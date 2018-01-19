@@ -65,21 +65,21 @@
 #include "Intrepid_FunctionSpaceTools.hpp"
 #include "Intrepid_CellTools.hpp"
 
-#include "Teuchos_RCP.hpp"
+#include "ROL_Ptr.hpp"
 
 
 template <class Real>
 class PDE_Filter : public PDE<Real> {
 private:
   // Finite element basis information
-  Teuchos::RCP<Intrepid::Basis<Real, Intrepid::FieldContainer<Real> > > basisPtr_;
-  std::vector<Teuchos::RCP<Intrepid::Basis<Real, Intrepid::FieldContainer<Real> > > > basisPtrs_;
+  ROL::Ptr<Intrepid::Basis<Real, Intrepid::FieldContainer<Real> > > basisPtr_;
+  std::vector<ROL::Ptr<Intrepid::Basis<Real, Intrepid::FieldContainer<Real> > > > basisPtrs_;
   // Cell cubature information
-  Teuchos::RCP<Intrepid::Cubature<Real> > cellCub_;
+  ROL::Ptr<Intrepid::Cubature<Real> > cellCub_;
   // Cell node information
-  Teuchos::RCP<Intrepid::FieldContainer<Real> > volCellNodes_;
+  ROL::Ptr<Intrepid::FieldContainer<Real> > volCellNodes_;
   // Finite element definition
-  Teuchos::RCP<FE<Real> > fe_;
+  ROL::Ptr<FE<Real> > fe_;
   // Field pattern, offsets, etc.
   std::vector<std::vector<int> > fieldPattern_;  // local Field/DOF pattern; set from DOF manager 
   int numFields_;                                // number of fields (equations in the PDE)
@@ -90,14 +90,14 @@ private:
   // Problem parameters.
   Real lengthScale_;
 
-  Teuchos::RCP<FieldHelper<Real> > fieldHelper_;
+  ROL::Ptr<FieldHelper<Real> > fieldHelper_;
 
 public:
   PDE_Filter(Teuchos::ParameterList &parlist) {
     // Finite element fields.
     int basisOrder    = parlist.sublist("Problem").get("Basis Order",1);
     int cubDegree     = parlist.sublist("Problem").get("Cubature Degree",4);
-    int bdryCubDegree = parlist.sublist("Problem").get("Boundary Cubature Degree",2);
+//    int bdryCubDegree = parlist.sublist("Problem").get("Boundary Cubature Degree",2);
     int probDim       = parlist.sublist("Problem").get("Problem Dimension",2);
     if (probDim > 3 || probDim < 2) {
       TEUCHOS_TEST_FOR_EXCEPTION(true, std::invalid_argument,
@@ -109,18 +109,18 @@ public:
     }
     if (probDim == 2) {
       if (basisOrder == 1) {
-        basisPtr_ = Teuchos::rcp(new Intrepid::Basis_HGRAD_QUAD_C1_FEM<Real, Intrepid::FieldContainer<Real> >);
+        basisPtr_ = ROL::makePtr<Intrepid::Basis_HGRAD_QUAD_C1_FEM<Real, Intrepid::FieldContainer<Real> >>();
       }
       else if (basisOrder == 2) {
-        basisPtr_ = Teuchos::rcp(new Intrepid::Basis_HGRAD_QUAD_C2_FEM<Real, Intrepid::FieldContainer<Real> >);
+        basisPtr_ = ROL::makePtr<Intrepid::Basis_HGRAD_QUAD_C2_FEM<Real, Intrepid::FieldContainer<Real> >>();
       }
     }
     else if (probDim == 3) {
       if (basisOrder == 1) {
-        basisPtr_ = Teuchos::rcp(new Intrepid::Basis_HGRAD_HEX_C1_FEM<Real, Intrepid::FieldContainer<Real> >);
+        basisPtr_ = ROL::makePtr<Intrepid::Basis_HGRAD_HEX_C1_FEM<Real, Intrepid::FieldContainer<Real> >>();
       }
       else if (basisOrder == 2) {
-        basisPtr_ = Teuchos::rcp(new Intrepid::Basis_HGRAD_HEX_C2_FEM<Real, Intrepid::FieldContainer<Real> >);
+        basisPtr_ = ROL::makePtr<Intrepid::Basis_HGRAD_HEX_C2_FEM<Real, Intrepid::FieldContainer<Real> >>();
       }
     }
     basisPtrs_.clear();
@@ -153,10 +153,10 @@ public:
     }
   }
 
-  void residual(Teuchos::RCP<Intrepid::FieldContainer<Real> > & res,
-                const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & u_coeff,
-                const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & z_coeff = Teuchos::null,
-                const Teuchos::RCP<const std::vector<Real> > & z_param = Teuchos::null) {
+  void residual(ROL::Ptr<Intrepid::FieldContainer<Real> > & res,
+                const ROL::Ptr<const Intrepid::FieldContainer<Real> > & u_coeff,
+                const ROL::Ptr<const Intrepid::FieldContainer<Real> > & z_coeff = ROL::nullPtr,
+                const ROL::Ptr<const std::vector<Real> > & z_param = ROL::nullPtr) {
     // Retrieve dimensions.
     int c = fe_->gradN()->dimension(0);
     int f = fe_->gradN()->dimension(1);
@@ -164,25 +164,25 @@ public:
     int d = fe_->gradN()->dimension(3);
  
     // Initialize residuals.
-    std::vector<Teuchos::RCP<Intrepid::FieldContainer<Real> > > R(d);
+    std::vector<ROL::Ptr<Intrepid::FieldContainer<Real> > > R(d);
     for (int i=0; i<d; ++i) {
-      R[i] = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c,f));
+      R[i] = ROL::makePtr<Intrepid::FieldContainer<Real>>(c,f);
     }
 
     // Split u_coeff and z_coeff into components.
-    std::vector<Teuchos::RCP<Intrepid::FieldContainer<Real> > > U;
-    std::vector<Teuchos::RCP<Intrepid::FieldContainer<Real> > > Z;
+    std::vector<ROL::Ptr<Intrepid::FieldContainer<Real> > > U;
+    std::vector<ROL::Ptr<Intrepid::FieldContainer<Real> > > Z;
     fieldHelper_->splitFieldCoeff(U, u_coeff);
     fieldHelper_->splitFieldCoeff(Z, z_coeff);
 
     // Evaluate/interpolate finite element fields on cells.
-    std::vector<Teuchos::RCP<Intrepid::FieldContainer<Real> > > valU_eval(d);
-    std::vector<Teuchos::RCP<Intrepid::FieldContainer<Real> > > gradU_eval(d);
-    std::vector<Teuchos::RCP<Intrepid::FieldContainer<Real> > > valZ_eval(d);
+    std::vector<ROL::Ptr<Intrepid::FieldContainer<Real> > > valU_eval(d);
+    std::vector<ROL::Ptr<Intrepid::FieldContainer<Real> > > gradU_eval(d);
+    std::vector<ROL::Ptr<Intrepid::FieldContainer<Real> > > valZ_eval(d);
     for (int i=0; i<d; ++i) {
-      valU_eval[i]  =  Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, p));
-      valZ_eval[i]  =  Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, p));
-      gradU_eval[i] =  Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, p, d));
+      valU_eval[i]  =  ROL::makePtr<Intrepid::FieldContainer<Real>>(c, p);
+      valZ_eval[i]  =  ROL::makePtr<Intrepid::FieldContainer<Real>>(c, p);
+      gradU_eval[i] =  ROL::makePtr<Intrepid::FieldContainer<Real>>(c, p, d);
     }
     for (int i=0; i<d; ++i) {
       fe_->evaluateValue(valU_eval[i], U[i]);
@@ -218,20 +218,20 @@ public:
     fieldHelper_->combineFieldCoeff(res, R);
   }
 
-  void Jacobian_1(Teuchos::RCP<Intrepid::FieldContainer<Real> > & jac,
-                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & u_coeff,
-                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & z_coeff = Teuchos::null,
-                  const Teuchos::RCP<const std::vector<Real> > & z_param = Teuchos::null) {
+  void Jacobian_1(ROL::Ptr<Intrepid::FieldContainer<Real> > & jac,
+                  const ROL::Ptr<const Intrepid::FieldContainer<Real> > & u_coeff,
+                  const ROL::Ptr<const Intrepid::FieldContainer<Real> > & z_coeff = ROL::nullPtr,
+                  const ROL::Ptr<const std::vector<Real> > & z_param = ROL::nullPtr) {
     // Retrieve dimensions.
     int c = fe_->gradN()->dimension(0);
     int f = fe_->gradN()->dimension(1);
     int d = fe_->gradN()->dimension(3);
  
     // Initialize Jacobians.
-    std::vector<std::vector<Teuchos::RCP<Intrepid::FieldContainer<Real> > > > J(d);
+    std::vector<std::vector<ROL::Ptr<Intrepid::FieldContainer<Real> > > > J(d);
     for (int i=0; i<d; ++i) {
       for (int j=0; j<d; ++j) {
-        J[i].push_back(Teuchos::rcp(new Intrepid::FieldContainer<Real>(c,f,f)));
+        J[i].push_back(ROL::makePtr<Intrepid::FieldContainer<Real>>(c,f,f));
       }
     }
 
@@ -247,20 +247,20 @@ public:
   }
 
 
-  void Jacobian_2(Teuchos::RCP<Intrepid::FieldContainer<Real> > & jac,
-                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & u_coeff,
-                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & z_coeff = Teuchos::null,
-                  const Teuchos::RCP<const std::vector<Real> > & z_param = Teuchos::null) {
+  void Jacobian_2(ROL::Ptr<Intrepid::FieldContainer<Real> > & jac,
+                  const ROL::Ptr<const Intrepid::FieldContainer<Real> > & u_coeff,
+                  const ROL::Ptr<const Intrepid::FieldContainer<Real> > & z_coeff = ROL::nullPtr,
+                  const ROL::Ptr<const std::vector<Real> > & z_param = ROL::nullPtr) {
     // Retrieve dimensions.
     int c = fe_->gradN()->dimension(0);
     int f = fe_->gradN()->dimension(1);
     int d = fe_->gradN()->dimension(3);
  
     // Initialize Jacobians.
-    std::vector<std::vector<Teuchos::RCP<Intrepid::FieldContainer<Real> > > > J(d);
+    std::vector<std::vector<ROL::Ptr<Intrepid::FieldContainer<Real> > > > J(d);
     for (int i=0; i<d; ++i) {
       for (int j=0; j<d; ++j) {
-        J[i].push_back(Teuchos::rcp(new Intrepid::FieldContainer<Real>(c,f,f)));
+        J[i].push_back(ROL::makePtr<Intrepid::FieldContainer<Real>>(c,f,f));
       }
     }
 
@@ -274,39 +274,39 @@ public:
     fieldHelper_->combineFieldCoeff(jac, J);
   }
 
-  void Hessian_11(Teuchos::RCP<Intrepid::FieldContainer<Real> > & hess,
-                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & l_coeff,
-                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & u_coeff,
-                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & z_coeff = Teuchos::null,
-                  const Teuchos::RCP<const std::vector<Real> > & z_param = Teuchos::null) {
+  void Hessian_11(ROL::Ptr<Intrepid::FieldContainer<Real> > & hess,
+                  const ROL::Ptr<const Intrepid::FieldContainer<Real> > & l_coeff,
+                  const ROL::Ptr<const Intrepid::FieldContainer<Real> > & u_coeff,
+                  const ROL::Ptr<const Intrepid::FieldContainer<Real> > & z_coeff = ROL::nullPtr,
+                  const ROL::Ptr<const std::vector<Real> > & z_param = ROL::nullPtr) {
     throw Exception::Zero(">>> (PDE_Filter::Hessian_11): Hessian is zero.");
   }
 
-  void Hessian_12(Teuchos::RCP<Intrepid::FieldContainer<Real> > & hess,
-                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & l_coeff,
-                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & u_coeff,
-                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & z_coeff = Teuchos::null,
-                  const Teuchos::RCP<const std::vector<Real> > & z_param = Teuchos::null) {
+  void Hessian_12(ROL::Ptr<Intrepid::FieldContainer<Real> > & hess,
+                  const ROL::Ptr<const Intrepid::FieldContainer<Real> > & l_coeff,
+                  const ROL::Ptr<const Intrepid::FieldContainer<Real> > & u_coeff,
+                  const ROL::Ptr<const Intrepid::FieldContainer<Real> > & z_coeff = ROL::nullPtr,
+                  const ROL::Ptr<const std::vector<Real> > & z_param = ROL::nullPtr) {
     throw Exception::Zero(">>> (PDE_Filter::Hessian_12): Hessian is zero.");
   }
 
-  void Hessian_21(Teuchos::RCP<Intrepid::FieldContainer<Real> > & hess,
-                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & l_coeff,
-                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & u_coeff,
-                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & z_coeff = Teuchos::null,
-                  const Teuchos::RCP<const std::vector<Real> > & z_param = Teuchos::null) {
+  void Hessian_21(ROL::Ptr<Intrepid::FieldContainer<Real> > & hess,
+                  const ROL::Ptr<const Intrepid::FieldContainer<Real> > & l_coeff,
+                  const ROL::Ptr<const Intrepid::FieldContainer<Real> > & u_coeff,
+                  const ROL::Ptr<const Intrepid::FieldContainer<Real> > & z_coeff = ROL::nullPtr,
+                  const ROL::Ptr<const std::vector<Real> > & z_param = ROL::nullPtr) {
     throw Exception::Zero(">>> (PDE_Filter::Hessian_21): Hessian is zero.");
   }
 
-  void Hessian_22(Teuchos::RCP<Intrepid::FieldContainer<Real> > & hess,
-                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & l_coeff,
-                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & u_coeff,
-                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & z_coeff = Teuchos::null,
-                  const Teuchos::RCP<const std::vector<Real> > & z_param = Teuchos::null) {
+  void Hessian_22(ROL::Ptr<Intrepid::FieldContainer<Real> > & hess,
+                  const ROL::Ptr<const Intrepid::FieldContainer<Real> > & l_coeff,
+                  const ROL::Ptr<const Intrepid::FieldContainer<Real> > & u_coeff,
+                  const ROL::Ptr<const Intrepid::FieldContainer<Real> > & z_coeff = ROL::nullPtr,
+                  const ROL::Ptr<const std::vector<Real> > & z_param = ROL::nullPtr) {
     throw Exception::Zero(">>> (PDE_Filter::Hessian_22): Hessian is zero.");
   }
 
-  void RieszMap_1(Teuchos::RCP<Intrepid::FieldContainer<Real> > & riesz) {
+  void RieszMap_1(ROL::Ptr<Intrepid::FieldContainer<Real> > & riesz) {
     throw Exception::NotImplemented(">>> (PDE_Filter::RieszMap_1): Not implemented.");
     // Retrieve dimensions.
     int c = fe_->gradN()->dimension(0);
@@ -314,10 +314,10 @@ public:
     int d = fe_->gradN()->dimension(3);
  
     // Initialize Jacobians.
-    std::vector<std::vector<Teuchos::RCP<Intrepid::FieldContainer<Real> > > > J(d);
+    std::vector<std::vector<ROL::Ptr<Intrepid::FieldContainer<Real> > > > J(d);
     for (int i=0; i<d; ++i) {
       for (int j=0; j<d; ++j) {
-        J[i].push_back(Teuchos::rcp(new Intrepid::FieldContainer<Real>(c,f,f)));
+        J[i].push_back(ROL::makePtr<Intrepid::FieldContainer<Real>>(c,f,f));
       }
     }
 
@@ -330,25 +330,25 @@ public:
     fieldHelper_->combineFieldCoeff(riesz, J);
   }
 
-  void RieszMap_2(Teuchos::RCP<Intrepid::FieldContainer<Real> > & riesz) {
+  void RieszMap_2(ROL::Ptr<Intrepid::FieldContainer<Real> > & riesz) {
     throw Exception::NotImplemented(">>> (PDE_Filter::RieszMap_2): Not implemented.");
   }
 
-  std::vector<Teuchos::RCP<Intrepid::Basis<Real, Intrepid::FieldContainer<Real> > > > getFields() {
+  std::vector<ROL::Ptr<Intrepid::Basis<Real, Intrepid::FieldContainer<Real> > > > getFields() {
     return basisPtrs_;
   }
 
-  void setCellNodes(const Teuchos::RCP<Intrepid::FieldContainer<Real> > &volCellNodes,
-                    const std::vector<std::vector<Teuchos::RCP<Intrepid::FieldContainer<Real> > > > &bdryCellNodes,
+  void setCellNodes(const ROL::Ptr<Intrepid::FieldContainer<Real> > &volCellNodes,
+                    const std::vector<std::vector<ROL::Ptr<Intrepid::FieldContainer<Real> > > > &bdryCellNodes,
                     const std::vector<std::vector<std::vector<int> > > &bdryCellLocIds) {
     volCellNodes_ = volCellNodes;
     // Finite element definition.
-    fe_ = Teuchos::rcp(new FE<Real>(volCellNodes_,basisPtr_,cellCub_));
+    fe_ = ROL::makePtr<FE<Real>>(volCellNodes_,basisPtr_,cellCub_);
   }
 
   void setFieldPattern(const std::vector<std::vector<int> > & fieldPattern) {
     fieldPattern_ = fieldPattern;
-    fieldHelper_ = Teuchos::rcp(new FieldHelper<Real>(numFields_, numDofs_, numFieldDofs_, fieldPattern_));
+    fieldHelper_ = ROL::makePtr<FieldHelper<Real>>(numFields_, numDofs_, numFieldDofs_, fieldPattern_);
   }
 
 }; // PDE_Filter

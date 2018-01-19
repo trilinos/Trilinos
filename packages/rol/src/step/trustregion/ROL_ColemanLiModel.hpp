@@ -61,15 +61,15 @@ namespace ROL {
 template<class Real>
 class ColemanLiModel : public TrustRegionModel<Real> {
 private:
-  Teuchos::RCP<BoundConstraint<Real> > bnd_;              // Bound constraint
-  Teuchos::RCP<Secant<Real> > sec_;                       // Secant storage
+  ROL::Ptr<BoundConstraint<Real> > bnd_;              // Bound constraint
+  ROL::Ptr<Secant<Real> > sec_;                       // Secant storage
 
-  Teuchos::RCP<Vector<Real> > prim_, dual_, hv_;          // Auxiliary storage
-  Teuchos::RCP<Vector<Real> > step_;                      // Step storage
-  Teuchos::RCP<Vector<Real> > cauchyStep_, cauchyScal_;   // Cauchy point vectors
-  Teuchos::RCP<Vector<Real> > reflectStep_, reflectScal_; // Reflective step vectors
-  Teuchos::RCP<Vector<Real> > Dmat_;                      // sqrt(abs(v))
-  Teuchos::RCP<Vector<Real> > Cmat_;                      // diag(g) * dv/dx
+  ROL::Ptr<Vector<Real> > prim_, dual_, hv_;          // Auxiliary storage
+  ROL::Ptr<Vector<Real> > step_;                      // Step storage
+  ROL::Ptr<Vector<Real> > cauchyStep_, cauchyScal_;   // Cauchy point vectors
+  ROL::Ptr<Vector<Real> > reflectStep_, reflectScal_; // Reflective step vectors
+  ROL::Ptr<Vector<Real> > Dmat_;                      // sqrt(abs(v))
+  ROL::Ptr<Vector<Real> > Cmat_;                      // diag(g) * dv/dx
 
   const bool useSecantPrecond_;                           // Use secant as preconditioner (unused)
   const bool useSecantHessVec_;                           // Use secant as Hessian
@@ -100,9 +100,9 @@ private:
   }
 
   void constructC(void) {
-    const Teuchos::RCP<const Vector<Real> > gc = TrustRegionModel<Real>::getGradient();
-    const Teuchos::RCP<const Vector<Real> > l  = bnd_->getLowerBound();
-    const Teuchos::RCP<const Vector<Real> > u  = bnd_->getUpperBound();
+    const ROL::Ptr<const Vector<Real> > gc = TrustRegionModel<Real>::getGradient();
+    const ROL::Ptr<const Vector<Real> > l  = bnd_->getLowerBound();
+    const ROL::Ptr<const Vector<Real> > u  = bnd_->getUpperBound();
 
     // Set Cmat_ to be the sign of the gradient
     Cmat_->set(gc->dual());
@@ -136,10 +136,10 @@ private:
   }
 
   void constructInverseD(void) {
-    const Teuchos::RCP<const Vector<Real> > xc = TrustRegionModel<Real>::getIterate();
-    const Teuchos::RCP<const Vector<Real> > gc = TrustRegionModel<Real>::getGradient();
-    const Teuchos::RCP<const Vector<Real> > l  = bnd_->getLowerBound();
-    const Teuchos::RCP<const Vector<Real> > u  = bnd_->getUpperBound();
+    const ROL::Ptr<const Vector<Real> > xc = TrustRegionModel<Real>::getIterate();
+    const ROL::Ptr<const Vector<Real> > gc = TrustRegionModel<Real>::getGradient();
+    const ROL::Ptr<const Vector<Real> > l  = bnd_->getLowerBound();
+    const ROL::Ptr<const Vector<Real> > u  = bnd_->getUpperBound();
     const Real zero(0), one(1), INF(ROL_INF<Real>()), NINF(ROL_NINF<Real>());
     const int LESS_THAN    = 0;
     const int EQUAL_TO     = 1;
@@ -210,7 +210,7 @@ private:
   // Build diagonal D and C matrices
   void initialize(Objective<Real> &obj, BoundConstraint<Real> &bnd,
                   const Vector<Real> &x, const Vector<Real> &g) {
-    bnd_ = Teuchos::rcpFromRef(bnd);
+    bnd_ = ROL::makePtrFromRef(bnd);
 
     prim_ = x.clone();
     dual_ = g.clone();
@@ -233,7 +233,7 @@ private:
   ColemanLiModel( Objective<Real> &obj, BoundConstraint<Real> &bnd,
                   const Vector<Real> &x, const Vector<Real> &g)
     : TrustRegionModel<Real>::TrustRegionModel(obj,x,g,false),
-      sec_(Teuchos::null), useSecantPrecond_(false), useSecantHessVec_(false),
+      sec_(ROL::nullPtr), useSecantPrecond_(false), useSecantHessVec_(false),
       TRradius_(1), stepBackMax_(0.9999), stepBackScale_(1),
       singleReflect_(true), sCs_(0), pred_(0) {
     initialize(obj,bnd,x,g);
@@ -244,7 +244,7 @@ private:
                   const Real TRradius, const Real stepBackMax, const Real stepBackScale,
                   const bool singleReflect = true )
     : TrustRegionModel<Real>::TrustRegionModel(obj,x,g,false),
-      sec_(Teuchos::null), useSecantPrecond_(false), useSecantHessVec_(false),
+      sec_(ROL::nullPtr), useSecantPrecond_(false), useSecantHessVec_(false),
       TRradius_(TRradius), stepBackMax_(stepBackMax), stepBackScale_(stepBackScale),
       singleReflect_(singleReflect), sCs_(0), pred_(0) {
     initialize(obj,bnd,x,g);
@@ -252,7 +252,7 @@ private:
 
   ColemanLiModel( Objective<Real> &obj, BoundConstraint<Real> &bnd,
                   const Vector<Real> &x, const Vector<Real> &g,
-                  const Teuchos::RCP<Secant<Real> > &sec,
+                  const ROL::Ptr<Secant<Real> > &sec,
                   const bool useSecantPrecond, const bool useSecantHessVec,
                   const Real TRradius, const Real stepBackMax, const Real stepBackScale,
                   const bool singleReflect = true )
@@ -265,7 +265,7 @@ private:
  
   // Note that s is the \f$\hat{s}\f$ and \f$\psi\f$ is the $\hat\psi$ from the paper
   Real value( const Vector<Real> &s, Real &tol ) {
-    const Teuchos::RCP<const Vector<Real> > gc = TrustRegionModel<Real>::getGradient();
+    const ROL::Ptr<const Vector<Real> > gc = TrustRegionModel<Real>::getGradient();
     // Apply Hessian to s
     hessVec(*hv_, s, s, tol);
     hv_->scale(static_cast<Real>(0.5));
@@ -277,21 +277,21 @@ private:
   }
 
   void gradient( Vector<Real> &g, const Vector<Real> &s, Real &tol ) {
-    const Teuchos::RCP<const Vector<Real> > gc = TrustRegionModel<Real>::getGradient();
+    const ROL::Ptr<const Vector<Real> > gc = TrustRegionModel<Real>::getGradient();
     hessVec(g, s, s, tol);
     applyInverseD(*prim_, gc->dual());
     g.plus(prim_->dual());    
   }
 
   void hessVec( Vector<Real> &hv, const Vector<Real> &v, const Vector<Real> &s, Real &tol ) {
-    const Teuchos::RCP<const Vector<Real> > gc = TrustRegionModel<Real>::getGradient();
+    const ROL::Ptr<const Vector<Real> > gc = TrustRegionModel<Real>::getGradient();
     // Build B = inv(D) * Hessian * inv(D)
     applyInverseD(*prim_, v);
     if(useSecantHessVec_) {
       sec_->applyB(*dual_, *prim_);
     }
     else {
-      const Teuchos::RCP<const Vector<Real> > xc = TrustRegionModel<Real>::getIterate();
+      const ROL::Ptr<const Vector<Real> > xc = TrustRegionModel<Real>::getIterate();
       TrustRegionModel<Real>::getObjective()->hessVec(*dual_, *prim_, *xc, tol);   
     }
     applyInverseD(hv, *dual_);
@@ -398,16 +398,16 @@ private:
     ared += sCs_;
   }
 
-  const Teuchos::RCP<BoundConstraint<Real> > getBoundConstraint(void) const {
+  const ROL::Ptr<BoundConstraint<Real> > getBoundConstraint(void) const {
     return bnd_;
   }
 
 private:
 
   void getScalarBounds( Real &lowerBound, Real &upperBound, const Vector<Real> &p ) {
-    const Teuchos::RCP<const Vector<Real> > xc = TrustRegionModel<Real>::getIterate();
-    const Teuchos::RCP<const Vector<Real> > l  = bnd_->getLowerBound();
-    const Teuchos::RCP<const Vector<Real> > u  = bnd_->getUpperBound();
+    const ROL::Ptr<const Vector<Real> > xc = TrustRegionModel<Real>::getIterate();
+    const ROL::Ptr<const Vector<Real> > l  = bnd_->getLowerBound();
+    const ROL::Ptr<const Vector<Real> > u  = bnd_->getUpperBound();
     const Real one(1);
     Real pnorm = p.norm();
 
@@ -459,7 +459,7 @@ private:
   }
 
   Real minimize1D(Real &tau, const Real lowerBound, const Real upperBound, const Vector<Real> &p) {
-    const Teuchos::RCP<const Vector<Real> > gc = TrustRegionModel<Real>::getGradient();
+    const ROL::Ptr<const Vector<Real> > gc = TrustRegionModel<Real>::getGradient();
     Real tol = std::sqrt(ROL_EPSILON<Real>());
 
     // Compute coefficients of one dimensional quadratic
@@ -483,7 +483,7 @@ private:
 
   Real computeCauchyPoint(void) {
     // Set step = -inv(D) g
-    const Teuchos::RCP<const Vector<Real> > gc = TrustRegionModel<Real>::getGradient();
+    const ROL::Ptr<const Vector<Real> > gc = TrustRegionModel<Real>::getGradient();
     applyInverseD(*cauchyStep_, gc->dual());
     cauchyStep_->scale(static_cast<Real>(-1));
 
@@ -505,7 +505,7 @@ private:
   }
 
   void computeReflectiveStep(Vector<Real> &Rv, const Vector<Real> &v, const Vector<Real> &Dv) {
-    const Teuchos::RCP<const Vector<Real> > xc = TrustRegionModel<Real>::getIterate();
+    const ROL::Ptr<const Vector<Real> > xc = TrustRegionModel<Real>::getIterate();
     Real alpha = computeAlpha(Dv);
     Rv.set(v);
 
@@ -531,7 +531,7 @@ private:
   }
 
   void computeFullReflectiveStep(Vector<Real> &Rv, const Vector<Real> &v, const Vector<Real> &Dv) {
-    const Teuchos::RCP<const Vector<Real> > xc = TrustRegionModel<Real>::getIterate();
+    const ROL::Ptr<const Vector<Real> > xc = TrustRegionModel<Real>::getIterate();
     Rv.set(v);
 
     class LowerBound : public Elementwise::BinaryFunction<Real> {
@@ -556,8 +556,8 @@ private:
   }
 
   Real computeAlpha( const Vector<Real> &d ) {
-    const Teuchos::RCP<const Vector<Real> > xc = TrustRegionModel<Real>::getIterate();
-    Teuchos::RCP<Vector<Real> > lx = xc->clone(), ux = xc->clone();
+    const ROL::Ptr<const Vector<Real> > xc = TrustRegionModel<Real>::getIterate();
+    ROL::Ptr<Vector<Real> > lx = xc->clone(), ux = xc->clone();
     const Real one(1);
 
     // Define elementwise functions
@@ -590,7 +590,7 @@ private:
   }
 
   bool isStrictlyFeasibleStep( const Vector<Real> &d ) const {
-    const Teuchos::RCP<const Vector<Real> > xc = TrustRegionModel<Real>::getIterate();
+    const ROL::Ptr<const Vector<Real> > xc = TrustRegionModel<Real>::getIterate();
 
     class Greater : public Elementwise::BinaryFunction<Real> {
     public:

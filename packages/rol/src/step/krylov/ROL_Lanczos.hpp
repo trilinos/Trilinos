@@ -64,7 +64,7 @@ namespace ROL {
 template<class Real>
 class Lanczos { 
 
-  template <typename T> using RCP = Teuchos::RCP<T>;
+  template <typename T> using ROL::Ptr = ROL::Ptr<T>;
   template <typename T> using vector = std::vector<T>;
 
   template typename vector<Real> size_type uint;
@@ -78,7 +78,7 @@ private:
 
   Teuchos::LAPACK<int,Real> lapack_;
 
-  vector<RCP<V> > Q_;     // Orthogonal basis
+  vector<ROL::Ptr<V> > Q_;     // Orthogonal basis
   vector<Real>    alpha_; // Diagonal recursion coefficients
   vector<Real>    beta_;  // Sub/super-diagonal recursion coefficients
   
@@ -92,7 +92,7 @@ private:
   vector<Real> work_;     // Scratch space for eigenvalue decomposition
   vector<int>  ipiv_;     // Pivots for LU
 
-  RCP<V> u_;              // An auxilliary vector
+  ROL::Ptr<V> u_;              // An auxilliary vector
 
   Real max_beta_;          // maximum beta encountered
   Real tol_beta_;          // relative smallest beta allowed

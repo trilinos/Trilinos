@@ -60,8 +60,8 @@
 typedef double RealT;
 
 using namespace ROL;
-using Teuchos::RCP;
-using Teuchos::rcp;
+
+
 using Teuchos::ArrayRCP;
 
 
@@ -83,12 +83,12 @@ int main(int argc, char *argv[]) {
     Teuchos::GlobalMPISession mpiSession(&argc,&argv);
 
     int iprint     = argc - 1;
-    Teuchos::RCP<std::ostream> outStream;
+    ROL::Ptr<std::ostream> outStream;
     Teuchos::oblackholestream bhs; // outputs nothing
     if (iprint > 0)
-        outStream = Teuchos::rcp(&std::cout, false);
+        outStream = ROL::makePtrFromRef(std::cout);
     else
-        outStream = Teuchos::rcp(&bhs, false);
+        outStream = ROL::makePtrFromRef(bhs);
 
     int errorFlag = 0;
 
@@ -101,39 +101,39 @@ int main(int argc, char *argv[]) {
 	M(1,1) = 3.0;
 
 
-	Teuchos::RCP<std::vector<RealT> > w_rcp = Teuchos::rcp(new std::vector<RealT>(2));
-	Teuchos::RCP<std::vector<RealT> > x_rcp = Teuchos::rcp(new std::vector<RealT>(2));
-	Teuchos::RCP<std::vector<RealT> > y_rcp = Teuchos::rcp(new std::vector<RealT>(2));
-	Teuchos::RCP<std::vector<RealT> > z_rcp = Teuchos::rcp(new std::vector<RealT>(2));
+	ROL::Ptr<std::vector<RealT> > w_ptr = ROL::makePtr<std::vector<RealT>>(2);
+	ROL::Ptr<std::vector<RealT> > x_ptr = ROL::makePtr<std::vector<RealT>>(2);
+	ROL::Ptr<std::vector<RealT> > y_ptr = ROL::makePtr<std::vector<RealT>>(2);
+	ROL::Ptr<std::vector<RealT> > z_ptr = ROL::makePtr<std::vector<RealT>>(2);
 
-	(*w_rcp)[0] = 0.0;
-	(*w_rcp)[1] = 1.0;
+	(*w_ptr)[0] = 0.0;
+	(*w_ptr)[1] = 1.0;
 
-	(*x_rcp)[0] = 1.0;
-	(*x_rcp)[1] = 0.0;
+	(*x_ptr)[0] = 1.0;
+	(*x_ptr)[1] = 0.0;
 
-	(*y_rcp)[0] = 3.0;
-	(*y_rcp)[1] = 4.0;
+	(*y_ptr)[0] = 3.0;
+	(*y_ptr)[1] = 4.0;
 
-	(*z_rcp)[0] = -1.0;
-	(*z_rcp)[1] =  1.0;
+	(*z_ptr)[0] = -1.0;
+	(*z_ptr)[1] =  1.0;
        
-	RCP<Vector<RealT> > w = rcp(new StdVector<RealT>(w_rcp)); 
-	RCP<Vector<RealT> > x = rcp(new StdVector<RealT>(x_rcp)); 
-	RCP<Vector<RealT> > y = rcp(new StdVector<RealT>(y_rcp)); 
-	RCP<Vector<RealT> > z = rcp(new StdVector<RealT>(z_rcp)); 
+	ROL::Ptr<Vector<RealT> > w = ROL::makePtr<StdVector<RealT>>(w_ptr); 
+	ROL::Ptr<Vector<RealT> > x = ROL::makePtr<StdVector<RealT>>(x_ptr); 
+	ROL::Ptr<Vector<RealT> > y = ROL::makePtr<StdVector<RealT>>(y_ptr); 
+	ROL::Ptr<Vector<RealT> > z = ROL::makePtr<StdVector<RealT>>(z_ptr); 
 
-	ArrayRCP<RCP<Vector<RealT> > > A_rcp(2);
-	ArrayRCP<RCP<Vector<RealT> > > B_rcp(2);
+	ArrayRCP<ROL::Ptr<Vector<RealT> > > A_ptr(2);
+	ArrayRCP<ROL::Ptr<Vector<RealT> > > B_ptr(2);
 
-	A_rcp[0] = x;     
-	A_rcp[1] = y;     
+	A_ptr[0] = x;     
+	A_ptr[1] = y;     
 
-	B_rcp[0] = w;     
-	B_rcp[1] = z;     
+	B_ptr[0] = w;     
+	B_ptr[1] = z;     
 
-	RCP<MultiVector<RealT> > A = rcp(new MultiVectorDefault<RealT>(A_rcp));
-	RCP<MultiVector<RealT> > B = rcp(new MultiVectorDefault<RealT>(B_rcp));
+	ROL::Ptr<MultiVector<RealT> > A = ROL::makePtr<MultiVectorDefault<RealT>>(A_ptr);
+        ROL::Ptr<MultiVector<RealT> > B = ROL::makePtr<MultiVectorDefault<RealT>>(B_ptr);
        
 	// Test norm
 	if(static_cast<int>(norm_sum(*A)) != 6) {
@@ -142,14 +142,14 @@ int main(int argc, char *argv[]) {
 	}
 
 	// Test clone
-	RCP<MultiVector<RealT> > C = A->clone();    
+	ROL::Ptr<MultiVector<RealT> > C = A->clone();    
 	if(norm_sum(*C) != 0) {
             *outStream << "Clone test failed!\n";
 	    ++errorFlag;
 	}
 
 	// Test deep copy
-        RCP<MultiVector<RealT> > D = A->deepCopy();
+        ROL::Ptr<MultiVector<RealT> > D = A->deepCopy();
 	if(static_cast<int>(norm_sum(*D)) != 6) {
             *outStream << "Deep copy test failed!\n";
 	    ++errorFlag;
@@ -159,7 +159,7 @@ int main(int argc, char *argv[]) {
 	std::vector<int> index(1);
 	index[0] = 0;
 
-        RCP<MultiVector<RealT> > S = A->shallowCopy(index);
+        ROL::Ptr<MultiVector<RealT> > S = A->shallowCopy(index);
 	if(static_cast<int>(norm_sum(*S)) != 1) {
             *outStream << "Shallow copy test failed!\n";
 	    ++errorFlag;
@@ -211,8 +211,8 @@ int main(int argc, char *argv[]) {
             ++errorFlag;
         }
 
-//    StdVector<RealT> d0 = Teuchos::dyn_cast<StdVector<RealT>>(*D->getVector(0));
-//    StdVector<RealT> d1 = Teuchos::dyn_cast<StdVector<RealT>>(*D->getVector(1));
+//    StdVector<RealT> d0 = dynamic_cast<StdVector<RealT>>(*D-&>getVector(0));
+//    StdVector<RealT> d1 = dynamic_cast<StdVector<RealT>>(*D-&>getVector(1));
 
 //    std::cout << (*d0.getVector())[0] << std::endl;
 //    std::cout << (*d0.getVector())[1] << std::endl;

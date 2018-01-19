@@ -92,5 +92,27 @@ decltype(auto) unary_apply(F&& f, Tuple&& t) {
 
 } // namespace details 
 
+// Common elementwise functions
+auto sum = [](auto... args) {
+  using ReturnType = std::common_type_t<decltype(args)...>;
+  ReturnType ret{0};
+  ReturnType  _[] = { (ret += args )... };
+  (void)_;
+  return ret;
+};
+
+auto product = [](auto... args) {
+  using ReturnType = std::common_type_t<decltype(args)...>;
+  ReturnType ret{1};
+  ReturnType  _[] = { (ret *= args )... };
+  (void)_;
+  return ret;
+};
+
+auto divide = [] ( auto num, auto den ) { return num/den; };
+
+
+
+
 } // namespace XROL
 

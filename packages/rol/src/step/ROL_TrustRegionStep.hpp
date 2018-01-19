@@ -130,13 +130,13 @@ class TrustRegionStep : public Step<Real> {
 private:
 
   // ADDITIONAL VECTOR STORAGE
-  Teuchos::RCP<Vector<Real> > xnew_; ///< Container for updated iteration vector.
-  Teuchos::RCP<Vector<Real> > xold_; ///< Container for previous iteration vector.
-  Teuchos::RCP<Vector<Real> > gp_;   ///< Container for previous gradient vector.
+  ROL::Ptr<Vector<Real> > xnew_; ///< Container for updated iteration vector.
+  ROL::Ptr<Vector<Real> > xold_; ///< Container for previous iteration vector.
+  ROL::Ptr<Vector<Real> > gp_;   ///< Container for previous gradient vector.
 
   // TRUST REGION INFORMATION
-  Teuchos::RCP<TrustRegion<Real> >      trustRegion_; ///< Container for trust-region solver object.
-  Teuchos::RCP<TrustRegionModel<Real> > model_;       ///< Container for trust-region model.
+  ROL::Ptr<TrustRegion<Real> >      trustRegion_; ///< Container for trust-region solver object.
+  ROL::Ptr<TrustRegionModel<Real> > model_;       ///< Container for trust-region model.
   ETrustRegion                          etr_;         ///< Trust-region subproblem solver type.
   ETrustRegionModel                     TRmodel_;     ///< Trust-region subproblem model type.
   Real                                  delMax_;      ///< Maximum trust-region radius.
@@ -146,7 +146,7 @@ private:
   bool                                  bndActive_;   ///< Flag whether bound is activated.
 
   // SECANT INFORMATION
-  Teuchos::RCP<Secant<Real> > secant_;           ///< Container for secant approximation.
+  ROL::Ptr<Secant<Real> > secant_;           ///< Container for secant approximation.
   ESecant                     esec_;             ///< Secant type.
   bool                        useSecantHessVec_; ///< Flag whether to use a secant Hessian.
   bool                        useSecantPrecond_; ///< Flag whether to use a secant preconditioner. 
@@ -181,7 +181,7 @@ private:
       @param[in]  parlist   is the user-supplied ParameterList.
   */
   void parseParameterList(Teuchos::ParameterList &parlist) {
-    Teuchos::RCP<StepState<Real> > step_state = Step<Real>::getState();
+    ROL::Ptr<StepState<Real> > step_state = Step<Real>::getState();
     // Trust-Region Parameters
     Teuchos::ParameterList &slist = parlist.sublist("Step");
     Teuchos::ParameterList &list  = slist.sublist("Trust Region");
@@ -232,7 +232,7 @@ private:
   */
   void updateGradient( Vector<Real> &x, Objective<Real> &obj, BoundConstraint<Real> &bnd, 
                        AlgorithmState<Real> &algo_state ) {
-    Teuchos::RCP<StepState<Real> > state = Step<Real>::getState();
+    ROL::Ptr<StepState<Real> > state = Step<Real>::getState();
     if ( useInexact_[1] ) {
       const Real one(1);
       //const Real oem2(1.e-2), oe4(1.e4);
@@ -311,12 +311,12 @@ public:
   */
   TrustRegionStep( Teuchos::ParameterList & parlist )
     : Step<Real>(),
-      xnew_(Teuchos::null), xold_(Teuchos::null), gp_(Teuchos::null),
-      trustRegion_(Teuchos::null), model_(Teuchos::null),
+      xnew_(ROL::nullPtr), xold_(ROL::nullPtr), gp_(ROL::nullPtr),
+      trustRegion_(ROL::nullPtr), model_(ROL::nullPtr),
       etr_(TRUSTREGION_DOGLEG), TRmodel_(TRUSTREGION_MODEL_KELLEYSACHS),
       delMax_(1e8), TRflag_(TRUSTREGION_FLAG_SUCCESS),
       SPflag_(0), SPiter_(0), bndActive_(false),
-      secant_(Teuchos::null), esec_(SECANT_LBFGS),
+      secant_(ROL::nullPtr), esec_(SECANT_LBFGS),
       useSecantHessVec_(false), useSecantPrecond_(false),
       scaleEps_(1), useProjectedGrad_(false),
       alpha_init_(1), max_fval_(20), mu_(0.9999), beta_(0.01),
@@ -342,14 +342,14 @@ public:
       @param[in]     secant     is a user-defined secant object
       @param[in]     parlist    is a parameter list containing algorithmic specifications
   */
-  TrustRegionStep( Teuchos::RCP<Secant<Real> > &secant, Teuchos::ParameterList &parlist ) 
+  TrustRegionStep( ROL::Ptr<Secant<Real> > &secant, Teuchos::ParameterList &parlist ) 
     : Step<Real>(),
-      xnew_(Teuchos::null), xold_(Teuchos::null), gp_(Teuchos::null),
-      trustRegion_(Teuchos::null), model_(Teuchos::null),
+      xnew_(ROL::nullPtr), xold_(ROL::nullPtr), gp_(ROL::nullPtr),
+      trustRegion_(ROL::nullPtr), model_(ROL::nullPtr),
       etr_(TRUSTREGION_DOGLEG), TRmodel_(TRUSTREGION_MODEL_KELLEYSACHS),
       delMax_(1e8), TRflag_(TRUSTREGION_FLAG_SUCCESS),
       SPflag_(0), SPiter_(0), bndActive_(false),
-      secant_(Teuchos::null), esec_(SECANT_LBFGS),
+      secant_(ROL::nullPtr), esec_(SECANT_LBFGS),
       useSecantHessVec_(false), useSecantPrecond_(false),
       scaleEps_(1), useProjectedGrad_(false),
       alpha_init_(1), max_fval_(20), mu_(0.9999), beta_(0.01),
@@ -362,7 +362,7 @@ public:
     Teuchos::ParameterList &glist = parlist.sublist("General");
     useSecantPrecond_ = glist.sublist("Secant").get("Use as Preconditioner", false);
     useSecantHessVec_ = glist.sublist("Secant").get("Use as Hessian",        false);
-    if ( secant_ == Teuchos::null ) {
+    if ( secant_ == ROL::nullPtr ) {
       Teuchos::ParameterList Slist;
       Slist.sublist("General").sublist("Secant").set("Type","Limited-Memory BFGS");
       Slist.sublist("General").sublist("Secant").set("Maximum Storage",10);
@@ -382,7 +382,7 @@ public:
                    Objective<Real> &obj, BoundConstraint<Real> &bnd, 
                    AlgorithmState<Real> &algo_state ) {
     Real p1(0.1), oe10(1.e10), zero(0), one(1), half(0.5), three(3), two(2), six(6);
-    Teuchos::RCP<StepState<Real> > step_state = Step<Real>::getState();
+    ROL::Ptr<StepState<Real> > step_state = Step<Real>::getState();
     bndActive_ = bnd.isActivated();
 
     trustRegion_->initialize(x,s,g);
@@ -417,8 +417,8 @@ public:
     if ( !useSecantHessVec_ &&
         (etr_ == TRUSTREGION_DOGLEG || etr_ == TRUSTREGION_DOUBLEDOGLEG) ) {
       try {
-        Teuchos::RCP<Vector<Real> > v  = g.clone();
-        Teuchos::RCP<Vector<Real> > hv = x.clone();
+        ROL::Ptr<Vector<Real> > v  = g.clone();
+        ROL::Ptr<Vector<Real> > hv = x.clone();
         obj.invHessVec(*hv,*v,x,htol);
       }
       catch (std::exception &e) {
@@ -428,7 +428,7 @@ public:
 
     // Evaluate Objective Function at Cauchy Point
     if ( step_state->searchSize <= zero ) {
-      Teuchos::RCP<Vector<Real> > Bg = g.clone();
+      ROL::Ptr<Vector<Real> > Bg = g.clone();
       if ( useSecantHessVec_ ) {
         secant_->applyB(*Bg,(step_state->gradientVec)->dual());
       }
@@ -441,10 +441,10 @@ public:
         alpha = algo_state.gnorm*algo_state.gnorm/gBg;
       }
       // Evaluate the objective function at the Cauchy point
-      Teuchos::RCP<Vector<Real> > cp = s.clone();
+      ROL::Ptr<Vector<Real> > cp = s.clone();
       cp->set((step_state->gradientVec)->dual()); 
       cp->scale(-alpha);
-      Teuchos::RCP<Vector<Real> > xcp = x.clone();
+      ROL::Ptr<Vector<Real> > xcp = x.clone();
       xcp->set(x);
       xcp->plus(*cp);
       if ( bnd.isActivated() ) {
@@ -496,24 +496,24 @@ public:
   void compute( Vector<Real> &s, const Vector<Real> &x, Objective<Real> &obj, BoundConstraint<Real> &bnd, 
                 AlgorithmState<Real> &algo_state ) {
     // Get step state
-    Teuchos::RCP<StepState<Real> > step_state = Step<Real>::getState();
+    ROL::Ptr<StepState<Real> > step_state = Step<Real>::getState();
     // Build trust-region model
     if (bnd.isActivated()) { 
       if ( TRmodel_ == TRUSTREGION_MODEL_KELLEYSACHS ) {
 //      Real eps = scaleEps_*algo_state.gnorm;
         Real eps = scaleEps_ * std::min(std::pow(algo_state.gnorm,static_cast<Real>(0.75)),
                                         static_cast<Real>(0.01));
-        model_ = Teuchos::rcp(new ROL::KelleySachsModel<Real>(obj,
+        model_ = ROL::makePtr<ROL::KelleySachsModel<Real>>(obj,
                                                               bnd,
                                                               x,
                                                               *(step_state->gradientVec),
                                                               eps,
                                                               secant_,
                                                               useSecantPrecond_,
-                                                              useSecantHessVec_));
+                                                              useSecantHessVec_);
       }
       else if ( TRmodel_ == TRUSTREGION_MODEL_COLEMANLI ) {
-        model_ = Teuchos::rcp(new ROL::ColemanLiModel<Real>(obj,
+        model_ = ROL::makePtr<ROL::ColemanLiModel<Real>>(obj,
                                                             bnd,
                                                             x,
                                                             *(step_state->gradientVec),
@@ -523,7 +523,7 @@ public:
                                                             step_state->searchSize,
                                                             stepBackMax_,
                                                             stepBackScale_,
-                                                            singleReflect_));
+                                                            singleReflect_);
       }
       else {
         TEUCHOS_TEST_FOR_EXCEPTION( true, std::invalid_argument,
@@ -531,12 +531,12 @@ public:
       }
     }
     else {
-      model_ = Teuchos::rcp(new ROL::TrustRegionModel<Real>(obj,
+      model_ = ROL::makePtr<ROL::TrustRegionModel<Real>>(obj,
                                                             x,
                                                             *(step_state->gradientVec),
                                                             secant_,
                                                             useSecantPrecond_,
-                                                            useSecantHessVec_));
+                                                            useSecantHessVec_);
     }
     // Minimize trust-region model over trust-region constraint
     SPflag_ = 0; SPiter_ = 0;
@@ -560,7 +560,7 @@ public:
                BoundConstraint<Real> &bnd, 
                AlgorithmState<Real>  &algo_state ) {
     // Get step state
-    Teuchos::RCP<StepState<Real> > state = Step<Real>::getState();
+    ROL::Ptr<StepState<Real> > state = Step<Real>::getState();
     // Store previous step for constraint computations
     if ( bnd.isActivated() ) {
       xold_->set(x);
@@ -742,7 +742,7 @@ public:
       @param[in]     printHeader   if ste to true will print the header at each iteration
   */
   std::string print( AlgorithmState<Real> & algo_state, bool print_header = false ) const  {
-    const Teuchos::RCP<const StepState<Real> >& step_state = Step<Real>::getStepState();
+    const ROL::Ptr<const StepState<Real> >& step_state = Step<Real>::getStepState();
 
     std::stringstream hist;
     hist << std::scientific << std::setprecision(6);

@@ -49,7 +49,7 @@
 #ifndef ROL_PDEOPT_ELASTICITY_TRACTION_HPP
 #define ROL_PDEOPT_ELASTICITY_TRACTION_HPP
 
-#include "Teuchos_RCP.hpp"
+#include "ROL_Ptr.hpp"
 #include "Teuchos_ParameterList.hpp"
 #include "Intrepid_FieldContainer.hpp"
 
@@ -63,7 +63,7 @@ private:
   std::vector<int> sidesets_, sideids_;
   std::vector<Real> loadMagnitude_;
   std::vector<Real> loadPolar_, loadAzimuth_;
-  std::vector<std::vector<Teuchos::RCP<Intrepid::FieldContainer<Real> > > > bdryCellNodes_;
+  std::vector<std::vector<ROL::Ptr<Intrepid::FieldContainer<Real> > > > bdryCellNodes_;
   std::vector<std::vector<std::vector<int> > > bdryCellLocIds_;
   int dim_, offset_;
 
@@ -122,7 +122,7 @@ public:
     }
   }
 
-  void setCellNodes(const std::vector<std::vector<Teuchos::RCP<Intrepid::FieldContainer<Real> > > > &bdryCellNodes,
+  void setCellNodes(const std::vector<std::vector<ROL::Ptr<Intrepid::FieldContainer<Real> > > > &bdryCellNodes,
                     const std::vector<std::vector<std::vector<int> > > &bdryCellLocIds) {
     bdryCellNodes_  = bdryCellNodes;
     bdryCellLocIds_ = bdryCellLocIds;
@@ -131,7 +131,7 @@ public:
   virtual Real evaluate(const int                dir,
                         const int                sideset,
                         const std::vector<Real> &param) const {
-    const int numSideSets = sidesets_.size();
+//    const int numSideSets = sidesets_.size();
     const int paramSize   = param.size();
     Real val(0);
     Real loadMagNoise(0), loadAngNoise0(0);
@@ -172,8 +172,8 @@ public:
     return val;
   }
 
-  void compute(std::vector<std::vector<std::vector<Teuchos::RCP<Intrepid::FieldContainer<Real> > > > > &traction,
-               const std::vector<std::vector<Teuchos::RCP<FE<Real> > > >                               &fe,
+  void compute(std::vector<std::vector<std::vector<ROL::Ptr<Intrepid::FieldContainer<Real> > > > > &traction,
+               const std::vector<std::vector<ROL::Ptr<FE<Real> > > >                               &fe,
                const std::vector<Real>                                                                 &param,
                const Real                                                                               scale = 1) const {
     traction.clear();
@@ -188,7 +188,7 @@ public:
           const int numCubPerSide = fe[0][0]->gradN()->dimension(2);
           for (int k = 0; k < dim_; ++k) {
             traction[sidesets_[i]][sideids_[i]][k]
-              = Teuchos::rcp(new Intrepid::FieldContainer<Real>(numCellsSide, numCubPerSide));
+              = ROL::makePtr<Intrepid::FieldContainer<Real>>(numCellsSide, numCubPerSide);
             for (int c = 0; c < numCellsSide; ++c) {
               for (int p = 0; p < numCubPerSide; ++p) {
                 (*traction[sidesets_[i]][sideids_[i]][k])(c,p) = scale*evaluate(k,i,param);
@@ -200,8 +200,8 @@ public:
     }
   }
 
-  void apply(std::vector<Teuchos::RCP<Intrepid::FieldContainer<Real> > > &R,
-             const std::vector<std::vector<Teuchos::RCP<FE<Real> > > >   &fe,
+  void apply(std::vector<ROL::Ptr<Intrepid::FieldContainer<Real> > > &R,
+             const std::vector<std::vector<ROL::Ptr<FE<Real> > > >   &fe,
              const std::vector<Real>                                     &param,
              const Real                                                   scale = 1) const {
     const int numSideSets = sidesets_.size();

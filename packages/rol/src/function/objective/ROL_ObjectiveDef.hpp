@@ -54,7 +54,7 @@ template <class Real>
 Real Objective<Real>::dirDeriv( const Vector<Real> &x, const Vector<Real> &d, Real &tol) {
   Real ftol = std::sqrt(ROL_EPSILON<Real>());
 
-  Teuchos::RCP<Vector<Real> > xd = d.clone();
+  ROL::Ptr<Vector<Real> > xd = d.clone();
   xd->set(x);
   xd->axpy(tol, d);
   return (this->value(*xd,ftol) - this->value(x,ftol)) / tol;
@@ -86,11 +86,11 @@ void Objective<Real>::hessVec( Vector<Real> &hv, const Vector<Real> &v, const Ve
     //Real h = 2.0/(v.norm()*v.norm())*tol;
 
     // Compute Gradient at x
-    Teuchos::RCP<Vector<Real> > g = hv.clone();
+    ROL::Ptr<Vector<Real> > g = hv.clone();
     this->gradient(*g,x,gtol);
 
     // Compute New Step x + h*v
-    Teuchos::RCP<Vector<Real> > xnew = x.clone();
+    ROL::Ptr<Vector<Real> > xnew = x.clone();
     xnew->set(x);
     xnew->axpy(h,v);  
     this->update(*xnew);
@@ -158,13 +158,13 @@ std::vector<std::vector<Real> > Objective<Real>::checkGradient( const Vector<Rea
   Real val = this->value(x,tol);
 
   // Compute gradient at x.
-  Teuchos::RCP<Vector<Real> > gtmp = g.clone();
+  ROL::Ptr<Vector<Real> > gtmp = g.clone();
   this->update(x);
   this->gradient(*gtmp, x, tol);
   Real dtg = d.dot(gtmp->dual());
 
   // Temporary vectors.
-  Teuchos::RCP<Vector<Real> > xnew = x.clone();
+  ROL::Ptr<Vector<Real> > xnew = x.clone();
 
   for (int i=0; i<numSteps; i++) {
 
@@ -276,19 +276,19 @@ std::vector<std::vector<Real> > Objective<Real>::checkHessVec( const Vector<Real
   oldFormatState.copyfmt(outStream);
 
   // Compute gradient at x.
-  Teuchos::RCP<Vector<Real> > g = hv.clone();
+  ROL::Ptr<Vector<Real> > g = hv.clone();
   this->update(x);
   this->gradient(*g, x, tol);
 
   // Compute (Hessian at x) times (vector v).
-  Teuchos::RCP<Vector<Real> > Hv = hv.clone();
+  ROL::Ptr<Vector<Real> > Hv = hv.clone();
   this->hessVec(*Hv, v, x, tol);
   Real normHv = Hv->norm();
 
   // Temporary vectors.
-  Teuchos::RCP<Vector<Real> > gdif = hv.clone();
-  Teuchos::RCP<Vector<Real> > gnew = hv.clone();
-  Teuchos::RCP<Vector<Real> > xnew = x.clone();
+  ROL::Ptr<Vector<Real> > gdif = hv.clone();
+  ROL::Ptr<Vector<Real> > gnew = hv.clone();
+  ROL::Ptr<Vector<Real> > xnew = x.clone();
 
   for (int i=0; i<numSteps; i++) {
 
@@ -366,7 +366,7 @@ std::vector<Real> Objective<Real>::checkHessSym( const Vector<Real> &x,
   Real tol = std::sqrt(ROL_EPSILON<Real>());
   
   // Compute (Hessian at x) times (vector v).
-  Teuchos::RCP<Vector<Real> > h = hv.clone();
+  ROL::Ptr<Vector<Real> > h = hv.clone();
   this->hessVec(*h, v, x, tol);
   Real wHv = w.dot(h->dual());
 

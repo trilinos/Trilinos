@@ -54,18 +54,18 @@ namespace ROL {
 template <class Real>
 class AlmostSureConstraint : public Constraint<Real> {
 private:
-  const Teuchos::RCP<SampleGenerator<Real> > sampler_;
-  const Teuchos::RCP<Constraint<Real> >      con_;
+  const ROL::Ptr<SampleGenerator<Real> > sampler_;
+  const ROL::Ptr<Constraint<Real> >      con_;
 
-  Teuchos::RCP<Vector<Real> >                scratch1_;
-  Teuchos::RCP<Vector<Real> >                scratch2_;
+  ROL::Ptr<Vector<Real> >                scratch1_;
+  ROL::Ptr<Vector<Real> >                scratch2_;
   bool                                       isInitialized_;
 
 public:
   virtual ~AlmostSureConstraint() {}
 
-  AlmostSureConstraint(const Teuchos::RCP<SampleGenerator<Real> > &sampler,
-                       const Teuchos::RCP<Constraint<Real> > &con)
+  AlmostSureConstraint(const ROL::Ptr<SampleGenerator<Real> > &sampler,
+                       const ROL::Ptr<Constraint<Real> > &con)
     : sampler_(sampler), con_(con), isInitialized_(false) {}
 
   void update( const Vector<Real> &x, bool flag = true, int iter = -1 ) {}
@@ -74,7 +74,7 @@ public:
              const Vector<Real> &x,
              Real &tol) {
     c.zero();
-    SimulatedVector<Real> &pc = Teuchos::dyn_cast<SimulatedVector<Real> >(c);
+    SimulatedVector<Real> &pc = dynamic_cast<SimulatedVector<Real>&>(c);
 
     std::vector<Real> param;
     for (int i = 0; i < sampler_->numMySamples(); ++i) {
@@ -90,7 +90,7 @@ public:
                      const Vector<Real> &x,
                      Real &tol) {
     jv.zero();
-    SimulatedVector<Real> &pjv = Teuchos::dyn_cast<SimulatedVector<Real> >(jv);
+    SimulatedVector<Real> &pjv = dynamic_cast<SimulatedVector<Real>&>(jv);
 
     std::vector<Real> param;
     for (int i = 0; i < sampler_->numMySamples(); ++i) {
@@ -111,7 +111,7 @@ public:
       scratch2_ = ajv.clone();
       isInitialized_ = true;
     }
-    const SimulatedVector<Real> &pv = Teuchos::dyn_cast<const SimulatedVector<Real> >(v);
+    const SimulatedVector<Real> &pv = dynamic_cast<const SimulatedVector<Real>&>(v);
 
     std::vector<Real> param;
     scratch1_->zero(); scratch2_->zero();
@@ -136,7 +136,7 @@ public:
       scratch2_ = ahuv.clone();
       isInitialized_ = true;
     }
-    const SimulatedVector<Real> &pu = Teuchos::dyn_cast<const SimulatedVector<Real> >(u);
+    const SimulatedVector<Real> &pu = dynamic_cast<const SimulatedVector<Real>&>(u);
 
     std::vector<Real> param;
     scratch1_->zero(); scratch2_->zero();
@@ -156,8 +156,8 @@ public:
                            const Vector<Real> &g,
                            Real &tol) {
     Pv.zero();
-    SimulatedVector<Real> &ppv = Teuchos::dyn_cast<SimulatedVector<Real> >(Pv);
-    const SimulatedVector<Real> &pv = Teuchos::dyn_cast<const SimulatedVector<Real> >(v);
+    SimulatedVector<Real> &ppv = dynamic_cast<SimulatedVector<Real>&>(Pv);
+    const SimulatedVector<Real> &pv = dynamic_cast<const SimulatedVector<Real>&>(v);
 
     std::vector<Real> param;
     scratch1_->zero(); scratch2_->zero();

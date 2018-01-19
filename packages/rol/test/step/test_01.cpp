@@ -65,12 +65,12 @@ int main(int argc, char *argv[]) {
 
   // This little trick lets us print to std::cout only if a (dummy) command-line argument is provided.
   int iprint     = argc - 1;
-  Teuchos::RCP<std::ostream> outStream;
+  ROL::Ptr<std::ostream> outStream;
   Teuchos::oblackholestream bhs; // outputs nothing
   if (iprint > 0)
-    outStream = Teuchos::rcp(&std::cout, false);
+    outStream = ROL::makePtrFromRef(std::cout);
   else
-    outStream = Teuchos::rcp(&bhs, false);
+    outStream = ROL::makePtrFromRef(bhs);
 
   int errorFlag  = 0;
 
@@ -90,17 +90,17 @@ int main(int argc, char *argv[]) {
       *outStream << std::endl << std::endl << ROL::ETestObjectivesToString(objFunc) << std::endl << std::endl;
 
       // Set up optimization problem
-      Teuchos::RCP<ROL::Vector<RealT> > x0, z;
-      Teuchos::RCP<ROL::Objective<RealT> > obj;
+      ROL::Ptr<ROL::Vector<RealT> > x0, z;
+      ROL::Ptr<ROL::Objective<RealT> > obj;
       ROL::getTestObjectives<RealT>(obj,x0,z,objFunc);
-      Teuchos::RCP<ROL::Vector<RealT> > x = x0->clone();
+      ROL::Ptr<ROL::Vector<RealT> > x = x0->clone();
 
       // Get Dimension of Problem
       int dim = x0->dimension(); 
       parlist->sublist("General").sublist("Krylov").set("Iteration Limit", 2*dim);
 
       // Error Vector
-      Teuchos::RCP<ROL::Vector<RealT> > e = x0->clone();
+      ROL::Ptr<ROL::Vector<RealT> > e = x0->clone();
       e->zero();
 
       for ( ROL::EDescent desc = ROL::DESCENT_STEEPEST; desc < ROL::DESCENT_LAST; desc++ ) {

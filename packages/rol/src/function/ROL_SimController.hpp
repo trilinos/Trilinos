@@ -55,7 +55,7 @@ private:
   // Storage
   std::map<std::vector<Real>, int>          indices_;
   std::vector<bool>                         flags_;
-  std::vector<Teuchos::RCP<Vector<Real> > > vectors_;
+  std::vector<ROL::Ptr<Vector<Real> > > vectors_;
   int maxIndex_;
 
   // Update flags

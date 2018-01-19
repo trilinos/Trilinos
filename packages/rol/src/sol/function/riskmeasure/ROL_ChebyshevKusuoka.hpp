@@ -96,7 +96,7 @@ namespace ROL {
 template<class Real>
 class ChebyshevKusuoka : public SpectralRisk<Real> {
 private:
-  Teuchos::RCP<PlusFunction<Real> > plusFunction_;
+  ROL::Ptr<PlusFunction<Real> > plusFunction_;
 
   Real lower_, upper_;
   int nQuad_; 
@@ -114,20 +114,20 @@ private:
       ">>> ERROR (ROL::ChebyshevKusuoka): Upper bound is greater than one!");
     TEUCHOS_TEST_FOR_EXCEPTION((wType_ < 1 || wType_ > 3), std::invalid_argument,
       ">>> ERROR (ROL::ChebyshevKusuoka): Weight must be 1, 2 or 3!");
-    TEUCHOS_TEST_FOR_EXCEPTION(plusFunction_ == Teuchos::null, std::invalid_argument,
+    TEUCHOS_TEST_FOR_EXCEPTION(plusFunction_ == ROL::nullPtr, std::invalid_argument,
       ">>> ERROR (ROL::ChebyshevKusuoka): PlusFunction pointer is null!");
   }
 
   void initialize(void) {
-     Teuchos::RCP<Quadrature1D<Real> > quad;
+     ROL::Ptr<Quadrature1D<Real> > quad;
      if ( wType_ == 1 ) {
-       quad = Teuchos::rcp(new GaussChebyshev1Quadrature<Real>(nQuad_));
+       quad = ROL::makePtr<GaussChebyshev1Quadrature<Real>>(nQuad_);
      }
      else if ( wType_ == 2 ) {
-       quad = Teuchos::rcp(new GaussChebyshev2Quadrature<Real>(nQuad_));
+       quad = ROL::makePtr<GaussChebyshev2Quadrature<Real>>(nQuad_);
      }
      else if ( wType_ == 3 ) {
-       quad = Teuchos::rcp(new GaussChebyshev3Quadrature<Real>(nQuad_));
+       quad = ROL::makePtr<GaussChebyshev3Quadrature<Real>>(nQuad_);
      }
      // quad->test();
      quad->get(pts_,wts_);
@@ -164,7 +164,7 @@ public:
     upper_ = list.get("Upper Bound",1.0);
     nQuad_ = list.get("Number of Quadrature Points",5);
     wType_ = list.get("Weight Type",1);
-    plusFunction_ = Teuchos::rcp(new PlusFunction<Real>(list));
+    plusFunction_ = ROL::makePtr<PlusFunction<Real>>(list);
     // Check inputs
     checkInputs();
     initialize();
@@ -180,7 +180,7 @@ public:
   */
   ChebyshevKusuoka(const Real lower, const Real upper,
                    const int nQuad, const int wType,
-                   const Teuchos::RCP<PlusFunction<Real> > &pf)
+                   const ROL::Ptr<PlusFunction<Real> > &pf)
     : RiskMeasure<Real>(), plusFunction_(pf),
       lower_(lower), upper_(upper), nQuad_(nQuad), wType_(wType) {
     // Check inputs

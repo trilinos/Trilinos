@@ -112,7 +112,7 @@ void printRegionalVector(const std::string vectorName, ///< string to be used fo
     )
 {
 //  sleep(myRank);
-  for (int j = 0; j < regVecs.size(); j++) {
+  for (int j = 0; j < (int) regVecs.size(); j++) {
     printf("%d: %s %d\n", myRank, vectorName.c_str(), j);
     regVecs[j]->Print(std::cout);
   }
@@ -124,7 +124,7 @@ void printRegionalMap(const std::string mapName, ///< string to be used for scre
     )
 {
   sleep(myRank);
-  for (int j = 0; j < regMaps.size(); j++) {
+  for (int j = 0; j < (int) regMaps.size(); j++) {
     printf("%d: %s %d\n", myRank, mapName.c_str(), j);
     regMaps[j]->Print(std::cout);
   }
@@ -223,8 +223,6 @@ void jacobiIterate(const int maxIter,
       (*diag[j])[i] *= (*regionInterfaceScaling[j])[i]; // Scale to obtain the true diagonal
   }
 
-  int myRank = mapComp->Comm().MyPID();
-
   for (int iter = 0; iter < maxIter; ++iter) {
 
     /* Update the residual vector
@@ -271,30 +269,65 @@ void jacobiIterate(const int maxIter,
   return;
 }
 
-/*! \brief Identify interface nodes in a given list of nodes
+/*! \brief Find common regions of two nodes
+ *
  */
-std::vector<bool> findInterfaceEntries(const int* inds, ///< given list of IDs to be examined
-    const int numInds, ///< number of indices to be examined
-    const std::vector<int> intIDs ///< list of interface IDs
+std::vector<int> findCommonRegions(const int nodeA, ///< GID of first node
+    const int nodeB, ///< GID of second node
+    const Epetra_MultiVector& nodesToRegions ///< mapping of nodes to regions
     )
 {
-  std::vector<bool> isInterface(numInds);
-
-  int prevInd = -1;
-
-  for (int i = 0; i < numInds; ++i) {
-    int ind = inds[i];
-    isInterface[i] = false;
-    for (std::vector<int>::const_iterator it = intIDs.begin(); it < intIDs.end(); ++it) {
-      if (*it == ind && prevInd != ind) {
-        isInterface[i] = true;
-        break;
-      }
+  // extract node-to-regions mapping for both nodes A and B
+  std::vector<int> regionsA;
+  std::vector<int> regionsB;
+  {
+    const Epetra_BlockMap& map = nodesToRegions.Map();
+    for (int i = 0; i < nodesToRegions.NumVectors(); ++i) {
+      regionsA.push_back((nodesToRegions[i])[map.LID(nodeA)]);
+      regionsB.push_back((nodesToRegions[i])[map.LID(nodeB)]);
     }
-    prevInd = ind;
   }
 
-  return isInterface;
+//  // Print list of regions for both nodes
+//  {
+//    int myRank = nodesToRegions.Comm().MyPID();
+//    const Epetra_BlockMap& map = nodesToRegions.Map();
+//    std::cout << myRank << ": nodeA = " << map.GID(nodeA) << ": ";
+//    for (int i = 0; i < nodesToRegions.NumVectors(); ++i)
+//      std::cout << ", " << regionsA[i];
+//    std::cout << std::endl;
+//    std::cout << myRank << ": nodeB = " << map.GID(nodeB) << ": ";
+//      for (int i = 0; i < nodesToRegions.NumVectors(); ++i)
+//        std::cout << ", " << regionsB[i];
+//      std::cout << std::endl;
+//  }
+
+  // identify common regions
+  std::vector<int> commonRegions(nodesToRegions.NumVectors());
+  std::sort(regionsA.begin(), regionsA.end());
+  std::sort(regionsB.begin(), regionsB.end());
+
+  std::vector<int>::iterator it = std::set_intersection(regionsA.begin(),
+      regionsA.end(), regionsB.begin(), regionsB.end(), commonRegions.begin());
+  commonRegions.resize(it-commonRegions.begin());
+
+  // remove '-1' entries
+  std::vector<int> finalCommonRegions;
+  for (std::size_t i = 0; i < commonRegions.size(); ++i) {
+    if (commonRegions[i] != -1)
+      finalCommonRegions.push_back(commonRegions[i]);
+  }
+
+//  // Print result for debugging purposes
+//  {
+//    int myRank = nodesToRegions.Comm().MyPID();
+//    std::cout << myRank << ": " << nodeA << "/" << nodeB << ": ";
+//    for (int i = 0; i < finalCommonRegions.size(); ++i)
+//      std::cout << ", " << finalCommonRegions[i];
+//    std::cout << std::endl;
+//  }
+
+  return finalCommonRegions;
 }
 
 // Interact with a Matlab program through a bunch of myData_procID files.
@@ -371,6 +404,10 @@ int main(int argc, char *argv[]) {
   Epetra_CrsMatrix* ACompSplit = NULL; // composite form of matrix
   Epetra_Map* mapComp= NULL; // composite map used to build AComp
 
+  // regionsPerGID[i] lists all regions that share the ith composite GID
+  // associated with myRank's composite matrix row Map.
+  Epetra_MultiVector *regionsPerGID = NULL;
+
   // regionsPerGIDWithGhosts[i] lists all regions that share the ith composite GID
   // associated with myRank's composite matrix col Map.
   Epetra_MultiVector *regionsPerGIDWithGhosts = NULL;
@@ -417,9 +454,12 @@ int main(int argc, char *argv[]) {
   std::vector< Epetra_Vector* > regionInterfaceScaling(maxRegPerProc);
   std::vector< Epetra_Vector* > coarseRegionInterfaceScaling(maxRegPerProc);
 
+  std::vector< Epetra_Vector* > regNspViolation(maxRegPerProc); // violation of nullspace property in region layout
+
   Epetra_Vector* compX = NULL; // initial guess for truly composite calculations
   Epetra_Vector* compY = NULL; // result vector for truly composite calculations
   Epetra_Vector* regYComp = NULL; // result vector in composite layout, but computed via regional operations
+  Epetra_Vector* nspViolation = NULL; // violation of nullspace property in composite layout
 
   std::vector<Epetra_Vector*> quasiRegX(maxRegPerProc); // initial guess associated with myRank's ith region in quasiRegional layout
   std::vector<Epetra_Vector*> quasiRegY(maxRegPerProc); // result vector associated with myRank's ith region in quasiRegional layout
@@ -479,7 +519,7 @@ int main(int argc, char *argv[]) {
     }
     else if (strcmp(command,"LoadAndCommRegAssignments") == 0) {
 
-      Epetra_MultiVector *regionsPerGID= new Epetra_MultiVector(AComp->RowMap(),maxRegPerGID);
+      regionsPerGID = new Epetra_MultiVector(AComp->RowMap(),maxRegPerGID);
 
       int k;
       double *jthRegions; // pointer to jth column in regionsPerGID
@@ -724,6 +764,12 @@ int main(int argc, char *argv[]) {
         revisedColMapPerGrp[k] = new Epetra_Map(-1,0,NULL,0,Comm);
       }
 
+      // Setup importers
+      for (int j = 0; j < maxRegPerProc; j++) {
+        rowImportPerGrp[j] = new Epetra_Import(*(rowMapPerGrp[j]), *mapComp);
+        colImportPerGrp[j] = new Epetra_Import(*(colMapPerGrp[j]), *mapComp);
+      }
+
     }
     else if (strcmp(command,"MakeGrpRegRowMaps") == 0) {
       std::vector<int> rowGIDsReg;
@@ -773,101 +819,36 @@ int main(int argc, char *argv[]) {
       printGrpMaps(rowMapPerGrp, maxRegPerProc, str);
     }
     else if (strcmp(command,"MakeQuasiRegionMatrices") == 0) {
-      // copy and modify the composite matrix. Extract diagonal and divide interface entries by 2
+      /* We use the edge-based splitting, i.e. we first modify off-diagonal
+       * entries in the composite matrix, then decompose it into region matrices
+       * and finally take care of diagonal entries by enforcing the nullspace
+       * preservation constraint.
+       */
+
+      // copy and modify the composite matrix
       ACompSplit = new Epetra_CrsMatrix(*AComp);
-      Epetra_Vector* diagAComp = new Epetra_Vector(*mapComp, true);
-      ACompSplit->ExtractDiagonalCopy(*diagAComp);
-      // Could instead do the following:
-      //     1) make a region vector of all 1's
-      //     2) do a region-to-composite transfer and scale this
-      //        composite vector 'scaleRecip'
-      //     3) grap the matrix pointers from ACompSplit and go through
-      //        each entry. If scaleRecip[row] ~= 1, then scale by
-      //        1/min(scaleRecip[row],scaleRecip[col]).
-      //
-      //  Note: this algorithm does not quite work in general (though
-      //        it should work for our test case). Here is an example
-      //        where the scaling is wrong for some of the off-diagonals
-      //
-      //                   |
-      //                   |
-      //                   |---------
-      //          ---------|
-      //                   |
-      //                   |
-      //        If we look at the scaling for (row,col) where row corresponds
-      //        to one of the degree 3 vertices and col corresponds to the
-      //        other degree 3 vertex, the algorithm above would decide that
-      //        we need to scale this off-diag by 3, though it should really
-      //        be two. The reason for the error is that these two vertices
-      //        have only two regions in common (not 3), which determines
-      //        the proper scaling. Don't know an easy fix for this. Perhaps
-      //        we just want to exclude this case? We could compare matvecs
-      //        (region vs. composite) and print an error later on to warn
-      //        anyone who ends up in this case.
-      //        xxxxxx
 
-      for (int i = 0; i < intIDs.size(); ++i)
-        (*diagAComp)[intIDs[i]] *= 0.5;
+      for (int row = 0; row < ACompSplit->NumMyRows(); ++row) { // loop over local rows of composite matrix
+        int rowGID = ACompSplit->RowMap().GID(row);
+        int numEntries; // number of nnz
+        double* vals; // non-zeros in this row
+        int* inds; // local column indices
+        int err = ACompSplit->ExtractMyRowView(row, numEntries, vals, inds);
+        TEUCHOS_ASSERT(err == 0);
 
-      ACompSplit->ReplaceDiagonalValues(*diagAComp);
+        for (int c = 0; c < numEntries; ++c) { // loop over all entries in this row
+          int col = inds[c];
+          int colGID = ACompSplit->ColMap().GID(col);
+          std::vector<int> commonRegions;
+          if (rowGID != colGID) { // Skip the diagonal entry. It will be processed later.
+            commonRegions = findCommonRegions(rowGID, colGID, *regionsPerGIDWithGhosts);
+          }
 
-      // Setup importers
-      for (int j = 0; j < maxRegPerProc; j++) {
-        rowImportPerGrp[j] = new Epetra_Import(*(rowMapPerGrp[j]),*mapComp);
-        colImportPerGrp[j] = new Epetra_Import(*(colMapPerGrp[j]),*mapComp);
-      }
-
-/*
-      {
-        // initialize region vector with all ones.
-        std::vector<Epetra_Vector*> regScale(maxRegPerProc);
-        for (int j = 0; j < maxRegPerProc; j++) {
-          regScale[j] = new Epetra_Vector(*revisedRowMapPerGrp[j], true);
-          regScale[j]->PutScalar(1.0);
-        }
-
-        // transform to composite layout while adding interface values via the Export() combine mode
-        Epetra_Vector* compScale = new Epetra_Vector(*mapComp, true);
-        regionalToComposite(regScale, compScale, maxRegPerProc, rowMapPerGrp,
-            rowImportPerGrp, Epetra_AddLocalAlso);
-
-        // copy the composite matrix
-        ACompSplit = new Epetra_CrsMatrix(*AComp);
-        TEUCHOS_ASSERT(ACompSplit->RowMap().PointSameAs(compScale->Map()));
-
-        // Import() off-processor values of compScale
-        Epetra_Vector* compScaleImported = new Epetra_Vector(ACompSplit->ColMap(), true);
-        compScaleImported->Import(*compScale, *ACompSplit->Importer(), Insert);
-
-        std::cout << myRank << ": intIDs --- ";
-        for (int k = 0; k < intIDs.size(); ++k)
-          std::cout << intIDs[k] << " - ";
-        std::cout << " |" << std::endl;
-
-        // modify the composite matrix by scaling its interface entries
-        for (int row = 0; row < ACompSplit->NumMyRows(); ++row) {
-//        for (int j = 0; j < intIDs.size(); ++j) {
-//          int row = intIDs[j];
-          int numEntries;
-          double* vals;
-          int* inds; // local column indices
-          int err = ACompSplit->ExtractMyRowView(row, numEntries, vals, inds);
-          TEUCHOS_ASSERT(err == 0);
-
-          std::vector<bool> isIntInds = findInterfaceEntries(inds, numEntries, intIDs);
-          std::cout << myRank << ": row " << row << " --";
-          for (int k = 0; k < isIntInds.size(); ++k)
-            std::cout << "- " << inds[k] << "/" << isIntInds[k];
-          std::cout << std::endl;
-
-          for (int i = 0; i < numEntries; i++) {
-            if (isIntInds[i] == true)
-              vals[i] /= (*compScaleImported)[inds[i]];
+          if (commonRegions.size() > 1) {
+            vals[c] *= 0.5;
           }
         }
       }
-*/
 
       // Import data from ACompSplit into the quasiRegion matrices
       for (int j = 0; j < maxRegPerProc; j++) {
@@ -930,39 +911,116 @@ int main(int argc, char *argv[]) {
       }
     }
     else if (strcmp(command,"MakeRegionMatrices") == 0) {
-      /* This delivers region matrices that already account for the basic splitting.
-       * I don't know why, but these are the facts.
-       */
 
-      // We work on a copy. Just for safety.
-      for (int j = 0; j < maxRegPerProc; j++) {
-        // create empty matrix with correct row and column map
-        regionGrpMats[j] = new Epetra_CrsMatrix(Copy, *(revisedRowMapPerGrp[j]), *(revisedColMapPerGrp[j]), 3);
+      // Copy data from quasiRegionGrpMats, but into new map layout
+      {
+        for (int j = 0; j < maxRegPerProc; j++) {
+          // create empty matrix with correct row and column map
+          regionGrpMats[j] = new Epetra_CrsMatrix(Copy, *(revisedRowMapPerGrp[j]), *(revisedColMapPerGrp[j]), 3);
 
-        // extract pointers to crs arrays from quasiRegion matrix
-        Epetra_IntSerialDenseVector & qRowPtr = quasiRegionGrpMats[j]->ExpertExtractIndexOffset();
-        Epetra_IntSerialDenseVector & qColInd = quasiRegionGrpMats[j]->ExpertExtractIndices();
-        double *& qVals = quasiRegionGrpMats[j]->ExpertExtractValues();
+          // extract pointers to crs arrays from quasiRegion matrix
+          Epetra_IntSerialDenseVector & qRowPtr = quasiRegionGrpMats[j]->ExpertExtractIndexOffset();
+          Epetra_IntSerialDenseVector & qColInd = quasiRegionGrpMats[j]->ExpertExtractIndices();
+          double *& qVals = quasiRegionGrpMats[j]->ExpertExtractValues();
 
-        // extract pointers to crs arrays from region matrix
-        Epetra_IntSerialDenseVector & rowPtr = regionGrpMats[j]->ExpertExtractIndexOffset();
-        Epetra_IntSerialDenseVector & colInd = regionGrpMats[j]->ExpertExtractIndices();
-        double *& vals = regionGrpMats[j]->ExpertExtractValues();
+          // extract pointers to crs arrays from region matrix
+          Epetra_IntSerialDenseVector & rowPtr = regionGrpMats[j]->ExpertExtractIndexOffset();
+          Epetra_IntSerialDenseVector & colInd = regionGrpMats[j]->ExpertExtractIndices();
+          double *& vals = regionGrpMats[j]->ExpertExtractValues();
 
-        // assign array values from quasiRegional to regional matrices
-        rowPtr.Resize(qRowPtr.Length());
-        colInd.Resize(qColInd.Length());
-        delete [] vals;
-        vals = qVals;
-        for (int i = 0; i < rowPtr.Length(); ++i) rowPtr[i] = qRowPtr[i];
-        for (int i = 0; i < colInd.Length(); ++i) colInd[i] = qColInd[i];
+          // assign array values from quasiRegional to regional matrices
+          rowPtr.Resize(qRowPtr.Length());
+          colInd.Resize(qColInd.Length());
+          delete [] vals;
+          vals = qVals;
+          for (int i = 0; i < rowPtr.Length(); ++i) rowPtr[i] = qRowPtr[i];
+          for (int i = 0; i < colInd.Length(); ++i) colInd[i] = qColInd[i];
+        }
+
+        /* add domain and range map to region matrices (pass in revisedRowMap, since
+         * we assume that row map = range map = domain map)
+         */
+        for (int j = 0; j < maxRegPerProc; j++) {
+          regionGrpMats[j]->ExpertStaticFillComplete(*(revisedRowMapPerGrp[j]),*(revisedRowMapPerGrp[j]));
+        }
       }
 
-      /* add domain and range map to region matrices (pass in revisedRowMap, since
-       * we assume that row map = range map = domain map)
-       */
+      // enforce nullspace constraint
+      {
+        // compute violation of nullspace property close to DBCs
+        Epetra_Vector* nspVec = new Epetra_Vector(*mapComp, true);
+        nspVec->PutScalar(1.0);
+        nspViolation = new Epetra_Vector(*mapComp, true);
+        int err = AComp->Apply(*nspVec, *nspViolation);
+        TEUCHOS_ASSERT(err == 0);
+
+        // move to regional layout
+        std::vector<Epetra_Vector*> quasiRegNspViolation(maxRegPerProc);
+        createRegionalVector(quasiRegNspViolation, maxRegPerProc, rowMapPerGrp);
+        createRegionalVector(regNspViolation, maxRegPerProc, revisedRowMapPerGrp);
+        compositeToRegional(nspViolation, quasiRegNspViolation, regNspViolation,
+            maxRegPerProc, rowMapPerGrp, revisedRowMapPerGrp, rowImportPerGrp);
+
+        /* The nullspace violation computed in the composite layout needs to be
+         * transfered to the regional layout. Since we use this to compute
+         * the splitting of the diagonal values, we need to split the nullspace
+         * violation. We'd like to use the 'regInterfaceScaling', though this is
+         * not setup at this point. So, let's compute it right now.
+         *
+         * ToDo: Move setup of 'regInterfaceScaling' up front to use it here.
+         */
+        {
+          // initialize region vector with all ones.
+          std::vector<Epetra_Vector*> interfaceScaling(maxRegPerProc);
+          for (int j = 0; j < maxRegPerProc; j++) {
+            interfaceScaling[j] = new Epetra_Vector(*revisedRowMapPerGrp[j], true);
+            interfaceScaling[j]->PutScalar(1.0);
+          }
+
+          // transform to composite layout while adding interface values via the Export() combine mode
+          Epetra_Vector* compInterfaceScalingSum = new Epetra_Vector(*mapComp, true);
+          regionalToComposite(interfaceScaling, compInterfaceScalingSum,
+              maxRegPerProc, rowMapPerGrp, rowImportPerGrp, Epetra_AddLocalAlso);
+
+          /* transform composite layout back to regional layout. Now, GIDs associated
+           * with region interface should carry a scaling factor (!= 1).
+           */
+          std::vector<Epetra_Vector*> quasiRegInterfaceScaling(maxRegPerProc);
+          compositeToRegional(compInterfaceScalingSum, quasiRegInterfaceScaling,
+              interfaceScaling, maxRegPerProc, rowMapPerGrp,
+              revisedRowMapPerGrp, rowImportPerGrp);
+
+          // modify its interface entries
+          for (int j = 0; j < maxRegPerProc; j++) {
+            for (int i = 0; i < regNspViolation[j]->MyLength(); ++i) {
+              (*regNspViolation[j])[i] /= (*interfaceScaling[j])[i];
+            }
+          }
+        }
+      }
+
+      std::vector<Epetra_Vector*> regNsp(maxRegPerProc);
+      std::vector<Epetra_Vector*> regCorrection(maxRegPerProc);
       for (int j = 0; j < maxRegPerProc; j++) {
-        regionGrpMats[j]->ExpertStaticFillComplete(*(revisedRowMapPerGrp[j]),*(revisedRowMapPerGrp[j]));
+        regNsp[j] = new Epetra_Vector(*revisedRowMapPerGrp[j], true);
+        regNsp[j]->PutScalar(1.0);
+
+        regCorrection[j] = new Epetra_Vector(*revisedRowMapPerGrp[j], true);
+        int err = regionGrpMats[j]->Apply(*regNsp[j], *regCorrection[j]);
+        TEUCHOS_ASSERT(err == 0);
+      }
+
+
+      std::vector<Epetra_Vector*> regDiag(maxRegPerProc);
+      for (int j = 0; j < maxRegPerProc; j++) {
+        regDiag[j] = new Epetra_Vector(*revisedRowMapPerGrp[j], true);
+        int err = regionGrpMats[j]->ExtractDiagonalCopy(*regDiag[j]);
+        TEUCHOS_ASSERT(err == 0);
+        err = regDiag[j]->Update(-1.0, *regCorrection[j], 1.0, *regNspViolation[j], 1.0);
+        TEUCHOS_ASSERT(err == 0);
+
+        err = regionGrpMats[j]->ReplaceDiagonalValues(*regDiag[j]);
+        TEUCHOS_ASSERT(err == 0);
       }
     }
     else if (strcmp(command,"PrintRegionMatrices") == 0) {
@@ -1139,7 +1197,7 @@ int main(int argc, char *argv[]) {
 
           // loop over existing regColGIDs and see if current GID is already in that list
           bool found = false;
-          for (int k = 0; k < regColGIDs.size(); ++k) {
+          for (std::size_t k = 0; k < regColGIDs.size(); ++k) {
             if ((*regGIDVec[j])[regGIDVec[j]->Map().LID(currGID)] == regColGIDs[k]) {
               found = true;
               break;
@@ -1201,9 +1259,9 @@ int main(int argc, char *argv[]) {
         int inds[1];
         vals[0] = 1.0/3.0;
         regionAltGrpProlong[j] = new Epetra_CrsMatrix(Copy, *revisedRowMapPerGrp[j], *coarseAltColMapPerGrp[j], 1, false);
-        int *coarseCol = coarseAltColMapPerGrp[j]->MyGlobalElements();
+//        int *coarseCol = coarseAltColMapPerGrp[j]->MyGlobalElements();
         int NccSize    = coarseAltColMapPerGrp[j]->NumMyElements();
-        int *fineRow   = revisedRowMapPerGrp[j]->MyGlobalElements();
+//        int *fineRow   = revisedRowMapPerGrp[j]->MyGlobalElements();
         int NfrSize    = revisedRowMapPerGrp[j]->NumMyElements();
         if (NfrSize > 0) {
           int fstart = 3 - (appData.lowInd[3*j]%3);
@@ -1504,8 +1562,8 @@ int LID2Dregion(void *ptr, int LIDcomp, int whichGrp)
 {
    struct widget * myWidget = (struct widget *) ptr;
 
-   int        *minGIDComp  = myWidget->minGIDComp;
-   int        *maxGIDComp  = myWidget->maxGIDComp;
+//   int        *minGIDComp  = myWidget->minGIDComp;
+//   int        *maxGIDComp  = myWidget->maxGIDComp;
    int        *myRegions   = myWidget->myRegions;
    Epetra_Map *colMap      = myWidget->colMap;
    int        maxRegPerGID = myWidget->maxRegPerGID;

@@ -69,19 +69,19 @@ class InteriorPointPenalty : public Objective<Real> {
 
 private:
   
-  const Teuchos::RCP<OBJ>       obj_;
-  const Teuchos::RCP<BND>       bnd_;
-  const Teuchos::RCP<const V>   lo_;
-  const Teuchos::RCP<const V>   up_;
+  const ROL::Ptr<OBJ>       obj_;
+  const ROL::Ptr<BND>       bnd_;
+  const ROL::Ptr<const V>   lo_;
+  const ROL::Ptr<const V>   up_;
 
-  Teuchos::RCP<V>   g_;       // Gradient of penalized objective
+  ROL::Ptr<V>   g_;       // Gradient of penalized objective
 
-  Teuchos::RCP<V>   maskL_;   // Elements are 1 when xl>-INF, zero for xl = -INF
-  Teuchos::RCP<V>   maskU_;   // Elements are 1 when xu< INF, zero for xu =  INF
+  ROL::Ptr<V>   maskL_;   // Elements are 1 when xl>-INF, zero for xl = -INF
+  ROL::Ptr<V>   maskU_;   // Elements are 1 when xu< INF, zero for xu =  INF
 
-  Teuchos::RCP<V>   a_;       // Scratch vector
-  Teuchos::RCP<V>   b_;       // Scratch vector
-  Teuchos::RCP<V>   c_;       // Scratch vector
+  ROL::Ptr<V>   a_;       // Scratch vector
+  ROL::Ptr<V>   b_;       // Scratch vector
+  ROL::Ptr<V>   c_;       // Scratch vector
 
   bool useLinearDamping_;     // Add linear damping terms to the penalized objective
                               // to prevent the problems such as when the log barrier
@@ -143,8 +143,8 @@ public:
 
   ~InteriorPointPenalty() {}
 
-  InteriorPointPenalty( const Teuchos::RCP<Objective<Real> > &obj,
-                        const Teuchos::RCP<BoundConstraint<Real> > &con, 
+  InteriorPointPenalty( const ROL::Ptr<Objective<Real> > &obj,
+                        const ROL::Ptr<BoundConstraint<Real> > &con, 
                         Teuchos::ParameterList &parlist ) :
     obj_(obj), bnd_(con), lo_( con->getLowerBound() ), up_( con->getUpperBound() ) {
 
@@ -182,7 +182,7 @@ public:
     return fval_;
   }
 
-  Teuchos::RCP<Vector<Real> > getGradient(void) const {
+  ROL::Ptr<Vector<Real> > getGradient(void) const {
     return g_;
   }
 
@@ -194,11 +194,11 @@ public:
     return ngval_;
   }
 
-  Teuchos::RCP<const Vector<Real> > getLowerMask(void) const {
+  ROL::Ptr<const Vector<Real> > getLowerMask(void) const {
     return maskL_;
   }
 
-  Teuchos::RCP<const Vector<Real> > getUpperMask(void) const {
+  ROL::Ptr<const Vector<Real> > getUpperMask(void) const {
     return maskU_;
   }
 
@@ -369,10 +369,10 @@ public:
  }
 
   // Return the unpenalized objective
-  const Teuchos::RCP<OBJ> getObjective( void ) { return obj_; }
+  const ROL::Ptr<OBJ> getObjective( void ) { return obj_; }
 
   // Return the bound constraint
-  const Teuchos::RCP<BND> getBoundConstraint( void ) { return bnd_; }
+  const ROL::Ptr<BND> getBoundConstraint( void ) { return bnd_; }
 
 }; // class InteriorPointPenalty
 

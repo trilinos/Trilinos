@@ -227,58 +227,58 @@ namespace ROL {
   }
 
   template<class Real>
-  inline Teuchos::RCP<RiskMeasure<Real> > RiskMeasureFactory(Teuchos::ParameterList &parlist) {
+  inline ROL::Ptr<RiskMeasure<Real> > RiskMeasureFactory(Teuchos::ParameterList &parlist) {
     std::string risk = parlist.sublist("SOL").sublist("Risk Measure").get("Name","CVaR");
     ERiskMeasure ed = StringToERiskMeasure(risk);
     switch(ed) {
       case RISKMEASURE_CVAR:
-             return Teuchos::rcp(new CVaR<Real>(parlist));
+             return ROL::makePtr<CVaR<Real>>(parlist);
       case RISKMEASURE_COHERENTEXPUTILITY:
-             return Teuchos::rcp(new CoherentExpUtility<Real>());
+             return ROL::makePtr<CoherentExpUtility<Real>>();
       case RISKMEASURE_EXPUTILITY:
-             return Teuchos::rcp(new ExpUtility<Real>(parlist));
+             return ROL::makePtr<ExpUtility<Real>>(parlist);
       case RISKMEASURE_HMCR:
-             return Teuchos::rcp(new HMCR<Real>(parlist));
+             return ROL::makePtr<HMCR<Real>>(parlist);
       case RISKMEASURE_MEANDEVIATIONFROMTARGET:
-             return Teuchos::rcp(new MeanDeviationFromTarget<Real>(parlist));
+             return ROL::makePtr<MeanDeviationFromTarget<Real>>(parlist);
       case RISKMEASURE_MEANDEVIATION:
-             return Teuchos::rcp(new MeanDeviation<Real>(parlist));
+             return ROL::makePtr<MeanDeviation<Real>>(parlist);
       case RISKMEASURE_MEANVARIANCEFROMTARGET:
-             return Teuchos::rcp(new MeanVarianceFromTarget<Real>(parlist));
+             return ROL::makePtr<MeanVarianceFromTarget<Real>>(parlist);
       case RISKMEASURE_MEANVARIANCE:
-             return Teuchos::rcp(new MeanVariance<Real>(parlist));
+             return ROL::makePtr<MeanVariance<Real>>(parlist);
       case RISKMEASURE_MOREAUYOSIDACVAR:
-             return Teuchos::rcp(new MoreauYosidaCVaR<Real>(parlist));
+             return ROL::makePtr<MoreauYosidaCVaR<Real>>(parlist);
       case RISKMEASURE_GENMOREAUYOSIDACVAR:
-             return Teuchos::rcp(new GenMoreauYosidaCVaR<Real>(parlist));
+             return ROL::makePtr<GenMoreauYosidaCVaR<Real>>(parlist);
       case RISKMEASURE_LOGEXPONENTIALQUADRANGLE:
-             return Teuchos::rcp(new LogExponentialQuadrangle<Real>(parlist));
+             return ROL::makePtr<LogExponentialQuadrangle<Real>>(parlist);
       case RISKMEASURE_LOGQUANTILEQUADRANGLE:
-             return Teuchos::rcp(new LogQuantileQuadrangle<Real>(parlist));
+             return ROL::makePtr<LogQuantileQuadrangle<Real>>(parlist);
       case RISKMEASURE_MEANVARIANCEQUADRANGLE:
-             return Teuchos::rcp(new MeanVarianceQuadrangle<Real>(parlist));
+             return ROL::makePtr<MeanVarianceQuadrangle<Real>>(parlist);
       case RISKMEASURE_MIXEDQUANTILEQUADRANGLE:
-             return Teuchos::rcp(new MixedQuantileQuadrangle<Real>(parlist));
+             return ROL::makePtr<MixedQuantileQuadrangle<Real>>(parlist);
       case RISKMEASURE_SUPERQUANTILEQUADRANGLE:
-             return Teuchos::rcp(new SuperQuantileQuadrangle<Real>(parlist));
+             return ROL::makePtr<SuperQuantileQuadrangle<Real>>(parlist);
       case RISKMEASURE_CHEBYSHEVKUSUOKA:
-             return Teuchos::rcp(new ChebyshevKusuoka<Real>(parlist));
+             return ROL::makePtr<ChebyshevKusuoka<Real>>(parlist);
       case RISKMEASURE_SPECTRALRISK:
-             return Teuchos::rcp(new SpectralRisk<Real>(parlist));
+             return ROL::makePtr<SpectralRisk<Real>>(parlist);
       case RISKMEASURE_QUANTILEQUADRANGLE:
-             return Teuchos::rcp(new QuantileQuadrangle<Real>(parlist));
+             return ROL::makePtr<QuantileQuadrangle<Real>>(parlist);
       case RISKMEASURE_QUANTILERADIUSQUADRANGLE:
-             return Teuchos::rcp(new QuantileRadiusQuadrangle<Real>(parlist));
+             return ROL::makePtr<QuantileRadiusQuadrangle<Real>>(parlist);
       case RISKMEASURE_SMOOTHEDWORSTCASEQUADRANGLE:
-             return Teuchos::rcp(new SmoothedWorstCaseQuadrangle<Real>(parlist));
+             return ROL::makePtr<SmoothedWorstCaseQuadrangle<Real>>(parlist);
       case RISKMEASURE_TRUNCATEDMEANQUADRANGLE:
-             return Teuchos::rcp(new TruncatedMeanQuadrangle<Real>(parlist));
+             return ROL::makePtr<TruncatedMeanQuadrangle<Real>>(parlist);
       case RISKMEASURE_CHI2DIVERGENCE:
-             return Teuchos::rcp(new Chi2Divergence<Real>(parlist));
+             return ROL::makePtr<Chi2Divergence<Real>>(parlist);
       case RISKMEASURE_KLDIVERGENCE:
-             return Teuchos::rcp(new KLDivergence<Real>(parlist));
+             return ROL::makePtr<KLDivergence<Real>>(parlist);
       case RISKMEASURE_BPOE:
-             return Teuchos::rcp(new BPOE<Real>(parlist));
+             return ROL::makePtr<BPOE<Real>>(parlist);
       default:
         TEUCHOS_TEST_FOR_EXCEPTION(true,std::invalid_argument,
                                    "Invalid risk measure type " << risk << "!");

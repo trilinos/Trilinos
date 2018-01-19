@@ -77,13 +77,13 @@ class Objective_HS39 : public Objective<Real> {
 public:
 
   Real value( const Vector<Real> &x, Real &tol ) {
-    Teuchos::RCP<const vector> xp = Teuchos::dyn_cast<const SV>(x).getVector();
+    ROL::Ptr<const vector> xp = dynamic_cast<const SV&>(x).getVector();
     return -(*xp)[0];
   }
 
   void gradient( Vector<Real> &g, const Vector<Real> &x, Real &tol ) {
-    Teuchos::RCP<const vector> xp = Teuchos::dyn_cast<const SV>(x).getVector();
-    Teuchos::RCP<vector> gp = Teuchos::dyn_cast<SV>(g).getVector();
+    ROL::Ptr<const vector> xp = dynamic_cast<const SV&>(x).getVector();
+    ROL::Ptr<vector> gp = dynamic_cast<SV&>(g).getVector();
 
     (*gp)[0] = -1.0;
     (*gp)[1] =  0.0;
@@ -109,8 +109,8 @@ public:
  
   void value( Vector<Real> &c, const Vector<Real> &x, Real &tol ) {
 
-    Teuchos::RCP<vector> cp = Teuchos::dyn_cast<SV>(c).getVector();
-    Teuchos::RCP<const vector> xp = Teuchos::dyn_cast<const SV>(x).getVector();
+    ROL::Ptr<vector> cp = dynamic_cast<SV&>(c).getVector();
+    ROL::Ptr<const vector> xp = dynamic_cast<const SV&>(x).getVector();
 
     (*cp)[0] = (*xp)[1]-std::pow((*xp)[0],3)-std::pow((*xp)[2],2);
   }  
@@ -118,9 +118,9 @@ public:
   void applyJacobian(Vector<Real> &jv, const Vector<Real> &v,
                      const Vector<Real> &x, Real &tol) {
 
-    Teuchos::RCP<vector> jvp = Teuchos::dyn_cast<SV>(jv).getVector();
-    Teuchos::RCP<const vector> vp = Teuchos::dyn_cast<const SV>(v).getVector();
-    Teuchos::RCP<const vector> xp = Teuchos::dyn_cast<const SV>(x).getVector();
+    ROL::Ptr<vector> jvp = dynamic_cast<SV&>(jv).getVector();
+    ROL::Ptr<const vector> vp = dynamic_cast<const SV&>(v).getVector();
+    ROL::Ptr<const vector> xp = dynamic_cast<const SV&>(x).getVector();
 
     (*jvp)[0] = (*vp)[1] - 3.0*(*xp)[0]*(*xp)[0]*(*vp)[0] - 2.0*(*xp)[2]*(*vp)[2];
 
@@ -129,9 +129,9 @@ public:
   void applyAdjointJacobian( Vector<Real> &ajv, const Vector<Real> &v,
                              const Vector<Real> &x, Real &tol ) {
 
-    Teuchos::RCP<vector> ajvp = Teuchos::dyn_cast<SV>(ajv).getVector();
-    Teuchos::RCP<const vector> vp = Teuchos::dyn_cast<const SV>(v).getVector();
-    Teuchos::RCP<const vector> xp = Teuchos::dyn_cast<const SV>(x).getVector();
+    ROL::Ptr<vector> ajvp = dynamic_cast<SV&>(ajv).getVector();
+    ROL::Ptr<const vector> vp = dynamic_cast<const SV&>(v).getVector();
+    ROL::Ptr<const vector> xp = dynamic_cast<const SV&>(x).getVector();
 
     (*ajvp)[0] = -3.0*(*xp)[0]*(*xp)[0]*(*vp)[0];
     (*ajvp)[1] = (*vp)[0];
@@ -143,10 +143,10 @@ public:
                            const Vector<Real> &v, const Vector<Real> &x,
                            Real &tol) {
 
-    Teuchos::RCP<vector> ahuvp = Teuchos::dyn_cast<SV>(ahuv).getVector();
-    Teuchos::RCP<const vector> up = Teuchos::dyn_cast<const SV>(u).getVector();
-    Teuchos::RCP<const vector> vp = Teuchos::dyn_cast<const SV>(v).getVector();
-    Teuchos::RCP<const vector> xp = Teuchos::dyn_cast<const SV>(x).getVector();
+    ROL::Ptr<vector> ahuvp = dynamic_cast<SV&>(ahuv).getVector();
+    ROL::Ptr<const vector> up = dynamic_cast<const SV&>(u).getVector();
+    ROL::Ptr<const vector> vp = dynamic_cast<const SV&>(v).getVector();
+    ROL::Ptr<const vector> xp = dynamic_cast<const SV&>(x).getVector();
 
     (*ahuvp)[0] = -6.0*(*up)[0]*(*xp)[0]*(*vp)[0]; 
     (*ahuvp)[1] = 0.0;
@@ -169,8 +169,8 @@ public:
   Constraint_HS39b(void) {}
  
   void value( Vector<Real> &c, const Vector<Real> &x, Real &tol ) {
-    Teuchos::RCP<vector> cp = Teuchos::dyn_cast<SV>(c).getVector();
-    Teuchos::RCP<const vector> xp = Teuchos::dyn_cast<const SV>(x).getVector();
+    ROL::Ptr<vector> cp = dynamic_cast<SV&>(c).getVector();
+    ROL::Ptr<const vector> xp = dynamic_cast<const SV&>(x).getVector();
 
     (*cp)[0] = std::pow((*xp)[0],2)-(*xp)[1]-std::pow((*xp)[3],2);
   }  
@@ -178,9 +178,9 @@ public:
   void applyJacobian(Vector<Real> &jv, const Vector<Real> &v,
                      const Vector<Real> &x, Real &tol) {
 
-    Teuchos::RCP<vector> jvp = Teuchos::dyn_cast<SV>(jv).getVector();
-    Teuchos::RCP<const vector> vp = Teuchos::dyn_cast<const SV>(v).getVector();
-    Teuchos::RCP<const vector> xp = Teuchos::dyn_cast<const SV>(x).getVector();
+    ROL::Ptr<vector> jvp = dynamic_cast<SV&>(jv).getVector();
+    ROL::Ptr<const vector> vp = dynamic_cast<const SV&>(v).getVector();
+    ROL::Ptr<const vector> xp = dynamic_cast<const SV&>(x).getVector();
 
     (*jvp)[0] = 2.0*(*xp)[0]*(*vp)[0] - (*vp)[1] - 2.0*(*xp)[3]*(*vp)[3];
 
@@ -189,9 +189,9 @@ public:
   void applyAdjointJacobian( Vector<Real> &ajv, const Vector<Real> &v,
                              const Vector<Real> &x, Real &tol ) {
 
-    Teuchos::RCP<vector> ajvp = Teuchos::dyn_cast<SV>(ajv).getVector();
-    Teuchos::RCP<const vector> vp = Teuchos::dyn_cast<const SV>(v).getVector();
-    Teuchos::RCP<const vector> xp = Teuchos::dyn_cast<const SV>(x).getVector();
+    ROL::Ptr<vector> ajvp = dynamic_cast<SV&>(ajv).getVector();
+    ROL::Ptr<const vector> vp = dynamic_cast<const SV&>(v).getVector();
+    ROL::Ptr<const vector> xp = dynamic_cast<const SV&>(x).getVector();
 
     (*ajvp)[0] = 2.0*(*xp)[0]*(*vp)[0];
     (*ajvp)[1] = -(*vp)[0]; 
@@ -203,10 +203,10 @@ public:
                            const Vector<Real> &v, const Vector<Real> &x,
                            Real &tol) {
 
-    Teuchos::RCP<vector> ahuvp = Teuchos::dyn_cast<SV>(ahuv).getVector();
-    Teuchos::RCP<const vector> up = Teuchos::dyn_cast<const SV>(u).getVector();
-    Teuchos::RCP<const vector> vp = Teuchos::dyn_cast<const SV>(v).getVector();
-    Teuchos::RCP<const vector> xp = Teuchos::dyn_cast<const SV>(x).getVector();
+    ROL::Ptr<vector> ahuvp = dynamic_cast<SV&>(ahuv).getVector();
+    ROL::Ptr<const vector> up = dynamic_cast<const SV&>(u).getVector();
+    ROL::Ptr<const vector> vp = dynamic_cast<const SV&>(v).getVector();
+    ROL::Ptr<const vector> xp = dynamic_cast<const SV&>(x).getVector();
 
   //  (*cp)[0] = std::pow((*xp)[0],2)-(*xp)[1]-std::pow((*xp)[3],2);
 

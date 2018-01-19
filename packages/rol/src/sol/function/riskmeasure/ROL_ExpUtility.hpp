@@ -65,9 +65,9 @@ namespace ROL {
 template<class Real>
 class ExpUtility : public RiskMeasure<Real> {
 private:
-  Teuchos::RCP<Vector<Real> > scaledGradient_;
-  Teuchos::RCP<Vector<Real> > dualVector1_;
-  Teuchos::RCP<Vector<Real> > dualVector2_;
+  ROL::Ptr<Vector<Real> > scaledGradient_;
+  ROL::Ptr<Vector<Real> > dualVector1_;
+  ROL::Ptr<Vector<Real> > dualVector2_;
   bool firstReset_;
 
   Real coeff_;
@@ -104,7 +104,7 @@ public:
     checkInputs();
   }
 
-  void reset(Teuchos::RCP<Vector<Real> > &x0, const Vector<Real> &x) {
+  void reset(ROL::Ptr<Vector<Real> > &x0, const Vector<Real> &x) {
     RiskMeasure<Real>::reset(x0,x);
     if ( firstReset_ ) {
       scaledGradient_ = (x0->dual()).clone();
@@ -115,11 +115,11 @@ public:
     scaledGradient_->zero(); dualVector1_->zero(); dualVector2_->zero();
   }
 
-  void reset(Teuchos::RCP<Vector<Real> > &x0, const Vector<Real> &x,
-             Teuchos::RCP<Vector<Real> > &v0, const Vector<Real> &v) {
+  void reset(ROL::Ptr<Vector<Real> > &x0, const Vector<Real> &x,
+             ROL::Ptr<Vector<Real> > &v0, const Vector<Real> &v) {
     reset(x0,x);
-    v0 = Teuchos::rcp_const_cast<Vector<Real> >(
-           Teuchos::dyn_cast<const RiskVector<Real> >(v).getVector());
+    v0 = ROL::constPtrCast<Vector<Real> >(
+           dynamic_cast<const RiskVector<Real>&>(v).getVector());
   }
 
   void update(const Real val, const Real weight) {
@@ -145,7 +145,7 @@ public:
     sampler.sumAll(*(RiskMeasure<Real>::g_),*dualVector1_);
     dualVector1_->scale(one/ev);
 
-    (Teuchos::dyn_cast<RiskVector<Real> >(g)).setVector(*dualVector1_);
+    (dynamic_cast<RiskVector<Real>&>(g)).setVector(*dualVector1_);
   }
 
   void update(const Real val, const Vector<Real> &g, const Real gv, const Vector<Real> &hv,
@@ -175,7 +175,7 @@ public:
     sampler.sumAll(*(RiskMeasure<Real>::g_),*dualVector2_);
     dualVector1_->axpy(coeff_*val[1]/(val[0]*val[0]),*dualVector2_);
 
-    (Teuchos::dyn_cast<RiskVector<Real> >(hv)).setVector(*dualVector1_);
+    (dynamic_cast<RiskVector<Real>&>(hv)).setVector(*dualVector1_);
   }
 };
 

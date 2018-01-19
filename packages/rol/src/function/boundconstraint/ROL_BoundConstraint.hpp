@@ -186,12 +186,12 @@ public:
   // QUERY FUNCTIONS (VIRTUAL AND NONVIRTUAL)
 
   /** \brief Return the ref count pointer to the lower bound vector */
-  virtual const Teuchos::RCP<const Vector<Real> > getLowerBound( void ) const {
+  virtual const ROL::Ptr<const Vector<Real> > getLowerBound( void ) const {
     throw Exception::NotImplemented(">>> ROL::BoundConstraint::getLowerBound: Not implemented!");
   }
 
   /** \brief Return the ref count pointer to the upper bound vector */
-  virtual const Teuchos::RCP<const Vector<Real> > getUpperBound( void ) const {
+  virtual const ROL::Ptr<const Vector<Real> > getUpperBound( void ) const {
     throw Exception::NotImplemented(">>> ROL::BoundConstraint::getUpperBound: Not implemented!");
   }
 
@@ -328,7 +328,7 @@ public:
   void pruneLowerInactive( Vector<Real> &v, const Vector<Real> &x, Real eps = 0 ) {
     if (isLowerActivated()) {
       const Real one(1);
-      Teuchos::RCP<Vector<Real> > tmp = v.clone(); 
+      ROL::Ptr<Vector<Real> > tmp = v.clone(); 
       tmp->set(v);
       pruneLowerActive(*tmp,x,eps);
       v.axpy(-one,*tmp);
@@ -345,7 +345,7 @@ public:
   void pruneUpperInactive( Vector<Real> &v, const Vector<Real> &x, Real eps = 0 ) { 
     if (isUpperActivated()) {
       const Real one(1);
-      Teuchos::RCP<Vector<Real> > tmp = v.clone(); 
+      ROL::Ptr<Vector<Real> > tmp = v.clone(); 
       tmp->set(v);
       pruneUpperActive(*tmp,x,eps);
       v.axpy(-one,*tmp);
@@ -363,7 +363,7 @@ public:
   void pruneLowerInactive( Vector<Real> &v, const Vector<Real> &g, const Vector<Real> &x, Real eps = 0 ) { 
     if (isLowerActivated()) {
       const Real one(1);
-      Teuchos::RCP<Vector<Real> > tmp = v.clone(); 
+      ROL::Ptr<Vector<Real> > tmp = v.clone(); 
       tmp->set(v);
       pruneLowerActive(*tmp,g,x,eps);
       v.axpy(-one,*tmp);
@@ -381,7 +381,7 @@ public:
   void pruneUpperInactive( Vector<Real> &v, const Vector<Real> &g, const Vector<Real> &x, Real eps = 0 ) { 
     if (isUpperActivated()) {
       const Real one(1);
-      Teuchos::RCP<Vector<Real> > tmp = v.clone(); 
+      ROL::Ptr<Vector<Real> > tmp = v.clone(); 
       tmp->set(v);
       pruneUpperActive(*tmp,g,x,eps);
       v.axpy(-one,*tmp);
@@ -398,7 +398,7 @@ public:
   void pruneInactive( Vector<Real> &v, const Vector<Real> &x, Real eps = 0 ) { 
     if (isActivated()) {
       const Real one(1);
-      Teuchos::RCP<Vector<Real> > tmp = v.clone(); 
+      ROL::Ptr<Vector<Real> > tmp = v.clone(); 
       tmp->set(v);
       pruneActive(*tmp,x,eps);
       v.axpy(-one,*tmp);
@@ -416,7 +416,7 @@ public:
   void pruneInactive( Vector<Real> &v, const Vector<Real> &g, const Vector<Real> &x, Real eps = 0 ) { 
     if (isActivated()) {
       const Real one(1);
-      Teuchos::RCP<Vector<Real> > tmp = v.clone(); 
+      ROL::Ptr<Vector<Real> > tmp = v.clone(); 
       tmp->set(v);
       pruneActive(*tmp,g,x,eps);
       v.axpy(-one,*tmp);
@@ -431,7 +431,7 @@ public:
   */
   void computeProjectedGradient( Vector<Real> &g, const Vector<Real> &x ) {
     if (isActivated()) {
-      Teuchos::RCP<Vector<Real> > tmp = g.clone();
+      ROL::Ptr<Vector<Real> > tmp = g.clone();
       tmp->set(g);
       pruneActive(g,*tmp,x);
     }

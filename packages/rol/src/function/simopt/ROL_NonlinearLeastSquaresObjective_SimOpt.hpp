@@ -75,10 +75,10 @@ class Constraint_SimOpt;
 template <class Real>
 class NonlinearLeastSquaresObjective_SimOpt : public Objective<Real> {
 private:
-  const Teuchos::RCP<Constraint_SimOpt<Real> > con_;
+  const ROL::Ptr<Constraint_SimOpt<Real> > con_;
   const bool GaussNewtonHessian_;
 
-  Teuchos::RCP<Vector<Real> > c1_, c2_, cdual_, udual_, z_;
+  ROL::Ptr<Vector<Real> > c1_, c2_, cdual_, udual_, z_;
 
 public:
   /** \brief Constructor. 
@@ -88,7 +88,7 @@ public:
       @param[in]          vec   is a constraint space vector used for cloning.
       @param[in]          GHN   is a flag dictating whether or not to use the Gauss-Newton Hessian.
   */
-  NonlinearLeastSquaresObjective_SimOpt(const Teuchos::RCP<Constraint_SimOpt<Real> > &con,
+  NonlinearLeastSquaresObjective_SimOpt(const ROL::Ptr<Constraint_SimOpt<Real> > &con,
                                         const Vector<Real> &uvec,
                                         const Vector<Real> &zvec,
                                         const Vector<Real> &cvec,
