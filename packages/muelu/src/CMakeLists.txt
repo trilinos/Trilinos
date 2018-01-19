@@ -416,9 +416,8 @@ INCLUDE_DIRECTORIES(${BDIR}/)
 APPEND_GLOB(HEADERS ${BDIR}/*.hpp)
 
 # Remove everything in the interface directory and add it to a list for muelu-interface instead
-# NOTE: Because of the funny way the glob mactros work, the use of two slashses for the APPEND_GLOB is critical
 SET(SOURCES_INTERFACE "")
-APPEND_GLOB(SOURCES_INTERFACE Interface//*.cpp)
+APPEND_GLOB(SOURCES_INTERFACE Interface/*.cpp)
 IF(${PACKAGE_NAME}_ENABLE_EXPLICIT_INSTANTIATION)
   APPEND_SET(SOURCES_INTERFACE ${DIR}/Utils/ExplicitInstantiation/MueLu_FacadeClassFactory.cpp)
   APPEND_SET(SOURCES_INTERFACE ${DIR}/Utils/ExplicitInstantiation/MueLu_ParameterListInterpreter.cpp)
