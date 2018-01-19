@@ -1,4 +1,8 @@
-<!--- Provide a general summary of the issue in the Title above. -->
+<!---
+Provide a general summary of the issue in the Title above.  If this issue
+pertains to a particular package in Trilinos, it's worthwhile to start the
+title with "PackageName:  ".
+-->
 
 <!---
 Note that anything between these delimiters is a comment that will not appear
