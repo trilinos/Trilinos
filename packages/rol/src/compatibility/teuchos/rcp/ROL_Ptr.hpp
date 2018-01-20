@@ -65,13 +65,6 @@ static const Teuchos::ENull nullPtr = Teuchos::null;
 
 }
 
-namespace std {
-
-template<class T>
-struct is_pointer<ROL::Ptr<T>> : public std::true_type { };
-
-}
-
 namespace ROL {
 
 // Special case handling until C++14 (auto type deduction) is required
