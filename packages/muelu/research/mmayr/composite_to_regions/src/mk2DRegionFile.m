@@ -121,7 +121,7 @@ elseif(strcmp(filename, 'caseEight') == true)  % caseEight
   % This is supposed to be the RegionsSpanProcs counterpart to caseSeven.
   error('Not implemented, yet.');
    
-elseif(strcmp(filename, 'caseNine') == true)  % caseTest
+elseif(strcmp(filename, 'caseNine') == true)  % caseNine
 
 %px:0   0   0   1   1
 %px:        1                
@@ -136,8 +136,8 @@ elseif(strcmp(filename, 'caseNine') == true)  % caseTest
   whichCase = 'MultipleRegionsPerProc';
   rxInterfaceLocations = [2 4];   
   ryInterfaceLocations = [2 4];   
-  pxProcChange         = [2];
-  pyProcChange         = [2];
+  pxProcChange         = [3];
+  pyProcChange         = [3];
 
 end
 

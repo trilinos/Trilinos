@@ -139,6 +139,10 @@
 
 #cmakedefine HAVE_TEUCHOS_TIME_MASSIF_SNAPSHOTS
 
+#cmakedefine HAVE_TEUCHOS_KOKKOS_PROFILING
+
+#cmakedefine KOKKOS_ENABLE_PROFILING
+
 /* template qualifier required for calling template methods from non-template
    code */
 #define INVALID_TEMPLATE_QUALIFIER @INVALID_TEMPLATE_QUALIFIER@

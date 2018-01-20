@@ -62,21 +62,27 @@ observeAcceptedTimeStep(const Integrator<Scalar>& integrator){
   RCP<SolutionStateMetaData<Scalar> > csmd =
     integrator.getSolutionHistory()->getCurrentState()->getMetaData();
 
-  const Scalar steppertime = integrator.getStepperTimer()->totalElapsedTime();
-  const Teuchos::RCP<Teuchos::FancyOStream> out = integrator.getOStream();
-  Teuchos::OSTab ostab(out,0,"ScreenOutput");
-  *out<<std::scientific<<std::setw( 6)<<std::setprecision(3)<<csmd->getIStep()
-      <<std::setw(11)<<std::setprecision(3)<<csmd->getTime()
-      <<std::setw(11)<<std::setprecision(3)<<csmd->getDt()
-      <<std::setw(11)<<std::setprecision(3)<<csmd->getErrorAbs()
-      <<std::setw(11)<<std::setprecision(3)<<csmd->getErrorRel()
-      <<std::fixed     <<std::setw( 7)<<std::setprecision(1)<<csmd->getOrder()
-      <<std::scientific<<std::setw( 7)<<std::setprecision(3)<<csmd->getNFailures()
-      <<std::setw(11)<<std::setprecision(3)<<steppertime
-      <<std::endl;
+  if ((csmd->getOutputScreen() == true) or
+      (csmd->getOutput() == true) or
+      (csmd->getTime() == integrator.getTimeStepControl()->getFinalTime())) {
 
-  // reset the stepper timer
-  integrator.getStepperTimer()->reset();
+     const Scalar steppertime = integrator.getStepperTimer()->totalElapsedTime();
+     // reset the stepper timer
+     integrator.getStepperTimer()->reset();
+
+     const Teuchos::RCP<Teuchos::FancyOStream> out = integrator.getOStream();
+     Teuchos::OSTab ostab(out,0,"ScreenOutput");
+     *out<<std::scientific<<std::setw( 6)<<std::setprecision(3)<<csmd->getIStep()
+        <<std::setw(11)<<std::setprecision(3)<<csmd->getTime()
+        <<std::setw(11)<<std::setprecision(3)<<csmd->getDt()
+        <<std::setw(11)<<std::setprecision(3)<<csmd->getErrorAbs()
+        <<std::setw(11)<<std::setprecision(3)<<csmd->getErrorRel()
+        <<std::fixed     <<std::setw( 7)<<std::setprecision(1)<<csmd->getOrder()
+        <<std::scientific<<std::setw( 7)<<std::setprecision(3)<<csmd->getNFailures()
+        <<std::setw(11)<<std::setprecision(3)<<steppertime
+        <<std::endl;
+  }
+
 }
 
 template<class Scalar>
