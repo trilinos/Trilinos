@@ -487,20 +487,20 @@ TEUCHOS_UNIT_TEST( Parser, mathexpr_language ) {
 }
 
 void test_mathexpr_reader(std::string const& str) {
-  DebugReader reader(MathExpr::ask_reader_tables(), std::cout);
+  Reader reader(MathExpr::ask_reader_tables());
   Teuchos::any result;
   reader.read_string(result, str, "test_mathexpr_reader");
 }
 
 TEUCHOS_UNIT_TEST( Parser, mathexpr_reader ) {
-//test_mathexpr_reader("1 + 1");
-//test_mathexpr_reader("concat(one, two, three)");
-//test_mathexpr_reader("x < 0.5 ? 1 : 0");
-//test_mathexpr_reader("sqrt(x^2 + y^2) < 0.5 ? 1 : 0");
-//test_mathexpr_reader("1.22+30.*exp(-((x^2 + (y-180)^2))/(2.*(2.2)^2))");
-//test_mathexpr_reader("1.23e5+8.07e10*exp(-((x^2 + (y-180)^2))/(2.*(2.2)^2))");
-//test_mathexpr_reader("---16");
-//test_mathexpr_reader("((1 < 2) && (2 < 1)) ? 42 : 9");
+  test_mathexpr_reader("1 + 1");
+  test_mathexpr_reader("concat(one, two, three)");
+  test_mathexpr_reader("x < 0.5 ? 1 : 0");
+  test_mathexpr_reader("sqrt(x^2 + y^2) < 0.5 ? 1 : 0");
+  test_mathexpr_reader("1.22+30.*exp(-((x^2 + (y-180)^2))/(2.*(2.2)^2))");
+  test_mathexpr_reader("1.23e5+8.07e10*exp(-((x^2 + (y-180)^2))/(2.*(2.2)^2))");
+  test_mathexpr_reader("---16");
+  test_mathexpr_reader("((1 < 2) && (2 < 1)) ? 42 : 9");
   test_mathexpr_reader("x = 2; y = 5; x^2 + y^2");
 }
 
