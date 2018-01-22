@@ -59,7 +59,7 @@
 
 namespace MueLuTests {
 
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(TentativePFactory, MakeStructuredTentative, Scalar, LocalOrdinal, GlobalOrdinal, Node)
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(StructuredAggregation, MakeStructuredTentative, Scalar, LocalOrdinal, GlobalOrdinal, Node)
   {
 #   include "MueLu_UseShortNames.hpp"
     MUELU_TESTING_SET_OSTREAM;
@@ -78,6 +78,7 @@ namespace MueLuTests {
 
     // Set global geometric data
     LO numDimensions = 1;
+    Array<GO> meshData;
     Array<LO> lNodesPerDir(3);
     Array<GO> gNodesPerDir(3);
     for(int dim = 0; dim < 3; ++dim) {
@@ -91,7 +92,7 @@ namespace MueLuTests {
 
     RCP<const Xpetra::MultiVector<double,LO,GO,NO> > Coordinates =
       TestHelpers::TestFactory<SC,LO,GO,NO>::BuildGeoCoordinates(numDimensions, gNodesPerDir,
-                                                                 lNodesPerDir);
+                                                                 lNodesPerDir, meshData);
 
     Teuchos::ParameterList matrixList;
     matrixList.set("nx", gNodesPerDir[0]);
@@ -154,7 +155,7 @@ namespace MueLuTests {
   } //MakeTentative
 
 #  define MUELU_ETI_GROUP(Scalar, LO, GO, Node) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(TentativePFactory,MakeStructuredTentative,Scalar,LO,GO,Node)
+      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(StructuredAggregation,MakeStructuredTentative,Scalar,LO,GO,Node)
 
 #include <MueLu_ETI_4arg.hpp>
 

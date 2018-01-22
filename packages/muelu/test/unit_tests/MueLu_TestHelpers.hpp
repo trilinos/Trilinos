@@ -333,7 +333,7 @@ namespace MueLuTests {
 
       static RCP<Xpetra::MultiVector<double,LO,GO,NO> >
       BuildGeoCoordinates(const int numDimensions, const Array<GO> gNodesPerDir,
-                          Array<LO>& lNodesPerDir,
+                          Array<LO>& lNodesPerDir, Array<GO>& meshData,
                           const std::string meshLayout = "Global Lexicographic") {
 
         // Get MPI infos
@@ -348,10 +348,31 @@ namespace MueLuTests {
         //                                //
         ////////////////////////////////////
         if(numRanks == 1) {
+          if(meshLayout == "Local Lexicographic") {
+            meshData[0] = 1; // Local Proc
+            meshData[1] = 1; // Local Proc?
+            meshData[2] = 1; // Parent Proc
+          }
           for(int dim = 0; dim < 3; ++dim) {
             lNodesPerDir[dim] = gNodesPerDir[dim];
+            if(meshLayout == "Local Lexicographic") {
+              meshData[3 + 2*dim]    = 0;                        // Lowest  index in direction dim
+              meshData[3 + 2*dim +1] = gNodesPerDir[dim] - 1;    // Highest index in direction dim
+            }
+          }
+          if(meshLayout == "Local Lexicographic") {
+            meshData[9] = 0;
           }
         } else if(numRanks == 4) {
+          if(meshLayout == "Local Lexicographic") {
+            // First fill the rank related info in meshData
+            for(int rank = 0; rank < numRanks; ++rank) {
+              meshData[10*rank + 0] = rank + 1; // Local Proc
+              meshData[10*rank + 1] = rank + 1; // Local Proc?
+              meshData[10*rank + 2] = 1;        // Parent Proc
+            }
+          }
+
           if(numDimensions == 1) {
             LO numNodesPerRank = std::ceil(Teuchos::as<double>(gNodesPerDir[0]) / numRanks);
             if(myRank == numRanks - 1) {
@@ -360,6 +381,16 @@ namespace MueLuTests {
               lNodesPerDir[0] = numNodesPerRank;
             }
             lNodesPerDir[1] = gNodesPerDir[1];
+
+            if(meshLayout == "Local Lexicographic") {
+              for(int rank = 0; rank < numRanks; ++rank) {
+                meshData[10*rank + 3] = rank*numNodesPerRank;
+                meshData[10*rank + 4] =
+                  (rank == numRanks - 1) ? (gNodesPerDir[0] - 1) : ((rank + 1)*numNodesPerRank - 1);
+                meshData[10*rank + 5] = 0;
+                meshData[10*rank + 6] = 0;
+              }
+            }
           } else {
             if(myRank == 0 || myRank == 2) {
               lNodesPerDir[0] = std::ceil(Teuchos::as<double>(gNodesPerDir[0]) / 2);
@@ -371,8 +402,42 @@ namespace MueLuTests {
             } else {
               lNodesPerDir[1] = std::floor(Teuchos::as<double>(gNodesPerDir[1]) / 2);
             }
+            if(meshLayout == "Local Lexicographic") {
+              for(int j = 0; j < 2; ++j) {
+                for(int i = 0; i < 2; ++i) {
+                  int rank = 2*j + i;
+                  if(i == 0) {
+                    meshData[10*rank + 3] = 0;
+                    meshData[10*rank + 4] = std::ceil(Teuchos::as<double>(gNodesPerDir[0]) / 2) - 1;
+                  } else if(i == 1) {
+                    meshData[10*rank + 3] = std::ceil(Teuchos::as<double>(gNodesPerDir[0]) / 2);
+                    meshData[10*rank + 4] = gNodesPerDir[0] - 1;
+                  }
+                  if(j == 0) {
+                    meshData[10*rank + 5] = 0;
+                    meshData[10*rank + 6] = std::ceil(Teuchos::as<double>(gNodesPerDir[1]) / 2) - 1;
+                  } else if(j == 1) {
+                    meshData[10*rank + 5] = std::ceil(Teuchos::as<double>(gNodesPerDir[1]) / 2);
+                    meshData[10*rank + 6] = gNodesPerDir[1] - 1;
+                  }
+                }
+              }
+            }
           }
           lNodesPerDir[2] = gNodesPerDir[2];
+          if(meshLayout == "Local Lexicographic") {
+            for(int rank = 0; rank < numRanks; ++rank) {
+              meshData[10*rank + 7] = 0;
+              meshData[10*rank + 8] = gNodesPerDir[2] - 1;
+            }
+            meshData[9] = 0;
+            for(int rank = 1; rank < numRanks; ++rank) {
+              meshData[10*rank + 9] = meshData[10*(rank - 1) + 9]
+                + (meshData[10*(rank - 1) + 4] - meshData[10*(rank - 1) + 3] + 1)
+                *(meshData[10*(rank - 1) + 6] - meshData[10*(rank - 1) + 5] + 1)
+                *(meshData[10*(rank - 1) + 8] - meshData[10*(rank - 1) + 7] + 1);
+            }
+          }
         }
 
         GO gNumNodes = 1;
@@ -461,7 +526,8 @@ namespace MueLuTests {
                 if(gNodesPerDir[dim] == 1) {
                   myCoords[dim][nodeIdx] = 0.0;
                 } else {
-                  myCoords[dim][nodeIdx] = (myLowestTuple[dim] + ijk[dim]) / (gNodesPerDir[dim] - 1);
+                  myCoords[dim][nodeIdx] =
+                    Teuchos::as<double>(myLowestTuple[dim] + ijk[dim]) / (gNodesPerDir[dim] - 1);
                 }
               }
             }

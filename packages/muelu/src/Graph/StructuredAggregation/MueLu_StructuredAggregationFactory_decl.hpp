@@ -167,7 +167,7 @@ private:
       // the struct can be rewritten to accomodate constraints of Kokkos/CUDA data types
 
       std::string meshLayout = "Global Lexicographic";
-      int numDimensions;
+      int numDimensions = -1, myRank = -1, numRanks = -1;
       LO lNumFineNodes = -1, lNumCoarseNodes = -1, lNumGhostNodes = -1,lNumGhostedNodes  = -1;
       LO myBlock = -1, numBlocks = -1, lNumFineNodes10 = -1, lNumCoarseNodes10 = -1;
       LO numGhostedCoarseNodes = -1, numGhostedCoarseNodes10 = -1;
@@ -177,7 +177,7 @@ private:
       Array<LO> lFineNodesPerDir, lCoarseNodesPerDir, offsets, ghostedCoarseNodesPerDir;
       Array<GO> startIndices, gFineNodesPerDir, gCoarseNodesPerDir, startGhostedCoarseNode;
       std::vector<std::vector<GO> > meshData; // These are sorted later so they are in std::vector
-      bool ghostInterface[6] = {false};
+      bool ghostInterface[6] = {false}, ghostedDir[6] = {false};
 
       GeometricData() {
         coarseRate.resize(3);
@@ -190,6 +190,229 @@ private:
         gFineNodesPerDir.resize(3);
         gCoarseNodesPerDir.resize(3);
         startGhostedCoarseNode.resize(3);
+      }
+
+      void computeGeometricParameters(const std::string MeshLayout, const int NumDimensions,
+                                      const int MyRank, const int NumRanks,
+                                      const Array<GO> GFineNodesPerDir,
+                                      const Array<LO> LFineNodesPerDir,
+                                      const Array<LO> CoarseRate, const Array<GO> MeshData,
+                                      const GO MinGlobalIndex) {
+
+        // First copy over the input data
+        meshLayout       = MeshLayout;
+        numDimensions    = NumDimensions;
+        myRank           = MyRank;
+        numRanks         = NumRanks;
+        gFineNodesPerDir = GFineNodesPerDir;
+        lFineNodesPerDir = LFineNodesPerDir;
+
+        // Load coarse rate, being careful about formating
+        for(int dim = 0; dim < 3; ++dim) {
+          if(dim < numDimensions) {
+            if(CoarseRate.size() == 1) {
+              coarseRate[dim] = CoarseRate[0];
+            } else if(CoarseRate.size() == numDimensions) {
+              coarseRate[dim] = CoarseRate[dim];
+            }
+          } else {
+            coarseRate[dim] = 1;
+          }
+        }
+
+        // Load meshData for local lexicographic case
+        if(meshLayout == "Local Lexicographic") {
+          meshData.resize(numRanks);
+          for(int rank = 0; rank < numRanks; ++rank) {
+            meshData[rank].resize(10);
+            for(int entry = 0; entry < 10; ++entry) {
+              meshData[rank][entry] = MeshData[10*rank + entry];
+            }
+          }
+        }
+
+        // Start simple parameter calculation
+        gNumFineNodes10 = gFineNodesPerDir[1]*gFineNodesPerDir[0];
+        gNumFineNodes   = gFineNodesPerDir[2]*gNumFineNodes10;
+        lNumFineNodes10 = lFineNodesPerDir[1]*lFineNodesPerDir[0];
+        lNumFineNodes   = lFineNodesPerDir[2]*lNumFineNodes10;
+
+        if(meshLayout == "Global Lexicographic") {
+          GO tmp = 0;
+          startIndices[2] = MinGlobalIndex / (gFineNodesPerDir[1]*gFineNodesPerDir[0]);
+          tmp             = MinGlobalIndex % (gFineNodesPerDir[1]*gFineNodesPerDir[0]);
+          startIndices[1] = tmp / gFineNodesPerDir[0];
+          startIndices[0] = tmp % gFineNodesPerDir[0];
+
+          for(int dim = 0; dim < 3; ++dim) {
+            startIndices[dim + 3] = startIndices[dim] + lFineNodesPerDir[dim] - 1;
+          }
+
+        } else if(meshLayout == "Local Lexicographic") {
+          myBlock = meshData[myRank][2];
+          for(int i = 0; i < 3; ++i) {
+            startIndices[i]     = meshData[myRank][2*i + 3];
+            startIndices[i + 3] = meshData[myRank][2*i + 4];
+          }
+          sortLocalLexicographicData();
+        }
+
+        for(int dim = 0; dim < 3; ++dim) {
+          if(dim < numDimensions) {
+            offsets[dim]     = Teuchos::as<LO>(startIndices[dim]) % coarseRate[dim];
+            offsets[dim + 3] = Teuchos::as<LO>(startIndices[dim]) % coarseRate[dim];
+
+            if(startIndices[dim] % coarseRate[dim] != 0 ||
+               startIndices[dim] == gFineNodesPerDir[dim]-1) {
+              ghostInterface[2*dim] = true;
+            }
+            if((startIndices[dim + 3] != gFineNodesPerDir[dim] - 1) &&
+               ((lFineNodesPerDir[dim] == 1) || (startIndices[dim + 3] % coarseRate[dim] != 0))) {
+              ghostInterface[2*dim+1] = true;
+            }
+          }
+        }
+
+
+        // Here one element can represent either the degenerate case of one node or the more general
+        // case of two nodes, i.e. x---x is a 1D element with two nodes and x is a 1D element with
+        // one node. This helps generating a 3D space from tensorial products...
+        // A good way to handle this would be to generalize the algorithm to take into account the
+        // discretization order used in each direction, at least in the FEM sense, since a 0 degree
+        // discretization will have a unique node per element. This way 1D discretization can be
+        // viewed as a 3D problem with one 0 degree element in the y direction and one 0 degre
+        // element in the z direction.
+        // !!! Operations below are aftecting both local and global values that have two         !!!
+        // different orientations. Orientations can be interchanged using mapDirG2L and mapDirL2G.
+        // coarseRate, endRate and offsets are in the global basis, as well as all the variables
+        // starting with a g.
+        // !!! while the variables starting with an l are in the local basis.                    !!!
+        for(int dim = 0; dim < 3; ++dim) {
+          if(dim < numDimensions) {
+            // This array is passed to the RAPFactory and eventually becomes gFineNodePerDir on the next
+            // level.
+            gCoarseNodesPerDir[dim] = (gFineNodesPerDir[dim] - 1) / coarseRate[dim];
+            endRate[dim] = Teuchos::as<LO>((gFineNodesPerDir[dim] - 1) % coarseRate[dim]);
+            if(endRate[dim] == 0) {
+              endRate[dim] = coarseRate[dim];
+              ++gCoarseNodesPerDir[dim];
+            } else {
+              gCoarseNodesPerDir[dim] += 2;
+            }
+          } else {
+            endRate[dim] = 1;
+            gCoarseNodesPerDir[dim] = 1;
+          }
+        }
+
+        gNumCoarseNodes10 = gCoarseNodesPerDir[0]*gCoarseNodesPerDir[1];
+        gNumCoarseNodes   = gNumCoarseNodes10*gCoarseNodesPerDir[2];
+
+        for(LO dim = 0; dim < 3; ++dim) {
+          if(dim < numDimensions) {
+            // Check whether the partition includes the "end" of the mesh which means that endRate
+            // will apply. Also make sure that endRate is not 0 which means that the mesh does not
+            // require a particular treatment at the boundaries.
+            if( (startIndices[dim] + lFineNodesPerDir[dim]) == gFineNodesPerDir[dim] ) {
+              lCoarseNodesPerDir[dim] = (lFineNodesPerDir[dim] - endRate[dim] + offsets[dim] - 1)
+                / coarseRate[dim] + 1;
+              if(offsets[dim] == 0) {++lCoarseNodesPerDir[dim];}
+            } else {
+              lCoarseNodesPerDir[dim] = (lFineNodesPerDir[dim] + offsets[dim] - 1) /coarseRate[dim];
+              if(offsets[dim] == 0) {++lCoarseNodesPerDir[dim];}
+            }
+          } else {
+            lCoarseNodesPerDir[dim] = 1;
+          }
+          // This would happen if the rank does not own any nodes but in that case a subcommunicator
+          // should be used so this should really not be a concern.
+          if(lFineNodesPerDir[dim] < 1) {lCoarseNodesPerDir[dim] = 0;}
+        }
+
+        // Assuming linear interpolation, each fine point has contribution from 8 coarse points
+        // and each coarse point value gets injected.
+        // For systems of PDEs we assume that all dofs have the same P operator.
+        lNumCoarseNodes10 = lCoarseNodesPerDir[0]*lCoarseNodesPerDir[1];
+        lNumCoarseNodes   = lNumCoarseNodes10*lCoarseNodesPerDir[2];
+
+        // For each direction, determine how many points (including ghosts) are required.
+        for(int dim = 0; dim < 3; ++dim) {
+          // The first branch of this if-statement will be used if the rank contains only one layer
+          // of nodes in direction i, that layer must also coincide with the boundary of the mesh
+          // and coarseRate[i] == endRate[i]...
+          if(dim < numDimensions) {
+            if((startIndices[dim] == gFineNodesPerDir[dim] - 1) &&
+               (startIndices[dim] % coarseRate[dim] == 0)) {
+              startGhostedCoarseNode[dim] = startIndices[dim] / coarseRate[dim] - 1;
+            } else {
+              startGhostedCoarseNode[dim] = startIndices[dim] / coarseRate[dim];
+            }
+          }
+          ghostedCoarseNodesPerDir[dim] = lCoarseNodesPerDir[dim];
+          // Check whether face *low needs ghost nodes
+          if(ghostInterface[2*dim]) {ghostedCoarseNodesPerDir[dim] += 1;}
+          // Check whether face *hi needs ghost nodes
+          if(ghostInterface[2*dim + 1]) {ghostedCoarseNodesPerDir[dim] += 1;}
+        }
+        numGhostedCoarseNodes10 = ghostedCoarseNodesPerDir[1]*ghostedCoarseNodesPerDir[0];
+        numGhostedCoarseNodes   = numGhostedCoarseNodes10*ghostedCoarseNodesPerDir[2];
+        lNumGhostNodes = numGhostedCoarseNodes - lNumCoarseNodes;
+      }
+
+      void sortLocalLexicographicData() {
+        std::sort(meshData.begin(), meshData.end(),
+                  [](const std::vector<GO>& a, const std::vector<GO>& b)->bool {
+                    // The below function sorts ranks by blockID, kmin, jmin and imin
+                    if(a[2] < b[2]) {
+                      return true;
+                    } else if(a[2] == b[2]) {
+                      if(a[7] < b[7]) {
+                        return true;
+                      } else if(a[7] == b[7]) {
+                        if(a[5] < b[5]) {
+                          return true;
+                        } else if(a[5] == b[5]) {
+                          if(a[3] < b[3]) {return true;}
+                        }
+                      }
+                    }
+                    return false;
+                  });
+
+        numBlocks = meshData[numRanks - 1][2] + 1;
+        // Find the range of the current block
+        auto myBlockStart = std::lower_bound(meshData.begin(), meshData.end(), myBlock - 1,
+                                             [](const std::vector<GO>& vec, const GO val)->bool{
+                                               return (vec[2] < val) ? true : false;
+                                             });
+        auto myBlockEnd = std::upper_bound(meshData.begin(), meshData.end(), myBlock,
+                                           [](const GO val, const std::vector<GO>& vec)->bool{
+                                             return (val < vec[2]) ? true : false;
+                                           });
+        // Assuming that i,j,k and ranges are split in pi, pj and pk processors
+        // we search for these numbers as they will allow us to find quickly the PID of processors
+        // owning ghost nodes.
+        auto myKEnd = std::upper_bound(myBlockStart, myBlockEnd, (*myBlockStart)[3],
+                                       [](const GO val, const std::vector<GO>& vec)->bool{
+                                         return (val < vec[7]) ? true : false;
+                                       });
+        auto myJEnd = std::upper_bound(myBlockStart, myKEnd, (*myBlockStart)[3],
+                                       [](const GO val, const std::vector<GO>& vec)->bool{
+                                         return (val < vec[5]) ? true : false;
+                                       });
+        LO pi = std::distance(myBlockStart, myJEnd);
+        LO pj = std::distance(myBlockStart, myKEnd) / pi;
+        LO pk = std::distance(myBlockStart, myBlockEnd) / (pj*pi);
+
+        const int MyRank = myRank;
+
+        // We also look for the index of the local rank in the current block.
+        LO myRankIndex = std::distance(meshData.begin(),
+                                       std::find_if(myBlockStart, myBlockEnd,
+                                                    [MyRank](const std::vector<GO>& vec)->bool{
+                                                      return (vec[0] == MyRank) ? true : false;
+                                                    })
+                                       );
       }
 
       void getFineNodeGlobalTuple(const GO myGID, GO& i, GO& j, GO& k) const {
@@ -319,8 +542,9 @@ private:
                                    LO& numNonAggregatedNodes) const;
 
     /*! @brief assumes local lexicographic layout of the mesh to build aggregates */
-    void LoxalLexicographicLayout(const RCP<const Map> coordMap, RCP<GeometricData> geoData,
-                                  RCP<Aggregates> aggregates) const;
+    void LocalLexicographicLayout(const RCP<const Map> coordMap, RCP<GeometricData> geoData,
+                                  RCP<Aggregates> aggregates, std::vector<unsigned>& aggStat,
+                                  LO& numNonAggregatedNodes) const;
 
     //@}
 
