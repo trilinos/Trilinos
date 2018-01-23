@@ -203,6 +203,21 @@ class CGSingleRedIter : virtual public CGIteration<ScalarType,MV,OP> {
   //! States whether the solver has been initialized or not.
   bool isInitialized() { return initialized_; }
 
+  //! Sets whether or not to store the diagonal for condition estimation
+  void setDoCondEst(bool val){/*ignored*/}
+
+  //! Gets the diagonal for condition estimation (NOT_IMPLEMENTED)
+  Teuchos::ArrayView<MagnitudeType> getDiag() { 
+    Teuchos::ArrayView<MagnitudeType> temp;
+    return temp;
+  }
+
+  //! Gets the off-diagonal for condition estimation (NOT_IMPLEMENTED)
+  Teuchos::ArrayView<MagnitudeType> getOffDiag() {
+    Teuchos::ArrayView<MagnitudeType> temp;
+    return temp;
+  }
+
   //@}
 
   private:
