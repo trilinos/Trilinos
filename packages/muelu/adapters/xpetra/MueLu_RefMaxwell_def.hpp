@@ -64,10 +64,6 @@
 #include "MueLu_ParameterListInterpreter.hpp"
 #include "MueLu_HierarchyManager.hpp"
 
-#ifdef HAVE_XPETRA_TPETRA
-#include "Tpetra_MultiVector.hpp"
-#endif
-
 
 namespace MueLu {
 
@@ -152,12 +148,18 @@ void RefMaxwell<Scalar,LocalOrdinal,GlobalOrdinal,Node>::compute() {
 
     Nullspace_ = MultiVectorFactory::Build(SM_Matrix_->getRowMap(),Coords_->getNumVectors());
 
+    // Cast coordinates to Scalar
     RCP<MultiVector> CoordsSC;
-#ifdef HAVE_XPETRA_TPETRA
+#if defined(HAVE_XPETRA_TPETRA) && defined(HAVE_TPETRA_INST_COMPLEX_DOUBLE)
     if (typeid(Scalar).name() == typeid(std::complex<double>).name()) {
-      RCP<Xpetra::TpetraMultiVector<double, LO, GO, NO> > tCoords = rcp_dynamic_cast<Xpetra::TpetraMultiVector<double, LO, GO, NO> >(Coords_);
-      CoordsSC = MultiVectorFactory::Build(tCoords->getMap(),Coords_->getNumVectors());
-      Tpetra::deep_copy(toTpetra(*CoordsSC), toTpetra(*Coords_));
+      CoordsSC = MultiVectorFactory::Build(Coords_->getMap(),Coords_->getNumVectors());
+      size_t numVecs = Coords_->getNumVectors();
+      for (size_t j=0;j<numVecs;j++) {
+        Teuchos::ArrayRCP<const double> coordsVec = Coords_->getData(j);
+        Teuchos::ArrayRCP<Scalar> coordsVecSC = CoordsSC->getDataNonConst(j);
+        for(size_t i=0;i<coordsVec.size();i++)
+          coordsVecSC[i]=coordsVec[i];
+      }
     } else
 #endif
       CoordsSC = rcp_dynamic_cast<MultiVector>(Coords_);
@@ -290,7 +292,7 @@ void RefMaxwell<Scalar,LocalOrdinal,GlobalOrdinal,Node>::compute() {
         SM_Matrix_->getDomainMap()->lib() == Xpetra::UseTpetra &&
         A22_->getDomainMap()->lib() == Xpetra::UseTpetra &&
         D0_Matrix_->getDomainMap()->lib() == Xpetra::UseTpetra) {
-#ifdef HAVE_MUELU_IFPACK2
+#if defined(HAVE_MUELU_IFPACK2) && defined(HAVE_TPETRA_INST_INT_INT)
       Teuchos::ParameterList hiptmairPreList, hiptmairPostList, smootherPreList, smootherPostList;
 
       if (smootherList_.isSublist("smoother: pre params"))
@@ -701,7 +703,7 @@ void RefMaxwell<Scalar,LocalOrdinal,GlobalOrdinal,Node>::apply (const MultiVecto
   }
 
   // apply pre-smoothing
-#ifdef HAVE_MUELU_IFPACK2
+#if defined(HAVE_MUELU_IFPACK2) && defined(HAVE_TPETRA_INST_INT_INT)
   if (useHiptmairSmoothing_) {
     Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> tX = toTpetra(X);
     Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> tRHS = toTpetra(RHS);
@@ -725,7 +727,7 @@ void RefMaxwell<Scalar,LocalOrdinal,GlobalOrdinal,Node>::apply (const MultiVecto
     applyInverseAdditive(RHS,X);
 
   // apply post-smoothing
-#ifdef HAVE_MUELU_IFPACK2
+#if defined(HAVE_MUELU_IFPACK2) && defined(HAVE_TPETRA_INST_INT_INT)
   if (useHiptmairSmoothing_)
     {
       Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> tX = toTpetra(X);

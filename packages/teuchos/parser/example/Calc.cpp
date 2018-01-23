@@ -31,17 +31,17 @@ std::ostream& operator<<(std::ostream& os, CallArgs const&) {
 class Reader : public Teuchos::Reader {
  public:
   Reader():Teuchos::Reader(Teuchos::MathExpr::ask_reader_tables()) {
-    unary_map["sqrt"] = &std::sqrt;
-    unary_map["sin"] = &std::sin;
-    unary_map["cos"] = &std::cos;
-    unary_map["tan"] = &std::tan;
-    unary_map["asin"] = &std::asin;
-    unary_map["acos"] = &std::acos;
-    unary_map["atan"] = &std::atan;
-    unary_map["exp"] = &std::exp;
-    unary_map["log"] = &std::log;
-    unary_map["log10"] = &std::log10;
-    binary_map["atan2"] = &std::atan2;
+    unary_function_map["sqrt"] = &std::sqrt;
+    unary_function_map["sin"] = &std::sin;
+    unary_function_map["cos"] = &std::cos;
+    unary_function_map["tan"] = &std::tan;
+    unary_function_map["asin"] = &std::asin;
+    unary_function_map["acos"] = &std::acos;
+    unary_function_map["atan"] = &std::atan;
+    unary_function_map["exp"] = &std::exp;
+    unary_function_map["log"] = &std::log;
+    unary_function_map["log10"] = &std::log10;
+    binary_function_map["atan2"] = &std::atan2;
   }
   virtual ~Reader() {}
  protected:
@@ -62,6 +62,24 @@ class Reader : public Teuchos::Reader {
   virtual void at_reduce(Teuchos::any& result, int prod, std::vector<Teuchos::any>& rhs) {
     using std::swap;
     switch (prod) {
+      case Teuchos::MathExpr::PROD_PROGRAM: {
+        TEUCHOS_TEST_FOR_EXCEPTION(rhs.at(1).empty(), Teuchos::ParserFail,
+          "Calculator needs an expression to evaluate!");
+        swap(result, rhs.at(1));
+        break;
+      }
+      case Teuchos::MathExpr::PROD_NO_STATEMENTS:
+      case Teuchos::MathExpr::PROD_NO_EXPR:
+      case Teuchos::MathExpr::PROD_NEXT_STATEMENT: {
+        break;
+      }
+      case Teuchos::MathExpr::PROD_ASSIGN: {
+        std::string const& name = Teuchos::any_ref_cast<std::string>(rhs.at(0));
+        double value = any_cast<double>(rhs.at(4));
+        variable_map[name] = value;
+        break;
+      }
+      case Teuchos::MathExpr::PROD_YES_EXPR:
       case Teuchos::MathExpr::PROD_EXPR:
       case Teuchos::MathExpr::PROD_TERNARY_DECAY:
       case Teuchos::MathExpr::PROD_OR_DECAY:
@@ -123,14 +141,14 @@ class Reader : public Teuchos::Reader {
         TEUCHOS_TEST_FOR_EXCEPTION(args.n < 1 || args.n > 2, Teuchos::ParserFail,
             "Only unary and binary functions supported!\n");
         if (args.n == 1) {
-          TEUCHOS_TEST_FOR_EXCEPTION(!unary_map.count(name), Teuchos::ParserFail,
+          TEUCHOS_TEST_FOR_EXCEPTION(!unary_function_map.count(name), Teuchos::ParserFail,
               "Unknown unary function name \"" << name << "\"\n");
-          Unary fptr = unary_map[name];
+          Unary fptr = unary_function_map[name];
           result = (*fptr)(args.a0);
         } else {
-          TEUCHOS_TEST_FOR_EXCEPTION(!binary_map.count(name), Teuchos::ParserFail,
+          TEUCHOS_TEST_FOR_EXCEPTION(!binary_function_map.count(name), Teuchos::ParserFail,
               "Unknown binary function name \"" << name << "\"\n");
-          Binary fptr = binary_map[name];
+          Binary fptr = binary_function_map[name];
           result = (*fptr)(args.a0, args.a1);
         }
         break;
@@ -163,15 +181,21 @@ class Reader : public Teuchos::Reader {
         result = any_cast<double>(rhs.at(0));
         break;
       case Teuchos::MathExpr::PROD_VAR:
-        throw Teuchos::ParserFail("Variables not supported!\n");
+        std::string const& name = Teuchos::any_ref_cast<std::string>(rhs.at(0));
+        auto it = variable_map.find(name);
+        TEUCHOS_TEST_FOR_EXCEPTION(it == variable_map.end(), Teuchos::ParserFail,
+            "variable " << name << " not defined!");
+        double value = it->second;
+        result = value;
         break;
     }
   }
  private:
   typedef double (*Unary)(double);
   typedef double (*Binary)(double, double);
-  std::map<std::string, Unary> unary_map;
-  std::map<std::string, Binary> binary_map;
+  std::map<std::string, Unary> unary_function_map;
+  std::map<std::string, Binary> binary_function_map;
+  std::map<std::string, double> variable_map;
 };
 
 }  // end anonymous namespace

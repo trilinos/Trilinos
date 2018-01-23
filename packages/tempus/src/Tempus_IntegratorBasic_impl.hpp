@@ -551,11 +551,6 @@ void IntegratorBasic<Scalar>::acceptTimeStep()
   csmd->setNFailures(std::max(csmd->getNFailures()-1,0));
   csmd->setNConsecutiveFailures(0);
 
-  if ((csmd->getOutputScreen() == true) or
-      (csmd->getOutput() == true) or
-      (csmd->getTime() == timeStepControl_->getFinalTime())) {
-  }
-
   // Output and screen output
   if (csmd->getOutput() == true) {
     // Dump solution!
