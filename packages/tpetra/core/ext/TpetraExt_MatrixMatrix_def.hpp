@@ -60,7 +60,7 @@
 #include "Teuchos_FancyOStream.hpp"
 
 #include "TpetraExt_MatrixMatrix_ExtraKernels_def.hpp"
-
+#include "Tpetra_Details_getEntryOnHost.hpp"
 
 #include "KokkosSparse_spgemm.hpp"
 
@@ -3680,7 +3680,7 @@ merge_matrices(CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Aview
       });
     
     // Allocate nnz
-    size_t merge_nnz = Mrowptr(merge_numrows);// NOTE: This needs to get fixed on CUDA
+    size_t merge_nnz = ::Tpetra::Details::getEntryOnHost(Mrowptr,merge_numrows);
     lno_nnz_view_t Mcolind("Mcolind",merge_nnz);
     scalar_view_t Mvalues("Mvals",merge_nnz);
     
