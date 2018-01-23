@@ -90,11 +90,6 @@ public:
   StdVector( IndexT dim, ElementT value=0 ) : 
     vec_(move(make_unique<vector<ElementT>>(dim,value))) {}
 
-  // Copy construct makes a deep copy 
-  StdVector( const StdVector& v ) : 
-    vec_(make_unique<vector<ElementT>>( *(v.vec_) ) ) {
-  }
-
   void plus( const StdVector& x ) {
     for(IndexT i=0; i<vec_->size(); ++i) (*vec_)[i] += x[i]; 
   }
@@ -141,7 +136,9 @@ public:
   IndexT dimension() const { return vec_->size(); }
 
   // Does nothing
-  void dual( DualT& x ) const { }
+  const DualT& dual( ) const { 
+    return *this; 
+  }
 
   void print( ostream &os, const string& delimiter=" " ) const {
     for( auto e: *vec_ ) os << e << delimiter;

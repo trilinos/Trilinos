@@ -52,16 +52,16 @@ namespace ROL {
 template<class Real, class Ordinal>
 class StdTeuchosBatchManager : public TeuchosBatchManager<Real,Ordinal> {
 public:
-  StdTeuchosBatchManager(const Teuchos::RCP<const Teuchos::Comm<Ordinal> > &comm)
+  StdTeuchosBatchManager(const ROL::Ptr<const Teuchos::Comm<Ordinal> > &comm)
     : TeuchosBatchManager<Real,Ordinal>(comm) {}
 
   using TeuchosBatchManager<Real,Ordinal>::sumAll;
 
   void sumAll(Vector<Real> &input, Vector<Real> &output) {
-    Teuchos::RCP<std::vector<Real> > input_ptr
-      = Teuchos::dyn_cast<StdVector<Real> >(input).getVector();
-    Teuchos::RCP<std::vector<Real> > output_ptr
-      = Teuchos::dyn_cast<StdVector<Real> >(output).getVector();
+    ROL::Ptr<std::vector<Real> > input_ptr
+      = dynamic_cast<StdVector<Real>&>(input).getVector();
+    ROL::Ptr<std::vector<Real> > output_ptr
+      = dynamic_cast<StdVector<Real>&>(output).getVector();
     int dim_i = static_cast<int>(input_ptr->size());
     int dim_o = static_cast<int>(output_ptr->size());
     TEUCHOS_TEST_FOR_EXCEPTION(dim_i != dim_o, std::invalid_argument,

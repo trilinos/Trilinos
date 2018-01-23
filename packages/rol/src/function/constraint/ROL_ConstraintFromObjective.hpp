@@ -67,25 +67,25 @@ class ConstraintFromObjective : public Constraint<Real> {
 
 private:
 
-  const Teuchos::RCP<Objective<Real> > obj_;
-  Teuchos::RCP<V>                      dualVector_;
+  const ROL::Ptr<Objective<Real> > obj_;
+  ROL::Ptr<V>                      dualVector_;
   const Real                           offset_;
   bool                                 isDualInitialized_;
 
   Real getValue( const V& x ) { 
-    return Teuchos::dyn_cast<const SingletonVector<Real> >(x).getValue(); 
+    return dynamic_cast<const SingletonVector<Real>&>(x).getValue(); 
   }
  
   void setValue( V& x, Real val ) {
-    Teuchos::dyn_cast<SingletonVector<Real>>(x).setValue(val);
+    dynamic_cast<SingletonVector<Real>&>(x).setValue(val);
   }
 
 public:
 
-  ConstraintFromObjective( const Teuchos::RCP<Objective<Real> > &obj, const Real offset = 0 ) :
-    obj_(obj), dualVector_(Teuchos::null), offset_(offset), isDualInitialized_(false) {}
+  ConstraintFromObjective( const ROL::Ptr<Objective<Real> > &obj, const Real offset = 0 ) :
+    obj_(obj), dualVector_(ROL::nullPtr), offset_(offset), isDualInitialized_(false) {}
 
-  const Teuchos::RCP<Objective<Real> > getObjective(void) const { return obj_; }
+  const ROL::Ptr<Objective<Real> > getObjective(void) const { return obj_; }
 
 
   void setParameter( const std::vector<Real> &param ) {

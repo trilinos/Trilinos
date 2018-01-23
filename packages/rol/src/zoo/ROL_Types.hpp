@@ -60,10 +60,9 @@
 #include <string>
 #include <sstream>
 #include <limits>
-#include <Teuchos_getConst.hpp>
-#include <Teuchos_RCP.hpp>
 #include <Teuchos_ScalarTraits.hpp>
 #include <Teuchos_TestForException.hpp>
+#include <ROL_Ptr.hpp>
 #include <ROL_Vector.hpp>
 #include <ROL_config.h>
 
@@ -128,9 +127,9 @@ namespace ROL {
     Real aggregateGradientNorm;
     Real aggregateModelError;
     bool flag;
-    Teuchos::RCP<Vector<Real> > iterateVec;
-    Teuchos::RCP<Vector<Real> > lagmultVec;
-    Teuchos::RCP<Vector<Real> > minIterVec;
+    ROL::Ptr<Vector<Real> > iterateVec;
+    ROL::Ptr<Vector<Real> > lagmultVec;
+    ROL::Ptr<Vector<Real> > minIterVec;
 
     AlgorithmState(void) : iter(0), minIter(0), nfval(0), ngrad(0), value(0), minValue(0), 
       gnorm(std::numeric_limits<Real>::max()),
@@ -139,7 +138,7 @@ namespace ROL {
       aggregateGradientNorm(std::numeric_limits<Real>::max()),
       aggregateModelError(std::numeric_limits<Real>::max()),
       flag(false),
-      iterateVec(Teuchos::null), lagmultVec(Teuchos::null), minIterVec(Teuchos::null) {}
+      iterateVec(ROL::nullPtr), lagmultVec(ROL::nullPtr), minIterVec(ROL::nullPtr) {}
 
     void reset(void) {
       iter                  = 0;
@@ -155,13 +154,13 @@ namespace ROL {
       aggregateGradientNorm = ROL_INF<Real>();
       aggregateModelError   = ROL_INF<Real>();
       flag                  = false;
-      if (iterateVec != Teuchos::null) {
+      if (iterateVec != ROL::nullPtr) {
         iterateVec->zero();
       }
-      if (lagmultVec != Teuchos::null) {
+      if (lagmultVec != ROL::nullPtr) {
         lagmultVec->zero();
       }
-      if (minIterVec != Teuchos::null) {
+      if (minIterVec != ROL::nullPtr) {
         minIterVec->zero();
       }
     }
@@ -171,28 +170,28 @@ namespace ROL {
    */
   template<class Real>
   struct StepState {
-    Teuchos::RCP<Vector<Real> > gradientVec;
-    Teuchos::RCP<Vector<Real> > descentVec;
-    Teuchos::RCP<Vector<Real> > constraintVec;
+    ROL::Ptr<Vector<Real> > gradientVec;
+    ROL::Ptr<Vector<Real> > descentVec;
+    ROL::Ptr<Vector<Real> > constraintVec;
     int nfval;
     int ngrad;
     Real searchSize; // line search parameter (alpha) or trust-region radius (delta)
 
-    StepState(void) : gradientVec(Teuchos::null),
-                      descentVec(Teuchos::null),
-                      constraintVec(Teuchos::null),
+    StepState(void) : gradientVec(ROL::nullPtr),
+                      descentVec(ROL::nullPtr),
+                      constraintVec(ROL::nullPtr),
                       nfval(0),
                       ngrad(0),
                       searchSize(0) {}
 
     void reset(const Real searchSizeInput = 1.0) {
-      if (gradientVec != Teuchos::null) {
+      if (gradientVec != ROL::nullPtr) {
         gradientVec->zero();
       }
-      if (descentVec != Teuchos::null) {
+      if (descentVec != ROL::nullPtr) {
         descentVec->zero();
       }
-      if (constraintVec != Teuchos::null) {
+      if (constraintVec != ROL::nullPtr) {
         constraintVec->zero();
       }
       nfval = 0;

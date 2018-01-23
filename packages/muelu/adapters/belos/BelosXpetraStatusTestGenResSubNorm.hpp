@@ -486,14 +486,14 @@ class StatusTestGenResSubNorm<Scalar,Xpetra::MultiVector<Scalar,LocalOrdinal,Glo
         numrhs_ = MVT::GetNumberVecs( *init_res );
         scalevector_.resize( numrhs_ );
         MVT::MvNorm( *init_res, scalevector_, scalenormtype_ );
-        scalevalue_ = Teuchos::ScalarTraits<Scalar>::one();
+        scalevalue_ = one;
       }
       else if (scaletype_==NormOfFullPrecInitRes) {
         Teuchos::RCP<const MV> init_res = lp.getInitPrecResVec();
         numrhs_ = MVT::GetNumberVecs( *init_res );
         scalevector_.resize( numrhs_ );
         MVT::MvNorm( *init_res, scalevector_, scalenormtype_ );
-        scalevalue_ = Teuchos::ScalarTraits<Scalar>::one();
+        scalevalue_ = one;
       }
       else if (scaletype_==NormOfFullScaledInitRes) {
         Teuchos::RCP<const MV> init_res = lp.getInitResVec();

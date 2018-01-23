@@ -27,7 +27,8 @@ typedef DenseMatrixView<DenseMatrixViewHostType,DeviceSpaceType> DenseMatrixOfBl
 
 TEST( DenseByBlocks, chol ) {
   const ordinal_type m = 100, mb = 32;
-
+  
+  typedef ArithTraits<ValueType> ats;
   Kokkos::View<ValueType*,HostSpaceType> a("a", m*m), a1("a1", m*m), a2("a2", m*m);
   DenseMatrixViewHostType A;
 
@@ -112,8 +113,8 @@ TEST( DenseByBlocks, chol ) {
   {
     double diff = 0.0, norm = 0.0;
     for (ordinal_type p=0;p<(m*m);++p) {
-      norm += real(a(p)*conj(a(p)));
-      diff += real((a(p) - a1(p))*conj(a(p) - a1(p)));
+      norm += ats::real(a(p)*ats::conj(a(p)));
+      diff += ats::real((a(p) - a1(p))*ats::conj(a(p) - a1(p)));
     }
     
     const double eps = std::numeric_limits<double>::epsilon()*100;
@@ -150,8 +151,8 @@ TEST( DenseByBlocks, chol ) {
   {
     double diff = 0.0, norm = 0.0;
     for (ordinal_type p=0;p<(m*m);++p) {
-      norm += real(a(p)*conj(a(p)));
-      diff += real((a(p) - a2(p))*conj(a(p) - a2(p)));
+      norm += ats::real(a(p)*ats::conj(a(p)));
+      diff += ats::real((a(p) - a2(p))*ats::conj(a(p) - a2(p)));
     }
     
     const double eps = std::numeric_limits<double>::epsilon()*100;
@@ -161,6 +162,8 @@ TEST( DenseByBlocks, chol ) {
 }
 
 TEST( DenseByBlocks, gemm ) {
+  typedef ArithTraits<ValueType> ats;
+
   double alpha = 2.0, beta = 0.5;
   const ordinal_type m = 100, n = 100, k = 100, mb = 32;
 
@@ -272,8 +275,8 @@ TEST( DenseByBlocks, gemm ) {
   {
     double diff = 0.0, norm = 0.0;
     for (ordinal_type p=0;p<(m*m);++p) {
-      norm += real(c(p)*conj(c(p)));
-      diff += real((c(p) - c1(p))*conj(c(p) - c1(p)));
+      norm += ats::real(c(p)*ats::conj(c(p)));
+      diff += ats::real((c(p) - c1(p))*ats::conj(c(p) - c1(p)));
     }
     
     const double eps = std::numeric_limits<double>::epsilon()*100;
@@ -282,6 +285,8 @@ TEST( DenseByBlocks, gemm ) {
 }
 
 TEST( DenseByBlocks, herk ) {
+  typedef ArithTraits<ValueType> ats;
+
   double alpha = 2.0, beta = 0.5;
   const ordinal_type n = 100, k = 100, mb = 32; 
 
@@ -374,8 +379,8 @@ TEST( DenseByBlocks, herk ) {
   {
     double diff = 0.0, norm = 0.0;
     for (ordinal_type p=0;p<(n*n);++p) {
-      norm += real(c(p)*conj(c(p)));
-      diff += real((c(p) - c1(p))*conj(c(p) - c1(p)));
+      norm += ats::real(c(p)*ats::conj(c(p)));
+      diff += ats::real((c(p) - c1(p))*ats::conj(c(p) - c1(p)));
     }
     
     const double eps = std::numeric_limits<double>::epsilon()*100;
@@ -385,6 +390,8 @@ TEST( DenseByBlocks, herk ) {
 
 
 TEST( DenseByBlocks, trsm ) {
+  typedef ArithTraits<ValueType> ats;
+
   double alpha = 2.0;
   const ordinal_type m = 4, n = 4, mb = 4; 
 
@@ -485,8 +492,8 @@ TEST( DenseByBlocks, trsm ) {
   {
     double diff = 0.0, norm = 0.0;
     for (ordinal_type p=0;p<(m*n);++p) {
-      norm += real(b(p)*conj(b(p)));
-      diff += real((b(p) - b1(p))*conj(b(p) - b1(p)));
+      norm += ats::real(b(p)*ats::conj(b(p)));
+      diff += ats::real((b(p) - b1(p))*ats::conj(b(p) - b1(p)));
     }
     
     const double eps = std::numeric_limits<double>::epsilon()*100;

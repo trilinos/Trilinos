@@ -1,7 +1,7 @@
 #ifndef __TACHO_EXAMPLE_PARDISO_HPP__
 #define __TACHO_EXAMPLE_PARDISO_HPP__
 
-#ifdef TACHO_HAVE_MKL
+#if defined (__INTEL_MKL__)
 using namespace std;
 
 #include "TachoExp_Util.hpp"

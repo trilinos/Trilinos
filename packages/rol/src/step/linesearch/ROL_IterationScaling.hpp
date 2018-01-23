@@ -56,7 +56,7 @@ template<class Real>
 class IterationScaling : public LineSearch<Real> {
 private:
   int algo_iter_;
-  Teuchos::RCP<Vector<Real> > xnew_; 
+  ROL::Ptr<Vector<Real> > xnew_; 
 
 public:
 

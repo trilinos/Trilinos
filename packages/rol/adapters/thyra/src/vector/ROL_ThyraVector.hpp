@@ -247,7 +247,7 @@ public:
   /** \brief Compute \f$y \leftarrow x + y\f$ where \f$y = \mbox{*this}\f$.
   */
   void plus( const Vector<Real> &x ) {
-    const ThyraVector &ex = Teuchos::dyn_cast<const ThyraVector>(x);
+    const ThyraVector &ex = dynamic_cast<const ThyraVector&>(x);
     ::Thyra::Vp_V( thyra_vec_.ptr(), *ex.getVector());
   }
 
@@ -260,7 +260,7 @@ public:
   /** \brief Returns \f$ \langle y,x \rangle \f$ where \f$y = \mbox{*this}\f$.
   */
   Real dot( const Vector<Real> &x ) const {
-    const ThyraVector &ex = Teuchos::dyn_cast<const ThyraVector>(x);
+    const ThyraVector &ex = dynamic_cast<const ThyraVector&>(x);
     return ::Thyra::dot<Real>(*thyra_vec_, *ex.thyra_vec_);
   }
 
@@ -275,13 +275,13 @@ public:
   */
   Teuchos::RCP<Vector<Real> > clone() const{
     Teuchos::RCP<Thyra::VectorBase<Real> > tv = thyra_vec_->clone_v();
-    return Teuchos::rcp(new ThyraVector(tv)); 
+    return Teuchos::rcp( new ThyraVector(tv) ); 
   }
 
   /** \brief Compute \f$y \leftarrow \alpha x + y\f$ where \f$y = \mbox{*this}\f$.
   */
   void axpy( const Real alpha, const Vector<Real> &x ) {
-    const ThyraVector &ex = Teuchos::dyn_cast<const ThyraVector>(x);
+    const ThyraVector &ex = dynamic_cast<const ThyraVector&>(x);
     ::Thyra::Vp_StV( thyra_vec_.ptr(), alpha, *ex.getVector());
   }
 
@@ -315,7 +315,7 @@ public:
     Teuchos::RCP<Thyra::VectorBase<Real> > basisThyraVec = thyra_vec_->clone_v(); 
     ::Thyra::put_scalar(0.0, basisThyraVec.ptr());
     ::Thyra::set_ele(i,1.0, basisThyraVec.ptr());
-    return Teuchos::rcp(new ThyraVector(basisThyraVec));
+    return Teuchos::rcp( new ThyraVector(basisThyraVec) );
   }
 
   /** \brief Return dimension of the vector space.
@@ -327,7 +327,7 @@ public:
   /** \brief Set \f$y \leftarrow x\f$ where \f$y = \mathtt{*this}\f$.
     */
   void set(const Vector<Real> &x ) {
-    const ThyraVector &ex = Teuchos::dyn_cast<const ThyraVector>(x);
+    const ThyraVector &ex = dynamic_cast<const ThyraVector&>(x);
     ::Thyra::copy( *ex.getVector(), thyra_vec_.ptr() );
   }
 
@@ -348,7 +348,7 @@ public:
   }
 
   void applyBinary( const Elementwise::BinaryFunction<Real> &f, const Vector<Real> &x ) {
-    const ThyraVector &ex = Teuchos::dyn_cast<const ThyraVector>(x);
+    const ThyraVector &ex = dynamic_cast<const ThyraVector&>(x);
     Teuchos::RCP< const Thyra::VectorBase<Real> > xp = ex.getVector();
 
     SetGetEleAccelerator thisAccel(thyra_vec_);

@@ -58,14 +58,14 @@ namespace ROL {
 template <class Real>
 class SimulatedBoundConstraint : public BoundConstraint<Real> {
 private:
-  const Teuchos::RCP<SampleGenerator<Real> > sampler_;
-  const Teuchos::RCP<BoundConstraint<Real> > bnd_;
-  Teuchos::RCP<Vector<Real> > l_;
-  Teuchos::RCP<Vector<Real> > u_;
+  const ROL::Ptr<SampleGenerator<Real> > sampler_;
+  const ROL::Ptr<BoundConstraint<Real> > bnd_;
+  ROL::Ptr<Vector<Real> > l_;
+  ROL::Ptr<Vector<Real> > u_;
 
   const Vector<Real>& getVector(const Vector<Real> &x, int k) const {
     try {
-      return *(Teuchos::dyn_cast<const SimulatedVector<Real> >(x).get(k));
+      return *(dynamic_cast<const SimulatedVector<Real>&>(x).get(k));
     }
     catch (const std::bad_cast &e) {
       return x;
@@ -74,7 +74,7 @@ private:
 
   Vector<Real>& getVector(Vector<Real> &x, int k) {
     try {
-      return *(Teuchos::dyn_cast<SimulatedVector<Real> >(x).get(k));
+      return *(dynamic_cast<SimulatedVector<Real>&>(x).get(k));
     }
     catch (const std::bad_cast &e) {
       return x;
@@ -84,19 +84,19 @@ private:
 public:
   ~SimulatedBoundConstraint() {}
 
-  SimulatedBoundConstraint(const Teuchos::RCP<SampleGenerator<Real> > &sampler,
-                           const Teuchos::RCP<BoundConstraint<Real> > &bnd )
+  SimulatedBoundConstraint(const ROL::Ptr<SampleGenerator<Real> > &sampler,
+                           const ROL::Ptr<BoundConstraint<Real> > &bnd )
     : sampler_(sampler), bnd_(bnd) {
     int nsamp = sampler_->numMySamples();
-    std::vector<Teuchos::RCP<Vector<Real> > > lvec(nsamp), uvec(nsamp);
+    std::vector<ROL::Ptr<Vector<Real> > > lvec(nsamp), uvec(nsamp);
     for ( int k=0; k<sampler_->numMySamples(); ++k) {
       lvec[k] = bnd_->getLowerBound()->clone();
       lvec[k]->set(*bnd_->getLowerBound());
       uvec[k] = bnd_->getUpperBound()->clone();
       uvec[k]->set(*bnd_->getUpperBound());
     }
-    l_ = Teuchos::rcp(new SimulatedVector<Real>(lvec,sampler_->getBatchManager()));
-    u_ = Teuchos::rcp(new SimulatedVector<Real>(uvec,sampler_->getBatchManager()));
+    l_ = ROL::makePtr<SimulatedVector<Real>>(lvec,sampler_->getBatchManager());
+    u_ = ROL::makePtr<SimulatedVector<Real>>(uvec,sampler_->getBatchManager());
   }
 
   void project( Vector<Real> &x ) {
@@ -147,11 +147,11 @@ public:
     }
   }
  
-  const Teuchos::RCP<const Vector<Real> > getLowerBound( void ) const {
+  const ROL::Ptr<const Vector<Real> > getLowerBound( void ) const {
     return l_;
   }
 
-  const Teuchos::RCP<const Vector<Real> > getUpperBound( void ) const {
+  const ROL::Ptr<const Vector<Real> > getUpperBound( void ) const {
     return u_;
   }
 

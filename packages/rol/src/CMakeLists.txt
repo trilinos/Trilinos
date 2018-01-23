@@ -39,6 +39,21 @@ INCLUDE_DIRECTORIES(${DIR})
 APPEND_GLOB(HEADERS ${DIR}/*.hpp)
 
 #
+# compatibility headers
+#
+
+SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_SOURCE_DIR}/compatibility)
+
+# Set an implementation of smart pointers
+IF(${PACKAGE_NAME}_ENABLE_STD_SHARED_PTR)
+  INCLUDE_DIRECTORIES(${DIR}/std/shared_ptr)
+  APPEND_GLOB(HEADERS ${DIR}/std/shared_ptr/ROL_Ptr.hpp)
+ELSE()
+  INCLUDE_DIRECTORIES(${DIR}/teuchos/rcp)
+  APPEND_GLOB(HEADERS ${DIR}/teuchos/rcp/ROL_Ptr.hpp)
+ENDIF()
+
+#
 # function headers
 #
 

@@ -66,22 +66,22 @@ class Objective_HS29 : public Objective<Real> {
 
 private:
 
-  Teuchos::RCP<const vector> getVector( const V& x ) {
-    using Teuchos::dyn_cast;
-    return dyn_cast<const SV>(x).getVector();
+  ROL::Ptr<const vector> getVector( const V& x ) {
+    
+    return dynamic_cast<const SV&>(x).getVector();
   }
 
-  Teuchos::RCP<vector> getVector( V& x ) {
-    using Teuchos::dyn_cast;
-    return dyn_cast<SV>(x).getVector();
+  ROL::Ptr<vector> getVector( V& x ) {
+    
+    return dynamic_cast<SV&>(x).getVector();
   }
 
 public:
   
   Real value( const Vector<Real> &x, Real &tol ) {
 
-    using Teuchos::RCP;
-    RCP<const vector> xp = getVector(x);    
+    
+    ROL::Ptr<const vector> xp = getVector(x);    
 
     return -(*xp)[0]*(*xp)[1]*(*xp)[2];
 
@@ -89,9 +89,9 @@ public:
 
   void gradient( Vector<Real> &g, const Vector<Real> &x, Real &tol ) {
 
-    using Teuchos::RCP;
-    RCP<const vector> xp = getVector(x);
-    RCP<vector> gp = getVector(g);
+    
+    ROL::Ptr<const vector> xp = getVector(x);
+    ROL::Ptr<vector> gp = getVector(g);
 
     (*gp)[0] = -(*xp)[1]*(*xp)[2];
     (*gp)[1] = -(*xp)[0]*(*xp)[2];
@@ -101,10 +101,10 @@ public:
 
   void hessVec( Vector<Real> &hv, const Vector<Real> &v, const Vector<Real> &x, Real &tol ) {
 
-    using Teuchos::RCP;
-    RCP<const vector> xp = getVector(x);
-    RCP<const vector> vp = getVector(v);
-    RCP<vector> hvp = getVector(hv);
+    
+    ROL::Ptr<const vector> xp = getVector(x);
+    ROL::Ptr<const vector> vp = getVector(v);
+    ROL::Ptr<vector> hvp = getVector(hv);
 
     (*hvp)[0] = -( (*xp)[2]*(*vp)[1] + (*xp)[1]*(*vp)[2] );
     (*hvp)[1] = -( (*xp)[2]*(*vp)[0] + (*xp)[0]*(*vp)[2] );
@@ -124,24 +124,24 @@ class InequalityConstraint_HS29 : public InequalityConstraint<Real> {
 
 private:
   
-  Teuchos::RCP<const vector> getVector( const V& x ) {
-    using Teuchos::dyn_cast;
-    return dyn_cast<const SV>(x).getVector();
+  ROL::Ptr<const vector> getVector( const V& x ) {
+    
+    return dynamic_cast<const SV&>(x).getVector();
   }
 
-  Teuchos::RCP<vector> getVector( V& x ) {
-    using Teuchos::dyn_cast;
-    return dyn_cast<SV>(x).getVector();
+  ROL::Ptr<vector> getVector( V& x ) {
+    
+    return dynamic_cast<SV&>(x).getVector();
   }
 
 public:
 
   void value( Vector<Real> &c, const Vector<Real> &x, Real &tol ) {
 
-    using Teuchos::RCP;
+    
 
-    RCP<vector> cp = getVector(c);
-    RCP<const vector> xp = getVector(x); 
+    ROL::Ptr<vector> cp = getVector(c);
+    ROL::Ptr<const vector> xp = getVector(x); 
 
     (*cp)[0] = -std::pow((*xp)[0],2) - 2*std::pow((*xp)[1],2) - 4*std::pow((*xp)[2],2) + 48;
 
@@ -150,11 +150,11 @@ public:
   void applyJacobian( Vector<Real> &jv, const Vector<Real> &v, 
                       const Vector<Real> &x, Real &tol ) {
 
-    using Teuchos::RCP;
     
-    RCP<vector> jvp = getVector(jv);
-    RCP<const vector> vp = getVector(v);
-    RCP<const vector> xp = getVector(x); 
+    
+    ROL::Ptr<vector> jvp = getVector(jv);
+    ROL::Ptr<const vector> vp = getVector(v);
+    ROL::Ptr<const vector> xp = getVector(x); 
 
     (*jvp)[0] = -2*(*xp)[0]*(*vp)[0] - 4*(*xp)[1]*(*vp)[1] - 8*(*xp)[2]*(*vp)[2];
        
@@ -163,11 +163,11 @@ public:
   void applyAdjointJacobian( Vector<Real> &ajv, const Vector<Real> &v,
                              const Vector<Real> &x, Real &tol ) {
 
-    using Teuchos::RCP;
+    
 
-    RCP<vector> ajvp = getVector(ajv);
-    RCP<const vector> vp = getVector(v);
-    RCP<const vector> xp = getVector(x);
+    ROL::Ptr<vector> ajvp = getVector(ajv);
+    ROL::Ptr<const vector> vp = getVector(v);
+    ROL::Ptr<const vector> xp = getVector(x);
 
     (*ajvp)[0] = -2*(*xp)[0]*(*vp)[0];
     (*ajvp)[1] = -4*(*xp)[1]*(*vp)[0];
@@ -178,12 +178,12 @@ public:
   void applyAdjointHessian( Vector<Real> &ahuv, const Vector<Real> &u,
                             const Vector<Real> &v, const Vector<Real> &x, Real &tol ) {
 
-    using Teuchos::RCP;
+    
   
-    RCP<vector> ahuvp = getVector(ahuv);
-    RCP<const vector> up = getVector(u);
-    RCP<const vector> vp = getVector(v);
-    RCP<const vector> xp = getVector(x);
+    ROL::Ptr<vector> ahuvp = getVector(ahuv);
+    ROL::Ptr<const vector> up = getVector(u);
+    ROL::Ptr<const vector> vp = getVector(v);
+    ROL::Ptr<const vector> xp = getVector(x);
 
     (*ahuvp)[0] = -2*(*up)[0]*(*vp)[0];
     (*ahuvp)[1] = -4*(*up)[0]*(*vp)[1];

@@ -45,7 +45,7 @@
 #define ROLTEUCHOSBATCHMANAGER_HPP
 
 #include "ROL_BatchManager.hpp"
-#include "Teuchos_RCP.hpp"
+#include "ROL_Ptr.hpp"
 #include "Teuchos_Comm.hpp"
 #include "Teuchos_CommHelpers.hpp"
 
@@ -54,10 +54,10 @@ namespace ROL {
 template<class Real, class Ordinal>
 class TeuchosBatchManager : public BatchManager<Real> {
 private:
-  const Teuchos::RCP<const Teuchos::Comm<Ordinal> > comm_;
+  const ROL::Ptr<const Teuchos::Comm<Ordinal> > comm_;
 
 public:
-  TeuchosBatchManager(const Teuchos::RCP<const Teuchos::Comm<Ordinal> > &comm)
+  TeuchosBatchManager(const ROL::Ptr<const Teuchos::Comm<Ordinal> > &comm)
     : comm_(comm) {}
 
   int batchID(void) {

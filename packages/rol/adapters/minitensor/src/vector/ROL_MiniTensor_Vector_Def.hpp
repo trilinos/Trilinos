@@ -49,7 +49,7 @@ minitensor::Vector<T, N>
 MTfromROL(Vector<T> const & x)
 {
   MiniTensorVector<T, N> const &
-  xe = Teuchos::dyn_cast<MiniTensorVector<T, N> const>(x);
+  xe = dynamic_cast<MiniTensorVector<T, N> const&>(x);
 
   minitensor::Vector<T, N> const &
   xval = xe.getVector();
@@ -65,7 +65,7 @@ void
 MTtoROL(minitensor::Vector<T, N> const & xval, Vector<T> & x)
 {
   MiniTensorVector<T, N> &
-  xe = Teuchos::dyn_cast<MiniTensorVector<T, N>>(x);
+  xe = dynamic_cast<MiniTensorVector<T, N>&>(x);
 
   xe.set(xval);
 }
@@ -199,7 +199,7 @@ norm() const
 //
 //
 template<typename T, minitensor::Index N>
-Teuchos::RCP<Vector<T>>
+ROL::Ptr<Vector<T>>
 MiniTensorVector<T, N>::
 clone() const
 {
@@ -209,8 +209,8 @@ clone() const
   minitensor::Vector<T, N>
   val(dim, minitensor::Filler::ZEROS);
 
-  Teuchos::RCP<MiniTensorVector>
-  e = Teuchos::rcp(new MiniTensorVector(val));
+  ROL::Ptr<MiniTensorVector>
+  e = ROL::makePtr<MiniTensorVector>(val);
 
   return e;
 }
@@ -241,7 +241,7 @@ getVector()
 //
 //
 template<typename T, minitensor::Index N>
-Teuchos::RCP<Vector<T>>
+ROL::Ptr<Vector<T>>
 MiniTensorVector<T, N>::
 basis(int const i) const
 {
@@ -253,8 +253,8 @@ basis(int const i) const
 
   val(i) = 1.0;
 
-  Teuchos::RCP<MiniTensorVector>
-  e = Teuchos::rcp(new MiniTensorVector(val));
+  ROL::Ptr<MiniTensorVector>
+  e = ROL::makePtr<MiniTensorVector>(val);
 
   return e;
 }

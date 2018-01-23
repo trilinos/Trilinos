@@ -62,19 +62,19 @@ class StdVector<Real, std::complex<Real> > : public Vector<Real> {
 
 private:
 
-  Teuchos::RCP<vector> std_vec_;
+  ROL::Ptr<vector> std_vec_;
 
 public:
-  StdVector( const Teuchos::RCP<vector> &std_vec) : std_vec_(std_vec) {}
+  StdVector( const ROL::Ptr<vector> &std_vec) : std_vec_(std_vec) {}
 
   void set( const V &x ) {
-    const SV &ex = Teuchos::dyn_cast<const SV>(x);
+    const SV &ex = dynamic_cast<const SV&>(x);
     const vector& xval = *ex.getVector();
     std::copy(xval.begin(),xval.end(),std_vec_->begin());  
   }
 
   void plus( const V& x ) {
-    const SV &ex = Teuchos::dyn_cast<const SV>(x);
+    const SV &ex = dynamic_cast<const SV&>(x);
     const vector& xval = *ex.getVector();
     uint dim = std_vec_->size();
     for( uint i=0; i<dim; ++i ) {
@@ -83,7 +83,7 @@ public:
   }  
 
   void axpy( const Real alpha, const V& x ) {
-    const SV &ex = Teuchos::dyn_cast<const SV>(x);
+    const SV &ex = dynamic_cast<const SV&>(x);
     const vector& xval = *ex.getVector();
     uint dim = std_vec_->size();
     for( uint i=0; i<dim; ++i ) {
@@ -100,7 +100,7 @@ public:
 
   Real dot( const V &x ) const {
   
-    const SV &ex = Teuchos::dyn_cast<const SV>(x);
+    const SV &ex = dynamic_cast<const SV&>(x);
     const vector& xval = *ex.getVector();
     uint dim = std_vec_->size();
     Real val = 0;
@@ -119,21 +119,21 @@ public:
     return std::sqrt(val);
   }
 
-  virtual Teuchos::RCP<Vector<Real> > clone() const {
-    return Teuchos::rcp( new StdVector( Teuchos::rcp(new vector(std_vec_->size())) ));
+  virtual ROL::Ptr<Vector<Real> > clone() const {
+    return ROL::makePtr<StdVector>( ROL::makePtr<vector>(std_vec_->size()));
   }
 
-  Teuchos::RCP<const vector> getVector() const {
+  ROL::Ptr<const vector> getVector() const {
     return std_vec_;
   }
 
-  Teuchos::RCP<vector> getVector() {
+  ROL::Ptr<vector> getVector() {
     return std_vec_;
   }
 
-  Teuchos::RCP<Vector<Real> > basis( const int i ) const {
+  ROL::Ptr<Vector<Real> > basis( const int i ) const {
 
-    Teuchos::RCP<StdVector> e = Teuchos::rcp( new StdVector( Teuchos::rcp(new vector(std_vec_->size(), 0.0)) ));
+    ROL::Ptr<StdVector> e = ROL::makePtr<StdVector>( ROL::makePtr<vector>(std_vec_->size(), 0.0));
     (*e->getVector())[i] = 1.0;
     return e;
   }
@@ -151,7 +151,7 @@ public:
 
   void applyBinary( const Elementwise::BinaryFunction<Complex> &f, const V &x ) {
 
-    const SV & ex = Teuchos::dyn_cast<const SV>(x);
+    const SV & ex = dynamic_cast<const SV&>(x);
     const vector& xval = *ex.getVector();
     uint dim  = std_vec_->size();
     for (uint i=0; i<dim; i++) {

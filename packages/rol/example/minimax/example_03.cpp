@@ -68,12 +68,12 @@ int main(int argc, char *argv[]) {
 
   // This little trick lets us print to std::cout only if a (dummy) command-line argument is provided.
   int iprint = argc - 1;
-  Teuchos::RCP<std::ostream> outStream;
+  ROL::Ptr<std::ostream> outStream;
   Teuchos::oblackholestream bhs; // outputs nothing
   if (iprint > 0)
-    outStream = Teuchos::rcp(&std::cout, false);
+    outStream = ROL::makePtrFromRef(std::cout);
   else
-    outStream = Teuchos::rcp(&bhs, false);
+    outStream = ROL::makePtrFromRef(bhs);
 
   int errorFlag  = 0;
 
@@ -85,11 +85,11 @@ int main(int argc, char *argv[]) {
     ROL::Minimax3<RealT> obj;
 
     // Initialize iteration vectors.
-    Teuchos::RCP<std::vector<RealT> > x_rcp = Teuchos::rcp( new std::vector<RealT> (dim, 0.0) );
-    ROL::StdVector<RealT> x(x_rcp);
-    Teuchos::RCP<std::vector<RealT> > z_rcp = Teuchos::rcp( new std::vector<RealT> (dim, 0.0) );
-    (*z_rcp)[0] = 0.0; (*z_rcp)[1] = 1.0; (*z_rcp)[2] = 2.0; (*z_rcp)[3] = -1.0;
-    ROL::StdVector<RealT> z(x_rcp);
+    ROL::Ptr<std::vector<RealT> > x_ptr = ROL::makePtr<std::vector<RealT>>(dim, 0.0);
+    ROL::StdVector<RealT> x(x_ptr);
+    ROL::Ptr<std::vector<RealT> > z_ptr = ROL::makePtr<std::vector<RealT>>(dim, 0.0);
+    (*z_ptr)[0] = 0.0; (*z_ptr)[1] = 1.0; (*z_ptr)[2] = 2.0; (*z_ptr)[3] = -1.0;
+    ROL::StdVector<RealT> z(x_ptr);
 
     // Algorithmic input parameters.
     std::string filename = "input.xml";
@@ -102,7 +102,7 @@ int main(int argc, char *argv[]) {
     algo.run(x, obj, true, *outStream);
 
     // Compute error 
-    Teuchos::RCP<ROL::Vector<RealT> > diff = x.clone();
+    ROL::Ptr<ROL::Vector<RealT> > diff = x.clone();
     diff->set(x);
     diff->axpy(-1.0,z);
     RealT error = diff->norm();

@@ -56,8 +56,8 @@
 
 #include "Tpetra_DefaultPlatform.hpp"
 
-using Teuchos::RCP;
-using Teuchos::rcp; 
+
+ 
 using Teuchos::ArrayRCP;
 
 typedef double RealT;
@@ -71,11 +71,11 @@ typedef Tpetra::MultiVector<RealT, LO, GO, Node> MV;
 typedef Tpetra::DefaultPlatform::DefaultPlatformType Platform;
 
 typedef std::vector<RealT> SV;
-typedef RCP<MV>            MVP;
-typedef RCP<SV>            SVP;
+typedef ROL::Ptr<MV>            MVP;
+typedef ROL::Ptr<SV>            SVP;
 
 
-int test(RCP<const Teuchos::Comm<int> > comm, int dim) {
+int test(ROL::Ptr<const Teuchos::Comm<int> > comm, int dim) {
 
     // Get number of processes
     const int numProc = comm->getSize(); 
@@ -83,20 +83,20 @@ int test(RCP<const Teuchos::Comm<int> > comm, int dim) {
     // Total size over all processes
     const int numGblIndices = numProc*dim;
 
-    RCP<Map> map = rcp( new Map(numGblIndices,0,comm) ); 
+    ROL::Ptr<Map> map = ROL::makePtr<Map>(numGblIndices,0,comm); 
 
     int errorFlag = 0;
 
     // Upper bound is +0.75
-    MVP u = rcp( new MV(map,1,true) );
+    MVP u = ROL::makePtr<MV>(map,1,true);
     u->putScalar(0.9);
 
     // Lower bound is -0.75
-    MVP l = rcp( new MV(map,1,true) );
+    MVP l = ROL::makePtr<MV>(map,1,true);
     l->putScalar(-0.9);
  
     // Optimization variable
-    MVP x = rcp( new MV(map,1,true) );
+    MVP x = ROL::makePtr<MV>(map,1,true);
     x->randomize();
 
     ROL::TpetraBoundConstraint<RealT,LO,GO,Node> tcon(l,u);
@@ -120,14 +120,14 @@ int main(int argc, char *argv[]) {
 
 
     int iprint     = argc - 1;
-    Teuchos::RCP<std::ostream> outStream;
+    ROL::Ptr<std::ostream> outStream;
     Teuchos::oblackholestream bhs; // outputs nothing
     Teuchos::GlobalMPISession mpiSession (&argc, &argv, &bhs);
 
     if (iprint > 0)
-        outStream = Teuchos::rcp(&std::cout, false);
+        ROL::makePtrFromRef(std::cout);
     else
-        outStream = Teuchos::rcp(&bhs, false);
+        ROL::makePtrFromRef(bhs);
 
     int errorFlag  = 0;
 
@@ -135,7 +135,7 @@ int main(int argc, char *argv[]) {
         
         Platform &platform = Tpetra::DefaultPlatform::getDefaultPlatform();
 
-        RCP<const Teuchos::Comm<int> > comm = platform.getComm();
+        ROL::Ptr<const Teuchos::Comm<int> > comm = platform.getComm();
 
 
         // Maximum dimension of test for a given process
@@ -146,12 +146,12 @@ int main(int argc, char *argv[]) {
         }
 
         typedef std::vector<int> ivec;  
-        Teuchos::RCP<ivec> a_rcp = Teuchos::rcp(new ivec(2,1));
-        Teuchos::RCP<ivec> b_rcp = Teuchos::rcp(new ivec(3,2));
-        Teuchos::ArrayRCP<Teuchos::RCP<ivec>> v(2); 
-        v[0] = a_rcp;
-        v[1] = b_rcp;   
-        (*b_rcp)[2] = 3;
+        ROL::Ptr<ivec> a_ptr = ROL::makePtr<ivec>(2,1);
+        ROL::Ptr<ivec> b_ptr = ROL::makePtr<ivec>(3,2);
+        Teuchos::ArrayRCP<ROL::Ptr<ivec>> v(2); 
+        v[0] = a_ptr;
+        v[1] = b_ptr;   
+        (*b_ptr)[2] = 3;
 
     }
 

@@ -72,8 +72,8 @@ public:
 
 template<class Real> 
 void printVector( const ROL::Vector<Real> &x, std::ostream &outStream ) {
-  Teuchos::RCP<const std::vector<Real> > xp = 
-    Teuchos::dyn_cast<const ROL::StdVector<Real> >(x).getVector();
+  ROL::Ptr<const std::vector<Real> > xp = 
+    dynamic_cast<const ROL::StdVector<Real>&>(x).getVector();
 
   for( size_t i=0; i<xp->size(); ++i ) {
     outStream << (*xp)[i] << std::endl;
@@ -96,17 +96,17 @@ int main(int argc, char *argv[]) {
 
   typedef Teuchos::ParameterList      PL;
 
-  using Teuchos::RCP; using Teuchos::rcp;
+   
 
   Teuchos::GlobalMPISession mpiSession(&argc, &argv);
 
   int iprint = argc - 1;
-  RCP<std::ostream> outStream;
+  ROL::Ptr<std::ostream> outStream;
   Teuchos::oblackholestream bhs;
   if( iprint > 0 ) 
-    outStream = rcp(&std::cout,false);
+    outStream = ROL::makePtrFromRef(std::cout);
   else
-    outStream = rcp(&bhs,false);
+    outStream = ROL::makePtrFromRef(bhs);
 
   int errorFlag = 0;
    
@@ -130,34 +130,34 @@ int main(int argc, char *argv[]) {
     int dim = 4;
     int numTestVectors = 19;
  
-    RCP<vector> x_rcp  = rcp( new vector(dim, 0.0) ); 
-    RCP<vector> d_rcp  = rcp( new vector(dim, 0.0) );
-    RCP<vector> v_rcp  = rcp( new vector(dim, 0.0) );
-    RCP<vector> l_rcp  = rcp( new vector(dim, 0.0) );
-    RCP<vector> u_rcp  = rcp( new vector(dim, 0.0) );
-    RCP<vector> e0_rcp = rcp( new vector(dim, 0.0) ); // First canonical vector
+    ROL::Ptr<vector> x_ptr  = ROL::makePtr<vector>(dim, 0.0); 
+    ROL::Ptr<vector> d_ptr  = ROL::makePtr<vector>(dim, 0.0);
+    ROL::Ptr<vector> v_ptr  = ROL::makePtr<vector>(dim, 0.0);
+    ROL::Ptr<vector> l_ptr  = ROL::makePtr<vector>(dim, 0.0);
+    ROL::Ptr<vector> u_ptr  = ROL::makePtr<vector>(dim, 0.0);
+    ROL::Ptr<vector> e0_ptr = ROL::makePtr<vector>(dim, 0.0); // First canonical vector
 
-    (*e0_rcp)[0] = 1.0;
+    (*e0_ptr)[0] = 1.0;
 
-    SV e0(e0_rcp);
+    SV e0(e0_ptr);
 
     // Lower Bounds         // Upper Bounds
-    (*l_rcp)[0] = ninf;     (*u_rcp)[0] = 5.0;
-    (*l_rcp)[1] = ninf;     (*u_rcp)[1] = inf;
-    (*l_rcp)[2] = -5.0;     (*u_rcp)[2] = inf;
-    (*l_rcp)[3] = -5.0;     (*u_rcp)[3] = 5.0;
+    (*l_ptr)[0] = ninf;     (*u_ptr)[0] = 5.0;
+    (*l_ptr)[1] = ninf;     (*u_ptr)[1] = inf;
+    (*l_ptr)[2] = -5.0;     (*u_ptr)[2] = inf;
+    (*l_ptr)[3] = -5.0;     (*u_ptr)[3] = 5.0;
 
     RealT left = -1.0;  RealT right = 1.0;
 
     RealT xmax = 4.99; 
 
-    RCP<V> x  = rcp( new SV( x_rcp ) );
-    RCP<V> d  = rcp( new SV( d_rcp ) );
-    RCP<V> v  = rcp( new SV( v_rcp ) );
-    RCP<V> l  = rcp( new SV( l_rcp ) );
-    RCP<V> u  = rcp( new SV( u_rcp ) );
+    ROL::Ptr<V> x  = ROL::makePtr<SV>( x_ptr );
+    ROL::Ptr<V> d  = ROL::makePtr<SV>( d_ptr );
+    ROL::Ptr<V> v  = ROL::makePtr<SV>( v_ptr );
+    ROL::Ptr<V> l  = ROL::makePtr<SV>( l_ptr );
+    ROL::Ptr<V> u  = ROL::makePtr<SV>( u_ptr );
 
-    RCP<const V> maskL, maskU;
+    ROL::Ptr<const V> maskL, maskU;
 
     ROL::RandomizeVector(*d,left,right);
     ROL::RandomizeVector(*v,left,right);
@@ -165,7 +165,7 @@ int main(int argc, char *argv[]) {
     std::vector<RealT>   values(numTestVectors);        // Computed objective value for each 
     std::vector<RealT>   exact_values(numTestVectors);  
 
-    std::vector<RCP<V> > x_test;
+    std::vector<ROL::Ptr<V> > x_test;
 
     for(int i=0; i<numTestVectors; ++i) {
       x_test.push_back(x->clone());
@@ -174,16 +174,16 @@ int main(int argc, char *argv[]) {
       x_test[i]->applyUnary(ROL::Elementwise::Fill<RealT>(fillValue));
     }
 
-    RCP<OBJ> obj = rcp( new NullObjective<RealT> );
-    RCP<BND> bnd = rcp( new ROL::Bounds<RealT>(l,u) );
+    ROL::Ptr<OBJ> obj = ROL::makePtr<NullObjective<RealT>>();
+    ROL::Ptr<BND> bnd = ROL::makePtr<ROL::Bounds<RealT>>(l,u);
 
     ROL::InteriorPointPenalty<RealT> ipobj(obj,bnd,parlist);
 
     maskL = ipobj.getLowerMask();
     maskU = ipobj.getUpperMask();
 
-    RCP<const std::vector<RealT> > maskL_rcp = Teuchos::dyn_cast<const SV>(*maskL).getVector();
-    RCP<const std::vector<RealT> > maskU_rcp = Teuchos::dyn_cast<const SV>(*maskU).getVector();
+    ROL::Ptr<const std::vector<RealT> > maskL_ptr = dynamic_cast<const SV&>(*maskL).getVector();
+    ROL::Ptr<const std::vector<RealT> > maskU_ptr = dynamic_cast<const SV&>(*maskU).getVector();
 
     *outStream << "\nLower bound vector" << std::endl;
     printVector(*l,*outStream);
@@ -216,20 +216,20 @@ int main(int argc, char *argv[]) {
 
  
       for(int j=0; j<dim; ++j) {
-        if( (*maskL_rcp)[j] ) {
-          RealT diff = xval-(*l_rcp)[j];
+        if( (*maskL_ptr)[j] ) {
+          RealT diff = xval-(*l_ptr)[j];
           exact_values[i] -= mu*std::log(diff);
 
-          if( useLinearDamping && !(*maskU_rcp)[j] ) {
+          if( useLinearDamping && !(*maskU_ptr)[j] ) {
             exact_values[i] += mu*kappaD*diff;
           }
 
         }
-        if( (*maskU_rcp)[j] ) {
-          RealT diff = (*u_rcp)[j]-xval;
+        if( (*maskU_ptr)[j] ) {
+          RealT diff = (*u_ptr)[j]-xval;
           exact_values[i] -= mu*std::log(diff);
 
-          if(useLinearDamping && !(*maskL_rcp)[j] ) {
+          if(useLinearDamping && !(*maskL_ptr)[j] ) {
             exact_values[i] += mu*kappaD*diff;
           }        
     

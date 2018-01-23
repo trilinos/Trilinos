@@ -271,8 +271,8 @@ TEST(MiniTensor_ROL, NLLS01)
   ROL::MiniTensorVector<Real, NUM_VAR>
   sol(solval);
 
-  Teuchos::RCP<ROL::EqualityConstraint<Real>>
-  pconstr = Teuchos::rcp(&constr, false);
+  ROL::Ptr<ROL::EqualityConstraint<Real>>
+  pconstr = &constr, false;
 
   // Define algorithm.
   Teuchos::ParameterList

@@ -68,8 +68,8 @@ public:
   Objective_Powell() {}
 
   Real value( const Vector<Real> &x, Real &tol ) {
-    Teuchos::RCP<const std::vector<Real> > xp
-      = Teuchos::dyn_cast<const PrimalScaledStdVector<Real> >(x).getVector();
+    ROL::Ptr<const std::vector<Real> > xp
+      = dynamic_cast<const PrimalScaledStdVector<Real>&>(x).getVector();
 
     Real f1 = 1.e4*(*xp)[0]*(*xp)[1] - 1.0;
     Real f2 = std::exp(-(*xp)[0]) + std::exp(-(*xp)[1]) - 1.0001;
@@ -78,10 +78,10 @@ public:
   }
 
   void gradient( Vector<Real> &g, const Vector<Real> &x, Real &tol ) {
-    Teuchos::RCP<std::vector<Real> > gp
-      = Teuchos::dyn_cast<DualScaledStdVector<Real> >(g).getVector();
-    Teuchos::RCP<const std::vector<Real> > xp
-      = Teuchos::dyn_cast<const PrimalScaledStdVector<Real> >(x).getVector();
+    ROL::Ptr<std::vector<Real> > gp
+      = dynamic_cast<DualScaledStdVector<Real>&>(g).getVector();
+    ROL::Ptr<const std::vector<Real> > xp
+      = dynamic_cast<const PrimalScaledStdVector<Real>&>(x).getVector();
 
     Real f1 = 1.e4*(*xp)[0]*(*xp)[1] - 1.0;
     Real f2 = std::exp(-(*xp)[0]) + std::exp(-(*xp)[1]) - 1.0001;
@@ -96,12 +96,12 @@ public:
   }
 #if USE_HESSVEC
   void hessVec( Vector<Real> &hv, const Vector<Real> &v, const Vector<Real> &x, Real &tol ) {
-    Teuchos::RCP<std::vector<Real> > hvp
-      = Teuchos::dyn_cast<DualScaledStdVector<Real> >(hv).getVector();
-    Teuchos::RCP<const std::vector<Real> > vp
-      = Teuchos::dyn_cast<const PrimalScaledStdVector<Real> >(v).getVector();
-    Teuchos::RCP<const std::vector<Real> > xp
-      = Teuchos::dyn_cast<const PrimalScaledStdVector<Real> >(x).getVector();
+    ROL::Ptr<std::vector<Real> > hvp
+      = dynamic_cast<DualScaledStdVector<Real>&>(hv).getVector();
+    ROL::Ptr<const std::vector<Real> > vp
+      = dynamic_cast<const PrimalScaledStdVector<Real>&>(v).getVector();
+    ROL::Ptr<const std::vector<Real> > xp
+      = dynamic_cast<const PrimalScaledStdVector<Real>&>(x).getVector();
 
     Real f1 = 1.e4*(*xp)[0]*(*xp)[1] - 1.0;
     Real f2 = std::exp(-(*xp)[0]) + std::exp(-(*xp)[1]) - 1.0001;
@@ -130,12 +130,12 @@ public:
   }
 #endif
   void invHessVec( Vector<Real> &hv, const Vector<Real> &v, const Vector<Real> &x, Real &tol ) {
-    Teuchos::RCP<std::vector<Real> > hvp
-      = Teuchos::dyn_cast<PrimalScaledStdVector<Real> >(hv).getVector();
-    Teuchos::RCP<const std::vector<Real> > vp
-      = Teuchos::dyn_cast<const DualScaledStdVector<Real> >(v).getVector();
-    Teuchos::RCP<const std::vector<Real> > xp
-      = Teuchos::dyn_cast<const PrimalScaledStdVector<Real> >(x).getVector();
+    ROL::Ptr<std::vector<Real> > hvp
+      = dynamic_cast<PrimalScaledStdVector<Real>&>(hv).getVector();
+    ROL::Ptr<const std::vector<Real> > vp
+      = dynamic_cast<const DualScaledStdVector<Real>&>(v).getVector();
+    ROL::Ptr<const std::vector<Real> > xp
+      = dynamic_cast<const PrimalScaledStdVector<Real>&>(x).getVector();
 
     Real f1 = 1.e4*(*xp)[0]*(*xp)[1] - 1.0;
     Real f2 = std::exp(-(*xp)[0]) + std::exp(-(*xp)[1]) - 1.0001;
@@ -165,28 +165,28 @@ public:
 };
 
 template<class Real>
-void getPowell( Teuchos::RCP<Objective<Real> > &obj,
-                Teuchos::RCP<Vector<Real> >    &x0,
-                Teuchos::RCP<Vector<Real> >    &x ) {
+void getPowell( ROL::Ptr<Objective<Real> > &obj,
+                ROL::Ptr<Vector<Real> >    &x0,
+                ROL::Ptr<Vector<Real> >    &x ) {
   // Problem dimension
   int n = 2;
 
   // Get problem scaling
-  Teuchos::RCP<std::vector<Real> > scale = Teuchos::rcp(new std::vector<Real>(n,0.0));
+  ROL::Ptr<std::vector<Real> > scale = ROL::makePtr<std::vector<Real>>(n,0.0);
   (*scale)[0] = 1.e10; (*scale)[1] = 1.e-2;
 
   // Get Initial Guess
-  Teuchos::RCP<std::vector<Real> > x0p = Teuchos::rcp(new std::vector<Real>(n,0.0));
+  ROL::Ptr<std::vector<Real> > x0p = ROL::makePtr<std::vector<Real>>(n,0.0);
   (*x0p)[0] = 0.0; (*x0p)[1] = 1.0;
-  x0 = Teuchos::rcp(new PrimalScaledStdVector<Real>(x0p,scale));
+  x0 = ROL::makePtr<PrimalScaledStdVector<Real>>(x0p,scale);
 
   // Get Solution: (*xp)[0] = 1.0981770261368074e-05;
-  Teuchos::RCP<std::vector<Real> > xp = Teuchos::rcp(new std::vector<Real>(n,0.0));
+  ROL::Ptr<std::vector<Real> > xp = ROL::makePtr<std::vector<Real>>(n,0.0);
   (*xp)[0] = 1.098e-05; (*xp)[1] = 9.106;
-  x = Teuchos::rcp(new PrimalScaledStdVector<Real>(xp,scale));
+  x = ROL::makePtr<PrimalScaledStdVector<Real>>(xp,scale);
 
   // Instantiate Objective Function
-  obj = Teuchos::rcp(new Objective_Powell<Real>);
+  obj = ROL::makePtr<Objective_Powell<Real>>();
 }
 
 } // End ZOO Namespace

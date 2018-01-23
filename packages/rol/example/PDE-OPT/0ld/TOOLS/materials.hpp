@@ -62,7 +62,7 @@ private:
   bool planeStrain_;
   Real modulus_;
   Real poissonRatio_;
-  Teuchos::RCP<Intrepid::FieldContainer<Real> > materialTensor_;
+  ROL::Ptr<Intrepid::FieldContainer<Real> > materialTensor_;
 
 public:
   
@@ -91,7 +91,7 @@ public:
   }
 
   void ComputeMaterialTensor(void) {
-    materialTensor_ = Teuchos::rcp(new Intrepid::FieldContainer<Real>(tensorMatSize_, tensorMatSize_));
+    materialTensor_ = ROL::makePtr<Intrepid::FieldContainer<Real>>(tensorMatSize_, tensorMatSize_);
     materialTensor_ -> initialize(0.0);
     if(dim_==1) {
       (*materialTensor_)(0, 0)=modulus_;
@@ -133,7 +133,7 @@ public:
     }				
   }
 
-  const Teuchos::RCP<Intrepid::FieldContainer<Real> > GetMaterialTensor(void) const {
+  const ROL::Ptr<Intrepid::FieldContainer<Real> > GetMaterialTensor(void) const {
     return materialTensor_;
   }
   
@@ -214,11 +214,11 @@ public:
   }
   
   // the following function is not in use
-  Teuchos::RCP<Intrepid::FieldContainer<Real> > computeScaledMaterialTensor(const Real scale) const {
+  ROL::Ptr<Intrepid::FieldContainer<Real> > computeScaledMaterialTensor(const Real scale) const {
     Real zero(0);
     int TMS = Material<Real>::getMaterialTensorDim();
-    Teuchos::RCP<Intrepid::FieldContainer<Real> > scaledMaterialTensor
-      = Teuchos::rcp(new Intrepid::FieldContainer<Real>(TMS, TMS));
+    ROL::Ptr<Intrepid::FieldContainer<Real> > scaledMaterialTensor
+      = ROL::makePtr<Intrepid::FieldContainer<Real>>(TMS, TMS);
     scaledMaterialTensor -> initialize(zero);
   	
     for(int i=0; i<TMS; i++) {

@@ -54,11 +54,11 @@ namespace ROL {
 template<class Real>
 class PlusFunction : public PositiveFunction<Real> {
 private:
-  Teuchos::RCP<Distribution<Real> > dist_;
+  ROL::Ptr<Distribution<Real> > dist_;
   Real param_;
 
 public: 
-  PlusFunction(Teuchos::RCP<Distribution<Real> > &dist, Real param = 1.) : dist_(dist) {
+  PlusFunction(ROL::Ptr<Distribution<Real> > &dist, Real param = 1.) : dist_(dist) {
     param_ = ((param <= 0) ? 1.e-2 : param);
   }
 

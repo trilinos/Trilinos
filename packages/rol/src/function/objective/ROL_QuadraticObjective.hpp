@@ -46,7 +46,7 @@
 
 #include "ROL_Objective.hpp"
 #include "ROL_Vector.hpp"
-#include "Teuchos_RCP.hpp"
+#include "ROL_Ptr.hpp"
 
 /** @ingroup func_group
     \class ROL::QuadraticObjective
@@ -69,13 +69,13 @@ namespace ROL {
 template <class Real>
 class QuadraticObjective : public Objective<Real> {
 private:
-  const Teuchos::RCP<const LinearOperator<Real> > op_;
-  const Teuchos::RCP<const Vector<Real> > vec_;
-  Teuchos::RCP<Vector<Real> > tmp_;
+  const ROL::Ptr<const LinearOperator<Real> > op_;
+  const ROL::Ptr<const Vector<Real> > vec_;
+  ROL::Ptr<Vector<Real> > tmp_;
 
 public:
-  QuadraticObjective(const Teuchos::RCP<const LinearOperator<Real> > &op,
-                  const Teuchos::RCP<const Vector<Real> > &vec)
+  QuadraticObjective(const ROL::Ptr<const LinearOperator<Real> > &op,
+                  const ROL::Ptr<const Vector<Real> > &vec)
     : op_(op), vec_(vec) {
     tmp_ = vec_->dual().clone();
   }

@@ -73,16 +73,16 @@ public:
 
   Real value( const Vector<Real> &x, Real &tol ) {
 
-    Teuchos::RCP<const vector> xp = Teuchos::dyn_cast<const SV>(x).getVector(); 
+    ROL::Ptr<const vector> xp = dynamic_cast<const SV&>(x).getVector(); 
 
     return rt3_*(*xp)[0]*std::pow((*xp)[1],3)*((*xp)[0]-6)/81.0;
   }
 
   void gradient( Vector<Real> &g, const Vector<Real> &x, Real &tol ) {
 
-    Teuchos::RCP<const vector> xp = Teuchos::dyn_cast<const SV>(x).getVector(); 
+    ROL::Ptr<const vector> xp = dynamic_cast<const SV&>(x).getVector(); 
 
-    Teuchos::RCP<vector> gp = Teuchos::dyn_cast<SV>(g).getVector(); 
+    ROL::Ptr<vector> gp = dynamic_cast<SV&>(g).getVector(); 
 
     (*gp)[0] = 2*rt3_*std::pow((*xp)[1],3)*((*xp)[0]-3)/81.0;
     (*gp)[1] = rt3_*(*xp)[0]*std::pow((*xp)[1],2)*((*xp)[0]-6)/27.0;
@@ -92,9 +92,9 @@ public:
   
   void hessVec( Vector<Real> &hv, const Vector<Real> &v, const Vector<Real> &x, Real &tol ) {
 
-    Teuchos::RCP<const vector> xp = Teuchos::dyn_cast<const SV>(x).getVector(); 
-    Teuchos::RCP<const vector> vp = Teuchos::dyn_cast<const SV>(v).getVector(); 
-    Teuchos::RCP<vector> hvp = Teuchos::dyn_cast<SV>(hv).getVector(); 
+    ROL::Ptr<const vector> xp = dynamic_cast<const SV&>(x).getVector(); 
+    ROL::Ptr<const vector> vp = dynamic_cast<const SV&>(v).getVector(); 
+    ROL::Ptr<vector> hvp = dynamic_cast<SV&>(hv).getVector(); 
 
     Real a00 = pow((*xp)[1],3)/81.0;
     Real a01 = pow((*xp)[1],2)*((*xp)[0]-3)/27.0;
@@ -123,8 +123,8 @@ public:
 
   void value( Vector<Real> &c, const Vector<Real> &x, Real &tol ) {
 
-    Teuchos::RCP<const vector> xp = Teuchos::dyn_cast<const SV>(x).getVector();
-    Teuchos::RCP<vector> cp = Teuchos::dyn_cast<SV>(c).getVector();
+    ROL::Ptr<const vector> xp = dynamic_cast<const SV&>(x).getVector();
+    ROL::Ptr<vector> cp = dynamic_cast<SV&>(c).getVector();
 
     (*cp)[0] =  (*xp)[0]/rt3_ -      (*xp)[1];
     (*cp)[1] =  (*xp)[0]      + rt3_*(*xp)[1];
@@ -135,8 +135,8 @@ public:
   void applyJacobian( Vector<Real> &jv, const Vector<Real> &v,
                       const Vector<Real> &x, Real &tol ) {
 
-    Teuchos::RCP<const vector> vp = Teuchos::dyn_cast<const SV>(v).getVector();
-    Teuchos::RCP<vector> jvp = Teuchos::dyn_cast<SV>(jv).getVector();
+    ROL::Ptr<const vector> vp = dynamic_cast<const SV&>(v).getVector();
+    ROL::Ptr<vector> jvp = dynamic_cast<SV&>(jv).getVector();
 
     (*jvp)[0] =  (*vp)[0]/rt3_ -      (*vp)[1];
     (*jvp)[1] =  (*vp)[0]      + rt3_*(*vp)[1];
@@ -148,8 +148,8 @@ public:
   void applyAdjointJacobian( Vector<Real> &ajv, const Vector<Real> &v, 
                              const Vector<Real> &x, Real &tol ) {
 
-    Teuchos::RCP<const vector> vp = Teuchos::dyn_cast<const SV>(v).getVector();
-    Teuchos::RCP<vector> ajvp = Teuchos::dyn_cast<SV>(ajv).getVector();
+    ROL::Ptr<const vector> vp = dynamic_cast<const SV&>(v).getVector();
+    ROL::Ptr<vector> ajvp = dynamic_cast<SV&>(ajv).getVector();
 
     (*ajvp)[0] = rt3_*(*vp)[0]/3 + (*vp)[1] - (*vp)[2];
     (*ajvp)[1] = -(*vp)[0] + rt3_*(*vp)[1] - rt3_*(*vp)[2];
@@ -166,57 +166,57 @@ public:
 
 
 template<class Real> 
-Teuchos::RCP<Objective<Real> > getObjective_HS24( void ) {
-  return Teuchos::rcp( new Objective_HS24<Real>() );
+ROL::Ptr<Objective<Real> > getObjective_HS24( void ) {
+  return ROL::makePtr<Objective_HS24<Real>>();
 }
 
 template<class Real> 
-Teuchos::RCP<InequalityConstraint<Real> > getInequalityConstraint_HS24( void ) {
-  return Teuchos::rcp( new InequalityConstraint_HS24<Real>() );
+ROL::Ptr<InequalityConstraint<Real> > getInequalityConstraint_HS24( void ) {
+  return ROL::makePtr<InequalityConstraint_HS24<Real>>();
 }
 
 
 template<class Real> 
-Teuchos::RCP<BoundConstraint<Real> > getBoundConstraint_HS24( void ) {
+ROL::Ptr<BoundConstraint<Real> > getBoundConstraint_HS24( void ) {
 
   // Lower bound is zero  
-  Teuchos::RCP<std::vector<Real> > lp = Teuchos::rcp( new std::vector<Real>(2,0.0) );
+  ROL::Ptr<std::vector<Real> > lp = ROL::makePtr<std::vector<Real>>(2,0.0);
   
   // No upper bound
-  Teuchos::RCP<std::vector<Real> > up = Teuchos::rcp( new std::vector<Real>(2,ROL_INF<Real>()) );
+  ROL::Ptr<std::vector<Real> > up = ROL::makePtr<std::vector<Real>(2,ROL_INF<Real>>());
  
-  Teuchos::RCP<Vector<Real> > l = Teuchos::rcp( new StdVector<Real>(lp) );
-  Teuchos::RCP<Vector<Real> > u = Teuchos::rcp( new StdVector<Real>(up) );
+  ROL::Ptr<Vector<Real> > l = ROL::makePtr<StdVector<Real>>(lp);
+  ROL::Ptr<Vector<Real> > u = ROL::makePtr<StdVector<Real>>(up);
 
-  return Teuchos::rcp( new Bounds<Real>(l,u) );
+  return ROL::makePtr<Bounds<Real>>(l,u);
 
 }
 
 template<class Real> 
-Teuchos::RCP<Vector<Real> > getInitialGuess_HS24( void ) {
+ROL::Ptr<Vector<Real> > getInitialGuess_HS24( void ) {
 
-  Teuchos::RCP<std::vector<Real> > x0p = Teuchos::rcp( new std::vector<Real>(2) );
+  ROL::Ptr<std::vector<Real> > x0p = ROL::makePtr<std::vector<Real>>(2);
   (*x0p)[0] = 1.0;
   (*x0p)[1] = 0.5;
 
-  return Teuchos::rcp( new StdVector<Real>(x0p) );
+  return ROL::makePtr<StdVector<Real>>(x0p);
 }
 
 template<class Real> 
-Teuchos::RCP<Vector<Real> > getSolution_HS24( void ) {
+ROL::Ptr<Vector<Real> > getSolution_HS24( void ) {
 
-  Teuchos::RCP<std::vector<Real> > xp = Teuchos::rcp( new std::vector<Real>(2) );
+  ROL::Ptr<std::vector<Real> > xp = ROL::makePtr<std::vector<Real>>(2);
   (*xp)[0] = 3.0;
   (*xp)[1] = std::sqrt(3.0);
 
-  return Teuchos::rcp( new StdVector<Real>(xp) );
+  return ROL::makePtr<StdVector<Real>>(xp);
 }
 
 template<class Real> 
-Teuchos::RCP<Vector<Real> > getInequalityMultiplier_HS24( void ) {
+ROL::Ptr<Vector<Real> > getInequalityMultiplier_HS24( void ) {
   
-  Teuchos::RCP<std::vector<Real> > lp = Teuchos::rcp( new std::vector<Real>(3,0.0) );
-  return Teuchos::rcp( new StdVector<Real>(lp) );
+  ROL::Ptr<std::vector<Real> > lp = ROL::makePtr<std::vector<Real>>(3,0.0);
+  return ROL::makePtr<StdVector<Real>>(lp);
 
 }
 

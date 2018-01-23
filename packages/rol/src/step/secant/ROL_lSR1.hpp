@@ -71,7 +71,7 @@ public:
                       const Real snorm,       const int iter ) {
     Real one(1);
     // Get Generic Secant State
-    Teuchos::RCP<SecantState<Real> >& state = Secant<Real>::get_state();
+    ROL::Ptr<SecantState<Real> >& state = Secant<Real>::get_state();
     if ( !isInitialized_ ) {
       state->iterate = x.clone();
       isInitialized_ = true;
@@ -79,7 +79,7 @@ public:
 
     state->iterate->set(x);
     state->iter = iter;
-    Teuchos::RCP<Vector<Real> > gradDiff = grad.clone();
+    ROL::Ptr<Vector<Real> > gradDiff = grad.clone();
     gradDiff->set(grad);
     gradDiff->axpy(-one,gp);
 
@@ -110,13 +110,13 @@ public:
   // Apply lSR1 Approximate Inverse Hessian
   void applyH( Vector<Real> &Hv, const Vector<Real> &v ) const {
     // Get Generic Secant State
-    const Teuchos::RCP<SecantState<Real> >& state = Secant<Real>::get_state();
+    const ROL::Ptr<SecantState<Real> >& state = Secant<Real>::get_state();
 
     // Apply initial Hessian approximation to v
     applyH0(Hv,v);
 
-    std::vector<Teuchos::RCP<Vector<Real> > > a(state->current+1);
-    std::vector<Teuchos::RCP<Vector<Real> > > b(state->current+1);
+    std::vector<ROL::Ptr<Vector<Real> > > a(state->current+1);
+    std::vector<ROL::Ptr<Vector<Real> > > b(state->current+1);
     Real byi(0), byj(0), bv(0), normbi(0), normyi(0), one(1);
     for (int i = 0; i <= state->current; i++) {
       // Compute Hy
@@ -155,13 +155,13 @@ public:
   // Apply lSR1 Approximate Hessian
   void applyB( Vector<Real> &Bv, const Vector<Real> &v ) const {
     // Get Generic Secant State
-    const Teuchos::RCP<SecantState<Real> >& state = Secant<Real>::get_state();
+    const ROL::Ptr<SecantState<Real> >& state = Secant<Real>::get_state();
 
     // Apply initial Hessian approximation to v
     applyB0(Bv,v);
 
-    std::vector<Teuchos::RCP<Vector<Real> > > a(state->current+1);
-    std::vector<Teuchos::RCP<Vector<Real> > > b(state->current+1);
+    std::vector<ROL::Ptr<Vector<Real> > > a(state->current+1);
+    std::vector<ROL::Ptr<Vector<Real> > > b(state->current+1);
     Real bsi(0), bsj(0), bv(0), normbi(0), normsi(0), one(1);
     for (int i = 0; i <= state->current; i++) {
       // Compute Hy

@@ -68,14 +68,14 @@ class CoherentExpUtility : public RiskMeasure<Real> {
 private:
   bool firstReset_;
 
-  Teuchos::RCP<Vector<Real> > scaledGradient1_;
-  Teuchos::RCP<Vector<Real> > scaledGradient2_;
+  ROL::Ptr<Vector<Real> > scaledGradient1_;
+  ROL::Ptr<Vector<Real> > scaledGradient2_;
   Real dval1_;
   Real dval2_;
   Real dval3_;
 
-  Teuchos::RCP<Vector<Real> > dualVector1_;
-  Teuchos::RCP<Vector<Real> > dualVector2_;
+  ROL::Ptr<Vector<Real> > dualVector1_;
+  ROL::Ptr<Vector<Real> > dualVector2_;
 
   Real xstat_;
   Real vstat_;
@@ -84,12 +84,12 @@ public:
   CoherentExpUtility(void) : RiskMeasure<Real>(), firstReset_(true),
     dval1_(0), dval2_(0), dval3_(0), xstat_(0), vstat_(0) {}
 
-  void reset(Teuchos::RCP<Vector<Real> > &x0, const Vector<Real> &x) {
+  void reset(ROL::Ptr<Vector<Real> > &x0, const Vector<Real> &x) {
     Real zero(0);
     RiskMeasure<Real>::reset(x0,x);
     int index = RiskMeasure<Real>::getIndex();
     int comp  = RiskMeasure<Real>::getComponent();
-    xstat_ = (*Teuchos::dyn_cast<const RiskVector<Real> >(x).getStatistic(comp,index))[0];
+    xstat_ = (*dynamic_cast<const RiskVector<Real>&>(x).getStatistic(comp,index))[0];
     if ( firstReset_ ) {
       scaledGradient1_ = (x0->dual()).clone();
       scaledGradient2_ = (x0->dual()).clone();
@@ -102,14 +102,14 @@ public:
     dval1_ = zero; dval2_ = zero; dval3_ = zero;
   }
 
-  void reset(Teuchos::RCP<Vector<Real> > &x0, const Vector<Real> &x,
-             Teuchos::RCP<Vector<Real> > &v0, const Vector<Real> &v) {
+  void reset(ROL::Ptr<Vector<Real> > &x0, const Vector<Real> &x,
+             ROL::Ptr<Vector<Real> > &v0, const Vector<Real> &v) {
     reset(x0,x);
-    v0 = Teuchos::rcp_const_cast<Vector<Real> >(
-           Teuchos::dyn_cast<const RiskVector<Real> >(v).getVector());
+    v0 = ROL::constPtrCast<Vector<Real> >(
+           dynamic_cast<const RiskVector<Real>&>(v).getVector());
     int index = RiskMeasure<Real>::getIndex();
     int comp  = RiskMeasure<Real>::getComponent();
-    vstat_ = (*Teuchos::dyn_cast<const RiskVector<Real> >(v).getStatistic(comp,index))[0];
+    vstat_ = (*dynamic_cast<const RiskVector<Real>&>(v).getStatistic(comp,index))[0];
   }
 
   void update(const Real val, const Real weight) {
@@ -141,10 +141,10 @@ public:
     Real gstat = std::log(myval[0]) - myval[1]/(myval[0]*xstat_);
     dualVector1_->scale(one/myval[0]);
     // Set partial derivatives in g vector
-    (Teuchos::dyn_cast<RiskVector<Real> >(g)).setVector(*dualVector1_);
+    (dynamic_cast<RiskVector<Real>&>(g)).setVector(*dualVector1_);
     int index = RiskMeasure<Real>::getIndex();
     int comp  = RiskMeasure<Real>::getComponent();
-    (Teuchos::dyn_cast<RiskVector<Real> >(g)).setStatistic(gstat,comp,index);
+    (dynamic_cast<RiskVector<Real>&>(g)).setStatistic(gstat,comp,index);
   }
 
   void update(const Real val, const Vector<Real> &g, const Real gv, const Vector<Real> &hv,
@@ -188,10 +188,10 @@ public:
     sampler.sumAll(*scaledGradient2_,*dualVector2_);
     dualVector1_->axpy(-vstat_/val[0],*dualVector2_);
 
-    (Teuchos::dyn_cast<RiskVector<Real> >(hv)).setVector(*dualVector1_);
+    (dynamic_cast<RiskVector<Real>&>(hv)).setVector(*dualVector1_);
     int index = RiskMeasure<Real>::getIndex();
     int comp  = RiskMeasure<Real>::getComponent();
-    (Teuchos::dyn_cast<RiskVector<Real> >(hv)).setStatistic(h11+h12,comp,index);
+    (dynamic_cast<RiskVector<Real>&>(hv)).setStatistic(h11+h12,comp,index);
   }
 };
 

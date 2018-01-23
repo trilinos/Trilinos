@@ -2,7 +2,6 @@
 ASSERT_DEFINED(
   ${PACKAGE_NAME}_ENABLE_Amesos2
   ${PACKAGE_NAME}_ENABLE_Belos
-  ${PACKAGE_NAME}_ENABLE_Tpetra
   )
 
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
@@ -13,41 +12,54 @@ INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../../gallery)
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../../adapters/belos)
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../unit_tests)
 
-IF (${PACKAGE_NAME}_ENABLE_Tpetra AND ${PACKAGE_NAME}_ENABLE_Belos AND ${PACKAGE_NAME}_ENABLE_Amesos2)
+IF (${PACKAGE_NAME}_ENABLE_Belos AND ${PACKAGE_NAME}_ENABLE_Amesos2)
 
-# CAG: 11/29/2017 Disabling for now, will be reenabled once I merge the updated RefMaxwell
-  # TRIBITS_ADD_EXECUTABLE_AND_TEST(
-  #     Maxwell3D
-  #     SOURCES Maxwell3D.cpp
-  #     COMM serial
-  #   )
+  TRIBITS_ADD_EXECUTABLE(
+    Maxwell3D
+    SOURCES Maxwell3D.cpp
+    COMM serial mpi
+    )
 
-  #   TRIBITS_ADD_EXECUTABLE_AND_TEST(
-  #     Maxwell3D
-  #     SOURCES Maxwell3D.cpp
-  #     NUM_MPI_PROCS 4
-  #     COMM mpi
-  #   )
+  IF (${PACKAGE_NAME}_ENABLE_Tpetra)
+    TRIBITS_ADD_TEST(
+      Maxwell3D
+      NAME "Maxwell3D-Tpetra"
+      ARGS "--linAlgebra=Tpetra"
+      COMM serial mpi
+      NUM_MPI_PROCS 4
+      )
 
-# JJH: 8/21/2015  Disabling until LinearSolverFactory is ready.  See bug#6395.
-#    IF(HAVE_MUELU_COMPLEX)
-#
-#      TRIBITS_ADD_EXECUTABLE_AND_TEST(
-#        MaxwellComplex3D
-#        SOURCES MaxwellComplex3D.cpp
-#        COMM serial
-#      )
-#
-#      TRIBITS_ADD_EXECUTABLE_AND_TEST(
-#        MaxwellComplex3D
-#        SOURCES MaxwellComplex3D.cpp
-#        NUM_MPI_PROCS 4
-#        COMM mpi
-#      )
-#
-#    ENDIF()
+    IF (${PACKAGE_NAME}_INST_DOUBLE_INT_INT OR ${PACKAGE_NAME}_INST_DOUBLE_INT_LONGINT OR ${PACKAGE_NAME}_INST_DOUBLE_INT_LONGLONGINT)
+      TRIBITS_ADD_TEST(
+        Maxwell3D
+        NAME "Maxwell3D-Tpetra-Stratimikos"
+        ARGS "--linAlgebra=Tpetra --solverName=Stratimikos"
+        COMM serial mpi
+        NUM_MPI_PROCS 4
+        )
+    ENDIF()
+  ENDIF()
 
-    TRIBITS_COPY_FILES_TO_BINARY_DIR(Maxwell_cp
+  IF (${PACKAGE_NAME}_ENABLE_Epetra)
+    TRIBITS_ADD_TEST(
+      Maxwell3D
+      NAME "Maxwell3D-Epetra"
+      ARGS "--linAlgebra=Epetra"
+      COMM serial mpi
+      NUM_MPI_PROCS 4
+      )
+  ENDIF()
+
+
+  TRIBITS_COPY_FILES_TO_BINARY_DIR(Maxwell_cp
     SOURCE_FILES M0.txt M1.txt S.txt D0.txt coords.txt
     )
+
+  IF(HAVE_MUELU_COMPLEX)
+    TRIBITS_COPY_FILES_TO_BINARY_DIR(Maxwell_cp_complex
+      SOURCE_FILES M0_complex.txt M1_complex.txt S_complex.txt D0_complex.txt
+      )
+  ENDIF()
+
+
 ENDIF()

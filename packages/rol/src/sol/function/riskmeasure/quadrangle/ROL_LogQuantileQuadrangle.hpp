@@ -76,7 +76,7 @@ template<class Real>
 class LogQuantileQuadrangle : public ExpectationQuad<Real> {
 private:
 
-  Teuchos::RCP<PlusFunction<Real> > pf_;
+  ROL::Ptr<PlusFunction<Real> > pf_;
 
   Real alpha_;
   Real rate_;
@@ -90,7 +90,7 @@ private:
       ">>> ERROR (ROL::LogQuantileQuadrangle): Exponential growth rate must be positive!");
     TEUCHOS_TEST_FOR_EXCEPTION((eps_ <= zero), std::invalid_argument,
       ">>> ERROR (ROL::LogQuantileQuadrangle): Smoothing parameter must be positive!");
-    TEUCHOS_TEST_FOR_EXCEPTION(pf_ == Teuchos::null, std::invalid_argument,
+    TEUCHOS_TEST_FOR_EXCEPTION(pf_ == ROL::nullPtr, std::invalid_argument,
       ">>> ERROR (ROL::LogQuantileQuadrangle): PlusFunction pointer is null!");
   }
 
@@ -103,7 +103,7 @@ public:
       @param[in]     pf       is the plus function or an approximation
   */
   LogQuantileQuadrangle(Real alpha, Real rate, Real eps,
-                        Teuchos::RCP<PlusFunction<Real> > &pf ) 
+                        ROL::Ptr<PlusFunction<Real> > &pf ) 
     : ExpectationQuad<Real>(), alpha_(alpha), rate_(rate), eps_(eps), pf_(pf) {
     checkInputs();
   }
@@ -128,7 +128,7 @@ public:
     rate_   = list.get<Real>("Rate for Exponential Growth");
     eps_    = list.get<Real>("Smoothing Parameter");
     // Build plus function
-    pf_ = Teuchos::rcp( new PlusFunction<Real>(list) );
+    pf_ = ROL::makePtr<PlusFunction<Real>>(list);
     checkInputs();
   }
 

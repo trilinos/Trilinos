@@ -49,7 +49,7 @@
 #ifndef ROL_PDEOPT_ELASTICITY_DIRICHLET_HPP
 #define ROL_PDEOPT_ELASTICITY_DIRICHLET_HPP
 
-#include "Teuchos_RCP.hpp"
+#include "ROL_Ptr.hpp"
 #include "Teuchos_ParameterList.hpp"
 #include "Intrepid_FieldContainer.hpp"
 #include <vector>
@@ -58,7 +58,7 @@ template<class Real>
 class Dirichlet {
 private:
   std::vector<int> sidesets_, types_;
-  std::vector<std::vector<Teuchos::RCP<Intrepid::FieldContainer<Real> > > > bdryCellNodes_;
+  std::vector<std::vector<ROL::Ptr<Intrepid::FieldContainer<Real> > > > bdryCellNodes_;
   std::vector<std::vector<std::vector<int> > > bdryCellLocIds_;
   std::vector<std::vector<int> > fidx_;
 
@@ -105,7 +105,7 @@ public:
     types_ = types.toVector();
   }
 
-  void setCellNodes(const std::vector<std::vector<Teuchos::RCP<Intrepid::FieldContainer<Real> > > > &bdryCellNodes,
+  void setCellNodes(const std::vector<std::vector<ROL::Ptr<Intrepid::FieldContainer<Real> > > > &bdryCellNodes,
                     const std::vector<std::vector<std::vector<int> > > &bdryCellLocIds,
                     const std::vector<std::vector<int> > fidx) {
     bdryCellNodes_  = bdryCellNodes;
@@ -113,8 +113,8 @@ public:
     fidx_           = fidx;
   }
 
-  void applyResidual(std::vector<Teuchos::RCP<Intrepid::FieldContainer<Real> > > &R,
-                     const std::vector<Teuchos::RCP<Intrepid::FieldContainer<Real> > > &U) const {
+  void applyResidual(std::vector<ROL::Ptr<Intrepid::FieldContainer<Real> > > &R,
+                     const std::vector<ROL::Ptr<Intrepid::FieldContainer<Real> > > &U) const {
     const int d = R.size();
     const int numSideSets = sidesets_.size();
     if (numSideSets > 0) {
@@ -138,7 +138,7 @@ public:
     }
   }
 
-  void applyJacobian1(std::vector<std::vector<Teuchos::RCP<Intrepid::FieldContainer<Real> > > > &J) const {
+  void applyJacobian1(std::vector<std::vector<ROL::Ptr<Intrepid::FieldContainer<Real> > > > &J) const {
     const int d = J.size();
     const int f = J[0][0]->dimension(1);
     const int numSideSets = sidesets_.size();
@@ -168,7 +168,7 @@ public:
     }
   }
 
-  void applyJacobian2(std::vector<std::vector<Teuchos::RCP<Intrepid::FieldContainer<Real> > > > &J) const {
+  void applyJacobian2(std::vector<std::vector<ROL::Ptr<Intrepid::FieldContainer<Real> > > > &J) const {
     const int d = J.size();
     const int f = J[0][0]->dimension(1);
     const int numSideSets = sidesets_.size();
@@ -197,7 +197,7 @@ public:
     }
   }
 
-  void applyMultiplier(std::vector<Teuchos::RCP<Intrepid::FieldContainer<Real> > > &L) const {
+  void applyMultiplier(std::vector<ROL::Ptr<Intrepid::FieldContainer<Real> > > &L) const {
     const int d = L.size();
     const int numSideSets = sidesets_.size();
     if (numSideSets > 0) {
@@ -240,9 +240,9 @@ public:
 //      for (int j=0; j<numLocSides; ++j) {
 //        int c = bdryCellLocIds_[i][j].size();
 //        int f = basisPtr_->getCardinality();
-//        bdryCellDofValues_[i][j] = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, f, d));
-//        Teuchos::RCP<Intrepid::FieldContainer<Real> > coords =
-//          Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, f, d));
+//        bdryCellDofValues_[i][j] = ROL::makePtr<Intrepid::FieldContainer<Real>>(c, f, d);
+//        ROL::Ptr<Intrepid::FieldContainer<Real> > coords =
+//          ROL::makePtr<Intrepid::FieldContainer<Real>>(c, f, d);
 //        if (c > 0) {
 //          fe_->computeDofCoords(coords, bdryCellNodes_[i][j]);
 //        }

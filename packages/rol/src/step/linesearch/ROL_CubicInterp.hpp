@@ -56,7 +56,7 @@ template<class Real>
 class CubicInterp : public LineSearch<Real> {
 private:
   Real rho_;
-  Teuchos::RCP<Vector<Real> > xnew_; 
+  ROL::Ptr<Vector<Real> > xnew_; 
 
 public:
 

@@ -204,13 +204,13 @@ if(json.isMember("ROL")) {
     @param[in/out] step      is a ref count pointer to a ROL::Step 
 */
 template <class Real>
-void stepFactory(Teuchos::ParameterList &parlist,Teuchos::RCP<ROL::Step<Real> > &step) {
+void stepFactory(Teuchos::ParameterList &parlist,ROL::Ptr<ROL::Step<Real> > &step) {
      
     if(parlist.get("Step Type","Linesearch")=="Trust-Region") {
-	step = Teuchos::rcp(new ROL::TrustRegionStep<Real>(parlist));
+	step = ROL::makePtr<ROL::TrustRegionStep<Real>>(parlist);
     }
     else {
-	step = Teuchos::rcp(new ROL::LineSearchStep<Real>(parlist));
+	step = ROL::makePtr<ROL::LineSearchStep<Real>>(parlist);
 	 
     }
 }

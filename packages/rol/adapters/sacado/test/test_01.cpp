@@ -67,8 +67,8 @@ typedef double RealT;
 int main(int argc, char *argv[]) {
 
   using namespace ROL;
-  using Teuchos::RCP;
-  using Teuchos::rcp;
+  
+  
   
   typedef Teuchos::ParameterList PL;
 
@@ -81,12 +81,12 @@ int main(int argc, char *argv[]) {
 
   // This little trick lets us print to std::cout only if a (dummy) command-line argument is provided.
   int iprint     = argc - 1;
-  RCP<std::ostream> outStream;
+  ROL::Ptr<std::ostream> outStream;
   Teuchos::oblackholestream bhs; // outputs nothing
   if (iprint > 0)
-    outStream = rcp(&std::cout, false);
+    outStream = ROL::makePtrFromRef(std::cout);
   else
-    outStream = rcp(&bhs, false);
+    outStream = ROL::makePtrFromRef(bhs);
 
   int errorFlag   = 0;
   int numProblems = 40;
@@ -100,24 +100,24 @@ int main(int argc, char *argv[]) {
 
   HS::ProblemFactory<RealT> factory;
 
-  RCP<NLP>  nlp;
-  RCP<OPT>  opt;
+  ROL::Ptr<NLP>  nlp;
+  ROL::Ptr<OPT>  opt;
 
   // Get two copies so we can validate without setting defaults
-  RCP<PL>   parlist = rcp( new PL() );
-  RCP<PL>   parlistCopy = rcp( new PL() );
-  RCP<PL>   test = rcp( new PL() );
+  ROL::Ptr<PL>   parlist = ROL::makePtr<PL>();
+  ROL::Ptr<PL>   parlistCopy = ROL::makePtr<PL>();
+  ROL::Ptr<PL>   test = ROL::makePtr<PL>();
 
   Teuchos::updateParametersFromXmlFile(std::string("hs_parameters.xml"),parlist.ptr());
   Teuchos::updateParametersFromXmlFile(std::string("hs_parameters.xml"),parlistCopy.ptr());
   Teuchos::updateParametersFromXmlFile(std::string("test_parameters.xml"),test.ptr());
 
-  RCP<const PL> validParameters = getValidROLParameters();
+  ROL::Ptr<const PL> validParameters = getValidROLParameters();
 
   parlistCopy->validateParametersAndSetDefaults(*validParameters);
 
-  RCP<V>           x;
-  RCP<const STATE> algo_state;
+  ROL::Ptr<V>           x;
+  ROL::Ptr<const STATE> algo_state;
 
   bool problemSolved;
 

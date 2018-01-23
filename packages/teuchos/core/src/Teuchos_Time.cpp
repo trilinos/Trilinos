@@ -78,6 +78,9 @@ inline void seconds_initialize() {
 #include <unistd.h>
 #endif
 
+#if defined(HAVE_TEUCHOS_KOKKOS_PROFILING) && defined(HAVE_TEUCHOSCORE_KOKKOSCORE) && defined(KOKKOS_ENABLE_PROFILING)
+#include "Kokkos_Core.hpp"
+#endif
 
 namespace Teuchos {
 
@@ -117,6 +120,9 @@ void Time::start(bool reset_in)
     }
 #endif
     startTime_ = wallTime();
+#if defined(HAVE_TEUCHOS_KOKKOS_PROFILING) && defined(HAVE_TEUCHOSCORE_KOKKOSCORE) && defined(KOKKOS_ENABLE_PROFILING)
+    ::Kokkos::Profiling::pushRegion (name_);
+#endif
   }
 }
 
@@ -137,7 +143,9 @@ double Time::stop()
         numCallsMassifSnapshots_++;
       }
 #endif
-
+#if defined(HAVE_TEUCHOS_KOKKOS_PROFILING) && defined(HAVE_TEUCHOSCORE_KOKKOSCORE) && defined(KOKKOS_ENABLE_PROFILING)
+      ::Kokkos::Profiling::popRegion ();
+#endif
     }
   }
   return totalTime_;

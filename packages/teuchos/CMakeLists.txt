@@ -337,6 +337,14 @@ IF(TPL_ENABLE_Valgrind)
   ENDIF()
 ENDIF()
 
+TRIBITS_ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_KOKKOS_PROFILING
+  HAVE_TEUCHOS_KOKKOS_PROFILING
+  "Wrap every Teuchos timer with a Kokkos profiling region."
+  OFF)
+IF (${PACKAGE_NAME}_KOKKOS_PROFILING)
+  MESSAGE(STATUS "Wrapping every Teuchos timer with a Kokkos profiling region.")
+ENDIF()
+
 
 #
 # D) Process the subpackages for Teuchos

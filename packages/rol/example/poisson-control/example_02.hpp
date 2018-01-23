@@ -402,7 +402,7 @@ public:
 template<class Real>
 class DiffusionConstraint : public ROL::Constraint_SimOpt<Real> {
 private:
-  const Teuchos::RCP<FEM<Real> > FEM_;
+  const ROL::Ptr<FEM<Real> > FEM_;
   int num_solves_;
 
 /***************************************************************/
@@ -429,16 +429,16 @@ private:
 /*************************************************************/
 
 public:
-  DiffusionConstraint(const Teuchos::RCP<FEM<Real> > &FEM) : FEM_(FEM), num_solves_(0) {}
+  DiffusionConstraint(const ROL::Ptr<FEM<Real> > &FEM) : FEM_(FEM), num_solves_(0) {}
 
   int getNumSolves(void) const {
     return num_solves_;
   }
 
   void value(ROL::Vector<Real> &c, const ROL::Vector<Real> &u, const ROL::Vector<Real> &z, Real &tol) {
-    Teuchos::RCP<std::vector<Real> > cp = Teuchos::dyn_cast<ROL::StdVector<Real> >(c).getVector();
-    Teuchos::RCP<const std::vector<Real> > up = Teuchos::dyn_cast<const ROL::StdVector<Real> >(u).getVector();
-    Teuchos::RCP<const std::vector<Real> > zp = Teuchos::dyn_cast<const ROL::StdVector<Real> >(z).getVector();
+    ROL::Ptr<std::vector<Real> > cp = dynamic_cast<ROL::StdVector<Real>&>(c).getVector();
+    ROL::Ptr<const std::vector<Real> > up = dynamic_cast<const ROL::StdVector<Real>&>(u).getVector();
+    ROL::Ptr<const std::vector<Real> > zp = dynamic_cast<const ROL::StdVector<Real>&>(z).getVector();
     // Apply PDE Jacobian
     FEM_->apply_jacobian_1(*cp, *up, this->getParameter());
     // Get Right Hand Side
@@ -452,9 +452,9 @@ public:
   }
 
   void solve(ROL::Vector<Real> &c, ROL::Vector<Real> &u, const ROL::Vector<Real> &z, Real &tol) {
-    Teuchos::RCP<std::vector<Real> > cp = Teuchos::dyn_cast<ROL::StdVector<Real> >(c).getVector();
-    Teuchos::RCP<std::vector<Real> > up = Teuchos::dyn_cast<ROL::StdVector<Real> >(u).getVector();
-    Teuchos::RCP<const std::vector<Real> > zp = Teuchos::dyn_cast<const ROL::StdVector<Real> >(z).getVector();
+    ROL::Ptr<std::vector<Real> > cp = dynamic_cast<ROL::StdVector<Real>&>(c).getVector();
+    ROL::Ptr<std::vector<Real> > up = dynamic_cast<ROL::StdVector<Real>&>(u).getVector();
+    ROL::Ptr<const std::vector<Real> > zp = dynamic_cast<const ROL::StdVector<Real>&>(z).getVector();
     // Get PDE Jacobian
     std::vector<Real> dl(FEM_->nu()-1,0.0);
     std::vector<Real> d(FEM_->nu(),0.0);
@@ -475,23 +475,23 @@ public:
 
   void applyJacobian_1(ROL::Vector<Real> &jv, const ROL::Vector<Real> &v, const ROL::Vector<Real> &u,
                  const ROL::Vector<Real> &z, Real &tol) {
-    Teuchos::RCP<std::vector<Real> > jvp = Teuchos::dyn_cast<ROL::StdVector<Real> >(jv).getVector();
-    Teuchos::RCP<const std::vector<Real> > vp = Teuchos::dyn_cast<const ROL::StdVector<Real> >(v).getVector();
+    ROL::Ptr<std::vector<Real> > jvp = dynamic_cast<ROL::StdVector<Real>&>(jv).getVector();
+    ROL::Ptr<const std::vector<Real> > vp = dynamic_cast<const ROL::StdVector<Real>&>(v).getVector();
     FEM_->apply_jacobian_1(*jvp, *vp, this->getParameter());
   }
 
   void applyJacobian_2(ROL::Vector<Real> &jv, const ROL::Vector<Real> &v, const ROL::Vector<Real> &u,
                  const ROL::Vector<Real> &z, Real &tol) {
-    Teuchos::RCP<std::vector<Real> > jvp = Teuchos::dyn_cast<ROL::StdVector<Real> >(jv).getVector();
-    Teuchos::RCP<const std::vector<Real> > vp = Teuchos::dyn_cast<const ROL::StdVector<Real> >(v).getVector();
+    ROL::Ptr<std::vector<Real> > jvp = dynamic_cast<ROL::StdVector<Real>&>(jv).getVector();
+    ROL::Ptr<const std::vector<Real> > vp = dynamic_cast<const ROL::StdVector<Real>&>(v).getVector();
     FEM_->apply_jacobian_2(*jvp, *vp, this->getParameter());
     scale(*jvp,-1.0);
   }
 
   void applyInverseJacobian_1(ROL::Vector<Real> &jv, const ROL::Vector<Real> &v, const ROL::Vector<Real> &u,
                         const ROL::Vector<Real> &z, Real &tol) {
-    Teuchos::RCP<std::vector<Real> > jvp = Teuchos::dyn_cast<ROL::StdVector<Real> >(jv).getVector();
-    Teuchos::RCP<const std::vector<Real> > vp = Teuchos::dyn_cast<const ROL::StdVector<Real> >(v).getVector();
+    ROL::Ptr<std::vector<Real> > jvp = dynamic_cast<ROL::StdVector<Real>&>(jv).getVector();
+    ROL::Ptr<const std::vector<Real> > vp = dynamic_cast<const ROL::StdVector<Real>&>(v).getVector();
     // Get PDE Jacobian
     std::vector<Real> dl(FEM_->nu()-1,0.0);
     std::vector<Real> d(FEM_->nu(),0.0);
@@ -509,8 +509,8 @@ public:
 
   void applyAdjointJacobian_2(ROL::Vector<Real> &jv, const ROL::Vector<Real> &v, const ROL::Vector<Real> &u,
                         const ROL::Vector<Real> &z, Real &tol) {
-    Teuchos::RCP<std::vector<Real> > jvp = Teuchos::dyn_cast<ROL::StdVector<Real> >(jv).getVector();
-    Teuchos::RCP<const std::vector<Real> > vp = Teuchos::dyn_cast<const ROL::StdVector<Real> >(v).getVector();
+    ROL::Ptr<std::vector<Real> > jvp = dynamic_cast<ROL::StdVector<Real>&>(jv).getVector();
+    ROL::Ptr<const std::vector<Real> > vp = dynamic_cast<const ROL::StdVector<Real>&>(v).getVector();
     FEM_->apply_adjoint_jacobian_2(*jvp, *vp, this->getParameter());
     scale(*jvp,-1.0);
   }
@@ -546,7 +546,7 @@ public:
 template<class Real>
 class DiffusionObjective : public ROL::Objective_SimOpt<Real> {
 private:
-  const Teuchos::RCP<FEM<Real> > FEM_;
+  const ROL::Ptr<FEM<Real> > FEM_;
   const Real alpha_;
 
 /***************************************************************/
@@ -574,12 +574,12 @@ private:
 /*************************************************************/
 
 public:
-  DiffusionObjective(const Teuchos::RCP<FEM<Real> > fem, const Real alpha = 1.e-4)
+  DiffusionObjective(const ROL::Ptr<FEM<Real> > fem, const Real alpha = 1.e-4)
     : FEM_(fem), alpha_(alpha) {}
 
   Real value( const ROL::Vector<Real> &u, const ROL::Vector<Real> &z, Real &tol ) {
-    Teuchos::RCP<const std::vector<Real> > up = Teuchos::dyn_cast<const ROL::StdVector<Real> >(u).getVector();
-    Teuchos::RCP<const std::vector<Real> > zp = Teuchos::dyn_cast<const ROL::StdVector<Real> >(z).getVector();
+    ROL::Ptr<const std::vector<Real> > up = dynamic_cast<const ROL::StdVector<Real>&>(u).getVector();
+    ROL::Ptr<const std::vector<Real> > zp = dynamic_cast<const ROL::StdVector<Real>&>(z).getVector();
     int nz = FEM_->nz(), nu = FEM_->nu();
     // COMPUTE CONTROL PENALTY
     std::vector<Real> Mz(nz);
@@ -597,8 +597,8 @@ public:
   }
 
   void gradient_1( ROL::Vector<Real> &g, const ROL::Vector<Real> &u, const ROL::Vector<Real> &z, Real &tol ) {
-    Teuchos::RCP<std::vector<Real> > gp = Teuchos::dyn_cast<ROL::StdVector<Real> >(g).getVector();
-    Teuchos::RCP<const std::vector<Real> > up = Teuchos::dyn_cast<const ROL::StdVector<Real> >(u).getVector();
+    ROL::Ptr<std::vector<Real> > gp = dynamic_cast<ROL::StdVector<Real>&>(g).getVector();
+    ROL::Ptr<const std::vector<Real> > up = dynamic_cast<const ROL::StdVector<Real>&>(u).getVector();
     int nu = FEM_->nu();
     // COMPUTE GRADIENT
     std::vector<Real> diff(nu);
@@ -609,8 +609,8 @@ public:
   }
 
   void gradient_2( ROL::Vector<Real> &g, const ROL::Vector<Real> &u, const ROL::Vector<Real> &z, Real &tol ) {
-    Teuchos::RCP<std::vector<Real> > gp = Teuchos::dyn_cast<ROL::StdVector<Real> >(g).getVector();
-    Teuchos::RCP<const std::vector<Real> > zp = Teuchos::dyn_cast<const ROL::StdVector<Real> >(z).getVector();
+    ROL::Ptr<std::vector<Real> > gp = dynamic_cast<ROL::StdVector<Real>&>(g).getVector();
+    ROL::Ptr<const std::vector<Real> > zp = dynamic_cast<const ROL::StdVector<Real>&>(z).getVector();
     // COMPUTE GRADIENT
     FEM_->apply_mass_control(*gp,*zp);
     scale(*gp,alpha_);
@@ -618,8 +618,8 @@ public:
 
   void hessVec_11( ROL::Vector<Real> &hv, const ROL::Vector<Real> &v,
              const ROL::Vector<Real> &u, const ROL::Vector<Real> &z, Real &tol ) {
-    Teuchos::RCP<std::vector<Real> > hvp = Teuchos::dyn_cast<ROL::StdVector<Real> >(hv).getVector();
-    Teuchos::RCP<const std::vector<Real> > vp = Teuchos::dyn_cast<const ROL::StdVector<Real> >(v).getVector();
+    ROL::Ptr<std::vector<Real> > hvp = dynamic_cast<ROL::StdVector<Real>&>(hv).getVector();
+    ROL::Ptr<const std::vector<Real> > vp = dynamic_cast<const ROL::StdVector<Real>&>(v).getVector();
     // COMPUTE HESSVEC
     FEM_->apply_mass_state(*hvp,*vp,this->getParameter());
   }
@@ -636,8 +636,8 @@ public:
 
   void hessVec_22( ROL::Vector<Real> &hv, const ROL::Vector<Real> &v,
              const ROL::Vector<Real> &u, const ROL::Vector<Real> &z, Real &tol ) {
-    Teuchos::RCP<std::vector<Real> > hvp = Teuchos::dyn_cast<ROL::StdVector<Real> >(hv).getVector();
-    Teuchos::RCP<const std::vector<Real> > vp = Teuchos::dyn_cast<const ROL::StdVector<Real> >(v).getVector();
+    ROL::Ptr<std::vector<Real> > hvp = dynamic_cast<ROL::StdVector<Real>&>(hv).getVector();
+    ROL::Ptr<const std::vector<Real> > vp = dynamic_cast<const ROL::StdVector<Real>&>(v).getVector();
     // COMPUTE HESSVEC
     FEM_->apply_mass_control(*hvp,*vp);
     scale(*hvp,alpha_);
