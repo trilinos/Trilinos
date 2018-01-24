@@ -87,6 +87,9 @@ MACRO(TRILINOS_SYSTEM_SPECIFIC_CTEST_DRIVER)
   # script)
   SET_DEFAULT(Trilinos_BRANCH develop)
 
+  # Don't process any extra repos
+  SET(Trilinos_EXTRAREPOS_FILE NONE)
+
  TRILINOS_CTEST_DRIVER()
 
 ENDMACRO()
