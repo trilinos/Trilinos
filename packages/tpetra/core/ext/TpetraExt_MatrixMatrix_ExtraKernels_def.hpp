@@ -956,6 +956,7 @@ void jacobi_A_B_newmatrix_MultiplyScaleAddKernel(Scalar omega,
   if(!params.is_null()) {
     jparams = *params;
     jparams.remove("openmp: algorithm",false);
+    jparams.remove("cuda: algorithm",false);
   }
 
   // 1) Multiply A*B
