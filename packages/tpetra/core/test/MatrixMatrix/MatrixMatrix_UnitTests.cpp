@@ -705,8 +705,8 @@ mult_test_results jacobi_test(
       
       Tpetra::MatrixMatrix::Multiply(*A,false,*B,false,*AB);
       AB->leftScale(Dinv);
-      
       Tpetra::MatrixMatrix::Add(*AB,false,-one,*B,false,one,C2);
+      if(!C2->isFillComplete()) C2->fillComplete(C->getDomainMap(),C->getRangeMap());
     }
 
   // Check the difference
