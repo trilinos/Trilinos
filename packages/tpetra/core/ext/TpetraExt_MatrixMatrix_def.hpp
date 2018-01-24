@@ -60,7 +60,7 @@
 #include "Teuchos_FancyOStream.hpp"
 
 #include "TpetraExt_MatrixMatrix_ExtraKernels_def.hpp"
-
+#include "Tpetra_Details_getEntryOnHost.hpp"
 
 #include "KokkosSparse_spgemm.hpp"
 
@@ -3654,65 +3654,64 @@ merge_matrices(CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Aview
     // We do have a Bimport
     // NOTE: We're going merge Borig and Bimport into a single matrix and reindex the columns *before* we multiply.
     // This option was chosen because we know we don't have any duplicate entries, so we can allocate once.
-    RCP<const KCRS> Ik;
-    if(!Bview.importMatrix.is_null()) Ik = Teuchos::rcpFromRef<const KCRS>(Bview.importMatrix->getLocalMatrix());
-      size_t merge_numrows =  Ak.numCols();
-      lno_view_t Mrowptr("Mrowptr", merge_numrows + 1);
-      
-      const LocalOrdinal LO_INVALID =Teuchos::OrdinalTraits<LocalOrdinal>::invalid();
-      
-      // Use a Kokkos::parallel_scan to build the rowptr
-      typedef typename Node::execution_space execution_space;
-      typedef Kokkos::RangePolicy<execution_space, size_t> range_type;
-      Kokkos::parallel_scan ("Tpetra_MatrixMatrix_merge_matrices_buildRowptr", range_type (0, merge_numrows), KOKKOS_LAMBDA(const size_t i, size_t& update, const bool final) {
-          if(final) Mrowptr(i) = update;
-          // Get the row count
-          size_t ct=0;
-          if(Acol2Brow(i)!=LO_INVALID)
-            ct = Bk.graph.row_map(Acol2Brow(i)+1) - Bk.graph.row_map(Acol2Brow(i));
-          else
-            ct = Ik->graph.row_map(Acol2Irow(i)+1) - Ik->graph.row_map(Acol2Irow(i));
-          update+=ct;
-          
-          if(final && i+1==merge_numrows)
-            Mrowptr(i+1)=update;
-        });
-
-      // Allocate nnz
-      size_t merge_nnz = Mrowptr(merge_numrows);
-      lno_nnz_view_t Mcolind("Mcolind",merge_nnz);
-      scalar_view_t Mvalues("Mvals",merge_nnz);
-
-      // Use a Kokkos::parallel_for to fill the rowptr/colind arrays
-      typedef Kokkos::RangePolicy<execution_space, size_t> range_type;
-      Kokkos::parallel_for ("Tpetra_MatrixMatrix_merg_matrices_buildColindValues", range_type (0, merge_numrows),KOKKOS_LAMBDA(const size_t i) {
-          if(Acol2Brow(i)!=LO_INVALID) {
-            size_t row   = Acol2Brow(i);
-            size_t start = Bk.graph.row_map(row);
-            for(size_t j= Mrowptr(i); j<Mrowptr(i+1); j++) {
-              Mvalues(j) = Bk.values(j-Mrowptr(i)+start);
-              Mcolind(j) = Bcol2Ccol(Bk.graph.entries(j-Mrowptr(i)+start));
-            }
+    RCP<const KCRS> Ik_;
+    if(!Bview.importMatrix.is_null()) Ik_ = Teuchos::rcpFromRef<const KCRS>(Bview.importMatrix->getLocalMatrix());
+    const KCRS * Ik     = Bview.importMatrix.is_null() ? 0 : &*Ik_;
+    size_t merge_numrows =  Ak.numCols();
+    lno_view_t Mrowptr("Mrowptr", merge_numrows + 1);
+    
+    const LocalOrdinal LO_INVALID =Teuchos::OrdinalTraits<LocalOrdinal>::invalid();
+    
+    // Use a Kokkos::parallel_scan to build the rowptr
+    typedef typename Node::execution_space execution_space;
+    typedef Kokkos::RangePolicy<execution_space, size_t> range_type;
+    Kokkos::parallel_scan ("Tpetra_MatrixMatrix_merge_matrices_buildRowptr", range_type (0, merge_numrows), KOKKOS_LAMBDA(const size_t i, size_t& update, const bool final) {
+        if(final) Mrowptr(i) = update;
+        // Get the row count
+        size_t ct=0;
+        if(Acol2Brow(i)!=LO_INVALID)
+          ct = Bk.graph.row_map(Acol2Brow(i)+1) - Bk.graph.row_map(Acol2Brow(i));
+        else
+          ct = Ik->graph.row_map(Acol2Irow(i)+1) - Ik->graph.row_map(Acol2Irow(i));
+        update+=ct;
+        
+        if(final && i+1==merge_numrows)
+          Mrowptr(i+1)=update;
+      });
+    
+    // Allocate nnz
+    size_t merge_nnz = ::Tpetra::Details::getEntryOnHost(Mrowptr,merge_numrows);
+    lno_nnz_view_t Mcolind("Mcolind",merge_nnz);
+    scalar_view_t Mvalues("Mvals",merge_nnz);
+    
+    // Use a Kokkos::parallel_for to fill the rowptr/colind arrays
+    typedef Kokkos::RangePolicy<execution_space, size_t> range_type;
+    Kokkos::parallel_for ("Tpetra_MatrixMatrix_merg_matrices_buildColindValues", range_type (0, merge_numrows),KOKKOS_LAMBDA(const size_t i) {
+        if(Acol2Brow(i)!=LO_INVALID) {
+          size_t row   = Acol2Brow(i);
+          size_t start = Bk.graph.row_map(row);
+          for(size_t j= Mrowptr(i); j<Mrowptr(i+1); j++) {
+            Mvalues(j) = Bk.values(j-Mrowptr(i)+start);
+            Mcolind(j) = Bcol2Ccol(Bk.graph.entries(j-Mrowptr(i)+start));
           }
-          else {
-            size_t row   = Acol2Irow(i);
-            size_t start = Ik->graph.row_map(row);
-            for(size_t j= Mrowptr(i); j<Mrowptr(i+1); j++) {
-              Mvalues(j) = Ik->values(j-Mrowptr(i)+start);
-              Mcolind(j) = Icol2Ccol(Ik->graph.entries(j-Mrowptr(i)+start));
-            }
+        }
+        else {
+          size_t row   = Acol2Irow(i);
+          size_t start = Ik->graph.row_map(row);
+          for(size_t j= Mrowptr(i); j<Mrowptr(i+1); j++) {
+            Mvalues(j) = Ik->values(j-Mrowptr(i)+start);
+            Mcolind(j) = Icol2Ccol(Ik->graph.entries(j-Mrowptr(i)+start));
           }
-        });
-
-      KCRS newmat("CrsMatrix",merge_numrows,mergedNodeNumCols,merge_nnz,Mvalues,Mrowptr,Mcolind);
-      return newmat;
-    }
-    else {
-      // We don't have a Bimport (the easy case)
-      return Bk;
-    }
-
-
+        }
+      });
+    
+    KCRS newmat("CrsMatrix",merge_numrows,mergedNodeNumCols,merge_nnz,Mvalues,Mrowptr,Mcolind);
+    return newmat;
+  }
+  else {
+    // We don't have a Bimport (the easy case)
+    return Bk;
+  }   
 }//end merge_matrices
 
 

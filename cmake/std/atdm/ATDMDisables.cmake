@@ -56,6 +56,7 @@ SET(ATDM_SE_PACKAGE_DISABLES
   SEACASEx2ex1v2
   Trios
   FEI
+  TriKota
   Intrepid
   STKClassic
   STKUnit_test_utils
@@ -69,6 +70,7 @@ SET(ATDM_SE_PACKAGE_DISABLES
   ShyLU_DD
   ShyLU
   Stokhos
+  MOOCHO
   ROL
   PyTrilinos
   )

@@ -71,7 +71,7 @@
 
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void createTwoLevelHierarchy(MueLu::Level& fineLevel, MueLu::Level& coarseLevel,
-                             Teuchos::RCP<typename Xpetra::Matrix<> > A);
+                             Teuchos::RCP<typename Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > A);
 
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int argc, char *argv[]) {
@@ -82,14 +82,14 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
   using Teuchos::tuple;
   using Teuchos::TimeMonitor;
 
-  typedef Tpetra::Map<> map_type;
-  typedef Tpetra::CrsMatrix<> crs_matrix_type;
+  typedef Tpetra::Map<LO,GO,NO> map_type;
+  typedef Tpetra::CrsMatrix<SC,LO,GO,NO> crs_matrix_type;
 
-  typedef Tpetra::CrsMatrix<>::scalar_type scalar_type;
-  typedef Tpetra::CrsMatrix<>::local_ordinal_type local_ordinal_type;
-  typedef Tpetra::CrsMatrix<>::global_ordinal_type global_ordinal_type;
-  typedef Tpetra::CrsMatrix<>::node_type node_type;
-  typedef Tpetra::CrsMatrix<>::mag_type magnitude_type;
+  typedef typename crs_matrix_type::scalar_type scalar_type;
+  typedef typename crs_matrix_type::local_ordinal_type local_ordinal_type;
+  typedef typename crs_matrix_type::global_ordinal_type global_ordinal_type;
+  typedef typename crs_matrix_type::node_type node_type;
+  typedef typename crs_matrix_type::mag_type magnitude_type;
 
   bool success = false;
   bool verbose = true;
@@ -254,8 +254,8 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
     out << std::endl << "Forming the prolongator" << std::endl;
 
     MueLu::Level fineLevel, coarseLevel;
-    RCP<Matrix> matA = MueLu::TpetraCrs_To_XpetraMatrix<SC,LO,GO,NO>(regA);
-    createTwoLevelHierarchy<SC, LO, GO, NO>(fineLevel, coarseLevel, matA);
+    RCP<Xpetra::Matrix<SC,LO,GO,NO> > matA = MueLu::TpetraCrs_To_XpetraMatrix<SC,LO,GO,NO>(regA);
+    createTwoLevelHierarchy<SC,LO,GO,NO>(fineLevel, coarseLevel, matA);
 
     // Now the prolongator needs to be created
     Array<global_ordinal_type> coarseRegGIDs (lNumRegCoarseGIDs);
@@ -320,7 +320,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
 
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void createTwoLevelHierarchy(MueLu::Level& fineLevel, MueLu::Level& coarseLevel,
-                             Teuchos::RCP<typename Xpetra::Matrix<> > A) {
+                             Teuchos::RCP<typename Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > A) {
 #include <MueLu_UseShortNames.hpp>
   using Teuchos::RCP; using Teuchos::rcp;
   RCP<FactoryManagerBase> factoryHandler = rcp(new FactoryManager());
