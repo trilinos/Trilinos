@@ -680,16 +680,26 @@ mult_test_results jacobi_test(
   Tpetra::MatrixMatrix::Jacobi<SC, LO, GO, NT>(omega,Dinv,*A,*B,*C);
 
   // Multiply + Add version
-    RCP<Matrix_t> C2 = rcp(new Matrix_t(B->getRowMap(),0));
+  RCP<Matrix_t> C2 = rcp(new Matrix_t(B->getRowMap(),0));
+  bool done=false;
 #ifdef HAVE_TPETRA_INST_OPENMP
     if(std::is_same<NT,Kokkos::Compat::KokkosOpenMPWrapperNode>::value) {
-    Teuchos::ParameterList p;
-    p.set("openmp: algorithm","MSAK");
-    Tpetra::MatrixMatrix::Jacobi<SC, LO, GO, NT>(omega,Dinv,*A,*B,*C2,true,"jacobi_test_msak",rcp(&p,false));
-  }
-  else
+      Teuchos::ParameterList p;
+      p.set("openmp: algorithm","MSAK");
+      Tpetra::MatrixMatrix::Jacobi<SC, LO, GO, NT>(omega,Dinv,*A,*B,*C2,true,"jacobi_test_msak",rcp(&p,false));
+      done=true;
+    }
 #endif
-    {
+#ifdef HAVE_TPETRA_INST_CUDA
+    if(std::is_same<NT,Kokkos::Compat::KokkosCudaWrapperNode>::value) {
+      Teuchos::ParameterList p;
+      p.set("cuda: algorithm","MSAK");
+      Tpetra::MatrixMatrix::Jacobi<SC, LO, GO, NT>(omega,Dinv,*A,*B,*C2,true,"jacobi_test_msak",rcp(&p,false));
+      done=true;
+    }
+#endif
+    // Fallback
+    if(!done) {
       Dinv.putScalar(omega);
       RCP<Matrix_t> AB = rcp(new Matrix_t(B->getRowMap(),0));
       
