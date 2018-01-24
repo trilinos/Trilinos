@@ -452,8 +452,8 @@ void KernelWrappers2<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosCud
                                                                                                const Vector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosCudaWrapperNode> & Dinv,
                                                                                                CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Kokkos::Compat::KokkosCudaWrapperNode>& Aview,
                                                                                                CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Kokkos::Compat::KokkosCudaWrapperNode>& Bview,
-                                                                                               const LocalOrdinalViewType & Acol2Brow,
-                                                                                               const LocalOrdinalViewType & Acol2Irow,
+                                                                                               const LocalOrdinalViewType & targetMapToOrigRow,
+                                                                                               const LocalOrdinalViewType & targetMapToImportRow,
                                                                                                const LocalOrdinalViewType & Bcol2Ccol,
                                                                                                const LocalOrdinalViewType & Icol2Ccol,                                                       
                                                                                                CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Kokkos::Compat::KokkosCudaWrapperNode>& C,
@@ -461,32 +461,146 @@ void KernelWrappers2<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosCud
                                                                                                const std::string& label,
                                                                                                const Teuchos::RCP<Teuchos::ParameterList>& params) {
 
+  // FIXME: Right now, this is a cut-and-paste of the serial kernel
+  typedef Kokkos::Compat::KokkosCudaWrapperNode Node; 
+
 #ifdef HAVE_TPETRA_MMM_TIMINGS
-    std::string prefix_mmm = std::string("TpetraExt ") + label + std::string(": ");
-    using Teuchos::TimeMonitor;
-    Teuchos::RCP<TimeMonitor> MM;
+  std::string prefix_mmm = std::string("TpetraExt ") + label + std::string(": ");
+  using Teuchos::TimeMonitor;
+  Teuchos::RCP<Teuchos::TimeMonitor> MM = rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix_mmm + std::string("Jacobi Reuse CudaCore"))));
+  Teuchos::RCP<Teuchos::TimeMonitor> MM2;
 #endif
+  using Teuchos::RCP;
+  using Teuchos::rcp;
 
   // Lots and lots of typedefs
-  using Teuchos::RCP;
+  typedef typename Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>::local_matrix_type KCRS;
+  typedef typename KCRS::StaticCrsGraphType graph_t;
+  typedef typename graph_t::row_map_type::const_type c_lno_view_t;
+  typedef typename graph_t::entries_type::non_const_type lno_nnz_view_t;
+  typedef typename KCRS::values_type::non_const_type scalar_view_t;
+  typedef typename scalar_view_t::memory_space scalar_memory_space;
 
-  // Options
-  int team_work_size = 16;  // Defaults to 16 as per Deveci 12/7/16 - csiefer
-  std::string myalg("LTG");
-  if(!params.is_null()) {
-    if(params->isParameter("openmp: algorithm"))
-      myalg = params->get("openmp: algorithm",myalg);
-    if(params->isParameter("openmp: team work size"))
-      team_work_size = params->get("openmp: team work size",team_work_size);
+  typedef Scalar            SC;
+  typedef LocalOrdinal      LO;
+  typedef GlobalOrdinal     GO;
+  typedef Node              NO;
+  typedef Map<LO,GO,NO>     map_type;
+  const size_t ST_INVALID = Teuchos::OrdinalTraits<LO>::invalid();
+  const LO LO_INVALID = Teuchos::OrdinalTraits<LO>::invalid();
+  const SC SC_ZERO = Teuchos::ScalarTraits<Scalar>::zero();
+
+  // Sizes
+  RCP<const map_type> Ccolmap = C.getColMap();
+  size_t m = Aview.origMatrix->getNodeNumRows();
+  size_t n = Ccolmap->getNodeNumElements();
+
+  // Grab the  Kokkos::SparseCrsMatrices & inner stuff
+  const KCRS & Amat = Aview.origMatrix->getLocalMatrix();
+  const KCRS & Bmat = Bview.origMatrix->getLocalMatrix();
+  const KCRS & Cmat = C.getLocalMatrix();
+
+  c_lno_view_t Arowptr = Amat.graph.row_map, Browptr = Bmat.graph.row_map, Crowptr = Cmat.graph.row_map;
+  const lno_nnz_view_t Acolind = Amat.graph.entries, Bcolind = Bmat.graph.entries, Ccolind = Cmat.graph.entries;
+  const scalar_view_t Avals = Amat.values, Bvals = Bmat.values;
+  scalar_view_t Cvals = Cmat.values;
+
+  c_lno_view_t  Irowptr;
+  lno_nnz_view_t  Icolind;
+  scalar_view_t  Ivals;
+  if(!Bview.importMatrix.is_null()) {
+    Irowptr = Bview.importMatrix->getLocalMatrix().graph.row_map;
+    Icolind = Bview.importMatrix->getLocalMatrix().graph.entries;
+    Ivals   = Bview.importMatrix->getLocalMatrix().values;
   }
 
-  
-  throw std::runtime_error("Tpetra::MatrixMatrix::Jacobi reuse unknown kernel");
-
+  // Jacobi-specific inner stuff
+  auto Dvals = Dinv.template getLocalView<scalar_memory_space>();
 
 #ifdef HAVE_TPETRA_MMM_TIMINGS
-  MM = rcp(new TimeMonitor (*TimeMonitor::getNewTimer(prefix_mmm + std::string("Jacobi Reuse CudaESFC"))));
+  MM2 = rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix_mmm + std::string("Jacobi Reuse CudaCore - Compare"))));
 #endif
+
+  // The status array will contain the index into colind where this entry was last deposited.
+  //   c_status[i] <  CSR_ip - not in the row yet
+  //   c_status[i] >= CSR_ip - this is the entry where you can find the data
+  // We start with this filled with INVALID's indicating that there are no entries yet.
+  // Sadly, this complicates the code due to the fact that size_t's are unsigned.
+  std::vector<size_t> c_status(n, ST_INVALID);
+
+  // For each row of A/C
+  size_t CSR_ip = 0, OLD_ip = 0;
+  for (size_t i = 0; i < m; i++) {
+
+    // First fill the c_status array w/ locations where we're allowed to
+    // generate nonzeros for this row
+    OLD_ip = Crowptr[i];
+    CSR_ip = Crowptr[i+1];
+    for (size_t k = OLD_ip; k < CSR_ip; k++) {
+      c_status[Ccolind[k]] = k;
+
+      // Reset values in the row of C
+      Cvals[k] = SC_ZERO;
+    }
+
+    SC minusOmegaDval = -omega*Dvals(i,0);
+
+    // Entries of B
+    for (size_t j = Browptr[i]; j < Browptr[i+1]; j++) {
+      Scalar Bval = Bvals[j];
+      if (Bval == SC_ZERO)
+        continue;
+      LO Bij = Bcolind[j];
+      LO Cij = Bcol2Ccol[Bij];
+
+      TEUCHOS_TEST_FOR_EXCEPTION(c_status[Cij] < OLD_ip || c_status[Cij] >= CSR_ip,
+        std::runtime_error, "Trying to insert a new entry into a static graph");
+
+      Cvals[c_status[Cij]] = Bvals[j];
+    }
+
+    // Entries of -omega * Dinv * A * B
+    for (size_t k = Arowptr[i]; k < Arowptr[i+1]; k++) {
+      LO Aik  = Acolind[k];
+      const SC Aval = Avals[k];
+      if (Aval == SC_ZERO)
+        continue;
+
+      if (targetMapToOrigRow[Aik] != LO_INVALID) {
+        // Local matrix
+        size_t Bk = Teuchos::as<size_t>(targetMapToOrigRow[Aik]);
+
+        for (size_t j = Browptr[Bk]; j < Browptr[Bk+1]; ++j) {
+          LO Bkj = Bcolind[j];
+          LO Cij = Bcol2Ccol[Bkj];
+
+          TEUCHOS_TEST_FOR_EXCEPTION(c_status[Cij] < OLD_ip || c_status[Cij] >= CSR_ip,
+            std::runtime_error, "Trying to insert a new entry into a static graph");
+
+          Cvals[c_status[Cij]] += minusOmegaDval * Aval * Bvals[j];
+        }
+
+      } else {
+        // Remote matrix
+        size_t Ik = Teuchos::as<size_t>(targetMapToImportRow[Aik]);
+        for (size_t j = Irowptr[Ik]; j < Irowptr[Ik+1]; ++j) {
+          LO Ikj = Icolind[j];
+          LO Cij = Icol2Ccol[Ikj];
+
+          TEUCHOS_TEST_FOR_EXCEPTION(c_status[Cij] < OLD_ip || c_status[Cij] >= CSR_ip,
+            std::runtime_error, "Trying to insert a new entry into a static graph");
+
+          Cvals[c_status[Cij]] += minusOmegaDval * Aval * Ivals[j];
+        }
+      }
+    }
+  }
+
+#ifdef HAVE_TPETRA_MMM_TIMINGS
+  MM2= Teuchos::null; 
+  MM = rcp(new TimeMonitor (*TimeMonitor::getNewTimer(prefix_mmm + std::string("Jacobi Reuse ESFC"))));
+#endif
+
   C.fillComplete(C.getDomainMap(), C.getRangeMap());
 
 }
