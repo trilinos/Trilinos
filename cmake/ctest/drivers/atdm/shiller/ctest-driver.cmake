@@ -9,8 +9,8 @@ INCLUDE("${CTEST_SCRIPT_DIRECTORY}/../TrilinosCTestDriverCore.atdm.cmake")
 # Add this script and the shiller env script to the notes
 SET( CTEST_NOTES_FILES
   ${CTEST_NOTES_FILES}
-  "${CTEST_SCRIPT_DIRECTORY}/${CTEST_SCRIPT_NAME}"
   "${TRIBITS_PROJECT_ROOT}/cmake/std/atdm/shiller/environment.sh"
+  "${CMAKE_CURRENT_LIST_FILE}"
   )
 
 # Shiller and Hansen nodes have 16 cores which cant support 2 threads each.
