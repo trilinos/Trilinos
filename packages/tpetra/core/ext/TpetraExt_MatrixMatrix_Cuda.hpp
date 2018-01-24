@@ -79,6 +79,39 @@ struct KernelWrappers<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosCu
 
 };
 
+// Jacobi KernelWrappers for Partial Specialization to Cuda
+template<class Scalar,
+         class LocalOrdinal,
+         class GlobalOrdinal, class LocalOrdinalViewType>
+struct KernelWrappers2<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosCudaWrapperNode,LocalOrdinalViewType> {
+    static inline void jacobi_A_B_newmatrix_kernel_wrapper(Scalar omega,
+                                                           const Vector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosCudaWrapperNode> & Dinv,
+                                                           CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Kokkos::Compat::KokkosCudaWrapperNode>& Aview,
+                                                           CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Kokkos::Compat::KokkosCudaWrapperNode>& Bview,
+                                                           const LocalOrdinalViewType & Acol2Brow,
+                                                           const LocalOrdinalViewType & Acol2Irow,
+                                                           const LocalOrdinalViewType & Bcol2Ccol,
+                                                           const LocalOrdinalViewType & Icol2Ccol,
+                                                           CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Kokkos::Compat::KokkosCudaWrapperNode>& C,
+                                                           Teuchos::RCP<const Import<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosCudaWrapperNode> > Cimport,
+                                                           const std::string& label = std::string(),
+                                                           const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
+
+    static inline void jacobi_A_B_reuse_kernel_wrapper(Scalar omega,
+                                                       const Vector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosCudaWrapperNode> & Dinv,
+                                                       CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Kokkos::Compat::KokkosCudaWrapperNode>& Aview,
+                                                       CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Kokkos::Compat::KokkosCudaWrapperNode>& Bview,
+                                                       const LocalOrdinalViewType & Acol2Brow,
+                                                       const LocalOrdinalViewType & Acol2Irow,
+                                                       const LocalOrdinalViewType & Bcol2Ccol,
+                                                       const LocalOrdinalViewType & Icol2Ccol,
+                                                       CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Kokkos::Compat::KokkosCudaWrapperNode>& C,
+                                                       Teuchos::RCP<const Import<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosCudaWrapperNode> > Cimport,
+                                                       const std::string& label = std::string(),
+                                                       const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
+
+};
+
 
 /*********************************************************************************************************/
 // AB NewMatrix Kernel wrappers (KokkosKernels/CUDA Version)
@@ -347,6 +380,116 @@ void KernelWrappers<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosCuda
   C.fillComplete(C.getDomainMap(), C.getRangeMap());
 }
 
+/*********************************************************************************************************/
+template<class Scalar,
+         class LocalOrdinal,
+         class GlobalOrdinal, 
+         class LocalOrdinalViewType>
+void KernelWrappers2<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosCudaWrapperNode,LocalOrdinalViewType>::jacobi_A_B_newmatrix_kernel_wrapper(Scalar omega,
+                                                                                               const Vector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosCudaWrapperNode> & Dinv,
+                                                                                               CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Kokkos::Compat::KokkosCudaWrapperNode>& Aview,
+                                                                                               CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Kokkos::Compat::KokkosCudaWrapperNode>& Bview,
+                                                                                               const LocalOrdinalViewType & Acol2Brow,
+                                                                                               const LocalOrdinalViewType & Acol2Irow,
+                                                                                               const LocalOrdinalViewType & Bcol2Ccol,
+                                                                                               const LocalOrdinalViewType & Icol2Ccol,                                                       
+                                                                                               CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Kokkos::Compat::KokkosCudaWrapperNode>& C,
+                                                                                               Teuchos::RCP<const Import<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosCudaWrapperNode> > Cimport,
+                                                                                               const std::string& label,
+                                                                                               const Teuchos::RCP<Teuchos::ParameterList>& params) {
+
+#ifdef HAVE_TPETRA_MMM_TIMINGS
+    std::string prefix_mmm = std::string("TpetraExt ") + label + std::string(": ");
+    using Teuchos::TimeMonitor;
+    Teuchos::RCP<TimeMonitor> MM;
+#endif
+
+  // Node-specific code
+  using Teuchos::RCP;
+
+  // Options
+  int team_work_size = 16;  // Defaults to 16 as per Deveci 12/7/16 - csiefer
+  std::string myalg("MSAK");
+  if(!params.is_null()) {
+    if(params->isParameter("openmp: algorithm"))
+      myalg = params->get("openmp: algorithm",myalg);
+    if(params->isParameter("openmp: team work size"))
+      team_work_size = params->get("openmp: team work size",team_work_size);
+  }
+
+  if(myalg == "MSAK") {
+    ::Tpetra::MatrixMatrix::ExtraKernels::jacobi_A_B_newmatrix_MultiplyScaleAddKernel(omega,Dinv,Aview,Bview,Acol2Brow,Acol2Irow,Bcol2Ccol,Icol2Ccol,C,Cimport,label,params);
+  }
+  else {
+    throw std::runtime_error("Tpetra::MatrixMatrix::Jacobi newmatrix unknown kernel");
+  }
+
+#ifdef HAVE_TPETRA_MMM_TIMINGS
+  MM = rcp(new TimeMonitor (*TimeMonitor::getNewTimer(prefix_mmm + std::string("Jacobi Newmatrix CudaESFC"))));
+#endif
+
+  // Final Fillcomplete
+  RCP<Teuchos::ParameterList> labelList = rcp(new Teuchos::ParameterList);
+  labelList->set("Timer Label",label);
+  if(!params.is_null()) labelList->set("compute global constants",params->get("compute global constants",true));
+
+  // NOTE: MSAK already fillCompletes, so we have to check here
+  if(!C.isFillComplete()) {
+    RCP<const Export<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosCudaWrapperNode> > dummyExport;
+    C.expertStaticFillComplete(Bview.origMatrix->getDomainMap(), Aview.origMatrix->getRangeMap(), Cimport,dummyExport,labelList);
+  }
+
+}
+
+
+
+/*********************************************************************************************************/
+template<class Scalar,
+         class LocalOrdinal,
+         class GlobalOrdinal, 
+         class LocalOrdinalViewType>
+void KernelWrappers2<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosCudaWrapperNode,LocalOrdinalViewType>::jacobi_A_B_reuse_kernel_wrapper(Scalar omega,
+                                                                                               const Vector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosCudaWrapperNode> & Dinv,
+                                                                                               CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Kokkos::Compat::KokkosCudaWrapperNode>& Aview,
+                                                                                               CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Kokkos::Compat::KokkosCudaWrapperNode>& Bview,
+                                                                                               const LocalOrdinalViewType & Acol2Brow,
+                                                                                               const LocalOrdinalViewType & Acol2Irow,
+                                                                                               const LocalOrdinalViewType & Bcol2Ccol,
+                                                                                               const LocalOrdinalViewType & Icol2Ccol,                                                       
+                                                                                               CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Kokkos::Compat::KokkosCudaWrapperNode>& C,
+                                                                                               Teuchos::RCP<const Import<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosCudaWrapperNode> > Cimport,
+                                                                                               const std::string& label,
+                                                                                               const Teuchos::RCP<Teuchos::ParameterList>& params) {
+
+#ifdef HAVE_TPETRA_MMM_TIMINGS
+    std::string prefix_mmm = std::string("TpetraExt ") + label + std::string(": ");
+    using Teuchos::TimeMonitor;
+    Teuchos::RCP<TimeMonitor> MM;
+#endif
+
+  // Lots and lots of typedefs
+  using Teuchos::RCP;
+
+  // Options
+  int team_work_size = 16;  // Defaults to 16 as per Deveci 12/7/16 - csiefer
+  std::string myalg("LTG");
+  if(!params.is_null()) {
+    if(params->isParameter("openmp: algorithm"))
+      myalg = params->get("openmp: algorithm",myalg);
+    if(params->isParameter("openmp: team work size"))
+      team_work_size = params->get("openmp: team work size",team_work_size);
+  }
+
+  
+  throw std::runtime_error("Tpetra::MatrixMatrix::Jacobi reuse unknown kernel");
+
+
+#ifdef HAVE_TPETRA_MMM_TIMINGS
+  MM = rcp(new TimeMonitor (*TimeMonitor::getNewTimer(prefix_mmm + std::string("Jacobi Reuse CudaESFC"))));
+#endif
+  C.fillComplete(C.getDomainMap(), C.getRangeMap());
+
+}
 
   }//MMdetails
 }//Tpetra

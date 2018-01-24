@@ -76,7 +76,7 @@ struct KernelWrappers<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosOp
 };
 
 
-  // Jacobi KernelWrappers for Partial Specialization to OpenMP
+// Jacobi KernelWrappers for Partial Specialization to OpenMP
 template<class Scalar,
          class LocalOrdinal,
          class GlobalOrdinal, class LocalOrdinalViewType>
