@@ -298,17 +298,31 @@ public:
 
     computeStepStartEnd(steps_);
     allocateBoundaryExchangeVectors();
+
+    std::vector<Ptr<Vector<Real>>> stepVectors;
+    stepVectors.resize(stepEnd_-stepStart_ + rightVectors_.size() + leftVectors_.size());
     
     // build up local vectors
-    std::vector<Ptr<Vector<Real>>> stepVectors(stepEnd_-stepStart_);
-    for(int i=stepStart_;i<stepEnd_;i++) {
-      stepVectors[i-stepStart_]  = localVector_->clone();
-      stepVectors[i-stepStart_]->set(*localVector_);      // make sure each subvector is initialized
+    for(int i=0;i<stepVectors.size();i++) {
+      stepVectors[i]  = localVector_->clone();
+      stepVectors[i]->set(*localVector_);      // make sure each subvector is initialized
     }
 
     stepVectors_ = makePtr<PartitionedVector<Real>>(stepVectors);
 
     isInitialized_ = true;
+  }
+
+  /** How many vectors are "owned" by this processor. This also includes
+      any duplicate vectors.
+      
+      It may be the case that
+      this processor belongs to a sub group of processors. All processors
+      in that sub group will return the same number of owned vectors.
+    */
+  int numOwnedVectors() const 
+  { 
+    return stepVectors_->numVectors(); 
   }
 
   /** How many steps are "owned" by this processor. 
@@ -317,7 +331,10 @@ public:
       this processor belongs to a sub group of processors. All processors
       in that sub group will return the same number of owned steps.
     */
-  int numOwnedSteps() const { return stepVectors_->numVectors(); }
+  int numOwnedSteps() const 
+  { 
+    return stepVectors_->numVectors()-leftVectors_.size()-rightVectors_.size(); 
+  }
 
   /** What is the stencil used to build this vector?
  
@@ -332,21 +349,30 @@ public:
   const PinTCommunicators & communicators() const { return *communicators_; }
 
 
-  /** Determine if an index is valid including the stencil.
+  /** \brief Determine if an index is valid including the stencil.
+
       An index is valid if is in [min(stencil),max(stencil)+numOwnedSteps()-1]
+      Note that this treats owned vectors that live in the "shared" region as
+      negative numbers, or numbers greater than numOwnedSteps()-1
    */
   bool isValidIndex(int i) const
   {
-    if(0<=i && i <numOwnedSteps()) 
-      return true;
+    int leftCount = leftVectors_.size();
+    int rightCount = rightVectors_.size();
 
-    // these are "neighbor" unowned vectors (left)
-    if(-leftVectors_.size() <= i && i < 0)
+    if(0<=i && i <numOwnedSteps()) {
       return true;
+    }
+
+    // these are "neighbor" unowned vectors (left) 
+    if(-leftCount <= i && i < 0) {
+      return true;
+    }
 
     // these are "neighbor" unowned vectors (right)
-    if(numOwnedSteps() <= i && i<numOwnedSteps()+rightVectors_.size())
+    if(numOwnedSteps() <= i && i<numOwnedSteps()+rightCount) {
       return true;
+    }
 
     return false;
   }
@@ -355,18 +381,30 @@ public:
    */
   Ptr<Vector<Real>> getVectorPtr(int i) const
   {
+    if(not isValidIndex(i))
+      return nullPtr;
+
+    return stepVectors_->get(i+leftVectors_.size());
+  }
+
+  /** Get a vector pointer to the local buffer. This uses the same numbering scheme as
+    * <code>getVectorPtr</code>. The valid range is valid from i in [min(stencil),-1],
+    * [max(stencil),max(stencil)+numOwnedSteps()-1]
+   */
+  Ptr<Vector<Real>> getRemoteBufferPtr(int i) const
+  {
     assert(isValidIndex(i));
+    assert(i<0 and i>=numOwnedSteps());
 
-    // these are owned vectors
-    if(0<=i && i<numOwnedSteps()) 
-      return stepVectors_->get(i);
+    int leftCount = leftVectors_.size();
+    int rightCount = rightVectors_.size();
 
-    // these are "neighbor" unowned vectors (left)
-    if(-leftVectors_.size() <= i && i < 0) 
+      // these are "neighbor" unowned vectors (left)
+    if(-leftCount <= i && i < 0) 
       return leftVectors_[leftVectors_.size()+i];
 
     // these are "neighbor" unowned vectors (right)
-    if(numOwnedSteps() <= i && i<numOwnedSteps()+rightVectors_.size())
+    if(numOwnedSteps() <= i && i<numOwnedSteps()+rightCount)
       return rightVectors_[i-numOwnedSteps()];
 
     return nullPtr;
@@ -413,7 +451,7 @@ public:
         vectorComm_->send(timeComm,myRank+1,*getVectorPtr(numOwnedSteps()+offset)); // this is "owned"
       
       if(recvFromLeft)
-        vectorComm_->recv(timeComm,myRank-1,*getVectorPtr(offset),false);                  
+        vectorComm_->recv(timeComm,myRank-1,*getRemoteBufferPtr(offset),false);                  
     }
 
     // send from right to left
@@ -426,7 +464,7 @@ public:
         vectorComm_->send(timeComm,myRank-1,*getVectorPtr(offset-1)); // this is "owned"
       
       if(recvFromRight)
-        vectorComm_->recv(timeComm,myRank+1,*getVectorPtr(numOwnedSteps()+offset-1),false);
+        vectorComm_->recv(timeComm,myRank+1,*getRemoteBufferPtr(numOwnedSteps()+offset-1),false);
     }
   }
 
@@ -460,7 +498,7 @@ public:
       }
       
       if(sendToLeft) {
-        vectorComm_->send(timeComm,myRank-1,*getVectorPtr(offset));                  
+        vectorComm_->send(timeComm,myRank-1,*getRemoteBufferPtr(offset));                  
       }
     }
 
@@ -474,7 +512,7 @@ public:
         vectorComm_->recv(timeComm,myRank-1,*getVectorPtr(offset-1),true); // this is "owned"
       
       if(sendToRight)
-        vectorComm_->send(timeComm,myRank+1,*getVectorPtr(numOwnedSteps()+offset-1));
+        vectorComm_->send(timeComm,myRank+1,*getRemoteBufferPtr(numOwnedSteps()+offset-1));
     }
   }
 
