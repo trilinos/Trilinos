@@ -17,6 +17,8 @@ SET(CTEST_BUILD_NAME "$ENV{JOB_NAME}")
 SET(THIS_FILE_LIST_DIR "${CMAKE_CURRENT_LIST_DIR}")
 INCLUDE("${THIS_FILE_LIST_DIR}/../../TrilinosCTestDriverCore.cmake")
 
+SET(THIS_LIST_FILE "${CMAKE_CURRENT_LIST_FILE}")
+
 MACRO(TRILINOS_SYSTEM_SPECIFIC_CTEST_DRIVER)
 
   # Always assume the PWD is the root directory
@@ -78,12 +80,15 @@ MACRO(TRILINOS_SYSTEM_SPECIFIC_CTEST_DRIVER)
   # Add this file to the list of notes files
   SET(CTEST_NOTES_FILES
     ${CTEST_NOTES_FILES}
-    "${CTEST_SCRIPT_DIRECTORY}/${CTEST_SCRIPT_NAME}"
+    "${THIS_LIST_FILE}"
     )
 
   # Make the default branch 'develop' (but allow it to be overriden in *.cmake
   # script)
   SET_DEFAULT(Trilinos_BRANCH develop)
+
+  # Don't process any extra repos
+  SET(Trilinos_EXTRAREPOS_FILE NONE)
 
  TRILINOS_CTEST_DRIVER()
 

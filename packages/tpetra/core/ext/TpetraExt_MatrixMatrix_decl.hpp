@@ -302,6 +302,55 @@ add (const Scalar& alpha,
      const Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> >& rangeMap  = Teuchos::null,
      const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
 
+
+/// \brief Compute the sparse matrix sum <tt>C = scalarA * Op(A) +
+///   scalarB * Op(B)</tt>, where Op(X) is either X or its transpose.
+///
+/// This version of sparse matrix-matrix add returns a new CrsMatrix
+/// instance, rather than using an existing instance for the result.
+/// The returned matrix is fill complete, with the given domain and
+/// range Maps.  It is correct (though less efficient) for A and B to
+/// have different row Maps; the returned matrix will have the same
+/// row Map as the row Map of B.
+///
+/// \pre A and B must both be fillComplete and have matching domain and
+///   range Maps.
+///
+/// \param scalarA [in] Scalar multiplier for A in the sum.
+/// \param transposeA [in] If true, use the transpose of A.
+/// \param A [in] The first input matrix.
+///
+/// \param scalarB [in] Scalar multiplier for B in the sum.
+/// \param transposeB [in] If true, use the transpose of B.
+/// \param B [in] The second input matrix.
+///
+/// \param B [in] The result matrix, which we expect to be 'new'
+///
+/// \param domainMap [in] Domain Map of C (on output).  If null or not
+///   provided, this defaults to the row Map of B.
+/// \param rangeMap [in] Range Map of C (on output).  If null or not
+///   provided, this defaults to the row Map of B.
+/// \param params [in/out] Same as the parameters of RowMatrix::add.
+///
+/// See the documentation of RowMatrix::add for a more detailed
+/// discussion of the optional parameters.
+template <class Scalar,
+          class LocalOrdinal,
+          class GlobalOrdinal,
+          class Node>
+void
+add (const Scalar& alpha,
+     const bool transposeA,
+     const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& A,
+     const Scalar& beta,
+     const bool transposeB,
+     const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& B,
+     CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> & C,
+     const Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> >& domainMap = Teuchos::null,
+     const Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> >& rangeMap  = Teuchos::null,
+     const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
+
+
 /// \brief Compute the sparse matrix sum <tt>C = scalarA * Op(A) +
 ///   scalarB * Op(B)</tt>, where Op(X) is either X or its transpose.
 ///
