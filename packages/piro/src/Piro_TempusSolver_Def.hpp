@@ -925,6 +925,7 @@ setObserver()
   }
   if (Teuchos::nonnull(observer)) {
     //Set observer in integrator
+    fwdStateIntegrator->getObserver()->clearObservers();
     fwdStateIntegrator->setObserver(observer);
     //Reinitialize everything in integrator class, since we have changed the observer.
     fwdStateIntegrator->initialize();
