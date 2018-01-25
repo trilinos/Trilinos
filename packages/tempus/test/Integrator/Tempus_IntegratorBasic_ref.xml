@@ -35,6 +35,9 @@
       <Parameter docString="" id="23" isDefault="true" isUsed="true" name="Maximum Number of Stepper Failures" type="int" value="10"/>
       <Parameter docString="" id="24" isDefault="true" isUsed="true" name="Maximum Number of Consecutive Stepper Failures" type="int" value="5"/>
       <Parameter docString="" id="25" isDefault="true" isUsed="true" name="Number of Time Steps" type="int" value="-1"/>
+      <ParameterList id="37" name="Time Step Control Strategy">
+          <Parameter docString="" id="36" isDefault="true" isUsed="true" name="Time Step Control Strategy List" type="string" value=""/>
+      </ParameterList>
     </ParameterList>
     <Parameter docString="" id="27" isDefault="true" isUsed="true" name="Screen Output Index List" type="string" value=""/>
     <Parameter docString="" id="28" isDefault="true" isUsed="true" name="Screen Output Index Interval" type="int" value="1000000"/>

@@ -23,6 +23,8 @@
 //Thyra
 #include "Thyra_VectorStdOps.hpp"
 
+//TODO: remove this
+#include <fstream>
 
 namespace Tempus {
 
@@ -299,7 +301,7 @@ void TimeStepControl<Scalar>::setParameterList(
   } else {
     tscPL_ = pList;
   }
-  tscPL_->validateParametersAndSetDefaults(*this->getValidParameters());
+  tscPL_->validateParametersAndSetDefaults(*this->getValidParameters(), 0);
 
   // Override parameters
   setNumTimeSteps(getNumTimeSteps());
@@ -450,6 +452,10 @@ void TimeStepControl<Scalar>::setParameterList(
   }
 
   // set the step control strategy
+  std::ofstream myPL("thisPL.txt");
+  tscPL_->print(myPL);
+  myPL.close();
+
   stepControlStategy_ = Teuchos::rcp(new TimeStepControlStrategyComposite<Scalar>());
   if (getStepType() == "Constant"){
       stepControlStategy_->addStrategy( 
@@ -524,6 +530,9 @@ TimeStepControl<Scalar>::getValidParameters() const
     "('Final Time' - 'Initial Time')/'Number of Time Steps'\n"
     "  'Integrator Step Type' = 'Constant'\n");
 
+   Teuchos::RCP<Teuchos::ParameterList> tscsPL = Teuchos::parameterList("Time Step Control Strategy");
+   tscsPL->set<std::string>("Time Step Control Strategy List","");
+   pl->set("Time Step Control Strategy", *tscsPL);
   return pl;
 }
 

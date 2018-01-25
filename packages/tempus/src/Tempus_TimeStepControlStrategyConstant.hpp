@@ -126,8 +126,7 @@ public:
         "    [order_min, order_max] = [" <<tsc.getMinOrder()<< ", "
         <<tsc.getMaxOrder()<< "]\n"
         "    order = " << order << "\n");
-/*
-*/
+
       metaData->setOrder(order);
       metaData->setDt(dt);
     }

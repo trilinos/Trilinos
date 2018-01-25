@@ -32,7 +32,11 @@ class TimeStepControlStrategyBasicVS : virtual public TimeStepControlStrategy<Sc
 public:
 
   /// Constructor
-  TimeStepControlStrategyBasicVS(){}
+  TimeStepControlStrategyBasicVS(Teuchos::RCP<Teuchos::ParameterList> pList = Teuchos::null){
+     //asm("int $3");
+     std::cout << "SIDAFA: got here!!" << std::endl;
+     this->setParameterList(pList);  
+  }
 
   /// Destructor
   virtual ~TimeStepControlStrategyBasicVS(){}
@@ -134,6 +138,50 @@ public:
       metaData->setDt(dt);
     }
 
+  /// \name Overridden from Teuchos::ParameterListAcceptor
+  //@{
+    void setParameterList(const Teuchos::RCP<Teuchos::ParameterList> & pList){
+
+       if (pList == Teuchos::null) {
+          // Create default parameters if null, otherwise keep current parameters.
+          if (tscsPL_ == Teuchos::null) {
+             tscsPL_ = Teuchos::parameterList("TimeStepControlStrategyBasicVS");
+             *tscsPL_= *(this->getValidParameters());
+          }
+       } else {
+          tscsPL_ = pList;
+       }
+       tscsPL_->validateParametersAndSetDefaults(*this->getValidParameters());
+
+    }
+
+    Teuchos::RCP<const Teuchos::ParameterList> getValidParameters() const {
+       Teuchos::RCP<Teuchos::ParameterList> pl = Teuchos::parameterList();
+
+       //From (Denner, 2014), amplification factor can be at most 1.91 for stability.
+       pl->set<double>("Amplification Factor" , 1.75   , "Amplification factor");
+       pl->set<double>("Reduction Factor"     , 0.5    , "Reduction factor");
+       //FIXME? may need to modify default values of monitoring function
+       //IKT, 1/5/17: from (Denner, 2014), it seems a reasonable choice for eta_min is 0.1*eta_max
+       //Numerical tests confirm this. TODO: Change default value of eta_min to 1.0e-2?
+       pl->set<double>("Minimum Value Monitoring Function" , 1.0e-6      , "Min value eta");
+       pl->set<double>("Maximum Value Monitoring Function" , 1.0e-1      , "Max value eta");
+       return pl;
+    }
+
+    Teuchos::RCP<Teuchos::ParameterList> getNonconstParameterList() {
+       return tscsPL_;
+    }
+
+    Teuchos::RCP<Teuchos::ParameterList> unsetParameterList() {
+       Teuchos::RCP<Teuchos::ParameterList> temp_plist = tscsPL_;
+       tscsPL_ = Teuchos::null;
+       return(temp_plist);
+    }
+
+  //@}
+private:
+    Teuchos::RCP<Teuchos::ParameterList> tscsPL_;
 };
 } // namespace Tempus
 #endif // Tempus_StepControlStrategy_BasicBS_hpp

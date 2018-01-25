@@ -67,7 +67,7 @@ public:
   /** \brief Check if time step index is within minimum and maximum index. */
   virtual bool indexInRange(const int iStep) const;
 
-  /// \name Overridden from Teuchos::ParameterListAcceptor
+  /// \name Overridden from Teuchos::ParameterListAccepto{}
   //@{
     void setParameterList(const Teuchos::RCP<Teuchos::ParameterList> & pl);
     Teuchos::RCP<const Teuchos::ParameterList> getValidParameters() const;
