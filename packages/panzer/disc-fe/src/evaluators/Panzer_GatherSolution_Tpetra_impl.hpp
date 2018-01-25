@@ -207,7 +207,7 @@ evaluateFields(typename TRAITS::EvalData workset)
      auto gather_field = gatherFields_[fieldIndex];
      int fieldNum = fieldIds_[fieldIndex];
 
-     for(std::size_t worksetCellIndex=0;worksetCellIndex<localCellIds.size();++worksetCellIndex) {
+     Kokkos::parallel_for(localCellIds.size(), KOKKOS_LAMBDA (std::size_t worksetCellIndex) {
        // loop over basis functions and fill the fields
        for(std::size_t basis=0;basis<offsets.dimension_0();basis++) {
          int offset = offsets(basis);
@@ -216,7 +216,7 @@ evaluateFields(typename TRAITS::EvalData workset)
          // set the value and seed the FAD object
          gather_field(worksetCellIndex,basis) = x_data(lid,0);
        }
-     }
+     });
    }
 }
 
