@@ -255,16 +255,19 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
             fileList[i] == "problem_x.xml")
           continue;
 
+        std::string xmlFile = dirName + fileList[i];
+
+        Teuchos::ParameterList paramList;
+        Teuchos::updateParametersFromXmlFileAndBroadcast(xmlFile, Teuchos::Ptr<Teuchos::ParameterList>(&paramList), *comm);
+
+        if (TYPE_EQUAL(Scalar, std::complex<double>) and paramList.get<bool>("skipForComplex", false))
+          continue;
+
         // Set seed
         Utilities::SetRandomSeed(*comm);
 
         // Reset (potentially) cached value of the estimate
         A->SetMaxEigenvalueEstimate(-Teuchos::ScalarTraits<SC>::one());
-
-        std::string xmlFile = dirName + fileList[i];
-
-        Teuchos::ParameterList paramList;
-        Teuchos::updateParametersFromXmlFileAndBroadcast(xmlFile, Teuchos::Ptr<Teuchos::ParameterList>(&paramList), *comm);
 
         std::string    solveType = paramList.get<std::string>   ("solver", "standalone");
         double         goldRate  = paramList.get<double>        ("convergence rate");

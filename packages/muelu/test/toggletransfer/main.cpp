@@ -58,6 +58,7 @@
 #include <MueLu_ParameterListInterpreter.hpp>
 
 #include "MueLu_SemiCoarsenPFactory.hpp" // for semi-coarsening constants
+#include <MueLu_TestHelpers.hpp>
 
 /**********************************************************************************/
 /* CREATE INITAL MATRIX                                                           */
@@ -154,6 +155,14 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
     /**********************************************************************************/
     Teuchos::ParameterList paramList;
     Teuchos::updateParametersFromXmlFileAndBroadcast(xmlFile, Teuchos::Ptr<Teuchos::ParameterList>(&paramList), *comm);
+
+    if (TYPE_EQUAL(Scalar, std::complex<double>)) {
+      Teuchos::ParameterList smootherParams = paramList.sublist("Factories").sublist("myJacobi").sublist("ParameterList");
+      double damping = smootherParams.get<double>("relaxation: damping factor");
+      smootherParams.remove("relaxation: damping factor");
+      smootherParams.set<Scalar>("relaxation: damping factor",damping);
+      paramList.sublist("Factories").sublist("myJacobi").set("ParameterList",smootherParams);
+    }
 
     // create parameter list interpreter
     Teuchos::RCP<HierarchyManager> mueluFactory = Teuchos::rcp(new ParameterListInterpreter(paramList));

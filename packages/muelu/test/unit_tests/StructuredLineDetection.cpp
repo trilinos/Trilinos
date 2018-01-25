@@ -301,7 +301,7 @@ namespace MueLuTests {
     Teuchos::ParameterList smootherParamList;
     smootherParamList.set("relaxation: type", "Jacobi");
     smootherParamList.set("relaxation: sweeps", (LocalOrdinal) 1);
-    smootherParamList.set("relaxation: damping factor", (double) 1.0);
+    smootherParamList.set("relaxation: damping factor", Teuchos::ScalarTraits<Scalar>::one());
     RCP<SmootherPrototype> smooProto = rcp( new TrilinosSmoother("LINESMOOTHING_BANDEDRELAXATION", smootherParamList) );
     RCP<SmootherFactory> SmooFact = rcp( new SmootherFactory(smooProto) );
     Acfact->setVerbLevel(Teuchos::VERB_HIGH);
