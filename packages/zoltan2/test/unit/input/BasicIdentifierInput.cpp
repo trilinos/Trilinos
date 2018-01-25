@@ -62,7 +62,7 @@ int main(int argc, char *argv[]) {
   RCP<const Comm<int> > comm = DefaultComm<int>::getComm();
   int rank = comm->getRank();
   int nprocs = comm->getSize();
-  int fail = 0, gfail=0;
+  int fail = 0, gfail = 0;
 
   // Create global identifiers with weights
   zlno_t numLocalIds = 10;

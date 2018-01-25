@@ -91,7 +91,7 @@ public:
   typedef typename InputTraits<User>::node_t   node_t;
   typedef User user_t;
 
-  /*! \brief Constructor
+  /*! \brief Constructor // TODO: Update comments
    *  \param numIds is the number of identifiers in the list
    *  \param ids should point to a list of numIds identifiers.
    *  \param weights  a list of pointers to arrays of weights.
@@ -105,36 +105,37 @@ public:
    *  The values pointed to the arguments must remain valid for the
    *  lifetime of this Adapter.
    */
-  BasicKokkosIdentifierAdapter(Kokkos::View<gno_t*> ids, 
-    Kokkos::View<scalar_t**> weights); // ** instead of * because it's 2D because of stride
-//lno_t numIds, const gno_t *idPtr, 
-//    std::vector<const scalar_t *> &weights, std::vector<int> &weightStrides);
+  BasicKokkosIdentifierAdapter(
+    Kokkos::View<gno_t*> &ids, Kokkos::View<scalar_t**> &weights);
 
   ////////////////////////////////////////////////////////////////
   // The Adapter interface.
   ////////////////////////////////////////////////////////////////
 
-  size_t getLocalNumIDs() const { return numIds_;} // Get num elements in Kokkos::View
+// https://github.com/kokkos/kokkos/wiki/View
+  size_t getLocalNumIDs() const { return _ids.dimension(0); } // Get num elements in Kokkos::View
 
-  void getIDsView(const gno_t *&Ids) const { Ids = idList_; }
+  void getIDsView(Kokkos::View<gno_t *> &ids) const { ids = _ids; }
 
-  int getNumWeightsPerID() const { return weights_.size(); }
+  int getNumWeightsPerID() const { return _weights.dimension(1); }
 
-  void getWeightsView(const scalar_t *&weights, int &stride, int idx) const {
-    if (idx < 0 || idx >= weights_.size()) {
-      std::ostringstream emsg;
-      emsg << __FILE__ << ":" << __LINE__
-           << "  Invalid weight index " << idx << std::endl;
-      throw std::runtime_error(emsg.str());
-    }
-    size_t length;
-    weights_[idx].getStridedList(length, weights, stride);
+// TODO: Figure out virtual overloading issue when building.
+  void getWeightsView(Kokkos::View<scalar_t *> &wgt, int idx = 0) const {
+// TODO // Returns a subview
+//void getWeightsView(const scalar_t *&weights, int &stride, int idx) const {
+//    if (idx < 0 || idx >= weights_.size()) {
+//      std::ostringstream emsg;
+//      emsg << __FILE__ << ":" << __LINE__
+//           << "  Invalid weight index " << idx << std::endl;
+//      throw std::runtime_error(emsg.str());
+//    }
+//    size_t length;
+//    weights_[idx].getStridedList(length, weights, stride);
   }
 
 private:
-  lno_t numIds_;
-  const gno_t *idList_;
-  ArrayRCP<StridedData<lno_t, scalar_t> > weights_;
+  Kokkos::View<gno_t *> _ids;
+  Kokkos::View<scalar_t **> _weights;
 };
 
 ////////////////////////////////////////////////////////////////
@@ -143,26 +144,10 @@ private:
 
 template <typename User>
   BasicKokkosIdentifierAdapter<User>::BasicKokkosIdentifierAdapter(
-    lno_t numIds, const gno_t *idPtr,
-    std::vector<const scalar_t *> &weights, std::vector<int> &weightStrides):
-      numIds_(numIds), idList_(idPtr), weights_()
-{
-  typedef StridedData<lno_t, scalar_t> input_t;
-  size_t numWeights = weights.size();
-
-  if (numWeights > 0) {
-    weights_ = arcp(new input_t [numWeights], 0, numWeights, true);
-
-    if (numIds > 0) {
-      for (size_t i = 0; i < numWeights; i++) {
-        int stride = weightStrides.size() ? weightStrides[i] : 1;
-        ArrayRCP<const scalar_t> wgtV(weights[i], 0, stride * numIds, false);
-        weights_[i] = input_t(wgtV, stride);
-      }
-    }
+    Kokkos::View<gno_t*> &ids, Kokkos::View<scalar_t**> &weights):
+      _ids(ids), _weights(weights) {
   }
-}
   
-}  //namespace Zoltan2
+} //namespace Zoltan2
   
 #endif

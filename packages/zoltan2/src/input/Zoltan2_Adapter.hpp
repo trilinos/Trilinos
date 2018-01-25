@@ -132,7 +132,7 @@ public:
         this process.
    */
 // TODO: Question: Is this correct? Parameter in the reference to the View pointer, which contains pointers to global numbers, because the view will be mutated?
-  virtual void getIDsView(Kokos::View<gno_t *> &ids) const {
+  virtual void getIDsView(Kokkos::View<gno_t *> &ids) const {
     Z2_THROW_NOT_IMPLEMENTED
   }
 

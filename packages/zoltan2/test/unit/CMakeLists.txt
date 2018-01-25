@@ -109,8 +109,8 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   )
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
-  KokkosBasicIdentifierInput
-  SOURCES input/KokkosBasicIdentifierInput.cpp
+  BasicKokkosIdentifierInput
+  SOURCES input/BasicKokkosIdentifierInput.cpp
   NUM_MPI_PROCS 4
   COMM serial mpi
   PASS_REGULAR_EXPRESSION "PASS"
