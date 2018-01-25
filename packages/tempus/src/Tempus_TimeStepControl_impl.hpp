@@ -199,51 +199,6 @@ bool TimeStepControl<Scalar>::indexInRange(const int iStep) const{
   return iir;
 }
 
-template<class Scalar>
-Scalar TimeStepControl<Scalar>::computeEta(const Teuchos::RCP<SolutionHistory<Scalar> > & solutionHistory)
-{
-  using Teuchos::RCP;
-  Scalar eta;
-  const double eps = 1.0e4*std::numeric_limits<double>::epsilon();
-  RCP<Teuchos::FancyOStream> out = this->getOStream();
-  int numStates = solutionHistory->getNumStates();
-  //Compute eta
-  if (numStates < 3) {
-    eta = getMinEta();
-    return eta;
-  }
-  RCP<const Thyra::VectorBase<Scalar> > xOld = (*solutionHistory)[numStates-3]->getX();
-  RCP<const Thyra::VectorBase<Scalar> > x = (*solutionHistory)[numStates-1]->getX();
-//IKT: uncomment the following to get some debug output
-//#define VERBOSE_DEBUG_OUTPUT
-#ifdef VERBOSE_DEBUG_OUTPUT
-  Teuchos::Range1D range;
-  *out << "\n*** xOld ***\n";
-  RTOpPack::ConstSubVectorView<Scalar> xOldv;
-  xOld->acquireDetachedView(range, &xOldv);
-  auto xoa = xOldv.values();
-  for (auto i = 0; i < xoa.size(); ++i) *out << xoa[i] << " ";
-  *out << "\n*** xOld ***\n";
-  *out << "\n*** x ***\n";
-  RTOpPack::ConstSubVectorView<Scalar> xv;
-  x->acquireDetachedView(range, &xv);
-  auto xa = xv.values();
-  for (auto i = 0; i < xa.size(); ++i) *out << xa[i] << " ";
-  *out << "\n*** x ***\n";
-#endif
-  //xDiff = x - xOld
-  RCP<Thyra::VectorBase<Scalar> > xDiff = Thyra::createMember(x->space());
-  Thyra::V_VmV(xDiff.ptr(), *x, *xOld);
-  Scalar xDiffNorm = Thyra::norm(*xDiff);
-  Scalar xOldNorm = Thyra::norm(*xOld);
-  //eta = ||x^(n+1)-x^n||/(||x^n||+eps)
-  eta = xDiffNorm/(xOldNorm + eps);
-#ifdef VERBOSE_DEBUG_OUTPUT
-  *out << "IKT xDiffNorm, xOldNorm, eta = " << xDiffNorm << ", " << xOldNorm
-       << ", " << eta << "\n";
-#endif
-  return eta;
-}
 
 template<class Scalar>
 void TimeStepControl<Scalar>::setNumTimeSteps(int numTimeSteps) {
@@ -381,18 +336,6 @@ void TimeStepControl<Scalar>::setParameterList(
     << "  'Variable' - Integrator will allow changes to the time step size.\n"
     << "  stepType = " << getStepType()  << "\n");
 
-  TEUCHOS_TEST_FOR_EXCEPTION(getAmplFactor() <= 1.0, std::out_of_range,
-        "Error - Invalid value of Amplification Factor = " << getAmplFactor() << "!  \n"
-        << "Amplification Factor must be > 1.0.\n");
-
-  TEUCHOS_TEST_FOR_EXCEPTION(getReductFactor() >= 1.0, std::out_of_range,
-        "Error - Invalid value of Reduction Factor = " << getReductFactor() << "!  \n"
-        << "Reduction Factor must be < 1.0.\n");
-
-  TEUCHOS_TEST_FOR_EXCEPTION(getMinEta() > getMaxEta(), std::out_of_range,
-        "Error - Invalid values of 'Minimum Value Monitoring Function' = "
-        << getMinEta() << "\n and 'Maximum Value Monitoring Function' = "
-        << getMaxEta() <<"! \n Mininum Value cannot be > Maximum Value! \n");
 
   // Parse output times
   {
@@ -451,21 +394,106 @@ void TimeStepControl<Scalar>::setParameterList(
     std::sort(outputIndices_.begin(),outputIndices_.end());
   }
 
-  // set the step control strategy
-  std::ofstream myPL("thisPL.txt");
-  tscPL_->print(myPL);
-  myPL.close();
+   //set the step control strategy
+  //std::ofstream myPL("thisPL.txt");
+  //tscPL_->print(myPL);
+  //myPL.close();
 
-  stepControlStategy_ = Teuchos::rcp(new TimeStepControlStrategyComposite<Scalar>());
-  if (getStepType() == "Constant"){
-      stepControlStategy_->addStrategy( 
-         Teuchos::rcp(new TimeStepControlStrategyConstant<Scalar>()));
-  } else { //VARIABLE
-      stepControlStategy_->addStrategy( 
-         Teuchos::rcp(new TimeStepControlStrategyBasicVS<Scalar>()));
-  }
+  this->setTimeStepControlStrategy();
+  //if (getStepType() == "Constant"){
+      //stepControlStategy_->addStrategy( 
+         //Teuchos::rcp(new TimeStepControlStrategyConstant<Scalar>()));
+  //} else { //VARIABLE
+      //stepControlStategy_->addStrategy( 
+         //Teuchos::rcp(new TimeStepControlStrategyBasicVS<Scalar>()));
+  //}
 
   return;
+}
+
+template<class Scalar>
+void TimeStepControl<Scalar>::setTimeStepControlStrategy(
+  Teuchos::RCP<TimeStepControlStrategy<Scalar> > tscs)
+{
+   using Teuchos::RCP;
+   using Teuchos::ParameterList;
+
+   //asm("int $3");
+   //std::cout << "SIDAFA: got here!!" << std::endl;
+
+   if (tscs == Teuchos::null) {
+      // Create stepControlStategy_ if null, otherwise keep current parameters.
+
+      if (stepControlStategy_ == Teuchos::null)
+         stepControlStategy_ = 
+            Teuchos::rcp(new TimeStepControlStrategyComposite<Scalar>());
+
+         if (getStepType() == "Constant"){
+            stepControlStategy_->addStrategy( 
+                  Teuchos::rcp(new TimeStepControlStrategyConstant<Scalar>()));
+         } else if ((getStepType() != "Constant") and 
+               tscPL_->isSublist("Time Step Control Strategy")) {
+
+            //asm("int $3");
+            //std::cout << "SIDAFA: got here!!" << std::endl;
+
+            RCP<ParameterList> tscsPL =
+               Teuchos::sublist(tscPL_,"Time Step Control Strategy",true);
+            // Construct from TSCS sublist
+            std::vector<std::string> tscsLists;
+
+            // string tokenizer
+            tscsLists.clear();
+            std::string str = tscsPL->get<std::string>("Time Step Control Strategy List");
+            std::string delimiters(",");
+            // Skip delimiters at the beginning
+            std::string::size_type lastPos = str.find_first_not_of(delimiters, 0);
+            // Find the first delimiter
+            std::string::size_type pos     = str.find_first_of(delimiters, lastPos);
+            while ((pos != std::string::npos) || (lastPos != std::string::npos)) {
+               // Found a token, add it to the vector
+               std::string token = str.substr(lastPos,pos-lastPos);
+               tscsLists.push_back(token);
+               if(pos==std::string::npos) break;
+
+               lastPos = str.find_first_not_of(delimiters, pos); // Skip delimiters
+               pos = str.find_first_of(delimiters, lastPos);     // Find next delimiter
+            }
+
+            //asm("int $3");
+            //std::cout << "SIDAFA: got here!!" << std::endl;
+            // For each sublist name tokenized, add the TSCS
+            for( auto el: tscsLists){
+
+               RCP<Teuchos::ParameterList> pl =
+                  Teuchos::rcp(new ParameterList(tscsPL->sublist(el)));
+
+               //std::ofstream tmpPLinLoop(el+".txt");
+               //pl->print(tmpPLinLoop);
+               //tmpPLinLoop.close();
+               
+               //asm("int $3");
+               //std::cout << "SIDAFA: got here!!" << std::endl;
+               stepControlStategy_->addStrategy( 
+                     Teuchos::rcp(new TimeStepControlStrategyBasicVS<Scalar>(pl)));
+            }
+         } //else {
+         //// Construct default TimeStepControl
+         //timeStepControl_ = rcp(new TimeStepControl<Scalar>());
+         //RCP<ParameterList> tscPL = timeStepControl_->getNonconstParameterList();
+         //integratorPL_->set("Time Step Control", tscPL->name());
+         //integratorPL_->set(tscPL->name(), tscPL);
+         //}
+      
+
+   } /*else {
+      // Make integratorPL_ consistent with new TimeStepControl.
+      RCP<ParameterList> tscPL = tsc->getNonconstParameterList();
+      integratorPL_->set("Time Step Control", tscPL->name());
+      integratorPL_->set(tscPL->name(), tscPL);
+      timeStepControl_ = tsc;
+   }*/
+
 }
 
 
@@ -484,6 +512,7 @@ TimeStepControl<Scalar>::getValidParameters() const
   pl->set<double>("Minimum Time Step"    , stdMin , "Minimum time step size");
   pl->set<double>("Initial Time Step"    , stdMin , "Initial time step size");
   pl->set<double>("Maximum Time Step"    , stdMax , "Maximum time step size");
+  //INFO: duplicate now since these are validated in TimeStepControlStrategyBasicVS now
   //From (Denner, 2014), amplification factor can be at most 1.91 for stability.
   pl->set<double>("Amplification Factor" , 1.75   , "Amplification factor");
   pl->set<double>("Reduction Factor"     , 0.5    , "Reduction factor");
