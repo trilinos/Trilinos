@@ -42,7 +42,7 @@ public:
   virtual ~TimeStepControlStrategyBasicVS(){}
 
   /** \brief Determine the time step size.*/
-  virtual void getNextTimeStep(TimeStepControl<Scalar> tsc, Teuchos::RCP<SolutionHistory<Scalar> > solutionHistory,
+  virtual void getNextTimeStep(const TimeStepControl<Scalar> tsc, Teuchos::RCP<SolutionHistory<Scalar> > solutionHistory,
         Status & integratorStatus) override {
 
      Teuchos::RCP<SolutionState<Scalar> > workingState=solutionHistory->getWorkingState();
@@ -58,10 +58,6 @@ public:
      Teuchos::RCP<Teuchos::FancyOStream> out = tsc.getOStream();
     Teuchos::OSTab ostab(out,1,"getNextTimeStep");
 
-    //asm("int $3");
-    //std::cout << "SIDAFA: got here!!" << std::endl;
-
-    //TODO: prevent redefining this
     auto changeDT = [] (Scalar dt_old, Scalar dt_new, std::string reason) {
        std::stringstream message;
        message <<
@@ -194,6 +190,7 @@ public:
        tscsPL_ = Teuchos::null;
        return(temp_plist);
     }
+  //@}
 
     virtual Scalar getAmplFactor() const
       { return tscsPL_->get<double>("Amplification Factor"); }
@@ -249,7 +246,7 @@ public:
 #endif
        return eta;
     }
-  //@}
+
 private:
     Teuchos::RCP<Teuchos::ParameterList> tscsPL_;
 };

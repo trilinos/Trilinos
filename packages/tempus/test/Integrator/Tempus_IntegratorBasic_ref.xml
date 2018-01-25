@@ -36,7 +36,13 @@
       <Parameter docString="" id="24" isDefault="true" isUsed="true" name="Maximum Number of Consecutive Stepper Failures" type="int" value="5"/>
       <Parameter docString="" id="25" isDefault="true" isUsed="true" name="Number of Time Steps" type="int" value="-1"/>
       <ParameterList id="37" name="Time Step Control Strategy">
-          <Parameter docString="" id="36" isDefault="true" isUsed="true" name="Time Step Control Strategy List" type="string" value=""/>
+          <Parameter docString="" id="36" isDefault="true" isUsed="true" name="Time Step Control Strategy List" type="string" value="basic_vs"/>
+          <ParameterList id="38" name="basic_vs">
+              <Parameter docString="" id="39" isDefault="true" isUsed="true" name="Amplification Factor" type="double" value="1.75"/>
+              <Parameter docString="" id="40" isDefault="true" isUsed="true" name="Reduction Factor" type="double" value="0.5"/>
+              <Parameter docString="" id="41" isDefault="true" isUsed="true" name="Minimum Value Monitoring Function" type="double" value="1.0e-6"/>
+              <Parameter docString="" id="42" isDefault="true" isUsed="true" name="Maximum Value Monitoring Function" type="double" value="0.1"/>
+          </ParameterList>
       </ParameterList>
     </ParameterList>
     <Parameter docString="" id="27" isDefault="true" isUsed="true" name="Screen Output Index List" type="string" value=""/>

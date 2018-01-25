@@ -23,9 +23,6 @@
 //Thyra
 #include "Thyra_VectorStdOps.hpp"
 
-//TODO: remove this
-#include <fstream>
-
 namespace Tempus {
 
 template<class Scalar>
@@ -38,11 +35,12 @@ TimeStepControl<Scalar>::TimeStepControl(
 
 template<class Scalar>
 TimeStepControl<Scalar>::TimeStepControl(const TimeStepControl<Scalar>& tsc_)
-  : tscPL_           (tsc_.tscPL_           ),
-    outputIndices_   (tsc_.outputIndices_   ),
-    outputTimes_     (tsc_.outputTimes_     ),
-    outputAdjustedDt_(tsc_.outputAdjustedDt_),
-    dtAfterOutput_   (tsc_.dtAfterOutput_   )
+  : tscPL_              (tsc_.tscPL_              ),
+    outputIndices_      (tsc_.outputIndices_      ),
+    outputTimes_        (tsc_.outputTimes_        ),
+    outputAdjustedDt_   (tsc_.outputAdjustedDt_   ),
+    dtAfterOutput_      (tsc_.dtAfterOutput_      ),
+    stepControlStategy_ (tsc_.stepControlStategy_ )
 {}
 
 
@@ -261,6 +259,9 @@ void TimeStepControl<Scalar>::setParameterList(
   // Override parameters
   setNumTimeSteps(getNumTimeSteps());
 
+  // set the time step control strategy
+  setTimeStepControlStrategy();
+
   TEUCHOS_TEST_FOR_EXCEPTION(
     (getInitTime() > getFinalTime() ), std::logic_error,
     "Error - Inconsistent time range.\n"
@@ -394,19 +395,6 @@ void TimeStepControl<Scalar>::setParameterList(
     std::sort(outputIndices_.begin(),outputIndices_.end());
   }
 
-   //set the step control strategy
-  //std::ofstream myPL("thisPL.txt");
-  //tscPL_->print(myPL);
-  //myPL.close();
-
-  this->setTimeStepControlStrategy();
-  //if (getStepType() == "Constant"){
-      //stepControlStategy_->addStrategy( 
-         //Teuchos::rcp(new TimeStepControlStrategyConstant<Scalar>()));
-  //} else { //VARIABLE
-      //stepControlStategy_->addStrategy( 
-         //Teuchos::rcp(new TimeStepControlStrategyBasicVS<Scalar>()));
-  //}
 
   return;
 }
@@ -418,81 +406,90 @@ void TimeStepControl<Scalar>::setTimeStepControlStrategy(
    using Teuchos::RCP;
    using Teuchos::ParameterList;
 
-   //asm("int $3");
-   //std::cout << "SIDAFA: got here!!" << std::endl;
+   if (stepControlStategy_ == Teuchos::null){
+      stepControlStategy_ = 
+         Teuchos::rcp(new TimeStepControlStrategyComposite<Scalar>());
+   }
 
    if (tscs == Teuchos::null) {
       // Create stepControlStategy_ if null, otherwise keep current parameters.
 
-      if (stepControlStategy_ == Teuchos::null)
-         stepControlStategy_ = 
-            Teuchos::rcp(new TimeStepControlStrategyComposite<Scalar>());
+      if (getStepType() == "Constant"){
+         stepControlStategy_->addStrategy( 
+               Teuchos::rcp(new TimeStepControlStrategyConstant<Scalar>()));
+      } 
 
-         if (getStepType() == "Constant"){
+
+      // For backward compatitibility (so we only need to create on VS strategy)
+      if ( (getStepType() == "Variable") and 
+            tscPL_->isParameter("Amplification Factor")){
+
+         RCP<Teuchos::ParameterList> tscsVSPL = 
+            Teuchos::rcp(new ParameterList("basic vs"));
+
+         tscsVSPL->set<double>("Amplification Factor", 
+               tscPL_->get<double>("Amplification Factor"));
+         tscsVSPL->set<double>("Reduction Factor", 
+               tscPL_->get<double>("Reduction Factor"));
+         tscsVSPL->set<double>("Minimum Value Monitoring Function",
+               tscPL_->get<double>("Minimum Value Monitoring Function"));
+         tscsVSPL->set<double>("Maximum Value Monitoring Function",
+               tscPL_->get<double>("Maximum Value Monitoring Function"));
+
+         tscPL_->sublist("Time Step Control Strategy").
+            set<std::string>("Time Step Control Strategy List", "basic_vs");
+         tscPL_->sublist("Time Step Control Strategy").
+            set("basic_vs", *tscsVSPL);
+
+         //TODO: now remove them from tscPL_ ( no need for them anymore in tscPL_)
+         //tscPL_->remove("Amplification Factor");
+         //tscPL_->remove("Reduction Factor");
+         //tscPL_->remove("Minimum Value Monitoring Function");
+         //tscPL_->remove("Maximum Value Monitoring Function");
+      } 
+
+
+      if ((getStepType() == "Variable") and 
+            tscPL_->isSublist("Time Step Control Strategy")) {
+
+         RCP<ParameterList> tscsPL =
+            Teuchos::sublist(tscPL_,"Time Step Control Strategy",true);
+         // Construct from TSCS sublist
+         std::vector<std::string> tscsLists;
+
+         // string tokenizer
+         tscsLists.clear();
+         std::string str = tscsPL->get<std::string>("Time Step Control Strategy List");
+         std::string delimiters(",");
+         // Skip delimiters at the beginning
+         std::string::size_type lastPos = str.find_first_not_of(delimiters, 0);
+         // Find the first delimiter
+         std::string::size_type pos     = str.find_first_of(delimiters, lastPos);
+         while ((pos != std::string::npos) || (lastPos != std::string::npos)) {
+            // Found a token, add it to the vector
+            std::string token = str.substr(lastPos,pos-lastPos);
+            tscsLists.push_back(token);
+            if(pos==std::string::npos) break;
+
+            lastPos = str.find_first_not_of(delimiters, pos); // Skip delimiters
+            pos = str.find_first_of(delimiters, lastPos);     // Find next delimiter
+         }
+
+         // For each sublist name tokenized, add the TSCS
+         for( auto el: tscsLists){
+
+            RCP<Teuchos::ParameterList> pl =
+               Teuchos::rcp(new ParameterList(tscsPL->sublist(el)));
+
             stepControlStategy_->addStrategy( 
-                  Teuchos::rcp(new TimeStepControlStrategyConstant<Scalar>()));
-         } else if ((getStepType() != "Constant") and 
-               tscPL_->isSublist("Time Step Control Strategy")) {
+                  Teuchos::rcp(new TimeStepControlStrategyBasicVS<Scalar>(pl)));
+         }
+      }
 
-            //asm("int $3");
-            //std::cout << "SIDAFA: got here!!" << std::endl;
-
-            RCP<ParameterList> tscsPL =
-               Teuchos::sublist(tscPL_,"Time Step Control Strategy",true);
-            // Construct from TSCS sublist
-            std::vector<std::string> tscsLists;
-
-            // string tokenizer
-            tscsLists.clear();
-            std::string str = tscsPL->get<std::string>("Time Step Control Strategy List");
-            std::string delimiters(",");
-            // Skip delimiters at the beginning
-            std::string::size_type lastPos = str.find_first_not_of(delimiters, 0);
-            // Find the first delimiter
-            std::string::size_type pos     = str.find_first_of(delimiters, lastPos);
-            while ((pos != std::string::npos) || (lastPos != std::string::npos)) {
-               // Found a token, add it to the vector
-               std::string token = str.substr(lastPos,pos-lastPos);
-               tscsLists.push_back(token);
-               if(pos==std::string::npos) break;
-
-               lastPos = str.find_first_not_of(delimiters, pos); // Skip delimiters
-               pos = str.find_first_of(delimiters, lastPos);     // Find next delimiter
-            }
-
-            //asm("int $3");
-            //std::cout << "SIDAFA: got here!!" << std::endl;
-            // For each sublist name tokenized, add the TSCS
-            for( auto el: tscsLists){
-
-               RCP<Teuchos::ParameterList> pl =
-                  Teuchos::rcp(new ParameterList(tscsPL->sublist(el)));
-
-               //std::ofstream tmpPLinLoop(el+".txt");
-               //pl->print(tmpPLinLoop);
-               //tmpPLinLoop.close();
-               
-               //asm("int $3");
-               //std::cout << "SIDAFA: got here!!" << std::endl;
-               stepControlStategy_->addStrategy( 
-                     Teuchos::rcp(new TimeStepControlStrategyBasicVS<Scalar>(pl)));
-            }
-         } //else {
-         //// Construct default TimeStepControl
-         //timeStepControl_ = rcp(new TimeStepControl<Scalar>());
-         //RCP<ParameterList> tscPL = timeStepControl_->getNonconstParameterList();
-         //integratorPL_->set("Time Step Control", tscPL->name());
-         //integratorPL_->set(tscPL->name(), tscPL);
-         //}
-      
-
-   } /*else {
-      // Make integratorPL_ consistent with new TimeStepControl.
-      RCP<ParameterList> tscPL = tsc->getNonconstParameterList();
-      integratorPL_->set("Time Step Control", tscPL->name());
-      integratorPL_->set(tscPL->name(), tscPL);
-      timeStepControl_ = tsc;
-   }*/
+   } else {
+      // just add the new tscs to the vector of strategies
+      stepControlStategy_->addStrategy(tscs);
+   }
 
 }
 
