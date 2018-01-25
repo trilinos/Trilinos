@@ -125,6 +125,8 @@ public:
                get<int>("Maximum Number of Consecutive Stepper Failures"); }
     virtual int getNumTimeSteps() const
       { return tscPL_->get<int>("Number of Time Steps"); }
+    virtual Teuchos::RCP<TimeStepControlStrategyComposite<Scalar>> 
+       getTimeStepControlStrategy() const { return stepControlStategy_;}
   //@}
 
   /// \name Set ParameterList values

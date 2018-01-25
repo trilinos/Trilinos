@@ -23,7 +23,8 @@ namespace Tempus {
  *
  */
 template<class Scalar>
-class TimeStepControlStrategyConstant : virtual public TimeStepControlStrategy<Scalar>
+class TimeStepControlStrategyConstant 
+  : virtual public TimeStepControlStrategy<Scalar> 
 {
 public:
 
@@ -34,9 +35,10 @@ public:
   virtual ~TimeStepControlStrategyConstant(){}
 
   /** \brief Determine the time step size.*/
-  virtual void getNextTimeStep(const TimeStepControl<Scalar> tsc, Teuchos::RCP<SolutionHistory<Scalar> > solutionHistory, 
-        Status & integratorStatus) override {
-
+  virtual void getNextTimeStep(const TimeStepControl<Scalar> tsc,
+    Teuchos::RCP<SolutionHistory<Scalar> > solutionHistory, 
+    Status & integratorStatus) override
+  {
      Teuchos::RCP<SolutionState<Scalar> > workingState=solutionHistory->getWorkingState();
      Teuchos::RCP<SolutionStateMetaData<Scalar> > metaData = workingState->getMetaData();
      const Scalar errorAbs = metaData->getErrorAbs();
@@ -45,91 +47,91 @@ public:
      Scalar dt = metaData->getDt();
      Teuchos::RCP<StepperState<Scalar> > stepperState = workingState->getStepperState();
      bool printChanges = solutionHistory->getVerbLevel() !=
-                        Teuchos::as<int>(Teuchos::VERB_NONE);
+        Teuchos::as<int>(Teuchos::VERB_NONE);
 
      dt = tsc.getInitTimeStep();
 
      Teuchos::RCP<Teuchos::FancyOStream> out = tsc.getOStream();
-    Teuchos::OSTab ostab(out,1,"getNextTimeStep");
+     Teuchos::OSTab ostab(out,1,"getNextTimeStep");
 
-    //TODO: prevent redefining this
-    auto changeOrder = [] (int order_old, int order_new, std::string reason) {
-       std::stringstream message;
-       message << "     (order = " << std::setw(2) << order_old
-          <<       ", new = " << std::setw(2) << order_new
-          << ")  " << reason << std::endl;
-       return message.str();
-    };
+     auto changeOrder = [] (int order_old, int order_new, std::string reason) {
+        std::stringstream message;
+        message << "     (order = " << std::setw(2) << order_old
+           <<       ", new = " << std::setw(2) << order_new
+           << ")  " << reason << std::endl;
+        return message.str();
+     };
 
-      // Stepper failure
-      if (stepperState->stepperStatus_ == Status::FAILED) {
+     // Stepper failure
+     if (stepperState->stepperStatus_ == Status::FAILED) {
         if (order+1 <= tsc.getMaxOrder()) {
-          if (printChanges) *out << changeOrder(order, order+1,
-            "Stepper failure, increasing order.");
-          order++;
+           if (printChanges) *out << changeOrder(order, order+1,
+                 "Stepper failure, increasing order.");
+           order++;
         } else {
-          *out << "Failure - Stepper failed and can not change time step size "
-               << "or order!\n"
-               << "    Time step type == CONSTANT_STEP_SIZE\n"
-               << "    order = " << order << std::endl;
-          integratorStatus = FAILED;
-          return;
+           *out << "Failure - Stepper failed and can not change time step size "
+              << "or order!\n"
+              << "    Time step type == CONSTANT_STEP_SIZE\n"
+              << "    order = " << order << std::endl;
+           integratorStatus = FAILED;
+           return;
         }
-      }
+     }
 
-      // Absolute error failure
-      if (errorAbs > tsc.getMaxAbsError()) {
+     // Absolute error failure
+     if (errorAbs > tsc.getMaxAbsError()) {
         if (order+1 <= tsc.getMaxOrder()) {
-          if (printChanges) *out << changeOrder(order, order+1,
-            "Absolute error is too large.  Increasing order.");
-          order++;
+           if (printChanges) *out << changeOrder(order, order+1,
+                 "Absolute error is too large.  Increasing order.");
+           order++;
         } else {
-          *out
-            << "Failure - Absolute error failed and can not change time step "
-            << "size or order!\n"
-            << "  Time step type == CONSTANT_STEP_SIZE\n"
-            << "  order = " << order
-            << "  (errorAbs ="<<errorAbs<<") > (errorMaxAbs ="
-            << tsc.getMaxAbsError()<<")"
-            << std::endl;
-          integratorStatus = FAILED;
-          return;
+           *out
+              << "Failure - Absolute error failed and can not change time step "
+              << "size or order!\n"
+              << "  Time step type == CONSTANT_STEP_SIZE\n"
+              << "  order = " << order
+              << "  (errorAbs ="<<errorAbs<<") > (errorMaxAbs ="
+              << tsc.getMaxAbsError()<<")"
+              << std::endl;
+           integratorStatus = FAILED;
+           return;
         }
-      }
+     }
 
-      // Relative error failure
-      if (errorRel > tsc.getMaxRelError()) {
+     // Relative error failure
+     if (errorRel > tsc.getMaxRelError()) {
         if (order+1 <= tsc.getMaxOrder()) {
-          if (printChanges) *out << changeOrder(order, order+1,
-            "Relative error is too large.  Increasing order.");
-          order++;
+           if (printChanges) *out << changeOrder(order, order+1,
+                 "Relative error is too large.  Increasing order.");
+           order++;
         } else {
-          *out
-            << "Failure - Relative error failed and can not change time step "
-            << "size or order!\n"
-            << "  Time step type == CONSTANT_STEP_SIZE\n"
-            << "  order = " << order
-            << "  (errorRel ="<<errorRel<<") > (errorMaxRel ="
-            << tsc.getMaxRelError()<<")"
-            << std::endl;
-          integratorStatus = FAILED;
-          return;
+           *out
+              << "Failure - Relative error failed and can not change time step "
+              << "size or order!\n"
+              << "  Time step type == CONSTANT_STEP_SIZE\n"
+              << "  order = " << order
+              << "  (errorRel ="<<errorRel<<") > (errorMaxRel ="
+              << tsc.getMaxRelError()<<")"
+              << std::endl;
+           integratorStatus = FAILED;
+           return;
         }
-      }
+     }
 
-      // Consistency checks
-      TEUCHOS_TEST_FOR_EXCEPTION(
-        (order < tsc.getMinOrder() || order > tsc.getMaxOrder()), std::out_of_range,
-        "Error - Solution order is out of range and can not change "
-        "time step size!\n"
-        "    Time step type == CONSTANT_STEP_SIZE\n"
-        "    [order_min, order_max] = [" <<tsc.getMinOrder()<< ", "
-        <<tsc.getMaxOrder()<< "]\n"
-        "    order = " << order << "\n");
+     // Consistency checks
+     TEUCHOS_TEST_FOR_EXCEPTION(
+           (order < tsc.getMinOrder() || order > tsc.getMaxOrder()), std::out_of_range,
+           "Error - Solution order is out of range and can not change "
+           "time step size!\n"
+           "    Time step type == CONSTANT_STEP_SIZE\n"
+           "    [order_min, order_max] = [" <<tsc.getMinOrder()<< ", "
+           <<tsc.getMaxOrder()<< "]\n"
+           "    order = " << order << "\n");
 
-      metaData->setOrder(order);
-      metaData->setDt(dt);
-    }
+     // update order and dt
+     metaData->setOrder(order);
+     metaData->setDt(dt);
+  }
 
 };
 } // namespace Tempus
