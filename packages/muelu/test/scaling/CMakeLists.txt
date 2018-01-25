@@ -275,13 +275,16 @@ IF (${PACKAGE_NAME}_ENABLE_Tpetra AND ${PACKAGE_NAME}_ENABLE_Ifpack2 AND ${PACKA
       )
   ENDIF()
 
-  TRIBITS_ADD_TEST(
-    ReadMatrix
-    NAME "ReadMatrixTpetra"
-    ARGS "--linAlgebra=Tpetra --xml=simple.xml"
-    NUM_MPI_PROCS 4
-    COMM serial mpi
-    )
+  # Reading a matrix saved in real format as complex does not work.
+  IF (NOT ${PACKAGE_NAME}_INST_COMPLEX_INT_INT)
+    TRIBITS_ADD_TEST(
+      ReadMatrix
+      NAME "ReadMatrixTpetra"
+      ARGS "--linAlgebra=Tpetra --xml=simple.xml"
+      NUM_MPI_PROCS 4
+      COMM serial mpi
+      )
+  ENDIF()
 
 ENDIF()
 
