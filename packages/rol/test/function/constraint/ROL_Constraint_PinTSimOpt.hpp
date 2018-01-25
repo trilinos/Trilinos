@@ -237,7 +237,7 @@ public:
                 flag = true if optimization variable is changed,
                 iter is the outer algorithm iterations count.
   */
-  virtual void update_1( const Vector<Real> &z, bool flag = true, int iter = -1 ) {}
+  virtual void update_1( const Vector<Real> &u, bool flag = true, int iter = -1 ) {}
 
   /** \brief Update constraint functions with respect to Opt variable.
                 z is the control variable, 
@@ -262,6 +262,17 @@ public:
     pint_u.boundaryExchange();
     pint_z.boundaryExchange();
 
+    // build in the time continuity constraint, note that this just using the identity matrix
+    const std::vector<int> & stencil = pint_c.stencil();
+    for(size_t i=0;i<stencil.size();i++) {
+      int offset = stencil[i];
+      if(offset<0) {
+        pint_c.getVectorPtr(offset)->set(*pint_u.getVectorPtr(offset));             // this is the local value
+        pint_c.getVectorPtr(offset)->axpy(-1.0,*pint_u.getRemoteBufferPtr(offset)); // this is the remote value
+      }
+    }
+
+    // now setup the residual for the time evolution
     for(int i=0;i<pint_c.numOwnedSteps();i++) {
       Ptr<const Vector<Real>> u_state = getStateVector(pint_u,i);
       Ptr<const Vector<Real>> z_all = getVector(pint_z,i,ALL);
@@ -292,6 +303,22 @@ public:
     pint_z.boundaryExchange();
     pint_u.boundaryExchange(PinTVector<Real>::RECV_ONLY); // this is going to block
 
+    // satisfy the time continuity constraint, note that this just using the identity matrix
+    const std::vector<int> & stencil = pint_c.stencil();
+    for(size_t i=0;i<stencil.size();i++) {
+      int offset = stencil[i];
+      if(offset<0) {
+
+        // update the old time information
+        pint_u.getVectorPtr(offset)->set(*pint_u.getRemoteBufferPtr(offset));        // this is the local value
+
+        // this should be zero!
+        pint_c.getVectorPtr(offset)->set(*pint_u.getVectorPtr(offset));             // this is the local value
+        pint_c.getVectorPtr(offset)->axpy(-1.0,*pint_u.getRemoteBufferPtr(offset)); // this is the remote value
+      }
+    }
+
+    // solve the time steps
     for(int i=0;i<pint_c.numOwnedSteps();i++) {
       Ptr<const Vector<Real>> z_all = getVector(pint_z,i,ALL);
 
@@ -325,6 +352,21 @@ public:
     pint_u.boundaryExchange();
     pint_z.boundaryExchange();
 
+    // differentiate the time continuity constraint, note that this just using the identity matrix
+    int timeRank = pint_u.communicators().getTimeRank();
+    const std::vector<int> & stencil = pint_jv.stencil();
+    for(size_t i=0;i<stencil.size();i++) {
+      int offset = stencil[i];
+      if(offset<0) {
+        pint_jv.getVectorPtr(offset)->set(*pint_v.getVectorPtr(offset));             // this is the local value
+
+        // this is a hack to make sure that sensitivities with respect to the initial condition
+        // don't get accidentally included
+        if(timeRank>0) 
+          pint_jv.getVectorPtr(offset)->axpy(-1.0,*pint_v.getRemoteBufferPtr(offset)); // this is the remote value
+      }
+    }
+
     for(int i=0;i<pint_jv.numOwnedSteps();i++) {
       // pull out all the time steps required
       Ptr<const Vector<Real>> v_state = getStateVector(pint_v,i);
@@ -355,6 +397,14 @@ public:
     pint_v.boundaryExchange();
     pint_u.boundaryExchange();
     pint_z.boundaryExchange();
+
+    const std::vector<int> & stencil = pint_jv.stencil();
+    for(size_t i=0;i<stencil.size();i++) {
+      int offset = stencil[i];
+      if(offset<0) {
+        pint_jv.getVectorPtr(offset)->zero();
+      }
+    }
 
     for(int i=0;i<pint_jv.numOwnedSteps();i++) {
       // pull out all the time steps required
@@ -419,6 +469,18 @@ public:
       ajv_now->axpy(1.0,*scratch);   
     }
 
+    // handle the constraint adjoint
+    const std::vector<int> & stencil = pint_u.stencil();
+    for(size_t i=0;i<stencil.size();i++) {
+      int offset = stencil[i];
+      if(offset<0) {
+        pint_ajv.getVectorPtr(offset)->axpy(1.0,*pint_v.getVectorPtr(offset));
+        pint_ajv.getRemoteBufferPtr(offset)->set(*pint_v.getVectorPtr(offset)); // this will be sent to the remote processor
+        pint_ajv.getRemoteBufferPtr(offset)->scale(-1.0);
+      }
+    }
+
+    // this sums from the remote buffer into the local buffer which is part of the vector
     pint_ajv.boundaryExchangeSumInto();
   }
 
@@ -456,6 +518,8 @@ public:
 
       stepConstraint_->applyAdjointJacobian_2(*ajv_now,*v_dual,*u_state,*z_all,tol);
     }
+
+    // no constraint hanlding because that doesn't work yet!
   }
 
   virtual void applyInverseAdjointJacobian_1(Vector<Real> &iajv,
