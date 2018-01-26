@@ -561,6 +561,7 @@ makeColMapAndConvertGids(GlobalOrdinal ncols,
   return rcp(new map_type(Teuchos::OrdinalTraits<GlobalOrdinal>::invalid(), colmap, 0, comm));
 }
 
+
 template <class Scalar,
           class LocalOrdinal,
           class GlobalOrdinal,
@@ -572,6 +573,35 @@ add (const Scalar& alpha,
      const Scalar& beta,
      const bool transposeB,
      const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& B,
+     const Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> >& domainMap,
+     const Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> >& rangeMap,
+     const Teuchos::RCP<Teuchos::ParameterList>& params)
+{
+  typedef Map<LocalOrdinal,GlobalOrdinal,Node>                     map_type;
+  typedef CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>  crs_matrix_type;
+  Teuchos::RCP<const map_type> CrowMap = transposeB ?  B.getDomainMap() : B.getRowMap();
+
+  Teuchos::RCP<crs_matrix_type> C = rcp(new crs_matrix_type(CrowMap, 0));
+
+  add(alpha,transposeA,A,beta,transposeB,B,*C,domainMap,rangeMap,params);
+  return C;
+}
+
+
+
+
+template <class Scalar,
+          class LocalOrdinal,
+          class GlobalOrdinal,
+          class Node>
+void
+add (const Scalar& alpha,
+     const bool transposeA,
+     const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& A,
+     const Scalar& beta,
+     const bool transposeB,
+     const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& B,
+     CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& C,
      const Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> >& domainMap,
      const Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> >& rangeMap,
      const Teuchos::RCP<Teuchos::ParameterList>& params)
@@ -690,7 +720,6 @@ add (const Scalar& alpha,
   }
   bool matchingColMaps = Aprime->getColMap()->isSameAs(*(Bprime->getColMap()));
   bool sorted = AGraphSorted && BGraphSorted;
-  RCP<crs_matrix_type> C;
   RCP<const map_type> CrowMap;
   RCP<const map_type> CcolMap;
   RCP<const import_type> Cimport = Teuchos::null;
@@ -708,7 +737,11 @@ add (const Scalar& alpha,
          << "Call Bprime->add(...)" << std::endl;
       std::cerr << os.str ();
     }
-    return Teuchos::rcp_static_cast<crs_matrix_type>(Bprime->add(alpha, *Aprime, beta, CDomainMap, CRangeMap, params));
+    Teuchos::RCP<crs_matrix_type> C_ = Teuchos::rcp_static_cast<crs_matrix_type>(Bprime->add(alpha, *Aprime, beta, CDomainMap, CRangeMap, params));
+    C.replaceColMap(C_->getColMap());
+    C.setAllValues(C_->getLocalMatrix().graph.row_map,C_->getLocalMatrix().graph.entries,C_->getLocalMatrix().values);
+    C.expertStaticFillComplete(CDomainMap, CRangeMap, C_->getGraph()->getImporter(), C_->getGraph()->getExporter(), params);
+    return;
   }
   else if(!matchingColMaps)
   {
@@ -789,7 +822,9 @@ add (const Scalar& alpha,
 #ifdef HAVE_TPETRA_MMM_TIMINGS
       MM = rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix_mmm + std::string("Tpetra::Crs constructor"))));
 #endif
-      C = rcp(new crs_matrix_type(CrowMap, CcolMap, rowptrs, colinds, vals, params));
+      //      C = rcp(new crs_matrix_type(CrowMap, CcolMap, rowptrs, colinds, vals, params));      
+      C.replaceColMap(CcolMap);
+      C.setAllValues(rowptrs,colinds,vals);
 #ifdef HAVE_TPETRA_MMM_TIMINGS
       MM = rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix_mmm + std::string("Tpetra::Crs expertStaticFillComplete"))));
 #endif
@@ -820,8 +855,8 @@ add (const Scalar& alpha,
        << "Call C->expertStaticFillComplete(...)" << std::endl;
     std::cerr << os.str ();
   }
-  C->expertStaticFillComplete(CDomainMap, CRangeMap, Cimport, Cexport, params);
-  return C;
+  C.expertStaticFillComplete(CDomainMap, CRangeMap, Cimport, Cexport, params);
+
 }
 
 template <class Scalar,
