@@ -48,6 +48,10 @@
    \brief Modified boost::any class for holding a templated value
 */
 
+#include <utility>
+#include <type_traits>
+#include <exception>
+
 #include "Teuchos_Assert.hpp"
 #include "Teuchos_TypeNameTraits.hpp"
 
@@ -79,6 +83,66 @@
 //
 
 namespace Teuchos {
+
+template<class T>
+struct is_comparable
+{
+    template<class X>
+    static auto test(int) -> decltype(std::declval<X>() == std::declval<X>(),
+                                      void(), std::true_type());
+    template<class X>
+    static auto test(...) -> std::false_type;
+    using type = decltype(test<T>(0));
+};
+
+template<class T>
+struct is_printable
+{
+    template<class X>
+    static auto test(int) -> decltype(std::declval<std::ostream&>() << std::declval<X>(),
+                                      void(), std::true_type());
+    template<class X>
+    static auto test(...) -> std::false_type;
+    using type = decltype(test<T>(0));
+};
+
+template <class T, class ok = typename is_comparable<T>::type>
+struct compare;
+
+template <class T>
+struct compare<T, std::false_type> {
+  bool operator()(T const&, T const&) const {
+    TEUCHOS_TEST_FOR_EXCEPTION(true, std::runtime_error,
+        "Trying to compare type " << typeid(T).name() << " which is not comparable");
+    return false;
+  }
+};
+
+template <class T>
+struct compare<T, std::true_type> {
+  bool operator()(T const& a, T const& b) const {
+    return a == b;
+  }
+};
+
+template <class T, class ok = typename is_printable<T>::type>
+struct print;
+
+template <class T>
+struct print<T, std::false_type> {
+  std::ostream& operator()(std::ostream& s, T const&) const {
+    TEUCHOS_TEST_FOR_EXCEPTION(true, std::runtime_error,
+        "Trying to print type " << typeid(T).name() << " which is not printable");
+    return s;
+  }
+};
+
+template <class T>
+struct print<T, std::true_type> {
+  std::ostream& operator()(std::ostream& a, T const& b) const {
+    return a << b;
+  }
+};
 
 /** \brief Modified boost::any class, which is a container for a templated
  * value.
@@ -216,11 +280,11 @@ public:
         // type() == other.type()
         const ValueType
           &other_held = dynamic_cast<const holder<ValueType>&>(other).held;
-        return held == other_held;
+        return ::Teuchos::compare<ValueType>{}(held, other_held);
       }
     /** \brief . */
     void print(std::ostream & os) const
-      { os << held; }
+      { ::Teuchos::print<ValueType>{}(os, held); }
     /** \brief . */
     ValueType held;
   };
