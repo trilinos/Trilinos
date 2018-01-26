@@ -41,12 +41,6 @@ bool intersects(std::set<T> const& a, std::set<T> const& b) {
   return false;
 }
 
-/* NOTE: this is only required to support Teuchos::any's non-standard print functionality ! */
-template <typename T>
-std::ostream& operator<<(std::ostream& os, std::set<T> const&) {
-  return os;
-}
-
 }
 
 #endif
