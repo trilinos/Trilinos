@@ -95,6 +95,12 @@ void TimeStepControl<Scalar>::getNextTimeStep(
       dtAfterOutput_ = 0.0;
     }
 
+    if (dt <= 0.0) {
+      if (printChanges) *out << changeDT(dt, getInitTimeStep(),
+        "Reset dt to initial dt.");
+      dt = getInitTimeStep();
+    }
+
     if (dt < getMinTimeStep()) {
       if (printChanges) *out << changeDT(dt, getMinTimeStep(),
         "Reset dt to minimum dt.");
@@ -104,6 +110,18 @@ void TimeStepControl<Scalar>::getNextTimeStep(
     if (getStepType() == "Constant") {
 
       dt = getInitTimeStep();
+
+      if (order < getMinOrder()) {
+        if (printChanges) *out << changeOrder(order, getMinOrder(),
+          "Order below minimum. Reset to minimum order.");
+        order = getMinOrder();
+      }
+
+      if (order > getMaxOrder()) {
+        if (printChanges) *out << changeOrder(order, getMaxOrder(),
+          "Order above maximum. Reset to maximum order.");
+        order = getMaxOrder();
+      }
 
       // Stepper failure
       if (stepperState->stepperStatus_ == Status::FAILED) {
@@ -115,6 +133,8 @@ void TimeStepControl<Scalar>::getNextTimeStep(
           *out << "Failure - Stepper failed and can not change time step size "
                << "or order!\n"
                << "    Time step type == CONSTANT_STEP_SIZE\n"
+               << "    [order_min, order_max] = ["
+               << getMinOrder()<< ", " <<getMaxOrder()<< "]\n"
                << "    order = " << order << std::endl;
           integratorStatus = FAILED;
           return;
@@ -132,6 +152,8 @@ void TimeStepControl<Scalar>::getNextTimeStep(
             << "Failure - Absolute error failed and can not change time step "
             << "size or order!\n"
             << "  Time step type == CONSTANT_STEP_SIZE\n"
+            << "    [order_min, order_max] = ["
+            << getMinOrder()<< ", " <<getMaxOrder()<< "]\n"
             << "  order = " << order
             << "  (errorAbs ="<<errorAbs<<") > (errorMaxAbs ="
             << getMaxAbsError()<<")"
@@ -152,6 +174,8 @@ void TimeStepControl<Scalar>::getNextTimeStep(
             << "Failure - Relative error failed and can not change time step "
             << "size or order!\n"
             << "  Time step type == CONSTANT_STEP_SIZE\n"
+            << "    [order_min, order_max] = ["
+            << getMinOrder()<< ", " <<getMaxOrder()<< "]\n"
             << "  order = " << order
             << "  (errorRel ="<<errorRel<<") > (errorMaxRel ="
             << getMaxRelError()<<")"
@@ -609,10 +633,11 @@ TimeStepControl<Scalar>::getValidParameters() const
   pl->set<double>("Amplification Factor" , 1.75   , "Amplification factor");
   pl->set<double>("Reduction Factor"     , 0.5    , "Reduction factor");
   //FIXME? may need to modify default values of monitoring function
-  //IKT, 1/5/17: from (Denner, 2014), it seems a reasonable choice for eta_min is 0.1*eta_max
-  //Numerical tests confirm this. TODO: Change default value of eta_min to 1.0e-2?
-  pl->set<double>("Minimum Value Monitoring Function" , 1.0e-6      , "Min value eta");
-  pl->set<double>("Maximum Value Monitoring Function" , 1.0e-1      , "Max value eta");
+  //IKT, 1/5/17: from (Denner, 2014), it seems a reasonable choice for
+  //eta_min is 0.1*eta_max.  Numerical tests confirm this.
+  //TODO: Change default value of eta_min to 1.0e-2?
+  pl->set<double>("Minimum Value Monitoring Function", 1.0e-6, "Min value eta");
+  pl->set<double>("Maximum Value Monitoring Function", 1.0e-1, "Max value eta");
   pl->set<int>   ("Minimum Order", 0,
     "Minimum time-integration order.  If set to zero (default), the\n"
     "Stepper minimum order is used.");

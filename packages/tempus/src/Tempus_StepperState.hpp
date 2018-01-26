@@ -42,7 +42,7 @@ class StepperState :
 {
 public:
   /// Constructor
-  StepperState(std::string name, Status stepperStatus = WORKING)
+  StepperState(std::string name = "Default", Status stepperStatus = WORKING)
     : stepperName_(name), stepperStatus_(stepperStatus){}
 
   /// Clone copy constructor

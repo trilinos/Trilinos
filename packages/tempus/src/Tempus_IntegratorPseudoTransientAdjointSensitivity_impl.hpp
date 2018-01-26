@@ -380,16 +380,22 @@ buildSolutionHistory()
     RCP<VectorBase<Scalar> > x_b = x;
 
     // X-Dot
-    RCP<DPV> x_dot = defaultProductVector(prod_space);
-    assign(x_dot->getNonconstVectorBlock(0).ptr(), *(state->getXDot()));
-    assign(x_dot->getNonconstVectorBlock(1).ptr(), zero);
-    RCP<VectorBase<Scalar> > x_dot_b = x_dot;
+    RCP<VectorBase<Scalar> > x_dot_b;
+    if (state->getXDot() != Teuchos::null) {
+      RCP<DPV> x_dot = defaultProductVector(prod_space);
+      assign(x_dot->getNonconstVectorBlock(0).ptr(), *(state->getXDot()));
+      assign(x_dot->getNonconstVectorBlock(1).ptr(), zero);
+      x_dot_b = x_dot;
+    }
 
     // X-Dot-Dot
-    RCP<DPV> x_dot_dot = defaultProductVector(prod_space);
-    assign(x_dot_dot->getNonconstVectorBlock(0).ptr(), *(state->getXDotDot()));
-    assign(x_dot_dot->getNonconstVectorBlock(1).ptr(), zero);
-    RCP<VectorBase<Scalar> > x_dot_dot_b = x_dot_dot;
+    RCP<VectorBase<Scalar> > x_dot_dot_b;
+    if (state->getXDotDot() != Teuchos::null) {
+      RCP<DPV> x_dot_dot = defaultProductVector(prod_space);
+      assign(x_dot_dot->getNonconstVectorBlock(0).ptr(),*(state->getXDotDot()));
+      assign(x_dot_dot->getNonconstVectorBlock(1).ptr(), zero);
+      x_dot_dot_b = x_dot_dot;
+    }
 
     RCP<SolutionState<Scalar> > prod_state =
       rcp(new SolutionState<Scalar>(state->getMetaData()->clone(),
@@ -417,16 +423,22 @@ buildSolutionHistory()
     RCP<VectorBase<Scalar> > x_b = x;
 
     // X-Dot
-    RCP<DPV> x_dot = defaultProductVector(prod_space);
-    assign(x_dot->getNonconstVectorBlock(0).ptr(), *frozen_x_dot);
-    assign(x_dot->getNonconstVectorBlock(1).ptr(), *(state->getXDot()));
-    RCP<VectorBase<Scalar> > x_dot_b = x_dot;
+    RCP<VectorBase<Scalar> > x_dot_b;
+    if (state->getXDot() != Teuchos::null) {
+      RCP<DPV> x_dot = defaultProductVector(prod_space);
+      assign(x_dot->getNonconstVectorBlock(0).ptr(), *frozen_x_dot);
+      assign(x_dot->getNonconstVectorBlock(1).ptr(), *(state->getXDot()));
+      x_dot_b = x_dot;
+    }
 
     // X-Dot-Dot
-    RCP<DPV> x_dot_dot = defaultProductVector(prod_space);
-    assign(x_dot_dot->getNonconstVectorBlock(0).ptr(), *frozen_x_dot_dot);
-    assign(x_dot_dot->getNonconstVectorBlock(1).ptr(), *(state->getXDotDot()));
-    RCP<VectorBase<Scalar> > x_dot_dot_b = x_dot_dot;
+    RCP<VectorBase<Scalar> > x_dot_dot_b;
+    if (state->getXDotDot() != Teuchos::null) {
+      RCP<DPV> x_dot_dot = defaultProductVector(prod_space);
+      assign(x_dot_dot->getNonconstVectorBlock(0).ptr(), *frozen_x_dot_dot);
+      assign(x_dot_dot->getNonconstVectorBlock(1).ptr(),*(state->getXDotDot()));
+      x_dot_dot_b = x_dot_dot;
+    }
 
     RCP<SolutionState<Scalar> > prod_state =
       rcp(new SolutionState<Scalar>(state->getMetaData()->clone(),
