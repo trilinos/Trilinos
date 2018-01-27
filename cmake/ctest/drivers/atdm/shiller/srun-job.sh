@@ -1,4 +1,4 @@
-#!/bin/bash -l
+#!/bin/bash
 
 if [ "${WORKSPACE}" == ""  ] ; then
   echo "Error, must set WORKSPACE var before calling"
