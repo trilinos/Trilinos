@@ -589,8 +589,6 @@ private:
         } else if((kGhosted == ghostedCoarseNodesPerDir[2] - 1) && ghostInterface[5]) {
           myRankGuess += pj*pi;
         }
-        std::cout << "p=" << myRank << " | myRankIndex= " << myRankIndex
-                  << ", myRankGuess=" << myRankGuess << std::endl;
         if(coarseNodeFineIndices[0] >= meshData[myRankGuess][3]
            && coarseNodeFineIndices[0] <= meshData[myRankGuess][4]
            && coarseNodeFineIndices[1] >= meshData[myRankGuess][5]
@@ -609,8 +607,6 @@ private:
         } else { // The guess failed, let us use the heavy artilery: std::find_if()
           // It could be interesting to monitor how many times this branch of the code gets
           // used as it is far more expensive than the above one...
-          std::cout << "p=" << myRank << " | Node: (" << iGhosted << ", " << jGhosted << ", "
-                    << kGhosted << ") is not found with initial guess!" << std::endl;
           auto nodeRank = std::find_if(myBlockStart, myBlockEnd,
                                        [coarseNodeFineIndices](const std::vector<GO>& vec){
                                          if(coarseNodeFineIndices[0] >= vec[3]
