@@ -50,7 +50,7 @@ private:
 
   int nx_;
   int ny_;
-  Teuchos::RCP<std::vector<std::vector<Intrepid::FieldContainer<int> > > >  meshSideSets_;
+  ROL::Ptr<std::vector<std::vector<Intrepid::FieldContainer<int> > > >  meshSideSets_;
 
 public: 
 
@@ -65,7 +65,7 @@ public:
   void computeSideSets() {
 
     int numSideSets = 3;
-    meshSideSets_ = Teuchos::rcp(new std::vector<std::vector<Intrepid::FieldContainer<int> > >(numSideSets));
+    meshSideSets_ = ROL::makePtr<std::vector<std::vector<Intrepid::FieldContainer<int> > >>(numSideSets);
 
     // Dirichlet
     (*meshSideSets_)[0].resize(2);
@@ -93,7 +93,7 @@ public:
 
   } // computeSideSets
 
-  Teuchos::RCP<std::vector<std::vector<Intrepid::FieldContainer<int> > > > getSideSets(
+  ROL::Ptr<std::vector<std::vector<Intrepid::FieldContainer<int> > > > getSideSets(
       std::ostream & outStream = std::cout,
       const bool verbose = false) const {
     if ( verbose ) {

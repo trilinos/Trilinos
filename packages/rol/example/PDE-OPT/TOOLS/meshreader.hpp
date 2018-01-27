@@ -78,14 +78,14 @@ private:
   int numFacesPerCell_;
   int numNodesPerFace_;
 
-  Teuchos::RCP<shards::CellTopology> cellTopo_;
+  ROL::Ptr<shards::CellTopology> cellTopo_;
 
-  Teuchos::RCP<Intrepid::FieldContainer<Real> > meshNodes_;
-  Teuchos::RCP<Intrepid::FieldContainer<int> >  meshCellToNodeMap_;
-  Teuchos::RCP<Intrepid::FieldContainer<int> >  meshCellToEdgeMap_;
-  Teuchos::RCP<Intrepid::FieldContainer<int> >  meshCellToFaceMap_;
+  ROL::Ptr<Intrepid::FieldContainer<Real> > meshNodes_;
+  ROL::Ptr<Intrepid::FieldContainer<int> >  meshCellToNodeMap_;
+  ROL::Ptr<Intrepid::FieldContainer<int> >  meshCellToEdgeMap_;
+  ROL::Ptr<Intrepid::FieldContainer<int> >  meshCellToFaceMap_;
 
-  Teuchos::RCP<std::vector<std::vector<std::vector<int> > > >  meshSideSets_;
+  ROL::Ptr<std::vector<std::vector<std::vector<int> > > >  meshSideSets_;
 
 public:
 
@@ -148,16 +148,16 @@ public:
 
     } // end parse header
 
-    cellTopo_ = Teuchos::rcp(new shards::CellTopology( shards::getCellTopologyData<shards::Hexahedron<8> >() ));
+    cellTopo_ = ROL::makePtr<shards::CellTopology>( shards::getCellTopologyData<shards::Hexahedron<8>>() );
 
     // Set up internal storage.
     numNodesPerCell_ = cellTopo_->getVertexCount();
     numFacesPerCell_ = cellTopo_->getFaceCount();
     numEdgesPerCell_ = cellTopo_->getEdgeCount();
     numNodesPerFace_ = cellTopo_->getVertexCount(2,0);
-    meshNodes_ = Teuchos::rcp(new Intrepid::FieldContainer<Real>(numNodes_, spaceDim_));
+    meshNodes_ = ROL::makePtr<Intrepid::FieldContainer<Real>>(numNodes_, spaceDim_);
     Intrepid::FieldContainer<Real> &nodes = *meshNodes_;
-    meshCellToNodeMap_ = Teuchos::rcp(new Intrepid::FieldContainer<int>(numCells_, numNodesPerCell_));
+    meshCellToNodeMap_ = ROL::makePtr<Intrepid::FieldContainer<int>>(numCells_, numNodesPerCell_);
     Intrepid::FieldContainer<int> &ctn = *meshCellToNodeMap_;
 
     // Parse node coordinates.
@@ -264,7 +264,7 @@ public:
 
 
     // Parse side sets.
-    meshSideSets_ = Teuchos::rcp(new std::vector<std::vector<std::vector<int> > >(numSideSets_));
+    meshSideSets_ = ROL::makePtr<std::vector<std::vector<std::vector<int> > >>(numSideSets_);
     for (int ss=0; ss<numSideSets_; ++ss) {
       (*meshSideSets_)[ss].resize(numFacesPerCell_);
     }
@@ -382,27 +382,27 @@ public:
   }
 
 
-  Teuchos::RCP<Intrepid::FieldContainer<Real> > getNodes() const {
+  ROL::Ptr<Intrepid::FieldContainer<Real> > getNodes() const {
     return meshNodes_;
   }
 
 
-  Teuchos::RCP<Intrepid::FieldContainer<int> > getCellToNodeMap() const {
+  ROL::Ptr<Intrepid::FieldContainer<int> > getCellToNodeMap() const {
     return meshCellToNodeMap_;
   }
 
 
-  Teuchos::RCP<Intrepid::FieldContainer<int> > getCellToEdgeMap() const {
+  ROL::Ptr<Intrepid::FieldContainer<int> > getCellToEdgeMap() const {
     return meshCellToEdgeMap_;
   }
 
 
-  Teuchos::RCP<Intrepid::FieldContainer<int> > getCellToFaceMap() const {
+  ROL::Ptr<Intrepid::FieldContainer<int> > getCellToFaceMap() const {
     return meshCellToFaceMap_;
   }
 
 
-  Teuchos::RCP<std::vector<std::vector<std::vector<int> > > > getSideSets (
+  ROL::Ptr<std::vector<std::vector<std::vector<int> > > > getSideSets (
       const bool verbose = false,
       std::ostream & outStream = std::cout) const {
     if (verbose) {
@@ -444,7 +444,7 @@ public:
   } // getNumSideSets
 
   void computeCellToEdgeMap() {
-    meshCellToEdgeMap_ = Teuchos::rcp(new Intrepid::FieldContainer<int>(numCells_, numEdgesPerCell_));
+    meshCellToEdgeMap_ = ROL::makePtr<Intrepid::FieldContainer<int>>(numCells_, numEdgesPerCell_);
     Intrepid::FieldContainer<int> &cte = *meshCellToEdgeMap_;
     Intrepid::FieldContainer<int> &ctn = *meshCellToNodeMap_;
     std::set<int> edgenodes;
@@ -480,7 +480,7 @@ public:
   }
 
   void computeCellToFaceMap() {
-    meshCellToFaceMap_ = Teuchos::rcp(new Intrepid::FieldContainer<int>(numCells_, numFacesPerCell_));
+    meshCellToFaceMap_ = ROL::makePtr<Intrepid::FieldContainer<int>>(numCells_, numFacesPerCell_);
     Intrepid::FieldContainer<int> &ctf = *meshCellToFaceMap_;
     Intrepid::FieldContainer<int> &ctn = *meshCellToNodeMap_;
     std::set<int> facenodes;

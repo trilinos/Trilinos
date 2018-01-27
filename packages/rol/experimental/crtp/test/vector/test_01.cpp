@@ -148,6 +148,9 @@ int main( int argc, char* argv[] ) {
     if (norm(consistency) > 0.0) {
       errorFlag++;
     }
+    x.print(*outStream);
+    x = y;
+    x.print(*outStream);
 
   }
   catch (logic_error err) {

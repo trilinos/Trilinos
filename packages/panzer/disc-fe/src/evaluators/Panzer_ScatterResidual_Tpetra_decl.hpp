@@ -133,6 +133,9 @@ private:
   std::string globalDataKey_; // what global data does this fill?
   Teuchos::RCP<const TpetraLinearObjContainer<double,LO,GO,NodeT> > tpetraContainer_;
 
+  Kokkos::View<int**,PHX::Device> scratch_lids_;
+  std::vector<Kokkos::View<int*,PHX::Device> > scratch_offsets_;
+
   ScatterResidual_Tpetra();
 };
 

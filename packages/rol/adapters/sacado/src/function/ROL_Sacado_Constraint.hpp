@@ -112,37 +112,37 @@ void Sacado_Constraint<Real,Constr>::applyJacobianAD(Vector<ScalarT> &jv, const 
     typedef std::vector<ScalarT>       vector;
     typedef StdVector<ScalarT>         SV;
   
-    using Teuchos::RCP;       using Teuchos::rcp;
-    using Teuchos::dyn_cast; 
+           
+     
 
-    RCP<const vector> xp = dyn_cast<const SV>(x).getVector();
+    ROL::Ptr<const vector> xp = dynamic_cast<const SV&>(x).getVector();
 
     int n = xp->size();
 
     // Get a pointer to the direction vector
-    RCP<const vector> vp = dyn_cast<const SV>(v).getVector();
+    ROL::Ptr<const vector> vp = dynamic_cast<const SV&>(v).getVector();
 
-    RCP<vector> jvp = dyn_cast<SV>(jv).getVector();
+    ROL::Ptr<vector> jvp = dynamic_cast<SV&>(jv).getVector();
 
     // Create a vector of independent variables
-    RCP<Fadvector> x_fad_rcp = rcp( new Fadvector );
-    x_fad_rcp->reserve(n);
+    ROL::Ptr<Fadvector> x_fad_ptr = ROL::makePtr<Fadvector>();
+    x_fad_ptr->reserve(n);
 
     // Initialize constructor for each element
     for(int i=0; i<n; ++i) {
-        x_fad_rcp->push_back(FadType(n,i,(*xp)[i])); 
+        x_fad_ptr->push_back(FadType(n,i,(*xp)[i])); 
     }
 
     // Create a vector of independent variables
-    RCP<Fadvector> c_fad_rcp = rcp( new Fadvector );
-    c_fad_rcp->reserve(dim_);
+    ROL::Ptr<Fadvector> c_fad_ptr = ROL::makePtr<Fadvector>();
+    c_fad_ptr->reserve(dim_);
 
     for(int j=0; j<dim_; ++j) {
-        c_fad_rcp->push_back(0);  
+        c_fad_ptr->push_back(0);  
     }
 
-    StdVector<FadType> x_fad(x_fad_rcp);
-    StdVector<FadType> c_fad(c_fad_rcp);
+    StdVector<FadType> x_fad(x_fad_ptr);
+    StdVector<FadType> c_fad(c_fad_ptr);
 
     // Evaluate constraint     
     constr_.value(c_fad,x_fad,tol);
@@ -150,7 +150,7 @@ void Sacado_Constraint<Real,Constr>::applyJacobianAD(Vector<ScalarT> &jv, const 
     for(int i=0; i<dim_; ++i) {
         (*jvp)[i] = 0;
         for(int j=0; j<n; ++j) {
-            (*jvp)[i] += (*vp)[j]*(*c_fad_rcp)[i].dx(j); 
+            (*jvp)[i] += (*vp)[j]*(*c_fad_ptr)[i].dx(j); 
         }   
     }       
 }
@@ -168,36 +168,36 @@ void Sacado_Constraint<Real,Constr>::applyAdjointJacobianAD(Vector<ScalarT> &aju
     typedef std::vector<ScalarT>       vector;
     typedef StdVector<ScalarT>         SV;
   
-    using Teuchos::RCP;       using Teuchos::rcp;
-    using Teuchos::dyn_cast; 
+           
+     
 
     // Get a pointer to the optimization vector
-    RCP<const vector> xp = dyn_cast<const SV>(x).getVector();
+    ROL::Ptr<const vector> xp = dynamic_cast<const SV&>(x).getVector();
 
     // Get a pointer to the direction vector
-    RCP<const vector> up = dyn_cast<const SV>(u).getVector();
+    ROL::Ptr<const vector> up = dynamic_cast<const SV&>(u).getVector();
 
-    RCP<vector> ajup = dyn_cast<SV>(aju).getVector();
+    ROL::Ptr<vector> ajup = dynamic_cast<SV&>(aju).getVector();
 
     int n = xp->size();
 
     // Create a vector of independent variables
-    RCP<Fadvector> x_fad_rcp = rcp( new Fadvector );
-    x_fad_rcp->reserve(n);
+    ROL::Ptr<Fadvector> x_fad_ptr = ROL::makePtr<Fadvector>();
+    x_fad_ptr->reserve(n);
 
     // Initialize constructor for each element
     for(int i=0; i<n; ++i) {
-        x_fad_rcp->push_back(FadType(n,i,(*xp)[i])); 
+        x_fad_ptr->push_back(FadType(n,i,(*xp)[i])); 
     }
 
-    RCP<Fadvector> c_fad_rcp = rcp( new Fadvector );
-    c_fad_rcp->reserve(dim_);
+    ROL::Ptr<Fadvector> c_fad_ptr = ROL::makePtr<Fadvector>();
+    c_fad_ptr->reserve(dim_);
     for(int j=0; j<dim_; ++j) {
-        c_fad_rcp->push_back(0);  
+        c_fad_ptr->push_back(0);  
     }
 
-    StdVector<FadType> x_fad(x_fad_rcp);
-    StdVector<FadType> c_fad(c_fad_rcp);
+    StdVector<FadType> x_fad(x_fad_ptr);
+    StdVector<FadType> c_fad(c_fad_ptr);
  
     // Evaluate constraint
     constr_.value(c_fad,x_fad,tol);
@@ -205,7 +205,7 @@ void Sacado_Constraint<Real,Constr>::applyAdjointJacobianAD(Vector<ScalarT> &aju
     FadType udotc = 0;
     
     for(int j=0;j<dim_;++j){ 
-        udotc += (*c_fad_rcp)[j]*(*up)[j];
+        udotc += (*c_fad_ptr)[j]*(*up)[j];
     } 
 
     for(int i=0;i<n;++i){
@@ -226,62 +226,62 @@ void Sacado_Constraint<Real,Constr>::applyAdjointHessianAD(Vector<ScalarT> &ahuv
     typedef std::vector<ScalarT>         vector;
     typedef StdVector<ScalarT>           SV;
   
-    using Teuchos::RCP;       using Teuchos::rcp;
-    using Teuchos::dyn_cast;
+           
+    
 
     // Get a pointer to the optimization vector
-    RCP<const vector> xp = dyn_cast<const SV>(x).getVector();
+    ROL::Ptr<const vector> xp = dynamic_cast<const SV&>(x).getVector();
 
     // Get a pointer to the dual constraint vector
-    RCP<const vector> up = dyn_cast<const SV>(u).getVector();
+    ROL::Ptr<const vector> up = dynamic_cast<const SV&>(u).getVector();
 
     // Get a pointer to the direction vector
-    RCP<const vector> vp = dyn_cast<const SV>(v).getVector();
+    ROL::Ptr<const vector> vp = dynamic_cast<const SV&>(v).getVector();
 
     // Get a pointer to the directional adjoint Hessian 
-    RCP<vector> ahuvp = dyn_cast<SV>(ahuv).getVector();
+    ROL::Ptr<vector> ahuvp = dynamic_cast<SV&>(ahuv).getVector();
 
     // Number of optimization variables
     int n = xp->size();
 
     // Create a vector of independent variables
-    RCP<Fadvector> x_fad_rcp = rcp( new Fadvector );
-    x_fad_rcp->reserve(n);
+    ROL::Ptr<Fadvector> x_fad_ptr = ROL::makePtr<Fadvector>();
+    x_fad_ptr->reserve(n);
 
     // Allocate for directional adjoint Jacobian
-    RCP<Fadvector> aju_fad_rcp = rcp( new Fadvector );
-    aju_fad_rcp->reserve(n);
+    ROL::Ptr<Fadvector> aju_fad_ptr = ROL::makePtr<Fadvector>();
+    aju_fad_ptr->reserve(n);
 
     for(int i=0; i<n; ++i) {
-        x_fad_rcp->push_back(FadType(1,(*xp)[i]));
+        x_fad_ptr->push_back(FadType(1,(*xp)[i]));
 
         // Set derivative direction
-        (*x_fad_rcp)[i].fastAccessDx(0) = (*vp)[i];     
+        (*x_fad_ptr)[i].fastAccessDx(0) = (*vp)[i];     
 
-        aju_fad_rcp->push_back(0);
+        aju_fad_ptr->push_back(0);
     }
 
     // Allocate for constraint vector
-    RCP<Fadvector> c_fad_rcp = rcp( new Fadvector );
-    c_fad_rcp->reserve(dim_);
+    ROL::Ptr<Fadvector> c_fad_ptr = ROL::makePtr<Fadvector>();
+    c_fad_ptr->reserve(dim_);
 
     // Allocate for dual constraint vector
-    RCP<Fadvector> u_fad_rcp = rcp( new Fadvector );
-    u_fad_rcp->reserve(dim_);
+    ROL::Ptr<Fadvector> u_fad_ptr = ROL::makePtr<Fadvector>();
+    u_fad_ptr->reserve(dim_);
 
      for(int j=0; j<dim_; ++j) {
-        u_fad_rcp->push_back((*up)[j]);
+        u_fad_ptr->push_back((*up)[j]);
     }
 
-    StdVector<FadType> x_fad(x_fad_rcp);
-    StdVector<FadType> u_fad(u_fad_rcp);
-    StdVector<FadType> aju_fad(aju_fad_rcp);
+    StdVector<FadType> x_fad(x_fad_ptr);
+    StdVector<FadType> u_fad(u_fad_ptr);
+    StdVector<FadType> aju_fad(aju_fad_ptr);
 
     // Evaluate constraint adjoint Jacobian direction
     this->applyAdjointJacobianAD( aju_fad, u_fad, x_fad, tol);
 
     for(int i=0; i<n; ++i) {
-        (*ahuvp)[i] = (*aju_fad_rcp)[i].dx(0);             
+        (*ahuvp)[i] = (*aju_fad_ptr)[i].dx(0);             
     }
 }
 

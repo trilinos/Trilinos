@@ -97,7 +97,7 @@ template<class Real>
 class QuantileQuadrangle : public ExpectationQuad<Real> {
 private:
 
-  Teuchos::RCP<PlusFunction<Real> > pf_;
+  ROL::Ptr<PlusFunction<Real> > pf_;
 
   Real prob_;
   Real lam_;
@@ -114,7 +114,7 @@ private:
       ">>> ERROR (ROL::QuantileQuadrangle): Convex combination parameter must be positive!");
     TEUCHOS_TEST_FOR_EXCEPTION((eps_ <= zero), std::invalid_argument,
       ">>> ERROR (ROL::QuantileQuadrangle): Smoothing parameter must be positive!");
-    TEUCHOS_TEST_FOR_EXCEPTION(pf_ == Teuchos::null, std::invalid_argument,
+    TEUCHOS_TEST_FOR_EXCEPTION(pf_ == ROL::nullPtr, std::invalid_argument,
       ">>> ERROR (ROL::QuantileQuadrangle): PlusFunction pointer is null!");
   }
 
@@ -131,7 +131,7 @@ public:
       @param[in]     eps     is the smoothing parameter for the plus function approximation
       @param[in]     pf      is the plus function or an approximation
   */
-  QuantileQuadrangle(Real prob, Real eps, Teuchos::RCP<PlusFunction<Real> > &pf ) 
+  QuantileQuadrangle(Real prob, Real eps, ROL::Ptr<PlusFunction<Real> > &pf ) 
     : ExpectationQuad<Real>(), prob_(prob), lam_(0), eps_(eps), pf_(pf) {
     checkInputs();
     setParameters();
@@ -147,7 +147,7 @@ public:
       @param[in]     pf      is the plus function or an approximation
   */
   QuantileQuadrangle(Real prob, Real lam, Real eps,
-                     Teuchos::RCP<PlusFunction<Real> > &pf ) 
+                     ROL::Ptr<PlusFunction<Real> > &pf ) 
     : ExpectationQuad<Real>(), prob_(prob), lam_(lam), eps_(eps), pf_(pf) {
     checkInputs();
     setParameters();
@@ -172,7 +172,7 @@ public:
     lam_  = list.get<Real>("Convex Combination Parameter");
     eps_  = list.get<Real>("Smoothing Parameter");
     // Build plus function
-    pf_   = Teuchos::rcp( new PlusFunction<Real>(list) );
+    pf_   = ROL::makePtr<PlusFunction<Real>>(list);
     // Check inputs
     checkInputs();
     setParameters();

@@ -1,4 +1,8 @@
-<!--- Provide a general summary of the issue in the Title above. -->
+<!---
+Provide a general summary of the issue in the Title above.  If this issue
+pertains to a particular package in Trilinos, it's worthwhile to start the
+title with "PackageName:  ".
+-->
 
 <!---
 Note that anything between these delimiters is a comment that will not appear
@@ -48,7 +52,7 @@ useful in the real world.
 
 ## Definition of Done
 <!---
-Tell us what needs to happen.  If necessary, give us a task lisk along the
+Tell us what needs to happen.  If necessary, give us a task list along the
 lines of:                                                   
 - [ ] First do this.
 - [ ] Then do that.

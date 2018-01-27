@@ -85,28 +85,28 @@ protected:
   std::vector<int > my_pointload_bc_;
 //
 
-  std::vector<Teuchos::RCP<Material<Real> > > material_;
-  Teuchos::RCP<Intrepid::FieldContainer<Real> > BMat_;
-  Teuchos::RCP<Intrepid::FieldContainer<Real> > BMatWeighted_;
-  Teuchos::RCP<Intrepid::FieldContainer<Real> > CBMat_;
-  Teuchos::RCP<Intrepid::FieldContainer<Real> > NMat_;
-  Teuchos::RCP<Intrepid::FieldContainer<Real> > NMatWeighted_;
+  std::vector<ROL::Ptr<Material<Real> > > material_;
+  ROL::Ptr<Intrepid::FieldContainer<Real> > BMat_;
+  ROL::Ptr<Intrepid::FieldContainer<Real> > BMatWeighted_;
+  ROL::Ptr<Intrepid::FieldContainer<Real> > CBMat_;
+  ROL::Ptr<Intrepid::FieldContainer<Real> > NMat_;
+  ROL::Ptr<Intrepid::FieldContainer<Real> > NMatWeighted_;
   int materialTensorDim_;
 
 // for boundary integration of traction force
-  Teuchos::RCP<Intrepid::FieldContainer<Real> > NMatWeighted_Side;
-  Teuchos::RCP<Intrepid::FieldContainer<Real> > cub_points_side;
-  Teuchos::RCP<Intrepid::FieldContainer<Real> > cub_weights_side;
-  Teuchos::RCP<Intrepid::FieldContainer<Real> > cub_points_side_refcell;
-  Teuchos::RCP<Intrepid::FieldContainer<Real> > cub_points_side_physical;
-  Teuchos::RCP<Intrepid::FieldContainer<Real> > jacobian_side_refcell;
-  Teuchos::RCP<Intrepid::FieldContainer<Real> > jacobian_det_side_refcell;
-  Teuchos::RCP<Intrepid::FieldContainer<Real> > weighted_measure_side_refcell;
-  Teuchos::RCP<Intrepid::FieldContainer<Real> > value_of_basis_at_cub_points_side_refcell;
-  Teuchos::RCP<Intrepid::FieldContainer<Real> > transformed_value_of_basis_at_cub_points_side_refcell;
-  Teuchos::RCP<Intrepid::FieldContainer<Real> > weighted_transformed_value_of_basis_at_cub_points_side_refcell;
-  Teuchos::RCP<Intrepid::FieldContainer<Real> > tractions;
-  Teuchos::RCP<Intrepid::FieldContainer<Real> > tractions_on_dofs;
+  ROL::Ptr<Intrepid::FieldContainer<Real> > NMatWeighted_Side;
+  ROL::Ptr<Intrepid::FieldContainer<Real> > cub_points_side;
+  ROL::Ptr<Intrepid::FieldContainer<Real> > cub_weights_side;
+  ROL::Ptr<Intrepid::FieldContainer<Real> > cub_points_side_refcell;
+  ROL::Ptr<Intrepid::FieldContainer<Real> > cub_points_side_physical;
+  ROL::Ptr<Intrepid::FieldContainer<Real> > jacobian_side_refcell;
+  ROL::Ptr<Intrepid::FieldContainer<Real> > jacobian_det_side_refcell;
+  ROL::Ptr<Intrepid::FieldContainer<Real> > weighted_measure_side_refcell;
+  ROL::Ptr<Intrepid::FieldContainer<Real> > value_of_basis_at_cub_points_side_refcell;
+  ROL::Ptr<Intrepid::FieldContainer<Real> > transformed_value_of_basis_at_cub_points_side_refcell;
+  ROL::Ptr<Intrepid::FieldContainer<Real> > weighted_transformed_value_of_basis_at_cub_points_side_refcell;
+  ROL::Ptr<Intrepid::FieldContainer<Real> > tractions;
+  ROL::Ptr<Intrepid::FieldContainer<Real> > tractions_on_dofs;
 
   bool verbose_;
 
@@ -137,9 +137,9 @@ public:
   Elasticity() {}
   virtual ~Elasticity() {}
 
-  virtual void Initialize(const Teuchos::RCP<const Teuchos::Comm<int> > &comm,
+  virtual void Initialize(const ROL::Ptr<const Teuchos::Comm<int> > &comm,
                           const Teuchos::RCP<Teuchos::ParameterList> &parlist,
-                          const Teuchos::RCP<std::ostream> &outStream) {
+                          const ROL::Ptr<std::ostream> &outStream) {
     /****************************************************************************/
     /*** Initialize the base PDE_FEM class. *************************************/
     /****************************************************************************/
@@ -166,17 +166,17 @@ public:
     Teuchos::ParameterList &Plist = parlist->sublist("PDE FEM");
     verbose_ = Plist.get("Verbose Output",false);
     int basisOrder = Plist.get<int>("Order of FE Discretization");
-    Teuchos::RCP<MeshManager<Real> > meshMgr = Teuchos::rcp(new MeshManager_Rectangle<Real>(*parlist));
+    ROL::Ptr<MeshManager<Real> > meshMgr = ROL::makePtr<MeshManager_Rectangle<Real>>(*parlist);
     int spaceDim = 2;
-    std::vector<Teuchos::RCP<Intrepid::Basis<Real, Intrepid::FieldContainer<Real> > > > basisPtrs(spaceDim,Teuchos::null);
+    std::vector<ROL::Ptr<Intrepid::Basis<Real, Intrepid::FieldContainer<Real> > > > basisPtrs(spaceDim,ROL::nullPtr);
     for (int k = 0; k < spaceDim; ++k) {
       if (basisOrder == 1) {
         basisPtrs[k]
-          = Teuchos::rcp(new Intrepid::Basis_HGRAD_QUAD_C1_FEM<Real, Intrepid::FieldContainer<Real> >);
+          = ROL::makePtr<Intrepid::Basis_HGRAD_QUAD_C1_FEM<Real, Intrepid::FieldContainer<Real> >>();
       }
       else if (basisOrder == 2) {
         basisPtrs[k]
-          = Teuchos::rcp(new Intrepid::Basis_HGRAD_QUAD_C2_FEM<Real, Intrepid::FieldContainer<Real> >);
+          = ROL::makePtr<Intrepid::Basis_HGRAD_QUAD_C2_FEM<Real, Intrepid::FieldContainer<Real> >>();
       }
       else {
         TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
@@ -314,7 +314,7 @@ public:
     int numCells = PDE_FEM<Real>::GetNumCells();
     int spaceDim = PDE_FEM<Real>::GetSpaceDim();
     for(int i = 0; i < numCells; ++i) {
-      Teuchos::RCP<Material<Real> > CellMaterial = Teuchos::rcp(new Material<Real>());
+      ROL::Ptr<Material<Real> > CellMaterial = ROL::makePtr<Material<Real>>();
       CellMaterial-> InitializeMaterial(spaceDim, planeStrain_, E_, poissonR_);
       materialTensorDim_ = CellMaterial->GetMaterialTensorDim();
       material_.push_back(CellMaterial);
@@ -328,22 +328,22 @@ public:
     int lfs = PDE_FEM<Real>::GetLocalFieldSize();
     int full_lfs = lfs * spaceDim;
     
-    this->gradgradMats_ = Teuchos::rcp(new Intrepid::FieldContainer<Real>(numCells, full_lfs, full_lfs));
-    this->valvalMats_   = Teuchos::rcp(new Intrepid::FieldContainer<Real>(numCells, full_lfs, full_lfs));
+    this->gradgradMats_ = ROL::makePtr<Intrepid::FieldContainer<Real>>(numCells, full_lfs, full_lfs);
+    this->valvalMats_   = ROL::makePtr<Intrepid::FieldContainer<Real>>(numCells, full_lfs, full_lfs);
     
     // construct mats
     CreateMaterial();
     
     BMat_
-      = Teuchos::rcp(new Intrepid::FieldContainer<Real>(numCells, full_lfs, numCubPoints, materialTensorDim_));
+      = ROL::makePtr<Intrepid::FieldContainer<Real>>(numCells, full_lfs, numCubPoints, materialTensorDim_);
     BMatWeighted_
-      = Teuchos::rcp(new Intrepid::FieldContainer<Real>(numCells, full_lfs, numCubPoints, materialTensorDim_));
+      = ROL::makePtr<Intrepid::FieldContainer<Real>>(numCells, full_lfs, numCubPoints, materialTensorDim_);
     CBMat_
-      = Teuchos::rcp(new Intrepid::FieldContainer<Real>(numCells, full_lfs, numCubPoints, materialTensorDim_));
+      = ROL::makePtr<Intrepid::FieldContainer<Real>>(numCells, full_lfs, numCubPoints, materialTensorDim_);
     NMat_
-      = Teuchos::rcp(new Intrepid::FieldContainer<Real>(numCells, full_lfs, numCubPoints, spaceDim));
+      = ROL::makePtr<Intrepid::FieldContainer<Real>>(numCells, full_lfs, numCubPoints, spaceDim);
     NMatWeighted_
-      = Teuchos::rcp(new Intrepid::FieldContainer<Real>(numCells, full_lfs, numCubPoints, spaceDim));
+      = ROL::makePtr<Intrepid::FieldContainer<Real>>(numCells, full_lfs, numCubPoints, spaceDim);
     Construct_N_B_mats();
     Construct_CBmats();
 
@@ -366,7 +366,7 @@ public:
     int spaceDim = PDE_FEM<Real>::GetSpaceDim();
     int lfs = PDE_FEM<Real>::GetLocalFieldSize();
     int full_lfs = lfs * spaceDim;
-    NMatWeighted_Side = Teuchos::rcp(new Intrepid::FieldContainer<Real>(1, full_lfs, numCub, spaceDim));
+    NMatWeighted_Side = ROL::makePtr<Intrepid::FieldContainer<Real>>(1, full_lfs, numCub, spaceDim);
     NMatWeighted_Side -> initialize(0.0);
     
     if(spaceDim == 2) {
@@ -419,7 +419,7 @@ public:
     shards::CellTopology sideType(shards::getCellTopologyData< shards::Line<> >());
     int cubDegree = 10;                                                             
     Intrepid::DefaultCubatureFactory<Real> cubFactory; // create cubature factory
-    Teuchos::RCP<Intrepid::Cubature<Real> > sideCub = cubFactory.create(sideType, cubDegree);
+    ROL::Ptr<Intrepid::Cubature<Real> > sideCub = cubFactory.create(sideType, cubDegree);
     int numCubPointsSide = sideCub->getNumPoints();
     if ( verbose_ ) {
       *this->outStream_<<"numCubPointsSide: "<<numCubPointsSide<<std::endl;
@@ -427,8 +427,8 @@ public:
 
     int sideDim = this->sideDim_;
     int n_nbc = this->my_nbc_.size(); 
-    Teuchos::RCP<Intrepid::FieldContainer<Real> > thiscellNodes;
-    thiscellNodes = Teuchos::rcp(new Intrepid::FieldContainer<Real>(1, numNodesPerCell, cellDim));
+    ROL::Ptr<Intrepid::FieldContainer<Real> > thiscellNodes;
+    thiscellNodes = ROL::makePtr<Intrepid::FieldContainer<Real>>(1, numNodesPerCell, cellDim);
     Intrepid::FieldContainer<Real> &nodes = *(this->meshMgr_)->getNodes();
 
     if ( verbose_ ) {
@@ -450,29 +450,29 @@ public:
         //std::cout << "first node coords: " << (*thiscellNodes)(0, 0, 0)
         //          << ", " << (*thiscellNodes)(0, 0, 1) << std::endl;
         cub_points_side
-          = Teuchos::rcp(new Intrepid::FieldContainer<Real>(numCubPointsSide, sideDim));
+          = ROL::makePtr<Intrepid::FieldContainer<Real>>(numCubPointsSide, sideDim);
         cub_weights_side
-          = Teuchos::rcp(new Intrepid::FieldContainer<Real>(numCubPointsSide));
+          = ROL::makePtr<Intrepid::FieldContainer<Real>>(numCubPointsSide);
         cub_points_side_refcell
-          = Teuchos::rcp(new Intrepid::FieldContainer<Real>(numCubPointsSide, cellDim));
+          = ROL::makePtr<Intrepid::FieldContainer<Real>>(numCubPointsSide, cellDim);
         cub_points_side_physical
-          = Teuchos::rcp(new Intrepid::FieldContainer<Real>(1, numCubPointsSide, cellDim));
+          = ROL::makePtr<Intrepid::FieldContainer<Real>>(1, numCubPointsSide, cellDim);
         jacobian_side_refcell
-          = Teuchos::rcp(new Intrepid::FieldContainer<Real>(1, numCubPointsSide, cellDim, cellDim));
+          = ROL::makePtr<Intrepid::FieldContainer<Real>>(1, numCubPointsSide, cellDim, cellDim);
         jacobian_det_side_refcell
-          = Teuchos::rcp(new Intrepid::FieldContainer<Real>(1, numCubPointsSide));
+          = ROL::makePtr<Intrepid::FieldContainer<Real>>(1, numCubPointsSide);
         weighted_measure_side_refcell
-          = Teuchos::rcp(new Intrepid::FieldContainer<Real>(1, numCubPointsSide));
+          = ROL::makePtr<Intrepid::FieldContainer<Real>>(1, numCubPointsSide);
         value_of_basis_at_cub_points_side_refcell
-          = Teuchos::rcp(new Intrepid::FieldContainer<Real>(lfs, numCubPointsSide));
+          = ROL::makePtr<Intrepid::FieldContainer<Real>>(lfs, numCubPointsSide);
         transformed_value_of_basis_at_cub_points_side_refcell
-          = Teuchos::rcp(new Intrepid::FieldContainer<Real>(1, lfs, numCubPointsSide));
+          = ROL::makePtr<Intrepid::FieldContainer<Real>>(1, lfs, numCubPointsSide);
         weighted_transformed_value_of_basis_at_cub_points_side_refcell
-          = Teuchos::rcp(new Intrepid::FieldContainer<Real>(1, lfs, numCubPointsSide));
+          = ROL::makePtr<Intrepid::FieldContainer<Real>>(1, lfs, numCubPointsSide);
         tractions
-          = Teuchos::rcp(new Intrepid::FieldContainer<Real>(1, numCubPointsSide, cellDim));
+          = ROL::makePtr<Intrepid::FieldContainer<Real>>(1, numCubPointsSide, cellDim);
         tractions_on_dofs
-          = Teuchos::rcp(new Intrepid::FieldContainer<Real>(1, full_lfs));
+          = ROL::makePtr<Intrepid::FieldContainer<Real>>(1, full_lfs);
            
         // compute traction b.c. contributions and adjust rhs
         sideCub->getCubature(*cub_points_side, *cub_weights_side);
@@ -562,8 +562,8 @@ public:
     int numCubPoints = PDE_FEM<Real>::GetNumCubPoints();
     int lfs = PDE_FEM<Real>::GetLocalFieldSize();
     int full_lfs = lfs * spaceDim;
-    this->dataF_ = Teuchos::rcp(new Intrepid::FieldContainer<Real>(numCells, numCubPoints, spaceDim));
-    this->datavalVecF_ = Teuchos::rcp(new Intrepid::FieldContainer<Real>(numCells, full_lfs));
+    this->dataF_ = ROL::makePtr<Intrepid::FieldContainer<Real>>(numCells, numCubPoints, spaceDim);
+    this->datavalVecF_ = ROL::makePtr<Intrepid::FieldContainer<Real>>(numCells, full_lfs);
 
     std::vector<Real> x(spaceDim), F(spaceDim);
     for (int i = 0; i < numCells; ++i) { // evaluate functions at these points
@@ -678,21 +678,21 @@ public:
 
   // test matrices
   virtual void test_mats(void) {
-    Teuchos::RCP<Intrepid::FieldContainer<Real> > test_Jaco_Mat;
-    Teuchos::RCP<Intrepid::FieldContainer<Real> > test_Grad_Mat;
-    Teuchos::RCP<Intrepid::FieldContainer<Real> > test_N_Mat;
-    Teuchos::RCP<Intrepid::FieldContainer<Real> > test_B_Mat;
-    Teuchos::RCP<Intrepid::FieldContainer<Real> > test_K_Mat;
-    Teuchos::RCP<Intrepid::FieldContainer<Real> > test_M_Mat;
-    Teuchos::RCP<Intrepid::FieldContainer<Real> > test_F_Vec;
+    ROL::Ptr<Intrepid::FieldContainer<Real> > test_Jaco_Mat;
+    ROL::Ptr<Intrepid::FieldContainer<Real> > test_Grad_Mat;
+    ROL::Ptr<Intrepid::FieldContainer<Real> > test_N_Mat;
+    ROL::Ptr<Intrepid::FieldContainer<Real> > test_B_Mat;
+    ROL::Ptr<Intrepid::FieldContainer<Real> > test_K_Mat;
+    ROL::Ptr<Intrepid::FieldContainer<Real> > test_M_Mat;
+    ROL::Ptr<Intrepid::FieldContainer<Real> > test_F_Vec;
     
-    test_Jaco_Mat = Teuchos::rcp(new Intrepid::FieldContainer<Real>(this->spaceDim_, this->spaceDim_));
-    test_Grad_Mat = Teuchos::rcp(new Intrepid::FieldContainer<Real>(this->lfs_, this->spaceDim_));
-    test_N_Mat = Teuchos::rcp(new Intrepid::FieldContainer<Real>(this->numLocalDofs_, this->spaceDim_));
-    test_B_Mat = Teuchos::rcp(new Intrepid::FieldContainer<Real>(this->numLocalDofs_, materialTensorDim_));
-    test_K_Mat = Teuchos::rcp(new Intrepid::FieldContainer<Real>(this->numLocalDofs_, this->numLocalDofs_));
-    test_M_Mat = Teuchos::rcp(new Intrepid::FieldContainer<Real>(this->numLocalDofs_, this->numLocalDofs_));
-    test_F_Vec = Teuchos::rcp(new Intrepid::FieldContainer<Real>(this->numLocalDofs_, 1));
+    test_Jaco_Mat = ROL::makePtr<Intrepid::FieldContainer<Real>>(this->spaceDim_, this->spaceDim_);
+    test_Grad_Mat = ROL::makePtr<Intrepid::FieldContainer<Real>>(this->lfs_, this->spaceDim_);
+    test_N_Mat = ROL::makePtr<Intrepid::FieldContainer<Real>>(this->numLocalDofs_, this->spaceDim_);
+    test_B_Mat = ROL::makePtr<Intrepid::FieldContainer<Real>>(this->numLocalDofs_, materialTensorDim_);
+    test_K_Mat = ROL::makePtr<Intrepid::FieldContainer<Real>>(this->numLocalDofs_, this->numLocalDofs_);
+    test_M_Mat = ROL::makePtr<Intrepid::FieldContainer<Real>>(this->numLocalDofs_, this->numLocalDofs_);
+    test_F_Vec = ROL::makePtr<Intrepid::FieldContainer<Real>>(this->numLocalDofs_, 1);
     
     for(int i=0; i<this->spaceDim_; i++) {
        for(int j=0; j<this->spaceDim_; j++) {
@@ -729,7 +729,7 @@ public:
     //std::cout<<"Computing CB mats."<<std::endl;
     CBMat_->initialize(0.0);
     for (int i=0; i<this->numCells_; ++i) {
-      Teuchos::RCP<Intrepid::FieldContainer<Real> > materialMat = material_[i]->GetMaterialTensor();
+      ROL::Ptr<Intrepid::FieldContainer<Real> > materialMat = material_[i]->GetMaterialTensor();
       for (int j=0; j<this->numCubPoints_; ++j) {
         for (int m=0; m<this->lfs_*this->spaceDim_; m++) {
           for (int n=0; n<materialTensorDim_; n++) {
@@ -772,7 +772,7 @@ public:
                               const std::vector<int> &localNodeNum,
                               const std::vector<Real> &coord1,
                               const std::vector<Real> &coord2) { 
-    Teuchos::RCP<Intrepid::FieldContainer<int> > nodeDofs = this->dofMgr_->getNodeDofs();
+    ROL::Ptr<Intrepid::FieldContainer<int> > nodeDofs = this->dofMgr_->getNodeDofs();
     bool isLoadPosContainedInCurrentSegment = false;
     int whichNodeIsCloser = -1;
     // if update F, provides parametrized computation of F[0] and F[1]

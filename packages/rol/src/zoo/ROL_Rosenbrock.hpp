@@ -77,13 +77,13 @@ private:
   Real const2_;
 
   template<class VectorType> 
-  Teuchos::RCP<const vector> getVector( const V& x ) {
-    return Teuchos::dyn_cast<const VectorType>((x)).getVector();
+  ROL::Ptr<const vector> getVector( const V& x ) {
+    return dynamic_cast<const VectorType&>((x)).getVector();
   }
 
   template<class VectorType> 
-  Teuchos::RCP<vector> getVector( V& x ) {
-    return Teuchos::dyn_cast<VectorType>(x).getVector();
+  ROL::Ptr<vector> getVector( V& x ) {
+    return dynamic_cast<VectorType&>(x).getVector();
   }
 
 public:
@@ -91,8 +91,8 @@ public:
 
   Real value( const Vector<Real> &x, Real &tol ) {
 
-    using Teuchos::RCP;
-    RCP<const vector> xp = getVector<XPrim>(x);
+    
+    ROL::Ptr<const vector> xp = getVector<XPrim>(x);
 
     uint n = xp->size();
     Real val = 0;
@@ -110,9 +110,9 @@ public:
 
   void gradient( Vector<Real> &g, const Vector<Real> &x, Real &tol ) {
 
-    using Teuchos::RCP;
-    RCP<const vector> xp = getVector<XPrim>(x);
-    RCP<vector> gp = getVector<XDual>(g);
+    
+    ROL::Ptr<const vector> xp = getVector<XPrim>(x);
+    ROL::Ptr<vector> gp = getVector<XDual>(g);
 
     uint n = xp->size();
     for( uint i=0; i<n/2; i++ ) {
@@ -129,10 +129,10 @@ public:
 #if USE_HESSVEC
   void hessVec( Vector<Real> &hv, const Vector<Real> &v, const Vector<Real> &x, Real &tol ) {
 
-    using Teuchos::RCP;
-    RCP<const vector> xp = getVector<XPrim>(x);
-    RCP<const vector> vp = getVector<XPrim>(v);
-    RCP<vector> hvp = getVector<XDual>(hv);
+    
+    ROL::Ptr<const vector> xp = getVector<XPrim>(x);
+    ROL::Ptr<const vector> vp = getVector<XPrim>(v);
+    ROL::Ptr<vector> hvp = getVector<XDual>(hv);
 
     uint n = xp->size();
     for( uint i=0; i<n/2; i++ ) {
@@ -147,11 +147,11 @@ public:
 #endif
   void invHessVec( Vector<Real> &hv, const Vector<Real> &v, const Vector<Real> &x, Real &tol ) {
   
-    using Teuchos::RCP; 
+     
   
-    RCP<const vector> xp = getVector<XPrim>(x);
-    RCP<const vector> vp = getVector<XDual>(v);
-    RCP<vector> hvp = getVector<XPrim>(hv);
+    ROL::Ptr<const vector> xp = getVector<XPrim>(x);
+    ROL::Ptr<const vector> vp = getVector<XDual>(v);
+    ROL::Ptr<vector> hvp = getVector<XPrim>(hv);
 
     uint n = xp->size();
     for( uint i=0; i<n/2; i++ ) {
@@ -166,29 +166,29 @@ public:
 };
 
 template<class Real, class XPrim, class XDual>
-void getRosenbrock( Teuchos::RCP<Objective<Real> > &obj,
-                    Teuchos::RCP<Vector<Real> >    &x0,
-                    Teuchos::RCP<Vector<Real> >    &x ) {
+void getRosenbrock( ROL::Ptr<Objective<Real> > &obj,
+                    ROL::Ptr<Vector<Real> >    &x0,
+                    ROL::Ptr<Vector<Real> >    &x ) {
   // Problem dimension
   int n = 100;
 
   // Get Initial Guess
-  Teuchos::RCP<std::vector<Real> > x0p = Teuchos::rcp(new std::vector<Real>(n,0.0));
+  ROL::Ptr<std::vector<Real> > x0p = ROL::makePtr<std::vector<Real>>(n,0.0);
   for ( int i = 0; i < n/2; i++ ) {
     (*x0p)[2*i]   = -1.2;
     (*x0p)[2*i+1] =  1.0;
   }
-  x0 = Teuchos::rcp(new XPrim(x0p));
+  x0 = ROL::makePtr<XPrim>(x0p);
 
   // Get Solution
-  Teuchos::RCP<std::vector<Real> > xp = Teuchos::rcp(new std::vector<Real>(n,0.0));
+  ROL::Ptr<std::vector<Real> > xp = ROL::makePtr<std::vector<Real>>(n,0.0);
   for ( int i = 0; i < n; i++ ) {
     (*xp)[i] = 1.0;
   }
-  x = Teuchos::rcp(new XPrim(xp));
+  x = ROL::makePtr<XPrim>(xp);
 
   // Instantiate Objective Function
-  obj = Teuchos::rcp(new Objective_Rosenbrock<Real, XPrim, XDual>);
+  obj = ROL::makePtr<Objective_Rosenbrock<Real, XPrim, XDual>>();
 }
 
 }// End ZOO Namespace

@@ -26,7 +26,7 @@
     Adapted from the MATLAB code by Dirk Laurie and Walter Gautschi
     http://www.cs.purdue.edu/archives/2002/wxg/codes/r_jacobi.m  */
 template<class Real>
-void rec_jacobi( Teuchos::RCP<Teuchos::LAPACK<int,Real> > lapack,
+void rec_jacobi( ROL::Ptr<Teuchos::LAPACK<int,Real> > lapack,
                  const double alpha, 
                  const double beta,
                  std::vector<Real> &a,
@@ -101,7 +101,7 @@ void vandermonde( const std::vector<Real> &a,
     Adapted from the MATLAB code by Walter Gautschi
     http://www.cs.purdue.edu/archives/2002/wxg/codes/gauss.m  */
 template<class Real>
-void gauss( Teuchos::RCP<Teuchos::LAPACK<int,Real> > lapack,
+void gauss( ROL::Ptr<Teuchos::LAPACK<int,Real> > lapack,
             const std::vector<Real> &a,
             const std::vector<Real> &b,
             std::vector<Real> &x,
@@ -148,7 +148,7 @@ void gauss( Teuchos::RCP<Teuchos::LAPACK<int,Real> > lapack,
     "Some modified matrix eigenvalue problems" 
     by Gene Golub, SIAM Review Vol 15, No. 2, April 1973, pp.318--334 */
 template<class Real>
-void rec_lobatto( Teuchos::RCP<Teuchos::LAPACK<int,Real> > const lapack,
+void rec_lobatto( ROL::Ptr<Teuchos::LAPACK<int,Real> > const lapack,
                   const double xl1, 
                   const double xl2,
                   std::vector<Real> &a,

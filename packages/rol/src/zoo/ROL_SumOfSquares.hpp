@@ -87,22 +87,22 @@ public:
 };
 
 template<class Real>
-void getSumOfSquares( Teuchos::RCP<Objective<Real> > &obj,
-                      Teuchos::RCP<Vector<Real> >    &x0,
-                      Teuchos::RCP<Vector<Real> >    &x ) {
+void getSumOfSquares( ROL::Ptr<Objective<Real> > &obj,
+                      ROL::Ptr<Vector<Real> >    &x0,
+                      ROL::Ptr<Vector<Real> >    &x ) {
   // Problem dimension
   int n = 100;
 
   // Get Initial Guess
-  Teuchos::RCP<std::vector<Real> > x0p = Teuchos::rcp(new std::vector<Real>(n,1.0));
-  x0 = Teuchos::rcp(new StdVector<Real>(x0p));
+  ROL::Ptr<std::vector<Real> > x0p = ROL::makePtr<std::vector<Real>>(n,1.0);
+  x0 = ROL::makePtr<StdVector<Real>>(x0p);
 
   // Get Solution
-  Teuchos::RCP<std::vector<Real> > xp = Teuchos::rcp(new std::vector<Real>(n,0.0));
-  x = Teuchos::rcp(new StdVector<Real>(xp));
+  ROL::Ptr<std::vector<Real> > xp = ROL::makePtr<std::vector<Real>>(n,0.0);
+  x = ROL::makePtr<StdVector<Real>>(xp);
 
   // Instantiate Objective Function
-  obj = Teuchos::rcp(new Objective_SumOfSquares<Real>);
+  obj = ROL::makePtr<Objective_SumOfSquares<Real>>();
 }
 
 } // End ZOO Namespace

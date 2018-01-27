@@ -64,22 +64,22 @@ class BlockOperator : public LinearOperator<Real> {
   typedef PartitionedVector<Real>    PV;   // Partitioned Vector
   typedef LinearOperator<Real>       OP;   // Linear Operator
 
-  typedef std::vector<Teuchos::RCP<OP> > OpVec;  // Vector (column-stacked matrix) of pointers to operators
+  typedef std::vector<ROL::Ptr<OP> > OpVec;  // Vector (column-stacked matrix) of pointers to operators
   typedef typename OpVec::size_type      uint;   // index type
 
 private:
   
-  Teuchos::RCP<OpVec> blocks_;
+  ROL::Ptr<OpVec> blocks_;
 
 public:
   BlockOperator() {}
-  BlockOperator( const Teuchos::RCP<OpVec> &blocks ) : blocks_(blocks) {}
+  BlockOperator( const ROL::Ptr<OpVec> &blocks ) : blocks_(blocks) {}
   
   virtual void apply( V &Hv, const V &v, Real &tol ) const {
  
     // Downcast to Partitioned Vectors
-    PV &Hv_part = Teuchos::dyn_cast<PV>(Hv);
-    const PV &v_part = Teuchos::dyn_cast<const PV>(v);
+    PV &Hv_part = dynamic_cast<PV&>(Hv);
+    const PV &v_part = dynamic_cast<const PV&>(v);
     
     uint nvec1 = v_part.numVectors();
     uint nvec2 = Hv_part.numVectors();
@@ -95,8 +95,8 @@ public:
 
     for( uint i=0; i<nvec1; ++i ) {
       
-      Teuchos::RCP<V> Hvi = Hv_part.get(i);
-      Teuchos::RCP<V> u = Hvi->clone();
+      ROL::Ptr<V> Hvi = Hv_part.get(i);
+      ROL::Ptr<V> u = Hvi->clone();
 
       u->zero(); 
 

@@ -58,10 +58,10 @@ template<class Real>
 class MultiVectorDefault : public MultiVector<Real> {
 
     typedef Vector<Real>              V;       // Single vector 
-    typedef Teuchos::RCP<V>           PV;      // Pointer to a vector
+    typedef ROL::Ptr<V>           PV;      // Pointer to a vector
     typedef Teuchos::ArrayRCP<PV>     APV;     // Array of pointers to vectors
     typedef MultiVector<Real>         MV;      // Instance of this class
-    typedef Teuchos::RCP<MV>          PMV;     // Pointer to an instance of this class 
+    typedef ROL::Ptr<MV>          PMV;     // Pointer to an instance of this class 
 
     private:
         APV mvec_;             // Array of pointers to vectors 
@@ -97,7 +97,7 @@ class MultiVectorDefault : public MultiVector<Real> {
             for(int i=0;i<numVectors_;++i) {
                 x[i] = mvec_[i]->clone();
             }    
-            return Teuchos::rcp(new MultiVectorDefault<Real>(x));
+            return ROL::makePtr<MultiVectorDefault<Real>>(x);
         } 
  
        // Make a new MultiVector of specified dimension
@@ -107,7 +107,7 @@ class MultiVectorDefault : public MultiVector<Real> {
             for(int i=0;i<numvecs;++i) {
                 x[i] = mvec_[0]->clone();
             }    
-            return Teuchos::rcp(new MultiVectorDefault<Real>(x));
+            return ROL::makePtr<MultiVectorDefault<Real>>(x);
         } 
 
 
@@ -120,7 +120,7 @@ class MultiVectorDefault : public MultiVector<Real> {
                 x[i] = mvec_[i]->clone();
                 x[i]->set(*mvec_[i]);
             }
-            return Teuchos::rcp(new MultiVectorDefault<Real>(x));
+            return ROL::makePtr<MultiVectorDefault<Real>>(x);
         }
 
         // Make a deep copy specified vectors in the MultiVector
@@ -132,7 +132,7 @@ class MultiVectorDefault : public MultiVector<Real> {
                 x[i] = mvec_[j]->clone();
                 x[i]->set(*mvec_[j]);
             }
-            return Teuchos::rcp(new MultiVectorDefault<Real>(x));
+            return ROL::makePtr<MultiVectorDefault<Real>>(x);
         } 
 
         // Make a shallow copy specified vectors in the MultiVector
@@ -143,7 +143,7 @@ class MultiVectorDefault : public MultiVector<Real> {
                 int j = index[i]; 
                 x[i] = mvec_[j]; 
             }
-            return Teuchos::rcp(new MultiVectorDefault<Real>(x));
+            return ROL::makePtr<MultiVectorDefault<Real>>(x);
         } 
 
         // Make a const shallow copy specified vectors in the MultiVector
@@ -154,7 +154,7 @@ class MultiVectorDefault : public MultiVector<Real> {
                 int j = index[i]; 
                 x[i] = mvec_[j]; 
             }
-            return Teuchos::rcp(new MultiVectorDefault<Real>(x));
+            return ROL::makePtr<MultiVectorDefault<Real>>(x);
         } 
 
         // Get the number of elements of a vector in the MultiVector

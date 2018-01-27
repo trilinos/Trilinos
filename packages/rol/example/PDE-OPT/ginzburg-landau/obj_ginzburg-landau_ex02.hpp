@@ -53,8 +53,8 @@
 template <class Real>
 class QoI_GinzburgLandau_StateTracking_ex02 : public QoI_GinzburgLandau_StateTracking<Real> {
 public:
-  QoI_GinzburgLandau_StateTracking_ex02(const Teuchos::RCP<FE<Real> > &fe,
-                                        const Teuchos::RCP<FieldHelper<Real> > &fieldHelper,
+  QoI_GinzburgLandau_StateTracking_ex02(const ROL::Ptr<FE<Real> > &fe,
+                                        const ROL::Ptr<FieldHelper<Real> > &fieldHelper,
                                         Teuchos::ParameterList &parlist)
     : QoI_GinzburgLandau_StateTracking<Real>(fe,fieldHelper,parlist) {
     QoI_GinzburgLandau_StateTracking<Real>::computeTarget();

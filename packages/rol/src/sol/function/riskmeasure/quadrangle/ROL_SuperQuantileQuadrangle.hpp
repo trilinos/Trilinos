@@ -84,7 +84,7 @@ namespace ROL {
 template<class Real>
 class SuperQuantileQuadrangle : public SpectralRisk<Real> {
 private:
-  Teuchos::RCP<PlusFunction<Real> > plusFunction_;
+  ROL::Ptr<PlusFunction<Real> > plusFunction_;
 
   Real alpha_;
   int nQuad_;
@@ -96,17 +96,17 @@ private:
   void checkInputs(void) const {
     TEUCHOS_TEST_FOR_EXCEPTION((alpha_ < 0 || alpha_ >= 1), std::invalid_argument,
       ">>> ERROR (ROL::SuperQuantileQuadrangle): Confidence level not between 0 and 1!");
-    TEUCHOS_TEST_FOR_EXCEPTION(plusFunction_ == Teuchos::null, std::invalid_argument,
+    TEUCHOS_TEST_FOR_EXCEPTION(plusFunction_ == ROL::nullPtr, std::invalid_argument,
       ">>> ERROR (ROL::SuperQuantileQuadrangle): PlusFunction pointer is null!");
   }
 
   void initialize(void) {
-    Teuchos::RCP<Quadrature1D<Real> > quad;
+    ROL::Ptr<Quadrature1D<Real> > quad;
     if ( useGauss_ ) {
-      quad = Teuchos::rcp(new GaussLegendreQuadrature<Real>(nQuad_));
+      quad = ROL::makePtr<GaussLegendreQuadrature<Real>>(nQuad_);
     }
     else {
-      quad = Teuchos::rcp(new Fejer2Quadrature<Real>(nQuad_));
+      quad = ROL::makePtr<Fejer2Quadrature<Real>>(nQuad_);
     }
     // quad->test();
     quad->get(pts_,wts_);
@@ -131,7 +131,7 @@ public:
     alpha_ = list.get<Real>("Confidence Level");
     nQuad_ = list.get("Number of Quadrature Points",5);
     useGauss_ = list.get("Use Gauss-Legendre Quadrature",true);
-    plusFunction_ = Teuchos::rcp(new PlusFunction<Real>(list));
+    plusFunction_ = ROL::makePtr<PlusFunction<Real>>(list);
     // Check inputs
     checkInputs();
     initialize();
@@ -139,7 +139,7 @@ public:
 
   SuperQuantileQuadrangle(const Real alpha,
                           const int nQuad,
-                          const Teuchos::RCP<PlusFunction<Real> > &pf,
+                          const ROL::Ptr<PlusFunction<Real> > &pf,
                           const bool useGauss = true)
     : SpectralRisk<Real>(), plusFunction_(pf),
       alpha_(alpha), nQuad_(nQuad), useGauss_(useGauss) {

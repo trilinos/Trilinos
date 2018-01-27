@@ -58,11 +58,11 @@ namespace ROL {
 template <class Real>
 class Bounds : public BoundConstraint<Real> {
 private:
-  const Teuchos::RCP<Vector<Real> > x_lo_;
-  const Teuchos::RCP<Vector<Real> > x_up_;
+  const ROL::Ptr<Vector<Real> > x_lo_;
+  const ROL::Ptr<Vector<Real> > x_up_;
   const Real scale_;
 
-  Teuchos::RCP<Vector<Real> > mask_;
+  ROL::Ptr<Vector<Real> > mask_;
 
   Real min_diff_;
 
@@ -125,8 +125,8 @@ public:
     }
   }
 
-  Bounds(const Teuchos::RCP<Vector<Real> > &x_lo,
-         const Teuchos::RCP<Vector<Real> > &x_up,
+  Bounds(const ROL::Ptr<Vector<Real> > &x_lo,
+         const ROL::Ptr<Vector<Real> > &x_up,
          const Real scale = 1)
     : x_lo_(x_lo), x_up_(x_up), scale_(scale), mask_(x_lo->clone()) {
     const Real half(0.5), one(1);
@@ -254,11 +254,11 @@ public:
     }
   }
 
-  const Teuchos::RCP<const Vector<Real> > getLowerBound( void ) const {
+  const ROL::Ptr<const Vector<Real> > getLowerBound( void ) const {
     return x_lo_;
   }
 
-  const Teuchos::RCP<const Vector<Real> > getUpperBound( void ) const {
+  const ROL::Ptr<const Vector<Real> > getUpperBound( void ) const {
     return x_up_;
   }
 

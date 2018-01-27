@@ -76,7 +76,7 @@ public:
   }
 
   virtual Real dot( const Vector<Real> &x ) const {
-    Teuchos::RCP<Vector<Real> > y = this->clone();
+    ROL::Ptr<Vector<Real> > y = this->clone();
     y->set(*this);
     y->applyBinary(Elementwise::Multiply<Real>(),x);
     return y->reduce(Elementwise::ReductionSum<Real>());    
