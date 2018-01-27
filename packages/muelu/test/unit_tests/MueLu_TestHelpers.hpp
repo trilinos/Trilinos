@@ -349,9 +349,9 @@ namespace MueLuTests {
         ////////////////////////////////////
         if(numRanks == 1) {
           if(meshLayout == "Local Lexicographic") {
-            meshData[0] = 1; // Local Proc
-            meshData[1] = 1; // Local Proc?
-            meshData[2] = 1; // Parent Proc
+            meshData[0] = 0; // Local Proc
+            meshData[1] = 0; // Local Proc?
+            meshData[2] = 0; // Parent Proc
           }
           for(int dim = 0; dim < 3; ++dim) {
             lNodesPerDir[dim] = gNodesPerDir[dim];
@@ -367,9 +367,9 @@ namespace MueLuTests {
           if(meshLayout == "Local Lexicographic") {
             // First fill the rank related info in meshData
             for(int rank = 0; rank < numRanks; ++rank) {
-              meshData[10*rank + 0] = rank + 1; // Local Proc
-              meshData[10*rank + 1] = rank + 1; // Local Proc?
-              meshData[10*rank + 2] = 1;        // Parent Proc
+              meshData[10*rank + 0] = rank; // Local Proc
+              meshData[10*rank + 1] = rank; // Local Proc?
+              meshData[10*rank + 2] = 0;        // Parent Proc
             }
           }
 

@@ -170,14 +170,17 @@ private:
       int numDimensions = -1, myRank = -1, numRanks = -1;
       LO lNumFineNodes = -1, lNumCoarseNodes = -1, lNumGhostNodes = -1,lNumGhostedNodes  = -1;
       LO myBlock = -1, numBlocks = -1, lNumFineNodes10 = -1, lNumCoarseNodes10 = -1;
-      LO numGhostedCoarseNodes = -1, numGhostedCoarseNodes10 = -1;
+      LO numGhostedCoarseNodes = -1, numGhostedCoarseNodes10 = -1, pi = -1, pj = -1, pk = -1;
+      LO myRankIndex = -1;
       GO gNumFineNodes = -1, gNumCoarseNodes = -1, gNumFineNodes10 = -1, gNumCoarseNodes10 = -1;
       GO minGlobalIndex = -1;
-      Array<int> coarseRate, endRate;
+      Array<int> coarseRate, endRate, rankIndices;
       Array<LO> lFineNodesPerDir, lCoarseNodesPerDir, offsets, ghostedCoarseNodesPerDir;
       Array<GO> startIndices, gFineNodesPerDir, gCoarseNodesPerDir, startGhostedCoarseNode;
       std::vector<std::vector<GO> > meshData; // These are sorted later so they are in std::vector
+      std::vector<std::vector<GO> > coarseMeshData; // These are sorted while being computed
       bool ghostInterface[6] = {false}, ghostedDir[6] = {false};
+      typename std::vector<std::vector<GO> >::iterator myBlockStart, myBlockEnd;
 
       GeometricData() {
         coarseRate.resize(3);
@@ -381,38 +384,71 @@ private:
 
         numBlocks = meshData[numRanks - 1][2] + 1;
         // Find the range of the current block
-        auto myBlockStart = std::lower_bound(meshData.begin(), meshData.end(), myBlock - 1,
-                                             [](const std::vector<GO>& vec, const GO val)->bool{
-                                               return (vec[2] < val) ? true : false;
-                                             });
-        auto myBlockEnd = std::upper_bound(meshData.begin(), meshData.end(), myBlock,
-                                           [](const GO val, const std::vector<GO>& vec)->bool{
-                                             return (val < vec[2]) ? true : false;
-                                           });
+        myBlockStart = std::lower_bound(meshData.begin(), meshData.end(), myBlock - 1,
+                                        [] (const std::vector<GO>& vec, const GO val)->bool {
+                                          return (vec[2] < val) ? true : false;
+                                        });
+        myBlockEnd = std::upper_bound(meshData.begin(), meshData.end(), myBlock,
+                                      [] (const GO val, const std::vector<GO>& vec)->bool {
+                                        return (val < vec[2]) ? true : false;
+                                      });
         // Assuming that i,j,k and ranges are split in pi, pj and pk processors
         // we search for these numbers as they will allow us to find quickly the PID of processors
         // owning ghost nodes.
         auto myKEnd = std::upper_bound(myBlockStart, myBlockEnd, (*myBlockStart)[3],
-                                       [](const GO val, const std::vector<GO>& vec)->bool{
+                                       [] (const GO val, const std::vector<GO>& vec)->bool {
                                          return (val < vec[7]) ? true : false;
                                        });
         auto myJEnd = std::upper_bound(myBlockStart, myKEnd, (*myBlockStart)[3],
-                                       [](const GO val, const std::vector<GO>& vec)->bool{
+                                       [] (const GO val, const std::vector<GO>& vec)->bool {
                                          return (val < vec[5]) ? true : false;
                                        });
-        LO pi = std::distance(myBlockStart, myJEnd);
-        LO pj = std::distance(myBlockStart, myKEnd) / pi;
-        LO pk = std::distance(myBlockStart, myBlockEnd) / (pj*pi);
-
-        const int MyRank = myRank;
+        pi = std::distance(myBlockStart, myJEnd);
+        pj = std::distance(myBlockStart, myKEnd) / pi;
+        pk = std::distance(myBlockStart, myBlockEnd) / (pj*pi);
 
         // We also look for the index of the local rank in the current block.
-        LO myRankIndex = std::distance(meshData.begin(),
-                                       std::find_if(myBlockStart, myBlockEnd,
-                                                    [MyRank](const std::vector<GO>& vec)->bool{
-                                                      return (vec[0] == MyRank) ? true : false;
-                                                    })
-                                       );
+        const int MyRank = myRank;
+        myRankIndex = std::distance(meshData.begin(),
+                                    std::find_if(myBlockStart, myBlockEnd,
+                                                 [MyRank] (const std::vector<GO>& vec)->bool {
+                                                   return (vec[0] == MyRank) ? true : false;
+                                                 })
+                                    );
+        // We also construct a mapping of rank to rankIndex in the meshData vector,
+        // this will allow us to access data quickly later on.
+        rankIndices.resize(numRanks);
+        for(int rankIndex = 0; rankIndex < numRanks; ++rankIndex) {
+          rankIndices[meshData[rankIndex][0]] = rankIndex;
+        }
+      }
+
+      void computeCoarseLocalLexicographicData() {
+        coarseMeshData.resize(numRanks);
+        Array<LO> rankOffset(3);
+        for(int rank = 0; rank < numRanks; ++rank) {
+          coarseMeshData[rank].resize(10);
+          coarseMeshData[rank][0] = meshData[rank][0];
+          coarseMeshData[rank][1] = meshData[rank][1];
+          coarseMeshData[rank][2] = meshData[rank][2];
+          for(int dim = 0; dim < 3; ++dim) {
+            coarseMeshData[rank][3 + 2*dim] = meshData[rank][3 + 2*dim] / coarseRate[dim];
+            if(meshData[rank][3 + 2*dim] % coarseRate[dim] > 0) {
+              ++coarseMeshData[rank][3 + 2*dim];
+            }
+            coarseMeshData[rank][3 + 2*dim + 1] = meshData[rank][3 + 2*dim + 1] / coarseRate[dim];
+            if(meshData[rank][3 + 2*dim + 1] == gFineNodesPerDir[dim] - 1 &&
+               endRate[dim] < coarseRate[dim]) {
+              ++coarseMeshData[rank][3 + 2*dim + 1];
+            }
+          }
+          if(rank > 0) {
+            coarseMeshData[rank][9] = coarseMeshData[rank - 1][9]
+              + (coarseMeshData[rank - 1][8] - coarseMeshData[rank - 1][7] + 1)
+              * (coarseMeshData[rank - 1][6] - coarseMeshData[rank - 1][5] + 1)
+              * (coarseMeshData[rank - 1][4] - coarseMeshData[rank - 1][3] + 1);
+          }
+        }
       }
 
       void getFineNodeGlobalTuple(const GO myGID, GO& i, GO& j, GO& k) const {
@@ -530,6 +566,74 @@ private:
         LO ktmp = k - (offsets[2] > 0 ? 1 : 0);
         myLID = ktmp*lNumCoarseNodes10 + jtmp*lCoarseNodesPerDir[0] + itmp;
       }
+
+      void GetGIDLocalLexicographic(const LO iGhosted, const LO jGhosted, const LO kGhosted,
+                                    const Array<LO> coarseNodeFineIndices,
+                                    GO& myGID, LO& myPID, LO& myLID) const {
+
+        LO ni = -1, nj = -1, li = -1, lj = -1, lk = -1;
+        LO myRankGuess = myRankIndex;
+        // We try to make a logical guess as to which PID owns the current coarse node
+        if(iGhosted == 0 && ghostInterface[0]) {
+          --myRankGuess;
+        } else if((iGhosted == ghostedCoarseNodesPerDir[0] - 1) && ghostInterface[1]) {
+          ++myRankGuess;
+        }
+        if(jGhosted == 0 && ghostInterface[2]) {
+          myRankGuess -= pi;
+        } else if((jGhosted == ghostedCoarseNodesPerDir[1] - 1) && ghostInterface[3]) {
+          myRankGuess += pi;
+        }
+        if(kGhosted == 0 && ghostInterface[4]) {
+          myRankGuess -= pj*pi;
+        } else if((kGhosted == ghostedCoarseNodesPerDir[2] - 1) && ghostInterface[5]) {
+          myRankGuess += pj*pi;
+        }
+        std::cout << "p=" << myRank << " | myRankIndex= " << myRankIndex
+                  << ", myRankGuess=" << myRankGuess << std::endl;
+        if(coarseNodeFineIndices[0] >= meshData[myRankGuess][3]
+           && coarseNodeFineIndices[0] <= meshData[myRankGuess][4]
+           && coarseNodeFineIndices[1] >= meshData[myRankGuess][5]
+           && coarseNodeFineIndices[1] <= meshData[myRankGuess][6]
+           && coarseNodeFineIndices[2] >= meshData[myRankGuess][7]
+           && coarseNodeFineIndices[2] <= meshData[myRankGuess][8]
+           && myRankGuess < numRanks - 1) {
+          myPID = meshData[myRankGuess][0];
+          ni = meshData[myRankGuess][4] - meshData[myRankGuess][3] + 1;
+          nj = meshData[myRankGuess][6] - meshData[myRankGuess][5] + 1;
+          li = coarseNodeFineIndices[0] - meshData[myRankGuess][3];
+          lj = coarseNodeFineIndices[1] - meshData[myRankGuess][5];
+          lk = coarseNodeFineIndices[2] - meshData[myRankGuess][7];
+          myLID = lk*nj*ni + lj*ni + li;
+          myGID = meshData[myRankGuess][9] + myLID;
+        } else { // The guess failed, let us use the heavy artilery: std::find_if()
+          // It could be interesting to monitor how many times this branch of the code gets
+          // used as it is far more expensive than the above one...
+          std::cout << "p=" << myRank << " | Node: (" << iGhosted << ", " << jGhosted << ", "
+                    << kGhosted << ") is not found with initial guess!" << std::endl;
+          auto nodeRank = std::find_if(myBlockStart, myBlockEnd,
+                                       [coarseNodeFineIndices](const std::vector<GO>& vec){
+                                         if(coarseNodeFineIndices[0] >= vec[3]
+                                            && coarseNodeFineIndices[0] <= vec[4]
+                                            && coarseNodeFineIndices[1] >= vec[5]
+                                            && coarseNodeFineIndices[1] <= vec[6]
+                                            && coarseNodeFineIndices[2] >= vec[7]
+                                            && coarseNodeFineIndices[2] <= vec[8]) {
+                                           return true;
+                                         } else {
+                                           return false;
+                                         }
+                                       });
+          myPID = (*nodeRank)[0];
+          ni = (*nodeRank)[4] - (*nodeRank)[3] + 1;
+          nj = (*nodeRank)[6] - (*nodeRank)[5] + 1;
+          li = coarseNodeFineIndices[0] - (*nodeRank)[3];
+          lj = coarseNodeFineIndices[1] - (*nodeRank)[5];
+          lk = coarseNodeFineIndices[2] - (*nodeRank)[7];
+          myLID = lk*nj*ni + lj*ni + li;
+          myGID = (*nodeRank)[9] + myLID;
+        }
+      } // End GetGIDLocalLexicographic
 
     };
 

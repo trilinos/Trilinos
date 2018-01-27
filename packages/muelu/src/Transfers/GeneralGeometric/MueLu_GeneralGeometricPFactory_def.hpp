@@ -1641,7 +1641,7 @@ namespace MueLu {
     }
     stencil[0] = coarseNode;
 
-  }
+  } // ComputeConstantInterpolationStencil
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void GeneralGeometricPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
@@ -1730,7 +1730,7 @@ namespace MueLu {
       stencil[i] = functions[0][i];
     }
 
-  }
+  } // End ComputeLinearInterpolationStencil
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void GeneralGeometricPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::

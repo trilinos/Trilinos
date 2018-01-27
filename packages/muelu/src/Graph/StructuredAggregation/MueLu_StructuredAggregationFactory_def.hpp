@@ -217,9 +217,6 @@ namespace MueLu {
       }
     }
 
-    if(coordMap->getComm()->getRank() == 1)
-      std::cout << "About to compute geometric parameters" << std::endl;
-
     geoData->computeGeometricParameters(meshLayout, numDimensions, myRank, numRanks,
                                         gFineNodesPerDir, lFineNodesPerDir, coarseRate, meshData,
                                         coordMap->getMinGlobalIndex());
@@ -235,11 +232,6 @@ namespace MueLu {
                                "The global number of elements in Coordinates is not equal to the"
                                " number of nodes given by: gNodesPerDim!");
 
-    if(coordMap->getComm()->getRank() == 1) {
-      std::cout << "About to jump into aggregation kernel" << std::endl;
-      std::cout << "mesh layout: " << geoData->meshLayout << std::endl;
-    }
-
     // Build
     RCP<Aggregates> aggregates = rcp(new Aggregates(coordMap));
     aggregates->setObjectLabel("ST");
@@ -251,10 +243,8 @@ namespace MueLu {
     LO numNonAggregatedNodes = geoData->lNumFineNodes;
     GO numGlobalAggregatedPrev = 0, numGlobalAggsPrev = 0;
     if(geoData->meshLayout == "Global Lexicographic") {
-      std::cout << "Using the global lexi route" << std::endl;
       GlobalLexicographicLayout(coordMap, geoData, aggregates, aggStat, numNonAggregatedNodes);
     } else if(geoData->meshLayout == "Local Lexicographic") {
-      std::cout << "Using the local lexi route" << std::endl;
       LocalLexicographicLayout(coordMap, geoData, aggregates, aggStat, numNonAggregatedNodes);
     }
 
@@ -274,174 +264,6 @@ namespace MueLu {
   GlobalLexicographicLayout(const RCP<const Map> coordMap, RCP<GeometricData> geoData,
                             RCP<Aggregates> aggregates, std::vector<unsigned>& aggStat,
                             LO& numNonAggregatedNodes) const {
-
-    if(coordMap->getComm()->getRank() == 1)
-      std::cout << "gFineNodesPerDir: " << geoData->gFineNodesPerDir << std::endl;
-
-    // {
-    //   GO tmp = 0;
-    //   geoData->startIndices[2] = coordMap->getMinGlobalIndex()
-    //     / (geoData->gFineNodesPerDir[1]*geoData->gFineNodesPerDir[0]);
-    //   tmp = coordMap->getMinGlobalIndex()
-    //     % (geoData->gFineNodesPerDir[1]*geoData->gFineNodesPerDir[0]);
-    //   geoData->startIndices[1] = tmp / geoData->gFineNodesPerDir[0];
-    //   geoData->startIndices[0] = tmp % geoData->gFineNodesPerDir[0];
-    // } // End of scope for tmp
-    // for(int dim = 0; dim < 3; ++dim) {
-    //   geoData->startIndices[dim + 3] =
-    //     geoData->startIndices[dim] + geoData->lFineNodesPerDir[dim] - 1;
-    // }
-
-    if(coordMap->getComm()->getRank() == 1)
-      std::cout << "lFineNodesPerDir: " << geoData->lFineNodesPerDir << std::endl
-                << "startIndices: " << geoData->startIndices << std::endl;
-
-    // for(int dim = 0; dim < 3; ++dim) {
-    //   if(dim < geoData->numDimensions) {
-    //     geoData->offsets[dim]     =
-    //       Teuchos::as<LO>(geoData->startIndices[dim]) % geoData->coarseRate[dim];
-    //     geoData->offsets[dim + 3] =
-    //       Teuchos::as<LO>(geoData->startIndices[dim]) % geoData->coarseRate[dim];
-    //   }
-    // }
-
-    if(coordMap->getComm()->getRank() == 1)
-      std::cout << "coarseRate: " << geoData->coarseRate << std::endl;
-
-    // // Check if the partition contains nodes on a boundary, if so that boundary (face, line or
-    // // point) will not require ghost nodes, unless there is only one node in that direction.
-    // for(int dim = 0; dim < 3; ++dim) {
-    //   if( (dim < geoData->numDimensions) &&
-    //       (geoData->startIndices[dim] % geoData->coarseRate[dim] != 0 ||
-    //        geoData->startIndices[dim] == geoData->gFineNodesPerDir[dim]-1)) {
-    //     geoData->ghostInterface[2*dim] = true;
-    //   }
-    //   if( (dim < geoData->numDimensions) &&
-    //       (geoData->startIndices[dim + 3] != geoData->gFineNodesPerDir[dim] - 1) &&
-    //       (geoData->lFineNodesPerDir[dim] == 1 ||
-    //        geoData->startIndices[dim + 3] % geoData->coarseRate[dim] != 0)) {
-    //     geoData->ghostInterface[2*dim + 1] = true;
-    //   }
-    // }
-
-    if(coordMap->getComm()->getRank() == 1)
-      std::cout << "ghostInterface: {" << geoData->ghostInterface[0] << ", "
-                << geoData->ghostInterface[1] << ", "
-                << geoData->ghostInterface[2] << ", "
-                << geoData->ghostInterface[3] << ", "
-                << geoData->ghostInterface[4] << ", "
-                << geoData->ghostInterface[5] << "}"
-                << std::endl;
-
-    // // Here one element can represent either the degenerate case of one node or the more general
-    // // case of two nodes, i.e. x---x is a 1D element with two nodes and x is a 1D element with one
-    // // node. This helps generating a 3D space from tensorial products...
-    // // A good way to handle this would be to generalize the algorithm to take into account the
-    // // discretization order used in each direction, at least in the FEM sense, since a 0 degree
-    // // discretization will have a unique node per element. This way 1D discretization can be viewed
-    // // as a 3D problem with one 0 degree element in the y direction and one 0 degre element in the z
-    // // direction.
-    // // !!! Operations below are aftecting both local and global values that have two different   !!!
-    // // orientations. Orientations can be interchanged using mapDirG2L and mapDirL2G. coarseRate,
-    // // endRate and offsets are in the global basis, as well as all the variables starting with a g,
-    // // !!! while the variables starting with an l are in the local basis.                        !!!
-    // for(int dim = 0; dim < 3; ++dim) {
-    //   if(dim < geoData->numDimensions) {
-    //     // This array is passed to the RAPFactory and eventually becomes gFineNodePerDir on the next
-    //     // level.
-    //     geoData->gCoarseNodesPerDir[dim] =
-    //       (geoData->gFineNodesPerDir[dim] - 1) / geoData->coarseRate[dim];
-    //     geoData->endRate[dim] =
-    //       Teuchos::as<LO>((geoData->gFineNodesPerDir[dim] - 1) %geoData->coarseRate[dim]);
-    //     if(geoData->endRate[dim] == 0) {
-    //       geoData->endRate[dim] = geoData->coarseRate[dim];
-    //       ++geoData->gCoarseNodesPerDir[dim];
-    //     } else {
-    //       geoData->gCoarseNodesPerDir[dim] += 2;
-    //     }
-    //   } else {
-    //     geoData->endRate[dim] = 1;
-    //     geoData->gCoarseNodesPerDir[dim] = 1;
-    //   }
-    // }
-
-    // geoData->gNumCoarseNodes = geoData->gCoarseNodesPerDir[0]*geoData->gCoarseNodesPerDir[1]
-    //   *geoData->gCoarseNodesPerDir[2];
-    // geoData->gNumCoarseNodes10 = geoData->gCoarseNodesPerDir[0]*geoData->gCoarseNodesPerDir[1];
-
-    if(coordMap->getComm()->getRank() == 1)
-      std::cout << "gCoarseNodesPerDir: " << geoData->gCoarseNodesPerDir << std::endl
-                << "gNumCoarseNodes: " << geoData->gNumCoarseNodes << std::endl
-                << "gNumCoarseNodes10: " << geoData->gNumCoarseNodes10 << std::endl;
-
-    // for(LO dim = 0; dim < 3; ++dim) {
-    //   if(dim < geoData->numDimensions) {
-    //     // Check whether the partition includes the "end" of the mesh which means that endRate will
-    //     // apply. Also make sure that endRate is not 0 which means that the mesh does not require a
-    //     // particular treatment at the boundaries.
-    //     if( (geoData->startIndices[dim] + geoData->lFineNodesPerDir[dim])
-    //         == geoData->gFineNodesPerDir[dim] ) {
-    //       geoData->lCoarseNodesPerDir[dim] = (geoData->lFineNodesPerDir[dim] - geoData->endRate[dim]
-    //                                + geoData->offsets[dim] - 1) / geoData->coarseRate[dim] + 1;
-    //       if(geoData->offsets[dim] == 0) {++geoData->lCoarseNodesPerDir[dim];}
-    //     } else {
-    //       geoData->lCoarseNodesPerDir[dim] =
-    //         (geoData->lFineNodesPerDir[dim] + geoData->offsets[dim] - 1) / geoData->coarseRate[dim];
-    //       if(geoData->offsets[dim] == 0) {++geoData->lCoarseNodesPerDir[dim];}
-    //     }
-    //   } else {
-    //     geoData->lCoarseNodesPerDir[dim] = 1;
-    //   }
-    //   // This would happen if the rank does not own any nodes but in that case a subcommunicator
-    //   // should be used so this should really not be a concern.
-    //   if(geoData->lFineNodesPerDir[dim] < 1) {geoData->lCoarseNodesPerDir[dim] = 0;}
-    // }
-
-    if(coordMap->getComm()->getRank() == 1)
-      std::cout << "lCoarseNodesPerDir: " << geoData->lCoarseNodesPerDir << std::endl;
-
-    // geoData->lNumCoarseNodes = geoData->lCoarseNodesPerDir[0]*geoData->lCoarseNodesPerDir[1]
-    //   *geoData->lCoarseNodesPerDir[2];
-    // geoData->lNumCoarseNodes10 = geoData->lCoarseNodesPerDir[0]*geoData->lCoarseNodesPerDir[1];
-
-    // // For each direction, determine how many points (including ghosts) are required.
-    // for(int dim = 0; dim < 3; ++dim) {
-    //   // The first branch of this if-statement will be used if the rank contains only one layer
-    //   // of nodes in direction i, that layer must also coincide with the boundary of the mesh
-    //   // and coarseRate[i] == endRate[i]...
-    //   if(dim < geoData->numDimensions) {
-    //     if(geoData->startIndices[dim] == geoData->gFineNodesPerDir[dim] - 1 &&
-    //        geoData->startIndices[dim] % geoData->coarseRate[dim] == 0) {
-    //       geoData->startGhostedCoarseNode[dim] =
-    //         geoData->startIndices[dim] / geoData->coarseRate[dim] - 1;
-    //     } else {
-    //       geoData->startGhostedCoarseNode[dim] =
-    //         geoData->startIndices[dim] / geoData->coarseRate[dim];
-    //     }
-    //     geoData->ghostedCoarseNodesPerDir[dim] = geoData->lCoarseNodesPerDir[dim];
-    //     // Check whether face *low needs ghost nodes
-    //     if(geoData->ghostInterface[2*dim]) {
-    //       geoData->ghostedCoarseNodesPerDir[dim] += 1;
-    //       geoData->ghostedDir[2*dim] = true;
-    //     }
-    //     // Check whether face *hi needs ghost nodes
-    //     if(geoData->ghostInterface[2*dim + 1]) {
-    //       geoData->ghostedCoarseNodesPerDir[dim] += 1;
-    //       geoData->ghostedDir[2*dim + 1] = true;
-    //     }
-    //   } else {
-    //     geoData->startGhostedCoarseNode[dim] = 0;
-    //     geoData->ghostedCoarseNodesPerDir[dim] = 1;
-    //   }
-    // }
-    // geoData->numGhostedCoarseNodes10 = geoData->ghostedCoarseNodesPerDir[0]
-    //   *geoData->ghostedCoarseNodesPerDir[1];
-    // geoData->numGhostedCoarseNodes = geoData->numGhostedCoarseNodes10
-    //   *geoData->ghostedCoarseNodesPerDir[2];
-
-    if(coordMap->getComm()->getRank() == 1)
-      std::cout << "startGhostedCoarseNode" << geoData->startGhostedCoarseNode << std::endl
-                << "ghostedCoarseNodesPerDir: " << geoData->ghostedCoarseNodesPerDir << std::endl;
 
     aggregates->SetNumAggregates(geoData->lNumCoarseNodes);
 
@@ -549,6 +371,107 @@ namespace MueLu {
   LocalLexicographicLayout(const RCP<const Map> coordMap, RCP<GeometricData> geoData,
                            RCP<Aggregates> aggregates, std::vector<unsigned>& aggStat,
                            LO& numNonAggregatedNodes) const {
+
+    aggregates->SetNumAggregates(geoData->lNumCoarseNodes);
+
+    // Now the tricky part starts, the coarse nodes / ghosted coarse nodes need to be imported.
+    // This requires finding what their GID on the fine mesh is. They need to be ordered
+    // lexicographically to allow for fast sweeps through the mesh.
+
+    // We loop over all ghosted coarse nodes by increasing global lexicographic order
+    Array<LO>  ghostedCoarseNodeCoarseIndices(3), ghostedCoarseNodeFineIndices(3);
+    Array<LO>  lCoarseNodeCoarseIndices(3);
+    Array<GO>  lCoarseNodeCoarseGIDs(geoData->lNumCoarseNodes);
+    Array<LO>  ghostedCoarseNodeCoarseLIDs(geoData->numGhostedCoarseNodes);
+    Array<int> ghostedCoarseNodeCoarsePIDs(geoData->numGhostedCoarseNodes);
+    LO currentIndex = -1, countCoarseNodes = 0;
+    geoData->computeCoarseLocalLexicographicData();
+    for(int k = 0; k < geoData->ghostedCoarseNodesPerDir[2]; ++k) {
+      for(int j = 0; j < geoData->ghostedCoarseNodesPerDir[1]; ++j) {
+        for(int i = 0; i < geoData->ghostedCoarseNodesPerDir[0]; ++i) {
+          currentIndex = k*geoData->ghostedCoarseNodesPerDir[1]*geoData->ghostedCoarseNodesPerDir[0]
+            + j*geoData->ghostedCoarseNodesPerDir[0] + i;
+          ghostedCoarseNodeCoarseIndices[0] = geoData->startGhostedCoarseNode[0] + i;
+          ghostedCoarseNodeFineIndices[0] = ghostedCoarseNodeCoarseIndices[0]*geoData->coarseRate[0];
+          if(ghostedCoarseNodeFineIndices[0] > geoData->gFineNodesPerDir[0] - 1) {
+            ghostedCoarseNodeFineIndices[0] = geoData->gFineNodesPerDir[0] - 1;
+          }
+          ghostedCoarseNodeCoarseIndices[1] = geoData->startGhostedCoarseNode[1] + j;
+          ghostedCoarseNodeFineIndices[1] = ghostedCoarseNodeCoarseIndices[1]*geoData->coarseRate[1];
+          if(ghostedCoarseNodeFineIndices[1] > geoData->gFineNodesPerDir[1] - 1) {
+            ghostedCoarseNodeFineIndices[1] = geoData->gFineNodesPerDir[1] - 1;
+          }
+          ghostedCoarseNodeCoarseIndices[2] = geoData->startGhostedCoarseNode[2] + k;
+          ghostedCoarseNodeFineIndices[2] = ghostedCoarseNodeCoarseIndices[2]*geoData->coarseRate[2];
+          if(ghostedCoarseNodeFineIndices[2] > geoData->gFineNodesPerDir[2] - 1) {
+            ghostedCoarseNodeFineIndices[2] = geoData->gFineNodesPerDir[2] - 1;
+          }
+
+          GO myGID = -1, myCoarseGID = -1;
+          LO myLID = -1, myPID = -1, myCoarseLID = -1;
+          geoData->GetGIDLocalLexicographic(i, j, k, ghostedCoarseNodeFineIndices,
+                                            myGID, myPID, myLID);
+
+          int myRankIndex = geoData->rankIndices[myPID];
+          for(int dim = 0; dim < 3; ++dim) {
+            if(dim < geoData->numDimensions) {
+              lCoarseNodeCoarseIndices[dim] = ghostedCoarseNodeCoarseIndices[dim]
+                - geoData->coarseMeshData[myRankIndex][3 + 2*dim];
+            }
+          }
+          LO myRankIndexCoarseNodesInDir0 = geoData->coarseMeshData[myRankIndex][4]
+            - geoData->coarseMeshData[myRankIndex][3] + 1;
+          LO myRankIndexCoarseNodes10 = (geoData->coarseMeshData[myRankIndex][6]
+                                         - geoData->coarseMeshData[myRankIndex][5] + 1)
+            *myRankIndexCoarseNodesInDir0;
+          myCoarseLID = lCoarseNodeCoarseIndices[2]*myRankIndexCoarseNodes10
+            + lCoarseNodeCoarseIndices[1]*myRankIndexCoarseNodesInDir0
+            + lCoarseNodeCoarseIndices[0];
+          myCoarseGID = myCoarseLID + geoData->coarseMeshData[myRankIndex][9];
+
+          ghostedCoarseNodeCoarseLIDs[currentIndex] = myCoarseLID;
+          ghostedCoarseNodeCoarsePIDs[currentIndex] = myPID;
+
+          if(myPID == geoData->myRank) {
+            lCoarseNodeCoarseGIDs[countCoarseNodes] = myCoarseGID;
+            ++countCoarseNodes;
+          }
+        }
+      }
+    }
+
+    RCP<const Map> coarseCoordMap = MapFactory::Build (coordMap->lib(),
+                                                       geoData->gNumCoarseNodes,
+                                                       lCoarseNodeCoarseGIDs(),
+                                                       coordMap->getIndexBase(),
+                                                       coordMap->getComm());
+
+    // Now we are ready for the big loop over the fine node that will assign each
+    // node on the fine grid to an aggregate and a processor.
+    ArrayRCP<LO> vertex2AggId = aggregates->GetVertex2AggId()->getDataNonConst(0);
+    ArrayRCP<LO> procWinner   = aggregates->GetProcWinner()  ->getDataNonConst(0);
+    LO iGhosted, jGhosted, kGhosted, iCoarse, jCoarse, kCoarse, iRem, jRem, kRem;
+    LO ghostedCoarseNodeCoarseLID, aggId;
+    for(LO nodeIdx = 0; nodeIdx < geoData->lNumFineNodes; ++nodeIdx) {
+      // Compute coarse ID associated with fine LID
+      geoData->getFineNodeGhostedTuple(nodeIdx, iGhosted, jGhosted, kGhosted);
+      iCoarse = iGhosted / geoData->coarseRate[0];
+      iRem    = iGhosted % geoData->coarseRate[0];
+      if(iRem > (geoData->coarseRate[0] / 2)) { ++iCoarse; }
+      jCoarse = jGhosted / geoData->coarseRate[1];
+      jRem    = jGhosted % geoData->coarseRate[1];
+      if(jRem > (geoData->coarseRate[1] / 2)) { ++jCoarse; }
+      kCoarse = kGhosted / geoData->coarseRate[2];
+      kRem    = kGhosted % geoData->coarseRate[2];
+      if(kRem > (geoData->coarseRate[2] / 2)) { ++kCoarse; }
+      geoData->getCoarseNodeGhostedLID(iCoarse, jCoarse, kCoarse, ghostedCoarseNodeCoarseLID);
+
+      aggId                 = ghostedCoarseNodeCoarseLIDs[ghostedCoarseNodeCoarseLID];
+      vertex2AggId[nodeIdx] = aggId;
+      procWinner[nodeIdx]   = ghostedCoarseNodeCoarsePIDs[ghostedCoarseNodeCoarseLID];
+      aggStat[nodeIdx]      = AGGREGATED;
+      --numNonAggregatedNodes;
+    }
 
   } // LocalLexicographicLayout
 
