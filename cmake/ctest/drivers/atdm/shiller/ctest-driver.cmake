@@ -22,9 +22,5 @@ SET(CTEST_PARALLEL_LEVEL "16")  # Should be set to 32 if using only 1 thread?
 # No extra configure options set!
 SET(EXTRA_CONFIGURE_OPTIONS)
 
-# CDash Group
-SET(CTEST_TEST_TYPE Nightly)
-SET(Trilinos_TRACK Specialized)
-
 # Run the genetic ATDM driver
 TRILINOS_SYSTEM_SPECIFIC_CTEST_DRIVER()
