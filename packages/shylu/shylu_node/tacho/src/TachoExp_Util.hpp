@@ -462,8 +462,8 @@ namespace Tacho {
     struct Conjugate {
       enum : int { tag = 801 };
       
-      Conjugate() = default;
-      Conjugate(const Conjugate &b) = default;
+      Conjugate() {} 
+      Conjugate(const Conjugate &b) {} 
 
       KOKKOS_FORCEINLINE_FUNCTION float operator()(const float &v) const { return v; }
       KOKKOS_FORCEINLINE_FUNCTION double operator()(const double &v) const { return v; }
@@ -476,8 +476,8 @@ namespace Tacho {
     struct NoConjugate {
       enum : int {tag = 802 };
 
-      NoConjugate() = default;
-      NoConjugate(const NoConjugate &b) = default;
+      NoConjugate() {}
+      NoConjugate(const NoConjugate &b) {}
       
       KOKKOS_FORCEINLINE_FUNCTION float operator()(const float &v) const { return v; }
       KOKKOS_FORCEINLINE_FUNCTION double operator()(const double &v) const { return v; }
