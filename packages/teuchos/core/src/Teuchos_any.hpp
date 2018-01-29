@@ -216,7 +216,10 @@ public:
       return content ? content->typeName() : "NONE";
     }
 
-  //! \brief Return if two any objects are the same or not.
+  /*! \brief Return if two any objects are the same or not.
+   *  \warning This function with throw an exception if
+   *           operator== can't be applied to the held type!
+   */
   bool same( const any &other ) const
     {
       if( this->empty() && other.empty() )
@@ -229,7 +232,10 @@ public:
       return content->same(*other.content);
     }
 
-  //! Print this value to the output stream <tt>os</tt>
+  /*! \brief Print this value to the output stream <tt>os</tt>
+   *  \warning This function with throw an exception if
+   *           the held type can't be printed via operator<< !
+   */
   void print(std::ostream& os) const
     {
       if (content) content->print(os);
@@ -386,6 +392,8 @@ ValueType& any_ref_cast(any &operand)
 
 /*! \relates any
     \brief Converts the value in <tt>any</tt> to a std::string.
+    \warning This function with throw an exception if
+             the held type can't be printed via operator<< !
 */
 inline std::string toString(const any &rhs)
 {
@@ -396,6 +404,8 @@ inline std::string toString(const any &rhs)
 
 /*! \relates any
     \brief Returns true if two any objects have the same value.
+    \warning This function with throw an exception if
+             operator== can't be applied to the held type!
 */
 inline bool operator==( const any &a, const any &b )
 {
@@ -404,6 +414,8 @@ inline bool operator==( const any &a, const any &b )
 
 /*! \relates any
     \brief Returns true if two any objects <b>do not</b> have the same value.
+    \warning This function with throw an exception if
+             operator== can't be applied to the held type!
 */
 inline bool operator!=( const any &a, const any &b )
 {
@@ -412,6 +424,8 @@ inline bool operator!=( const any &a, const any &b )
 
 /*! \relates any
     \brief Writes "any" input <tt>rhs</tt> to the output stream <tt>os</tt>.
+    \warning This function with throw an exception if
+             the held type can't be printed via operator<< !
 */
 inline std::ostream & operator<<(std::ostream & os, const any &rhs)
 {
