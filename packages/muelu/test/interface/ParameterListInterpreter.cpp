@@ -106,7 +106,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
   matrixParameters.set("nx",         Teuchos::as<GO>(9999));
   matrixParameters.set("matrixType", "Laplace1D");
   RCP<Matrix>      A           = MueLuTests::TestHelpers::TestFactory<SC, LO, GO, NO>::Build1DPoisson(matrixParameters.get<GO>("nx"), lib);
-  RCP<MultiVector> coordinates = Galeri::Xpetra::Utils::CreateCartesianCoordinates<SC,LO,GO,Map,MultiVector>("1D", A->getRowMap(), matrixParameters);
+  RCP<RealValuedMultiVector> coordinates = Galeri::Xpetra::Utils::CreateCartesianCoordinates<double,LO,GO,Map,RealValuedMultiVector>("1D", A->getRowMap(), matrixParameters);
 
   std::string outDir = "Output/";
 
@@ -275,6 +275,11 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
         // This leads to us always failing this test.
         // NOTE1 : Epetra, on the other hand, rolls out its out random number
         // generator, which always produces same results
+
+        // make sure complex tests pass
+        run_sed("'s/relaxation: damping factor = (1,0)/relaxation: damping factor = 1/'", baseFile);
+        run_sed("'s/damping factor: (1,0)/damping factor: 1/'", baseFile);
+        run_sed("'s/relaxation: min diagonal value = (0,0)/relaxation: min diagonal value = 0/'", baseFile);
 
         // Ignore the value of "lambdaMax"
         run_sed("'s/lambdaMax: [0-9]*.[0-9]*/lambdaMax = <ignored>/'", baseFile);
