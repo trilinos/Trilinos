@@ -976,7 +976,7 @@ MM2 = rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix_mmm + std::string("Ja
 
   // 3) Add [-omega Dinv A] + B
   Scalar one = Teuchos::ScalarTraits<Scalar>::one();  
-  Tpetra::MatrixMatrix::add(one,false,*Bview.origMatrix,-omega,false,*AB,C,AB->getDomainMap(),AB->getRangeMap(),params);
+  Tpetra::MatrixMatrix::add(one,false,*Bview.origMatrix,Scalar(-omega),false,*AB,C,AB->getDomainMap(),AB->getRangeMap(),params);
 
  }// jacobi_A_B_newmatrix_MultiplyScaleAddKernel
 
