@@ -88,17 +88,20 @@ public:
 
     // solving (u,v are states, z is control)
     // 
-    //    u' = v + z, v'=-omega^2 * u
+    //    u' = v + z, v'=-omega^2 * u, w' = sqrt(w)
     //    u(0) = 0
     //    v(0) = omega 
+    //    w(0) = 1.0
     //
     //    u(t) = sin(omega*t)
     //    v(t) = omega*cos(omega*t)
+    //    w(t) = 0.25*(-2.0*c1*t+c1**2+t**2), (init cond implies c1 = 2)
     //
     // using backward euler
-    
+
     c_data[0] = un_data[0]-uo_data[0] - timestep_*(un_data[1] + z_data[0]);
     c_data[1] = un_data[1]-uo_data[1] + timestep_*omega_*omega_*un_data[0];
+    c_data[2] = un_data[2]-uo_data[2] - timestep_*std::sqrt(un_data[2]);  // throw in some nonlinear term
   }
 
   virtual void solve(ROL::Vector<Real> &c,
@@ -120,6 +123,15 @@ public:
     un_data[0] = (1.0 * rhs_0 +   b * rhs_1)/gamma;
     un_data[1] = ( -a * rhs_0 + 1.0 * rhs_1)/gamma;
 
+    // Newton's method
+    for(int i=0;i<5;i++) {
+      // safety check
+      TEUCHOS_ASSERT(un_data[2]>=0.0);
+
+      double residual = un_data[2]-uo_data[2] - timestep_*std::sqrt(un_data[2]); 
+      un_data[2] = un_data[2] - residual / (1.0-timestep_*(0.5/std::sqrt(un_data[2])));
+    }
+
     value(c,u_old,u_new,z,tol);
   }
 
@@ -133,6 +145,7 @@ public:
 
     jv_data[0] = -vo_data[0];
     jv_data[1] = -vo_data[1];
+    jv_data[2] = -vo_data[2];
   }
 
   virtual void applyJacobian_1_new(ROL::Vector<Real> &jv,
@@ -142,11 +155,15 @@ public:
                                    Real &tol) override {
     auto & jv_data = getVector(jv);
     auto & vn_data = getVector(v_new);
+    auto & un_data = getVector(u_new);
 
     jv_data[0] = vn_data[0] - timestep_*vn_data[1];
     jv_data[1] = vn_data[1] + timestep_*omega_*omega_*vn_data[0];
              // [      1,   -dt ]
              // [ dt*w*w,     1 ]
+            
+    TEUCHOS_ASSERT(un_data[2]>=0.0);
+    jv_data[2] = (1.0 - timestep_*0.5/std::sqrt(un_data[2]))*vn_data[2];
   }
 
   virtual void applyInverseJacobian_1_new(ROL::Vector<Real> &ijv,
@@ -156,6 +173,7 @@ public:
                                           Real &tol) override {
     auto & ijv_data = getVector(ijv);
     auto & v_data = getVector(v_new); 
+    auto & un_data = getVector(u_new);
       
     Real a = omega_*omega_*timestep_;
     Real b = timestep_;
@@ -163,6 +181,9 @@ public:
 
     ijv_data[0] = gamma*(1.0 * v_data[0] +   b * v_data[1]);
     ijv_data[1] = gamma*( -a * v_data[0] + 1.0 * v_data[1]);
+
+    TEUCHOS_ASSERT(un_data[2]>=0.0);
+    ijv_data[2] = v_data[2]/(1.0 - timestep_*0.5/std::sqrt(un_data[2]));
   }
 
   virtual void applyJacobian_2(ROL::Vector<Real> &jv,
@@ -175,6 +196,7 @@ public:
 
     jv_data[0] = -timestep_*vn_data[0];
     jv_data[1] = 0.0;
+    jv_data[2] = 0.0;
   }
 
   virtual void applyAdjointJacobian_1_old(ROL::Vector<Real> &ajv_old,
@@ -187,6 +209,7 @@ public:
 
     ajv_data[0] = -v_data[0];
     ajv_data[1] = -v_data[1];
+    ajv_data[2] = -v_data[2];
   }
 
   virtual void applyAdjointJacobian_1_new(ROL::Vector<Real> &ajv_new,
@@ -197,9 +220,13 @@ public:
 
     auto & ajv_data = getVector(ajv_new);
     auto & v_data = getVector(dualv);
+    auto & un_data = getVector(u_new);
 
     ajv_data[0] = v_data[0] + timestep_*omega_*omega_*v_data[1];
     ajv_data[1] = v_data[1] - timestep_*v_data[0];
+
+    TEUCHOS_ASSERT(un_data[2]>=0.0);
+    ajv_data[2] = (1.0 - timestep_*0.5/std::sqrt(un_data[2]))*v_data[2];
   }
 
   virtual void applyAdjointJacobian_2_time(ROL::Vector<Real> &ajv,
@@ -220,6 +247,7 @@ public:
                                                  Real &tol) override {
     auto & iajv_data = getVector(iajv);
     auto & v_data = getVector(v_new); 
+    auto & un_data = getVector(u_new);
       
     Real a = omega_*omega_*timestep_;
     Real b = timestep_;
@@ -227,7 +255,46 @@ public:
 
     iajv_data[0] = gamma*(1.0 * v_data[0] -   a * v_data[1]);
     iajv_data[1] = gamma*(  b * v_data[0] + 1.0 * v_data[1]);
+
+    TEUCHOS_ASSERT(un_data[2]>=0.0);
+    iajv_data[2] = v_data[2]/(1.0 - timestep_*0.5/std::sqrt(un_data[2]));
   }
+
+  virtual void applyAdjointHessian_11_old(ROL::Vector<Real> &ahwv_old,
+                                          const ROL::Vector<Real> &w,
+                                          const ROL::Vector<Real> &v_old,
+                                          const ROL::Vector<Real> &u_old,
+                                          const ROL::Vector<Real> &u_new,
+                                          const ROL::Vector<Real> &z,
+                                          Real &tol) override
+  {
+    auto & ahwv_data = getVector(ahwv_old);
+    auto & w_data = getVector(w); 
+    auto & v_data = getVector(v_old); 
+
+    ahwv_data[0] = 0.0;
+    ahwv_data[1] = 0.0;
+    ahwv_data[2] = 0.0;
+  }
+
+  virtual void applyAdjointHessian_11_new(ROL::Vector<Real> &ahwv_new,
+                                          const ROL::Vector<Real> &w,
+                                          const ROL::Vector<Real> &v_new,
+                                          const ROL::Vector<Real> &u_old,
+                                          const ROL::Vector<Real> &u_new,
+                                          const ROL::Vector<Real> &z,
+                                          Real &tol) override
+  {
+    auto & ahwv_data = getVector(ahwv_new);
+    auto & w_data = getVector(w); 
+    auto & v_data = getVector(v_new); 
+    auto & un_data = getVector(u_new);
+
+    ahwv_data[0] = 0.0;
+    ahwv_data[1] = 0.0;
+    ahwv_data[2] = 0.25*timestep_*w_data[2]*v_data[2]/std::pow(un_data[2],1.5);
+  }
+
 };
 
 #endif 

@@ -519,7 +519,7 @@ public:
       stepConstraint_->applyAdjointJacobian_2(*ajv_now,*v_dual,*u_state,*z_all,tol);
     }
 
-    // no constraint hanlding because that doesn't work yet!
+    // no constraint for controls hanlding because that doesn't work yet!
   }
 
   virtual void applyInverseAdjointJacobian_1(Vector<Real> &iajv,
@@ -530,6 +530,152 @@ public:
     TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
       "The method applyInverseAdjointJacobian_1 is used but not implemented!\n");
   };
+
+  /** \brief Apply the simulation-space derivative of the adjoint of the constraint
+             simulation-space Jacobian at \f$(u,z)\f$ to the vector \f$w\f$ in the
+             direction \f$v\f$, according to \f$v\mapsto c_{uu}(u,z)(v,\cdot)^*w\f$.
+
+             @param[out]      ahwv is the result of applying the simulation-space derivative of the adjoint of the constraint simulation-space Jacobian at @b \f$(u,z)\f$ to the vector @b \f$w\f$ in direction @b \f$w\f$; a dual simulation-space vector
+             @param[in]       w    is the direction vector; a dual constraint-space vector
+             @param[in]       v    is a simulation-space vector
+             @param[in]       u    is the constraint argument; a simulation-space vector
+             @param[in]       z    is the constraint argument; an optimization-space vector
+             @param[in,out]   tol  is a tolerance for inexact evaluations; currently unused
+
+             On return, \f$\mathsf{ahwv} = c_{uu}(u,z)(v,\cdot)^*w\f$, where
+             \f$w \in \mathcal{C}^*\f$, \f$v \in \mathcal{U}\f$, and
+             \f$\mathsf{ahwv} \in \mathcal{U}^*\f$.
+
+             ---
+  */
+  virtual void applyAdjointHessian_11(Vector<Real> &ahwv,
+                                      const Vector<Real> &w,
+                                      const Vector<Real> &v,
+                                      const Vector<Real> &u,
+                                      const Vector<Real> &z,
+                                      Real &tol) override
+  {
+    PinTVector<Real>       & pint_ahwv = dynamic_cast<PinTVector<Real>&>(ahwv);
+    const PinTVector<Real> & pint_w    = dynamic_cast<const PinTVector<Real>&>(w);
+    const PinTVector<Real> & pint_v    = dynamic_cast<const PinTVector<Real>&>(v);
+    const PinTVector<Real> & pint_u    = dynamic_cast<const PinTVector<Real>&>(u);
+    const PinTVector<Real> & pint_z    = dynamic_cast<const PinTVector<Real>&>(z);
+       // its possible we won't always want to cast to a PinT vector here
+      
+    TEUCHOS_ASSERT(pint_ahwv.numOwnedSteps()==pint_u.numOwnedSteps());
+    TEUCHOS_ASSERT(pint_ahwv.numOwnedSteps()==pint_v.numOwnedSteps());
+
+    // communicate neighbors, these are block calls
+    pint_w.boundaryExchange();
+    pint_v.boundaryExchange();
+    pint_u.boundaryExchange();
+    pint_z.boundaryExchange();
+
+    // we need to make sure this has all zeros to begin with (this includes boundary exchange components)
+    pint_ahwv.zeroAll();
+
+    Ptr<Vector<Real>> scratch;
+    for(int i=0;i<pint_ahwv.numOwnedSteps();i++) {
+      // pull out all the time steps required
+      Ptr<const Vector<Real>> w_dual = getVector(pint_w,i,CURRENT);
+      Ptr<const Vector<Real>> v_dual = getStateVector(pint_v,i);
+      Ptr<const Vector<Real>> u_state = getStateVector(pint_u,i);
+      Ptr<const Vector<Real>> z_all = getVector(pint_z,i,ALL);
+
+      Ptr<Vector<Real>> ahwv_now = getStateVector(pint_ahwv,i);
+
+      // this will lead to problems if problem size changes in time
+      if(scratch==ROL::nullPtr) {
+        scratch = ahwv_now->clone();
+      }
+
+      stepConstraint_->applyAdjointHessian_11(*scratch,*w_dual,*v_dual,*u_state,*z_all,tol);
+
+      ahwv_now->axpy(1.0,*scratch);   
+    }
+
+    // handle the constraint adjoint
+    //   nothing to do here, as the constraint is linear, 
+  }
+
+  /** \brief Apply the optimization-space derivative of the adjoint of the constraint
+             simulation-space Jacobian at \f$(u,z)\f$ to the vector \f$w\f$ in the
+             direction \f$v\f$, according to \f$v\mapsto c_{uz}(u,z)(v,\cdot)^*w\f$.
+
+             @param[out]      ahwv is the result of applying the optimization-space derivative of the adjoint of the constraint simulation-space Jacobian at @b \f$(u,z)\f$ to the vector @b \f$w\f$ in direction @b \f$w\f$; a dual optimization-space vector
+             @param[in]       w    is the direction vector; a dual constraint-space vector
+             @param[in]       v    is a simulation-space vector
+             @param[in]       u    is the constraint argument; a simulation-space vector
+             @param[in]       z    is the constraint argument; an optimization-space vector
+             @param[in,out]   tol  is a tolerance for inexact evaluations; currently unused
+
+             On return, \f$\mathsf{ahwv} = c_{uz}(u,z)(v,\cdot)^*w\f$, where
+             \f$w \in \mathcal{C}^*\f$, \f$v \in \mathcal{U}\f$, and
+             \f$\mathsf{ahwv} \in \mathcal{Z}^*\f$.
+
+             ---
+  */
+  virtual void applyAdjointHessian_12(Vector<Real> &ahwv,
+                                      const Vector<Real> &w,
+                                      const Vector<Real> &v,
+                                      const Vector<Real> &u,
+                                      const Vector<Real> &z,
+                                      Real &tol) override  
+  {
+    ahwv.zero();
+  }
+
+  /** \brief Apply the simulation-space derivative of the adjoint of the constraint 
+             optimization-space Jacobian at \f$(u,z)\f$ to the vector \f$w\f$ in the 
+             direction \f$v\f$, according to \f$v\mapsto c_{zu}(u,z)(v,\cdot)^*w\f$. 
+ 
+             @param[out]      ahwv is the result of applying the simulation-space derivative of the adjoint of the constraint optimization-space Jacobian at @b \f$(u,z)\f$ to the vector @b \f$w\f$ in direction @b \f$w\f$; a dual simulation-space vector 
+             @param[in]       w    is the direction vector; a dual constraint-space vector 
+             @param[in]       v    is a optimization-space vector 
+             @param[in]       u    is the constraint argument; a simulation-space vector 
+             @param[in]       z    is the constraint argument; an optimization-space vector 
+             @param[in,out]   tol  is a tolerance for inexact evaluations; currently unused 
+ 
+             On return, \f$\mathsf{ahwv} = c_{zu}(u,z)(v,\cdot)^*w\f$, where 
+             \f$w \in \mathcal{C}^*\f$, \f$v \in \mathcal{Z}\f$, and 
+             \f$\mathsf{ahwv} \in \mathcal{U}^*\f$. 
+ 
+             --- 
+  */ 
+  virtual void applyAdjointHessian_21(Vector<Real> &ahwv, 
+                                      const Vector<Real> &w, 
+                                      const Vector<Real> &v, 
+                                      const Vector<Real> &u, 
+                                      const Vector<Real> &z, 
+                                      Real &tol) override { 
+    ahwv.zero();
+  }
+
+  /** \brief Apply the optimization-space derivative of the adjoint of the constraint
+             optimization-space Jacobian at \f$(u,z)\f$ to the vector \f$w\f$ in the
+             direction \f$v\f$, according to \f$v\mapsto c_{zz}(u,z)(v,\cdot)^*w\f$.
+
+             @param[out]      ahwv is the result of applying the optimization-space derivative of the adjoint of the constraint optimization-space Jacobian at @b \f$(u,z)\f$ to the vector @b \f$w\f$ in direction @b \f$w\f$; a dual optimization-space vector
+             @param[in]       w    is the direction vector; a dual constraint-space vector
+             @param[in]       v    is a optimization-space vector
+             @param[in]       u    is the constraint argument; a simulation-space vector
+             @param[in]       z    is the constraint argument; an optimization-space vector
+             @param[in,out]   tol  is a tolerance for inexact evaluations; currently unused
+
+             On return, \f$\mathsf{ahwv} = c_{zz}(u,z)(v,\cdot)^*w\f$, where
+             \f$w \in \mathcal{C}^*\f$, \f$v \in \mathcal{Z}\f$, and
+             \f$\mathsf{ahwv} \in \mathcal{Z}^*\f$.
+
+             ---
+  */
+  virtual void applyAdjointHessian_22(Vector<Real> &ahwv,
+                                      const Vector<Real> &w,
+                                      const Vector<Real> &v,
+                                      const Vector<Real> &u,
+                                      const Vector<Real> &z,
+                                      Real &tol) override {
+    ahwv.zero();
+  }
 
 }; // class Constraint_SimOpt
 

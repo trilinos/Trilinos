@@ -161,16 +161,18 @@ double run_test(MPI_Comm comm, const ROL::Ptr<std::ostream> & outStream,int numS
 
   {
     // allocate local state vector
-    ROL::Ptr<std::vector<Real>> u_data_ptr = ROL::makePtr<std::vector<Real>>(2);
+    ROL::Ptr<std::vector<Real>> u_data_ptr = ROL::makePtr<std::vector<Real>>(3);
     std::vector<Real> & u_data = *u_data_ptr;
     u_data[0] = 0.0;
     u_data[1] = omega;
+    u_data[2] = 1.0;
     PtrVector u = ROL::makePtr<ROL::StdVector<Real>>(u_data_ptr);
 
-    ROL::Ptr<std::vector<Real>> u_data_unit_ptr = ROL::makePtr<std::vector<Real>>(2);
+    ROL::Ptr<std::vector<Real>> u_data_unit_ptr = ROL::makePtr<std::vector<Real>>(3);
     std::vector<Real> & u_data_unit = *u_data_unit_ptr;
     u_data_unit[0] = 1.0;
     u_data_unit[1] = 1.0;
+    u_data_unit[2] = 1.0;
     PtrVector u_unit = ROL::makePtr<ROL::StdVector<Real>>(u_data_unit_ptr);
       // this requirement to use a copy constructor tripped me up for a while
 
@@ -192,20 +194,25 @@ double run_test(MPI_Comm comm, const ROL::Ptr<std::ostream> & outStream,int numS
 
   ROL::Ptr<ROL::Constraint_PinTSimOpt<Real>> pint_constraint = ROL::makePtr<ROL::Constraint_PinTSimOpt<Real>>(step_constraint);
 
-  PtrVector u   = state_unit;
-  PtrVector z   = control_unit->clone();
-  PtrVector c   = state->clone();
-  PtrVector jv  = c->clone();
-  PtrVector v_u = state_unit->clone();
-  PtrVector v_z = control_unit->clone();
-  PtrVector w_u = state->dual().clone();
-  PtrVector w_z = control->dual().clone();
+  PtrVector u    = state_unit;
+  PtrVector z    = control_unit->clone();
+  PtrVector c    = state->clone();
+  PtrVector jv   = c->clone();
+  PtrVector v_u  = state_unit->clone();
+  PtrVector v_z  = control_unit->clone();
+  PtrVector w_u  = state->dual().clone();
+  PtrVector w_z  = control->dual().clone();
+  PtrVector w_c  = c->dual().clone();
+  PtrVector hv_u = state->dual().clone();
+  PtrVector hv_z = z->dual().clone();
 
   ROL::RandomizeVector<RealT>(*u); // this randomization doesn't really matter here as 'u' is complete determine by the solve
   ROL::RandomizeVector<RealT>(*z); 
   ROL::RandomizeVector<RealT>(*v_u); 
+  ROL::RandomizeVector<RealT>(*v_z); 
   ROL::RandomizeVector<RealT>(*w_u); 
   ROL::RandomizeVector<RealT>(*w_z); 
+  ROL::RandomizeVector<RealT>(*w_c); 
  
   // check the solve
   //////////////////////////////////////////////////////////////////////
@@ -233,7 +240,7 @@ double run_test(MPI_Comm comm, const ROL::Ptr<std::ostream> & outStream,int numS
       *outStream << "Checking apply Jacobian 1" << std::endl;
 
     auto errors = pint_constraint->checkApplyJacobian_1(*u,*z,*v_u,*jv,true,*outStream);
-    if(errors[6][3] >= 1e-8)
+    if(errors[6][3]/errors[6][1] >= 1e-6)
       throw std::logic_error("Constraint apply jacobian 1 is incorrect");
   }
 
@@ -244,7 +251,7 @@ double run_test(MPI_Comm comm, const ROL::Ptr<std::ostream> & outStream,int numS
       *outStream << "Checking apply Jacobian 2" << std::endl;
 
     auto errors = pint_constraint->checkApplyJacobian_2(*u,*z,*v_z,*jv,true,*outStream);
-    if(errors[6][3] >= 1e-8)
+    if(errors[6][3]/errors[6][1] >= 1e-6)
       throw std::logic_error("Constraint apply jacobian 2 is incorrect");
   }
 
@@ -268,6 +275,50 @@ double run_test(MPI_Comm comm, const ROL::Ptr<std::ostream> & outStream,int numS
     auto error = pint_constraint->checkAdjointConsistencyJacobian_2(*w_u,*v_z,*u,*z,true,*outStream);
     if(error >= 1e-8)
       throw std::logic_error("Constraint apply adjoint jacobian 2 is incorrect");
+  }
+
+  // check the Adjoint Hessian 11
+  /////////////////////////////////////////////////////////////////////////////
+  {
+    if(myRank==0)
+      *outStream << "Checking apply Adjoint Hessian_11" << std::endl;
+
+    auto errors = pint_constraint->checkApplyAdjointHessian_11(*u,*z,*w_c,*v_u,*hv_u,true,*outStream);
+    if(errors[6][3]/errors[6][1] >= 1e-4) // wow, this is really not very good accuracy
+      throw std::logic_error("Constraint apply Adjoint Hessian 11 is incorrect: " + std::to_string( errors[6][3]/errors[6][1]));
+  }
+
+  // check the Adjoint Hessian_12
+  /////////////////////////////////////////////////////////////////////////////
+  {
+    if(myRank==0)
+      *outStream << "Checking apply Adjoint Hessian_12" << std::endl;
+
+    auto errors = pint_constraint->checkApplyAdjointHessian_12(*u,*z,*w_c,*v_u,*hv_z,true,*outStream);
+    if(errors[6][3] >= 1e-5)
+      throw std::logic_error("Constraint apply Adjoint Hessian 12 is incorrect");
+  }
+
+  // check the Adjoint Hessian_21
+  /////////////////////////////////////////////////////////////////////////////
+  {
+    if(myRank==0)
+      *outStream << "Checking apply Adjoint Hessian_21" << std::endl;
+
+    auto errors = pint_constraint->checkApplyAdjointHessian_21(*u,*z,*w_c,*v_z,*hv_u,true,*outStream);
+    if(errors[6][3] >= 1e-5)
+      throw std::logic_error("Constraint apply Adjoint Hessian 12 is incorrect");
+  }
+
+  // check the Adjoint Hessian_22
+  /////////////////////////////////////////////////////////////////////////////
+  {
+    if(myRank==0)
+      *outStream << "Checking apply Adjoint Hessian_22" << std::endl;
+
+    auto errors = pint_constraint->checkApplyAdjointHessian_22(*u,*z,*w_c,*v_z,*hv_z,true,*outStream);
+    if(errors[6][3] >= 1e-5)
+      throw std::logic_error("Constraint apply Adjoint Hessian 12 is incorrect");
   }
 
   // This computes and returns the last value of the 'u' component and shares
