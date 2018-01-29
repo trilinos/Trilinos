@@ -114,7 +114,9 @@ struct compare<T, std::false_type> {
   bool operator()(T const&, T const&) const {
     TEUCHOS_TEST_FOR_EXCEPTION(true, std::runtime_error,
         "Trying to compare type " << typeid(T).name() << " which is not comparable");
+#ifndef __CUDACC__
     return false;
+#endif
   }
 };
 
@@ -133,7 +135,9 @@ struct print<T, std::false_type> {
   std::ostream& operator()(std::ostream& s, T const&) const {
     TEUCHOS_TEST_FOR_EXCEPTION(true, std::runtime_error,
         "Trying to print type " << typeid(T).name() << " which is not printable");
+#ifndef __CUDACC__
     return s;
+#endif
   }
 };
 
