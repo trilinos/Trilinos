@@ -67,7 +67,7 @@ class RKButcherTableau :
     /** \brief Return the vector of quadrature weights for embedded methods */
     virtual const Teuchos::SerialDenseVector<int,Scalar>& bstar() const
       { return bstar_ ; }
-    /** \brief Reutrn the vectir of stage positions */
+    /** \brief Return the vector of stage positions */
     virtual const Teuchos::SerialDenseVector<int,Scalar>& c() const
       { return c_; }
     /** \brief Return the order */
@@ -1578,7 +1578,7 @@ class SDIRK2Stage2ndOrder_RKBT :
       "  Stepper Type != \""+this->description()+"\"\n"
       "  Stepper Type = " + pl->get<std::string>("Stepper Type"));
 
-    gamma_ = pl->get<double>("gamma");
+    gamma_ = pl->get<double>("gamma", gamma_default_);
 
     typedef Teuchos::ScalarTraits<Scalar> ST;
     int NumStages = 2;
