@@ -24,7 +24,34 @@ namespace Tempus {
 template<class Scalar> class StepperFactory;
 
 
-// StepperIMEX_RK definitions:
+template<class Scalar>
+StepperIMEX_RK<Scalar>::StepperIMEX_RK(
+  const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel,
+  std::string stepperType)
+{
+  this->setTableaus(Teuchos::null, stepperType);
+  this->setParameterList(Teuchos::null);
+  this->setModel(appModel);
+  this->setSolver();
+  this->setObserver();
+  this->initialize();
+}
+
+
+template<class Scalar>
+StepperIMEX_RK<Scalar>::StepperIMEX_RK(
+  const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel,
+  Teuchos::RCP<Teuchos::ParameterList> pList)
+{
+  this->setTableaus(pList, "IMEX RK SSP2");
+  this->setParameterList(pList);
+  this->setModel(appModel);
+  this->setSolver();
+  this->setObserver();
+  this->initialize();
+}
+
+
 template<class Scalar>
 StepperIMEX_RK<Scalar>::StepperIMEX_RK(
   const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel,
@@ -49,7 +76,7 @@ void StepperIMEX_RK<Scalar>::setTableaus(
     if (pList == Teuchos::null)
       stepperType = "IMEX RK SSP2";
     else
-      stepperType = pList->get<std::string>("Stepper Type");
+      stepperType = pList->get<std::string>("Stepper Type", "IMEX RK SSP2");
   }
 
   if (stepperType == "IMEX RK 1st order") {
@@ -362,7 +389,7 @@ void StepperIMEX_RK<Scalar>::setSolver(
       << "\n" << "  Solver Name  = "<<solverName<<"\n");
     solverName = solverPL->name();
     stepperPL_->set("Solver Name", solverName);
-    stepperPL_->set(solverName, solverPL);      // Add sublist
+    stepperPL_->set(solverName, *solverPL);      // Add sublist
     solver_ = rcp(new Thyra::NOXNonlinearSolver());
     RCP<ParameterList> noxPL = Teuchos::sublist(solverPL, "NOX", true);
     solver_->setParameterList(noxPL);
@@ -384,7 +411,7 @@ void StepperIMEX_RK<Scalar>::setSolver(
   RCP<ParameterList> solverPL = solver->getNonconstParameterList();
   std::string solverName = solverPL->name();
   stepperPL_->set("Solver Name", solverName);
-  stepperPL_->set(solverName, solverPL);      // Add sublist
+  stepperPL_->set(solverName, *solverPL);      // Add sublist
   solver_ = solver;
 }
 

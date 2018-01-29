@@ -72,12 +72,18 @@ public:
 
     /// Get a default (initial) StepperState
     virtual Teuchos::RCP<Tempus::StepperState<Scalar> > getDefaultStepperState();
-    virtual Scalar getOrder()    const {return stepperPL_->get<int>("Order");}
-    virtual Scalar getOrderMin() const {return stepperPL_->get<int>("Order");}
-    virtual Scalar getOrderMax() const {return stepperPL_->get<int>("Order");}
-    virtual void setOrder   (Scalar ord) {stepperPL_->set<int>("Order", ord);}
-    virtual void setOrderMin(Scalar ord) {stepperPL_->set<int>("Order", ord);}
-    virtual void setOrderMax(Scalar ord) {stepperPL_->set<int>("Order", ord);}
+    virtual Scalar getOrder()    const
+      {return stepperPL_->get<int>("Order");}
+    virtual Scalar getOrderMin() const
+      {return stepperPL_->get<int>("Minimum Order");}
+    virtual Scalar getOrderMax() const
+      {return stepperPL_->get<int>("Maximum Order");}
+    virtual void setOrder   (Scalar ord)
+      {stepperPL_->set<int>("Order", ord);}
+    virtual void setOrderMin(Scalar ord)
+      {stepperPL_->set<int>("Minimum Order", ord);}
+    virtual void setOrderMax(Scalar ord)
+      {stepperPL_->set<int>("Maximum Order", ord);}
 
     virtual bool isExplicit() const
     {

@@ -58,7 +58,6 @@ correctVelocity(Thyra::VectorBase<Scalar>& v,
 }
 
 
-// StepperNewmarkExplicitAForm definitions:
 template<class Scalar>
 StepperNewmarkExplicitAForm<Scalar>::StepperNewmarkExplicitAForm(
   const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel,

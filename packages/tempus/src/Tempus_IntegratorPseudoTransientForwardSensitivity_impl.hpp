@@ -457,20 +457,24 @@ buildSolutionHistory()
     RCP<VectorBase<Scalar> > x = multiVectorProductVector(prod_space, x_mv);
 
     // X-Dot
-    RCP< MultiVectorBase<Scalar> > x_dot_mv =
-      createMembers(x_space, num_param+1);
-    assign(x_dot_mv->col(0).ptr(), *(state->getXDot()));
-    assign(x_dot_mv->subView(rng).ptr(), zero);
-    RCP<VectorBase<Scalar> > x_dot =
-      multiVectorProductVector(prod_space, x_dot_mv);
+    RCP<VectorBase<Scalar> > x_dot;
+    if (state->getXDot() != Teuchos::null) {
+      RCP< MultiVectorBase<Scalar> > x_dot_mv =
+        createMembers(x_space, num_param+1);
+      assign(x_dot_mv->col(0).ptr(), *(state->getXDot()));
+      assign(x_dot_mv->subView(rng).ptr(), zero);
+      x_dot = multiVectorProductVector(prod_space, x_dot_mv);
+    }
 
     // X-Dot-Dot
-    RCP< MultiVectorBase<Scalar> > x_dot_dot_mv =
-      createMembers(x_space, num_param+1);
-    assign(x_dot_dot_mv->col(0).ptr(), *(state->getXDotDot()));
-    assign(x_dot_dot_mv->subView(rng).ptr(), zero);
-    RCP<VectorBase<Scalar> > x_dot_dot =
-      multiVectorProductVector(prod_space, x_dot_dot_mv);
+    RCP<VectorBase<Scalar> > x_dot_dot;
+    if (state->getXDotDot() != Teuchos::null) {
+      RCP< MultiVectorBase<Scalar> > x_dot_dot_mv =
+        createMembers(x_space, num_param+1);
+      assign(x_dot_dot_mv->col(0).ptr(), *(state->getXDotDot()));
+      assign(x_dot_dot_mv->subView(rng).ptr(), zero);
+      x_dot_dot = multiVectorProductVector(prod_space, x_dot_dot_mv);
+    }
 
     RCP<SolutionState<Scalar> > prod_state =
       rcp(new SolutionState<Scalar>(state->getMetaData()->clone(),
@@ -501,24 +505,28 @@ buildSolutionHistory()
     RCP<VectorBase<Scalar> > x = multiVectorProductVector(prod_space, x_mv);
 
     // X-Dot
-    RCP< MultiVectorBase<Scalar> > x_dot_mv =
-      createMembers(x_space, num_param+1);
-    RCP<const MultiVectorBase<Scalar> > dxdotdp =
-      rcp_dynamic_cast<const DMVPV>(state->getXDot())->getMultiVector();
-    assign(x_dot_mv->col(0).ptr(), *(frozen_x_dot));
-    assign(x_dot_mv->subView(rng).ptr(), *dxdotdp);
-    RCP<VectorBase<Scalar> > x_dot =
-      multiVectorProductVector(prod_space, x_dot_mv);
+    RCP<VectorBase<Scalar> > x_dot;
+    if (state->getXDot() != Teuchos::null) {
+      RCP< MultiVectorBase<Scalar> > x_dot_mv =
+        createMembers(x_space, num_param+1);
+      RCP<const MultiVectorBase<Scalar> > dxdotdp =
+        rcp_dynamic_cast<const DMVPV>(state->getXDot())->getMultiVector();
+      assign(x_dot_mv->col(0).ptr(), *(frozen_x_dot));
+      assign(x_dot_mv->subView(rng).ptr(), *dxdotdp);
+      x_dot = multiVectorProductVector(prod_space, x_dot_mv);
+    }
 
     // X-Dot-Dot
-    RCP< MultiVectorBase<Scalar> > x_dot_dot_mv =
-      createMembers(x_space, num_param+1);
-    RCP<const MultiVectorBase<Scalar> > dxdotdotdp =
-      rcp_dynamic_cast<const DMVPV>(state->getXDotDot())->getMultiVector();
-    assign(x_dot_dot_mv->col(0).ptr(), *(frozen_x_dot_dot));
-    assign(x_dot_dot_mv->subView(rng).ptr(), *dxdotdotdp);
-    RCP<VectorBase<Scalar> > x_dot_dot =
-      multiVectorProductVector(prod_space, x_dot_dot_mv);
+    RCP<VectorBase<Scalar> > x_dot_dot;
+    if (state->getXDotDot() != Teuchos::null) {
+      RCP< MultiVectorBase<Scalar> > x_dot_dot_mv =
+        createMembers(x_space, num_param+1);
+      RCP<const MultiVectorBase<Scalar> > dxdotdotdp =
+        rcp_dynamic_cast<const DMVPV>(state->getXDotDot())->getMultiVector();
+      assign(x_dot_dot_mv->col(0).ptr(), *(frozen_x_dot_dot));
+      assign(x_dot_dot_mv->subView(rng).ptr(), *dxdotdotdp);
+      x_dot_dot = multiVectorProductVector(prod_space, x_dot_dot_mv);
+    }
 
     RCP<SolutionState<Scalar> > prod_state =
       rcp(new SolutionState<Scalar>(state->getMetaData()->clone(),

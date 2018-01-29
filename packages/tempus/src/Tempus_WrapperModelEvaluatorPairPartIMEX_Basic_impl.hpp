@@ -168,6 +168,9 @@ getIMEXVector(const Teuchos::RCP<Thyra::VectorBase<Scalar> > & full) const
   using Teuchos::RCP;
   using Teuchos::rcp_dynamic_cast;
 
+  if(full == Teuchos::null)
+    return Teuchos::null;
+
   if(numExplicitOnlyBlocks_==0)
     return full;
 
@@ -194,6 +197,9 @@ getIMEXVector(const Teuchos::RCP<const Thyra::VectorBase<Scalar> > & full) const
 {
   using Teuchos::RCP;
   using Teuchos::rcp_dynamic_cast;
+
+  if(full == Teuchos::null)
+    return Teuchos::null;
 
   if(numExplicitOnlyBlocks_==0)
     return full;
@@ -223,7 +229,7 @@ getExplicitOnlyVector(
   using Teuchos::RCP;
   using Teuchos::rcp_dynamic_cast;
 
-  if(numExplicitOnlyBlocks_==0)
+  if(numExplicitOnlyBlocks_ == 0 || full == Teuchos::null)
     return Teuchos::null;
 
   RCP<Thyra::ProductVectorBase<Scalar> > blk_full =
@@ -251,7 +257,7 @@ getExplicitOnlyVector(
   using Teuchos::RCP;
   using Teuchos::rcp_dynamic_cast;
 
-  if(numExplicitOnlyBlocks_==0)
+  if(numExplicitOnlyBlocks_ == 0 || full == Teuchos::null)
     return Teuchos::null;
 
   RCP<const Thyra::ProductVectorBase<Scalar> > blk_full =
