@@ -98,7 +98,7 @@ TEUCHOS_UNIT_TEST(BDF2, ParameterList)
 
 // ************************************************************
 // ************************************************************
-TEUCHOS_UNIT_TEST(BDF2, ContructingFromDefaults)
+TEUCHOS_UNIT_TEST(BDF2, ConstructingFromDefaults)
 {
   double dt = 0.1;
 

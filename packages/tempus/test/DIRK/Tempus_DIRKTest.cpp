@@ -115,7 +115,7 @@ TEUCHOS_UNIT_TEST(DIRK, ParameterList)
 
 // ************************************************************
 // ************************************************************
-TEUCHOS_UNIT_TEST(DIRK, ContructingFromDefaults)
+TEUCHOS_UNIT_TEST(DIRK, ConstructingFromDefaults)
 {
   double dt = 0.025;
 

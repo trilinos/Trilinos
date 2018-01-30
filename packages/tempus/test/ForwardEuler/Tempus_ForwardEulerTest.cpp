@@ -81,7 +81,7 @@ TEUCHOS_UNIT_TEST(ForwardEuler, ParameterList)
 
 // ************************************************************
 // ************************************************************
-TEUCHOS_UNIT_TEST(ForwardEuler, ContructingFromDefaults)
+TEUCHOS_UNIT_TEST(ForwardEuler, ConstructingFromDefaults)
 {
   double dt = 0.1;
 

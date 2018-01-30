@@ -109,7 +109,7 @@ TEUCHOS_UNIT_TEST(ExplicitRK, ParameterList)
 
 // ************************************************************
 // ************************************************************
-TEUCHOS_UNIT_TEST(ExplicitRK, ContructingFromDefaults)
+TEUCHOS_UNIT_TEST(ExplicitRK, ConstructingFromDefaults)
 {
   double dt = 0.1;
 

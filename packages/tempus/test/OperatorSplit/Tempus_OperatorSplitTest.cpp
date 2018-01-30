@@ -38,7 +38,7 @@ using Tempus::SolutionState;
 
 // ************************************************************
 // ************************************************************
-TEUCHOS_UNIT_TEST(OperatorSplit, ContructingFromDefaults)
+TEUCHOS_UNIT_TEST(OperatorSplit, ConstructingFromDefaults)
 {
   double dt = 0.05;
 

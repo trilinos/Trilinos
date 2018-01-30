@@ -38,7 +38,7 @@ using Tempus::SolutionState;
 
 // ************************************************************
 // ************************************************************
-TEUCHOS_UNIT_TEST(IMEX_RK_Partitioned, ContructingFromDefaults)
+TEUCHOS_UNIT_TEST(IMEX_RK_Partitioned, ConstructingFromDefaults)
 {
   double dt = 0.025;
 

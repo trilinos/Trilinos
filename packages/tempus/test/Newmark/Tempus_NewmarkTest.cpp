@@ -330,7 +330,7 @@ TEUCHOS_UNIT_TEST(NewmarkExplicitAForm, HarmonicOscillatorDamped)
 #ifdef TEST_HARMONIC_OSCILLATOR_DAMPED_CTOR
 // ************************************************************
 // ************************************************************
-TEUCHOS_UNIT_TEST(NewmarkImplicitAForm, ContructingFromDefaults)
+TEUCHOS_UNIT_TEST(NewmarkImplicitAForm, ConstructingFromDefaults)
 {
   double dt = 1.0;
 
@@ -418,12 +418,9 @@ TEUCHOS_UNIT_TEST(NewmarkImplicitAForm, ContructingFromDefaults)
   // Check the order and intercept
   std::cout << "  Stepper = " << stepper->description() << std::endl;
   std::cout << "  =========================" << std::endl;
-  std::cout << "  Exact solution   : " << get_ele(*(x_exact), 0) << "   "
-                                       << get_ele(*(x_exact), 1) << std::endl;
-  std::cout << "  Computed solution: " << get_ele(*(x      ), 0) << "   "
-                                       << get_ele(*(x      ), 1) << std::endl;
-  std::cout << "  Difference       : " << get_ele(*(xdiff  ), 0) << "   "
-                                       << get_ele(*(xdiff  ), 1) << std::endl;
+  std::cout << "  Exact solution   : " << get_ele(*(x_exact), 0) << std::endl;
+  std::cout << "  Computed solution: " << get_ele(*(x      ), 0) << std::endl;
+  std::cout << "  Difference       : " << get_ele(*(xdiff  ), 0) << std::endl;
   std::cout << "  =========================" << std::endl;
   TEST_FLOATING_EQUALITY(get_ele(*(x), 0), -0.222222, 1.0e-4 );
   TEST_FLOATING_EQUALITY(get_ele(*(x), 1),  0.0     , 1.0e-4 );
