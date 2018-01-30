@@ -39,7 +39,6 @@ echo "TRILNOS_DIR = '$TRILNOS_DIR'"
 # Purge all of the existing modules first
 module purge
 
-
 export BUILD_COUNT=32
 export OMPI_CXX=
 
@@ -98,7 +97,6 @@ if [ "$COMPILER" == "GNU" ]; then
     export BLAS_LIB="-L${BLAS_ROOT}/lib;-lblas;-lgfortran"
 elif [ "$COMPILER" == "INTEL" ]; then
     module load devpack/openmpi/2.1.1/intel/17.4.196/cuda/none
-    module swap intel/compilers/17.0.042 intel/compilers/17.1.132
     export OMPI_CXX=`which icpc`
     export OMPI_CC=`which icc`
     export OMPI_FC=`which ifort`
