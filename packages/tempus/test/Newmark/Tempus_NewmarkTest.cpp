@@ -423,7 +423,6 @@ TEUCHOS_UNIT_TEST(NewmarkImplicitAForm, ConstructingFromDefaults)
   std::cout << "  Difference       : " << get_ele(*(xdiff  ), 0) << std::endl;
   std::cout << "  =========================" << std::endl;
   TEST_FLOATING_EQUALITY(get_ele(*(x), 0), -0.222222, 1.0e-4 );
-  TEST_FLOATING_EQUALITY(get_ele(*(x), 1),  0.0     , 1.0e-4 );
 }
 #endif
 
