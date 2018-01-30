@@ -126,8 +126,12 @@ elif [ "$COMPILER" == "CUDA" ]; then
     export BLAS_LIB="-L${BLAS_ROOT}/lib;-lblas;-lgfortran"
 else
     echo "No valid compiler found"
-
 fi
+
+# Set MPI wrappers
+export MPICC=`which mpicc`
+export MPICXX=`which mpicxx`
+export MPIF90=`which mpif90`
 
 export USE_HWLOC=OFF
 export HWLOC_LIBS=-lhwloc
