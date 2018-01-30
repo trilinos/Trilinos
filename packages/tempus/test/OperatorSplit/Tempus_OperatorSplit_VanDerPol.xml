@@ -48,9 +48,11 @@
 
     <ParameterList name="Demo Stepper">
 
-      <Parameter name="Stepper Type" type="string" value="Operator Split"/>
-      <Parameter name="Order"        type="int"    value="1"/>
-      <Parameter name="Stepper List" type="string" value="'Operator 1', 'Operator 2'"/>
+      <Parameter name="Stepper Type"  type="string" value="Operator Split"/>
+      <Parameter name="Minimum Order" type="int"    value="1"/>
+      <Parameter name="Order"         type="int"    value="1"/>
+      <Parameter name="Maximum Order" type="int"    value="1"/>
+      <Parameter name="Stepper List"  type="string" value="'Operator 1', 'Operator 2'"/>
 
       <ParameterList name="Operator 1">
         <Parameter name="Stepper Type" type="string" value="Forward Euler"/>

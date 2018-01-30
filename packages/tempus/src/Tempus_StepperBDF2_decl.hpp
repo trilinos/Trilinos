@@ -98,6 +98,10 @@ public:
   virtual void computeStartUp(
     const Teuchos::RCP<SolutionHistory<Scalar> >& solutionHistory);
 
+  /// Provide temporary xDot memory for Stepper if SolutionState doesn't.
+  virtual Teuchos::RCP<Thyra::VectorBase<Scalar> > getXDotTemp(
+    Teuchos::RCP<Thyra::VectorBase<Scalar> > x);
+
   /// \name ParameterList methods
   //@{
     void setParameterList(const Teuchos::RCP<Teuchos::ParameterList> & pl);
@@ -128,6 +132,8 @@ private:
 
   Teuchos::RCP<StepperBDF2Observer<Scalar> > stepperBDF2Observer_;
   Scalar                                             order_;
+
+  Teuchos::RCP<Thyra::VectorBase<Scalar> >           xDotTemp_;
 };
 
 /** \brief Time-derivative interface for BDF2.

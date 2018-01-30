@@ -114,7 +114,9 @@ void StepperForwardEuler<Scalar>::takeStep(
     // of a state function corresponding to the explicit ODE formulation
     // x_dot = f(x, t)
     if (inArgs_.supports(MEB::IN_ARG_x_dot)) inArgs_.set_x_dot(Teuchos::null);
-    outArgs_.set_f(currentState->getXDot());
+    RCP<Thyra::VectorBase<Scalar> > xDot = currentState->getXDot();
+    if (xDot == Teuchos::null) xDot = getXDotTemp(currentState->getX());
+    outArgs_.set_f(xDot);
 
     stepperFEObserver_->observeBeforeExplicit(solutionHistory, *this);
 
@@ -124,13 +126,26 @@ void StepperForwardEuler<Scalar>::takeStep(
     RCP<SolutionState<Scalar> > workingState=solutionHistory->getWorkingState();
     const Scalar dt = workingState->getTimeStep();
     Thyra::V_VpStV(Teuchos::outArg(*(workingState->getX())),
-      *(currentState->getX()),dt,*(currentState->getXDot()));
+      *(currentState->getX()),dt,*(xDot));
 
+    if (workingState->getXDot() != Teuchos::null)
+      assign((workingState->getXDot()).ptr(),
+        Teuchos::ScalarTraits<Scalar>::zero());
     workingState->getStepperState()->stepperStatus_ = Status::PASSED;
     workingState->setOrder(this->getOrder());
     stepperFEObserver_->observeEndTakeStep(solutionHistory, *this);
   }
   return;
+}
+
+
+template<class Scalar>
+Teuchos::RCP<Thyra::VectorBase<Scalar> >
+StepperForwardEuler<Scalar>::
+getXDotTemp(Teuchos::RCP<Thyra::VectorBase<Scalar> > x)
+{
+  if (xDotTemp_ == Teuchos::null) xDotTemp_ = x->clone_v();
+  return xDotTemp_;
 }
 
 

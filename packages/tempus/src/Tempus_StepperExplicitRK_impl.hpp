@@ -18,7 +18,30 @@
 
 namespace Tempus {
 
-// StepperExplicitRK definitions:
+template<class Scalar>
+StepperExplicitRK<Scalar>::StepperExplicitRK(
+  const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel,
+  std::string stepperType)
+{
+  this->setTableau(Teuchos::null, stepperType);
+  this->setParameterList(Teuchos::null);
+  this->setModel(appModel);
+  this->setObserver();
+  this->initialize();
+}
+
+template<class Scalar>
+StepperExplicitRK<Scalar>::StepperExplicitRK(
+  const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel,
+  Teuchos::RCP<Teuchos::ParameterList>                      pList)
+{
+  this->setTableau(pList, "RK Explicit 4 Stage");
+  this->setParameterList(pList);
+  this->setModel(appModel);
+  this->setObserver();
+  this->initialize();
+}
+
 template<class Scalar>
 StepperExplicitRK<Scalar>::StepperExplicitRK(
   const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel,
@@ -91,10 +114,11 @@ void StepperExplicitRK<Scalar>::setTableau(
     if (pList == Teuchos::null)
       stepperType = "RK Explicit 4 Stage";
     else
-      stepperType = pList->get<std::string>("Stepper Type");
+      stepperType =
+        pList->get<std::string>("Stepper Type", "RK Explicit 4 Stage");
   }
 
-  ERK_ButcherTableau_ = createRKBT<Scalar>(stepperType,pList);
+  ERK_ButcherTableau_ = createRKBT<Scalar>(stepperType, pList);
 
   TEUCHOS_TEST_FOR_EXCEPTION(ERK_ButcherTableau_->isImplicit() == true,
     std::logic_error,
