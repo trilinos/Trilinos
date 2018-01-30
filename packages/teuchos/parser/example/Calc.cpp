@@ -18,16 +18,6 @@ struct CallArgs {
   int n;
 };
 
-bool operator==(CallArgs const&, CallArgs const&) {
-  throw std::logic_error("CallArgs operator== is just to satisfy Teuchos");
-  return false;
-}
-
-std::ostream& operator<<(std::ostream& os, CallArgs const&) {
-  throw std::logic_error("CallArgs operator<< is just to satisfy Teuchos");
-  return os;
-}
-
 class Reader : public Teuchos::Reader {
  public:
   Reader():Teuchos::Reader(Teuchos::MathExpr::ask_reader_tables()) {
