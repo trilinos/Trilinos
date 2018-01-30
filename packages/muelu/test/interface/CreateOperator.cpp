@@ -200,6 +200,11 @@ namespace MueLuExamples {
       // NOTE1 : Epetra, on the other hand, rolls out its out random number
       // generator, which always produces same results
 
+      // make sure complex tests pass
+      run_sed("'s/relaxation: damping factor = (1,0)/relaxation: damping factor = 1/'", baseFile);
+      run_sed("'s/damping factor: (1,0)/damping factor: 1/'", baseFile);
+      run_sed("'s/relaxation: min diagonal value = (0,0)/relaxation: min diagonal value = 0/'", baseFile);
+
       // Ignore the value of "lambdaMax"
       run_sed("'s/lambdaMax: [0-9]*.[0-9]*/lambdaMax = <ignored>/'", baseFile);
 

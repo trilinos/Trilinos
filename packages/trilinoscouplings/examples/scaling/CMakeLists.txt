@@ -98,14 +98,14 @@ IF(${PACKAGE_NAME}_ENABLE_Epetra AND ${PACKAGE_NAME}_ENABLE_EpetraExt AND
           NUM_MPI_PROCS 1
           )
       ENDIF()
-
-      TRIBITS_COPY_FILES_TO_BINARY_DIR(TestCopyMaxwellFiles
-        SOURCE_FILES Maxwell.xml
-        SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}
-        DEST_DIR ${CMAKE_CURRENT_BINARY_DIR}
-        )
     ENDIF() # MueLu_ENABLE_Epetra
   ENDIF()
+
+  TRIBITS_COPY_FILES_TO_BINARY_DIR(TestCopyMaxwellFiles
+    SOURCE_FILES Maxwell.xml Ninja.xml
+    SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}
+    DEST_DIR ${CMAKE_CURRENT_BINARY_DIR}
+    )
 
   TRIBITS_ADD_EXECUTABLE_AND_TEST(
     Example_GradDiv

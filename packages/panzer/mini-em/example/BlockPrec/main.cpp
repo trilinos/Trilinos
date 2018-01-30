@@ -397,7 +397,7 @@ int main(int argc,char * argv[])
 
       {
         Teuchos::RCP<Teuchos::TimeMonitor> tM = Teuchos::rcp(new Teuchos::TimeMonitor(*Teuchos::TimeMonitor::getNewTimer(std::string("Mini-EM: timestepper"))));
-        for(int ts = 1; ts < 21; ts++)
+        for(int ts = 1; ts < 201; ts++)
         {
           RCP<Thyra::VectorBase<double> > x_old = solution_vec->clone_v();
     
@@ -686,6 +686,7 @@ void writeToExodus(double time_stamp,
   // fill STK mesh objects
   Thyra::ModelEvaluatorBase::InArgs<double> inArgs = model.createInArgs();
   inArgs.set_x(x);
+  inArgs.set_t(time_stamp);
 
   panzer::AssemblyEngineInArgs respInput;
   model.setupAssemblyInArgs(inArgs,respInput);
