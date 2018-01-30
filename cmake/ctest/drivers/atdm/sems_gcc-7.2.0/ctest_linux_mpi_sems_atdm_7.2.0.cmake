@@ -54,10 +54,13 @@
 # @HEADER
 
 
-INCLUDE("${CTEST_SCRIPT_DIRECTORY}/../../TrilinosCTestDriverCore.cmake")
+INCLUDE("${CTEST_SCRIPT_DIRECTORY}/../../../TrilinosCTestDriverCore.cmake")
 
-SET_DEFAULT(COMPILER_VERSION "GCC-7.2.0")
-SET(BUILD_DIR_NAME "MPI_RELEASE_ATDM")
+# Must set the Jenkins JOB_NAME which will be the CDash build name 
+IF ("$ENV{JOB_NAME}" STREQUAL "")
+  MESSAGE(FATAL_ERROR "Error, must set env var JOB_NAME")
+ENDIF()
+SET(CTEST_BUILD_NAME "$ENV{JOB_NAME}")
 SET(CTEST_TEST_TIMEOUT 600)
 SET( CTEST_NOTES_FILES
   "${CTEST_SCRIPT_DIRECTORY}/${CTEST_SCRIPT_NAME}"
@@ -68,12 +71,14 @@ SET( CTEST_PARALLEL_LEVEL "10" )
 SET(Trilinos_ENABLE_SECONDARY_TESTED_CODE OFF)
 SET(Trilinos_ENABLE_CONFIGURE_TIMING ON)
 SET(Trilinos_BRANCH develop)
+SET(Trilinos_EXTRAREPOS_FILE NONE)
+# Just test all the packages
 #SET(Trilinos_PACKAGES)
 SET( EXTRA_CONFIGURE_OPTIONS
   "-DTrilinos_CONFIGURE_OPTIONS_FILE:STRING=cmake/std/sems/atdm/SEMSATDMSettings.cmake,cmake/std/MpiReleaseDebugSharedPtSettings.cmake,cmake/std/BasicCiTestingSettings.cmake"
   "-DTrilinos_ENABLE_CONFIGURE_TIMING=ON"
   )
 SET(CTEST_TEST_TYPE Nightly)
-SET(Trilinos_TRACK Specialized)
+SET(Trilinos_TRACK ATDM)
 
 TRIBITS_CTEST_DRIVER()
