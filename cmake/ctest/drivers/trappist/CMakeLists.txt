@@ -24,7 +24,7 @@ if($ENV{CTEST_CONFIGURATION} MATCHES "default")
 elseif($ENV{CTEST_CONFIGURATION} MATCHES "intel")
 
   TRILINOS_DRIVER_ADD_DASHBOARD(
-    OPENMPI_1.10.0_RELEASE_MueLu
+    INTEL_OPENMPI_1.10.0_RELEASE_MueLu
     ctest_linux_nightly_mpi_release_muelu_trappist.intel.cmake
     CTEST_INSTALLER_TYPE release
     RUN_SERIAL
@@ -33,7 +33,7 @@ elseif($ENV{CTEST_CONFIGURATION} MATCHES "intel")
 elseif($ENV{CTEST_CONFIGURATION} MATCHES "clang")
 
   TRILINOS_DRIVER_ADD_DASHBOARD(
-    OPENMPI_1.10.0_RELEASE
+    CLANG_OPENMPI_1.10.0_RELEASE
     ctest_linux_nightly_mpi_release_muelu_trappist.clang.cmake
     CTEST_INSTALLER_TYPE release
     RUN_SERIAL

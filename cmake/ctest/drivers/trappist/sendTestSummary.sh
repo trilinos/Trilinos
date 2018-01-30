@@ -32,7 +32,7 @@ fi
 #########################################################################
 
 #Perl script to produce prettified HTML
-HTMLPERLSCRIPT="/storage/lberge/nightlyTests/Trilinos/cmake/ctest/drivers/trappist"
+HTMLPERLSCRIPT="/storage/lberge/nightlyTests/Trilinos/cmake/ctest/drivers/trappist/drakify-email.pl"
 #root of cdash testing directory
 TESTLOCATION="/storage/lberge/nightlyTests"
 LOGBACKUPDIRECTORY="/storage/lberge/nightlyTests/logs"
