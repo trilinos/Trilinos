@@ -89,7 +89,7 @@ namespace MueLu {
             class LocalOrdinal,
             class GlobalOrdinal,
             class Node>
-  class RefMaxwell : public Xpetra::Operator<Scalar,LocalOrdinal,GlobalOrdinal,Node> {
+  class RefMaxwell : public VerboseObject, public Xpetra::Operator<Scalar,LocalOrdinal,GlobalOrdinal,Node> {
 
 #undef MUELU_REFMAXWELL_SHORT
 #include "MueLu_UseShortNames.hpp"

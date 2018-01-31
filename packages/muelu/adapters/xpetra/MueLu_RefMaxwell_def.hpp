@@ -63,6 +63,7 @@
 #include "MueLu_MLParameterListInterpreter.hpp"
 #include "MueLu_ParameterListInterpreter.hpp"
 #include "MueLu_HierarchyManager.hpp"
+#include "MueLu_VerbosityLevel.hpp"
 
 
 namespace MueLu {
@@ -103,9 +104,6 @@ namespace MueLu {
   template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void RefMaxwell<Scalar,LocalOrdinal,GlobalOrdinal,Node>::compute() {
 
-    Teuchos::FancyOStream out(Teuchos::rcpFromRef(std::cout));
-    out.setOutputToRootOnly(0);
-    out.setShowProcRank(false);
     magnitudeType eps = Teuchos::ScalarTraits<magnitudeType>::eps();
     SC zero = Teuchos::ScalarTraits<Scalar>::zero();
 
@@ -190,10 +188,7 @@ namespace MueLu {
 
     // build special prolongator for (1,1)-block
     if(P11_==Teuchos::null) {
-      out << "\n"                                                         \
-        "--------------------------------------------------------------------------------\n" \
-        "---           build special prolongator for (1,1)-block                      ---\n" \
-        "--------------------------------------------------------------------------------\n";
+      GetOStream(Runtime0) << "RefMaxwell::compute(): building special prolongator for (1,1)-block" << std::endl;
 
       // Form A_nodal = D0* M1 D0  (aka TMT_agg)
       RCP<Teuchos::TimeMonitor> tm = rcp(new Teuchos::TimeMonitor(*Teuchos::TimeMonitor::getNewTimer("MueLu RefMaxwell: Build A_nodal")));
@@ -214,6 +209,8 @@ namespace MueLu {
       if (dump_matrices_)
         Xpetra::IO<SC, LO, GlobalOrdinal, Node>::Write(std::string("A_nodal.mat"), *A_nodal_Matrix_);
 
+      // build special prolongator
+      GetOStream(Runtime0) << "RefMaxwell::compute(): building special prolongator" << std::endl;
       tm = rcp(new Teuchos::TimeMonitor(*Teuchos::TimeMonitor::getNewTimer("MueLu RefMaxwell: Build special prolongator")));
       buildProlongator();
     }
@@ -223,10 +220,8 @@ namespace MueLu {
     std::string syntaxStr = "parameterlist: syntax";
 
     {
-      out << "\n" \
-        "--------------------------------------------------------------------------------\n" \
-        "---                  build MG for coarse (1,1)-block                         ---\n" \
-        "--------------------------------------------------------------------------------\n";
+      GetOStream(Runtime0) << "RefMaxwell::compute(): building MG for coarse (1,1)-block" << std::endl;
+
       // build coarse grid operator for (1,1)-block
       RCP<Teuchos::TimeMonitor> tm = rcp(new Teuchos::TimeMonitor(*Teuchos::TimeMonitor::getNewTimer("MueLu RefMaxwell: Build AH")));
       formCoarseMatrix();
@@ -247,10 +242,8 @@ namespace MueLu {
     }
 
     {
-      out << "\n" \
-        "--------------------------------------------------------------------------------\n" \
-        "---                  build MG for (2,2)-block                                ---\n" \
-        "--------------------------------------------------------------------------------\n";
+      GetOStream(Runtime0) << "RefMaxwell::compute(): building MG for (2,2)-block" << std::endl;
+
       // build fine grid operator for (2,2)-block, D0* SM D0  (aka TMT)
       RCP<Teuchos::TimeMonitor> tm = rcp(new Teuchos::TimeMonitor(*Teuchos::TimeMonitor::getNewTimer("MueLu RefMaxwell: Build A22")));
       A22_=MatrixFactory::Build(D0_Matrix_->getDomainMap(),0);
@@ -282,10 +275,7 @@ namespace MueLu {
     }
 
     {
-      out << "\n" \
-        "--------------------------------------------------------------------------------\n" \
-        "---                  build smoothers for fine (1,1)-block                     ---\n" \
-        "--------------------------------------------------------------------------------\n";
+      GetOStream(Runtime0) << "RefMaxwell::compute(): building smoothers for fine (1,1)-block" << std::endl;
       RCP<Teuchos::TimeMonitor> tm = rcp(new Teuchos::TimeMonitor(*Teuchos::TimeMonitor::getNewTimer("MueLu RefMaxwell: Build smoothers for fine (1,1) block")));
       std::string smootherType = parameterList_.get<std::string>("smoother: type", "CHEBYSHEV");
       if (smootherType == "hiptmair" &&
@@ -383,8 +373,6 @@ namespace MueLu {
     //
     // The graph of D0 contains the incidence from nodes to edges.
     // The nodal prolongator P maps aggregates to nodes.
-
-    RCP<Teuchos::FancyOStream> out = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
 
     const SC SC_ZERO = Teuchos::ScalarTraits<SC>::zero();
     const size_t ST_INVALID = Teuchos::OrdinalTraits<LO>::invalid();
