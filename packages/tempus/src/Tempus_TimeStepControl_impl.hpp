@@ -19,10 +19,10 @@
 #include "Tempus_TimeStepControlStrategyConstant.hpp"
 #include "Tempus_TimeStepControlStrategyComposite.hpp"
 #include "Tempus_TimeStepControlStrategyBasicVS.hpp"
+#include "Tempus_TimeStepControlStrategyIntegralController.hpp"
 
 //Thyra
 #include "Thyra_VectorStdOps.hpp"
-
 
 namespace Tempus {
 
@@ -74,7 +74,7 @@ void TimeStepControl<Scalar>::getNextTimeStep(
     RCP<SolutionStateMetaData<Scalar> > metaData = workingState->getMetaData();
     const Scalar lastTime = solutionHistory->getCurrentState()->getTime();
     const int iStep = metaData->getIStep();
-    int order = metaData->getOrder();
+    volatile int order = metaData->getOrder();
     Scalar dt = metaData->getDt();
     bool output = metaData->getOutput();
 
@@ -440,11 +440,14 @@ void TimeStepControl<Scalar>::setTimeStepControlStrategy(
 
       // For backward compatitibility (so we only need to create on VS strategy)
       if ( (getStepType() == "Variable") and 
-            tscPL_->isParameter("Amplification Factor")){
+            tscPL_->isParameter("Amplification Factor") and
+            (tscPL_->sublist("Time Step Control Strategy").
+             get<std::string>("Time Step Control Strategy List") == "")){
 
          RCP<Teuchos::ParameterList> tscsVSPL = 
             Teuchos::rcp(new ParameterList("basic vs"));
 
+         tscsVSPL->set<std::string>("Name","Basic VS");
          tscsVSPL->set<double>("Amplification Factor", 
                tscPL_->get<double>("Amplification Factor"));
          tscsVSPL->set<double>("Reduction Factor", 
@@ -499,8 +502,14 @@ void TimeStepControl<Scalar>::setTimeStepControlStrategy(
             RCP<Teuchos::ParameterList> pl =
                Teuchos::rcp(new ParameterList(tscsPL->sublist(el)));
 
-            stepControlStategy_->addStrategy( 
-                  Teuchos::rcp(new TimeStepControlStrategyBasicVS<Scalar>(pl)));
+            RCP<TimeStepControlStrategy<Scalar>> ts;
+
+            if(pl->get<std::string>("Name") == "Integral Controller")
+               ts = Teuchos::rcp(new TimeStepControlStrategyIntegralController<Scalar>(pl));
+            else if(pl->get<std::string>("Name") == "Basic VS")
+               ts = Teuchos::rcp(new TimeStepControlStrategyBasicVS<Scalar>(pl));
+
+            stepControlStategy_->addStrategy(ts);
          }
       }
 
