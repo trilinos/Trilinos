@@ -74,6 +74,21 @@
 
 #include "Teuchos_TimeMonitor.hpp"
 
+
+// DEBUG
+template < typename Graph, typename VertexNameMap > void
+print_dependencies(std::ostream & out, const Graph & g,
+                   VertexNameMap name_map)
+{
+  typename boost::graph_traits < Graph >::edge_iterator ei, ei_end;
+  for (boost::tie(ei, ei_end) = boost::edges(g); ei != ei_end; ++ei)
+    out << boost::get(name_map, boost::source(*ei, g)) << " -$>$ "
+	<< boost::get(name_map, boost::target(*ei, g)) << std::endl;
+}
+// END DEBUG
+
+
+
 namespace MueLu {
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -292,7 +307,7 @@ namespace MueLu {
     // Attach FactoryManager to the coarse level
     SetFactoryManager SFMCoarse(Levels_[coarseLevelID], coarseLevelManager);
 
-    if (isDumpingEnabled_ && dumpLevel_ == 0 && coarseLevelID == 1)
+    //    if (isDumpingEnabled_ && dumpLevel_ == 0 && coarseLevelID == 1)
       DumpCurrentGraph();
 
     RCP<TopSmootherFactory> coarseFact   = rcp(new TopSmootherFactory(coarseLevelManager, "CoarseSolver"));
@@ -441,7 +456,7 @@ namespace MueLu {
     }
 
     // I think this is the proper place for graph so that it shows every dependence
-    if (isDumpingEnabled_ && dumpLevel_ > 0 && coarseLevelID == dumpLevel_)
+    //    if (isDumpingEnabled_ && dumpLevel_ > 0 && coarseLevelID == dumpLevel_)
       DumpCurrentGraph();
 
     if (!isFinestLevel) {
@@ -1290,6 +1305,7 @@ namespace MueLu {
     if (GetProcRankVerbose() != 0)
       return;
 #if defined(HAVE_MUELU_BOOST) && defined(HAVE_MUELU_BOOST_FOR_REAL) && defined(BOOST_VERSION) && (BOOST_VERSION >= 104400)
+    printf("CMS: We can has boost\n");
     BoostGraph      graph;
 
     BoostProperties dp;
@@ -1302,21 +1318,36 @@ namespace MueLu {
     std::map<const FactoryBase*, BoostVertex>                                     vindices;
     typedef std::map<std::pair<BoostVertex,BoostVertex>, std::string> emap; emap  edges;
 
+    static int call_id=0;
+
+    RCP<Operator> A = Levels_[0]->template Get<RCP<Operator> >("A");
+    int rank = A->getDomainMap()->getComm()->getRank();
+
+    //    printf("[%d] CMS: ----------------------\n",rank);
     for (int i = dumpLevel_; i <= dumpLevel_+1 && i < GetNumLevels(); i++) {
       edges.clear();
       Levels_[i]->UpdateGraph(vindices, edges, dp, graph);
 
       for (emap::const_iterator eit = edges.begin(); eit != edges.end(); eit++) {
         std::pair<BoostEdge, bool> boost_edge = boost::add_edge(eit->first.first, eit->first.second, graph);
-        boost::put("label", dp, boost_edge.first, eit->second);
+	//	printf("[%d] CMS:   Hierarchy, adding edge (%d->%d) %d\n",rank,(int)eit->first.first,(int)eit->first.second,(int)boost_edge.second);
+	// Because xdot.py views 'Graph' as a keyword
+	if(eit->second==std::string("Graph")) boost::put("label", dp, boost_edge.first, std::string("Graph_"));
+        else boost::put("label", dp, boost_edge.first, eit->second);
         if (i == dumpLevel_)
           boost::put("color", dp, boost_edge.first, std::string("red"));
         else
           boost::put("color", dp, boost_edge.first, std::string("blue"));
       }
     }
+    //    printf("[%d] CMS: ----------------------\n",rank);
 
+    //    boost::property_map <BoostGraph, boost::vertex_name_t >::type name_map = boost::get(boost::vertex_name, graph);
+    //    std::ofstream outg(dumpFile_.c_str() + std::to_string(call_id)+std::string("_")+std::to_string(rank) + std::string(".gph"));
+    //    print_dependencies(outg, graph, boost::get(boost::vertex_name, graph));
+    //    outg.close();
     // add legend
+#if 0
     std::ostringstream legend;
     legend << "< <TABLE BORDER=\"0\" CELLBORDER=\"1\" CELLSPACING=\"0\" CELLPADDING=\"4\"> \
                <TR><TD COLSPAN=\"2\">Legend</TD></TR> \
@@ -1324,9 +1355,12 @@ namespace MueLu {
                </TABLE> >";
     BoostVertex boost_vertex = boost::add_vertex(graph);
     boost::put("label", dp, boost_vertex, legend.str());
+#endif
 
-    std::ofstream out(dumpFile_.c_str());
+    std::ofstream out(dumpFile_.c_str() +std::to_string(call_id)+std::string("_")+ std::to_string(rank) + std::string(".dot"));
     boost::write_graphviz_dp(out, graph, dp, std::string("id"));
+    out.close();
+    call_id++;
 #else
     GetOStream(Errors) <<  "Dependency graph output requires boost and MueLu_ENABLE_Boost_for_real" << std::endl;
 #endif

@@ -728,12 +728,27 @@ namespace MueLuTests {
     for(size_t i=0; i<(size_t)data.size(); i++)
       data[i] = PID + (double)i / data.size();
       
+    // nullspace
+    RCP<MultiVector> nullspace = MultiVectorFactory::Build(bOp->getFullRangeMap(),1);
+    data = nullspace->getDataNonConst(0);
+    for(size_t i=0; i<(size_t)data.size(); i++)
+      data[i] = 1.0;
+
+    // Grab sub-blocks for the Tobias-style goodies
+    RCP<MultiVector> nullspace1 = mapExtractor->ExtractVector(nullspace,0);
+    RCP<MultiVector> nullspace2 = mapExtractor->ExtractVector(nullspace,1);
+    
+    
+    
+    
     // build hierarchy
     Hierarchy H;
     H.SetMaxCoarseSize(150);    // FIXME: At present this does not work past two levels
     RCP<Level> levelOne = H.GetLevel();
     levelOne->Set("A", Teuchos::rcp_dynamic_cast<Matrix>(bOp)); // set blocked operator
     levelOne->Set("Coordinates",coord);
+    levelOne->Set("Nullspace1",nullspace1);
+    levelOne->Set("Nullspace2",nullspace2);
 
     RCP<SubBlockAFactory> A11Fact = Teuchos::rcp(new SubBlockAFactory());
     A11Fact->SetFactory("A",MueLu::NoFactory::getRCP());
@@ -782,6 +797,7 @@ namespace MueLuTests {
     RCP<SmootherFactory> Smoo22Fact = rcp( new SmootherFactory(smoProto22) );
 
     RCP<Factory> Nullspace11 = rcp(new NullspaceFactory());
+    Nullspace11->SetParameter("Fine level nullspace", Teuchos::ParameterEntry(std::string("Nullspace1")));
     Nullspace11->SetFactory("Nullspace",P11Fact);
     RCP<Factory> Cmap11 = rcp(new CoarseMapFactory());
     Cmap11->SetFactory("Aggregates",AggFact11);
@@ -792,6 +808,7 @@ namespace MueLuTests {
     Coord11->SetFactory("CoarseMap",Cmap11);  
 
     RCP<Factory> Nullspace22 = rcp(new NullspaceFactory());
+    Nullspace22->SetParameter("Fine level nullspace", Teuchos::ParameterEntry(std::string("Nullspace2")));
     Nullspace22->SetFactory("Nullspace",P22Fact);
     RCP<Factory> Cmap22 = rcp(new CoarseMapFactory());
     Cmap22->SetFactory("Aggregates",AggFact22);
@@ -912,18 +929,6 @@ namespace MueLuTests {
     H.EnableGraphDumping("dep_graph",0);
 
     H.Setup(M);
-
-
-    // Cleanup to maybe de-stress RCP's?  FIXME
-    M11=Teuchos::null;
-    M22=Teuchos::null;
-    P11Fact=Teuchos::null;
-    CDFact11=Teuchos::null;
-    Amalg11=Teuchos::null;
-    RebAcFact=Teuchos::null;
-    RebRFact=Teuchos::null;
-    PFact=Teuchos::null;
-    CoordXfer=Teuchos::null;
 
 
 

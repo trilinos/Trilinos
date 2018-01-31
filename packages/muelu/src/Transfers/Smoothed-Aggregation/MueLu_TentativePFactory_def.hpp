@@ -120,6 +120,10 @@ namespace MueLu {
     RCP<const Map>        coarseMap     = Get< RCP<const Map> >       (fineLevel, "CoarseMap");
 
     // Sanity checking
+    if(A->getRowMap()->getNodeNumElements() != fineNullspace->getMap()->getNodeNumElements())
+      printf("[%d] A->getRowMap()->getNodeNumElements() = %d fineNullspace->getMap()->getNodeNumElements() %d\n",fineNullspace->getMap()->getComm()->getRank(),
+	     A->getRowMap()->getNodeNumElements(),fineNullspace->getMap()->getNodeNumElements());
+
     TEUCHOS_TEST_FOR_EXCEPTION(A->getRowMap()->getNodeNumElements() != fineNullspace->getMap()->getNodeNumElements(),
 			       Exceptions::RuntimeError,"MueLu::TentativePFactory::MakeTentative: Size mismatch between A and Nullspace");
 
