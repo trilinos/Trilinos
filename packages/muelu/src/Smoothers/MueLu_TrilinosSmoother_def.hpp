@@ -56,6 +56,11 @@
 #include "MueLu_Ifpack2Smoother.hpp"
 #include "MueLu_Exceptions.hpp"
 
+
+#define TYPE_EQUAL(TYPE1, TYPE2) \
+  (typeid(TYPE1).name() == typeid(TYPE2).name())
+
+
 namespace MueLu {
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -74,8 +79,17 @@ namespace MueLu {
 
     TEUCHOS_TEST_FOR_EXCEPTION(overlap_ < 0, Exceptions::RuntimeError, "Overlap parameter is negative (" << overlap << ")");
 
-    // paramList contains only parameters which are understood by Ifpack/Ifpack2
-    ParameterList paramList = paramListIn;
+    ParameterList paramList;
+      
+    if (TYPE_EQUAL(Scalar, std::complex<double>) && type_=="CHEBYSHEV") {
+      type_ = "RELAXATION";
+      
+      this->GetOStream(Warnings0) << "MueLu::TrilinosSmoother CHEBYSHEV smoother is not supported for Scalar=std::complex<double>. Switching to Symmetric Gauss-Seidel." << std::endl;
+      paramList.set("relaxation: type", "Symmetric Gauss-Seidel");
+      paramList.set("relaxation: sweeps", 2);
+    } else
+      // paramList contains only parameters which are understood by Ifpack/Ifpack2
+      paramList = paramListIn;
 
 
     // We want TrilinosSmoother to be able to work with both Epetra and Tpetra objects, therefore we try to construct both

@@ -109,6 +109,5 @@ void Teuchos_stopTimer( int timerID )
   }
   TEUCHOS_STANDARD_CATCH_STATEMENTS(true,
     *Teuchos::VerboseObjectBase::getDefaultOStream(), success);
-  if (!success)
-    ; // Avoid unused var warning (we don't need to check)
+  if (!success) {} // Avoid warnings
 }

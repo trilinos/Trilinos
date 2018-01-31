@@ -26,6 +26,23 @@
 #include "EpetraExt_BlockMapIn.h"
 #include "EpetraExt_MatrixMatrix.h"
 
+#include <MueLu.hpp>
+#include <MueLu_AmalgamationFactory.hpp>
+#include <MueLu_CoalesceDropFactory.hpp>
+#include <MueLu_UncoupledAggregationFactory.hpp>
+#include <MueLu_CoarseMapFactory.hpp>
+#include <MueLu_Hierarchy.hpp>
+#include <MueLu_NullspaceFactory.hpp>
+#include <MueLu_RAPFactory.hpp>
+#include <MueLu_SmootherFactory.hpp>
+#include <MueLu_SmootherPrototype.hpp>
+#include <MueLu_TentativePFactory.hpp>
+#include <MueLu_TransPFactory.hpp>
+#include <MueLu_Utilities.hpp>
+#include <MueLu_CreateXpetraPreconditioner.hpp>
+
+#include <Xpetra_Map.hpp>
+
 #include "Teuchos_Assert.hpp"
 
 int LIDregion(void *ptr, int LIDcomp, int whichGrp);
@@ -1100,6 +1117,92 @@ int main(int argc, char *argv[]) {
       diffY->NormInf(&diffNormInf);
       std::cout << myRank << ": diffNormTwo: " << diffNormTwo << "\tdiffNormInf: " << diffNormInf << std::endl;
 
+    }
+    else if (strcmp(command,"MakeMueLuTransferOperators") == 0) {
+
+      using Teuchos::RCP; using Teuchos::rcp;
+
+      // convert Epetra region matrices to Xpetra
+      std::vector<RCP<Xpetra::Matrix<double,int,int,Xpetra::EpetraNode> > > regionGrpXMats(maxRegPerProc);
+      for (int j = 0; j < maxRegPerProc; j++) {
+        regionGrpXMats[j] = MueLu::EpetraCrs_To_XpetraMatrix<double,int,int,Xpetra::EpetraNode>(Teuchos::rcp(regionGrpMats[j], false));
+      }
+
+      std::vector<RCP<MueLu::Hierarchy<double,int,int,Xpetra::EpetraNode> > > regGrpHierarchy(maxRegPerProc);
+      for (int j = 0; j < maxRegPerProc; j++) {
+        regGrpHierarchy[j] = rcp(new MueLu::Hierarchy<double,int,int,Xpetra::EpetraNode>());
+        regGrpHierarchy[j]->setDefaultVerbLevel(Teuchos::VERB_HIGH);
+
+        RCP<MueLu::Factory> PFact = rcp(new MueLu::TentativePFactory<double,int,int,Xpetra::EpetraNode>());
+        RCP<MueLu::Factory> RFact = rcp(new MueLu::TransPFactory<double,int,int,Xpetra::EpetraNode>());
+        RCP<MueLu::RAPFactory<double,int,int,Xpetra::EpetraNode> > AcFact = rcp(new MueLu::RAPFactory<double,int,int,Xpetra::EpetraNode>());
+        RCP<MueLu::Factory> NSFact = rcp(new MueLu::NullspaceFactory<double,int,int,Xpetra::EpetraNode>());
+
+        RCP<MueLu::AmalgamationFactory<double,int,int,Xpetra::EpetraNode> > amalgFact = rcp(new MueLu::AmalgamationFactory<double,int,int,Xpetra::EpetraNode>());
+
+        RCP<MueLu::CoalesceDropFactory<double,int,int,Xpetra::EpetraNode> > dropFact = rcp(new MueLu::CoalesceDropFactory<double,int,int,Xpetra::EpetraNode>());
+        dropFact->SetFactory("UnAmalgamationInfo", amalgFact);
+
+        RCP<MueLu::UncoupledAggregationFactory<int,int,Xpetra::EpetraNode> > UnCoupledAggFact = rcp(new MueLu::UncoupledAggregationFactory<int,int,Xpetra::EpetraNode>());
+        UnCoupledAggFact->SetFactory("Graph", dropFact);
+
+        RCP<MueLu::CoarseMapFactory<double,int,int,Xpetra::EpetraNode> > coarseMapFact = rcp(new MueLu::CoarseMapFactory<double,int,int,Xpetra::EpetraNode>());
+        coarseMapFact->SetFactory("Aggregates", UnCoupledAggFact);
+
+        // setup smoothers
+        Teuchos::ParameterList smootherParamList;
+        smootherParamList.set("relaxation: type", "Jacobi");
+        smootherParamList.set("relaxation: sweeps", (int) 1);
+        smootherParamList.set("relaxation: damping factor", (double) 1.0);
+        RCP<MueLu::SmootherPrototype<double,int,int,Xpetra::EpetraNode> > smooProto
+            = rcp( new MueLu::TrilinosSmoother<double,int,int,Xpetra::EpetraNode>("RELAXATION", smootherParamList) );
+        RCP<MueLu::SmootherFactory<double,int,int,Xpetra::EpetraNode> > SmooFact = rcp( new MueLu::SmootherFactory<double,int,int,Xpetra::EpetraNode>(smooProto) );
+
+        // create the factory manager and the factories
+        MueLu::FactoryManager<double,int,int,Xpetra::EpetraNode> M;
+
+        // Set default factories in the manager
+        M.SetFactory("P", PFact);
+        M.SetFactory("R", RFact);
+        M.SetFactory("A", AcFact);
+        M.SetFactory("Nullspace", NSFact);
+        M.SetFactory("Aggregates", UnCoupledAggFact);
+        M.SetFactory("UnAmalgamationInfo", amalgFact);
+        M.SetFactory("CoarseMap", coarseMapFact);
+        M.SetFactory("Smoother", SmooFact);
+
+        RCP<Xpetra::MultiVector<double,int,int,Xpetra::EpetraNode> > nullSpace
+            = Xpetra::MultiVectorFactory<double,int,int,Xpetra::EpetraNode>::Build(regionGrpXMats[j]->getRowMap(), 1);
+        nullSpace->putScalar(1.0);
+
+        RCP<MueLu::Level> Finest = regGrpHierarchy[j]->GetLevel();
+        Finest->setDefaultVerbLevel(Teuchos::VERB_HIGH);
+        Finest->Set("A", regionGrpXMats[j]); // set fine level matrix
+        Finest->Set("Nullspace", nullSpace); // set null space information for finest level
+        Finest->SetFactoryManager(Teuchos::rcpFromRef(M));
+
+        int maxLevels = 2;
+        regGrpHierarchy[j]->SetMaxCoarseSize(2);
+        regGrpHierarchy[j]->Setup(M, 0, maxLevels);
+
+      }
+
+      // Extract stuff from MueLu hierarchy and put it in our own data structures
+      Teuchos::RCP<Teuchos::FancyOStream> out = Teuchos::rcp(new Teuchos::FancyOStream(Teuchos::rcp(&std::cout,false)));
+      std::vector<RCP<Xpetra::Matrix<double,int,int,Xpetra::EpetraNode> > > regPXpetra(maxRegPerProc);
+      std::vector<RCP<Xpetra::Matrix<double,int,int,Xpetra::EpetraNode> > > regPAPXpetra(maxRegPerProc);
+      for (int j = 0; j < maxRegPerProc; j++) {
+        RCP<MueLu::Level> levelOne = regGrpHierarchy[j]->GetLevel(1);
+        regPXpetra[j] = levelOne->Get<RCP<Xpetra::Matrix<double,int,int,Xpetra::EpetraNode> > >("P", MueLu::NoFactory::get());
+        regionGrpProlong[j] = &*(MueLu::Utilities<double,int,int,Xpetra::EpetraNode>::Op2NonConstEpetraCrs(regPXpetra[j]));
+
+        regPAPXpetra[j] = levelOne->Get<RCP<Xpetra::Matrix<double,int,int,Xpetra::EpetraNode> > >("A", MueLu::NoFactory::get());
+        regCoarseMatPerGrp[j] = &*(MueLu::Utilities<double,int,int,Xpetra::EpetraNode>::Op2NonConstEpetraCrs(regPAPXpetra[j]));
+
+        // regPXpetra[j]->describe(*out, Teuchos::VERB_EXTREME);
+        // regCoarseMatPerGrp[j]->describe(*out, Teuchos::VERB_EXTREME);
+
+      }
     }
     else if (strcmp(command,"MakeRegionTransferOperators") == 0) {
       /* Populate a fine grid vector with 1 at coarse nodes and 0 at fine nodes.

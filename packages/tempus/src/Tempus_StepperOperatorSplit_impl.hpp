@@ -317,6 +317,8 @@ StepperOperatorSplit<Scalar>::getValidParameters() const
     "'Stepper Type' must be 'Operator Split'.");
   pl->set<int>   ("Minimum Order", 1,
     "Minimum Operator-split order.  (default = 1)\n");
+  pl->set<int>   ("Order", 1,
+    "Operator-split order.  (default = 1)\n");
   pl->set<int>   ("Maximum Order", 1,
     "Maximum Operator-split order.  (default = 1)\n");
 

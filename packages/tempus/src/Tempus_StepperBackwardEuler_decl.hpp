@@ -86,6 +86,10 @@ public:
   virtual void computePredictor(
     const Teuchos::RCP<SolutionHistory<Scalar> >& solutionHistory);
 
+  /// Provide temporary xDot memory for Stepper if SolutionState doesn't.
+  virtual Teuchos::RCP<Thyra::VectorBase<Scalar> > getXDotTemp(
+    Teuchos::RCP<Thyra::VectorBase<Scalar> > x);
+
   /// \name ParameterList methods
   //@{
     void setParameterList(const Teuchos::RCP<Teuchos::ParameterList> & pl);
@@ -109,12 +113,13 @@ private:
 
 private:
 
-  Teuchos::RCP<Teuchos::ParameterList>               stepperPL_;
-  Teuchos::RCP<WrapperModelEvaluator<Scalar> >       wrapperModel_;
-  Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> >  solver_;
-  Teuchos::RCP<Stepper<Scalar> >                     predictorStepper_;
-
+  Teuchos::RCP<Teuchos::ParameterList>                stepperPL_;
+  Teuchos::RCP<WrapperModelEvaluator<Scalar> >        wrapperModel_;
+  Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> >   solver_;
+  Teuchos::RCP<Stepper<Scalar> >                      predictorStepper_;
   Teuchos::RCP<StepperBackwardEulerObserver<Scalar> > stepperBEObserver_;
+
+  Teuchos::RCP<Thyra::VectorBase<Scalar> >            xDotTemp_;
 };
 
 /** \brief Time-derivative interface for Backward Euler.

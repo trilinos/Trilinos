@@ -180,7 +180,8 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
       // =========================================================================
       RCP<Matrix>       A;
       RCP<Map>          map;
-      RCP<MultiVector>  nullspace, coordinates;
+      RCP<MultiVector>  nullspace;
+      RCP<RealValuedMultiVector> coordinates;
 
       // Galeri will attempt to create a square-as-possible distribution of subdomains di, e.g.,
       //                                 d1  d2  d3
@@ -198,16 +199,16 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
       // At the moment, however, things are fragile as we hope that the Problem uses same map and coordinates inside
       if (matrixType == "Laplace1D") {
         map = Galeri::Xpetra::CreateMap<LO, GO, Node>(lib, "Cartesian1D", comm, galeriParameters);
-        coordinates = Galeri::Xpetra::Utils::CreateCartesianCoordinates<SC,LO,GO,Map,MultiVector>("1D", map, galeriParameters);
+        coordinates = Galeri::Xpetra::Utils::CreateCartesianCoordinates<double,LO,GO,Map,RealValuedMultiVector>("1D", map, galeriParameters);
 
       } else if (matrixType == "Laplace2D" || matrixType == "Star2D" ||
                  matrixType == "BigStar2D" || matrixType == "Elasticity2D") {
         map = Galeri::Xpetra::CreateMap<LO, GO, Node>(lib, "Cartesian2D", comm, galeriParameters);
-        coordinates = Galeri::Xpetra::Utils::CreateCartesianCoordinates<SC,LO,GO,Map,MultiVector>("2D", map, galeriParameters);
+        coordinates = Galeri::Xpetra::Utils::CreateCartesianCoordinates<double,LO,GO,Map,RealValuedMultiVector>("2D", map, galeriParameters);
 
       } else if (matrixType == "Laplace3D" || matrixType == "Brick3D" || matrixType == "Elasticity3D") {
         map = Galeri::Xpetra::CreateMap<LO, GO, Node>(lib, "Cartesian3D", comm, galeriParameters);
-        coordinates = Galeri::Xpetra::Utils::CreateCartesianCoordinates<SC,LO,GO,Map,MultiVector>("3D", map, galeriParameters);
+        coordinates = Galeri::Xpetra::Utils::CreateCartesianCoordinates<double,LO,GO,Map,RealValuedMultiVector>("3D", map, galeriParameters);
       }
 
       // Expand map to do multiple DOF per node for block problems
@@ -255,16 +256,19 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
             fileList[i] == "problem_x.xml")
           continue;
 
+        std::string xmlFile = dirName + fileList[i];
+
+        Teuchos::ParameterList paramList;
+        Teuchos::updateParametersFromXmlFileAndBroadcast(xmlFile, Teuchos::Ptr<Teuchos::ParameterList>(&paramList), *comm);
+
+        if (TYPE_EQUAL(Scalar, std::complex<double>) and paramList.get<bool>("skipForComplex", false))
+          continue;
+
         // Set seed
         Utilities::SetRandomSeed(*comm);
 
         // Reset (potentially) cached value of the estimate
         A->SetMaxEigenvalueEstimate(-Teuchos::ScalarTraits<SC>::one());
-
-        std::string xmlFile = dirName + fileList[i];
-
-        Teuchos::ParameterList paramList;
-        Teuchos::updateParametersFromXmlFileAndBroadcast(xmlFile, Teuchos::Ptr<Teuchos::ParameterList>(&paramList), *comm);
 
         std::string    solveType = paramList.get<std::string>   ("solver", "standalone");
         double         goldRate  = paramList.get<double>        ("convergence rate");

@@ -1,3 +1,4 @@
+/*
 // @HEADER
 // ***********************************************************************
 //
@@ -38,83 +39,53 @@
 //
 // ***********************************************************************
 // @HEADER
+*/
 
-#include "Teuchos_TestForException.hpp"
-#include "Teuchos_GlobalMPISession.hpp"
+#include "Teuchos_UnitTestHarness.hpp"
+#include "Teuchos_any.hpp"
 
-#include <iostream>
-
-//
-// ToDo: Make these functions thread-safe!
-//
-
+#include <sstream>
 
 namespace {
 
 
-int throwNumber = 0;
-
-
-bool& loc_enableStackTrace()
+TEUCHOS_UNIT_TEST( any, noThrowComparePrintDouble )
 {
-  static bool static_enableStackTrace =
-#ifdef HAVE_TEUCHOS_DEFAULT_STACKTRACE
-    true
-#else
-    false
-#endif
-    ;
-  return static_enableStackTrace;
+  double value = 25.0;
+  auto a = Teuchos::any(value);
+  auto b = Teuchos::any(value);
+  TEST_NOTHROW(a == b);
+  TEST_EQUALITY_CONST(true, b.same(a));
+  std::stringstream ss;
+  TEST_NOTHROW(ss << a);
 }
 
+TEUCHOS_UNIT_TEST( any, throwPrintVector )
+{
+  std::vector<double> value;
+  auto a = Teuchos::any(value);
+  auto b = Teuchos::any(value);
+  TEST_NOTHROW(a == b);
+  TEST_EQUALITY_CONST(true, b.same(a));
+  std::stringstream ss;
+  TEST_THROW(ss << a, std::runtime_error);
+  TEST_THROW(ss << b, std::runtime_error);
+}
+
+struct NotComparableOrPrintable {
+  int x;
+};
+
+TEUCHOS_UNIT_TEST( any, throwComparePrintStruct )
+{
+  NotComparableOrPrintable value;
+  value.x = 15;
+  auto a = Teuchos::any(value);
+  auto b = Teuchos::any(value);
+  TEST_THROW(a == b, std::runtime_error);
+  std::stringstream ss;
+  TEST_THROW(ss << a, std::runtime_error);
+  TEST_THROW(ss << b, std::runtime_error);
+}
 
 } // namespace
-
-
-void Teuchos::TestForException_incrThrowNumber()
-{
-  ++throwNumber;
-}
-
-
-int Teuchos::TestForException_getThrowNumber()
-{
-  return throwNumber;
-}
-
-
-void Teuchos::TestForException_break( const std::string &errorMsg )
-{
-  size_t break_on_me;
-  break_on_me = errorMsg.length(); // Use errMsg to avoid compiler warning.
-  if (break_on_me) {} // Avoid warning
-  // Above is just some statement for the debugger to break on.  Note: now is
-  // a good time to examine the stack trace and look at the error message in
-  // 'errorMsg' to see what happened.  In GDB just type 'where' or you can go
-  // up by typing 'up' and moving up in the stack trace to see where you are
-  // and how you got to this point in the code where you are throwning this
-  // exception!  Typing in a 'p errorMsg' will show you what the error message
-  // is.  Also, you should consider adding a conditional breakpoint in this
-  // function based on a specific value of 'throwNumber' if the exception you
-  // want to examine is not the first exception thrown.
-}
-
-
-void Teuchos::TestForException_setEnableStacktrace(bool enableStrackTrace)
-{
-  loc_enableStackTrace() = enableStrackTrace;
-}
-
-
-bool Teuchos::TestForException_getEnableStacktrace()
-{
-  return loc_enableStackTrace();
-}
-
-void Teuchos::TestForTermination_terminate(const std::string &msg) {
-  if (GlobalMPISession::getNProc() > 1) {
-    std::cerr << "p="<<GlobalMPISession::getRank()<<": ";
-  }
-  std::cerr << msg << "\n";
-  std::terminate();
-}

@@ -126,7 +126,6 @@ correctDisplacement(Thyra::VectorBase<Scalar>& d,
 }
 
 
-// StepperHHTAlpha definitions:
 template<class Scalar>
 StepperHHTAlpha<Scalar>::StepperHHTAlpha(
   const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel,
@@ -226,7 +225,7 @@ void StepperHHTAlpha<Scalar>::setSolver(
       << "\n" << "  Solver Name  = "<<solverName<<"\n");
     solverName = solverPL->name();
     stepperPL_->set("Solver Name", solverName);
-    stepperPL_->set(solverName, solverPL);      // Add sublist
+    stepperPL_->set(solverName, *solverPL);      // Add sublist
     solver_ = rcp(new Thyra::NOXNonlinearSolver());
     RCP<ParameterList> noxPL = Teuchos::sublist(solverPL, "NOX", true);
     solver_->setParameterList(noxPL);
@@ -248,7 +247,7 @@ void StepperHHTAlpha<Scalar>::setSolver(
   RCP<ParameterList> solverPL = solver->getNonconstParameterList();
   std::string solverName = solverPL->name();
   stepperPL_->set("Solver Name", solverName);
-  stepperPL_->set(solverName, solverPL);      // Add sublist
+  stepperPL_->set(solverName, *solverPL);      // Add sublist
   solver_ = solver;
 }
 
@@ -392,7 +391,7 @@ std::string StepperHHTAlpha<Scalar>::description() const
 #ifdef VERBOSE_DEBUG_OUTPUT
   *out_ << "DEBUG: " << __PRETTY_FUNCTION__ << "\n";
 #endif
-  std::string name = "HHTAlpha ";
+  std::string name = "HHT-Alpha";
   return(name);
 }
 
@@ -431,13 +430,13 @@ void StepperHHTAlpha<Scalar>::setParameterList(
   std::string stepperType = stepperPL_->get<std::string>("Stepper Type");
   TEUCHOS_TEST_FOR_EXCEPTION( stepperType != "HHT-Alpha",
     std::logic_error,
-       "\nError - Stepper Type is not 'HHT-Alpha'!\n"
-    << "Stepper Type = "<< pList->get<std::string>("Stepper Type") << "\n");
+       "\nError - Stepper Type is not 'HHT-Alpha'!\n" << "Stepper Type = "
+       << stepperPL_->get<std::string>("Stepper Type") << "\n");
   beta_ = 0.25; //default value
   gamma_ = 0.5; //default value
   //IKT, FIXME: test this scheme for alpha_f and alpha_m != 0.0.
-  //Once that is done, logic should be changed to allow user to select these options from
-  //the parameter list.
+  //Once that is done, logic should be changed to allow user to select
+  //these options from the parameter list.
   alpha_f_ = 0.0; //default value.  Hard-coded for Newmark-Beta for now.
   alpha_m_ = 0.0; //default value.  Hard-coded for Newmark-Beta for now.
   Teuchos::RCP<Teuchos::FancyOStream> out =
@@ -450,29 +449,38 @@ void StepperHHTAlpha<Scalar>::setParameterList(
     alpha_f_ = HHTalphaPL.get("Alpha_f", 0.0);
     TEUCHOS_TEST_FOR_EXCEPTION( (alpha_m_ >= 1.0) || (alpha_m_ < 0.0),
       std::logic_error,
-         "\nError in 'HHT-Alpha' stepper: invalid value of Alpha_m = " << alpha_m_ << ".  Please select Alpha_m >= 0 and < 1. \n");
+         "\nError in 'HHT-Alpha' stepper: invalid value of Alpha_m = "
+         << alpha_m_ << ".  Please select Alpha_m >= 0 and < 1. \n");
     TEUCHOS_TEST_FOR_EXCEPTION( (alpha_f_ > 1.0) || (alpha_f_ < 0.0),
       std::logic_error,
-         "\nError in 'HHT-Alpha' stepper: invalid value of Alpha_f = " << alpha_f_ << ".  Please select Alpha_f >= 0 and <= 1. \n");
+         "\nError in 'HHT-Alpha' stepper: invalid value of Alpha_f = "
+         << alpha_f_ << ".  Please select Alpha_f >= 0 and <= 1. \n");
     TEUCHOS_TEST_FOR_EXCEPTION( (alpha_m_ != 0.0) || (alpha_f_ != 0.0),
       std::logic_error,
-         "\nError - 'HHT-Alpha' stepper has not been verified yet for Alpha_m, Alpha_f != 0! \n"
-          << "You have specified Alpha_m = " << alpha_m_ << ", Alpha_f = " << alpha_f_ <<".\n");
+         "\nError - 'HHT-Alpha' stepper has not been verified yet for "
+         "Alpha_m, Alpha_f != 0! \n" << "You have specified Alpha_m = "
+         << alpha_m_ << ", Alpha_f = " << alpha_f_ <<".\n");
     if (scheme_name == "Newmark Beta") {
       beta_ = HHTalphaPL.get("Beta", 0.25);
       gamma_ = HHTalphaPL.get("Gamma", 0.5);
       TEUCHOS_TEST_FOR_EXCEPTION( (beta_ > 1.0) || (beta_ < 0.0),
         std::logic_error,
-           "\nError in 'HHT-Alpha' stepper: invalid value of Beta = " << beta_ << ".  Please select Beta >= 0 and <= 1. \n");
+           "\nError in 'HHT-Alpha' stepper: invalid value of Beta = "
+           << beta_ << ".  Please select Beta >= 0 and <= 1. \n");
       TEUCHOS_TEST_FOR_EXCEPTION( (gamma_ > 1.0) || (gamma_ < 0.0),
         std::logic_error,
-           "\nError in 'HHT-Alpha' stepper: invalid value of Gamma = " <<gamma_ << ".  Please select Gamma >= 0 and <= 1. \n");
-      *out << "\n \nScheme Name = Newmark Beta.  Setting Alpha_f = Alpha_m = 0. Setting \n"
-           << "Beta = " << beta_ << " and Gamma = " << gamma_ << " from HHT-Alpha Parameters in input file.\n\n";
+           "\nError in 'HHT-Alpha' stepper: invalid value of Gamma = "
+           <<gamma_ << ".  Please select Gamma >= 0 and <= 1. \n");
+      *out << "\n \nScheme Name = Newmark Beta.  Setting Alpha_f = "
+           << "Alpha_m = 0. Setting \n" << "Beta = " << beta_
+           << " and Gamma = " << gamma_
+           << " from HHT-Alpha Parameters in input file.\n\n";
     }
     else {
-      *out << "\n \nScheme Name = " << scheme_name << ".  Using values of Alpha_m, Alpha_f, \n"
-           << "Beta and Gamma for this scheme (ignoring values of Alpha_m, Alpha_f, Beta and Gamma \n"
+      *out << "\n \nScheme Name = " << scheme_name
+           << ".  Using values of Alpha_m, Alpha_f, \n"
+           << "Beta and Gamma for this scheme (ignoring values of "
+           << "Alpha_m, Alpha_f, Beta and Gamma \n"
            << "in input file, if provided).\n";
        if (scheme_name == "Newmark Beta Average Acceleration") {
          beta_ = 0.25; gamma_ = 0.5;
@@ -486,20 +494,25 @@ void StepperHHTAlpha<Scalar>::setParameterList(
        else {
          TEUCHOS_TEST_FOR_EXCEPTION(true,
             std::logic_error,
-            "\nError in Tempus::StepperHHTAlpha!  Invalid Scheme Name = " << scheme_name <<".  \n"
-            <<"Valid Scheme Names are: 'Newmark Beta', 'Newmark Beta Average Acceleration', \n"
-            <<"'Newmark Beta Linear Acceleration', and 'Newmark Beta Central Difference'.\n");
+            "\nError in Tempus::StepperHHTAlpha!  Invalid Scheme Name = "
+            << scheme_name <<".  \n"
+            <<"Valid Scheme Names are: 'Newmark Beta', 'Newmark Beta "
+            <<"Average Acceleration', \n"
+            <<"'Newmark Beta Linear Acceleration', and 'Newmark Beta "
+            <<"Central Difference'.\n");
        }
-       *out << "===> Alpha_m = " << alpha_m_ << ", Alpha_f = " << alpha_f_ << ", Beta = " << beta_ << ", Gamma = " << gamma_ << "\n";
+       *out << "===> Alpha_m = " << alpha_m_ << ", Alpha_f = " << alpha_f_
+            << ", Beta = " << beta_ << ", Gamma = " << gamma_ << "\n";
     }
     if (beta_ == 0.0) {
       *out << "\n \nRunning  HHT-Alpha Stepper with Beta = 0.0, which \n"
-           << "specifies an explicit scheme.  WARNING: code has not been optimized \n"
-           << "yet for this case (no mass lumping)\n";
+           << "specifies an explicit scheme.  WARNING: code has not been "
+           << "optimized \nyet for this case (no mass lumping)\n";
     }
   }
   else {
-    *out << "\n  \nNo HHT-Alpha Parameters sublist found in input file; using default values of Beta = "
+    *out << "\n  \nNo HHT-Alpha Parameters sublist found in input file; "
+         << "using default values of Beta = "
          << beta_ << " and Gamma = " << gamma_ << ".\n\n";
   }
 }

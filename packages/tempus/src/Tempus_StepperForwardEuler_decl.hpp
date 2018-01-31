@@ -88,6 +88,10 @@ public:
     virtual bool isMultiStepMethod() const {return !isOneStepMethod();}
   //@}
 
+  /// Provide temporary xDot memory for Stepper if SolutionState doesn't.
+  virtual Teuchos::RCP<Thyra::VectorBase<Scalar> > getXDotTemp(
+    Teuchos::RCP<Thyra::VectorBase<Scalar> > x);
+
   /// \name ParameterList methods
   //@{
     void setParameterList(const Teuchos::RCP<Teuchos::ParameterList> & pl);
@@ -119,6 +123,8 @@ protected:
   Thyra::ModelEvaluatorBase::OutArgs<Scalar>         outArgs_;
 
   Teuchos::RCP<StepperForwardEulerObserver<Scalar> > stepperFEObserver_;
+
+  Teuchos::RCP<Thyra::VectorBase<Scalar> >            xDotTemp_;
 };
 
 } // namespace Tempus

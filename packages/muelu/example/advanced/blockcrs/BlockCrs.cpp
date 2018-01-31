@@ -299,6 +299,8 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
     typedef Xpetra::CrsMatrixWrap<SC,LO,GO,NO> Xpetra_CrsMatrixWrap;
     typedef typename Teuchos::ScalarTraits<SC>::magnitudeType SCN;
 
+    SC one = Teuchos::ScalarTraits<SC>::one();
+
     RCP<Tpetra_CrsMatrix> Acrs;
     RCP<Tpetra_BlockCrsMatrix> Ablock;
 
@@ -369,7 +371,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
     {
       Teuchos::ParameterList IList;
       IList.set("relaxation: type","Jacobi");
-      IList.set("relaxation: damping factor",1.0);
+      IList.set("relaxation: damping factor",one);
       IList.set("relaxation: sweeps",10);
       std::string ifpack2_precond("RELAXATION");
 
