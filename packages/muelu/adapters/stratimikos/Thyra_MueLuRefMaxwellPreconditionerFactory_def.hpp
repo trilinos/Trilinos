@@ -223,7 +223,6 @@ namespace Thyra {
           paramList.set<RCP<XpMat> >("M1", M1);
         }
 
-        RCP<const ThyLinOpBase> tD0t = paramList.get<RCP<const ThyLinOpBase> >("D0");
         if (paramList.isParameter("D0") && paramList.isType<Teuchos::RCP<TpCrsMat> >("D0")) {
           RCP<TpCrsMat> tD0 = paramList.get<RCP<TpCrsMat> >("D0");
           paramList.remove("D0");
