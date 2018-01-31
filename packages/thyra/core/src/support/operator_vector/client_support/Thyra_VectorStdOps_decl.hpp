@@ -226,7 +226,7 @@ void ele_wise_prod( const Scalar& alpha, const VectorBase<Scalar>& x,
  * \relates VectorBase
  */
 template<class Scalar>
-void ele_wise_max(const Scalar& alpha, const VectorBase<Scalar>& x,
+void pair_wise_max(const Scalar& alpha, const VectorBase<Scalar>& x,
   const VectorBase<Scalar>& v, const Ptr<VectorBase<Scalar> > &y );
 
 /** \brief Element-wise conjugate product update:
@@ -274,7 +274,7 @@ void ele_wise_prod_update( const Scalar& alpha, const VectorBase<Scalar>& x,
  * \relates VectorBase
  */
 template<class Scalar>
-void ele_wise_max_update( const Scalar& alpha, const VectorBase<Scalar>& x,
+void pair_wise_max_update( const Scalar& alpha, const VectorBase<Scalar>& x,
   const Ptr<VectorBase<Scalar> > &y );
 
 /** \brief Element-wise product update:

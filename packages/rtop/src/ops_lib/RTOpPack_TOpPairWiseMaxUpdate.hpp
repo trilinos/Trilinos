@@ -40,8 +40,8 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef RTOPPACK_TOP_ELE_WISE_MAX_UPDATE_HPP
-#define RTOPPACK_TOP_ELE_WISE_MAX_UPDATE_HPP
+#ifndef RTOPPACK_TOP_PAIR_WISE_MAX_UPDATE_HPP
+#define RTOPPACK_TOP_PAIR_WISE_MAX_UPDATE_HPP
 
 #include "RTOpPack_RTOpTHelpers.hpp"
 
@@ -49,12 +49,12 @@
 namespace RTOpPack {
 
 
-/** \brief Element-wise transformation operator for TOpEleWiseMaxUpdate. */
+/** \brief Pair-wise transformation operator for TOpPairWiseMaxUpdate. */
 template<class Scalar>
-class TOpEleWiseMaxUpdateEleWiseTransformation
+class TOpPairWiseMaxUpdatePairWiseTransformation
 {
 public:
-  TOpEleWiseMaxUpdateEleWiseTransformation(const Scalar &alpha )
+  TOpPairWiseMaxUpdatePairWiseTransformation(const Scalar &alpha )
   : alpha_(alpha)
   {}
   void operator()( const Scalar &v0, Scalar &z0 ) const
@@ -66,20 +66,20 @@ private:
 };
 
 
-/** \brief Element-wise Maxuct update transformation operator: 
+/** \brief Pair-wise Maximum update transformation operator: 
  * <tt>z0[i] = max(z0[i],v0[i]), i=0...n-1</tt>.
  */
 template<class Scalar>
-class TOpEleWiseMaxUpdate
-  : public TOp_1_1_Base<Scalar, TOpEleWiseMaxUpdateEleWiseTransformation<Scalar> >
+class TOpPairWiseMaxUpdate
+  : public TOp_1_1_Base<Scalar, TOpPairWiseMaxUpdatePairWiseTransformation<Scalar> >
 {
 public:
-  typedef TOp_1_1_Base<Scalar, TOpEleWiseMaxUpdateEleWiseTransformation<Scalar> > base_t;
+  typedef TOp_1_1_Base<Scalar, TOpPairWiseMaxUpdatePairWiseTransformation<Scalar> > base_t;
   /** \brief . */
-  TOpEleWiseMaxUpdate( const Scalar &alpha )
-    : base_t(TOpEleWiseMaxUpdateEleWiseTransformation<Scalar>(alpha))
+  TOpPairWiseMaxUpdate( const Scalar &alpha )
+    : base_t(TOpPairWiseMaxUpdatePairWiseTransformation<Scalar>(alpha))
     {
-      this->setOpNameBase("TOpEleWiseMaxUpdate");
+      this->setOpNameBase("TOpPairWiseMaxUpdate");
     }
 };
 
@@ -87,4 +87,4 @@ public:
 } // namespace RTOpPack
 
 
-#endif // RTOPPACK_TOP_ELE_WISE_MAX_UPDATE_HPP
+#endif // RTOPPACK_TOP_PAIR_WISE_MAX_UPDATE_HPP
