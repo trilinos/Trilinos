@@ -105,6 +105,7 @@ private:
       stepperType == "RK Explicit 3 Stage 3rd order by Heun" ||
       stepperType == "RK Explicit 2 Stage 2nd order by Runge" ||
       stepperType == "RK Explicit Trapezoidal" ||
+      stepperType == "Bogacki-Shampine 3(2) Pair" ||
       stepperType == "General ERK" )
       return rcp(new StepperExplicitRK<Scalar>(model, stepperType, stepperPL));
     else if (
