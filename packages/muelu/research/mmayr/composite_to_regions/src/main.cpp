@@ -1191,9 +1191,8 @@ int main(int argc, char *argv[]) {
       }
 
       // Extract stuff from MueLu hierarchy and put it in our own data structures
-      Teuchos::RCP<Teuchos::FancyOStream> out = Teuchos::rcp(new Teuchos::FancyOStream(Teuchos::rcp(&std::cout,false)));
-      std::vector<RCP<Xpetra::Matrix<double,int,int,Xpetra::EpetraNode> > > regPXpetra(maxRegPerProc);
-      std::vector<RCP<Xpetra::Matrix<double,int,int,Xpetra::EpetraNode> > > regPAPXpetra(maxRegPerProc);
+      std::vector<Teuchos::RCP<Xpetra::Matrix<double,int,int,Xpetra::EpetraNode> > > regPXpetra(maxRegPerProc); // region-wise prolongator in true region layout with unique GIDs for replicated interface DOFs
+      std::vector<Teuchos::RCP<Xpetra::Matrix<double,int,int,Xpetra::EpetraNode> > > regPAPXpetra(maxRegPerProc); // coarse level operator 'RAP' in region layout
       for (int j = 0; j < maxRegPerProc; j++) {
         RCP<MueLu::Level> levelOne = regGrpHierarchy[j]->GetLevel(1);
         regPXpetra[j] = levelOne->Get<RCP<Xpetra::Matrix<double,int,int,Xpetra::EpetraNode> > >("P", MueLu::NoFactory::get());
@@ -1202,9 +1201,9 @@ int main(int argc, char *argv[]) {
         regPAPXpetra[j] = levelOne->Get<RCP<Xpetra::Matrix<double,int,int,Xpetra::EpetraNode> > >("A", MueLu::NoFactory::get());
         regCoarseMatPerGrp[j] = MueLu::Utilities<double,int,int,Xpetra::EpetraNode>::Op2NonConstEpetraCrs(regPAPXpetra[j]);
 
+        /// Teuchos::RCP<Teuchos::FancyOStream> out = Teuchos::rcp(new Teuchos::FancyOStream(Teuchos::rcp(&std::cout,false)));
         // regPXpetra[j]->describe(*out, Teuchos::VERB_EXTREME);
         // regCoarseMatPerGrp[j]->describe(*out, Teuchos::VERB_EXTREME);
-
       }
     }
     else if (strcmp(command,"MakeRegionTransferOperators") == 0) {
@@ -1399,6 +1398,12 @@ int main(int argc, char *argv[]) {
 //        regionAltGrpProlong[j]->Print(std::cout);
       }
     }
+    else if (strcmp(command,"PrintRegProlongatorPerGrp") == 0) {
+      sleep(myRank);
+      for (int j = 0; j < maxRegPerProc; j++) {
+        regionGrpProlong[j]->Print(std::cout);
+      }
+    }
     else if (strcmp(command,"MakeCoarseLevelOperator") == 0) {
 
       std::vector<Teuchos::RCP<Epetra_CrsMatrix> > regAP(maxRegPerProc); // store intermediate result A*P
@@ -1426,8 +1431,13 @@ int main(int argc, char *argv[]) {
 
 //      for (int j = 0; j < maxRegPerProc; j++) {
 //          regAP[j]->Print(std::cout);
-//        regCoarseMatPerGrp[j]->Print(std::cout);
 //      }
+    }
+    else if (strcmp(command,"PrintRegCoarseMatPerGrp") == 0) {
+      sleep(myRank);
+      for (int j = 0; j < maxRegPerProc; j++) {
+        regCoarseMatPerGrp[j]->Print(std::cout);
+      }
     }
     else if (strcmp(command,"RunTwoLevelMethod") == 0) {
       // initial guess for solution
