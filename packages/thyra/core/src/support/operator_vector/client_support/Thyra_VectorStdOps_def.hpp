@@ -57,8 +57,10 @@
 #include "RTOpPack_TOpAddScalar.hpp"
 #include "RTOpPack_TOpEleWiseDivide.hpp"
 #include "RTOpPack_TOpEleWiseProd.hpp"
+#include "RTOpPack_TOpEleWiseMax.hpp"
 #include "RTOpPack_TOpEleWiseConjProd.hpp"
 #include "RTOpPack_TOpEleWiseProdUpdate.hpp"
+#include "RTOpPack_TOpEleWiseMaxUpdate.hpp"
 #include "RTOpPack_TOpRandomize.hpp"
 #include "Teuchos_Assert.hpp"
 #include "Teuchos_Assert.hpp"
@@ -221,6 +223,18 @@ void Thyra::ele_wise_prod(
     tuple(v_lhs), null );
 }
 
+template<class Scalar>
+void Thyra::ele_wise_max(
+  const Scalar &alpha, const VectorBase<Scalar>& v_rhs1,
+  const VectorBase<Scalar>& v_rhs2, const Ptr<VectorBase<Scalar> > &v_lhs
+  )
+{
+  using Teuchos::tuple; using Teuchos::ptrInArg; using Teuchos::null;
+  RTOpPack::TOpEleWiseMax<Scalar> ele_wise_max_op(alpha);
+  applyOp<Scalar>( ele_wise_max_op, tuple(ptrInArg(v_rhs1),ptrInArg(v_rhs2)),
+    tuple(v_lhs), null );
+}
+
 
 template<class Scalar>
 void Thyra::ele_wise_conj_prod(
@@ -263,6 +277,18 @@ void Thyra::ele_wise_prod_update(
   using Teuchos::tuple; using Teuchos::ptrInArg; using Teuchos::null;
   RTOpPack::TOpEleWiseProdUpdate<Scalar> ele_wise_prod_update_op(alpha);
   applyOp<Scalar>( ele_wise_prod_update_op, tuple(ptrInArg(v_rhs1)),
+    tuple(v_lhs), null );
+}
+
+template<class Scalar>
+void Thyra::ele_wise_max_update(
+  const Scalar& alpha, const VectorBase<Scalar>& v_rhs1,
+  const Ptr<VectorBase<Scalar> > &v_lhs
+  )
+{
+  using Teuchos::tuple; using Teuchos::ptrInArg; using Teuchos::null;
+  RTOpPack::TOpEleWiseMaxUpdate<Scalar> ele_wise_max_update_op(alpha);
+  applyOp<Scalar>( ele_wise_max_update_op, tuple(ptrInArg(v_rhs1)),
     tuple(v_lhs), null );
 }
 
@@ -614,6 +640,11 @@ void Thyra::maxLessThanBound( const VectorBase<Scalar>& x,
     const VectorBase<SCALAR >& v_rhs2, const Ptr<VectorBase<SCALAR > > &v_lhs  \
     );  \
    \
+  template void ele_wise_max(  \
+    const SCALAR& alpha, const VectorBase<SCALAR >& v_rhs1,  \
+    const VectorBase<SCALAR >& v_rhs2, const Ptr<VectorBase<SCALAR > > &v_lhs  \
+    );  \
+   \
   template void ele_wise_conj_prod(  \
     const SCALAR& alpha, const VectorBase<SCALAR >& v_rhs1,  \
     const VectorBase<SCALAR >& v_rhs2, const Ptr<VectorBase<SCALAR > > &v_lhs  \
@@ -629,6 +660,11 @@ void Thyra::maxLessThanBound( const VectorBase<Scalar>& x,
     );  \
    \
   template void ele_wise_prod_update(  \
+    const SCALAR& alpha, const VectorBase<SCALAR >& v_rhs1,  \
+    const Ptr<VectorBase<SCALAR > > &v_lhs  \
+    );  \
+   \
+  template void ele_wise_max_update(  \
     const SCALAR& alpha, const VectorBase<SCALAR >& v_rhs1,  \
     const Ptr<VectorBase<SCALAR > > &v_lhs  \
     );  \
