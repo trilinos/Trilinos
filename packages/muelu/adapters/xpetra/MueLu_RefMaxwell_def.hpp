@@ -83,11 +83,10 @@ namespace MueLu {
   template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void RefMaxwell<Scalar,LocalOrdinal,GlobalOrdinal,Node>::setParameters(Teuchos::ParameterList& list) {
 
+    parameterList_    = list;
     disable_addon_    = list.get("refmaxwell: disable addon",true);
     mode_             = list.get("refmaxwell: mode","additive");
     dump_matrices_    = list.get("refmaxwell: dump matrices",false);
-    read_P_from_file_ = list.get("refmaxwell: read_P_from_file_",false);
-    P_filename_       = list.get("refmaxwell: P_filename_",std::string("P.mat"));
 
     if(list.isSublist("refmaxwell: 11list"))
       precList11_     =  list.sublist("refmaxwell: 11list");
@@ -109,19 +108,9 @@ namespace MueLu {
 
     RCP<Teuchos::TimeMonitor> tmCompute = rcp(new Teuchos::TimeMonitor(*Teuchos::TimeMonitor::getNewTimer("MueLu RefMaxwell: compute")));
 
-    if (dump_matrices_)
-      Xpetra::IO<SC, LO, GlobalOrdinal, Node>::Write(std::string("SM.mat"), *SM_Matrix_);
-
     // clean rows associated with boundary conditions
     findDirichletRows(SM_Matrix_,BCrows_);
     findDirichletCols(D0_Matrix_,BCrows_,BCcols_);
-
-    if (dump_matrices_) {
-      std::ofstream outBCrows("BCrows.mat");
-      std::copy(BCrows_.begin(), BCrows_.end(), std::ostream_iterator<LO>(outBCrows, "\n"));
-      std::ofstream outBCcols("BCcols.mat");
-      std::copy(BCcols_.begin(), BCcols_.end(), std::ostream_iterator<LO>(outBCcols, "\n"));
-    }
 
     // build nullspace if necessary
     if(Nullspace_ != Teuchos::null) {
@@ -140,10 +129,6 @@ namespace MueLu {
         for(size_t i=0;i<static_cast<size_t>(datavec.size());i++)
           datavec[i] *= norms[j];
       }
-
-      if (dump_matrices_)
-        Xpetra::IO<double, LO, GlobalOrdinal, Node>::Write(std::string("coords.mat"), *Coords_);
-
       Nullspace_ = MultiVectorFactory::Build(SM_Matrix_->getRowMap(),Coords_->getNumVectors());
 
       // Cast coordinates to Scalar
@@ -174,8 +159,6 @@ namespace MueLu {
       for(size_t i=0;i<BCrows_.size();i++)
         datavec[BCrows_[i]]=zero;
     }
-    if (dump_matrices_)
-      Xpetra::IO<SC, LO, GlobalOrdinal, Node>::Write(std::string("nullspace.mat"), *Nullspace_);
 
     if (dump_matrices_)
       Xpetra::IO<SC, LO, GlobalOrdinal, Node>::Write(std::string("D0_clean.mat"), *D0_Matrix_);
@@ -183,8 +166,6 @@ namespace MueLu {
     Apply_BCsToMatrixRows(D0_Matrix_,BCrows_);
     Apply_BCsToMatrixCols(D0_Matrix_,BCcols_);
     D0_Matrix_->fillComplete(D0_Matrix_->getDomainMap(),D0_Matrix_->getRangeMap());
-    if (dump_matrices_)
-      Xpetra::IO<SC, LO, GlobalOrdinal, Node>::Write(std::string("D0_nuked.mat"), *D0_Matrix_);
 
     // build special prolongator for (1,1)-block
     if(P11_==Teuchos::null) {
@@ -204,15 +185,13 @@ namespace MueLu {
       A_nodal_Matrix_->resumeFill();
       Remove_Zeroed_Rows(A_nodal_Matrix_,2.0*eps);
       A_nodal_Matrix_->SetFixedBlockSize(1);
-      tm = Teuchos::null;
 
-      if (dump_matrices_)
-        Xpetra::IO<SC, LO, GlobalOrdinal, Node>::Write(std::string("A_nodal.mat"), *A_nodal_Matrix_);
 
       // build special prolongator
       GetOStream(Runtime0) << "RefMaxwell::compute(): building special prolongator" << std::endl;
       tm = rcp(new Teuchos::TimeMonitor(*Teuchos::TimeMonitor::getNewTimer("MueLu RefMaxwell: Build special prolongator")));
       buildProlongator();
+      tm = Teuchos::null;
     }
 
     // Use HierarchyManagers to build 11 & 22 Hierarchies
@@ -358,6 +337,20 @@ namespace MueLu {
     D0res_  = MultiVectorFactory::Build(D0_Matrix_->getDomainMap(),1);
     D0x_    = MultiVectorFactory::Build(D0_Matrix_->getDomainMap(),1);
     residual_ = MultiVectorFactory::Build(SM_Matrix_->getDomainMap(),1);
+
+    if (dump_matrices_) {
+      GetOStream(Runtime0) << "RefMaxwell::compute(): dumping data" << std::endl;
+      Xpetra::IO<SC, LO, GlobalOrdinal, Node>::Write(std::string("SM.mat"), *SM_Matrix_);
+      std::ofstream outBCrows("BCrows.mat");
+      std::copy(BCrows_.begin(), BCrows_.end(), std::ostream_iterator<LO>(outBCrows, "\n"));
+      std::ofstream outBCcols("BCcols.mat");
+      std::copy(BCcols_.begin(), BCcols_.end(), std::ostream_iterator<LO>(outBCcols, "\n"));
+      Xpetra::IO<SC, LO, GlobalOrdinal, Node>::Write(std::string("nullspace.mat"), *Nullspace_);
+      if (Coords_ != Teuchos::null)
+        Xpetra::IO<double, LO, GlobalOrdinal, Node>::Write(std::string("coords.mat"), *Coords_);
+      Xpetra::IO<SC, LO, GlobalOrdinal, Node>::Write(std::string("D0_nuked.mat"), *D0_Matrix_);
+      Xpetra::IO<SC, LO, GlobalOrdinal, Node>::Write(std::string("A_nodal.mat"), *A_nodal_Matrix_);
+    }
   }
 
 
@@ -390,8 +383,12 @@ namespace MueLu {
     // build prolongator: algorithm 1 in the reference paper
     // First, build nodal unsmoothed prolongator using the matrix A_nodal
     RCP<Matrix> P_nodal;
-    if (read_P_from_file_) {
-      P_nodal = Xpetra::IO<SC, LO, GO, NO>::Read(P_filename_, A_nodal_Matrix_->getDomainMap());
+    bool read_P_from_file = parameterList_.get("refmaxwell: read_P_from_file",false);
+    if (read_P_from_file) {
+      // This permits to read in an ML prolongator, so that we get the same hierarchy.
+      // (ML and MueLu typically produce difference aggregates.)
+      std::string P_filename = parameterList_.get("refmaxwell: P_filename",std::string("P.mat"));
+      P_nodal = Xpetra::IO<SC, LO, GO, NO>::Read(P_filename, A_nodal_Matrix_->getDomainMap());
     } else {
       Level fineLevel, coarseLevel;
       RCP<MueLu::FactoryManagerBase> factoryHandler = rcp(new FactoryManager());
@@ -751,7 +748,6 @@ namespace MueLu {
     HierarchyH_ = Teuchos::null;
     Hierarchy22_ = Teuchos::null;
     Smoother_ = Teuchos::null;
-    parameterList_ = List;
     disable_addon_ = false;
     mode_ = "additive";
 

@@ -449,8 +449,7 @@ namespace MueLu {
     //! Parameter lists
     Teuchos::ParameterList parameterList_, precList11_, precList22_, smootherList_;
     //! Some options
-    bool disable_addon_, dump_matrices_, read_P_from_file_;
-    std::string P_filename_;
+    bool disable_addon_, dump_matrices_;
     std::string mode_;
     //! Temporary memory
     mutable Teuchos::RCP<MultiVector> P11res_, P11x_, D0res_, D0x_, residual_;
