@@ -113,26 +113,22 @@ IF (${PACKAGE_NAME}_ENABLE_Galeri)
 
     IF (${PACKAGE_NAME}_ENABLE_Tpetra AND ${PACKAGE_NAME}_ENABLE_Ifpack2 AND ${PACKAGE_NAME}_ENABLE_Amesos2)
 
-      # Do not run for complex.
-      # Currently, the MueLu default parameters do not work in that case.
-      IF (NOT ${PACKAGE_NAME}_INST_COMPLEX_INT_INT)
-        TRIBITS_ADD_TEST(
-          ParameterListInterpreter
-          NAME "ParameterListInterpreterTpetra"
-          ARGS "--linAlgebra=Tpetra"
-          STANDARD_PASS_OUTPUT
-          NUM_MPI_PROCS 1
-          COMM mpi serial
-          )
-        TRIBITS_ADD_TEST(
-          ParameterListInterpreter
-          NAME "ParameterListInterpreterTpetra"
-          ARGS "--linAlgebra=Tpetra"
-          STANDARD_PASS_OUTPUT
-          NUM_MPI_PROCS 4
-          COMM mpi
-          )
-      ENDIF()
+      TRIBITS_ADD_TEST(
+        ParameterListInterpreter
+        NAME "ParameterListInterpreterTpetra"
+        ARGS "--linAlgebra=Tpetra"
+        STANDARD_PASS_OUTPUT
+        NUM_MPI_PROCS 1
+        COMM mpi serial
+        )
+      TRIBITS_ADD_TEST(
+        ParameterListInterpreter
+        NAME "ParameterListInterpreterTpetra"
+        ARGS "--linAlgebra=Tpetra"
+        STANDARD_PASS_OUTPUT
+        NUM_MPI_PROCS 4
+        COMM mpi
+        )
 
       TRIBITS_ADD_TEST(
         CreateOperator
@@ -151,31 +147,27 @@ IF (${PACKAGE_NAME}_ENABLE_Galeri)
         COMM mpi
         )
 
-      # Do not run for complex.
-      # Currently, the MueLu default parameters do not work in that case.
-      IF (NOT ${PACKAGE_NAME}_INST_COMPLEX_INT_INT)
-        # This test only runs on the dashboard, not at checkin.
-        TRIBITS_ADD_TEST(
-          ParameterListInterpreter
-          NAME "ParameterListInterpreterTpetraHeavy"
-          ARGS "--linAlgebra=Tpetra --heavytests"
-          STANDARD_PASS_OUTPUT
-          NUM_MPI_PROCS 1
-          COMM mpi serial
-          CATEGORIES CONTINUOUS
-          )
+      # This test only runs on the dashboard, not at checkin.
+      TRIBITS_ADD_TEST(
+        ParameterListInterpreter
+        NAME "ParameterListInterpreterTpetraHeavy"
+        ARGS "--linAlgebra=Tpetra --heavytests"
+        STANDARD_PASS_OUTPUT
+        NUM_MPI_PROCS 1
+        COMM mpi serial
+        CATEGORIES CONTINUOUS
+        )
 
-        # This test only runs on the dashboard, not at checkin.
-        TRIBITS_ADD_TEST(
-          ParameterListInterpreter
-          NAME "ParameterListInterpreterTpetraHeavy"
-          ARGS "--linAlgebra=Tpetra --heavytests"
-          STANDARD_PASS_OUTPUT
-          NUM_MPI_PROCS 4
-          COMM mpi
-          CATEGORIES CONTINUOUS
-          )
-      ENDIF()
+      # This test only runs on the dashboard, not at checkin.
+      TRIBITS_ADD_TEST(
+        ParameterListInterpreter
+        NAME "ParameterListInterpreterTpetraHeavy"
+        ARGS "--linAlgebra=Tpetra --heavytests"
+        STANDARD_PASS_OUTPUT
+        NUM_MPI_PROCS 4
+        COMM mpi
+        CATEGORIES CONTINUOUS
+        )
 
     ENDIF()
 
@@ -183,10 +175,14 @@ IF (${PACKAGE_NAME}_ENABLE_Galeri)
 
 ENDIF()
 
-ADD_SUBDIRECTORY(EasyParameterListInterpreter)
-ADD_SUBDIRECTORY(EasyParameterListInterpreter-heavy)
-ADD_SUBDIRECTORY(FactoryParameterListInterpreter)
-ADD_SUBDIRECTORY(FactoryParameterListInterpreter-heavy)
-ADD_SUBDIRECTORY(MLParameterListInterpreter)
-ADD_SUBDIRECTORY(MLParameterListInterpreter2)
-ADD_SUBDIRECTORY(Output)
+IF (NOT ${PACKAGE_NAME}_INST_COMPLEX_INT_INT)
+  ADD_SUBDIRECTORY(EasyParameterListInterpreter)
+  ADD_SUBDIRECTORY(EasyParameterListInterpreter-heavy)
+  ADD_SUBDIRECTORY(FactoryParameterListInterpreter)
+  ADD_SUBDIRECTORY(FactoryParameterListInterpreter-heavy)
+  ADD_SUBDIRECTORY(MLParameterListInterpreter)
+  ADD_SUBDIRECTORY(MLParameterListInterpreter2)
+  ADD_SUBDIRECTORY(Output)
+ELSE()
+  ADD_SUBDIRECTORY(complex)
+ENDIF()
