@@ -40,8 +40,8 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef RTOPPACK_TOP_ELE_WISE_MAX_HPP
-#define RTOPPACK_TOP_ELE_WISE_MAX_HPP
+#ifndef RTOPPACK_TOP_PAIR_WISE_MAX_HPP
+#define RTOPPACK_TOP_PAIR_WISE_MAX_HPP
 
 #include "RTOpPack_RTOpTHelpers.hpp"
 
@@ -49,12 +49,12 @@
 namespace RTOpPack {
 
 
-/** \brief Element-wise transformation operator for TOpEleWiseMax. */
+/** \brief Pair-wise transformation operator for TOpPairWiseMax. */
 template<class Scalar>
-class TOpEleWiseMaxEleWiseTransformation
+class TOpPairWiseMaxPairWiseTransformation
 {
 public:
-  TOpEleWiseMaxEleWiseTransformation(const Scalar &alpha)
+  TOpPairWiseMaxPairWiseTransformation(const Scalar &alpha)
   : alpha_(alpha)
   {}
   void operator()( const Scalar &v0, const Scalar &v1, Scalar &z0 ) const
@@ -66,20 +66,20 @@ private:
 };
 
 
-/** \brief Element-wise Maximum transformation operator: <tt>z0[i] = max(
+/** \brief Pair-wise Maximum transformation operator: <tt>z0[i] = max(
  * v0[i],v1[i]), i=0...n-1</tt>.
  */
 template<class Scalar>
-class TOpEleWiseMax
-  : public TOp_2_1_Base<Scalar, TOpEleWiseMaxEleWiseTransformation<Scalar> >
+class TOpPairWiseMax
+  : public TOp_2_1_Base<Scalar, TOpPairWiseMaxPairWiseTransformation<Scalar> >
 {
 public:
-  typedef TOp_2_1_Base<Scalar, TOpEleWiseMaxEleWiseTransformation<Scalar> > base_t;
+  typedef TOp_2_1_Base<Scalar, TOpPairWiseMaxPairWiseTransformation<Scalar> > base_t;
   /** \brief . */
-  TOpEleWiseMax(const Scalar &alpha )
-    : base_t(TOpEleWiseMaxEleWiseTransformation<Scalar>(alpha))
+  TOpPairWiseMax(const Scalar &alpha )
+    : base_t(TOpPairWiseMaxPairWiseTransformation<Scalar>(alpha))
     {
-      this->setOpNameBase("TOpEleWiseMax");
+      this->setOpNameBase("TOpPAIRWiseMax");
     }
 };
 
@@ -87,4 +87,4 @@ public:
 } // namespace RTOpPack
 
 
-#endif // RTOPPACK_TOP_ELE_WISE_MAX_HPP
+#endif // RTOPPACK_TOP_PAIR_WISE_MAX_HPP

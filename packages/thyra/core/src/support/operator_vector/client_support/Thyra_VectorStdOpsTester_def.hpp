@@ -597,8 +597,8 @@ bool VectorStdOpsTester<Scalar>::checkStdOps(
       ) success=false;
   }
 
-// Test ele_wise_max
-  out << "\n"<<tc<<") Testing ele_wise_max(*v1, *v2, z.ptr()) ...\n";
+// Test pair_wise_max
+  out << "\n"<<tc<<") Testing pair_wise_max(*v1, *v2, z.ptr()) ...\n";
   ++tc;
   {
     v1  = createMember(vecSpc);
@@ -611,7 +611,7 @@ bool VectorStdOpsTester<Scalar>::checkStdOps(
     randomize(as<Scalar>(-ST::one()),ST::one(),v2.ptr()); // v2 = rand
 
     // z = alpha*max(v1_i, v2_i)
-    ele_wise_max(alpha, *v1, *v2, z.ptr()); 
+    pair_wise_max(alpha, *v1, *v2, z.ptr()); 
 
     V_VpV(v3.ptr(), *v1, *v2); // v3 = v1 + v2
     Vp_V(v1.ptr(), *v2, as<Scalar>(-ST::one())); // v1 -= v2
