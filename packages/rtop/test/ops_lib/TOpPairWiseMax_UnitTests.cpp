@@ -1,3 +1,4 @@
+/*
 // @HEADER
 // ***********************************************************************
 // 
@@ -39,52 +40,79 @@
 // 
 // ***********************************************************************
 // @HEADER
-
-#ifndef RTOPPACK_TOP_PAIR_WISE_MAX_UPDATE_HPP
-#define RTOPPACK_TOP_PAIR_WISE_MAX_UPDATE_HPP
-
-#include "RTOpPack_RTOpTHelpers.hpp"
+*/
 
 
-namespace RTOpPack {
+#include "RTOpPack_TOpPairWiseMax.hpp"
+
+#include "supportUnitTestsHelpers.hpp"
 
 
-/** \brief Pair-wise transformation operator for TOpPairWiseMaxUpdate. */
+namespace {
+
+
 template<class Scalar>
-class TOpPairWiseMaxUpdatePairWiseTransformation
+void basicTest(const int stride, FancyOStream &out, bool &success)
 {
-public:
-  TOpPairWiseMaxUpdatePairWiseTransformation(const Scalar &alpha )
-  : alpha_(alpha)
-  {}
-  void operator()( const Scalar &v0, Scalar &z0 ) const
-    {
-      z0 = alpha_ * std::max(z0, v0);
-    }
-private:
-  Scalar alpha_;
-};
+
+  using Teuchos::as;
+  typedef ScalarTraits<Scalar> ST;
+  typedef typename ST::magnitudeType ScalarMag;
+
+  ConstSubVectorView<Scalar> v0 =
+    newStridedRandomSubVectorView<Scalar>(n, stride);
+
+  ConstSubVectorView<Scalar> v1 =
+    newStridedRandomSubVectorView<Scalar>(n, stride);
+
+  SubVectorView<Scalar> orig_z0 =
+    newStridedRandomSubVectorView<Scalar>(n, stride);
+  
+  SubVectorView<Scalar> z0 =
+    newStridedSubVectorView<Scalar>(n, stride, ST::nan());
+  RTOpPack::assign_entries<Scalar>( Teuchos::outArg(z0), orig_z0 );
+
+  const Scalar alpha = 2.0*ST::one();
+
+  RTOpPack::TOpPairWiseMax<Scalar> op(alpha);
+  op.apply_op( tuple(v0,v1), tuple(z0)(), null );
+
+  SubVectorView<Scalar> expected_z0
+    = newStridedSubVectorView<Scalar>(n, stride, ST::nan());
+  for (int k = 0; k < v0.subDim(); ++k)
+    expected_z0[k] =  v0[k] + v1[k] + std::abs(v0[k] - v1[k]);
+
+  if (verbose) {
+    out << "alpha = " << alpha << "\n";
+    dumpSubVectorView(v0, "v0", out);
+    dumpSubVectorView(v1, "v1", out);
+    dumpSubVectorView(orig_z0, "orig_z0", out);
+    dumpSubVectorView(z0, "z0", out);
+    dumpSubVectorView(expected_z0, "expected_z0", out);
+  }
+
+  TEST_COMPARE_FLOATING_ARRAYS( constSubVectorViewAsArray(z0),
+    constSubVectorViewAsArray(expected_z0),
+    as<ScalarMag>(ST::eps() * errorTolSlack)
+    );
+
+}
 
 
-/** \brief Pair-wise Maximum update transformation operator: 
- * <tt>z0[i] = alpha*max(z0[i],v0[i]), i=0...n-1</tt>.
- */
-template<class Scalar>
-class TOpPairWiseMaxUpdate
-  : public TOp_1_1_Base<Scalar, TOpPairWiseMaxUpdatePairWiseTransformation<Scalar> >
+TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( TOpPairWiseMax, unitStride, Scalar )
 {
-public:
-  typedef TOp_1_1_Base<Scalar, TOpPairWiseMaxUpdatePairWiseTransformation<Scalar> > base_t;
-  /** \brief . */
-  TOpPairWiseMaxUpdate( const Scalar &alpha )
-    : base_t(TOpPairWiseMaxUpdatePairWiseTransformation<Scalar>(alpha))
-    {
-      this->setOpNameBase("TOpPairWiseMaxUpdate");
-    }
-};
+  basicTest<Scalar>(1, out, success);
+}
+
+TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT_SCALAR_TYPES( TOpPairWiseMax, unitStride )
 
 
-} // namespace RTOpPack
+TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( TOpPairWiseMax, nonunitStride, Scalar )
+{
+  basicTest<Scalar>(4, out, success);
+}
+
+TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT_SCALAR_TYPES( TOpPairWiseMax, nonunitStride )
 
 
-#endif // RTOPPACK_TOP_PAIR_WISE_MAX_UPDATE_HPP
+} // namespace
