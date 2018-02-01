@@ -63,10 +63,79 @@
 #include "MueLu_MLParameterListInterpreter.hpp"
 #include "MueLu_ParameterListInterpreter.hpp"
 #include "MueLu_HierarchyManager.hpp"
+#include "MueLu_Utilities.hpp"
 #include "MueLu_VerbosityLevel.hpp"
 
 
 namespace MueLu {
+
+  template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  void RefMaxwell<Scalar,LocalOrdinal,GlobalOrdinal,Node>::findDirichletCols(Teuchos::RCP<Matrix> A,
+                                                                             std::vector<LocalOrdinal>& dirichletRows,
+                                                                             std::vector<LocalOrdinal>& dirichletCols) {
+    SC zero = Teuchos::ScalarTraits<Scalar>::zero();
+    SC one = Teuchos::ScalarTraits<Scalar>::one();
+    magnitudeType eps = Teuchos::ScalarTraits<magnitudeType>::eps();
+    Teuchos::RCP<const Map> domMap = A->getDomainMap();
+    Teuchos::RCP<const Map> colMap = A->getColMap();
+    Teuchos::RCP<Export> exporter = ExportFactory::Build(colMap,domMap);
+    Teuchos::RCP<MultiVector> myColsToZero = MultiVectorFactory::Build(colMap,1);
+    Teuchos::RCP<MultiVector> globalColsToZero = MultiVectorFactory::Build(domMap,1);
+    myColsToZero->putScalar(zero);
+    globalColsToZero->putScalar(zero);
+    // Find all column indices in Dirichlet rows, record in myColsToZero
+    for(size_t i=0; i<dirichletRows.size(); i++) {
+      Teuchos::ArrayView<const LocalOrdinal> indices;
+      Teuchos::ArrayView<const Scalar> values;
+      A->getLocalRowView(dirichletRows[i],indices,values);
+      for(size_t j=0; j<static_cast<size_t>(indices.size()); j++)
+        myColsToZero->replaceLocalValue(indices[j],0,one);
+    }
+    globalColsToZero->doExport(*myColsToZero,*exporter,Xpetra::ADD);
+    myColsToZero->doImport(*globalColsToZero,*exporter,Xpetra::INSERT);
+    Teuchos::ArrayRCP<const Scalar> myCols = myColsToZero->getData(0);
+    dirichletCols.resize(colMap->getNodeNumElements());
+    for(size_t i=0; i<colMap->getNodeNumElements(); i++) {
+      if(Teuchos::ScalarTraits<Scalar>::magnitude(myCols[i])>2.0*eps)
+        dirichletCols[i]=1;
+      else
+        dirichletCols[i]=0;
+    }
+  }
+
+  template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  void RefMaxwell<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Remove_Zeroed_Rows(Teuchos::RCP<Matrix>& A, magnitudeType tol) {
+    SC one = Teuchos::ScalarTraits<Scalar>::one();
+    SC zero = Teuchos::ScalarTraits<Scalar>::zero();
+    Teuchos::RCP<const Map> rowMap = A->getRowMap();
+    RCP<Matrix> DiagMatrix = MatrixFactory::Build(rowMap,1);
+    RCP<Matrix> NewMatrix  = MatrixFactory::Build(rowMap,1);
+    for(size_t i=0; i<A->getNodeNumRows(); i++) {
+      Teuchos::ArrayView<const LocalOrdinal> indices;
+      Teuchos::ArrayView<const Scalar> values;
+      A->getLocalRowView(i,indices,values);
+      int nnz=0;
+      for (size_t j=0; j<static_cast<size_t>(indices.size()); j++)
+        if (Teuchos::ScalarTraits<Scalar>::magnitude(values[j]) > tol)
+          nnz++;
+      GlobalOrdinal row = rowMap->getGlobalElement(i);
+      if (nnz == 0)
+        DiagMatrix->insertGlobalValues(row,
+                                       Teuchos::ArrayView<GlobalOrdinal>(&row,1),
+                                       Teuchos::ArrayView<Scalar>(&one,1));
+      else
+        DiagMatrix->insertGlobalValues(row,
+                                       Teuchos::ArrayView<GlobalOrdinal>(&row,1),
+                                       Teuchos::ArrayView<Scalar>(&zero,1));
+    }
+    DiagMatrix->fillComplete();
+    A->fillComplete();
+    // add matrices together
+    RCP<Teuchos::FancyOStream> out = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
+    Xpetra::MatrixMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>::TwoMatrixAdd(*DiagMatrix,false,one,*A,false,one,NewMatrix,*out);
+    NewMatrix->fillComplete();
+    A=NewMatrix;
+  }
 
   template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   Teuchos::RCP<const Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > RefMaxwell<Scalar,LocalOrdinal,GlobalOrdinal,Node>::getDomainMap() const {
@@ -109,7 +178,8 @@ namespace MueLu {
     RCP<Teuchos::TimeMonitor> tmCompute = rcp(new Teuchos::TimeMonitor(*Teuchos::TimeMonitor::getNewTimer("MueLu RefMaxwell: compute")));
 
     // clean rows associated with boundary conditions
-    findDirichletRows(SM_Matrix_,BCrows_);
+    // Find rows with only 1 or 2 nonzero entries, record them in BCrows_.
+    Utilities::FindDirichletRows(SM_Matrix_,BCrows_,/*count_twos_as_dirichlet=*/true);
     findDirichletCols(D0_Matrix_,BCrows_,BCcols_);
 
     // build nullspace if necessary
@@ -134,6 +204,8 @@ namespace MueLu {
       // Cast coordinates to Scalar
       RCP<MultiVector> CoordsSC;
 #if defined(HAVE_XPETRA_TPETRA) && defined(HAVE_TPETRA_INST_COMPLEX_DOUBLE)
+      // Need to cast the real-valued multivector to Scalar=complex,
+      // so we can multiply it against D0.
       if (typeid(Scalar).name() == typeid(std::complex<double>).name()) {
         CoordsSC = MultiVectorFactory::Build(Coords_->getMap(),Coords_->getNumVectors());
         size_t numVecs = Coords_->getNumVectors();
@@ -162,14 +234,17 @@ namespace MueLu {
 
     if (dump_matrices_)
       Xpetra::IO<SC, LO, GlobalOrdinal, Node>::Write(std::string("D0_clean.mat"), *D0_Matrix_);
+
+    GetOStream(Runtime0) << "RefMaxwell::compute(): nuking BC edges of D0" << std::endl;
     D0_Matrix_->resumeFill();
-    Apply_BCsToMatrixRows(D0_Matrix_,BCrows_);
-    Apply_BCsToMatrixCols(D0_Matrix_,BCcols_);
+    Scalar replaceWith = Teuchos::ScalarTraits<SC>::eps();
+    Utilities::ZeroDirichletRows(D0_Matrix_,BCrows_,replaceWith);
+    Utilities::ZeroDirichletCols(D0_Matrix_,BCcols_,replaceWith);
     D0_Matrix_->fillComplete(D0_Matrix_->getDomainMap(),D0_Matrix_->getRangeMap());
 
     // build special prolongator for (1,1)-block
     if(P11_==Teuchos::null) {
-      GetOStream(Runtime0) << "RefMaxwell::compute(): building special prolongator for (1,1)-block" << std::endl;
+      GetOStream(Runtime0) << "RefMaxwell::compute(): building A_nodal" << std::endl;
 
       // Form A_nodal = D0* M1 D0  (aka TMT_agg)
       RCP<Teuchos::TimeMonitor> tm = rcp(new Teuchos::TimeMonitor(*Teuchos::TimeMonitor::getNewTimer("MueLu RefMaxwell: Build A_nodal")));
@@ -186,6 +261,10 @@ namespace MueLu {
       Remove_Zeroed_Rows(A_nodal_Matrix_,2.0*eps);
       A_nodal_Matrix_->SetFixedBlockSize(1);
 
+      //GetOStream(Runtime0) << "RefMaxwell::compute(): nuking BC edges of M1" << std::endl;
+      //M1_Matrix_->resumeFill();
+      //Utilities::ApplyOAZToMatrixRows(M1_Matrix_,BCrows_);
+      //M1_Matrix_->fillComplete(M1_Matrix_->getDomainMap(),M1_Matrix_->getRangeMap());
 
       // build special prolongator
       GetOStream(Runtime0) << "RefMaxwell::compute(): building special prolongator" << std::endl;
@@ -548,21 +627,22 @@ namespace MueLu {
       Teuchos::RCP<Matrix> Zaux = MatrixFactory::Build(M1_Matrix_->getRowMap(),0);
       Teuchos::RCP<Matrix> Z = MatrixFactory::Build(D0_Matrix_->getDomainMap(),0);
 
-      // construct M1 P11
+      // construct Zaux = M1 P11
       Xpetra::MatrixMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Multiply(*M1_Matrix_,false,*P11_,false,*Zaux,true,true);
-      // construct Z = D0* M1 P11
+      // construct Z = D0* M1 P11 = D0* Zaux
       Xpetra::MatrixMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Multiply(*D0_Matrix_,true,*Zaux,false,*Z,true,true);
 
       // construct Z* M0inv Z
       Teuchos::RCP<Matrix> Matrix2 = MatrixFactory::Build(Z->getDomainMap(),0);
       if (parameterList_.get<bool>("rap: triple product", false) == false) {
         Teuchos::RCP<Matrix> C2 = MatrixFactory::Build(M0inv_Matrix_->getRowMap(),0);
-        // construct M0inv Z
+        // construct C2 = M0inv Z
         Xpetra::MatrixMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Multiply(*M0inv_Matrix_,false,*Z,false,*C2,true,true);
-        // construct Z* M0inv Z
+        // construct Matrix2 = Z* M0inv Z = Z* C2
         Xpetra::MatrixMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Multiply(*Z,true,*C2,false,*Matrix2,true,true);
       }
       else {
+        // construct Matrix2 = Z* M0inv Z
         Xpetra::TripleMatrixMultiply<Scalar,LocalOrdinal,GlobalOrdinal,Node>::
           MultiplyRAP(*Z, true, *M0inv_Matrix_, false, *Z, false, *Matrix2, true, true);
       }
@@ -573,6 +653,8 @@ namespace MueLu {
     }
 
     // set fixed block size for vector nodal matrix
+    // TODO: Which one is it?
+    // AH_->SetFixedBlockSize(1);
     size_t dim = Nullspace_->getNumVectors();
     AH_->SetFixedBlockSize(dim);
 

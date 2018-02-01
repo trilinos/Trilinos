@@ -294,123 +294,14 @@ namespace MueLu {
 
   private:
 
-    void findDirichletRows(Teuchos::RCP<Matrix> A,
-                           std::vector<LocalOrdinal>& dirichletRows) {
-      magnitudeType eps = Teuchos::ScalarTraits<magnitudeType>::eps();
-      dirichletRows.resize(0);
-      for(size_t i=0; i<A->getNodeNumRows(); i++) {
-        Teuchos::ArrayView<const LocalOrdinal> indices;
-        Teuchos::ArrayView<const Scalar> values;
-        A->getLocalRowView(i,indices,values);
-        size_t nnz=0;
-        for (size_t j=0; j<static_cast<size_t>(indices.size()); j++)
-          if (Teuchos::ScalarTraits<Scalar>::magnitude(values[j]) > 2.0*eps)
-            nnz++;
-        if (nnz == 1 || nnz == 2)
-          dirichletRows.push_back(i);
-      }
-    }
-
     void findDirichletCols(Teuchos::RCP<Matrix> A,
                            std::vector<LocalOrdinal>& dirichletRows,
-                           std::vector<LocalOrdinal>& dirichletCols) {
-      SC zero = Teuchos::ScalarTraits<Scalar>::zero();
-      SC one = Teuchos::ScalarTraits<Scalar>::one();
-      magnitudeType eps = Teuchos::ScalarTraits<magnitudeType>::eps();
-      Teuchos::RCP<const Map> domMap = A->getDomainMap();
-      Teuchos::RCP<const Map> colMap = A->getColMap();
-      Teuchos::RCP<Export> exporter = ExportFactory::Build(colMap,domMap);
-      Teuchos::RCP<MultiVector> myColsToZero = MultiVectorFactory::Build(colMap,1);
-      Teuchos::RCP<MultiVector> globalColsToZero = MultiVectorFactory::Build(domMap,1);
-      myColsToZero->putScalar(zero);
-      globalColsToZero->putScalar(zero);
-      for(size_t i=0; i<dirichletRows.size(); i++) {
-        Teuchos::ArrayView<const LocalOrdinal> indices;
-        Teuchos::ArrayView<const Scalar> values;
-        A->getLocalRowView(dirichletRows[i],indices,values);
-        for(size_t j=0; j<static_cast<size_t>(indices.size()); j++)
-          myColsToZero->replaceLocalValue(indices[j],0,one);
-      }
-      globalColsToZero->doExport(*myColsToZero,*exporter,Xpetra::ADD);
-      myColsToZero->doImport(*globalColsToZero,*exporter,Xpetra::INSERT);
-      Teuchos::ArrayRCP<const Scalar> myCols = myColsToZero->getData(0);
-      dirichletCols.resize(colMap->getNodeNumElements());
-      for(size_t i=0; i<colMap->getNodeNumElements(); i++) {
-        if(Teuchos::ScalarTraits<Scalar>::magnitude(myCols[i])>2.0*eps)
-          dirichletCols[i]=1;
-        else
-          dirichletCols[i]=0;
-      }
-    }
+                           std::vector<LocalOrdinal>& dirichletCols);
 
-    void Apply_BCsToMatrixRows(Teuchos::RCP<Matrix>& A,
-                               std::vector<LocalOrdinal>& dirichletRows) {
-      SC eps = Teuchos::ScalarTraits<SC>::eps();
-      for(size_t i=0; i<dirichletRows.size(); i++) {
-        Teuchos::ArrayView<const LocalOrdinal> indices;
-        Teuchos::ArrayView<const Scalar> values;
-        A->getLocalRowView(dirichletRows[i],indices,values);
-        std::vector<Scalar> vec;
-        vec.resize(indices.size());
-        Teuchos::ArrayView<Scalar> zerovalues(vec);
-        for(size_t j=0; j<static_cast<size_t>(indices.size()); j++)
-          zerovalues[j]=eps;
-        A->replaceLocalValues(dirichletRows[i],indices,zerovalues);
-      }
-    }
-
-    void Apply_BCsToMatrixCols(Teuchos::RCP<Matrix>& A,
-                               std::vector<LocalOrdinal>& dirichletCols) {
-      SC eps = Teuchos::ScalarTraits<SC>::eps();
-      for(size_t i=0; i<A->getNodeNumRows(); i++) {
-        Teuchos::ArrayView<const LocalOrdinal> indices;
-        Teuchos::ArrayView<const Scalar> values;
-        A->getLocalRowView(i,indices,values);
-        std::vector<Scalar> vec;
-        vec.resize(indices.size());
-        Teuchos::ArrayView<Scalar> zerovalues(vec);
-        for(size_t j=0; j<static_cast<size_t>(indices.size()); j++) {
-          if(dirichletCols[indices[j]]==1)
-            zerovalues[j]=eps;
-          else
-            zerovalues[j]=values[j];
-        }
-        A->replaceLocalValues(i,indices,zerovalues);
-      }
-    }
-
-    void Remove_Zeroed_Rows(Teuchos::RCP<Matrix>& A, magnitudeType tol=1.0e-14) {
-      SC one = Teuchos::ScalarTraits<Scalar>::one();
-      SC zero = Teuchos::ScalarTraits<Scalar>::zero();
-      Teuchos::RCP<const Map> rowMap = A->getRowMap();
-      RCP<Matrix> DiagMatrix = MatrixFactory::Build(rowMap,1);
-      RCP<Matrix> NewMatrix  = MatrixFactory::Build(rowMap,1);
-      for(size_t i=0; i<A->getNodeNumRows(); i++) {
-        Teuchos::ArrayView<const LocalOrdinal> indices;
-        Teuchos::ArrayView<const Scalar> values;
-        A->getLocalRowView(i,indices,values);
-        int nnz=0;
-        for (size_t j=0; j<static_cast<size_t>(indices.size()); j++)
-          if (Teuchos::ScalarTraits<Scalar>::magnitude(values[j]) > tol)
-            nnz++;
-        GlobalOrdinal row = rowMap->getGlobalElement(i);
-        if (nnz == 0)
-          DiagMatrix->insertGlobalValues(row,
-                                         Teuchos::ArrayView<GlobalOrdinal>(&row,1),
-                                         Teuchos::ArrayView<Scalar>(&one,1));
-        else
-          DiagMatrix->insertGlobalValues(row,
-                                         Teuchos::ArrayView<GlobalOrdinal>(&row,1),
-                                         Teuchos::ArrayView<Scalar>(&zero,1));
-      }
-      DiagMatrix->fillComplete();
-      A->fillComplete();
-      // add matrices together
-      RCP<Teuchos::FancyOStream> out = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
-      Xpetra::MatrixMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>::TwoMatrixAdd(*DiagMatrix,false,one,*A,false,one,NewMatrix,*out);
-      NewMatrix->fillComplete();
-      A=NewMatrix;
-    }
+    // Builds diagonal matrix DiagMatrix with one on diagonal for zero rows of A
+    // Assigns A = DiagMatrix + A.
+    // We apply this to A_nodal.
+    void Remove_Zeroed_Rows(Teuchos::RCP<Matrix>& A, magnitudeType tol=1.0e-14);
 
 
     /** Initialize with matrices except the Jacobian (don't compute the preconditioner)
