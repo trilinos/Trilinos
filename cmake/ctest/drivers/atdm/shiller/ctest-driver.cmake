@@ -22,5 +22,9 @@ SET(CTEST_PARALLEL_LEVEL "16")  # Should be set to 32 if using only 1 thread?
 # No extra configure options set!
 SET(EXTRA_CONFIGURE_OPTIONS)
 
+# Must set the site name so that it does not change depending on what node
+# runs the build.
+SET(CTEST_SITE "hansen/shiller")
+
 # Run the genetic ATDM driver
 TRILINOS_SYSTEM_SPECIFIC_CTEST_DRIVER()
