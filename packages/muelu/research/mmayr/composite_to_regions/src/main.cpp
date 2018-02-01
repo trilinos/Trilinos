@@ -155,14 +155,13 @@ void sumInterfaceValues(std::vector<Teuchos::RCP<Epetra_Vector> >& regVec,
     const int maxRegPerProc, ///< max number of regions per proc [in]
     std::vector<Teuchos::RCP<Epetra_Map> > rowMapPerGrp,///< row maps in region layout [in]
     std::vector<Teuchos::RCP<Epetra_Map> > revisedRowMapPerGrp,///< revised row maps in region layout [in]
-    std::vector<Teuchos::RCP<Epetra_Import> > rowImportPerGrp, ///< row importer in region layout [in])
-    Epetra_CombineMode combineMode = Add
+    std::vector<Teuchos::RCP<Epetra_Import> > rowImportPerGrp ///< row importer in region layout [in])
     )
 {
   Teuchos::RCP<Epetra_Vector> compVec = Teuchos::rcp(new Epetra_Vector(*compMap, true));
   std::vector<Teuchos::RCP<Epetra_Vector> > quasiRegVec(maxRegPerProc);
   regionalToComposite(regVec, compVec, maxRegPerProc, rowMapPerGrp,
-      rowImportPerGrp, combineMode);
+      rowImportPerGrp, Epetra_AddLocalAlso);
 
   compositeToRegional(compVec, quasiRegVec, regVec, maxRegPerProc,
       rowMapPerGrp, revisedRowMapPerGrp, rowImportPerGrp);
@@ -204,7 +203,7 @@ std::vector<Teuchos::RCP<Epetra_Vector> > computeResidual(
   }
 
   sumInterfaceValues(regRes, mapComp, maxRegPerProc, rowMapPerGrp,
-      revisedRowMapPerGrp, rowImportPerGrp, Epetra_AddLocalAlso);
+      revisedRowMapPerGrp, rowImportPerGrp);
 
   for (int j = 0; j < maxRegPerProc; j++) { // step 3
     int err = regRes[j]->Update(1.0, *regB[j], -1.0);
@@ -257,7 +256,7 @@ void jacobiIterate(const int maxIter,
     }
 
     sumInterfaceValues(regRes, mapComp, maxRegPerProc, rowMapPerGrp,
-        revisedRowMapPerGrp, rowImportPerGrp, Epetra_AddLocalAlso);
+        revisedRowMapPerGrp, rowImportPerGrp);
 
     for (int j = 0; j < maxRegPerProc; j++) { // step 3
       int err = regRes[j]->Update(1.0, *regB[j], -1.0);
@@ -1526,7 +1525,7 @@ int main(int argc, char *argv[]) {
           }
           sumInterfaceValues(coarseRegB, coarseCompRowMap, maxRegPerProc,
               coarseQuasiRowMapPerGrp, coarseRowMapPerGrp,
-              coarseRowImportPerGrp, Epetra_AddLocalAlso);
+              coarseRowImportPerGrp);
 
           // -----------------------------------------------------------------------
           // Perform region-wise Jacobi on coarse level
