@@ -81,4 +81,8 @@ SET( EXTRA_CONFIGURE_OPTIONS
 SET(CTEST_TEST_TYPE Nightly)
 SET(Trilinos_TRACK ATDM)
 
+# Must set the site name so that it does not change depending on what node
+# runs the build.
+SET(CTEST_SITE "sems-rhel6")
+
 TRIBITS_CTEST_DRIVER()
