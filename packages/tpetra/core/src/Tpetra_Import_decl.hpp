@@ -223,10 +223,12 @@ namespace Tpetra {
     /// transpose of a sparse matrix.
     Import (const Export<LocalOrdinal,GlobalOrdinal,Node>& exporter);
 
-    /// \bief Full Expert constructor
-    /// Requirements: source and target maps are fully correct
+    /// \brief Expert constructor.
     ///
-
+    /// \warning THIS IS FOR EXPERT USERS ONLY.  More specifically,
+    ///   this constructor exists for MueLu (algebraic multigrid)
+    ///   setup ONLY.  If you aren't a MueLu or Tpetra developer,
+    ///   DON'T USE THIS.
     Import (const Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> >& source,
             const Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> >& target,
             Teuchos::Array<int> & userRemotePIDs,
@@ -236,7 +238,6 @@ namespace Tpetra {
             const bool useRemotePIDs,
             const Teuchos::RCP<Teuchos::ParameterList>& plist = Teuchos::null,
             const Teuchos::RCP<Teuchos::FancyOStream>& out = Teuchos::null);
-
 
     //! Destructor.
     virtual ~Import ();
