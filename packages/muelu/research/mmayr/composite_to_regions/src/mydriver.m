@@ -238,6 +238,7 @@ waitForRmDataFiles(nProcs);
 send('MakeGrpRegRowMaps',nProcs);
 send('MakeGrpRegColMaps',nProcs);
 send('MakeExtendedGrpRegMaps',nProcs);
+send('TestRegionalToComposite',nProcs);
 send('MakeQuasiRegionMatrices',nProcs);
 % send('PrintQuasiRegionMatrices',nProcs);
 % send('PrintGrpRegDomMaps',nProcs);
