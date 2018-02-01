@@ -1169,7 +1169,7 @@ int main(int argc, char *argv[]) {
       Teuchos::RCP<Epetra_Vector> diffY = Teuchos::rcp(new Epetra_Vector(*mapComp, true));
       diffY->Update(1.0, *compY, -1.0, *regYComp, 0.0);
 
-      diffY->Print(std::cout);
+//      diffY->Print(std::cout);
 
       sleep(8);
 
