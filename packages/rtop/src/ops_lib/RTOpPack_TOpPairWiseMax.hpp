@@ -66,7 +66,7 @@ private:
 };
 
 
-/** \brief Pair-wise Maximum transformation operator: <tt>z0[i] = max(
+/** \brief Pair-wise Maximum transformation operator: <tt>z0[i] = alpha *max(
  * v0[i],v1[i]), i=0...n-1</tt>.
  */
 template<class Scalar>
