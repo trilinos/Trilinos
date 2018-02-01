@@ -342,6 +342,8 @@ namespace MueLuTests {
         LO numRanks = comm->getSize();
         LO myRank   = comm->getRank();
 
+        meshData.resize(10*numRanks);
+
         ////////////////////////////////////
         //                                //
         //   Step 1: Compute map layout   //

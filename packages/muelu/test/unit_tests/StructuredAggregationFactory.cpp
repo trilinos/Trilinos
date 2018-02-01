@@ -56,8 +56,45 @@
 #include "MueLu_RAPFactory.hpp"
 #include "MueLu_SmootherFactory.hpp"
 #include "MueLu_CoarseMapFactory.hpp"
+#include "MueLu_LocalLexicographicIndexManager.hpp"
 
 namespace MueLuTests {
+
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(StructuredAggregation, CreateIndexManager, Scalar, LocalOrdinal, GlobalOrdinal, Node)
+  {
+#   include "MueLu_UseShortNames.hpp"
+    MUELU_TESTING_SET_OSTREAM;
+    MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Node);
+
+    out << "version: " << MueLu::Version() << std::endl;
+
+    // Set global geometric data
+    LO numDimensions = 1;
+    Array<GO> meshData;
+    Array<LO> lNodesPerDir(3);
+    Array<GO> gNodesPerDir(3);
+    for(int dim = 0; dim < 3; ++dim) {
+      if(dim < numDimensions) {
+        // Use more nodes in 1D to have a reasonable number of nodes per procs
+        gNodesPerDir[dim] = 20;
+      } else {
+        gNodesPerDir[dim] = 1;
+      }
+    }
+
+    RCP<const Xpetra::MultiVector<double,LO,GO,NO> > Coordinates =
+      TestHelpers::TestFactory<SC,LO,GO,NO>::BuildGeoCoordinates(numDimensions, gNodesPerDir,
+                                                                 lNodesPerDir, meshData,
+                                                                 "Local Lexicographic");
+
+    RCP<const Teuchos::Comm<int> > comm = Coordinates->getMap()->getComm();
+    Array<LO> coarseRate(1);
+    coarseRate[0] = 3;
+    MueLu::LocalLexicographicIndexManager<LO,GO,NO> myIndexManager(numDimensions, comm->getRank(),
+                                                            comm->getSize(), gNodesPerDir,
+                                                            lNodesPerDir, coarseRate, meshData);
+
+  }
 
   TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(StructuredAggregation, MakeStructuredTentative, Scalar, LocalOrdinal, GlobalOrdinal, Node)
   {
@@ -69,7 +106,6 @@ namespace MueLuTests {
     typedef TestHelpers::TestFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node> test_factory;
 
     out << "version: " << MueLu::Version() << std::endl;
-    out << "Test QR with user-supplied nullspace" << std::endl;
 
     Level fineLevel, coarseLevel;
     test_factory::createTwoLevelHierarchy(fineLevel, coarseLevel);
@@ -155,7 +191,8 @@ namespace MueLuTests {
   } //MakeTentative
 
 #  define MUELU_ETI_GROUP(Scalar, LO, GO, Node) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(StructuredAggregation,MakeStructuredTentative,Scalar,LO,GO,Node)
+      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(StructuredAggregation,MakeStructuredTentative,Scalar,LO,GO,Node) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(StructuredAggregation,CreateIndexManager,Scalar,LO,GO,Node)
 
 #include <MueLu_ETI_4arg.hpp>
 
