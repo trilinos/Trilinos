@@ -90,7 +90,9 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
   // =========================================================================
 
   bool runHeavyTests = false;
+  std::string xmlForceFile = "";
   clp.setOption("heavytests", "noheavytests",  &runHeavyTests, "whether to exercise tests that take a long time to run");
+  clp.setOption("xml", &xmlForceFile, "xml input file (useful for debugging)");
   clp.recogniseAllOptions(true);
   switch (clp.parse(argc,argv)) {
     case Teuchos::CommandLineProcessor::PARSE_HELP_PRINTED:        return EXIT_SUCCESS;
@@ -129,6 +131,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
   int numLists = dirList.size();
 
   bool failed = false;
+  bool jumpOut = false;
   Teuchos::Time timer("Interpreter timer");
   //double lastTime = timer.wallTime();
   for (int k = 0; k < numLists; k++) {
@@ -142,10 +145,25 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
       // Reset (potentially) cached value of the estimate
       A->SetMaxEigenvalueEstimate(-Teuchos::ScalarTraits<SC>::one());
 
-      std::string xmlFile  = dirList[k] + fileList[i];
-      std::string outFile  = outDir     + fileList[i];
-      std::string baseFile = outFile.substr(0, outFile.find_last_of('.'));
-      std::size_t found = baseFile.find("_np");
+      std::string xmlFile;
+      std::string outFile;
+      std::string baseFile;
+      std::size_t found;
+      if (xmlForceFile==""){
+        xmlFile  = dirList[k] + fileList[i];
+        outFile  = outDir     + fileList[i];
+        baseFile = outFile.substr(0, outFile.find_last_of('.'));
+        found = baseFile.find("_np");
+      } else {
+        xmlFile = xmlForceFile;
+        std::string dir = xmlForceFile.substr(0, xmlForceFile.find_last_of('/')+1);
+        dirList[k] = dir;
+        outFile = outDir + xmlForceFile.substr(xmlForceFile.find_last_of('/')+1, xmlForceFile.size());
+        baseFile = outFile.substr(0, outFile.find_last_of('.'));
+        found = baseFile.find("_np");
+        jumpOut = true;
+      }
+      
       if (numProc == 1 && found != std::string::npos) {
 #ifdef HAVE_MPI
         baseFile = baseFile.substr(0, found);
@@ -328,7 +346,11 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
         //std::cout.flags(ff); // reset flags to whatever they were prior to printing time
         std::cout << xmlFile << " : " << (ret ? "failed" : "passed") << std::endl;
       }
+      if (jumpOut)
+        break;
     }
+    if (jumpOut)
+      break;
   }
 
   if (myRank == 0)

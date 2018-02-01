@@ -262,11 +262,29 @@ namespace MueLu {
             "<Parameter name=\"number of equations\" type=\"int\" value=\"1\"/>"
           
             "<Parameter name=\"smoother: type\" type=\"string\" value=\"CHEBYSHEV\"/>"
-          
+
             "<Parameter name=\"multigrid algorithm\" type=\"string\" value=\"sa\"/>"
           
     "</ParameterList>"
   )
+("Poisson-2D-complex",
+
+    "<ParameterList name=\"MueLu\">"
+    
+            "<Parameter name=\"number of equations\" type=\"int\" value=\"1\"/>"
+          
+            "<Parameter name=\"smoother: type\" type=\"string\" value=\"RELAXATION\"/>"
+
+            "<ParameterList name=\"smoother: params\">"
+ 
+                    "<Parameter name=\"relaxation: type\" type=\"string\" value=\"Symmetric Gauss-Seidel\"/>"
+
+            "</ParameterList>"
+          
+            "<Parameter name=\"multigrid algorithm\" type=\"string\" value=\"sa\"/>"
+          
+    "</ParameterList>"
+  )                                                                                                                                        
 ("Poisson-3D",
 
     "<ParameterList name=\"MueLu\">"
@@ -274,6 +292,24 @@ namespace MueLu {
             "<Parameter name=\"number of equations\" type=\"int\" value=\"1\"/>"
           
             "<Parameter name=\"smoother: type\" type=\"string\" value=\"CHEBYSHEV\"/>"
+          
+            "<Parameter name=\"multigrid algorithm\" type=\"string\" value=\"sa\"/>"
+          
+    "</ParameterList>"
+  )
+("Poisson-3D-complex",
+
+    "<ParameterList name=\"MueLu\">"
+    
+            "<Parameter name=\"number of equations\" type=\"int\" value=\"1\"/>"
+          
+            "<Parameter name=\"smoother: type\" type=\"string\" value=\"RELAXATION\"/>"
+
+            "<ParameterList name=\"smoother: params\">"
+ 
+                    "<Parameter name=\"relaxation: type\" type=\"string\" value=\"Symmetric Gauss-Seidel\"/>"
+
+            "</ParameterList>"
           
             "<Parameter name=\"multigrid algorithm\" type=\"string\" value=\"sa\"/>"
           
@@ -291,6 +327,24 @@ namespace MueLu {
           
     "</ParameterList>"
   )
+("Elasticity-2D-complex",
+
+    "<ParameterList name=\"MueLu\">"
+    
+            "<Parameter name=\"number of equations\" type=\"int\" value=\"2\"/>"
+          
+            "<Parameter name=\"smoother: type\" type=\"string\" value=\"RELAXATION\"/>"
+ 
+            "<ParameterList name=\"smoother: params\">"
+ 
+                    "<Parameter name=\"relaxation: type\" type=\"string\" value=\"Symmetric Gauss-Seidel\"/>"
+
+            "</ParameterList>"
+          
+            "<Parameter name=\"multigrid algorithm\" type=\"string\" value=\"sa\"/>"
+          
+    "</ParameterList>"
+  )                                                                                                                                         
 ("Elasticity-3D",
 
     "<ParameterList name=\"MueLu\">"
@@ -303,6 +357,24 @@ namespace MueLu {
           
     "</ParameterList>"
   )
+("Elasticity-3D-complex",
+
+    "<ParameterList name=\"MueLu\">"
+    
+            "<Parameter name=\"number of equations\" type=\"int\" value=\"3\"/>"
+          
+            "<Parameter name=\"smoother: type\" type=\"string\" value=\"RELAXATION\"/>"
+ 
+            "<ParameterList name=\"smoother: params\">"
+ 
+                    "<Parameter name=\"relaxation: type\" type=\"string\" value=\"Symmetric Gauss-Seidel\"/>"
+
+            "</ParameterList>"
+          
+            "<Parameter name=\"multigrid algorithm\" type=\"string\" value=\"sa\"/>"
+          
+    "</ParameterList>"
+  )                                                                                                                                         
 ("MHD",
 
     "<ParameterList name=\"MueLu\">"
