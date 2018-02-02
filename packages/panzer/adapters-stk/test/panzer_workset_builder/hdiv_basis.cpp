@@ -299,7 +299,6 @@ namespace panzer {
     out <<  worksets[0].bases.size() << std::endl;
     
     const BasisValues2<double> & hdiv_basis_values = *worksets[0].bases[0];
-    const BasisValues2<double> & hcurl_basis_values = *worksets[0].bases[1];
     out << (*worksets[0].basis_names)[0]
         << " " << (*worksets[0].basis_names)[1] << std::endl;
 

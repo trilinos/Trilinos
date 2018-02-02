@@ -17,16 +17,16 @@ namespace mini_em {
     
   public:    
     
-    BCStrategy_Dirichlet_AuxConstant(const panzer::BC& bc, const Teuchos::RCP<panzer::GlobalData>& global_data);
+    BCStrategy_Dirichlet_AuxConstant(const panzer::BC& bc, const Teuchos::RCP<panzer::GlobalData>& /* global_data */);
     
     void setup(const panzer::PhysicsBlock& side_pb,
-	       const Teuchos::ParameterList& user_data);
+	       const Teuchos::ParameterList& /* user_data */);
     
     void buildAndRegisterEvaluators(PHX::FieldManager<panzer::Traits>& fm,
-				    const panzer::PhysicsBlock& pb,
-				    const panzer::ClosureModelFactory_TemplateManager<panzer::Traits>& factory,
-				    const Teuchos::ParameterList& models,
-				    const Teuchos::ParameterList& user_data) const;
+				    const panzer::PhysicsBlock& /* pb */,
+				    const panzer::ClosureModelFactory_TemplateManager<panzer::Traits>& /* factory */,
+				    const Teuchos::ParameterList& /* models */,
+				    const Teuchos::ParameterList& /* user_data */) const;
 
     void buildAndRegisterGatherScatterEvaluators(PHX::FieldManager<panzer::Traits>& fm,
                                                  const panzer::PhysicsBlock& side_pb,
