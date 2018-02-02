@@ -1,13 +1,13 @@
 /*
 //@HEADER
 // ***********************************************************************
-// 
-//        AztecOO: An Object-Oriented Aztec Linear Solver Package 
+//
+//        AztecOO: An Object-Oriented Aztec Linear Solver Package
 //                 Copyright (2002) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -35,8 +35,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
-// 
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+//
 // ***********************************************************************
 //@HEADER
 */
@@ -177,7 +177,7 @@ void AZ_read_update_funky(int *N_update, int *update[], int proc_config[],
     AZ_broadcast((char *) &pts_y , sizeof(int), proc_config, AZ_PACK);
     AZ_broadcast((char *) &pts_z , sizeof(int), proc_config, AZ_PACK);
     AZ_broadcast((char *) NULL   , 0          , proc_config, AZ_SEND);
- 
+
     total_pts_x = pts_x;
     total_pts_y = pts_y;
 
@@ -230,7 +230,7 @@ void AZ_read_update_funky(int *N_update, int *update[], int proc_config[],
     /* compute the number of elements per processor in each direction */
 
     *N_update = pts_x * pts_y * pts_z * chunk;
-    if (!AZ_using_fortran) 
+    if (!AZ_using_fortran)
        *update     = (int *) AZ_allocate((*N_update)*sizeof(int));
 
     /* compute the lower left corner and the upper right corner */
@@ -254,7 +254,7 @@ void AZ_read_update_funky(int *N_update, int *update[], int proc_config[],
       for (j = start_y; j < end_y; j++ ) {
         for (i = start_x; i < end_x; i++ ) {
           for (ii = 0; ii < chunk; ii++ ) {
-            pt_number = (i + j * total_pts_x + k * total_pts_x * total_pts_y) * 
+            pt_number = (i + j * total_pts_x + k * total_pts_x * total_pts_y) *
                             chunk + ii;
             (*update)[count++] = pt_number;
           }
@@ -292,7 +292,7 @@ void AZ_read_update_funky(int *N_update, int *update[], int proc_config[],
     *N_update = t1*chunk;
     t2   *= chunk;
 
-    if (!AZ_using_fortran) 
+    if (!AZ_using_fortran)
        *update = (int *) AZ_allocate((*N_update+1)*sizeof(int));
 
     if (*update == NULL) {
@@ -413,7 +413,7 @@ void AZ_read_update_funky(int *N_update, int *update[], int proc_config[],
        if (proc == 0) {
           (void) fprintf(stderr,"Error: In AZ_read_update(), the '.update'");
           (void) fprintf(stderr,"file does not contain\n       one ");
-          (void) fprintf(stderr,"occurance of row 0. Make sure that rows are");
+          (void) fprintf(stderr,"occurrence of row 0. Make sure that rows are");
           (void) fprintf(stderr," numbered\n       from 0 to n-1.\n");
        }
        exit(1);

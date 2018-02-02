@@ -41,7 +41,7 @@
 
 #include "Teuchos_StandardParameterEntryValidators.hpp"
 #include "Teuchos_as.hpp"
-
+#include <fstream>
 
 std::string Teuchos::getVerbosityLevelParameterValueName(
   const EVerbosityLevel verbLevel

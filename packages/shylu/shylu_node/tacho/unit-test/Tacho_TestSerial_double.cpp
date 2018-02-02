@@ -6,6 +6,7 @@
 typedef Kokkos::DefaultHostExecutionSpace HostSpaceType;
 typedef Kokkos::Serial DeviceSpaceType;
 typedef double ValueType;
+typedef double MagnitudeType;
 
 static const std::string MM_TEST_FILE="test_double";
 

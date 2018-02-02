@@ -81,7 +81,6 @@ readProblemParams(const std::string xmlFileName,
   return probParamsRCP;
 }
 
-
 // =========== //
 // main driver //
 // =========== //
@@ -124,7 +123,6 @@ int main(int argc, char* argv[])
   if (comm->getSize() > 1)
     MueLu::Utilities<SC,LO,GO,NO>::PauseForDebugger();
 
-
   // wrap the output stream
   Teuchos::RCP<Teuchos::FancyOStream> out = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
 
@@ -139,7 +137,7 @@ int main(int argc, char* argv[])
     probParams->print(*out);
 
   const std::string& mappingFileName = probParams->get<std::string>("mapping file name");
-//  const std::string& matrixFileName = probParams->get<std::string>("matrix file name");
+  const std::string& matrixFileName = probParams->get<std::string>("matrix file name");
 
   // create the RegionManager to deal with node-to-region mappings
   Teuchos::RCP<RegionManager> regionManager = Teuchos::rcp(new RegionManager(mappingFileName, comm));
@@ -150,9 +148,10 @@ int main(int argc, char* argv[])
 ////  regionManager->printNumRegionsPerProc(*out);
 ////  regionManager->printProcsPerRegion(*out);
 //
-//
+
 //  // create the RegionMatrix to access the assembled, the composite, and the regional matrix
 //  Teuchos::RCP<RegionMatrix> regionMatrix = Teuchos::rcp(new RegionMatrix(matrixFileName, regionManager, comm));
+//  regionMatrix->printCompositeMatrix(*out, Teuchos::VERB_EXTREME);
 
 #ifdef HAVE_MPI
   MPI_Finalize();

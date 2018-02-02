@@ -123,11 +123,8 @@ namespace MueLu {
     GO                     indexBase = rowMap->getIndexBase();
     Xpetra::UnderlyingLib  lib       = rowMap->lib();
 
-    // NOTE: Teuchos::MPIComm::duplicate() calls MPI_Bcast inside, so this is
-    // a synchronization point. However, as we do MueLu_sumAll afterwards anyway, it
-    // does not matter.
     RCP<const Teuchos::Comm<int> > origComm = rowMap->getComm();
-    RCP<const Teuchos::Comm<int> > comm     = origComm->duplicate();
+    RCP<const Teuchos::Comm<int> > comm     = origComm;
 
     int myRank   = comm->getRank();
     int numProcs = comm->getSize();

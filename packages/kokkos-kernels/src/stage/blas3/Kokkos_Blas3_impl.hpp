@@ -51,7 +51,7 @@
 #ifdef KOKKOS_USE_MKL
 #include <mkl.h>
 #endif
-#ifdef KOKKOS_HAVE_CUDA
+#ifdef KOKKOS_ENABLE_CUDA
 #include <cublas.h>
 #endif
 namespace KokkosBlas {
@@ -1462,7 +1462,7 @@ cblas_zgemm (CblasColMajor, transA, transB, m, n, k, alpha, A.ptr_on_device(), l
 
 #endif
 
-#ifdef KOKKOS_HAVE_CUDA
+#ifdef KOKKOS_ENABLE_CUDA
 
 struct MultiGemm<double,double,double,Kokkos::Cuda,Kokkos::LayoutRight,Kokkos::LayoutRight,Kokkos::LayoutRight,int,2>{
         static void GEMM(const char transA, const char transB, double alpha,

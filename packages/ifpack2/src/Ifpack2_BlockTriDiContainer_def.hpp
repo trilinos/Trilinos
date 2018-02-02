@@ -63,6 +63,8 @@
 
 #include "Ifpack2_BlockTriDiContainer_decl.hpp"
 
+#include <memory>
+
 //todo Move to KokkosKernels.
 namespace KokkosBatched {
 namespace Details {
@@ -103,7 +105,7 @@ inline static __m256d add_radial_impl (const __m256d& a, const double r) {
 
 #if defined(__AVX__) || defined(__AVX2__)
 template<typename SpT, typename ScalarType>
-inline 
+inline
 static Vector<VectorTag<AVX<double,SpT>,4> >
 add_radial (Vector<VectorTag<AVX<double,SpT>,4> > const& a, const ScalarType& r) {
   return add_radial_impl(a, r);
@@ -112,7 +114,7 @@ add_radial (Vector<VectorTag<AVX<double,SpT>,4> > const& a, const ScalarType& r)
 
 #if defined(__AVX512F__)
 template<typename SpT, typename ScalarType>
-inline 
+inline
 static Vector<VectorTag<AVX<double,SpT>,8> >
 add_radial (Vector<VectorTag<AVX<double,SpT>,8> > const& a, const ScalarType& r) {
   // AVX512F doesn't support _mm512_{and,or,andnot}_pd, so do two 256-bit
@@ -152,9 +154,9 @@ Serial_LU_Internal_Unblocked_invoke(
     value_type
       *__restrict__ a21  = A+(p+1)*as0+(p  )*as1,
       *__restrict__ A22  = A+(p+1)*as0+(p+1)*as1;
-        
+
     for (int i=0;i<iend;++i) {
-      // a21[i*as0] *= inv_alpha11; 
+      // a21[i*as0] *= inv_alpha11;
       a21[i*as0] /= alpha11;
       for (int j=0;j<jend;++j)
         A22[i*as0+j*as1] -= a21[i*as0] * a12t[j*as1];
@@ -699,7 +701,7 @@ public:
     TEUCHOS_TEST_FOR_EXCEPT_MSG(bs > bufsz, "bufsz is too small; contact the developer.");
     Kokkos::parallel_for(Kokkos::RangePolicy<typename MvView::execution_space>(0, nparts), *this);
   }
-  
+
   KOKKOS_INLINE_FUNCTION void operator() (const Int& partidx) const {
     Scalar ybuf[bufsz];
     const Int pri0 = part2packrowidx0(partidx);
@@ -1008,12 +1010,12 @@ public: // Intended to be private, but public for Cuda.
   class SetTridiagsToI {
     Tridiags btdm;
     LOList packptr;
-    
+
   public:
     SetTridiagsToI (const Tridiags& btdm_, const LOList& packptr_)
       : btdm(btdm_), packptr(packptr_)
     {}
-    
+
     KOKKOS_INLINE_FUNCTION void operator() (const LO& k) const {
       const Size is = btdm.pack_td_ptr(packptr(k)), ie = btdm.pack_td_ptr(packptr(k+1));
       const LO bs = btdm.values.extent(1);
@@ -1079,9 +1081,9 @@ public: // Intended to be private, but public for Cuda.
                const Teuchos::RCP<const map_type>& tgt_map, const LO bsz) {
       bsz_ = bsz;
       comm_ = tgt_map->getComm();
-      
+
       const import_type import(src_map, tgt_map);
-      
+
       { // Send and recv buffers by PID.
         Tpetra::Distributor& d = import.getDistributor();
         init(d.getLengthsTo(), sos_);
@@ -1247,7 +1249,7 @@ public: // Intended to be private, but public for Cuda.
 
   public:
     AsyncableImport (const Teuchos::RCP<const map_type>& src_map,
-                     const Teuchos::RCP<const map_type>& tgt_map, const LO block_size) {     
+                     const Teuchos::RCP<const map_type>& tgt_map, const LO block_size) {
       init(src_map, tgt_map, block_size);
     }
 
@@ -1318,7 +1320,7 @@ public: // Intended to be private, but public for Cuda.
     }
 
     const Teuchos::RCP<const Teuchos::Comm<int> >& get_comm () const { return comm_; }
-    
+
     const MvView& get_mv_remote () const { return X_remote_; }
   };
 
@@ -1332,10 +1334,10 @@ public: // Intended to be private, but public for Cuda.
     MPI_Request mpi_request_;
     MPI_Comm comm_;
 #endif
-    
+
   public:
     typedef std::shared_ptr<NormManager> Ptr;
-    
+
     NormManager (const Teuchos::RCP<const Teuchos::Comm<int> >& comm) {
       sweep_step_ = 1;
       n0_ = 0;
@@ -1472,7 +1474,7 @@ public: // Intended to be private, but public for Cuda.
     ConstUnmanaged<LOList> part2rowidx0, part2packrowidx0, lclrow, packptr;
     bool y_is_zero;
     magnitude_type* norm2sqr;
-    
+
     void init (const mv_type& mv_, const typename Tridiags::PackedMultiVector& pmv_,
                const Enum& side_, const impl_scalar_type& damping_factor_, const LOList& part2rowidx0_,
                const LOList& part2packrowidx0_, const LOList& lclrow_, const LOList& packptr_,
@@ -1511,7 +1513,7 @@ public: // Intended to be private, but public for Cuda.
     // For || reduce.
     typedef magnitude_type value_type[];
     int value_count;
-    
+
     // Packed multivector <- Tpetra::MultiVector.
     PermuteAndRepack (const mv_type& mv_, typename Tridiags::PackedMultiVector& pmv_,
                       const LOList& part2rowidx0_, const LOList& part2packrowidx0_,
@@ -1748,7 +1750,7 @@ public: // Intended to be private, but public for Cuda.
         i0 += 3;
       }
     }
-    
+
   public:
     ExtractAndFactorizeTridiags (const Tridiags& btdm_, const LOList& partptr_, const LOList& lclrow_,
                                  const LOList& packptr_, const CrsGraphRowMap& A_rowptr_,
@@ -1800,7 +1802,7 @@ public: // Intended to be private, but public for Cuda.
       kbe::SerialTrsv<UploType, kbe::Trans::NoTranspose, DiagType, kbe::Algo::Trsv::Unblocked>
         ::invoke(a, A, X);
     }
-    
+
     template <typename Tag, typename UploType, typename DiagType,
               typename Scalar, typename MatA, typename MatX>
     KOKKOS_FORCEINLINE_FUNCTION static void
@@ -2051,7 +2053,7 @@ public: // Intended to be private, but public for Cuda.
         run<MatTag>();
     }
   };
-  
+
 private:
 
   template <typename T> static KOKKOS_INLINE_FUNCTION constexpr T square (const T& x) { return x*x; }
@@ -2441,7 +2443,7 @@ public:
 
     std::vector<LO> col2row;
     find_col2row(col2row);
-    
+
     col_contiguous_ = col2row[0] == 0;
     if (col_contiguous_) {
       for (LO lr = 1; lr < nrows; ++lr)
@@ -2685,7 +2687,7 @@ public:
           compute_b_minus_Rx(X, *Y_remote_, Y);
           // pmv := y(lclrow).
           PermuteAndRepack(Y, pmv_, part2rowidx0_, part2packrowidx0_, lclrow_, packptr_).run();
-          
+
         } else {
 
           // Fused y := x - R y and pmv := y(lclrow).
@@ -2709,17 +2711,17 @@ public:
             compute_b_minus_Rx(X, Y.template getLocalView<tpetra_device_type>(),
                                async_import_->get_mv_remote(), pmv_);
           }
-          
+
         }
       }
 
       // pmv := inv(D) pmv.
       Solve<layout_type, void>(btdm_, packptr_, part2packrowidx0_, pmv_).run();
-      
+
       // y(lclrow) = (b - a) y(lclrow) + a pmv, with b = 1 always.
       PermuteAndRepack(pmv_, Y, damping_factor, part2rowidx0_, part2packrowidx0_, lclrow_, packptr_,
                        y_is_zero, do_norm ? norm_mgr_->get_buffer() : nullptr).run();
-      
+
       if (do_norm) {
         if (sweep + 1 == max_num_sweeps) {
           norm_mgr_->ireduce(sweep, true);

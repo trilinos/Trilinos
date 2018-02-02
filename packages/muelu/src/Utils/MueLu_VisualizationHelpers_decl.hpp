@@ -54,6 +54,8 @@
 #include "MueLu_VisualizationHelpers_fwd.hpp"
 #include "MueLu_GraphBase.hpp"
 
+#include <list>
+
 namespace MueLu {
 
   class Level;

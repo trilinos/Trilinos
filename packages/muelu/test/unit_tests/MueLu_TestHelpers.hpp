@@ -47,6 +47,7 @@
 #define MUELU_TEST_HELPERS_H
 #include <stdio.h> //DEBUG
 #include <string>
+#include <set>
 #ifndef _MSC_VER
 #include <dirent.h>
 #endif

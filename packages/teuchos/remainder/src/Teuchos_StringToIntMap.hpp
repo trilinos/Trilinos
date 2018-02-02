@@ -43,6 +43,8 @@
 #define TEUCHOS_STRING_TO_INT_MAP_HPP
 
 #include "Teuchos_Assert.hpp"
+#include <map>
+#include <string>
 
 namespace Teuchos {
 

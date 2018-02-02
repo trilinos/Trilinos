@@ -46,7 +46,7 @@
 #include "Teuchos_GlobalMPISession.hpp"
 #include "Teuchos_oblackholestream.hpp"
 #include "Teuchos_as.hpp"
-
+#include <deque>
 
 namespace Teuchos {
 
@@ -363,7 +363,7 @@ private:
      out << "This is indented!\n";
      ...
    }
-   \endcode  
+   \endcode
  *
  * In addition to indenting output, this stream object can also print various
  * types of information at the beginning of each line. The type of information

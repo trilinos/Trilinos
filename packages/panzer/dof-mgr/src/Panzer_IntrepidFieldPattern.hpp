@@ -52,6 +52,7 @@
 
 #include "Phalanx_KokkosDeviceTypes.hpp"
 #include "Teuchos_RCP.hpp"
+#include <set>
 
 namespace panzer {
 
@@ -61,7 +62,7 @@ namespace panzer {
   class Intrepid2FieldPattern : public FieldPattern {
   public:
     Intrepid2FieldPattern(const Teuchos::RCP< Intrepid2::Basis<PHX::Device,double,double> > &intrepidBasis);
-    
+
     virtual int getSubcellCount(int dim) const;
     virtual const std::vector<int> & getSubcellIndices(int dim, int cellIndex) const;
     virtual int getDimension() const;
@@ -73,7 +74,7 @@ namespace panzer {
 
     /** For a given sub cell find the set of sub cells at all dimensions contained
      * internally.  This is inclusive, so that (dim,subCell) will be in the set.
-     * 
+     *
      * \param[in] cellTopo Parent cell topology being used.
      * \param[in] dim      Dimension of sub cell
      * \param[in] subCell  Ordinal of sub cell at specified dimension
@@ -110,7 +111,7 @@ namespace panzer {
     static void getSubcellNodes(const shards::CellTopology & cellTopo,unsigned dim,unsigned subCell,
                                 std::vector<unsigned> & nodes);
 
-    /** \brief Does this field pattern support interpolatory coordinates? 
+    /** \brief Does this field pattern support interpolatory coordinates?
      *
      * If this method returns true then <code>getInterpolatoryCoordinates</code> will
      * succeed, otherwise it will throw.

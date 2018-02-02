@@ -52,6 +52,7 @@
 #include "Teuchos_DataAccess.hpp"
 #include "Teuchos_ConfigDefs.hpp"
 #include "Teuchos_Assert.hpp"
+#include <vector>
 
 /*! \class Teuchos::SerialSymDenseMatrix
     \brief This class creates and provides basic support for symmetric, positive-definite dense matrices of templated type.

@@ -49,7 +49,7 @@
 #define PDEOPT_TOOLS_BOUNDARY_CELLS_HPP
 
 #include "Intrepid_FieldContainer.hpp"
-#include "Teuchos_RCP.hpp"
+#include "ROL_Ptr.hpp"
 #include <vector>
 
 enum EBoundaryType {
@@ -66,14 +66,14 @@ private:
   const int boundaryID_;
   const EBoundaryType boundaryType_;
   const std::vector<int> localCellIndex_;
-  const Teuchos::RCP<Intrepid::FieldContainer<Real> > cellNodes_;
+  const ROL::Ptr<Intrepid::FieldContainer<Real> > cellNodes_;
   const int localCellSideID_;
 
 public:
   BoundaryCells(const int &boundaryID,
                 const EBoundaryType &boundaryType,
                 const std::vector<int> &localCellIndex,
-                const Teuchos::RCP<Intrepid::FieldContainer<Real> > &cellNodes,
+                const ROL::Ptr<Intrepid::FieldContainer<Real> > &cellNodes,
                 const int &localCellSideID)
     : boundaryID_(boundaryID),
       boundaryType_(boundaryType),
@@ -93,7 +93,7 @@ public:
     return localCellIndex_; 
   }
 
-  const Teuchos::RCP<Intrepid::FieldContainer<Real> > getCellNodes(void) const {
+  const ROL::Ptr<Intrepid::FieldContainer<Real> > getCellNodes(void) const {
     return cellNodes_; 
   }
 

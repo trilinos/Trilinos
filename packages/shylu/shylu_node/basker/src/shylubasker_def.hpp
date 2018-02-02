@@ -638,7 +638,7 @@ namespace BaskerNS
 */
 
     if ( btf_nblks > 1 ) { //non-single block case
-    #ifdef KOKKOS_HAVE_OPENMP
+    #ifdef KOKKOS_ENABLE_OPENMP
     #pragma omp parallel for
     #endif
       for( Int i = 0; i < nnz; ++i ) {
@@ -663,7 +663,7 @@ namespace BaskerNS
     } //end if
     else if ( btf_nblks == 1 )
     {
-    #ifdef KOKKOS_HAVE_OPENMP
+    #ifdef KOKKOS_ENABLE_OPENMP
     #pragma omp parallel for
     #endif
       for( Int i = 0; i < nnz; ++i ) {
@@ -928,7 +928,7 @@ namespace BaskerNS
 
     //Next test if Kokkos has that many threads!
     //This is a common mistake in mpi-based apps
-    #ifdef KOKKOS_HAVE_OPENMP
+    #ifdef KOKKOS_ENABLE_OPENMP
     int check_value = Kokkos::OpenMP::max_hardware_threads();
     if(nthreads > check_value)
     {

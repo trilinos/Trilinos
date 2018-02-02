@@ -29,6 +29,8 @@ namespace Test {
 
     Kokkos::fill_random(b_a,rand_pool,ScalarA(10));
 
+    Kokkos::fence();
+
     Kokkos::deep_copy(h_b_a,b_a);
 
     typename ViewTypeA::const_type c_a = a;
@@ -68,6 +70,8 @@ namespace Test {
     Kokkos::Random_XorShift64_Pool<typename Device::execution_space> rand_pool(13718);
 
     Kokkos::fill_random(b_a,rand_pool,ScalarA(10));
+
+    Kokkos::fence();
 
     Kokkos::deep_copy(h_b_a,b_a);
 

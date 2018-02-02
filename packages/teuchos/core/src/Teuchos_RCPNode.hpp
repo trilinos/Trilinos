@@ -132,6 +132,7 @@ public:
       // Should never get here!
 #ifdef TEUCHOS_DEBUG
       TEUCHOS_TEST_FOR_EXCEPT(true);
+      return "";
 #else
       return "";
 #endif
@@ -585,7 +586,7 @@ public:
   ~RCPNodeTmpl()
     {
 #ifdef TEUCHOS_DEBUG
-      TEUCHOS_TEST_FOR_EXCEPTION( ptr_!=0, std::logic_error,
+      TEUCHOS_TEST_FOR_TERMINATION( ptr_!=0,
         "Error, the underlying object must be explicitly deleted before deleting"
         " the node object!" );
 #endif

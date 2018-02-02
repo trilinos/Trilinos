@@ -77,6 +77,7 @@ namespace Tacho {
     ordinal_type _serial_thres_size;    // serialization threshold size
     ordinal_type _mb;                   // block size for byblocks algorithms
     ordinal_type _nb;                   // panel size for panel algorithms
+    ordinal_type _front_update_mode;    // front update mode 0 - lock, 1 - atomic
 
     // parallelism and memory constraint is made via this parameter
     ordinal_type _max_num_superblocks;  // # of superblocks in the memoyrpool
@@ -90,7 +91,8 @@ namespace Tacho {
         _small_problem_thres(1024),
         _serial_thres_size(-1),
         _mb(-1),
-        _nb(-1) {}
+        _nb(-1),
+        _front_update_mode(-1) {}
 
     Solver(const Solver &b) = default;
 
@@ -108,6 +110,9 @@ namespace Tacho {
     }
     void setPanelsize(const ordinal_type nb = -1) {
       _nb = nb;
+    }
+    void setFrontUpdateMode(const ordinal_type front_update_mode = 1) {
+      _front_update_mode = front_update_mode;
     }
     void setMaxNumberOfSuperblocks(const ordinal_type max_num_superblocks = -1) {
       _max_num_superblocks = max_num_superblocks;
@@ -253,6 +258,11 @@ namespace Tacho {
           _max_num_superblocks = 16;
         }
         _N.setMaxNumberOfSuperblocks(_max_num_superblocks);
+
+        if (_front_update_mode < 0) { // set default values
+          _front_update_mode = 1; // atomic is default
+        }
+        _N.setFrontUpdateMode(_front_update_mode);
 
         const ordinal_type nthreads = device_exec_space::thread_pool_size(0);
         if (nthreads == 1) {

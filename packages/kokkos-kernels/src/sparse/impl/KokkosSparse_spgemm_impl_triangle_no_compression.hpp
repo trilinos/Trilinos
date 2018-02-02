@@ -211,7 +211,7 @@ struct KokkosSPGEMM
     case KokkosKernels::Impl::Exec_QTHREADS:
       return Kokkos::Qthread::hardware_thread_id();
 #endif
-#if defined( KOKKOS_HAVE_CUDA )
+#if defined( KOKKOS_ENABLE_CUDA )
     case KokkosKernels::Impl::Exec_CUDA:
       return row_index;
 #endif
@@ -1290,7 +1290,7 @@ void KokkosSPGEMM
   }
 
 
-#if defined( KOKKOS_HAVE_CUDA )
+#if defined( KOKKOS_ENABLE_CUDA )
   size_t free_byte ;
   size_t total_byte ;
   cudaMemGetInfo( &free_byte, &total_byte ) ;

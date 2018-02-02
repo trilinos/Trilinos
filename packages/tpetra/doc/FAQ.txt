@@ -1,6 +1,6 @@
 #+TITLE: Frequently asked questions (FAQ) about Tpetra
 #+AUTHOR: Mark Hoemmen
-#+DATE: Time-stamp: "2017-09-30 21:57:31 mhoemme"
+#+DATE: Time-stamp: "2017-12-14 09:39:50 mhoemme"
 
 * If this is just a text file, why does it have strange mark-up?
 
@@ -329,14 +329,18 @@ rules to decide which execution space to use by default:
   - Set ~Tpetra_INST_PTHREAD=ON~ to enable ~Kokkos::Threads~
   - Set ~Tpetra_INST_SERIAL=ON~ to enable ~Kokkos::Serial~
 
-** Why is performance bad when I use both ~Kokkos::OpenMP~ and ~Kokkos::Threads~?
+** Why does Kokkos forbid enabling both OpenMP and Pthreads?
 
-Please don't do that.  ~Kokkos::Threads~ uses Pthreads; OpenMP uses
-its own threads.  The two sets of worker threads fight over hardware
-resources.  As soon as you start up either of these execution spaces
-in the same executable, it dominates the hardware and makes life hard
-for the other one.  Pick one of these two (we prefer OpenMP) and stick
-to it.
+As of Dec 2017, Kokkos forbids, at configure time, enabling both
+~Kokkos::OpenMP~ (OpenMP back-end) and ~Kokkos::Threads~ (Pthreads
+back-end).  This would be a bad idea anyway, because using both
+execution spaces at the same time would result in very poor
+performance.  This is because ~Kokkos::Threads~ uses Pthreads; OpenMP
+uses its own threads.  The two sets of worker threads fight over
+hardware resources.  As soon as you start up either of these execution
+spaces in the same executable, it dominates the hardware and makes
+life hard for the other one.  Pick one of these two (we prefer OpenMP)
+and stick to it.
 
 ** What GlobalOrdinal (GO) types does Tpetra allow?
 

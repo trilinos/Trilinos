@@ -27,7 +27,8 @@ typedef DenseMatrixView<DenseMatrixViewHostType,DeviceSpaceType> DenseMatrixOfBl
 
 TEST( DenseByBlocks, chol ) {
   const ordinal_type m = 100, mb = 32;
-
+  
+  typedef ArithTraits<ValueType> ats;
   Kokkos::View<ValueType*,HostSpaceType> a("a", m*m), a1("a1", m*m), a2("a2", m*m);
   DenseMatrixViewHostType A;
 
@@ -58,10 +59,10 @@ TEST( DenseByBlocks, chol ) {
 
   // temporary testing ldl as dummy
   {
-    double a[10][10], work[10][10];
+    double aa[10][10], work[10][10];
     int ipiv[10], info;
-    Lapack<double>::sytrf('U', 10, &a[0][0], 10, &ipiv[0], &work[0][0], 100, &info);
-    printf("ldl tested\n");
+    Lapack<double>::sytrf('U', 10, &aa[0][0], 10, &ipiv[0], &work[0][0], 100, &info);
+    //printf("ldl tested\n");
   }
 
   // test: chol by blocks with attached base buffer
@@ -112,8 +113,8 @@ TEST( DenseByBlocks, chol ) {
   {
     double diff = 0.0, norm = 0.0;
     for (ordinal_type p=0;p<(m*m);++p) {
-      norm += real(a(p)*conj(a(p)));
-      diff += real((a(p) - a1(p))*conj(a(p) - a1(p)));
+      norm += ats::real(a(p)*ats::conj(a(p)));
+      diff += ats::real((a(p) - a1(p))*ats::conj(a(p) - a1(p)));
     }
     
     const double eps = std::numeric_limits<double>::epsilon()*100;
@@ -150,8 +151,8 @@ TEST( DenseByBlocks, chol ) {
   {
     double diff = 0.0, norm = 0.0;
     for (ordinal_type p=0;p<(m*m);++p) {
-      norm += real(a(p)*conj(a(p)));
-      diff += real((a(p) - a2(p))*conj(a(p) - a2(p)));
+      norm += ats::real(a(p)*ats::conj(a(p)));
+      diff += ats::real((a(p) - a2(p))*ats::conj(a(p) - a2(p)));
     }
     
     const double eps = std::numeric_limits<double>::epsilon()*100;
@@ -161,6 +162,8 @@ TEST( DenseByBlocks, chol ) {
 }
 
 TEST( DenseByBlocks, gemm ) {
+  typedef ArithTraits<ValueType> ats;
+
   double alpha = 2.0, beta = 0.5;
   const ordinal_type m = 100, n = 100, k = 100, mb = 32;
 
@@ -180,9 +183,9 @@ TEST( DenseByBlocks, gemm ) {
 
     Random<ValueType> random;
     auto randomize = [&](const DenseMatrixViewHostType &mat) {
-      const ordinal_type m = mat.dimension_0(), n = mat.dimension_1();
-      for (ordinal_type j=0;j<n;++j)
-        for (ordinal_type i=0;i<m;++i)
+      const ordinal_type mm = mat.dimension_0(), nn = mat.dimension_1();
+      for (ordinal_type j=0;j<nn;++j)
+        for (ordinal_type i=0;i<mm;++i)
           mat(i,j) = random.value();
     };
     randomize(A);
@@ -272,8 +275,8 @@ TEST( DenseByBlocks, gemm ) {
   {
     double diff = 0.0, norm = 0.0;
     for (ordinal_type p=0;p<(m*m);++p) {
-      norm += real(c(p)*conj(c(p)));
-      diff += real((c(p) - c1(p))*conj(c(p) - c1(p)));
+      norm += ats::real(c(p)*ats::conj(c(p)));
+      diff += ats::real((c(p) - c1(p))*ats::conj(c(p) - c1(p)));
     }
     
     const double eps = std::numeric_limits<double>::epsilon()*100;
@@ -282,6 +285,8 @@ TEST( DenseByBlocks, gemm ) {
 }
 
 TEST( DenseByBlocks, herk ) {
+  typedef ArithTraits<ValueType> ats;
+
   double alpha = 2.0, beta = 0.5;
   const ordinal_type n = 100, k = 100, mb = 32; 
 
@@ -298,9 +303,9 @@ TEST( DenseByBlocks, herk ) {
 
     Random<ValueType> random;
     auto randomize = [&](const DenseMatrixViewHostType &mat) {
-      const ordinal_type m = mat.dimension_0(), n = mat.dimension_1();
-      for (ordinal_type j=0;j<n;++j)
-        for (ordinal_type i=0;i<m;++i)
+      const ordinal_type mm = mat.dimension_0(), nn = mat.dimension_1();
+      for (ordinal_type j=0;j<nn;++j)
+        for (ordinal_type i=0;i<mm;++i)
           mat(i,j) = random.value();
     };
     randomize(A);
@@ -374,8 +379,8 @@ TEST( DenseByBlocks, herk ) {
   {
     double diff = 0.0, norm = 0.0;
     for (ordinal_type p=0;p<(n*n);++p) {
-      norm += real(c(p)*conj(c(p)));
-      diff += real((c(p) - c1(p))*conj(c(p) - c1(p)));
+      norm += ats::real(c(p)*ats::conj(c(p)));
+      diff += ats::real((c(p) - c1(p))*ats::conj(c(p) - c1(p)));
     }
     
     const double eps = std::numeric_limits<double>::epsilon()*100;
@@ -385,6 +390,8 @@ TEST( DenseByBlocks, herk ) {
 
 
 TEST( DenseByBlocks, trsm ) {
+  typedef ArithTraits<ValueType> ats;
+
   double alpha = 2.0;
   const ordinal_type m = 4, n = 4, mb = 4; 
 
@@ -401,9 +408,9 @@ TEST( DenseByBlocks, trsm ) {
 
     Random<ValueType> random;
     auto randomize = [&](const DenseMatrixViewHostType &mat) {
-      const ordinal_type m = mat.dimension_0(), n = mat.dimension_1();
-      for (ordinal_type j=0;j<n;++j)
-        for (ordinal_type i=0;i<m;++i)
+      const ordinal_type mm = mat.dimension_0(), nn = mat.dimension_1();
+      for (ordinal_type j=0;j<nn;++j)
+        for (ordinal_type i=0;i<mm;++i)
           mat(i,j) = random.value();
     };
     randomize(A);
@@ -485,8 +492,8 @@ TEST( DenseByBlocks, trsm ) {
   {
     double diff = 0.0, norm = 0.0;
     for (ordinal_type p=0;p<(m*n);++p) {
-      norm += real(b(p)*conj(b(p)));
-      diff += real((b(p) - b1(p))*conj(b(p) - b1(p)));
+      norm += ats::real(b(p)*ats::conj(b(p)));
+      diff += ats::real((b(p) - b1(p))*ats::conj(b(p) - b1(p)));
     }
     
     const double eps = std::numeric_limits<double>::epsilon()*100;

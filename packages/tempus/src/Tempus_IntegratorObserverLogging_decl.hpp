@@ -10,6 +10,7 @@
 #define Tempus_IntegratorObserverLogging_decl_hpp
 
 #include "Tempus_IntegratorObserver.hpp"
+#include <list>
 
 namespace Tempus {
 

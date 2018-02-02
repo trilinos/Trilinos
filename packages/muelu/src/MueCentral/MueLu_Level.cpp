@@ -335,7 +335,7 @@ namespace MueLu {
           v = Teuchos::null; // free data
           map_[factory].erase(ename);
           if (map_.count(factory) == 0) {
-            break; // last occurence for factory has been removed. proceed with next factory
+            break; // last occurrence for factory has been removed. proceed with next factory
           }
         }
         else

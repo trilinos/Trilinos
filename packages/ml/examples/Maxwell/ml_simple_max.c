@@ -158,12 +158,12 @@ int main(int argc, char *argv[])
   int  nodal_its = 3;               /* edge/nodal subsmoothers.             */
   double nodal_omega = ML_DDEFAULT, /* SOR damping parameter for noda/edge  */
          edge_omega  = ML_DDEFAULT; /* subsmoothers (see comments above).   */
-  int   hiptmair_type=HALF_HIPTMAIR;/* FULL_HIPTMAIR: each invokation       */
+  int   hiptmair_type=HALF_HIPTMAIR;/* FULL_HIPTMAIR: each invocation       */
                                     /*     smoothes on edges, then nodes,   */
                                     /*     and then once again on edges.    */
-                                    /* HALF_HIPTMAIR: each pre-invokation   */
+                                    /* HALF_HIPTMAIR: each pre-invocation   */
                                     /*     smoothes on edges, then nodes.   */
-                                    /*     Each post-invokation smoothes    */
+                                    /*     Each post-invocation smoothes    */
                                     /*     on nodes then edges. .           */
 
 
@@ -572,7 +572,7 @@ void user_partition_nodes(struct user_partition *Partition)
   else {
     /* on 2 processors assignment is done via 2 horizontal strips  */
     /* Note: local_ids's for ghost unknowns must follow local_id's */
-    /*       for uknowns assigned to this processor. Further,      */
+    /*       for unknowns assigned to this processor. Further,     */
     /*       ghost nodes assigned to the same processor must have  */
     /*       consecutively numbered local_id's.                    */
 

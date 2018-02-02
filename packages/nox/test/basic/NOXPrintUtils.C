@@ -50,10 +50,12 @@
 #include "NOX.H"
 
 #include "Teuchos_StandardCatchMacros.hpp"
+#include <fstream>
 
 #ifdef HAVE_MPI
 #include "mpi.h"
 #endif
+
 
 using namespace std;
 

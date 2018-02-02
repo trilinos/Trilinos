@@ -62,19 +62,17 @@ typedef Constraint_Partitioned<Real>            IPCON;
 
 private:
 
-  Teuchos::RCP<StatusTest<Real> >       status_;
-  Teuchos::RCP<Step<Real> >             step_;  
-  Teuchos::RCP<IPOBJ>                   ipobj_;
-  Teuchos::RCP<IPCON>                   ipcon_;
-  Teuchos::RCP<Algorithm<Real> >        algo_;
+  ROL::Ptr<StatusTest<Real> >       status_;
+  ROL::Ptr<Step<Real> >             step_;  
+  ROL::Ptr<Algorithm<Real> >        algo_;
   Teuchos::RCP<Teuchos::ParameterList>  parlist_;
-  Teuchos::RCP<BoundConstraint<Real> >  bnd_;
+  ROL::Ptr<BoundConstraint<Real> >  bnd_;
 
   // Storage
-  Teuchos::RCP<Vector<Real> > x_;
-  Teuchos::RCP<Vector<Real> > g_;
-  Teuchos::RCP<Vector<Real> > l_;
-  Teuchos::RCP<Vector<Real> > c_;
+  ROL::Ptr<Vector<Real> > x_;
+  ROL::Ptr<Vector<Real> > g_;
+  ROL::Ptr<Vector<Real> > l_;
+  ROL::Ptr<Vector<Real> > c_;
 
   Real mu_;      // Barrier parameter
   Real mumin_;   // Minimal value of barrier parameter
@@ -102,15 +100,13 @@ public:
 
   InteriorPointStep(Teuchos::ParameterList &parlist) :
     Step<Real>(), 
-    status_(Teuchos::null), 
-    step_(Teuchos::null),
-    ipobj_(Teuchos::null),
-    ipcon_(Teuchos::null),
-    algo_(Teuchos::null), 
-    x_(Teuchos::null),
-    g_(Teuchos::null),
-    l_(Teuchos::null),
-    c_(Teuchos::null),
+    status_(ROL::nullPtr), 
+    step_(ROL::nullPtr),
+    algo_(ROL::nullPtr), 
+    x_(ROL::nullPtr),
+    g_(ROL::nullPtr),
+    l_(ROL::nullPtr),
+    c_(ROL::nullPtr),
     hasEquality_(false) {
 
     using Teuchos::ParameterList;
@@ -135,7 +131,7 @@ public:
     stol_  = stlist.get("Step Tolerance", 1.e-8);
     maxit_ = stlist.get("Iteration Limit", 100);
  
-    parlist_ = Teuchos::rcp(&parlist, false);
+    parlist_ = ROL::makePtrFromRef(parlist);
   }
 
   /** \brief Initialize step with equality constraint 
@@ -146,7 +142,7 @@ public:
                    AlgorithmState<Real> &algo_state ) {
     hasEquality_ = true;
 
-    Teuchos::RCP<StepState<Real> > state = Step<Real>::getState();
+    ROL::Ptr<StepState<Real> > state = Step<Real>::getState();
     state->descentVec    = x.clone();
     state->gradientVec   = g.clone();
     state->constraintVec = c.clone();
@@ -159,11 +155,11 @@ public:
 
     x_->set(x);
 
-    ipobj_ = Teuchos::rcp(&Teuchos::dyn_cast<IPOBJ>(obj),false);
-    ipcon_ = Teuchos::rcp(&Teuchos::dyn_cast<IPCON>(con),false);
+    auto& ipobj = dynamic_cast<IPOBJ&>(obj);
+    auto& ipcon = dynamic_cast<IPCON&>(con);
 
     // Set initial penalty
-    ipobj_->updatePenalty(mu_);
+    ipobj.updatePenalty(mu_);
 
     algo_state.nfval = 0;
     algo_state.ncval = 0;
@@ -179,9 +175,9 @@ public:
     con.value(*c_,x,zerotol);
     algo_state.cnorm = c_->norm();
 
-    algo_state.nfval += ipobj_->getNumberFunctionEvaluations();
-    algo_state.ngrad += ipobj_->getNumberGradientEvaluations();
-    algo_state.ncval += ipcon_->getNumberConstraintEvaluations(); 
+    algo_state.nfval += ipobj.getNumberFunctionEvaluations();
+    algo_state.ngrad += ipobj.getNumberGradientEvaluations();
+    algo_state.ncval += ipcon.getNumberConstraintEvaluations(); 
 
   }
 
@@ -202,7 +198,7 @@ public:
                    AlgorithmState<Real> &algo_state ) {
     bnd.projectInterior(x);
 
-    Teuchos::RCP<StepState<Real> > state = Step<Real>::getState();
+    ROL::Ptr<StepState<Real> > state = Step<Real>::getState();
     state->descentVec    = x.clone();
     state->gradientVec   = g.clone();
 
@@ -211,8 +207,8 @@ public:
     g_ = g.clone();
 
     // Set initial penalty
-    ipobj_ = Teuchos::rcp(&Teuchos::dyn_cast<IPOBJ>(obj),false);
-    ipobj_->updatePenalty(mu_);
+    auto& ipobj = dynamic_cast<IPOBJ&>(obj);
+    ipobj.updatePenalty(mu_);
 
     algo_state.nfval = 0;
     algo_state.ncval = 0;
@@ -227,10 +223,10 @@ public:
 
     algo_state.cnorm = static_cast<Real>(0);
 
-    algo_state.nfval += ipobj_->getNumberFunctionEvaluations();
-    algo_state.ngrad += ipobj_->getNumberGradientEvaluations();
+    algo_state.nfval += ipobj.getNumberFunctionEvaluations();
+    algo_state.ngrad += ipobj.getNumberGradientEvaluations();
 
-    bnd_ = Teuchos::rcp(new BoundConstraint<Real>());
+    bnd_ = ROL::makePtr<BoundConstraint<Real>>();
     bnd_->deactivate();
   }
 
@@ -245,15 +241,15 @@ public:
                 Constraint<Real>     &con, 
                 AlgorithmState<Real> &algo_state ) {
     // Grab interior point objective and constraint
-    ipobj_ = Teuchos::rcp(&Teuchos::dyn_cast<IPOBJ>(obj),false);
-    ipcon_ = Teuchos::rcp(&Teuchos::dyn_cast<IPCON>(con),false);
+    auto& ipobj = dynamic_cast<IPOBJ&>(obj);
+    auto& ipcon = dynamic_cast<IPCON&>(con);
 
     // Create the algorithm 
-    algo_ = Teuchos::rcp( new Algorithm<Real>("Composite Step",*parlist_,false) );
+    algo_ = ROL::makePtr<Algorithm<Real>>("Composite Step",*parlist_,false);
 
     //  Run the algorithm
     x_->set(x);
-    algo_->run(*x_,*g_,*l_,*c_,*ipobj_,*ipcon_,false);
+    algo_->run(*x_,*g_,*l_,*c_,ipobj,ipcon,false);
     s.set(*x_); s.axpy(-1.0,x);
 
     // Get number of iterations from the subproblem solve
@@ -277,14 +273,14 @@ public:
                 BoundConstraint<Real> &bnd,
                 AlgorithmState<Real>  &algo_state ) {
     // Grab interior point objective and constraint
-    ipobj_ = Teuchos::rcp(&Teuchos::dyn_cast<IPOBJ>(obj),false);
+    auto& ipobj = dynamic_cast<IPOBJ&>(obj);
 
     // Create the algorithm 
-    algo_ = Teuchos::rcp( new Algorithm<Real>("Trust Region",*parlist_,false) );
+    algo_ = ROL::makePtr<Algorithm<Real>>("Trust Region",*parlist_,false);
 
     //  Run the algorithm
     x_->set(x);
-    algo_->run(*x_,*g_,*ipobj_,*bnd_,false);
+    algo_->run(*x_,*g_,ipobj,*bnd_,false);
     s.set(*x_); s.axpy(-1.0,x);
 
     // Get number of iterations from the subproblem solve
@@ -302,16 +298,16 @@ public:
                Constraint<Real>     &con,
                AlgorithmState<Real> &algo_state ) {
     // Grab interior point objective and constraint
-    ipobj_ = Teuchos::rcp(&Teuchos::dyn_cast<IPOBJ>(obj),false);
-    ipcon_ = Teuchos::rcp(&Teuchos::dyn_cast<IPCON>(con),false);
+    auto& ipobj = dynamic_cast<IPOBJ&>(obj);
+    auto& ipcon = dynamic_cast<IPCON&>(con);
 
     // If we can change the barrier parameter, do so
     if( (rho_< 1.0 && mu_ > mumin_) || (rho_ > 1.0 && mu_ < mumax_) ) {
       mu_ *= rho_;
-      ipobj_->updatePenalty(mu_);
+      ipobj.updatePenalty(mu_);
     }
 
-    Teuchos::RCP<StepState<Real> > state = Step<Real>::getState();
+    ROL::Ptr<StepState<Real> > state = Step<Real>::getState();
  
     // Update optimization vector
     x.plus(s);
@@ -323,25 +319,25 @@ public:
 
     Real zerotol = 0.0;
 
-    algo_state.value = ipobj_->value(x,zerotol);
-    algo_state.value = ipobj_->getObjectiveValue();
+    algo_state.value = ipobj.value(x,zerotol);
+    algo_state.value = ipobj.getObjectiveValue();
 
-    ipcon_->value(*c_,x,zerotol);
+    ipcon.value(*c_,x,zerotol);
     state->constraintVec->set(*c_);
 
-    ipobj_->gradient(*g_,x,zerotol);
+    ipobj.gradient(*g_,x,zerotol);
     state->gradientVec->set(*g_);
 
-    ipcon_->applyAdjointJacobian(*g_,*l_,x,zerotol);
+    ipcon.applyAdjointJacobian(*g_,*l_,x,zerotol);
     state->gradientVec->plus(*g_);    
 
     algo_state.gnorm = g_->norm();
     algo_state.cnorm = state->constraintVec->norm();
     algo_state.snorm = s.norm();
 
-    algo_state.nfval += ipobj_->getNumberFunctionEvaluations();
-    algo_state.ngrad += ipobj_->getNumberGradientEvaluations();
-    algo_state.ncval += ipcon_->getNumberConstraintEvaluations();
+    algo_state.nfval += ipobj.getNumberFunctionEvaluations();
+    algo_state.ngrad += ipobj.getNumberGradientEvaluations();
+    algo_state.ncval += ipcon.getNumberConstraintEvaluations();
     
   }
 
@@ -354,7 +350,7 @@ public:
                AlgorithmState<Real>  &algo_state ) {
     update(x,l,s,obj,con,algo_state); 
 
-    Teuchos::RCP<StepState<Real> > state = Step<Real>::getState();
+    ROL::Ptr<StepState<Real> > state = Step<Real>::getState();
     x_->set(x);
     x_->axpy(static_cast<Real>(-1),state->gradientVec->dual());
     bnd.project(*x_);
@@ -368,15 +364,15 @@ public:
                BoundConstraint<Real> &bnd,
                AlgorithmState<Real>  &algo_state ) {
     // Grab interior point objective
-    ipobj_ = Teuchos::rcp(&Teuchos::dyn_cast<IPOBJ>(obj),false);
+    auto& ipobj = dynamic_cast<IPOBJ&>(obj);
 
     // If we can change the barrier parameter, do so
     if( (rho_< 1.0 && mu_ > mumin_) || (rho_ > 1.0 && mu_ < mumax_) ) {
       mu_ *= rho_;
-      ipobj_->updatePenalty(mu_);
+      ipobj.updatePenalty(mu_);
     }
 
-    Teuchos::RCP<StepState<Real> > state = Step<Real>::getState();
+    ROL::Ptr<StepState<Real> > state = Step<Real>::getState();
  
     // Update optimization vector
     x.plus(s);
@@ -388,10 +384,10 @@ public:
 
     Real zerotol = std::sqrt(ROL_EPSILON<Real>());
 
-    algo_state.value = ipobj_->value(x,zerotol);
-    algo_state.value = ipobj_->getObjectiveValue();
+    algo_state.value = ipobj.value(x,zerotol);
+    algo_state.value = ipobj.getObjectiveValue();
 
-    ipobj_->gradient(*g_,x,zerotol);
+    ipobj.gradient(*g_,x,zerotol);
     state->gradientVec->set(*g_);
 
     x_->set(x);
@@ -402,8 +398,8 @@ public:
     algo_state.gnorm = x_->norm();
     algo_state.snorm = s.norm();
 
-    algo_state.nfval += ipobj_->getNumberFunctionEvaluations();
-    algo_state.ngrad += ipobj_->getNumberGradientEvaluations();
+    algo_state.nfval += ipobj.getNumberFunctionEvaluations();
+    algo_state.ngrad += ipobj.getNumberGradientEvaluations();
   }
 
   /** \brief Print iterate header.

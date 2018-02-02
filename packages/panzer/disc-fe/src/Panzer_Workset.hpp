@@ -133,13 +133,13 @@ namespace panzer {
     const panzer::PureBasis & getBasis(const panzer::BasisDescriptor & description) const;
 
     /// Number of cells owned by this workset
-    int num_owned_cells() const {return _num_owned_cells;}
+    int numOwnedCells() const {return _num_owned_cells;}
 
     /// Number of cells owned by a different workset
-    int num_ghost_cells() const {return _num_ghost_cells;}
+    int numGhostCells() const {return _num_ghost_cells;}
 
     /// Number of cells not owned by any workset - these are used for boundary conditions
-    int num_virtual_cells() const {return _num_virtual_cells;}
+    int numVirtualCells() const {return _num_virtual_cells;}
 
   protected:
 

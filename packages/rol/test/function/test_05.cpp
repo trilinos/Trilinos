@@ -65,12 +65,12 @@ int main(int argc, char *argv[]) {
 
   // This little trick lets us print to std::cout only if a (dummy) command-line argument is provided.
   int iprint     = argc - 1;
-  Teuchos::RCP<std::ostream> outStream;
+  ROL::Ptr<std::ostream> outStream;
   Teuchos::oblackholestream bhs; // outputs nothing
   if (iprint > 0)
-    outStream = Teuchos::rcp(&std::cout, false);
+    outStream = ROL::makePtrFromRef(std::cout);
   else
-    outStream = Teuchos::rcp(&bhs, false);
+    outStream = ROL::makePtrFromRef(bhs);
 
   int errorFlag  = 0;
 
@@ -78,12 +78,12 @@ int main(int argc, char *argv[]) {
 
   try {
 
-    Teuchos::RCP<ROL::Objective<RealT> > obj;
-    Teuchos::RCP<ROL::Constraint<RealT> > constr;
-    Teuchos::RCP<std::vector<RealT> > x_rcp = Teuchos::rcp( new std::vector<RealT> (0, 0.0) );
-    Teuchos::RCP<std::vector<RealT> > sol_rcp = Teuchos::rcp( new std::vector<RealT> (0, 0.0) );
-    ROL::StdVector<RealT> x(x_rcp);      // Iteration vector.
-    ROL::StdVector<RealT> sol(sol_rcp);  // Reference solution vector.
+    ROL::Ptr<ROL::Objective<RealT> > obj;
+    ROL::Ptr<ROL::Constraint<RealT> > constr;
+    ROL::Ptr<std::vector<RealT> > x_ptr = ROL::makePtr<std::vector<RealT>>(0, 0.0);
+    ROL::Ptr<std::vector<RealT> > sol_ptr = ROL::makePtr<std::vector<RealT>>(0, 0.0);
+    ROL::StdVector<RealT> x(x_ptr);      // Iteration vector.
+    ROL::StdVector<RealT> sol(sol_ptr);  // Reference solution vector.
 
     // Retrieve objective, constraint, iteration vector, solution vector.
     ROL::ZOO::getSimpleEqConstrained <RealT, ROL::StdVector<RealT>, ROL::StdVector<RealT>, ROL::StdVector<RealT>, ROL::StdVector<RealT> > (obj, constr, x, sol);
@@ -92,28 +92,28 @@ int main(int argc, char *argv[]) {
     int dim = 5;
     int nc = 3;
     RealT left = -1e0, right = 1e0;
-    Teuchos::RCP<std::vector<RealT> > xtest_rcp = Teuchos::rcp( new std::vector<RealT> (dim, 0.0) );
-    Teuchos::RCP<std::vector<RealT> > g_rcp = Teuchos::rcp( new std::vector<RealT> (dim, 0.0) );
-    Teuchos::RCP<std::vector<RealT> > d_rcp = Teuchos::rcp( new std::vector<RealT> (dim, 0.0) );
-    Teuchos::RCP<std::vector<RealT> > v_rcp = Teuchos::rcp( new std::vector<RealT> (dim, 0.0) );
-    Teuchos::RCP<std::vector<RealT> > vc_rcp = Teuchos::rcp( new std::vector<RealT> (nc, 0.0) );
-    Teuchos::RCP<std::vector<RealT> > vl_rcp = Teuchos::rcp( new std::vector<RealT> (nc, 0.0) );
-    ROL::StdVector<RealT> xtest(xtest_rcp);
-    ROL::StdVector<RealT> g(g_rcp);
-    ROL::StdVector<RealT> d(d_rcp);
-    ROL::StdVector<RealT> v(v_rcp);
-    ROL::StdVector<RealT> vc(vc_rcp);
-    ROL::StdVector<RealT> vl(vl_rcp);
+    ROL::Ptr<std::vector<RealT> > xtest_ptr = ROL::makePtr<std::vector<RealT>>(dim, 0.0);
+    ROL::Ptr<std::vector<RealT> > g_ptr = ROL::makePtr<std::vector<RealT>>(dim, 0.0);
+    ROL::Ptr<std::vector<RealT> > d_ptr = ROL::makePtr<std::vector<RealT>>(dim, 0.0);
+    ROL::Ptr<std::vector<RealT> > v_ptr = ROL::makePtr<std::vector<RealT>>(dim, 0.0);
+    ROL::Ptr<std::vector<RealT> > vc_ptr = ROL::makePtr<std::vector<RealT>>(nc, 0.0);
+    ROL::Ptr<std::vector<RealT> > vl_ptr = ROL::makePtr<std::vector<RealT>>(nc, 0.0);
+    ROL::StdVector<RealT> xtest(xtest_ptr);
+    ROL::StdVector<RealT> g(g_ptr);
+    ROL::StdVector<RealT> d(d_ptr);
+    ROL::StdVector<RealT> v(v_ptr);
+    ROL::StdVector<RealT> vc(vc_ptr);
+    ROL::StdVector<RealT> vl(vl_ptr);
     // set xtest, d, v
     for (int i=0; i<dim; i++) {
-      (*xtest_rcp)[i] = ( (RealT)rand() / (RealT)RAND_MAX ) * (right - left) + left;
-      (*d_rcp)[i] = ( (RealT)rand() / (RealT)RAND_MAX ) * (right - left) + left;
-      (*v_rcp)[i] = ( (RealT)rand() / (RealT)RAND_MAX ) * (right - left) + left;
+      (*xtest_ptr)[i] = ( (RealT)rand() / (RealT)RAND_MAX ) * (right - left) + left;
+      (*d_ptr)[i] = ( (RealT)rand() / (RealT)RAND_MAX ) * (right - left) + left;
+      (*v_ptr)[i] = ( (RealT)rand() / (RealT)RAND_MAX ) * (right - left) + left;
     }
     // set vc, vl
     for (int i=0; i<nc; i++) {
-      (*vc_rcp)[i] = ( (RealT)rand() / (RealT)RAND_MAX ) * (right - left) + left;
-      (*vl_rcp)[i] = ( (RealT)rand() / (RealT)RAND_MAX ) * (right - left) + left;
+      (*vc_ptr)[i] = ( (RealT)rand() / (RealT)RAND_MAX ) * (right - left) + left;
+      (*vl_ptr)[i] = ( (RealT)rand() / (RealT)RAND_MAX ) * (right - left) + left;
     }
 
     xtest.set(x);

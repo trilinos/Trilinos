@@ -139,13 +139,6 @@ IF (${PACKAGE_NAME}_ENABLE_SPLIT_ETI_CPP_FILES)
   MESSAGE(STATUS "Split MueLu ETI files: this may slow down the compilation process.")
 ENDIF()
 
-# Enable broken tests
-TRIBITS_ADD_OPTION_AND_DEFINE(
-  ${PACKAGE_NAME}_ENABLE_BROKEN_TESTS
-  HAVE_${PACKAGE_NAME_UC}_BROKEN_TESTS
-  "Enable broken code."
-  NO)
-
 # Memory testing
 IF (${PACKAGE_NAME}_ENABLE_MEMORY_TESTING)
   SET(MUELU_VALGRIND_TESTING YES)

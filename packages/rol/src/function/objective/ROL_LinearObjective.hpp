@@ -46,7 +46,7 @@
 
 #include "ROL_Objective.hpp"
 #include "ROL_Vector.hpp"
-#include "Teuchos_RCP.hpp"
+#include "ROL_Ptr.hpp"
 
 /** @ingroup func_group
     \class ROL::LinearObjective
@@ -67,10 +67,10 @@ namespace ROL {
 template <class Real>
 class LinearObjective : public Objective<Real> {
 private:
-  const Teuchos::RCP<const Vector<Real> > cost_;
+  const ROL::Ptr<const Vector<Real> > cost_;
 
 public:
-  LinearObjective(const Teuchos::RCP<const Vector<Real> > &cost) : cost_(cost) {}
+  LinearObjective(const ROL::Ptr<const Vector<Real> > &cost) : cost_(cost) {}
 
   Real value( const Vector<Real> &x, Real &tol ) {
     return x.dot(cost_->dual());

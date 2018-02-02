@@ -221,6 +221,12 @@ public:
    //! Get the range vector space (f)
    Teuchos::RCP<const Thyra::VectorSpaceBase<ScalarT> > getThyraRangeSpace() const;
 
+   //! Get the domain vector space (x and dxdt)
+   Teuchos::RCP<const Thyra::VectorSpaceBase<ScalarT> > getThyraDomainSpace(int blk) const;
+
+   //! Get the range vector space (f)
+   Teuchos::RCP<const Thyra::VectorSpaceBase<ScalarT> > getThyraRangeSpace(int blk) const;
+
    //! Get a domain vector
    Teuchos::RCP<Thyra::VectorBase<ScalarT> > getThyraDomainVector() const;
 
@@ -269,6 +275,12 @@ public:
 
    Teuchos::RCP<CrsMatrixType> getTpetraMatrix(int i,int j) const;
    Teuchos::RCP<CrsMatrixType> getGhostedTpetraMatrix(int i,int j) const;
+
+   Teuchos::RCP<VectorType> getTpetraDomainVector(int i) const;
+   Teuchos::RCP<VectorType> getGhostedTpetraDomainVector(int i) const;
+
+   Teuchos::RCP<VectorType> getTpetraRangeVector(int i) const;
+   Teuchos::RCP<VectorType> getGhostedTpetraRangeVector(int i) const;
 
    //! how many block rows
    int getBlockRowCount() const;

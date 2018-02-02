@@ -27,7 +27,8 @@ endif
 
 CXXFLAGS = -O3
 LINK ?= $(CXX)
-LDFLAGS ?= -lpthread
+LDFLAGS ?=
+override LDFLAGS += -lpthread
 
 include $(KOKKOS_PATH)/Makefile.kokkos
 
@@ -294,6 +295,12 @@ endif
 TARGETS += KokkosCore_UnitTest_Default
 TEST_TARGETS += test-default
 
+TARGETS += KokkosCore_UnitTest_PushFinalizeHook
+TEST_TARGETS += test-push-finalize-hook
+
+TARGETS += KokkosCore_UnitTest_PushFinalizeHook_terminate
+TEST_TARGETS += test-push-finalize-hook-terminate
+
 NUM_INITTESTS = 16
 INITTESTS_NUMBERS := $(shell seq 1 ${NUM_INITTESTS})
 INITTESTS_TARGETS := $(addprefix KokkosCore_UnitTest_DefaultDeviceTypeInit_,${INITTESTS_NUMBERS})
@@ -329,10 +336,17 @@ KokkosCore_UnitTest_HWLOC: $(OBJ_HWLOC) $(KOKKOS_LINK_DEPENDS)
 	$(LINK) $(EXTRA_PATH) $(OBJ_HWLOC) $(KOKKOS_LIBS) $(LIB) $(KOKKOS_LDFLAGS) $(LDFLAGS) -o KokkosCore_UnitTest_HWLOC
 
 KokkosCore_UnitTest_AllocationTracker: $(OBJ_ALLOCATIONTRACKER) $(KOKKOS_LINK_DEPENDS)
-	$(LINK) $(EXTRA_PATH) $(OBJ_ALLOCATIONTRACKER) $(KOKKOS_LIBS) $( $(KOKKOS_LDFLAGS) $(LDFLAGS)LIB) -o KokkosCore_UnitTest_AllocationTracker
+	$(LINK) $(EXTRA_PATH) $(OBJ_ALLOCATIONTRACKER) $(KOKKOS_LIBS) $(KOKKOS_LDFLAGS) $(LDFLAGS) $(LIB) -o KokkosCore_UnitTest_AllocationTracker
 
 KokkosCore_UnitTest_Default: $(OBJ_DEFAULT) $(KOKKOS_LINK_DEPENDS)
 	$(LINK) $(EXTRA_PATH) $(OBJ_DEFAULT) $(KOKKOS_LIBS) $(LIB) $(KOKKOS_LDFLAGS) $(LDFLAGS) -o KokkosCore_UnitTest_Default
+
+KokkosCore_UnitTest_PushFinalizeHook: $(OBJ_DEFAULT) $(KOKKOS_LINK_DEPENDS)
+	$(LINK) $(EXTRA_PATH) $(OBJ_DEFAULT) $(KOKKOS_LIBS) $(LIB) $(KOKKOS_LDFLAGS) $(LDFLAGS) -o KokkosCore_UnitTest_PushFinalizeHook
+
+KokkosCore_UnitTest_PushFinalizeHook_terminate: $(OBJ_DEFAULT) $(KOKKOS_LINK_DEPENDS)
+	$(LINK) $(EXTRA_PATH) $(OBJ_DEFAULT) $(KOKKOS_LIBS) $(LIB) $(KOKKOS_LDFLAGS) $(LDFLAGS) -o KokkosCore_UnitTest_PushFinalizeHook_terminate
+
 
 ${INITTESTS_TARGETS}: KokkosCore_UnitTest_DefaultDeviceTypeInit_%: TestDefaultDeviceTypeInit_%.o UnitTestMain.o gtest-all.o $(KOKKOS_LINK_DEPENDS)
 	$(LINK) $(EXTRA_PATH) TestDefaultDeviceTypeInit_$*.o UnitTestMain.o gtest-all.o $(KOKKOS_LIBS) $(LIB) $(KOKKOS_LDFLAGS) $(LDFLAGS) -o KokkosCore_UnitTest_DefaultDeviceTypeInit_$*
@@ -367,6 +381,12 @@ test-allocationtracker: KokkosCore_UnitTest_AllocationTracker
 
 test-default: KokkosCore_UnitTest_Default
 	./KokkosCore_UnitTest_Default
+
+test-push-finalize-hook: KokkosCore_UnitTest_PushFinalizeHook
+	./KokkosCore_UnitTest_PushFinalizeHook
+
+test-push-finalize-hook-terminate: KokkosCore_UnitTest_PushFinalizeHook_terminate
+	./KokkosCore_UnitTest_PushFinalizeHook_terminate
 
 ${INITTESTS_TEST_TARGETS}: test-default-init-%: KokkosCore_UnitTest_DefaultDeviceTypeInit_%
 	./KokkosCore_UnitTest_DefaultDeviceTypeInit_$*

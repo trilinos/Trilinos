@@ -46,7 +46,7 @@
 
 #include "ROL_Distribution.hpp"
 #include "ROL_Gaussian.hpp"
-#include "Teuchos_RCP.hpp"
+#include "ROL_Ptr.hpp"
 #include "Teuchos_ParameterList.hpp"
 
 namespace ROL {
@@ -59,7 +59,7 @@ private:
   Real mean_;
   Real sdev_;
 
-  Teuchos::RCP<Gaussian<Real> > gauss_;
+  ROL::Ptr<Gaussian<Real> > gauss_;
 
   Real alpha_;
   Real beta_;
@@ -73,7 +73,7 @@ public:
     : a_((lo < up) ? lo : up), b_((up > lo) ? up : lo),
       mean_(mean), sdev_((sdev>0) ? sdev : 1) {
     //Real var = sdev_*sdev_;
-    gauss_ = Teuchos::rcp(new Gaussian<Real>());
+    gauss_ = ROL::makePtr<Gaussian<Real>>();
     alpha_ = (a_-mean_)/sdev_;
     beta_  = (b_-mean_)/sdev_;
     phi_   = gauss_->evaluateCDF(alpha_);
@@ -95,7 +95,7 @@ public:
     sdev_ = (sdev_ > zero) ? sdev_ : one;
 
     //Real var = sdev_*sdev_;
-    gauss_ = Teuchos::rcp(new Gaussian<Real>());
+    gauss_ = ROL::makePtr<Gaussian<Real>>();
     alpha_ = (a_-mean_)/sdev_;
     beta_  = (b_-mean_)/sdev_;
     phi_   = gauss_->evaluateCDF(alpha_);

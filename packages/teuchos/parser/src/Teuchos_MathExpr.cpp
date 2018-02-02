@@ -8,6 +8,12 @@ Teuchos::Language make_language() {
   Teuchos::Language out;
   Teuchos::Language::Productions& prods = out.productions;
   prods.resize(NPRODS);
+  prods[PROD_PROGRAM]("program") >> "statements", "expr?";
+  prods[PROD_NO_STATEMENTS]("statements");
+  prods[PROD_NEXT_STATEMENT]("statements") >> "statements", "statement", ";", "S?";
+  prods[PROD_ASSIGN]("statement") >> "name", "S?", "=", "S?", "expr";
+  prods[PROD_NO_EXPR]("expr?");
+  prods[PROD_YES_EXPR]("expr?") >> "expr";
   prods[PROD_EXPR]("expr") >> "ternary";
   prods[PROD_TERNARY_DECAY]("ternary") >> "add_sub";
   prods[PROD_OR_DECAY]("or") >> "and";
@@ -65,6 +71,8 @@ Teuchos::Language make_language() {
   out.tokens[TOK_OR]("||", "\\|\\|");
   out.tokens[TOK_CONST]("constant",
       "(0|([1-9][0-9]*))(\\.[0-9]*)?([eE]\\-?[1-9][0-9]*)?");
+  out.tokens[TOK_SEMICOLON](";", ";");
+  out.tokens[TOK_ASSIGN]("=", "=");
   return out;
 }
 

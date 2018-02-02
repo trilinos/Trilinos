@@ -314,7 +314,7 @@ setFieldData(const PHX::any& a)
   // PHX::any object is always the non-const data type.  To correctly
   // cast the any object to the Kokkos::View, need to pull the const
   // off the scalar type if this MDField has a const scalar type.
-  typedef Kokkos::View<typename array_type::non_const_data_type,PHX::Device> non_const_view;
+  typedef PHX::View<typename array_type::non_const_data_type> non_const_view;
   try {
     non_const_view tmp = PHX::any_cast<non_const_view>(a);
     m_field_data = tmp;
@@ -382,7 +382,7 @@ template<typename DataT,
          typename Tag0,typename Tag1, typename Tag2, typename Tag3,
          typename Tag4,typename Tag5, typename Tag6, typename Tag7>
 KOKKOS_FORCEINLINE_FUNCTION
-Kokkos::DynRankView<DataT,PHX::Device> 
+Kokkos::DynRankView<DataT,typename PHX::DevLayout<DataT>::type,PHX::Device> 
 PHX::MDField<DataT,Tag0,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,Tag7>::
 get_view() 
 {
@@ -394,7 +394,7 @@ template<typename DataT,
          typename Tag0,typename Tag1, typename Tag2, typename Tag3,
          typename Tag4,typename Tag5, typename Tag6, typename Tag7>
 KOKKOS_FORCEINLINE_FUNCTION
-const Kokkos::DynRankView<DataT,PHX::Device>
+const Kokkos::DynRankView<DataT,typename PHX::DevLayout<DataT>::type,PHX::Device>
 PHX::MDField<DataT,Tag0,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,Tag7>::
 get_view() const
 {

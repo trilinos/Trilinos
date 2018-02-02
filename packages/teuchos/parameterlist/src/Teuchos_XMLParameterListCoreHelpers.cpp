@@ -45,7 +45,7 @@
 #include "Teuchos_StringInputSource.hpp"
 #include "Teuchos_XMLParameterListReader.hpp"
 #include "Teuchos_XMLParameterListWriter.hpp"
-
+#include <fstream>
 
 void Teuchos::updateParametersFromXmlFile(
   const std::string &xmlFileName,

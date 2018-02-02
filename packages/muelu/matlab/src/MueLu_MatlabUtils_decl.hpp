@@ -71,6 +71,7 @@
 #include "Tpetra_CrsMatrix_decl.hpp"
 #include "Xpetra_EpetraCrsMatrix.hpp"
 #include "Xpetra_MapFactory.hpp"
+#include "Xpetra_CrsGraph.hpp"
 #include "Xpetra_VectorFactory.hpp"
 #include <Tpetra_DefaultPlatform.hpp>
 
@@ -120,6 +121,7 @@ typedef Xpetra::Map<mm_LocalOrd, mm_GlobalOrd, mm_node_t> Xpetra_map;
 typedef Xpetra::Vector<mm_LocalOrd, mm_LocalOrd, mm_GlobalOrd, mm_node_t> Xpetra_ordinal_vector;
 typedef Xpetra::Matrix<double, mm_LocalOrd, mm_GlobalOrd, mm_node_t> Xpetra_Matrix_double;
 typedef Xpetra::Matrix<complex_t, mm_LocalOrd, mm_GlobalOrd, mm_node_t> Xpetra_Matrix_complex;
+typedef Xpetra::CrsGraph<mm_LocalOrd, mm_GlobalOrd, mm_node_t> Xpetra_CrsGraph;
 typedef Xpetra::MultiVector<double, mm_LocalOrd, mm_GlobalOrd, mm_node_t> Xpetra_MultiVector_double;
 typedef Xpetra::MultiVector<complex_t, mm_LocalOrd, mm_GlobalOrd, mm_node_t> Xpetra_MultiVector_complex;
 typedef MueLu::Hierarchy<double, mm_LocalOrd, mm_GlobalOrd, mm_node_t> Hierarchy_double;

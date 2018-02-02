@@ -49,7 +49,7 @@
 #ifndef ROL_PDEOPT_ELASTICITY_LOAD_HPP
 #define ROL_PDEOPT_ELASTICITY_LOAD_HPP
 
-#include "Teuchos_RCP.hpp"
+#include "ROL_Ptr.hpp"
 #include "Teuchos_ParameterList.hpp"
 #include "Intrepid_FieldContainer.hpp"
 
@@ -173,8 +173,8 @@ public:
     return val;
   }
 
-  void compute(std::vector<Teuchos::RCP<Intrepid::FieldContainer<Real> > > &load,
-               const Teuchos::RCP<FE<Real> >                               &fe,
+  void compute(std::vector<ROL::Ptr<Intrepid::FieldContainer<Real> > > &load,
+               const ROL::Ptr<FE<Real> >                               &fe,
                const std::vector<Real>                                     &param,
                const Real                                                   scale = 1) const {
     // Retrieve dimensions.

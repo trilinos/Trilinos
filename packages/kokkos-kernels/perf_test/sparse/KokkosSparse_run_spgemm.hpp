@@ -156,8 +156,14 @@ crsMat_t3 run_experiment(
   lno_nnz_view_t entriesC;
   scalar_view_t valuesC;
 
+
+  typedef typename lno_nnz_view_t::value_type lno_t;
+  typedef typename lno_view_t::value_type size_type;
+  typedef typename scalar_view_t::value_type scalar_t;
+
+
   typedef KokkosKernels::Experimental::KokkosKernelsHandle
-      <lno_view_t,lno_nnz_view_t, scalar_view_t,
+      <size_type,lno_t, scalar_t,
       ExecSpace, TempMemSpace,PersistentMemSpace > KernelHandle;
 
   typedef typename lno_nnz_view_t::value_type idx;

@@ -69,28 +69,28 @@ public:
   Objective_HS1(void) {}
 
   Real value( const Vector<Real> &x, Real &tol ) {
-    Teuchos::RCP<const std::vector<Real> > ex
-      = Teuchos::dyn_cast<const StdVector<Real> >(x).getVector();
+    ROL::Ptr<const std::vector<Real> > ex
+      = dynamic_cast<const StdVector<Real>&>(x).getVector();
     return 100.0 * std::pow((*ex)[1] - std::pow((*ex)[0],2.0),2.0) + std::pow(1.0-(*ex)[0],2.0);
   }
 
   void gradient( Vector<Real> &g, const Vector<Real> &x, Real &tol ) {
-    Teuchos::RCP<std::vector<Real> > eg
-      = Teuchos::dyn_cast<StdVector<Real> >(g).getVector();
-    Teuchos::RCP<const std::vector<Real> > ex
-      = Teuchos::dyn_cast<const StdVector<Real> >(x).getVector();
+    ROL::Ptr<std::vector<Real> > eg
+      = dynamic_cast<StdVector<Real>&>(g).getVector();
+    ROL::Ptr<const std::vector<Real> > ex
+      = dynamic_cast<const StdVector<Real>&>(x).getVector();
    
     (*eg)[0] = -4.0 * 100.0 * ((*ex)[1] - std::pow((*ex)[0],2.0)) * (*ex)[0] - 2.0 * (1.0-(*ex)[0]);
     (*eg)[1] = 2.0 * 100.0 * ((*ex)[1] - std::pow((*ex)[0],2.0)); 
   }
 #if USE_HESSVEC
   void hessVec( Vector<Real> &hv, const Vector<Real> &v, const Vector<Real> &x, Real &tol ) {
-    Teuchos::RCP<std::vector<Real> > ehv
-      = Teuchos::dyn_cast<StdVector<Real> >(hv).getVector();
-    Teuchos::RCP<const std::vector<Real> > ev
-      = Teuchos::dyn_cast<const StdVector<Real> >(v).getVector();
-    Teuchos::RCP<const std::vector<Real> > ex
-      = Teuchos::dyn_cast<const StdVector<Real> >(x).getVector();
+    ROL::Ptr<std::vector<Real> > ehv
+      = dynamic_cast<StdVector<Real>&>(hv).getVector();
+    ROL::Ptr<const std::vector<Real> > ev
+      = dynamic_cast<const StdVector<Real>&>(v).getVector();
+    ROL::Ptr<const std::vector<Real> > ex
+      = dynamic_cast<const StdVector<Real>&>(x).getVector();
 
     Real h11 = -4.0 * 100.0 * (*ex)[1] + 12.0 * 100.0 * std::pow((*ex)[0],2.0) + 2.0; 
     Real h22 = 2.0 * 100.0;
@@ -102,12 +102,12 @@ public:
   } 
 #endif
   void invHessVec( Vector<Real> &hv, const Vector<Real> &v, const Vector<Real> &x, Real &tol ) {
-    Teuchos::RCP<std::vector<Real> > ehv
-      = Teuchos::dyn_cast<StdVector<Real> >(hv).getVector();
-    Teuchos::RCP<const std::vector<Real> > ev
-      = Teuchos::dyn_cast<const StdVector<Real> >(v).getVector();
-    Teuchos::RCP<const std::vector<Real> > ex
-      = Teuchos::dyn_cast<const StdVector<Real> >(x).getVector();
+    ROL::Ptr<std::vector<Real> > ehv
+      = dynamic_cast<StdVector<Real>&>(hv).getVector();
+    ROL::Ptr<const std::vector<Real> > ev
+      = dynamic_cast<const StdVector<Real>&>(v).getVector();
+    ROL::Ptr<const std::vector<Real> > ex
+      = dynamic_cast<const StdVector<Real>&>(x).getVector();
     
     Real h11 = -4.0 * 100.0 * (*ex)[1] + 12.0 * 100.0 * std::pow((*ex)[0],2.0) + 2.0; 
     Real h22 = 2.0 * 100.0;
@@ -120,38 +120,38 @@ public:
 };
 
 template<class Real>
-void getHS1( Teuchos::RCP<Objective<Real> >       &obj,
-             Teuchos::RCP<BoundConstraint<Real> > &con, 
-             Teuchos::RCP<Vector<Real> >          &x0,
-             Teuchos::RCP<Vector<Real> >          &x ) {
+void getHS1( ROL::Ptr<Objective<Real> >       &obj,
+             ROL::Ptr<BoundConstraint<Real> > &con, 
+             ROL::Ptr<Vector<Real> >          &x0,
+             ROL::Ptr<Vector<Real> >          &x ) {
   // Problem size
   int n = 2;
 
   // Get Initial Guess
-  Teuchos::RCP<std::vector<Real> > x0p = Teuchos::rcp(new std::vector<Real>(n,0.0));
+  ROL::Ptr<std::vector<Real> > x0p = ROL::makePtr<std::vector<Real>>(n,0.0);
   (*x0p)[0] = -2.0; (*x0p)[1] = 1.0;
-  x0 = Teuchos::rcp(new StdVector<Real>(x0p));
+  x0 = ROL::makePtr<StdVector<Real>>(x0p);
 
   // Get Solution
-  Teuchos::RCP<std::vector<Real> > xp  = Teuchos::rcp(new std::vector<Real>(n,0.0));
+  ROL::Ptr<std::vector<Real> > xp  = ROL::makePtr<std::vector<Real>>(n,0.0);
   (*xp)[0] = 1.0; (*xp)[1] = 1.0;
-  x = Teuchos::rcp(new StdVector<Real>(xp));
+  x = ROL::makePtr<StdVector<Real>>(xp);
 
   // Instantiate Objective Function
-  obj = Teuchos::rcp(new Objective_HS1<Real>);
+  obj = ROL::makePtr<Objective_HS1<Real>>();
 
   // Build lower bound
-  Teuchos::RCP<std::vector<Real> > lp = Teuchos::rcp(new std::vector<Real>(n,0.0)); 
+  ROL::Ptr<std::vector<Real> > lp = ROL::makePtr<std::vector<Real>>(n,0.0); 
   (*lp)[0] = ROL_NINF<Real>(); (*lp)[1] = -1.5;
-  Teuchos::RCP<Vector<Real> > l = Teuchos::rcp(new StdVector<Real>(lp));
+  ROL::Ptr<Vector<Real> > l = ROL::makePtr<StdVector<Real>>(lp);
 
   // Build upper bound
-  Teuchos::RCP<std::vector<Real> > up = Teuchos::rcp(new std::vector<Real>(n,0.0)); 
+  ROL::Ptr<std::vector<Real> > up = ROL::makePtr<std::vector<Real>>(n,0.0); 
   (*up)[0] = ROL_INF<Real>(); (*up)[1] = ROL_INF<Real>();
-  Teuchos::RCP<Vector<Real> > u = Teuchos::rcp(new StdVector<Real>(up));
+  ROL::Ptr<Vector<Real> > u = ROL::makePtr<StdVector<Real>>(up);
 
   // Instantiate BoundConstraint
-  con = Teuchos::rcp(new Bounds<Real>(l,u));
+  con = ROL::makePtr<Bounds<Real>>(l,u);
 }
 
 } // End ZOO Namespace

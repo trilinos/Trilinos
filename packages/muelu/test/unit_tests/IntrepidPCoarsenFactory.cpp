@@ -1455,7 +1455,12 @@ void TestPseudoPoisson(Teuchos::FancyOStream &out, int num_p1_nodes, int degree,
     RCP<Matrix> P;
     coarseLevel.Get("P",P,IPCFact.get());
     RCP<CrsMatrix> Pcrs   = rcp_dynamic_cast<CrsMatrixWrap>(P)->getCrsMatrix();
-    if(!MyPID) printf("P size = %d x %d\n",(int)P->getRangeMap()->getGlobalNumElements(),(int)P->getDomainMap()->getGlobalNumElements());
+    //if(!MyPID) printf("P size = %d x %d\n",(int)P->getRangeMap()->getGlobalNumElements(),(int)P->getDomainMap()->getGlobalNumElements());
+    out << "P size = "
+        << (int)P->getRangeMap()->getGlobalNumElements()
+        << " x "
+        << (int)P->getDomainMap()->getGlobalNumElements()
+        << std::endl;
 
     // Sanity
     if((int)P->getRangeMap()->getGlobalNumElements()!=(int)hi_gold_out.size())
@@ -1507,7 +1512,8 @@ void TestPseudoPoisson(Teuchos::FancyOStream &out, int num_p1_nodes, int degree,
     s_codeOutput->norm2(norm2());
 
 
-    if(!MyPID) printf("Diff norm = %10.4e\n",norm2[0]);
+    //if(!MyPID) printf("Diff norm = %10.4e\n",norm2[0]);
+    out << "Diff norm = " << norm2[0] << std::endl;
 
   }
 
@@ -1651,6 +1657,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(IntrepidPCoarsenFactory,BuildP_PseudoPoisson_p
     Params.set("coarse: max size",100);
     level0.set("pcoarsen: element to node map",rcp(&elem_to_node,false));
     Params.set("level 0",level0);
+    Params.set("verbosity","none");
 
 
     // Build hierarchy
@@ -1716,6 +1723,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(IntrepidPCoarsenFactory,BuildP_PseudoPoisson_p
     Params.set("coarse: max size",100);
     level0.set("pcoarsen: element to node map",rcp(&elem_to_node,false));
     Params.set("level 0",level0);
+    Params.set("verbosity","none");
 
 
     // Build hierarchy
@@ -1781,6 +1789,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(IntrepidPCoarsenFactory,BuildP_PseudoPoisson_p
     Params.set("coarse: max size",100);
     level0.set("pcoarsen: element to node map",rcp(&elem_to_node,false));
     Params.set("level 0",level0);
+    Params.set("verbosity","none");
 
 
     // Build hierarchy
@@ -2585,6 +2594,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(IntrepidPCoarsenFactory,BuildP_PseudoPoisson_L
     Params.set("coarse: max size",100);
     level0.set("pcoarsen: element to node map",rcp(&elem_to_node,false));
     Params.set("level 0",level0);
+    Params.set("verbosity","none");
 
 
     // Build hierarchy
@@ -2651,6 +2661,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(IntrepidPCoarsenFactory,BuildP_PseudoPoisson_L
     Params.set("coarse: max size",100);
     level0.set("pcoarsen: element to node map",rcp(&elem_to_node,false));
     Params.set("level 0",level0);
+    Params.set("verbosity","none");
 
 
     // Build hierarchy
@@ -2716,6 +2727,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(IntrepidPCoarsenFactory,BuildP_PseudoPoisson_L
     Params.set("coarse: max size",100);
     level0.set("pcoarsen: element to node map",rcp(&elem_to_node,false));
     Params.set("level 0",level0);
+    Params.set("verbosity","none");
 
 
     // Build hierarchy
@@ -2789,6 +2801,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(IntrepidPCoarsenFactory,BuildP_PseudoPoisson_L
     level2.set("pcoarsen: hi basis","hgrad_line_c3");
     level2.set("pcoarsen: lo basis","hgrad_line_c2");
     Params.set("level 2",level2);
+    Params.set("verbosity","none");
 
 #if 0
     // DEBUG
@@ -2872,6 +2885,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(IntrepidPCoarsenFactory,BuildP_PseudoPoisson_L
 
     level2.set("multigrid algorithm","sa");
     Params.set("level 2",level2);
+    Params.set("verbosity","none");
 
 
     // Build hierarchy
@@ -2947,6 +2961,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(IntrepidPCoarsenFactory,BuildP_PseudoPoisson_L
 
     level3.set("multigrid algorithm","sa");
     Params.set("level 3",level3);
+    Params.set("verbosity","none");
 
 
     // Build hierarchy
@@ -3014,6 +3029,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(IntrepidPCoarsenFactory,BuildP_PseudoPoisson_L
 
     Params.set("pcoarsen: element","hgrad_line_c");
     Params.set("pcoarsen: schedule","{3,2,1}");
+    Params.set("verbosity","none");
 
     // Build hierarchy
     RCP<Hierarchy> tH = MueLu::CreateXpetraPreconditioner<SC,LO,GO,NO>(A,Params);

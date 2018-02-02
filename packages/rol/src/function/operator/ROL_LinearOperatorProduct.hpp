@@ -61,25 +61,25 @@ class LinearOperatorProduct : public LinearOperator<Real> {
   typedef Vector<Real>         V;
   typedef LinearOperator<Real> OP;
  
-  typedef typename std::vector<Teuchos::RCP<OP> >::size_type size_type;
+  typedef typename std::vector<ROL::Ptr<OP> >::size_type size_type;
 
 private:
 
-  Teuchos::RCP<std::vector<Teuchos::RCP<OP> > > ops_;
+  ROL::Ptr<std::vector<ROL::Ptr<OP> > > ops_;
 
 public:
 
-  LinearOperatorSum( Teuchos::RCP<OP> &A, 
-                     Teuchos::RCP<OP> &B) {
-    ops_ = Teuchos::rcp(new std::vector<OP> > );
+  LinearOperatorSum( ROL::Ptr<OP> &A, 
+                     ROL::Ptr<OP> &B) {
+    ops_ = ROL::makePtr<std::vector<OP> >>();
     ops_->push_back(A);
     ops_->push_back(B);
   }
 
-  LinearOperatorSum( Teuchos::RCP<OP> &A, 
-                     Teuchos::RCP<OP> &B, 
-                     Teuchos::RCP<OP> &C) {
-    ops_ = Teuchos::rcp(new std::vector<OP> > );
+  LinearOperatorSum( ROL::Ptr<OP> &A, 
+                     ROL::Ptr<OP> &B, 
+                     ROL::Ptr<OP> &C) {
+    ops_ = ROL::makePtr<std::vector<OP> >>();
     ops_->push_back(A);
     ops_->push_back(B);
     ops_->push_back(C);

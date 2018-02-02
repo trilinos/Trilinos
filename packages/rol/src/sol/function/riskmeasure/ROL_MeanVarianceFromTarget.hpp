@@ -79,7 +79,7 @@ class MeanVarianceFromTarget : public RiskMeasure<Real> {
   typedef typename std::vector<Real>::size_type uint;
 private:
 
-  Teuchos::RCP<PositiveFunction<Real> > positiveFunction_;
+  ROL::Ptr<PositiveFunction<Real> > positiveFunction_;
 
   std::vector<Real> target_;
   std::vector<Real> order_;
@@ -97,7 +97,7 @@ private:
       TEUCHOS_TEST_FOR_EXCEPTION((coeff_[i] < zero), std::invalid_argument,
         ">>> ERROR (ROL::MeanVarianceFromTarget): Element of coefficient array out of range!");
     }
-    TEUCHOS_TEST_FOR_EXCEPTION(positiveFunction_ == Teuchos::null, std::invalid_argument,
+    TEUCHOS_TEST_FOR_EXCEPTION(positiveFunction_ == ROL::nullPtr, std::invalid_argument,
       ">>> ERROR (ROL::MeanVarianceFromTarget): PositiveFunction pointer is null!");
   }
 
@@ -113,7 +113,7 @@ public:
       with a single variance.
   */
   MeanVarianceFromTarget( const Real target, const Real order, const Real coeff,
-                          const Teuchos::RCP<PositiveFunction<Real> > &pf )
+                          const ROL::Ptr<PositiveFunction<Real> > &pf )
     : RiskMeasure<Real>(), positiveFunction_(pf) {
     target_.clear(); target_.push_back(target);
     order_.clear();  order_.push_back(order);
@@ -135,7 +135,7 @@ public:
   MeanVarianceFromTarget( const std::vector<Real> &target,
                           const std::vector<Real> &order,
                           const std::vector<Real> &coeff, 
-                          const Teuchos::RCP<PositiveFunction<Real> > &pf )
+                          const ROL::Ptr<PositiveFunction<Real> > &pf )
     : RiskMeasure<Real>(), positiveFunction_(pf) {
     target_.clear(); order_.clear(); coeff_.clear();
     for ( uint i = 0; i < target.size(); i++ ) {
@@ -180,10 +180,10 @@ public:
     // Build (approximate) positive function
     std::string type = list.get<std::string>("Deviation Type");
     if ( type == "Upper" ) {
-      positiveFunction_ = Teuchos::rcp(new PlusFunction<Real>(list));
+      positiveFunction_ = ROL::makePtr<PlusFunction<Real>>(list);
     }
     else if ( type == "Absolute" ) {
-      positiveFunction_ = Teuchos::rcp(new AbsoluteValue<Real>(list));
+      positiveFunction_ = ROL::makePtr<AbsoluteValue<Real>>(list);
     }
     else {
       TEUCHOS_TEST_FOR_EXCEPTION(true, std::invalid_argument,

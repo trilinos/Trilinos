@@ -65,7 +65,7 @@ private:
   Real sum_ng2_;
   
   const bool useDist_;
-  const std::vector<Teuchos::RCP<Distribution<Real> > > dist_;
+  const std::vector<ROL::Ptr<Distribution<Real> > > dist_;
 
   Real ierf(Real input) const {
     std::vector<Real> coeff;
@@ -155,8 +155,8 @@ private:
 
 public:
   MonteCarloGenerator(const int nSamp,
-                      const std::vector<Teuchos::RCP<Distribution<Real> > > &dist, 
-                      const Teuchos::RCP<BatchManager<Real> > &bman, 
+                      const std::vector<ROL::Ptr<Distribution<Real> > > &dist, 
+                      const ROL::Ptr<BatchManager<Real> > &bman, 
                       const bool use_SA = false,
                       const bool adaptive = false,
                       const int numNewSamps = 0)
@@ -180,7 +180,7 @@ public:
 
   MonteCarloGenerator(const int nSamp,
                             std::vector<std::vector<Real> > &bounds, 
-                      const Teuchos::RCP<BatchManager<Real> > &bman,  
+                      const ROL::Ptr<BatchManager<Real> > &bman,  
                       const bool use_SA = false,
                       const bool adaptive = false,
                       const int numNewSamps = 0)
@@ -216,7 +216,7 @@ public:
   MonteCarloGenerator(const int nSamp,
                       const std::vector<Real> &mean,
                       const std::vector<Real> &std, 
-                      const Teuchos::RCP<BatchManager<Real> > &bman,
+                      const ROL::Ptr<BatchManager<Real> > &bman,
                       const bool use_SA = false,
                       const bool adaptive = false,
                       const int numNewSamps = 0 )
@@ -284,9 +284,9 @@ public:
     }
   }
 
-  Real computeError( std::vector<Teuchos::RCP<Vector<Real> > > &vals, const Vector<Real> &x ) {
+  Real computeError( std::vector<ROL::Ptr<Vector<Real> > > &vals, const Vector<Real> &x ) {
     if ( adaptive_ && !use_SA_ ) {
-      int zero(0), one(1), tol(1e-4);
+      Real zero(0), one(1), tol(1e-4);
       // Compute unbiased sample variance
       int cnt = 0;
       Real ng = zero;

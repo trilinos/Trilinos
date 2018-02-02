@@ -24,7 +24,34 @@ namespace Tempus {
 template<class Scalar> class StepperFactory;
 
 
-// StepperIMEX_RK_Partition definitions:
+template<class Scalar>
+StepperIMEX_RK_Partition<Scalar>::StepperIMEX_RK_Partition(
+  const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel,
+  std::string stepperType)
+{
+  this->setTableaus(Teuchos::null, stepperType);
+  this->setParameterList(Teuchos::null);
+  this->setModel(appModel);
+  this->setSolver();
+  this->setObserver();
+  this->initialize();
+}
+
+
+template<class Scalar>
+StepperIMEX_RK_Partition<Scalar>::StepperIMEX_RK_Partition(
+  const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel,
+  Teuchos::RCP<Teuchos::ParameterList> pList)
+{
+  this->setTableaus(pList, "Partitioned IMEX RK SSP2");
+  this->setParameterList(pList);
+  this->setModel(appModel);
+  this->setSolver();
+  this->setObserver();
+  this->initialize();
+}
+
+
 template<class Scalar>
 StepperIMEX_RK_Partition<Scalar>::StepperIMEX_RK_Partition(
   const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel,
@@ -49,7 +76,8 @@ void StepperIMEX_RK_Partition<Scalar>::setTableaus(
     if (pList == Teuchos::null)
       stepperType = "Partitioned IMEX RK SSP2";
     else
-      stepperType = pList->get<std::string>("Stepper Type");
+      stepperType = pList->get<std::string>("Stepper Type",
+                                            "Partitioned IMEX RK SSP2");
   }
 
   if (stepperType == "Partitioned IMEX RK 1st order") {
@@ -355,7 +383,7 @@ void StepperIMEX_RK_Partition<Scalar>::setSolver(
       << "\n" << "  Solver Name  = "<<solverName<<"\n");
     solverName = solverPL->name();
     stepperPL_->set("Solver Name", solverName);
-    stepperPL_->set(solverName, solverPL);      // Add sublist
+    stepperPL_->set(solverName, *solverPL);      // Add sublist
     solver_ = rcp(new Thyra::NOXNonlinearSolver());
     RCP<ParameterList> noxPL = Teuchos::sublist(solverPL, "NOX", true);
     solver_->setParameterList(noxPL);
@@ -377,7 +405,7 @@ void StepperIMEX_RK_Partition<Scalar>::setSolver(
   RCP<ParameterList> solverPL = solver->getNonconstParameterList();
   std::string solverName = solverPL->name();
   stepperPL_->set("Solver Name", solverName);
-  stepperPL_->set(solverName, solverPL);      // Add sublist
+  stepperPL_->set(solverName, *solverPL);      // Add sublist
   solver_ = solver;
 }
 
@@ -401,6 +429,17 @@ void StepperIMEX_RK_Partition<Scalar>::setObserver(
 template<class Scalar>
 void StepperIMEX_RK_Partition<Scalar>::initialize()
 {
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    (explicitTableau_ == Teuchos::null) || (implicitTableau_ == Teuchos::null),
+    std::logic_error,
+    "Error - Need to set the Butcher Tableaus, setTableaus(), before calling "
+    "StepperIMEX_RK_Partition::initialize()\n");
+
+  TEUCHOS_TEST_FOR_EXCEPTION( wrapperModelPairIMEX_ == Teuchos::null,
+    std::logic_error,
+    "Error - Need to set the model, setModel(), before calling "
+    "StepperIMEX_RK_Partition::initialize()\n");
+
   // Initialize the stage vectors
   const int numStages = explicitTableau_->numStages();
   stageF_.resize(numStages);
@@ -508,7 +547,7 @@ void StepperIMEX_RK_Partition<Scalar>::takeStep(
     const SerialDenseVector<int,Scalar> & c    = implicitTableau_->c();
 
     bool pass = true;
-    Thyra::SolveStatus<double> sStatus;
+    Thyra::SolveStatus<Scalar> sStatus;
     stageZ_ = workingState->getX();
     Thyra::assign(stageZ_.ptr(), *(currentState->getX()));
     RCP<Thyra::VectorBase<Scalar> > stageY =
@@ -662,7 +701,8 @@ void StepperIMEX_RK_Partition<Scalar>::setParameterList(
   const Teuchos::RCP<Teuchos::ParameterList> & pList)
 {
   if (pList == Teuchos::null) {
-    stepperPL_ = this->getDefaultParameters();
+    // Create default parameters if null, otherwise keep current parameters.
+    if (stepperPL_ == Teuchos::null) stepperPL_ = this->getDefaultParameters();
   } else {
     stepperPL_ = pList;
   }

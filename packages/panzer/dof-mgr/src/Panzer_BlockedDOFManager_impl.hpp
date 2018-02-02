@@ -44,6 +44,7 @@
 #define PANZER_BLOCKED_DOF_MANAGER_IMPL_HPP
 
 #include <map>
+#include <numeric>
 
 #include "Panzer_GeometricAggFieldPattern.hpp"
 #include "Panzer_NodalFieldPattern.hpp"

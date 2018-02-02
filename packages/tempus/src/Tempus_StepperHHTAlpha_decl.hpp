@@ -62,6 +62,8 @@ public:
       Teuchos::RCP<Teuchos::ParameterList> solverPL=Teuchos::null);
     virtual void setSolver(
       Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> > solver);
+    virtual Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> > getSolver() const
+      { return solver_; }
 
 
     /// Initialize during construction and after changing input parameters.
@@ -79,6 +81,13 @@ public:
     }
     virtual Scalar getOrderMin() const {return 1.0;}
     virtual Scalar getOrderMax() const {return 2.0;}
+
+    virtual bool isExplicit()         const {return false;}
+    virtual bool isImplicit()         const {return true;}
+    virtual bool isExplicitImplicit() const
+      {return isExplicit() and isImplicit();}
+    virtual bool isOneStepMethod()   const {return true;}
+    virtual bool isMultiStepMethod() const {return !isOneStepMethod();}
   //@}
 
   /// \name ParameterList methods

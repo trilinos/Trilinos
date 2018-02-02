@@ -196,11 +196,11 @@ namespace MueLu {
       if (Ptent->IsView("stridedMaps"))
         finalP->CreateView("stridedMaps", Ptent);
 
-      if (IsPrint(Statistics1)) {
+      if (IsPrint(Statistics2)) {
         RCP<ParameterList> params = rcp(new ParameterList());
         params->set("printLoadBalancingInfo", true);
         params->set("printCommInfo",          true);
-        GetOStream(Statistics1) << PerfUtils::PrintMatrixInfo(*finalP, "P", params);
+        GetOStream(Statistics2) << PerfUtils::PrintMatrixInfo(*finalP, "P", params);
       }
 
     } else {
@@ -217,11 +217,11 @@ namespace MueLu {
       if (Ptent->IsView("stridedMaps"))
         R->CreateView("stridedMaps", Ptent, true/*transposeA*/);
 
-      if (IsPrint(Statistics1)) {
+      if (IsPrint(Statistics2)) {
         RCP<ParameterList> params = rcp(new ParameterList());
         params->set("printLoadBalancingInfo", true);
         params->set("printCommInfo",          true);
-        GetOStream(Statistics1) << PerfUtils::PrintMatrixInfo(*R, "R", params);
+        GetOStream(Statistics2) << PerfUtils::PrintMatrixInfo(*R, "R", params);
       }
     }
 

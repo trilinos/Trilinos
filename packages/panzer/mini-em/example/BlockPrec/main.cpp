@@ -43,6 +43,8 @@
 #include "MiniEM_AddFieldsToMesh.hpp"
 #include "MiniEM_OperatorRequestCallback.hpp"
 #include "MiniEM_FullMaxwellPreconditionerFactory.hpp"
+//#include "MiniEM_RefMaxwellPreconditionerFactory.hpp"
+#include "MiniEM_DiscreteGradient.hpp"
 
 #include <string>
 #include <iostream>
@@ -124,6 +126,7 @@ int main(int argc,char * argv[])
       bool use_ilu = false;
       bool use_refmaxwell = false;
       bool print_diagnostics = false;
+      int numTimeSteps = 1;
       Teuchos::CommandLineProcessor clp;
       clp.setOption("x-elements",&x_elements);
       clp.setOption("y-elements",&y_elements);
@@ -138,7 +141,8 @@ int main(int argc,char * argv[])
       clp.setOption("matrix-output","no-matrix-output",&matrix_output);
       clp.setOption("use-ilu","no-ilu",&use_ilu);
       clp.setOption("use-refmaxwell","use-augmentation",&use_refmaxwell);
-      clp.setOption("subsolve-diagnositics","no-subsolve-diagnostics",&print_diagnostics);
+      clp.setOption("subsolve-diagnostics","no-subsolve-diagnostics",&print_diagnostics);
+      clp.setOption("numTimeSteps",&numTimeSteps);
   
       // parse command-line argument
       TEUCHOS_ASSERT(clp.parse(argc,argv)==Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL);
@@ -162,11 +166,11 @@ int main(int argc,char * argv[])
       pl->set("Z Procs",z_procs);
   
       // periodic boundaries
-      //Teuchos::ParameterList& per_pl = pl->sublist("Periodic BCs");
-      //per_pl.set("Count", 1);
-      //per_pl.set("Periodic Condition 1", "xy-all 1e-8: front;back");
-      //per_pl.set("Periodic Condition 2", "xz-all 1e-8: top;bottom");
-      //per_pl.set("Periodic Condition 3", "yz-all 1e-8: left;right");
+      //      Teuchos::ParameterList& per_pl = pl->sublist("Periodic BCs");
+      //      per_pl.set("Count", 3);
+      //      per_pl.set("Periodic Condition 1", "xy-all 1e-8: front;back");
+      //      per_pl.set("Periodic Condition 2", "xz-all 1e-8: top;bottom");
+      //      per_pl.set("Periodic Condition 3", "yz-all 1e-8: left;right");
   
       mesh_factory.setParameterList(pl);
   
@@ -240,7 +244,6 @@ int main(int argc,char * argv[])
   
       // Add fields to the mesh data base (this is a peculiarity of how STK classic requires the
           // fields to be setup)
-      //    if (exodus_output)
       createExodusFile(physicsBlocks, Teuchos::rcpFromRef(mesh_factory), mesh, exodus_output);
   
       // build worksets
@@ -297,9 +300,12 @@ int main(int argc,char * argv[])
   
       Teuchos::ParameterList user_data("User Data"); // user data can be empty here
   
-      // add maxwell solver to teko
+      // add full maxwell solver to teko
       RCP<Teko::Cloneable> clone = rcp(new Teko::AutoClone<mini_em::FullMaxwellPreconditionerFactory>());
       Teko::PreconditionerFactory::addPreconditionerFactory("Full Maxwell Preconditioner",clone);
+      // add refMaxwell solver to teko
+      //clone = rcp(new Teko::AutoClone<mini_em::RefMaxwellPreconditionerFactory>());
+      //Teko::PreconditionerFactory::addPreconditionerFactory("RefMaxwell Preconditioner",clone);
   
       // add callbacks to request handler. these are for requesting auxiliary operators and for providing
       // coordinate information to MueLu
@@ -311,6 +317,9 @@ int main(int argc,char * argv[])
                              rcp_dynamic_cast<panzer::BlockedDOFManager<int,panzer::Ordinal64> >(dofManager,true),
                              rcp_dynamic_cast<panzer::BlockedDOFManager<int,panzer::Ordinal64> >(auxDofManager,true)));
       req_handler->addRequestCallback(callback);
+
+      // add discrete gradient
+      addDiscreteGradientToRequestHandler(auxLinObjFactory,req_handler);
   
       // build linear solver
       RCP<Teuchos::ParameterList> lin_solver_pl = maxwellSolverParameterList(use_ilu,use_refmaxwell,print_diagnostics);
@@ -384,13 +393,13 @@ int main(int argc,char * argv[])
       physics->evalModel(inArgs,outArgs);
       outArgs.set_W(RCP<Thyra::LinearOpWithSolveBase<double> >(NULL));
   
-      // take 20 time-steps with Backward Euler
+      // take time-steps with Backward Euler
       if (exodus_output)
         writeToExodus(0,solution_vec,*physics,*stkIOResponseLibrary,*mesh);
 
       {
         Teuchos::RCP<Teuchos::TimeMonitor> tM = Teuchos::rcp(new Teuchos::TimeMonitor(*Teuchos::TimeMonitor::getNewTimer(std::string("Mini-EM: timestepper"))));
-        for(int ts = 1; ts < 21; ts++)
+        for(int ts = 1; ts < numTimeSteps+1; ts++)
         {
           RCP<Thyra::VectorBase<double> > x_old = solution_vec->clone_v();
     
@@ -679,6 +688,7 @@ void writeToExodus(double time_stamp,
   // fill STK mesh objects
   Thyra::ModelEvaluatorBase::InArgs<double> inArgs = model.createInArgs();
   inArgs.set_x(x);
+  inArgs.set_t(time_stamp);
 
   panzer::AssemblyEngineInArgs respInput;
   model.setupAssemblyInArgs(inArgs,respInput);

@@ -1,0 +1,10 @@
+MACRO(ATDM_SET)
+  SET(${ARGN} "Set in ATDMDevEnv.cmake")
+ENDMACRO()
+
+MACRO(ATDM_SET_ENABLE  VAR_NAME  VAR_DEFAULT)
+  IF ("${${VAR_DEFAULT}}" STREQUAL "")
+    MESSAGE("-- " "Setting default ${VAR_NAME}=${VAR_DEFAULT}")
+    SET(${VAR_NAME} ${VAR_DEFAULT} CACHE BOOL "Set in ATDMDevEnv.cmake")
+  ENDIF()
+ENDMACRO()

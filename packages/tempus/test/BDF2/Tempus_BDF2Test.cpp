@@ -9,9 +9,11 @@
 #include "Teuchos_UnitTestHarness.hpp"
 #include "Teuchos_XMLParameterListHelpers.hpp"
 #include "Teuchos_TimeMonitor.hpp"
+#include "Teuchos_DefaultComm.hpp"
 
 #include "Tempus_config.hpp"
 #include "Tempus_IntegratorBasic.hpp"
+#include "Tempus_StepperBDF2.hpp"
 
 #include "../TestModels/SinCosModel.hpp"
 #include "../TestModels/CDR_Model.hpp"
@@ -27,9 +29,17 @@
 #include "Epetra_SerialComm.h"
 #endif
 
-#include <vector>
-#include <sstream>
+#include <fstream>
 #include <limits>
+#include <sstream>
+#include <vector>
+
+//IKT, 11/20/17: comment out any of the following
+//if you wish not to build/run all the test cases.
+#define TEST_CDR
+#define TEST_SINCOS
+#define TEST_SINCOS_ADAPT
+#define TEST_VANDERPOL
 
 namespace Tempus_Test {
 
@@ -64,12 +74,12 @@ TEUCHOS_UNIT_TEST(BDF2, ParameterList)
       Tempus::integratorBasic<double>(tempusPL, model);
 
     RCP<ParameterList> stepperPL = sublist(tempusPL, "Default Stepper", true);
-    // Remove Predictor for comparison
-    stepperPL->remove("Predictor Name");
-    stepperPL->remove("Default Predictor");
+    // Remove Start Up Stepper for comparison
+    stepperPL->remove("Start Up Stepper Name");
+    stepperPL->remove("Default Start Up Stepper");
     RCP<ParameterList> defaultPL =
       integrator->getStepper()->getDefaultParameters();
-    TEST_ASSERT(haveSameValues(*stepperPL,*defaultPL))
+    TEST_ASSERT(haveSameValues(*stepperPL, *defaultPL, true))
   }
 
   // Test constructor IntegratorBasic(model, stepperType)
@@ -81,33 +91,148 @@ TEUCHOS_UNIT_TEST(BDF2, ParameterList)
     RCP<ParameterList> defaultPL =
       integrator->getStepper()->getDefaultParameters();
 
-    TEST_ASSERT(haveSameValues(*stepperPL,*defaultPL))
+    TEST_ASSERT(haveSameValues(*stepperPL, *defaultPL, true))
   }
 }
 
 
 // ************************************************************
 // ************************************************************
+TEUCHOS_UNIT_TEST(BDF2, ConstructingFromDefaults)
+{
+  double dt = 0.1;
+
+  // Read params from .xml file
+  RCP<ParameterList> pList =
+    getParametersFromXmlFile("Tempus_BDF2_SinCos.xml");
+  RCP<ParameterList> pl = sublist(pList, "Tempus", true);
+
+  // Setup the SinCosModel
+  RCP<ParameterList> scm_pl = sublist(pList, "SinCosModel", true);
+  //RCP<SinCosModel<double> > model = sineCosineModel(scm_pl);
+  RCP<SinCosModel<double> > model =
+    Teuchos::rcp(new SinCosModel<double>(scm_pl));
+
+  // Setup Stepper for field solve ----------------------------
+  RCP<Tempus::StepperBDF2<double> > stepper =
+    Teuchos::rcp(new Tempus::StepperBDF2<double>(model));
+  //{
+  //  // Setup a linear NOX solve
+  //  RCP<ParameterList> sPL = stepper->getNonconstParameterList();
+  //  std::string solverName = sPL->get<std::string>("Solver Name");
+  //  RCP<ParameterList> solverPL = Teuchos::sublist(sPL, solverName, true);
+  //  stepper->setSolver(solverPL);
+  //  stepper->initialize();
+  //}
+
+  // Setup TimeStepControl ------------------------------------
+  RCP<Tempus::TimeStepControl<double> > timeStepControl =
+    Teuchos::rcp(new Tempus::TimeStepControl<double>());
+  ParameterList tscPL = pl->sublist("Default Integrator")
+                           .sublist("Time Step Control");
+  timeStepControl->setStepType (tscPL.get<std::string>("Integrator Step Type"));
+  timeStepControl->setInitIndex(tscPL.get<int>   ("Initial Time Index"));
+  timeStepControl->setInitTime (tscPL.get<double>("Initial Time"));
+  timeStepControl->setFinalTime(tscPL.get<double>("Final Time"));
+  timeStepControl->setInitTimeStep(dt);
+
+  // Setup initial condition SolutionState --------------------
+  Thyra::ModelEvaluatorBase::InArgs<double> inArgsIC =
+    stepper->getModel()->getNominalValues();
+  RCP<Thyra::VectorBase<double> > icSolution =
+    Teuchos::rcp_const_cast<Thyra::VectorBase<double> > (inArgsIC.get_x());
+  RCP<Tempus::SolutionState<double> > icState =
+      Teuchos::rcp(new Tempus::SolutionState<double>(icSolution));
+  icState->setTime    (timeStepControl->getInitTime());
+  icState->setIndex   (timeStepControl->getInitIndex());
+  icState->setTimeStep(0.0);
+  icState->setOrder   (stepper->getOrder());
+  icState->setSolutionStatus(Tempus::Status::PASSED);  // ICs are passing.
+
+  // Setup SolutionHistory ------------------------------------
+  RCP<Tempus::SolutionHistory<double> > solutionHistory =
+    Teuchos::rcp(new Tempus::SolutionHistory<double>());
+  solutionHistory->setName("Forward States");
+  solutionHistory->setStorageType(Tempus::STORAGE_TYPE_STATIC);
+  solutionHistory->setStorageLimit(3);
+  solutionHistory->addState(icState);
+
+  // Setup Integrator -----------------------------------------
+  RCP<Tempus::IntegratorBasic<double> > integrator =
+    Tempus::integratorBasic<double>();
+  integrator->setStepperWStepper(stepper);
+  integrator->setTimeStepControl(timeStepControl);
+  integrator->setSolutionHistory(solutionHistory);
+  //integrator->setObserver(...);
+  integrator->initialize();
+
+
+  // Integrate to timeMax
+  bool integratorStatus = integrator->advanceTime();
+  TEST_ASSERT(integratorStatus)
+
+
+  // Test if at 'Final Time'
+  double time = integrator->getTime();
+  double timeFinal =pl->sublist("Default Integrator")
+     .sublist("Time Step Control").get<double>("Final Time");
+  TEST_FLOATING_EQUALITY(time, timeFinal, 1.0e-14);
+
+  // Time-integrated solution and the exact solution
+  RCP<Thyra::VectorBase<double> > x = integrator->getX();
+  RCP<const Thyra::VectorBase<double> > x_exact =
+    model->getExactSolution(time).get_x();
+
+  // Calculate the error
+  RCP<Thyra::VectorBase<double> > xdiff = x->clone_v();
+  Thyra::V_StVpStV(xdiff.ptr(), 1.0, *x_exact, -1.0, *(x));
+
+  // Check the order and intercept
+  std::cout << "  Stepper = BDF2" << std::endl;
+  std::cout << "  =========================" << std::endl;
+  std::cout << "  Exact solution   : " << get_ele(*(x_exact), 0) << "   "
+                                       << get_ele(*(x_exact), 1) << std::endl;
+  std::cout << "  Computed solution: " << get_ele(*(x      ), 0) << "   "
+                                       << get_ele(*(x      ), 1) << std::endl;
+  std::cout << "  Difference       : " << get_ele(*(xdiff  ), 0) << "   "
+                                       << get_ele(*(xdiff  ), 1) << std::endl;
+  std::cout << "  =========================" << std::endl;
+  TEST_FLOATING_EQUALITY(get_ele(*(x), 0), 0.845467, 1.0e-4 );
+  TEST_FLOATING_EQUALITY(get_ele(*(x), 1), 0.547390, 1.0e-4 );
+}
+
+
+// ************************************************************
+// ************************************************************
+#ifdef TEST_SINCOS
 TEUCHOS_UNIT_TEST(BDF2, SinCos)
 {
   std::vector<double> StepSize;
   std::vector<double> ErrorNorm;
-  const int nTimeStepSizes = 7;
-  double dt = 0.2;
+
+  // Read params from .xml file
+  RCP<ParameterList> pList = getParametersFromXmlFile("Tempus_BDF2_SinCos.xml");
+  //Set initial time step = 2*dt specified in input file (for convergence study)
+  //
+  RCP<ParameterList> pl = sublist(pList, "Tempus", true);
+  double dt = pl->sublist("Default Integrator")
+       .sublist("Time Step Control").get<double>("Initial Time Step");
+  dt *= 2.0;
+
+  // Setup the SinCosModel
+  RCP<ParameterList> scm_pl = sublist(pList, "SinCosModel", true);
+  const int nTimeStepSizes = scm_pl->get<int>("Number of Time Step Sizes", 7);
+  std::string output_file_string =
+                    scm_pl->get<std::string>("Output File Name", "Tempus_BDF2_SinCos");
+  std::string output_file_name = output_file_string + ".dat";
+  std::string err_out_file_name = output_file_string + "-Error.dat";
   double order = 0.0;
   for (int n=0; n<nTimeStepSizes; n++) {
-
-    // Read params from .xml file
-    RCP<ParameterList> pList =
-      getParametersFromXmlFile("Tempus_BDF2_SinCos.xml");
 
     //std::ofstream ftmp("PL.txt");
     //pList->print(ftmp);
     //ftmp.close();
 
-    // Setup the SinCosModel
-    RCP<ParameterList> scm_pl = sublist(pList, "SinCosModel", true);
-    //RCP<SinCosModel<double> > model = sineCosineModel(scm_pl);
     RCP<SinCosModel<double> > model =
       Teuchos::rcp(new SinCosModel<double>(scm_pl));
 
@@ -118,7 +243,7 @@ TEUCHOS_UNIT_TEST(BDF2, SinCos)
     pl->sublist("Default Integrator")
        .sublist("Time Step Control").set("Initial Time Step", dt);
     RCP<Tempus::IntegratorBasic<double> > integrator =
-      Tempus::integratorBasic<double>(pl, model);
+       Tempus::integratorBasic<double>(pl, model);
     order = integrator->getStepper()->getOrder();
 
     // Initial Conditions
@@ -146,7 +271,7 @@ TEUCHOS_UNIT_TEST(BDF2, SinCos)
 
     // Plot sample solution and exact solution
     if (n == 0) {
-      std::ofstream ftmp("Tempus_BDF2_SinCos.dat");
+      std::ofstream ftmp(output_file_name);
       RCP<const SolutionHistory<double> > solutionHistory =
         integrator->getSolutionHistory();
       RCP<const Thyra::VectorBase<double> > x_exact_plot;
@@ -172,17 +297,19 @@ TEUCHOS_UNIT_TEST(BDF2, SinCos)
     ErrorNorm.push_back(L2norm);
   }
 
-  // Check the order and intercept
-  double slope = computeLinearRegressionLogLog<double>(StepSize, ErrorNorm);
-  std::cout << "  Stepper = BDF2" << std::endl;
-  std::cout << "  =========================" << std::endl;
-  std::cout << "  Expected order: " << order << std::endl;
-  std::cout << "  Observed order: " << slope << std::endl;
-  std::cout << "  =========================" << std::endl;
-  TEST_FLOATING_EQUALITY( slope, order, 0.01 );
-  TEST_FLOATING_EQUALITY( ErrorNorm[0], 0.0486418, 1.0e-4 );
+  if (nTimeStepSizes > 1) {
+    // Check the order and intercept
+    double slope = computeLinearRegressionLogLog<double>(StepSize, ErrorNorm);
+    std::cout << "  Stepper = BDF2" << std::endl;
+    std::cout << "  =========================" << std::endl;
+    std::cout << "  Expected order: " << order << std::endl;
+    std::cout << "  Observed order: " << slope << std::endl;
+    std::cout << "  =========================" << std::endl;
+    TEST_FLOATING_EQUALITY( slope, order, 0.01 );
+  }
+  TEST_FLOATING_EQUALITY( ErrorNorm[0], 0.00778269, 1.0e-4 );
 
-  std::ofstream ftmp("Tempus_BDF2_SinCos-Error.dat");
+  std::ofstream ftmp(err_out_file_name);
   double error0 = 0.8*ErrorNorm[0];
   for (int n=0; n<nTimeStepSizes; n++) {
     ftmp << StepSize[n]  << "   " << ErrorNorm[n] << "   "
@@ -190,9 +317,146 @@ TEUCHOS_UNIT_TEST(BDF2, SinCos)
   }
   ftmp.close();
 }
+#endif //TEST_SINCOS
 
 // ************************************************************
 // ************************************************************
+#ifdef TEST_SINCOS_ADAPT
+TEUCHOS_UNIT_TEST(BDF2, SinCosAdapt)
+{
+  std::vector<double> StepSize;
+  std::vector<double> ErrorNorm;
+
+  // Read params from .xml file
+  RCP<ParameterList> pList =
+    getParametersFromXmlFile("Tempus_BDF2_SinCos_AdaptDt.xml");
+  //Set initial time step = 2*dt specified in input file (for convergence study)
+  RCP<ParameterList> pl = sublist(pList, "Tempus", true);
+  double dt = pl->sublist("Default Integrator")
+       .sublist("Time Step Control").get<double>("Initial Time Step");
+  dt *= 2.0;
+
+  // Setup the SinCosModel
+  RCP<ParameterList> scm_pl = sublist(pList, "SinCosModel", true);
+  const int nTimeStepSizes = scm_pl->get<int>("Number of Time Step Sizes", 7);
+  std::string output_file_string =
+    scm_pl->get<std::string>("Output File Name", "Tempus_BDF2_SinCos");
+  std::string output_file_name = output_file_string + ".dat";
+  std::string err_out_file_name = output_file_string + "-Error.dat";
+  double order = 0.0;
+  for (int n=0; n<nTimeStepSizes; n++) {
+
+    //std::ofstream ftmp("PL.txt");
+    //pList->print(ftmp);
+    //ftmp.close();
+
+    RCP<SinCosModel<double> > model =
+      Teuchos::rcp(new SinCosModel<double>(scm_pl));
+
+    dt /= 2;
+
+    // Setup the Integrator and reset initial time step
+    RCP<ParameterList> pl = sublist(pList, "Tempus", true);
+    pl->sublist("Default Integrator")
+       .sublist("Time Step Control").set("Initial Time Step", dt/4.0);
+    // Ensure time step does not get larger than the initial time step size,
+    // as that would mess up the convergence rates.
+    pl->sublist("Default Integrator")
+       .sublist("Time Step Control").set("Maximum Time Step", dt);
+    // Ensure time step does not get too small and therefore too many steps.
+    pl->sublist("Default Integrator")
+       .sublist("Time Step Control").set("Minimum Time Step", dt/4.0);
+    // For the SinCos problem eta is directly related to dt
+    pl->sublist("Default Integrator")
+       .sublist("Time Step Control")
+       .set("Minimum Value Monitoring Function", dt*0.99);
+    RCP<Tempus::IntegratorBasic<double> > integrator =
+       Tempus::integratorBasic<double>(pl, model);
+    order = integrator->getStepper()->getOrder();
+
+    // Initial Conditions
+    // During the Integrator construction, the initial SolutionState
+    // is set by default to model->getNominalVales().get_x().  However,
+    // the application can set it also by integrator->setInitialState.
+    RCP<Thyra::VectorBase<double> > x0 =
+      model->getNominalValues().get_x()->clone_v();
+    integrator->setInitialState(0.0, x0);
+
+    // Integrate to timeMax
+    bool integratorStatus = integrator->advanceTime();
+    TEST_ASSERT(integratorStatus)
+
+    // Test if at 'Final Time'
+    double time = integrator->getTime();
+    double timeFinal =pl->sublist("Default Integrator")
+       .sublist("Time Step Control").get<double>("Final Time");
+    TEST_FLOATING_EQUALITY(time, timeFinal, 1.0e-14);
+
+    // Time-integrated solution and the exact solution
+    RCP<Thyra::VectorBase<double> > x = integrator->getX();
+    RCP<const Thyra::VectorBase<double> > x_exact =
+      model->getExactSolution(time).get_x();
+
+    // Plot sample solution and exact solution
+    if (n == 0) {
+      std::ofstream ftmp(output_file_name);
+      //Warning: the following assumes serial run
+      FILE *gold_file = fopen("Tempus_BDF2_SinCos_AdaptDt_gold.dat", "r");
+      RCP<const SolutionHistory<double> > solutionHistory =
+        integrator->getSolutionHistory();
+      RCP<const Thyra::VectorBase<double> > x_exact_plot;
+      for (int i=0; i<solutionHistory->getNumStates(); i++) {
+        char time_gold_char[100];
+        fgets(time_gold_char, 100, gold_file);
+        double time_gold;
+        sscanf(time_gold_char, "%lf", &time_gold);
+        RCP<const SolutionState<double> > solutionState = (*solutionHistory)[i];
+        double time = solutionState->getTime();
+        //Throw error if time does not match time in gold file to specified tolerance
+        TEST_FLOATING_EQUALITY( time, time_gold, 1.0e-5 );
+        RCP<const Thyra::VectorBase<double> > x_plot = solutionState->getX();
+        x_exact_plot = model->getExactSolution(time).get_x();
+        ftmp << time << "   "
+             << get_ele(*(x_plot), 0) << "   "
+             << get_ele(*(x_plot), 1) << "   "
+             << get_ele(*(x_exact_plot), 0) << "   "
+             << get_ele(*(x_exact_plot), 1) << std::endl;
+      }
+      ftmp.close();
+    }
+
+    // Calculate the error
+    RCP<Thyra::VectorBase<double> > xdiff = x->clone_v();
+    Thyra::V_StVpStV(xdiff.ptr(), 1.0, *x_exact, -1.0, *(x));
+    StepSize.push_back(dt);
+    const double L2norm = Thyra::norm_2(*xdiff);
+    ErrorNorm.push_back(L2norm);
+  }
+
+  if (nTimeStepSizes > 1) {
+    // Check the order and intercept
+    double slope = computeLinearRegressionLogLog<double>(StepSize, ErrorNorm);
+    std::cout << "  Stepper = BDF2" << std::endl;
+    std::cout << "  =========================" << std::endl;
+    std::cout << "  Expected order: " << order << std::endl;
+    std::cout << "  Observed order: " << slope << std::endl;
+    std::cout << "  =========================" << std::endl;
+    TEST_FLOATING_EQUALITY( slope, 1.95089, 0.01 );
+  }
+  TEST_FLOATING_EQUALITY( ErrorNorm[0], 0.000197325, 1.0e-4 );
+
+  std::ofstream ftmp(err_out_file_name);
+  double error0 = 0.8*ErrorNorm[0];
+  for (int n=0; n<nTimeStepSizes; n++) {
+    ftmp << StepSize[n]  << "   " << ErrorNorm[n] << "   "
+         << error0*(StepSize[n]/StepSize[0]) << std::endl;
+  }
+  ftmp.close();
+}
+#endif //TEST_SINCOS_ADAPT
+
+// ************************************************************
+#ifdef TEST_CDR
 TEUCHOS_UNIT_TEST(BDF2, CDR)
 {
   // Create a communicator for Epetra objects
@@ -206,17 +470,24 @@ TEUCHOS_UNIT_TEST(BDF2, CDR)
   std::vector<RCP<Thyra::VectorBase<double>>> solutions;
   std::vector<double> StepSize;
   std::vector<double> ErrorNorm;
-  const int nTimeStepSizes = 5;
-  double dt = 0.2;
+
+  // Read params from .xml file
+  RCP<ParameterList> pList =
+    getParametersFromXmlFile("Tempus_BDF2_CDR.xml");
+  //Set initial time step = 2*dt specified in input file (for convergence study)
+  //
+  RCP<ParameterList> pl = sublist(pList, "Tempus", true);
+  double dt = pl->sublist("Demo Integrator")
+       .sublist("Time Step Control").get<double>("Initial Time Step");
+  dt *= 2.0;
+  RCP<ParameterList> model_pl = sublist(pList, "CDR Model", true);
+
+  const int nTimeStepSizes = model_pl->get<int>("Number of Time Step Sizes", 5);
   double order = 0.0;
+
   for (int n=0; n<nTimeStepSizes; n++) {
 
-    // Read params from .xml file
-    RCP<ParameterList> pList =
-      getParametersFromXmlFile("Tempus_BDF2_CDR.xml");
-
     // Create CDR Model
-    RCP<ParameterList> model_pl = sublist(pList, "CDR Model", true);
     const int num_elements = model_pl->get<int>("num elements");
     const double left_end = model_pl->get<double>("left end");
     const double right_end = model_pl->get<double>("right end");
@@ -314,17 +585,19 @@ TEUCHOS_UNIT_TEST(BDF2, CDR)
     ErrorNorm.push_back(L2norm);
   }
 
-  // Check the order and intercept
-  double slope = computeLinearRegressionLogLog<double>(StepSizeCheck,ErrorNorm);
-  std::cout << "  Stepper = BDF2" << std::endl;
-  std::cout << "  =========================" << std::endl;
-  std::cout << "  Expected order: " << order << std::endl;
-  std::cout << "  Observed order: " << slope << std::endl;
-  std::cout << "  =========================" << std::endl;
-  TEST_FLOATING_EQUALITY( slope, order, 0.35 );
-  TEST_COMPARE(slope, >, 0.95);
-  out << "\n\n ** Slope on BDF2 Method = " << slope
-      << "\n" << std::endl;
+  if (nTimeStepSizes > 2) {
+    // Check the order and intercept
+    double slope = computeLinearRegressionLogLog<double>(StepSizeCheck,ErrorNorm);
+    std::cout << "  Stepper = BDF2" << std::endl;
+    std::cout << "  =========================" << std::endl;
+    std::cout << "  Expected order: " << order << std::endl;
+    std::cout << "  Observed order: " << slope << std::endl;
+    std::cout << "  =========================" << std::endl;
+    TEST_FLOATING_EQUALITY( slope, order, 0.35 );
+    TEST_COMPARE(slope, >, 0.95);
+    out << "\n\n ** Slope on BDF2 Method = " << slope
+        << "\n" << std::endl;
+  }
 
   // Write error data
   {
@@ -361,25 +634,35 @@ TEUCHOS_UNIT_TEST(BDF2, CDR)
 
   Teuchos::TimeMonitor::summarize();
 }
+#endif //TEST_CDR
 
 // ************************************************************
 // ************************************************************
+#ifdef TEST_VANDERPOL
 TEUCHOS_UNIT_TEST(BDF2, VanDerPol)
 {
   std::vector<RCP<Thyra::VectorBase<double>>> solutions;
   std::vector<double> StepSize;
   std::vector<double> ErrorNorm;
-  const int nTimeStepSizes = 4;
-  double dt = 0.05;
+
+  // Read params from .xml file
+  RCP<ParameterList> pList =
+    getParametersFromXmlFile("Tempus_BDF2_VanDerPol.xml");
+  //Set initial time step = 2*dt specified in input file (for convergence study)
+  //
+  RCP<ParameterList> pl = sublist(pList, "Tempus", true);
+  double dt = pl->sublist("Demo Integrator")
+       .sublist("Time Step Control").get<double>("Initial Time Step");
+  dt *= 2.0;
+
+  RCP<ParameterList> vdpm_pl = sublist(pList, "VanDerPolModel", true);
+  const int nTimeStepSizes = vdpm_pl->get<int>("Number of Time Step Sizes", 3);
+  //const int nTimeStepSizes = 5;
   double order = 0.0;
+
   for (int n=0; n<nTimeStepSizes; n++) {
 
-    // Read params from .xml file
-    RCP<ParameterList> pList =
-      getParametersFromXmlFile("Tempus_BDF2_VanDerPol.xml");
-
     // Setup the VanDerPolModel
-    RCP<ParameterList> vdpm_pl = sublist(pList, "VanDerPolModel", true);
     RCP<VanDerPolModel<double> > model =
       Teuchos::rcp(new VanDerPolModel<double>(vdpm_pl));
 
@@ -444,16 +727,18 @@ TEUCHOS_UNIT_TEST(BDF2, VanDerPol)
     ErrorNorm.push_back(L2norm);
   }
 
-  // Check the order and intercept
-  double slope = computeLinearRegressionLogLog<double>(StepSizeCheck,ErrorNorm);
-  std::cout << "  Stepper = BDF2" << std::endl;
-  std::cout << "  =========================" << std::endl;
-  std::cout << "  Expected order: " << order << std::endl;
-  std::cout << "  Observed order: " << slope << std::endl;
-  std::cout << "  =========================" << std::endl;
-  TEST_FLOATING_EQUALITY( slope, order, 0.10 );
-  out << "\n\n ** Slope on BDF2 Method = " << slope
-      << "\n" << std::endl;
+  if (nTimeStepSizes > 2) {
+    // Check the order and intercept
+    double slope = computeLinearRegressionLogLog<double>(StepSizeCheck,ErrorNorm);
+    std::cout << "  Stepper = BDF2" << std::endl;
+    std::cout << "  =========================" << std::endl;
+    std::cout << "  Expected order: " << order << std::endl;
+    std::cout << "  Observed order: " << slope << std::endl;
+    std::cout << "  =========================" << std::endl;
+    TEST_FLOATING_EQUALITY( slope, order, 0.10 );
+    out << "\n\n ** Slope on BDF2 Method = " << slope
+        << "\n" << std::endl;
+  }
 
   // Write error data
   {
@@ -468,6 +753,6 @@ TEUCHOS_UNIT_TEST(BDF2, VanDerPol)
 
   Teuchos::TimeMonitor::summarize();
 }
-
+#endif //TEST_VANDERPOL
 
 } // namespace Tempus_Test

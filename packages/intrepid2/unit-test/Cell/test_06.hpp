@@ -48,8 +48,8 @@
 
 #include "Intrepid2_config.h"
 
-#include "Intrepid2_CellTools.hpp"
 #include "Intrepid2_CellTools_Serial.hpp"
+#include "Intrepid2_CellTools.hpp"
 
 #include "Teuchos_oblackholestream.hpp"
 #include "Teuchos_RCP.hpp"

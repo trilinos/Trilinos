@@ -61,6 +61,10 @@
 #include <ovis.h>
 #endif
 
+
+
+
+
 #include <bitset>
 
 using Teuchos::rcp_dynamic_cast;
@@ -134,6 +138,11 @@ public:
   */
   static void getValidParameters(ParameterList & pl)
   {
+
+#ifdef INCLUDE_ZOLTAN2_EXPERIMENTAL_WOLF
+    AlgND<Adapter>::getValidParameters(pl);
+#endif
+
     RCP<Teuchos::StringValidator> order_method_Validator =
       Teuchos::rcp( new Teuchos::StringValidator(
         Teuchos::tuple<std::string>( "rcm", "minimum_degree", "natural",

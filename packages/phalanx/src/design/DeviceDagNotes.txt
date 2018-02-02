@@ -1,0 +1,76 @@
+=========================
+Compiling for Device DAG:
+=========================
+
+* Need relocatable device code enabled: this requires kokkos cmake
+  flag and the correct flag in CMAKE_CXX_FLAGS. Also need the flag set
+  in PHALANX.
+ 
+* Tests also need lambda support enabled on cuda. Both a kokkos flag
+  and the correct CMAKE_CXX_FLAGS need be set.
+
+  For new KOKKOS_ARCH flag:
+
+-D Phalanx_ENABLE_DEVICE_DAG:BOOL=ON \
+-D KOKKOS_ARCH="Pascal60"
+-D Kokkos_ENABLE_Cuda_Lambda:BOOL=ON \
+-D Kokkos_ENABLE_Cuda_Relocatable_Device_Code:BOOL=ON \
+
+  For Kokkos legacy tribits mode:
+
+-D Phalanx_ENABLE_DEVICE_DAG:BOOL=ON \
+-D Kokkos_ENABLE_Cuda_Lambda:BOOL=ON \
+-D Kokkos_ENABLE_Cuda_Relocatable_Device_Code:BOOL=ON \
+-D CMAKE_CXX_FLAGS:STRING="--expt-extended-lambda --relocatable-device-code=true -std=c++11 -arch=sm_37" \
+
+=============
+Design Notes:
+=============
+
+1. Worksets must be movable to device. Can't contain traditional
+vectors and unordered_maps in the workset since they don't work on
+CUDA. Limits flexibility.
+
+2. Old way (separate parallel_for per evaluator) allowed us to pick
+specific views out of workset and bind to functor before launch. Very
+clean. New way doesn't allow us to bind separate views from a workset
+without a parallel_for kernel launch to bind the view. Additionally,
+we would need users to provide interfaces for specifying how to bind
+the data to the device functor.
+
+3. For unmanaged fields, we will need to bind the new memory by
+calling a parallel_for to rebuild the evaluator on device with the new
+pointer. Bad if we rebind workset data.
+
+4. Best path is to capture workset by value and pass to functor. If we
+want the DeviceEvaluator to support operator() directly, then the
+workset has to be registered in another call (only the team_member
+gets passed through the operator()). Unfortunately, once the
+hierarchical parallel_for(team) is called, the best we can do is
+per_thread binding when we want to do once per node. Could move
+binding into separate parallel_for call with work_size of one. But
+then have to store workset in each functor which leads to unnecessary
+view assignment and boilerplate written by user. It's probably better
+to use the workset data directly. This is a difference from the
+original implementation.
+
+4a. Additional issue - There are objects that have ctor, assignment
+and dtor not decorated with KOKKOS_INLINE_FUNCTION. In this case, it
+must be constructed on host. For these objects, we need to use the
+workset and capture the data during kernel launch (copied over) since
+it can not be in the DeviceEvalutor ctor. The StaticCrsGraph is one of
+these objects which means Jacobians need to come in through the
+workset.
+
+5. On workset design. Instead of having separate workset objects for
+each workset (with separate views for storage), we could use one
+workset object with an extra rank for the workset or just carry around
+an offset index, e.g. MDField<ScalarT,WORKSET,CELL,QP>. Never do this
+for MDFields (big memory overhead). Workset data is intended for
+static data that is computed once and stored. Using offsets avoids
+having to rebind Views in functors for workset data that changes for
+each parallel_for/workset evaluation call.
+
+6. Main interest in Device DAG is to evaluate cache reuse in a complex
+DAG.
+

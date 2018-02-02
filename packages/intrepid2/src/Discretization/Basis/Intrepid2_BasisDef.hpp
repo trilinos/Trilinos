@@ -244,15 +244,21 @@ namespace Intrepid2 {
 
       case 1:
         return 0;
+#ifndef __NVCC__ //prevent nvcc warning
         break;
+#endif
 
       case 2:
         return yMult;
+#ifndef __NVCC__ //prevent nvcc warning
         break;
+#endif
 
       case 3:
         return zMult + (yMult+zMult)*(yMult+zMult+1)/2;
+#ifndef __NVCC__ //prevent nvcc warning
         break;
+#endif
 
       default: {
         INTREPID2_TEST_FOR_ABORT( !( (0 < spaceDim ) && (spaceDim < 4) ),

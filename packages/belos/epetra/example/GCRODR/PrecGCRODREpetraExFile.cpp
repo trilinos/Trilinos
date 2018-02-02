@@ -49,7 +49,7 @@
 #include "BelosLinearProblem.hpp"
 #include "BelosEpetraAdapter.hpp"
 #include "BelosGCRODRSolMgr.hpp"
-#include "createEpetraProblem.hpp"
+#include "BelosEpetraUtils.h"
 #include "Ifpack_IlukGraph.h"
 #include "Ifpack_CrsRiluk.h"
 #include "Epetra_Map.h"
@@ -127,7 +127,7 @@ bool proc_verbose = false;
   //
   RCP<Epetra_CrsMatrix> A;
   RCP<Epetra_MultiVector> B, X;
-  int return_val =Belos::createEpetraProblem(filename,NULL,&A,NULL,NULL,&MyPID);
+  int return_val =Belos::Util::createEpetraProblem(filename,NULL,&A,NULL,NULL,&MyPID);
   const Epetra_Map &Map = A->RowMap();
   if(return_val != 0) return return_val;
   proc_verbose = verbose && (MyPID==0); /* Only print on zero processor */

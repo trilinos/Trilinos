@@ -183,6 +183,7 @@ namespace Sacado {
     template <typename S> class GeneralFad;
   }
   }
+#ifndef SACADO_VIEW_CUDA_HIERARCHICAL_DFAD
   template <unsigned Stride, typename T, typename U>
   KOKKOS_INLINE_FUNCTION
   typename LocalScalarType< Fad::Exp::GeneralFad< Fad::Exp::DynamicStorage<T,U> >, Stride >::type
@@ -202,6 +203,7 @@ namespace Sacado {
 
     return xp;
   }
+#endif
   template <unsigned Stride, typename T, int N>
   KOKKOS_INLINE_FUNCTION
   typename LocalScalarType< Fad::Exp::GeneralFad< Fad::Exp::StaticStorage<T,N> >, Stride >::type
@@ -233,6 +235,7 @@ namespace Sacado {
     template <typename T, int N> class SLFad;
     template <typename T, int N> class SFad;
   }
+#ifndef SACADO_VIEW_CUDA_HIERARCHICAL_DFAD
   template <unsigned Stride, typename T>
   KOKKOS_INLINE_FUNCTION
   typename LocalScalarType< Fad::DFad<T>, Stride >::type
@@ -252,6 +255,7 @@ namespace Sacado {
 
     return xp;
   }
+#endif
   template <unsigned Stride, typename T, int N>
   KOKKOS_INLINE_FUNCTION
   typename LocalScalarType< Fad::SLFad<T,N>, Stride >::type

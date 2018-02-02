@@ -78,25 +78,25 @@ class HouseholderReflector : public LinearOperator<Real> {
   
 private:
 
-  const Teuchos::RCP<const V> x_;
-  const Teuchos::RCP<const V> y_;
+  const ROL::Ptr<const V> x_;
+  const ROL::Ptr<const V> y_;
 
-  Teuchos::RCP<V> u_;
+  ROL::Ptr<V> u_;
 
 public:
   
-  HouseholderReflector( const Teuchos::RCP<const Vector<Real> > &x, 
-                        const Teuchos::RCP<const Vector<Real> > &y) : x_(x), y_(y), u_(x->clone()) {}
+  HouseholderReflector( const ROL::Ptr<const Vector<Real> > &x, 
+                        const ROL::Ptr<const Vector<Real> > &y) : x_(x), y_(y), u_(x->clone()) {}
   
 
-  HouseholderReflector( const Teuchos::RCP<const Vector<Real> > &x,
-                        const Teuchos::RCP<const Vector<Real> > &y,
-                        Teuchos::RCP<Vector<Real> > &scratch ) : x_(x), y_(y), u_(scratch) {}
+  HouseholderReflector( const ROL::Ptr<const Vector<Real> > &x,
+                        const ROL::Ptr<const Vector<Real> > &y,
+                        ROL::Ptr<Vector<Real> > &scratch ) : x_(x), y_(y), u_(scratch) {}
 
-  HouseholderReflector( const Teuchos::RCP<const Vector<Real> > &x ) : x_(x), y_(x->basis(0)), u_(x->clone()) {}
+  HouseholderReflector( const ROL::Ptr<const Vector<Real> > &x ) : x_(x), y_(x->basis(0)), u_(x->clone()) {}
   
-  HouseholderReflector( const Teuchos::RCP<const Vector<Real> > &x,
-                        Teuchos::RCP<Vector<Real> > &scratch ) : x_(x), y_(x->basis(0)), u_(scratch) {}
+  HouseholderReflector( const ROL::Ptr<const Vector<Real> > &x,
+                        ROL::Ptr<Vector<Real> > &scratch ) : x_(x), y_(x->basis(0)), u_(scratch) {}
   
                       
 

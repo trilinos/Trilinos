@@ -76,7 +76,7 @@ class GatherSolution<PHX::MyTraits::Residual,Traits>
     public PHX::EvaluatorDerived<PHX::MyTraits::Residual, Traits>  {
 
   typedef typename PHX::MyTraits::Residual::ScalarT ScalarT;
-  Kokkos::View<ScalarT**,PHX::Device> field;
+  PHX::View<ScalarT**> field;
   const int num_equations;
   const int field_index;
   const Kokkos::View<const double*,PHX::Device> x;
@@ -103,7 +103,7 @@ class GatherSolution<PHX::MyTraits::Jacobian,Traits>
     public PHX::EvaluatorDerived<PHX::MyTraits::Jacobian, Traits>  {
 
   typedef typename PHX::MyTraits::Jacobian::ScalarT ScalarT;
-  Kokkos::View<ScalarT**,PHX::Device> field;
+  PHX::View<ScalarT**> field;
   const int num_equations;
   const int field_index;
   const Kokkos::View<const double*,PHX::Device> x;

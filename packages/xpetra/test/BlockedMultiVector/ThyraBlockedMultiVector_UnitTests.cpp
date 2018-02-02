@@ -69,6 +69,8 @@
 #include <Thyra_DefaultProductVectorSpace_decl.hpp>
 #endif
 
+#include <set>
+
 namespace XpetraBlockMatrixTests {
 
 double errorTolSlack = 1e+1;

@@ -339,7 +339,7 @@ mult_test_results multiply_test_kernel(
   RCP<const Map_t> map = C->getRowMap();
   LO LO_INVALID = Teuchos::OrdinalTraits<LO>::invalid();
 
-  SC one = Teuchos::ScalarTraits<SC>::one();
+  // SC one = Teuchos::ScalarTraits<SC>::one();
   mult_test_results results;
 
   // Transposes
@@ -409,7 +409,8 @@ mult_test_results multiply_test_kernel(
   typedef typename graph_t::row_map_type::non_const_type lno_view_t;
   typedef typename graph_t::entries_type::non_const_type lno_nnz_view_t;
   typedef typename KCRS::values_type::non_const_type scalar_view_t;
-  typedef KokkosKernels::Experimental::KokkosKernelsHandle<lno_view_t,lno_nnz_view_t, scalar_view_t, typename device_t::execution_space, typename device_t::memory_space,typename device_t::memory_space > KernelHandle;
+  typedef KokkosKernels::Experimental::KokkosKernelsHandle<typename lno_view_t::const_value_type,typename lno_nnz_view_t::const_value_type, typename scalar_view_t::const_value_type, 
+          typename device_t::execution_space, typename device_t::memory_space,typename device_t::memory_space > KernelHandle;
 
   // Grab the  Kokkos::SparseCrsMatrix-es
   const KCRS & Ak = Aeff->getLocalMatrix();
@@ -811,9 +812,13 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Tpetra_MatMatKernels, operations_test,SC,LO, G
     double epsilon = currentSystem.get<double> ("epsilon", defaultEpsilon);
     std::string op = currentSystem.get<std::string> ("op");
 
-    RCP<Matrix_t> A = Reader<Matrix_t>::readSparseFile (A_file, comm);
-    RCP<Matrix_t> B = Reader<Matrix_t>::readSparseFile (B_file, comm);
-    RCP<Matrix_t> C = Reader<Matrix_t>::readSparseFile (C_file, comm);
+    RCP<Matrix_t> A, B, C;
+    if (A_file != "")
+      A = Reader<Matrix_t>::readSparseFile (A_file, comm);
+    if (B_file != "")
+      B = Reader<Matrix_t>::readSparseFile (B_file, comm);
+    if (C_file != "")
+      C = Reader<Matrix_t>::readSparseFile (C_file, comm);
 
     TEUCHOS_TEST_FOR_EXCEPTION(op != "multiply" && op != "add" && op != "RAP", std::runtime_error,
                                "Unrecognized Matrix Operation: " << op);

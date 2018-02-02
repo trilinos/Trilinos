@@ -9,6 +9,8 @@
 
 #cmakedefine PHX_ETI
 
+#cmakedefine PHX_ENABLE_DEVICE_DAG
+
 #cmakedefine PHX_KOKKOS_DEVICE_TYPE_SERIAL
 #cmakedefine PHX_KOKKOS_DEVICE_TYPE_CUDA
 #cmakedefine PHX_KOKKOS_DEVICE_TYPE_THREAD

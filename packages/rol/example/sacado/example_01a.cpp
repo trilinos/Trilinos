@@ -78,12 +78,12 @@ int main(int argc, char **argv)
 
     // This little trick lets us print to std::cout only if a (dummy) command-line argument is provided.
     int iprint     = argc - 1;
-    Teuchos::RCP<std::ostream> outStream;
+    ROL::Ptr<std::ostream> outStream;
     Teuchos::oblackholestream bhs; // outputs nothing
     if (iprint > 0)
-        outStream = Teuchos::rcp(&std::cout, false);
+        outStream = ROL::makePtrFromRef(std::cout);
     else
-        outStream = Teuchos::rcp(&bhs, false);
+        outStream = ROL::makePtrFromRef(bhs);
 
     int errorFlag  = 0;
 
@@ -96,7 +96,7 @@ int main(int argc, char **argv)
         int dim = 10; // Set problem dimension. 
 
         // Load optimizer parameters form XML file
-        Teuchos::RCP<Teuchos::ParameterList> parlist = Teuchos::rcp(new Teuchos::ParameterList());
+        Teuchos::RCP<Teuchos::ParameterList> parlist = Teuchos::rcp( new Teuchos::ParameterList() );
         std::string paramfile = "parameters.xml";
         Teuchos::updateParametersFromXmlFile(paramfile,parlist.ptr());
 
@@ -104,20 +104,20 @@ int main(int argc, char **argv)
         Algorithm<RealT> algo("Line Search",*parlist);
 
         // Iteration vector.
-        Teuchos::RCP<std::vector<RealT> > x_rcp = Teuchos::rcp( new std::vector<RealT> (dim, 0.0) );
+        ROL::Ptr<std::vector<RealT> > x_ptr = ROL::makePtr<std::vector<RealT>>(dim, 0.0);
         // Set Initial Guess
         for (int i=0; i<dim; i++) {
-            (*x_rcp)[i]   = 2;
+            (*x_ptr)[i]   = 2;
         }
 
-        StdVector<RealT> x(x_rcp);
+        StdVector<RealT> x(x_ptr);
 
         // Run algorithm.
         algo.run(x, obj, true, *outStream);
 
         // Get true solution.
-        Teuchos::RCP<std::vector<RealT> > xtrue_rcp = Teuchos::rcp( new std::vector<RealT> (dim, 0.0) );
-        StdVector<RealT> xtrue(xtrue_rcp);
+        ROL::Ptr<std::vector<RealT> > xtrue_ptr = ROL::makePtr<std::vector<RealT>>(dim, 0.0);
+        StdVector<RealT> xtrue(xtrue_ptr);
         
         // Compute error.
         x.axpy(-1.0, xtrue);

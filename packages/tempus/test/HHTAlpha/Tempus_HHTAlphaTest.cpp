@@ -12,6 +12,7 @@
 
 #include "Tempus_config.hpp"
 #include "Tempus_IntegratorBasic.hpp"
+#include "Tempus_StepperHHTAlpha.hpp"
 
 #include "../TestModels/HarmonicOscillatorModel.hpp"
 #include "../TestUtils/Tempus_ConvergenceTestUtils.hpp"
@@ -28,9 +29,10 @@
 #include "Epetra_SerialComm.h"
 #endif
 
-#include <vector>
-#include <sstream>
+#include <fstream>
 #include <limits>
+#include <sstream>
+#include <vector>
 
 namespace Tempus_Test {
 
@@ -43,7 +45,7 @@ using Tempus::IntegratorBasic;
 using Tempus::SolutionHistory;
 using Tempus::SolutionState;
 
-//IKT, 3/22/17: comment out any of the following 
+//IKT, 3/22/17: comment out any of the following
 //if you wish not to build/run all the test cases.
 #define TEST_BALL_PARABOLIC
 #define TEST_SIN_COS
@@ -51,10 +53,10 @@ using Tempus::SolutionState;
 
 #ifdef TEST_BALL_PARABOLIC
 // ************************************************************
-TEUCHOS_UNIT_TEST(NewmarkImplicit, BallParabolic)
+TEUCHOS_UNIT_TEST(HHTAlpha, BallParabolic)
 {
-  //Tolerance to check if test passed 
-  double tolerance = 1.0e-14; 
+  //Tolerance to check if test passed
+  double tolerance = 1.0e-14;
   // Read params from .xml file
   RCP<ParameterList> pList =
     getParametersFromXmlFile("Tempus_Newmark_BallParabolic.xml");
@@ -87,11 +89,11 @@ TEUCHOS_UNIT_TEST(NewmarkImplicit, BallParabolic)
 
   // Plot sample solution and exact solution
   std::ofstream ftmp("Tempus_Newmark_BallParabolic.dat");
-  ftmp.precision(16); 
+  ftmp.precision(16);
   RCP<const SolutionHistory<double> > solutionHistory =
     integrator->getSolutionHistory();
-  bool passed = true; 
-  double err = 0.0; 
+  bool passed = true;
+  double err = 0.0;
   RCP<const Thyra::VectorBase<double> > x_exact_plot;
   for (int i=0; i<solutionHistory->getNumStates(); i++) {
     RCP<const SolutionState<double> > solutionState = (*solutionHistory)[i];
@@ -105,19 +107,117 @@ TEUCHOS_UNIT_TEST(NewmarkImplicit, BallParabolic)
       err = abs(get_ele(*(x_plot),0) - get_ele(*(x_exact_plot), 0));
   }
   ftmp.close();
-  std::cout << "Max error = " << err << "\n \n"; 
+  std::cout << "Max error = " << err << "\n \n";
   if (err > tolerance)
-    passed = false; 
-   
+    passed = false;
+
   TEUCHOS_TEST_FOR_EXCEPTION(!passed, std::logic_error,
     "\n Test failed!  Max error = " << err << " > tolerance = " << tolerance << "\n!");
 
 }
 #endif
 
+// ************************************************************
+// ************************************************************
+TEUCHOS_UNIT_TEST(HHTAlpha, ConstructingFromDefaults)
+{
+  double dt = 0.05;
+
+  // Read params from .xml file
+  RCP<ParameterList> pList =
+    getParametersFromXmlFile("Tempus_Newmark_SinCos_SecondOrder.xml");
+  RCP<ParameterList> pl = sublist(pList, "Tempus", true);
+
+  // Setup the HarmonicOscillatorModel
+  RCP<ParameterList> hom_pl = sublist(pList, "HarmonicOscillatorModel", true);
+  RCP<HarmonicOscillatorModel<double> > model =
+    Teuchos::rcp(new HarmonicOscillatorModel<double>(hom_pl));
+
+  // Setup Stepper for field solve ----------------------------
+  RCP<Tempus::StepperHHTAlpha<double> > stepper =
+    Teuchos::rcp(new Tempus::StepperHHTAlpha<double>(model));
+
+  // Setup TimeStepControl ------------------------------------
+  RCP<Tempus::TimeStepControl<double> > timeStepControl =
+    Teuchos::rcp(new Tempus::TimeStepControl<double>());
+  ParameterList tscPL = pl->sublist("Default Integrator")
+                           .sublist("Time Step Control");
+  timeStepControl->setStepType (tscPL.get<std::string>("Integrator Step Type"));
+  timeStepControl->setInitIndex(tscPL.get<int>   ("Initial Time Index"));
+  timeStepControl->setInitTime (tscPL.get<double>("Initial Time"));
+  timeStepControl->setFinalTime(tscPL.get<double>("Final Time"));
+  timeStepControl->setInitTimeStep(dt);
+
+  // Setup initial condition SolutionState --------------------
+  using Teuchos::rcp_const_cast;
+  Thyra::ModelEvaluatorBase::InArgs<double> inArgsIC =
+    stepper->getModel()->getNominalValues();
+  RCP<Thyra::VectorBase<double> > icX =
+    rcp_const_cast<Thyra::VectorBase<double> > (inArgsIC.get_x());
+  RCP<Thyra::VectorBase<double> > icXDot =
+    rcp_const_cast<Thyra::VectorBase<double> > (inArgsIC.get_x_dot());
+  RCP<Thyra::VectorBase<double> > icXDotDot =
+    rcp_const_cast<Thyra::VectorBase<double> > (inArgsIC.get_x_dot_dot());
+  RCP<Tempus::SolutionState<double> > icState =
+      Teuchos::rcp(new Tempus::SolutionState<double>(icX, icXDot, icXDotDot));
+  icState->setTime    (timeStepControl->getInitTime());
+  icState->setIndex   (timeStepControl->getInitIndex());
+  icState->setTimeStep(0.0);
+  icState->setOrder   (stepper->getOrder());
+  icState->setSolutionStatus(Tempus::Status::PASSED);  // ICs are passing.
+
+  // Setup SolutionHistory ------------------------------------
+  RCP<Tempus::SolutionHistory<double> > solutionHistory =
+    Teuchos::rcp(new Tempus::SolutionHistory<double>());
+  solutionHistory->setName("Forward States");
+  solutionHistory->setStorageType(Tempus::STORAGE_TYPE_STATIC);
+  solutionHistory->setStorageLimit(2);
+  solutionHistory->addState(icState);
+
+  // Setup Integrator -----------------------------------------
+  RCP<Tempus::IntegratorBasic<double> > integrator =
+    Tempus::integratorBasic<double>();
+  integrator->setStepperWStepper(stepper);
+  integrator->setTimeStepControl(timeStepControl);
+  integrator->setSolutionHistory(solutionHistory);
+  //integrator->setObserver(...);
+  integrator->initialize();
+
+
+  // Integrate to timeMax
+  bool integratorStatus = integrator->advanceTime();
+  TEST_ASSERT(integratorStatus)
+
+
+  // Test if at 'Final Time'
+  double time = integrator->getTime();
+  double timeFinal =pl->sublist("Default Integrator")
+     .sublist("Time Step Control").get<double>("Final Time");
+  TEST_FLOATING_EQUALITY(time, timeFinal, 1.0e-14);
+
+  // Time-integrated solution and the exact solution
+  RCP<Thyra::VectorBase<double> > x = integrator->getX();
+  RCP<const Thyra::VectorBase<double> > x_exact =
+    model->getExactSolution(time).get_x();
+
+  // Calculate the error
+  RCP<Thyra::VectorBase<double> > xdiff = x->clone_v();
+  Thyra::V_StVpStV(xdiff.ptr(), 1.0, *x_exact, -1.0, *(x));
+
+  // Check the order and intercept
+  std::cout << "  Stepper = " << stepper->description() << std::endl;
+  std::cout << "  =========================" << std::endl;
+  std::cout << "  Exact solution   : " << get_ele(*(x_exact), 0) << std::endl;
+  std::cout << "  Computed solution: " << get_ele(*(x      ), 0) << std::endl;
+  std::cout << "  Difference       : " << get_ele(*(xdiff  ), 0) << std::endl;
+  std::cout << "  =========================" << std::endl;
+  TEST_FLOATING_EQUALITY(get_ele(*(x), 0), 0.144918, 1.0e-4 );
+}
+
+
 #ifdef TEST_SIN_COS
 // ************************************************************
-TEUCHOS_UNIT_TEST(NewmarkImplicit, SinCos_SecondOrder)
+TEUCHOS_UNIT_TEST(HHTAlpha, SinCos_SecondOrder)
 {
   std::vector<double> StepSize;
   std::vector<double> ErrorNorm;
@@ -132,25 +232,26 @@ TEUCHOS_UNIT_TEST(NewmarkImplicit, SinCos_SecondOrder)
   RCP<ParameterList> hom_pl = sublist(pList, "HarmonicOscillatorModel", true);
   RCP<HarmonicOscillatorModel<double> > model =
     Teuchos::rcp(new HarmonicOscillatorModel<double>(hom_pl));
-  
-  //Get k and m coefficients from model, needed for computing energy 
+
+  //Get k and m coefficients from model, needed for computing energy
   double k = hom_pl->get<double>("x coeff k");
   double m = hom_pl->get<double>("Mass coeff m");
 
   // Setup the Integrator and reset initial time step
   RCP<ParameterList> pl = sublist(pList, "Tempus", true);
 
-  //Set initial time step = 2*dt specified in input file (for convergence study) 
+  //Set initial time step = 2*dt specified in input file (for convergence study)
   //
   double dt =pl->sublist("Default Integrator")
        .sublist("Time Step Control").get<double>("Initial Time Step");
-  dt *= 2.0; 
+  dt *= 2.0;
 
   for (int n=0; n<nTimeStepSizes; n++) {
 
-    //Perform time-step refinement 
+    //Perform time-step refinement
     dt /= 2;
-    std::cout << "\n \n time step #" << n << " (out of " << nTimeStepSizes-1 << "), dt = " << dt << "\n"; 
+    std::cout << "\n \n time step #" << n << " (out of "
+              << nTimeStepSizes-1 << "), dt = " << dt << "\n";
     pl->sublist("Default Integrator")
        .sublist("Time Step Control").set("Initial Time Step", dt);
     RCP<Tempus::IntegratorBasic<double> > integrator =
@@ -172,10 +273,10 @@ TEUCHOS_UNIT_TEST(NewmarkImplicit, SinCos_SecondOrder)
     RCP<const Thyra::VectorBase<double> > x_exact =
       model->getExactSolution(time).get_x();
 
-    // Plot sample solution and exact solution at most-refined resolution 
+    // Plot sample solution and exact solution at most-refined resolution
     if (n == nTimeStepSizes-1) {
       std::ofstream ftmp("Tempus_Newmark_SinCos_SecondOrder.dat");
-      ftmp.precision(16); 
+      ftmp.precision(16);
       RCP<const SolutionHistory<double> > solutionHistory =
         integrator->getSolutionHistory();
       RCP<const Thyra::VectorBase<double> > x_exact_plot;
@@ -185,18 +286,18 @@ TEUCHOS_UNIT_TEST(NewmarkImplicit, SinCos_SecondOrder)
         RCP<const Thyra::VectorBase<double> > x_plot = solutionState->getX();
         RCP<const Thyra::VectorBase<double> > x_dot_plot = solutionState->getXDot();
         x_exact_plot = model->getExactSolution(time).get_x();
-        //kinetic energy = 0.5*m*xdot*xdot 
-        double ke = Thyra::dot(*x_dot_plot, *x_dot_plot); 
+        //kinetic energy = 0.5*m*xdot*xdot
+        double ke = Thyra::dot(*x_dot_plot, *x_dot_plot);
         ke *= 0.5*m;
-        //potential energy = 0.5*k*x*x 
-        double pe = Thyra::dot(*x_plot, *x_plot); 
-        pe *= 0.5*k; 
-        double te = ke + pe;  
-        //Output to file the following: 
-        //[time, x computed, x exact, xdot computed, ke, pe, te] 
+        //potential energy = 0.5*k*x*x
+        double pe = Thyra::dot(*x_plot, *x_plot);
+        pe *= 0.5*k;
+        double te = ke + pe;
+        //Output to file the following:
+        //[time, x computed, x exact, xdot computed, ke, pe, te]
         ftmp << time << "   "
              << get_ele(*(x_plot), 0) << "   "
-             << get_ele(*(x_exact_plot), 0) << "   " 
+             << get_ele(*(x_exact_plot), 0) << "   "
              << get_ele(*(x_dot_plot), 0) << "   "
              << ke << "   " << pe << "   " << te << std::endl;
       }
@@ -222,7 +323,7 @@ TEUCHOS_UNIT_TEST(NewmarkImplicit, SinCos_SecondOrder)
   //TEST_FLOATING_EQUALITY( ErrorNorm[0], 0.0486418, 1.0e-4 );
 
   std::ofstream ftmp("Tempus_Newmark-Error_SinCos_SecondOrder.dat");
-  ftmp.precision(16); 
+  ftmp.precision(16);
   double error0 = 0.8*ErrorNorm[0];
   for (int n=0; n<nTimeStepSizes; n++) {
     ftmp << StepSize[n]  << "   " << ErrorNorm[n] << "   "
@@ -232,7 +333,7 @@ TEUCHOS_UNIT_TEST(NewmarkImplicit, SinCos_SecondOrder)
 }
 
 // ************************************************************
-TEUCHOS_UNIT_TEST(NewmarkImplicit, SinCos_FirstOrder)
+TEUCHOS_UNIT_TEST(HHTAlpha, SinCos_FirstOrder)
 {
   std::vector<double> StepSize;
   std::vector<double> ErrorNorm;
@@ -248,24 +349,25 @@ TEUCHOS_UNIT_TEST(NewmarkImplicit, SinCos_FirstOrder)
   RCP<HarmonicOscillatorModel<double> > model =
     Teuchos::rcp(new HarmonicOscillatorModel<double>(hom_pl));
 
-  //Get k and m coefficients from model, needed for computing energy 
+  //Get k and m coefficients from model, needed for computing energy
   double k = hom_pl->get<double>("x coeff k");
   double m = hom_pl->get<double>("Mass coeff m");
 
   // Setup the Integrator and reset initial time step
   RCP<ParameterList> pl = sublist(pList, "Tempus", true);
 
-  //Set initial time step = 2*dt specified in input file (for convergence study) 
+  //Set initial time step = 2*dt specified in input file (for convergence study)
   //
   double dt =pl->sublist("Default Integrator")
        .sublist("Time Step Control").get<double>("Initial Time Step");
-  dt *= 2.0; 
+  dt *= 2.0;
 
   for (int n=0; n<nTimeStepSizes; n++) {
 
-    //Perform time-step refinement 
+    //Perform time-step refinement
     dt /= 2;
-    std::cout << "\n \n time step #" << n << " (out of " << nTimeStepSizes-1 << "), dt = " << dt << "\n"; 
+    std::cout << "\n \n time step #" << n << " (out of "
+              << nTimeStepSizes-1 << "), dt = " << dt << "\n";
     pl->sublist("Default Integrator")
        .sublist("Time Step Control").set("Initial Time Step", dt);
     RCP<Tempus::IntegratorBasic<double> > integrator =
@@ -287,10 +389,10 @@ TEUCHOS_UNIT_TEST(NewmarkImplicit, SinCos_FirstOrder)
     RCP<const Thyra::VectorBase<double> > x_exact =
       model->getExactSolution(time).get_x();
 
-    // Plot sample solution and exact solution at most-refined resolution 
+    // Plot sample solution and exact solution at most-refined resolution
     if (n == nTimeStepSizes-1) {
       std::ofstream ftmp("Tempus_Newmark_SinCos_FirstOrder.dat");
-      ftmp.precision(16); 
+      ftmp.precision(16);
       RCP<const SolutionHistory<double> > solutionHistory =
         integrator->getSolutionHistory();
       RCP<const Thyra::VectorBase<double> > x_exact_plot;
@@ -300,18 +402,18 @@ TEUCHOS_UNIT_TEST(NewmarkImplicit, SinCos_FirstOrder)
         RCP<const Thyra::VectorBase<double> > x_plot = solutionState->getX();
         RCP<const Thyra::VectorBase<double> > x_dot_plot = solutionState->getXDot();
         x_exact_plot = model->getExactSolution(time).get_x();
-        //kinetic energy = 0.5*m*xdot*xdot 
-        double ke = Thyra::dot(*x_dot_plot, *x_dot_plot); 
+        //kinetic energy = 0.5*m*xdot*xdot
+        double ke = Thyra::dot(*x_dot_plot, *x_dot_plot);
         ke *= 0.5*m;
-        //potential energy = 0.5*k*x*x 
-        double pe = Thyra::dot(*x_plot, *x_plot); 
-        pe *= 0.5*k; 
-        double te = ke + pe;  
-        //Output to file the following: 
-        //[time, x computed, x exact, xdot computed, ke, pe, te] 
+        //potential energy = 0.5*k*x*x
+        double pe = Thyra::dot(*x_plot, *x_plot);
+        pe *= 0.5*k;
+        double te = ke + pe;
+        //Output to file the following:
+        //[time, x computed, x exact, xdot computed, ke, pe, te]
         ftmp << time << "   "
              << get_ele(*(x_plot), 0) << "   "
-             << get_ele(*(x_exact_plot), 0) << "   " 
+             << get_ele(*(x_exact_plot), 0) << "   "
              << get_ele(*(x_dot_plot), 0) << "   "
              << ke << "   " << pe << "   " << te << std::endl;
       }
@@ -337,7 +439,7 @@ TEUCHOS_UNIT_TEST(NewmarkImplicit, SinCos_FirstOrder)
   //TEST_FLOATING_EQUALITY( ErrorNorm[0], 0.0486418, 1.0e-4 );
 
   std::ofstream ftmp("Tempus_Newmark-Error_SinCos_FirstOrder.dat");
-  ftmp.precision(16); 
+  ftmp.precision(16);
   double error0 = 0.8*ErrorNorm[0];
   for (int n=0; n<nTimeStepSizes; n++) {
     ftmp << StepSize[n]  << "   " << ErrorNorm[n] << "   "
@@ -363,24 +465,25 @@ TEUCHOS_UNIT_TEST(NewmarkExplicit, SinCos_CD)
   RCP<HarmonicOscillatorModel<double> > model =
     Teuchos::rcp(new HarmonicOscillatorModel<double>(hom_pl));
 
-  //Get k and m coefficients from model, needed for computing energy 
+  //Get k and m coefficients from model, needed for computing energy
   double k = hom_pl->get<double>("x coeff k");
   double m = hom_pl->get<double>("Mass coeff m");
 
   // Setup the Integrator and reset initial time step
   RCP<ParameterList> pl = sublist(pList, "Tempus", true);
 
-  //Set initial time step = 2*dt specified in input file (for convergence study) 
+  //Set initial time step = 2*dt specified in input file (for convergence study)
   //
   double dt =pl->sublist("Default Integrator")
        .sublist("Time Step Control").get<double>("Initial Time Step");
-  dt *= 2.0; 
+  dt *= 2.0;
 
   for (int n=0; n<nTimeStepSizes; n++) {
 
-    //Perform time-step refinement 
+    //Perform time-step refinement
     dt /= 2;
-    std::cout << "\n \n time step #" << n << " (out of " << nTimeStepSizes-1 << "), dt = " << dt << "\n"; 
+    std::cout << "\n \n time step #" << n << " (out of "
+              << nTimeStepSizes-1 << "), dt = " << dt << "\n";
     pl->sublist("Default Integrator")
        .sublist("Time Step Control").set("Initial Time Step", dt);
     RCP<Tempus::IntegratorBasic<double> > integrator =
@@ -402,10 +505,10 @@ TEUCHOS_UNIT_TEST(NewmarkExplicit, SinCos_CD)
     RCP<const Thyra::VectorBase<double> > x_exact =
       model->getExactSolution(time).get_x();
 
-    // Plot sample solution and exact solution at most-refined resolution 
+    // Plot sample solution and exact solution at most-refined resolution
     if (n == nTimeStepSizes-1) {
       std::ofstream ftmp("Tempus_Newmark_SinCos_ExplicitCD.dat");
-      ftmp.precision(16); 
+      ftmp.precision(16);
       RCP<const SolutionHistory<double> > solutionHistory =
         integrator->getSolutionHistory();
       RCP<const Thyra::VectorBase<double> > x_exact_plot;
@@ -415,18 +518,18 @@ TEUCHOS_UNIT_TEST(NewmarkExplicit, SinCos_CD)
         RCP<const Thyra::VectorBase<double> > x_plot = solutionState->getX();
         RCP<const Thyra::VectorBase<double> > x_dot_plot = solutionState->getXDot();
         x_exact_plot = model->getExactSolution(time).get_x();
-        //kinetic energy = 0.5*m*xdot*xdot 
-        double ke = Thyra::dot(*x_dot_plot, *x_dot_plot); 
+        //kinetic energy = 0.5*m*xdot*xdot
+        double ke = Thyra::dot(*x_dot_plot, *x_dot_plot);
         ke *= 0.5*m;
-        //potential energy = 0.5*k*x*x 
-        double pe = Thyra::dot(*x_plot, *x_plot); 
-        pe *= 0.5*k; 
-        double te = ke + pe;  
-        //Output to file the following: 
-        //[time, x computed, x exact, xdot computed, ke, pe, te] 
+        //potential energy = 0.5*k*x*x
+        double pe = Thyra::dot(*x_plot, *x_plot);
+        pe *= 0.5*k;
+        double te = ke + pe;
+        //Output to file the following:
+        //[time, x computed, x exact, xdot computed, ke, pe, te]
         ftmp << time << "   "
              << get_ele(*(x_plot), 0) << "   "
-             << get_ele(*(x_exact_plot), 0) << "   " 
+             << get_ele(*(x_exact_plot), 0) << "   "
              << get_ele(*(x_dot_plot), 0) << "   "
              << ke << "   " << pe << "   " << te << std::endl;
       }
@@ -452,7 +555,7 @@ TEUCHOS_UNIT_TEST(NewmarkExplicit, SinCos_CD)
   //TEST_FLOATING_EQUALITY( ErrorNorm[0], 0.0486418, 1.0e-4 );
 
   std::ofstream ftmp("Tempus_Newmark-Error_SinCos_ExplicitCD.dat");
-  ftmp.precision(16); 
+  ftmp.precision(16);
   double error0 = 0.8*ErrorNorm[0];
   for (int n=0; n<nTimeStepSizes; n++) {
     ftmp << StepSize[n]  << "   " << ErrorNorm[n] << "   "

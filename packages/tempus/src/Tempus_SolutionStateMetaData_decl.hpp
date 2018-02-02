@@ -51,13 +51,13 @@ public:
   SolutionStateMetaData(const SolutionStateMetaData<Scalar>& ssmd);
 
   /// Clone constructor
-  Teuchos::RCP<SolutionStateMetaData<Scalar> > clone();
+  Teuchos::RCP<SolutionStateMetaData<Scalar> > clone() const;
 
   /// This is a deep copy
-  void copy(Teuchos::RCP<SolutionStateMetaData<Scalar> > ssmd);
+  void copy(const Teuchos::RCP<const SolutionStateMetaData<Scalar> >& ssmd);
 
   /// Destructor
-  virtual ~SolutionStateMetaData() {};
+  virtual ~SolutionStateMetaData() {}
 
   /// \name Accessor methods
   //@{

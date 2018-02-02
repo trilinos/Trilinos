@@ -48,6 +48,7 @@
 #include "Phalanx_config.hpp"
 #include "Teuchos_RCP.hpp"
 #include "Kokkos_View.hpp"
+#include "KokkosSparse_CrsMatrix.hpp"
 #include "Mesh.hpp"
 
 struct Workset {
@@ -58,7 +59,7 @@ struct Workset {
   Kokkos::View<int**,PHX::Device> gids_;
   
   // Weights for integration rule <qp>
-  Kokkos::View<double*> weights_;
+  Kokkos::View<double*,PHX::Device> weights_;
 
   // Determinant of Jacobian <cell,qp>
   Kokkos::View<double**,PHX::Device> det_jac_;  
@@ -67,7 +68,22 @@ struct Workset {
   Kokkos::View<double**,PHX::Device> basis_;
 
   // Gradient of basis in real space <cell,qp,basis,dim>
-  Kokkos::View<double****> grad_basis_real_;
+  Kokkos::View<double****,PHX::Device> grad_basis_real_;
+
+  // Solution vector (Required only for Device DAG support)
+  Kokkos::View<double*,PHX::Device> global_solution_;
+
+  // Global residual vector, must be atomic (Required only for Device DAG support)
+  Kokkos::View<double*,PHX::Device,Kokkos::MemoryTraits<Kokkos::Atomic>> global_residual_atomic_;
+
+  // Global Jacobian  matrix (Required only for Device DAG support)
+  KokkosSparse::CrsMatrix<double,int,PHX::Device> global_jacobian_;
+
+  // thread team size (Required only for Host DAG support)
+  int team_size_;
+  
+  // vector team size  (Required only for Host DAG support)
+  int vector_size_;
 };
 
 #endif

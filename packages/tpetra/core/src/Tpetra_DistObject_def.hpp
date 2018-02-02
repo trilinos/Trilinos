@@ -53,7 +53,7 @@
 #include "Tpetra_Distributor.hpp"
 #include "Tpetra_Details_reallocDualViewIfNeeded.hpp"
 #include "Tpetra_Details_Behavior.hpp"
-
+#include <memory>
 
 namespace Tpetra {
 

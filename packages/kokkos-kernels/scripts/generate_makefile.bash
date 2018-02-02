@@ -66,6 +66,7 @@ do
       HWLOC_PATH="${key#*=}"
       ;;
     --with-memkind*)
+      KOKKOSKERNELS_SPACES="HBWSpace,${KOKKOSKERNELS_SPACES}"
       MEMKIND_PATH="${key#*=}"
       ;;
     --arch*)
@@ -118,6 +119,9 @@ do
       ;;
     --with-tpls*)
       KOKKOSKERNELS_ENABLE_TPLS="${key#*=}"
+      ;;
+    --with-spaces*)
+      KOKKOSKERNELS_SPACES="${key#*=}"
       ;;
     --with-kokkos-options*)
       KOKKOS_OPT="${key#*=}"
@@ -297,6 +301,14 @@ fi
 
 if [ ${#KOKKOS_CUDA_OPT} -gt 0 ]; then
   KOKKOS_SETTINGS="${KOKKOS_SETTINGS} KOKKOS_CUDA_OPTIONS=${KOKKOS_CUDA_OPT}"
+  if [[ "${KOKKOS_CUDA_OPT}" =~ "force_uvm" ]]; then
+    KOKKOSKERNELS_SPACES="CudaUVMSpace,${KOKKOSKERNELS_SPACES}"
+  fi
+fi
+
+if [ ${#KOKKOSKERNELS_SPACES} -gt 0 ]; then 
+  KOKKOSKERNELS_SPACES="${KOKKOSKERNELS_SPACES},${KOKKOS_DEVICES}"
+  KOKKOS_SETTINGS="${KOKKOS_SETTINGS} KOKKOSKERNELS_SPACES=${KOKKOSKERNELS_SPACES}"  
 fi
 
 if [ ${#KOKKOSKERNELS_SCALARS} -gt 0 ]; then
@@ -309,10 +321,6 @@ fi
 
 if [ ${#KOKKOSKERNELS_OFFSETS} -gt 0 ]; then
   KOKKOS_SETTINGS="${KOKKOS_SETTINGS} KOKKOSKERNELS_OFFSETS=${KOKKOSKERNELS_OFFSETS}"
-fi
-
-if [ ${#KOKKOSKERNELS_SPACES} -gt 0 ]; then
-  KOKKOS_SETTINGS="${KOKKOS_SETTINGS} KOKKOSKERNELS_SPACES=${KOKKOSKERNELS_SPACES}"
 fi
 
 if [ ${#KOKKOSKERNELS_LAYOUTS} -gt 0 ]; then
@@ -352,7 +360,7 @@ echo "" >> kokkos/Makefile
 echo "build:" >> kokkos/Makefile
 echo -e "\t\$(MAKE) -f ${KOKKOS_PATH}/core/src/Makefile ${KOKKOS_SETTINGS}" >> kokkos/Makefile
 echo "" >> kokkos/Makefile
-echo "install:" >> kokkos/Makefile
+echo "install-lib:" >> kokkos/Makefile
 echo -e "\t\$(MAKE) -f ${KOKKOS_PATH}/core/src/Makefile ${KOKKOS_SETTINGS} install" >> kokkos/Makefile
 echo "" >> kokkos/Makefile
 echo "clean:" >> kokkos/Makefile
@@ -365,7 +373,7 @@ echo "" >> src/Makefile
 echo "build:" >> src/Makefile
 echo -e "\t\$(MAKE) -f ${KOKKOSKERNELS_PATH}/src/Makefile ${KOKKOS_SETTINGS}" >> src/Makefile
 echo "" >> src/Makefile
-echo "install:" >> src/Makefile
+echo "install-lib:" >> src/Makefile
 echo -e "\t\$(MAKE) -f ${KOKKOSKERNELS_PATH}/src/Makefile ${KOKKOS_SETTINGS} install" >> src/Makefile
 echo "" >> src/Makefile
 echo "clean:" >> src/Makefile
@@ -404,7 +412,7 @@ echo "KOKKOS_SETTINGS=${KOKKOS_SETTINGS}" > Makefile
 
 echo "" >> Makefile
 echo "kokkos-lib:" >> Makefile
-echo -e "\t\$(MAKE) -C kokkos install" >> Makefile
+echo -e "\t\$(MAKE) -C kokkos install-lib" >> Makefile
 echo "" >> Makefile
 
 echo "" >> Makefile
@@ -412,11 +420,11 @@ echo "kokkoskernels-lib: kokkos-lib" >> Makefile
 echo -e "\t\$(MAKE) -C src build" >> Makefile
 echo "" >> Makefile
 
-echo "install: kokkoskernels-lib" >> Makefile
-echo -e "\t\$(MAKE) -C src install" >> Makefile
+echo "install-lib: kokkoskernels-lib" >> Makefile
+echo -e "\t\$(MAKE) -C src install-lib" >> Makefile
 echo "" >> Makefile
 
-echo "build-test: install" >> Makefile
+echo "build-test: install-lib" >> Makefile
 echo -e "\t\$(MAKE) -C unit_test" >> Makefile
 echo -e "\t\$(MAKE) -C perf_test" >> Makefile
 echo "" >> Makefile

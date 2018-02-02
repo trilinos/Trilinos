@@ -132,14 +132,18 @@ Note the trailing '/' is critical for the correct functioning of rsync.
 
 By default, this script does the following:
 
-1) Asserts that the git repo for 'orig-dir' is clean (i.e. no uncommitted
-   files, no unknown files, etc.).  This can be disabled by passing in
-   --allow-dirty-orig-dir.
+1) Assert that the git repo for 'orig-dir' is clean (i.e. no uncommitted
+   files, no unknown files, etc.).  (Can be disabled by passing in
+   --allow-dirty-orig-dir.)
 
-2) Asserts that the git repo for <some-dest-dir>/ is clean (see above).  This
-   can be disabled by passing in --allow-dirty-dest-dir.
+2) Assert that the git repo for <some-dest-dir>/ is clean (see above).  (Can
+be disabled by passing in --allow-dirty-dest-dir.)
 
-3) Run 'rsync -cav --delete' to copy the contents from 'orig-dir' to
+3) Clean out the ignored files from <some-source-dir>/orig-dir using 'git
+   clean -xdf' run in that directory.  (Only if --clean-ignored-files-orig-dir
+   is specified.)
+
+4) Run 'rsync -cav --delete' to copy the contents from 'orig-dir' to
    'dest-dir', excluding the '.git/' directory if it exists in either git repo
    dir.  After this runs, <some-dest-dir>/ should be an exact duplicate of
    <some-orig-dir>/ (except for otherwise noted excluded files).  This rsync
@@ -148,15 +152,15 @@ By default, this script does the following:
    should avoid showing them as tracked or unknown files in the 'dest-dir' git
    repo as well.
 
-4) Run 'git add .' in <some-dest-dir>/ to stage any new files.  Note that git
+5) Run 'git add .' in <some-dest-dir>/ to stage any new files.  Note that git
    will automatically stage deletes for any files removed by the 'rsync -cav
    --delete' command!
 
-5) Get the git remote URL from the orig-dir git repo, and the git log for the
+6) Get the git remote URL from the orig-dir git repo, and the git log for the
    last commit for the directory from orig-dir.  This information is used to
    define perfect tracing of the version info when doing the snapshot.
 
-6) Commit the updated dest-dir directory using a commit message with the
+7) Commit the updated dest-dir directory using a commit message with the
    orig-dir repo URL and log info.  This will only commit files in 'dest-dir'
    and not in other directories in the destination git repo!
 
@@ -166,14 +170,22 @@ NOTES:
   repos.  This is allowed because the rsync command is told to ignore the
   .git/ directory when syncing.
 
+* The cleaning of the orig-dir/ using 'git clean -xdf' may be somewhat
+  dangerous but it is recommended that it be preformed by passing in
+  --clean-ignored-files-orig-dir to avoid copying locally-ignored files in
+  orig-dir/ (e.g. ignored in .git/info/excludes but not in a committed
+  .gitignore file) that get copied to and then committed in the dest-dir/
+  repo.  Therefore, be sure you don't have any ignored files in orig-dir/ that
+  you want to keep before you run this script!
+
 * Snapshotting with this script will create an exact duplicate of 'orig-dir'
   in 'dest-dir' and therefore if there are any local changes to the files or
-  chagnes after the last snapshot, they will get wiped out.  To avoid this, do
-  the snapshot on a branch in the 'dest-dir' git repo, then merge that branch
-  into the master branch in 'dest-dir' repo that has the local changes.  As
-  long as there are no merge conflicts, this will preserve local changes for
-  the mirrored directories and files.  This works amazingly well in most
-  cases.
+  changes after the last snapshot, they will get wiped out.  To avoid this,
+  one can the snapshot on a branch in the 'dest-dir' git repo, then merge that
+  branch into the main branch (e.g. 'master') in 'dest-dir' repo.  As long as
+  there are no merge conflicts, this will preserve local changes for the
+  mirrored directories and files.  This strategy can work well as a way to
+  allow for local modifications but still do the snapshotting..
 """
 
 
@@ -245,6 +257,14 @@ def snapshotDirMainDriver(cmndLineArgs, defaultOptionsIn = None, stdout = None):
       help="Skip clean check of dest-dir." )
 
     clp.add_option(
+      "--clean-ignored-files-orig-dir", dest="cleanIgnoredFilesOrigDir", action="store_true",
+      help="Clean out the ignored files from orig-dir/ before snapshotting." )
+    clp.add_option(
+      "--no-clean-ignored-files-orig-dir", dest="cleanIgnoredFilesOrigDir", action="store_false",
+      default=False,
+      help="Do not clean out orig-dir/ ignored files before snapshotting. [default]" )
+
+    clp.add_option(
       "--do-rsync", dest="doRsync", action="store_true",
       help="Actually do the rsync. [default]" )
     clp.add_option(
@@ -280,14 +300,18 @@ def snapshotDirMainDriver(cmndLineArgs, defaultOptionsIn = None, stdout = None):
       print("  --assert-clean-dest-dir \\")
     else:
       print("  --allow-dirty-dest-dir \\")
-    if options.doCommit:
-      print("  --do-commit \\")
+    if options.cleanIgnoredFilesOrigDir:
+      print("  --clean-ignored-files-orig-dir \\")
     else:
-      print("  --skip-commit \\")
+      print("  --no-clean-ignored-files-orig-dir \\")
     if options.doRsync:
       print("  --do-rsync \\")
     else:
       print("  --skip-rsync \\")
+    if options.doCommit:
+      print("  --do-commit \\")
+    else:
+      print("  --skip-commit \\")
   
     if options.showDefaults:
       return  # All done!
@@ -330,7 +354,16 @@ def snapshotDir(inOptions):
     print("Skipping on request!")
 
   #
-  print("\nC) Get info from git commit from origDir [optional]\n")
+  print("\nC) Cleaning out ignored files in orig-dir\n")
+  #
+
+  if inOptions.cleanIgnoredFilesOrigDir:
+    cleanIgnoredFilesFromGitDir(inOptions.origDir, "origin")
+  else:
+    print("Skipping on request!")
+
+  #
+  print("\nD) Get info from git commit from origDir [optional]\n")
   #
 
   # Get the repo for origin
@@ -345,7 +378,7 @@ def snapshotDir(inOptions):
   print("\norigin commit message:\n\n" + originLastCommitMsg + "\n")
 
   #
-  print("\nD) Run rsync to add and remove files and dirs between two directories\n")
+  print("\nE) Run rsync to add and remove files and dirs between two directories\n")
   #
 
   if inOptions.doRsync:
@@ -364,7 +397,7 @@ def snapshotDir(inOptions):
       )
   
     if rtn != 0:
-      "Rsync failed, aborting!"
+      print("Rsync failed, aborting!")
       return False
 
   else:
@@ -440,6 +473,21 @@ def assertCleanGitDir(dirPath, dirName, explanation):
 
   # NOTE: The above git diff command will not catch unknown files but that is
   # not a huge risk for the use cases that I am concerned with.
+
+
+def cleanIgnoredFilesFromGitDir(dirPath, dirName):
+
+  rtn = echoRunSysCmnd(
+    r"git clean -xdf",
+    workingDir=dirPath,
+    throwExcept=False,
+    timeCmnd=True
+    )
+  
+  if rtn != 0:
+    raise Exception(
+      "Error, cleaning of origin `"+dirPath+"` failed!"
+      )
 
 
 def getCommitSha1(gitDir):

@@ -56,8 +56,9 @@
 #include <Teuchos_RCP.hpp>
 #include <Teuchos_DefaultComm.hpp>
 
-#include <sstream>
+#include <fstream>
 #include <iomanip>
+#include <sstream>
 
 using Teuchos::RCP;
 using Teuchos::rcp;

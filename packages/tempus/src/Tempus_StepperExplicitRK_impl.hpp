@@ -18,7 +18,30 @@
 
 namespace Tempus {
 
-// StepperExplicitRK definitions:
+template<class Scalar>
+StepperExplicitRK<Scalar>::StepperExplicitRK(
+  const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel,
+  std::string stepperType)
+{
+  this->setTableau(Teuchos::null, stepperType);
+  this->setParameterList(Teuchos::null);
+  this->setModel(appModel);
+  this->setObserver();
+  this->initialize();
+}
+
+template<class Scalar>
+StepperExplicitRK<Scalar>::StepperExplicitRK(
+  const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel,
+  Teuchos::RCP<Teuchos::ParameterList>                      pList)
+{
+  this->setTableau(pList, "RK Explicit 4 Stage");
+  this->setParameterList(pList);
+  this->setModel(appModel);
+  this->setObserver();
+  this->initialize();
+}
+
 template<class Scalar>
 StepperExplicitRK<Scalar>::StepperExplicitRK(
   const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel,
@@ -91,10 +114,11 @@ void StepperExplicitRK<Scalar>::setTableau(
     if (pList == Teuchos::null)
       stepperType = "RK Explicit 4 Stage";
     else
-      stepperType = pList->get<std::string>("Stepper Type");
+      stepperType =
+        pList->get<std::string>("Stepper Type", "RK Explicit 4 Stage");
   }
 
-  ERK_ButcherTableau_ = createRKBT<Scalar>(stepperType,pList);
+  ERK_ButcherTableau_ = createRKBT<Scalar>(stepperType, pList);
 
   TEUCHOS_TEST_FOR_EXCEPTION(ERK_ButcherTableau_->isImplicit() == true,
     std::logic_error,
@@ -123,6 +147,15 @@ void StepperExplicitRK<Scalar>::setObserver(
 template<class Scalar>
 void StepperExplicitRK<Scalar>::initialize()
 {
+  TEUCHOS_TEST_FOR_EXCEPTION( ERK_ButcherTableau_ == Teuchos::null,
+    std::logic_error,
+    "Error - Need to set the Butcher Tableau, setTableau(), before calling "
+    "StepperExplicitRK::initialize()\n");
+
+  TEUCHOS_TEST_FOR_EXCEPTION( appModel_ == Teuchos::null, std::logic_error,
+    "Error - Need to set the model, setModel(), before calling "
+    "StepperExplicitRK::initialize()\n");
+
   // Initialize the stage vectors
   int numStages = ERK_ButcherTableau_->numStages();
   stageX_ = Thyra::createMember(appModel_->get_f_space());
@@ -236,7 +269,8 @@ void StepperExplicitRK<Scalar>::setParameterList(
   const Teuchos::RCP<Teuchos::ParameterList> & pList)
 {
   if (pList == Teuchos::null) {
-    stepperPL_ = this->getDefaultParameters();
+    // Create default parameters if null, otherwise keep current parameters.
+    if (stepperPL_ == Teuchos::null) stepperPL_ = this->getDefaultParameters();
   } else {
     stepperPL_ = pList;
   }

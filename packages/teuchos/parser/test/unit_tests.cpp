@@ -501,6 +501,7 @@ TEUCHOS_UNIT_TEST( Parser, mathexpr_reader ) {
   test_mathexpr_reader("1.23e5+8.07e10*exp(-((x^2 + (y-180)^2))/(2.*(2.2)^2))");
   test_mathexpr_reader("---16");
   test_mathexpr_reader("((1 < 2) && (2 < 1)) ? 42 : 9");
+  test_mathexpr_reader("x = 2; y = 5; x^2 + y^2");
 }
 
 } // anonymous namespace

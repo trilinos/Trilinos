@@ -245,11 +245,15 @@ namespace MueLu {
         // FIXME_KOKKOS
         // Utils2_kokkos<Scalar, LocalOrdinal, GlobalOrdinal, Node>::MyOldScaleMatrix_Epetra(Op, sv, doFillComplete, doOptimizeStorage);
         throw std::runtime_error("FIXME");
+#ifndef __NVCC__ //prevent nvcc warning
         break;
+#endif
 
       default:
         throw Exceptions::RuntimeError("Only Epetra and Tpetra matrices can be scaled.");
+#ifndef __NVCC__ //prevent nvcc warning
         break;
+#endif
     }
   }
 

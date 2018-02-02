@@ -184,10 +184,6 @@ namespace Tacho {
         stat.s_max_block_size = 0;
         stat.s_capacity = 0;
         stat.s_num_superblocks = 0;
-
-#if defined( TACHO_PROFILE_TIME_PER_THREAD )
-        resetTimePerThread();
-#endif
       }
 
       inline
@@ -224,18 +220,6 @@ namespace Tacho {
         printf("             gflop   for numeric factorization:               %10.2f GFLOP\n", flop/1024/1024/1024);
         printf("             gflop/s for numeric factorization:               %10.2f GFLOP/s\n", flop/stat.t_factor/1024/1024/1024);
         printf("\n");
-#if defined( TACHO_PROFILE_TIME_PER_THREAD )
-        const ordinal_type nthreads = host_exec_space::thread_pool_size(0);
-        double t_total = 0, t_avg = 0, t_min = 0, t_max = 0;
-        getTimePerThread(nthreads, t_total, t_avg, t_min, t_max);  
-
-        printf("  Time per thread\n");
-        // for (ordinal_type i=0;i<nthreads;++i) 
-        //   printf("             time for external blas lapack (diff from avg):   %10.6f s, %10.6f s\n", g_time_per_thread[i], fabs(g_time_per_thread[i] - t_avg));
-        printf("             sum(time per thread)/(factor. time x nthreads):  %10.6f s\n", t_total/(stat.t_factor*nthreads));
-        printf("             time min, max, avg, factor                       %10.6f s, %10.6f s, %10.6f, %10.6f\n", t_min, t_max, t_avg, stat.t_factor);
-        printf("\n");        
-#endif
       }
       
       inline
@@ -349,6 +333,12 @@ namespace Tacho {
           // this should be zero
           print_stat_memory();
         }
+      }
+
+      inline
+      void
+      setFrontUpdateMode(const ordinal_type front_update_mode) {
+        _info.front_update_mode = front_update_mode;
       }
 
       inline
@@ -1079,7 +1069,7 @@ namespace Tacho {
                                  x.dimension_0() != b.dimension_0() ||
                                  x.dimension_1() != b.dimension_1(), std::logic_error,
                                  "A,x and b dimensions are not compatible");
-
+        typedef ArithTraits<value_type> ats;
         const ordinal_type m = A.NumRows(), k = b.dimension_1();
         double diff = 0, norm = 0;
         for (ordinal_type p=0;p<k;++p) {
@@ -1090,8 +1080,8 @@ namespace Tacho {
               const ordinal_type col = A.Col(j);
               s += A.Value(j)*x(col,p);
             }
-            norm += real(b(i,p)*conj(b(i,p)));
-            diff += real((b(i,p) - s)*conj(b(i,p) - s));
+            norm += ats::real(b(i,p)*ats::conj(b(i,p)));
+            diff += ats::real((b(i,p) - s)*ats::conj(b(i,p) - s));
           }
         }
         return sqrt(diff/norm);

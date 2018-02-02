@@ -84,12 +84,20 @@ template<class Scalar>
 class StepperDIRK : virtual public Tempus::StepperImplicit<Scalar>
 {
 public:
-
-  /// Constructor
+  /// Constructor to use default Stepper parameters.
   StepperDIRK(
     const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel,
-    std::string stepperType,
-    Teuchos::RCP<Teuchos::ParameterList> pList = Teuchos::null);
+    std::string stepperType = "SDIRK 2 Stage 2nd order");
+
+  /// Constructor to specialize Stepper parameters.
+  StepperDIRK(
+    const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel,
+    Teuchos::RCP<Teuchos::ParameterList> pList);
+
+  /// Constructor for StepperFactory.
+  StepperDIRK(
+    const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel,
+    std::string stepperType, Teuchos::RCP<Teuchos::ParameterList> pList);
 
   /// \name Basic stepper methods
   //@{
@@ -105,6 +113,8 @@ public:
       Teuchos::RCP<Teuchos::ParameterList> solverPL = Teuchos::null);
     virtual void setSolver(
       Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> > solver);
+    virtual Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> > getSolver() const
+      { return solver_; }
     virtual void setObserver(
       Teuchos::RCP<StepperDIRKObserver<Scalar> > obs = Teuchos::null);
 
@@ -121,9 +131,23 @@ public:
 
     /// Get a default (initial) StepperState
     virtual Teuchos::RCP<Tempus::StepperState<Scalar> >getDefaultStepperState();
-    virtual Scalar getOrder() const{return DIRK_ButcherTableau_->order();}
+    virtual Scalar getOrder()    const{return DIRK_ButcherTableau_->order();}
     virtual Scalar getOrderMin() const{return DIRK_ButcherTableau_->orderMin();}
     virtual Scalar getOrderMax() const{return DIRK_ButcherTableau_->orderMax();}
+
+    virtual bool isExplicit() const
+    {
+      const int numStages = DIRK_ButcherTableau_->numStages();
+      Teuchos::SerialDenseMatrix<int,Scalar> A = DIRK_ButcherTableau_->A();
+      bool isExplicit = false;
+      for (int i=0; i<numStages; ++i) if (A(i,i) == 0.0) isExplicit = true;
+      return isExplicit;
+    }
+    virtual bool isImplicit()         const {return true;}
+    virtual bool isExplicitImplicit() const
+      {return isExplicit() and isImplicit();}
+    virtual bool isOneStepMethod()   const {return true;}
+    virtual bool isMultiStepMethod() const {return !isOneStepMethod();}
   //@}
 
   /// \name ParameterList methods

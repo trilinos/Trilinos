@@ -62,6 +62,8 @@ public:
       Teuchos::RCP<Teuchos::ParameterList> solverPL=Teuchos::null);
     virtual void setSolver(
         Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> > solver);
+    virtual Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> > getSolver() const
+      { return Teuchos::null; }
     virtual void setObserver(
       Teuchos::RCP<StepperForwardEulerObserver<Scalar> > obs = Teuchos::null);
 
@@ -77,7 +79,18 @@ public:
     virtual Scalar getOrder() const {return 1.0;}
     virtual Scalar getOrderMin() const {return 1.0;}
     virtual Scalar getOrderMax() const {return 1.0;}
+
+    virtual bool isExplicit()         const {return true;}
+    virtual bool isImplicit()         const {return false;}
+    virtual bool isExplicitImplicit() const
+      {return isExplicit() and isImplicit();}
+    virtual bool isOneStepMethod()   const {return true;}
+    virtual bool isMultiStepMethod() const {return !isOneStepMethod();}
   //@}
+
+  /// Provide temporary xDot memory for Stepper if SolutionState doesn't.
+  virtual Teuchos::RCP<Thyra::VectorBase<Scalar> > getXDotTemp(
+    Teuchos::RCP<Thyra::VectorBase<Scalar> > x);
 
   /// \name ParameterList methods
   //@{
@@ -110,6 +123,8 @@ protected:
   Thyra::ModelEvaluatorBase::OutArgs<Scalar>         outArgs_;
 
   Teuchos::RCP<StepperForwardEulerObserver<Scalar> > stepperFEObserver_;
+
+  Teuchos::RCP<Thyra::VectorBase<Scalar> >            xDotTemp_;
 };
 
 } // namespace Tempus

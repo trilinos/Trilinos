@@ -68,12 +68,12 @@ int main(int argc, char *argv[]) {
 
   // This little trick lets us print to std::cout only if a (dummy) command-line argument is provided.
   int iprint     = argc - 1;
-  Teuchos::RCP<std::ostream> outStream;
+  ROL::Ptr<std::ostream> outStream;
   Teuchos::oblackholestream bhs; // outputs nothing
   if (iprint > 0)
-    outStream = Teuchos::rcp(&std::cout, false);
+    outStream = ROL::makePtrFromRef(std::cout);
   else
-    outStream = Teuchos::rcp(&bhs, false);
+    outStream = ROL::makePtrFromRef(bhs);
 
   int errorFlag  = 0;
 
@@ -97,12 +97,12 @@ int main(int argc, char *argv[]) {
     ROL::Algorithm<RealT> algo(stepname,parlist);
 
     // Iteration vector.
-    Teuchos::RCP<std::vector<RealT> > x_rcp = Teuchos::rcp( new std::vector<RealT> (dim, 0.0) );
+    ROL::Ptr<std::vector<RealT> > x_ptr = ROL::makePtr<std::vector<RealT>>(dim, 0.0);
     // Set initial guess.
     for (int i=0; i<dim; i++) {
-      (*x_rcp)[i] = 0.1;
+      (*x_ptr)[i] = 0.1;
     }
-    ROL::StdVector<RealT> x(x_rcp);
+    ROL::StdVector<RealT> x(x_ptr);
 
     // Run algorithm.
     algo.run(x, obj, true, *outStream);
@@ -186,14 +186,14 @@ int main(int argc, char *argv[]) {
 
     // Reset initial guess.
     for (int i=0; i<dim; i++) {
-      (*x_rcp)[i] = 0.1;
+      (*x_ptr)[i] = 0.1;
     }
 
     // Run Newton algorithm.
     newton_algo.run(x, obj, true, *outStream);
 
-    Teuchos::RCP<const ROL::AlgorithmState<RealT> > new_state = newton_algo.getState();
-    Teuchos::RCP<const ROL::AlgorithmState<RealT> > old_state = algo.getState();
+    ROL::Ptr<const ROL::AlgorithmState<RealT> > new_state = newton_algo.getState();
+    ROL::Ptr<const ROL::AlgorithmState<RealT> > old_state = algo.getState();
     *outStream << "old_optimal_value = " << old_state->value << std::endl;
     *outStream << "new_optimal_value = " << new_state->value << std::endl;
     if ( std::abs(new_state->value - old_state->value) / std::abs(old_state->value) > errtol ) {

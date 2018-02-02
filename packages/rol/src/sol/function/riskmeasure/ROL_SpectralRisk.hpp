@@ -88,18 +88,18 @@ namespace ROL {
 template<class Real>
 class SpectralRisk : public RiskMeasure<Real> {
 private:
-  Teuchos::RCP<MixedQuantileQuadrangle<Real> > mqq_;
-  Teuchos::RCP<PlusFunction<Real> > plusFunction_;
+  ROL::Ptr<MixedQuantileQuadrangle<Real> > mqq_;
+  ROL::Ptr<PlusFunction<Real> > plusFunction_;
 
   std::vector<Real> wts_;
   std::vector<Real> pts_;
 
   bool isSet_;
 
-  void checkInputs(Teuchos::RCP<Distribution<Real> > &dist = Teuchos::null) const {
-    TEUCHOS_TEST_FOR_EXCEPTION(plusFunction_ == Teuchos::null, std::invalid_argument,
+  void checkInputs(ROL::Ptr<Distribution<Real> > &dist = ROL::nullPtr) const {
+    TEUCHOS_TEST_FOR_EXCEPTION(plusFunction_ == ROL::nullPtr, std::invalid_argument,
       ">>> ERROR (ROL::SpectralRisk): PlusFunction pointer is null!");
-    if ( dist != Teuchos::null) {
+    if ( dist != ROL::nullPtr) {
       Real lb = dist->lowerBound();
       Real ub = dist->upperBound();
       TEUCHOS_TEST_FOR_EXCEPTION(lb < static_cast<Real>(0), std::invalid_argument,
@@ -111,15 +111,15 @@ private:
 
 protected:
   void buildMixedQuantile(const std::vector<Real> &pts, const std::vector<Real> &wts,
-                          const Teuchos::RCP<PlusFunction<Real> > &pf) {
+                          const ROL::Ptr<PlusFunction<Real> > &pf) {
      pts_.clear(); pts_.assign(pts.begin(),pts.end());
      wts_.clear(); wts_.assign(wts.begin(),wts.end());
      plusFunction_ = pf;
-     mqq_ = Teuchos::rcp(new MixedQuantileQuadrangle<Real>(pts,wts,pf));
+     mqq_ = ROL::makePtr<MixedQuantileQuadrangle<Real>>(pts,wts,pf);
   }
 
   void buildQuadFromDist(std::vector<Real> &pts, std::vector<Real> &wts,
-                   const int nQuad, const Teuchos::RCP<Distribution<Real> > &dist) const {
+                   const int nQuad, const ROL::Ptr<Distribution<Real> > &dist) const {
     const Real lo = dist->lowerBound(), hi = dist->upperBound();
     const Real half(0.5), one(1), N(nQuad);
     wts.clear(); wts.resize(nQuad);
@@ -176,9 +176,9 @@ protected:
 public:
   SpectralRisk(void) : RiskMeasure<Real>(), isSet_(false) {}
 
-  SpectralRisk( const Teuchos::RCP<Distribution<Real> > &dist,
+  SpectralRisk( const ROL::Ptr<Distribution<Real> > &dist,
                 const int nQuad,
-                const Teuchos::RCP<PlusFunction<Real> > &pf)
+                const ROL::Ptr<PlusFunction<Real> > &pf)
     : RiskMeasure<Real>(), isSet_(false) {
     // Build generalized trapezoidal rule
     std::vector<Real> wts(nQuad), pts(nQuad);
@@ -197,9 +197,9 @@ public:
     int nQuad  = list.get("Number of Quadrature Points",5);
     bool print = list.get("Print Quadrature to Screen",false);
     // Build distribution
-    Teuchos::RCP<Distribution<Real> > dist = DistributionFactory<Real>(list);
+    ROL::Ptr<Distribution<Real> > dist = DistributionFactory<Real>(list);
     // Build plus function approximation
-    Teuchos::RCP<PlusFunction<Real> > pf = Teuchos::rcp(new PlusFunction<Real>(list));
+    ROL::Ptr<PlusFunction<Real> > pf = ROL::makePtr<PlusFunction<Real>>(list);
     // Build generalized trapezoidal rule
     std::vector<Real> wts(nQuad), pts(nQuad);
     buildQuadFromDist(pts,wts,nQuad,dist);
@@ -211,7 +211,7 @@ public:
   }
 
   SpectralRisk( const std::vector<Real> &pts, const std::vector<Real> &wts,
-                const Teuchos::RCP<PlusFunction<Real> > &pf)
+                const ROL::Ptr<PlusFunction<Real> > &pf)
     : RiskMeasure<Real>(), isSet_(false) {
     buildMixedQuantile(pts,wts,pf);
     // Check inputs
@@ -223,7 +223,7 @@ public:
     std::vector<Real> xstat;
     int index = RiskMeasure<Real>::getIndex();
     int comp  = RiskMeasure<Real>::getComponent();
-    xstat = (*Teuchos::dyn_cast<const RiskVector<Real> >(x).getStatistic(comp,index));
+    xstat = (*dynamic_cast<const RiskVector<Real>&>(x).getStatistic(comp,index));
     Real stat(0);
     int nQuad = static_cast<int>(wts_.size());
     for (int i = 0; i < nQuad; ++i) {
@@ -232,13 +232,13 @@ public:
     return stat;
   }
 
-  void reset(Teuchos::RCP<Vector<Real> > &x0, const Vector<Real> &x) {
+  void reset(ROL::Ptr<Vector<Real> > &x0, const Vector<Real> &x) {
     setInfo();
     mqq_->reset(x0,x);
   }
 
-  void reset(Teuchos::RCP<Vector<Real> > &x0, const Vector<Real> &x,
-             Teuchos::RCP<Vector<Real> > &v0, const Vector<Real> &v) {
+  void reset(ROL::Ptr<Vector<Real> > &x0, const Vector<Real> &x,
+             ROL::Ptr<Vector<Real> > &v0, const Vector<Real> &v) {
     setInfo();
     mqq_->reset(x0,x,v0,v);
   }

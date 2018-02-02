@@ -337,6 +337,50 @@ SumStatic(const Teuchos::ParameterList& p)
 //**********************************************************************
 
 template<typename EvalT, typename TRAITS,typename Tag0,typename Tag1>
+SumStatic<EvalT,TRAITS,Tag0,Tag1,void>::
+SumStatic(const std::vector<PHX::Tag<typename EvalT::ScalarT>> & inputs,
+          const std::vector<double> & scalar_values,
+          const PHX::Tag<typename EvalT::ScalarT> & output)
+{
+  TEUCHOS_ASSERT(scalar_values.size()==inputs.size());
+
+  // check if the user wants to scale each term independently
+  if(scalars.size()==0) {
+    useScalars = false;
+  }
+  else {
+    useScalars = true;
+
+    Kokkos::View<double*,PHX::Device> scalars_nc
+        = Kokkos::View<double*,PHX::Device>("scalars",scalar_values.size());
+
+    for(std::size_t i=0;i<scalar_values.size();i++)
+      scalars_nc(i) = scalar_values[i];
+
+    scalars = scalars_nc;
+  }
+
+  // sanity check
+  TEUCHOS_ASSERT(inputs.size()<=MAX_VALUES);
+  
+  sum = output;
+  this->addEvaluatedField(sum);
+ 
+  values.resize(inputs.size());
+  for (std::size_t i=0; i < inputs.size(); ++i) {
+    values[i] = inputs[i];
+    this->addDependentField(values[i]);
+  }
+
+  numValues = inputs.size();
+
+  std::string n = "SumStatic Rank 2 Evaluator";
+  this->setName(n);
+}
+
+//**********************************************************************
+
+template<typename EvalT, typename TRAITS,typename Tag0,typename Tag1>
 void SumStatic<EvalT,TRAITS,Tag0,Tag1,void>::
 postRegistrationSetup(typename TRAITS::SetupData /* d */,
                       PHX::FieldManager<TRAITS>& fm)

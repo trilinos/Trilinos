@@ -3,10 +3,13 @@
 
 // headers
 
+// Xpetra
+#include "Xpetra_Map.hpp"
 
 // forward declarations
 namespace Teuchos
 {
+  template<>
   class Comm<std::size_t>;
 }
 
@@ -76,7 +79,7 @@ public:
   //@[
 
   //! Is this an interface node?
-  virtual const bool IsInterfaceNode() const;
+  virtual const bool isInterfaceNode() const;
 
   //@}
 
@@ -136,7 +139,8 @@ public:
   virtual const bool hasNode(const GO nodeID) const;
 
   //! get the node (read only)
-  virtual const Xpetra::RegionNode<GO>& getNode(const GO nodeID) const;
+  virtual const Xpetra::RegionNode<GO>& getNode(const GO globalNodeID ///< global node ID
+      ) const;
 
   //! get global number of nodes
   virtual const GO getNumNodes() const;
@@ -149,10 +153,17 @@ public:
   virtual Teuchos::RCP<const Teuchos::Array<GO> > getNodeGIDsPerProc(const int myRank ///< MPI rank
       ) const;
 
+  //! Get list of node GIDs per region
+  virtual Teuchos::RCP<const Teuchos::Array<GO> > getNodeGIDsPerRegion(const GO regionID ///< Region ID
+      ) const;
+
   //! Get list of node GIDs per region and per processor
   virtual Teuchos::RCP<const Teuchos::Array<GO> > getNodeGIDsPerRegionAndProc(const GO regionID, ///< Region ID
       const int myRank ///< MPI rank
       ) const;
+
+  //! Access mapping of interface nodes to regions
+  virtual Teuchos::Array<std::tuple<int,Teuchos::Array<GO> > > getMappingInterfaceNodesToRegions() const;
 
   //@}
 
@@ -205,10 +216,31 @@ class RegionManager
   //@{
 
   //! Get total number of nodes in the mesh
-  GO getNumNodes() const { return numNodes_; }
+  virtual GO getNumNodes() const { return numNodes_; }
+
+  //! Get total number of nodes in the mesh
+  virtual const GO getNumNodesPerRegion(const GO regID ///< region ID
+      ) const;
 
   //! Get total number of regions in the mesh
-  GO getNumRegions() const { return numRegions_; }
+  virtual GO getNumRegions() const { return numRegions_; }
+
+  //! Get composite map
+  virtual Teuchos::RCP<const Xpetra::Map<LO,GO,NO> > getCompositeMap() const { return compositeMap_; }
+
+  //! Get map of region \c regID
+  virtual Teuchos::RCP<const Xpetra::Map<LO,GO,NO> > getRegionMap(const GO regID) const { return regionMaps_[regID]; }
+
+  /*! \brief Get mapping of local node ID to global node ID for region \c regID
+   *
+   *  \warning This relies on std::tuples and is a relict from Max's implementation.
+   *
+   *  \todo Replace this once the splitting/collapsing routines are refactored.
+   */
+  virtual Teuchos::Array<std::tuple<GO,GO> > getRegionToAll(const GO regID) const;
+
+  //! Access mapping of interface nodes to regions
+  virtual Teuchos::Array<std::tuple<int,Teuchos::Array<GO> > > getInterfaceNodesToRegions() const;
 
   //@}
 

@@ -114,17 +114,17 @@ int main(int argc, char* argv[])
   int coarsening_factor = 3;
   Xpetra::RegionAMG<Scalar,LocalOrdinal,GlobalOrdinal,Node> preconditioner(matrixSplitting, regionHandler, comm, mueluParams, max_num_levels, coarsening_factor);
 
-  // Setup vectors for test problem
-  Teuchos::RCP<multivector_type> X = Xpetra::MultiVectorFactory< Scalar, LocalOrdinal, GlobalOrdinal, Node >::Build(preconditioner.getDomainMap(), 1) ;
-  Teuchos::RCP<multivector_type> Y = Xpetra::MultiVectorFactory< Scalar, LocalOrdinal, GlobalOrdinal, Node >::Build(preconditioner.getRangeMap(), 1) ;
-  X->randomize();
-  Y->putScalar((scalar_type) 0.0);
-
-  // Apply the preconditioner
-  preconditioner.apply(*X,*Y);
-
-  // Output result to screen
-  Y->describe(*out, Teuchos::VERB_EXTREME);
+//  // Setup vectors for test problem
+//  Teuchos::RCP<multivector_type> X = Xpetra::MultiVectorFactory< Scalar, LocalOrdinal, GlobalOrdinal, Node >::Build(preconditioner.getDomainMap(), 1) ;
+//  Teuchos::RCP<multivector_type> Y = Xpetra::MultiVectorFactory< Scalar, LocalOrdinal, GlobalOrdinal, Node >::Build(preconditioner.getRangeMap(), 1) ;
+//  X->randomize();
+//  Y->putScalar((scalar_type) 0.0);
+//
+//  // Apply the preconditioner
+//  preconditioner.apply(*X,*Y);
+//
+//  // Output result to screen
+//  Y->describe(*out, Teuchos::VERB_EXTREME);
 
 #ifdef HAVE_MPI
   MPI_Finalize();

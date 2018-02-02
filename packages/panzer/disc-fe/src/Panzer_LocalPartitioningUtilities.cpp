@@ -201,6 +201,10 @@ setupSubLocalMeshInfo(const panzer::LocalMeshInfoBase<LO,GO> & parent_info,
       for(int local_face=0;local_face<num_faces_per_cell;++local_face){
         const LO parent_face = parent_info.cell_to_faces(owned_parent_cell,local_face);
 
+        // Skip faces at the edge of the domain
+        if(parent_face<0)
+          continue;
+
         // Get the cell on the other side of the face
         const LO neighbor_side = (parent_info.face_to_cells(parent_face,0) == owned_parent_cell) ? 1 : 0;
 

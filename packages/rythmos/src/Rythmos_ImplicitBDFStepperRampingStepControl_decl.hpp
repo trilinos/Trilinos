@@ -31,6 +31,7 @@
 
 #include "Rythmos_ErrWtVecCalcAcceptingStepControlStrategyBase.hpp"
 #include "Rythmos_ImplicitBDFStepperStepControl.hpp" // for BDFactionFlag definition
+#include <list>
 
 namespace Rythmos {
 
@@ -78,11 +79,11 @@ namespace Rythmos {
     //@{
     /** \brief . */
     void setRequestedStepSize(const StepperBase<Scalar>& stepper,
-			      const Scalar& stepSize, const StepSizeType& stepSizeType);
+                              const Scalar& stepSize, const StepSizeType& stepSizeType);
 
     /** \brief . */
     void nextStepSize(const StepperBase<Scalar>& stepper, Scalar* stepSize,
-		      StepSizeType* stepSizeType, int* order);
+                      StepSizeType* stepSizeType, int* order);
 
     /** \brief . */
     void setCorrection(

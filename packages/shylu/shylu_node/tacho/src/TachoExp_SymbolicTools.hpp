@@ -243,8 +243,8 @@ namespace Tacho {
           memset(a.data(), 0, cnt*sizeof(typename ordinal_type_array::value_type));
         };
 
-        auto colmap_per_supernode = [](const size_type_array &ap,
-                                       const ordinal_type_array &aj,
+        auto colmap_per_supernode = [](const size_type_array &ap_,
+                                       const ordinal_type_array &aj_,
                                        const ordinal_type sbeg, 
                                        const ordinal_type send,
                                        const ordinal_type_array &cid,
@@ -260,8 +260,8 @@ namespace Tacho {
           
           // visit each super node row (off diagonal block)
           for (ordinal_type i=sbeg;i<send;++i) {
-            for (size_type j=ap(i);j<ap(i+1);++j) {
-              const ordinal_type col = aj(j);
+            for (size_type j=ap_(i);j<ap_(i+1);++j) {
+              const ordinal_type col = aj_(j);
               if (flag(col)) {
                 // already visited; pass on
               } else {

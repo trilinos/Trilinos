@@ -827,7 +827,7 @@ applyRightPreconditioning(bool useTranspose,
   }
   else
     throwError("applyRightPreconditioning",
-           "Parameter \"preconditioner\" is not vaild for this method");
+           "Parameter \"preconditioner\" is not valid for this method");
 
   if (errorCode != 0) {
     std::string msg = "Error - NOX::Epetra::LinearSystemAztecOO::applyRightPreconditioning() - A non-zero error code has been returned from the preconditioner.";

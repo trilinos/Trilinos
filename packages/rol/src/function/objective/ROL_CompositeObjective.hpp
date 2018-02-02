@@ -57,20 +57,20 @@ namespace ROL {
 template <class Real>
 class CompositeObjective : public Objective<Real> {
 private:
-  const std::vector<Teuchos::RCP<Objective<Real> > > obj_vec_;
-  const Teuchos::RCP<StdObjective<Real> > std_obj_;
+  const std::vector<ROL::Ptr<Objective<Real> > > obj_vec_;
+  const ROL::Ptr<StdObjective<Real> > std_obj_;
 
-  Teuchos::RCP<std::vector<Real> > obj_value_, obj_grad_, obj_gv_, obj_hess_;
-  Teuchos::RCP<StdVector<Real> > obj_value_vec_, obj_grad_vec_, obj_gv_vec_, obj_hess_vec_;
-  std::vector<Teuchos::RCP<Vector<Real> > > vec_grad_, vec_hess_;
+  ROL::Ptr<std::vector<Real> > obj_value_, obj_grad_, obj_gv_, obj_hess_;
+  ROL::Ptr<StdVector<Real> > obj_value_vec_, obj_grad_vec_, obj_gv_vec_, obj_hess_vec_;
+  std::vector<ROL::Ptr<Vector<Real> > > vec_grad_, vec_hess_;
 
   bool isInitialized_, isValueComputed_, isGradientComputed_;
 
   void initialize(const Vector<Real> &x) {
     if (!isInitialized_){
       int size = obj_vec_.size();
-      vec_grad_.clear(); vec_grad_.resize(size,Teuchos::null);
-      vec_hess_.clear(); vec_hess_.resize(size,Teuchos::null);
+      vec_grad_.clear(); vec_grad_.resize(size,ROL::nullPtr);
+      vec_hess_.clear(); vec_hess_.resize(size,ROL::nullPtr);
       for (int i = 0; i < size; ++i) {
         vec_grad_[i] = x.dual().clone();
         vec_hess_[i] = x.dual().clone();
@@ -113,18 +113,18 @@ private:
   }
 
 public:
-  CompositeObjective(const std::vector<Teuchos::RCP<Objective<Real> > > &obj_vec,
-                     const Teuchos::RCP<StdObjective<Real> > &std_obj)
+  CompositeObjective(const std::vector<ROL::Ptr<Objective<Real> > > &obj_vec,
+                     const ROL::Ptr<StdObjective<Real> > &std_obj)
     : obj_vec_(obj_vec), std_obj_(std_obj), isInitialized_(false),
       isValueComputed_(false), isGradientComputed_(false) {
-    obj_value_ = Teuchos::rcp(new std::vector<Real>(obj_vec_.size(),0));
-    obj_value_vec_ = Teuchos::rcp(new StdVector<Real>(obj_value_));
-    obj_grad_ = Teuchos::rcp(new std::vector<Real>(obj_vec_.size(),0));
-    obj_grad_vec_ = Teuchos::rcp(new StdVector<Real>(obj_grad_));
-    obj_gv_ = Teuchos::rcp(new std::vector<Real>(obj_vec_.size(),0));
-    obj_gv_vec_ = Teuchos::rcp(new StdVector<Real>(obj_gv_));
-    obj_hess_ = Teuchos::rcp(new std::vector<Real>(obj_vec_.size(),0));
-    obj_hess_vec_ = Teuchos::rcp(new StdVector<Real>(obj_hess_));
+    obj_value_ = ROL::makePtr<std::vector<Real>>(obj_vec_.size(),0);
+    obj_value_vec_ = ROL::makePtr<StdVector<Real>>(obj_value_);
+    obj_grad_ = ROL::makePtr<std::vector<Real>>(obj_vec_.size(),0);
+    obj_grad_vec_ = ROL::makePtr<StdVector<Real>>(obj_grad_);
+    obj_gv_ = ROL::makePtr<std::vector<Real>>(obj_vec_.size(),0);
+    obj_gv_vec_ = ROL::makePtr<StdVector<Real>>(obj_gv_);
+    obj_hess_ = ROL::makePtr<std::vector<Real>>(obj_vec_.size(),0);
+    obj_hess_vec_ = ROL::makePtr<StdVector<Real>>(obj_hess_);
   }
 
   void update( const Vector<Real> &x, bool flag = true, int iter = -1 ) {

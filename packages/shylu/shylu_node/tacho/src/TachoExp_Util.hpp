@@ -25,7 +25,7 @@
 #include "Kokkos_Core.hpp"
 #include "impl/Kokkos_Timer.hpp"
 
-#ifdef TACHO_HAVE_MKL
+#if defined (__INTEL_MKL__)
 #include "mkl.h"
 #endif
 
@@ -35,13 +35,6 @@
 
 namespace Tacho {
 
-  extern double g_time_per_thread[2048];
-  void resetTimePerThread();
-  void getTimePerThread(const int nthreads,
-                        double &t_total,
-                        double &t_avg,
-                        double &t_min,
-                        double &t_max);
   const char* Version();
 
   namespace Experimental {
@@ -69,11 +62,22 @@ namespace Tacho {
       throw x(msg);                                                     \
     }
 
-#if defined( KOKKOS_ENABLE_ASM ) && !defined( _WIN32 ) && !defined( __arm__ ) && !defined( __aarch64__ )
-#define KOKKOS_IMPL_PAUSE asm volatile("pause\n":::"memory")
-#else
-#define KOKKOS_IMPL_PAUSE
-#endif
+
+    #if defined( KOKKOS_ENABLE_ASM )
+      #if defined( __amd64 )  || defined( __amd64__ ) || \
+          defined( __x86_64 ) || defined( __x86_64__ )
+          #if !defined( _WIN32 ) /* IS NOT Microsoft Windows */
+             #define KOKKOS_IMPL_PAUSE asm volatile( "pause\n":::"memory" );
+          #else
+             #define KOKKOS_IMPL_PAUSE __asm__ __volatile__( "pause\n":::"memory" );
+          #endif
+      #elif defined(__PPC64__)
+            #define KOKKOS_IMPL_PAUSE  asm volatile( "or 27, 27, 27" ::: "memory" );
+      #endif
+    #else
+        #define KOKKOS_IMPL_PAUSE
+    #endif
+
 
     ///
     /// print execution spaces
@@ -113,91 +117,79 @@ namespace Tacho {
       MaxDependenceSize = 8,
       ThresholdSolvePhaseUsingBlas3 = 12 
     };
-    
-    template<typename T>
-    struct TypeTraits;
 
-    template<>
-    struct TypeTraits<float> {
-      typedef float type;
-      typedef float value_type;
-      typedef float std_value_type;
-
-      typedef float magnitude_type;
-      typedef float scalar_type;
-    };
-
-    template<>
-    struct TypeTraits<double> {
-      typedef double type;
-      typedef double value_type;
-      typedef double std_value_type;
-
-      typedef double magnitude_type;
-      typedef double scalar_type;
-    };
-
-    template<>
-    struct TypeTraits<std::complex<float> > {
-      typedef std::complex<float> type;
-      typedef std::complex<float> value_type;
-      typedef std::complex<float> std_value_type;
-
-      typedef float magnitude_type;
-      typedef float scalar_type;
-    };
-
-    template<>
-    struct TypeTraits<std::complex<double> > {
-      typedef std::complex<double> type;
-      typedef std::complex<double> value_type;
-      typedef std::complex<double> std_value_type;
-
-      typedef double magnitude_type;
-      typedef double scalar_type;
-    };
-    
-    template<>
-    struct TypeTraits<Kokkos::complex<float> > {
-      typedef Kokkos::complex<float> type;
-      typedef Kokkos::complex<float> value_type;
-      typedef std::complex<float> std_value_type;
-
-      typedef float magnitude_type;
-      typedef float scalar_type;
-    };
-
-    template<>
-    struct TypeTraits<Kokkos::complex<double> > {
-      typedef Kokkos::complex<double> type;
-      typedef Kokkos::complex<double> value_type;
-      typedef std::complex<double> std_value_type;
-
-      typedef double magnitude_type;
-      typedef double scalar_type;
-    };
-
-    // template<typename ValueType, typename ExecSpace>
-    // struct DenseMatrixView;
-
-    // template<typename ValueType, typename ExecSpace>
-    // struct TypeTraits<DenseMatrixView<ValueType,ExecSpace> > {
-    //   typedef DenseMatrixView<ValueType,ExecSpace> type;
-    //   typedef ValueType value_type;
-    //   typedef typename TypeTraits<value_type>::magnitude_type magnitude_type;
-    // };
 
     ///
-    /// complex query
+    /// later, this would be replaced with Kokkos::ArithTraits
     ///
     template<typename T>
-    struct is_complex_type { enum : bool { value = false }; };
+    struct ArithTraits;
 
-    template< typename T >
-    struct is_complex_type< Kokkos::complex<T> > { enum : bool { value = true }; };
+    template<>
+    struct ArithTraits<float> {
+      typedef float val_type;
+      typedef float mag_type;
 
-    template< typename T >
-    struct is_complex_type< std::complex<T> > { enum : bool { value = true }; };
+      enum : bool { is_complex = false };
+      static KOKKOS_FORCEINLINE_FUNCTION mag_type real(const val_type& x) { return x; }
+      static KOKKOS_FORCEINLINE_FUNCTION mag_type imag(const val_type& x) { return x; }
+      static KOKKOS_FORCEINLINE_FUNCTION val_type conj(const val_type& x) { return x; }
+    };
+
+    template<>
+    struct ArithTraits<double> {
+      typedef double val_type;
+      typedef double mag_type;
+
+      enum : bool { is_complex = false };
+      static KOKKOS_FORCEINLINE_FUNCTION mag_type real(const val_type& x) { return x; }
+      static KOKKOS_FORCEINLINE_FUNCTION mag_type imag(const val_type& x) { return x; }
+      static KOKKOS_FORCEINLINE_FUNCTION val_type conj(const val_type& x) { return x; }
+    };
+
+    template<>
+    struct ArithTraits<std::complex<float> > {
+      typedef std::complex<float> val_type;
+      typedef float mag_type;
+
+      enum : bool { is_complex = true };
+      static inline mag_type real(const val_type& x) { return x.real(); }
+      static inline mag_type imag(const val_type& x) { return x.imag(); }
+      static inline val_type conj(const val_type& x) { return std::conj(x); }
+    };
+
+    template<>
+    struct ArithTraits<std::complex<double> > {
+      typedef std::complex<double> val_type;
+      typedef double mag_type;
+
+      enum : bool { is_complex = true };
+      static inline mag_type real(const val_type& x) { return x.real(); }
+      static inline mag_type imag(const val_type& x) { return x.imag(); }
+      static inline val_type conj(const val_type& x) { return std::conj(x); }
+    };
+    
+    template<>
+    struct ArithTraits<Kokkos::complex<float> > {
+      typedef Kokkos::complex<float> val_type;
+      typedef float mag_type;
+
+      enum : bool { is_complex = true };
+      static KOKKOS_FORCEINLINE_FUNCTION mag_type real(const val_type& x) { return x.real(); }
+      static KOKKOS_FORCEINLINE_FUNCTION mag_type imag(const val_type& x) { return x.imag(); }
+      static KOKKOS_FORCEINLINE_FUNCTION val_type conj(const val_type& x) { return Kokkos::conj(x); }
+    };
+
+    template<>
+    struct ArithTraits<Kokkos::complex<double> > {
+      typedef Kokkos::complex<double> val_type;
+      typedef double mag_type;
+
+      enum : bool { is_complex = true };
+      static KOKKOS_FORCEINLINE_FUNCTION mag_type real(const val_type& x) { return x.real(); }
+      static KOKKOS_FORCEINLINE_FUNCTION mag_type imag(const val_type& x) { return x.imag(); }
+      static KOKKOS_FORCEINLINE_FUNCTION val_type conj(const val_type& x) { return Kokkos::conj(x); }
+    };
 
     ///
     /// Coo : Sparse coordinate format; (i, j, val).
@@ -253,97 +245,6 @@ namespace Tacho {
     static void swap(Ta &a, Tb &b) {
       Ta c(a); a = static_cast<Ta>(b); b = static_cast<Tb>(c);
     }
-
-    /// complex conj
-
-    template<typename T>
-    KOKKOS_FORCEINLINE_FUNCTION
-    static T conj(const T a);
-
-    template<>
-    KOKKOS_FORCEINLINE_FUNCTION
-    double conj<double>(const double a) { 
-      return a;
-    }
-    
-    template<>
-    KOKKOS_FORCEINLINE_FUNCTION
-    float conj<float>(const float a) { 
-      return a;
-    }
-    
-    template<>
-    KOKKOS_FORCEINLINE_FUNCTION
-    Kokkos::complex<double> conj<Kokkos::complex<double> >(const Kokkos::complex<double> a) { 
-      return Kokkos::complex<double>(a.real(), -a.imag());
-    }
-    
-    template<>
-    KOKKOS_FORCEINLINE_FUNCTION
-    Kokkos::complex<float> conj<Kokkos::complex<float> >(const Kokkos::complex<float> a) { 
-      return Kokkos::complex<float>(a.real(), -a.imag());
-    }
-
-    /// complex real
-
-    template<typename T>
-    KOKKOS_FORCEINLINE_FUNCTION
-    static typename TypeTraits<T>::scalar_type real(const T a);
-
-    template<>
-    KOKKOS_FORCEINLINE_FUNCTION
-    double real<double>(const double a) { 
-      return a;
-    }
-    
-    template<>
-    KOKKOS_FORCEINLINE_FUNCTION
-    float real<float>(const float a) { 
-      return a;
-    }
-    
-    template<>
-    KOKKOS_FORCEINLINE_FUNCTION
-    double real<Kokkos::complex<double> >(const Kokkos::complex<double> a) { 
-      return a.real();
-    }
-    
-    template<>
-    KOKKOS_FORCEINLINE_FUNCTION
-    float real<Kokkos::complex<float> >(const Kokkos::complex<float> a) { 
-      return a.real();
-    }
-
-    /// complex imag
-
-    template<typename T>
-    KOKKOS_FORCEINLINE_FUNCTION
-    static typename TypeTraits<T>::scalar_type imag(const T a);
-
-    template<>
-    KOKKOS_FORCEINLINE_FUNCTION
-    double imag<double>(const double a) { 
-      return 0.0;
-    }
-    
-    template<>
-    KOKKOS_FORCEINLINE_FUNCTION
-    float imag<float>(const float a) { 
-      return 0.0;
-    }
-    
-    template<>
-    KOKKOS_FORCEINLINE_FUNCTION
-    double imag<Kokkos::complex<double> >(const Kokkos::complex<double> a) { 
-      return a.imag();
-    }
-    
-    template<>
-    KOKKOS_FORCEINLINE_FUNCTION
-    float imag<Kokkos::complex<float> >(const Kokkos::complex<float> a) { 
-      return a.imag();
-    }
-
 
     KOKKOS_FORCEINLINE_FUNCTION
     static void clear(char *buf, size_type bufsize) {
@@ -432,44 +333,21 @@ namespace Tacho {
                    TopRight,
                    BottomLeft,
                    BottomRight };
-      
-      // struct Top          { enum : int { tag = 101 }; };
-      // struct Bottom       { enum : int { tag = 102 }; };
-      
-      // struct Left         { enum : int { tag = 201 }; };
-      // struct Right        { enum : int { tag = 202 }; };
-      
-      // struct TopLeft      { enum : int { tag = 301 }; };
-      // struct TopRight     { enum : int { tag = 302 }; };
-      // struct BottomLeft   { enum : int { tag = 303 }; };
-      // struct BottomRight  { enum : int { tag = 304 }; };
     };
-    // template<typename T>
-    // struct is_valid_partition_tag {
-    //   enum : bool { value = (std::is_same<T,Partition::Top>::value        ||
-    //                          std::is_same<T,Partition::Bottom>::value     ||
-    //                          std::is_same<T,Partition::Left>::value       ||
-    //                          std::is_same<T,Partition::Right>::value      ||
-    //                          std::is_same<T,Partition::TopLeft>::value    ||
-    //                          std::is_same<T,Partition::TopRight>::value   ||
-    //                          std::is_same<T,Partition::BottomLeft>::value ||
-    //                          std::is_same<T,Partition::BottomRight>::value)
-    //   };
-    // };
 
     struct Uplo {
       enum : int { tag = 400 };
       struct Upper        { 
         enum : int { tag = 401 }; 
         static constexpr char param = 'U'; 
-#ifdef TACHO_HAVE_MKL  
+#if defined(__INTEL_MKL__)  
         static constexpr CBLAS_UPLO mkl_param = CblasUpper;
 #endif
       };
       struct Lower        { 
         enum : int { tag = 402 }; 
         static constexpr char param = 'L'; 
-#ifdef TACHO_HAVE_MKL  
+#if defined(__INTEL_MKL__)  
         static constexpr CBLAS_UPLO mkl_param = CblasLower;
 #endif
       };
@@ -490,14 +368,14 @@ namespace Tacho {
       struct Left         { 
         enum : int { tag = 501 }; 
         static constexpr char param = 'L'; 
-#ifdef TACHO_HAVE_MKL  
+#if defined(__INTEL_MKL__)  
         static constexpr CBLAS_SIDE mkl_param = CblasLeft;
 #endif
       };
       struct Right        { 
         enum : int { tag = 502 }; 
         static constexpr char param = 'R'; 
-#ifdef TACHO_HAVE_MKL  
+#if defined(__INTEL_MKL__)  
         static constexpr CBLAS_SIDE mkl_param = CblasRight;
 #endif
       };
@@ -517,14 +395,14 @@ namespace Tacho {
       struct Unit         { 
         enum : int { tag = 601 }; 
         static constexpr char param = 'U'; 
-#ifdef TACHO_HAVE_MKL  
+#if defined(__INTEL_MKL__)  
         static constexpr CBLAS_DIAG mkl_param = CblasUnit;
 #endif
       };
       struct NonUnit      { 
         enum : int { tag = 602 }; 
         static constexpr char param = 'N'; 
-#ifdef TACHO_HAVE_MKL  
+#if defined(__INTEL_MKL__)  
         static constexpr CBLAS_DIAG mkl_param = CblasNonUnit;
 #endif
       };
@@ -541,21 +419,21 @@ namespace Tacho {
       struct Transpose      { 
         enum : int { tag = 701 }; 
         static constexpr char param = 'T'; 
-#ifdef TACHO_HAVE_MKL  
+#if defined(__INTEL_MKL__)  
         static constexpr CBLAS_TRANSPOSE mkl_param = CblasTrans;
 #endif
       };
       struct ConjTranspose  { 
         enum : int { tag = 702 }; 
         static constexpr char param = 'C'; 
-#ifdef TACHO_HAVE_MKL  
+#if defined(__INTEL_MKL__)  
         static constexpr CBLAS_TRANSPOSE mkl_param = CblasConjTrans;
 #endif
       };
       struct NoTranspose    { 
         enum : int { tag = 703 }; 
         static constexpr char param = 'N'; 
-#ifdef TACHO_HAVE_MKL  
+#if defined(__INTEL_MKL__)  
         static constexpr CBLAS_TRANSPOSE mkl_param = CblasNoTrans;
 #endif
       };
@@ -577,6 +455,37 @@ namespace Tacho {
     template<>           struct conj_transpose_trans_tag<Trans::Transpose>      { typedef Trans::NoTranspose type; };
     template<>           struct conj_transpose_trans_tag<Trans::ConjTranspose>  { typedef Trans::NoTranspose type; };
     template<>           struct conj_transpose_trans_tag<Trans::NoTranspose>    { typedef Trans::ConjTranspose type; };
+
+    ///
+    /// helper functions
+    ///
+    struct Conjugate {
+      enum : int { tag = 801 };
+      
+      Conjugate() {} 
+      Conjugate(const Conjugate &b) {} 
+
+      KOKKOS_FORCEINLINE_FUNCTION float operator()(const float &v) const { return v; }
+      KOKKOS_FORCEINLINE_FUNCTION double operator()(const double &v) const { return v; }
+      inline std::complex<float> operator()(const std::complex<float> &v) const { return std::conj(v); }
+      inline std::complex<double> operator()(const std::complex<double> &v) const { return std::conj(v); }
+      KOKKOS_FORCEINLINE_FUNCTION Kokkos::complex<float> operator()(const Kokkos::complex<float> &v) const { return Kokkos::conj(v); }
+      KOKKOS_FORCEINLINE_FUNCTION Kokkos::complex<double> operator()(const Kokkos::complex<double> &v) const { return Kokkos::conj(v); }
+    };
+    
+    struct NoConjugate {
+      enum : int {tag = 802 };
+
+      NoConjugate() {}
+      NoConjugate(const NoConjugate &b) {}
+      
+      KOKKOS_FORCEINLINE_FUNCTION float operator()(const float &v) const { return v; }
+      KOKKOS_FORCEINLINE_FUNCTION double operator()(const double &v) const { return v; }
+      inline std::complex<float> operator()(const std::complex<float> &v) const { return v; }
+      inline std::complex<double> operator()(const std::complex<double> &v) const { return v; }
+      KOKKOS_FORCEINLINE_FUNCTION Kokkos::complex<float> operator()(const Kokkos::complex<float> &v) const { return v; }
+      KOKKOS_FORCEINLINE_FUNCTION Kokkos::complex<double> operator()(const Kokkos::complex<double> &v) const { return v; }
+    };
 
     struct Algo {
       struct External { enum : int { tag = 1001 }; };

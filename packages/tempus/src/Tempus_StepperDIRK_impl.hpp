@@ -23,8 +23,32 @@ namespace Tempus {
 // Forward Declaration for recursive includes (this Stepper <--> StepperFactory)
 template<class Scalar> class StepperFactory;
 
+template<class Scalar>
+StepperDIRK<Scalar>::StepperDIRK(
+  const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel,
+  std::string stepperType)
+{
+  this->setTableau(Teuchos::null, stepperType);
+  this->setParameterList(Teuchos::null);
+  this->setModel(appModel);
+  this->setSolver();
+  this->setObserver();
+  this->initialize();
+}
 
-// StepperDIRK definitions:
+template<class Scalar>
+StepperDIRK<Scalar>::StepperDIRK(
+  const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel,
+  Teuchos::RCP<Teuchos::ParameterList>                      pList)
+{
+  this->setTableau(pList, "SDIRK 2 Stage 2nd order");
+  this->setParameterList(pList);
+  this->setModel(appModel);
+  this->setSolver();
+  this->setObserver();
+  this->initialize();
+}
+
 template<class Scalar>
 StepperDIRK<Scalar>::StepperDIRK(
   const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel,
@@ -104,7 +128,7 @@ void StepperDIRK<Scalar>::setSolver(
       << "\n" << "  Solver Name  = "<<solverName<<"\n");
     solverName = solverPL->name();
     stepperPL_->set("Solver Name", solverName);
-    stepperPL_->set(solverName, solverPL);      // Add sublist
+    stepperPL_->set(solverName, *solverPL);      // Add sublist
     solver_ = rcp(new Thyra::NOXNonlinearSolver());
     RCP<ParameterList> noxPL = Teuchos::sublist(solverPL, "NOX", true);
     solver_->setParameterList(noxPL);
@@ -126,7 +150,7 @@ void StepperDIRK<Scalar>::setSolver(
   RCP<ParameterList> solverPL = solver->getNonconstParameterList();
   std::string solverName = solverPL->name();
   stepperPL_->set("Solver Name", solverName);
-  stepperPL_->set(solverName, solverPL);      // Add sublist
+  stepperPL_->set(solverName, *solverPL);      // Add sublist
   solver_ = solver;
 }
 
@@ -138,9 +162,10 @@ void StepperDIRK<Scalar>::setTableau(
 {
   if (stepperType == "") {
     if (pList == Teuchos::null)
-      stepperType = "Forward Euler";
+      stepperType = "SDIRK 2 Stage 2nd order";
     else
-      stepperType = pList->get<std::string>("Stepper Type");
+      stepperType = pList->get<std::string>("Stepper Type",
+                                            "SDIRK 2 Stage 2nd order");
   }
 
   DIRK_ButcherTableau_ = createRKBT<Scalar>(stepperType,pList);
@@ -172,6 +197,15 @@ void StepperDIRK<Scalar>::setObserver(
 template<class Scalar>
 void StepperDIRK<Scalar>::initialize()
 {
+  TEUCHOS_TEST_FOR_EXCEPTION( DIRK_ButcherTableau_ == Teuchos::null,
+    std::logic_error,
+    "Error - Need to set the Butcher Tableau, setTableau(), before calling "
+    "StepperDIRK::initialize()\n");
+
+  TEUCHOS_TEST_FOR_EXCEPTION( wrapperModel_ == Teuchos::null, std::logic_error,
+    "Error - Need to set the model, setModel(), before calling "
+    "StepperDIRK::initialize()\n");
+
   // Initialize the stage vectors
   const int numStages = DIRK_ButcherTableau_->numStages();
   stageX_    = wrapperModel_->getNominalValues().get_x()->clone_v();
@@ -205,7 +239,7 @@ void StepperDIRK<Scalar>::takeStep(
 
     // Compute stage solutions
     bool pass = true;
-    Thyra::SolveStatus<double> sStatus;
+    Thyra::SolveStatus<Scalar> sStatus;
     for (int i=0; i < numStages; ++i) {
       stepperDIRKObserver_->observeBeginStage(solutionHistory, *this);
       Thyra::assign(xTilde_.ptr(), *(currentState->getX()));
@@ -333,7 +367,8 @@ void StepperDIRK<Scalar>::setParameterList(
   const Teuchos::RCP<Teuchos::ParameterList> & pList)
 {
   if (pList == Teuchos::null) {
-    stepperPL_ = this->getDefaultParameters();
+    // Create default parameters if null, otherwise keep current parameters.
+    if (stepperPL_ == Teuchos::null) stepperPL_ = this->getDefaultParameters();
   } else {
     stepperPL_ = pList;
   }
@@ -346,16 +381,6 @@ template<class Scalar>
 Teuchos::RCP<const Teuchos::ParameterList>
 StepperDIRK<Scalar>::getValidParameters() const
 {
-  //std::stringstream Description;
-  //Description << "'Stepper Type' sets the stepper method.\n"
-  //            << "For DIRK the following methods are valid:\n"
-  //            << "  SDIRK 1 Stage 1st order\n"
-  //            << "  SDIRK 2 Stage 2nd order\n"
-  //            << "  SDIRK 2 Stage 3rd order\n"
-  //            << "  SDIRK 3 Stage 4th order\n"
-  //            << "  SDIRK 5 Stage 4th order\n"
-  //            << "  SDIRK 5 Stage 5th order\n";
-
   return DIRK_ButcherTableau_->getValidParameters();
 }
 

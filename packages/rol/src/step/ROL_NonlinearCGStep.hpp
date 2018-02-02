@@ -60,7 +60,7 @@ template <class Real>
 class NonlinearCGStep : public Step<Real> {
 private:
 
-  Teuchos::RCP<NonlinearCG<Real> > nlcg_; ///< NonlinearCG object (used for quasi-Newton)
+  ROL::Ptr<NonlinearCG<Real> > nlcg_; ///< NonlinearCG object (used for quasi-Newton)
   ENonlinearCG enlcg_;
   int verbosity_;                         ///< Verbosity setting
   const bool computeObj_;
@@ -83,7 +83,7 @@ public:
       @param[in]     nlcg       is a user-defined NonlinearCG object
   */
   NonlinearCGStep( Teuchos::ParameterList &parlist,
-             const Teuchos::RCP<NonlinearCG<Real> > &nlcg = Teuchos::null,
+             const ROL::Ptr<NonlinearCG<Real> > &nlcg = ROL::nullPtr,
              const bool computeObj = true )
     : Step<Real>(), nlcg_(nlcg), enlcg_(NONLINEARCG_USERDEFINED),
       verbosity_(0), computeObj_(computeObj) {
@@ -91,11 +91,11 @@ public:
     verbosity_ = parlist.sublist("General").get("Print Verbosity",0);
     // Initialize secant object
     Teuchos::ParameterList& Llist = parlist.sublist("Step").sublist("Line Search");
-    if ( nlcg == Teuchos::null ) {
+    if ( nlcg == ROL::nullPtr ) {
       ncgName_ = Llist.sublist("Descent Method").get("Nonlinear CG Type","Oren-Luenberger");
       enlcg_
         = StringToENonlinearCG(ncgName_);
-      nlcg_ = Teuchos::rcp(new NonlinearCG<Real>(enlcg_));
+      nlcg_ = ROL::makePtr<NonlinearCG<Real>>(enlcg_);
     }
     else {
       ncgName_ = Llist.sublist("Descent Method").get("User Defined Nonlinear CG Name",
@@ -106,7 +106,7 @@ public:
   void compute( Vector<Real> &s, const Vector<Real> &x,
                 Objective<Real> &obj, BoundConstraint<Real> &bnd,
                 AlgorithmState<Real> &algo_state ) {
-    Teuchos::RCP<StepState<Real> > step_state = Step<Real>::getState();
+    ROL::Ptr<StepState<Real> > step_state = Step<Real>::getState();
     Real one(1);
 
     // Compute search direction
@@ -117,7 +117,7 @@ public:
   void update( Vector<Real> &x, const Vector<Real> &s, Objective<Real> &obj, BoundConstraint<Real> &con,
                AlgorithmState<Real> &algo_state ) {
     Real tol = std::sqrt(ROL_EPSILON<Real>());
-    Teuchos::RCP<StepState<Real> > step_state = Step<Real>::getState();
+    ROL::Ptr<StepState<Real> > step_state = Step<Real>::getState();
 
     // Update iterate
     algo_state.iter++;

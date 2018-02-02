@@ -48,7 +48,7 @@
 #include "ROL_Vector.hpp"
 #include "ROL_StdVector.hpp"
 
-#include "Teuchos_RCP.hpp"
+#include "ROL_Ptr.hpp"
 
 namespace ROL {
 
@@ -61,14 +61,14 @@ class Minimax1 : public Objective<Real> {
 
 private:
 
-  Teuchos::RCP<const vector> getVector( const V& x ) {
-    using Teuchos::dyn_cast;
-    return dyn_cast<const SV>(x).getVector();
+  ROL::Ptr<const vector> getVector( const V& x ) {
+    
+    return dynamic_cast<const SV&>(x).getVector();
   }
 
-  Teuchos::RCP<vector> getVector( V& x ) {
-    using Teuchos::dyn_cast;
-    return dyn_cast<SV>(x).getVector();
+  ROL::Ptr<vector> getVector( V& x ) {
+    
+    return dynamic_cast<SV&>(x).getVector();
   }
 
 public:
@@ -76,8 +76,8 @@ public:
 
   Real value(const Vector<Real> &x, Real &tol) {
 
-    using Teuchos::RCP;
-    RCP<const vector> xp = getVector(x);
+    
+    ROL::Ptr<const vector> xp = getVector(x);
     Real f1 = std::pow((*xp)[0],2.0) + std::pow((*xp)[1],4.0);
     Real f2 = std::pow(2.0-(*xp)[0],2.0) + std::pow(2.0-(*xp)[1],2.0);
     Real f3 = 2.0*std::exp(-(*xp)[0] + (*xp)[1]);
@@ -86,9 +86,9 @@ public:
 
   void gradient(Vector<Real> &g, const Vector<Real> &x, Real &tol) {
 
-    using Teuchos::RCP;
-    RCP<const vector> xp = getVector(x);
-    RCP<vector> gp = getVector(g);
+    
+    ROL::Ptr<const vector> xp = getVector(x);
+    ROL::Ptr<vector> gp = getVector(g);
     Real f1 = std::pow((*xp)[0],2.0) + std::pow((*xp)[1],4.0);
     Real f2 = std::pow(2.0-(*xp)[0],2.0) + std::pow(2.0-(*xp)[1],2.0);
     Real f3 = 2.0*std::exp(-(*xp)[0] + (*xp)[1]);

@@ -206,7 +206,7 @@ struct KokkosSPGEMM
     case KokkosKernels::Impl::Exec_QTHREADS:
       return Kokkos::Qthread::hardware_thread_id();
 #endif
-#if defined( KOKKOS_HAVE_CUDA )
+#if defined( KOKKOS_ENABLE_CUDA )
     case KokkosKernels::Impl::Exec_CUDA:
       return row_index;
 #endif
@@ -943,7 +943,7 @@ suggested_vector_size = 4;
   }
 
 
-#if defined( KOKKOS_HAVE_CUDA )
+#if defined( KOKKOS_ENABLE_CUDA )
   if (my_exec_space == KokkosKernels::Impl::Exec_CUDA) {
 
     size_t free_byte ;
@@ -1466,7 +1466,7 @@ struct KokkosSPGEMM
     case KokkosKernels::Impl::Exec_QTHREADS:
       return Kokkos::Qthread::hardware_thread_id();
 #endif
-#if defined( KOKKOS_HAVE_CUDA )
+#if defined( KOKKOS_ENABLE_CUDA )
     case KokkosKernels::Impl::Exec_CUDA:
       return row_index;
 #endif

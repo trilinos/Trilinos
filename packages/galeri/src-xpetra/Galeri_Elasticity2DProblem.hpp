@@ -384,13 +384,10 @@ namespace Galeri {
       // Equalize norms of all vectors to that of the first one
       // We do not normalize them as a vector of ones seems nice
       Teuchos::Array<typename TST::magnitudeType> norms2(numVectors);
-      for (int i = 1; i < numVectors; i++)
-        norms2[i] = norms2[0] / norms2[i];
-      norms2[0] = TST::magnitude(TST::one());
       this->Nullspace_->norm2(norms2);
       Teuchos::Array<SC> norms2scalar(numVectors);
-      for (int i = 1; i < numVectors; i++)
-        norms2scalar[i] = norms2[i];
+      for (int i = 0; i < numVectors; i++)
+        norms2scalar[i] = norms2[0] / norms2[i];
       this->Nullspace_->scale(norms2scalar);
 
       return this->Nullspace_;

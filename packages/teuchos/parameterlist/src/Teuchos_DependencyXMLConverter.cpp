@@ -114,7 +114,7 @@ DependencyXMLConverter::fromDependencytoXML(
     TEUCHOS_TEST_FOR_EXCEPTION(entryIDsMap.find(*it) == entryIDsMap.end(),
       MissingDependeeException,
       "Can't find the Dependee of a dependency in the given " <<
-      "EntryIDsMap. Occured when converting " <<
+      "EntryIDsMap. Occurred when converting " <<
       "to XML" << std::endl << std::endl);
     currentDependee.addAttribute<ParameterEntry::ParameterEntryID>(
       getParameterIdAttributeName(), entryIDsMap.find(*it)->second);
@@ -127,7 +127,7 @@ DependencyXMLConverter::fromDependencytoXML(
     TEUCHOS_TEST_FOR_EXCEPTION(entryIDsMap.find(*it) == entryIDsMap.end(),
       MissingDependentException,
       "Can't find the Dependent of a dependency in the given " <<
-      "ValidatordIDsMap.. Occured when converting " <<
+      "ValidatordIDsMap. Occurred when converting " <<
       "to XML" << std::endl << std::endl);
     currentDependent.addAttribute<ParameterEntry::ParameterEntryID>(
       getParameterIdAttributeName(), entryIDsMap.find(*it)->second);

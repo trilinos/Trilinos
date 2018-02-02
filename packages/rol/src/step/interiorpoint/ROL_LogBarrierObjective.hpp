@@ -53,7 +53,7 @@ public:
   /* \brief Objective value J(x) = \f$-\sum_i \log(x_i) \f$ */
   Real value( const Vector<Real> &x, Real &tol ) {
 
-    Teuchos::RCP<Vector<Real> > logx = x.clone();
+    ROL::Ptr<Vector<Real> > logx = x.clone();
     logx->set(x);
     
     Elementwise::Logarithm<Real> log;
@@ -80,7 +80,7 @@ public:
 
   Real dirDeriv( const Vector<Real> &x, const Vector<Real> &d, Real &tol ) {
  
-    Teuchos::RCP<Vector<Real> > dbyx = d.clone();
+    ROL::Ptr<Vector<Real> > dbyx = d.clone();
     dbyx->set(x);
 
     struct Division : public Elementwise::BinaryFunction<Real> {

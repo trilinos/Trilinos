@@ -201,6 +201,10 @@ Thyra::create_Vector(
   RCP<const SpmdVectorSpaceBase<double> >
     space = Teuchos::rcp_dynamic_cast<const SpmdVectorSpaceBase<double> >(
       space_in,true);
+  // mfh 06 Dec 2017: This return should not trigger an issue like
+  // #1941, because if epetra_v is NULL on some process but not
+  // others, then that process should not be participating in
+  // collectives with the other processes anyway.
   if(!epetra_v.get())
     return Teuchos::null;
   // New local view of raw data
@@ -233,6 +237,10 @@ Thyra::create_Vector(
   RCP<const SpmdVectorSpaceBase<double> >
     space = Teuchos::rcp_dynamic_cast<const SpmdVectorSpaceBase<double> >(
       space_in,true);
+  // mfh 06 Dec 2017: This return should not trigger an issue like
+  // #1941, because if epetra_v is NULL on some process but not
+  // others, then that process should not be participating in
+  // collectives with the other processes anyway.
   if(!epetra_v.get())
     return Teuchos::null;
   // New local view of raw data
@@ -274,6 +282,10 @@ Thyra::create_MultiVector(
       unwrapSingleProductVectorSpace(domain_in),
       true
       );
+  // mfh 06 Dec 2017: This return should not trigger an issue like
+  // #1941, because if epetra_mv is NULL on some process but not
+  // others, then that process should not be participating in
+  // collectives with the other processes anyway.
   if (!epetra_mv.get() )
     return Teuchos::null;
   if ( is_null(domain) ) {
@@ -326,6 +338,10 @@ Thyra::create_MultiVector(
       unwrapSingleProductVectorSpace(domain_in),
       true
       );
+  // mfh 06 Dec 2017: This return should not trigger an issue like
+  // #1941, because if epetra_mv is NULL on some process but not
+  // others, then that process should not be participating in
+  // collectives with the other processes anyway.
   if (!epetra_mv.get())
     return Teuchos::null;
   if ( is_null(domain) ) {
@@ -502,6 +518,8 @@ Thyra::get_Epetra_Vector(
   const Ptr<const RCP<Epetra_Vector> >
     epetra_v_ptr = get_optional_extra_data<RCP<Epetra_Vector> >(
       v,"Epetra_Vector");
+  // mfh 06 Dec 2017: This should be consistent over all processes
+  // that participate in v's communicator.
   if(!is_null(epetra_v_ptr)) {
     return *epetra_v_ptr;
   }
@@ -579,11 +597,15 @@ Thyra::get_Epetra_Vector(
   const Ptr<const RCP<const Epetra_Vector> >
     epetra_v_ptr = get_optional_extra_data<RCP<const Epetra_Vector> >(
       v,"Epetra_Vector");
+  // mfh 06 Dec 2017: This should be consistent over all processes
+  // that participate in v's communicator.
   if(!is_null(epetra_v_ptr))
     return *epetra_v_ptr;
   const Ptr<const RCP<Epetra_Vector> >
     epetra_nonconst_v_ptr = get_optional_extra_data<RCP<Epetra_Vector> >(
       v,"Epetra_Vector");
+  // mfh 06 Dec 2017: This should be consistent over all processes
+  // that participate in v's communicator.
   if(!is_null(epetra_nonconst_v_ptr))
     return *epetra_nonconst_v_ptr;
   //
@@ -646,6 +668,8 @@ Thyra::get_Epetra_MultiVector(
   const Ptr<const RCP<Epetra_MultiVector> >
     epetra_mv_ptr = get_optional_extra_data<RCP<Epetra_MultiVector> >(
       mv,"Epetra_MultiVector");
+  // mfh 06 Dec 2017: This should be consistent over all processes
+  // that participate in v's communicator.
   if(!is_null(epetra_mv_ptr)) {
     return *epetra_mv_ptr;
   }
@@ -729,6 +753,8 @@ Thyra::get_Epetra_MultiVector(
     epetra_mv_ptr
     = get_optional_extra_data<RCP<const Epetra_MultiVector> >(
       mv,"Epetra_MultiVector" );
+  // mfh 06 Dec 2017: This should be consistent over all processes
+  // that participate in v's communicator.
   if(!is_null(epetra_mv_ptr)) {
     return *epetra_mv_ptr;
   }
@@ -786,25 +812,25 @@ Thyra::get_Epetra_MultiVector(
   )
 {
   using Teuchos::rcpWithEmbeddedObj;
-  using Teuchos::rcpFromRef;
   using Teuchos::ptrFromRef;
   using Teuchos::ptr_dynamic_cast;
   using Teuchos::outArg;
+
+  Ptr<SpmdMultiVectorBase<double> > mvSpmdMv =
+    ptr_dynamic_cast<SpmdMultiVectorBase<double> >(ptrFromRef(mv));
+
   ArrayRCP<double> mvData;
-  Ordinal mvLeadingDim = -1;
-  Ptr<SpmdMultiVectorBase<double> > mvSpmdMv;
-  if (nonnull(mvSpmdMv = ptr_dynamic_cast<SpmdMultiVectorBase<double> >(ptrFromRef(mv)))) {
+  Ordinal mvLeadingDim = 0;
+  if (nonnull(mvSpmdMv)) {
     mvSpmdMv->getNonconstLocalData(outArg(mvData), outArg(mvLeadingDim));
   }
-  if (nonnull(mvData)) {
-    return rcpWithEmbeddedObj(
-      new Epetra_MultiVector(
-        ::View, map, mvData.getRawPtr(), mvLeadingDim, mv.domain()->dim()
-        ),
-      mvData
-      );
-  }
-  return ::Thyra::get_Epetra_MultiVector(map, rcpFromRef(mv));
+
+  return rcpWithEmbeddedObj(
+    new Epetra_MultiVector(
+      ::View, map, mvData.getRawPtr(), mvLeadingDim, mv.domain()->dim()
+      ),
+    mvData
+    );
 }
 
 
@@ -815,25 +841,22 @@ Thyra::get_Epetra_MultiVector(
   )
 {
   using Teuchos::rcpWithEmbeddedObj;
-  using Teuchos::rcpFromRef;
   using Teuchos::ptrFromRef;
   using Teuchos::ptr_dynamic_cast;
   using Teuchos::outArg;
 
-  double* rawMvData = NULL;
-  Ordinal mvLeadingDim = 0;
-
   Ptr<const SpmdMultiVectorBase<double> > mvSpmdMv =
     ptr_dynamic_cast<const SpmdMultiVectorBase<double> >(ptrFromRef(mv));
+
   ArrayRCP<const double> mvData;
+  Ordinal mvLeadingDim = 0;
   if (nonnull(mvSpmdMv)) {
     mvSpmdMv->getLocalData(outArg(mvData), outArg(mvLeadingDim));
-    rawMvData = const_cast<double*> (mvData.getRawPtr ());
   }
 
   return rcpWithEmbeddedObj(
     new Epetra_MultiVector(
-        ::View, map, rawMvData, mvLeadingDim, mv.domain()->dim()
+      ::View, map, const_cast<double*>(mvData.getRawPtr()), mvLeadingDim, mv.domain()->dim()
       ),
     mvData
     );

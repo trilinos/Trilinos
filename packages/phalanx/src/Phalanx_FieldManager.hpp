@@ -121,7 +121,7 @@ namespace PHX {
 
     template<typename EvalT, typename DataT>
     void getFieldData(const PHX::FieldTag& ft,
-                      Kokkos::View<DataT,PHX::Device>& f);
+                      PHX::View<DataT>& f);
 
     /*! \brief Allows the user to manage the memory allocation of a
         particular field and dynamically set/swap the memory at any
@@ -185,7 +185,7 @@ namespace PHX {
     */
     template<typename EvalT, typename DataT>
     void setUnmanagedField(const FieldTag& ft,
-                           Kokkos::View<DataT,PHX::Device>& f);
+                           PHX::View<DataT>& f);
 
     /*! \brief Makes two fields point to (alias) the same memory for all evaluation types. 
 
@@ -230,15 +230,20 @@ namespace PHX {
     void aliasField(const PHX::FieldTag& aliasedField,
                     const PHX::FieldTag& targetField);
     
-    //! Allocates memory for a single evaluation type
+    //! Builds DAG and allocates memory for a single evaluation type
     template<typename EvalT>
-    void postRegistrationSetupForType(typename Traits::SetupData d);
+    void postRegistrationSetupForType(typename Traits::SetupData d, const bool& buildDeviceDAG = false);
 
-    //! Allocates memory for all evaluation types
-    void postRegistrationSetup(typename Traits::SetupData d);
+    //! Builds DAG and allocates memory for all evaluation types
+    void postRegistrationSetup(typename Traits::SetupData d, const bool& buildDeviceDAG = false);
 
+    //! Evalaute fields with a separate parallel_for for each node in the DAG.
     template<typename EvalT>
     void evaluateFields(typename Traits::EvalData d);
+
+    //! Evalaute fields using Device DAG capability where a single parallel_for evaluates the entire DAG.
+    template<typename EvalT>
+    void evaluateFieldsDeviceDag(const int& work_size, const int& team_size, const int& vector_size, typename Traits::EvalData d);
 
 #ifdef PHX_ENABLE_KOKKOS_AMT
     /*! \brief Evaluate the fields using hybrid functional (asynchronous multi-tasking) and data parallelism.

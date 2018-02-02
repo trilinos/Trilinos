@@ -73,14 +73,14 @@ typedef typename vector::size_type uint;
 private:
   Real alpha_;
 
-  Teuchos::RCP<const vector> getVector( const V& x ) {
-    using Teuchos::dyn_cast;
-    return dyn_cast<const SV>(x).getVector();
+  ROL::Ptr<const vector> getVector( const V& x ) {
+    
+    return dynamic_cast<const SV&>(x).getVector();
   }
 
-  Teuchos::RCP<vector> getVector( V& x ) {
-    using Teuchos::dyn_cast;
-    return dyn_cast<SV>(x).getVector();
+  ROL::Ptr<vector> getVector( V& x ) {
+    
+    return dynamic_cast<SV&>(x).getVector();
   }
 
 public:
@@ -89,9 +89,9 @@ public:
 
   void apply_mass(Vector<Real> &Mz, const Vector<Real> &z ) {
 
-    using Teuchos::RCP;
-    RCP<const vector> zp = getVector(z);
-    RCP<vector> Mzp = getVector(Mz);
+    
+    ROL::Ptr<const vector> zp = getVector(z);
+    ROL::Ptr<vector> Mzp = getVector(Mz);
 
     uint  n = zp->size();
     Real h = 1.0/((Real)n+1.0);
@@ -110,15 +110,15 @@ public:
 
   void solve_poisson(Vector<Real> & u, const Vector<Real> & z) {
 
-    using Teuchos::RCP;
-    using Teuchos::rcp;
+    
+    
 
-    RCP<vector> up = getVector(u);
+    ROL::Ptr<vector> up = getVector(u);
 
     uint  n = up->size();
     Real h = 1.0/((Real)n+1.0);
-    SV b( Teuchos::rcp( new vector(n,0.0) ) );
-    RCP<vector> bp = getVector(b);
+    SV b( ROL::makePtr<vector>(n,0.0) );
+    ROL::Ptr<vector> bp = getVector(b);
     apply_mass(b,z);
 
     Real d   =  2.0/h;
@@ -144,15 +144,15 @@ public:
 
   Real value( const Vector<Real> &z, Real &tol ) {
 
-    using Teuchos::RCP;
-    using Teuchos::rcp;
-    RCP<const vector> zp = getVector(z);
+    
+    
+    ROL::Ptr<const vector> zp = getVector(z);
     uint n    = zp->size();
     Real h    = 1.0/((Real)n+1.0);
     // SOLVE STATE EQUATION
-    SV u( rcp( new vector(n,0.0) ) );
+    SV u( ROL::makePtr<vector>(n,0.0) );
     solve_poisson(u,z);
-    RCP<vector> up = getVector(u);
+    ROL::Ptr<vector> up = getVector(u);
 
     Real val  = 0.0;
     Real res  = 0.0;
@@ -187,30 +187,30 @@ public:
 
   void gradient( Vector<Real> &g, const Vector<Real> &z, Real &tol ) {
 
-    using Teuchos::RCP;
-    using Teuchos::rcp;
-    RCP<const vector> zp = getVector(z);
-    RCP<vector> gp = getVector(g);
+    
+    
+    ROL::Ptr<const vector> zp = getVector(z);
+    ROL::Ptr<vector> gp = getVector(g);
 
     uint  n = zp->size();
     Real h = 1.0/((Real)n+1.0);
 
     // SOLVE STATE EQUATION
-    SV u( rcp( new vector(n,0.0) ) );
+    SV u( ROL::makePtr<vector>(n,0.0) );
     solve_poisson(u,z);
-    RCP<vector> up = getVector(u);
+    ROL::Ptr<vector> up = getVector(u);
 
     // SOLVE ADJOINT EQUATION
-    StdVector<Real> res( Teuchos::rcp( new std::vector<Real>(n,0.0) ) );
-    RCP<vector> rp = getVector(res);
+    StdVector<Real> res( ROL::makePtr<std::vector<Real>>(n,0.0) );
+    ROL::Ptr<vector> rp = getVector(res);
 
     for (uint i=0; i<n; i++) {
       (*rp)[i] = -((*up)[i]-evaluate_target((Real)(i+1)*h));
     }
 
-    SV p( rcp( new vector(n,0.0) ) );
+    SV p( ROL::makePtr<vector>(n,0.0) );
     solve_poisson(p,res);
-    RCP<vector> pp = getVector(p);
+    ROL::Ptr<vector> pp = getVector(p);
 
     Real res1 = 0.0;
     Real res2 = 0.0;
@@ -237,25 +237,25 @@ public:
 #if USE_HESSVEC
   void hessVec( Vector<Real> &hv, const Vector<Real> &v, const Vector<Real> &z, Real &tol ) {
 
-    using Teuchos::RCP;
-    using Teuchos::rcp;
-    RCP<const vector> zp = getVector(z);
-    RCP<const vector> vp = getVector(v);
-    RCP<vector> hvp = getVector(hv);
+    
+    
+    ROL::Ptr<const vector> zp = getVector(z);
+    ROL::Ptr<const vector> vp = getVector(v);
+    ROL::Ptr<vector> hvp = getVector(hv);
 
     uint  n = zp->size();
     Real h = 1.0/((Real)n+1.0);
 
     // SOLVE STATE EQUATION
-    SV u( rcp( new vector(n,0.0) ) );
+    SV u( ROL::makePtr<vector>(n,0.0) );
     solve_poisson(u,v);
-    RCP<vector> up = getVector(u);
+    ROL::Ptr<vector> up = getVector(u);
 
     // SOLVE ADJOINT EQUATION
-    SV p( rcp( new vector(n,0.0) ) );
+    SV p( ROL::makePtr<vector>(n,0.0) );
 
     solve_poisson(p,u);
-    RCP<vector> pp = getVector(p);  
+    ROL::Ptr<vector> pp = getVector(p);  
 
     Real res1 = 0.0;
     Real res2 = 0.0;
@@ -283,30 +283,30 @@ public:
 };
 
 template<class Real>
-void getPoissonControl( Teuchos::RCP<Objective<Real> > &obj,
-                        Teuchos::RCP<Vector<Real> >    &x0,
-                        Teuchos::RCP<Vector<Real> >    &x ) {
+void getPoissonControl( ROL::Ptr<Objective<Real> > &obj,
+                        ROL::Ptr<Vector<Real> >    &x0,
+                        ROL::Ptr<Vector<Real> >    &x ) {
   // Problem dimension
   int n = 512;
 
   // Get Initial Guess
-  Teuchos::RCP<std::vector<Real> > x0p = Teuchos::rcp(new std::vector<Real>(n,0.0));
+  ROL::Ptr<std::vector<Real> > x0p = ROL::makePtr<std::vector<Real>>(n,0.0);
   for (int i=0; i<n; i++) {
     (*x0p)[i] = 0.0;
   }
-  x0 = Teuchos::rcp(new StdVector<Real>(x0p));
+  x0 = ROL::makePtr<StdVector<Real>>(x0p);
 
   // Get Solution
-  Teuchos::RCP<std::vector<Real> > xp = Teuchos::rcp(new std::vector<Real>(n,0.0));
+  ROL::Ptr<std::vector<Real> > xp = ROL::makePtr<std::vector<Real>>(n,0.0);
   Real h = 1.0/((Real)n+1.0), pt = 0.0;
   for( int i = 0; i < n; i++ ) {
     pt = (Real)(i+1)*h;
     (*xp)[i] = 4.0*pt*(1.0-pt);
   }
-  x = Teuchos::rcp(new StdVector<Real>(xp));
+  x = ROL::makePtr<StdVector<Real>>(xp);
 
   // Instantiate Objective Function
-  obj = Teuchos::rcp(new Objective_PoissonControl<Real>);
+  obj = ROL::makePtr<Objective_PoissonControl<Real>>();
 }
 
 } // End ZOO Namespace

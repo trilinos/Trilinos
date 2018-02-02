@@ -92,19 +92,18 @@ PHX_EVALUATE_FIELDS(VectorToScalar,workset)
 
   typedef typename PHX::MDField<ScalarT,Cell,Point>::size_type size_type;
 
-  // Loop over cells
-  for (index_t cell = 0; cell < workset.num_cells; ++cell) {
-
-    // Loop over points
-    for (size_type pt = 0; pt < vector_field.dimension(1); ++pt) {
-      
-      // Loop over scalars
-      for (std::size_t sc = 0; sc < scalar_fields.size(); ++sc) {
-      
-	scalar_fields[sc](cell,pt) = vector_field(cell,pt,sc);
-
+  // Need local copies for cuda, *this is not usable
+  auto local_vector_field = vector_field;
+  // Loop over scalars
+  for (std::size_t sc = 0; sc < scalar_fields.size(); ++sc) {
+    auto local_scalar_field = scalar_fields[sc];
+    // Loop over cells
+    Kokkos::parallel_for(workset.num_cells, KOKKOS_LAMBDA (const index_t cell) {
+      // Loop over points
+      for (size_type pt = 0; pt < vector_field.dimension(1); ++pt) {
+        local_scalar_field(cell,pt) = local_vector_field(cell,pt,sc);
       }
-    }
+    });
   }
 }
 

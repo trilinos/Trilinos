@@ -40,7 +40,9 @@
 // @HEADER
 
 #include "Teuchos_TestForException.hpp"
+#include "Teuchos_GlobalMPISession.hpp"
 
+#include <iostream>
 
 //
 // ToDo: Make these functions thread-safe!
@@ -85,8 +87,7 @@ void Teuchos::TestForException_break( const std::string &errorMsg )
 {
   size_t break_on_me;
   break_on_me = errorMsg.length(); // Use errMsg to avoid compiler warning.
-  if (break_on_me)
-    ; // Avoid 'used var' warning
+  if (break_on_me) {} // Avoid warning
   // Above is just some statement for the debugger to break on.  Note: now is
   // a good time to examine the stack trace and look at the error message in
   // 'errorMsg' to see what happened.  In GDB just type 'where' or you can go
@@ -108,4 +109,12 @@ void Teuchos::TestForException_setEnableStacktrace(bool enableStrackTrace)
 bool Teuchos::TestForException_getEnableStacktrace()
 {
   return loc_enableStackTrace();
+}
+
+void Teuchos::TestForTermination_terminate(const std::string &msg) {
+  if (GlobalMPISession::getNProc() > 1) {
+    std::cerr << "p="<<GlobalMPISession::getRank()<<": ";
+  }
+  std::cerr << msg << "\n";
+  std::terminate();
 }

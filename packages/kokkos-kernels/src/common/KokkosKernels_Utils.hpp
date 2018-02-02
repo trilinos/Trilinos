@@ -116,7 +116,7 @@ void get_suggested_vector_team_size(
   }
 #endif
 
-#if defined( KOKKOS_HAVE_CUDA )
+#if defined( KOKKOS_ENABLE_CUDA )
   if (Kokkos::Impl::is_same<Kokkos::Cuda, ExecutionSpace >::value){
 
     suggested_vector_size_ = nnz / double (nr) + 0.5;
