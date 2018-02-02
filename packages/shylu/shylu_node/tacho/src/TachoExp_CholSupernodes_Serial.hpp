@@ -147,7 +147,6 @@ namespace Tacho {
         const size_type s2tsize = srcsize*sizeof(ordinal_type);
         TACHO_TEST_FOR_ABORT(bufsize < s2tsize, "bufsize is smaller than required s2t workspace");        
 
-        dense_block_type A;
         ordinal_type *s2t = (ordinal_type*)buf;
 
         // loop over target
@@ -173,6 +172,7 @@ namespace Tacho {
           }
 
           {
+            dense_block_type A;
             A.set_view(s.m, s.n);
             A.attach_buffer(1, s.m, s.buf);
             
@@ -198,26 +198,34 @@ namespace Tacho {
           }
         }
 #else
+        // s2t should be constructed by a single thread
+        // workspace s2t is not team private
+        Kokkos::single(Kokkos::PerTeam(member), [&]() {
+            for (ordinal_type i=sbeg;i<send;++i) {
+              const auto &s = info.supernodes(info.sid_block_colidx(i).first);
+              {
+                const ordinal_type 
+                  tgtbeg  = info.sid_block_colidx(s.sid_col_begin).second,
+                  tgtend  = info.sid_block_colidx(s.sid_col_end-1).second,
+                  tgtsize = tgtend - tgtbeg;
+                
+                const ordinal_type *t_colidx = &info.gid_colidx(s.gid_col_begin + tgtbeg);
+                Kokkos::parallel_for(Kokkos::ThreadVectorRange(member, srcsize), [&](const ordinal_type &k) {
+                    s2t[k] = -1;
+                    for (ordinal_type l=0;l<tgtsize && t_colidx[l] <= s_colidx[k];++l)
+                      if (s_colidx[k] == t_colidx[l]) {
+                        s2t[k] = l; 
+                        break;
+                      }
+                  });
+              }
+            }
+          });
+        
         Kokkos::parallel_for(Kokkos::TeamThreadRange(member, sbeg, send), [&](const ordinal_type &i) {
             const auto &s = info.supernodes(info.sid_block_colidx(i).first);
             {
-              const ordinal_type 
-                tgtbeg  = info.sid_block_colidx(s.sid_col_begin).second,
-                tgtend  = info.sid_block_colidx(s.sid_col_end-1).second,
-                tgtsize = tgtend - tgtbeg;
-              
-              const ordinal_type *t_colidx = &info.gid_colidx(s.gid_col_begin + tgtbeg);
-              Kokkos::parallel_for(Kokkos::ThreadVectorRange(member, srcsize), [&](const ordinal_type &k) {
-                  s2t[k] = -1;
-                  for (ordinal_type l=0;l<tgtsize && t_colidx[l] <= s_colidx[k];++l)
-                    if (s_colidx[k] == t_colidx[l]) {
-                      s2t[k] = l; 
-                      break;
-                    }
-                });
-            }
-            
-            {
+              dense_block_type A;
               A.set_view(s.m, s.n);
               A.attach_buffer(1, s.m, s.buf);
             
@@ -260,6 +268,14 @@ namespace Tacho {
         typedef Kokkos::pair<ordinal_type,ordinal_type> range_type;
 
         const auto &s = info.supernodes(sid);
+
+        typedef typename std::conditional
+          <std::is_same<Kokkos::Impl::ActiveExecutionMemorySpace,Kokkos::HostSpace>::value,
+           Algo::External,Algo::Internal>::type TrsmAlgoType;
+
+        typedef typename std::conditional
+          <std::is_same<Kokkos::Impl::ActiveExecutionMemorySpace,Kokkos::HostSpace>::value,
+           Algo::External,Algo::Internal>::type GemmAlgoType;
 
         // get panel pointer
         value_type *ptr = s.buf; 
@@ -313,6 +329,7 @@ namespace Tacho {
         const ordinal_type m = xB.dimension_0(), n = xB.dimension_1();
         TACHO_TEST_FOR_ABORT(m != (cur.n-cur.m), "# of rows in xB does not match to super blocksize in sid");
         
+#if defined (KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_HOST)        
         for (ordinal_type i=sbeg,is=0;i<send;++i) {
           const ordinal_type 
             tbeg = info.sid_block_colidx(i).second,
@@ -334,7 +351,21 @@ namespace Tacho {
           s.lock = 0;
           Kokkos::load_fence();          
         }
-        
+#else
+        Kokkos::single(Kokkos::PerTeam(member), [&]() {
+            for (ordinal_type i=sbeg,is=0;i<send;++i) {
+              const ordinal_type 
+                tbeg = info.sid_block_colidx(i).second,
+                tend = info.sid_block_colidx(i+1).second;
+              
+              for (ordinal_type it=tbeg;it<tend;++it,++is) {
+                const ordinal_type row = info.gid_colidx(cur.gid_col_begin + it);
+                for (ordinal_type j=0;j<n;++j) 
+                  Kokkos::atomic_add(&info.x(row,j), xB(is,j));
+              }
+            }
+          });
+#endif        
         return 0;
       }
       
@@ -354,6 +385,14 @@ namespace Tacho {
         typedef typename supernode_info_type::value_type_matrix value_type_matrix;
 
         typedef Kokkos::pair<ordinal_type,ordinal_type> range_type;
+
+        typedef typename std::conditional
+          <std::is_same<Kokkos::Impl::ActiveExecutionMemorySpace,Kokkos::HostSpace>::value,
+           Algo::External,Algo::Internal>::type GemmAlgoType;
+
+        typedef typename std::conditional
+          <std::is_same<Kokkos::Impl::ActiveExecutionMemorySpace,Kokkos::HostSpace>::value,
+           Algo::External,Algo::Internal>::type TrsmAlgoType;
 
         // get current supernode
         const auto &s = info.supernodes(sid);
@@ -410,11 +449,23 @@ namespace Tacho {
         TACHO_TEST_FOR_ABORT(m != (s.n-s.m), "# of rows in xB does not match to super blocksize in sid");
 
         const ordinal_type goffset = s.gid_col_begin + s.m;
+#if defined (KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_HOST)
         for (ordinal_type j=0;j<n;++j)
           for (ordinal_type i=0;i<m;++i) {
             const ordinal_type row = info.gid_colidx(i+goffset);
             xB(i,j) = info.x(row,j);
           }
+#else
+        Kokkos::parallel_for
+          (Kokkos::TeamThreadRange(member, n), [&](const ordinal_type &j) {
+            Kokkos::parallel_for
+              (Kokkos::ThreadVectorRange(member, m), [&](const ordinal_type &i) {
+                const ordinal_type row = info.gid_colidx(i+goffset);
+                xB(i,j) = info.x(row,j);
+              });
+          });
+#endif
+
         return 0;
       }
 

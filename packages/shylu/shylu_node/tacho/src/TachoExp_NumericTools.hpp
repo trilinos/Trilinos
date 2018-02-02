@@ -175,8 +175,10 @@ namespace Tacho {
       void
       print_stat_factor() {
         double flop = 0;
+        auto h_supernodes = Kokkos::create_mirror_view(_supernodes);                    
+        Kokkos::deep_copy(h_supernodes, _supernodes);  
         for (ordinal_type sid=0;sid<_nsupernodes;++sid) {
-          auto &s = _supernodes(sid);
+          auto &s = h_supernodes(sid);
           const ordinal_type m = s.m, n = s.n - s.m;
           flop += DenseFlopCount<value_type>::Chol(m);
           flop += DenseFlopCount<value_type>::Trsm(true,  m, n);
@@ -538,12 +540,12 @@ namespace Tacho {
         
         sched_type sched;
         {
-          const size_t max_functor_size = sizeof(functor_type);
+          const size_t max_functor_size = 2*sizeof(functor_type);
           const size_t estimate_max_numtasks = _sid_block_colidx.dimension_0() >> 3;
           
           const size_t
             task_queue_capacity = max(estimate_max_numtasks,128)*max_functor_size,
-            min_block_size  = 1,
+            min_block_size  = 16,
             max_block_size  = max_functor_size,
             num_superblock  = 32, // various small size blocks
             superblock_size = task_queue_capacity/num_superblock;
@@ -614,11 +616,11 @@ namespace Tacho {
         stat.t_copy = timer.seconds();
 
         timer.reset();
-        // const ordinal_type nroots = _stree_roots.dimension_0();
-        // for (ordinal_type i=0;i<nroots;++i)
-        //   Kokkos::host_spawn(Kokkos::TaskSingle(sched, Kokkos::TaskPriority::High),
-        //                      functor_type(sched, bufpool, _info, _stree_roots(i)));
-        // Kokkos::wait(sched);
+        const ordinal_type nroots = _stree_roots.dimension_0();
+        for (ordinal_type i=0;i<nroots;++i)
+          Kokkos::host_spawn(Kokkos::TaskSingle(sched, Kokkos::TaskPriority::High),
+                             functor_type(sched, bufpool, _info, _stree_roots(i)));
+        Kokkos::wait(sched);
         stat.t_factor = timer.seconds();
         
         track_free(bufpool.capacity());
@@ -650,12 +652,12 @@ namespace Tacho {
         
         sched_type sched;
         {
-          const size_t max_functor_size = sizeof(functor_type);
+          const size_t max_functor_size = 2*sizeof(functor_type);
           const size_t estimate_max_numtasks = _sid_block_colidx.dimension_0() >> 3;
           
           const size_t
             task_queue_capacity = max(estimate_max_numtasks,128)*max_functor_size,
-            min_block_size  = 1,
+            min_block_size  = 16,
             max_block_size  = max_functor_size,
             num_superblock  = 32, // various small size blocks
             superblock_size = task_queue_capacity/num_superblock;
@@ -781,12 +783,12 @@ namespace Tacho {
           //typedef Kokkos::Future<int,exec_space> future_type;
           
           {
-            const size_t max_functor_size = max(sizeof(functor_lower_type), sizeof(functor_upper_type));
+            const size_t max_functor_size = 2*max(sizeof(functor_lower_type), sizeof(functor_upper_type));
             const size_t estimate_max_numtasks = _sid_block_colidx.dimension_0()/2;
             
             const size_t
               task_queue_capacity = max(estimate_max_numtasks,128)*max_functor_size,
-              min_block_size  = 1,
+              min_block_size  = 16,
               max_block_size  = max_functor_size,
               num_superblock  = 32, // various small size blocks
               superblock_size = task_queue_capacity/num_superblock;
@@ -836,13 +838,13 @@ namespace Tacho {
           stat.t_extra += timer.seconds();
           
           timer.reset();
-          // const ordinal_type nroots = _stree_roots.dimension_0();
-          // for (ordinal_type i=0;i<nroots;++i) {
-          //   auto fl = Kokkos::host_spawn(Kokkos::TaskSingle(_sched_solve, Kokkos::TaskPriority::High),
-          //                                functor_lower_type(_sched_solve, _bufpool_solve, _info, _stree_roots(i)));
-          //   auto fu = Kokkos::host_spawn(Kokkos::TaskSingle(fl,           Kokkos::TaskPriority::High),
-          //                                functor_upper_type(_sched_solve, _bufpool_solve, _info, _stree_roots(i)));
-          // }
+          const ordinal_type nroots = _stree_roots.dimension_0();
+          for (ordinal_type i=0;i<nroots;++i) {
+            auto fl = Kokkos::host_spawn(Kokkos::TaskSingle(_sched_solve, Kokkos::TaskPriority::High),
+                                         functor_lower_type(_sched_solve, _bufpool_solve, _info, _stree_roots(i)));
+            auto fu = Kokkos::host_spawn(Kokkos::TaskSingle(fl,           Kokkos::TaskPriority::High),
+                                         functor_upper_type(_sched_solve, _bufpool_solve, _info, _stree_roots(i)));
+          }
           Kokkos::wait(_sched_solve);
           stat.t_solve = timer.seconds();
         }
@@ -883,12 +885,12 @@ namespace Tacho {
         sched_type sched;
         {
           const size_t max_dep_future_size = max_ncols_of_blocks*max_ncols_of_blocks*sizeof(future_type);
-          const size_t max_functor_size = sizeof(functor_type);
+          const size_t max_functor_size = 2*sizeof(functor_type);
           const size_t estimate_max_numtasks = _sid_block_colidx.dimension_0() >> 3;
           
           const size_t
             task_queue_capacity = max(estimate_max_numtasks,128)*max_functor_size,
-            min_block_size  = 1,
+            min_block_size  = 16,
             max_block_size  = ( max_dep_future_size + max_functor_size ),
             num_superblock  = 32, // various small size blocks
             superblock_size = task_queue_capacity/num_superblock;
@@ -1004,12 +1006,12 @@ namespace Tacho {
         sched_type sched;
         {
           const size_t max_dep_future_size = max_nrows_of_blocks*max_ncols_of_blocks*sizeof(future_type);
-          const size_t max_functor_size = sizeof(functor_type);
+          const size_t max_functor_size = 2*sizeof(functor_type);
           const size_t estimate_max_numtasks = _sid_block_colidx.dimension_0() >> 3;
           
           const size_t
             task_queue_capacity = max(estimate_max_numtasks,128)*max_functor_size,
-            min_block_size  = 1,
+            min_block_size  = 16,
             max_block_size  = ( max_dep_future_size + max_functor_size ),
             num_superblock  = 32, // various small size blocks
             superblock_size = task_queue_capacity/num_superblock;
@@ -1160,7 +1162,10 @@ namespace Tacho {
       computeRelativeResidual(const value_type_matrix &x,
                               const value_type_matrix &b) {
         crs_matrix_type A;
-        A.setExternalMatrix(_m, _m, _ap(_m),
+        auto d_last = Kokkos::subview(_ap, _m);
+        auto h_last = Kokkos::create_mirror_view(d_last);
+        Kokkos::deep_copy(h_last, d_last);
+        A.setExternalMatrix(_m, _m, h_last(), //_ap(_m),
                             _ap, _aj, _ax);
 
         return computeRelativeResidual(A, x, b);

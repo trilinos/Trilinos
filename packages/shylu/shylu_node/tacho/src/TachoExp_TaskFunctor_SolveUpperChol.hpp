@@ -40,7 +40,7 @@ namespace Tacho {
       supernode_info_type _info;
       ordinal_type _sid;
 
-      supernode_type _s;
+      //supernode_type _s;
 
     public:
       KOKKOS_INLINE_FUNCTION
@@ -54,8 +54,8 @@ namespace Tacho {
         : _sched(sched),
           _bufpool(bufpool),
           _info(info),
-          _sid(sid),
-          _s(info.supernodes(sid)) {}
+          _sid(sid) {}
+          //_s(info.supernodes(sid)) {}
 
       KOKKOS_INLINE_FUNCTION
       ordinal_type 
@@ -79,30 +79,30 @@ namespace Tacho {
 
       KOKKOS_INLINE_FUNCTION
       void operator()(member_type &member, value_type &r_val) {
-        if (get_team_rank(member) == 0) {
-
-          if (_info.serial_thres_size > _s.max_decendant_supernode_size) {
-            r_val = solve_internal(member, _s.max_decendant_schur_size, true);
-            if (r_val) 
-              Kokkos::respawn(this, _sched, Kokkos::TaskPriority::Low);
-          } else {
-            r_val = solve_internal(member, _s.n - _s.m, false);
-            if (r_val) {
-              Kokkos::respawn(this, _sched, Kokkos::TaskPriority::Low);
+        Kokkos::single(Kokkos::PerTeam(member), [&]() {
+            const auto &_s = _info.supernodes(_sid);
+            if (_info.serial_thres_size > _s.max_decendant_supernode_size) {
+              r_val = solve_internal(member, _s.max_decendant_schur_size, true);
+              if (r_val) 
+                Kokkos::respawn(this, _sched, Kokkos::TaskPriority::Low);
             } else {
-              // allocate dependence array to handle variable number of children schur contributions
-              future_type dep[MaxDependenceSize]; /* 4 */
-              
-              // spawn children tasks and this (their parent) depends on the children tasks
-              for (ordinal_type i=0;i<_s.nchildren;++i) {
-                auto f = Kokkos::task_spawn(Kokkos::TaskSingle(_sched, Kokkos::TaskPriority::Regular),
-                                            TaskFunctor_SolveUpperChol(_sched, _bufpool, _info, _s.children[i]));
-                TACHO_TEST_FOR_ABORT(f.is_null(), "task allocation fails");
-                dep[i] = f;
+              r_val = solve_internal(member, _s.n - _s.m, false);
+              if (r_val) {
+                Kokkos::respawn(this, _sched, Kokkos::TaskPriority::Low);
+              } else {
+                // allocate dependence array to handle variable number of children schur contributions
+                future_type dep[MaxDependenceSize]; /* 4 */
+                
+                // spawn children tasks and this (their parent) depends on the children tasks
+                for (ordinal_type i=0;i<_s.nchildren;++i) {
+                  auto f = Kokkos::task_spawn(Kokkos::TaskSingle(_sched, Kokkos::TaskPriority::Regular),
+                                              TaskFunctor_SolveUpperChol(_sched, _bufpool, _info, _s.children[i]));
+                  TACHO_TEST_FOR_ABORT(f.is_null(), "task allocation fails");
+                  dep[i] = f;
+                }
               }
             }
-          }
-        }
+          });
       }
     };
   }

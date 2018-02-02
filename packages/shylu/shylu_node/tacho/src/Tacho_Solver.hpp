@@ -297,7 +297,8 @@ namespace Tacho {
           const size_type jbeg = _h_ap(i), jend = _h_ap(i+1);
           for (size_type j=jbeg;j<jend;++j) {
             const ordinal_type col = _h_aj(j);
-            if (i <= col) _U(i, col) = h_ax(j);
+            if (i <= col) 
+              _U(i, col) = h_ax(j);
           }
         }
         const double t_copy = timer.seconds();
@@ -340,19 +341,20 @@ namespace Tacho {
         }
         _N.setFrontUpdateMode(_front_update_mode);
 
+#if !defined (KOKKOS_ENABLE_CUDA)
         const ordinal_type nthreads = host_space::thread_pool_size(0);
-
+#endif
+        
         if (false) {
           // do nothing
         } 
 #if !defined (KOKKOS_ENABLE_CUDA)
-        else if { 
-        if (nthreads == 1) {
+        else if (nthreads == 1) {
           if (_nb < 0) 
             _N.factorizeCholesky_Serial(ax, _verbose);
           else 
             _N.factorizeCholesky_SerialPanel(ax, _nb, _verbose);
-        } 
+        }
 #endif
         else {
           const ordinal_type max_dense_size = max(_N.getMaxSupernodeSize(),_N.getMaxSchurSize());
@@ -371,18 +373,20 @@ namespace Tacho {
             else if (max_dense_size < 8192) _mb = 256;
             else                            _mb = 256;
           }
+          
+          _N.factorizeCholesky_Parallel(ax, _verbose);          
+          // if (_nb <= 0) {
+          //   if (_mb > 0)
+          //     _N.factorizeCholesky_ParallelByBlocks(ax, _mb, _verbose);
+          //   else
+          //     _N.factorizeCholesky_Parallel(ax, _verbose);
+          // } else {
+          //   if (_mb > 0) 
+          //     _N.factorizeCholesky_ParallelByBlocksPanel(ax, _mb, _nb, _verbose);
+          //   else
+          //     _N.factorizeCholesky_ParallelPanel(ax, _nb, _verbose);
+          // }
 
-          if (_nb <= 0) {
-            if (_mb > 0)
-              _N.factorizeCholesky_ParallelByBlocks(ax, _mb, _verbose);
-            else
-              _N.factorizeCholesky_Parallel(ax, _verbose);
-          } else {
-            if (_mb > 0) 
-              _N.factorizeCholesky_ParallelByBlocksPanel(ax, _mb, _nb, _verbose);
-            else
-              _N.factorizeCholesky_ParallelPanel(ax, _nb, _verbose);
-          }
         }
       }
       return 0;
@@ -400,12 +404,13 @@ namespace Tacho {
         Kokkos::Impl::Timer timer;
 
         timer.reset();
-        auto h_x = Kokkos::create_mirror_view(b); Kokkos::deep_copy(h_x, b);
-        Kokkos::deep_copy(h_x, b);
+        Kokkos::deep_copy(x, b);
         const double t_copy = timer.seconds();
 
         timer.reset();
         const ordinal_type sched = 0, member = 0;
+        auto h_x = Kokkos::create_mirror_view(x); 
+        Kokkos::deep_copy(h_x, x);
         Trsm<Side::Left,Uplo::Upper,Trans::ConjTranspose,Algo::External>
           ::invoke(sched, member, Diag::NonUnit(), 1.0, _U, h_x);
         Trsm<Side::Left,Uplo::Upper,Trans::NoTranspose,Algo::External>
@@ -423,7 +428,9 @@ namespace Tacho {
           printf("\n");
         }
       } else {
+#if !defined (KOKKOS_ENABLE_CUDA)
         const ordinal_type nthreads = host_space::thread_pool_size(0);
+#endif
         TACHO_TEST_FOR_EXCEPTION(t.dimension_0() < x.dimension_0() ||
                                  t.dimension_1() < x.dimension_1(), std::logic_error, "Temporary rhs vector t is smaller than x");
         auto tt = Kokkos::subview(t, 

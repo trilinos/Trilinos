@@ -40,7 +40,7 @@ namespace Tacho {
       supernode_info_type _info;
       ordinal_type _sid;
       
-      supernode_type _s;
+      //supernode_type _s;
 
       ordinal_type _state;
 
@@ -57,7 +57,7 @@ namespace Tacho {
           _bufpool(bufpool),
           _info(info),
           _sid(sid),
-          _s(info.supernodes(sid)),
+          //_s(info.supernodes(sid)),
           _state(0) {}
       
       
@@ -83,46 +83,47 @@ namespace Tacho {
 
       KOKKOS_INLINE_FUNCTION
       void operator()(member_type &member, value_type &r_val) {
-        if (get_team_rank(member) == 0) {
-          constexpr ordinal_type done = 2;
-          TACHO_TEST_FOR_ABORT(_state == done, "dead lock");
-
-          switch (_state) {
-          case 0: { // tree parallelsim
-            if (_info.serial_thres_size > _s.max_decendant_supernode_size) {
-              r_val = solve_internal(member, _s.max_decendant_schur_size, true);
+        Kokkos::single(Kokkos::PerTeam(member), [&]() {
+            const auto &_s = _info.supernodes(_sid);
+            constexpr ordinal_type done = 2;
+            TACHO_TEST_FOR_ABORT(_state == done, "dead lock");
+            
+            switch (_state) {
+            case 0: { // tree parallelsim
+              if (_info.serial_thres_size > _s.max_decendant_supernode_size) {
+                r_val = solve_internal(member, _s.max_decendant_schur_size, true);
+                if (r_val) 
+                  Kokkos::respawn(this, _sched, Kokkos::TaskPriority::Low);
+                else
+                  _state = done; 
+              } else {
+                // allocate dependence array to handle variable number of children schur contributions
+                future_type dep[MaxDependenceSize]; /* 4 */
+                
+                // spawn children tasks and this (their parent) depends on the children tasks
+                for (ordinal_type i=0;i<_s.nchildren;++i) {
+                  auto f = Kokkos::task_spawn(Kokkos::TaskSingle(_sched, Kokkos::TaskPriority::Regular),
+                                              TaskFunctor_SolveLowerChol(_sched, _bufpool, _info, _s.children[i]));
+                  TACHO_TEST_FOR_ABORT(f.is_null(), "task allocation fails");
+                  dep[i] = f;
+                }
+                
+                // respawn with updating state
+                _state = 1;
+                Kokkos::respawn(this, Kokkos::when_all(dep, _s.nchildren), Kokkos::TaskPriority::Regular);
+              }
+              break;
+            }
+            case 1: {
+              r_val = solve_internal(member, _s.n - _s.m, false);
               if (r_val) 
                 Kokkos::respawn(this, _sched, Kokkos::TaskPriority::Low);
               else
                 _state = done; 
-            } else {
-              // allocate dependence array to handle variable number of children schur contributions
-              future_type dep[MaxDependenceSize]; /* 4 */
-              
-              // spawn children tasks and this (their parent) depends on the children tasks
-              for (ordinal_type i=0;i<_s.nchildren;++i) {
-                auto f = Kokkos::task_spawn(Kokkos::TaskSingle(_sched, Kokkos::TaskPriority::Regular),
-                                            TaskFunctor_SolveLowerChol(_sched, _bufpool, _info, _s.children[i]));
-                TACHO_TEST_FOR_ABORT(f.is_null(), "task allocation fails");
-                dep[i] = f;
-              }
-              
-              // respawn with updating state
-              _state = 1;
-              Kokkos::respawn(this, Kokkos::when_all(dep, _s.nchildren), Kokkos::TaskPriority::Regular);
+              break;
             }
-            break;
-          }
-          case 1: {
-            r_val = solve_internal(member, _s.n - _s.m, false);
-            if (r_val) 
-              Kokkos::respawn(this, _sched, Kokkos::TaskPriority::Low);
-            else
-              _state = done; 
-            break;
-          }
-          }         
-        }
+            }         
+          });
       }
     };
   }
