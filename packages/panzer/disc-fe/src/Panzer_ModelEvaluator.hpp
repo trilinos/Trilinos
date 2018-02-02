@@ -358,7 +358,9 @@ public:
    * \brief return a copy of the model evaluators template manager, this is shallow class so pass by value
    * @return The AssemblyEngine template manager
    */
-  panzer::AssemblyEngine_TemplateManager<panzer::Traits> getAssemblyEngineTemplateManager() const;
+  panzer::AssemblyEngine_TemplateManager<panzer::Traits> getAssemblyEngineTemplateManager() const {
+    return ae_tm_;
+  }
 
   Teuchos::RCP<panzer::ResponseLibrary<panzer::Traits> > getResponseLibrary() const
   { return responseLibrary_; }
