@@ -108,17 +108,48 @@ void regionalToComposite(std::vector<Teuchos::RCP<Epetra_Vector> > regVec, ///< 
     const int maxRegPerProc, ///< max number of regions per proc
     std::vector<Teuchos::RCP<Epetra_Map> > rowMapPerGrp, ///< row maps in quasiRegion layout [in]
     std::vector<Teuchos::RCP<Epetra_Import> > rowImportPerGrp, ///< row importer in region layout [in]
-    const Epetra_CombineMode combineMode ///< Combine mode for import/export [in]
+    const Epetra_CombineMode combineMode, ///< Combine mode for import/export [in]
+    const bool addLocalManually = true ///< perform ADD of local values manually (not via Epetra CombineMode)
     )
 {
-  std::vector<Teuchos::RCP<Epetra_Vector> > quasiRegVec(maxRegPerProc);
-  for (int j = 0; j < maxRegPerProc; j++) {
-    // copy vector and replace map
-    quasiRegVec[j] = Teuchos::rcp(new Epetra_Vector(*(regVec[j])));
-    quasiRegVec[j]->ReplaceMap(*(rowMapPerGrp[j]));
+  if (not addLocalManually) {
+    /* Use the Eptra_AddLocalAlso combine mode to add processor-local values.
+     * Note that such a combine mode is not available in Tpetra.
+     */
 
-    int err = compVec->Export(*quasiRegVec[j], *(rowImportPerGrp[j]), combineMode);
-    TEUCHOS_ASSERT(err == 0);
+    std::vector<Teuchos::RCP<Epetra_Vector> > quasiRegVec(maxRegPerProc);
+    for (int j = 0; j < maxRegPerProc; j++) {
+      // copy vector and replace map
+      quasiRegVec[j] = Teuchos::rcp(new Epetra_Vector(*(regVec[j])));
+      quasiRegVec[j]->ReplaceMap(*(rowMapPerGrp[j]));
+
+      int err = compVec->Export(*quasiRegVec[j], *(rowImportPerGrp[j]), combineMode);
+      TEUCHOS_ASSERT(err == 0);
+    }
+  }
+  else {
+    /* Let's fake an ADD combine mode that also adds local values by
+     * 1. exporting quasiRegional vectors to auxiliary composite vectors (1 per group)
+     * 2. add all auxiliary vectors together
+     */
+
+    Teuchos::RCP<Epetra_MultiVector> partialCompVec = Teuchos::rcp(new Epetra_MultiVector(compVec->Map(), maxRegPerProc, true));
+
+    std::vector<Teuchos::RCP<Epetra_Vector> > quasiRegVec(maxRegPerProc);
+    for (int j = 0; j < maxRegPerProc; j++) {
+      // copy vector and replace map
+      quasiRegVec[j] = Teuchos::rcp(new Epetra_Vector(*(regVec[j])));
+      quasiRegVec[j]->ReplaceMap(*(rowMapPerGrp[j]));
+
+      int err = (*partialCompVec)(j)->Export(*quasiRegVec[j], *(rowImportPerGrp[j]), Add);
+      TEUCHOS_ASSERT(err == 0);
+    }
+
+    compVec->PutScalar(0.0);
+    for (int j = 0; j < maxRegPerProc; j++) {
+      int err = compVec->Update(1.0, *(*partialCompVec)(j), 1.0);
+      TEUCHOS_ASSERT(err == 0);
+    }
   }
 
   return;
@@ -155,14 +186,13 @@ void sumInterfaceValues(std::vector<Teuchos::RCP<Epetra_Vector> >& regVec,
     const int maxRegPerProc, ///< max number of regions per proc [in]
     std::vector<Teuchos::RCP<Epetra_Map> > rowMapPerGrp,///< row maps in region layout [in]
     std::vector<Teuchos::RCP<Epetra_Map> > revisedRowMapPerGrp,///< revised row maps in region layout [in]
-    std::vector<Teuchos::RCP<Epetra_Import> > rowImportPerGrp, ///< row importer in region layout [in])
-    Epetra_CombineMode combineMode = Add
+    std::vector<Teuchos::RCP<Epetra_Import> > rowImportPerGrp ///< row importer in region layout [in])
     )
 {
   Teuchos::RCP<Epetra_Vector> compVec = Teuchos::rcp(new Epetra_Vector(*compMap, true));
   std::vector<Teuchos::RCP<Epetra_Vector> > quasiRegVec(maxRegPerProc);
   regionalToComposite(regVec, compVec, maxRegPerProc, rowMapPerGrp,
-      rowImportPerGrp, combineMode);
+      rowImportPerGrp, Epetra_AddLocalAlso);
 
   compositeToRegional(compVec, quasiRegVec, regVec, maxRegPerProc,
       rowMapPerGrp, revisedRowMapPerGrp, rowImportPerGrp);
@@ -204,7 +234,7 @@ std::vector<Teuchos::RCP<Epetra_Vector> > computeResidual(
   }
 
   sumInterfaceValues(regRes, mapComp, maxRegPerProc, rowMapPerGrp,
-      revisedRowMapPerGrp, rowImportPerGrp, Epetra_AddLocalAlso);
+      revisedRowMapPerGrp, rowImportPerGrp);
 
   for (int j = 0; j < maxRegPerProc; j++) { // step 3
     int err = regRes[j]->Update(1.0, *regB[j], -1.0);
@@ -257,7 +287,7 @@ void jacobiIterate(const int maxIter,
     }
 
     sumInterfaceValues(regRes, mapComp, maxRegPerProc, rowMapPerGrp,
-        revisedRowMapPerGrp, rowImportPerGrp, Epetra_AddLocalAlso);
+        revisedRowMapPerGrp, rowImportPerGrp);
 
     for (int j = 0; j < maxRegPerProc; j++) { // step 3
       int err = regRes[j]->Update(1.0, *regB[j], -1.0);
@@ -838,6 +868,36 @@ int main(int argc, char *argv[]) {
       char str[80]; sprintf(str,"%d: rowMap ",myRank);
       printGrpMaps(rowMapPerGrp, maxRegPerProc, str);
     }
+    else if (strcmp(command,"TestRegionalToComposite") == 0) {
+      /* Create a random vector in regional layout and use both regionalToComposite
+       * modes (with automatic and manual ADD of local values). Compare results.
+       */
+
+      Teuchos::RCP<Epetra_Vector> startVec = Teuchos::rcp(new Epetra_Vector(*mapComp, true));
+      startVec->Random();
+
+      std::vector<Teuchos::RCP<Epetra_Vector> > regStartVec(maxRegPerProc);
+      std::vector<Teuchos::RCP<Epetra_Vector> > quasiRegStartVec(maxRegPerProc);
+      compositeToRegional(startVec, quasiRegStartVec, regStartVec, maxRegPerProc, rowMapPerGrp, revisedRowMapPerGrp, rowImportPerGrp);
+
+      // use automatic ADD of local values via Export()
+      Teuchos::RCP<Epetra_Vector> autoCompVec = Teuchos::rcp(new Epetra_Vector(*mapComp, true));
+      regionalToComposite(regStartVec, autoCompVec, maxRegPerProc, rowMapPerGrp, rowImportPerGrp, Epetra_AddLocalAlso, false);
+
+      Teuchos::RCP<Epetra_Vector> manCompVec = Teuchos::rcp(new Epetra_Vector(*mapComp, true));
+      regionalToComposite(regStartVec, manCompVec, maxRegPerProc, rowMapPerGrp, rowImportPerGrp, Add, true);
+
+      // check for difference in result
+      {
+        Teuchos::RCP<Epetra_Vector> diff = Teuchos::rcp(new Epetra_Vector(*mapComp, true));
+        int err = diff->Update(1.0, *autoCompVec, -1.0, *manCompVec, 0.0);
+        TEUCHOS_ASSERT( err == 0);
+        double diffNorm2 = 0.0;
+        diff->Norm2(&diffNorm2);
+        TEUCHOS_TEST_FOR_EXCEPT_MSG(diffNorm2 > 1.0e-15, "regionalToComposite() delivers "
+            "different results for adding local values via Export() combine mode or manually.");
+      }
+    }
     else if (strcmp(command,"MakeQuasiRegionMatrices") == 0) {
       /* We use the edge-based splitting, i.e. we first modify off-diagonal
        * entries in the composite matrix, then decompose it into region matrices
@@ -1109,7 +1169,7 @@ int main(int argc, char *argv[]) {
       Teuchos::RCP<Epetra_Vector> diffY = Teuchos::rcp(new Epetra_Vector(*mapComp, true));
       diffY->Update(1.0, *compY, -1.0, *regYComp, 0.0);
 
-      diffY->Print(std::cout);
+//      diffY->Print(std::cout);
 
       sleep(8);
 
@@ -1526,7 +1586,7 @@ int main(int argc, char *argv[]) {
           }
           sumInterfaceValues(coarseRegB, coarseCompRowMap, maxRegPerProc,
               coarseQuasiRowMapPerGrp, coarseRowMapPerGrp,
-              coarseRowImportPerGrp, Epetra_AddLocalAlso);
+              coarseRowImportPerGrp);
 
           // -----------------------------------------------------------------------
           // Perform region-wise Jacobi on coarse level
