@@ -324,8 +324,13 @@ namespace Tacho {
                       const bool replace_value_with_one = false) {
         // count m, n, nnz
         const ordinal_type nsupernodes = supernodes.dimension_0();
-        auto &last = supernodes(nsupernodes - 1);
-        
+
+        auto d_last = Kokkos::subview(supernodes, nsupernodes - 1);
+        auto h_last = Kokkos::create_mirror_view(d_last);
+        Kokkos::deep_copy(h_last, d_last);
+        auto last = h_last();
+        //auto &last = supernodes(nsupernodes - 1);
+
         const ordinal_type mm = last.row_begin + last.m, nn = mm;
 
         Kokkos::RangePolicy<exec_space> supernodes_range_policy(0,nsupernodes);
@@ -353,9 +358,13 @@ namespace Tacho {
           });
         
         // fill the matrix
-        auto nnz = Kokkos::create_mirror_view(Kokkos::subview(ap, mm));
-        ordinal_type_array aj("aj", nnz());
-        value_type_array ax("ax", nnz());
+        auto d_nnz = Kokkos::subview(ap, mm);
+        auto h_nnz = Kokkos::create_mirror_view(d_nnz);        
+        Kokkos::deep_copy();
+
+        const auto nnz = h_nnz();
+        ordinal_type_array aj("aj", nnz);
+        value_type_array ax("ax", nnz);
 
         Kokkos::parallel_for
           (supernodes_range_policy, KOKKOS_LAMBDA(const ordinal_type &sid) {
