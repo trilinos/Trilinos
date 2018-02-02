@@ -251,47 +251,48 @@ namespace Tacho {
           });
       }
       
-      template<typename MemberType>
-      KOKKOS_INLINE_FUNCTION
-      void
-      copySparseToSuperpanel(MemberType &member,
-                             // input from sparse matrix
-                             const size_type_array &ap,
-                             const ordinal_type_array &aj,
-                             const value_type_array &ax,
-                             const ordinal_type_array &perm,
-                             const ordinal_type_array &peri,
-                             // work array to store map
-                             /* */ ordinal_type *work) const { // size m array
-        const ordinal_type sid = member.league_rank();
+      // template<typename MemberType>
+      // KOKKOS_INLINE_FUNCTION
+      // void
+      // copySparseToSuperpanel(MemberType &member,
+      //                        // input from sparse matrix
+      //                        const supernode_type &s,
+      //                        const size_type_array &ap,
+      //                        const ordinal_type_array &aj,
+      //                        const value_type_array &ax,
+      //                        const ordinal_type_array &perm,
+      //                        const ordinal_type_array &peri,
+      //                        // work array to store map
+      //                        /* */ ordinal_type *work) const { // size m array
+      //   //const ordinal_type sid = member.league_rank();
+      //   //const auto &s = supernodes(sid);
 
-        const auto &s = supernodes(sid);
-        const dense_block_type tgt(s.buf, s.m, s.n);;            
+      //   const dense_block_type tgt(s.buf, s.m, s.n);;            
             
-        // local to global map
-        //for (ordinal_type j=0;j<s.n;++j) 
-        Kokkos::parallel_for(Kokkos::TeamThreadRange(member, 0, s.n), [&](const ordinal_type &j) {
-            Kokkos::single(Kokkos::PerThread(member), [&]() {
-                work[gid_colidx(j+s.gid_col_begin) /* = col */] = j;
-              });
-          });
+      //   // local to global map
+      //   //for (ordinal_type j=0;j<s.n;++j) 
+      //   Kokkos::parallel_for(Kokkos::TeamThreadRange(member, 0, s.n), [&](const ordinal_type &j) {
+      //       Kokkos::single(Kokkos::PerThread(member), [&]() {
+      //           work[gid_colidx(j+s.gid_col_begin) /* = col */] = j;
+      //         });
+      //     });
         
-        // row major access to sparse src
-        //for (ordinal_type i=0;i<s.m;++i) {
-        Kokkos::parallel_for(Kokkos::TeamThreadRange(member, 0, s.m), [&](const ordinal_type &i) {
-            const ordinal_type 
-              ii = i + s.row_begin,  // row in U
-              row = perm(ii), kbeg = ap(row), kend = ap(row+1);   // row in A
-            const ordinal_type kcnt = kend - kbeg;
-            //for (ordinal_type k=kbeg;k<kend;++k) {
-            Kokkos::parallel_for(Kokkos::ThreadVectorRange(member, kcnt), [&](const ordinal_type &kk) {
-                const ordinal_type k  = kk + kbeg;
-                const ordinal_type jj = peri(aj(k) /* col in A */); // col in U
-                if (ii <= jj) 
-                  tgt(i, work[jj]) = ax(k);
-              });
-          });
-      }
+      //   // row major access to sparse src
+      //   //for (ordinal_type i=0;i<s.m;++i) {
+      //   Kokkos::parallel_for(Kokkos::TeamThreadRange(member, 0, s.m), [&](const ordinal_type &i) {
+      //       const ordinal_type 
+      //         ii = i + s.row_begin,  // row in U
+      //         row = perm(ii), kbeg = ap(row), kend = ap(row+1);   // row in A
+      //       const ordinal_type kcnt = kend - kbeg;
+      //       //for (ordinal_type k=kbeg;k<kend;++k) {
+      //       Kokkos::parallel_for(Kokkos::ThreadVectorRange(member, kcnt), [&](const ordinal_type &kk) {
+      //           const ordinal_type k  = kk + kbeg;
+      //           const ordinal_type jj = peri(aj(k) /* col in A */); // col in U
+      //           if (ii <= jj) 
+      //             tgt(i, work[jj]) = ax(k);
+      //         });
+      //     });
+      // }
       
 
       inline
@@ -302,19 +303,52 @@ namespace Tacho {
                               const value_type_array &ax,
                               const ordinal_type_array &perm,
                               const ordinal_type_array &peri) {
+#if 1
         const ordinal_type nsupernodes = supernodes.dimension_0(), m = ap.dimension_0() - 1;
         Kokkos::TeamPolicy<exec_space,Kokkos::Schedule<Kokkos::Static> > 
           policy(nsupernodes, Kokkos::AUTO()); // team and vector sizes are AUTO selected.
+
+        typedef typename exec_space::scratch_memory_space shmem_space;        
+        typedef Kokkos::View<ordinal_type*,shmem_space,Kokkos::MemoryUnmanaged> team_shared_memory_view_type;
+        const ordinal_type lvl = 0, per_team_scratch = team_shared_memory_view_type::shmem_size(m);
         
-        const int lvl = 0, per_team_scratch = m*sizeof(ordinal_type);
-        
+        const auto l_supernodes = supernodes;
+        const auto l_gid_colidx = gid_colidx;
         Kokkos::parallel_for
           (policy.set_scratch_size(lvl, Kokkos::PerTeam(per_team_scratch)),
            KOKKOS_LAMBDA ( const typename Kokkos::TeamPolicy<exec_space>::member_type &member) {
-            typedef typename exec_space::scratch_memory_space shmem_space;
-            Kokkos::View<ordinal_type*,shmem_space,Kokkos::MemoryUnmanaged> work(member.team_shmem(), m);
-            copySparseToSuperpanel(member, ap, aj, ax, perm, peri, work.data());
+            team_shared_memory_view_type work(member.team_shmem(), m);
+            const ordinal_type sid = member.league_rank();
+            const auto s = l_supernodes(sid);
+            dense_block_type tgt(s.buf, s.m, s.n);;            
+                        
+            // local to global map
+            //for (ordinal_type j=0;j<s.n;++j) 
+            Kokkos::parallel_for(Kokkos::TeamThreadRange(member, s.n), [&](const ordinal_type &j) {
+                Kokkos::single(Kokkos::PerThread(member), [&]() {
+                    work[l_gid_colidx(j+s.gid_col_begin) /* = col */] = j;
+                  });
+              });
+            
+            // row major access to sparse src
+            //for (ordinal_type i=0;i<s.m;++i) {
+            Kokkos::parallel_for(Kokkos::TeamThreadRange(member, 0, s.m), [&](const ordinal_type &i) {
+                const ordinal_type 
+                  ii = i + s.row_begin,  // row in U
+                  row = perm(ii), kbeg = ap(row), kend = ap(row+1);   // row in A
+                const ordinal_type kcnt = kend - kbeg;
+                //for (ordinal_type k=kbeg;k<kend;++k) {
+                Kokkos::parallel_for(Kokkos::ThreadVectorRange(member, kcnt), [&](const ordinal_type &kk) {
+                    const ordinal_type k  = kk + kbeg;
+                    const ordinal_type jj = peri(aj(k) /* col in A */); // col in U
+                    if (ii <= jj) 
+                      tgt(i, work[jj]) = ax(k);
+                  });
+              });
+            
+            //copySparseToSuperpanel(member, s, ap, aj, ax, perm, peri, work.data());
           });
+#endif
       }
       
       
@@ -360,7 +394,7 @@ namespace Tacho {
         // fill the matrix
         auto d_nnz = Kokkos::subview(ap, mm);
         auto h_nnz = Kokkos::create_mirror_view(d_nnz);        
-        Kokkos::deep_copy();
+        Kokkos::deep_copy(h_nnz, d_nnz);
 
         const auto nnz = h_nnz();
         ordinal_type_array aj("aj", nnz);
