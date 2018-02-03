@@ -3,8 +3,12 @@
 xsltproc tex.xsl masterList.xml > paramlist.tex
 xsltproc tex_hidden.xsl masterList.xml > paramlist_hidden.tex
 
+if [ "$1" != "" ]; then
+    code_file=$1
+else
+    code_file="../../src/MueCentral/MueLu_MasterList.cpp"
+fi
 
-code_file="../../src/MueCentral/MueLu_MasterList.cpp"
 
 echo '// @HEADER
 //
