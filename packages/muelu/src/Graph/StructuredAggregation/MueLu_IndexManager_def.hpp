@@ -67,9 +67,9 @@ namespace MueLu {
     endRate.resize(3);
     gCoarseNodesPerDir.resize(3);
     lCoarseNodesPerDir.resize(3);
-    ghostedCoarseNodesPerDir.resize(3);
+    ghostedNodesPerDir.resize(3);
 
-    offsets.resize(6);
+    offsets.resize(3);
     startIndices.resize(6);
     startGhostedCoarseNode.resize(3);
 
@@ -85,7 +85,6 @@ namespace MueLu {
     for(int dim = 0; dim < 3; ++dim) {
       if(dim < numDimensions) {
         offsets[dim]     = Teuchos::as<LO>(startIndices[dim]) % coarseRate[dim];
-        offsets[dim + 3] = Teuchos::as<LO>(startIndices[dim]) % coarseRate[dim];
 
         if(startIndices[dim] % coarseRate[dim] != 0 ||
            startIndices[dim] == gFineNodesPerDir[dim]-1) {
@@ -154,22 +153,22 @@ namespace MueLu {
       // This would happen if the rank does not own any nodes but in that case a subcommunicator
       // should be used so this should really not be a concern.
       if(lFineNodesPerDir[dim] < 1) {lCoarseNodesPerDir[dim] = 0;}
-      ghostedCoarseNodesPerDir[dim] = lCoarseNodesPerDir[dim];
+      ghostedNodesPerDir[dim] = lCoarseNodesPerDir[dim];
       // Check whether face *low needs ghost nodes
-      if(ghostInterface[2*dim]) {ghostedCoarseNodesPerDir[dim] += 1;}
+      if(ghostInterface[2*dim]) {ghostedNodesPerDir[dim] += 1;}
       // Check whether face *hi needs ghost nodes
-      if(ghostInterface[2*dim + 1]) {ghostedCoarseNodesPerDir[dim] += 1;}
+      if(ghostInterface[2*dim + 1]) {ghostedNodesPerDir[dim] += 1;}
     }
 
 
     // Compute cummulative values
-    gNumCoarseNodes10       = gCoarseNodesPerDir[0]*gCoarseNodesPerDir[1];
-    gNumCoarseNodes         = gNumCoarseNodes10*gCoarseNodesPerDir[2];
-    lNumCoarseNodes10       = lCoarseNodesPerDir[0]*lCoarseNodesPerDir[1];
-    lNumCoarseNodes         = lNumCoarseNodes10*lCoarseNodesPerDir[2];
-    numGhostedCoarseNodes10 = ghostedCoarseNodesPerDir[1]*ghostedCoarseNodesPerDir[0];
-    numGhostedCoarseNodes   = numGhostedCoarseNodes10*ghostedCoarseNodesPerDir[2];
-    lNumGhostNodes          = numGhostedCoarseNodes - lNumCoarseNodes;
+    gNumCoarseNodes10 = gCoarseNodesPerDir[0]*gCoarseNodesPerDir[1];
+    gNumCoarseNodes   = gNumCoarseNodes10*gCoarseNodesPerDir[2];
+    lNumCoarseNodes10 = lCoarseNodesPerDir[0]*lCoarseNodesPerDir[1];
+    lNumCoarseNodes   = lNumCoarseNodes10*lCoarseNodesPerDir[2];
+    numGhostedNodes10 = ghostedNodesPerDir[1]*ghostedNodesPerDir[0];
+    numGhostedNodes   = numGhostedNodes10*ghostedNodesPerDir[2];
+    numGhostNodes     = numGhostedNodes - lNumCoarseNodes;
 
   }
 

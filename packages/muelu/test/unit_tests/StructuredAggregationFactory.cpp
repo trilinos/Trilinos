@@ -69,14 +69,14 @@ namespace MueLuTests {
     out << "version: " << MueLu::Version() << std::endl;
 
     // Set global geometric data
-    LO numDimensions = 1;
+    LO numDimensions = 2;
     Array<GO> meshData;
     Array<LO> lNodesPerDir(3);
     Array<GO> gNodesPerDir(3);
     for(int dim = 0; dim < 3; ++dim) {
       if(dim < numDimensions) {
         // Use more nodes in 1D to have a reasonable number of nodes per procs
-        gNodesPerDir[dim] = 20;
+        gNodesPerDir[dim] = 6;
       } else {
         gNodesPerDir[dim] = 1;
       }
@@ -90,9 +90,12 @@ namespace MueLuTests {
     RCP<const Teuchos::Comm<int> > comm = Coordinates->getMap()->getComm();
     Array<LO> coarseRate(1);
     coarseRate[0] = 3;
-    MueLu::LocalLexicographicIndexManager<LO,GO,NO> myIndexManager(numDimensions, comm->getRank(),
-                                                            comm->getSize(), gNodesPerDir,
-                                                            lNodesPerDir, coarseRate, meshData);
+    RCP<MueLu::LocalLexicographicIndexManager<LO,GO,NO> > myIndexManager =
+      rcp(new MueLu::LocalLexicographicIndexManager<LO,GO,NO>(numDimensions, comm->getRank(),
+                                                              comm->getSize(), gNodesPerDir,
+                                                              lNodesPerDir, coarseRate, meshData));
+
+    myIndexManager->printMeshInfo(0);
 
   }
 

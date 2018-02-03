@@ -47,16 +47,116 @@
 #define MUELU_GLOBALLEXICOGRAPHICINDEXMANAGER_DEF_HPP_
 
 #include <MueLu_GlobalLexicographicIndexManager_decl.hpp>
+#include <Xpetra_MapFactory.hpp>
 
 namespace MueLu {
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   GlobalLexicographicIndexManager<LocalOrdinal, GlobalOrdinal, Node>::
   GlobalLexicographicIndexManager(const int NumDimensions, const Array<GO> GFineNodesPerDir,
-                                  const Array<LO> LFineNodesPerDir, const Array<LO> CoarseRate) :
+                                  const Array<LO> LFineNodesPerDir, const Array<LO> CoarseRate,
+                                  const GO MinGlobalIndex) :
     IndexManager(NumDimensions, GFineNodesPerDir, LFineNodesPerDir) {
 
+    // Load coarse rate, being careful about formating.
+    for(int dim = 0; dim < 3; ++dim) {
+      if(dim < this->numDimensions) {
+        if(CoarseRate.size() == 1) {
+          this->coarseRate[dim] = CoarseRate[0];
+        } else if(CoarseRate.size() == this->numDimensions) {
+          this->coarseRate[dim] = CoarseRate[dim];
+        }
+      } else {
+        this->coarseRate[dim] = 1;
+      }
+    }
+
+    {
+      GO tmp = 0;
+      this->startIndices[2]= MinGlobalIndex / (this->gFineNodesPerDir[1]*this->gFineNodesPerDir[0]);
+      tmp                  = MinGlobalIndex % (this->gFineNodesPerDir[1]*this->gFineNodesPerDir[0]);
+      this->startIndices[1]= tmp / this->gFineNodesPerDir[0];
+      this->startIndices[0]= tmp % this->gFineNodesPerDir[0];
+
+      for(int dim = 0; dim < 3; ++dim) {
+        this->startIndices[dim + 3] = this->startIndices[dim] + this->lFineNodesPerDir[dim] - 1;
+      }
+    }
+
+    this->computeMeshParameters();
+
   }
+
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  void GlobalLexicographicIndexManager<LocalOrdinal, GlobalOrdinal, Node>::
+  getGhostedNodesData(const RCP<const Map> fineMap, RCP<const Map> coarseMap,
+                     Array<LO>& ghostedNodeCoarseLIDs, Array<int>& ghostedNodeCoarsePIDs) const {
+
+    // Find the GIDs, LIDs and PIDs of the coarse points on the fine mesh and coarse
+    // mesh as this data will be used to fill vertex2AggId and procWinner vectors.
+    Array<GO> lCoarseNodeCoarseGIDs(this->lNumCoarseNodes),
+      lCoarseNodeFineGIDs(this->lNumCoarseNodes);
+    Array<GO> ghostedCoarseNodeCoarseGIDs(this->numGhostedNodes),
+      ghostedCoarseNodeFineGIDs(this->numGhostedNodes);
+    Array<LO> ghostedCoarseNodeCoarseIndices(3), ghostedCoarseNodeFineIndices(3), ijk(3);
+    LO currentIndex = -1, coarseNodeFineLID = -1, computedCoarseNode = -1;
+    for(ijk[2] = 0; ijk[2] < this->ghostedNodesPerDir[2]; ++ijk[2]) {
+      for(ijk[1] = 0; ijk[1] < this->ghostedNodesPerDir[1]; ++ijk[1]) {
+        for(ijk[0] = 0; ijk[0] < this->ghostedNodesPerDir[0]; ++ijk[0]) {
+          currentIndex = ijk[2]*this->numGhostedNodes10 + ijk[1]*this->ghostedNodesPerDir[0] + ijk[0];
+          ghostedCoarseNodeCoarseIndices[0] = this->startGhostedCoarseNode[0] + ijk[0];
+          ghostedCoarseNodeCoarseIndices[1] = this->startGhostedCoarseNode[1] + ijk[1];
+          ghostedCoarseNodeCoarseIndices[2] = this->startGhostedCoarseNode[2] + ijk[2];
+          GO myCoarseGID = ghostedCoarseNodeCoarseIndices[0]
+            + ghostedCoarseNodeCoarseIndices[1]*this->gCoarseNodesPerDir[0]
+            + ghostedCoarseNodeCoarseIndices[2]*this->gNumCoarseNodes10;
+          ghostedCoarseNodeCoarseGIDs[currentIndex] = myCoarseGID;
+          GO myGID = 0, factor[3] = {};
+          factor[2] = this->gNumFineNodes10;
+          factor[1] = this->gFineNodesPerDir[0];
+          factor[0] = 1;
+          for(int dim = 0; dim < 3; ++dim) {
+            if(dim < this->numDimensions) {
+              if(this->startIndices[dim] - this->offsets[dim] + ijk[dim]*this->coarseRate[dim]
+                 < this->gFineNodesPerDir[dim] - 1) {
+                myGID += (this->startIndices[dim] - this->offsets[dim]
+                          + ijk[dim]*this->coarseRate[dim])*factor[dim];
+              } else {
+                myGID += (this->startIndices[dim] - this->offsets[dim] + (ijk[dim] - 1)
+                          *this->coarseRate[dim] + this->endRate[dim])*factor[dim];
+              }
+            }
+          }
+          if((!this->ghostInterface[0] || ijk[0] != 0) &&
+             (!this->ghostInterface[2] || ijk[1] != 0) &&
+             (!this->ghostInterface[4] || ijk[2] != 0) &&
+             (!this->ghostInterface[1] || ijk[0] != this->ghostedNodesPerDir[0] - 1) &&
+             (!this->ghostInterface[3] || ijk[1] != this->ghostedNodesPerDir[1] - 1) &&
+             (!this->ghostInterface[5] || ijk[2] != this->ghostedNodesPerDir[2] - 1)) {
+            this->getGhostedNodeFineLID(ijk[0], ijk[1], ijk[2], coarseNodeFineLID);
+            this->getGhostedNodeCoarseLID(ijk[0], ijk[1], ijk[2], computedCoarseNode);
+
+            lCoarseNodeCoarseGIDs[computedCoarseNode] = myCoarseGID;
+            lCoarseNodeFineGIDs[computedCoarseNode]   = myGID;
+          }
+          ghostedCoarseNodeFineGIDs[currentIndex] = myGID;
+        }
+      }
+    }
+
+    coarseMap = Xpetra::MapFactory<LO,GO,NO>::Build (fineMap->lib(),
+                                                     this->gNumCoarseNodes,
+                                                     lCoarseNodeCoarseGIDs(),
+                                                     fineMap->getIndexBase(),
+                                                     fineMap->getComm());
+
+    Array<int> ghostedCoarseNodeCoarsePIDs(this->numGhostedNodes);
+    Array<LO>  ghostedCoarseNodeCoarseLIDs(this->numGhostedNodes);
+    coarseMap->getRemoteIndexList(ghostedCoarseNodeCoarseGIDs(),
+                                  ghostedCoarseNodeCoarsePIDs(),
+                                  ghostedCoarseNodeCoarseLIDs());
+
+  } // End getGhostedMeshData
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   void GlobalLexicographicIndexManager<LocalOrdinal, GlobalOrdinal, Node>::
@@ -139,7 +239,7 @@ namespace MueLu {
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   void GlobalLexicographicIndexManager<LocalOrdinal, GlobalOrdinal, Node>::
   getCoarseNodeGhostedLID(const LO i, const LO j, const LO k, LO& myLID) const {
-    myLID = k*this->numGhostedCoarseNodes10 + j*this->ghostedCoarseNodesPerDir[0] + i;
+    myLID = k*this->numGhostedNodes10 + j*this->ghostedNodesPerDir[0] + i;
   }
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>

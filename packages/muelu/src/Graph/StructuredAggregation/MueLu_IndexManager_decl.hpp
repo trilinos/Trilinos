@@ -81,6 +81,44 @@ namespace MueLu {
 #undef MUELU_INDEXMANAGER_SHORT
 #include "MueLu_UseShortNamesOrdinal.hpp"
 
+  private:
+
+  protected:
+
+    const int numDimensions;            ///< Number of spacial dimensions in the problem
+
+    Array<int> coarseRate;              ///< coarsening rate in each direction
+    Array<int> endRate;                 ///< adapted coarsening rate at the edge of the mesh in each direction.
+
+    GO gNumFineNodes;                   ///< global number of nodes.
+    GO gNumFineNodes10;                 ///< global number of nodes per 0-1 slice.
+    const Array<GO> gFineNodesPerDir;   ///< global number of nodes per direction.
+
+    LO lNumFineNodes;                   ///< local number of nodes.
+    LO lNumFineNodes10;                 ///< local number of nodes per 0-1 slice.
+    const Array<LO> lFineNodesPerDir;   ///< local number of nodes per direction.
+
+    GO gNumCoarseNodes;                 ///< global number of nodes remaining after coarsening.
+    GO gNumCoarseNodes10;               ///< global number of nodes per 0-1 slice remaining after coarsening.
+    Array<GO> gCoarseNodesPerDir;       ///< global number of nodes per direction remaining after coarsening.
+
+    LO lNumCoarseNodes;                 ///< local number of nodes remaining after coarsening.
+    LO lNumCoarseNodes10;               ///< local number of nodes per 0-1 slice remaining after coarsening.
+    Array<LO> lCoarseNodesPerDir;       ///< local number of nodes per direction remaing after coarsening.
+
+    LO numGhostNodes;                   ///< local number of ghost nodes
+    LO numGhostedNodes;                 ///< local number of ghosted nodes (i.e. ghost + coarse nodes).
+    LO numGhostedNodes10;               ///< local number of ghosted nodes (i.e. ghost + coarse nodes) per 0-1 slice.
+    Array<LO> ghostedNodesPerDir;       ///< local number of ghosted nodes (i.e. ghost + coarse nodes) per direction
+
+    GO minGlobalIndex;                  ///< lowest GID of any node in the local process
+    Array<LO> offsets;                  ///< distance between lowest (resp. highest) index to the lowest (resp. highest) ghostedNodeIndex in that direction.
+    Array<GO> startIndices;             ///< lowest global tuple (i,j,k) of a node on the local process
+    Array<GO> startGhostedCoarseNode;   ///< lowest coarse global tuple (i,j,k) of a node remaing on the local process after coarsening.
+
+    bool ghostInterface[6] = {false};   ///< flags indicating if ghost points are needed at ilo, ihi, jlo, jhi, klo and khi boundaries.
+    bool ghostedDir[6] = {false};       ///< flags indicating if ghost points are needed at ilo, ihi, jlo, jhi, klo and khi boundaries.
+
   public:
 
     IndexManager() = default;
@@ -91,6 +129,54 @@ namespace MueLu {
     virtual ~IndexManager() {}
 
     void computeMeshParameters();
+
+    virtual void getGhostedNodesData(const RCP<const Map> fineMap, RCP<const Map> coarseCoordMap,
+                                     Array<LO>& ghostedNodeCoarseLIDs,
+                                     Array<int>& ghostedNodeCoarsePIDs) const = 0;
+
+    const int getNumDimensions() const {return numDimensions;}
+
+    const GO getNumGlobalFineNodes() const {return gNumFineNodes;}
+
+    const GO getNumGlobalCoarseNodes() const {return gNumCoarseNodes;}
+
+    const LO getNumLocalFineNodes() const {return lNumFineNodes;}
+
+    const LO getNumLocalCoarseNodes() const {return lNumCoarseNodes;}
+
+    const LO getNumLocalGhostedNodes() const {return numGhostedNodes;}
+
+    const Array<int> getCoarseningRates() const {return coarseRate;}
+
+    const int getCoarseningRate(const int dim) const {return coarseRate[dim];}
+
+    const Array<int> getCoarseningEndRates() const {return endRate;}
+
+    const bool getGhostInterface(const int dim) const {return ghostInterface[dim];}
+
+    const Array<LO> getOffsets() const {return offsets;}
+
+    const LO getOffset(int const dim) const {return offsets[dim];}
+
+    const Array<GO> getStartIndices() const {return startIndices;}
+
+    const GO getStartIndex(int const dim) const {return startIndices[dim];}
+
+    const Array<GO> getStartGhostedCoarseNodes() const {return startGhostedCoarseNode;}
+
+    const GO getStartGhostedCoarseNode(int const dim) const {return startGhostedCoarseNode[dim];}
+
+    const Array<GO> getGlobalFineNodesPerDir() const {return gFineNodesPerDir;}
+
+    const GO getGlobalFineNodesInDir(const int dim) const {return gFineNodesPerDir[dim];}
+
+    const Array<GO> getGlobalCoarseNodesPerDir() const {return gCoarseNodesPerDir;}
+
+    const GO getGlobalCoarseNodesInDir(const int dim) const {return gCoarseNodesPerDir[dim];}
+
+    const Array<LO> getGhostedNodesPerDir() const {return ghostedNodesPerDir;}
+
+    const LO getGhostedNodesInDir(const int dim) const {return ghostedNodesPerDir[dim];}
 
     virtual void getFineNodeGlobalTuple(const GO myGID, GO& i, GO& j, GO& k) const = 0;
 
@@ -117,45 +203,6 @@ namespace MueLu {
     virtual void getGhostedNodeFineLID(const LO i, const LO j, const LO k, LO& myLID) const = 0;
 
     virtual void getGhostedNodeCoarseLID(const LO i, const LO j, const LO k, LO& myLID) const = 0;
-
-  protected:
-
-    const int numDimensions;            ///< Number of spacial dimensions in the problem
-
-    Array<int> coarseRate;              ///< coarsening rate in each direction
-    Array<int> endRate;                 ///< adapted coarsening rate at the edge of the mesh in each direction.
-
-    LO gNumFineNodes;                   ///< global number of nodes.
-    LO gNumFineNodes10;                 ///< global number of nodes per 0-1 slice.
-    const Array<GO> gFineNodesPerDir;   ///< global number of nodes per direction.
-
-    LO lNumFineNodes;                   ///< local number of nodes.
-    LO lNumFineNodes10;                 ///< local number of nodes per 0-1 slice.
-    const Array<LO> lFineNodesPerDir;   ///< local number of nodes per direction.
-
-    LO gNumCoarseNodes;                 ///< global number of nodes remaining after coarsening.
-    LO gNumCoarseNodes10;               ///< global number of nodes per 0-1 slice remaining after coarsening.
-    Array<LO> gCoarseNodesPerDir; ///< global number of nodes per direction remaining after coarsening.
-
-    LO lNumCoarseNodes;                 ///< local number of nodes remaining after coarsening.
-    LO lNumCoarseNodes10;               ///< local number of nodes per 0-1 slice remaining after coarsening.
-    Array<LO> lCoarseNodesPerDir;       ///< local number of nodes per direction remaing after coarsening.
-
-    LO lNumGhostNodes;                  ///< local number of ghost nodes
-    LO lNumGhostedNodes;                ///< local number of ghosted nodes (i.e. ghost + coarse nodes).
-    LO numGhostedCoarseNodes;           ///< local number of ghosted nodes (i.e. ghost + coarse nodes).
-    LO numGhostedCoarseNodes10;         ///< local number of ghosted nodes (i.e. ghost + coarse nodes) per 0-1 slice.
-    Array<LO> ghostedCoarseNodesPerDir; ///< local number of ghosted nodes (i.e. ghost + coarse nodes) per direction
-
-    GO minGlobalIndex;                  ///< lowest GID of any node in the local process
-    Array<LO> offsets;                  ///< distance between lowest (resp. highest) index to the lowest (resp. highest) ghostedNodeIndex in that direction.
-    Array<GO> startIndices;             ///< lowest global tuple (i,j,k) of a node on the local process
-    Array<GO> startGhostedCoarseNode;   ///< lowest coarse global tuple (i,j,k) of a node remaing on the local process after coarsening.
-
-    bool ghostInterface[6] = {false};   ///< flags indicating if ghost points are needed at ilo, ihi, jlo, jhi, klo and khi boundaries.
-    bool ghostedDir[6] = {false};       ///< flags indicating if ghost points are needed at ilo, ihi, jlo, jhi, klo and khi boundaries.
-
-  private:
 
   };
 

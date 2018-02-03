@@ -92,11 +92,11 @@ namespace MueLu {
 
     virtual ~LocalLexicographicIndexManager() {}
 
-    void printMeshInfo();
+    void getGhostedNodesData(const RCP<const Map> fineMap, RCP<const Map> coarseMap,
+                             Array<LO>& ghostedNodeCoarseLIDs,
+                             Array<int>& ghostedNodeCoarsePIDs) const;
 
-    void sortLocalLexicographicData();
-
-    void computeCoarseLocalLexicographicData();
+    void printMeshInfo(int rank);
 
     void getFineNodeGlobalTuple(const GO myGID, GO& i, GO& j, GO& k) const;
 
@@ -142,6 +142,14 @@ namespace MueLu {
     Array<int> rankIndices;      ///< mapping between rank ID and reordered rank ID.
     std::vector<std::vector<GO> > meshData;          ///< layout of indices accross all processes.
     std::vector<std::vector<GO> > coarseMeshData;    ///< layout of indices accross all processes after coarsening.
+
+    void sortLocalLexicographicData();
+
+    void computeCoarseLocalLexicographicData();
+
+    void getGIDLocalLexicographic(const LO iGhosted, const LO jGhosted, const LO kGhosted,
+                                  const Array<LO> coarseNodeFineIndices, GO& myGID, LO& myPID,
+                                  LO& myLID) const;
 
   };
 

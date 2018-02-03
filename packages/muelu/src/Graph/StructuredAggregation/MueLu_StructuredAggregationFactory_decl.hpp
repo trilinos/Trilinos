@@ -62,6 +62,8 @@
 #include "MueLu_GraphBase.hpp"
 #include "MueLu_Aggregates_fwd.hpp"
 #include "MueLu_Exceptions.hpp"
+#include "MueLu_LocalLexicographicIndexManager.hpp"
+#include "MueLu_GlobalLexicographicIndexManager.hpp"
 
 namespace MueLu {
 
@@ -632,21 +634,6 @@ private:
       } // End GetGIDLocalLexicographic
 
     };
-
-    //! @name mesh layout handling methods.
-    //@{
-
-    /*! @brief assumes global lexicographic layout of the mesh to build aggregates */
-    void GlobalLexicographicLayout(const RCP<const Map> coordMap, RCP<GeometricData> geoData,
-                                   RCP<Aggregates> aggregates, std::vector<unsigned>& aggStat,
-                                   LO& numNonAggregatedNodes) const;
-
-    /*! @brief assumes local lexicographic layout of the mesh to build aggregates */
-    void LocalLexicographicLayout(const RCP<const Map> coordMap, RCP<GeometricData> geoData,
-                                  RCP<Aggregates> aggregates, std::vector<unsigned>& aggStat,
-                                  LO& numNonAggregatedNodes) const;
-
-    //@}
 
 }; // class StructuredAggregationFactory
 

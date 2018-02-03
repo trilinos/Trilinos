@@ -87,9 +87,14 @@ namespace MueLu {
     GlobalLexicographicIndexManager();
 
     GlobalLexicographicIndexManager(const int NumDimensions, const Array<GO> GFineNodesPerDir,
-                                    const Array<LO> LFineNodesPerDir, const Array<LO> CoarseRate);
+                                    const Array<LO> LFineNodesPerDir, const Array<LO> CoarseRate,
+                                    const GO MinGlobalIndex);
 
     virtual ~GlobalLexicographicIndexManager() {}
+
+    void getGhostedNodesData(const RCP<const Map> fineMap, RCP<const Map> coarseMap,
+                            Array<LO>& ghostedNodeCoarseLIDs,
+                            Array<int>& ghostedNodeCoarsePIDs) const;
 
     void getFineNodeGlobalTuple(const GO myGID, GO& i, GO& j, GO& k) const;
 

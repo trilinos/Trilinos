@@ -47,6 +47,7 @@
 #define MUELU_LOCALLEXICOGRAPHICINDEXMANAGER_DEF_HPP_
 
 #include <MueLu_LocalLexicographicIndexManager_decl.hpp>
+#include <Xpetra_MapFactory.hpp>
 
 namespace MueLu {
 
@@ -91,13 +92,162 @@ namespace MueLu {
     }
 
     this->computeMeshParameters();
+    computeCoarseLocalLexicographicData();
 
   }
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   void LocalLexicographicIndexManager<LocalOrdinal, GlobalOrdinal, Node>::
-  printMeshInfo() {
+  getGhostedNodesData(const RCP<const Map>fineMap, RCP<const Map> coarseMap,
+                      Array<LO>& ghostedNodeCoarseLIDs, Array<int>& ghostedNodeCoarsePIDs) const {
+    // Now the tricky part starts, the coarse nodes / ghosted coarse nodes need to be imported.
+    // This requires finding what their GID on the fine mesh is. They need to be ordered
+    // lexicographically to allow for fast sweeps through the mesh.
 
+    // We loop over all ghosted coarse nodes by increasing global lexicographic order
+    Array<LO>  ghostedCoarseNodeCoarseIndices(3), ghostedCoarseNodeFineIndices(3);
+    Array<LO>  lCoarseNodeCoarseIndices(3);
+    Array<GO>  lCoarseNodeCoarseGIDs(this->lNumCoarseNodes);
+    LO currentIndex = -1, countCoarseNodes = 0;
+    for(int k = 0; k < this->ghostedNodesPerDir[2]; ++k) {
+      for(int j = 0; j < this->ghostedNodesPerDir[1]; ++j) {
+        for(int i = 0; i < this->ghostedNodesPerDir[0]; ++i) {
+          currentIndex = k*this->numGhostedNodes10 + j*this->ghostedNodesPerDir[0] + i;
+          ghostedCoarseNodeCoarseIndices[0] = this->startGhostedCoarseNode[0] + i;
+          ghostedCoarseNodeFineIndices[0] = ghostedCoarseNodeCoarseIndices[0]*this->coarseRate[0];
+          if(ghostedCoarseNodeFineIndices[0] > this->gFineNodesPerDir[0] - 1) {
+            ghostedCoarseNodeFineIndices[0] = this->gFineNodesPerDir[0] - 1;
+          }
+          ghostedCoarseNodeCoarseIndices[1] = this->startGhostedCoarseNode[1] + j;
+          ghostedCoarseNodeFineIndices[1] = ghostedCoarseNodeCoarseIndices[1]*this->coarseRate[1];
+          if(ghostedCoarseNodeFineIndices[1] > this->gFineNodesPerDir[1] - 1) {
+            ghostedCoarseNodeFineIndices[1] = this->gFineNodesPerDir[1] - 1;
+          }
+          ghostedCoarseNodeCoarseIndices[2] = this->startGhostedCoarseNode[2] + k;
+          ghostedCoarseNodeFineIndices[2] = ghostedCoarseNodeCoarseIndices[2]*this->coarseRate[2];
+          if(ghostedCoarseNodeFineIndices[2] > this->gFineNodesPerDir[2] - 1) {
+            ghostedCoarseNodeFineIndices[2] = this->gFineNodesPerDir[2] - 1;
+          }
+
+          GO myGID = -1, myCoarseGID = -1;
+          LO myLID = -1, myPID = -1, myCoarseLID = -1;
+          getGIDLocalLexicographic(i, j, k, ghostedCoarseNodeFineIndices, myGID, myPID, myLID);
+
+          int rankIndex = rankIndices[myPID];
+          for(int dim = 0; dim < 3; ++dim) {
+            if(dim < this->numDimensions) {
+              lCoarseNodeCoarseIndices[dim] = ghostedCoarseNodeCoarseIndices[dim]
+                - coarseMeshData[rankIndex][3 + 2*dim];
+            }
+          }
+          LO myRankIndexCoarseNodesInDir0 = coarseMeshData[rankIndex][4]
+            - coarseMeshData[rankIndex][3] + 1;
+          LO myRankIndexCoarseNodes10 = (coarseMeshData[rankIndex][6]
+                                         - coarseMeshData[rankIndex][5] + 1)
+            *myRankIndexCoarseNodesInDir0;
+          myCoarseLID = lCoarseNodeCoarseIndices[2]*myRankIndexCoarseNodes10
+            + lCoarseNodeCoarseIndices[1]*myRankIndexCoarseNodesInDir0
+            + lCoarseNodeCoarseIndices[0];
+          myCoarseGID = myCoarseLID + coarseMeshData[rankIndex][9];
+
+          ghostedNodeCoarseLIDs[currentIndex] = myCoarseLID;
+          ghostedNodeCoarsePIDs[currentIndex] = myPID;
+
+          if(myPID == myRank) {
+            lCoarseNodeCoarseGIDs[countCoarseNodes] = myCoarseGID;
+            ++countCoarseNodes;
+          }
+        }
+      }
+    }
+
+    coarseMap = Xpetra::MapFactory<LO,GO,NO>::Build (fineMap->lib(),
+                                                     this->gNumCoarseNodes,
+                                                     lCoarseNodeCoarseGIDs(),
+                                                     fineMap->getIndexBase(),
+                                                     fineMap->getComm());
+
+  }
+
+  template<class LocalOrdinal, class GlobalOrdinal, class Node>
+  void LocalLexicographicIndexManager<LocalOrdinal, GlobalOrdinal, Node>::
+  getGIDLocalLexicographic(const LO iGhosted, const LO jGhosted, const LO kGhosted,
+                           const Array<LO> coarseNodeFineIndices,
+                           GO& myGID, LO& myPID, LO& myLID) const {
+
+    LO ni = -1, nj = -1, li = -1, lj = -1, lk = -1;
+    LO myRankGuess = myRankIndex;
+    // We try to make a logical guess as to which PID owns the current coarse node
+    if(iGhosted == 0 && this->ghostInterface[0]) {
+      --myRankGuess;
+    } else if((iGhosted == this->ghostedNodesPerDir[0] - 1) && this->ghostInterface[1]) {
+      ++myRankGuess;
+    }
+    if(jGhosted == 0 && this->ghostInterface[2]) {
+      myRankGuess -= pi;
+    } else if((jGhosted == this->ghostedNodesPerDir[1] - 1) && this->ghostInterface[3]) {
+      myRankGuess += pi;
+    }
+    if(kGhosted == 0 && this->ghostInterface[4]) {
+      myRankGuess -= pj*pi;
+    } else if((kGhosted == this->ghostedNodesPerDir[2] - 1) && this->ghostInterface[5]) {
+      myRankGuess += pj*pi;
+    }
+    if(coarseNodeFineIndices[0] >= meshData[myRankGuess][3]
+       && coarseNodeFineIndices[0] <= meshData[myRankGuess][4]
+       && coarseNodeFineIndices[1] >= meshData[myRankGuess][5]
+       && coarseNodeFineIndices[1] <= meshData[myRankGuess][6]
+       && coarseNodeFineIndices[2] >= meshData[myRankGuess][7]
+       && coarseNodeFineIndices[2] <= meshData[myRankGuess][8]
+       && myRankGuess < numRanks - 1) {
+      myPID = meshData[myRankGuess][0];
+      ni = meshData[myRankGuess][4] - meshData[myRankGuess][3] + 1;
+      nj = meshData[myRankGuess][6] - meshData[myRankGuess][5] + 1;
+      li = coarseNodeFineIndices[0] - meshData[myRankGuess][3];
+      lj = coarseNodeFineIndices[1] - meshData[myRankGuess][5];
+      lk = coarseNodeFineIndices[2] - meshData[myRankGuess][7];
+      myLID = lk*nj*ni + lj*ni + li;
+      myGID = meshData[myRankGuess][9] + myLID;
+    } else { // The guess failed, let us use the heavy artilery: std::find_if()
+      // It could be interesting to monitor how many times this branch of the code gets
+      // used as it is far more expensive than the above one...
+      auto nodeRank = std::find_if(myBlockStart, myBlockEnd,
+                                   [coarseNodeFineIndices](const std::vector<GO>& vec){
+                                     if(coarseNodeFineIndices[0] >= vec[3]
+                                        && coarseNodeFineIndices[0] <= vec[4]
+                                        && coarseNodeFineIndices[1] >= vec[5]
+                                        && coarseNodeFineIndices[1] <= vec[6]
+                                        && coarseNodeFineIndices[2] >= vec[7]
+                                        && coarseNodeFineIndices[2] <= vec[8]) {
+                                       return true;
+                                     } else {
+                                       return false;
+                                     }
+                                   });
+      myPID = (*nodeRank)[0];
+      ni = (*nodeRank)[4] - (*nodeRank)[3] + 1;
+      nj = (*nodeRank)[6] - (*nodeRank)[5] + 1;
+      li = coarseNodeFineIndices[0] - (*nodeRank)[3];
+      lj = coarseNodeFineIndices[1] - (*nodeRank)[5];
+      lk = coarseNodeFineIndices[2] - (*nodeRank)[7];
+      myLID = lk*nj*ni + lj*ni + li;
+      myGID = (*nodeRank)[9] + myLID;
+    }
+  }
+
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  void LocalLexicographicIndexManager<LocalOrdinal, GlobalOrdinal, Node>::
+  printMeshInfo(int rank = -1) {
+    if(rank < 0 || rank == myRank) {
+      std::cout << "p=" << myRank << " | numDimensions:      " << this->numDimensions << std::endl;
+      std::cout << "p=" << myRank << " | gFineNodesPerDir:   " << this->gFineNodesPerDir << std::endl;
+      std::cout << "p=" << myRank << " | lFineNodesPerDir:   " << this->lFineNodesPerDir << std::endl;
+      std::cout << "p=" << myRank << " | coarseRate:         " << this->coarseRate << std::endl;
+      std::cout << "p=" << myRank << " | gCoarseNodesPerDir: " << this->gCoarseNodesPerDir << std::endl;
+      std::cout << "p=" << myRank << " | lCoarseNodesPerDir: " << this->lCoarseNodesPerDir << std::endl;
+      std::cout << "p=" << myRank << " | offsets:            " << this->offsets << std::endl;
+      std::cout << "p=" << myRank << " | startIndices:       " << this->startIndices << std::endl;
+    }
   }
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -247,6 +397,7 @@ namespace MueLu {
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   void LocalLexicographicIndexManager<LocalOrdinal, GlobalOrdinal, Node>::
   getCoarseNodeFineLID(const LO i, const LO j, const LO k, LO& myLID) const {
+    myLID = k*this->numGhostedNodes10 + j*this->ghostedNodesPerDir[0] + i;
   }
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
