@@ -105,6 +105,7 @@ MACRO(TRILINOS_SYSTEM_SPECIFIC_CTEST_DRIVER)
           "-DKokkos_ENABLE_Cuda:BOOL=ON"
           "-DKokkos_ENABLE_Cuda_UVM:BOOL=ON"
           "-DKokkos_ENABLE_Cuda_Lambda:BOOL=ON"
+          "-DTrilinos_ENABLE_Epetra:BOOL=OFF"
 
       ### MISC ###
       "-DCMAKE_VERBOSE_MAKEFILE:BOOL=ON"
