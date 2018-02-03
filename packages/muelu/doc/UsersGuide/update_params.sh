@@ -143,7 +143,7 @@ echo ';' >> $code_file
 
 echo '  std::map<std::string,std::string> MasterList::DefaultProblemTypeLists_ = DefaultProblemStrings<std::string,std::string>' >> $code_file
 
-PROBLEM_TYPES=( "Poisson-2D" "Poisson-3D" "Elasticity-2D" "Elasticity-3D" "MHD" "ConvectionDiffusion" )
+PROBLEM_TYPES=( "Poisson-2D" "Poisson-2D-complex" "Poisson-3D" "Poisson-3D-complex" "Elasticity-2D" "Elasticity-2D-complex" "Elasticity-3D" "Elasticity-3D-complex" "MHD" "ConvectionDiffusion" )
 
 for i in "${PROBLEM_TYPES[@]}"; do
   echo "(\"$i\"," >> $code_file

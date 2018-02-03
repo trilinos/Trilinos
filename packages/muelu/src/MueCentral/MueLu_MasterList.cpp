@@ -71,7 +71,7 @@ namespace MueLu {
     }
     return problemSpecificList_;
   }
- 
+
    std::string MasterList::interpretParameterName(const std::string& name, const std::string& value) {
 
     // used to concatenate the return string
@@ -141,7 +141,7 @@ namespace MueLu {
     if (name == "use external multigrid package") { ss << "<Parameter name=\"use external multigrid package\" type=\"string\" value=" << value << "/>"; return ss.str(); }      
     return "";
   }
- 
+
   Teuchos::RCP<Teuchos::ParameterList> MasterList::masterList_ = Teuchos::null;
   Teuchos::RCP<Teuchos::ParameterList> MasterList::problemSpecificList_ = Teuchos::null;
   std::string                          MasterList::problemType_ = "unknown";
@@ -262,7 +262,7 @@ namespace MueLu {
             "<Parameter name=\"number of equations\" type=\"int\" value=\"1\"/>"
           
             "<Parameter name=\"smoother: type\" type=\"string\" value=\"CHEBYSHEV\"/>"
-
+          
             "<Parameter name=\"multigrid algorithm\" type=\"string\" value=\"sa\"/>"
           
     "</ParameterList>"
@@ -274,17 +274,17 @@ namespace MueLu {
             "<Parameter name=\"number of equations\" type=\"int\" value=\"1\"/>"
           
             "<Parameter name=\"smoother: type\" type=\"string\" value=\"RELAXATION\"/>"
-
-            "<ParameterList name=\"smoother: params\">"
- 
-                    "<Parameter name=\"relaxation: type\" type=\"string\" value=\"Symmetric Gauss-Seidel\"/>"
-
-            "</ParameterList>"
           
+    "<ParameterList name=\"smoother: params\">"
+    
+        "<Parameter name=\"relaxation: type\" type=\"string\" value=\"Symmetric Gauss-Seidel\"/>"
+        
+    "</ParameterList>"
+  
             "<Parameter name=\"multigrid algorithm\" type=\"string\" value=\"sa\"/>"
           
     "</ParameterList>"
-  )                                                                                                                                        
+  )
 ("Poisson-3D",
 
     "<ParameterList name=\"MueLu\">"
@@ -304,13 +304,13 @@ namespace MueLu {
             "<Parameter name=\"number of equations\" type=\"int\" value=\"1\"/>"
           
             "<Parameter name=\"smoother: type\" type=\"string\" value=\"RELAXATION\"/>"
-
-            "<ParameterList name=\"smoother: params\">"
- 
-                    "<Parameter name=\"relaxation: type\" type=\"string\" value=\"Symmetric Gauss-Seidel\"/>"
-
-            "</ParameterList>"
           
+    "<ParameterList name=\"smoother: params\">"
+    
+        "<Parameter name=\"relaxation: type\" type=\"string\" value=\"Symmetric Gauss-Seidel\"/>"
+        
+    "</ParameterList>"
+  
             "<Parameter name=\"multigrid algorithm\" type=\"string\" value=\"sa\"/>"
           
     "</ParameterList>"
@@ -334,17 +334,17 @@ namespace MueLu {
             "<Parameter name=\"number of equations\" type=\"int\" value=\"2\"/>"
           
             "<Parameter name=\"smoother: type\" type=\"string\" value=\"RELAXATION\"/>"
- 
-            "<ParameterList name=\"smoother: params\">"
- 
-                    "<Parameter name=\"relaxation: type\" type=\"string\" value=\"Symmetric Gauss-Seidel\"/>"
-
-            "</ParameterList>"
           
+    "<ParameterList name=\"smoother: params\">"
+    
+        "<Parameter name=\"relaxation: type\" type=\"string\" value=\"Symmetric Gauss-Seidel\"/>"
+        
+    "</ParameterList>"
+  
             "<Parameter name=\"multigrid algorithm\" type=\"string\" value=\"sa\"/>"
           
     "</ParameterList>"
-  )                                                                                                                                         
+  )
 ("Elasticity-3D",
 
     "<ParameterList name=\"MueLu\">"
@@ -364,17 +364,17 @@ namespace MueLu {
             "<Parameter name=\"number of equations\" type=\"int\" value=\"3\"/>"
           
             "<Parameter name=\"smoother: type\" type=\"string\" value=\"RELAXATION\"/>"
- 
-            "<ParameterList name=\"smoother: params\">"
- 
-                    "<Parameter name=\"relaxation: type\" type=\"string\" value=\"Symmetric Gauss-Seidel\"/>"
-
-            "</ParameterList>"
           
+    "<ParameterList name=\"smoother: params\">"
+    
+        "<Parameter name=\"relaxation: type\" type=\"string\" value=\"Symmetric Gauss-Seidel\"/>"
+        
+    "</ParameterList>"
+  
             "<Parameter name=\"multigrid algorithm\" type=\"string\" value=\"sa\"/>"
           
     "</ParameterList>"
-  )                                                                                                                                         
+  )
 ("MHD",
 
     "<ParameterList name=\"MueLu\">"
@@ -502,9 +502,9 @@ namespace MueLu {
       
          ("aggregation: Dirichlet threshold","aggregation: Dirichlet threshold")
       
+         ("aggregation: phase 1 algorithm","aggregation: phase 1 algorithm")
+      
          ("aggregation: enable phase 1","aggregation: enable phase 1")
-         
-         ("aggregation: phase 1 algorithm","Serial")
       
          ("aggregation: enable phase 2a","aggregation: enable phase 2a")
       
