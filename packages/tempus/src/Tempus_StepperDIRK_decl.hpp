@@ -198,7 +198,7 @@ protected:
  *  \f]
  *  compute the DIRK stage time-derivative,
  *  \f[
- *    \dot{X}_i = \frac{X_{i} - \tilde{X}}{a_{ii} \Delta t}\f$
+ *    \dot{X}_i = \frac{X_{i} - \tilde{X}}{a_{ii} \Delta t}
  *  \f]
  *  \f$\ddot{x}\f$ is not used and set to null.
  */
