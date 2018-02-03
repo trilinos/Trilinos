@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 xsltproc tex.xsl masterList.xml > paramlist.tex
 xsltproc tex_hidden.xsl masterList.xml > paramlist_hidden.tex
