@@ -26,7 +26,6 @@ namespace Tacho {
              const DiagType diagA,
              const ViewTypeA &A,
              const ViewTypeB &B) {
-
         typedef typename ViewTypeA::non_const_value_type value_type;
         typedef typename ViewTypeB::non_const_value_type value_type_b;
         
@@ -36,9 +35,10 @@ namespace Tacho {
         static_assert(std::is_same<value_type,value_type_b>::value,
                       "A and B do not have the same value type.");
         
-        const ordinal_type m = B.dimension_0(), n = B.dimension_1();
+        const ordinal_type m = B.dimension_0();
+        const ordinal_type n = B.dimension_1();
         
-        if (m > 0 && n > 0) {
+        if (m > 0 && n > 0) 
           for (ordinal_type p=0,offsB=0;p<n;++p,offsB+=B.stride_1()) {  
             BlasTeam<value_type>::trsv(member,
                                        ArgUplo::param, ArgTransA::param, 
@@ -47,7 +47,6 @@ namespace Tacho {
                                        A.data(), A.stride_1(), 
                                        (B.data() + offsB), B.stride_0());
           }
-        }
         return 0;
       }
     };

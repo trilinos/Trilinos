@@ -37,7 +37,8 @@ namespace Tacho {
         static_assert(std::is_same<value_type,value_type_b>::value,
                       "A and B do not have the same value type.");
         
-        const ordinal_type m = B.dimension_0(), n = B.dimension_1();
+        const ordinal_type m = B.dimension_0();
+        const ordinal_type n = B.dimension_1();
 
         if (m > 0 && n > 0) 
           BlasTeam<value_type>::trsm(member,
@@ -49,7 +50,6 @@ namespace Tacho {
                                      value_type(alpha),
                                      A.data(), A.stride_1(),
                                      B.data(), B.stride_1());
-
         return 0;
       }
     };

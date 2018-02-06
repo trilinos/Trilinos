@@ -42,12 +42,11 @@ namespace Tacho {
                       std::is_same<value_type_b,value_type_c>::value,
                       "A, B and C do not have the same value type.");
 
-        const ordinal_type 
-          m = A.dimension_0(),
-          n = A.dimension_1(),
-          k = C.dimension_1();
+        const ordinal_type m = A.dimension_0();
+        const ordinal_type n = A.dimension_1();
+        const ordinal_type k = C.dimension_1();
 
-        if (m > 0 && n > 0 && k > 0) {
+        if (m > 0 && n > 0 && k > 0) 
           for (ordinal_type p=0,offsB=0,offsC=0;p<k;++p,offsB+=B.stride_1(),offsC+=C.stride_1()) {
             BlasTeam<value_type>::gemv(member,
                                        ArgTrans::param, 
@@ -58,7 +57,6 @@ namespace Tacho {
                                        value_type(beta), 
                                        (C.data() + offsC), C.stride_0());
           }
-        }
         return 0;
       }
     };

@@ -115,7 +115,7 @@ namespace Tacho {
     enum : int { 
       MaxDependenceSize = 8,
       ThresholdSolvePhaseUsingBlas3 = 12,
-      CudaVectorSize = 4
+      CudaVectorSize = 8
     };
 
     ///
@@ -521,20 +521,6 @@ namespace Tacho {
                                        typename ViewType::memory_traits>;
     template <typename ViewType>
     using ConstUnmanagedViewType = ConstViewType<UnmanagedViewType<ViewType> >;
-
-    template<typename T>
-    KOKKOS_FORCEINLINE_FUNCTION
-    typename std::enable_if<!std::is_integral<T>::value,ordinal_type>::type
-    get_team_rank(const T& member) {
-      return member.team_rank();
-    }
-
-    template<typename T>
-    KOKKOS_FORCEINLINE_FUNCTION
-    typename std::enable_if<std::is_integral<T>::value,ordinal_type>::type
-    get_team_rank(const T& member) {
-      return 0;
-    }
 
   }
 }

@@ -23,6 +23,7 @@ namespace Tacho {
                          T *A, const int as0, const int as1,
                          int *info) {
           if (m <= 0) return;
+
           typedef ArithTraits<T> ats;
           for (int p=0;p<m;++p) {
             const int jend = m-p-1;
@@ -35,7 +36,7 @@ namespace Tacho {
             Kokkos::single(Kokkos::PerTeam(member), [&] (){
                 *alpha11 = sqrt(ats::real(*alpha11));                
               });
-            
+            member.team_barrier();
             const auto alpha = ats::real(*alpha11);
             Kokkos::parallel_for(Kokkos::TeamThreadRange(member,jend),[&](const int &j) {
                 Kokkos::single(Kokkos::PerThread(member), [&] () {
@@ -48,7 +49,6 @@ namespace Tacho {
                   });
               });
           }
-          
         }
 
 

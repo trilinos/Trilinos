@@ -14,17 +14,13 @@ namespace Tacho {
 
     template<typename ArgTransA, typename ArgTransB>
     struct Gemm<ArgTransA,ArgTransB,Algo::External> {
-      template<typename PolicyType,
-               typename MemberType,
-               typename ScalarType,
+      template<typename ScalarType,
                typename ViewTypeA,
                typename ViewTypeB,
                typename ViewTypeC>
       inline
       static int
-      invoke(PolicyType &policy,
-             MemberType &member,
-             const ScalarType alpha,
+      invoke(const ScalarType alpha,
              const ViewTypeA &A,
              const ViewTypeB &B,
              const ScalarType beta,
@@ -48,21 +44,45 @@ namespace Tacho {
           k = (std::is_same<ArgTransB,Trans::NoTranspose>::value ? B.dimension_0() : B.dimension_1());
         
         if (m > 0 && n > 0 && k > 0) {
-          if (get_team_rank(member) == 0) {
-            Blas<value_type>::gemm(ArgTransA::param, ArgTransB::param,
-                                   m, n, k,
-                                   value_type(alpha),
-                                   A.data(), A.stride_1(),
-                                   B.data(), B.stride_1(),
-                                   value_type(beta),
-                                   C.data(), C.stride_1());
-          }
+          Blas<value_type>::gemm(ArgTransA::param, ArgTransB::param,
+                                 m, n, k,
+                                 value_type(alpha),
+                                 A.data(), A.stride_1(),
+                                 B.data(), B.stride_1(),
+                                 value_type(beta),
+                                 C.data(), C.stride_1());
         }
 #else
-            TACHO_TEST_FOR_ABORT( true, ">> This function is only allowed in host space.");
+        TACHO_TEST_FOR_ABORT( true, ">> This function is only allowed in host space.");
 #endif
         return 0;
       }
+      
+      template<typename PolicyType,
+               typename MemberType,
+               typename ScalarType,
+               typename ViewTypeA,
+               typename ViewTypeB,
+               typename ViewTypeC>
+      inline
+      static int
+      invoke(PolicyType &policy,
+             MemberType &member,
+             const ScalarType alpha,
+             const ViewTypeA &A,
+             const ViewTypeB &B,
+             const ScalarType beta,
+             const ViewTypeC &C) {
+#if defined( KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_HOST )        
+        Kokkos::single(Kokkos::PerTeam(member), [&]() {
+            invoke(alpha, A, B, beta, C);
+          });
+#else
+        TACHO_TEST_FOR_ABORT( true, ">> This function is only allowed in host space.");
+#endif
+        return 0;
+      }
+
     };
   }
 }

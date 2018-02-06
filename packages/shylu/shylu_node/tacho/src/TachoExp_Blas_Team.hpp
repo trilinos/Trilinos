@@ -447,13 +447,13 @@ namespace Tacho {
               member.team_barrier();
               if (!use_unit_diag) {
                 const T alpha11 = cjA(A[p*as0+p*as1]);
-                
                 Kokkos::parallel_for(Kokkos::TeamThreadRange(member,0,jend),[&](const int &j) {
                     Kokkos::single(Kokkos::PerThread(member), [&]() {
                         b1t[j*bs1] /= alpha11;
                       });
                   });
               }
+
               Kokkos::parallel_for(Kokkos::TeamThreadRange(member,jend),[&](const int &j) {
                   Kokkos::parallel_for(Kokkos::ThreadVectorRange(member,iend),[&](const int &i) {
                       B2[i*bs0+j*bs1] -= cjA(a21[i*as0]) * b1t[j*bs1];

@@ -42,9 +42,9 @@ namespace Tacho {
                       std::is_same<value_type_b,value_type_c>::value,
                       "A, B and C do not have the same value type.");
 
+        const ordinal_type m = C.dimension_0();
+        const ordinal_type n = C.dimension_1();
         const ordinal_type 
-          m = C.dimension_0(),
-          n = C.dimension_1(),
           k = (std::is_same<ArgTransB,Trans::NoTranspose>::value ? B.dimension_0() : B.dimension_1());
         
         if (m > 0 && n > 0 && k > 0) 
@@ -56,7 +56,6 @@ namespace Tacho {
                                      B.data(), B.stride_1(),
                                      value_type(beta),
                                      C.data(), C.stride_1());
-
         return 0;
       }
     };

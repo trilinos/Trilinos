@@ -35,7 +35,6 @@ namespace Tacho {
                                         m,
                                         A.data(), A.stride_1(),
                                         &r_val);
-        
         return r_val;
       }
     };

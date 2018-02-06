@@ -177,6 +177,7 @@ namespace Tacho {
         double flop = 0;
         auto h_supernodes = Kokkos::create_mirror_view(_supernodes);                    
         Kokkos::deep_copy(h_supernodes, _supernodes);  
+        
         for (ordinal_type sid=0;sid<_nsupernodes;++sid) {
           auto &s = h_supernodes(sid);
           const ordinal_type m = s.m, n = s.n - s.m;
@@ -566,10 +567,15 @@ namespace Tacho {
         
         memory_pool_type bufpool;
         {
+#if defined (KOKKOS_ENABLE_CUDA)
+          const size_t cuda_max_team_size = 32;
+#else
+          const size_t cuda_max_team_size =  1;          
+#endif
           const size_t
             min_block_size  = 1,
             max_block_size  = max((_info.max_schur_size*_info.max_schur_size +
-                                   _info.max_schur_size)*sizeof(value_type),
+                                   _info.max_schur_size*cuda_max_team_size)*sizeof(value_type),
                                   _m*sizeof(ordinal_type));
           
           ordinal_type ishift = 0;
@@ -618,10 +624,19 @@ namespace Tacho {
         timer.reset();
         const ordinal_type nroots = _stree_roots.dimension_0();
         for (ordinal_type i=0;i<nroots;++i)
-          Kokkos::host_spawn(Kokkos::TaskSingle(sched, Kokkos::TaskPriority::High),
+          Kokkos::host_spawn(Kokkos::TaskTeam(sched, Kokkos::TaskPriority::High),
                              functor_type(sched, bufpool, _info, _stree_roots(i)));
         Kokkos::wait(sched);
         stat.t_factor = timer.seconds();
+        exec_space::fence();
+
+        {
+          auto superpanel_buf = Kokkos::create_mirror_view(_superpanel_buf);
+          Kokkos::deep_copy(superpanel_buf, _superpanel_buf);
+          for (int i=0;i<superpanel_buf.dimension_0();++i) {
+            std::cout << " spanel " << i << " val = " << superpanel_buf(i) << "\n";
+          }
+        }
         
         track_free(bufpool.capacity());
         track_free(sched.memory()->capacity());

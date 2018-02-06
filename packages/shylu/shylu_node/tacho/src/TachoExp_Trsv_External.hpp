@@ -14,16 +14,12 @@ namespace Tacho {
     
     template<typename ArgUplo, typename ArgTransA>
     struct Trsv<ArgUplo,ArgTransA,Algo::External> {      
-      template<typename PolicyType,
-               typename MemberType,
-               typename DiagType,
+      template<typename DiagType,
                typename ViewTypeA,
                typename ViewTypeB>
       inline
       static int
-      invoke(PolicyType &policy,
-             MemberType &member,
-             const DiagType diagA,
+      invoke(const DiagType diagA,
              const ViewTypeA &A,
              const ViewTypeB &B) {
 #if defined( KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_HOST )
@@ -39,18 +35,38 @@ namespace Tacho {
         const ordinal_type m = B.dimension_0(), n = B.dimension_1();
         
         if (m > 0 && n > 0) {
-          if (get_team_rank(member) == 0) {
-            for (ordinal_type p=0,offsB=0;p<n;++p,offsB+=B.stride_1()) {  
-              Blas<value_type>::trsv(ArgUplo::param, ArgTransA::param, 
-                                     diagA.param, 
-                                     m,
-                                     A.data(), A.stride_1(), 
-                                     (B.data() + offsB), B.stride_0());
-            }
+          for (ordinal_type p=0,offsB=0;p<n;++p,offsB+=B.stride_1()) {  
+            Blas<value_type>::trsv(ArgUplo::param, ArgTransA::param, 
+                                   diagA.param, 
+                                   m,
+                                   A.data(), A.stride_1(), 
+                                   (B.data() + offsB), B.stride_0());
           }
         }
 #else
-            TACHO_TEST_FOR_ABORT( true, "This function is only allowed in host space.");
+        TACHO_TEST_FOR_ABORT( true, "This function is only allowed in host space.");
+#endif
+        return 0;
+      }
+
+      template<typename PolicyType,
+               typename MemberType,
+               typename DiagType,
+               typename ViewTypeA,
+               typename ViewTypeB>
+      inline
+      static int
+      invoke(PolicyType &policy,
+             MemberType &member,
+             const DiagType diagA,
+             const ViewTypeA &A,
+             const ViewTypeB &B) {
+#if defined( KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_HOST )
+        Kokkos::single(Kokkos::PerTeam(member), [&]() {
+            invoke(diagA, A, B);
+          });
+#else
+        TACHO_TEST_FOR_ABORT( true, "This function is only allowed in host space.");
 #endif
         return 0;
       }
