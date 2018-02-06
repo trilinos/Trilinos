@@ -18,9 +18,9 @@ namespace Tacho {
       typedef ValueType value_type;
       typedef value_type non_const_value_type;
 
-      typedef ExecSpace exec_space;
+      typedef ExecSpace execution_space;
 
-      typedef Kokkos::Future<int,exec_space> future_type;
+      typedef Kokkos::Future<int,execution_space> future_type;
 
     private:
       ordinal_type _offm, _offn, _m, _n, _rs, _cs;
@@ -296,40 +296,33 @@ namespace Tacho {
       }
     }
 
-    template<typename DenseMatrixViewTypeA, 
-             typename DenseMatrixViewTypeB, 
-             typename OrdinalTypeArray>
-    KOKKOS_INLINE_FUNCTION
-    void
-    applyRowPermutation(const DenseMatrixViewTypeA &A, 
-                        const DenseMatrixViewTypeB &B,
-                        const OrdinalTypeArray &p) {
-      const ordinal_type m = A.dimension_0(), n = A.dimension_1();
-      for (ordinal_type i=0;i<m;++i)
-        for (ordinal_type j=0;j<n;++j)
-          A(p(i), j) = B(i, j);
-    }
-
-    template<typename DenseMatrixViewTypeA, 
-             typename DenseMatrixViewTypeB, 
+    template<typename DenseMatrixViewType,
              typename OrdinalTypeArray>
     inline
     void
-    applyRowPermutation_Device(const DenseMatrixViewTypeA &A, 
-                               const DenseMatrixViewTypeB &B,
-                               const OrdinalTypeArray &p) {
+    applyRowPermutation(const DenseMatrixViewType &A, 
+                        const DenseMatrixViewType &B,
+                        const OrdinalTypeArray &p) {
       const ordinal_type m = A.dimension_0(), n = A.dimension_1();
-      typedef typename DenseMatrixViewTypeA::execution_space exec_space;
+      typedef typename DenseMatrixViewType::execution_space execution_space;
 
-      Kokkos::TeamPolicy<exec_space,
-        Kokkos::Schedule<Kokkos::Static> > policy(m, 1 /* teamsize */, 1024 /* worksetsize */);
-
-      Kokkos::parallel_for
-        (policy, KOKKOS_LAMBDA (const typename Kokkos::TeamPolicy<exec_space>::member_type &member) {
-          const ordinal_type i = member.league_rank();
+      if (std::is_same<typename execution_space::memory_space,Kokkos::HostSpace>::value) {
+        // serial copy on host
+        for (ordinal_type i=0;i<m;++i)
           for (ordinal_type j=0;j<n;++j)
             A(p(i), j) = B(i, j);
-        });
+      } else {      
+        // this probably is not good for layout left... 
+        Kokkos::TeamPolicy<execution_space,Kokkos::Schedule<Kokkos::Static> > policy(m, 1);
+        Kokkos::parallel_for
+          (policy, KOKKOS_LAMBDA (const typename Kokkos::TeamPolicy<execution_space>::member_type &member) {
+            const ordinal_type i = member.league_rank();
+            Kokkos::parallel_for(Kokkos::ThreadVectorRange(member,n),[&](const int &j) {
+                A(p(i), j) = B(i, j);
+              });
+          });
+      }
+
     }
 
   }

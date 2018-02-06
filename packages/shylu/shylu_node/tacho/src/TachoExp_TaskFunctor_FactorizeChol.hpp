@@ -64,11 +64,7 @@ namespace Tacho {
       KOKKOS_INLINE_FUNCTION
       ordinal_type factorize_internal(member_type &member, const ordinal_type n, const bool final) {
         // ABR workssize and team private map size
-#if defined( KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_HOST )
-        const size_t team_size = 1; 
-#else
         const size_t team_size = member.team_size();
-#endif
         const size_t bufsize = (n*n + _info.max_schur_size*team_size)*sizeof(mat_value_type);
         
         mat_value_pointer_type buf = NULL;
@@ -83,7 +79,8 @@ namespace Tacho {
           ::factorize_recursive_serial(_sched, member, _info, _sid, final, buf, bufsize);
         
         Kokkos::single(Kokkos::PerTeam(member), [&]() {
-            _bufpool.deallocate(buf, bufsize);
+            if (bufsize > 0)
+              _bufpool.deallocate(buf, bufsize);
           });
 
         return 0;

@@ -537,7 +537,6 @@ namespace Tacho {
         timer.reset();
 
         typedef TaskFunctor_FactorizeChol<value_type,exec_space> functor_type;
-        //typedef Kokkos::Future<int,exec_space> future_type;
         
         sched_type sched;
         {
@@ -567,13 +566,11 @@ namespace Tacho {
         
         memory_pool_type bufpool;
         {
-#if defined (KOKKOS_ENABLE_CUDA)
-          const size_t cuda_max_team_size = 32;
-#else
-          const size_t cuda_max_team_size =  1;          
-#endif
+          const size_t cuda_max_team_size 
+            = std::is_same<typename exec_space::memory_space,Kokkos::HostSpace>::value 
+            ? 1 : 32/CudaVectorSize;
           const size_t
-            min_block_size  = 1,
+            min_block_size  = 16,
             max_block_size  = max((_info.max_schur_size*_info.max_schur_size +
                                    _info.max_schur_size*cuda_max_team_size)*sizeof(value_type),
                                   _m*sizeof(ordinal_type));
@@ -628,12 +625,11 @@ namespace Tacho {
                              functor_type(sched, bufpool, _info, _stree_roots(i)));
         Kokkos::wait(sched);
         stat.t_factor = timer.seconds();
-        exec_space::fence();
 
         {
           auto superpanel_buf = Kokkos::create_mirror_view(_superpanel_buf);
           Kokkos::deep_copy(superpanel_buf, _superpanel_buf);
-          for (int i=0;i<superpanel_buf.dimension_0();++i) {
+          for (size_t i=0;i<superpanel_buf.dimension_0();++i) {
             std::cout << " spanel " << i << " val = " << superpanel_buf(i) << "\n";
           }
         }
@@ -663,7 +659,6 @@ namespace Tacho {
         timer.reset();
 
         typedef TaskFunctor_FactorizeCholPanel<value_type,exec_space> functor_type;
-        //typedef Kokkos::Future<int,exec_space> future_type;
         
         sched_type sched;
         {
@@ -694,9 +689,15 @@ namespace Tacho {
         memory_pool_type bufpool;
         const ordinal_type nb = panelsize > 0 ? panelsize : _info.max_schur_size;
         {
+          const size_t cuda_max_team_size 
+            = std::is_same<typename exec_space::memory_space,Kokkos::HostSpace>::value 
+            ? 1 : 32/CudaVectorSize;
           const size_t
-            min_block_size  = 1,
-            max_block_size  = max((nb*_info.max_schur_size + _info.max_schur_size)*sizeof(value_type), _m*sizeof(ordinal_type));
+            min_block_size       = 16,
+            max_block_size_left  = (nb*_info.max_schur_size + 
+                                    _info.max_schur_size*cuda_max_team_size)*sizeof(value_type),
+            max_block_size_right = _m*sizeof(ordinal_type),
+            max_block_size       = max(max_block_size_left, max_block_size_right);
           
           ordinal_type ishift = 0;
           size_t superblock_size = 1;
@@ -742,11 +743,11 @@ namespace Tacho {
         stat.t_copy = timer.seconds();
         
         timer.reset();
-        //const ordinal_type nroots = _stree_roots.dimension_0();
+        // const ordinal_type nroots = _stree_roots.dimension_0();
         // for (ordinal_type i=0;i<nroots;++i)
         //   Kokkos::host_spawn(Kokkos::TaskSingle(sched, Kokkos::TaskPriority::High),
         //                      functor_type(sched, bufpool, _info, _stree_roots(i), nb));
-        Kokkos::wait(sched);
+        // Kokkos::wait(sched);
         stat.t_factor = timer.seconds();
         
         track_free(bufpool.capacity());
@@ -787,7 +788,7 @@ namespace Tacho {
 
         // copy b -> t
         timer.reset();
-        applyRowPermutation_Device(t, b, _peri);
+        applyRowPermutation(t, b, _peri);
         stat.t_extra = timer.seconds();
 
         {
@@ -795,7 +796,6 @@ namespace Tacho {
 
           typedef TaskFunctor_SolveLowerChol<value_type,exec_space> functor_lower_type;
           typedef TaskFunctor_SolveUpperChol<value_type,exec_space> functor_upper_type;
-          //typedef Kokkos::Future<int,exec_space> future_type;
           
           {
             const size_t max_functor_size = 2*max(sizeof(functor_lower_type), sizeof(functor_upper_type));
@@ -821,7 +821,7 @@ namespace Tacho {
           
           {
             const size_t
-              min_block_size  = 1,
+              min_block_size  = 16,
               max_block_size  = 2*_info.max_schur_size*sizeof(value_type)*x.dimension_1();
             
             size_t superblock_size = 1;
@@ -855,9 +855,9 @@ namespace Tacho {
           timer.reset();
           const ordinal_type nroots = _stree_roots.dimension_0();
           for (ordinal_type i=0;i<nroots;++i) {
-            auto fl = Kokkos::host_spawn(Kokkos::TaskSingle(_sched_solve, Kokkos::TaskPriority::High),
+            auto fl = Kokkos::host_spawn(Kokkos::TaskTeam(_sched_solve, Kokkos::TaskPriority::High),
                                          functor_lower_type(_sched_solve, _bufpool_solve, _info, _stree_roots(i)));
-            auto fu = Kokkos::host_spawn(Kokkos::TaskSingle(fl,           Kokkos::TaskPriority::High),
+            auto fu = Kokkos::host_spawn(Kokkos::TaskTeam(          fl, Kokkos::TaskPriority::High),
                                          functor_upper_type(_sched_solve, _bufpool_solve, _info, _stree_roots(i)));
           }
           Kokkos::wait(_sched_solve);
@@ -866,8 +866,16 @@ namespace Tacho {
 
         // copy t -> x
         timer.reset();
-        applyRowPermutation_Device(x, t, _perm);
+        applyRowPermutation(x, t, _perm);
         stat.t_extra += timer.seconds();
+
+        {
+          auto xx = Kokkos::create_mirror_view(x);
+          Kokkos::deep_copy(xx, x);
+          for (size_t i=0;i<xx.dimension_0();++i) {
+            std::cout << " xx " << i << " val = " << xx(i,0) << "\n";
+          }
+        }
         
         if (verbose) {
           printf("Summary: NumericTools (ParallelSolve: %3d)\n", ordinal_type(x.dimension_1()));

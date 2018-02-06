@@ -194,10 +194,17 @@ namespace Tacho {
               Kokkos::parallel_for(Kokkos::TeamThreadRange(member,m),[&](const int &i) {
                   T t(0);
                   const T *__restrict__ tA = (A+i*as0);
-                  Kokkos::parallel_reduce(Kokkos::ThreadVectorRange(member,n),[&](const int &j, T &val) {
-                      val += cj(tA[j*as1])*x[j*xs0];
-                    }, t);                  
-                  y[i*ys0] += alpha*t;
+                  Kokkos::parallel_for(Kokkos::ThreadVectorRange(member,n),[&](const int &j) {
+                      t += cj(tA[j*as1])*x[j*xs0];
+                    });                  
+                  Kokkos::atomic_add(&y[i*ys0], alpha*t);
+                  // probably the above impl is better
+                  // Kokkos::parallel_reduce(Kokkos::ThreadVectorRange(member,n),[&](const int &j, T &val) {
+                  //     val += cj(tA[j*as1])*x[j*xs0];
+                  //   }, t);
+                  // Kokkos::single(Kokkos::PerTeam(member), [&]() {
+                  //     y[i*ys0] += alpha*t;
+                  //   });
                 });
             }
           }
