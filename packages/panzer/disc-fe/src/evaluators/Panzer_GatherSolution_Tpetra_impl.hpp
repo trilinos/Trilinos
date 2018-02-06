@@ -205,7 +205,6 @@ evaluateFields(typename TRAITS::EvalData workset)
    for (std::size_t fieldIndex=0; fieldIndex<gatherFields_.size();fieldIndex++) {
      auto offsets = scratch_offsets_[fieldIndex];
      auto gather_field = gatherFields_[fieldIndex];
-     int fieldNum = fieldIds_[fieldIndex];
 
      Kokkos::parallel_for(localCellIds.size(), KOKKOS_LAMBDA (std::size_t worksetCellIndex) {
        // loop over basis functions and fill the fields
