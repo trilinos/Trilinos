@@ -78,6 +78,31 @@ PHX_EVALUATOR_CTOR(ScalarToVector,p)
 }
 
 //**********************************************************************
+
+template<typename EvalT, typename Traits>				\
+ScalarToVector<EvalT,Traits>::
+ScalarToVector(const std::vector<PHX::Tag<ScalarT>> & input,
+               const PHX::FieldTag & output)
+{
+  // setup the fields
+  vector_field = output;
+
+  scalar_fields.resize(input.size());
+  for(std::size_t i=0;i<input.size();i++) 
+    scalar_fields[i] = input[i];
+
+  // add dependent/evaluate fields
+  this->addEvaluatedField(vector_field);
+  
+  for (std::size_t i=0; i < scalar_fields.size(); ++i)
+    this->addDependentField(scalar_fields[i]);
+  
+  // name array
+  std::string n = "ScalarToVector: " + vector_field.fieldTag().name();
+  this->setName(n);
+}
+
+//**********************************************************************
 PHX_POST_REGISTRATION_SETUP(ScalarToVector, /* worksets */, fm)
 {
   internal_scalar_fields = Kokkos::View<KokkosScalarFields_t*>("ScalarToVector::internal_scalar_fields", scalar_fields.size());
