@@ -743,15 +743,23 @@ namespace Tacho {
         stat.t_copy = timer.seconds();
         
         timer.reset();
-        // const ordinal_type nroots = _stree_roots.dimension_0();
-        // for (ordinal_type i=0;i<nroots;++i)
-        //   Kokkos::host_spawn(Kokkos::TaskSingle(sched, Kokkos::TaskPriority::High),
-        //                      functor_type(sched, bufpool, _info, _stree_roots(i), nb));
-        // Kokkos::wait(sched);
+        const ordinal_type nroots = _stree_roots.dimension_0();
+        for (ordinal_type i=0;i<nroots;++i)
+          Kokkos::host_spawn(Kokkos::TaskTeam(sched, Kokkos::TaskPriority::High),
+                             functor_type(sched, bufpool, _info, _stree_roots(i), nb));
+        Kokkos::wait(sched);
         stat.t_factor = timer.seconds();
         
         track_free(bufpool.capacity());
         track_free(sched.memory()->capacity());
+
+        {
+          auto superpanel_buf = Kokkos::create_mirror_view(_superpanel_buf);
+          Kokkos::deep_copy(superpanel_buf, _superpanel_buf);
+          for (size_t i=0;i<superpanel_buf.dimension_0();++i) {
+            std::cout << " panel version spanel " << i << " val = " << superpanel_buf(i) << "\n";
+          }
+        }
 
         // reset solve scheduler and bufpool
         _sched_solve_capacity = 0;
@@ -992,7 +1000,7 @@ namespace Tacho {
         timer.reset();
         const ordinal_type nroots = _stree_roots.dimension_0();
         for (ordinal_type i=0;i<nroots;++i)
-          Kokkos::host_spawn(Kokkos::TaskSingle(sched, Kokkos::TaskPriority::High),
+          Kokkos::host_spawn(Kokkos::TaskTeam(sched, Kokkos::TaskPriority::High),
                              functor_type(sched, bufpool, _info, _stree_roots(i), blksize));
         Kokkos::wait(sched);
         stat.t_factor = timer.seconds();

@@ -244,7 +244,7 @@ namespace Tacho {
           Kokkos::single(Kokkos::PerTeam(member), [&]() {          
               const bool use_byblocks = (_mb*1.5 < _s.max_decendant_supernode_size);
               future_type dep[MaxDependenceSize];
-              if (true) { //use_byblocks) {
+              if (use_byblocks) {
                 for (ordinal_type i=0;i<_s.nchildren;++i) {
                   auto f = Kokkos::task_spawn(Kokkos::TaskTeam(_sched, Kokkos::TaskPriority::Regular),
                                               TaskFunctor_FactorizeCholByBlocks

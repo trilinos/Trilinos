@@ -6,10 +6,40 @@
 
 #include "TachoExp_Util.hpp"
 
+#include "TachoExp_Lapack_External.hpp"
+#include "TachoExp_Lapack_Team.hpp"
+
+#include "TachoExp_Blas_External.hpp"
+#include "TachoExp_Blas_Team.hpp"
+
+#include "TachoExp_Chol.hpp"
+#include "TachoExp_Chol_External.hpp"
+#include "TachoExp_Chol_Internal.hpp"
+
+#include "TachoExp_Trsm.hpp"
+#include "TachoExp_Trsm_External.hpp"
+#include "TachoExp_Trsm_Internal.hpp"
+
+#include "TachoExp_Herk.hpp"
+#include "TachoExp_Herk_External.hpp"
+#include "TachoExp_Herk_Internal.hpp"
+
+#include "TachoExp_Gemm.hpp"
+#include "TachoExp_Gemm_External.hpp"
+#include "TachoExp_Gemm_Internal.hpp"
+
+#include "TachoExp_Trsv.hpp"
+#include "TachoExp_Trsv_External.hpp"
+#include "TachoExp_Trsv_Internal.hpp"
+
+#include "TachoExp_Gemv.hpp"
+#include "TachoExp_Gemv_External.hpp"
+#include "TachoExp_Gemv_Internal.hpp"
+
 namespace Tacho {
 
   namespace Experimental {
-
+    
     template<>
     struct CholSupernodes<Algo::Workflow::SerialPanel> {
       template<typename SchedulerType,
@@ -26,9 +56,18 @@ namespace Tacho {
         typedef typename supernode_info_type::value_type value_type;
         typedef typename supernode_info_type::value_type_matrix value_type_matrix;
 
+        // algorithm choice
+        typedef typename std::conditional
+          <std::is_same<Kokkos::Impl::ActiveExecutionMemorySpace,Kokkos::HostSpace>::value,
+           Algo::External,Algo::Internal>::type CholAlgoType;
+
+        typedef typename std::conditional
+          <std::is_same<Kokkos::Impl::ActiveExecutionMemorySpace,Kokkos::HostSpace>::value,
+           Algo::External,Algo::Internal>::type TrsmAlgoType;
+
         // get current supernode 
         const auto &s = info.supernodes(sid);
-
+        
         // get panel pointer
         value_type *ptr = s.buf;
 
@@ -38,12 +77,12 @@ namespace Tacho {
         // m is available, then factorize the supernode block
         if (m > 0) {
           UnmanagedViewType<value_type_matrix> ATL(ptr, m, m); ptr += m*m;
-          Chol<Uplo::Upper,Algo::External>::invoke(sched, member, ATL);
+          Chol<Uplo::Upper,CholAlgoType>::invoke(sched, member, ATL);
 
           // n is available, then solve interface block
           if (n > 0) {
             UnmanagedViewType<value_type_matrix> ATR(ptr, m, n);
-            Trsm<Side::Left,Uplo::Upper,Trans::ConjTranspose,Algo::External>
+            Trsm<Side::Left,Uplo::Upper,Trans::ConjTranspose,TrsmAlgoType>
               ::invoke(sched, member, Diag::NonUnit(), 1.0, ATL, ATR);
           }
         }
@@ -69,6 +108,17 @@ namespace Tacho {
         typedef typename supernode_info_type::value_type_matrix value_type_matrix;
         typedef typename supernode_info_type::dense_block_type dense_block_type;
 
+        // algorithm choice
+        typedef typename std::conditional
+          <std::is_same<Kokkos::Impl::ActiveExecutionMemorySpace,Kokkos::HostSpace>::value,
+           Algo::External,Algo::Internal>::type HerkAlgoType;
+
+        typedef typename std::conditional
+          <std::is_same<Kokkos::Impl::ActiveExecutionMemorySpace,Kokkos::HostSpace>::value,
+           Algo::External,Algo::Internal>::type GemmAlgoType;
+
+        member.team_barrier();
+
         // get current supernode
         const auto &cur = info.supernodes(sid);
 
@@ -88,8 +138,15 @@ namespace Tacho {
             srcend  = info.sid_block_colidx(send).second, 
             srcsize = srcend - srcbeg;
 
-          TACHO_TEST_FOR_ABORT(bufsize < (srcsize*sizeof(ordinal_type) + nn*nb*sizeof(value_type)), 
+#if defined (KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_HOST)
+          TACHO_TEST_FOR_ABORT(bufsize < (srcsize*sizeof(ordinal_type) + 
+                                          nn*nb*sizeof(value_type)),
                                "bufsize is smaller than required workspace");        
+#else          
+          TACHO_TEST_FOR_ABORT(bufsize < (srcsize*sizeof(ordinal_type)*member.team_size() + 
+                                          nn*nb*sizeof(value_type)),
+                               "bufsize is smaller than required workspace");        
+#endif
           
           UnmanagedViewType<value_type_matrix> ABL(cur.buf    +    m*m, m, nn);
           UnmanagedViewType<value_type_matrix> ATR(ABL.data() + offn*m, m, nb);
@@ -98,10 +155,10 @@ namespace Tacho {
           UnmanagedViewType<value_type_matrix> ABR(ptr, nn, nb); ptr += ABR.span();
 
           if (offn == 0 && nb == n)
-            Herk<Uplo::Upper,Trans::ConjTranspose,Algo::External>
+            Herk<Uplo::Upper,Trans::ConjTranspose,HerkAlgoType>
               ::invoke(sched, member, -1.0, ATR, 0.0, ABR);            
           else 
-            Gemm<Trans::ConjTranspose,Trans::NoTranspose,Algo::External>
+            Gemm<Trans::ConjTranspose,Trans::NoTranspose,GemmAlgoType>
               ::invoke(sched, member, -1.0, ABL, ATR, 0.0, ABR);  
           
           // short cut to direct update
@@ -116,6 +173,7 @@ namespace Tacho {
               /* */ value_type *tgt = s.buf;
               const value_type *src = (value_type*)ABR.data();
 
+#if defined (KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_HOST)
               switch (info.front_update_mode) {
               case 1: {
                 for (ordinal_type js=0;js<nb;++js) {
@@ -152,16 +210,26 @@ namespace Tacho {
                 break;
               }
               }
+#else
+              Kokkos::parallel_for(Kokkos::TeamThreadRange(member, nb), [&](const ordinal_type &js) {
+                  const ordinal_type jt = js + offn;
+                  const value_type *__restrict__ ss = src + js*srcsize;
+                  /* */ value_type *__restrict__ tt = tgt + jt*srcsize;
+                  Kokkos::parallel_for(Kokkos::ThreadVectorRange(member, jt+1), [&](const ordinal_type &i) {
+                      Kokkos::atomic_fetch_add(&tt[i], ss[i]);
+                    });
+                });
+#endif
+              
               return 0;
             }
-          } 
+          }
           
-          dense_block_type A;
-          ordinal_type *s2t = (ordinal_type*)ptr;
-          
+#if defined (KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_HOST)
           // loop over target
           const ordinal_type *s_colidx = sbeg < send ? &info.gid_colidx(cur.gid_col_begin + srcbeg) : NULL;
           for (ordinal_type i=sbeg;i<send;++i) {
+            ordinal_type *s2t = (ordinal_type*)ptr;
             const auto &s = info.supernodes(info.sid_block_colidx(i).first);
             {
               const ordinal_type 
@@ -181,6 +249,7 @@ namespace Tacho {
             }
             
             {
+              dense_block_type A;
               A.set_view(s.m, s.n);
               A.attach_buffer(1, s.m, s.buf);
               
@@ -225,6 +294,127 @@ namespace Tacho {
               }
             }
           }
+#else
+#if 0 // single thread case works
+          Kokkos::single(Kokkos::PerTeam(member), [&]() {
+              // loop over target
+              const ordinal_type *s_colidx = sbeg < send ? &info.gid_colidx(cur.gid_col_begin + srcbeg) : NULL;
+              for (ordinal_type i=sbeg;i<send;++i) {
+                ordinal_type *s2t = (ordinal_type*)ptr;
+                const auto &s = info.supernodes(info.sid_block_colidx(i).first);
+                {
+                  const ordinal_type 
+                    tgtbeg  = info.sid_block_colidx(s.sid_col_begin).second,
+                    tgtend  = info.sid_block_colidx(s.sid_col_end-1).second,
+                    tgtsize = tgtend - tgtbeg;
+                  
+                  const ordinal_type *t_colidx = &info.gid_colidx(s.gid_col_begin + tgtbeg);
+                  for (ordinal_type k=0,l=0;k<nn;++k) {
+                    s2t[k] = -1;
+                    for (;l<tgtsize && t_colidx[l] <= s_colidx[k];++l)
+                      if (s_colidx[k] == t_colidx[l]) {
+                        s2t[k] = l; 
+                        break;
+                      }
+                  }
+                }
+                
+                {
+                  dense_block_type A;
+                  A.set_view(s.m, s.n);
+                  A.attach_buffer(1, s.m, s.buf);
+                  
+                  ordinal_type ijbeg = 0; for (;s2t[ijbeg] == -1; ++ijbeg) ;
+                  
+                  // lock
+                  for (ordinal_type jj=max(ijbeg,offn);jj<nn;++jj) {
+                    const ordinal_type js = jj - offn;
+                    for (ordinal_type ii=ijbeg;ii<nn;++ii) {
+                      const ordinal_type row = s2t[ii];
+                      if (row < s.m) Kokkos::atomic_fetch_add(&A(row, s2t[jj]), ABR(ii, js));
+                      else break;
+                    }
+                  }
+                }
+              }
+            });
+#endif
+          
+#if 1
+          const ordinal_type *s_colidx = sbeg < send ? &info.gid_colidx(cur.gid_col_begin + srcbeg) : NULL;
+          Kokkos::parallel_for(Kokkos::TeamThreadRange(member, sbeg, send), [&](const ordinal_type &i) {
+              ordinal_type *s2t = (((ordinal_type*)ptr) + (member.team_rank()*nn));
+              const auto &s = info.supernodes(info.sid_block_colidx(i).first);
+              {
+                const ordinal_type 
+                  tgtbeg  = info.sid_block_colidx(s.sid_col_begin).second,
+                  tgtend  = info.sid_block_colidx(s.sid_col_end-1).second,
+                  tgtsize = tgtend - tgtbeg;
+                
+                const ordinal_type *t_colidx = &info.gid_colidx(s.gid_col_begin + tgtbeg);
+                // Kokkos::single(Kokkos::PerThread(member), [&]() {
+                //     for (ordinal_type k=0,l=0;k<nn;++k) {
+                //       s2t[k] = -1;
+                //       for (;l<tgtsize && t_colidx[l] <= s_colidx[k];++l)
+                //         if (s_colidx[k] == t_colidx[l]) {
+                //           s2t[k] = l; 
+                //           break;
+                //         }
+                //     }
+                //   });
+                Kokkos::parallel_for(Kokkos::ThreadVectorRange(member, nn), [&](const ordinal_type &k) {
+                    s2t[k] = -1;
+                    for (ordinal_type l=0;l<tgtsize && t_colidx[l] <= s_colidx[k];++l)
+                      if (s_colidx[k] == t_colidx[l]) {
+                        s2t[k] = l; 
+                        break;
+                      }
+                  });
+              }
+                
+              {
+                dense_block_type A;
+                A.set_view(s.m, s.n);
+                A.attach_buffer(1, s.m, s.buf);
+                
+                ordinal_type ijbeg = 0; for (;s2t[ijbeg] == -1; ++ijbeg) ;
+                  
+                // Kokkos::single(Kokkos::PerThread(member), [&]() {
+                //     for (ordinal_type jj=max(ijbeg,offn);jj<nn;++jj) {
+                //       const ordinal_type js = jj - offn;
+                //       for (ordinal_type ii=ijbeg;ii<nn;++ii) {
+                //         const ordinal_type row = s2t[ii];
+                //         if (row < s.m) Kokkos::atomic_fetch_add(&A(row, s2t[jj]), ABR(ii, js));
+                //         else break;
+                //       }
+                //     }
+                //   });
+                // for (ordinal_type jj=max(ijbeg,offn);jj<nn;++jj) {
+                //   const ordinal_type js = jj - offn;
+                //   Kokkos::parallel_for
+                //     (Kokkos::ThreadVectorRange(member, nn - ijbeg), [&](const ordinal_type &iii) {
+                //       const ordinal_type ii = iii + ijbeg;
+                //       const ordinal_type row = s2t[ii];
+                //       if (row < s.m) Kokkos::atomic_fetch_add(&A(row, s2t[jj]), ABR(ii, js));
+                //     });
+                // }
+                const ordinal_type ijtmp = max(ijbeg,offn);
+                Kokkos::parallel_for
+                  (Kokkos::ThreadVectorRange(member, nn - ijtmp), [&](const ordinal_type &jjj) {
+                    const ordinal_type jj = jjj + ijtmp;
+                    const ordinal_type js = jj - offn;
+                    for (ordinal_type ii=ijbeg;ii<nn;++ii) {
+                      const ordinal_type row = s2t[ii];
+                      if (row < s.m) 
+                        Kokkos::atomic_fetch_add(&A(row, s2t[jj]), ABR(ii, js));
+                      else 
+                        break;
+                    }
+                  });                
+              }
+            });          
+#endif
+#endif
         }
         return 0;
       }
@@ -243,9 +433,8 @@ namespace Tacho {
                                  const ordinal_type bufsize,
                                  const ordinal_type np) {
         typedef SupernodeInfoType supernode_info_type;
-
+        
         typedef typename supernode_info_type::value_type value_type;
-        //typedef typename supernode_info_type::value_type_matrix value_type_matrix;
 
         const auto &s = info.supernodes(sid);
 
@@ -258,11 +447,15 @@ namespace Tacho {
         }
 
         {
-          const size_type n = s.n - s.m, bufsize_required = n*(min(np,n)+1)*sizeof(value_type);
-
+          const size_type n = s.n - s.m;
+#if defined (KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_HOST)
+          const size_type bufsize_required = n*(min(np,n)+1)*sizeof(value_type);
+#else
+          const size_type bufsize_required = n*(min(np,n)+member.team_size())*sizeof(value_type);
+#endif
           TACHO_TEST_FOR_ABORT(bufsize < static_cast<ordinal_type>(bufsize_required), 
                                "bufsize is smaller than required");
-
+          
           CholSupernodes<Algo::Workflow::SerialPanel>
             ::factorize(sched, member, info, sid);
 

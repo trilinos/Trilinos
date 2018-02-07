@@ -40,7 +40,7 @@ namespace Tacho {
       supernode_info_type _info;
       ordinal_type _sid;
 
-      supernode_type _s;
+      //supernode_type _s;
 
       ordinal_type _nb;
 
@@ -60,15 +60,19 @@ namespace Tacho {
           _bufpool(bufpool),
           _info(info),
           _sid(sid),
-          _s(info.supernodes(sid)),
+          //_s(info.supernodes(sid)),
           _nb(nb),
           _state(0) {}
 
       KOKKOS_INLINE_FUNCTION
       ordinal_type factorize_internal(member_type &member, const ordinal_type n, const bool final) {
-        const size_t bufsize = (_nb*n + _info.max_schur_size)*sizeof(mat_value_type);
+        const size_t team_size = member.team_size();
+        const size_t bufsize = (_nb*n + _info.max_schur_size*team_size)*sizeof(mat_value_type);
         
-        mat_value_type *buf = bufsize > 0 ? (mat_value_type*)_bufpool.allocate(bufsize) : NULL;
+        mat_value_type *buf = NULL;
+        Kokkos::single(Kokkos::PerTeam(member), [&](mat_value_type *&val) {        
+            val = bufsize > 0 ? (mat_value_type*)_bufpool.allocate(bufsize) : NULL;
+          }, buf);
 
         if (buf == NULL && bufsize) 
           return -1; // allocation fails
@@ -76,36 +80,41 @@ namespace Tacho {
         CholSupernodes<Algo::Workflow::SerialPanel>
           ::factorize_recursive_serial(_sched, member, _info, _sid, final, buf, bufsize, _nb);
         
-        _bufpool.deallocate(buf, bufsize);
-
+        Kokkos::single(Kokkos::PerTeam(member), [&]() {
+            if (bufsize > 0) 
+              _bufpool.deallocate(buf, bufsize);
+          });
+        
         return 0;
       }
 
       KOKKOS_INLINE_FUNCTION
       void operator()(member_type &member, value_type &r_val) {
+        const auto &_s = _info.supernodes(_sid);
+        constexpr ordinal_type done = 2;
+        TACHO_TEST_FOR_ABORT(_state == done, "dead lock");
+
         Kokkos::single(Kokkos::PerTeam(member), [&]() {
-            constexpr ordinal_type done = 2;
-            TACHO_TEST_FOR_ABORT(_state == done, "dead lock");
-
             if (_s.nchildren == 0 && _state == 0) _state = 1;
+          });
 
-            switch (_state) {
-            case 0: { // tree parallelsim
-              if (_info.serial_thres_size > _s.max_decendant_supernode_size) {
-                r_val = factorize_internal(member, _s.max_decendant_schur_size, true);
+        switch (_state) {
+        case 0: { // tree parallelsim
+          if (false && _info.serial_thres_size > _s.max_decendant_supernode_size) {
+            r_val = factorize_internal(member, _s.max_decendant_schur_size, true);
 
-                // allocation fails
-                if (r_val) 
-                  Kokkos::respawn(this, _sched, Kokkos::TaskPriority::Low);
-                else
-                  _state = done;
-              } else {
+            Kokkos::single(Kokkos::PerTeam(member), [&]() {
+                if (r_val) Kokkos::respawn(this, _sched, Kokkos::TaskPriority::Low);
+                else       _state = done;
+              });
+          } else {
+            Kokkos::single(Kokkos::PerTeam(member), [&]() {
                 // allocate dependence array to handle variable number of children schur contributions
                 future_type dep[MaxDependenceSize]; /* 4 */
 
                 // spawn children tasks and this (their parent) depends on the children tasks
                 for (ordinal_type i=0;i<_s.nchildren;++i) {
-                  auto f = Kokkos::task_spawn(Kokkos::TaskSingle(_sched, Kokkos::TaskPriority::Regular),
+                  auto f = Kokkos::task_spawn(Kokkos::TaskTeam(_sched, Kokkos::TaskPriority::Regular),
                                               TaskFunctor_FactorizeCholPanel(_sched, _bufpool, _info, _s.children[i], _nb));
                   TACHO_TEST_FOR_ABORT(f.is_null(), "task allocation fails");
                   dep[i] = f;
@@ -114,20 +123,19 @@ namespace Tacho {
                 // respawn with updating state
                 _state = 1;
                 Kokkos::respawn(this, Kokkos::when_all(dep, _s.nchildren), Kokkos::TaskPriority::Regular);
-              }
-              break;
-            }
-            case 1: {
-              r_val = factorize_internal(member, _s.n - _s.m, false);
-              // allocation fails
-              if (r_val) 
-                Kokkos::respawn(this, _sched, Kokkos::TaskPriority::Low);
-              else
-                _state = done;
-              break;
-            }
-            }
-          });
+              });
+          }
+          break;
+        }
+        case 1: {
+          r_val = factorize_internal(member, _s.n - _s.m, false);
+          Kokkos::single(Kokkos::PerTeam(member), [&]() {
+              if (r_val) Kokkos::respawn(this, _sched, Kokkos::TaskPriority::Low);
+              else       _state = done;
+            });
+          break;
+        }
+        }
       }
     };
   }
