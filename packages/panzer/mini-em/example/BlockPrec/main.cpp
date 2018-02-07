@@ -26,7 +26,9 @@
 #include "Panzer_InitialCondition_Builder.hpp"
 #include "Panzer_CheckBCConsistency.hpp"
 
+#include "Panzer_STK_MeshFactory.hpp"
 #include "Panzer_STK_CubeHexMeshFactory.hpp"
+#include "Panzer_STK_CubeTetMeshFactory.hpp"
 #include "Panzer_STK_SetupLOWSFactory.hpp"
 #include "Panzer_STK_WorksetFactory.hpp"
 #include "Panzer_STKConnManager.hpp"
@@ -127,6 +129,7 @@ int main(int argc,char * argv[])
       bool use_refmaxwell = false;
       bool print_diagnostics = false;
       int numTimeSteps = 1;
+      bool build_tet_mesh = false;
       Teuchos::CommandLineProcessor clp;
       clp.setOption("x-elements",&x_elements);
       clp.setOption("y-elements",&y_elements);
@@ -141,6 +144,7 @@ int main(int argc,char * argv[])
       clp.setOption("matrix-output","no-matrix-output",&matrix_output);
       clp.setOption("use-ilu","no-ilu",&use_ilu);
       clp.setOption("use-refmaxwell","use-augmentation",&use_refmaxwell);
+      clp.setOption("build-tet-mesh","build-hex-mesh",&build_tet_mesh);
       clp.setOption("subsolve-diagnostics","no-subsolve-diagnostics",&print_diagnostics);
       clp.setOption("numTimeSteps",&numTimeSteps);
   
@@ -151,9 +155,8 @@ int main(int argc,char * argv[])
       double c  = std::sqrt(1.0/8.854187817e-12/1.2566370614e-6);
       double min_dx = 1.0/std::max(x_elements,std::max(y_elements,z_elements));
       double dt = cfl*min_dx/c;
-  
+
       // set mesh factory parameters
-      panzer_stk::CubeHexMeshFactory mesh_factory;
       RCP<Teuchos::ParameterList> pl = rcp(new Teuchos::ParameterList);
       pl->set("X Blocks",1);
       pl->set("Y Blocks",1);
@@ -171,11 +174,17 @@ int main(int argc,char * argv[])
       //      per_pl.set("Periodic Condition 1", "xy-all 1e-8: front;back");
       //      per_pl.set("Periodic Condition 2", "xz-all 1e-8: top;bottom");
       //      per_pl.set("Periodic Condition 3", "yz-all 1e-8: left;right");
-  
-      mesh_factory.setParameterList(pl);
-  
+         
       // build mesh
-      RCP<panzer_stk::STK_Interface> mesh = mesh_factory.buildUncommitedMesh(MPI_COMM_WORLD);
+      RCP<panzer_stk::STK_MeshFactory> mesh_factory; 
+      RCP<panzer_stk::STK_Interface> mesh;
+      if (build_tet_mesh) {
+        mesh_factory = rcp(new panzer_stk::CubeTetMeshFactory());
+      } else {
+        mesh_factory = rcp(new panzer_stk::CubeHexMeshFactory());
+      }
+      mesh_factory->setParameterList(pl);
+      mesh = mesh_factory->buildUncommitedMesh(MPI_COMM_WORLD);
   
       // data container for auxiliary linear operators used in preconditioning (mass matrix and gradient)
       Teuchos::RCP<panzer::GlobalEvaluationDataContainer> auxGlobalData = Teuchos::rcp(new panzer::GlobalEvaluationDataContainer);
@@ -244,7 +253,7 @@ int main(int argc,char * argv[])
   
       // Add fields to the mesh data base (this is a peculiarity of how STK classic requires the
           // fields to be setup)
-      createExodusFile(physicsBlocks, Teuchos::rcpFromRef(mesh_factory), mesh, exodus_output);
+      createExodusFile(physicsBlocks, mesh_factory, mesh, exodus_output);
   
       // build worksets
       Teuchos::RCP<panzer_stk::WorksetFactory> wkstFactory
