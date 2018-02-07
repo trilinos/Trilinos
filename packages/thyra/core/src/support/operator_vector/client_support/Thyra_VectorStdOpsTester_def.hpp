@@ -207,7 +207,43 @@ public:
       result = ( maxIndex < 0 );
       if (nonnull(out)) *out << "\nmaxIndex = " << maxIndex << " < 0 ? " << passfail(result) << std::endl;
       if(!result) success = false;
-      
+
+
+      // Test pair_wise_max
+      if (nonnull(out)) *out << "\nTesting pair_wise_max(*v1, *v2, z.ptr()) ...\n";
+      {
+         using Teuchos::as;
+         using Teuchos::tuple;
+         using Teuchos::null;
+         using Teuchos::outArg;
+         using Teuchos::inOutArg;
+         typedef Teuchos::ScalarTraits<Scalar> ST;
+         Teuchos::RCP<VectorBase<Scalar> > v1  = createMember(vecSpc);
+         Teuchos::RCP<VectorBase<Scalar> > v2  = createMember(vecSpc);
+         Teuchos::RCP<VectorBase<Scalar> > v3  = createMember(vecSpc);
+         Teuchos::RCP<VectorBase<Scalar> > z   = createMember(vecSpc);
+         const Scalar alpha = as<Scalar>(2.0);
+         seed_randomize<Scalar>(12345);
+         randomize(as<Scalar>(-ST::one()),ST::one(),v1.ptr()); // v1 = rand
+         randomize(as<Scalar>(-ST::one()),ST::one(),v2.ptr()); // v2 = rand
+
+         // z = alpha*max(v1_i, v2_i)
+         pair_wise_max(alpha, *v1, *v2, z.ptr()); 
+
+         V_VpV(v3.ptr(), *v1, *v2); // v3 = v1 + v2
+         Vp_V(v1.ptr(), *v2, as<Scalar>(-ST::one())); // v1 -= v2
+         abs(*v1, v2.ptr()); // v2 = abs(v1)
+         Vp_V(v3.ptr(), *v2); // v3 += v2
+
+         // v1 + v2 + | v1 - v2 | = 2 max (v1, v2)
+         Vp_V(z.ptr(), *v3, as<Scalar>(-ST::one())); // z -= v3
+         if(!testMaxErr<Scalar>(
+                  "norm_2(*z)",norm_2(*z)
+                  ,"error_tol",error_tol,"warning_tol",warning_tol,out.get()
+                  )
+           ) success=false;
+      }
+
       return success;
     }
 };
@@ -597,35 +633,6 @@ bool VectorStdOpsTester<Scalar>::checkStdOps(
       ) success=false;
   }
 
-// Test pair_wise_max
-  out << "\n"<<tc<<") Testing pair_wise_max(*v1, *v2, z.ptr()) ...\n";
-  ++tc;
-  {
-    v1  = createMember(vecSpc);
-    v2  = createMember(vecSpc);
-    v3  = createMember(vecSpc);
-    z   = createMember(vecSpc);
-    const Scalar alpha = as<Scalar>(2.0);
-    seed_randomize<Scalar>(12345);
-    randomize(as<Scalar>(-ST::one()),ST::one(),v1.ptr()); // v1 = rand
-    randomize(as<Scalar>(-ST::one()),ST::one(),v2.ptr()); // v2 = rand
-
-    // z = alpha*max(v1_i, v2_i)
-    pair_wise_max(alpha, *v1, *v2, z.ptr()); 
-
-    V_VpV(v3.ptr(), *v1, *v2); // v3 = v1 + v2
-    Vp_V(v1.ptr(), *v2, as<Scalar>(-ST::one())); // v1 -= v2
-    abs(*v1, v2.ptr()); // v2 = abs(v1)
-    Vp_V(v3.ptr(), *v2); // v3 += v2
-
-    // v1 + v2 + | v1 - v2 | = 2 max (v1, v2)
-    Vp_V(z.ptr(), *v3, as<Scalar>(-ST::one())); // z -= v3
-    if(!testMaxErr<Scalar>(
-         "norm_2(*z)",norm_2(*z)
-         ,"error_tol",error_tol(),"warning_tol",warning_tol(),&out
-        )
-      ) success=false;
-  }
 
   // Test ele_wise_scale
   out << "\n"<<tc<<") Testing ele_wise_scale(*v1, z.ptr()) ...\n";
