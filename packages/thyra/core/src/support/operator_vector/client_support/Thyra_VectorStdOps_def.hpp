@@ -642,11 +642,6 @@ void Thyra::maxLessThanBound( const VectorBase<Scalar>& x,
     const VectorBase<SCALAR >& v_rhs2, const Ptr<VectorBase<SCALAR > > &v_lhs  \
     );  \
    \
-  template void pair_wise_max(  \
-    const SCALAR& alpha, const VectorBase<SCALAR >& v_rhs1,  \
-    const VectorBase<SCALAR >& v_rhs2, const Ptr<VectorBase<SCALAR > > &v_lhs  \
-    );  \
-   \
   template void ele_wise_conj_prod(  \
     const SCALAR& alpha, const VectorBase<SCALAR >& v_rhs1,  \
     const VectorBase<SCALAR >& v_rhs2, const Ptr<VectorBase<SCALAR > > &v_lhs  \
@@ -662,11 +657,6 @@ void Thyra::maxLessThanBound( const VectorBase<Scalar>& x,
     );  \
    \
   template void ele_wise_prod_update(  \
-    const SCALAR& alpha, const VectorBase<SCALAR >& v_rhs1,  \
-    const Ptr<VectorBase<SCALAR > > &v_lhs  \
-    );  \
-   \
-  template void pair_wise_max_update(  \
     const SCALAR& alpha, const VectorBase<SCALAR >& v_rhs1,  \
     const Ptr<VectorBase<SCALAR > > &v_lhs  \
     );  \
@@ -741,6 +731,16 @@ void Thyra::maxLessThanBound( const VectorBase<Scalar>& x,
 #define THYRA_VECTOR_STD_OPS_REAL_INSTANT(SCALAR) \
    \
   template SCALAR min( const VectorBase<SCALAR >& x );  \
+   \
+  template void pair_wise_max(  \
+    const SCALAR& alpha, const VectorBase<SCALAR >& v_rhs1,  \
+    const VectorBase<SCALAR >& v_rhs2, const Ptr<VectorBase<SCALAR > > &v_lhs  \
+    );  \
+   \
+  template void pair_wise_max_update(  \
+    const SCALAR& alpha, const VectorBase<SCALAR >& v_rhs1,  \
+    const Ptr<VectorBase<SCALAR > > &v_lhs  \
+    );  \
    \
   template void min( const VectorBase<SCALAR >& x,  \
     const Ptr<SCALAR > &minEle, const Ptr<Ordinal> &minIndex  \
