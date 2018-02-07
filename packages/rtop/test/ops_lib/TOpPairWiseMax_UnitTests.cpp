@@ -59,34 +59,34 @@ void basicTest(const int stride, FancyOStream &out, bool &success)
   typedef ScalarTraits<Scalar> ST;
   typedef typename ST::magnitudeType ScalarMag;
 
-  ConstSubVectorView<Scalar> v0 =
-    newStridedRandomSubVectorView<Scalar>(n, stride);
+  const int local_n = 4;
 
-  ConstSubVectorView<Scalar> v1 =
-    newStridedRandomSubVectorView<Scalar>(n, stride);
+  SubVectorView<Scalar> v0 =
+    newStridedSubVectorView<Scalar>(local_n, stride, ST::nan());
 
-  SubVectorView<Scalar> orig_z0 =
-    newStridedRandomSubVectorView<Scalar>(n, stride);
+  SubVectorView<Scalar> v1 =
+    newStridedSubVectorView<Scalar>(local_n, stride, ST::nan());
+
+  const Scalar alpha = 1.5*ST::one();
+
+  SubVectorView<Scalar> expected_z0 =
+    newStridedSubVectorView<Scalar>(local_n, stride, ST::nan());
+
+  v0[0] = 1.0;  v1[0] = 2.0;  expected_z0[0] = 3.0;
+  v0[1] = -1.0; v1[1] = -2.0; expected_z0[1] = -1.5;
+  v0[2] = 1.0;  v1[2] = -2.0; expected_z0[2] = 1.5;
+  v0[3] = 2.0;  v1[3] = 1.0;  expected_z0[3] = 3.0;
   
   SubVectorView<Scalar> z0 =
     newStridedSubVectorView<Scalar>(n, stride, ST::nan());
-  RTOpPack::assign_entries<Scalar>( Teuchos::outArg(z0), orig_z0 );
-
-  const Scalar alpha = 2.0*ST::one();
 
   RTOpPack::TOpPairWiseMax<Scalar> op(alpha);
-  op.apply_op( tuple(v0,v1), tuple(z0)(), null );
-
-  SubVectorView<Scalar> expected_z0
-    = newStridedSubVectorView<Scalar>(n, stride, ST::nan());
-  for (int k = 0; k < v0.subDim(); ++k)
-    expected_z0[k] =  v0[k] + v1[k] + std::abs(v0[k] - v1[k]);
+  op.apply_op( tuple<ConstSubVectorView<Scalar>>(v0,v1), tuple(z0)(), null );
 
   if (verbose) {
     out << "alpha = " << alpha << "\n";
     dumpSubVectorView(v0, "v0", out);
     dumpSubVectorView(v1, "v1", out);
-    dumpSubVectorView(orig_z0, "orig_z0", out);
     dumpSubVectorView(z0, "z0", out);
     dumpSubVectorView(expected_z0, "expected_z0", out);
   }
