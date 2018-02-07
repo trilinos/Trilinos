@@ -568,7 +568,7 @@ namespace Tacho {
         {
           const size_t cuda_max_team_size 
             = std::is_same<typename exec_space::memory_space,Kokkos::HostSpace>::value 
-            ? 1 : 32/CudaVectorSize;
+            ? 1 : 32;
           const size_t
             min_block_size  = 16,
             max_block_size  = max((_info.max_schur_size*_info.max_schur_size +
@@ -691,7 +691,7 @@ namespace Tacho {
         {
           const size_t cuda_max_team_size 
             = std::is_same<typename exec_space::memory_space,Kokkos::HostSpace>::value 
-            ? 1 : 32/CudaVectorSize;
+            ? 1 : 32;
           const size_t
             min_block_size       = 16,
             max_block_size_left  = (nb*_info.max_schur_size + 
@@ -934,10 +934,13 @@ namespace Tacho {
         
         memory_pool_type bufpool;
         {
+          const size_t cuda_max_team_size 
+            = std::is_same<typename exec_space::memory_space,Kokkos::HostSpace>::value 
+            ? 1 : 32;
           const size_t
-            min_block_size  = 1,
+            min_block_size  = 16,
             max_block_size  = max(( (_info.max_schur_size*_info.max_schur_size +
-                                     _info.max_schur_size)*sizeof(value_type) +
+                                     _info.max_schur_size*cuda_max_team_size)*sizeof(value_type) +
                                     (max_nrows_of_blocks*max_nrows_of_blocks +
                                      max_nrows_of_blocks*max_ncols_of_blocks +
                                      max_ncols_of_blocks*max_ncols_of_blocks)*sizeof(dense_block_type) ),
@@ -988,11 +991,19 @@ namespace Tacho {
 
         timer.reset();
         const ordinal_type nroots = _stree_roots.dimension_0();
-        // for (ordinal_type i=0;i<nroots;++i)
-        //   Kokkos::host_spawn(Kokkos::TaskSingle(sched, Kokkos::TaskPriority::High),
-        //                      functor_type(sched, bufpool, _info, _stree_roots(i), blksize));
+        for (ordinal_type i=0;i<nroots;++i)
+          Kokkos::host_spawn(Kokkos::TaskSingle(sched, Kokkos::TaskPriority::High),
+                             functor_type(sched, bufpool, _info, _stree_roots(i), blksize));
         Kokkos::wait(sched);
         stat.t_factor = timer.seconds();
+
+        {
+          auto superpanel_buf = Kokkos::create_mirror_view(_superpanel_buf);
+          Kokkos::deep_copy(superpanel_buf, _superpanel_buf);
+          for (size_t i=0;i<superpanel_buf.dimension_0();++i) {
+            std::cout << "byblocks spanel " << i << " val = " << superpanel_buf(i) << "\n";
+          }
+        }
         
         track_free(bufpool.capacity());
         track_free(sched.memory()->capacity());

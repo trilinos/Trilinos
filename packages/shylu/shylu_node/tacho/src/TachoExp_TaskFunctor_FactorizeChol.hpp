@@ -27,7 +27,6 @@ namespace Tacho {
       typedef Kokkos::Future<int,exec_space> future_type;
 
       typedef MatValueType mat_value_type; // matrix value type
-      typedef mat_value_type* mat_value_pointer_type;
 
       typedef SupernodeInfo<mat_value_type,exec_space> supernode_info_type;
       typedef typename supernode_info_type::supernode_type supernode_type;
@@ -67,9 +66,9 @@ namespace Tacho {
         const size_t team_size = member.team_size();
         const size_t bufsize = (n*n + _info.max_schur_size*team_size)*sizeof(mat_value_type);
         
-        mat_value_pointer_type buf = NULL;
-        Kokkos::single(Kokkos::PerTeam(member), [&](mat_value_pointer_type &val) {
-            val = bufsize > 0 ? (mat_value_pointer_type)_bufpool.allocate(bufsize) : NULL;
+        mat_value_type * buf = NULL;
+        Kokkos::single(Kokkos::PerTeam(member), [&](mat_value_type *&val) {
+            val = bufsize > 0 ? (mat_value_type *)_bufpool.allocate(bufsize) : NULL;
           }, buf);
 
         if (buf == NULL && bufsize) 

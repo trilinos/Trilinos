@@ -260,6 +260,25 @@ namespace Tacho {
 #endif
     } 
     
+    template<typename MemberType>
+    KOKKOS_FORCEINLINE_FUNCTION
+    static void clear(MemberType &member, char *buf, size_type bufsize) {
+#if defined( KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_HOST )
+      memset(buf, 0, bufsize);
+#else
+      const ordinal_type team_index_range = (bufsize/CudaVectorSize) + (bufsize%CudaVectorSize > 0);
+      Kokkos::parallel_for(Kokkos::TeamThreadRange(member,team_index_range),[&](const int &idx) {
+          const int ioff = idx * CudaVectorSize;
+          const int itmp = bufsize - ioff;
+          const int icnt = itmp > CudaVectorSize ? CudaVectorSize : itmp;
+          Kokkos::parallel_for(Kokkos::ThreadVectorRange(member,icnt),[&](const int &ii) {
+              const int i = ioff + ii;
+              buf[i] = 0;
+            });
+        });
+#endif
+    } 
+    
     template<size_t BufSize, typename SpaceType = Kokkos::DefaultExecutionSpace>
     struct Flush {
       typedef double value_type;
