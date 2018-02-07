@@ -40,7 +40,8 @@ public:
 
   // add strategy to the composite strategy list
   void addStrategy(const Teuchos::RCP<TimeStepControlStrategy<Scalar> > &strategy){
-     strategies_.push_back(strategy);
+     if (Teuchos::nonnull(strategy))
+        strategies_.push_back(strategy);
   }
 
   void clearObservers(){
