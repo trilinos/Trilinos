@@ -69,7 +69,7 @@ public:
    { return subcellIndices.size()-1; }
 
    std::vector<std::vector<int> > & operator[](int v)
-   { return subcellIndices[v]; } 
+   { return subcellIndices[v]; }
 
    virtual shards::CellTopology getCellTopology() const
    { return cellTopo; }

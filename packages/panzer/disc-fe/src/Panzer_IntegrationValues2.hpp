@@ -73,9 +73,9 @@ namespace panzer {
 
     typedef PHX::MDField<Scalar,Cell,BASIS,Dim> Array_CellBASISDim;
 
-    IntegrationValues2(const std::string & pre="",bool allocArrays=false) 
+    IntegrationValues2(const std::string & pre="",bool allocArrays=false)
         : alloc_arrays(allocArrays), prefix(pre), ddims_(1,0) {}
-    
+
     //! Sizes/allocates memory for arrays
     void setupArrays(const Teuchos::RCP<const panzer::IntegrationRule>& ir);
 
@@ -112,9 +112,9 @@ namespace panzer {
     Teuchos::RCP<Intrepid2::Cubature<PHX::Device::execution_space,double,double>> intrepid_cubature;
 
     // for Shakib stabilization <Cell,IP,Dim,Dim>
-    Array_CellIPDimDim covarient; 
-    Array_CellIPDimDim contravarient; 
-    Array_CellIP norm_contravarient; 
+    Array_CellIPDimDim covarient;
+    Array_CellIPDimDim contravarient;
+    Array_CellIP norm_contravarient;
 
     // integration points
     Array_CellIPDim ip_coordinates;      // <Cell,IP,Dim>

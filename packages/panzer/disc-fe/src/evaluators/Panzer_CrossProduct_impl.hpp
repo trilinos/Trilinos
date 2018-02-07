@@ -58,8 +58,8 @@ PHX_EVALUATOR_CTOR(CrossProduct,p)
   std::string result_name = p.get<std::string>("Result Name");
   std::string vec_a_name = p.get<std::string>("Vector A Name");
   std::string vec_b_name = p.get<std::string>("Vector B Name");
-  
-  const Teuchos::RCP<const panzer::PointRule> pr = 
+
+  const Teuchos::RCP<const panzer::PointRule> pr =
     p.get< Teuchos::RCP<const panzer::PointRule> >("Point Rule");
 
   // use a scalar field only if dimension is 2D
@@ -67,7 +67,7 @@ PHX_EVALUATOR_CTOR(CrossProduct,p)
 
   if(!useScalarField)
     vec_a_cross_vec_b = PHX::MDField<ScalarT>(result_name, pr->dl_vector);
-  else 
+  else
     vec_a_cross_vec_b = PHX::MDField<ScalarT>(result_name, pr->dl_scalar);
 
   vec_a = PHX::MDField<const ScalarT>(vec_a_name, pr->dl_vector);
@@ -76,7 +76,7 @@ PHX_EVALUATOR_CTOR(CrossProduct,p)
   this->addEvaluatedField(vec_a_cross_vec_b);
   this->addDependentField(vec_a);
   this->addDependentField(vec_b);
- 
+
   std::string n = "CrossProduct: " + result_name + " = " + vec_a_name + " . " + vec_b_name;
   this->setName(n);
 }
@@ -97,7 +97,7 @@ PHX_POST_REGISTRATION_SETUP(CrossProduct, /* sd */, fm)
 
 //**********************************************************************
 PHX_EVALUATE_FIELDS(CrossProduct,workset)
-{ 
+{
   if(useScalarField) {
     for (index_t cell = 0; cell < workset.num_cells; ++cell) {
       for (int p = 0; p < num_pts; ++p) {

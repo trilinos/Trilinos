@@ -46,7 +46,7 @@
 // only do this if required by the user
 #ifdef Panzer_BUILD_HESSIAN_SUPPORT
 
-// the includes for this file come in as a result of the includes in the main 
+// the includes for this file come in as a result of the includes in the main
 // Tpetra gather solution file
 
 namespace panzer {

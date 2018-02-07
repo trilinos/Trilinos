@@ -75,7 +75,7 @@ EquationSet_MeshCoords(const Teuchos::RCP<Teuchos::ParameterList>& params,
   // ********************
   // Validate and parse parameter list
   // ********************
-  {    
+  {
     Teuchos::ParameterList valid_parameters;
     this->setDefaultValidParameters(valid_parameters);
 
@@ -133,8 +133,8 @@ buildAndRegisterEquationSetEvaluators(PHX::FieldManager<panzer::Traits>& fm,
   std::string coord_names[3] = {"X","Y","Z"};
   std::string dof_names[3] = {"COORDX","COORDY","COORDZ"};
 
-  Teuchos::RCP<panzer::IntegrationRule> ir = this->getIntRuleForDOF(dof_names[0]); 
-  Teuchos::RCP<panzer::BasisIRLayout> basis = this->getBasisIRLayoutForDOF(dof_names[0]); 
+  Teuchos::RCP<panzer::IntegrationRule> ir = this->getIntRuleForDOF(dof_names[0]);
+  Teuchos::RCP<panzer::BasisIRLayout> basis = this->getBasisIRLayoutForDOF(dof_names[0]);
 
   // Transient Operator
   if (this->buildTransientSupport()) {
@@ -145,10 +145,10 @@ buildAndRegisterEquationSetEvaluators(PHX::FieldManager<panzer::Traits>& fm,
       p.set("Basis", basis);
       p.set("IR", ir);
       p.set("Multiplier", 1.0);
-  
-      RCP< PHX::Evaluator<panzer::Traits> > op = 
+
+      RCP< PHX::Evaluator<panzer::Traits> > op =
         rcp(new panzer::Integrator_BasisTimesScalar<EvalT,panzer::Traits>(p));
-      
+
       this->template registerEvaluator<EvalT>(fm, op);
     }
   }

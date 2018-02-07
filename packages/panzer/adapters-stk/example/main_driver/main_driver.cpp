@@ -100,14 +100,14 @@ int main(int argc, char *argv[])
 #endif
 
   try {
-    
-    Teuchos::RCP<Teuchos::Time> total_time = 
+
+    Teuchos::RCP<Teuchos::Time> total_time =
       Teuchos::TimeMonitor::getNewTimer("User App: Total Time");
-    
-    Teuchos::TimeMonitor timer(*total_time); 
-    
+
+    Teuchos::TimeMonitor timer(*total_time);
+
     Teuchos::RCP<const Teuchos::Comm<int> > comm = Teuchos::DefaultComm<int>::getComm();
-    
+
     // Parse the command line arguments
     std::string input_file_name = "user_app.xml";
     int exodus_io_num_procs = 0;
@@ -115,16 +115,16 @@ int main(int argc, char *argv[])
     bool fluxCalculation = false;
     {
       Teuchos::CommandLineProcessor clp;
-      
+
       clp.setOption("i", &input_file_name, "User_App input xml filename");
       clp.setOption("exodus-io-num-procs", &exodus_io_num_procs, "Number of processes that can access the file system at the same time to read their portion of a sliced exodus file in parallel.  Defaults to 0 - implies all processes for the run can access the file system at the same time.");
       clp.setOption("pause-to-attach","disable-pause-to-attach", &pauseToAttachOn, "Call pause to attach, default is off.");
       clp.setOption("flux-calc","disable-flux-calc", &fluxCalculation, "Enable the flux calculation.");
-      
-      Teuchos::CommandLineProcessor::EParseCommandLineReturn parse_return = 
+
+      Teuchos::CommandLineProcessor::EParseCommandLineReturn parse_return =
 	clp.parse(argc,argv,&std::cerr);
-      
-      TEUCHOS_TEST_FOR_EXCEPTION(parse_return != Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL, 
+
+      TEUCHOS_TEST_FOR_EXCEPTION(parse_return != Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL,
 			 std::runtime_error, "Failed to parse command line!");
     }
 
@@ -138,22 +138,22 @@ int main(int argc, char *argv[])
     // Parse the input file and broadcast to other processes
     Teuchos::RCP<Teuchos::ParameterList> input_params = Teuchos::rcp(new Teuchos::ParameterList("User_App Parameters"));
     Teuchos::updateParametersFromXmlFileAndBroadcast(input_file_name, input_params.ptr(), *comm);
-    
+
     *out << *input_params << std::endl;
 
     Teuchos::ParameterList solver_factories = input_params->sublist("Solver Factories");
     input_params->remove("Solver Factories");
-    
+
     // Add in the application specific equation set factory
     Teuchos::RCP<user_app::MyFactory> eqset_factory = Teuchos::rcp(new user_app::MyFactory);
 
     // Add in the application specific closure model factory
     user_app::MyModelFactory_TemplateBuilder cm_builder;
-    panzer::ClosureModelFactory_TemplateManager<panzer::Traits> cm_factory;  
+    panzer::ClosureModelFactory_TemplateManager<panzer::Traits> cm_factory;
     cm_factory.buildObjects(cm_builder);
 
     // Add in the application specific bc factory
-    user_app::BCFactory bc_factory; 
+    user_app::BCFactory bc_factory;
 
     // Create the global data
     Teuchos::RCP<panzer::GlobalData> global_data = panzer::createGlobalData();
@@ -180,7 +180,7 @@ int main(int argc, char *argv[])
       me_factory.setParameterList(input_params);
       me_factory.buildObjects(comm,global_data,eqset_factory,bc_factory,cm_factory);
 
-      // add a volume response functional for each field 
+      // add a volume response functional for each field
       for(Teuchos::ParameterList::ConstIterator itr=responses.begin();itr!=responses.end();++itr) {
         const std::string name = responses.name(itr);
         TEUCHOS_ASSERT(responses.entry(itr).isList());
@@ -197,15 +197,15 @@ int main(int argc, char *argv[])
         // add the respone
         std::vector<std::string> eblocks;
         panzer::StringTokenizer(eblocks,lst.get<std::string>("Element Blocks"),",",true);
-        
+
         std::vector<panzer::WorksetDescriptor> wkst_descs;
-        for(std::size_t i=0;i<eblocks.size();i++) 
+        for(std::size_t i=0;i<eblocks.size();i++)
           wkst_descs.push_back(panzer::blockDescriptor(eblocks[i]));
 
         int respIndex = me_factory.addResponse(name,wkst_descs,builder);
         responseIndexToName[respIndex] = name;
       }
- 
+
       // enusre all the responses are built
       me_factory.buildResponses(cm_factory);
 
@@ -232,25 +232,25 @@ int main(int argc, char *argv[])
           rof = Teuchos::rcp(new user_app::RythmosObserverFactory(stkIOResponseLibrary,rLibrary->getWorksetContainer(),useCoordinateUpdate));
 	  // me_factory.setRythmosObserverFactory(rof);
 	}
-	
+
 	// NOX
 	Teuchos::RCP<user_app::NOXObserverFactory> nof;
 	{
           nof = Teuchos::rcp(new user_app::NOXObserverFactory(stkIOResponseLibrary));
-	  
-	  Teuchos::RCP<Teuchos::ParameterList> observers_to_build = 
+
+	  Teuchos::RCP<Teuchos::ParameterList> observers_to_build =
 	    Teuchos::parameterList(solver_factories.sublist("NOX Observers"));
-	  
+
 	  nof->setParameterList(observers_to_build);
 	  // me_factory.setNOXObserverFactory(nof);
 	}
 
         // solver = me_factory.getResponseOnlyModelEvaluator();
         solver = me_factory.buildResponseOnlyModelEvaluator(physics,global_data,Teuchos::null,nof.ptr(),rof.ptr());
-      } 
+      }
 
     }
-    
+
     // setup outputs to mesh on the stkIOResponseLibrary
     ////////////////////////////////////////////////////////////////
 
@@ -262,7 +262,7 @@ int main(int argc, char *argv[])
     {
       Teuchos::ParameterList user_data(input_params->sublist("User Data"));
       user_data.set<int>("Workset Size",input_params->sublist("Assembly").get<int>("Workset Size"));
-    
+
       stkIOResponseLibrary->buildResponseEvaluators(physicsBlocks,
                                         cm_factory,
                                         input_params->sublist("Closure Models"),
@@ -272,50 +272,50 @@ int main(int argc, char *argv[])
     // setup outputs to mesh on the fluxResponseLibrary
     ////////////////////////////////////////////////////////////////
 
-    Teuchos::RCP<panzer::ResponseLibrary<panzer::Traits> > fluxResponseLibrary 
+    Teuchos::RCP<panzer::ResponseLibrary<panzer::Traits> > fluxResponseLibrary
         = Teuchos::rcp(new panzer::ResponseLibrary<panzer::Traits>);
 
     if(fluxCalculation) {
       fluxResponseLibrary->initialize(*rLibrary);
-  
+
       // build high-order flux response
       {
         user_app::HOFluxResponse_Builder builder;
         builder.comm = MPI_COMM_WORLD;
         builder.cubatureDegree = 2;
-  
+
         std::vector<panzer::WorksetDescriptor> sidesets;
         sidesets.push_back(panzer::sidesetVolumeDescriptor("eblock-0_0","left"));
-  
+
         fluxResponseLibrary->addResponse("HO-Flux",sidesets,builder);
       }
-  
+
       {
         Teuchos::ParameterList user_data(input_params->sublist("User Data"));
         user_data.set<int>("Workset Size",input_params->sublist("Assembly").get<int>("Workset Size"));
-      
+
         fluxResponseLibrary->buildResponseEvaluators(physicsBlocks,
                                           *eqset_factory,
                                           cm_factory,
                                           input_params->sublist("Closure Models"),
                                           user_data);
       }
-  
+
       {
         Teuchos::RCP<panzer::ResponseMESupportBase<panzer::Traits::Residual> > resp
             = Teuchos::rcp_dynamic_cast<panzer::ResponseMESupportBase<panzer::Traits::Residual> >(fluxResponseLibrary->getResponse<panzer::Traits::Residual>("HO-Flux"),true);
-  
+
         // allocate a vector
         Teuchos::RCP<Epetra_Vector> vec = Teuchos::rcp(new Epetra_Vector(*resp->getMap()));
         resp->setVector(vec);
       }
     }
-    
+
     ////////////////////////////////////////////////////////////////
-    
+
     // solve the system
     {
-      
+
       // Set inputs
       Thyra::ModelEvaluatorBase::InArgs<double> inArgs = solver->createInArgs();
       const Thyra::ModelEvaluatorBase::InArgs<double> inArgsNominal = solver->getNominalValues();
@@ -340,18 +340,18 @@ int main(int argc, char *argv[])
          Thyra::ModelEvaluatorBase::OutArgs<double> respOutArgs = physics->createOutArgs();
 
          TEUCHOS_ASSERT(physics->Ng()==respOutArgs.Ng());
-   
+
          respInArgs.set_x(gx);
-   
+
          // set up response out args
          for(int i=0;i<respOutArgs.Ng();i++) {
 	   Teuchos::RCP<Thyra::VectorBase<double> > response = Thyra::createMember(*physics->get_g_space(i));
            respOutArgs.set_g(i,response);
          }
-   
+
          // Now, solve the problem and return the responses
          physics->evalModel(respInArgs, respOutArgs);
-   
+
          // loop over out args for printing
          for(int i=0;i<respOutArgs.Ng();i++) {
 	   Teuchos::RCP<Thyra::VectorBase<double> > response = respOutArgs.get_g(i);
@@ -413,7 +413,7 @@ int main(int argc, char *argv[])
     *out << "************ Caught Exception: End Error Report ************" << std::endl;
     status = -1;
   }
-  
+
   Teuchos::TimeMonitor::summarize(*out,false,true,false);
 
 #ifdef Panzer_BUILD_PAPI_SUPPORT

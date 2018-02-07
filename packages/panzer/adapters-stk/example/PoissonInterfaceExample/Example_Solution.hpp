@@ -57,7 +57,7 @@
 #include "Panzer_Evaluator_WithBaseImpl.hpp"
 
 namespace Example {
-    
+
 using panzer::Cell;
 using panzer::Point;
 using panzer::Dim;
@@ -73,11 +73,11 @@ public:
   Solution(const std::string & name,
            const panzer::IntegrationRule & ir,
            const bool linear_Robin = true);
-                                                                        
-  void postRegistrationSetup(typename Traits::SetupData d,           
-                             PHX::FieldManager<Traits>& fm);        
-                                                                     
-  void evaluateFields(typename Traits::EvalData d);               
+
+  void postRegistrationSetup(typename Traits::SetupData d,
+                             PHX::FieldManager<Traits>& fm);
+
+  void evaluateFields(typename Traits::EvalData d);
 
 
 private:

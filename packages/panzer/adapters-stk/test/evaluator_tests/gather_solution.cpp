@@ -155,15 +155,15 @@ namespace panzer {
     testInitialization(ipb);
 
     const int default_int_order = 1;
-    std::string eBlockID = "eblock-0_0";    
+    std::string eBlockID = "eblock-0_0";
     Teuchos::RCP<user_app::MyFactory> eqset_factory = Teuchos::rcp(new user_app::MyFactory);
     panzer::CellData cellData(workset_size,mesh->getCellTopology("eblock-0_0"));
     Teuchos::RCP<panzer::GlobalData> gd = panzer::createGlobalData();
-    Teuchos::RCP<panzer::PhysicsBlock> physicsBlock = 
+    Teuchos::RCP<panzer::PhysicsBlock> physicsBlock =
       Teuchos::rcp(new PhysicsBlock(ipb,eBlockID,default_int_order,cellData,eqset_factory,gd,false));
 
     Teuchos::RCP<std::vector<panzer::Workset> > work_sets = panzer_stk::buildWorksets(*mesh,physicsBlock->elementBlockID(),
-                                                                                            physicsBlock->getWorksetNeeds()); 
+                                                                                            physicsBlock->getWorksetNeeds());
     TEST_EQUALITY(work_sets->size(),1);
 
     // build connection manager and field manager
@@ -187,13 +187,13 @@ namespace panzer {
     /////////////////////////////////////////////////////////////
 
     Teuchos::RCP<const Teuchos::MpiComm<int> > tComm = Teuchos::rcp(new Teuchos::MpiComm<int>(MPI_COMM_WORLD));
-    Teuchos::RCP<BlockedEpetraLinearObjFactory<panzer::Traits,int> > e_lof 
+    Teuchos::RCP<BlockedEpetraLinearObjFactory<panzer::Traits,int> > e_lof
        = Teuchos::rcp(new BlockedEpetraLinearObjFactory<panzer::Traits,int>(tComm.getConst(),dofManager));
     Teuchos::RCP<LinearObjFactory<panzer::Traits> > lof = e_lof;
     Teuchos::RCP<LinearObjContainer> loc = e_lof->buildGhostedLinearObjContainer();
     e_lof->initializeGhostedContainer(LinearObjContainer::X,*loc);
 
-    Teuchos::RCP<EpetraLinearObjContainer> e_loc 
+    Teuchos::RCP<EpetraLinearObjContainer> e_loc
        = Teuchos::rcp_dynamic_cast<EpetraLinearObjContainer>(loc);
     Teuchos::RCP<Thyra::VectorBase<double> > x_vec = e_loc->get_x_th();
     Thyra::assign(x_vec.ptr(),123.0+myRank);
@@ -225,7 +225,7 @@ namespace panzer {
 
     // setup field manager, add evaluator under test
     /////////////////////////////////////////////////////////////
- 
+
     PHX::FieldManager<panzer::Traits> fm;
 
     std::vector<PHX::index_size_type> derivative_dimensions;
@@ -247,7 +247,7 @@ namespace panzer {
        names->push_back(fieldName1_q1);
        names->push_back(fieldName2_q1);
 
-       Teuchos::ParameterList pl; 
+       Teuchos::ParameterList pl;
        pl.set("Basis", basis_q1);
        pl.set("DOF Names",names);
        pl.set("Indexer Names",names);
@@ -265,7 +265,7 @@ namespace panzer {
        RCP<std::vector<std::string> > names = rcp(new std::vector<std::string>);
        names->push_back(fieldName_qedge1);
 
-       Teuchos::ParameterList pl; 
+       Teuchos::ParameterList pl;
        pl.set("Basis", basis_qedge1);
        pl.set("DOF Names",names);
        pl.set("Indexer Names",names);
@@ -285,7 +285,7 @@ namespace panzer {
        names->push_back(fieldName1_q1);
        names->push_back(fieldName2_q1);
 
-       Teuchos::ParameterList pl; 
+       Teuchos::ParameterList pl;
        pl.set("Basis", basis_q1);
        pl.set("DOF Names",names);
        pl.set("Indexer Names",names);
@@ -303,7 +303,7 @@ namespace panzer {
        RCP<std::vector<std::string> > names = rcp(new std::vector<std::string>);
        names->push_back(fieldName_qedge1);
 
-       Teuchos::ParameterList pl; 
+       Teuchos::ParameterList pl;
        pl.set("Basis", basis_qedge1);
        pl.set("DOF Names",names);
        pl.set("Indexer Names",names);
@@ -354,7 +354,7 @@ namespace panzer {
        RCP<std::vector<std::string> > names = rcp(new std::vector<std::string>);
        names->push_back(fieldName_qedge1);
 
-       Teuchos::ParameterList pl; 
+       Teuchos::ParameterList pl;
        pl.set("Basis", basis_qedge1);
        pl.set("DOF Names",names);
        pl.set("Indexer Names",names);
@@ -478,9 +478,9 @@ namespace panzer {
 
     // test Residual fields
     {
-       PHX::MDField<panzer::Traits::Residual::ScalarT,panzer::Cell,panzer::BASIS> 
+       PHX::MDField<panzer::Traits::Residual::ScalarT,panzer::Cell,panzer::BASIS>
           fieldData1_q1(fieldName1_q1,basis_q1->functional);
-       PHX::MDField<panzer::Traits::Residual::ScalarT,panzer::Cell,panzer::BASIS> 
+       PHX::MDField<panzer::Traits::Residual::ScalarT,panzer::Cell,panzer::BASIS>
           fieldData2_q1(fieldName2_q1,basis_qedge1->functional);
 
        fm.getFieldData<panzer::Traits::Residual>(fieldData1_q1);
@@ -492,47 +492,47 @@ namespace panzer {
        TEST_EQUALITY(fieldData2_q1.dimension(1),4);
        TEST_EQUALITY(fieldData1_q1.size(),Teuchos::as<unsigned int>(4*4/numProcs));
        TEST_EQUALITY(fieldData2_q1.size(),Teuchos::as<unsigned int>(4*4/numProcs));
-   
-       for(unsigned int i=0;i<fieldData1_q1.dimension(0);i++) 
-          for(unsigned int j=0;j<fieldData1_q1.dimension(1);j++) 
+
+       for(unsigned int i=0;i<fieldData1_q1.dimension(0);i++)
+          for(unsigned int j=0;j<fieldData1_q1.dimension(1);j++)
              TEST_EQUALITY(fieldData1_q1(i,j),123.0+myRank);
 
-       for(unsigned int i=0;i<fieldData2_q1.dimension(0);i++) 
-          for(unsigned int j=0;j<fieldData2_q1.dimension(1);j++) 
+       for(unsigned int i=0;i<fieldData2_q1.dimension(0);i++)
+          for(unsigned int j=0;j<fieldData2_q1.dimension(1);j++)
              TEST_EQUALITY(fieldData2_q1(i,j),123.0+myRank);
     }
     {
-       PHX::MDField<panzer::Traits::Residual::ScalarT,panzer::Cell,panzer::BASIS> 
+       PHX::MDField<panzer::Traits::Residual::ScalarT,panzer::Cell,panzer::BASIS>
           fieldData_qedge1(fieldName_qedge1,basis_qedge1->functional);
 
        fm.getFieldData<panzer::Traits::Residual>(fieldData_qedge1);
- 
+
        TEST_EQUALITY(fieldData_qedge1.dimension(0),Teuchos::as<unsigned int>(4/numProcs));
        TEST_EQUALITY(fieldData_qedge1.dimension(1),4);
        TEST_EQUALITY(fieldData_qedge1.size(),Teuchos::as<unsigned int>(4*4/numProcs));
-   
-       for(unsigned int cell=0;cell<fieldData_qedge1.dimension_0();++cell) 
-        for(unsigned int pt=0;pt<fieldData_qedge1.dimension_1();pt++) 
+
+       for(unsigned int cell=0;cell<fieldData_qedge1.dimension_0();++cell)
+        for(unsigned int pt=0;pt<fieldData_qedge1.dimension_1();pt++)
           TEST_EQUALITY(fieldData_qedge1(cell,pt),123.0+myRank);
     }
 
     // test Jacobian fields
     {
-       PHX::MDField<panzer::Traits::Jacobian::ScalarT,panzer::Cell,panzer::BASIS> 
+       PHX::MDField<panzer::Traits::Jacobian::ScalarT,panzer::Cell,panzer::BASIS>
           fieldData1_q1(fieldName1_q1,basis_q1->functional);
-       PHX::MDField<panzer::Traits::Jacobian::ScalarT,panzer::Cell,panzer::BASIS> 
+       PHX::MDField<panzer::Traits::Jacobian::ScalarT,panzer::Cell,panzer::BASIS>
           fieldData2_q1(fieldName2_q1,basis_qedge1->functional);
-   
+
        fm.getFieldData<panzer::Traits::Jacobian>(fieldData1_q1);
        fm.getFieldData<panzer::Traits::Jacobian>(fieldData2_q1);
-   
-       for(unsigned int cell=0;cell<fieldData1_q1.dimension_0();++cell) { 
+
+       for(unsigned int cell=0;cell<fieldData1_q1.dimension_0();++cell) {
         for(unsigned int pt=0;pt<fieldData1_q1.dimension_1();pt++) {
           TEST_EQUALITY(fieldData1_q1(cell,pt),123.0+myRank);
           TEST_EQUALITY(fieldData1_q1(cell,pt).availableSize(),12);
         }
        }
-       for(unsigned int cell=0;cell<fieldData2_q1.dimension_0();++cell) { 
+       for(unsigned int cell=0;cell<fieldData2_q1.dimension_0();++cell) {
         for(unsigned int pt=0;pt<fieldData2_q1.dimension_1();pt++) {
           TEST_EQUALITY(fieldData2_q1(cell,pt),123.0+myRank);
           TEST_EQUALITY(fieldData2_q1(cell,pt).availableSize(),12);
@@ -540,11 +540,11 @@ namespace panzer {
        }
     }
     {
-       PHX::MDField<panzer::Traits::Jacobian::ScalarT,panzer::Cell,panzer::BASIS> 
+       PHX::MDField<panzer::Traits::Jacobian::ScalarT,panzer::Cell,panzer::BASIS>
           fieldData_qedge1(fieldName_qedge1,basis_qedge1->functional);
-   
+
        fm.getFieldData<panzer::Traits::Jacobian>(fieldData_qedge1);
-   
+
        for(unsigned int cell=0;cell<fieldData_qedge1.dimension_0();++cell) {
         for(unsigned int pt=0;pt<fieldData_qedge1.dimension_1();++pt) {
           TEST_EQUALITY(fieldData_qedge1(cell,pt),123.0+myRank);
@@ -619,12 +619,12 @@ namespace panzer {
 
 
   Teuchos::RCP<panzer::PureBasis> buildBasis(std::size_t worksetSize,const std::string & basisName)
-  { 
-     Teuchos::RCP<shards::CellTopology> topo = 
+  {
+     Teuchos::RCP<shards::CellTopology> topo =
         Teuchos::rcp(new shards::CellTopology(shards::getCellTopologyData< shards::Quadrilateral<4> >()));
 
      panzer::CellData cellData(worksetSize,topo);
-     return Teuchos::rcp(new panzer::PureBasis(basisName,1,cellData)); 
+     return Teuchos::rcp(new panzer::PureBasis(basisName,1,cellData));
   }
 
   Teuchos::RCP<panzer_stk::STK_Interface> buildMesh(int elemX,int elemY)
@@ -634,11 +634,11 @@ namespace panzer {
     pl->set("Y Blocks",1);
     pl->set("X Elements",elemX);
     pl->set("Y Elements",elemY);
-    
+
     panzer_stk::SquareQuadMeshFactory factory;
     factory.setParameterList(pl);
     Teuchos::RCP<panzer_stk::STK_Interface> mesh = factory.buildUncommitedMesh(MPI_COMM_WORLD);
-    factory.completeMeshConstruction(*mesh,MPI_COMM_WORLD); 
+    factory.completeMeshConstruction(*mesh,MPI_COMM_WORLD);
 
     return mesh;
   }
@@ -665,7 +665,7 @@ namespace panzer {
       p.set("Basis Order",1);
       p.set("Integration Order",1);
     }
-    
+
   }
 
 }

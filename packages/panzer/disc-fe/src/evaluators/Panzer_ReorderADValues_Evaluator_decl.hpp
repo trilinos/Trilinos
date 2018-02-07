@@ -63,11 +63,11 @@ class UniqueGlobalIndexerBase;
 /** \brief Reorders the ad values of a specified field to match a different
            unique global indexer.
 
-    This is neccessary primarily when gathering with one unique global indexer    
+    This is neccessary primarily when gathering with one unique global indexer
     and scattering with a second unique global indexer.
 */
-template<typename EvalT, typename TRAITS> 
-class ReorderADValues_Evaluator  
+template<typename EvalT, typename TRAITS>
+class ReorderADValues_Evaluator
   : public panzer::EvaluatorWithBaseImpl<TRAITS>,
     public PHX::EvaluatorDerived<EvalT, TRAITS> {
 public:
@@ -109,13 +109,13 @@ private:
 
 
 // **************************************************************
-// Jacobian 
+// Jacobian
 // **************************************************************
 template<typename TRAITS>
-class ReorderADValues_Evaluator<typename TRAITS::Jacobian,TRAITS>  
+class ReorderADValues_Evaluator<typename TRAITS::Jacobian,TRAITS>
   : public panzer::EvaluatorWithBaseImpl<TRAITS>,
     public PHX::EvaluatorDerived<typename TRAITS::Jacobian, TRAITS> {
-  
+
 public:
 
   ReorderADValues_Evaluator(const std::string & outPrefix,
@@ -133,12 +133,12 @@ public:
                             const std::string & elementBlock,
                             const UniqueGlobalIndexerBase & indexerSrc,
                             const UniqueGlobalIndexerBase & indexerDest);
-  
+
   void postRegistrationSetup(typename TRAITS::SetupData d,
 			     PHX::FieldManager<TRAITS>& vm);
 
   void evaluateFields(typename TRAITS::EvalData workset);
-  
+
 private:
   typedef typename TRAITS::Jacobian::ScalarT ScalarT;
 
@@ -159,7 +159,7 @@ private:
   // fields that need to be modified
   std::vector< PHX::MDField<ScalarT> > outFields_;
 
-  // This allows indexing into a destination sized vector and 
+  // This allows indexing into a destination sized vector and
   // maps to a source vector. If a value is less then 0
   // then that implies that value is not mapped. That is a strange
   // case but this structure supports it

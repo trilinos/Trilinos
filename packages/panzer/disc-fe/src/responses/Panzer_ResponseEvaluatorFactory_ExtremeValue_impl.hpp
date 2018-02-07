@@ -58,10 +58,10 @@ namespace panzer {
 template <typename EvalT,typename LO,typename GO>
 Teuchos::RCP<ResponseBase> ResponseEvaluatorFactory_ExtremeValue<EvalT,LO,GO>::
 buildResponseObject(const std::string & responseName) const
-{ 
-  Teuchos::RCP<ResponseBase> response = Teuchos::rcp(new Response_ExtremeValue<EvalT>(responseName,comm_,useMax_,linearObjFactory_)); 
+{
+  Teuchos::RCP<ResponseBase> response = Teuchos::rcp(new Response_ExtremeValue<EvalT>(responseName,comm_,useMax_,linearObjFactory_));
   response->setRequiresDirichletAdjustment(applyDirichletToDerivative_);
- 
+
   return response;
 }
 
@@ -89,9 +89,9 @@ buildAndRegisterEvaluators(const std::string & responseName,
      pl.set("IR",ir);
      pl.set("Use Max",useMax_);
 
-     Teuchos::RCP<PHX::Evaluator<panzer::Traits> > eval 
+     Teuchos::RCP<PHX::Evaluator<panzer::Traits> > eval
          = Teuchos::rcp(new CellExtreme<EvalT,panzer::Traits>(pl));
- 
+
      this->template registerEvaluator<EvalT>(fm, eval);
    }
 
@@ -103,9 +103,9 @@ buildAndRegisterEvaluators(const std::string & responseName,
      std::string field = (quadPointField_=="" ? responseName : quadPointField_);
 
      // build useful evaluator
-     Teuchos::RCP<PHX::Evaluator<panzer::Traits> > eval 
-         = Teuchos::rcp(new ResponseScatterEvaluator_ExtremeValue<EvalT,panzer::Traits>(field,         
-                                                                                        responseName,         
+     Teuchos::RCP<PHX::Evaluator<panzer::Traits> > eval
+         = Teuchos::rcp(new ResponseScatterEvaluator_ExtremeValue<EvalT,panzer::Traits>(field,
+                                                                                        responseName,
                                                                                         physicsBlock.cellData(),
                                                                                         useMax_,
                                                                                         scatterObj));

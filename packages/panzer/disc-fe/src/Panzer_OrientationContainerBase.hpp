@@ -45,7 +45,7 @@
 
 namespace panzer {
 
-/** This class is used to access orientations and 
+/** This class is used to access orientations and
   * provides a degree of seperation between the
   * BasisValues objects and the global indexer (which
   * computes and stores the orientation). The particular

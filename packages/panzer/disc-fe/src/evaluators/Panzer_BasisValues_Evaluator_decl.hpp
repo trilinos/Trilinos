@@ -52,12 +52,12 @@
 #include "Panzer_Evaluator_Macros.hpp"
 
 namespace panzer {
-    
+
 //! Interpolates basis DOF values to IP DOF values
 PANZER_EVALUATOR_CLASS(BasisValues_Evaluator)
- 
+
   Teuchos::RCP<const panzer::PureBasis> basis;
-  
+
   // is anything other than ScalarT really needed here?
   Teuchos::RCP<BasisValues2<ScalarT> > basisValues;
   PointValues2<ScalarT> pointValues;
@@ -66,7 +66,7 @@ PANZER_EVALUATOR_CLASS(BasisValues_Evaluator)
   Teuchos::RCP<const std::vector<Intrepid2::Orientation> > orientations;
 
   bool derivativesRequired_;
- 
+
   //! Initialization method to unify the constructors.
   void initialize(const Teuchos::RCP<const panzer::PointRule> & pointRule,
                   const Teuchos::RCP<const panzer::PureBasis> & basis,

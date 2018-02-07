@@ -83,27 +83,27 @@ public:
   void initialize(panzer::ConnManager<LocalOrdinal,GlobalOrdinal> & conn);
 
   KOKKOS_INLINE_FUNCTION
-  GlobalOrdinal getLeftElem (GlobalOrdinal face_id) const 
+  GlobalOrdinal getLeftElem (GlobalOrdinal face_id) const
   {LocalOrdinal lid = face_map_->getLocalElement(face_id); return elems_by_face_(lid,0);}
 
   KOKKOS_INLINE_FUNCTION
-  GlobalOrdinal getRightElem(GlobalOrdinal face_id) const 
+  GlobalOrdinal getRightElem(GlobalOrdinal face_id) const
   {LocalOrdinal lid = face_map_->getLocalElement(face_id); return elems_by_face_(lid,1);}
 
   KOKKOS_INLINE_FUNCTION
-  int getLeftBlock (GlobalOrdinal face_id) const 
+  int getLeftBlock (GlobalOrdinal face_id) const
   {LocalOrdinal lid = face_map_->getLocalElement(face_id); return blocks_by_face_(lid,0);}
 
   KOKKOS_INLINE_FUNCTION
-  int getRightBlock(GlobalOrdinal face_id) const 
+  int getRightBlock(GlobalOrdinal face_id) const
   {LocalOrdinal lid = face_map_->getLocalElement(face_id); return blocks_by_face_(lid,1);}
 
   KOKKOS_INLINE_FUNCTION
-  int getLeftProc  (GlobalOrdinal face_id) const 
+  int getLeftProc  (GlobalOrdinal face_id) const
   {LocalOrdinal lid = face_map_->getLocalElement(face_id); return procs_by_face_(lid,0);}
 
   KOKKOS_INLINE_FUNCTION
-  int getRightProc (GlobalOrdinal face_id) const 
+  int getRightProc (GlobalOrdinal face_id) const
   {LocalOrdinal lid = face_map_->getLocalElement(face_id); return procs_by_face_(lid,1);}
 
   Kokkos::View<const GlobalOrdinal*[2]> getFaceToElementsMap() const

@@ -6,14 +6,14 @@ namespace panzer {
   class Workset;
 
   /** \brief Mix-in interface to support cell "domains" in panzer.
-   * 
+   *
    *  This class adds support for cell domains into evaluators. This is commonly used in DG discretizations.
    */
   class DomainEvaluator {
 
   public:
 
-    /// Domain types supported by worksets. 
+    /// Domain types supported by worksets.
     enum DomainType : int {
         OWNED=0,    /// All Owned cells for the workset on the MPI process
         GHOST=1,    /// All Ghosted cells for the workset on the MPI process

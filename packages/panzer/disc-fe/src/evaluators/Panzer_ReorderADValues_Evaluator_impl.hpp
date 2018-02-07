@@ -60,7 +60,7 @@ ReorderADValues_Evaluator(const std::string & outPrefix,
                           const std::string & /* elementBlock */,
                           const UniqueGlobalIndexerBase & /* indexerSrc */,
                           const UniqueGlobalIndexerBase & /* indexerDest */)
-{ 
+{
   TEUCHOS_ASSERT(inFieldNames.size()==fieldLayouts.size());
 
   // build the vector of fields that this is dependent on
@@ -87,7 +87,7 @@ ReorderADValues_Evaluator(const std::string & outPrefix,
                           const std::string & /* elementBlock */,
                           const UniqueGlobalIndexerBase & /* indexerSrc */,
                           const UniqueGlobalIndexerBase & /* indexerDest */)
-{ 
+{
   TEUCHOS_ASSERT(inFieldNames.size()==fieldLayouts.size());
   TEUCHOS_ASSERT(inDOFs.size()==outDOFs.size());
 
@@ -107,7 +107,7 @@ ReorderADValues_Evaluator(const std::string & outPrefix,
 // **********************************************************************
 template<typename EvalT,typename TRAITS>
 void panzer::ReorderADValues_Evaluator<EvalT, TRAITS>::
-postRegistrationSetup(typename TRAITS::SetupData /* d */, 
+postRegistrationSetup(typename TRAITS::SetupData /* d */,
 		      PHX::FieldManager<TRAITS>& fm)
 {
   // load required field numbers for fast use
@@ -143,7 +143,7 @@ ReorderADValues_Evaluator(const std::string & outPrefix,
                           const std::string & elementBlock,
                           const UniqueGlobalIndexerBase & indexerSrc,
                           const UniqueGlobalIndexerBase & indexerDest)
-{ 
+{
   TEUCHOS_ASSERT(inFieldNames.size()==fieldLayouts.size());
 
   // build the vector of fields that this is dependent on
@@ -177,7 +177,7 @@ ReorderADValues_Evaluator(const std::string & outPrefix,
                           const std::string & elementBlock,
                           const UniqueGlobalIndexerBase & indexerSrc,
                           const UniqueGlobalIndexerBase & indexerDest)
-{ 
+{
   TEUCHOS_ASSERT(inFieldNames.size()==fieldLayouts.size());
   TEUCHOS_ASSERT(inDOFs.size()==outDOFs.size());
 
@@ -213,7 +213,7 @@ ReorderADValues_Evaluator(const std::string & outPrefix,
 // **********************************************************************
 template<typename TRAITS>
 void panzer::ReorderADValues_Evaluator<typename TRAITS::Jacobian, TRAITS>::
-postRegistrationSetup(typename TRAITS::SetupData /* d */, 
+postRegistrationSetup(typename TRAITS::SetupData /* d */,
 		      PHX::FieldManager<TRAITS>& fm)
 {
   // load required field numbers for fast use
@@ -235,7 +235,7 @@ evaluateFields(typename TRAITS::EvalData /* workset */)
 
   for(std::size_t fieldIndex = 0; fieldIndex < inFields_.size(); ++fieldIndex) {
 
-    const PHX::MDField<const ScalarT>& inField = inFields_[fieldIndex];                                                                                                    
+    const PHX::MDField<const ScalarT>& inField = inFields_[fieldIndex];
     const PHX::MDField<ScalarT>& outField = outFields_[fieldIndex];
 
     if(inField.size()>0) {
@@ -321,10 +321,10 @@ evaluateFields(typename TRAITS::EvalData /* workset */)
         outField.resize(dstFromSrcMap_.size());
 
         // copy jacobian entries correctly reordered
-        for(std::size_t k=0;k<dstFromSrcMap_.size();k++) 
+        for(std::size_t k=0;k<dstFromSrcMap_.size();k++)
           outField.fastAccessDx(k) = inField.fastAccessDx(dstFromSrcMap_[k]);
       }
- 
+
       outField.val() = inField.val();
     }
   }

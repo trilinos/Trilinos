@@ -57,7 +57,7 @@ namespace panzer {
     std::vector<Teuchos::RCP<panzer::EquationSetFactory> > m_factories;
 
   public:
-    
+
     EquationSet_FactoryComposite(const std::vector<Teuchos::RCP<panzer::EquationSetFactory> >& factories);
 
     Teuchos::RCP<panzer::EquationSet_TemplateManager<panzer::Traits> >
@@ -66,7 +66,7 @@ namespace panzer {
 		     const panzer::CellData& cell_data,
 		     const Teuchos::RCP<panzer::GlobalData>& global_data,
 		     const bool build_transient_support) const;
-    
+
   };
 
 }

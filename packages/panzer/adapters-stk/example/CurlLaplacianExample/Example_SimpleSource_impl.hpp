@@ -64,14 +64,14 @@ SimpleSource<EvalT,Traits>::SimpleSource(const std::string & name,
   source = PHX::MDField<ScalarT,Cell,Point,Dim>(name, data_layout);
 
   this->addEvaluatedField(source);
-  
+
   std::string n = "Simple Source";
   this->setName(n);
 }
 
 //**********************************************************************
 template <typename EvalT,typename Traits>
-void SimpleSource<EvalT,Traits>::postRegistrationSetup(typename Traits::SetupData sd,           
+void SimpleSource<EvalT,Traits>::postRegistrationSetup(typename Traits::SetupData sd,
                                                        PHX::FieldManager<Traits>& fm)
 {
 
@@ -83,7 +83,7 @@ void SimpleSource<EvalT,Traits>::postRegistrationSetup(typename Traits::SetupDat
 //**********************************************************************
 template <typename EvalT,typename Traits>
 void SimpleSource<EvalT,Traits>::evaluateFields(typename Traits::EvalData workset)
-{ 
+{
   using panzer::index_t;
   for (index_t cell = 0; cell < workset.num_cells; ++cell) {
     for (int point = 0; point < source.extent_int(1); ++point) {

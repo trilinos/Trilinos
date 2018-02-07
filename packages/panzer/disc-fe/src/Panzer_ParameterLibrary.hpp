@@ -49,7 +49,7 @@
 #include "Panzer_EvaluationTraits.hpp"
 
 namespace panzer {
-  
+
   typedef Sacado::ScalarParameterLibrary<panzer::EvaluationTraits> ParamLib;
   typedef Sacado::ScalarParameterVector<panzer::EvaluationTraits> ParamVec;
 

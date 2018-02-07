@@ -62,7 +62,7 @@ PHX_EVALUATOR_CTOR(DirichletResidual_FaceBasis,p)
   pointRule = p.get<Teuchos::RCP<const panzer::PointRule> >("Point Rule");
 
   std::string field_name = p.get<std::string>("DOF Name");
-  std::string dof_name = field_name+"_"+pointRule->getName(); 
+  std::string dof_name = field_name+"_"+pointRule->getName();
   std::string value_name = p.get<std::string>("Value Name");
 
   Teuchos::RCP<PHX::DataLayout> basis_layout = basis->functional;
@@ -90,11 +90,11 @@ PHX_EVALUATOR_CTOR(DirichletResidual_FaceBasis,p)
   constJac_ = pointValues.jac;
   this->addDependentField(constJac_);
 
-  
+
   this->addEvaluatedField(residual);
   this->addDependentField(dof);
   this->addDependentField(value);
- 
+
   std::string n = "Dirichlet Residual Face Basis Evaluator";
   this->setName(n);
 }
@@ -114,7 +114,7 @@ PHX_POST_REGISTRATION_SETUP(DirichletResidual_FaceBasis,sd,fm)
 
 //**********************************************************************
 PHX_EVALUATE_FIELDS(DirichletResidual_FaceBasis,workset)
-{ 
+{
   // basic cell topology data
   const shards::CellTopology & parentCell = *basis->getCellTopology();
   const int cellDim = parentCell.getDimension();
@@ -123,7 +123,7 @@ PHX_EVALUATE_FIELDS(DirichletResidual_FaceBasis,workset)
   const int subcellDim = 2;
   const int subcellOrd = this->wda(workset).subcell_index;
 
-  const int numFaces = parentCell.getSubcellCount(subcellDim);  
+  const int numFaces = parentCell.getSubcellCount(subcellDim);
   const int numFaceDofs = dof.extent_int(1);
 
   TEUCHOS_ASSERT(cellDim == dof.extent_int(2));
@@ -145,7 +145,7 @@ PHX_EVALUATE_FIELDS(DirichletResidual_FaceBasis,workset)
     int faceOrts[6] = {};
     for(index_t c=0;c<workset.num_cells;c++) {
       const auto ort = orientations->at(details.cell_local_ids[c]);
-      ort.getFaceOrientation(faceOrts, numFaces); 
+      ort.getFaceOrientation(faceOrts, numFaces);
 
       // vertex count represent rotation count before it flips
       const double ortVal = faceOrts[subcellOrd] < static_cast<int>(subcellTopo.getVertexCount()) ? 1.0 : -1.0;
@@ -154,7 +154,7 @@ PHX_EVALUATE_FIELDS(DirichletResidual_FaceBasis,workset)
         for(int d=0;d<cellDim;d++)
           residual(c,b) += (dof(c,b,d)-value(c,b,d))*faceNormal(c,b,d);
         residual(c,b) *= ortVal;
-      } 
+      }
     }
   }
 }

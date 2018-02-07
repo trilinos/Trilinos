@@ -202,7 +202,7 @@ preEvaluate(
     xBvRoGed_ = rcp_dynamic_cast<BVROGED>(ged, true);
     return;
   } // end of the refactored ReadOnly way
-  
+
   // Now try the old path.
   {
     ged = d.gedc->getDataObject(globalDataKey_);
@@ -451,7 +451,7 @@ preEvaluate(
     xBvRoGed_ = rcp_dynamic_cast<BVROGED>(ged, true);
     return;
   } // end of the refactored ReadOnly way
-  
+
   // Now try the old path.
   {
     ged = d.gedc->getDataObject(globalDataKey_);
@@ -722,7 +722,7 @@ preEvaluate(
     xBvRoGed_ = rcp_dynamic_cast<BVROGED>(ged, true);
     return;
   } // end of the refactored ReadOnly way
-  
+
   // Now try the old path.
   {
     ged = d.gedc->getDataObject(globalDataKey_);

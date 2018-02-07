@@ -80,9 +80,9 @@ buildAndRegisterEquationSetEvaluators(PHX::FieldManager<panzer::Traits>& fm,
   using Teuchos::ParameterList;
   using Teuchos::RCP;
   using Teuchos::rcp;
-  
-  Teuchos::RCP<panzer::IntegrationRule> ir = this->getIntRuleForDOF(dof_name); 
-  Teuchos::RCP<panzer::BasisIRLayout> basis = this->getBasisIRLayoutForDOF(dof_name); 
+
+  Teuchos::RCP<panzer::IntegrationRule> ir = this->getIntRuleForDOF(dof_name);
+  Teuchos::RCP<panzer::BasisIRLayout> basis = this->getBasisIRLayoutForDOF(dof_name);
 
 
   // Mass Operator
@@ -95,13 +95,13 @@ buildAndRegisterEquationSetEvaluators(PHX::FieldManager<panzer::Traits>& fm,
     p.set("Multiplier", multiplier);
     Teuchos::RCP<std::vector<std::string> > fms = Teuchos::rcp(new std::vector<std::string>);
     p.set< Teuchos::RCP<const std::vector<std::string> > >("Field Multipliers",fms);
-    
-    if(basis->getBasis()->isScalarBasis()){  
-      RCP< PHX::Evaluator<panzer::Traits> > op = 
+
+    if(basis->getBasis()->isScalarBasis()){
+      RCP< PHX::Evaluator<panzer::Traits> > op =
         rcp(new panzer::Integrator_BasisTimesScalar<EvalT,panzer::Traits>(p));
       fm.template registerEvaluator<EvalT>(op);
-    } else if(basis->getBasis()->isVectorBasis()){ 
-      RCP< PHX::Evaluator<panzer::Traits> > op = 
+    } else if(basis->getBasis()->isVectorBasis()){
+      RCP< PHX::Evaluator<panzer::Traits> > op =
         rcp(new panzer::Integrator_BasisTimesVector<EvalT,panzer::Traits>(p));
       fm.template registerEvaluator<EvalT>(op);
     } else
@@ -133,13 +133,13 @@ buildAndRegisterScatterEvaluators(PHX::FieldManager<panzer::Traits>& fm,
    typedef panzer::Traits::Jacobian EvalT;
 
    std::string fieldStr = (*this->m_dof_names)[0];
-   const std::string residualField = "AUX_MASS_RESIDUAL_"+dof_name; 
+   const std::string residualField = "AUX_MASS_RESIDUAL_"+dof_name;
    int pFieldNum;
    int blockIndex;
 
-   // must be able to cast to a block linear object factory 
+   // must be able to cast to a block linear object factory
    Teuchos::RCP<const panzer::BlockedTpetraLinearObjFactory<panzer::Traits,double,int,panzer::Ordinal64> > tblof
-      = Teuchos::rcp_dynamic_cast<const panzer::BlockedTpetraLinearObjFactory<panzer::Traits,double,int,panzer::Ordinal64> >(Teuchos::rcpFromRef(lof)); 
+      = Teuchos::rcp_dynamic_cast<const panzer::BlockedTpetraLinearObjFactory<panzer::Traits,double,int,panzer::Ordinal64> >(Teuchos::rcpFromRef(lof));
 
    std::string outPrefix = "ScatterReordered_";
 
@@ -148,23 +148,23 @@ buildAndRegisterScatterEvaluators(PHX::FieldManager<panzer::Traits>& fm,
 
    if(tblof != Teuchos::null){
      Teuchos::RCP<const panzer::BlockedDOFManager<int,panzer::Ordinal64> > blockedDOFMngr = tblof->getGlobalIndexer();
-     TEUCHOS_ASSERT(blockedDOFMngr!=Teuchos::null); 
+     TEUCHOS_ASSERT(blockedDOFMngr!=Teuchos::null);
 
      pFieldNum = blockedDOFMngr->getFieldNum(fieldStr);
      blockIndex = blockedDOFMngr->getFieldBlock(pFieldNum);
 
      // get the unique global indexer for just this field
      Teuchos::RCP<panzer::UniqueGlobalIndexer<int,panzer::Ordinal64> > ugi = blockedDOFMngr->getFieldDOFManagers()[blockIndex];
- 
-     // build a new tpetra linear object factory 
+
+     // build a new tpetra linear object factory
      nlof = Teuchos::rcp(new panzer::TpetraLinearObjFactory<panzer::Traits,double,int,panzer::Ordinal64>(Teuchos::rcp(new Teuchos::MpiComm<int>(tblof->getComm())).getConst(),ugi));
 
      // first build a reordering evaluator to take it to the new sub global indexer
      {
-        std::vector<Teuchos::RCP<PHX::DataLayout> > fieldLayouts; 
+        std::vector<Teuchos::RCP<PHX::DataLayout> > fieldLayouts;
         fieldLayouts.push_back(field_library.lookupBasis(fieldStr)->functional);
 
-        std::vector<std::string> resNames; 
+        std::vector<std::string> resNames;
         resNames.push_back(residualField);
 
         RCP< PHX::Evaluator<panzer::Traits> > op = Teuchos::rcp(
@@ -179,11 +179,11 @@ buildAndRegisterScatterEvaluators(PHX::FieldManager<panzer::Traits>& fm,
      }
 
    } else
-     TEUCHOS_ASSERT(false); 
+     TEUCHOS_ASSERT(false);
 
 
    {
-      RCP<std::map<std::string,std::string> > resToField 
+      RCP<std::map<std::string,std::string> > resToField
          = rcp(new std::map<std::string,std::string>);
       (*resToField)[outPrefix+residualField] = dof_name;
 
@@ -207,9 +207,9 @@ buildAndRegisterScatterEvaluators(PHX::FieldManager<panzer::Traits>& fm,
       PHX::Tag<EvalT::ScalarT> tag(scatterName, Teuchos::rcp(new PHX::MDALayout<panzer::Dummy>(0)));
       fm.requireField<EvalT>(tag);
    }
-   
+
    if(!m_gedc->containsDataObject("Mass Matrix " + dof_name + " Scatter Container")) {
-      Teuchos::RCP<panzer::GlobalEvaluationData> dataObject 
+      Teuchos::RCP<panzer::GlobalEvaluationData> dataObject
          = Teuchos::rcp(new panzer::LOCPair_GlobalEvaluationData(nlof,panzer::LinearObjContainer::Mat));
       m_gedc->addDataObject("Mass Matrix " + dof_name + " Scatter Container",dataObject);
    }

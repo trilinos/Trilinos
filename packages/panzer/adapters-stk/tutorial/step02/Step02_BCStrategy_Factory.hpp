@@ -56,14 +56,14 @@ namespace user_app {
 
 PANZER_DECLARE_BCSTRATEGY_TEMPLATE_BUILDER(BCStrategy_ConstantDirichlet,
   BCStrategy_ConstantDirichlet)
-  
+
 class BCStrategyFactory : public panzer::BCStrategyFactory {
 public:
 
   Teuchos::RCP<panzer::BCStrategy_TemplateManager<panzer::Traits> >
   buildBCStrategy(const panzer::BC& bc, const Teuchos::RCP<panzer::GlobalData>& global_data) const
   {
-    Teuchos::RCP<panzer::BCStrategy_TemplateManager<panzer::Traits> > bcs_tm = 
+    Teuchos::RCP<panzer::BCStrategy_TemplateManager<panzer::Traits> > bcs_tm =
         Teuchos::rcp(new panzer::BCStrategy_TemplateManager<panzer::Traits>);
 
     bool found = false;
@@ -78,12 +78,12 @@ public:
 
       return bcs_tm;
 
-      
+
     return bcs_tm;
   }
 
 };
-  
+
 }
 
 #endif

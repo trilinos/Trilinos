@@ -313,53 +313,53 @@ applyOrientations(const std::string & eBlock, std::vector<Workset> & worksets) c
     }
   }
 }
-  
-  
+
+
 void WorksetContainer::
 applyOrientations(const WorksetDescriptor & desc,std::map<unsigned,Workset> & worksets) const
 {
   using Teuchos::RCP;
-  
+
   /////////////////////////////////
   // this is for side worksets //
   /////////////////////////////////
-  
+
   // short circuit if no global indexer exists
   if(globalIndexer_==Teuchos::null) {
     Teuchos::FancyOStream fout(Teuchos::rcpFromRef(std::cout));
     fout.setOutputToRootOnly(0);
-    
+
     fout << "Panzer Warning: No global indexer assigned to a workset container. "
          << "Orientation of the basis for edge basis functions cannot be applied, "
          << "if those basis functions are used, there will be problems!";
     return;
   }
-  
+
   // loop over each basis requiring orientations, then apply them
   //////////////////////////////////////////////////////////////////////////////////
-  
+
   // Note: It may be faster to loop over the basis pairs on the inside (not really sure)
   const WorksetNeeds & needs = lookupNeeds(desc.getElementBlock());
   TEUCHOS_ASSERT(needs.bases.size()==needs.rep_field_name.size());
-  
+
   for(std::size_t i=0;i<needs.bases.size();i++) {
     //const std::string & fieldName = needs.rep_field_name[i];
     const PureBasis & basis = *needs.bases[i];
-    
+
     // no need for this if orientations are not required!
     if(!basis.requiresOrientations()) continue;
-    
+
     // build accessors for orientation fields
-    std::vector<Intrepid2::Orientation> ortsPerBlock;  
-    
+    std::vector<Intrepid2::Orientation> ortsPerBlock;
+
     // loop over worksets compute and apply orientations
-    for(std::map<unsigned,Workset>::iterator itr=worksets.begin(); 
-        itr!=worksets.end();++itr) { 
-      
+    for(std::map<unsigned,Workset>::iterator itr=worksets.begin();
+        itr!=worksets.end();++itr) {
+
       // break out of the workset loop
       if(itr->second.num_cells<=0) continue;
-      
-      for(std::size_t j=0;j<itr->second.numDetails();j++) {  
+
+      for(std::size_t j=0;j<itr->second.numDetails();j++) {
         WorksetDetails & details = itr->second(j);
 
         ortsPerBlock.clear();

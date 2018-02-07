@@ -11,7 +11,7 @@ namespace panzer {
 template <typename> class LinearObjFactory;
 class UniqueGlobalIndexerBase;
 
-/** \brief Clone a linear object factory, but using a different domain. 
+/** \brief Clone a linear object factory, but using a different domain.
   *
   * This is the case where you want to make sure the linear algebra
   * abstractions are compatible, but don't really care which one is used.
@@ -21,11 +21,11 @@ class UniqueGlobalIndexerBase;
   *
   * \note As implemented this only functions for the expicitly instantiated linear
   *       object factory types.
-  */ 
+  */
 Teuchos::RCP<const LinearObjFactory<panzer::Traits> > cloneWithNewDomain(const LinearObjFactory<panzer::Traits> & lof,
                                                                          const Teuchos::RCP<const UniqueGlobalIndexerBase> & dUgi);
 
-/** \brief Clone a linear object factory, but using a different range. 
+/** \brief Clone a linear object factory, but using a different range.
   *
   * This is the case where you want to make sure the linear algebra
   * abstractions are compatible, but don't really care which one is used.
@@ -35,11 +35,11 @@ Teuchos::RCP<const LinearObjFactory<panzer::Traits> > cloneWithNewDomain(const L
   *
   * \note As implemented this only functions for the expicitly instantiated linear
   *       object factory types.
-  */ 
+  */
 Teuchos::RCP<const LinearObjFactory<panzer::Traits> > cloneWithNewRange(const LinearObjFactory<panzer::Traits> & lof,
                                                                         const Teuchos::RCP<const UniqueGlobalIndexerBase> & rUgi);
 
-/** \brief Clone a linear object factory, but using a different range and domain. 
+/** \brief Clone a linear object factory, but using a different range and domain.
   *
   * This is the case where you want to make sure the linear algebra
   * abstractions are compatible, but don't really care which one is used.
@@ -50,7 +50,7 @@ Teuchos::RCP<const LinearObjFactory<panzer::Traits> > cloneWithNewRange(const Li
   *
   * \note As implemented this only functions for the expicitly instantiated linear
   *       object factory types.
-  */ 
+  */
 Teuchos::RCP<const LinearObjFactory<panzer::Traits> > cloneWithNewRangeAndDomain(
                                                                         const LinearObjFactory<panzer::Traits> & lof,
                                                                         const Teuchos::RCP<const UniqueGlobalIndexerBase> & rUgi,

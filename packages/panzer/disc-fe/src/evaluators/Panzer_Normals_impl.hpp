@@ -70,7 +70,7 @@ PHX_EVALUATOR_CTOR(Normals,p)
   // build field, set as evaluated type
   normals = PHX::MDField<ScalarT,Cell,Point,Dim>(name, vector_dl);
   this->addEvaluatedField(normals);
-  
+
   std::string n = "Normals: " + name;
   this->setName(n);
 }
@@ -82,31 +82,31 @@ PHX_POST_REGISTRATION_SETUP(Normals,sd,fm)
 
   num_qp  = normals.dimension(1);
   num_dim = normals.dimension(2);
-  
+
   quad_index =  panzer::getIntegrationRuleIndex(quad_order,(*sd.worksets_)[0], this->wda);
 }
 
 //**********************************************************************
 PHX_EVALUATE_FIELDS(Normals,workset)
-{ 
+{
   // ECC Fix: Get Physical Side Normals
 
   if(workset.num_cells>0) {
     Intrepid2::CellTools<PHX::exec_space>::getPhysicalSideNormals(normals.get_view(),
                                                                   this->wda(workset).int_rules[quad_index]->jac.get_view(),
                                                                   side_id, *this->wda(workset).int_rules[quad_index]->int_rule->topology);
-      
+
     if(normalize) {
-      // normalize vector: getPhysicalSideNormals does not 
+      // normalize vector: getPhysicalSideNormals does not
       // return normalized vectors
       for(index_t c=0;c<workset.num_cells;c++) {
         for(std::size_t q=0;q<num_qp;q++) {
           ScalarT norm = 0.0;
-   
+
           // compute squared norm
           for(std::size_t d=0;d<num_dim;d++)
             norm += normals(c,q,d)*normals(c,q,d);
-    
+
           // adjust for length of vector, now unit vectors
           norm = sqrt(norm);
           for(std::size_t d=0;d<num_dim;d++)

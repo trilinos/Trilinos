@@ -48,7 +48,7 @@
 #include "Panzer_ParameterLibrary.hpp"
 
 namespace panzer {
-  
+
   /** \brief Struct for global data to be stored.
 
      This object is unique for each instantiation of a panzer model
@@ -59,21 +59,21 @@ namespace panzer {
      library and a default ostream to redirect all output to.
   */
   struct GlobalData {
-    
+
     /** \brief ostream for redirecting all panzer output for a particular instantiation.  */
     Teuchos::RCP<Teuchos::FancyOStream> os;
-    
+
     /** \brief Sacado scalar parameter library */
     Teuchos::RCP<panzer::ParamLib> pl;
 
     /** \brief Get the output stream */
-    std::ostream & out() 
+    std::ostream & out()
     { return *os; }
-    
+
   };
-  
+
   /** \brief Nonmember constructor
-      
+
     Allocates a new global data object.  Automatically allocates the
     sacado parameter libraries.
 

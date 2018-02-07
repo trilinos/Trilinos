@@ -66,7 +66,7 @@ namespace panzer
     public panzer::CloneableEvaluator
   {
     public:
-    
+
       /**
        *  \brief Constructor.
        *
@@ -82,7 +82,7 @@ namespace panzer
         indexers_(indexers)
       {
       } // end of Constructor
-    
+
       /**
        *  \brief Initializing Constructor.
        *
@@ -99,7 +99,7 @@ namespace panzer
         const std::vector<Teuchos::RCP<const UniqueGlobalIndexer<LO, int>>>&
           indexers,
         const Teuchos::ParameterList& p);
-    
+
       /**
        *  \brief Post-Registration Setup.
        *
@@ -113,7 +113,7 @@ namespace panzer
       postRegistrationSetup(
         typename TRAITS::SetupData d,
         PHX::FieldManager<TRAITS>& vm);
-    
+
       /**
        *  \brief Pre-Evaluate:  Sets the solution vector.
        *
@@ -127,7 +127,7 @@ namespace panzer
       void
       preEvaluate(
         typename TRAITS::PreEvalData d);
-    
+
       /**
        *  \brief Evaluate Fields:  Gather operation.
        *
@@ -139,7 +139,7 @@ namespace panzer
       void
       evaluateFields(
         typename TRAITS::EvalData d);
-    
+
       /**
        *  \brief Create a copy.
        *
@@ -163,7 +163,7 @@ namespace panzer
           GatherSolution_BlockedEpetra<Traits::Hessian, TRAITS, LO, GO>
           (indexers_, pl));
       } // end of clone()
-    
+
     private:
 
       /**
@@ -175,17 +175,17 @@ namespace panzer
        *  \brief The scalar type.
        */
       typedef typename panzer::Traits::Hessian::ScalarT ScalarT;
-    
+
       /**
        *  \brief A list of the names of the fields to be gathered.
        */
       std::vector<std::string> indexerNames_;
-    
+
       /**
        *  \brief The key identifying the `GlobalEvaluationData`.
        */
       std::string globalDataKey_;
-    
+
       /**
        *  \brief These map the local (field, element, basis) triplet to a
        *         global ID for scattering.
@@ -201,23 +201,23 @@ namespace panzer
        *  \brief Sub-field IDs, which need to be mapped.
        */
       std::vector<int> subFieldIds_;
-    
+
       /**
        *  \brief The fields to be gathered.
        */
       std::vector< PHX::MDField<ScalarT, Cell, NODE>> gatherFields_;
-    
+
       /**
        *  \brief A flag indicating whether we should be working with \f$ x \f$
        *         or \f$ \dot{x} \f$.
        */
       bool useTimeDerivativeSolutionVector_;
-    
+
       /**
        *  \brief Sets which gather operations have sensitivities.
        */
       std::string sensitivitiesName_;
-    
+
       /**
        *  \brief Which gather seed in the workset to use.
        *
@@ -236,7 +236,7 @@ namespace panzer
        *         sensitivities.
        */
       bool firstApplySensitivities_;
-                            
+
       /**
        *  \brief The prefix for the field containing the second sensitivities.
        */
@@ -253,7 +253,7 @@ namespace panzer
        *         sensitivities.
        */
       bool secondApplySensitivities_;
-    
+
       /**
        *  \brief The solution vector.
        */
@@ -272,7 +272,7 @@ namespace panzer
        */
       Teuchos::RCP<panzer::BlockedVector_ReadOnly_GlobalEvaluationData>
       dxBvRoGed_;
-    
+
       /**
        *  \brief Default Constructor (disabled)
        */

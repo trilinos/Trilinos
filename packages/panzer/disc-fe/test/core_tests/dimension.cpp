@@ -58,7 +58,7 @@ namespace panzer {
 
     Array<double,NaturalOrder,Dim,IP,BASIS,NODE,Point,Cell,Dummy,Edge> a;
     Array<double,NaturalOrder,Dim,IP,BASIS,NODE,Point,Cell,Dummy,Edge> b;
-    
+
     a = b;
   }
 

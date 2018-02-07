@@ -57,33 +57,33 @@
 #include "Phalanx_FieldManager.hpp"
 
 namespace panzer {
-  
+
   template <typename EvalT>
     class BCStrategy_Dirichlet_DefaultImpl : public panzer::BCStrategy<EvalT>,
 					     public panzer::GlobalDataAcceptorDefaultImpl {
 
-  public:    
+  public:
 
     BCStrategy_Dirichlet_DefaultImpl(const panzer::BC& bc, const Teuchos::RCP<panzer::GlobalData>& global_data,
 				     const bool check_apply_bc = false);
-    
+
     virtual ~BCStrategy_Dirichlet_DefaultImpl();
-    
+
     virtual void setup(const panzer::PhysicsBlock& side_pb, const Teuchos::ParameterList& user_data) = 0;
-      
+
     virtual void buildAndRegisterEvaluators(PHX::FieldManager<panzer::Traits>& fm,
 					    const panzer::PhysicsBlock& pb,
 					    const panzer::ClosureModelFactory_TemplateManager<panzer::Traits>& factory,
 					    const Teuchos::ParameterList& models,
 					    const Teuchos::ParameterList& user_data) const = 0;
 
-    void 
+    void
     virtual buildAndRegisterGatherScatterEvaluators(PHX::FieldManager<panzer::Traits>& fm,
 						    const panzer::PhysicsBlock& pb,
 						    const panzer::LinearObjFactory<panzer::Traits> & lof,
 						    const Teuchos::ParameterList& user_data) const;
 
-    virtual void 
+    virtual void
     buildAndRegisterScatterEvaluators(PHX::FieldManager<panzer::Traits>& fm,
 				      const panzer::PhysicsBlock& side_pb,
 				      const LinearObjFactory<panzer::Traits> & lof,
@@ -127,7 +127,7 @@ namespace panzer {
 
     /** This is to support backward compatibility and allow a migration path from the old
       * protected data approach of specifying the inputs and outputs of this class.
-      */ 
+      */
     void buildDescriptorMapFromVectors() const;
 
     //! For convenience, declare the DOFDescriptor iterator
@@ -143,7 +143,7 @@ namespace panzer {
       *                        dirichlet condition. This exists only in the PHX::FieldManager
       *                        and is required to be distinct from the <code>dofName</code>.
       * \param[in] dofName (Required) Name of field to lookup in the unique global
-      *                        indexer. The 
+      *                        indexer. The
       * \param[in] residualName (Optional) Name of field that is to be scattered associated with
       *                         this DOF.  If not supplied or an empty string used, the
       *                         default is to add the prefix "RESIDUAL_" to the dofName for
@@ -161,7 +161,7 @@ namespace panzer {
       *                        dirichlet condition. This exists only in the PHX::FieldManager
       *                        and is required to be distinct from the <code>dofName</code>.
       * \param[in] dofName (Required) Name of field to lookup in the unique global
-      *                        indexer. The 
+      *                        indexer. The
       * \param[in] residualName (Optional) Name of field that is to be scattered associated with
       *                         this DOF.  If not supplied or an empty string used, the
       *                         default is to add the prefix "RESIDUAL_" to the dofName for
@@ -179,7 +179,7 @@ namespace panzer {
       *                        dirichlet condition. This exists only in the PHX::FieldManager
       *                        and is required to be distinct from the <code>dofName</code>.
       * \param[in] dofName (Required) Name of field to lookup in the unique global
-      *                        indexer. The 
+      *                        indexer. The
       * \param[in] residualName (Optional) Name of field that is to be scattered associated with
       *                         this DOF.  If not supplied or an empty string used, the
       *                         default is to add the prefix "RESIDUAL_" to the dofName for

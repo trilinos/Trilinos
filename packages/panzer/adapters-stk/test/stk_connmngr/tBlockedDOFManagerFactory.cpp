@@ -72,7 +72,7 @@ Teuchos::RCP<panzer_stk::STK_Interface> buildQuadMesh(stk::ParallelMachine comm,
 
    panzer_stk::SquareQuadMeshFactory meshFact;
    meshFact.setParameterList(Teuchos::rcpFromRef(pl));
-   
+
    return meshFact.buildMesh(comm);
 }
 
@@ -94,7 +94,7 @@ TEUCHOS_UNIT_TEST(tBlockedDOFManagerFactory, basic_test)
 //    #else
 //       stk::ParallelMachine Comm = WHAT_TO_DO_COMM;
 //    #endif
-// 
+//
    // int numProcs = stk::parallel_machine_size(Comm);
    // int myRank = stk::parallel_machine_rank(Comm);
 
@@ -109,11 +109,11 @@ TEUCHOS_UNIT_TEST(tBlockedDOFManagerFactory, basic_test)
    result = BDFii::requiresBlocking("blocked: UX UY P");     TEST_ASSERT(result);
    TEST_THROW(BDFii::requiresBlocking("blocked: - UX"),std::logic_error);
    TEST_THROW(BDFii::requiresBlocking("blocked: UX - - P"),std::logic_error);
-   
-   
+
+
    {
       std::vector<std::vector<std::string> > blocks;
-      BDFii::buildBlocking("blocked: UX - UY - P",blocks); 
+      BDFii::buildBlocking("blocked: UX - UY - P",blocks);
 
       TEST_EQUALITY(blocks.size(),1);
       TEST_EQUALITY(blocks[0].size(),3);
@@ -124,7 +124,7 @@ TEUCHOS_UNIT_TEST(tBlockedDOFManagerFactory, basic_test)
 
    {
       std::vector<std::vector<std::string> > blocks;
-      BDFii::buildBlocking("blocked: UX UY - P",blocks); 
+      BDFii::buildBlocking("blocked: UX UY - P",blocks);
 
       TEST_EQUALITY(blocks.size(),2);
       TEST_EQUALITY(blocks[0].size(),1);
@@ -137,7 +137,7 @@ TEUCHOS_UNIT_TEST(tBlockedDOFManagerFactory, basic_test)
 
    {
       std::vector<std::vector<std::string> > blocks;
-      BDFii::buildBlocking("blocked: UX - UY P",blocks); 
+      BDFii::buildBlocking("blocked: UX - UY P",blocks);
 
       TEST_EQUALITY(blocks.size(),2);
       TEST_EQUALITY(blocks[0].size(),2);
@@ -150,7 +150,7 @@ TEUCHOS_UNIT_TEST(tBlockedDOFManagerFactory, basic_test)
 
    {
       std::vector<std::vector<std::string> > blocks;
-      BDFii::buildBlocking("blocked: UX P UY",blocks); 
+      BDFii::buildBlocking("blocked: UX P UY",blocks);
 
       TEST_EQUALITY(blocks.size(),3);
 

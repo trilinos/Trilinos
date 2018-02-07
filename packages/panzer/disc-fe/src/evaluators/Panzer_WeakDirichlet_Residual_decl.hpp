@@ -49,17 +49,17 @@
 #include "Panzer_Evaluator_Macros.hpp"
 
 namespace panzer {
-    
+
   /** \brief Evaluates a Weak Dirichlet BC residual contribution
 
       computes the surface integral term resulting from integration
       by parts for a particular dof:
 
       int(n \cdot flux * phi) + int(\sigma (u-g) * phi)
-      
+
   */
 PANZER_EVALUATOR_CLASS(WeakDirichletResidual)
-  
+
   PHX::MDField<ScalarT> residual;
   PHX::MDField<ScalarT> normal_dot_flux_plus_pen;
   PHX::MDField<const ScalarT> flux; // i.e., -K \nabla u

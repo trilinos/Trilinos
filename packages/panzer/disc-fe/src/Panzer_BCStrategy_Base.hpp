@@ -59,25 +59,25 @@ namespace panzer {
 
   //! Non-templated empty base class for BCStrategy objects
 class BCStrategyBase : public EvaluatorsRegistrar {
-    
+
   public:
-    
+
     BCStrategyBase() {}
-    
+
     virtual ~BCStrategyBase() {}
-    
-    virtual void 
+
+    virtual void
     setup(const panzer::PhysicsBlock& side_pb,
 	  const Teuchos::ParameterList& user_data) = 0;
 
-    virtual void 
+    virtual void
       buildAndRegisterEvaluators(PHX::FieldManager<panzer::Traits>& fm,
 				 const panzer::PhysicsBlock& side_pb,
 				 const panzer::ClosureModelFactory_TemplateManager<panzer::Traits>& factory,
 				 const Teuchos::ParameterList& models,
 				 const Teuchos::ParameterList& user_data) const = 0;
 
-    virtual void 
+    virtual void
     buildAndRegisterScatterEvaluators(PHX::FieldManager<panzer::Traits>& fm,
 				      const panzer::PhysicsBlock& side_pb,
 				      const LinearObjFactory<panzer::Traits> & lof,
@@ -90,7 +90,7 @@ class BCStrategyBase : public EvaluatorsRegistrar {
 						   const Teuchos::ParameterList& user_data) const = 0;
 
   };
-  
+
 }
 
 #endif

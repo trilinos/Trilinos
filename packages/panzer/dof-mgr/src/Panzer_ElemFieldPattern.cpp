@@ -73,7 +73,7 @@ const std::vector<int> & ElemFieldPattern::getSubcellIndices(int dim,int cellInd
 {
    if(dim==3)
       return ElemIndices_[cellIndex];
-   
+
    // only Elems
    return empty_;
 }

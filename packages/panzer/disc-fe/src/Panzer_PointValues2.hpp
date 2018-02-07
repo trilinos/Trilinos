@@ -70,7 +70,7 @@ namespace panzer {
                  const std::vector<PHX::index_size_type> & ddims,
                  bool allocArrays=false)
        : alloc_arrays_(allocArrays), prefix_(pre), ddims_(ddims) {}
-    
+
     //! Sizes/allocates memory for arrays
     void setupArrays(const Teuchos::RCP<const panzer::PointRule>& pr);
 
@@ -88,15 +88,15 @@ namespace panzer {
       evaluateValues(); }
 
     /** Evaluate teh jacobian and derivative information at the requested reference
-      * points. This version allows a shallow copy of the vertex coordinates. 
+      * points. This version allows a shallow copy of the vertex coordinates.
       *
       * \param[in] node_coords Cell vertices
       * \param[in] point_coords Reference cell coordinates
       * \param[in] shallow_copy_nodes Enable or disable a shallow copy of the vertices
-      */ 
+      */
     template <typename PointArray>
     void evaluateValues(const PHX::MDField<Scalar,Cell,NODE,Dim> & node_coords,
-                        const PointArray & point_coords, 
+                        const PointArray & point_coords,
                         bool shallow_copy_nodes)
     { if(shallow_copy_nodes)
         node_coordinates = node_coords;
@@ -106,7 +106,7 @@ namespace panzer {
       evaluateValues(); }
 
     //! Return reference cell coordinates this class uses (IP,Dim) sized
-    PHX::MDField<Scalar,IP,Dim> & getRefCoordinates() const 
+    PHX::MDField<Scalar,IP,Dim> & getRefCoordinates() const
     { return coords_ref; }
 
     //! Return the vertex coordinates this class uses (Cell,NODE,Dim) sized

@@ -66,17 +66,17 @@ PHX_EVALUATOR_CTOR(Integrator_Scalar,p) : quad_index(-1)
 
   this->addEvaluatedField(integral);
   this->addDependentField(scalar);
-    
+
   multiplier = 1.0;
   if(p.isType<double>("Multiplier"))
      multiplier = p.get<double>("Multiplier");
 
   if (p.isType<Teuchos::RCP<const std::vector<std::string> > >("Field Multipliers")) {
-    const std::vector<std::string>& field_multiplier_names = 
+    const std::vector<std::string>& field_multiplier_names =
       *(p.get<Teuchos::RCP<const std::vector<std::string> > >("Field Multipliers"));
 
-    for (std::vector<std::string>::const_iterator name = 
-	   field_multiplier_names.begin(); 
+    for (std::vector<std::string>::const_iterator name =
+	   field_multiplier_names.begin();
 	 name != field_multiplier_names.end(); ++name) {
       PHX::MDField<const ScalarT,Cell,IP> tmp_field(*name, p.get< Teuchos::RCP<panzer::IntegrationRule> >("IR")->dl_scalar);
       field_multipliers.push_back(tmp_field);
@@ -96,7 +96,7 @@ PHX_POST_REGISTRATION_SETUP(Integrator_Scalar,sd,fm)
 {
   this->utils.setFieldData(integral,fm);
   this->utils.setFieldData(scalar,fm);
-  
+
   for (typename std::vector<PHX::MDField<const ScalarT,Cell,IP> >::iterator field = field_multipliers.begin();
        field != field_multipliers.end(); ++field)
     this->utils.setFieldData(*field,fm);
@@ -110,7 +110,7 @@ PHX_POST_REGISTRATION_SETUP(Integrator_Scalar,sd,fm)
 
 //**********************************************************************
 PHX_EVALUATE_FIELDS(Integrator_Scalar,workset)
-{ 
+{
 /*
   for (index_t cell = 0; cell < workset.num_cells; ++cell)
     integral(cell) = 0.0;
@@ -121,7 +121,7 @@ PHX_EVALUATE_FIELDS(Integrator_Scalar,workset)
       tmp(cell,qp) = multiplier * scalar(cell,qp);
       for (typename std::vector<PHX::MDField<const ScalarT,Cell,IP> >::iterator field = field_multipliers.begin();
 	   field != field_multipliers.end(); ++field)
-        tmp(cell,qp) = tmp(cell,qp) * (*field)(cell,qp);  
+        tmp(cell,qp) = tmp(cell,qp) * (*field)(cell,qp);
     }
   }
 
@@ -132,11 +132,11 @@ PHX_EVALUATE_FIELDS(Integrator_Scalar,workset)
   /*
   if(workset.num_cells>0)
     Intrepid2::FunctionSpaceTools::
-      integrate<ScalarT>(integral, tmp, 
-			 (this->wda(workset).int_rules[quad_index])->weighted_measure, 
+      integrate<ScalarT>(integral, tmp,
+			 (this->wda(workset).int_rules[quad_index])->weighted_measure,
 			 Intrepid2::COMP_CPP);
   */
-  
+
   // NOTE: this is not portable to GPUs.  Need to remove all uses of
   // intrepid field container for MDFields.  This is rather involved
   // since we need to change the Worksets.
@@ -145,7 +145,7 @@ PHX_EVALUATE_FIELDS(Integrator_Scalar,workset)
   const IntegrationValues2<double> & iv = *this->wda(workset).int_rules[quad_index];
 
   int numPoints       = tmp.dimension(1);
- 
+
   for(index_t cl = 0; cl < workset.num_cells; cl++) {
     integral(cl) = tmp(cl, 0)*iv.weighted_measure(cl, 0);
     for(int qp = 1; qp < numPoints; qp++)
@@ -156,7 +156,7 @@ PHX_EVALUATE_FIELDS(Integrator_Scalar,workset)
 
 //**********************************************************************
 template<typename EvalT, typename TRAITS>
-Teuchos::RCP<Teuchos::ParameterList> 
+Teuchos::RCP<Teuchos::ParameterList>
 Integrator_Scalar<EvalT, TRAITS>::getValidParameters() const
 {
   Teuchos::RCP<Teuchos::ParameterList> p = Teuchos::rcp(new Teuchos::ParameterList);

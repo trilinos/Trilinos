@@ -61,7 +61,7 @@ typedef Sacado::Fad::SFad<FadType,1> HessianType;
   * to compute (given a function f)
   *
   *    H(x) * v = d/dt(\nabla f(x+t*v))|_{t=0}
-  *       
+  *
   * where x is the value to differentiate about, v is the direction. This function
   * seeds for one value of the independent variable x[i] in the direction v[i]. What
   * is returned from this function is the independent variable to pass the derivative
@@ -87,7 +87,7 @@ double func(double x, double y)
 {
   // Grad = y * std::cos(x*y)
   //      = x * std::cos(x*y)-0.25*std::sin(y)
-  
+
   // Hess*v = dy * std::cos(x*y) - y * ( dx * sin(x*y) + dy * sin(x*y))
   //        = dx * std::cos(x*y) - x * ( dx * sin(x*y) + dy * sin(x*y)) - 0.25 * dy * std::cos(y)
   //
@@ -108,7 +108,7 @@ TEUCHOS_UNIT_TEST(hessian_test_k,correctness)
 {
   typedef HessianType ScalarT;
   typedef Sacado::ScalarValue<ScalarT> Value;
- 
+
   using Teuchos::RCP;
   using Teuchos::rcp;
 

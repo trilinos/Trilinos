@@ -58,25 +58,25 @@ using panzer::IntegrationRule;
 namespace panzer {
 
   TEUCHOS_UNIT_TEST(integration_values, volume)
-  {    
-    Teuchos::RCP<shards::CellTopology> topo = 
+  {
+    Teuchos::RCP<shards::CellTopology> topo =
        Teuchos::rcp(new shards::CellTopology(shards::getCellTopologyData< shards::Quadrilateral<4> >()));
 
     const int num_cells = 20;
     const int base_cell_dimension = 2;
     const panzer::CellData cell_data(num_cells,topo);
 
-    const int cubature_degree = 2;    
-    RCP<IntegrationRule> int_rule = 
+    const int cubature_degree = 2;
+    RCP<IntegrationRule> int_rule =
       rcp(new IntegrationRule(cubature_degree, cell_data));
-    
+
     panzer::IntegrationValues2<double> int_values("prefix_",true);
     panzer::MDFieldArrayFactory af("prefix_",true);
 
     int_values.setupArrays(int_rule);
 
     const int num_vertices = int_rule->topology->getNodeCount();
-    PHX::MDField<double,Cell,NODE,Dim> node_coordinates 
+    PHX::MDField<double,Cell,NODE,Dim> node_coordinates
         = af.buildStaticArray<double,Cell,NODE,Dim>("nc",num_cells, num_vertices, base_cell_dimension);
 
     // Set up node coordinates.  Here we assume the following
@@ -103,20 +103,20 @@ namespace panzer {
     }
 
     int_values.evaluateValues(node_coordinates);
-    
+
     TEST_EQUALITY(int_values.ip_coordinates.dimension(1), 4);
     double realspace_x_coord = (1.0/std::sqrt(3.0) + 1.0) / 2.0;
     double realspace_y_coord = (1.0/std::sqrt(3.0) + 1.0) / 2.0;
-    TEST_FLOATING_EQUALITY(int_values.ip_coordinates(0,0,0), 
+    TEST_FLOATING_EQUALITY(int_values.ip_coordinates(0,0,0),
                            realspace_x_coord, 1.0e-8);
-    TEST_FLOATING_EQUALITY(int_values.ip_coordinates(0,0,1), 
+    TEST_FLOATING_EQUALITY(int_values.ip_coordinates(0,0,1),
                            realspace_y_coord, 1.0e-8);
 
   }
 
   TEUCHOS_UNIT_TEST(integration_values, control_volume)
-  {    
-    Teuchos::RCP<shards::CellTopology> topo = 
+  {
+    Teuchos::RCP<shards::CellTopology> topo =
        Teuchos::rcp(new shards::CellTopology(shards::getCellTopologyData< shards::Quadrilateral<4> >()));
 
     const int num_cells = 20;
@@ -124,24 +124,24 @@ namespace panzer {
     const panzer::CellData cell_data(num_cells,topo);
 
     std::string cv_type = "volume";
-    RCP<IntegrationRule> int_rule_vol = 
+    RCP<IntegrationRule> int_rule_vol =
       rcp(new IntegrationRule(cell_data, cv_type));
-    
+
     panzer::IntegrationValues2<double> int_values_vol("prefix_",true);
     panzer::MDFieldArrayFactory af("prefix_",true);
 
     int_values_vol.setupArrays(int_rule_vol);
 
     cv_type = "side";
-    RCP<IntegrationRule> int_rule_side = 
+    RCP<IntegrationRule> int_rule_side =
       rcp(new IntegrationRule(cell_data, cv_type));
-    
+
     panzer::IntegrationValues2<double> int_values_side("prefix_",true);
 
     int_values_side.setupArrays(int_rule_side);
 
     const int num_vertices = int_rule_vol->topology->getNodeCount();
-    PHX::MDField<double,Cell,NODE,Dim> node_coordinates 
+    PHX::MDField<double,Cell,NODE,Dim> node_coordinates
         = af.buildStaticArray<double,Cell,NODE,Dim>("nc",num_cells, num_vertices, base_cell_dimension);
 
     // Set up node coordinates.  Here we assume the following
@@ -169,28 +169,28 @@ namespace panzer {
 
     int_values_vol.evaluateValues(node_coordinates);
     int_values_side.evaluateValues(node_coordinates);
-    
+
     TEST_EQUALITY(int_values_vol.ip_coordinates.dimension(1), 4);
     TEST_EQUALITY(int_values_side.ip_coordinates.dimension(1), 4);
     TEST_EQUALITY(int_values_side.weighted_normals.dimension(1), 4);
     double realspace_x_coord_1 = 0.25;
     double realspace_y_coord_1 = 0.25;
-    TEST_FLOATING_EQUALITY(int_values_vol.ip_coordinates(0,0,0), 
+    TEST_FLOATING_EQUALITY(int_values_vol.ip_coordinates(0,0,0),
                            realspace_x_coord_1, 1.0e-8);
-    TEST_FLOATING_EQUALITY(int_values_vol.ip_coordinates(0,0,1), 
+    TEST_FLOATING_EQUALITY(int_values_vol.ip_coordinates(0,0,1),
                            realspace_y_coord_1, 1.0e-8);
     double realspace_x_coord_2 = 0.5;
     double realspace_y_coord_2 = 0.25;
-    TEST_FLOATING_EQUALITY(int_values_side.ip_coordinates(0,0,0), 
+    TEST_FLOATING_EQUALITY(int_values_side.ip_coordinates(0,0,0),
                            realspace_x_coord_2, 1.0e-8);
-    TEST_FLOATING_EQUALITY(int_values_side.ip_coordinates(0,0,1), 
+    TEST_FLOATING_EQUALITY(int_values_side.ip_coordinates(0,0,1),
                            realspace_y_coord_2, 1.0e-8);
 
   }
 
   TEUCHOS_UNIT_TEST(integration_values, control_volume_boundary)
   {
-    Teuchos::RCP<shards::CellTopology> topo = 
+    Teuchos::RCP<shards::CellTopology> topo =
        Teuchos::rcp(new shards::CellTopology(shards::getCellTopologyData< shards::Quadrilateral<4> >()));
 
     const int num_cells = 2;
@@ -199,7 +199,7 @@ namespace panzer {
     const panzer::CellData cell_data(num_cells,cell_side,topo);
 
     std::string cv_type = "boundary";
-    RCP<IntegrationRule> int_rule_bc = 
+    RCP<IntegrationRule> int_rule_bc =
       rcp(new IntegrationRule(cell_data, cv_type));
 
     panzer::IntegrationValues2<double> int_values_bc("prefix_",true);
@@ -208,7 +208,7 @@ namespace panzer {
     int_values_bc.setupArrays(int_rule_bc);
 
     const int num_vertices = int_rule_bc->topology->getNodeCount();
-    PHX::MDField<double,Cell,NODE,Dim> node_coordinates 
+    PHX::MDField<double,Cell,NODE,Dim> node_coordinates
         = af.buildStaticArray<double,Cell,NODE,Dim>("nc",num_cells, num_vertices, base_cell_dimension);
 
     // Set up node coordinates.  Here we assume the following
@@ -235,13 +235,13 @@ namespace panzer {
     }
 
     int_values_bc.evaluateValues(node_coordinates);
-    
+
     TEST_EQUALITY(int_values_bc.ip_coordinates.dimension(1), 2);
     double realspace_x_coord_1 = 1.0;
     double realspace_y_coord_1 = 0.25;
-    TEST_FLOATING_EQUALITY(int_values_bc.ip_coordinates(0,0,0), 
+    TEST_FLOATING_EQUALITY(int_values_bc.ip_coordinates(0,0,0),
                            realspace_x_coord_1, 1.0e-8);
-    TEST_FLOATING_EQUALITY(int_values_bc.ip_coordinates(0,0,1), 
+    TEST_FLOATING_EQUALITY(int_values_bc.ip_coordinates(0,0,1),
                            realspace_y_coord_1, 1.0e-8);
 
   }

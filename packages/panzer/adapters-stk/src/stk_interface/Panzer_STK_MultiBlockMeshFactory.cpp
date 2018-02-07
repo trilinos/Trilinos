@@ -148,7 +148,7 @@ void MultiBlockMeshFactory::buildMetaData(stk::ParallelMachine /* parallelMach *
       mesh.addElementBlock("eblock"+ebPostfix.str(),ctd);
    }
 
-   // add sidesets 
+   // add sidesets
    mesh.addSideset("left",side_ctd);
    mesh.addSideset("right",side_ctd);
    mesh.addSideset("top",side_ctd);
@@ -185,7 +185,7 @@ void MultiBlockMeshFactory::buildBlock(stk::ParallelMachine /* parallelMach */, 
    double yf_ = 1.0;
    double deltaX = (xf_-x0_)/double(totalXElems);
    double deltaY = (yf_-y0_)/double(totalYElems);
- 
+
    std::vector<double> coord(2,0.0);
 
    // build the nodes
@@ -276,7 +276,7 @@ void MultiBlockMeshFactory::addSideSets(STK_Interface & mesh) const
       // vertical boundaries
       ///////////////////////////////////////////
 
-      if(nx+1==totalXElems) { 
+      if(nx+1==totalXElems) {
          stk::mesh::Entity edge = mesh.findConnectivityById(element, stk::topology::EDGE_RANK, 1);
 
          // on the right

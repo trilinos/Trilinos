@@ -48,11 +48,11 @@
 #include "Panzer_Evaluator_WithBaseImpl.hpp"
 
 namespace panzer {
-    
+
 //! Interpolates basis DOF values to IP DOF Div values
-template<typename EvalT, typename TRAITS>                   
-class DOFDiv : public panzer::EvaluatorWithBaseImpl<TRAITS>,      
-                public PHX::EvaluatorDerived<EvalT, TRAITS>  {   
+template<typename EvalT, typename TRAITS>
+class DOFDiv : public panzer::EvaluatorWithBaseImpl<TRAITS>,
+                public PHX::EvaluatorDerived<EvalT, TRAITS>  {
 public:
 
   DOFDiv(const Teuchos::ParameterList& p);
@@ -81,7 +81,7 @@ private:
   bool use_descriptors_;
   panzer::BasisDescriptor bd_;
   panzer::IntegrationDescriptor id_;
-  
+
   PHX::MDField<const ScalarT,Cell,Point> dof_value;
   PHX::MDField<ScalarT,Cell,IP> dof_div;
 
@@ -90,10 +90,10 @@ private:
 };
 
 // Specitialization for the Jacobian
-template<typename TRAITS>                   
-class DOFDiv<panzer::Traits::Jacobian,TRAITS> : 
-                public panzer::EvaluatorWithBaseImpl<TRAITS>,      
-                public PHX::EvaluatorDerived<panzer::Traits::Jacobian, TRAITS>  {   
+template<typename TRAITS>
+class DOFDiv<panzer::Traits::Jacobian,TRAITS> :
+                public panzer::EvaluatorWithBaseImpl<TRAITS>,
+                public PHX::EvaluatorDerived<panzer::Traits::Jacobian, TRAITS>  {
 public:
 
   DOFDiv(const Teuchos::ParameterList& p);

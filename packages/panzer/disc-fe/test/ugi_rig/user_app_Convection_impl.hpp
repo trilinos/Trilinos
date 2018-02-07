@@ -61,12 +61,12 @@ PHX_EVALUATOR_CTOR(Convection,p)
 
   RCP<DataLayout> scalar = ir->dl_scalar;
   RCP<DataLayout> vector = ir->dl_vector;
-  
+
   conv = MDField<ScalarT,Cell,Point>(p.get<string>("Operator Name"),scalar);
 
   a = MDField<ScalarT,Cell,Point,Dim>(p.get<string>("A Name"),vector);
 
-  grad_x = 
+  grad_x =
     MDField<ScalarT,Cell,Point,Dim>(p.get<string>("Gradient Name"),vector);
 
   multiplier = p.get<double>("Multiplier");
@@ -75,7 +75,7 @@ PHX_EVALUATOR_CTOR(Convection,p)
 
   this->addDependentField(a);
   this->addDependentField(grad_x);
-  
+
   std::string n = "Convection: " + conv.fieldTag().name();
   this->setName(n);
 }
@@ -90,19 +90,19 @@ PHX_POST_REGISTRATION_SETUP(Convection,worksets,fm)
 
 //**********************************************************************
 PHX_EVALUATE_FIELDS(Convection,workset)
-{ 
+{
   typedef typename PHX::MDField<ScalarT,Cell,Point>::size_type size_type;
-  
-  for (index_t cell = 0; cell < workset.num_cells; ++cell) {    
+
+  for (index_t cell = 0; cell < workset.num_cells; ++cell) {
     for (size_type point = 0; point < conv.dimension(1); ++point) {
-      
+
       conv(cell,point) = 0.0;
-	
+
       for (size_type dim = 0; dim < a.dimension(2); ++dim)
 	conv(cell,point) += a(cell,point,dim) * grad_x(cell,point,dim);
-      
+
       conv(cell,point) *= multiplier;
-      
+
     }
   }
 

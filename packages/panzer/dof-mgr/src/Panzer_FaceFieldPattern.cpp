@@ -58,7 +58,7 @@ void FaceFieldPattern::setCellTopology(const shards::CellTopology & ct)
 
    // allocate the space and setup the indices
    FaceIndices_.clear();
-   if ( cellTopo_.getDimension() == 3 ) 
+   if ( cellTopo_.getDimension() == 3 )
      FaceIndices_.resize(cellTopo_.getFaceCount());
    else
      FaceIndices_.resize(1);
@@ -76,7 +76,7 @@ const std::vector<int> & FaceFieldPattern::getSubcellIndices(int dim,int cellInd
 {
    if(dim==2)
       return FaceIndices_[cellIndex];
-   
+
    // only Faces
    return empty_;
 }

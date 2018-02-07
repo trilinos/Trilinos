@@ -52,7 +52,7 @@
 #include "Shards_BasicTopologies.hpp"
 
 namespace panzer {
-  
+
   /** \brief Data for determining cell topology and dimensionality
 
       This class provides information about the finite elements/cells
@@ -61,15 +61,15 @@ namespace panzer {
       conditions, we integrate over a side but must still use all
       basis points from the volume if we need a gradient that contains
       a normal component to the surface being integrated over.
-  */ 
+  */
   class CellData {
-    
+
   public:
 
     /** for testing purposes only */
-    explicit CellData() 
+    explicit CellData()
     { }
-    
+
     /** Build cell data that uses volume data.  CellTopology is on the
       * volume cells!
       */
@@ -91,24 +91,24 @@ namespace panzer {
       m_side(local_side_id),
       m_cell_topo(ct)
     { }
-	
-    bool isSide() const 
+
+    bool isSide() const
     {return m_is_side;}
-    
-    int side() const 
+
+    int side() const
     {
       TEUCHOS_TEST_FOR_EXCEPTION(!m_is_side, std::logic_error,
 			 "Cannot return side index, CellData is not a side!");
       return m_side;
     }
-    	
-    std::size_t numCells() const 
+
+    std::size_t numCells() const
     {return m_num_cells;}
-    	
+
     //! Dimension of the base cell.  NOT the dimension of the local side, even if the side() method returns true.
-    int baseCellDimension() const 
+    int baseCellDimension() const
     {return m_cell_topo->getDimension();}
-    
+
     //! Get CellTopology for the base cell.
     Teuchos::RCP<const shards::CellTopology> getCellTopology() const
     { return m_cell_topo; }
@@ -117,8 +117,8 @@ namespace panzer {
     std::size_t m_num_cells;
     bool m_is_side;
     int m_side;
-      
- 
+
+
     Teuchos::RCP<const shards::CellTopology> m_cell_topo;
   };
 

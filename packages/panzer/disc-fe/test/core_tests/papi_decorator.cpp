@@ -73,8 +73,8 @@ namespace panzer {
     counter.stop();
 
     counter.report(std::cout);
-    
-    
+
+
 
   }
 
@@ -94,14 +94,14 @@ namespace panzer {
 
       {
 	inner_counter_1.start();
-	
+
 	double a = 0;
 	for (int i=0; i < 1000000; ++i)
 	  a += static_cast<double>(i);
-	
+
 	inner_counter_1.stop();
       }
-      
+
       {
 	inner_counter_2.start();
 	double a = 0;
@@ -114,10 +114,10 @@ namespace panzer {
     outer_counter.stop();
 
     outer_counter.report(std::cout);
-    
+
 //     panzer::PAPICounter inner_counter_1("Inner Counter 1",rank,comm);
 //     panzer::PAPICounter inner_counter_2("Inner Counter 2",rank,comm);
-    
+
     inner_counter_1.report(std::cout);
     inner_counter_2.report(std::cout);
 

@@ -61,7 +61,7 @@
 #include "Phalanx_FieldManager.hpp"
 #include "Phalanx_MDField.hpp"
 
-// This file is used to make a set of ResponseEvaluatorFactory objects look 
+// This file is used to make a set of ResponseEvaluatorFactory objects look
 // like BCStrategy objects. It is only being used by the ResponseLibrary and
 // is primarily there to unify the interface between volumetric response objects
 // and surface response objects. It is a little bit painful!
@@ -76,24 +76,24 @@ namespace response_bc_adapters {
   {
     std::vector<std::pair<std::string,Teuchos::RCP<ResponseEvaluatorFactory_TemplateManager<panzer::Traits> > > > refVec_;
 
-  public:    
-    
+  public:
+
     ResponseFactory_BCStrategyAdapter(const panzer::BC & bc,const std::vector<std::pair<std::string,Teuchos::RCP<ResponseEvaluatorFactory_TemplateManager<panzer::Traits> > > > & refVec)
       : panzer::BCStrategy<EvalT>(bc), refVec_(refVec) {}
-    
+
     virtual ~ResponseFactory_BCStrategyAdapter() {}
-    
+
     //! \name Derived from BCStrategy
-    //@{ 
+    //@{
 
     virtual void setup(const panzer::PhysicsBlock& /* side_pb */, const Teuchos::ParameterList& /* user_data */) {}
-      
+
     virtual void buildAndRegisterEvaluators(PHX::FieldManager<panzer::Traits>& fm,
 					    const panzer::PhysicsBlock& side_pb,
 					    const panzer::ClosureModelFactory_TemplateManager<panzer::Traits>& factory,
 					    const Teuchos::ParameterList& models,
 					    const Teuchos::ParameterList& user_data) const
-    { 
+    {
       side_pb.buildAndRegisterEquationSetEvaluators(fm, user_data);
       side_pb.buildAndRegisterClosureModelEvaluatorsForType<EvalT>(fm,factory,models,user_data);
 
@@ -102,11 +102,11 @@ namespace response_bc_adapters {
 
         // only register evaluators if the type is supported
         if(respEvalFact!=Teuchos::null && respEvalFact->typeSupported())
-          respEvalFact->buildAndRegisterEvaluators(refVec_[i].first,fm,side_pb,user_data); 
+          respEvalFact->buildAndRegisterEvaluators(refVec_[i].first,fm,side_pb,user_data);
       }
     }
 
-    virtual void 
+    virtual void
     buildAndRegisterScatterEvaluators(PHX::FieldManager<panzer::Traits>& /* fm */,
 				      const panzer::PhysicsBlock& /* side_pb */,
 				      const LinearObjFactory<panzer::Traits> & /* lof */,
@@ -117,18 +117,18 @@ namespace response_bc_adapters {
 					           const panzer::PhysicsBlock& side_pb,
 						   const LinearObjFactory<panzer::Traits> & lof,
 						   const Teuchos::ParameterList& user_data) const
-    { 
+    {
       using Teuchos::RCP;
       using Teuchos::rcp;
 
-      side_pb.buildAndRegisterGatherAndOrientationEvaluators(fm,lof,user_data); 
-      side_pb.buildAndRegisterDOFProjectionsToIPEvaluators(fm,Teuchos::ptrFromRef(lof),user_data); 
+      side_pb.buildAndRegisterGatherAndOrientationEvaluators(fm,lof,user_data);
+      side_pb.buildAndRegisterDOFProjectionsToIPEvaluators(fm,Teuchos::ptrFromRef(lof),user_data);
 
       // add in side normals
       const std::map<int,Teuchos::RCP<panzer::IntegrationRule> > & int_rules = side_pb.getIntegrationRules();
       for(std::map<int,Teuchos::RCP<panzer::IntegrationRule> >::const_iterator itr=int_rules.begin();
           itr!=int_rules.end();++itr) {
-         
+
         std::stringstream s;
         s << "Side Normal:" << side_pb.cellData().side();
         Teuchos::ParameterList p(s.str());
@@ -155,7 +155,7 @@ namespace response_bc_adapters {
     typedef std::vector<std::pair<std::string,Teuchos::RCP<ResponseEvaluatorFactory_TemplateManager<panzer::Traits> > > > RespFact_TM_Vector;
     const BC & bc_;
     const RespFact_TM_Vector & vec_;
- 
+
     BCStrategy_TM_ResponseAdapterBuilder(const BC & bc,const RespFact_TM_Vector & vec)
       : bc_(bc), vec_(vec) {}
 
@@ -175,7 +175,7 @@ namespace response_bc_adapters {
     Teuchos::RCP<panzer::BCStrategy_TemplateManager<panzer::Traits> >
     buildBCStrategy(const panzer::BC& bc, const Teuchos::RCP<panzer::GlobalData>& /* global_data */) const
     {
-      Teuchos::RCP<panzer::BCStrategy_TemplateManager<panzer::Traits> > bcstrategy_tm 
+      Teuchos::RCP<panzer::BCStrategy_TemplateManager<panzer::Traits> > bcstrategy_tm
           = Teuchos::rcp(new panzer::BCStrategy_TemplateManager<panzer::Traits>);
 
       BCHashMap::const_iterator itr = hashMap_.find(bc);
@@ -183,14 +183,14 @@ namespace response_bc_adapters {
 
       BCStrategy_TM_ResponseAdapterBuilder builder(bc,*itr->second);
       bcstrategy_tm->buildObjects(builder);
- 
+
       return bcstrategy_tm;
     }
 
   private:
     BCHashMap hashMap_;
   };
-  
+
 
 } // response_bc_adapters
 } // end panzer

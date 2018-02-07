@@ -48,6 +48,6 @@
 
 namespace panzer {
 
-template class ModelEvaluator<panzer::Traits::RealType>; 
+template class ModelEvaluator<panzer::Traits::RealType>;
 
 }

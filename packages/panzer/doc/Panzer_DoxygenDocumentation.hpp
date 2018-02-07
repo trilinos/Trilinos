@@ -62,7 +62,7 @@
 
 \section overview Overview
 
-Panzer is a toolkit that provides a multiphysics assembly engine for solving large-scale systems of partial differential equations.  
+Panzer is a toolkit that provides a multiphysics assembly engine for solving large-scale systems of partial differential equations.
 
 NOTE: Panzer is a work in progress and is considered research stable code.  Do not expect backwards-compatible support.  External support is minimal at this point.  Use at your own risk.
 
@@ -97,7 +97,7 @@ NOTE: Panzer is a work in progress and is considered research stable code.  Do n
 \verbinclude copyright.txt
 
 \section questions For All Questions and Comments...
-  
+
    Please contact Roger Pawlowski (rppawlo@sandia.gov).
 
 */
@@ -144,7 +144,7 @@ Long Term:
 
 \ref faq2
 
-\section faq1 1. Why name the code Panzer?  
+\section faq1 1. Why name the code Panzer?
 The Panzer library is a fast and flexible assembly engine for solving partial differential equations.  Following the engine idea, it was named after a fast machine - the German Panzer tank from World War II.  The tank spearheded Blitzkrieg maneuvers during World War II.  Along these lines, Panzer is meant for rapid prototyping of new discretiations.
 
 \section faq2 2. Put your question here?

@@ -69,7 +69,7 @@ class ParameterListCallback : public Teko::RequestCallback<Teuchos::RCP<Teuchos:
 public:
   ParameterListCallback(const std::string & coordFieldName,
                         const std::map<std::string,Teuchos::RCP<const panzer::Intrepid2FieldPattern> > & fp,
-                        const Teuchos::RCP<const panzer_stk::STKConnManager<GlobalOrdinalT> > & connManager, 
+                        const Teuchos::RCP<const panzer_stk::STKConnManager<GlobalOrdinalT> > & connManager,
                         const Teuchos::RCP<const panzer::UniqueGlobalIndexer<LocalOrdinalT,GlobalOrdinalT> > & ugi);
 
    Teuchos::RCP<Teuchos::ParameterList> request(const Teko::RequestMesg & rm);
@@ -78,14 +78,14 @@ public:
 
    void preRequest(const Teko::RequestMesg & rm);
 
-   const std::vector<double> & getCoordsVector(unsigned dim) const 
+   const std::vector<double> & getCoordsVector(unsigned dim) const
    { switch(dim) {
      case 0:
-       return getXCoordsVector(); 
+       return getXCoordsVector();
      case 1:
-       return getYCoordsVector(); 
+       return getYCoordsVector();
      case 2:
-       return getZCoordsVector(); 
+       return getZCoordsVector();
      default:
        TEUCHOS_ASSERT(false);
      }
@@ -116,7 +116,7 @@ private:
    Teuchos::RCP<const panzer_stk::STKConnManager<GlobalOrdinalT> > connManager_;
    Teuchos::RCP<const panzer::UniqueGlobalIndexer<LocalOrdinalT,GlobalOrdinalT> > ugi_;
    bool coordinatesBuilt_;
- 
+
    std::vector<double> xcoords_;
    std::vector<double> ycoords_;
    std::vector<double> zcoords_;

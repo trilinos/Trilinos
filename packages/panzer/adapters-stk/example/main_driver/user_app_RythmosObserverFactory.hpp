@@ -65,11 +65,11 @@ namespace user_app {
                            bool useCoordinateUpdate)
        : stkIOResponseLibrary_(stkIOResponseLibrary)
        , wkstContainer_(wkstContainer)
-       , useCoordinateUpdate_(useCoordinateUpdate) 
+       , useCoordinateUpdate_(useCoordinateUpdate)
     {}
 
     bool useNOXObserver() const { return false; }
-    
+
     Teuchos::RCP<Rythmos::IntegrationObserverBase<double> >
     buildRythmosObserver(const Teuchos::RCP<panzer_stk::STK_Interface>& mesh,
 			 const Teuchos::RCP<const panzer::UniqueGlobalIndexerBase> & dof_manager,
@@ -77,7 +77,7 @@ namespace user_app {
     {
       // all done?
       if(!useCoordinateUpdate_) {
-        Teuchos::RCP<user_app::RythmosObserver_WriteToExodus> exodus_observer 
+        Teuchos::RCP<user_app::RythmosObserver_WriteToExodus> exodus_observer
             = Teuchos::rcp(new user_app::RythmosObserver_WriteToExodus(mesh,dof_manager,lof,stkIOResponseLibrary_));
 
         return exodus_observer;
@@ -88,13 +88,13 @@ namespace user_app {
         Rythmos::createCompositeIntegrationObserver<double>();
 
       {
-        Teuchos::RCP<user_app::RythmosObserver_WriteToExodus> observer 
+        Teuchos::RCP<user_app::RythmosObserver_WriteToExodus> observer
             = Teuchos::rcp(new user_app::RythmosObserver_WriteToExodus(mesh,dof_manager,lof,stkIOResponseLibrary_));
         composite_observer->addObserver(observer);
       }
 
       {
-        Teuchos::RCP<user_app::RythmosObserver_CoordinateUpdate> observer 
+        Teuchos::RCP<user_app::RythmosObserver_CoordinateUpdate> observer
             = Teuchos::rcp(new user_app::RythmosObserver_CoordinateUpdate(wkstContainer_));
         composite_observer->addObserver(observer);
       }

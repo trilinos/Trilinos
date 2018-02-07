@@ -91,15 +91,15 @@ namespace panzer {
     double value = 5.0;
     Teuchos::ParameterList p;
     p.set("Value",value);
-    panzer::BC bc(bc_id, neumann, sideset_id, element_block_id, dof_name, 
+    panzer::BC bc(bc_id, neumann, sideset_id, element_block_id, dof_name,
 		  strategy, p);
 
-    panzer::BC bc1(bc_id, neumann, sideset_id, element_block_id, dof_name, 
+    panzer::BC bc1(bc_id, neumann, sideset_id, element_block_id, dof_name,
 		   "Constant 1", p);
 
-    panzer::BC bc2(bc_id, neumann, sideset_id, element_block_id, dof_name, 
+    panzer::BC bc2(bc_id, neumann, sideset_id, element_block_id, dof_name,
 		   "Constant 2", p);
-    
+
 
     Teuchos::RCP<panzer::GlobalData> gd = panzer::createGlobalData();
 
@@ -122,7 +122,7 @@ namespace panzer {
       TEST_ASSERT(nonnull(bcs));
       TEST_THROW(bcs = my_factory2.buildBCStrategy(bc1,gd),std::logic_error);
     }
-    
+
     // Build composite and test that it can build both bc 1 and bc 2
     {
       std::vector<Teuchos::RCP<panzer::BCStrategyFactory> > factories;

@@ -60,13 +60,13 @@ Solution<EvalT,Traits>::Solution(const std::string& name,
   solution = PHX::MDField<ScalarT,Cell,Point>(name, data_layout);
 
   this->addEvaluatedField(solution);
-  
+
   std::string n = "Solution";
   this->setName(n);
 }
 
 template <typename EvalT,typename Traits>
-void Solution<EvalT,Traits>::postRegistrationSetup(typename Traits::SetupData sd,           
+void Solution<EvalT,Traits>::postRegistrationSetup(typename Traits::SetupData sd,
                                                    PHX::FieldManager<Traits>& fm)
 {
   this->utils.setFieldData(solution,fm);

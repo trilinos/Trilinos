@@ -16,10 +16,10 @@
 // ********************************************************************
 // ********************************************************************
 template<typename EvalT>
-Teuchos::RCP< std::vector< Teuchos::RCP<PHX::Evaluator<panzer::Traits> > > > 
+Teuchos::RCP< std::vector< Teuchos::RCP<PHX::Evaluator<panzer::Traits> > > >
 mini_em::ModelFactory<EvalT>::
 buildClosureModels(const std::string& model_id,
-		   const Teuchos::ParameterList& models, 
+		   const Teuchos::ParameterList& models,
 		   const panzer::FieldLayoutLibrary& fl,
 		   const Teuchos::RCP<panzer::IntegrationRule>& ir,
 		   const Teuchos::ParameterList& /* default_params */,
@@ -34,13 +34,13 @@ buildClosureModels(const std::string& model_id,
   using Teuchos::ParameterList;
   using PHX::Evaluator;
 
-  RCP< vector< RCP<Evaluator<panzer::Traits> > > > evaluators = 
+  RCP< vector< RCP<Evaluator<panzer::Traits> > > > evaluators =
     rcp(new vector< RCP<Evaluator<panzer::Traits> > > );
 
   if (!models.isSublist(model_id)) {
     models.print(std::cout);
     std::stringstream msg;
-    msg << "Failed to find requested model, \"" << model_id 
+    msg << "Failed to find requested model, \"" << model_id
 	<< "\", for equation set:\n" << std::endl;
     TEUCHOS_TEST_FOR_EXCEPTION(!models.isSublist(model_id), std::logic_error, msg.str());
   }
@@ -50,11 +50,11 @@ buildClosureModels(const std::string& model_id,
 
   const ParameterList& my_models = models.sublist(model_id);
 
-  for (ParameterList::ConstIterator model_it = my_models.begin(); 
+  for (ParameterList::ConstIterator model_it = my_models.begin();
        model_it != my_models.end(); ++model_it) {
-    
+
     bool found = false;
-    
+
     const std::string key = model_it->first;
     ParameterList input;
     const Teuchos::ParameterEntry& entry = model_it->second;
@@ -65,18 +65,18 @@ buildClosureModels(const std::string& model_id,
 	input.set("Name", key);
 	input.set("Value", plist.get<double>("Value"));
 	input.set("Data Layout", ir->dl_scalar);
-	RCP< Evaluator<panzer::Traits> > e = 
+	RCP< Evaluator<panzer::Traits> > e =
 	  rcp(new panzer::Constant<EvalT,panzer::Traits>(input));
 	evaluators->push_back(e);
       }
-      
+
       for (std::vector<Teuchos::RCP<const panzer::PureBasis> >::const_iterator basis_itr = bases.begin();
 	   basis_itr != bases.end(); ++basis_itr) { // at BASIS
 	input.set("Name", key);
 	input.set("Value", plist.get<double>("Value"));
 	Teuchos::RCP<const panzer::BasisIRLayout> basis = basisIRLayout(*basis_itr,*ir);
 	input.set("Data Layout", basis->functional);
-	RCP< Evaluator<panzer::Traits> > e = 
+	RCP< Evaluator<panzer::Traits> > e =
 	  rcp(new panzer::Constant<EvalT,panzer::Traits>(input));
 	evaluators->push_back(e);
       }
@@ -87,7 +87,7 @@ buildClosureModels(const std::string& model_id,
       std::string type = plist.get<std::string>("Type");
       double dt = plist.get<double>("dt");
       if(type=="GAUSSIAN PULSE") {
-	RCP< Evaluator<panzer::Traits> > e = 
+	RCP< Evaluator<panzer::Traits> > e =
 	  rcp(new mini_em::GaussianPulse<EvalT,panzer::Traits>(key,*ir,fl,dt));
 	evaluators->push_back(e);
 
@@ -97,8 +97,8 @@ buildClosureModels(const std::string& model_id,
 
     if (!found) {
       std::stringstream msg;
-      msg << "ClosureModelFactory failed to build evaluator for key \"" << key 
-	  << "\"\nin model \"" << model_id 
+      msg << "ClosureModelFactory failed to build evaluator for key \"" << key
+	  << "\"\nin model \"" << model_id
 	  << "\".  Please correct the type or add support to the \nfactory." <<std::endl;
       TEUCHOS_TEST_FOR_EXCEPTION(!found, std::logic_error, msg.str());
     }

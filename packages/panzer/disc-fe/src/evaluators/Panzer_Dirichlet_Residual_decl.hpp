@@ -49,10 +49,10 @@
 #include "Panzer_Evaluator_Macros.hpp"
 
 namespace panzer {
-    
+
 //! Evaluates a Dirichlet BC residual corresponding to a field value
 PANZER_EVALUATOR_CLASS(DirichletResidual)
-  
+
   PHX::MDField<ScalarT> residual;
   PHX::MDField<const ScalarT> dof;
   PHX::MDField<const ScalarT> value;

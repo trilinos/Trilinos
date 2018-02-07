@@ -53,12 +53,12 @@
 
 namespace panzer {
 
-  std::vector<std::string>::size_type 
+  std::vector<std::string>::size_type
   getPureBasisIndex(std::string basis_name, const panzer::Workset& workset, WorksetDetailsAccessor& wda)
   {
     std::vector<std::string>::iterator basis = wda(workset).basis_names->begin();
     std::vector<std::string>::const_iterator last = wda(workset).basis_names->end();
-    
+
     while (basis != last) {
 
       std::vector<std::string>::size_type index = std::distance(wda(workset).basis_names->begin(), basis);
@@ -70,13 +70,13 @@ namespace panzer {
 
     TEUCHOS_TEST_FOR_EXCEPTION(basis == wda(workset).basis_names->end(),
 			       std::logic_error,
-			       "Could not find the basis named \"" 
+			       "Could not find the basis named \""
                                << basis_name << "\" in the workset!");
 
     return std::distance(wda(workset).basis_names->begin(), basis);
   }
 
-  std::vector<std::string>::size_type 
+  std::vector<std::string>::size_type
   getBasisIndex(std::string basis_name, const panzer::Workset& workset, WorksetDetailsAccessor& wda)
   {
     std::vector<std::string>::iterator basis;
@@ -87,7 +87,7 @@ namespace panzer {
 
     TEUCHOS_TEST_FOR_EXCEPTION(basis == wda(workset).basis_names->end(),
 			       std::logic_error,
-			       "Could not find the basis named \"" 
+			       "Could not find the basis named \""
                                << basis_name << "\" in the workset!");
 
     return std::distance(wda(workset).basis_names->begin(), basis);
@@ -101,10 +101,10 @@ namespace panzer {
     ir = std::find(wda(workset).ir_degrees->begin(),
 		   wda(workset).ir_degrees->end(),
 		   ir_degree);
-    
+
     TEUCHOS_TEST_FOR_EXCEPTION(ir == wda(workset).ir_degrees->end(),
 			       std::logic_error,
-			       "Could not find the integration rule degree \"" 
+			       "Could not find the integration rule degree \""
                                << ir_degree << "\" in the workset!");
 
     return std::distance(wda(workset).ir_degrees->begin(), ir);
@@ -115,16 +115,16 @@ namespace panzer {
      os << "WORKSET"
         << " block_id = \"" << wda(workset).block_id << "\""
         << " num_cells = \"" << workset.num_cells << "\"\n";
-     os << "   cell_local_ids = [ "; 
-     for(index_t i=0;i<workset.num_cells;i++) 
+     os << "   cell_local_ids = [ ";
+     for(index_t i=0;i<workset.num_cells;i++)
         os << wda(workset).cell_local_ids[i] << " ";
      os << "]\n";
-     os << "   ir_degrees = [ "; 
-     for(std::size_t i=0;i<wda(workset).ir_degrees->size();i++) 
+     os << "   ir_degrees = [ ";
+     for(std::size_t i=0;i<wda(workset).ir_degrees->size();i++)
         os << (*wda(workset).ir_degrees)[i] << " ";
      os << "]\n";
-     os << "   basis_names = [ "; 
-     for(std::size_t i=0;i<wda(workset).basis_names->size();i++) 
+     os << "   basis_names = [ ";
+     for(std::size_t i=0;i<wda(workset).basis_names->size();i++)
         os << (*wda(workset).basis_names)[i] << " ";
      os << "]\n";
      /*
@@ -182,7 +182,7 @@ namespace panzer {
      for(int i=0;i<wda(workset).bases[0]->weighted_basis.size();i++)
         os << wda(workset).bases[0]->weighted_basis[i] << " ";
      os << "]\n";
-     
+
      os << "   weighted_grad_basis = [ ";
      for(int i=0;i<wda(workset).bases[0]->weighted_grad_basis.size();i++)
         os << wda(workset).bases[0]->weighted_grad_basis[i] << " ";
@@ -192,7 +192,7 @@ namespace panzer {
      for(int i=0;i<wda(workset).bases[0]->basis.size();i++)
         os << wda(workset).bases[0]->basis[i] << " ";
      os << "]\n";
-     
+
      os << "   grad_basis = [ ";
      for(int i=0;i<wda(workset).bases[0]->grad_basis.size();i++)
         os << wda(workset).bases[0]->grad_basis[i] << " ";
@@ -200,12 +200,12 @@ namespace panzer {
      */
   }
 
-  std::vector<std::string>::size_type 
+  std::vector<std::string>::size_type
   getPureBasisIndex(std::string basis_name, const panzer::Workset& workset) {
     WorksetDetailsAccessor wda;
     return getPureBasisIndex(basis_name, workset, wda);
   }
-  std::vector<std::string>::size_type 
+  std::vector<std::string>::size_type
   getBasisIndex(std::string basis_name, const panzer::Workset& workset) {
     WorksetDetailsAccessor wda;
     return getBasisIndex(basis_name, workset, wda);

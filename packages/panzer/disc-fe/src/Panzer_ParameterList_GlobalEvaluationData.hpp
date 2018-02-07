@@ -56,9 +56,9 @@ namespace panzer {
   */
 class ParameterList_GlobalEvaluationData : public GlobalEvaluationData {
 public:
-   ParameterList_GlobalEvaluationData(const std::vector<std::string> & activeParameters) 
+   ParameterList_GlobalEvaluationData(const std::vector<std::string> & activeParameters)
      : activeParameters_(activeParameters) {}
-   virtual ~ParameterList_GlobalEvaluationData() {} 
+   virtual ~ParameterList_GlobalEvaluationData() {}
 
    virtual void ghostToGlobal(int /* mem */) {}
    virtual void globalToGhost(int /* mem */) {}

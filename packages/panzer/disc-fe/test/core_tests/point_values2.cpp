@@ -62,7 +62,7 @@ namespace panzer {
 
   TEUCHOS_UNIT_TEST(point_values2, md_field_setup)
   {
-    Teuchos::RCP<shards::CellTopology> topo = 
+    Teuchos::RCP<shards::CellTopology> topo =
        Teuchos::rcp(new shards::CellTopology(shards::getCellTopologyData< shards::Quadrilateral<4> >()));
 
     const int num_cells = 20;
@@ -73,11 +73,11 @@ namespace panzer {
     RCP<PointRule> point_rule = rcp(new PointRule("RandomPoints",num_points, cell_data));
 
     TEST_EQUALITY(point_rule->num_points,Teuchos::as<int>(num_points));
-  
+
     panzer::PointValues2<double > point_values2("prefix_");
     point_values2.setupArrays(point_rule);
 
-    // check to make sure all data layouts and field names are as 
+    // check to make sure all data layouts and field names are as
     // expected. In a simulation environment the field manager will
     // build these values.
 
@@ -127,7 +127,7 @@ namespace panzer {
     typedef PHX::MDField<double>::size_type size_type;
 
 
-    Teuchos::RCP<shards::CellTopology> topo = 
+    Teuchos::RCP<shards::CellTopology> topo =
        Teuchos::rcp(new shards::CellTopology(shards::getCellTopologyData< shards::Quadrilateral<4> >()));
 
     const int num_cells = 4;
@@ -142,7 +142,7 @@ namespace panzer {
     const size_type derivative_dim = 4;
     const std::vector<PHX::index_size_type> ddims(1,derivative_dim);
     panzer::MDFieldArrayFactory af("prefix_",ddims);
-  
+
     panzer::PointValues2<ScalarType> point_values2("prefix_",ddims);
     point_values2.setupArrays(point_rule);
 
@@ -169,7 +169,7 @@ namespace panzer {
       node_coordinates(cell,0,y) = yleft*0.5;
 
       node_coordinates(cell,1,x) = (xleft+1)*0.5;
-      node_coordinates(cell,1,y) = yleft*0.5; 
+      node_coordinates(cell,1,y) = yleft*0.5;
 
       node_coordinates(cell,2,x) = (xleft+1)*0.5;
       node_coordinates(cell,2,y) = (yleft+1)*0.5;
@@ -199,7 +199,7 @@ namespace panzer {
     point_values2.jac.setFieldData(ViewFactory::buildView(point_values2.jac.fieldTag(),ddims));
     point_values2.jac_inv.setFieldData(ViewFactory::buildView(point_values2.jac_inv.fieldTag(),ddims));
     point_values2.jac_det.setFieldData(ViewFactory::buildView(point_values2.jac_det.fieldTag(),ddims));
-    
+
     point_values2.evaluateValues(node_coordinates,point_coordinates);
 
     // check the reference values (ensure copying)
@@ -212,7 +212,7 @@ namespace panzer {
        double dx = 0.5;
        double dy = 0.5;
        for(int p=0;p<num_points;p++) {
-          double x = dx*(point_coordinates(p,0).val()+1.0)/2.0 + node_coordinates(c,0,0).val(); 
+          double x = dx*(point_coordinates(p,0).val()+1.0)/2.0 + node_coordinates(c,0,0).val();
           double y = dy*(point_coordinates(p,1).val()+1.0)/2.0 + node_coordinates(c,0,1).val();
           TEST_FLOATING_EQUALITY(point_values2.point_coords(c,p,0).val(),x,1e-10);
           TEST_FLOATING_EQUALITY(point_values2.point_coords(c,p,1).val(),y,1e-10);

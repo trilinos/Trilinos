@@ -51,21 +51,21 @@
 #include "Panzer_GlobalData.hpp"
 
 namespace user_app {
-  
+
 class BCStrategyFactory : public panzer::BCStrategyFactory {
 public:
 
   Teuchos::RCP<panzer::BCStrategy_TemplateManager<panzer::Traits> >
   buildBCStrategy(const panzer::BC& /* bc */, const Teuchos::RCP<panzer::GlobalData>& /* global_data */) const
   {
-    Teuchos::RCP<panzer::BCStrategy_TemplateManager<panzer::Traits> > bcs_tm = 
+    Teuchos::RCP<panzer::BCStrategy_TemplateManager<panzer::Traits> > bcs_tm =
         Teuchos::rcp(new panzer::BCStrategy_TemplateManager<panzer::Traits>);
-      
+
     return bcs_tm;
   }
 
 };
-  
+
 }
 
 #endif

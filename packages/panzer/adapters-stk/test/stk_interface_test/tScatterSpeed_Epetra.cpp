@@ -128,7 +128,7 @@ void newAssembly(Teuchos::FancyOStream& /* out */)
     crsgraph->FillComplete();
   }
   RCP<CrsMatrix> crsmat = rcp(new CrsMatrix(Copy,*crsgraph));
-  
+
   //Where the data transfer takes place.
   for(std::size_t i=0;i<20;i++) {
     Teuchos::TimeMonitor LocalTimer(*New_Time);
@@ -157,7 +157,7 @@ size_t setUp1(RCP<Map> &rowmap,
   pl->set("Y Elements",yelem);
   pl->set("Z Elements",zelem);
 
-  panzer_stk::CubeHexMeshFactory factory; 
+  panzer_stk::CubeHexMeshFactory factory;
   factory.setParameterList(pl);
   RCP<panzer_stk::STK_Interface> mesh = factory.buildMesh(MPI_COMM_WORLD);
 
@@ -177,8 +177,8 @@ size_t setUp1(RCP<Map> &rowmap,
 
   my_dofM->buildGlobalUnknowns();
 
-  std::vector<int> owned; 
-  std::vector<int> ownedAndGhosted; 
+  std::vector<int> owned;
+  std::vector<int> ownedAndGhosted;
 
   my_dofM->getOwnedIndices(owned);
   my_dofM->getOwnedAndGhostedIndices(ownedAndGhosted);

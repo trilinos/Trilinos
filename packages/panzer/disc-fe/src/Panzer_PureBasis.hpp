@@ -58,11 +58,11 @@ namespace panzer {
   class BasisDescriptor;
 
   //! Description and data layouts associated with a particular basis
-  class PureBasis { 
+  class PureBasis {
 
   public:
     typedef enum { HGRAD=0, HCURL=1, HDIV=2, CONST=3 } EElementSpace;
-    
+
     /** Build a basis given a type, order and CellData object
       \param[in] basis_type String name that describes the type of basis
       \param[in] basis_order Order of the basis
@@ -91,30 +91,30 @@ namespace panzer {
 
     //! Returns the number of cells in the data layouts
     int numCells() const;
-    
+
     //! Returns the dimension of the basis from the topology
     int dimension() const;
 
     //! Returns the basis type
     std::string type() const;
-    
+
     //! Returns the polynomial order of the basis
     int order() const;
-    
+
     //! A unique key that is the combination of the basis type and basis order
     std::string name() const;
-    
+
     std::string fieldName() const;
-    
+
     std::string fieldNameD1() const;
-    
+
     std::string fieldNameD2() const;
 
-    Teuchos::RCP< Intrepid2::Basis<PHX::Device::execution_space,double,double> > 
+    Teuchos::RCP< Intrepid2::Basis<PHX::Device::execution_space,double,double> >
     getIntrepid2Basis() const;
 
     template <typename ExecutionSpace,typename OutputValueType, typename PointValueType>
-    Teuchos::RCP< Intrepid2::Basis<ExecutionSpace,OutputValueType,PointValueType> > 
+    Teuchos::RCP< Intrepid2::Basis<ExecutionSpace,OutputValueType,PointValueType> >
     getIntrepid2Basis() const
     { return panzer::createIntrepid2Basis<ExecutionSpace,OutputValueType,PointValueType>(type(), order(), *(getCellTopology())); }
 
@@ -122,8 +122,8 @@ namespace panzer {
     { return element_space_; }
 
     bool requiresOrientations() const
-    { 
-      return intrepid_basis_->requireOrientation(); 
+    {
+      return intrepid_basis_->requireOrientation();
     }
 
     bool supportsGrad() const
@@ -150,7 +150,7 @@ namespace panzer {
     { return topology_; }
 
   public:
-    //! <Cell> 
+    //! <Cell>
     Teuchos::RCP<PHX::DataLayout> cell_data;
     //! <Cell,Basis> or <Cell,Basis>
     Teuchos::RCP<PHX::DataLayout> functional;
@@ -164,7 +164,7 @@ namespace panzer {
     Teuchos::RCP<PHX::DataLayout> local_mat_layout;
 
   private:
-    
+
     //! Initialize the basis object
     void initialize(const std::string & basis_type,const int basis_order);
 

@@ -84,10 +84,10 @@ template <typename EvalT>
 class BCStrategy_Interface_Robin : public panzer::BCStrategy_Interface_DefaultImpl<EvalT> {
 public:
   BCStrategy_Interface_Robin(const panzer::BC& bc, const Teuchos::RCP<panzer::GlobalData>& global_data);
-    
+
   void setup(const panzer::PhysicsBlock& side_pb,
              const Teuchos::ParameterList& user_data);
-    
+
   void buildAndRegisterEvaluators(PHX::FieldManager<panzer::Traits>& fm,
                                   const panzer::PhysicsBlock& pb,
                                   const panzer::ClosureModelFactory_TemplateManager<panzer::Traits>& factory,

@@ -51,9 +51,9 @@
 #include "Panzer_Evaluator_WithBaseImpl.hpp"
 
 namespace panzer {
-    
+
 /** Sums entries on a single data layout
- 
+
     \verbatim
     <ParameterList>
       <ParameterList name="Sum Name" type="string" value="<destination field name>"/>
@@ -65,7 +65,7 @@ namespace panzer {
   */
 PANZER_EVALUATOR_CLASS(Sum)
   static const int MAX_VALUES=20;
-  
+
   PHX::MDField<ScalarT> sum;
   // std::vector< PHX::MDField<const ScalarT> > values;
   // std::vector<double> scalars;
@@ -85,7 +85,7 @@ PANZER_EVALUATOR_CLASS_END
 
 /** A template version of Sum that specializes on the
   * rank type. This must be done at run time.
-  */ 
+  */
 template<typename EvalT, typename TRAITS,typename Tag0,typename Tag1=void,typename Tag2=void>
 class SumStatic : public panzer::EvaluatorWithBaseImpl<TRAITS>,
             public PHX::EvaluatorDerived<EvalT, TRAITS>  {
@@ -181,9 +181,9 @@ private:
 
 /** This functions builds a static sum evaluator based on the rank of the data layout object.
   * Dependent and evaluated fields are denoted by the passed in parameters.
-  */ 
+  */
 template<typename EvalT, typename TRAITS,typename Tag0,typename Tag1,typename Tag2>
-Teuchos::RCP<PHX::Evaluator<TRAITS> > 
+Teuchos::RCP<PHX::Evaluator<TRAITS> >
 buildStaticSumEvaluator(const std::string & sum_name,
                         const std::vector<std::string> & value_names,
                         const Teuchos::RCP<PHX::DataLayout> & data_layout);

@@ -59,17 +59,17 @@ namespace panzer {
   * response, thus the object itself should remain stateless.
   *
   * \note Users should derive off of this class directly. The
-  *       <code>ReponseEvaluatorFactory_TemplateManager</code> 
+  *       <code>ReponseEvaluatorFactory_TemplateManager</code>
   *       should be used to access these objects.
   */
-template <typename EvalT> 
+template <typename EvalT>
 class ResponseEvaluatorFactory : public ResponseEvaluatorFactoryBase {
 public:
 
    ResponseEvaluatorFactory() {}
 
    virtual ~ResponseEvaluatorFactory() {}
-   
+
    /** Build the response object used by this factory. This object
      * assumes the role of the scatter target and will be accessible
      * by all the evaluators in the field managers. This is the sideset
@@ -82,7 +82,7 @@ public:
      * \param[in] wkstdescs A vector of descriptors for the elements this response is over.
      */
    virtual Teuchos::RCP<ResponseBase> buildResponseObject(const std::string & responseName,
-                                                          const std::vector<WorksetDescriptor> & wkstdescs) const = 0; 
+                                                          const std::vector<WorksetDescriptor> & wkstdescs) const = 0;
 
    /** Build and register evaluators for a response on a particular physics
      * block. Note that it is assumed that a field has been marked required
@@ -105,7 +105,7 @@ public:
      * where a response may support a particular evaluation type, however at runtime the user
      * decides not to enable the (say) Jacobian evaluation of this response.
      *
-     * Note that use of this mechanism is complementary to having the builder return 
+     * Note that use of this mechanism is complementary to having the builder return
      * <code>Teuchos::null</code> for a particular evaluation type.
      */
    virtual bool typeSupported() const = 0;

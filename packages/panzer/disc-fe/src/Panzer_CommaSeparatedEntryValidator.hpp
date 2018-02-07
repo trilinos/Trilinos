@@ -58,11 +58,11 @@ namespace panzer {
 
 /** This class validates a response type. Essentially
   * it is used to make sure the parameter value is correctly
-  * formatted. 
+  * formatted.
   */
 class CommaSeparatedEntryValidator : public Teuchos::ParameterEntryValidator {
 public:
-  /** A basic constructor. If <code>allowEmpty</code> is true then the 
+  /** A basic constructor. If <code>allowEmpty</code> is true then the
     * empty string is a valid entry.
     */
   CommaSeparatedEntryValidator(bool allowEmpty=false) : allowEmpty_(allowEmpty) {}
@@ -70,7 +70,7 @@ public:
   ValidStringsList validStringValues() const
   { return Teuchos::null; }
 
-  void validate(const Teuchos::ParameterEntry & entry, 
+  void validate(const Teuchos::ParameterEntry & entry,
                 const std::string & paramName,
                 const std::string & sublistName) const;
 

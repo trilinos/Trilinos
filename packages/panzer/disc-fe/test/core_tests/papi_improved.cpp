@@ -61,7 +61,7 @@ namespace panzer {
 
   TEUCHOS_UNIT_TEST(papi, NestedPAPICounter)
   {
-    
+
     int rank;
     MPI_Comm comm = MPI_COMM_WORLD;
     MPI_Comm_rank(comm, &rank);
@@ -75,31 +75,31 @@ namespace panzer {
 
       //    outer_counter.start();
       for (int i=0; i < 10; ++i) {
-	
+
 	{
 	  panzer::PAPICounter2 inner_counter("Inner Loop 1");
-	  
+
 	  double a = 0;
 	  for (int i=0; i < 100; ++i)
 	    a += static_cast<double>(i);
-	  
+
 	}
-	
+
 	{
 	  panzer::PAPICounter2 inner_counter("Inner Loop 2");
 	  double a = 0;
 	  for (int i=0; i < 100; ++i)
 	    a += static_cast<double>(i);
 	}
-	
+
       }
       //outer_counter.stop();
-      
+
 
     }  // dtor stops outer counter and records results
     Teuchos::RCP<const Teuchos::Comm<int> > t_comm = Teuchos::DefaultComm<int>::getComm();
     panzer::PAPICounter2::report(std::cout,*t_comm);
-      
+
   }
 
 }

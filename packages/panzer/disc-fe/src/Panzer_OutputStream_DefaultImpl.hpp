@@ -47,9 +47,9 @@
 #include "Panzer_OutputStream.hpp"
 
 namespace panzer {
-  
-  /** \brief Default implementation 
-      
+
+  /** \brief Default implementation
+
      This class carries two ostreams used in SIMD applications.  The
      first, an ostream only prints from a single process that is
      designated as the print process. Teh second is an ostream that
@@ -62,7 +62,7 @@ namespace panzer {
 
     OutputStreamDefaultImpl();
 
-    ~OutputStreamDefaultImpl();    
+    ~OutputStreamDefaultImpl();
 
     void setOStream(const Teuchos::RCP<Teuchos::FancyOStream>& os);
 

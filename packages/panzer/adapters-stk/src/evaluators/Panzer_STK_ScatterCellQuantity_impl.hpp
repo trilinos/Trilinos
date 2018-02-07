@@ -67,8 +67,8 @@ PHX_EVALUATOR_CTOR(ScatterCellQuantity,p) :
 
   std::string scatterName = p.get<std::string>("Scatter Name");
   int worksetSize = p.get<int>("Workset Size");
- 
-  const std::vector<std::string> & names = 
+
+  const std::vector<std::string> & names =
     *(p.get< Teuchos::RCP< std::vector<std::string> > >("Field Names"));
 
   Teuchos::RCP<PHX::DataLayout> dl_cell = Teuchos::rcp(new PHX::MDALayout<Cell>(worksetSize));

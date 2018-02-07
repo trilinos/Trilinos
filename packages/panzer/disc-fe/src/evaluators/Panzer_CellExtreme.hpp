@@ -52,7 +52,7 @@
 #include "Panzer_Evaluator_Macros.hpp"
 
 namespace panzer {
-    
+
 /** This integrates a scalar quanity over each cell.
   * It is useful for comptuing integral responses.
 
@@ -68,9 +68,9 @@ namespace panzer {
   \endverbatim
   */
 PANZER_EVALUATOR_CLASS(CellExtreme)
-  
+
   PHX::MDField<ScalarT> extreme;  // result
-    
+
   PHX::MDField<const ScalarT,Cell,IP> scalar; // function to be integrated
 
   std::vector<PHX::MDField<const ScalarT,Cell,IP> > field_multipliers;
@@ -79,12 +79,12 @@ PANZER_EVALUATOR_CLASS(CellExtreme)
   std::size_t num_qp;
   std::size_t quad_index;
   int quad_order;
- 
+
   bool use_max; // true ... if false then this is a "min"
 
 public:
   // for testing purposes
-  const PHX::FieldTag & getFieldTag() const 
+  const PHX::FieldTag & getFieldTag() const
   { return extreme.fieldTag(); }
 
 private:

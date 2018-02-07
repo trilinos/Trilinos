@@ -50,12 +50,12 @@ namespace Thyra {
 }
 
 namespace panzer {
-  
+
   template <typename ScalarT, typename LO, typename GO>
-  Teuchos::RCP<Thyra::ModelEvaluator<ScalarT> > 
+  Teuchos::RCP<Thyra::ModelEvaluator<ScalarT> >
   buildModelEvaluator(const RCP<panzer::FieldManagerBuilder & fmb,
 		      const RCP<panzer::BlockedEpetraLinearObjFactory<panzer::Traits,int> >& lof);
-    
+
 }
 
 #include "Panzer_ModelEvaluator_Factory_impl.hpp"

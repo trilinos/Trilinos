@@ -60,7 +60,7 @@ namespace panzer {
 template <typename TraitsT>
 ResponseLibrary<TraitsT>::ResponseLibrary()
    : nextBC_id(0), closureModelByEBlock_(false), disableGather_(false)
-   , disableScatter_(true), residualType_(false), responseEvaluatorsBuilt_(false) 
+   , disableScatter_(true), residualType_(false), responseEvaluatorsBuilt_(false)
 {
 }
 
@@ -74,7 +74,7 @@ ResponseLibrary<TraitsT>::ResponseLibrary(const Teuchos::RCP<WorksetContainer> &
 {
   if(residualType)
     initializeResidualType(wc,ugi,lof);
-  else 
+  else
     initialize(wc,ugi,lof);
 }
 
@@ -167,13 +167,13 @@ namespace {
     { }
 
     template <typename T>
-    Teuchos::RCP<ResponseBase> build() const 
-    { 
+    Teuchos::RCP<ResponseBase> build() const
+    {
       Teuchos::RCP<const panzer::ResponseEvaluatorFactoryBase> baseObj = respFact_->template getAsBase<T>();
-     
+
       // only build this templated set of objects if the there is something to build them with
       if(baseObj!=Teuchos::null && baseObj->typeSupported()) {
-        Teuchos::RCP<ResponseBase> resp = baseObj->buildResponseObject(respName_,wkstDesc_); 
+        Teuchos::RCP<ResponseBase> resp = baseObj->buildResponseObject(respName_,wkstDesc_);
 
         return resp;
       }
@@ -195,7 +195,7 @@ namespace {
     { }
 
     template <typename T>
-    Teuchos::RCP<ResponseBase> build() const 
+    Teuchos::RCP<ResponseBase> build() const
     { return Teuchos::rcp(new Response_Residual<T>(respName_,lof_)); }
   };
 }
@@ -205,7 +205,7 @@ template <typename ResponseEvaluatorFactory_BuilderT>
 void ResponseLibrary<TraitsT>::
 addResponse(const std::string & responseName,
             const std::vector<std::string> & blocks,
-            const ResponseEvaluatorFactory_BuilderT & builder) 
+            const ResponseEvaluatorFactory_BuilderT & builder)
 {
    using Teuchos::RCP;
    using Teuchos::rcp;
@@ -231,7 +231,7 @@ template <typename ResponseEvaluatorFactory_BuilderT>
 void ResponseLibrary<TraitsT>::
 addResponse(const std::string & responseName,
             const std::vector<std::pair<std::string,std::string> > & sideset_blocks,
-            const ResponseEvaluatorFactory_BuilderT & builder) 
+            const ResponseEvaluatorFactory_BuilderT & builder)
 {
    using Teuchos::RCP;
    using Teuchos::rcp;
@@ -260,13 +260,13 @@ addResponse(const std::string & responseName,
      RCP<std::vector<std::pair<std::string,RCP<ResponseEvaluatorFactory_TemplateManager<TraitsT> > > > > block_tm
         = respBCFactories_[bc];
      if(block_tm==Teuchos::null) {
-       block_tm = Teuchos::rcp(new std::vector<std::pair<std::string,RCP<ResponseEvaluatorFactory_TemplateManager<TraitsT> > > >); 
+       block_tm = Teuchos::rcp(new std::vector<std::pair<std::string,RCP<ResponseEvaluatorFactory_TemplateManager<TraitsT> > > >);
        respBCFactories_[bc] = block_tm;
      }
 
      // add response factory TM to vector that stores them
      block_tm->push_back(std::make_pair(responseName,modelFact_tm));
- 
+
      nextBC_id++;
    }
 }
@@ -276,7 +276,7 @@ template <typename ResponseEvaluatorFactory_BuilderT>
 void ResponseLibrary<TraitsT>::
 addResponse(const std::string & responseName,
             const std::vector<WorksetDescriptor> & wkst_desc,
-            const ResponseEvaluatorFactory_BuilderT & builder) 
+            const ResponseEvaluatorFactory_BuilderT & builder)
 {
   using Teuchos::RCP;
   using Teuchos::rcp;
@@ -400,20 +400,20 @@ public:
        // what is going on here?
        if(fact==Teuchos::null)
          continue;
- 
+
        // loop over each evaluation type
        for(typename ResponseEvaluatorFactory_TemplateManager<TraitsT>::iterator rf_itr=fact->begin();
            rf_itr!=fact->end();++rf_itr) {
 
          // not setup for this template type, ignore it
-         if(rf_itr.rcp()==Teuchos::null || !rf_itr.rcp()->typeSupported()) 
+         if(rf_itr.rcp()==Teuchos::null || !rf_itr.rcp()->typeSupported())
            continue;
 
          // build and register evaluators, store field tag, make it required
-         rf_itr->buildAndRegisterEvaluators(responseName,fm,pb,userData_);     
+         rf_itr->buildAndRegisterEvaluators(responseName,fm,pb,userData_);
        }
      }
-    
+
      return true;
    }
 
@@ -450,7 +450,7 @@ buildResponseEvaluators(
    for(typename RespFactoryTable::const_iterator itr=respFactories_.begin();
        itr!=respFactories_.end();++itr) {
      // is there something to do?
-     if(itr->second.size()==0) 
+     if(itr->second.size()==0)
        continue;
 
      const WorksetDescriptor & wd = itr->first;
@@ -462,7 +462,7 @@ buildResponseEvaluators(
          requiredVolPhysicsBlocks.push_back(physicsBlocks[i]);
          failure = false;
          break;
-       } 
+       }
      }
 
      // we must find at least one physics block
@@ -487,7 +487,7 @@ buildResponseEvaluators(
    response_bc_adapters::BCFactoryResponse bc_factory(respBCFactories_);
 
    // don't build scatter evaluators
-   fmb2_ = Teuchos::rcp(new FieldManagerBuilder(disableScatter_,disableGather_)); 
+   fmb2_ = Teuchos::rcp(new FieldManagerBuilder(disableScatter_,disableGather_));
 
    fmb2_->setWorksetContainer(wkstContainer_);
    fmb2_->setupVolumeFieldManagers(requiredVolPhysicsBlocks,requiredWorksetDesc,cm_factory,closure_models,*linObjFactory_,user_data,rvef2,closureModelByEBlock_);
@@ -504,7 +504,7 @@ buildResponseEvaluators(
    // fourth build assembly engine from FMB
    ////////////////////////////////////////////////////////////////////////////////
 
-   AssemblyEngine_TemplateBuilder builder(fmb2_,linObjFactory_); 
+   AssemblyEngine_TemplateBuilder builder(fmb2_,linObjFactory_);
    ae_tm2_.buildObjects(builder);
 
    responseEvaluatorsBuilt_ = true;
@@ -530,7 +530,7 @@ buildResidualResponseEvaluators(
                               "response library is a \"residualType\"!");
 
    // don't build scatter evaluators
-   fmb2_ = Teuchos::rcp(new FieldManagerBuilder(disableScatter_,disableGather_)); 
+   fmb2_ = Teuchos::rcp(new FieldManagerBuilder(disableScatter_,disableGather_));
 
    fmb2_->setWorksetContainer(wkstContainer_);
    fmb2_->setupVolumeFieldManagers(physicsBlocks,cm_factory,closure_models,*linObjFactory_,user_data);
@@ -545,21 +545,21 @@ buildResidualResponseEvaluators(
    // fourth build assembly engine from FMB
    ////////////////////////////////////////////////////////////////////////////////
 
-   AssemblyEngine_TemplateBuilder builder(fmb2_,linObjFactory_); 
+   AssemblyEngine_TemplateBuilder builder(fmb2_,linObjFactory_);
    ae_tm2_.buildObjects(builder);
 
    responseEvaluatorsBuilt_ = true;
 }
 
 template <typename TraitsT>
-template <typename EvalT> 
+template <typename EvalT>
 void ResponseLibrary<TraitsT>::
 addResponsesToInArgs(panzer::AssemblyEngineInArgs & input_args) const
 {
   std::vector<Teuchos::RCP<ResponseBase> > responses;
   this->getResponses<EvalT>(responses);
 
-  // add all responses to input args  
+  // add all responses to input args
   if(!residualType_) {
     for(std::size_t i=0;i<responses.size();i++) {
       if(responses[i]!=Teuchos::null) {
@@ -594,7 +594,7 @@ addResidualResponsesToInArgs(Overloader<typename TraitsT::Residual>,panzer::Asse
   const RCP<ThyraObjContainer<ScalarT> > thGhostedContainer =
     Teuchos::rcp_dynamic_cast<ThyraObjContainer<ScalarT> >(ghostedContainer_);
   input_args.ghostedContainer_ = ghostedContainer_;
-  
+
   // convert responses into thyra object
   const RCP<ThyraObjContainer<ScalarT> > thGlobalContainer =
     Teuchos::rcp_dynamic_cast<ThyraObjContainer<ScalarT> >(input_args.container_);
@@ -732,7 +732,7 @@ addResidualResponsesToInArgs(Overloader<typename TraitsT::Hessian>,panzer::Assem
 #endif
 
 template <typename TraitsT>
-template <typename EvalT> 
+template <typename EvalT>
 void ResponseLibrary<TraitsT>::
 evaluate(const panzer::AssemblyEngineInArgs& input_args)
 {
@@ -745,7 +745,7 @@ print(std::ostream & os) const
 {
    typedef std::unordered_map<std::string, Response_TemplateManager> RespObjType;
 
-   for(RespObjType::const_iterator itr=responseObjects_.begin();itr!=responseObjects_.end();++itr) { 
+   for(RespObjType::const_iterator itr=responseObjects_.begin();itr!=responseObjects_.end();++itr) {
      std::string respName = itr->first;
      os << "Response \"" << respName << "\": ";
      Sacado::mpl::for_each<typename Response_TemplateManager::types_vector>(Printer(itr->second,os));

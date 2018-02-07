@@ -86,7 +86,7 @@ MySourceTerm(
   // dependencies, so we have no need to call addDependentField().
   this->addEvaluatedField(result_);
 
-  // Multiple instances of the same Evaluator can be created with different 
+  // Multiple instances of the same Evaluator can be created with different
   // "name"s passed into the constructor.  This is admittedly not useful, in
   // our particular case, but could easily be useful if we were to generalize
   // our source term to take multiple arguments, for instance, k_x and k_y,

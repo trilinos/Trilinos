@@ -45,8 +45,8 @@
 #include <ostream>
 
 namespace panzer {
-  
-  Teuchos::RCP<panzer::GlobalData> 
+
+  Teuchos::RCP<panzer::GlobalData>
   createGlobalData(bool build_default_os, int print_process)
   {
     Teuchos::RCP<panzer::GlobalData> gd = Teuchos::rcp(new panzer::GlobalData);

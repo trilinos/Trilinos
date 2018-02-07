@@ -55,7 +55,7 @@ panzer::AssemblyEngine<EvalT>::
 AssemblyEngine(const Teuchos::RCP<panzer::FieldManagerBuilder>& fmb,
                const Teuchos::RCP<const panzer::LinearObjFactory<panzer::Traits> > & lof)
   : m_field_manager_builder(fmb), m_lin_obj_factory(lof), countersInitialized_(false)
-{ 
+{
 
 }
 
@@ -211,7 +211,7 @@ evaluateVolume(const panzer::AssemblyEngineInArgs& in)
     // double s = 0.;
     // double p = 0.;
     // fm->template analyzeGraph<EvalT>(s,p);
-    // std::cout << "Analyze Graph: " << PHX::typeAsString<EvalT>() << ",b=" << block << ", s=" << s << ", p=" << p << std::endl; 
+    // std::cout << "Analyze Graph: " << PHX::typeAsString<EvalT>() << ",b=" << block << ", s=" << s << ", p=" << p << std::endl;
 
     fm->template postEvaluate<EvalT>(NULL);
   }
@@ -248,7 +248,7 @@ evaluateDirichletBCs(const panzer::AssemblyEngineInArgs& in)
     globalCounter_ = m_lin_obj_factory->buildPrimitiveLinearObjContainer();
     summedGhostedCounter_ = m_lin_obj_factory->buildPrimitiveGhostedLinearObjContainer();
     countersInitialized_ = true;
- 
+
     m_lin_obj_factory->initializeGhostedContainer(LinearObjContainer::F,*localCounter_); // store counter in F
     m_lin_obj_factory->initializeContainer(       LinearObjContainer::F,*globalCounter_); // store counter in X
     m_lin_obj_factory->initializeGhostedContainer(LinearObjContainer::F,*summedGhostedCounter_); // store counter in X
@@ -326,25 +326,25 @@ evaluateBCs(const panzer::BCType bc_type,
   }
 
   {
-    const std::map<panzer::BC, 
+    const std::map<panzer::BC,
       std::map<unsigned,PHX::FieldManager<panzer::Traits> >,
-      panzer::LessBC>& bc_field_managers = 
+      panzer::LessBC>& bc_field_managers =
       m_field_manager_builder->getBCFieldManagers();
-  
+
     // Must do all neumann before all dirichlet so we need a double loop
     // here over all bcs
-    typedef typename std::map<panzer::BC, 
+    typedef typename std::map<panzer::BC,
       std::map<unsigned,PHX::FieldManager<panzer::Traits> >,
       panzer::LessBC>::const_iterator bcfm_it_type;
 
     // loop over bcs
-    for (bcfm_it_type bcfm_it = bc_field_managers.begin(); 
+    for (bcfm_it_type bcfm_it = bc_field_managers.begin();
          bcfm_it != bc_field_managers.end(); ++bcfm_it) {
-      
+
       const panzer::BC& bc = bcfm_it->first;
-      const std::map<unsigned,PHX::FieldManager<panzer::Traits> > bc_fm = 
+      const std::map<unsigned,PHX::FieldManager<panzer::Traits> > bc_fm =
         bcfm_it->second;
-   
+
       panzer::WorksetDescriptor desc = panzer::bcDescriptor(bc);
       Teuchos::RCP<const std::map<unsigned,panzer::Workset> > bc_wkst_ptr = wkstContainer->getSideWorksets(desc);
       TEUCHOS_TEST_FOR_EXCEPTION(bc_wkst_ptr == Teuchos::null, std::logic_error,
@@ -357,20 +357,20 @@ evaluateBCs(const panzer::BCType bc_type,
         // Loop over local faces
         for (std::map<unsigned,PHX::FieldManager<panzer::Traits> >::const_iterator side = bc_fm.begin(); side != bc_fm.end(); ++side) {
 
-          // extract field manager for this side  
+          // extract field manager for this side
           unsigned local_side_index = side->first;
-          PHX::FieldManager<panzer::Traits>& local_side_fm = 
+          PHX::FieldManager<panzer::Traits>& local_side_fm =
             const_cast<PHX::FieldManager<panzer::Traits>& >(side->second);
-          
+
           // extract workset for this side: only one workset per face
-          std::map<unsigned,panzer::Workset>::const_iterator wkst_it = 
+          std::map<unsigned,panzer::Workset>::const_iterator wkst_it =
             bc_wkst.find(local_side_index);
-          
+
           TEUCHOS_TEST_FOR_EXCEPTION(wkst_it == bc_wkst.end(), std::logic_error,
                              "Failed to find corresponding bc workset side!");
-          
-          panzer::Workset& workset = 
-            const_cast<panzer::Workset&>(wkst_it->second); 
+
+          panzer::Workset& workset =
+            const_cast<panzer::Workset&>(wkst_it->second);
 
           // run prevaluate
           local_side_fm.template preEvaluate<EvalT>(ped);
@@ -381,15 +381,15 @@ evaluateBCs(const panzer::BCType bc_type,
           workset.time = in.time;
           workset.gather_seeds = in.gather_seeds;
           workset.evaluate_transient_terms = in.evaluate_transient_terms;
-          
+
           local_side_fm.template evaluateFields<EvalT>(workset);
 
           // run postevaluate for consistency
           local_side_fm.template postEvaluate<EvalT>(NULL);
-          
+
         }
       }
-    } 
+    }
   }
 
 }

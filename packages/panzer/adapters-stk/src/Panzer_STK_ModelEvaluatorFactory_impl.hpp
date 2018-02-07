@@ -572,9 +572,9 @@ namespace panzer_stk {
 
     // build worksets
     //////////////////////////////////////////////////////////////
-   
+
     // build up needs array for workset container
-    std::map<std::string,panzer::WorksetNeeds> needs;  
+    std::map<std::string,panzer::WorksetNeeds> needs;
     for(std::size_t i=0;i<physicsBlocks.size();i++)
       needs[physicsBlocks[i]->elementBlockID()] = physicsBlocks[i]->getWorksetNeeds();
 
@@ -594,7 +594,7 @@ namespace panzer_stk {
       max_wksets = std::max(max_wksets,works->size());
     }
     user_data_params.set<std::size_t>("Max Worksets",max_wksets);
-    wkstContainer->clear(); 
+    wkstContainer->clear();
 
     // Setup lagrangian type coordinates
     /////////////////////////////////////////////////////////////
@@ -738,7 +738,7 @@ namespace panzer_stk {
       // For now just remove Global MMS Parameters, if it exists
       const Teuchos::ParameterList& models = p.sublist("Closure Models");
       Teuchos::ParameterList cl_models(models.name());
-      for (Teuchos::ParameterList::ConstIterator model_it=models.begin(); 
+      for (Teuchos::ParameterList::ConstIterator model_it=models.begin();
            model_it!=models.end(); ++model_it) {
            std::string key = model_it->first;
            if (model_it->first != "Global MMS Parameters")
@@ -1303,7 +1303,7 @@ namespace panzer_stk {
       fmb->writeVolumeTextDependencyFiles(graphPrefix, physicsBlocks);
       fmb->writeBCTextDependencyFiles(field_manager_prefix);
     }
-    
+
     return fmb;
   }
 

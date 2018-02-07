@@ -59,7 +59,7 @@ namespace panzer {
   * passed in field pattern. It is meant to be used internally
   * and is specialized to return the FEI arrays required.
   * Hence it requires a map containing both the desired field
-  * pattern objects and the integer used by FEI to specify 
+  * pattern objects and the integer used by FEI to specify
   * the field.
   */
 class FieldAggPattern : public FieldPattern {
@@ -114,7 +114,7 @@ public:
    virtual FieldType getFieldType(int fieldId) const;
 
    //! \defgroup FEISupport Support functions for building FEI patterns
-   //@{ 
+   //@{
 
    //! Lenght of vector is number of Ids, value is how many ids per field
    const std::vector<int> & numFieldsPerId() const { return numFields_; }
@@ -127,11 +127,11 @@ public:
    //@}
 
    //! \defgroup LOCALOFFSET Functions for indexing into a GID array ordered according to this pattern
-   //@{ 
+   //@{
 
    /** This function produces a map between the ordering specified by
      * this pattern and an ordering required by the pattern associated with
-     * <code>fieldId</code>. 
+     * <code>fieldId</code>.
      *
      * For instance if you have a vector called <code>GIDs</code>
      * of length <code>this->numberIds()</code> and you want the GIDs
@@ -141,14 +141,14 @@ public:
      *
      * \param[in] fieldId Field to look up
      *
-     * \returns offsets Offsets into global IDs vector. The order of this vector 
+     * \returns offsets Offsets into global IDs vector. The order of this vector
      *                  is defined by the underlying FieldPattern defining the requested
-     *                  field. For the Intrepid2FieldPattern this will correspond to the 
+     *                  field. For the Intrepid2FieldPattern this will correspond to the
      *                  required order of the basis functions
      */
    const std::vector<int> & localOffsets(int fieldId) const;
-     
-   /** Returns a pair of vectors. The first is the offsets into the global ID 
+
+   /** Returns a pair of vectors. The first is the offsets into the global ID
      * array for the field and subcell specified. This will be the
      * indexing in the <code>GIDs</code> vector (see <code>localOffsets</code>). Notice
      * that this returns the "closure".  Meaning that all offsets for a particular subcell
@@ -184,7 +184,7 @@ protected:
    void buildFieldIdToPatternIdx();
 
    /** Merge the current set of patterns in the patterns_ vector
-     * into the numFields_ and fieldIds_ vectors. This looks 
+     * into the numFields_ and fieldIds_ vectors. This looks
      * at the patterns_ vector and has side effects, wiping out
      * any previous state stored in those vectors.
      */
@@ -196,7 +196,7 @@ protected:
      * field patterns for only ONE FieldType (CG or DG) AT AT
      * TIME. This that allows for easier mapping of the internal DG
      * indices to subcells.
-     * 
+     *
      * \param[in] fieldType - The type of field to build data for.
      *
      */
@@ -204,7 +204,7 @@ protected:
 
    /** Adds all the pattern's sub cell indices to the vector
      * specified.  The sub cell (dim and sub cell ordinal) is also specified.
-     */ 
+     */
    void addAllPatternSubcellIndices(int dim,int sc,std::vector<int> & indices);
 
    /** Build Pattern data vectors.
@@ -214,7 +214,7 @@ protected:
    /** Helper function that builds the local offsets for this field.
      */
    void localOffsets_build(int fieldId,std::vector<int> & offsets) const;
-   
+
    std::size_t dimension_;
    Teuchos::RCP<const FieldPattern> geomAggPattern_;
 
@@ -233,7 +233,7 @@ protected:
    //! Stores the Field offsets for the fieldId key. Note that the key is the fieldId, not the index into the patterns_.
    mutable std::map<int, std::vector<int> > fieldOffsets_;
 
-   struct LessThan  
+   struct LessThan
    { bool operator()(const Teuchos::Tuple<int,3> & a,const Teuchos::Tuple<int,3> & b) const; };
    mutable std::map<Teuchos::Tuple<int,3>, std::pair<std::vector<int>,std::vector<int> >,LessThan>
          fieldSubcellOffsets_closure_;

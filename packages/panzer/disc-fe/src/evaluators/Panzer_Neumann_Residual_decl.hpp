@@ -49,7 +49,7 @@
 #include "Panzer_Evaluator_Macros.hpp"
 
 namespace panzer {
-    
+
   /** \brief Evaluates a Neumann BC residual contribution
 
       computes the surface integral term resulting from integration
@@ -58,7 +58,7 @@ namespace panzer {
       int(n \cdot (flux * phi) )
   */
 PANZER_EVALUATOR_CLASS(NeumannResidual)
-  
+
   PHX::MDField<ScalarT> residual;
   PHX::MDField<ScalarT> normal_dot_flux;
   PHX::MDField<const ScalarT> flux;

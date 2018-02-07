@@ -63,7 +63,7 @@ namespace panzer {
 
 namespace PHX {
   template<typename T> class FieldManager;
-}  
+}
 
 namespace panzer {
 
@@ -74,7 +74,7 @@ namespace panzer {
 
   class EmptyEvaluatorFactory : public GenericEvaluatorFactory {
   public:
-    bool registerEvaluators(PHX::FieldManager<panzer::Traits> & /* fm */, const WorksetDescriptor & /* wd */, const PhysicsBlock & /* pb */) const 
+    bool registerEvaluators(PHX::FieldManager<panzer::Traits> & /* fm */, const WorksetDescriptor & /* wd */, const PhysicsBlock & /* pb */) const
     { return false; }
   };
 
@@ -85,7 +85,7 @@ namespace panzer {
     typedef std::map<unsigned,panzer::Workset> BCFaceWorksetMap;
 
     FieldManagerBuilder(bool disablePhysicsBlockScatter=false,bool disablePhysicsBlockGather=false)
-      : disablePhysicsBlockScatter_(disablePhysicsBlockScatter) 
+      : disablePhysicsBlockScatter_(disablePhysicsBlockScatter)
       , disablePhysicsBlockGather_(disablePhysicsBlockGather) {}
 
     void print(std::ostream& os) const;
@@ -102,13 +102,13 @@ namespace panzer {
     Teuchos::RCP<WorksetContainer> getWorksetContainer() const
     { return worksetContainer_; }
 
-    const 
+    const
       std::vector< Teuchos::RCP< PHX::FieldManager<panzer::Traits> > >&
       getVolumeFieldManagers() const {return phx_volume_field_managers_;}
 
     //! Look up field manager by an element block ID
     Teuchos::RCP< PHX::FieldManager<panzer::Traits> >
-    getVolumeFieldManager(const WorksetDescriptor & wd) const 
+    getVolumeFieldManager(const WorksetDescriptor & wd) const
     {
        const std::vector<WorksetDescriptor> & wkstDesc = getVolumeWorksetDescriptors();
        std::vector<WorksetDescriptor>::const_iterator itr = std::find(wkstDesc.begin(),wkstDesc.end(),wd);
@@ -122,9 +122,9 @@ namespace panzer {
     const std::vector<WorksetDescriptor> &
       getVolumeWorksetDescriptors() const { return volume_workset_desc_; }
 
-    const std::map<panzer::BC, 
+    const std::map<panzer::BC,
 		   std::map<unsigned,PHX::FieldManager<panzer::Traits> >,
-		   panzer::LessBC>& 
+		   panzer::LessBC>&
       getBCFieldManagers() const {return bc_field_managers_;}
 
     // The intention of the next set of functions is to simplify and eventually
@@ -194,7 +194,7 @@ namespace panzer {
                               const LinearObjFactory<panzer::Traits> & lo_factory,
 			      const Teuchos::ParameterList& user_data);
 
-    void setKokkosExtendedDataTypeDimensions(const std::string & eblock, 
+    void setKokkosExtendedDataTypeDimensions(const std::string & eblock,
                                              const panzer::UniqueGlobalIndexerBase & globalIndexer,
                                              const Teuchos::ParameterList& user_data,
                                              PHX::FieldManager<panzer::Traits> & fm) const;
@@ -207,14 +207,14 @@ namespace panzer {
       *        the appropriate set of worksets for each field manager.
       */
     std::vector<WorksetDescriptor> volume_workset_desc_;
-    
+
     /*! \brief Field managers for the boundary conditions
 
         key is a panzer::BC object.  value is a map of
         field managers where the key is the local side index used by
         intrepid
     */
-    std::map<panzer::BC, 
+    std::map<panzer::BC,
       std::map<unsigned,PHX::FieldManager<panzer::Traits> >,
       panzer::LessBC> bc_field_managers_;
 

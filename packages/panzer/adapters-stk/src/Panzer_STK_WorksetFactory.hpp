@@ -57,7 +57,7 @@ class LocalMeshInfo;
 
 namespace panzer_stk {
 
-/** Pure virtual base class used to construct 
+/** Pure virtual base class used to construct
   * worksets on volumes and side sets.
   */
 class WorksetFactory : public panzer::WorksetFactoryBase {
@@ -76,7 +76,7 @@ public:
    /** Build sets of boundary condition worksets
      */
    virtual
-   Teuchos::RCP<std::map<unsigned,panzer::Workset> > 
+   Teuchos::RCP<std::map<unsigned,panzer::Workset> >
    getSideWorksets(const panzer::WorksetDescriptor & desc,
                    const panzer::WorksetNeeds & needs) const;
 

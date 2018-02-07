@@ -44,9 +44,9 @@
 #include "Panzer_Version.hpp"
 
 namespace panzer {
-  
-  std::string version() { 
-    return("Panzer Version: development"); 
+
+  std::string version() {
+    return("Panzer Version: development");
   }
 
 }

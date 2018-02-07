@@ -68,24 +68,24 @@ public:
 		    const Teuchos::RCP<panzer::GlobalData>& global_data,
                     const bool build_transient_support) const
    {
-      Teuchos::RCP<panzer::EquationSet_TemplateManager<panzer::Traits> > eq_set= 
+      Teuchos::RCP<panzer::EquationSet_TemplateManager<panzer::Traits> > eq_set=
          Teuchos::rcp(new panzer::EquationSet_TemplateManager<panzer::Traits>);
-         
+
       bool found = false; // this is used by PANZER_BUILD_EQSET_OBJECTS
-         
+
       // macro checks if(ies.name=="MixedPoisson") then an EquationSet_Energy object is constructed
       PANZER_BUILD_EQSET_OBJECTS("MixedPoisson", MixedPoissonEquationSet)
-         
+
       // make sure your equation set has been found
       if(!found) {
 	std::string msg = "Error - the \"Equation Set\" called \"" + params->get<std::string>("Type") +
                            "\" is not a valid equation set identifier. Please supply the correct factory.\n";
          TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, msg);
       }
-         
+
       return eq_set;
    }
-    
+
 };
 
 }

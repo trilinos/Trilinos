@@ -53,12 +53,12 @@ namespace panzer {
 namespace {
 
 //**********************************************************************
-template<typename ScalarT,typename ArrayT>                   
+template<typename ScalarT,typename ArrayT>
 void evaluateDiv_withSens(int numCells,
-                          PHX::MDField<ScalarT,Cell,IP> & dof_div, 
+                          PHX::MDField<ScalarT,Cell,IP> & dof_div,
                           PHX::MDField<const ScalarT,Cell,Point> & dof_value,
                           const ArrayT & div_basis)
-{ 
+{
   if(numCells>0) {
     // evaluate at quadrature points
 
@@ -85,15 +85,15 @@ void evaluateDiv_withSens(int numCells,
 //**********************************************************************
 
 //**********************************************************************
-template<typename EvalT, typename TRAITS>                   
+template<typename EvalT, typename TRAITS>
 DOFDiv<EvalT, TRAITS>::
 DOFDiv(const Teuchos::ParameterList & p) :
   use_descriptors_(false),
-  dof_value( p.get<std::string>("Name"), 
+  dof_value( p.get<std::string>("Name"),
 	     p.get< Teuchos::RCP<panzer::BasisIRLayout> >("Basis")->functional),
   basis_name(p.get< Teuchos::RCP<panzer::BasisIRLayout> >("Basis")->name())
 {
-  Teuchos::RCP<const PureBasis> basis 
+  Teuchos::RCP<const PureBasis> basis
      = p.get< Teuchos::RCP<BasisIRLayout> >("Basis")->getBasis();
 
   // Verify that this basis supports the div operation
@@ -103,27 +103,27 @@ DOFDiv(const Teuchos::ParameterList & p) :
                              "DOFDiv: Basis of type \"" << basis->name() << "\" in DOF Div should require orientations. So we are throwing.");
 
   // build dof_div
-  dof_div = PHX::MDField<ScalarT,Cell,IP>(p.get<std::string>("Div Name"), 
+  dof_div = PHX::MDField<ScalarT,Cell,IP>(p.get<std::string>("Div Name"),
       	                                  p.get< Teuchos::RCP<panzer::IntegrationRule> >("IR")->dl_scalar );
 
   // add to evaluation graph
   this->addEvaluatedField(dof_div);
   this->addDependentField(dof_value);
-  
+
   std::string n = "DOFDiv: " + dof_div.fieldTag().name() + " ("+PHX::typeAsString<EvalT>()+")";
   this->setName(n);
 }
 
 //**********************************************************************
-template<typename EvalT, typename TRAITS>                   
+template<typename EvalT, typename TRAITS>
 DOFDiv<EvalT, TRAITS>::
 DOFDiv(const PHX::FieldTag & input,
        const PHX::FieldTag & output,
        const panzer::BasisDescriptor & bd,
        const panzer::IntegrationDescriptor & id)
   : use_descriptors_(true)
-  , bd_(bd) 
-  , id_(id) 
+  , bd_(bd)
+  , id_(id)
   , dof_value(input)
 {
   TEUCHOS_ASSERT(bd.getType()=="HDiv");
@@ -134,13 +134,13 @@ DOFDiv(const PHX::FieldTag & input,
   // add to evaluation graph
   this->addEvaluatedField(dof_div);
   this->addDependentField(dof_value);
-  
+
   std::string n = "DOFDiv: " + dof_div.fieldTag().name() + " ("+PHX::typeAsString<EvalT>()+")";
   this->setName(n);
 }
 
 //**********************************************************************
-template<typename EvalT, typename TRAITS>                   
+template<typename EvalT, typename TRAITS>
 void DOFDiv<EvalT, TRAITS>::
 postRegistrationSetup(typename TRAITS::SetupData sd,
                       PHX::FieldManager<TRAITS>& fm)
@@ -153,10 +153,10 @@ postRegistrationSetup(typename TRAITS::SetupData sd,
 }
 
 //**********************************************************************
-template<typename EvalT, typename TRAITS>                   
+template<typename EvalT, typename TRAITS>
 void DOFDiv<EvalT, TRAITS>::
 evaluateFields(typename TRAITS::EvalData workset)
-{ 
+{
   const panzer::BasisValues2<double> & basisValues = use_descriptors_ ?  this->wda(workset).getBasisValues(bd_,id_)
                                                                       : *this->wda(workset).bases[basis_index];
 
@@ -170,15 +170,15 @@ evaluateFields(typename TRAITS::EvalData workset)
 //**********************************************************************
 
 //**********************************************************************
-template<typename TRAITS>                   
+template<typename TRAITS>
 DOFDiv<panzer::Traits::Jacobian, TRAITS>::
 DOFDiv(const Teuchos::ParameterList & p) :
   use_descriptors_(false),
-  dof_value( p.get<std::string>("Name"), 
+  dof_value( p.get<std::string>("Name"),
 	     p.get< Teuchos::RCP<panzer::BasisIRLayout> >("Basis")->functional),
   basis_name(p.get< Teuchos::RCP<panzer::BasisIRLayout> >("Basis")->name())
 {
-  Teuchos::RCP<const PureBasis> basis 
+  Teuchos::RCP<const PureBasis> basis
      = p.get< Teuchos::RCP<BasisIRLayout> >("Basis")->getBasis();
 
   // do you specialize because you know where the basis functions are and can
@@ -198,27 +198,27 @@ DOFDiv(const Teuchos::ParameterList & p) :
                              "DOFDiv: Basis of type \"" << basis->name() << "\" in DOF Div should require orientations. So we are throwing.");
 
   // build dof_div
-  dof_div = PHX::MDField<ScalarT,Cell,IP>(p.get<std::string>("Div Name"), 
+  dof_div = PHX::MDField<ScalarT,Cell,IP>(p.get<std::string>("Div Name"),
       	                                  p.get< Teuchos::RCP<panzer::IntegrationRule> >("IR")->dl_scalar );
 
   // add to evaluation graph
   this->addEvaluatedField(dof_div);
   this->addDependentField(dof_value);
-  
+
   std::string n = "DOFDiv: " + dof_div.fieldTag().name() + " ("+PHX::typeAsString<panzer::Traits::Jacobian>()+")";
   this->setName(n);
 }
 
 //**********************************************************************
-template<typename TRAITS>                   
+template<typename TRAITS>
 DOFDiv<panzer::Traits::Jacobian, TRAITS>::
 DOFDiv(const PHX::FieldTag & input,
        const PHX::FieldTag & output,
        const panzer::BasisDescriptor & bd,
        const panzer::IntegrationDescriptor & id)
   : use_descriptors_(true)
-  , bd_(bd) 
-  , id_(id) 
+  , bd_(bd)
+  , id_(id)
   , dof_value(input)
 {
   TEUCHOS_ASSERT(bd.getType()=="HDiv");
@@ -231,13 +231,13 @@ DOFDiv(const PHX::FieldTag & input,
   // add to evaluation graph
   this->addEvaluatedField(dof_div);
   this->addDependentField(dof_value);
-  
+
   std::string n = "DOFDiv: " + dof_div.fieldTag().name() + " ("+PHX::typeAsString<panzer::Traits::Jacobian>()+")";
   this->setName(n);
 }
 
 //**********************************************************************
-template<typename TRAITS>                   
+template<typename TRAITS>
 void DOFDiv<panzer::Traits::Jacobian, TRAITS>::
 postRegistrationSetup(typename TRAITS::SetupData sd,
                       PHX::FieldManager<TRAITS>& fm)
@@ -249,10 +249,10 @@ postRegistrationSetup(typename TRAITS::SetupData sd,
     basis_index = panzer::getBasisIndex(basis_name, (*sd.worksets_)[0], this->wda);
 }
 
-template<typename TRAITS>                   
+template<typename TRAITS>
 void DOFDiv<panzer::Traits::Jacobian,TRAITS>::
 evaluateFields(typename TRAITS::EvalData workset)
-{ 
+{
   const panzer::BasisValues2<double> & basisValues = use_descriptors_ ?  this->wda(workset).getBasisValues(bd_,id_)
                                                                       : *this->wda(workset).bases[basis_index];
 

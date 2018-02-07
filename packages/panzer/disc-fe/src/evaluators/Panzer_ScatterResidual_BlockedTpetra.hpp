@@ -62,7 +62,7 @@ namespace panzer {
 template <typename LocalOrdinalT,typename GlobalOrdinalT>
 class BlockedDOFManager; //forward declaration
 
-/** \brief Pushes residual values into the residual vector for a 
+/** \brief Pushes residual values into the residual vector for a
            Newton-based solve
 
 */
@@ -73,7 +73,7 @@ class ScatterResidual_BlockedTpetra
     public panzer::CloneableEvaluator  {
 public:
    typedef typename EvalT::ScalarT ScalarT;
- 
+
    ScatterResidual_BlockedTpetra(const Teuchos::RCP<const BlockedDOFManager<LO,GO> > & /* indexer */)
    { }
    ScatterResidual_BlockedTpetra(const Teuchos::RCP<const BlockedDOFManager<LO,GO> > & gidProviders,
@@ -97,28 +97,28 @@ public:
 
 
 // **************************************************************
-// Residual 
+// Residual
 // **************************************************************
 template <typename TRAITS,typename LO,typename GO,typename NodeT>
 class ScatterResidual_BlockedTpetra<panzer::Traits::Residual,TRAITS,LO,GO,NodeT>
   : public panzer::EvaluatorWithBaseImpl<TRAITS>,
     public PHX::EvaluatorDerived<panzer::Traits::Residual, TRAITS>,
     public panzer::CloneableEvaluator {
-  
+
 public:
   ScatterResidual_BlockedTpetra(const Teuchos::RCP<const BlockedDOFManager<LO,GO> > & indexer)
      : globalIndexer_(indexer) {}
-  
+
   ScatterResidual_BlockedTpetra(const Teuchos::RCP<const BlockedDOFManager<LO,GO> > & indexer,
                                 const Teuchos::ParameterList& p);
-  
+
   void postRegistrationSetup(typename TRAITS::SetupData d,
 			     PHX::FieldManager<TRAITS>& vm);
 
   void preEvaluate(typename TRAITS::PreEvalData d);
-  
+
   void evaluateFields(typename TRAITS::EvalData workset);
-  
+
   virtual Teuchos::RCP<CloneableEvaluator> clone(const Teuchos::ParameterList & pl) const
   { return Teuchos::rcp(new ScatterResidual_BlockedTpetra<panzer::Traits::Residual,TRAITS,LO,GO,NodeT>(globalIndexer_,pl)); }
 
@@ -165,11 +165,11 @@ private:
 template <typename TRAITS,typename LO,typename GO,typename NodeT>
 class ScatterResidual_BlockedTpetra<panzer::Traits::Jacobian,TRAITS,LO,GO,NodeT>
   : public panzer::EvaluatorWithBaseImpl<TRAITS>,
-    public PHX::EvaluatorDerived<panzer::Traits::Jacobian, TRAITS>, 
+    public PHX::EvaluatorDerived<panzer::Traits::Jacobian, TRAITS>,
     public panzer::CloneableEvaluator {
-  
+
 public:
-  
+
   /** The parameter list passed takes the following values
       \verbatim
       <ParameterList>
@@ -192,17 +192,17 @@ public:
   */
   ScatterResidual_BlockedTpetra(const Teuchos::RCP<const BlockedDOFManager<LO,GO> > & indexer)
      : globalIndexer_(indexer) {}
-  
+
   ScatterResidual_BlockedTpetra(const Teuchos::RCP<const BlockedDOFManager<LO,GO> > & indexer,
                                 const Teuchos::ParameterList& p);
-  
+
   void postRegistrationSetup(typename TRAITS::SetupData d,
 			     PHX::FieldManager<TRAITS>& vm);
 
   void preEvaluate(typename TRAITS::PreEvalData d);
-  
+
   void evaluateFields(typename TRAITS::EvalData workset);
-  
+
   virtual Teuchos::RCP<CloneableEvaluator> clone(const Teuchos::ParameterList & pl) const
   { return Teuchos::rcp(new ScatterResidual_BlockedTpetra<panzer::Traits::Jacobian,TRAITS,LO,GO,NodeT>(globalIndexer_,pl)); }
 

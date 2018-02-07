@@ -115,10 +115,10 @@ bool BlockedDOFManager<LocalOrdinalT,GlobalOrdinalT>::fieldInBlock(const std::st
    TEUCHOS_TEST_FOR_EXCEPTION(fieldsItr==blockIdToFieldStrings_.end(),std::logic_error,
                       "BlockedDOFManager::fieldInBlock could not find the element block \""+block+"\"");
 
-   // find field in element block 
+   // find field in element block
    const std::set<std::string> & fields = fieldsItr->second;
    std::set<std::string>::const_iterator itr = fields.find(field);
-   return itr!=fields.end(); 
+   return itr!=fields.end();
 }
 
 /** Get field numbers associated with a particular element block.
@@ -141,9 +141,9 @@ void BlockedDOFManager<LocalOrdinalT,GlobalOrdinalT>::getElementGIDs(LocalOrdina
 {
    // WARNING: there is an assumed ordering being used here it
    // corresponds directly to the blockGIDOffset_ map and (as
-   // a result) the getBlockGIDOffset function. However for 
-   // the sake of speed this conversion is implicit. 
-   //  
+   // a result) the getBlockGIDOffset function. However for
+   // the sake of speed this conversion is implicit.
+   //
    // Any changes to the order should be reflected in the
    // blockGIDOffset_ map.
 
@@ -155,7 +155,7 @@ void BlockedDOFManager<LocalOrdinalT,GlobalOrdinalT>::getElementGIDs(LocalOrdina
 
       fieldBlockManagers_[fbm]->getElementGIDs(localElmtId,fieldBlockOwned,blockIdHint);
 
-      for(std::size_t i=0;i<fieldBlockOwned.size();i++) 
+      for(std::size_t i=0;i<fieldBlockOwned.size();i++)
          gids.push_back(std::make_pair(fbm,fieldBlockOwned[i]));
    }
 }
@@ -165,9 +165,9 @@ void BlockedDOFManager<LocalOrdinalT,GlobalOrdinalT>::getElementOrientation(Loca
 {
    // WARNING: there is an assumed ordering being used here it
    // corresponds directly to the blockGIDOffset_ map and (as
-   // a result) the getBlockGIDOffset function. However for 
-   // the sake of speed this conversion is implicit. 
-   //  
+   // a result) the getBlockGIDOffset function. However for
+   // the sake of speed this conversion is implicit.
+   //
    // Any changes to the order should be reflected in the
    // blockGIDOffset_ map.
 
@@ -179,7 +179,7 @@ void BlockedDOFManager<LocalOrdinalT,GlobalOrdinalT>::getElementOrientation(Loca
 
       fieldBlockManagers_[fbm]->getElementOrientation(localElmtId,blkOrientation);
 
-      for(std::size_t i=0;i<blkOrientation.size();i++) 
+      for(std::size_t i=0;i<blkOrientation.size();i++)
          gidsOrientation.push_back(blkOrientation[i]);
    }
 }
@@ -188,7 +188,7 @@ template <typename LocalOrdinalT,typename GlobalOrdinalT>
 const std::vector<int> & BlockedDOFManager<LocalOrdinalT,GlobalOrdinalT>::getGIDFieldOffsets(const std::string & blockId,int fieldNum) const
 {
    typedef std::map<std::string,std::map<int,std::vector<int> > > FieldOffsetsMap;
-  
+
    FieldOffsetsMap::iterator blockItr = gidFieldOffsets_.find(blockId);
    if(blockItr!=gidFieldOffsets_.end()) {
       std::map<int,std::vector<int> > & fieldToVectorMap = blockItr->second;
@@ -210,7 +210,7 @@ const std::vector<int> & BlockedDOFManager<LocalOrdinalT,GlobalOrdinalT>::getGID
 
    // grab relevant map from iterator
    std::map<int,std::vector<int> > & fieldToVectorMap = blockItr->second;
-  
+
    // we have not found the vector, now we need to build one
    ////////////////////////////////////////////////////////////////
 
@@ -219,11 +219,11 @@ const std::vector<int> & BlockedDOFManager<LocalOrdinalT,GlobalOrdinalT>::getGID
    Teuchos::RCP<const UniqueGlobalIndexer<LocalOrdinalT,GlobalOrdinalT> > dofManager = fieldBlockManagers_[fieldBlock];
 
    // grab offsets for sub dof manager. Notice you must convert to field number used by sub manager!
-   const std::vector<int> & subGIDOffsets 
+   const std::vector<int> & subGIDOffsets
          = dofManager->getGIDFieldOffsets(blockId,dofManager->getFieldNum(getFieldString(fieldNum)));
 
    // increment offsets to correspond with blocked system
-   int gidOffset = getBlockGIDOffset(blockId,fieldBlock); 
+   int gidOffset = getBlockGIDOffset(blockId,fieldBlock);
    std::vector<int> & finalFieldOffsets = fieldToVectorMap[fieldNum];
    finalFieldOffsets.resize(subGIDOffsets.size());
    for(std::size_t i=0;i<finalFieldOffsets.size();i++)
@@ -234,16 +234,16 @@ const std::vector<int> & BlockedDOFManager<LocalOrdinalT,GlobalOrdinalT>::getGID
 
 template <typename LocalOrdinalT,typename GlobalOrdinalT>
 bool BlockedDOFManager<LocalOrdinalT,GlobalOrdinalT>::LessThan
-::operator()(const Teuchos::Tuple<int,3> & a,const Teuchos::Tuple<int,3> & b) const 
+::operator()(const Teuchos::Tuple<int,3> & a,const Teuchos::Tuple<int,3> & b) const
 {
    if(a[0] < b[0]) return true;
    if(a[0] > b[0]) return false;
 
-   // a[0]==b[0]  
+   // a[0]==b[0]
    if(a[1] < b[1]) return true;
    if(a[1] > b[1]) return false;
 
-   // a[1]==b[1] && a[0]==b[0] 
+   // a[1]==b[1] && a[0]==b[0]
    if(a[2] < b[2]) return true;
    if(a[2] > b[2]) return false;
 
@@ -252,7 +252,7 @@ bool BlockedDOFManager<LocalOrdinalT,GlobalOrdinalT>::LessThan
 }
 
 template <typename LocalOrdinalT,typename GlobalOrdinalT>
-const std::pair<std::vector<int>,std::vector<int> > & 
+const std::pair<std::vector<int>,std::vector<int> > &
 BlockedDOFManager<LocalOrdinalT,GlobalOrdinalT>::getGIDFieldOffsets_closure(const std::string & blockId,int fieldNum,int subcellDim,int subcellId) const
 {
    typename std::map<std::string,TupleToVectorPairMap>::iterator blockItr = gidFieldOffsets_closure_.find(blockId);
@@ -277,7 +277,7 @@ BlockedDOFManager<LocalOrdinalT,GlobalOrdinalT>::getGIDFieldOffsets_closure(cons
 
    // grab relevant map from iterator
    TupleToVectorPairMap & fieldToTupleMap = blockItr->second;
-  
+
    // we have not found the vector, now we need to build one
    ////////////////////////////////////////////////////////////////
 
@@ -290,7 +290,7 @@ BlockedDOFManager<LocalOrdinalT,GlobalOrdinalT>::getGIDFieldOffsets_closure(cons
          = dofManager->getGIDFieldOffsets_closure(blockId,dofManager->getFieldNum(getFieldString(fieldNum)),subcellDim,subcellId);
 
    // increment offsets to correspond with blocked system
-   int gidOffset = getBlockGIDOffset(blockId,fieldBlock); 
+   int gidOffset = getBlockGIDOffset(blockId,fieldBlock);
    std::pair<std::vector<int>,std::vector<int> > & finalFieldOffsets = fieldToTupleMap[Teuchos::tuple(fieldNum,subcellDim,subcellId)];
    finalFieldOffsets.first.resize(subGIDOffsets_closure.first.size());
    finalFieldOffsets.second = subGIDOffsets_closure.second;
@@ -428,8 +428,8 @@ void BlockedDOFManager<LocalOrdinalT,GlobalOrdinalT>::ownedIndices(const std::ve
 
    std::vector<std::vector<GlobalOrdinalT> > blockIndices(fieldBlockManagers_.size());
    for(std::size_t i=0;i<indices.size();i++)
-      blockIndices[indices[i].first].push_back(indices[i].second); 
- 
+      blockIndices[indices[i].first].push_back(indices[i].second);
+
    // build bool vector stating if each sub block is owned
    std::vector<std::vector<bool> > blockIsOwned(fieldBlockManagers_.size());
    std::vector<std::vector<bool>::const_iterator> blockItrs;
@@ -459,7 +459,7 @@ void BlockedDOFManager<LocalOrdinalT,GlobalOrdinalT>::ownedIndices(const std::ve
       TEUCHOS_TEST_FOR_EXCEPTION(blockItrs[fbm]!=blockIsOwned[fbm].end(),std::logic_error,
                        "BlockedDOFManager::ownedIndices: Did not consume all sub block boolean entries as expected.");
    }
-    
+
 }
 
 
@@ -505,7 +505,7 @@ Teuchos::RCP<ConnManager<LocalOrdinalT,GlobalOrdinalT> > BlockedDOFManager<Local
    Teuchos::RCP<ConnManager<LocalOrdinalT,GlobalOrdinalT> > connMngr = connMngr_;
 
    connMngr_ = Teuchos::null;
-   ownedGIDHashTable_.clear(); 
+   ownedGIDHashTable_.clear();
    blockGIDOffset_.clear();
 
    return connMngr;
@@ -518,7 +518,7 @@ void BlockedDOFManager<LocalOrdinalT,GlobalOrdinalT>::addField(const std::string
    std::vector<std::string> elementBlockIds;
    connMngr_->getElementBlockIds(elementBlockIds);
 
-   // loop over blocks adding field pattern to each 
+   // loop over blocks adding field pattern to each
    for(std::size_t i=0;i<elementBlockIds.size();i++)
       addField(elementBlockIds[i],str,pattern);
 }
@@ -529,14 +529,14 @@ void BlockedDOFManager<LocalOrdinalT,GlobalOrdinalT>::addField(const std::string
 {
    TEUCHOS_TEST_FOR_EXCEPTION(fieldsRegistered(),std::logic_error,
                       "BlockedDOFManager::addField: addField cannot be called after registerFields or"
-                      "buildGlobalUnknowns has been called"); 
+                      "buildGlobalUnknowns has been called");
 
    fieldStringToPattern_[std::make_pair(blockId,str)] = pattern;
    blockIdToFieldStrings_[blockId].insert(str);
 }
 
 template <typename LocalOrdinalT,typename GlobalOrdinalT>
-void BlockedDOFManager<LocalOrdinalT,GlobalOrdinalT>::registerFields(bool buildSubUGIs) 
+void BlockedDOFManager<LocalOrdinalT,GlobalOrdinalT>::registerFields(bool buildSubUGIs)
 {
    if(buildSubUGIs)
      fieldBlockManagers_.clear();
@@ -544,7 +544,7 @@ void BlockedDOFManager<LocalOrdinalT,GlobalOrdinalT>::registerFields(bool buildS
    fieldNumToStr_.clear();
    fieldNumToFieldBlk_.clear();
    maxSubFieldNum_ = -1;
-   
+
    fieldsRegistered_ = false;
 
    // test validity of the field order, build default if none is provided
@@ -605,10 +605,10 @@ void BlockedDOFManager<LocalOrdinalT,GlobalOrdinalT>::registerFields(bool buildS
        // add in these fields to the new manager
        this->addFieldsToFieldBlockManager(fieldOrder_[fldBlk],*dofManager);
 
-       fieldBlockManagers_.push_back(dofManager); 
+       fieldBlockManagers_.push_back(dofManager);
      }
    }
-    
+
    ////////////////////////////////
    // build field numbers: two stage algorithm
 
@@ -626,7 +626,7 @@ void BlockedDOFManager<LocalOrdinalT,GlobalOrdinalT>::registerFields(bool buildS
 
       int fieldNum = 0;
       for(std::size_t f=0;f<activeFields.size();f++) {
-         fieldNum = dofManager->getFieldNum(activeFields[f]); 
+         fieldNum = dofManager->getFieldNum(activeFields[f]);
          tempStrToNum[activeFields[f]] = fieldNum;
 
          maxSubFieldNum_ = (fieldNum>maxSubFieldNum_) ? fieldNum : maxSubFieldNum_;
@@ -638,7 +638,7 @@ void BlockedDOFManager<LocalOrdinalT,GlobalOrdinalT>::registerFields(bool buildS
    int numOffset = 0;
    for(std::size_t fldBlk=0;fldBlk<fieldBlockManagers_.size();fldBlk++) {
       const std::vector<std::string> & activeFields = fieldOrder_[fldBlk];
- 
+
       for(std::size_t f=0;f<activeFields.size();f++) {
          // compute offset field number
          int fieldNum = tempStrToNum[activeFields[f]]+numOffset;
@@ -646,14 +646,14 @@ void BlockedDOFManager<LocalOrdinalT,GlobalOrdinalT>::registerFields(bool buildS
          // build up map data
          fieldStrToNum_[activeFields[f]] = fieldNum;
          fieldNumToStr_[fieldNum] = activeFields[f];
-         fieldNumToFieldBlk_[fieldNum] = fldBlk; 
+         fieldNumToFieldBlk_[fieldNum] = fldBlk;
       }
 
       // increament field number offset based on largest sub field number
       numOffset += (maxSubFieldNum_+1);
    }
 
-   // end build field numbers 
+   // end build field numbers
    ////////////////////////////////
 
    // build block to field numbers: this requires field numbers have been built
@@ -663,7 +663,7 @@ void BlockedDOFManager<LocalOrdinalT,GlobalOrdinalT>::registerFields(bool buildS
       const std::set<std::string> & fields = itr->second;
 
       std::vector<int> & fieldNums = blockIdToFieldNumbers_[itr->first];
-      for(std::set<std::string>::const_iterator fldItr=fields.begin();  
+      for(std::set<std::string>::const_iterator fldItr=fields.begin();
           fldItr!=fields.end();++fldItr) {
          fieldNums.push_back(getFieldNum(*fldItr));
       }
@@ -674,7 +674,7 @@ void BlockedDOFManager<LocalOrdinalT,GlobalOrdinalT>::registerFields(bool buildS
 }
 
 template <typename LocalOrdinalT,typename GlobalOrdinalT>
-Teuchos::RCP<UniqueGlobalIndexer<LocalOrdinalT,GlobalOrdinalT> > 
+Teuchos::RCP<UniqueGlobalIndexer<LocalOrdinalT,GlobalOrdinalT> >
 BlockedDOFManager<LocalOrdinalT,GlobalOrdinalT>::
 buildNewIndexer(const Teuchos::RCP<ConnManager<LocalOrdinalT,GlobalOrdinalT> > & connManager,MPI_Comm mpiComm) const
 {
@@ -780,7 +780,7 @@ getElementBlockGIDCount(const std::string & elementBlock) const
   int gidCount = 0;
   for(std::size_t i=0;i<fieldBlockManagers_.size();i++)
     gidCount += fieldBlockManagers_[i]->getElementBlockGIDCount(elementBlock);
- 
+
   return gidCount;
 }
 
@@ -791,7 +791,7 @@ getElementBlockGIDCount(const std::size_t & elementBlock) const
   int gidCount = 0;
   for(std::size_t i=0;i<fieldBlockManagers_.size();i++)
     gidCount += fieldBlockManagers_[i]->getElementBlockGIDCount(elementBlock);
- 
+
   return gidCount;
 }
 
@@ -907,7 +907,7 @@ void BlockedDOFManager<LocalOrdinalT,GlobalOrdinalT>::buildGlobalUnknowns(
     TEUCHOS_ASSERT(fieldBlockManagers.size()>0); // the minimum requirement!
 
     // get reference values from the initial DOFManager
-    RCP<const DOFManager<LocalOrdinalT,GlobalOrdinalT> > refDofManager 
+    RCP<const DOFManager<LocalOrdinalT,GlobalOrdinalT> > refDofManager
         = rcp_dynamic_cast<const DOFManager<LocalOrdinalT,GlobalOrdinalT> >(fieldBlockManagers[0]);
 
     TEUCHOS_TEST_FOR_EXCEPTION(refDofManager==Teuchos::null,std::runtime_error,
@@ -922,7 +922,7 @@ void BlockedDOFManager<LocalOrdinalT,GlobalOrdinalT>::buildGlobalUnknowns(
     refGeomPattern = refDofManager->getGeometricFieldPattern();
 
     for(std::size_t i=1;i<fieldBlockManagers.size();i++) {
-      RCP<const DOFManager<LocalOrdinalT,GlobalOrdinalT> > dofManager 
+      RCP<const DOFManager<LocalOrdinalT,GlobalOrdinalT> > dofManager
           = rcp_dynamic_cast<const DOFManager<LocalOrdinalT,GlobalOrdinalT> >(fieldBlockManagers[i]);
 
       TEUCHOS_TEST_FOR_EXCEPTION(refDofManager==Teuchos::null,std::runtime_error,
@@ -946,21 +946,21 @@ void BlockedDOFManager<LocalOrdinalT,GlobalOrdinalT>::buildGlobalUnknowns(
   {
     std::vector<std::string> eblocks;
     this->getElementBlockIds(eblocks);
-  
+
     for(std::size_t i=0;i<fieldBlockManagers.size();i++) {
-      RCP<const DOFManager<LocalOrdinalT,GlobalOrdinalT> > dofManager 
+      RCP<const DOFManager<LocalOrdinalT,GlobalOrdinalT> > dofManager
           = rcp_dynamic_cast<const DOFManager<LocalOrdinalT,GlobalOrdinalT> >(fieldBlockManagers[i]);
-  
+
       for(std::size_t e=0;e<eblocks.size();e++) {
         const std::vector<int> & fieldIds = dofManager->getBlockFieldNumbers(eblocks[e]);
-   
+
         // insert the fields into the block dof manager
         for(std::size_t f=0;f<fieldIds.size();f++) {
-          // get the field name and pattern 
+          // get the field name and pattern
           std::string fieldName = dofManager->getFieldString(fieldIds[f]);
           Teuchos::RCP<const panzer::FieldPattern> fieldPattern
               = dofManager->getFieldPattern(eblocks[e],fieldName);
-   
+
           // add in the field
           this->addField(eblocks[e],fieldName,fieldPattern);
         }
@@ -1045,7 +1045,7 @@ void BlockedDOFManager<LocalOrdinalT,GlobalOrdinalT>::buildGlobalUnknowns()
      patVector.push_back(std::make_pair(FieldType::CG,f2p_itr->second));
 
    // if orientations are required, add the nodal field pattern to make it possible to compute them
-   if(requireOrientations_) 
+   if(requireOrientations_)
      patVector.push_back(std::make_pair(FieldType::CG,Teuchos::rcp(new NodalFieldPattern(patVector[0].second->getCellTopology()))));
 
    RCP<GeometricAggFieldPattern> aggFieldPattern = Teuchos::rcp(new GeometricAggFieldPattern);
@@ -1062,7 +1062,7 @@ template <typename LocalOrdinalT,typename GlobalOrdinalT>
 void BlockedDOFManager<LocalOrdinalT,GlobalOrdinalT>::printFieldInformation(std::ostream & os) const
 {
    os << "BlockedDOFManager Field Information: " << std::endl;
-   
+
    if(fieldsRegistered()) {
       // Print field block DOF managers
       for(std::size_t fbm=0;fbm<fieldBlockManagers_.size();fbm++) {
@@ -1075,7 +1075,7 @@ void BlockedDOFManager<LocalOrdinalT,GlobalOrdinalT>::printFieldInformation(std:
          for(std::size_t i=0;i<fieldOrder_[fbm].size();i++) {
             std::string fieldString = fieldOrder_[fbm][i];
             int fieldNum = getFieldNum(fieldString);
-            os << "      \"" << fieldString << "\" is field ID " << fieldNum 
+            os << "      \"" << fieldString << "\" is field ID " << fieldNum
                << "/" << fieldBlockManagers_[fbm]->getFieldNum(fieldString) << std::endl;
          }
          os << std::endl;
@@ -1088,7 +1088,7 @@ void BlockedDOFManager<LocalOrdinalT,GlobalOrdinalT>::printFieldInformation(std:
 }
 
 template <typename LocalOrdinalT,typename GlobalOrdinalT>
-Teuchos::RCP<const FieldPattern> 
+Teuchos::RCP<const FieldPattern>
 BlockedDOFManager<LocalOrdinalT,GlobalOrdinalT>::getFieldPattern(const std::string & blockId, const std::string & fieldName) const
 {
    std::map<std::pair<std::string,std::string>,Teuchos::RCP<const FieldPattern> >::const_iterator itr;
@@ -1123,14 +1123,14 @@ bool BlockedDOFManager<LocalOrdinalT,GlobalOrdinalT>::validFieldOrder(const std:
 
    bool correctCount = (numberInOrder==fields.size());
    bool sameFields = (orderedFields==fields);
- 
+
    return correctCount && sameFields;
 }
 
 template <typename LocalOrdinalT,typename GlobalOrdinalT>
 int BlockedDOFManager<LocalOrdinalT,GlobalOrdinalT>::getNumFieldBlocks() const
 {
-   if(fieldOrder_.size()==0) 
+   if(fieldOrder_.size()==0)
       return 1; // only one field block
    return fieldOrder_.size();
 }

@@ -66,17 +66,17 @@ namespace panzer_stk {
   * "Field Names" of type <code>Teuchos::RCP<std::vector<std::string> ></code>
   * and "Basis" of type <code>Teuchos::RCP<panzer::Basis></code>.
   */
-template<typename EvalT, typename Traits> 
+template<typename EvalT, typename Traits>
 class GatherFields
   : public panzer::EvaluatorWithBaseImpl<Traits>,
     public PHX::EvaluatorDerived<EvalT, Traits> {
 
 public:
   GatherFields(const Teuchos::RCP<const panzer_stk::STK_Interface> & mesh,const Teuchos::ParameterList & p);
-  
+
   void postRegistrationSetup(typename Traits::SetupData d,
 			     PHX::FieldManager<Traits>& vm);
-  
+
   void evaluateFields(typename Traits::EvalData d);
 
 private:
@@ -85,9 +85,9 @@ private:
 
   std::vector< PHX::MDField<ScalarT,panzer::Cell,panzer::NODE> > gatherFields_;
   std::vector<VariableField*> stkFields_;
- 
+
   Teuchos::RCP<const STK_Interface> mesh_;
- 
+
   bool isConstant_;
 
   GatherFields();

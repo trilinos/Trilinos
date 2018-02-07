@@ -82,7 +82,7 @@ public:
       Triplet() : x(-1),y(-1),z(-1) {}
       Triplet(T a,T b,T c) : x(a),y(b),z(c) {}
       T x, y, z;
-   }; 
+   };
 
    CartesianConnManager() {}
 
@@ -134,13 +134,13 @@ public:
      */
    LocalOrdinal computeLocalElementIndex(const Triplet<GlobalOrdinal> & element) const;
 
-   /** Compute the global index from a global triplet. 
+   /** Compute the global index from a global triplet.
      */
    GlobalOrdinal computeGlobalElementIndex(const Triplet<GlobalOrdinal> & element) const;
 
    /** Utility function for computing the processor i,j,k ranking. Publically exposed for testing.
      */
-   static Triplet<int> computeMyRankTriplet(int myRank,int dim,const Triplet<int> & procs); 
+   static Triplet<int> computeMyRankTriplet(int myRank,int dim,const Triplet<int> & procs);
 
    /** Utility function for computing a global element triplet from a local element index
      * Publically exposed for testing.
@@ -148,12 +148,12 @@ public:
    static Triplet<GlobalOrdinal> computeLocalElementGlobalTriplet(int index,const Triplet<GlobalOrdinal> & myElements,
                                                                        const Triplet<GlobalOrdinal> & myOffset);
 
-   /** Compute the global index from a global triplet. 
+   /** Compute the global index from a global triplet.
      */
    static GlobalOrdinal computeGlobalElementIndex(const Triplet<GlobalOrdinal> & element,
                                                   const Triplet<GlobalOrdinal> & shape);
 
-   /** Compute the global index for a triplet. 
+   /** Compute the global index for a triplet.
      */
    static LocalOrdinal computeLocalElementIndex(const Triplet<GlobalOrdinal> & element,
                                                 const Triplet<GlobalOrdinal> & myElements,
@@ -168,7 +168,7 @@ public:
      * \param[in] fp Field pattern to build connectivity for
      */
    virtual void buildConnectivity(const FieldPattern & fp);
- 
+
    /** Build a clone of this connection manager, without any assumptions
      * about the required connectivity (e.g. <code>buildConnectivity</code>
      * has never been called).
@@ -190,10 +190,10 @@ public:
      *
      * \returns Number of mesh IDs that are associated with this element.
      */
-   virtual LocalOrdinal getConnectivitySize(LocalOrdinal localElmtId) const 
+   virtual LocalOrdinal getConnectivitySize(LocalOrdinal localElmtId) const
    { return Teuchos::as<LocalOrdinal>(connectivity_[localElmtId].size()); }
 
-   
+
    /** Get the block ID for a particular element.
      *
      * \param[in] localElmtId Local element ID
@@ -227,7 +227,7 @@ public:
    virtual const std::vector<LocalOrdinal> & getAssociatedNeighbors(const LocalOrdinal& /* el */) const
    { return emptyVector_; }
 
-   virtual bool hasAssociatedNeighbors() const 
+   virtual bool hasAssociatedNeighbors() const
    { return false; }
 
 private:
@@ -240,13 +240,13 @@ private:
 
    // Update the connectivity vector with the field pattern. The connectivity is specified
    // here using the i,j,k index of the local element. Also, this is where the ordering
-   // of a cell is embedded into the system. 
+   // of a cell is embedded into the system.
    void updateConnectivity_2d(const panzer::FieldPattern & fp,int subcellDim,int localElementId,
                              std::vector<GlobalOrdinal> & conn) const;
 
    // Update the connectivity vector with the field pattern. The connectivity is specified
    // here using the i,j,k index of the local element. Also, this is where the ordering
-   // of a cell is embedded into the system. 
+   // of a cell is embedded into the system.
    void updateConnectivity_3d(const panzer::FieldPattern & fp,int subcellDim,int localElementId,
                              std::vector<GlobalOrdinal> & conn) const;
 
@@ -254,7 +254,7 @@ private:
    int myRank_;
    Triplet<int> myRankIndex_;
 
-   int dim_; 
+   int dim_;
    Triplet<GlobalOrdinal> totalElements_; // over all blocks and processors how many elements
    Triplet<GlobalOrdinal> elements_; // per block element counts
    Triplet<int> processors_;         // full mesh
@@ -267,8 +267,8 @@ private:
 
    // element vector to connectivity
    std::vector<std::vector<GlobalOrdinal> > connectivity_;
- 
-   GlobalOrdinal totalNodes_; 
+
+   GlobalOrdinal totalNodes_;
    GlobalOrdinal totalEdges_;
    GlobalOrdinal totalFaces_;
    GlobalOrdinal totalCells_;

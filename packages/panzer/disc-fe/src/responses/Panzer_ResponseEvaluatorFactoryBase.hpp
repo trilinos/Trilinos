@@ -67,7 +67,7 @@ namespace panzer {
   * (Later, EvaluatorsRegistrar was added to manage the workset
   * details index. It is stateful, but its default state
   * behaves as if the Registrar is not present.)
-  * 
+  *
   * \note Users should not derive directly off of this object,
   *       but should instead derive from the ResponseEvaluatorFactory
   *       which is the templated version with a specific evaluation
@@ -92,8 +92,8 @@ public:
      * \param[in] wkstdescs A vector of descriptors for the elements this response is over.
      */
    virtual Teuchos::RCP<ResponseBase> buildResponseObject(const std::string & responseName,
-                                                          const std::vector<WorksetDescriptor> & wkstdescs) const = 0; 
-   
+                                                          const std::vector<WorksetDescriptor> & wkstdescs) const = 0;
+
    /** Build and register evaluators for a response on a particular physics
      * block.
      *
@@ -114,7 +114,7 @@ public:
      * where a response may support a particular evaluation type, however at runtime the user
      * decides not to enable the (say) Jacobian evaluation of this response.
      *
-     * Note that use of this mechanism is complementary to having the builder return 
+     * Note that use of this mechanism is complementary to having the builder return
      * <code>Teuchos::null</code> for a particular evaluation type.
      *
      * \note In this contect the "type" does not make a lot of sense. But in the dervied

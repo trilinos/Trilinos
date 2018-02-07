@@ -66,21 +66,21 @@ namespace panzer {
     panzer::FieldLayoutLibrary fl;
     Teuchos::RCP<panzer::IntegrationRule> ir;
     {
-      Teuchos::RCP<shards::CellTopology> topo = 
+      Teuchos::RCP<shards::CellTopology> topo =
          Teuchos::rcp(new shards::CellTopology(shards::getCellTopologyData< shards::Hexahedron<8> >()));
-    
+
       const int num_cells = 20;
       const panzer::CellData cell_data(num_cells,topo);
-      const int cubature_degree = 2;      
+      const int cubature_degree = 2;
       ir = Teuchos::rcp(new panzer::IntegrationRule(cubature_degree, cell_data));
       Teuchos::RCP<panzer::BasisIRLayout> basis = Teuchos::rcp(new panzer::BasisIRLayout("Q1",0,*ir));
-      
+
       fl.addFieldAndLayout("Ux",basis);
     }
 
     std::string model_id = "fluid model";
 
-    Teuchos::ParameterList eqset_params; 
+    Teuchos::ParameterList eqset_params;
 
     Teuchos::ParameterList p("Closure Models");
     {
@@ -113,7 +113,7 @@ namespace panzer {
 
     // Add an unsupported type
     p.sublist("fluid model").sublist("garbage").set<std::string>("Value","help!");
-    
+
     TEST_THROW(model_factory.getAsObject<panzer::Traits::Residual>()->buildClosureModels(model_id, p, fl, ir, eqset_params, user_data, gd, fm), std::logic_error);
 
   }

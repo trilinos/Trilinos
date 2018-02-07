@@ -62,7 +62,7 @@
 // ********************************************************************
 // ********************************************************************
 template<typename EvalT>
-Teuchos::RCP< std::vector< Teuchos::RCP<PHX::Evaluator<panzer::Traits> > > > 
+Teuchos::RCP< std::vector< Teuchos::RCP<PHX::Evaluator<panzer::Traits> > > >
 user_app::ClosureModelFactory<EvalT>::
 buildClosureModels(const std::string& model_id,
     const Teuchos::ParameterList& models,
@@ -77,13 +77,13 @@ buildClosureModels(const std::string& model_id,
   using Teuchos::rcp;
   using Teuchos::ParameterList;
 
-  RCP<std::vector< RCP<PHX::Evaluator<panzer::Traits> > > > evaluators = 
+  RCP<std::vector< RCP<PHX::Evaluator<panzer::Traits> > > > evaluators =
       rcp(new std::vector< RCP<PHX::Evaluator<panzer::Traits> > > );
 
   if (!models.isSublist(model_id)) {
     models.print(std::cout);
     std::stringstream msg;
-    msg << "Falied to find requested model, \"" << model_id 
+    msg << "Falied to find requested model, \"" << model_id
         << "\", for equation set:\n" << std::endl;
     TEUCHOS_TEST_FOR_EXCEPTION(!models.isSublist(model_id), std::logic_error, msg.str());
   }
@@ -95,7 +95,7 @@ buildClosureModels(const std::string& model_id,
   const ParameterList& my_models = models.sublist(model_id);
 
   // loop over all the models
-  for (ParameterList::ConstIterator model_it = my_models.begin(); 
+  for (ParameterList::ConstIterator model_it = my_models.begin();
       model_it != my_models.end(); ++model_it) {
 
     bool found = false;
@@ -137,8 +137,8 @@ buildClosureModels(const std::string& model_id,
 
       // a linear fucntion across the domain
       if(evaluator_type == "Linear Function" ) {
-        double acoeff = plist.get<double>("ACoeff"); 
-        double bcoeff = plist.get<double>("BCoeff"); 
+        double acoeff = plist.get<double>("ACoeff");
+        double bcoeff = plist.get<double>("BCoeff");
 
         RCP<PHX::Evaluator<panzer::Traits> > e =
             rcp(new user_app::LinearFunction<EvalT,panzer::Traits>(key,acoeff,bcoeff,*ir));
@@ -151,7 +151,7 @@ buildClosureModels(const std::string& model_id,
     // fail if you can't find one of the models
     if (!found) {
       std::stringstream msg;
-      msg << "ClosureModelFactory failed to build evaluator for key \"" << key 
+      msg << "ClosureModelFactory failed to build evaluator for key \"" << key
           << "\"\nin model \"" << model_id
           << "\".  Please correct the type or add support to the \nfactory." <<std::endl;
       TEUCHOS_TEST_FOR_EXCEPTION(!found, std::logic_error, msg.str());

@@ -77,7 +77,7 @@ Teuchos::RCP<STK_Interface> SculptMeshFactory::buildMesh(stk::ParallelMachine pa
 
    // wrtie exodus file
    //mesh->writeToExodus("STKSculptMesh.exo");
- 
+
    return mesh;
 }
 
@@ -97,9 +97,9 @@ Teuchos::RCP<STK_Interface> SculptMeshFactory::buildUncommitedMesh(stk::Parallel
        // call Sculptor
        char diatom_file[1000];
        writeDiatomFile( stlFileDir_, stlFileName_, diatom_file  );
-  
+
        callSculptor( parallelMach, diatom_file );
-   
+
         // build meta information: blocks and side set setups
         buildMetaData(parallelMach,*mesh);
 
@@ -110,14 +110,14 @@ Teuchos::RCP<STK_Interface> SculptMeshFactory::buildUncommitedMesh(stk::Parallel
 //   if( machRank_ == 0 )
 //                if(mesh->isWritable())
 //                               mesh->writeToExodus("STKSculptMesh.exo");
-            
+
 
    return mesh;
 }
 
 int SculptMeshFactory::writeDiatomFile( std::string stl_path, std::string stl_filename, char *diatom_file ) const
 {
- 
+
   strcpy( diatom_file, stl_path.c_str() );
   strcat( diatom_file, "stl.diatom" );
   FILE *fp = fopen( diatom_file, "w" );
@@ -140,23 +140,23 @@ int SculptMeshFactory::writeDiatomFile( std::string stl_path, std::string stl_fi
   fprintf( fp, "    endpackage\n" );
   fprintf( fp, "  enddiatom\n" );
   fclose( fp );
-  
+
   return 1;
 
 }
-int SculptMeshFactory::callSculptor(stk::ParallelMachine parallelMach, char *diatom_file_name ) const 
+int SculptMeshFactory::callSculptor(stk::ParallelMachine parallelMach, char *diatom_file_name ) const
 {
 
   char * base_exodus_file_name = NULL;
   char * base_vfrac_file_name = NULL;
-  int nelx, nely, nelz; 
+  int nelx, nely, nelz;
 
   nelx = xInterval_;
   nely = yInterval_;
   nelz = zInterval_;
 
   int mesh_void = 0;
- 
+
   double gmin[3];
   double gmax[3];
 
@@ -167,23 +167,23 @@ int SculptMeshFactory::callSculptor(stk::ParallelMachine parallelMach, char *dia
   gmax[1] = yMax_;
   gmax[2] = zMax_;
 
-  int stair = 0; 
+  int stair = 0;
   int smooth = 1;
   int smooth_iterations = 7;
- 
+
   int gen_sidesets = 4; //for stl based sidesets
-  int adaptive_grid = 0;  
+  int adaptive_grid = 0;
   int adapt_level = 2;
   int adapt_type = 0;
-   
+
   printf("\n Sculpt BBox Min ( %lf, %lf, %lf )\n", xMin_, yMin_, zMin_ );
   printf("\n Sculpt BBox Max ( %lf, %lf, %lf )\n", xMax_, yMax_, zMax_ );
-  
+
   int cr_result = Create_Sculptor_Mesh(diatom_file_name,
 				       base_exodus_file_name,
                                        base_vfrac_file_name,
-				       0, //vfac_input 
-				       machSize_, //comm.size(), 
+				       0, //vfac_input
+				       machSize_, //comm.size(),
 				       machRank_, //comm.rank(),
                                        1,
 				       nelx,
@@ -191,14 +191,14 @@ int SculptMeshFactory::callSculptor(stk::ParallelMachine parallelMach, char *dia
 				       nelz,
 				       gmin,
 				       gmax,
-				       stair, 
-				       smooth, 
+				       stair,
+				       smooth,
 				       10,/*num_laplac_iters*/
                                        0, // max opt iters
 				       .4,/*opt_threshold*/
                                        0, // max pcol iters
                                        .4, // pcol threshold
-				       mesh_void, 
+				       mesh_void,
 				       gen_sidesets,
 				       adapt_type, /* adatptive type*/
                                        adaptive_grid,/*adaptive_grid*/
@@ -264,9 +264,9 @@ void SculptMeshFactory::setParameterList(const Teuchos::RCP<Teuchos::ParameterLi
    xMax_ = paramList->get<double>("xMax");
    yMax_ = paramList->get<double>("yMax");
    zMax_ = paramList->get<double>("zMax");
- 
+
    stlFileDir_ = paramList->get<std::string>("stlFileDir");
-   stlFileName_ = paramList->get<std::string>("stlFileName"); 
+   stlFileName_ = paramList->get<std::string>("stlFileName");
 
    // read in periodic boundary conditions
    parsePeriodicBCList(Teuchos::rcpFromRef(paramList->sublist("Periodic BCs")),periodicBCVec_);
@@ -292,7 +292,7 @@ Teuchos::RCP<const Teuchos::ParameterList> SculptMeshFactory::getValidParameters
       defaultParams->set<double>("xMax",1.0);
       defaultParams->set<double>("yMax",1.0);
       defaultParams->set<double>("zMax",1.0);
-     
+
       defaultParams->set<std::string>("stlFileDir", "NULL");
       defaultParams->set<std::string>("stlFileName", "NULL");
 
@@ -311,7 +311,7 @@ void SculptMeshFactory::initializeWithDefaults()
 
    // set that parameter list
    setParameterList(validParams);
-   
+
 }
 
 void SculptMeshFactory::buildMetaData(stk::ParallelMachine parallelMach, STK_Interface & mesh) const
@@ -337,9 +337,9 @@ void SculptMeshFactory::buildMetaData(stk::ParallelMachine parallelMach, STK_Int
    }
 
 
-   // add sidesets 
+   // add sidesets
      int side_set_id;
-     machRank_ = stk::parallel_machine_rank(parallelMach); 
+     machRank_ = stk::parallel_machine_rank(parallelMach);
      for(int ict = 0;ict < nSidesets_;ict ++){
         std::stringstream sPostfix;
         sPostfix << "-" << mss->side_set_id[ict];
@@ -373,19 +373,19 @@ void SculptMeshFactory::buildNodes( stk::ParallelMachine paralleMach, STK_Interf
       coord[2] = mss->coord[2*num_nodes+ict];
       mesh.addNode(global_node_numbers, coord );
 
-      //std::cout<<"Node "<<global_node_numbers<<": ( "<<coord[0]<<", "<<coord[1]<<", "<<coord[2]<<" )"<<std::endl;      
+      //std::cout<<"Node "<<global_node_numbers<<": ( "<<coord[0]<<", "<<coord[1]<<", "<<coord[2]<<" )"<<std::endl;
 
     }
   }
- 
 
-} 
+
+}
 
 void SculptMeshFactory::buildElements(stk::ParallelMachine parallelMach,STK_Interface & mesh) const
 {
    struct MeshStorageStruct *mss = get_sculpt_mesh();
    int num_blocks  = mss->num_elem_blk;
-  
+
 
    int *block_id = new int[num_blocks];
    //char ** element_types = new std::string[num_blocks];
@@ -418,7 +418,7 @@ void SculptMeshFactory::buildBlock(stk::ParallelMachine parallelMach,STK_Interfa
 
   struct MeshStorageStruct *mss = get_sculpt_mesh();
 
-   // add blocks     
+   // add blocks
    std::stringstream blockName;
    blockName << "eblock-" << block_id[block_index];
    stk::mesh::Part * block = mesh.getElementBlockPart(blockName.str());
@@ -426,7 +426,7 @@ void SculptMeshFactory::buildBlock(stk::ParallelMachine parallelMach,STK_Interfa
 
    buildNodes( parallelMach, mesh );
 
- 
+
     // read element block properties
     //read element connectivity information into a temporary array
       if(elements[block_index]) {
@@ -455,7 +455,7 @@ void SculptMeshFactory::buildBlock(stk::ParallelMachine parallelMach,STK_Interfa
 
 const stk::mesh::Relation * SculptMeshFactory::getRelationByID(unsigned ID,stk::mesh::PairIterRelation relations) const
 {
-   for(std::size_t i=0;i<relations.size();i++) 
+   for(std::size_t i=0;i<relations.size();i++)
       if(relations[i].identifier()==ID)
          return &relations[i];
 
@@ -481,13 +481,13 @@ void SculptMeshFactory::addSideSets(STK_Interface & mesh) const
     int **side_set_node_counter = new int*[num_side_sets];
     int **side_set_nodes = new int*[num_side_sets];
     double **side_set_df = new double*[num_side_sets];
-    
+
     for(int ict = 0;ict < num_side_sets;ict ++){
         side_set_id[ict] = mss->side_set_id[ict];
     }
 
    for(int i = 0; i < num_side_sets; i++) {
-     
+
       std::stringstream sidesetName;
       sidesetName << "Sideset-" << mss->side_set_id[i];
       stk::mesh::Part * sideset = mesh.getSideset(sidesetName.str());
@@ -495,7 +495,7 @@ void SculptMeshFactory::addSideSets(STK_Interface & mesh) const
 
       num_elements_in_side_set[i] = mss->num_elements_in_side_set[i];
       num_df_in_side_set[i] = mss->num_df_in_side_set[i];
-      
+
       int ne = num_elements_in_side_set[i];
       side_set_elements[i] = new int[ne];
       side_set_faces[i] = new int[ne];
@@ -503,14 +503,14 @@ void SculptMeshFactory::addSideSets(STK_Interface & mesh) const
       side_set_node_counter[i] = new int[ne];
       side_set_df[i] = new double[num_df_in_side_set[i]];
 
-     
+
       if(ne) {
 
         for(int nct = 0; nct < ne; nct ++){
 
           std::vector<stk::mesh::EntityId> nodes(4);
 
-          int sculpt_elem_id =  mss->global_element_numbers[ mss->side_set_elements[i][nct]-1 ]; 
+          int sculpt_elem_id =  mss->global_element_numbers[ mss->side_set_elements[i][nct]-1 ];
           int sculpt_face_id = -1 ;
 
           std::vector<stk::mesh::Entity> localElmts;
@@ -521,15 +521,15 @@ void SculptMeshFactory::addSideSets(STK_Interface & mesh) const
             stk::mesh::Entity element = (*itr);
 
             if( element->identifier() == sculpt_elem_id )
-            { 
+            {
               sculpt_face_id =  mss->side_set_faces[i][nct];
 
               stk::mesh::EntityId gid = element->identifier();
- 
+
               stk::mesh::PairIterRelation relations = element->relations(mesh.getSideRank());
 
               stk::mesh::Entity side = getRelationByID(sculpt_face_id-1,relations)->entity();
- 
+
               if( side != NULL )
               {
                 if(side->owner_rank()==machRank_)
@@ -552,7 +552,7 @@ void SculptMeshFactory::addNodeSets(STK_Interface & mesh) const
 
     struct MeshStorageStruct *mss = get_sculpt_mesh();
     int num_node_sets  = mss->num_node_sets;
- 
+
 
     if (num_node_sets) {
       int *node_set_id = new int[num_node_sets];
@@ -576,10 +576,10 @@ void SculptMeshFactory::addNodeSets(STK_Interface & mesh) const
           }
         }
       }
-    
+
 
       for(int i = 0; i < num_node_sets; i++) {
-    
+
         std::stringstream nodesetName;
         nodesetName << "Nodeset-" << mss->node_set_id[i];
         stk::mesh::Part * nodeset = mesh.getNodeset(nodesetName.str());
@@ -589,7 +589,7 @@ void SculptMeshFactory::addNodeSets(STK_Interface & mesh) const
            int node_id = node_set_nodes[i][j];
            Teuchos::RCP<stk::mesh::BulkData> bulkData = mesh.getBulkData();
            if(machRank_==0)
-           {  
+           {
               stk::mesh::Entity node = bulkData->get_entity(mesh.getNodeRank(),node_id);
               mesh.addEntityToNodeset(*node, nodeset);
            }
@@ -607,7 +607,7 @@ Teuchos::Tuple<std::size_t,2> SculptMeshFactory::procRankToProcTuple(std::size_t
 {
    std::size_t i=0,j=0;
 
-   j = procRank/machSize_; 
+   j = procRank/machSize_;
    procRank = procRank % machSize_;
    i = procRank;
 

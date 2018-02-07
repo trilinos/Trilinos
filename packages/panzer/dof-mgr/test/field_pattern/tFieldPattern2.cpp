@@ -107,8 +107,8 @@ namespace panzer {
     Teuchos::RCP<const FieldPattern> fpA = rcp(new Intrepid2FieldPattern(basisA));
     Teuchos::RCP<const FieldPattern> fpB= rcp(new Intrepid2FieldPattern(basisB));
 
-    bool forward = fpA->equals(*fpB); 
-    bool bckward = fpB->equals(*fpA); 
+    bool forward = fpA->equals(*fpB);
+    bool bckward = fpB->equals(*fpA);
 
     std::cout << " intrepid_equals \n";
     fpA->print(std::cout);
@@ -122,7 +122,7 @@ namespace panzer {
     }
     TEUCHOS_ASSERT(bckward==forward);
 
-    return forward; // they are equal so that it shouldn't matter at this point 
+    return forward; // they are equal so that it shouldn't matter at this point
   }
 
   bool intrepid_same_geom(const RCP<Intrepid2::Basis<PHX::Device,double,double> > & basisA,
@@ -134,8 +134,8 @@ namespace panzer {
     Teuchos::RCP<const FieldPattern> fpA = rcp(new Intrepid2FieldPattern(basisA));
     Teuchos::RCP<const FieldPattern> fpB= rcp(new Intrepid2FieldPattern(basisB));
 
-    bool forward = fpA->sameGeometry(*fpB); 
-    bool bckward = fpB->sameGeometry(*fpA); 
+    bool forward = fpA->sameGeometry(*fpB);
+    bool bckward = fpB->sameGeometry(*fpA);
 
     std::cout << " intrepid_geom_equals \n";
     fpA->print(std::cout);
@@ -149,7 +149,7 @@ namespace panzer {
     }
     TEUCHOS_ASSERT(bckward==forward);
 
-    return forward; // they are equal so that it shouldn't matter at this point 
+    return forward; // they are equal so that it shouldn't matter at this point
   }
 
 }

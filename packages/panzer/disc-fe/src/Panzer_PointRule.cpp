@@ -83,7 +83,7 @@ PointRule(const panzer::PointDescriptor& description,
 
 void panzer::PointRule::
 setup(const std::string & ptName,
-      int np, 
+      int np,
       const panzer::CellData& cell_data)
 {
   point_name = ptName;
@@ -92,19 +92,19 @@ setup(const std::string & ptName,
   workset_size = cell_data.numCells();
   _num_faces = -1;
   _num_points_per_face = -1;
-  
+
   topology = cell_data.getCellTopology();
   TEUCHOS_TEST_FOR_EXCEPTION(topology==Teuchos::null,std::runtime_error,
                      "PointRule::setup - Base topology from cell_data cannot be null!");
   TEUCHOS_TEST_FOR_EXCEPTION(spatial_dimension!=(int) topology->getDimension(), std::runtime_error,
 		     "PointRule::setup - Spatial dimension from cell_data does not match the cell topology.");
-  
+
   TEUCHOS_TEST_FOR_EXCEPTION(Teuchos::is_null(topology), std::runtime_error,
 		     "PointRule::setup - Failed to allocate cell topology!");
-  
+
   // handle side issues : first veryify the 0D side follows the rules
   if(cell_data.isSide() && spatial_dimension==1) {
-     TEUCHOS_ASSERT(num_points==1); // only one point on a node 
+     TEUCHOS_ASSERT(num_points==1); // only one point on a node
   }
 
   // now extract side topology
@@ -112,22 +112,22 @@ setup(const std::string & ptName,
   if (side_topology!=Teuchos::null)
     side = cell_data.side();
 
-  TEUCHOS_TEST_FOR_EXCEPTION(side >= 0 && Teuchos::is_null(side_topology), 
+  TEUCHOS_TEST_FOR_EXCEPTION(side >= 0 && Teuchos::is_null(side_topology),
 		     std::runtime_error,
 		     "Failed to allocate side topology!");
 
   // allocate data layout objects
   using Teuchos::rcp;
   using PHX::MDALayout;
-  
-  dl_scalar = 
+
+  dl_scalar =
     rcp(new MDALayout<Cell,IP>(workset_size,num_points));
-  
-  dl_vector = 
+
+  dl_vector =
     rcp(new MDALayout<Cell,IP,Dim>(workset_size, num_points,
 				   spatial_dimension));
-  
-  dl_tensor = 
+
+  dl_tensor =
     rcp(new MDALayout<Cell,IP,Dim,Dim>(workset_size, num_points,
 				       spatial_dimension,
 				       spatial_dimension));
@@ -190,17 +190,17 @@ Teuchos::RCP<shards::CellTopology> panzer::PointRule::getSideTopology(const Cell
   if (cell_data.isSide() && spatial_dimension>1) {
     int side = cell_data.side();
 
-    TEUCHOS_TEST_FOR_EXCEPTION( (side >= static_cast<int>(topology->getSideCount())), 
-			std::runtime_error, "Error - local side " 
-			<< side << " is not in range (0->" << topology->getSideCount()-1 
+    TEUCHOS_TEST_FOR_EXCEPTION( (side >= static_cast<int>(topology->getSideCount())),
+			std::runtime_error, "Error - local side "
+			<< side << " is not in range (0->" << topology->getSideCount()-1
    			<< ") of topologic entity!");
-    
+
     sideTopo = Teuchos::rcp(new shards::CellTopology(topology->getCellTopologyData(topology->getDimension()-1,side)));
   }
   else if(cell_data.isSide() && spatial_dimension==1) {
     sideTopo = Teuchos::rcp(new shards::CellTopology(shards::getCellTopologyData<shards::Node>()));
   }
-  
+
   return sideTopo;
 }
 
@@ -261,9 +261,9 @@ void panzer::PointRule::print(std::ostream & os)
 {
    os << "panzer::PointRule ( "
       << "Name = " << getName()
-      << ", Dimension = " << spatial_dimension 
+      << ", Dimension = " << spatial_dimension
       << ", Workset Size = " << workset_size
-      << ", Num Points = " << num_points 
+      << ", Num Points = " << num_points
       << ", Side = " << side
       << " )";
 }

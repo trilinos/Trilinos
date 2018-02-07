@@ -53,19 +53,19 @@ namespace panzer {
 
   TEUCHOS_UNIT_TEST(basis, Q2_2D_volume)
   {
-    
-    Teuchos::RCP<shards::CellTopology> topo = 
+
+    Teuchos::RCP<shards::CellTopology> topo =
        Teuchos::rcp(new shards::CellTopology(shards::getCellTopologyData< shards::Quadrilateral<4> >()));
-    
+
     const int num_cells = 20;
     const int base_cell_dimension = topo->getDimension();
     const panzer::CellData cell_data(num_cells,topo);
     const int cubature_degree = 2;
 
     panzer::IntegrationRule int_rule(cubature_degree,cell_data);
-    
+
     const std::string basis_type = "Q2";
-    
+
     panzer::BasisIRLayout basis(basis_type,-1,int_rule);
 
     TEST_EQUALITY(basis.cardinality(), 9);
@@ -99,10 +99,10 @@ namespace panzer {
 
   TEUCHOS_UNIT_TEST(basis, Q2_2D_side)
   {
-    
-    Teuchos::RCP<shards::CellTopology> topo = 
+
+    Teuchos::RCP<shards::CellTopology> topo =
        Teuchos::rcp(new shards::CellTopology(shards::getCellTopologyData< shards::Quadrilateral<4> >()));
-    
+
     const int num_cells = 20;
     const int base_cell_dimension = topo->getDimension();
     const int cell_local_side_id = 1;
@@ -110,9 +110,9 @@ namespace panzer {
     const int cubature_degree = 2;
 
     panzer::IntegrationRule int_rule(cubature_degree,cell_data);
-    
+
     const std::string basis_type = "Q2";
-    
+
     panzer::BasisIRLayout basis(basis_type,-1,int_rule);
 
     TEST_EQUALITY(basis.cardinality(), 9);
@@ -146,10 +146,10 @@ namespace panzer {
 
   TEUCHOS_UNIT_TEST(basis, TEdge1_2D_volume)
   {
-    
-    Teuchos::RCP<shards::CellTopology> topo = 
+
+    Teuchos::RCP<shards::CellTopology> topo =
        Teuchos::rcp(new shards::CellTopology(shards::getCellTopologyData< shards::Triangle<3> >()));
-    
+
     const int num_cells = 20;
     const int base_cell_dimension = topo->getDimension();
     const panzer::CellData cell_data(num_cells, topo);
@@ -169,10 +169,10 @@ namespace panzer {
 
   TEUCHOS_UNIT_TEST(basis, QEdge1_2D_volume)
   {
-    
-    Teuchos::RCP<shards::CellTopology> topo = 
+
+    Teuchos::RCP<shards::CellTopology> topo =
        Teuchos::rcp(new shards::CellTopology(shards::getCellTopologyData< shards::Quadrilateral<4> >()));
-    
+
     const int num_cells = 20;
     const int base_cell_dimension = topo->getDimension();
     const panzer::CellData cell_data(num_cells,topo);
@@ -192,17 +192,17 @@ namespace panzer {
 
   TEUCHOS_UNIT_TEST(basis, supported_bases)
   {
-    
+
     const int num_cells = 20;
     Teuchos::RCP<PureBasis> basis;
-      
+
 
     // Triangle
     {
-      Teuchos::RCP<shards::CellTopology> topo = 
+      Teuchos::RCP<shards::CellTopology> topo =
 	Teuchos::rcp(new shards::CellTopology(shards::getCellTopologyData< shards::Triangle<3> >()));
       const panzer::CellData cell_data(num_cells,topo);
-      
+
       basis = Teuchos::rcp(new PureBasis("HGrad",1,cell_data));
       TEST_EQUALITY(basis->name(),"HGrad:1");
       TEST_EQUALITY(basis->getElementSpace(),PureBasis::HGRAD);
@@ -216,10 +216,10 @@ namespace panzer {
 
     // Quad
     {
-      Teuchos::RCP<shards::CellTopology> topo = 
+      Teuchos::RCP<shards::CellTopology> topo =
 	Teuchos::rcp(new shards::CellTopology(shards::getCellTopologyData< shards::Quadrilateral<4> >()));
       const panzer::CellData cell_data(num_cells,topo);
-      
+
       basis = Teuchos::rcp(new PureBasis("HGrad",1,cell_data));
       TEST_EQUALITY(basis->name(),"HGrad:1");
       TEST_EQUALITY(basis->getElementSpace(),PureBasis::HGRAD);
@@ -233,10 +233,10 @@ namespace panzer {
 
     // Tet
     {
-      Teuchos::RCP<shards::CellTopology> topo = 
+      Teuchos::RCP<shards::CellTopology> topo =
 	Teuchos::rcp(new shards::CellTopology(shards::getCellTopologyData< shards::Tetrahedron<4> >()));
       const panzer::CellData cell_data(num_cells,topo);
-      
+
       basis = Teuchos::rcp(new PureBasis("HGrad",1,cell_data));
       TEST_EQUALITY(basis->name(),"HGrad:1");
       TEST_EQUALITY(basis->getElementSpace(),PureBasis::HGRAD);
@@ -250,10 +250,10 @@ namespace panzer {
 
     // Hex
     {
-      Teuchos::RCP<shards::CellTopology> topo = 
+      Teuchos::RCP<shards::CellTopology> topo =
 	Teuchos::rcp(new shards::CellTopology(shards::getCellTopologyData< shards::Hexahedron<8> >()));
       const panzer::CellData cell_data(num_cells,topo);
-      
+
       basis = Teuchos::rcp(new PureBasis("HGrad",1,cell_data));
       TEST_EQUALITY(basis->name(),"HGrad:1");
       TEST_EQUALITY(basis->getElementSpace(),PureBasis::HGRAD);
@@ -267,10 +267,10 @@ namespace panzer {
 
     // Line
     {
-      Teuchos::RCP<shards::CellTopology> topo = 
+      Teuchos::RCP<shards::CellTopology> topo =
 	Teuchos::rcp(new shards::CellTopology(shards::getCellTopologyData< shards::Line<2> >()));
       const panzer::CellData cell_data(num_cells,topo);
-      
+
       basis = Teuchos::rcp(new PureBasis("HGrad",1,cell_data));
       TEST_EQUALITY(basis->name(),"HGrad:1");
       TEST_EQUALITY(basis->getElementSpace(),PureBasis::HGRAD);
@@ -280,19 +280,19 @@ namespace panzer {
 
   TEUCHOS_UNIT_TEST(basis, deprecated_bases)
   {
-    
+
     const int num_cells = 20;
 
-    
+
     Teuchos::RCP<PureBasis> basis;
-      
+
 
     // T1, T2
     {
-      Teuchos::RCP<shards::CellTopology> topo = 
+      Teuchos::RCP<shards::CellTopology> topo =
 	Teuchos::rcp(new shards::CellTopology(shards::getCellTopologyData< shards::Triangle<3> >()));
       const panzer::CellData cell_data(num_cells,topo);
-      
+
       basis = Teuchos::rcp(new PureBasis("T1",0,cell_data));
       TEST_EQUALITY(basis->name(),"HGrad:1");
       TEST_EQUALITY(basis->getElementSpace(),PureBasis::HGRAD);
@@ -306,10 +306,10 @@ namespace panzer {
 
     // Quad
     {
-      Teuchos::RCP<shards::CellTopology> topo = 
+      Teuchos::RCP<shards::CellTopology> topo =
 	Teuchos::rcp(new shards::CellTopology(shards::getCellTopologyData< shards::Quadrilateral<4> >()));
       const panzer::CellData cell_data(num_cells,topo);
-      
+
       basis = Teuchos::rcp(new PureBasis("Q1",0,cell_data));
       TEST_EQUALITY(basis->name(),"HGrad:1");
       TEST_EQUALITY(basis->getElementSpace(),PureBasis::HGRAD);
@@ -323,10 +323,10 @@ namespace panzer {
 
     // Tet
     {
-      Teuchos::RCP<shards::CellTopology> topo = 
+      Teuchos::RCP<shards::CellTopology> topo =
 	Teuchos::rcp(new shards::CellTopology(shards::getCellTopologyData< shards::Tetrahedron<4> >()));
       const panzer::CellData cell_data(num_cells,topo);
-      
+
       basis = Teuchos::rcp(new PureBasis("T1",0,cell_data));
       TEST_EQUALITY(basis->name(),"HGrad:1");
       TEST_EQUALITY(basis->getElementSpace(),PureBasis::HGRAD);
@@ -340,10 +340,10 @@ namespace panzer {
 
     // Hex
     {
-      Teuchos::RCP<shards::CellTopology> topo = 
+      Teuchos::RCP<shards::CellTopology> topo =
 	Teuchos::rcp(new shards::CellTopology(shards::getCellTopologyData< shards::Hexahedron<8> >()));
       const panzer::CellData cell_data(num_cells,topo);
-      
+
       basis = Teuchos::rcp(new PureBasis("Q1",0,cell_data));
       TEST_EQUALITY(basis->name(),"HGrad:1");
       TEST_EQUALITY(basis->getElementSpace(),PureBasis::HGRAD);

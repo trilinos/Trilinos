@@ -48,11 +48,11 @@
 #include "Panzer_Evaluator_Macros.hpp"
 
 namespace panzer {
-    
+
 //! Interpolates basis DOF values to IP DOF Gradient values
-template <typename EvalT, typename TRAITS>                   
-class DOFGradient : public panzer::EvaluatorWithBaseImpl<TRAITS>,      
-                    public PHX::EvaluatorDerived<EvalT, TRAITS>  {   
+template <typename EvalT, typename TRAITS>
+class DOFGradient : public panzer::EvaluatorWithBaseImpl<TRAITS>,
+                    public PHX::EvaluatorDerived<EvalT, TRAITS>  {
 public:
 
   DOFGradient(const Teuchos::ParameterList& p);
@@ -73,7 +73,7 @@ public:
                              PHX::FieldManager<TRAITS>& fm);
 
   void evaluateFields(typename TRAITS::EvalData d);
-  
+
 private:
 
   typedef typename EvalT::ScalarT ScalarT;

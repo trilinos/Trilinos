@@ -53,15 +53,15 @@ namespace panzer {
 
   template <typename EvalT>
   class EquationSet : public panzer::EquationSetBase {
-    
-  public:    
-    
+
+  public:
+
     EquationSet() {}
 
     virtual ~EquationSet() {}
 
     /// \name Initialization (derived from panzer::EquationSetBase)
-    ///@{ 
+    ///@{
 
     virtual void setElementBlockId(const std::string & blockId) = 0;
 
@@ -74,7 +74,7 @@ namespace panzer {
                                                                 const panzer::FieldLibrary& field_library,
                                                                 const LinearObjFactory<panzer::Traits> & lof,
                                                                 const Teuchos::ParameterList& user_data) const = 0;
-    
+
     virtual void buildAndRegisterScatterEvaluators(PHX::FieldManager<panzer::Traits>& fm,
                                                    const panzer::FieldLibrary& field_library,
                                                    const LinearObjFactory<panzer::Traits> & lof,
@@ -85,7 +85,7 @@ namespace panzer {
                                                               const Teuchos::RCP<panzer::IntegrationRule>& ir,
                                                               const Teuchos::Ptr<const panzer::LinearObjFactory<panzer::Traits> > & lof,
                                                               const Teuchos::ParameterList& user_data) const = 0;
-    
+
     virtual void buildAndRegisterEquationSetEvaluators(PHX::FieldManager<panzer::Traits>& fm,
                                                        const panzer::FieldLibrary& field_library,
                                                        const Teuchos::ParameterList& user_data) const = 0;
@@ -104,7 +104,7 @@ namespace panzer {
                                                         const std::string& model_name,
                                                         const Teuchos::ParameterList& models,
                                                         const Teuchos::ParameterList& user_data) const = 0;
-    
+
     virtual void buildAndRegisterInitialConditionEvaluators(PHX::FieldManager<panzer::Traits>& fm,
                                                             const panzer::FieldLibrary& field_library,
                                                             const panzer::ClosureModelFactory_TemplateManager<panzer::Traits>& factory,
@@ -119,7 +119,7 @@ namespace panzer {
     ///@{
 
     virtual const Teuchos::RCP<Teuchos::ParameterList> getEvaluatorParameterList() const = 0;
-    
+
     virtual const std::vector<std::pair<std::string,Teuchos::RCP<panzer::PureBasis> > > & getProvidedDOFs() const = 0;
 
     virtual const std::vector<std::vector<std::string> > & getCoordinateDOFs() const = 0;
@@ -133,7 +133,7 @@ namespace panzer {
     ///@}
 
   };
-  
+
 }
 
 #endif

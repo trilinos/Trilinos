@@ -124,7 +124,7 @@ TEUCHOS_UNIT_TEST(tEpetra_GlbEvalData, basic)
   RCP<const Epetra_Import> importer = rcp(new Epetra_Import(*ghostedMap,*ownedMap));
 
   EpetraVector_ReadOnly_GlobalEvaluationData ged;
- 
+
   TEST_ASSERT(!ged.isInitialized());
 
   ged.initialize(importer,ghostedMap,ownedMap);
@@ -132,16 +132,16 @@ TEUCHOS_UNIT_TEST(tEpetra_GlbEvalData, basic)
   TEST_ASSERT(ged.isInitialized());
 
   // test the ghosted vector sizing (we don't care what the entries are!)
-  { 
+  {
     RCP<Epetra_Vector> ghostedVecE = ged.getGhostedVector_Epetra();
     RCP<Thyra_Vector>  ghostedVecT = ged.getGhostedVector();
 
-    TEST_ASSERT(ghostedVecE!=Teuchos::null); 
-    TEST_ASSERT(ghostedVecT!=Teuchos::null); 
+    TEST_ASSERT(ghostedVecE!=Teuchos::null);
+    TEST_ASSERT(ghostedVecT!=Teuchos::null);
 
-    RCP<const Thyra::SpmdVectorSpaceBase<double> > ghostedSpace 
+    RCP<const Thyra::SpmdVectorSpaceBase<double> > ghostedSpace
         = rcp_dynamic_cast<const Thyra::SpmdVectorSpaceBase<double> >(ghostedVecT->space());
-    
+
     TEST_EQUALITY(ghostedMap->NumMyElements(),ghostedVecE->MyLength());
     TEST_EQUALITY(ghostedMap->NumGlobalElements(),ghostedVecE->GlobalLength());
 
@@ -169,14 +169,14 @@ TEUCHOS_UNIT_TEST(tEpetra_GlbEvalData, basic)
   }
 
   // test the owned vector sizing and thyra entries
-  { 
+  {
     RCP<const Thyra_Vector>  ownedVecT = ged.getOwnedVector();
 
-    TEST_ASSERT(ownedVecT!=Teuchos::null); 
+    TEST_ASSERT(ownedVecT!=Teuchos::null);
 
-    RCP<const Thyra::SpmdVectorSpaceBase<double> > ownedSpace 
+    RCP<const Thyra::SpmdVectorSpaceBase<double> > ownedSpace
         = rcp_dynamic_cast<const Thyra::SpmdVectorSpaceBase<double> >(ownedVecT->space());
-    
+
     TEST_EQUALITY(ownedSpace->isLocallyReplicated(),false);
 
     RCP<const Thyra_SpmdVec> spmdVec = rcp_dynamic_cast<const Thyra_SpmdVec>(ownedVecT);
@@ -416,9 +416,9 @@ TEUCHOS_UNIT_TEST(tEpetra_GlbEvalData, filtered_dofs)
   RCP<const Epetra_Import> importer = rcp(new Epetra_Import(*ghostedMap,*ownedMap));
 
   EpetraVector_ReadOnly_GlobalEvaluationData ged;
- 
+
   std::vector<int> constIndex(1);
- 
+
   // setup filtered values
   constIndex[0] = 0;
   ged.useConstantValues(constIndex,2.0);

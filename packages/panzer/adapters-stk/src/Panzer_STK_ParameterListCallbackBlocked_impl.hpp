@@ -49,7 +49,7 @@ using Teuchos::rcp;
 
 template <typename LocalOrdinalT,typename GlobalOrdinalT,typename Node>
 ParameterListCallbackBlocked<LocalOrdinalT,GlobalOrdinalT,Node>::ParameterListCallbackBlocked(
-                      const Teuchos::RCP<const panzer_stk::STKConnManager<GlobalOrdinalT> > & connManager, 
+                      const Teuchos::RCP<const panzer_stk::STKConnManager<GlobalOrdinalT> > & connManager,
                       const Teuchos::RCP<const panzer::BlockedDOFManager<int,GlobalOrdinalT> > & blocked_ugi,
                       const Teuchos::RCP<const panzer::BlockedDOFManager<int,GlobalOrdinalT> > & aux_blocked_ugi)
    : connManager_(connManager), blocked_ugi_(blocked_ugi), aux_blocked_ugi_(aux_blocked_ugi)
@@ -57,7 +57,7 @@ ParameterListCallbackBlocked<LocalOrdinalT,GlobalOrdinalT,Node>::ParameterListCa
 }
 
 template <typename LocalOrdinalT,typename GlobalOrdinalT,typename Node>
-Teuchos::RCP<Teuchos::ParameterList> 
+Teuchos::RCP<Teuchos::ParameterList>
 ParameterListCallbackBlocked<LocalOrdinalT,GlobalOrdinalT,Node>::request(const Teko::RequestMesg & rm)
 {
    TEUCHOS_ASSERT(handlesRequest(rm)); // design by contract
@@ -221,13 +221,13 @@ void ParameterListCallbackBlocked<LocalOrdinalT,GlobalOrdinalT,Node>::buildCoord
 
    switch(coordsVec_->getNumVectors()) {
    case 3:
-      zcoords_[field].resize(coordsVec_->getLocalLength()); 
+      zcoords_[field].resize(coordsVec_->getLocalLength());
       coordsVec_->getVector(2)->get1dCopy(Teuchos::arrayViewFromVector(zcoords_[field]));
    case 2:
-      ycoords_[field].resize(coordsVec_->getLocalLength()); 
+      ycoords_[field].resize(coordsVec_->getLocalLength());
       coordsVec_->getVector(1)->get1dCopy(Teuchos::arrayViewFromVector(ycoords_[field]));
    case 1:
-      xcoords_[field].resize(coordsVec_->getLocalLength()); 
+      xcoords_[field].resize(coordsVec_->getLocalLength());
       coordsVec_->getVector(0)->get1dCopy(Teuchos::arrayViewFromVector(xcoords_[field]));
       break;
    default:
@@ -248,7 +248,7 @@ getHandledField(const Teuchos::ParameterList & pl) const
     return pl.get<std::string>("Coordinates");
   else
     TEUCHOS_TEST_FOR_EXCEPTION(true,std::logic_error,"Neither x-coordinates not Coordinates field provided.");
-    
+
 }
 
 template <typename LocalOrdinalT,typename GlobalOrdinalT,typename Node>
@@ -298,6 +298,6 @@ Teuchos::RCP<const panzer::Intrepid2FieldPattern> ParameterListCallbackBlocked<L
 }
 
 
-} 
+}
 
 #endif

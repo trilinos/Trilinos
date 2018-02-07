@@ -58,9 +58,9 @@ namespace panzer {
 PHX_EVALUATOR_CTOR(Sum,p)
 {
   std::string sum_name = p.get<std::string>("Sum Name");
-  Teuchos::RCP<std::vector<std::string> > value_names = 
+  Teuchos::RCP<std::vector<std::string> > value_names =
     p.get<Teuchos::RCP<std::vector<std::string> > >("Values Names");
-  Teuchos::RCP<PHX::DataLayout> data_layout = 
+  Teuchos::RCP<PHX::DataLayout> data_layout =
     p.get< Teuchos::RCP<PHX::DataLayout> >("Data Layout");
 
   TEUCHOS_ASSERT(static_cast<int>(value_names->size()) < MAX_VALUES);
@@ -81,12 +81,12 @@ PHX_EVALUATOR_CTOR(Sum,p)
       local_scalars(i) = 1.0;
   }
 
-  scalars = local_scalars; 
-  
+  scalars = local_scalars;
+
   sum = PHX::MDField<ScalarT>(sum_name, data_layout);
-  
+
   this->addEvaluatedField(sum);
- 
+
   for (std::size_t i=0; i < value_names->size(); ++i) {
     values[i] = PHX::MDField<const ScalarT>( (*value_names)[i], data_layout);
     this->addDependentField(values[i]);
@@ -98,7 +98,7 @@ PHX_EVALUATOR_CTOR(Sum,p)
     this->addDependentField(values[i]);
   }
   */
- 
+
   std::string n = "Sum Evaluator";
   this->setName(n);
 }
@@ -176,14 +176,14 @@ void Sum<EvalT, TRAITS>::operator() (PanzerSumTag<RANK>, const int &i) const{
 
 //**********************************************************************
 PHX_EVALUATE_FIELDS(Sum, /* workset */)
-{   
+{
 
   sum.deep_copy(ScalarT(0.0));
 
-#if PANZER_USE_FAST_SUM 
+#if PANZER_USE_FAST_SUM
   sum.deep_copy(ScalarT(0.0));
   for (std::size_t j = 0; j < values.size(); ++j) {
-    
+
     PHX::MDFieldIterator<ScalarT> sum_it(sum);
     PHX::MDFieldIterator<const ScalarT> values_it(values[j]);
     // for (PHX::MDFieldIterator<ScalarT> sum_it(sum), values_it(values[j]);
@@ -235,24 +235,24 @@ SumStatic<EvalT,TRAITS,Tag0,void,void>::
 SumStatic(const Teuchos::ParameterList& p)
 {
   std::string sum_name = p.get<std::string>("Sum Name");
-  Teuchos::RCP<std::vector<std::string> > value_names = 
+  Teuchos::RCP<std::vector<std::string> > value_names =
     p.get<Teuchos::RCP<std::vector<std::string> > >("Values Names");
-  Teuchos::RCP<PHX::DataLayout> data_layout = 
+  Teuchos::RCP<PHX::DataLayout> data_layout =
     p.get< Teuchos::RCP<PHX::DataLayout> >("Data Layout");
-  
+
   // sanity check
   TEUCHOS_ASSERT(data_layout->rank()==1);
-  
+
   sum = PHX::MDField<ScalarT,Tag0>(sum_name, data_layout);
-  
+
   this->addEvaluatedField(sum);
- 
+
   values.resize(value_names->size());
   for (std::size_t i=0; i < value_names->size(); ++i) {
     values[i] = PHX::MDField<const ScalarT,Tag0>( (*value_names)[i], data_layout);
     this->addDependentField(values[i]);
   }
- 
+
   std::string n = "SumStatic Rank 1 Evaluator";
   this->setName(n);
 }
@@ -289,9 +289,9 @@ SumStatic<EvalT,TRAITS,Tag0,Tag1,void>::
 SumStatic(const Teuchos::ParameterList& p)
 {
   std::string sum_name = p.get<std::string>("Sum Name");
-  Teuchos::RCP<std::vector<std::string> > value_names = 
+  Teuchos::RCP<std::vector<std::string> > value_names =
     p.get<Teuchos::RCP<std::vector<std::string> > >("Values Names");
-  Teuchos::RCP<PHX::DataLayout> data_layout = 
+  Teuchos::RCP<PHX::DataLayout> data_layout =
     p.get< Teuchos::RCP<PHX::DataLayout> >("Data Layout");
 
   // check if the user wants to scale each term independently
@@ -317,11 +317,11 @@ SumStatic(const Teuchos::ParameterList& p)
 
   // sanity check
   TEUCHOS_ASSERT(data_layout->rank()==2);
-  
+
   sum = PHX::MDField<ScalarT,Tag0,Tag1>(sum_name, data_layout);
-  
+
   this->addEvaluatedField(sum);
- 
+
   values.resize(value_names->size());
   for (std::size_t i=0; i < value_names->size(); ++i) {
     values[i] = PHX::MDField<const ScalarT,Tag0,Tag1>( (*value_names)[i], data_layout);
@@ -329,7 +329,7 @@ SumStatic(const Teuchos::ParameterList& p)
   }
   numValues = value_names->size();
   TEUCHOS_ASSERT(numValues<=MAX_VALUES);
- 
+
   std::string n = "SumStatic Rank 2 Evaluator";
   this->setName(n);
 }
@@ -362,10 +362,10 @@ SumStatic(const std::vector<PHX::Tag<typename EvalT::ScalarT>> & inputs,
 
   // sanity check
   TEUCHOS_ASSERT(inputs.size()<=MAX_VALUES);
-  
+
   sum = output;
   this->addEvaluatedField(sum);
- 
+
   values.resize(inputs.size());
   for (std::size_t i=0; i < inputs.size(); ++i) {
     values[i] = inputs[i];
@@ -401,7 +401,7 @@ evaluateFields(typename TRAITS::EvalData /* d */)
   sum.deep_copy(ScalarT(0.0));
 
   // Kokkos::parallel_for(sum.dimension_0(), *this);
-  if(useScalars) 
+  if(useScalars)
     Kokkos::parallel_for(Kokkos::RangePolicy<PHX::Device,ScalarsTag>(0,sum.dimension_0()), *this);
   else
     Kokkos::parallel_for(Kokkos::RangePolicy<PHX::Device,NoScalarsTag>(0,sum.dimension_0()), *this);
@@ -443,24 +443,24 @@ SumStatic<EvalT,TRAITS,Tag0,Tag1,Tag2>::
 SumStatic(const Teuchos::ParameterList& p)
 {
   std::string sum_name = p.get<std::string>("Sum Name");
-  Teuchos::RCP<std::vector<std::string> > value_names = 
+  Teuchos::RCP<std::vector<std::string> > value_names =
     p.get<Teuchos::RCP<std::vector<std::string> > >("Values Names");
-  Teuchos::RCP<PHX::DataLayout> data_layout = 
+  Teuchos::RCP<PHX::DataLayout> data_layout =
     p.get< Teuchos::RCP<PHX::DataLayout> >("Data Layout");
-  
+
   // sanity check
   TEUCHOS_ASSERT(data_layout->rank()==3);
-  
+
   sum = PHX::MDField<ScalarT,Tag0,Tag1,Tag2>(sum_name, data_layout);
-  
+
   this->addEvaluatedField(sum);
- 
+
   values.resize(value_names->size());
   for (std::size_t i=0; i < value_names->size(); ++i) {
     values[i] = PHX::MDField<ScalarT,Tag0,Tag1,Tag2>( (*value_names)[i], data_layout);
     this->addDependentField(values[i]);
   }
- 
+
   std::string n = "Sum Evaluator";
   this->setName(n);
 }
@@ -488,7 +488,7 @@ void SumStatic<EvalT,TRAITS,Tag0,Tag1,Tag2>::
 evaluateFields(typename TRAITS::EvalData d)
 {
   sum.deep_copy(ScalarT(0.0));
-  
+
   for (std::size_t d = 0; d < values.size(); ++d)
     for (std::size_t i = 0; i < sum.dimension_0(); ++i)
       for (std::size_t j = 0; j < sum.dimension_1(); ++j)
@@ -501,7 +501,7 @@ evaluateFields(typename TRAITS::EvalData d)
 //**********************************************************************
 
 template<typename EvalT, typename TRAITS,typename Tag0,typename Tag1,typename Tag2>
-Teuchos::RCP<PHX::Evaluator<TRAITS> > 
+Teuchos::RCP<PHX::Evaluator<TRAITS> >
 buildStaticSumEvaluator(const std::string & sum_name,
                         const std::vector<std::string> & value_names,
                         const Teuchos::RCP<PHX::DataLayout> & data_layout)
@@ -510,7 +510,7 @@ buildStaticSumEvaluator(const std::string & sum_name,
   p.set<std::string>("Sum Name",sum_name);
   p.set<Teuchos::RCP<std::vector<std::string> > >("Values Names",Teuchos::rcp(new std::vector<std::string>(value_names)));
   p.set< Teuchos::RCP<PHX::DataLayout> >("Data Layout",data_layout);
-   
+
   return Teuchos::rcp(new SumStatic<EvalT,TRAITS,Tag0,Tag1,Tag2>(p));
 }
 

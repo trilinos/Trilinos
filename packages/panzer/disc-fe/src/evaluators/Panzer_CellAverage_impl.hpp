@@ -67,17 +67,17 @@ PHX_EVALUATOR_CTOR(CellAverage,p) : quad_index(-1)
 
   this->addEvaluatedField(average);
   this->addDependentField(scalar);
-    
+
   multiplier = 1.0;
   if(p.isType<double>("Multiplier"))
      multiplier = p.get<double>("Multiplier");
 
   if (p.isType<Teuchos::RCP<const std::vector<std::string> > >("Field Multipliers")) {
-    const std::vector<std::string>& field_multiplier_names = 
+    const std::vector<std::string>& field_multiplier_names =
       *(p.get<Teuchos::RCP<const std::vector<std::string> > >("Field Multipliers"));
 
-    for (std::vector<std::string>::const_iterator name = 
-	   field_multiplier_names.begin(); 
+    for (std::vector<std::string>::const_iterator name =
+	   field_multiplier_names.begin();
 	 name != field_multiplier_names.end(); ++name) {
       PHX::MDField<const ScalarT,Cell,IP> tmp_field(*name, p.get< Teuchos::RCP<panzer::IntegrationRule> >("IR")->dl_scalar);
       field_multipliers.push_back(tmp_field);
@@ -97,7 +97,7 @@ PHX_POST_REGISTRATION_SETUP(CellAverage,sd,fm)
 {
   this->utils.setFieldData(average,fm);
   this->utils.setFieldData(scalar,fm);
-  
+
   for (typename std::vector<PHX::MDField<const ScalarT,Cell,IP> >::iterator field = field_multipliers.begin();
        field != field_multipliers.end(); ++field)
     this->utils.setFieldData(*field,fm);
@@ -109,9 +109,9 @@ PHX_POST_REGISTRATION_SETUP(CellAverage,sd,fm)
 
 //**********************************************************************
 PHX_EVALUATE_FIELDS(CellAverage,workset)
-{ 
+{
   for (index_t cell = 0; cell < workset.num_cells; ++cell) {
-    
+
     // start with no average
     average(cell) = 0.0;
 
@@ -120,7 +120,7 @@ PHX_EVALUATE_FIELDS(CellAverage,workset)
       ScalarT current= multiplier * scalar(cell,qp);
       for (typename std::vector<PHX::MDField<const ScalarT,Cell,IP> >::iterator field = field_multipliers.begin();
 	   field != field_multipliers.end(); ++field)
-        current *= (*field)(cell,qp);  
+        current *= (*field)(cell,qp);
 
       // take first quad point value
       average(cell) += current/num_qp;
@@ -130,7 +130,7 @@ PHX_EVALUATE_FIELDS(CellAverage,workset)
 
 //**********************************************************************
 template<typename EvalT, typename TRAITS>
-Teuchos::RCP<Teuchos::ParameterList> 
+Teuchos::RCP<Teuchos::ParameterList>
 CellAverage<EvalT, TRAITS>::getValidParameters() const
 {
   Teuchos::RCP<Teuchos::ParameterList> p = Teuchos::rcp(new Teuchos::ParameterList);

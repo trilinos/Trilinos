@@ -61,11 +61,11 @@ class UniqueGlobalIndexerBase;
 /** \brief Class that provides access to worksets on
   * each element block and side set.
   *
-  * This class provides access to worksets on each 
+  * This class provides access to worksets on each
   * element block and side set. This is done using an
   * optional lazy construction mechnism that builds the
   * worksets in a just in time fashion. Because the specifics
-  * of a workset is constructed are based on the type of 
+  * of a workset is constructed are based on the type of
   * mesh database, each new implementation must inherit
   * from the <code>WorksetFactoryBase</code> class. This
   * class will then use that one to handle the lazy evaluation.
@@ -81,7 +81,7 @@ public:
      * \param[in] factory Factory to be used for constructing worksets
      * \param[in] needs Workset needs mapped from the elemetn blocks
      *                  (integration rules and basis values for each element block)
-     */ 
+     */
    WorksetContainer(const Teuchos::RCP<const WorksetFactoryBase> & factory,
                     const std::map<std::string,WorksetNeeds> & needs);
 
@@ -92,7 +92,7 @@ public:
 
    /** Set the workset factory, and as a consequence clear out all previously computed
      * worksets.
-     */ 
+     */
    void setFactory(const Teuchos::RCP<const WorksetFactoryBase> & factory)
    { clear(); wkstFactory_ = factory; }
 
@@ -120,7 +120,7 @@ public:
 
    /** Clear all allocated worksets, maintain the workset factory and element to physics
      * block map.
-     */ 
+     */
    void clear();
 
 
@@ -158,13 +158,13 @@ private:
    /** Using the stored global indexer, set the orientations for a volume workset on a
      * specified element block.
      */
-   void applyOrientations(const std::vector<Intrepid2::Orientation> & orientations, 
+   void applyOrientations(const std::vector<Intrepid2::Orientation> & orientations,
                           const std::string & eBlock,
                           std::vector<Workset> & worksets) const;
 
    /** Using the stored global indexer, set the orientations for a side workset.
      */
-   void applyOrientations(const std::vector<Intrepid2::Orientation> & orientations, 
+   void applyOrientations(const std::vector<Intrepid2::Orientation> & orientations,
                           const WorksetDescriptor & desc,
                           std::map<unsigned,Workset> & worksets) const;
 
@@ -213,7 +213,7 @@ private:
   * \param[in] wc Workset container that contains, or will contain, the volume worksets.
   * \param[in] elementBlockNames Element blocks to build the worksets for.
   * \param[out] volumeWksts Map form element block ids to the volume worksets. This will
-  *                         not be cleared but the worksets with shared element names 
+  *                         not be cleared but the worksets with shared element names
   *                         will be overwritten.
   */
 void getVolumeWorksetsFromContainer(WorksetContainer & wc,
@@ -226,7 +226,7 @@ void getVolumeWorksetsFromContainer(WorksetContainer & wc,
   * \param[in]  wc        Workset container that contains, or will contain, the volume worksets.
   * \param[in]  bcs       Boundary conditions to use.
   * \param[out] sideWksts Map form element block ids to the volume worksets. This will
-  *                       not be cleared but the worksets with shared element names 
+  *                       not be cleared but the worksets with shared element names
   *                       will be overwritten.
   */
 void getSideWorksetsFromContainer(WorksetContainer & wc,

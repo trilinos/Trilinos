@@ -78,24 +78,24 @@ ScatterResidual_Epetra(const Teuchos::RCP<const UniqueGlobalIndexer<LO,GO> > & i
                        const Teuchos::ParameterList& p,
                        bool useDiscreteAdjoint)
    : globalIndexer_(indexer)
-   , colGlobalIndexer_(cIndexer) 
+   , colGlobalIndexer_(cIndexer)
    , globalDataKey_("Residual Scatter Container")
    , useDiscreteAdjoint_(useDiscreteAdjoint)
-{ 
+{
   std::string scatterName = p.get<std::string>("Scatter Name");
-  scatterHolder_ = 
+  scatterHolder_ =
     Teuchos::rcp(new PHX::Tag<ScalarT>(scatterName,Teuchos::rcp(new PHX::MDALayout<Dummy>(0))));
 
   // get names to be evaluated
-  const std::vector<std::string>& names = 
+  const std::vector<std::string>& names =
     *(p.get< Teuchos::RCP< std::vector<std::string> > >("Dependent Names"));
 
   // grab map from evaluated names to field names
   fieldMap_ = p.get< Teuchos::RCP< std::map<std::string,std::string> > >("Dependent Map");
 
-  Teuchos::RCP<PHX::DataLayout> dl = 
+  Teuchos::RCP<PHX::DataLayout> dl =
     p.get< Teuchos::RCP<const panzer::PureBasis> >("Basis")->functional;
-  
+
   // build the vector of fields that this is dependent on
   scatterFields_.resize(names.size());
   for (std::size_t eq = 0; eq < names.size(); ++eq) {
@@ -121,7 +121,7 @@ ScatterResidual_Epetra(const Teuchos::RCP<const UniqueGlobalIndexer<LO,GO> > & i
 }
 
 // **********************************************************************
-template<typename TRAITS,typename LO,typename GO> 
+template<typename TRAITS,typename LO,typename GO>
 void panzer::ScatterResidual_Epetra<panzer::Traits::Hessian, TRAITS,LO,GO>::
 postRegistrationSetup(typename TRAITS::SetupData /* d */,
                       PHX::FieldManager<TRAITS>& fm)
@@ -145,7 +145,7 @@ preEvaluate(typename TRAITS::PreEvalData d)
 {
   // extract linear object container
   epetraContainer_ = Teuchos::rcp_dynamic_cast<EpetraLinearObjContainer>(d.gedc->getDataObject(globalDataKey_));
- 
+
   if(epetraContainer_==Teuchos::null) {
     // extract linear object container
     Teuchos::RCP<LinearObjContainer> loc = Teuchos::rcp_dynamic_cast<LOCPair_GlobalEvaluationData>(d.gedc->getDataObject(globalDataKey_),true)->getGhostedLOC();
@@ -170,12 +170,12 @@ evaluateFields(typename TRAITS::EvalData workset)
    std::string blockId = this->wda(workset).block_id;
    const std::vector<std::size_t> & localCellIds = this->wda(workset).cell_local_ids;
 
-   Teuchos::RCP<Epetra_Vector> r = epetraContainer_->get_f(); 
+   Teuchos::RCP<Epetra_Vector> r = epetraContainer_->get_f();
    Teuchos::RCP<Epetra_CrsMatrix> Jac = epetraContainer_->get_A();
 
    const Teuchos::RCP<const panzer::UniqueGlobalIndexer<LO,GO> >&
      colGlobalIndexer = useColumnIndexer ? colGlobalIndexer_ : globalIndexer_;
-   
+
    // NOTE: A reordering of these loops will likely improve performance
    //       The "getGIDFieldOffsets" may be expensive.  However the
    //       "getElementGIDs" can be cheaper. However the lookup for LIDs
@@ -185,7 +185,7 @@ evaluateFields(typename TRAITS::EvalData workset)
    for(std::size_t worksetCellIndex=0;worksetCellIndex<localCellIds.size();++worksetCellIndex) {
       std::size_t cellLocalId = localCellIds[worksetCellIndex];
 
-      auto rLIDs = globalIndexer_->getElementLIDs(cellLocalId); 
+      auto rLIDs = globalIndexer_->getElementLIDs(cellLocalId);
       auto initial_cLIDs = colGlobalIndexer->getElementLIDs(cellLocalId);
       vector<int> cLIDs;
       for (int i(0); i < static_cast<int>(initial_cLIDs.extent(0)); ++i)
@@ -207,10 +207,10 @@ evaluateFields(typename TRAITS::EvalData workset)
             const ScalarT scatterField = (scatterFields_[fieldIndex])(worksetCellIndex,rowBasisNum);
             int rowOffset = elmtOffset[rowBasisNum];
             int row = rLIDs[rowOffset];
-    
+
             // loop over the sensitivity indices: all DOFs on a cell
             jacRow.resize(scatterField.size());
-            
+
             for(int sensIndex=0;sensIndex<scatterField.size();++sensIndex)
               jacRow[sensIndex] = scatterField.fastAccessDx(sensIndex).fastAccessDx(0);
 

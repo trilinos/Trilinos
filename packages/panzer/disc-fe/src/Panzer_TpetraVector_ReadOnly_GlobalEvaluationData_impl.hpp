@@ -50,7 +50,7 @@ namespace panzer {
 using Teuchos::RCP;
 
 template <typename ScalarT,typename LocalOrdinalT,typename GlobalOrdinalT,typename NodeT>
-void 
+void
 TpetraVector_ReadOnly_GlobalEvaluationData<ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT>::
 useConstantValues(const std::vector<GlobalOrdinalT> & indices,double value)
 {
@@ -103,12 +103,12 @@ initialize(const RCP<const ImportType>& importer,
      filteredPairs_[i].first = lids;
      filteredPairs_[i].second = globalFilteredPairs_[i].second;
    }
-  
+
   isInitialized_ = true;
 }
 
 template <typename ScalarT,typename LocalOrdinalT,typename GlobalOrdinalT,typename NodeT>
-void 
+void
 TpetraVector_ReadOnly_GlobalEvaluationData<ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT>::
 globalToGhost(int /* mem */)
 {
@@ -124,7 +124,7 @@ globalToGhost(int /* mem */)
 }
 
 template <typename ScalarT,typename LocalOrdinalT,typename GlobalOrdinalT,typename NodeT>
-void 
+void
 TpetraVector_ReadOnly_GlobalEvaluationData<ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT>::
 initializeData()
 {
@@ -147,7 +147,7 @@ initializeData()
 }
 
 template <typename ScalarT,typename LocalOrdinalT,typename GlobalOrdinalT,typename NodeT>
-void 
+void
 TpetraVector_ReadOnly_GlobalEvaluationData<ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT>::
 setOwnedVector_Tpetra(const Teuchos::RCP<const VectorType>& ownedVector)
 {
@@ -176,7 +176,7 @@ getGhostedVector_Tpetra() const
 }
 
 template <typename ScalarT,typename LocalOrdinalT,typename GlobalOrdinalT,typename NodeT>
-void 
+void
 TpetraVector_ReadOnly_GlobalEvaluationData<ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT>::
 setOwnedVector(const Teuchos::RCP<const Thyra::VectorBase<double> >&
 	ownedVector)
@@ -187,7 +187,7 @@ setOwnedVector(const Teuchos::RCP<const Thyra::VectorBase<double> >&
 }
 
 template <typename ScalarT,typename LocalOrdinalT,typename GlobalOrdinalT,typename NodeT>
-Teuchos::RCP<const Thyra::VectorBase<double> > 
+Teuchos::RCP<const Thyra::VectorBase<double> >
 TpetraVector_ReadOnly_GlobalEvaluationData<ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT>::
 getOwnedVector() const
 {
@@ -197,7 +197,7 @@ getOwnedVector() const
 }
 
 template <typename ScalarT,typename LocalOrdinalT,typename GlobalOrdinalT,typename NodeT>
-Teuchos::RCP<Thyra::VectorBase<double> > 
+Teuchos::RCP<Thyra::VectorBase<double> >
 TpetraVector_ReadOnly_GlobalEvaluationData<ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT>::
 getGhostedVector() const
 {

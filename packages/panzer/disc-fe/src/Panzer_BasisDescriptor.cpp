@@ -54,33 +54,33 @@ namespace panzer
 // Anonymous namespace that holds the coordinate generator,
 // this hides any details about the generator from an external
 // user and hopefully hides Kokkos from any file that doesn't need it.
-namespace { 
+namespace {
 
 /** A generator that builds basis values
   */
-class BasisCoordsGenerator :  
+class BasisCoordsGenerator :
     public PointGenerator {
 public:
   BasisCoordsGenerator(const int basis_order, const std::string & basis_type)
     : _basis_type(basis_type), _basis_order(basis_order) {}
- 
+
   virtual ~BasisCoordsGenerator() = default;
 
   virtual Kokkos::DynRankView<double> getPoints(const shards::CellTopology & topo) const
   {
-    Teuchos::RCP<Intrepid2::Basis<PHX::Device::execution_space,double,double> > 
+    Teuchos::RCP<Intrepid2::Basis<PHX::Device::execution_space,double,double> >
         intrepid_basis = createIntrepid2Basis<PHX::Device::execution_space,double,double>(_basis_type,_basis_order,topo);
-    
+
     Kokkos::DynRankView<double> view(_basis_type+"_ref_coords",intrepid_basis->getCardinality(),topo.getDimension());
-  
+
     intrepid_basis->getDofCoords(view);
-  
+
     return view;
   }
 
   virtual int numPoints(const shards::CellTopology & topo) const
   {
-    Teuchos::RCP<Intrepid2::Basis<PHX::Device::execution_space,double,double> > 
+    Teuchos::RCP<Intrepid2::Basis<PHX::Device::execution_space,double,double> >
         intrepid_basis = createIntrepid2Basis<PHX::Device::execution_space,double,double>(_basis_type,_basis_order,topo);
     return intrepid_basis->getCardinality();
   }
@@ -112,7 +112,7 @@ BasisDescriptor::BasisDescriptor(const int basis_order, const std::string & basi
   _key = std::hash<BasisDescriptor>{}(*this);
 }
 
-PointDescriptor 
+PointDescriptor
 BasisDescriptor::
 getPointDescriptor() const
 {

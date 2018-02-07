@@ -14,14 +14,14 @@ namespace mini_em {
 
   template <typename EvalT>
   class BCStrategy_Dirichlet_AuxConstant : public panzer::BCStrategy<EvalT> {
-    
-  public:    
-    
+
+  public:
+
     BCStrategy_Dirichlet_AuxConstant(const panzer::BC& bc, const Teuchos::RCP<panzer::GlobalData>& /* global_data */);
-    
+
     void setup(const panzer::PhysicsBlock& side_pb,
 	       const Teuchos::ParameterList& /* user_data */);
-    
+
     void buildAndRegisterEvaluators(PHX::FieldManager<panzer::Traits>& fm,
 				    const panzer::PhysicsBlock& /* pb */,
 				    const panzer::ClosureModelFactory_TemplateManager<panzer::Traits>& /* factory */,
@@ -33,7 +33,7 @@ namespace mini_em {
                                                  const panzer::LinearObjFactory<panzer::Traits> & lof,
                                                  const Teuchos::ParameterList& user_data) const;
 
-    virtual void 
+    virtual void
     buildAndRegisterScatterEvaluators(PHX::FieldManager<panzer::Traits>& fm,
 				      const panzer::PhysicsBlock& side_pb,
 				      const panzer::LinearObjFactory<panzer::Traits> & lof,

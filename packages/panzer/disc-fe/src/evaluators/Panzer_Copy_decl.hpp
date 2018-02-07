@@ -49,7 +49,7 @@
 #include "Panzer_Evaluator_Macros.hpp"
 
 namespace panzer {
-    
+
 /** Copies the contents of one field to anouther with a different
   * name. This basically allows easy renaming of fields. The constructor
   * takes a parameter list of the form
@@ -62,7 +62,7 @@ namespace panzer {
     \endverbatim
   */
 PANZER_EVALUATOR_CLASS(Copy)
-  
+
   PHX::MDField<const ScalarT> input;
   PHX::MDField<ScalarT> output;
 

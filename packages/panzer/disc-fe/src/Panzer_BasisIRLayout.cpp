@@ -51,13 +51,13 @@
 // ***********************************************************************
 // Nonmember ctors
 
-Teuchos::RCP<panzer::BasisIRLayout> 
+Teuchos::RCP<panzer::BasisIRLayout>
 panzer::basisIRLayout(std::string basis_type, const int basis_order, const panzer::PointRule& pt_rule)
 {
   return Teuchos::rcp(new panzer::BasisIRLayout(basis_type,basis_order,pt_rule),true);
 }
 
-Teuchos::RCP<panzer::BasisIRLayout> 
+Teuchos::RCP<panzer::BasisIRLayout>
 panzer::basisIRLayout(const Teuchos::RCP<const PureBasis> & b, const PointRule& pt_rule)
 {
   return Teuchos::rcp(new panzer::BasisIRLayout(b,pt_rule),true);
@@ -89,28 +89,28 @@ setup(const panzer::PointRule & point_rule)
   num_cells_ = point_rule.dl_vector->dimension(0);
   num_points_ = point_rule.dl_vector->dimension(1);
   dimension_ = point_rule.dl_vector->dimension(2);
-  
+
   using Teuchos::rcp;
   using PHX::MDALayout;
-  
+
   basis_ref = rcp(new MDALayout<BASIS,IP>(cardinality(), numPoints()));
-  
-  basis = 
+
+  basis =
     rcp(new MDALayout<Cell,BASIS,IP>(numCells(), cardinality(), numPoints()));
-  
-  basis_grad_ref = 
+
+  basis_grad_ref =
     rcp(new MDALayout<BASIS,IP,Dim>(cardinality(), numPoints(), dimension()));
-  
+
   basis_grad = rcp(new MDALayout<Cell,BASIS,IP,Dim>(numCells(),
 						    cardinality(),
 						    numPoints(),
 						    dimension()));
 
-  basis_D2_ref =  rcp(new MDALayout<BASIS,IP,Dim,Dim>(cardinality(), 
-						      numPoints(), 
-						      dimension(), 
+  basis_D2_ref =  rcp(new MDALayout<BASIS,IP,Dim,Dim>(cardinality(),
+						      numPoints(),
+						      dimension(),
 						      dimension()));
-  
+
   basis_D2 = rcp(new MDALayout<Cell,BASIS,IP,Dim,Dim>(numCells(),
 						      cardinality(),
 						      numPoints(),
@@ -130,7 +130,7 @@ setup(const panzer::PointRule & point_rule)
 
   const Teuchos::RCP<const shards::CellTopology>& topology = basis_data_->getCellTopology();
   cell_topo_info = rcp(new panzer::CellTopologyInfo(numCells(), topology) );
-  
+
 }
 
 int panzer::BasisIRLayout::cardinality() const
@@ -166,14 +166,14 @@ std::string panzer::BasisIRLayout::fieldName() const
 std::string panzer::BasisIRLayout::fieldNameD1() const
 {
   return basis_data_->fieldNameD1();
-}    
- 
+}
+
 std::string panzer::BasisIRLayout::fieldNameD2() const
 {
   return basis_data_->fieldNameD2();
-}    
+}
 
-Teuchos::RCP< Intrepid2::Basis<PHX::Device::execution_space,double,double> > 
+Teuchos::RCP< Intrepid2::Basis<PHX::Device::execution_space,double,double> >
 panzer::BasisIRLayout::getIntrepid2Basis() const
 {
    return basis_data_->getIntrepid2Basis();
@@ -187,8 +187,8 @@ panzer::BasisIRLayout::getBasis() const
 
 void panzer::BasisIRLayout::print(std::ostream & os) const
 {
-   os << "Name = " << name() 
+   os << "Name = " << name()
       << ", Dimension = " << dimension()
-      << ", Cells = " << numCells() 
+      << ", Cells = " << numCells()
       << ", Num Points = " << numPoints();
 }

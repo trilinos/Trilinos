@@ -64,14 +64,14 @@ SimpleSource<EvalT,Traits>::SimpleSource(const std::string & name,
   source = PHX::MDField<ScalarT,Cell,Point>(name, data_layout);
 
   this->addEvaluatedField(source);
-  
+
   std::string n = "Simple Source";
   this->setName(n);
 }
 
 //**********************************************************************
 template <typename EvalT,typename Traits>
-void SimpleSource<EvalT,Traits>::postRegistrationSetup(typename Traits::SetupData sd,           
+void SimpleSource<EvalT,Traits>::postRegistrationSetup(typename Traits::SetupData sd,
                                                        PHX::FieldManager<Traits>& fm)
 {
 

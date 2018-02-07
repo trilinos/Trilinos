@@ -100,7 +100,7 @@ TEUCHOS_UNIT_TEST(tUniformRef, stk_fixture)
    pl->set("X Elements",2);
    pl->set("Y Elements",3);
 
-   SquareQuadMeshFactory factory; 
+   SquareQuadMeshFactory factory;
    factory.setParameterList(pl);
    RCP<STK_Interface> mesh = factory.buildUncommitedMesh(MPI_COMM_WORLD);
 
@@ -112,18 +112,18 @@ TEUCHOS_UNIT_TEST(tUniformRef, stk_fixture)
    stk::mesh::BulkData * bulkData = &*mesh->getBulkData();
 
    stk::percept::PerceptMesh perceptMesh(metaData,bulkData,false);
-    
+
    const std::string refine="DEFAULT";
    const std::string enrich="";
    const std::string convert="";
-   
+
    stk::adapt::BlockNamesType block_names;
-   
+
    Teuchos::RCP<stk::adapt::UniformRefinerPatternBase> uniformRefinePattern
-      = stk::adapt::UniformRefinerPatternBase::createPattern(refine, 
-                                                             enrich, 
-                                                             convert, 
-                                                             perceptMesh, 
+      = stk::adapt::UniformRefinerPatternBase::createPattern(refine,
+                                                             enrich,
+                                                             convert,
+                                                             perceptMesh,
                                                              block_names);
 
    // end Step 1
@@ -140,11 +140,11 @@ TEUCHOS_UNIT_TEST(tUniformRef, stk_fixture)
    int num_uniform_refines = 2;
    for (int iBreak = 0; iBreak < num_uniform_refines; iBreak++) {
      out << "  ref level " << iBreak +1 << std::endl;
-     breaker.doBreak();   
+     breaker.doBreak();
      stk::adapt::RefinementInfoByType::printTable(
-       out, 
-       breaker.getRefinementInfoByType(), 
-       iBreak , 
+       out,
+       breaker.getRefinementInfoByType(),
+       iBreak ,
        true);
    }
 
@@ -177,18 +177,18 @@ TEUCHOS_UNIT_TEST(tUniformRef, stk_exodus)
    stk::mesh::BulkData * bulkData = &*mesh->getBulkData();
 
    stk::percept::PerceptMesh perceptMesh(metaData,bulkData,false);
-    
+
    const std::string refine="DEFAULT";
    const std::string enrich="";
    const std::string convert="";
-   
+
    stk::adapt::BlockNamesType block_names;
-   
+
    Teuchos::RCP<stk::adapt::UniformRefinerPatternBase> uniformRefinePattern
-      = stk::adapt::UniformRefinerPatternBase::createPattern(refine, 
-                                                             enrich, 
-                                                             convert, 
-                                                             perceptMesh, 
+      = stk::adapt::UniformRefinerPatternBase::createPattern(refine,
+                                                             enrich,
+                                                             convert,
+                                                             perceptMesh,
                                                              block_names);
 
    // end Step 1
@@ -205,11 +205,11 @@ TEUCHOS_UNIT_TEST(tUniformRef, stk_exodus)
    int num_uniform_refines = 2;
    for (int iBreak = 0; iBreak < num_uniform_refines; iBreak++) {
      out << "  ref level " << iBreak +1 << std::endl;
-     breaker.doBreak();   
+     breaker.doBreak();
      stk::adapt::RefinementInfoByType::printTable(
-       out, 
-       breaker.getRefinementInfoByType(), 
-       iBreak , 
+       out,
+       breaker.getRefinementInfoByType(),
+       iBreak ,
        true);
    }
 

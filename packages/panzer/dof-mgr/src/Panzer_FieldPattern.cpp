@@ -67,12 +67,12 @@ void FieldPattern::print(std::ostream & os) const
    for(int i=0;i<dim;i++) {
       int subcells = getSubcellCount(i);
       os << "FieldPattern:    " << subcells << " subcells of type " << i << std::endl;
-       
+
       for(int j=0;j<subcells;j++) {
          const std::vector<int> & indices = getSubcellIndices(i,j);
          os << "FieldPattern:       subcell " << j << " = [ ";
          for(std::size_t k=0;k<indices.size();k++)
-            os << indices[k] << " "; 
+            os << indices[k] << " ";
          os << "]" << std::endl;
       }
    }
@@ -85,7 +85,7 @@ bool FieldPattern::sameGeometry(const FieldPattern & fp) const
    // test same dimension
    std::size_t dim = getDimension();
    equal &= (dim==(std::size_t) fp.getDimension());
-   
+
    // check sub cells
    for(std::size_t d=0;d<dim;d++)
       equal &= getSubcellCount(d)==fp.getSubcellCount(d);
@@ -114,21 +114,21 @@ bool FieldPattern::equals(const FieldPattern & fp) const
    // same geometry is required
    if(not this->sameGeometry(fp))
       return false;
-   
+
    // check to make sure subcell indices are equal
-   int dimension = this->getDimension(); 
+   int dimension = this->getDimension();
    for(int d=0;d<dimension+1;d++) {
       for(int sc=0;sc<this->getSubcellCount(d);sc++) {
          const std::vector<int> & myVector = this->getSubcellIndices(d,sc);
          const std::vector<int> & argVector = fp.getSubcellIndices(d,sc);
 
          // check size of vectors
-         if(myVector.size()!=argVector.size()) 
+         if(myVector.size()!=argVector.size())
             return false;
-         
+
          // check content of vectors
          bool eq = std::equal(myVector.begin(),myVector.end(),argVector.begin());
-         if(not eq) 
+         if(not eq)
             return false;
       }
    }

@@ -55,7 +55,7 @@ ConnManager<GO>::ConnManager(int rank,int procCount)
    TEUCHOS_ASSERT(procCount==2);
    TEUCHOS_ASSERT(rank==0 || rank==1);
 
-   procRank_ = rank; 
+   procRank_ = rank;
 
    if(procRank_==0) {
       elements_["block_0"].push_back(0);
@@ -81,9 +81,9 @@ void GLOBAL_CONN(std::vector<std::vector<GO> > & conn,
 { conn[le].push_back(a); conn[le].push_back(b); conn[le].push_back(c); conn[le].push_back(d); }
 
 template <typename GO>
-void ConnManager<GO>::buildConnectivity(const FieldPattern & fp) 
+void ConnManager<GO>::buildConnectivity(const FieldPattern & fp)
 {
-   if(callback_!=Teuchos::null) 
+   if(callback_!=Teuchos::null)
       callback_->buildConnectivity(fp);
 
    if(procRank_==0) {

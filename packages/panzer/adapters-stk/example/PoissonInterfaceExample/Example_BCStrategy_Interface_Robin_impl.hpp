@@ -114,8 +114,8 @@ setup(const panzer::PhysicsBlock& side_pb,
   const string residual_name = "Residual_" + this->m_bc.equationSetName();
 
   const std::map<int,RCP< panzer::IntegrationRule > >& ir = side_pb.getIntegrationRules();
-  TEUCHOS_ASSERT(ir.size() == 1); 
-  
+  TEUCHOS_ASSERT(ir.size() == 1);
+
   const int integration_order = ir.begin()->second->order();
 
   this->addResidualContribution(residual_name, dof_name_, "", integration_order, side_pb);
@@ -153,7 +153,7 @@ buildAndRegisterEvaluators(PHX::FieldManager<panzer::Traits>& fm,
   using Teuchos::ParameterList;
   using Teuchos::RCP;
   using Teuchos::rcp;
-  using std::string; 
+  using std::string;
 
   const std::vector<std::tuple<string,string,string,int,Teuchos::RCP<panzer::PureBasis>,
     Teuchos::RCP<panzer::IntegrationRule> > > data = this->getResidualContributionData();
@@ -180,7 +180,7 @@ buildAndRegisterEvaluators(PHX::FieldManager<panzer::Traits>& fm,
     {
       ParameterList p("My DOF");
       p.set("Name", dof_name_);
-      p.set("Basis", basis); 
+      p.set("Basis", basis);
       p.set("IR", ir);
       const RCP< PHX::Evaluator<panzer::Traits> >
         op = rcp(new panzer::DOF<EvalT,panzer::Traits>(p));
@@ -225,7 +225,7 @@ buildAndRegisterEvaluators(PHX::FieldManager<panzer::Traits>& fm,
       p.set("Data Layout", ir->dl_scalar);
       const RCP< PHX::Evaluator<panzer::Traits> >
         op = rcp(new panzer::Product<EvalT,panzer::Traits>(p));
-      this->template registerEvaluator<EvalT>(fm, op);      
+      this->template registerEvaluator<EvalT>(fm, op);
     }
     {
       ParameterList p("a dot(grad phi, normal) [f_me if nonlinear] + b f_me + c f_other");
@@ -254,7 +254,7 @@ buildAndRegisterEvaluators(PHX::FieldManager<panzer::Traits>& fm,
     { // Get values on other side.
       ParameterList p("Other DOF");
       p.set("Name", dof_name_);
-      p.set("Basis", basis); 
+      p.set("Basis", basis);
       p.set("IR", ir);
       const RCP< PHX::Evaluator<panzer::Traits> >
         op = rcp(new panzer::DOF<EvalT,panzer::Traits>(p));
@@ -277,11 +277,11 @@ template <typename EvalT>
 void Example::BCStrategy_Interface_Robin<EvalT>::
 postRegistrationSetup(typename panzer::Traits::SetupData /* d */,
 		      PHX::FieldManager<panzer::Traits>& /* vm */)
-{ 
+{
 }
 
 template <typename EvalT>
 void Example::BCStrategy_Interface_Robin<EvalT>::
 evaluateFields(typename panzer::Traits::EvalData /* d */)
-{  
+{
 }

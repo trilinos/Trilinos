@@ -178,7 +178,7 @@ TEUCHOS_UNIT_TEST(workset_builder, stk_edge)
   std::vector<Teuchos::RCP<panzer::PhysicsBlock> > physicsBlocks;
   {
     Teuchos::RCP<user_app::MyFactory> eqset_factory = Teuchos::rcp(new user_app::MyFactory);
-    
+
     std::map<std::string,std::string> block_ids_to_physics_ids;
     block_ids_to_physics_ids["eblock-0_0_0"] = "test physics";
     block_ids_to_physics_ids["eblock-1_0_0"] = "test physics";
@@ -186,7 +186,7 @@ TEUCHOS_UNIT_TEST(workset_builder, stk_edge)
     std::map<std::string,Teuchos::RCP<const shards::CellTopology> > block_ids_to_cell_topo;
     block_ids_to_cell_topo["eblock-0_0_0"] = mesh->getCellTopology("eblock-0_0_0");
     block_ids_to_cell_topo["eblock-1_0_0"] = mesh->getCellTopology("eblock-1_0_0");
-      
+
     Teuchos::RCP<panzer::GlobalData> gd = panzer::createGlobalData();
 
     panzer::buildPhysicsBlocks(block_ids_to_physics_ids,
@@ -208,7 +208,7 @@ TEUCHOS_UNIT_TEST(workset_builder, stk_edge)
     Teuchos::RCP<std::map<unsigned,panzer::Workset> > worksets = panzer_stk::buildBCWorksets(
       *mesh,
       pb_a->getWorksetNeeds(),pb_a->elementBlockID(),
-      pb_b->getWorksetNeeds(),pb_b->elementBlockID(), 
+      pb_b->getWorksetNeeds(),pb_b->elementBlockID(),
       sideset);
 
     TEST_EQUALITY(worksets->size(), 1);
@@ -216,7 +216,7 @@ TEUCHOS_UNIT_TEST(workset_builder, stk_edge)
     //std::cout << "prws(workset) for element block index " << ebi << ":\n" << prws(workset) << "\n";
     TEST_EQUALITY(workset.numDetails(), 2);
     testIpMatch(workset.details(0), workset.details(1), workset.num_cells, out, success);
-  }    
+  }
 }
 
 void testInitialization(const Teuchos::RCP<Teuchos::ParameterList>& ipb,
@@ -253,10 +253,10 @@ void testInitialization(const Teuchos::RCP<Teuchos::ParameterList>& ipb,
     double value = 5.0;
     Teuchos::ParameterList p;
     p.set("Value",value);
-    panzer::BC bc(bc_id, neumann, sideset_id, element_block_id, dof_name, 
+    panzer::BC bc(bc_id, neumann, sideset_id, element_block_id, dof_name,
                   strategy, p);
     bcs.push_back(bc);
-  }    
+  }
   {
     std::size_t bc_id = 0;
     panzer::BCType neumann = BCT_Dirichlet;
@@ -267,10 +267,10 @@ void testInitialization(const Teuchos::RCP<Teuchos::ParameterList>& ipb,
     double value = 5.0;
     Teuchos::ParameterList p;
     p.set("Value",value);
-    panzer::BC bc(bc_id, neumann, sideset_id, element_block_id, dof_name, 
+    panzer::BC bc(bc_id, neumann, sideset_id, element_block_id, dof_name,
                   strategy, p);
     bcs.push_back(bc);
-  }   
+  }
   {
     std::size_t bc_id = 0;
     panzer::BCType neumann = BCT_Dirichlet;
@@ -281,7 +281,7 @@ void testInitialization(const Teuchos::RCP<Teuchos::ParameterList>& ipb,
     double value = 5.0;
     Teuchos::ParameterList p;
     p.set("Value",value);
-    panzer::BC bc(bc_id, neumann, sideset_id, element_block_id, dof_name, 
+    panzer::BC bc(bc_id, neumann, sideset_id, element_block_id, dof_name,
                   strategy, p);
     bcs.push_back(bc);
   }

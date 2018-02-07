@@ -75,29 +75,29 @@ namespace periodic_helpers {
                      const Matcher & matcher,
                      const std::vector<std::pair<std::size_t,std::size_t> > & current, const std::string type_ = "coord");
 
-   /** This returns all the global IDs and coordinates for 
+   /** This returns all the global IDs and coordinates for
      * a particular side. By "all" that means across all processors.
      */
    std::pair<Teuchos::RCP<std::vector<std::size_t> >,
              Teuchos::RCP<std::vector<Teuchos::Tuple<double,3> > > >
    getSideIdsAndCoords(const STK_Interface & mesh,
                        const std::string & sideName, const std::string type_ = "coord");
- 
-   /** This returns the locally owned global IDs and coordinates for 
-     * a particular side. 
+
+   /** This returns the locally owned global IDs and coordinates for
+     * a particular side.
      */
    std::pair<Teuchos::RCP<std::vector<std::size_t> >,
              Teuchos::RCP<std::vector<Teuchos::Tuple<double,3> > > >
    getLocalSideIdsAndCoords(const STK_Interface & mesh,
                             const std::string & sideName, const std::string type_ = "coord");
- 
+
    /** This returns the locally resident (includes ghosted) global IDs
-     * for a particular side. 
+     * for a particular side.
      */
    Teuchos::RCP<std::vector<std::size_t> >
    getLocalSideIds(const STK_Interface & mesh,
                    const std::string & sideName, const std::string type_ = "coord");
- 
+
    /** Determine a map from the specified side to the set of coordinates
      * and Ids passed in. A vector of pairs that maps from (passed in gids)->(locally owned gids)
      * is returned.
@@ -108,7 +108,7 @@ namespace periodic_helpers {
                             const std::vector<Teuchos::Tuple<double,3> > & side_coords,
                             const STK_Interface & mesh,
                             const std::string & sideName,const Matcher & matcher, const std::string type_ = "coord");
- 
+
    /** Builds a vector of local ids and their matching global indices.
      * This requires a previously discovered vector of pairs of locally matched
      * ids to distribute. This vector comes from the getLocallyMatchedSideIds.
@@ -129,8 +129,8 @@ namespace periodic_helpers {
   * the IDs owned by this processor to their
   * matching IDs on the periodic boundary.
   *
-  * Notice that the matched boundaries are not 
-  * specified by this object. This is done in the 
+  * Notice that the matched boundaries are not
+  * specified by this object. This is done in the
   * inherited class.
   */
 class PeriodicBC_MatcherBase {
@@ -147,7 +147,7 @@ public:
      *          node ID (not necessarily on this processor)
      *          that replaces it.
      */
-   virtual 
+   virtual
    Teuchos::RCP<std::vector<std::pair<std::size_t,std::size_t> > >
    getMatchedPair(const STK_Interface & mesh,
                   const Teuchos::RCP<const std::vector<std::pair<std::size_t,std::size_t> > >  & currentState = Teuchos::null
@@ -191,15 +191,15 @@ public:
    getMatchedPair(const STK_Interface & mesh,
                   const Teuchos::RCP<const std::vector<std::pair<std::size_t,std::size_t> > >  & currentState = Teuchos::null
                   ) const
-   { 
-      if(currentState==Teuchos::null) 
-         return periodic_helpers::matchPeriodicSides(left_,right_,mesh,matcher_,type_); 
+   {
+      if(currentState==Teuchos::null)
+         return periodic_helpers::matchPeriodicSides(left_,right_,mesh,matcher_,type_);
       else
-         return periodic_helpers::matchPeriodicSides(left_,right_,mesh,matcher_,*currentState,type_); 
+         return periodic_helpers::matchPeriodicSides(left_,right_,mesh,matcher_,*currentState,type_);
    }
 
-   std::string getString() const 
-   { 
+   std::string getString() const
+   {
       std::stringstream ss;
       ss << "condition: " << matcher_.getString() << ", sides = [ "
          << "\"" << left_ << "\", "
@@ -207,8 +207,8 @@ public:
       return ss.str();
    }
 
-   std::string getType() const 
-   { 
+   std::string getType() const
+   {
       return type_;
    }
 
@@ -225,11 +225,11 @@ private:
 };
 
 /** A simple constructor function for building a matcher object.
-  * This prevents the need to directly instantiate the templated 
+  * This prevents the need to directly instantiate the templated
   * derived class. It is a convenience.
   */
 template <typename Matcher>
-Teuchos::RCP<PeriodicBC_MatcherBase> 
+Teuchos::RCP<PeriodicBC_MatcherBase>
 buildPeriodicBC_Matcher(const std::string & left, const std::string & right, const Matcher & matcher, const std::string type = "coord")
 { return Teuchos::rcp(new PeriodicBC_Matcher<Matcher>(left,right,matcher,type)); }
 

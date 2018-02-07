@@ -109,7 +109,7 @@ PHX_POST_REGISTRATION_SETUP(GlobalStatistics,sd,fm)
   this->utils.setFieldData(volumes,fm);
   this->utils.setFieldData(tmp,fm);
   this->utils.setFieldData(ones,fm);
-  
+
   for (typename std::vector<PHX::MDField<const ScalarT,Cell,IP> >::iterator field = field_values.begin();
        field != field_values.end(); ++field)
     this->utils.setFieldData(*field,fm);
@@ -123,12 +123,12 @@ PHX_POST_REGISTRATION_SETUP(GlobalStatistics,sd,fm)
 
 //**********************************************************************
 PHX_EVALUATE_FIELDS(GlobalStatistics,workset)
-{ 
+{
   if (workset.num_cells == 0)
     return;
 
   Intrepid2::FunctionSpaceTools<PHX::Device::execution_space>::integrate(volumes.get_view(),
-                                                                         ones.get_view(), 
+                                                                         ones.get_view(),
                                                                          (this->wda(workset).int_rules[ir_index])->weighted_measure.get_view());
 
   for (index_t cell = 0; cell < workset.num_cells; ++cell)
@@ -137,11 +137,11 @@ PHX_EVALUATE_FIELDS(GlobalStatistics,workset)
   typename std::vector<PHX::MDField<ScalarT,Cell,IP> >::size_type field_index = 0;
   for (typename std::vector<PHX::MDField<const ScalarT,Cell,IP> >::iterator field = field_values.begin();
        field != field_values.end(); ++field,++field_index) {
-    
+
     Intrepid2::FunctionSpaceTools<PHX::Device::execution_space>::integrate(tmp.get_view(),
-                                                                           field->get_view(), 
+                                                                           field->get_view(),
                                                                            (this->wda(workset).int_rules[ir_index])->weighted_measure.get_view());
-    
+
     for (index_t cell = 0; cell < workset.num_cells; ++cell) {
       averages[field_index] += tmp(cell);
 
@@ -150,7 +150,7 @@ PHX_EVALUATE_FIELDS(GlobalStatistics,workset)
         mins[field_index] = std::min( (*field)(cell,ip), mins[field_index]);
       }
     }
-    
+
   }
 }
 
@@ -198,24 +198,24 @@ void GlobalStatistics<panzer::Traits::Residual, panzer::Traits>::postprocess(std
   if (comm->getRank() == 0) {
 
     panzer::ios_all_saver saver(os);
-    
+
     std::size_t precision = 8;
     os << std::scientific << std::showpoint << std::setprecision(precision) << std::left;
-    
+
     std::size_t name_width = 0;
     for (std::vector<ScalarT>::size_type i = 0; i < field_values.size(); ++i)
       name_width = std::max(name_width,field_values[i].fieldTag().name().size());
-    
+
     std::size_t value_width = precision + 7;
-    
-    os << std::setw(name_width) << "Field" 
-       << " " << std::setw(value_width) << "Average" 
-       << " " << std::setw(value_width) << "Maximum (@IP)" 
-       << " " << std::setw(value_width) << "Minimum (@IP)" 
+
+    os << std::setw(name_width) << "Field"
+       << " " << std::setw(value_width) << "Average"
+       << " " << std::setw(value_width) << "Maximum (@IP)"
+       << " " << std::setw(value_width) << "Minimum (@IP)"
        << std::endl;
-    
+
     for (std::vector<ScalarT>::size_type i = 0; i < field_values.size(); ++i) {
-      os << std::setw(name_width) <<  field_values[i].fieldTag().name() 
+      os << std::setw(name_width) <<  field_values[i].fieldTag().name()
          << " " << std::setw(value_width) << global_averages[i]
          << " " << std::setw(value_width) << global_maxs[i]
          << " " << std::setw(value_width) << global_mins[i] << std::endl;

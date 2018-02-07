@@ -78,9 +78,9 @@ IOClosureModelFactory(const Teuchos::RCP<const panzer::ClosureModelFactory<EvalT
 
    typedef std::map<std::string,std::vector<std::string> >::const_iterator const_iterator;
 
-   for(const_iterator itr=nodalFields.begin();itr!=nodalFields.end();++itr) 
+   for(const_iterator itr=nodalFields.begin();itr!=nodalFields.end();++itr)
       blockIdEvaluated_[itr->first] = false;
-   for(const_iterator itr=cellFields.begin();itr!=cellFields.end();++itr) 
+   for(const_iterator itr=cellFields.begin();itr!=cellFields.end();++itr)
       blockIdEvaluated_[itr->first] = false;
 }
 
@@ -96,7 +96,7 @@ parseOutputList(const Teuchos::ParameterList & pl,
       const std::string & blockId = itr->first;
       const std::string & fields = Teuchos::any_cast<std::string>(itr->second.getAny());
       std::vector<std::string> & tokens = blockIdToFields[blockId];
- 
+
       // break up comma seperated fields
       panzer::StringTokenizer(tokens,fields,",",true);
 
@@ -107,13 +107,13 @@ parseOutputList(const Teuchos::ParameterList & pl,
 // ********************************************************************
 // ********************************************************************
 template<typename EvalT>
-Teuchos::RCP< std::vector< Teuchos::RCP<PHX::Evaluator<panzer::Traits> > > > 
+Teuchos::RCP< std::vector< Teuchos::RCP<PHX::Evaluator<panzer::Traits> > > >
 panzer_stk::IOClosureModelFactory<EvalT>::
 buildClosureModels(const std::string& model_id,
-		   const Teuchos::ParameterList& models, 
+		   const Teuchos::ParameterList& models,
 		   const panzer::FieldLayoutLibrary& fl,
 		   const Teuchos::RCP<panzer::IntegrationRule>& ir,
-		   const Teuchos::ParameterList& default_params, 
+		   const Teuchos::ParameterList& default_params,
 		   const Teuchos::ParameterList& user_data,
 		   const Teuchos::RCP<panzer::GlobalData>& global_data,
 		   PHX::FieldManager<panzer::Traits>& fm) const

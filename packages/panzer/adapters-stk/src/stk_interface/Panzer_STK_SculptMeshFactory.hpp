@@ -52,7 +52,7 @@ namespace panzer_stk {
 class STK_Interface;
 
 /** This builds a parallel mesh object. Sculpt is an all-hex meshing algorithm to handle general solids.
-  * Common geometry formats for general solids include STL, SAT, and Diatom.  Major steps in Sculpt include 
+  * Common geometry formats for general solids include STL, SAT, and Diatom.  Major steps in Sculpt include
   * (1) create a overlay grid  on the general solid
   * (2) remove the grid cells outside the solid
   * (3) project the stair-step grid nodes on the boundary surface, pillow, and smooth.
@@ -79,7 +79,7 @@ public:
    //! what is the 2D tuple describe this processor distribution
    Teuchos::Tuple<std::size_t,2> procRankToProcTuple(std::size_t procRank) const;
 
-protected: 
+protected:
    void initializeWithDefaults();
 
    int callSculptor(stk::ParallelMachine parallelMach, char *diatom_file  )const ;

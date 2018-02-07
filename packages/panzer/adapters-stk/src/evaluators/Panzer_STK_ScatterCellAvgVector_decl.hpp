@@ -59,8 +59,8 @@
 namespace panzer_stk {
 
 /** This class is a scatter operation to the mesh. It
-  * takes a set of field names and an integration rule. 
-  * Those quantities are components of vector fields. They are averaged over 
+  * takes a set of field names and an integration rule.
+  * Those quantities are components of vector fields. They are averaged over
   * the cell and written to the mesh.
   *
   * The constructor takes a STK_Interface RCP and parameter list
@@ -74,14 +74,14 @@ PANZER_EVALUATOR_CLASS(ScatterCellAvgVector)
 
   // typedef panzer_stk::STK_Interface::SolutionFieldType VariableField; // this is weird, but the correct thing
   typedef panzer_stk::STK_Interface::VectorFieldType VariableField;
-  
+
   std::size_t numValues_;
- 
+
   std::vector< PHX::MDField<const ScalarT,panzer::Cell,panzer::Point,panzer::Dim> > scatterFields_;
   Teuchos::RCP<STK_Interface> mesh_;
 
   std::vector<VariableField*> stkFields_;
- 
+
 PANZER_EVALUATOR_CLASS_END
 
 }

@@ -136,7 +136,7 @@ PHX_POST_REGISTRATION_SETUP(Integrator_GradBasisTimesScalar,sd,fm)
 
 //**********************************************************************
 PHX_EVALUATE_FIELDS(Integrator_GradBasisTimesScalar,workset)
-{ 
+{
 
   // Zero the residuals
   for (int i(0); i < static_cast<int>(_num_dims); ++i)

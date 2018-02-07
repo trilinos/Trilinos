@@ -33,7 +33,7 @@ namespace mini_em {
         const Teuchos::RCP<panzer::GlobalData>& global_data,
         const bool build_transient_support) const
     {
-      Teuchos::RCP<panzer::EquationSet_TemplateManager<panzer::Traits> > eq_set= 
+      Teuchos::RCP<panzer::EquationSet_TemplateManager<panzer::Traits> > eq_set=
           Teuchos::rcp(new panzer::EquationSet_TemplateManager<panzer::Traits>);
 
       bool found = false;

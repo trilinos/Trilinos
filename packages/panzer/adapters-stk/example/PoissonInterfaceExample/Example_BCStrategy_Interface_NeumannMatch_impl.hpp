@@ -78,7 +78,7 @@ setup(const panzer::PhysicsBlock& side_pb,
   using std::vector;
   using std::string;
   using std::pair;
-  
+
   const int di = this->getDetailsIndex();
 
   // obtain the dof name
@@ -92,8 +92,8 @@ setup(const panzer::PhysicsBlock& side_pb,
   const string flux_name = "Other_Flux";
 
   const std::map<int,RCP< panzer::IntegrationRule > >& ir = side_pb.getIntegrationRules();
-  TEUCHOS_ASSERT(ir.size() == 1); 
-  
+  TEUCHOS_ASSERT(ir.size() == 1);
+
   const int integration_order = ir.begin()->second->order();
 
   this->addResidualContribution(residual_name,dof_name,flux_name,integration_order,side_pb);
@@ -111,7 +111,7 @@ buildAndRegisterEvaluators(PHX::FieldManager<panzer::Traits>& fm,
   using Teuchos::ParameterList;
   using Teuchos::RCP;
   using Teuchos::rcp;
-  using std::string; 
+  using std::string;
 
   const std::vector<std::tuple<string,string,string,int,Teuchos::RCP<panzer::PureBasis>,
     Teuchos::RCP<panzer::IntegrationRule> > > data = this->getResidualContributionData();
@@ -125,7 +125,7 @@ buildAndRegisterEvaluators(PHX::FieldManager<panzer::Traits>& fm,
   RCP<panzer::BasisIRLayout> basis = fll->lookupLayout(dof_name);
 
   if (this->getDetailsIndex() == 0) {
-    { // add contribution to the residual 
+    { // add contribution to the residual
       ParameterList p("Neumann Match Residual");
       p.set("Residual Name", residual_name);
       p.set("Value Name", flux_name);
@@ -152,7 +152,7 @@ buildAndRegisterEvaluators(PHX::FieldManager<panzer::Traits>& fm,
       ParameterList p("Other DOF gradient");
       p.set("Name", dof_name);
       p.set("Gradient Name", dof_grad_name);
-      p.set("Basis", basis); 
+      p.set("Basis", basis);
       p.set("IR", ir);
       const RCP< PHX::Evaluator<panzer::Traits> >
         op = rcp(new panzer::DOFGradient<EvalT,panzer::Traits>(p));
@@ -196,7 +196,7 @@ void Example::BCStrategy_Interface_NeumannMatch<EvalT>::
 postRegistrationSetup(typename panzer::Traits::SetupData /* d */,
 		      PHX::FieldManager<panzer::Traits>& /* vm */)
 {
-  
+
 }
 
 
@@ -205,5 +205,5 @@ template <typename EvalT>
 void Example::BCStrategy_Interface_NeumannMatch<EvalT>::
 evaluateFields(typename panzer::Traits::EvalData /* d */)
 {
-  
+
 }

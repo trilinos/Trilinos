@@ -45,7 +45,7 @@
 // only do this if required by the user
 #ifdef Panzer_BUILD_HESSIAN_SUPPORT
 
-// the includes for this file come in as a result of the includes in the main 
+// the includes for this file come in as a result of the includes in the main
 // blocked Tpetra scatter dirichlet file
 
 namespace panzer {
@@ -59,14 +59,14 @@ ScatterDirichletResidual_BlockedTpetra(const Teuchos::RCP<const BlockedDOFManage
                                       const Teuchos::ParameterList& p)
 {
   std::string scatterName = p.get<std::string>("Scatter Name");
-  scatterHolder_ = 
+  scatterHolder_ =
     Teuchos::rcp(new PHX::Tag<ScalarT>(scatterName,Teuchos::rcp(new PHX::MDALayout<Dummy>(0))));
 
   this->addEvaluatedField(*scatterHolder_);
 
   this->setName(scatterName+" Scatter Dirichlet Residual BlockedTpetra (Hessian)");
 }
-  
+
 template <typename TRAITS,typename LO,typename GO,typename NodeT>
 void
 ScatterDirichletResidual_BlockedTpetra<panzer::Traits::Hessian,TRAITS,LO,GO,NodeT>::
@@ -81,7 +81,7 @@ ScatterDirichletResidual_BlockedTpetra<panzer::Traits::Hessian,TRAITS,LO,GO,Node
 preEvaluate(typename TRAITS::PreEvalData /* d */)
 {
 }
-  
+
 template <typename TRAITS,typename LO,typename GO,typename NodeT>
 void
 ScatterDirichletResidual_BlockedTpetra<panzer::Traits::Hessian,TRAITS,LO,GO,NodeT>::

@@ -55,12 +55,12 @@ namespace panzer {
 
   /** Data structure that holds all evaluated fields associated
     * with a basis fucntion and integration rule. This class will
-    * allocate the memory and evaluate the basis functions. The 
-    * orientations must be applied using the  
+    * allocate the memory and evaluate the basis functions. The
+    * orientations must be applied using the
     * <code>applyOrientations</code> method.
     */
   template <typename Scalar>
-  class BasisValues2 { 
+  class BasisValues2 {
   public:
     typedef typename ArrayTraits<Scalar,PHX::MDField<Scalar,void,void,void,void,void,void,void,void> >::size_type size_type;
 
@@ -72,10 +72,10 @@ namespace panzer {
     typedef PHX::MDField<Scalar,BASIS,Dim,void,void,void,void,void,void> Array_BasisDim;
     typedef PHX::MDField<Scalar,Cell,BASIS,Dim,void,void,void,void,void> Array_CellBasisDim;
 
-    BasisValues2(const std::string & pre="",bool allocArrays=false,bool buildWeighted=false) 
+    BasisValues2(const std::string & pre="",bool allocArrays=false,bool buildWeighted=false)
         : build_weighted(buildWeighted), alloc_arrays(allocArrays), prefix(pre)
         , ddims_(1,0), references_evaluated(false) {}
- 
+
     //! Sizes/allocates memory for arrays
     void setupArrays(const Teuchos::RCP<const panzer::BasisIRLayout>& basis,
                      bool computeDerivatives=true);
@@ -119,10 +119,10 @@ namespace panzer {
 
     PureBasis::EElementSpace getElementSpace() const;
 
-    Array_BasisIP     basis_ref_scalar;           // <BASIS,IP> 
-    Array_CellBasisIP basis_scalar;               // <Cell,BASIS,IP> 
+    Array_BasisIP     basis_ref_scalar;           // <BASIS,IP>
+    Array_CellBasisIP basis_scalar;               // <Cell,BASIS,IP>
 
-    Array_BasisIPDim     basis_ref_vector;           // <BASIS,IP,Dim> 
+    Array_BasisIPDim     basis_ref_vector;           // <BASIS,IP,Dim>
     Array_CellBasisIPDim basis_vector;               // <Cell,BASIS,IP,Dim>
 
     Array_BasisIPDim     grad_basis_ref;             // <BASIS,IP,Dim>
@@ -134,15 +134,15 @@ namespace panzer {
     Array_BasisIPDim     curl_basis_ref_vector;      // <BASIS,IP,Dim> - 3D!
     Array_CellBasisIPDim curl_basis_vector;          // <Cell,BASIS,IP,Dim> - 3D!
 
-    Array_BasisIP     div_basis_ref;           // <BASIS,IP> 
-    Array_CellBasisIP div_basis;               // <Cell,BASIS,IP> 
+    Array_BasisIP     div_basis_ref;           // <BASIS,IP>
+    Array_CellBasisIP div_basis;               // <Cell,BASIS,IP>
 
-    Array_CellBasisIP weighted_basis_scalar;                  // <Cell,BASIS,IP> 
-    Array_CellBasisIPDim weighted_basis_vector;               // <Cell,BASIS,IP,Dim> 
+    Array_CellBasisIP weighted_basis_scalar;                  // <Cell,BASIS,IP>
+    Array_CellBasisIPDim weighted_basis_vector;               // <Cell,BASIS,IP,Dim>
     Array_CellBasisIPDim weighted_grad_basis;                 // <Cell,BASIS,IP,Dim>
     Array_CellBasisIP weighted_curl_basis_scalar;             // <Cell,BASIS,IP>
     Array_CellBasisIPDim weighted_curl_basis_vector;          // <Cell,BASIS,IP,Dim>
-    Array_CellBasisIP weighted_div_basis;                     // <Cell,BASIS,IP> 
+    Array_CellBasisIP weighted_div_basis;                     // <Cell,BASIS,IP>
 
     /** Carterisan coordinates for basis coefficients
 
@@ -159,7 +159,7 @@ namespace panzer {
     Array_CellBasisDim basis_coordinates;     // <Cell,BASIS,Dim>
 
     Teuchos::RCP<const panzer::BasisIRLayout> basis_layout;
-    
+
     Teuchos::RCP<Intrepid2::Basis<PHX::Device::execution_space,Scalar,Scalar> > intrepid_basis;
 
     bool compute_derivatives;
@@ -189,14 +189,14 @@ namespace panzer {
                              const PHX::MDField<Scalar,Cell,IP,Dim,Dim,void,void,void,void> & jac,
                              const PHX::MDField<Scalar,Cell,IP,void,void,void,void,void,void> & jac_det,
                              const PHX::MDField<Scalar,Cell,IP> & weighted_measure);
- 
+
   private:
 
     void evaluateBasisCoordinates(const PHX::MDField<Scalar,Cell,NODE,Dim> & vertex_coordinates);
 
     /** Evaluate the reference values for the basis functions needed
       *
-      * Node after this call references_evaluated=true 
+      * Node after this call references_evaluated=true
       */
     void evaluateReferenceValues(const PHX::MDField<Scalar,IP,Dim> & cub_points,bool compute_derivatives,bool use_vertex_coordinates);
 

@@ -53,10 +53,10 @@ namespace panzer {
 
   TEUCHOS_UNIT_TEST(material_model_entry, no_params)
   {
-    
+
     std::string factory_name_m1 = "one";
     std::string factory_name_m2 = "two";
-    
+
     panzer::MaterialModelEntry m1(factory_name_m1);
     panzer::MaterialModelEntry m2(factory_name_m2);
 
@@ -78,18 +78,18 @@ namespace panzer {
 
     std::stringstream s;
     s << m1;
-    TEST_EQUALITY(s.str(),"Material Model Entry: one"); 
+    TEST_EQUALITY(s.str(),"Material Model Entry: one");
   }
 
   TEUCHOS_UNIT_TEST(material_model_entry, with_params)
   {
-    
+
     std::string factory_name = "one";
     Teuchos::ParameterList p1;
     p1.set<double>("value", 1.0);
     Teuchos::ParameterList p2;
     p2.set<int>("value", 1);
-    
+
 
     panzer::MaterialModelEntry m1(factory_name,p1);
     panzer::MaterialModelEntry m2(factory_name,p2);

@@ -46,11 +46,11 @@
 //**********************************************************************
 PHX_EVALUATOR_CTOR_NAMESPACE(user_app,ConstantModel,p) :
   value( p.get<double>("Value") ),
-  constant( p.get<std::string>("Name"), 
+  constant( p.get<std::string>("Name"),
 	    p.get< Teuchos::RCP<PHX::DataLayout> >("Data Layout") )
 {
   this->addEvaluatedField(constant);
-  
+
   std::string n = "user_app::Constant: " + constant.fieldTag().name();
   this->setName(n);
 }

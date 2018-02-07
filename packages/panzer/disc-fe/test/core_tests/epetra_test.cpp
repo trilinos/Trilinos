@@ -54,10 +54,10 @@
 #include <vector>
 
 namespace panzer {
-  
+
   TEUCHOS_UNIT_TEST(epetra_test, maptest)
   {
-    
+
     Epetra_MpiComm comm(MPI_COMM_WORLD);
 
     int veca[] = {0, 1, 2, 3, 4, 5};
@@ -75,7 +75,7 @@ namespace panzer {
     case 0:
 
 // 0 passes, 1 fails
-#if 1 
+#if 1
       num0 = 0;
       ind0 = &empty;
 #else

@@ -58,27 +58,27 @@ namespace Example {
   * the evaluators required for a particular equation set. The level of the
   * granularity is largely up to a user. For instance this could be the momentum
   * or continuity equation in Navier-Stokes, or it could simply be the Navier-Stokes
-  * equations. 
+  * equations.
   *
   * Generally, this inherits from the panzer::EquationSet_DefaultImpl which takes
-  * care of adding the gather (extract basis coefficients from solution vector) and 
+  * care of adding the gather (extract basis coefficients from solution vector) and
   * scatter (using element matrices and vectors distribute and sum their values
   * to a global linear system) evaluators. These use data members that must be set by
   * the user.
   */
 template <typename EvalT>
 class CurlLaplacianEquationSet : public panzer::EquationSet_DefaultImpl<EvalT> {
-public:    
+public:
 
    /** In the constructor you set all the fields provided by this
-     * equation set. 
+     * equation set.
      */
    CurlLaplacianEquationSet(const Teuchos::RCP<Teuchos::ParameterList>& params,
 			    const int& default_integration_order,
 			    const panzer::CellData& cell_data,
 			    const Teuchos::RCP<panzer::GlobalData>& global_data,
 			    const bool build_transient_support);
-    
+
    /** The specific evaluators are registered with the field manager argument.
      */
    void buildAndRegisterEquationSetEvaluators(PHX::FieldManager<panzer::Traits>& fm,

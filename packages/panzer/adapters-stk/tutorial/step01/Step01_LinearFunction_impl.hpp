@@ -14,8 +14,8 @@ template <typename EvalT,typename Traits>
 LinearFunction<EvalT,Traits>::LinearFunction(const std::string & name,
                                              double acoeff,double bcoeff,
                                              const panzer::IntegrationRule & ir)
-  : acoeff_(acoeff) 
-  , bcoeff_(bcoeff) 
+  : acoeff_(acoeff)
+  , bcoeff_(bcoeff)
   , ir_degree_(ir.cubature_degree)
 {
   using Teuchos::RCP;
@@ -30,7 +30,7 @@ LinearFunction<EvalT,Traits>::LinearFunction(const std::string & name,
 
 //**********************************************************************
 template <typename EvalT,typename Traits>
-void LinearFunction<EvalT,Traits>::postRegistrationSetup(typename Traits::SetupData sd,           
+void LinearFunction<EvalT,Traits>::postRegistrationSetup(typename Traits::SetupData sd,
                                                           PHX::FieldManager<Traits>& fm)
 {
 
@@ -42,7 +42,7 @@ void LinearFunction<EvalT,Traits>::postRegistrationSetup(typename Traits::SetupD
 //**********************************************************************
 template <typename EvalT,typename Traits>
 void LinearFunction<EvalT,Traits>::evaluateFields(typename Traits::EvalData workset)
-{ 
+{
   for (panzer::index_t cell = 0; cell < workset.num_cells; ++cell) {
     for (int point = 0; point < result.extent_int(1); ++point) {
 

@@ -52,7 +52,7 @@
 #include <string>
 
 namespace panzer {
-    
+
 /** A Output evaluator for writing out fields.
   */
 template<typename EvalT, typename Traits>
@@ -62,13 +62,13 @@ class FieldSpy : public PHX::EvaluatorWithBaseImpl<Traits>,
 public:
     FieldSpy(const std::string & name,
              const Teuchos::RCP<PHX::DataLayout> & data_layout);
-                                                                        
-    void postRegistrationSetup(typename Traits::SetupData d,           
-                               PHX::FieldManager<Traits>& fm);        
-                                                                     
-    void evaluateFields(typename Traits::EvalData d);               
 
-    const PHX::FieldTag & getRequiredFieldTag() const 
+    void postRegistrationSetup(typename Traits::SetupData d,
+                               PHX::FieldManager<Traits>& fm);
+
+    void evaluateFields(typename Traits::EvalData d);
+
+    const PHX::FieldTag & getRequiredFieldTag() const
     { return *dummyField; }
 
 private:

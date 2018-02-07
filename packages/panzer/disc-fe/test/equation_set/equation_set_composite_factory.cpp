@@ -53,7 +53,7 @@
 namespace panzer {
 
   TEUCHOS_UNIT_TEST(equation_set, composite_factory)
-  {    
+  {
 
     const int num_cells = 20;
     const int default_int_order = 2;
@@ -84,8 +84,8 @@ namespace panzer {
     p_bad->set("Basis Order",2);
 
     Teuchos::RCP<panzer::EquationSet_TemplateManager<panzer::Traits> > eq_set;
-  
-    // Check that eqf1 can build Energy 1 and fails to build Energy 2 
+
+    // Check that eqf1 can build Energy 1 and fails to build Energy 2
     {
       user_app::MyFactory1 my_factory1(true);
       TEST_NOTHROW(eq_set = my_factory1.buildEquationSet(p1, default_int_order, cell_data, global_data, false));
@@ -93,7 +93,7 @@ namespace panzer {
       TEST_THROW(eq_set = my_factory1.buildEquationSet(p2, default_int_order, cell_data, global_data, false),std::logic_error);
     }
 
-    // Check that eqf2 can build Energy 2 and fails to build Energy 1 
+    // Check that eqf2 can build Energy 2 and fails to build Energy 1
     {
       eq_set = Teuchos::null;
       user_app::MyFactory2 my_factory2(true);
@@ -109,7 +109,7 @@ namespace panzer {
     factories.push_back(eqsf1);
     factories.push_back(eqsf2);
 
-    Teuchos::RCP<panzer::EquationSet_FactoryComposite> composite_factory = 
+    Teuchos::RCP<panzer::EquationSet_FactoryComposite> composite_factory =
       Teuchos::rcp(new panzer::EquationSet_FactoryComposite(factories));
 
     // Build each physics
@@ -120,12 +120,12 @@ namespace panzer {
     eq_set = Teuchos::null;
     TEST_NOTHROW(eq_set = composite_factory->buildEquationSet(p2, default_int_order, cell_data, global_data, false));
     TEST_ASSERT(nonnull(eq_set));
-    
+
     // try bad eq set
     eq_set = Teuchos::null;
     TEST_THROW(eq_set = composite_factory->buildEquationSet(p_bad, default_int_order, cell_data, global_data, false),std::logic_error);
     TEST_ASSERT(is_null(eq_set));
-    
+
   }
 
 }

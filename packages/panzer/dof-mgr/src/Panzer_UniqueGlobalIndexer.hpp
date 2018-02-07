@@ -60,7 +60,7 @@ template <typename LocalOrdinalT> class ConnManagerBase;
 
 class UniqueGlobalIndexerBase {
 public:
-   //! Pure virtual destructor: prevents warnings with inline empty implementation 
+   //! Pure virtual destructor: prevents warnings with inline empty implementation
    virtual ~UniqueGlobalIndexerBase() = 0;
 
    /** Get communicator associated with this global indexer.
@@ -94,19 +94,19 @@ public:
    /** \brief Reverse lookup of the field string from
      *        a field number.
      *
-     * \param[in] num Field number. Assumed to be 
+     * \param[in] num Field number. Assumed to be
      *                a valid field number.  Computed
      *                from <code>getFieldNum</code>.
      *
-     * \returns Field name. 
+     * \returns Field name.
      */
    virtual const std::string & getFieldString(int num) const = 0;
 
    /** What are the blockIds included in this connection manager?
      */
-   virtual void getElementBlockIds(std::vector<std::string> & elementBlockIds) const = 0; 
+   virtual void getElementBlockIds(std::vector<std::string> & elementBlockIds) const = 0;
 
-   /** Is the specified field in the element block? 
+   /** Is the specified field in the element block?
      */
    virtual bool fieldInBlock(const std::string & field, const std::string & block) const = 0;
 
@@ -131,7 +131,7 @@ public:
      * \param[in] subcellDim
      * \param[in] subcellId
      */
-   virtual const std::pair<std::vector<int>,std::vector<int> > & 
+   virtual const std::pair<std::vector<int>,std::vector<int> > &
    getGIDFieldOffsets_closure(const std::string & blockId, int fieldNum,
                               int subcellDim,int subcellId) const = 0;
 
@@ -153,7 +153,7 @@ public:
 template <typename LocalOrdinalT,typename GlobalOrdinalT>
 class UniqueGlobalIndexer : public UniqueGlobalIndexerBase {
 public:
-   //! Pure virtual destructor: prevents warnings with inline empty implementation 
+   //! Pure virtual destructor: prevents warnings with inline empty implementation
    virtual ~UniqueGlobalIndexer() = 0;
 
    /** Get communicator associated with this global indexer.
@@ -186,9 +186,9 @@ public:
 
    /** What are the blockIds included in this connection manager?
      */
-   virtual void getElementBlockIds(std::vector<std::string> & elementBlockIds) const = 0; 
+   virtual void getElementBlockIds(std::vector<std::string> & elementBlockIds) const = 0;
 
-   /** Is the specified field in the element block? 
+   /** Is the specified field in the element block?
      */
    virtual bool fieldInBlock(const std::string & field, const std::string & block) const = 0;
 
@@ -213,7 +213,7 @@ public:
      * \param[in] subcellDim
      * \param[in] subcellId
      */
-   virtual const std::pair<std::vector<int>,std::vector<int> > & 
+   virtual const std::pair<std::vector<int>,std::vector<int> > &
    getGIDFieldOffsets_closure(const std::string & blockId, int fieldNum,
                               int subcellDim,int subcellId) const = 0;
 
@@ -307,7 +307,7 @@ public:
      */
    void getElementLIDs(Kokkos::View<const int*,PHX::Device> cellIds,
                        Kokkos::View<LocalOrdinalT**,PHX::Device> lids) const
-   { 
+   {
      CopyCellLIDsFunctor functor;
      functor.cellIds = cellIds;
      functor.global_lids = localIDs_k_;
@@ -345,47 +345,47 @@ public:
      KOKKOS_INLINE_FUNCTION
      void operator()(const int cell) const
      {
-       for(int i=0;i<Teuchos::as<int>(local_lids.dimension_1());i++) 
+       for(int i=0;i<Teuchos::as<int>(local_lids.dimension_1());i++)
          local_lids(cell,i) = global_lids(cellIds(cell),i);
      }
-     
+
    };
 
 protected:
 
-   /** This method is used by derived classes to the construct the local IDs from 
+   /** This method is used by derived classes to the construct the local IDs from
      * the <code>getOwnedAndGhostedIndices</code> method.
      */
    void buildLocalIds()
-   { 
+   {
      // this method is implmented as two steps to ensure
      // that setLocalIds works, it would be better to simply
      // call:
-     //   buildLocalIdsFromOwnedElements(localIDs_); 
+     //   buildLocalIdsFromOwnedElements(localIDs_);
 
-     std::vector<std::vector<LocalOrdinalT> > localIDs; 
-     buildLocalIdsFromOwnedElements(localIDs); 
+     std::vector<std::vector<LocalOrdinalT> > localIDs;
+     buildLocalIdsFromOwnedElements(localIDs);
      setLocalIds(localIDs);
    }
 
-   /** This method is used by derived classes to the construct the local IDs from 
+   /** This method is used by derived classes to the construct the local IDs from
      * the <code>getOwnedAndGhostedIndices</code> method.
      */
-   void buildLocalIdsFromOwnedElements(std::vector<std::vector<LocalOrdinalT> > & localIDs) const ; 
+   void buildLocalIdsFromOwnedElements(std::vector<std::vector<LocalOrdinalT> > & localIDs) const ;
 
    /** This method provides some capability to set the local IDs externally without
      * using the default buildLocalIds. The point is that we want to keep "getElementLIDs"
      * access exteremly fast.
      */
    void setLocalIds(const std::vector<std::vector<LocalOrdinalT> > & localIDs)
-   {  
+   {
      // determine the maximium second dimension of the local IDs
      std::size_t max = 0;
      for(std::size_t i=0;i<localIDs.size();i++)
        max = localIDs[i].size() > max ? localIDs[i].size() : max;
 
      // allocate for the kokkos size
-     Kokkos::View<LocalOrdinalT**,Kokkos::LayoutRight,PHX::Device> localIDs_k 
+     Kokkos::View<LocalOrdinalT**,Kokkos::LayoutRight,PHX::Device> localIDs_k
        = Kokkos::View<LocalOrdinalT**,Kokkos::LayoutRight,PHX::Device>("ugi:localIDs_",localIDs.size(),max);
      for(std::size_t i=0;i<localIDs.size();i++) {
        for(std::size_t j=0;j<localIDs[i].size();j++)
@@ -423,7 +423,7 @@ buildLocalIdsFromOwnedElements(std::vector<std::vector<LocalOrdinalT> > & localI
 {
   std::vector<GlobalOrdinalT> ownedAndGhosted;
   this->getOwnedAndGhostedIndices(ownedAndGhosted);
-   
+
   // build global to local hash map (temporary and used only once)
   std::unordered_map<GlobalOrdinalT,LocalOrdinalT> hashMap;
   for(std::size_t i=0;i<ownedAndGhosted.size();i++)
@@ -431,7 +431,7 @@ buildLocalIdsFromOwnedElements(std::vector<std::vector<LocalOrdinalT> > & localI
 
   std::vector<std::string> elementBlocks;
   this->getElementBlockIds(elementBlocks);
- 
+
   // compute total number of elements
   std::size_t numElmts = 0;
   for(std::size_t eb=0;eb<elementBlocks.size();eb++)
@@ -447,11 +447,11 @@ buildLocalIdsFromOwnedElements(std::vector<std::vector<LocalOrdinalT> > & localI
       this->getElementGIDs(elmts[e],gids,elementBlocks[eb]);
       std::vector<LocalOrdinalT> & lids = localIDs[elmts[e]];
       lids.resize(gids.size());
- 
+
       for(std::size_t g=0;g<gids.size();g++)
         lids[g] = hashMap[gids[g]];
     }
-  } 
+  }
 }
 
 }

@@ -70,7 +70,7 @@ public:
    virtual ~UniqueGlobalIndexerFactory() {}
 
    /** Use the physics block to construct a unique global indexer object.
-     * 
+     *
      * \param[in] mpiComm MPI communicator to use in the construction
      * \param[in] physicsBlocks A vector of physics block objects that contain
      *                          unknown field information.
@@ -84,7 +84,7 @@ public:
      *          the object is fully constructed. If it is false, the caller must
      *          finalize it.
      */
-   virtual Teuchos::RCP<panzer::UniqueGlobalIndexer<LO,GO> > 
+   virtual Teuchos::RCP<panzer::UniqueGlobalIndexer<LO,GO> >
    buildUniqueGlobalIndexer(const Teuchos::RCP<const Teuchos::OpaqueWrapper<MPI_Comm> > & mpiComm,
                             const std::vector<Teuchos::RCP<panzer::PhysicsBlock> > & physicsBlocks,
                             const Teuchos::RCP<ConnManager<CONN_LO,CONN_GO> > & connMngr,

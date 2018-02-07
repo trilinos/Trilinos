@@ -87,7 +87,7 @@ namespace panzer_stk {
 
     //! Mesh pointer, will be passed around
     Teuchos::RCP<STK_Interface> mesh_;
- 
+
     //! Map showing which cell averaged fields need to be written out for each element block
     std::map<std::string,std::vector<std::string> > blockIdToCellAvgFields_;
 
@@ -107,7 +107,7 @@ namespace panzer_stk {
       * used in multiple places then the appropriate evaluator will be added and
       * required only once. So its likely that not every field manager will have (and require)
       * the scatter cell evaluators.
-      */    
+      */
     mutable std::map<std::string,bool> blockIdEvaluated_;
 
     //! we will reuse the drekar closure model factory

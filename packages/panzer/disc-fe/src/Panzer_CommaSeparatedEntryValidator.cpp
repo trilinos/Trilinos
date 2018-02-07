@@ -53,7 +53,7 @@ split(const std::string & str,
 {
    output.clear();
 
-   // typedef boost::tokenizer<boost::char_separator<char> > 
+   // typedef boost::tokenizer<boost::char_separator<char> >
    //         tokenizer;
 
    // boost::char_separator<char> sep(delim.c_str());
@@ -70,15 +70,15 @@ split(const std::string & str,
    panzer::StringTokenizer(output, str, delim, true);
 }
 
-void 
+void
 CommaSeparatedEntryValidator::
-validate(const Teuchos::ParameterEntry & entry,  
+validate(const Teuchos::ParameterEntry & entry,
 	 const std::string & paramName,
 	 const std::string & sublistName) const
 {
   const std::string &entryName = entry.getAny(false).typeName();
   Teuchos::any anyValue = entry.getAny(true);
-  
+
   // type passed, validate value
   TEUCHOS_TEST_FOR_EXCEPTION(!(anyValue.type() == typeid(std::string) ),
     Teuchos::Exceptions::InvalidParameterType,
@@ -94,7 +94,7 @@ validate(const Teuchos::ParameterEntry & entry,
   const std::string & value = Teuchos::any_cast<std::string>(anyValue);
 
   std::vector<std::string> tokens;
-  split(value,",",tokens);  
+  split(value,",",tokens);
 
   if(!allowEmpty_) {
      const std::string errorStr = "The value for \"string-list\" type parameter in sublist \""+sublistName+"\" named \""+paramName+"\" "

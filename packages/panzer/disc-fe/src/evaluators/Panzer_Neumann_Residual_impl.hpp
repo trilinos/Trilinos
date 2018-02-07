@@ -60,11 +60,11 @@ PHX_EVALUATOR_CTOR(NeumannResidual,p)
   std::string flux_name = p.get<std::string>("Flux Name");
   std::string normal_name = p.get<std::string>("Normal Name");
   std::string normal_dot_flux_name = normal_name + " dot " + flux_name;
-  
+
   const Teuchos::RCP<const panzer::PureBasis> basis =
     p.get< Teuchos::RCP<const panzer::PureBasis> >("Basis");
 
-  const Teuchos::RCP<const panzer::IntegrationRule> ir = 
+  const Teuchos::RCP<const panzer::IntegrationRule> ir =
     p.get< Teuchos::RCP<const panzer::IntegrationRule> >("IR");
 
 
@@ -77,7 +77,7 @@ PHX_EVALUATOR_CTOR(NeumannResidual,p)
   this->addEvaluatedField(normal_dot_flux);
   this->addDependentField(normal);
   this->addDependentField(flux);
- 
+
   basis_name = panzer::basisIRLayout(basis,*ir)->name();
 
   std::string n = "Neumann Residual Evaluator";
@@ -103,14 +103,14 @@ PHX_POST_REGISTRATION_SETUP(NeumannResidual,sd,fm)
 
 //**********************************************************************
 PHX_EVALUATE_FIELDS(NeumannResidual,workset)
-{ 
+{
   residual.deep_copy(ScalarT(0.0));
 
   for (index_t cell = 0; cell < workset.num_cells; ++cell) {
     for (std::size_t ip = 0; ip < num_ip; ++ip) {
       normal_dot_flux(cell,ip) = ScalarT(0.0);
       for (std::size_t dim = 0; dim < num_dim; ++dim) {
-	normal_dot_flux(cell,ip) += normal(cell,ip,dim) * flux(cell,ip,dim); 
+	normal_dot_flux(cell,ip) += normal(cell,ip,dim) * flux(cell,ip,dim);
       }
     }
   }
@@ -128,7 +128,7 @@ PHX_EVALUATE_FIELDS(NeumannResidual,workset)
   if(workset.num_cells>0)
     Intrepid2::FunctionSpaceTools<PHX::exec_space>::
       integrate<ScalarT>(residual.get_view(),
-                         normal_dot_flux.get_view(), 
+                         normal_dot_flux.get_view(),
 			 (this->wda(workset).bases[basis_index])->weighted_basis_scalar.get_view());
 }
 

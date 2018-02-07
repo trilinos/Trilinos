@@ -61,7 +61,7 @@ template<typename EvalT,typename Traits>
 panzer::ProjectToEdges<EvalT, Traits>::
 ProjectToEdges(
   const Teuchos::ParameterList& p)
-{ 
+{
   dof_name = (p.get< std::string >("DOF Name"));
 
   if(p.isType< Teuchos::RCP<PureBasis> >("Basis"))
@@ -72,7 +72,7 @@ ProjectToEdges(
   quad_degree = 0;
   if(p.isType<int>("Quadrature Order"))
     quad_degree = p.get<int>("Quadrature Order");
-    
+
   Teuchos::RCP<PHX::DataLayout> basis_layout  = basis->functional;
   Teuchos::RCP<PHX::DataLayout> vector_layout = basis->functional_grad;
 
@@ -86,12 +86,12 @@ ProjectToEdges(
   this->addDependentField(tangents);
 
   if(quad_degree > 0){
-    const shards::CellTopology & parentCell = *basis->getCellTopology();                                                                                    
-    Intrepid2::DefaultCubatureFactory quadFactory;                         
-    Teuchos::RCP< Intrepid2::Cubature<PHX::exec_space,double,double> > quadRule                    
+    const shards::CellTopology & parentCell = *basis->getCellTopology();
+    Intrepid2::DefaultCubatureFactory quadFactory;
+    Teuchos::RCP< Intrepid2::Cubature<PHX::exec_space,double,double> > quadRule
       = quadFactory.create<PHX::exec_space,double,double>(parentCell.getCellTopologyData(1,0), quad_degree);
-    int numQPoints = quadRule->getNumPoints(); 
- 
+    int numQPoints = quadRule->getNumPoints();
+
     vector_values.resize(numQPoints);
     for (int qp(0); qp < numQPoints; ++qp)
     {
@@ -119,7 +119,7 @@ ProjectToEdges(
 // **********************************************************************
 template<typename EvalT,typename Traits>
 void panzer::ProjectToEdges<EvalT, Traits>::
-postRegistrationSetup(typename Traits::SetupData  d, 
+postRegistrationSetup(typename Traits::SetupData  d,
 		      PHX::FieldManager<Traits>& fm)
 {
   orientations = d.orientations_;
@@ -146,7 +146,7 @@ postRegistrationSetup(typename Traits::SetupData  d,
 template<typename EvalT,typename Traits>
 void panzer::ProjectToEdges<EvalT, Traits>::
 evaluateFields(typename Traits::EvalData workset)
-{ 
+{
   const shards::CellTopology & parentCell = *basis->getCellTopology();
   const int intDegree = basis->order();
   TEUCHOS_ASSERT(intDegree == 1);
@@ -178,11 +178,11 @@ evaluateFields(typename Traits::EvalData workset)
       const auto v1_id = parentCell.getNodeMap(1, e, 1);
       Intrepid2::CellTools<PHX::exec_space>::getReferenceVertex(v0, parentCell, v0_id);
       Intrepid2::CellTools<PHX::exec_space>::getReferenceVertex(v1, parentCell, v1_id);
-      
+
       double norm = 0.0;
       for (int d=0;d<num_dim;++d)
         norm += (v0(d) - v1(d))*(v0(d) - v1(d));
-      
+
       refEdgeWt[e] = sqrt(norm);
     }
 
@@ -217,7 +217,7 @@ evaluateFields(typename Traits::EvalData workset)
     // Loop over the faces of the workset cells
     for (index_t cell = 0; cell < workset.num_cells; ++cell) {
 
-      // get nodal coordinates for this cell 
+      // get nodal coordinates for this cell
       Kokkos::DynRankView<double,PHX::Device> physicalNodes("physicalNodes",1,vertex_coords.dimension(1),num_dim);
       for (int point(0); point < vertex_coords.extent_int(1); ++point)
       {
@@ -230,7 +230,7 @@ evaluateFields(typename Traits::EvalData workset)
         result(cell,p) = ScalarT(0.0);
 
         // get quad weights/pts on reference 2d cell
-        const shards::CellTopology & subcell = parentCell.getCellTopologyData(subcell_dim,p);     
+        const shards::CellTopology & subcell = parentCell.getCellTopologyData(subcell_dim,p);
         edgeQuad = quadFactory.create<PHX::exec_space,double,double>(subcell, quad_degree);
         TEUCHOS_ASSERT(
           edgeQuad->getNumPoints() == static_cast<int>(vector_values.size()));

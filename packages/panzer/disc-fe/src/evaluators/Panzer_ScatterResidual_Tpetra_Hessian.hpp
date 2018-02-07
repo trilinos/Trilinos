@@ -46,7 +46,7 @@
 // only do this if required by the user
 #ifdef Panzer_BUILD_HESSIAN_SUPPORT
 
-// the includes for this file come in as a result of the includes in the main 
+// the includes for this file come in as a result of the includes in the main
 // Tpetra scatter residual file
 
 namespace panzer {
@@ -59,21 +59,21 @@ class ScatterResidual_Tpetra<panzer::Traits::Hessian,TRAITS,LO,GO,NodeT>
   : public panzer::EvaluatorWithBaseImpl<TRAITS>,
     public PHX::EvaluatorDerived<panzer::Traits::Hessian, TRAITS>,
     public panzer::CloneableEvaluator {
-  
+
 public:
-  ScatterResidual_Tpetra(const Teuchos::RCP<const panzer::UniqueGlobalIndexer<LO,GO> > & indexer) 
+  ScatterResidual_Tpetra(const Teuchos::RCP<const panzer::UniqueGlobalIndexer<LO,GO> > & indexer)
      : globalIndexer_(indexer) {}
-  
+
   ScatterResidual_Tpetra(const Teuchos::RCP<const panzer::UniqueGlobalIndexer<LO,GO> > & indexer,
                          const Teuchos::ParameterList& p);
-  
+
   void postRegistrationSetup(typename TRAITS::SetupData d,
 			     PHX::FieldManager<TRAITS>& vm);
 
   void preEvaluate(typename TRAITS::PreEvalData d);
-  
+
   void evaluateFields(typename TRAITS::EvalData workset);
-  
+
   virtual Teuchos::RCP<CloneableEvaluator> clone(const Teuchos::ParameterList & pl) const
   { return Teuchos::rcp(new ScatterResidual_Tpetra<panzer::Traits::Hessian,TRAITS,LO,GO,NodeT>(globalIndexer_,pl)); }
 

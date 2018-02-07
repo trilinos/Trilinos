@@ -54,7 +54,7 @@ namespace panzer_stk {
 
 class STK_Interface;
 
-/** Pure virtual interface that constructs a 
+/** Pure virtual interface that constructs a
   * STK_Mesh interface object.
   */
 class STK_MeshFactory : public Teuchos::ParameterListAcceptorDefaultBase {
@@ -66,9 +66,9 @@ public:
      *
      * \param[in] parallelMach Descriptor for machine to build this mesh on.
      *
-     * \returns Pointer to <code>STK_Interface</code> object with 
+     * \returns Pointer to <code>STK_Interface</code> object with
      *          <code>isModifiable()==false</code>.
-     */ 
+     */
    virtual Teuchos::RCP<STK_Interface> buildMesh(stk::ParallelMachine parallelMach) const = 0;
 
    /** This builds all the meta data of the mesh. Does not call metaData->commit.
@@ -92,8 +92,8 @@ public:
       periodicBC = parser.getMatchers();
    }
 
-   void enableRebalance(bool enable,const Teuchos::RCP<const Teuchos::ParameterList> & rebalanceList=Teuchos::null) 
-   { enableRebalance_ = enable; 
+   void enableRebalance(bool enable,const Teuchos::RCP<const Teuchos::ParameterList> & rebalanceList=Teuchos::null)
+   { enableRebalance_ = enable;
      rebalanceList_ = rebalanceList; }
 
    void rebalance(STK_Interface & mesh) const
@@ -126,7 +126,7 @@ public:
 
 protected:
    // vector of periodic boundary condition objects
-   std::vector<Teuchos::RCP<const PeriodicBC_MatcherBase> > periodicBCVec_; 
+   std::vector<Teuchos::RCP<const PeriodicBC_MatcherBase> > periodicBCVec_;
 
    // for managing rebalance
    bool enableRebalance_;

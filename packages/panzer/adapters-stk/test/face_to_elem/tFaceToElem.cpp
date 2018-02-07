@@ -230,7 +230,7 @@ TEUCHOS_UNIT_TEST(tFullRelations, test_build_workset)
 
   Teuchos::RCP<panzer::PhysicsBlock> physicsBlock = createPhysicsBlock(mesh);
   Teuchos::RCP<std::vector<panzer::Workset> > work_sets = panzer_stk::buildWorksets(*mesh,physicsBlock->elementBlockID(),
-                                                                                          physicsBlock->getWorksetNeeds());                    
+                                                                                          physicsBlock->getWorksetNeeds());
 }
 
 TEUCHOS_UNIT_TEST(tFullRelations, test_tet_normals)
@@ -251,7 +251,7 @@ TEUCHOS_UNIT_TEST(tFullRelations, test_tet_normals)
 
   Teuchos::RCP<panzer::PhysicsBlock> physicsBlock = createPhysicsBlock(mesh);
   Teuchos::RCP<std::vector<panzer::Workset> > work_sets = panzer_stk::buildWorksets(*mesh,physicsBlock->elementBlockID(),
-                                                                                          physicsBlock->getWorksetNeeds());                    
+                                                                                          physicsBlock->getWorksetNeeds());
 
   rel.setNormals(work_sets);
 
@@ -272,7 +272,7 @@ TEUCHOS_UNIT_TEST(tFullRelations, test_tet_normals)
   rel.getNormal(4, 2, norm);
   TEST_FLOATING_EQUALITY( norm[0], -nx/nxny2, 1e-14);
   TEST_FLOATING_EQUALITY( norm[1], +ny/nxny2, 1e-14);
-  
+
   // and the last face is pointing to the right.
   rel.getNormal(4, 3, norm);
   TEST_FLOATING_EQUALITY( norm[0], +1.0, 1e-14);
@@ -296,7 +296,7 @@ TEUCHOS_UNIT_TEST(tFullRelations, test_tri_normals)
 
   Teuchos::RCP<panzer::PhysicsBlock> physicsBlock = createPhysicsBlock(mesh);
   Teuchos::RCP<std::vector<panzer::Workset> > work_sets = panzer_stk::buildWorksets(*mesh,physicsBlock->elementBlockID(),
-                                                                                          physicsBlock->getWorksetNeeds());                    
+                                                                                          physicsBlock->getWorksetNeeds());
 
   rel.setNormals(work_sets);
   std::vector<double> norm;

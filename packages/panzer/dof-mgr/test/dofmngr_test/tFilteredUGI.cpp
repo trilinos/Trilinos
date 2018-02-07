@@ -60,7 +60,7 @@
 #include "UnitTest_ConnManager.hpp"
 
 // include some intrepid basis functions
-// 2D basis 
+// 2D basis
 #include "Intrepid2_HGRAD_QUAD_C1_FEM.hpp"
 
 #include "Kokkos_DynRankView.hpp"
@@ -89,7 +89,7 @@ Teuchos::RCP<const panzer::FieldPattern> buildFieldPattern()
 // this just excercises a bunch of functions
 TEUCHOS_UNIT_TEST(tFilteredUGI,equivalence_test)
 {
-   RCP<const Teuchos::MpiComm<int> > tComm 
+   RCP<const Teuchos::MpiComm<int> > tComm
      = rcp(new Teuchos::MpiComm<int>(Teuchos::opaqueWrapper(MPI_COMM_WORLD)));
 
    // panzer::pauseToAttach();
@@ -99,13 +99,13 @@ TEUCHOS_UNIT_TEST(tFilteredUGI,equivalence_test)
    using Teuchos::rcp_dynamic_cast;
 
    int myRank = tComm->getRank();
-   int numProc = tComm->getSize();   
+   int numProc = tComm->getSize();
 
    RCP<ConnManager<int,int> > connManager = rcp(new unit_test::ConnManager<int>(myRank,numProc));
-   RCP<DOFManager<int,int> > dofManager = rcp(new DOFManager<int,int>); 
+   RCP<DOFManager<int,int> > dofManager = rcp(new DOFManager<int,int>);
    dofManager->setConnManager(connManager,MPI_COMM_WORLD);
 
-   RCP<const panzer::FieldPattern> patternC1 
+   RCP<const panzer::FieldPattern> patternC1
      = buildFieldPattern<Intrepid2::Basis_HGRAD_QUAD_C1_FEM<PHX::exec_space,double,double> >();
 
    dofManager->addField("T",patternC1); // add it to all three blocks
@@ -143,7 +143,7 @@ TEUCHOS_UNIT_TEST(tFilteredUGI,equivalence_test)
        TEST_EQUALITY(lids[i],lids_f[i]);
      }
    }
-   
+
    // check owned and ghosted
    {
      std::vector<int> indices, indices_f;
@@ -157,7 +157,7 @@ TEUCHOS_UNIT_TEST(tFilteredUGI,equivalence_test)
      }
    }
 
-   // check owned 
+   // check owned
    {
      std::vector<int> indices, indices_f;
 
@@ -184,7 +184,7 @@ TEUCHOS_UNIT_TEST(tFilteredUGI,equivalence_test)
 // this just excercises a bunch of functions
 TEUCHOS_UNIT_TEST(tFilteredUGI,filtering)
 {
-   RCP<const Teuchos::MpiComm<int> > tComm 
+   RCP<const Teuchos::MpiComm<int> > tComm
      = rcp(new Teuchos::MpiComm<int>(Teuchos::opaqueWrapper(MPI_COMM_WORLD)));
 
    // panzer::pauseToAttach();
@@ -193,14 +193,14 @@ TEUCHOS_UNIT_TEST(tFilteredUGI,filtering)
    using Teuchos::rcp;
    using Teuchos::rcp_dynamic_cast;
 
-   int myRank = tComm->getRank(); 
-   int numProc = tComm->getSize(); 
+   int myRank = tComm->getRank();
+   int numProc = tComm->getSize();
 
    RCP<ConnManager<int,int> > connManager = rcp(new unit_test::ConnManager<int>(myRank,numProc));
-   RCP<DOFManager<int,int> > dofManager = rcp(new DOFManager<int,int>); 
+   RCP<DOFManager<int,int> > dofManager = rcp(new DOFManager<int,int>);
    dofManager->setConnManager(connManager,MPI_COMM_WORLD);
 
-   RCP<const panzer::FieldPattern> patternC1 
+   RCP<const panzer::FieldPattern> patternC1
      = buildFieldPattern<Intrepid2::Basis_HGRAD_QUAD_C1_FEM<PHX::exec_space,double,double> >();
 
    dofManager->addField("T",patternC1); // add it to all three blocks
@@ -295,9 +295,9 @@ TEUCHOS_UNIT_TEST(tFilteredUGI,filtering)
      TEST_ASSERT(indices_f.size()<=indices.size());
 
      // allocate space
-     diff.resize(indices.size()); 
+     diff.resize(indices.size());
 
-     // sort each set of owned indices, then do a set difference and 
+     // sort each set of owned indices, then do a set difference and
      // crop the difference indices
      std::sort(indices.begin(),indices.end());
      std::sort(indices_f.begin(),indices_f.end());
@@ -332,9 +332,9 @@ TEUCHOS_UNIT_TEST(tFilteredUGI,filtering)
     // Check that the size didn't shrink.
     TEST_ASSERT(filteredIndices.size() >= indices.size())
 
-    // Sort each set of ghosted indices, and then do a set difference and 
+    // Sort each set of ghosted indices, and then do a set difference and
     // crop the difference indices.
-    diff.resize(filteredIndices.size()); 
+    diff.resize(filteredIndices.size());
     sort(indices.begin(), indices.end());
     sort(filteredIndices.begin(), filteredIndices.end());
     vector<int>::iterator it = set_difference(filteredIndices.begin(),
@@ -386,10 +386,10 @@ TEUCHOS_UNIT_TEST(tFilteredUGI,filtering)
      // check that the size didn't grow
      TEST_ASSERT(indices_f.size()<indices.size());
 
-     // sort each set of owned indices, then do a set difference and 
+     // sort each set of owned indices, then do a set difference and
      // crop the difference indices
      std::vector<int> diff;
-     diff.resize(indices.size()); 
+     diff.resize(indices.size());
      std::sort(indices.begin(),indices.end());
      std::sort(indices_f.begin(),indices_f.end());
      std::vector<int>::iterator it = std::set_difference(indices.begin(),indices.end(),

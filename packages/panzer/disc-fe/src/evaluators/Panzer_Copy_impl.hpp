@@ -55,13 +55,13 @@ PHX_EVALUATOR_CTOR(Copy,p)
   std::string input_name = p.get<std::string>("Source Name");
   std::string output_name = p.get<std::string>("Destination Name");
   Teuchos::RCP<PHX::DataLayout> data_layout = p.get< Teuchos::RCP<PHX::DataLayout> >("Data Layout");
-  
+
   input  = PHX::MDField<const ScalarT>(input_name, data_layout);
   output = PHX::MDField<ScalarT>(output_name, data_layout);
-  
+
   this->addDependentField(input);
   this->addEvaluatedField(output);
- 
+
   std::string n = "Copy Evaluator: " + input_name + " => " + output_name;
   this->setName(n);
 }
@@ -77,7 +77,7 @@ PHX_POST_REGISTRATION_SETUP(Copy, /* worksets */, fm)
 
 //**********************************************************************
 PHX_EVALUATE_FIELDS(Copy, /* workset */)
-{ 
+{
   output.deep_copy(input);
 }
 

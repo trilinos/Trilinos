@@ -70,7 +70,7 @@ namespace panzer_stk {
 				 const std::string& elementBlockName,
 				 std::ostream* /* out */,
 				 std::ostream* pout)
-  {    
+  {
     using panzer::Cell;
     using panzer::NODE;
     using panzer::Dim;
@@ -78,11 +78,11 @@ namespace panzer_stk {
     using Teuchos::RCP;
 
     panzer::MDFieldArrayFactory af("",true);
-    
+
     RCP<stk::mesh::MetaData> metaData = mesh->getMetaData();
     RCP<stk::mesh::BulkData> bulkData = mesh->getBulkData();
 
-    // Grab all nodes for a surface including ghosted to get correct contributions to normal average    
+    // Grab all nodes for a surface including ghosted to get correct contributions to normal average
     stk::mesh::Part * sidePart = mesh->getSideset(sidesetName);
     stk::mesh::Part * elmtPart = mesh->getElementBlockPart(elementBlockName);
     stk::mesh::Selector sideSelector = *sidePart;
@@ -109,7 +109,7 @@ namespace panzer_stk {
 
     // maps a panzer local element id to a list of normals
     std::unordered_map<unsigned,std::vector<double> > nodeNormals;
-    
+
     TEUCHOS_ASSERT(sides.size() == localSideTopoIDs.size());
     TEUCHOS_ASSERT(localSideTopoIDs.size() == parentElements.size());
 
@@ -121,26 +121,26 @@ namespace panzer_stk {
     std::vector<std::size_t>::const_iterator sideID = localSideTopoIDs.begin();
     std::vector<stk::mesh::Entity>::const_iterator parentElement = parentElements.begin();
 
-    // KK: invoke serial interface; cubDegree is 1 and integration point is one 
+    // KK: invoke serial interface; cubDegree is 1 and integration point is one
     //     for debugging statement, use max dimension
     // this lookup table setup is necessary before any impl::celltools is called
     Intrepid2::Impl::CellTools::setSubcellParametrization();
     Kokkos::DynRankView<double,Kokkos::HostSpace> normal_at_point("normal",3); // parentTopology->getDimension());
     for ( ; sideID != localSideTopoIDs.end(); ++side,++sideID,++parentElement) {
-    
+
       std::vector<stk::mesh::Entity> elementEntities;
       elementEntities.push_back(*parentElement); // notice this is size 1!
-      PHX::MDField<double,panzer::Cell,panzer::NODE,panzer::Dim> vertices 
+      PHX::MDField<double,panzer::Cell,panzer::NODE,panzer::Dim> vertices
           = af.buildStaticArray<double,Cell,NODE,Dim>("",elementEntities.size(), parentTopology->getVertexCount(), mesh->getDimension());
       mesh->getElementVerticesNoResize(elementEntities,elementBlockName,vertices);
-      
+
       panzer::CellData sideCellData(1,*sideID,parentTopology); // this is size 1 because elementEntties is size 1!
       RCP<panzer::IntegrationRule> ir = Teuchos::rcp(new panzer::IntegrationRule(cubDegree,sideCellData));
 
       panzer::IntegrationValues2<double> iv("",true);
       iv.setupArrays(ir);
       iv.evaluateValues(vertices);
-      
+
       // KK: use serial interface; jac_at_point (D,D) from (C,P,D,D)
       {
         auto jac_at_point = Kokkos::subview(iv.jac.get_view(), 0, 0, Kokkos::ALL(), Kokkos::ALL());
@@ -182,9 +182,9 @@ namespace panzer_stk {
 
 	double sum = 0.0;
 	for (unsigned dim = 0; dim < parentTopology->getDimension(); ++dim)
-	  sum += (node->second[surface*parentTopology->getDimension() + dim]) * 
+	  sum += (node->second[surface*parentTopology->getDimension() + dim]) *
 	    (node->second[surface*parentTopology->getDimension() + dim]);
-	
+
 	contribArea[surface] = std::sqrt(sum);
 
 	totalArea += contribArea[surface];
@@ -204,31 +204,31 @@ namespace panzer_stk {
       }
 
       if (pout != NULL) {
-	*pout << "surface normal before normalization: " 
+	*pout << "surface normal before normalization: "
 	      << "gid(" << node->first << ")"
 	      << ", normal(" << normals[node->first][0] << "," << normals[node->first][1] << "," << normals[node->first][2] << ")"
 	      << std::endl;
       }
-	    
+
       double sum = 0.0;
       for (unsigned dim = 0; dim < parentTopology->getDimension(); ++dim)
 	sum += normals[node->first][dim] * normals[node->first][dim];
 
       for (unsigned dim = 0; dim < parentTopology->getDimension(); ++dim)
 	normals[node->first][dim] /= std::sqrt(sum);
-      
+
       if (pout != NULL) {
-	*pout << "surface normal after normalization: " 
+	*pout << "surface normal after normalization: "
 	      << "gid(" << node->first << ")"
-	      << ", normal(" 
-	      << normals[node->first][0] << "," 
-	      << normals[node->first][1] << "," 
+	      << ", normal("
+	      << normals[node->first][0] << ","
+	      << normals[node->first][1] << ","
 	      << normals[node->first][2] << ")"
 	      << std::endl;
       }
 
     }
-    
+
   }
 
   void computeSidesetNodeNormals(std::unordered_map<std::size_t,Kokkos::DynRankView<double,PHX::Device> >& normals,
@@ -237,17 +237,17 @@ namespace panzer_stk {
 				 const std::string& elementBlockName,
 				 std::ostream* out,
 				 std::ostream* pout)
-  {    
+  {
     using Teuchos::RCP;
-    
+
     std::unordered_map<unsigned,std::vector<double> > nodeEntityIdToNormals;
-    
+
     computeSidesetNodeNormals(nodeEntityIdToNormals,mesh,sidesetName,elementBlockName,out,pout);
 
     RCP<stk::mesh::MetaData> metaData = mesh->getMetaData();
     RCP<stk::mesh::BulkData> bulkData = mesh->getBulkData();
 
-    // Grab all nodes for a surface including ghosted to get correct contributions to normal average    
+    // Grab all nodes for a surface including ghosted to get correct contributions to normal average
     stk::mesh::Part * sidePart = mesh->getSideset(sidesetName);
     stk::mesh::Part * elmtPart = mesh->getElementBlockPart(elementBlockName);
     stk::mesh::Selector sideSelector = *sidePart;
@@ -261,12 +261,12 @@ namespace panzer_stk {
     std::vector<std::size_t> localSideTopoIDs;
     std::vector<stk::mesh::Entity> parentElements;
     panzer_stk::workset_utils::getUniversalSubcellElements(*mesh,elementBlockName,sides,localSideTopoIDs,parentElements);
-    
+
     std::vector<stk::mesh::Entity>::const_iterator side = sides.begin();
     std::vector<std::size_t>::const_iterator sideID = localSideTopoIDs.begin();
     std::vector<stk::mesh::Entity>::const_iterator parentElement = parentElements.begin();
     for ( ; sideID != localSideTopoIDs.end(); ++side,++sideID,++parentElement) {
-    
+
       // loop over nodes in nodes in side element
       const size_t numNodes = bulkData->num_nodes(*parentElement);
       stk::mesh::Entity const* nodeRelations = bulkData->begin_nodes(*parentElement);
@@ -277,7 +277,7 @@ namespace panzer_stk {
         stk::mesh::Entity node = nodeRelations[nodeIndex];
 	// if the node is on the sideset, insert, otherwise set normal
 	// to zero (it is an interior node of the parent element).
-	if (nodeEntityIdToNormals.find(bulkData->identifier(node)) != nodeEntityIdToNormals.end()) { 
+	if (nodeEntityIdToNormals.find(bulkData->identifier(node)) != nodeEntityIdToNormals.end()) {
 	  for (unsigned dim = 0; dim < parentTopology->getDimension(); ++dim) {
 	    (normals[mesh->elementLocalId(*parentElement)])(nodeIndex,dim) = (nodeEntityIdToNormals[bulkData->identifier(node)])[dim];
 	  }
@@ -288,7 +288,7 @@ namespace panzer_stk {
 	  }
 	}
       }
- 
+
     }
 
   }

@@ -62,37 +62,37 @@
 #include "Panzer_Evaluator_WithBaseImpl.hpp"
 
 namespace panzer {
-  
+
   template <typename EvalT>
   class BCStrategy_WeakDirichlet_DefaultImpl : public panzer::BCStrategy<EvalT>,
 					 public panzer::GlobalDataAcceptorDefaultImpl,
 					 public panzer::EvaluatorWithBaseImpl<panzer::Traits>
   {
-    
-  public:    
-    
+
+  public:
+
     BCStrategy_WeakDirichlet_DefaultImpl(const panzer::BC& bc, const Teuchos::RCP<panzer::GlobalData>& global_data);
-    
+
     virtual ~BCStrategy_WeakDirichlet_DefaultImpl();
-    
+
     //! \name Derived from BCStrategy
-    //@{ 
+    //@{
 
     virtual void setup(const panzer::PhysicsBlock& side_pb, const Teuchos::ParameterList& user_data) = 0;
-      
+
     virtual void buildAndRegisterEvaluators(PHX::FieldManager<panzer::Traits>& fm,
 					    const panzer::PhysicsBlock& side_pb,
 					    const panzer::ClosureModelFactory_TemplateManager<panzer::Traits>& factory,
 					    const Teuchos::ParameterList& models,
 					    const Teuchos::ParameterList& user_data) const = 0;
 
-    virtual void 
+    virtual void
     buildAndRegisterGatherScatterEvaluators(PHX::FieldManager<panzer::Traits>& fm,
 					    const panzer::PhysicsBlock& side_pb,
 					    const panzer::LinearObjFactory<panzer::Traits> & lof,
 					    const Teuchos::ParameterList& user_data) const;
 
-    virtual void 
+    virtual void
     buildAndRegisterScatterEvaluators(PHX::FieldManager<panzer::Traits>& fm,
 				      const panzer::PhysicsBlock& side_pb,
 				      const LinearObjFactory<panzer::Traits> & lof,
@@ -106,7 +106,7 @@ namespace panzer {
     //@}
 
     //! \name Derived from PHX::EvaluatorWithDefaultImpl
-    //@{ 
+    //@{
     virtual void postRegistrationSetup(typename Traits::SetupData d,
 				       PHX::FieldManager<Traits>& vm) = 0;
 
@@ -114,19 +114,19 @@ namespace panzer {
     //@}
 
     //! \name User Interface methods to provide information to the default implementation to be able to build the default evaluators for a Neumann BC
-    //@{ 
+    //@{
 
     //! Requires that a gather evaluator for the DOF be constructed.
     virtual void requireDOFGather(const std::string required_dof_name);
 
     /** \brief Adds a residual contribution for a neumann condition to a particular equation
-	
+
       \param residual_name [in] Name of the residual field that is to be scattered to the global residual.
       \param dof_name [in] Name of the DOF residual that the Neumann contribution should be added to.
       \param flux_name [in] Name of the flux field that will be integrated over to form the residual.
       \param integration_order [in] Order of the integration rule needed to define the data layouts for the flux integration.
       \param side_pb [in] The side physics block.  Used to build the PureBasis and IntegrationRule for a residual contribution.
-    */ 
+    */
     virtual void addResidualContribution(const std::string residual_name,
 					 const std::string dof_name,
 					 const std::string flux_name,
@@ -138,20 +138,20 @@ namespace panzer {
 
     //@}
 
-    
+
     //! \name Query methods for underlying data
-    //@{ 
+    //@{
 
     //! Returns the boundary condition data for this object
     const panzer::BC bc() const;
 
     //@}
 
-    
+
   private:
 
     //! \name Utility functions used by default implementation
-    //@{ 
+    //@{
 
     //! Finds the basis for the corresponding dof_name in the physics block.
     Teuchos::RCP<panzer::PureBasis> getBasis(const std::string dof_name,

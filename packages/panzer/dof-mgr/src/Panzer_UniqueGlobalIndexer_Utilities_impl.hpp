@@ -62,7 +62,7 @@ nc2c_vector(const std::vector<Teuchos::RCP<UniqueGlobalIndexer<LocalOrdinalT,Glo
 {
   std::vector<Teuchos::RCP<const UniqueGlobalIndexer<LocalOrdinalT,GlobalOrdinalT> > > vec;
 
-  for(std::size_t blk=0;blk<ugis.size();blk++) 
+  for(std::size_t blk=0;blk<ugis.size();blk++)
     vec.push_back(ugis[blk]);
 
   return vec;
@@ -127,14 +127,14 @@ void computeBlockOffsets(const std::string & blockId,
 }
 
 template <typename LocalOrdinalT,typename GlobalOrdinalT>
-std::string 
+std::string
 printUGILoadBalancingInformation(const UniqueGlobalIndexer<LocalOrdinalT,GlobalOrdinalT> & ugi)
 {
   std::vector<GlobalOrdinalT> owned;
   ugi.getOwnedIndices(owned);
 
   std::size_t myOwnedCount = owned.size();
- 
+
   std::size_t sum=0,min=0,max=0;
 
   // get min,max and sum
@@ -148,7 +148,7 @@ printUGILoadBalancingInformation(const UniqueGlobalIndexer<LocalOrdinalT,GlobalO
 
   double variance = 0.0;
   Teuchos::reduceAll(*ugi.getComm(),Teuchos::REDUCE_SUM,1,&dev2,&variance);
- 
+
   double mean = sum / double(ugi.getComm()->getSize());
   variance = variance / double(ugi.getComm()->getSize());
 
@@ -171,8 +171,8 @@ printMeshTopology(std::ostream & os,const panzer::UniqueGlobalIndexer<LocalOrdin
     const std::vector<LocalOrdinalT> & elements = ugi.getElementBlock(block_ids[b]);
 
     os << "Element Block: \"" << block_ids[b] << "\"" << std::endl;
- 
-    // loop over element in this element block, write out to 
+
+    // loop over element in this element block, write out to
     for(std::size_t e=0;e<elements.size();e++) {
       // extract LIDs, this is returned by reference nominally for performance
       Kokkos::View<const int*, PHX::Device> lids = ugi.getElementLIDs(elements[e]);
@@ -210,7 +210,7 @@ buildGhostedFieldReducedVector(const UniqueGlobalIndexer<LocalOrdinalT,GlobalOrd
 
    std::vector<int> fieldNumbers(indices.size(),-1);
 
-   Teuchos::RCP<Map> ghostedMap 
+   Teuchos::RCP<Map> ghostedMap
          = Teuchos::rcp(new Map(Teuchos::OrdinalTraits<GlobalOrdinalT>::invalid(), Teuchos::arrayViewFromVector(indices),
                                 Teuchos::OrdinalTraits<GlobalOrdinalT>::zero(), ugi.getComm()));
 
@@ -220,7 +220,7 @@ buildGhostedFieldReducedVector(const UniqueGlobalIndexer<LocalOrdinalT,GlobalOrd
 
       const std::vector<LocalOrdinalT> & elements = ugi.getElementBlock(blockId);
       const std::vector<int> & fields = ugi.getBlockFieldNumbers(blockId);
- 
+
       // loop over all elements, and set field number in output array
       std::vector<GlobalOrdinalT> gids(fields.size());
       for(std::size_t e=0;e<elements.size();e++) {
@@ -231,7 +231,7 @@ buildGhostedFieldReducedVector(const UniqueGlobalIndexer<LocalOrdinalT,GlobalOrd
             GlobalOrdinalT gid = gids[f];
             std::size_t lid = ghostedMap->getLocalElement(gid); // hash table lookup
 
-            fieldNumbers[lid] = fieldNum; 
+            fieldNumbers[lid] = fieldNum;
          }
       }
    }
@@ -246,7 +246,7 @@ buildGhostedFieldReducedVector(const UniqueGlobalIndexer<LocalOrdinalT,GlobalOrd
       }
    }
 
-   Teuchos::RCP<Map> reducedMap 
+   Teuchos::RCP<Map> reducedMap
       = Teuchos::rcp(new Map(Teuchos::OrdinalTraits<GlobalOrdinalT>::invalid(), Teuchos::arrayViewFromVector(reducedIndices),
                              Teuchos::OrdinalTraits<GlobalOrdinalT>::zero(), ugi.getComm()));
    return Teuchos::rcp(new IntVector(reducedMap,Teuchos::arrayViewFromVector(reducedFieldNumbers)));
@@ -274,7 +274,7 @@ buildGhostedFieldVector(const UniqueGlobalIndexer<LocalOrdinalT,GlobalOrdinalT> 
    typedef Tpetra::Vector<int,int,GlobalOrdinalT,Node> IntVector;
    typedef Tpetra::Import<int,GlobalOrdinalT,Node> Importer;
 
-   // first step: get a reduced field number vector and build a map to 
+   // first step: get a reduced field number vector and build a map to
    // contain the full field number vector
    ///////////////////////////////////////////////////////////////////////////////
 
@@ -292,7 +292,7 @@ buildGhostedFieldVector(const UniqueGlobalIndexer<LocalOrdinalT,GlobalOrdinalT> 
    Teuchos::RCP<const Map> sourceMap = source->getMap();
 
    // second step: perform the global communciation required to fix the
-   // interface conditions (where this processor doesn't know what field  
+   // interface conditions (where this processor doesn't know what field
    // some indices are)
    ///////////////////////////////////////////////////////////////////////////////
    Teuchos::RCP<IntVector> dest = Teuchos::rcp(new IntVector(destMap));
@@ -318,7 +318,7 @@ void updateGhostedDataReducedVector(const std::string & fieldName,const std::str
    int fieldNum = ugi.getFieldNum(fieldName);
    const std::vector<LocalOrdinalT> & elements = ugi.getElementBlock(blockId);
    const std::vector<int> & fieldOffsets = ugi.getGIDFieldOffsets(blockId,fieldNum);
-   
+
    TEUCHOS_TEST_FOR_EXCEPTION(data.dimension(0)!=elements.size(),std::runtime_error,
                       "panzer::updateGhostedDataReducedVector: data cell dimension does not match up with block cell count");
 
@@ -327,9 +327,9 @@ void updateGhostedDataReducedVector(const std::string & fieldName,const std::str
    if(rank==2) {
       // loop over elements distributing relevent data to vector
       std::vector<GlobalOrdinalT> gids;
-      for(std::size_t e=0;e<elements.size();e++) { 
+      for(std::size_t e=0;e<elements.size();e++) {
          ugi.getElementGIDs(elements[e],gids);
-   
+
          for(std::size_t f=0;f<fieldOffsets.size();f++) {
             std::size_t localIndex = dataMap->getLocalElement(gids[fieldOffsets[f]]); // hash table lookup
             dataVector.replaceLocalValue(localIndex,0,data(e,f));
@@ -338,15 +338,15 @@ void updateGhostedDataReducedVector(const std::string & fieldName,const std::str
    }
    else if(rank==3) {
       std::size_t entries = data.dimension(2);
- 
+
       TEUCHOS_TEST_FOR_EXCEPTION(dataVector.getNumVectors()!=entries,std::runtime_error,
                       "panzer::updateGhostedDataReducedVector: number of columns in data vector inconsistent with data array");
 
       // loop over elements distributing relevent data to vector
       std::vector<GlobalOrdinalT> gids;
-      for(std::size_t e=0;e<elements.size();e++) { 
+      for(std::size_t e=0;e<elements.size();e++) {
          ugi.getElementGIDs(elements[e],gids);
-   
+
          for(std::size_t f=0;f<fieldOffsets.size();f++) {
             std::size_t localIndex = dataMap->getLocalElement(gids[fieldOffsets[f]]); // hash table lookup
             for(std::size_t v=0;v<entries;v++)
@@ -370,12 +370,12 @@ getFieldMap(int fieldNum,const Tpetra::Vector<int,int,GlobalOrdinalT,Node> & fie
    fieldTVector.get1dCopy(Teuchos::arrayViewFromVector(fieldVector));
 
    std::vector<GlobalOrdinalT> mapVector;
-   for(std::size_t i=0;i<fieldVector.size();i++) { 
+   for(std::size_t i=0;i<fieldVector.size();i++) {
       if(fieldVector[i]==fieldNum)
          mapVector.push_back(origMap->getGlobalElement(i));
    }
 
-   Teuchos::RCP<Tpetra::Map<int,GlobalOrdinalT,Node> > finalMap 
+   Teuchos::RCP<Tpetra::Map<int,GlobalOrdinalT,Node> > finalMap
       = Teuchos::rcp(new Tpetra::Map<int,GlobalOrdinalT,Node>(
                                 Teuchos::OrdinalTraits<GlobalOrdinalT>::invalid(), Teuchos::arrayViewFromVector(mapVector),
                                 Teuchos::OrdinalTraits<GlobalOrdinalT>::zero(), origMap->getComm()));
@@ -388,13 +388,13 @@ namespace orientation_helpers {
 template <typename GlobalOrdinalT>
 void computeCellEdgeOrientations(const std::vector<std::pair<int,int> > & topEdgeIndices,
                                  const std::vector<GlobalOrdinalT> & topology,
-                                 const FieldPattern & fieldPattern, 
+                                 const FieldPattern & fieldPattern,
                                  std::vector<signed char> & orientation)
 {
    // LOCAL element orientations are always set so that they flow in the positive
    // direction along an edge from node 0 to node 1. As a result if the GID of
    // node 0 is larger then node 1 then the GLOBAL orientation is -1 (and positive
-   // otherwise). The local definition of the edge direction is defined by 
+   // otherwise). The local definition of the edge direction is defined by
    // the shards cell topology.
 
    TEUCHOS_ASSERT(orientation.size()==std::size_t(fieldPattern.numberIds()));
@@ -403,7 +403,7 @@ void computeCellEdgeOrientations(const std::vector<std::pair<int,int> > & topEdg
 
    for(std::size_t e=0;e<topEdgeIndices.size();e++) {
       // grab topological nodes
-      const std::pair<int,int> nodes = topEdgeIndices[e]; 
+      const std::pair<int,int> nodes = topEdgeIndices[e];
 
       // extract global values of topological nodes
       GlobalOrdinalT v0 = topology[nodes.first];
@@ -412,12 +412,12 @@ void computeCellEdgeOrientations(const std::vector<std::pair<int,int> > & topEdg
       // using simple rule make a decision about orientation
       signed char edgeOrientation = 1;
       if(v1>v0)
-         edgeOrientation = 1; 
+         edgeOrientation = 1;
       else if(v0>v1)
-         edgeOrientation = -1; 
+         edgeOrientation = -1;
       else
       { TEUCHOS_ASSERT(false); }
-      
+
       // grab edgeIndices to be set to compute orientation
       const std::vector<int> & edgeIndices = fieldPattern.getSubcellIndices(edgeDim,e);
       for(std::size_t s=0;s<edgeIndices.size();s++)
@@ -428,7 +428,7 @@ void computeCellEdgeOrientations(const std::vector<std::pair<int,int> > & topEdg
 template <typename GlobalOrdinalT>
 void computeCellFaceOrientations(const std::vector<std::vector<int> > & topFaceIndices,
                                  const std::vector<GlobalOrdinalT> & topology,
-                                 const FieldPattern & fieldPattern, 
+                                 const FieldPattern & fieldPattern,
                                  std::vector<signed char> & orientation)
 {
    // LOCAL element orientations are always set so that they flow in the positive
@@ -447,17 +447,17 @@ void computeCellFaceOrientations(const std::vector<std::vector<int> > & topFaceI
 
    TEUCHOS_ASSERT(orientation.size()==std::size_t(fieldPattern.numberIds()));
 
-   int faceDim = 2; 
+   int faceDim = 2;
 
    for(std::size_t f=0;f<topFaceIndices.size();f++) {
       // grab topological nodes
-      const std::vector<int> & nodes = topFaceIndices[f]; 
+      const std::vector<int> & nodes = topFaceIndices[f];
       std::vector<GlobalOrdinalT> globals(nodes.size());
       for(std::size_t n=0;n<nodes.size();n++)
-         globals[n] = topology[nodes[n]]; 
+         globals[n] = topology[nodes[n]];
 
-      typename std::vector<GlobalOrdinalT>::const_iterator itr 
-          = std::min_element(globals.begin(),globals.end()); 
+      typename std::vector<GlobalOrdinalT>::const_iterator itr
+          = std::min_element(globals.begin(),globals.end());
 
       TEUCHOS_TEST_FOR_EXCEPTION(itr==globals.end(),std::out_of_range,
                                  "panzer::orientation_helpers::computeCellFaceOrientations: A face index array "
@@ -477,7 +477,7 @@ void computeCellFaceOrientations(const std::vector<std::vector<int> > & topFaceI
       TEUCHOS_ASSERT(std::find(globals.begin(),globals.end(),vbefore)!=globals.end());
       TEUCHOS_ASSERT(std::find(globals.begin(),globals.end(),vafter)!=globals.end());
 
-      // print out information about the found nodes and also what 
+      // print out information about the found nodes and also what
       // order they were in originally
       std::cout << "\nFace Order = ";
       for(std::size_t l=0;l<globals.size();l++)
@@ -492,12 +492,12 @@ void computeCellFaceOrientations(const std::vector<std::vector<int> > & topFaceI
       // Based on the next lowest global id starting from the minimum
       signed char faceOrientation = 1;
       if(vafter>vbefore) // means smaller in clockwise direction
-         faceOrientation = -1; 
+         faceOrientation = -1;
       else if(vbefore>vafter) // means smaller in counter clockwise direction
-         faceOrientation = 1; 
+         faceOrientation = 1;
       else
       { TEUCHOS_ASSERT(false); } // we got an equality somehow!
-      
+
       // grab faceIndices to be set to compute orientation
       const std::vector<int> & faceIndices = fieldPattern.getSubcellIndices(faceDim,f);
       for(std::size_t s=0;s<faceIndices.size();s++)
@@ -558,7 +558,7 @@ ArrayToFieldVector<LocalOrdinalT,GlobalOrdinalT,Node>::
 
       // make sure field is in correct block
       if(!ugi_->fieldInBlock(fieldName,block))
-         continue; 
+         continue;
 
       // extract data vector
       typename std::map<std::string,ArrayT>::const_iterator blockItr = data.find(block);
@@ -566,7 +566,7 @@ ArrayToFieldVector<LocalOrdinalT,GlobalOrdinalT,Node>::
                         "ArrayToFieldVector::getDataVector: can not find block \""+block+"\".");
 
      const ArrayT & d = blockItr->second;
-     updateGhostedDataReducedVector<ScalarT,ArrayT,LocalOrdinalT,GlobalOrdinalT,Node>(fieldName,block,*ugi_,d,*finalReducedVec); 
+     updateGhostedDataReducedVector<ScalarT,ArrayT,LocalOrdinalT,GlobalOrdinalT,Node>(fieldName,block,*ugi_,d,*finalReducedVec);
    }
 
    // build final (not reduced vector)
@@ -611,10 +611,10 @@ ArrayToFieldVector<LocalOrdinalT,GlobalOrdinalT,Node>::
 
    Teuchos::RCP<Tpetra::MultiVector<ScalarT,int,GlobalOrdinalT,Node> > destVec
          = Teuchos::rcp(new Tpetra::MultiVector<ScalarT,int,GlobalOrdinalT,Node>(destMap,sourceVec->getNumVectors()));
-   
+
    // do import
    Tpetra::Import<int,GlobalOrdinalT> importer(sourceVec->getMap(),destMap);
-   destVec->doImport(*sourceVec,importer,Tpetra::INSERT); 
+   destVec->doImport(*sourceVec,importer,Tpetra::INSERT);
 
    return destVec;
 }
@@ -661,5 +661,5 @@ getFieldMap(int fieldNum) const
 
    return fieldMaps_[fieldNum];
 }
-                                   
+
 } // end namspace panzer

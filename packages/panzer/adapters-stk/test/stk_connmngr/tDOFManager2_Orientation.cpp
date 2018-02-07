@@ -84,7 +84,7 @@ Teuchos::RCP<panzer::ConnManager<int,int> > buildQuadMesh(stk::ParallelMachine c
 
    panzer_stk::SquareQuadMeshFactory meshFact;
    meshFact.setParameterList(Teuchos::rcpFromRef(pl));
-   
+
    Teuchos::RCP<panzer_stk::STK_Interface> mesh = meshFact.buildMesh(comm);
    return Teuchos::rcp(new panzer_stk::STKConnManager<int>(mesh));
 }
@@ -115,9 +115,9 @@ TEUCHOS_UNIT_TEST(tDOFManager_Orientation, buildTest_quad_edge_orientations)
    TEUCHOS_ASSERT(numProcs==2);
 
    // build a geometric pattern from a single basis
-   RCP<const panzer::FieldPattern> patternC1 
+   RCP<const panzer::FieldPattern> patternC1
          = buildFieldPattern<Intrepid2::Basis_HGRAD_QUAD_C1_FEM<PHX::exec_space,double,double> >();
-   RCP<const panzer::FieldPattern> patternI1 
+   RCP<const panzer::FieldPattern> patternI1
          = buildFieldPattern<Intrepid2::Basis_HCURL_QUAD_I1_FEM<PHX::exec_space,double,double> >();
    RCP<const panzer::FieldPattern> patternDIV
          = buildFieldPattern<Intrepid2::Basis_HDIV_QUAD_I1_FEM<PHX::exec_space,double,double> >();
@@ -137,7 +137,7 @@ TEUCHOS_UNIT_TEST(tDOFManager_Orientation, buildTest_quad_edge_orientations)
    dofManager->addField("e",patternDIV);
 
    dofManager->buildGlobalUnknowns();
-   
+
    const std::vector<int> & u_offsets = dofManager->getGIDFieldOffsets("eblock-0_0",dofManager->getFieldNum("u"));
    const std::vector<int> & b_offsets = dofManager->getGIDFieldOffsets("eblock-0_0",dofManager->getFieldNum("b"));
    const std::vector<int> & e_offsets = dofManager->getGIDFieldOffsets("eblock-0_0",dofManager->getFieldNum("e"));
@@ -262,7 +262,7 @@ TEUCHOS_UNIT_TEST(tDOFManager_Orientation, buildTest_quad_edge_orientations2)
    TEUCHOS_ASSERT(numProcs==2);
 
    // build a geometric pattern from a single basis
-   RCP<const panzer::FieldPattern> patternI1 
+   RCP<const panzer::FieldPattern> patternI1
          = buildFieldPattern<Intrepid2::Basis_HCURL_QUAD_I1_FEM<PHX::exec_space,double,double> >();
 
    RCP<panzer::ConnManager<int,int> > connManager = buildQuadMesh(Comm,2,2,1,1);
@@ -335,7 +335,7 @@ TEUCHOS_UNIT_TEST(tDOFManager_Orientation, buildTest_quad_edge_orientations_fail
    TEUCHOS_ASSERT(numProcs==2);
 
    // build a geometric pattern from a single basis
-   RCP<const panzer::FieldPattern> patternI1 
+   RCP<const panzer::FieldPattern> patternI1
          = buildFieldPattern<Intrepid2::Basis_HCURL_QUAD_I1_FEM<PHX::exec_space,double,double> >();
 
    RCP<panzer::ConnManager<int,int> > connManager = buildQuadMesh(Comm,2,2,1,1);

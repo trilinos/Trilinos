@@ -64,7 +64,7 @@ namespace panzer {
 template <typename LocalOrdinalT,typename GlobalOrdinalT>
 class UniqueGlobalIndexer;
 
-/** \brief Pushes residual values into the residual vector for a 
+/** \brief Pushes residual values into the residual vector for a
            Newton-based solve
 
     Currently makes an assumption that the stride is constant for dofs
@@ -83,28 +83,28 @@ class ScatterDirichletResidual_Tpetra;
 
 
 // **************************************************************
-// Residual 
+// Residual
 // **************************************************************
 template<typename TRAITS,typename LO,typename GO,typename NodeT>
 class ScatterDirichletResidual_Tpetra<panzer::Traits::Residual,TRAITS,LO,GO,NodeT>
   : public panzer::EvaluatorWithBaseImpl<TRAITS>,
     public PHX::EvaluatorDerived<panzer::Traits::Residual, TRAITS>,
     public panzer::CloneableEvaluator  {
-  
+
 public:
   ScatterDirichletResidual_Tpetra(const Teuchos::RCP<const UniqueGlobalIndexer<LO,GO> > & indexer)
      : globalIndexer_(indexer) {}
-  
+
   ScatterDirichletResidual_Tpetra(const Teuchos::RCP<const UniqueGlobalIndexer<LO,GO> > & indexer,
                                   const Teuchos::ParameterList& p);
-  
+
   void postRegistrationSetup(typename TRAITS::SetupData d,
 			     PHX::FieldManager<TRAITS>& vm);
 
   void preEvaluate(typename TRAITS::PreEvalData d);
-  
+
   void evaluateFields(typename TRAITS::EvalData workset);
-  
+
   virtual Teuchos::RCP<CloneableEvaluator> clone(const Teuchos::ParameterList & pl) const
   { return Teuchos::rcp(new ScatterDirichletResidual_Tpetra<panzer::Traits::Residual,TRAITS,LO,GO>(globalIndexer_,pl)); }
 
@@ -152,28 +152,28 @@ private:
 };
 
 // **************************************************************
-// Tangent 
+// Tangent
 // **************************************************************
 template<typename TRAITS,typename LO,typename GO,typename NodeT>
 class ScatterDirichletResidual_Tpetra<panzer::Traits::Tangent,TRAITS,LO,GO,NodeT>
   : public panzer::EvaluatorWithBaseImpl<TRAITS>,
     public PHX::EvaluatorDerived<panzer::Traits::Tangent, TRAITS>,
     public panzer::CloneableEvaluator  {
-  
+
 public:
   ScatterDirichletResidual_Tpetra(const Teuchos::RCP<const UniqueGlobalIndexer<LO,GO> > & indexer)
      : globalIndexer_(indexer) {}
-  
+
   ScatterDirichletResidual_Tpetra(const Teuchos::RCP<const UniqueGlobalIndexer<LO,GO> > & indexer,
                                   const Teuchos::ParameterList& p);
-  
+
   void postRegistrationSetup(typename TRAITS::SetupData d,
 			     PHX::FieldManager<TRAITS>& vm);
 
   void preEvaluate(typename TRAITS::PreEvalData d);
-  
+
   void evaluateFields(typename TRAITS::EvalData workset);
-  
+
   virtual Teuchos::RCP<CloneableEvaluator> clone(const Teuchos::ParameterList & pl) const
   { return Teuchos::rcp(new ScatterDirichletResidual_Tpetra<panzer::Traits::Tangent,TRAITS,LO,GO>(globalIndexer_,pl)); }
 
@@ -229,24 +229,24 @@ class ScatterDirichletResidual_Tpetra<panzer::Traits::Jacobian,TRAITS,LO,GO,Node
   : public panzer::EvaluatorWithBaseImpl<TRAITS>,
     public PHX::EvaluatorDerived<panzer::Traits::Jacobian, TRAITS>,
     public panzer::CloneableEvaluator  {
-  
+
 public:
   ScatterDirichletResidual_Tpetra(const Teuchos::RCP<const UniqueGlobalIndexer<LO,GO> > & indexer)
      : globalIndexer_(indexer) {}
-  
+
   ScatterDirichletResidual_Tpetra(const Teuchos::RCP<const UniqueGlobalIndexer<LO,GO> > & indexer,
                                   const Teuchos::ParameterList& p);
 
   void preEvaluate(typename TRAITS::PreEvalData d);
-  
+
   void postRegistrationSetup(typename TRAITS::SetupData d,
 			     PHX::FieldManager<TRAITS>& vm);
-  
+
   void evaluateFields(typename TRAITS::EvalData workset);
 
   virtual Teuchos::RCP<CloneableEvaluator> clone(const Teuchos::ParameterList & pl) const
   { return Teuchos::rcp(new ScatterDirichletResidual_Tpetra<panzer::Traits::Jacobian,TRAITS,LO,GO>(globalIndexer_,pl)); }
-  
+
 private:
 
   typedef typename panzer::Traits::Jacobian::ScalarT ScalarT;

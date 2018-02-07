@@ -58,18 +58,18 @@ class ClosureModelFactory_TemplateBuilder {
 public:
 
   template <typename EvalT>
-  Teuchos::RCP<panzer::ClosureModelFactoryBase> build() const 
+  Teuchos::RCP<panzer::ClosureModelFactoryBase> build() const
   {
     using Teuchos::RCP;
     using Teuchos::rcp;
- 
+
     RCP<user_app::ClosureModelFactory<EvalT> > closure_factory = rcp(new user_app::ClosureModelFactory<EvalT>);
 
     return Teuchos::rcp_static_cast<panzer::ClosureModelFactoryBase>(closure_factory);
   }
-    
+
 };
-  
+
 }
 
-#endif 
+#endif

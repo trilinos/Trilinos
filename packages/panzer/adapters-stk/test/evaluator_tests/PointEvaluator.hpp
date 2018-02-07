@@ -112,7 +112,7 @@ PHX_EVALUATE_FIELDS(PointEvaluator,workset)
 {
    if(isVector)
       function->evaluateContainer(this->wda(workset).int_rules[quad_index]->ip_coordinates,vectorField);
-   else 
+   else
       function->evaluateContainer(this->wda(workset).int_rules[quad_index]->ip_coordinates,vectorField);
 }
 

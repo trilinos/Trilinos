@@ -64,14 +64,14 @@ SineSolution<EvalT,Traits>::SineSolution(const std::string & name,
   solution = PHX::MDField<ScalarT,Cell,Point>(name, data_layout);
 
   this->addEvaluatedField(solution);
-  
+
   std::string n = "Sine Solution";
   this->setName(n);
 }
 
 //**********************************************************************
 template <typename EvalT,typename Traits>
-void SineSolution<EvalT,Traits>::postRegistrationSetup(typename Traits::SetupData sd,           
+void SineSolution<EvalT,Traits>::postRegistrationSetup(typename Traits::SetupData sd,
                                                        PHX::FieldManager<Traits>& fm)
 {
 
@@ -83,7 +83,7 @@ void SineSolution<EvalT,Traits>::postRegistrationSetup(typename Traits::SetupDat
 //**********************************************************************
 template <typename EvalT,typename Traits>
 void SineSolution<EvalT,Traits>::evaluateFields(typename Traits::EvalData workset)
-{ 
+{
   using panzer::index_t;
   for (index_t cell = 0; cell < workset.num_cells; ++cell) {
     for (int point = 0; point < solution.extent_int(1); ++point) {

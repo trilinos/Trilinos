@@ -10,7 +10,7 @@
 
 //  Based on Peter Dimov's proposal
 //  http://www.open-std.org/JTC1/SC22/WG21/docs/papers/2005/n1756.pdf
-//  issue 6.18. 
+//  issue 6.18.
 //
 //  This also contains public domain code from MurmurHash. From the
 //  MurmurHash header:
@@ -18,8 +18,8 @@
 // MurmurHash3 was written by Austin Appleby, and is placed in the public
 // domain. The author hereby disclaims copyright to this source code.
 
-// ******************************************************************* 
-// ******************************************************************* 
+// *******************************************************************
+// *******************************************************************
 
 #ifndef PANZER_HASH_UTILS_HPP
 #define PANZER_HASH_UTILS_HPP

@@ -52,7 +52,7 @@
 #include "Panzer_GeometricAggFieldPattern.hpp"
 
 // include some intrepid basis functions
-// 2D basis 
+// 2D basis
 #include "Intrepid2_HGRAD_TRI_C1_FEM.hpp"
 #include "Intrepid2_HGRAD_TRI_C2_FEM.hpp"
 #include "Intrepid2_HDIV_TRI_I1_FEM.hpp"

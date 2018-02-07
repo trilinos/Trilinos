@@ -69,7 +69,7 @@ public:
      * \param[in] fp Field pattern to build connectivity for
      */
    virtual void buildConnectivity(const FieldPattern & fp) = 0;
-  
+
    /** Build a clone of this connection manager, without any assumptions
      * about the required connectivity (i.e. <code>buildConnectivity</code>
      * has never been called).
@@ -96,7 +96,7 @@ public:
 
    /** What are the blockIds included in this connection manager?
      */
-   virtual void getElementBlockIds(std::vector<std::string> & elementBlockIds) const = 0; 
+   virtual void getElementBlockIds(std::vector<std::string> & elementBlockIds) const = 0;
 
    /** What are the cellTopologies linked to element blocks in this connection manager?
     */
@@ -186,7 +186,7 @@ public:
 
    /** What are the blockIds included in this connection manager?
      */
-   virtual void getElementBlockIds(std::vector<std::string> & elementBlockIds) const = 0; 
+   virtual void getElementBlockIds(std::vector<std::string> & elementBlockIds) const = 0;
 
    /** Get the local element IDs for a paricular element
      * block.

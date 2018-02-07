@@ -54,7 +54,7 @@
 namespace panzer_stk {
 
   class STK_Interface;
-  
+
 
   /** \brief Computes the normals for all nodes associated with a sideset surface
 
@@ -67,7 +67,7 @@ namespace panzer_stk {
       sidesets to be provided to allow for the union computation.
 
       \param[out] normals Map of the node normals (including ghosted nodes).  Key is the global id from the stk mesh node entity id and value is vector of the size of the parent element dimension containing the normal vector components.  Vector components will be resized on calling this method.
-      \param[in] mesh (Required) Panzer stk mesh 
+      \param[in] mesh (Required) Panzer stk mesh
       \param[in] sidesetName (Required) Name of the sideset that the normals will be computed on
       \param[in] elementBlockName (Required) Name of the element block that the outward facing normals will be computed on
       \param[in] out (Optional) The ostream used for serial debug output on print process only.  If non-null this will print debug info.
@@ -91,7 +91,7 @@ namespace panzer_stk {
       sidesets to be provided to allow for the union computation.
 
       \param[out] normals Map of the node normals (including ghosted nodes).  Key is the panzer_stk::STK_Interface local element id and value is a multidimensional array of the size of the number of nodes times the parent element dimension containing the normal vector components.  Vector components will be resized on calling this method.
-      \param[in] mesh (Required) Panzer stk mesh 
+      \param[in] mesh (Required) Panzer stk mesh
       \param[in] sidesetName (Required) Name of the sideset that the normals will be computed on
       \param[in] elementBlockName (Required) Name of the element block that the outward facing normals will be computed on
       \param[in] out (Optional) The ostream used for serial debug output on print process only.  If non-null this will print debug info.

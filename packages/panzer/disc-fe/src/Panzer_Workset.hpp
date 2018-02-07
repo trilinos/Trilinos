@@ -97,10 +97,10 @@ namespace panzer {
     //! Value correspondes to integration order.  Use the offest for indexing.
     //TEUCHOS_DEPRECATED
     Teuchos::RCP< std::vector<int> > ir_degrees;
-    
+
     //TEUCHOS_DEPRECATED
     std::vector<Teuchos::RCP<panzer::IntegrationValues2<double> > > int_rules;
-    
+
     //! Value corresponds to basis type.  Use the offest for indexing.
     //TEUCHOS_DEPRECATED
     Teuchos::RCP< std::vector<std::string> > basis_names;
@@ -119,11 +119,11 @@ namespace panzer {
     const panzer::IntegrationRule & getIntegrationRule(const panzer::IntegrationDescriptor & description) const;
 
     /// Grab the basis values for a given basis description and integration description (throws error if it doesn't exist)
-    const panzer::BasisValues2<double> & getBasisValues(const panzer::BasisDescriptor & basis_description, 
+    const panzer::BasisValues2<double> & getBasisValues(const panzer::BasisDescriptor & basis_description,
                                                         const panzer::IntegrationDescriptor & integration_description) const;
 
     /// Grab the basis values for a given basis description and integration description (throws error if it doesn't exist)
-    const panzer::BasisValues2<double> & getBasisValues(const panzer::BasisDescriptor & basis_description, 
+    const panzer::BasisValues2<double> & getBasisValues(const panzer::BasisDescriptor & basis_description,
                                                         const panzer::PointDescriptor & point_description) const;
 
     /// Grab the basis values for a given basis description and integration description (throws error if it doesn't exist)
@@ -180,7 +180,7 @@ namespace panzer {
 
     index_t num_cells;
     int subcell_dim; //! If workset corresponds to a sub cell, what is the dimension?
-    
+
     double alpha;
     double beta;
     double time;
@@ -211,7 +211,7 @@ namespace panzer {
     size_t numDetails() const { return Teuchos::nonnull(other) ? 2 : 1; }
 
   private:
-    std::size_t identifier_;    
+    std::size_t identifier_;
   };
 
   std::ostream& operator<<(std::ostream& os, const panzer::Workset& w);

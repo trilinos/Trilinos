@@ -50,16 +50,16 @@ GeometricAggFieldPattern::GeometricAggFieldPattern()
    : patternBuilt_(false), dimension_(0)
 {}
 
-  GeometricAggFieldPattern::GeometricAggFieldPattern(std::vector<std::pair<FieldType,Teuchos::RCP<const FieldPattern>>> & patterns) 
+  GeometricAggFieldPattern::GeometricAggFieldPattern(std::vector<std::pair<FieldType,Teuchos::RCP<const FieldPattern>>> & patterns)
    : patternBuilt_(false), dimension_(0)
-{ 
-   buildPattern(patterns); 
+{
+   buildPattern(patterns);
 }
 
 GeometricAggFieldPattern::GeometricAggFieldPattern(const FieldType& fieldType,
-                                                   const Teuchos::RCP<const FieldPattern> & pattern) 
+                                                   const Teuchos::RCP<const FieldPattern> & pattern)
    : patternBuilt_(false), dimension_(0)
-{ 
+{
   buildPattern(fieldType,pattern);
 }
 
@@ -77,7 +77,7 @@ void GeometricAggFieldPattern::buildPattern(const std::vector<std::pair<FieldTyp
 
    bool sameGeometry=true;
    for(std::size_t i=1;i<patterns.size();i++)
-     sameGeometry &= patterns[0].second->sameGeometry(*(patterns[i].second));       
+     sameGeometry &= patterns[0].second->sameGeometry(*(patterns[i].second));
    TEUCHOS_TEST_FOR_EXCEPTION(not sameGeometry,std::logic_error,
              "GeometricAggFieldPattern::buildPattern(): Patterns must "
              "have the same geometry!");
@@ -107,14 +107,14 @@ void GeometricAggFieldPattern::buildPattern(const std::vector<std::pair<FieldTyp
          for(std::size_t p=0;p<patterns.size();p++) {
            if ( (patterns[p].first) == FieldType::CG) {
               RCP<const FieldPattern> field = (patterns[p]).second;
-              // if dofs exist, we have a geometric entity 
+              // if dofs exist, we have a geometric entity
               const std::size_t num = ( (field->getSubcellIndices(d,s).size() > 0) ? 1 : 0 );
-              if(current.size()<num) { 
-                for(int i=num-current.size();i>0;i--,counter++) 
+              if(current.size()<num) {
+                for(int i=num-current.size();i>0;i--,counter++)
                   current.push_back(counter);
               }
             }
-         } 
+         }
       }
    }
 
@@ -129,15 +129,15 @@ void GeometricAggFieldPattern::buildPattern(const std::vector<std::pair<FieldTyp
               RCP<const FieldPattern> field = (patterns[p]).second;
               // if dofs exist, we have a geometric entity
               const std::size_t num = ( (field->getSubcellIndices(d,s).size() > 0) ? 1 : 0 );
-              if(current.size()<num) { 
-                for(int i=num-current.size();i>0;i--,counter++) 
+              if(current.size()<num) {
+                for(int i=num-current.size();i>0;i--,counter++)
                   current.push_back(counter);
               }
             }
-         } 
+         }
       }
    }
-   
+
    // record that the pattern has been built
    patternBuilt_ = true;
 }

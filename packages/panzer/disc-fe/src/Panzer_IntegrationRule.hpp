@@ -72,7 +72,7 @@ namespace panzer {
    */
   class IntegrationRule : public PointRule, public IntegrationDescriptor {
   public:
-    
+
     //! if side = -1 then we use the cell volume integration rule.
     //TEUCHOS_DEPRECATED
     IntegrationRule(int cubature_degree, const panzer::CellData& cell_data);
@@ -90,7 +90,7 @@ namespace panzer {
 
     // TODO: Move to protected
     void setup_cv(const panzer::CellData& cell_data, std::string cv_type);
-  
+
     //! Returns the order of integration (cubature degree in intrepid lingo)
     // Use getOrder() from base class
     //TEUCHOS_DEPRECATED
@@ -107,12 +107,12 @@ namespace panzer {
     //! print information about the integration rule
     virtual void print(std::ostream & os);
 
-    //! Construct an array containing the reference coordinates 
+    //! Construct an array containing the reference coordinates
     void referenceCoordinates(Kokkos::DynRankView<double,PHX::Device> & container);
 
     //! Returns the integration point offset for a given subcell_index (i.e. local face index)
     int getPointOffset(const int subcell_index) const;
-  
+
   protected:
 
     /// Setup a surface integration

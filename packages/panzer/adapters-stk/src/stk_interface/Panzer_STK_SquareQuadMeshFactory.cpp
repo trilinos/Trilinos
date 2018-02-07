@@ -89,7 +89,7 @@ Teuchos::RCP<STK_Interface> SquareQuadMeshFactory::buildUncommitedMesh(stk::Para
 
    if(xProcs_==-1) {
       // default x only decomposition
-      xProcs_ = machSize_; 
+      xProcs_ = machSize_;
       yProcs_ = 1;
    }
   TEUCHOS_TEST_FOR_EXCEPTION(int(machSize_) != xProcs_ * yProcs_, std::logic_error,
@@ -102,7 +102,7 @@ Teuchos::RCP<STK_Interface> SquareQuadMeshFactory::buildUncommitedMesh(stk::Para
    buildMetaData(parallelMach,*mesh);
 
    mesh->addPeriodicBCs(periodicBCVec_);
- 
+
    return mesh;
 }
 
@@ -141,11 +141,11 @@ void SquareQuadMeshFactory::setParameterList(const Teuchos::RCP<Teuchos::Paramet
 
    setMyParamList(paramList);
 
-   x0_ = paramList->get<double>("X0"); 
-   y0_ = paramList->get<double>("Y0"); 
+   x0_ = paramList->get<double>("X0");
+   y0_ = paramList->get<double>("Y0");
 
-   xf_ = paramList->get<double>("Xf"); 
-   yf_ = paramList->get<double>("Yf"); 
+   xf_ = paramList->get<double>("Xf");
+   yf_ = paramList->get<double>("Yf");
 
    xBlocks_ = paramList->get<int>("X Blocks");
    yBlocks_ = paramList->get<int>("Y Blocks");
@@ -223,7 +223,7 @@ void SquareQuadMeshFactory::buildMetaData(stk::ParallelMachine /* parallelMach *
       }
    }
 
-   // add sidesets 
+   // add sidesets
 #ifndef ENABLE_UNIFORM
    mesh.addSideset("left",side_ctd);
    mesh.addSideset("right",side_ctd);
@@ -274,7 +274,7 @@ void SquareQuadMeshFactory::buildBlock(stk::ParallelMachine /* parallelMach */,i
 
    double deltaX = (xf_-x0_)/double(totalXElems);
    double deltaY = (yf_-y0_)/double(totalYElems);
- 
+
    std::vector<double> coord(2,0.0);
 
    // build the nodes
@@ -395,7 +395,7 @@ void SquareQuadMeshFactory::addSideSets(STK_Interface & mesh) const
       // vertical boundaries
       ///////////////////////////////////////////
 
-      if(nx+1==totalXElems) { 
+      if(nx+1==totalXElems) {
          stk::mesh::Entity edge = mesh.findConnectivityById(element, stk::topology::EDGE_RANK, 1);
 
          // on the right
@@ -486,7 +486,7 @@ void SquareQuadMeshFactory::addNodeSets(STK_Interface & mesh) const
    // mesh.getMyElements(localElmts);
 
    Teuchos::RCP<stk::mesh::BulkData> bulkData = mesh.getBulkData();
-   if(machRank_==0) 
+   if(machRank_==0)
    {
       // add zero node to lower_left node set
       stk::mesh::Entity node = bulkData->get_entity(mesh.getNodeRank(),1);
@@ -504,7 +504,7 @@ Teuchos::Tuple<std::size_t,2> SquareQuadMeshFactory::procRankToProcTuple(std::si
 {
    std::size_t i=0,j=0;
 
-   j = procRank/xProcs_; 
+   j = procRank/xProcs_;
    procRank = procRank % xProcs_;
    i = procRank;
 

@@ -203,7 +203,7 @@ preEvaluate(
   else if (d.gedc->containsDataObject(globalDataKey_))
   {
     ged = d.gedc->getDataObject(globalDataKey_);
-  
+
     // Try to extract the linear object container.
     xEvRoGed_            = rcp_dynamic_cast<EVROGED>(ged);
     auto epetraContainer = rcp_dynamic_cast<ELOC>(ged);

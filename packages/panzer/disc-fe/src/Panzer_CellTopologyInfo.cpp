@@ -50,12 +50,12 @@
 panzer::CellTopologyInfo::
 CellTopologyInfo(int numCells, const Teuchos::RCP<const shards::CellTopology>& cellTopo)
 {
-  num_cells = numCells; 
+  num_cells = numCells;
 
   dimension = cellTopo->getDimension();
   num_edges = cellTopo->getEdgeCount();
   cell_topo_name = cellTopo->getName();
-  
+
   topology = cellTopo;
 
   initializeDataLayouts();

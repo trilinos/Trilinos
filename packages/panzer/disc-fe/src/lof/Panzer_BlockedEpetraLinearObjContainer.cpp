@@ -51,7 +51,7 @@
 
 namespace panzer {
 
-//! Make sure row and column spaces match up 
+//! Make sure row and column spaces match up
 bool BlockedEpetraLinearObjContainer::
 checkCompatibility() const
 {
@@ -62,8 +62,8 @@ checkCompatibility() const
    bool x_matches=false, f_matches=false, dxdt_matches=false;
 
    if(get_A()!=null) {
-      RCP<const VectorSpaceBase<double> > range  = get_A()->range();   
-      RCP<const VectorSpaceBase<double> > domain = get_A()->domain();   
+      RCP<const VectorSpaceBase<double> > range  = get_A()->range();
+      RCP<const VectorSpaceBase<double> > domain = get_A()->domain();
 
       if(get_x()!=null)
          x_matches = range->isCompatible(*get_x()->space());
@@ -105,7 +105,7 @@ initialize()
    if(get_dxdt()!=Teuchos::null) Thyra::assign<double>(get_dxdt().ptr(),0.0);
    if(get_f()!=Teuchos::null)    Thyra::assign<double>(get_f().ptr(),0.0);
    if(get_A()!=Teuchos::null) {
-      RCP<PhysicallyBlockedLinearOpBase<double> > Amat 
+      RCP<PhysicallyBlockedLinearOpBase<double> > Amat
             = rcp_dynamic_cast<PhysicallyBlockedLinearOpBase<double> >(get_A(),true);
       RCP<const ProductVectorSpaceBase<double> > range = Amat->productRange();
       RCP<const ProductVectorSpaceBase<double> > domain = Amat->productDomain();
@@ -117,7 +117,7 @@ initialize()
             if(block!=Teuchos::null) {
                RCP<Epetra_Operator> e_block = Thyra::get_Epetra_Operator(*block);
                rcp_dynamic_cast<Epetra_CrsMatrix>(e_block,true)->PutScalar(0.0);
-            }   
+            }
          }
       }
    }
@@ -133,7 +133,7 @@ initializeMatrix(double value)
    using Teuchos::rcp_dynamic_cast;
 
    if(get_A()!=Teuchos::null) {
-      RCP<PhysicallyBlockedLinearOpBase<double> > Amat 
+      RCP<PhysicallyBlockedLinearOpBase<double> > Amat
             = rcp_dynamic_cast<PhysicallyBlockedLinearOpBase<double> >(get_A(),true);
       RCP<const ProductVectorSpaceBase<double> > range = Amat->productRange();
       RCP<const ProductVectorSpaceBase<double> > domain = Amat->productDomain();
@@ -145,7 +145,7 @@ initializeMatrix(double value)
             if(block!=Teuchos::null) {
                RCP<Epetra_Operator> e_block = Thyra::get_Epetra_Operator(*block);
                rcp_dynamic_cast<Epetra_CrsMatrix>(e_block,true)->PutScalar(value);
-            }   
+            }
          }
       }
    }

@@ -40,8 +40,8 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef __Panzer_Integrator_DivBasisTimesScalar_impl_hpp__ 
-#define __Panzer_Integrator_DivBasisTimesScalar_impl_hpp__ 
+#ifndef __Panzer_Integrator_DivBasisTimesScalar_impl_hpp__
+#define __Panzer_Integrator_DivBasisTimesScalar_impl_hpp__
 
 #include "Intrepid2_FunctionSpaceTools.hpp"
 
@@ -54,14 +54,14 @@ namespace panzer {
 
 //**********************************************************************
 PHX_EVALUATOR_CTOR(Integrator_DivBasisTimesScalar,p) :
-  residual( p.get<std::string>("Residual Name"), 
+  residual( p.get<std::string>("Residual Name"),
 	    p.get< Teuchos::RCP<panzer::BasisIRLayout> >("Basis")->functional),
   basis_name(p.get< Teuchos::RCP<panzer::BasisIRLayout> >("Basis")->name())
 {
   Teuchos::RCP<Teuchos::ParameterList> valid_params = this->getValidParameters();
   p.validateParameters(*valid_params);
 
-  Teuchos::RCP<const PureBasis> basis 
+  Teuchos::RCP<const PureBasis> basis
      = p.get< Teuchos::RCP<BasisIRLayout> >("Basis")->getBasis();
 
   // Verify that this basis supports the curl operation
@@ -75,11 +75,11 @@ PHX_EVALUATOR_CTOR(Integrator_DivBasisTimesScalar,p) :
 
   this->addEvaluatedField(residual);
   this->addDependentField(scalar);
-  
+
   multiplier = p.get<double>("Multiplier");
   if (p.isType<Teuchos::RCP<const std::vector<std::string> > >("Field Multipliers")) {
 
-    const std::vector<std::string>& field_multiplier_names = 
+    const std::vector<std::string>& field_multiplier_names =
       *(p.get<Teuchos::RCP<const std::vector<std::string> > >("Field Multipliers"));
 
     for (const std::string & name : field_multiplier_names) {
@@ -91,7 +91,7 @@ PHX_EVALUATOR_CTOR(Integrator_DivBasisTimesScalar,p) :
   for (const auto & field : field_multipliers)
     this->addDependentField(field);
 
-  std::string n = 
+  std::string n =
     "Integrator_DivBasisTimesScalar: " + residual.fieldTag().name();
 
   this->setName(n);
@@ -111,15 +111,15 @@ PHX_POST_REGISTRATION_SETUP(Integrator_DivBasisTimesScalar,sd,fm)
 
   basis_index = panzer::getBasisIndex(basis_name, (*sd.worksets_)[0], this->wda);
 
-  tmp = Kokkos::createDynRankView(residual.get_static_view(),"tmp",scalar.dimension(0), num_qp); 
+  tmp = Kokkos::createDynRankView(residual.get_static_view(),"tmp",scalar.dimension(0), num_qp);
 }
 
 //**********************************************************************
 PHX_EVALUATE_FIELDS(Integrator_DivBasisTimesScalar,workset)
-{ 
+{
   // zero the reisdual
   residual.deep_copy(ScalarT(0.0));
-  
+
   for (index_t cell = 0; cell < workset.num_cells; ++cell) {
     for (std::size_t qp = 0; qp < num_qp; ++qp) {
       ScalarT tmpVar = 1.0;
@@ -130,7 +130,7 @@ PHX_EVALUATE_FIELDS(Integrator_DivBasisTimesScalar,workset)
       tmp(cell,qp) = multiplier * tmpVar * scalar(cell,qp);
     }
   }
-  
+
   {
     // const Kokkos::DynRankView<double,PHX::Device> & weighted_div_basis = (this->wda(workset).bases[basis_index])->weighted_div_basis;
     const BasisValues2<double> & bv = *this->wda(workset).bases[basis_index];
@@ -144,8 +144,8 @@ PHX_EVALUATE_FIELDS(Integrator_DivBasisTimesScalar,workset)
 /*
   if(workset.num_cells>0) {
      Intrepid2::FunctionSpaceTools::
-       integrate<ScalarT>(residual, tmp, 
-                       this->wda(workset).bases[basis_index]->weighted_div_basis, 
+       integrate<ScalarT>(residual, tmp,
+                       this->wda(workset).bases[basis_index]->weighted_div_basis,
 		       Intrepid2::COMP_CPP);
   }
 */
@@ -154,7 +154,7 @@ PHX_EVALUATE_FIELDS(Integrator_DivBasisTimesScalar,workset)
 //**********************************************************************
 
 template<typename EvalT, typename TRAITS>
-Teuchos::RCP<Teuchos::ParameterList> 
+Teuchos::RCP<Teuchos::ParameterList>
 Integrator_DivBasisTimesScalar<EvalT, TRAITS>::getValidParameters() const
 {
   Teuchos::RCP<Teuchos::ParameterList> p = Teuchos::rcp(new Teuchos::ParameterList);

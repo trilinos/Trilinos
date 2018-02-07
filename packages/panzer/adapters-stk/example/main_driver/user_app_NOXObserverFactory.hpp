@@ -59,11 +59,11 @@
 #include "user_app_NOXObserver_NeumannBCAnalyticSystemTest.hpp"
 
 namespace user_app {
-  
+
   class NOXObserverFactory :
     public panzer_stk::NOXObserverFactory,
     public Teuchos::ParameterListAcceptorDefaultBase  {
-    
+
     //! Store STK IO response library...be careful, it will be modified externally
     Teuchos::RCP<panzer::ResponseLibrary<panzer::Traits> > stkIOResponseLibrary_;
 
@@ -73,7 +73,7 @@ namespace user_app {
 
     NOXObserverFactory(const Teuchos::RCP<panzer::ResponseLibrary<panzer::Traits> > & stkIOResponseLibrary)
        : stkIOResponseLibrary_(stkIOResponseLibrary) {}
-    
+
     Teuchos::RCP<NOX::Abstract::PrePostOperator>
     buildNOXObserver(const Teuchos::RCP<panzer_stk::STK_Interface>& mesh,
 		     const Teuchos::RCP<const panzer::UniqueGlobalIndexerBase>& dof_manager,
@@ -89,15 +89,15 @@ namespace user_app {
 
       // Exodus writer to output solution
       if (this->getParameterList()->get<std::string>("Write Solution to Exodus File") == "ON") {
-	Teuchos::RCP<NOX::Abstract::PrePostOperator> solution_writer = 
+	Teuchos::RCP<NOX::Abstract::PrePostOperator> solution_writer =
 	  Teuchos::rcp(new user_app::NOXObserver_WriteToExodus(mesh,dof_manager,lof,stkIOResponseLibrary_));
 	observer->pushBack(solution_writer);
       }
 
-      
+
       // Neumann BC unit test
       if (this->getParameterList()->get<std::string>("Neumann BC Analytic System Test") == "ON") {
-	Teuchos::RCP<NOX::Abstract::PrePostOperator> ppo = 
+	Teuchos::RCP<NOX::Abstract::PrePostOperator> ppo =
 	  Teuchos::rcp(new user_app::NOXObserver_NeumannBCAnalyticSystemTest);
 	observer->pushBack(ppo);
       }
@@ -107,7 +107,7 @@ namespace user_app {
 
     /** \name Overridden from Teuchos::ParameterListAcceptor */
     //@{
-    
+
     void setParameterList(Teuchos::RCP<Teuchos::ParameterList> const& paramList)
     {
       using Teuchos::RCP;
@@ -116,11 +116,11 @@ namespace user_app {
       paramList->validateParametersAndSetDefaults(*(this->getValidParameters()));
       setMyParamList(paramList);
     }
-    
+
     Teuchos::RCP<const Teuchos::ParameterList> getValidParameters() const
     {
       if (valid_params_.is_null()) {
-	
+
 	valid_params_ = Teuchos::rcp(new Teuchos::ParameterList);
 
 	Teuchos::setStringToIntegralParameter<int>(
@@ -141,7 +141,7 @@ namespace user_app {
       }
       return valid_params_;
     }
- 
+
     //@}
 
   };

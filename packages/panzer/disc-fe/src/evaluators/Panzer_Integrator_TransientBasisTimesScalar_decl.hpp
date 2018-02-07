@@ -52,11 +52,11 @@
 #include "Panzer_Evaluator_Macros.hpp"
 
 namespace panzer {
-    
+
 PANZER_EVALUATOR_CLASS(Integrator_TransientBasisTimesScalar)
-  
+
   PHX::MDField<ScalarT,Cell,BASIS> residual;
-    
+
   PHX::MDField<const ScalarT,Cell,IP> scalar;
 
   std::vector<PHX::MDField<const ScalarT,Cell,IP> > field_multipliers;

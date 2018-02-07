@@ -1304,7 +1304,7 @@ evalModel_D2fDpDx(int pIndex,
   using Teuchos::rcp_dynamic_cast;
   using Teuchos::null;
 
-  // parameter is not distributed 
+  // parameter is not distributed
   TEUCHOS_ASSERT(parameters_[pIndex]->is_distributed);
 
   // parameter is distributed but has no global indexer.
@@ -1331,7 +1331,7 @@ evalModel_D2fDpDx(int pIndex,
                                          // gather seeds
   ae_inargs.first_sensitivities_name  = (*parameters_[pIndex]->names)[0]; // distributed parameters have one name!
   ae_inargs.second_sensitivities_name  = "";
-                                         
+
   rLibrary.addResponsesToInArgs<Traits::Hessian>(ae_inargs);
   rLibrary.evaluate<Traits::Hessian>(ae_inargs);
 #else
@@ -1351,7 +1351,7 @@ evalModel_D2fDp2(int pIndex,
   using Teuchos::rcp_dynamic_cast;
   using Teuchos::null;
 
-  // parameter is not distributed 
+  // parameter is not distributed
   TEUCHOS_ASSERT(parameters_[pIndex]->is_distributed);
 
   // parameter is distributed but has no global indexer.
@@ -1378,7 +1378,7 @@ evalModel_D2fDp2(int pIndex,
                                          // gather seeds
   ae_inargs.first_sensitivities_name  = (*parameters_[pIndex]->names)[0]; // distributed parameters have one name!
   ae_inargs.second_sensitivities_name = (*parameters_[pIndex]->names)[0]; // distributed parameters have one name!
-                                         
+
   rLibrary.addResponsesToInArgs<Traits::Hessian>(ae_inargs);
   rLibrary.evaluate<Traits::Hessian>(ae_inargs);
 #else

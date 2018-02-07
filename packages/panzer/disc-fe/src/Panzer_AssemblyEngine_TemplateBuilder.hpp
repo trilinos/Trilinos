@@ -54,25 +54,25 @@
 namespace panzer {
 
   class AssemblyEngine_TemplateBuilder {
-    
+
     Teuchos::RCP<panzer::FieldManagerBuilder> m_fmb;
     Teuchos::RCP<const panzer::LinearObjFactory<panzer::Traits> > m_lof;
-    
+
   public:
-    
+
     AssemblyEngine_TemplateBuilder(const Teuchos::RCP<panzer::FieldManagerBuilder>& fmb,
                                    const Teuchos::RCP<const panzer::LinearObjFactory<panzer::Traits> > & lof) :
-      m_fmb(fmb), m_lof(lof)  
+      m_fmb(fmb), m_lof(lof)
       {}
-      
+
     template <typename EvalT>
       Teuchos::RCP<panzer::Base> build() const {
       return Teuchos::rcp( static_cast<panzer::Base*>
 			   (new panzer::AssemblyEngine<EvalT>(m_fmb,m_lof)) );
     }
-    
+
   };
-  
+
 }
 
-#endif 
+#endif

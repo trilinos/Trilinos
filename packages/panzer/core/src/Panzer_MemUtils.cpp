@@ -1,4 +1,4 @@
-// @HEADER                                                                                                                                    
+// @HEADER
 // ***********************************************************************
 //
 //           Panzer: A partial differential equation assembly

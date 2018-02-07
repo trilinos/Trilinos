@@ -51,13 +51,13 @@
 #include "Panzer_Evaluator_Macros.hpp"
 
 namespace panzer {
-    
+
 PANZER_EVALUATOR_CLASS(CoordinatesEvaluator)
-  
+
   int dimension;
-  
+
   PHX::MDField<ScalarT,Cell,BASIS> coordinate;
-  
+
 PANZER_EVALUATOR_CLASS_END
 
 }

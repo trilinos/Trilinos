@@ -69,9 +69,9 @@ namespace panzer {
   public:
 
     ClosureModelFactory(bool throw_if_model_not_found=true) : m_throw_if_model_not_found(throw_if_model_not_found) {}
-    
+
     virtual ~ClosureModelFactory() {}
-    
+
     Teuchos::RCP< std::vector< Teuchos::RCP<PHX::Evaluator<panzer::Traits> > > >
     virtual  buildClosureModels(const std::string& model_id,
                                 const Teuchos::ParameterList& models,
@@ -91,7 +91,7 @@ namespace panzer {
       */
     virtual void registerEvaluators(const std::vector< Teuchos::RCP<PHX::Evaluator<panzer::Traits> > > & evaluators,
                                     PHX::FieldManager<panzer::Traits>& fm) const
-    { 
+    {
       for (std::vector< Teuchos::RCP<PHX::Evaluator<panzer::Traits> > >::size_type i=0; i < evaluators.size(); ++i)
         this->template registerEvaluator<EvalT>(fm, evaluators[i]);
     }
@@ -101,7 +101,7 @@ namespace panzer {
     }
 
   };
-  
+
 }
 
 #endif

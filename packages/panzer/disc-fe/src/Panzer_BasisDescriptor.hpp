@@ -99,7 +99,7 @@ public:
 
 protected:
 
- 
+
   /// Basis type (HGrad, HDiv, HCurl,...)
   std::string _basis_type;
 

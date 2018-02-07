@@ -78,7 +78,7 @@ class MyEquationSet
   public panzer::EquationSet_DefaultImpl<EvalT>
 {
   public:
-    
+
     /**
      * 	\brief Default Constructor.
      *
@@ -137,7 +137,7 @@ class MyEquationSet
       const Teuchos::ParameterList&      userData) const;
 
   private:
-    
+
     /**
      * 	\brief The name of the degree of freedom.
      */

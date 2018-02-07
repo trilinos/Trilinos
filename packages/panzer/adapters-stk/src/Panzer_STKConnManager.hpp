@@ -89,7 +89,7 @@ public:
      * \returns Pointer to beginning of indices, with total size
      *          equal to <code>getConnectivitySize(localElmtId)</code>
      */
-   virtual const GlobalOrdinal * getConnectivity(LocalOrdinal localElmtId) const 
+   virtual const GlobalOrdinal * getConnectivity(LocalOrdinal localElmtId) const
    { return &connectivity_[elmtLidToConn_[localElmtId]]; }
 
    /** Get ID connectivity for a particular element
@@ -99,7 +99,7 @@ public:
      * \returns Pointer to beginning of indices, with total size
      *          equal to <code>getConnectivitySize(localElmtId)</code>
      */
-   virtual GlobalOrdinal * getConnectivity(LocalOrdinal localElmtId) 
+   virtual GlobalOrdinal * getConnectivity(LocalOrdinal localElmtId)
    { return &connectivity_[elmtLidToConn_[localElmtId]]; }
 
    /** How many mesh IDs are associated with this element?
@@ -158,11 +158,11 @@ public:
    { return *(neighborElementBlocks_.find(blockId)->second); }
 
    /** Get the coordinates (with local cell ids) for a specified element block and field pattern.
-     * 
+     *
      * \param[in] blockId Block containing the cells
      * \param[in] coordProvider Field pattern that builds the coordinates
      * \param[out] localCellIds Local cell Ids (indices)
-     * \param[out] Resizable field container that contains the coordinates 
+     * \param[out] Resizable field container that contains the coordinates
      *             of the points on exit.
      */
    virtual void getDofCoords(const std::string & blockId,
@@ -213,7 +213,7 @@ protected:
      * \note This function requires global All-2-All communication IFF
      *       periodic boundary conditions are required.
      */
-   void applyPeriodicBCs( const panzer::FieldPattern & fp, GlobalOrdinal nodeOffset, GlobalOrdinal edgeOffset, 
+   void applyPeriodicBCs( const panzer::FieldPattern & fp, GlobalOrdinal nodeOffset, GlobalOrdinal edgeOffset,
                                                            GlobalOrdinal faceOffset, GlobalOrdinal cellOffset);
    void applyInterfaceConditions();
 

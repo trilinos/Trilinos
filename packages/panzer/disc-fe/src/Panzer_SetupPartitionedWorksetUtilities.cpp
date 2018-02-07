@@ -68,7 +68,7 @@ convertMeshPartitionToWorkset(const panzer::LocalMeshPartition<LO,GO> & partitio
 
 }
 
-Teuchos::RCP<std::vector<panzer::Workset> >  
+Teuchos::RCP<std::vector<panzer::Workset> >
 buildPartitionedWorksets(const panzer::LocalMeshInfo<int,int> & mesh_info,
                          const panzer::WorksetDescriptor & description,
                          const panzer::WorksetNeeds & needs)

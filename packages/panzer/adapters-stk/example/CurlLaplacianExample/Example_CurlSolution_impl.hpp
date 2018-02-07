@@ -70,14 +70,14 @@ CurlSolution<EvalT,Traits>::CurlSolution(const std::string & name,
 
   this->addEvaluatedField(solution);
   this->addEvaluatedField(solution_curl);
-  
+
   std::string n = "Curl Solution";
   this->setName(n);
 }
 
 //**********************************************************************
 template <typename EvalT,typename Traits>
-void CurlSolution<EvalT,Traits>::postRegistrationSetup(typename Traits::SetupData sd,           
+void CurlSolution<EvalT,Traits>::postRegistrationSetup(typename Traits::SetupData sd,
                                                        PHX::FieldManager<Traits>& /* fm */)
 {
   ir_index = panzer::getIntegrationRuleIndex(ir_degree,(*sd.worksets_)[0], this->wda);
@@ -86,7 +86,7 @@ void CurlSolution<EvalT,Traits>::postRegistrationSetup(typename Traits::SetupDat
 //**********************************************************************
 template <typename EvalT,typename Traits>
 void CurlSolution<EvalT,Traits>::evaluateFields(typename Traits::EvalData workset)
-{ 
+{
   using panzer::index_t;
   for (index_t cell = 0; cell < workset.num_cells; ++cell) {
     for (int point = 0; point < solution.extent_int(1); ++point) {

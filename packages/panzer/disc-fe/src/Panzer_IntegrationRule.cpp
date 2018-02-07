@@ -144,7 +144,7 @@ void panzer::IntegrationRule::setup(int in_cubature_degree, const panzer::CellDa
 
   std::stringstream ss;
   ss << "CubaturePoints (Degree=" << cubature_degree;
-  
+
   // Intrepid2 does not support a quadrature on a 0-dimensional object
   // (which doesn't make much sense anyway) to work around this we
   // will adjust the integration rule manually
@@ -264,7 +264,7 @@ void panzer::IntegrationRule::setup_cv(const panzer::CellData& cell_data, std::s
   }
   else if (cv_type == "boundary") {
     ss << ",boundary)";
-    intrepid_cubature  = Teuchos::rcp(new 
+    intrepid_cubature  = Teuchos::rcp(new
                                       Intrepid2::CubatureControlVolumeBoundary<PHX::Device::execution_space,double,double>(topo,cell_data.side()));
     num_points = intrepid_cubature->getNumPoints();
   }
@@ -288,10 +288,10 @@ void panzer::IntegrationRule::print(std::ostream & os)
 {
    os << "IntegrationRule ( "
       << "Name = " << getName()
-      << ", Degree = " << cubature_degree 
-      << ", Dimension = " << spatial_dimension 
+      << ", Degree = " << cubature_degree
+      << ", Dimension = " << spatial_dimension
       << ", Workset Size = " << workset_size
-      << ", Num Points = " << num_points 
+      << ", Num Points = " << num_points
       << ", Side = " << side
       << " )";
 }
@@ -301,7 +301,7 @@ void panzer::IntegrationRule::referenceCoordinates(Kokkos::DynRankView<double,PH
     // build an interpid cubature rule
   Teuchos::RCP< Intrepid2::Cubature<PHX::Device::execution_space,double,double> > intrepid_cubature;
     Intrepid2::DefaultCubatureFactory cubature_factory;
-    
+
     if (!isSide())
       intrepid_cubature = cubature_factory.create<PHX::Device::execution_space,double,double>(*(topology),cubature_degree);
     else

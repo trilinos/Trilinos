@@ -58,7 +58,7 @@ class EvaluatorWithBaseImpl :
 public:
   //! An evaluator builder sets the details index.
   void setDetailsIndex(const int di) { wda.setDetailsIndex(di); }
-  
+
 protected:
   WorksetDetailsAccessor wda;
 };

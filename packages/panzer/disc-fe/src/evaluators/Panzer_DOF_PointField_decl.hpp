@@ -54,10 +54,10 @@
 #include "Panzer_Evaluator_WithBaseImpl.hpp"
 
 namespace panzer {
-    
+
 //! Interpolates basis DOF using reference coordinates defined by a field
 template <typename EvalT, typename TRAITST>
-class DOF_PointField 
+class DOF_PointField
   : public panzer::EvaluatorWithBaseImpl<TRAITST>,
     public PHX::EvaluatorDerived<EvalT, TRAITST> {
 public:
@@ -106,9 +106,9 @@ public:
                  const Teuchos::RCP<PHX::DataLayout> & coordLayout,
                  const Teuchos::RCP<PHX::DataLayout> & quadLayout,
                  bool useCoordPostfix)
-  { std::string postfixFieldName = (useCoordPostfix ? coordinateName : ""); 
+  { std::string postfixFieldName = (useCoordPostfix ? coordinateName : "");
     initialize(fieldName,fieldBasis,coordinateName,coordLayout,quadLayout,postfixFieldName); }
-  
+
   void postRegistrationSetup(typename TRAITST::SetupData d,
 			     PHX::FieldManager<TRAITST>& vm);
 
@@ -126,7 +126,7 @@ private:
                   const std::string & postfixFieldName);
 
   PHX::MDField<const ScalarT,Point,Dim> coordinates; // reference coordinates
-  PHX::MDField<const ScalarT> dof_coeff;  // coefficient values   
+  PHX::MDField<const ScalarT> dof_coeff;  // coefficient values
   PHX::MDField<ScalarT> dof_field;  // evaluate field
 
   Teuchos::RCP<Intrepid2::Basis<PHX::exec_space,double,double>> intrepidBasis;

@@ -60,10 +60,10 @@ namespace panzer {
 template <typename EvalT,typename LO,typename GO>
 Teuchos::RCP<ResponseBase> ResponseEvaluatorFactory_Functional<EvalT,LO,GO>::
 buildResponseObject(const std::string & responseName) const
-{ 
-  Teuchos::RCP<ResponseBase> response = Teuchos::rcp(new Response_Functional<EvalT>(responseName,comm_,linearObjFactory_)); 
+{
+  Teuchos::RCP<ResponseBase> response = Teuchos::rcp(new Response_Functional<EvalT>(responseName,comm_,linearObjFactory_));
   response->setRequiresDirichletAdjustment(applyDirichletToDerivative_);
- 
+
   return response;
 }
 
@@ -90,9 +90,9 @@ buildAndRegisterEvaluators(const std::string & responseName,
      pl.set("Integrand Name",field);
      pl.set("IR",ir);
 
-     Teuchos::RCP<PHX::Evaluator<panzer::Traits> > eval 
+     Teuchos::RCP<PHX::Evaluator<panzer::Traits> > eval
          = Teuchos::rcp(new Integrator_Scalar<EvalT,panzer::Traits>(pl));
- 
+
      this->template registerEvaluator<EvalT>(fm, eval);
    }
 
@@ -108,7 +108,7 @@ buildAndRegisterEvaluators(const std::string & responseName,
         auto bugi = Teuchos::rcp_dynamic_cast<const BlockedDOFManager<LO,GO> >(linearObjFactory_->getDomainGlobalIndexer());
 
         if(ugi!=Teuchos::null) {
-          std::vector<Teuchos::RCP<const UniqueGlobalIndexer<LO,GO> > > ugis; 
+          std::vector<Teuchos::RCP<const UniqueGlobalIndexer<LO,GO> > > ugis;
           ugis.push_back(ugi);
 
           scatterObj = Teuchos::rcp(new FunctionalScatter<LO,GO>(ugis));
@@ -124,7 +124,7 @@ buildAndRegisterEvaluators(const std::string & responseName,
      std::string field = (quadPointField_=="" ? responseName : quadPointField_);
 
      // build useful evaluator
-     Teuchos::RCP<PHX::Evaluator<panzer::Traits> > eval 
+     Teuchos::RCP<PHX::Evaluator<panzer::Traits> > eval
          = Teuchos::rcp(new ResponseScatterEvaluator_Functional<EvalT,panzer::Traits>(field,responseName,physicsBlock.cellData(),scatterObj));
 
      this->template registerEvaluator<EvalT>(fm, eval);

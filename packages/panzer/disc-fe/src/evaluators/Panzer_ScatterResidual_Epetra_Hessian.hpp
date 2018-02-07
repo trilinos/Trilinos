@@ -46,7 +46,7 @@
 // only do this if required by the user
 #ifdef Panzer_BUILD_HESSIAN_SUPPORT
 
-// the includes for this file come in as a result of the includes in the main 
+// the includes for this file come in as a result of the includes in the main
 // Epetra scatter residual file
 
 namespace panzer {
@@ -59,24 +59,24 @@ class ScatterResidual_Epetra<panzer::Traits::Hessian,TRAITS,LO,GO>
   : public panzer::EvaluatorWithBaseImpl<TRAITS>,
     public PHX::EvaluatorDerived<panzer::Traits::Hessian, TRAITS>,
     public panzer::CloneableEvaluator {
-  
+
 public:
   ScatterResidual_Epetra(const Teuchos::RCP<const panzer::UniqueGlobalIndexer<LO,GO> > & indexer,
                          const Teuchos::RCP<const panzer::UniqueGlobalIndexer<LO,GO> > & cIndexer=Teuchos::null,
                          bool useDiscreteAdjoint=false)
      : globalIndexer_(indexer), colGlobalIndexer_(cIndexer), useDiscreteAdjoint_(useDiscreteAdjoint)  {}
-  
+
   ScatterResidual_Epetra(const Teuchos::RCP<const panzer::UniqueGlobalIndexer<LO,GO> > & indexer,
                          const Teuchos::RCP<const panzer::UniqueGlobalIndexer<LO,GO> > & cIndexer,
                          const Teuchos::ParameterList& p,bool=false);
-  
+
   void postRegistrationSetup(typename TRAITS::SetupData d,
 			     PHX::FieldManager<TRAITS>& vm) ;
 
   void preEvaluate(typename TRAITS::PreEvalData d);
-  
+
   void evaluateFields(typename TRAITS::EvalData workset);
-  
+
   virtual Teuchos::RCP<CloneableEvaluator> clone(const Teuchos::ParameterList & pl) const
   { return Teuchos::rcp(new ScatterResidual_Epetra<panzer::Traits::Hessian,TRAITS,LO,GO>(globalIndexer_,colGlobalIndexer_,pl)); }
 

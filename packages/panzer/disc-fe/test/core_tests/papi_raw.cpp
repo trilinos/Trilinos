@@ -60,7 +60,7 @@ namespace panzer {
 
   TEUCHOS_UNIT_TEST(papi, krp_c_fcn_calls)
   {
-    
+
     int iam;
     MPI_Comm_rank(MPI_COMM_WORLD, &iam);
     int hw_counters;
@@ -68,17 +68,17 @@ namespace panzer {
     long long int rus=0;
     long long int ucy=0;
     long long int uus=0;
-    
+
     MPI_Comm comm = MPI_COMM_WORLD;
     long int rt_rus=0;
     long int rt_ins=0;
     long int rt_fp=0;
-    long int rt_dcm=0; 
-    
+    long int rt_dcm=0;
+
     std::string name = "TESTING RAW INTERFACE\0";
 
     panzer::krp_init_(&iam,&hw_counters,&rcy,&rus,&ucy,&uus);
-    
+
     double a = 0.0;
     for (int i=0; i < 1000; ++i)
       a += static_cast<double>(i);

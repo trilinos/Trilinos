@@ -27,15 +27,15 @@ namespace {
    };
 }
 
-template <typename EvalT> 
-Teuchos::RCP<panzer::ResponseBase> ResponseEvaluatorFactory_SolutionWriter<EvalT>:: 
+template <typename EvalT>
+Teuchos::RCP<panzer::ResponseBase> ResponseEvaluatorFactory_SolutionWriter<EvalT>::
 buildResponseObject(const std::string & responseName) const
 {
    return Teuchos::rcp(new Response_STKDummy(responseName));
 }
-   
-template <typename EvalT> 
-void ResponseEvaluatorFactory_SolutionWriter<EvalT>:: 
+
+template <typename EvalT>
+void ResponseEvaluatorFactory_SolutionWriter<EvalT>::
 buildAndRegisterEvaluators(const std::string& /* responseName */,
                            PHX::FieldManager<panzer::Traits> & fm,
                            const panzer::PhysicsBlock & physicsBlock,
@@ -51,7 +51,7 @@ buildAndRegisterEvaluators(const std::string& /* responseName */,
 
   std::map<std::string,RCP<const panzer::PureBasis> > bases;
   std::map<std::string,std::vector<std::string> > basisBucket;
-  { 
+  {
     const std::map<std::string,RCP<panzer::PureBasis> > & nc_bases = physicsBlock.getBases();
     bases.insert(nc_bases.begin(),nc_bases.end());
   }
@@ -63,7 +63,7 @@ buildAndRegisterEvaluators(const std::string& /* responseName */,
   if(!addCoordinateFields_ && addSolutionFields_) {
     // inject all the fields, including the coordinates (we will remove them shortly)
     allFields.insert(allFields.end(),physicsBlock.getProvidedDOFs().begin(),physicsBlock.getProvidedDOFs().end());
-   
+
 
     // get a list of strings with fields to remove
     std::vector<std::string> removedFields;
@@ -73,12 +73,12 @@ buildAndRegisterEvaluators(const std::string& /* responseName */,
         removedFields.push_back(coord_fields[c][d]);
 
     // remove all coordinate fields
-    deleteRemovedFields(removedFields,allFields); 
+    deleteRemovedFields(removedFields,allFields);
   }
   else if(addCoordinateFields_ && !addSolutionFields_) {
     Teuchos::RCP<const panzer::FieldLibraryBase> fieldLib = physicsBlock.getFieldLibraryBase();
     const std::vector<std::vector<std::string> > & coord_fields = physicsBlock.getCoordinateDOFs();
-    
+
     // get the basis and field for each coordiante
     for(std::size_t c=0;c<coord_fields.size();c++) {
       for(std::size_t d=0;d<coord_fields[c].size();d++) {
@@ -121,7 +121,7 @@ buildAndRegisterEvaluators(const std::string& /* responseName */,
       computeReferenceCentroid(bases,physicsBlock.cellData().baseCellDimension(),centroid);
 
       // build pointe values evaluator
-      RCP<PHX::Evaluator<panzer::Traits> > evaluator  = 
+      RCP<PHX::Evaluator<panzer::Traits> > evaluator  =
          rcp(new panzer::PointValues_Evaluator<EvalT,panzer::Traits>(centroidRule,centroid));
       this->template registerEvaluator<EvalT>(fm, evaluator);
 
@@ -165,7 +165,7 @@ buildAndRegisterEvaluators(const std::string& /* responseName */,
         fields_concat += fields[f];
       }
 
-      Teuchos::RCP<PHX::Evaluator<panzer::Traits> > eval = 
+      Teuchos::RCP<PHX::Evaluator<panzer::Traits> > eval =
         Teuchos::rcp(new ScatterFields<EvalT,panzer::Traits>("STK HGRAD Scatter Basis " +basis->name()+": "+fields_concat,
                                                       mesh_, basis, fields,scalars));
 
@@ -178,7 +178,7 @@ buildAndRegisterEvaluators(const std::string& /* responseName */,
 
       // register basis values evaluator
       {
-        Teuchos::RCP<PHX::Evaluator<panzer::Traits> > evaluator  
+        Teuchos::RCP<PHX::Evaluator<panzer::Traits> > evaluator
            = Teuchos::rcp(new panzer::BasisValues_Evaluator<EvalT,panzer::Traits>(centroidRule,basis));
         this->template registerEvaluator<EvalT>(fm, evaluator);
       }
@@ -190,7 +190,7 @@ buildAndRegisterEvaluators(const std::string& /* responseName */,
         p.set("Name",fields[f]);
         p.set("Basis",basis);
         p.set("Point Rule",centroidRule.getConst());
-        Teuchos::RCP<PHX::Evaluator<panzer::Traits> > evaluator  
+        Teuchos::RCP<PHX::Evaluator<panzer::Traits> > evaluator
            = Teuchos::rcp(new panzer::DOF_PointValues<EvalT,panzer::Traits>(p));
 
         this->template registerEvaluator<EvalT>(fm, evaluator);
@@ -200,7 +200,7 @@ buildAndRegisterEvaluators(const std::string& /* responseName */,
 
       // add the scatter field evaluator for this basis
       {
-        Teuchos::RCP<PHX::Evaluator<panzer::Traits> > evaluator  
+        Teuchos::RCP<PHX::Evaluator<panzer::Traits> > evaluator
            = Teuchos::rcp(new ScatterVectorFields<EvalT,panzer::Traits>("STK HCURL Scatter Basis " +basis->name()+": "+fields_concat,
                                                                         mesh_,centroidRule,fields,scalars));
 
@@ -213,7 +213,7 @@ buildAndRegisterEvaluators(const std::string& /* responseName */,
 
       // register basis values evaluator
       {
-        Teuchos::RCP<PHX::Evaluator<panzer::Traits> > evaluator  
+        Teuchos::RCP<PHX::Evaluator<panzer::Traits> > evaluator
            = Teuchos::rcp(new panzer::BasisValues_Evaluator<EvalT,panzer::Traits>(centroidRule,basis));
         this->template registerEvaluator<EvalT>(fm, evaluator);
       }
@@ -225,7 +225,7 @@ buildAndRegisterEvaluators(const std::string& /* responseName */,
         p.set("Name",fields[f]);
         p.set("Basis",basis);
         p.set("Point Rule",centroidRule.getConst());
-        Teuchos::RCP<PHX::Evaluator<panzer::Traits> > evaluator  
+        Teuchos::RCP<PHX::Evaluator<panzer::Traits> > evaluator
            = Teuchos::rcp(new panzer::DOF_PointValues<EvalT,panzer::Traits>(p));
 
         this->template registerEvaluator<EvalT>(fm, evaluator);
@@ -235,7 +235,7 @@ buildAndRegisterEvaluators(const std::string& /* responseName */,
 
       // add the scatter field evaluator for this basis
       {
-        Teuchos::RCP<PHX::Evaluator<panzer::Traits> > evaluator  
+        Teuchos::RCP<PHX::Evaluator<panzer::Traits> > evaluator
            = Teuchos::rcp(new ScatterVectorFields<EvalT,panzer::Traits>("STK HDIV Scatter Basis " +basis->name()+": "+fields_concat,
                                                                         mesh_,centroidRule,fields,scalars));
 
@@ -250,7 +250,7 @@ buildAndRegisterEvaluators(const std::string& /* responseName */,
   out.setOutputToRootOnly(0);
 
   for(std::unordered_set<std::string>::const_iterator itr=scaledFieldsHash.begin();
-      itr!=scaledFieldsHash.end();itr++) { 
+      itr!=scaledFieldsHash.end();itr++) {
     out << "WARNING: STK Solution Writer did not scale the field \"" << *itr << "\" "
         << "because it was not written." << std::endl;
   }

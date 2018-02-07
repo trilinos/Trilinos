@@ -59,11 +59,11 @@ namespace panzer {
 
 /** This class defines a response based on a functional.
   */
-template <typename EvalT,typename LO,typename GO> 
+template <typename EvalT,typename LO,typename GO>
 class ResponseEvaluatorFactory_ExtremeValue : public ResponseEvaluatorFactory<EvalT> {
 public:
 
-   ResponseEvaluatorFactory_ExtremeValue(MPI_Comm comm, 
+   ResponseEvaluatorFactory_ExtremeValue(MPI_Comm comm,
                                int cubatureDegree=1,
                                bool requiresCellReduction=true,
                                bool useMax=true,
@@ -80,10 +80,10 @@ public:
    }
 
    virtual ~ResponseEvaluatorFactory_ExtremeValue() {}
- 
+
    /** Build the response object used by this factory. This object
      * assumes the role of the scatter target and will be accessible
-     * by all the evaluators in the field managers. 
+     * by all the evaluators in the field managers.
      *
      * \param[in] responseName Name of response to be built. This
      *                         name will be used for looking up
@@ -93,11 +93,11 @@ public:
    virtual Teuchos::RCP<ResponseBase> buildResponseObject(const std::string & responseName) const;
 
    virtual Teuchos::RCP<ResponseBase> buildResponseObject(const std::string & responseName,
-                                                          const std::vector<WorksetDescriptor> & wkstDesc) const 
+                                                          const std::vector<WorksetDescriptor> & wkstDesc) const
    { return buildResponseObject(responseName); }
 
    /** Build and register evaluators for a response on a particular physics
-     * block. 
+     * block.
      *
      * \param[in] responseName The name of the response to be constructed
      *                         by these evaluators.
@@ -116,7 +116,7 @@ public:
      * where a response may support a particular evaluation type, however at runtime the user
      * decides not to enable the (say) Jacobian evaluation of this response.
      *
-     * Note that use of this mechanism is complementary to having the builder return 
+     * Note that use of this mechanism is complementary to having the builder return
      * <code>Teuchos::null</code> for a particular evaluation type.
      */
    virtual bool typeSupported() const;
@@ -136,7 +136,7 @@ private:
    bool applyDirichletToDerivative_;
 };
 
-template <typename LO,typename GO> 
+template <typename LO,typename GO>
 struct ExtremeValueResponse_Builder : public ResponseMESupportBuilderBase {
   MPI_Comm comm;
   int cubatureDegree;
@@ -186,10 +186,10 @@ struct ExtremeValueResponse_Builder : public ResponseMESupportBuilderBase {
   /** Using a panzer::Tangent evaluation type build the REFB for this
     * response.
     */
-  virtual Teuchos::RCP<panzer::ResponseEvaluatorFactoryBase> buildHessianFactory() const 
+  virtual Teuchos::RCP<panzer::ResponseEvaluatorFactoryBase> buildHessianFactory() const
   { return build<panzer::Traits::Hessian>(); }
 #endif
-  
+
 private:
   Teuchos::RCP<const panzer::LinearObjFactory<panzer::Traits> > linearObjFactory;
   Teuchos::RCP<const panzer::UniqueGlobalIndexer<LO,GO> > globalIndexer;

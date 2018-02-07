@@ -74,7 +74,7 @@ using Teuchos::rcp;
 
 #include "UnitValueEvaluator.hpp"
 
-// for making explicit instantiated tests easier 
+// for making explicit instantiated tests easier
 #define UNIT_TEST_GROUP(TYPE) \
   TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT(dof_pointfield,value,TYPE)
   //TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT(dof_pointfield,gradient,TYPE)
@@ -91,14 +91,14 @@ PHX_EVALUATOR_CTOR(DummyFieldEvaluator,p)
 {
   // Read from parameters
   const std::string name = p.get<std::string>("Name");
-  Teuchos::RCP<panzer::PureBasis> basis 
+  Teuchos::RCP<panzer::PureBasis> basis
      = p.get< Teuchos::RCP<panzer::PureBasis> >("Basis");
 
   // grab information from quadrature rule
   fieldValue = PHX::MDField<ScalarT,Cell,BASIS>(name, basis->functional);
 
   this->addEvaluatedField(fieldValue);
-  
+
   std::string n = "DummyFieldEvaluator: " + name;
   this->setName(n);
 }
@@ -106,16 +106,16 @@ PHX_POST_REGISTRATION_SETUP(DummyFieldEvaluator, /* sd */, fm)
 {
   this->utils.setFieldData(fieldValue,fm);
 
-  
+
 }
 
 PHX_EVALUATE_FIELDS(DummyFieldEvaluator, /* workset */)
-{ 
+{
   fieldValue(0,0) = 1.0;
   fieldValue(0,1) = 2.0;
   fieldValue(0,2) = 2.0;
   fieldValue(0,3) = 1.0;
-  
+
   fieldValue(1,0) = 2.0;
   fieldValue(1,1) = 3.0;
   fieldValue(1,2) = 3.0;
@@ -143,7 +143,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(dof_pointfield,value,EvalType)
   Teuchos::RCP<panzer::PureBasis> targetBasis = Teuchos::rcp(new panzer::PureBasis("HGrad",2,numCells,topo));
 
   Teuchos::RCP<PHX::FieldManager<panzer::Traits> > fm
-     = Teuchos::rcp(new PHX::FieldManager<panzer::Traits>); 
+     = Teuchos::rcp(new PHX::FieldManager<panzer::Traits>);
 
   // add in some evaluators
   ///////////////////////////////////////////////////
@@ -152,7 +152,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(dof_pointfield,value,EvalType)
      Teuchos::ParameterList p;
      p.set("Name","Pressure");
      p.set("Basis",sourceBasis);
-     RCP<panzer::DummyFieldEvaluator<EvalType,panzer::Traits> > e = 
+     RCP<panzer::DummyFieldEvaluator<EvalType,panzer::Traits> > e =
        rcp(new panzer::DummyFieldEvaluator<EvalType,panzer::Traits>(p));
 
      fm->registerEvaluator<EvalType>(e);
@@ -162,11 +162,11 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(dof_pointfield,value,EvalType)
   ///////////////////////////////////////////////////
 
   {
-    RCP<panzer::DOF_BasisToBasis<EvalType,panzer::Traits> > e = 
+    RCP<panzer::DOF_BasisToBasis<EvalType,panzer::Traits> > e =
       rcp(new panzer::DOF_BasisToBasis<EvalType,panzer::Traits>("Pressure",*sourceBasis,*targetBasis));
-    
+
     fm->registerEvaluator<EvalType>(e);
-    
+
     Teuchos::RCP<PHX::FieldTag> ft = e->evaluatedFields()[0];
     fm->requireField<EvalType>(*ft);
   }

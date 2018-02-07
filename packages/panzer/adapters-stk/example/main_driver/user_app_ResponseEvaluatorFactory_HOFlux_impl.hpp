@@ -18,9 +18,9 @@ buildAndRegisterEvaluators(const std::string & responseName,
 {
   using Teuchos::RCP;
   using Teuchos::rcp;
-  using Teuchos::ParameterList; 
+  using Teuchos::ParameterList;
 
-  // create basis 
+  // create basis
   RCP<const panzer::FieldLibrary> fieldLib = physicsBlock.getFieldLibrary();
   RCP<const panzer::PureBasis> basis = fieldLib->lookupBasis("TEMPERATURE");
 
@@ -30,10 +30,10 @@ buildAndRegisterEvaluators(const std::string & responseName,
     pl.set("Field Name","RESIDUAL_TEMPERATURE");
     pl.set("Basis",basis);
     pl.set("Multiplier",1.0);
-    
-    Teuchos::RCP<PHX::Evaluator<panzer::Traits> > eval 
+
+    Teuchos::RCP<PHX::Evaluator<panzer::Traits> > eval
         = Teuchos::rcp(new panzer::SubcellSum<EvalT,panzer::Traits>(pl));
- 
+
     this->template registerEvaluator<EvalT>(fm, eval);
   }
 

@@ -74,21 +74,21 @@ namespace panzer {
     panzer::FieldLayoutLibrary fl;
     Teuchos::RCP<panzer::IntegrationRule> ir;
     {
-      Teuchos::RCP<shards::CellTopology> topo = 
+      Teuchos::RCP<shards::CellTopology> topo =
          Teuchos::rcp(new shards::CellTopology(shards::getCellTopologyData< shards::Hexahedron<8> >()));
-    
+
       const int num_cells = 20;
       const panzer::CellData cell_data(num_cells,topo);
-      const int cubature_degree = 2;      
+      const int cubature_degree = 2;
       ir = Teuchos::rcp(new panzer::IntegrationRule(cubature_degree, cell_data));
       Teuchos::RCP<panzer::BasisIRLayout> basis = Teuchos::rcp(new panzer::BasisIRLayout("Q2",0,*ir));
-      
+
       fl.addFieldAndLayout("Ux",basis);
     }
 
     std::string model_id = "fluid model";
 
-    Teuchos::ParameterList eqset_params; 
+    Teuchos::ParameterList eqset_params;
 
     Teuchos::ParameterList p("Closure Models");
     {
@@ -104,7 +104,7 @@ namespace panzer {
     Teuchos::ParameterList user_data("User Data");
     user_data.set("Comm",Teuchos::DefaultComm<int>::getComm());
     Teuchos::RCP<panzer::GlobalData> gd = panzer::createGlobalData();
-    
+
     // Prove Physics 1 builds all constant evaluators
     {
       user_app::MyModelFactory_Physics1<panzer::Traits::Residual> p1(false);
@@ -120,17 +120,17 @@ namespace panzer {
       evaluators = p2.buildClosureModels(model_id, p, fl, ir, eqset_params, user_data, gd, fm);
       TEST_EQUALITY(evaluators->size(), 1);
     }
-    
+
     PHX::FieldManager<panzer::Traits> fm;
 
 
     user_app::MyModelFactory_Physics1_TemplateBuilder builder1(false);
-    Teuchos::RCP<panzer::ClosureModelFactory_TemplateManager<panzer::Traits> > model_factory1 = 
+    Teuchos::RCP<panzer::ClosureModelFactory_TemplateManager<panzer::Traits> > model_factory1 =
       Teuchos::rcp(new panzer::ClosureModelFactory_TemplateManager<panzer::Traits>);
     model_factory1->buildObjects(builder1);
 
     user_app::MyModelFactory_Physics2_TemplateBuilder builder2(false);
-    Teuchos::RCP<panzer::ClosureModelFactory_TemplateManager<panzer::Traits> > model_factory2 = 
+    Teuchos::RCP<panzer::ClosureModelFactory_TemplateManager<panzer::Traits> > model_factory2 =
       Teuchos::rcp(new panzer::ClosureModelFactory_TemplateManager<panzer::Traits>);
     model_factory2->buildObjects(builder2);
 
@@ -141,10 +141,10 @@ namespace panzer {
     model_factory_composite.buildObjects(builder_composite);
 
     evaluators = model_factory_composite.getAsObject<panzer::Traits::Residual>()->buildClosureModels(model_id, p, fl, ir, eqset_params, user_data, gd, fm);
-    
+
     TEST_EQUALITY(evaluators->size(), 9);
-    
-    // Add an unsupported type 
+
+    // Add an unsupported type
 
     // RPP: :disabling for now due to issues with global statistics.
     // The jacobian was returning a null pointer that translated intot
@@ -153,7 +153,7 @@ namespace panzer {
     // This can be caught in field manager.
 
     //p.sublist("fluid model").sublist("garbage").set<std::string>("Value","help!");
-    
+
     //TEST_THROW(model_factory_composite.getAsObject<panzer::Traits::Residual>()->buildClosureModels(ies.model_id, ies, p, default_params, user_data, gd, fm), std::logic_error);
 
   }

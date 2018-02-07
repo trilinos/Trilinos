@@ -76,7 +76,7 @@ namespace panzer {
   #else
      Teuchos::RCP<Teuchos::Comm<int> > tcomm = Teuchos::rcp(new Teuchos::SerialComm<int>);
   #endif
-    
+
     // excercise subcell entities capability
     {
       RCP<Teuchos::ParameterList> pl = rcp(new Teuchos::ParameterList);
@@ -84,12 +84,12 @@ namespace panzer {
       pl->set("Y Elements",4);
       pl->set("X Procs",1);
       pl->set("Y Procs",2);
-  
+
       panzer_stk::SquareQuadMeshFactory factory;
       factory.setParameterList(pl);
       RCP<panzer_stk::STK_Interface> mesh = factory.buildMesh(MPI_COMM_WORLD);
-  
-      std::vector<stk::mesh::Entity> sideEntities; 
+
+      std::vector<stk::mesh::Entity> sideEntities;
       mesh->getMySides("left","eblock-0_0",sideEntities);
 
       std::vector<std::vector<stk::mesh::Entity> > subcells;
@@ -111,12 +111,12 @@ namespace panzer {
       pl->set("Y Elements",4);
       pl->set("X Procs",1);
       pl->set("Y Procs",2);
-  
+
       panzer_stk::SquareQuadMeshFactory factory;
       factory.setParameterList(pl);
       RCP<panzer_stk::STK_Interface> mesh = factory.buildMesh(MPI_COMM_WORLD);
 
-      std::vector<stk::mesh::Entity> sideEntities; 
+      std::vector<stk::mesh::Entity> sideEntities;
       mesh->getMySides("left","eblock-0_0",sideEntities);
       TEST_ASSERT(sideEntities.size()==2);
 
@@ -129,7 +129,7 @@ namespace panzer {
       TEST_EQUALITY(localSubcellDim.size(),6);
       TEST_ASSERT(localSubcellDim.size()==localSubcellIds.size());
       TEST_ASSERT(localSubcellDim.size()==elements.size());
- 
+
       int node_cnt = 0;
       int edge_cnt = 0;
       for(std::size_t i=0;i<localSubcellDim.size();i++) {
@@ -179,10 +179,10 @@ namespace panzer {
       double value = 5.0;
       Teuchos::ParameterList p;
       p.set("Value",value);
-      panzer::BC bc(bc_id, neumann, sideset_id, element_block_id, dof_name, 
+      panzer::BC bc(bc_id, neumann, sideset_id, element_block_id, dof_name,
 		    strategy, p);
       bcs.push_back(bc);
-    }    
+    }
     {
       std::size_t bc_id = 0;
       panzer::BCType neumann = BCT_Dirichlet;
@@ -193,10 +193,10 @@ namespace panzer {
       double value = 5.0;
       Teuchos::ParameterList p;
       p.set("Value",value);
-      panzer::BC bc(bc_id, neumann, sideset_id, element_block_id, dof_name, 
+      panzer::BC bc(bc_id, neumann, sideset_id, element_block_id, dof_name,
 		    strategy, p);
       bcs.push_back(bc);
-    }   
+    }
     {
       std::size_t bc_id = 0;
       panzer::BCType neumann = BCT_Dirichlet;
@@ -207,7 +207,7 @@ namespace panzer {
       double value = 5.0;
       Teuchos::ParameterList p;
       p.set("Value",value);
-      panzer::BC bc(bc_id, neumann, sideset_id, element_block_id, dof_name, 
+      panzer::BC bc(bc_id, neumann, sideset_id, element_block_id, dof_name,
 		    strategy, p);
       bcs.push_back(bc);
     }

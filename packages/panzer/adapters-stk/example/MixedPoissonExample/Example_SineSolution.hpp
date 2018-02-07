@@ -57,7 +57,7 @@
 #include "Panzer_Evaluator_WithBaseImpl.hpp"
 
 namespace Example {
-    
+
   using panzer::Cell;
   using panzer::Point;
   using panzer::Dim;
@@ -71,11 +71,11 @@ class SineSolution : public panzer::EvaluatorWithBaseImpl<Traits>,
 public:
     SineSolution(const std::string & name,
                        const panzer::IntegrationRule & ir);
-                                                                        
-    void postRegistrationSetup(typename Traits::SetupData d,           
-                               PHX::FieldManager<Traits>& fm);        
-                                                                     
-    void evaluateFields(typename Traits::EvalData d);               
+
+    void postRegistrationSetup(typename Traits::SetupData d,
+                               PHX::FieldManager<Traits>& fm);
+
+    void evaluateFields(typename Traits::EvalData d);
 
 
 private:

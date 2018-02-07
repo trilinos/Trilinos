@@ -48,16 +48,16 @@
 namespace panzer {
 namespace dof_functors {
 
-//! Sums all entries of a Rank 2 Kokkos View 
+//! Sums all entries of a Rank 2 Kokkos View
 template<typename GO, typename ArrayType>
 struct SumRank2 {
   typedef GO value_type;
   typedef typename PHX::Device execution_space;
-  
+
   ArrayType a_;
 
   SumRank2(ArrayType a) : a_(a) {}
-  
+
   KOKKOS_INLINE_FUNCTION
   void operator () (const unsigned int i, GO& lsum) const {
     for (unsigned int j=0; j < a_.dimension_1(); ++j)

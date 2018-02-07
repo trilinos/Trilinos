@@ -47,7 +47,7 @@ namespace panzer {
 
 //**********************************************************************
 PHX_EVALUATOR_CTOR(ConstantVector,p) :
-  vector(p.get<std::string>("Name"), 
+  vector(p.get<std::string>("Name"),
          p.get< Teuchos::RCP<PHX::DataLayout> >("Data Layout") )
 {
   this->addEvaluatedField(vector);
@@ -59,7 +59,7 @@ PHX_EVALUATOR_CTOR(ConstantVector,p) :
     vals[1] = ScalarT(p.get<double>("Value Y"));
   if(dim>2)
     vals[2] = ScalarT(p.get<double>("Value Z"));
-  
+
   std::string n = "ConstantVector: " + vector.fieldTag().name();
   this->setName(n);
 }
@@ -73,7 +73,7 @@ PHX_POST_REGISTRATION_SETUP(ConstantVector, /* worksets */, fm)
 
 //**********************************************************************
 PHX_EVALUATE_FIELDS(ConstantVector, /* d */)
-{ 
+{
   for(int c=0;c<vector.extent_int(0);c++)
     for(int p=0;p<vector.extent_int(1);p++)
       for(int d=0;d<vector.extent_int(2);d++)

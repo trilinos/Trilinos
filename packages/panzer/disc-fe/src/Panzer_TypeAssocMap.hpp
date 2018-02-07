@@ -55,26 +55,26 @@ class TypeAssocMap {
 public:
   typedef TypesVector types_vector;
 
-  TypeAssocMap() 
+  TypeAssocMap()
   {
     const int sz = Sacado::mpl::size<TypesVector>::value;
     mapValues_.resize(sz);
   }
 
-  //! Modify routine 
+  //! Modify routine
   template <typename T>
-  void set(ValueType v) 
-  { 
+  void set(ValueType v)
+  {
     const int idx = Sacado::mpl::find<TypesVector,T>::value;
-    mapValues_[idx] = v; 
+    mapValues_[idx] = v;
   }
 
   //! Access routine
   template <typename T>
-  ValueType get() const 
-  { 
+  ValueType get() const
+  {
     const int idx = Sacado::mpl::find<TypesVector,T>::value;
-    return mapValues_[idx]; 
+    return mapValues_[idx];
   }
 
   template <typename BuilderOpT>
@@ -90,15 +90,15 @@ public:
     const BuilderOpT & builder_;
     BuildObjects(std::vector<ValueType> & mv,const BuilderOpT& builder) : mv_(mv), builder_(builder) {}
 
-    template <typename T> void operator()(T) const { 
+    template <typename T> void operator()(T) const {
       const int idx = Sacado::mpl::find<TypesVector,T>::value;
-      mv_[idx] = builder_.template build<T>(); 
+      mv_[idx] = builder_.template build<T>();
     }
   };
 
   std::vector<ValueType> mapValues_;
 };
- 
+
 }
 
 #endif

@@ -67,7 +67,7 @@ Teuchos::RCP<GlobalEvaluationData> GlobalEvaluationDataContainer::getDataObject(
 {
    std::unordered_map<std::string,Teuchos::RCP<GlobalEvaluationData> >::const_iterator itr;
    for(itr=begin();itr!=end();++itr) {
-     if(itr->first==key) 
+     if(itr->first==key)
        return itr->second;
    }
 
@@ -83,8 +83,8 @@ Teuchos::RCP<GlobalEvaluationData> GlobalEvaluationDataContainer::getDataObject(
 
    return Teuchos::null;
 /*
-   std::unordered_map<std::string,Teuchos::RCP<GlobalEvaluationData> >::const_iterator itr = lookupTable_.find(key); 
-   
+   std::unordered_map<std::string,Teuchos::RCP<GlobalEvaluationData> >::const_iterator itr = lookupTable_.find(key);
+
    if(itr==lookupTable_.end()) {
      std::stringstream ss;
      ss << "Valid keys = ";
@@ -95,7 +95,7 @@ Teuchos::RCP<GlobalEvaluationData> GlobalEvaluationDataContainer::getDataObject(
                         "In GlobalEvaluationDataContainer::getDataObject(key) failed to find the data object specified by \""+key+"\"\n   " + ss.str());
    }
 
-   return itr->second; 
+   return itr->second;
 */
 }
 

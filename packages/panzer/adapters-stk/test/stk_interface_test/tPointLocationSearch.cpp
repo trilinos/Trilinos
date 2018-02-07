@@ -87,23 +87,23 @@ TEUCHOS_UNIT_TEST(tPointLocationSearch, basic)
    pl->set("Yf",1.0);
    pl->set("Z0",0.0);
    pl->set("Zf",1.0);
-   
-   CubeHexMeshFactory factory; 
+
+   CubeHexMeshFactory factory;
    factory.setParameterList(pl);
    RCP<STK_Interface> mesh = factory.buildMesh(MPI_COMM_WORLD);
    TEST_ASSERT(mesh!=Teuchos::null);
- 
+
    // minimal requirements
    TEST_ASSERT(not mesh->isModifiable());
 
    // Build (domain) bounding boxes for all cells in mesh
    RCP<stk::mesh::MetaData> meta_data = mesh->getMetaData();
-   RCP<stk::mesh::BulkData> bulk_data = mesh->getBulkData(); 
+   RCP<stk::mesh::BulkData> bulk_data = mesh->getBulkData();
    const stk::mesh::Field<double, stk::mesh::Cartesian>* domain_coord_field = &(mesh->getCoordinatesField());
    stk::ParallelMachine comm = bulk_data->parallel();
    // NOTE: the create bounding boxes call has specific typedefs on data.  We need to rewrite for general case.
    std::vector<AxisAlignedBoundingBox3D> domain_vector;
-   
+
 
    Teuchos::FancyOStream os(Teuchos::rcpFromRef(std::cout));
    os.setShowProcRank(true);
@@ -117,20 +117,20 @@ TEUCHOS_UNIT_TEST(tPointLocationSearch, basic)
    mesh->getMyElements(my_elements);
    for (std::vector<stk::mesh::Entity>::const_iterator e=my_elements.begin(); e!=my_elements.end();++e) {
      os << "element id = " << (*e)->identifier() << std::endl;
-   
+
 
      AxisAlignedBoundingBox3D bbox;
      std::vector<double> box(6);
      // loop over nodes to get min/max coordinates and center
 
-     // set on bbox 
+     // set on bbox
 
      // set the key for bbox
 
      // add bbox to vector
-     
+
    }
-   
+
      */
 
 
@@ -138,7 +138,7 @@ TEUCHOS_UNIT_TEST(tPointLocationSearch, basic)
 					     mesh->getElementRank(),
 					     const_cast<stk::mesh::Field<double, stk::mesh::Cartesian>* >(domain_coord_field),
 					     domain_vector);
-   
+
 
 
 
@@ -147,40 +147,40 @@ TEUCHOS_UNIT_TEST(tPointLocationSearch, basic)
 
    os << "\nsize of domain = " << domain_vector.size() << std::endl;
    for (std::vector<AxisAlignedBoundingBox3D>::const_iterator i=domain_vector.begin(); i != domain_vector.end(); ++i)
-     os << i->key.ident.id() << "," << i->key.proc << " = " 
+     os << i->key.ident.id() << "," << i->key.proc << " = "
 	<< "X(" << i->box[0] << "," << i->box[0+AxisAlignedBoundingBox3D::DIMENSION] << ") "
 	<< "Y(" << i->box[1] << "," << i->box[1+AxisAlignedBoundingBox3D::DIMENSION] << ") "
 	<< "Z(" << i->box[2] << "," << i->box[2+AxisAlignedBoundingBox3D::DIMENSION] << ") "
 	<< std::endl;
-   
+
 
    std::vector<PointBoundingBox3D> pts;
-   {   
+   {
      PointBoundingBox3D p;
      double center[3] = {0.25,0.25,0.25};
-     
+
      stk::mesh::EntityKey pt_key(0,451);
      IdentProc id(pt_key,stk::parallel_machine_rank(comm));
      p.key = id;
      p.set_center(center);
-     
+
      pts.push_back(p);
    }
 
    stk::search::FactoryOrder order;
    order.m_communicator = comm;
    order.m_algorithm = stk::search::FactoryOrder::BIHTREE;
-   
+
    IdentProcRelation relation;
-   
+
    stk::search::coarse_search(relation, pts, domain_vector, order);
-   
+
    for (IdentProcRelation::const_iterator i=relation.begin(); i != relation.end(); ++i)
-     os << "Relation Domain(" << i->first.ident.id() << "," << i->first.proc << ") " 
+     os << "Relation Domain(" << i->first.ident.id() << "," << i->first.proc << ") "
 	<< "Range(" << i->second.ident.id() << "," << i->second.proc << ")"
 	<< std::endl;
-   
-   
+
+
 
 }
 

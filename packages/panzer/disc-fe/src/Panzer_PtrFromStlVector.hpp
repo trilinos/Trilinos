@@ -64,10 +64,10 @@ namespace panzer {
   template <typename T>
   inline T* ptrFromStlVector(std::vector<T>& v)
   {
-#ifdef _GLIBCXX_DEBUG  
+#ifdef _GLIBCXX_DEBUG
     if (v.size() > 0)
       return &v[0];
-    
+
     return NULL;
 #else
     return &v[0];

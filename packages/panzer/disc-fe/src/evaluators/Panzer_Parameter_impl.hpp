@@ -59,13 +59,13 @@ Parameter(const std::string parameter_name,
 	  const std::string field_name,
 	  const Teuchos::RCP<PHX::DataLayout>& data_layout,
 	  panzer::ParamLib& param_lib)
-{ 
+{
   target_field = PHX::MDField<ScalarT, Cell, Point>(field_name, data_layout);
-  
+
   this->addEvaluatedField(target_field);
- 
+
   //param = panzer::accessScalarParameter<EvalT>(parameter_name,param_lib);
-  param = panzer::createAndRegisterScalarParameter<EvalT>(parameter_name,param_lib); 
+  param = panzer::createAndRegisterScalarParameter<EvalT>(parameter_name,param_lib);
     // no initialization, this will be done by someone else (possibly the ME) later
 
   std::string n = "Parameter Evaluator";
@@ -85,7 +85,7 @@ postRegistrationSetup(typename TRAITS::SetupData /* worksets */,
 template<typename EvalT, typename TRAITS>
 void Parameter<EvalT, TRAITS>::
 evaluateFields(typename TRAITS::EvalData workset)
-{ 
+{
   //std::cout << "ROGER ParamValue = " << param->getValue() << std::endl;
 
   for (index_t cell = 0; cell < workset.num_cells; ++cell) {

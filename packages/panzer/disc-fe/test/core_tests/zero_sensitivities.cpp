@@ -75,17 +75,17 @@ namespace panzer {
 
 
   typedef PHX::index_size_type size_type;
-  
+
   template <typename Scalar,typename Device,typename Array>
   class ComputeA {
     Array a_;
   public:
     typedef PHX::Device execution_space;
-    
+
     ComputeA(Array& a)
       : a_(a)
     {}
-    
+
     KOKKOS_INLINE_FUNCTION
     void operator () (const size_type c) const
     {
@@ -101,11 +101,11 @@ namespace panzer {
     Array a_;
   public:
     typedef PHX::Device execution_space;
-    
+
     ComputeB(Array& a)
       : a_(a)
     {}
-    
+
     KOKKOS_INLINE_FUNCTION
     void operator () (const size_type c) const
     {
@@ -135,18 +135,18 @@ namespace panzer {
     {
       PHX::MDField<panzer::Traits::RealType,Cell,BASIS> a("rho",dl);
       a.setFieldData(PHX::KokkosViewFactory<panzer::Traits::RealType,PHX::Device>::buildView(a.fieldTag()));
-      
+
       // initialize
       for (int cell = 0; cell < a.extent_int(0); ++cell) {
 	for (int pt=0; pt < a.extent_int(1); ++pt) {
 	  a(cell,pt) = 2.0;
 	}
       }
-      
+
       // Compute
       Kokkos::parallel_for(a.extent_int(0),ComputeA<panzer::Traits::RealType,PHX::Device,PHX::MDField<panzer::Traits::RealType,Cell,BASIS> > (a));
       PHX::Device::fence();
-      
+
       // Check
       for (int cell = 0; cell < a.extent_int(0); ++cell)
 	for (int pt=0; pt < a.extent_int(1); ++pt)
@@ -161,7 +161,7 @@ namespace panzer {
       std::vector<size_type> derivative_dimension;
       derivative_dimension.push_back(2);
       a.setFieldData(PHX::KokkosViewFactory<panzer::Traits::FadType,PHX::Device>::buildView(a.fieldTag(),derivative_dimension));
-      
+
       // initialize
       for (int cell = 0; cell < a.extent_int(0); ++cell) {
 	for (int pt=0; pt < a.extent_int(1); ++pt) {
@@ -173,11 +173,11 @@ namespace panzer {
 	  TEST_FLOATING_EQUALITY(a(cell,pt).fastAccessDx(1),3.0,1e-12);
 	}
       }
-      
+
       // Compute
       Kokkos::parallel_for(a.dimension_0(),ComputeB<PHX::Device,PHX::MDField<panzer::Traits::FadType,Cell,BASIS> > (a));
       PHX::Device::fence();
-      
+
       // Check
       for (int cell = 0; cell < a.extent_int(0); ++cell) {
 	for (int pt=0; pt < a.extent_int(1); ++pt) {
@@ -187,6 +187,6 @@ namespace panzer {
 	}
       }
 
-    }    
+    }
   }
 }

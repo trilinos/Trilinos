@@ -119,7 +119,7 @@ TEUCHOS_UNIT_TEST(tTpetra_GlbEvalData, basic)
   RCP<const Tpetra_Import> importer = rcp(new Tpetra_Import(ownedMap,ghostedMap));
 
   TpetraVector_ReadOnly_GlobalEvaluationData<double,int,panzer::Ordinal64> ged;
- 
+
   TEST_ASSERT(!ged.isInitialized());
 
   ged.initialize(importer,ghostedMap,ownedMap);
@@ -127,16 +127,16 @@ TEUCHOS_UNIT_TEST(tTpetra_GlbEvalData, basic)
   TEST_ASSERT(ged.isInitialized());
 
   // test the ghosted vector sizing (we don't care what the entries are!)
-  { 
+  {
     RCP<Tpetra_Vector> ghostedVecTp = ged.getGhostedVector_Tpetra();
     RCP<Thyra_Vector>  ghostedVecT = ged.getGhostedVector();
 
-    TEST_ASSERT(ghostedVecTp!=Teuchos::null); 
-    TEST_ASSERT(ghostedVecT!=Teuchos::null); 
+    TEST_ASSERT(ghostedVecTp!=Teuchos::null);
+    TEST_ASSERT(ghostedVecT!=Teuchos::null);
 
-    RCP<const Thyra::SpmdVectorSpaceBase<double> > ghostedSpace 
+    RCP<const Thyra::SpmdVectorSpaceBase<double> > ghostedSpace
         = rcp_dynamic_cast<const Thyra::SpmdVectorSpaceBase<double> >(ghostedVecT->space());
-    
+
     TEST_EQUALITY(ghostedMap->getNodeNumElements(),ghostedVecTp->getLocalLength());
     TEST_EQUALITY(ghostedMap->getGlobalNumElements(),ghostedVecTp->getGlobalLength());
 
@@ -166,18 +166,18 @@ TEUCHOS_UNIT_TEST(tTpetra_GlbEvalData, basic)
   }
 
   // test the owned vector sizing and thyra entries
-  { 
+  {
     const Tpetra_Vector & ownedVecTp = *ged.getOwnedVector_Tpetra();
     auto uv_2d = ownedVecTp.getLocalView<Kokkos::HostSpace> ();
     auto ownedVecTpKv = Kokkos::subview (uv_2d, Kokkos::ALL (), 0);
 
     RCP<const Thyra_Vector>  ownedVecT = ged.getOwnedVector();
 
-    TEST_ASSERT(ownedVecT!=Teuchos::null); 
+    TEST_ASSERT(ownedVecT!=Teuchos::null);
 
-    RCP<const Thyra::SpmdVectorSpaceBase<double> > ownedSpace 
+    RCP<const Thyra::SpmdVectorSpaceBase<double> > ownedSpace
         = rcp_dynamic_cast<const Thyra::SpmdVectorSpaceBase<double> >(ownedVecT->space());
-    
+
     TEST_EQUALITY(ownedMap->getNodeNumElements(),ownedVecTp.getLocalLength());
     TEST_EQUALITY(ownedMap->getGlobalNumElements(),ownedVecTp.getGlobalLength());
 
@@ -435,9 +435,9 @@ TEUCHOS_UNIT_TEST(tTpetra_GlbEvalData, filtered_dofs)
   RCP<const Tpetra_Import> importer = rcp(new Tpetra_Import(ownedMap,ghostedMap));
 
   TpetraVector_ReadOnly_GlobalEvaluationData<double,int,panzer::Ordinal64> ged;
- 
+
   std::vector<panzer::Ordinal64> constIndex(1);
- 
+
   // setup filtered values
   constIndex[0] = 0;
   ged.useConstantValues(constIndex,2.0);

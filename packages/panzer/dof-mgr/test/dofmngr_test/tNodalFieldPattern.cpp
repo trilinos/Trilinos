@@ -52,11 +52,11 @@
 #include "Panzer_NodalFieldPattern.hpp"
 
 // include some intrepid basis functions
-// 2D basis 
+// 2D basis
 #include "Intrepid2_HGRAD_TRI_C1_FEM.hpp"
 #include "Intrepid2_HGRAD_TRI_C2_FEM.hpp"
 
-// 3D basis 
+// 3D basis
 #include "Intrepid2_HGRAD_HEX_C1_FEM.hpp"
 #include "Intrepid2_HGRAD_HEX_C2_FEM.hpp"
 
@@ -84,7 +84,7 @@ TEUCHOS_UNIT_TEST(tNodalFieldPattern, test2d_tri_c1)
    Teuchos::RCP<FieldPattern> pattern1 = rcp(new Intrepid2FieldPattern(basis1));
    Teuchos::RCP<FieldPattern> pattern2 = rcp(new Intrepid2FieldPattern(basis2));
    Teuchos::RCP<FieldPattern> nodalPattern = rcp(new NodalFieldPattern(pattern1->getCellTopology()));
-  
+
    TEST_ASSERT(nodalPattern->equals(*pattern1))
    TEST_ASSERT(!nodalPattern->equals(*pattern2))
 }
@@ -99,7 +99,7 @@ TEUCHOS_UNIT_TEST(tNodalFieldPattern, test3d_HEX_c1)
    Teuchos::RCP<FieldPattern> pattern1 = rcp(new Intrepid2FieldPattern(basis1));
    Teuchos::RCP<FieldPattern> pattern2 = rcp(new Intrepid2FieldPattern(basis2));
    Teuchos::RCP<FieldPattern> nodalPattern = rcp(new NodalFieldPattern(pattern1->getCellTopology()));
-  
+
    TEST_ASSERT(nodalPattern->equals(*pattern1))
    TEST_ASSERT(!nodalPattern->equals(*pattern2))
 }

@@ -88,7 +88,7 @@ BasisInformation(const std::string & in_basis_type,
   else if(basis_type_=="Const")
     element_space_ = CONST;
   else { TEUCHOS_TEST_FOR_EXCEPTION(true,std::invalid_argument,
-				    "BasisInformation::initializeIntrospection - Invalid basis name \"" 
+				    "BasisInformation::initializeIntrospection - Invalid basis name \""
 				    << basis_type_ << "\""); }
 }
 

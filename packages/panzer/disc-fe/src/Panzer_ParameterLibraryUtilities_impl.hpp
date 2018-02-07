@@ -47,14 +47,14 @@ namespace panzer {
 
   template<typename EvaluationType>
   Teuchos::RCP<panzer::ScalarParameterEntry<EvaluationType> >
-  createAndRegisterScalarParameter(const std::string name, 
+  createAndRegisterScalarParameter(const std::string name,
 				   panzer::ParamLib& pl)
   {
     if (!pl.isParameter(name))
       pl.addParameterFamily(name,true,false);
-    
+
     Teuchos::RCP<panzer::ScalarParameterEntry<EvaluationType> > entry;
-    
+
     if (pl.isParameterForType<EvaluationType>(name)) {
       Teuchos::RCP<Sacado::ScalarParameterEntry<EvaluationType,panzer::EvaluationTraits> > sacado_entry =
 	pl.getEntry<EvaluationType>(name);

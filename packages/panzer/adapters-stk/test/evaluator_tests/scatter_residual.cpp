@@ -117,15 +117,15 @@ namespace panzer {
     testInitialization(ipb);
 
     const int default_int_order = 1;
-    std::string eBlockID = "eblock-0_0";    
+    std::string eBlockID = "eblock-0_0";
     Teuchos::RCP<user_app::MyFactory> eqset_factory = Teuchos::rcp(new user_app::MyFactory);
     panzer::CellData cellData(workset_size,mesh->getCellTopology("eblock-0_0"));
     Teuchos::RCP<panzer::GlobalData> gd = panzer::createGlobalData();
-    Teuchos::RCP<panzer::PhysicsBlock> physicsBlock = 
+    Teuchos::RCP<panzer::PhysicsBlock> physicsBlock =
       Teuchos::rcp(new PhysicsBlock(ipb,eBlockID,default_int_order,cellData,eqset_factory,gd,false));
 
     Teuchos::RCP<std::vector<panzer::Workset> > work_sets = panzer_stk::buildWorksets(*mesh,physicsBlock->elementBlockID(),
-                                                                                            physicsBlock->getWorksetNeeds()); 
+                                                                                            physicsBlock->getWorksetNeeds());
     TEST_EQUALITY(work_sets->size(),1);
 
     // build connection manager and field manager
@@ -148,14 +148,14 @@ namespace panzer {
     // setup linear object factory
     /////////////////////////////////////////////////////////////
 
-    Teuchos::RCP<BlockedEpetraLinearObjFactory<panzer::Traits,int> > be_lof 
+    Teuchos::RCP<BlockedEpetraLinearObjFactory<panzer::Traits,int> > be_lof
        = Teuchos::rcp(new BlockedEpetraLinearObjFactory<panzer::Traits,int>(tComm.getConst(),dofManager));
     Teuchos::RCP<LinearObjFactory<panzer::Traits> > lof = be_lof;
     Teuchos::RCP<LinearObjContainer> loc = be_lof->buildGhostedLinearObjContainer();
     be_lof->initializeGhostedContainer(LinearObjContainer::X | LinearObjContainer::F,*loc);
     loc->initialize();
 
-    Teuchos::RCP<BlockedEpetraLinearObjContainer> b_loc 
+    Teuchos::RCP<BlockedEpetraLinearObjContainer> b_loc
        = Teuchos::rcp_dynamic_cast<BlockedEpetraLinearObjContainer>(loc);
     Teuchos::RCP<Thyra::ProductVectorBase<double> > p_vec = Teuchos::rcp_dynamic_cast<Thyra::ProductVectorBase<double> >(b_loc->get_x());
     Thyra::assign(p_vec->getNonconstVectorBlock(0).ptr(),123.0+myRank);
@@ -164,7 +164,7 @@ namespace panzer {
 
     // setup field manager, add evaluator under test
     /////////////////////////////////////////////////////////////
- 
+
     PHX::FieldManager<panzer::Traits> fm;
 
     std::string resName = "";
@@ -182,7 +182,7 @@ namespace panzer {
        names->push_back(resName+fieldName1_q1);
        names->push_back(resName+fieldName2_q1);
 
-       Teuchos::ParameterList pl; 
+       Teuchos::ParameterList pl;
        pl.set("Scatter Name", "ScatterQ1");
        pl.set("Basis", basis_q1.getConst());
        pl.set("Dependent Names", names);
@@ -201,7 +201,7 @@ namespace panzer {
        RCP<std::vector<std::string> > names = rcp(new std::vector<std::string>);
        names->push_back(resName+fieldName_qedge1);
 
-       Teuchos::ParameterList pl; 
+       Teuchos::ParameterList pl;
        pl.set("Scatter Name", "ScatterQEdge1");
        pl.set("Basis", basis_qedge1.getConst());
        pl.set("Dependent Names", names);
@@ -223,7 +223,7 @@ namespace panzer {
        names->push_back(fieldName1_q1);
        names->push_back(fieldName2_q1);
 
-       Teuchos::ParameterList pl; 
+       Teuchos::ParameterList pl;
        pl.set("Basis", basis_q1);
        pl.set("DOF Names",names);
        pl.set("Indexer Names",names);
@@ -238,7 +238,7 @@ namespace panzer {
        RCP<std::vector<std::string> > names = rcp(new std::vector<std::string>);
        names->push_back(fieldName_qedge1);
 
-       Teuchos::ParameterList pl; 
+       Teuchos::ParameterList pl;
        pl.set("Basis", basis_qedge1);
        pl.set("DOF Names",names);
        pl.set("Indexer Names",names);
@@ -277,7 +277,7 @@ namespace panzer {
 
     // check all the residual values. This is kind of crappy test since it simply checks twice the target
     // value and the target. Its this way because you add two entries across elements.
-    
+
     Teuchos::rcp_dynamic_cast<const Thyra::SpmdVectorBase<double> >(f_vec->getVectorBlock(0))->getLocalData(Teuchos::ptrFromRef(data));
     TEST_EQUALITY(data.size(),b_loc->getMapForBlock(0)->NumMyElements());
     for(size_type i=0;i<data.size();i++) {
@@ -326,15 +326,15 @@ namespace panzer {
     testInitialization(ipb);
 
     const int default_int_order = 1;
-    std::string eBlockID = "eblock-0_0";    
+    std::string eBlockID = "eblock-0_0";
     Teuchos::RCP<user_app::MyFactory> eqset_factory = Teuchos::rcp(new user_app::MyFactory);
     panzer::CellData cellData(workset_size,mesh->getCellTopology("eblock-0_0"));
     Teuchos::RCP<panzer::GlobalData> gd = panzer::createGlobalData();
-    Teuchos::RCP<panzer::PhysicsBlock> physicsBlock = 
+    Teuchos::RCP<panzer::PhysicsBlock> physicsBlock =
       Teuchos::rcp(new PhysicsBlock(ipb,eBlockID,default_int_order,cellData,eqset_factory,gd,false));
 
     Teuchos::RCP<std::vector<panzer::Workset> > work_sets = panzer_stk::buildWorksets(*mesh,physicsBlock->elementBlockID(),
-                                                                                            physicsBlock->getWorksetNeeds()); 
+                                                                                            physicsBlock->getWorksetNeeds());
     TEST_EQUALITY(work_sets->size(),1);
 
     // build connection manager and field manager
@@ -357,14 +357,14 @@ namespace panzer {
     // setup linear object factory
     /////////////////////////////////////////////////////////////
 
-    Teuchos::RCP<BlockedEpetraLinearObjFactory<panzer::Traits,int> > be_lof 
+    Teuchos::RCP<BlockedEpetraLinearObjFactory<panzer::Traits,int> > be_lof
        = Teuchos::rcp(new BlockedEpetraLinearObjFactory<panzer::Traits,int>(tComm.getConst(),dofManager));
     Teuchos::RCP<LinearObjFactory<panzer::Traits> > lof = be_lof;
     Teuchos::RCP<LinearObjContainer> loc = be_lof->buildGhostedLinearObjContainer();
     be_lof->initializeGhostedContainer(LinearObjContainer::X | LinearObjContainer::F | LinearObjContainer::Mat,*loc);
     loc->initialize();
 
-    Teuchos::RCP<BlockedEpetraLinearObjContainer> b_loc 
+    Teuchos::RCP<BlockedEpetraLinearObjContainer> b_loc
        = Teuchos::rcp_dynamic_cast<BlockedEpetraLinearObjContainer>(loc);
 
     Teuchos::RCP<Thyra::ProductVectorBase<double> > p_vec = Teuchos::rcp_dynamic_cast<Thyra::ProductVectorBase<double> >(b_loc->get_x());
@@ -374,7 +374,7 @@ namespace panzer {
 
     // setup field manager, add evaluator under test
     /////////////////////////////////////////////////////////////
- 
+
     PHX::FieldManager<panzer::Traits> fm;
 
     std::string resName = "";
@@ -392,7 +392,7 @@ namespace panzer {
        names->push_back(resName+fieldName1_q1);
        names->push_back(resName+fieldName2_q1);
 
-       Teuchos::ParameterList pl; 
+       Teuchos::ParameterList pl;
        pl.set("Scatter Name", "ScatterQ1");
        pl.set("Basis", basis_q1.getConst());
        pl.set("Dependent Names", names);
@@ -411,7 +411,7 @@ namespace panzer {
        RCP<std::vector<std::string> > names = rcp(new std::vector<std::string>);
        names->push_back(resName+fieldName_qedge1);
 
-       Teuchos::ParameterList pl; 
+       Teuchos::ParameterList pl;
        pl.set("Scatter Name", "ScatterQEdge1");
        pl.set("Basis", basis_qedge1.getConst());
        pl.set("Dependent Names", names);
@@ -433,7 +433,7 @@ namespace panzer {
        names->push_back(fieldName1_q1);
        names->push_back(fieldName2_q1);
 
-       Teuchos::ParameterList pl; 
+       Teuchos::ParameterList pl;
        pl.set("Basis", basis_q1);
        pl.set("DOF Names",names);
        pl.set("Indexer Names",names);
@@ -448,7 +448,7 @@ namespace panzer {
        RCP<std::vector<std::string> > names = rcp(new std::vector<std::string>);
        names->push_back(fieldName_qedge1);
 
-       Teuchos::ParameterList pl; 
+       Teuchos::ParameterList pl;
        pl.set("Basis", basis_qedge1);
        pl.set("DOF Names",names);
        pl.set("Indexer Names",names);
@@ -487,7 +487,7 @@ namespace panzer {
 
     // check all the residual values. This is kind of crappy test since it simply checks twice the target
     // value and the target. Its this way because you add two entries across elements.
-    
+
     Teuchos::rcp_dynamic_cast<const Thyra::SpmdVectorBase<double> >(f_vec->getVectorBlock(0))->getLocalData(Teuchos::ptrFromRef(data));
     TEST_EQUALITY(data.size(),b_loc->getMapForBlock(0)->NumMyElements());
     out << std::endl;
@@ -502,7 +502,7 @@ namespace panzer {
     out << std::endl;
     for(size_type i=0;i<data.size();i++) {
        double target = 456.0+myRank;
-       TEST_ASSERT(data[i]==target || data[i]==2.0*target); 
+       TEST_ASSERT(data[i]==target || data[i]==2.0*target);
        out << data[i] << std::endl;
     }
 
@@ -517,12 +517,12 @@ namespace panzer {
   }
 
   Teuchos::RCP<panzer::PureBasis> buildBasis(std::size_t worksetSize,const std::string & basisName)
-  { 
-     Teuchos::RCP<shards::CellTopology> topo = 
+  {
+     Teuchos::RCP<shards::CellTopology> topo =
         Teuchos::rcp(new shards::CellTopology(shards::getCellTopologyData< shards::Quadrilateral<4> >()));
 
      panzer::CellData cellData(worksetSize,topo);
-     return Teuchos::rcp(new panzer::PureBasis(basisName,1,cellData)); 
+     return Teuchos::rcp(new panzer::PureBasis(basisName,1,cellData));
   }
 
   Teuchos::RCP<panzer_stk::STK_Interface> buildMesh(int elemX,int elemY)
@@ -532,11 +532,11 @@ namespace panzer {
     pl->set("Y Blocks",1);
     pl->set("X Elements",elemX);
     pl->set("Y Elements",elemY);
-    
+
     panzer_stk::SquareQuadMeshFactory factory;
     factory.setParameterList(pl);
     RCP<panzer_stk::STK_Interface> mesh = factory.buildUncommitedMesh(MPI_COMM_WORLD);
-    factory.completeMeshConstruction(*mesh,MPI_COMM_WORLD); 
+    factory.completeMeshConstruction(*mesh,MPI_COMM_WORLD);
 
     return mesh;
   }
@@ -563,7 +563,7 @@ namespace panzer {
       p.set("Basis Order",1);
       p.set("Integration Order",1);
     }
-    
+
   }
 
 }

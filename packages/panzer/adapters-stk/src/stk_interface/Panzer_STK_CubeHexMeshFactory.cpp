@@ -88,7 +88,7 @@ Teuchos::RCP<STK_Interface> CubeHexMeshFactory::buildUncommitedMesh(stk::Paralle
 
    if(xProcs_==-1) {
       // default x only decomposition
-      xProcs_ = machSize_; 
+      xProcs_ = machSize_;
       yProcs_ = 1;
       zProcs_ = 1;
    }
@@ -99,7 +99,7 @@ Teuchos::RCP<STK_Interface> CubeHexMeshFactory::buildUncommitedMesh(stk::Paralle
 
    // build meta information: blocks and side set setups
    buildMetaData(parallelMach,*mesh);
- 
+
    mesh->addPeriodicBCs(periodicBCVec_);
 
    return mesh;
@@ -148,13 +148,13 @@ void CubeHexMeshFactory::setParameterList(const Teuchos::RCP<Teuchos::ParameterL
 
    setMyParamList(paramList);
 
-   x0_ = paramList->get<double>("X0"); 
-   y0_ = paramList->get<double>("Y0"); 
-   z0_ = paramList->get<double>("Z0"); 
+   x0_ = paramList->get<double>("X0");
+   y0_ = paramList->get<double>("Y0");
+   z0_ = paramList->get<double>("Z0");
 
-   xf_ = paramList->get<double>("Xf"); 
-   yf_ = paramList->get<double>("Yf"); 
-   zf_ = paramList->get<double>("Zf"); 
+   xf_ = paramList->get<double>("Xf");
+   yf_ = paramList->get<double>("Yf");
+   zf_ = paramList->get<double>("Zf");
 
    xBlocks_ = paramList->get<int>("X Blocks");
    yBlocks_ = paramList->get<int>("Y Blocks");
@@ -246,7 +246,7 @@ void CubeHexMeshFactory::buildMetaData(stk::ParallelMachine /* parallelMach */, 
       }
    }
 
-   // add sidesets 
+   // add sidesets
    mesh.addSideset("left",side_ctd);
    mesh.addSideset("right",side_ctd);
    mesh.addSideset("top",side_ctd);
@@ -311,7 +311,7 @@ void CubeHexMeshFactory::buildBlock(stk::ParallelMachine /* parallelMach */,int 
    double deltaX = (xf_-x0_)/double(totalXElems);
    double deltaY = (yf_-y0_)/double(totalYElems);
    double deltaZ = (zf_-z0_)/double(totalZElems);
- 
+
    std::vector<double> coord(3,0.0);
 
    // build the nodes
@@ -338,14 +338,14 @@ void CubeHexMeshFactory::buildBlock(stk::ParallelMachine /* parallelMach */,int 
             stk::mesh::EntityId gid = totalXElems*totalYElems*nz+totalXElems*ny+nx+1;
             std::vector<stk::mesh::EntityId> nodes(8);
             nodes[0] = nx+1+ny*(totalXElems+1) +nz*(totalYElems+1)*(totalXElems+1);
-            nodes[1] = nodes[0]+1;              
+            nodes[1] = nodes[0]+1;
             nodes[2] = nodes[1]+(totalXElems+1);
-            nodes[3] = nodes[2]-1;              
+            nodes[3] = nodes[2]-1;
             nodes[4] = nodes[0]+(totalYElems+1)*(totalXElems+1);
             nodes[5] = nodes[1]+(totalYElems+1)*(totalXElems+1);
             nodes[6] = nodes[2]+(totalYElems+1)*(totalXElems+1);
             nodes[7] = nodes[3]+(totalYElems+1)*(totalXElems+1);
-   
+
             RCP<ElementDescriptor> ed = rcp(new ElementDescriptor(gid,nodes));
             mesh.addElement(ed,block);
          }
@@ -473,7 +473,7 @@ void CubeHexMeshFactory::addSides(STK_Interface & mesh) const
       }
 
       if(ny==0) {
-         // on the bottom 
+         // on the bottom
          mesh.getBulkData()->declare_element_side(element, 0, parts);
       }
       if(ny+1==totalYElems) {
@@ -514,7 +514,7 @@ void CubeHexMeshFactory::addSideSets(STK_Interface & mesh) const
    std::vector<stk::mesh::Part*> vertical;
    std::vector<stk::mesh::Part*> horizontal;
    std::vector<stk::mesh::Part*> transverse;
-  
+
    if(buildInterfaceSidesets_) {
      for(int bx=1;bx<xBlocks_;bx++) {
        std::stringstream ss;
@@ -584,7 +584,7 @@ void CubeHexMeshFactory::addSideSets(STK_Interface & mesh) const
       if(ny % nYElems_==0) {
          stk::mesh::Entity side = mesh.findConnectivityById(element, side_rank, 0);
 
-         // on the bottom 
+         // on the bottom
          if(mesh.entityOwnerRank(side)==machRank_) {
 	   if(ny==0) {
 	     mesh.addEntityToSideset(side,bottom);
@@ -655,7 +655,7 @@ void CubeHexMeshFactory::addNodeSets(STK_Interface & mesh) const
    stk::mesh::Part * origin = mesh.getNodeset("origin");
 
    Teuchos::RCP<stk::mesh::BulkData> bulkData = mesh.getBulkData();
-   if(machRank_==0) 
+   if(machRank_==0)
    {
       // add zero node to origin node set
       stk::mesh::Entity node = bulkData->get_entity(mesh.getNodeRank(),1);

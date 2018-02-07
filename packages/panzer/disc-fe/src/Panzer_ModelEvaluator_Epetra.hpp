@@ -81,7 +81,7 @@ namespace panzer {
 			  const std::vector<Teuchos::RCP<Teuchos::Array<double> > >& p_values,
 			  const Teuchos::RCP<panzer::GlobalData>& global_data,
 			  bool build_transient_support);
-    
+
     ModelEvaluator_Epetra(const Teuchos::RCP<panzer::FieldManagerBuilder>& fmb,
                           const Teuchos::RCP<panzer::ResponseLibrary<panzer::Traits> >& rLibrary,
 			  const Teuchos::RCP<panzer::BlockedEpetraLinearObjFactory<panzer::Traits,int> >& lof,
@@ -89,10 +89,10 @@ namespace panzer {
 			  const std::vector<Teuchos::RCP<Teuchos::Array<double> > >& p_values,
 			  const Teuchos::RCP<panzer::GlobalData>& global_data,
 			  bool build_transient_support);
-    
+
     /** \name Overridden from EpetraExt::ModelEvaluator . */
     //@{
-    
+
     Teuchos::RCP<const Epetra_Map> get_x_map() const;
     Teuchos::RCP<const Epetra_Map> get_f_map() const;
     Teuchos::RCP<const Epetra_Vector> get_x_init() const;
@@ -119,7 +119,7 @@ namespace panzer {
 
     /** \name Post-Construction methods to add parameters and/or responses */
     //@{
-    
+
     /** Add a distributed parameter to the model evaluator
 
         Distributed parameters are special in that they most likely
@@ -142,8 +142,8 @@ namespace panzer {
 
         \param[in] name Name of the distributed parameter
 	\param[in] global_map RCP to Epetra_Map used to construct the global parameter vector.
-	\param[in] importer RCP to a Epetra_Import object used for the global to ghost.  If set to null, then no global to ghost will be performed.  
-	\param[in] ghosted_vector RCP to the ghosted vector that is the target of the global to ghost.  If set to null, then no global to ghost will be performed.  
+	\param[in] importer RCP to a Epetra_Import object used for the global to ghost.  If set to null, then no global to ghost will be performed.
+	\param[in] ghosted_vector RCP to the ghosted vector that is the target of the global to ghost.  If set to null, then no global to ghost will be performed.
 
 	\return The index associated with this parameter for accessing it through the ModelEvaluator interface.
     */
@@ -208,7 +208,7 @@ namespace panzer {
       */
     void setOneTimeDirichletBeta(const double & beta) const;
 
-    /** Apply the dirichlet boundary conditions to the vector "f" using the 
+    /** Apply the dirichlet boundary conditions to the vector "f" using the
       * "x" values as the current solution.
       */
     void applyDirichletBCs(const Teuchos::RCP<Thyra::VectorBase<double> > & x,
@@ -234,7 +234,7 @@ namespace panzer {
     // Private evaluation methods
 
     //! for evaluation and handling of normal quantities, x,f,W, etc
-    void evalModel_basic( const InArgs& inArgs, const OutArgs& outArgs ) const; 
+    void evalModel_basic( const InArgs& inArgs, const OutArgs& outArgs ) const;
 
     /** handles evaluation of responses g, dgdx
       *
@@ -260,10 +260,10 @@ namespace panzer {
     //! Are their required responses in the out args? g and DgDx
     bool required_basic_g(const OutArgs & outArgs) const;
 
-    //! Are their required responses in the out args? DgDx 
+    //! Are their required responses in the out args? DgDx
     bool required_basic_dgdx(const OutArgs & outArgs) const;
 
-    //! Are derivatives of the residual with respect to the parameters in the out args? DfDp 
+    //! Are derivatives of the residual with respect to the parameters in the out args? DfDp
     bool required_basic_dfdp(const OutArgs & outArgs) const;
 
     void copyEpetraIntoThyra(const Epetra_MultiVector& x, const Teuchos::Ptr<Thyra::VectorBase<double> > &thyraVec) const;
@@ -271,18 +271,18 @@ namespace panzer {
 
     // /////////////////////////////////////
     // Private member data
-    
+
     /** \defgroup EpetraObjs Underlying epetra types
-      * @{ 
+      * @{
       */
     Teuchos::RCP<const Epetra_Map>   map_x_;
     Teuchos::RCP<Epetra_Vector> x0_;
     Teuchos::RCP<Epetra_Vector> x_dot_init_;
     double t_init_;
-    mutable Teuchos::RCP<Epetra_Vector> dummy_f_;    
-    
+    mutable Teuchos::RCP<Epetra_Vector> dummy_f_;
+
     /** @} */
-    
+
     Teuchos::RCP<panzer::FieldManagerBuilder> fmb_;
     mutable panzer::AssemblyEngine_TemplateManager<panzer::Traits> ae_tm_;   // they control and provide access to evaluate
 
@@ -310,8 +310,8 @@ namespace panzer {
        Tuple index 0: the string name for the parameter in the model evaluator.
        Tuple index 1: the integer index for the parameter in the model evaluator.
        Tuple index 2: an RCP to the linear object factory that performs the global to ghost operation.
-       Tuple index 3: an RCP to the GHOSTED vector that is the target of the global to ghost operation. 
-    */ 
+       Tuple index 3: an RCP to the GHOSTED vector that is the target of the global to ghost operation.
+    */
     std::vector<std::tuple<std::string,int,Teuchos::RCP<Epetra_Import>,Teuchos::RCP<Epetra_Vector> > > distributed_parameter_container_;
 
     // basic specific linear object objects
@@ -351,17 +351,17 @@ namespace panzer {
        TEUCHOS_TEST_FOR_EXCEPTION(respBase==Teuchos::null,std::logic_error,
                                   "panzer::ModelEvaluator_Epetra::addResponse: Response with name \"" << responseName << "\" "
                                   "has no residual type! Not sure what is going on!");
-  
+
        // check that the response supports interactions with the model evaluator
        Teuchos::RCP<panzer::ResponseMESupportBase<panzer::Traits::Residual> > resp = Teuchos::rcp_dynamic_cast<panzer::ResponseMESupportBase<panzer::Traits::Residual> >(respBase);
        TEUCHOS_TEST_FOR_EXCEPTION(resp==Teuchos::null,std::logic_error,
                                   "panzer::ModelEvaluator_Epetra::addResponse: Response with name \"" << responseName << "\" "
                                   "resulted in bad cast to panzer::ResponseMESupportBase<Residual>, the type of the response is incompatible!");
-  
+
        // set the response in the model evaluator
        Teuchos::RCP<const Epetra_Map> eMap = resp->getMap();
        g_map_.push_back(eMap);
-  
+
        // lets be cautious and set a vector on the response
        resp->setVector(Teuchos::rcp(new Epetra_Vector(*eMap)));
      }
@@ -412,7 +412,7 @@ namespace panzer {
     * This method attempts to cast to the right linear object factory and then calls the
     * appropriate constructor of ModelEvaluator_Epetra.
     */
-  Teuchos::RCP<ModelEvaluator_Epetra> 
+  Teuchos::RCP<ModelEvaluator_Epetra>
   buildEpetraME(const Teuchos::RCP<FieldManagerBuilder>& fmb,
                 const Teuchos::RCP<ResponseLibrary<panzer::Traits> >& rLibrary,
 	        const Teuchos::RCP<LinearObjFactory<panzer::Traits> >& lof,
@@ -420,7 +420,7 @@ namespace panzer {
 	        const std::vector<Teuchos::RCP<Teuchos::Array<double> > >& p_values,
 		const Teuchos::RCP<panzer::GlobalData>& global_data,
 	        bool build_transient_support);
-  
+
 }
 
 #endif

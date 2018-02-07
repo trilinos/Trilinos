@@ -59,7 +59,7 @@
 
 #include "Thyra_LinearOpWithSolveFactoryBase.hpp"
 
-#ifdef PANZER_HAVE_TEKO 
+#ifdef PANZER_HAVE_TEKO
 #include "Teko_RequestHandler.hpp"
 #endif
 
@@ -73,9 +73,9 @@ buildLOWSFactory(bool blockedAssembly,
                  int spatialDim,
                  const Teuchos::RCP<const Teuchos::MpiComm<int> > & mpi_comm,
                  const Teuchos::RCP<Teuchos::ParameterList> & strat_params,
-                 #ifdef PANZER_HAVE_TEKO 
+                 #ifdef PANZER_HAVE_TEKO
                  const Teuchos::RCP<Teko::RequestHandler> & req_handler=Teuchos::null,
-                 #endif 
+                 #endif
                  bool writeCoordinates=false,
                  bool writeTopo=false,
                  const Teuchos::RCP<const panzer::UniqueGlobalIndexerBase> & auxGlobalIndexer=Teuchos::null,
@@ -84,17 +84,17 @@ buildLOWSFactory(bool blockedAssembly,
 
 /** Build LOWS factory.
   */
-template <typename GO> 
-Teuchos::RCP<Thyra::LinearOpWithSolveFactoryBase<double> > 
+template <typename GO>
+Teuchos::RCP<Thyra::LinearOpWithSolveFactoryBase<double> >
 buildLOWSFactory(bool blockedAssembly,
                  const Teuchos::RCP<const panzer::UniqueGlobalIndexerBase> & globalIndexer,
                  const Teuchos::RCP<panzer_stk::STKConnManager<GO> > & stkConn_manager,
                  int spatialDim,
                  const Teuchos::RCP<const Teuchos::MpiComm<int> > & mpi_comm,
                  const Teuchos::RCP<Teuchos::ParameterList> & strat_params,
-                 #ifdef PANZER_HAVE_TEKO 
+                 #ifdef PANZER_HAVE_TEKO
                  const Teuchos::RCP<Teko::RequestHandler> & req_handler,
-                 #endif 
+                 #endif
                  bool writeCoordinates=false,
                  bool writeTopo=false,
                  const Teuchos::RCP<const panzer::UniqueGlobalIndexerBase> & auxGlobalIndexer=Teuchos::null,

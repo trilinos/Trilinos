@@ -57,14 +57,14 @@ namespace user_app {
 
   template <typename EvalT>
   class BCStrategy_Neumann_Constant : public panzer::BCStrategy_Neumann_DefaultImpl<EvalT> {
-    
-  public:    
-    
+
+  public:
+
     BCStrategy_Neumann_Constant(const panzer::BC& bc, const Teuchos::RCP<panzer::GlobalData>& global_data);
-    
+
     void setup(const panzer::PhysicsBlock& side_pb,
 	       const Teuchos::ParameterList& user_data);
-    
+
     void buildAndRegisterEvaluators(PHX::FieldManager<panzer::Traits>& fm,
 				    const panzer::PhysicsBlock& pb,
 				    const panzer::ClosureModelFactory_TemplateManager<panzer::Traits>& factory,

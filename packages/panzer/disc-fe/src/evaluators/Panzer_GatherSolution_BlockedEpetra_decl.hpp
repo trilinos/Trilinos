@@ -104,7 +104,7 @@ namespace panzer
        *  \brief The scalar type.
        */
       typedef typename EvalT::ScalarT ScalarT;
-  
+
       /**
        *  \brief Constructor.
        *
@@ -117,7 +117,7 @@ namespace panzer
         const Teuchos::ParameterList& p)
       {
       } // end of Constructor
-  
+
       /**
        *  \brief Create a copy.
        *
@@ -137,7 +137,7 @@ namespace panzer
         return Teuchos::rcp(new
           GatherSolution_BlockedEpetra<EvalT, TRAITS, LO, GO>(pl));
       } // end of clone()
-  
+
       /**
        *  \brief Post-Registration Setup.
        *
@@ -152,7 +152,7 @@ namespace panzer
         PHX::FieldManager<TRAITS>& fm)
       {
       } // end of postRegistrationSetup()
-  
+
       /**
        *  \brief Evaluate Fields.
        *
@@ -206,7 +206,7 @@ namespace panzer
       GatherSolution_BlockedEpetra(
         const std::vector<Teuchos::RCP<const UniqueGlobalIndexer<LO, int>>>&
           indexers)
-        : 
+        :
         indexers_(indexers)
       {
       } // end of Constructor
@@ -241,7 +241,7 @@ namespace panzer
       postRegistrationSetup(
         typename TRAITS::SetupData d,
         PHX::FieldManager<TRAITS>& fm);
-       
+
       /**
        *  \brief Pre-Evaluate:  Sets the solution vector.
        *
@@ -255,7 +255,7 @@ namespace panzer
       void
       preEvaluate(
         typename TRAITS::PreEvalData d);
-       
+
       /**
        *  \brief Evaluate Fields:  Gather operation.
        *
@@ -267,7 +267,7 @@ namespace panzer
       void
       evaluateFields(
         typename TRAITS::EvalData d);
-       
+
       /**
        *  \brief Create a copy.
        *
@@ -290,7 +290,7 @@ namespace panzer
           GatherSolution_BlockedEpetra<Traits::Residual, TRAITS, LO, GO>
           (indexers_, pl));
       } // end of clone()
-  
+
     private:
 
       /**
@@ -302,61 +302,61 @@ namespace panzer
        *  \brief The scalar type.
        */
       typedef typename panzer::Traits::Residual::ScalarT ScalarT;
-       
+
       /**
        *  \brief These map the local (field, element, basis) triplet to a
        *         global ID for scattering.
        */
       std::vector<Teuchos::RCP<const UniqueGlobalIndexer<LO, int>>> indexers_;
-       
+
       /**
        *  \brief The block index into `indexers_`.
        */
       std::vector<int> indexerIds_;
-       
+
       /**
        *  \brief Sub-field IDs, which need to be mapped.
        */
       std::vector<int> subFieldIds_;
-       
+
       /**
        *  \brief The fields to be gathered.
        */
       std::vector<PHX::MDField<ScalarT, Cell, NODE>> gatherFields_;
-       
+
       /**
        *  \brief A list of the names of the fields to be gathered.
        */
       std::vector<std::string> indexerNames_;
-       
+
       /**
        *  \brief A flag indicating whether we should be working with \f$ x \f$
        *         or \f$ \dot{x} \f$.
        */
       bool useTimeDerivativeSolutionVector_;
-       
+
       /**
        *  \brief The key identifying the `GlobalEvaluationData`.
        */
       std::string globalDataKey_;
-       
+
       /**
        *  \brief The solution vector.
        */
       Teuchos::RCP<Thyra::ProductVectorBase<double>> x_;
-       
+
       /**
        *  \brief The `GlobalEvaluationData` containing both the owned and
        *         ghosted solution vectors.
        */
       Teuchos::RCP<panzer::BlockedVector_ReadOnly_GlobalEvaluationData>
       xBvRoGed_;
-  
+
       /**
        *  \brief A flag indicating whether or not we have tangent fields.
        */
       bool hasTangentFields_;
-       
+
       /**
        *  \brief Fields for storing the tangent components
        *         \f$\left(\frac{dx}{dp}\right)\f$ of the solution vector
@@ -369,7 +369,7 @@ namespace panzer
        */
       std::vector<std::vector<PHX::MDField<const ScalarT, Cell, NODE>>>
       tangentFields_;
-       
+
       /**
        *  \brief Default Constructor (disabled)
        */
@@ -395,7 +395,7 @@ namespace panzer
     public panzer::CloneableEvaluator
   {
     public:
-  
+
       /**
        *  \brief Constructor.
        *
@@ -411,7 +411,7 @@ namespace panzer
         indexers_(indexers)
       {
       } // end of Constructor
-  
+
       /**
        *  \brief Initializing Constructor.
        *
@@ -428,7 +428,7 @@ namespace panzer
         const std::vector<Teuchos::RCP<const UniqueGlobalIndexer<LO, int>>>&
           indexers,
         const Teuchos::ParameterList& p);
-  
+
       /**
        *  \brief Post-Registration Setup.
        *
@@ -442,7 +442,7 @@ namespace panzer
       postRegistrationSetup(
         typename TRAITS::SetupData d,
         PHX::FieldManager<TRAITS>& fm);
-  
+
       /**
        *  \brief Pre-Evaluate:  Sets the solution vector.
        *
@@ -456,7 +456,7 @@ namespace panzer
       void
       preEvaluate(
         typename TRAITS::PreEvalData d);
-  
+
       /**
        *  \brief Evaluate Fields:  Gather operation.
        *
@@ -469,7 +469,7 @@ namespace panzer
       void
       evaluateFields(
         typename TRAITS::EvalData d);
-  
+
       /**
        *  \brief Create a copy.
        *
@@ -492,7 +492,7 @@ namespace panzer
           GatherSolution_BlockedEpetra<Traits::Tangent, TRAITS, LO, GO>
           (indexers_, pl));
       } // end of clone()
-  
+
     private:
 
       /**
@@ -504,49 +504,49 @@ namespace panzer
        *  \brief The scalar type.
        */
       typedef typename panzer::Traits::Tangent::ScalarT ScalarT;
-  
+
       /**
        *  \brief These map the local (field, element, basis) triplet to a
        *         global ID for scattering.
        */
       std::vector<Teuchos::RCP<const UniqueGlobalIndexer<LO, int>>> indexers_;
-  
+
       /**
        *  \brief The block index into `indexers_`.
        */
       std::vector<int> indexerIds_;
-  
+
       /**
        *  \brief Sub-field IDs, which need to be mapped.
        */
       std::vector<int> subFieldIds_;
-  
+
       /**
        *  \brief The fields to be gathered.
        */
       std::vector<PHX::MDField<ScalarT, Cell, NODE>> gatherFields_;
-  
+
       /**
        *  \brief A list of the names of the fields to be gathered.
        */
       std::vector<std::string> indexerNames_;
-  
+
       /**
        *  \brief A flag indicating whether we should be working with \f$ x \f$
        *         or \f$ \dot{x} \f$.
        */
       bool useTimeDerivativeSolutionVector_;
-  
+
       /**
        *  \brief The key identifying the `GlobalEvaluationData`.
        */
       std::string globalDataKey_;
-  
+
       /**
        *  \brief The solution vector.
        */
       Teuchos::RCP<Thyra::ProductVectorBase<double>> x_;
-  
+
       /**
        *  \brief The `GlobalEvaluationData` containing both the owned and
        *         ghosted solution vectors.
@@ -695,7 +695,7 @@ namespace panzer
           GatherSolution_BlockedEpetra<Traits::Jacobian, TRAITS, LO, GO>
           (indexers_, pl));
       } // end of clone()
-  
+
     private:
 
       /**

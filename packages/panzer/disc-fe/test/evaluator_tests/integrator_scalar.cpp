@@ -70,7 +70,7 @@ using Teuchos::rcp;
 
 #include "UnitValueEvaluator.hpp"
 
-// for making explicit instantiated tests easier 
+// for making explicit instantiated tests easier
 #define UNIT_TEST_GROUP(TYPE) \
   TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT(integrator_scalar_side,test2d,TYPE) \
   TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT(integrator_scalar_side,test3d,TYPE) \
@@ -87,7 +87,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(integrator_scalar_side,test2d,EvalType)
   #else
      Teuchos::RCP<Epetra_Comm> eComm = Teuchos::rcp(new Epetra_SerialComm());
   #endif
- 
+
   using Teuchos::RCP;
   using Teuchos::rcp;
   using Teuchos::rcp_dynamic_cast;
@@ -133,7 +133,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(integrator_scalar_side,test2d,EvalType)
   workset->int_rules.push_back(quadValues);
 
   Teuchos::RCP<PHX::FieldManager<panzer::Traits> > fm
-     = Teuchos::rcp(new PHX::FieldManager<panzer::Traits>); 
+     = Teuchos::rcp(new PHX::FieldManager<panzer::Traits>);
 
   // typedef panzer::Traits::Residual EvalType;
   typedef Sacado::ScalarValue<typename EvalType::ScalarT> ScalarValue;
@@ -148,8 +148,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(integrator_scalar_side,test2d,EvalType)
      p.set("Integrand Name","Unit Value");
      p.set("Multiplier",2.0);
      p.set("IR",quadRule);
-    
-     RCP<panzer::Integrator_Scalar<EvalType,panzer::Traits> > eval 
+
+     RCP<panzer::Integrator_Scalar<EvalType,panzer::Traits> > eval
         = rcp(new panzer::Integrator_Scalar<EvalType,panzer::Traits>(p));
 
      fm->registerEvaluator<EvalType>(eval);
@@ -164,8 +164,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(integrator_scalar_side,test2d,EvalType)
      Teuchos::ParameterList p;
      p.set("Name","Unit Value");
      p.set("IR",quadRule);
-    
-     RCP<PHX::Evaluator<panzer::Traits> > eval 
+
+     RCP<PHX::Evaluator<panzer::Traits> > eval
         = rcp(new UnitValueEvaluator<EvalType,panzer::Traits>(p));
 
      fm->registerEvaluator<EvalType>(eval);
@@ -214,7 +214,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(integrator_scalar_side,test3d,EvalType)
   #else
      Teuchos::RCP<Epetra_Comm> eComm = Teuchos::rcp(new Epetra_SerialComm());
   #endif
- 
+
   using Teuchos::RCP;
   using Teuchos::rcp;
   using Teuchos::rcp_dynamic_cast;
@@ -268,7 +268,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(integrator_scalar_side,test3d,EvalType)
   workset->int_rules.push_back(quadValues);
 
   Teuchos::RCP<PHX::FieldManager<panzer::Traits> > fm
-     = Teuchos::rcp(new PHX::FieldManager<panzer::Traits>); 
+     = Teuchos::rcp(new PHX::FieldManager<panzer::Traits>);
 
   // typedef panzer::Traits::Residual EvalType;
   typedef Sacado::ScalarValue<typename EvalType::ScalarT> ScalarValue;
@@ -283,8 +283,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(integrator_scalar_side,test3d,EvalType)
      p.set("Integrand Name","Unit Value");
      p.set("Multiplier",2.0);
      p.set("IR",quadRule);
-    
-     RCP<panzer::Integrator_Scalar<EvalType,panzer::Traits> > eval 
+
+     RCP<panzer::Integrator_Scalar<EvalType,panzer::Traits> > eval
         = rcp(new panzer::Integrator_Scalar<EvalType,panzer::Traits>(p));
 
      fm->registerEvaluator<EvalType>(eval);
@@ -299,8 +299,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(integrator_scalar_side,test3d,EvalType)
      Teuchos::ParameterList p;
      p.set("Name","Unit Value");
      p.set("IR",quadRule);
-    
-     RCP<PHX::Evaluator<panzer::Traits> > eval 
+
+     RCP<PHX::Evaluator<panzer::Traits> > eval
         = rcp(new UnitValueEvaluator<EvalType,panzer::Traits>(p));
 
      fm->registerEvaluator<EvalType>(eval);
@@ -349,7 +349,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(integrator_scalar,test3d,EvalType)
   #else
      Teuchos::RCP<Epetra_Comm> eComm = Teuchos::rcp(new Epetra_SerialComm());
   #endif
- 
+
   using Teuchos::RCP;
   using Teuchos::rcp;
   using Teuchos::rcp_dynamic_cast;
@@ -403,7 +403,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(integrator_scalar,test3d,EvalType)
   workset->int_rules.push_back(quadValues);
 
   Teuchos::RCP<PHX::FieldManager<panzer::Traits> > fm
-     = Teuchos::rcp(new PHX::FieldManager<panzer::Traits>); 
+     = Teuchos::rcp(new PHX::FieldManager<panzer::Traits>);
 
   // typedef panzer::Traits::Residual EvalType;
   typedef Sacado::ScalarValue<typename EvalType::ScalarT> ScalarValue;
@@ -418,8 +418,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(integrator_scalar,test3d,EvalType)
      p.set("Integrand Name","Unit Value");
      p.set("Multiplier",2.0);
      p.set("IR",quadRule);
-    
-     RCP<panzer::Integrator_Scalar<EvalType,panzer::Traits> > eval 
+
+     RCP<panzer::Integrator_Scalar<EvalType,panzer::Traits> > eval
         = rcp(new panzer::Integrator_Scalar<EvalType,panzer::Traits>(p));
 
      fm->registerEvaluator<EvalType>(eval);
@@ -434,8 +434,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(integrator_scalar,test3d,EvalType)
      Teuchos::ParameterList p;
      p.set("Name","Unit Value");
      p.set("IR",quadRule);
-    
-     RCP<PHX::Evaluator<panzer::Traits> > eval 
+
+     RCP<PHX::Evaluator<panzer::Traits> > eval
         = rcp(new UnitValueEvaluator<EvalType,panzer::Traits>(p));
 
      fm->registerEvaluator<EvalType>(eval);

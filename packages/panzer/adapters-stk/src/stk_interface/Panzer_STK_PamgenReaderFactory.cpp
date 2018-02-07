@@ -47,7 +47,7 @@
 #include "Panzer_STK_PamgenReaderFactory.hpp"
 #include "Panzer_STK_Interface.hpp"
 
-#ifdef PANZER_HAVE_IOSS 
+#ifdef PANZER_HAVE_IOSS
 
 #include <Ionit_Initializer.h>
 #include <Ioss_ElementBlock.h>
@@ -73,7 +73,7 @@ Teuchos::RCP<STK_Interface> STK_PamgenReaderFactory::buildMesh(stk::ParallelMach
 
    using Teuchos::RCP;
    using Teuchos::rcp;
-   
+
    RCP<STK_Interface> mesh = buildUncommitedMesh(parallelMach);
 
    // in here you would add your fields...but it is better to use
@@ -82,7 +82,7 @@ Teuchos::RCP<STK_Interface> STK_PamgenReaderFactory::buildMesh(stk::ParallelMach
    // this calls commit on meta data
    mesh->initialize(parallelMach,false);
 
-   completeMeshConstruction(*mesh,parallelMach); 
+   completeMeshConstruction(*mesh,parallelMach);
 
    return mesh;
 }
@@ -91,8 +91,8 @@ Teuchos::RCP<STK_Interface> STK_PamgenReaderFactory::buildMesh(stk::ParallelMach
   * Allows user to add solution fields and other pieces. The mesh can be "completed"
   * by calling <code>completeMeshConstruction</code>.
   */
-Teuchos::RCP<STK_Interface> STK_PamgenReaderFactory::buildUncommitedMesh(stk::ParallelMachine parallelMach) const 
-{ 
+Teuchos::RCP<STK_Interface> STK_PamgenReaderFactory::buildUncommitedMesh(stk::ParallelMachine parallelMach) const
+{
    PANZER_FUNC_TIME_MONITOR("panzer::STK_PamgenReaderFactory::buildUncomittedMesh()");
 
    using Teuchos::RCP;
@@ -114,7 +114,7 @@ Teuchos::RCP<STK_Interface> STK_PamgenReaderFactory::buildUncommitedMesh(stk::Pa
    // trying to read other fields for use in solve
    meshData->add_all_mesh_fields_as_input_fields();
 
-   // store mesh data pointer for later use in initializing 
+   // store mesh data pointer for later use in initializing
    // bulk data
    mesh->getMetaData()->declare_attribute_with_delete(meshData);
 
@@ -125,7 +125,7 @@ Teuchos::RCP<STK_Interface> STK_PamgenReaderFactory::buildUncommitedMesh(stk::Pa
 
    mesh->addPeriodicBCs(periodicBCVec_);
 
-   return mesh; 
+   return mesh;
 }
 
 void STK_PamgenReaderFactory::completeMeshConstruction(STK_Interface & mesh,stk::ParallelMachine parallelMach) const
@@ -145,7 +145,7 @@ void STK_PamgenReaderFactory::completeMeshConstruction(STK_Interface & mesh,stk:
          // if const_cast is wrong ... why does it feel so right?
          // I believe this is safe since we are basically hiding this object under the covers
          // until the mesh construction can be completed...below I cleanup the object myself.
-   TEUCHOS_ASSERT(metaData.remove_attribute(meshData)); 
+   TEUCHOS_ASSERT(metaData.remove_attribute(meshData));
       // remove the MeshData attribute
 
    // build mesh bulk data
@@ -189,8 +189,8 @@ void STK_PamgenReaderFactory::setParameterList(const Teuchos::RCP<Teuchos::Param
         "\nis required in parameter (sub)list \""<< paramList->name() <<"\"."
         "\n\nThe parsed parameter parameter list is: \n" << paramList->currentParametersString()
    );
-      
-   paramList->validateParametersAndSetDefaults(*getValidParameters(),0); 
+
+   paramList->validateParametersAndSetDefaults(*getValidParameters(),0);
 
    setMyParamList(paramList);
 
@@ -209,10 +209,10 @@ Teuchos::RCP<const Teuchos::ParameterList> STK_PamgenReaderFactory::getValidPara
 
    if(validParams==Teuchos::null) {
       validParams = Teuchos::rcp(new Teuchos::ParameterList);
-      validParams->set<std::string>("File Name","<file name not set>","Name of pamgen file to be read", 
+      validParams->set<std::string>("File Name","<file name not set>","Name of pamgen file to be read",
                                     Teuchos::rcp(new Teuchos::FileNameValidator));
-      
-      validParams->set<int>("Restart Index",-1,"Index of solution to read in", 
+
+      validParams->set<int>("Restart Index",-1,"Index of solution to read in",
 			    Teuchos::rcp(new Teuchos::AnyNumberParameterEntryValidator(Teuchos::AnyNumberParameterEntryValidator::PREFER_INT,Teuchos::AnyNumberParameterEntryValidator::AcceptedTypes(true))));
 
       Teuchos::ParameterList & bcs = validParams->sublist("Periodic BCs");
@@ -222,7 +222,7 @@ Teuchos::RCP<const Teuchos::ParameterList> STK_PamgenReaderFactory::getValidPara
    return validParams.getConst();
 }
 
-void STK_PamgenReaderFactory::registerElementBlocks(STK_Interface & mesh,stk::io::StkMeshIoBroker & meshData) const 
+void STK_PamgenReaderFactory::registerElementBlocks(STK_Interface & mesh,stk::io::StkMeshIoBroker & meshData) const
 {
    using Teuchos::RCP;
 
@@ -234,7 +234,7 @@ void STK_PamgenReaderFactory::registerElementBlocks(STK_Interface & mesh,stk::io
    const Ioss::ElementBlockContainer & elem_blocks = meshData.get_input_io_region()->get_element_blocks();
    for(Ioss::ElementBlockContainer::const_iterator itr=elem_blocks.begin();itr!=elem_blocks.end();++itr) {
       Ioss::GroupingEntity * entity = *itr;
-      const std::string & name = entity->name(); 
+      const std::string & name = entity->name();
 
       const stk::mesh::Part * part = femMetaData->get_part(name);
       const CellTopologyData * ct = femMetaData->get_cell_topology(*part).getCellTopologyData();
@@ -272,16 +272,16 @@ void STK_PamgenReaderFactory::registerSidesets(STK_Interface & mesh) const
       // on part contains all sub parts with consistent topology
       if(part->primary_entity_rank()==mesh.getSideRank() && ct==0 && subsets.size()>0) {
          TEUCHOS_TEST_FOR_EXCEPTION(subsets.size()!=1,std::runtime_error,
-                            "STK_PamgenReaderFactory::registerSidesets error - part \"" << part->name() << 
-                            "\" has more than one subset"); 
+                            "STK_PamgenReaderFactory::registerSidesets error - part \"" << part->name() <<
+                            "\" has more than one subset");
 
          // grab cell topology and name of subset part
          const stk::mesh::Part * ss_part = subsets[0];
          // const CellTopologyData * ss_ct = stk::mesh::get_cell_topology(*ss_part).getCellTopologyData();
          const CellTopologyData * ss_ct = metaData->get_cell_topology(*ss_part).getCellTopologyData();
- 
+
          // only add subset parts that have no topology
-         if(ss_ct!=0) 
+         if(ss_ct!=0)
             mesh.addSideset(part->name(),ss_ct);
       }
    }

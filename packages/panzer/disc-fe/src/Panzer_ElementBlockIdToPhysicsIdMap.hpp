@@ -52,7 +52,7 @@ namespace Teuchos {
 
 namespace panzer {
 
-  void buildBlockIdToPhysicsIdMap(std::map<std::string,std::string>& b_to_p, 
+  void buildBlockIdToPhysicsIdMap(std::map<std::string,std::string>& b_to_p,
 				  const Teuchos::ParameterList& p);
 
 }

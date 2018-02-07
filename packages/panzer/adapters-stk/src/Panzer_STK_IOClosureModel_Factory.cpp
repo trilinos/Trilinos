@@ -49,13 +49,13 @@
 #include "Panzer_STK_ScatterFields.hpp"
 
 template< >
-Teuchos::RCP< std::vector< Teuchos::RCP<PHX::Evaluator<panzer::Traits> > > > 
+Teuchos::RCP< std::vector< Teuchos::RCP<PHX::Evaluator<panzer::Traits> > > >
 panzer_stk::IOClosureModelFactory<panzer::Traits::Residual>::
 buildClosureModels(const std::string& model_id,
 		   const Teuchos::ParameterList& models,
 		   const panzer::FieldLayoutLibrary& fl,
-		   const Teuchos::RCP<panzer::IntegrationRule>& ir, 
-		   const Teuchos::ParameterList& default_params, 
+		   const Teuchos::RCP<panzer::IntegrationRule>& ir,
+		   const Teuchos::ParameterList& default_params,
 		   const Teuchos::ParameterList& user_data,
 		   const Teuchos::RCP<panzer::GlobalData>& global_data,
 		   PHX::FieldManager<panzer::Traits>& fm) const
@@ -66,11 +66,11 @@ buildClosureModels(const std::string& model_id,
   using PHX::Evaluator;
 
   // build user evaluators
-  RCP< std::vector< RCP<Evaluator<panzer::Traits> > > > user_evals = 
+  RCP< std::vector< RCP<Evaluator<panzer::Traits> > > > user_evals =
     userCMF_->buildClosureModels(model_id,models,fl,ir,default_params,user_data,global_data,fm);
 
   // add user evaluators to evaluator list
-  RCP< std::vector< RCP<Evaluator<panzer::Traits> > > > evaluators = 
+  RCP< std::vector< RCP<Evaluator<panzer::Traits> > > > evaluators =
     rcp(new std::vector< RCP<Evaluator<panzer::Traits> > > );
 
   // extract element block id
@@ -85,7 +85,7 @@ buildClosureModels(const std::string& model_id,
      BlockIdToFields::const_iterator cellAvgItr = blockIdToCellAvgFields_.find(block_id);
      if(cellAvgItr!=blockIdToCellAvgFields_.end() ) {
         Teuchos::RCP<std::vector<std::string> > fieldNames = Teuchos::rcp(new std::vector<std::string>(cellAvgItr->second));
-   
+
         // setup averge cell fields
         Teuchos::ParameterList pl;
         pl.set("Mesh",mesh_);
@@ -96,17 +96,17 @@ buildClosureModels(const std::string& model_id,
             = Teuchos::rcp(new panzer_stk::ScatterCellAvgQuantity<panzer::Traits::Residual,panzer::Traits>(pl));
         fm.registerEvaluator<panzer::Traits::Residual>(eval);
         fm.requireField<panzer::Traits::Residual>(*eval->evaluatedFields()[0]);
-   
+
         evaluators->push_back(eval);
-   
+
         blockIdEvaluated_[block_id] = true;
-     } 
+     }
 
      // if a requested field is found then add in cell avg vector evaluator
      BlockIdToFields::const_iterator cellAvgVecItr = blockIdToCellAvgVectors_.find(block_id);
      if(cellAvgVecItr != blockIdToCellAvgVectors_.end() ) {
         Teuchos::RCP<std::vector<std::string> > fieldNames = Teuchos::rcp(new std::vector<std::string>(cellAvgVecItr->second));
-   
+
         // setup cell average vectors
         Teuchos::ParameterList pl;
         pl.set("Mesh",mesh_);
@@ -117,17 +117,17 @@ buildClosureModels(const std::string& model_id,
             = Teuchos::rcp(new panzer_stk::ScatterCellAvgVector<panzer::Traits::Residual,panzer::Traits>(pl));
         fm.registerEvaluator<panzer::Traits::Residual>(eval);
         fm.requireField<panzer::Traits::Residual>(*eval->evaluatedFields()[0]);
-   
+
         evaluators->push_back(eval);
-   
+
         blockIdEvaluated_[block_id] = true;
-     } 
+     }
 
      // if a requested field is found then add in cell quantity evaluator
      BlockIdToFields::const_iterator cellItr = blockIdToCellFields_.find(block_id);
      if(cellItr!=blockIdToCellFields_.end() ) {
         Teuchos::RCP<std::vector<std::string> > fieldNames = Teuchos::rcp(new std::vector<std::string>(cellItr->second));
-   
+
         // setup averge cell fields
         Teuchos::ParameterList pl;
         pl.set("Mesh",mesh_);
@@ -138,11 +138,11 @@ buildClosureModels(const std::string& model_id,
             = Teuchos::rcp(new panzer_stk::ScatterCellQuantity<panzer::Traits::Residual,panzer::Traits>(pl));
         fm.registerEvaluator<panzer::Traits::Residual>(eval);
         fm.requireField<panzer::Traits::Residual>(*eval->evaluatedFields()[0]);
-   
+
         evaluators->push_back(eval);
-   
+
         blockIdEvaluated_[block_id] = true;
-     } 
+     }
 
      // if a requested field is found then add in cell quantity evaluator
      BlockIdToFields::const_iterator nodalItr = blockIdToNodalFields_.find(block_id);
@@ -150,20 +150,20 @@ buildClosureModels(const std::string& model_id,
         Teuchos::RCP<std::vector<std::string> > fieldNames = Teuchos::rcp(new std::vector<std::string>(nodalItr->second));
 
         Teuchos::RCP<const panzer::PureBasis> basis = Teuchos::rcp(new panzer::PureBasis("HGrad",1,ir->workset_size,ir->topology));
-   
+
         // setup scatter nodal fields
         Teuchos::RCP<PHX::Evaluator<panzer::Traits> > eval
             = Teuchos::rcp(new panzer_stk::ScatterFields<panzer::Traits::Residual,panzer::Traits>(block_id+"Nodal_Fields",mesh_,basis,*fieldNames));
         fm.registerEvaluator<panzer::Traits::Residual>(eval);
         fm.requireField<panzer::Traits::Residual>(*eval->evaluatedFields()[0]);
-   
+
         evaluators->push_back(eval);
-   
+
         blockIdEvaluated_[block_id] = true;
-     } 
+     }
   }
 
-  evaluators->insert(evaluators->end(),user_evals->begin(),user_evals->end()); 
+  evaluators->insert(evaluators->end(),user_evals->begin(),user_evals->end());
 
   return evaluators;
 }

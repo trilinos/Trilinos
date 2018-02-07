@@ -86,9 +86,9 @@ RCP<const panzer::FieldPattern> buildFieldPattern()
 
 std::string getElementBlock(const Triplet & element,
                                     const CartesianConnManager<int,Ordinal64> & connManager)
-                                    
+
 {
-  int localElmtId = connManager.computeLocalElementIndex(element); 
+  int localElmtId = connManager.computeLocalElementIndex(element);
   return connManager.getBlockId(localElmtId);
 }
 
@@ -153,11 +153,11 @@ TEUCHOS_UNIT_TEST(tCartesianDOFMgr_DynRankView, threed)
 
   // build global unknowns (useful comment!)
   dofManager->buildGlobalUnknowns();
- 
-  // print out some diagnostic information 
+
+  // print out some diagnostic information
   ///////////////////////////////////////////////////////////
 
-  dofManager->printFieldInformation(out); 
+  dofManager->printFieldInformation(out);
 
   out << std::endl << "Load balancing: " << printUGILoadBalancingInformation(*dofManager) << std::endl;
 
@@ -308,7 +308,7 @@ TEUCHOS_UNIT_TEST(tCartesianDOFMgr_DynRankView, threed)
       Teuchos::send(comm,Teuchos::as<int>(gid_sub_l.size()),&gid_sub_l[0],rank-1);
     }
 
-    // recieve right, check 
+    // recieve right, check
     if(rank!=np-1) {
       std::vector<Ordinal64> gid_remote(gid_sub_r.size(),-1);
       Teuchos::receive(comm,rank+1,Teuchos::as<int>(gid_sub_r.size()),&gid_remote[0]);
@@ -317,7 +317,7 @@ TEUCHOS_UNIT_TEST(tCartesianDOFMgr_DynRankView, threed)
         TEST_EQUALITY(gid_sub_r[i],gid_remote[i]);
     }
   }
-    
+
 }
 
 } // end unit test

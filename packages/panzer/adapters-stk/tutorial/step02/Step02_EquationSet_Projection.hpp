@@ -56,14 +56,14 @@ namespace user_app {
 template <typename EvalT>
 class EquationSet_Projection : public panzer::EquationSet_DefaultImpl<EvalT> {
 
-public:    
+public:
 
   EquationSet_Projection(const Teuchos::RCP<Teuchos::ParameterList>& params,
                          const int& default_integration_order,
                          const panzer::CellData& cell_data,
                          const Teuchos::RCP<panzer::GlobalData>& gd,
                          const bool build_transient_support);
-  
+
   void buildAndRegisterEquationSetEvaluators(PHX::FieldManager<panzer::Traits>& fm,
                                              const panzer::FieldLibrary& field_library,
                                              const Teuchos::ParameterList& user_data) const;

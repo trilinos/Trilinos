@@ -64,11 +64,11 @@ public:
   virtual ~ExtremeValueScatterBase() {}
 
   virtual void scatterDerivative(const PHX::MDField<const panzer::Traits::Jacobian::ScalarT,panzer::Cell> & cellExtremeValue,
-                                 panzer::Traits::EvalData workset, 
+                                 panzer::Traits::EvalData workset,
                                  WorksetDetailsAccessor& wda,
                                  Teuchos::ArrayRCP<double> & dgdx) const = 0;
 };
- 
+
 template <typename LO,typename GO>
 class ExtremeValueScatter : public ExtremeValueScatterBase {
 public:
@@ -76,11 +76,11 @@ public:
      : globalIndexer_(globalIndexer) { }
 
    void scatterDerivative(const PHX::MDField<const panzer::Traits::Jacobian::ScalarT,panzer::Cell> & cellExtremeValue,
-                         panzer::Traits::EvalData workset, 
+                         panzer::Traits::EvalData workset,
                          WorksetDetailsAccessor& wda,
                          Teuchos::ArrayRCP<double> & dgdx) const;
 private:
- 
+
    Teuchos::RCP<const panzer::UniqueGlobalIndexer<LO,GO> > globalIndexer_;
 };
 
@@ -89,7 +89,7 @@ private:
   */
 template<typename EvalT, typename Traits>
 class ResponseScatterEvaluator_ExtremeValue : public panzer::EvaluatorWithBaseImpl<Traits>,
-                                            public PHX::EvaluatorDerived<EvalT, Traits>  { 
+                                            public PHX::EvaluatorDerived<EvalT, Traits>  {
 public:
 
   //! A constructor with concrete arguments instead of a parameter list.
@@ -122,7 +122,7 @@ private:
 template <typename LO,typename GO>
 void ExtremeValueScatter<LO,GO>::scatterDerivative(
                                         const PHX::MDField<const panzer::Traits::Jacobian::ScalarT,panzer::Cell> & cellExtremeValue,
-                                        panzer::Traits::EvalData workset, 
+                                        panzer::Traits::EvalData workset,
                                         WorksetDetailsAccessor& wda,
                                         Teuchos::ArrayRCP<double> & dgdx) const
 {

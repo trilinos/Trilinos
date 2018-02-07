@@ -48,12 +48,12 @@
 namespace panzer {
 
   struct GlobalData;
-  
+
   /** \brief Interface for accessing the GlobalData object.  */
   class GlobalDataAcceptor {
 
   public:
-    
+
     virtual ~GlobalDataAcceptor() {}
 
     virtual void setGlobalData(const Teuchos::RCP<panzer::GlobalData>& gd) = 0;

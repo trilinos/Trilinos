@@ -618,7 +618,7 @@ globalToExodus(
   using std::string;
   using Teuchos::Array;
 
-  // Loop over all the global variables to be added to the Exodus output file. 
+  // Loop over all the global variables to be added to the Exodus output file.
   // For each global variable, we determine the data type, and then add or
   // write it accordingly, depending on the value of flag.
   for (auto i = globalData_.begin(); i != globalData_.end(); ++i)

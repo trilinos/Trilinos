@@ -52,7 +52,7 @@ class STK_Interface;
 
 /** This builds a parallel mesh object. Note that the
   * local IDs are ordered by going left to right
-  * across the X-axis. 
+  * across the X-axis.
   */
 class LineMeshFactory : public STK_MeshFactory {
 public:
@@ -77,7 +77,7 @@ public:
    //! what is the 2D tuple describe this processor distribution
    Teuchos::Tuple<std::size_t,2> procRankToProcTuple(std::size_t procRank) const;
 
-protected: 
+protected:
    void initializeWithDefaults();
 
    void buildMetaData(stk::ParallelMachine parallelMach,STK_Interface & mesh) const;

@@ -101,7 +101,7 @@ public:
 
 /*************** Linear object factory methods *******************/
 
-   virtual void readVector(const std::string & /* identifier */, LinearObjContainer & /* loc */, int /* id */) const 
+   virtual void readVector(const std::string & /* identifier */, LinearObjContainer & /* loc */, int /* id */) const
    { TEUCHOS_ASSERT(false); }
 
    virtual void writeVector(const std::string & /* identifier */, const LinearObjContainer & /* loc */, int /* id */) const
@@ -109,12 +109,12 @@ public:
 
    virtual Teuchos::RCP<LinearObjContainer> buildLinearObjContainer() const;
 
-   virtual Teuchos::RCP<LinearObjContainer> buildPrimitiveLinearObjContainer() const 
+   virtual Teuchos::RCP<LinearObjContainer> buildPrimitiveLinearObjContainer() const
    { return buildLinearObjContainer(); }
 
    virtual Teuchos::RCP<LinearObjContainer> buildGhostedLinearObjContainer() const;
 
-   virtual Teuchos::RCP<LinearObjContainer> buildPrimitiveGhostedLinearObjContainer() const 
+   virtual Teuchos::RCP<LinearObjContainer> buildPrimitiveGhostedLinearObjContainer() const
    { return buildGhostedLinearObjContainer(); }
 
    virtual void globalToGhostContainer(const LinearObjContainer & container,
@@ -184,7 +184,7 @@ public:
    { return Teuchos::rcp(new ScatterDirichletResidual_BlockedTpetra<EvalT,Traits,LocalOrdinalT,GlobalOrdinalT,NodeT>(blockedDOFManager_)); }
 
 /*************** Generic helper functions for container setup *******************/
-   
+
    /** Initialize container with a specific set of member values.
      *
      * \note This will overwrite everything in the container and zero out values
@@ -323,7 +323,7 @@ protected:
 
    // which block entries are ignored
   std::unordered_set<std::pair<int,int>,panzer::pair_hash> excludedPairs_;
-  
+
 /*************** Thyra based methods/members *******************/
 
    void ghostToGlobalThyraVector(const Teuchos::RCP<const Thyra::VectorBase<ScalarT> > & in,

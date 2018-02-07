@@ -68,7 +68,7 @@ namespace panzer
   *
   * \returns vector of worksets for the corresponding element block.
   */
-Teuchos::RCP<std::vector<panzer::Workset> >  
+Teuchos::RCP<std::vector<panzer::Workset> >
 buildPartitionedWorksets(const panzer::LocalMeshInfo<int,int> & mesh_info,
                          const panzer::WorksetDescriptor & description,
                          const panzer::WorksetNeeds & needs);

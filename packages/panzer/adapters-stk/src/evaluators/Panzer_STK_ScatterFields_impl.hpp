@@ -103,7 +103,7 @@ initialize(const std::string & scatterName,
   // build dependent fields
   scatterFields_.resize(names.size());
   for (std::size_t fd = 0; fd < names.size(); ++fd) {
-    scatterFields_[fd] = 
+    scatterFields_[fd] =
       PHX::MDField<const ScalarT,Cell,NODE>(names[fd],basis->functional);
     this->addDependentField(scatterFields_[fd]);
   }
@@ -120,7 +120,7 @@ initialize(const std::string & scatterName,
 
 template <typename EvalT,typename TraitsT>
 void ScatterFields<EvalT,TraitsT>::
-postRegistrationSetup(typename TraitsT::SetupData /* d */, 
+postRegistrationSetup(typename TraitsT::SetupData /* d */,
                       PHX::FieldManager<TraitsT>& fm)
 {
   for (std::size_t fd = 0; fd < scatterFields_.size(); ++fd) {

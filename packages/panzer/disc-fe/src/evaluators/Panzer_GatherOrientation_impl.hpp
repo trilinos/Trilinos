@@ -57,10 +57,10 @@ panzer::GatherOrientation<EvalT, TRAITS,LO,GO>::
 GatherOrientation(
   const Teuchos::RCP<const panzer::UniqueGlobalIndexer<LO,GO> > & indexer,
   const Teuchos::ParameterList& p)
-{ 
+{
   indexers_.push_back(indexer);
 
-  const std::vector<std::string>& names = 
+  const std::vector<std::string>& names =
     *(p.get< Teuchos::RCP< std::vector<std::string> > >("DOF Names"));
 
   indexerNames_ = p.get< Teuchos::RCP< std::vector<std::string> > >("Indexer Names");
@@ -74,7 +74,7 @@ GatherOrientation(
 
   gatherFieldOrientations_.resize(names.size());
   for (std::size_t fd = 0; fd < names.size(); ++fd) {
-    gatherFieldOrientations_[fd] = 
+    gatherFieldOrientations_[fd] =
       // PHX::MDField<ScalarT,Cell,NODE>(names[fd]+" Orientation",basis->functional);
       PHX::MDField<ScalarT,Cell,NODE>(basis->name()+" Orientation",basis->functional);
     this->addEvaluatedField(gatherFieldOrientations_[fd]);
@@ -88,8 +88,8 @@ panzer::GatherOrientation<EvalT, TRAITS,LO,GO>::
 GatherOrientation(const std::vector<Teuchos::RCP<const UniqueGlobalIndexer<LO,GO> > > & indexers,
                   const Teuchos::ParameterList& p)
   : indexers_(indexers)
-{ 
-  const std::vector<std::string>& names = 
+{
+  const std::vector<std::string>& names =
     *(p.get< Teuchos::RCP< std::vector<std::string> > >("DOF Names"));
 
   indexerNames_ = p.get< Teuchos::RCP< std::vector<std::string> > >("Indexer Names");
@@ -103,7 +103,7 @@ GatherOrientation(const std::vector<Teuchos::RCP<const UniqueGlobalIndexer<LO,GO
 
   gatherFieldOrientations_.resize(names.size());
   for (std::size_t fd = 0; fd < names.size(); ++fd) {
-    gatherFieldOrientations_[fd] = 
+    gatherFieldOrientations_[fd] =
       PHX::MDField<ScalarT,Cell,NODE>(basis->name()+" Orientation",basis->functional);
     this->addEvaluatedField(gatherFieldOrientations_[fd]);
   }
@@ -114,7 +114,7 @@ GatherOrientation(const std::vector<Teuchos::RCP<const UniqueGlobalIndexer<LO,GO
 // **********************************************************************
 template<typename EvalT,typename TRAITS,typename LO,typename GO>
 void panzer::GatherOrientation<EvalT, TRAITS,LO,GO>::
-postRegistrationSetup(typename TRAITS::SetupData /* d */, 
+postRegistrationSetup(typename TRAITS::SetupData /* d */,
 		      PHX::FieldManager<TRAITS>& fm)
 {
   TEUCHOS_ASSERT(gatherFieldOrientations_.size() == indexerNames_->size());
@@ -140,9 +140,9 @@ postRegistrationSetup(typename TRAITS::SetupData /* d */,
 template<typename EvalT,typename TRAITS,typename LO,typename GO>
 void panzer::GatherOrientation<EvalT, TRAITS,LO,GO>::
 evaluateFields(typename TRAITS::EvalData workset)
-{ 
+{
    std::vector<double> orientation;
- 
+
    // for convenience pull out some objects from workset
    std::string blockId = this->wda(workset).block_id;
    const std::vector<std::size_t> & localCellIds = this->wda(workset).cell_local_ids;
@@ -155,12 +155,12 @@ evaluateFields(typename TRAITS::EvalData workset)
 
       auto subRowIndexer = indexers_[indexerId];
       const std::vector<int> & elmtOffset = subRowIndexer->getGIDFieldOffsets(blockId,subFieldNum);
- 
+
       // gather operation for each cell in workset
       for(std::size_t worksetCellIndex=0;worksetCellIndex<localCellIds.size();++worksetCellIndex) {
          std::size_t cellLocalId = localCellIds[worksetCellIndex];
- 
-         subRowIndexer->getElementOrientation(cellLocalId,orientation); 
+
+         subRowIndexer->getElementOrientation(cellLocalId,orientation);
 
          // loop over basis functions and fill the fields
          for(std::size_t basis=0;basis<elmtOffset.size();basis++) {

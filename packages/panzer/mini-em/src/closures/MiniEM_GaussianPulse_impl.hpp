@@ -24,13 +24,13 @@ GaussianPulse<EvalT,Traits>::GaussianPulse(const std::string & name,
 
   current = PHX::MDField<ScalarT,Cell,Point,Dim>(name, data_layout);
   this->addEvaluatedField(current);
-  
+
   alpha = 1.0;
   beta  = 5.0*dt;
 
   Teuchos::RCP<const panzer::PureBasis> basis = fl.lookupBasis("E_edge");
   const std::string coordName = panzer::GatherBasisCoordinates<EvalT,Traits>::fieldName(basis->name());
-  coords = PHX::MDField<const ScalarT,Cell,Point,Dim>(coordName, basis->coordinates); 
+  coords = PHX::MDField<const ScalarT,Cell,Point,Dim>(coordName, basis->coordinates);
   this->addDependentField(coords);
 
   std::string n = "Gaussian Pulse";
@@ -40,7 +40,7 @@ GaussianPulse<EvalT,Traits>::GaussianPulse(const std::string & name,
 //**********************************************************************
 template <typename EvalT,typename Traits>
 void GaussianPulse<EvalT,Traits>::evaluateFields(typename Traits::EvalData workset)
-{ 
+{
   using panzer::index_t;
 
   double time = workset.time;

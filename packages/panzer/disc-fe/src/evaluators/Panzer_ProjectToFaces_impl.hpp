@@ -64,18 +64,18 @@ template<typename EvalT,typename Traits>
 panzer::ProjectToFaces<EvalT, Traits>::
 ProjectToFaces(
   const Teuchos::ParameterList& p)
-{ 
+{
   dof_name = (p.get< std::string >("DOF Name"));
 
   if(p.isType< Teuchos::RCP<PureBasis> >("Basis"))
     basis = p.get< Teuchos::RCP<PureBasis> >("Basis");
   else
     basis = p.get< Teuchos::RCP<const PureBasis> >("Basis");
- 
+
   quad_degree = 0;
   if(p.isType<int>("Quadrature Order"))
     quad_degree = p.get<int>("Quadrature Order");
-    
+
   Teuchos::RCP<PHX::DataLayout> basis_layout  = basis->functional;
   Teuchos::RCP<PHX::DataLayout> vector_layout  = basis->functional_grad;
 
@@ -89,12 +89,12 @@ ProjectToFaces(
   this->addDependentField(normals);
 
   if(quad_degree > 0){
-    const shards::CellTopology & parentCell = *basis->getCellTopology();                                                                                    
+    const shards::CellTopology & parentCell = *basis->getCellTopology();
     Intrepid2::DefaultCubatureFactory quadFactory;
-    Teuchos::RCP< Intrepid2::Cubature<PHX::exec_space,double,double> > quadRule                    
+    Teuchos::RCP< Intrepid2::Cubature<PHX::exec_space,double,double> > quadRule
       = quadFactory.create<PHX::exec_space,double,double>(parentCell.getCellTopologyData(2,0), quad_degree);
-    int numQPoints = quadRule->getNumPoints(); 
- 
+    int numQPoints = quadRule->getNumPoints();
+
     vector_values.resize(numQPoints);
     for (int qp(0); qp < numQPoints; ++qp)
     {
@@ -117,7 +117,7 @@ ProjectToFaces(
 // **********************************************************************
 template<typename EvalT,typename Traits>
 void panzer::ProjectToFaces<EvalT, Traits>::
-postRegistrationSetup(typename Traits::SetupData d, 
+postRegistrationSetup(typename Traits::SetupData d,
 		      PHX::FieldManager<Traits>& fm)
 {
   orientations = d.orientations_;
@@ -143,7 +143,7 @@ postRegistrationSetup(typename Traits::SetupData d,
 template<typename EvalT,typename Traits>
 void panzer::ProjectToFaces<EvalT, Traits>::
 evaluateFields(typename Traits::EvalData workset)
-{ 
+{
 
   // The coefficients being calculated here in the projection to the face basis
   // are defined as the integral over the face of the field dotted with the face
@@ -170,8 +170,8 @@ evaluateFields(typename Traits::EvalData workset)
       for (int q=0; q<numQPoints; q++)
         refFaceWt[f] += quadWts(q);
     }
-  
-    
+
+
     // Loop over the faces of the workset cells.
     for (index_t cell = 0; cell < workset.num_cells; ++cell) {
       for (int p = 0; p < num_pts; ++p) {
@@ -198,7 +198,7 @@ evaluateFields(typename Traits::EvalData workset)
     // Loop over the faces of the workset cells
     for (index_t cell = 0; cell < workset.num_cells; ++cell) {
 
-      // get nodal coordinates for this cell 
+      // get nodal coordinates for this cell
       Kokkos::DynRankView<double,PHX::Device> physicalNodes("physicalNodes",1,vertex_coords.dimension(1),num_dim);
       for (int point(0); point < vertex_coords.extent_int(1); ++point)
       {
@@ -224,7 +224,7 @@ evaluateFields(typename Traits::EvalData workset)
                                                          faceOrts[p]);
 
         // get quad weights/pts on reference 2d cell
-        const shards::CellTopology & subcell = parentCell.getCellTopologyData(subcell_dim,p);     
+        const shards::CellTopology & subcell = parentCell.getCellTopologyData(subcell_dim,p);
         faceQuad = quadFactory.create<PHX::exec_space,double,double>(subcell, quad_degree);
         TEUCHOS_ASSERT(
           faceQuad->getNumPoints() == static_cast<int>(vector_values.size()));
@@ -242,7 +242,7 @@ evaluateFields(typename Traits::EvalData workset)
 
         // Calculate weighted measure at quadrature points
         Kokkos::DynRankView<double,PHX::Device> weighted_measure("weighted_measure",1,faceQuad->getNumPoints());
-        Kokkos::DynRankView<double,PHX::Device> scratch_space("scratch_space",jacobianSide.span());        
+        Kokkos::DynRankView<double,PHX::Device> scratch_space("scratch_space",jacobianSide.span());
         Intrepid2::FunctionSpaceTools<PHX::exec_space>::computeFaceMeasure(weighted_measure, jacobianSide, quadWts, p, parentCell, scratch_space);
 
         // loop over quadrature points
@@ -251,9 +251,9 @@ evaluateFields(typename Traits::EvalData workset)
           auto phyEdgeTan_U = Kokkos::subview(phyEdges, 0, Kokkos::ALL());
           auto phyEdgeTan_V = Kokkos::subview(phyEdges, 1, Kokkos::ALL());
           auto J = Kokkos::subview(jacobianSide, 0, qp, Kokkos::ALL(), Kokkos::ALL());
-  
-          Intrepid2::Kernels::Serial::matvec_product(phyEdgeTan_U, J, ortEdgeTan_U);            
-          Intrepid2::Kernels::Serial::matvec_product(phyEdgeTan_V, J, ortEdgeTan_V);            
+
+          Intrepid2::Kernels::Serial::matvec_product(phyEdgeTan_U, J, ortEdgeTan_U);
+          Intrepid2::Kernels::Serial::matvec_product(phyEdgeTan_V, J, ortEdgeTan_V);
 
           // normal = TanU x TanV
           std::vector<ScalarT> normal(3,0.0);

@@ -69,7 +69,7 @@
 class MyClosureModelFactory_TemplateBuilder
 {
   public:
-    
+
     /**
      * 	\brief Build the closure model factory.
      *
@@ -77,7 +77,7 @@ class MyClosureModelFactory_TemplateBuilder
      */
     template <typename EvalT>
     Teuchos::RCP<panzer::ClosureModelFactoryBase>
-    build() const 
+    build() const
     {
       using panzer::ClosureModelFactoryBase;
       using Teuchos::RCP;

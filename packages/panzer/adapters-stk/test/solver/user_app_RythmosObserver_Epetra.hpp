@@ -59,11 +59,11 @@
 
 namespace user_app {
 
-  class RythmosObserver_Epetra : 
+  class RythmosObserver_Epetra :
     public Rythmos::IntegrationObserverBase<double> {
 
   public:
-    
+
     RythmosObserver_Epetra(const Teuchos::RCP<panzer_stk::STK_Interface>& mesh,
 			   const RCP<panzer::UniqueGlobalIndexer<int,int> >& dof_manager,
 			   const Teuchos::RCP<panzer::BlockedEpetraLinearObjFactory<panzer::Traits,int> >& lof) :
@@ -71,7 +71,7 @@ namespace user_app {
       m_dof_manager(dof_manager),
       m_lof(lof)
     { }
-    
+
     Teuchos::RCP<Rythmos::IntegrationObserverBase<double> >
     cloneIntegrationObserver() const
     {
@@ -84,12 +84,12 @@ namespace user_app {
     void observeCompletedTimeStep(const Rythmos::StepperBase<double> &stepper,
 				  const Rythmos::StepControlInfo<double>& /* stepCtrlInfo */,
 				  const int /* timeStepIter */)
-    { 
+    {
       std::cout << "*************************ROGER in Time************************************"  << std::endl;
       std::cout << "time = " << stepper.getStepStatus().time << std::endl;
       std::cout << *(stepper.getStepStatus().solution);
       Teuchos::RCP<const Thyra::VectorBase<double> > solution = stepper.getStepStatus().solution;
-      
+
       // Next few lines are inefficient, but we can revisit later
       Teuchos::RCP<const Epetra_Vector> ep_solution = Thyra::get_Epetra_Vector(*(m_lof->getMap(0)), solution);
       Epetra_Vector ghosted_solution(*(m_lof->getGhostedMap(0)));
@@ -98,10 +98,10 @@ namespace user_app {
       ghosted_solution.Import(*ep_solution,*importer,Insert);
 
       panzer_stk::write_solution_data(*m_dof_manager,*m_mesh,ghosted_solution);
-      
+
       m_mesh->writeToExodus(stepper.getStepStatus().time);
     }
-    
+
   protected:
 
     Teuchos::RCP<panzer_stk::STK_Interface> m_mesh;

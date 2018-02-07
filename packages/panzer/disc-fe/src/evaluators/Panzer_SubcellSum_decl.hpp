@@ -55,10 +55,10 @@
 #include "Panzer_Evaluator_Macros.hpp"
 
 namespace panzer {
-    
+
 /** This performs a sum over all the fields limited to the subcell
   * specified in the workset. It is useful for computing high-order
-  * surface integrals as responses. 
+  * surface integrals as responses.
   *
   * The field specified with "Sum Name" will be dimensioned as the number
   * of cells in the workset. The "Field Name" object is dimension as the number
@@ -78,24 +78,24 @@ namespace panzer {
   \endverbatim
   */
 PANZER_EVALUATOR_CLASS(SubcellSum)
-  
+
   PHX::MDField<ScalarT,Cell> outField;  // result
-    
+
   PHX::MDField<const ScalarT,Cell,BASIS> inField; // function to be integrated
 
   double multiplier;
 
 public:
 
-  const PHX::FieldTag & getFieldTag() const 
+  const PHX::FieldTag & getFieldTag() const
   { return outField.fieldTag(); }
 
 private:
   Teuchos::RCP<Teuchos::ParameterList> getValidParameters() const;
- 
+
   // This is used to lookup closure indices (local Ids that live on a subcell)
   Teuchos::RCP<const panzer::FieldPattern> fieldPattern_;
-  
+
   // evalaute on the "closure" of the indicated sub-cells
   bool evaluateOnClosure_;
 

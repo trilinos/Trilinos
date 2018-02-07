@@ -75,7 +75,7 @@ public:
 
    typedef Tpetra::Map<LocalOrdinalT,GlobalOrdinalT,NodeT> MapType;
 
-   //! Make sure row and column spaces match up 
+   //! Make sure row and column spaces match up
    bool checkCompatibility() const;
 
    virtual void clear();
@@ -105,7 +105,7 @@ public:
    virtual void initialize();
 
    // Inherited from ThyraObjContainer
- 
+
    void set_x_th(const Teuchos::RCP<VectorType> & in) { x = in; }
    Teuchos::RCP<VectorType> get_x_th() const { return x; }
 

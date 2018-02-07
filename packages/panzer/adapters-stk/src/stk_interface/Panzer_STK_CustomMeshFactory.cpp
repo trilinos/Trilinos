@@ -246,7 +246,7 @@ namespace panzer_stk {
 
     // build the elements
     std::vector<std::string> block_ids;
-    mesh.getElementBlockNames(block_ids);  
+    mesh.getElementBlockNames(block_ids);
 
     for (int i=0;i<NumElementsPerProc_;++i) {
 
@@ -330,18 +330,18 @@ namespace panzer_stk {
 
       std::stringstream block_id;
       block_id << "eblock-" << blk;
-      
+
       // elements in this processor for this block
-      std::vector<stk::mesh::Entity> elements;    
+      std::vector<stk::mesh::Entity> elements;
       mesh.getMyElements(block_id.str(), elements);
 
       // size of elements in the current block
       std::size_t n_elements = elements.size();
-      
+
       // build local element index
       std::vector<std::size_t> local_ids;
       for (std::vector<stk::mesh::Entity>::const_iterator
-             itr=elements.begin();itr!=elements.end();++itr) 
+             itr=elements.begin();itr!=elements.end();++itr)
         local_ids.push_back(mesh.elementLocalId(*itr));
 
       // re-index solution fields in the same order of local_ids
@@ -365,7 +365,7 @@ namespace panzer_stk {
                                 block_id.str(),
                                 local_ids,
                                 charge_density, 1.0);
-      
+
       mesh.setSolutionFieldData("ELECTRIC_POTENTIAL",
                                 block_id.str(),
                                 local_ids,

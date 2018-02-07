@@ -62,7 +62,7 @@ namespace panzer {
   template <typename EvalT>
     class AssemblyEngine : public panzer::Base {
 
-  public:    
+  public:
     struct EvaluationFlags {
       EvaluationFlags(int flags) : value_(flags) {
         TEUCHOS_ASSERT(flags>0 && flags <= EvaluationFlags::All);
@@ -79,7 +79,7 @@ namespace panzer {
 
     AssemblyEngine(const Teuchos::RCP<panzer::FieldManagerBuilder>& fmb,
                    const Teuchos::RCP<const panzer::LinearObjFactory<panzer::Traits> > & lof);
-    
+
     void evaluate(const panzer::AssemblyEngineInArgs& input_arguments, const EvaluationFlags flags=EvaluationFlags(EvaluationFlags::All));
 
     void evaluateVolume(const panzer::AssemblyEngineInArgs& input_arguments);
@@ -100,9 +100,9 @@ namespace panzer {
 
     Teuchos::RCP<panzer::FieldManagerBuilder> getManagerBuilder()
     { return m_field_manager_builder; }
-    
+
   protected:
-      
+
     /** Evaluate both Dirichlet and Neumann conditions.
       *
       * \param[in] bc_type Type of Dirichlet condition to evaluate
@@ -110,12 +110,12 @@ namespace panzer {
       * \param[in] preEval_loc Linear object container used by Dirichlet conditions for
       *                        keeping track of rows that have been modified.
       */
-    void evaluateBCs(const panzer::BCType bc_type, 
+    void evaluateBCs(const panzer::BCType bc_type,
 		     const panzer::AssemblyEngineInArgs& input_arguments,
                      const Teuchos::RCP<LinearObjContainer> preEval_loc=Teuchos::null);
 
   protected:
-    
+
       Teuchos::RCP<panzer::FieldManagerBuilder> m_field_manager_builder;
 
       Teuchos::RCP<const panzer::LinearObjFactory<panzer::Traits> > m_lin_obj_factory;
@@ -127,7 +127,7 @@ namespace panzer {
       Teuchos::RCP<LinearObjContainer> globalCounter_;
       Teuchos::RCP<LinearObjContainer> summedGhostedCounter_;
   };
-  
+
 }
 
 // #include "Panzer_AssemblyEngine_impl.hpp"

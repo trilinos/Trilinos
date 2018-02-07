@@ -23,7 +23,7 @@
 template <typename EvalT>
 mini_em::BCStrategy_Dirichlet_AuxConstant<EvalT>::
 BCStrategy_Dirichlet_AuxConstant(const panzer::BC& bc,
-    const Teuchos::RCP<panzer::GlobalData>& /* global_data */) 
+    const Teuchos::RCP<panzer::GlobalData>& /* global_data */)
   : panzer::BCStrategy<EvalT>(bc)
 {
   TEUCHOS_ASSERT(this->m_bc.strategy() == "AuxConstant");
@@ -44,10 +44,10 @@ setup(const panzer::PhysicsBlock& side_pb,
   value_ = this->m_bc.params()->template get<double>("Value");
   fieldName_ = this->m_bc.params()->template get<std::string>("Field Name");
 
-  // find the basis for this dof 
+  // find the basis for this dof
   const std::vector<std::pair<std::string,RCP<panzer::PureBasis> > >& dofs = side_pb.getProvidedDOFs();
 
-  for (std::vector<std::pair<std::string,RCP<panzer::PureBasis> > >::const_iterator dof_it = 
+  for (std::vector<std::pair<std::string,RCP<panzer::PureBasis> > >::const_iterator dof_it =
 	 dofs.begin(); dof_it != dofs.end(); ++dof_it) {
     if (dof_it->first == fieldName_)
       this->basis_ = dof_it->second;
@@ -79,10 +79,10 @@ buildAndRegisterEvaluators(PHX::FieldManager<panzer::Traits>& fm,
     p.set("Name", "AuxConstant_" + this->m_bc.equationSetName()+"_"+fieldName_);
     p.set("Data Layout", basis_->functional);
     p.set("Value", this->m_bc.params()->template get<double>("Value"));
-    
-    RCP< PHX::Evaluator<panzer::Traits> > op = 
+
+    RCP< PHX::Evaluator<panzer::Traits> > op =
       rcp(new panzer::Constant<EvalT,panzer::Traits>(p));
-    
+
     fm.template registerEvaluator<EvalT>(op);
   }
 
@@ -93,9 +93,9 @@ buildAndRegisterEvaluators(PHX::FieldManager<panzer::Traits>& fm,
     p.set("Value Name", "AuxConstant_" + this->m_bc.equationSetName()+"_"+fieldName_);
     p.set("Data Layout", basis_->functional);
 
-    RCP< PHX::Evaluator<panzer::Traits> > op = 
+    RCP< PHX::Evaluator<panzer::Traits> > op =
       rcp(new panzer::DirichletResidual<EvalT,panzer::Traits>(p));
-    
+
     fm.template registerEvaluator<EvalT>(op);
   }
 }
@@ -137,27 +137,27 @@ void mini_em::BCStrategy_Dirichlet_AuxConstant<panzer::Traits::Jacobian>::
 buildAndRegisterGatherAndOrientationEvaluators(PHX::FieldManager<panzer::Traits>& fm,
                                                  const panzer::PhysicsBlock& /* side_pb */,
                                                  const panzer::LinearObjFactory<panzer::Traits> & lof,
-                                                 const Teuchos::ParameterList& /* user_data */) const 
+                                                 const Teuchos::ParameterList& /* user_data */) const
 {
   typedef panzer::Traits::Jacobian EvalT;
 
   using Teuchos::RCP;
   using Teuchos::rcp;
- 
+
   // Gather
   {
-    
+
     Teuchos::ParameterList p("BC Gather");
-    
+
     RCP<std::vector<std::string> > gather_names_vec = rcp(new std::vector<std::string>);
     gather_names_vec->push_back(fieldName_);
-    
+
     p.set("DOF Names", gather_names_vec);
     p.set("Indexer Names", gather_names_vec);
     p.set("Basis", basis_);
-    
+
     RCP< PHX::Evaluator<panzer::Traits> > op = lof.buildGather<EvalT>(p);
-    
+
     fm.registerEvaluator<EvalT>(op);
   }
 
@@ -168,7 +168,7 @@ void mini_em::BCStrategy_Dirichlet_AuxConstant<panzer::Traits::Jacobian>::
 buildAndRegisterScatterEvaluators(PHX::FieldManager<panzer::Traits>& fm,
                                   const panzer::PhysicsBlock& side_pb,
 				  const panzer::LinearObjFactory<panzer::Traits> & lof,
-				  const Teuchos::ParameterList& /* user_data */) const 
+				  const Teuchos::ParameterList& /* user_data */) const
 {
   typedef panzer::Traits::Jacobian EvalT;
 
@@ -177,17 +177,17 @@ buildAndRegisterScatterEvaluators(PHX::FieldManager<panzer::Traits>& fm,
 
   // must be able to cast to a block linear object factory
   const panzer::BlockedTpetraLinearObjFactory<panzer::Traits,double,int,panzer::Ordinal64> & blof
-     = Teuchos::dyn_cast<const panzer::BlockedTpetraLinearObjFactory<panzer::Traits,double,int,panzer::Ordinal64> >(lof); 
+     = Teuchos::dyn_cast<const panzer::BlockedTpetraLinearObjFactory<panzer::Traits,double,int,panzer::Ordinal64> >(lof);
   Teuchos::RCP<const panzer::BlockedDOFManager<int,panzer::Ordinal64> > blockedDOFMngr = blof.getGlobalIndexer();
-  TEUCHOS_ASSERT(blockedDOFMngr!=Teuchos::null); 
+  TEUCHOS_ASSERT(blockedDOFMngr!=Teuchos::null);
 
   int fieldNum = blockedDOFMngr->getFieldNum(fieldName_);
   int blockIndex = blockedDOFMngr->getFieldBlock(fieldNum);
 
   // get the unique global indexer for just this field
   Teuchos::RCP<panzer::UniqueGlobalIndexer<int,panzer::Ordinal64> > ugi = blockedDOFMngr->getFieldDOFManagers()[blockIndex];
-   
-  // build a new epetra linear object factory 
+
+  // build a new epetra linear object factory
   Teuchos::RCP<panzer::LinearObjFactory<panzer::Traits> > elof
      = Teuchos::rcp(new panzer::TpetraLinearObjFactory<panzer::Traits,double,int,panzer::Ordinal64>(Teuchos::rcp(new Teuchos::MpiComm<int>(blof.getComm())).getConst(),ugi));
 
@@ -197,10 +197,10 @@ buildAndRegisterScatterEvaluators(PHX::FieldManager<panzer::Traits>& fm,
 
   // first build a reordering evaluator to take it to the new sub global indexer
   {
-     std::vector<Teuchos::RCP<PHX::DataLayout> > fieldLayouts; 
+     std::vector<Teuchos::RCP<PHX::DataLayout> > fieldLayouts;
      fieldLayouts.push_back(basis_->functional);
 
-     std::vector<std::string> resNames; 
+     std::vector<std::string> resNames;
      resNames.push_back(residualField);
 
      RCP< PHX::Evaluator<panzer::Traits> > op = Teuchos::rcp(
@@ -215,7 +215,7 @@ buildAndRegisterScatterEvaluators(PHX::FieldManager<panzer::Traits>& fm,
   }
 
   {
-    RCP<std::map<std::string,std::string> > resToField 
+    RCP<std::map<std::string,std::string> > resToField
        = rcp(new std::map<std::string,std::string>);
     (*resToField)[outPrefix+residualField] = fieldName_;
 

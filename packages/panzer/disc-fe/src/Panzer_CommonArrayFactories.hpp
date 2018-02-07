@@ -59,7 +59,7 @@
 //
 
 namespace panzer {
-  
+
   /** Implementation for intrepid field container factory. This
     * is intended to be used only with the BasisValues and
     * IntegrationValues objects. Notice in this case the string
@@ -88,14 +88,14 @@ namespace panzer {
      /** Build fields with no prefix, will simply use the string
        * passed into <code>buildArray</code> to name the fields.
        */
-     MDFieldArrayFactory() 
+     MDFieldArrayFactory()
       : prefix_(""), allocArray_(false), ddims_(1,0) {}
 
      /** Build fields with a prefix, will use the string
        * passed into <code>buildArray</code> prefixed with the
        * argument to this constructor to name the fields.
        */
-     MDFieldArrayFactory(const std::string & prefix,bool allocArray=false) 
+     MDFieldArrayFactory(const std::string & prefix,bool allocArray=false)
        : prefix_(prefix),allocArray_(allocArray), ddims_(1,0) {}
 
      /** Build fields with a prefix, will use the string
@@ -104,10 +104,10 @@ namespace panzer {
        */
      MDFieldArrayFactory(const std::string & prefix,
                          const std::vector<PHX::index_size_type> & ddims,
-                         bool allocArray=false) 
+                         bool allocArray=false)
        : prefix_(prefix),allocArray_(allocArray), ddims_(ddims) {}
 
- 
+
      template <typename Scalar,typename T0>
      PHX::MDField<Scalar> buildArray(const std::string & str,int d0) const;
      template <typename Scalar,typename T0,typename T1>
@@ -131,7 +131,7 @@ namespace panzer {
      PHX::MDField<Scalar,T0,T1,T2,T3,T4> buildStaticArray(const std::string & str,int d0,int d1,int d2,int d3,int d4) const;
 
   private:
-     std::string prefix_;     
+     std::string prefix_;
      bool allocArray_;
      std::vector<PHX::index_size_type> ddims_;
   };

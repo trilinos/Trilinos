@@ -80,13 +80,13 @@ PANZER_EVALUATOR_CLASS(ScatterVectorFields)
   int spatialDimension_;
 
 public:
-  
+
   ScatterVectorFields(const std::string & scatterName,
                       const Teuchos::RCP<STK_Interface> mesh,
                       const Teuchos::RCP<const panzer::PointRule> & pointRule,
                       const std::vector<std::string> & names,
                       const std::vector<double> & scaling = std::vector<double>());
- 
+
 PANZER_EVALUATOR_CLASS_END
 
 }
