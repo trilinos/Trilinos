@@ -51,7 +51,7 @@
 #include <string>
 #include <iostream>
 
-Teuchos::RCP<Teuchos::ParameterList> maxwellParameterList(const int basis_order);
+Teuchos::RCP<Teuchos::ParameterList> maxwellParameterList(const int basis_order, const double epsilon, const double mu);
 std::vector<panzer::BC> homogeneousBoundaries();
 std::vector<panzer::BC> auxiliaryBoundaries();
 Teuchos::RCP<Teuchos::ParameterList> auxOpsParameterList(const int basis_order, const double massMultiplier);
@@ -129,6 +129,8 @@ int main(int argc,char * argv[])
       bool use_refmaxwell = false;
       bool print_diagnostics = false;
       int numTimeSteps = 1;
+      double epsilon = 8.854187817e-12;
+      double mu = 1.2566370614e-6;
       bool build_tet_mesh = false;
       Teuchos::CommandLineProcessor clp;
       clp.setOption("x-elements",&x_elements);
@@ -147,12 +149,14 @@ int main(int argc,char * argv[])
       clp.setOption("build-tet-mesh","build-hex-mesh",&build_tet_mesh);
       clp.setOption("subsolve-diagnostics","no-subsolve-diagnostics",&print_diagnostics);
       clp.setOption("numTimeSteps",&numTimeSteps);
-  
+      clp.setOption("epsilon",&epsilon);
+      clp.setOption("mu",&mu);
+        
       // parse command-line argument
       TEUCHOS_ASSERT(clp.parse(argc,argv)==Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL);
   
       // compute dt from cfl
-      double c  = std::sqrt(1.0/8.854187817e-12/1.2566370614e-6);
+      double c  = std::sqrt(1.0/epsilon/mu);
       double min_dx = 1.0/std::max(x_elements,std::max(y_elements,z_elements));
       double dt = cfl*min_dx/c;
 
@@ -198,7 +202,7 @@ int main(int argc,char * argv[])
       Teuchos::RCP<panzer::GlobalData> globalData = panzer::createGlobalData();
   
       // define physics block parameter list and boundary conditions
-      Teuchos::RCP<Teuchos::ParameterList> physicsBlock_pl = maxwellParameterList(basis_order);
+      Teuchos::RCP<Teuchos::ParameterList> physicsBlock_pl = maxwellParameterList(basis_order, epsilon, mu);
       std::vector<panzer::BC> bcs = homogeneousBoundaries();
       std::vector<panzer::BC> aux_bcs;// = auxiliaryBoundaries();
   
@@ -227,7 +231,11 @@ int main(int argc,char * argv[])
       }
   
       // build the auxiliary physics blocks objects
-      Teuchos::RCP<Teuchos::ParameterList> auxPhysicsBlock_pl = auxOpsParameterList(basis_order);
+      Teuchos::RCP<Teuchos::ParameterList> auxPhysicsBlock_pl;
+      if (use_refmaxwell)
+         auxPhysicsBlock_pl = auxOpsParameterList(basis_order, epsilon / dt / cfl / cfl / min_dx / min_dx);
+      else
+        auxPhysicsBlock_pl = auxOpsParameterList(basis_order, 1.0);
       std::vector<RCP<panzer::PhysicsBlock> > auxPhysicsBlocks;
       {
         bool build_transient_support = false;
@@ -442,7 +450,7 @@ int main(int argc,char * argv[])
 }
 
 //! Create a parameter list defining the Maxwell equations physics block
-Teuchos::RCP<Teuchos::ParameterList> maxwellParameterList(const int basis_order)
+Teuchos::RCP<Teuchos::ParameterList> maxwellParameterList(const int basis_order, const double epsilon, const double mu)
 {
   Teuchos::RCP<Teuchos::ParameterList> pl = Teuchos::rcp(new Teuchos::ParameterList("Physics Block"));
   const int integration_order = 2*basis_order;
@@ -452,8 +460,8 @@ Teuchos::RCP<Teuchos::ParameterList> maxwellParameterList(const int basis_order)
   p.set("Model ID","electromagnetics");
   p.set("Basis Order",basis_order);
   p.set("Integration Order",integration_order);
-  //p.set("Epsilon",1.0);
-  //p.set("Mu",1.0);
+  p.set("Epsilon",epsilon);
+  p.set("Mu", mu);
 
   return pl;
 }
