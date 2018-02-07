@@ -105,7 +105,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( TOpPairWiseMaxUpdate, unitStride, Scalar )
   basicTest<Scalar>(1, out, success);
 }
 
-TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT_SCALAR_TYPES( TOpPairWiseMaxUpdate, unitStride )
+TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT_REAL_SCALAR_TYPES( TOpPairWiseMaxUpdate, unitStride )
 
 
 TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( TOpPairWiseMaxUpdate, nonunitStride, Scalar )
@@ -113,7 +113,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( TOpPairWiseMaxUpdate, nonunitStride, Scalar )
   basicTest<Scalar>(4, out, success);
 }
 
-TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT_SCALAR_TYPES( TOpPairWiseMaxUpdate, nonunitStride )
+TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT_REAL_SCALAR_TYPES( TOpPairWiseMaxUpdate, nonunitStride )
 
 
 } // namespace
