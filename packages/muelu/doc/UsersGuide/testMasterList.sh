@@ -12,7 +12,7 @@ done
 ./update_params.sh MueLu_MasterList.cpp
 
 # check whether xsltproc crashed
-if [ $? -ne 1 ]; then
+if [ $? -ne 0 ]; then
     echo "xsltproc is available, but crashed when the update_params.sh script was run. Consider updating xsltproc."
     exit 0
 fi
