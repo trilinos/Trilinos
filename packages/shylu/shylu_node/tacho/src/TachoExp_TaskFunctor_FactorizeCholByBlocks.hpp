@@ -216,11 +216,6 @@ namespace Tacho {
                     });
                 });
               Kokkos::single(Kokkos::PerTeam(member), [&]() {
-                  for (ordinal_type j=0,k=0;j<bn;++j)
-                    for (ordinal_type i=0;i<=j;++i,++k) {
-                      dep[k] = hbr(i,j).future();
-                      hbr(i,j).set_future();
-                    }
                   Kokkos::respawn(this, Kokkos::when_all(dep, bn2), Kokkos::TaskPriority::Regular);
                   for (ordinal_type k=0;k<static_cast<ordinal_type>(bn2);++k) (dep+k)->~future_type();
                   _sched.memory()->deallocate((void*)dep, depsize);
