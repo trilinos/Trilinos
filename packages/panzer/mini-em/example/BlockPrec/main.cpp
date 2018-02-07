@@ -52,7 +52,7 @@
 Teuchos::RCP<Teuchos::ParameterList> maxwellParameterList(const int basis_order);
 std::vector<panzer::BC> homogeneousBoundaries();
 std::vector<panzer::BC> auxiliaryBoundaries();
-Teuchos::RCP<Teuchos::ParameterList> auxOpsParameterList(const int basis_order);
+Teuchos::RCP<Teuchos::ParameterList> auxOpsParameterList(const int basis_order, const double massMultiplier);
 Teuchos::RCP<Teuchos::ParameterList> maxwellSolverParameterList(const bool use_ilu, const bool use_refmaxwell, const bool print_diagnostics);
 void createExodusFile(const std::vector<Teuchos::RCP<panzer::PhysicsBlock> >& physicsBlocks,
                       Teuchos::RCP<panzer_stk::STK_MeshFactory> mesh_factory,
@@ -510,7 +510,7 @@ std::vector<panzer::BC> auxiliaryBoundaries()
 }
 
 //! Create parameter list defining nodal mass matrix and node-edge weak gradient
-Teuchos::RCP<Teuchos::ParameterList> auxOpsParameterList(const int basis_order)
+Teuchos::RCP<Teuchos::ParameterList> auxOpsParameterList(const int basis_order, const double massMultiplier)
 {
   Teuchos::RCP<Teuchos::ParameterList> pl = Teuchos::rcp(new Teuchos::ParameterList("Aux Physics Block"));
   const int integration_order = 2*basis_order;
@@ -522,6 +522,7 @@ Teuchos::RCP<Teuchos::ParameterList> auxOpsParameterList(const int basis_order)
     p.set("Basis Type","HGrad");
     p.set("Basis Order",basis_order);
     p.set("Integration Order",integration_order);
+    p.set("Multiplier",massMultiplier);
   }
 
   {
