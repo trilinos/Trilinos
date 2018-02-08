@@ -1,11 +1,12 @@
 #!/bin/bash
 
 xsltproc tex.xsl masterList.xml > paramlist.tex
-if [ $? -ne 0 ]; then
+returncode=$?
+if [ $returncode -ne 0 ]; then
     # There seems to be an issue with certain versions of xsltproc
     # suddenly segfaulting.
     echo "xsltproc exited unexpectedly. Please investigate!"
-    exit $?;
+    exit returncode;
 fi
 
 xsltproc tex_hidden.xsl masterList.xml > paramlist_hidden.tex
