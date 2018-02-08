@@ -1,10 +1,21 @@
 #!/bin/bash
 
 xsltproc tex.xsl masterList.xml > paramlist.tex
+if [ $? -ne 0 ]; then
+    # There seems to be an issue with certain versions of xsltproc
+    # suddenly segfaulting.
+    echo "xsltproc exited unexpectedly. Please investigate!"
+    exit $?;
+fi
+
 xsltproc tex_hidden.xsl masterList.xml > paramlist_hidden.tex
 
+if [ "$1" != "" ]; then
+    code_file=$1
+else
+    code_file="../../src/MueCentral/MueLu_MasterList.cpp"
+fi
 
-code_file="../../src/MueCentral/MueLu_MasterList.cpp"
 
 echo '// @HEADER
 //
@@ -79,7 +90,7 @@ namespace MueLu {
     }
     return problemSpecificList_;
   }
- 
+
    std::string MasterList::interpretParameterName(const std::string& name, const std::string& value) {
 
     // used to concatenate the return string
@@ -131,7 +142,7 @@ xsltproc gen_interpreter.xsl masterList.xml >> $code_file
 echo '
     return "";
   }
- 
+
   Teuchos::RCP<Teuchos::ParameterList> MasterList::masterList_ = Teuchos::null;
   Teuchos::RCP<Teuchos::ParameterList> MasterList::problemSpecificList_ = Teuchos::null;
   std::string                          MasterList::problemType_ = "unknown";
