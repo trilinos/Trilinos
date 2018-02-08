@@ -209,7 +209,7 @@ TEST( Numeric, factorizeCholesky_Parallel ) {
                                             s_snodes_tree_parent, s_snodes_tree_ptr, s_snodes_tree_children,
                                             S.SupernodesTreeRoots());
   
-  //N.factorizeCholesky_Parallel(a_values);
+  N.factorizeCholesky_Parallel(a_values);
   TEST_END;
 }
 

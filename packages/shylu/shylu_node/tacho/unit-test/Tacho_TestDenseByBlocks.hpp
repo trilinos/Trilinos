@@ -39,7 +39,7 @@ TEST( DenseByBlocks, ldl ) {
   Lapack<double>::sytrf('U', 10, &aa[0][0], 10, &ipiv[0], &work[0][0], 100, &info);
   TEST_END;
 }
-#if 0
+#if 1
 TEST( DenseByBlocks, chol ) {
   TEST_BEGIN;
   const ordinal_type m = 100, mb = 32;
@@ -70,8 +70,7 @@ TEST( DenseByBlocks, chol ) {
     
     Kokkos::deep_copy(a1.d_view, a.h_view);
   
-    int dummy;
-    Chol<Uplo::Upper,Algo::External>::invoke(dummy, dummy, A);
+    Chol<Uplo::Upper,Algo::External>::invoke(A);
   }
 
   // test: chol by blocks with attached base buffer
@@ -185,12 +184,11 @@ TEST( DenseByBlocks, gemm ) {
 
     Kokkos::deep_copy(c1.d_view, c.h_view);
 
-    int dummy;
     Gemm<Trans::NoTranspose,Trans::NoTranspose,Algo::External>
-      ::invoke(dummy, dummy, alpha, A, B, beta, C);
+      ::invoke(alpha, A, B, beta, C);
 
     Gemm<Trans::ConjTranspose,Trans::NoTranspose,Algo::External>
-      ::invoke(dummy, dummy, alpha, A, B, beta, C);
+      ::invoke(alpha, A, B, beta, C);
   }
   
 
@@ -342,9 +340,8 @@ TEST( DenseByBlocks, herk ) {
 
     Kokkos::deep_copy(c1.d_view, c.h_view);
 
-    int dummy;
     Herk<Uplo::Upper,Trans::ConjTranspose,Algo::External>
-      ::invoke(dummy, dummy, alpha, A, beta, C);
+      ::invoke(alpha, A, beta, C);
   }
 
 
@@ -483,11 +480,10 @@ TEST( DenseByBlocks, trsm ) {
 
     Kokkos::deep_copy(b1.d_view, b.h_view);
     
-    int dummy;
     Trsm<Side::Left,Uplo::Upper,Trans::ConjTranspose,Algo::External>
-      ::invoke(dummy, dummy, Diag::NonUnit(), alpha, A, B);
+      ::invoke(Diag::NonUnit(), alpha, A, B);
     Trsm<Side::Left,Uplo::Upper,Trans::NoTranspose,Algo::External>
-      ::invoke(dummy, dummy, Diag::NonUnit(), alpha, A, B);
+      ::invoke(Diag::NonUnit(), alpha, A, B);
   }
 
   // test: trsm by blocks with attached base buffer
