@@ -73,19 +73,19 @@ PoissonEquationSet(const Teuchos::RCP<Teuchos::ParameterList>& params,
   // ********************
   // Validate and parse parameter list
   // ********************
-  {    
+  {
     Teuchos::ParameterList valid_parameters;
     this->setDefaultValidParameters(valid_parameters);
-    
+
     valid_parameters.set("Model ID","","Closure model id associated with this equation set");
     valid_parameters.set("Basis Type","HGrad","Type of Basis to use");
     valid_parameters.set("Basis Order",1,"Order of the basis");
     valid_parameters.set("Integration Order",-1,"Order of the integration rule");
     valid_parameters.set("DOF Name","DOF Name");
-    
+
     params->validateParametersAndSetDefaults(valid_parameters);
   }
-  
+
   std::string basis_type = params->get<std::string>("Basis Type");
   int basis_order = params->get<int>("Basis Order");
   int integration_order = params->get<int>("Integration Order");
@@ -124,7 +124,7 @@ PoissonEquationSet(const Teuchos::RCP<Teuchos::ParameterList>& params,
    // ********************
    // Build Basis Functions and Integration Rules
    // ********************
-   
+
    this->addClosureModel(model_id);
 
    this->setupDOFs();
@@ -140,9 +140,9 @@ buildAndRegisterEquationSetEvaluators(PHX::FieldManager<panzer::Traits>& fm,
   using Teuchos::ParameterList;
   using Teuchos::RCP;
   using Teuchos::rcp;
-  
+
   Teuchos::RCP<panzer::IntegrationRule> ir = this->getIntRuleForDOF(dof_name);
-  Teuchos::RCP<panzer::BasisIRLayout> basis = this->getBasisIRLayoutForDOF(dof_name); 
+  Teuchos::RCP<panzer::BasisIRLayout> basis = this->getBasisIRLayoutForDOF(dof_name);
 
   // ********************
   // Energy Equation
@@ -157,9 +157,9 @@ buildAndRegisterEquationSetEvaluators(PHX::FieldManager<panzer::Traits>& fm,
     p.set("IR", ir);
     p.set("Multiplier", 1.0);
 
-    RCP< PHX::Evaluator<panzer::Traits> > op = 
+    RCP< PHX::Evaluator<panzer::Traits> > op =
       rcp(new panzer::Integrator_BasisTimesScalar<EvalT,panzer::Traits>(p));
-    
+
     this->template registerEvaluator<EvalT>(fm, op);
   }
 
@@ -173,15 +173,15 @@ buildAndRegisterEquationSetEvaluators(PHX::FieldManager<panzer::Traits>& fm,
     p.set("Basis", basis);
     p.set("IR", ir);
     p.set("Multiplier", thermal_conductivity);
-    
-    RCP< PHX::Evaluator<panzer::Traits> > op = 
+
+    RCP< PHX::Evaluator<panzer::Traits> > op =
       rcp(new panzer::Integrator_GradBasisDotVector<EvalT,panzer::Traits>(p));
 
     this->template registerEvaluator<EvalT>(fm, op);
   }
-  
+
   // Source Operator
-  {   
+  {
     ParameterList p("Source Residual");
     p.set("Residual Name", "RESIDUAL_" + dof_name + "_SOURCE_OP");
     p.set("Value Name", "SOURCE_" + dof_name); // this field must be provided by the closure model factory
@@ -189,10 +189,10 @@ buildAndRegisterEquationSetEvaluators(PHX::FieldManager<panzer::Traits>& fm,
     p.set("Basis", basis);
     p.set("IR", ir);
     p.set("Multiplier", -1.0);
-    
-    RCP< PHX::Evaluator<panzer::Traits> > op = 
+
+    RCP< PHX::Evaluator<panzer::Traits> > op =
       rcp(new panzer::Integrator_BasisTimesScalar<EvalT,panzer::Traits>(p));
-    
+
     this->template registerEvaluator<EvalT>(fm, op);
   }
 

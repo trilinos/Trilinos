@@ -64,13 +64,13 @@ ClosureModelFactoryComposite(const std::vector<Teuchos::RCP<panzer::ClosureModel
 
 // ********************************************************************
 template<typename EvalT>
-Teuchos::RCP< std::vector< Teuchos::RCP<PHX::Evaluator<panzer::Traits> > > > 
+Teuchos::RCP< std::vector< Teuchos::RCP<PHX::Evaluator<panzer::Traits> > > >
 panzer::ClosureModelFactoryComposite<EvalT>::
 buildClosureModels(const std::string& model_id,
-		   const Teuchos::ParameterList& models, 
+		   const Teuchos::ParameterList& models,
 		   const panzer::FieldLayoutLibrary& fl,
 		   const Teuchos::RCP<panzer::IntegrationRule>& ir,
-		   const Teuchos::ParameterList& default_params, 
+		   const Teuchos::ParameterList& default_params,
 		   const Teuchos::ParameterList& user_data,
 		   const Teuchos::RCP<panzer::GlobalData>& global_data,
 		   PHX::FieldManager<panzer::Traits>& fm) const
@@ -83,12 +83,12 @@ buildClosureModels(const std::string& model_id,
   using Teuchos::ParameterList;
   using PHX::Evaluator;
 
-  RCP< vector< RCP<Evaluator<panzer::Traits> > > > evaluators = 
+  RCP< vector< RCP<Evaluator<panzer::Traits> > > > evaluators =
     rcp(new vector< RCP<Evaluator<panzer::Traits> > > );
 
   if (!models.isSublist(model_id)) {
     std::stringstream msg;
-    msg << "Falied to find requested model, \"" << model_id 
+    msg << "Falied to find requested model, \"" << model_id
 	<< "\" for equation set:\n" << std::endl;
     TEUCHOS_TEST_FOR_EXCEPTION(!models.isSublist(model_id), std::logic_error, msg.str());
   }
@@ -98,7 +98,7 @@ buildClosureModels(const std::string& model_id,
   // pull out the nonlist (not associated with any model) parameters
   // this will be used by each stored closure model
   Teuchos::ParameterList nonlist_params(models.name()); // make sure it maintains the models name
-  for (ParameterList::ConstIterator model_it = models.begin(); 
+  for (ParameterList::ConstIterator model_it = models.begin();
        model_it != models.end(); ++model_it) {
 
     std::string key = model_it->first;
@@ -113,7 +113,7 @@ buildClosureModels(const std::string& model_id,
 
   // Loop over factories
   for (std::vector<Teuchos::RCP<panzer::ClosureModelFactory_TemplateManager<panzer::Traits> > >::const_iterator factory = m_factories.begin(); factory != m_factories.end(); ++factory) {
-    
+
     (*factory)->getAsObject<EvalT>()->setThrowOnModelNotFound(false);
     RCP< vector< RCP<Evaluator<panzer::Traits> > > > tmp_evaluators =
       (*factory)->getAsObject<EvalT>()->buildClosureModels(model_id,copy_of_my_model,fl,ir,default_params,user_data,global_data,fm);
@@ -128,11 +128,11 @@ buildClosureModels(const std::string& model_id,
 /*
   // for each model, try each factory until you get a nonnull
   // return, meaning you have built the evaluators for that model
-  for (ParameterList::ConstIterator model_it = my_model.begin(); 
+  for (ParameterList::ConstIterator model_it = my_model.begin();
        model_it != my_model.end(); ++model_it) {
-    
+
     std::string model_key = model_it->first;
-    
+
     // Duplicate models sublist with just the particular model you
     // want to build
     ParameterList copy_of_models = nonlist_params;
@@ -142,7 +142,7 @@ buildClosureModels(const std::string& model_id,
 
     std::cout << "COPY OF MODELS = " << model_id << std::endl;
     copy_of_models.print(std::cout);
-    
+
     // Loop over factories
     for (std::vector<Teuchos::RCP<panzer::ClosureModelFactory_TemplateManager<panzer::Traits> > >::const_iterator factory = m_factories.begin(); factory != m_factories.end(); ++factory) {
 
@@ -150,12 +150,12 @@ buildClosureModels(const std::string& model_id,
 	(*factory)->getAsObject<EvalT>()->buildClosureModels(model_id,set,copy_of_models,default_params,user_data,global_data,fm);
 
       if (tmp_evaluators->size() > 0) {
-	
+
 	for (vector< RCP<Evaluator<panzer::Traits> > >::const_iterator eval = tmp_evaluators->begin(); eval != tmp_evaluators->end(); ++eval)
 	  evaluators->push_back(*eval);
 
       }
-      
+
     }
 
   }

@@ -55,7 +55,7 @@
 namespace panzer {
 
   template<typename Traits>
-  class ResponseEvaluatorFactory_TemplateManager : 
+  class ResponseEvaluatorFactory_TemplateManager :
     public PHX::TemplateManager<typename Traits::EvalTypes,
 				panzer::ResponseEvaluatorFactoryBase,
 				panzer::ResponseEvaluatorFactory<_> > {
@@ -68,6 +68,6 @@ namespace panzer {
 
   };
 
-} 
+}
 
-#endif 
+#endif

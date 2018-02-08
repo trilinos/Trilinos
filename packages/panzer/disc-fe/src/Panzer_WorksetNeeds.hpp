@@ -64,11 +64,11 @@ class IntegrationRule;
   * "meta" data that describes which basis functions are need,
   * which integration rules are needed and the shape of the
   * cell.
-  * 
+  *
   * This is intended to be specified for each element block
   * and side set based on the integration rules and basis functions
   * that are needed.
-  */ 
+  */
 struct WorksetNeeds
 {
 public:

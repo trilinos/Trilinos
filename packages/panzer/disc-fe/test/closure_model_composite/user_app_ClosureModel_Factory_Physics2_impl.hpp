@@ -65,10 +65,10 @@ user_app::MyModelFactory_Physics2<EvalT>::MyModelFactory_Physics2(bool throw_if_
 
 // ********************************************************************
 template<typename EvalT>
-Teuchos::RCP< std::vector< Teuchos::RCP<PHX::Evaluator<panzer::Traits> > > > 
+Teuchos::RCP< std::vector< Teuchos::RCP<PHX::Evaluator<panzer::Traits> > > >
 user_app::MyModelFactory_Physics2<EvalT>::
 buildClosureModels(const std::string& model_id,
-		   const Teuchos::ParameterList& models, 
+		   const Teuchos::ParameterList& models,
 		   const panzer::FieldLayoutLibrary& /* fl */,
 		   const Teuchos::RCP<panzer::IntegrationRule>& ir,
 		   const Teuchos::ParameterList& /* default_params */,
@@ -84,31 +84,31 @@ buildClosureModels(const std::string& model_id,
   using Teuchos::ParameterList;
   using PHX::Evaluator;
 
-  RCP< vector< RCP<Evaluator<panzer::Traits> > > > evaluators = 
+  RCP< vector< RCP<Evaluator<panzer::Traits> > > > evaluators =
     rcp(new vector< RCP<Evaluator<panzer::Traits> > > );
 
   if (!models.isSublist(model_id)) {
     models.print(std::cout);
     std::stringstream msg;
-    msg << "Falied to find requested model, \"" << model_id 
+    msg << "Falied to find requested model, \"" << model_id
 	<< "\", for equation set:\n" << std::endl;
     TEUCHOS_TEST_FOR_EXCEPTION(!models.isSublist(model_id), std::logic_error, msg.str());
   }
 
   const ParameterList& my_models = models.sublist(model_id);
 
-  for (ParameterList::ConstIterator model_it = my_models.begin(); 
+  for (ParameterList::ConstIterator model_it = my_models.begin();
        model_it != my_models.end(); ++model_it) {
-    
+
     bool found = false;
-    
+
     const std::string key = model_it->first;
     ParameterList input;
     const Teuchos::ParameterEntry& entry = model_it->second;
     const ParameterList& plist = Teuchos::getValue<Teuchos::ParameterList>(entry);
 
     if (plist.isType<std::string>("Value")) {
-    
+
       const std::string value = plist.get<std::string>("Value");
 
       if (key == "Global Statistics") {
@@ -117,10 +117,10 @@ buildClosureModels(const std::string& model_id,
 	  input.set("Names", value);
 	  input.set("IR", ir);
 	  input.set("Global Data", global_data);
-	  RCP< panzer::GlobalStatistics<EvalT,panzer::Traits> > e = 
+	  RCP< panzer::GlobalStatistics<EvalT,panzer::Traits> > e =
 	    rcp(new panzer::GlobalStatistics<EvalT,panzer::Traits>(input));
 	  evaluators->push_back(e);
-	  
+
 	  // Require certain fields be evaluated
 	  fm.template requireField<EvalT>(e->getRequiredFieldTag());
 	}
@@ -131,8 +131,8 @@ buildClosureModels(const std::string& model_id,
 
     if (!found && m_throw_if_model_not_found) {
       std::stringstream msg;
-      msg << "ClosureModelFactory failed to build evaluator for key \"" << key 
-	  << "\"\nin model \"" << model_id 
+      msg << "ClosureModelFactory failed to build evaluator for key \"" << key
+	  << "\"\nin model \"" << model_id
 	  << "\".  Please correct the type or add support to the \nfactory." <<std::endl;
       TEUCHOS_TEST_FOR_EXCEPTION(!found, std::logic_error, msg.str());
     }

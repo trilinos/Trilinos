@@ -62,7 +62,7 @@
 #include "UnitTest_ConnManager.hpp"
 
 // include some intrepid basis functions
-// 2D basis 
+// 2D basis
 #include "Intrepid2_HGRAD_QUAD_C1_FEM.hpp"
 
 #include "Kokkos_DynRankView.hpp"
@@ -101,7 +101,7 @@ TEUCHOS_UNIT_TEST(tEpetra_LOF_FilteredUGI,epetra_lof)
    // build global (or serial communicator)
    #ifdef HAVE_MPI
       RCP<Epetra_Comm> eComm = rcp(new Epetra_MpiComm(MPI_COMM_WORLD));
-      RCP<const Teuchos::MpiComm<int> > tComm 
+      RCP<const Teuchos::MpiComm<int> > tComm
          = rcp(new Teuchos::MpiComm<int>(Teuchos::opaqueWrapper(MPI_COMM_WORLD)));
    #else
       PANZER DOES NOT DO SERIAL
@@ -113,10 +113,10 @@ TEUCHOS_UNIT_TEST(tEpetra_LOF_FilteredUGI,epetra_lof)
    int numProc = eComm->NumProc();
 
    RCP<ConnManager<int,int> > connManager = rcp(new unit_test::ConnManager<int>(myRank,numProc));
-   RCP<DOFManager<int,int> > dofManager = rcp(new DOFManager<int,int>); 
+   RCP<DOFManager<int,int> > dofManager = rcp(new DOFManager<int,int>);
    dofManager->setConnManager(connManager,MPI_COMM_WORLD);
 
-   RCP<const panzer::FieldPattern> patternC1 
+   RCP<const panzer::FieldPattern> patternC1
      = buildFieldPattern<Intrepid2::Basis_HGRAD_QUAD_C1_FEM<PHX::exec_space,double,double> >();
 
    dofManager->addField("T",patternC1); // add it to all three blocks
@@ -133,7 +133,7 @@ TEUCHOS_UNIT_TEST(tEpetra_LOF_FilteredUGI,epetra_lof)
    {
      std::pair<std::vector<int>,std::vector<int> > fieldOffsets
          = dofManager->getGIDFieldOffsets_closure("block_0",dofManager->getFieldNum("Ux"),1,0);
- 
+
      std::vector<int> gids;
      dofManager->getElementGIDs(0,gids);
 
@@ -168,12 +168,12 @@ TEUCHOS_UNIT_TEST(tEpetra_LOF_FilteredUGI,epetra_lof)
      filtered_ugi->getOwnedIndices(indices_f);
 
      BlockedEpetraLinearObjFactory<panzer::Traits,int> lof(tComm,filtered_ugi);
-     TEST_EQUALITY(rcp_dynamic_cast<const SpmdSpace>(lof.getThyraDomainSpace(),true)->localSubDim(),Teuchos::as<int>(indices_f.size())); 
-     TEST_EQUALITY(rcp_dynamic_cast<const SpmdSpace>(lof.getThyraRangeSpace(),true)->localSubDim(),Teuchos::as<int>(indices_f.size())); 
+     TEST_EQUALITY(rcp_dynamic_cast<const SpmdSpace>(lof.getThyraDomainSpace(),true)->localSubDim(),Teuchos::as<int>(indices_f.size()));
+     TEST_EQUALITY(rcp_dynamic_cast<const SpmdSpace>(lof.getThyraRangeSpace(),true)->localSubDim(),Teuchos::as<int>(indices_f.size()));
 
      RCP<Thyra::LinearOpBase<double> > A = lof.getThyraMatrix();
-     TEST_EQUALITY(rcp_dynamic_cast<const SpmdSpace>(A->range(),true)->localSubDim(),Teuchos::as<int>(indices_f.size())); 
-     TEST_EQUALITY(rcp_dynamic_cast<const SpmdSpace>(A->domain(),true)->localSubDim(),Teuchos::as<int>(indices_f.size())); 
+     TEST_EQUALITY(rcp_dynamic_cast<const SpmdSpace>(A->range(),true)->localSubDim(),Teuchos::as<int>(indices_f.size()));
+     TEST_EQUALITY(rcp_dynamic_cast<const SpmdSpace>(A->domain(),true)->localSubDim(),Teuchos::as<int>(indices_f.size()));
 
      // This next chunk of code tests to ensure parallel communication works as
      // expected, in particular that a filtered owned vector can be used with
@@ -209,14 +209,14 @@ TEUCHOS_UNIT_TEST(tEpetra_LOF_FilteredUGI,epetra_lof)
      }
 
      int sum = 0;
-     for(int i=0;i<ghosted_x.MyLength();i++) 
-       sum += ghosted_x[i]; 
+     for(int i=0;i<ghosted_x.MyLength();i++)
+       sum += ghosted_x[i];
 
      // check that ones sum up to the number of ids
      // that were not filtered
      TEST_EQUALITY(sum,ghosted_x.MyLength()-count);
 
-     
+
      // do a lazy test to ensure you can construct an owned matrix
      RCP<Thyra::LinearOpBase<double> > ownedMatrix  = lof.getThyraMatrix();
      TEST_ASSERT(ownedMatrix != Teuchos::null);

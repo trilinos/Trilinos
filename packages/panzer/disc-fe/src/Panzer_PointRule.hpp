@@ -60,7 +60,7 @@ namespace panzer {
     */
   class PointRule {
   public:
-    
+
     /** if side = -1 then we use the cell as an reference frame
       *
       * \param[in] ptName Name of the point rule.
@@ -96,7 +96,7 @@ namespace panzer {
     virtual ~PointRule() {}
 
     void setup(const std::string & ptName,int np, const panzer::CellData& cell_data);
-  
+
     // Returns true if this point rule is for a sideset
     bool isSide() const;
 
@@ -105,16 +105,16 @@ namespace panzer {
     const std::string & getName() const;
 
     Teuchos::RCP<const shards::CellTopology> topology;
-    
+
     Teuchos::RCP<shards::CellTopology> side_topology;
-    
+
     //! Data layout for scalar fields
     Teuchos::RCP<PHX::DataLayout> dl_scalar;
     //! Data layout for vector fields
     Teuchos::RCP<PHX::DataLayout> dl_vector;
     //! Data layout for rank-2 tensor fields
     Teuchos::RCP<PHX::DataLayout> dl_tensor;
-    
+
     //! Data layout for vector fields - full (x,y,z)
     Teuchos::RCP<PHX::DataLayout> dl_vector3;
 
@@ -148,7 +148,7 @@ namespace panzer {
     Teuchos::RCP<PHX::DataLayout> getFacePointDataLayout() const;
     Teuchos::RCP<PHX::DataLayout> getFacePointDataLayout(const int dim0) const;
     Teuchos::RCP<PHX::DataLayout> getFacePointDataLayout(const int dim0, const int dim1) const;
-  
+
   protected:
     PointRule() : side(-1) {}
 

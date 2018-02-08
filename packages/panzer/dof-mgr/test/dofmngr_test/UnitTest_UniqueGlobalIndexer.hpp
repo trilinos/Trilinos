@@ -81,24 +81,24 @@ public:
    virtual int getFieldNum(const std::string & str) const;
 
    virtual int getNumFields() const { return 2; }
-   virtual void getFieldOrder(std::vector<std::string> & order) const 
-   { order.push_back("U"); order.push_back("T"); } 
+   virtual void getFieldOrder(std::vector<std::string> & order) const
+   { order.push_back("U"); order.push_back("T"); }
 
    virtual const std::string & getFieldString(int fieldNum) const;
 
-   /** Get the communicator 
+   /** Get the communicator
      */
    virtual Teuchos::RCP<Teuchos::Comm<int> > getComm() const;
 
    /** What are the blockIds included in this connection manager?
      */
-   virtual void getElementBlockIds(std::vector<std::string> & elementBlockIds) const; 
+   virtual void getElementBlockIds(std::vector<std::string> & elementBlockIds) const;
 
    /** Get field numbers associated with a particular element block.
      */
    virtual const std::vector<int> & getBlockFieldNumbers(const std::string & block) const;
 
-   /** Is the specified field in the element block? 
+   /** Is the specified field in the element block?
      */
    virtual bool fieldInBlock(const std::string & field, const std::string & block) const;
 
@@ -136,8 +136,8 @@ public:
      * \param[in] subcellDim
      * \param[in] subcellId
      */
-   // virtual const std::vector<int> & 
-   virtual const std::pair<std::vector<int>,std::vector<int> > & 
+   // virtual const std::vector<int> &
+   virtual const std::pair<std::vector<int>,std::vector<int> > &
    getGIDFieldOffsets_closure(const std::string & blockId, int fieldNum,
                                                                int subcellDim,int subcellId) const;
 
@@ -229,8 +229,8 @@ private:
    mutable Teuchos::RCP<std::vector<int> > field0Offset_b1_; // local element IDs
    mutable Teuchos::RCP<std::vector<int> > field1Offset_b1_; // local element IDs
 
-   mutable Teuchos::RCP<std::vector<int> > block0Fields_; 
-   mutable Teuchos::RCP<std::vector<int> > block1Fields_; 
+   mutable Teuchos::RCP<std::vector<int> > block0Fields_;
+   mutable Teuchos::RCP<std::vector<int> > block1Fields_;
 };
 
 } // end unit test

@@ -64,18 +64,18 @@ namespace panzer {
   {
     typedef panzer::ArrayTraits<double,PHX::MDField<double> >::size_type size_type;
 
-    Teuchos::RCP<shards::CellTopology> topo = 
+    Teuchos::RCP<shards::CellTopology> topo =
        Teuchos::rcp(new shards::CellTopology(shards::getCellTopologyData< shards::Quadrilateral<4> >()));
 
     const int num_cells = 4;
     const int base_cell_dimension = 2;
     const panzer::CellData cell_data(num_cells,topo);
 
-    const int cubature_degree = 4;    
-    RCP<IntegrationRule> int_rule = 
+    const int cubature_degree = 4;
+    RCP<IntegrationRule> int_rule =
       rcp(new IntegrationRule(cubature_degree, cell_data));
     const int num_qp = int_rule->num_points;
-    
+
     panzer::IntegrationValues2<double> int_values("prefix_",true);
     int_values.setupArrays(int_rule);
 
@@ -104,7 +104,7 @@ namespace panzer {
       node_coordinates(cell,0,y) = yleft*0.5;
 
       node_coordinates(cell,1,x) = (xleft+1)*0.5;
-      node_coordinates(cell,1,y) = yleft*0.5; 
+      node_coordinates(cell,1,y) = yleft*0.5;
 
       node_coordinates(cell,2,x) = (xleft+1)*0.5;
       node_coordinates(cell,2,y) = (yleft+1)*0.5;
@@ -120,9 +120,9 @@ namespace panzer {
     }
 
     int_values.evaluateValues(node_coordinates);
-    
+
     const std::string basis_type = "Const";
-  
+
     RCP<panzer::BasisIRLayout> basis = rcp(new panzer::BasisIRLayout(basis_type, 0, *int_rule));
     TEST_EQUALITY(basis->getIntrepid2Basis()->requireOrientation(), false);
 
@@ -130,7 +130,7 @@ namespace panzer {
 
     out << "setupArrays" << std::endl;
     basis_values.setupArrays(basis);
-    
+
     out << "evaluateValues" << std::endl;
     basis_values.evaluateValues(int_values.cub_points,
                                 int_values.jac,
@@ -167,18 +167,18 @@ namespace panzer {
   {
     typedef panzer::ArrayTraits<double,PHX::MDField<double> >::size_type size_type;
 
-    Teuchos::RCP<shards::CellTopology> topo = 
+    Teuchos::RCP<shards::CellTopology> topo =
        Teuchos::rcp(new shards::CellTopology(shards::getCellTopologyData< shards::Quadrilateral<4> >()));
 
     const int num_cells = 4;
     const int base_cell_dimension = 2;
     const panzer::CellData cell_data(num_cells,topo);
 
-    const int cubature_degree = 4;    
-    RCP<IntegrationRule> int_rule = 
+    const int cubature_degree = 4;
+    RCP<IntegrationRule> int_rule =
       rcp(new IntegrationRule(cubature_degree, cell_data));
     const int num_qp = int_rule->num_points;
-    
+
     panzer::IntegrationValues2<double> int_values("prefix_",true);
     int_values.setupArrays(int_rule);
 
@@ -208,7 +208,7 @@ namespace panzer {
       node_coordinates(cell,0,y) = yleft*0.5;
 
       node_coordinates(cell,1,x) = (xleft+1)*0.5;
-      node_coordinates(cell,1,y) = yleft*0.5; 
+      node_coordinates(cell,1,y) = yleft*0.5;
 
       node_coordinates(cell,2,x) = (xleft+1)*0.5;
       node_coordinates(cell,2,y) = (yleft+1)*0.5;
@@ -224,9 +224,9 @@ namespace panzer {
     }
 
     int_values.evaluateValues(node_coordinates);
-    
+
     const std::string basis_type = "Q1";
-  
+
     RCP<panzer::BasisIRLayout> basis = rcp(new panzer::BasisIRLayout(basis_type, 0, *int_rule));
     TEST_EQUALITY(basis->getIntrepid2Basis()->requireOrientation(), false);
 
@@ -272,24 +272,24 @@ namespace panzer {
   {
     typedef panzer::ArrayTraits<double,PHX::MDField<double> >::size_type size_type;
 
-    Teuchos::RCP<shards::CellTopology> topo = 
+    Teuchos::RCP<shards::CellTopology> topo =
        Teuchos::rcp(new shards::CellTopology(shards::getCellTopologyData< shards::Quadrilateral<4> >()));
 
     const int num_cells = 4;
     const int base_cell_dimension = 2;
     const panzer::CellData cell_data(num_cells,topo);
 
-    const int cubature_degree = 4;    
-    RCP<IntegrationRule> int_rule = 
+    const int cubature_degree = 4;
+    RCP<IntegrationRule> int_rule =
       rcp(new IntegrationRule(cubature_degree, cell_data));
     const unsigned int num_qp = Teuchos::as<unsigned int>(int_rule->num_points);
-    
+
     panzer::IntegrationValues2<double> int_values("prefix_",true);
     int_values.setupArrays(int_rule);
 
     const int num_vertices = int_rule->topology->getNodeCount();
     panzer::MDFieldArrayFactory af("prefix_",true);
-    PHX::MDField<double,Cell,NODE,Dim> node_coordinates 
+    PHX::MDField<double,Cell,NODE,Dim> node_coordinates
         = af.buildStaticArray<double,Cell,NODE,Dim>("nc",num_cells, num_vertices, base_cell_dimension);
     // const int num_edges = int_rule->topology->getEdgeCount();
     // FieldContainer<double> edge_orientation(num_cells, num_edges);
@@ -297,7 +297,7 @@ namespace panzer {
     // Set up node coordinates.  Here we assume the following
     // ordering.  This needs to be consistent with shards topology,
     // otherwise we will get negative determinates
- 
+
     // 3(0,1)---2(1,1)
     //   |    0  |
     //   |       |
@@ -321,7 +321,7 @@ namespace panzer {
       node_coordinates(cell,0,y) = yleft*0.5;
 
       node_coordinates(cell,1,x) = (xleft+1)*0.5;
-      node_coordinates(cell,1,y) = yleft*0.5; 
+      node_coordinates(cell,1,y) = yleft*0.5;
 
       node_coordinates(cell,2,x) = (xleft+1)*0.5;
       node_coordinates(cell,2,y) = (yleft+1)*0.5;
@@ -337,9 +337,9 @@ namespace panzer {
     }
 
     int_values.evaluateValues(node_coordinates);
-    
+
     const std::string basis_type = "HCurl";
-  
+
     Teuchos::RCP<PureBasis> basis = Teuchos::rcp(new PureBasis(basis_type,1,cell_data));
     RCP<panzer::BasisIRLayout> basisIRLayout = rcp(new panzer::BasisIRLayout(basis, *int_rule));
     TEST_EQUALITY(basis->getIntrepid2Basis()->requireOrientation(), true);
@@ -404,24 +404,24 @@ namespace panzer {
   {
     typedef panzer::ArrayTraits<double,PHX::MDField<double> >::size_type size_type;
 
-    Teuchos::RCP<shards::CellTopology> topo = 
+    Teuchos::RCP<shards::CellTopology> topo =
        Teuchos::rcp(new shards::CellTopology(shards::getCellTopologyData< shards::Tetrahedron<4> >()));
 
     const int num_cells = 4;
     const int base_cell_dimension = 3;
     const panzer::CellData cell_data(num_cells,topo);
 
-    const int cubature_degree = 4;    
-    RCP<IntegrationRule> int_rule = 
+    const int cubature_degree = 4;
+    RCP<IntegrationRule> int_rule =
       rcp(new IntegrationRule(cubature_degree, cell_data));
     const unsigned int num_qp = Teuchos::as<unsigned int>(int_rule->num_points);
-    
+
     panzer::IntegrationValues2<double> int_values("prefix_",true);
     int_values.setupArrays(int_rule);
 
     const int num_vertices = int_rule->topology->getNodeCount();
     panzer::MDFieldArrayFactory af("prefix_",true);
-    PHX::MDField<double,Cell,NODE,Dim> node_coordinates 
+    PHX::MDField<double,Cell,NODE,Dim> node_coordinates
         = af.buildStaticArray<double,Cell,NODE,Dim>("nc",num_cells, num_vertices, base_cell_dimension);
     // const int num_edges = int_rule->topology->getEdgeCount();
     // FieldContainer<double> edge_orientation(num_cells, num_edges);
@@ -438,7 +438,7 @@ namespace panzer {
       node_coordinates(cell,0,z) = 0.0;
 
       node_coordinates(cell,1,x) = (xleft+1)*0.5;
-      node_coordinates(cell,1,y) = yleft*0.5; 
+      node_coordinates(cell,1,y) = yleft*0.5;
       node_coordinates(cell,1,z) = 0.0;
 
       node_coordinates(cell,2,x) = xleft*0.5;
@@ -458,9 +458,9 @@ namespace panzer {
     }
 
     int_values.evaluateValues(node_coordinates);
-    
+
     const std::string basis_type = "HDiv";
-  
+
     Teuchos::RCP<PureBasis> basis = Teuchos::rcp(new PureBasis(basis_type,1,cell_data));
     RCP<panzer::BasisIRLayout> basisIRLayout = rcp(new panzer::BasisIRLayout(basis, *int_rule));
     TEST_EQUALITY(basis->getIntrepid2Basis()->requireOrientation(), true);
@@ -562,13 +562,13 @@ namespace panzer {
            TEST_EQUALITY(ortVal[faceOrts[cell][b]]*0.5      *basis_values.basis_ref_vector(b,i,0)/relCellVol,  basis_values.basis_vector(cell,b,i,0));
            TEST_EQUALITY(ortVal[faceOrts[cell][b]]*0.5      *basis_values.basis_ref_vector(b,i,1)/relCellVol,  basis_values.basis_vector(cell,b,i,1));
            TEST_EQUALITY(ortVal[faceOrts[cell][b]]*(1.0/3.0)*basis_values.basis_ref_vector(b,i,2)/relCellVol,  basis_values.basis_vector(cell,b,i,2));
-           
+
            TEST_EQUALITY(ortVal[faceOrts[cell][b]]*basis_values.div_basis_ref(b,i)/relCellVol,basis_values.div_basis(cell,b,i));
-           
+
            TEST_EQUALITY(basis_values.weighted_basis_vector(cell,b,i,0),relCellVol*weight*basis_values.basis_vector(cell,b,i,0));
            TEST_EQUALITY(basis_values.weighted_basis_vector(cell,b,i,1),relCellVol*weight*basis_values.basis_vector(cell,b,i,1));
            TEST_EQUALITY(basis_values.weighted_basis_vector(cell,b,i,2),relCellVol*weight*basis_values.basis_vector(cell,b,i,2));
-           
+
            TEST_EQUALITY(basis_values.weighted_div_basis(cell,b,i),relCellVol*weight*basis_values.div_basis(cell,b,i));
          }
        }
@@ -581,24 +581,24 @@ namespace panzer {
     typedef panzer::ArrayTraits<double,PHX::MDField<double> >::size_type size_type;
 
 
-    Teuchos::RCP<shards::CellTopology> topo = 
+    Teuchos::RCP<shards::CellTopology> topo =
        Teuchos::rcp(new shards::CellTopology(shards::getCellTopologyData< shards::Hexahedron<8> >()));
 
     const int num_cells = 4;
     const int base_cell_dimension = 3;
     const panzer::CellData cell_data(num_cells,topo);
 
-    const int cubature_degree = 4;    
-    RCP<IntegrationRule> int_rule = 
+    const int cubature_degree = 4;
+    RCP<IntegrationRule> int_rule =
       rcp(new IntegrationRule(cubature_degree, cell_data));
     const unsigned int num_qp = Teuchos::as<unsigned int>(int_rule->num_points);
-    
+
     panzer::IntegrationValues2<double> int_values("prefix_",true);
     int_values.setupArrays(int_rule);
 
     const int num_vertices = int_rule->topology->getNodeCount();
     panzer::MDFieldArrayFactory af("prefix_",true);
-    PHX::MDField<double,Cell,NODE,Dim> node_coordinates 
+    PHX::MDField<double,Cell,NODE,Dim> node_coordinates
         = af.buildStaticArray<double,Cell,NODE,Dim>("nc",num_cells, num_vertices, base_cell_dimension);
     // const int num_edges = int_rule->topology->getEdgeCount();
     // FieldContainer<double> edge_orientation(num_cells, num_edges);
@@ -606,7 +606,7 @@ namespace panzer {
     // Set up node coordinates.  Here we assume the following
     // ordering.  This needs to be consistent with shards topology,
     // otherwise we will get negative determinates
- 
+
     // 3(0,1)---2(1,1)
     //   |    0  |
     //   |       |
@@ -634,7 +634,7 @@ namespace panzer {
       node_coordinates(cell,0,z) = zleft*0.5;
 
       node_coordinates(cell,1,x) = (xleft+1)*0.5;
-      node_coordinates(cell,1,y) = yleft*0.5; 
+      node_coordinates(cell,1,y) = yleft*0.5;
       node_coordinates(cell,1,z) = zleft*0.5;
 
       node_coordinates(cell,2,x) = (xleft+1)*0.5;
@@ -650,7 +650,7 @@ namespace panzer {
       node_coordinates(cell,4,z) = (zleft+1)*0.5;
 
       node_coordinates(cell,5,x) = (xleft+1)*0.5;
-      node_coordinates(cell,5,y) = yleft*0.5; 
+      node_coordinates(cell,5,y) = yleft*0.5;
       node_coordinates(cell,5,z) = (zleft+1)*0.5;
 
       node_coordinates(cell,6,x) = (xleft+1)*0.5;
@@ -670,9 +670,9 @@ namespace panzer {
     }
 
     int_values.evaluateValues(node_coordinates);
-    
+
     const std::string basis_type = "QEdge1";
-  
+
     Teuchos::RCP<PureBasis> basis = Teuchos::rcp(new PureBasis(basis_type,1,cell_data));
     RCP<panzer::BasisIRLayout> basisIRLayout = rcp(new panzer::BasisIRLayout(basis, *int_rule));
     TEST_EQUALITY(basis->getIntrepid2Basis()->requireOrientation(), true);
@@ -716,18 +716,18 @@ namespace panzer {
   TEUCHOS_UNIT_TEST(basis_values, md_field_setup)
   {
 
-    Teuchos::RCP<shards::CellTopology> topo = 
+    Teuchos::RCP<shards::CellTopology> topo =
        Teuchos::rcp(new shards::CellTopology(shards::getCellTopologyData< shards::Quadrilateral<4> >()));
 
     const int num_cells = 20;
     const panzer::CellData cell_data(num_cells,topo);
     const std::string basis_type = "Q2";
-    const int cubature_degree = 2;    
+    const int cubature_degree = 2;
 
-    RCP<IntegrationRule> int_rule = 
+    RCP<IntegrationRule> int_rule =
       rcp(new IntegrationRule(cubature_degree, cell_data));
     const unsigned int num_qp = Teuchos::as<unsigned int>(int_rule->num_points);
-  
+
     RCP<PureBasis> basis = Teuchos::rcp(new PureBasis(basis_type,2,cell_data));
     RCP<panzer::BasisIRLayout> basisPtLayout = rcp(new panzer::BasisIRLayout(basis, *int_rule));
 
@@ -735,7 +735,7 @@ namespace panzer {
 
     basis_values.setupArrays(basisPtLayout);
 
-    // check to make sure all data layouts and field names are as 
+    // check to make sure all data layouts and field names are as
     // expected. In a simulation environment the field manager will
     // build these values.
 
@@ -796,18 +796,18 @@ namespace panzer {
 
     typedef panzer::Traits::FadType ScalarType;
 
-    Teuchos::RCP<shards::CellTopology> topo = 
+    Teuchos::RCP<shards::CellTopology> topo =
        Teuchos::rcp(new shards::CellTopology(shards::getCellTopologyData< shards::Quadrilateral<4> >()));
 
     const int num_cells = 20;
     const panzer::CellData cell_data(num_cells,topo);
     const std::string basis_type = "Q2";
-    const int cubature_degree = 2;    
+    const int cubature_degree = 2;
 
-    RCP<IntegrationRule> int_rule = 
+    RCP<IntegrationRule> int_rule =
       rcp(new IntegrationRule(cubature_degree, cell_data));
     const unsigned int num_qp = Teuchos::as<unsigned int>(int_rule->num_points);
-  
+
     RCP<PureBasis> basis = Teuchos::rcp(new PureBasis(basis_type,2,cell_data));
     RCP<panzer::BasisIRLayout> basisPtLayout = rcp(new panzer::BasisIRLayout(basis, *int_rule));
 
@@ -815,7 +815,7 @@ namespace panzer {
 
     basis_values.setupArrays(basisPtLayout);
 
-    // check to make sure all data layouts and field names are as 
+    // check to make sure all data layouts and field names are as
     // expected. In a simulation environment the field manager will
     // build these values.
 
@@ -875,7 +875,7 @@ namespace panzer {
   {
     typedef panzer::ArrayTraits<double,PHX::MDField<double> >::size_type size_type;
 
-    Teuchos::RCP<shards::CellTopology> topo = 
+    Teuchos::RCP<shards::CellTopology> topo =
        Teuchos::rcp(new shards::CellTopology(shards::getCellTopologyData< shards::Quadrilateral<4> >()));
 
     const int num_cells = 4;
@@ -886,19 +886,19 @@ namespace panzer {
     RCP<IntegrationRule> int_rule_vol =
       rcp(new IntegrationRule(cell_data, cv_type));
     const unsigned int num_qp = Teuchos::as<unsigned int>(int_rule_vol->num_points);
-    
+
     panzer::IntegrationValues2<double> int_values_vol("prefix_",true);
     int_values_vol.setupArrays(int_rule_vol);
 
     const int num_vertices = int_rule_vol->topology->getNodeCount();
     panzer::MDFieldArrayFactory af("prefix_",true);
-    PHX::MDField<double,Cell,NODE,Dim> node_coordinates 
+    PHX::MDField<double,Cell,NODE,Dim> node_coordinates
         = af.buildStaticArray<double,Cell,NODE,Dim>("nc",num_cells, num_vertices, base_cell_dimension);
 
     // Set up node coordinates.  Here we assume the following
     // ordering.  This needs to be consistent with shards topology,
     // otherwise we will get negative determinates
- 
+
     // 3(0,1)---2(1,1)
     //   |    0  |
     //   |       |
@@ -914,7 +914,7 @@ namespace panzer {
       node_coordinates(cell,0,y) = yleft*0.5;
 
       node_coordinates(cell,1,x) = (xleft+1)*0.5;
-      node_coordinates(cell,1,y) = yleft*0.5; 
+      node_coordinates(cell,1,y) = yleft*0.5;
 
       node_coordinates(cell,2,x) = (xleft+1)*0.5;
       node_coordinates(cell,2,y) = (yleft+1)*0.5;
@@ -930,9 +930,9 @@ namespace panzer {
     }
 
     int_values_vol.evaluateValues(node_coordinates);
-    
+
     const std::string basis_type = "HGrad";
-  
+
     Teuchos::RCP<PureBasis> basis = Teuchos::rcp(new PureBasis(basis_type,1,cell_data));
     RCP<panzer::BasisIRLayout> basisIRLayout = rcp(new panzer::BasisIRLayout(basis, *int_rule_vol));
 

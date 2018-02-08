@@ -49,7 +49,7 @@
 #include "Panzer_Evaluator_Macros.hpp"
 
 namespace panzer {
-    
+
 //! Interpolates basis DOF values to IP DOF values
 PANZER_EVALUATOR_CLASS(ScalarToVector)
   std::vector< PHX::MDField<const ScalarT,Cell,Point> > scalar_fields;

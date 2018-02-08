@@ -92,15 +92,15 @@ typedef CartesianConnManager<int,Ordinal64>::Triplet<Ordinal64> Triplet;
 
 std::string getElementBlock(const Triplet & element,
                             const CartesianConnManager<int,Ordinal64> & connManager)
-                                    
+
 {
-  int localElmtId = connManager.computeLocalElementIndex(element); 
+  int localElmtId = connManager.computeLocalElementIndex(element);
   return connManager.getBlockId(localElmtId);
 }
 
 TEUCHOS_UNIT_TEST(tCartesianDOFMgr_DG, basic)
 {
-  Teuchos::MpiComm<int> comm(MPI_COMM_WORLD);    
+  Teuchos::MpiComm<int> comm(MPI_COMM_WORLD);
   int np = comm.getSize();
   int rank = comm.getRank();
 
@@ -125,7 +125,7 @@ TEUCHOS_UNIT_TEST(tCartesianDOFMgr_DG, basic)
   dofManager->setConnManager(connManager,*comm.getRawMpiComm());
 
   using Basis = Intrepid2::Basis<PHX::Device,double,double>;
-  
+
   RCP<Basis> bhgrad2 = rcp(new Intrepid2::Basis_HGRAD_HEX_Cn_FEM<PHX::Device,double,double>(2));
   RCP<const FieldPattern> hgrad2 = rcp(new Intrepid2FieldPattern(bhgrad2));
   out << "HGRAD2\n" << *hgrad2 << std::endl;
@@ -133,11 +133,11 @@ TEUCHOS_UNIT_TEST(tCartesianDOFMgr_DG, basic)
   RCP<Basis> bhgrad1 = rcp(new Intrepid2::Basis_HGRAD_HEX_Cn_FEM<PHX::Device,double,double>(1));
   RCP<const FieldPattern> hgrad1 = rcp(new Intrepid2FieldPattern(bhgrad1));
   out << "HGRAD1\n" << *hgrad1 << std::endl;
-  
+
   RCP<Basis> bhcurl = rcp(new Intrepid2::Basis_HCURL_HEX_In_FEM<PHX::Device,double,double>(1));
   RCP<const FieldPattern> hcurl = rcp(new Intrepid2FieldPattern(bhcurl));
   out << "HCURL2\n" << *hcurl << std::endl;
-  
+
   RCP<Basis> bhdiv = rcp(new Intrepid2::Basis_HDIV_HEX_In_FEM<PHX::Device,double,double>(1));
   RCP<const FieldPattern> hdiv = rcp(new Intrepid2FieldPattern(bhdiv));
   out << "HDIV2\n" << *hdiv << std::endl;
@@ -156,13 +156,13 @@ TEUCHOS_UNIT_TEST(tCartesianDOFMgr_DG, basic)
 
   // build global unknowns (useful comment!)
   dofManager->buildGlobalUnknowns();
- 
-  // print out some diagnostic information 
+
+  // print out some diagnostic information
   ///////////////////////////////////////////////////////////
 
   out.setShowProcRank(true); // show process rank
 
-  dofManager->printFieldInformation(out); 
+  dofManager->printFieldInformation(out);
   out << std::endl << "Load balancing: " << printUGILoadBalancingInformation(*dofManager) << std::endl;
   out << std::endl << "Mesh Topology: " << std::endl;
   printMeshTopology(out,*dofManager);
@@ -183,14 +183,14 @@ TEUCHOS_UNIT_TEST(tCartesianDOFMgr_DG, basic)
     const ord_t numHdivUnknownsCG = (nx+1)*(ny*nz) + (ny+1)*(nx*nz) + (nz+1)*(nx*ny);
     const ord_t numCells = nx * ny * nz;
     const ord_t numHgrad2UnknownsDG = numCells * hgrad2->numberIds();
-    
+
     const ord_t expectedTotalDOFs =
-      numHgrad2FieldsCG * numHgrad2UnknownsCG 
+      numHgrad2FieldsCG * numHgrad2UnknownsCG
       + numHgrad1FieldsCG * numHgrad1UnknownsCG
       + numHcurlFieldsCG * numHcurlUnknownsCG
       + numHdivFieldsCG * numHdivUnknownsCG
       + numHgrad2FieldsDG * numHgrad2UnknownsDG;
-    
+
     ord_t myNumDOFs = (ord_t) dofManager->getNumOwned();
     ord_t numDOFs = 0;
     MPI_Reduce(&myNumDOFs,&numDOFs,1,MPI_LONG_LONG_INT,MPI_SUM,0,MPI_COMM_WORLD);
@@ -247,7 +247,7 @@ TEUCHOS_UNIT_TEST(tCartesianDOFMgr_DG, basic)
 
     // CG in x
     {
-      out << "\nCG in x" << std::endl; 
+      out << "\nCG in x" << std::endl;
       out << "Elements " << localElmtId << " " << localElmtId_px << std::endl;
       auto offsets   = dofManager->getGIDFieldOffsets_closure(   eblock,uxId,2,1); // +x
       auto offsets_n = dofManager->getGIDFieldOffsets_closure(eblock_px,uxId,2,3); // -x
@@ -270,7 +270,7 @@ TEUCHOS_UNIT_TEST(tCartesianDOFMgr_DG, basic)
 
     // DG in x (CG matched, use the exact same procedure, but make sure DG is different)
     {
-      out << "\nDG in x" << std::endl; 
+      out << "\nDG in x" << std::endl;
       out << "Elements " << localElmtId << " " << localElmtId_px << std::endl;
       auto offsets   = dofManager->getGIDFieldOffsets_closure(   eblock,dgId,2,1); // +x
       auto offsets_n = dofManager->getGIDFieldOffsets_closure(eblock_px,dgId,2,3); // -x
@@ -289,7 +289,7 @@ TEUCHOS_UNIT_TEST(tCartesianDOFMgr_DG, basic)
       for(std::size_t i=0;i<gid_sub.size();i++) {
         TEST_INEQUALITY(gid_sub[i],gid_sub_px[i]);
       }
-      
+
       // Now check that the closure gids are in the volume gid list
       const auto& offsets_vol = dofManager->getGIDFieldOffsets(eblock,dgId);
       std::vector<Ordinal64> gid_vol;
@@ -305,7 +305,7 @@ TEUCHOS_UNIT_TEST(tCartesianDOFMgr_DG, basic)
 
     // CG in y
     {
-      out << "\nCG in y" << std::endl; 
+      out << "\nCG in y" << std::endl;
       out << "Elements " << localElmtId << " " << localElmtId_py << std::endl;
       auto offsets   = dofManager->getGIDFieldOffsets_closure(   eblock,uxId,2,2); // +y
       auto offsets_n = dofManager->getGIDFieldOffsets_closure(eblock_py,uxId,2,0); // -y
@@ -328,7 +328,7 @@ TEUCHOS_UNIT_TEST(tCartesianDOFMgr_DG, basic)
 
     // DG in y (CG matched, use the exact same procedure, but make sure DG is different)
     {
-      out << "\nDG in y" << std::endl; 
+      out << "\nDG in y" << std::endl;
       out << "Elements " << localElmtId << " " << localElmtId_py << std::endl;
       auto offsets   = dofManager->getGIDFieldOffsets_closure(   eblock,dgId,2,2); // +y
       auto offsets_n = dofManager->getGIDFieldOffsets_closure(eblock_py,dgId,2,0); // -y
@@ -363,7 +363,7 @@ TEUCHOS_UNIT_TEST(tCartesianDOFMgr_DG, basic)
 
     // CG in z
     {
-      out << "\nCG in z" << std::endl; 
+      out << "\nCG in z" << std::endl;
       out << "Elements " << localElmtId << " " << localElmtId_pz << std::endl;
       auto offsets   = dofManager->getGIDFieldOffsets_closure(   eblock,uxId,2,5); // +z
       auto offsets_n = dofManager->getGIDFieldOffsets_closure(eblock_pz,uxId,2,4); // -z
@@ -387,7 +387,7 @@ TEUCHOS_UNIT_TEST(tCartesianDOFMgr_DG, basic)
     // DG in z (CG matched, use the exact same procedure, but make
     // sure DG is different)
     {
-      out << "\nDG in z" << std::endl; 
+      out << "\nDG in z" << std::endl;
       out << "Elements " << localElmtId << " " << localElmtId_pz << std::endl;
       auto offsets   = dofManager->getGIDFieldOffsets_closure(   eblock,dgId,2,5); // +z
       auto offsets_n = dofManager->getGIDFieldOffsets_closure(eblock_pz,dgId,2,4); // -z
@@ -467,7 +467,7 @@ TEUCHOS_UNIT_TEST(tCartesianDOFMgr_DG, basic)
       Teuchos::send(comm,Teuchos::as<int>(gid_sub_l.size()),&gid_sub_l[0],rank-1);
     }
 
-    // recieve right, check 
+    // recieve right, check
     if(rank!=np-1) {
       std::vector<Ordinal64> gid_remote(gid_sub_r.size(),-1);
       Teuchos::receive(comm,rank+1,Teuchos::as<int>(gid_sub_r.size()),&gid_remote[0]);
@@ -476,7 +476,7 @@ TEUCHOS_UNIT_TEST(tCartesianDOFMgr_DG, basic)
         TEST_EQUALITY(gid_sub_r[i],gid_remote[i]);
     }
   }
-  
+
 }
 
 } // end unit test

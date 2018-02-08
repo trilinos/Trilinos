@@ -82,7 +82,7 @@ namespace panzer {
 
   TEUCHOS_UNIT_TEST(evaluators, Constant)
   {
-    
+
     RCP<PHX::DataLayout> dl = rcp(new PHX::MDALayout<Cell,Point,Dim>(10,8,3));
 
     ParameterList p("Constant Test");
@@ -96,7 +96,7 @@ namespace panzer {
 
   TEUCHOS_UNIT_TEST(evaluators, Sum)
   {
-    
+
 
     ParameterList p("Sum Test");
     p.set("Sum Name", "Sum of Sources");
@@ -114,7 +114,7 @@ namespace panzer {
 
   TEUCHOS_UNIT_TEST(evaluators, ScalarToVector)
   {
-    
+
 
     ParameterList p("ScalarToVector Test");
     p.set("Vector Name", "U");
@@ -123,9 +123,9 @@ namespace panzer {
     scalar_names->push_back("UY");
     scalar_names->push_back("UZ");
     p.set<RCP<const vector<string> > >("Scalar Names", scalar_names);
-    RCP<PHX::DataLayout> dl_scalar = 
+    RCP<PHX::DataLayout> dl_scalar =
       rcp(new PHX::MDALayout<Cell,Point>(10,8));
-    RCP<PHX::DataLayout> dl_vector = 
+    RCP<PHX::DataLayout> dl_vector =
       rcp(new PHX::MDALayout<Cell,Point,Dim>(10,8,3));
     p.set("Data Layout Scalar", dl_scalar);
     p.set("Data Layout Vector", dl_vector);
@@ -136,7 +136,7 @@ namespace panzer {
 
   TEUCHOS_UNIT_TEST(evaluators, VectorToScalar)
   {
-    
+
 
     ParameterList p("VectorToScalar Test");
     p.set("Vector Name", "U");
@@ -145,9 +145,9 @@ namespace panzer {
     scalar_names->push_back("UY");
     scalar_names->push_back("UZ");
     p.set<RCP<const vector<string> > >("Scalar Names", scalar_names);
-    RCP<PHX::DataLayout> dl_scalar = 
+    RCP<PHX::DataLayout> dl_scalar =
       rcp(new PHX::MDALayout<Cell,Point>(10,8));
-    RCP<PHX::DataLayout> dl_vector = 
+    RCP<PHX::DataLayout> dl_vector =
       rcp(new PHX::MDALayout<Cell,Point,Dim>(10,8,3));
     p.set("Data Layout Scalar", dl_scalar);
     p.set("Data Layout Vector", dl_vector);
@@ -158,7 +158,7 @@ namespace panzer {
 
   TEUCHOS_UNIT_TEST(evaluators, DirichletResidual)
   {
-    
+
 
     ParameterList p("DirichletResidual Test");
     p.set("Residual Name", "Residual_TEMP");
@@ -173,13 +173,13 @@ namespace panzer {
 
   TEUCHOS_UNIT_TEST(evaluators, DOF)
   {
-    
+
     using panzer::IntegrationRule;
     using panzer::BasisIRLayout;
 
-    Teuchos::RCP<shards::CellTopology> topo = 
+    Teuchos::RCP<shards::CellTopology> topo =
        Teuchos::rcp(new shards::CellTopology(shards::getCellTopologyData< shards::Quadrilateral<4> >()));
-    
+
     RCP<panzer::IntegrationRule> ir;
     RCP<panzer::PureBasis> basis;
     RCP<panzer::BasisIRLayout> basisLayout;
@@ -204,11 +204,11 @@ namespace panzer {
 
   TEUCHOS_UNIT_TEST(evaluators, DOFGradient)
   {
-    
+
     using panzer::IntegrationRule;
     using panzer::BasisIRLayout;
-    
-    Teuchos::RCP<shards::CellTopology> topo = 
+
+    Teuchos::RCP<shards::CellTopology> topo =
        Teuchos::rcp(new shards::CellTopology(shards::getCellTopologyData< shards::Quadrilateral<4> >()));
     {
       RCP<panzer::IntegrationRule> ir;
@@ -223,13 +223,13 @@ namespace panzer {
         basis = rcp(new PureBasis(basisType,1,cellData));
         basisLayout = rcp(new BasisIRLayout(basis,*ir));
       }
-  
+
       ParameterList p("DOFGradient Test");
       p.set("Name", "TEMP");
       p.set("Gradient Name", "GRAD_TEMP");
       p.set("IR", ir);
       p.set("Basis", basisLayout);
-  
+
       panzer::DOFGradient<panzer::Traits::Residual,panzer::Traits> e_r(p);
       panzer::DOFGradient<panzer::Traits::Jacobian,panzer::Traits> e_J(p);
     }
@@ -248,13 +248,13 @@ namespace panzer {
         basis = rcp(new PureBasis(basisType,1,cellData));
         basisLayout = rcp(new BasisIRLayout(basis,*ir));
       }
-  
+
       ParameterList p("DOFGradient Test");
       p.set("Name", "TEMP");
       p.set("Gradient Name", "GRAD_TEMP");
       p.set("IR", ir);
       p.set("Basis", basisLayout);
-  
+
       typedef panzer::DOFGradient<panzer::Traits::Residual,panzer::Traits> DOFRes;
       typedef panzer::DOFGradient<panzer::Traits::Jacobian,panzer::Traits> DOFJac;
       TEST_THROW(DOFRes e_r(p),std::logic_error);
@@ -264,13 +264,13 @@ namespace panzer {
 
   TEUCHOS_UNIT_TEST(evaluators, Integrator_BasisTimesScalar)
   {
-    
+
     using panzer::IntegrationRule;
     using panzer::BasisIRLayout;
 
-    Teuchos::RCP<shards::CellTopology> topo = 
+    Teuchos::RCP<shards::CellTopology> topo =
        Teuchos::rcp(new shards::CellTopology(shards::getCellTopologyData< shards::Quadrilateral<4> >()));
-    
+
     RCP<panzer::IntegrationRule> ir;
     RCP<panzer::BasisIRLayout> basis;
     {
@@ -291,20 +291,20 @@ namespace panzer {
 
     typedef panzer::Traits::Residual Residual;
     typedef panzer::Traits::Jacobian Jacobian;
-    
+
     panzer::Integrator_BasisTimesScalar<Residual,panzer::Traits> e_r(p);
     panzer::Integrator_BasisTimesScalar<Jacobian,panzer::Traits> e_J(p);
   }
 
   TEUCHOS_UNIT_TEST(evaluators, Integrator_GradBasisDotVector)
   {
-    
+
     using panzer::IntegrationRule;
     using panzer::BasisIRLayout;
 
-    Teuchos::RCP<shards::CellTopology> topo = 
+    Teuchos::RCP<shards::CellTopology> topo =
        Teuchos::rcp(new shards::CellTopology(shards::getCellTopologyData< shards::Quadrilateral<4> >()));
-    
+
     RCP<panzer::IntegrationRule> ir;
     RCP<panzer::BasisIRLayout> basis;
     {
@@ -325,7 +325,7 @@ namespace panzer {
 
     typedef panzer::Traits::Residual Residual;
     typedef panzer::Traits::Jacobian Jacobian;
-    
+
     panzer::Integrator_GradBasisDotVector<Residual,panzer::Traits> e_r(p);
     panzer::Integrator_GradBasisDotVector<Jacobian,panzer::Traits> e_J(p);
   }

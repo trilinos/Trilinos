@@ -50,7 +50,7 @@
 namespace panzer {
 
   /** \brief Allocates a parameter entry and registers with parameter library
-      
+
   \relates ParameterLibraryAcceptor
   */
   template<typename EvaluationType>
@@ -63,7 +63,7 @@ namespace panzer {
   accessScalarParameter(const std::string name, panzer::ParamLib& pl);
 
   void registerScalarParameter(const std::string name,panzer::ParamLib& pl,double realValue);
-  
+
 
 }
 

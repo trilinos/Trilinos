@@ -14,8 +14,8 @@ namespace panzer {
 
       TEUCHOS_TEST_FOR_EXCEPTION(eb_search == element_block_names.end(),
                                  std::runtime_error,
-                                 "ERROR: the element block \"" << bc.elementBlockID() 
-                                 << "\" for boundary condition \"" << bc.bcID() 
+                                 "ERROR: the element block \"" << bc.elementBlockID()
+                                 << "\" for boundary condition \"" << bc.bcID()
                                  << "\" does not exist in the mesh.");
 
       const auto ss_search = std::find(sideset_names.begin(),

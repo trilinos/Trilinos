@@ -60,9 +60,9 @@ namespace panzer {
   {
     if (!m_is_initialized) {
       TEUCHOS_ASSERT( PAPI_library_init(PAPI_VER_CURRENT) == PAPI_VER_CURRENT );
- 
+
       TEUCHOS_ASSERT( PAPI_create_eventset(&m_event_set) == PAPI_OK );
-      
+
       for (std::vector<int>::const_iterator event = m_events.begin();
 	   event != m_events.end(); ++event) {
 	TEUCHOS_ASSERT( PAPI_add_event(m_event_set,*event) == PAPI_OK );
@@ -71,7 +71,7 @@ namespace panzer {
       TEUCHOS_ASSERT( PAPI_start(m_event_set) == PAPI_OK );
       m_is_initialized = true;
     }
-    
+
     // initialize the specific timer first time in
     std::map<std::string,InternalCounter2>::const_iterator counter;
     counter = m_counters.find(m_name);
@@ -104,7 +104,7 @@ namespace panzer {
     std::vector<long_long>::const_iterator stop = c.stop_counters.begin();
     for (; accum !=  c.accumulated_counters.end(); ++accum,++start,++stop)
       *accum += *stop - *start;
-    
+
   }
 
   void PAPICounter2::addEventCounter(const int event)
@@ -138,7 +138,7 @@ namespace panzer {
 	 timer != m_counters.end(); ++timer) {
 
       // Communicate totals across processes
-      
+
       const std::vector<long long int>& accum = timer->second.accumulated_counters;
       std::vector<long long int> global_min(accum.size(),0);
       std::vector<long long int> global_max(accum.size(),0);
@@ -158,24 +158,24 @@ namespace panzer {
       Teuchos::reduceAll(comm, Teuchos::REDUCE_SUM, 1, &(timer->second.accumulated_time), &average_time);
       average_time /= Teuchos::as<long long int>(comm.getSize());
 
-      os << timer->first<< ": Average Process Time (seconds) = " 
+      os << timer->first<< ": Average Process Time (seconds) = "
 	 << timer->second.accumulated_time / 1.0e6 << std::endl;
       os << timer->first<< ": Number of Calls = " << timer->second.num_calls << std::endl;
-      
+
       int i=0;
       for (std::vector<long_long>::const_iterator event=timer->second.accumulated_counters.begin();
 	   event != timer->second.accumulated_counters.end(); ++event,++i) {
 	char event_name[PAPI_MAX_STR_LEN];
 	TEUCHOS_ASSERT( PAPI_event_code_to_name(m_events[i],event_name) == PAPI_OK);
 	std::string string_event_name(event_name);
-	os << timer->first << ": " << string_event_name << " = " 
-	   << "min:" << global_min[i] 
+	os << timer->first << ": " << string_event_name << " = "
+	   << "min:" << global_min[i]
 	   << ", max:" << global_max[i]
 	   << ", total:" << global_sum[i]
 	   << ", avg:" << global_avg[i]
 	   << std::endl;
       }
-      
+
     }
 
     os << "************************************************************" << std::endl;

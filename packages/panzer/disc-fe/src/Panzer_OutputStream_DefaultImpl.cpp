@@ -45,24 +45,24 @@
 #include "Teuchos_Assert.hpp"
 
 namespace panzer {
-  
+
   OutputStreamDefaultImpl::OutputStreamDefaultImpl()
   { }
-  
-  OutputStreamDefaultImpl::~OutputStreamDefaultImpl()  
-  { }  
+
+  OutputStreamDefaultImpl::~OutputStreamDefaultImpl()
+  { }
 
   void OutputStreamDefaultImpl::
   setOStream(const Teuchos::RCP<Teuchos::FancyOStream>& os)
   {
     m_out = os;
-    m_out->setOutputToRootOnly(0); 
+    m_out->setOutputToRootOnly(0);
     m_pout = Teuchos::rcp(new Teuchos::FancyOStream(os->getOStream()));
     m_pout->copyAllOutputOptions(*m_out);
     m_pout->setOutputToRootOnly(-1);
   }
 
-  Teuchos::RCP<Teuchos::FancyOStream> 
+  Teuchos::RCP<Teuchos::FancyOStream>
   OutputStreamDefaultImpl::getOStream() const
   {
     return m_out;
@@ -87,17 +87,17 @@ namespace panzer {
   {
     return m_level;
   }
-  
+
   bool OutputStreamDefaultImpl::
   doOutput(EVerbosityLevel vl, bool only_for_exact_level) const
   {
-    if ( !only_for_exact_level && 
+    if ( !only_for_exact_level &&
 	 (Teuchos::as<int>(vl) >= Teuchos::as<int>(m_level)) )
       return true;
-    
+
     if (only_for_exact_level && (vl == m_level) )
       return true;
-    
+
     return false;
   }
 

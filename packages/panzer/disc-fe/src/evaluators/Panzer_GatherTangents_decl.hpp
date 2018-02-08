@@ -58,24 +58,24 @@ namespace panzer {
 /** \brief Gathers tangent vectors per field from the global indexer and
     stores them in the field manager.
 */
-template<typename EvalT, typename Traits> 
+template<typename EvalT, typename Traits>
 class GatherTangents
   : public PHX::EvaluatorWithBaseImpl<Traits>,
     public PHX::EvaluatorDerived<EvalT, Traits>,
     public CloneableEvaluator  {
-   
+
 public:
-  
+
   GatherTangents(const Teuchos::ParameterList& p);
-  
+
   void postRegistrationSetup(typename Traits::SetupData d,
 			     PHX::FieldManager<Traits>& vm);
-  
+
   void evaluateFields(typename Traits::EvalData d);
 
   virtual Teuchos::RCP<CloneableEvaluator> clone(const Teuchos::ParameterList & pl) const
   {return Teuchos::rcp(new GatherTangents<EvalT,Traits>(pl));}
-  
+
 private:
 
   typedef typename EvalT::ScalarT ScalarT;

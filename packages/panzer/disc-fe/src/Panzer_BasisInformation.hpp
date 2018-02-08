@@ -51,11 +51,11 @@
 namespace panzer {
 
   //! Description and data layouts associated with a particular basis
-  class BasisInformation { 
+  class BasisInformation {
 
   public:
     typedef enum { HGRAD=0, HCURL=1, HDIV=2, CONST=3 } EElementSpace;
-    
+
     /** Build a basis information given a type and order
       \param[in] basis_type String name that describes the type of basis
       \param[in] basis_order Order of the basis
@@ -67,7 +67,7 @@ namespace panzer {
     //! Returns the basis type
     std::string type() const
     { return basis_type_; }
-    
+
     //! Returns the polynomial order of the basis
     int order() const
     { return basis_order_; }
@@ -78,7 +78,7 @@ namespace panzer {
     //! Returns the dimension of the basis from the topology
     int dimension() const
     { return topology_.getDimension(); }
-    
+
     EElementSpace getElementSpace() const
     { return element_space_; }
 

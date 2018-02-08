@@ -48,15 +48,15 @@ namespace panzer {
 
   //! Non-templated empty base class for template managers
   class Base {
-    
+
   public:
-    
+
     Base() {}
-    
+
     virtual ~Base() {}
-    
+
   };
-  
+
 }
 
 #endif

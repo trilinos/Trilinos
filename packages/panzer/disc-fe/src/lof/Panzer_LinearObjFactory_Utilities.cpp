@@ -50,7 +50,7 @@ Teuchos::RCP<const LinearObjFactory<panzer::Traits> > cloneWithNewRangeAndDomain
   // This proceeds by casting to a number of known LOF types (all explicitly instantiated)
   // then trying to build a new one. Of course for many of these under implemented operation
   // this fails and an error is thrown.
- 
+
 /*
   Ptr<const EpetraLOF> epetra_lof = ptr_dynamic_cast<const EpetraLOF>(ptrFromRef(lof));
   if(epetra_lof!=null) {

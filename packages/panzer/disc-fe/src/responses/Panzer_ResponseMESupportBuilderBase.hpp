@@ -54,15 +54,15 @@
 
 namespace panzer {
 
-/** This class is used by the model evaluator and it supports setting up derivative information for a 
+/** This class is used by the model evaluator and it supports setting up derivative information for a
   * response. In particular, it provides a mechanism for defining which distributed parameters are used for
   * compute derivatives.
   */
 class ResponseMESupportBuilderBase {
 public:
   virtual ~ResponseMESupportBuilderBase() {}
- 
-  /** This method controls how the derivative vector is allocated and 
+
+  /** This method controls how the derivative vector is allocated and
     * scattered. The idea here is a Response can have different partial
     * derivatives and this provides the mechanism for supporting that.
     */

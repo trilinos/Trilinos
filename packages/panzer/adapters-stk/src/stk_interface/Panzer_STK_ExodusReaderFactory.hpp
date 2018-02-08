@@ -78,9 +78,9 @@ public:
      *
      * \param[in] parallelMach Descriptor for machine to build this mesh on.
      *
-     * \returns Pointer to <code>STK_Interface</code> object with 
+     * \returns Pointer to <code>STK_Interface</code> object with
      *          <code>isModifiable()==false</code>.
-     */ 
+     */
    virtual Teuchos::RCP<STK_Interface> buildMesh(stk::ParallelMachine parallelMach) const;
 
    /** This builds all the meta data of the mesh. Does not call metaData->commit.

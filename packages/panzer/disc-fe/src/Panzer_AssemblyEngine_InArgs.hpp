@@ -61,7 +61,7 @@ namespace panzer {
 
     AssemblyEngineInArgs(const Teuchos::RCP<panzer::LinearObjContainer> & ghostedContainer,
                          const Teuchos::RCP<panzer::LinearObjContainer> & container)
-       : ghostedContainer_(ghostedContainer), container_(container) 
+       : ghostedContainer_(ghostedContainer), container_(container)
        , alpha(Teuchos::ScalarTraits<double>::nan())   // also setup some painful and
        , beta(Teuchos::ScalarTraits<double>::nan())    // hopefully loud initial values
        , time(Teuchos::ScalarTraits<double>::nan())
@@ -75,7 +75,7 @@ namespace panzer {
     { }
 
     AssemblyEngineInArgs()
-       : ghostedContainer_(Teuchos::null), container_(Teuchos::null) 
+       : ghostedContainer_(Teuchos::null), container_(Teuchos::null)
        , alpha(Teuchos::ScalarTraits<double>::nan())   // also setup some painful and
        , beta(Teuchos::ScalarTraits<double>::nan())    // hopefully loud initial values
        , time(Teuchos::ScalarTraits<double>::nan())
@@ -115,13 +115,13 @@ namespace panzer {
        TEUCHOS_TEST_FOR_EXCEPTION(ged_map.find(key)!=ged_map.end(),std::logic_error,
                                   "AssemblyEngine::addGlobalEvaluationData: Method cannot over write existing "
                                   "data object with key \"" + key + "\"");
-  
+
        ged_map[key] = ged;
     }
 
     void addGlobalEvaluationData(const GlobalEvaluationDataContainer & gedc)
     {
-       ged_map.insert(gedc.begin(),gedc.end()); 
+       ged_map.insert(gedc.begin(),gedc.end());
     }
 
     //! Using internal map fill the global evaluation data container object

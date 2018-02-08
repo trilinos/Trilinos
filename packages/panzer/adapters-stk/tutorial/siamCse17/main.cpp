@@ -359,7 +359,7 @@ main(
     RCP<WorksetFactory> wkstFactory = rcp(new WorksetFactory(mesh));
     RCP<WorksetContainer> wkstContainer = rcp(new WorksetContainer);
     wkstContainer->setFactory(wkstFactory);
-    for (size_t i(0); i < physicsBlocks.size(); ++i) 
+    for (size_t i(0); i < physicsBlocks.size(); ++i)
       wkstContainer->setNeeds(physicsBlocks[i]->elementBlockID(),
         physicsBlocks[i]->getWorksetNeeds());
     wkstContainer->setWorksetSize(worksetSize);

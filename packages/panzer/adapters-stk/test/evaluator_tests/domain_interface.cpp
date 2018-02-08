@@ -71,7 +71,7 @@ public:
     // Temporary vars needed by test macros
     auto& out = std::cout;
     int success = 0;
-    
+
     TEST_EQUALITY(this->cellStartIndex(workset), expectedStartIndex_);
     TEST_EQUALITY(this->cellEndIndex(workset), expectedEndIndex_);
     TEST_EQUALITY(success, 0);

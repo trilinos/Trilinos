@@ -76,7 +76,7 @@ Teko::LinearOp FullMaxwellPreconditionerFactory::buildPreconditionerOperator(Tek
 
      // Mass inverse - diagonal approximation
      Teko::LinearOp invQ_E = Teko::getInvDiagonalOp(Q_E,Teko::AbsRowSum);
- 
+
      /////////////////////////////////////////////////
      // Build block upper triangular inverse matrix //
      /////////////////////////////////////////////////
@@ -104,7 +104,7 @@ Teko::LinearOp FullMaxwellPreconditionerFactory::buildPreconditionerOperator(Tek
      Teko::LinearOp T = getRequestHandler()->request<Teko::LinearOp>(Teko::RequestMesg("Discrete Gradient"));
      Teko::LinearOp KT = Teko::explicitMultiply(K,T);
      TEUCHOS_ASSERT(Teko::infNorm(KT) < 1.0e-14 * Teko::infNorm(T) * Teko::infNorm(K));
- 
+
      TEUCHOS_ASSERT(false); // TODO: refMaxwell not hooked in yet
    }
 
@@ -115,7 +115,7 @@ void FullMaxwellPreconditionerFactory::initializeFromParameterList(const Teuchos
 {
    /////////////////////
    // Solver options  //
-   // //////////////////            
+   // //////////////////
 
    // Print residual for each sub-solve
    bool print_diagnostics = false;
@@ -174,7 +174,7 @@ void FullMaxwellPreconditionerFactory::initializeFromParameterList(const Teuchos
        Teuchos::ParameterList& repartition = ml_pl.sublist("repartition: params");
        repartition.set("algorithm","multijagged");
      }
-     // add coordinates to parameter list 
+     // add coordinates to parameter list
      {
        Teuchos::ParameterList& required = ml_pl.sublist("Required Parameters");
        required.set("Coordinates","B_face");
@@ -213,7 +213,7 @@ void FullMaxwellPreconditionerFactory::initializeFromParameterList(const Teuchos
        Teuchos::ParameterList& repartition = ml_pl.sublist("repartition: params");
        repartition.set("algorithm","multijagged");
      }
-     // add coordinates to parameter list 
+     // add coordinates to parameter list
      {
        Teuchos::ParameterList& required = ml_pl.sublist("Required Parameters");
        required.set("Coordinates","E_edge");
@@ -254,7 +254,7 @@ void FullMaxwellPreconditionerFactory::initializeFromParameterList(const Teuchos
        Teuchos::ParameterList& repartition = ml_pl.sublist("repartition: params");
        repartition.set("algorithm","multijagged");
      }
-     // add coordinates to parameter list 
+     // add coordinates to parameter list
      {
        Teuchos::ParameterList& required = ml_pl.sublist("Required Parameters");
        required.set("Coordinates","E_edge");
@@ -281,5 +281,5 @@ void FullMaxwellPreconditionerFactory::initializeFromParameterList(const Teuchos
      }
    }
 }
- 
+
 }

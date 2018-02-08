@@ -63,28 +63,28 @@ namespace panzer {
 //**********************************************************************
 
 //**********************************************************************
-template<typename EvalT, typename TRAITS>                   
+template<typename EvalT, typename TRAITS>
 DOF<EvalT, TRAITS>::
 DOF(const Teuchos::ParameterList & p) :
   use_descriptors_(false),
-  dof_basis( p.get<std::string>("Name"), 
+  dof_basis( p.get<std::string>("Name"),
 	     p.get< Teuchos::RCP<BasisIRLayout> >("Basis")->functional),
   basis_name(p.get< Teuchos::RCP<BasisIRLayout> >("Basis")->name())
 {
-  Teuchos::RCP<const PureBasis> basis 
+  Teuchos::RCP<const PureBasis> basis
      = p.get< Teuchos::RCP<BasisIRLayout> >("Basis")->getBasis();
   is_vector_basis = basis->isVectorBasis();
 
   // swap between scalar basis value, or vector basis value
   if(basis->isScalarBasis()) {
      dof_ip_scalar = PHX::MDField<ScalarT,Cell,Point>(
-                p.get<std::string>("Name"), 
+                p.get<std::string>("Name"),
      	        p.get< Teuchos::RCP<panzer::IntegrationRule> >("IR")->dl_scalar);
      this->addEvaluatedField(dof_ip_scalar);
   }
   else if(basis->isVectorBasis()) {
      dof_ip_vector = PHX::MDField<ScalarT,Cell,Point,Dim>(
-                p.get<std::string>("Name"), 
+                p.get<std::string>("Name"),
      	        p.get< Teuchos::RCP<panzer::IntegrationRule> >("IR")->dl_vector);
      this->addEvaluatedField(dof_ip_vector);
   }
@@ -98,22 +98,22 @@ DOF(const Teuchos::ParameterList & p) :
 }
 
 //**********************************************************************
-template<typename EvalT, typename TRAITS>                   
+template<typename EvalT, typename TRAITS>
 DOF<EvalT, TRAITS>::
 DOF(const PHX::FieldTag & input,
     const PHX::FieldTag & output,
     const panzer::BasisDescriptor & bd,
     const panzer::IntegrationDescriptor & id)
   : use_descriptors_(true)
-  , bd_(bd) 
-  , id_(id) 
+  , bd_(bd)
+  , id_(id)
   , dof_basis(input)
 {
-  TEUCHOS_ASSERT(bd.getType()=="HGrad" || bd.getType()=="HCurl" || 
+  TEUCHOS_ASSERT(bd.getType()=="HGrad" || bd.getType()=="HCurl" ||
                  bd.getType()=="HDiv" || bd.getType()=="Const")
 
   is_vector_basis = (bd.getType()=="HCurl" || bd.getType()=="HDiv");
- 
+
   // swap between scalar basis value, or vector basis value
   if(not is_vector_basis) {
      dof_ip_scalar = output;
@@ -131,7 +131,7 @@ DOF(const PHX::FieldTag & input,
 }
 
 //**********************************************************************
-template<typename EvalT, typename TRAITS>                   
+template<typename EvalT, typename TRAITS>
 void DOF<EvalT, TRAITS>::
 postRegistrationSetup(typename TRAITS::SetupData sd,
                       PHX::FieldManager<TRAITS>& fm)
@@ -148,10 +148,10 @@ postRegistrationSetup(typename TRAITS::SetupData sd,
 }
 
 //**********************************************************************
-template<typename EvalT, typename TRAITS>                   
+template<typename EvalT, typename TRAITS>
 void DOF<EvalT, TRAITS>::
 evaluateFields(typename TRAITS::EvalData workset)
-{ 
+{
   const panzer::BasisValues2<double> & basisValues = use_descriptors_ ?  this->wda(workset).getBasisValues(bd_,id_)
                                                                       : *this->wda(workset).bases[basis_index];
 
@@ -179,15 +179,15 @@ evaluateFields(typename TRAITS::EvalData workset)
 //**********************************************************************
 
 //**********************************************************************
-template<typename TRAITS>                   
+template<typename TRAITS>
 DOF<typename TRAITS::Jacobian, TRAITS>::
 DOF(const Teuchos::ParameterList & p) :
   use_descriptors_(false),
-  dof_basis( p.get<std::string>("Name"), 
+  dof_basis( p.get<std::string>("Name"),
 	     p.get< Teuchos::RCP<BasisIRLayout> >("Basis")->functional),
   basis_name(p.get< Teuchos::RCP<BasisIRLayout> >("Basis")->name())
 {
-  Teuchos::RCP<const PureBasis> basis 
+  Teuchos::RCP<const PureBasis> basis
      = p.get< Teuchos::RCP<BasisIRLayout> >("Basis")->getBasis();
   is_vector_basis = basis->isVectorBasis();
 
@@ -212,13 +212,13 @@ DOF(const Teuchos::ParameterList & p) :
   // swap between scalar basis value, or vector basis value
   if(basis->isScalarBasis()) {
      dof_ip_scalar = PHX::MDField<ScalarT,Cell,Point>(
-                p.get<std::string>("Name"), 
+                p.get<std::string>("Name"),
      	        p.get< Teuchos::RCP<panzer::IntegrationRule> >("IR")->dl_scalar);
      this->addEvaluatedField(dof_ip_scalar);
   }
   else if(basis->isVectorBasis()) {
      dof_ip_vector = PHX::MDField<ScalarT,Cell,Point,Dim>(
-                p.get<std::string>("Name"), 
+                p.get<std::string>("Name"),
      	        p.get< Teuchos::RCP<panzer::IntegrationRule> >("IR")->dl_vector);
      this->addEvaluatedField(dof_ip_vector);
   }
@@ -227,31 +227,31 @@ DOF(const Teuchos::ParameterList & p) :
 
   this->addDependentField(dof_basis);
 
-  std::string n = "DOF: " + dof_basis.fieldTag().name() 
-                          + ( accelerate_jacobian_enabled ? " accel_jac " : "slow_jac" ) 
+  std::string n = "DOF: " + dof_basis.fieldTag().name()
+                          + ( accelerate_jacobian_enabled ? " accel_jac " : "slow_jac" )
                           + " ("+PHX::typeAsString<panzer::Traits::Jacobian>()+")";
   this->setName(n);
 }
 
 //**********************************************************************
-template<typename TRAITS>                   
+template<typename TRAITS>
 DOF<typename TRAITS::Jacobian, TRAITS>::
 DOF(const PHX::FieldTag & input,
     const PHX::FieldTag & output,
     const panzer::BasisDescriptor & bd,
     const panzer::IntegrationDescriptor & id)
   : use_descriptors_(true)
-  , bd_(bd) 
-  , id_(id) 
+  , bd_(bd)
+  , id_(id)
   , dof_basis(input)
 {
-  TEUCHOS_ASSERT(bd.getType()=="HGrad" || bd.getType()=="HCurl" || 
+  TEUCHOS_ASSERT(bd.getType()=="HGrad" || bd.getType()=="HCurl" ||
                  bd.getType()=="HDiv" || bd.getType()=="Const")
 
   accelerate_jacobian_enabled = false; // don't short cut for identity matrix
 
   is_vector_basis = (bd.getType()=="HCurl" || bd.getType()=="HDiv");
- 
+
   // swap between scalar basis value, or vector basis value
   if(not is_vector_basis) {
      dof_ip_scalar = output;
@@ -269,7 +269,7 @@ DOF(const PHX::FieldTag & input,
 }
 
 //**********************************************************************
-template<typename TRAITS>                   
+template<typename TRAITS>
 void DOF<typename TRAITS::Jacobian, TRAITS>::
 postRegistrationSetup(typename TRAITS::SetupData sd,
                       PHX::FieldManager<TRAITS>& fm)
@@ -299,10 +299,10 @@ preEvaluate(typename TRAITS::PreEvalData d)
 }
 
 //**********************************************************************
-template<typename TRAITS>                   
+template<typename TRAITS>
 void DOF<typename TRAITS::Jacobian, TRAITS>::
 evaluateFields(typename TRAITS::EvalData workset)
-{ 
+{
   const panzer::BasisValues2<double> & basisValues = use_descriptors_ ?  this->wda(workset).getBasisValues(bd_,id_)
                                                                       : *this->wda(workset).bases[basis_index];
 

@@ -57,7 +57,7 @@ namespace panzer {
 
 /** This class defines a response based on a functional.
   */
-template <typename EvalT> 
+template <typename EvalT>
 class ResponseEvaluatorFactory_IPCoordinates : public ResponseEvaluatorFactory<EvalT> {
 public:
 
@@ -65,10 +65,10 @@ public:
      : cubatureDegree_(cubatureDegree) {}
 
    virtual ~ResponseEvaluatorFactory_IPCoordinates() {}
- 
+
    /** Build the response object used by this factory. This object
      * assumes the role of the scatter target and will be accessible
-     * by all the evaluators in the field managers. 
+     * by all the evaluators in the field managers.
      *
      * \param[in] responseName Name of response to be built. This
      *                         name will be used for looking up
@@ -79,7 +79,7 @@ public:
                                                           const std::vector<WorksetDescriptor> & eBlocks) const;
 
    /** Build and register evaluators for a response on a particular physics
-     * block. 
+     * block.
      *
      * \param[in] responseName The name of the response to be constructed
      *                         by these evaluators.
@@ -98,7 +98,7 @@ public:
      * where a response may support a particular evaluation type, however at runtime the user
      * decides not to enable the (say) Jacobian evaluation of this response.
      *
-     * Note that use of this mechanism is complementary to having the builder return 
+     * Note that use of this mechanism is complementary to having the builder return
      * <code>Teuchos::null</code> for a particular evaluation type.
      */
    virtual bool typeSupported() const;

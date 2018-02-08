@@ -51,11 +51,11 @@
 #include "Panzer_Evaluator_Macros.hpp"
 
 namespace panzer {
-    
+
 PANZER_EVALUATOR_CLASS(ConstantVector)
-  
+
   ScalarT vals[3]; // 3 dimensional vector
-  
+
   PHX::MDField<ScalarT> vector;
 
 PANZER_EVALUATOR_CLASS_END

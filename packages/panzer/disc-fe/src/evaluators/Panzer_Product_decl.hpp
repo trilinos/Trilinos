@@ -49,9 +49,9 @@
 #include "Panzer_Evaluator_Macros.hpp"
 
 namespace panzer {
-    
+
 /** Product of entries on a single data layout
- 
+
     \verbatim
     <ParameterList>
       <ParameterList name="Product Name" type="string" value="<destination field name>"/>
@@ -62,7 +62,7 @@ namespace panzer {
     \endverbatim
   */
 PANZER_EVALUATOR_CLASS(Product)
-  
+
   double scaling;
   PHX::MDField<ScalarT> product;
   std::vector< PHX::MDField<const ScalarT> > values;

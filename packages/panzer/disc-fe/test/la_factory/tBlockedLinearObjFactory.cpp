@@ -161,9 +161,9 @@ TEUCHOS_UNIT_TEST(tEpetraLinearObjFactory, gather_scatter_constr)
    int myRank = eComm->MyPID();
    int numProc = eComm->NumProc();
 
-   RCP<panzer::UniqueGlobalIndexer<int,int> > indexer 
+   RCP<panzer::UniqueGlobalIndexer<int,int> > indexer
          = rcp(new panzer::unit_test::UniqueGlobalIndexer<int,int>(myRank,numProc));
- 
+
    // setup factory
    Teuchos::RCP<panzer::LinearObjFactory<panzer::Traits> > la_factory
          = Teuchos::rcp(new panzer::BlockedEpetraLinearObjFactory<panzer::Traits,int>(tComm.getConst(),indexer));
@@ -174,7 +174,7 @@ TEUCHOS_UNIT_TEST(tEpetraLinearObjFactory, gather_scatter_constr)
 
    Teuchos::ParameterList gatherParams;
    {
-      Teuchos::RCP<shards::CellTopology> topo = 
+      Teuchos::RCP<shards::CellTopology> topo =
          Teuchos::rcp(new shards::CellTopology(shards::getCellTopologyData< shards::Quadrilateral<4> >()));
 
       // auxiliary information needed to construct basis object
@@ -197,22 +197,22 @@ TEUCHOS_UNIT_TEST(tEpetraLinearObjFactory, gather_scatter_constr)
 
    Teuchos::ParameterList scatterParams;
    {
-      Teuchos::RCP<shards::CellTopology> topo = 
+      Teuchos::RCP<shards::CellTopology> topo =
          Teuchos::rcp(new shards::CellTopology(shards::getCellTopologyData< shards::Quadrilateral<4> >()));
 
       std::string basisType = "Q1";
       panzer::CellData cellData(numCells,topo);
-   
+
       // build basis
       RCP<const panzer::PureBasis> basis = rcp(new panzer::PureBasis(basisType,1,cellData));
-   
+
       std::string scatterName = "Residual_NS";
-   
+
       // build DOF names
       RCP<std::vector<std::string> > evaluatedNames = rcp(new std::vector<std::string>);
       evaluatedNames->push_back("Residual_ux"); // in practice these probably would not be scattered together!
       evaluatedNames->push_back("Residual_p");
-   
+
       // build evaluated map
       RCP<std::map<std::string,std::string> > evaluatedMap = rcp(new std::map<std::string,std::string>);
       evaluatedMap->insert(std::make_pair("Residual_ux","ux")); // in practice these probably would not be scattered together!
@@ -227,27 +227,27 @@ TEUCHOS_UNIT_TEST(tEpetraLinearObjFactory, gather_scatter_constr)
 
    Teuchos::ParameterList scatterDirichletParams;
    {
-      Teuchos::RCP<shards::CellTopology> topo = 
+      Teuchos::RCP<shards::CellTopology> topo =
          Teuchos::rcp(new shards::CellTopology(shards::getCellTopologyData< shards::Quadrilateral<4> >()));
 
       std::string basisType = "Q1";
       panzer::CellData cellData(numCells,topo);
-   
+
       // build basis
       RCP<panzer::PureBasis> basis = rcp(new panzer::PureBasis(basisType,1,cellData));
-   
+
       std::string scatterName = "Residual_NS";
-   
+
       // build DOF names
       RCP<std::vector<std::string> > evaluatedNames = rcp(new std::vector<std::string>);
       evaluatedNames->push_back("Residual_ux"); // in practice these probably would not be scattered together!
       evaluatedNames->push_back("Residual_p");
-   
+
       // build evaluated map
       RCP<std::map<std::string,std::string> > evaluatedMap = rcp(new std::map<std::string,std::string>);
       evaluatedMap->insert(std::make_pair("Residual_ux","ux")); // in practice these probably would not be scattered together!
       evaluatedMap->insert(std::make_pair("Residual_p","p"));
-   
+
       // build scatter parameter list
       scatterDirichletParams.set<std::string>("Scatter Name",scatterName);
       scatterDirichletParams.set<RCP<std::vector<std::string> > >("Dependent Names",evaluatedNames);
@@ -270,19 +270,19 @@ TEUCHOS_UNIT_TEST(tEpetraLinearObjFactory, gather_scatter_constr)
          evaluator = la_factory->buildGather<EvalType>(gatherParams);
 
          TEST_ASSERT(evaluator!=Teuchos::null);
-         RCP<GatherSolution_Epetra<EvalType,panzer::Traits,int,int> > gatherSolutionEval 
+         RCP<GatherSolution_Epetra<EvalType,panzer::Traits,int,int> > gatherSolutionEval
                = rcp_dynamic_cast<GatherSolution_Epetra<EvalType,panzer::Traits,int,int> >(evaluator);
          TEST_ASSERT(gatherSolutionEval!=Teuchos::null);
-   
+
          const std::vector<RCP<PHX::FieldTag> > & fields = gatherSolutionEval->evaluatedFields();
          TEST_EQUALITY(fields.size(),2);
-   
+
          TEST_EQUALITY(fields[0]->name(),"ux");
          TEST_EQUALITY(fields[1]->name(),"p");
-   
+
          TEST_EQUALITY(fields[0]->dataLayout().extent_int(0),Teuchos::as<int>(numCells));
          TEST_EQUALITY(fields[0]->dataLayout().extent_int(1),Teuchos::as<int>(4)); // for Q1
-   
+
          TEST_EQUALITY(fields[1]->dataLayout().extent_int(0),Teuchos::as<int>(numCells));
          TEST_EQUALITY(fields[1]->dataLayout().extent_int(1),Teuchos::as<int>(4)); // for Q1
       }
@@ -293,19 +293,19 @@ TEUCHOS_UNIT_TEST(tEpetraLinearObjFactory, gather_scatter_constr)
 
          out << "SCATTER RES NAME: \"" << evaluator->getName() << "\"" << std::endl;
          TEST_ASSERT(evaluator!=Teuchos::null);
-         RCP<ScatterResidual_Epetra<EvalType,panzer::Traits,int,int> > scatterResidual 
+         RCP<ScatterResidual_Epetra<EvalType,panzer::Traits,int,int> > scatterResidual
                = rcp_dynamic_cast<ScatterResidual_Epetra<EvalType,panzer::Traits,int,int> >(evaluator);
          TEST_ASSERT(scatterResidual!=Teuchos::null);
 
          const std::vector<RCP<PHX::FieldTag> > & evalFields = scatterResidual->evaluatedFields();
          TEST_EQUALITY(evalFields.size(),1); // this is a dummy holder for the sake of the field manager
-   
+
          const std::vector<RCP<PHX::FieldTag> > & fields = scatterResidual->dependentFields();
          TEST_EQUALITY(fields.size(),2); // these store the residual values
-   
+
          TEST_EQUALITY(fields[0]->name(),"Residual_ux");
          TEST_EQUALITY(fields[1]->name(),"Residual_p");
-   
+
          TEST_EQUALITY(fields[0]->dataLayout().extent_int(0),Teuchos::as<int>(numCells));
          TEST_EQUALITY(fields[0]->dataLayout().extent_int(1),Teuchos::as<int>(4)); // for Q1
 
@@ -319,22 +319,22 @@ TEUCHOS_UNIT_TEST(tEpetraLinearObjFactory, gather_scatter_constr)
 
          out << "SCATTER DIRICHLET RES NAME: \"" << evaluator->getName() << "\"" << std::endl;
          TEST_ASSERT(evaluator!=Teuchos::null);
-         RCP<ScatterDirichletResidual_Epetra<EvalType,panzer::Traits,int,int> > scatterResidual 
+         RCP<ScatterDirichletResidual_Epetra<EvalType,panzer::Traits,int,int> > scatterResidual
                = rcp_dynamic_cast<ScatterDirichletResidual_Epetra<EvalType,panzer::Traits,int,int> >(evaluator);
          TEST_ASSERT(scatterResidual!=Teuchos::null);
 
          const std::vector<RCP<PHX::FieldTag> > & evalFields = scatterResidual->evaluatedFields();
          TEST_EQUALITY(evalFields.size(),1); // this is a dummy holder for the sake of the field manager
-   
+
          const std::vector<RCP<PHX::FieldTag> > & fields = scatterResidual->dependentFields();
          TEST_EQUALITY(fields.size(),2); // these store the residual values
-   
+
          TEST_EQUALITY(fields[0]->name(),"Residual_ux");
          TEST_EQUALITY(fields[1]->name(),"Residual_p");
-   
+
          TEST_EQUALITY(fields[0]->dataLayout().extent_int(0),Teuchos::as<int>(numCells));
          TEST_EQUALITY(fields[0]->dataLayout().extent_int(1),Teuchos::as<int>(4)); // for Q1
-   
+
          TEST_EQUALITY(fields[1]->dataLayout().extent_int(0),Teuchos::as<int>(numCells));
          TEST_EQUALITY(fields[1]->dataLayout().extent_int(1),Teuchos::as<int>(4)); // for Q1
       }
@@ -349,19 +349,19 @@ TEUCHOS_UNIT_TEST(tEpetraLinearObjFactory, gather_scatter_constr)
          evaluator = la_factory->buildGather<EvalType>(gatherParams);
 
          TEST_ASSERT(evaluator!=Teuchos::null);
-         RCP<GatherSolution_Epetra<EvalType,panzer::Traits,int,int> > gatherSolutionEval 
+         RCP<GatherSolution_Epetra<EvalType,panzer::Traits,int,int> > gatherSolutionEval
                = rcp_dynamic_cast<GatherSolution_Epetra<EvalType,panzer::Traits,int,int> >(evaluator);
          TEST_ASSERT(gatherSolutionEval!=Teuchos::null);
-   
+
          const std::vector<RCP<PHX::FieldTag> > & fields = gatherSolutionEval->evaluatedFields();
          TEST_EQUALITY(fields.size(),2);
-   
+
          TEST_EQUALITY(fields[0]->name(),"ux");
          TEST_EQUALITY(fields[1]->name(),"p");
-   
+
          TEST_EQUALITY(fields[0]->dataLayout().extent_int(0),Teuchos::as<int>(numCells));
          TEST_EQUALITY(fields[0]->dataLayout().extent_int(1),Teuchos::as<int>(4)); // for Q1
-   
+
          TEST_EQUALITY(fields[1]->dataLayout().extent_int(0),Teuchos::as<int>(numCells));
          TEST_EQUALITY(fields[1]->dataLayout().extent_int(1),Teuchos::as<int>(4)); // for Q1
       }
@@ -371,19 +371,19 @@ TEUCHOS_UNIT_TEST(tEpetraLinearObjFactory, gather_scatter_constr)
          evaluator = la_factory->buildScatter<EvalType>(scatterParams);
 
          TEST_ASSERT(evaluator!=Teuchos::null);
-         RCP<ScatterResidual_Epetra<EvalType,panzer::Traits,int,int> > scatterResidual 
+         RCP<ScatterResidual_Epetra<EvalType,panzer::Traits,int,int> > scatterResidual
                = rcp_dynamic_cast<ScatterResidual_Epetra<EvalType,panzer::Traits,int,int> >(evaluator);
          TEST_ASSERT(scatterResidual!=Teuchos::null);
 
          const std::vector<RCP<PHX::FieldTag> > & evalFields = scatterResidual->evaluatedFields();
          TEST_EQUALITY(evalFields.size(),1); // this is a dummy holder for the sake of the field manager
-   
+
          const std::vector<RCP<PHX::FieldTag> > & fields = scatterResidual->dependentFields();
          TEST_EQUALITY(fields.size(),2); // these store the residual values
-   
+
          TEST_EQUALITY(fields[0]->name(),"Residual_ux");
          TEST_EQUALITY(fields[1]->name(),"Residual_p");
-   
+
          TEST_EQUALITY(fields[0]->dataLayout().extent_int(0),Teuchos::as<int>(numCells));
          TEST_EQUALITY(fields[0]->dataLayout().extent_int(1),Teuchos::as<int>(4)); // for Q1
 
@@ -397,22 +397,22 @@ TEUCHOS_UNIT_TEST(tEpetraLinearObjFactory, gather_scatter_constr)
 
          out << "SCATTER DIRICHLET RES NAME: \"" << evaluator->getName() << "\"" << std::endl;
          TEST_ASSERT(evaluator!=Teuchos::null);
-         RCP<ScatterDirichletResidual_Epetra<EvalType,panzer::Traits,int,int> > scatterResidual 
+         RCP<ScatterDirichletResidual_Epetra<EvalType,panzer::Traits,int,int> > scatterResidual
                = rcp_dynamic_cast<ScatterDirichletResidual_Epetra<EvalType,panzer::Traits,int,int> >(evaluator);
          TEST_ASSERT(scatterResidual!=Teuchos::null);
 
          const std::vector<RCP<PHX::FieldTag> > & evalFields = scatterResidual->evaluatedFields();
          TEST_EQUALITY(evalFields.size(),1); // this is a dummy holder for the sake of the field manager
-   
+
          const std::vector<RCP<PHX::FieldTag> > & fields = scatterResidual->dependentFields();
          TEST_EQUALITY(fields.size(),2); // these store the residual values
-   
+
          TEST_EQUALITY(fields[0]->name(),"Residual_ux");
          TEST_EQUALITY(fields[1]->name(),"Residual_p");
-   
+
          TEST_EQUALITY(fields[0]->dataLayout().extent_int(0),Teuchos::as<int>(numCells));
          TEST_EQUALITY(fields[0]->dataLayout().extent_int(1),Teuchos::as<int>(4)); // for Q1
-   
+
          TEST_EQUALITY(fields[1]->dataLayout().extent_int(0),Teuchos::as<int>(numCells));
          TEST_EQUALITY(fields[1]->dataLayout().extent_int(1),Teuchos::as<int>(4)); // for Q1
       }
@@ -438,16 +438,16 @@ TEUCHOS_UNIT_TEST(tEpetraLinearObjFactory, initializeContainer)
 
    int myRank = eComm->MyPID();
    int numProc = eComm->NumProc();
- 
+
    typedef EpetraLinearObjContainer ELOC;
 
-   RCP<panzer::UniqueGlobalIndexer<int,int> > indexer 
+   RCP<panzer::UniqueGlobalIndexer<int,int> > indexer
          = rcp(new unit_test::UniqueGlobalIndexer<int,int>(myRank,numProc));
 
    std::vector<int> ownedIndices, ownedAndGhostedIndices;
    indexer->getOwnedIndices(ownedIndices);
    indexer->getOwnedAndGhostedIndices(ownedAndGhostedIndices);
- 
+
    // setup factory
    Teuchos::RCP<panzer::BlockedEpetraLinearObjFactory<panzer::Traits,int> > la_factory
          = Teuchos::rcp(new panzer::BlockedEpetraLinearObjFactory<panzer::Traits,int>(tComm.getConst(),indexer));
@@ -462,7 +462,7 @@ TEUCHOS_UNIT_TEST(tEpetraLinearObjFactory, initializeContainer)
    {
       // Generic code
       /////////////////////////////////////////////////////////////
-   
+
       // test individial initializers
       la_factory->initializeGhostedContainer(ELOC::X,*ghostedContainer);
       TEST_ASSERT(eGhostedContainer->get_x()!=Teuchos::null);
@@ -470,91 +470,91 @@ TEUCHOS_UNIT_TEST(tEpetraLinearObjFactory, initializeContainer)
       TEST_EQUALITY(eGhostedContainer->get_f(),    Teuchos::null)
       TEST_EQUALITY(eGhostedContainer->get_A(),    Teuchos::null)
       TEST_EQUALITY(eGhostedContainer->get_x()->MyLength(),(int) ownedAndGhostedIndices.size());
-   
+
       la_factory->initializeGhostedContainer(ELOC::DxDt,*ghostedContainer);
       TEST_EQUALITY(eGhostedContainer->get_x(),    Teuchos::null)
       TEST_ASSERT(eGhostedContainer->get_dxdt()!=Teuchos::null);
       TEST_EQUALITY(eGhostedContainer->get_f(),    Teuchos::null)
       TEST_EQUALITY(eGhostedContainer->get_A(),    Teuchos::null)
       TEST_EQUALITY(eGhostedContainer->get_dxdt()->MyLength(),(int) ownedAndGhostedIndices.size());
-   
+
       la_factory->initializeGhostedContainer(ELOC::F,*ghostedContainer);
       TEST_EQUALITY(eGhostedContainer->get_x(),    Teuchos::null)
       TEST_EQUALITY(eGhostedContainer->get_dxdt(), Teuchos::null)
       TEST_ASSERT(eGhostedContainer->get_f()!=Teuchos::null);
       TEST_EQUALITY(eGhostedContainer->get_A(),    Teuchos::null)
       TEST_EQUALITY(eGhostedContainer->get_f()->MyLength(),(int) ownedAndGhostedIndices.size());
-   
+
       la_factory->initializeGhostedContainer(ELOC::Mat,*ghostedContainer);
       TEST_EQUALITY(eGhostedContainer->get_x(),    Teuchos::null)
       TEST_EQUALITY(eGhostedContainer->get_dxdt(), Teuchos::null)
       TEST_EQUALITY(eGhostedContainer->get_f(),    Teuchos::null)
       TEST_ASSERT(eGhostedContainer->get_A()!=Teuchos::null);
       TEST_EQUALITY(eGhostedContainer->get_A()->NumMyRows(),(int) ownedAndGhostedIndices.size());
-   
+
       // jacobian and residual vector output
       la_factory->initializeGhostedContainer(ELOC::F | ELOC::Mat,*ghostedContainer);
       TEST_EQUALITY(eGhostedContainer->get_x(),    Teuchos::null)
       TEST_EQUALITY(eGhostedContainer->get_dxdt(), Teuchos::null)
       TEST_ASSERT(eGhostedContainer->get_f()!=Teuchos::null);
       TEST_ASSERT(eGhostedContainer->get_A()!=Teuchos::null);
-   
+
       // x and time dertivative input
       la_factory->initializeGhostedContainer(ELOC::X | ELOC::DxDt,*ghostedContainer);
       TEST_ASSERT(eGhostedContainer->get_x()!=Teuchos::null);
       TEST_ASSERT(eGhostedContainer->get_dxdt()!=Teuchos::null);
       TEST_EQUALITY(eGhostedContainer->get_f(),    Teuchos::null)
       TEST_EQUALITY(eGhostedContainer->get_A(),    Teuchos::null)
-   
+
       // everything
       la_factory->initializeGhostedContainer(ELOC::X | ELOC::DxDt | ELOC::F | ELOC::Mat,*ghostedContainer);
       TEST_ASSERT(eGhostedContainer->get_x()!=Teuchos::null);
       TEST_ASSERT(eGhostedContainer->get_dxdt()!=Teuchos::null);
       TEST_ASSERT(eGhostedContainer->get_f()!=Teuchos::null);
       TEST_ASSERT(eGhostedContainer->get_A()!=Teuchos::null);
-   
+
       // Epetra specific code
       /////////////////////////////////////////////////////////////
-   
+
       // test individial initializers
       la_factory->initializeGhostedContainer(ELOC::X,*eGhostedContainer);
       TEST_ASSERT(eGhostedContainer->get_x()!=Teuchos::null);
       TEST_EQUALITY(eGhostedContainer->get_dxdt(), Teuchos::null)
       TEST_EQUALITY(eGhostedContainer->get_f(),    Teuchos::null)
       TEST_EQUALITY(eGhostedContainer->get_A(),    Teuchos::null)
-   
+
       la_factory->initializeGhostedContainer(ELOC::DxDt,*eGhostedContainer);
       TEST_EQUALITY(eGhostedContainer->get_x(),    Teuchos::null)
       TEST_ASSERT(eGhostedContainer->get_dxdt()!=Teuchos::null);
       TEST_EQUALITY(eGhostedContainer->get_f(),    Teuchos::null)
       TEST_EQUALITY(eGhostedContainer->get_A(),    Teuchos::null)
-   
+
       la_factory->initializeGhostedContainer(ELOC::F,*eGhostedContainer);
       TEST_EQUALITY(eGhostedContainer->get_x(),    Teuchos::null)
       TEST_EQUALITY(eGhostedContainer->get_dxdt(), Teuchos::null)
       TEST_ASSERT(eGhostedContainer->get_f()!=Teuchos::null);
       TEST_EQUALITY(eGhostedContainer->get_A(),    Teuchos::null)
-   
+
       la_factory->initializeGhostedContainer(ELOC::Mat,*eGhostedContainer);
       TEST_EQUALITY(eGhostedContainer->get_x(),    Teuchos::null)
       TEST_EQUALITY(eGhostedContainer->get_dxdt(), Teuchos::null)
       TEST_EQUALITY(eGhostedContainer->get_f(),    Teuchos::null)
       TEST_ASSERT(eGhostedContainer->get_A()!=Teuchos::null);
-   
+
       // jacobian and residual vector output
       la_factory->initializeGhostedContainer(ELOC::F | ELOC::Mat,*eGhostedContainer);
       TEST_EQUALITY(eGhostedContainer->get_x(),    Teuchos::null)
       TEST_EQUALITY(eGhostedContainer->get_dxdt(), Teuchos::null)
       TEST_ASSERT(eGhostedContainer->get_f()!=Teuchos::null);
       TEST_ASSERT(eGhostedContainer->get_A()!=Teuchos::null);
-   
+
       // x and time dertivative input
       la_factory->initializeGhostedContainer(ELOC::X | ELOC::DxDt,*eGhostedContainer);
       TEST_ASSERT(eGhostedContainer->get_x()!=Teuchos::null);
       TEST_ASSERT(eGhostedContainer->get_dxdt()!=Teuchos::null);
       TEST_EQUALITY(eGhostedContainer->get_f(),    Teuchos::null)
       TEST_EQUALITY(eGhostedContainer->get_A(),    Teuchos::null)
-   
+
       // everything
       la_factory->initializeGhostedContainer(ELOC::X | ELOC::DxDt | ELOC::F | ELOC::Mat,*eGhostedContainer);
       TEST_ASSERT(eGhostedContainer->get_x()!=Teuchos::null);
@@ -612,95 +612,95 @@ TEUCHOS_UNIT_TEST(tBlockedEpetraLinearObjFactory, epetra_factory_tests)
    {
       // Generic code
       /////////////////////////////////////////////////////////////
-   
+
       // test individial initializers
       factory.initializeContainer(LOC::X,*container);
       TEST_ASSERT(bContainer->get_x()!=Teuchos::null);
       TEST_EQUALITY(bContainer->get_dxdt(), Teuchos::null)
       TEST_EQUALITY(bContainer->get_f(),    Teuchos::null)
       TEST_EQUALITY(bContainer->get_A(),    Teuchos::null)
-   
+
       factory.initializeContainer(LOC::DxDt,*container);
       TEST_EQUALITY(bContainer->get_x(),    Teuchos::null)
       TEST_ASSERT(bContainer->get_dxdt()!=Teuchos::null);
       TEST_EQUALITY(bContainer->get_f(),    Teuchos::null)
       TEST_EQUALITY(bContainer->get_A(),    Teuchos::null)
-   
+
       factory.initializeContainer(LOC::F,*container);
       TEST_EQUALITY(bContainer->get_x(),    Teuchos::null)
       TEST_EQUALITY(bContainer->get_dxdt(), Teuchos::null)
       TEST_ASSERT(bContainer->get_f()!=Teuchos::null);
       TEST_EQUALITY(bContainer->get_A(),    Teuchos::null)
-   
+
       factory.initializeContainer(LOC::Mat,*container);
       TEST_EQUALITY(bContainer->get_x(),    Teuchos::null)
       TEST_EQUALITY(bContainer->get_dxdt(), Teuchos::null)
       TEST_EQUALITY(bContainer->get_f(),    Teuchos::null)
       TEST_ASSERT(bContainer->get_A()!=Teuchos::null);
-   
+
       // jacobian and residual vector output
       factory.initializeContainer(LOC::F | LOC::Mat,*container);
       TEST_EQUALITY(bContainer->get_x(),    Teuchos::null)
       TEST_EQUALITY(bContainer->get_dxdt(), Teuchos::null)
       TEST_ASSERT(bContainer->get_f()!=Teuchos::null);
       TEST_ASSERT(bContainer->get_A()!=Teuchos::null);
-   
+
       // x and time dertivative input
       factory.initializeContainer(LOC::X | LOC::DxDt,*container);
       TEST_ASSERT(bContainer->get_x()!=Teuchos::null);
       TEST_ASSERT(bContainer->get_dxdt()!=Teuchos::null);
       TEST_EQUALITY(bContainer->get_f(),    Teuchos::null)
       TEST_EQUALITY(bContainer->get_A(),    Teuchos::null)
-   
+
       // everything
       factory.initializeContainer(LOC::X | LOC::DxDt | LOC::F | LOC::Mat,*container);
       TEST_ASSERT(bContainer->get_x()!=Teuchos::null);
       TEST_ASSERT(bContainer->get_dxdt()!=Teuchos::null);
       TEST_ASSERT(bContainer->get_f()!=Teuchos::null);
       TEST_ASSERT(bContainer->get_A()!=Teuchos::null);
-   
+
       // Epetra specific code
       /////////////////////////////////////////////////////////////
-   
+
       // test individial initializers
       factory.initializeContainer(LOC::X,*bContainer);
       TEST_ASSERT(bContainer->get_x()!=Teuchos::null);
       TEST_EQUALITY(bContainer->get_dxdt(), Teuchos::null)
       TEST_EQUALITY(bContainer->get_f(),    Teuchos::null)
       TEST_EQUALITY(bContainer->get_A(),    Teuchos::null)
-   
+
       factory.initializeContainer(LOC::DxDt,*bContainer);
       TEST_EQUALITY(bContainer->get_x(),    Teuchos::null)
       TEST_ASSERT(bContainer->get_dxdt()!=Teuchos::null);
       TEST_EQUALITY(bContainer->get_f(),    Teuchos::null)
       TEST_EQUALITY(bContainer->get_A(),    Teuchos::null)
-   
+
       factory.initializeContainer(LOC::F,*bContainer);
       TEST_EQUALITY(bContainer->get_x(),    Teuchos::null)
       TEST_EQUALITY(bContainer->get_dxdt(), Teuchos::null)
       TEST_ASSERT(bContainer->get_f()!=Teuchos::null);
       TEST_EQUALITY(bContainer->get_A(),    Teuchos::null)
-   
+
       factory.initializeContainer(LOC::Mat,*bContainer);
       TEST_EQUALITY(bContainer->get_x(),    Teuchos::null)
       TEST_EQUALITY(bContainer->get_dxdt(), Teuchos::null)
       TEST_EQUALITY(bContainer->get_f(),    Teuchos::null)
       TEST_ASSERT(bContainer->get_A()!=Teuchos::null);
-   
+
       // jacobian and residual vector output
       factory.initializeContainer(LOC::F | LOC::Mat,*bContainer);
       TEST_EQUALITY(bContainer->get_x(),    Teuchos::null)
       TEST_EQUALITY(bContainer->get_dxdt(), Teuchos::null)
       TEST_ASSERT(bContainer->get_f()!=Teuchos::null);
       TEST_ASSERT(bContainer->get_A()!=Teuchos::null);
-   
+
       // x and time dertivative input
       factory.initializeContainer(LOC::X | LOC::DxDt,*bContainer);
       TEST_ASSERT(bContainer->get_x()!=Teuchos::null);
       TEST_ASSERT(bContainer->get_dxdt()!=Teuchos::null);
       TEST_EQUALITY(bContainer->get_f(),    Teuchos::null)
       TEST_EQUALITY(bContainer->get_A(),    Teuchos::null)
-   
+
       // everything
       factory.initializeContainer(LOC::X | LOC::DxDt | LOC::F | LOC::Mat,*bContainer);
       TEST_ASSERT(bContainer->get_x()!=Teuchos::null);
@@ -731,7 +731,7 @@ TEUCHOS_UNIT_TEST(tBlockedEpetraLinearObjFactory, ghostToGlobal)
    int numBlocks = 2;
    int myRank = tComm->getRank();
    int numProc = tComm->getSize();
- 
+
    RCP<const panzer::BlockedDOFManager<int,int> > blkIndexer = buildBlockedIndexer(myRank,numProc,numBlocks);
 
    out << "Built indexer = " << blkIndexer << std::endl;
@@ -760,10 +760,10 @@ TEUCHOS_UNIT_TEST(tBlockedEpetraLinearObjFactory, ghostToGlobal)
 
    Teuchos::RCP<Thyra::LinearOpBase<double> > th_A = Teuchos::rcp_dynamic_cast<BlockedEpetraLinearObjContainer>(global)->get_A();
    Teuchos::RCP<Thyra::BlockedLinearOpBase<double> > blk_A = Teuchos::rcp_dynamic_cast<Thyra::BlockedLinearOpBase<double> >(th_A);
-   
+
    out << "Blk A " << blk_A << std::endl;
    out << "Blk A " << Teuchos::describe(*blk_A,Teuchos::VERB_MEDIUM) << std::endl;
-  
+
    Teuchos::RCP<Epetra_Operator> cA_00 = Thyra::get_Epetra_Operator(*blk_A->getNonconstBlock(0,0));
    out << "00" << std::endl;
 
@@ -816,7 +816,7 @@ TEUCHOS_UNIT_TEST(tBlockedEpetraLinearObjFactory, graph_constr)
    int numBlocks = 2;
    int myRank = tComm->getRank();
    int numProc = tComm->getSize();
- 
+
    RCP<const panzer::BlockedDOFManager<int,int> > blkIndexer = buildBlockedIndexer(myRank,numProc,numBlocks);
 
    Teuchos::RCP<BlockedEpetraLinearObjFactory<panzer::Traits,int> > la_factory
@@ -862,7 +862,7 @@ TEUCHOS_UNIT_TEST(tBlockedEpetraLinearObjFactory, adjustDirichlet)
    int numBlocks = 3;
    int myRank = tComm->getRank();
    int numProc = tComm->getSize();
- 
+
    typedef BlockedEpetraLinearObjContainer BLOC;
 
    RCP<const panzer::BlockedDOFManager<int,int> > blkIndexer = buildBlockedIndexer(myRank,numProc,numBlocks);
@@ -901,23 +901,23 @@ TEUCHOS_UNIT_TEST(tBlockedEpetraLinearObjFactory, adjustDirichlet)
    //   2. Set on multiple processors
    //   3. Set remotely
 
-   if(myRank==0) {   
+   if(myRank==0) {
       for(int i=0;i<numBlocks;i++) {
          RCP<Thyra::VectorBase<double> > x_0 = rcp_dynamic_cast<ProductVectorBase<double> >(b_0->get_f())->getNonconstVectorBlock(i);
          RCP<Thyra::VectorBase<double> > x_1 = rcp_dynamic_cast<ProductVectorBase<double> >(b_1->get_f())->getNonconstVectorBlock(i);
 
          Teuchos::ArrayRCP<double> data_0,data_1;
-         rcp_dynamic_cast<SpmdVectorBase<double> >(x_0)->getNonconstLocalData(Teuchos::ptrFromRef(data_0)); 
-         rcp_dynamic_cast<SpmdVectorBase<double> >(x_1)->getNonconstLocalData(Teuchos::ptrFromRef(data_1)); 
+         rcp_dynamic_cast<SpmdVectorBase<double> >(x_0)->getNonconstLocalData(Teuchos::ptrFromRef(data_0));
+         rcp_dynamic_cast<SpmdVectorBase<double> >(x_1)->getNonconstLocalData(Teuchos::ptrFromRef(data_1));
 
          // case 0
          data_0[0] = 1.0; // GID = 0
          data_1[0] = 1.0;
-   
+
          // case 1
          data_0[2] = 1.0; // GID = 2
          data_1[2] = 2.0;
-   
+
          // case 2
          data_1[5] = 2.0; // GID = 5
       }
@@ -928,22 +928,22 @@ TEUCHOS_UNIT_TEST(tBlockedEpetraLinearObjFactory, adjustDirichlet)
          RCP<Thyra::VectorBase<double> > x_1 = rcp_dynamic_cast<ProductVectorBase<double> >(b_1->get_f())->getNonconstVectorBlock(i);
 
          Teuchos::ArrayRCP<double> data_0,data_1;
-         rcp_dynamic_cast<SpmdVectorBase<double> >(x_0)->getNonconstLocalData(Teuchos::ptrFromRef(data_0)); 
-         rcp_dynamic_cast<SpmdVectorBase<double> >(x_1)->getNonconstLocalData(Teuchos::ptrFromRef(data_1)); 
+         rcp_dynamic_cast<SpmdVectorBase<double> >(x_0)->getNonconstLocalData(Teuchos::ptrFromRef(data_0));
+         rcp_dynamic_cast<SpmdVectorBase<double> >(x_1)->getNonconstLocalData(Teuchos::ptrFromRef(data_1));
 
          // case 0
          data_0[3] = 1.0; // GID = 9
          data_1[3] = 1.0;
-   
+
          // case 1
          data_0[0] = 1.0; // GID =2
          data_1[0] = 2.0;
-   
+
          // case 2
          data_1[6] = 2.0; // GID = 4
       }
    }
-   else 
+   else
       TEUCHOS_ASSERT(false);
 
    out << "LOCAL " << std::endl;
@@ -960,14 +960,14 @@ TEUCHOS_UNIT_TEST(tBlockedEpetraLinearObjFactory, adjustDirichlet)
    double * values = 0;
    int * indices = 0;
 
-   if(myRank==0) {   
+   if(myRank==0) {
       RCP<const Thyra::LinearOpBase<double> > A = b_sys->get_A();
 
       for(int i=0;i<numBlocks;i++) {
          Teuchos::ArrayRCP<const double> data;
          RCP<const Thyra::VectorBase<double> > f = rcp_dynamic_cast<ProductVectorBase<double> >(b_sys->get_f())->getVectorBlock(i);
-         rcp_dynamic_cast<const SpmdVectorBase<double> >(f)->getLocalData(Teuchos::ptrFromRef(data)); 
-   
+         rcp_dynamic_cast<const SpmdVectorBase<double> >(f)->getLocalData(Teuchos::ptrFromRef(data));
+
          TEST_EQUALITY(data[0],-3.0);     // case 0
          TEST_EQUALITY(data[2],-3.0/2.0); // case 1
          TEST_EQUALITY(data[5],0.0);      // case 2
@@ -992,8 +992,8 @@ TEUCHOS_UNIT_TEST(tBlockedEpetraLinearObjFactory, adjustDirichlet)
       for(int i=0;i<numBlocks;i++) {
          Teuchos::ArrayRCP<const double> data;
          RCP<const Thyra::VectorBase<double> > f = rcp_dynamic_cast<ProductVectorBase<double> >(b_sys->get_f())->getVectorBlock(i);
-         rcp_dynamic_cast<const SpmdVectorBase<double> >(f)->getLocalData(Teuchos::ptrFromRef(data)); 
-   
+         rcp_dynamic_cast<const SpmdVectorBase<double> >(f)->getLocalData(Teuchos::ptrFromRef(data));
+
          TEST_EQUALITY(data[3],-3.0);     // case 0
          TEST_EQUALITY(data[0],-3.0/2.0); // case 1
          TEST_EQUALITY(data[6],0.0);     // case 2
@@ -1003,16 +1003,16 @@ TEUCHOS_UNIT_TEST(tBlockedEpetraLinearObjFactory, adjustDirichlet)
 
             subA->ExtractMyRowView(3,numEntries,values,indices);
             for(int k=0;k<numEntries;k++) TEST_EQUALITY(values[k],-3.0);
-   
+
             subA->ExtractMyRowView(0,numEntries,values,indices);
             for(int k=0;k<numEntries;k++) TEST_EQUALITY(values[k],-3.0/2.0);
-   
+
             subA->ExtractMyRowView(6,numEntries,values,indices);
             for(int k=0;k<numEntries;k++) TEST_EQUALITY(values[k],0.0);
          }
       }
    }
-   else 
+   else
       TEUCHOS_ASSERT(false);
 }
 
@@ -1037,7 +1037,7 @@ TEUCHOS_UNIT_TEST(tBlockedEpetraLinearObjFactory, node_cell)
    int numBlocks = 2;
    int myRank = tComm->getRank();
    int numProc = tComm->getSize();
- 
+
    typedef BlockedEpetraLinearObjContainer BLOC;
 
    RCP<const panzer::BlockedDOFManager<int,int> > blkIndexer = buildBlockedIndexer(myRank,numProc,numBlocks);
@@ -1076,13 +1076,13 @@ TEUCHOS_UNIT_TEST(tBlockedEpetraLinearObjFactory, node_cell)
    //   2. Set on multiple processors
    //   3. Set remotely
 
-   if(myRank==0) {   
+   if(myRank==0) {
       RCP<Thyra::VectorBase<double> > x_0 = rcp_dynamic_cast<ProductVectorBase<double> >(b_0->get_f())->getNonconstVectorBlock(0);
       RCP<Thyra::VectorBase<double> > x_1 = rcp_dynamic_cast<ProductVectorBase<double> >(b_1->get_f())->getNonconstVectorBlock(0);
 
       Teuchos::ArrayRCP<double> data_0,data_1;
-      rcp_dynamic_cast<SpmdVectorBase<double> >(x_0)->getNonconstLocalData(Teuchos::ptrFromRef(data_0)); 
-      rcp_dynamic_cast<SpmdVectorBase<double> >(x_1)->getNonconstLocalData(Teuchos::ptrFromRef(data_1)); 
+      rcp_dynamic_cast<SpmdVectorBase<double> >(x_0)->getNonconstLocalData(Teuchos::ptrFromRef(data_0));
+      rcp_dynamic_cast<SpmdVectorBase<double> >(x_1)->getNonconstLocalData(Teuchos::ptrFromRef(data_1));
 
       // case 0
       data_0[0] = 1.0; // GID = 0
@@ -1099,8 +1099,8 @@ TEUCHOS_UNIT_TEST(tBlockedEpetraLinearObjFactory, node_cell)
          x_0 = rcp_dynamic_cast<ProductVectorBase<double> >(b_0->get_f())->getNonconstVectorBlock(1);
          x_1 = rcp_dynamic_cast<ProductVectorBase<double> >(b_1->get_f())->getNonconstVectorBlock(1);
 
-         rcp_dynamic_cast<SpmdVectorBase<double> >(x_0)->getNonconstLocalData(Teuchos::ptrFromRef(data_0)); 
-         rcp_dynamic_cast<SpmdVectorBase<double> >(x_1)->getNonconstLocalData(Teuchos::ptrFromRef(data_1)); 
+         rcp_dynamic_cast<SpmdVectorBase<double> >(x_0)->getNonconstLocalData(Teuchos::ptrFromRef(data_0));
+         rcp_dynamic_cast<SpmdVectorBase<double> >(x_1)->getNonconstLocalData(Teuchos::ptrFromRef(data_1));
 
          data_1[0] = 2.0;
       }
@@ -1110,8 +1110,8 @@ TEUCHOS_UNIT_TEST(tBlockedEpetraLinearObjFactory, node_cell)
       RCP<Thyra::VectorBase<double> > x_1 = rcp_dynamic_cast<ProductVectorBase<double> >(b_1->get_f())->getNonconstVectorBlock(0);
 
       Teuchos::ArrayRCP<double> data_0,data_1;
-      rcp_dynamic_cast<SpmdVectorBase<double> >(x_0)->getNonconstLocalData(Teuchos::ptrFromRef(data_0)); 
-      rcp_dynamic_cast<SpmdVectorBase<double> >(x_1)->getNonconstLocalData(Teuchos::ptrFromRef(data_1)); 
+      rcp_dynamic_cast<SpmdVectorBase<double> >(x_0)->getNonconstLocalData(Teuchos::ptrFromRef(data_0));
+      rcp_dynamic_cast<SpmdVectorBase<double> >(x_1)->getNonconstLocalData(Teuchos::ptrFromRef(data_1));
 
       // case 0
       data_0[3] = 1.0; // GID = 9
@@ -1124,7 +1124,7 @@ TEUCHOS_UNIT_TEST(tBlockedEpetraLinearObjFactory, node_cell)
       // case 2
       data_1[6] = 2.0; // GID = 4
    }
-   else 
+   else
       TEUCHOS_ASSERT(false);
 
    out << "LOCAL " << std::endl;
@@ -1141,15 +1141,15 @@ TEUCHOS_UNIT_TEST(tBlockedEpetraLinearObjFactory, node_cell)
    double * values = 0;
    int * indices = 0;
 
-   if(myRank==0) {   
+   if(myRank==0) {
       RCP<const Thyra::LinearOpBase<double> > A = b_sys->get_A();
 
       int i = 0;
       {
          Teuchos::ArrayRCP<const double> data;
          RCP<const Thyra::VectorBase<double> > f = rcp_dynamic_cast<ProductVectorBase<double> >(b_sys->get_f())->getVectorBlock(i);
-         rcp_dynamic_cast<const SpmdVectorBase<double> >(f)->getLocalData(Teuchos::ptrFromRef(data)); 
-   
+         rcp_dynamic_cast<const SpmdVectorBase<double> >(f)->getLocalData(Teuchos::ptrFromRef(data));
+
          TEST_EQUALITY(data[0],-3.0);     // case 0
          TEST_EQUALITY(data[2],-3.0/2.0); // case 1
          TEST_EQUALITY(data[5],0.0);     // case 2
@@ -1172,8 +1172,8 @@ TEUCHOS_UNIT_TEST(tBlockedEpetraLinearObjFactory, node_cell)
       {
          Teuchos::ArrayRCP<const double> data;
          RCP<const Thyra::VectorBase<double> > f = rcp_dynamic_cast<ProductVectorBase<double> >(b_sys->get_f())->getVectorBlock(i);
-         rcp_dynamic_cast<const SpmdVectorBase<double> >(f)->getLocalData(Teuchos::ptrFromRef(data)); 
-   
+         rcp_dynamic_cast<const SpmdVectorBase<double> >(f)->getLocalData(Teuchos::ptrFromRef(data));
+
          TEST_EQUALITY(data[0],0.0);
 
          for(int j=0;j<numBlocks;j++) {
@@ -1191,8 +1191,8 @@ TEUCHOS_UNIT_TEST(tBlockedEpetraLinearObjFactory, node_cell)
       {
          Teuchos::ArrayRCP<const double> data;
          RCP<const Thyra::VectorBase<double> > f = rcp_dynamic_cast<ProductVectorBase<double> >(b_sys->get_f())->getVectorBlock(i);
-         rcp_dynamic_cast<const SpmdVectorBase<double> >(f)->getLocalData(Teuchos::ptrFromRef(data)); 
-   
+         rcp_dynamic_cast<const SpmdVectorBase<double> >(f)->getLocalData(Teuchos::ptrFromRef(data));
+
          TEST_EQUALITY(data[3],-3.0);     // case 0
          TEST_EQUALITY(data[0],-3.0/2.0); // case 1
          TEST_EQUALITY(data[6],0.0);     // case 2
@@ -1202,10 +1202,10 @@ TEUCHOS_UNIT_TEST(tBlockedEpetraLinearObjFactory, node_cell)
 
             subA->ExtractMyRowView(3,numEntries,values,indices);
             for(int k=0;k<numEntries;k++) TEST_EQUALITY(values[k],-3.0);
-   
+
             subA->ExtractMyRowView(0,numEntries,values,indices);
             for(int k=0;k<numEntries;k++) TEST_EQUALITY(values[k],-3.0/2.0);
-   
+
             subA->ExtractMyRowView(6,numEntries,values,indices);
             for(int k=0;k<numEntries;k++) TEST_EQUALITY(values[k],0.0);
          }
@@ -1215,8 +1215,8 @@ TEUCHOS_UNIT_TEST(tBlockedEpetraLinearObjFactory, node_cell)
       {
          Teuchos::ArrayRCP<const double> data;
          RCP<const Thyra::VectorBase<double> > f = rcp_dynamic_cast<ProductVectorBase<double> >(b_sys->get_f())->getVectorBlock(i);
-         rcp_dynamic_cast<const SpmdVectorBase<double> >(f)->getLocalData(Teuchos::ptrFromRef(data)); 
-   
+         rcp_dynamic_cast<const SpmdVectorBase<double> >(f)->getLocalData(Teuchos::ptrFromRef(data));
+
          TEST_EQUALITY(data[0],-3.0);
 
          for(int j=0;j<numBlocks;j++) {
@@ -1227,7 +1227,7 @@ TEUCHOS_UNIT_TEST(tBlockedEpetraLinearObjFactory, node_cell)
          }
       }
    }
-   else 
+   else
       TEUCHOS_ASSERT(false);
 }
 
@@ -1255,7 +1255,7 @@ TEUCHOS_UNIT_TEST(tBlockedEpetraLinearObjFactory, exclusion)
    RCP<const panzer::BlockedDOFManager<int,int> > blkIndexer = buildBlockedIndexer(myRank,numProc,numBlocks);
 
    BlockedEpetraLinearObjFactory<panzer::Traits,int> factory(tComm,blkIndexer);
- 
+
    // exclude some pairs
    std::vector<std::pair<int,int> > exPairs;
    exPairs.push_back(std::make_pair(0,2));
@@ -1283,7 +1283,7 @@ TEUCHOS_UNIT_TEST(tBlockedEpetraLinearObjFactory, exclusion)
       TEST_EQUALITY(bContainer->get_f(),    Teuchos::null)
       TEST_ASSERT(bContainer->get_A()!=Teuchos::null);
 
-      RCP<Thyra::BlockedLinearOpBase<double> > blo 
+      RCP<Thyra::BlockedLinearOpBase<double> > blo
          = rcp_dynamic_cast<Thyra::BlockedLinearOpBase<double> >(bContainer->get_A());
 
       TEST_ASSERT(!blo->getNonconstBlock(0,0).is_null());

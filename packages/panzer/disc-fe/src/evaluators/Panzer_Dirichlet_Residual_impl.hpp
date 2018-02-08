@@ -53,20 +53,20 @@ namespace panzer {
 PHX_EVALUATOR_CTOR(DirichletResidual,p)
 {
   std::string residual_name = p.get<std::string>("Residual Name");
-  std::string dof_name = p.get<std::string>("DOF Name"); 
+  std::string dof_name = p.get<std::string>("DOF Name");
   std::string value_name = p.get<std::string>("Value Name");
 
-  Teuchos::RCP<PHX::DataLayout> data_layout = 
-    p.get< Teuchos::RCP<PHX::DataLayout> >("Data Layout"); 
+  Teuchos::RCP<PHX::DataLayout> data_layout =
+    p.get< Teuchos::RCP<PHX::DataLayout> >("Data Layout");
 
   residual = PHX::MDField<ScalarT>(residual_name, data_layout);
   dof = PHX::MDField<const ScalarT>(dof_name, data_layout);
   value = PHX::MDField<const ScalarT>(value_name, data_layout);
-  
+
   this->addEvaluatedField(residual);
   this->addDependentField(dof);
   this->addDependentField(value);
- 
+
   std::string n = "Dirichlet Residual Evaluator";
   this->setName(n);
 }
@@ -83,7 +83,7 @@ PHX_POST_REGISTRATION_SETUP(DirichletResidual, /* worksets */, fm)
 
 //**********************************************************************
 PHX_EVALUATE_FIELDS(DirichletResidual,workset)
-{ 
+{
   for (index_t i = 0; i < workset.num_cells; ++i)
     for (std::size_t j = 0; j < cell_data_size; ++j)
       residual(i,j)=dof(i,j)-value(i,j);

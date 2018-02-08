@@ -253,32 +253,32 @@ WorksetDetails::getIntegrationRule(const panzer::IntegrationDescriptor & descrip
 }
 
 const panzer::BasisValues2<double> &
-WorksetDetails::getBasisValues(const panzer::BasisDescriptor & basis_description, 
+WorksetDetails::getBasisValues(const panzer::BasisDescriptor & basis_description,
                                const panzer::PointDescriptor & point_description) const
 {
   const auto itr = _basis_map.find(basis_description.getKey());
   TEUCHOS_TEST_FOR_EXCEPT_MSG(itr == _basis_map.end(),
-                              "Workset::getBasisValues: Can't find basis \"" + basis_description.getType() + "\" " 
+                              "Workset::getBasisValues: Can't find basis \"" + basis_description.getType() + "\" "
                               "of order " + std::to_string(basis_description.getOrder()));
   const auto & point_map = itr->second;
   const auto itr2 = point_map.find(point_description.getKey());
   TEUCHOS_TEST_FOR_EXCEPT_MSG(itr2 == point_map.end(),
-                              "Workset::getBasisValues: Can't find point values \"" + point_description.getType() + "\""); 
+                              "Workset::getBasisValues: Can't find point values \"" + point_description.getType() + "\"");
   return *(itr2->second);
 }
 
 const panzer::BasisValues2<double> &
-WorksetDetails::getBasisValues(const panzer::BasisDescriptor & basis_description, 
+WorksetDetails::getBasisValues(const panzer::BasisDescriptor & basis_description,
                                const panzer::IntegrationDescriptor & integration_description) const
 {
   const auto itr = _basis_map.find(basis_description.getKey());
   TEUCHOS_TEST_FOR_EXCEPT_MSG(itr == _basis_map.end(),
-                              "Workset::getBasisValues: Can't find basis \"" + basis_description.getType() + "\" " 
+                              "Workset::getBasisValues: Can't find basis \"" + basis_description.getType() + "\" "
                               "of order " + std::to_string(basis_description.getOrder()));
   const auto & integration_map = itr->second;
   const auto itr2 = integration_map.find(integration_description.getKey());
   TEUCHOS_TEST_FOR_EXCEPT_MSG(itr2 == integration_map.end(),
-                              "Workset::getBasisValues: Can't find integration " + std::to_string(integration_description.getType()) + " " 
+                              "Workset::getBasisValues: Can't find integration " + std::to_string(integration_description.getType()) + " "
                               "of order " + std::to_string(integration_description.getOrder()));
   return *(itr2->second);
 }
@@ -288,7 +288,7 @@ WorksetDetails::getPointValues(const panzer::PointDescriptor & point_description
 {
   const auto itr = _point_map.find(point_description.getKey());
   TEUCHOS_TEST_FOR_EXCEPT_MSG(itr == _point_map.end(),
-                              "Workset::getPointValues: Can't find point values \"" + point_description.getType() + "\""); 
+                              "Workset::getPointValues: Can't find point values \"" + point_description.getType() + "\"");
   return *(itr->second);
 }
 
@@ -317,7 +317,7 @@ WorksetDetails::getBasis(const panzer::BasisDescriptor & description) const
       os << "    " << *ir << std::endl;
 
     std::vector<int>::const_iterator ir = w.ir_degrees->begin();
-    for (std::vector<Teuchos::RCP<panzer::IntegrationValues2<double> > >::const_iterator irv = w.int_rules.begin();  
+    for (std::vector<Teuchos::RCP<panzer::IntegrationValues2<double> > >::const_iterator irv = w.int_rules.begin();
          irv != w.int_rules.end(); ++irv,++ir) {
 
       os << "  IR Values (Degree=" << *ir << "):" << endl;
@@ -368,11 +368,11 @@ WorksetDetails::getBasis(const panzer::BasisDescriptor & description) const
       os << "    " << *b << std::endl;
 
     std::vector<std::string>::const_iterator b = w.basis_names->begin();
- 
+
     for (std::vector<Teuchos::RCP< panzer::BasisValues2<double> > >::const_iterator bv = w.bases.begin(); bv != w.bases.end(); ++bv,++b) {
 
       os << "  Basis Values (basis_name=" << *b << "):" << endl;
-      
+
 /*
       os << "    basis_ref:" << endl;
       os << (*bv)->basis_ref << endl;
@@ -402,7 +402,7 @@ WorksetDetails::getBasis(const panzer::BasisDescriptor & description) const
       os << "    basis_layout->name():" << (*bv)->basis_layout->name() << endl;
     }
 
-  
+
 
     return os;
   }

@@ -50,29 +50,29 @@ namespace panzer {
 //**********************************************************************
 PHX_EVALUATOR_CTOR(VectorToScalar,p)
 {
-  Teuchos::RCP<PHX::DataLayout> scalar_dl = 
+  Teuchos::RCP<PHX::DataLayout> scalar_dl =
     p.get< Teuchos::RCP<PHX::DataLayout> >("Data Layout Scalar");
 
-  Teuchos::RCP<PHX::DataLayout> vector_dl = 
+  Teuchos::RCP<PHX::DataLayout> vector_dl =
     p.get< Teuchos::RCP<PHX::DataLayout> >("Data Layout Vector");
 
-  const std::vector<std::string>& scalar_names = 
+  const std::vector<std::string>& scalar_names =
     *(p.get< Teuchos::RCP<const std::vector<std::string> > >("Scalar Names"));
 
   scalar_fields.resize(scalar_names.size());
   for (std::size_t i=0; i < scalar_names.size(); ++i)
-    scalar_fields[i] = 
+    scalar_fields[i] =
       PHX::MDField<ScalarT,Cell,Point>(scalar_names[i], scalar_dl);
 
-  vector_field = 
+  vector_field =
     PHX::MDField<const ScalarT,Cell,Point,Dim>(p.get<std::string>
 					 ("Vector Name"), vector_dl);
 
   this->addDependentField(vector_field);
-  
+
   for (std::size_t i=0; i < scalar_fields.size(); ++i)
     this->addEvaluatedField(scalar_fields[i]);
-  
+
   std::string n = "VectorToScalar: " + vector_field.fieldTag().name();
   this->setName(n);
 }
@@ -88,7 +88,7 @@ PHX_POST_REGISTRATION_SETUP(VectorToScalar, /* worksets */, fm)
 
 //**********************************************************************
 PHX_EVALUATE_FIELDS(VectorToScalar,workset)
-{ 
+{
 
   typedef typename PHX::MDField<ScalarT,Cell,Point>::size_type size_type;
 

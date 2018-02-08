@@ -65,7 +65,7 @@ TEUCHOS_UNIT_TEST(tEpetraGather, constructor)
    typedef panzer::Traits::Residual Residual;
    typedef panzer::Traits::Jacobian Jacobian;
 
-   Teuchos::RCP<shards::CellTopology> topo 
+   Teuchos::RCP<shards::CellTopology> topo
     = Teuchos::rcp(new shards::CellTopology(shards::getCellTopologyData< shards::Quadrilateral<4> >()));
 
    // auxiliary information needed to construct basis object
@@ -74,7 +74,7 @@ TEUCHOS_UNIT_TEST(tEpetraGather, constructor)
    panzer::CellData cellData(numCells,topo);
 
    // build DOF names
-   RCP<std::vector<std::string> > dofNames = rcp(new std::vector<std::string>); 
+   RCP<std::vector<std::string> > dofNames = rcp(new std::vector<std::string>);
    dofNames->push_back("ux"); // in practice these probably would not be gathered together!
    dofNames->push_back("p");
 
@@ -93,7 +93,7 @@ TEUCHOS_UNIT_TEST(tEpetraGather, constructor)
 
       const std::vector<RCP<PHX::FieldTag> > & fields = gatherResidual.evaluatedFields();
       TEST_EQUALITY(fields.size(),2);
- 
+
       TEST_EQUALITY(fields[0]->name(),"ux");
       TEST_EQUALITY(fields[1]->name(),"p");
 
@@ -110,7 +110,7 @@ TEUCHOS_UNIT_TEST(tEpetraGather, constructor)
 
       const std::vector<RCP<PHX::FieldTag> > & fields = gatherJacobian.evaluatedFields();
       TEST_EQUALITY(fields.size(),2);
- 
+
       TEST_EQUALITY(fields[0]->name(),"ux");
       TEST_EQUALITY(fields[1]->name(),"p");
 

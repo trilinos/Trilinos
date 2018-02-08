@@ -47,6 +47,6 @@
 
 namespace panzer {
 
-template class MassMatrixModelEvaluator<panzer::Traits::RealType>; 
+template class MassMatrixModelEvaluator<panzer::Traits::RealType>;
 
 }

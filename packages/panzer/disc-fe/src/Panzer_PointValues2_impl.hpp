@@ -60,7 +60,7 @@ namespace panzer {
     MDFieldArrayFactory af(prefix_, ddims_, alloc_arrays_);
 
     point_rule = pr;
-    
+
     int num_nodes = point_rule->topology->getNodeCount();
     int num_cells = point_rule->workset_size;
     int num_space_dim = point_rule->spatial_dimension;
@@ -74,11 +74,11 @@ namespace panzer {
     coords_ref = af.template buildStaticArray<Scalar,IP,Dim>("coords_ref",num_points, num_space_dim);
 
     node_coordinates = af.template buildStaticArray<Scalar,Cell,NODE,Dim>("node_coordinates",num_cells, num_nodes, num_space_dim);
-    
+
     jac = af.template buildStaticArray<Scalar,Cell,IP,Dim,Dim>("jac",num_cells, num_points, num_space_dim,num_space_dim);
     jac_inv = af.template buildStaticArray<Scalar,Cell,IP,Dim,Dim>("jac_inv",num_cells, num_points, num_space_dim,num_space_dim);
     jac_det = af.template buildStaticArray<Scalar,Cell,IP>("jac_det",num_cells, num_points);
-    
+
     point_coords = af.template buildStaticArray<Scalar,Cell,IP,Dim>("point_coords",num_cells, num_points, num_space_dim);
   }
 
@@ -89,13 +89,13 @@ namespace panzer {
     if (point_rule->isSide()) {
        TEUCHOS_ASSERT(false); // not implemented!!!!
     }
-    
+
     Intrepid2::CellTools<PHX::exec_space> cell_tools;
-    
+
     cell_tools.setJacobian(jac.get_view(), coords_ref.get_view(), node_coordinates.get_view(), *(point_rule->topology));
     cell_tools.setJacobianInv(jac_inv.get_view(), jac.get_view());
     cell_tools.setJacobianDet(jac_det.get_view(), jac.get_view());
-    
+
     // IP coordinates
     cell_tools.mapToPhysicalFrame(point_coords.get_view(), coords_ref.get_view(), node_coordinates.get_view(), *(point_rule->topology));
   }
@@ -110,7 +110,7 @@ namespace panzer {
       size_type num_cells = in_node_coords.dimension(0);
       size_type num_nodes = in_node_coords.dimension(1);
       size_type num_dims = in_node_coords.dimension(2);
-     
+
       for (size_type cell = 0; cell < num_cells;  ++cell)
 	for (size_type node = 0; node < num_nodes; ++node)
 	  for (size_type dim = 0; dim < num_dims; ++dim)
@@ -127,7 +127,7 @@ namespace panzer {
     {
       size_type num_points = in_point_coords.dimension(0);
       size_type num_dims = in_point_coords.dimension(1);
-     
+
       for (size_type point = 0; point < num_points; ++point)
         for (size_type dim = 0; dim < num_dims; ++dim)
           coords_ref(point,dim) = in_point_coords(point,dim);

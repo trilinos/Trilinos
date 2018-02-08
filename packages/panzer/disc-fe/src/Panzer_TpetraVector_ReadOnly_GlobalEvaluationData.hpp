@@ -78,7 +78,7 @@ public:
    /** Initialize this object with some Tpetra communication objects. This method
      * must be called before an object of this type can be used.
      *
-     * \param[in] importer Importer for doing communication from the owned 
+     * \param[in] importer Importer for doing communication from the owned
      *                     to the ghosted vector.
      * \param[in] ghostedMap Map describing the ghosted vector.
      * \param[in] ownedMap Map describing the ghosted vector.
@@ -100,7 +100,7 @@ public:
    /** Initialize this object with some Tpetra communication objects. This method
      * must be called before an object of this type can be used.
      *
-     * \param[in] importer Importer for doing communication from the owned 
+     * \param[in] importer Importer for doing communication from the owned
      *                     to the ghosted vector.
      * \param[in] ghostedMap Map describing the ghosted vector.
      * \param[in] ownedMap Map describing the ghosted vector.
@@ -109,16 +109,16 @@ public:
                    const Teuchos::RCP<const MapType>&    ghostedMap,
                    const Teuchos::RCP<const MapType>&    ownedMap);
 
-   /** For this class, this method does the halo exchange for the 
+   /** For this class, this method does the halo exchange for the
      * vector.
      */
    virtual void globalToGhost(int mem);
 
-   //! Clear out the ghosted vector 
-   virtual void initializeData(); 
-  
+   //! Clear out the ghosted vector
+   virtual void initializeData();
+
    //! For this class this method does nothing.
-   virtual void ghostToGlobal(int /* mem */) {} 
+   virtual void ghostToGlobal(int /* mem */) {}
 
    //! Nothing to do (its read only)
    virtual bool requiresDirichletAdjustment() const { return false; }

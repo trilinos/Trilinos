@@ -52,11 +52,11 @@
 #include "Teuchos_FancyOStream.hpp"
 
 template<typename EvalT,typename TRAITS>
-std::string 
+std::string
 panzer::GatherIntegrationCoordinates<EvalT, TRAITS>::
 fieldName(int degree)
 {
-   std::stringstream ss; 
+   std::stringstream ss;
    ss << "IR_" << degree << " IntegrationCoordinates";
    return ss.str();
 }
@@ -64,7 +64,7 @@ fieldName(int degree)
 template<typename EvalT,typename TRAITS>
 panzer::GatherIntegrationCoordinates<EvalT, TRAITS>::
 GatherIntegrationCoordinates(const panzer::IntegrationRule & quad)
-{ 
+{
   quadDegree_ = quad.cubature_degree;
 
   quadCoordinates_ = PHX::MDField<ScalarT,Cell,Point,Dim>(fieldName(quadDegree_),quad.dl_vector);
@@ -77,7 +77,7 @@ GatherIntegrationCoordinates(const panzer::IntegrationRule & quad)
 // **********************************************************************
 template<typename EvalT,typename TRAITS>
 void panzer::GatherIntegrationCoordinates<EvalT, TRAITS>::
-postRegistrationSetup(typename TRAITS::SetupData sd, 
+postRegistrationSetup(typename TRAITS::SetupData sd,
 		      PHX::FieldManager<TRAITS>& fm)
 {
   this->utils.setFieldData(quadCoordinates_,fm);
@@ -86,11 +86,11 @@ postRegistrationSetup(typename TRAITS::SetupData sd,
 }
 
 // **********************************************************************
-template<typename EvalT,typename TRAITS> 
+template<typename EvalT,typename TRAITS>
 void panzer::GatherIntegrationCoordinates<EvalT, TRAITS>::
 evaluateFields(typename TRAITS::EvalData workset)
-{ 
-  // const Kokkos::DynRankView<double,PHX::Device> & quadCoords = this->wda(workset).int_rules[quadIndex_]->ip_coordinates;  
+{
+  // const Kokkos::DynRankView<double,PHX::Device> & quadCoords = this->wda(workset).int_rules[quadIndex_]->ip_coordinates;
   const IntegrationValues2<double> & iv = *this->wda(workset).int_rules[quadIndex_];
 
   // just copy the array

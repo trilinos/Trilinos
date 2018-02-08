@@ -63,7 +63,7 @@ class MyClosureModelFactory
   public panzer::ClosureModelFactory<EvalT>
 {
   public:
-    
+
     /**
      *  \brief Build the closure models.
      *

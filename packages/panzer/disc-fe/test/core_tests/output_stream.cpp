@@ -57,9 +57,9 @@ namespace panzer {
 
     void printValues() const
     {
-      
+
       out() << "Test\n";
-      
+
       if (doOutput(VERB_HIGH))
 	out() << "Test2\n";
 
@@ -70,7 +70,7 @@ namespace panzer {
     }
 
   };
-  
+
 
   TEUCHOS_UNIT_TEST(output, default_impl)
   {
@@ -80,11 +80,11 @@ namespace panzer {
 
     std::ostringstream os;
 
-    RCP<FancyOStream> fos = 
+    RCP<FancyOStream> fos =
       rcp(new FancyOStream(Teuchos::rcpFromRef(os)));
 
     TestObject t;
-    
+
     t.setOStream(fos);
     t.setVerbosityLevel(VERB_MEDIUM);
 

@@ -61,17 +61,17 @@ namespace panzer {
 
   public:
 
-    TestObject2(const Teuchos::RCP<panzer::GlobalData>& gd) : 
+    TestObject2(const Teuchos::RCP<panzer::GlobalData>& gd) :
       panzer::GlobalDataAcceptorDefaultImpl(gd)
     {
-      
+
     }
 
   };
-  
+
   TEUCHOS_UNIT_TEST(global_data, builder)
   {
-    
+
     Teuchos::RCP<panzer::GlobalData> gd;
 
     TEST_ASSERT(is_null(gd));
@@ -95,9 +95,9 @@ namespace panzer {
 
   TEUCHOS_UNIT_TEST(global_data, accessor_default_impl)
   {
-    
+
     Teuchos::RCP<panzer::GlobalData> gd = panzer::createGlobalData();
-    
+
     TestObject t;
     t.setGlobalData(gd);
 

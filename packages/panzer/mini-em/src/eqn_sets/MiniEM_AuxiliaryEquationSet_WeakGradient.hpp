@@ -14,7 +14,7 @@ namespace mini_em {
   template <typename EvalT>
   class AuxiliaryEquationSet_WeakGradient : public panzer::EquationSet_DefaultImpl<EvalT> {
 
-  public:    
+  public:
 
     AuxiliaryEquationSet_WeakGradient(const Teuchos::RCP<panzer::GlobalEvaluationDataContainer> & gedc,
 					  const Teuchos::RCP<Teuchos::ParameterList>& params,
@@ -22,13 +22,13 @@ namespace mini_em {
 					  const panzer::CellData& cell_data,
 					  const Teuchos::RCP<panzer::GlobalData>& global_data,
 					  const bool build_transient_support);
-    
+
     void buildAndRegisterEquationSetEvaluators(PHX::FieldManager<panzer::Traits>& fm,
-					       const panzer::FieldLibrary& /* field_library */, 
+					       const panzer::FieldLibrary& /* field_library */,
                                                const Teuchos::ParameterList& /* user_data */) const;
 
     void buildAndRegisterScatterEvaluators(PHX::FieldManager<panzer::Traits>& fm,
-					   const panzer::FieldLibrary& field_library, 
+					   const panzer::FieldLibrary& field_library,
                                            const panzer::LinearObjFactory<panzer::Traits> & lof,
                                            const Teuchos::ParameterList& user_data) const;
 
@@ -43,7 +43,7 @@ namespace mini_em {
 template < >
 void AuxiliaryEquationSet_WeakGradient<panzer::Traits::Jacobian>::
 buildAndRegisterScatterEvaluators(PHX::FieldManager<panzer::Traits>& fm,
-				  const panzer::FieldLibrary& field_library, 
+				  const panzer::FieldLibrary& field_library,
                                   const panzer::LinearObjFactory<panzer::Traits> & lof,
                                   const Teuchos::ParameterList& user_data) const;
 

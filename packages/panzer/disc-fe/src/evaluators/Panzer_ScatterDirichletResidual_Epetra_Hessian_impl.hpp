@@ -48,7 +48,7 @@
 
 #include "Panzer_PtrFromStlVector.hpp"
 
-// the includes for this file come in as a result of the includes in the main 
+// the includes for this file come in as a result of the includes in the main
 // Epetra scatter dirichlet residual file
 
 namespace panzer {
@@ -60,29 +60,29 @@ template<typename TRAITS,typename LO,typename GO>
 ScatterDirichletResidual_Epetra<panzer::Traits::Hessian,TRAITS,LO,GO>::
 ScatterDirichletResidual_Epetra(const Teuchos::RCP<const UniqueGlobalIndexer<LO,GO> > & indexer,
                                 const Teuchos::RCP<const panzer::UniqueGlobalIndexer<LO,GO> > & cIndexer,
-                                const Teuchos::ParameterList& p) 
+                                const Teuchos::ParameterList& p)
    : globalIndexer_(indexer)
-   , colGlobalIndexer_(cIndexer) 
+   , colGlobalIndexer_(cIndexer)
    , globalDataKey_("Residual Scatter Container")
    , preserveDiagonal_(false)
 {
   std::string scatterName = p.get<std::string>("Scatter Name");
-  scatterHolder_ = 
+  scatterHolder_ =
     Teuchos::rcp(new PHX::Tag<ScalarT>(scatterName,Teuchos::rcp(new PHX::MDALayout<Dummy>(0))));
 
   // get names to be evaluated
-  const std::vector<std::string>& names = 
+  const std::vector<std::string>& names =
     *(p.get< Teuchos::RCP< std::vector<std::string> > >("Dependent Names"));
 
   // grab map from evaluated names to field names
   fieldMap_ = p.get< Teuchos::RCP< std::map<std::string,std::string> > >("Dependent Map");
 
-  Teuchos::RCP<PHX::DataLayout> dl = 
+  Teuchos::RCP<PHX::DataLayout> dl =
     p.get< Teuchos::RCP<panzer::PureBasis> >("Basis")->functional;
 
   side_subcell_dim_ = p.get<int>("Side Subcell Dimension");
   local_side_id_ = p.get<int>("Local Side ID");
-  
+
   // build the vector of fields that this is dependent on
   scatterFields_.resize(names.size());
   for (std::size_t eq = 0; eq < names.size(); ++eq) {
@@ -112,12 +112,12 @@ ScatterDirichletResidual_Epetra(const Teuchos::RCP<const UniqueGlobalIndexer<LO,
 
   this->setName(scatterName+" Scatter Residual (Hessian)");
 }
-  
+
 template<typename TRAITS,typename LO,typename GO>
 void
 ScatterDirichletResidual_Epetra<panzer::Traits::Hessian,TRAITS,LO,GO>::
 postRegistrationSetup(typename TRAITS::SetupData /* d */,
-                      PHX::FieldManager<TRAITS>& fm) 
+                      PHX::FieldManager<TRAITS>& fm)
 {
   fieldIds_.resize(scatterFields_.size());
 
@@ -141,11 +141,11 @@ postRegistrationSetup(typename TRAITS::SetupData /* d */,
 template<typename TRAITS,typename LO,typename GO>
 void
 ScatterDirichletResidual_Epetra<panzer::Traits::Hessian,TRAITS,LO,GO>::
-preEvaluate(typename TRAITS::PreEvalData d) 
+preEvaluate(typename TRAITS::PreEvalData d)
 {
   // extract linear object container
   epetraContainer_ = Teuchos::rcp_dynamic_cast<EpetraLinearObjContainer>(d.gedc->getDataObject(globalDataKey_));
- 
+
   if(epetraContainer_==Teuchos::null) {
     // extract linear object container
     Teuchos::RCP<LinearObjContainer> loc = Teuchos::rcp_dynamic_cast<LOCPair_GlobalEvaluationData>(d.gedc->getDataObject(globalDataKey_),true)->getGhostedLOC();
@@ -162,11 +162,11 @@ preEvaluate(typename TRAITS::PreEvalData d)
     TEUCHOS_ASSERT(!Teuchos::is_null(dirichletCounter_));
   }
 }
-  
+
 template<typename TRAITS,typename LO,typename GO>
 void
 ScatterDirichletResidual_Epetra<panzer::Traits::Hessian,TRAITS,LO,GO>::
-evaluateFields(typename TRAITS::EvalData workset) 
+evaluateFields(typename TRAITS::EvalData workset)
 {
   using panzer::ptrFromStlVector;
   using std::vector;
@@ -178,7 +178,7 @@ evaluateFields(typename TRAITS::EvalData workset)
    std::vector<double> jacRow;
 
    bool useColumnIndexer = colGlobalIndexer_!=Teuchos::null;
- 
+
    // for convenience pull out some objects from workset
    std::string blockId = this->wda(workset).block_id;
    const std::vector<std::size_t> & localCellIds = this->wda(workset).cell_local_ids;
@@ -195,22 +195,22 @@ evaluateFields(typename TRAITS::EvalData workset)
    for(std::size_t worksetCellIndex=0;worksetCellIndex<localCellIds.size();++worksetCellIndex) {
       std::size_t cellLocalId = localCellIds[worksetCellIndex];
 
-      rLIDs = globalIndexer_->getElementLIDs(cellLocalId); 
+      rLIDs = globalIndexer_->getElementLIDs(cellLocalId);
       if(useColumnIndexer)
-        cLIDs = colGlobalIndexer_->getElementLIDs(cellLocalId); 
+        cLIDs = colGlobalIndexer_->getElementLIDs(cellLocalId);
       else
         cLIDs = rLIDs;
 
       // loop over each field to be scattered
       for(std::size_t fieldIndex = 0; fieldIndex < scatterFields_.size(); fieldIndex++) {
          int fieldNum = fieldIds_[fieldIndex];
-   
+
          // this call "should" get the right ordering according to the Intrepid2 basis
-         const std::pair<std::vector<int>,std::vector<int> > & indicePair 
+         const std::pair<std::vector<int>,std::vector<int> > & indicePair
                = globalIndexer_->getGIDFieldOffsets_closure(blockId,fieldNum, side_subcell_dim_, local_side_id_);
          const std::vector<int> & elmtOffset = indicePair.first;
          const std::vector<int> & basisIdMap = indicePair.second;
-   
+
          // loop over basis functions
          for(std::size_t basis=0;basis<elmtOffset.size();basis++) {
             int offset = elmtOffset[basis];
@@ -241,7 +241,7 @@ evaluateFields(typename TRAITS::EvalData workset)
                     rowValues[i] = 0.0;
                }
             }
- 
+
             // int gid = GIDs[offset];
             const ScalarT scatterField = (scatterFields_[fieldIndex])(worksetCellIndex,basisId);
 
@@ -254,17 +254,17 @@ evaluateFields(typename TRAITS::EvalData workset)
             jacRow.resize(scatterField.size());
             for(int sensIndex=0;sensIndex<scatterField.size();++sensIndex)
               jacRow[sensIndex] = scatterField.fastAccessDx(sensIndex).fastAccessDx(0);
-    
+
             if(!preserveDiagonal_) {
-              int err = Jac->ReplaceMyValues(row, cLIDs.size(), 
+              int err = Jac->ReplaceMyValues(row, cLIDs.size(),
                 ptrFromStlVector(jacRow), &cLIDs[0]);
-              TEUCHOS_ASSERT(err==0); 
+              TEUCHOS_ASSERT(err==0);
             }
          }
       }
    }
 }
-  
+
 }
 
 // **************************************************************

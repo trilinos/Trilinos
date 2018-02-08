@@ -64,7 +64,7 @@ FieldSpy<EvalT,Traits>::FieldSpy(const std::string & name,
 
   source = PHX::MDField<const ScalarT,Cell,Point>(name, data_layout);
   this->addDependentField(source);
-  
+
   std::string n = "Field Spy";
   this->setName(n);
 }
@@ -81,7 +81,7 @@ void FieldSpy<EvalT,Traits>::postRegistrationSetup(typename Traits::SetupData /*
 //**********************************************************************
 template <typename EvalT,typename Traits>
 void FieldSpy<EvalT,Traits>::evaluateFields(typename Traits::EvalData workset)
-{ 
+{
   std::cout << "SPY: Name = \"" << source.fieldTag().identifier() << "\" at t = " << workset.time << "\n";
   for (index_t cell=0;cell<workset.num_cells;++cell) {
     std::cout << "SPY: ";

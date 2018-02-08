@@ -55,24 +55,24 @@ namespace panzer {
 // forward declaration
 class PureBasis;
 
-/** This class parses the input parameters for the gather solution 
-  * evaluators. Its goal is to unify the input for all of those 
-  * evaluators. 
+/** This class parses the input parameters for the gather solution
+  * evaluators. Its goal is to unify the input for all of those
+  * evaluators.
   */
 class GatherSolution_Input : Teuchos::ParameterListAcceptorDefaultBase {
 public:
   GatherSolution_Input();
 
-  /** Set the parameter list, this is the complete state. This will modify 
+  /** Set the parameter list, this is the complete state. This will modify
     * the list.
     */
   void setParameterList(const Teuchos::ParameterList & pl);
 
-  /** Set the parameter list, this is the complete state. This will modify 
+  /** Set the parameter list, this is the complete state. This will modify
     * the list.
     */
   void setParameterList(const Teuchos::RCP<Teuchos::ParameterList> & pl);
-  
+
   //! Get valid parameters
   Teuchos::RCP<const Teuchos::ParameterList> getValidParameters() const;
 
@@ -91,17 +91,17 @@ public:
 
   //! Gather a time derivative vector?  (all types)
   bool useTimeDerivativeSolutionVector() const { return useTimeDerivSolnVec_; }
-  
+
   //! Name of the global evaluation data container to use for the source vector (all types)
   std::string getGlobalDataKey() const { return globalDataKey_; }
-  
+
   // tangent
-  
+
   //! Get the name of the tangent fields (tangent only)
   const std::vector<std::vector<std::string> > & getTangentNames() const { return tangentNames_; }
 
   // jacobian
-  
+
   //! The name of the sensitivities. Enables sensitivities at "preEvaluate" time (Jacobian and Hessian)
   std::string getSensitivitiesName() const { return sensName_; }
 
@@ -112,7 +112,7 @@ public:
   bool firstSensitivitiesAvailable() { return firstSensAvail_; }
 
   // hessian
-  
+
   //! Are second derivative sensitivies enabled or disabled (Hessian only)
   bool secondSensitivitiesAvailable() { return secondSensAvail_; }
 
@@ -123,14 +123,14 @@ private:
   GatherSolution_Input(const GatherSolution_Input &); // hide me
 
   // residual
-  std::vector<std::string> dofNames_;   
-  std::vector<std::string> indexerNames_;   
+  std::vector<std::string> dofNames_;
+  std::vector<std::string> indexerNames_;
   Teuchos::RCP<const PureBasis> basis_;
   bool useTimeDerivSolnVec_;
   std::string globalDataKey_;
-  
+
   // tangent
-  std::vector<std::vector<std::string> > tangentNames_;   
+  std::vector<std::vector<std::string> > tangentNames_;
 
   // jacobian
   std::string sensName_;

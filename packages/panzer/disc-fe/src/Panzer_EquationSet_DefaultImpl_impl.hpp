@@ -74,7 +74,7 @@ EquationSet_DefaultImpl(const Teuchos::RCP<Teuchos::ParameterList>& params,
   m_default_integration_order(default_integration_order),
   m_cell_data(cell_data),
   m_build_transient_support(build_transient_support)
-{ 
+{
   TEUCHOS_ASSERT(nonnull(m_input_params));
 
   m_eval_plist = Teuchos::rcp(new Teuchos::ParameterList);
@@ -114,7 +114,7 @@ setupDOFs()
     // Create the unique integration rule map and complete descriptor objects
     TEUCHOS_ASSERT(nonnull(itr->second.intRule));
     m_int_rules[itr->second.intRule->order()] = itr->second.intRule;
-    
+
   }
 
   // Setup the basis to dof mapping
@@ -369,10 +369,10 @@ buildAndRegisterDOFProjectionsToIPEvaluators(PHX::FieldManager<panzer::Traits>& 
   using Teuchos::rcp;
 
   Teuchos::RCP<const panzer::UniqueGlobalIndexerBase> globalIndexer;
-  if(lof!=Teuchos::null) 
+  if(lof!=Teuchos::null)
     globalIndexer = lof->getRangeGlobalIndexer();
-  
-  // DOFs: Scalar value @ basis --> Scalar value @ IP 
+
+  // DOFs: Scalar value @ basis --> Scalar value @ IP
   for (DescriptorIterator dof_iter = m_provided_dofs_desc.begin(); dof_iter != m_provided_dofs_desc.end(); ++dof_iter) {
 
     ParameterList p;
@@ -383,15 +383,15 @@ buildAndRegisterDOFProjectionsToIPEvaluators(PHX::FieldManager<panzer::Traits>& 
     if(globalIndexer!=Teuchos::null) {
       // build the offsets for this field
       int fieldNum = globalIndexer->getFieldNum(dof_iter->first);
-      RCP<const std::vector<int> > offsets = 
+      RCP<const std::vector<int> > offsets =
           rcp(new std::vector<int>(globalIndexer->getGIDFieldOffsets(m_block_id,fieldNum)));
       p.set("Jacobian Offsets Vector", offsets);
     }
     // else default to the slow DOF call
-    
-    RCP< PHX::Evaluator<panzer::Traits> > op = 
+
+    RCP< PHX::Evaluator<panzer::Traits> > op =
       rcp(new panzer::DOF<EvalT,panzer::Traits>(p));
-    
+
     this->template registerEvaluator<EvalT>(fm, op);
   }
 
@@ -399,11 +399,11 @@ buildAndRegisterDOFProjectionsToIPEvaluators(PHX::FieldManager<panzer::Traits>& 
 
   for(typename std::map<std::string,DOFDescriptor>::const_iterator itr=m_provided_dofs_desc.begin();
       itr!=m_provided_dofs_desc.end();++itr) {
-    
+
     if(itr->second.basis->supportsGrad()) {
-      
+
       // is gradient required for this variable
-      if(!itr->second.grad.first) 
+      if(!itr->second.grad.first)
         continue; // its not required, quit the loop
 
       const std::string dof_name =      itr->first;
@@ -412,10 +412,10 @@ buildAndRegisterDOFProjectionsToIPEvaluators(PHX::FieldManager<panzer::Traits>& 
       ParameterList p;
       p.set("Name", dof_name);
       p.set("Gradient Name", dof_grad_name);
-      p.set("Basis", fl.lookupLayout(dof_name)); 
+      p.set("Basis", fl.lookupLayout(dof_name));
       p.set("IR", ir);
-      
-      RCP< PHX::Evaluator<panzer::Traits> > op = 
+
+      RCP< PHX::Evaluator<panzer::Traits> > op =
         rcp(new panzer::DOFGradient<EvalT,panzer::Traits>(p));
 
       this->template registerEvaluator<EvalT>(fm, op);
@@ -426,11 +426,11 @@ buildAndRegisterDOFProjectionsToIPEvaluators(PHX::FieldManager<panzer::Traits>& 
 
   for(typename std::map<std::string,DOFDescriptor>::const_iterator itr=m_provided_dofs_desc.begin();
       itr!=m_provided_dofs_desc.end();++itr) {
-    
+
     if(itr->second.basis->supportsCurl()) {
 
       // is curl required for this variable
-      if(!itr->second.curl.first) 
+      if(!itr->second.curl.first)
         continue; // its not required, quit the loop
 
       const std::string dof_name =      itr->first;
@@ -439,21 +439,21 @@ buildAndRegisterDOFProjectionsToIPEvaluators(PHX::FieldManager<panzer::Traits>& 
       ParameterList p;
       p.set("Name", dof_name);
       p.set("Curl Name", dof_curl_name);
-      p.set("Basis", fl.lookupLayout(dof_name)); 
+      p.set("Basis", fl.lookupLayout(dof_name));
       p.set("IR", ir);
 
       // this will help accelerate the DOFCurl evaluator when Jacobians are needed
       if(globalIndexer!=Teuchos::null) {
         // build the offsets for this field
         int fieldNum = globalIndexer->getFieldNum(dof_name);
-        RCP<const std::vector<int> > offsets = 
+        RCP<const std::vector<int> > offsets =
             rcp(new std::vector<int>(globalIndexer->getGIDFieldOffsets(m_block_id,fieldNum)));
         p.set("Jacobian Offsets Vector", offsets);
       }
       // else default to the slow DOF call
-    
-      
-      RCP< PHX::Evaluator<panzer::Traits> > op = 
+
+
+      RCP< PHX::Evaluator<panzer::Traits> > op =
         rcp(new panzer::DOFCurl<EvalT,panzer::Traits>(p));
 
       this->template registerEvaluator<EvalT>(fm, op);
@@ -469,7 +469,7 @@ buildAndRegisterDOFProjectionsToIPEvaluators(PHX::FieldManager<panzer::Traits>& 
     if(itr->second.basis->supportsDiv()) {
 
       // is div required for this variable
-      if(!itr->second.div.first) 
+      if(!itr->second.div.first)
         continue; // its not required, quit the loop
 
       const std::string dof_name =      itr->first;
@@ -478,45 +478,45 @@ buildAndRegisterDOFProjectionsToIPEvaluators(PHX::FieldManager<panzer::Traits>& 
       ParameterList p;
       p.set("Name", dof_name);
       p.set("Div Name", dof_div_name);
-      p.set("Basis", fl.lookupLayout(dof_name)); 
+      p.set("Basis", fl.lookupLayout(dof_name));
       p.set("IR", ir);
 
       // this will help accelerate the DOFDiv evaluator when Jacobians are needed
       if(globalIndexer!=Teuchos::null) {
         // build the offsets for this field
         int fieldNum = globalIndexer->getFieldNum(dof_name);
-        RCP<const std::vector<int> > offsets = 
+        RCP<const std::vector<int> > offsets =
             rcp(new std::vector<int>(globalIndexer->getGIDFieldOffsets(m_block_id,fieldNum)));
         p.set("Jacobian Offsets Vector", offsets);
       }
       // else default to the slow DOF call
-    
-      
-      RCP< PHX::Evaluator<panzer::Traits> > op = 
+
+
+      RCP< PHX::Evaluator<panzer::Traits> > op =
         rcp(new panzer::DOFDiv<EvalT,panzer::Traits>(p));
 
       this->template registerEvaluator<EvalT>(fm, op);
     }
   }
 
-  // Time derivative of DOFs: Scalar value @ basis --> Scalar value @ IP 
+  // Time derivative of DOFs: Scalar value @ basis --> Scalar value @ IP
   for(typename std::map<std::string,DOFDescriptor>::const_iterator itr=m_provided_dofs_desc.begin();
       itr!=m_provided_dofs_desc.end();++itr) {
     // is td required for this variable
-    if(!itr->second.timeDerivative.first) 
+    if(!itr->second.timeDerivative.first)
       continue; // its not required, quit the loop
 
     const std::string td_name = itr->second.timeDerivative.second;
 
     ParameterList p;
     p.set("Name", td_name);
-    p.set("Basis", fl.lookupLayout(itr->first)); 
+    p.set("Basis", fl.lookupLayout(itr->first));
     p.set("IR", ir);
 
     if(globalIndexer!=Teuchos::null) {
       // build the offsets for this field
       int fieldNum = globalIndexer->getFieldNum(itr->first);
-      RCP<const std::vector<int> > offsets = 
+      RCP<const std::vector<int> > offsets =
           rcp(new std::vector<int>(globalIndexer->getGIDFieldOffsets(m_block_id,fieldNum)));
       p.set("Jacobian Offsets Vector", offsets);
     }
@@ -526,10 +526,10 @@ buildAndRegisterDOFProjectionsToIPEvaluators(PHX::FieldManager<panzer::Traits>& 
     // required for the basis
     if(itr->second.basis->requiresOrientations())
       p.set("Orientation Field Name", itr->first+" Orientation");
-    
-    RCP< PHX::Evaluator<panzer::Traits> > op = 
+
+    RCP< PHX::Evaluator<panzer::Traits> > op =
       rcp(new panzer::DOF<EvalT,panzer::Traits>(p));
-    
+
     this->template registerEvaluator<EvalT>(fm, op);
   }
 
@@ -546,24 +546,24 @@ buildAndRegisterScatterEvaluators(PHX::FieldManager<panzer::Traits>& fm,
   using Teuchos::ParameterList;
   using Teuchos::RCP;
   using Teuchos::rcp;
-  
+
   // this turns off the scatter contribution, and does
   // only the gather
   bool ignoreScatter = false;
-  if(user_data.isParameter("Ignore Scatter")) 
+  if(user_data.isParameter("Ignore Scatter"))
     ignoreScatter = user_data.get<bool>("Ignore Scatter");
-  
+
   if(!ignoreScatter) {
-    
+
     for(typename std::map<std::string,DOFDescriptor>::const_iterator itr=m_provided_dofs_desc.begin();
         itr!=m_provided_dofs_desc.end();++itr) {
-      
+
       RCP<std::map<std::string,std::string> > names_map = rcp(new std::map<std::string,std::string>);
       RCP< std::vector<std::string> > residual_names = rcp(new std::vector<std::string>);
-      
+
       // sanity check to make sure a residual name was registered for each provided variable
       TEUCHOS_ASSERT(itr->second.residualName.first);
-      
+
       names_map->insert(std::make_pair(itr->second.residualName.second,itr->first));
       residual_names->push_back(itr->second.residualName.second);
 
@@ -573,19 +573,19 @@ buildAndRegisterScatterEvaluators(PHX::FieldManager<panzer::Traits>& fm,
         p.set("Basis", itr->second.basis.getConst());
         p.set("Dependent Names", residual_names);
         p.set("Dependent Map", names_map);
-        
+
         RCP< PHX::Evaluator<panzer::Traits> > op = lof.buildScatter<EvalT>(p);
-        
+
         this->template registerEvaluator<EvalT>(fm, op);
       }
-      
+
       // Require variables
       {
-        PHX::Tag<typename EvalT::ScalarT> tag(itr->second.scatterName, 
+        PHX::Tag<typename EvalT::ScalarT> tag(itr->second.scatterName,
                                               Teuchos::rcp(new PHX::MDALayout<Dummy>(0)));
         fm.template requireField<EvalT>(tag);
       }
-    
+
     }
 
   }
@@ -605,7 +605,7 @@ buildAndRegisterClosureModelEvaluators(PHX::FieldManager<panzer::Traits>& fm,
 {
   for (std::vector<std::string>::const_iterator model_name = m_closure_model_ids.begin();
        model_name != m_closure_model_ids.end(); ++model_name) {
-    
+
     this->buildAndRegisterClosureModelEvaluators(fm,fl,ir,factory,*model_name,models,user_data);
   }
 }
@@ -622,7 +622,7 @@ buildAndRegisterClosureModelEvaluators(PHX::FieldManager<panzer::Traits>& fm,
                                        const Teuchos::ParameterList& models,
                                        const Teuchos::ParameterList& user_data) const
 {
-  Teuchos::RCP< std::vector< Teuchos::RCP<PHX::Evaluator<panzer::Traits> > > > evaluators = 
+  Teuchos::RCP< std::vector< Teuchos::RCP<PHX::Evaluator<panzer::Traits> > > > evaluators =
     factory.getAsObject<EvalT>()->buildClosureModels(model_name,
                                                      models,
                                                      fl,
@@ -631,7 +631,7 @@ buildAndRegisterClosureModelEvaluators(PHX::FieldManager<panzer::Traits>& fm,
                                                      user_data,
                                                      this->getGlobalData(),
                                                      fm);
-  
+
   for (std::vector< Teuchos::RCP<PHX::Evaluator<panzer::Traits> > >::size_type i=0; i < evaluators->size(); ++i)
     this->template registerEvaluator<EvalT>(fm, (*evaluators)[i]);
 }
@@ -657,7 +657,7 @@ buildAndRegisterInitialConditionEvaluators(PHX::FieldManager<panzer::Traits>& fm
 
   for(typename std::map<std::string,DOFDescriptor>::const_iterator itr=m_provided_dofs_desc.begin();
       itr!=m_provided_dofs_desc.end();++itr) {
-    
+
     Teuchos::ParameterList p("Scatter");
     p.set("Scatter Name", itr->second.scatterName);
     p.set("Basis", itr->second.basis.getConst());
@@ -675,7 +675,7 @@ buildAndRegisterInitialConditionEvaluators(PHX::FieldManager<panzer::Traits>& fm
 
     // Use ScatterDirichlet to scatter the initial condition
     Teuchos::RCP< PHX::Evaluator<panzer::Traits> > op = lof.buildScatterDirichlet<EvalT>(p);
-    
+
     this->template registerEvaluator<EvalT>(fm, op);
 
 
@@ -699,9 +699,9 @@ buildAndRegisterInitialConditionEvaluators(PHX::FieldManager<panzer::Traits>& fm
       dummy_ir = m_int_rules.begin()->second;
     Teuchos::RCP<const panzer::FieldLayoutLibrary> fll = fl.buildFieldLayoutLibrary(*dummy_ir);
 
-    Teuchos::RCP< std::vector< Teuchos::RCP<PHX::Evaluator<panzer::Traits> > > > evaluators = 
+    Teuchos::RCP< std::vector< Teuchos::RCP<PHX::Evaluator<panzer::Traits> > > > evaluators =
       factory.getAsObject<EvalT>()->buildClosureModels(model_name, models, *fll, dummy_ir, *(this->m_eval_plist), user_data, this->getGlobalData(), fm);
-    
+
     for (std::vector< Teuchos::RCP<PHX::Evaluator<panzer::Traits> > >::size_type i=0; i < evaluators->size(); ++i)
       this->template registerEvaluator<EvalT>(fm, (*evaluators)[i]);
   }
@@ -716,9 +716,9 @@ buildAndRegisterInitialConditionEvaluators(PHX::FieldManager<panzer::Traits>& fm
       p.set("Basis", basis_it->second.first);
       p.set("DOF Names", basis_it->second.second);
       p.set("Indexer Names", basis_it->second.second);
-     
+
       Teuchos::RCP< PHX::Evaluator<panzer::Traits> > op = lof.buildGatherOrientation<EvalT>(p);
-      
+
       this->template registerEvaluator<EvalT>(fm, op);
     }
   }
@@ -1025,7 +1025,7 @@ setDefaultValidParameters(Teuchos::ParameterList& valid_parameters)
 
 // ***********************************************************************
 template <typename EvalT>
-Teuchos::RCP<panzer::PureBasis> 
+Teuchos::RCP<panzer::PureBasis>
 panzer::EquationSet_DefaultImpl<EvalT>::getBasisForDOF(const std::string& dof_name) const
 {
   typename std::map<std::string,DOFDescriptor>::const_iterator desc_it = m_provided_dofs_desc.find(dof_name);
@@ -1035,7 +1035,7 @@ panzer::EquationSet_DefaultImpl<EvalT>::getBasisForDOF(const std::string& dof_na
 
 // ***********************************************************************
 template <typename EvalT>
-Teuchos::RCP<panzer::IntegrationRule> 
+Teuchos::RCP<panzer::IntegrationRule>
 panzer::EquationSet_DefaultImpl<EvalT>::getIntRuleForDOF(const std::string& dof_name) const
 {
   typename std::map<std::string,DOFDescriptor>::const_iterator desc_it = m_provided_dofs_desc.find(dof_name);
@@ -1047,7 +1047,7 @@ panzer::EquationSet_DefaultImpl<EvalT>::getIntRuleForDOF(const std::string& dof_
 
 // ***********************************************************************
 template <typename EvalT>
-Teuchos::RCP<panzer::BasisIRLayout> 
+Teuchos::RCP<panzer::BasisIRLayout>
 panzer::EquationSet_DefaultImpl<EvalT>::getBasisIRLayoutForDOF(const std::string& dof_name) const
 {
   typename std::map<std::string,DOFDescriptor>::const_iterator desc_it = m_provided_dofs_desc.find(dof_name);
@@ -1075,19 +1075,19 @@ buildAndRegisterResidualSummationEvalautor(PHX::FieldManager<panzer::Traits>& fm
     p.set("Sum Name", residual_field_name);
   else
     p.set("Sum Name", "RESIDUAL_" + dof_name);
-  
+
   RCP<std::vector<std::string> > rcp_residual_contributions = rcp(new std::vector<std::string>);
   *rcp_residual_contributions = residual_contributions;
 
   p.set("Values Names", rcp_residual_contributions);
-  
+
   DescriptorIterator desc_it = m_provided_dofs_desc.find(dof_name);
   TEUCHOS_ASSERT(desc_it != m_provided_dofs_desc.end());
-  
+
   p.set("Data Layout", desc_it->second.basis->functional);
 
   RCP< PHX::Evaluator<panzer::Traits> > op = rcp(new panzer::SumStatic<EvalT,panzer::Traits,panzer::Cell,panzer::BASIS>(p));
-  
+
   this->template registerEvaluator<EvalT>(fm, op);
 }
 
@@ -1109,21 +1109,21 @@ buildAndRegisterResidualSummationEvalautor(PHX::FieldManager<panzer::Traits>& fm
     p.set("Sum Name", residual_field_name);
   else
     p.set("Sum Name", "RESIDUAL_" + dof_name);
-  
+
   RCP<std::vector<std::string> > rcp_residual_contributions = rcp(new std::vector<std::string>);
   *rcp_residual_contributions = residual_contributions;
   p.set("Values Names", rcp_residual_contributions);
 
   RCP<const std::vector<double> > rcp_scale_contributions = rcp(new std::vector<double>(scale_contributions));
   p.set("Scalars", rcp_scale_contributions);
-  
+
   DescriptorIterator desc_it = m_provided_dofs_desc.find(dof_name);
   TEUCHOS_ASSERT(desc_it != m_provided_dofs_desc.end());
-  
+
   p.set("Data Layout", desc_it->second.basis->functional);
 
   RCP< PHX::Evaluator<panzer::Traits> > op = rcp(new panzer::SumStatic<EvalT,panzer::Traits,panzer::Cell,panzer::BASIS>(p));
-  
+
   this->template registerEvaluator<EvalT>(fm, op);
 }
 
@@ -1136,7 +1136,7 @@ void panzer::EquationSet_DefaultImpl<EvalT>::addClosureModel(const std::string& 
 
 // ***********************************************************************
 template <typename EvalT>
-Teuchos::RCP<Teuchos::ParameterList> 
+Teuchos::RCP<Teuchos::ParameterList>
 panzer::EquationSet_DefaultImpl<EvalT>::getEquationSetParameterList() const
 {
   return m_input_params;

@@ -72,7 +72,7 @@ using Teuchos::rcp;
 
 #include "UnitValueEvaluator.hpp"
 
-// for making explicit instantiated tests easier 
+// for making explicit instantiated tests easier
 #define UNIT_TEST_GROUP(TYPE) \
   TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT(gather_coordinates,basis,TYPE) \
   TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT(gather_coordinates,integration,TYPE)
@@ -88,7 +88,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(gather_coordinates,basis,EvalType)
   #else
      Teuchos::RCP<Epetra_Comm> eComm = Teuchos::rcp(new Epetra_SerialComm());
   #endif
- 
+
   using Teuchos::RCP;
   using Teuchos::rcp;
   using Teuchos::rcp_dynamic_cast;
@@ -155,7 +155,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(gather_coordinates,basis,EvalType)
   workset->bases.push_back(basisValues);
 
   Teuchos::RCP<PHX::FieldManager<panzer::Traits> > fm
-     = Teuchos::rcp(new PHX::FieldManager<panzer::Traits>); 
+     = Teuchos::rcp(new PHX::FieldManager<panzer::Traits>);
 
   // typedef panzer::Traits::Residual EvalType;
   typedef Sacado::ScalarValue<typename EvalType::ScalarT> ScalarValue;
@@ -165,7 +165,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(gather_coordinates,basis,EvalType)
   // add in some evaluators
   ///////////////////////////////////////////////////
   {
-     RCP<panzer::GatherBasisCoordinates<EvalType,panzer::Traits> > eval 
+     RCP<panzer::GatherBasisCoordinates<EvalType,panzer::Traits> > eval
         = rcp(new panzer::GatherBasisCoordinates<EvalType,panzer::Traits>(*basis));
 
      const std::vector<RCP<PHX::FieldTag> > & evalFields = eval->evaluatedFields();
@@ -226,7 +226,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(gather_coordinates,integration,EvalType)
   #else
      Teuchos::RCP<Epetra_Comm> eComm = Teuchos::rcp(new Epetra_SerialComm());
   #endif
- 
+
   using Teuchos::RCP;
   using Teuchos::rcp;
   using Teuchos::rcp_dynamic_cast;
@@ -294,7 +294,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(gather_coordinates,integration,EvalType)
   workset->bases.push_back(basisValues);
 
   Teuchos::RCP<PHX::FieldManager<panzer::Traits> > fm
-     = Teuchos::rcp(new PHX::FieldManager<panzer::Traits>); 
+     = Teuchos::rcp(new PHX::FieldManager<panzer::Traits>);
 
   // typedef panzer::Traits::Residual EvalType;
   typedef Sacado::ScalarValue<typename EvalType::ScalarT> ScalarValue;
@@ -304,7 +304,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(gather_coordinates,integration,EvalType)
   // add in some evaluators
   ///////////////////////////////////////////////////
   {
-     RCP<panzer::GatherIntegrationCoordinates<EvalType,panzer::Traits> > eval 
+     RCP<panzer::GatherIntegrationCoordinates<EvalType,panzer::Traits> > eval
         = rcp(new panzer::GatherIntegrationCoordinates<EvalType,panzer::Traits>(*quadRule));
 
      const std::vector<RCP<PHX::FieldTag> > & evalFields = eval->evaluatedFields();

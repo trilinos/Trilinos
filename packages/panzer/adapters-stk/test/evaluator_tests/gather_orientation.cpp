@@ -101,15 +101,15 @@ namespace panzer {
     testInitialization(ipb);
 
     const int default_int_order = 1;
-    std::string eBlockID = "eblock-0_0";    
+    std::string eBlockID = "eblock-0_0";
     Teuchos::RCP<user_app::MyFactory> eqset_factory = Teuchos::rcp(new user_app::MyFactory);
     panzer::CellData cellData(workset_size,mesh->getCellTopology("eblock-0_0"));
     Teuchos::RCP<panzer::GlobalData> gd = panzer::createGlobalData();
-    Teuchos::RCP<panzer::PhysicsBlock> physicsBlock = 
+    Teuchos::RCP<panzer::PhysicsBlock> physicsBlock =
       Teuchos::rcp(new PhysicsBlock(ipb,eBlockID,default_int_order,cellData,eqset_factory,gd,false));
 
     Teuchos::RCP<std::vector<panzer::Workset> > work_sets = panzer_stk::buildWorksets(*mesh,physicsBlock->elementBlockID(),
-                                                                                            physicsBlock->getWorksetNeeds()); 
+                                                                                            physicsBlock->getWorksetNeeds());
     TEST_EQUALITY(work_sets->size(),1);
 
     // build connection manager and field manager
@@ -122,7 +122,7 @@ namespace panzer {
 
     // setup field manager, add evaluator under test
     /////////////////////////////////////////////////////////////
- 
+
     PHX::FieldManager<panzer::Traits> fm;
 
     Teuchos::RCP<PHX::FieldTag> evalField_q1, evalField_qedge1;
@@ -135,7 +135,7 @@ namespace panzer {
        pl.set("DOF Names",dofNames);
        pl.set("Basis",basis_q1);
 
-       Teuchos::RCP<PHX::Evaluator<panzer::Traits> > evaluator  
+       Teuchos::RCP<PHX::Evaluator<panzer::Traits> > evaluator
           = Teuchos::rcp(new panzer::GatherOrientation<panzer::Traits::Residual,panzer::Traits,int,int>(dofManager,pl));
 
        TEST_EQUALITY(evaluator->evaluatedFields().size(),1);
@@ -157,7 +157,7 @@ namespace panzer {
        pl.set("DOF Names",dofNames);
        pl.set("Basis",basis_qedge1);
 
-       Teuchos::RCP<PHX::Evaluator<panzer::Traits> > evaluator  
+       Teuchos::RCP<PHX::Evaluator<panzer::Traits> > evaluator
           = Teuchos::rcp(new panzer::GatherOrientation<panzer::Traits::Residual,panzer::Traits,int,int>(dofManager,pl));
 
        TEST_EQUALITY(evaluator->evaluatedFields().size(),1);
@@ -186,10 +186,10 @@ namespace panzer {
     fm.evaluateFields<panzer::Traits::Residual>(workset);
 
     // <cell,basis>
-    PHX::MDField<panzer::Traits::Residual::ScalarT> 
+    PHX::MDField<panzer::Traits::Residual::ScalarT>
        fieldData_q1(evalField_q1->name(),basis_q1->functional);
     // <cell,basis>
-    PHX::MDField<panzer::Traits::Residual::ScalarT> 
+    PHX::MDField<panzer::Traits::Residual::ScalarT>
        fieldData_qedge1(evalField_qedge1->name(),basis_qedge1->functional);
 
     fm.getFieldData<panzer::Traits::Residual>(fieldData_q1);
@@ -208,12 +208,12 @@ namespace panzer {
   }
 
   Teuchos::RCP<panzer::PureBasis> buildBasis(std::size_t worksetSize,const std::string & basisName)
-  { 
-     Teuchos::RCP<shards::CellTopology> topo = 
+  {
+     Teuchos::RCP<shards::CellTopology> topo =
         Teuchos::rcp(new shards::CellTopology(shards::getCellTopologyData< shards::Quadrilateral<4> >()));
 
      panzer::CellData cellData(worksetSize,topo);
-     return Teuchos::rcp(new panzer::PureBasis(basisName,1,cellData)); 
+     return Teuchos::rcp(new panzer::PureBasis(basisName,1,cellData));
   }
 
   Teuchos::RCP<panzer_stk::STK_Interface> buildMesh(int elemX,int elemY)
@@ -223,11 +223,11 @@ namespace panzer {
     pl->set("Y Blocks",1);
     pl->set("X Elements",elemX);
     pl->set("Y Elements",elemY);
-    
+
     panzer_stk::SquareQuadMeshFactory factory;
     factory.setParameterList(pl);
     RCP<panzer_stk::STK_Interface> mesh = factory.buildUncommitedMesh(MPI_COMM_WORLD);
-    factory.completeMeshConstruction(*mesh,MPI_COMM_WORLD); 
+    factory.completeMeshConstruction(*mesh,MPI_COMM_WORLD);
 
     return mesh;
   }
@@ -254,7 +254,7 @@ namespace panzer {
       p.set("Basis Order",1);
       p.set("Integration Order",1);
     }
-    
+
   }
 
 }

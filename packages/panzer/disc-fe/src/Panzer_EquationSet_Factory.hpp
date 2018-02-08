@@ -59,7 +59,7 @@ namespace panzer {
      \param[in] global_data  Global data
      \param[in] build_transient_support If true, the transient evaluators will be built, registered, and required in the Phalanx evaluation graph.
 
-     Returns an RCP to a newly allocated EquationSet_TemplateManager.  
+     Returns an RCP to a newly allocated EquationSet_TemplateManager.
   */
   struct EquationSetFactory {
     virtual ~EquationSetFactory() = 0;
@@ -74,7 +74,7 @@ namespace panzer {
   };
 
   inline EquationSetFactory::~EquationSetFactory() {}
-  
+
 }
 
 #endif

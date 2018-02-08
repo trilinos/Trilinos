@@ -63,7 +63,7 @@ namespace panzer {
 //**********************************************************************
 
 //**********************************************************************
-template<typename EvalT, typename TRAITS>                   
+template<typename EvalT, typename TRAITS>
 DOF_PointValues<EvalT, TRAITS>::
 DOF_PointValues(const Teuchos::ParameterList & p)
 {
@@ -117,7 +117,7 @@ DOF_PointValues(const Teuchos::ParameterList & p)
 }
 
 //**********************************************************************
-template<typename EvalT, typename TRAITS>                   
+template<typename EvalT, typename TRAITS>
 void DOF_PointValues<EvalT, TRAITS>::
 postRegistrationSetup(typename TRAITS::SetupData /* sd */,
                       PHX::FieldManager<TRAITS>& fm)
@@ -128,23 +128,23 @@ postRegistrationSetup(typename TRAITS::SetupData /* sd */,
     this->utils.setFieldData(dof_ip_scalar,fm);
 
     // setup the pointers for the basis values data structure
-    this->utils.setFieldData(basisValues->basis_ref_scalar,fm);      
-    this->utils.setFieldData(basisValues->basis_scalar,fm);           
+    this->utils.setFieldData(basisValues->basis_ref_scalar,fm);
+    this->utils.setFieldData(basisValues->basis_scalar,fm);
   }
   else {
     this->utils.setFieldData(dof_ip_vector,fm);
 
     // setup the pointers for the basis values data structure
-    this->utils.setFieldData(basisValues->basis_ref_vector,fm);      
-    this->utils.setFieldData(basisValues->basis_vector,fm);           
+    this->utils.setFieldData(basisValues->basis_ref_vector,fm);
+    this->utils.setFieldData(basisValues->basis_vector,fm);
   }
 }
 
 //**********************************************************************
-template<typename EvalT, typename TRAITS>                   
+template<typename EvalT, typename TRAITS>
 void DOF_PointValues<EvalT, TRAITS>::
 evaluateFields(typename TRAITS::EvalData workset)
-{ 
+{
   if(is_vector_basis) {
     int spaceDim  = basisValues->basis_vector.dimension(3);
     if(spaceDim==3) {
@@ -169,7 +169,7 @@ evaluateFields(typename TRAITS::EvalData workset)
 //**********************************************************************
 
 //**********************************************************************
-template<typename TRAITS>                   
+template<typename TRAITS>
 DOF_PointValues<typename TRAITS::Jacobian, TRAITS>::
 DOF_PointValues(const Teuchos::ParameterList & p)
 {
@@ -215,8 +215,8 @@ DOF_PointValues(const Teuchos::ParameterList & p)
      this->addEvaluatedField(dof_ip_scalar);
      constBasisRefScalar_ = basisValues->basis_ref_scalar;
      constBasisScalar_    = basisValues->basis_scalar;
-     this->addDependentField(constBasisRefScalar_); 
-     this->addDependentField(constBasisScalar_); 
+     this->addDependentField(constBasisRefScalar_);
+     this->addDependentField(constBasisScalar_);
   }
   else if(basis->isVectorBasis()) {
      dof_ip_vector = PHX::MDField<ScalarT,Cell,Point,Dim>(
@@ -225,8 +225,8 @@ DOF_PointValues(const Teuchos::ParameterList & p)
      this->addEvaluatedField(dof_ip_vector);
      constBasisRefVector_ = basisValues->basis_ref_vector;
      constBasisVector_    = basisValues->basis_vector;
-     this->addDependentField(constBasisRefVector_); 
-     this->addDependentField(constBasisVector_); 
+     this->addDependentField(constBasisRefVector_);
+     this->addDependentField(constBasisVector_);
   }
   else
   { TEUCHOS_ASSERT(false); }
@@ -236,7 +236,7 @@ DOF_PointValues(const Teuchos::ParameterList & p)
 }
 
 //**********************************************************************
-template<typename TRAITS>                   
+template<typename TRAITS>
 void DOF_PointValues<typename TRAITS::Jacobian, TRAITS>::
 postRegistrationSetup(typename TRAITS::SetupData /* sd */,
                       PHX::FieldManager<TRAITS>& fm)
@@ -247,23 +247,23 @@ postRegistrationSetup(typename TRAITS::SetupData /* sd */,
     this->utils.setFieldData(dof_ip_scalar,fm);
 
     // setup the pointers for the basis values data structure
-    this->utils.setFieldData(basisValues->basis_ref_scalar,fm);      
-    this->utils.setFieldData(basisValues->basis_scalar,fm);           
+    this->utils.setFieldData(basisValues->basis_ref_scalar,fm);
+    this->utils.setFieldData(basisValues->basis_scalar,fm);
   }
   else {
     this->utils.setFieldData(dof_ip_vector,fm);
 
     // setup the pointers for the basis values data structure
-    this->utils.setFieldData(basisValues->basis_ref_vector,fm);      
-    this->utils.setFieldData(basisValues->basis_vector,fm);           
+    this->utils.setFieldData(basisValues->basis_ref_vector,fm);
+    this->utils.setFieldData(basisValues->basis_vector,fm);
   }
 }
 
 //**********************************************************************
-template<typename TRAITS>                   
+template<typename TRAITS>
 void DOF_PointValues<typename TRAITS::Jacobian, TRAITS>::
 evaluateFields(typename TRAITS::EvalData workset)
-{ 
+{
   if(is_vector_basis) {
     if(accelerate_jacobian) {
       int spaceDim  = basisValues->basis_vector.dimension(3);

@@ -77,8 +77,8 @@ public:
 
    virtual void scatterResponse() {}
 
-   virtual void initializeResponse()  
-   { 
+   virtual void initializeResponse()
+   {
      if(coords==Teuchos::null)
        coords = Teuchos::rcp(new std::vector<panzer::Traits::Residual::ScalarT>);
 

@@ -80,21 +80,21 @@ void computePatternFaceIndices(const FieldPattern & pattern,std::vector<std::vec
 
    if(pattern.getDimension()==3) {
       shards::CellTopology cellTopo = pattern.getCellTopology();
-   
+
       faceIndices.resize(cellTopo.getSubcellCount(subcell_dim));
-   
+
       for(unsigned f=0;f<cellTopo.getSubcellCount(subcell_dim);f++) {
          shards::CellTopology faceTopo(cellTopo.getBaseCellTopologyData(subcell_dim,f));
-   
+
          for(unsigned v=0;v<faceTopo.getNodeCount();v++) {
             // get local vertex ids for a this edge
             unsigned local_v = cellTopo.getNodeMap(subcell_dim,f,v);
-   
+
             // get sub cell indices for geometric pattern
             const std::vector<int> & v_indices = pattern.getSubcellIndices(node_dim,local_v);
-      
+
             TEUCHOS_ASSERT(v_indices.size()>0); // there must be a node
-      
+
             // take the first index on each vertex and make a edge lookup
             faceIndices[f].push_back(v_indices[0]);
          }
@@ -102,9 +102,9 @@ void computePatternFaceIndices(const FieldPattern & pattern,std::vector<std::vec
    }
    else if(pattern.getDimension()==2) {
       shards::CellTopology cellTopo = pattern.getCellTopology();
-   
+
       faceIndices.resize(1);
-   
+
       for(unsigned v=0;v<cellTopo.getNodeCount();v++)
         faceIndices[0].push_back(v);
    }

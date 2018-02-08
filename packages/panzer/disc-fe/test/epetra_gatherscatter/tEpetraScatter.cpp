@@ -80,12 +80,12 @@ TEUCHOS_UNIT_TEST(tEpetraScatter, constructor)
    std::string scatterName = "Residual_NS";
 
    // build DOF names
-   RCP<std::vector<std::string> > evaluatedNames = rcp(new std::vector<std::string>); 
+   RCP<std::vector<std::string> > evaluatedNames = rcp(new std::vector<std::string>);
    evaluatedNames->push_back("Residual_ux"); // in practice these probably would not be scattered together!
    evaluatedNames->push_back("Residual_p");
 
    // build evaluated map
-   RCP<std::map<std::string,std::string> > evaluatedMap = rcp(new std::map<std::string,std::string>); 
+   RCP<std::map<std::string,std::string> > evaluatedMap = rcp(new std::map<std::string,std::string>);
    evaluatedMap->insert(std::make_pair("Residual_ux","ux")); // in practice these probably would not be scattered together!
    evaluatedMap->insert(std::make_pair("Residual_p","p"));
 

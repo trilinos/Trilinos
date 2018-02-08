@@ -49,7 +49,7 @@
 #include "Panzer_Evaluator_Macros.hpp"
 
 namespace panzer {
-    
+
 /** \brief Evaluates dot product at a set of points
 
     v_a \cdot v_b
@@ -62,7 +62,7 @@ namespace panzer {
   <Parameter name="Field Multiplier" type="string" value="Multiplier name"/>
 */
 PANZER_EVALUATOR_CLASS(DotProduct)
-  
+
   PHX::MDField<ScalarT> vec_a_dot_vec_b;
   PHX::MDField<const ScalarT> vec_a, vec_b;
   PHX::MDField<const ScalarT> multiplier_field;
@@ -77,7 +77,7 @@ PANZER_EVALUATOR_CLASS_END
 /** \brief Build a dot product evaluator. Evaluates dot product at a set of points
 
     mv * fm * v_a \cdot v_b
-   
+
   * \param[in] resultName Destination scalar field sized by <code>pr.dl_scalar</code>
   *                       containing the dot product
   * \param[in] pr Point rule class that defines the size of the fields

@@ -55,7 +55,7 @@
 #include "Panzer_UniqueGlobalIndexer_Utilities.hpp"
 
 // include some intrepid basis functions
-// 2D basis 
+// 2D basis
 #include "Intrepid2_HGRAD_TRI_C1_FEM.hpp"
 #include "Intrepid2_HGRAD_TRI_C2_FEM.hpp"
 #include "Intrepid2_HCURL_TRI_I1_FEM.hpp"
@@ -136,15 +136,15 @@ TEUCHOS_UNIT_TEST(tOrientation, testEdgeBasis_tri)
    // all that matters is the global
    // node numbering and the local ordering
    // The local ordering is defined by the following connectivity
-   connectivity[0][0] = 0; connectivity[0][1] = 6; connectivity[0][2] = 5; 
-   connectivity[1][0] = 6; connectivity[1][1] = 0; connectivity[1][2] = 1; 
-   connectivity[2][0] = 1; connectivity[2][1] = 3; connectivity[2][2] = 6; 
-   connectivity[3][0] = 3; connectivity[3][1] = 5; connectivity[3][2] = 6; 
+   connectivity[0][0] = 0; connectivity[0][1] = 6; connectivity[0][2] = 5;
+   connectivity[1][0] = 6; connectivity[1][1] = 0; connectivity[1][2] = 1;
+   connectivity[2][0] = 1; connectivity[2][1] = 3; connectivity[2][2] = 6;
+   connectivity[3][0] = 3; connectivity[3][1] = 5; connectivity[3][2] = 6;
 
    // LOCAL element orientations are always set so that they flow in the positive
    // direction along an edge from node 0 to node 1. As a result if the GID of
    // node 0 is larger then node 1 then the GLOBAL orientation is -1 (and positive
-   // otherwise. The local definition of the edge direction is defined by 
+   // otherwise. The local definition of the edge direction is defined by
    // the shards cell topology.
    {
       std::vector<signed char> orientations(patternB->numberIds(),0);
@@ -198,7 +198,7 @@ TEUCHOS_UNIT_TEST(tOrientation, testEdgeBasis_tri)
       const std::vector<int> & edgeIndices = aggPattern->getSubcellIndices(1,e);
       for(std::size_t s=0;s<edgeIndices.size();s++)
          TEST_EQUALITY(orientations[edgeIndices[s]],tests[e]);
-   }       
+   }
 }
 
 TEUCHOS_UNIT_TEST(tOrientation, testEdgeBasis_quad)
@@ -246,15 +246,15 @@ TEUCHOS_UNIT_TEST(tOrientation, testEdgeBasis_quad)
    // all that matters is the global
    // node numbering and the local ordering
    // The local ordering is defined by the following connectivity
-   connectivity[0][0] = 0; connectivity[0][1] = 1; connectivity[0][2] = 4; connectivity[0][3] = 3; 
-   connectivity[1][0] = 1; connectivity[1][1] = 2; connectivity[1][2] = 5; connectivity[1][3] = 4; 
-   connectivity[2][0] = 3; connectivity[2][1] = 4; connectivity[2][2] = 6; connectivity[2][3] = 7; 
-   connectivity[3][0] = 4; connectivity[3][1] = 5; connectivity[3][2] = 8; connectivity[3][3] = 6; 
+   connectivity[0][0] = 0; connectivity[0][1] = 1; connectivity[0][2] = 4; connectivity[0][3] = 3;
+   connectivity[1][0] = 1; connectivity[1][1] = 2; connectivity[1][2] = 5; connectivity[1][3] = 4;
+   connectivity[2][0] = 3; connectivity[2][1] = 4; connectivity[2][2] = 6; connectivity[2][3] = 7;
+   connectivity[3][0] = 4; connectivity[3][1] = 5; connectivity[3][2] = 8; connectivity[3][3] = 6;
 
    // LOCAL element orientations are always set so that they flow in the positive
    // direction along an edge from node 0 to node 1. As a result if the GID of
    // node 0 is larger then node 1 then the GLOBAL orientation is -1 (and positive
-   // otherwise. The local definition of the edge direction is defined by 
+   // otherwise. The local definition of the edge direction is defined by
    // the shards cell topology.
    {
       std::vector<signed char> orientations(patternB->numberIds(),0);
@@ -312,7 +312,7 @@ TEUCHOS_UNIT_TEST(tOrientation, testEdgeBasis_quad)
       const std::vector<int> & edgeIndices = aggPattern->getSubcellIndices(1,e);
       for(std::size_t s=0;s<edgeIndices.size();s++)
          TEST_EQUALITY(orientations[edgeIndices[s]],tests[e]);
-   }       
+   }
 }
 
 /////////////////////////////////////////////
@@ -363,15 +363,15 @@ TEUCHOS_UNIT_TEST(tOrientation, testFaceBasis_tri)
    // all that matters is the global
    // node numbering and the local ordering
    // The local ordering is defined by the following connectivity
-   connectivity[0][0] = 0; connectivity[0][1] = 6; connectivity[0][2] = 5; 
-   connectivity[1][0] = 6; connectivity[1][1] = 0; connectivity[1][2] = 1; 
-   connectivity[2][0] = 1; connectivity[2][1] = 3; connectivity[2][2] = 6; 
-   connectivity[3][0] = 3; connectivity[3][1] = 5; connectivity[3][2] = 6; 
+   connectivity[0][0] = 0; connectivity[0][1] = 6; connectivity[0][2] = 5;
+   connectivity[1][0] = 6; connectivity[1][1] = 0; connectivity[1][2] = 1;
+   connectivity[2][0] = 1; connectivity[2][1] = 3; connectivity[2][2] = 6;
+   connectivity[3][0] = 3; connectivity[3][1] = 5; connectivity[3][2] = 6;
 
    // LOCAL element orientations are always set so that they flow in the positive
    // direction away from the cell center from node 0 to node 1. As a result if the GID of
    // node 0 is larger then node 1 then the GLOBAL orientation is -1 (and positive
-   // otherwise. The local definition of the face direction is defined by 
+   // otherwise. The local definition of the face direction is defined by
    // the shards cell topology.
    {
       std::vector<signed char> orientations(patternB->numberIds(),0);
@@ -425,7 +425,7 @@ TEUCHOS_UNIT_TEST(tOrientation, testFaceBasis_tri)
       const std::vector<int> & faceIndices = aggPattern->getSubcellIndices(1,e);
       for(std::size_t s=0;s<faceIndices.size();s++)
          TEST_EQUALITY(orientations[faceIndices[s]],tests[e]);
-   }       
+   }
 }
 
 TEUCHOS_UNIT_TEST(tOrientation, testFaceBasis_quad)
@@ -473,15 +473,15 @@ TEUCHOS_UNIT_TEST(tOrientation, testFaceBasis_quad)
    // all that matters is the global
    // node numbering and the local ordering
    // The local ordering is defined by the following connectivity
-   connectivity[0][0] = 0; connectivity[0][1] = 1; connectivity[0][2] = 4; connectivity[0][3] = 3; 
-   connectivity[1][0] = 1; connectivity[1][1] = 2; connectivity[1][2] = 5; connectivity[1][3] = 4; 
-   connectivity[2][0] = 3; connectivity[2][1] = 4; connectivity[2][2] = 6; connectivity[2][3] = 7; 
-   connectivity[3][0] = 4; connectivity[3][1] = 5; connectivity[3][2] = 8; connectivity[3][3] = 6; 
+   connectivity[0][0] = 0; connectivity[0][1] = 1; connectivity[0][2] = 4; connectivity[0][3] = 3;
+   connectivity[1][0] = 1; connectivity[1][1] = 2; connectivity[1][2] = 5; connectivity[1][3] = 4;
+   connectivity[2][0] = 3; connectivity[2][1] = 4; connectivity[2][2] = 6; connectivity[2][3] = 7;
+   connectivity[3][0] = 4; connectivity[3][1] = 5; connectivity[3][2] = 8; connectivity[3][3] = 6;
 
    // LOCAL element orientations are always set so that they flow in the positive
    // direction along an face from node 0 to node 1. As a result if the GID of
    // node 0 is larger then node 1 then the GLOBAL orientation is -1 (and positive
-   // otherwise. The local definition of the face direction is defined by 
+   // otherwise. The local definition of the face direction is defined by
    // the shards cell topology.
    {
       std::vector<signed char> orientations(patternB->numberIds(),0);
@@ -539,7 +539,7 @@ TEUCHOS_UNIT_TEST(tOrientation, testFaceBasis_quad)
       const std::vector<int> & faceIndices = aggPattern->getSubcellIndices(1,e);
       for(std::size_t s=0;s<faceIndices.size();s++)
          TEST_EQUALITY(orientations[faceIndices[s]],tests[e]);
-   }       
+   }
 }
 
 TEUCHOS_UNIT_TEST(tOrientation, testFaceBasis_tri2)
@@ -568,7 +568,7 @@ TEUCHOS_UNIT_TEST(tOrientation, testFaceBasis_quad2)
 
    out << note << std::endl;
 
-   shards::CellTopology quad(shards::getCellTopologyData<shards::Quadrilateral<4> >()); 
+   shards::CellTopology quad(shards::getCellTopologyData<shards::Quadrilateral<4> >());
 
    // basis to build patterns from
    RCP<Intrepid2::Basis<PHX::exec_space,double,double> > basisA = rcp(new Intrepid2::Basis_HVOL_C0_FEM<PHX::exec_space,double,double>(quad));
@@ -581,8 +581,8 @@ TEUCHOS_UNIT_TEST(tOrientation, testFaceBasis_quad2)
    orientation_helpers::computePatternFaceIndices(*patternA,topFaceIndices);
 
    TEST_EQUALITY(topFaceIndices.size(),1);
-   TEST_EQUALITY(topFaceIndices[0].size(),4); 
-   TEST_EQUALITY(topFaceIndices[0][0],0); TEST_EQUALITY(topFaceIndices[0][1],1); TEST_EQUALITY(topFaceIndices[0][2],2); TEST_EQUALITY(topFaceIndices[0][3],3); 
+   TEST_EQUALITY(topFaceIndices[0].size(),4);
+   TEST_EQUALITY(topFaceIndices[0][0],0); TEST_EQUALITY(topFaceIndices[0][1],1); TEST_EQUALITY(topFaceIndices[0][2],2); TEST_EQUALITY(topFaceIndices[0][3],3);
 }
 
 /////////////////////////////////////////////
@@ -631,7 +631,7 @@ TEUCHOS_UNIT_TEST(tOrientation, testFaceBasis_tet)
    std::vector<std::vector<long> > connectivity(1);
    connectivity[0].resize(patternA->numberIds());
 
-   connectivity[0][0] = 6; connectivity[0][1] = 2; connectivity[0][2] = 9; connectivity[0][3] = 7; 
+   connectivity[0][0] = 6; connectivity[0][1] = 2; connectivity[0][2] = 9; connectivity[0][3] = 7;
 
    {
       std::vector<signed char> orientations(patternB->numberIds(),0);
@@ -665,28 +665,28 @@ TEUCHOS_UNIT_TEST(tOrientation, testFaceBasis_hex)
    // this checks to ensure that each face is oriented in a counter clockwise direction
 
    TEST_EQUALITY(topFaceIndices.size(),6);
-   TEST_EQUALITY(topFaceIndices[0].size(),4); 
-     TEST_EQUALITY(topFaceIndices[0][0],0); TEST_EQUALITY(topFaceIndices[0][1],1); TEST_EQUALITY(topFaceIndices[0][2],5); TEST_EQUALITY(topFaceIndices[0][3],4); 
+   TEST_EQUALITY(topFaceIndices[0].size(),4);
+     TEST_EQUALITY(topFaceIndices[0][0],0); TEST_EQUALITY(topFaceIndices[0][1],1); TEST_EQUALITY(topFaceIndices[0][2],5); TEST_EQUALITY(topFaceIndices[0][3],4);
    TEST_EQUALITY(topFaceIndices[1].size(),4);
-     TEST_EQUALITY(topFaceIndices[1][0],1); TEST_EQUALITY(topFaceIndices[1][1],2); TEST_EQUALITY(topFaceIndices[1][2],6); TEST_EQUALITY(topFaceIndices[1][3],5); 
+     TEST_EQUALITY(topFaceIndices[1][0],1); TEST_EQUALITY(topFaceIndices[1][1],2); TEST_EQUALITY(topFaceIndices[1][2],6); TEST_EQUALITY(topFaceIndices[1][3],5);
    TEST_EQUALITY(topFaceIndices[2].size(),4);
-     TEST_EQUALITY(topFaceIndices[2][0],2); TEST_EQUALITY(topFaceIndices[2][1],3); TEST_EQUALITY(topFaceIndices[2][2],7); TEST_EQUALITY(topFaceIndices[2][3],6); 
+     TEST_EQUALITY(topFaceIndices[2][0],2); TEST_EQUALITY(topFaceIndices[2][1],3); TEST_EQUALITY(topFaceIndices[2][2],7); TEST_EQUALITY(topFaceIndices[2][3],6);
    TEST_EQUALITY(topFaceIndices[3].size(),4);
-     TEST_EQUALITY(topFaceIndices[3][0],0); TEST_EQUALITY(topFaceIndices[3][1],4); TEST_EQUALITY(topFaceIndices[3][2],7); TEST_EQUALITY(topFaceIndices[3][3],3); 
+     TEST_EQUALITY(topFaceIndices[3][0],0); TEST_EQUALITY(topFaceIndices[3][1],4); TEST_EQUALITY(topFaceIndices[3][2],7); TEST_EQUALITY(topFaceIndices[3][3],3);
    TEST_EQUALITY(topFaceIndices[4].size(),4);
-     TEST_EQUALITY(topFaceIndices[4][0],0); TEST_EQUALITY(topFaceIndices[4][1],3); TEST_EQUALITY(topFaceIndices[4][2],2); TEST_EQUALITY(topFaceIndices[4][3],1); 
+     TEST_EQUALITY(topFaceIndices[4][0],0); TEST_EQUALITY(topFaceIndices[4][1],3); TEST_EQUALITY(topFaceIndices[4][2],2); TEST_EQUALITY(topFaceIndices[4][3],1);
    TEST_EQUALITY(topFaceIndices[5].size(),4);
-     TEST_EQUALITY(topFaceIndices[5][0],4); TEST_EQUALITY(topFaceIndices[5][1],5); TEST_EQUALITY(topFaceIndices[5][2],6); TEST_EQUALITY(topFaceIndices[5][3],7); 
+     TEST_EQUALITY(topFaceIndices[5][0],4); TEST_EQUALITY(topFaceIndices[5][1],5); TEST_EQUALITY(topFaceIndices[5][2],6); TEST_EQUALITY(topFaceIndices[5][3],7);
 
    // Topologically the first elements look like (shown by looking at each face), note
    // that the expected orientation is included as a +/- sign in the element
-   // 
+   //
    //  0 ----- 8   8 ----- 9   9 ----- 1
    //  |       |   |       |   |       |
    //  |   +   |   |   +   |   |   -   |
    //  |       |   |       |   |       |
    //  5 ----- 2   2 ----- 6   6 ----- 7
-   // 
+   //
    //  1 ----- 0   5 ----- 2   1 ----- 9
    //  |       |   |       |   |       |
    //  |   +   |   |   +   |   |   -   |
@@ -700,8 +700,8 @@ TEUCHOS_UNIT_TEST(tOrientation, testFaceBasis_hex)
    std::vector<std::vector<long> > connectivity(1);
    connectivity[0].resize(patternA->numberIds());
 
-   connectivity[0][0] = 5; connectivity[0][1] = 2; connectivity[0][2] = 6; connectivity[0][3] = 7; 
-   connectivity[0][4] = 0; connectivity[0][5] = 8; connectivity[0][6] = 9; connectivity[0][7] = 1; 
+   connectivity[0][0] = 5; connectivity[0][1] = 2; connectivity[0][2] = 6; connectivity[0][3] = 7;
+   connectivity[0][4] = 0; connectivity[0][5] = 8; connectivity[0][6] = 9; connectivity[0][7] = 1;
 
    {
       std::vector<signed char> orientations(patternB->numberIds(),0);

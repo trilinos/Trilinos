@@ -67,14 +67,14 @@ SimpleSolution<EvalT,Traits>::SimpleSolution(const std::string & name,
 
   this->addEvaluatedField(solution);
   this->addEvaluatedField(solution_grad);
-  
+
   std::string n = "Simple Solution";
   this->setName(n);
 }
 
 //**********************************************************************
 template <typename EvalT,typename Traits>
-void SimpleSolution<EvalT,Traits>::postRegistrationSetup(typename Traits::SetupData sd,           
+void SimpleSolution<EvalT,Traits>::postRegistrationSetup(typename Traits::SetupData sd,
                                                        PHX::FieldManager<Traits>& fm)
 {
 
@@ -86,7 +86,7 @@ void SimpleSolution<EvalT,Traits>::postRegistrationSetup(typename Traits::SetupD
 //**********************************************************************
 template <typename EvalT,typename Traits>
 void SimpleSolution<EvalT,Traits>::evaluateFields(typename Traits::EvalData workset)
-{ 
+{
   using panzer::index_t;
   for (index_t cell = 0; cell < workset.num_cells; ++cell) {
     for (int point = 0; point < solution.extent_int(1); ++point) {

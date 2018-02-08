@@ -56,24 +56,24 @@ namespace panzer {
 
 /** \brief Given a function stored as a vector and the tangents at each edge, project the vector onto the edge basis
 */
-template<typename EvalT, typename Traits> 
+template<typename EvalT, typename Traits>
 class ProjectToEdges
   : public PHX::EvaluatorWithBaseImpl<Traits>,
     public PHX::EvaluatorDerived<EvalT, Traits>,
     public CloneableEvaluator  {
-   
+
 public:
-  
+
   ProjectToEdges(const Teuchos::ParameterList& p);
-  
+
   void postRegistrationSetup(typename Traits::SetupData d,
 			     PHX::FieldManager<Traits>& vm);
-  
+
   void evaluateFields(typename Traits::EvalData d);
 
   virtual Teuchos::RCP<CloneableEvaluator> clone(const Teuchos::ParameterList & pl) const
   {return Teuchos::rcp(new ProjectToEdges<EvalT,Traits>(pl));}
-  
+
 private:
 
   typedef typename EvalT::ScalarT ScalarT;

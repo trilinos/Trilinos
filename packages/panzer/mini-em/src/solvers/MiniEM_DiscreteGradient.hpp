@@ -53,7 +53,7 @@ void addDiscreteGradientToRequestHandler(
   // use "AUXILIARY_EDGE" and "AUXILIARY_NODE" as the DOFs
   std::string edge_basis_name  = "AUXILIARY_EDGE";
   std::string nodal_basis_name = "AUXILIARY_NODE";
-      
+
   // must be able to cast to a block linear object factory
   RCP<const BTLOF > blof  = rcp_dynamic_cast<const BTLOF >(linObjFactory,true);
   RCP<const panzer::BlockedDOFManager<int,panzer::Ordinal64> > blockedDOFMngr = blof->getGlobalIndexer();
@@ -66,13 +66,13 @@ void addDiscreteGradientToRequestHandler(
   int nBlockIndex = blockedDOFMngr->getFieldBlock(nFieldNum);
   RCP<UGI> eUgi = blockedDOFMngr->getFieldDOFManagers()[eBlockIndex];
   RCP<UGI> nUgi = blockedDOFMngr->getFieldDOFManagers()[nBlockIndex];
- 
+
   // extract ghosted and global linear object containers
   RCP<panzer::GlobalEvaluationData> dataObject
         = rcp(new panzer::LOCPair_GlobalEvaluationData(blof,panzer::LinearObjContainer::Mat));
   RCP<panzer::LinearObjContainer> loc = rcp_dynamic_cast<panzer::LOCPair_GlobalEvaluationData>(dataObject,true)->getGhostedLOC();
   RCP<BTLOC> ghosted_tloc = rcp_dynamic_cast<BTLOC>(loc,true);
-  RCP<panzer::LinearObjContainer> global_loc 
+  RCP<panzer::LinearObjContainer> global_loc
      = rcp_dynamic_cast<panzer::LOCPair_GlobalEvaluationData>(dataObject,true)->getGlobalLOC();
   RCP<BTLOC> global_tloc = rcp_dynamic_cast<BTLOC>(global_loc,true);
 
@@ -81,7 +81,7 @@ void addDiscreteGradientToRequestHandler(
   RCP<ThTLOp> thyra_TpetraOp = rcp_dynamic_cast<ThTLOp>(blocked_op->getNonconstBlock(eBlockIndex,nBlockIndex),true);
   RCP<Tmatrix> grad_matrix = rcp_dynamic_cast<Tmatrix>(thyra_TpetraOp->getTpetraOperator(),true);
   grad_matrix->resumeFill();
- 
+
   RCP<const panzer::FieldPattern> field_pattern = blockedDOFMngr->getGeometricFieldPattern();
   shards::CellTopology cell_topology = field_pattern->getCellTopology();
   std::vector<Intrepid2::Orientation> orientations = *panzer::buildIntrepidOrientation(blockedDOFMngr);
@@ -93,7 +93,7 @@ void addDiscreteGradientToRequestHandler(
     // loop over elements
     std::vector<int> elementIds = blockedDOFMngr->getElementBlock(elementBlockIds[blockIter]);
     for(std::size_t elemIter = 0; elemIter < elementIds.size(); ++elemIter){
- 
+
       // get IDs for edges and nodes
       std::vector<panzer::Ordinal64> eGIDs;
       eUgi->getElementGIDs(elementIds[elemIter],eGIDs);
@@ -101,18 +101,18 @@ void addDiscreteGradientToRequestHandler(
       nUgi->getElementGIDs(elementIds[elemIter],nGIDs);
       auto eLIDs = eUgi->getElementLIDs(elementIds[elemIter]);
       auto nLIDs = nUgi->getElementLIDs(elementIds[elemIter]);
- 
+
       std::vector<bool> isOwned;
       eUgi->ownedIndices(eGIDs,isOwned);
 
-      // get element orientations 
+      // get element orientations
       std::vector<int> eFieldOffsets = blockedDOFMngr->getGIDFieldOffsets(elementBlockIds[blockIter],eFieldNum);
       std::vector<int> ort(eFieldOffsets.size(),0);
       orientations[elementIds[elemIter]].getEdgeOrientation(&ort[0], eFieldOffsets.size());
 
       // loop over edges
       for(std::size_t eIter = 0; eIter < eFieldOffsets.size(); ++eIter){
- 
+
         if(isOwned[eIter]){
 
           int headIndex = cell_topology.getNodeMap(1, eIter, 0);
@@ -122,10 +122,10 @@ void addDiscreteGradientToRequestHandler(
           double values[2] = {1.0,-1.0};
           if(ort[eIter] == 0)
             {values[0] *= -1.0; values[1] *= -1.0;}
- 
+
           // get LIDs associated with nodes
           int indices[2] = {nLIDs[tailIndex],nLIDs[headIndex]};
- 
+
           // insert values in matrix
           int err = grad_matrix->replaceLocalValues(eLIDs[eIter], 2, values, indices);
           TEUCHOS_ASSERT_EQUALITY(err,2);
@@ -139,7 +139,7 @@ void addDiscreteGradientToRequestHandler(
   blof->ghostToGlobalContainer(*ghosted_tloc, *global_tloc,panzer::LinearObjContainer::Mat);
   RCP<Thyra::BlockedLinearOpBase<double> > global_blocked_op = rcp_dynamic_cast<Thyra::BlockedLinearOpBase<double> >(global_tloc->get_A_th(),true);
   RCP<Thyra::LinearOpBase<double> > thyra_gradient = global_blocked_op->getNonconstBlock(eBlockIndex,nBlockIndex);
- 
+
   // add gradient callback to request handler
   reqHandler->addRequestCallback(Teuchos::rcp(new GradientRequestCallback(thyra_gradient)));
 }

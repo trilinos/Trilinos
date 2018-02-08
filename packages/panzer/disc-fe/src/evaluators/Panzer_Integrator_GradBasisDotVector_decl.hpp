@@ -227,7 +227,7 @@ namespace panzer
       /**
        *  \brief Perform the integration.
        *
-       *  Generally speaking, for a given cell in the `Workset`, this routine    // JMG:  Fill this out.                          
+       *  Generally speaking, for a given cell in the `Workset`, this routine    // JMG:  Fill this out.
        *  loops over quadrature points, vector dimensions, and bases to perform
        *  the integration, scaling the vector field to be integrated by the
        *  multiplier (\f$ M \f$) and any field multipliers (\f$ a(x) \f$, \f$

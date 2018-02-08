@@ -47,7 +47,7 @@
 #include "Panzer_Traits.hpp"
 
 namespace panzer {
-  
+
   class BC;
   template<typename T> class BCStrategy_TemplateManager;
   struct GlobalData;
@@ -71,7 +71,7 @@ namespace panzer {
 		    const Teuchos::RCP<panzer::GlobalData>& global_data) const = 0;
 
   };
-  
+
 }
 
 #endif

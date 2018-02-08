@@ -83,7 +83,7 @@ public:
    /** Add a field associated with a basis to the library.
      */
    void addFieldAndLayout(const std::string & fieldName,
-                         const Teuchos::RCP<panzer::BasisIRLayout> & basis);   
+                         const Teuchos::RCP<panzer::BasisIRLayout> & basis);
 
    //! Get vector of unique bases contained in this field library
    void uniqueBases(std::vector<Teuchos::RCP<const panzer::PureBasis> > & bases) const;
@@ -129,7 +129,7 @@ public:
    /** Add a field associated witha basis to the library.
      */
    void addFieldAndBasis(const std::string & fieldName,
-                 const Teuchos::RCP<panzer::PureBasis> & basis);   
+                 const Teuchos::RCP<panzer::PureBasis> & basis);
 
    /** Given an integration rule build a FieldLayoutLibrary which
      * oversees the marriage of the integration rule and the basis

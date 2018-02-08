@@ -62,22 +62,22 @@ namespace panzer {
   template <typename EvalT>
   class EquationSet_DefaultImpl : public panzer::EquationSet<EvalT>,
                                   public panzer::GlobalDataAcceptorDefaultImpl {
-    
-  public:    
-    
+
+  public:
+
     EquationSet_DefaultImpl(const Teuchos::RCP<Teuchos::ParameterList>& params,
                             const int& default_integration_order,
                             const panzer::CellData& cell_data,
                             const Teuchos::RCP<panzer::GlobalData>& global_data,
                             const bool build_transient_support);
-    
+
     virtual ~EquationSet_DefaultImpl() {}
-    
+
     virtual void buildAndRegisterGatherAndOrientationEvaluators(PHX::FieldManager<panzer::Traits>& fm,
                                                                 const panzer::FieldLibrary& fl,
                                                                 const LinearObjFactory<panzer::Traits> & lof,
                                                                 const Teuchos::ParameterList& user_data) const;
-    
+
     virtual void buildAndRegisterScatterEvaluators(PHX::FieldManager<panzer::Traits>& fm,
                                                    const panzer::FieldLibrary& fl,
                                                    const LinearObjFactory<panzer::Traits> & lof,
@@ -92,7 +92,7 @@ namespace panzer {
                                                               const Teuchos::RCP<panzer::IntegrationRule>& ir,
                                                               const Teuchos::Ptr<const panzer::LinearObjFactory<panzer::Traits> > & lof,
                                                               const Teuchos::ParameterList& user_data) const;
-    
+
     virtual void buildAndRegisterClosureModelEvaluators(PHX::FieldManager<panzer::Traits>& fm,
                                                         const panzer::FieldLayoutLibrary& fl,
                                                         const Teuchos::RCP<panzer::IntegrationRule>& ir,
@@ -117,7 +117,7 @@ namespace panzer {
                                                             const Teuchos::ParameterList& user_data) const;
 
     virtual const Teuchos::RCP<Teuchos::ParameterList> getEvaluatorParameterList() const;
-    
+
     virtual const std::vector<std::pair<std::string,Teuchos::RCP<panzer::PureBasis> > > & getProvidedDOFs() const;
 
     virtual const std::vector<std::vector<std::string> > & getCoordinateDOFs() const;
@@ -151,7 +151,7 @@ namespace panzer {
       * basis cannot be changed, only the order.
       *
       * \param[in] dofName (Required) Name of field to lookup in the unique global
-      *                        indexer. 
+      *                        indexer.
       * \param[in] basisOrder (Required) Polynomial order for the basis for this DOF.
       * \param[in] integrationOrder (Optional) Order of the integration rule associated with this
       *                             DOF.  If set to -1 (default), it will use the default
@@ -164,14 +164,14 @@ namespace panzer {
     /** \brief Get the basis order for an existing degree of freedom.
       *
       * \param[in] dofName (Required) Name of field to lookup in the unique global
-      *                        indexer. 
+      *                        indexer.
       */
     int getBasisOrder(const std::string & dofName) const;
 
     /** \brief Get the integration order for an existing degree of freedom.
       *
       * \param[in] dofName (Required) Name of field to lookup in the unique global
-      *                        indexer. 
+      *                        indexer.
       */
     int getIntegrationOrder(const std::string & dofName) const;
 
@@ -183,7 +183,7 @@ namespace panzer {
     //! Returns true if transient support should be enabled in the equation set
     bool buildTransientSupport() const;
 
-    // The set of functions below are for use by derived classes to specify the 
+    // The set of functions below are for use by derived classes to specify the
     // provided degree of freedom (and associated residual name), in addition
     // to enabling the, gradient, curl and time derivative for those.
 
@@ -217,7 +217,7 @@ namespace panzer {
 
     /** Alert the panzer library that a gradient of particular a DOF is needed.
       *
-      * \param[in] dofName (Required) Name of field to lookup in the unique global indexer. 
+      * \param[in] dofName (Required) Name of field to lookup in the unique global indexer.
       * \param[in] gradName (Optional) Name of the gradient field associated with
       *                     this DOF.  If not supplied or an empty string used,
       *                     the default is to add the prefix "GRAD_"
@@ -228,7 +228,7 @@ namespace panzer {
 
     /** Alert the panzer library that a curl of particular a DOF is needed.
       *
-      * \param[in] dofName (Required) Name of field to lookup in the unique global indexer. 
+      * \param[in] dofName (Required) Name of field to lookup in the unique global indexer.
       * \param[in] curlName (Optional) Name of the curl field associated with
       *                     this DOF.  If not supplied or an empty string used,
       *                     the default is to add the prefix "CURL_"
@@ -239,7 +239,7 @@ namespace panzer {
 
     /** Alert the panzer library that a div of particular a DOF is needed.
       *
-      * \param[in] dofName (Required) Name of field to lookup in the unique global indexer. 
+      * \param[in] dofName (Required) Name of field to lookup in the unique global indexer.
       * \param[in] divName (Optional) Name of the div field associated with
       *                     this DOF.  If not supplied or an empty string used,
       *                     the default is to add the prefix "DIV__"
@@ -250,7 +250,7 @@ namespace panzer {
 
     /** Alert the panzer library that a time derivative of particular a DOF is needed.
       *
-      * \param[in] dofName (Required) Name of field to lookup in the unique global indexer. 
+      * \param[in] dofName (Required) Name of field to lookup in the unique global indexer.
       * \param[in] dotName (Optional) Name of the time derivative field associated with
       *                    this DOF.  If not supplied or an empty string used,
       *                    the default is to add the prefix "DXDT_"
@@ -304,7 +304,7 @@ namespace panzer {
      * \param[in] dof_name Name of DOF that this residual will contribute to
      * \param[in] residual_contributions Vector of field names that will be summed to produce the residual contributions
      * \param[in] residualfield_name Name of the evalauted residual field.  This is optional and will use a default value if the string is empty.
-     */ 
+     */
     void buildAndRegisterResidualSummationEvalautor(PHX::FieldManager<panzer::Traits>& fm,
                                                     const std::string dof_name,
                                                     const std::vector<std::string>& residual_contributions,
@@ -324,7 +324,7 @@ namespace panzer {
      * \param[in] residual_contributions Vector of field names that will be summed to produce the residual contributions
      * \param[in] scale_contributions Vector of scalars for each term in the residual contributions.
      * \param[in] residualfield_name Name of the evalauted residual field.  This is optional and will use a default value if the string is empty.
-     */ 
+     */
     void buildAndRegisterResidualSummationEvalautor(PHX::FieldManager<panzer::Traits>& fm,
                                                     const std::string dof_name,
                                                     const std::vector<std::string>& residual_contributions,
@@ -335,14 +335,14 @@ namespace panzer {
     //object.  Useful for passing off input parameter sublists
     //directly to evaluators.
     Teuchos::RCP<Teuchos::ParameterList> getEquationSetParameterList() const;
-    
+
     // Deprecated code support, NOTE: this assumes the same basis and inte rule are used for all dofs in the physics block!!!  We are setting these to avoid having to change closure model factories for all physics right away.
     void setupDeprecatedDOFsSupport();
 
   protected:
 
     struct DOFDescriptor {
-      DOFDescriptor() 
+      DOFDescriptor()
         : dofName("")
         , residualName(std::make_pair(false,""))
         , grad(std::make_pair(false,""))
@@ -400,12 +400,12 @@ namespace panzer {
 
     //! For convenience, declare a basis iterator
     typedef typename std::map<std::string,std::pair<Teuchos::RCP<panzer::PureBasis>,Teuchos::RCP<std::vector<std::string> > > >::const_iterator BasisIterator;
-    
+
     const Teuchos::RCP<Teuchos::ParameterList> m_input_params;
     int m_default_integration_order;
     const panzer::CellData m_cell_data;
     const bool m_build_transient_support;
-    
+
     //! Key is the dof name and the value is the corresponding basis
     std::vector<std::pair<std::string,Teuchos::RCP<panzer::PureBasis> > >  m_provided_dofs;
 
@@ -427,7 +427,7 @@ namespace panzer {
     std::vector<std::vector<std::string> > m_coordinate_dofs;
 
   };
-  
+
 }
 
 #endif

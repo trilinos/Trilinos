@@ -63,10 +63,10 @@ TEUCHOS_UNIT_TEST(tSquareTriMeshFactory, defaults)
    using Teuchos::RCP;
    using Teuchos::rcp;
    using Teuchos::rcpFromRef;
-   
-   SquareTriMeshFactory factory; 
+
+   SquareTriMeshFactory factory;
    RCP<STK_Interface> mesh = factory.buildMesh(MPI_COMM_WORLD);
- 
+
    if(mesh->isWritable())
       mesh->writeToExodus("square-tri.exo");
 
@@ -93,7 +93,7 @@ TEUCHOS_UNIT_TEST(tSquareTriMeshFactory, defaults)
    // check for nodeset
    std::vector<std::string> nodesets;
    mesh->getNodesetNames(nodesets);
- 
+
    TEST_EQUALITY(nodesets.size(),1);
    TEST_EQUALITY(nodesets[0],"origin");
 }

@@ -59,8 +59,8 @@ namespace panzer {
 template <typename EvalT>
 Teuchos::RCP<ResponseBase> ResponseEvaluatorFactory_IPCoordinates<EvalT>::
 buildResponseObject(const std::string & responseName,const std::vector<WorksetDescriptor> & wkstDesc) const
-{ 
-  // check that the input worksets constains only element blocks 
+{
+  // check that the input worksets constains only element blocks
   bool failure = false;
   std::stringstream failureStrm;
   for(std::size_t i=0;i<wkstDesc.size();i++) {
@@ -71,7 +71,7 @@ buildResponseObject(const std::string & responseName,const std::vector<WorksetDe
                              "REF_IPCoordinates::buildResponseObject: could not build using side set descriptors:\n"
                              << failureStrm.str());
 
-  return Teuchos::rcp(new Response_IPCoordinates<EvalT>(responseName)); 
+  return Teuchos::rcp(new Response_IPCoordinates<EvalT>(responseName));
 }
 
 template <typename EvalT>
@@ -87,7 +87,7 @@ buildAndRegisterEvaluators(const std::string & responseName,
    // build scatter evaluator
    {
      // build useful evaluator
-     Teuchos::RCP<PHX::Evaluator<panzer::Traits> > eval 
+     Teuchos::RCP<PHX::Evaluator<panzer::Traits> > eval
          = Teuchos::rcp(new ResponseScatterEvaluator_IPCoordinates<EvalT,panzer::Traits>(responseName,cubatureDegree_));
 
      this->template registerEvaluator<EvalT>(fm, eval);

@@ -16,7 +16,7 @@
 #include "Panzer_Evaluator_WithBaseImpl.hpp"
 
 namespace mini_em {
-    
+
   using panzer::Cell;
   using panzer::Point;
   using panzer::Dim;
@@ -35,8 +35,8 @@ public:
                   const panzer::IntegrationRule & ir,
                   const panzer::FieldLayoutLibrary & fl,
                   const double & dt);
-                                                                        
-    void evaluateFields(typename Traits::EvalData d);               
+
+    void evaluateFields(typename Traits::EvalData d);
 
 
 private:

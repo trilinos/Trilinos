@@ -52,7 +52,7 @@ namespace panzer_test {
   {
     using FadType = Sacado::Fad::DFad<double>;
     const int derivative_dim_plus_one = 7;
-				  
+
     // Test a DynRankView from a DynRankView
     {
       Kokkos::DynRankView<FadType,PHX::Device> a("a",10,4,13,derivative_dim_plus_one);

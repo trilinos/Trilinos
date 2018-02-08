@@ -47,7 +47,7 @@
 #include "PanzerAdaptersSTK_config.hpp"
 
 namespace panzer_stk {
-  
+
   std::string version();
 
 }

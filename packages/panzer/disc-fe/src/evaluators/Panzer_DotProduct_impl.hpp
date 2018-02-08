@@ -53,7 +53,7 @@
 namespace panzer {
 
 template <typename EvalT,typename TraitsT>
-Teuchos::RCP<DotProduct<EvalT,TraitsT> > 
+Teuchos::RCP<DotProduct<EvalT,TraitsT> >
 buildEvaluator_DotProduct(const std::string & resultName,
                           const panzer::PointRule & pr,
                           const std::string & vecA,
@@ -87,8 +87,8 @@ PHX_EVALUATOR_CTOR(DotProduct,p)
   multiplier_value = 1.0;
   if(p.isType<double>("Multiplier"))
     multiplier_value = p.get<double>("Multiplier");
-  
-  const Teuchos::RCP<const panzer::PointRule> pr = 
+
+  const Teuchos::RCP<const panzer::PointRule> pr =
     p.get< Teuchos::RCP<const panzer::PointRule> >("Point Rule");
 
   vec_a_dot_vec_b = PHX::MDField<ScalarT>(result_name, pr->dl_scalar);
@@ -104,7 +104,7 @@ PHX_EVALUATOR_CTOR(DotProduct,p)
   this->addEvaluatedField(vec_a_dot_vec_b);
   this->addDependentField(vec_a);
   this->addDependentField(vec_b);
- 
+
   std::string n = "DotProduct: " + result_name + " = " + vec_a_name + " . " + vec_b_name;
   this->setName(n);
 }
@@ -128,12 +128,12 @@ PHX_POST_REGISTRATION_SETUP(DotProduct, /* sd */, fm)
 
 //**********************************************************************
 PHX_EVALUATE_FIELDS(DotProduct,workset)
-{ 
+{
   for (index_t cell = 0; cell < workset.num_cells; ++cell) {
     for (int p = 0; p < num_pts; ++p) {
       vec_a_dot_vec_b(cell,p) = ScalarT(0.0);
       for (int dim = 0; dim < num_dim; ++dim)
-	vec_a_dot_vec_b(cell,p) += vec_a(cell,p,dim) * vec_b(cell,p,dim); 
+	vec_a_dot_vec_b(cell,p) += vec_a(cell,p,dim) * vec_b(cell,p,dim);
 
       if(multiplier_field_on)
         vec_a_dot_vec_b(cell,p) *= multiplier_value*multiplier_field(cell,p);

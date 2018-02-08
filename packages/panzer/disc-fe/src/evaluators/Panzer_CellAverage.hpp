@@ -52,7 +52,7 @@
 #include "Panzer_Evaluator_Macros.hpp"
 
 namespace panzer {
-    
+
 /** This integrates a scalar quanity over each cell.
   * It is useful for comptuing integral responses.
 
@@ -67,9 +67,9 @@ namespace panzer {
   \endverbatim
   */
 PANZER_EVALUATOR_CLASS(CellAverage)
-  
+
   PHX::MDField<ScalarT,Cell> average;  // result
-    
+
   PHX::MDField<const ScalarT,Cell,IP> scalar; // function to be integrated
 
   std::vector<PHX::MDField<const ScalarT,Cell,IP> > field_multipliers;
@@ -78,10 +78,10 @@ PANZER_EVALUATOR_CLASS(CellAverage)
   std::size_t num_qp;
   std::size_t quad_index;
   int quad_order;
- 
+
 public:
   // for testing purposes
-  const PHX::FieldTag & getFieldTag() const 
+  const PHX::FieldTag & getFieldTag() const
   { return average.fieldTag(); }
 
 private:
@@ -93,8 +93,8 @@ PANZER_EVALUATOR_CLASS_END
   * that builds scalars from a single vector field. The user specifies
   * the layouts (assumed compatible) and then uses a postfix for each
   * of the scalar fields.
-  * 
-  * \param[in] vectorName Name of the vector 
+  *
+  * \param[in] vectorName Name of the vector
   * \param[in] postfix Vector specifying the postfix to use when naming
   *                    each scalar field
   * \param[in] vectorLayout Data layout for the vector field

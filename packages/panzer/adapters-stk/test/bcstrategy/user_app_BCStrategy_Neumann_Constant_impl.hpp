@@ -107,10 +107,10 @@ buildAndRegisterEvaluators(PHX::FieldManager<panzer::Traits>& fm,
     p.set("Data Layout", ir->dl_vector);
     TEUCHOS_ASSERT(this->m_bc.params()->isSublist("Flux Values"));
     p.sublist("Flux Values") = this->m_bc.params()->sublist("Flux Values");
-    
-    RCP< PHX::Evaluator<panzer::Traits> > op = 
+
+    RCP< PHX::Evaluator<panzer::Traits> > op =
       rcp(new panzer::ConstantFlux<EvalT,panzer::Traits>(p));
-    
+
     this->template registerEvaluator<EvalT>(fm, op);
   }
 
@@ -122,7 +122,7 @@ void user_app::BCStrategy_Neumann_Constant<EvalT>::
 postRegistrationSetup(typename panzer::Traits::SetupData /* d */,
 		      PHX::FieldManager<panzer::Traits>& /* vm */)
 {
-  
+
 }
 
 
@@ -131,5 +131,5 @@ template <typename EvalT>
 void user_app::BCStrategy_Neumann_Constant<EvalT>::
 evaluateFields(typename panzer::Traits::EvalData /* d */)
 {
-  
+
 }

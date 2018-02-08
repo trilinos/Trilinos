@@ -127,11 +127,11 @@ namespace panzer {
     testInitialization(ipb);
 
     const int default_int_order = 1;
-    std::string eBlockID = "eblock-0_0";    
+    std::string eBlockID = "eblock-0_0";
     Teuchos::RCP<user_app::MyFactory> eqset_factory = Teuchos::rcp(new user_app::MyFactory);
     panzer::CellData cellData(workset_size,mesh->getCellTopology("eblock-0_0"));
     Teuchos::RCP<panzer::GlobalData> gd = panzer::createGlobalData();
-    Teuchos::RCP<panzer::PhysicsBlock> physicsBlock = 
+    Teuchos::RCP<panzer::PhysicsBlock> physicsBlock =
       Teuchos::rcp(new PhysicsBlock(ipb,eBlockID,default_int_order,cellData,eqset_factory,gd,false));
 
     Teuchos::RCP<panzer::IntegrationRule> ir = buildIR(workset_size,4);
@@ -152,7 +152,7 @@ namespace panzer {
     panzer::WorksetContainer wkstContainer; // (Teuchos::rcp(new panzer_stk::WorksetFactory(mesh)),physicsBlocks,workset_size);
 
     wkstContainer.setFactory(Teuchos::rcp(new panzer_stk::WorksetFactory(mesh)));
-    for(size_t i=0;i<physicsBlocks.size();i++) 
+    for(size_t i=0;i<physicsBlocks.size();i++)
       wkstContainer.setNeeds(physicsBlocks[i]->elementBlockID(),physicsBlocks[i]->getWorksetNeeds());
     wkstContainer.setGlobalIndexer(dofManager);
     wkstContainer.setWorksetSize(workset_size);
@@ -163,7 +163,7 @@ namespace panzer {
 
     // setup field manager, add evaluator under test
     /////////////////////////////////////////////////////////////
- 
+
     PHX::FieldManager<panzer::Traits> fm;
 
     {
@@ -174,7 +174,7 @@ namespace panzer {
        pl.set<Teuchos::RCP<const PointEvaluation<panzer::Traits::Residual::ScalarT> > >("Point Evaluator",
                                                                                         Teuchos::rcp(new BilinearPointEvaluator));
 
-       Teuchos::RCP<PHX::Evaluator<panzer::Traits> > evaluator  
+       Teuchos::RCP<PHX::Evaluator<panzer::Traits> > evaluator
           = Teuchos::rcp(new PointEvaluator<panzer::Traits::Residual,panzer::Traits>(pl));
 
        fm.registerEvaluator<panzer::Traits::Residual>(evaluator);
@@ -192,7 +192,7 @@ namespace panzer {
           = Teuchos::rcp(new std::vector<std::string>);
        pl.set("Field Multipliers", vec);
 
-       Teuchos::RCP<PHX::Evaluator<panzer::Traits> > evaluator  
+       Teuchos::RCP<PHX::Evaluator<panzer::Traits> > evaluator
           = Teuchos::rcp(new panzer::Integrator_BasisTimesVector<panzer::Traits::Residual,panzer::Traits>(pl));
 
        fm.registerEvaluator<panzer::Traits::Residual>(evaluator);
@@ -218,7 +218,7 @@ namespace panzer {
 
     fm.evaluateFields<panzer::Traits::Residual>(workset);
 
-    PHX::MDField<panzer::Traits::Residual::ScalarT,panzer::Cell,panzer::BASIS> 
+    PHX::MDField<panzer::Traits::Residual::ScalarT,panzer::Cell,panzer::BASIS>
        fieldData_qedge1("Residual",basis_qedge1->functional);
 
     fm.getFieldData<panzer::Traits::Residual>(fieldData_qedge1);
@@ -228,21 +228,21 @@ namespace panzer {
 
     // Transformation is [x,y] = F[x_ref,y_ref] = 0.5*[1,1]+0.5*[1,0;0,1]*[x_ref,y_ref]
     // therefore transformation matrix is DF^{-T} = 2*[1,0;0,1]
-    // so curl vector u_ref:Ref_coord=>Ref_Vec transforms with 
+    // so curl vector u_ref:Ref_coord=>Ref_Vec transforms with
     //
     //           u(x,y)=DF^{-T}*u_ref(F^{-1}(x,y))
 
-    TEST_FLOATING_EQUALITY(fieldData_qedge1(0,0),5.0/12.0,1e-5);        // 0 edge basis is [(1-y_ref)/4, 0] 
-    TEST_FLOATING_EQUALITY(fieldData_qedge1(0,2),3.0/4.0,1e-5);         // 2 edge basis is [(1+y_ref)/4, 0] 
+    TEST_FLOATING_EQUALITY(fieldData_qedge1(0,0),5.0/12.0,1e-5);        // 0 edge basis is [(1-y_ref)/4, 0]
+    TEST_FLOATING_EQUALITY(fieldData_qedge1(0,2),3.0/4.0,1e-5);         // 2 edge basis is [(1+y_ref)/4, 0]
 
     // these two have sign changes because of the mesh topology!
-    TEST_FLOATING_EQUALITY(fieldData_qedge1(0,1),0.428925006266,1e-5);  // 1 edge basis is [(1+x_ref)/4, 0] 
-    TEST_FLOATING_EQUALITY(fieldData_qedge1(0,3),0.344719536524,1e-5);  // 3 edge basis is [(1-x_ref)/4, 0] 
+    TEST_FLOATING_EQUALITY(fieldData_qedge1(0,1),0.428925006266,1e-5);  // 1 edge basis is [(1+x_ref)/4, 0]
+    TEST_FLOATING_EQUALITY(fieldData_qedge1(0,3),0.344719536524,1e-5);  // 3 edge basis is [(1-x_ref)/4, 0]
   }
 
   Teuchos::RCP<panzer::IntegrationRule> buildIR(const std::size_t& workset_size, const int& cubature_degree)
   {
-     Teuchos::RCP<shards::CellTopology> topo = 
+     Teuchos::RCP<shards::CellTopology> topo =
         Teuchos::rcp(new shards::CellTopology(shards::getCellTopologyData< shards::Quadrilateral<4> >()));
 
      const panzer::CellData cell_data(workset_size,topo);
@@ -252,13 +252,13 @@ namespace panzer {
 
   Teuchos::RCP<panzer::PureBasis> buildBasis(const std::size_t& worksetSize,
 					     const std::string& basisName)
-  { 
-     Teuchos::RCP<shards::CellTopology> topo = 
+  {
+     Teuchos::RCP<shards::CellTopology> topo =
         Teuchos::rcp(new shards::CellTopology(shards::getCellTopologyData< shards::Quadrilateral<4> >()));
 
      panzer::CellData cellData(worksetSize,topo);
      // hard coded to first order
-     return Teuchos::rcp(new panzer::PureBasis(basisName,1,cellData)); 
+     return Teuchos::rcp(new panzer::PureBasis(basisName,1,cellData));
   }
 
   Teuchos::RCP<panzer_stk::STK_Interface> buildMesh(int elemX,int elemY)
@@ -268,11 +268,11 @@ namespace panzer {
     pl->set("Y Blocks",1);
     pl->set("X Elements",elemX);
     pl->set("Y Elements",elemY);
-    
+
     panzer_stk::SquareQuadMeshFactory factory;
     factory.setParameterList(pl);
     RCP<panzer_stk::STK_Interface> mesh = factory.buildUncommitedMesh(MPI_COMM_WORLD);
-    factory.completeMeshConstruction(*mesh,MPI_COMM_WORLD); 
+    factory.completeMeshConstruction(*mesh,MPI_COMM_WORLD);
 
     return mesh;
   }
@@ -299,7 +299,7 @@ namespace panzer {
       p.set("Basis Order",1);
       p.set("Integration Order",4);
     }
-    
+
   }
 
 }

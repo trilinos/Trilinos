@@ -77,13 +77,13 @@ TEUCHOS_UNIT_TEST(tCubeTetMeshFactory, defaults)
    pl->set("Z Elements",1);
 */
 
-   CubeTetMeshFactory factory; 
+   CubeTetMeshFactory factory;
    // factory.setParameterList(pl);
    RCP<STK_Interface> mesh = factory.buildMesh(MPI_COMM_WORLD);
    TEST_ASSERT(mesh!=Teuchos::null);
 
    TEST_EQUALITY(mesh->getPeriodicBCVector().size(),0);
- 
+
    if(mesh->isWritable())
       mesh->writeToExodus("CubeTet.exo");
 
@@ -99,7 +99,7 @@ TEUCHOS_UNIT_TEST(tCubeTetMeshFactory, defaults)
    // check for nodeset
    std::vector<std::string> nodesets;
    mesh->getNodesetNames(nodesets);
- 
+
    TEST_EQUALITY(nodesets.size(),1);
    TEST_EQUALITY(nodesets[0],"origin");
 }

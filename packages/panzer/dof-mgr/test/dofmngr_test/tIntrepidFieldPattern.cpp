@@ -52,13 +52,13 @@
 #include "Panzer_IntrepidFieldPattern.hpp"
 
 // include some intrepid basis functions
-// 2D basis 
+// 2D basis
 #include "Intrepid2_HGRAD_TRI_C1_FEM.hpp"
 #include "Intrepid2_HGRAD_TRI_C2_FEM.hpp"
 #include "Intrepid2_HGRAD_QUAD_C1_FEM.hpp"
 #include "Intrepid2_HGRAD_QUAD_C2_FEM.hpp"
 
-// 3D basis 
+// 3D basis
 #include "Intrepid2_HGRAD_HEX_C1_FEM.hpp"
 #include "Intrepid2_HGRAD_HEX_C2_FEM.hpp"
 
@@ -92,7 +92,7 @@ TEUCHOS_UNIT_TEST(tIntrepid2FieldPattern, test2d_tri_c1)
    basis = rcp(new Intrepid2::Basis_HGRAD_TRI_C1_FEM<PHX::exec_space,double,double>);
 
    Teuchos::RCP<FieldPattern> pattern = rcp(new Intrepid2FieldPattern(basis));
-  
+
    out << "output stream test: " << std::endl;
    out << *pattern << std::endl;
 
@@ -103,7 +103,7 @@ TEUCHOS_UNIT_TEST(tIntrepid2FieldPattern, test2d_tri_c1)
    TEST_EQUALITY(pattern->getSubcellCount(0),3); // nodes
    TEST_EQUALITY(pattern->getSubcellCount(1),3); // edges
    TEST_EQUALITY(pattern->getSubcellCount(2),1); // cells
-  
+
    std::vector<int> v;
    v = pattern->getSubcellIndices(0,0);
    TEST_EQUALITY(v.size(),1);
@@ -127,7 +127,7 @@ TEUCHOS_UNIT_TEST(tIntrepid2FieldPattern, test2d_tri_c1)
    std::vector<int> bndryIndices_true(2);
 
    //
-   pattern->getSubcellClosureIndices(1,0,bndryIndices); 
+   pattern->getSubcellClosureIndices(1,0,bndryIndices);
    std::sort(bndryIndices.begin(),bndryIndices.end()); // sort for comparision
 
    bndryIndices_true[0] = 0;
@@ -174,7 +174,7 @@ TEUCHOS_UNIT_TEST(tIntrepid2FieldPattern, test2d_tri_c2)
    TEST_EQUALITY(pattern->getSubcellCount(0),3); // nodes
    TEST_EQUALITY(pattern->getSubcellCount(1),3); // edges
    TEST_EQUALITY(pattern->getSubcellCount(2),1); // cells
-  
+
    std::vector<int> v;
    v = pattern->getSubcellIndices(0,0);
    TEST_EQUALITY(v.size(),1);
@@ -207,7 +207,7 @@ TEUCHOS_UNIT_TEST(tIntrepid2FieldPattern, test2d_tri_c2)
    std::vector<int> bndryIndices_true(3);
 
    //
-   pattern->getSubcellClosureIndices(1,0,bndryIndices); 
+   pattern->getSubcellClosureIndices(1,0,bndryIndices);
    std::sort(bndryIndices.begin(),bndryIndices.end()); // sort for comparision
 
    bndryIndices_true[0] = 0;
@@ -255,7 +255,7 @@ TEUCHOS_UNIT_TEST(tIntrepid2FieldPattern, test2d_quad_c1)
    TEST_EQUALITY(pattern->getSubcellCount(0),4); // nodes
    TEST_EQUALITY(pattern->getSubcellCount(1),4); // edges
    TEST_EQUALITY(pattern->getSubcellCount(2),1); // cells
-  
+
    std::vector<int> v;
    v = pattern->getSubcellIndices(0,0);
    TEST_EQUALITY(v.size(),1);
@@ -284,7 +284,7 @@ TEUCHOS_UNIT_TEST(tIntrepid2FieldPattern, test2d_quad_c1)
    std::vector<int> bndryIndices_true(2);
 
    //
-   pattern->getSubcellClosureIndices(1,0,bndryIndices); 
+   pattern->getSubcellClosureIndices(1,0,bndryIndices);
    std::sort(bndryIndices.begin(),bndryIndices.end()); // sort for comparision
 
    bndryIndices_true[0] = 0;
@@ -380,7 +380,7 @@ TEUCHOS_UNIT_TEST(tIntrepid2FieldPattern, test2d_quad_c2)
    std::vector<int> bndryIndices_true(3);
 
    //
-   pattern->getSubcellClosureIndices(1,0,bndryIndices); 
+   pattern->getSubcellClosureIndices(1,0,bndryIndices);
    std::sort(bndryIndices.begin(),bndryIndices.end()); // sort for comparision
 
    bndryIndices_true[0] = 0;
@@ -408,7 +408,7 @@ TEUCHOS_UNIT_TEST(tIntrepid2FieldPattern, test2d_quad_c2)
    bndryIndices_true[2] = 6;
    TEST_ASSERT(bndryIndices.size()==bndryIndices_true.size());
    TEST_ASSERT(std::equal(bndryIndices_true.begin(),bndryIndices_true.end(),bndryIndices.begin()));
-  
+
    //
    pattern->getSubcellClosureIndices(1,3,bndryIndices);
    std::sort(bndryIndices.begin(),bndryIndices.end()); // sort for comparision
@@ -480,7 +480,7 @@ TEUCHOS_UNIT_TEST(tIntrepid2FieldPattern, test3d_hex_c1)
    bndryIndices_true[1] = 3;
    TEST_ASSERT(bndryIndices.size()==bndryIndices_true.size());
    TEST_ASSERT(std::equal(bndryIndices_true.begin(),bndryIndices_true.end(),bndryIndices.begin()));
-  
+
    //
    pattern->getSubcellClosureIndices(1,6,bndryIndices);
    std::sort(bndryIndices.begin(),bndryIndices.end()); // sort for comparision
@@ -515,10 +515,10 @@ TEUCHOS_UNIT_TEST(tIntrepid2FieldPattern, test3d_hex_c1)
 
 //    // test cell
 //    bndryIndices_true.resize(8);
-// 
+//
 //    pattern->getSubcellClosureIndices(3,0,bndryIndices);
 //    std::sort(bndryIndices.begin(),bndryIndices.end()); // sort for comparision
-// 
+//
 //    for(std::size_t i=0;i<bndryIndices_true.size();++i)
 //       bndryIndices_true[i] = i;
 //    TEST_ASSERT(std::equal(bndryIndices_true.begin(),bndryIndices_true.end(),bndryIndices.begin()));
@@ -610,7 +610,7 @@ TEUCHOS_UNIT_TEST(tIntrepid2FieldPattern, test3d_hex_c2)
    bndryIndices_true[2] = 10;
    TEST_ASSERT(bndryIndices.size()==bndryIndices_true.size());
    TEST_ASSERT(std::equal(bndryIndices_true.begin(),bndryIndices_true.end(),bndryIndices.begin()));
-  
+
    //
    pattern->getSubcellClosureIndices(1,6,bndryIndices);
    std::sort(bndryIndices.begin(),bndryIndices.end()); // sort for comparision
@@ -677,10 +677,10 @@ TEUCHOS_UNIT_TEST(tIntrepid2FieldPattern, test3d_hex_c2)
       out << bndryIndices[i] << " ?==" << bndryIndices_true[i] << std::endl;
 //    // test cell
 //    bndryIndices_true.resize(8);
-// 
+//
 //    pattern->getSubcellClosureIndices(3,0,bndryIndices);
 //    std::sort(bndryIndices.begin(),bndryIndices.end()); // sort for comparision
-// 
+//
 //    for(std::size_t i=0;i<bndryIndices_true.size();++i)
 //       bndryIndices_true[i] = i;
 //    TEST_ASSERT(std::equal(bndryIndices_true.begin(),bndryIndices_true.end(),bndryIndices.begin()));

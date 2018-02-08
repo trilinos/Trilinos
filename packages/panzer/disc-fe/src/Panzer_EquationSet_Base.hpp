@@ -68,15 +68,15 @@ namespace panzer {
 
   //! Non-templated empty base class for EquationSet objects
   class EquationSetBase : public EvaluatorsRegistrar {
-    
+
   public:
-    
+
     EquationSetBase() {}
-    
+
     virtual ~EquationSetBase() {}
-    
+
     /// \name Initialization
-    ///@{ 
+    ///@{
 
     virtual void setElementBlockId(const std::string & blockId) = 0;
 
@@ -89,22 +89,22 @@ namespace panzer {
 								const panzer::FieldLibrary& field_library,
 								const LinearObjFactory<panzer::Traits> & lof,
 								const Teuchos::ParameterList& user_data) const = 0;
-    
+
     virtual void buildAndRegisterScatterEvaluators(PHX::FieldManager<panzer::Traits>& fm,
 						   const panzer::FieldLibrary& field_library,
 						   const LinearObjFactory<panzer::Traits> & lof,
 						   const Teuchos::ParameterList& user_data) const = 0;
-    
+
     virtual void buildAndRegisterDOFProjectionsToIPEvaluators(PHX::FieldManager<panzer::Traits>& fm,
 							      const panzer::FieldLayoutLibrary& field_library,
 							      const Teuchos::RCP<panzer::IntegrationRule>& ir,
                                                               const Teuchos::Ptr<const panzer::LinearObjFactory<panzer::Traits> > & lof,
 							      const Teuchos::ParameterList& user_data) const = 0;
-    
+
     virtual void buildAndRegisterEquationSetEvaluators(PHX::FieldManager<panzer::Traits>& fm,
 						       const panzer::FieldLibrary& field_library,
 						       const Teuchos::ParameterList& user_data) const = 0;
-    
+
     //! Register closure model evaluators with the model name internally specified by the equation set
     virtual void buildAndRegisterClosureModelEvaluators(PHX::FieldManager<panzer::Traits>& fm,
 							const panzer::FieldLayoutLibrary& field_library,
@@ -137,7 +137,7 @@ namespace panzer {
 
     //! Returns the parameter list that will be passed off from the equaiton set to the closure model evaluator factory.  This allows users to pass parameters from a particular equaiton set to its associated closure models.
     virtual const Teuchos::RCP<Teuchos::ParameterList> getEvaluatorParameterList() const = 0;
-    
+
     //! Return the Basis for the equation set, key is the DOF name (note coordinate DOFs are NOT included)
     virtual const std::vector<std::pair<std::string,Teuchos::RCP<panzer::PureBasis> > > & getProvidedDOFs() const = 0;
 
@@ -158,7 +158,7 @@ namespace panzer {
     virtual void setTangentParamNames(const std::vector<std::string>& tangent_param_names) = 0;
 
   };
-  
+
 }
 
 #endif

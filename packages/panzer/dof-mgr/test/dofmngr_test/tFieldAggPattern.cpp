@@ -55,14 +55,14 @@
 #include "Panzer_NodalFieldPattern.hpp"
 
 // include some intrepid basis functions
-// 2D basis 
+// 2D basis
 #include "Intrepid2_HGRAD_TRI_C1_FEM.hpp"
 #include "Intrepid2_HGRAD_TRI_C2_FEM.hpp"
 #include "Intrepid2_HGRAD_QUAD_C1_FEM.hpp"
 #include "Intrepid2_HGRAD_QUAD_C2_FEM.hpp"
 #include "Intrepid2_HCURL_QUAD_I1_FEM.hpp"
 
-// 3D basis 
+// 3D basis
 #include "Intrepid2_HGRAD_HEX_C1_FEM.hpp"
 #include "Intrepid2_HGRAD_HEX_C2_FEM.hpp"
 #include "Intrepid2_HGRAD_HEX_Cn_FEM.hpp"
@@ -90,7 +90,7 @@ typedef Kokkos::DynRankView<double,PHX::Device> FieldContainer;
 // tests:
 //    - getGeometricAggPattern
 //    - getFieldPattern
-//    - getDimension 
+//    - getDimension
 TEUCHOS_UNIT_TEST(tFieldAggPattern, testA)
 {
 
@@ -121,8 +121,8 @@ TEUCHOS_UNIT_TEST(tFieldAggPattern, testA)
 
    // test build of geometric field pattern
    {
-      FieldAggPattern agg; 
-   
+      FieldAggPattern agg;
+
       TEST_THROW(agg.getSubcellClosureIndices(2,0,closureIndices),std::logic_error);
       // TEST_THROW(*agg.getGeometricAggFieldPattern(),Teuchos::NullReferenceError);
 
@@ -139,10 +139,10 @@ TEUCHOS_UNIT_TEST(tFieldAggPattern, testA)
 
    // test build of geometric field pattern
    {
-      FieldAggPattern agg(patternM); 
+      FieldAggPattern agg(patternM);
 
       TEST_THROW(agg.getSubcellClosureIndices(2,0,closureIndices),std::logic_error);
-   
+
       bool equality = false;
       TEST_NOTHROW(equality = geom.equals(*agg.getGeometricAggFieldPattern()));
       TEST_ASSERT(equality);
@@ -151,8 +151,8 @@ TEUCHOS_UNIT_TEST(tFieldAggPattern, testA)
    }
 
    {
-      FieldAggPattern agg(patternM); 
-   
+      FieldAggPattern agg(patternM);
+
       TEST_THROW(agg.getFieldPattern(5),std::logic_error); // no field 5
 
       TEST_NOTHROW(agg.getFieldPattern(3));
@@ -185,10 +185,10 @@ TEUCHOS_UNIT_TEST(tFieldAggPattern, testB)
       std::vector<std::tuple<int,FieldType,RCP<const FieldPattern> > > patternM;
       patternM.push_back(std::make_tuple(3,FieldType::CG,patternB));
 
-      FieldAggPattern agg(patternM); 
+      FieldAggPattern agg(patternM);
       agg.print(out); // for debugging purposes
 
-      TEST_EQUALITY(agg.getDimension(),patternB->getDimension()); 
+      TEST_EQUALITY(agg.getDimension(),patternB->getDimension());
       TEST_EQUALITY((int) agg.fieldIds().size(),patternB->numberIds());
       TEST_EQUALITY((int) agg.numFieldsPerId().size(),patternB->numberIds());
 
@@ -218,8 +218,8 @@ TEUCHOS_UNIT_TEST(tFieldAggPattern, testB)
       }
 
       for(int i=0;i<agg.getDimension();i++)
-         TEST_EQUALITY(agg.getSubcellCount(i),patternB->getSubcellCount(i)); 
-      TEST_ASSERT(agg.equals(*patternB)); 
+         TEST_EQUALITY(agg.getSubcellCount(i),patternB->getSubcellCount(i));
+      TEST_ASSERT(agg.equals(*patternB));
    }
 
    // test that single construction gives the same pattern
@@ -228,11 +228,11 @@ TEUCHOS_UNIT_TEST(tFieldAggPattern, testB)
       patternM.push_back(std::make_tuple(3,FieldType::CG,patternB));
       patternM.push_back(std::make_tuple(7,FieldType::CG,patternA));
 
-      FieldAggPattern agg(patternM); 
+      FieldAggPattern agg(patternM);
       agg.print(out); // for debugging purposes
 
       TEST_ASSERT(patternB->sameGeometry(agg));
-      TEST_EQUALITY(agg.getDimension(),patternB->getDimension()); 
+      TEST_EQUALITY(agg.getDimension(),patternB->getDimension());
       TEST_EQUALITY((int) agg.numFieldsPerId().size(),agg.getGeometricAggFieldPattern()->numberIds());
 
       const std::vector<int> & fieldsPerId = agg.numFieldsPerId();
@@ -252,12 +252,12 @@ TEUCHOS_UNIT_TEST(tFieldAggPattern, testB)
       offset = 0;
       dimension = 0;
       for(int nodes=0;nodes<geomPattern->getSubcellCount(dimension);nodes++)
-         TEST_EQUALITY(fieldsPerId[offset+nodes],2); 
+         TEST_EQUALITY(fieldsPerId[offset+nodes],2);
 
       offset += geomPattern->getSubcellCount(dimension);
       dimension = 1;
       for(int edges=0;edges<geomPattern->getSubcellCount(dimension);edges++)
-         TEST_EQUALITY(fieldsPerId[offset+edges],1); 
+         TEST_EQUALITY(fieldsPerId[offset+edges],1);
 
       // this tests length of fieldsPerId is not longer than expected
       TEST_EQUALITY(offset+geomPattern->getSubcellCount(dimension),(int) fieldsPerId.size());
@@ -269,7 +269,7 @@ TEUCHOS_UNIT_TEST(tFieldAggPattern, testB)
          TEST_EQUALITY(fieldIds[offset+2*nodes],3);
          TEST_EQUALITY(fieldIds[offset+2*nodes+1],7);
       }
- 
+
       offset += 2*geomPattern->getSubcellCount(dimension);
       dimension = 1;
       for(int edges=0;edges<geomPattern->getSubcellCount(dimension);edges++)
@@ -284,7 +284,7 @@ TEUCHOS_UNIT_TEST(tFieldAggPattern, testB)
       for(int nodes=0;nodes<geomPattern->getSubcellCount(dimension);++nodes) {
          const std::vector<int> & indices = agg.getSubcellIndices(dimension,nodes);
          TEST_EQUALITY((int) indices.size(),2);
-         for(std::size_t i=0;i<indices.size();i++,index++) 
+         for(std::size_t i=0;i<indices.size();i++,index++)
             TEST_EQUALITY(indices[i],index);
       }
 
@@ -292,7 +292,7 @@ TEUCHOS_UNIT_TEST(tFieldAggPattern, testB)
       for(int edges=0;edges<geomPattern->getSubcellCount(dimension);++edges) {
          const std::vector<int> & indices = agg.getSubcellIndices(dimension,edges);
          TEST_EQUALITY((int) indices.size(),1);
-         for(std::size_t i=0;i<indices.size();i++,index++) 
+         for(std::size_t i=0;i<indices.size();i++,index++)
             TEST_EQUALITY(indices[i],index);
       }
 
@@ -323,7 +323,7 @@ TEUCHOS_UNIT_TEST(tFieldAggPattern, testC)
       TEUCHOS_ASSERT(agg.equals(*pattern));
 
       TEST_THROW(agg.localOffsets(7),std::logic_error); // check for failure if ID does not exist
- 
+
       std::vector<int> v = agg.localOffsets(3);
       for(std::size_t i=0;i<v.size();i++)
          TEST_EQUALITY(v[i],(int) i);
@@ -344,8 +344,8 @@ TEUCHOS_UNIT_TEST(tFieldAggPattern, testC)
       // nodes
       v_true[0] = 0; v_true[1] = 1; v_true[2] = 2; v_true[3] = 3;
       v_true[4] = 4; v_true[5] = 5; v_true[6] = 6; v_true[7] = 7;
- 
-      // edges     
+
+      // edges
       v_true[8]  = 8; v_true[9]  = 9; v_true[10] = 10; v_true[11] = 11;
       v_true[12] = 16; v_true[13] = 17; v_true[14] = 18 ;v_true[15] = 19;
       v_true[16] = 12; v_true[17] = 13; v_true[18] = 14; v_true[19] = 15;
@@ -354,9 +354,9 @@ TEUCHOS_UNIT_TEST(tFieldAggPattern, testC)
       v_true[20] = 26;
 
       // faces
-      v_true[21] = 24; v_true[22] = 25; v_true[23] = 23; 
+      v_true[21] = 24; v_true[22] = 25; v_true[23] = 23;
       v_true[24] = 21; v_true[25] = 20; v_true[26] = 22;
- 
+
       std::vector<int> v = agg.localOffsets(3);
       for(std::size_t i=0;i<v.size();i++)
          TEST_EQUALITY(v[i],v_true[i]);
@@ -395,17 +395,17 @@ TEUCHOS_UNIT_TEST(tFieldAggPattern, testC)
          // nodes
          v_true[0] = 4*0+0; v_true[1] = 4*1+0; v_true[2] = 4*2+0; v_true[3] = 4*3+0;
          v_true[4] = 4*4+0; v_true[5] = 4*5+0; v_true[6] = 4*6+0; v_true[7] = 4*7+0;
-    
-         // edges     
+
+         // edges
          v_true[8]  = 3*0+32; v_true[9]  = 3*1+32; v_true[10] = 3*2+32; v_true[11] = 3*3+32;
          v_true[12] = 3*8+32; v_true[13] = 3*9+32; v_true[14] = 3*10+32; v_true[15] = 3*11+32;
          v_true[16] = 3*4+32; v_true[17] = 3*5+32; v_true[18] = 3*6+32; v_true[19] = 3*7+32;
-   
+
          // volume
          v_true[20] = 86;
-   
+
          // faces
-         v_true[21] = 3*4+68; v_true[22] = 3*5+68; v_true[23] = 3*3+68; 
+         v_true[21] = 3*4+68; v_true[22] = 3*5+68; v_true[23] = 3*3+68;
          v_true[24] = 3*1+68; v_true[25] = 3*0+68; v_true[26] = 3*2+68;
 
          std::vector<int> v = agg.localOffsets(d);
@@ -416,7 +416,7 @@ TEUCHOS_UNIT_TEST(tFieldAggPattern, testC)
 
    {
       out << "Crazy HEX basis test" << std::endl;
- 
+
       RCP<Intrepid2::Basis<PHX::exec_space,double,double> > basisC1 = rcp(new Intrepid2::Basis_HGRAD_HEX_C1_FEM<PHX::exec_space,double,double>);
       RCP<Intrepid2::Basis<PHX::exec_space,double,double> > basisDivI1 = rcp(new Intrepid2::Basis_HDIV_HEX_I1_FEM<PHX::exec_space,double,double>);
       RCP<Intrepid2::Basis<PHX::exec_space,double,double> > basisCurlI1 = rcp(new Intrepid2::Basis_HCURL_HEX_I1_FEM<PHX::exec_space,double,double>);
@@ -457,7 +457,7 @@ TEUCHOS_UNIT_TEST(tFieldAggPattern, testC)
 
    {
       out << "Highorder HEX basis test: FAILS!!!! DISABLED FOR NOW!!!!!" << std::endl;
- 
+
 /*
       RCP<Intrepid2::Basis<PHX::exec_space,double,double> > basis = rcp(new Intrepid2::Basis_HGRAD_HEX_Cn_FEM<PHX::exec_space,double,double>(4,Intrepid2::POINTTYPE_EQUISPACED));
       RCP<const FieldPattern> pattern = rcp(new Intrepid2FieldPattern(basis));
@@ -506,8 +506,8 @@ TEUCHOS_UNIT_TEST(tFieldAggPattern, testD)
 
       // nodes
       v_true[0] = 0; v_true[1] = 1; v_true[2] = 4; v_true[3] = 5;
- 
-      // edges     
+
+      // edges
       v_true[4]  = 8; v_true[5]  = 17; v_true[6] = 12; v_true[7] = 16;
 
       // areas
@@ -527,9 +527,9 @@ TEUCHOS_UNIT_TEST(tFieldAggPattern, testD)
 
       // nodes
       v_true[0] = 4; v_true[1] = 7;
- 
-      // edges     
-      v_true[2]  = 15; 
+
+      // edges
+      v_true[2]  = 15;
 
       TEST_EQUALITY(v.size(),v_true.size());
 
@@ -546,7 +546,7 @@ TEUCHOS_UNIT_TEST(tFieldAggPattern, testD)
 
          // nodes
          v_true[0] = i;
- 
+
          TEST_EQUALITY(v.size(),v_true.size());
          TEST_EQUALITY(v[0],v_true[0]);
       }
@@ -586,7 +586,7 @@ TEUCHOS_UNIT_TEST(tFieldAggPattern, testD)
 
       // nodes
       v_true[0] = 2*2; v_true[1] = 2*3; v_true[2] = 2*7; v_true[3] = 2*6;
- 
+
       TEST_EQUALITY(v.size(),v_true.size());
 
       std::sort(v.begin(),v.end());
@@ -601,7 +601,7 @@ TEUCHOS_UNIT_TEST(tFieldAggPattern, testD)
 
       // nodes
       v_true[0] = 2*3; v_true[1] = 2*7;
- 
+
       TEST_EQUALITY(v.size(),v_true.size());
 
       std::sort(v.begin(),v.end());
@@ -617,7 +617,7 @@ TEUCHOS_UNIT_TEST(tFieldAggPattern, testD)
 
          // nodes
          v_true[0] = 2*i;
- 
+
          TEST_EQUALITY(v.size(),v_true.size());
          TEST_EQUALITY(v[0],v_true[0]);
       }
@@ -632,8 +632,8 @@ TEUCHOS_UNIT_TEST(tFieldAggPattern, testD)
 
       // nodes
       v_true[0] = 2*0+1; v_true[1] = 2*1+1; v_true[2] = 2*2+1; v_true[3] = 2*3+1;
- 
-      // edges     
+
+      // edges
       v_true[4]  = 16; v_true[5]  = 17; v_true[6] = 18; v_true[7] = 19;
 
       // areas
@@ -653,9 +653,9 @@ TEUCHOS_UNIT_TEST(tFieldAggPattern, testD)
 
       // nodes
       v_true[0] = 2*2+1; v_true[1] = 2*6+1;
- 
-      // edges     
-      v_true[2]  = 26; 
+
+      // edges
+      v_true[2]  = 26;
 
       TEST_EQUALITY(v.size(),v_true.size());
 
@@ -672,7 +672,7 @@ TEUCHOS_UNIT_TEST(tFieldAggPattern, testD)
 
          // nodes
          v_true[0] = 2*i+1;
- 
+
          TEST_EQUALITY(v.size(),v_true.size());
          TEST_EQUALITY(v[0],v_true[0]);
       }
@@ -703,8 +703,8 @@ TEUCHOS_UNIT_TEST(tFieldAggPattern, testE)
 
    // test build of geometric field pattern
    {
-      FieldAggPattern agg; 
-   
+      FieldAggPattern agg;
+
       agg.buildPattern(patternM,Teuchos::rcpFromRef(geom));
 
       bool equality = false;

@@ -64,7 +64,7 @@ initialize(const Teuchos::MpiComm<int> & comm,GlobalOrdinal nx, GlobalOrdinal ny
   // preconditions
   TEUCHOS_ASSERT(0<nx*ny);
   TEUCHOS_TEST_FOR_EXCEPTION(comm.getSize()!=px*py,std::logic_error,
-                                "Processor assignment does not equal processor count: " << comm.getSize() 
+                                "Processor assignment does not equal processor count: " << comm.getSize()
                              << " != " << px << " * " << py );
   TEUCHOS_ASSERT(0<bx*by);
   TEUCHOS_ASSERT(nx/px>=1.0);
@@ -108,7 +108,7 @@ initialize(const Teuchos::MpiComm<int> & comm,GlobalOrdinal nx, GlobalOrdinal ny
   // preconditions
   TEUCHOS_ASSERT(0<nx*ny*nz);
   TEUCHOS_TEST_FOR_EXCEPTION(comm.getSize()!=px*py*pz,std::logic_error,
-                                "Processor assignment does not equal processor count: " << comm.getSize() 
+                                "Processor assignment does not equal processor count: " << comm.getSize()
                              << " != " << px << " * " << py << " * " << pz);
   TEUCHOS_ASSERT(0<bx*by*bz);
   TEUCHOS_ASSERT(nx/px>=1.0);
@@ -145,7 +145,7 @@ initialize(const Teuchos::MpiComm<int> & comm,GlobalOrdinal nx, GlobalOrdinal ny
 }
 
 template <typename LocalOrdinal,typename GlobalOrdinal>
-void 
+void
 CartesianConnManager<LocalOrdinal,GlobalOrdinal>::
 buildConnectivity(const panzer::FieldPattern & fp)
 {
@@ -153,19 +153,19 @@ buildConnectivity(const panzer::FieldPattern & fp)
 
   connectivity_.clear();
   connectivity_.resize(myElements_.x*myElements_.y*myElements_.z);
-  
+
   std::vector<std::string> elementBlockIds;
   getElementBlockIds(elementBlockIds);
 
   // loop over all element blocks
   for(std::size_t i=0;i<elementBlockIds.size();i++) {
 
-    // loop over each element block 
+    // loop over each element block
     const std::vector<LocalOrdinal> & elmts = getElementBlock(elementBlockIds[i]);
     for(std::size_t e=0;e<elmts.size();e++) {
       LocalOrdinal element = elmts[e];
       std::vector<GlobalOrdinal> & conn = connectivity_[element];
-      
+
       // loop over each dimension, add in coefficients
       //int ordered_dim[4] = { 0, 1, 3, 2 }; // this is the order of creation
                                            // because of the way shards orders
@@ -188,7 +188,7 @@ buildConnectivity(const panzer::FieldPattern & fp)
 
 
 template <typename LocalOrdinal,typename GlobalOrdinal>
-Teuchos::RCP<panzer::ConnManagerBase<LocalOrdinal> > 
+Teuchos::RCP<panzer::ConnManagerBase<LocalOrdinal> >
 CartesianConnManager<LocalOrdinal,GlobalOrdinal>::
 noConnectivityClone() const
 {
@@ -225,12 +225,12 @@ noConnectivityClone() const
   clone->totalCells_ = totalCells_;
 
   clone->buildLocalElements();
- 
+
   return clone;
 }
 
 template <typename LocalOrdinal,typename GlobalOrdinal>
-std::size_t 
+std::size_t
 CartesianConnManager<LocalOrdinal,GlobalOrdinal>::
 numElementBlocks() const
 {
@@ -238,7 +238,7 @@ numElementBlocks() const
 }
 
 template <typename LocalOrdinal,typename GlobalOrdinal>
-void 
+void
 CartesianConnManager<LocalOrdinal,GlobalOrdinal>::
 getElementBlockIds(std::vector<std::string> & elementBlockIds) const
 {
@@ -248,7 +248,7 @@ getElementBlockIds(std::vector<std::string> & elementBlockIds) const
         // build up block name
         std::stringstream ss;
         ss << "eblock-" << i << "_" << j;
-        if(dim_==3) 
+        if(dim_==3)
           ss << "_" << k;
 
         elementBlockIds.push_back(ss.str());
@@ -277,7 +277,7 @@ getElementBlockTopologies(std::vector<shards::CellTopology> & elementBlockTopolo
 
 }
 template <typename LocalOrdinal,typename GlobalOrdinal>
-const std::vector<LocalOrdinal> & 
+const std::vector<LocalOrdinal> &
 CartesianConnManager<LocalOrdinal,GlobalOrdinal>::
 getElementBlock(const std::string & blockId) const
 {
@@ -291,7 +291,7 @@ getElementBlock(const std::string & blockId) const
 }
 
 template <typename LocalOrdinal,typename GlobalOrdinal>
-std::string 
+std::string
 CartesianConnManager<LocalOrdinal,GlobalOrdinal>::
 getBlockId(LocalOrdinal localElmtId) const
 {
@@ -303,20 +303,20 @@ getBlockId(LocalOrdinal localElmtId) const
 
   std::stringstream ss;
   ss << "eblock-" << i << "_" << j;
-  if(dim_==3) 
+  if(dim_==3)
     ss << "_" << k;
 
   return ss.str();
 }
 
 template <typename LocalOrdinal,typename GlobalOrdinal>
-CartesianConnManager<LocalOrdinal,GlobalOrdinal>::Triplet<int> 
+CartesianConnManager<LocalOrdinal,GlobalOrdinal>::Triplet<int>
 CartesianConnManager<LocalOrdinal,GlobalOrdinal>::
-computeMyRankTriplet(int myRank,int dim,const Triplet<int> & procs) 
+computeMyRankTriplet(int myRank,int dim,const Triplet<int> & procs)
 {
   // for 2D the rank satisfies:  r = px * j + i
   // for 3D the rank satisfies:  r = px * py * k + px * j + i
-  
+
   Triplet<int> index;
 
   if(dim==2) {
@@ -338,7 +338,7 @@ computeMyRankTriplet(int myRank,int dim,const Triplet<int> & procs)
 }
 
 template <typename LocalOrdinal,typename GlobalOrdinal>
-CartesianConnManager<LocalOrdinal,GlobalOrdinal>::Triplet<GlobalOrdinal> 
+CartesianConnManager<LocalOrdinal,GlobalOrdinal>::Triplet<GlobalOrdinal>
 CartesianConnManager<LocalOrdinal,GlobalOrdinal>::
 computeLocalElementGlobalTriplet(int index,const Triplet<GlobalOrdinal> & myElements,
                                            const Triplet<GlobalOrdinal> & myOffset)
@@ -365,7 +365,7 @@ computeGlobalElementIndex(const Triplet<GlobalOrdinal> & element,const Triplet<G
 }
 
 template <typename LocalOrdinal,typename GlobalOrdinal>
-GlobalOrdinal 
+GlobalOrdinal
 CartesianConnManager<LocalOrdinal,GlobalOrdinal>::
 computeGlobalElementIndex(const Triplet<GlobalOrdinal> & element) const
 {
@@ -373,16 +373,16 @@ computeGlobalElementIndex(const Triplet<GlobalOrdinal> & element) const
 }
 
 template <typename LocalOrdinal,typename GlobalOrdinal>
-LocalOrdinal 
+LocalOrdinal
 CartesianConnManager<LocalOrdinal,GlobalOrdinal>::
 computeLocalElementIndex(const Triplet<GlobalOrdinal> & element,
                          const Triplet<GlobalOrdinal> & myElements,
                          const Triplet<GlobalOrdinal> & myOffset)
 {
   // first make sure its in range
-  GlobalOrdinal dx = element.x-myOffset.x;  
-  GlobalOrdinal dy = element.y-myOffset.y;  
-  GlobalOrdinal dz = element.z-myOffset.z;  
+  GlobalOrdinal dx = element.x-myOffset.x;
+  GlobalOrdinal dy = element.y-myOffset.y;
+  GlobalOrdinal dz = element.z-myOffset.z;
 
   if(   dx>=myElements.x || dx<0
      || dy>=myElements.y || dy<0
@@ -393,7 +393,7 @@ computeLocalElementIndex(const Triplet<GlobalOrdinal> & element,
 }
 
 template <typename LocalOrdinal,typename GlobalOrdinal>
-LocalOrdinal 
+LocalOrdinal
 CartesianConnManager<LocalOrdinal,GlobalOrdinal>::
 computeLocalElementIndex(const Triplet<GlobalOrdinal> & element) const
 {
@@ -401,7 +401,7 @@ computeLocalElementIndex(const Triplet<GlobalOrdinal> & element) const
 }
 
 template <typename LocalOrdinal,typename GlobalOrdinal>
-void 
+void
 CartesianConnManager<LocalOrdinal,GlobalOrdinal>::
 buildLocalElements()
 {
@@ -438,11 +438,11 @@ buildLocalElements()
 
   // loop over all your elements and assign them to an element block that owns them
   for(GlobalOrdinal i=0;i<myElements_.x*myElements_.y*myElements_.z;i++)
-    localElements_[getBlockId(Teuchos::as<GlobalOrdinal>(i))].push_back(Teuchos::as<int>(i)); 
+    localElements_[getBlockId(Teuchos::as<GlobalOrdinal>(i))].push_back(Teuchos::as<int>(i));
 }
 
 template <typename LocalOrdinal,typename GlobalOrdinal>
-void 
+void
 CartesianConnManager<LocalOrdinal,GlobalOrdinal>::
 updateConnectivity_2d(const panzer::FieldPattern & fp,
                       int subcellDim,
@@ -450,29 +450,29 @@ updateConnectivity_2d(const panzer::FieldPattern & fp,
                       std::vector<GlobalOrdinal> & conn) const
 {
   Triplet<GlobalOrdinal> index = computeLocalElementGlobalTriplet(localElementId,myElements_,myOffset_);
- 
+
   for(int c=0;c<fp.getSubcellCount(subcellDim);c++) {
     std::size_t num = fp.getSubcellIndices(subcellDim,c).size();
     TEUCHOS_ASSERT(num==1 || num==0);
- 
+
     if(num==0) continue;
- 
+
     // there is an index to add here
     if(subcellDim==0) {
-      // node number     =  Number for the lower left          
+      // node number     =  Number for the lower left
       GlobalOrdinal node =  (totalElements_.x+1)*index.y + index.x
                            + (c==1 || c==2) * 1                    // shift for i+1
                            + (c==3 || c==2) * (totalElements_.x+1); // shift for j+1
       conn.push_back(node);
     }
     else if(subcellDim==1) {
-      // node number     =  Number for the lower left          
+      // node number     =  Number for the lower left
       GlobalOrdinal edge =  totalNodes_ + (2*totalElements_.x+1)*index.y + index.x
-                                        + (        c==1) * 1                     
+                                        + (        c==1) * 1
                                         + (        c==2) * (2*totalElements_.x+1)
                                         + (c==1 || c==3) * totalElements_.x;
       conn.push_back(edge);
-    } 
+    }
     else if(subcellDim==2)
       conn.push_back(totalNodes_+totalEdges_+computeGlobalElementIndex(index));
     else {
@@ -482,7 +482,7 @@ updateConnectivity_2d(const panzer::FieldPattern & fp,
 }
 
 template <typename LocalOrdinal,typename GlobalOrdinal>
-void 
+void
 CartesianConnManager<LocalOrdinal,GlobalOrdinal>::
 updateConnectivity_3d(const panzer::FieldPattern & fp,
                       int subcellDim,
@@ -490,16 +490,16 @@ updateConnectivity_3d(const panzer::FieldPattern & fp,
                       std::vector<GlobalOrdinal> & conn) const
 {
   Triplet<GlobalOrdinal> index = computeLocalElementGlobalTriplet(localElementId,myElements_,myOffset_);
- 
+
   for(int c=0;c<fp.getSubcellCount(subcellDim);c++) {
     std::size_t num = fp.getSubcellIndices(subcellDim,c).size();
     TEUCHOS_ASSERT(num==1 || num==0);
- 
+
     if(num==0) continue;
- 
+
     // there is an index to add here
     if(subcellDim==0) {
-      // node number     =  Number for the lower left          
+      // node number     =  Number for the lower left
       GlobalOrdinal node =  (totalElements_.x+1)*(totalElements_.y+1)*index.z + (totalElements_.x+1)*index.y + index.x
                            + (c==1 || c==2 || c==5 || c==6) * 1                                          // shift for i+1
                            + (c==3 || c==2 || c==6 || c==7) * (totalElements_.x+1)                       // shift for j+1
@@ -531,7 +531,7 @@ updateConnectivity_3d(const panzer::FieldPattern & fp,
 
       // vertical edges
       if(c==8 || c==9 || c==10 || c==11)
-        edge +=  (totalElements_.x+1)*totalElements_.y + totalElements_.x*(totalElements_.y+1) 
+        edge +=  (totalElements_.x+1)*totalElements_.y + totalElements_.x*(totalElements_.y+1)
                 - index.y*totalElements_.x;
 
       if(c== 8) edge += 0;
@@ -540,7 +540,7 @@ updateConnectivity_3d(const panzer::FieldPattern & fp,
       if(c==11) edge += totalElements_.x+1;
 
       conn.push_back(edge);
-    } 
+    }
     else if(subcellDim==2) {
       GlobalOrdinal kshift =  totalElements_.x*totalElements_.y
                              +(totalElements_.x+1)*totalElements_.y

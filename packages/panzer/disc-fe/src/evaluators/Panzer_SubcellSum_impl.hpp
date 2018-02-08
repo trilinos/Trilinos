@@ -52,7 +52,7 @@
 namespace panzer {
 
 //**********************************************************************
-PHX_EVALUATOR_CTOR(SubcellSum,p) 
+PHX_EVALUATOR_CTOR(SubcellSum,p)
   : evaluateOnClosure_(false)
 {
   Teuchos::RCP<Teuchos::ParameterList> valid_params = this->getValidParameters();
@@ -73,7 +73,7 @@ PHX_EVALUATOR_CTOR(SubcellSum,p)
 
   // build a field pattern object so that looking up closure indices is easy
   fieldPattern_ = Teuchos::rcp(new Intrepid2FieldPattern(basis->getIntrepid2Basis<PHX::exec_space,double,double>()));
-    
+
   std::string n = "SubcellSum: " + outField.fieldTag().name();
   this->setName(n);
 }
@@ -87,10 +87,10 @@ PHX_POST_REGISTRATION_SETUP(SubcellSum, /* sd */, fm)
 
 //**********************************************************************
 PHX_EVALUATE_FIELDS(SubcellSum,workset)
-{ 
+{
   std::vector<int> indices;
- 
-  // figure out which indices to sum (this can be made more efficient by 
+
+  // figure out which indices to sum (this can be made more efficient by
   // simply saving the indices and only updating if the subcell dimension
   // and index changes)
   if(evaluateOnClosure_)
@@ -99,12 +99,12 @@ PHX_EVALUATE_FIELDS(SubcellSum,workset)
     indices = fieldPattern_->getSubcellIndices(workset.subcell_dim,this->wda(workset).subcell_index);
 
   for(index_t c=0;c<workset.num_cells;c++) {
-    outField(c) = 0.0; // initialize field 
+    outField(c) = 0.0; // initialize field
 
     // sum over all relevant indices for this subcell
     for(std::size_t i=0;i<indices.size();i++)
       outField(c) += inField(c,indices[i]);
- 
+
     // scale by what ever the user wants
     outField(c) *= multiplier;
   }
@@ -112,7 +112,7 @@ PHX_EVALUATE_FIELDS(SubcellSum,workset)
 
 //**********************************************************************
 template<typename EvalT, typename TRAITS>
-Teuchos::RCP<Teuchos::ParameterList> 
+Teuchos::RCP<Teuchos::ParameterList>
 SubcellSum<EvalT, TRAITS>::getValidParameters() const
 {
   Teuchos::RCP<Teuchos::ParameterList> p = Teuchos::rcp(new Teuchos::ParameterList);

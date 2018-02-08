@@ -47,7 +47,7 @@
 #include "Teuchos_RCP.hpp"
 
 namespace panzer {
-  
+
   enum EVerbosityLevel {
     VERB_NONE,
     VERB_LOW,
@@ -57,7 +57,7 @@ namespace panzer {
   };
 
   /** \brief Interface for handling output in Panzer
-      
+
      This class carries two ostreams used in SIMD applications.  The
      first (out), an ostream that only prints on a specific process
      that is designated as the print process. The second is an ostream

@@ -134,7 +134,7 @@ protected:
   typename panzer::kokkos_utils::VectorToViewTraits<Epetra_Vector>::View
   ghostedView_;
 
-private: 
+private:
 
   CombineMode combineMode_;
 }; // end of class WriteVector_GlobalEvaluationData

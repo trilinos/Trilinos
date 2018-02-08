@@ -95,11 +95,11 @@ void PeriodicBC_Parser::setParameterList(const Teuchos::RCP<Teuchos::ParameterLi
       else if(matcherType == "face")
         faceMatchers_.push_back(buildMatcher(cond));
       else if(matcherType == "all"){
-        matchers_.push_back(buildMatcher(replaceMatcherType(cond,"coord"))); 
+        matchers_.push_back(buildMatcher(replaceMatcherType(cond,"coord")));
         edgeMatchers_.push_back(buildMatcher(replaceMatcherType(cond,"edge")));
         if(matcherDim > 2)
-          faceMatchers_.push_back(buildMatcher(replaceMatcherType(cond,"face"))); 
-      } 
+          faceMatchers_.push_back(buildMatcher(replaceMatcherType(cond,"face")));
+      }
    }
 
    // Order BCs with all coords first, followed by edges, then faces
@@ -246,7 +246,7 @@ bool PeriodicBC_Parser::buildMatcher_Tokenize_withParams(const std::string & bui
 
    // no parameters: default to old style input
    if(endMatchAndParams==std::string::npos) {
-      buildMatcher_Tokenize(buildStr,matcher,bndry1,bndry2); 
+      buildMatcher_Tokenize(buildStr,matcher,bndry1,bndry2);
       return false;
    }
 
@@ -288,7 +288,7 @@ bool PeriodicBC_Parser::buildMatcher_Tokenize_withParams(const std::string & bui
    return true;
 }
 
-Teuchos::RCP<const PeriodicBC_MatcherBase> 
+Teuchos::RCP<const PeriodicBC_MatcherBase>
 PeriodicBC_Parser::buildMatcher(const std::string & buildStr) const
 {
    std::vector<std::string> params;

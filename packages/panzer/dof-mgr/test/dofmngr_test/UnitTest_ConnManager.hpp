@@ -72,7 +72,7 @@ class ConnCallback { public: virtual void buildConnectivity(const FieldPattern &
   *
   * Here is a drawing showing the blocks, double lines distinguishes block boundaries
     where as single lines denote element boundaries.
- 
+
        +------+------+
        |      |      |
        |   BLOCK 2   |
@@ -202,7 +202,7 @@ public:
 
 private:
    int procRank_;
-   
+
    Teuchos::RCP<ConnCallback> callback_;
    std::map<std::string,std::vector<int> > elements_; // local element IDs
    std::vector<std::vector<GlobalOrdinal> > connectivity_;

@@ -8,14 +8,14 @@ GatherSolution_Input()
   setParameterList(Teuchos::rcp(new Teuchos::ParameterList(*getValidParameters())));
 }
 
-void 
+void
 GatherSolution_Input::
 setParameterList(const Teuchos::ParameterList & p)
 {
   setParameterList(Teuchos::rcp(new Teuchos::ParameterList(p)));
 }
 
-void 
+void
 GatherSolution_Input::
 setParameterList(const Teuchos::RCP<Teuchos::ParameterList> & p)
 {
@@ -41,7 +41,7 @@ setParameterList(const Teuchos::RCP<Teuchos::ParameterList> & p)
   basis_               = p->get<RCP<const panzer::PureBasis> >("Basis");
 
   // required by Tangent types
-  tangentNames_ = *p->get<RCP<std::vector<std::vector<std::string> > > >("Tangent Names"); 
+  tangentNames_ = *p->get<RCP<std::vector<std::vector<std::string> > > >("Tangent Names");
 
   // required by Jacobian types
   sensName_        = p->get<std::string>("Sensitivities Name");
@@ -49,11 +49,11 @@ setParameterList(const Teuchos::RCP<Teuchos::ParameterList> & p)
   firstSensAvail_  = p->get<bool>("First Sensitivities Available");
 
   // required by Hessian types
-  secondSensAvail_         = p->get<bool>("Second Sensitivities Available");    
+  secondSensAvail_         = p->get<bool>("Second Sensitivities Available");
   secondSensDataKeyPrefix_ = p->get<std::string>("Second Sensitivities Data Key Prefix");
 }
-  
-Teuchos::RCP<const Teuchos::ParameterList> 
+
+Teuchos::RCP<const Teuchos::ParameterList>
 GatherSolution_Input::
 getValidParameters() const
 {

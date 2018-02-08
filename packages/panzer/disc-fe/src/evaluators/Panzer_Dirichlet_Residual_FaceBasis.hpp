@@ -59,19 +59,19 @@
 #include "Panzer_Evaluator_Macros.hpp"
 
 namespace panzer {
-    
+
 /** Evaluates a Dirichlet BC residual corresponding to a field value
   * at a set of points defined by a point rule. Note that this assumes
   * a vector basis is used.
   */
 PANZER_EVALUATOR_CLASS(DirichletResidual_FaceBasis)
-  
+
   PHX::MDField<ScalarT,Cell,BASIS> residual;
   PHX::MDField<const ScalarT,Cell,Point,Dim> dof;
   PHX::MDField<const ScalarT,Cell,Point,Dim> value;
 
-  Teuchos::RCP<const panzer::PureBasis> basis; 
-  Teuchos::RCP<const panzer::PointRule> pointRule; 
+  Teuchos::RCP<const panzer::PureBasis> basis;
+  Teuchos::RCP<const panzer::PointRule> pointRule;
   Kokkos::DynRankView<ScalarT,PHX::Device> faceNormal; // face normals
   Kokkos::DynRankView<ScalarT,PHX::Device> refFaceNormal; // reference face normals
 

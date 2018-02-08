@@ -10,15 +10,15 @@ namespace mini_em {
 
 class ClosureModelFactory_TemplateBuilder {
 public:
-    
+
    template <typename EvalT>
-   Teuchos::RCP<panzer::ClosureModelFactoryBase> build() const 
+   Teuchos::RCP<panzer::ClosureModelFactoryBase> build() const
    {
       return Teuchos::rcp( static_cast<panzer::ClosureModelFactoryBase*>(new mini_em::ModelFactory<EvalT>) );
    }
-    
+
 };
-  
+
 }
 
-#endif 
+#endif

@@ -49,7 +49,7 @@
 #include "Panzer_Evaluator_Macros.hpp"
 
 namespace panzer {
-    
+
   /** \brief Evaluates cross product at a set of points
 
       v_a \times v_b
@@ -60,7 +60,7 @@ namespace panzer {
     <Parameter name="Vector B Name" type="string" value="<vector b name>"/>
   */
 PANZER_EVALUATOR_CLASS(CrossProduct)
-  
+
   PHX::MDField<ScalarT> vec_a_cross_vec_b;
   PHX::MDField<const ScalarT> vec_a, vec_b;
 

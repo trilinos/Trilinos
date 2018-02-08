@@ -80,7 +80,7 @@ class LinearObjContainer;
   * a user adds).  When a response is maintained that simply
   * means there is a mechansim to "reserve" it. A response is
   * not required by any field manager until a user "reserves"
-  * it. The reservation process is done by response name and 
+  * it. The reservation process is done by response name and
   * the element block or BC it is associated with. The field
   * tag specified in the <code>addResponse</code> is used only
   * for the "name" field, however that use of <code>PHX::FieldTag</code>
@@ -101,7 +101,7 @@ public:
    ResponseLibrary(const Teuchos::RCP<WorksetContainer> & wc,
                    const Teuchos::RCP<const UniqueGlobalIndexerBase> & ugi,
                    const Teuchos::RCP<const LinearObjFactory<TraitsT> > & lof,
-                   bool residualType=false); 
+                   bool residualType=false);
 
    ResponseLibrary(const ResponseLibrary & rl);
 
@@ -109,25 +109,25 @@ public:
      */
    void initialize(const Teuchos::RCP<WorksetContainer> & wc,
                    const Teuchos::RCP<const UniqueGlobalIndexerBase> & ugi,
-                   const Teuchos::RCP<const LinearObjFactory<TraitsT> > & lof); 
+                   const Teuchos::RCP<const LinearObjFactory<TraitsT> > & lof);
 
    /** Initialize the response library with the appropriate objects. This is
-     * in the case that no respones will be added an only a residual is 
+     * in the case that no respones will be added an only a residual is
      * desired. If <code>addResponse</code> is called then an exception will
-     * be raised. 
+     * be raised.
      */
    void initializeResidualType(const Teuchos::RCP<WorksetContainer> & wc,
                                const Teuchos::RCP<const UniqueGlobalIndexerBase> & ugi,
-                               const Teuchos::RCP<const LinearObjFactory<TraitsT> > & lof); 
+                               const Teuchos::RCP<const LinearObjFactory<TraitsT> > & lof);
 
 
    /** Initialize the response library from a previously construct response library.
      */
    void initialize(const ResponseLibrary & rl);
- 
+
    /** Copy all the responses from another response library. This is a different from
      * <code>initialize</code>. This method only copies the responses leaving the
-     * parameters set by <code>initialize</code> alone. This must be called before 
+     * parameters set by <code>initialize</code> alone. This must be called before
      * <code>buildResponseEvaluators</code>.
      */
    void copyResponses(const ResponseLibrary & rl);
@@ -139,11 +139,11 @@ public:
    { return wkstContainer_; }
 
    //! Get the internally stored global indexer
-   Teuchos::RCP<const UniqueGlobalIndexerBase> getGlobalIndexer() const 
+   Teuchos::RCP<const UniqueGlobalIndexerBase> getGlobalIndexer() const
    { return globalIndexer_; }
 
    //! Get the internally stored linear object factory
-   Teuchos::RCP<const LinearObjFactory<TraitsT> > getLinearObjFactory() const 
+   Teuchos::RCP<const LinearObjFactory<TraitsT> > getLinearObjFactory() const
    { return linObjFactory_; }
 
    /** Add a volumetric response using the response factory builder.
@@ -155,7 +155,7 @@ public:
    template <typename ResponseEvaluatorFactory_BuilderT>
    void addResponse(const std::string & responseName,
                     const std::vector<std::string> & blocks,
-                    const ResponseEvaluatorFactory_BuilderT & builder); 
+                    const ResponseEvaluatorFactory_BuilderT & builder);
 
    /** Add a surface response using the response factory builder.
      *
@@ -167,7 +167,7 @@ public:
    template <typename ResponseEvaluatorFactory_BuilderT>
    void addResponse(const std::string & responseName,
                     const std::vector<std::pair<std::string,std::string> > & sideset_blocks,
-                    const ResponseEvaluatorFactory_BuilderT & builder); 
+                    const ResponseEvaluatorFactory_BuilderT & builder);
 
    /** Add a response specified by a list of WorksetDescriptor objects. The specifics of the
      * response are specified by the response factory builder.
@@ -180,8 +180,8 @@ public:
    template <typename ResponseEvaluatorFactory_BuilderT>
    void addResponse(const std::string & responseName,
                     const std::vector<WorksetDescriptor> & wkst_desc,
-                    const ResponseEvaluatorFactory_BuilderT & builder); 
-                   
+                    const ResponseEvaluatorFactory_BuilderT & builder);
+
    /** Access a response by name and evaluation type.
      *
      * \param[in] responseName Name of the response to be retrieved.
@@ -239,20 +239,20 @@ public:
          const bool write_graphviz_file=false,
          const std::string& graphviz_file_prefix="");
 
-   /** Have the response evaluators been built? True only if 
+   /** Have the response evaluators been built? True only if
      * <code>buildResponseEvaluators</code> has been called and run to completion.
-     */ 
+     */
    bool responseEvaluatorsBuilt() const
    { return responseEvaluatorsBuilt_; }
 
-   /** Add response objects to assembly data. 
+   /** Add response objects to assembly data.
      */
-   template <typename EvalT> 
+   template <typename EvalT>
    void addResponsesToInArgs(panzer::AssemblyEngineInArgs & input_args) const;
 
    /** Evaluate response library for a particular evaluation type.
      */
-   template <typename EvalT> 
+   template <typename EvalT>
    void evaluate(const panzer::AssemblyEngineInArgs& input_args);
 
    /** Print the contents of this response library.
@@ -268,7 +268,7 @@ public:
    void disableScatter(bool value)
    { disableScatter_ = value; }
 
-   bool isResidualType() const 
+   bool isResidualType() const
    { return residualType_; }
 
 protected:
@@ -341,7 +341,7 @@ private:
    BCHashMap respBCFactories_;
    std::size_t nextBC_id;
 
-   //! Store all the response objects 
+   //! Store all the response objects
    std::unordered_map<std::string, Response_TemplateManager> responseObjects_;
    bool closureModelByEBlock_;
    bool disableGather_;
@@ -356,9 +356,9 @@ private:
      const Response_TemplateManager & tm_;
      std::ostream & os_;
      Printer(const Response_TemplateManager & tm,std::ostream & os) : tm_(tm), os_(os) {}
-     template <typename T> void operator()(T) const { 
+     template <typename T> void operator()(T) const {
 //       os_ << PHX::TypeString<T>::value << "=";
-       if(tm_.get<T>()!=Teuchos::null) 
+       if(tm_.get<T>()!=Teuchos::null)
          os_ << "ON ";
        else
          os_ << "OFF ";

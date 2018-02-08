@@ -82,7 +82,7 @@ Teuchos::RCP<panzer::ConnManager<int,int> > buildQuadMesh(stk::ParallelMachine c
 
    panzer_stk::SquareQuadMeshFactory meshFact;
    meshFact.setParameterList(Teuchos::rcpFromRef(pl));
-   
+
    Teuchos::RCP<panzer_stk::STK_Interface> mesh = meshFact.buildMesh(comm);
    return Teuchos::rcp(new panzer_stk::STKConnManager<int>(mesh));
 }
@@ -117,7 +117,7 @@ TEUCHOS_UNIT_TEST(tEpetraLinearObjFactory, buildTest_quad)
    TEUCHOS_ASSERT(numProcs<=2);
 
    // build a geometric pattern from a single basis
-   RCP<const panzer::FieldPattern> patternC1 
+   RCP<const panzer::FieldPattern> patternC1
          = buildFieldPattern<Intrepid2::Basis_HGRAD_QUAD_C1_FEM<PHX::exec_space,double,double> >();
 
    RCP<panzer::ConnManager<int,int> > connManager = buildQuadMesh(Comm,2,2,1,1);
@@ -135,7 +135,7 @@ TEUCHOS_UNIT_TEST(tEpetraLinearObjFactory, buildTest_quad)
    std::vector<int> owned,ownedAndGhosted;
    dofManager->getOwnedIndices(owned);
    dofManager->getOwnedAndGhostedIndices(ownedAndGhosted);
-  
+
    // test maps
    {
       TEST_EQUALITY(map->NumMyElements(),(int) owned.size());
@@ -163,37 +163,37 @@ TEUCHOS_UNIT_TEST(tEpetraLinearObjFactory, buildTest_quad)
       indices.resize(numIndices);
       std::sort(indices.begin(),indices.end());
       if(numProcs==1) {
-         TEST_EQUALITY(numIndices,9); 
+         TEST_EQUALITY(numIndices,9);
 
          std::vector<int> compare(9);
          compare[0] = 0; compare[1] = 1; compare[2] = 2;
          compare[3] = 3; compare[4] = 4; compare[5] = 5;
          compare[3] = 6; compare[4] = 7; compare[5] = 8;
-         
+
          TEST_EQUALITY(compare.size(),indices.size());
          TEST_ASSERT(std::equal(compare.begin(),compare.end(),indices.begin()));
       }
       else if(numProcs==2 && myRank==0) {
-         TEST_EQUALITY(numIndices,6); 
+         TEST_EQUALITY(numIndices,6);
 
          std::vector<int> compare(6);
          compare[0] = 0; compare[1] = 1; compare[2] = 2;
          compare[3] = 3; compare[4] = 5; compare[5] = 7;
-         
+
          TEST_EQUALITY(compare.size(),indices.size());
          TEST_ASSERT(std::equal(compare.begin(),compare.end(),indices.begin()));
       }
       else if(numProcs==2 && myRank==1) {
-         TEST_EQUALITY(numIndices,6); 
+         TEST_EQUALITY(numIndices,6);
 
          std::vector<int> compare(6);
          compare[0] = 3; compare[1] = 4; compare[2] = 5;
          compare[3] = 6; compare[4] = 7; compare[5] = 8;
-         
+
          TEST_EQUALITY(compare.size(),indices.size());
          TEST_ASSERT(std::equal(compare.begin(),compare.end(),indices.begin()));
       }
-      
+
    }
 
    // test graph

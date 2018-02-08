@@ -67,13 +67,13 @@ TEUCHOS_UNIT_TEST(tCubeHexMeshFactory, defaults)
    using Teuchos::RCP;
    using Teuchos::rcp;
    using Teuchos::rcpFromRef;
-   
-   CubeHexMeshFactory factory; 
+
+   CubeHexMeshFactory factory;
    RCP<STK_Interface> mesh = factory.buildMesh(MPI_COMM_WORLD);
    TEST_ASSERT(mesh!=Teuchos::null);
 
    TEST_EQUALITY(mesh->getPeriodicBCVector().size(),0);
- 
+
    if(mesh->isWritable())
       mesh->writeToExodus("CubeHex.exo");
 
@@ -105,8 +105,8 @@ TEUCHOS_UNIT_TEST(tCubeHexMeshFactory, periodic_input)
    Teuchos::ParameterList & pbcs = pl->sublist("Periodic BCs");
    pbcs.set<int>("Count",1);
    pbcs.set("Periodic Condition 1","yz-coord left;right");
-   
-   CubeHexMeshFactory factory; 
+
+   CubeHexMeshFactory factory;
    factory.setParameterList(pl);
    RCP<STK_Interface> mesh = factory.buildMesh(MPI_COMM_WORLD);
    TEST_ASSERT(mesh!=Teuchos::null);
@@ -127,12 +127,12 @@ TEUCHOS_UNIT_TEST(tCubeHexMeshFactory, element_counts)
    pl->set("X Elements",2);
    pl->set("Y Elements",4);
    pl->set("Z Elements",5);
-   
-   CubeHexMeshFactory factory; 
+
+   CubeHexMeshFactory factory;
    factory.setParameterList(pl);
    RCP<STK_Interface> mesh = factory.buildMesh(MPI_COMM_WORLD);
    TEST_ASSERT(mesh!=Teuchos::null);
- 
+
    if(mesh->isWritable())
       mesh->writeToExodus("CubeHex_oddelmt.exo");
 
@@ -168,12 +168,12 @@ TEUCHOS_UNIT_TEST(tCubeHexMeshFactory, allblock)
    pl->set("Z Elements",ze);
 
    xe *= bx; ye *= by; ze *= bz;
-   
-   CubeHexMeshFactory factory; 
+
+   CubeHexMeshFactory factory;
    factory.setParameterList(pl);
    RCP<STK_Interface> mesh = factory.buildMesh(MPI_COMM_WORLD);
    TEST_ASSERT(mesh!=Teuchos::null);
- 
+
    if(mesh->isWritable())
       mesh->writeToExodus("CubeHex_allblock.exo");
 
@@ -193,7 +193,7 @@ TEUCHOS_UNIT_TEST(tCubeHexMeshFactory, allblock)
    TEST_EQUALITY(nodesets.size(),1);
 
    std::vector<stk::mesh::Entity> nodes;
-   mesh->getMyNodes("origin","eblock-0_0_0",nodes); 
+   mesh->getMyNodes("origin","eblock-0_0_0",nodes);
    if(rank==0) {
       std::vector<std::size_t> localNodeIds;
       std::vector<stk::mesh::Entity> elements;
@@ -224,12 +224,12 @@ TEUCHOS_UNIT_TEST(tCubeHexMeshFactory, two_block)
    pl->set("X Elements",5);
    pl->set("Y Elements",10);
    pl->set("Z Elements",5);
-   
-   CubeHexMeshFactory factory; 
+
+   CubeHexMeshFactory factory;
    factory.setParameterList(pl);
    RCP<STK_Interface> mesh = factory.buildMesh(MPI_COMM_WORLD);
    TEST_ASSERT(mesh!=Teuchos::null);
- 
+
    if(mesh->isWritable())
       mesh->writeToExodus("CubeHex_2block.exo");
 
@@ -250,7 +250,7 @@ TEUCHOS_UNIT_TEST(tCubeHexMeshFactory, sub_two_block)
    using Teuchos::RCP;
    using Teuchos::rcp;
    using Teuchos::rcpFromRef;
-   int size; MPI_Comm_size(MPI_COMM_WORLD, &size); 
+   int size; MPI_Comm_size(MPI_COMM_WORLD, &size);
 
    RCP<Teuchos::ParameterList> pl = rcp(new Teuchos::ParameterList);
    pl->set("X Blocks",2);
@@ -262,19 +262,19 @@ TEUCHOS_UNIT_TEST(tCubeHexMeshFactory, sub_two_block)
    pl->set("X Elements",5);
    pl->set("Y Elements",10);
    pl->set("Z Elements",5);
-   
-   CubeHexMeshFactory factory; 
+
+   CubeHexMeshFactory factory;
    factory.setParameterList(pl);
    RCP<STK_Interface> mesh;
    if(size!=8) {
       TEST_THROW(factory.buildMesh(MPI_COMM_WORLD),std::logic_error);
-      return; 
+      return;
    }
    else {
       mesh = factory.buildMesh(MPI_COMM_WORLD);
    }
    TEST_ASSERT(mesh!=Teuchos::null);
- 
+
    if(mesh->isWritable())
       mesh->writeToExodus("CubeHex_sub_2block.exo");
 

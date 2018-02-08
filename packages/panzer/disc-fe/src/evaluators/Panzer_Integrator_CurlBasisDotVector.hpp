@@ -52,9 +52,9 @@
 #include "Panzer_Evaluator_Macros.hpp"
 
 namespace panzer {
-    
+
 /** In 3D this computes
-  * 
+  *
   *  \f$\int \nabla\times \phi \cdot v \f$
   *
   * however the name can be misleading. The curl of a vector
@@ -76,12 +76,12 @@ private:
   bool use_descriptors_;
   panzer::BasisDescriptor bd_;
   panzer::IntegrationDescriptor id_;
-  
+
   PHX::MDField<ScalarT,Cell,BASIS> residual;
-    
+
   PHX::MDField<const ScalarT,Cell,IP>     flux_scalar; // note that this is used for scalar fields
   PHX::MDField<const ScalarT,Cell,IP,Dim> flux_vector; // note that this is used for vector fields
-    
+
   std::vector<PHX::MDField<const ScalarT,Cell,IP> > field_multipliers;
 
   std::size_t num_nodes;

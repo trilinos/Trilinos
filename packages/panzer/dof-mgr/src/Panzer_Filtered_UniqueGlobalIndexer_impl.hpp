@@ -107,7 +107,7 @@ initialize(
 } // end of initialize()
 
 template <typename LocalOrdinalT,typename GlobalOrdinalT>
-void 
+void
 Filtered_UniqueGlobalIndexer<LocalOrdinalT,GlobalOrdinalT>::
 getOwnedAndGhostedNotFilteredIndicator(std::vector<int> & indicator) const
 {
@@ -127,9 +127,9 @@ getOwnedAndGhostedNotFilteredIndicator(std::vector<int> & indicator) const
   getOwnedIndices(ownedIndices);
   getOwnedAndGhostedIndices(ghostedIndices);
 
-  RCP<const Map> ownedMap 
+  RCP<const Map> ownedMap
       = Tpetra::createNonContigMap<LO,GO>(ownedIndices,getComm());
-  RCP<const Map> ghostedMap 
+  RCP<const Map> ghostedMap
       = Tpetra::createNonContigMap<LO,GO>(ghostedIndices,getComm());
 
   // allocate the owned vector, mark those GIDs as unfiltered
@@ -150,11 +150,11 @@ getOwnedAndGhostedNotFilteredIndicator(std::vector<int> & indicator) const
 
   // copy communicated data (clear it out first)
   indicator.clear();
-  indicator.insert(indicator.end(),data.begin(),data.end()); 
+  indicator.insert(indicator.end(),data.begin(),data.end());
 }
 
 template <typename LocalOrdinalT,typename GlobalOrdinalT>
-void 
+void
 Filtered_UniqueGlobalIndexer<LocalOrdinalT,GlobalOrdinalT>::
 getFilteredOwnedAndGhostedIndices(std::vector<GlobalOrdinalT> & indices) const
 {
@@ -176,7 +176,7 @@ getFilteredOwnedAndGhostedIndices(std::vector<GlobalOrdinalT> & indices) const
 }
 
 template <typename LocalOrdinalT,typename GlobalOrdinalT>
-void 
+void
 Filtered_UniqueGlobalIndexer<LocalOrdinalT,GlobalOrdinalT>::
 ownedIndices(const std::vector<GlobalOrdinalT> & indices,std::vector<bool> & isOwned) const
 {

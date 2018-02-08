@@ -61,40 +61,40 @@ namespace panzer {
   class BasisIRLayout;
 
   //! Nonmember constructor
-  Teuchos::RCP<panzer::BasisIRLayout> 
+  Teuchos::RCP<panzer::BasisIRLayout>
   basisIRLayout(std::string basis_type, const int basis_order, const PointRule& pt_rule);
 
   //! Nonmember constructor
   Teuchos::RCP<panzer::BasisIRLayout>
   basisIRLayout(const Teuchos::RCP<const PureBasis> & b, const PointRule& pt_rule);
 
-  class BasisIRLayout { 
+  class BasisIRLayout {
 
   public:
-    
+
     BasisIRLayout(std::string basis_type, const int basis_order, const PointRule& int_rule);
     BasisIRLayout(const Teuchos::RCP<const PureBasis> & b, const PointRule& int_rule);
 
     void setup(const panzer::PointRule & int_rule);
 
     int cardinality() const;
-    
+
     int numCells() const;
-    
+
     int numPoints() const;
-    
+
     int dimension() const;
 
     //! Unique key for workset indexing composed of basis name and point rule name
     std::string name() const;
 
     std::string fieldName() const;
-    
+
     std::string fieldNameD1() const;
-    
+
     std::string fieldNameD2() const;
 
-    Teuchos::RCP< Intrepid2::Basis<PHX::Device::execution_space,double,double> > 
+    Teuchos::RCP< Intrepid2::Basis<PHX::Device::execution_space,double,double> >
     getIntrepid2Basis() const;
 
     Teuchos::RCP<const PureBasis> getBasis() const;
@@ -103,10 +103,10 @@ namespace panzer {
 
     Teuchos::RCP<const CellTopologyInfo> getCellTopologyInfo() const
     { return cell_topo_info; }
-    
+
 
   public:
-    
+
     //! <BASIS,IP>
     Teuchos::RCP<PHX::DataLayout> basis_ref;
     //! <Cell,BASIS,IP>
@@ -132,9 +132,9 @@ namespace panzer {
     int num_cells_;
     int num_points_;
     int dimension_;
-    
+
     Teuchos::RCP<const PureBasis> basis_data_;
-    
+
     Teuchos::RCP<const CellTopologyInfo> cell_topo_info;
   };
 

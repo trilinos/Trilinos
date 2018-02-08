@@ -46,7 +46,7 @@
 // only do this if required by the user
 #ifdef Panzer_BUILD_HESSIAN_SUPPORT
 
-// the includes for this file come in as a result of the includes in the main 
+// the includes for this file come in as a result of the includes in the main
 // Tpetra scatter dirichlet residual file
 
 namespace panzer {
@@ -57,32 +57,32 @@ namespace panzer {
 template<typename TRAITS,typename LO,typename GO,typename NodeT>
 ScatterDirichletResidual_Tpetra<panzer::Traits::Hessian,TRAITS,LO,GO,NodeT>::
 ScatterDirichletResidual_Tpetra(const Teuchos::RCP<const UniqueGlobalIndexer<LO,GO> > & /* indexer */,
-                                const Teuchos::ParameterList& p) 
+                                const Teuchos::ParameterList& p)
 {
   std::string scatterName = p.get<std::string>("Scatter Name");
-  scatterHolder_ = 
+  scatterHolder_ =
     Teuchos::rcp(new PHX::Tag<ScalarT>(scatterName,Teuchos::rcp(new PHX::MDALayout<Dummy>(0))));
 
   this->addEvaluatedField(*scatterHolder_);
 
   this->setName(scatterName+" Scatter Dirichlet Residual Tpetra (Hessian)");
 }
-  
+
 template<typename TRAITS,typename LO,typename GO,typename NodeT>
 void
 ScatterDirichletResidual_Tpetra<panzer::Traits::Hessian,TRAITS,LO,GO,NodeT>::
 postRegistrationSetup(typename TRAITS::SetupData /* d */,
-                      PHX::FieldManager<TRAITS>& /* vm */) 
+                      PHX::FieldManager<TRAITS>& /* vm */)
 {
 }
 
 template<typename TRAITS,typename LO,typename GO,typename NodeT>
 void
 ScatterDirichletResidual_Tpetra<panzer::Traits::Hessian,TRAITS,LO,GO,NodeT>::
-preEvaluate(typename TRAITS::PreEvalData /* d */) 
+preEvaluate(typename TRAITS::PreEvalData /* d */)
 {
 }
-  
+
 template<typename TRAITS,typename LO,typename GO,typename NodeT>
 void
 ScatterDirichletResidual_Tpetra<panzer::Traits::Hessian,TRAITS,LO,GO,NodeT>::

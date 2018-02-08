@@ -75,7 +75,7 @@ EquationSet_Energy(const Teuchos::RCP<Teuchos::ParameterList>& params,
   // ********************
   // Validate and parse parameter list
   // ********************
-  {    
+  {
     Teuchos::ParameterList valid_parameters;
     this->setDefaultValidParameters(valid_parameters);
 
@@ -91,7 +91,7 @@ EquationSet_Energy(const Teuchos::RCP<Teuchos::ParameterList>& params,
       "Enables or disables convection term in the energy equation",
       Teuchos::tuple<std::string>("ON","OFF"),
       &valid_parameters
-      );    
+      );
 
     params->validateParametersAndSetDefaults(valid_parameters);
   }
@@ -134,8 +134,8 @@ buildAndRegisterEquationSetEvaluators(PHX::FieldManager<panzer::Traits>& fm,
   // Energy Equation
   // ********************
 
-  Teuchos::RCP<panzer::IntegrationRule> ir = this->getIntRuleForDOF(m_dof_name); 
-  Teuchos::RCP<panzer::BasisIRLayout> basis = this->getBasisIRLayoutForDOF(m_dof_name); 
+  Teuchos::RCP<panzer::IntegrationRule> ir = this->getIntRuleForDOF(m_dof_name);
+  Teuchos::RCP<panzer::BasisIRLayout> basis = this->getBasisIRLayoutForDOF(m_dof_name);
 
   // Transient Operator
   if (this->buildTransientSupport()) {
@@ -145,16 +145,16 @@ buildAndRegisterEquationSetEvaluators(PHX::FieldManager<panzer::Traits>& fm,
     p.set("Basis", basis);
     p.set("IR", ir);
     p.set("Multiplier", 1.0);
-    Teuchos::RCP<std::vector<std::string> > fms = 
+    Teuchos::RCP<std::vector<std::string> > fms =
       Teuchos::rcp(new std::vector<std::string>);
     fms->push_back(m_prefix+"DENSITY");
     fms->push_back(m_prefix+"HEAT_CAPACITY");
     p.set< Teuchos::RCP<const std::vector<std::string> > >("Field Multipliers",fms);
 
-    RCP< PHX::Evaluator<panzer::Traits> > op = 
+    RCP< PHX::Evaluator<panzer::Traits> > op =
       // rcp(new panzer::Integrator_TransientBasisTimesScalar<EvalT,panzer::Traits>(p));
       rcp(new panzer::Integrator_BasisTimesScalar<EvalT,panzer::Traits>(p));
-    
+
     this->template registerEvaluator<EvalT>(fm, op);
   }
 
@@ -168,13 +168,13 @@ buildAndRegisterEquationSetEvaluators(PHX::FieldManager<panzer::Traits>& fm,
     p.set("Basis", basis);
     p.set("IR", ir);
     p.set("Multiplier", thermal_conductivity);
-    
-    RCP< PHX::Evaluator<panzer::Traits> > op = 
+
+    RCP< PHX::Evaluator<panzer::Traits> > op =
       rcp(new panzer::Integrator_GradBasisDotVector<EvalT,panzer::Traits>(p));
 
     this->template registerEvaluator<EvalT>(fm, op);
   }
-  
+
   // Convection Operator
   if (m_do_convection == "ON") {
 
@@ -189,9 +189,9 @@ buildAndRegisterEquationSetEvaluators(PHX::FieldManager<panzer::Traits>& fm,
       p.set("Data Layout Scalar",ir->dl_scalar);
       p.set("Data Layout Vector",ir->dl_vector);
 
-      RCP< PHX::Evaluator<panzer::Traits> > op = 
+      RCP< PHX::Evaluator<panzer::Traits> > op =
 	rcp(new panzer::ScalarToVector<EvalT,panzer::Traits>(p));
-      
+
       this->template registerEvaluator<EvalT>(fm, op);
     }
 
@@ -204,9 +204,9 @@ buildAndRegisterEquationSetEvaluators(PHX::FieldManager<panzer::Traits>& fm,
       p.set("Gradient Name", "GRAD_"+m_prefix+"TEMPERATURE");
       p.set("Multiplier", 1.0);
 
-      RCP< PHX::Evaluator<panzer::Traits> > op = 
+      RCP< PHX::Evaluator<panzer::Traits> > op =
 	rcp(new user_app::Convection<EvalT,panzer::Traits>(p));
-      
+
       this->template registerEvaluator<EvalT>(fm, op);
     }
 
@@ -218,31 +218,31 @@ buildAndRegisterEquationSetEvaluators(PHX::FieldManager<panzer::Traits>& fm,
       p.set("Basis", basis);
       p.set("IR", ir);
       p.set("Multiplier", 1.0);
-      Teuchos::RCP<std::vector<std::string> > fms = 
+      Teuchos::RCP<std::vector<std::string> > fms =
 	Teuchos::rcp(new std::vector<std::string>);
       fms->push_back(m_prefix+"DENSITY");
       fms->push_back(m_prefix+"HEAT_CAPACITY");
       p.set< Teuchos::RCP<const std::vector<std::string> > >("Field Multipliers",fms);
-      
-      RCP< PHX::Evaluator<panzer::Traits> > op = 
+
+      RCP< PHX::Evaluator<panzer::Traits> > op =
 	rcp(new panzer::Integrator_BasisTimesScalar<EvalT,panzer::Traits>(p));
-      
+
       this->template registerEvaluator<EvalT>(fm, op);
     }
   }
 
   // Source Operator
-  {   
+  {
     ParameterList p("Source Residual");
     p.set("Residual Name", "RESIDUAL_"+m_prefix+"TEMPERATURE_SOURCE_OP");
     p.set("Value Name", "SOURCE_"+m_prefix+"TEMPERATURE");
     p.set("Basis", basis);
     p.set("IR", ir);
     p.set("Multiplier", -1.0);
-    
-    RCP< PHX::Evaluator<panzer::Traits> > op = 
+
+    RCP< PHX::Evaluator<panzer::Traits> > op =
       rcp(new panzer::Integrator_BasisTimesScalar<EvalT,panzer::Traits>(p));
-    
+
     this->template registerEvaluator<EvalT>(fm, op);
   }
 

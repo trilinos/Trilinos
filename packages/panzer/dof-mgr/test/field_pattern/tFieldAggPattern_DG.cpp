@@ -203,7 +203,7 @@ namespace panzer {
     out << "dimension = " << afp.getDimension() << std::endl;
     out << "GeomAggFP = \n" << *afp.getGeometricAggFieldPattern() << std::endl;
     out << "AggFP = \n" << afp << std::endl;
-    
+
     // Sizing
     {
       TEST_EQUALITY(afp.getGeometricAggFieldPattern()->getSubcellIndices(2,0).size(),1);
@@ -218,7 +218,7 @@ namespace panzer {
       // Cell (Face)
       TEST_EQUALITY(afp.getSubcellIndices(2,0).size(),16);
     }
-    
+
     // Check that all DG come after all CG
     {
       // CG
@@ -259,7 +259,7 @@ namespace panzer {
     out << "dimension = " << afp.getDimension() << std::endl;
     out << "GeomAggFP = \n" << *afp.getGeometricAggFieldPattern() << std::endl;
     out << "AggFP = \n" << afp << std::endl;
-    
+
     // Sizing
     {
       TEST_EQUALITY(afp.getGeometricAggFieldPattern()->getSubcellIndices(3,0).size(),1);
@@ -278,7 +278,7 @@ namespace panzer {
       // Cell
       TEST_EQUALITY(afp.getSubcellIndices(3,0).size(),66); // 12 CG + 54 DG
     }
-    
+
     // Check that all DG come after all CG
     {
       // CG
@@ -335,7 +335,7 @@ namespace panzer {
       // Cell
       TEST_EQUALITY(afp.getSubcellIndices(3,0).size(),56); // 2 CG + 54 DG
     }
-    
+
     // Check that all DG come after all CG
     {
       // CG
@@ -384,12 +384,12 @@ namespace panzer {
     out << "dimension = " << afp.getDimension() << std::endl;
     out << "GeomAggFP = \n" << *afp.getGeometricAggFieldPattern() << std::endl;
     out << "AggFP = \n" << afp << std::endl;
-    
+
     // Check the DG faces
     for (int i=0; i < afp.getFieldPattern(1)->getSubcellCount(2); ++i) {
       const auto& offsets = afp.localOffsets_closure(1,2,0);
       const auto& o1 = offsets.first;
-      const auto& o2 = offsets.second;      
+      const auto& o2 = offsets.second;
       TEST_EQUALITY(o1.size(), 9);
       TEST_EQUALITY(o1.size(), o2.size());
     }
@@ -419,7 +419,7 @@ namespace panzer {
     v2_gold[4] = 24;
     v2_gold[5] = 9;
     v2_gold[6] = 3;
-    v2_gold[7] = 10;    
+    v2_gold[7] = 10;
     v2_gold[8]  = 2;
     v2_gold[9]  = 16;
     v2_gold[10] = 20;
@@ -434,20 +434,20 @@ namespace panzer {
     v2_gold[19] = 12;
     v2_gold[20] = 5;
     v2_gold[21] = 15;
-    v2_gold[22] = 25; 
+    v2_gold[22] = 25;
     v2_gold[23] = 13;
     v2_gold[24] = 7;
     v2_gold[25] = 14;
     v2_gold[26] = 6;
 
     // v2 is CG field
-    const auto& v2 = afp.localOffsets(2);    
+    const auto& v2 = afp.localOffsets(2);
     for(std::size_t i=0;i<v2.size();i++)
       TEST_EQUALITY(v2[i],v2_gold[i]);
 
     // v1 is DG field. Same pattern as v2 but offset by number of v2
     // DOFs.
-    const auto& v1 = afp.localOffsets(1);    
+    const auto& v1 = afp.localOffsets(1);
     for(std::size_t i=0;i<v1.size();i++)
       TEST_EQUALITY(v1[i],v2_gold[i]+27);
   }

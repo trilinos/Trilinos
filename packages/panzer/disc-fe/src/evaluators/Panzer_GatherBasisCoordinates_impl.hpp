@@ -53,11 +53,11 @@
 #include "Teuchos_FancyOStream.hpp"
 
 template<typename EvalT,typename TRAITS>
-std::string 
+std::string
 panzer::GatherBasisCoordinates<EvalT, TRAITS>::
 fieldName(const std::string & basisName)
 {
-   std::stringstream ss; 
+   std::stringstream ss;
    ss << "Basis_" << basisName << " BasisCoordinates";
    return ss.str();
 }
@@ -65,7 +65,7 @@ fieldName(const std::string & basisName)
 template<typename EvalT,typename TRAITS>
 panzer::GatherBasisCoordinates<EvalT, TRAITS>::
 GatherBasisCoordinates(const panzer::PureBasis & basis)
-{ 
+{
   basisName_ = basis.name();
 
   basisCoordinates_ = PHX::MDField<ScalarT,Cell,BASIS,Dim>(fieldName(basisName_),basis.coordinates);
@@ -78,7 +78,7 @@ GatherBasisCoordinates(const panzer::PureBasis & basis)
 // **********************************************************************
 template<typename EvalT,typename TRAITS>
 void panzer::GatherBasisCoordinates<EvalT, TRAITS>::
-postRegistrationSetup(typename TRAITS::SetupData sd, 
+postRegistrationSetup(typename TRAITS::SetupData sd,
 		      PHX::FieldManager<TRAITS>& fm)
 {
   this->utils.setFieldData(basisCoordinates_,fm);
@@ -87,11 +87,11 @@ postRegistrationSetup(typename TRAITS::SetupData sd,
 }
 
 // **********************************************************************
-template<typename EvalT,typename TRAITS> 
+template<typename EvalT,typename TRAITS>
 void panzer::GatherBasisCoordinates<EvalT, TRAITS>::
 evaluateFields(typename TRAITS::EvalData workset)
-{ 
-  // const Kokkos::DynRankView<double,PHX::Device> & basisCoords = this->wda(workset).bases[basisIndex_]->basis_coordinates;  
+{
+  // const Kokkos::DynRankView<double,PHX::Device> & basisCoords = this->wda(workset).bases[basisIndex_]->basis_coordinates;
   const Teuchos::RCP<const BasisValues2<double> > bv = this->wda(workset).bases[basisIndex_];
 
   // just copy the array

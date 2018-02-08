@@ -50,7 +50,7 @@ namespace panzer {
 //**********************************************************************
 PHX_EVALUATOR_CTOR(TensorToStdVector, p)
 {
-  Teuchos::RCP<PHX::DataLayout> vector_dl = 
+  Teuchos::RCP<PHX::DataLayout> vector_dl =
     p.get< Teuchos::RCP<PHX::DataLayout> >("Data Layout Vector");
 
   Teuchos::RCP<PHX::DataLayout> tensor_dl =
@@ -69,10 +69,10 @@ PHX_EVALUATOR_CTOR(TensorToStdVector, p)
 					 ("Tensor Name"), tensor_dl);
 
   this->addDependentField(tensor_field);
-  
+
   for (std::size_t i=0; i < vector_fields.size(); ++i)
     this->addEvaluatedField(vector_fields[i]);
-  
+
   std::string n = "TensorToStdVector: " + tensor_field.fieldTag().name();
   this->setName(n);
 }
@@ -88,7 +88,7 @@ PHX_POST_REGISTRATION_SETUP(TensorToStdVector, /* worksets */, fm)
 
 //**********************************************************************
 PHX_EVALUATE_FIELDS(TensorToStdVector, workset)
-{ 
+{
 
   typedef typename PHX::MDField<ScalarT,Cell,Point,Dim>::size_type size_type;
 
@@ -97,13 +97,13 @@ PHX_EVALUATE_FIELDS(TensorToStdVector, workset)
 
     // Loop over points
     for (size_type pt = 0; pt < tensor_field.dimension(1); ++pt) {
-      
+
       // Loop over vectors
       for (std::size_t vec = 0; vec < vector_fields.size(); ++vec) {
 
         // Loop over spatial dimensions
         for (std::size_t dim = 0; dim < tensor_field.dimension(2); ++dim) {
-      
+
           vector_fields[vec](cell,pt,dim) = tensor_field(cell,pt,vec,dim);
 
         }

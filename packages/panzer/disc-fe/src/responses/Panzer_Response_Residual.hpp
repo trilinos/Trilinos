@@ -71,7 +71,7 @@ public:
   virtual void initializeResponse() {}
 };
 
-/** This is the response object used for calculation of the 
+/** This is the response object used for calculation of the
   * residual. This class uses the LOF to construct a ghosted residual
   * object. A user can uses class members to construct a compatible
   * residual object and then set it as the residual for this response to
@@ -88,37 +88,37 @@ private:
 
 public:
   Response_Residual(const std::string & responseName,
-                     const Teuchos::RCP<const panzer::LinearObjFactory<panzer::Traits> > & lof) 
-     : ResponseBase(responseName) 
+                     const Teuchos::RCP<const panzer::LinearObjFactory<panzer::Traits> > & lof)
+     : ResponseBase(responseName)
      , linObjFactory_(lof) {}
   virtual ~Response_Residual() {}
 
   /** Access the ghosted residual object. Note that this method will not return null.
     * When called for the first time this will use the LOF to construct a ghosted residual.
     */
-  Teuchos::RCP<Thyra::VectorBase<panzer::Traits::RealType> > getGhostedResidual() const; 
+  Teuchos::RCP<Thyra::VectorBase<panzer::Traits::RealType> > getGhostedResidual() const;
 
   /** Access the residual. This method can return null, but will only return the residual
     * class set by setResidual.
     */
-  Teuchos::RCP<Thyra::VectorBase<panzer::Traits::RealType> > getResidual() const; 
+  Teuchos::RCP<Thyra::VectorBase<panzer::Traits::RealType> > getResidual() const;
 
   /** Set the residual to use. If set to null, the internal residual will be lost. This
     * is assumed to be correctly sized.
     */
   void setResidual(const Teuchos::RCP<Thyra::VectorBase<panzer::Traits::RealType> > & res);
 
-  /** Build a correctly sized residual vector. This is a conenience, it wraps the 
+  /** Build a correctly sized residual vector. This is a conenience, it wraps the
     * linear object factory.
     */
-  Teuchos::RCP<Thyra::VectorBase<panzer::Traits::RealType> > allocateResidualVector() const; 
+  Teuchos::RCP<Thyra::VectorBase<panzer::Traits::RealType> > allocateResidualVector() const;
 
   // Functions inherited from ResponseBase
   virtual void initializeResponse() {}
   virtual void scatterResponse() {}
 };
 
-/** This is the response object used for calculation of the 
+/** This is the response object used for calculation of the
   * Jacobian. This class uses the LOF to construct a ghosted Jacobian
   * object. A user can uses class members to construct a compatible
   * Jacobian object and then set it as the Jacobian for this response to
@@ -135,30 +135,30 @@ private:
 
 public:
   Response_Residual(const std::string & responseName,
-                     const Teuchos::RCP<const panzer::LinearObjFactory<panzer::Traits> > & lof) 
-     : ResponseBase(responseName) 
+                     const Teuchos::RCP<const panzer::LinearObjFactory<panzer::Traits> > & lof)
+     : ResponseBase(responseName)
      , linObjFactory_(lof) {}
   virtual ~Response_Residual() {}
 
   /** Access the ghosted Jacobian object. Note that this method will not return null.
     * When called for the first time this will use the LOF to construct a ghosted Jacobian.
     */
-  Teuchos::RCP<Thyra::LinearOpBase<panzer::Traits::RealType> > getGhostedJacobian() const; 
+  Teuchos::RCP<Thyra::LinearOpBase<panzer::Traits::RealType> > getGhostedJacobian() const;
 
   /** Access the Jacobian. This method can return null, but will only return the Jacobian
     * class set by setJacobian.
     */
-  Teuchos::RCP<Thyra::LinearOpBase<panzer::Traits::RealType> > getJacobian() const; 
+  Teuchos::RCP<Thyra::LinearOpBase<panzer::Traits::RealType> > getJacobian() const;
 
   /** Set the Jacobian to use. If set to null, the internal Jacobian will be lost. This
     * is assumed to be correctly sized.
     */
   void setJacobian(const Teuchos::RCP<Thyra::LinearOpBase<panzer::Traits::RealType> > & res);
 
-  /** Build a correctly sized Jacobian. This is a conenience, it wraps the 
+  /** Build a correctly sized Jacobian. This is a conenience, it wraps the
     * linear object factory.
     */
-  Teuchos::RCP<Thyra::LinearOpBase<panzer::Traits::RealType> > allocateJacobian() const; 
+  Teuchos::RCP<Thyra::LinearOpBase<panzer::Traits::RealType> > allocateJacobian() const;
 
   // Functions inherited from ResponseBase
   virtual void initializeResponse() {}
@@ -166,7 +166,7 @@ public:
 };
 
 #ifdef Panzer_BUILD_HESSIAN_SUPPORT
-/** This is the response object used for calculation of the 
+/** This is the response object used for calculation of the
   * Hessian. This class uses the LOF to construct a ghosted Hessian
   * object. A user can uses class members to construct a compatible
   * Hessian object and then set it as the Hessian for this response to
@@ -183,30 +183,30 @@ private:
 
 public:
   Response_Residual(const std::string & responseName,
-                     const Teuchos::RCP<const panzer::LinearObjFactory<panzer::Traits> > & lof) 
-     : ResponseBase(responseName) 
+                     const Teuchos::RCP<const panzer::LinearObjFactory<panzer::Traits> > & lof)
+     : ResponseBase(responseName)
      , linObjFactory_(lof) {}
   virtual ~Response_Residual() {}
 
   /** Access the ghosted Hessian object. Note that this method will not return null.
     * When called for the first time this will use the LOF to construct a ghosted Hessian.
     */
-  Teuchos::RCP<Thyra::LinearOpBase<panzer::Traits::RealType> > getGhostedHessian() const; 
+  Teuchos::RCP<Thyra::LinearOpBase<panzer::Traits::RealType> > getGhostedHessian() const;
 
   /** Access the Hessian. This method can return null, but will only return the Hessian
     * class set by setHessian.
     */
-  Teuchos::RCP<Thyra::LinearOpBase<panzer::Traits::RealType> > getHessian() const; 
+  Teuchos::RCP<Thyra::LinearOpBase<panzer::Traits::RealType> > getHessian() const;
 
   /** Set the Hessian to use. If set to null, the internal Hessian will be lost. This
     * is assumed to be correctly sized.
     */
   void setHessian(const Teuchos::RCP<Thyra::LinearOpBase<panzer::Traits::RealType> > & res);
 
-  /** Build a correctly sized Hessian. This is a conenience, it wraps the 
+  /** Build a correctly sized Hessian. This is a conenience, it wraps the
     * linear object factory.
     */
-  Teuchos::RCP<Thyra::LinearOpBase<panzer::Traits::RealType> > allocateHessian() const; 
+  Teuchos::RCP<Thyra::LinearOpBase<panzer::Traits::RealType> > allocateHessian() const;
 
   // Functions inherited from ResponseBase
   virtual void initializeResponse() {}

@@ -47,7 +47,7 @@ namespace panzer {
 
 //**********************************************************************
 PHX_EVALUATOR_CTOR(ConstantFlux,p) :
-  flux( p.get<std::string>("Flux Field Name"), 
+  flux( p.get<std::string>("Flux Field Name"),
 	p.get< Teuchos::RCP<PHX::DataLayout> >("Data Layout") )
 {
   const Teuchos::ParameterList& flux_values = p.sublist("Flux Values");
@@ -56,7 +56,7 @@ PHX_EVALUATOR_CTOR(ConstantFlux,p) :
     values.push_back(Teuchos::getValue<double>(i->second));
 
   this->addEvaluatedField(flux);
-  
+
   std::string n = "Constant: " + flux.fieldTag().name();
   this->setName(n);
 }

@@ -79,7 +79,7 @@ TEUCHOS_UNIT_TEST(tGeometricFieldPattern, test2d)
    out << note << std::endl;
 
    // basis to build patterns from
-   const int maxOrder = Intrepid2::Parameters::MaxOrder; 
+   const int maxOrder = Intrepid2::Parameters::MaxOrder;
    const int order = std::min(6, maxOrder);
    RCP<Intrepid2::Basis<PHX::Device,double,double> > basis = rcp(new Intrepid2::Basis_HGRAD_QUAD_Cn_FEM<PHX::Device,double,double>(order));
    RCP<const FieldPattern> pattern = rcp(new Intrepid2FieldPattern(basis));
@@ -122,7 +122,7 @@ TEUCHOS_UNIT_TEST(tGeometricFieldPattern, test2d)
       tfp.subcellIndices[2].resize(1);
       if (order > 1) {
         tfp[1][0].push_back(4); tfp[1][1].push_back(5); tfp[1][2].push_back(6); tfp[1][3].push_back(7);
-        tfp[2][0].push_back(8); 
+        tfp[2][0].push_back(8);
       }
       TEST_ASSERT(gfp.equals(tfp));
    }

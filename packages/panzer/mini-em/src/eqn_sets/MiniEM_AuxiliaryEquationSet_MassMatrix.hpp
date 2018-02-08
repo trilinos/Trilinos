@@ -14,7 +14,7 @@ namespace mini_em {
   template <typename EvalT>
   class AuxiliaryEquationSet_MassMatrix : public panzer::EquationSet_DefaultImpl<EvalT> {
 
-  public:    
+  public:
 
     AuxiliaryEquationSet_MassMatrix(const Teuchos::RCP<panzer::GlobalEvaluationDataContainer> & gedc,
                              const Teuchos::RCP<Teuchos::ParameterList>& params,
@@ -22,7 +22,7 @@ namespace mini_em {
 			     const panzer::CellData& cell_data,
 		             const Teuchos::RCP<panzer::GlobalData>& global_data,
 		             const bool build_transient_support);
-    
+
     void buildAndRegisterEquationSetEvaluators(PHX::FieldManager<panzer::Traits>& fm,
 					       const panzer::FieldLibrary& /* field_library */,
                                                const Teuchos::ParameterList& /* user_data */) const;

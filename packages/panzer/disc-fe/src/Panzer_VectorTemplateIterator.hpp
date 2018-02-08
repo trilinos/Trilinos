@@ -50,12 +50,12 @@
 
 namespace panzer {
 
-/*! 
+/*!
  * Iterator for traversing through template instantiations stored by
  * the TemplateManager class.
  */
 /*!
- * This class implements a standard forward iterator for the 
+ * This class implements a standard forward iterator for the
  * TemplateManager.
  */
 template <typename TypeSeq, typename BaseT, typename ObjectT>
@@ -64,15 +64,15 @@ class VectorTemplateIterator : public std::iterator<std::input_iterator_tag,
 public:
    //! Constructor
    VectorTemplateIterator(panzer::VectorTemplateManager<TypeSeq,BaseT,ObjectT> & m,
-                    typename std::vector<std::vector< Teuchos::RCP<BaseT> > >::iterator p) 
+                    typename std::vector<std::vector< Teuchos::RCP<BaseT> > >::iterator p)
       : manager_(&m), object_iterator_(p) {}
 
    //! Equal operator
-   bool operator==(const VectorTemplateIterator& t) const 
+   bool operator==(const VectorTemplateIterator& t) const
    { return object_iterator_ == t.objectIterator_; }
 
    //! Not equal operator
-   bool operator!=(const VectorTemplateIterator& t) const 
+   bool operator!=(const VectorTemplateIterator& t) const
    { return object_iterator_ != t.object_iterator_; }
 
    //! Dereference operator
@@ -111,15 +111,15 @@ class ConstVectorTemplateIterator : public std::iterator<std::input_iterator_tag
 public:
    //! Constructor
    ConstVectorTemplateIterator(const panzer::VectorTemplateManager<TypeSeq,BaseT,ObjectT> & m,
-                    typename std::vector<std::vector< Teuchos::RCP<BaseT> > >::const_iterator p) 
+                    typename std::vector<std::vector< Teuchos::RCP<BaseT> > >::const_iterator p)
       : manager_(&m), object_iterator_(p) {}
 
    //! Equal operator
-   bool operator==(const ConstVectorTemplateIterator& t) const 
+   bool operator==(const ConstVectorTemplateIterator& t) const
    { return object_iterator_ == t.objectIterator_; }
 
    //! Not equal operator
-   bool operator!=(const ConstVectorTemplateIterator& t) const 
+   bool operator!=(const ConstVectorTemplateIterator& t) const
    { return object_iterator_ != t.object_iterator_; }
 
    //! Dereference operator

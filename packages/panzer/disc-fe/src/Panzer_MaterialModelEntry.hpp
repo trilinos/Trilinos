@@ -59,15 +59,15 @@ namespace panzer {
 
     MaterialModelEntry(const std::string factory_name);
 
-    MaterialModelEntry(const std::string factory_name, 
+    MaterialModelEntry(const std::string factory_name,
 		       const Teuchos::ParameterList& p);
-    
+
     std::string factoryName() const;
 
     const Teuchos::ParameterList& params() const;
 
     void operator=(const MaterialModelEntry& e);
-    
+
     bool operator==(const MaterialModelEntry& e) const;
 
     bool operator!=(const MaterialModelEntry& e) const;

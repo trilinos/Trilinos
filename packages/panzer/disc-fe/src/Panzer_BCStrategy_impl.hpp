@@ -46,7 +46,7 @@
 template <typename EvalT>
 panzer::BCStrategy<EvalT>::
 BCStrategy(const panzer::BC& bc) :
-  m_bc(bc) 
+  m_bc(bc)
 { }
 
 template <typename EvalT>

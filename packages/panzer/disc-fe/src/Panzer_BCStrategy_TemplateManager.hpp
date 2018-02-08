@@ -54,7 +54,7 @@
 namespace panzer {
 
   template<typename Traits>
-    class BCStrategy_TemplateManager : 
+    class BCStrategy_TemplateManager :
     public PHX::TemplateManager<typename Traits::EvalTypes,
 				panzer::BCStrategyBase,
                                 panzer::BCStrategy<_> > {
@@ -67,6 +67,6 @@ namespace panzer {
 
   };
 
-} 
+}
 
-#endif 
+#endif

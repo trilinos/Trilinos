@@ -88,13 +88,13 @@ public:
    virtual int getFieldNum(const std::string & str) const;
 
    virtual int getNumFields() const { return 2; }
-   virtual void getFieldOrder(std::vector<std::string> & order) const 
+   virtual void getFieldOrder(std::vector<std::string> & order) const
    { order.push_back("U"); order.push_back("T"); }
 
    virtual const std::string & getFieldString(int field) const;
 
    virtual Teuchos::RCP<Teuchos::Comm<int> > getComm() const
-   { 
+   {
       #ifdef HAVE_MPI
          return Teuchos::rcp(new Teuchos::MpiComm<int>(Teuchos::opaqueWrapper(MPI_COMM_WORLD)));
       #else
@@ -104,9 +104,9 @@ public:
 
    /** What are the blockIds included in this connection manager?
      */
-   virtual void getElementBlockIds(std::vector<std::string> & elementBlockIds) const; 
+   virtual void getElementBlockIds(std::vector<std::string> & elementBlockIds) const;
 
-   /** Is the specified field in the element block? 
+   /** Is the specified field in the element block?
      */
    virtual bool fieldInBlock(const std::string & field, const std::string & block) const;
 
@@ -148,8 +148,8 @@ public:
      * \param[in] subcellDim
      * \param[in] subcellId
      */
-   // virtual const std::vector<int> & 
-   virtual const std::pair<std::vector<int>,std::vector<int> > & 
+   // virtual const std::vector<int> &
+   virtual const std::pair<std::vector<int>,std::vector<int> > &
    getGIDFieldOffsets_closure(const std::string & blockId, int fieldNum,
                                                                int subcellDim,int subcellId) const;
 

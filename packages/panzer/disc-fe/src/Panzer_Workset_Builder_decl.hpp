@@ -53,12 +53,12 @@
 #include "Panzer_WorksetNeeds.hpp"
 
 namespace panzer {
-  
+
   struct Workset;
   struct WorksetDetails;
 
   template<typename ArrayT>
-  Teuchos::RCP<std::vector<Workset> > 
+  Teuchos::RCP<std::vector<Workset> >
   buildWorksets(const WorksetNeeds & needs,
                 const std::string & elementBlock,
                 const std::vector<std::size_t>& local_cell_ids,
@@ -93,7 +93,7 @@ namespace panzer {
     * is constructed.
     */
   template<typename ArrayT>
-  Teuchos::RCP<std::vector<Workset> > 
+  Teuchos::RCP<std::vector<Workset> >
   buildEdgeWorksets(const WorksetNeeds & needs_a,
                    const std::string & eblock_a,
                     const std::vector<std::size_t>& local_cell_ids_a,

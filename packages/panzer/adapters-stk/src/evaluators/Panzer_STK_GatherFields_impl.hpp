@@ -54,26 +54,26 @@
 // Specialization: Residual
 // **********************************************************************
 
-template<typename EvalT, typename Traits> 
+template<typename EvalT, typename Traits>
 panzer_stk::GatherFields<EvalT, Traits>::
   GatherFields(const Teuchos::RCP<const STK_Interface> & mesh,const Teuchos::ParameterList& p)
-{ 
+{
   using panzer::Cell;
   using panzer::NODE;
- 
+
   mesh_ = mesh;
 
-  const std::vector<std::string>& names = 
+  const std::vector<std::string>& names =
     *(p.get< Teuchos::RCP< std::vector<std::string> > >("Field Names"));
 
-  Teuchos::RCP<panzer::BasisIRLayout> basis = 
+  Teuchos::RCP<panzer::BasisIRLayout> basis =
     p.get< Teuchos::RCP<panzer::BasisIRLayout> >("Basis");
   isConstant_ = basis->getBasis()->getElementSpace()==panzer::PureBasis::CONST;
 
   gatherFields_.resize(names.size());
   stkFields_.resize(names.size());
   for (std::size_t fd = 0; fd < names.size(); ++fd) {
-    gatherFields_[fd] = 
+    gatherFields_[fd] =
       PHX::MDField<ScalarT,Cell,NODE>(names[fd],basis->functional);
     this->addEvaluatedField(gatherFields_[fd]);
   }
@@ -82,9 +82,9 @@ panzer_stk::GatherFields<EvalT, Traits>::
 }
 
 // **********************************************************************
-template<typename EvalT, typename Traits> 
+template<typename EvalT, typename Traits>
 void panzer_stk::GatherFields<EvalT, Traits>::
-postRegistrationSetup(typename Traits::SetupData /* d */, 
+postRegistrationSetup(typename Traits::SetupData /* d */,
 		      PHX::FieldManager<Traits>& fm)
 {
   for (std::size_t fd = 0; fd < gatherFields_.size(); ++fd) {
@@ -93,13 +93,13 @@ postRegistrationSetup(typename Traits::SetupData /* d */,
     stkFields_[fd] = mesh_->getMetaData()->get_field<VariableField>(stk::topology::NODE_RANK, fieldName);
 
     if(stkFields_[fd]==0) {
-      std::stringstream ss; 
+      std::stringstream ss;
       mesh_->printMetaData(ss);
       TEUCHOS_TEST_FOR_EXCEPTION(true,std::invalid_argument,
-                                 "panzer_stk::GatherFields: STK field " << "\"" << fieldName << "\" " 
+                                 "panzer_stk::GatherFields: STK field " << "\"" << fieldName << "\" "
                                  "not found.\n STK meta data follows: \n\n" << ss.str());
     }
-     
+
 
     // setup the field data object
     this->utils.setFieldData(gatherFields_[fd],fm);
@@ -107,15 +107,15 @@ postRegistrationSetup(typename Traits::SetupData /* d */,
 }
 
 // **********************************************************************
-template<typename EvalT, typename Traits> 
+template<typename EvalT, typename Traits>
 void panzer_stk::GatherFields<EvalT, Traits>::
 evaluateFields(typename Traits::EvalData workset)
-{ 
+{
    const std::vector<stk::mesh::Entity> & localElements = *mesh_->getElementsOrderedByLID();
- 
+
    // for convenience pull out some objects from workset
    const std::vector<std::size_t> & localCellIds = this->wda(workset).cell_local_ids;
- 
+
    // gather operation for each cell in workset
    for(std::size_t worksetCellIndex=0;worksetCellIndex<localCellIds.size();++worksetCellIndex) {
       std::size_t cellLocalId = localCellIds[worksetCellIndex];

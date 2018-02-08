@@ -100,7 +100,7 @@ buildAndRegisterEquationSetEvaluators(PHX::FieldManager<panzer::Traits>& fm,
   // EField Equation
   //  eps dE/dt = 1/mu \nabla \times B -J
   // ********************
-  { 
+  {
     Teuchos::RCP<panzer::IntegrationRule> ir = this->getIntRuleForDOF(m_Efield_dof_name);
     Teuchos::RCP<panzer::BasisIRLayout> basis = this->getBasisIRLayoutForDOF(m_Efield_dof_name);
 
@@ -141,7 +141,7 @@ buildAndRegisterEquationSetEvaluators(PHX::FieldManager<panzer::Traits>& fm,
       p.set("Basis", basis);
       p.set("IR", ir);
       p.set("Multiplier", 1.0);
-     
+
       RCP< PHX::Evaluator<panzer::Traits> > op =
           rcp(new panzer::Integrator_BasisTimesVector<EvalT,panzer::Traits>(p));
 

@@ -48,7 +48,7 @@ namespace panzer {
   void trim(std::string& str)
   {
     const std::string whitespace(" \t\n");
-    
+
     const auto strBegin = str.find_first_not_of(whitespace);
     if (strBegin == std::string::npos) {
       str = "";
@@ -61,7 +61,7 @@ namespace panzer {
     str = str.substr(strBegin, strRange);
     return;
   }
-  
+
   void StringTokenizer(std::vector<std::string>& tokens,
 		       const std::string& str,
 		       const std::string delimiters,bool trim)
@@ -72,7 +72,7 @@ namespace panzer {
     string::size_type lastPos = str.find_first_not_of(delimiters, 0);
     // Find first "non-delimiter".
     string::size_type pos     = str.find_first_of(delimiters, lastPos);
-    
+
     while (string::npos != pos || string::npos != lastPos) {
 
       // grab token, trim if desired
@@ -91,7 +91,7 @@ namespace panzer {
       // Find next "non-delimiter"
       pos = str.find_first_of(delimiters, lastPos);
     }
-    
+
   }
 
   void TokensToDoubles(std::vector<double> & values,const std::vector<std::string> & tokens)
@@ -101,8 +101,8 @@ namespace panzer {
         double value = 0.0;
         std::stringstream ss;
         ss << tokens[i];
-        ss >> value; 
-      
+        ss >> value;
+
         values.push_back(value);
      }
   }
@@ -114,8 +114,8 @@ namespace panzer {
         int value = 0;
         std::stringstream ss;
         ss << tokens[i];
-        ss >> value; 
-      
+        ss >> value;
+
         values.push_back(value);
      }
   }

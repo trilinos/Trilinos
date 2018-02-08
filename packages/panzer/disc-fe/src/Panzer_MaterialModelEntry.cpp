@@ -109,7 +109,7 @@ void panzer::MaterialModelEntry::print(std::ostream& os) const
 
 //=======================================================================
 //=======================================================================
-std::ostream& 
+std::ostream&
 panzer::operator<<(std::ostream& os, panzer::MaterialModelEntry& m)
 {
   m.print(os);

@@ -57,11 +57,11 @@
 
 namespace user_app {
 
-  class RythmosObserver_WriteToExodus : 
+  class RythmosObserver_WriteToExodus :
     public Rythmos::IntegrationObserverBase<double> {
 
   public:
-    
+
     RythmosObserver_WriteToExodus(const Teuchos::RCP<panzer_stk::STK_Interface>& mesh,
 				   const Teuchos::RCP<const panzer::UniqueGlobalIndexerBase>& dof_manager,
 				   const Teuchos::RCP<const panzer::LinearObjFactory<panzer::Traits> >& lof,
@@ -70,7 +70,7 @@ namespace user_app {
       m_dof_manager(dof_manager),
       m_lof(lof),
       m_response_library(response_library)
-    { 
+    {
       // get all element blocks and add them to the list
       std::vector<std::string> eBlocks;
       mesh->getElementBlockNames(eBlocks);
@@ -79,7 +79,7 @@ namespace user_app {
       builder.mesh = mesh;
       m_response_library->addResponse("Main Field Output",eBlocks,builder);
     }
-    
+
     Teuchos::RCP<Rythmos::IntegrationObserverBase<double> >
     cloneIntegrationObserver() const
     {
@@ -92,9 +92,9 @@ namespace user_app {
     void observeCompletedTimeStep(const Rythmos::StepperBase<double> &stepper,
 				  const Rythmos::StepControlInfo<double>& /* stepCtrlInfo */,
 				  const int /* timeStepIter */)
-    { 
+    {
       Teuchos::RCP<const Thyra::VectorBase<double> > solution = stepper.getStepStatus().solution;
-      
+
       // initialize the assembly container
       panzer::AssemblyEngineInArgs ae_inargs;
       ae_inargs.container_ = m_lof->buildLinearObjContainer();
@@ -115,10 +115,10 @@ namespace user_app {
 
       m_response_library->addResponsesToInArgs<panzer::Traits::Residual>(ae_inargs);
       m_response_library->evaluate<panzer::Traits::Residual>(ae_inargs);
-      
+
       m_mesh->writeToExodus(stepper.getStepStatus().time);
     }
-    
+
   protected:
 
     Teuchos::RCP<panzer_stk::STK_Interface> m_mesh;

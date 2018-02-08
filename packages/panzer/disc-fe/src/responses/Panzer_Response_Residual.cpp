@@ -10,7 +10,7 @@ namespace panzer {
 //////////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////////
 
-Teuchos::RCP<Thyra::VectorBase<panzer::Traits::RealType> > 
+Teuchos::RCP<Thyra::VectorBase<panzer::Traits::RealType> >
 Response_Residual<panzer::Traits::Residual>::
 getGhostedResidual() const
 {
@@ -26,26 +26,26 @@ getGhostedResidual() const
   // otherwise, allocate a new ghosted vector
   RCP<LinearObjContainer> loc = linObjFactory_->buildGhostedLinearObjContainer();
   linObjFactory_->initializeGhostedContainer(LinearObjContainer::F,*loc);
- 
+
   RCP<TOC> th_loc = rcp_dynamic_cast<TOC>(loc);
   return th_loc->get_f_th();
 }
 
-Teuchos::RCP<Thyra::VectorBase<panzer::Traits::RealType> > 
+Teuchos::RCP<Thyra::VectorBase<panzer::Traits::RealType> >
 Response_Residual<panzer::Traits::Residual>::
 getResidual() const
 {
   return residual_;
 }
 
-void 
+void
 Response_Residual<panzer::Traits::Residual>::
 setResidual(const Teuchos::RCP<Thyra::VectorBase<panzer::Traits::RealType> > & res)
 {
   residual_ = res;
 }
 
-Teuchos::RCP<Thyra::VectorBase<panzer::Traits::RealType> > 
+Teuchos::RCP<Thyra::VectorBase<panzer::Traits::RealType> >
 Response_Residual<panzer::Traits::Residual>::
 allocateResidualVector() const
 {
@@ -61,7 +61,7 @@ allocateResidualVector() const
 //////////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////////
 
-Teuchos::RCP<Thyra::LinearOpBase<panzer::Traits::RealType> > 
+Teuchos::RCP<Thyra::LinearOpBase<panzer::Traits::RealType> >
 Response_Residual<panzer::Traits::Jacobian>::
 getGhostedJacobian() const
 {
@@ -77,26 +77,26 @@ getGhostedJacobian() const
   // otherwise, allocate a new ghosted vector
   RCP<LinearObjContainer> loc = linObjFactory_->buildGhostedLinearObjContainer();
   linObjFactory_->initializeGhostedContainer(LinearObjContainer::Mat,*loc);
- 
+
   RCP<TOC> th_loc = rcp_dynamic_cast<TOC>(loc);
   return th_loc->get_A_th();
 }
 
-Teuchos::RCP<Thyra::LinearOpBase<panzer::Traits::RealType> > 
+Teuchos::RCP<Thyra::LinearOpBase<panzer::Traits::RealType> >
 Response_Residual<panzer::Traits::Jacobian>::
 getJacobian() const
 {
   return jacobian_;
 }
 
-void 
+void
 Response_Residual<panzer::Traits::Jacobian>::
 setJacobian(const Teuchos::RCP<Thyra::LinearOpBase<panzer::Traits::RealType> > & jac)
 {
   jacobian_ = jac;
 }
 
-Teuchos::RCP<Thyra::LinearOpBase<panzer::Traits::RealType> > 
+Teuchos::RCP<Thyra::LinearOpBase<panzer::Traits::RealType> >
 Response_Residual<panzer::Traits::Jacobian>::
 allocateJacobian() const
 {
@@ -114,7 +114,7 @@ allocateJacobian() const
 
 #ifdef Panzer_BUILD_HESSIAN_SUPPORT
 
-Teuchos::RCP<Thyra::LinearOpBase<panzer::Traits::RealType> > 
+Teuchos::RCP<Thyra::LinearOpBase<panzer::Traits::RealType> >
 Response_Residual<panzer::Traits::Hessian>::
 getGhostedHessian() const
 {
@@ -130,26 +130,26 @@ getGhostedHessian() const
   // otherwise, allocate a new ghosted vector
   RCP<LinearObjContainer> loc = linObjFactory_->buildGhostedLinearObjContainer();
   linObjFactory_->initializeGhostedContainer(LinearObjContainer::Mat,*loc);
- 
+
   RCP<TOC> th_loc = rcp_dynamic_cast<TOC>(loc);
   return th_loc->get_A_th();
 }
 
-Teuchos::RCP<Thyra::LinearOpBase<panzer::Traits::RealType> > 
+Teuchos::RCP<Thyra::LinearOpBase<panzer::Traits::RealType> >
 Response_Residual<panzer::Traits::Hessian>::
 getHessian() const
 {
   return hessian_;
 }
 
-void 
+void
 Response_Residual<panzer::Traits::Hessian>::
 setHessian(const Teuchos::RCP<Thyra::LinearOpBase<panzer::Traits::RealType> > & jac)
 {
   hessian_ = jac;
 }
 
-Teuchos::RCP<Thyra::LinearOpBase<panzer::Traits::RealType> > 
+Teuchos::RCP<Thyra::LinearOpBase<panzer::Traits::RealType> >
 Response_Residual<panzer::Traits::Hessian>::
 allocateHessian() const
 {

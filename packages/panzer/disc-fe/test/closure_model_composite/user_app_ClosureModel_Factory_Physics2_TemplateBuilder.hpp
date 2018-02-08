@@ -64,9 +64,9 @@ namespace user_app {
       return Teuchos::rcp( static_cast<panzer::ClosureModelFactoryBase*>
 			   (new user_app::MyModelFactory_Physics2<EvalT>(m_throw_if_model_not_found)) );
     }
-    
+
   };
-  
+
 }
 
-#endif 
+#endif

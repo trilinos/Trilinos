@@ -72,7 +72,7 @@ public:
 
    void initializeWithDefaults();
 
-protected: 
+protected:
    void buildMetaData(stk::ParallelMachine parallelMach, STK_Interface & mesh) const;
    void buildElements(stk::ParallelMachine parallelMach,STK_Interface & mesh) const;
    void buildBlock(stk::ParallelMachine parallelMach,int xBlock,int yBlock,STK_Interface & mesh) const;

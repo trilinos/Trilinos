@@ -81,9 +81,9 @@ RCP<const panzer::FieldPattern> buildFieldPattern(RCP<Intrepid2::Basis<PHX::Devi
 
 std::string getElementBlock(const Triplet & element,
                                     const CartesianConnManager<int,Ordinal64> & connManager)
-                                    
+
 {
-  int localElmtId = connManager.computeLocalElementIndex(element); 
+  int localElmtId = connManager.computeLocalElementIndex(element);
   return connManager.getBlockId(localElmtId);
 }
 
@@ -137,7 +137,7 @@ TEUCHOS_UNIT_TEST(tCartesianDOFMgr_HighOrder, ho_gid_values)
     Triplet element;
     element.x = myOffset.x + myElements.x/2-1;
     element.y = myOffset.y + myElements.y/2-1;
-    element.z = 0; 
+    element.z = 0;
 
     out << "Root element = " << element.x << " " << element.y << " " << element.z << std::endl;
 
@@ -152,7 +152,7 @@ TEUCHOS_UNIT_TEST(tCartesianDOFMgr_HighOrder, ho_gid_values)
 
     std::set<Ordinal64> s_gids;
     s_gids.insert(gids.begin(),gids.end());
- 
+
     // ensure that the expected number of GIDs are produced
     TEST_EQUALITY(s_gids.size(),gids.size());
   }
@@ -231,7 +231,7 @@ TEUCHOS_UNIT_TEST(tCartesianDOFMgr_HighOrder, gid_values)
     Triplet element;
     element.x = myOffset.x + myElements.x/2-1;
     element.y = myOffset.y + myElements.y/2-1;
-    element.z = 0; 
+    element.z = 0;
 
     out << "Root element = " << element.x << " " << element.y << " " << element.z << std::endl;
 
@@ -305,7 +305,7 @@ TEUCHOS_UNIT_TEST(tCartesianDOFMgr_HighOrder, quad2d)
   RCP<const panzer::FieldPattern> pattern_U = buildFieldPattern( rcp(new Intrepid2::Basis_HGRAD_QUAD_Cn_FEM<PHX::Device,double,double>( poly_U )) );
   RCP<const panzer::FieldPattern> pattern_P = buildFieldPattern( rcp(new Intrepid2::Basis_HGRAD_QUAD_Cn_FEM<PHX::Device,double,double>( poly_P )) );
   RCP<const panzer::FieldPattern> pattern_T = buildFieldPattern( rcp(new Intrepid2::Basis_HGRAD_QUAD_Cn_FEM<PHX::Device,double,double>( poly_T )) );
-  
+
   // build the topology
   RCP<CCM> connManager = rcp(new CCM);
   connManager->initialize(comm,nx,ny,px,py,bx,by);
@@ -332,27 +332,27 @@ TEUCHOS_UNIT_TEST(tCartesianDOFMgr_HighOrder, quad2d)
   int ux_num   = dofManager->getFieldNum("UX");
   int uy_num   = dofManager->getFieldNum("UY");
 
-  out << "\n\nP, T, UX, UY = " << p_num << ", " << t_num << ", " 
+  out << "\n\nP, T, UX, UY = " << p_num << ", " << t_num << ", "
                            << ux_num << ", " << uy_num << std::endl;
 
   // build global unknowns (useful comment!)
   dofManager->buildGlobalUnknowns();
 
   TEST_EQUALITY(dofManager->getElementBlockGIDCount("eblock-0_0"),
-                pattern_U->numberIds() + 
-                pattern_U->numberIds() + 
+                pattern_U->numberIds() +
+                pattern_U->numberIds() +
                 pattern_P->numberIds() +
                 pattern_T->numberIds() );
 
   TEST_EQUALITY(dofManager->getElementBlockGIDCount("eblock-0_1"),
-                pattern_U->numberIds() + 
-                pattern_U->numberIds() + 
+                pattern_U->numberIds() +
+                pattern_U->numberIds() +
                 pattern_T->numberIds() );
-  
-  // print out some diagnostic information 
+
+  // print out some diagnostic information
   ///////////////////////////////////////////////////////////
 
-  dofManager->printFieldInformation(out); 
+  dofManager->printFieldInformation(out);
 
   out << std::endl << "Load balancing: " << printUGILoadBalancingInformation(*dofManager) << std::endl;
 
@@ -371,7 +371,7 @@ TEUCHOS_UNIT_TEST(tCartesianDOFMgr_HighOrder, quad2d)
     Triplet element;
     element.x = myOffset.x + myElements.x/2-1;
     element.y = myOffset.y + myElements.y/2-1;
-    element.z = 0; 
+    element.z = 0;
 
     out << "Root element = " << element.x << " " << element.y << " " << element.z << std::endl;
 
@@ -399,7 +399,7 @@ TEUCHOS_UNIT_TEST(tCartesianDOFMgr_HighOrder, quad2d)
       s_gids.insert(gids.begin(),gids.end());
       s_gids_px.insert(gids_px.begin(),gids_px.end());
       s_gids_py.insert(gids_py.begin(),gids_py.end());
- 
+
       // ensure that the expected number of GIDs are produced
       TEST_EQUALITY(s_gids.size(),gids.size());
       TEST_EQUALITY(s_gids_px.size(),gids_px.size());
@@ -479,7 +479,7 @@ TEUCHOS_UNIT_TEST(tCartesianDOFMgr_HighOrder, quad2d)
       std::set<Ordinal64> s_gids_l, s_gids_r;
       s_gids_l.insert(gids_l.begin(),gids_l.end());
       s_gids_r.insert(gids_r.begin(),gids_r.end());
- 
+
       // ensure that the expected number of GIDs are produced
       TEST_EQUALITY(s_gids_l.size(),gids_l.size());
       TEST_EQUALITY(s_gids_r.size(),gids_r.size());
@@ -508,7 +508,7 @@ TEUCHOS_UNIT_TEST(tCartesianDOFMgr_HighOrder, quad2d)
       Teuchos::send(comm,Teuchos::as<int>(gid_sub_l.size()),&gid_sub_l[0],rank-1);
     }
 
-    // recieve right, check 
+    // recieve right, check
     if(rank!=np-1) {
       std::vector<Ordinal64> gid_remote(gid_sub_r.size(),-1);
       Teuchos::receive(comm,rank+1,Teuchos::as<int>(gid_sub_r.size()),&gid_remote[0]);
@@ -517,7 +517,7 @@ TEUCHOS_UNIT_TEST(tCartesianDOFMgr_HighOrder, quad2d)
         TEST_EQUALITY(gid_sub_r[i],gid_remote[i]);
     }
   }
-    
+
 }
 
 } // end unit test

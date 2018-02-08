@@ -60,14 +60,14 @@ PHX_EVALUATOR_CTOR(WeakDirichletResidual,p)
   std::string flux_name = p.get<std::string>("Flux Name");
   std::string normal_name = p.get<std::string>("Normal Name");
   std::string normal_dot_flux_name = normal_name + " dot " + flux_name;
-  std::string dof_name = p.get<std::string>("DOF Name"); 
+  std::string dof_name = p.get<std::string>("DOF Name");
   std::string value_name = p.get<std::string>("Value Name");
   std::string sigma_name = p.get<std::string>("Sigma Name");
-  
+
   const Teuchos::RCP<const panzer::PureBasis> basis =
     p.get< Teuchos::RCP<const panzer::PureBasis> >("Basis");
 
-  const Teuchos::RCP<const panzer::IntegrationRule> ir = 
+  const Teuchos::RCP<const panzer::IntegrationRule> ir =
     p.get< Teuchos::RCP<const panzer::IntegrationRule> >("IR");
 
 
@@ -86,7 +86,7 @@ PHX_EVALUATOR_CTOR(WeakDirichletResidual,p)
   this->addDependentField(dof);
   this->addDependentField(value);
   this->addDependentField(sigma);
- 
+
   basis_name = panzer::basisIRLayout(basis,*ir)->name();
 
   std::string n = "Weak Dirichlet Residual Evaluator";
@@ -115,23 +115,23 @@ PHX_POST_REGISTRATION_SETUP(WeakDirichletResidual,sd,fm)
 
 //**********************************************************************
 PHX_EVALUATE_FIELDS(WeakDirichletResidual,workset)
-{ 
+{
   for (index_t cell = 0; cell < workset.num_cells; ++cell) {
     for (std::size_t ip = 0; ip < num_ip; ++ip) {
       normal_dot_flux_plus_pen(cell,ip) = ScalarT(0.0);
       for (std::size_t dim = 0; dim < num_dim; ++dim) {
 	normal_dot_flux_plus_pen(cell,ip) += normal(cell,ip,dim) * flux(cell,ip,dim);
       }
-      normal_dot_flux_plus_pen(cell,ip) += sigma(cell,ip) * (dof(cell,ip) - value(cell,ip)); 
+      normal_dot_flux_plus_pen(cell,ip) += sigma(cell,ip) * (dof(cell,ip) - value(cell,ip));
     }
   }
 
   if(workset.num_cells>0)
     Intrepid2::FunctionSpaceTools<PHX::exec_space>::
       integrate(residual.get_view(),
-                normal_dot_flux_plus_pen.get_view(), 
+                normal_dot_flux_plus_pen.get_view(),
                 (this->wda(workset).bases[basis_index])->weighted_basis_scalar.get_view());
-  
+
 }
 
 //**********************************************************************

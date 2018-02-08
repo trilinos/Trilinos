@@ -60,7 +60,7 @@ namespace panzer_stk {
   class NOXObserverFactory {
 
   public:
-    
+
     virtual ~NOXObserverFactory() {}
 
     virtual Teuchos::RCP<NOX::Abstract::PrePostOperator>

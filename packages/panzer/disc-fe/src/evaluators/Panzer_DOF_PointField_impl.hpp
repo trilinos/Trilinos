@@ -82,7 +82,7 @@ void DOF_PointField<EvalT,TRAITST>::initialize(const std::string & fieldName,
   basisRef    = Kokkos::DynRankView<double,PHX::Device>("basisRef",coeffCount,pointCount);
   basis       = Kokkos::DynRankView<double,PHX::Device>("basis",cellCount,coeffCount,pointCount);
   intrpCoords = Kokkos::DynRankView<double,PHX::Device>("intrpCoords",pointCount,dimCount);
-  
+
   std::string n = "DOF_PointField: " + dof_field.fieldTag().name();
   this->setName(n);
 }
@@ -100,7 +100,7 @@ void DOF_PointField<EvalT,TRAITST>::postRegistrationSetup(typename TRAITST::Setu
 //**********************************************************************
 template <typename EvalT, typename TRAITST>
 void DOF_PointField<EvalT,TRAITST>::evaluateFields(typename TRAITST::EvalData workset)
-{ 
+{
   // Zero out arrays (intrepid does a sum! 1/17/2012)
   dof_field.deep_copy(ScalarT(0.0));
 

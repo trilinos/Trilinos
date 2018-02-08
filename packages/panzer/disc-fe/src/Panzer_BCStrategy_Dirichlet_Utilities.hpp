@@ -75,7 +75,7 @@ namespace panzer {
     \param user_data [in] User suppplied data that optionally can be used to build models
 */
 template<typename EvalT>
-void 
+void
 buildAndRegisterSubsetOfClosureModelEvaluatorsForType(PHX::FieldManager<panzer::Traits>& fm,
 						      const panzer::PhysicsBlock& pb,
 						      const panzer::ClosureModelFactory_TemplateManager<panzer::Traits>& factory,
@@ -83,22 +83,22 @@ buildAndRegisterSubsetOfClosureModelEvaluatorsForType(PHX::FieldManager<panzer::
 						      const Teuchos::ParameterList& models,
 						      const Teuchos::ParameterList& user_data)
 {
-  
+
   std::vector<std::string> closure_model_vector;
   panzer::StringTokenizer(closure_model_vector,comma_sep_closure_model_list,",");
-  
+
   // copy into list
   std::list<std::string> closure_model_list;
   for (std::vector<std::string>::iterator i=closure_model_vector.begin(); i != closure_model_vector.end(); ++i)
     closure_model_list.push_back(*i);
-  
+
   Teuchos::ParameterList models_to_build;
-  
+
   for (Teuchos::ParameterList::ConstIterator model = models.begin(); model != models.end(); ++model) {
-    
-    std::list<std::string>::iterator search = 
+
+    std::list<std::string>::iterator search =
       std::find(closure_model_list.begin(), closure_model_list.end(), model->first);
-    
+
     if (search != closure_model_list.end()) {
       closure_model_list.erase(search);
       models_to_build.sublist(model->first) = models.sublist(model->first);
@@ -106,14 +106,14 @@ buildAndRegisterSubsetOfClosureModelEvaluatorsForType(PHX::FieldManager<panzer::
     else
       models_to_build.sublist(model->first);
   }
-  
+
   TEUCHOS_TEST_FOR_EXCEPTION(closure_model_list.size() != 0, std::logic_error,
 			     "Error - the list of closure models \"" << comma_sep_closure_model_list << "\" contains an invalid model.");
 
   pb.buildAndRegisterClosureModelEvaluatorsForType<EvalT>(fm,factory,models_to_build,user_data);
 
 }
-  
+
 } // namespace panzer
 
 #endif

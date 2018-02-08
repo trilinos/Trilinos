@@ -64,11 +64,11 @@ namespace panzer {
   /** \brief Interface to papi counters
 
       Mimics the Teuchos::TimeMonitor functionality
-  */ 
+  */
   class PAPICounter2 {
 
   public:
-    
+
     /** Timer starts at construction.  Stops when destructor called. */
     PAPICounter2(const std::string);
 

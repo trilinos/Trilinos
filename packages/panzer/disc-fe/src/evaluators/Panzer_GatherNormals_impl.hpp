@@ -59,7 +59,7 @@ template<typename EvalT,typename Traits>
 panzer::GatherNormals<EvalT, Traits>::
 GatherNormals(
   const Teuchos::ParameterList& p)
-{ 
+{
   dof_name = (p.get< std::string >("DOF Name"));
 
   if(p.isType< Teuchos::RCP<PureBasis> >("Basis"))
@@ -94,7 +94,7 @@ GatherNormals(
 // **********************************************************************
 template<typename EvalT,typename Traits>
 void panzer::GatherNormals<EvalT, Traits>::
-postRegistrationSetup(typename Traits::SetupData d, 
+postRegistrationSetup(typename Traits::SetupData d,
 		      PHX::FieldManager<Traits>& fm)
 {
   orientations = d.orientations_;
@@ -114,7 +114,7 @@ postRegistrationSetup(typename Traits::SetupData d,
 template<typename EvalT,typename Traits>
 void panzer::GatherNormals<EvalT, Traits>::
 evaluateFields(typename Traits::EvalData workset)
-{ 
+{
 
   if(workset.num_cells<=0)
     return;
@@ -150,8 +150,8 @@ evaluateFields(typename Traits::EvalData workset)
       auto phyEdgeTan_V = Kokkos::subview(phyEdges, 1, Kokkos::ALL());
       auto J = Kokkos::subview(worksetJacobians, c, pt, Kokkos::ALL(), Kokkos::ALL());
 
-      Intrepid2::Kernels::Serial::matvec_product(phyEdgeTan_U, J, ortEdgeTan_U);            
-      Intrepid2::Kernels::Serial::matvec_product(phyEdgeTan_V, J, ortEdgeTan_V);            
+      Intrepid2::Kernels::Serial::matvec_product(phyEdgeTan_U, J, ortEdgeTan_U);
+      Intrepid2::Kernels::Serial::matvec_product(phyEdgeTan_V, J, ortEdgeTan_V);
 
       // take the cross product of the two vectors
       gatherFieldNormals(c,pt,0) = (phyEdgeTan_U(1)*phyEdgeTan_V(2) - phyEdgeTan_U(2)*phyEdgeTan_V(1));

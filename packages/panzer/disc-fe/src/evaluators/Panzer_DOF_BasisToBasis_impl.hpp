@@ -60,7 +60,7 @@ DOF_BasisToBasis(const std::string & fieldName,
 		 const PureBasis & targetBasis)
 {
   TEUCHOS_ASSERT(sourceBasis.numCells() == targetBasis.numCells());
-  
+
   // **************
   // Declare fields
   // **************
@@ -71,27 +71,27 @@ DOF_BasisToBasis(const std::string & fieldName,
   this->addEvaluatedField(dof_target_coeff);
 
   // **************
-  // Get coordinate points for reference cell on target basis 
+  // Get coordinate points for reference cell on target basis
   // **************
   Kokkos::DynRankView<double,PHX::Device>intrpCoords =
     Kokkos::DynRankView<double,PHX::Device>("intrpCoords",targetBasis.cardinality(),targetBasis.dimension());
-  
+
   targetBasis.getIntrepid2Basis<PHX::exec_space,double,double>()->getDofCoords(intrpCoords);
 
   // **************
   // Evaluate source basis values at target basis coordinates
   // **************
-  Kokkos::DynRankView<double,PHX::Device> basisRef = 
+  Kokkos::DynRankView<double,PHX::Device> basisRef =
     Kokkos::DynRankView<double,PHX::Device>("basisRef",sourceBasis.cardinality(),targetBasis.cardinality());
 
   sourceBasis.getIntrepid2Basis()->getValues(basisRef, intrpCoords, Intrepid2::OPERATOR_VALUE);
-  
+
   // **************
   // Copy the reference basis values for all cells in workset
   // **************
   basis = Kokkos::DynRankView<double,PHX::Device>("basis",sourceBasis.numCells(),sourceBasis.cardinality(),targetBasis.cardinality());
   Intrepid2::FunctionSpaceTools<PHX::exec_space>::HGRADtransformVALUE(basis,basisRef);
-    
+
   std::string n = "DOF_BasisToBasis: " + dof_target_coeff.fieldTag().name();
   this->setName(n);
 }
@@ -109,7 +109,7 @@ void DOF_BasisToBasis<EvalT,TRAITST>::postRegistrationSetup(typename TRAITST::Se
 //**********************************************************************
 template <typename EvalT, typename TRAITST>
 void DOF_BasisToBasis<EvalT,TRAITST>::evaluateFields(typename TRAITST::EvalData workset)
-{ 
+{
   // Zero out arrays (intrepid does a sum!)
   dof_target_coeff.deep_copy(ScalarT(0.0));
 

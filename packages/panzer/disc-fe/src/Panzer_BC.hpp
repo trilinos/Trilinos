@@ -91,7 +91,7 @@ namespace panzer {
       bool operator()(const BC & bc1,const BC & bc2) const
       { return bc1.elementBlockID()==bc2.elementBlockID() && bc1.sidesetID()==bc2.sidesetID(); }
     };
-    
+
   public:
 
     //! \brief Ctor.
@@ -189,12 +189,12 @@ namespace panzer {
     Teuchos::RCP<panzer::GlobalData> m_gd;
   };
 
-  std::ostream& 
+  std::ostream&
     operator<<(std::ostream & os, const panzer::BC& bc);
 
   struct LessBC {
-    
-    bool operator()(const panzer::BC& left, 
+
+    bool operator()(const panzer::BC& left,
 		    const panzer::BC& right) const
     {
       return left.bcID() < right.bcID();

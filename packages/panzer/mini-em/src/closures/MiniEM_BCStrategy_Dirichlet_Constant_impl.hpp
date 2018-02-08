@@ -46,7 +46,7 @@ setup(const panzer::PhysicsBlock& side_pb,
   // unique residual name
   this->residual_name = "Residual_" + this->m_bc.identifier();
 
-  // map residual to dof 
+  // map residual to dof
   this->residual_to_dof_names_map[residual_name] = this->m_bc.equationSetName();
 
   // map residual to target field
@@ -61,10 +61,10 @@ setup(const panzer::PhysicsBlock& side_pb,
                   this->m_bc.equationSetName(),              // DOF Name
                   "Residual_"+this->m_bc.identifier());      // Residual Name
 
-  // find the basis for this dof 
+  // find the basis for this dof
   const vector<pair<string,RCP<panzer::PureBasis> > >& dofs = side_pb.getProvidedDOFs();
 
-  for (vector<pair<string,RCP<panzer::PureBasis> > >::const_iterator dof_it = 
+  for (vector<pair<string,RCP<panzer::PureBasis> > >::const_iterator dof_it =
 	 dofs.begin(); dof_it != dofs.end(); ++dof_it) {
     if (dof_it->first == this->m_bc.equationSetName())
       this->basis = dof_it->second;
@@ -91,7 +91,7 @@ buildAndRegisterEvaluators(PHX::FieldManager<panzer::Traits>& fm,
   using Teuchos::rcp;
 
   // provide a constant target value to map into residual
-  if(basis->isScalarBasis()) 
+  if(basis->isScalarBasis())
   {
     // build the scalar
     {
@@ -111,10 +111,10 @@ buildAndRegisterEvaluators(PHX::FieldManager<panzer::Traits>& fm,
       p.set("Name", "Constant_" + this->m_bc.equationSetName());
       p.set("Data Layout", basis->functional_grad);
       p.set("Value", this->m_bc.params()->template get<double>("Value"));
-    
+
       RCP< PHX::Evaluator<panzer::Traits> > op =
           rcp(new panzer::Constant<EvalT,panzer::Traits>(p));
-    
+
       this->template registerEvaluator<EvalT>(fm, op);
     }
   }
@@ -129,10 +129,10 @@ buildAndRegisterEvaluators(PHX::FieldManager<panzer::Traits>& fm,
       p.set("Value Y", this->m_bc.params()->template get<double>("Value Y"));
     if(basis->dimension()>2)
       p.set("Value Z", this->m_bc.params()->template get<double>("Value Z"));
-    
-    RCP< PHX::Evaluator<panzer::Traits> > op = 
+
+    RCP< PHX::Evaluator<panzer::Traits> > op =
       rcp(new panzer::ConstantVector<EvalT,panzer::Traits>(p));
-    
+
     fm.template registerEvaluator<EvalT>(op);
   }
   else

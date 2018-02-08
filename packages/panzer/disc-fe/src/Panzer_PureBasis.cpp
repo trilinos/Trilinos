@@ -123,9 +123,9 @@ void panzer::PureBasis::initialize(const std::string & in_basis_type,const int i
   else if(basis_type_=="Const")
     element_space_ = CONST;
   else { TEUCHOS_TEST_FOR_EXCEPTION(true,std::invalid_argument,
-				    "PureBasis::initializeIntrospection - Invalid basis name \"" 
+				    "PureBasis::initializeIntrospection - Invalid basis name \""
 				    << basis_type_ << "\""); }
-  
+
   switch(getElementSpace()) {
   case CONST:
      basis_rank_ = 0;
@@ -163,10 +163,10 @@ void panzer::PureBasis::initialize(const std::string & in_basis_type,const int i
 							cardinality(),
 							dimension(),
 							dimension()));
-  
+
   local_mat_layout = Teuchos::rcp(new PHX::MDALayout<panzer::Cell, panzer::BASIS, panzer::BASIS>(
-                     this->numCells(), this->cardinality(), this->cardinality()));  
-  
+                     this->numCells(), this->cardinality(), this->cardinality()));
+
 }
 
 int panzer::PureBasis::cardinality() const
@@ -207,24 +207,24 @@ std::string panzer::PureBasis::fieldName() const
 std::string panzer::PureBasis::fieldNameD1() const
 {
   return field_basis_name_D1_;
-}    
- 
+}
+
 std::string panzer::PureBasis::fieldNameD2() const
 {
   return field_basis_name_D2_;
-}    
+}
 
-Teuchos::RCP< Intrepid2::Basis<PHX::Device::execution_space,double,double> > 
+Teuchos::RCP< Intrepid2::Basis<PHX::Device::execution_space,double,double> >
 panzer::PureBasis::getIntrepid2Basis() const
 {
    return intrepid_basis_;
 }
 
-bool 
+bool
 panzer::PureBasis::supportsBasisCoordinates() const
 {
   // typedef Kokkos::DynRankView<double,PHX::Device> Array;
-  // Teuchos::RCP<const Intrepid2::DofCoordsInterface<Array> > coord_interface 
+  // Teuchos::RCP<const Intrepid2::DofCoordsInterface<Array> > coord_interface
   //     = Teuchos::rcp_dynamic_cast<const Intrepid2::DofCoordsInterface<Array> >(getIntrepid2Basis());
 
   // return !Teuchos::is_null(coord_interface);

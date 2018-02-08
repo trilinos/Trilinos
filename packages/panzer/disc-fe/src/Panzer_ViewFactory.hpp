@@ -48,7 +48,7 @@
 
 namespace panzer {
 
-  //! Wrapper to simplify Panzer use of Sacado ViewFactory 
+  //! Wrapper to simplify Panzer use of Sacado ViewFactory
   template<typename InputArray,typename ... DimensionPack>
   Kokkos::DynRankView<typename InputArray::value_type,PHX::Device>
   createDynRankView(const InputArray& a, const std::string& name, const DimensionPack... dims)

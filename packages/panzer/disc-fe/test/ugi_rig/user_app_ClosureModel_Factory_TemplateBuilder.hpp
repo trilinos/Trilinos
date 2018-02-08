@@ -54,15 +54,15 @@ namespace user_app {
   class MyModelFactory_TemplateBuilder {
 
   public:
-    
+
     template <typename EvalT>
     Teuchos::RCP<panzer::ClosureModelFactoryBase> build() const {
       return Teuchos::rcp( static_cast<panzer::ClosureModelFactoryBase*>
 			   (new user_app::MyModelFactory<EvalT>) );
     }
-    
+
   };
-  
+
 }
 
-#endif 
+#endif

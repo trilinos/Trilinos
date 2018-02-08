@@ -56,7 +56,7 @@
 namespace panzer {
 namespace kokkos_utils {
 
-/** Convert a non-blocked thyra vector into a Kokkos view 
+/** Convert a non-blocked thyra vector into a Kokkos view
   */
 
 template <typename V>
@@ -80,7 +80,7 @@ template <typename VectorType>
 inline
 typename VectorToViewTraits<VectorType>::View
 getView(typename VectorToViewTraits<VectorType>::ThyraVector & v);
- 
+
 template < >
 inline
 typename VectorToViewTraits<Epetra_Vector>::View
@@ -89,7 +89,7 @@ getView<Epetra_Vector>(typename VectorToViewTraits<Epetra_Vector>::ThyraVector &
   auto values = Teuchos::ptr_dynamic_cast<Thyra::DefaultSpmdVector<double> >(Teuchos::ptrFromRef(v))->getRCPtr();
 
   VectorToViewTraits<Epetra_Vector>::View view(values.get(),values.size());
- 
+
   return view;
 }
 
@@ -101,7 +101,7 @@ getView<const Epetra_Vector>(typename VectorToViewTraits<const Epetra_Vector>::T
   auto values = Teuchos::ptr_dynamic_cast<const Thyra::DefaultSpmdVector<double> >(Teuchos::ptrFromRef(v))->getRCPtr();
 
   VectorToViewTraits<const Epetra_Vector>::View view(values.get(),values.size());
- 
+
   return view;
 }
 

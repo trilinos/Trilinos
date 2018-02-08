@@ -62,8 +62,8 @@ public:
 
   /// Default constructor, no version
   PointDescriptor() = delete;
- 
-  /** \brief Constructor for the point descriptor. 
+
+  /** \brief Constructor for the point descriptor.
     *
     * \param[in] type String that defines the "type" of this point descriptor,
     *                 used to generate unique hashes
@@ -74,7 +74,7 @@ public:
   /// Destructor
   virtual ~PointDescriptor() = default;
 
-  /** Build a generator class that generates any reference points on 
+  /** Build a generator class that generates any reference points on
     * a specified topology.
     *
     * \param[in] The cell topology to build the coordinates on

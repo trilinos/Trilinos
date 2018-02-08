@@ -67,7 +67,7 @@ namespace panzer_stk {
                                           const std::map<std::string,std::vector<std::string> > & cellFields)
 
        : cmf_tm_(cmf_tm), mesh_(mesh), nodalFields_(nodalFields), cellFields_(cellFields), plConstr_(false) {}
-    
+
     template <typename EvalT>
     Teuchos::RCP<panzer::ClosureModelFactoryBase> build() const {
       if(plConstr_)
@@ -77,7 +77,7 @@ namespace panzer_stk {
         return Teuchos::rcp( static_cast<panzer::ClosureModelFactoryBase*>
                             (new panzer_stk::IOClosureModelFactory<EvalT>(cmf_tm_.template getAsObject<EvalT>(),mesh_,nodalFields_,cellFields_)) );
     }
-    
+
   private:
      const panzer::ClosureModelFactory_TemplateManager<TraitsT> & cmf_tm_;
      Teuchos::RCP<STK_Interface> mesh_;
@@ -86,7 +86,7 @@ namespace panzer_stk {
      std::map<std::string,std::vector<std::string> > cellFields_;
      bool plConstr_;
   };
-  
+
 }
 
-#endif 
+#endif

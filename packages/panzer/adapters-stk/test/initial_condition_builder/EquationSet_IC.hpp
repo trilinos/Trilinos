@@ -10,17 +10,17 @@
 
 template <typename EvalT>
 class EquationSet_IC : public panzer::EquationSet_DefaultImpl<EvalT> {
-public:    
+public:
 
    /** In the constructor you set all the fields provided by this
-     * equation set. 
+     * equation set.
      */
    EquationSet_IC(const Teuchos::RCP<Teuchos::ParameterList>& params,
                   const int& default_integration_order,
                   const panzer::CellData& cell_data,
                   const Teuchos::RCP<panzer::GlobalData>& global_data,
                   const bool build_transient_support);
-    
+
    /** The specific evaluators are registered with the field manager argument.
      */
    void buildAndRegisterEquationSetEvaluators(PHX::FieldManager<panzer::Traits>& fm,
@@ -47,7 +47,7 @@ EquationSet_IC(const Teuchos::RCP<Teuchos::ParameterList>& params,
   valid_parameters_sublist.set("Basis Order",1,"Order of the basis");
 
   for(auto itr=params->begin();itr!=params->end();++itr) {
-     
+
     const std::string field = params->name(itr);
     const Teuchos::ParameterEntry & entry = params->entry(itr);
 
@@ -62,7 +62,7 @@ EquationSet_IC(const Teuchos::RCP<Teuchos::ParameterList>& params,
 
     this->addDOF(field,basis_type,basis_order,default_integration_order);
   }
-  
+
   this->addClosureModel("");
 
   this->setupDOFs();
@@ -82,24 +82,24 @@ public:
 		    const Teuchos::RCP<panzer::GlobalData>& global_data,
                     const bool build_transient_support) const
    {
-      Teuchos::RCP<panzer::EquationSet_TemplateManager<panzer::Traits> > eq_set= 
+      Teuchos::RCP<panzer::EquationSet_TemplateManager<panzer::Traits> > eq_set=
          Teuchos::rcp(new panzer::EquationSet_TemplateManager<panzer::Traits>);
-         
+
       bool found = false; // this is used by PANZER_BUILD_EQSET_OBJECTS
-         
+
       // macro checks if(ies.name=="Poisson") then an EquationSet_Energy object is constructed
       PANZER_BUILD_EQSET_OBJECTS("IC", EquationSet_IC)
-         
+
       // make sure your equation set has been found
       if(!found) {
 	std::string msg = "Error - the \"Equation Set\" called \"" + params->get<std::string>("Type") +
                            "\" is not a valid equation set identifier. Please supply the correct factory.\n";
          TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, msg);
       }
-         
+
       return eq_set;
    }
-    
+
 };
 
 #endif

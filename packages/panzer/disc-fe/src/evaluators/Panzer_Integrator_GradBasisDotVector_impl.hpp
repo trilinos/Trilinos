@@ -122,7 +122,7 @@ namespace panzer
       this->addContributedField(field_);
     else // if (evalStyle_ == EvaluatorStyle::EVALUATES)
       this->addEvaluatedField(field_);
- 
+
     // Add the dependent field multipliers, if there are any.
     int i(0);
     fieldMults_.resize(fmNames.size());

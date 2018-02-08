@@ -58,7 +58,7 @@
 
 namespace panzer {
 
-  /** \brief Builds PHX::FieldManager objects for inital conditions and registers evaluators. 
+  /** \brief Builds PHX::FieldManager objects for inital conditions and registers evaluators.
 
   \param[in] wkstContainer Worksets for the corresponding evaluations.
   \param[in] physicsBlock PhysicsBlocks created by FieldManagerBuilder.
@@ -79,7 +79,7 @@ namespace panzer {
                                           const std::string& graphviz_file_prefix,
                                           std::map<std::string, Teuchos::RCP< PHX::FieldManager<panzer::Traits> > >& phx_ic_field_managers);
 
-  /** \brief Builds PHX::FieldManager objects for inital conditions and closure models and registers evaluators. 
+  /** \brief Builds PHX::FieldManager objects for inital conditions and closure models and registers evaluators.
 
   \param[in] wkstContainer Worksets for the corresponding evaluations.
   \param[in] physicsBlock PhysicsBlocks created by FieldManagerBuilder.
@@ -135,7 +135,7 @@ namespace panzer {
                                     double t0,
                                     const Teuchos::RCP<Thyra::VectorBase<double> > & vec);
 
-  /** A helper function that builds the physics blocks specified by the field descriptors. This is 
+  /** A helper function that builds the physics blocks specified by the field descriptors. This is
     * used inside the setup function for controls to build mock physics blocks.
     *
     * \param[in] block_ids_to_cell_topo Map from element blocks to cell topologies.

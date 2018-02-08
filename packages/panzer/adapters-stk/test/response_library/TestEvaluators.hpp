@@ -71,7 +71,7 @@ PHX_EVALUATOR_CTOR(TestEvaluator,p)
 
   this->addEvaluatedField(dogValues);
   this->addEvaluatedField(hrsValues);
-  
+
   std::string n = "TestEvaluator";
   this->setName(n);
 }
@@ -85,7 +85,7 @@ PHX_POST_REGISTRATION_SETUP(TestEvaluator, /* sd */, fm)
 
 //**********************************************************************
 PHX_EVALUATE_FIELDS(TestEvaluator,workset)
-{ 
+{
    double extra = 0.0;
    if(this->wda(workset).block_id=="block_1")
       extra = 44.3;

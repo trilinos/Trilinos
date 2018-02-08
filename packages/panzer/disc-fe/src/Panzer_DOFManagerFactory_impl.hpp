@@ -52,7 +52,7 @@
 namespace panzer {
 
 template <typename LO,typename GO>
-Teuchos::RCP<panzer::UniqueGlobalIndexer<LO,GO> > 
+Teuchos::RCP<panzer::UniqueGlobalIndexer<LO,GO> >
 DOFManagerFactory<LO,GO>::buildUniqueGlobalIndexer(const Teuchos::RCP<const Teuchos::OpaqueWrapper<MPI_Comm> > & mpiComm,
                             const std::vector<Teuchos::RCP<panzer::PhysicsBlock> > & physicsBlocks,
                             const Teuchos::RCP<ConnManager<LO,GO> > & connMngr,
@@ -63,7 +63,7 @@ DOFManagerFactory<LO,GO>::buildUniqueGlobalIndexer(const Teuchos::RCP<const Teuc
 
 template <typename LO,typename GO>
 template <typename DOFManagerT>
-Teuchos::RCP<panzer::UniqueGlobalIndexer<LO,GO> > 
+Teuchos::RCP<panzer::UniqueGlobalIndexer<LO,GO> >
 DOFManagerFactory<LO,GO>::buildUniqueGlobalIndexer(const Teuchos::RCP<const Teuchos::OpaqueWrapper<MPI_Comm> > & mpiComm,
                             const std::vector<Teuchos::RCP<panzer::PhysicsBlock> > & physicsBlocks,
                             const Teuchos::RCP<ConnManager<LO,GO> > & connMngr,
@@ -76,14 +76,14 @@ DOFManagerFactory<LO,GO>::buildUniqueGlobalIndexer(const Teuchos::RCP<const Teuc
    pout->setOutputToRootOnly(0);
 
    // build the DOF manager for the problem
-   Teuchos::RCP<DOFManagerT> dofManager 
+   Teuchos::RCP<DOFManagerT> dofManager
          = Teuchos::rcp(new DOFManagerT(connMngr,*mpiComm));
- 
-   // this is bad, but it works for now; DOFManagerFEI does not have a 
+
+   // this is bad, but it works for now; DOFManagerFEI does not have a
    // tie break capability but the native one does, so cast to it
    // and set the tie break if needed.
    {
-     Teuchos::RCP<panzer::DOFManager<LO,GO> > nativeDofMngr = 
+     Teuchos::RCP<panzer::DOFManager<LO,GO> > nativeDofMngr =
          Teuchos::rcp_dynamic_cast<panzer::DOFManager<LO,GO> >(dofManager);
      if (nativeDofMngr!=Teuchos::null) {
        nativeDofMngr->enableTieBreak(useTieBreak_);
@@ -99,22 +99,22 @@ DOFManagerFactory<LO,GO>::buildUniqueGlobalIndexer(const Teuchos::RCP<const Teuc
    std::vector<Teuchos::RCP<panzer::PhysicsBlock> >::const_iterator physIter;
    for(physIter=physicsBlocks.begin();physIter!=physicsBlocks.end();++physIter) {
       Teuchos::RCP<const panzer::PhysicsBlock> pb = *physIter;
-       
+
       const std::vector<StrPureBasisPair> & blockFields = pb->getProvidedDOFs();
 
       // insert all fields into a set
       std::set<StrPureBasisPair,StrPureBasisComp> fieldNames;
-      fieldNames.insert(blockFields.begin(),blockFields.end()); 
+      fieldNames.insert(blockFields.begin(),blockFields.end());
 
       // add basis to DOF manager: block specific
-      std::set<StrPureBasisPair,StrPureBasisComp>::const_iterator fieldItr; 
+      std::set<StrPureBasisPair,StrPureBasisComp>::const_iterator fieldItr;
       for (fieldItr=fieldNames.begin();fieldItr!=fieldNames.end();++fieldItr) {
          // determine if orientations are required
          // PureBasis::EElementSpace space = fieldItr->second->getElementSpace();
-         // orientationsRequired |= ((space==PureBasis::HDIV) || (space==PureBasis::HCURL)); 
+         // orientationsRequired |= ((space==PureBasis::HDIV) || (space==PureBasis::HCURL));
          orientationsRequired |= fieldItr->second->requiresOrientations();
 
-         Teuchos::RCP< Intrepid2::Basis<PHX::Device::execution_space,double,double> > intrepidBasis 
+         Teuchos::RCP< Intrepid2::Basis<PHX::Device::execution_space,double,double> > intrepidBasis
                = fieldItr->second->getIntrepid2Basis();
          Teuchos::RCP<Intrepid2FieldPattern> fp = Teuchos::rcp(new Intrepid2FieldPattern(intrepidBasis));
          dofManager->addField(pb->elementBlockID(),fieldItr->first,fp);
@@ -122,7 +122,7 @@ DOFManagerFactory<LO,GO>::buildUniqueGlobalIndexer(const Teuchos::RCP<const Teuc
          // *pout << "\"" << fieldItr->first << "\" Field Pattern = \n";
          // fp->print(*pout);
       }
-   } 
+   }
 
    // set orientations required flag
    dofManager->setOrientationsRequired(orientationsRequired);
@@ -155,11 +155,11 @@ DOFManagerFactory<LO,GO>::buildUniqueGlobalIndexer(const Teuchos::RCP<const Teuc
 }
 
 template <typename LO,typename GO>
-void 
+void
 DOFManagerFactory<LO,GO>::
 buildFieldOrder(const std::string & fieldOrderStr,std::vector<std::string> & fieldOrder)
 {
-  // this tokenizes "fieldOrderStr" string 
+  // this tokenizes "fieldOrderStr" string
   // and dumps it into "fieldOrder"
   std::stringstream ss;
   ss << fieldOrderStr;

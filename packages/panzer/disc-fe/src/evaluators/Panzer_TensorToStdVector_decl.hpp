@@ -50,7 +50,7 @@
 #include "Phalanx_MDField.hpp"
 
 namespace panzer {
-    
+
 /*! \brief Transform at Tensor to a std::vector of PHX-vectors
  *
  *  Since Phalanx/Panzer heavily relies on componentwise compuations,
@@ -75,7 +75,7 @@ PHX_EVALUATOR_CLASS_END
   * that builds vectors from a single tensor field. The user specifies
   * the layouts (assumed compatible) and then uses a postfix for each
   * of the vector fields.
-  * 
+  *
   * \param[in] tensorName Name of the tensor
   * \param[in] vectorPrefix Name to prefix to the vector values
   * \param[in] postfix Vector specifying the postfix to use when naming
@@ -111,7 +111,7 @@ Teuchos::RCP<PHX::Evaluator<Traits> > tensorToStdVectorEvaluator(const std::stri
   * that builds vectors from a single tensor field. The user specifies
   * the layouts (assumed compatible) and then uses a postfix for each
   * of the vector fields.
-  * 
+  *
   * \param[in] tensorName Name of the tensor
   * \param[in] postfix Vector specifying the postfix to use when naming
   *                    each vector field

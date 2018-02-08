@@ -58,10 +58,10 @@ template <typename EvalT>
 class BCStrategy_Interface_WeakDirichletMatch : public panzer::BCStrategy_Interface_DefaultImpl<EvalT> {
 public:
   BCStrategy_Interface_WeakDirichletMatch(const panzer::BC& bc, const Teuchos::RCP<panzer::GlobalData>& global_data);
-    
+
   void setup(const panzer::PhysicsBlock& side_pb,
              const Teuchos::ParameterList& user_data);
-    
+
   void buildAndRegisterEvaluators(PHX::FieldManager<panzer::Traits>& fm,
                                   const panzer::PhysicsBlock& pb,
                                   const panzer::ClosureModelFactory_TemplateManager<panzer::Traits>& factory,
@@ -79,8 +79,8 @@ public:
   virtual void evaluateFields(typename panzer::Traits::EvalData d);
 
 private:
-  std::vector<std::string> paramName; 
-  double value; 
+  std::vector<std::string> paramName;
+  double value;
   double temp;
   std::string other_dof_name;
 

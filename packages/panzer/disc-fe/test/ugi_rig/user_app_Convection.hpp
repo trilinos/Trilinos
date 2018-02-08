@@ -54,16 +54,16 @@ using panzer::Point;
 using panzer::Dim;
 
 namespace user_app {
-    
+
   //! Convection: conv = multiplier * a \cdot \nabla x
 PANZER_EVALUATOR_CLASS(Convection)
 
   PHX::MDField<ScalarT,Cell,Point> conv;
-    
+
   PHX::MDField<ScalarT,Cell,Point,Dim> a;
-    
+
   PHX::MDField<ScalarT,Cell,Point,Dim> grad_x;
-    
+
   double multiplier;
 
 PANZER_EVALUATOR_CLASS_END

@@ -55,7 +55,7 @@ namespace panzer {
       \param[in] workset Worksets to perform the search over
       \param[in] wda WorksetDetailsAccessor to access the correct WorksetDetails in workset.
   */
-  std::vector<std::string>::size_type 
+  std::vector<std::string>::size_type
   getPureBasisIndex(std::string basis_name, const panzer::Workset& workset, WorksetDetailsAccessor& wda);
 
   /** \brief Returns the index in the workset bases for a particular BasisIRLayout name.
@@ -63,7 +63,7 @@ namespace panzer {
       \param[in] workset Worksets to perform the search over
       \param[in] wda WorksetDetailsAccessor to access the correct WorksetDetails in workset.
   */
-  std::vector<std::string>::size_type 
+  std::vector<std::string>::size_type
   getBasisIndex(std::string basis_name, const panzer::Workset& workset, WorksetDetailsAccessor& wda);
 
   std::vector<int>::size_type

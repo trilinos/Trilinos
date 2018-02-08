@@ -56,13 +56,13 @@ namespace Example {
 
   template <typename EvalT>
   class BCStrategy_Neumann_Constant : public panzer::BCStrategy_Neumann_DefaultImpl<EvalT> {
-  public:    
-    
+  public:
+
     BCStrategy_Neumann_Constant(const panzer::BC& bc, const Teuchos::RCP<panzer::GlobalData>& global_data);
-    
+
     void setup(const panzer::PhysicsBlock& side_pb,
 	       const Teuchos::ParameterList& user_data);
-    
+
     void buildAndRegisterEvaluators(PHX::FieldManager<panzer::Traits>& fm,
 				    const panzer::PhysicsBlock& pb,
 				    const panzer::ClosureModelFactory_TemplateManager<panzer::Traits>& factory,
@@ -81,8 +81,8 @@ namespace Example {
     virtual void evaluateFields(typename panzer::Traits::EvalData d);
 
   private:
-    std::vector<std::string> paramName; 
-    double value; 
+    std::vector<std::string> paramName;
+    double value;
     double temp;
 
   };

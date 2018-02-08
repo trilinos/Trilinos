@@ -48,7 +48,7 @@
 #include <vector>
 
 namespace panzer {
-  
+
   struct BCFactoryComposite : public panzer::BCStrategyFactory {
 
   public:
@@ -61,9 +61,9 @@ namespace panzer {
   private:
 
     std::vector<Teuchos::RCP<panzer::BCStrategyFactory> > m_bc_strategy_factories;
-    
+
   };
-  
+
 }
 
 #endif

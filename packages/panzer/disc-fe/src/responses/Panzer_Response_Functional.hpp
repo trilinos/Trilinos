@@ -101,7 +101,7 @@ public:
    //! This simply does global summation, then shoves the result into a vector
    virtual void scatterResponse();
 
-   virtual void initializeResponse()  
+   virtual void initializeResponse()
    { value = 0.0; if(ghostedContainer_!=Teuchos::null) ghostedContainer_->initialize(); }
 
    // from ResponseMESupport_Default
@@ -117,7 +117,7 @@ public:
    { return Teuchos::rcp_dynamic_cast<const ThyraObjContainer<double> >(ghostedContainer_)->get_x_th(); }
 
    void adjustForDirichletConditions(const GlobalEvaluationData & localBCRows,const GlobalEvaluationData & globalBCRows);
-    
+
 private:
    //! Set solution vector space
    void setSolnVectorSpace(const Teuchos::RCP<const Thyra::VectorSpaceBase<double> > & soln_vs);

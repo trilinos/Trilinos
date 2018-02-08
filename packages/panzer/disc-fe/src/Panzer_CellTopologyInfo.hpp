@@ -61,34 +61,34 @@
 
 namespace panzer {
 
-  class CellTopologyInfo { 
+  class CellTopologyInfo {
 
   public:
-    
+
     CellTopologyInfo(int numCells, const Teuchos::RCP<const shards::CellTopology>& cellTopo);
 
     int getNumCells() const
     { return num_cells; }
-    
+
     int getDimension() const
     { return dimension; }
-    
+
     int getNumEdges() const
     { return num_edges; }
-    
+
     std::string getCellName() const
     { return cell_topo_name; }
-    
+
     Teuchos::RCP<const shards::CellTopology> getCellTopology() const
     { return topology; }
 
   public:
 
     //!<Cell,Edge>
-    Teuchos::RCP<PHX::DataLayout> edge_scalar;  
+    Teuchos::RCP<PHX::DataLayout> edge_scalar;
 
     //!<Cell,Edge,Dim>
-    Teuchos::RCP<PHX::DataLayout> edge_vector; 
+    Teuchos::RCP<PHX::DataLayout> edge_vector;
 
   private:
 
@@ -101,7 +101,7 @@ namespace panzer {
 
     int num_cells;
     int dimension;
-    int num_edges; 
+    int num_edges;
 
   };
 

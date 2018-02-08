@@ -71,7 +71,7 @@
 // ********************************************************************
 // ********************************************************************
 template<typename EvalT>
-Teuchos::RCP< std::vector< Teuchos::RCP<PHX::Evaluator<panzer::Traits> > > > 
+Teuchos::RCP< std::vector< Teuchos::RCP<PHX::Evaluator<panzer::Traits> > > >
 user_app::MyModelFactory<EvalT>::
 buildClosureModels(const std::string& model_id,
     const Teuchos::ParameterList& models,
@@ -90,13 +90,13 @@ buildClosureModels(const std::string& model_id,
   using Teuchos::ParameterList;
   using PHX::Evaluator;
 
-  RCP< vector< RCP<Evaluator<panzer::Traits> > > > evaluators = 
+  RCP< vector< RCP<Evaluator<panzer::Traits> > > > evaluators =
       rcp(new vector< RCP<Evaluator<panzer::Traits> > > );
 
   if (!models.isSublist(model_id)) {
     models.print(std::cout);
     std::stringstream msg;
-    msg << "Falied to find requested model, \"" << model_id 
+    msg << "Falied to find requested model, \"" << model_id
         << "\", for equation set:\n" << std::endl;
     TEUCHOS_TEST_FOR_EXCEPTION(!models.isSublist(model_id), std::logic_error, msg.str());
   }
@@ -106,7 +106,7 @@ buildClosureModels(const std::string& model_id,
 
   const ParameterList& my_models = models.sublist(model_id);
 
-  for (ParameterList::ConstIterator model_it = my_models.begin(); 
+  for (ParameterList::ConstIterator model_it = my_models.begin();
       model_it != my_models.end(); ++model_it) {
 
     bool found = false;
@@ -187,25 +187,25 @@ buildClosureModels(const std::string& model_id,
           found = true;
         }
         else if (plist.get<std::string>("Type") == "Product") {
-          RCP<std::vector<std::string> > valuesNames = rcp(new std::vector<std::string>); 
+          RCP<std::vector<std::string> > valuesNames = rcp(new std::vector<std::string>);
           // Tokenize a string, put tokens in a vector
           panzer::StringTokenizer(*valuesNames,plist.get<std::string>("Term Names"));
-          double scaling = 1.0; 
-          if(plist.isType<double>("Scaling")) 
+          double scaling = 1.0;
+          if(plist.isType<double>("Scaling"))
             scaling = plist.get<double>("Scaling");
-  
+
           {
             Teuchos::ParameterList input;
             input.set("Scaling", scaling);
             input.set("Product Name", key);
             input.set("Values Names", valuesNames);
             input.set("Data Layout", ir->dl_scalar);
-  
-            RCP< panzer::Product<EvalT,panzer::Traits> > e = 
+
+            RCP< panzer::Product<EvalT,panzer::Traits> > e =
               rcp(new panzer::Product<EvalT,panzer::Traits>(input));
             evaluators->push_back(e);
           }
-  
+
           found = true;
         }
 
@@ -314,7 +314,7 @@ buildClosureModels(const std::string& model_id,
         input.set("Data Layout", basis.functional);
         input.set("Dimension", i);
 
-        RCP< Evaluator<panzer::Traits> > e = 
+        RCP< Evaluator<panzer::Traits> > e =
             rcp(new panzer::CoordinatesEvaluator<EvalT,panzer::Traits>(input));
         evaluators->push_back(e);
       }
@@ -325,7 +325,7 @@ buildClosureModels(const std::string& model_id,
 
     if (!found) {
       std::stringstream msg;
-      msg << "ClosureModelFactory failed to build evaluator for key \"" << key 
+      msg << "ClosureModelFactory failed to build evaluator for key \"" << key
           << "\"\nin model \"" << model_id
           << "\".  Please correct the type or add support to the \nfactory." <<std::endl;
       TEUCHOS_TEST_FOR_EXCEPTION(!found, std::logic_error, msg.str());

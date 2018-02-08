@@ -62,7 +62,7 @@ namespace panzer {
 
     // template <typename SubType>
     // struct mod_scalar { typedef Intrepid2::FieldContainer<SubType> array_type; };
-    
+
   };
   */
 /*

@@ -52,13 +52,13 @@
 #include "Panzer_IntrepidFieldPattern.hpp"
 
 // include some intrepid basis functions
-// 2D basis 
+// 2D basis
 #include "Intrepid2_HGRAD_TRI_C1_FEM.hpp"
 #include "Intrepid2_HGRAD_TRI_C2_FEM.hpp"
 #include "Intrepid2_HGRAD_QUAD_C1_FEM.hpp"
 #include "Intrepid2_HGRAD_QUAD_C2_FEM.hpp"
 
-// 3D basis 
+// 3D basis
 #include "Intrepid2_HGRAD_HEX_C1_FEM.hpp"
 #include "Intrepid2_HGRAD_HEX_C2_FEM.hpp"
 
@@ -140,8 +140,8 @@ bool intrepid_equals(const RCP<Intrepid2::Basis<PHX::exec_space,double,double> >
    Teuchos::RCP<const FieldPattern> fpA = rcp(new Intrepid2FieldPattern(basisA));
    Teuchos::RCP<const FieldPattern> fpB= rcp(new Intrepid2FieldPattern(basisB));
 
-   bool forward = fpA->equals(*fpB); 
-   bool bckward = fpB->equals(*fpA); 
+   bool forward = fpA->equals(*fpB);
+   bool bckward = fpB->equals(*fpA);
 
    if(bckward!=forward) { // if true, this is a big problem
       TEUCHOS_TEST_FOR_EXCEPTION(true,std::logic_error,
@@ -151,7 +151,7 @@ bool intrepid_equals(const RCP<Intrepid2::Basis<PHX::exec_space,double,double> >
    }
    TEUCHOS_ASSERT(bckward==forward);
 
-   return forward; // they are equal so that it shouldn't matter at this point 
+   return forward; // they are equal so that it shouldn't matter at this point
 }
 
 bool intrepid_same_geom(const RCP<Intrepid2::Basis<PHX::exec_space,double,double> > & basisA,
@@ -163,8 +163,8 @@ bool intrepid_same_geom(const RCP<Intrepid2::Basis<PHX::exec_space,double,double
    Teuchos::RCP<const FieldPattern> fpA = rcp(new Intrepid2FieldPattern(basisA));
    Teuchos::RCP<const FieldPattern> fpB= rcp(new Intrepid2FieldPattern(basisB));
 
-   bool forward = fpA->sameGeometry(*fpB); 
-   bool bckward = fpB->sameGeometry(*fpA); 
+   bool forward = fpA->sameGeometry(*fpB);
+   bool bckward = fpB->sameGeometry(*fpA);
 
    if(bckward!=forward) { // if true, this is a big problem
       TEUCHOS_TEST_FOR_EXCEPTION(true,std::logic_error,
@@ -174,7 +174,7 @@ bool intrepid_same_geom(const RCP<Intrepid2::Basis<PHX::exec_space,double,double
    }
    TEUCHOS_ASSERT(bckward==forward);
 
-   return forward; // they are equal so that it shouldn't matter at this point 
+   return forward; // they are equal so that it shouldn't matter at this point
 }
 
 }

@@ -47,13 +47,13 @@
 #include "Phalanx_MDField.hpp"
 
 namespace user_app {
-    
+
 PHX_EVALUATOR_CLASS(ConstantModel)
-  
+
   ScalarT value;
-  
+
   PHX::MDField<ScalarT> constant;
-  
+
 PHX_EVALUATOR_CLASS_END
 
 }

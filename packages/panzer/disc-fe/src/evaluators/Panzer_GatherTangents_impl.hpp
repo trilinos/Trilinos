@@ -59,7 +59,7 @@ template<typename EvalT,typename Traits>
 panzer::GatherTangents<EvalT, Traits>::
 GatherTangents(
   const Teuchos::ParameterList& p)
-{ 
+{
   dof_name = (p.get< std::string >("DOF Name"));
 
   if(p.isType< Teuchos::RCP<PureBasis> >("Basis"))
@@ -108,7 +108,7 @@ postRegistrationSetup(typename Traits::SetupData d,
 template<typename EvalT,typename Traits>
 void panzer::GatherTangents<EvalT, Traits>::
 evaluateFields(typename Traits::EvalData workset)
-{ 
+{
 
   if(workset.num_cells<=0)
     return;
@@ -138,9 +138,9 @@ evaluateFields(typename Traits::EvalData workset)
                                                         pt,
                                                         parentCell,
                                                         edgeOrts[pt]);
-        
+
         auto J = Kokkos::subview(worksetJacobians, c, pt, Kokkos::ALL(), Kokkos::ALL());
-        Intrepid2::Kernels::Serial::matvec_product(phyEdgeTan, J, ortEdgeTan);            
+        Intrepid2::Kernels::Serial::matvec_product(phyEdgeTan, J, ortEdgeTan);
 
       }// for pt
     }// for pCell

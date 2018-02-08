@@ -67,13 +67,13 @@ getOrientations(const std::string & blockId,
 {
   int fieldNum = globalIndexer_->getFieldNum(fieldName_);
   const std::vector<int> & elmtOffset = globalIndexer_->getGIDFieldOffsets(blockId,fieldNum);
- 
+
   // gather operation for each cell in workset
   for(std::size_t cellIndex=0;cellIndex<cell_local_ids.size();++cellIndex) {
     std::vector<double> orientation;
     std::size_t cellLocalId = cell_local_ids[cellIndex];
- 
-    globalIndexer_->getElementOrientation(cellLocalId,orientation); 
+
+    globalIndexer_->getElementOrientation(cellLocalId,orientation);
 
     // loop over basis functions and fill the fields
     for(std::size_t basis=0;basis<elmtOffset.size();basis++) {
@@ -84,20 +84,20 @@ getOrientations(const std::string & blockId,
 }
 
 template <typename Scalar,typename Array>
-Teuchos::RCP<const OrientationContainerBase<Scalar,Array> > 
+Teuchos::RCP<const OrientationContainerBase<Scalar,Array> >
 buildOrientationContainer(const Teuchos::RCP<const UniqueGlobalIndexerBase> & globalIndexer,
                           const std::string & fieldName)
 {
   using Teuchos::rcp_dynamic_cast;
   using Teuchos::RCP;
   using Teuchos::rcp;
-  
-  // int, int 
+
+  // int, int
   {
     typedef int LO;
     typedef int GO;
 
-    RCP<const UniqueGlobalIndexer<LO,GO> > ugi 
+    RCP<const UniqueGlobalIndexer<LO,GO> > ugi
         = rcp_dynamic_cast<const UniqueGlobalIndexer<LO,GO> >(globalIndexer);
     if(ugi!=Teuchos::null)
       return rcp(new OrientationContainer<Scalar,Array,LO,GO>(ugi,fieldName));
@@ -108,7 +108,7 @@ buildOrientationContainer(const Teuchos::RCP<const UniqueGlobalIndexerBase> & gl
     typedef int LO;
     typedef Ordinal64 GO;
 
-    RCP<const UniqueGlobalIndexer<LO,GO> > ugi 
+    RCP<const UniqueGlobalIndexer<LO,GO> > ugi
         = rcp_dynamic_cast<const UniqueGlobalIndexer<LO,GO> >(globalIndexer);
     if(ugi!=Teuchos::null)
       return rcp(new OrientationContainer<Scalar,Array,LO,GO>(ugi,fieldName));
@@ -119,7 +119,7 @@ buildOrientationContainer(const Teuchos::RCP<const UniqueGlobalIndexerBase> & gl
     typedef int LO;
     typedef std::pair<int,int> GO;
 
-    RCP<const UniqueGlobalIndexer<LO,GO> > ugi 
+    RCP<const UniqueGlobalIndexer<LO,GO> > ugi
         = rcp_dynamic_cast<const UniqueGlobalIndexer<LO,GO> >(globalIndexer);
     if(ugi!=Teuchos::null)
       return rcp(new OrientationContainer<Scalar,Array,LO,GO>(ugi,fieldName));
@@ -130,7 +130,7 @@ buildOrientationContainer(const Teuchos::RCP<const UniqueGlobalIndexerBase> & gl
     typedef int LO;
     typedef std::pair<int,Ordinal64> GO;
 
-    RCP<const UniqueGlobalIndexer<LO,GO> > ugi 
+    RCP<const UniqueGlobalIndexer<LO,GO> > ugi
         = rcp_dynamic_cast<const UniqueGlobalIndexer<LO,GO> >(globalIndexer);
     if(ugi!=Teuchos::null)
       return rcp(new OrientationContainer<Scalar,Array,LO,GO>(ugi,fieldName));

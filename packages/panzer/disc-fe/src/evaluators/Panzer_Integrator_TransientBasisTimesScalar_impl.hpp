@@ -53,16 +53,16 @@ namespace panzer {
 
 //**********************************************************************
 PHX_EVALUATOR_CTOR(Integrator_TransientBasisTimesScalar,p) :
-  residual( p.get<std::string>("Residual Name"), 
+  residual( p.get<std::string>("Residual Name"),
 	    p.get< Teuchos::RCP<panzer::BasisIRLayout> >("Basis")->functional),
-  scalar( p.get<std::string>("Value Name"), 
+  scalar( p.get<std::string>("Value Name"),
 	  p.get< Teuchos::RCP<panzer::IntegrationRule> >("IR")->dl_scalar),
   basis_name(p.get< Teuchos::RCP<panzer::BasisIRLayout> >("Basis")->name())
 {
   Teuchos::RCP<Teuchos::ParameterList> valid_params = this->getValidParameters();
   p.validateParameters(*valid_params);
 
-  Teuchos::RCP<const PureBasis> basis 
+  Teuchos::RCP<const PureBasis> basis
      = p.get< Teuchos::RCP<BasisIRLayout> >("Basis")->getBasis();
 
   // Verify that this basis supports the gradient operation
@@ -72,16 +72,16 @@ PHX_EVALUATOR_CTOR(Integrator_TransientBasisTimesScalar,p) :
 
   this->addEvaluatedField(residual);
   this->addDependentField(scalar);
-    
+
   multiplier = p.get<double>("Multiplier");
 
 
   if (p.isType<Teuchos::RCP<const std::vector<std::string> > >("Field Multipliers")) {
-    const std::vector<std::string>& field_multiplier_names = 
+    const std::vector<std::string>& field_multiplier_names =
       *(p.get<Teuchos::RCP<const std::vector<std::string> > >("Field Multipliers"));
 
-    for (std::vector<std::string>::const_iterator name = 
-	   field_multiplier_names.begin(); 
+    for (std::vector<std::string>::const_iterator name =
+	   field_multiplier_names.begin();
 	 name != field_multiplier_names.end(); ++name) {
       PHX::MDField<const ScalarT,Cell,IP> tmp_field(*name, p.get< Teuchos::RCP<panzer::IntegrationRule> >("IR")->dl_scalar);
       field_multipliers.push_back(tmp_field);
@@ -101,7 +101,7 @@ PHX_POST_REGISTRATION_SETUP(Integrator_TransientBasisTimesScalar,sd,fm)
 {
   this->utils.setFieldData(residual,fm);
   this->utils.setFieldData(scalar,fm);
-  
+
   for (typename std::vector<PHX::MDField<const ScalarT,Cell,IP> >::iterator field = field_multipliers.begin();
        field != field_multipliers.end(); ++field)
     this->utils.setFieldData(*field,fm);
@@ -111,17 +111,17 @@ PHX_POST_REGISTRATION_SETUP(Integrator_TransientBasisTimesScalar,sd,fm)
 
   basis_index = panzer::getBasisIndex(basis_name, (*sd.worksets_)[0], this->wda);
 
-  tmp = Kokkos::createDynRankView(residual.get_static_view(),"tmp",scalar.dimension(0), num_qp); 
+  tmp = Kokkos::createDynRankView(residual.get_static_view(),"tmp",scalar.dimension(0), num_qp);
 }
 
 //**********************************************************************
 PHX_EVALUATE_FIELDS(Integrator_TransientBasisTimesScalar,workset)
-{ 
+{
   if (workset.evaluate_transient_terms) {
-    
+
    // for (int i=0; i < residual.size(); ++i)
    //   residual[i] = 0.0;
-    
+
    Kokkos::deep_copy (residual.get_static_view(), ScalarT(0.0));
 
     for (index_t cell = 0; cell < workset.num_cells; ++cell) {
@@ -129,21 +129,21 @@ PHX_EVALUATE_FIELDS(Integrator_TransientBasisTimesScalar,workset)
 	tmp(cell,qp) = multiplier * scalar(cell,qp);
 	for (typename std::vector<PHX::MDField<const ScalarT,Cell,IP> >::iterator field = field_multipliers.begin();
 	     field != field_multipliers.end(); ++field)
-	  tmp(cell,qp) = tmp(cell,qp) * (*field)(cell,qp);  
+	  tmp(cell,qp) = tmp(cell,qp) * (*field)(cell,qp);
       }
     }
 
     if(workset.num_cells>0)
       Intrepid2::FunctionSpaceTools<PHX::exec_space>::
         integrate<ScalarT>(residual.get_view(),
-                           tmp, 
+                           tmp,
 			   (this->wda(workset).bases[basis_index])->weighted_basis_scalar.get_view());
   }
 }
 
 //**********************************************************************
 template<typename EvalT, typename TRAITS>
-Teuchos::RCP<Teuchos::ParameterList> 
+Teuchos::RCP<Teuchos::ParameterList>
 Integrator_TransientBasisTimesScalar<EvalT, TRAITS>::getValidParameters() const
 {
   Teuchos::RCP<Teuchos::ParameterList> p = Teuchos::rcp(new Teuchos::ParameterList);

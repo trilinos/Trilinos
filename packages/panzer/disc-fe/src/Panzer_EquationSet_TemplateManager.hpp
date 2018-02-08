@@ -54,7 +54,7 @@
 namespace panzer {
 
   template<typename Traits>
-  class EquationSet_TemplateManager : 
+  class EquationSet_TemplateManager :
     public PHX::TemplateManager<typename Traits::EvalTypes,
 				panzer::EquationSetBase,
                                 panzer::EquationSet<_> > {
@@ -67,6 +67,6 @@ namespace panzer {
 
   };
 
-} 
+}
 
-#endif 
+#endif

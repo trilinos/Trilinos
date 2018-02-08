@@ -74,18 +74,18 @@ MixedPoissonEquationSet(const Teuchos::RCP<Teuchos::ParameterList>& params,
   // ********************
   // Validate and parse parameter list
   // ********************
-  {    
+  {
     Teuchos::ParameterList valid_parameters;
     this->setDefaultValidParameters(valid_parameters);
-    
+
     valid_parameters.set("Model ID","","Closure model id associated with this equaiton set");
     valid_parameters.set("Integration Order",-1,"Order of the integration rule");
     valid_parameters.set("HGrad Basis Order",-1,"Polynomial order of hgrad basis");
     valid_parameters.set("HDiv Basis Order",-1,"Polynomial order of hdiv basis");
-    
+
     params->validateParametersAndSetDefaults(valid_parameters);
   }
-  
+
   std::string basis_type = "HGrad";
   std::string grad_basis_type = "HDiv";
   int basis_order = params->get<int>("HGrad Basis Order");
@@ -122,7 +122,7 @@ MixedPoissonEquationSet(const Teuchos::RCP<Teuchos::ParameterList>& params,
    // ********************
    // Build Basis Functions and Integration Rules
    // ********************
-   
+
    this->addClosureModel(model_id);
 
    this->setupDOFs();
@@ -138,10 +138,10 @@ buildAndRegisterEquationSetEvaluators(PHX::FieldManager<panzer::Traits>& fm,
   using Teuchos::ParameterList;
   using Teuchos::RCP;
   using Teuchos::rcp;
-   
+
   Teuchos::RCP<panzer::IntegrationRule> ir = this->getIntRuleForDOF("GRADPHI_FIELD");
-  Teuchos::RCP<panzer::BasisIRLayout> basis_v = this->getBasisIRLayoutForDOF("GRADPHI_FIELD"); 
-  Teuchos::RCP<panzer::BasisIRLayout> basis_phi = this->getBasisIRLayoutForDOF("PHI"); 
+  Teuchos::RCP<panzer::BasisIRLayout> basis_v = this->getBasisIRLayoutForDOF("GRADPHI_FIELD");
+  Teuchos::RCP<panzer::BasisIRLayout> basis_phi = this->getBasisIRLayoutForDOF("PHI");
 
   // This implements the Least-Squares approach for a mixed formulation of
   //
@@ -149,77 +149,77 @@ buildAndRegisterEquationSetEvaluators(PHX::FieldManager<panzer::Traits>& fm,
   //
   // Specifically the weak form is
   //
-  //    (-\nabla\cdot v-f,-\nabla\cdot w) + (\nabla \phi - v,\nabla q) 
+  //    (-\nabla\cdot v-f,-\nabla\cdot w) + (\nabla \phi - v,\nabla q)
   //
   // where w \in HDIV and q \in HGRAD
 
   // "diffusion" operator (-\nabla\cdot v,-\nabla\cdot w)
-  {   
+  {
     ParameterList p("Source Residual");
     p.set("Residual Name", "RESIDUAL_GRADPHI_FIELD_DIFFUSION_OP");
-    p.set("Value Name", "DIV_GRADPHI_FIELD"); 
-    p.set("Test Field Name", "GRADPHI_FIELD"); 
+    p.set("Value Name", "DIV_GRADPHI_FIELD");
+    p.set("Test Field Name", "GRADPHI_FIELD");
     p.set("Basis", basis_v);
     p.set("IR", ir);
     p.set("Multiplier", 1.0);
-    
-    RCP< PHX::Evaluator<panzer::Traits> > op = 
+
+    RCP< PHX::Evaluator<panzer::Traits> > op =
       rcp(new panzer::Integrator_DivBasisTimesScalar<EvalT,panzer::Traits>(p));
-    
+
     this->template registerEvaluator<EvalT>(fm, op);
   }
 
   // Source operator (-f,-\nabla\cdot w)
-  {   
+  {
     ParameterList p("Source Residual");
     p.set("Residual Name", "RESIDUAL_GRADPHI_FIELD_MASS_OP");
-    p.set("Value Name", "SOURCE"); 
-    p.set("Test Field Name", "GRADPHI_FIELD"); 
+    p.set("Value Name", "SOURCE");
+    p.set("Test Field Name", "GRADPHI_FIELD");
     p.set("Basis", basis_v);
     p.set("IR", ir);
-    p.set("Multiplier", -1.0); // scale by the right hand side 
+    p.set("Multiplier", -1.0); // scale by the right hand side
                                             // when phi = sin(2*pi*x)*sin(2*pi*y)*sin(2*pi*z)
-    
-    RCP< PHX::Evaluator<panzer::Traits> > op = 
+
+    RCP< PHX::Evaluator<panzer::Traits> > op =
       rcp(new panzer::Integrator_DivBasisTimesScalar<EvalT,panzer::Traits>(p));
-    
+
     this->template registerEvaluator<EvalT>(fm, op);
   }
 
   // "diffusion" operator (\nabla \phi,\nabla q)
-  {   
+  {
     ParameterList p("Source Residual");
     p.set("Residual Name", "RESIDUAL_PHI_DIFFUSION_OP");
-    p.set("Flux Name", "GRAD_PHI"); 
+    p.set("Flux Name", "GRAD_PHI");
     p.set("Basis", basis_phi);
     p.set("IR", ir);
     p.set("Multiplier", 1.0);
-    
-    RCP< PHX::Evaluator<panzer::Traits> > op = 
+
+    RCP< PHX::Evaluator<panzer::Traits> > op =
       rcp(new panzer::Integrator_GradBasisDotVector<EvalT,panzer::Traits>(p));
-    
+
     this->template registerEvaluator<EvalT>(fm, op);
   }
 
   // "diffusion" operator (-v,\nabla q)
-  {   
+  {
     ParameterList p("Source Residual");
     p.set("Residual Name", "RESIDUAL_PHI_MASS_OP");
-    p.set("Flux Name", "GRADPHI_FIELD"); 
+    p.set("Flux Name", "GRADPHI_FIELD");
     p.set("Basis", basis_phi);
     p.set("IR", ir);
     p.set("Multiplier", -1.0);
-    
-    RCP< PHX::Evaluator<panzer::Traits> > op = 
+
+    RCP< PHX::Evaluator<panzer::Traits> > op =
       rcp(new panzer::Integrator_GradBasisDotVector<EvalT,panzer::Traits>(p));
-    
+
     this->template registerEvaluator<EvalT>(fm, op);
   }
-  
+
   // Use a sum operator to form the overall residual for the equation
   {
     std::vector<std::string> sum_names;
-    
+
     // these are the names of the residual values to sum together
     sum_names.push_back("RESIDUAL_GRADPHI_FIELD_DIFFUSION_OP");
     sum_names.push_back("RESIDUAL_GRADPHI_FIELD_MASS_OP");
@@ -230,7 +230,7 @@ buildAndRegisterEquationSetEvaluators(PHX::FieldManager<panzer::Traits>& fm,
   // Use a sum operator to form the overall residual for the equation
   {
     std::vector<std::string> sum_names;
-    
+
     // these are the names of the residual values to sum together
     sum_names.push_back("RESIDUAL_PHI_DIFFUSION_OP");
     sum_names.push_back("RESIDUAL_PHI_MASS_OP");

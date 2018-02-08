@@ -63,7 +63,7 @@ namespace panzer {
   */
 template<typename EvalT, typename Traits>
 class ResponseScatterEvaluator_IPCoordinates : public panzer::EvaluatorWithBaseImpl<Traits>,
-                                               public PHX::EvaluatorDerived<EvalT, Traits>  { 
+                                               public PHX::EvaluatorDerived<EvalT, Traits>  {
 public:
 
   //! A constructor with concrete arguments instead of a parameter list.

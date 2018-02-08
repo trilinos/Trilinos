@@ -50,13 +50,13 @@
 #include "Panzer_Evaluator_Macros.hpp"
 
 namespace panzer {
-    
+
 //! Interpolates basis DOF values to IP DOF values
 PANZER_EVALUATOR_CLASS(PointValues_Evaluator)
 
   // is anything other than ScalarT really needed here?
   PointValues2<ScalarT> pointValues;
- 
+
   PHX::MDField<double,NODE,Dim> refPointArray;
 
   bool useBasisValuesRefArray; // if true then basis is non-null

@@ -88,7 +88,7 @@ void write_solution_data(const panzer::UniqueGlobalIndexer<int,GlobalOrdinal> & 
    write_solution_data(dofMngr,mesh,*x(0),prefix,postfix);
 }
 
-template 
+template
 void write_solution_data<int>(const panzer::UniqueGlobalIndexer<int,int> & dofMngr,panzer_stk::STK_Interface & mesh,const Epetra_MultiVector & x,const std::string & prefix,const std::string & postfix);
 #ifdef PANZER_HAVE_LONG_LONG_INT
 template
@@ -117,7 +117,7 @@ void write_solution_data(const panzer::UniqueGlobalIndexer<int,GlobalOrdinal> & 
 
       // write out to stk mesh
       std::map<std::string,FieldContainer>::iterator dataItr;
-      for(dataItr=data.begin();dataItr!=data.end();++dataItr) 
+      for(dataItr=data.begin();dataItr!=data.end();++dataItr)
          mesh.setSolutionFieldData(prefix+dataItr->first+postfix,blockId,localCellIds,dataItr->second);
    }
 }
@@ -150,14 +150,14 @@ void gather_in_block(const std::string & blockId, const panzer::UniqueGlobalInde
          std::vector<GlobalOrdinal> GIDs;
          std::vector<int> LIDs;
          std::size_t cellLocalId = localCellIds[worksetCellIndex];
-      
+
          dofMngr.getElementGIDs(cellLocalId,GIDs);
-      
+
          // caculate the local IDs for this element
          LIDs.resize(GIDs.size());
          for(std::size_t i=0;i<GIDs.size();i++)
             LIDs[i] = x.Map().LID(GIDs[i]);
-   
+
          // loop over basis functions and fill the fields
          for(std::size_t basis=0;basis<elmtOffset.size();basis++) {
             int offset = elmtOffset[basis];

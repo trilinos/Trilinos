@@ -78,7 +78,7 @@ namespace panzer {
 
 
   /** \brief Nonmember function for building the physics blocks from a Teuchos::ParameterList for a given list of element blocks.  A unique physics block object is built for each element block even if multiple element blocks point to the same physics block.
-      \relates panzer::PhysicsBlock 
+      \relates panzer::PhysicsBlock
   */
   void buildPhysicsBlocks(const std::map<std::string,std::string>& block_ids_to_physics_ids,
                           const std::map<std::string,Teuchos::RCP<const shards::CellTopology> >& block_ids_to_cell_topo,
@@ -95,7 +95,7 @@ namespace panzer {
     *        A unique physics block object is built for each element block even if multiple element blocks point to the same physics block.
     *        The <code>intialize</code> method must be called before the physics blocks are used.
     *
-    * \relates panzer::PhysicsBlock 
+    * \relates panzer::PhysicsBlock
     */
   void readPhysicsBlocks(const std::map<std::string,std::string>& block_ids_to_physics_ids,
                          const Teuchos::RCP<Teuchos::ParameterList>& physics_blocks_plist,
@@ -111,15 +111,15 @@ namespace panzer {
   Teuchos::RCP<panzer::PhysicsBlock> findPhysicsBlock(const std::string element_block_id,
                                                       const std::vector<Teuchos::RCP<panzer::PhysicsBlock> > & physics_blocks,
                                                       bool throw_on_failure = true);
-  
+
   //! Object that contains information on the physics and discretization of a block of elements with the SAME topology.
   class PhysicsBlock : public EvaluatorsRegistrar {
 
-  public:    
+  public:
     /** for testing purposes only */
-    explicit PhysicsBlock() 
+    explicit PhysicsBlock()
        : m_build_transient_support(false), m_global_data(Teuchos::null)
-    { std::cout << "WARNING: Default constructor for panzer::PhysicsBlock is for testing purposes only!" << std::endl; } 
+    { std::cout << "WARNING: Default constructor for panzer::PhysicsBlock is for testing purposes only!" << std::endl; }
 
     /** This constructor call initialize.
       */
@@ -146,7 +146,7 @@ namespace panzer {
     /** This constructor builds a bare bones equation set. It will do gather
       * and scatter for a particular field and set of basis functions. It will
       * not have any equation sets associated with it.
-      */ 
+      */
     PhysicsBlock(const std::string & element_block_id,
                  const std::string & physics_block_id,
                  const int integration_order,
@@ -238,7 +238,7 @@ namespace panzer {
     //! Returns list of tangent fields from DOFs and tangent param names
     const std::vector<StrPureBasisPair>& getTangentFields() const;
 
-    /** Build a workset needs object for this physics block. 
+    /** Build a workset needs object for this physics block.
       */
     WorksetNeeds getWorksetNeeds() const;
 
@@ -263,12 +263,12 @@ namespace panzer {
 
     Teuchos::RCP<panzer::GlobalData> globalData() const;
 
-    Teuchos::RCP<const FieldLibrary> getFieldLibrary() const 
+    Teuchos::RCP<const FieldLibrary> getFieldLibrary() const
     { return m_field_lib.getConst(); }
-    
-    Teuchos::RCP<const FieldLibraryBase> getFieldLibraryBase() const 
+
+    Teuchos::RCP<const FieldLibraryBase> getFieldLibraryBase() const
     { return m_field_lib.getConst(); }
-    
+
     // return the Physics Block parameter list
     Teuchos::RCP<const Teuchos::ParameterList> getParameterList() const
     { return m_input_parameters; }
@@ -299,12 +299,12 @@ namespace panzer {
     std::map<std::string,Teuchos::RCP<panzer::PureBasis> > m_bases;
     //! map of unique integration rules, key is panzer::IntegrationRule::order() corresponding to its value
     std::map<int,Teuchos::RCP<panzer::IntegrationRule> > m_integration_rules;
-    
+
     std::vector< Teuchos::RCP<panzer::EquationSet_TemplateManager<panzer::Traits> > > m_equation_sets;
     Teuchos::RCP<FieldLibrary> m_field_lib;
     Teuchos::RCP<const panzer::EquationSetFactory> m_eqset_factory;
   };
-  
+
 }
 
 // ************************************************************
@@ -320,7 +320,7 @@ void panzer::PhysicsBlock::buildAndRegisterEquationSetEvaluatorsForType(PHX::Fie
   using panzer::EquationSet_TemplateManager;
 
   // Loop over equation set template managers
-  vector< RCP<EquationSet_TemplateManager<panzer::Traits> > >::const_iterator 
+  vector< RCP<EquationSet_TemplateManager<panzer::Traits> > >::const_iterator
     eq_set = m_equation_sets.begin();
   for (;eq_set != m_equation_sets.end(); ++eq_set) {
 
@@ -342,7 +342,7 @@ void panzer::PhysicsBlock::buildAndRegisterGatherAndOrientationEvaluatorsForType
   using panzer::EquationSet_TemplateManager;
 
   // Loop over equation set template managers
-  vector< RCP<EquationSet_TemplateManager<panzer::Traits> > >::const_iterator 
+  vector< RCP<EquationSet_TemplateManager<panzer::Traits> > >::const_iterator
     eq_set = m_equation_sets.begin();
   for (;eq_set != m_equation_sets.end(); ++eq_set) {
 
@@ -364,7 +364,7 @@ void panzer::PhysicsBlock::buildAndRegisterDOFProjectionsToIPEvaluatorsForType(P
   using panzer::EquationSet_TemplateManager;
 
   // Loop over equation set template managers
-  vector< RCP<EquationSet_TemplateManager<panzer::Traits> > >::const_iterator 
+  vector< RCP<EquationSet_TemplateManager<panzer::Traits> > >::const_iterator
     eq_set = m_equation_sets.begin();
   for (;eq_set != m_equation_sets.end(); ++eq_set) {
     EquationSet_TemplateManager<panzer::Traits> eqstm = *(*eq_set);
@@ -372,9 +372,9 @@ void panzer::PhysicsBlock::buildAndRegisterDOFProjectionsToIPEvaluatorsForType(P
     // Loop over integration rules
     for (std::map<int,Teuchos::RCP<panzer::IntegrationRule> >::const_iterator ir_iter = m_integration_rules.begin();
          ir_iter != m_integration_rules.end(); ++ ir_iter) {
-      
+
       Teuchos::RCP<panzer::IntegrationRule> ir = ir_iter->second;
-      
+
       const int di = eqstm.getAsObject<EvalT>()->setDetailsIndex(this->getDetailsIndex());
       eqstm.getAsObject<EvalT>()->buildAndRegisterDOFProjectionsToIPEvaluators(fm,*m_field_lib->buildFieldLayoutLibrary(*ir),ir,lof,user_data);
       eqstm.getAsObject<EvalT>()->setDetailsIndex(di);
@@ -393,7 +393,7 @@ void panzer::PhysicsBlock::buildAndRegisterScatterEvaluatorsForType(PHX::FieldMa
   using panzer::EquationSet_TemplateManager;
 
   // Loop over equation set template managers
-  vector< RCP<EquationSet_TemplateManager<panzer::Traits> > >::const_iterator 
+  vector< RCP<EquationSet_TemplateManager<panzer::Traits> > >::const_iterator
     eq_set = m_equation_sets.begin();
   for (;eq_set != m_equation_sets.end(); ++eq_set) {
 
@@ -416,7 +416,7 @@ void panzer::PhysicsBlock::buildAndRegisterClosureModelEvaluatorsForType(PHX::Fi
   using panzer::EquationSet_TemplateManager;
 
   // Loop over equation set template managers
-  vector< RCP<EquationSet_TemplateManager<panzer::Traits> > >::const_iterator 
+  vector< RCP<EquationSet_TemplateManager<panzer::Traits> > >::const_iterator
     eq_set = m_equation_sets.begin();
   for (;eq_set != m_equation_sets.end(); ++eq_set) {
 
@@ -425,9 +425,9 @@ void panzer::PhysicsBlock::buildAndRegisterClosureModelEvaluatorsForType(PHX::Fi
     // Loop over integration rules
     for (std::map<int,Teuchos::RCP<panzer::IntegrationRule> >::const_iterator ir_iter = m_integration_rules.begin();
          ir_iter != m_integration_rules.end(); ++ ir_iter) {
-      
+
       Teuchos::RCP<panzer::IntegrationRule> ir = ir_iter->second;
-      
+
       const int di = eqstm.getAsObject<EvalT>()->setDetailsIndex(this->getDetailsIndex());
       eqstm.getAsObject<EvalT>()->buildAndRegisterClosureModelEvaluators(fm,*m_field_lib->buildFieldLayoutLibrary(*ir),ir,factory,models,user_data);
       eqstm.getAsObject<EvalT>()->setDetailsIndex(di);
@@ -449,7 +449,7 @@ void panzer::PhysicsBlock::buildAndRegisterInitialConditionEvaluatorsForType(PHX
   using panzer::EquationSet_TemplateManager;
 
   // Loop over equation set template managers
-  vector< RCP<EquationSet_TemplateManager<panzer::Traits> > >::const_iterator 
+  vector< RCP<EquationSet_TemplateManager<panzer::Traits> > >::const_iterator
     eq_set = m_equation_sets.begin();
   for (;eq_set != m_equation_sets.end(); ++eq_set) {
     std::vector<StrBasisPair> providedDOFs;

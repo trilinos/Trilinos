@@ -88,7 +88,7 @@ TEUCHOS_UNIT_TEST(tUniqueGlobalIndexer_Utilities,GhostedFieldVector)
 
    TEUCHOS_ASSERT(numProcs==2);
 
-   RCP<panzer::UniqueGlobalIndexer<short,int> > globalIndexer 
+   RCP<panzer::UniqueGlobalIndexer<short,int> > globalIndexer
          = rcp(new panzer::unit_test::UniqueGlobalIndexer(myRank,numProcs));
 
    std::vector<int> ghostedFields;
@@ -101,7 +101,7 @@ TEUCHOS_UNIT_TEST(tUniqueGlobalIndexer_Utilities,GhostedFieldVector)
 
    std::stringstream ss;
    ss << "Field Numbers = ";
-   for(std::size_t i=0;i<ghostedFields.size();i++) 
+   for(std::size_t i=0;i<ghostedFields.size();i++)
       ss << ghostedIndices[i] << ":" << ghostedFields[i] << " ";
    out << std::endl;
    out << ss.str() << std::endl;
@@ -136,7 +136,7 @@ TEUCHOS_UNIT_TEST(tUniqueGlobalIndexer_Utilities,GhostedFieldVector)
       TEST_EQUALITY(ghostedFields[10],0);
       TEST_EQUALITY(ghostedFields[11],0);
    }
-   else 
+   else
       TEUCHOS_ASSERT(false);
 }
 
@@ -190,13 +190,13 @@ TEUCHOS_UNIT_TEST(tUniqueGlobalIndexer_Utilities,updateGhostedDataVector)
 
    TEUCHOS_ASSERT(numProcs==2);
 
-   RCP<panzer::UniqueGlobalIndexer<short,int> > globalIndexer 
+   RCP<panzer::UniqueGlobalIndexer<short,int> > globalIndexer
          = rcp(new panzer::unit_test::UniqueGlobalIndexer(myRank,numProcs));
 
    int uFieldNum = globalIndexer->getFieldNum("U");
    int tFieldNum = globalIndexer->getFieldNum("T");
 
-   Teuchos::RCP<Tpetra::Vector<int,int,int> > reducedFieldVector 
+   Teuchos::RCP<Tpetra::Vector<int,int,int> > reducedFieldVector
          = panzer::buildGhostedFieldReducedVector<short,int,panzer::TpetraNodeType>(*globalIndexer);
 
    Tpetra::Vector<int,int,int> reducedUDataVector(getFieldMap(uFieldNum,*reducedFieldVector));
@@ -205,11 +205,11 @@ TEUCHOS_UNIT_TEST(tUniqueGlobalIndexer_Utilities,updateGhostedDataVector)
    TEST_EQUALITY(reducedUDataVector.getLocalLength(),8);
    TEST_EQUALITY(reducedTDataVector.getLocalLength(),4);
 
-   IntFieldContainer dataU_b0, dataU_b1; 
+   IntFieldContainer dataU_b0, dataU_b1;
    fillFieldContainer(uFieldNum,"block_0",*globalIndexer,dataU_b0);
    fillFieldContainer(uFieldNum,"block_1",*globalIndexer,dataU_b1);
 
-   IntFieldContainer dataT_b0; 
+   IntFieldContainer dataT_b0;
    fillFieldContainer(tFieldNum,"block_0",*globalIndexer,dataT_b0);
 
    updateGhostedDataReducedVector("U","block_0",*globalIndexer,dataU_b0,reducedUDataVector);
@@ -222,7 +222,7 @@ TEUCHOS_UNIT_TEST(tUniqueGlobalIndexer_Utilities,updateGhostedDataVector)
 
    reducedUDataVector.get1dCopy(Teuchos::arrayViewFromVector(ghostedFields_u));
    reducedTDataVector.get1dCopy(Teuchos::arrayViewFromVector(ghostedFields_t));
-   
+
    if(myRank==0) {
       TEST_EQUALITY(ghostedFields_u[0], 0);
       TEST_EQUALITY(ghostedFields_u[1], 2);
@@ -253,7 +253,7 @@ TEUCHOS_UNIT_TEST(tUniqueGlobalIndexer_Utilities,updateGhostedDataVector)
       TEST_EQUALITY(ghostedFields_t[2],11);
       TEST_EQUALITY(ghostedFields_t[3], 5);
    }
-   else 
+   else
       TEUCHOS_ASSERT(false);
 }
 
@@ -274,7 +274,7 @@ TEUCHOS_UNIT_TEST(tUniqueGlobalIndexer_Utilities,ArrayToFieldVector_ghost)
 
    TEUCHOS_ASSERT(numProcs==2);
 
-   RCP<panzer::UniqueGlobalIndexer<short,int> > globalIndexer 
+   RCP<panzer::UniqueGlobalIndexer<short,int> > globalIndexer
          = rcp(new panzer::unit_test::UniqueGlobalIndexer(myRank,numProcs));
 
    panzer::ArrayToFieldVector<short,int,panzer::TpetraNodeType> atfv(globalIndexer);
@@ -292,7 +292,7 @@ TEUCHOS_UNIT_TEST(tUniqueGlobalIndexer_Utilities,ArrayToFieldVector_ghost)
 
    reducedUDataVector->getVector(0)->get1dCopy(Teuchos::arrayViewFromVector(ghostedFields_u));
    reducedTDataVector->getVector(0)->get1dCopy(Teuchos::arrayViewFromVector(ghostedFields_t));
-   
+
    if(myRank==0) {
       TEST_EQUALITY(reducedUDataVector->getLocalLength(),8);
       TEST_EQUALITY(reducedTDataVector->getLocalLength(),6);
@@ -331,7 +331,7 @@ TEUCHOS_UNIT_TEST(tUniqueGlobalIndexer_Utilities,ArrayToFieldVector_ghost)
       TEST_EQUALITY(ghostedFields_t[2],11);
       TEST_EQUALITY(ghostedFields_t[3], 5);
    }
-   else 
+   else
       TEUCHOS_ASSERT(false);
 }
 
@@ -352,7 +352,7 @@ TEUCHOS_UNIT_TEST(tUniqueGlobalIndexer_Utilities,ArrayToFieldVector)
 
    TEUCHOS_ASSERT(numProcs==2);
 
-   RCP<panzer::UniqueGlobalIndexer<short,int> > globalIndexer 
+   RCP<panzer::UniqueGlobalIndexer<short,int> > globalIndexer
          = rcp(new panzer::unit_test::UniqueGlobalIndexer(myRank,numProcs));
 
    panzer::ArrayToFieldVector<short,int,panzer::TpetraNodeType> atfv(globalIndexer);
@@ -370,7 +370,7 @@ TEUCHOS_UNIT_TEST(tUniqueGlobalIndexer_Utilities,ArrayToFieldVector)
 
    reducedUDataVector->getVector(0)->get1dCopy(Teuchos::arrayViewFromVector(fields_u));
    reducedTDataVector->getVector(0)->get1dCopy(Teuchos::arrayViewFromVector(fields_t));
-   
+
    if(myRank==0) {
       TEST_EQUALITY(reducedUDataVector->getLocalLength(),6);
       TEST_EQUALITY(reducedTDataVector->getLocalLength(),5);
@@ -399,7 +399,7 @@ TEUCHOS_UNIT_TEST(tUniqueGlobalIndexer_Utilities,ArrayToFieldVector)
 
       TEST_EQUALITY(fields_t[0], 5);
    }
-   else 
+   else
       TEUCHOS_ASSERT(false);
 }
 
@@ -420,7 +420,7 @@ TEUCHOS_UNIT_TEST(tUniqueGlobalIndexer_Utilities,ArrayToFieldVector_multicol)
 
    TEUCHOS_ASSERT(numProcs==2);
 
-   RCP<panzer::UniqueGlobalIndexer<short,int> > globalIndexer 
+   RCP<panzer::UniqueGlobalIndexer<short,int> > globalIndexer
          = rcp(new panzer::unit_test::UniqueGlobalIndexer(myRank,numProcs));
 
    panzer::ArrayToFieldVector<short,int,panzer::TpetraNodeType> atfv(globalIndexer);
@@ -443,21 +443,21 @@ TEUCHOS_UNIT_TEST(tUniqueGlobalIndexer_Utilities,ArrayToFieldVector_multicol)
    for(std::size_t c=0;c<numCols;c++) {
       std::vector<int> fields_u(reducedUDataVector->getLocalLength());
       std::vector<int> fields_t(reducedTDataVector->getLocalLength());
-   
+
       reducedUDataVector->getVector(c)->get1dCopy(Teuchos::arrayViewFromVector(fields_u));
       reducedTDataVector->getVector(c)->get1dCopy(Teuchos::arrayViewFromVector(fields_t));
-      
+
       if(myRank==0) {
          TEST_EQUALITY(reducedUDataVector->getLocalLength(),6);
          TEST_EQUALITY(reducedTDataVector->getLocalLength(),5);
-   
+
          TEST_EQUALITY(fields_u[0], 6+Teuchos::as<int>(c));
          TEST_EQUALITY(fields_u[1], 0+Teuchos::as<int>(c));
          TEST_EQUALITY(fields_u[2], 2+Teuchos::as<int>(c));
          TEST_EQUALITY(fields_u[3], 8+Teuchos::as<int>(c));
          TEST_EQUALITY(fields_u[4],10+Teuchos::as<int>(c));
          TEST_EQUALITY(fields_u[5],13+Teuchos::as<int>(c));
-   
+
          TEST_EQUALITY(fields_t[0], 7+Teuchos::as<int>(c));
          TEST_EQUALITY(fields_t[1], 1+Teuchos::as<int>(c));
          TEST_EQUALITY(fields_t[2], 3+Teuchos::as<int>(c));
@@ -467,15 +467,15 @@ TEUCHOS_UNIT_TEST(tUniqueGlobalIndexer_Utilities,ArrayToFieldVector_multicol)
       else if(myRank==1) {
          TEST_EQUALITY(reducedUDataVector->getLocalLength(),4);
          TEST_EQUALITY(reducedTDataVector->getLocalLength(),1);
-   
+
          TEST_EQUALITY(fields_u[0], 4+Teuchos::as<int>(c));
          TEST_EQUALITY(fields_u[1],12+Teuchos::as<int>(c));
          TEST_EQUALITY(fields_u[2],15+Teuchos::as<int>(c));
          TEST_EQUALITY(fields_u[3],14+Teuchos::as<int>(c));
-   
+
          TEST_EQUALITY(fields_t[0], 5+Teuchos::as<int>(c));
       }
-      else 
+      else
          TEUCHOS_ASSERT(false);
    }
 
@@ -509,7 +509,7 @@ TEUCHOS_UNIT_TEST(tUniqueGlobalIndexer_Utilities,ArrayToFieldVector_multicol)
 
       TEST_EQUALITY(tMap->getGlobalElement(0),5);
    }
-   else 
+   else
       TEUCHOS_ASSERT(false);
 }
 

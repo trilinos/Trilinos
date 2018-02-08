@@ -55,7 +55,7 @@ PHX_EVALUATOR_CTOR(PointValues_Evaluator,p)
 {
   basis_index = 0;
 
-  Teuchos::RCP<const panzer::PointRule> pointRule 
+  Teuchos::RCP<const panzer::PointRule> pointRule
      = p.get< Teuchos::RCP<const panzer::PointRule> >("Point Rule");
   Teuchos::RCP<const Kokkos::DynRankView<double,PHX::Device> > userArray
      = p.get<Teuchos::RCP<const Kokkos::DynRankView<double,PHX::Device> > >("Point Array");
@@ -103,9 +103,9 @@ void PointValues_Evaluator<EvalT,TRAITST>::initialize(const Teuchos::RCP<const p
 {
   basis = pureBasis;
 
-  if(userArray!=Teuchos::null && basis==Teuchos::null) 
+  if(userArray!=Teuchos::null && basis==Teuchos::null)
     useBasisValuesRefArray = false;
-  else if(userArray==Teuchos::null && basis!=Teuchos::null) 
+  else if(userArray==Teuchos::null && basis!=Teuchos::null)
     useBasisValuesRefArray = true;
   else {
     // this is a conflicting request, throw an exception
@@ -121,7 +121,7 @@ void PointValues_Evaluator<EvalT,TRAITST>::initialize(const Teuchos::RCP<const p
     // TEUCHOS_ASSERT(refPointArray.size()==userArray->size());
     for(int i=0;i<userArray->extent_int(0);i++)
       for(int j=0;j<userArray->extent_int(1);j++)
-        refPointArray(i,j) = (*userArray)(i,j); 
+        refPointArray(i,j) = (*userArray)(i,j);
   }
 
   // setup all fields to be evaluated and constructed
@@ -162,7 +162,7 @@ PHX_POST_REGISTRATION_SETUP(PointValues_Evaluator,sd,fm)
 
 //**********************************************************************
 PHX_EVALUATE_FIELDS(PointValues_Evaluator,workset)
-{ 
+{
   if(useBasisValuesRefArray) {
     panzer::BasisValues2<double> & basisValues = *this->wda(workset).bases[basis_index];
 

@@ -60,12 +60,12 @@ namespace panzer {
     p->set("Basis Type","HGrad");
     p->set("Basis Order",1);
 
-    int default_integration_order = 1;    
+    int default_integration_order = 1;
     int num_cells = 20;
     panzer::CellData cell_data(num_cells,Teuchos::rcp(new shards::CellTopology(shards::getCellTopologyData< shards::Quadrilateral<4> >())));
 
     Teuchos::RCP<panzer::EquationSet_TemplateManager<panzer::Traits> > eq_set;
-  
+
     user_app::MyFactory my_factory;
     Teuchos::RCP<panzer::GlobalData> global_data = panzer::createGlobalData();
     TEST_NOTHROW(eq_set = my_factory.buildEquationSet(p, default_integration_order, cell_data, global_data, false));
@@ -81,13 +81,13 @@ namespace panzer {
     p->set("Basis Type","HGrad");
     p->set("Basis Order",1);
 
-    int default_integration_order = 1; 
+    int default_integration_order = 1;
     int num_cells = 20;
     panzer::CellData cell_data(num_cells,
                         Teuchos::rcp(new shards::CellTopology(shards::getCellTopologyData< shards::Quadrilateral<4> >())));
 
     Teuchos::RCP<panzer::EquationSet_TemplateManager<panzer::Traits> > eq_set;
-  
+
     user_app::MyFactory my_factory;
     Teuchos::RCP<panzer::GlobalData> global_data = panzer::createGlobalData();
     TEST_NOTHROW(eq_set = my_factory.buildEquationSet(p, default_integration_order, cell_data, global_data, true));

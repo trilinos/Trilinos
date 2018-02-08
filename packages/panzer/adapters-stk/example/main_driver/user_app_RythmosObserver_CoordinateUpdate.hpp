@@ -54,15 +54,15 @@
 
 namespace user_app {
 
-  class RythmosObserver_CoordinateUpdate : 
+  class RythmosObserver_CoordinateUpdate :
     public Rythmos::IntegrationObserverBase<double> {
 
   public:
-    
+
     RythmosObserver_CoordinateUpdate(const Teuchos::RCP<panzer::WorksetContainer> & workset_container) :
       m_workset_container(workset_container)
     { }
-    
+
     Teuchos::RCP<Rythmos::IntegrationObserverBase<double> >
     cloneIntegrationObserver() const
     { return Teuchos::rcp(new RythmosObserver_CoordinateUpdate(m_workset_container)); }
@@ -73,9 +73,9 @@ namespace user_app {
     void observeCompletedTimeStep(const Rythmos::StepperBase<double>& /* stepper */,
 				  const Rythmos::StepControlInfo<double>& /* stepCtrlInfo */,
 				  const int /* timeStepIter */)
-    { TEUCHOS_ASSERT(m_workset_container!=Teuchos::null); 
+    { TEUCHOS_ASSERT(m_workset_container!=Teuchos::null);
       m_workset_container->clear(); }
-    
+
   protected:
 
     Teuchos::RCP<panzer::WorksetContainer> m_workset_container;

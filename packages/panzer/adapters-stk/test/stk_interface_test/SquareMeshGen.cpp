@@ -49,12 +49,12 @@
 #include "Panzer_STK_SquareQuadMeshFactory.hpp"
 #include "Panzer_STK_CubeHexMeshFactory.hpp"
 
-int main(int argc, char * argv[]) 
+int main(int argc, char * argv[])
 {
    using Teuchos::RCP;
    using Teuchos::rcp;
    using Teuchos::rcpFromRef;
- 
+
    Teuchos::GlobalMPISession mpiSession(&argc,&argv,&std::cout);
 
    std::string output_file_name = "square_mesh.gen";
@@ -65,9 +65,9 @@ int main(int argc, char * argv[])
    double y0=0.0, yf=1.0;
    double z0=0.0, zf=1.0;
    bool threeD = false;
- 
+
    // setup input arguments
-   { 
+   {
      Teuchos::CommandLineProcessor clp;
      clp.throwExceptions(false);
 
@@ -91,16 +91,16 @@ int main(int argc, char * argv[])
 
      clp.setOption("z0", &z0, "Location of front(?) edge");
      clp.setOption("zf", &zf, "Location of back(?) edge");
- 
+
      Teuchos::CommandLineProcessor::EParseCommandLineReturn parse_return = clp.parse(argc,argv,&std::cerr);
 
      if(parse_return==Teuchos::CommandLineProcessor::PARSE_HELP_PRINTED)
        return -1;
-      
-     TEUCHOS_TEST_FOR_EXCEPTION(parse_return != Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL, 
+
+     TEUCHOS_TEST_FOR_EXCEPTION(parse_return != Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL,
                                 std::runtime_error, "Failed to parse command line!");
    }
-  
+
 
    RCP<Teuchos::ParameterList> pl = rcp(new Teuchos::ParameterList);
    pl->set("X Blocks",xBlocks);
@@ -122,11 +122,11 @@ int main(int argc, char * argv[])
    // int numprocs = stk::parallel_machine_size(MPI_COMM_WORLD);
    // int rank = stk::parallel_machine_rank(MPI_COMM_WORLD);
 
-   RCP<panzer_stk::STK_MeshFactory> factory; 
+   RCP<panzer_stk::STK_MeshFactory> factory;
    if(!threeD)
-     factory = Teuchos::rcp(new panzer_stk::SquareQuadMeshFactory); 
+     factory = Teuchos::rcp(new panzer_stk::SquareQuadMeshFactory);
    else
-     factory = Teuchos::rcp(new panzer_stk::CubeHexMeshFactory); 
+     factory = Teuchos::rcp(new panzer_stk::CubeHexMeshFactory);
 
    factory->setParameterList(pl);
 

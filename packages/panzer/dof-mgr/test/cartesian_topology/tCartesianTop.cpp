@@ -229,7 +229,7 @@ TEUCHOS_UNIT_TEST(tCartesianTop, connmanager_2d_1dpart_helpers)
   }
 
   // test that owned and offset elements are correct
-  { 
+  {
     auto myElements = connManager->getMyElementsTriplet();
     auto myOffset = connManager->getMyOffsetTriplet();
 
@@ -338,15 +338,15 @@ TEUCHOS_UNIT_TEST(tCartesianTop, connmanager_2d_1dpart)
     std::string blocks[] = {"eblock-0_0","eblock-0_1"};
     for(int b=0;b<2;b++) {
       const std::vector<int> & elmts0 = connManager->getElementBlock(blocks[b]);
-  
+
       for(std::size_t i=0;i<elmts0.size();i++) {
         TEST_EQUALITY(connManager->getConnectivitySize(elmts0[i]),4);
-  
+
         auto global = CCM::computeLocalElementGlobalTriplet(elmts0[i],connManager->getMyElementsTriplet(),
                                                                       connManager->getMyOffsetTriplet());
         auto * conn = connManager->getConnectivity(elmts0[i]);
         TEST_ASSERT(conn!=0);
-  
+
         TEST_EQUALITY(conn[0], global.x + (nx*bx+1)*global.y + 0 + (   0   ));
         TEST_EQUALITY(conn[1], global.x + (nx*bx+1)*global.y + 1 + (   0   ));
         TEST_EQUALITY(conn[2], global.x + (nx*bx+1)*global.y + 1 + (nx*bx+1));
@@ -372,15 +372,15 @@ TEUCHOS_UNIT_TEST(tCartesianTop, connmanager_2d_1dpart)
     std::string blocks[] = {"eblock-0_0","eblock-0_1"};
     for(int b=0;b<2;b++) {
       const std::vector<int> & elmts0 = connManager->getElementBlock(blocks[b]);
-  
+
       for(std::size_t i=0;i<elmts0.size();i++) {
         TEST_EQUALITY(connManager->getConnectivitySize(elmts0[i]),9);
-  
+
         auto global = CCM::computeLocalElementGlobalTriplet(elmts0[i],connManager->getMyElementsTriplet(),
                                                                       connManager->getMyOffsetTriplet());
         auto * conn = connManager->getConnectivity(elmts0[i]);
         TEST_ASSERT(conn!=0);
-  
+
         // nodes
         TEST_EQUALITY(conn[0], global.x + (nx*bx+1)*global.y + 0 + (   0   ));
         TEST_EQUALITY(conn[1], global.x + (nx*bx+1)*global.y + 1 + (   0   ));
@@ -442,7 +442,7 @@ TEUCHOS_UNIT_TEST(tCartesianTop, connmanager_3d_1dpart_helpers)
   }
 
   // test that owned and offset elements are correct
-  { 
+  {
     auto myElements = connManager->getMyElementsTriplet();
     auto myOffset = connManager->getMyOffsetTriplet();
 
@@ -556,15 +556,15 @@ TEUCHOS_UNIT_TEST(tCartesianTop, connmanager_3d_1dpart)
     std::string blocks[] = {"eblock-0_0_0","eblock-0_1_0"};
     for(int b=0;b<2;b++) {
       const std::vector<int> & elmts0 = connManager->getElementBlock(blocks[b]);
-  
+
       for(std::size_t i=0;i<elmts0.size();i++) {
         TEST_EQUALITY(connManager->getConnectivitySize(elmts0[i]),8);
-  
+
         auto global = CCM::computeLocalElementGlobalTriplet(elmts0[i],connManager->getMyElementsTriplet(),
                                                                       connManager->getMyOffsetTriplet());
         auto * conn = connManager->getConnectivity(elmts0[i]);
         TEST_ASSERT(conn!=0);
-  
+
         auto basePoint = global.x + (nx*bx+1)*global.y + (nx*bx+1)*(ny*by+1)*global.z;
         TEST_EQUALITY(conn[0], basePoint + 0 + (   0   ) + (   0   )*(   0   ));
         TEST_EQUALITY(conn[1], basePoint + 1 + (   0   ) + (   0   )*(   0   ));
@@ -596,16 +596,16 @@ TEUCHOS_UNIT_TEST(tCartesianTop, connmanager_3d_1dpart)
     std::string blocks[] = {"eblock-0_0_0","eblock-0_1_0"};
     for(int b=0;b<2;b++) {
       const std::vector<int> & elmts0 = connManager->getElementBlock(blocks[b]);
-  
+
       for(std::size_t i=0;i<elmts0.size();i++) {
         TEST_EQUALITY(connManager->getConnectivitySize(elmts0[i]),27);
-  
+
         auto global = CCM::computeLocalElementGlobalTriplet(elmts0[i],connManager->getMyElementsTriplet(),
                                                                       connManager->getMyOffsetTriplet());
         out << "Element Triplet: " << global.x << ", " << global.y << ", " << global.z << std::endl;
         auto * conn = connManager->getConnectivity(elmts0[i]);
         TEST_ASSERT(conn!=0);
-  
+
         // nodes
         auto nodeBasePoint = global.x + (nx*bx+1)*global.y + (nx*bx+1)*(ny*by+1)*global.z;
         TEST_EQUALITY(conn[0], nodeBasePoint + 0 + (   0   ) + (   0   )*(   0   ));
@@ -622,7 +622,7 @@ TEUCHOS_UNIT_TEST(tCartesianTop, connmanager_3d_1dpart)
         auto e_kp = (bx*nx+1)*by*ny + bx*nx*(by*ny+1);
         auto edgeBasePoint = totalNodes + global.x + global.y *(2*bx*nx+1) + global.z*e_ks;
 
-        // horizontal edges: bottom 
+        // horizontal edges: bottom
         TEST_EQUALITY(conn[ 8], edgeBasePoint +           0);
         TEST_EQUALITY(conn[ 9], edgeBasePoint +   bx*nx + 1);
         TEST_EQUALITY(conn[10], edgeBasePoint + 2*bx*nx + 1);

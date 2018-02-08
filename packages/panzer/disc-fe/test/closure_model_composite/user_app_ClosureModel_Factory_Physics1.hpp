@@ -70,7 +70,7 @@ namespace user_app {
 
   private:
 
-    
+
     bool m_throw_if_model_not_found;
 
   };

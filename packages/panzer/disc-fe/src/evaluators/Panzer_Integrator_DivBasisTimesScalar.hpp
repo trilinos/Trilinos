@@ -52,15 +52,15 @@
 #include "Panzer_Evaluator_Macros.hpp"
 
 namespace panzer {
-    
+
 /** This computes
-  * 
+  *
   *  \f$\int \nabla\cdot \phi v \f$
   *
   * where \f$\phi\f$ is a vector HDIV basis.
   */
 PANZER_EVALUATOR_CLASS(Integrator_DivBasisTimesScalar)
-  
+
   PHX::MDField<ScalarT,Cell,BASIS> residual;
   PHX::MDField<const ScalarT,Cell,IP> scalar;
   std::vector<PHX::MDField<const ScalarT,Cell,IP> > field_multipliers;

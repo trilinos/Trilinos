@@ -9,9 +9,9 @@
 namespace user_app {
 
 /** This class defines a response based on a functional. */
-  
-template <typename EvalT,typename LO,typename GO> 
-class ResponseEvaluatorFactory_HOFlux : public panzer::ResponseEvaluatorFactory_Functional<EvalT,LO,GO> 
+
+template <typename EvalT,typename LO,typename GO>
+class ResponseEvaluatorFactory_HOFlux : public panzer::ResponseEvaluatorFactory_Functional<EvalT,LO,GO>
 {
 public:
 
@@ -20,9 +20,9 @@ public:
    {}
 
    virtual ~ResponseEvaluatorFactory_HOFlux() {}
-   
+
    /** Build and register evaluators for a response on a particular physics
-     * block. 
+     * block.
      *
      * \param[in] responseName The name of the response to be constructed
      *                         by these evaluators.

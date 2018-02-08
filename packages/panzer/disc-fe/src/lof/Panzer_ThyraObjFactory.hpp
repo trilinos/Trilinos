@@ -59,7 +59,7 @@ template <typename ScalarT>
 class ThyraObjFactory {
 public:
    virtual ~ThyraObjFactory() {}
-   
+
    //! Get the domain space
    virtual Teuchos::RCP<const Thyra::VectorSpaceBase<ScalarT> > getThyraDomainSpace() const = 0;
 

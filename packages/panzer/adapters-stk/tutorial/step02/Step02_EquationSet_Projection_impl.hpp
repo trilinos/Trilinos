@@ -69,7 +69,7 @@ EquationSet_Projection(const Teuchos::RCP<Teuchos::ParameterList>& params,
   // ********************
   // Validate and parse parameter list
   // ********************
-  {    
+  {
     Teuchos::ParameterList valid_parameters;
     this->setDefaultValidParameters(valid_parameters);
 
@@ -116,16 +116,16 @@ buildAndRegisterEquationSetEvaluators(PHX::FieldManager<panzer::Traits>& fm,
   // define some special strings to use
   const std::string residual_projection_term     = "RESIDUAL_"+dof_name_+"_PROJECTION";
   const std::string residual_projection_src_term = "RESIDUAL_"+dof_name_+"_PROJECTION_SOURCE";
-  
-  const std::string projection_src_name = dof_name_+"_SOURCE"; 
+
+  const std::string projection_src_name = dof_name_+"_SOURCE";
     // this must be satisfied by the closure model
 
   // ********************
   // Projection Equation
   // ********************
 
-  RCP<panzer::IntegrationRule> ir  = this->getIntRuleForDOF(dof_name_); 
-  RCP<panzer::BasisIRLayout> basis = this->getBasisIRLayoutForDOF(dof_name_); 
+  RCP<panzer::IntegrationRule> ir  = this->getIntRuleForDOF(dof_name_);
+  RCP<panzer::BasisIRLayout> basis = this->getBasisIRLayoutForDOF(dof_name_);
 
   // Projection operator (U,phi)
   {
@@ -136,9 +136,9 @@ buildAndRegisterEquationSetEvaluators(PHX::FieldManager<panzer::Traits>& fm,
     p.set("IR",            ir);
     p.set("Multiplier",    1.0);
 
-    RCP<PHX::Evaluator<panzer::Traits> > op = 
+    RCP<PHX::Evaluator<panzer::Traits> > op =
       rcp(new panzer::Integrator_BasisTimesScalar<EvalT,panzer::Traits>(p));
-    
+
     this->template registerEvaluator<EvalT>(fm, op);
   }
 
@@ -151,9 +151,9 @@ buildAndRegisterEquationSetEvaluators(PHX::FieldManager<panzer::Traits>& fm,
     p.set("IR",            ir);
     p.set("Multiplier",    -1.0);
 
-    RCP<PHX::Evaluator<panzer::Traits> > op = 
+    RCP<PHX::Evaluator<panzer::Traits> > op =
       rcp(new panzer::Integrator_BasisTimesScalar<EvalT,panzer::Traits>(p));
-    
+
     this->template registerEvaluator<EvalT>(fm, op);
   }
 

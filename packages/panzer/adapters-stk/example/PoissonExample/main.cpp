@@ -123,7 +123,7 @@ int main(int argc,char * argv[])
    clp.setOption("cell",&celltype);
    clp.setOption("x-elements",&x_elements);
    clp.setOption("y-elements",&y_elements);
-   clp.setOption("basis-order",&basis_order); 
+   clp.setOption("basis-order",&basis_order);
 
    // parse commandline argument
    Teuchos::CommandLineProcessor::EParseCommandLineReturn r_parse= clp.parse( argc, argv );
@@ -134,20 +134,20 @@ int main(int argc,char * argv[])
    ////////////////////////////////////////////////////
 
    // factory definitions
-   Teuchos::RCP<Example::EquationSetFactory> eqset_factory = 
+   Teuchos::RCP<Example::EquationSetFactory> eqset_factory =
      Teuchos::rcp(new Example::EquationSetFactory); // where poison equation is defined
-   Example::BCStrategyFactory bc_factory;    // where boundary conditions are defined 
+   Example::BCStrategyFactory bc_factory;    // where boundary conditions are defined
 
    Teuchos::RCP<panzer_stk::STK_MeshFactory> mesh_factory;
    if      (celltype == "Quad") mesh_factory = Teuchos::rcp(new panzer_stk::SquareQuadMeshFactory);
    else if (celltype == "Tri")  mesh_factory = Teuchos::rcp(new panzer_stk::SquareTriMeshFactory);
-   else 
+   else
      throw std::runtime_error("not supported celltype argument: try Quad or Tri");
-   
+
    // other declarations
    const std::size_t workset_size = 20;
 
-   // construction of uncommitted (no elements) mesh 
+   // construction of uncommitted (no elements) mesh
    ////////////////////////////////////////////////////////
 
    // set mesh factory parameters
@@ -170,7 +170,7 @@ int main(int argc,char * argv[])
       bool build_transient_support = false;
 
       testInitialization(basis_order, ipb, bcs);
-      
+
       const panzer::CellData volume_cell_data(workset_size, mesh->getCellTopology("eblock-0_0"));
 
       // GobalData sets ostream and parameter interface to physics
@@ -178,11 +178,11 @@ int main(int argc,char * argv[])
 
       // Can be overridden by the equation set
       int default_integration_order = 1;
-      
+
       // the physics block nows how to build and register evaluator with the field manager
-      RCP<panzer::PhysicsBlock> pb 
+      RCP<panzer::PhysicsBlock> pb
 	= rcp(new panzer::PhysicsBlock(ipb,
-				       "eblock-0_0", 
+				       "eblock-0_0",
 				       default_integration_order,
 				       volume_cell_data,
 				       eqset_factory,
@@ -215,13 +215,13 @@ int main(int argc,char * argv[])
 
    // build DOF Manager and linear object factory
    /////////////////////////////////////////////////////////////
- 
-   // build the connection manager 
-   const Teuchos::RCP<panzer::ConnManager<int,int> > 
+
+   // build the connection manager
+   const Teuchos::RCP<panzer::ConnManager<int,int> >
      conn_manager = Teuchos::rcp(new panzer_stk::STKConnManager<int>(mesh));
 
    panzer::DOFManagerFactory<int,int> globalIndexerFactory;
-   RCP<panzer::UniqueGlobalIndexer<int,int> > dofManager 
+   RCP<panzer::UniqueGlobalIndexer<int,int> > dofManager
          = globalIndexerFactory.buildUniqueGlobalIndexer(Teuchos::opaqueWrapper(MPI_COMM_WORLD),physicsBlocks,conn_manager);
 
    // construct some linear algebra object, build object to pass to evaluators
@@ -236,7 +236,7 @@ int main(int argc,char * argv[])
    Teuchos::RCP<panzer::WorksetContainer> wkstContainer     // attach it to a workset container (uses lazy evaluation)
        = Teuchos::rcp(new panzer::WorksetContainer);
     wkstContainer->setFactory(wkstFactory);
-    for(size_t i=0;i<physicsBlocks.size();i++) 
+    for(size_t i=0;i<physicsBlocks.size();i++)
       wkstContainer->setNeeds(physicsBlocks[i]->elementBlockID(),physicsBlocks[i]->getWorksetNeeds());
     wkstContainer->setWorksetSize(workset_size);
     wkstContainer->setGlobalIndexer(dofManager);
@@ -272,9 +272,9 @@ int main(int argc,char * argv[])
 
    // setup closure model
    /////////////////////////////////////////////////////////////
- 
+
    // Add in the application specific closure model factory
-   panzer::ClosureModelFactory_TemplateManager<panzer::Traits> cm_factory; 
+   panzer::ClosureModelFactory_TemplateManager<panzer::Traits> cm_factory;
    Example::ClosureModelFactory_TemplateBuilder cm_builder;
    cm_factory.buildObjects(cm_builder);
 
@@ -299,7 +299,7 @@ int main(int argc,char * argv[])
    // setup field manager builder
    /////////////////////////////////////////////////////////////
 
-   Teuchos::RCP<panzer::FieldManagerBuilder> fmb = 
+   Teuchos::RCP<panzer::FieldManagerBuilder> fmb =
          Teuchos::rcp(new panzer::FieldManagerBuilder);
    fmb->setWorksetContainer(wkstContainer);
    fmb->setupVolumeFieldManagers(physicsBlocks,cm_factory,closure_models,*linObjFactory,user_data);
@@ -311,7 +311,7 @@ int main(int argc,char * argv[])
    // setup assembly engine
    /////////////////////////////////////////////////////////////
 
-   // build assembly engine: The key piece that brings together everything and 
+   // build assembly engine: The key piece that brings together everything and
    //                        drives and controls the assembly process. Just add
    //                        matrices and vectors
    panzer::AssemblyEngine_TemplateManager<panzer::Traits> ae_tm;
@@ -358,11 +358,11 @@ int main(int argc,char * argv[])
    /////////////////////////////////////////////////////////////
 
    // convert generic linear object container to epetra container
-   RCP<panzer::EpetraLinearObjContainer> ep_container 
+   RCP<panzer::EpetraLinearObjContainer> ep_container
          = rcp_dynamic_cast<panzer::EpetraLinearObjContainer>(container);
 
-   // Setup the linear solve: notice A is used directly 
-   Epetra_LinearProblem problem(&*ep_container->get_A(),&*ep_container->get_x(),&*ep_container->get_f()); 
+   // Setup the linear solve: notice A is used directly
+   Epetra_LinearProblem problem(&*ep_container->get_A(),&*ep_container->get_x(),&*ep_container->get_f());
 
    // build the solver
    AztecOO solver(problem);
@@ -379,9 +379,9 @@ int main(int argc,char * argv[])
    // zero in the context of a Newton solve.
    //     J*e = -r = -(f - J*0) where f = J*u
    // Therefore we have  J*e=-J*u which implies e = -u
-   // thus we will scale the solution vector 
+   // thus we will scale the solution vector
    ep_container->get_x()->Scale(-1.0);
-  
+
    // output data (optional)
    /////////////////////////////////////////////////////////////
 
@@ -395,8 +395,8 @@ int main(int argc,char * argv[])
    // write out solution to matrix
    if(true) {
       // redistribute solution vector to ghosted vector
-      linObjFactory->globalToGhostContainer(*container,*ghostCont, panzer::EpetraLinearObjContainer::X 
-                                                                 | panzer::EpetraLinearObjContainer::DxDt); 
+      linObjFactory->globalToGhostContainer(*container,*ghostCont, panzer::EpetraLinearObjContainer::X
+                                                                 | panzer::EpetraLinearObjContainer::DxDt);
 
       // get X Epetra_Vector from ghosted container
       RCP<panzer::EpetraLinearObjContainer> ep_ghostCont = rcp_dynamic_cast<panzer::EpetraLinearObjContainer>(ghostCont);
@@ -424,13 +424,13 @@ int main(int argc,char * argv[])
       respInput.beta = 1;
 
       Teuchos::RCP<panzer::ResponseBase> l2_resp = errorResponseLibrary->getResponse<panzer::Traits::Residual>("L2 Error");
-      Teuchos::RCP<panzer::Response_Functional<panzer::Traits::Residual> > l2_resp_func = 
+      Teuchos::RCP<panzer::Response_Functional<panzer::Traits::Residual> > l2_resp_func =
              Teuchos::rcp_dynamic_cast<panzer::Response_Functional<panzer::Traits::Residual> >(l2_resp);
       Teuchos::RCP<Thyra::VectorBase<double> > l2_respVec = Thyra::createMember(l2_resp_func->getVectorSpace());
       l2_resp_func->setVector(l2_respVec);
 
       Teuchos::RCP<panzer::ResponseBase> h1_resp = errorResponseLibrary->getResponse<panzer::Traits::Residual>("H1 Error");
-      Teuchos::RCP<panzer::Response_Functional<panzer::Traits::Residual> > h1_resp_func = 
+      Teuchos::RCP<panzer::Response_Functional<panzer::Traits::Residual> > h1_resp_func =
              Teuchos::rcp_dynamic_cast<panzer::Response_Functional<panzer::Traits::Residual> >(h1_resp);
       Teuchos::RCP<Thyra::VectorBase<double> > h1_respVec = Thyra::createMember(h1_resp_func->getVectorSpace());
       h1_resp_func->setVector(h1_respVec);
@@ -448,7 +448,7 @@ int main(int argc,char * argv[])
 
    // all done!
    /////////////////////////////////////////////////////////////
-   
+
    out << "ALL PASSED" << std::endl;
 
    return 0;
@@ -467,7 +467,7 @@ void testInitialization(const int basis_order,
     p.set("Basis Order",basis_order);
     p.set("Integration Order",integration_order);
   }
-  
+
    {
       std::size_t bc_id = 0;
       panzer::BCType bctype = panzer::BCT_Dirichlet;
@@ -478,10 +478,10 @@ void testInitialization(const int basis_order,
       double value = 0.0;
       Teuchos::ParameterList p;
       p.set("Value",value);
-      panzer::BC bc(bc_id, bctype, sideset_id, element_block_id, dof_name, 
+      panzer::BC bc(bc_id, bctype, sideset_id, element_block_id, dof_name,
   		    strategy, p);
       bcs.push_back(bc);
-   }    
+   }
 
    {
       std::size_t bc_id = 1;
@@ -493,10 +493,10 @@ void testInitialization(const int basis_order,
       double value = 0.0;
       Teuchos::ParameterList p;
       p.set("Value",value);
-      panzer::BC bc(bc_id, bctype, sideset_id, element_block_id, dof_name, 
+      panzer::BC bc(bc_id, bctype, sideset_id, element_block_id, dof_name,
   		    strategy, p);
       bcs.push_back(bc);
-   }    
+   }
 
    {
       std::size_t bc_id = 2;
@@ -508,10 +508,10 @@ void testInitialization(const int basis_order,
       double value = 0.0;
       Teuchos::ParameterList p;
       p.set("Value",value);
-      panzer::BC bc(bc_id, bctype, sideset_id, element_block_id, dof_name, 
+      panzer::BC bc(bc_id, bctype, sideset_id, element_block_id, dof_name,
   		    strategy, p);
       bcs.push_back(bc);
-   }    
+   }
 
    {
       std::size_t bc_id = 3;
@@ -523,8 +523,8 @@ void testInitialization(const int basis_order,
       double value = 0.0;
       Teuchos::ParameterList p;
       p.set("Value",value);
-      panzer::BC bc(bc_id, bctype, sideset_id, element_block_id, dof_name, 
+      panzer::BC bc(bc_id, bctype, sideset_id, element_block_id, dof_name,
   		    strategy, p);
       bcs.push_back(bc);
-   }    
+   }
 }

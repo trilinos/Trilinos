@@ -58,7 +58,7 @@ public:
 
 
    /** Use the physics block to construct a unique global indexer object.
-     * 
+     *
      * \param[in] mpiComm MPI communicator to use in the construction
      * \param[in] physicsBlocks A vector of physics block objects that contain
      *                          unknown field information.
@@ -72,23 +72,23 @@ public:
      *          the object is fully constructed. If it is false, the caller must
      *          finalize it.
      */
-   virtual Teuchos::RCP<panzer::UniqueGlobalIndexer<LO,GO> > 
+   virtual Teuchos::RCP<panzer::UniqueGlobalIndexer<LO,GO> >
    buildUniqueGlobalIndexer(const Teuchos::RCP<const Teuchos::OpaqueWrapper<MPI_Comm> > & mpiComm,
                             const std::vector<Teuchos::RCP<panzer::PhysicsBlock> > & physicsBlocks,
                             const Teuchos::RCP<ConnManager<LO,GO> > & connMngr,
                             const std::string & fieldOrder="") const;
 
    void setUseDOFManagerFEI(bool flag)
-   { 
-     useDOFManagerFEI_ = flag; 
+   {
+     useDOFManagerFEI_ = flag;
    }
 
    bool getUseDOFManagerFEI() const
-   { 
+   {
      return false;
    }
 
-   void setUseTieBreak(bool flag) 
+   void setUseTieBreak(bool flag)
    { useTieBreak_ = flag; }
 
    bool getUseTieBreak() const
@@ -103,7 +103,7 @@ public:
    static void buildFieldOrder(const std::string & fieldOrderStr,std::vector<std::string> & fieldOrder);
 protected:
    template <typename DOFManagerT>
-   Teuchos::RCP<panzer::UniqueGlobalIndexer<LO,GO> > 
+   Teuchos::RCP<panzer::UniqueGlobalIndexer<LO,GO> >
    buildUniqueGlobalIndexer(const Teuchos::RCP<const Teuchos::OpaqueWrapper<MPI_Comm> > & mpiComm,
                             const std::vector<Teuchos::RCP<panzer::PhysicsBlock> > & physicsBlocks,
                             const Teuchos::RCP<ConnManager<LO,GO> > & connMngr,

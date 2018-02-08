@@ -78,7 +78,7 @@ public:
    //! what is the 3D tuple describe this processor distribution
    Teuchos::Tuple<std::size_t,3> procRankToProcTuple(std::size_t procRank) const;
 
-protected: 
+protected:
    void initializeWithDefaults();
 
    void buildMetaData(stk::ParallelMachine parallelMach,STK_Interface & mesh) const;
@@ -95,7 +95,7 @@ protected:
    void buildTetsOnHex(const Teuchos::Tuple<int,3> & meshDesc,
                        const Teuchos::Tuple<int,3> & element,
                        stk::mesh::Part * block,
-                       const std::vector<stk::mesh::EntityId> & h_nodes, 
+                       const std::vector<stk::mesh::EntityId> & h_nodes,
                        STK_Interface & mesh) const;
 
    double x0_, y0_, z0_;

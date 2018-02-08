@@ -76,13 +76,13 @@ class Orientation;
 namespace panzer {
 
   class GlobalEvaluationDataContainer;
-  
+
   struct Traits {
 
     // ******************************************************************
     // *** Scalar Types
     // ******************************************************************
-    
+
     // Scalar types we plan to use
     typedef double RealType;
     // typedef Sacado::Fad::DFad<double> FadType;
@@ -96,7 +96,7 @@ namespace panzer {
     // typedef Sacado::Fad::SFad<FadType,1> HessianType;
     typedef Sacado::Fad::DFad<Sacado::Fad::SFad<RealType,1> > HessianType;
 #endif
-    
+
     // ******************************************************************
     // *** Evaluation Types
     // ******************************************************************
@@ -109,7 +109,7 @@ namespace panzer {
 #endif
 
     typedef Sacado::mpl::vector< Residual
-                               , Jacobian 
+                               , Jacobian
                                , Tangent
 #ifdef Panzer_BUILD_HESSIAN_SUPPORT
                                , Hessian
@@ -120,7 +120,7 @@ namespace panzer {
     // *** User Defined Object Passed in for Evaluation Method
     // ******************************************************************
 
-    struct SD { 
+    struct SD {
       Teuchos::RCP<const std::vector<panzer::Workset>> worksets_;
       Teuchos::RCP<const std::vector<Intrepid2::Orientation>> orientations_;
     };
@@ -139,26 +139,26 @@ namespace panzer {
     typedef void* PostEvalData;
 
   };
- 
+
 }
 
 namespace PHX {
 
   template<>
-  struct eval_scalar_types<panzer::Traits::Residual> 
+  struct eval_scalar_types<panzer::Traits::Residual>
   { typedef Sacado::mpl::vector<panzer::Traits::RealType,bool> type; };
 
   template<>
-  struct eval_scalar_types<panzer::Traits::Jacobian> 
+  struct eval_scalar_types<panzer::Traits::Jacobian>
   { typedef Sacado::mpl::vector<panzer::Traits::FadType,panzer::Traits::RealType,bool> type; };
 
   template<>
-  struct eval_scalar_types<panzer::Traits::Tangent> 
+  struct eval_scalar_types<panzer::Traits::Tangent>
   { typedef Sacado::mpl::vector<panzer::Traits::FadType,panzer::Traits::RealType,bool> type; };
 
 #ifdef Panzer_BUILD_HESSIAN_SUPPORT
   template<>
-  struct eval_scalar_types<panzer::Traits::Hessian> 
+  struct eval_scalar_types<panzer::Traits::Hessian>
   { typedef Sacado::mpl::vector<panzer::Traits::HessianType,bool> type; };
 #endif
 

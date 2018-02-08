@@ -53,9 +53,9 @@ public:
    BlockedDOFManagerFactory() : useDOFManagerFEI_(false), useTieBreak_(false) {}
    virtual ~BlockedDOFManagerFactory() {}
 
-   /** Does a fieldOrder string require blocking? 
+   /** Does a fieldOrder string require blocking?
      * A field order is basically stetup like this
-     *    blocked: <field 0> <field 1> 
+     *    blocked: <field 0> <field 1>
      * where two blocks will be created. To merge fields
      * between blocks use a hyphen, i.e.
      *    blocked: <field 0> <field 1> - <field 2> - <field 3>
@@ -65,9 +65,9 @@ public:
      */
    static bool requiresBlocking(const std::string & fieldorder);
 
-   /** Does a fieldOrder string require blocking? 
+   /** Does a fieldOrder string require blocking?
      * A field order is basically stetup like this
-     *    blocked: <field 0> <field 1> 
+     *    blocked: <field 0> <field 1>
      * where two blocks will be created. To merge fields
      * between blocks use a hyphen, i.e.
      *    blocked: <field 0> <field 1> - <field 2> - <field 3>
@@ -78,7 +78,7 @@ public:
    static void buildBlocking(const std::string & fieldorder,std::vector<std::vector<std::string> > & blocks);
 
    /** Use the physics block to construct a unique global indexer object.
-     * 
+     *
      * \param[in] mpiComm MPI communicator to use in the construction
      * \param[in] physicsBlocks A vector of physics block objects that contain
      *                          unknown field information.
@@ -97,7 +97,7 @@ public:
      *          the object is fully constructed. If it is false, the caller must
      *          finalize it.
      */
-   virtual Teuchos::RCP<panzer::UniqueGlobalIndexer<LO,std::pair<int,GO> > > 
+   virtual Teuchos::RCP<panzer::UniqueGlobalIndexer<LO,std::pair<int,GO> > >
    buildUniqueGlobalIndexer(const Teuchos::RCP<const Teuchos::OpaqueWrapper<MPI_Comm> > & mpiComm,
                             const std::vector<Teuchos::RCP<panzer::PhysicsBlock> > & physicsBlocks,
                             const Teuchos::RCP<ConnManager<LO,GO> > & connMngr,
@@ -109,7 +109,7 @@ public:
    bool getUseDOFManagerFEI() const
    { return useDOFManagerFEI_; }
 
-   void setUseTieBreak(bool flag) 
+   void setUseTieBreak(bool flag)
    { useTieBreak_ = flag; }
 
    bool getUseTieBreak()

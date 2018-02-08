@@ -53,7 +53,7 @@ namespace panzer {
 PHX_EVALUATOR_CTOR(BasisValues_Evaluator,p)
   : derivativesRequired_(true)
 {
-  Teuchos::RCP<const panzer::PointRule> pointRule 
+  Teuchos::RCP<const panzer::PointRule> pointRule
      = p.get< Teuchos::RCP<const panzer::PointRule> >("Point Rule");
   Teuchos::RCP<const panzer::PureBasis> inBasis
      = p.get<Teuchos::RCP<const panzer::PureBasis> >("Basis");
@@ -117,36 +117,36 @@ void BasisValues_Evaluator<EvalT,TRAITST>::initialize(const Teuchos::RCP<const p
   // the field manager will allocate all of these field
 
   if(basis->getElementSpace()==panzer::PureBasis::HGRAD) {
-    this->addEvaluatedField(basisValues->basis_ref_scalar);      
-    this->addEvaluatedField(basisValues->basis_scalar);           
+    this->addEvaluatedField(basisValues->basis_ref_scalar);
+    this->addEvaluatedField(basisValues->basis_scalar);
 
     if(derivativesRequired) {
-      this->addEvaluatedField(basisValues->grad_basis_ref);   
-      this->addEvaluatedField(basisValues->grad_basis);        
+      this->addEvaluatedField(basisValues->grad_basis_ref);
+      this->addEvaluatedField(basisValues->grad_basis);
     }
   }
 
   if(basis->getElementSpace()==panzer::PureBasis::HCURL) {
-    this->addEvaluatedField(basisValues->basis_ref_vector);      
-    this->addEvaluatedField(basisValues->basis_vector);           
+    this->addEvaluatedField(basisValues->basis_ref_vector);
+    this->addEvaluatedField(basisValues->basis_vector);
 
     if(derivativesRequired && space_dim==2) {
-      this->addEvaluatedField(basisValues->curl_basis_ref_scalar);     
-      this->addEvaluatedField(basisValues->curl_basis_scalar);          
+      this->addEvaluatedField(basisValues->curl_basis_ref_scalar);
+      this->addEvaluatedField(basisValues->curl_basis_scalar);
     }
     else if(derivativesRequired && space_dim==3) {
-      this->addEvaluatedField(basisValues->curl_basis_ref_vector);     
-      this->addEvaluatedField(basisValues->curl_basis_vector);          
+      this->addEvaluatedField(basisValues->curl_basis_ref_vector);
+      this->addEvaluatedField(basisValues->curl_basis_vector);
     }
   }
 
   if(basis->getElementSpace()==panzer::PureBasis::HDIV) {
-    this->addEvaluatedField(basisValues->basis_ref_vector);      
-    this->addEvaluatedField(basisValues->basis_vector);           
+    this->addEvaluatedField(basisValues->basis_ref_vector);
+    this->addEvaluatedField(basisValues->basis_vector);
 
     if(derivativesRequired) {
-      this->addEvaluatedField(basisValues->div_basis_ref);     
-      this->addEvaluatedField(basisValues->div_basis);          
+      this->addEvaluatedField(basisValues->div_basis_ref);
+      this->addEvaluatedField(basisValues->div_basis);
     }
   }
 
@@ -172,36 +172,36 @@ PHX_POST_REGISTRATION_SETUP(BasisValues_Evaluator, sd, fm)
   // setup the pointers for the basis values data structure
 
   if(basis->getElementSpace()==panzer::PureBasis::HGRAD) {
-    this->utils.setFieldData(basisValues->basis_ref_scalar,fm);      
-    this->utils.setFieldData(basisValues->basis_scalar,fm);           
+    this->utils.setFieldData(basisValues->basis_ref_scalar,fm);
+    this->utils.setFieldData(basisValues->basis_scalar,fm);
 
     if(derivativesRequired_) {
-      this->utils.setFieldData(basisValues->grad_basis_ref,fm);   
-      this->utils.setFieldData(basisValues->grad_basis,fm);        
+      this->utils.setFieldData(basisValues->grad_basis_ref,fm);
+      this->utils.setFieldData(basisValues->grad_basis,fm);
     }
   }
 
   if(basis->getElementSpace()==panzer::PureBasis::HCURL) {
-    this->utils.setFieldData(basisValues->basis_ref_vector,fm);      
-    this->utils.setFieldData(basisValues->basis_vector,fm);           
+    this->utils.setFieldData(basisValues->basis_ref_vector,fm);
+    this->utils.setFieldData(basisValues->basis_vector,fm);
 
     if(derivativesRequired_ && space_dim==2) {
-      this->utils.setFieldData(basisValues->curl_basis_ref_scalar,fm);     
-      this->utils.setFieldData(basisValues->curl_basis_scalar,fm);          
+      this->utils.setFieldData(basisValues->curl_basis_ref_scalar,fm);
+      this->utils.setFieldData(basisValues->curl_basis_scalar,fm);
     }
     else if(derivativesRequired_ && space_dim==3) {
-      this->utils.setFieldData(basisValues->curl_basis_ref_vector,fm);     
-      this->utils.setFieldData(basisValues->curl_basis_vector,fm);          
+      this->utils.setFieldData(basisValues->curl_basis_ref_vector,fm);
+      this->utils.setFieldData(basisValues->curl_basis_vector,fm);
     }
   }
 
   if(basis->getElementSpace()==panzer::PureBasis::HDIV) {
-    this->utils.setFieldData(basisValues->basis_ref_vector,fm);      
-    this->utils.setFieldData(basisValues->basis_vector,fm);           
+    this->utils.setFieldData(basisValues->basis_ref_vector,fm);
+    this->utils.setFieldData(basisValues->basis_vector,fm);
 
     if(derivativesRequired_) {
-      this->utils.setFieldData(basisValues->div_basis_ref,fm);     
-      this->utils.setFieldData(basisValues->div_basis,fm);          
+      this->utils.setFieldData(basisValues->div_basis_ref,fm);
+      this->utils.setFieldData(basisValues->div_basis,fm);
     }
   }
 
@@ -209,7 +209,7 @@ PHX_POST_REGISTRATION_SETUP(BasisValues_Evaluator, sd, fm)
 
 //**********************************************************************
 PHX_EVALUATE_FIELDS(BasisValues_Evaluator, workset)
-{ 
+{
   // evaluate the point values (construct jacobians etc...)
   basisValues->evaluateValues(pointValues.coords_ref,
                               pointValues.jac,
@@ -219,11 +219,11 @@ PHX_EVALUATE_FIELDS(BasisValues_Evaluator, workset)
   // this can be over-ridden in basisValues e.g., DG element setting
   if(basis->requiresOrientations()) {
     const WorksetDetails & details = workset;
-    
+
     std::vector<Intrepid2::Orientation> ortPerWorkset;
     for (index_t c=0;c<workset.num_cells;++c)
       ortPerWorkset.push_back((*orientations)[details.cell_local_ids[c]]);
-    
+
     basisValues->applyOrientations(ortPerWorkset);
   }
 }

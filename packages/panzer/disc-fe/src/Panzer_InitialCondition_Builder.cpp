@@ -52,7 +52,7 @@
 
 namespace panzer {
 
-void 
+void
 setupInitialConditionFieldManagers(WorksetContainer & wkstContainer,
                                    const std::vector<Teuchos::RCP<panzer::PhysicsBlock> >& physicsBlocks,
                                    const panzer::ClosureModelFactory_TemplateManager<panzer::Traits>& cm_factory,
@@ -69,18 +69,18 @@ setupInitialConditionFieldManagers(WorksetContainer & wkstContainer,
     std::string blockId = pb->elementBlockID();
 
     // build a field manager object
-    Teuchos::RCP<PHX::FieldManager<panzer::Traits> > fm 
+    Teuchos::RCP<PHX::FieldManager<panzer::Traits> > fm
           = Teuchos::rcp(new PHX::FieldManager<panzer::Traits>);
-    
+
     // Choose model sublist for this element block
     std::string closure_model_name = "";
     if (ic_block_closure_models.isSublist(blockId))
       closure_model_name = blockId;
     else if (ic_block_closure_models.isSublist("Default"))
       closure_model_name = "Default";
-    else 
-      TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, "Failed to find initial condition for element block \"" << blockId 
-                                                      << "\".  You must provide an initial condition for each element block or set a default!" 
+    else
+      TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, "Failed to find initial condition for element block \"" << blockId
+                                                      << "\".  You must provide an initial condition for each element block or set a default!"
                                                       << ic_block_closure_models);
 
     // use the physics block to register evaluators
@@ -94,13 +94,13 @@ setupInitialConditionFieldManagers(WorksetContainer & wkstContainer,
 
     fm->postRegistrationSetup(setupData);
     phx_ic_field_managers[blockId] = fm;
-    
+
     if (write_graphviz_file)
       fm->writeGraphvizFile(graphviz_file_prefix+"_IC_"+blockId);
   }
 }
 
-void 
+void
 setupInitialConditionFieldManagers(WorksetContainer & wkstContainer,
                                    const std::vector<Teuchos::RCP<panzer::PhysicsBlock> >& physicsBlocks,
                                    const panzer::ClosureModelFactory_TemplateManager<panzer::Traits>& cm_factory,
@@ -118,23 +118,23 @@ setupInitialConditionFieldManagers(WorksetContainer & wkstContainer,
     std::string blockId = pb->elementBlockID();
 
     // build a field manager object
-    Teuchos::RCP<PHX::FieldManager<panzer::Traits> > fm 
+    Teuchos::RCP<PHX::FieldManager<panzer::Traits> > fm
           = Teuchos::rcp(new PHX::FieldManager<panzer::Traits>);
-    
+
     // Choose model sublist for this element block
     std::string closure_model_name = "";
     if (ic_block_closure_models.isSublist(blockId))
       closure_model_name = blockId;
     else if (ic_block_closure_models.isSublist("Default"))
       closure_model_name = "Default";
-    else 
-      TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, "Failed to find initial condition for element block \"" << blockId 
-                                                      << "\".  You must provide an initial condition for each element block or set a default!" 
+    else
+      TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, "Failed to find initial condition for element block \"" << blockId
+                                                      << "\".  You must provide an initial condition for each element block or set a default!"
                                                       << ic_block_closure_models);
 
     // build and register all closure models
     pb->buildAndRegisterClosureModelEvaluators(*fm,cm_factory,closure_models,user_data);
-     
+
     // use the physics block to register evaluators
     pb->buildAndRegisterInitialConditionEvaluators(*fm, cm_factory, closure_model_name, ic_block_closure_models, lo_factory, user_data);
 
@@ -146,13 +146,13 @@ setupInitialConditionFieldManagers(WorksetContainer & wkstContainer,
 
     fm->postRegistrationSetup(setupData);
     phx_ic_field_managers[blockId] = fm;
-    
+
     if (write_graphviz_file)
       fm->writeGraphvizFile(graphviz_file_prefix+"_IC_"+blockId);
   }
 }
 
-void 
+void
 evaluateInitialCondition(WorksetContainer & wkstContainer,
                          const std::map< std::string,Teuchos::RCP< PHX::FieldManager<panzer::Traits> > >& phx_ic_field_managers,
                          Teuchos::RCP<panzer::LinearObjContainer> loc,
@@ -190,10 +190,10 @@ evaluateInitialCondition(WorksetContainer & wkstContainer,
     std::vector<panzer::Workset>& w = *wkstContainer.getWorksets(wd);
     for (std::size_t i = 0; i < w.size(); ++i) {
       panzer::Workset& workset = w[i];
-      
+
       // Need to figure out how to get restart time from Rythmos.
       workset.time = time_stamp;
-      
+
       fm->evaluateFields<panzer::Traits::Residual>(workset);
     }
   }
@@ -239,17 +239,17 @@ namespace {
 
 template <typename EvalT>
 class EquationSet_IC : public EquationSet_DefaultImpl<EvalT> {
-public:    
+public:
 
    /** In the constructor you set all the fields provided by this
-     * equation set. 
+     * equation set.
      */
    EquationSet_IC(const Teuchos::RCP<Teuchos::ParameterList>& params,
                   const int& default_integration_order,
                   const CellData& cell_data,
                   const Teuchos::RCP<GlobalData>& global_data,
                   const bool build_transient_support);
-    
+
    /** The specific evaluators are registered with the field manager argument.
      */
    void buildAndRegisterEquationSetEvaluators(PHX::FieldManager<Traits>& /* fm */,
@@ -276,7 +276,7 @@ EquationSet_IC(const Teuchos::RCP<Teuchos::ParameterList>& params,
   valid_parameters_sublist.set("Basis Order",1,"Order of the basis");
 
   for(auto itr=params->begin();itr!=params->end();++itr) {
-     
+
     const std::string field = params->name(itr);
     const Teuchos::ParameterEntry & entry = params->entry(itr);
 
@@ -291,7 +291,7 @@ EquationSet_IC(const Teuchos::RCP<Teuchos::ParameterList>& params,
 
     this->addDOF(field,basis_type,basis_order,default_integration_order);
   }
-  
+
   this->addClosureModel("");
 
   this->setupDOFs();
@@ -311,29 +311,29 @@ public:
 		    const Teuchos::RCP<GlobalData>& global_data,
                     const bool build_transient_support) const
    {
-      Teuchos::RCP<EquationSet_TemplateManager<Traits> > eq_set= 
+      Teuchos::RCP<EquationSet_TemplateManager<Traits> > eq_set=
          Teuchos::rcp(new EquationSet_TemplateManager<Traits>);
-         
+
       bool found = false; // this is used by PANZER_BUILD_EQSET_OBJECTS
-         
+
       // macro checks if(ies.name=="Poisson") then an EquationSet_Energy object is constructed
       PANZER_BUILD_EQSET_OBJECTS("IC", EquationSet_IC)
-         
+
       // make sure your equation set has been found
       if(!found) {
 	std::string msg = "Error - the \"Equation Set\" called \"" + params->get<std::string>("Type") +
                            "\" is not a valid equation set identifier. Please supply the correct factory.\n";
          TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, msg);
       }
-         
+
       return eq_set;
    }
-    
+
 };
 
 } // end anonymous namespace
 
-void 
+void
 setupControlInitialCondition(const std::map<std::string,Teuchos::RCP<const shards::CellTopology> > & block_ids_to_cell_topo,
                              const std::map<std::string,std::vector<ICFieldDescriptor> > & block_ids_to_fields,
                              WorksetContainer & wkstContainer,
@@ -359,7 +359,7 @@ setupControlInitialCondition(const std::map<std::string,Teuchos::RCP<const shard
                                                "initial_condition_control_test",
                                                phx_ic_field_managers);
 
-  
+
   Teuchos::RCP<LinearObjContainer> loc  = lof.buildLinearObjContainer();
   Teuchos::rcp_dynamic_cast<ThyraObjContainer<double> >(loc)->set_x_th(vec);
 

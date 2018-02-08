@@ -49,16 +49,16 @@
 #include "Panzer_Evaluator_Macros.hpp"
 
 namespace panzer {
-    
+
 /** Compute normals on a particular side of an element.
   * By default the normals are normalized. A second option
   * would be for the normals to be unormalized values.
-  
+
     <ParameterList name="Name" type="string" value="<Name to give to the normals field>"/>
     <ParameterList name="Side Id" type="int" value="<side id to use for computing normals>"/>
     <ParameterList name="IR" type="RCP<IntegrationRule>" value="<user specified IntegrationRule>"/>
     <ParameterList name="Normalize" type="bool" value="true"/>
-  
+
   * The Name used to define the normals field is specified by "Name"
   * and the data layout is defined by the dl_vector field in the IntegrationRule.
   * The side ID must be legitimate for this topology and will be used to
@@ -79,7 +79,7 @@ PANZER_EVALUATOR_CLASS(Normals)
 
 public:
   // for testing purposes
-  const PHX::FieldTag & getFieldTag() const 
+  const PHX::FieldTag & getFieldTag() const
   { return normals.fieldTag(); }
 
 PANZER_EVALUATOR_CLASS_END

@@ -21,7 +21,7 @@ namespace panzer_stk {
 
 /** This class defines a response based solution writer.
   */
-template <typename EvalT> 
+template <typename EvalT>
 class ResponseEvaluatorFactory_SolutionWriter : public panzer::ResponseEvaluatorFactory<EvalT> {
 public:
 
@@ -29,10 +29,10 @@ public:
      : mesh_(mesh), addSolutionFields_(true), addCoordinateFields_(true) {}
 
    virtual ~ResponseEvaluatorFactory_SolutionWriter() {}
- 
+
    /** Build the response object used by this factory. This object
      * assumes the role of the scatter target and will be accessible
-     * by all the evaluators in the field managers. 
+     * by all the evaluators in the field managers.
      *
      * \param[in] responseName Name of response to be built. This
      *                         name will be used for looking up
@@ -42,11 +42,11 @@ public:
    virtual Teuchos::RCP<panzer::ResponseBase> buildResponseObject(const std::string & responseName) const;
 
    virtual Teuchos::RCP<panzer::ResponseBase> buildResponseObject(const std::string & responseName,
-                                                          const std::vector<panzer::WorksetDescriptor>& /* wkstDesc */) const 
+                                                          const std::vector<panzer::WorksetDescriptor>& /* wkstDesc */) const
    { return buildResponseObject(responseName); }
-   
+
    /** Build and register evaluators for a response on a particular physics
-     * block. 
+     * block.
      *
      * \param[in] responseName The name of the response to be constructed
      *                         by these evaluators.
@@ -65,7 +65,7 @@ public:
      * where a response may support a particular evaluation type, however at runtime the user
      * decides not to enable the (say) Jacobian evaluation of this response.
      *
-     * Note that use of this mechanism is complementary to having the builder return 
+     * Note that use of this mechanism is complementary to having the builder return
      * <code>Teuchos::null</code> for a particular evaluation type.
      */
    virtual bool typeSupported() const;
@@ -76,7 +76,7 @@ public:
    static void bucketByBasisType(const std::vector<std::pair<std::string,Teuchos::RCP<const panzer::PureBasis> > > & providedDofs,
                                  std::map<std::string,std::vector<std::string> > & basisBucket);
 
-   /** Scale a field before writing out to STK by a prescribed value (the implicit default is 1.0). 
+   /** Scale a field before writing out to STK by a prescribed value (the implicit default is 1.0).
      * A warning will be printed if no field is found of that name when <code>buildAndRegisterEvaluators</code>
      * is called.
      *
@@ -93,12 +93,12 @@ public:
 
    /** Enable/disable addition of solution fields. Note that this "true" by default.
      */
-   void setAddSolutionFields(bool asf) 
+   void setAddSolutionFields(bool asf)
    { addSolutionFields_ = asf; }
 
    /** Enable/disable addition of coordinate fields. Note that this "true" by default.
      */
-   void setAddCoordinateFields(bool acf) 
+   void setAddCoordinateFields(bool acf)
    { addCoordinateFields_ = acf; }
 
    /** Remove a field (even a solution field) from the response. Note that even if a field has not
@@ -119,7 +119,7 @@ private:
 
    struct RemovedFieldsSearchUnaryFunctor : public std::unary_function<std::pair<std::string,const panzer::PureBasis>,bool> {
      std::vector<std::string> removedFields_;
-     bool operator() (const std::pair<std::string,Teuchos::RCP<const panzer::PureBasis> > & field) 
+     bool operator() (const std::pair<std::string,Teuchos::RCP<const panzer::PureBasis> > & field)
      { return std::find(removedFields_.begin(),removedFields_.end(),field.first)!=removedFields_.end(); }
    };
 
@@ -134,7 +134,7 @@ private:
    bool addCoordinateFields_;
 };
 
-/** A simple builder for this the SolutionWriter response factory, simply set the mesh 
+/** A simple builder for this the SolutionWriter response factory, simply set the mesh
   * and this will build the response factories for you. (Pass into ResponseLibrary::addResponse)
   */
 struct RespFactorySolnWriter_Builder {
@@ -157,10 +157,10 @@ struct RespFactorySolnWriter_Builder {
 
   template <typename T>
   Teuchos::RCP<panzer::ResponseEvaluatorFactoryBase> build() const
-  { 
-    Teuchos::RCP<ResponseEvaluatorFactory_SolutionWriter<T> > ref = 
-        Teuchos::rcp(new panzer_stk::ResponseEvaluatorFactory_SolutionWriter<T>(mesh)); 
- 
+  {
+    Teuchos::RCP<ResponseEvaluatorFactory_SolutionWriter<T> > ref =
+        Teuchos::rcp(new panzer_stk::ResponseEvaluatorFactory_SolutionWriter<T>(mesh));
+
     // disable/enable the solution fields
     ref->setAddSolutionFields(addSolutionFields_);
 
@@ -176,7 +176,7 @@ struct RespFactorySolnWriter_Builder {
 
     // set all scaled field values
     for(std::unordered_map<std::string,double>::const_iterator itr=fieldToScalar_.begin();
-        itr!=fieldToScalar_.end();++itr) 
+        itr!=fieldToScalar_.end();++itr)
       ref->scaleField(itr->first,itr->second);
 
     return ref;
@@ -184,12 +184,12 @@ struct RespFactorySolnWriter_Builder {
 
    /** Enable/disable addition of solution fields. Note that this "true" by default.
      */
-   void setAddSolutionFields(bool asf) 
+   void setAddSolutionFields(bool asf)
    { addSolutionFields_ = asf; }
 
    /** Enable/disable addition of coordinate fields. Note that this "true" by default.
      */
-   void setAddCoordinateFields(bool acf) 
+   void setAddCoordinateFields(bool acf)
    { addCoordinateFields_ = acf; }
 
 private:

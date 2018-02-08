@@ -53,11 +53,11 @@ namespace panzer {
     : intrepidBasis_(intrepidBasis) {
     const auto dofOrd = intrepidBasis_->getAllDofOrdinal(); // rank 3 view
     const auto dofTag = intrepidBasis_->getAllDofTags(); // rank 2 view
-    
-    const int 
+
+    const int
       iend = dofOrd.dimension(0),
       jend = dofOrd.dimension(1);
-    
+
     subcellIndicies_.resize(iend);
     for (int i=0;i<iend;++i) {
       subcellIndicies_[i].resize(jend);
@@ -65,8 +65,8 @@ namespace panzer {
         const int ord = dofOrd(i, j, 0);
         if (ord >= 0) {
           const int ndofs = dofTag(ord, 3);
-          subcellIndicies_[i][j].resize(ndofs); 
-          for (int k=0;k<ndofs;++k) 
+          subcellIndicies_[i][j].resize(ndofs);
+          for (int k=0;k<ndofs;++k)
             subcellIndicies_[i][j][k] = dofOrd(i, j, k);
         } else {
           // if ordinal does not exist empty container.
@@ -75,8 +75,8 @@ namespace panzer {
       }
     }
   }
-  
-  int 
+
+  int
   Intrepid2FieldPattern::
   getSubcellCount(int dim) const
   {
@@ -87,20 +87,20 @@ namespace panzer {
   const std::vector<int> &
   Intrepid2FieldPattern::getSubcellIndices(int dim, int cellIndex) const
   {
-    if ((dim       < static_cast<int>(subcellIndicies_.size()     ))  and 
+    if ((dim       < static_cast<int>(subcellIndicies_.size()     ))  and
         (cellIndex < static_cast<int>(subcellIndicies_[dim].size())))
       return subcellIndicies_[dim][cellIndex];
 
     return empty_;
   }
 
-  void 
+  void
   Intrepid2FieldPattern::
   getSubcellClosureIndices(int dim,int cellIndex,std::vector<int> & indices) const
   {
     // wipe out previous values
-    indices.clear(); 
-    
+    indices.clear();
+
     if (dim == 0) {
       indices = getSubcellIndices(dim,cellIndex);
     } else {
@@ -109,7 +109,7 @@ namespace panzer {
 
       std::set<std::pair<unsigned,unsigned> > closure;
       Intrepid2FieldPattern::buildSubcellClosure(ct,dim,cellIndex,closure);
-      
+
       // grab basis indices on the closure of the sub cell
       std::set<std::pair<unsigned,unsigned> >::const_iterator itr;
       for (itr=closure.begin();itr!=closure.end();++itr) {
@@ -121,22 +121,22 @@ namespace panzer {
       }
     }
   }
-  
-  int 
+
+  int
   Intrepid2FieldPattern::
   getDimension() const
   {
     return intrepidBasis_->getBaseCellTopology().getDimension();
   }
 
-  shards::CellTopology 
+  shards::CellTopology
   Intrepid2FieldPattern::
   getCellTopology() const
   {
     return intrepidBasis_->getBaseCellTopology();
   }
 
-  void 
+  void
   Intrepid2FieldPattern::
   getSubcellNodes(const shards::CellTopology & cellTopo,unsigned dim,unsigned subCell,
                   std::vector<unsigned> & nodes)
@@ -155,13 +155,13 @@ namespace panzer {
     std::sort(nodes.begin(),nodes.end());
   }
 
-  void 
+  void
   Intrepid2FieldPattern::
   findContainedSubcells(const shards::CellTopology & cellTopo,unsigned dim,
                         const std::vector<unsigned> & nodes,
                         std::set<std::pair<unsigned,unsigned> > & subCells)
   {
-    unsigned subCellCount = cellTopo.getSubcellCount(dim); 
+    unsigned subCellCount = cellTopo.getSubcellCount(dim);
     for(unsigned subCellOrd=0;subCellOrd<subCellCount;++subCellOrd) {
       // get all nodes in sub cell
       std::vector<unsigned> subCellNodes;
@@ -172,7 +172,7 @@ namespace panzer {
                                            subCellNodes.begin(), subCellNodes.end());
       if(isSubset)
         subCells.insert(std::make_pair(dim,subCellOrd));
-       
+
     }
 
     // stop recursion base case
@@ -182,7 +182,7 @@ namespace panzer {
     findContainedSubcells(cellTopo,dim-1,nodes,subCells);
   }
 
-  void 
+  void
   Intrepid2FieldPattern::
   buildSubcellClosure(const shards::CellTopology & cellTopo,unsigned dim,unsigned subCell,
                       std::set<std::pair<unsigned,unsigned> > & closure)
@@ -212,20 +212,20 @@ namespace panzer {
     };
   }
 
-  bool 
+  bool
   Intrepid2FieldPattern::
   supportsInterpolatoryCoordinates() const
   {
     // we no longer use CoordsInterface
     return true;
   }
-  
+
   /** Get the local coordinates for this field. This is independent of element
    * locations.
    *
    * \param[in,out] coords   Coordinates associated with this field type.
    */
-  void 
+  void
   Intrepid2FieldPattern::
   getInterpolatoryCoordinates(Kokkos::DynRankView<double,PHX::Device> & coords) const
   {
@@ -239,7 +239,7 @@ namespace panzer {
    *
    * \param[in,out] coords   Coordinates associated with this field type.
    */
-  void 
+  void
   Intrepid2FieldPattern::
   getInterpolatoryCoordinates(const Kokkos::DynRankView<double,PHX::Device> & cellVertices,
                               Kokkos::DynRankView<double,PHX::Device> & coords) const
@@ -260,5 +260,5 @@ namespace panzer {
       cellTools.mapToPhysicalFrame(coords,localCoords,cellVertices,intrepidBasis_->getBaseCellTopology());
     }
   }
-  
+
 }

@@ -52,31 +52,31 @@
 #include "Thyra_DefaultProductVector.hpp"
 
 namespace user_app {
-  
+
   class NOXObserver_NeumannBCAnalyticSystemTest : public NOX::Abstract::PrePostOperator {
-    
+
   public:
-    
+
     NOXObserver_NeumannBCAnalyticSystemTest()
-    { 
+    {
 
     }
-      
+
     void runPreIterate(const NOX::Solver::Generic& /* solver */)
     {
 
     }
-    
+
     void runPostIterate(const NOX::Solver::Generic& /* solver */)
     {
 
     }
-    
+
     void runPreSolve(const NOX::Solver::Generic& /* solver */)
     {
 
     }
-    
+
     void runPostSolve(const NOX::Solver::Generic& solver)
     {
       /*
@@ -86,7 +86,7 @@ namespace user_app {
         2.0 for temperature on the left surface where the neumann
         condition is applied.  We will check exactly one node on this
         boundary and make sure it is within the expected error
-        (accounting for discretization error).  
+        (accounting for discretization error).
 
 	IMPORTANT: If the global dof numbering scheme changes in the
 	future, this test could fail by grabbing the wrong node.
@@ -95,7 +95,7 @@ namespace user_app {
       const NOX::Abstract::Vector& x = solver.getSolutionGroup().getX();
       const NOX::Thyra::Vector* n_th_x = dynamic_cast<const NOX::Thyra::Vector*>(&x);
       TEUCHOS_TEST_FOR_EXCEPTION(n_th_x == NULL, std::runtime_error, "Failed to dynamic_cast to NOX::Thyra::Vector!")
-      const ::Thyra::VectorBase<double>& th_x = n_th_x->getThyraVector(); 
+      const ::Thyra::VectorBase<double>& th_x = n_th_x->getThyraVector();
 
       // Assume a single process job (enforced in CMakeLists.txt file)
 
@@ -104,7 +104,7 @@ namespace user_app {
       TEUCHOS_TEST_FOR_EXCEPTION(th_spmd_x == NULL, std::runtime_error, "Failed to dynamic_cast to Thyra SPMD vector!");
 
       Teuchos::ArrayRCP<const double> local_values;
-     
+
       th_spmd_x->getLocalData(outArg(local_values));
 
 //       for (std::size_t i=0; i < local_values.size(); ++i)
@@ -116,9 +116,9 @@ namespace user_app {
       TEUCHOS_TEST_FOR_EXCEPTION( std::fabs(local_values[0] - 2.0) > tol, std::runtime_error, "Solution value for Neumann Condition is " << local_values[0] << " and should be 2.0.  The tolerance condition, std::fabs(local_values[0] - 2.0) > tol, where tol is " << tol << " has been violated, causing the test to fail.");
 
       local_values = Teuchos::null;
-   
+
     }
-    
+
   };
 }
 

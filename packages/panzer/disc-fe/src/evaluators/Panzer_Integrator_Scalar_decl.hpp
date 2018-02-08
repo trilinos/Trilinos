@@ -52,7 +52,7 @@
 #include "Panzer_Evaluator_Macros.hpp"
 
 namespace panzer {
-    
+
 /** This integrates a scalar quanity over each cell.
   * It is useful for comptuing integral responses.
 
@@ -67,9 +67,9 @@ namespace panzer {
   \endverbatim
   */
 PANZER_EVALUATOR_CLASS(Integrator_Scalar)
-  
+
   PHX::MDField<ScalarT> integral;  // result
-    
+
   PHX::MDField<const ScalarT,Cell,IP> scalar; // function to be integrated
 
   std::vector<PHX::MDField<const ScalarT,Cell,IP> > field_multipliers;
@@ -84,7 +84,7 @@ PANZER_EVALUATOR_CLASS(Integrator_Scalar)
 
 public:
   // for testing purposes
-  const PHX::FieldTag & getFieldTag() const 
+  const PHX::FieldTag & getFieldTag() const
   { return integral.fieldTag(); }
 
 private:

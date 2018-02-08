@@ -91,7 +91,7 @@ Teuchos::RCP<STK_Interface> LineMeshFactory::buildUncommitedMesh(stk::ParallelMa
    buildMetaData(parallelMach,*mesh);
 
    mesh->addPeriodicBCs(periodicBCVec_);
- 
+
    return mesh;
 }
 
@@ -123,8 +123,8 @@ void LineMeshFactory::setParameterList(const Teuchos::RCP<Teuchos::ParameterList
 
    setMyParamList(paramList);
 
-   x0_ = paramList->get<double>("X0"); 
-   xf_ = paramList->get<double>("Xf"); 
+   x0_ = paramList->get<double>("X0");
+   xf_ = paramList->get<double>("Xf");
    xBlocks_ = paramList->get<int>("X Blocks");
    nXElems_ = paramList->get<int>("X Elements");
 
@@ -181,7 +181,7 @@ void LineMeshFactory::buildMetaData(stk::ParallelMachine /* parallelMach */, STK
       }
    }
 
-   // add sidesets 
+   // add sidesets
    mesh.addSideset("left",side_ctd);
    mesh.addSideset("right",side_ctd);
 }
@@ -278,7 +278,7 @@ void LineMeshFactory::addSideSets(STK_Interface & mesh) const
       // vertical boundaries
       ///////////////////////////////////////////
 
-      if(nx+1==totalXElems) { 
+      if(nx+1==totalXElems) {
          stk::mesh::Entity edge = mesh.findConnectivityById(element, sideRank, 1);
 
          // on the right
@@ -303,7 +303,7 @@ Teuchos::Tuple<std::size_t,2> LineMeshFactory::procRankToProcTuple(std::size_t p
 {
    std::size_t i=0,j=0;
 
-   j = procRank/machSize_; 
+   j = procRank/machSize_;
    procRank = procRank % machSize_;
    i = procRank;
 

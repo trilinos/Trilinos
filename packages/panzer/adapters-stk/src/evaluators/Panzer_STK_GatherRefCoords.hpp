@@ -66,7 +66,7 @@ namespace panzer_stk {
   * "Field Names" of type <code>Teuchos::RCP<std::vector<std::string> ></code>
   * and "Basis" of type <code>Teuchos::RCP<panzer::Basis></code>.
   */
-template<typename EvalT, typename Traits> 
+template<typename EvalT, typename Traits>
 class GatherRefCoords
   : public panzer::EvaluatorWithBaseImpl<Traits>,
     public PHX::EvaluatorDerived<EvalT, Traits> {
@@ -75,17 +75,17 @@ public:
   GatherRefCoords(const Teuchos::RCP<const STK_Interface> & mesh,
                   const panzer::BasisIRLayout & basis,
                   const std::string & fieldName);
-  
+
   void postRegistrationSetup(typename Traits::SetupData d,
 			     PHX::FieldManager<Traits>& vm);
-  
+
   void evaluateFields(typename Traits::EvalData d);
 
 private:
   typedef typename EvalT::ScalarT ScalarT;
 
   PHX::MDField<ScalarT,panzer::Cell,panzer::NODE,panzer::Dim> coordField_;
- 
+
   Teuchos::RCP<const STK_Interface> mesh_;
 
   GatherRefCoords();

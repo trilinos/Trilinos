@@ -75,11 +75,11 @@ getGlobalPairing(const std::vector<std::size_t> & locallyRequiredIds,
    TEUCHOS_ASSERT(sumVal==0);
 
    std::vector<int> requiredInts(locallyRequiredIds.size());
-   for(std::size_t i=0;i<requiredInts.size();i++) 
+   for(std::size_t i=0;i<requiredInts.size();i++)
       requiredInts[i] = locallyRequiredIds[i];
 
    std::vector<int> providedInts(locallyMatchedIds.size());
-   for(std::size_t i=0;i<locallyMatchedIds.size();i++) 
+   for(std::size_t i=0;i<locallyMatchedIds.size();i++)
       providedInts[i] = locallyMatchedIds[i].first;
 
    // maps and communciation all set up
@@ -91,11 +91,11 @@ getGlobalPairing(const std::vector<std::size_t> & locallyRequiredIds,
      providedIntsPtr = &providedInts[0];
    Epetra_Map requiredMap(-1,requiredInts.size(),requiredIntsPtr,0,Comm);
    Epetra_Map providedMap(-1,providedInts.size(),providedIntsPtr,0,Comm);
-   Epetra_Import importer(requiredMap,providedMap); 
-   
+   Epetra_Import importer(requiredMap,providedMap);
+
    // this is what to distribute
    Epetra_IntVector providedVector(providedMap);
-   for(std::size_t i=0;i<locallyMatchedIds.size();i++) 
+   for(std::size_t i=0;i<locallyMatchedIds.size();i++)
       providedVector[i] = locallyMatchedIds[i].second;
 
    // vector to fill
@@ -108,15 +108,15 @@ getGlobalPairing(const std::vector<std::size_t> & locallyRequiredIds,
    for(std::size_t i=0;i<result->size();i++) {
       (*result)[i].first = requiredInts[i];
       (*result)[i].second = myMappedIds[i];
-   } 
-  
+   }
+
    return result;
 }
 
 
 
 /** This returns the locally resident (includes ghosted) global IDs
-  * for a particular side. 
+  * for a particular side.
   */
 Teuchos::RCP<std::vector<std::size_t> >
 getLocalSideIds(const STK_Interface & mesh,
@@ -133,7 +133,7 @@ getLocalSideIds(const STK_Interface & mesh,
    stk::mesh::Selector mySides = *side & (metaData->locally_owned_part() | metaData->globally_shared_part());
 
    stk::mesh::EntityRank rank;
-   unsigned int offset = 0; // offset to avoid giving nodes, edges, faces the same sideId 
+   unsigned int offset = 0; // offset to avoid giving nodes, edges, faces the same sideId
    if(type_ == "coord"){
      rank = mesh.getNodeRank();
    } else if(type_ == "edge"){
@@ -176,7 +176,7 @@ getLocalSideIdsAndCoords(const STK_Interface & mesh,
                          const std::string & sideName, const std::string type_)
 {
    unsigned physicalDim = mesh.getDimension();
-   
+
    Teuchos::RCP<stk::mesh::MetaData> metaData = mesh.getMetaData();
    Teuchos::RCP<stk::mesh::BulkData> bulkData = mesh.getBulkData();
 
@@ -251,7 +251,7 @@ getSideIdsAndCoords(const STK_Interface & mesh,
    Epetra_MpiComm Comm(mesh.getBulkData()->parallel());
 
    unsigned physicalDim = mesh.getDimension();
- 
+
    // grab local IDs and coordinates on this side
    // and build local epetra vector
    //////////////////////////////////////////////////////////////////
@@ -279,7 +279,7 @@ getSideIdsAndCoords(const STK_Interface & mesh,
          (*(*localCoordVec)(d))[n] = coords[d];
    }
 
-   // fully distribute epetra vector across all processors 
+   // fully distribute epetra vector across all processors
    // (these are "distributed" or "dist" objects)
    //////////////////////////////////////////////////////////////
 

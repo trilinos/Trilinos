@@ -53,11 +53,11 @@ UniqueGlobalIndexer::UniqueGlobalIndexer(int rank,int procCount)
 
 int UniqueGlobalIndexer::getFieldNum(const std::string & str) const
 {
-   if(str=="TEMPERATURE") 
+   if(str=="TEMPERATURE")
       return 0;
-   else if(str=="ION_TEMPERATURE") 
+   else if(str=="ION_TEMPERATURE")
       return 1;
-   else  
+   else
       TEUCHOS_TEST_FOR_EXCEPTION(true,std::runtime_error,"Can't find field \"" << str << "\" in unit_test::UniqueGlobalIndexer, try \'U\' or \'T\'");
 }
 
@@ -70,11 +70,11 @@ const std::string & UniqueGlobalIndexer::getFieldString(int field) const
       return u;
    else if(field==1)
       return t;
-   else  
+   else
       TEUCHOS_TEST_FOR_EXCEPTION(true,std::runtime_error,"Can't find field \"" << field << "\" in unit_test::UniqueGlobalIndexer, try \'0\' or \'1\'");
 }
 
-void UniqueGlobalIndexer::getElementBlockIds(std::vector<std::string> & elementBlockIds) const 
+void UniqueGlobalIndexer::getElementBlockIds(std::vector<std::string> & elementBlockIds) const
 {
    elementBlockIds.clear();
    elementBlockIds.push_back("block_0");
@@ -82,9 +82,9 @@ void UniqueGlobalIndexer::getElementBlockIds(std::vector<std::string> & elementB
 
 bool UniqueGlobalIndexer::fieldInBlock(const std::string & field, const std::string & block) const
 {
-   if(block!="block_0") 
+   if(block!="block_0")
       return false;
- 
+
    if(field=="TEMPERATURE" || field=="ION_TEMPERATURE")
       return true;
 
@@ -96,7 +96,7 @@ const std::vector<int> & UniqueGlobalIndexer::getElementBlock(const std::string 
    TEUCHOS_TEST_FOR_EXCEPTION(blockId!="block_0",std::runtime_error,
                       "Can't find block ID \"" << blockId << "\" in unit_test::UniqueGlobalIndexer");
 
-   if(elements_==Teuchos::null) { 
+   if(elements_==Teuchos::null) {
       elements_ = Teuchos::rcp(new std::vector<int>);
       switch(procRank_) {
       case 0:
@@ -119,15 +119,15 @@ void UniqueGlobalIndexer::getElementGIDs(int localElmtId,std::vector<int> & gids
 
    switch(procRank_) {
    case 0:
-      gids[0] = 0; gids[1] = 1; 
+      gids[0] = 0; gids[1] = 1;
       gids[2] = 2; gids[3] = 3;
-      gids[4] = 4; gids[5] = 5; 
+      gids[4] = 4; gids[5] = 5;
       gids[6] = 6; gids[7] = 7;
       break;
    case 1:
-      gids[0] = 2; gids[1] = 3; 
+      gids[0] = 2; gids[1] = 3;
       gids[2] = 8; gids[3] = 9;
-      gids[4] = 10; gids[5] = 11; 
+      gids[4] = 10; gids[5] = 11;
       gids[6] = 4; gids[7] = 5;
       break;
    default:
@@ -141,13 +141,13 @@ const std::vector<int> & UniqueGlobalIndexer::getGIDFieldOffsets(const std::stri
                    "unit_test::UniqueGlobalIndexer - Invalid field or block id specified");
 
    if(field0Offset_==Teuchos::null || field1Offset_==Teuchos::null) {
-      field0Offset_ = Teuchos::rcp(new std::vector<int>(4)); 
+      field0Offset_ = Teuchos::rcp(new std::vector<int>(4));
       (*field0Offset_)[0] = 0;
       (*field0Offset_)[1] = 2;
       (*field0Offset_)[2] = 4;
       (*field0Offset_)[3] = 6;
 
-      field1Offset_ = Teuchos::rcp(new std::vector<int>(4)); 
+      field1Offset_ = Teuchos::rcp(new std::vector<int>(4));
       (*field1Offset_)[0] = 1;
       (*field1Offset_)[1] = 3;
       (*field1Offset_)[2] = 5;
@@ -158,7 +158,7 @@ const std::vector<int> & UniqueGlobalIndexer::getGIDFieldOffsets(const std::stri
    else return *field1Offset_;
 }
 
-const std::pair<std::vector<int>,std::vector<int> > & 
+const std::pair<std::vector<int>,std::vector<int> > &
 UniqueGlobalIndexer::getGIDFieldOffsets_closure(const std::string & blockId, int fieldNum,
                                                 int subcellDim,int subcellId) const
 {
@@ -170,7 +170,7 @@ UniqueGlobalIndexer::getGIDFieldOffsets_closure(const std::string & blockId, int
                    "unit_test::UniqueGlobalIndexer - Invalid field or block id specified");
 
    if(field0_closures_==Teuchos::null || field1_closures_==Teuchos::null) {
-      field0_closures_ = Teuchos::rcp(new std::map<std::pair<int,int>,VectorPair>); 
+      field0_closures_ = Teuchos::rcp(new std::map<std::pair<int,int>,VectorPair>);
 
       {
          VectorPair vp;
@@ -186,7 +186,7 @@ UniqueGlobalIndexer::getGIDFieldOffsets_closure(const std::string & blockId, int
          (*field0_closures_)[std::make_pair(1,1)] = vp;
       }
 
-      field1_closures_ = Teuchos::rcp(new std::map<std::pair<int,int>,VectorPair>); 
+      field1_closures_ = Teuchos::rcp(new std::map<std::pair<int,int>,VectorPair>);
       {
          VectorPair vp;
 
@@ -206,7 +206,7 @@ UniqueGlobalIndexer::getGIDFieldOffsets_closure(const std::string & blockId, int
    ss << "(subcellDim,subcellId) = (" << subcellDim << "," << subcellId << ") on fieldNum = " << fieldNum;
 
    if(fieldNum==0) {
-      std::map<std::pair<int,int>, VectorPair>::const_iterator itr 
+      std::map<std::pair<int,int>, VectorPair>::const_iterator itr
             = field0_closures_->find(std::make_pair(subcellDim,subcellId));
       TEUCHOS_TEST_FOR_EXCEPTION(itr==field0_closures_->end(),std::runtime_error,
                          "unit_test::UniqueGlobalIndexer::getGIDFieldOffsets_closure has not added "+ss.str()+" yet");
@@ -214,13 +214,13 @@ UniqueGlobalIndexer::getGIDFieldOffsets_closure(const std::string & blockId, int
       return itr->second;
    }
    else {
-      std::map<std::pair<int,int>, VectorPair>::const_iterator itr 
+      std::map<std::pair<int,int>, VectorPair>::const_iterator itr
             = field1_closures_->find(std::make_pair(subcellDim,subcellId));
       TEUCHOS_TEST_FOR_EXCEPTION(itr==field1_closures_->end(),std::runtime_error,
                          "unit_test::UniqueGlobalIndexer::getGIDFieldOffsets_closure has not added "+ss.str()+" yet");
 
       return itr->second;
-   } 
+   }
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -363,7 +363,7 @@ void UniqueGlobalIndexer::ownedIndices(const std::vector<int> & indices,std::vec
    getOwnedIndices(owned);
 
    isOwned.resize(indices.size(),false);
-   for(std::size_t i=0;i<indices.size();i++) 
+   for(std::size_t i=0;i<indices.size();i++)
       isOwned[i] = (std::find(owned.begin(),owned.end(),indices[i])!=owned.end());
 }
 

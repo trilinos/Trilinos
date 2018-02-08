@@ -56,11 +56,11 @@
 namespace panzer {
 
 struct GlobalData;
-    
+
 PANZER_EVALUATOR_CLASS_PP(GlobalStatistics)
-  
+
   PHX::MDField<ScalarT,Cell> volumes;
-    
+
   PHX::MDField<ScalarT,Cell> tmp;
 
   PHX::MDField<ScalarT,Cell,IP> ones;

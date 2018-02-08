@@ -68,25 +68,25 @@ namespace user_app {
 		     const Teuchos::RCP<panzer::GlobalData>& global_data,
 		     const bool build_transient_support) const
     {
-      Teuchos::RCP<panzer::EquationSet_TemplateManager<panzer::Traits> > eq_set= 
+      Teuchos::RCP<panzer::EquationSet_TemplateManager<panzer::Traits> > eq_set=
 	Teuchos::rcp(new panzer::EquationSet_TemplateManager<panzer::Traits>);
-      
+
       bool found = false;
-      
+
       PANZER_BUILD_EQSET_OBJECTS("Energy 1", EquationSet_Energy)
-      
+
       if (!found && m_throw_on_failure) {
 	std::string msg = "Error - the \"Equation Set\" with \"Type\"= \"" + params->get<std::string>("Type") +
 	  "\" is not a valid equation set identifier. Please supply the correct factory.\n";
 	TEUCHOS_TEST_FOR_EXCEPTION(!found && m_throw_on_failure, std::logic_error, msg);
       }
-      
+
       if (!found)
 	return Teuchos::null;
 
       return eq_set;
     }
-    
+
   };
 
 }

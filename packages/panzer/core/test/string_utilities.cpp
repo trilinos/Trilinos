@@ -52,7 +52,7 @@ namespace panzer {
     std::string names =  "fluid,solid";
     std::vector<std::string> tokens;
     panzer::StringTokenizer(tokens, names);
-    
+
     TEST_EQUALITY(tokens.size(), 2);
     TEST_EQUALITY(tokens[0], "fluid");
     TEST_EQUALITY(tokens[1], "solid");
@@ -63,7 +63,7 @@ namespace panzer {
     std::string names =  "fluid";
     std::vector<std::string> tokens;
     panzer::StringTokenizer(tokens, names);
-    
+
     TEST_EQUALITY(tokens.size(), 1);
     TEST_EQUALITY(tokens[0], "fluid");
   }

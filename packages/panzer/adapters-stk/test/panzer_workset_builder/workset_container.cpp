@@ -88,9 +88,9 @@ namespace panzer {
 
     // build DOF Manager (with a single HDiv basis)
     /////////////////////////////////////////////////////////////
- 
-    // build the connection manager 
-    const RCP<panzer::ConnManager<int,panzer::Ordinal64> > 
+
+    // build the connection manager
+    const RCP<panzer::ConnManager<int,panzer::Ordinal64> >
       conn_manager = rcp(new panzer_stk::STKConnManager<panzer::Ordinal64>(mesh));
 
     RCP<panzer::DOFManager<int,panzer::Ordinal64> > dof_manager
@@ -109,14 +109,14 @@ namespace panzer {
 
     // build WorksetContainer
     //////////////////////////////////////////////////////////////
-    
-    RCP<panzer_stk::WorksetFactory> wkstFactory 
+
+    RCP<panzer_stk::WorksetFactory> wkstFactory
        = rcp(new panzer_stk::WorksetFactory(mesh)); // build STK workset factory
     RCP<panzer::WorksetContainer> wkstContainer     // attach it to a workset container (uses lazy evaluation)
        = rcp(new panzer::WorksetContainer);
 
     // I'm surprised the needs are required
-    { 
+    {
       BasisDescriptor basis_desc(1,"HGrad");
       WorksetNeeds needs;
       needs.cellData = CellData(workset_size,mesh->getCellTopology(element_block));
@@ -135,9 +135,9 @@ namespace panzer {
 
       std::set<std::size_t> identifiers;
       for(auto wkst : worksets) {
-        // check a unique identifier 
+        // check a unique identifier
         TEST_ASSERT(wkst.getIdentifier()!=0u);
- 
+
         identifiers.insert(wkst.getIdentifier());
       }
 
@@ -159,11 +159,11 @@ namespace panzer {
 
         std::set<std::size_t> identifiers;
         for(auto wkst : worksets) {
-          out << "IS THIS ZERO ???? " << wkst.second.getIdentifier() << " " << wkst.first << std::endl; 
+          out << "IS THIS ZERO ???? " << wkst.second.getIdentifier() << " " << wkst.first << std::endl;
 
-          // check a unique identifier 
+          // check a unique identifier
           TEST_ASSERT(wkst.second.getIdentifier()!=0u);
- 
+
           identifiers.insert(wkst.second.getIdentifier());
         }
 
@@ -185,9 +185,9 @@ namespace panzer {
 
         std::set<std::size_t> identifiers;
         for(auto wkst : worksets) {
-          // check a unique identifier 
+          // check a unique identifier
           TEST_ASSERT(wkst.second.getIdentifier()!=0u);
- 
+
           identifiers.insert(wkst.second.getIdentifier());
         }
 

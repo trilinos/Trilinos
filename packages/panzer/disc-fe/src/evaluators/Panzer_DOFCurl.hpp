@@ -48,11 +48,11 @@
 #include "Panzer_Evaluator_WithBaseImpl.hpp"
 
 namespace panzer {
-    
+
 //! Interpolates basis DOF values to IP DOF Curl values
-template<typename EvalT, typename TRAITS>                   
-class DOFCurl : public panzer::EvaluatorWithBaseImpl<TRAITS>,      
-                public PHX::EvaluatorDerived<EvalT, TRAITS>  {   
+template<typename EvalT, typename TRAITS>
+class DOFCurl : public panzer::EvaluatorWithBaseImpl<TRAITS>,
+                public PHX::EvaluatorDerived<EvalT, TRAITS>  {
 public:
 
   DOFCurl(const Teuchos::ParameterList& p);
@@ -95,10 +95,10 @@ private:
 };
 
 // Specitialization for the Jacobian
-template<typename TRAITS>                   
-class DOFCurl<typename TRAITS::Jacobian,TRAITS> : 
-                public panzer::EvaluatorWithBaseImpl<TRAITS>,      
-                public PHX::EvaluatorDerived<typename TRAITS::Jacobian, TRAITS>  {   
+template<typename TRAITS>
+class DOFCurl<typename TRAITS::Jacobian,TRAITS> :
+                public panzer::EvaluatorWithBaseImpl<TRAITS>,
+                public PHX::EvaluatorDerived<typename TRAITS::Jacobian, TRAITS>  {
 public:
 
   DOFCurl(const Teuchos::ParameterList& p);

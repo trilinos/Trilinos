@@ -61,11 +61,11 @@ namespace panzer {
   * gets confused by const.
   */
 template <typename LocalOrdinalT,typename GlobalOrdinalT>
-std::vector<Teuchos::RCP<const UniqueGlobalIndexer<LocalOrdinalT,GlobalOrdinalT> > > 
+std::vector<Teuchos::RCP<const UniqueGlobalIndexer<LocalOrdinalT,GlobalOrdinalT> > >
 nc2c_vector(const std::vector<Teuchos::RCP<UniqueGlobalIndexer<LocalOrdinalT,GlobalOrdinalT> > > & ugis);
 
 /** Get the block associated with a particular field. This is an exhaustive (e.g. expensive)
-  * search. This returns the first found index into the <code>ugis</code> that contains the 
+  * search. This returns the first found index into the <code>ugis</code> that contains the
   * required field.
   *
   * \param[in] fieldName The field to look for.
@@ -78,7 +78,7 @@ int getFieldBlock(const std::string & fieldName,
                   const std::vector<Teuchos::RCP<UniqueGlobalIndexer<LocalOrdinalT,GlobalOrdinalT> > > & ugis);
 
 /** Get the block associated with a particular field. This is an exhaustive (e.g. expensive)
-  * search. This returns the first found index into the <code>ugis</code> that contains the 
+  * search. This returns the first found index into the <code>ugis</code> that contains the
   * required field.
   *
   * \param[in] fieldName The field to look for.
@@ -134,7 +134,7 @@ template <typename LocalOrdinalT,typename GlobalOrdinalT>
 std::string printUGILoadBalancingInformation(const UniqueGlobalIndexer<LocalOrdinalT,GlobalOrdinalT> & ugi);
 
 /** Print all GIDs and their associated elements to the screen. Note if a FancyOStream is used
-  * the correct prefixes this method will label the processors as well. This can print out an 
+  * the correct prefixes this method will label the processors as well. This can print out an
   * extreme amount of information so it is only useful for debugging.
   */
 template <typename LocalOrdinalT,typename GlobalOrdinalT>
@@ -144,10 +144,10 @@ void printMeshTopology(std::ostream & os,const panzer::UniqueGlobalIndexer<Local
   * The ordering is based on the ordering from <code>ugi.getOwnedAndGhostedIndices()</code>.
   * The term "reduced" means that this processor must be able to fully determine the
   * field number for each global number. There are some cases where processors are split
-  * across element blocks with differing fields that this is nontrivial. 
+  * across element blocks with differing fields that this is nontrivial.
   *
   * \param[in] ugi Global indexer to use.
-  * 
+  *
   * \returns Reduced vector containing the field numbers.
   *
   * \note The description and use of this function are equally confusing...
@@ -228,7 +228,7 @@ void updateGhostedDataReducedVector(const std::string & fieldName,const std::str
   * \param[in] fieldNum Field ID to use to build the map
   * \param[in] fieldVector An listing of the fields. For instance [0,1,2,0,1,2,0,1,2...]
   *                        for a three dimensional interlaced vector field.
-  *                        
+  *
   * \returns A vector that contains the indices of the field requested. Again for the
   *          three dimensional vector field if fieldNum==1, it would be [1,4,7,10,13,...].
   */
@@ -239,7 +239,7 @@ getFieldMap(int fieldNum,const Tpetra::Vector<int,int,GlobalOrdinalT,Node> & fie
 
 namespace orientation_helpers {
 
-/** For a given field pattern compute the offsets that give 
+/** For a given field pattern compute the offsets that give
   * the beginning and end dimension-0-subcell index for each edge.
   *
   * \param[in] pattern Pattern specifying the layout of IDs. Note that
@@ -253,11 +253,11 @@ void computePatternEdgeIndices(const FieldPattern & pattern,std::vector<std::pai
 /** This function computes the edge orientation for a cell given its global topology.
   * It is most often called in conjunction with <code>computePatternEdgeIndices</code>. The
   * general model is to call <code>computePatternEdgeIndices</code> once for a given topology
-  * field pattern. These edge indices are used with the topology vector of GIDs (which is laid out 
+  * field pattern. These edge indices are used with the topology vector of GIDs (which is laid out
   * using the topology field pattern) for particular to define the orientation for that element.
   * The layout of the orientation vector is defined to satisfy yet another field pattern whose
   * structure defines the global unknowns for that element. This function can then be called
-  * repeatedly for each element that satisfies the topology used in the 
+  * repeatedly for each element that satisfies the topology used in the
   * <code>computePatternEdgeIndices</code> call.
   *
   * \param[in] topEdgeIndices Computed by <code>computePatternEdgeIndices</code>
@@ -269,10 +269,10 @@ void computePatternEdgeIndices(const FieldPattern & pattern,std::vector<std::pai
 template <typename GlobalOrdinalT>
 void computeCellEdgeOrientations(const std::vector<std::pair<int,int> > & topEdgeIndices,
                                  const std::vector<GlobalOrdinalT> & topology,
-                                 const FieldPattern & fieldPattern, 
+                                 const FieldPattern & fieldPattern,
                                  std::vector<signed char> & orientation);
 
-/** For a given field pattern compute the offsets that give 
+/** For a given field pattern compute the offsets that give
   * the dimension-0-subcell indices for each face. Note that the assumption is
   * made that the node ordering returned by Shards for each face is counter-clockwise.
   * This is how the determination of inward or outward facing normals is made.
@@ -290,11 +290,11 @@ void computePatternFaceIndices(const FieldPattern & pattern,std::vector<std::vec
 /** This function computes the face orientation for a cell given its global topology.
   * It is most often called in conjunction with <code>computePatternFaceIndices</code>. The
   * general model is to call <code>computePatternFaceIndices</code> once for a given topology
-  * field pattern. These face indices are used with the topology vector of GIDs (which is laid out 
+  * field pattern. These face indices are used with the topology vector of GIDs (which is laid out
   * using the topology field pattern) to define the orientation for that element.
   * The layout of the orientation vector is defined to satisfy yet another field pattern whose
   * structure defines the global unknowns for that element. This function can then be called
-  * repeatedly for each element that satisfies the topology used in the 
+  * repeatedly for each element that satisfies the topology used in the
   * <code>computePatternFaceIndices</code> call.
   *
   * \param[in] topFaceIndices Computed by <code>computePatternFaceIndices</code>
@@ -306,7 +306,7 @@ void computePatternFaceIndices(const FieldPattern & pattern,std::vector<std::vec
 template <typename GlobalOrdinalT>
 void computeCellFaceOrientations(const std::vector<std::pair<int,int> > & topEdgeIndices,
                                  const std::vector<GlobalOrdinalT> & topology,
-                                 const FieldPattern & fieldPattern, 
+                                 const FieldPattern & fieldPattern,
                                  std::vector<signed char> & orientation);
 
 } // end orientations_helpers
@@ -322,7 +322,7 @@ public:
      */
    ArrayToFieldVector(const Teuchos::RCP<const UniqueGlobalIndexer<LocalOrdinalT,GlobalOrdinalT> > & ugi);
 
-   /** Get a Tpetra vector containing the data ordered according to 
+   /** Get a Tpetra vector containing the data ordered according to
      * the ordering from <code>UGI::getOwnedAndGhostedIndices</code>.
      *
      * \param[in] fieldName Name of field this data is from
@@ -335,7 +335,7 @@ public:
    Teuchos::RCP<Tpetra::MultiVector<ScalarT,int,GlobalOrdinalT,Node> >
    getGhostedDataVector(const std::string & fieldName,const std::map<std::string,ArrayT> & data) const;
 
-   /** Get a Tpetra vector containing the data ordered according to 
+   /** Get a Tpetra vector containing the data ordered according to
      * the ordering from <code>UGI::getOwnedIndices</code>.
      *
      * \param[in] fieldName Name of field this data is from

@@ -59,8 +59,8 @@ namespace panzer {
   * one degree of freedom per edge, this pattern will
   * specify one degree of freedom per node and one per edge.
   *
-  * Essentially if you took all of the FieldPatterns and 
-  * stacked them on top of each other then the 
+  * Essentially if you took all of the FieldPatterns and
+  * stacked them on top of each other then the
   * shadow cast would be the geometric field pattern.
   *
   * \note Because the <code>GeometricAggFieldPattern</code> is passed
@@ -72,13 +72,13 @@ class GeometricAggFieldPattern : public FieldPattern {
 public:
    GeometricAggFieldPattern();
 
-   /** Construct the pattern, this automatically calls 
+   /** Construct the pattern, this automatically calls
      * <code>buildPattern()</code> and is equivalent to calling the
      * default constructor and then <code>buildPattern()</code>.
      */
   GeometricAggFieldPattern(std::vector<std::pair<FieldType,Teuchos::RCP<const FieldPattern>>> & patterns);
 
-   /** Construct the geometric version of this pattern, this automatically calls 
+   /** Construct the geometric version of this pattern, this automatically calls
      * <code>buildPattern()</code> and is equivalent to calling the
      * default constructor and then <code>buildPattern()</code>.
      */
@@ -88,7 +88,7 @@ public:
    virtual ~GeometricAggFieldPattern() {}
 
    /** Construct the underlying data for this object.
-     * Before calling this function getDimension(), 
+     * Before calling this function getDimension(),
      * getSubcellCount() and getSubcellIndices methods
      * will throw an exception.
      *
@@ -97,19 +97,19 @@ public:
      *       state is constructed.
      */
    virtual void buildPattern(const std::vector<std::pair<FieldType,Teuchos::RCP<const FieldPattern>>> & patterns);
-   
+
    /** Convenience function, simply builds a vector and calls the vectorized
      * form of <code>buildPattern</code>.
      */
    virtual void buildPattern(const FieldType& fieldType,
                              const Teuchos::RCP<const FieldPattern> & pattern);
 
-   /** Returns the sub cell count (see <code>FieldPattern</code>) if 
+   /** Returns the sub cell count (see <code>FieldPattern</code>) if
      * <code>buildPattern</code> has been called. Otherwise it will throw an exception.
      */
    virtual int getSubcellCount(int dim) const;
 
-   /** Returns the sub cell indices (see <code>FieldPattern</code>) if 
+   /** Returns the sub cell indices (see <code>FieldPattern</code>) if
      * <code>buildPattern</code> has been called. Otherwise it will throw an exception.
      */
    virtual const std::vector<int> & getSubcellIndices(int dim,int cellIndex) const;
@@ -120,7 +120,7 @@ public:
    virtual void getSubcellClosureIndices(int /* dim */, int /* cellIndex */, std::vector<int>& /* indices */) const
    { TEUCHOS_ASSERT(false); }
 
-   /** Returns the dimension (see <code>FieldPattern</code>) if 
+   /** Returns the dimension (see <code>FieldPattern</code>) if
      * <code>buildPattern</code> has been called. Otherwise it will throw an exception.
      */
    virtual int getDimension() const;

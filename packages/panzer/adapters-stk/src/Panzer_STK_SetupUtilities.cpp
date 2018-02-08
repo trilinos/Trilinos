@@ -49,7 +49,7 @@
 
 namespace panzer_stk {
 
-Teuchos::RCP<std::vector<panzer::Workset> >  
+Teuchos::RCP<std::vector<panzer::Workset> >
 buildWorksets(const panzer_stk::STK_Interface & mesh,
               const std::string & eBlock,
               const panzer::WorksetNeeds & needs)
@@ -70,7 +70,7 @@ buildWorksets(const panzer_stk::STK_Interface & mesh,
   return panzer::buildWorksets(needs, eBlock, local_cell_ids, cell_vertex_coordinates);
 }
 
-Teuchos::RCP<std::vector<panzer::Workset> >  
+Teuchos::RCP<std::vector<panzer::Workset> >
 buildWorksets(const panzer_stk::STK_Interface & mesh,
               const panzer::WorksetNeeds & needs,
               const std::string & sideset,
@@ -80,7 +80,7 @@ buildWorksets(const panzer_stk::STK_Interface & mesh,
   using namespace workset_utils;
   using Teuchos::RCP;
 
-  std::vector<stk::mesh::Entity> sideEntities; 
+  std::vector<stk::mesh::Entity> sideEntities;
 
   try {
      // grab local entities on this side
@@ -89,27 +89,27 @@ buildWorksets(const panzer_stk::STK_Interface & mesh,
         mesh.getMySides(sideset,eBlock,sideEntities);
      else
         mesh.getAllSides(sideset,eBlock,sideEntities);
-  } 
+  }
   catch(STK_Interface::SidesetException & e) {
      std::stringstream ss;
-     std::vector<std::string> sideSets; 
+     std::vector<std::string> sideSets;
      mesh.getSidesetNames(sideSets);
- 
+
      // build an error message
      ss << e.what() << "\nChoose one of:\n";
-     for(std::size_t i=0;i<sideSets.size();i++) 
+     for(std::size_t i=0;i<sideSets.size();i++)
         ss << "\"" << sideSets[i] << "\"\n";
 
      TEUCHOS_TEST_FOR_EXCEPTION_PURE_MSG(true,std::logic_error,ss.str());
   }
   catch(STK_Interface::ElementBlockException & e) {
      std::stringstream ss;
-     std::vector<std::string> elementBlocks; 
+     std::vector<std::string> elementBlocks;
      mesh.getElementBlockNames(elementBlocks);
 
      // build an error message
      ss << e.what() << "\nChoose one of:\n";
-     for(std::size_t i=0;i<elementBlocks.size();i++) 
+     for(std::size_t i=0;i<elementBlocks.size();i++)
         ss << "\"" << elementBlocks[i] << "\"\n";
 
      TEUCHOS_TEST_FOR_EXCEPTION_PURE_MSG(true,std::logic_error,ss.str());
@@ -120,7 +120,7 @@ buildWorksets(const panzer_stk::STK_Interface & mesh,
 
      TEUCHOS_TEST_FOR_EXCEPTION_PURE_MSG(true,std::logic_error,ss.str());
   }
-  
+
   std::vector<stk::mesh::Entity> elements;
   std::map<std::pair<unsigned,unsigned>,std::vector<std::size_t> > local_cell_ids;
   if(!useCascade) {
@@ -132,7 +132,7 @@ buildWorksets(const panzer_stk::STK_Interface & mesh,
     // build local cell_ids, mapped by local side id
     for(std::size_t elm=0;elm<elements.size();++elm) {
       stk::mesh::Entity element = elements[elm];
-	
+
       local_cell_ids[std::make_pair(subcell_dim,local_side_ids[elm])].push_back(mesh.elementLocalId(element));
     }
   }
@@ -144,7 +144,7 @@ buildWorksets(const panzer_stk::STK_Interface & mesh,
     // build local cell_ids, mapped by local side id
     for(std::size_t elm=0;elm<elements.size();++elm) {
       stk::mesh::Entity element = elements[elm];
-	
+
       local_cell_ids[std::make_pair(subcell_dim[elm],local_subcell_ids[elm])].push_back(mesh.elementLocalId(element));
     }
   }
@@ -162,13 +162,13 @@ buildWorksets(const panzer_stk::STK_Interface & mesh,
     // loop over each side
     for(std::map<std::pair<unsigned,unsigned>,std::vector<std::size_t> >::const_iterator itr=local_cell_ids.begin();
         itr!=local_cell_ids.end();++itr) {
- 
+
       if(itr->second.size()==0)
         continue;
 
       Kokkos::DynRankView<double,PHX::Device> vertices;
       mesh.getElementVertices(itr->second,eBlock,vertices);
-  
+
       Teuchos::RCP<std::vector<panzer::Workset> > current
          = panzer::buildWorksets(needs, eBlock, itr->second, vertices);
 
@@ -184,7 +184,7 @@ buildWorksets(const panzer_stk::STK_Interface & mesh,
 
     return worksets;
   }
-  
+
   // return Teuchos::null;
   return Teuchos::rcp(new std::vector<panzer::Workset>());
 }
@@ -205,7 +205,7 @@ buildBCWorksets(const panzer_stk::STK_Interface & mesh,
   try {
      // grab local entities on this side
      // ...catch any failure...primarily wrong side set and element block info
-     
+
      // we can't use getMySides because it only returns locally owned sides
      // this gurantees all the sides are extracted (element ownership is considered
      // we we call getSideElements below)
@@ -219,15 +219,15 @@ buildBCWorksets(const panzer_stk::STK_Interface & mesh,
 
      // grab elements
      stk::mesh::get_selected_entities(side,mesh.getBulkData()->buckets(mesh.getSideRank()),sideEntities);
-  } 
+  }
   catch(STK_Interface::ElementBlockException & e) {
      std::stringstream ss;
-     std::vector<std::string> elementBlocks; 
+     std::vector<std::string> elementBlocks;
      mesh.getElementBlockNames(elementBlocks);
 
      // build an error message
      ss << e.what() << "\nChoose one of:\n";
-     for(std::size_t i=0;i<elementBlocks.size();i++) 
+     for(std::size_t i=0;i<elementBlocks.size();i++)
         ss << "\"" << elementBlocks[i] << "\"\n";
 
      TEUCHOS_TEST_FOR_EXCEPTION_PURE_MSG(true,std::logic_error,ss.str());
@@ -245,7 +245,7 @@ buildBCWorksets(const panzer_stk::STK_Interface & mesh,
 
   // this enforces that "a" elements must be owned.
   getSideElements(mesh, blockid_a,blockid_b, sideEntities,
-                        local_side_ids_a,elements_a, 
+                        local_side_ids_a,elements_a,
                         local_side_ids_b,elements_b);
 
   TEUCHOS_TEST_FOR_EXCEPTION(elements_a.size()!=elements_b.size(),std::logic_error,
@@ -264,7 +264,7 @@ buildBCWorksets(const panzer_stk::STK_Interface & mesh,
   for(std::size_t elm=0;elm<elements_a.size();++elm) {
     stk::mesh::Entity element_a = elements_a[elm];
     stk::mesh::Entity element_b = elements_b[elm];
-	
+
     local_cell_ids_a.push_back(mesh.elementLocalId(element_a));
     local_cell_ids_b.push_back(mesh.elementLocalId(element_b));
   }
@@ -287,33 +287,33 @@ buildBCWorksets(const panzer_stk::STK_Interface & mesh,
   using namespace workset_utils;
   using Teuchos::RCP;
 
-  std::vector<stk::mesh::Entity> sideEntities; 
+  std::vector<stk::mesh::Entity> sideEntities;
 
   try {
      // grab local entities on this side
      // ...catch any failure...primarily wrong side set and element block info
      mesh.getMySides(sidesetID,eblockID,sideEntities);
-  } 
+  }
   catch(STK_Interface::SidesetException & e) {
      std::stringstream ss;
-     std::vector<std::string> sideSets; 
+     std::vector<std::string> sideSets;
      mesh.getSidesetNames(sideSets);
- 
+
      // build an error message
      ss << e.what() << "\nChoose one of:\n";
-     for(std::size_t i=0;i<sideSets.size();i++) 
+     for(std::size_t i=0;i<sideSets.size();i++)
         ss << "\"" << sideSets[i] << "\"\n";
 
      TEUCHOS_TEST_FOR_EXCEPTION_PURE_MSG(true,std::logic_error,ss.str());
   }
   catch(STK_Interface::ElementBlockException & e) {
      std::stringstream ss;
-     std::vector<std::string> elementBlocks; 
+     std::vector<std::string> elementBlocks;
      mesh.getElementBlockNames(elementBlocks);
 
      // build an error message
      ss << e.what() << "\nChoose one of:\n";
-     for(std::size_t i=0;i<elementBlocks.size();i++) 
+     for(std::size_t i=0;i<elementBlocks.size();i++)
         ss << "\"" << elementBlocks[i] << "\"\n";
 
      TEUCHOS_TEST_FOR_EXCEPTION_PURE_MSG(true,std::logic_error,ss.str());
@@ -324,7 +324,7 @@ buildBCWorksets(const panzer_stk::STK_Interface & mesh,
 
      TEUCHOS_TEST_FOR_EXCEPTION_PURE_MSG(true,std::logic_error,ss.str());
   }
-  
+
   std::vector<stk::mesh::Entity> elements;
   std::vector<std::size_t> local_cell_ids;
   std::vector<std::size_t> local_side_ids;
@@ -334,7 +334,7 @@ buildBCWorksets(const panzer_stk::STK_Interface & mesh,
   // loop over elements of this block
   for(std::size_t elm=0;elm<elements.size();++elm) {
 	stk::mesh::Entity element = elements[elm];
-	
+
 	local_cell_ids.push_back(mesh.elementLocalId(element));
   }
 
@@ -343,24 +343,24 @@ buildBCWorksets(const panzer_stk::STK_Interface & mesh,
   // condition may have not elements and thus no contribution
   // on this processor
   if(elements.size()!=0) {
-      Teuchos::RCP<const shards::CellTopology> topo 
+      Teuchos::RCP<const shards::CellTopology> topo
          = mesh.getCellTopology(eblockID);
 
       Kokkos::DynRankView<double,PHX::Device> vertices;
       mesh.getElementVertices(local_cell_ids,eblockID,vertices);
-  
+
       return panzer::buildBCWorkset(needs, eblockID, local_cell_ids, local_side_ids, vertices);
   }
-  
+
   return Teuchos::null;
 }
 
-namespace workset_utils { 
+namespace workset_utils {
 
 void getSubcellElements(const panzer_stk::STK_Interface & mesh,
-	 	        const std::string & blockId, 
+	 	        const std::string & blockId,
 		        const std::vector<stk::mesh::Entity> & entities,
-		        std::vector<std::size_t> & localEntityIds, 
+		        std::vector<std::size_t> & localEntityIds,
 		        std::vector<stk::mesh::Entity> & elements)
 {
   // for verifying that an element is in specified block
@@ -395,9 +395,9 @@ void getSubcellElements(const panzer_stk::STK_Interface & mesh,
 }
 
 void getUniversalSubcellElements(const panzer_stk::STK_Interface & mesh,
-				 const std::string & blockId, 
+				 const std::string & blockId,
 				 const std::vector<stk::mesh::Entity> & entities,
-				 std::vector<std::size_t> & localEntityIds, 
+				 std::vector<std::size_t> & localEntityIds,
 				 std::vector<stk::mesh::Entity> & elements)
 {
   // for verifying that an element is in specified block
@@ -432,10 +432,10 @@ void getUniversalSubcellElements(const panzer_stk::STK_Interface & mesh,
 }
 
 void getSideElementCascade(const panzer_stk::STK_Interface & mesh,
-                           const std::string & blockId, 
+                           const std::string & blockId,
                            const std::vector<stk::mesh::Entity> & sides,
-                           std::vector<std::size_t> & localSubcellDim, 
-                           std::vector<std::size_t> & localSubcellIds, 
+                           std::vector<std::size_t> & localSubcellDim,
+                           std::vector<std::size_t> & localSubcellIds,
                            std::vector<stk::mesh::Entity> & elements)
 {
   // This is the alogrithm, for computing the side element
@@ -468,21 +468,21 @@ void getSideElementCascade(const panzer_stk::STK_Interface & mesh,
 }
 
 void getSideElements(const panzer_stk::STK_Interface & mesh,
-                     const std::string & blockId, 
+                     const std::string & blockId,
                      const std::vector<stk::mesh::Entity> & sides,
-                     std::vector<std::size_t> & localSideIds, 
+                     std::vector<std::size_t> & localSideIds,
                      std::vector<stk::mesh::Entity> & elements)
 {
    getSubcellElements(mesh,blockId,sides,localSideIds,elements);
 }
 
 void getSideElements(const panzer_stk::STK_Interface & mesh,
-                     const std::string & blockId_a, 
-                     const std::string & blockId_b, 
+                     const std::string & blockId_a,
+                     const std::string & blockId_b,
                      const std::vector<stk::mesh::Entity> & sides,
-                     std::vector<std::size_t> & localSideIds_a, 
+                     std::vector<std::size_t> & localSideIds_a,
                      std::vector<stk::mesh::Entity> & elements_a,
-                     std::vector<std::size_t> & localSideIds_b, 
+                     std::vector<std::size_t> & localSideIds_b,
                      std::vector<stk::mesh::Entity> & elements_b)
 {
   // for verifying that an element is in specified block
@@ -540,9 +540,9 @@ void getSideElements(const panzer_stk::STK_Interface & mesh,
 }
 
 void getNodeElements(const panzer_stk::STK_Interface & mesh,
-                     const std::string & blockId, 
+                     const std::string & blockId,
                      const std::vector<stk::mesh::Entity> & nodes,
-                     std::vector<std::size_t> & localNodeIds, 
+                     std::vector<std::size_t> & localNodeIds,
                      std::vector<stk::mesh::Entity> & elements)
 {
    getSubcellElements(mesh,blockId,nodes,localNodeIds,elements);

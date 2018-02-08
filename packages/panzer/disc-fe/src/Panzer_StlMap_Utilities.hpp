@@ -53,7 +53,7 @@ namespace panzer {
   template<typename MapT>
   const typename MapT::mapped_type &
   getEntry(const MapT& in_map, const typename MapT::key_type& in_key) {
-    
+
     typename MapT::const_iterator it = in_map.find(in_key);
 
     TEUCHOS_TEST_FOR_EXCEPTION(it == in_map.end(), std::runtime_error,

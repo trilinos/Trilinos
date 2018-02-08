@@ -51,7 +51,7 @@
 namespace panzer_stk {
 
 /** Match coordinates that share the same point on a line
-  */ 
+  */
 class CoordMatcher {
    double error_;
    int index_;
@@ -61,11 +61,11 @@ class CoordMatcher {
    void buildLabels()
    { labels_[0] = 'x'; labels_[1] = 'y'; labels_[2] = 'z'; }
 
-   void parseParams(const std::vector<std::string> & params) 
-   { 
+   void parseParams(const std::vector<std::string> & params)
+   {
       std::string errStr = "CoordMatcher \"" + std::string(1,labels_[index_]) + "-coord\" takes at most two parameters <tol, relative>";
       TEUCHOS_TEST_FOR_EXCEPTION(params.size()>2,std::logic_error,errStr);
- 
+
       // read in string, get double
       if(params.size()>0) {
          std::stringstream ss;
@@ -97,8 +97,8 @@ public:
      return std::fabs(a[index_]-b[index_])<error; /* I'm being lazy here! */
    }
 
-   std::string getString() const 
-   { 
+   std::string getString() const
+   {
       std::stringstream ss;
       ss << labels_[index_] << "-coord <tol=" << error_ << ">";
       return ss.str();
@@ -106,27 +106,27 @@ public:
 };
 
 /** Match coordinates at the same point on a plane
-  */ 
+  */
 class PlaneMatcher {
    double error_;
    int index0_, index1_;
    bool relative_; // compute error relative to length of domain
    char labels_[3];
-  
+
    void buildLabels()
    { labels_[0] = 'x'; labels_[1] = 'y'; labels_[2] = 'z'; }
 
-   void parseParams(const std::vector<std::string> & params) 
-   { 
-      std::string errStr = "PlaneMatcher \"" + std::string(1,labels_[index0_])+std::string(1,labels_[index1_]) 
+   void parseParams(const std::vector<std::string> & params)
+   {
+      std::string errStr = "PlaneMatcher \"" + std::string(1,labels_[index0_])+std::string(1,labels_[index1_])
                          + "-coord\" takes at most two parameter <tol, relative>";
       TEUCHOS_TEST_FOR_EXCEPTION(params.size()>2,std::logic_error,errStr);
- 
+
       // read in string, get double
       if(params.size()==1) {
          std::stringstream ss;
          ss << params[0];
-         ss >> error_; 
+         ss >> error_;
          if(params.size()==2){
            std::string errStr = params[1] + " is not a valid periodic option (try \"relative\")";
            TEUCHOS_TEST_FOR_EXCEPTION(params[1]!="relative",std::logic_error,errStr);
@@ -143,7 +143,7 @@ public:
    PlaneMatcher(int index0,int index1,double error) : error_(error),index0_(index0), index1_(index1), relative_(false)
    { TEUCHOS_ASSERT(index0!=index1); buildLabels(); }
 
-   PlaneMatcher(int index0,int index1,const std::vector<std::string> & params) 
+   PlaneMatcher(int index0,int index1,const std::vector<std::string> & params)
       : error_(1e-8), index0_(index0), index1_(index1), relative_(false)
    { TEUCHOS_ASSERT(index0!=index1); buildLabels(); parseParams(params); }
 
@@ -156,12 +156,12 @@ public:
      double error = error_;
      if(relative_) // scale error by length of domain in normal direction
        error*=std::fabs(a[3-index0_-index1_]-b[3-index0_-index1_]);
-     return (std::fabs(a[index0_]-b[index0_])<error_) 
+     return (std::fabs(a[index0_]-b[index0_])<error_)
          && (std::fabs(a[index1_]-b[index1_])<error_) ; /* I'm being lazy here! */
    }
 
-   std::string getString() const 
-   { 
+   std::string getString() const
+   {
       std::stringstream ss;
       ss << labels_[index0_] << labels_[index1_] << "-coord <tol=" << error_ << ">";
       return ss.str();
@@ -169,54 +169,54 @@ public:
 };
 
 /** Match coordinates at the same point in two planes. This handles quarter symmetry.
-  */ 
+  */
 class QuarterPlaneMatcher {
    double error_;
    int index0a_, index0b_, index1_;
    char labels_[3];
-  
+
    void buildLabels()
    { labels_[0] = 'x'; labels_[1] = 'y'; labels_[2] = 'z'; }
 
-   void parseParams(const std::vector<std::string> & params) 
-   { 
-      std::string errStr = "QuarterPlaneMatcher \"(" + std::string(1,labels_[index0a_])+std::string(1,labels_[index0b_])+")"+std::string(1,labels_[index1_]) 
+   void parseParams(const std::vector<std::string> & params)
+   {
+      std::string errStr = "QuarterPlaneMatcher \"(" + std::string(1,labels_[index0a_])+std::string(1,labels_[index0b_])+")"+std::string(1,labels_[index1_])
                          + "-quarter-coord\" takes only one parameter <tol>";
       TEUCHOS_TEST_FOR_EXCEPTION(params.size()>1,std::logic_error,errStr);
- 
+
       // read in string, get double
       if(params.size()==1) {
          std::stringstream ss;
          ss << params[0];
-         ss >> error_; 
+         ss >> error_;
       }
       // else use default value for error
    }
 
 public:
-   QuarterPlaneMatcher(int index0a,int index0b,int index1) 
-      : error_(1e-8), index0a_(index0a), index0b_(index0b), index1_(index1) 
+   QuarterPlaneMatcher(int index0a,int index0b,int index1)
+      : error_(1e-8), index0a_(index0a), index0b_(index0b), index1_(index1)
    { TEUCHOS_ASSERT(index0a!=index1); TEUCHOS_ASSERT(index0b!=index1); buildLabels(); }
 
-   QuarterPlaneMatcher(int index0a,int index0b,int index1,double error) 
-      : error_(error), index0a_(index0a), index0b_(index0b), index1_(index1) 
+   QuarterPlaneMatcher(int index0a,int index0b,int index1,double error)
+      : error_(error), index0a_(index0a), index0b_(index0b), index1_(index1)
    { TEUCHOS_ASSERT(index0a!=index1); TEUCHOS_ASSERT(index0b!=index1); buildLabels(); }
 
-   QuarterPlaneMatcher(int index0a,int index0b,int index1,const std::vector<std::string> & params) 
-      : error_(1e-8), index0a_(index0a), index0b_(index0b), index1_(index1) 
+   QuarterPlaneMatcher(int index0a,int index0b,int index1,const std::vector<std::string> & params)
+      : error_(1e-8), index0a_(index0a), index0b_(index0b), index1_(index1)
    { TEUCHOS_ASSERT(index0a!=index1); TEUCHOS_ASSERT(index0b!=index1); buildLabels(); parseParams(params); }
 
-   QuarterPlaneMatcher(const QuarterPlaneMatcher & cm) 
-      : error_(cm.error_), index0a_(cm.index0a_), index0b_(cm.index0b_), index1_(cm.index1_) 
+   QuarterPlaneMatcher(const QuarterPlaneMatcher & cm)
+      : error_(cm.error_), index0a_(cm.index0a_), index0b_(cm.index0b_), index1_(cm.index1_)
    { buildLabels(); }
 
    bool operator()(const Teuchos::Tuple<double,3> & a,
                    const Teuchos::Tuple<double,3> & b) const
-   { return (std::fabs(a[index0a_]-b[index0b_])<error_) 
+   { return (std::fabs(a[index0a_]-b[index0b_])<error_)
          && (std::fabs(a[index1_]-b[index1_])<error_) ; /* I'm being lazy here! */ }
 
-   std::string getString() const 
-   { 
+   std::string getString() const
+   {
       std::stringstream ss;
       ss << "(" << labels_[index0a_] << labels_[index0b_] << ")" << labels_[index1_] << "-quarter-coord <tol=" << error_ << ">";
       return ss.str();

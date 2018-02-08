@@ -67,9 +67,9 @@ namespace panzer {
   public:
 
     ClosureModelFactoryBase() {}
-    
+
     virtual ~ClosureModelFactoryBase() {}
-    
+
     Teuchos::RCP< std::vector< Teuchos::RCP<PHX::Evaluator<panzer::Traits> > > >
     virtual  buildClosureModels(const std::string& model_id,
                                 const Teuchos::ParameterList& models,
@@ -91,7 +91,7 @@ namespace panzer {
                                     PHX::FieldManager<panzer::Traits>& fm) const = 0;
 
   };
-  
+
 }
 
 #endif

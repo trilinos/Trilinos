@@ -50,11 +50,11 @@
 #include "Panzer_Evaluator_WithBaseImpl.hpp"
 
 namespace panzer {
-    
+
 //! Interpolates basis DOF values to IP DOF values
-template<typename EvalT, typename TRAITS>                   
-class DOF : public panzer::EvaluatorWithBaseImpl<TRAITS>,      
-            public PHX::EvaluatorDerived<EvalT, TRAITS>  {   
+template<typename EvalT, typename TRAITS>
+class DOF : public panzer::EvaluatorWithBaseImpl<TRAITS>,
+            public PHX::EvaluatorDerived<EvalT, TRAITS>  {
 public:
 
   DOF(const Teuchos::ParameterList& p);
@@ -83,7 +83,7 @@ private:
   bool use_descriptors_;
   panzer::BasisDescriptor bd_;
   panzer::IntegrationDescriptor id_;
-  
+
   PHX::MDField<const ScalarT,Cell,Point> dof_basis;
 
   PHX::MDField<ScalarT,Cell,Point> dof_ip_scalar;
@@ -98,10 +98,10 @@ private:
 /** Interpolates basis DOF values to IP DOF Curl values (specialization for the jacobian)
   * Allows short cut for simple jacobian to dof structure.
   */
-template<typename TRAITS>                   
-class DOF<typename TRAITS::Jacobian,TRAITS> : 
-            public panzer::EvaluatorWithBaseImpl<TRAITS>,      
-            public PHX::EvaluatorDerived<typename TRAITS::Jacobian, TRAITS>  {   
+template<typename TRAITS>
+class DOF<typename TRAITS::Jacobian,TRAITS> :
+            public panzer::EvaluatorWithBaseImpl<TRAITS>,
+            public PHX::EvaluatorDerived<typename TRAITS::Jacobian, TRAITS>  {
 public:
 
   DOF(const Teuchos::ParameterList& p);
@@ -125,7 +125,7 @@ private:
   bool use_descriptors_;
   panzer::BasisDescriptor bd_;
   panzer::IntegrationDescriptor id_;
-  
+
   PHX::MDField<const ScalarT,Cell,Point> dof_basis;
 
   PHX::MDField<ScalarT,Cell,Point> dof_ip_scalar;

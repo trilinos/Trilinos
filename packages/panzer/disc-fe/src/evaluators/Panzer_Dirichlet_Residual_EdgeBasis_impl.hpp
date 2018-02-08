@@ -67,7 +67,7 @@ PHX_EVALUATOR_CTOR(DirichletResidual_EdgeBasis,p)
   pointRule = p.get<Teuchos::RCP<const panzer::PointRule> >("Point Rule");
 
   std::string field_name = p.get<std::string>("DOF Name");
-  std::string dof_name = field_name+"_"+pointRule->getName(); 
+  std::string dof_name = field_name+"_"+pointRule->getName();
   std::string value_name = p.get<std::string>("Value Name");
 
   Teuchos::RCP<PHX::DataLayout> basis_layout = basis->functional;
@@ -96,11 +96,11 @@ PHX_EVALUATOR_CTOR(DirichletResidual_EdgeBasis,p)
   // the field manager will allocate all of these field
   constJac_ = pointValues.jac;
   this->addDependentField(constJac_);
-  
+
   this->addEvaluatedField(residual);
   this->addDependentField(dof);
   this->addDependentField(value);
- 
+
   std::string n = "Dirichlet Residual Edge Basis Evaluator";
   this->setName(n);
 }
@@ -118,7 +118,7 @@ PHX_POST_REGISTRATION_SETUP(DirichletResidual_EdgeBasis,sd,fm)
 
 //**********************************************************************
 PHX_EVALUATE_FIELDS(DirichletResidual_EdgeBasis,workset)
-{ 
+{
   const int numCells = workset.num_cells;
   if(numCells <= 0)
     return;
@@ -129,7 +129,7 @@ PHX_EVALUATE_FIELDS(DirichletResidual_EdgeBasis,workset)
 
     const int subcellDim = workset.subcell_dim;
     const int subcellOrd = this->wda(workset).subcell_index;
-    
+
     const auto cellTopo = *basis->getCellTopology();
     const auto worksetJacobians = pointValues.jac.get_view();
 
@@ -147,13 +147,13 @@ PHX_EVALUATE_FIELDS(DirichletResidual_EdgeBasis,workset)
       if (intrepid_basis->getDofCount(1, subcellOrd)) {
         auto phyEdgeTan = Kokkos::subview(work, 0, Kokkos::ALL());
         auto ortEdgeTan = Kokkos::subview(work, 1, Kokkos::ALL());
-        
+
         const int ndofsEdge = intrepid_basis->getDofCount(1, subcellOrd);
         const int numEdges = cellTopo.getEdgeCount();
         /* */ int edgeOrts[4] = {};
         for(index_t c=0;c<workset.num_cells;c++) {
           orientations->at(details.cell_local_ids[c]).getEdgeOrientation(edgeOrts, numEdges);
-          
+
           Intrepid2::Orientation::getReferenceEdgeTangent(ortEdgeTan,
                                                           subcellOrd,
                                                           cellTopo,
@@ -163,8 +163,8 @@ PHX_EVALUATE_FIELDS(DirichletResidual_EdgeBasis,workset)
           for (int i=0;i<ndofsEdge;++i) {
             const int b = intrepid_basis->getDofOrdinal(1, subcellOrd, i);
             auto J = Kokkos::subview(worksetJacobians, c, b, Kokkos::ALL(), Kokkos::ALL());
-            Intrepid2::Kernels::Serial::matvec_product(phyEdgeTan, J, ortEdgeTan);            
-            
+            Intrepid2::Kernels::Serial::matvec_product(phyEdgeTan, J, ortEdgeTan);
+
             for(int d=0;d<cellDim;d++) {
               residual(c,b) += (dof(c,b,d)-value(c,b,d))*phyEdgeTan(d);
             }
@@ -172,11 +172,11 @@ PHX_EVALUATE_FIELDS(DirichletResidual_EdgeBasis,workset)
         }
       }
       break;
-    } 
+    }
     case 2: { // 3D element Tet and Hex
       const int numEdges = cellTopo.getEdgeCount();
       const int numFaces = cellTopo.getFaceCount();
-      
+
       {
         auto phyEdgeTan = Kokkos::subview(work, 0, Kokkos::ALL());
         auto ortEdgeTan = Kokkos::subview(work, 1, Kokkos::ALL());
@@ -190,18 +190,18 @@ PHX_EVALUATE_FIELDS(DirichletResidual_EdgeBasis,workset)
             const int edgeOrd = Intrepid2::Orientation::getEdgeOrdinalOfFace(i, subcellOrd, cellTopo);
             const int b = edgeOrd;
             orientations->at(details.cell_local_ids[c]).getEdgeOrientation(edgeOrts, numEdges);
-            
+
             Intrepid2::Orientation::getReferenceEdgeTangent(ortEdgeTan,
                                                             edgeOrd,
                                                             cellTopo,
                                                             edgeOrts[edgeOrd],
                                                             is_normalize);
-            
-            // for(int b=0;b<dof.extent_int(1);b++) 
+
+            // for(int b=0;b<dof.extent_int(1);b++)
             {
               auto J = Kokkos::subview(worksetJacobians, c, b, Kokkos::ALL(), Kokkos::ALL());
               Intrepid2::Kernels::Serial::matvec_product(phyEdgeTan, J, ortEdgeTan);
-              
+
               for(int d=0;d<dof.extent_int(2);d++) {
                 residual(c,b) += (dof(c,b,d)-value(c,b,d))*phyEdgeTan(d);
               }
@@ -215,7 +215,7 @@ PHX_EVALUATE_FIELDS(DirichletResidual_EdgeBasis,workset)
         auto ortFaceTanU = Kokkos::subview(work, 1, Kokkos::ALL());
         auto phyFaceTanV = Kokkos::subview(work, 2, Kokkos::ALL());
         auto ortFaceTanV = Kokkos::subview(work, 3, Kokkos::ALL());
-        
+
         int faceOrts[6] = {};
         for(index_t c=0;c<workset.num_cells;c++) {
           orientations->at(details.cell_local_ids[c]).getFaceOrientation(faceOrts, numFaces);
@@ -225,12 +225,12 @@ PHX_EVALUATE_FIELDS(DirichletResidual_EdgeBasis,workset)
                                                            cellTopo,
                                                            faceOrts[subcellOrd],
                                                            is_normalize);
-          
+
           for(int b=0;b<dof.extent_int(1);b++) {
             auto J = Kokkos::subview(worksetJacobians, c, b, Kokkos::ALL(), Kokkos::ALL());
             Intrepid2::Kernels::Serial::matvec_product(phyFaceTanU, J, ortFaceTanU);
             Intrepid2::Kernels::Serial::matvec_product(phyFaceTanV, J, ortFaceTanV);
-            
+
             for(int d=0;d<dof.extent_int(2);d++) {
               residual(c,b) += (dof(c,b,d)-value(c,b,d))*phyFaceTanU(d);
               residual(c,b) += (dof(c,b,d)-value(c,b,d))*phyFaceTanV(d);
@@ -238,14 +238,14 @@ PHX_EVALUATE_FIELDS(DirichletResidual_EdgeBasis,workset)
           }
         }
       }
-      
+
       break;
     }
     }
   }
-  
+
 }
-  
+
 //**********************************************************************
 
 }

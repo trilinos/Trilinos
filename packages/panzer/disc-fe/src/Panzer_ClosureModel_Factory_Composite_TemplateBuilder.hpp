@@ -61,14 +61,14 @@ namespace panzer {
       return Teuchos::rcp( static_cast<panzer::ClosureModelFactoryBase*>
 			   (new panzer::ClosureModelFactoryComposite<EvalT>(m_factories)) );
     }
-    
+
     void addFactory(const Teuchos::RCP<panzer::ClosureModelFactory_TemplateManager<panzer::Traits> >& factory)
     {
       m_factories.push_back(factory);
     }
 
   };
-  
+
 }
 
-#endif 
+#endif

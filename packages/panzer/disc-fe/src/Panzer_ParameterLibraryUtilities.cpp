@@ -58,7 +58,7 @@ struct RegisterScalarParameter {
 
 void registerScalarParameter(const std::string name,panzer::ParamLib& pl,double realValue)
 {
-  RegisterScalarParameter rsp; 
+  RegisterScalarParameter rsp;
   rsp.name = name;
   rsp.pl = Teuchos::ptrFromRef(pl);
 

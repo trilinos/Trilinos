@@ -59,7 +59,7 @@
 // ***********************************************************************
 template <typename EvalT>
 user_app::BCStrategy_ConstantDirichlet<EvalT>::
-BCStrategy_ConstantDirichlet(const panzer::BC& bc, const Teuchos::RCP<panzer::GlobalData>& global_data) 
+BCStrategy_ConstantDirichlet(const panzer::BC& bc, const Teuchos::RCP<panzer::GlobalData>& global_data)
   : panzer::BCStrategy_Dirichlet_DefaultImpl<EvalT>(bc,global_data)
 // the constructor called here stores bc and global_data
 {
@@ -83,10 +83,10 @@ setup(const panzer::PhysicsBlock& side_pb,
   this->addTarget("Constant_"+this->m_bc.equationSetName(),  // Target Name
                   this->m_bc.equationSetName(),              // DOF Name
                   "Residual_"+this->m_bc.identifier());      // Residual Name
- 
-  // find the basis for this dof 
+
+  // find the basis for this dof
   const vector<pair<string,RCP<panzer::PureBasis> > >& dofs = side_pb.getProvidedDOFs();
-  
+
   for (vector<pair<string,RCP<panzer::PureBasis> > >::const_iterator dof_it =
        dofs.begin(); dof_it != dofs.end(); ++dof_it) {
     if (dof_it->first == this->m_bc.equationSetName())
@@ -111,7 +111,7 @@ buildAndRegisterEvaluators(PHX::FieldManager<panzer::Traits>& fm,
   using Teuchos::ParameterList;
   using Teuchos::RCP;
   using Teuchos::rcp;
- 
+
   // THIS LINE GETS PARAMETER "VALUE" FROM THE INPUT DECK..
   //  p.set("Value", this->m_bc.params()->template get<double>("Value"));
 
@@ -121,10 +121,10 @@ buildAndRegisterEvaluators(PHX::FieldManager<panzer::Traits>& fm,
     p.set("Name", "Constant_" + this->m_bc.equationSetName());
     p.set("Data Layout", basis->functional);
     p.set("Value", 2.9);
-    
-    RCP< PHX::Evaluator<panzer::Traits> > op = 
+
+    RCP< PHX::Evaluator<panzer::Traits> > op =
       rcp(new panzer::Constant<EvalT,panzer::Traits>(p));
-    
+
     this->template registerEvaluator<EvalT>(fm, op);
   }
 }

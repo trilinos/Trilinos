@@ -50,9 +50,9 @@
 #include "Panzer_Evaluator_Macros.hpp"
 
 namespace panzer {
-    
+
 PANZER_EVALUATOR_CLASS(VectorToScalar)
-  
+
   std::vector< PHX::MDField<ScalarT,Cell,Point> > scalar_fields;
   PHX::MDField<const ScalarT,Cell,Point,Dim> vector_field;
 
@@ -62,8 +62,8 @@ PANZER_EVALUATOR_CLASS_END
   * that builds scalars from a single vector field. The user specifies
   * the layouts (assumed compatible) and then uses a postfix for each
   * of the scalar fields.
-  * 
-  * \param[in] vectorName Name of the vector 
+  *
+  * \param[in] vectorName Name of the vector
   * \param[in] scalarPrefix Name to prefix to the scalar values
   * \param[in] postfix Vector specifying the postfix to use when naming
   *                    each scalar field
@@ -98,8 +98,8 @@ Teuchos::RCP<PHX::Evaluator<Traits> > vectorToScalarEvaluator(const std::string 
   * that builds scalars from a single vector field. The user specifies
   * the layouts (assumed compatible) and then uses a postfix for each
   * of the scalar fields.
-  * 
-  * \param[in] vectorName Name of the vector 
+  *
+  * \param[in] vectorName Name of the vector
   * \param[in] postfix Vector specifying the postfix to use when naming
   *                    each scalar field
   * \param[in] vectorLayout Data layout for the vector field

@@ -63,12 +63,12 @@ class UniqueGlobalIndexer; //forward declaration
 /** \brief Gathers orientations per field from the global indexer and
     stores them in the field manager.
 */
-template<typename EvalT, typename TRAITS,typename LO,typename GO> 
+template<typename EvalT, typename TRAITS,typename LO,typename GO>
 class GatherOrientation
   : public panzer::EvaluatorWithBaseImpl<TRAITS>,
     public PHX::EvaluatorDerived<EvalT, TRAITS>,
     public panzer::CloneableEvaluator  {
-   
+
 public:
 
   GatherOrientation(const Teuchos::RCP<const panzer::UniqueGlobalIndexer<LO,GO> > & indexer)
@@ -82,15 +82,15 @@ public:
 
   GatherOrientation(const std::vector<Teuchos::RCP<const UniqueGlobalIndexer<LO,GO> > > & indexers,
                     const Teuchos::ParameterList& p);
-  
+
   void postRegistrationSetup(typename TRAITS::SetupData d,
 			     PHX::FieldManager<TRAITS>& vm);
-  
+
   void evaluateFields(typename TRAITS::EvalData d);
 
   virtual Teuchos::RCP<CloneableEvaluator> clone(const Teuchos::ParameterList & pl) const
   { return Teuchos::rcp(new GatherOrientation<EvalT,TRAITS,LO,GO>(indexers_,pl)); }
-  
+
 private:
 
   typedef typename EvalT::ScalarT ScalarT;

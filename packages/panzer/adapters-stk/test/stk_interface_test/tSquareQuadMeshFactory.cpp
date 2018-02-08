@@ -71,7 +71,7 @@ inline bool XOR(bool A,bool B)
 class LocalIdCompare {
 public:
    LocalIdCompare(const Teuchos::RCP<const STK_Interface> & mesh) : mesh_(mesh) {}
-   bool operator()(stk::mesh::Entity a,stk::mesh::Entity b) const 
+   bool operator()(stk::mesh::Entity a,stk::mesh::Entity b) const
    { return mesh_->elementLocalId(a) < mesh_->elementLocalId(b); }
 
 private:
@@ -84,7 +84,7 @@ static const double * getNode(const Teuchos::RCP<const STK_Interface> & mesh, st
    std::vector<stk::mesh::EntityId> nodeIds;
    getNodeIds(mesh->getNodeRank(),element,nodeIds);
 
-   return mesh->getNodeCoordinates(nodeIds[id]); 
+   return mesh->getNodeCoordinates(nodeIds[id]);
 }
 */
 
@@ -107,14 +107,14 @@ TEUCHOS_UNIT_TEST(tSquareQuadMeshFactory, periodic_input)
    int rank = stk::parallel_machine_rank(MPI_COMM_WORLD);
    out << "Running numprocs = " << numprocs << " rank = " << rank << std::endl;
 
-   SquareQuadMeshFactory factory; 
+   SquareQuadMeshFactory factory;
    factory.setParameterList(pl);
    RCP<STK_Interface> mesh = factory.buildMesh(MPI_COMM_WORLD);
 
    TEST_EQUALITY(mesh->getPeriodicBCVector().size(),1);
 }
 
-// This test was modified to its current lame state when the 
+// This test was modified to its current lame state when the
 // construction of the local element IDs was automated in the
 // STK_Interface. (Independent of order of addition in the mesh
 
@@ -134,7 +134,7 @@ TEUCHOS_UNIT_TEST(tSquareQuadMeshFactory, local_ids)
    int rank = stk::parallel_machine_rank(MPI_COMM_WORLD);
    out << "Running numprocs = " << numprocs << " rank = " << rank << std::endl;
 
-   SquareQuadMeshFactory factory; 
+   SquareQuadMeshFactory factory;
    factory.setParameterList(pl);
    RCP<STK_Interface> mesh = factory.buildMesh(MPI_COMM_WORLD);
 
@@ -214,10 +214,10 @@ TEUCHOS_UNIT_TEST(tSquareQuadMeshFactory, defaults)
    using Teuchos::RCP;
    using Teuchos::rcp;
    using Teuchos::rcpFromRef;
-   
-   SquareQuadMeshFactory factory; 
+
+   SquareQuadMeshFactory factory;
    RCP<STK_Interface> mesh = factory.buildMesh(MPI_COMM_WORLD);
- 
+
    if(mesh->isWritable())
       mesh->writeToExodus("SquareQuad.exo");
 
@@ -233,72 +233,72 @@ TEUCHOS_UNIT_TEST(tSquareQuadMeshFactory, defaults)
 
    int numprocs = stk::parallel_machine_size(MPI_COMM_WORLD);
    int rank = stk::parallel_machine_rank(MPI_COMM_WORLD);
-   
+
    if(numprocs==1) {
       out << "Running numprocs = " << numprocs << " rank = " << rank << std::endl;
       {
          std::vector<stk::mesh::EntityId> elmt0, elmt1;
-   
+
          mesh->getSubcellIndices(mesh->getNodeRank(),3,elmt0);
          mesh->getSubcellIndices(mesh->getNodeRank(),8,elmt1);
-   
+
          TEST_EQUALITY(elmt0.size(),4);
          TEST_EQUALITY(elmt0.size(),elmt1.size());
          TEST_EQUALITY(elmt0[2],elmt1[1]);
          TEST_EQUALITY(elmt0[3],elmt1[0]);
-   
+
          mesh->getSubcellIndices(mesh->getSideRank(),3,elmt0);
          mesh->getSubcellIndices(mesh->getSideRank(),8,elmt1);
-   
+
          TEST_EQUALITY(elmt0.size(),4);
          TEST_EQUALITY(elmt0.size(),elmt1.size());
          TEST_EQUALITY(elmt0[2],elmt1[0]);
       }
-   
+
       {
          std::vector<stk::mesh::EntityId> elmt0, elmt1;
-   
+
          mesh->getSubcellIndices(mesh->getNodeRank(),7,elmt0);
          mesh->getSubcellIndices(mesh->getNodeRank(),13,elmt1);
-   
+
          TEST_EQUALITY(elmt0.size(),4);
          TEST_EQUALITY(elmt0.size(),elmt1.size());
          TEST_EQUALITY(elmt0[2],elmt1[0]);
       }
-   
+
       {
          std::vector<stk::mesh::EntityId> elmt0, elmt1;
-   
+
          mesh->getSubcellIndices(mesh->getNodeRank(),14,elmt0);
          mesh->getSubcellIndices(mesh->getNodeRank(),19,elmt1);
-   
+
          TEST_EQUALITY(elmt0.size(),4);
          TEST_EQUALITY(elmt0.size(),elmt1.size());
          TEST_EQUALITY(elmt0[2],elmt1[1]);
          TEST_EQUALITY(elmt0[3],elmt1[0]);
-   
+
          mesh->getSubcellIndices(mesh->getSideRank(),14,elmt0);
          mesh->getSubcellIndices(mesh->getSideRank(),19,elmt1);
-   
+
          TEST_EQUALITY(elmt0.size(),4);
          TEST_EQUALITY(elmt0.size(),elmt1.size());
          TEST_EQUALITY(elmt0[2],elmt1[0]);
       }
-   
+
       {
          std::vector<stk::mesh::EntityId> elmt0, elmt1;
-   
+
          mesh->getSubcellIndices(mesh->getNodeRank(),17,elmt0);
          mesh->getSubcellIndices(mesh->getNodeRank(),18,elmt1);
-   
+
          TEST_EQUALITY(elmt0.size(),4);
          TEST_EQUALITY(elmt0.size(),elmt1.size());
          TEST_EQUALITY(elmt0[1],elmt1[0]);
          TEST_EQUALITY(elmt0[2],elmt1[3]);
-   
+
          mesh->getSubcellIndices(mesh->getSideRank(),17,elmt0);
          mesh->getSubcellIndices(mesh->getSideRank(),18,elmt1);
-   
+
          TEST_EQUALITY(elmt0.size(),4);
          TEST_EQUALITY(elmt0.size(),elmt1.size());
          TEST_EQUALITY(elmt0[1],elmt1[3]);
@@ -308,18 +308,18 @@ TEUCHOS_UNIT_TEST(tSquareQuadMeshFactory, defaults)
       out << "Running numprocs = " << numprocs << " rank = " << rank << std::endl;
       {
          std::vector<stk::mesh::EntityId> elmt0, elmt1;
-   
+
          mesh->getSubcellIndices(mesh->getNodeRank(),3,elmt0);
          mesh->getSubcellIndices(mesh->getNodeRank(),8,elmt1);
-   
+
          TEST_EQUALITY(elmt0.size(),4);
          TEST_EQUALITY(elmt0.size(),elmt1.size());
          TEST_EQUALITY(elmt0[2],elmt1[1]);
          TEST_EQUALITY(elmt0[3],elmt1[0]);
-   
+
          mesh->getSubcellIndices(mesh->getSideRank(),3,elmt0);
          mesh->getSubcellIndices(mesh->getSideRank(),8,elmt1);
-   
+
          TEST_EQUALITY(elmt0.size(),4);
          TEST_EQUALITY(elmt0.size(),elmt1.size());
          TEST_EQUALITY(elmt0[2],elmt1[0]);
@@ -327,18 +327,18 @@ TEUCHOS_UNIT_TEST(tSquareQuadMeshFactory, defaults)
 
       {
          std::vector<stk::mesh::EntityId> elmt0, elmt1;
-   
+
          mesh->getSubcellIndices(mesh->getNodeRank(),17,elmt0);
          mesh->getSubcellIndices(mesh->getNodeRank(),18,elmt1);
-   
+
          TEST_EQUALITY(elmt0.size(),4);
          TEST_EQUALITY(elmt0.size(),elmt1.size());
          TEST_EQUALITY(elmt0[1],elmt1[0]);
          TEST_EQUALITY(elmt0[2],elmt1[3]);
-   
+
          mesh->getSubcellIndices(mesh->getSideRank(),17,elmt0);
          mesh->getSubcellIndices(mesh->getSideRank(),18,elmt1);
-   
+
          TEST_EQUALITY(elmt0.size(),4);
          TEST_EQUALITY(elmt0.size(),elmt1.size());
          TEST_EQUALITY(elmt0[1],elmt1[3]);
@@ -346,10 +346,10 @@ TEUCHOS_UNIT_TEST(tSquareQuadMeshFactory, defaults)
 
       {
          std::vector<stk::mesh::EntityId> elmt0, elmt1;
-   
+
          mesh->getSubcellIndices(mesh->getNodeRank(),7,elmt0);
          mesh->getSubcellIndices(mesh->getNodeRank(),13,elmt1);
-   
+
          TEST_EQUALITY(elmt0.size(),4);
          TEST_EQUALITY(elmt0.size(),elmt1.size());
          TEST_EQUALITY(elmt0[2],elmt1[0]);
@@ -359,18 +359,18 @@ TEUCHOS_UNIT_TEST(tSquareQuadMeshFactory, defaults)
       out << "Running numprocs = " << numprocs << " rank = " << rank << std::endl;
       {
          std::vector<stk::mesh::EntityId> elmt0, elmt1;
-   
+
          mesh->getSubcellIndices(mesh->getNodeRank(),14,elmt0);
          mesh->getSubcellIndices(mesh->getNodeRank(),19,elmt1);
-   
+
          TEST_EQUALITY(elmt0.size(),4);
          TEST_EQUALITY(elmt0.size(),elmt1.size());
          TEST_EQUALITY(elmt0[2],elmt1[1]);
          TEST_EQUALITY(elmt0[3],elmt1[0]);
-   
+
          mesh->getSubcellIndices(mesh->getSideRank(),14,elmt0);
          mesh->getSubcellIndices(mesh->getSideRank(),19,elmt1);
-   
+
          TEST_EQUALITY(elmt0.size(),4);
          TEST_EQUALITY(elmt0.size(),elmt1.size());
          TEST_EQUALITY(elmt0[2],elmt1[0]);
@@ -378,10 +378,10 @@ TEUCHOS_UNIT_TEST(tSquareQuadMeshFactory, defaults)
 
       {
          std::vector<stk::mesh::EntityId> elmt0, elmt1;
-   
+
          mesh->getSubcellIndices(mesh->getNodeRank(),3,elmt0);
          mesh->getSubcellIndices(mesh->getNodeRank(),9,elmt1);
-   
+
          TEST_EQUALITY(elmt0.size(),4);
          TEST_EQUALITY(elmt0.size(),elmt1.size());
          TEST_EQUALITY(elmt0[2],elmt1[0]);
@@ -410,7 +410,7 @@ TEUCHOS_UNIT_TEST(tSquareQuadMeshFactory, multi_xblock)
    pl->set("X Elements",6);
    pl->set("Y Elements",4);
 
-   SquareQuadMeshFactory factory; 
+   SquareQuadMeshFactory factory;
    factory.setParameterList(pl);
    RCP<STK_Interface> mesh = factory.buildMesh(MPI_COMM_WORLD);
    if(mesh->isWritable())
@@ -423,7 +423,7 @@ TEUCHOS_UNIT_TEST(tSquareQuadMeshFactory, multi_xblock)
 
    std::vector<stk::mesh::Entity> myElements;
    mesh->getMyElements(myElements);
-   
+
    TEST_EQUALITY(myElements.size(), (std::size_t) 12*12/numprocs);
 }
 
@@ -445,7 +445,7 @@ TEUCHOS_UNIT_TEST(tSquareQuadMeshFactory, side_elmt_access)
    pl->set("X Elements",6);
    pl->set("Y Elements",4);
 
-   SquareQuadMeshFactory factory; 
+   SquareQuadMeshFactory factory;
    factory.setParameterList(pl);
    RCP<STK_Interface> mesh = factory.buildMesh(MPI_COMM_WORLD);
    stk::mesh::BulkData & bulkData = *mesh->getBulkData();
@@ -465,7 +465,7 @@ TEUCHOS_UNIT_TEST(tSquareQuadMeshFactory, side_elmt_access)
       mesh->getMyElements(blockNames[0],myElements);
 
       TEST_EQUALITY((int) myElements.size(),24/numprocs);
-      
+
       TEST_EQUALITY((int) mesh->elementGlobalId(myElements[0]),1+rank*3);
       TEST_EQUALITY((int) mesh->elementGlobalId(myElements[1]),2+rank*3);
       TEST_EQUALITY((int) mesh->elementGlobalId(myElements[2]),3+rank*3);
@@ -505,7 +505,7 @@ TEUCHOS_UNIT_TEST(tSquareQuadMeshFactory, side_elmt_access)
       for(sItr=sidesets.begin();sItr!=sidesets.end();++sItr) {
          std::vector<stk::mesh::Entity> mySides;
          mesh->getMySides(*sItr,mySides);
-   
+
          std::vector<stk::mesh::Entity>::iterator itr;
          for(itr=mySides.begin();itr!=mySides.end();++itr) {
             stk::mesh::Entity side = *itr;
@@ -514,7 +514,7 @@ TEUCHOS_UNIT_TEST(tSquareQuadMeshFactory, side_elmt_access)
             TEST_EQUALITY(bulkData.num_elements(side),1);
             TEST_EQUALITY(bulkData.num_nodes(side),2);
          }
-         
+
       }
    }
 
@@ -548,7 +548,7 @@ TEUCHOS_UNIT_TEST(tSquareQuadMeshFactory, side_elmt_access)
       for(std::size_t i=0;i<sidesets.size();++i) {
          std::vector<stk::mesh::Entity> mySides;
          mesh->getMySides(sidesets[i],eblocks[i],mySides);
-   
+
          std::vector<stk::mesh::Entity>::iterator itr;
          for(itr=mySides.begin();itr!=mySides.end();++itr) {
             stk::mesh::Entity side = *itr;
@@ -557,7 +557,7 @@ TEUCHOS_UNIT_TEST(tSquareQuadMeshFactory, side_elmt_access)
             TEST_EQUALITY(bulkData.num_elements(side),1);
             TEST_EQUALITY(bulkData.num_nodes(side),2);
          }
-         
+
       }
    }
 }
@@ -578,11 +578,11 @@ TEUCHOS_UNIT_TEST(tSquareQuadMeshFactory, check_ss)
    int rank = stk::parallel_machine_rank(MPI_COMM_WORLD);
    out << "Running numprocs = " << numprocs << " rank = " << rank << std::endl;
 
-   SquareQuadMeshFactory factory; 
+   SquareQuadMeshFactory factory;
    factory.setParameterList(pl);
    RCP<STK_Interface> mesh = factory.buildMesh(MPI_COMM_WORLD);
 
-   stk::mesh::Selector ownedAndGhosted = mesh->getMetaData()->locally_owned_part() 
+   stk::mesh::Selector ownedAndGhosted = mesh->getMetaData()->locally_owned_part()
                                        | mesh->getMetaData()->globally_shared_part();
    stk::mesh::Selector topPart = *mesh->getMetaData()->get_part("top","Big error!")    & ownedAndGhosted;
    stk::mesh::Selector btmPart = *mesh->getMetaData()->get_part("bottom","Big error!") & ownedAndGhosted;
@@ -595,7 +595,7 @@ TEUCHOS_UNIT_TEST(tSquareQuadMeshFactory, check_ss)
    unsigned rhtCnt = stk::mesh::count_selected_entities(rhtPart,nodeBuckets);
    unsigned topCnt = stk::mesh::count_selected_entities(topPart,nodeBuckets);
    unsigned btmCnt = stk::mesh::count_selected_entities(btmPart,nodeBuckets);
-   
+
    if(numprocs==1) {
       TEST_EQUALITY(lftCnt,2);
       TEST_EQUALITY(rhtCnt,2);
@@ -614,7 +614,7 @@ TEUCHOS_UNIT_TEST(tSquareQuadMeshFactory, check_ss)
       TEST_EQUALITY(topCnt,4);
       TEST_EQUALITY(btmCnt,4);
    }
-   else  
+   else
       TEUCHOS_ASSERT(false);
 }
 
@@ -645,7 +645,7 @@ TEUCHOS_UNIT_TEST(tSquareQuadMeshFactory, sideset_nodeset)
    pl->set("X Elements",20);
    pl->set("Y Elements",4);
 
-   SquareQuadMeshFactory factory; 
+   SquareQuadMeshFactory factory;
    factory.setParameterList(pl);
    RCP<STK_Interface> mesh = factory.buildMesh(MPI_COMM_WORLD);
 
@@ -659,10 +659,10 @@ TEUCHOS_UNIT_TEST(tSquareQuadMeshFactory, sideset_nodeset)
 
    std::vector<stk::mesh::Entity> nodes;
    std::vector<stk::mesh::Entity> nodes_o;
-   mesh->getMyNodes("lower_left","eblock-0_0",nodes); 
-   mesh->getMyNodes("origin","eblock-0_0",nodes_o); 
+   mesh->getMyNodes("lower_left","eblock-0_0",nodes);
+   mesh->getMyNodes("origin","eblock-0_0",nodes_o);
    if(rank==0) {
-      { 
+      {
          std::vector<std::size_t> localNodeIds;
          std::vector<stk::mesh::Entity> elements;
 
@@ -674,7 +674,7 @@ TEUCHOS_UNIT_TEST(tSquareQuadMeshFactory, sideset_nodeset)
          TEST_EQUALITY(mesh->elementGlobalId(elements[0]),1);
          TEST_EQUALITY(localNodeIds[0],0);
       }
-      { 
+      {
          std::vector<std::size_t> localNodeIds;
          std::vector<stk::mesh::Entity> elements;
 
@@ -694,7 +694,7 @@ TEUCHOS_UNIT_TEST(tSquareQuadMeshFactory, sideset_nodeset)
 
 TEUCHOS_UNIT_TEST(tSquareQuadMeshFactory, element_counts)
 {
-   int colors[] = 
+   int colors[] =
       { 1,
         2,2,
         4,4,4,4 };
@@ -730,14 +730,14 @@ TEUCHOS_UNIT_TEST(tSquareQuadMeshFactory, element_counts)
 TEUCHOS_UNIT_TEST(tSquareQuadMeshFactory,rebalance)
 {
   // Temporarily disabled until we get rebalance into Trilinos
-   // int size = 0; 
+   // int size = 0;
    // MPI_Comm_size(MPI_COMM_WORLD, &size);
 
    // RCP<Teuchos::ParameterList> pl = rcp(new Teuchos::ParameterList);
    // pl->set("X Elements",5);
    // pl->set("Y Elements",5);
-   
-   // SquareQuadMeshFactory factory; 
+
+   // SquareQuadMeshFactory factory;
    // factory.setParameterList(pl);
    // RCP<STK_Interface> mesh = factory.buildMesh(MPI_COMM_WORLD);
    // TEST_ASSERT(mesh!=Teuchos::null);
@@ -770,8 +770,8 @@ void test1(Teuchos::FancyOStream &out, bool &success, MPI_Comm & comm)
    pl->set("Y Procs",1);
    pl->set("X Elements",2);
    pl->set("Y Elements",4);
-   
-   SquareQuadMeshFactory factory; 
+
+   SquareQuadMeshFactory factory;
    factory.setParameterList(pl);
    RCP<STK_Interface> mesh = factory.buildMesh(comm);
    TEST_ASSERT(mesh!=Teuchos::null);
@@ -791,15 +791,15 @@ void test1(Teuchos::FancyOStream &out, bool &success, MPI_Comm & comm)
 void test2(Teuchos::FancyOStream &out, bool &success,MPI_Comm & comm)
 {
    int size; MPI_Comm_size(comm, &size); TEST_EQUALITY(size,2);
-   int rank; MPI_Comm_rank(comm, &rank); 
+   int rank; MPI_Comm_rank(comm, &rank);
 
    RCP<Teuchos::ParameterList> pl = rcp(new Teuchos::ParameterList);
    pl->set("X Procs",1);
    pl->set("Y Procs",2);
    pl->set("X Elements",2);
    pl->set("Y Elements",4);
-   
-   SquareQuadMeshFactory factory; 
+
+   SquareQuadMeshFactory factory;
    factory.setParameterList(pl);
    RCP<STK_Interface> mesh = factory.buildMesh(comm);
    TEST_ASSERT(mesh!=Teuchos::null);
@@ -840,15 +840,15 @@ void test2(Teuchos::FancyOStream &out, bool &success,MPI_Comm & comm)
 void test4(Teuchos::FancyOStream &out, bool &success,MPI_Comm & comm)
 {
    int size; MPI_Comm_size(comm, &size); TEST_EQUALITY(size,4);
-   int rank; MPI_Comm_rank(comm, &rank); 
+   int rank; MPI_Comm_rank(comm, &rank);
 
    RCP<Teuchos::ParameterList> pl = rcp(new Teuchos::ParameterList);
    pl->set("X Procs",2);
    pl->set("Y Procs",2);
    pl->set("X Elements",2);
    pl->set("Y Elements",4);
-   
-   SquareQuadMeshFactory factory; 
+
+   SquareQuadMeshFactory factory;
    factory.setParameterList(pl);
    RCP<STK_Interface> mesh = factory.buildMesh(comm);
    TEST_ASSERT(mesh!=Teuchos::null);

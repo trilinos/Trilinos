@@ -73,7 +73,7 @@ namespace panzer {
   // tests:
   //    - getGeometricAggPattern
   //    - getFieldPattern
-  //    - getDimension 
+  //    - getDimension
   TEUCHOS_UNIT_TEST(tFieldAggPattern, testA)
   {
 
@@ -108,8 +108,8 @@ namespace panzer {
 
     // test build of geometric field pattern
     {
-      FieldAggPattern agg; 
-   
+      FieldAggPattern agg;
+
       TEST_THROW(agg.getSubcellClosureIndices(2,0,closureIndices),std::logic_error);
       // TEST_THROW(*agg.getGeometricAggFieldPattern(),Teuchos::NullReferenceError);
 
@@ -126,10 +126,10 @@ namespace panzer {
 
     // test build of geometric field pattern
     {
-      FieldAggPattern agg(patternM); 
+      FieldAggPattern agg(patternM);
 
       TEST_THROW(agg.getSubcellClosureIndices(2,0,closureIndices),std::logic_error);
-   
+
       bool equality = false;
       TEST_NOTHROW(equality = geom.equals(*agg.getGeometricAggFieldPattern()));
       TEST_ASSERT(equality);
@@ -138,8 +138,8 @@ namespace panzer {
     }
 
     {
-      FieldAggPattern agg(patternM); 
-   
+      FieldAggPattern agg(patternM);
+
       TEST_THROW(agg.getFieldPattern(5),std::logic_error); // no field 5
 
       TEST_NOTHROW(agg.getFieldPattern(3));
@@ -157,11 +157,11 @@ namespace panzer {
   TEUCHOS_UNIT_TEST(tFieldAggPattern, testB)
   {
     out << note << std::endl;
-   
-    const int maxOrder = Intrepid2::Parameters::MaxOrder; 
+
+    const int maxOrder = Intrepid2::Parameters::MaxOrder;
     const int poly_A = std::min(3, maxOrder),
               poly_B = std::min(5, maxOrder);
-    
+
     // basis to build patterns from
     RCP<Intrepid2::Basis<PHX::Device,double,double> > basisA = rcp(new Intrepid2::Basis_HGRAD_QUAD_Cn_FEM<PHX::Device,double,double>(poly_A));
     RCP<Intrepid2::Basis<PHX::Device,double,double> > basisB = rcp(new Intrepid2::Basis_HGRAD_QUAD_Cn_FEM<PHX::Device,double,double>(poly_B));
@@ -181,10 +181,10 @@ namespace panzer {
       std::vector<std::tuple<int,FieldType,RCP<const FieldPattern> > > patternM;
       patternM.push_back(std::make_tuple(3,FieldType::CG,patternB));
 
-      FieldAggPattern agg(patternM); 
+      FieldAggPattern agg(patternM);
       agg.print(out); // for debugging purposes
 
-      TEST_EQUALITY(agg.getDimension(),patternB->getDimension()); 
+      TEST_EQUALITY(agg.getDimension(),patternB->getDimension());
       TEST_EQUALITY((int) agg.fieldIds().size(),patternB->numberIds());
 
       // this cannot match in high order case
@@ -203,11 +203,11 @@ namespace panzer {
       // check fields per ID
       {
         bool allMatch = true;
-        const int fields_B[] = { ndof_B[0], ndof_B[0], ndof_B[0], ndof_B[0], 
-                                 ndof_B[1], ndof_B[1], ndof_B[1], ndof_B[1], 
+        const int fields_B[] = { ndof_B[0], ndof_B[0], ndof_B[0], ndof_B[0],
+                                 ndof_B[1], ndof_B[1], ndof_B[1], ndof_B[1],
                                  ndof_B[2] };
         int size_fields_B = 0;
-        for (int i=0;i<9;++i) 
+        for (int i=0;i<9;++i)
           size_fields_B += (fields_B[i] > 0);
 
         TEST_ASSERT(static_cast<int>(fieldsPerId.size()) == size_fields_B);
@@ -226,10 +226,10 @@ namespace panzer {
       }
 
       for(int i=0;i<agg.getDimension();i++)
-        TEST_EQUALITY(agg.getSubcellCount(i),patternB->getSubcellCount(i)); 
+        TEST_EQUALITY(agg.getSubcellCount(i),patternB->getSubcellCount(i));
       // this cannot be compared anymore
       // agg create a pattern based on the geometrical order while patternB is arbitrary given from intrepid
-      // TEST_ASSERT(agg.equals(*patternB)); 
+      // TEST_ASSERT(agg.equals(*patternB));
     }
 
     // test that single construction gives the same pattern
@@ -238,11 +238,11 @@ namespace panzer {
       patternM.push_back(std::make_tuple(3,FieldType::CG,patternB));
       patternM.push_back(std::make_tuple(7,FieldType::CG,patternA));
 
-      FieldAggPattern agg(patternM); 
+      FieldAggPattern agg(patternM);
       agg.print(out); // for debugging purposes
 
       TEST_ASSERT(patternB->sameGeometry(agg));
-      TEST_EQUALITY(agg.getDimension(),patternB->getDimension()); 
+      TEST_EQUALITY(agg.getDimension(),patternB->getDimension());
       TEST_EQUALITY((int) agg.numFieldsPerId().size(),agg.getGeometricAggFieldPattern()->numberIds());
 
       const std::vector<int> & fieldsPerId = agg.numFieldsPerId();
@@ -261,14 +261,14 @@ namespace panzer {
       for (int offset=0, dimension=0;dimension<3;++dimension) {
         const int nsubcell = geomPattern->getSubcellCount(dimension);
         for(int entities=0;entities<nsubcell;entities++) {
-          TEST_EQUALITY(fieldsPerId[offset],ndof_A[dimension]+ndof_B[dimension]); 
+          TEST_EQUALITY(fieldsPerId[offset],ndof_A[dimension]+ndof_B[dimension]);
         }
         offset += nsubcell;
       }
 
       // this tests length of fieldsPerId is not longer than expected
-      TEST_EQUALITY(geomPattern->getSubcellCount(0)+ 
-                    geomPattern->getSubcellCount(1)+ 
+      TEST_EQUALITY(geomPattern->getSubcellCount(0)+
+                    geomPattern->getSubcellCount(1)+
                     geomPattern->getSubcellCount(2),
                     (int) fieldsPerId.size());
 
@@ -280,14 +280,14 @@ namespace panzer {
             TEST_EQUALITY(fieldIds[offset],3);
           }
           for (int ndof=0;ndof<ndof_A[dimension];++ndof,++offset) {
-            TEST_EQUALITY(fieldIds[offset],7); 
+            TEST_EQUALITY(fieldIds[offset],7);
           }
         }
       }
 
       // this tests length of fieldIds is not longer than expected
-      TEST_EQUALITY((ndof_A[0]+ndof_B[0])*geomPattern->getSubcellCount(0)+ 
-                    (ndof_A[1]+ndof_B[1])*geomPattern->getSubcellCount(1)+ 
+      TEST_EQUALITY((ndof_A[0]+ndof_B[0])*geomPattern->getSubcellCount(0)+
+                    (ndof_A[1]+ndof_B[1])*geomPattern->getSubcellCount(1)+
                     (ndof_A[2]+ndof_B[2])*geomPattern->getSubcellCount(2),
                     (int) fieldIds.size());
 
@@ -296,7 +296,7 @@ namespace panzer {
         for(int nodes=0;nodes<geomPattern->getSubcellCount(dimension);++nodes) {
           const std::vector<int> & indices = agg.getSubcellIndices(dimension,nodes);
           TEST_EQUALITY((int) indices.size(),ndof_A[dimension]+ndof_B[dimension]);
-          for(std::size_t i=0;i<indices.size();i++,index++) 
+          for(std::size_t i=0;i<indices.size();i++,index++)
             TEST_EQUALITY(indices[i],index);
         }
       }
@@ -315,13 +315,13 @@ namespace panzer {
     {
 
       const int maxOrder = Intrepid2::Parameters::MaxOrder;
-      const int poly = std::min(4,maxOrder); 
+      const int poly = std::min(4,maxOrder);
       RCP<Intrepid2::Basis<PHX::Device,double,double> > basis = rcp(new Intrepid2::Basis_HGRAD_QUAD_Cn_FEM<PHX::Device,double,double>(poly));
 
       const int ndof[] = { basis->getDofTag(basis->getDofOrdinal(0,0,0))(3),
                            basis->getDofTag(basis->getDofOrdinal(1,0,0))(3),
                            basis->getDofTag(basis->getDofOrdinal(2,0,0))(3) };
-      
+
       RCP<const FieldPattern> pattern = rcp(new Intrepid2FieldPattern(basis));
 
       std::vector<std::tuple<int,FieldType,RCP<const FieldPattern> > > patternM;
@@ -337,12 +337,12 @@ namespace panzer {
       std::vector<int> v_true, v_tmp(basis->getCardinality());
       for (int offset=0, dimension=0;dimension<3;++dimension) {
         const int nsubcell = geomPattern->getSubcellCount(dimension);
-        for (int entities=0;entities<nsubcell;entities++) 
+        for (int entities=0;entities<nsubcell;entities++)
           for (int k=0;k<ndof[dimension];++k,++offset)
             v_tmp[basis->getDofOrdinal(dimension,entities,k)] = offset;
       }
       v_true = v_tmp;
-      
+
       std::vector<int> v = agg.localOffsets(3);
       TEST_EQUALITY(v.size(),v_true.size());
       for(std::size_t i=0;i<v.size();i++)
@@ -350,12 +350,12 @@ namespace panzer {
     }
 
     {
-      const int maxOrder = Intrepid2::Parameters::MaxOrder; 
+      const int maxOrder = Intrepid2::Parameters::MaxOrder;
       const int polyC1 = std::min(3, maxOrder),
                 polyC2 = std::min(4, maxOrder);
       RCP<Intrepid2::Basis<PHX::Device,double,double> > basisC1 = rcp(new Intrepid2::Basis_HGRAD_QUAD_Cn_FEM<PHX::Device,double,double>(polyC1));
       RCP<Intrepid2::Basis<PHX::Device,double,double> > basisC2 = rcp(new Intrepid2::Basis_HGRAD_QUAD_Cn_FEM<PHX::Device,double,double>(polyC2));
-      
+
       const int ndofC1[] = { basisC1->getDofTag(basisC1->getDofOrdinal(0,0,0))(3),
                              basisC1->getDofTag(basisC1->getDofOrdinal(1,0,0))(3),
                              basisC1->getDofTag(basisC1->getDofOrdinal(2,0,0))(3) };
@@ -412,17 +412,17 @@ namespace panzer {
       //     }
       //   }
       //   v_true = v_tmp;
-        
+
       //   std::vector<int> v = agg.localOffsets(d);
       //   TEST_EQUALITY(v.size(),v_true.size());
       //   for(std::size_t i=0;i<v.size();i++)
       //     TEST_EQUALITY(v[i],v_true[i]);
       // }
     }
-    
+
     //    {
     //       out << "Crazy HEX basis test" << std::endl;
- 
+
     //       RCP<Intrepid2::Basis<double,FieldContainer> > basisC1 = rcp(new Intrepid2::Basis_HGRAD_HEX_C1_FEM<double,FieldContainer>);
     //       RCP<Intrepid2::Basis<double,FieldContainer> > basisDivI1 = rcp(new Intrepid2::Basis_HDIV_HEX_I1_FEM<double,FieldContainer>);
     //       RCP<Intrepid2::Basis<double,FieldContainer> > basisCurlI1 = rcp(new Intrepid2::Basis_HCURL_HEX_I1_FEM<double,FieldContainer>);
@@ -463,7 +463,7 @@ namespace panzer {
 
     //    {
     //       out << "Highorder HEX basis test: FAILS!!!! DISABLED FOR NOW!!!!!" << std::endl;
- 
+
     // /*
     //       RCP<Intrepid2::Basis<double,FieldContainer> > basis = rcp(new Intrepid2::Basis_HGRAD_HEX_Cn_FEM<double,FieldContainer>(4,Intrepid2::POINTTYPE_EQUISPACED));
     //       RCP<const FieldPattern> pattern = rcp(new Intrepid2FieldPattern(basis));
@@ -512,8 +512,8 @@ namespace panzer {
 
   //       // nodes
   //       v_true[0] = 0; v_true[1] = 1; v_true[2] = 4; v_true[3] = 5;
- 
-  //       // edges     
+
+  //       // edges
   //       v_true[4]  = 8; v_true[5]  = 17; v_true[6] = 12; v_true[7] = 16;
 
   //       // areas
@@ -533,9 +533,9 @@ namespace panzer {
 
   //       // nodes
   //       v_true[0] = 4; v_true[1] = 7;
- 
-  //       // edges     
-  //       v_true[2]  = 15; 
+
+  //       // edges
+  //       v_true[2]  = 15;
 
   //       TEST_EQUALITY(v.size(),v_true.size());
 
@@ -552,7 +552,7 @@ namespace panzer {
 
   //          // nodes
   //          v_true[0] = i;
- 
+
   //          TEST_EQUALITY(v.size(),v_true.size());
   //          TEST_EQUALITY(v[0],v_true[0]);
   //       }
@@ -592,7 +592,7 @@ namespace panzer {
 
   //       // nodes
   //       v_true[0] = 2*2; v_true[1] = 2*3; v_true[2] = 2*7; v_true[3] = 2*6;
- 
+
   //       TEST_EQUALITY(v.size(),v_true.size());
 
   //       std::sort(v.begin(),v.end());
@@ -607,7 +607,7 @@ namespace panzer {
 
   //       // nodes
   //       v_true[0] = 2*3; v_true[1] = 2*7;
- 
+
   //       TEST_EQUALITY(v.size(),v_true.size());
 
   //       std::sort(v.begin(),v.end());
@@ -623,7 +623,7 @@ namespace panzer {
 
   //          // nodes
   //          v_true[0] = 2*i;
- 
+
   //          TEST_EQUALITY(v.size(),v_true.size());
   //          TEST_EQUALITY(v[0],v_true[0]);
   //       }
@@ -638,8 +638,8 @@ namespace panzer {
 
   //       // nodes
   //       v_true[0] = 2*0+1; v_true[1] = 2*1+1; v_true[2] = 2*2+1; v_true[3] = 2*3+1;
- 
-  //       // edges     
+
+  //       // edges
   //       v_true[4]  = 16; v_true[5]  = 17; v_true[6] = 18; v_true[7] = 19;
 
   //       // areas
@@ -659,9 +659,9 @@ namespace panzer {
 
   //       // nodes
   //       v_true[0] = 2*2+1; v_true[1] = 2*6+1;
- 
-  //       // edges     
-  //       v_true[2]  = 26; 
+
+  //       // edges
+  //       v_true[2]  = 26;
 
   //       TEST_EQUALITY(v.size(),v_true.size());
 
@@ -678,7 +678,7 @@ namespace panzer {
 
   //          // nodes
   //          v_true[0] = 2*i+1;
- 
+
   //          TEST_EQUALITY(v.size(),v_true.size());
   //          TEST_EQUALITY(v[0],v_true[0]);
   //       }
@@ -709,8 +709,8 @@ namespace panzer {
 
   //    // test build of geometric field pattern
   //    {
-  //       FieldAggPattern agg; 
-   
+  //       FieldAggPattern agg;
+
   //       agg.buildPattern(patternM,Teuchos::rcpFromRef(geom));
 
   //       bool equality = false;

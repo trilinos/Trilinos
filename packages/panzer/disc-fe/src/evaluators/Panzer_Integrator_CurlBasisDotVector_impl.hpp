@@ -55,14 +55,14 @@ namespace panzer {
 //**********************************************************************
 PHX_EVALUATOR_CTOR(Integrator_CurlBasisDotVector,p) :
   use_descriptors_(false),
-  residual( p.get<std::string>("Residual Name"), 
+  residual( p.get<std::string>("Residual Name"),
 	    p.get< Teuchos::RCP<panzer::BasisIRLayout> >("Basis")->functional),
   basis_name(p.get< Teuchos::RCP<panzer::BasisIRLayout> >("Basis")->name())
 {
   Teuchos::RCP<Teuchos::ParameterList> valid_params = this->getValidParameters();
   p.validateParameters(*valid_params);
 
-  Teuchos::RCP<const PureBasis> basis 
+  Teuchos::RCP<const PureBasis> basis
      = p.get< Teuchos::RCP<BasisIRLayout> >("Basis")->getBasis();
 
   // Verify that this basis supports the curl operation
@@ -75,29 +75,29 @@ PHX_EVALUATOR_CTOR(Integrator_CurlBasisDotVector,p) :
 
   // use a scalar field only if dimension is 2D
   useScalarField = (basis->dimension()==2);
-  
+
   // determine if using scalar field for curl or a vector field (2D versus 3D)
   if(!useScalarField) {
-     flux_vector = PHX::MDField<const ScalarT,Cell,IP,Dim>( p.get<std::string>("Value Name"), 
+     flux_vector = PHX::MDField<const ScalarT,Cell,IP,Dim>( p.get<std::string>("Value Name"),
 	                                  p.get< Teuchos::RCP<panzer::IntegrationRule> >("IR")->dl_vector );
      this->addDependentField(flux_vector);
   }
   else {
-     flux_scalar = PHX::MDField<const ScalarT,Cell,IP>( p.get<std::string>("Value Name"), 
+     flux_scalar = PHX::MDField<const ScalarT,Cell,IP>( p.get<std::string>("Value Name"),
    	                                  p.get< Teuchos::RCP<panzer::IntegrationRule> >("IR")->dl_scalar );
      this->addDependentField(flux_scalar);
   }
 
   this->addEvaluatedField(residual);
-  
+
   multiplier = p.get<double>("Multiplier");
-  if (p.isType<Teuchos::RCP<const std::vector<std::string> > >("Field Multipliers")) 
+  if (p.isType<Teuchos::RCP<const std::vector<std::string> > >("Field Multipliers"))
   {
-    const std::vector<std::string>& field_multiplier_names = 
+    const std::vector<std::string>& field_multiplier_names =
       *(p.get<Teuchos::RCP<const std::vector<std::string> > >("Field Multipliers"));
 
-    for (std::vector<std::string>::const_iterator name = field_multiplier_names.begin(); 
-      name != field_multiplier_names.end(); ++name) 
+    for (std::vector<std::string>::const_iterator name = field_multiplier_names.begin();
+      name != field_multiplier_names.end(); ++name)
     {
       PHX::MDField<const ScalarT,Cell,IP> tmp_field(*name, p.get< Teuchos::RCP<panzer::IntegrationRule> >("IR")->dl_scalar);
       field_multipliers.push_back(tmp_field);
@@ -108,14 +108,14 @@ PHX_EVALUATOR_CTOR(Integrator_CurlBasisDotVector,p) :
        field != field_multipliers.end(); ++field)
     this->addDependentField(*field);
 
-  std::string n = 
+  std::string n =
     "Integrator_CurlBasisDotVector: " + residual.fieldTag().name();
 
   this->setName(n);
 }
 
 //**********************************************************************
-template<typename EvalT, typename TRAITS>                   
+template<typename EvalT, typename TRAITS>
 Integrator_CurlBasisDotVector<EvalT, TRAITS>::
 Integrator_CurlBasisDotVector(const PHX::FieldTag & input,
                               const PHX::FieldTag & output,
@@ -156,7 +156,7 @@ Integrator_CurlBasisDotVector(const PHX::FieldTag & input,
        field != field_multipliers.end(); ++field)
     this->addDependentField(*field);
 
-  std::string n = 
+  std::string n =
     "Integrator_CurlBasisDotVector: " + residual.fieldTag().name();
 
   this->setName(n);
@@ -224,7 +224,7 @@ public:
   KOKKOS_INLINE_FUNCTION
   void operator()(const Initialize,const unsigned cell) const
   {
-    for (std::size_t qp = 0; qp < scratch.dimension_1(); ++qp) 
+    for (std::size_t qp = 0; qp < scratch.dimension_1(); ++qp)
       for (std::size_t d = 0; d < scratch.dimension_2(); ++d)
         scratch(cell,qp,d) = multiplier * vectorField(cell,qp,d);
   }
@@ -232,7 +232,7 @@ public:
   KOKKOS_INLINE_FUNCTION
   void operator()(const FieldMultipliers,const unsigned cell) const
   {
-    for (std::size_t qp = 0; qp < scratch.dimension_1(); ++qp) 
+    for (std::size_t qp = 0; qp < scratch.dimension_1(); ++qp)
       for (std::size_t d = 0; d < scratch.dimension_2(); ++d)
         scratch(cell,qp,d) *= field(cell,qp);
   }
@@ -259,14 +259,14 @@ public:
   KOKKOS_INLINE_FUNCTION
   void operator()(const Initialize,const unsigned cell) const
   {
-    for (std::size_t qp = 0; qp < scratch.dimension_1(); ++qp) 
-      scratch(cell,qp) = multiplier*vectorField(cell,qp);  
+    for (std::size_t qp = 0; qp < scratch.dimension_1(); ++qp)
+      scratch(cell,qp) = multiplier*vectorField(cell,qp);
   }
 
   KOKKOS_INLINE_FUNCTION
   void operator()(const FieldMultipliers,const unsigned cell) const
   {
-    for (std::size_t qp = 0; qp < scratch.dimension_1(); ++qp) 
+    for (std::size_t qp = 0; qp < scratch.dimension_1(); ++qp)
       scratch(cell,qp) *= field(cell,qp);
   }
 };
@@ -315,7 +315,7 @@ public:
 
 //**********************************************************************
 PHX_EVALUATE_FIELDS(Integrator_CurlBasisDotVector,workset)
-{ 
+{
   const panzer::BasisValues2<double> & bv = use_descriptors_ ?  this->wda(workset).getBasisValues(bd_,id_)
                                                              : *this->wda(workset).bases[basis_index];
 
@@ -342,7 +342,7 @@ PHX_EVALUATE_FIELDS(Integrator_CurlBasisDotVector,workset)
     intValues.scratch     = scratch_vector;
     intValues.residual    = residual;
     intValues.weighted_curl_basis = bv.weighted_curl_basis_vector;
-    
+
     Kokkos::parallel_for(workset.num_cells, intValues);
   }
   else {
@@ -384,7 +384,7 @@ PHX_EVALUATE_FIELDS(Integrator_CurlBasisDotVector,workset)
       //      field != field_multipliers.end(); ++field)
       for (typename std::vector<PHX::MDField<const ScalarT,Cell,IP> >::iterator field = field_multipliers.begin();
            field != field_multipliers.end(); ++field)
-        tmpVar = tmpVar * (*field)(cell,qp);  
+        tmpVar = tmpVar * (*field)(cell,qp);
 
       if(!useScalarField) {
         // for vector fields loop over dimension
@@ -427,7 +427,7 @@ PHX_EVALUATE_FIELDS(Integrator_CurlBasisDotVector,workset)
 //**********************************************************************
 
 template<typename EvalT, typename TRAITS>
-Teuchos::RCP<Teuchos::ParameterList> 
+Teuchos::RCP<Teuchos::ParameterList>
 Integrator_CurlBasisDotVector<EvalT, TRAITS>::getValidParameters() const
 {
   Teuchos::RCP<Teuchos::ParameterList> p = Teuchos::rcp(new Teuchos::ParameterList);

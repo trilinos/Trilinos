@@ -87,13 +87,13 @@ struct evaluateGrad_withSens {
 //**********************************************************************
 PHX_EVALUATOR_CTOR(DOFGradient,p) :
   use_descriptors_(false),
-  dof_value( p.get<std::string>("Name"), 
+  dof_value( p.get<std::string>("Name"),
 	     p.get< Teuchos::RCP<panzer::BasisIRLayout> >("Basis")->functional),
-  dof_gradient( p.get<std::string>("Gradient Name"), 
+  dof_gradient( p.get<std::string>("Gradient Name"),
 		p.get< Teuchos::RCP<panzer::IntegrationRule> >("IR")->dl_vector ),
   basis_name(p.get< Teuchos::RCP<panzer::BasisIRLayout> >("Basis")->name())
 {
-  Teuchos::RCP<const PureBasis> basis 
+  Teuchos::RCP<const PureBasis> basis
      = p.get< Teuchos::RCP<BasisIRLayout> >("Basis")->getBasis();
 
   // Verify that this basis supports the gradient operation
@@ -102,21 +102,21 @@ PHX_EVALUATOR_CTOR(DOFGradient,p) :
 
   this->addEvaluatedField(dof_gradient);
   this->addDependentField(dof_value);
-  
+
   std::string n = "DOFGradient: " + dof_gradient.fieldTag().name() + " ("+PHX::typeAsString<EvalT>()+")";
   this->setName(n);
 }
 
 //**********************************************************************
-template<typename EvalT, typename TRAITS>                   
+template<typename EvalT, typename TRAITS>
 DOFGradient<EvalT, TRAITS>::
 DOFGradient(const PHX::FieldTag & input,
             const PHX::FieldTag & output,
             const panzer::BasisDescriptor & bd,
             const panzer::IntegrationDescriptor & id)
   : use_descriptors_(true)
-  , bd_(bd) 
-  , id_(id) 
+  , bd_(bd)
+  , id_(id)
   , dof_value(input)
   , dof_gradient(output)
 {
@@ -126,7 +126,7 @@ DOFGradient(const PHX::FieldTag & input,
 
   this->addEvaluatedField(dof_gradient);
   this->addDependentField(dof_value);
-  
+
   std::string n = "DOFGradient: " + dof_gradient.fieldTag().name() + " ("+PHX::typeAsString<EvalT>()+")";
   this->setName(n);
 }
@@ -143,7 +143,7 @@ PHX_POST_REGISTRATION_SETUP(DOFGradient,sd,fm)
 
 //**********************************************************************
 PHX_EVALUATE_FIELDS(DOFGradient,workset)
-{ 
+{
   if (workset.num_cells == 0 )
     return;
 

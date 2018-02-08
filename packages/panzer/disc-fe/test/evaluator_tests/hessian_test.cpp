@@ -69,7 +69,7 @@ namespace panzer {
   * to compute (given a function f)
   *
   *    H(x) * v = d/dt(\nabla f(x+t*v))|_{t=0}
-  *       
+  *
   * where x is the value to differentiate about, v is the direction. This function
   * seeds for one value of the independent variable x[i] in the direction v[i]. What
   * is returned from this function is the independent variable to pass the derivative
@@ -127,7 +127,7 @@ PHX_EVALUATOR_CTOR(InputConditionsEvaluator, /* p */)
   this->addEvaluatedField(y);
   this->addEvaluatedField(dx);
   this->addEvaluatedField(dy);
-  
+
   std::string n = "InputConditions evaluator (" + PHX::typeAsString<ScalarT>()+")";
   this->setName(n);
 }
@@ -144,7 +144,7 @@ PHX_POST_REGISTRATION_SETUP(InputConditionsEvaluator, /* sd */, fm)
 
 //**********************************************************************
 PHX_EVALUATE_FIELDS(InputConditionsEvaluator, /* workset */)
-{ 
+{
   double x_val = 0.25;
   double y_val = 0.5;
   double dx_val = 2.0;
@@ -189,7 +189,7 @@ PHX_EVALUATOR_CTOR(HessianTestEvaluator, /* p */)
   this->addDependentField(x);
   this->addDependentField(y);
   this->addEvaluatedField(result);
-  
+
   std::string n = "Hessian test evaluator (" + PHX::typeAsString<ScalarT>()+")";
   this->setName(n);
 }
@@ -205,10 +205,10 @@ PHX_POST_REGISTRATION_SETUP(HessianTestEvaluator, /* sd */, fm)
 
 //**********************************************************************
 PHX_EVALUATE_FIELDS(HessianTestEvaluator, /* workset */)
-{ 
+{
   // Grad = y * std::cos(x*y)
   //      = x * std::cos(x*y)-0.25*std::sin(y)
-  
+
   // Hess*v = dy * std::cos(x*y) - y * ( dx * sin(x*y) + dy * sin(x*y))
   //        = dx * std::cos(x*y) - x * ( dx * sin(x*y) + dy * sin(x*y)) - 0.25 * dy * std::cos(y)
   //
@@ -238,7 +238,7 @@ TEUCHOS_UNIT_TEST(hessian_test,correctness)
   typedef HessianTestEvaluator<panzer::Traits::Hessian,panzer::Traits> HessTestEval;
   typedef panzer::Traits::HessianType ScalarT;
   typedef Sacado::ScalarValue<ScalarT> Value;
- 
+
   using Teuchos::RCP;
   using Teuchos::rcp;
 
@@ -249,7 +249,7 @@ TEUCHOS_UNIT_TEST(hessian_test,correctness)
   RCP<HessTestEval> ht_eval = rcp(new HessTestEval(empty_pl));
 
   Teuchos::RCP<PHX::FieldManager<panzer::Traits> > fm
-     = Teuchos::rcp(new PHX::FieldManager<panzer::Traits>); 
+     = Teuchos::rcp(new PHX::FieldManager<panzer::Traits>);
   fm->registerEvaluator<panzer::Traits::Hessian>(ic_eval);
   fm->registerEvaluator<panzer::Traits::Hessian>(ht_eval);
   fm->requireField<panzer::Traits::Hessian>(ht_eval->result.fieldTag());

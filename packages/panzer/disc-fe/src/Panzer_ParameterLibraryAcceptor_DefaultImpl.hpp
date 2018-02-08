@@ -57,12 +57,12 @@ namespace panzer {
     public ParameterLibraryAcceptor {
 
   public:
-    
+
     ParameterLibraryAcceptor_DefaultImpl() {}
-    
-    ParameterLibraryAcceptor_DefaultImpl(const Teuchos::RCP<panzer::ParamLib>& pl) : 
+
+    ParameterLibraryAcceptor_DefaultImpl(const Teuchos::RCP<panzer::ParamLib>& pl) :
       m_param_lib(pl) {}
-    
+
     virtual ~ParameterLibraryAcceptor_DefaultImpl() {}
 
     virtual void setParameterLibrary(const Teuchos::RCP<panzer::ParamLib>& pl)

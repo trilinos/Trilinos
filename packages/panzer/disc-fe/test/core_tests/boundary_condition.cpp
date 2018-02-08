@@ -55,7 +55,7 @@ namespace panzer {
 
   TEUCHOS_UNIT_TEST(bc, nonmember_ctor)
   {
-    
+
     Teuchos::ParameterList bc_params;
 
     std::vector<panzer::BC> bcs;
@@ -73,7 +73,7 @@ namespace panzer {
     bc_1.set("Equation Set Name", "UX");
     bc_1.set("Strategy", "Constant");
     bc_1.sublist("Data").set("Value",1.0);
-    
+
     Teuchos::RCP<panzer::GlobalData> gd = panzer::createGlobalData();
 
     panzer::buildBCs(bcs, bc_params, gd);
@@ -91,7 +91,7 @@ namespace panzer {
 
   TEUCHOS_UNIT_TEST(bc, neumann_no_param_list)
   {
-    
+
 
     std::size_t bc_id = 0;
     panzer::BCType neumann = BCT_Dirichlet;
@@ -102,7 +102,7 @@ namespace panzer {
     double value = 5.0;
     Teuchos::ParameterList p;
     p.set("Value",value);
-    panzer::BC bc(bc_id, neumann, sideset_id, element_block_id, dof_name, 
+    panzer::BC bc(bc_id, neumann, sideset_id, element_block_id, dof_name,
 		  strategy, p);
 
     TEST_EQUALITY(bc.bcID(), bc_id);
@@ -117,7 +117,7 @@ namespace panzer {
 
   TEUCHOS_UNIT_TEST(bc, dirichlet_with_param_list)
   {
-    
+
     std::size_t bc_id = 0;
     panzer::BCType dirichlet = BCT_Dirichlet;
     std::string sideset_id = "4";
@@ -127,7 +127,7 @@ namespace panzer {
     double value = 5.0;
     Teuchos::ParameterList p;
     p.set("Value",value);
-    panzer::BC bc(bc_id, dirichlet, sideset_id, element_block_id, dof_name, 
+    panzer::BC bc(bc_id, dirichlet, sideset_id, element_block_id, dof_name,
 		  strategy, p);
 
     TEST_EQUALITY(bc.bcID(), bc_id);
@@ -142,7 +142,7 @@ namespace panzer {
 
   TEUCHOS_UNIT_TEST(bc, dirichlet_complete_param_list)
   {
-    
+
     Teuchos::ParameterList p;
     p.set("Type", "Dirichlet");
     p.set("Sideset ID", "4");
@@ -165,7 +165,7 @@ namespace panzer {
 
   TEUCHOS_UNIT_TEST(bc, map_comparitor)
   {
-    
+
     using panzer::BC;
 
     BC bc1(0,BCT_Dirichlet,"3","fluid","VELOCITY","Constant");
@@ -182,6 +182,6 @@ namespace panzer {
     TEST_EQUALITY(my_bcs[bc2], 2);
     TEST_EQUALITY(my_bcs[bc3], 11);
 
-    TEST_INEQUALITY(my_bcs[bc3], 4);    
+    TEST_INEQUALITY(my_bcs[bc3], 4);
   }
 }

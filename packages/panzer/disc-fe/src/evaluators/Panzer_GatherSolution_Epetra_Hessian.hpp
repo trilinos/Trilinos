@@ -119,7 +119,7 @@ namespace panzer
        *  If using an `EpetraVector_ReadOnly_GlobalEvaluationData`, this sets
        *  the `GlobalEvaluationData`(s) containing both the owned and ghosted
        *  solution (and, if applicaple, derivative) vectors.  If using the
-       *  older `EpeteraLinearObjContainer`, this sets the solution vector. 
+       *  older `EpeteraLinearObjContainer`, this sets the solution vector.
        *  Also determines whether or not to apply sensitivities.
        *
        *  \param[in] d The `PreEvalData` containing the

@@ -68,7 +68,7 @@ public:
   LocalIdCompare(const RCP<const STK_Interface> & mesh) : mesh_(mesh) {}
 
   // Compares two stk mesh entities based on local ID
-  bool operator() (stk::mesh::Entity a,stk::mesh::Entity b) 
+  bool operator() (stk::mesh::Entity a,stk::mesh::Entity b)
   { return mesh_->elementLocalId(a) < mesh_->elementLocalId(b);}
 
 private:
@@ -82,7 +82,7 @@ STKConnManager<GO>::STKConnManager(const Teuchos::RCP<const STK_Interface> & stk
 }
 
 template <typename GO>
-Teuchos::RCP<panzer::ConnManagerBase<int> > 
+Teuchos::RCP<panzer::ConnManagerBase<int> >
 STKConnManager<GO>::
 noConnectivityClone() const
 {
@@ -92,7 +92,7 @@ noConnectivityClone() const
 template <typename GO>
 void STKConnManager<GO>::clearLocalElementMapping()
 {
-   elements_ = Teuchos::null; 
+   elements_ = Teuchos::null;
 
    elementBlocks_.clear();
    elmtLidToConn_.clear();
@@ -102,7 +102,7 @@ void STKConnManager<GO>::clearLocalElementMapping()
 
 template <typename GO>
 void STKConnManager<GO>::buildLocalElementMapping()
-{ 
+{
    clearLocalElementMapping(); // forget the past
 
    // build element block information
@@ -120,7 +120,7 @@ void STKConnManager<GO>::buildLocalElementMapping()
 
       // grab elements on this block
       std::vector<stk::mesh::Entity> blockElmts;
-      stkMeshDB_->getMyElements(blockId,blockElmts); 
+      stkMeshDB_->getMyElements(blockId,blockElmts);
 
       // concatenate them into element LID lookup table
       elements_->insert(elements_->end(),blockElmts.begin(),blockElmts.end());
@@ -131,7 +131,7 @@ void STKConnManager<GO>::buildLocalElementMapping()
          elementBlocks_[blockId]->push_back(stkMeshDB_->elementLocalId(blockElmts[i]));
    }
 
-   ownedElementCount_ = elements_->size(); 
+   ownedElementCount_ = elements_->size();
 
    blockIndex=0;
    for(std::vector<std::string>::const_iterator idItr=blockIds.begin();
@@ -140,7 +140,7 @@ void STKConnManager<GO>::buildLocalElementMapping()
 
       // grab elements on this block
       std::vector<stk::mesh::Entity> blockElmts;
-      stkMeshDB_->getNeighborElements(blockId,blockElmts); 
+      stkMeshDB_->getNeighborElements(blockId,blockElmts);
 
       // concatenate them into element LID lookup table
       elements_->insert(elements_->end(),blockElmts.begin(),blockElmts.end());
@@ -198,8 +198,8 @@ void STKConnManager<GO>::buildOffsetsAndIdCounts(const panzer::FieldPattern & fp
    cellOffset = faceOffset+(maxFaceId+1)*faceIdCnt;
 
    // sanity check
-   TEUCHOS_ASSERT(nodeOffset <= edgeOffset 
-               && edgeOffset <= faceOffset 
+   TEUCHOS_ASSERT(nodeOffset <= edgeOffset
+               && edgeOffset <= faceOffset
                && faceOffset <= cellOffset);
 }
 
@@ -207,7 +207,7 @@ template <typename GO>
 typename STKConnManager<GO>::LocalOrdinal STKConnManager<GO>::addSubcellConnectivities(
              stk::mesh::Entity element,unsigned subcellRank,LocalOrdinal idCnt,GlobalOrdinal offset)
 {
-   if(idCnt<=0) 
+   if(idCnt<=0)
       return 0 ;
 
    // loop over all relations of specified type
@@ -271,7 +271,7 @@ void STKConnManager<GO>::buildConnectivity(const panzer::FieldPattern & fp)
     // std::cout << "face: count = " << faceIdCnt << ", offset = " << faceOffset << std::endl;
     // std::cout << "cell: count = " << cellIdCnt << ", offset = " << cellOffset << std::endl;
 
-   // loop over elements and build global connectivity 
+   // loop over elements and build global connectivity
    for(std::size_t elmtLid=0;elmtLid!=elements_->size();++elmtLid) {
       GlobalOrdinal numIds = 0;
       stk::mesh::Entity element = (*elements_)[elmtLid];
@@ -287,9 +287,9 @@ void STKConnManager<GO>::buildConnectivity(const panzer::FieldPattern & fp)
       // add connectivity for parent cells
       if(cellIdCnt>0) {
          // add connectivities: adjust for STK indexing craziness
-         for(LocalOrdinal i=0;i<cellIdCnt;i++) 
+         for(LocalOrdinal i=0;i<cellIdCnt;i++)
             connectivity_.push_back(cellOffset+cellIdCnt*(bulkData.identifier(element)-1));
-      
+
          numIds += cellIdCnt;
       }
 
@@ -315,7 +315,7 @@ std::string STKConnManager<GO>::getBlockId(STKConnManager::LocalOrdinal localElm
 }
 
 template <typename GO>
-void STKConnManager<GO>::applyPeriodicBCs( const panzer::FieldPattern & fp, GlobalOrdinal nodeOffset, GlobalOrdinal edgeOffset, 
+void STKConnManager<GO>::applyPeriodicBCs( const panzer::FieldPattern & fp, GlobalOrdinal nodeOffset, GlobalOrdinal edgeOffset,
                                                                         GlobalOrdinal faceOffset, GlobalOrdinal /* cellOffset */)
 {
    using Teuchos::RCP;
@@ -411,7 +411,7 @@ getElementIdx(const std::vector<stk::mesh::Entity>& elements,
 
 template <typename GO>
 void STKConnManager<GO>::applyInterfaceConditions()
-{  
+{
   stk::mesh::BulkData& bulkData = *stkMeshDB_->getBulkData();
   elmtToAssociatedElmts_.resize(elements_->size());
   for (std::size_t i = 0; i < sidesetsToAssociate_.size(); ++i) {

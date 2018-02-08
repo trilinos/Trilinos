@@ -45,7 +45,7 @@
 
 namespace panzer {
 
-/** This class is used by panzer to manage 
+/** This class is used by panzer to manage
   * the data that is not contained in a workset.
   * It is often accessed by the gather/scatter
   * evaluators, where it is looked up by a string
@@ -74,7 +74,7 @@ public:
 class GlobalEvaluationData_Default : public GlobalEvaluationData {
 public:
    GlobalEvaluationData_Default() : requiresDirichletAdjustment_(false) {}
-   GlobalEvaluationData_Default(const GlobalEvaluationData_Default & s) 
+   GlobalEvaluationData_Default(const GlobalEvaluationData_Default & s)
    { requiresDirichletAdjustment_ = s.requiresDirichletAdjustment(); }
 
    virtual void ghostToGlobal(int /* mem */) {}
@@ -109,7 +109,7 @@ public:
      */
    virtual void adjustForDirichletConditions(const GlobalEvaluationData & localBCRows,
                                              const GlobalEvaluationData & globalBCRows) = 0;
-  
+
 };
 
 }

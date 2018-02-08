@@ -89,7 +89,7 @@ public:
 
    /** Build a periodic matcher object given a string
      *
-     * \param[in] buildStr String specifying the matcher to build. 
+     * \param[in] buildStr String specifying the matcher to build.
      *                     Format: "MatchCondition bndry1;bndry2"
      */
    Teuchos::RCP<const PeriodicBC_MatcherBase>
@@ -99,12 +99,12 @@ public:
      *    and the dimension: 2 or 3
      *
      * */
-   std::pair<std::string, unsigned int> getMatcherTypeAndDim(const std::string & buildStr) const; 
+   std::pair<std::string, unsigned int> getMatcherTypeAndDim(const std::string & buildStr) const;
 
    /** Replace "all" with specific type in matcher string:
      *    coord, edge, or face
      * */
-   std::string replaceMatcherType(const std::string & buildStr, const std::string & matcherType) const; 
+   std::string replaceMatcherType(const std::string & buildStr, const std::string & matcherType) const;
 
    /** Parse a string describing the periodic boundary condition
      * Format: "MatchCondition bndry1;bndry2"

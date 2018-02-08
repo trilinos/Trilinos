@@ -46,7 +46,7 @@
 // only do this if required by the user
 #ifdef Panzer_BUILD_HESSIAN_SUPPORT
 
-// the includes for this file come in as a result of the includes in the main 
+// the includes for this file come in as a result of the includes in the main
 // Epetra scatter residual file
 
 namespace panzer {
@@ -60,25 +60,25 @@ ScatterResidual_BlockedEpetra(const std::vector<Teuchos::RCP<const UniqueGlobalI
                               const std::vector<Teuchos::RCP<const UniqueGlobalIndexer<LO,int> > > & cIndexers,
                               const Teuchos::ParameterList& p,
                               bool useDiscreteAdjoint)
-  : rowIndexers_(rIndexers) 
-  , colIndexers_(cIndexers) 
+  : rowIndexers_(rIndexers)
+  , colIndexers_(cIndexers)
   , globalDataKey_("Residual Scatter Container")
   , useDiscreteAdjoint_(useDiscreteAdjoint)
 {
   std::string scatterName = p.get<std::string>("Scatter Name");
-  scatterHolder_ = 
+  scatterHolder_ =
     Teuchos::rcp(new PHX::Tag<ScalarT>(scatterName,Teuchos::rcp(new PHX::MDALayout<Dummy>(0))));
 
   // get names to be evaluated
-  const std::vector<std::string>& names = 
+  const std::vector<std::string>& names =
     *(p.get< Teuchos::RCP< std::vector<std::string> > >("Dependent Names"));
 
   // grab map from evaluated names to field names
   fieldMap_ = p.get< Teuchos::RCP< std::map<std::string,std::string> > >("Dependent Map");
 
-  Teuchos::RCP<PHX::DataLayout> dl = 
+  Teuchos::RCP<PHX::DataLayout> dl =
     p.get< Teuchos::RCP<const panzer::PureBasis> >("Basis")->functional;
-  
+
   // build the vector of fields that this is dependent on
   scatterFields_.resize(names.size());
   for (std::size_t eq = 0; eq < names.size(); ++eq) {
@@ -105,12 +105,12 @@ ScatterResidual_BlockedEpetra(const std::vector<Teuchos::RCP<const UniqueGlobalI
 
   this->setName(scatterName+" Scatter Residual BlockedEpetra (Hessian)");
 }
-  
+
 template<typename TRAITS,typename LO,typename GO>
 void
 ScatterResidual_BlockedEpetra<panzer::Traits::Hessian,TRAITS,LO,GO>::
 postRegistrationSetup(typename TRAITS::SetupData /* d */,
-                      PHX::FieldManager<TRAITS>& fm) 
+                      PHX::FieldManager<TRAITS>& fm)
 {
   indexerIds_.resize(scatterFields_.size());
   subFieldIds_.resize(scatterFields_.size());
@@ -131,7 +131,7 @@ postRegistrationSetup(typename TRAITS::SetupData /* d */,
 template<typename TRAITS,typename LO,typename GO>
 void
 ScatterResidual_BlockedEpetra<panzer::Traits::Hessian,TRAITS,LO,GO>::
-preEvaluate(typename TRAITS::PreEvalData d) 
+preEvaluate(typename TRAITS::PreEvalData d)
 {
    using Teuchos::RCP;
    using Teuchos::rcp_dynamic_cast;
@@ -155,11 +155,11 @@ preEvaluate(typename TRAITS::PreEvalData d)
 
    TEUCHOS_ASSERT(Jac_!=Teuchos::null);
 }
-  
+
 template<typename TRAITS,typename LO,typename GO>
 void
 ScatterResidual_BlockedEpetra<panzer::Traits::Hessian,TRAITS,LO,GO>::
-evaluateFields(typename TRAITS::EvalData workset) 
+evaluateFields(typename TRAITS::EvalData workset)
 {
    using Teuchos::RCP;
    using Teuchos::ArrayRCP;
@@ -196,7 +196,7 @@ evaluateFields(typename TRAITS::EvalData workset)
       for(std::size_t worksetCellIndex=0;worksetCellIndex<localCellIds.size();++worksetCellIndex) {
          std::size_t cellLocalId = localCellIds[worksetCellIndex];
 
-	 auto rLIDs = subRowIndexer->getElementLIDs(cellLocalId); 
+	 auto rLIDs = subRowIndexer->getElementLIDs(cellLocalId);
 
          // loop over the basis functions (currently they are nodes)
          for(std::size_t rowBasisNum = 0; rowBasisNum < elmtOffset.size(); rowBasisNum++) {
@@ -206,24 +206,24 @@ evaluateFields(typename TRAITS::EvalData workset)
 
             // loop over the sensitivity indices: all DOFs on a cell
             jacRow.resize(scatterField.size());
-  
+
             // For Neumann conditions with no dependence on degrees of freedom, there should be no Jacobian contribution
             if(scatterField.size() == 0)
                 continue;
- 
+
             for(int sensIndex=0;sensIndex<scatterField.size();++sensIndex)
                jacRow[sensIndex] = scatterField.fastAccessDx(sensIndex).fastAccessDx(0);
-    
+
             // scatter the row to each block
             for(int colIndexer=0;colIndexer<numFieldBlocks;colIndexer++) {
                int start = blockOffsets[colIndexer];
                int end = blockOffsets[colIndexer+1];
 
-               if(end-start<=0) 
+               if(end-start<=0)
                   continue;
 
                auto subColIndexer = colIndexers_[colIndexer];
-	       auto cLIDs = subColIndexer->getElementLIDs(cellLocalId); 
+	       auto cLIDs = subColIndexer->getElementLIDs(cellLocalId);
 
                TEUCHOS_ASSERT(end-start==Teuchos::as<int>(cLIDs.size()));
 
@@ -233,7 +233,7 @@ evaluateFields(typename TRAITS::EvalData workset)
 
                // if you didn't find one before, add it to the hash table
                if(subJac==Teuchos::null) {
-                  Teuchos::RCP<Thyra::LinearOpBase<double> > tOp = Jac_->getNonconstBlock(blockIndex.first,blockIndex.second); 
+                  Teuchos::RCP<Thyra::LinearOpBase<double> > tOp = Jac_->getNonconstBlock(blockIndex.first,blockIndex.second);
 
                   // block operator is null, don't do anything (it is excluded)
                   if(Teuchos::is_null(tOp))
@@ -248,14 +248,14 @@ evaluateFields(typename TRAITS::EvalData workset)
                {
                  int err = subJac->SumIntoMyValues(r_lid, end-start, &jacRow[start],&cLIDs[0]);
                  if(err!=0) {
-  
+
                    std::stringstream ss;
                    ss << "Failed inserting row: " << "LID = " << r_lid << ": ";
                    for(int i=0;i<end-start;i++)
                      ss <<  cLIDs[i] << " ";
                    ss << std::endl;
                    ss << "Into block " << rowIndexer << ", " << colIndexer << std::endl;
-  
+
                    ss << "scatter field = ";
                    scatterFields_[fieldIndex].print(ss);
                    ss << std::endl;
@@ -266,7 +266,7 @@ evaluateFields(typename TRAITS::EvalData workset)
                    ss << std::endl;
 
                    std::cout << ss.str() << std::endl;
-                 
+
                    TEUCHOS_TEST_FOR_EXCEPTION(err!=0,std::runtime_error,ss.str());
                  }
                }
