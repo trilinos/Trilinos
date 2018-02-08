@@ -54,7 +54,6 @@
 #include "Tpetra_Map.hpp"
 #include "Tpetra_Util.hpp"
 #include "Tpetra_Distributor.hpp"
-#include "Tpetra_Vector.hpp"
 #include <Teuchos_Array.hpp>
 #include <utility>
 
@@ -79,43 +78,12 @@ namespace Tpetra {
              Teuchos::Array<int>& pids,
              bool use_minus_one_for_local);
 
-    //! Like getPidGidPairs, but just gets the PIDs, ordered by the column Map.
-    // Like the above, but without the resize
-    template <typename LocalOrdinal, typename GlobalOrdinal, typename Node>
-    void
-    getPids (const Tpetra::Import<LocalOrdinal,GlobalOrdinal,Node>& Importer,
-             Teuchos::ArrayView<int>& pids,
-             bool use_minus_one_for_local);
-
-
     /// \brief Get a list of remote PIDs from an importer in the order
     ///   corresponding to the remote LIDs.
     template <typename LocalOrdinal, typename GlobalOrdinal, typename Node>
     void
     getRemotePIDs (const Tpetra::Import<LocalOrdinal,GlobalOrdinal,Node>& Importer,
                    Teuchos::Array<int>& RemotePIDs);
-
-
-    /// \brief Generates an list of owning PIDs based on two transfer (aka import/export objects)
-    /// Let:
-    ///   OwningMap = useReverseModeForOwnership ? transferThatDefinesOwnership.getTargetMap() : transferThatDefinesOwnership.getSourceMap();
-    ///   MapAo     = useReverseModeForOwnership ? transferThatDefinesOwnership.getSourceMap() : transferThatDefinesOwnership.getTargetMap();
-    ///   MapAm     = useReverseModeForMigration ? transferThatDefinesMigration.getTargetMap() : transferThatDefinesMigration.getSourceMap();
-    ///   VectorMap = useReverseModeForMigration ? transferThatDefinesMigration.getSourceMap() : transferThatDefinesMigration.getTargetMap();
-    /// Precondition: 
-    ///  1) MapAo.isSameAs(*MapAm)                      - map compatibility between transfers
-    ///  2) VectorMap->isSameAs(*owningPIDs->getMap())  - map compabibility between transfer & vector
-    ///  3) OwningMap->isOneToOne()                     - owning map is 1-to-1
-    ///  --- Precondition 3 is only checked in DEBUG mode ---
-    /// Postcondition:
-    ///   owningPIDs[VectorMap->getLocalElement(GID i)] =   j iff  (OwningMap->isLocalElement(GID i) on rank j)
-    template <typename LocalOrdinal, typename GlobalOrdinal, typename Node>
-    void getTwoTransferOwnershipVector(const ::Tpetra::Details::Transfer<LocalOrdinal, GlobalOrdinal, Node>& transferThatDefinesOwnership,
-                                       bool useReverseModeForOwnership,
-                                       const ::Tpetra::Details::Transfer<LocalOrdinal, GlobalOrdinal, Node>& transferForMigratingData,
-                                       bool useReverseModeForMigration,
-                                       Tpetra::Vector<int,LocalOrdinal,GlobalOrdinal,Node> & owningPIDs);
-
   } // namespace Import_Util
 } // namespace Tpetra
 
@@ -173,26 +141,12 @@ getPids (const Tpetra::Import<LocalOrdinal,GlobalOrdinal,Node>& Importer,
          Teuchos::Array<int>& pids,
          bool use_minus_one_for_local)
 {
-  // Resize the outgoing data structure
-  pids.resize(Importer.getTargetMap()->getNodeNumElements());
-  Teuchos::ArrayView<int> v_pids = pids();
-  getPids(Importer,v_pids,use_minus_one_for_local);
-}
-
-
-template <typename LocalOrdinal, typename GlobalOrdinal, typename Node>
-void
-getPids (const Tpetra::Import<LocalOrdinal,GlobalOrdinal,Node>& Importer,
-         Teuchos::ArrayView<int>& pids,
-         bool use_minus_one_for_local)
-{
   const Tpetra::Distributor & D=Importer.getDistributor();
 
   LocalOrdinal ii;
   size_t  i,j,k;
   int mypid = Importer.getTargetMap()->getComm()->getRank();
   size_t N  = Importer.getTargetMap()->getNodeNumElements();
-  if(N!=(size_t)pids.size()) throw std::runtime_error("Tpetra::Import_Util::getPids(): Incorrect size for output array");
 
   // Get the importer's data
   Teuchos::ArrayView<const LocalOrdinal> RemoteLIDs  = Importer.getRemoteLIDs();
@@ -201,6 +155,9 @@ getPids (const Tpetra::Import<LocalOrdinal,GlobalOrdinal,Node>& Importer,
   size_t NumReceives                           = D.getNumReceives();
   Teuchos::ArrayView<const int> ProcsFrom      = D.getProcsFrom();
   Teuchos::ArrayView<const size_t> LengthsFrom = D.getLengthsFrom();
+
+  // Resize the outgoing data structure
+  pids.resize(N);
 
   // Start by claiming that I own all the data
   LocalOrdinal lzero = Teuchos::ScalarTraits<LocalOrdinal>::zero();
@@ -249,66 +206,6 @@ getRemotePIDs (const Tpetra::Import<LocalOrdinal,GlobalOrdinal,Node>& Importer,
       j++;
     }
   }
-}
-
-// Generates an list of owning PIDs based on two transfer (aka import/export objects)
-// Let:
-//   OwningMap = useReverseModeForOwnership ? transferThatDefinesOwnership.getTargetMap() : transferThatDefinesOwnership.getSourceMap();
-//   MapAo     = useReverseModeForOwnership ? transferThatDefinesOwnership.getSourceMap() : transferThatDefinesOwnership.getTargetMap();
-//   MapAm     = useReverseModeForMigration ? transferThatDefinesMigration.getTargetMap() : transferThatDefinesMigration.getSourceMap();
-//   VectorMap = useReverseModeForMigration ? transferThatDefinesMigration.getSourceMap() : transferThatDefinesMigration.getTargetMap();
-// Precondition: 
-//  1) MapAo.isSameAs(*MapAm)                      - map compatibility between transfers
-//  2) VectorMap->isSameAs(*owningPIDs->getMap())  - map compabibility between transfer & vector
-//  3) OwningMap->isOneToOne()                     - owning map is 1-to-1
-//  --- Precondition 3 is only checked in DEBUG mode ---
-// Postcondition:
-//   owningPIDs[VectorMap->getLocalElement(GID i)] =   j iff  (OwningMap->isLocalElement(GID i) on rank j)
-template <typename LocalOrdinal, typename GlobalOrdinal, typename Node>
-void getTwoTransferOwnershipVector(const ::Tpetra::Details::Transfer<LocalOrdinal, GlobalOrdinal, Node>& transferThatDefinesOwnership,
-                                   bool useReverseModeForOwnership,
-                                   const ::Tpetra::Details::Transfer<LocalOrdinal, GlobalOrdinal, Node>& transferThatDefinesMigration,
-                                   bool useReverseModeForMigration,
-                                   Tpetra::Vector<int,LocalOrdinal,GlobalOrdinal,Node> & owningPIDs) {
-  typedef Tpetra::Import<LocalOrdinal, GlobalOrdinal, Node> import_type;
-  typedef Tpetra::Export<LocalOrdinal, GlobalOrdinal, Node> export_type;
-
-  Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > OwningMap = useReverseModeForOwnership ? transferThatDefinesOwnership.getTargetMap() : transferThatDefinesOwnership.getSourceMap();
-  Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > MapAo     = useReverseModeForOwnership ? transferThatDefinesOwnership.getSourceMap() : transferThatDefinesOwnership.getTargetMap();
-  Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > MapAm     = useReverseModeForMigration ? transferThatDefinesMigration.getTargetMap() : transferThatDefinesMigration.getSourceMap();
-  Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > VectorMap = useReverseModeForMigration ? transferThatDefinesMigration.getSourceMap() : transferThatDefinesMigration.getTargetMap();
-
-  TEUCHOS_TEST_FOR_EXCEPTION(!MapAo->isSameAs(*MapAm),std::runtime_error,"Tpetra::Import_Util::getTwoTransferOwnershipVector map mismatch between transfers");
-  TEUCHOS_TEST_FOR_EXCEPTION(!VectorMap->isSameAs(*owningPIDs.getMap()),std::runtime_error,"Tpetra::Import_Util::getTwoTransferOwnershipVector map mismatch transfer and vector");
-#ifdef HAVE_TPETRA_DEBUG
-  TEUCHOS_TEST_FOR_EXCEPTION(!OwningMap->isOneToOne(),std::runtime_error,"Tpetra::Import_Util::getTwoTransferOwnershipVector owner must be 1-to-1");
-#endif
-
-  int rank = OwningMap->getComm()->getRank();  
-  // Generate "A" vector and fill it with owning information.  We can read this from transferThatDefinesOwnership w/o communication
-  // Note:  Due to the 1-to-1 requirement, several of these options throw
-  Tpetra::Vector<int,LocalOrdinal,GlobalOrdinal,Node> temp(MapAo);
-  const import_type* ownAsImport = dynamic_cast<const import_type*> (&transferThatDefinesOwnership);
-  const export_type* ownAsExport = dynamic_cast<const export_type*> (&transferThatDefinesOwnership);  
-  
-  Teuchos::ArrayRCP<int> pids    = temp.getDataNonConst();
-  Teuchos::ArrayView<int> v_pids = pids();
-  if(ownAsImport && useReverseModeForOwnership)       {TEUCHOS_TEST_FOR_EXCEPTION(1,std::runtime_error,"Tpetra::Import_Util::getTwoTransferOwnershipVector owner must be 1-to-1");}
-  else if(ownAsImport && !useReverseModeForOwnership) getPids(*ownAsImport,v_pids,false);
-  else if(ownAsExport && useReverseModeForMigration)  {TEUCHOS_TEST_FOR_EXCEPTION(1,std::runtime_error,"Tpetra::Import_Util::getTwoTransferOwnershipVector this option not yet implemented");}
-  else                                                {TEUCHOS_TEST_FOR_EXCEPTION(1,std::runtime_error,"Tpetra::Import_Util::getTwoTransferOwnershipVector owner must be 1-to-1");}
-
-  const import_type* xferAsImport = dynamic_cast<const import_type*> (&transferThatDefinesMigration);
-  const export_type* xferAsExport = dynamic_cast<const export_type*> (&transferThatDefinesMigration);
-  TEUCHOS_TEST_FOR_EXCEPTION(!xferAsImport && !xferAsExport,std::runtime_error,"Tpetra::Import_Util::getTwoTransferOwnershipVector transfer undefined");
-
-  // Migrate from "A" vector to output vector
-  owningPIDs.putScalar(rank);
-  if(xferAsImport && useReverseModeForMigration)        owningPIDs.doExport(temp,*xferAsImport,Tpetra::REPLACE);
-  else if(xferAsImport && !useReverseModeForMigration)  owningPIDs.doImport(temp,*xferAsImport,Tpetra::REPLACE);
-  else if(xferAsExport && useReverseModeForMigration)   owningPIDs.doImport(temp,*xferAsExport,Tpetra::REPLACE);
-  else                                                  owningPIDs.doExport(temp,*xferAsExport,Tpetra::REPLACE);
-
 }
 
 

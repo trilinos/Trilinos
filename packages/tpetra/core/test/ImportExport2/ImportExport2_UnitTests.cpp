@@ -2452,104 +2452,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( RemoteOnlyImport, Basic, LO, GO )  {
 
 
 
-TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( Import_Util,GetTwoTransferOwnershipVector, LO, GO )  {
-  RCP<const Comm<int> > Comm = getDefaultComm();
-  typedef Tpetra::Map<LO, GO> MapType;
-  typedef Tpetra::Import<LO, GO> ImportType;
-  typedef Tpetra::Vector<int,LO, GO, Node> IntVectorType;
-  RCP<const ImportType> ImportOwn, ImportXfer;
-  RCP<MapType> Map0, Map1, Map2;
-  
-  // Get Rank
-  const int NumProc = Comm->getSize ();
-  const int MyPID   = Comm->getRank ();
-  if(NumProc==1) {TEST_EQUALITY(0,0); return;}
-
-  typedef Tpetra::global_size_t GST;
-  const GST INVALID = Teuchos::OrdinalTraits<GST>::invalid ();
-
-  std::ostringstream err;
-  int lclErr = 0;
-  int gblErr = 0;
-  const int num_per_proc = 10;
-
-  // Map0  - Even
-  GO num_global = num_per_proc * NumProc;
-  Map0 = rcp(new MapType(num_global,0,Comm));
-
-
-  // Map1 - Cycled
-  Teuchos::Array<GO> map1_gids(num_per_proc);
-  for(int i=0; i<num_per_proc; i++) {
-    map1_gids[i] = MyPID + i*NumProc;
-  }
-  Map1 = rcp(new MapType(INVALID,map1_gids,0,Comm));
-
-  // Map2 - Reversed
-  Teuchos::Array<GO> map2_gids(num_per_proc);
-  GO map2_base = (NumProc-MyPID-1)*num_per_proc;
-  for(int i=0; i<num_per_proc; i++) {
-    map2_gids[i] = map2_base + i;
-  }
-  Map2 = rcp(new MapType(INVALID,map2_gids,0,Comm));
-
-  // Importer / Exporter
-  ImportOwn = rcp(new ImportType(Map0,Map1));
-  ImportXfer = rcp(new ImportType(Map1,Map2));
-
-  // Get the owned PID's list
-  IntVectorType ownership(Map2);
-  Tpetra::Import_Util::getTwoTransferOwnershipVector(*ImportOwn,false,*ImportXfer,false,ownership);
-  Teuchos::ArrayRCP<const int> odata = ownership.getData();
-
-#if 0
-  {
-    std::ostringstream oss;
-    oss<<"["<<MyPID<<"] Map0 = ";
-    for(int i=0; i<num_per_proc; i++)
-      oss<<Map0->getGlobalElement(i)<<" " ;
-    oss<<"\n["<<MyPID<<"] Map1 = ";
-    for(int i=0; i<num_per_proc; i++)
-      oss<<Map1->getGlobalElement(i)<<" " ;
-    oss<<"\n["<<MyPID<<"] Map2 = ";
-    for(int i=0; i<num_per_proc; i++)
-      oss<<Map2->getGlobalElement(i)<<" ";
-    oss<<"\n["<<MyPID<<"] Ownership = ";
-    for(int i=0; i<num_per_proc; i++)
-      oss<<odata[i]<< " ";
-    std::cout<<oss.str()<<std::endl; 
-  }
-#endif
-  
-  
-  // Check answer [ownership(GID i) should contain the owning PID in Map0]
-  for(size_t i=0; i<Map2->getNodeNumElements(); i++) {
-    GO GID  = Map2->getGlobalElement(i);
-    int PID = (int)(GID / num_per_proc);
-    if (odata[i]!=PID) {
-      printf("For GID %d on PID %d expected owner %d; got %d\n",(int)GID,MyPID,PID,odata[i]);
-      lclErr++;
-    }
-  }
-
-  // Sum Errors
-  reduceAll<int, int> (*Comm, REDUCE_MAX, lclErr, outArg (gblErr));
-  if (gblErr != 0) {
-    for (int r = 0; r <NumProc; ++r) {
-      if (r == MyPID) {
-        cerr << err.str () << endl;
-      }
-      Comm->barrier ();
-      Comm->barrier ();
-      Comm->barrier ();
-    }
-    TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, "Test failed!");
-  }
-
-  TEST_EQUALITY(gblErr,0);
-}
-
-
   //
   // INSTANTIATIONS
   //
@@ -2560,8 +2462,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( Import_Util,GetTwoTransferOwnershipVector, LO
   TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( RemoteOnlyImport, Basic, LO, GO ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( Import_Util, LowCommunicationMakeColMapAndReindex, LO, GO ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( CrsGraphImportExport, doImport, LO, GO ) \
-  TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( Import_Util, GetPids, LO, GO ) \
-  TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( Import_Util, GetTwoTransferOwnershipVector, LO, GO )
+  TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( Import_Util, GetPids, LO, GO )
 
 #define UNIT_TEST_GROUP_SC_LO_GO( SC, LO, GO )                   \
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsMatrixImportExport, doImport, LO, GO, SC ) \
