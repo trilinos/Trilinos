@@ -62,8 +62,6 @@ namespace Tacho {
     ordinal_type_array _perm; ordinal_type_array_host _h_perm;
     ordinal_type_array _peri; ordinal_type_array_host _h_peri;
 
-    bool _is_problem_set;
-
     // ** symbolic factorization output
     // supernodes output
     ordinal_type _nsupernodes;
@@ -109,7 +107,6 @@ namespace Tacho {
       : _m(0), _nnz(0),
         _ap(), _aj(),          _h_ap(), _h_aj(),
         _perm(), _peri(),      _h_perm(), _h_peri(),
-        _is_problem_set(false),
         _verbose(0),
         _small_problem_thres(1024),
         _serial_thres_size(-1),
@@ -182,33 +179,30 @@ namespace Tacho {
       TACHO_TEST_FOR_EXCEPTION(_mode != Cholesky, std::logic_error, "Cholesky is only supported now");
     }
 
+    // internal only
     int analyze(const ordinal_type m,
                 const size_type_array_host &ap,
                 const ordinal_type_array_host &aj,
                 const ordinal_type_array_host &perm,
                 const ordinal_type_array_host &peri) {
-      if (!_is_problem_set) {
-        _m = m;
-        _h_ap = ap;
-        _h_aj = aj;
-
-        _ap = Kokkos::create_mirror_view(exec_memory_space(), _h_ap); Kokkos::deep_copy(_ap, _h_ap);
-        _aj = Kokkos::create_mirror_view(exec_memory_space(), _h_aj); Kokkos::deep_copy(_aj, _h_aj);
-        
-        _nnz = _h_ap(m);
-
-        _h_perm = perm;
-        _h_peri = peri;
-
-        _perm = Kokkos::create_mirror_view(exec_memory_space(), _h_perm); Kokkos::deep_copy(_perm, _h_perm);
-        _peri = Kokkos::create_mirror_view(exec_memory_space(), _h_peri); Kokkos::deep_copy(_peri, _h_peri);
-
-        _is_problem_set = true;
-      }
-
       if (_verbose) {
         printf("TachoSolver: Analyze\n");
         printf("====================\n");
+      }
+
+      if (_m == 0) {
+        _m = m;
+        
+        _ap   = Kokkos::create_mirror_view(exec_memory_space(), ap); Kokkos::deep_copy(_ap, ap);
+        _aj   = Kokkos::create_mirror_view(exec_memory_space(), aj); Kokkos::deep_copy(_aj, aj);
+
+        _h_ap = ap;
+        _h_aj = aj;
+
+        _nnz = _ap(m);
+
+        _h_perm = perm;
+        _h_peri = peri;
       }
 
       if (_m < _small_problem_thres) {
@@ -247,6 +241,13 @@ namespace Tacho {
         Kokkos::deep_copy(_stree_parent           , S.SupernodesTreeParent());
         Kokkos::deep_copy(_stree_ptr              , S.SupernodesTreePtr());
         Kokkos::deep_copy(_stree_children         , S.SupernodesTreeChildren());
+
+        // perm and peri is updated during symbolic factorization
+        _perm = Kokkos::create_mirror_view(exec_memory_space(), _h_perm); 
+        _peri = Kokkos::create_mirror_view(exec_memory_space(), _h_peri); 
+
+        Kokkos::deep_copy(_perm, _h_perm);
+        Kokkos::deep_copy(_peri, _h_peri);
       }
       return 0;
     }
@@ -273,11 +274,7 @@ namespace Tacho {
       _h_perm = G.PermVector(); 
       _h_peri = G.InvPermVector();
 
-      _perm = Kokkos::create_mirror_view(exec_memory_space(), _h_perm); Kokkos::deep_copy(_perm, _h_perm);
-      _peri = Kokkos::create_mirror_view(exec_memory_space(), _h_peri); Kokkos::deep_copy(_peri, _h_peri);
-
-      _is_problem_set = true;
-
+      // invoke a private function
       return analyze(_m, _h_ap, _h_aj, _h_perm, _h_peri);
     }
 
@@ -304,8 +301,7 @@ namespace Tacho {
         const double t_copy = timer.seconds();
         
         timer.reset();
-        const ordinal_type sched = 0, member = 0;
-        Chol<Uplo::Upper,Algo::External>::invoke(sched, member, _U);
+        Chol<Uplo::Upper,Algo::External>::invoke(_U);
         const double t_factor = timer.seconds();
 
         if (_verbose) {
@@ -358,35 +354,50 @@ namespace Tacho {
 #endif
         else {
           const ordinal_type max_dense_size = max(_N.getMaxSupernodeSize(),_N.getMaxSchurSize());
-          if (_nb < 0) { 
-	    _nb = 64;
-            // if      (max_dense_size < 256)  _nb =  -1;
-            // else if (max_dense_size < 512)  _nb =  64;
-            // else if (max_dense_size < 1024) _nb = 128;
-            // else if (max_dense_size < 8192) _nb = 256;
-            // else                            _nb = 256;
-          }
-          if (_mb < 0) {
-            if      (max_dense_size < 256)  _mb =  -1;
-            else if (max_dense_size < 512)  _mb =  64;
-            else if (max_dense_size < 1024) _mb = 128;
-            else if (max_dense_size < 8192) _mb = 256;
-            else                            _mb = 256;
+          if (std::is_same<exec_memory_space,Kokkos::HostSpace>::value) {
+            if (_nb < 0) { 
+              _nb = 64;
+              // if      (max_dense_size < 256)  _nb =  -1;
+              // else if (max_dense_size < 512)  _nb =  64;
+              // else if (max_dense_size < 1024) _nb = 128;
+              // else if (max_dense_size < 8192) _nb = 256;
+              // else                            _nb = 256;
+            }
+            if (_mb < 0) {
+              if      (max_dense_size < 256)  _mb =  -1;
+              else if (max_dense_size < 512)  _mb =  64;
+              else if (max_dense_size < 1024) _mb = 128;
+              else if (max_dense_size < 8192) _mb = 256;
+              else                            _mb = 256;
+            }
+          } else {
+            if (_nb < 0) { 
+              _nb = 80;
+              // if      (max_dense_size < 256)  _nb =  -1;
+              // else if (max_dense_size < 512)  _nb =  64;
+              // else if (max_dense_size < 1024) _nb = 128;
+              // else if (max_dense_size < 8192) _nb = 256;
+              // else                            _nb = 256;
+            }
+            if (_mb < 0) {
+              if      (max_dense_size < 256)  _mb =  -1;
+              else if (max_dense_size < 512)  _mb =  80;
+              else if (max_dense_size < 1024) _mb = 120;
+              else if (max_dense_size < 8192) _mb = 160;
+              else                            _mb = 160;
+            }            
           }
           
-          _N.factorizeCholesky_Parallel(ax, _verbose);          
-          // if (_nb <= 0) {
-          //   if (_mb > 0)
-          //     _N.factorizeCholesky_ParallelByBlocks(ax, _mb, _verbose);
-          //   else
-          //     _N.factorizeCholesky_Parallel(ax, _verbose);
-          // } else {
-          //   if (_mb > 0) 
-          //     _N.factorizeCholesky_ParallelByBlocksPanel(ax, _mb, _nb, _verbose);
-          //   else
-          //     _N.factorizeCholesky_ParallelPanel(ax, _nb, _verbose);
-          // }
-
+          if (_nb <= 0) 
+            if (_mb > 0)
+              _N.factorizeCholesky_ParallelByBlocks(ax, _mb, _verbose);
+            else
+              _N.factorizeCholesky_Parallel(ax, _verbose);
+          else 
+            if (_mb > 0) 
+              _N.factorizeCholesky_ParallelByBlocksPanel(ax, _mb, _nb, _verbose);
+            else
+              _N.factorizeCholesky_ParallelPanel(ax, _nb, _verbose);
         }
       }
       return 0;
@@ -408,13 +419,12 @@ namespace Tacho {
         const double t_copy = timer.seconds();
 
         timer.reset();
-        const ordinal_type sched = 0, member = 0;
         auto h_x = Kokkos::create_mirror_view(x); 
         Kokkos::deep_copy(h_x, x);
         Trsm<Side::Left,Uplo::Upper,Trans::ConjTranspose,Algo::External>
-          ::invoke(sched, member, Diag::NonUnit(), 1.0, _U, h_x);
+          ::invoke(Diag::NonUnit(), 1.0, _U, h_x);
         Trsm<Side::Left,Uplo::Upper,Trans::NoTranspose,Algo::External>
-          ::invoke(sched, member, Diag::NonUnit(), 1.0, _U, h_x);
+          ::invoke(Diag::NonUnit(), 1.0, _U, h_x);
         Kokkos::deep_copy(x, h_x);         
         const double t_solve = timer.seconds();
 
@@ -465,8 +475,49 @@ namespace Tacho {
         printf("====================\n");
       }
       _N.release(_verbose);
-      _is_problem_set = false;
 
+      {
+        _transpose = false;
+        _mode = 0;
+        
+        _m = 0;
+        _nnz = 0;
+        
+        _ap = size_type_array();      _h_ap = size_type_array_host();
+        _aj = ordinal_type_array();   _h_aj = ordinal_type_array_host();
+        
+        _perm = ordinal_type_array(); _h_perm = ordinal_type_array_host();
+        _peri = ordinal_type_array(); _h_peri = ordinal_type_array_host();
+        
+        _nsupernodes = 0;
+        _supernodes = ordinal_type_array();
+        
+        _gid_super_panel_ptr = size_type_array();
+        _gid_super_panel_colidx = ordinal_type_array();
+        
+        _sid_super_panel_ptr = size_type_array();
+        
+        _sid_super_panel_colidx = ordinal_type_array();  
+        _blk_super_panel_colidx = ordinal_type_array();
+        
+        _stree_ptr = size_type_array();
+        _stree_children = ordinal_type_array();
+        
+        _stree_parent = ordinal_type_array();
+        _stree_roots = ordinal_type_array_host();
+        
+        _N = numeric_tools_type();
+        _U =value_type_matrix_host();
+        
+        _verbose = 0;
+        _small_problem_thres = 1024;
+        _serial_thres_size = -1; 
+        _mb = -1;                
+        _nb = -1;                
+        _front_update_mode = -1; 
+        
+        _max_num_superblocks = -1;
+      }
       return 0;
     }
 

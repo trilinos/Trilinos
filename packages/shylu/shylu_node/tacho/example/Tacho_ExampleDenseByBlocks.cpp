@@ -154,8 +154,6 @@ int main (int argc, char *argv[]) {
 
       // reference 
       {
-        int dummy = 0;
-
         sub_a. sync  <host_exec_space>();
         sub_a1.modify<host_exec_space>();
         
@@ -166,7 +164,7 @@ int main (int argc, char *argv[]) {
         for (ordinal_type iter=dry;iter<niter;++iter) {
           Kokkos::deep_copy(sub_a1.h_view, sub_a.h_view);
           timer.reset();
-          Chol<Uplo::Upper,Algo::External>::invoke(dummy, dummy, A);
+          Chol<Uplo::Upper,Algo::External>::invoke(A);
           t_reference += (iter >= 0)*timer.seconds();
         }
         t_reference /= niter;
@@ -272,8 +270,6 @@ int main (int argc, char *argv[]) {
 
       // reference 
       {
-        int dummy = 0;
-        
         sub_a. sync  <host_exec_space>();
         sub_a1.sync  <host_exec_space>();
         sub_a1.modify<host_exec_space>();
@@ -289,7 +285,7 @@ int main (int argc, char *argv[]) {
         for (ordinal_type iter=dry;iter<niter;++iter) {
           timer.reset();
           Trsm<Side::Left,Uplo::Upper,Trans::ConjTranspose,Algo::External>
-            ::invoke(dummy, dummy, Diag::NonUnit(), alpha, A, B);
+            ::invoke(Diag::NonUnit(), alpha, A, B);
           t_reference += (iter >= 0)*timer.seconds();
         }
         t_reference /= niter;
@@ -414,8 +410,6 @@ int main (int argc, char *argv[]) {
 
       // reference 
       {
-        int dummy = 0;
-        
         sub_a. sync  <host_exec_space>();
         sub_b. sync  <host_exec_space>();
         sub_a1.sync  <host_exec_space>();
@@ -436,7 +430,7 @@ int main (int argc, char *argv[]) {
         for (ordinal_type iter=dry;iter<niter;++iter) {
           timer.reset();
           Gemm<Trans::NoTranspose,Trans::NoTranspose,Algo::External>
-            ::invoke(dummy, dummy, alpha, A, B, beta, C);
+            ::invoke(alpha, A, B, beta, C);
           t_reference += (iter >= 0)*timer.seconds();
         }
         t_reference /= niter;

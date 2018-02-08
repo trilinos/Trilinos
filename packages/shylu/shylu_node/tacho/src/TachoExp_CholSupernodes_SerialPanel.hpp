@@ -139,12 +139,12 @@ namespace Tacho {
             srcsize = srcend - srcbeg;
 
 #if defined (KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_HOST)
-          TACHO_TEST_FOR_ABORT(bufsize < (srcsize*sizeof(ordinal_type) + 
-                                          nn*nb*sizeof(value_type)),
+          TACHO_TEST_FOR_ABORT(bufsize < size_type(srcsize*sizeof(ordinal_type) + 
+                                                   nn*nb*sizeof(value_type)),
                                "bufsize is smaller than required workspace");        
 #else          
-          TACHO_TEST_FOR_ABORT(bufsize < (srcsize*sizeof(ordinal_type)*member.team_size() + 
-                                          nn*nb*sizeof(value_type)),
+          TACHO_TEST_FOR_ABORT(bufsize < size_type(srcsize*sizeof(ordinal_type)*member.team_size() + 
+                                                   nn*nb*sizeof(value_type)),
                                "bufsize is smaller than required workspace");        
 #endif
           
@@ -430,8 +430,8 @@ namespace Tacho {
                                  const ordinal_type sid,
                                  const bool final,
                                  typename SupernodeInfoType::value_type *buf,
-                                 const ordinal_type bufsize,
-                                 const ordinal_type np) {
+                                 const size_type bufsize,
+                                 const size_type np) {
         typedef SupernodeInfoType supernode_info_type;
         
         typedef typename supernode_info_type::value_type value_type;
@@ -447,19 +447,19 @@ namespace Tacho {
         }
 
         {
-          const size_type n = s.n - s.m;
+          const ordinal_type n = s.n - s.m;
 #if defined (KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_HOST)
           const size_type bufsize_required = n*(min(np,n)+1)*sizeof(value_type);
 #else
           const size_type bufsize_required = n*(min(np,n)+member.team_size())*sizeof(value_type);
 #endif
-          TACHO_TEST_FOR_ABORT(bufsize < static_cast<ordinal_type>(bufsize_required), 
+          TACHO_TEST_FOR_ABORT(bufsize < bufsize_required, 
                                "bufsize is smaller than required");
           
           CholSupernodes<Algo::Workflow::SerialPanel>
             ::factorize(sched, member, info, sid);
 
-          for (ordinal_type offn=0; offn<static_cast<ordinal_type>(n); offn+=np) {
+          for (ordinal_type offn=0; offn<n; offn+=np) {
             CholSupernodes<Algo::Workflow::SerialPanel>
               ::update(sched, member, info, offn, np, sid, bufsize, (void*)buf);
           }

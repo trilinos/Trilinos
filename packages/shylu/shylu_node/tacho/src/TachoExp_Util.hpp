@@ -278,6 +278,24 @@ namespace Tacho {
         });
 #endif
     } 
+
+    template<typename T1, typename T2, typename CompareType>
+    KOKKOS_INLINE_FUNCTION
+    static T1* lower_bound(T1* first, T1* last, const T2& val, 
+                           CompareType compare) {
+      T1 *it;
+      ordinal_type step = 0, count = last - first;
+      while (count > 0) {
+        it = first; step = count/2; it += step;
+        if (compare(*it,val)) {
+          first = ++it;
+          count -= step + 1;
+        } else {
+          count = step;
+        }
+      }
+      return first;
+    }
     
     template<size_t BufSize, typename SpaceType = Kokkos::DefaultExecutionSpace>
     struct Flush {

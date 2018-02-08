@@ -625,14 +625,6 @@ namespace Tacho {
                              functor_type(sched, bufpool, _info, _stree_roots(i)));
         Kokkos::wait(sched);
         stat.t_factor = timer.seconds();
-
-        {
-          auto superpanel_buf = Kokkos::create_mirror_view(_superpanel_buf);
-          Kokkos::deep_copy(superpanel_buf, _superpanel_buf);
-          for (size_t i=0;i<superpanel_buf.dimension_0();++i) {
-            std::cout << " spanel " << i << " val = " << superpanel_buf(i) << "\n";
-          }
-        }
         
         track_free(bufpool.capacity());
         track_free(sched.memory()->capacity());
@@ -753,14 +745,6 @@ namespace Tacho {
         track_free(bufpool.capacity());
         track_free(sched.memory()->capacity());
 
-        {
-          auto superpanel_buf = Kokkos::create_mirror_view(_superpanel_buf);
-          Kokkos::deep_copy(superpanel_buf, _superpanel_buf);
-          for (size_t i=0;i<superpanel_buf.dimension_0();++i) {
-            std::cout << " panel version spanel " << i << " val = " << superpanel_buf(i) << "\n";
-          }
-        }
-
         // reset solve scheduler and bufpool
         _sched_solve_capacity = 0;
         _bufpool_solve_capacity = 0;
@@ -876,14 +860,6 @@ namespace Tacho {
         timer.reset();
         applyRowPermutation(x, t, _perm);
         stat.t_extra += timer.seconds();
-
-        {
-          auto xx = Kokkos::create_mirror_view(x);
-          Kokkos::deep_copy(xx, x);
-          for (size_t i=0;i<xx.dimension_0();++i) {
-            std::cout << " xx " << i << " val = " << xx(i,0) << "\n";
-          }
-        }
         
         if (verbose) {
           printf("Summary: NumericTools (ParallelSolve: %3d)\n", ordinal_type(x.dimension_1()));
@@ -1005,14 +981,6 @@ namespace Tacho {
         Kokkos::wait(sched);
         stat.t_factor = timer.seconds();
 
-        {
-          auto superpanel_buf = Kokkos::create_mirror_view(_superpanel_buf);
-          Kokkos::deep_copy(superpanel_buf, _superpanel_buf);
-          for (size_t i=0;i<superpanel_buf.dimension_0();++i) {
-            std::cout << "byblocks spanel " << i << " val = " << superpanel_buf(i) << "\n";
-          }
-        }
-        
         track_free(bufpool.capacity());
         track_free(sched.memory()->capacity());
 
@@ -1143,14 +1111,6 @@ namespace Tacho {
         // reset solve scheduler and bufpool
         _sched_solve_capacity = 0;
         _bufpool_solve_capacity = 0;
-
-        {
-          auto superpanel_buf = Kokkos::create_mirror_view(_superpanel_buf);
-          Kokkos::deep_copy(superpanel_buf, _superpanel_buf);
-          for (size_t i=0;i<superpanel_buf.dimension_0();++i) {
-            std::cout << " byblocks panel spanel " << i << " val = " << superpanel_buf(i) << "\n";
-          }
-        }
 
         if (verbose) {
           printf("Summary: NumericTools (ParallelFactorizationByBlocksPanel: %3d, %3d)\n", blksize, panelsize);

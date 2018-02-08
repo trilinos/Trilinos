@@ -21,6 +21,12 @@
 #include "cholmod.h"
 #endif
 
+#if defined (KOKKOS_ENABLE_CUDA)
+int main (int argc, char *argv[]) {
+  printf("Performance test is not compiled when CUDA is enabled due to a compiler bug\n");
+  return -1;
+}
+#else
 int main (int argc, char *argv[]) {
   int nthreads = 1; 
 
@@ -94,7 +100,7 @@ int main (int argc, char *argv[]) {
     ///
     /// problem setting
     ///
-    CrsMatrixBaseType A("A");
+    CrsMatrixBaseType A;
     {
       {
         std::ifstream in;
@@ -471,5 +477,5 @@ int main (int argc, char *argv[]) {
   Kokkos::finalize();
   return r_val;
 }
-
+#endif
 

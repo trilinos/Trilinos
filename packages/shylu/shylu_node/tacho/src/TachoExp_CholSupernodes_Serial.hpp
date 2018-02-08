@@ -571,7 +571,7 @@ namespace Tacho {
                                  const ordinal_type sid,
                                  const bool final,
                                  typename SupernodeInfoType::value_type *buf,
-                                 const ordinal_type bufsize) {
+                                 const size_type bufsize) {
         typedef SupernodeInfoType supernode_info_type;
 
         typedef typename supernode_info_type::value_type value_type;
@@ -587,13 +587,13 @@ namespace Tacho {
         }
 
         {
-          const size_type n = s.n - s.m;
+          const ordinal_type n = s.n - s.m;
 #if defined (KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_HOST)
           const size_type bufsize_required = n*(n+1)*sizeof(value_type);
 #else
           const size_type bufsize_required = n*(n+member.team_size())*sizeof(value_type);
 #endif
-          TACHO_TEST_FOR_ABORT(bufsize < static_cast<ordinal_type>(bufsize_required), 
+          TACHO_TEST_FOR_ABORT(bufsize < bufsize_required, 
                                "bufsize is smaller than required");
 
           UnmanagedViewType<value_type_matrix> ABR((value_type*)buf, n, n);
@@ -621,7 +621,7 @@ namespace Tacho {
                                    const ordinal_type sid,
                                    const bool final,
                                    typename SupernodeInfoType::value_type *buf,
-                                   const ordinal_type bufsize) {
+                                   const size_type bufsize) {
         typedef SupernodeInfoType supernode_info_type;
         
         typedef typename supernode_info_type::value_type value_type;
@@ -637,10 +637,11 @@ namespace Tacho {
         }
 
         {
-          const size_type n = s.n - s.m, nrhs = info.x.dimension_1(), 
-            bufsize_required = n*nrhs*sizeof(value_type);
+          const ordinal_type n = s.n - s.m;
+          const ordinal_type nrhs = info.x.dimension_1();
+          const size_type bufsize_required = n*nrhs*sizeof(value_type);
 
-          TACHO_TEST_FOR_ABORT(bufsize < static_cast<ordinal_type>(bufsize_required), 
+          TACHO_TEST_FOR_ABORT(bufsize < bufsize_required, 
                                "bufsize is smaller than required");
 
           UnmanagedViewType<value_type_matrix> xB((value_type*)buf, n, nrhs);
@@ -675,10 +676,11 @@ namespace Tacho {
 
         const auto &s = info.supernodes(sid);        
         {
-          const size_type n = s.n - s.m, nrhs = info.x.dimension_1(), 
-            bufsize_required = n*nrhs*sizeof(value_type);
+          const ordinal_type n = s.n - s.m;
+          const ordinal_type nrhs = info.x.dimension_1();
+          const ordinal_type bufsize_required = n*nrhs*sizeof(value_type);
           
-          TACHO_TEST_FOR_ABORT(bufsize < static_cast<ordinal_type>(bufsize_required), 
+          TACHO_TEST_FOR_ABORT(bufsize < bufsize_required, 
                                "bufsize is smaller than required");
 
           UnmanagedViewType<value_type_matrix> xB((value_type*)buf, n, nrhs);
