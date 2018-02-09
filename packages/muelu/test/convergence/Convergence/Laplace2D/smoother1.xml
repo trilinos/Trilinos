@@ -10,6 +10,7 @@
 
     $\lambda_{max}(T_{Jacobi}) \approx 1 - \frac{pi^2 h^{-2}}{2}$
   -->
+  <Parameter        name="skipForComplex"             type="bool"     value="true"/>
   <Parameter        name="convergence rate"           type="double"   value="0.9075"/>
 
   <ParameterList    name="MueLu">

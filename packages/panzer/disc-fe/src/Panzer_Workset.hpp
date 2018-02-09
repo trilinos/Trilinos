@@ -119,6 +119,10 @@ namespace panzer {
     const panzer::IntegrationRule & getIntegrationRule(const panzer::IntegrationDescriptor & description) const;
 
     /// Grab the basis values for a given basis description and integration description (throws error if it doesn't exist)
+    panzer::BasisValues2<double> & getBasisValues(const panzer::BasisDescriptor & basis_description, 
+                                                  const panzer::IntegrationDescriptor & integration_description);
+
+    /// Grab the basis values for a given basis description and integration description (throws error if it doesn't exist)
     const panzer::BasisValues2<double> & getBasisValues(const panzer::BasisDescriptor & basis_description, 
                                                         const panzer::IntegrationDescriptor & integration_description) const;
 
@@ -151,7 +155,7 @@ namespace panzer {
     std::map<size_t,Teuchos::RCP<const panzer::IntegrationValues2<double> > > _integrator_map;
 
     std::map<size_t,Teuchos::RCP<const panzer::PureBasis > > _pure_basis_map;
-    std::map<size_t,std::map<size_t,Teuchos::RCP<const panzer::BasisValues2<double> > > > _basis_map;
+    std::map<size_t,std::map<size_t,Teuchos::RCP<panzer::BasisValues2<double> > > > _basis_map;
 
     std::map<size_t,Teuchos::RCP<const panzer::PointRule > > _point_rule_map;
     std::map<size_t,Teuchos::RCP<const panzer::PointValues2<double> > > _point_map;

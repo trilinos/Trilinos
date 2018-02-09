@@ -187,7 +187,7 @@ StepperNewmarkImplicitDForm<Scalar>::setSolver(
             << "  Solver Name  = " << solverName << "\n");
     solverName = solverPL->name();
     stepperPL_->set("Solver Name", solverName);
-    stepperPL_->set(solverName, solverPL);  // Add sublist
+    stepperPL_->set(solverName, *solverPL);  // Add sublist
     solver_ = rcp(new Thyra::NOXNonlinearSolver());
     RCP<ParameterList> noxPL = Teuchos::sublist(solverPL, "NOX", true);
     solver_->setParameterList(noxPL);
@@ -208,7 +208,7 @@ StepperNewmarkImplicitDForm<Scalar>::setSolver(
   RCP<ParameterList> solverPL = solver->getNonconstParameterList();
   std::string solverName = solverPL->name();
   stepperPL_->set("Solver Name", solverName);
-  stepperPL_->set(solverName, solverPL);  // Add sublist
+  stepperPL_->set(solverName, *solverPL);  // Add sublist
   solver_ = solver;
 }
 
@@ -548,8 +548,7 @@ StepperNewmarkImplicitDForm<Scalar>::getValidParameters() const {
   Teuchos::RCP<Teuchos::ParameterList> pl = Teuchos::parameterList();
   pl->setName("Default Stepper - " + this->description());
   pl->set("Stepper Type", this->description());
-  pl->set(
-      "Solver Name", "",
+  pl->set("Solver Name", "",
       "Name of ParameterList containing the solver specifications.");
 
   return pl;

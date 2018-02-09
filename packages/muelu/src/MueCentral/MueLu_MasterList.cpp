@@ -71,7 +71,7 @@ namespace MueLu {
     }
     return problemSpecificList_;
   }
- 
+
    std::string MasterList::interpretParameterName(const std::string& name, const std::string& value) {
 
     // used to concatenate the return string
@@ -95,8 +95,8 @@ namespace MueLu {
     if (name == "cycle type") {
       std::stringstream temp1; temp1 << "\"" << "MGV" << "\"";
       std::stringstream temp2; temp2 << "\"" << "MGV" << "\"";
-      if (value == temp1.str() ) { ss << "<Parameter name=\"cycle type\" type=\"string\" value=\"V\"/>"; return ss.str(); }
-      else if (value == temp2.str()) { ss << "<Parameter name=\"cycle type\" type=\"string\" value=\"W\"/>"; return ss.str(); }
+      if (value == temp1.str() ) { ss << "<Parameter name=\"cycle type\" type=\"string\" value=\"V\"/>"; }
+      else if (value == temp2.str()) { ss << "<Parameter name=\"cycle type\" type=\"string\" value=\"W\"/>"; }
       else TEUCHOS_TEST_FOR_EXCEPTION(true, MueLu::Exceptions::RuntimeError, "MasterList::interpretParameterName, Line " << __LINE__ << ". "
                                            << "The parameter " << value << " is not supported by MueLu.");
       return ss.str();
@@ -141,7 +141,7 @@ namespace MueLu {
     if (name == "use external multigrid package") { ss << "<Parameter name=\"use external multigrid package\" type=\"string\" value=" << value << "/>"; return ss.str(); }      
     return "";
   }
- 
+
   Teuchos::RCP<Teuchos::ParameterList> MasterList::masterList_ = Teuchos::null;
   Teuchos::RCP<Teuchos::ParameterList> MasterList::problemSpecificList_ = Teuchos::null;
   std::string                          MasterList::problemType_ = "unknown";
@@ -267,6 +267,24 @@ namespace MueLu {
           
     "</ParameterList>"
   )
+("Poisson-2D-complex",
+
+    "<ParameterList name=\"MueLu\">"
+    
+            "<Parameter name=\"number of equations\" type=\"int\" value=\"1\"/>"
+          
+            "<Parameter name=\"smoother: type\" type=\"string\" value=\"RELAXATION\"/>"
+          
+    "<ParameterList name=\"smoother: params\">"
+    
+        "<Parameter name=\"relaxation: type\" type=\"string\" value=\"Symmetric Gauss-Seidel\"/>"
+        
+    "</ParameterList>"
+  
+            "<Parameter name=\"multigrid algorithm\" type=\"string\" value=\"sa\"/>"
+          
+    "</ParameterList>"
+  )
 ("Poisson-3D",
 
     "<ParameterList name=\"MueLu\">"
@@ -275,6 +293,24 @@ namespace MueLu {
           
             "<Parameter name=\"smoother: type\" type=\"string\" value=\"CHEBYSHEV\"/>"
           
+            "<Parameter name=\"multigrid algorithm\" type=\"string\" value=\"sa\"/>"
+          
+    "</ParameterList>"
+  )
+("Poisson-3D-complex",
+
+    "<ParameterList name=\"MueLu\">"
+    
+            "<Parameter name=\"number of equations\" type=\"int\" value=\"1\"/>"
+          
+            "<Parameter name=\"smoother: type\" type=\"string\" value=\"RELAXATION\"/>"
+          
+    "<ParameterList name=\"smoother: params\">"
+    
+        "<Parameter name=\"relaxation: type\" type=\"string\" value=\"Symmetric Gauss-Seidel\"/>"
+        
+    "</ParameterList>"
+  
             "<Parameter name=\"multigrid algorithm\" type=\"string\" value=\"sa\"/>"
           
     "</ParameterList>"
@@ -291,6 +327,24 @@ namespace MueLu {
           
     "</ParameterList>"
   )
+("Elasticity-2D-complex",
+
+    "<ParameterList name=\"MueLu\">"
+    
+            "<Parameter name=\"number of equations\" type=\"int\" value=\"2\"/>"
+          
+            "<Parameter name=\"smoother: type\" type=\"string\" value=\"RELAXATION\"/>"
+          
+    "<ParameterList name=\"smoother: params\">"
+    
+        "<Parameter name=\"relaxation: type\" type=\"string\" value=\"Symmetric Gauss-Seidel\"/>"
+        
+    "</ParameterList>"
+  
+            "<Parameter name=\"multigrid algorithm\" type=\"string\" value=\"sa\"/>"
+          
+    "</ParameterList>"
+  )
 ("Elasticity-3D",
 
     "<ParameterList name=\"MueLu\">"
@@ -299,6 +353,24 @@ namespace MueLu {
           
             "<Parameter name=\"smoother: type\" type=\"string\" value=\"CHEBYSHEV\"/>"
           
+            "<Parameter name=\"multigrid algorithm\" type=\"string\" value=\"sa\"/>"
+          
+    "</ParameterList>"
+  )
+("Elasticity-3D-complex",
+
+    "<ParameterList name=\"MueLu\">"
+    
+            "<Parameter name=\"number of equations\" type=\"int\" value=\"3\"/>"
+          
+            "<Parameter name=\"smoother: type\" type=\"string\" value=\"RELAXATION\"/>"
+          
+    "<ParameterList name=\"smoother: params\">"
+    
+        "<Parameter name=\"relaxation: type\" type=\"string\" value=\"Symmetric Gauss-Seidel\"/>"
+        
+    "</ParameterList>"
+  
             "<Parameter name=\"multigrid algorithm\" type=\"string\" value=\"sa\"/>"
           
     "</ParameterList>"
@@ -430,9 +502,9 @@ namespace MueLu {
       
          ("aggregation: Dirichlet threshold","aggregation: Dirichlet threshold")
       
+         ("aggregation: phase 1 algorithm","aggregation: phase 1 algorithm")
+      
          ("aggregation: enable phase 1","aggregation: enable phase 1")
-         
-         ("aggregation: phase 1 algorithm","Serial")
       
          ("aggregation: enable phase 2a","aggregation: enable phase 2a")
       

@@ -185,9 +185,9 @@ namespace MueLu {
         type_ == "LINESMOOTHING_BLOCKRELAXATION" ) {
       ParameterList& myparamList = const_cast<ParameterList&>(this->GetParameterList());
 
-      LO CoarseNumZLayers = Factory::Get<LO>(currentLevel,"CoarseNumZLayers");
+      LO CoarseNumZLayers = currentLevel.Get<LO>("CoarseNumZLayers",Factory::GetFactory("CoarseNumZLayers").get());
       if (CoarseNumZLayers > 0) {
-        Teuchos::ArrayRCP<LO> TVertLineIdSmoo = Factory::Get< Teuchos::ArrayRCP<LO> >(currentLevel, "LineDetection_VertLineIds");
+        Teuchos::ArrayRCP<LO> TVertLineIdSmoo = currentLevel.Get< Teuchos::ArrayRCP<LO> >("LineDetection_VertLineIds", Factory::GetFactory("LineDetection_VertLineIds").get());
 
         // determine number of local parts
         LO maxPart = 0;

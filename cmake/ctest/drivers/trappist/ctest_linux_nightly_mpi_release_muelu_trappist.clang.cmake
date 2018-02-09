@@ -54,26 +54,32 @@
 # @HEADER
 
 
-INCLUDE("${CTEST_SCRIPT_DIRECTORY}/../../TrilinosCTestDriverCore.cmake")
+INCLUDE("${CTEST_SCRIPT_DIRECTORY}/TrilinosCTestDriverCore.trappist.clang.cmake")
 
-SET_DEFAULT(COMPILER_VERSION "GCC-7.2.0")
-SET(BUILD_DIR_NAME "MPI_RELEASE_ATDM")
-SET(CTEST_TEST_TIMEOUT 600)
-SET( CTEST_NOTES_FILES
-  "${CTEST_SCRIPT_DIRECTORY}/${CTEST_SCRIPT_NAME}"
-  "${TRIBITS_PROJECT_ROOT}/cmake/std/sems/atdm/load_atdm_7.2_dev_env.sh"
-  )
-SET( CTEST_BUILD_FLAGS "-j10 -i" )
-SET( CTEST_PARALLEL_LEVEL "10" )
-SET(Trilinos_ENABLE_SECONDARY_TESTED_CODE OFF)
-SET(Trilinos_ENABLE_CONFIGURE_TIMING ON)
-SET(Trilinos_BRANCH develop)
-#SET(Trilinos_PACKAGES)
-SET( EXTRA_CONFIGURE_OPTIONS
-  "-DTrilinos_CONFIGURE_OPTIONS_FILE:STRING=cmake/std/sems/atdm/SEMSATDMSettings.cmake,cmake/std/MpiReleaseDebugSharedPtSettings.cmake,cmake/std/BasicCiTestingSettings.cmake"
-  "-DTrilinos_ENABLE_CONFIGURE_TIMING=ON"
-  )
+#
+# Set the options specific to this build case
+#
+
+SET(COMM_TYPE MPI)
+SET(BUILD_TYPE RELEASE)
+SET(BUILD_DIR_NAME OPENMPI_1.10.1_RELEASE_DEV_MueLu_clang)
+SET(CTEST_PARALLEL_LEVEL 8)
 SET(CTEST_TEST_TYPE Nightly)
-SET(Trilinos_TRACK Specialized)
+SET(Trilinos_TRACK  Specialized)      # Set CDash board to Specialized
+SET(CTEST_TEST_TIMEOUT 900)
 
-TRIBITS_CTEST_DRIVER()
+SET(Trilinos_PACKAGES MueLu)
+
+SET(EXTRA_CONFIGURE_OPTIONS
+  "-D Trilinos_ENABLE_EXPLICIT_INSTANTIATION=ON"
+  "-D Trilinos_ENABLE_DEPENDENCY_UNIT_TESTS=ON"
+  "-D TPL_ENABLE_SuperLU=ON"
+  "-D Zoltan2_ENABLE_Experimental=ON"
+  "-D Teuchos_GLOBALLY_REDUCE_UNITTEST_RESULTS=ON"
+)
+
+#
+# Set the rest of the system-specific options and run the dashboard build/test
+#
+
+TRILINOS_SYSTEM_SPECIFIC_CTEST_DRIVER()

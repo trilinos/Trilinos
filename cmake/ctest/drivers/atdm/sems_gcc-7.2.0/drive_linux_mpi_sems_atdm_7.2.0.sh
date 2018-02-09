@@ -12,7 +12,7 @@ DRIVER_SCRIPT_DIR_REL=`echo $0 | sed "s/\(.*\)\/.*\.sh/\1/g"`
 DRIVER_SCRIPT_DIR=`readlink -f ${DRIVER_SCRIPT_DIR_REL}`
 echo "DRIVER_SCRIPT_DIR = '$DRIVER_SCRIPT_DIR'"
 
-TRILINOS_DIR=`readlink -f ${DRIVER_SCRIPT_DIR}/../../../..`
+TRILINOS_DIR=`readlink -f ${DRIVER_SCRIPT_DIR}/../../../../..`
 echo "TRILINOS_DIR='${TRILINOS_DIR}'"
 
 source /etc/bashrc
@@ -26,7 +26,7 @@ echo "Some of the set env vars:"
 set | grep "SEMS_.*_ROOT"
 set | grep TRILINOS_SEMS_DEV_ENV_LOADED
 
-TEST_DIR=GCC-7.2.0-MPI_RELEASE_ATDM
+TEST_DIR=SRC_AND_BUILD
 if [ ! -e $TEST_DIR ] ; then
   echo "Creating $TEST_DIR"
   mkdir $TEST_DIR

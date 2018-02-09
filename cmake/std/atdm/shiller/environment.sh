@@ -1,27 +1,46 @@
-# This script must be sourced, not run!
+################################################################################
+#
+# Set up env on shiller/hansen for ATMD builds of Trilinos
+#
+# This source script gets the settings from the JOB_NAME var.
+#
+#  
+#
+################################################################################
 
-
-# Get the base dir for the sourced script
+# Assert this script is sourced, not run!
 called=$_
-#[[ $called != $0 ]] && echo "Script is being sourced" || echo "Script is being run"
-#echo "\$BASH_SOURCE ${BASH_SOURCE[@]}"
+if [ "$called" == "$0" ] ; then
+  echo "This script '$0' is being called.  Instead, it must be sourced!"
+  exit 1
+fi
+
+# Assert that JOB_NAME is set!
+if [ -z "$JOB_NAME" ] ; then
+  echo "Error, must set JOB_NAME in env!"
+  return
+fi
+
+# Return the absoute directory of some relative directory path.
+#
+# This uses a temp shell to cd into the directory and then uses pwd to get the
+# path.
+function get_abs_dir_path() {
+  [ -z "$1" ] && { pwd; return; }
+  (cd -P -- "$1" && pwd)
+}
+
+# Get the base dir for the sourced script to find the base of Trilinos
 _SCRIPT_DIR=`echo $BASH_SOURCE | sed "s/\(.*\)\/.*\.sh/\1/g"`
 #echo "_SCRIPT_DIR = '$_SCRIPT_DIR'"
-BASE_OF_TRILNOS_DIR=`dirname $_SCRIPT_DIR/../../../../..`
-
-# Set WORKSPACE if not already set
-if [ "$WORKSPACE" == "" ] ; then
-  WORKSPACE=$BASE_OF_TRILNOS_DIR
-fi
-echo "WORKSPACE = $WORKSPACE"
+TRILNOS_DIR=`get_abs_dir_path $_SCRIPT_DIR/../../../..`
+echo "TRILNOS_DIR = '$TRILNOS_DIR'"
 
 # Purge all of the existing modules first
 module purge
 
-
 export BUILD_COUNT=32
 export OMPI_CXX=
-if [ -z "$JOB_NAME" ]; then JOB_NAME=""; fi
 
 # Set the defaults
 export COMPILER=GNU
@@ -62,8 +81,6 @@ export INSTALL_DIR=/home/projects/empire/install-for-${PROJECT}/$COMPILER-$BUILD
 export Trilinos_INSTALL_DIR=`echo $INSTALL_DIR | sed s/${PROJECT}/PANZER/`
 export PATH=$Trilinos_INSTALL_DIR/bin:$PATH
 
-
-
 if [ $INSTALL == "ON" ]; then
     if [[ ! -e $INSTALL_DIR ]]; then mkdir -p $INSTALL_DIR; fi
     echo "#!/bin/bash" >$INSTALL_DIR/configure.sh
@@ -73,6 +90,8 @@ fi
 
 echo using compiler stack $COMPILER to build $BUILD_TYPE code
 
+module load ninja/1.7.2
+
 if [ "$COMPILER" == "GNU" ]; then
     module load devpack/openmpi/2.1.1/gcc/4.9.3/cuda/8.0.61
     export OMPI_CXX=`which g++`
@@ -80,7 +99,6 @@ if [ "$COMPILER" == "GNU" ]; then
     export BLAS_LIB="-L${BLAS_ROOT}/lib;-lblas;-lgfortran"
 elif [ "$COMPILER" == "INTEL" ]; then
     module load devpack/openmpi/2.1.1/intel/17.4.196/cuda/none
-    module swap intel/compilers/17.0.042 intel/compilers/17.1.132
     export OMPI_CXX=`which icpc`
     export OMPI_CC=`which icc`
     export OMPI_FC=`which ifort`
@@ -88,10 +106,10 @@ elif [ "$COMPILER" == "INTEL" ]; then
     export BLAS_LIB="-mkl"
 elif [ "$COMPILER" == "CUDA" ]; then
     module load devpack/openmpi/2.1.1/gcc/4.9.3/cuda/8.0.61
-    export OMPI_CXX=$WORKSPACE/Trilinos/packages/kokkos/config/nvcc_wrapper 
+    export OMPI_CXX=$TRILNOS_DIR/packages/kokkos/config/nvcc_wrapper 
     if [ $INSTALL == "ON" ]; then
         if [[ ! -e $INSTALL_DIR/bin ]]; then mkdir -p $INSTALL_DIR/bin; fi
-        cp $WORKSPACE/Trilinos/packages/kokkos/config/nvcc_wrapper $INSTALL_DIR/bin
+        cp $TRILNOS_DIR/packages/kokkos/config/nvcc_wrapper $INSTALL_DIR/bin
     fi
     if [ ! -x "$OMPI_CXX" ]; then
 	export OMPI_CXX=`which nvcc_wrapper`
@@ -110,8 +128,12 @@ elif [ "$COMPILER" == "CUDA" ]; then
     export BLAS_LIB="-L${BLAS_ROOT}/lib;-lblas;-lgfortran"
 else
     echo "No valid compiler found"
-
 fi
+
+# Set MPI wrappers
+export MPICC=`which mpicc`
+export MPICXX=`which mpicxx`
+export MPIF90=`which mpif90`
 
 export USE_HWLOC=OFF
 export HWLOC_LIBS=-lhwloc

@@ -24,7 +24,34 @@ namespace Tempus {
 template<class Scalar> class StepperFactory;
 
 
-// StepperIMEX_RK_Partition definitions:
+template<class Scalar>
+StepperIMEX_RK_Partition<Scalar>::StepperIMEX_RK_Partition(
+  const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel,
+  std::string stepperType)
+{
+  this->setTableaus(Teuchos::null, stepperType);
+  this->setParameterList(Teuchos::null);
+  this->setModel(appModel);
+  this->setSolver();
+  this->setObserver();
+  this->initialize();
+}
+
+
+template<class Scalar>
+StepperIMEX_RK_Partition<Scalar>::StepperIMEX_RK_Partition(
+  const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel,
+  Teuchos::RCP<Teuchos::ParameterList> pList)
+{
+  this->setTableaus(pList, "Partitioned IMEX RK SSP2");
+  this->setParameterList(pList);
+  this->setModel(appModel);
+  this->setSolver();
+  this->setObserver();
+  this->initialize();
+}
+
+
 template<class Scalar>
 StepperIMEX_RK_Partition<Scalar>::StepperIMEX_RK_Partition(
   const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel,
@@ -49,7 +76,8 @@ void StepperIMEX_RK_Partition<Scalar>::setTableaus(
     if (pList == Teuchos::null)
       stepperType = "Partitioned IMEX RK SSP2";
     else
-      stepperType = pList->get<std::string>("Stepper Type");
+      stepperType = pList->get<std::string>("Stepper Type",
+                                            "Partitioned IMEX RK SSP2");
   }
 
   if (stepperType == "Partitioned IMEX RK 1st order") {
@@ -355,7 +383,7 @@ void StepperIMEX_RK_Partition<Scalar>::setSolver(
       << "\n" << "  Solver Name  = "<<solverName<<"\n");
     solverName = solverPL->name();
     stepperPL_->set("Solver Name", solverName);
-    stepperPL_->set(solverName, solverPL);      // Add sublist
+    stepperPL_->set(solverName, *solverPL);      // Add sublist
     solver_ = rcp(new Thyra::NOXNonlinearSolver());
     RCP<ParameterList> noxPL = Teuchos::sublist(solverPL, "NOX", true);
     solver_->setParameterList(noxPL);
@@ -377,7 +405,7 @@ void StepperIMEX_RK_Partition<Scalar>::setSolver(
   RCP<ParameterList> solverPL = solver->getNonconstParameterList();
   std::string solverName = solverPL->name();
   stepperPL_->set("Solver Name", solverName);
-  stepperPL_->set(solverName, solverPL);      // Add sublist
+  stepperPL_->set(solverName, *solverPL);      // Add sublist
   solver_ = solver;
 }
 

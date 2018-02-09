@@ -87,8 +87,7 @@ void Teuchos::TestForException_break( const std::string &errorMsg )
 {
   size_t break_on_me;
   break_on_me = errorMsg.length(); // Use errMsg to avoid compiler warning.
-  if (break_on_me)
-    ; // Avoid 'used var' warning
+  if (break_on_me) {} // Avoid warning
   // Above is just some statement for the debugger to break on.  Note: now is
   // a good time to examine the stack trace and look at the error message in
   // 'errorMsg' to see what happened.  In GDB just type 'where' or you can go

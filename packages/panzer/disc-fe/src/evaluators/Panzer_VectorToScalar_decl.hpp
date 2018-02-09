@@ -56,6 +56,14 @@ PANZER_EVALUATOR_CLASS(VectorToScalar)
   std::vector< PHX::MDField<ScalarT,Cell,Point> > scalar_fields;
   PHX::MDField<const ScalarT,Cell,Point,Dim> vector_field;
 
+public:
+ 
+  /**
+   * \brief Tag only constructor for this class.
+   */
+  VectorToScalar(const PHX::FieldTag & input,
+                 const std::vector<PHX::Tag<ScalarT>> & output);
+
 PANZER_EVALUATOR_CLASS_END
 
 /** This is a function constructor for an evaluator

@@ -427,9 +427,8 @@ int main(int argc, char *argv[]) {
                   "Otherwise, we tell Pamgen to make a cube, using "
                   "nx, ny, and nz.");
   cmdp.setOption ("solverName", &solverName, "Name of iterative linear solver "
-                  "to use for solving the linear system.  You may use any name "
-                  "that Belos::SolverFactory understands.  Examples include "
-                  "\"GMRES\" and \"CG\".");
+                  "to use for solving the linear system.  Examples include "
+                  "\"ML\", \"MueLu\", \"ML-Stratimikos\" and \"MueLu-Stratimikos\".");
   cmdp.setOption ("verbose", "quiet", &verbose,
                   "Whether to print verbose status output.");
   cmdp.setOption ("debug", "release", &debug,

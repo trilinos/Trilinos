@@ -15,6 +15,11 @@
 #include "Teuchos_VerboseObjectParameterListHelpers.hpp"
 #include "Teuchos_TimeMonitor.hpp"
 
+//Step control strategy
+#include "Tempus_TimeStepControlStrategyConstant.hpp"
+#include "Tempus_TimeStepControlStrategyComposite.hpp"
+#include "Tempus_TimeStepControlStrategyBasicVS.hpp"
+
 //Thyra
 #include "Thyra_VectorStdOps.hpp"
 
@@ -31,11 +36,12 @@ TimeStepControl<Scalar>::TimeStepControl(
 
 template<class Scalar>
 TimeStepControl<Scalar>::TimeStepControl(const TimeStepControl<Scalar>& tsc_)
-  : tscPL_           (tsc_.tscPL_           ),
-    outputIndices_   (tsc_.outputIndices_   ),
-    outputTimes_     (tsc_.outputTimes_     ),
-    outputAdjustedDt_(tsc_.outputAdjustedDt_),
-    dtAfterOutput_   (tsc_.dtAfterOutput_   )
+  : tscPL_              (tsc_.tscPL_              ),
+    outputIndices_      (tsc_.outputIndices_      ),
+    outputTimes_        (tsc_.outputTimes_        ),
+    outputAdjustedDt_   (tsc_.outputAdjustedDt_   ),
+    dtAfterOutput_      (tsc_.dtAfterOutput_      ),
+    stepControlStategy_ (tsc_.stepControlStategy_ )
 {}
 
 
@@ -64,20 +70,10 @@ void TimeStepControl<Scalar>::getNextTimeStep(
       return message.str();
     };
 
-    auto changeOrder = [] (int order_old, int order_new, std::string reason) {
-      std::stringstream message;
-      message << "     (order = " << std::setw(2) << order_old
-              <<       ", new = " << std::setw(2) << order_new
-              << ")  " << reason << std::endl;
-      return message.str();
-    };
-
     RCP<SolutionState<Scalar> > workingState=solutionHistory->getWorkingState();
     RCP<SolutionStateMetaData<Scalar> > metaData = workingState->getMetaData();
     const Scalar lastTime = solutionHistory->getCurrentState()->getTime();
     const int iStep = metaData->getIStep();
-    const Scalar errorAbs = metaData->getErrorAbs();
-    const Scalar errorRel = metaData->getErrorRel();
     int order = metaData->getOrder();
     Scalar dt = metaData->getDt();
     bool output = metaData->getOutput();
@@ -95,141 +91,27 @@ void TimeStepControl<Scalar>::getNextTimeStep(
       dtAfterOutput_ = 0.0;
     }
 
+    if (dt <= 0.0) {
+      if (printChanges) *out << changeDT(dt, getInitTimeStep(),
+        "Reset dt to initial dt.");
+      dt = getInitTimeStep();
+    }
+
     if (dt < getMinTimeStep()) {
       if (printChanges) *out << changeDT(dt, getMinTimeStep(),
         "Reset dt to minimum dt.");
       dt = getMinTimeStep();
     }
 
-    if (getStepType() == "Constant") {
+    // update dt in metaData for the step control strategy to be informed
+    metaData->setDt(dt);
 
-      dt = getInitTimeStep();
+    // call the step control strategy (to update order/dt if needed)
+    stepControlStategy_->getNextTimeStep(*this, solutionHistory, integratorStatus);
 
-      // Stepper failure
-      if (stepperState->stepperStatus_ == Status::FAILED) {
-        if (order+1 <= getMaxOrder()) {
-          if (printChanges) *out << changeOrder(order, order+1,
-            "Stepper failure, increasing order.");
-          order++;
-        } else {
-          *out << "Failure - Stepper failed and can not change time step size "
-               << "or order!\n"
-               << "    Time step type == CONSTANT_STEP_SIZE\n"
-               << "    order = " << order << std::endl;
-          integratorStatus = FAILED;
-          return;
-        }
-      }
-
-      // Absolute error failure
-      if (errorAbs > getMaxAbsError()) {
-        if (order+1 <= getMaxOrder()) {
-          if (printChanges) *out << changeOrder(order, order+1,
-            "Absolute error is too large.  Increasing order.");
-          order++;
-        } else {
-          *out
-            << "Failure - Absolute error failed and can not change time step "
-            << "size or order!\n"
-            << "  Time step type == CONSTANT_STEP_SIZE\n"
-            << "  order = " << order
-            << "  (errorAbs ="<<errorAbs<<") > (errorMaxAbs ="
-            << getMaxAbsError()<<")"
-            << std::endl;
-          integratorStatus = FAILED;
-          return;
-        }
-      }
-
-      // Relative error failure
-      if (errorRel > getMaxRelError()) {
-        if (order+1 <= getMaxOrder()) {
-          if (printChanges) *out << changeOrder(order, order+1,
-            "Relative error is too large.  Increasing order.");
-          order++;
-        } else {
-          *out
-            << "Failure - Relative error failed and can not change time step "
-            << "size or order!\n"
-            << "  Time step type == CONSTANT_STEP_SIZE\n"
-            << "  order = " << order
-            << "  (errorRel ="<<errorRel<<") > (errorMaxRel ="
-            << getMaxRelError()<<")"
-            << std::endl;
-          integratorStatus = FAILED;
-          return;
-        }
-      }
-
-      // Consistency checks
-      TEUCHOS_TEST_FOR_EXCEPTION(
-        (order < getMinOrder() || order > getMaxOrder()), std::out_of_range,
-        "Error - Solution order is out of range and can not change "
-        "time step size!\n"
-        "    Time step type == CONSTANT_STEP_SIZE\n"
-        "    [order_min, order_max] = [" <<getMinOrder()<< ", "
-        <<getMaxOrder()<< "]\n"
-        "    order = " << order << "\n");
-    }
-
-    else if (getStepType() == "Variable") {
-      // Section 2.2.1 / Algorithm 2.4 of A. Denner, "Experiments on
-      // Temporal Variable Step BDF2 Algorithms", Masters Thesis,
-      // U Wisconsin-Madison, 2014.
-      Scalar rho   = getAmplFactor();
-      Scalar sigma = getReductFactor();
-      Scalar eta   = computeEta(solutionHistory);
-
-      // General rule: only increase/decrease dt once for any given reason.
-      if (stepperState->stepperStatus_ == Status::FAILED) {
-        if (printChanges) *out << changeDT(dt, dt*sigma,
-          "Stepper failure - Decreasing dt.");
-        dt *= sigma;
-      }
-      else { //Stepper passed
-        if (eta < getMinEta()) { // increase dt
-          if (printChanges) *out << changeDT(dt, dt*rho,
-            "Monitoring Value (eta) is too small ("
-            + std::to_string(eta) + " < " + std::to_string(getMinEta())
-            + ").  Increasing dt.");
-          dt *= rho;
-        }
-        else if (eta > getMaxEta()) { // reduce dt
-          if (printChanges) *out << changeDT(dt, dt*sigma,
-            "Monitoring Value (eta) is too large ("
-            + std::to_string(eta) + " > " + std::to_string(getMaxEta())
-            + ").  Decreasing dt.");
-          dt *= sigma;
-        }
-        else if (errorAbs > getMaxAbsError()) { // reduce dt
-          if (printChanges) *out << changeDT(dt, dt*sigma,
-            "Absolute error is too large ("
-            + std::to_string(errorAbs) +" > "+ std::to_string(getMaxAbsError())
-            + ").  Decreasing dt.");
-          dt *= sigma;
-        }
-        else if (errorRel > getMaxRelError()) { // reduce dt
-          if (printChanges) *out << changeDT(dt, dt*sigma,
-            "Relative error is too large ("
-            + std::to_string(errorRel) +" > "+ std::to_string(getMaxRelError())
-            + ").  Decreasing dt.");
-          dt *= sigma;
-        }
-        else if (order < getMinOrder()) { // order too low, increase dt
-          if (printChanges) *out << changeDT(dt, dt*rho,
-            "Order is too small ("
-            + std::to_string(order) + " < " + std::to_string(getMinOrder())
-            + ").  Increasing dt.");
-          dt *= rho;
-        }
-        else if (order > getMaxOrder()) { // order too high, reduce dt
-          if (printChanges) *out << changeDT(dt, dt*sigma,
-            "Order is too large ("
-            + std::to_string(order) + " > " + std::to_string(getMaxOrder())
-            + ").  Decreasing dt.");
-          dt *= sigma;
-        }
-      }
+    // get the order and dt (probably have changed by stepControlStategy_)
+    order = metaData->getOrder();
+    dt = metaData->getDt();
 
       if (dt < getMinTimeStep()) { // decreased below minimum dt
         if (printChanges) *out << changeDT(dt, getMinTimeStep(),
@@ -241,7 +123,7 @@ void TimeStepControl<Scalar>::getNextTimeStep(
           "dt is too large.  Resetting to maximum dt.");
         dt = getMaxTimeStep();
       }
-    }
+
 
     // Check if we need to output this step index
     std::vector<int>::const_iterator it =
@@ -334,51 +216,6 @@ bool TimeStepControl<Scalar>::indexInRange(const int iStep) const{
   return iir;
 }
 
-template<class Scalar>
-Scalar TimeStepControl<Scalar>::computeEta(const Teuchos::RCP<SolutionHistory<Scalar> > & solutionHistory)
-{
-  using Teuchos::RCP;
-  Scalar eta;
-  const double eps = 1.0e4*std::numeric_limits<double>::epsilon();
-  RCP<Teuchos::FancyOStream> out = this->getOStream();
-  int numStates = solutionHistory->getNumStates();
-  //Compute eta
-  if (numStates < 3) {
-    eta = getMinEta();
-    return eta;
-  }
-  RCP<const Thyra::VectorBase<Scalar> > xOld = (*solutionHistory)[numStates-3]->getX();
-  RCP<const Thyra::VectorBase<Scalar> > x = (*solutionHistory)[numStates-1]->getX();
-//IKT: uncomment the following to get some debug output
-//#define VERBOSE_DEBUG_OUTPUT
-#ifdef VERBOSE_DEBUG_OUTPUT
-  Teuchos::Range1D range;
-  *out << "\n*** xOld ***\n";
-  RTOpPack::ConstSubVectorView<Scalar> xOldv;
-  xOld->acquireDetachedView(range, &xOldv);
-  auto xoa = xOldv.values();
-  for (auto i = 0; i < xoa.size(); ++i) *out << xoa[i] << " ";
-  *out << "\n*** xOld ***\n";
-  *out << "\n*** x ***\n";
-  RTOpPack::ConstSubVectorView<Scalar> xv;
-  x->acquireDetachedView(range, &xv);
-  auto xa = xv.values();
-  for (auto i = 0; i < xa.size(); ++i) *out << xa[i] << " ";
-  *out << "\n*** x ***\n";
-#endif
-  //xDiff = x - xOld
-  RCP<Thyra::VectorBase<Scalar> > xDiff = Thyra::createMember(x->space());
-  Thyra::V_VmV(xDiff.ptr(), *x, *xOld);
-  Scalar xDiffNorm = Thyra::norm(*xDiff);
-  Scalar xOldNorm = Thyra::norm(*xOld);
-  //eta = ||x^(n+1)-x^n||/(||x^n||+eps)
-  eta = xDiffNorm/(xOldNorm + eps);
-#ifdef VERBOSE_DEBUG_OUTPUT
-  *out << "IKT xDiffNorm, xOldNorm, eta = " << xDiffNorm << ", " << xOldNorm
-       << ", " << eta << "\n";
-#endif
-  return eta;
-}
 
 template<class Scalar>
 void TimeStepControl<Scalar>::setNumTimeSteps(int numTimeSteps) {
@@ -436,10 +273,13 @@ void TimeStepControl<Scalar>::setParameterList(
   } else {
     tscPL_ = pList;
   }
-  tscPL_->validateParametersAndSetDefaults(*this->getValidParameters());
+  tscPL_->validateParametersAndSetDefaults(*this->getValidParameters(), 0);
 
   // Override parameters
   setNumTimeSteps(getNumTimeSteps());
+
+  // set the time step control strategy
+  setTimeStepControlStrategy();
 
   TEUCHOS_TEST_FOR_EXCEPTION(
     (getInitTime() > getFinalTime() ), std::logic_error,
@@ -516,18 +356,6 @@ void TimeStepControl<Scalar>::setParameterList(
     << "  'Variable' - Integrator will allow changes to the time step size.\n"
     << "  stepType = " << getStepType()  << "\n");
 
-  TEUCHOS_TEST_FOR_EXCEPTION(getAmplFactor() <= 1.0, std::out_of_range,
-        "Error - Invalid value of Amplification Factor = " << getAmplFactor() << "!  \n"
-        << "Amplification Factor must be > 1.0.\n");
-
-  TEUCHOS_TEST_FOR_EXCEPTION(getReductFactor() >= 1.0, std::out_of_range,
-        "Error - Invalid value of Reduction Factor = " << getReductFactor() << "!  \n"
-        << "Reduction Factor must be < 1.0.\n");
-
-  TEUCHOS_TEST_FOR_EXCEPTION(getMinEta() > getMaxEta(), std::out_of_range,
-        "Error - Invalid values of 'Minimum Value Monitoring Function' = "
-        << getMinEta() << "\n and 'Maximum Value Monitoring Function' = "
-        << getMaxEta() <<"! \n Mininum Value cannot be > Maximum Value! \n");
 
   // Parse output times
   {
@@ -589,6 +417,100 @@ void TimeStepControl<Scalar>::setParameterList(
   return;
 }
 
+template<class Scalar>
+void TimeStepControl<Scalar>::setTimeStepControlStrategy(
+  Teuchos::RCP<TimeStepControlStrategy<Scalar> > tscs)
+{
+   using Teuchos::RCP;
+   using Teuchos::ParameterList;
+
+   if (stepControlStategy_ == Teuchos::null){
+      stepControlStategy_ = 
+         Teuchos::rcp(new TimeStepControlStrategyComposite<Scalar>());
+   }
+
+   if (tscs == Teuchos::null) {
+      // Create stepControlStategy_ if null, otherwise keep current parameters.
+
+      if (getStepType() == "Constant"){
+         stepControlStategy_->addStrategy( 
+               Teuchos::rcp(new TimeStepControlStrategyConstant<Scalar>()));
+      } 
+
+
+      // For backward compatitibility (so we only need to create on VS strategy)
+      if ( (getStepType() == "Variable") and 
+            tscPL_->isParameter("Amplification Factor")){
+
+         RCP<Teuchos::ParameterList> tscsVSPL = 
+            Teuchos::rcp(new ParameterList("basic vs"));
+
+         tscsVSPL->set<double>("Amplification Factor", 
+               tscPL_->get<double>("Amplification Factor"));
+         tscsVSPL->set<double>("Reduction Factor", 
+               tscPL_->get<double>("Reduction Factor"));
+         tscsVSPL->set<double>("Minimum Value Monitoring Function",
+               tscPL_->get<double>("Minimum Value Monitoring Function"));
+         tscsVSPL->set<double>("Maximum Value Monitoring Function",
+               tscPL_->get<double>("Maximum Value Monitoring Function"));
+
+         tscPL_->sublist("Time Step Control Strategy").
+            set<std::string>("Time Step Control Strategy List", "basic_vs");
+         tscPL_->sublist("Time Step Control Strategy").
+            set("basic_vs", *tscsVSPL);
+
+         //TODO: now remove them from tscPL_ ( no need for them anymore in tscPL_)
+         //tscPL_->remove("Amplification Factor");
+         //tscPL_->remove("Reduction Factor");
+         //tscPL_->remove("Minimum Value Monitoring Function");
+         //tscPL_->remove("Maximum Value Monitoring Function");
+      } 
+
+
+      if ((getStepType() == "Variable") and 
+            tscPL_->isSublist("Time Step Control Strategy")) {
+
+         RCP<ParameterList> tscsPL =
+            Teuchos::sublist(tscPL_,"Time Step Control Strategy",true);
+         // Construct from TSCS sublist
+         std::vector<std::string> tscsLists;
+
+         // string tokenizer
+         tscsLists.clear();
+         std::string str = tscsPL->get<std::string>("Time Step Control Strategy List");
+         std::string delimiters(",");
+         // Skip delimiters at the beginning
+         std::string::size_type lastPos = str.find_first_not_of(delimiters, 0);
+         // Find the first delimiter
+         std::string::size_type pos     = str.find_first_of(delimiters, lastPos);
+         while ((pos != std::string::npos) || (lastPos != std::string::npos)) {
+            // Found a token, add it to the vector
+            std::string token = str.substr(lastPos,pos-lastPos);
+            tscsLists.push_back(token);
+            if(pos==std::string::npos) break;
+
+            lastPos = str.find_first_not_of(delimiters, pos); // Skip delimiters
+            pos = str.find_first_of(delimiters, lastPos);     // Find next delimiter
+         }
+
+         // For each sublist name tokenized, add the TSCS
+         for( auto el: tscsLists){
+
+            RCP<Teuchos::ParameterList> pl =
+               Teuchos::rcp(new ParameterList(tscsPL->sublist(el)));
+
+            stepControlStategy_->addStrategy( 
+                  Teuchos::rcp(new TimeStepControlStrategyBasicVS<Scalar>(pl)));
+         }
+      }
+
+   } else {
+      // just add the new tscs to the vector of strategies
+      stepControlStategy_->addStrategy(tscs);
+   }
+
+}
+
 
 template<class Scalar>
 Teuchos::RCP<const Teuchos::ParameterList>
@@ -609,10 +531,11 @@ TimeStepControl<Scalar>::getValidParameters() const
   pl->set<double>("Amplification Factor" , 1.75   , "Amplification factor");
   pl->set<double>("Reduction Factor"     , 0.5    , "Reduction factor");
   //FIXME? may need to modify default values of monitoring function
-  //IKT, 1/5/17: from (Denner, 2014), it seems a reasonable choice for eta_min is 0.1*eta_max
-  //Numerical tests confirm this. TODO: Change default value of eta_min to 1.0e-2?
-  pl->set<double>("Minimum Value Monitoring Function" , 1.0e-6      , "Min value eta");
-  pl->set<double>("Maximum Value Monitoring Function" , 1.0e-1      , "Max value eta");
+  //IKT, 1/5/17: from (Denner, 2014), it seems a reasonable choice for
+  //eta_min is 0.1*eta_max.  Numerical tests confirm this.
+  //TODO: Change default value of eta_min to 1.0e-2?
+  pl->set<double>("Minimum Value Monitoring Function", 1.0e-6, "Min value eta");
+  pl->set<double>("Maximum Value Monitoring Function", 1.0e-1, "Max value eta");
   pl->set<int>   ("Minimum Order", 0,
     "Minimum time-integration order.  If set to zero (default), the\n"
     "Stepper minimum order is used.");
@@ -650,6 +573,9 @@ TimeStepControl<Scalar>::getValidParameters() const
     "('Final Time' - 'Initial Time')/'Number of Time Steps'\n"
     "  'Integrator Step Type' = 'Constant'\n");
 
+   Teuchos::RCP<Teuchos::ParameterList> tscsPL = Teuchos::parameterList("Time Step Control Strategy");
+   tscsPL->set<std::string>("Time Step Control Strategy List","");
+   pl->set("Time Step Control Strategy", *tscsPL);
   return pl;
 }
 

@@ -87,6 +87,13 @@ MACRO(TRILINOS_SYSTEM_SPECIFIC_CTEST_DRIVER)
   # script)
   SET_DEFAULT(Trilinos_BRANCH develop)
 
+  # Set the default CDash Track/Group to "Specialized".  This will not trigger
+  # CDash error emails for any failures.  But when the build is clean, the var
+  # Trilinos_TRACK should be overridden to be "ATDM" on a build-by-build
+  # basis.
+  SET_DEFAULT(CTEST_TEST_TYPE Nightly)
+  SET_DEFAULT(Trilinos_TRACK Specialized)
+
   # Don't process any extra repos
   SET(Trilinos_EXTRAREPOS_FILE NONE)
 

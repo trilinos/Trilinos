@@ -16,15 +16,16 @@ SET( CTEST_NOTES_FILES
 # Shiller and Hansen nodes have 16 cores which can support 2 threads each.
 # For building, we use all 32 threads.  For running tests, we assume to use
 # all of the threads as well with 2 threads per core with an OpenMP build.
-SET(CTEST_BUILD_FLAGS "-j32 -k")
+SET(CTEST_BUILD_FLAGS "-j32 -k 999999")
 SET(CTEST_PARALLEL_LEVEL "16")  # Should be set to 32 if using only 1 thread?
 
-# No extra configure options set!
+SET(CTEST_CMAKE_GENERATOR Ninja)
+
 SET(EXTRA_CONFIGURE_OPTIONS)
 
-# CDash Group
-SET(CTEST_TEST_TYPE Nightly)
-SET(Trilinos_TRACK Specialized)
+# Must set the site name so that it does not change depending on what node
+# runs the build.
+SET(CTEST_SITE "hansen/shiller")
 
 # Run the genetic ATDM driver
 TRILINOS_SYSTEM_SPECIFIC_CTEST_DRIVER()

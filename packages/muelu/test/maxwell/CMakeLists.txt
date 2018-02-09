@@ -29,11 +29,11 @@ IF (${PACKAGE_NAME}_ENABLE_Belos AND ${PACKAGE_NAME}_ENABLE_Amesos2)
       NUM_MPI_PROCS 4
       )
 
-    IF (${PACKAGE_NAME}_INST_DOUBLE_INT_INT OR ${PACKAGE_NAME}_INST_DOUBLE_INT_LONGINT OR ${PACKAGE_NAME}_INST_DOUBLE_INT_LONGLONGINT)
+    IF (${PACKAGE_NAME}_INST_DOUBLE_INT_INT)
       TRIBITS_ADD_TEST(
         Maxwell3D
         NAME "Maxwell3D-Tpetra-Stratimikos"
-        ARGS "--linAlgebra=Tpetra --solverName=Stratimikos"
+        ARGS "--linAlgebra=Tpetra --solverName=Stratimikos --instantiation=DOUBLE_INT_INT"
         COMM serial mpi
         NUM_MPI_PROCS 4
         )

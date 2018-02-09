@@ -113,7 +113,6 @@ IF (${PACKAGE_NAME}_ENABLE_Galeri)
 
     IF (${PACKAGE_NAME}_ENABLE_Tpetra AND ${PACKAGE_NAME}_ENABLE_Ifpack2 AND ${PACKAGE_NAME}_ENABLE_Amesos2)
 
-
       TRIBITS_ADD_TEST(
         ParameterListInterpreter
         NAME "ParameterListInterpreterTpetra"
@@ -176,10 +175,14 @@ IF (${PACKAGE_NAME}_ENABLE_Galeri)
 
 ENDIF()
 
-ADD_SUBDIRECTORY(EasyParameterListInterpreter)
-ADD_SUBDIRECTORY(EasyParameterListInterpreter-heavy)
-ADD_SUBDIRECTORY(FactoryParameterListInterpreter)
-ADD_SUBDIRECTORY(FactoryParameterListInterpreter-heavy)
-ADD_SUBDIRECTORY(MLParameterListInterpreter)
-ADD_SUBDIRECTORY(MLParameterListInterpreter2)
-ADD_SUBDIRECTORY(Output)
+IF (NOT ${PACKAGE_NAME}_INST_COMPLEX_INT_INT)
+  ADD_SUBDIRECTORY(EasyParameterListInterpreter)
+  ADD_SUBDIRECTORY(EasyParameterListInterpreter-heavy)
+  ADD_SUBDIRECTORY(FactoryParameterListInterpreter)
+  ADD_SUBDIRECTORY(FactoryParameterListInterpreter-heavy)
+  ADD_SUBDIRECTORY(MLParameterListInterpreter)
+  ADD_SUBDIRECTORY(MLParameterListInterpreter2)
+  ADD_SUBDIRECTORY(Output)
+ELSE()
+  ADD_SUBDIRECTORY(complex)
+ENDIF()

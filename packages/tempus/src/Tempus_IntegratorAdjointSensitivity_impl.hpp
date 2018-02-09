@@ -504,7 +504,8 @@ buildSolutionHistory(
     RCP<SolutionState<Scalar> > prod_state =
       rcp(new SolutionState<Scalar>(forward_state->getMetaData()->clone(),
                                     x_b, x_dot_b, x_dot_dot_b,
-                                    forward_state->getStepperState()->clone()));
+                                    forward_state->getStepperState()->clone(),
+                                    Teuchos::null));
     solutionHistory_->addState(prod_state);
   }
 }

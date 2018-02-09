@@ -13,6 +13,12 @@ INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../../../test/unit_tests)
       COMM serial mpi
       )
 
+    TRIBITS_ADD_EXECUTABLE(
+      ImportTest
+      SOURCES Import.cpp
+      COMM serial mpi
+      )
+
     # TRIBITS_COPY_FILES_TO_BINARY_DIR(tawiesn_cp
     #   SOURCE_FILES driver.xml
     #   )

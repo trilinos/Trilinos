@@ -157,7 +157,7 @@ void RefMaxwell<Scalar,LocalOrdinal,GlobalOrdinal,Node>::compute() {
       for (size_t j=0;j<numVecs;j++) {
         Teuchos::ArrayRCP<const double> coordsVec = Coords_->getData(j);
         Teuchos::ArrayRCP<Scalar> coordsVecSC = CoordsSC->getDataNonConst(j);
-        for(size_t i=0;i<coordsVec.size();i++)
+        for(size_t i=0;i<static_cast<size_t>(coordsVec.size());i++)
           coordsVecSC[i]=coordsVec[i];
       }
     } else
