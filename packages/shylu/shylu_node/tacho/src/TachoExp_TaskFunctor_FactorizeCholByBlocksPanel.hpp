@@ -220,13 +220,21 @@ namespace Tacho {
                 }, dep);
               TACHO_TEST_FOR_ABORT(dep == NULL, "sched memory pool allocation fails"); 
               clear(member, (char*)dep, depsize);  
-              
+              // GCC compiler bug workaround              
+#if defined( KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_HOST )
+              for (ordinal_type j=0,l=0;j<bn;++j)
+                for (ordinal_type i=0;i<bm;++i,++l) {
+                  dep[l] = htr(i,j).future();
+                  htr(i,j).set_future();                  
+                }
+#else              
               Kokkos::parallel_for(Kokkos::TeamThreadRange(member,bn),[&](const ordinal_type &j) {
                   Kokkos::parallel_for(Kokkos::ThreadVectorRange(member,bm),[&](const ordinal_type &i) {
                       dep[j*bm+i] = htr(i,j).future();
                       htr(i,j).set_future();
                     });
                 });
+#endif
               member.team_barrier();
               Kokkos::single(Kokkos::PerTeam(member), [&]() {              
                   _state = 2;
