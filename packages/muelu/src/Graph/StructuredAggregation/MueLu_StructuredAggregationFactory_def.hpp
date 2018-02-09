@@ -86,20 +86,23 @@ namespace MueLu {
 #undef  SET_VALID_ENTRY
 
     // general variables needed in AggregationFactory
-    validParamList->set<RCP<const FactoryBase> >("Coordinates",             Teuchos::null,
-                                                 "Generating factory of problem coordinates");
+    validParamList->set<std::string >           ("aggregation: mesh layout","Global Lexicographic",
+                                                 "Type of mesh ordering");
     validParamList->set<int>                    ("aggregation: number of spatial dimensions", 3,
                                                   "The number of spatial dimensions in the problem");
+    validParamList->set<int>                    ("aggregation: coarsening order", 0,
+                                                  "The interpolation order used to construct grid transfer operators based off these aggregates.");
     validParamList->set<std::string>            ("aggregation: coarsening rate", "{3}",
                                                   "Coarsening rate per spatial dimensions");
+    validParamList->set<RCP<const FactoryBase> >("aggregation: mesh data",  Teuchos::null,
+                                                 "Mesh ordering associated data");
+
+    validParamList->set<RCP<const FactoryBase> >("Coordinates",             Teuchos::null,
+                                                 "Generating factory of problem coordinates");
     validParamList->set<RCP<const FactoryBase> >("gNodesPerDim",            Teuchos::null,
                                                  "Number of nodes per spatial dimmension provided by CoordinatesTransferFactory.");
     validParamList->set<RCP<const FactoryBase> >("lNodesPerDim",            Teuchos::null,
                                                  "Number of nodes per spatial dimmension provided by CoordinatesTransferFactory.");
-    validParamList->set<std::string >           ("meshLayout",              "Global Lexicographic",
-                                                 "Type of mesh ordering");
-    validParamList->set<RCP<const FactoryBase> >("meshData",                Teuchos::null,
-                                                 "Mesh ordering associated data");
 
     // special variables necessary for OnePtAggregationAlgorithm
     validParamList->set<std::string>            ("OnePt aggregate map name",         "",
@@ -176,8 +179,9 @@ namespace MueLu {
 
     // Since we want to operate on nodes and not dof, we need to modify the rowMap in order to
     // obtain a nodeMap.
-    std::string meshLayout = pL.get<std::string>("meshLayout");
-    const int numDimensions = Coordinates->getNumVectors();
+    const int numDimensions = pL.get<int>("aggregation: number of spatial dimensions");
+    const int interpolationOrder = pL.get<int>("aggregation: coarsening order");
+    std::string meshLayout = pL.get<std::string>("aggregation: mesh layout");
     Array<GO> gFineNodesPerDir(3);
     Array<LO> lFineNodesPerDir(3);
     if(currentLevel.GetLevelID() == 0) {
@@ -205,26 +209,39 @@ namespace MueLu {
                                "\"aggregation: coarsening rate\" must have at least as many"
                                " components as the number of spatial dimensions in the problem.");
 
-    // Now that we have extract info from the level, create the IndexManager
+    // Now that we have extracted info from the level, create the IndexManager
     RCP<MueLu::IndexManager<LO,GO,NO> > geoData;
     Array<GO> meshData;
     if(meshLayout == "Local Lexicographic") {
       if(currentLevel.GetLevelID() == 0) {
         // On level 0, data is provided by applications and has no associated factory.
-        meshData = currentLevel.Get<Array<GO> >("meshData", NoFactory::get());
+        meshData = currentLevel.Get<Array<GO> >("aggregation: mesh data", NoFactory::get());
         TEUCHOS_TEST_FOR_EXCEPTION(meshData.empty() == true, Exceptions::RuntimeError,
                                    "The meshData array is empty, somehow the input for structured"
                                    " aggregation are not captured correctly.");
       } else {
         // On level > 0, data is provided directly by generating factories.
-        meshData = Get<Array<GO> >(currentLevel, "meshData");
+        meshData = Get<Array<GO> >(currentLevel, "aggregation: mesh data");
       }
-      geoData = rcp(new MueLu::LocalLexicographicIndexManager<LO,GO,NO>(numDimensions, myRank,
-                                                                        numRanks, gFineNodesPerDir,
-                                                                        lFineNodesPerDir, coarseRate,
+      // Note, LBV Feb 5th 2018:
+      // I think that it might make sense to pass ghostInterface rather than interpolationOrder.
+      // For that I need to make sure that ghostInterface can be computed with minimal mesh
+      // knowledge outside of the IndexManager...
+      geoData = rcp(new MueLu::LocalLexicographicIndexManager<LO,GO,NO>(numDimensions,
+                                                                        interpolationOrder,
+                                                                        myRank,
+                                                                        numRanks,
+                                                                        gFineNodesPerDir,
+                                                                        lFineNodesPerDir,
+                                                                        coarseRate,
                                                                         meshData));
     } else  if(meshLayout == "Global Lexicographic") {
+      // Note, LBV Feb 5th 2018:
+      // I think that it might make sense to pass ghostInterface rather than interpolationOrder.
+      // For that I need to make sure that ghostInterface can be computed with minimal mesh
+      // knowledge outside of the IndexManager...
       geoData = rcp(new MueLu::GlobalLexicographicIndexManager<LO,GO,NO>(numDimensions,
+                                                                         interpolationOrder,
                                                                          gFineNodesPerDir,
                                                                          lFineNodesPerDir,
                                                                          coarseRate,
@@ -242,9 +259,12 @@ namespace MueLu {
                                "The global number of elements in Coordinates is not equal to the"
                                " number of nodes given by: gNodesPerDim!");
 
+    std::vector<std::vector<GO> > coarseMeshData = geoData->getCoarseMeshData();
+
     RCP<const Map> coarseCoordMap;
     Array<LO>  ghostedCoarseNodeCoarseLIDs(geoData->getNumLocalGhostedNodes());
     Array<int> ghostedCoarseNodeCoarsePIDs(geoData->getNumLocalGhostedNodes());
+
     geoData->getGhostedNodesData(coordMap, coarseCoordMap, ghostedCoarseNodeCoarseLIDs,
                                  ghostedCoarseNodeCoarsePIDs);
 
@@ -262,19 +282,43 @@ namespace MueLu {
     ArrayRCP<LO> vertex2AggId = aggregates->GetVertex2AggId()->getDataNonConst(0);
     ArrayRCP<LO> procWinner   = aggregates->GetProcWinner()  ->getDataNonConst(0);
     LO iGhosted, jGhosted, kGhosted, iCoarse, jCoarse, kCoarse, iRem, jRem, kRem;
-    LO ghostedCoarseNodeCoarseLID, aggId;
+    LO ghostedCoarseNodeCoarseLID, aggId, rate;
     for(LO nodeIdx = 0; nodeIdx < geoData->getNumLocalFineNodes(); ++nodeIdx) {
       // Compute coarse ID associated with fine LID
       geoData->getFineNodeGhostedTuple(nodeIdx, iGhosted, jGhosted, kGhosted);
       iCoarse = iGhosted / geoData->getCoarseningRate(0);
       iRem    = iGhosted % geoData->getCoarseningRate(0);
-      if(iRem > (geoData->getCoarseningRate(0) / 2)) { ++iCoarse; }
+      if(iGhosted + geoData->getStartIndex(0) - geoData->getOffset(0)
+         < geoData->getGlobalFineNodesInDir(0) - geoData->getCoarseningEndRate(0)) {
+        rate = geoData->getCoarseningRate(0);
+      } else {
+        rate = geoData->getCoarseningEndRate(0);
+      }
+      if(iRem > (rate / 2)) { ++iCoarse; }
+      if(geoData->getStartGhostedCoarseNode(0)*geoData->getCoarseningRate(0)
+         > geoData->getStartIndex(0)) { --iCoarse; }
       jCoarse = jGhosted / geoData->getCoarseningRate(1);
       jRem    = jGhosted % geoData->getCoarseningRate(1);
+      if(jGhosted + geoData->getStartIndex(1) - geoData->getOffset(1)
+         < geoData->getGlobalFineNodesInDir(1) - geoData->getCoarseningEndRate(1)) {
+        rate = geoData->getCoarseningRate(1);
+      } else {
+        rate = geoData->getCoarseningEndRate(1);
+      }
       if(jRem > (geoData->getCoarseningRate(1) / 2)) { ++jCoarse; }
+      if(geoData->getStartGhostedCoarseNode(1)*geoData->getCoarseningRate(1)
+         > geoData->getStartIndex(1)) { --jCoarse; }
       kCoarse = kGhosted / geoData->getCoarseningRate(2);
       kRem    = kGhosted % geoData->getCoarseningRate(2);
+      if(kGhosted + geoData->getStartIndex(2) - geoData->getOffset(2)
+         < geoData->getGlobalFineNodesInDir(2) - geoData->getCoarseningEndRate(2)) {
+        rate = geoData->getCoarseningRate(2);
+      } else {
+        rate = geoData->getCoarseningEndRate(2);
+      }
       if(kRem > (geoData->getCoarseningRate(2) / 2)) { ++kCoarse; }
+      if(geoData->getStartGhostedCoarseNode(2)*geoData->getCoarseningRate(2)
+         > geoData->getStartIndex(2)) { --kCoarse; }
       geoData->getCoarseNodeGhostedLID(iCoarse, jCoarse, kCoarse, ghostedCoarseNodeCoarseLID);
 
       aggId                 = ghostedCoarseNodeCoarseLIDs[ghostedCoarseNodeCoarseLID];

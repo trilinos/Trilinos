@@ -53,11 +53,12 @@ namespace MueLu {
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   LocalLexicographicIndexManager<LocalOrdinal, GlobalOrdinal, Node>::
-  LocalLexicographicIndexManager(const int NumDimensions, const int MyRank, const int NumRanks,
+  LocalLexicographicIndexManager(const int NumDimensions, const int interpolationOrder,
+                                 const int MyRank, const int NumRanks,
                                  const Array<GO> GFineNodesPerDir, const Array<LO> LFineNodesPerDir,
                                  const Array<LO> CoarseRate, const Array<GO> MeshData) :
-    IndexManager(NumDimensions, GFineNodesPerDir, LFineNodesPerDir), myRank(MyRank),
-    numRanks(NumRanks) {
+    IndexManager(NumDimensions, interpolationOrder, GFineNodesPerDir, LFineNodesPerDir),
+    myRank(MyRank), numRanks(NumRanks) {
 
     // Load coarse rate, being careful about formating
     for(int dim = 0; dim < 3; ++dim) {
@@ -237,21 +238,6 @@ namespace MueLu {
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   void LocalLexicographicIndexManager<LocalOrdinal, GlobalOrdinal, Node>::
-  printMeshInfo(int rank = -1) {
-    if(rank < 0 || rank == myRank) {
-      std::cout << "p=" << myRank << " | numDimensions:      " << this->numDimensions << std::endl;
-      std::cout << "p=" << myRank << " | gFineNodesPerDir:   " << this->gFineNodesPerDir << std::endl;
-      std::cout << "p=" << myRank << " | lFineNodesPerDir:   " << this->lFineNodesPerDir << std::endl;
-      std::cout << "p=" << myRank << " | coarseRate:         " << this->coarseRate << std::endl;
-      std::cout << "p=" << myRank << " | gCoarseNodesPerDir: " << this->gCoarseNodesPerDir << std::endl;
-      std::cout << "p=" << myRank << " | lCoarseNodesPerDir: " << this->lCoarseNodesPerDir << std::endl;
-      std::cout << "p=" << myRank << " | offsets:            " << this->offsets << std::endl;
-      std::cout << "p=" << myRank << " | startIndices:       " << this->startIndices << std::endl;
-    }
-  }
-
-  template <class LocalOrdinal, class GlobalOrdinal, class Node>
-  void LocalLexicographicIndexManager<LocalOrdinal, GlobalOrdinal, Node>::
   sortLocalLexicographicData() {
 
     std::sort(meshData.begin(), meshData.end(),
@@ -345,6 +331,10 @@ namespace MueLu {
   }
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  std::vector<std::vector<GlobalOrdinal> > LocalLexicographicIndexManager<LocalOrdinal, GlobalOrdinal, Node>::
+  getCoarseMeshData() const {return coarseMeshData;}
+
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
   void LocalLexicographicIndexManager<LocalOrdinal, GlobalOrdinal, Node>::
   getFineNodeGlobalTuple(const GO myGID, GO& i, GO& j, GO& k) const {
   }
@@ -352,11 +342,25 @@ namespace MueLu {
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   void LocalLexicographicIndexManager<LocalOrdinal, GlobalOrdinal, Node>::
   getFineNodeLocalTuple(const LO myLID, LO& i, LO& j, LO& k) const {
+    LO tmp;
+    k   = myLID / this->lNumFineNodes10;
+    tmp = myLID % this->lNumFineNodes10;
+    j   = tmp   / this->lFineNodesPerDir[0];
+    i   = tmp   % this->lFineNodesPerDir[0];
   }
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   void LocalLexicographicIndexManager<LocalOrdinal, GlobalOrdinal, Node>::
   getFineNodeGhostedTuple(const LO myLID, LO& i, LO& j, LO& k) const {
+    LO tmp;
+    k   = myLID / this->lNumFineNodes10;
+    tmp = myLID % this->lNumFineNodes10;
+    j   = tmp   / this->lFineNodesPerDir[0];
+    i   = tmp   % this->lFineNodesPerDir[0];
+
+    k += this->offsets[2];
+    j += this->offsets[1];
+    i += this->offsets[0];
   }
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -392,12 +396,12 @@ namespace MueLu {
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   void LocalLexicographicIndexManager<LocalOrdinal, GlobalOrdinal, Node>::
   getCoarseNodeGhostedLID(const LO i, const LO j, const LO k, LO& myLID) const {
+    myLID = k*this->numGhostedNodes10 + j*this->ghostedNodesPerDir[0] + i;
   }
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   void LocalLexicographicIndexManager<LocalOrdinal, GlobalOrdinal, Node>::
   getCoarseNodeFineLID(const LO i, const LO j, const LO k, LO& myLID) const {
-    myLID = k*this->numGhostedNodes10 + j*this->ghostedNodesPerDir[0] + i;
   }
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>

@@ -86,7 +86,8 @@ namespace MueLu {
 
     GlobalLexicographicIndexManager();
 
-    GlobalLexicographicIndexManager(const int NumDimensions, const Array<GO> GFineNodesPerDir,
+    GlobalLexicographicIndexManager(const int NumDimensions, const int interpolationOrder,
+                                    const Array<GO> GFineNodesPerDir,
                                     const Array<LO> LFineNodesPerDir, const Array<LO> CoarseRate,
                                     const GO MinGlobalIndex);
 
@@ -95,6 +96,8 @@ namespace MueLu {
     void getGhostedNodesData(const RCP<const Map> fineMap, RCP<const Map> coarseMap,
                             Array<LO>& ghostedNodeCoarseLIDs,
                             Array<int>& ghostedNodeCoarsePIDs) const;
+
+    std::vector<std::vector<GO> > getCoarseMeshData() const;
 
     void getFineNodeGlobalTuple(const GO myGID, GO& i, GO& j, GO& k) const;
 

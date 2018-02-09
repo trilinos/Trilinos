@@ -85,7 +85,8 @@ namespace MueLu {
 
     LocalLexicographicIndexManager() = default;
 
-    LocalLexicographicIndexManager(const int NumDimensions, const int MyRank, const int NumRanks,
+    LocalLexicographicIndexManager(const int NumDimensions, const int interpolationOrder,
+                                   const int MyRank, const int NumRanks,
                                    const Array<GO> GFineNodesPerDir,
                                    const Array<LO> LFineNodesPerDir,
                                    const Array<LO> CoarseRate, const Array<GO> MeshData);
@@ -96,7 +97,7 @@ namespace MueLu {
                              Array<LO>& ghostedNodeCoarseLIDs,
                              Array<int>& ghostedNodeCoarsePIDs) const;
 
-    void printMeshInfo(int rank);
+    std::vector<std::vector<GO> > getCoarseMeshData() const;
 
     void getFineNodeGlobalTuple(const GO myGID, GO& i, GO& j, GO& k) const;
 

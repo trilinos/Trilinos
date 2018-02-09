@@ -58,10 +58,11 @@ namespace MueLu {
 
   template<class LocalOrdinal, class GlobalOrdinal, class Node>
   IndexManager<LocalOrdinal, GlobalOrdinal, Node>::IndexManager(const int NumDimensions,
+                                                                const int interpolationOrder,
                                                                 const Array<GO> GFineNodesPerDir,
                                                                 const Array<LO> LFineNodesPerDir) :
-    numDimensions(NumDimensions), gFineNodesPerDir(GFineNodesPerDir),
-    lFineNodesPerDir(LFineNodesPerDir) {
+    numDimensions(NumDimensions), interpolationOrder_(interpolationOrder),
+    gFineNodesPerDir(GFineNodesPerDir), lFineNodesPerDir(LFineNodesPerDir) {
 
     coarseRate.resize(3);
     endRate.resize(3);
@@ -86,13 +87,26 @@ namespace MueLu {
       if(dim < numDimensions) {
         offsets[dim]     = Teuchos::as<LO>(startIndices[dim]) % coarseRate[dim];
 
-        if(startIndices[dim] % coarseRate[dim] != 0 ||
-           startIndices[dim] == gFineNodesPerDir[dim]-1) {
-          ghostInterface[2*dim] = true;
-        }
-        if((startIndices[dim + 3] != gFineNodesPerDir[dim] - 1) &&
-           ((lFineNodesPerDir[dim] == 1) || (startIndices[dim + 3] % coarseRate[dim] != 0))) {
-          ghostInterface[2*dim+1] = true;
+        if(interpolationOrder_ == 0) {
+          int rem  = startIndices[dim] % coarseRate[dim];
+          if((rem != 0) && (rem <= Teuchos::as<double>(coarseRate[dim]) / 2.0)) {
+            ghostInterface[2*dim] = true;
+          }
+          rem  = startIndices[dim + 3] % coarseRate[dim];
+          if((startIndices[dim + 3] != gFineNodesPerDir[dim] - 1) &&
+             (rem > Teuchos::as<double>(coarseRate[dim]) / 2.0)) {
+            ghostInterface[2*dim + 1] = true;
+          }
+
+        } else if(interpolationOrder_ == 1) {
+          if(startIndices[dim] % coarseRate[dim] != 0 ||
+             startIndices[dim] == gFineNodesPerDir[dim]-1) {
+            ghostInterface[2*dim] = true;
+          }
+          if((startIndices[dim + 3] != gFineNodesPerDir[dim] - 1) &&
+             ((lFineNodesPerDir[dim] == 1) || (startIndices[dim + 3] % coarseRate[dim] != 0))) {
+            ghostInterface[2*dim+1] = true;
+          }
         }
       }
     }
@@ -138,17 +152,25 @@ namespace MueLu {
         // The first branch of this if-statement will be used if the rank contains only one layer
         // of nodes in direction i, that layer must also coincide with the boundary of the mesh
         // and coarseRate[i] == endRate[i]...
-        if((startIndices[dim] == gFineNodesPerDir[dim] - 1) &&
-           (startIndices[dim] % coarseRate[dim] == 0)) {
-          startGhostedCoarseNode[dim] = startIndices[dim] / coarseRate[dim] - 1;
-        } else {
+        if(interpolationOrder_ == 0) {
           startGhostedCoarseNode[dim] = startIndices[dim] / coarseRate[dim];
+          int rem = startIndices[dim] % coarseRate[dim];
+          if(rem > (Teuchos::as<double>(coarseRate[dim]) / 2.0) ) {
+            ++startGhostedCoarseNode[dim];
+          }
+        } else {
+          if((startIndices[dim] == gFineNodesPerDir[dim] - 1) &&
+             (startIndices[dim] % coarseRate[dim] == 0)) {
+            startGhostedCoarseNode[dim] = startIndices[dim] / coarseRate[dim] - 1;
+          } else {
+            startGhostedCoarseNode[dim] = startIndices[dim] / coarseRate[dim];
+          }
         }
       } else { // Default value for dim >= numDimensions
         endRate[dim] = 1;
         gCoarseNodesPerDir[dim] = 1;
         lCoarseNodesPerDir[dim] = 1;
-      }
+      } // if (dim < numDimensions)
 
       // This would happen if the rank does not own any nodes but in that case a subcommunicator
       // should be used so this should really not be a concern.
@@ -158,7 +180,7 @@ namespace MueLu {
       if(ghostInterface[2*dim]) {ghostedNodesPerDir[dim] += 1;}
       // Check whether face *hi needs ghost nodes
       if(ghostInterface[2*dim + 1]) {ghostedNodesPerDir[dim] += 1;}
-    }
+    } // Loop for dim=0:3
 
 
     // Compute cummulative values
@@ -169,7 +191,6 @@ namespace MueLu {
     numGhostedNodes10 = ghostedNodesPerDir[1]*ghostedNodesPerDir[0];
     numGhostedNodes   = numGhostedNodes10*ghostedNodesPerDir[2];
     numGhostNodes     = numGhostedNodes - lNumCoarseNodes;
-
   }
 
 } //namespace MueLu

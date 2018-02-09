@@ -86,6 +86,7 @@ namespace MueLu {
   protected:
 
     const int numDimensions;            ///< Number of spacial dimensions in the problem
+    const int interpolationOrder_;      ///< Interpolation order used by grid transfer operators using these aggregates.
 
     Array<int> coarseRate;              ///< coarsening rate in each direction
     Array<int> endRate;                 ///< adapted coarsening rate at the edge of the mesh in each direction.
@@ -123,8 +124,8 @@ namespace MueLu {
 
     IndexManager() = default;
 
-    IndexManager(const int NumDimensions, const Array<GO> GFineNodesPerDir,
-                 const Array<LO> LFineNodesPerDir);
+    IndexManager(const int NumDimensions, const int interpolationOrder,
+                 const Array<GO> GFineNodesPerDir, const Array<LO> LFineNodesPerDir);
 
     virtual ~IndexManager() {}
 
@@ -152,6 +153,8 @@ namespace MueLu {
 
     const Array<int> getCoarseningEndRates() const {return endRate;}
 
+    const int getCoarseningEndRate(const int dim) const {return endRate[dim];}
+
     const bool getGhostInterface(const int dim) const {return ghostInterface[dim];}
 
     const Array<LO> getOffsets() const {return offsets;}
@@ -166,9 +169,17 @@ namespace MueLu {
 
     const GO getStartGhostedCoarseNode(int const dim) const {return startGhostedCoarseNode[dim];}
 
+    const Array<LO> getLocalFineNodesPerDir() const {return lFineNodesPerDir;}
+
+    const LO getLocalFineNodesInDir(const int dim) const {return lFineNodesPerDir[dim];}
+
     const Array<GO> getGlobalFineNodesPerDir() const {return gFineNodesPerDir;}
 
     const GO getGlobalFineNodesInDir(const int dim) const {return gFineNodesPerDir[dim];}
+
+    const Array<LO> getLocalCoarseNodesPerDir() const {return lCoarseNodesPerDir;}
+
+    const LO getLocalCoarseNodesInDir(const int dim) const {return lCoarseNodesPerDir[dim];}
 
     const Array<GO> getGlobalCoarseNodesPerDir() const {return gCoarseNodesPerDir;}
 
@@ -177,6 +188,8 @@ namespace MueLu {
     const Array<LO> getGhostedNodesPerDir() const {return ghostedNodesPerDir;}
 
     const LO getGhostedNodesInDir(const int dim) const {return ghostedNodesPerDir[dim];}
+
+    virtual std::vector<std::vector<GO> > getCoarseMeshData() const = 0;
 
     virtual void getFineNodeGlobalTuple(const GO myGID, GO& i, GO& j, GO& k) const = 0;
 

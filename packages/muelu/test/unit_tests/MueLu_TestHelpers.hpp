@@ -476,8 +476,8 @@ namespace MueLuTests {
             if(meshLayout == "Global Lexicographic") {
               myGIDOffset = myLowestTuple[1]*gNodesPerDir[0] + myLowestTuple[0];
             } else if(meshLayout == "Local Lexicographic") {
-              myGIDOffset = (gNodesPerDir[0] - lNodesPerDir[0])*(gNodesPerDir[1] - lNodesPerDir[1])
-                *gNodesPerDir[2];
+              myGIDOffset = (myLowestTuple[0]*std::ceil(Teuchos::as<double>(gNodesPerDir[1]) / 2)
+                             + myLowestTuple[1]*gNodesPerDir[0])*gNodesPerDir[2];
             }
           }
         }
@@ -503,7 +503,7 @@ namespace MueLuTests {
           }
         }
 
-        RCP<const Map> coordMap = MapFactory::Build(lib, gNumNodes, myGIDs(0, lNumNodes), 0, comm);
+        RCP<const Map> coordMap = MapFactory::Build(lib, gNumNodes, myGIDs(), 0, comm);
 
 
         ///////////////////////////////////////
@@ -525,7 +525,7 @@ namespace MueLuTests {
             for(ijk[0] = 0; ijk[0] < lNodesPerDir[0]; ++ijk[0]) {
               nodeIdx = ijk[2]*lNodesPerDir[1]*lNodesPerDir[0] + ijk[1]*lNodesPerDir[0] + ijk[0];
               for(int dim = 0; dim < numDimensions; ++dim) {
-                if(gNodesPerDir[dim] == 1) {
+                 if(gNodesPerDir[dim] == 1) {
                   myCoords[dim][nodeIdx] = 0.0;
                 } else {
                   myCoords[dim][nodeIdx] =

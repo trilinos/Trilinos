@@ -53,10 +53,11 @@ namespace MueLu {
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   GlobalLexicographicIndexManager<LocalOrdinal, GlobalOrdinal, Node>::
-  GlobalLexicographicIndexManager(const int NumDimensions, const Array<GO> GFineNodesPerDir,
+  GlobalLexicographicIndexManager(const int NumDimensions, const int interpolationOrder,
+                                  const Array<GO> GFineNodesPerDir,
                                   const Array<LO> LFineNodesPerDir, const Array<LO> CoarseRate,
                                   const GO MinGlobalIndex) :
-    IndexManager(NumDimensions, GFineNodesPerDir, LFineNodesPerDir) {
+    IndexManager(NumDimensions, interpolationOrder, GFineNodesPerDir, LFineNodesPerDir) {
 
     // Load coarse rate, being careful about formating.
     for(int dim = 0; dim < 3; ++dim) {
@@ -96,10 +97,10 @@ namespace MueLu {
     // mesh as this data will be used to fill vertex2AggId and procWinner vectors.
     Array<GO> lCoarseNodeCoarseGIDs(this->lNumCoarseNodes),
       lCoarseNodeFineGIDs(this->lNumCoarseNodes);
-    Array<GO> ghostedCoarseNodeCoarseGIDs(this->numGhostedNodes),
+    Array<GO> ghostedNodeCoarseGIDs(this->numGhostedNodes),
       ghostedCoarseNodeFineGIDs(this->numGhostedNodes);
     Array<LO> ghostedCoarseNodeCoarseIndices(3), ghostedCoarseNodeFineIndices(3), ijk(3);
-    LO currentIndex = -1, coarseNodeFineLID = -1, computedCoarseNode = -1;
+    LO currentIndex = -1, coarseNodeFineLID = -1, currentCoarseIndex = -1;
     for(ijk[2] = 0; ijk[2] < this->ghostedNodesPerDir[2]; ++ijk[2]) {
       for(ijk[1] = 0; ijk[1] < this->ghostedNodesPerDir[1]; ++ijk[1]) {
         for(ijk[0] = 0; ijk[0] < this->ghostedNodesPerDir[0]; ++ijk[0]) {
@@ -110,7 +111,7 @@ namespace MueLu {
           GO myCoarseGID = ghostedCoarseNodeCoarseIndices[0]
             + ghostedCoarseNodeCoarseIndices[1]*this->gCoarseNodesPerDir[0]
             + ghostedCoarseNodeCoarseIndices[2]*this->gNumCoarseNodes10;
-          ghostedCoarseNodeCoarseGIDs[currentIndex] = myCoarseGID;
+          ghostedNodeCoarseGIDs[currentIndex] = myCoarseGID;
           GO myGID = 0, factor[3] = {};
           factor[2] = this->gNumFineNodes10;
           factor[1] = this->gFineNodesPerDir[0];
@@ -127,17 +128,41 @@ namespace MueLu {
               }
             }
           }
+          // lbv 02-08-2018:
+          // This check is simplistic and should be replaced by a condition that checks
+          // if the local tuple of the current index is wihin the range of local nodes
+          // or not in the range of ghosted nodes.
           if((!this->ghostInterface[0] || ijk[0] != 0) &&
              (!this->ghostInterface[2] || ijk[1] != 0) &&
              (!this->ghostInterface[4] || ijk[2] != 0) &&
              (!this->ghostInterface[1] || ijk[0] != this->ghostedNodesPerDir[0] - 1) &&
              (!this->ghostInterface[3] || ijk[1] != this->ghostedNodesPerDir[1] - 1) &&
              (!this->ghostInterface[5] || ijk[2] != this->ghostedNodesPerDir[2] - 1)) {
-            this->getGhostedNodeFineLID(ijk[0], ijk[1], ijk[2], coarseNodeFineLID);
-            this->getGhostedNodeCoarseLID(ijk[0], ijk[1], ijk[2], computedCoarseNode);
 
-            lCoarseNodeCoarseGIDs[computedCoarseNode] = myCoarseGID;
-            lCoarseNodeFineGIDs[computedCoarseNode]   = myGID;
+            // this->getGhostedNodeFineLID(ijk[0], ijk[1], ijk[2], coarseNodeFineLID);
+            if(this->interpolationOrder_ == 0) {
+              currentCoarseIndex = 0;
+              if(this->ghostInterface[4]) {
+                currentCoarseIndex += (ijk[2] - 1)*this->lNumCoarseNodes10;
+              } else {
+                currentCoarseIndex += ijk[2]*this->lNumCoarseNodes10;
+              }
+              if(this->ghostInterface[2]) {
+                currentCoarseIndex += (ijk[1] - 1)*this->getLocalCoarseNodesInDir(0);
+              } else {
+                currentCoarseIndex += ijk[1]*this->getLocalCoarseNodesInDir(0);
+              }
+              if(this->ghostInterface[0]) {
+                currentCoarseIndex += ijk[0] - 1;
+              } else {
+                currentCoarseIndex += ijk[0];
+              }
+            } else {
+              this->getGhostedNodeCoarseLID(ijk[0], ijk[1], ijk[2], currentCoarseIndex);
+            }
+
+            lCoarseNodeCoarseGIDs[currentCoarseIndex] = myCoarseGID;
+            lCoarseNodeFineGIDs[currentCoarseIndex]   = myGID;
           }
           ghostedCoarseNodeFineGIDs[currentIndex] = myGID;
         }
@@ -150,13 +175,20 @@ namespace MueLu {
                                                      fineMap->getIndexBase(),
                                                      fineMap->getComm());
 
-    Array<int> ghostedCoarseNodeCoarsePIDs(this->numGhostedNodes);
-    Array<LO>  ghostedCoarseNodeCoarseLIDs(this->numGhostedNodes);
-    coarseMap->getRemoteIndexList(ghostedCoarseNodeCoarseGIDs(),
-                                  ghostedCoarseNodeCoarsePIDs(),
-                                  ghostedCoarseNodeCoarseLIDs());
+    // Array<int> ghostedCoarseNodeCoarsePIDs(this->numGhostedNodes);
+    // Array<LO>  ghostedCoarseNodeCoarseLIDs(this->numGhostedNodes);
+    coarseMap->getRemoteIndexList(ghostedNodeCoarseGIDs(),
+                                  ghostedNodeCoarsePIDs(),
+                                  ghostedNodeCoarseLIDs());
 
   } // End getGhostedMeshData
+
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  std::vector<std::vector<GlobalOrdinal> > GlobalLexicographicIndexManager<LocalOrdinal, GlobalOrdinal, Node>::
+  getCoarseMeshData() const {
+    std::vector<std::vector<GO> > coarseMeshData;
+    return coarseMeshData;
+  }
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   void GlobalLexicographicIndexManager<LocalOrdinal, GlobalOrdinal, Node>::
