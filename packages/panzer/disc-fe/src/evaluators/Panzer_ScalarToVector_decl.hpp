@@ -61,6 +61,12 @@ protected:
 public:
   void operator()(const size_t &cell) const;
 
+  /**
+   * \brief Tag only constructor for this class.
+   */
+  ScalarToVector(const std::vector<PHX::Tag<ScalarT>> & input,
+                 const PHX::FieldTag & output);
+
 PANZER_EVALUATOR_CLASS_END
 
 }

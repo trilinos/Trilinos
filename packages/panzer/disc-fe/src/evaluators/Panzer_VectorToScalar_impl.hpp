@@ -78,6 +78,31 @@ PHX_EVALUATOR_CTOR(VectorToScalar,p)
 }
 
 //**********************************************************************
+
+template<typename EvalT, typename Traits>				\
+VectorToScalar<EvalT,Traits>::
+VectorToScalar(const PHX::FieldTag & input,
+               const std::vector<PHX::Tag<ScalarT>> & output)
+{
+  // setup the fields
+  vector_field = input;
+
+  scalar_fields.resize(output.size());
+  for(std::size_t i=0;i<output.size();i++) 
+    scalar_fields[i] = output[i];
+
+  // add dependent/evaluate fields
+  this->addDependentField(vector_field);
+  
+  for (std::size_t i=0; i < scalar_fields.size(); ++i)
+    this->addEvaluatedField(scalar_fields[i]);
+  
+  // name array
+  std::string n = "VectorToScalar: " + vector_field.fieldTag().name();
+  this->setName(n);
+}
+
+//**********************************************************************
 PHX_POST_REGISTRATION_SETUP(VectorToScalar, /* worksets */, fm)
 {
   for (std::size_t i=0; i < scalar_fields.size(); ++i)
