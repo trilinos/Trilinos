@@ -93,6 +93,11 @@ nDims = 1; file='caseFour';
 
 if (nDims == 2)
   [globalDims,localDims,relcorners,abscorners]=mk2DRegionFile(file);
+elseif (nDims == 1) && ...
+    ((strcmp(file,'caseOne') == false) && (strcmp(file,'caseTwo')) == false && ...
+    (strcmp(file,'caseThree') == false) && (strcmp(file,'caseFour') == false))
+  
+  mk1DRegionFile(file);
 end
 
 %
