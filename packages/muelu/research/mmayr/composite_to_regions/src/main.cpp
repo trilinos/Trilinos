@@ -1199,6 +1199,8 @@ int main(int argc, char *argv[]) {
         RCP<MueLu::Factory> RFact = rcp(new MueLu::TransPFactory<double,int,int,Xpetra::EpetraNode>());
         RCP<MueLu::RAPFactory<double,int,int,Xpetra::EpetraNode> > AcFact = rcp(new MueLu::RAPFactory<double,int,int,Xpetra::EpetraNode>());
         RCP<MueLu::Factory> NSFact = rcp(new MueLu::NullspaceFactory<double,int,int,Xpetra::EpetraNode>());
+        NSFact->SetFactory("Nullspace", PFact); // specify dependency!!
+
 
         RCP<MueLu::AmalgamationFactory<double,int,int,Xpetra::EpetraNode> > amalgFact = rcp(new MueLu::AmalgamationFactory<double,int,int,Xpetra::EpetraNode>());
 
@@ -1244,7 +1246,7 @@ int main(int argc, char *argv[]) {
         Finest->Set("Nullspace", nullSpace); // set null space information for finest level
         Finest->SetFactoryManager(Teuchos::rcpFromRef(M));
 
-        int maxLevels = 2;
+        int maxLevels = 3;
         regGrpHierarchy[j]->SetMaxCoarseSize(2);
         regGrpHierarchy[j]->Setup(M, 0, maxLevels);
 
