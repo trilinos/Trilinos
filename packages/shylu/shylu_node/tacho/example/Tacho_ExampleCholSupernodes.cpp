@@ -207,7 +207,7 @@ int main (int argc, char *argv[]) {
     std::cout << "CholSupernodes:: solve matrix::time = " << t << std::endl;
 
     const double res = N.computeRelativeResidual(X, B);
-    const double eps = std::numeric_limits<double>::epsilon()*100;
+    //const double eps = std::numeric_limits<double>::epsilon()*100;
     std::cout << "CholSupernodes:: residual = " << res << std::endl;
   }
   Kokkos::finalize();

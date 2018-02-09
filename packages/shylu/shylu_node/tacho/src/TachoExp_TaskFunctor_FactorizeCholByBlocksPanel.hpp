@@ -93,7 +93,9 @@ namespace Tacho {
           ///
           /// partial update and its parent
           ///
-          const ordinal_type n = _s.n - _s.m, nb = min(_nb, n - _offn), nn = _offn + nb;
+          const ordinal_type n = _s.n - _s.m;
+          const ordinal_type nb = min(_nb, n - _offn);
+          const ordinal_type nn = _offn + nb;
           const size_type 
             team_size = member.team_size(),
             bufsize = n*team_size*sizeof(mat_value_type) + nn*nb*sizeof(mat_value_type);  
@@ -119,7 +121,11 @@ namespace Tacho {
           ///
           /// update to its parent
           ///
-          const ordinal_type n = _s.n - _s.m, bn = n/_nb + (n%_nb > 0), depsize = bn*sizeof(future_type);
+          const ordinal_type n = _s.n - _s.m;
+          const ordinal_type nb = _nb;
+          const ordinal_type bn = n/nb + (n%nb > 0);
+          const ordinal_type depsize = bn*sizeof(future_type);
+
           future_type *dep = NULL;
           Kokkos::single(Kokkos::PerTeam(member), [&](future_type *&val) {                  
               val = (future_type*)_sched.memory()->allocate(depsize);  
@@ -132,7 +138,7 @@ namespace Tacho {
               for (ordinal_type i=0;i<bn;++i) {
                 auto f = Kokkos::task_spawn(Kokkos::TaskTeam(_sched, Kokkos::TaskPriority::Regular),
                                             TaskFunctor_FactorizeCholByBlocksPanel
-                                            (_sched, _bufpool, _info, _sid, _mb, _nb, state, i*_nb));
+                                            (_sched, _bufpool, _info, _sid, _mb, nb, state, i*nb));
                 TACHO_TEST_FOR_ABORT(f.is_null(), "task allocation fails");
                 dep[i] = f;
               }
@@ -154,9 +160,16 @@ namespace Tacho {
           
           // panel is divided into diagonal and interface block (i.e., ATL and ATR)
           const ordinal_type m = _s.m, n = _s.n - _s.m;
-          
+
+#if defined( KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_HOST )
+          const ordinal_type mb = _mb;
+#else
+          const ordinal_type mnmax = max(m,n);
+          const ordinal_type mb = mnmax < 160 ? 40 : (mnmax < 320 ? 80 : _mb);
+#endif
+
           // block matrix size
-          const ordinal_type bm = m/_mb + (m%_mb > 0), bn = n/_mb + (n%_mb > 0);
+          const ordinal_type bm = m/mb + (m%mb > 0), bn = n/mb + (n%mb > 0);
           
           // allocation for matrix of blocks
           const size_t bufsize = (bm*bm + bm*bn)*sizeof(dense_block_type);
@@ -178,7 +191,7 @@ namespace Tacho {
               dense_matrix_of_blocks_type htl(buf_ptr, bm, bm);
               buf_ptr += bm*bm;
               
-              setMatrixOfBlocks(member, htl, m, m, _mb);
+              setMatrixOfBlocks(member, htl, m, m, mb);
               attachBaseBuffer(member, htl, ptr, 1, m); ptr += m*m;
               member.team_barrier();
               // chol
@@ -188,7 +201,7 @@ namespace Tacho {
                 htr = dense_matrix_of_blocks_type(buf_ptr, bm, bn);
                 buf_ptr += bm*bn;
                 
-                setMatrixOfBlocks(member, htr, m, n, _mb);
+                setMatrixOfBlocks(member, htr, m, n, mb);
                 attachBaseBuffer(member, htr, ptr, 1, m);
                   
                 // trsm

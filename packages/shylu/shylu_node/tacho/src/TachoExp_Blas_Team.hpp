@@ -336,6 +336,29 @@ namespace Tacho {
             if (m <= 0 || n <= 0 || k <= 0) return;
             
             member.team_barrier();
+            // {
+            //   constexpr int bm = 8;
+            //   constexpr int bn = 4;
+            //   for (int i=0;i<m;i+=bm) {
+            //     const T *__restrict__ pA = A + i*as0;
+            //     for (int j=0;j<n;j+=bn) {
+            //       const T *__restrict__ pB = B + j*bs1;
+            //       /* */ T *__restrict__ pC = C + i*cs0 + j*cs1; 
+            //       Kokkos::parallel_for(Kokkos::TeamThreadRange(member,min(bm,m-i)),[&](const int &ii) {
+            //           Kokkos::parallel_for(Kokkos::ThreadVectorRange(member,min(bn,n-j)),[&](const int &jj) {
+            //               const T 
+            //                 *__restrict__ pAA = pA+ii*as0, 
+            //                 *__restrict__ pBB = pB+jj*bs1;
+
+            //               T cc(0);
+            //               for (int pp=0;pp<k;++pp)
+            //                 cc += cjA(pAA[pp*as1])*cjB(pBB[pp*bs0]);
+            //               pC[ii*cs0+jj*cs1] += alpha*cc;
+            //             });
+            //         });
+            //     }
+            //   }
+            // }
             {
               Kokkos::parallel_for(Kokkos::TeamThreadRange(member,n),[&](const int &j) {
                   Kokkos::parallel_for(Kokkos::ThreadVectorRange(member,m),[&](const int &i) {
@@ -373,10 +396,9 @@ namespace Tacho {
             member.team_barrier();
             {
               Kokkos::parallel_for(Kokkos::TeamThreadRange(member,n),[&](const int &j) {
+                  const T *__restrict__ pA = A+j*as0;
                   Kokkos::parallel_for(Kokkos::ThreadVectorRange(member,j+1),[&](const int &i) {
-                      const T 
-                        *__restrict__ pA = A+j*as0,
-                        *__restrict__ pB = A+i*as0;
+                      const T *__restrict__ pB = A+i*as0;
                       T c(0);
                       for (int p=0;p<k;++p) 
                         c += cjA(pA[p*as1])*cjB(pB[p*as1]);
@@ -454,7 +476,7 @@ namespace Tacho {
               member.team_barrier();
               if (!use_unit_diag) {
                 const T alpha11 = cjA(A[p*as0+p*as1]);
-                Kokkos::parallel_for(Kokkos::TeamThreadRange(member,0,jend),[&](const int &j) {
+                Kokkos::parallel_for(Kokkos::TeamThreadRange(member,jend),[&](const int &j) {
                     Kokkos::single(Kokkos::PerThread(member), [&]() {
                         b1t[j*bs1] /= alpha11;
                       });

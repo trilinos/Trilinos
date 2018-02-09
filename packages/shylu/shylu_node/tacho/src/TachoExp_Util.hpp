@@ -115,7 +115,7 @@ namespace Tacho {
     enum : int { 
       MaxDependenceSize = 8,
       ThresholdSolvePhaseUsingBlas3 = 12,
-      CudaVectorSize = 8
+      CudaVectorSize = 4
     };
 
     ///

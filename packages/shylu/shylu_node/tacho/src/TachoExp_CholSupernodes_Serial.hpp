@@ -111,6 +111,7 @@ namespace Tacho {
              const ordinal_type sid,
              const size_type bufsize,
              /* */ void *buf) {
+
         typedef SupernodeInfoType supernode_info_type;
 
         typedef typename supernode_info_type::value_type value_type;
@@ -290,11 +291,13 @@ namespace Tacho {
               // }
               Kokkos::parallel_for(Kokkos::ThreadVectorRange(member, srcsize), [&](const ordinal_type &k) {
                   s2t[k] = -1;
-                  for (ordinal_type l=0;l<tgtsize && t_colidx[l] <= s_colidx[k];++l)
-                    if (s_colidx[k] == t_colidx[l]) {
-                      s2t[k] = l; 
-                      break;
-                    }
+                  auto found = lower_bound(&t_colidx[0], &t_colidx[tgtsize-1], s_colidx[k], 
+                                           [](ordinal_type left, ordinal_type right) { 
+                                             return left < right; 
+                                           });
+                  if (s_colidx[k] == *found) {
+                    s2t[k] = found - t_colidx;
+                  }
                 });
             }
             {
@@ -304,36 +307,34 @@ namespace Tacho {
               
               ordinal_type ijbeg = 0; for (;s2t[ijbeg] == -1; ++ijbeg) ;
       
-              // Kokkos::single(Kokkos::PerTeam(member), [&]() {
-              //     for (ordinal_type jj=ijbeg;jj<srcsize;++jj) 
-              //       for (ordinal_type ii=ijbeg;ii<srcsize;++ii) {
-              //         const ordinal_type row = s2t[ii];
-              //         if (row < s.m) 
-              //           Kokkos::atomic_add(&A(row, s2t[jj]), ABR(ii, jj));
-              //         else 
-              //           break;
-              //       }
-              //   });
-              // for (ordinal_type jj=ijbeg;jj<srcsize;++jj) {
-              //   Kokkos::parallel_for
-              //     (Kokkos::ThreadVectorRange(member, srcsize-ijbeg), [&](const ordinal_type &iii) {
-              //       const ordinal_type ii = ijbeg + iii;
+              Kokkos::parallel_for
+                (Kokkos::ThreadVectorRange(member, srcsize-ijbeg), [&](const ordinal_type &iii) {
+                  const ordinal_type ii = ijbeg + iii;
+                  const ordinal_type row = s2t[ii];
+                  if (row < s.m) 
+                    for (ordinal_type jj=ijbeg;jj<srcsize;++jj) 
+                      Kokkos::atomic_add(&A(row, s2t[jj]), ABR(ii, jj));
+                });              
+              // Kokkos::parallel_for
+              //   (Kokkos::ThreadVectorRange(member, srcsize-ijbeg), [&](const ordinal_type &jjj) {
+              //     const ordinal_type jj = jjj + ijbeg;
+              //     for (ordinal_type ii=ijbeg;ii<srcsize;++ii) {
               //       const ordinal_type row = s2t[ii];
               //       if (row < s.m) 
               //         Kokkos::atomic_add(&A(row, s2t[jj]), ABR(ii, jj));
-              //     });
-              // }
-              Kokkos::parallel_for
-                (Kokkos::ThreadVectorRange(member, srcsize-ijbeg), [&](const ordinal_type &jjj) {
-                  const ordinal_type jj = jjj + ijbeg;
-                  for (ordinal_type ii=ijbeg;ii<srcsize;++ii) {
-                    const ordinal_type row = s2t[ii];
-                    if (row < s.m) 
-                      Kokkos::atomic_add(&A(row, s2t[jj]), ABR(ii, jj));
-                    else 
-                      break;
-                  }
-                });
+              //       else 
+              //         break;
+              //     }
+              //   });
+              // const ordinal_type cnt = srcsize-ijbeg;
+              // Kokkos::parallel_for
+              //   (Kokkos::ThreadVectorRange(member, cnt*cnt), [&](const ordinal_type &idx) {
+              //     const ordinal_type ii = idx%cnt + ijbeg;
+              //     const ordinal_type jj = idx/cnt + ijbeg;
+              //     const ordinal_type row = s2t[ii];
+              //     const ordinal_type col = s2t[jj];
+              //     if (row < s.m) Kokkos::atomic_add(&A(row, s2t[jj]), ABR(ii, jj));
+              //   });
             }
           });
 #endif

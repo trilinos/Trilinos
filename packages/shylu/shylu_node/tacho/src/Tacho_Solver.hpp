@@ -372,7 +372,7 @@ namespace Tacho {
             }
           } else {
             if (_nb < 0) { 
-              _nb = 80;
+              _nb = 40;
               // if      (max_dense_size < 256)  _nb =  -1;
               // else if (max_dense_size < 512)  _nb =  64;
               // else if (max_dense_size < 1024) _nb = 128;

@@ -80,6 +80,8 @@ int main (int argc, char *argv[]) {
       Side::Left,Uplo::Upper,Trans::ConjTranspose,Diag::NonUnit,Algo::ByBlocks> task_functor_trsm;
     typedef TaskFunctor_Gemm<sched_type,double,DenseMatrixOfBlocksType,
       Trans::NoTranspose,Trans::NoTranspose,Algo::ByBlocks> task_functor_gemm;
+    typedef TaskFunctor_Herk<sched_type,double,DenseMatrixOfBlocksType,
+      Uplo::Upper,Trans::ConjTranspose,Algo::ByBlocks> task_functor_herk;
 
     const ordinal_type max_functor_size = 4*sizeof(task_functor_gemm);
     
@@ -532,6 +534,141 @@ int main (int argc, char *argv[]) {
     }
     printf("\n\n");
 #endif
+    ///
+    /// Herk
+    ///
+#if 1
+    for (ordinal_type m=mbeg;m<=mend;m+=step) {
+      t_reference = 0; t_byblocks = 0;
+      auto sub_a  = Kokkos::subview(a,  range_type(0,m*m));
+      auto sub_a1 = Kokkos::subview(a1, range_type(0,m*m));
+      auto sub_a2 = Kokkos::subview(a2, range_type(0,m*m));
+
+      {
+        sub_a. modify<host_exec_space>();
+        sub_a1.modify<host_exec_space>();
+        
+        DenseMatrixViewHostType A, C;
+        A.set_view(m, m);
+        A.attach_buffer(1, m, sub_a.h_view.data());
+
+        C.set_view(m, m);
+        C.attach_buffer(1, m, sub_a1.h_view.data());
+
+        randomize(A);
+        randomize(C);
+
+        sub_a2.modify<exec_space>();
+        Kokkos::deep_copy(sub_a2.d_view, sub_a1.h_view);
+      }
+
+      // reference 
+      {
+        sub_a. sync  <host_exec_space>();
+        sub_a1.sync  <host_exec_space>();
+        sub_a1.modify<host_exec_space>();
+
+        DenseMatrixViewType A, C;
+        A.set_view(m, m);
+        A.attach_buffer(1, m, sub_a.h_view.data());
+        
+        C.set_view(m, m);
+        C.attach_buffer(1, m, sub_a1.h_view.data());
+        
+        const double alpha = -1.0, beta = 1.0;
+
+        for (ordinal_type iter=dry;iter<niter;++iter) {
+          timer.reset();
+          Herk<Uplo::Upper,Trans::ConjTranspose,Algo::External>
+            ::invoke(alpha, A, beta, C);
+          t_reference += (iter >= 0)*timer.seconds();
+        }
+        t_reference /= niter;
+      }
+      
+      // dense by blocks
+      {
+        sub_a. sync  <exec_space>();
+        sub_a2.sync  <exec_space>();
+        sub_a2.modify<exec_space>();
+
+        DenseMatrixViewType A, C;
+        A.set_view(m, m);
+        A.attach_buffer(1, m, sub_a.d_view.data());
+
+        C.set_view(m, m);
+        C.attach_buffer(1, m, sub_a2.d_view.data());
+
+        const ordinal_type bm = (m/mb) + (m%mb>0);
+
+        ha.modify<host_exec_space>();
+        hc.modify<host_exec_space>();
+
+        DenseMatrixOfBlocksHostType HA, HC;
+
+        HA.set_view(bm, bm);
+        HA.attach_buffer(1, bm, ha.h_view.data());
+
+        HC.set_view(bm, bm);
+        HC.attach_buffer(1, bm, hc.h_view.data());
+
+        setMatrixOfBlocks(HA, m, m, mb);
+        attachBaseBuffer(HA, A.data(), A.stride_0(), A.stride_1());
+        
+        setMatrixOfBlocks(HC, m, m, mb);
+        attachBaseBuffer(HC, C.data(), C.stride_0(), C.stride_1());
+
+        ha.sync<exec_space>();
+        hc.sync<exec_space>();
+        
+        DenseMatrixOfBlocksType DA, DC;
+        
+        DA.set_view(bm, bm);
+        DA.attach_buffer(1, bm, ha.d_view.data());
+
+        DC.set_view(bm, bm);
+        DC.attach_buffer(1, bm, hc.d_view.data());
+
+        {
+          const double alpha = -1.0, beta = 1.0;
+          for (ordinal_type iter=dry;iter<niter;++iter) {
+            timer.reset();
+            Kokkos::host_spawn(Kokkos::TaskSingle(sched, Kokkos::TaskPriority::High),
+                               task_functor_herk(sched, alpha, DA, beta, DC));
+            Kokkos::wait(sched);
+            t_byblocks += (iter >=0)*timer.seconds();
+          }
+          t_byblocks /= niter;
+          //clearFutureOfBlocks(HC);
+        }
+      }
+      
+      {
+        a1.sync<host_exec_space>();
+        a2.sync<host_exec_space>();
+
+        double diff = 0.0, norm = 0.0;
+        for (ordinal_type p=0;p<(m*m);++p) {
+          norm += a1.h_view(p)*a1.h_view(p);
+          diff += (a1.h_view(p) - a2.h_view(p))*(a1.h_view(p) - a2.h_view(p));
+        }
+        const double relerr = sqrt(diff/norm);
+        if (relerr > eps) 
+          printf("******* herk problem %d fails, reltaive error against reference is %10.8e\n", 
+                 m, relerr);
+      }
+      
+      {
+        const double kilo = 1024, gflop = DenseFlopCount<value_type>::Gemm(m, m, m)/kilo/kilo/kilo;
+        printf("herk problem %10d, gflop %10.2f, gflop/s :: reference %10.2f, byblocks %10.2f\n", 
+               m, gflop, gflop/t_reference, gflop/t_byblocks);
+        PRINT_TIMER;
+      }
+    }
+    printf("\n\n");
+#endif
+
+
   }
   Kokkos::finalize();
 

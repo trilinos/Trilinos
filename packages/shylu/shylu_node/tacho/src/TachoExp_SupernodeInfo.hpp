@@ -344,8 +344,8 @@ namespace Tacho {
                       ordinal_type *first = &self.gid_colidx(s.gid_col_begin);
                       ordinal_type *last  = &self.gid_colidx(s.gid_col_end);
                       ordinal_type *loc   = lower_bound(first, last, jj,
-                                                        [](ordinal_type l, ordinal_type r) { 
-                                                          return l < r; });                      
+                                                        [](ordinal_type left, ordinal_type right) { 
+                                                          return left < right; });                      
                       TACHO_TEST_FOR_ABORT(*loc != jj, " copy is wrong" );
                       tgt(i, loc-first) = ax(k);
                     }
