@@ -1644,7 +1644,7 @@ int main(int argc, char *argv[]) {
       compX->Comm().Barrier();
       sleep(1);
 
-      regionalToComposite(regX, compX, maxRegPerProc, rowMapPerGrp, rowImportPerGrp, Zero);
+      regionalToComposite(regX, compX, maxRegPerProc, rowMapPerGrp, rowImportPerGrp, Zero, false);
       std::cout << "compX after V-cycle" << std::endl;
       compX->Print(std::cout);
       sleep(2);
