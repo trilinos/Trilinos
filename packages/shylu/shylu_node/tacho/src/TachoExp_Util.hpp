@@ -114,7 +114,7 @@ namespace Tacho {
     ///
     enum : int { 
       LabelSize = 64,
-      MaxDependenceSize = 8,
+      MaxDependenceSize = 4,
       ThresholdSolvePhaseUsingBlas3 = 12 
     };
 
