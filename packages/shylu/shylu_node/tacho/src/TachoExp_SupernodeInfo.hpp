@@ -88,7 +88,7 @@ namespace Tacho {
 
         // column connectivity (gid - dof, sid - supernode)
         ordinal_type gid_col_begin, gid_col_end, sid_col_begin, sid_col_end;  
-        ordinal_type nchildren, children[MaxDependenceSize]; // hierarchy
+        ordinal_type nchildren, *children, children_buf[MaxDependenceSize]; // hierarchy
 
         ordinal_type max_decendant_schur_size;      // workspace
         ordinal_type max_decendant_supernode_size;  // workspace
@@ -100,11 +100,11 @@ namespace Tacho {
           : lock(0), row_begin(0), m(0), n(0), 
             gid_col_begin(0), gid_col_end(0), 
             sid_col_begin(0), sid_col_end(0), 
-            nchildren(0),
+            nchildren(0), children(NULL),
             max_decendant_schur_size(0),
             max_decendant_supernode_size(0),
             buf(NULL) {
-          for (ordinal_type i=0;i<MaxDependenceSize;++i) children[i] = 0;
+          for (ordinal_type i=0;i<MaxDependenceSize;++i) children_buf[i] = 0;
         }
 
         KOKKOS_INLINE_FUNCTION
@@ -112,11 +112,11 @@ namespace Tacho {
           : lock(0), row_begin(b.row_begin), m(b.m), n(b.n), 
             gid_col_begin(b.gid_col_begin), gid_col_end(b.gid_col_end), 
             sid_col_begin(b.sid_col_begin), sid_col_end(b.sid_col_end), 
-            nchildren(b.nchildren),
+            nchildren(b.nchildren), children(b.children),
             max_decendant_schur_size(b.max_decendant_schur_size),
             max_decendant_supernode_size(b.max_decendant_supernode_size),
             buf(b.buf) {
-          for (ordinal_type i=0;i<b.nchildren;++i) children[i] = b.children[i];
+          for (ordinal_type i=0;i<b.nchildren;++i) children_buf[i] = b.children_buf[i];
         }
 
         KOKKOS_INLINE_FUNCTION
@@ -142,7 +142,7 @@ namespace Tacho {
       ///
       /// max parameter
       ///
-      ordinal_type max_supernode_size, max_schur_size, serial_thres_size;
+      ordinal_type max_nchildren, max_supernode_size, max_schur_size, serial_thres_size;
 
       ///
       /// frontal matrix subassembly mode
@@ -243,6 +243,7 @@ namespace Tacho {
               spar.max_decendant_schur_size = max(s.max_decendant_schur_size,
                                                   spar.max_decendant_schur_size);
             }
+
           }
           Kokkos::deep_copy(supernodes_, h_supernodes);
         }

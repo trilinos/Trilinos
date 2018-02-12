@@ -125,6 +125,7 @@ namespace Tacho {
                 _state = 1;
                 Kokkos::respawn(this, Kokkos::when_all(dep, _s.nchildren), Kokkos::TaskPriority::Regular);
               });
+
           }
           break;
         }

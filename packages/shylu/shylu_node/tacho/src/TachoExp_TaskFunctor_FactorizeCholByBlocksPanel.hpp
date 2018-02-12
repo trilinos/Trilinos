@@ -250,6 +250,7 @@ namespace Tacho {
             }
           }
 
+
           Kokkos::single(Kokkos::PerTeam(member), [&]() {                                      
               if (bufsize) _bufpool.deallocate(buf, bufsize);
             });

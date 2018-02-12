@@ -197,6 +197,7 @@ namespace Tacho {
               }            
               clearFutureOfBlocks(member, htl);
             }
+
               
             _state = 2;
             if (bn > 0) {

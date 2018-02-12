@@ -537,16 +537,18 @@ namespace Tacho {
         timer.reset();
 
         typedef TaskFunctor_FactorizeChol<value_type,exec_space> functor_type;
+        typedef Kokkos::Future<int,exec_space> future_type;
         
         sched_type sched;
         {
-          const size_t max_functor_size = 2*sizeof(functor_type);
+          const size_t max_functor_size = sizeof(functor_type);
+          const size_t max_dep_future_size = _info.max_nchildren*sizeof(future_type);
           const size_t estimate_max_numtasks = _sid_block_colidx.dimension_0() >> 3;
           
           const size_t
             task_queue_capacity = max(estimate_max_numtasks,128)*max_functor_size,
             min_block_size  = 16,
-            max_block_size  = max_functor_size,
+            max_block_size  = (max_functor_size + max_dep_future_size),
             num_superblock  = 32, // various small size blocks
             superblock_size = task_queue_capacity/num_superblock;
           
@@ -649,18 +651,20 @@ namespace Tacho {
         Kokkos::Impl::Timer timer;
 
         timer.reset();
-
+        
         typedef TaskFunctor_FactorizeCholPanel<value_type,exec_space> functor_type;
+        typedef Kokkos::Future<int,exec_space> future_type;
         
         sched_type sched;
         {
-          const size_t max_functor_size = 2*sizeof(functor_type);
+          const size_t max_functor_size = sizeof(functor_type);
+          const size_t max_dep_future_size = _info.max_nchildren*sizeof(future_type);
           const size_t estimate_max_numtasks = _sid_block_colidx.dimension_0() >> 3;
           
           const size_t
             task_queue_capacity = max(estimate_max_numtasks,128)*max_functor_size,
             min_block_size  = 16,
-            max_block_size  = max_functor_size,
+            max_block_size  = (max_functor_size + max_dep_future_size),
             num_superblock  = 32, // various small size blocks
             superblock_size = task_queue_capacity/num_superblock;
           
@@ -891,8 +895,8 @@ namespace Tacho {
         
         sched_type sched;
         {
-          const size_t max_dep_future_size = max_ncols_of_blocks*max_ncols_of_blocks*sizeof(future_type);
-          const size_t max_functor_size = 2*sizeof(functor_type);
+          const size_t max_dep_future_size = (_info.max_nchildren + max_ncols_of_blocks*max_ncols_of_blocks)*sizeof(future_type);
+          const size_t max_functor_size = sizeof(functor_type);
           const size_t estimate_max_numtasks = _sid_block_colidx.dimension_0() >> 3;
           
           const size_t
@@ -1015,8 +1019,8 @@ namespace Tacho {
         
         sched_type sched;
         {
-          const size_t max_dep_future_size = max_nrows_of_blocks*max_ncols_of_blocks*sizeof(future_type);
-          const size_t max_functor_size = 2*sizeof(functor_type);
+          const size_t max_dep_future_size = (_info.max_nchildren + max_nrows_of_blocks*max_ncols_of_blocks)*sizeof(future_type);
+          const size_t max_functor_size = sizeof(functor_type);
           const size_t estimate_max_numtasks = _sid_block_colidx.dimension_0() >> 3;
           
           const size_t

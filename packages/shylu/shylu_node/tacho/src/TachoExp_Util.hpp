@@ -113,7 +113,7 @@ namespace Tacho {
     /// label size used to identify object name
     ///
     enum : int { 
-      MaxDependenceSize = 8,
+      MaxDependenceSize = 4,
       ThresholdSolvePhaseUsingBlas3 = 12,
       CudaVectorSize = 4
     };
