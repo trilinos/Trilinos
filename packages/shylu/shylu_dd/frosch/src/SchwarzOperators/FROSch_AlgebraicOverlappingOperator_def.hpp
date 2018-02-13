@@ -81,7 +81,7 @@ namespace FROSch {
         this->IsComputed_ = true;
         return 0; // RETURN VALUE!!!
     }
-    
+
     template <class SC,class LO,class GO,class NO>
     void AlgebraicOverlappingOperator<SC,LO,GO,NO>::describe(Teuchos::FancyOStream &out,
                                                              const Teuchos::EVerbosityLevel verbLevel) const

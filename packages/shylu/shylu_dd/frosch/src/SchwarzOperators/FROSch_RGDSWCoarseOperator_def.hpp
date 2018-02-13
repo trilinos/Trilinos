@@ -170,15 +170,15 @@ namespace FROSch {
             }
             
             LOVec numEntitiesGlobal(3);
-            numEntitiesGlobal[0] = parentVertices->getEntityMap()->getMaxAllGlobalIndex()+1;
+            numEntitiesGlobal[0] = parentVertices->getEntityMap()->getMaxAllGlobalIndex();
             if (parentVertices->getEntityMap()->lib()==Xpetra::UseEpetra || parentVertices->getEntityMap()->getGlobalNumElements()>0) {
                 numEntitiesGlobal[0] += 1;
             }
-            numEntitiesGlobal[1] = parentEdges->getEntityMap()->getMaxAllGlobalIndex()+1;
+            numEntitiesGlobal[1] = parentEdges->getEntityMap()->getMaxAllGlobalIndex();
             if (parentEdges->getEntityMap()->lib()==Xpetra::UseEpetra || parentEdges->getEntityMap()->getGlobalNumElements()>0) {
                 numEntitiesGlobal[1] += 1;
             }
-            numEntitiesGlobal[2] = parentFaces->getEntityMap()->getMaxAllGlobalIndex()+1;
+            numEntitiesGlobal[2] = parentFaces->getEntityMap()->getMaxAllGlobalIndex();
             if (parentFaces->getEntityMap()->lib()==Xpetra::UseEpetra || parentFaces->getEntityMap()->getGlobalNumElements()>0) {
                 numEntitiesGlobal[2] += 1;
             }

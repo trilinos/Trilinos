@@ -618,7 +618,7 @@ namespace FROSch {
             FROSCH_ASSERT(DofsMaps_[i].size()==DofsPerNode_[i],"DofsMaps_[i].size()!=DofsPerNode_[i]");
             UN numMyElements = DofsMaps_[i][0]->getNodeNumElements();
             for (UN j=1; j<DofsPerNode_[i]; j++) {
-                FROSCH_ASSERT(DofsMaps_[i][j]->getNodeNumElements()==(int) numMyElements,"DofsMaps_[i][j]->getNodeNumElements()==numMyElements");
+                FROSCH_ASSERT(DofsMaps_[i][j]->getNodeNumElements()==(unsigned) numMyElements,"DofsMaps_[i][j]->getNodeNumElements()==numMyElements");
             }
             for (UN j=0; j<numMyElements; j++) {
                 for (UN k=0; k<DofsPerNode_[i]; k++) {
@@ -636,7 +636,7 @@ namespace FROSch {
         GO tmp = 0;
         for (UN i=0; i<NumberOfBlocks_; i++) {
             if (!BlockCoarseMaps_[i].is_null()) {
-                for (int j=0; j<BlockCoarseMaps_[i]->getNodeNumElements(); j++) {
+                for (UN j=0; j<BlockCoarseMaps_[i]->getNodeNumElements(); j++) {
                     mapVector.push_back(BlockCoarseMaps_[i]->getGlobalElement(j)+tmp);
                 }
                 tmp += BlockCoarseMaps_[i]->getMaxAllGlobalIndex()+1;
@@ -987,8 +987,8 @@ namespace FROSch {
         LO jj=0;
         LO kk=0;
         for (UN i=0; i<NumberOfBlocks_; i++) {
-            LO j = 0;
-            LO k = 0;
+            UN j = 0;
+            UN k = 0;
             //if (this->Verbose_) std::cout << MVPhiGamma_[i]->MyLength() << std::endl;
             if (!MVPhiGamma_[i].is_null()) {
                 for (j=0; j<MVPhiGamma_[i]->getNumVectors(); j++) {
@@ -1010,10 +1010,10 @@ namespace FROSch {
         LOVec indices;
         SCVec values;
         // IST DAS LANGSAM??????? TESTEN!!!!!
-        for (LO i=0; i<mVPhiGamma->getLocalLength(); i++) {
+        for (UN i=0; i<mVPhiGamma->getLocalLength(); i++) {
             indices.resize(0);
             values.resize(0);
-            for (LO j=0; j<mVPhiGamma->getNumVectors(); j++) {
+            for (UN j=0; j<mVPhiGamma->getNumVectors(); j++) {
                 valueTmp=mVPhiGamma->getData(j)[i];
                 if (fabs(valueTmp) > 1.0e-8) {
                     indices.push_back(j);
@@ -1046,10 +1046,10 @@ namespace FROSch {
         
         // Now we have to insert the values to the global matrix Phi
         // IST DAS LANGSAM??????? TESTEN!!!!!
-        for (LO i=0; i<mVPhiI->getLocalLength(); i++) {
+        for (UN i=0; i<mVPhiI->getLocalLength(); i++) {
             indices.resize(0);
             values.resize(0);
-            for (LO j=0; j<mVPhiI->getNumVectors(); j++) {
+            for (UN j=0; j<mVPhiI->getNumVectors(); j++) {
                 valueTmp=mVPhiI->getData(j)[i]; //if (this->Verbose_) std::cout << i << " " << this->K_->getRowMap()->getLocalElement(repeatedMap->getGlobalElement(indicesIDofsAll[i])) << " " << j << " " << valueTmp << std::endl;
                 if (fabs(valueTmp) > 1.0e-8) {
                     indices.push_back(j);
