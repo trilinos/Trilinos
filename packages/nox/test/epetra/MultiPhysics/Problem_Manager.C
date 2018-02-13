@@ -2269,7 +2269,7 @@ Problem_Manager::exchangeAllData()
   // Preceding this call, the solution vector for each problem has been placed
   // in each solver's group X vector.  We need to copy this into each problem's
   // corresponding solution vector and then fire off the appropriate transfers
-  // into auxillary data vectors.
+  // into auxiliary data vectors.
 
   copyAllGroupXtoProblems();
 
@@ -2295,7 +2295,7 @@ Problem_Manager::exchangeDataTo(int solverId)
   // Preceding this call, the solution vector for each problem has been placed
   // in each solver's group X vector.  We need to copy this into each problem's
   // corresponding solution vector and then fire off the appropriate transfers
-  // into auxillary data vectors.
+  // into auxiliary data vectors.
 
   copyAllGroupXtoProblems();
 

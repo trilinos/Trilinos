@@ -218,7 +218,7 @@ void PHX::Field<DataT,Rank>::setFieldData(const PHX::any& a)
   // any object is always the non-const data type.  To correctly cast
   // the any object to the Kokkos::View, need to pull the const off
   // the scalar type if this Field has a const scalar type.
-  typedef Kokkos::View<typename array_type::non_const_data_type,PHX::Device> non_const_view;
+  typedef PHX::View<typename array_type::non_const_data_type> non_const_view;
   try {
     non_const_view tmp = PHX::any_cast<non_const_view>(a);
     m_field_data = tmp;
@@ -255,7 +255,7 @@ void PHX::Field<DataT,Rank>::print(std::ostream& os, bool printValues) const
 // *********************************************************************
 template<typename DataT,int Rank>
 KOKKOS_INLINE_FUNCTION
-Kokkos::DynRankView<DataT,PHX::Device>
+Kokkos::DynRankView<DataT,typename PHX::DevLayout<DataT>::type,PHX::Device>
 PHX::Field<DataT,Rank>::get_view()
 {
   return m_field_data;
@@ -264,7 +264,7 @@ PHX::Field<DataT,Rank>::get_view()
 // *********************************************************************
 template<typename DataT,int Rank>
 KOKKOS_INLINE_FUNCTION
-const Kokkos::DynRankView<DataT,PHX::Device>
+const Kokkos::DynRankView<DataT,typename PHX::DevLayout<DataT>::type,PHX::Device>
 PHX::Field<DataT,Rank>::get_view() const
 {
   return m_field_data;

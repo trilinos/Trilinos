@@ -1,13 +1,13 @@
 /*
 //@HEADER
 // ***********************************************************************
-// 
-//        AztecOO: An Object-Oriented Aztec Linear Solver Package 
+//
+//        AztecOO: An Object-Oriented Aztec Linear Solver Package
 //                 Copyright (2002) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -35,8 +35,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
-// 
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+//
 // ***********************************************************************
 //@HEADER
 */
@@ -294,7 +294,7 @@ void AZ_compute_global_scalars(AZ_MATRIX *Amat,
         if ((proc_config[AZ_node]==0) && (options[AZ_output] != AZ_none)) {
           AZ_printf_out("Warning:No previous definition for A_norm found. Was ");
           AZ_printf_out("AZ_iterate used\n\tpreviously and was the scaling object ");
-          AZ_printf_out("passed in the same as for\n\tthis invokation of ");
+          AZ_printf_out("passed in the same as for\n\tthis invocation of ");
           AZ_printf_out("AZ_iterate()?\n");
         }
       }
@@ -360,7 +360,7 @@ void AZ_compute_global_scalars(AZ_MATRIX *Amat,
         if ((proc_config[AZ_node]==0) && (options[AZ_output] != AZ_none)) {
           AZ_printf_out("Warning:No previous definition for A_norm found. Was ");
           AZ_printf_out("AZ_iterate used\n\tpreviously and was the scaling object ");
-          AZ_printf_out("passed in the same as for\n\tthis invokation of ");
+          AZ_printf_out("passed in the same as for\n\tthis invocation of ");
           AZ_printf_out("AZ_iterate()?\n");
         }
       }
@@ -458,7 +458,7 @@ void AZ_compute_global_scalars(AZ_MATRIX *Amat,
       *value = dots[0];
     }
     print_info = -1; /* Never print unless on PE 0 */
-    if (proc_config[AZ_node] == 0) { 
+    if (proc_config[AZ_node] == 0) {
       if (options[AZ_output]==AZ_none || options[AZ_output]==AZ_warnings)
 	print_info = -1; /* Never print */
       else if (options[AZ_output]==AZ_last || options[AZ_output]==AZ_summary)
@@ -467,10 +467,10 @@ void AZ_compute_global_scalars(AZ_MATRIX *Amat,
 	print_info = 1; /* Print always */
       else if (conv_info->iteration%options[AZ_output]==0)
 	print_info = 1; /* print this time */
-      else 
+      else
 	print_info = 0; /* Print only if converged */
     }
-    conv_info->conv_function(conv_info->conv_object, conv_info->res_vec_object, 
+    conv_info->conv_function(conv_info->conv_object, conv_info->res_vec_object,
 			     conv_info->iteration,
                              r, print_info, conv_info->sol_updated,
                              &(conv_info->converged), &(conv_info->isnan), r_norm,

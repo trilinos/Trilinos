@@ -50,23 +50,34 @@
 #include "Phalanx_MDField.hpp"
 #include "Dimension.hpp"
 
-//! Project field values from basis to qp.
 template<typename EvalT, typename Traits>
 class ProjectGradientToQP : public PHX::EvaluatorWithBaseImpl<Traits>,
-                            public PHX::EvaluatorDerived<EvalT, Traits>  {
+			    public PHX::EvaluatorDerived<PHX::MyTraits::Residual, Traits>  {
 
   using ScalarT = typename EvalT::ScalarT;
   PHX::MDField<const ScalarT,CELL,BASIS> field_at_basis;
   PHX::MDField<ScalarT,CELL,QP,DIM> grad_field_at_qp;
 
 public:
-  struct MyDevEval : public PHX::DeviceEvaluator<Traits> {
-    Kokkos::View<const ScalarT**,PHX::Device> field_at_basis;
-    Kokkos::View<ScalarT***,PHX::Device> grad_field_at_qp;
-    KOKKOS_FUNCTION MyDevEval(const Kokkos::View<const ScalarT**,PHX::Device>& in_field_at_basis,
-                                     const Kokkos::View<ScalarT***,PHX::Device>& in_grad_field_at_qp) :
+
+  struct MyDevEvalResidual : public PHX::DeviceEvaluator<Traits> {
+    PHX::View<const ScalarT**> field_at_basis;
+    PHX::AtomicView<ScalarT***> grad_field_at_qp;
+    KOKKOS_FUNCTION MyDevEvalResidual(const PHX::View<const ScalarT**>& in_field_at_basis,
+				      const PHX::View<ScalarT***>& in_grad_field_at_qp) :
       field_at_basis(in_field_at_basis), grad_field_at_qp(in_grad_field_at_qp) {}
-    KOKKOS_FUNCTION MyDevEval(const MyDevEval& src) = default;
+    KOKKOS_FUNCTION MyDevEvalResidual(const MyDevEvalResidual& src) = default;
+    KOKKOS_FUNCTION void evaluate(const typename PHX::DeviceEvaluator<Traits>::member_type& team,
+                                  typename Traits::EvalData workset) override;
+  };
+
+  struct MyDevEvalJacobian : public PHX::DeviceEvaluator<Traits> {
+    PHX::View<const ScalarT**> field_at_basis;
+    PHX::View<ScalarT***> grad_field_at_qp;
+    KOKKOS_FUNCTION MyDevEvalJacobian(const PHX::View<const ScalarT**>& in_field_at_basis,
+				      const PHX::View<ScalarT***>& in_grad_field_at_qp) :
+      field_at_basis(in_field_at_basis), grad_field_at_qp(in_grad_field_at_qp) {}
+    KOKKOS_FUNCTION MyDevEvalJacobian(const MyDevEvalJacobian& src) = default;
     KOKKOS_FUNCTION void evaluate(const typename PHX::DeviceEvaluator<Traits>::member_type& team,
                                   typename Traits::EvalData workset) override;
   };

@@ -80,12 +80,12 @@ int main(int argc, char *argv[]) {
 
   // This little trick lets us print to std::cout only if a (dummy) command-line argument is provided.
   int iprint     = argc - 1;
-  Teuchos::RCP<std::ostream> outStream;
+  ROL::Ptr<std::ostream> outStream;
   Teuchos::oblackholestream bhs; // outputs nothing
   if (iprint > 0)
-    outStream = Teuchos::rcp(&std::cout, false);
+    outStream = ROL::makePtrFromRef(std::cout);
   else
-    outStream = Teuchos::rcp(&bhs, false);
+    outStream = ROL::makePtrFromRef(bhs);
 
   int errorFlag  = 0;
 
@@ -97,11 +97,11 @@ int main(int argc, char *argv[]) {
     Teuchos::updateParametersFromXmlFile( filename, parlist.ptr() );
 
     // Setup optimization problem
-    Teuchos::RCP<ROL::Vector<RealT> > x0, z;
-    Teuchos::RCP<ROL::Objective<RealT> > obj;
-    Teuchos::RCP<ROL::BoundConstraint<RealT> > bnd;
+    ROL::Ptr<ROL::Vector<RealT> > x0, z;
+    ROL::Ptr<ROL::Objective<RealT> > obj;
+    ROL::Ptr<ROL::BoundConstraint<RealT> > bnd;
     ROL::getTestObjectives<RealT>(obj,bnd,x0,z,ROL::TESTOPTPROBLEM_HS1);
-    Teuchos::RCP<ROL::Vector<RealT> > x = x0->clone(); x->set(*x0);
+    ROL::Ptr<ROL::Vector<RealT> > x = x0->clone(); x->set(*x0);
     ROL::OptimizationProblem<RealT> optProblem(obj,x,bnd);
 
     // Get Dimension of Problem
@@ -112,15 +112,15 @@ int main(int argc, char *argv[]) {
     optProblem.check(*outStream);
 
     // Error Vector
-    Teuchos::RCP<ROL::Vector<RealT> > e = x0->clone();
+    ROL::Ptr<ROL::Vector<RealT> > e = x0->clone();
     e->zero();
 
     // Setup optimization solver
     parlist->sublist("Status Test").set("Gradient Tolerance",static_cast<RealT>(1e-6));
     parlist->sublist("Step").set("Type", "Interior Point");
     ROL::OptimizationSolver<RealT> optSolver(optProblem,*parlist);
-    Teuchos::RCP<ROL::StatusTest<RealT> > myStatus
-      = Teuchos::rcp( new myStatusTest<RealT>(1.e-8) );
+    ROL::Ptr<ROL::StatusTest<RealT> > myStatus
+      = ROL::makePtr<myStatusTest<RealT>>(1.e-8);
     optSolver.solve(*outStream, myStatus, false);
 
     // Compute Error

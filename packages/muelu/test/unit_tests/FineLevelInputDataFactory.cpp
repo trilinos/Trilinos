@@ -292,7 +292,7 @@ namespace MueLuTests {
 #   include "MueLu_UseShortNames.hpp"
   public:
     void test_testfunc(const FineLevelInputDataFactory& fac) {
-      std::cout << "FineLevelInputDataFactoryTester" << std::endl;
+      //std::cout << "FineLevelInputDataFactoryTester" << std::endl;
       fac.test();
     }
   };

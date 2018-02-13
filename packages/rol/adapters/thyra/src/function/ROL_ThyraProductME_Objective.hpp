@@ -83,7 +83,7 @@ public:
     if(!x_hasChanged(rol_x))
        return value_;
 
-    const ThyraVector<Real>  & thyra_p = Teuchos::dyn_cast<const ThyraVector<Real> >(rol_x);
+    const ThyraVector<Real>  & thyra_p = dynamic_cast<const ThyraVector<Real>&>(rol_x);
     Teuchos::RCP< Thyra::VectorBase<Real> > g = Thyra::createMember<Real>(thyra_model.get_g_space(g_index));
     Teuchos::RCP<const Thyra::ProductVectorBase<Real> > thyra_prodvec_p = Teuchos::rcp_dynamic_cast<const Thyra::ProductVectorBase<Real>>(thyra_p.getVector());
 
@@ -121,9 +121,9 @@ public:
       params->set<bool>("Update Functional Gradient", !gradientUpdated);
     }
 
-    const ThyraVector<Real>  & thyra_p = Teuchos::dyn_cast<const ThyraVector<Real> >(rol_x);
+    const ThyraVector<Real>  & thyra_p = dynamic_cast<const ThyraVector<Real>&>(rol_x);
     Teuchos::RCP<const  Thyra::ProductVectorBase<Real> > thyra_prodvec_p = Teuchos::rcp_dynamic_cast<const Thyra::ProductVectorBase<Real>>(thyra_p.getVector());
-    ThyraVector<Real>  & thyra_dgdp = Teuchos::dyn_cast<ThyraVector<Real> >(rol_g);
+    ThyraVector<Real>  & thyra_dgdp = dynamic_cast<ThyraVector<Real>&>(rol_g);
 
     //Teuchos::RCP<Thyra::MultiVectorBase<Real> > dgdp = thyra_dgdp.getVector();
     Teuchos::RCP< Thyra::ProductMultiVectorBase<Real> > prodvec_dgdp_p = Teuchos::rcp_dynamic_cast<Thyra::ProductMultiVectorBase<Real>>(thyra_dgdp.getVector());

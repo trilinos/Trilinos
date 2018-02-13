@@ -1,13 +1,13 @@
 /*
 //@HEADER
 // ***********************************************************************
-// 
-//        AztecOO: An Object-Oriented Aztec Linear Solver Package 
+//
+//        AztecOO: An Object-Oriented Aztec Linear Solver Package
 //                 Copyright (2002) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -35,8 +35,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
-// 
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+//
 // ***********************************************************************
 //@HEADER
 */
@@ -151,7 +151,7 @@ void AZ_exchange_bdry(double x[], int data_org[], int proc_config[])
   type            = proc_config[AZ_MPI_Tag];
   proc_config[AZ_MPI_Tag] = (type+1-AZ_MSG_TYPE) % AZ_NUM_MSGS + AZ_MSG_TYPE;
 
-#ifdef AZTEC_MPI 
+#ifdef AZTEC_MPI
   if ( proc_config[AZ_Comm_Set] != AZ_Done_by_User) {
       AZ_printf_err("Error: Communicator not set. Use AZ_set_comm()\n");
       AZ_printf_err("       (e.g. AZ_set_comm(proc_config,MPI_COMM_WORLD)).\n");
@@ -212,9 +212,9 @@ void AZ_exchange_bdry(double x[], int data_org[], int proc_config[])
 /******************************************************************************/
 
 void AZ_exchange_local_info(int num_neighbors, int proc_num_neighbor[],
-                            char *message_send_add[], 
+                            char *message_send_add[],
                             unsigned int message_send_length[],
-                            char *message_recv_add[], 
+                            char *message_recv_add[],
                             unsigned int message_recv_length[],
                             int type, int proc_config[])
 
@@ -1795,7 +1795,7 @@ void AZ_print_sync_end(int proc_config[], int do_print_line)
   if (proc == 0) {
     from = nprocs -1;
     mdwrap_iread((void *) &flag, sizeof(int), &from, &type, &request2);
-    mdwrap_wait((void *) &flag, sizeof(int), &from, &type, &st, 
+    mdwrap_wait((void *) &flag, sizeof(int), &from, &type, &st,
                  &request2);
   }
 
@@ -2509,7 +2509,7 @@ void AZ_broadcast(char *ptr, int length, int proc_config[], int action)
 /******************************************************************************/
 /******************************************************************************/
 
-unsigned int AZ_broadcast_info(char buffer[], int proc_config[], 
+unsigned int AZ_broadcast_info(char buffer[], int proc_config[],
                                unsigned int length)
 
 /*******************************************************************************
@@ -2690,15 +2690,15 @@ void AZ_splitup_big_msg(int num_neighbors, char *ibuffer, char *obuffer,
   int     dummy_add;
   int     DEBUG = FALSE;
   unsigned int length, size;
-  
-  
+
+
   MPI_AZRequest request[AZ_MAX_NEIGHBORS];  /* Message handle */
 
   /**************************** execution begins ****************************/
 
   /* Compute the global maximum message buffer size needed */
 
-  
+
   for (n = 0; n < num_neighbors; n++) {
     max_buffer_size += actual_recv_length[n];
   }
@@ -2718,7 +2718,7 @@ void AZ_splitup_big_msg(int num_neighbors, char *ibuffer, char *obuffer,
     /*
      * Compute maximum total message size in bytes that any processor will
      * recieve and the maximum number of neighbors that any proc must
-     * communicate with. Also initalize some logical arrays.
+     * communicate with. Also initialize some logical arrays.
      */
 
     max_messg_size = 0;
@@ -2749,7 +2749,7 @@ void AZ_splitup_big_msg(int num_neighbors, char *ibuffer, char *obuffer,
     allowed_buff_size  = (int) floor(((double) AZ_MAX_MSG_BUFF_SIZE /
                                       (double) (3*element_size)));
 
-    messg_size_doubles = (int) floor((double) allowed_buff_size / 
+    messg_size_doubles = (int) floor((double) allowed_buff_size /
                                       (double) max_neighbors);
 
     number_of_messages = (int) ceil((double) max_messg_size /
@@ -2769,7 +2769,7 @@ void AZ_splitup_big_msg(int num_neighbors, char *ibuffer, char *obuffer,
 
     if (ibuffer == obuffer) {
        /*
-        * The input and output buffers are the same. Allocate a temporary 
+        * The input and output buffers are the same. Allocate a temporary
         * send buffer that can hold all out going messages.
         * Then copy all info to this buffer.
         */
@@ -2814,9 +2814,9 @@ void AZ_splitup_big_msg(int num_neighbors, char *ibuffer, char *obuffer,
 
           length = messg_size_doubles*element_size;
 
-          char_ptr = (char *) (&obuffer[start_recv_proc[n]*element_size] + 
+          char_ptr = (char *) (&obuffer[start_recv_proc[n]*element_size] +
                                        doubles_sent*element_size);
-          (void) mdwrap_iread((void *) char_ptr, length, &messg_from, 
+          (void) mdwrap_iread((void *) char_ptr, length, &messg_from,
                                &dummy_int,  request+n);
         }
         else if (doubles_sent+messg_size_doubles >= total_doubles_to_recv &&
@@ -2826,9 +2826,9 @@ void AZ_splitup_big_msg(int num_neighbors, char *ibuffer, char *obuffer,
 
           length = (total_doubles_to_recv - doubles_sent)*element_size;
 
-          char_ptr = (char *) (&obuffer[start_recv_proc[n]*element_size] + 
+          char_ptr = (char *) (&obuffer[start_recv_proc[n]*element_size] +
                                doubles_sent*element_size);
-          (void) mdwrap_iread((void *) char_ptr, length, &messg_from, 
+          (void) mdwrap_iread((void *) char_ptr, length, &messg_from,
                                &dummy_int,  request+n);
         }
         else if (finished_recv_messg[n] == AZ_TRUE) {
@@ -2836,7 +2836,7 @@ void AZ_splitup_big_msg(int num_neighbors, char *ibuffer, char *obuffer,
           /* read integer dummy message */
 
           length = sizeof(int);
-          (void) mdwrap_iread((void *) &dummy_add, length, &messg_from, 
+          (void) mdwrap_iread((void *) &dummy_add, length, &messg_from,
                                 &dummy_int,  request+n);
         }
       }
@@ -2852,7 +2852,7 @@ void AZ_splitup_big_msg(int num_neighbors, char *ibuffer, char *obuffer,
           /* send out messg_size_doubles bytes */
 
           length = messg_size_doubles*element_size;
-          char_ptr = (char *) (&send_buffer[element_size*start_send_proc[n]] + 
+          char_ptr = (char *) (&send_buffer[element_size*start_send_proc[n]] +
                                doubles_sent*element_size);
           (void) mdwrap_write((void *) char_ptr, length, dest, type, &flag);
         }
@@ -2863,7 +2863,7 @@ void AZ_splitup_big_msg(int num_neighbors, char *ibuffer, char *obuffer,
 
           length = (total_doubles_to_send - doubles_sent)*element_size;
 
-          char_ptr = (char *) (&send_buffer[start_send_proc[n]*element_size] + 
+          char_ptr = (char *) (&send_buffer[start_send_proc[n]*element_size] +
                                doubles_sent*element_size);
           (void) mdwrap_write((void *) char_ptr, length, dest, type, &flag);
 
@@ -2890,10 +2890,10 @@ void AZ_splitup_big_msg(int num_neighbors, char *ibuffer, char *obuffer,
           /* read messg_size_doubles bytes */
 
           length = messg_size_doubles*element_size;
-          char_ptr = (char *) (&obuffer[start_recv_proc[n]*element_size] + 
+          char_ptr = (char *) (&obuffer[start_recv_proc[n]*element_size] +
                                doubles_sent*element_size);
           size =  mdwrap_wait((void *) char_ptr, length, &messg_from,
-                             &messg_type, &flag, request+n); 
+                             &messg_type, &flag, request+n);
 
           if (length > size) {
            (void) AZ_printf_err("%sERROR on node %d\nmd_wait failed, message "
@@ -2907,10 +2907,10 @@ void AZ_splitup_big_msg(int num_neighbors, char *ibuffer, char *obuffer,
           /* read actual_recv_length[n] - doubles_sent bytes */
 
           length = (total_doubles_to_recv - doubles_sent)*element_size;
-          char_ptr = (char *) (&obuffer[start_recv_proc[n]*element_size] + 
+          char_ptr = (char *) (&obuffer[start_recv_proc[n]*element_size] +
                                doubles_sent*element_size);
           size =  mdwrap_wait((void *) char_ptr, length, &messg_from,
-                             &messg_type, &flag, request+n); 
+                             &messg_type, &flag, request+n);
 
           if (length > size) {
            (void) AZ_printf_err("%sERROR on node %d\nmd_wait failed, message "
@@ -2926,7 +2926,7 @@ void AZ_splitup_big_msg(int num_neighbors, char *ibuffer, char *obuffer,
 
           length = sizeof(int);
           size =  mdwrap_wait((void *) &dummy_add, length, &messg_from,
-                             &messg_type, &flag, request+n); 
+                             &messg_type, &flag, request+n);
 
           if (length > size) {
            (void) AZ_printf_err("%sERROR on node %d\nmd_wait failed, message "
@@ -2948,7 +2948,7 @@ void AZ_splitup_big_msg(int num_neighbors, char *ibuffer, char *obuffer,
   }
 
   else {
-     
+
      if (ibuffer == obuffer ) {
         /* Allocate a send buffer, if the input */
         /* and output buffers are the same.     */
@@ -2961,21 +2961,21 @@ void AZ_splitup_big_msg(int num_neighbors, char *ibuffer, char *obuffer,
            (void) AZ_printf_err("no space AZ_splitup_big_msg: send_buffer \n");
            exit(-1);
         }
-   
-        for (n = 0; n < (int) (total_send_size*element_size) ; n++) 
+
+        for (n = 0; n < (int) (total_send_size*element_size) ; n++)
            send_buffer[n] = ibuffer[n];
      }
      else send_buffer = ibuffer;
-     
+
      /* post receives for message */
-     
+
      j = 0;
      for (n = 0; n < num_neighbors; n++) {
         messg_from = proc_num_neighbor[n];
         dummy_int = type;
         size      = actual_recv_length[n]*element_size;
 
-        (void) mdwrap_iread((void *) &obuffer[j], size, &messg_from, 
+        (void) mdwrap_iread((void *) &obuffer[j], size, &messg_from,
                              &dummy_int, request+n);
         j += actual_recv_length[n]*element_size;
      }
@@ -2985,9 +2985,9 @@ void AZ_splitup_big_msg(int num_neighbors, char *ibuffer, char *obuffer,
      for (n = 0; n < num_neighbors; n++) {
         size = actual_send_length[n]*element_size;
         (void) mdwrap_write((void *) &send_buffer[start_send_proc[n]*
-                             element_size], size, proc_num_neighbor[n], type, 
+                             element_size], size, proc_num_neighbor[n], type,
                              &st);
-     }             
+     }
 
      /* wait for all messages */
 
@@ -2997,7 +2997,7 @@ void AZ_splitup_big_msg(int num_neighbors, char *ibuffer, char *obuffer,
         rtype     = type;
         size      = actual_recv_length[n]*element_size;
         length =  mdwrap_wait((void *) &obuffer[j], size, &messg_from,
-                               &rtype, &st, request+n); 
+                               &rtype, &st, request+n);
         if ((length != size) && (size !=0) ) {
            (void) AZ_printf_err( "%sERROR on node %d\nmd_wait failed, message "
                           "type = %d\n", yo, proc_config[AZ_node] , rtype);

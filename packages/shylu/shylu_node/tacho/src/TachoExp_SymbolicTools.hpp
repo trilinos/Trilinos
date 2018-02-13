@@ -243,8 +243,8 @@ namespace Tacho {
           memset(a.data(), 0, cnt*sizeof(typename ordinal_type_array::value_type));
         };
 
-        auto colmap_per_supernode = [](const size_type_array &ap,
-                                       const ordinal_type_array &aj,
+        auto colmap_per_supernode = [](const size_type_array &ap_,
+                                       const ordinal_type_array &aj_,
                                        const ordinal_type sbeg, 
                                        const ordinal_type send,
                                        const ordinal_type_array &cid,
@@ -260,8 +260,8 @@ namespace Tacho {
           
           // visit each super node row (off diagonal block)
           for (ordinal_type i=sbeg;i<send;++i) {
-            for (size_type j=ap(i);j<ap(i+1);++j) {
-              const ordinal_type col = aj(j);
+            for (size_type j=ap_(i);j<ap_(i+1);++j) {
+              const ordinal_type col = aj_(j);
               if (flag(col)) {
                 // already visited; pass on
               } else {
@@ -484,7 +484,7 @@ namespace Tacho {
       struct {
         ordinal_type nrows, nroots;
         size_type    nnz_a, nnz_u;
-        ordinal_type nsupernodes, largest_supernode, largest_schur;
+        ordinal_type nsupernodes, max_nchildren, largest_supernode, largest_schur;
         ordinal_type nleaves, height; // tree
       } stat;
 
@@ -630,17 +630,6 @@ namespace Tacho {
         }
         t_supernode += timer.seconds();
 
-        stat.nnz_u = ap(_m);
-        stat.nsupernodes = _supernodes.dimension_0() - 1;
-        stat.largest_supernode = 0;
-        stat.largest_schur = 0;
-        for (ordinal_type sid=0;sid<stat.nsupernodes;++sid) {
-          const ordinal_type m = _supernodes(sid+1) - _supernodes(sid);
-          const ordinal_type n = _blk_super_panel_colidx(_sid_super_panel_ptr(sid+1)-1);
- 
-          stat.largest_supernode = max(stat.largest_supernode, m);
-          stat.largest_schur     = max(stat.largest_schur,     n-m);
-        }
         track_alloc(ap.span()*sizeof(size_type));
         track_alloc(aj.span()*sizeof(ordinal_type));
 
@@ -664,8 +653,6 @@ namespace Tacho {
         }
         t_extra += timer.seconds();
 
-        stat.nroots = _stree_roots.dimension_0();
-
         track_alloc(_stree_parent.span()*sizeof(ordinal_type));
         track_alloc(_stree_ptr.span()*sizeof(size_type));
         track_alloc(_stree_children.span()*sizeof(ordinal_type));
@@ -677,6 +664,21 @@ namespace Tacho {
         track_free(work.span()*sizeof(ordinal_type));
         track_free(parent.span()*sizeof(ordinal_type));
         
+        stat.nnz_u = ap(_m);
+        stat.nsupernodes = _supernodes.dimension_0() - 1;
+        stat.largest_supernode = 0;
+        stat.largest_schur = 0;
+        stat.max_nchildren = 0;
+        for (ordinal_type sid=0;sid<stat.nsupernodes;++sid) {
+          const ordinal_type m = _supernodes(sid+1) - _supernodes(sid);
+          const ordinal_type n = _blk_super_panel_colidx(_sid_super_panel_ptr(sid+1)-1);
+          const ordinal_type nchildren = _stree_ptr(sid+1) - _stree_ptr(sid);
+          stat.largest_supernode = max(stat.largest_supernode, m);
+          stat.largest_schur     = max(stat.largest_schur,     n-m);
+          stat.max_nchildren     = max(stat.max_nchildren,     nchildren);
+        }
+        stat.nroots = _stree_roots.dimension_0();
+
         if (verbose) {
           printf("Summary: SymbolicTools\n");
           printf("======================\n");
@@ -713,6 +715,7 @@ namespace Tacho {
             printf("             number of supernodes:                            %10d\n", stat.nsupernodes);
             printf("             height of supernodal tree:                       %10d\n", stat.height);
             printf("             number of leaf supernodes:                       %10d\n", stat.nleaves);
+            printf("             max number of children in tree:                  %10d\n", stat.max_nchildren);
             printf("             size of largest supernode:                       %10d\n", stat.largest_supernode);
             printf("             size of largest schur size:                      %10d\n", stat.largest_schur);
             printf("\n");

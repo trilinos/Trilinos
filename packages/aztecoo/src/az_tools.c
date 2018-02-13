@@ -253,7 +253,7 @@ void AZ_invorder_vec(double vector[], int data_org[], int update_index[],
   ===============
 
   vector:          On input, a vector of length 'length'. On output,
-                   'vector' is reordered to be consistant with
+                   'vector' is reordered to be consistent with
                    update_index[].
 
   data_org:        Array use to specifiy communication information. See User's
@@ -319,7 +319,7 @@ void AZ_reorder_vec(double vector[], int data_org[], int update_index[],
   ===============
 
   vector:          On input, a vector of length 'length'. On output,
-                   'vector' is reordered to be consistant with
+                   'vector' is reordered to be consistent with
                    update_index[].
 
   data_org:        Array use to specifiy communication information. See User's
@@ -2744,7 +2744,7 @@ void AZ_read_update(int *N_update, int *update[], int proc_config[],
        if (proc == 0) {
           (void) fprintf(stderr,"Error: In AZ_read_update(), the '.update'");
           (void) fprintf(stderr,"file does not contain\n       one ");
-          (void) fprintf(stderr,"occurance of row 0. Make sure that rows are");
+          (void) fprintf(stderr,"occurrence of row 0. Make sure that rows are");
           (void) fprintf(stderr," numbered\n       from 0 to n-1.\n");
        }
        exit(1);
@@ -3098,7 +3098,7 @@ a file speficied by the input argument datafile instead of .update
        if (proc == 0) {
           (void) AZ_printf_err("Error: In AZ_read_update(), the %s", datafile);
           (void) AZ_printf_err("file does not contain\n       one ");
-          (void) AZ_printf_err("occurance of row 0. Make sure that rows are");
+          (void) AZ_printf_err("occurrence of row 0. Make sure that rows are");
           (void) AZ_printf_err(" numbered\n       from 0 to n-1.\n");
        }
        exit(1);

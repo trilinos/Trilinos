@@ -11,6 +11,12 @@ namespace Teuchos {
 namespace MathExpr {
 
 enum {
+  PROD_PROGRAM,
+  PROD_NO_STATEMENTS,
+  PROD_NEXT_STATEMENT,
+  PROD_ASSIGN,
+  PROD_NO_EXPR,
+  PROD_YES_EXPR,
   PROD_EXPR,
   PROD_TERNARY_DECAY,
   PROD_OR_DECAY,
@@ -68,10 +74,12 @@ enum {
   TOK_EQ,
   TOK_AND,
   TOK_OR,
-  TOK_CONST
+  TOK_CONST,
+  TOK_SEMICOLON,
+  TOK_ASSIGN
 };
 
-enum { NTOKS = TOK_CONST + 1 };
+enum { NTOKS = TOK_ASSIGN + 1 };
 
 Language make_language();
 

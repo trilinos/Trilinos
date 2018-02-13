@@ -196,14 +196,17 @@ evaluateFields(typename Traits::EvalData d)
 // *************************************************************************
 template <typename EvalT, typename Traits>
 void PHX::EvaluationContainer<EvalT, Traits>::
-evaluateFieldsDeviceDag(const int& work_size, typename Traits::EvalData d)
+evaluateFieldsDeviceDag(const int& work_size,
+			const int& team_size,
+			const int& vector_size,
+			typename Traits::EvalData d)
 {
 #ifdef PHX_DEBUG
   TEUCHOS_TEST_FOR_EXCEPTION( !(this->setupCalled()) , std::logic_error,
 		      "You must call postRegistrationSetup() for each evaluation type before calling the evaluateFields() method for that type!");
 #endif
 
-  this->dag_manager_.evaluateFieldsDeviceDag(work_size,d);
+  this->dag_manager_.evaluateFieldsDeviceDag(work_size,team_size,vector_size,d);
 }
 
 // *************************************************************************

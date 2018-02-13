@@ -7,11 +7,11 @@ execute_process(COMMAND date +%A OUTPUT_VARIABLE DAYOFWEEK)
 # parallel valgrind tests run every night except Sunday
 # coverage tests run on Saturday night
 
-if(${DAYOFWEEK} MATCHES "Sunday")
+if(${DAYOFWEEK} MATCHES "Saturday")
   SET(RUN_HEAVY_MEMORY_TESTS ON)
   SET(RUN_COVERAGE_TESTS OFF)
   SET(RUN_CUDA_OLD_TESTS ON)
-elseif(${DAYOFWEEK} MATCHES "Saturday")
+elseif(${DAYOFWEEK} MATCHES "Sunday")
   SET(RUN_HEAVY_MEMORY_TESTS OFF)
   SET(RUN_COVERAGE_TESTS ON)
   SET(RUN_CUDA_OLD_TESTS OFF)
@@ -27,7 +27,7 @@ if($ENV{CTEST_CONFIGURATION} MATCHES "default")
 
   # Regular tests
   TRILINOS_DRIVER_ADD_DASHBOARD(
-    SERIAL_DEBUG_MueLu_Tpetra
+    SERIAL_DEBUG_NO-EPETRA
     ctest_linux_nightly_serial_debug_muelu_tpetra_geminga.cmake
     CTEST_INSTALLER_TYPE release
     RUN_SERIAL
@@ -35,7 +35,7 @@ if($ENV{CTEST_CONFIGURATION} MATCHES "default")
     )
 
   TRILINOS_DRIVER_ADD_DASHBOARD(
-    SERIAL_DEBUG_MueLu_Epetra
+    SERIAL_DEBUG_NO-TPETRA
     ctest_linux_nightly_serial_debug_muelu_epetra_geminga.cmake
     CTEST_INSTALLER_TYPE release
     RUN_SERIAL
@@ -43,8 +43,16 @@ if($ENV{CTEST_CONFIGURATION} MATCHES "default")
     )
 
   TRILINOS_DRIVER_ADD_DASHBOARD(
-    OPENMPI_1.10.0_RELEASE_MueLu
+    OPENMPI-1.10.1_RELEASE_DEFAULT
     ctest_linux_nightly_mpi_release_muelu_geminga.cmake
+    CTEST_INSTALLER_TYPE release
+    RUN_SERIAL
+    TIMEOUT_MINUTES 330
+    )
+
+  TRILINOS_DRIVER_ADD_DASHBOARD(
+    OPENMPI-1.10.1_RELEASE_COMPLEX_DEFAULT
+    ctest_linux_nightly_mpi_release_complex_muelu_geminga.cmake
     CTEST_INSTALLER_TYPE release
     RUN_SERIAL
     TIMEOUT_MINUTES 330
@@ -52,7 +60,7 @@ if($ENV{CTEST_CONFIGURATION} MATCHES "default")
 
   # ETI tests
   TRILINOS_DRIVER_ADD_DASHBOARD(
-    OPENMPI_1.10.0_RELEASE_DEV_MueLu_Tpetra_NO_INT_NO_SERIAL
+    OPENMPI-1.10.1_RELEASE_NO-EPETRA_NO-INT_NO-SERIAL_OPENMP_EXPERIMENTAL
     ctest_linux_nightly_mpi_release_muelu_tpetra_no_int_no_serial_geminga.cmake
     CTEST_INSTALLER_TYPE release
     RUN_SERIAL
@@ -60,7 +68,7 @@ if($ENV{CTEST_CONFIGURATION} MATCHES "default")
     )
 
   TRILINOS_DRIVER_ADD_DASHBOARD(
-    OPENMPI_1.10.0_RELEASE_DEV_MueLu_NO_SERIAL
+    OPENMPI-1.10.1_RELEASE_NO-SERIAL_OPENMP_EXPERIMENTAL
     ctest_linux_nightly_mpi_release_muelu_no_serial_geminga.cmake
     CTEST_INSTALLER_TYPE release
     RUN_SERIAL
@@ -68,7 +76,7 @@ if($ENV{CTEST_CONFIGURATION} MATCHES "default")
     )
 
   TRILINOS_DRIVER_ADD_DASHBOARD(
-    OPENMPI_1.10.0_RELEASE_DEV_MueLu_NO_INT
+    OPENMPI-1.10.1_RELEASE_NO-EPETRA_NO-INT_EXPERIMENTAL
     ctest_linux_nightly_mpi_release_muelu_no_int_geminga.cmake
     CTEST_INSTALLER_TYPE release
     RUN_SERIAL
@@ -76,7 +84,7 @@ if($ENV{CTEST_CONFIGURATION} MATCHES "default")
     )
 
   TRILINOS_DRIVER_ADD_DASHBOARD(
-    OPENMPI_1.10.0_RELEASE_DEV_MueLu_NO_EPETRA_NO_SERIAL
+    OPENMPI-1.10.1_RELEASE_NO-EPETRA_NO-SERIAL_OPENMP_EXPERIMENTAL
     ctest_linux_nightly_mpi_release_muelu_no_epetra_no_serial_openmp_geminga.cmake
     CTEST_INSTALLER_TYPE release
     RUN_SERIAL
@@ -84,7 +92,7 @@ if($ENV{CTEST_CONFIGURATION} MATCHES "default")
     )
 
   TRILINOS_DRIVER_ADD_DASHBOARD(
-    OPENMPI_1.10.0_RELEASE_DEV_MueLu_NO_INT_NO_SERIAL
+    OPENMPI-1.10.1_RELEASE_NO-INT_NO-SERIAL_OPENMP_EXPERIMENTAL
     ctest_linux_nightly_mpi_release_muelu_no_int_no_serial_openmp_geminga.cmake
     CTEST_INSTALLER_TYPE release
     RUN_SERIAL
@@ -92,27 +100,18 @@ if($ENV{CTEST_CONFIGURATION} MATCHES "default")
     )
 
   TRILINOS_DRIVER_ADD_DASHBOARD(
-    OPENMPI_1.10.0_RELEASE_DEV_MueLu_NO_INT
+    OPENMPI-1.10.1_RELEASE_NO-INT_OPENMP_EXPERIMENTAL
     ctest_linux_nightly_mpi_release_muelu_no_int_openmp_geminga.cmake
     CTEST_INSTALLER_TYPE release
     RUN_SERIAL
     TIMEOUT_MINUTES 330
     )
 
-  # Refactor (kokkos) tests
-  TRILINOS_DRIVER_ADD_DASHBOARD(
-    OPENMPI_1.10.0_DEBUG_MueLu_Kokkos_Refactor_OpenMP
-    ctest_linux_nightly_mpi_debug_muelu_kokkos_refactor_openmp_geminga.cmake
-    CTEST_INSTALLER_TYPE release
-    RUN_SERIAL
-    TIMEOUT_MINUTES 420
-    )
-
   # Misc tests
   if(RUN_HEAVY_MEMORY_TESTS)
 
     TRILINOS_DRIVER_ADD_DASHBOARD(
-      SERIAL_DEBUG_MueLu_Valgrind
+      SERIAL_DEBUG_VALGRIND
       ctest_linux_nightly_serial_debug_valgrind_muelu_geminga.cmake
       CTEST_INSTALLER_TYPE release
       RUN_SERIAL
@@ -120,7 +119,7 @@ if($ENV{CTEST_CONFIGURATION} MATCHES "default")
       )
 
     TRILINOS_DRIVER_ADD_DASHBOARD(
-      OPENMPI_1.10.0_DEBUG_MueLu
+      OPENMPI-1.10.1_DEBUG_DEFAULT
       ctest_linux_nightly_mpi_debug_muelu_geminga.cmake
       CTEST_INSTALLER_TYPE release
       RUN_SERIAL
@@ -130,7 +129,7 @@ if($ENV{CTEST_CONFIGURATION} MATCHES "default")
   else()
 
     TRILINOS_DRIVER_ADD_DASHBOARD(
-      SERIAL_DEBUG_MueLu
+      SERIAL_DEBUG_DEFAULT
       ctest_linux_nightly_serial_debug_muelu_geminga.cmake
       CTEST_INSTALLER_TYPE release
       RUN_SERIAL
@@ -138,7 +137,7 @@ if($ENV{CTEST_CONFIGURATION} MATCHES "default")
       )
 
     TRILINOS_DRIVER_ADD_DASHBOARD(
-      OPENMPI_1.10.0_DEBUG_MueLu_Valgrind
+      OPENMPI-1.10.1_DEBUG_VALGRIND
       ctest_linux_nightly_mpi_debug_valgrind_muelu_geminga.cmake
       CTEST_INSTALLER_TYPE release
       RUN_SERIAL
@@ -150,7 +149,7 @@ if($ENV{CTEST_CONFIGURATION} MATCHES "default")
   if(RUN_COVERAGE_TESTS)
 
     TRILINOS_DRIVER_ADD_DASHBOARD(
-      OPENMPI_1.10.0_DEBUG_MueLu_Coverage
+      OPENMPI-1.10.1_DEBUG_COVERAGE_EXPERIMENTAL
       ctest_linux_nightly_mpi_debug_muelu_coverage_geminga.cmake
       CTEST_INSTALLER_TYPE release
       RUN_SERIAL
@@ -215,7 +214,7 @@ elseif($ENV{CTEST_CONFIGURATION} MATCHES "nvcc_wrapper")
   if(RUN_CUDA_OLD_TESTS)
 
     #TRILINOS_DRIVER_ADD_DASHBOARD(
-    #  OPENMPI_1.10.0_DEBUG_MueLu_Kokkos_Refactor_CUDA
+    #  OPENMPI-1.8.7_DEBUG_KOKKOS-REFACTOR_CUDA_8.0.44
     #  ctest_linux_nightly_mpi_debug_muelu_kokkos_refactor_cuda_geminga.cmake
     #  CTEST_INSTALLER_TYPE release
     #  RUN_SERIAL
@@ -223,7 +222,7 @@ elseif($ENV{CTEST_CONFIGURATION} MATCHES "nvcc_wrapper")
     #  )
 
     TRILINOS_DRIVER_ADD_DASHBOARD(
-      OPENMPI_1.10.0_RELEASE_MueLu_Kokkos_Refactor_CUDA
+      OPENMPI-1.8.7_RELEASE_KOKKOS-REFACTOR_CUDA-8.0.44
       ctest_linux_nightly_mpi_release_muelu_kokkos_refactor_cuda_geminga.cmake
       CTEST_INSTALLER_TYPE release
       RUN_SERIAL

@@ -42,7 +42,6 @@
 #include "BelosEpetraUtils.h"
 #include "BelosEpetraAdapter.hpp"
 #include "Teuchos_Workspace.hpp"
-#include "Trilinos_Util.h"
 #include "Epetra_CrsMatrix.h"
 #include "Epetra_MultiVector.h"
 #include "Epetra_Map.h"
@@ -54,9 +53,15 @@
 #endif
 #include "Epetra_Map.h"
 
+#ifdef HAVE_BELOS_TRIUTILS
+#include "Trilinos_Util.h"
+#endif
+
 namespace Belos {
 
 namespace Util {
+
+#ifdef HAVE_BELOS_TRIUTILS
 
 int createEpetraProblem( std::string              &filename,
                          RCP<Epetra_Map>          *rowMap,
@@ -194,6 +199,8 @@ int createEpetraProblem( std::string             &filename,
 
   return (0);
 }
+
+#endif
 
 int rebalanceEpetraProblem( RCP<Epetra_Map>         &Map,
                             RCP<Epetra_CrsMatrix>   &A,

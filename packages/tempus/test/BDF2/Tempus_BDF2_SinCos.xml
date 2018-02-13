@@ -8,6 +8,7 @@
     <Parameter name="IC x0"   type="double" value="0.0"/>
     <Parameter name="IC x1"   type="double" value="1.0"/>
     <Parameter name="IC t0"   type="double" value="0.0"/>
+    <Parameter name="Number of Time Step Sizes" type="int" value = "7"/>
   </ParameterList>
   <ParameterList name="Tempus">
     <Parameter name="Integrator Name" type="string" value="Default Integrator"/>
@@ -18,8 +19,9 @@
       <Parameter name="Screen Output Index Interval" type="int"    value="100"/>
       <Parameter name="Stepper Name"       type="string" value="Default Stepper"/>
       <ParameterList name="Solution History">
-        <Parameter name="Storage Type"  type="string" value="Unlimited"/>
-        <Parameter name="Storage Limit" type="int"    value="20"/>
+        <Parameter name="Storage Type"  type="string" value="Static"/>
+        <!--IKT the following can be as low as 3; setting it to 12 to write full Tempus_BDF2_SinCos.dat file-->
+        <Parameter name="Storage Limit" type="int"    value="12"/>
       </ParameterList>
       <ParameterList name="Time Step Control">
         <Parameter name="Initial Time"           type="double" value="0.0"/>
@@ -31,11 +33,11 @@
         <Parameter name="Maximum Time Step"      type="double" value="0.1"/>
         <Parameter name="Minimum Order"          type="int"    value="1"/>
         <Parameter name="Initial Order"          type="int"    value="1"/>
-        <Parameter name="Maximum Order"          type="int"    value="1"/>
+        <Parameter name="Maximum Order"          type="int"    value="2"/>
         <Parameter name="Maximum Absolute Error" type="double" value="1.0e-8"/>
         <Parameter name="Maximum Relative Error" type="double" value="1.0e-8"/>
         <Parameter name="Integrator Step Type"  type="string" value="Constant"/>
-        <Parameter name="Output Time List"       type="string" value=""/>
+        <Parameter name="Output Time List"       type="string" value="0.31"/>
         <Parameter name="Output Index List"      type="string" value=""/>
         <Parameter name="Output Time Interval"   type="double" value="10.0"/>
         <Parameter name="Output Index Interval"  type="int"    value="1000"/>
@@ -48,7 +50,7 @@
 
       <Parameter name="Stepper Type"   type="string" value="BDF2"/>
       <Parameter name="Solver Name"    type="string" value="Default Solver"/>
-      <Parameter name="Predictor Name" type="string" value="Default Predictor"/>
+      <Parameter name="Start Up Stepper Name" type="string" value="Default Start Up Stepper"/>
 
       <ParameterList name="Default Solver">
         <ParameterList name="NOX">
@@ -100,8 +102,8 @@
         </ParameterList>
       </ParameterList>
 
-      <ParameterList name="Default Predictor">
-        <Parameter name="Stepper Type" type="string" value="Forward Euler"/>
+      <ParameterList name="Default Start Up Stepper">
+        <Parameter name="Stepper Type" type="string" value="RK Forward Euler"/>
       </ParameterList>
 
     </ParameterList>

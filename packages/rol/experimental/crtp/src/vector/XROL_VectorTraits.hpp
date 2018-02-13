@@ -86,6 +86,9 @@ struct NormType {
 
 template<class V> struct DualType { using type = V; };
 
+template<class V> struct IsReflexive {
+  static constexpr auto value = is_same_t<V,typename DualType<V>::type>;
+};
 
 
 // Vector Implementation traits

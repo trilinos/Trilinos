@@ -87,7 +87,15 @@ template <typename ExecSpace, typename crsMat_t>
 void run_experiment(
     crsMat_t crsmat){
 
-  typedef typename crsMat_t::values_type scalar_view_t;
+
+  typedef typename crsMat_t::values_type::non_const_type scalar_view_t;
+  typedef typename crsMat_t::StaticCrsGraphType::row_map_type::non_const_type lno_view_t;
+  typedef typename crsMat_t::StaticCrsGraphType::entries_type::non_const_type lno_nnz_view_t;
+
+
+  typedef typename lno_nnz_view_t::value_type lno_t;
+  typedef typename lno_view_t::value_type size_type;
+  typedef typename scalar_view_t::value_type scalar_t;
 
   INDEX_TYPE nv = crsmat.numRows();
   scalar_view_t kok_x_original = create_x_vector<scalar_view_t>(nv, MAXVAL);
@@ -105,10 +113,13 @@ void run_experiment(
 
   KokkosKernels::Experimental::Example::CGSolveResult cg_result ;
 
+
+
+
   typedef KokkosKernels::Experimental::KokkosKernelsHandle
-        < typename crsMat_t::StaticCrsGraphType::row_map_type,
-          typename crsMat_t::StaticCrsGraphType::entries_type,
-          typename crsMat_t::values_type,
+        < size_type,
+		  lno_t,
+		  scalar_t,
           ExecSpace, ExecSpace, ExecSpace > KernelHandle;
 
   KernelHandle kh;
@@ -401,7 +412,7 @@ int main (int argc, char ** argv){
 
 #endif
 
-#if defined( KOKKOS_HAVE_CUDA )
+#if defined( KOKKOS_ENABLE_CUDA )
     if ( cmdline[ CMD_USE_CUDA ] ) {
       // Use the last device:
       INDEX_TYPE nv = 0, ne = 0;

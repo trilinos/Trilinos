@@ -11,7 +11,7 @@
 
 // Tempus
 #include "Tempus_IntegratorBasic.hpp"
-#include "Tempus_StaggeredForwardSensitivityModelEvaluator.hpp"
+#include "Tempus_SensitivityModelEvaluatorBase.hpp"
 
 namespace Tempus {
 
@@ -28,6 +28,22 @@ namespace Tempus {
  * equations with the state frozen to the computed steady-state.  This
  * integrator specializes the transient sensitivity methods implemented by
  * Tempus::IntegratorForwardSensitivity to this case.
+ *
+ * Consider an implicit ODE f(x_dot,x,p) = 0 with a stable steady-state solution
+ * x = x^s, x_dot = 0 where f(0,x^s,p) = 0 and all of the eigenvalues of
+ * df/dx(0,x^s,p) are in the right half-plane (for an explicit ODE, the
+ * eigenvalues must be in the left half-plane).  In the pseudo-transient method
+ * a time-integrator is applied to f(x_dot,x,p) = 0 until x_dot is sufficiently
+ * small.  Now consider the forward sensitivity equations:
+ *       df/dx_dot*z_dot + df/dx*z + df/dp = 0
+ * where z = dx/dp.  For pseudo-transient forward sensitivities, the above is
+ * integrated from z(0) = 0 until z_dot is sufficiently small, in which case
+ *       z^s = -(df/dx)^{-1}*(df/dp).
+ * Then the final sensitivity of g is
+ *       dg/dp + dg/dx*z^s.
+ * One can see that z^s is the only steady-state solution of the sensitivity
+ * equations, since df/dx and df/dp are constant, and must be linearly stable
+ * since it has the same Jacobian matrix as the forward equations.
  */
 template<class Scalar>
 class IntegratorPseudoTransientForwardSensitivity :
@@ -107,6 +123,10 @@ public:
   virtual Teuchos::RCP<const SolutionHistory<Scalar> > getSolutionHistory() const override;
    /// Get the TimeStepControl
   virtual Teuchos::RCP<const TimeStepControl<Scalar> > getTimeStepControl() const override;
+  virtual Teuchos::RCP<Teuchos::Time> getIntegratorTimer() const override
+  {return state_integrator_->getIntegratorTimer();}
+  virtual Teuchos::RCP<Teuchos::Time> getStepperTimer() const override
+  {return state_integrator_->getStepperTimer();}
 
   //@}
 
@@ -132,7 +152,8 @@ public:
 
   /// \name Overridden from Teuchos::ParameterListAcceptor
   //@{
-    void setParameterList(const Teuchos::RCP<Teuchos::ParameterList> & pl);
+    void setParameterList(const Teuchos::RCP<Teuchos::ParameterList> & pl)
+      override;
     Teuchos::RCP<Teuchos::ParameterList> getNonconstParameterList() override;
     Teuchos::RCP<Teuchos::ParameterList> unsetParameterList() override;
 
@@ -150,7 +171,7 @@ public:
 protected:
 
   // Create sensitivity model evaluator from application model
-  Teuchos::RCP<StaggeredForwardSensitivityModelEvaluator<Scalar> >
+  Teuchos::RCP<SensitivityModelEvaluatorBase<Scalar> >
   createSensitivityModel(
     const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >& model,
     const Teuchos::RCP<Teuchos::ParameterList>& inputPL);
@@ -158,7 +179,7 @@ protected:
   void buildSolutionHistory();
 
   Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > model_;
-  Teuchos::RCP<StaggeredForwardSensitivityModelEvaluator<Scalar> > sens_model_;
+  Teuchos::RCP<SensitivityModelEvaluatorBase<Scalar> > sens_model_;
   Teuchos::RCP<IntegratorBasic<Scalar> > state_integrator_;
   Teuchos::RCP<IntegratorBasic<Scalar> > sens_integrator_;
   Teuchos::RCP<SolutionHistory<Scalar> > solutionHistory_;

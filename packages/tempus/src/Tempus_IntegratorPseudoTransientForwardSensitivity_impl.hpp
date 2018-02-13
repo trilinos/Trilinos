@@ -9,11 +9,11 @@
 #ifndef Tempus_IntegratorPseudoTransientForwardSensitivity_impl_hpp
 #define Tempus_IntegratorPseudoTransientForwardSensitivity_impl_hpp
 
+#include "Tempus_WrapStaggeredFSAModelEvaluator.hpp"
 #include "Teuchos_VerboseObjectParameterListHelpers.hpp"
 #include "Thyra_DefaultMultiVectorProductVector.hpp"
 #include "Thyra_VectorStdOps.hpp"
 #include "Thyra_MultiVectorStdOps.hpp"
-#include "NOX_Thyra.H"
 
 namespace Tempus {
 
@@ -64,23 +64,15 @@ advanceTime()
 
   // Run state integrator and get solution
   bool state_status = state_integrator_->advanceTime();
-  RCP<VectorBase<Scalar> > x = state_integrator_->getX();
-  RCP<VectorBase<Scalar> > x_dot = state_integrator_->getXdot();
-  RCP<VectorBase<Scalar> > x_dot_dot = state_integrator_->getXdotdot();
 
   // Set solution in sensitivity ME
-  sens_model_->setModelX(x);
-  sens_model_->setModelXDot(x_dot);
-  sens_model_->setModelXDotDot(x_dot_dot);
+  sens_model_->setForwardSolutionState(state_integrator_->getCurrentState());
 
   // Reuse state solver if requested
   if (reuse_solver_ &&
       state_integrator_->getStepper()->getSolver() != Teuchos::null) {
-    RCP<Thyra::NOXNonlinearSolver> nox_solver =
-      Teuchos::rcp_dynamic_cast<Thyra::NOXNonlinearSolver>(
-        state_integrator_->getStepper()->getSolver());
-    sens_model_->setLO(nox_solver->get_nonconst_W_op(force_W_update_));
-    sens_model_->setPO(nox_solver->get_nonconst_prec_op());
+    sens_model_->setSolver(state_integrator_->getStepper()->getSolver(),
+                           force_W_update_);
   }
 
   // Run sensitivity integrator
@@ -101,23 +93,15 @@ advanceTime(const Scalar timeFinal)
 
   // Run state integrator and get solution
   bool state_status = state_integrator_->advanceTime(timeFinal);
-  RCP<VectorBase<Scalar> > x = state_integrator_->getX();
-  RCP<VectorBase<Scalar> > x_dot = state_integrator_->getXdot();
-  RCP<VectorBase<Scalar> > x_dot_dot = state_integrator_->getXdotdot();
 
   // Set solution in sensitivity ME
-  sens_model_->setModelX(x);
-  sens_model_->setModelXDot(x_dot);
-  sens_model_->setModelXDotDot(x_dot_dot);
+  sens_model_->setForwardSolutionState(state_integrator_->getCurrentState());
 
   // Reuse state solver if requested
   if (reuse_solver_ &&
       state_integrator_->getStepper()->getSolver() != Teuchos::null) {
-    RCP<Thyra::NOXNonlinearSolver> nox_solver =
-      Teuchos::rcp_dynamic_cast<Thyra::NOXNonlinearSolver>(
-        state_integrator_->getStepper()->getSolver());
-    sens_model_->setLO(nox_solver->get_nonconst_W_op(force_W_update_));
-    sens_model_->setPO(nox_solver->get_nonconst_prec_op());
+    sens_model_->setSolver(state_integrator_->getStepper()->getSolver(),
+                           force_W_update_);
   }
 
   // Run sensitivity integrator
@@ -408,7 +392,7 @@ getNonconstParameterList()
 }
 
 template <class Scalar>
-Teuchos::RCP<Tempus::StaggeredForwardSensitivityModelEvaluator<Scalar> >
+Teuchos::RCP<SensitivityModelEvaluatorBase<Scalar> >
 IntegratorPseudoTransientForwardSensitivity<Scalar>::
 createSensitivityModel(
   const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >& model,
@@ -424,7 +408,7 @@ createSensitivityModel(
   force_W_update_ = pl->get("Force W Update", true);
   pl->remove("Reuse State Linear Solver");
   pl->remove("Force W Update");
-  return rcp(new StaggeredForwardSensitivityModelEvaluator<Scalar>(model, pl));
+  return wrapStaggeredFSAModelEvaluator(model, pl);
 }
 
 template<class Scalar>
@@ -470,21 +454,27 @@ buildSolutionHistory()
       createMembers(x_space, num_param+1);
     assign(x_mv->col(0).ptr(), *(state->getX()));
     assign(x_mv->subView(rng).ptr(), zero);
-    RCP<DMVPV> x = multiVectorProductVector(prod_space, x_mv);
+    RCP<VectorBase<Scalar> > x = multiVectorProductVector(prod_space, x_mv);
 
     // X-Dot
-    RCP< MultiVectorBase<Scalar> > x_dot_mv =
-      createMembers(x_space, num_param+1);
-    assign(x_dot_mv->col(0).ptr(), *(state->getXDot()));
-    assign(x_dot_mv->subView(rng).ptr(), zero);
-    RCP<DMVPV> x_dot = multiVectorProductVector(prod_space, x_dot_mv);
+    RCP<VectorBase<Scalar> > x_dot;
+    if (state->getXDot() != Teuchos::null) {
+      RCP< MultiVectorBase<Scalar> > x_dot_mv =
+        createMembers(x_space, num_param+1);
+      assign(x_dot_mv->col(0).ptr(), *(state->getXDot()));
+      assign(x_dot_mv->subView(rng).ptr(), zero);
+      x_dot = multiVectorProductVector(prod_space, x_dot_mv);
+    }
 
     // X-Dot-Dot
-    RCP< MultiVectorBase<Scalar> > x_dot_dot_mv =
-      createMembers(x_space, num_param+1);
-    assign(x_dot_dot_mv->col(0).ptr(), *(state->getXDotDot()));
-    assign(x_dot_dot_mv->subView(rng).ptr(), zero);
-    RCP<DMVPV> x_dot_dot = multiVectorProductVector(prod_space, x_dot_dot_mv);
+    RCP<VectorBase<Scalar> > x_dot_dot;
+    if (state->getXDotDot() != Teuchos::null) {
+      RCP< MultiVectorBase<Scalar> > x_dot_dot_mv =
+        createMembers(x_space, num_param+1);
+      assign(x_dot_dot_mv->col(0).ptr(), *(state->getXDotDot()));
+      assign(x_dot_dot_mv->subView(rng).ptr(), zero);
+      x_dot_dot = multiVectorProductVector(prod_space, x_dot_dot_mv);
+    }
 
     RCP<SolutionState<Scalar> > prod_state =
       rcp(new SolutionState<Scalar>(state->getMetaData()->clone(),
@@ -512,25 +502,31 @@ buildSolutionHistory()
       rcp_dynamic_cast<const DMVPV>(state->getX())->getMultiVector();
     assign(x_mv->col(0).ptr(), *(frozen_x));
     assign(x_mv->subView(rng).ptr(), *dxdp);
-    RCP<DMVPV> x = multiVectorProductVector(prod_space, x_mv);
+    RCP<VectorBase<Scalar> > x = multiVectorProductVector(prod_space, x_mv);
 
     // X-Dot
-    RCP< MultiVectorBase<Scalar> > x_dot_mv =
-      createMembers(x_space, num_param+1);
-    RCP<const MultiVectorBase<Scalar> > dxdotdp =
-      rcp_dynamic_cast<const DMVPV>(state->getXDot())->getMultiVector();
-    assign(x_dot_mv->col(0).ptr(), *(frozen_x_dot));
-    assign(x_dot_mv->subView(rng).ptr(), *dxdotdp);
-    RCP<DMVPV> x_dot = multiVectorProductVector(prod_space, x_dot_mv);
+    RCP<VectorBase<Scalar> > x_dot;
+    if (state->getXDot() != Teuchos::null) {
+      RCP< MultiVectorBase<Scalar> > x_dot_mv =
+        createMembers(x_space, num_param+1);
+      RCP<const MultiVectorBase<Scalar> > dxdotdp =
+        rcp_dynamic_cast<const DMVPV>(state->getXDot())->getMultiVector();
+      assign(x_dot_mv->col(0).ptr(), *(frozen_x_dot));
+      assign(x_dot_mv->subView(rng).ptr(), *dxdotdp);
+      x_dot = multiVectorProductVector(prod_space, x_dot_mv);
+    }
 
     // X-Dot-Dot
-    RCP< MultiVectorBase<Scalar> > x_dot_dot_mv =
-      createMembers(x_space, num_param+1);
-    RCP<const MultiVectorBase<Scalar> > dxdotdotdp =
-      rcp_dynamic_cast<const DMVPV>(state->getXDotDot())->getMultiVector();
-    assign(x_dot_dot_mv->col(0).ptr(), *(frozen_x_dot_dot));
-    assign(x_dot_dot_mv->subView(rng).ptr(), *dxdotdotdp);
-    RCP<DMVPV> x_dot_dot = multiVectorProductVector(prod_space, x_dot_dot_mv);
+    RCP<VectorBase<Scalar> > x_dot_dot;
+    if (state->getXDotDot() != Teuchos::null) {
+      RCP< MultiVectorBase<Scalar> > x_dot_dot_mv =
+        createMembers(x_space, num_param+1);
+      RCP<const MultiVectorBase<Scalar> > dxdotdotdp =
+        rcp_dynamic_cast<const DMVPV>(state->getXDotDot())->getMultiVector();
+      assign(x_dot_dot_mv->col(0).ptr(), *(frozen_x_dot_dot));
+      assign(x_dot_dot_mv->subView(rng).ptr(), *dxdotdotdp);
+      x_dot_dot = multiVectorProductVector(prod_space, x_dot_dot_mv);
+    }
 
     RCP<SolutionState<Scalar> > prod_state =
       rcp(new SolutionState<Scalar>(state->getMetaData()->clone(),
@@ -538,11 +534,6 @@ buildSolutionHistory()
                                     state->getStepperState()->clone()));
     solutionHistory_->addState(prod_state);
   }
-
-  // Set current state to the last added state
-  RCP<SolutionState<Scalar> > last_state =
-    (*solutionHistory_)[solutionHistory_->getNumStates()-1];
-  solutionHistory_->setCurrentState(last_state);
 }
 
 /// Non-member constructor

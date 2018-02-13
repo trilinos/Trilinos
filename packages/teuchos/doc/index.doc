@@ -215,14 +215,14 @@ contains basic, general-purpose utilities.
 
   <ul>
 
-  <li> <em>Testing for Exceptions</em>: The TEUCHOS_TEST_FOR_EXCEPTION() macro accepts
-  a logical test, an exception handler, and a message.  It then throws
-  an "intelligent" exception informing the user of the file, line, and
-  message where the exception was thrown.  The macro
-  TEUCHOS_TEST_FOR_EXCEPT() is a shorter macro that just accepts a
-  logic test and is therefore easier to write.  Please use
-  TEUCHOS_TEST_FOR_EXCEPT(!test) as a safer, more informative
-  alternative to assert(test).</li>
+  <li> <em>Testing for Exceptions</em>: The TEUCHOS_TEST_FOR_EXCEPTION() macro
+  accepts a logical test, an exception handler, and a message.  It then throws
+  an "intelligent" exception informing the user of the file, line, and message
+  where the exception was thrown.  The macro TEUCHOS_TEST_FOR_EXCEPT() is a
+  shorter macro that just accepts a logic test and is therefore easier to
+  write.  Please use TEUCHOS_TEST_FOR_EXCEPT(!test) as a safer, more
+  informative alternative to assert(test).  For related error handling
+  utilties, see \ref TestForException_grp</li>
 
   <li> <em>Stack Tracing</em>: When a debug build is enabled
   (CMAKE_BUILD_TYPE=DEBUG OR Trilinos_ENABLE_DEBUG=ON) and when using GCC and

@@ -78,6 +78,12 @@ struct Workset {
 
   // Global Jacobian  matrix (Required only for Device DAG support)
   KokkosSparse::CrsMatrix<double,int,PHX::Device> global_jacobian_;
+
+  // thread team size (Required only for Host DAG support)
+  int team_size_;
+  
+  // vector team size  (Required only for Host DAG support)
+  int vector_size_;
 };
 
 #endif

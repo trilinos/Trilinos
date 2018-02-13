@@ -90,31 +90,48 @@ namespace Tacho {
           switch (_state) {
           case 0: { // tree parallelsim
             if (_info.serial_thres_size > _s.max_decendant_supernode_size) {
-              const ordinal_type r_val = solve_internal(member, _s.max_decendant_schur_size, true);
+              r_val = solve_internal(member, _s.max_decendant_schur_size, true);
               if (r_val) 
                 Kokkos::respawn(this, _sched, Kokkos::TaskPriority::Low);
               else
                 _state = done; 
             } else {
               // allocate dependence array to handle variable number of children schur contributions
-              future_type dep[MaxDependenceSize]; /* 4 */
-              
-              // spawn children tasks and this (their parent) depends on the children tasks
-              for (ordinal_type i=0;i<_s.nchildren;++i) {
-                auto f = Kokkos::task_spawn(Kokkos::TaskSingle(_sched, Kokkos::TaskPriority::Regular),
-                                            TaskFunctor_SolveLowerChol(_sched, _bufpool, _info, _s.children[i]));
-                TACHO_TEST_FOR_ABORT(f.is_null(), "task allocation fails");
-                dep[i] = f;
+              future_type *dep = NULL, depbuf[MaxDependenceSize];
+              size_t depbuf_size = _s.nchildren > MaxDependenceSize ? _s.nchildren*sizeof(future_type) : 0;
+              if (depbuf_size) {
+                dep = (future_type*)_sched.memory()->allocate(depbuf_size);
+                clear((char*)dep, depbuf_size);
+              } else {
+                dep = &depbuf[0];
               }
               
-              // respawn with updating state
-              _state = 1;
-              Kokkos::respawn(this, Kokkos::when_all(dep, _s.nchildren), Kokkos::TaskPriority::Regular);
+              // spawn children tasks and this (their parent) depends on the children tasks
+              if (dep != NULL) {
+                for (ordinal_type i=0;i<_s.nchildren;++i) {
+                  auto f = Kokkos::task_spawn(Kokkos::TaskSingle(_sched, Kokkos::TaskPriority::Regular),
+                                              TaskFunctor_SolveLowerChol(_sched, _bufpool, _info, _s.children[i]));
+                  TACHO_TEST_FOR_ABORT(f.is_null(), "task allocation fails");
+                  dep[i] = f;
+                }
+              
+                // respawn with updating state
+                _state = 1;
+                Kokkos::respawn(this, Kokkos::when_all(dep, _s.nchildren), Kokkos::TaskPriority::Regular);
+
+                if (depbuf_size) {
+                  for (ordinal_type i=0;i<_s.nchildren;++i) (dep+i)->~future_type();
+                  _sched.memory()->deallocate(dep, depbuf_size);
+                }
+              } else {
+                // fail to allocate depbuf
+                Kokkos::respawn(this, _sched, Kokkos::TaskPriority::Regular);
+              }
             }
             break;
           }
           case 1: {
-            const ordinal_type r_val = solve_internal(member, _s.n - _s.m, false);
+            r_val = solve_internal(member, _s.n - _s.m, false);
             if (r_val) 
               Kokkos::respawn(this, _sched, Kokkos::TaskPriority::Low);
             else

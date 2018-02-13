@@ -74,8 +74,8 @@ AuxiliaryEquationSet_MassMatrix(
 template <typename EvalT>
 void mini_em::AuxiliaryEquationSet_MassMatrix<EvalT>::
 buildAndRegisterEquationSetEvaluators(PHX::FieldManager<panzer::Traits>& fm,
-				      const panzer::FieldLibrary& field_library,
-				      const Teuchos::ParameterList& user_data) const
+				      const panzer::FieldLibrary& /* field_library */,
+				      const Teuchos::ParameterList& /* user_data */) const
 {
   using Teuchos::ParameterList;
   using Teuchos::RCP;
@@ -112,10 +112,10 @@ buildAndRegisterEquationSetEvaluators(PHX::FieldManager<panzer::Traits>& fm,
 // ***********************************************************************
 template <typename EvalT >
 void mini_em::AuxiliaryEquationSet_MassMatrix<EvalT>::
-buildAndRegisterScatterEvaluators(PHX::FieldManager<panzer::Traits>& fm,
-				  const panzer::FieldLibrary& field_library,
-                                  const panzer::LinearObjFactory<panzer::Traits> & lof,
-                                  const Teuchos::ParameterList& user_data) const
+buildAndRegisterScatterEvaluators(PHX::FieldManager<panzer::Traits>& /* fm */,
+				  const panzer::FieldLibrary& /* field_library */,
+                                  const panzer::LinearObjFactory<panzer::Traits> & /* lof */,
+                                  const Teuchos::ParameterList& /* user_data */) const
 {
 }
 
@@ -125,7 +125,7 @@ void mini_em::AuxiliaryEquationSet_MassMatrix<panzer::Traits::Jacobian>::
 buildAndRegisterScatterEvaluators(PHX::FieldManager<panzer::Traits>& fm,
 				  const panzer::FieldLibrary& field_library,
                                   const panzer::LinearObjFactory<panzer::Traits> & lof,
-                                  const Teuchos::ParameterList& user_data) const
+                                  const Teuchos::ParameterList& /* user_data */) const
 {
    using Teuchos::RCP;
    using Teuchos::rcp;

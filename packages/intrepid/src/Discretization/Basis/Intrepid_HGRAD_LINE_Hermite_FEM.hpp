@@ -69,7 +69,7 @@ namespace Intrepid {
 
             \f[\mathcal{H}_n = \{h_{2j}(x),h_{2j+1}\}_{j=0}^{n-1} \f]
 
-            The basis functions determined by the interpolation points \f$\{x_i}_{i=0}^{n-1}\f$
+            The basis functions determined by the interpolation points \f$\{x_i\}_{i=0}^{n-1}\f$
             which satisfy the ordering property
 
             \f[ -1\leq x_0 \leq \cdots \leq x_i \leq x_{i+1} \leq \cdots \leq x_n \leq 1 \f]
@@ -85,7 +85,7 @@ namespace Intrepid {
             using the relations
 
             \f[ P_{j+1}(x) = x P_j(x) + \frac{x^2-1}{j+1}P_j^{(1)}(x),\quad P_0(x) = 1 \f]
-            \f[ P_{j+1}^{(m)(x) = (j+m)P_j^{(m-1)}(x) + x P_j^{(m)}(x),\quad P_j^{(m)} = 0,\;\forall j<m\f]
+            \f[ P_{j+1}^{(m)(x)} = (j+m)P_j^{(m-1)}(x) + x P_j^{(m)}(x),\quad P_j^{(m)} = 0,\;\forall j<m\f]
 
 
 */

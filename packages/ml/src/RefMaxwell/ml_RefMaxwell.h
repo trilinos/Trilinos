@@ -182,6 +182,9 @@ namespace ML_Epetra
     //! Implicitly applies in the inverse in an additive format
     int ApplyInverse_Implicit_Additive(const Epetra_MultiVector& B, Epetra_MultiVector& X) const;
 
+    //! Implicitly applies in the inverse with smoothing only
+    int ApplyInverse_Implicit_OnlySmoothing(const Epetra_MultiVector& B, Epetra_MultiVector& X) const;
+
     //! Implicitly applies in the inverse in an 1-2-1 format
     int ApplyInverse_Implicit_121(const Epetra_MultiVector& B, Epetra_MultiVector& X) const;
 

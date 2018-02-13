@@ -116,6 +116,15 @@ module load sems-env
 module load $sems_python_and_version_default
 module load $sems_cmake_and_version_load
 module load $sems_git_and_version_default
+
+# The SEMS Intel modules point to an unsupported version of GCC.
+# until this is fixed, the workaround is below.
+# Please see https://github.com/trilinos/Trilinos/issues/2142
+# for updates regarding the right solution.
+if [[ $sems_compiler_and_version_load == "sems-intel/"* ]]; then
+  module load sems-gcc/4.8.4
+fi
+
 module load $sems_compiler_and_version_load
 module load $sems_mpi_and_version_load
 module load $sems_boost_and_version_default
@@ -123,7 +132,7 @@ module load $sems_zlib_and_version_default
 module load $sems_hdf5_and_version_default
 module load $sems_netcdf_and_version_default
 module load $sems_parmetis_and_version_default
-#module load $sems_scotch_and_version_default
+module load $sems_scotch_and_version_default
 module load $sems_superlu_and_version_default
 
 if [ "${TRILINOS_SEMS_DEV_ENV_VERBOSE}" == "1" ] ; then

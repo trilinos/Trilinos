@@ -78,8 +78,9 @@ directory, present in the directory from which ``ctest`` was run.
 Test Script Conventions
 -----------------------
 
-All test scripts shall use the ``optparse`` module to parse command
-line options and support the following options::
+All test scripts shall use either the ``optparse`` module (deprecated,
+but used historically in PyTrilinos), or the ``argparse`` module to
+parse command line options and support the following options::
 
   -t, --testharness     test local build modules; prevent loading
                         system-installed modules

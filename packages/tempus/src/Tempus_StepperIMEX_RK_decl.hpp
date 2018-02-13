@@ -231,11 +231,20 @@ class StepperIMEX_RK : virtual public Tempus::StepperImplicit<Scalar>
 {
 public:
 
-  /// Constructor
+  /// Constructor to use default Stepper parameters.
+  StepperIMEX_RK(
+    const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel,
+    std::string stepperType = "IMEX RK SSP2");
+
+  /// Constructor to specialize Stepper parameters.
+  StepperIMEX_RK(
+    const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel,
+    Teuchos::RCP<Teuchos::ParameterList> pList);
+
+  /// Constructor for StepperFactory.
   StepperIMEX_RK(
     const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& models,
-    std::string stepperType,
-    Teuchos::RCP<Teuchos::ParameterList> pList = Teuchos::null);
+    std::string stepperType, Teuchos::RCP<Teuchos::ParameterList> pList);
 
   /// \name Basic stepper methods
   //@{
@@ -299,6 +308,13 @@ public:
     virtual Scalar getOrder()const { return order_; }
     virtual Scalar getOrderMin()const { return order_; }
     virtual Scalar getOrderMax()const { return order_; }
+
+    virtual bool isExplicit()         const {return true;}
+    virtual bool isImplicit()         const {return true;}
+    virtual bool isExplicitImplicit() const
+      {return isExplicit() and isImplicit();}
+    virtual bool isOneStepMethod()   const {return true;}
+    virtual bool isMultiStepMethod() const {return !isOneStepMethod();}
   //@}
 
   /// \name ParameterList methods

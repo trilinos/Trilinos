@@ -71,16 +71,22 @@ TEUCHOS_STATIC_SETUP()
 TEUCHOS_UNIT_TEST(Behavior, On)
 {
 
+  // TPETRA_DEBUG was set globally in TEUCHOS_STATIC_SETUP to ON, so any query
+  // on TPETRA_DEBUG should evaluate to true, including named variants.
   bool dbg = Tpetra::Details::Behavior::debug();
   TEUCHOS_TEST_ASSERT(dbg, out, success);
   bool dbg_named = Tpetra::Details::Behavior::debug("Named");
   TEUCHOS_TEST_ASSERT(dbg_named, out, success);
 
+  // TPETRA_VERBOSE was set globally in TEUCHOS_STATIC_SETUP to ON, so any query
+  // on TPETRA_VERBOSE should evaluate to true, including named variants.
   bool verb = Tpetra::Details::Behavior::verbose();
   TEUCHOS_TEST_ASSERT(verb, out, success);
   bool verb_named = Tpetra::Details::Behavior::verbose("Named");
   TEUCHOS_TEST_ASSERT(verb_named, out, success);
 
+  // TPETRA_ASSUME_CUDA_AWARE_MPI was set globally in TEUCHOS_STATIC_SETUP to ON,
+  // so any query on TPETRA_ASSUME_CUDA_AWARE_MPI should evaluate to true
   bool cuda_aware_mpi = Tpetra::Details::Behavior::assumeMpiIsCudaAware();
   TEUCHOS_TEST_ASSERT(cuda_aware_mpi, out, success);
 }

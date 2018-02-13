@@ -85,7 +85,6 @@ correctDisplacement(Thyra::VectorBase<Scalar>& d,
 }
 
 
-// StepperNewmarkImplicitAForm definitions:
 template<class Scalar>
 StepperNewmarkImplicitAForm<Scalar>::StepperNewmarkImplicitAForm(
   const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel,
@@ -187,7 +186,7 @@ void StepperNewmarkImplicitAForm<Scalar>::setSolver(
       << "\n" << "  Solver Name  = "<<solverName<<"\n");
     solverName = solverPL->name();
     stepperPL_->set("Solver Name", solverName);
-    stepperPL_->set(solverName, solverPL);      // Add sublist
+    stepperPL_->set(solverName, *solverPL);      // Add sublist
     solver_ = rcp(new Thyra::NOXNonlinearSolver());
     RCP<ParameterList> noxPL = Teuchos::sublist(solverPL, "NOX", true);
     solver_->setParameterList(noxPL);
@@ -209,7 +208,7 @@ void StepperNewmarkImplicitAForm<Scalar>::setSolver(
   RCP<ParameterList> solverPL = solver->getNonconstParameterList();
   std::string solverName = solverPL->name();
   stepperPL_->set("Solver Name", solverName);
-  stepperPL_->set(solverName, solverPL);      // Add sublist
+  stepperPL_->set(solverName, *solverPL);      // Add sublist
   solver_ = solver;
 }
 
@@ -217,6 +216,10 @@ void StepperNewmarkImplicitAForm<Scalar>::setSolver(
 template<class Scalar>
 void StepperNewmarkImplicitAForm<Scalar>::initialize()
 {
+  TEUCHOS_TEST_FOR_EXCEPTION( wrapperModel_ == Teuchos::null, std::logic_error,
+    "Error - Need to set the model, setModel(), before calling "
+    "StepperNewmarkImplicitAForm::initialize()\n");
+
 #ifdef VERBOSE_DEBUG_OUTPUT
   *out_ << "DEBUG: " << __PRETTY_FUNCTION__ << "\n";
 #endif
@@ -258,7 +261,7 @@ void StepperNewmarkImplicitAForm<Scalar>::takeStep(
     RCP<Thyra::VectorBase<Scalar> > a_new = workingState->getXDotDot();
 
     //Get time and dt
-    const Scalar time = workingState->getTime();
+    const Scalar time = currentState->getTime();
     const Scalar dt = workingState->getTimeStep();
     //Update time
     Scalar t = time+dt;
@@ -273,7 +276,7 @@ void StepperNewmarkImplicitAForm<Scalar>::takeStep(
       Thyra::copy(*v_old, v_init.ptr());
       Thyra::put_scalar(0.0, a_init.ptr());
       wrapperModel_->initializeNewmark(a_init,v_init,d_init,0.0,time,beta_,gamma_);
-      const Thyra::SolveStatus<double> sStatus =
+      const Thyra::SolveStatus<Scalar> sStatus =
         this->solveNonLinear(wrapperModel_, *solver_, a_init);
       if (sStatus.solveStatus == Thyra::SOLVE_STATUS_CONVERGED )
         workingState->getStepperState()->stepperStatus_ = Status::PASSED;
@@ -300,7 +303,7 @@ void StepperNewmarkImplicitAForm<Scalar>::takeStep(
 
     //Solve for new acceleration
     //IKT, 3/13/17: check how solveNonLinear works.
-    const Thyra::SolveStatus<double> sStatus =
+    const Thyra::SolveStatus<Scalar> sStatus =
       this->solveNonLinear(wrapperModel_, *solver_, a_old);
 
     if (sStatus.solveStatus == Thyra::SOLVE_STATUS_CONVERGED )
@@ -370,8 +373,12 @@ void StepperNewmarkImplicitAForm<Scalar>::setParameterList(
 #ifdef VERBOSE_DEBUG_OUTPUT
   *out_ << "DEBUG: " << __PRETTY_FUNCTION__ << "\n";
 #endif
-  if (pList == Teuchos::null) stepperPL_ = this->getDefaultParameters();
-  else stepperPL_ = pList;
+  if (pList == Teuchos::null) {
+    // Create default parameters if null, otherwise keep current parameters.
+    if (stepperPL_ == Teuchos::null) stepperPL_ = this->getDefaultParameters();
+  } else {
+    stepperPL_ = pList;
+  }
   // Can not validate because of optional Parameters.
   //stepperPL_->validateParametersAndSetDefaults(*this->getValidParameters());
   //Get beta and gamma from parameter list
@@ -381,7 +388,8 @@ void StepperNewmarkImplicitAForm<Scalar>::setParameterList(
   TEUCHOS_TEST_FOR_EXCEPTION( stepperType != "Newmark Implicit a-Form",
     std::logic_error,
        "Error - Stepper Type is not 'Newmark Implicit a-Form'!\n"
-    << "  Stepper Type = "<< pList->get<std::string>("Stepper Type") << "\n");
+       << "  Stepper Type = "<< stepperPL_->get<std::string>("Stepper Type")
+       << "\n");
   beta_ = 0.25; //default value
   gamma_ = 0.5; //default value
     Teuchos::VerboseObjectBase::getDefaultOStream();
@@ -394,16 +402,19 @@ void StepperNewmarkImplicitAForm<Scalar>::setParameterList(
       gamma_ = newmarkPL.get("Gamma", 0.5);
       TEUCHOS_TEST_FOR_EXCEPTION( (beta_ > 1.0) || (beta_ < 0.0),
         std::logic_error,
-           "\nError in 'Newmark Implicit a-Form' stepper: invalid value of Beta = " << beta_ << ".  Please select Beta >= 0 and <= 1. \n");
+        "\nError in 'Newmark Implicit a-Form' stepper: invalid value of Beta = "
+        << beta_ << ".  Please select Beta >= 0 and <= 1. \n");
       TEUCHOS_TEST_FOR_EXCEPTION( (gamma_ > 1.0) || (gamma_ < 0.0),
         std::logic_error,
-           "\nError in 'Newmark Implicit a-Form' stepper: invalid value of Gamma = " <<gamma_ << ".  Please select Gamma >= 0 and <= 1. \n");
+        "\nError in 'Newmark Implicit a-Form' stepper: invalid value of Gamma ="
+        <<gamma_ << ".  Please select Gamma >= 0 and <= 1. \n");
       *out_ << "\nSetting Beta = " << beta_ << " and Gamma = " << gamma_
             << " from Newmark Parameters in input file.\n";
     }
     else {
       *out_ << "\nScheme Name = " << scheme_name << ".  Using values \n"
-            << "of Beta and Gamma for this scheme (ignoring values of Beta and Gamma \n"
+            << "of Beta and Gamma for this scheme (ignoring values of "
+            << "Beta and Gamma \n"
             << "in input file, if provided).\n";
        if (scheme_name == "Average Acceleration") {
          beta_ = 0.25; gamma_ = 0.5;
@@ -417,21 +428,28 @@ void StepperNewmarkImplicitAForm<Scalar>::setParameterList(
        else {
          TEUCHOS_TEST_FOR_EXCEPTION(true,
             std::logic_error,
-            "\nError in Tempus::StepperNewmarkImplicitAForm!  Invalid Scheme Name = " << scheme_name <<".  \n"
-            <<"Valid Scheme Names are: 'Average Acceleration', 'Linear Acceleration', \n"
+            "\nError in Tempus::StepperNewmarkImplicitAForm!  "
+            <<"Invalid Scheme Name = " << scheme_name <<".  \n"
+            <<"Valid Scheme Names are: 'Average Acceleration', "
+            <<"'Linear Acceleration', \n"
             <<"'Central Difference' and 'Not Specified'.\n");
        }
        *out_ << "===> Beta = " << beta_ << ", Gamma = " << gamma_ << "\n";
     }
     if (beta_ == 0.0) {
-      *out_ << "\nWARNING: Running (implicit implementation of) Newmark Implicit a-Form Stepper with Beta = 0.0, which \n"
-            << "specifies an explicit scheme.  Mass lumping is not possible, so this will be slow!  To run explicit \n"
-            << "implementation of Newmark Implicit a-Form Stepper, please re-run with 'Stepper Type' = 'Newmark Explicit a-Form'.\n"
-            << "This stepper allows for mass lumping when called through Piro::TempusSolver.\n";
+      *out_ << "\nWARNING: Running (implicit implementation of) Newmark "
+            << "Implicit a-Form Stepper with Beta = 0.0, which \n"
+            << "specifies an explicit scheme.  Mass lumping is not possible, "
+            << "so this will be slow!  To run explicit \n"
+            << "implementation of Newmark Implicit a-Form Stepper, please "
+            << "re-run with 'Stepper Type' = 'Newmark Explicit a-Form'.\n"
+            << "This stepper allows for mass lumping when called through "
+            << "Piro::TempusSolver.\n";
     }
   }
   else {
-    *out_ << "\nNo Newmark Parameters sublist found in input file; using default values of Beta = "
+    *out_ << "\nNo Newmark Parameters sublist found in input file; using "
+          << "default values of Beta = "
           << beta_ << " and Gamma = " << gamma_ << ".\n";
   }
 }

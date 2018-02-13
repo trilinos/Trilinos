@@ -11,6 +11,7 @@
 
 // Tempus
 #include "Tempus_IntegratorBasic.hpp"
+#include "Tempus_SensitivityModelEvaluatorBase.hpp"
 #include "Tempus_StepperStaggeredForwardSensitivity.hpp"
 
 namespace Tempus {
@@ -181,6 +182,10 @@ public:
   /// Initializes the Integrator after set* function calls
   virtual void initialize()
     { integrator_->initialize(); }
+  virtual Teuchos::RCP<Teuchos::Time> getIntegratorTimer() const override
+    { return integrator_->getIntegratorTimer(); }
+  virtual Teuchos::RCP<Teuchos::Time> getStepperTimer() const override
+    { return integrator_->getStepperTimer(); }
 
   /// Get current the solution, x
   virtual Teuchos::RCP<const Thyra::VectorBase<Scalar> > getX() const;
@@ -202,7 +207,8 @@ public:
 
   /// \name Overridden from Teuchos::ParameterListAcceptor
   //@{
-    void setParameterList(const Teuchos::RCP<Teuchos::ParameterList> & pl);
+    void setParameterList(const Teuchos::RCP<Teuchos::ParameterList> & pl)
+      override;
     Teuchos::RCP<Teuchos::ParameterList> getNonconstParameterList() override
       { return tempus_pl_; }
     Teuchos::RCP<Teuchos::ParameterList> unsetParameterList() override;
@@ -226,7 +232,7 @@ protected:
     const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >& model);
 
   Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > model_;
-  Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > sens_model_;
+  Teuchos::RCP<SensitivityModelEvaluatorBase<Scalar> > sens_model_;
   Teuchos::RCP<StepperStaggeredForwardSensitivity<Scalar> > sens_stepper_;
   Teuchos::RCP<IntegratorBasic<Scalar> > integrator_;
   Teuchos::RCP<Teuchos::ParameterList> tempus_pl_;

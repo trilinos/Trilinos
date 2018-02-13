@@ -68,9 +68,9 @@ namespace ROL {
 template <class Real>
 class AugmentedLagrangianStep : public Step<Real> {
 private:
-  Teuchos::RCP<Algorithm<Real> > algo_;
-  Teuchos::RCP<Vector<Real> > x_; 
-  Teuchos::RCP<BoundConstraint<Real> > bnd_;
+  ROL::Ptr<Algorithm<Real> > algo_;
+  ROL::Ptr<Vector<Real> > x_; 
+  ROL::Ptr<BoundConstraint<Real> > bnd_;
 
   Teuchos::ParameterList parlist_;
   // Lagrange multiplier update
@@ -102,7 +102,7 @@ private:
                        const Real mu, Objective<Real> &obj,
                        BoundConstraint<Real> &bnd) {
     AugmentedLagrangian<Real> &augLag
-      = Teuchos::dyn_cast<AugmentedLagrangian<Real> >(obj);
+      = dynamic_cast<AugmentedLagrangian<Real>&>(obj);
     Real gnorm = 0., tol = std::sqrt(ROL_EPSILON<Real>());
     augLag.gradient(g,x,tol);
     if ( scaleLagrangian_ ) {
@@ -131,8 +131,8 @@ public:
   ~AugmentedLagrangianStep() {}
 
   AugmentedLagrangianStep(Teuchos::ParameterList &parlist)
-    : Step<Real>(), algo_(Teuchos::null),
-      x_(Teuchos::null), parlist_(parlist), subproblemIter_(0) {
+    : Step<Real>(), algo_(ROL::nullPtr),
+      x_(ROL::nullPtr), parlist_(parlist), subproblemIter_(0) {
     Real one(1), p1(0.1), p9(0.9), ten(1.e1), oe8(1.e8), oem8(1.e-8);
     Teuchos::ParameterList& sublist = parlist.sublist("Step").sublist("Augmented Lagrangian");
     Step<Real>::getState()->searchSize = sublist.get("Initial Penalty Parameter",ten);
@@ -166,7 +166,7 @@ public:
   void initialize( Vector<Real> &x, const Vector<Real> &g, Vector<Real> &l, const Vector<Real> &c,
                    Objective<Real> &obj, Constraint<Real> &con,
                    AlgorithmState<Real> &algo_state ) {
-    bnd_ = Teuchos::rcp(new BoundConstraint<Real>());
+    bnd_ = ROL::makePtr<BoundConstraint<Real>>();
     bnd_->deactivate();
     initialize(x,g,l,c,obj,con,*bnd_,algo_state);
   }
@@ -177,9 +177,9 @@ public:
                    Objective<Real> &obj, Constraint<Real> &con, BoundConstraint<Real> &bnd,
                    AlgorithmState<Real> &algo_state ) {
     AugmentedLagrangian<Real> &augLag
-      = Teuchos::dyn_cast<AugmentedLagrangian<Real> >(obj);
+      = dynamic_cast<AugmentedLagrangian<Real>&>(obj);
     // Initialize step state
-    Teuchos::RCP<StepState<Real> > state = Step<Real>::getState();
+    ROL::Ptr<StepState<Real> > state = Step<Real>::getState();
     state->descentVec    = x.clone();
     state->gradientVec   = g.clone();
     state->constraintVec = c.clone();
@@ -229,10 +229,10 @@ public:
                 BoundConstraint<Real> &bnd, AlgorithmState<Real> &algo_state ) {
     Real one(1);
     AugmentedLagrangian<Real> &augLag
-      = Teuchos::dyn_cast<AugmentedLagrangian<Real> >(obj);
+      = dynamic_cast<AugmentedLagrangian<Real>&>(obj);
     parlist_.sublist("Status Test").set("Gradient Tolerance",optTolerance_);
     parlist_.sublist("Status Test").set("Step Tolerance",1.e-6*optTolerance_);
-    algo_ = Teuchos::rcp(new Algorithm<Real>(subStep_,parlist_,false));
+    algo_ = ROL::makePtr<Algorithm<Real>>(subStep_,parlist_,false);
     x_->set(x);
     if ( bnd.isActivated() ) {
       algo_->run(*x_,augLag,bnd,print_);
@@ -260,8 +260,8 @@ public:
                AlgorithmState<Real> &algo_state ) {
     Real one(1), oem2(1.e-2);
     AugmentedLagrangian<Real> &augLag
-      = Teuchos::dyn_cast<AugmentedLagrangian<Real> >(obj);
-    Teuchos::RCP<StepState<Real> > state = Step<Real>::getState();
+      = dynamic_cast<AugmentedLagrangian<Real>&>(obj);
+    ROL::Ptr<StepState<Real> > state = Step<Real>::getState();
     // Update the step and store in state
     x.plus(s);
     algo_state.iterateVec->set(x);

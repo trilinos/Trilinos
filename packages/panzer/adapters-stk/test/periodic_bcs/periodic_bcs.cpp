@@ -850,6 +850,72 @@ namespace panzer {
     
   }
 
+  TEUCHOS_UNIT_TEST(periodic_bcs, PeriodicBC_Matcher_relative)
+  {
+    using Teuchos::RCP;
+    using Teuchos::Tuple;
+
+
+    Epetra_MpiComm Comm(MPI_COMM_WORLD);
+
+    panzer_stk::SquareQuadMeshFactory mesh_factory;
+
+    // setup mesh
+    /////////////////////////////////////////////
+    RCP<panzer_stk::STK_Interface> mesh;
+    {
+       // make a mesh with small length-scale
+       RCP<Teuchos::ParameterList> pl = rcp(new Teuchos::ParameterList);
+       pl->set("X Blocks",2);
+       pl->set("Y Blocks",1);
+       pl->set("X Elements",6);
+       pl->set("Y Elements",4);
+       pl->set("X0",0.0);
+       pl->set("Xf",1.0e-6);
+       pl->set("Y0",0.0);
+       pl->set("Yf",1.0e-6);
+       mesh_factory.setParameterList(pl);
+       mesh = mesh_factory.buildMesh(MPI_COMM_WORLD);
+    }
+
+       std::pair<RCP<std::vector<std::size_t> >,
+                 RCP<std::vector<Tuple<double,3> > > > idsAndCoords_top = panzer_stk::periodic_helpers::getSideIdsAndCoords(*mesh,"top");
+       std::pair<RCP<std::vector<std::size_t> >,
+                 RCP<std::vector<Tuple<double,3> > > > idsAndCoords_bottom = panzer_stk::periodic_helpers::getSideIdsAndCoords(*mesh,"bottom");
+
+    // Nodes
+    {
+       // set up a matcher with a tolerance of 1e-6
+       std::vector<std::string> params;
+       params.push_back("1e-6");
+       CoordMatcher bad_matcher(0,params);
+       Teuchos::RCP<const panzer_stk::PeriodicBC_MatcherBase> bad_pMatch 
+             = panzer_stk::buildPeriodicBC_Matcher("top","bottom",bad_matcher);
+
+       // matching should fail since the tolerance is larger than the mesh size
+       TEST_THROW(bad_pMatch->getMatchedPair(*mesh),std::logic_error);
+
+       // make the tolerance relative, then matching shouldn't fail
+       params.push_back("relative");
+       CoordMatcher matcher(0,params);
+       Teuchos::RCP<const panzer_stk::PeriodicBC_MatcherBase> pMatch 
+             = panzer_stk::buildPeriodicBC_Matcher("top","bottom",matcher);
+
+       RCP<std::vector<std::pair<std::size_t,std::size_t> > > globallyMatchedIds = pMatch->getMatchedPair(*mesh);
+
+       // for testing purposes!
+       RCP<std::vector<std::size_t> > locallyRequiredIds = panzer_stk::periodic_helpers::getLocalSideIds(*mesh,"top");
+
+       TEST_EQUALITY(globallyMatchedIds->size(),locallyRequiredIds->size()); 
+
+       // match top & bottom sides
+       for(std::size_t i=0;i<globallyMatchedIds->size();i++) {
+          std::pair<std::size_t,std::size_t> pair = (*globallyMatchedIds)[i];
+          TEST_EQUALITY(pair.first,pair.second+52);
+       }
+    }
+  }
+  
   TEUCHOS_UNIT_TEST(periodic_bcs, PeriodicBC_Matcher_multi)
   {
     using Teuchos::RCP;

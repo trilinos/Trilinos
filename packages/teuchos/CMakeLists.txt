@@ -127,11 +127,14 @@ TRIBITS_ADD_EXPLICIT_INSTANTIATION_OPTION()
 
 TRIBITS_SET_ST_FOR_DEV_MODE(ST_FOR_DEV_PT_FOR_RELEASE)
 
-IF (Trilinos_ENABLE_COMPLEX_DOUBLE)
+ASSERT_DEFINED(Trilinos_ENABLE_COMPLEX_DOUBLE)
+ASSERT_DEFINED(Trilinos_ENABLE_COMPLEX_FLOAT)
+IF (Trilinos_ENABLE_COMPLEX_DOUBLE OR Trilinos_ENABLE_COMPLEX_FLOAT)
   SET(${PACKAGE_NAME}_ENABLE_COMPLEX_DEFAULT  TRUE)
 ELSE()
+  # If Teuchos is configured as its own CMake project, independent of
+  # Trilinos, then Teuchos_ENABLE_COMPLEX could be OFF by default.
   SET(${PACKAGE_NAME}_ENABLE_COMPLEX_DEFAULT  FALSE)
-  # ABove will be set in case Teuchos is confiugred as its own CMake project!
 ENDIF()
 
 TRIBITS_ADD_OPTION_AND_DEFINE(
@@ -332,6 +335,14 @@ IF(TPL_ENABLE_Valgrind)
   IF (${PACKAGE_NAME}_TIME_MASSIF_SNAPSHOTS)
     MESSAGE(STATUS "Enabling memory profiling using massif")
   ENDIF()
+ENDIF()
+
+TRIBITS_ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_KOKKOS_PROFILING
+  HAVE_TEUCHOS_KOKKOS_PROFILING
+  "Wrap every Teuchos timer with a Kokkos profiling region."
+  OFF)
+IF (${PACKAGE_NAME}_KOKKOS_PROFILING)
+  MESSAGE(STATUS "Wrapping every Teuchos timer with a Kokkos profiling region.")
 ENDIF()
 
 

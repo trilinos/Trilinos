@@ -38,6 +38,8 @@ namespace Test {
     Kokkos::fill_random(b_a,rand_pool,ScalarA(10));
     Kokkos::fill_random(b_b,rand_pool,ScalarB(10));
 
+    Kokkos::fence();
+
     Kokkos::deep_copy(h_b_a,b_a);
     Kokkos::deep_copy(h_b_b,b_b);
 
@@ -89,6 +91,8 @@ namespace Test {
 
     Kokkos::fill_random(b_a,rand_pool,ScalarA(10));
     Kokkos::fill_random(b_b,rand_pool,ScalarB(10));
+
+    Kokkos::fence();
 
     Kokkos::deep_copy(h_b_a,b_a);
     Kokkos::deep_copy(h_b_b,b_b);

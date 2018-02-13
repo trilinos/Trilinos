@@ -682,7 +682,7 @@ private:
   // Append the fad dimension for the internal offset mapping.
   typedef ViewOffset
     < typename array_analysis::dimension::
-        template append<( FadStaticDimension ? FadStaticDimension + 1 : 0 )>::type
+        template append<( unsigned(FadStaticDimension) > 0 ? unsigned(FadStaticDimension) + 1 : 0 )>::type
     , typename Traits::array_layout
     , void
     >  offset_type ;

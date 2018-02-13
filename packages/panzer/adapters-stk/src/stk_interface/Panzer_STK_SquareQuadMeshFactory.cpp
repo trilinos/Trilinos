@@ -92,9 +92,10 @@ Teuchos::RCP<STK_Interface> SquareQuadMeshFactory::buildUncommitedMesh(stk::Para
       xProcs_ = machSize_; 
       yProcs_ = 1;
    }
-   TEUCHOS_TEST_FOR_EXCEPTION(int(machSize_)!=xProcs_*yProcs_,std::logic_error,
-                      "Cannot build SquareQuadMeshFactory, the product of \"X Procs\" and \"Y Procs\""
-                      " must equal the number of processors.");
+  TEUCHOS_TEST_FOR_EXCEPTION(int(machSize_) != xProcs_ * yProcs_, std::logic_error,
+      "Cannot build SquareQuadMeshFactory. The product of 'X Procs * Y Procs = " << xProcs_ << "*" << yProcs_ << " = " << xProcs_*yProcs_
+      << "' must equal the number of processors = " << machSize_
+      << "\n\n\t==> Run the simulation with an appropriate number of processors, i.e. #procs = " << xProcs_*yProcs_ << ".\n");
    procTuple_ = procRankToProcTuple(machRank_);
 
    // build meta information: blocks and side set setups

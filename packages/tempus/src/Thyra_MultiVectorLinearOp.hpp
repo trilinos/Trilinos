@@ -12,6 +12,7 @@
 #include "Thyra_RowStatLinearOpBase.hpp"
 #include "Thyra_ScaledLinearOpBase.hpp"
 #include "Thyra_DefaultMultiVectorProductVectorSpace.hpp"
+#include "Thyra_DefaultMultiVectorProductVector.hpp"
 #include "Teuchos_ConstNonconstObjectContainer.hpp"
 #include "Thyra_VectorStdOps.hpp"
 #include "Thyra_MultiVectorStdOps.hpp"

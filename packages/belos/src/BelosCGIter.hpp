@@ -202,7 +202,39 @@ class CGIter : virtual public CGIteration<ScalarType,MV,OP> {
 
   //! States whether the solver has been initialized or not.
   bool isInitialized() { return initialized_; }
+  
 
+  //! Sets whether or not to store the diagonal for condition estimation
+  void setDoCondEst(bool val){doCondEst_=val;}
+  
+  //! Gets the diagonal for condition estimation
+  Teuchos::ArrayView<MagnitudeType> getDiag() {
+    // NOTE (mfh 30 Jul 2015) See note on getOffDiag() below.
+    // getDiag() didn't actually throw for me in that case, but why
+    // not be cautious?
+    typedef typename Teuchos::ArrayView<MagnitudeType>::size_type size_type;
+    if (static_cast<size_type> (iter_) >= diag_.size ()) {
+      return diag_ ();
+    } else {
+      return diag_ (0, iter_);
+    }
+    }
+  
+  //! Gets the off-diagonal for condition estimation
+  Teuchos::ArrayView<MagnitudeType> getOffDiag() {
+    // NOTE (mfh 30 Jul 2015) The implementation as I found it
+    // returned "offdiag(0,iter_)".  This breaks (Teuchos throws in
+    // debug mode) when the maximum number of iterations has been
+    // reached, because iter_ == offdiag_.size() in that case.  The
+    // new logic fixes this.
+    typedef typename Teuchos::ArrayView<MagnitudeType>::size_type size_type;
+    if (static_cast<size_type> (iter_) >= offdiag_.size ()) {
+      return offdiag_ ();
+    } else {
+      return offdiag_ (0, iter_);
+    }
+  }
+  
   //@}
 
   private:
@@ -235,6 +267,16 @@ class CGIter : virtual public CGIteration<ScalarType,MV,OP> {
 
   // Current number of iterations performed.
   int iter_;
+
+  // Assert that the matrix is positive definite
+  bool assertPositiveDefiniteness_;
+
+  // Tridiagonal system for condition estimation (if needed)
+  Teuchos::ArrayRCP<MagnitudeType> diag_, offdiag_;
+  int numEntriesForCondEst_;
+  bool doCondEst_;
+
+ 
   
   // 
   // State Storage
@@ -265,7 +307,9 @@ class CGIter : virtual public CGIteration<ScalarType,MV,OP> {
     stest_(tester),
     initialized_(false),
     stateStorageInitialized_(false),
-    iter_(0)
+    iter_(0),
+    assertPositiveDefiniteness_( params.get("Assert Positive Definiteness", true) ),
+    numEntriesForCondEst_(params.get("Max Size For Condest",0) )
   {
   }
 
@@ -297,7 +341,13 @@ class CGIter : virtual public CGIteration<ScalarType,MV,OP> {
 	  P_ = MVT::Clone( *tmp, 1 );
 	  AP_ = MVT::Clone( *tmp, 1 );
 	}
-	
+
+        // Tracking information for condition number estimation
+        if(numEntriesForCondEst_ > 0) {
+          diag_.resize(numEntriesForCondEst_);
+          offdiag_.resize(numEntriesForCondEst_-1);
+        }
+        	
 	// State storage has now been initialized.
 	stateStorageInitialized_ = true;
       }
@@ -415,8 +465,9 @@ class CGIter : virtual public CGIteration<ScalarType,MV,OP> {
       alpha(0,0) = rHz(0,0) / pAp(0,0);
       
       // Check that alpha is a positive number!
-      TEUCHOS_TEST_FOR_EXCEPTION( SCT::real(alpha(0,0)) <= zero, CGIterateFailure,
-			  "Belos::CGIter::iterate(): non-positive value for p^H*A*p encountered!" );
+      if(assertPositiveDefiniteness_)
+        TEUCHOS_TEST_FOR_EXCEPTION( SCT::real(alpha(0,0)) <= zero, CGIterateFailure,
+                                    "Belos::CGIter::iterate(): non-positive value for p^H*A*p encountered!" );
       //
       // Update the solution vector x := x + alpha * P_
       //

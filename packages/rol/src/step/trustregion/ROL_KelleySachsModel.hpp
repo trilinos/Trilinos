@@ -60,9 +60,9 @@ namespace ROL {
 template<class Real>
 class KelleySachsModel : public TrustRegionModel<Real> {
 private:
-  Teuchos::RCP<BoundConstraint<Real> > bnd_;
-  Teuchos::RCP<Secant<Real> > secant_;
-  Teuchos::RCP<Vector<Real> > dual_, prim_;
+  ROL::Ptr<BoundConstraint<Real> > bnd_;
+  ROL::Ptr<Secant<Real> > secant_;
+  ROL::Ptr<Vector<Real> > dual_, prim_;
 
   const bool useSecantPrecond_;
   const bool useSecantHessVec_;
@@ -74,26 +74,26 @@ public:
   KelleySachsModel(Objective<Real> &obj, BoundConstraint<Real> &bnd,
                    const Vector<Real> &x, const Vector<Real> &g, const Real eps)
     : TrustRegionModel<Real>::TrustRegionModel(obj,x,g,false),
-      secant_(Teuchos::null), useSecantPrecond_(false), useSecantHessVec_(false), eps_(eps) {
-    bnd_  = Teuchos::rcpFromRef(bnd);
+      secant_(ROL::nullPtr), useSecantPrecond_(false), useSecantHessVec_(false), eps_(eps) {
+    bnd_  = ROL::makePtrFromRef(bnd);
     prim_ = x.clone();
     dual_ = g.clone();
   }
 
   KelleySachsModel(Objective<Real> &obj, BoundConstraint<Real> &bnd,
                    const Vector<Real> &x, const Vector<Real> &g, const Real eps,
-                   const Teuchos::RCP<Secant<Real> > &secant,
+                   const ROL::Ptr<Secant<Real> > &secant,
                    const bool useSecantPrecond, const bool useSecantHessVec)
     : TrustRegionModel<Real>::TrustRegionModel(obj,x,g,false),
       secant_(secant), useSecantPrecond_(useSecantPrecond), useSecantHessVec_(useSecantHessVec), eps_(eps) {
-    bnd_  = Teuchos::rcpFromRef(bnd);
+    bnd_  = ROL::makePtrFromRef(bnd);
     prim_ = x.clone();
     dual_ = g.clone();
   }
 
   Real value( const Vector<Real> &s, Real &tol ) {
-    const Teuchos::RCP<const Vector<Real> > gc = TrustRegionModel<Real>::getGradient();
-    const Teuchos::RCP<const Vector<Real> > xc = TrustRegionModel<Real>::getIterate();
+    const ROL::Ptr<const Vector<Real> > gc = TrustRegionModel<Real>::getGradient();
+    const ROL::Ptr<const Vector<Real> > xc = TrustRegionModel<Real>::getIterate();
     hessVec(*dual_,s,s,tol);
     dual_->scale(static_cast<Real>(0.5));
     // Remove active components of gradient
@@ -105,8 +105,8 @@ public:
   }
 
   void gradient( Vector<Real> &g, const Vector<Real> &s, Real &tol ) {
-    const Teuchos::RCP<const Vector<Real> > gc = TrustRegionModel<Real>::getGradient();
-    const Teuchos::RCP<const Vector<Real> > xc = TrustRegionModel<Real>::getIterate();
+    const ROL::Ptr<const Vector<Real> > gc = TrustRegionModel<Real>::getGradient();
+    const ROL::Ptr<const Vector<Real> > xc = TrustRegionModel<Real>::getIterate();
     // Apply (reduced) hessian to direction s
     hessVec(g,s,s,tol);
     // Remove active components of gradient
@@ -117,8 +117,8 @@ public:
   }
 
   void hessVec( Vector<Real> &Hv, const Vector<Real> &v, const Vector<Real> &s, Real &tol ) {
-    const Teuchos::RCP<const Vector<Real> > gc = TrustRegionModel<Real>::getGradient();
-    const Teuchos::RCP<const Vector<Real> > xc = TrustRegionModel<Real>::getIterate();
+    const ROL::Ptr<const Vector<Real> > gc = TrustRegionModel<Real>::getGradient();
+    const ROL::Ptr<const Vector<Real> > xc = TrustRegionModel<Real>::getIterate();
     // Set vnew to v
     prim_->set(v);
     // Remove elements of vnew corresponding to binding set
@@ -143,8 +143,8 @@ public:
   }
 
   void invHessVec( Vector<Real> &Hv, const Vector<Real> &v, const Vector<Real> &s, Real &tol ) {
-    const Teuchos::RCP<const Vector<Real> > gc = TrustRegionModel<Real>::getGradient();
-    const Teuchos::RCP<const Vector<Real> > xc = TrustRegionModel<Real>::getIterate();
+    const ROL::Ptr<const Vector<Real> > gc = TrustRegionModel<Real>::getGradient();
+    const ROL::Ptr<const Vector<Real> > xc = TrustRegionModel<Real>::getIterate();
     // Set vnew to v
     dual_->set(v);
     // Remove elements of vnew corresponding to binding set
@@ -169,8 +169,8 @@ public:
   }
 
   void precond( Vector<Real> &Mv, const Vector<Real> &v, const Vector<Real> &x, Real &tol ) {
-    const Teuchos::RCP<const Vector<Real> > gc = TrustRegionModel<Real>::getGradient();
-    const Teuchos::RCP<const Vector<Real> > xc = TrustRegionModel<Real>::getIterate();
+    const ROL::Ptr<const Vector<Real> > gc = TrustRegionModel<Real>::getGradient();
+    const ROL::Ptr<const Vector<Real> > xc = TrustRegionModel<Real>::getIterate();
     // Set vnew to v
     dual_->set(v);
     // Remove elements of vnew corresponding to binding set
@@ -196,22 +196,22 @@ public:
 
   void dualTransform( Vector<Real> &tv, const Vector<Real> &v ) {
     // Compute T(v) = P_I(v) where P_I is the projection onto the inactive indices
-    const Teuchos::RCP<const Vector<Real> > gc = TrustRegionModel<Real>::getGradient();
-    const Teuchos::RCP<const Vector<Real> > xc = TrustRegionModel<Real>::getIterate();
+    const ROL::Ptr<const Vector<Real> > gc = TrustRegionModel<Real>::getGradient();
+    const ROL::Ptr<const Vector<Real> > xc = TrustRegionModel<Real>::getIterate();
     tv.set(v);
     bnd_->pruneActive(tv,*gc,*xc,eps_);
   }
 
   void primalTransform( Vector<Real> &tv, const Vector<Real> &v ) {
     // Compute T(v) = P( x + v ) - x where P is the projection onto the feasible set
-    const Teuchos::RCP<const Vector<Real> > xc = TrustRegionModel<Real>::getIterate();
+    const ROL::Ptr<const Vector<Real> > xc = TrustRegionModel<Real>::getIterate();
     tv.set(*xc);
     tv.plus(v);
     bnd_->project(tv);
     tv.axpy(static_cast<Real>(-1),*xc);
   }
 
-  const Teuchos::RCP<BoundConstraint<Real> > getBoundConstraint(void) const {
+  const ROL::Ptr<BoundConstraint<Real> > getBoundConstraint(void) const {
     return bnd_;
   }
 

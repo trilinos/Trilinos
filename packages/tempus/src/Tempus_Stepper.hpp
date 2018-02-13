@@ -100,6 +100,19 @@ public:
     virtual Scalar getOrderMin() const = 0;
     virtual Scalar getOrderMax() const = 0;
     virtual Teuchos::RCP<Teuchos::ParameterList> getDefaultParameters() const=0;
+
+    virtual bool isExplicit() const = 0;
+    virtual bool isImplicit() const = 0;
+    virtual bool isExplicitImplicit() const = 0;
+
+    virtual bool isOneStepMethod() const = 0;
+    virtual bool isMultiStepMethod() const = 0;
+  //@}
+
+  /// \name Functions for Steppers with subSteppers (e.g., OperatorSplit)
+  //@{
+    virtual void createSubSteppers(
+      std::vector<Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > > models){}
   //@}
 
   /// \name Helper functions

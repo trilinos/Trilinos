@@ -44,14 +44,15 @@
 #include "Teuchos_Assert.hpp"
 #include "Teuchos_UnitTestHarness.hpp"
 #include "Phalanx_KokkosDeviceTypes.hpp"
+#include "Phalanx_TypeStrings.hpp"
 #include <Phalanx_any.hpp>
 #include <unordered_map>
 #include <map>
 
 #include "Sacado.hpp"
 #include "Kokkos_View_Fad.hpp"
-#include "Kokkos_DynRankView.hpp"
 #include "Kokkos_DynRankView_Fad.hpp"
+#include "Kokkos_DynRankView.hpp"
 #include "KokkosSparse_CrsMatrix.hpp"
 
 #ifdef PHX_ENABLE_KOKKOS_AMT
@@ -828,5 +829,55 @@ namespace phalanx_test {
     TEST_EQUALITY(J.rowConst(9).colidx(1),9);
     TEST_FLOATING_EQUALITY(J.rowConst(9).value(0),1.0,tol);
     TEST_FLOATING_EQUALITY(J.rowConst(9).value(1),9.0,tol);
+  }
+
+  TEUCHOS_UNIT_TEST(kokkos, DeviceLayoutTypes)
+  {
+    using RealType = double;
+    using FadType = Sacado::Fad::DFad<double>;
+
+    // Get the layout in the view
+    using scalar_view_layout = PHX::View<RealType**>::array_layout;
+    using fad_view_layout = PHX::View<FadType**>::array_layout;
+
+    // Layout from PHX::DevLayout
+    using scalar_dev_layout = typename PHX::DevLayout<RealType**>::type;
+    using fad_dev_layout = typename PHX::DevLayout<FadType**>::type;
+
+    // Expected layout based on architecture.
+    using DefaultDevLayout = PHX::exec_space::array_layout;
+#if defined(SACADO_VIEW_CUDA_HIERARCHICAL_DFAD)
+
+#if defined(KOKKOS_HAVE_CUDA)
+    using DefaultFadLayout = Kokkos::LayoutContiguous<DefaultDevLayout,32>;
+#else
+    using DefaultFadLayout = Kokkos::LayoutContiguous<DefaultDevLayout,1>;
+#endif
+
+#else
+    using DefaultFadLayout = DefaultDevLayout;
+#endif
+
+    static_assert(std::is_same<scalar_view_layout,scalar_dev_layout>::value,"ERROR: Layout Inconsistency!");
+    static_assert(std::is_same<fad_view_layout,fad_dev_layout>::value,"ERROR: Layout Inconsistency!");
+    static_assert(std::is_same<scalar_view_layout,DefaultDevLayout>::value,"ERROR: Layout Inconsistency!");
+    static_assert(std::is_same<fad_view_layout,DefaultFadLayout>::value,"ERROR: Layout Inconsistency!");
+
+    std::cout << "\n\nscalar_view_layout = " << PHX::typeAsString<scalar_view_layout>() << std::endl;
+    std::cout << "scalar_dev_layout  = " << PHX::typeAsString<scalar_dev_layout>() << std::endl;
+    std::cout << "DefaultDevLayout   = " << PHX::typeAsString<DefaultDevLayout>() << "\n" << std::endl;
+
+    std::cout << "fad_view_layout    = " << PHX::typeAsString<fad_view_layout>() << std::endl;
+    std::cout << "fad_dev_layout     = " << PHX::typeAsString<fad_dev_layout>() << std::endl;
+    std::cout << "DefaultFadLayout   = " << PHX::typeAsString<DefaultFadLayout>() << "\n" << std::endl;
+
+    // Tests for assignments from static View to DynRankView
+    Kokkos::View<FadType**,typename PHX::DevLayout<FadType>::type,PHX::Device> static_a("static_a",100,8,64);
+    Kokkos::Experimental::DynRankView<FadType,typename PHX::DevLayout<FadType>::type,PHX::Device> dyn_a;
+    dyn_a = static_a;
+
+    Kokkos::View<FadType**,Kokkos::LayoutLeft,PHX::Device> static_a_ll("static_a",100,8,64);
+    Kokkos::Experimental::DynRankView<FadType,Kokkos::LayoutLeft,PHX::Device> dyn_a_ll;
+    dyn_a_ll = static_a_ll;
   }
 }

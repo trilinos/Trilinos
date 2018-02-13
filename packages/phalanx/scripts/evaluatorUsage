@@ -1,0 +1,321 @@
+#!/bin/bash
+
+# Usage information.
+usage()
+{
+  echo "┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓"
+  echo "┃ This script will produce a list of the Phalanx Evaluators used in whatever  ┃"
+  echo "┃ code you've run, with their usage information in terms of total number of   ┃"
+  echo "┃ calls, total run time, and average run time per call.  By default, the list ┃"
+  echo "┃ will be sorted in descending order in terms of the average run time per     ┃"
+  echo "┃ Evaluator call.                                                             ┃"
+  echo "┠─────────────────────────────────────────────────────────────────────────────┨"
+  echo "┃ Usage:  eveluatorUsage [options]                                            ┃"
+  echo "┃   The available options are:                                                ┃"
+  echo "┃     -h, --help:        Display this usage information.                      ┃"
+  echo "┃     -i, --input:       The following filename indicates a log file          ┃"
+  echo "┃                        containing results from a run of ctest with the      ┃"
+  echo "┃                        TimeMonitor turned on.  If omitted, the script will  ┃"
+  echo "┃                        look for a LastTest.log file in the current          ┃"
+  echo "┃                        working directory.                                   ┃"
+  echo "┃     -o, --ouput:       The following filename will be used to output the    ┃"
+  echo "┃                        results.  If omitted, the results will be output to  ┃"
+  echo "┃                        the terminal.                                        ┃"
+  echo "┃     -s, --status:      If present, output status information to the         ┃"
+  echo "┃                        terminal, giving an indication of how the script is  ┃"
+  echo "┃                        progressing.  If you use this option, you likely     ┃"
+  echo "┃                        want to specify an --output file.                    ┃"
+  echo "┃     -r, --run-time:    Sort the Evaluators based on the total run time.     ┃"
+  echo "┃     -c, --num-calls:   Sort the Evaluators based on the total number of     ┃"
+  echo "┃                        calls.                                               ┃"
+  echo "┃     -n, --names:       If present, aggregate the results where the same     ┃"
+  echo "┃                        Evaluator is instantiated with different names.      ┃"
+  echo "┃     -e, --eval-types:  If present, aggregate the results for Evaluators     ┃"
+  echo "┃                        instantiated with separate evaluation types          ┃"
+  echo "┃                        (e.g., residual, Jacobian, etc.) together.  By       ┃"
+  echo "┃                        the various evaluation types will be kept separate.  ┃"
+  echo "┃ Example:  This will search through LastTest.log, output the results to      ┃"
+  echo "┃           usage.log, display status information as the script progresses,   ┃"
+  echo "┃           aggregate the results based on runtime, and combine the results   ┃"
+  echo "┃           from the various evaluation types.                                ┃"
+  echo "┃   $ cd /path/to/build/dir/DrekarBase/drekar/Testing/Temporary               ┃"
+  echo "┃   $ evaluatorUsage -i LastTest.log -o usage.log -s -r -e                    ┃"
+  echo "┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛"
+}
+
+# Get the command line arguments.
+inputFile="LastTest.log"
+outputFile=""
+sortBy="avgTimePerCall"
+showStatus=false
+aggregateByName=false
+aggregateByEvalType=false
+while [[ $# -gt 0 ]]
+do
+  key="$1"
+  case $key in
+    -h|--help)
+      usage
+      exit 0
+      ;;
+    -i|--input)
+      inputFile="$2"
+      shift 2
+      ;;
+    -o|--output)
+      outputFile="$2"
+      shift 2
+      ;;
+    -s|--status)
+      showStatus=true
+      shift
+      ;;
+    -c|--num-calls)
+      sortBy="numCalls"
+      shift
+      ;;
+    -r|--run-time)
+      sortBy="runTime"
+      shift
+      ;;
+    -n|--names)
+      aggregateByName=true
+      shift
+      ;;
+    -e|--eval-types)
+      aggregateByEvalType=true
+      shift
+      ;;
+    *)
+      usage
+      echo "Unrecognized option:  $key"
+      exit 1
+      ;;
+  esac
+done
+
+# Validate the command line arguments.
+if [ ! -f $inputFile ]; then
+  usage
+  echo "The logFile you provided ($inputFile) is not a regular file."
+  exit 2
+fi
+if ! grep "TimeMonitor" $inputFile > /dev/null; then
+  usage
+  echo "The input file you provided ($inputFile) does not contain any TimeMonitor results."
+  exit 3
+fi
+
+# Create a temporary working directory.
+tmp=/tmp/evaluatorUsage
+mkdir -p $tmp
+
+# Clean up before exiting.
+cleanUp()
+{
+  rm -rf $tmp
+}
+
+# Display a status message in the terminal.
+message()
+{
+  if $showStatus; then
+    echo -en "\e[2K\r$1"
+  fi
+}
+
+# Create some variables to refer to the various files we'll be creating and
+# working with.
+ctest=$tmp/ctest
+timeMonitor=$tmp/timeMonitor
+p1=$tmp/p1
+p4=$tmp/p4
+p4Summed=$tmp/p4Summed
+all=$tmp/all
+results=$tmp/results
+cwd=$(pwd)
+
+# Copy the input file to our temporary working directory.
+cp $inputFile $ctest
+
+# Strip all "p=0 | " out of the beginnings of lines.
+message "Stripping out FancyOStream prefixes..."
+sed -i "s/^p=0 | //" $ctest 
+
+# Grab all the lines between "TimeMonitor results" and the next line of all
+# equal signs.
+message "Grabbing the TimeMonitor results..."
+sed -n '/TimeMonitor results/,/^=\+=$/p' $ctest > $timeMonitor
+
+# Remove all lines containing "TimeMonitor", "Timer Name", all equal signs or
+# hyphens, or nothing at all.
+message "Removing unnecessary lines..."
+sed -i '/TimeMonitor/d' $timeMonitor 
+sed -i '/Timer Name/d' $timeMonitor 
+sed -i '/^-\+-$/d' $timeMonitor 
+sed -i '/^=\+=$/d' $timeMonitor 
+sed -i '/^\s*$/d' $timeMonitor 
+
+# Get rid of all lines that don't correspond to Phalanx Evaluators.
+sed -i '/^Phalanx/!d' $timeMonitor
+
+# Grab the lines with one processor and reformat them such that it's:
+#   Evaluator Name | time | num calls
+message "Grabbing the one-processor results..."
+cp $timeMonitor $p1
+sed -i "/.* .* ([0-9]\+.*) \+.* ([0-9]\+.*) \+.* ([0-9]\+.*) \+.* ([0-9]\+.*)/d" $p1
+sed -i "s/\([^\s]*\)\s\+\([0-9]\+\..*\) (\([0-9]\+\))/\1|\2|\3/" $p1
+sed -i "s/\s\+|/|/" $p1 
+sed -i "s/\s\+$//" $p1 
+
+# Grab the lines with four processors and reformat them such that it's:
+#   Evaluator Name | time | num | time | num | time | num | time | num
+message "Grabbing the four-processor results..."
+sed -n "s/\([^\s]*\)\s\+\([0-9]\+\..*\) (\([0-9]\+.*\))\s\+\([0-9]\+\..*\) (\([0-9]\+.*\))\s\+\([0-9]\+\..*\) (\([0-9]\+.*\))\s\+\([0-9]\+\..*\) (\([0-9]\+.*\))/\1|\2|\3|\4|\5|\6|\7|\8|\9/p" $timeMonitor > $p4
+sed -i "s/\s\+|/|/" $p4 
+sed -i "s/\s\+$//" $p4
+
+# Sum the number of Evaluator calls in the four processor cases.
+awk '
+  BEGIN {
+    FS = "|"
+  } {
+    print $1 "|" $2 + $4 + $6 + $8 "|" $3 + $5 + $7 + $9
+  }' $p4 > $p4Summed
+
+# Combine the one-processor and summed four-processor results.
+cat $p1 $p4Summed > $all
+
+# Remove some text that is unnecessary at this point.
+sed -i "s/Phalanx: Evaluator [0-9]\+: //" $all
+
+# Sum the number of Evaluator calls for all lines with the same Evalutor name.
+message "Aggregating the results..."
+awk -v sortBy="$sortBy" -v aggregateByName="$aggregateByName" -v aggregateByEvalType="$aggregateByEvalType" '
+  function compare(l, r)
+  {
+    if (l > r)
+      return -1
+    else if (l == r)
+      return 0
+    else
+      return 1
+  }
+  function avgTimePerCall(i1, v1, i2, v2)
+  {
+    return compare(v1["avgTimePerCall"], v2["avgTimePerCall"])
+  }
+  function numCalls(i1, v1, i2, v2)
+  {
+    return compare(v1["numCalls"], v2["numCalls"])
+  }
+  function runTime(i1, v1, i2, v2)
+  {
+    return compare(v1["runTime"], v2["runTime"])
+  }
+  BEGIN {
+    FS = "|"
+  } {
+    if ($1 in data)
+    {
+      data[$1]["runTime"]  += $2
+      data[$1]["numCalls"] += $3
+    }
+    else
+    {
+      data[$1]["runTime"]  = $2
+      data[$1]["numCalls"] = $3
+    }
+  } END {
+    if (aggregateByName == "true")
+    {
+      for (elem in data)
+      {
+        prefix = gensub(/(.+): .+/, "\\1", 1, elem)
+        if (prefix in aggregatedByName)
+        {
+          aggregatedByName[prefix]["runTime"]  += data[elem]["runTime"]
+          aggregatedByName[prefix]["numCalls"] += data[elem]["numCalls"]
+        }
+        else
+        {
+          aggregatedByName[prefix]["runTime"]  = data[elem]["runTime"]
+          aggregatedByName[prefix]["numCalls"] = data[elem]["numCalls"]
+        }
+      }
+      delete data
+      for (elem in aggregatedByName)
+      {
+        data[elem]["runTime"]  = aggregatedByName[elem]["runTime"]
+        data[elem]["numCalls"] = aggregatedByName[elem]["numCalls"]
+      }
+    }
+    if (aggregateByEvalType == "true")
+    {
+      for (elem in data)
+      {
+        if (elem ~ /^\[.+\] /)
+        {
+          name = gensub(/^\[.+\] (.+)/, "\\1", 1, elem)
+          if (name in aggregatedByEvalType)
+          {
+            aggregatedByEvalType[name]["runTime"]  += data[elem]["runTime"]
+            aggregatedByEvalType[name]["numCalls"] += data[elem]["numCalls"]
+          }
+          else
+          {
+            aggregatedByEvalType[name]["runTime"]  = data[elem]["runTime"]
+            aggregatedByEvalType[name]["numCalls"] = data[elem]["numCalls"]
+          }
+        }
+        else
+        {
+          aggregatedByEvalType[elem]["runTime"]  = data[elem]["runTime"]
+          aggregatedByEvalType[elem]["numCalls"] = data[elem]["numCalls"]
+        }
+      }
+      delete data
+      for (elem in aggregatedByEvalType)
+      {
+        data[elem]["runTime"]  = aggregatedByEvalType[elem]["runTime"]
+        data[elem]["numCalls"] = aggregatedByEvalType[elem]["numCalls"]
+      }
+    }
+    for (elem in data)
+    {
+      if (data[elem]["numCalls"] > 0)
+        data[elem]["avgTimePerCall"] = data[elem]["runTime"] / data[elem]["numCalls"]
+      else
+        data[elem]["avgTimePerCall"] = data[elem]["runTime"]
+    }
+    asort(data, sortedByNumCalls, "numCalls")
+    width = length(sprintf("%d", sortedByNumCalls[1]["numCalls"]))
+    width = (width < 8 ? 8 : width)
+    PROCINFO["sorted_in"] = sortBy
+    printf "%-12s │ %-12s │ %-*s │ %s\n", "Avg. Time", "Total",    width, "Total #",  ""
+    printf "%-12s │ %-12s │ %-*s │ %s\n", "per Call",  "Run Time", width, "of Calls", "Evaluator Name"
+    for (i = 0; i < 13; ++i)
+      printf "━"
+    printf "┿"
+    for (i = 0; i < 14; ++i)
+      printf "━"
+    printf "┿"
+    for (i = 0; i <= width + 1; ++i)
+      printf "━"
+    printf "┿"
+    for (i = 0; i < 80 - width - 33; ++i)
+      printf "━"
+    printf "\n"
+    for (elem in data)
+      printf "%12e │ %12e │ %*d │ %s\n", data[elem]["avgTimePerCall"], data[elem]["runTime"], width, data[elem]["numCalls"], elem
+  }' $all > $results
+
+# Output the results, clean up, and exit.
+message ""
+if [[ $outputFile == "" ]]; then
+  cat $results
+else
+  cp $results $cwd/$outputFile
+fi
+cleanUp
+exit 0

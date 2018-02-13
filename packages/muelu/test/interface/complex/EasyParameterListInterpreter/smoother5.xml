@@ -1,0 +1,6 @@
+<ParameterList name="MueLu">
+  <Parameter name="smoother: type" type="string" value="RELAXATION"/>
+  <ParameterList name="smoother: params">
+    <Parameter name="relaxation: type" type="string" value="Symmetric Gauss-Seidel"/>
+  </ParameterList>
+</ParameterList>

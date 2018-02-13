@@ -59,13 +59,29 @@ class IntegrateDiffusionTerm : public PHX::EvaluatorWithBaseImpl<Traits>,
   PHX::MDField<ScalarT,CELL,BASIS> residual;
 
 public:
-  struct MyDevEval : public PHX::DeviceEvaluator<Traits> {
-    Kokkos::View<const ScalarT***,PHX::Device> flux;
-    Kokkos::View<ScalarT**,PHX::Device> residual;
-    KOKKOS_FUNCTION MyDevEval(const Kokkos::View<const ScalarT***,PHX::Device>& in_flux,
-                                     const Kokkos::View<ScalarT**,PHX::Device>& in_residual) :
+  struct MyDevEvalResidual : public PHX::DeviceEvaluator<Traits> {
+    PHX::View<const ScalarT***> flux;
+    PHX::AtomicView<ScalarT**> residual;
+    KOKKOS_FUNCTION MyDevEvalResidual(const PHX::View<const ScalarT***>& in_flux,
+			      const PHX::View<ScalarT**>& in_residual) :
       flux(in_flux), residual(in_residual) {}
-    KOKKOS_FUNCTION MyDevEval(const MyDevEval& src) = default;
+    KOKKOS_FUNCTION MyDevEvalResidual(const MyDevEvalResidual& src) = default;
+    KOKKOS_FUNCTION void evaluate(const typename PHX::DeviceEvaluator<Traits>::member_type& team,
+                                  typename Traits::EvalData workset) override;
+  };
+
+  struct MyDevEvalJacobian : public PHX::DeviceEvaluator<Traits> {
+    PHX::View<const ScalarT***> flux;
+#ifdef PHX_ENABLE_KOKKOS_AMT
+    // Make residual atomic so that AMT mode can sum diffusion and source terms at same time
+    Kokkos::View<ScalarT**,typename PHX::DevLayout<ScalarT>::type,PHX::Device,Kokkos::MemoryTraits<Kokkos::Atomic>> residual;
+#else
+    PHX::View<ScalarT**> residual;
+#endif
+    KOKKOS_FUNCTION MyDevEvalJacobian(const PHX::View<const ScalarT***>& in_flux,
+			      const PHX::View<ScalarT**>& in_residual) :
+      flux(in_flux), residual(in_residual) {}
+    KOKKOS_FUNCTION MyDevEvalJacobian(const MyDevEvalJacobian& src) = default;
     KOKKOS_FUNCTION void evaluate(const typename PHX::DeviceEvaluator<Traits>::member_type& team,
                                   typename Traits::EvalData workset) override;
   };

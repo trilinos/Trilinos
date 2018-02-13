@@ -38,7 +38,7 @@ namespace Tacho {
 
         // column connectivity (gid - dof, sid - supernode)
         ordinal_type gid_col_begin, gid_col_end, sid_col_begin, sid_col_end;  
-        ordinal_type nchildren, children[MaxDependenceSize]; // hierarchy
+        ordinal_type nchildren, *children, children_buf[MaxDependenceSize]; // hierarchy
 
         ordinal_type max_decendant_schur_size;      // workspace
         ordinal_type max_decendant_supernode_size;  // workspace
@@ -50,11 +50,11 @@ namespace Tacho {
           : lock(0), row_begin(0), m(0), n(0), 
             gid_col_begin(0), gid_col_end(0), 
             sid_col_begin(0), sid_col_end(0), 
-            nchildren(0),
+            nchildren(0), children(NULL),
             max_decendant_schur_size(0),
             max_decendant_supernode_size(0),
             buf(NULL) {
-          for (ordinal_type i=0;i<MaxDependenceSize;++i) children[i] = 0;
+          for (ordinal_type i=0;i<MaxDependenceSize;++i) children_buf[i] = 0;
         }
 
         KOKKOS_INLINE_FUNCTION
@@ -62,18 +62,18 @@ namespace Tacho {
           : lock(0), row_begin(b.row_begin), m(b.m), n(b.n), 
             gid_col_begin(b.gid_col_begin), gid_col_end(b.gid_col_end), 
             sid_col_begin(b.sid_col_begin), sid_col_end(b.sid_col_end), 
-            nchildren(b.nchildren),
+            nchildren(b.nchildren), children(b.children),
             max_decendant_schur_size(b.max_decendant_schur_size),
             max_decendant_supernode_size(b.max_decendant_supernode_size),
             buf(b.buf) {
-          for (ordinal_type i=0;i<b.nchildren;++i) children[i] = b.children[i];
+          for (ordinal_type i=0;i<b.nchildren;++i) children_buf[i] = b.children_buf[i];
         }
       };
       typedef struct Supernode supernode_type;
       typedef Kokkos::View<supernode_type*,exec_space> supernode_type_array;
 
       ///
-      /// Phase 1: symbolic
+      /// info for symbolic
       ///
       ConstUnmanagedViewType<supernode_type_array> supernodes;
 
@@ -86,12 +86,17 @@ namespace Tacho {
       ConstUnmanagedViewType<ordinal_pair_type_array> sid_block_colidx; 
 
       ///
-      /// Phase 2: max parameter
+      /// max parameter
       ///
-      ordinal_type max_supernode_size, max_schur_size, serial_thres_size;
+      ordinal_type max_nchildren, max_supernode_size, max_schur_size, serial_thres_size;
 
       ///
-      /// Phase 3: solve (rhs multivector)
+      /// frontal matrix subassembly mode
+      ///
+      ordinal_type front_update_mode; // 0 - lock, 1 - atomic
+
+      ///
+      /// info for solve (rhs multivector)
       UnmanagedViewType<value_type_matrix> x;
 
       KOKKOS_INLINE_FUNCTION
@@ -128,9 +133,13 @@ namespace Tacho {
         sid_block_colidx  = sid_block_colidx_;
 
         /// workspace parameter initialization
+        max_nchildren = 0; 
         max_schur_size = 0; 
         max_supernode_size = 0;
         serial_thres_size = 0;
+
+        // by default, update mode is atomic: 0 - mutex lock, 1 - atomic
+        front_update_mode = 1;
 
         size_type nnz = 0;
         for (ordinal_type sid=0;sid<nsupernodes;++sid) { 
@@ -149,13 +158,17 @@ namespace Tacho {
           }
 
           s.nchildren = stree_ptr_(sid+1) - stree_ptr_(sid);
-          TACHO_TEST_FOR_EXCEPTION(s.nchildren > MaxDependenceSize, std::runtime_error,
-                                   "# of children is greater than max dependence (children) size");
-
-          const ordinal_type offset = stree_ptr_(sid);
-          for (ordinal_type i=0;i<s.nchildren;++i) 
-            s.children[i] = stree_children_(offset + i);
-
+          {
+            const ordinal_type offset = stree_ptr_(sid);
+            if (s.nchildren < MaxDependenceSize) {
+              for (ordinal_type i=0;i<s.nchildren;++i) 
+                s.children_buf[i] = stree_children_(offset + i);
+              s.children = &s.children_buf[0];
+            } else {
+              s.children = &stree_children_(offset);
+            }
+            max_nchildren = max(max_nchildren, s.nchildren);
+          }
           max_supernode_size = max(max_supernode_size, s.m);
           max_schur_size = max(max_schur_size, s.n-s.m);
 

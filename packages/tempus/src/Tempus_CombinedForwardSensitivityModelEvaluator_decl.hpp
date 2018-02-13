@@ -9,6 +9,7 @@
 #ifndef Tempus_CombinedForwardSensitivityModelEvaluator_decl_hpp
 #define Tempus_CombinedForwardSensitivityModelEvaluator_decl_hpp
 
+#include "Tempus_SensitivityModelEvaluatorBase.hpp"
 #include "Thyra_StateFuncModelEvaluatorBase.hpp"
 #include "Thyra_DefaultMultiVectorProductVectorSpace.hpp"
 
@@ -34,7 +35,8 @@ namespace Tempus {
  */
 template <typename Scalar>
 class CombinedForwardSensitivityModelEvaluator :
-    public Thyra::StateFuncModelEvaluatorBase<Scalar> {
+    public Thyra::StateFuncModelEvaluatorBase<Scalar>,
+    public SensitivityModelEvaluatorBase<Scalar> {
 public:
   typedef Thyra::VectorBase<Scalar>  Vector;
   typedef Thyra::MultiVectorBase<Scalar>  MultiVector;
@@ -70,9 +72,17 @@ public:
     const Teuchos::RCP<MultiVector>& dx_dotdp_init = Teuchos::null,
     const Teuchos::RCP<MultiVector>& dx_dotdot_dp_init = Teuchos::null);
 
+  /** \name Public functions overridden from SensitivityModelEvaulator. */
+  //@{
+
   //! Get the underlying model 'f'
-  Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > getModel() const
+  Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > getForwardModel() const
   { return model_; }
+
+  //@}
+
+  //! Get sensitivity parameter index
+  int getSensitivityParamIndex() const { return p_index_; }
 
   /** \name Public functions overridden from ModelEvaulator. */
   //@{
@@ -85,7 +95,17 @@ public:
 
   Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> > get_f_space() const;
 
+  Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> > get_g_space(int j) const;
+
+  Teuchos::ArrayView<const std::string> get_g_names(int j) const;
+
   Teuchos::RCP<Thyra::LinearOpBase<Scalar> > create_W_op() const;
+
+  Teuchos::RCP<Thyra::LinearOpBase<Scalar> > create_DgDx_dot_op(int j) const;
+
+  Teuchos::RCP<Thyra::LinearOpBase<Scalar> > create_DgDx_op(int j) const;
+
+  Teuchos::RCP<Thyra::LinearOpBase<Scalar> > create_DgDp_op(int j, int l) const;
 
   Teuchos::RCP<const Thyra::LinearOpWithSolveFactoryBase<Scalar> >
   get_W_factory() const;

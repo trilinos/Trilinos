@@ -128,8 +128,3 @@ SET( CTEST_EXPLICITLY_ENABLE_IMPLICITLY_ENABLED_PACKAGES OFF )
 #
 
 TRIBITS_CTEST_DRIVER()
-
-MESSAGE(FATAL_ERROR "Not an error, we just need to abort to avoid running tests again!")
-# Above, we have to abort this Ctest -S script or, for some reason, ctest will
-# run the tests again!  This is the dumbest thing ever but I can't find a way
-# around this.

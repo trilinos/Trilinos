@@ -89,7 +89,7 @@ namespace Sacado {
 
     extern const Kokkos::MemoryPool<Kokkos::Cuda>* global_sacado_cuda_memory_pool_host;
     extern const Kokkos::MemoryPool<Kokkos::Cuda>* global_sacado_cuda_memory_pool_device;
-#ifdef KOKKOS_HAVE_CUDA_RDC
+#ifdef KOKKOS_CUDA_USE_RELOCATABLE_DEVICE_CODE
     extern __device__ const Kokkos::MemoryPool<Kokkos::Cuda>* global_sacado_cuda_memory_pool_on_device;
 #else
     __device__ const Kokkos::MemoryPool<Kokkos::Cuda>* global_sacado_cuda_memory_pool_on_device = 0;
@@ -187,7 +187,7 @@ namespace Sacado {
     template <typename T>
     KOKKOS_INLINE_FUNCTION
     static T* ds_alloc(const int sz) {
-#if defined( CUDA_VERSION ) && ( 6000 <= CUDA_VERSION ) && defined(KOKKOS_USE_CUDA_UVM) && !defined( __CUDA_ARCH__ )
+#if defined( CUDA_VERSION ) && ( 6000 <= CUDA_VERSION ) && defined(KOKKOS_ENABLE_CUDA_UVM) && !defined( __CUDA_ARCH__ )
       T* m;
       CUDA_SAFE_CALL( cudaMallocManaged( (void**) &m, sz*sizeof(T), cudaMemAttachGlobal ) );
 #elif defined(HAVE_SACADO_KOKKOSCORE) && defined(SACADO_KOKKOS_USE_MEMORY_POOL) && !defined(SACADO_DISABLE_CUDA_IN_KOKKOS) && defined(__CUDA_ARCH__)
@@ -225,7 +225,7 @@ namespace Sacado {
     template <typename T>
     KOKKOS_INLINE_FUNCTION
     static void ds_free(T* m, int sz) {
-#if defined( CUDA_VERSION ) && ( 6000 <= CUDA_VERSION ) && defined(KOKKOS_USE_CUDA_UVM) && !defined( __CUDA_ARCH__ )
+#if defined( CUDA_VERSION ) && ( 6000 <= CUDA_VERSION ) && defined(KOKKOS_ENABLE_CUDA_UVM) && !defined( __CUDA_ARCH__ )
       if (sz > 0)
         CUDA_SAFE_CALL( cudaFree(m) );
 #elif defined(HAVE_SACADO_KOKKOSCORE) && defined(SACADO_KOKKOS_USE_MEMORY_POOL) && !defined(SACADO_DISABLE_CUDA_IN_KOKKOS) && defined(__CUDA_ARCH__)
@@ -495,11 +495,9 @@ namespace Sacado {
     //! Copy array from \c src to \c dest of length \c sz
     KOKKOS_INLINE_FUNCTION
     static void strided_copy(const T* src, int src_stride,
-                                    T* dest, int dest_stride, int sz) {
+                             T* dest, int dest_stride, int sz) {
       for (int i=threadIdx.x; i<sz; i+=blockDim.x) {
-        *(dest) = *(src);
-        dest += dest_stride;
-        src += src_stride;
+        dest[i*dest_stride] = src[i*src_stride];
       }
     }
 
@@ -515,8 +513,7 @@ namespace Sacado {
     KOKKOS_INLINE_FUNCTION
     static void strided_zero(T* dest, int stride, int sz) {
       for (int i=threadIdx.x; i<sz; i+=blockDim.x) {
-        *(dest) = T(0.);
-        dest += stride;
+        dest[i*stride] = T(0.);
       }
     }
 

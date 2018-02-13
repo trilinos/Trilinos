@@ -8,16 +8,18 @@
 #include "TachoExp_Partition.hpp"
 
 #include "TachoExp_Trsm.hpp"
+#include "TachoExp_Trsm_Internal.hpp"
 #include "TachoExp_Trsm_External.hpp"
 
 #include "TachoExp_Gemm.hpp"
+#include "TachoExp_Gemm_Internal.hpp"
 #include "TachoExp_Gemm_External.hpp"
 #include "TachoExp_Gemm_ByBlocks.hpp"
 
 namespace Tacho {
   
   namespace Experimental {
-    
+
     template<>
     struct Trsm<Side::Left,Uplo::Upper,Trans::ConjTranspose,Algo::ByBlocks> {
       template<typename SchedType,
@@ -37,6 +39,10 @@ namespace Tacho {
         typedef ScalarType scalar_type;
         typedef typename MatrixOfDenseBlocksType::value_type dense_block_type;
         typedef typename dense_block_type::future_type future_type;
+
+        typedef typename std::conditional
+          <std::is_same<Kokkos::Impl::ActiveExecutionMemorySpace,Kokkos::HostSpace>::value,
+          Algo::External,Algo::Internal>::type TrsmAlgoType;
 
         if (get_team_rank(member) == 0) {
           MatrixOfDenseBlocksType ATL, ATR,      A00, A01, A02,
@@ -79,7 +85,8 @@ namespace Tacho {
                 Kokkos::task_spawn(Kokkos::TaskTeam(sched, Kokkos::when_all(dep, 2), Kokkos::TaskPriority::High),
                                    TaskFunctor_Trsm
                                    <sched_type,scalar_type,dense_block_type,
-                                   Side::Left,Uplo::Upper,Trans::ConjTranspose,DiagType,Algo::External>
+                                   Side::Left,Uplo::Upper,Trans::ConjTranspose,DiagType,
+                                   TrsmAlgoType>
                                    (sched, alpha_select, aa, bb));
               TACHO_TEST_FOR_ABORT(f.is_null(), "task_spawn return a null future");
               bb.set_future(f);
@@ -123,6 +130,10 @@ namespace Tacho {
         typedef ScalarType scalar_type;
         typedef typename MatrixOfDenseBlocksType::value_type dense_block_type;
         typedef typename dense_block_type::future_type future_type;
+
+        typedef typename std::conditional
+          <std::is_same<Kokkos::Impl::ActiveExecutionMemorySpace,Kokkos::HostSpace>::value,
+          Algo::External,Algo::Internal>::type TrsmAlgoType;
 
         if (get_team_rank(member) == 0) {
           MatrixOfDenseBlocksType ATL, ATR,      A00, A01, A02,
@@ -168,7 +179,8 @@ namespace Tacho {
                 Kokkos::task_spawn(Kokkos::TaskTeam(sched, Kokkos::when_all(dep, 2), Kokkos::TaskPriority::High),
                                    TaskFunctor_Trsm
                                    <sched_type,scalar_type,dense_block_type,
-                                   Side::Left,Uplo::Upper,Trans::NoTranspose,DiagType,Algo::External>
+                                   Side::Left,Uplo::Upper,Trans::NoTranspose,DiagType,
+                                   TrsmAlgoType>
                                    (sched, alpha_select, aa, bb));
               TACHO_TEST_FOR_ABORT(f.is_null(), "task_spawn return a null future");
               bb.set_future(f);
@@ -189,7 +201,6 @@ namespace Tacho {
         return 0;
       }
     };
-
 
 
   }

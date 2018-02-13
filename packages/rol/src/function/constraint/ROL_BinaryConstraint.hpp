@@ -60,20 +60,18 @@ namespace ROL {
 template<class Real>
 class BinaryConstraint : public Constraint<Real> {
 
-  template <typename T> using RCP = Teuchos::RCP<T>;
-
   using V = Vector<Real>;
 
 
 private:
 
-  const RCP<const V> lo_;    // Lower Bound Vector
-  const RCP<const V> up_;    // Upper Bound Vector
+  const ROL::Ptr<const V> lo_;    // Lower Bound Vector
+  const ROL::Ptr<const V> up_;    // Upper Bound Vector
 
-  RCP<V> d_;     // Scratch Vector
+  ROL::Ptr<V> d_;     // Scratch Vector
 
-//  RCP<V> dl_;    // Scratch Vectors
-//  RCP<V> du_;    // Scratch Vectors
+//  ROL::Ptr<V> dl_;    // Scratch Vectors
+//  ROL::Ptr<V> du_;    // Scratch Vectors
 
   Real   gamma_; // Penality parameter 
 
@@ -127,14 +125,14 @@ private:
 
 public:
 
-  BinaryConstraint( const RCP<const V> &lo, const RCP<const V> &up, Real gamma ) :
+  BinaryConstraint( const ROL::Ptr<const V> &lo, const ROL::Ptr<const V> &up, Real gamma ) :
       lo_( lo ), up_( up ), d_( lo_->clone() ), gamma_( gamma ) {} 
 
   BinaryConstraint( const BoundConstraint<Real> &bnd, Real gamma ) :
       BinaryConstraint( bnd.getLowerBound(), bnd.getUpperBound(), gamma ) {}
    
 
-  BinaryConstraint( const RCP<const BoundConstraint<Real>> &bnd, Real gamma ) :
+  BinaryConstraint( const ROL::Ptr<const BoundConstraint<Real>> &bnd, Real gamma ) :
       BinaryConstraint( bnd->getLowerBound(), bnd->getUpperBound(), gamma ) {}
      
 

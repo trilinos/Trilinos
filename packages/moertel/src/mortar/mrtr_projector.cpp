@@ -216,18 +216,18 @@ double MOERTEL::Projector::evaluate_F_2D_NodalNormal(MOERTEL::Node& node,
   
   for (int i=0; i<nmnode; ++i)
   {
-    const double* X = mnodes[i]->X();
+    const double* X = mnodes[i]->XCoords();
     Nx[0] += val[i]*X[0];
     Nx[1] += val[i]*X[1];
   }
   
   // subtract xs (Coordinates of the slave node)
-  const double* X = node.X();
+  const double* X = node.XCoords();
   Nx[0] -= X[0];
   Nx[1] -= X[1];
 
   // get the normal of node
-  const double* n = node.N();
+  const double* n = node.Normal();
   
   // calculate F
   double F = Nx[0]*n[1] - Nx[1]*n[0];
@@ -292,13 +292,13 @@ double MOERTEL::Projector::evaluate_gradF_2D_NodalNormal(MOERTEL::Node& node,
   }
   for (int i=0; i<nmnode; ++i)
   {
-    const double* X = mnodes[i]->X();
+    const double* X = mnodes[i]->XCoords();
     Nxeta[0] += deriv[i]*X[0];
     Nxeta[1] += deriv[i]*X[1];
   }
   
   // get the normal of node
-  const double* n = node.N();
+  const double* n = node.Normal();
 
   // calculate gradF
   double gradF = Nxeta[0]*n[1] - Nxeta[1]*n[0];  
@@ -466,16 +466,16 @@ double MOERTEL::Projector::evaluate_F_2D_SegmentNormal(MOERTEL::Node& node,
   }
   for (int i=0; i<nsnode; ++i)
   {
-    const double* X = snodes[i]->X();
+    const double* X = snodes[i]->XCoords();
     Nx[0] += val[i]*X[0];
     Nx[1] += val[i]*X[1];
-    const double* N = snodes[i]->N();
+    const double* N = snodes[i]->Normal();
     NN[0] += val[i]*N[0];
     NN[1] += val[i]*N[1];
   }
 
   // subtract xm from interpolated coords Nx
-  const double* X = node.X();
+  const double* X = node.XCoords();
   Nx[0] -= X[0];
   Nx[1] -= X[1];
   
@@ -549,12 +549,12 @@ double MOERTEL::Projector::evaluate_gradF_2D_SegmentNormal(MOERTEL::Node& node,
   }
   for (int i=0; i<nsnode; ++i)
   {
-    const double* X = snodes[i]->X();
+    const double* X = snodes[i]->XCoords();
     Nx[0]    += val[i]*X[0];
     Nx[1]    += val[i]*X[1];
     Nxeta[0] += deriv[i]*X[0];
     Nxeta[1] += deriv[i]*X[1];
-    const double* N = snodes[i]->N();
+    const double* N = snodes[i]->Normal();
     NN[0]    += val[i]*N[0];
     NN[1]    += val[i]*N[1];
     NNeta[0] += deriv[i]*N[0];
@@ -562,7 +562,7 @@ double MOERTEL::Projector::evaluate_gradF_2D_SegmentNormal(MOERTEL::Node& node,
   }
   
   // get master node coords
-  const double* xm = node.X();
+  const double* xm = node.XCoords();
   
   // calculate gradF
   double gradF =   Nxeta[0]*NN[1] + (Nx[0] - xm[0])*NNeta[1]  
@@ -668,13 +668,13 @@ double MOERTEL::Projector::evaluate_F_2D_SegmentOrthogonal(MOERTEL::Node& node,
   }
   for (int i=0; i<nsnode; ++i)
   {
-    const double* X = snodes[i]->X();
+    const double* X = snodes[i]->XCoords();
     Nx[0] += val[i]*X[0];
     Nx[1] += val[i]*X[1];
   }
   
   // subtract xm from interpolated coords Nx
-  const double* X = node.X();
+  const double* X = node.XCoords();
   Nx[0] -= X[0];
   Nx[1] -= X[1];
   
@@ -741,7 +741,7 @@ double MOERTEL::Projector::evaluate_gradF_2D_SegmentOrthogonal(
   }
   for (int i=0; i<nsnode; ++i)
   {
-    const double* X = snodes[i]->X();
+    const double* X = snodes[i]->XCoords();
     Nxeta[0] += deriv[i]*X[0];
     Nxeta[1] += deriv[i]*X[1];
   }
@@ -872,13 +872,13 @@ double MOERTEL::Projector::evaluate_F_2D_SegmentOrthogonal_to_g(MOERTEL::Node& n
   }
   for (int i=0; i<nsnode; ++i)
   {
-    const double* X = mnodes[i]->X();
+    const double* X = mnodes[i]->XCoords();
     Nx[0] += val[i]*X[0];
     Nx[1] += val[i]*X[1];
   }
   
   // subtract xs from interpolated coords Nx
-  const double* X = node.X();
+  const double* X = node.XCoords();
   Nx[0] -= X[0];
   Nx[1] -= X[1];
   
@@ -942,7 +942,7 @@ double MOERTEL::Projector::evaluate_gradF_2D_SegmentOrthogonal_to_g(
   }
   for (int i=0; i<nmnode; ++i)
   {
-    const double* X = mnodes[i]->X();
+    const double* X = mnodes[i]->XCoords();
     Nxeta[0] += deriv[i]*X[0];
     Nxeta[1] += deriv[i]*X[1];
   }

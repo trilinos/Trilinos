@@ -694,9 +694,8 @@ namespace MueLu {
 
     // Zeros out rows
     static void ZeroDirichletRows(Teuchos::RCP<Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >& A,
-                               const std::vector<LocalOrdinal>& dirichletRows) {
-      Scalar zero =Teuchos::ScalarTraits<Scalar>::zero();
-
+                                  const std::vector<LocalOrdinal>& dirichletRows,
+                                  Scalar replaceWith=Teuchos::ScalarTraits<Scalar>::zero()) {
       for(size_t i=0; i<dirichletRows.size(); i++) {
         Teuchos::ArrayView<const LocalOrdinal> indices;
         Teuchos::ArrayView<const Scalar> values;
@@ -704,7 +703,23 @@ namespace MueLu {
         // NOTE: This won't work with fancy node types.
         Scalar* valuesNC = const_cast<Scalar*>(values.getRawPtr());
         for(size_t j=0; j<(size_t)indices.size(); j++)
-            valuesNC[j]=zero;
+            valuesNC[j]=replaceWith;
+      }
+    }
+
+    // Zeros out columns
+    static void ZeroDirichletCols(Teuchos::RCP<Matrix>& A,
+                                  const std::vector<LocalOrdinal>& dirichletCols,
+                                  Scalar replaceWith=Teuchos::ScalarTraits<Scalar>::zero()) {
+      for(size_t i=0; i<A->getNodeNumRows(); i++) {
+        Teuchos::ArrayView<const LocalOrdinal> indices;
+        Teuchos::ArrayView<const Scalar> values;
+        A->getLocalRowView(i,indices,values);
+        // NOTE: This won't work with fancy node types.
+        Scalar* valuesNC = const_cast<Scalar*>(values.getRawPtr());
+        for(size_t j=0; j<static_cast<size_t>(indices.size()); j++)
+          if (dirichletCols[indices[j]]==1)
+            valuesNC[j] = replaceWith;
       }
     }
 

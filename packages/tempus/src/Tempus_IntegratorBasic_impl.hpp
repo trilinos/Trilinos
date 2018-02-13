@@ -58,6 +58,19 @@ IntegratorBasic<Scalar>::IntegratorBasic()
 
 
 template<class Scalar>
+IntegratorBasic<Scalar>::IntegratorBasic(
+  Teuchos::RCP<Teuchos::ParameterList>                inputPL,
+  std::vector<Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > > models)
+    : integratorObserver_(Teuchos::null),
+      integratorStatus_(WORKING), isInitialized_(false)
+{
+  this->setTempusParameterList(inputPL);
+  this->setStepper(models);
+  this->initialize();
+}
+
+
+template<class Scalar>
 void IntegratorBasic<Scalar>::setStepper(
   Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > model)
 {
@@ -73,6 +86,26 @@ void IntegratorBasic<Scalar>::setStepper(
     stepper_ = sf->createStepper(model, stepperPL);
   } else {
     stepper_->setModel(model);
+  }
+}
+
+
+template<class Scalar>
+void IntegratorBasic<Scalar>::setStepper(
+  std::vector<Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > > models)
+{
+  using Teuchos::RCP;
+  using Teuchos::ParameterList;
+
+  if (stepper_ == Teuchos::null) {
+    // Construct from Integrator ParameterList
+    RCP<StepperFactory<Scalar> > sf =Teuchos::rcp(new StepperFactory<Scalar>());
+    std::string stepperName = integratorPL_->get<std::string>("Stepper Name");
+
+    RCP<ParameterList> stepperPL = Teuchos::sublist(tempusPL_,stepperName,true);
+    stepper_ = sf->createStepper(models, stepperPL);
+  } else {
+    stepper_->createSubSteppers(models);
   }
 }
 
@@ -105,47 +138,23 @@ setInitialState(Teuchos::RCP<SolutionState<Scalar> >  state)
   solutionHistory_ = rcp(new SolutionHistory<Scalar>(shPL));
 
   if (state == Teuchos::null) {
-    // Construct default IC
-    // Create initial condition metadata from TimeStepControl
-    RCP<SolutionStateMetaData<Scalar> > md =
-      rcp(new SolutionStateMetaData<Scalar> ());
-    md->setTime (timeStepControl_->getInitTime());
-    md->setIStep(timeStepControl_->getInitIndex());
-    md->setDt   (timeStepControl_->getInitTimeStep());
-    int orderTmp = timeStepControl_->getInitOrder();
-    if (orderTmp == 0) orderTmp = stepper_->getOrder();
-    md->setOrder(orderTmp);
-    md->setSolutionStatus(Status::PASSED);  // ICs are considered passing.
-
-    // Create initial condition from ModelEvaluator::getNominalValues()
-    typedef Thyra::ModelEvaluatorBase MEB;
-    Thyra::ModelEvaluatorBase::InArgs<Scalar> inArgsIC =
-      stepper_->getModel()->getNominalValues();
-
-    using Teuchos::rcp_const_cast;
-    //RCP<Thyra::VectorBase<Scalar> > x = inArgsIC.get_x()->clone_v();
-    RCP<Thyra::VectorBase<Scalar> > x =
-      rcp_const_cast<Thyra::VectorBase<Scalar> > (inArgsIC.get_x());
-    RCP<Thyra::VectorBase<Scalar> > xdot;
-    if (inArgsIC.supports(MEB::IN_ARG_x_dot)) {
-      //xdot = inArgsIC.get_x_dot()->clone_v();
-      xdot = rcp_const_cast<Thyra::VectorBase<Scalar> > (inArgsIC.get_x_dot());
-    } else {
-      xdot = x->clone_v();
-    }
-    RCP<Thyra::VectorBase<Scalar> > xdotdot;
-    if (inArgsIC.supports(MEB::IN_ARG_x_dot_dot)) {
-      //xdotdot = inArgsIC.get_x_dot_dot()->clone_v();
-      xdotdot =
-        rcp_const_cast<Thyra::VectorBase<Scalar> > (inArgsIC.get_x_dot_dot());
-    }
-    else {
-      xdotdot = x->clone_v();
-    }
+    // Construct default IC from the application model
     RCP<SolutionState<Scalar> > newState = rcp(new SolutionState<Scalar>(
-      md, x, xdot, xdotdot, stepper_->getDefaultStepperState()));
+      stepper_->getModel(), stepper_->getDefaultStepperState(), Teuchos::null));
+
+    // Set SolutionState MetaData from TimeStepControl
+    newState->setTime    (timeStepControl_->getInitTime());
+    newState->setIndex   (timeStepControl_->getInitIndex());
+    newState->setTimeStep(timeStepControl_->getInitTimeStep());
+    int order = timeStepControl_->getInitOrder();
+    if (order == 0) order = stepper_->getOrder();
+    if (order < stepper_->getOrderMin()) order = stepper_->getOrderMin();
+    if (order > stepper_->getOrderMax()) order = stepper_->getOrderMax();
+    newState->setOrder(order);
+    newState->setSolutionStatus(Status::PASSED);  // ICs are considered passing.
 
     solutionHistory_->addState(newState);
+
   } else {
     // Use state as IC
     solutionHistory_->addState(state);
@@ -168,17 +177,6 @@ setInitialState(Scalar t0,
     Teuchos::sublist(integratorPL_, "Solution History", true);
   solutionHistory_ = rcp(new SolutionHistory<Scalar>(shPL));
 
-  // Create initial condition metadata from TimeStepControl
-  RCP<SolutionStateMetaData<Scalar> > md =
-    rcp(new SolutionStateMetaData<Scalar> ());
-  md->setTime (timeStepControl_->getInitTime());
-  md->setIStep(timeStepControl_->getInitIndex());
-  md->setDt   (timeStepControl_->getInitTimeStep());
-  int orderTmp = timeStepControl_->getInitOrder();
-  if (orderTmp == 0) orderTmp = stepper_->getOrder();
-  md->setOrder(orderTmp);
-  md->setSolutionStatus(Status::PASSED);  // ICs are considered passing.
-
   // Create and set xdot and xdotdot.
   RCP<Thyra::VectorBase<Scalar> > xdot    = x0->clone_v();
   RCP<Thyra::VectorBase<Scalar> > xdotdot = x0->clone_v();
@@ -192,7 +190,19 @@ setInitialState(Scalar t0,
     Thyra::assign(xdotdot.ptr(), *(xdotdot0));
 
   RCP<SolutionState<Scalar> > newState = rcp(new SolutionState<Scalar>(
-    md, x0->clone_v(), xdot, xdotdot, stepper_->getDefaultStepperState()));
+    x0->clone_v(), xdot, xdotdot, stepper_->getDefaultStepperState()));
+
+  // Set SolutionState MetaData from TimeStepControl
+  newState->setTime    (timeStepControl_->getInitTime());
+  newState->setIndex   (timeStepControl_->getInitIndex());
+  newState->setTimeStep(timeStepControl_->getInitTimeStep());
+  int order = timeStepControl_->getInitOrder();
+  if (order == 0) order = stepper_->getOrder();
+  if (order < stepper_->getOrderMin()) order = stepper_->getOrderMin();
+  if (order > stepper_->getOrderMax()) order = stepper_->getOrderMax();
+  newState->setOrder(order);
+
+  newState->setSolutionStatus(Status::PASSED);  // ICs are considered passing.
 
   solutionHistory_->addState(newState);
 }
@@ -219,7 +229,7 @@ void IntegratorBasic<Scalar>::setSolutionHistory(
     // Make integratorPL_ consistent with new SolutionHistory.
     RCP<ParameterList> shPL = sh->getNonconstParameterList();
     integratorPL_->set("Solution History", shPL->name());
-    integratorPL_->set(shPL->name(), shPL);
+    integratorPL_->set(shPL->name(), *shPL);
 
     solutionHistory_ = sh;
   }
@@ -234,29 +244,30 @@ void IntegratorBasic<Scalar>::setTimeStepControl(
   using Teuchos::ParameterList;
 
   if (tsc == Teuchos::null) {
-    // Construct from Integrator ParameterList
-    RCP<ParameterList> tscPL =
-      Teuchos::sublist(integratorPL_,"Time Step Control",true);
-    timeStepControl_ = rcp(new TimeStepControl<Scalar>(tscPL));
-
-    if (timeStepControl_->getMinOrder() == 0)
-      timeStepControl_->setMinOrder(stepper_->getOrderMin());
-    if (timeStepControl_->getMaxOrder() == 0)
-      timeStepControl_->setMaxOrder(stepper_->getOrderMax());
-    if (timeStepControl_->getInitOrder() < timeStepControl_->getMinOrder())
-      timeStepControl_->setInitOrder(timeStepControl_->getMinOrder());
-    if (timeStepControl_->getInitOrder() > timeStepControl_->getMaxOrder())
-      timeStepControl_->setInitOrder(timeStepControl_->getMaxOrder());
+    // Create timeStepControl_ if null, otherwise keep current parameters.
+    if (timeStepControl_ == Teuchos::null) {
+      if (integratorPL_->isSublist("Time Step Control")) {
+        // Construct from Integrator ParameterList
+        RCP<ParameterList> tscPL =
+          Teuchos::sublist(integratorPL_,"Time Step Control",true);
+        timeStepControl_ = rcp(new TimeStepControl<Scalar>(tscPL));
+      } else {
+        // Construct default TimeStepControl
+        timeStepControl_ = rcp(new TimeStepControl<Scalar>());
+        RCP<ParameterList> tscPL = timeStepControl_->getNonconstParameterList();
+        integratorPL_->set("Time Step Control", tscPL->name());
+        integratorPL_->set(tscPL->name(), *tscPL);
+      }
+    }
 
   } else {
     // Make integratorPL_ consistent with new TimeStepControl.
     RCP<ParameterList> tscPL = tsc->getNonconstParameterList();
     integratorPL_->set("Time Step Control", tscPL->name());
-    integratorPL_->set(tscPL->name(), tscPL);
-
-    timeStepControl_ = Teuchos::null;
+    integratorPL_->set(tscPL->name(), *tscPL);
     timeStepControl_ = tsc;
   }
+
 }
 
 
@@ -264,25 +275,44 @@ template<class Scalar>
 void IntegratorBasic<Scalar>::setObserver(
   Teuchos::RCP<IntegratorObserver<Scalar> > obs)
 {
+
   if (obs == Teuchos::null) {
     // Create default IntegratorObserverBasic, otherwise keep current observer.
     if (integratorObserver_ == Teuchos::null) {
       integratorObserver_ =
-        Teuchos::rcp(new IntegratorObserverBasic<Scalar>);
+        Teuchos::rcp(new IntegratorObserverComposite<Scalar>);
+      // add obsever to output integrator time step info
+      Teuchos::RCP<IntegratorObserverBasic<Scalar> > outputObs =
+          Teuchos::rcp(new IntegratorObserverBasic<Scalar>);
+      integratorObserver_->addObserver(outputObs);
     }
   } else {
-    integratorObserver_ = obs;
+    integratorObserver_->addObserver(obs);
   }
+
 }
 
 
 template<class Scalar>
 void IntegratorBasic<Scalar>::initialize()
 {
+  TEUCHOS_TEST_FOR_EXCEPTION( stepper_ == Teuchos::null, std::logic_error,
+    "Error - Need to set the Stepper, setStepper(), before calling "
+    "IntegratorBasic::initialize()\n");
+
   this->setTimeStepControl();
   this->parseScreenOutput();
   this->setSolutionHistory();
   this->setObserver();
+
+  if (timeStepControl_->getMinOrder() == 0)
+      timeStepControl_->setMinOrder(stepper_->getOrderMin());
+  if (timeStepControl_->getMaxOrder() == 0)
+      timeStepControl_->setMaxOrder(stepper_->getOrderMax());
+  if (timeStepControl_->getInitOrder() < timeStepControl_->getMinOrder())
+      timeStepControl_->setInitOrder(timeStepControl_->getMinOrder());
+  if (timeStepControl_->getInitOrder() > timeStepControl_->getMaxOrder())
+      timeStepControl_->setInitOrder(timeStepControl_->getMaxOrder());
 
   if (integratorTimer_ == Teuchos::null)
     integratorTimer_ = rcp(new Teuchos::Time("Integrator Timer"));
@@ -350,19 +380,7 @@ void IntegratorBasic<Scalar>::startIntegrator()
     integratorStatus_ = FAILED;
     return;
   }
-  std::time_t begin = std::time(nullptr);
   integratorTimer_->start();
-  Teuchos::OSTab ostab(out,0,"ScreenOutput");
-  *out << "\nTempus - IntegratorBasic\n"
-       << std::asctime(std::localtime(&begin)) << "\n"
-       << "  Stepper = " << stepper_->description() << "\n"
-       << "  Simulation Time Range  [" << timeStepControl_->getInitTime()
-       << ", " << timeStepControl_->getFinalTime() << "]\n"
-       << "  Simulation Index Range [" << timeStepControl_->getInitIndex()
-       << ", " << timeStepControl_->getFinalIndex() << "]\n"
-       << "============================================================================\n"
-       << "  Step       Time         dt  Abs Error  Rel Error  Order  nFail  dCompTime"
-       << std::endl;
   integratorStatus_ = WORKING;
 }
 
@@ -422,7 +440,7 @@ void IntegratorBasic<Scalar>::startTimeStep()
   std::vector<int>::const_iterator it =
     std::find(outputScreenIndices_.begin(),
               outputScreenIndices_.end(),
-              wsmd->getIStep()+1);
+              wsmd->getIStep());
   if (it == outputScreenIndices_.end())
     wsmd->setOutputScreen(false);
   else
@@ -468,7 +486,7 @@ void IntegratorBasic<Scalar>::acceptTimeStep()
        ((timeStepControl_->getStepType() == "Constant") and
         (wsmd->getDt() != timeStepControl_->getInitTimeStep()) and
         (wsmd->getOutput() != true) and
-        (wsmd->getTime()+wsmd->getDt() != timeStepControl_->getFinalTime())
+        (wsmd->getTime() != timeStepControl_->getFinalTime())
        )
      )
   {
@@ -510,25 +528,6 @@ void IntegratorBasic<Scalar>::acceptTimeStep()
   csmd->setNFailures(std::max(csmd->getNFailures()-1,0));
   csmd->setNConsecutiveFailures(0);
 
-  if ((csmd->getOutputScreen() == true) or
-      (csmd->getOutput() == true) or
-      (csmd->getTime() == timeStepControl_->getFinalTime())) {
-    const double steppertime = stepperTimer_->totalElapsedTime();
-    stepperTimer_->reset();
-    RCP<Teuchos::FancyOStream> out = this->getOStream();
-    Teuchos::OSTab ostab(out,0,"ScreenOutput");
-    *out
-    <<std::scientific<<std::setw( 6)<<std::setprecision(3)<<csmd->getIStep()
-                     <<std::setw(11)<<std::setprecision(3)<<csmd->getTime()
-                     <<std::setw(11)<<std::setprecision(3)<<csmd->getDt()
-                     <<std::setw(11)<<std::setprecision(3)<<csmd->getErrorAbs()
-                     <<std::setw(11)<<std::setprecision(3)<<csmd->getErrorRel()
-    <<std::fixed     <<std::setw( 7)<<std::setprecision(1)<<csmd->getOrder()
-    <<std::scientific<<std::setw( 7)<<std::setprecision(3)<<csmd->getNFailures()
-                     <<std::setw(11)<<std::setprecision(3)<<steppertime
-    <<std::endl;
-  }
-
   // Output and screen output
   if (csmd->getOutput() == true) {
     // Dump solution!
@@ -549,16 +548,10 @@ void IntegratorBasic<Scalar>::endIntegrator()
   }
 
   integratorTimer_->stop();
-  const double runtime = integratorTimer_->totalElapsedTime();
-  std::time_t end = std::time(nullptr);
+  runtime_ = integratorTimer_->totalElapsedTime();
+
   Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
-  Teuchos::OSTab ostab(out,0,"ScreenOutput");
-  *out << "============================================================================\n"
-       << "  Total runtime = " << runtime << " sec = "
-       << runtime/60.0 << " min\n"
-       << std::asctime(std::localtime(&end))
-       << exitStatus << "\n"
-       << std::endl;
+  //outputObserver_->observeEndIntegrator(*this, out, runtime);
 }
 
 
@@ -702,17 +695,6 @@ Teuchos::RCP<Tempus::IntegratorBasic<Scalar> > integratorBasic(
 /// Non-member constructor
 template<class Scalar>
 Teuchos::RCP<Tempus::IntegratorBasic<Scalar> > integratorBasic(
-  Teuchos::RCP<Teuchos::ParameterList>                     pList,
-  const Teuchos::RCP<Stepper<Scalar> >&                    stepper)
-{
-  Teuchos::RCP<Tempus::IntegratorBasic<Scalar> > integrator =
-    Teuchos::rcp(new Tempus::IntegratorBasic<Scalar>(pList, stepper));
-  return(integrator);
-}
-
-/// Non-member constructor
-template<class Scalar>
-Teuchos::RCP<Tempus::IntegratorBasic<Scalar> > integratorBasic(
   const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >&      model,
   std::string stepperType)
 {
@@ -727,6 +709,17 @@ Teuchos::RCP<Tempus::IntegratorBasic<Scalar> > integratorBasic()
 {
   Teuchos::RCP<Tempus::IntegratorBasic<Scalar> > integrator =
     Teuchos::rcp(new Tempus::IntegratorBasic<Scalar>());
+  return(integrator);
+}
+
+/// Non-member constructor
+template<class Scalar>
+Teuchos::RCP<Tempus::IntegratorBasic<Scalar> > integratorBasic(
+  Teuchos::RCP<Teuchos::ParameterList>                     pList,
+  std::vector<Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > > models)
+{
+  Teuchos::RCP<Tempus::IntegratorBasic<Scalar> > integrator =
+    Teuchos::rcp(new Tempus::IntegratorBasic<Scalar>(pList, models));
   return(integrator);
 }
 

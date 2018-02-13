@@ -486,7 +486,7 @@ void UnitTestRepository::setUpCLP(const Ptr<CommandLineProcessor>& clp)
   clp->setOption(
     "show-src-location", "no-show-src-location", &getData().showSrcLocation,
     "If true, then the location of the unit test source code is shown."
-    "  Only meaningfull if --show-test-details=ALL."
+    "  Only meaningful if --show-test-details=ALL."
     );
 
   clp->setOption(

@@ -49,7 +49,7 @@ namespace KokkosBatched {
           // inv_alpha11 = 1.0/A(p,p),
           alpha11 = A[p*as0+p*as1],
           *__restrict__ a12t = A+(p  )*as0+(p+1)*as1;
-            
+
         ValueType
           *__restrict__ a21  = A+(p+1)*as0+(p  )*as1,
           *__restrict__ A22  = A+(p+1)*as0+(p+1)*as1;
@@ -63,7 +63,7 @@ namespace KokkosBatched {
         member.team_barrier();
         Kokkos::parallel_for(Kokkos::TeamThreadRange(member,0,iend*jend),[&](const int &ij) {
 #if							\
-  defined (KOKKOS_HAVE_CUDA) &&				\
+  defined (KOKKOS_ENABLE_CUDA) &&				\
   defined (KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_CUDA)
             const int i = ij%iend, j = ij/iend;
 #else
@@ -102,7 +102,9 @@ namespace KokkosBatched {
                               ValueType *__restrict__ AA) {
         const int tsize = member.team_size();
         const int mb = mbAlgo;
-        const int nb = ((jb-mb) + (ib-mb))/tsize + ((jb-mb) + (ib-mb))%tsize > 0;
+        const int nb = ((jb-mb) + (ib-mb)) > 0?
+                       ((jb-mb) + (ib-mb))/tsize + (((jb-mb) + (ib-mb))%tsize > 0):
+                       1;
         const int kb = ib < jb ? ib : jb; 
 
         for (int p=0;p<kb;p+=mb) {
@@ -110,7 +112,7 @@ namespace KokkosBatched {
 
           // diagonal block
           ValueType *__restrict__ Ap = AA+p*as0+p*as1;
-                
+
           // lu on a block             
           member.team_barrier();
           if (member.team_rank() == 0)

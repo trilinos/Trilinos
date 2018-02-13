@@ -231,13 +231,5 @@ IF (Kokkos_ENABLE_Pthread)
   )
 ENDIF ()
 
-TRIBITS_ADD_EXECUTABLE_AND_TEST(
-  GitHubIssue101
-  SOURCES
-    Test_Main.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/sparse/Test_GitHubIssue101.cpp
-  NUM_MPI_PROCS 1
-  TESTONLYLIBS kokkoskernels_gtest
-)
 
  

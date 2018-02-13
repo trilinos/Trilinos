@@ -93,16 +93,20 @@ Setting up a build directory
 ----------------------------
 
 In order to configure, one must set up a build directory.  <Project> does
-*not* support in-source builds so the build tree must be seprate from the
+**not** support in-source builds so the build tree must be separate from the
 source tree.  The build tree can be created under the source tree such as
 with::
 
-  $ $SOURCE_DIR
-  $ mkdir <SOME_BUILD_DIR>
-  $ cd <SOME_BUILD_DIR>
+  $ cd <src-dir>/
+  $ mkdir <build-dir>
+  $ cd <build-dir>/
 
 but it is generally recommended to create a build directory parallel from the
-source tree.
+source tree such as with::
+
+  <some-base-dir>/
+    <src-dir>/
+    <build-dir>/
 
 NOTE: If you mistakenly try to configure for an in-source build (e.g. with
 'cmake .') you will get an error message and instructions on how to resolve
@@ -113,6 +117,10 @@ as shown above.
 
 Basic configuration
 -------------------
+
+A few different approaches for configuring are given below but likely the most
+recommended one for complex environments is to use ``*.cmake`` fragment files
+passed in through the `<Project>_CONFIGURE_OPTIONS_FILE`_ option.
 
 a) Create a 'do-configure' script such as [Recommended]::
 
@@ -132,8 +140,8 @@ a) Create a 'do-configure' script such as [Recommended]::
   ``SOURCE_BASE`` is set to the <Project> source base directory (or your can
   just give it explicitly in the script).
 
-  See `<Project>/sampleScripts/*cmake` for examples of real `do-configure`
-  scripts for different platforms..
+  See ``<Project>/sampleScripts/*`` for examples of real ``do-configure``
+  scripts for different platforms.
 
   NOTE: If one has already configured once and one needs to configure from
   scratch (needs to wipe clean defaults for cache variables, updates
@@ -150,7 +158,7 @@ b) Create a CMake file fragment and point to it [Recommended].
     EXTRA_ARGS=$@
     
     cmake \
-      -D <Project>_CONFIGURE_OPTIONS_FILE:FILEPATH=MyConfigureOptions.cmake \
+      -D <Project>_CONFIGURE_OPTIONS_FILE=MyConfigureOptions.cmake \
       -D <Project>_ENABLE_TESTS=ON \
       $EXTRA_ARGS \
       ${SOURCE_BASE}
@@ -165,17 +173,17 @@ b) Create a CMake file fragment and point to it [Recommended].
 
   Using a configuration fragment file allows for better reuse of configure
   options across different configure scripts and better version control of
-  configure options.  Using the comment "Set in MyConfigureOptions.cmake"
-  makes it easy see where that variable got set when looking an the
+  configure options.  Using the comment ``"Set in MyConfigureOptions.cmake"``
+  makes it easy see where that variable got set when looking an the generated
   CMakeCache.txt file.  Also, when this file changes, CMake will automatically
   trigger a reconfgure during a make (because it knows about the file and will
   check its time stamp).
 
-  One can use the ``FORCE`` option in the ``SET()`` shown above and that will
-  override any value of the options that might already be set.  However, that
-  will not allow the user to override the options on the CMake comamndline
-  using ``-D<VAR>=<value>`` so it is generally **not** desired to use
-  ``FORCE``.
+  One can use the ``FORCE`` option in the ``SET()`` commands shown above and
+  that will override any value of the options that might already be set.
+  However, that will not allow the user to override the options on the CMake
+  command-line using ``-D<VAR>=<value>`` so it is generally **not** desired to
+  use ``FORCE``.
 
   One can actually pass in a list of configuration fragment files separated by
   ''","'' which will be read in the order they are given::
@@ -188,7 +196,7 @@ b) Create a CMake file fragment and point to it [Recommended].
     -D <Project>_CONFIGURE_OPTIONS_FILE:STRING=cmake/MpiConfig1.cmake
 
   In this case, the relative paths will be with respect to the project base
-  source directory, not the current working directroy.  (By specifying the
+  source directory, not the current working directory.  (By specifying the
   type ``STRING``, one turns off CMake interpretation as a ``FILEPATH``.
   Otherwise, the type ``FILEPATH`` causes CMake to always interpret relative
   paths with respect to the current working directory and set the absolute
@@ -210,7 +218,7 @@ b) Create a CMake file fragment and point to it [Recommended].
   ``cmake -C`` only accepts a single file.  That saves from having to create
   another dummy ``*.cmake`` file that just includes the others.
 
-  3) One can create and use parameterized ``*.cmake`` files that can be used
+  3) One can create and use parametrized ``*.cmake`` files that can be used
   with multiple TriBITS projects.  For example, one can have set statements
   like ``SET(${PROJECT_NAME}_ENABLE_Fortran OFF ...)`` since ``PROJECT_NAME``
   is known before the file is included.  One can't do that with ``cmake -C``
@@ -794,6 +802,15 @@ cache variable::
 
   -D <Project>_CXX11_FLAGS="<compiler flags>"
 
+In order to enable C++11 but not have the default system set any flags for
+C++11, use::
+
+  -D <Project>_ENABLE_CXX11=ON
+  -D <Project>_CXX11_FLAGS=" "
+
+The empty space " " will result in the system assuming that no flags needs to
+be set.
+
 
 Enabling explicit template instantiation for C++
 ------------------------------------------------
@@ -1087,6 +1104,17 @@ To enable OpenMP support, one must set::
 
 Note that if you enable OpenMP directly through a compiler option (e.g.,
 ``-fopenmp``), you will NOT enable OpenMP inside <Project> source code.
+
+To skip adding flags for OpenMP for ``<LANG>`` = ``C``, ``CXX``, or
+``Fortran``, use::
+
+  -D OpenMP_<LANG>_FLAGS_OVERRIDE=" "
+
+The single space " " will result in no flags getting added.  This is needed
+since one can't set the flags ``OpenMP_<LANG>_FLAGS`` to an empty string or
+the ``FIND_PACKAGE(OpenMP)`` command will fail.  Setting the variable
+``-DOpenMP_<LANG>_FLAGS_OVERRIDE= " "`` is the only way to enable OpenMP but
+skip adding the OpenMP flags provided by ``FIND_PACKAGE(OpenMP)``.
 
 .. _BUILD_SHARED_LIBS:
 
@@ -1840,7 +1868,9 @@ Enabling extra repositories through a file
 
 .. _<Project>_EXTRAREPOS_FILE:
 
-In order to provide the list of extra TriBIITS repositories containing add-on
+.. _<Project>_ENABLE_KNOWN_EXTERNAL_REPOS_TYPE:
+
+In order to provide the list of extra TriBITS repositories containing add-on
 packages from a file, configure with::
 
   -D<Project>_EXTRAREPOS_FILE:FILEPATH=<EXTRAREPOSFILE> \
@@ -2859,7 +2889,8 @@ will set verbose output with CTest.
 Also note that one can submit results to a second CDash site as well by
 setting::
 
-  $ env TRIBITS_2ND_CTEST_DROP_SITE=<second-site> \
+  $ env \
+    TRIBITS_2ND_CTEST_DROP_SITE=<second-site> \
     TRIBITS_2ND_CTEST_DROP_LOCATION=<second-location> \
     ... \
     make dashboard

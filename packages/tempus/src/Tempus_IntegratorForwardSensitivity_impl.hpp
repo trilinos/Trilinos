@@ -14,6 +14,7 @@
 #include "Thyra_VectorStdOps.hpp"
 #include "Thyra_MultiVectorStdOps.hpp"
 #include "Tempus_CombinedForwardSensitivityModelEvaluator.hpp"
+#include "Tempus_WrapCombinedFSAModelEvaluator.hpp"
 
 namespace Tempus {
 
@@ -314,7 +315,7 @@ createSensitivityModelAndStepper(
   if (use_combined_method_) {
     spl->remove("Reuse State Linear Solver");
     sens_model_ =
-      rcp(new CombinedForwardSensitivityModelEvaluator<Scalar>(model_, spl));
+      wrapCombinedFSAModelEvaluator(model_, spl);
   }
   else {
     sens_stepper_ =

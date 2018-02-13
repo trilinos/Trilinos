@@ -81,8 +81,8 @@ public:
  
   using Constraint<Real>::value;
   void value(V &c, const V &x, Real &tol ) {
-    SV cs = Teuchos::dyn_cast<SV>(c);
-    const SV xs = Teuchos::dyn_cast<const SV>(x);
+    SV cs = dynamic_cast<SV&>(c);
+    const SV xs = dynamic_cast<const SV&>(x);
     value(*(cs.getVector()),*(xs.getVector()),tol); 
   }
 
@@ -92,9 +92,9 @@ public:
   
   using Constraint<Real>::applyJacobian;
   void applyJacobian( V &jv, const V &v, const V &x, Real &tol ) {
-    SV jvs = Teuchos::dyn_cast<SV>(jv);
-    const SV vs = Teuchos::dyn_cast<const SV>(v);
-    const SV xs = Teuchos::dyn_cast<const SV>(x);
+    SV jvs = dynamic_cast<SV&>(jv);
+    const SV vs = dynamic_cast<const SV&>(v);
+    const SV xs = dynamic_cast<const SV&>(x);
     applyJacobian(*(jvs.getVector()), *(vs.getVector()), *(xs.getVector()), tol);   
   }  
   
@@ -105,9 +105,9 @@ public:
 
   using Constraint<Real>::applyAdjointJacobian;
   void applyAdjointJacobian( V &aju, const V &u, const V &x, Real &tol ) {
-    SV ajus = Teuchos::dyn_cast<SV>(aju);
-    const SV us = Teuchos::dyn_cast<const SV>(u);
-    const SV xs = Teuchos::dyn_cast<const SV>(x);
+    SV ajus = dynamic_cast<SV&>(aju);
+    const SV us = dynamic_cast<const SV&>(u);
+    const SV xs = dynamic_cast<const SV&>(x);
     applyAdjointJacobian(*(ajus.getVector()),*(us.getVector()),*(xs.getVector()),tol);  
   }
 
@@ -119,10 +119,10 @@ public:
 
   using Constraint<Real>::applyAdjointHessian;
   void applyAdjointHessian( V &ahuv, const V &u, const V& v, const V &x, Real &tol ) {
-    SV ahuvs = Teuchos::dyn_cast<SV>(ahuv);
-    const SV us = Teuchos::dyn_cast<const SV>(u);
-    const SV vs = Teuchos::dyn_cast<const SV>(v);
-    const SV xs = Teuchos::dyn_cast<const SV>(x);
+    SV ahuvs = dynamic_cast<SV&>(ahuv);
+    const SV us = dynamic_cast<const SV&>(u);
+    const SV vs = dynamic_cast<const SV&>(v);
+    const SV xs = dynamic_cast<const SV&>(x);
     applyAdjointHessian(*(ahuvs.getVector()),*(us.getVector()),
                         *(vs.getVector()),*(xs.getVector()),tol);  
   }
@@ -148,7 +148,7 @@ void Sacado_StdConstraint<Real,Constr>::applyJacobianAD(vector<ScalarT> &jv, con
     int m = jv.size();
 
     // Create a vector of independent variables
-    Teuchos::RCP<Fadvector> x_fad = Teuchos::rcp( new Fadvector );
+    ROL::Ptr<Fadvector> x_fad = ROL::makePtr<Fadvector>();
 
     x_fad->reserve(n);
 
@@ -185,7 +185,7 @@ void Sacado_StdConstraint<Real,Constr>::applyAdjointJacobianAD(vector<ScalarT> &
     int m = u.size();
 
     // Create a vector of independent variables
-    Teuchos::RCP<Fadvector> x_fad = Teuchos::rcp( new Fadvector );
+    ROL::Ptr<Fadvector> x_fad = ROL::makePtr<Fadvector>();
 
     x_fad->reserve(n);
 
@@ -227,7 +227,7 @@ void Sacado_StdConstraint<Real,Constr>::applyAdjointHessianAD(vector<ScalarT> &a
   int n = x.size();
   
   // Create a vector of independent variables
-  Teuchos::RCP<Fadvector> x_fad = Teuchos::rcp( new Fadvector );
+  ROL::Ptr<Fadvector> x_fad = ROL::makePtr<Fadvector>();
 
   x_fad->reserve(n);
 

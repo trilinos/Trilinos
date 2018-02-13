@@ -53,6 +53,8 @@
 #include "BelosSolverManager.hpp"
 
 #include "BelosPseudoBlockCGIter.hpp"
+#include "BelosCGSingleRedIter.hpp"
+#include "BelosCGIter.hpp"
 #include "BelosStatusTestMaxIters.hpp"
 #include "BelosStatusTestGenResNorm.hpp"
 #include "BelosStatusTestCombo.hpp"
@@ -808,9 +810,15 @@ ReturnType PseudoBlockCGSolMgr<ScalarType,MV,OP,true>::solve ()
 
   //////////////////////////////////////////////////////////////////////////////////////
   // Pseudo-Block CG solver
+  Teuchos::RCP<CGIteration<ScalarType,MV,OP> > block_cg_iter;
+  if (numRHS2Solve == 1) {
+    block_cg_iter =
+      Teuchos::rcp (new CGIter<ScalarType,MV,OP> (problem_, printer_, outputTest_, plist));                                           
+  } else {
+    block_cg_iter =
+      Teuchos::rcp (new PseudoBlockCGIter<ScalarType,MV,OP> (problem_, printer_, outputTest_, plist));                                              
+  }
 
-  Teuchos::RCP<PseudoBlockCGIter<ScalarType,MV,OP> > block_cg_iter
-    = Teuchos::rcp( new PseudoBlockCGIter<ScalarType,MV,OP>(problem_,printer_,outputTest_,plist) );
 
   // Enter solve() iterations
   {

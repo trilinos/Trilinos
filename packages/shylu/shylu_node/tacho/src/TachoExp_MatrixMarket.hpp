@@ -29,7 +29,7 @@ namespace Tacho {
                               ordinal_type &row,
                               ordinal_type &col,
                               ValueType &val) {
-      typename TypeTraits<ValueType>::magnitude_type r, i;
+      typename ArithTraits<ValueType>::mag_type r, i;
       file >> row >> col >> r >> i;
       val = ValueType(r, i);
     }
@@ -70,6 +70,7 @@ namespace Tacho {
       /// \brief matrix market reader
       static CrsMatrixBase<ValueType,Kokkos::DefaultHostExecutionSpace>
       read(const std::string &filename, const ordinal_type verbose = 0) {
+        typedef ArithTraits<ValueType> ats;
         Kokkos::Impl::Timer timer;
 
         timer.reset();
@@ -100,17 +101,6 @@ namespace Tacho {
 
           hermitian = (header.find("hermitian") != std::string::npos);
 
-          //cmplx = (header.find("complex") != std::string::npos);
-          // typedef TypeTraits<ValueType>::scalar_type scalar_type;
-          // if (cmplx) {
-          //   TACHO_TEST_FOR_EXCEPTION(!std::is_same<ValueType,Kokkos::complex<scalar_type> >::value,
-          //                            std::logic_error,
-          //                            "input file is complex format but data type is not complex");
-          // } else {
-          //   TACHO_TEST_FOR_EXCEPTION(!std::is_same<ValueType,scalar_type>::value,
-          //                            std::logic_error,
-          //                            "input file is real format but data type is not real");
-          // }
           file >> m >> n >> nnz;
         }
 
@@ -133,7 +123,7 @@ namespace Tacho {
 
             mm.push_back(ijv_type(row, col, val));
             if (symmetry && row != col) 
-              mm.push_back(ijv_type(col, row, hermitian ? conj(val) : val));
+              mm.push_back(ijv_type(col, row, hermitian ? ats::conj(val) : val));
           }
           std::sort(mm.begin(), mm.end(), std::less<ijv_type>());
 
@@ -202,6 +192,7 @@ namespace Tacho {
       write(std::ofstream &file,
             const CrsMatrixBase<ValueType,Kokkos::DefaultHostExecutionSpace> &A,
             const std::string comment = "%% Tacho::MatrixMarket::Export") {
+        typedef ArithTraits<ValueType> ats;
         typedef ValueType value_type;
 
         std::streamsize prec = file.precision();
@@ -210,7 +201,7 @@ namespace Tacho {
 
         {
           file << "%%MatrixMarket matrix coordinate "
-               << (is_complex_type<value_type>::value ? "complex " : "real ")
+               << (ats::is_complex ? "complex " : "real ")
                << (is_valid_uplo_tag<uplo>::value ? "symmetric " : "general ")
                << std::endl;
           file << comment << std::endl;

@@ -78,6 +78,31 @@ PHX_EVALUATOR_CTOR(VectorToScalar,p)
 }
 
 //**********************************************************************
+
+template<typename EvalT, typename Traits>				\
+VectorToScalar<EvalT,Traits>::
+VectorToScalar(const PHX::FieldTag & input,
+               const std::vector<PHX::Tag<ScalarT>> & output)
+{
+  // setup the fields
+  vector_field = input;
+
+  scalar_fields.resize(output.size());
+  for(std::size_t i=0;i<output.size();i++) 
+    scalar_fields[i] = output[i];
+
+  // add dependent/evaluate fields
+  this->addDependentField(vector_field);
+  
+  for (std::size_t i=0; i < scalar_fields.size(); ++i)
+    this->addEvaluatedField(scalar_fields[i]);
+  
+  // name array
+  std::string n = "VectorToScalar: " + vector_field.fieldTag().name();
+  this->setName(n);
+}
+
+//**********************************************************************
 PHX_POST_REGISTRATION_SETUP(VectorToScalar, /* worksets */, fm)
 {
   for (std::size_t i=0; i < scalar_fields.size(); ++i)
@@ -92,19 +117,18 @@ PHX_EVALUATE_FIELDS(VectorToScalar,workset)
 
   typedef typename PHX::MDField<ScalarT,Cell,Point>::size_type size_type;
 
-  // Loop over cells
-  for (index_t cell = 0; cell < workset.num_cells; ++cell) {
-
-    // Loop over points
-    for (size_type pt = 0; pt < vector_field.dimension(1); ++pt) {
-      
-      // Loop over scalars
-      for (std::size_t sc = 0; sc < scalar_fields.size(); ++sc) {
-      
-	scalar_fields[sc](cell,pt) = vector_field(cell,pt,sc);
-
+  // Need local copies for cuda, *this is not usable
+  auto local_vector_field = vector_field;
+  // Loop over scalars
+  for (std::size_t sc = 0; sc < scalar_fields.size(); ++sc) {
+    auto local_scalar_field = scalar_fields[sc];
+    // Loop over cells
+    Kokkos::parallel_for(workset.num_cells, KOKKOS_LAMBDA (const index_t cell) {
+      // Loop over points
+      for (size_type pt = 0; pt < vector_field.dimension(1); ++pt) {
+        local_scalar_field(cell,pt) = local_vector_field(cell,pt,sc);
       }
-    }
+    });
   }
 }
 

@@ -306,7 +306,7 @@ void AlgParMETIS<Adapter>::partition(
     pm_idx_t pm_edgecut = -1;
     pm_idx_t pm_options[METIS_NOPTIONS];
     pm_options[0] = 1;   // Use non-default options for some ParMETIS options
-    for (int i = 0; i < METIS_NOPTIONS; i++) 
+    for (int i = 1; i < METIS_NOPTIONS; i++) 
       pm_options[i] = 0; // Default options
     pm_options[2] = 15;  // Matches default value used in Zoltan
   

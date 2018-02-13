@@ -40,7 +40,7 @@ namespace { // (anonymous)
   void
   split(const std::string& s,
         std::function<void(const std::string&)> f,
-        const char sep=':')
+        const char sep=',')
   {
     typedef std::string::size_type size_type;
     size_type cur_pos, last_pos=0, length=s.length();
@@ -290,7 +290,7 @@ bool Behavior::assumeMpiIsCudaAware ()
 bool Behavior::debug (const char name[])
 {
   constexpr char envVarName[] = "TPETRA_DEBUG";
-  constexpr bool defaultValue = debugDefault();
+  constexpr bool defaultValue = false;
 
   static std::once_flag flag_;
   static bool initialized_ = false;
@@ -304,7 +304,7 @@ bool Behavior::debug (const char name[])
 bool Behavior::verbose (const char name[])
 {
   constexpr char envVarName[] = "TPETRA_VERBOSE";
-  constexpr bool defaultValue = verboseDefault();
+  constexpr bool defaultValue = false;
 
   static std::once_flag flag_;
   static bool initialized_ = false;

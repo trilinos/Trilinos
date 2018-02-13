@@ -131,7 +131,7 @@ TRIBITS_REPOSITORY_DEFINE_PACKAGES(
   Panzer                packages/panzer                   PT
   Sundance              packages/Sundance                 ST # Could be PT based on deps (BUG: 4669)
   CTrilinos             packages/CTrilinos                ST # Switched to ST to speed up checkin testing
-  ForTrilinos           packages/ForTrilinos              EX
+#  ForTrilinos           packages/ForTrilinos              EX
   PyTrilinos            packages/PyTrilinos               ST
   WebTrilinos           packages/WebTrilinos              EX # Should be ST
   NewPackage            packages/new_package              EX # Should be ST

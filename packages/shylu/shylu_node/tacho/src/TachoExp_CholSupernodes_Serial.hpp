@@ -69,12 +69,6 @@ namespace Tacho {
              const ordinal_type sid,
              const size_type bufsize,
              /* */ void *buf) {
-#if defined( KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_HOST )
-#if defined( TACHO_PROFILE_TIME_PER_THREAD )
-        Kokkos::Impl::Timer timer;
-        timer.reset();
-#endif
-#endif
         typedef SupernodeInfoType supernode_info_type;
 
         typedef typename supernode_info_type::value_type value_type;
@@ -177,11 +171,6 @@ namespace Tacho {
             Kokkos::load_fence();
           }
         }
-// #if defined( KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_HOST )
-// #if defined( TACHO_PROFILE_TIME_PER_THREAD )
-//           g_time_per_thread[omp_get_thread_num()] += timer.seconds();
-// #endif
-// #endif
         return 0;
       }
 

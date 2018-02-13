@@ -66,8 +66,8 @@ template<class Real>
 class ParametrizedObjectiveEx7 : public ROL::Objective<Real> {
 public:
   Real value( const ROL::Vector<Real> &x, Real &tol ) {
-    Teuchos::RCP<const std::vector<Real> > ex
-      = Teuchos::dyn_cast<const ROL::StdVector<Real> >(x).getVector();
+    ROL::Ptr<const std::vector<Real> > ex
+      = dynamic_cast<const ROL::StdVector<Real>&>(x).getVector();
     Real quad(0), lin(0);
     std::vector<Real> p = ROL::Objective<Real>::getParameter();
     unsigned size = static_cast<unsigned>(ex->size());
@@ -79,10 +79,10 @@ public:
   }
 
   void gradient( ROL::Vector<Real> &g, const ROL::Vector<Real> &x, Real &tol ) {
-    Teuchos::RCP<const std::vector<Real> > ex
-      = Teuchos::dyn_cast<const ROL::StdVector<Real> >(x).getVector();
-    Teuchos::RCP<std::vector<Real> > eg
-      = Teuchos::dyn_cast<ROL::StdVector<Real> >(g).getVector();
+    ROL::Ptr<const std::vector<Real> > ex
+      = dynamic_cast<const ROL::StdVector<Real>&>(x).getVector();
+    ROL::Ptr<std::vector<Real> > eg
+      = dynamic_cast<ROL::StdVector<Real>&>(g).getVector();
     std::vector<Real> p = ROL::Objective<Real>::getParameter();
     unsigned size = static_cast<unsigned>(ex->size());
     const Real two(2);
@@ -93,10 +93,10 @@ public:
 
   void hessVec( ROL::Vector<Real> &hv, const ROL::Vector<Real> &v,
                 const ROL::Vector<Real> &x, Real &tol ) {
-    Teuchos::RCP<const std::vector<Real> > ev
-      = Teuchos::dyn_cast<const ROL::StdVector<Real> >(v).getVector();
-    Teuchos::RCP<std::vector<Real> > ehv
-      = Teuchos::dyn_cast<ROL::StdVector<Real> >(hv).getVector();
+    ROL::Ptr<const std::vector<Real> > ev
+      = dynamic_cast<const ROL::StdVector<Real>&>(v).getVector();
+    ROL::Ptr<std::vector<Real> > ehv
+      = dynamic_cast<ROL::StdVector<Real>&>(hv).getVector();
     std::vector<Real> p = ROL::Objective<Real>::getParameter();
     unsigned size = static_cast<unsigned>(ev->size());
     const Real two(2);
@@ -107,10 +107,10 @@ public:
 };
 
 void setUpAndSolve(Teuchos::ParameterList &list,
-                   Teuchos::RCP<ROL::Objective<RealT> > &pObj,
-                   Teuchos::RCP<ROL::SampleGenerator<RealT> > &sampler,
-                   Teuchos::RCP<ROL::Vector<RealT> > &x,
-                   Teuchos::RCP<ROL::BoundConstraint<RealT> > &bnd,
+                   ROL::Ptr<ROL::Objective<RealT> > &pObj,
+                   ROL::Ptr<ROL::SampleGenerator<RealT> > &sampler,
+                   ROL::Ptr<ROL::Vector<RealT> > &x,
+                   ROL::Ptr<ROL::BoundConstraint<RealT> > &bnd,
                    std::ostream & outStream) {
   ROL::OptimizationProblem<RealT> opt(pObj,x,bnd);
   opt.setStochasticObjective(list,sampler);
@@ -122,7 +122,7 @@ void setUpAndSolve(Teuchos::ParameterList &list,
 }
 
 template<class Real>
-Real random(const Teuchos::RCP<const Teuchos::Comm<int> > &commptr) {
+Real random(const ROL::Ptr<const Teuchos::Comm<int> > &commptr) {
   Real val(0);
   if ( Teuchos::rank<int>(*commptr)==0 ) {
     //srand(time(NULL));
@@ -134,7 +134,7 @@ Real random(const Teuchos::RCP<const Teuchos::Comm<int> > &commptr) {
 }
 
 void setRandomVector(std::vector<RealT> &x,
-               const Teuchos::RCP<const Teuchos::Comm<int> > &commptr) {
+               const ROL::Ptr<const Teuchos::Comm<int> > &commptr) {
   unsigned dim = static_cast<unsigned>(x.size());
   for ( unsigned i = 0; i < dim; i++ ) {
     x[i] = random<RealT>(commptr);
@@ -154,17 +154,17 @@ void printSolution(const std::vector<RealT> &x,
 int main(int argc, char* argv[]) {
 
   Teuchos::GlobalMPISession mpiSession(&argc, &argv);
-  Teuchos::RCP<const Teuchos::Comm<int> > commptr =
+  ROL::Ptr<const Teuchos::Comm<int> > commptr =
     Teuchos::DefaultComm<int>::getComm();
 
   // This little trick lets us print to std::cout only if a (dummy) command-line argument is provided.
   int iprint     = argc - 1;
-  Teuchos::RCP<std::ostream> outStream;
+  ROL::Ptr<std::ostream> outStream;
   Teuchos::oblackholestream bhs; // outputs nothing
   if (iprint > 0 && commptr->getRank()==0)
-    outStream = Teuchos::rcp(&std::cout, false);
+    outStream = ROL::makePtrFromRef(std::cout);
   else
-    outStream = Teuchos::rcp(&bhs, false);
+    outStream = ROL::makePtrFromRef(bhs);
 
   int errorFlag  = 0;
 
@@ -178,36 +178,36 @@ int main(int argc, char* argv[]) {
     Teuchos::updateParametersFromXmlFile( filename, parlist.ptr() );
     Teuchos::ParameterList list = *parlist;
     // Build ROL algorithm
-    Teuchos::RCP<ROL::Algorithm<RealT> > algo;
+    ROL::Ptr<ROL::Algorithm<RealT> > algo;
     /**********************************************************************************************/
     /************************* CONSTRUCT SOL COMPONENTS *******************************************/
     /**********************************************************************************************/
     // Build vectors
     const unsigned dim = 4;
-    Teuchos::RCP<std::vector<RealT> > x_rcp = Teuchos::rcp(new std::vector<RealT>(dim));
-    Teuchos::RCP<std::vector<RealT> > d_rcp = Teuchos::rcp(new std::vector<RealT>(dim));
-    Teuchos::RCP<ROL::Vector<RealT> > x = Teuchos::rcp(new ROL::StdVector<RealT>(x_rcp));
-    Teuchos::RCP<ROL::Vector<RealT> > d = Teuchos::rcp(new ROL::StdVector<RealT>(d_rcp));
-    setRandomVector(*x_rcp,commptr);
-    setRandomVector(*d_rcp,commptr);
+    ROL::Ptr<std::vector<RealT> > x_ptr = ROL::makePtr<std::vector<RealT>>(dim);
+    ROL::Ptr<std::vector<RealT> > d_ptr = ROL::makePtr<std::vector<RealT>>(dim);
+    ROL::Ptr<ROL::Vector<RealT> > x = ROL::makePtr<ROL::StdVector<RealT>>(x_ptr);
+    ROL::Ptr<ROL::Vector<RealT> > d = ROL::makePtr<ROL::StdVector<RealT>>(d_ptr);
+    setRandomVector(*x_ptr,commptr);
+    setRandomVector(*d_ptr,commptr);
     // Build samplers
     const RealT zero(0), one(1);
     const int nSamp = 1000;
     const unsigned sdim = dim + 2;
     std::vector<RealT> tmp = {-one, one};
     std::vector<std::vector<RealT> > bounds(sdim,tmp);
-    Teuchos::RCP<ROL::BatchManager<RealT> > bman =
-      Teuchos::rcp(new ROL::StdTeuchosBatchManager<RealT,int>(commptr));
-    Teuchos::RCP<ROL::SampleGenerator<RealT> > sampler =
-      Teuchos::rcp(new ROL::MonteCarloGenerator<RealT>(nSamp,bounds,bman,false,false,100));
+    ROL::Ptr<ROL::BatchManager<RealT> > bman =
+      ROL::makePtr<ROL::StdTeuchosBatchManager<RealT,int>>(commptr);
+    ROL::Ptr<ROL::SampleGenerator<RealT> > sampler =
+      ROL::makePtr<ROL::MonteCarloGenerator<RealT>>(nSamp,bounds,bman,false,false,100);
     // Build risk-averse objective function
-    Teuchos::RCP<ROL::Objective<RealT> > pObj =
-      Teuchos::rcp(new ParametrizedObjectiveEx7<RealT>);
+    ROL::Ptr<ROL::Objective<RealT> > pObj =
+      ROL::makePtr<ParametrizedObjectiveEx7<RealT>>();
     // Build bound constraints
     std::vector<RealT> l(dim,zero);
     std::vector<RealT> u(dim,one);
-    Teuchos::RCP<ROL::BoundConstraint<RealT> > bnd = 
-      Teuchos::rcp( new ROL::StdBoundConstraint<RealT>(l,u) );
+    ROL::Ptr<ROL::BoundConstraint<RealT> > bnd = 
+      ROL::makePtr<ROL::StdBoundConstraint<RealT>>(l,u);
     bnd->deactivate();
     // Test parametrized objective functions
     *outStream << "Check Derivatives of Parametrized Objective Function\n";
@@ -218,9 +218,9 @@ int main(int argc, char* argv[]) {
     /************************* MEAN PLUS HMCR *****************************************************/
     /**********************************************************************************************/
     *outStream << "\nMEAN PLUS HIGHER MOMENT COHERENT RISK MEASURE\n";
-    setRandomVector(*x_rcp,commptr);
+    setRandomVector(*x_ptr,commptr);
     setUpAndSolve(list,pObj,sampler,x,bnd,*outStream);
-    printSolution(*x_rcp,*outStream);
+    printSolution(*x_ptr,*outStream);
   }
   catch (std::logic_error err) {
     *outStream << err.what() << "\n";

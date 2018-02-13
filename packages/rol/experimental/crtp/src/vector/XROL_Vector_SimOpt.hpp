@@ -50,10 +50,6 @@ namespace XROL {
 
 namespace details {
 
-template<class F, class Tuple>
-decltype(auto) evaluate( const F& f, Tuple&& t );
-
-template<class V> Vector;
 template<class U, class Z> Vector_SimOpt;
 
 template<class U, class Z>
@@ -71,6 +67,14 @@ struct DualType<Vector_SimOpt<U,Z>> {
   using type = Vector_SimOpt<dual_t<U>,dual_t<Z>>;
 };
 
+tempate<class U, class Z>
+struct SelfDual<Vector_SimOpt<U,Z>> {
+  static constexpr auto value = 
+    SelfDual<U>::value and SelfDual<Z>::value;
+};
+
+
+
 template<class U, class Z>
 class Vector_SimOpt : public Vector<U,Z> {
   using IndexT   = index_t<Vector_SimOpt>;
@@ -80,13 +84,22 @@ class Vector_SimOpt : public Vector<U,Z> {
 
 private:
 
-  unique_ptr<U> sim_;
-  unique_ptr<Z> opt_;
+  template<class X>
+  using ptr_t = typename PointerType<X,is_same<X,dual_t<X>>>::type;
+
+  ptr_t<U> sim_;
+  ptr_t<Z> opt_;
+  
+  mutable unique_ptr<DualT> dual_vec_;
 
 public:
 
-  Vector_SimOpt( unique_ptr<U> sim, unique_ptr<Z> opt ) :
-    sim_(move(sim)), opt_(move(opt)) {}
+  Vector_SimOpt( ptr_t<U> sim, ptr_t<Z> opt ) {
+    if(!SelfDual<Vector_SimOpt>::value) {
+      dual_vec_ = make_unique<DualT>(move(sim->dual().clone()),
+                                     move(opt->dual().clone());
+    }
+  }
 
   void plus( const Vector_SimOpt& x ) {
     sim_->plus(x.get_1());
@@ -135,11 +148,14 @@ public:
     return sim_->dimension() + opt_->dimension();
   }
 
-  const DualT& dual() const {
-    auto ustar = sim_->dual().clone(); ustar->set(sim_->dual());
-    auto zstar = opt_->dual().clone(); zstar->set(opt_->dual());
-    auto xstar = make_unique<DualT>(ustar,zstar);
-    return *move(xstar);
+  enable_if_t<SelfDual<Vector_SimOpt>,const DualT&>
+  dual() const {
+    return *this;
+  }
+
+  enable_if_t<!SelfDual<Vector_SimOpt>,const DualT&>
+  dual() const {
+    return *dual_vec_;
   }
 
   void print( ostream &os, const string& delimiter = " " ) const {

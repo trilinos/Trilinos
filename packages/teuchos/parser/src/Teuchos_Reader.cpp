@@ -312,6 +312,9 @@ void Reader::read_string(any& result, std::string const& string, std::string con
 
 void Reader::read_file(any& result, std::string const& file_name) {
   std::ifstream stream(file_name.c_str());
+  TEUCHOS_TEST_FOR_EXCEPTION(!stream.is_open(),
+      ParserFail,
+      "Could not open file " << file_name);
   read_stream(result, stream, file_name);
 }
 
@@ -338,7 +341,6 @@ void DebugReader::at_shift(any& result, int token, std::string& text) {
     }
   }
   os << "SHIFT (" << at(grammar->symbol_names, token) << ")[" << text_escaped << "]\n";
-  os << "symbol_indentation_stack.back() " << symbol_indentation_stack.back() << '\n';
 }
 
 void DebugReader::at_reduce(any& result, int prod_i, std::vector<any>& rhs) {
@@ -353,7 +355,6 @@ void DebugReader::at_reduce(any& result, int prod_i, std::vector<any>& rhs) {
   }
   const std::string& lhs_name = at(grammar->symbol_names, prod.lhs);
   os << " -> (" << lhs_name << ")[" << lhs_text << "]\n";
-  os << "symbol_indentation_stack.back() " << symbol_indentation_stack.back() << '\n';
 }
 
 }  // namespace Teuchos

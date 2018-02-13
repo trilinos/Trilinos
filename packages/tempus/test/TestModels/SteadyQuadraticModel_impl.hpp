@@ -17,6 +17,7 @@
 #include "Thyra_DefaultSerialDenseLinearOpWithSolveFactory.hpp"
 #include "Thyra_DefaultMultiVectorLinearOpWithSolve.hpp"
 #include "Thyra_DefaultLinearOpSource.hpp"
+#include "Thyra_MultiVectorStdOps.hpp"
 #include "Thyra_VectorStdOps.hpp"
 #include "Thyra_DefaultMultiVectorProductVector.hpp"
 
@@ -275,6 +276,23 @@ evalModelImpl(
       }
     }
   }
+
+  // Responses:  g = x
+  RCP<VectorBase<Scalar> > g_out = outArgs.get_g(0);
+  if (g_out != Teuchos::null)
+    Thyra::assign(g_out.ptr(), *x_in);
+
+  RCP<Thyra::MultiVectorBase<Scalar> > DgDp_out =
+    outArgs.get_DgDp(0,0).getMultiVector();
+  if (DgDp_out != Teuchos::null)
+    Thyra::assign(DgDp_out.ptr(), Scalar(0.0));
+
+  RCP<Thyra::MultiVectorBase<Scalar> > DgDx_out =
+    outArgs.get_DgDx(0).getMultiVector();
+  if (DgDx_out != Teuchos::null) {
+    Thyra::DetachedMultiVectorView<Scalar> DgDx_out_view( *DgDx_out );
+    DgDx_out_view(0,0) = 1.0;
+  }
 }
 
 template<class Scalar>
@@ -349,7 +367,11 @@ setupInOutArgs_() const
     outArgs.setSupports( Thyra::ModelEvaluatorBase::OUT_ARG_W_op );
     outArgs.set_Np_Ng(Np_,Ng_);
     outArgs.setSupports( Thyra::ModelEvaluatorBase::OUT_ARG_DfDp,0,
-                         Thyra::ModelEvaluatorBase::DERIV_MV_BY_COL );
+                         Thyra::ModelEvaluatorBase::DERIV_MV_JACOBIAN_FORM );
+    outArgs.setSupports( Thyra::ModelEvaluatorBase::OUT_ARG_DgDx,0,
+                         Thyra::ModelEvaluatorBase::DERIV_MV_GRADIENT_FORM );
+    outArgs.setSupports( Thyra::ModelEvaluatorBase::OUT_ARG_DgDp,0,0,
+                         Thyra::ModelEvaluatorBase::DERIV_MV_GRADIENT_FORM );
     outArgs_ = outArgs;
   }
 

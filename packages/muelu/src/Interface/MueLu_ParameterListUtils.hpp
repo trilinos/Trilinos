@@ -67,7 +67,7 @@ namespace MueLu {
   // Extract all the parameters that begin with "str:" (but skip sublist)
   Teuchos::RCP<Teuchos::ParameterList> ExtractSetOfParameters(const Teuchos::ParameterList & paramList, const std::string & str);
 
-  //! replace all string occurences "from" with "to" in "str"
+  //! replace all string occurrences "from" with "to" in "str"
   //!
   //! @param str: input and output string
   //! @param from: search string
@@ -82,21 +82,21 @@ namespace MueLu {
     replaceAll(str, placeholder, s.str());
     return true;
   }
-  
+
   template<typename Type>
   bool actionInterpretParameter(Teuchos::ParameterList& mlParams, const std::string& paramName, std::string& str) {
-   
+
     //MUELU_READ_PARAM(mlParams, paramName, int, 0, data);
-    
+
     Type varName; // = defaultValue; // extract from master list
     if (mlParams.isParameter(paramName)) varName = mlParams.get<Type>(paramName);
-    
+
     std::stringstream placeholder;
     placeholder << "$" << paramName << "$";
 
     return MueLu::replacePlaceholder<Type>(str, placeholder.str(), varName);
-  }  
-  
+  }
+
 } // namespace MueLu
 
 #endif // MUELU_PARAMETERLISTUTILS_HPP

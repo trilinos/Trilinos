@@ -151,6 +151,7 @@ int main(int argc, char* argv[])
 
 //  // create the RegionMatrix to access the assembled, the composite, and the regional matrix
 //  Teuchos::RCP<RegionMatrix> regionMatrix = Teuchos::rcp(new RegionMatrix(matrixFileName, regionManager, comm));
+//  regionMatrix->printCompositeMatrix(*out, Teuchos::VERB_EXTREME);
 
 #ifdef HAVE_MPI
   MPI_Finalize();

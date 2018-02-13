@@ -253,6 +253,14 @@ int ML_Epetra::EdgeMatrixFreePreconditioner::BuildProlongator(const Epetra_Multi
 					       MLAggr,P,NumAggregates);
   if(rv!=0) ML_CHK_ERR(-2);
 
+  print_hierarchy= List_.get("print hierarchy",false);
+  if (print_hierarchy) {
+    /* Wrap P_n into Epetra-land */
+    Epetra_CrsMatrix *P_epetra;
+    Epetra_CrsMatrix_Wrap_ML_Operator(P,*Comm_,*NodeRangeMap_,&P_epetra,Copy,0);
+    EpetraExt::RowMatrixToMatlabFile("P.dat",*P_epetra);
+    EpetraExt::RowMatrixToMatrixMarketFile("P2.dat",*P_epetra, "P", "P", true);
+  }
 
   /* Create wrapper to do abs(T) */
   // NTS: Assume D0 has already been reindexed by now.
@@ -268,8 +276,12 @@ int ML_Epetra::EdgeMatrixFreePreconditioner::BuildProlongator(const Epetra_Multi
   Epetra_CrsMatrix *Psparse;
   Epetra_CrsMatrix_Wrap_ML_Operator(AbsD0P,*Comm_,*EdgeRangeMap_,&Psparse,Copy,0);
 
+  if (print_hierarchy) EpetraExt::RowMatrixToMatlabFile("P_intermediate.dat",*Psparse);
+
   /* Nuke the rows in Psparse */
   if(BCedges_.size()>0) Apply_BCsToMatrixRows(BCedges_.get(),BCedges_.size(),*Psparse);
+
+  if (print_hierarchy) EpetraExt::RowMatrixToMatlabFile("P_intermediate2.dat",*Psparse);
 
   /* Build the DomainMap of the new operator*/
   const Epetra_Map & FineColMap = Psparse->ColMap();

@@ -442,7 +442,9 @@ namespace Xpetra {
 
     local_matrix_type getLocalMatrix () const {
       throw std::runtime_error("Xpetra::TpetraBlockCrsMatrix does not support getLocalMatrix due to missing Kokkos::CrsMatrix in Tpetra's experimental implementation");
+#ifndef __NVCC__ //prevent nvcc warning
       local_matrix_type ret;
+#endif
       TEUCHOS_UNREACHABLE_RETURN(ret);
     }
 #endif

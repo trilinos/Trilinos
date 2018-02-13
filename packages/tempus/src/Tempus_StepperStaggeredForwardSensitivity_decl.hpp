@@ -10,7 +10,7 @@
 #define Tempus_StepperStaggeredForwardSensitivity_decl_hpp
 
 #include "Tempus_Stepper.hpp"
-#include "Tempus_StaggeredForwardSensitivityModelEvaluator.hpp"
+#include "Tempus_SensitivityModelEvaluatorBase.hpp"
 
 namespace Tempus {
 
@@ -97,6 +97,18 @@ public:
     virtual Scalar getOrder() const {return stateStepper_->getOrder();}
     virtual Scalar getOrderMin() const {return stateStepper_->getOrderMin();}
     virtual Scalar getOrderMax() const {return stateStepper_->getOrderMax();}
+
+    virtual bool isExplicit()         const
+      {return stateStepper_->isExplicit() or sensitivityStepper_->isExplicit();}
+    virtual bool isImplicit()         const
+      {return stateStepper_->isImplicit() or sensitivityStepper_->isImplicit();}
+    virtual bool isExplicitImplicit() const
+      {return isExplicit() and isImplicit();}
+
+    virtual bool isOneStepMethod()   const
+      {return stateStepper_->isOneStepMethod() and
+              sensitivityStepper_->isOneStepMethod();}
+    virtual bool isMultiStepMethod() const {return !isOneStepMethod();}
   //@}
 
   /// \name ParameterList methods
@@ -131,7 +143,8 @@ private:
   Teuchos::RCP<Teuchos::ParameterList>               sensPL_;
   Teuchos::RCP<Stepper<Scalar> >                     stateStepper_;
   Teuchos::RCP<Stepper<Scalar> >                     sensitivityStepper_;
-  Teuchos::RCP<StaggeredForwardSensitivityModelEvaluator<Scalar> > fsa_model_;
+  Teuchos::RCP<SensitivityModelEvaluatorBase<Scalar> > combined_fsa_model_;
+  Teuchos::RCP<SensitivityModelEvaluatorBase<Scalar> > fsa_model_;
   Teuchos::RCP<SolutionHistory<Scalar> > stateSolutionHistory_;
   Teuchos::RCP<SolutionHistory<Scalar> > sensSolutionHistory_;
   bool reuse_solver_;

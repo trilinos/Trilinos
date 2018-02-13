@@ -85,14 +85,14 @@ private:
   Real eps_;
   int  reg_type_;
 
-  Teuchos::RCP<const vector> getVector( const V& x ) {
-    using Teuchos::dyn_cast;
-    return dyn_cast<const SV>(x).getVector();
+  ROL::Ptr<const vector> getVector( const V& x ) {
+    
+    return dynamic_cast<const SV&>(x).getVector();
   }
   
-  Teuchos::RCP<vector> getVector( V& x ) {
-    using Teuchos::dyn_cast;
-    return dyn_cast<SV>(x).getVector();
+  ROL::Ptr<vector> getVector( V& x ) {
+    
+    return dynamic_cast<SV&>(x).getVector();
   }
 
 public:
@@ -104,9 +104,9 @@ public:
 
   /* REGULARIZATION DEFINITIONS */
   Real reg_value(const Vector<Real> &z) {
-    using Teuchos::RCP;
+    
 
-    RCP<const vector> zp = getVector(z);
+    ROL::Ptr<const vector> zp = getVector(z);
 
     Real val = 0.0;
     for (uint i = 0; i < nz_; i++) {
@@ -126,23 +126,23 @@ public:
   }
 
   void reg_gradient(Vector<Real> &g, const Vector<Real> &z) {
-    using Teuchos::RCP;     
+         
 
     if ( reg_type_ == 2 ) {
       g.set(z);
       g.scale(alpha_*hz_);    
     } 
     else if ( reg_type_ == 1 ) {
-      RCP<const vector> zp = getVector(z);
-      RCP<vector >      gp = getVector(g);
+      ROL::Ptr<const vector> zp = getVector(z);
+      ROL::Ptr<vector >      gp = getVector(g);
 
       for (uint i = 0; i < nz_; i++) {
         (*gp)[i] = alpha_ * hz_ * (*zp)[i]/std::sqrt(std::pow((*zp)[i],2.0)+eps_);
       }
     }
     else if ( reg_type_ == 0 ) {
-      RCP<const vector> zp = getVector(z);
-      RCP<vector>       gp = getVector(g);
+      ROL::Ptr<const vector> zp = getVector(z);
+      ROL::Ptr<vector>       gp = getVector(g);
 
       Real diff = 0.0;
       for (uint i = 0; i < nz_; i++) {
@@ -166,25 +166,25 @@ public:
 
   void reg_hessVec(Vector<Real> &hv, const Vector<Real> &v, const Vector<Real> &z) {
 
-    using Teuchos::RCP;
+    
 
     if ( reg_type_ == 2 ) {
       hv.set(v);
       hv.scale(alpha_*hz_);
     }
     else if ( reg_type_ == 1 ) {
-      RCP<const vector> zp  = getVector(z);
-      RCP<const vector> vp  = getVector(v);
-      RCP<vector>       hvp = getVector(hv);
+      ROL::Ptr<const vector> zp  = getVector(z);
+      ROL::Ptr<const vector> vp  = getVector(v);
+      ROL::Ptr<vector>       hvp = getVector(hv);
 
       for (uint i = 0; i < nz_; i++) {
         (*hvp)[i] = alpha_*hz_*(*vp)[i]*eps_/std::pow(std::pow((*zp)[i],2.0)+eps_,3.0/2.0);
       }
     }
     else if ( reg_type_ == 0 ) {
-      RCP<const vector> zp  = getVector(z);
-      RCP<const vector> vp  = getVector(v);
-      RCP<vector>       hvp = getVector(hv);
+      ROL::Ptr<const vector> zp  = getVector(z);
+      ROL::Ptr<const vector> vp  = getVector(v);
+      ROL::Ptr<vector>       hvp = getVector(hv);
 
       Real diff1 = 0.0;
       Real diff2 = 0.0;
@@ -213,9 +213,9 @@ public:
   /* FINITE ELEMENT DEFINTIONS */
   void apply_mass(Vector<Real> &Mf, const Vector<Real> &f ) {
 
-    using Teuchos::RCP;
-    RCP<const vector> fp  = getVector(f);
-    RCP<vector>       Mfp = getVector(Mf);
+    
+    ROL::Ptr<const vector> fp  = getVector(f);
+    ROL::Ptr<vector>       Mfp = getVector(Mf);
 
     for (uint i = 0; i < nu_; i++) {
       if ( i == 0 ) {
@@ -232,10 +232,10 @@ public:
 
   void solve_poisson(Vector<Real> &u, const Vector<Real> &z, Vector<Real> &b) {
 
-    using Teuchos::RCP;
-    RCP<const vector> zp = getVector(z);
-    RCP<vector>       up = getVector(u);
-    RCP<vector>       bp = getVector(b);
+    
+    ROL::Ptr<const vector> zp = getVector(z);
+    ROL::Ptr<vector>       up = getVector(u);
+    ROL::Ptr<vector>       bp = getVector(b);
 
     // Get Diagonal and Off-Diagonal Entries of PDE Jacobian
     vector d(nu_,1.0);
@@ -264,12 +264,12 @@ public:
   void apply_linearized_control_operator( Vector<Real> &Bd, const Vector<Real> &z, 
                                     const Vector<Real> &d,  const Vector<Real> &u ) {
 
-    using Teuchos::RCP;
     
-    RCP<const vector> zp  = getVector(z);
-    RCP<const vector> up  = getVector(u);
-    RCP<const vector> dp  = getVector(d);
-    RCP<vector>       Bdp = getVector(Bd);
+    
+    ROL::Ptr<const vector> zp  = getVector(z);
+    ROL::Ptr<const vector> up  = getVector(u);
+    ROL::Ptr<const vector> dp  = getVector(d);
+    ROL::Ptr<vector>       Bdp = getVector(Bd);
 
     for (uint i = 0; i < nu_; i++) {
       if ( i == 0 ) {
@@ -289,12 +289,12 @@ public:
 
   void apply_transposed_linearized_control_operator( Vector<Real> &Bd, const Vector<Real> &z,
                                                const Vector<Real> &d,  const Vector<Real> &u ) {
-    using Teuchos::RCP;
+    
 
-    RCP<const vector> zp  = getVector(z);
-    RCP<const vector> up  = getVector(u);
-    RCP<const vector> dp  = getVector(d);
-    RCP<vector>       Bdp = getVector(Bd);
+    ROL::Ptr<const vector> zp  = getVector(z);
+    ROL::Ptr<const vector> up  = getVector(u);
+    ROL::Ptr<const vector> dp  = getVector(d);
+    ROL::Ptr<vector>       Bdp = getVector(Bd);
 
     for (uint i = 0; i < nz_; i++) {
       if ( i == 0 ) {
@@ -311,12 +311,12 @@ public:
   
   void apply_transposed_linearized_control_operator_2( Vector<Real> &Bd, const Vector<Real> &z, const Vector<Real> &v,
                                                  const Vector<Real> &d,  const Vector<Real> &u ) {
-    using Teuchos::RCP;
-    RCP<const vector> zp  = getVector(z);
-    RCP<const vector> vp  = getVector(v);
-    RCP<const vector> up  = getVector(u);
-    RCP<const vector> dp  = getVector(d);
-    RCP<vector>       Bdp = getVector(Bd);
+    
+    ROL::Ptr<const vector> zp  = getVector(z);
+    ROL::Ptr<const vector> vp  = getVector(v);
+    ROL::Ptr<const vector> up  = getVector(u);
+    ROL::Ptr<const vector> dp  = getVector(d);
+    ROL::Ptr<vector>       Bdp = getVector(Bd);
 
     for (uint i = 0; i < nz_; i++) {
       if ( i == 0 ) {
@@ -334,13 +334,13 @@ public:
   /* STATE AND ADJOINT EQUATION DEFINTIONS */
   void solve_state_equation(Vector<Real> &u, const Vector<Real> &z) {
 
-    using Teuchos::RCP;
-    using Teuchos::rcp;
+    
+    
 
     Real k1 = 1.0;
     Real k2 = 2.0;
     // Right Hand Side
-    RCP<vector> bp = rcp( new vector(nu_, 0.0) );
+    ROL::Ptr<vector> bp = ROL::makePtr<vector>(nu_, 0.0);
     for ( uint i = 0; i < nu_; i++ ) {
       if ( (Real)(i+1)*hu_ < 0.5 ) {
        (*bp)[i] = 2.0*k1*hu_;
@@ -360,17 +360,17 @@ public:
 
   void solve_adjoint_equation(Vector<Real> &p, const Vector<Real> &u, const Vector<Real> &z) {
 
-    using Teuchos::RCP;
-    using Teuchos::rcp;
+    
+    
 
-    RCP<const vector> up = getVector(u);
-    RCP<vector> rp = rcp( new vector(nu_,0.0) );
+    ROL::Ptr<const vector> up = getVector(u);
+    ROL::Ptr<vector> rp = ROL::makePtr<vector>(nu_,0.0);
     SV res(rp);
 
     for ( uint i = 0; i < nu_; i++) {
       (*rp)[i] = -((*up)[i]-evaluate_target((Real)(i+1)*hu_));
     }
-    StdVector<Real> Mres( Teuchos::rcp( new std::vector<Real>(nu_,0.0) ) );
+    StdVector<Real> Mres( ROL::makePtr<std::vector<Real>>(nu_,0.0) );
     apply_mass(Mres,res);
     solve_poisson(p,z,Mres);
   }
@@ -378,8 +378,8 @@ public:
   void solve_state_sensitivity_equation(Vector<Real> &w, const Vector<Real> &v, 
                                         const Vector<Real> &u, const Vector<Real> &z) {
 
-    using Teuchos::rcp;
-    SV b( rcp( new vector(nu_,0.0) ) );
+    
+    SV b( ROL::makePtr<vector>(nu_,0.0) );
     apply_linearized_control_operator(b,z,v,u);
     solve_poisson(w,z,b);
   }
@@ -387,11 +387,11 @@ public:
   void solve_adjoint_sensitivity_equation(Vector<Real> &q, const Vector<Real> &w, const Vector<Real> &v,
                                           const Vector<Real> &p, const Vector<Real> &u, const Vector<Real> &z) {
 
-    using Teuchos::rcp;
+    
 
-    SV res( rcp( new vector(nu_,0.0) ) );
+    SV res( ROL::makePtr<vector>(nu_,0.0) );
     apply_mass(res,w);
-    SV res1( rcp( new vector(nu_,0.0) ) );
+    SV res1( ROL::makePtr<vector>(nu_,0.0) );
     apply_linearized_control_operator(res1,z,v,p);
     res.axpy(-1.0,res1);
     solve_poisson(q,z,res);
@@ -400,45 +400,45 @@ public:
   /* OBJECTIVE FUNCTION DEFINITIONS */
   Real value( const Vector<Real> &z, Real &tol ) {
 
-    using Teuchos::RCP;
-    using Teuchos::rcp;
+    
+    
 
     // SOLVE STATE EQUATION
-    RCP<vector> up = rcp( new vector(nu_,0.0) );
+    ROL::Ptr<vector> up = ROL::makePtr<vector>(nu_,0.0);
     SV u( up );
 
     solve_state_equation(u,z);
 
     // COMPUTE MISFIT
-    RCP<vector> rp = rcp( new vector(nu_,0.0) );
+    ROL::Ptr<vector> rp = ROL::makePtr<vector>(nu_,0.0);
     SV res( rp );
 
     for ( uint i = 0; i < nu_; i++) {
       (*rp)[i] = ((*up)[i]-evaluate_target((Real)(i+1)*hu_));
     }
 
-    RCP<V> Mres = res.clone();
+    ROL::Ptr<V> Mres = res.clone();
     apply_mass(*Mres,res);
     return 0.5*Mres->dot(res) + reg_value(z);
   } 
 
   void gradient( Vector<Real> &g, const Vector<Real> &z, Real &tol ) {
 
-    using Teuchos::rcp; 
+     
 
     // SOLVE STATE EQUATION
-    SV u( rcp( new vector(nu_,0.0) ) );
+    SV u( ROL::makePtr<vector>(nu_,0.0) );
     solve_state_equation(u,z);
 
     // SOLVE ADJOINT EQUATION
-    SV p( Teuchos::rcp( new std::vector<Real>(nu_,0.0) ) );
+    SV p( ROL::makePtr<std::vector<Real>>(nu_,0.0) );
     solve_adjoint_equation(p,u,z);
 
     // Apply Transpose of Linearized Control Operator
     apply_transposed_linearized_control_operator(g,z,p,u);
    
     // Regularization gradient
-    SV g_reg( rcp( new vector(nz_,0.0) ) );
+    SV g_reg( ROL::makePtr<vector>(nz_,0.0) );
     reg_gradient(g_reg,z); 
 
     // Build Gradient
@@ -447,29 +447,29 @@ public:
 #if USE_HESSVEC
   void hessVec( Vector<Real> &hv, const Vector<Real> &v, const Vector<Real> &z, Real &tol ) {
 
-    using Teuchos::rcp;
+    
 
     // SOLVE STATE EQUATION
-    SV u( rcp( new vector(nu_,0.0) ) );
+    SV u( ROL::makePtr<vector>(nu_,0.0) );
     solve_state_equation(u,z);
 
     // SOLVE ADJOINT EQUATION
-    SV p( rcp( new vector(nu_,0.0) ) );
+    SV p( ROL::makePtr<vector>(nu_,0.0) );
     solve_adjoint_equation(p,u,z);
 
     // SOLVE STATE SENSITIVITY EQUATION
-    SV w( rcp( new vector(nu_,0.0) ) );
+    SV w( ROL::makePtr<vector>(nu_,0.0) );
     solve_state_sensitivity_equation(w,v,u,z);
 
     // SOLVE ADJOINT SENSITIVITY EQUATION
-    SV q( rcp( new vector(nu_,0.0) ) );
+    SV q( ROL::makePtr<vector>(nu_,0.0) );
     solve_adjoint_sensitivity_equation(q,w,v,p,u,z);
 
     // Apply Transpose of Linearized Control Operator
     apply_transposed_linearized_control_operator(hv,z,q,u);
   
     // Apply Transpose of Linearized Control Operator
-    SV tmp( rcp( new vector(nz_,0.0) ) );
+    SV tmp( ROL::makePtr<vector>(nz_,0.0) );
     apply_transposed_linearized_control_operator(tmp,z,w,p);
     hv.axpy(-1.0,tmp); 
 
@@ -479,7 +479,7 @@ public:
     hv.plus(tmp);
 
     // Regularization hessVec
-    SV hv_reg( rcp( new vector(nz_,0.0) ) );
+    SV hv_reg( ROL::makePtr<vector>(nz_,0.0) );
     reg_hessVec(hv_reg,v,z);
 
     // Build hessVec
@@ -489,11 +489,11 @@ public:
 
   void invHessVec( Vector<Real> &hv, const Vector<Real> &v, const Vector<Real> &x, Real &tol ) {
 
-    using Teuchos::RCP;
-    using Teuchos::rcp;
+    
+    
 
     // Cast hv and v vectors to std::vector.
-    RCP<vector> hvp       = getVector(hv);
+    ROL::Ptr<vector> hvp       = getVector(hv);
 
     std::vector<Real> vp(*getVector(v));
 
@@ -541,21 +541,21 @@ public:
 };
 
 template<class Real>
-void getPoissonInversion( Teuchos::RCP<Objective<Real> > &obj,
-                          Teuchos::RCP<Vector<Real> >    &x0,
-                          Teuchos::RCP<Vector<Real> >    &x ) {
+void getPoissonInversion( ROL::Ptr<Objective<Real> > &obj,
+                          ROL::Ptr<Vector<Real> >    &x0,
+                          ROL::Ptr<Vector<Real> >    &x ) {
   // Problem dimension
   int n = 128;
 
   // Get Initial Guess
-  Teuchos::RCP<std::vector<Real> > x0p = Teuchos::rcp(new std::vector<Real>(n,0.0));
+  ROL::Ptr<std::vector<Real> > x0p = ROL::makePtr<std::vector<Real>>(n,0.0);
   for ( int i = 0; i < n; i++ ) {
     (*x0p)[i] = 1.5;
   }
-  x0 = Teuchos::rcp(new StdVector<Real>(x0p));
+  x0 = ROL::makePtr<StdVector<Real>>(x0p);
 
   // Get Solution
-  Teuchos::RCP<std::vector<Real> > xp = Teuchos::rcp(new std::vector<Real>(n,0.0));
+  ROL::Ptr<std::vector<Real> > xp = ROL::makePtr<std::vector<Real>>(n,0.0);
   Real h = 1.0/((Real)n+1), pt = 0.0, k1 = 1.0, k2 = 2.0;
   for( int i = 0; i < n; i++ ) {
     pt = (Real)(i+1)*h;
@@ -566,10 +566,10 @@ void getPoissonInversion( Teuchos::RCP<Objective<Real> > &obj,
       (*xp)[i] = std::log(k2); 
     }
   }
-  x = Teuchos::rcp(new StdVector<Real>(xp));
+  x = ROL::makePtr<StdVector<Real>>(xp);
 
   // Instantiate Objective Function
-  obj = Teuchos::rcp(new Objective_PoissonInversion<Real>(n,1.e-6));
+  obj = ROL::makePtr<Objective_PoissonInversion<Real>>(n,1.e-6);
 }
 
 } // End ZOO Namespace

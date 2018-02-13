@@ -65,7 +65,7 @@ private:
   Real value_;
 
   Real getValueX( const V& x ) const { 
-    return Teuchos::dyn_cast<const SingletonVector<Real> >(x).getValue(); 
+    return dynamic_cast<const SingletonVector<Real>&>(x).getValue(); 
   }
 
 public:
@@ -101,12 +101,12 @@ public:
     return std::abs(value_);
   }
   
-  Teuchos::RCP<V> clone() const {
-    return Teuchos::rcp( new SingletonVector(0) );
+  ROL::Ptr<V> clone() const {
+    return ROL::makePtr<SingletonVector>(0);
   }
   
-  Teuchos::RCP<V> basis() const {
-    return Teuchos::rcp( new SingletonVector(1) );
+  ROL::Ptr<V> basis() const {
+    return ROL::makePtr<SingletonVector>(1);
   }
 
   int dimension() const { return 1; };
