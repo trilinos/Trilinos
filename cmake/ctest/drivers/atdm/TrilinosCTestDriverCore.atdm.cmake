@@ -2,9 +2,10 @@
 #
 # Common ATDM CTest -S configuration settings for all ATDM bulids
 #
-# System-specific configurations are handled in the *.cmake driver files.
+# System-specific configurations are handled in the *.cmake driver files for
+# each sytem in subdirectories.
 #
-# The build name is the same as the Jenkins JOB_NAME var.
+# The CDash build name is the same as the Jenkins JOB_NAME var.
 #
 ################################################################################
 
@@ -83,8 +84,8 @@ MACRO(TRILINOS_SYSTEM_SPECIFIC_CTEST_DRIVER)
     "${THIS_LIST_FILE}"
     )
 
-  # Make the default branch 'develop' (but allow it to be overriden in *.cmake
-  # script)
+  # Make the default branch 'develop' (but allow it to be overridden in
+  # *.cmake script)
   SET_DEFAULT(Trilinos_BRANCH develop)
 
   # Set the default CDash Track/Group to "Specialized".  This will not trigger
