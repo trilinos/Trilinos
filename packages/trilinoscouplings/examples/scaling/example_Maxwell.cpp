@@ -174,6 +174,7 @@
 
 /*** Uncomment if you would like output data for plotting ***/
 //#define DUMP_DATA
+//#define DUMP_DATA_MORE
 
 using namespace std;
 using namespace Intrepid;
@@ -403,7 +404,7 @@ int main(int argc, char *argv[]) {
   // Values of command-line arguments.
   int nx, ny, nz;
   std::string xmlInFileName;
-  bool verbose, debug;
+  bool verbose, debug, jiggle;
   std::string solverName;
   double scaling = 1.0;
 
@@ -415,6 +416,7 @@ int main(int argc, char *argv[]) {
   solverName = "MueLu";
   verbose = false;
   debug = false;
+  jiggle = false;
   // Parse and validate command-line arguments.
   Teuchos::CommandLineProcessor cmdp (false, true);
   cmdp.setOption ("nx", &nx, "Number of cells along the x dimension");
@@ -434,6 +436,8 @@ int main(int argc, char *argv[]) {
   cmdp.setOption ("debug", "release", &debug,
                   "Whether to print copious debugging output to stderr.");
   cmdp.setOption ("scaling", &scaling, "scale mass matrix");
+  cmdp.setOption ("jiggle", "nojiggle", &jiggle,
+                  "Whether to randomly perturb the mesh.");
 
   if (MyPID == 0) {
     std::cout                                                           \
@@ -994,35 +998,56 @@ int main(int argc, char *argv[]) {
     }
   }
 
+  // Define global epetra maps
+  Epetra_Map globalMapG(-1,ownedNodes,ownedGIDs,0,Comm);
+  Epetra_Map globalMapC(-1,numOwnedEdges,ownedEdgeIds,0,Comm);
+  
+  if (jiggle) {
+    /***********************************************************************************/
+    /* This block of code will create a randomly perturbed mesh by jiggling the node   */
+    /* coordinates away from their initial location.                                   */
+    /***********************************************************************************/
 
-#ifdef RANDOM_GRID
-  /***********************************************************************************/
-  /* This block of code will create a randomly perturbed mesh by jiggling the node
-     coordinates up to 1/4 of an edge length away from their initial location.
-     !!!NOTE: THIS WILL ONLY WORK CORRECTLY ON A SINGLE PROCESSOR!!!           */
-  /***********************************************************************************/
-  // Side length assuming an initially regular grid
-  double hx = nodeCoord(elemToNode(0,1),0)-nodeCoord(elemToNode(0,0),0);
-  double hy = nodeCoord(elemToNode(0,3),1)-nodeCoord(elemToNode(0,0),1);
-  double hz = nodeCoord(elemToNode(0,4),2)-nodeCoord(elemToNode(0,0),2);
+    if(MyPID==0) {std::cout << "Jiggling the mesh" << std::endl << std::endl;}
 
-  // Loop over nodes
-  for (int inode = 0; inode < numNodes; inode++){
-    if (!nodeOnBoundary(inode) & nodeIsOwned[inode]) {
-      // random numbers between -1.0 and 1.0
-      double rx = 2.0 * (double)rand()/RAND_MAX - 1.0;
-      double ry = 2.0 * (double)rand()/RAND_MAX - 1.0;
-      double rz = 2.0 * (double)rand()/RAND_MAX - 1.0;
-      // limit variation to 1/4 edge length
-      nodeCoord(inode,0) = nodeCoord(inode,0) + 0.125 * hx * rx;
-      nodeCoord(inode,1) = nodeCoord(inode,1) + 0.125 * hy * ry;
-      nodeCoord(inode,2) = nodeCoord(inode,2) + 0.125 * hz * rz;
-      nodeCoordx[inode] = nodeCoord(inode,0);
-      nodeCoordy[inode] = nodeCoord(inode,1);
-      nodeCoordz[inode] = nodeCoord(inode,2);
+    // Build an overlapping map. To match globalMapG, we need to convert to int.
+    int * globalNodeIdsInt = new int[numNodes];
+    for (int i=0; i<numNodes; i++)
+      globalNodeIdsInt[i]=(int)globalNodeIds[i];
+    Epetra_Map globalMapAllNodes(-1,numNodes,globalNodeIdsInt,0,Comm);
+
+    // get random numbers between -1.0 and 1.0 wrt to 1-to-1 map
+    Epetra_MultiVector displacementTemp(globalMapG,3);
+    displacementTemp.Random();
+
+    // import that to overlapping map
+    Epetra_MultiVector displacement(globalMapAllNodes,3);
+    Epetra_Export MyImporter(globalMapAllNodes,globalMapG);
+    displacement.Import(displacementTemp,MyImporter,Insert);
+
+    // Side length assuming an initially regular grid
+    double hx = nodeCoord(elemToNode(0,1),0)-nodeCoord(elemToNode(0,0),0);
+    double hy = nodeCoord(elemToNode(0,3),1)-nodeCoord(elemToNode(0,0),1);
+    double hz = nodeCoord(elemToNode(0,4),2)-nodeCoord(elemToNode(0,0),2);
+
+    const double fac = 0.05;
+
+    // Loop over nodes
+    for (int inode = 0; inode < numNodes; inode++){
+      if (!nodeOnBoundary(inode)) {
+        double rx = displacement[0][inode];
+        double ry = displacement[1][inode];
+        double rz = displacement[2][inode]; 
+
+        nodeCoord(inode,0) = nodeCoord(inode,0) + fac * hx * rx;
+        nodeCoord(inode,1) = nodeCoord(inode,1) + fac * hy * ry;
+        nodeCoord(inode,2) = nodeCoord(inode,2) + fac * hz * rz;
+        nodeCoordx[inode] = nodeCoord(inode,0);
+        nodeCoordy[inode] = nodeCoord(inode,1);
+        nodeCoordz[inode] = nodeCoord(inode,2);
+      }
     }
   }
-#endif
 
   /**********************************************************************************/
   /********************************* GET CUBATURE ***********************************/
@@ -1115,10 +1140,6 @@ int main(int argc, char *argv[]) {
   /**********************************************************************************/
   /********************* BUILD MAPS FOR GLOBAL SOLUTION *****************************/
   /**********************************************************************************/
-
-  // Define global epetra maps
-  Epetra_Map globalMapG(-1,ownedNodes,ownedGIDs,0,Comm);
-  Epetra_Map globalMapC(-1,numOwnedEdges,ownedEdgeIds,0,Comm);
 
   Epetra_FECrsMatrix StiffMatrixC(Copy, globalMapC, numFieldsC);
   Epetra_FECrsMatrix MassMatrixC (Copy, globalMapC, numFieldsC);
