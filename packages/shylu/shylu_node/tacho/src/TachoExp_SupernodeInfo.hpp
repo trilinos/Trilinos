@@ -13,8 +13,9 @@ namespace Tacho {
     struct SuperNodeInfoInitReducer {
       typedef SuperNodeInfoInitReducer reducer;
       struct ValueType {
-        size_type max_supernode_size;
-        size_type max_schur_size;
+        ordinal_type max_nchildren;
+        ordinal_type max_supernode_size;
+        ordinal_type max_schur_size;
         size_type nnz;
       };
       typedef struct ValueType value_type;
@@ -28,6 +29,8 @@ namespace Tacho {
       KOKKOS_INLINE_FUNCTION SuperNodeInfoInitReducer(value_type &val) : value(&val) {}
         
       KOKKOS_INLINE_FUNCTION void join(value_type &dst, value_type &src) const {
+        dst.max_nchildren = ( src.max_nchildren > dst.max_nchildren ?
+                              src.max_nchildren : dst.max_nchildren );
         dst.max_supernode_size = ( src.max_supernode_size > dst.max_supernode_size ?
                                    src.max_supernode_size : dst.max_supernode_size );
         dst.max_schur_size = ( src.max_schur_size > dst.max_schur_size ?
@@ -36,6 +39,8 @@ namespace Tacho {
       }
         
       KOKKOS_INLINE_FUNCTION void join(volatile value_type &dst, const volatile value_type &src) const {
+        dst.max_nchildren = ( src.max_nchildren > dst.max_nchildren ?
+                              src.max_nchildren : dst.max_nchildren );
         dst.max_supernode_size = ( src.max_supernode_size > dst.max_supernode_size ?
                                    src.max_supernode_size : dst.max_supernode_size );
         dst.max_schur_size = ( src.max_schur_size > dst.max_schur_size ?
@@ -44,8 +49,9 @@ namespace Tacho {
       }
         
       KOKKOS_INLINE_FUNCTION void init(value_type &val) const {
-        val.max_supernode_size = Kokkos::reduction_identity<size_type>::max();
-        val.max_schur_size = Kokkos::reduction_identity<size_type>::max();
+        val.max_nchildren = Kokkos::reduction_identity<ordinal_type>::max();
+        val.max_supernode_size = Kokkos::reduction_identity<ordinal_type>::max();
+        val.max_schur_size = Kokkos::reduction_identity<ordinal_type>::max();
         val.nnz = Kokkos::reduction_identity<size_type>::sum();
       }
         
@@ -88,7 +94,7 @@ namespace Tacho {
 
         // column connectivity (gid - dof, sid - supernode)
         ordinal_type gid_col_begin, gid_col_end, sid_col_begin, sid_col_end;  
-        ordinal_type nchildren, *children, children_buf[MaxDependenceSize]; // hierarchy
+        ordinal_type nchildren, *children; //children[MaxDependenceSize]; // hierarchy
 
         ordinal_type max_decendant_schur_size;      // workspace
         ordinal_type max_decendant_supernode_size;  // workspace
@@ -104,7 +110,7 @@ namespace Tacho {
             max_decendant_schur_size(0),
             max_decendant_supernode_size(0),
             buf(NULL) {
-          for (ordinal_type i=0;i<MaxDependenceSize;++i) children_buf[i] = 0;
+          //for (ordinal_type i=0;i<MaxDependenceSize;++i) children[i] = 0;
         }
 
         KOKKOS_INLINE_FUNCTION
@@ -116,7 +122,7 @@ namespace Tacho {
             max_decendant_schur_size(b.max_decendant_schur_size),
             max_decendant_supernode_size(b.max_decendant_supernode_size),
             buf(b.buf) {
-          for (ordinal_type i=0;i<b.nchildren;++i) children_buf[i] = b.children_buf[i];
+          //for (ordinal_type i=0;i<b.nchildren;++i) children[i] = b.children[i];
         }
 
         KOKKOS_INLINE_FUNCTION
@@ -142,12 +148,12 @@ namespace Tacho {
       ///
       /// max parameter
       ///
-      ordinal_type max_nchildren, max_supernode_size, max_schur_size, serial_thres_size;
+      ordinal_type max_nchildren, max_supernode_size, max_schur_size;
 
       ///
-      /// frontal matrix subassembly mode
+      /// frontal matrix subassembly mode and serialization parameter
       ///
-      ordinal_type front_update_mode; // 0 - lock, 1 - atomic
+      short front_update_mode, serial_thres_size; // 0 - lock, 1 - atomic
 
       ///
       /// info for solve (rhs multivector)
@@ -189,9 +195,10 @@ namespace Tacho {
         self.serial_thres_size = 0;
 
         /// workspace parameter initialization
+        self.max_nchildren = 0;
         self.max_supernode_size = 0;
         self.max_schur_size = 0; 
-
+        
         Kokkos::RangePolicy<exec_space> supernodes_range_policy(0,nsupernodes);
         SuperNodeInfoInitReducer::value_type init_reduce_val;        
         Kokkos::parallel_reduce
@@ -212,11 +219,12 @@ namespace Tacho {
             }
             
             s.nchildren = stree_ptr_(sid+1) - stree_ptr_(sid);
-            
-            const ordinal_type offset = stree_ptr_(sid);
-            for (ordinal_type i=0;i<s.nchildren;++i)
-              s.children[i] = stree_children_(offset + i);
-            
+            s.children = &stree_children_(stree_ptr_(sid));
+            // const ordinal_type offset = stree_ptr_(sid);
+            // for (ordinal_type i=0;i<s.nchildren;++i)
+            //   s.children[i] = stree_children_(offset + i);
+
+            update.max_nchildren = max(update.max_nchildren, s.nchildren);            
             update.max_supernode_size = max(update.max_supernode_size, s.m);
             update.max_schur_size = max(update.max_schur_size, s.n-s.m);
             update.nnz += s.m * s.n;
@@ -243,7 +251,6 @@ namespace Tacho {
               spar.max_decendant_schur_size = max(s.max_decendant_schur_size,
                                                   spar.max_decendant_schur_size);
             }
-
           }
           Kokkos::deep_copy(supernodes_, h_supernodes);
         }
@@ -260,7 +267,8 @@ namespace Tacho {
         //                                           spar.max_decendant_schur_size);
         //     }
         //   });
-        
+
+        self.max_nchildren = init_reduce_val.max_nchildren;
         self.max_supernode_size = init_reduce_val.max_supernode_size;
         self.max_schur_size = init_reduce_val.max_schur_size;
 

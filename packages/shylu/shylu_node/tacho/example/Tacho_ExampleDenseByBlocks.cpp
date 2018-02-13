@@ -95,7 +95,7 @@ int main (int argc, char *argv[]) {
 
     {    
       const ordinal_type
-        task_queue_capacity_tmp = bmend*bmend*bmend*max_functor_size,
+        task_queue_capacity_tmp = 2*bmend*bmend*bmend*max_functor_size,
         min_block_size  = 16,
         max_block_size  = 4*max_functor_size,
         num_superblock  = 4,

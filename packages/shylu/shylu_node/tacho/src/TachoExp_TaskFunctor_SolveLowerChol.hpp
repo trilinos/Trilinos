@@ -113,7 +113,9 @@ namespace Tacho {
                 }
                 
                 // spawn children tasks and this (their parent) depends on the children tasks
-                if (dep != NULL) {
+                if (dep == NULL) {
+                  Kokkos::respawn(this, _sched, Kokkos::TaskPriority::Regular);
+                } else {
                   for (ordinal_type i=0;i<_s.nchildren;++i) {
                     // serialization for debugging
                     //auto f = Kokkos::task_spawn(Kokkos::TaskTeam(_sched, i > 0 ? dep[i-1] : future_type(), Kokkos::TaskPriority::Regular),
@@ -123,6 +125,7 @@ namespace Tacho {
                     TACHO_TEST_FOR_ABORT(f.is_null(), "task allocation fails");
                     dep[i] = f;
                   }
+                  
                   // respawn with updating state
                   _state = 1;
                   Kokkos::respawn(this, Kokkos::when_all(dep, _s.nchildren), Kokkos::TaskPriority::Regular);
@@ -131,14 +134,8 @@ namespace Tacho {
                     for (ordinal_type i=0;i<_s.nchildren;++i) (dep+i)->~future_type();
                     _sched.memory()->deallocate(dep, depbuf_size);
                   }
-                } else {
-                  // fail to allocate depbuf
-                  Kokkos::respawn(this, _sched, Kokkos::TaskPriority::Regular);
                 }
               });
-            }
-            break;
-          }
           }
           break;
         }

@@ -99,13 +99,13 @@ namespace Tacho {
     ///
 
 #if defined( TACHO_USE_INT_INT )
-    typedef int    ordinal_type;
-    typedef int    size_type;
+    typedef int ordinal_type;
+    typedef int size_type;
 #elif defined( TACHO_USE_INT_SIZE_T )
-    typedef int    ordinal_type;
+    typedef int ordinal_type;
     typedef size_t size_type;
 #else
-    typedef int    ordinal_type;
+    typedef int ordinal_type;
     typedef size_t size_type;
 #endif
 
