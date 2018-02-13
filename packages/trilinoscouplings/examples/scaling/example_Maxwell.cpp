@@ -173,8 +173,6 @@
 
 
 /*** Uncomment if you would like output data for plotting ***/
-//#define DUMP_DATA
-//#define DUMP_DATA_MORE
 
 using namespace std;
 using namespace Intrepid;
@@ -404,7 +402,7 @@ int main(int argc, char *argv[]) {
   // Values of command-line arguments.
   int nx, ny, nz;
   std::string xmlInFileName;
-  bool verbose, debug, jiggle;
+  bool verbose, debug, jiggle, dump;
   std::string solverName;
   double scaling = 1.0;
 
@@ -417,6 +415,7 @@ int main(int argc, char *argv[]) {
   verbose = false;
   debug = false;
   jiggle = false;
+  dump = false;
   // Parse and validate command-line arguments.
   Teuchos::CommandLineProcessor cmdp (false, true);
   cmdp.setOption ("nx", &nx, "Number of cells along the x dimension");
@@ -438,6 +437,8 @@ int main(int argc, char *argv[]) {
   cmdp.setOption ("scaling", &scaling, "scale mass matrix");
   cmdp.setOption ("jiggle", "nojiggle", &jiggle,
                   "Whether to randomly perturb the mesh.");
+  cmdp.setOption ("dump", "nodump", &dump,
+                  "Whether to dump data.");
 
   if (MyPID == 0) {
     std::cout                                                           \
@@ -1166,60 +1167,59 @@ int main(int argc, char *argv[]) {
     }
 
 
-#ifdef DUMP_DATA
-  // Put coordinates in multivector for output
-  Epetra_MultiVector nCoord(globalMapG,3);
+  Epetra_Map globalMapElem(numElemsGlobal, numElems, 0, Comm);
+  if (dump){
+    // Put coordinates in multivector for output
+    Epetra_MultiVector nCoord(globalMapG,3);
 
-  int ownedNode = 0;
-  for (int inode=0; inode<numNodes; inode++) {
-    if (nodeIsOwned[inode]) {
-      nCoord[0][ownedNode]=nodeCoord(inode,0);
-      nCoord[1][ownedNode]=nodeCoord(inode,1);
-      nCoord[2][ownedNode]=nodeCoord(inode,2);
-      ownedNode++;
-    }
-  }
-  EpetraExt::MultiVectorToMatrixMarketFile("coords.dat",nCoord,0,0,false);
-
-#ifdef DUMP_DATA_MORE
-  // Put element to node mapping in multivector for output
-  Epetra_Map   globalMapElem(numElemsGlobal, numElems, 0, Comm);
-  Epetra_MultiVector elem2node(globalMapElem, numNodesPerElem);
-  for (int ielem=0; ielem<numElems; ielem++) {
-    for (int inode=0; inode<numNodesPerElem; inode++) {
-      elem2node[inode][ielem]=globalNodeIds[elemToNode(ielem,inode)];
-    }
-  }
-  EpetraExt::MultiVectorToMatrixMarketFile("elem2node.dat",elem2node,0,0,false);
-
-  // Put element to edge mapping in multivector for output
-  Epetra_MultiVector elem2edge(globalMapElem, numEdgesPerElem);
-  for (int ielem=0; ielem<numElems; ielem++) {
-    for (int iedge=0; iedge<numEdgesPerElem; iedge++) {
-      elem2edge[iedge][ielem]=globalEdgeIds[elemToEdge(ielem,iedge)];
-    }
-  }
-  EpetraExt::MultiVectorToMatrixMarketFile("elem2edge.dat",elem2edge,0,0,false);
-
-  // Put edge to node mapping in multivector for output
-  Epetra_MultiVector edge2node(globalMapC, numNodesPerEdge);
-  int ownedEdge = 0;
-  for (int iedge=0; iedge<numEdges; iedge++) {
-    if (edgeIsOwned[iedge]) {
-      for (int inode=0; inode<numNodesPerEdge; inode++) {
-        edge2node[inode][ownedEdge]=globalNodeIds[edgeToNode(iedge,inode)];
+    int ownedNode = 0;
+    for (int inode=0; inode<numNodes; inode++) {
+      if (nodeIsOwned[inode]) {
+        nCoord[0][ownedNode]=nodeCoord(inode,0);
+        nCoord[1][ownedNode]=nodeCoord(inode,1);
+        nCoord[2][ownedNode]=nodeCoord(inode,2);
+        ownedNode++;
       }
-      ownedEdge++;
     }
-  }
-  EpetraExt::MultiVectorToMatrixMarketFile("edge2node.dat",edge2node,0,0,false);
+    EpetraExt::MultiVectorToMatrixMarketFile("coords.dat",nCoord,0,0,false);
 
+    // Put element to node mapping in multivector for output
+    Epetra_MultiVector elem2node(globalMapElem, numNodesPerElem);
+    for (int ielem=0; ielem<numElems; ielem++) {
+      for (int inode=0; inode<numNodesPerElem; inode++) {
+        elem2node[inode][ielem]=globalNodeIds[elemToNode(ielem,inode)];
+      }
+    }
+    EpetraExt::MultiVectorToMatrixMarketFile("elem2node.dat",elem2node,0,0,false);
+
+    // Put element to edge mapping in multivector for output
+    Epetra_MultiVector elem2edge(globalMapElem, numEdgesPerElem);
+    for (int ielem=0; ielem<numElems; ielem++) {
+      for (int iedge=0; iedge<numEdgesPerElem; iedge++) {
+        elem2edge[iedge][ielem]=globalEdgeIds[elemToEdge(ielem,iedge)];
+      }
+    }
+    EpetraExt::MultiVectorToMatrixMarketFile("elem2edge.dat",elem2edge,0,0,false);
+
+    // Put edge to node mapping in multivector for output
+    Epetra_MultiVector edge2node(globalMapC, numNodesPerEdge);
+    int ownedEdge = 0;
+    for (int iedge=0; iedge<numEdges; iedge++) {
+      if (edgeIsOwned[iedge]) {
+        for (int inode=0; inode<numNodesPerEdge; inode++) {
+          edge2node[inode][ownedEdge]=globalNodeIds[edgeToNode(iedge,inode)];
+        }
+        ownedEdge++;
+      }
+    }
+    EpetraExt::MultiVectorToMatrixMarketFile("edge2node.dat",edge2node,0,0,false);
+
+    
+    if(MyPID==0) {Time.ResetStartTime();}
+  }
+  
   // Define multi-vector for cell edge sign (fill during cell loop)
   Epetra_MultiVector edgeSign(globalMapElem, numEdgesPerElem);
-#endif
-
-  if(MyPID==0) {Time.ResetStartTime();}
-#endif
 
 
   /**********************************************************************************/
@@ -1428,11 +1428,11 @@ int main(int argc, char *argv[]) {
         worksetEdgeSigns(cellCounter,7)=-1.0*worksetEdgeSigns(cellCounter,7);
       }
 
-#ifdef DUMP_DATA_MORE
-      for (int iedge=0; iedge<numEdgesPerElem; iedge++) {
-        edgeSign[iedge][cell] = worksetEdgeSigns(cellCounter,iedge);
+      if (dump){
+        for (int iedge=0; iedge<numEdgesPerElem; iedge++) {
+          edgeSign[iedge][cell] = worksetEdgeSigns(cellCounter,iedge);
+        }
       }
-#endif
 
       cellCounter++;
 
@@ -1814,28 +1814,26 @@ int main(int argc, char *argv[]) {
   if(MyPID==0) {std::cout << "Global assembly                             "
                           << Time.ElapsedTime() << " sec \n"; Time.ResetStartTime();}
 
-#ifdef DUMP_DATA
-  // Node Coordinates
-  EpetraExt::VectorToMatrixMarketFile("coordx.dat",Nx,0,0,false);
-  EpetraExt::VectorToMatrixMarketFile("coordy.dat",Ny,0,0,false);
-  EpetraExt::VectorToMatrixMarketFile("coordz.dat",Nz,0,0,false);
+  if (dump) {
+    // Node Coordinates
+    EpetraExt::VectorToMatrixMarketFile("coordx.dat",Nx,0,0,false);
+    EpetraExt::VectorToMatrixMarketFile("coordy.dat",Ny,0,0,false);
+    EpetraExt::VectorToMatrixMarketFile("coordz.dat",Nz,0,0,false);
 
-  // Edge Coordinates
-  EpetraExt::VectorToMatrixMarketFile("ecoordx.dat",EDGE_X);
-  EpetraExt::VectorToMatrixMarketFile("ecoordy.dat",EDGE_Y);
-  EpetraExt::VectorToMatrixMarketFile("ecoordz.dat",EDGE_Z);
+    // Edge Coordinates
+    EpetraExt::VectorToMatrixMarketFile("ecoordx.dat",EDGE_X);
+    EpetraExt::VectorToMatrixMarketFile("ecoordy.dat",EDGE_Y);
+    EpetraExt::VectorToMatrixMarketFile("ecoordz.dat",EDGE_Z);
 
 
-  // Edge signs
-#ifdef DUMP_DATA_MORE
-  EpetraExt::MultiVectorToMatrixMarketFile("edge_signs.dat",edgeSign,0,0,false);
-#endif
+    // Edge signs
+    EpetraExt::MultiVectorToMatrixMarketFile("edge_signs.dat",edgeSign,0,0,false);
 
-  EpetraExt::RowMatrixToMatlabFile("mag_k1_matrix.dat",StiffMatrixC);
-  EpetraExt::RowMatrixToMatlabFile("mag_m1_matrix.dat",MassMatrixC);
-  EpetraExt::RowMatrixToMatlabFile("mag_t_matrix.dat",DGrad);
-#endif
-
+    EpetraExt::RowMatrixToMatlabFile("mag_k1_matrix.dat",StiffMatrixC);
+    EpetraExt::RowMatrixToMatlabFile("mag_m1_matrix.dat",MassMatrixC);
+    EpetraExt::RowMatrixToMatlabFile("mag_t_matrix.dat",DGrad);
+  }
+  
 
   /**********************************************************************************/
   /*********************** ADJUST MATRICES AND RHS FOR BCs **************************/
@@ -1899,11 +1897,10 @@ int main(int argc, char *argv[]) {
   if(MyPID==0) {std::cout << "Adjust global matrix and rhs due to BCs     " << Time.ElapsedTime()
                           << " sec \n"; Time.ResetStartTime();}
 
-#ifdef DUMP_DATA
-  EpetraExt::RowMatrixToMatlabFile("mag_m0_matrix.dat",MassMatrixG);
-  EpetraExt::RowMatrixToMatlabFile("edge_matrix.dat",StiffMatrixC);
-#endif
-#undef DUMP_DATA
+  if (dump) {
+    EpetraExt::RowMatrixToMatlabFile("mag_m0_matrix.dat",MassMatrixG);
+    EpetraExt::RowMatrixToMatlabFile("edge_matrix.dat",StiffMatrixC);
+  }
 
   /**********************************************************************************/
   /*********************************** SOLVE ****************************************/
