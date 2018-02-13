@@ -2395,33 +2395,41 @@ void TestMueLuMultiLevelPreconditioner_Maxwell(char ProblemType[],
   typedef double Scalar;
   typedef int LocalOrdinal;
   typedef int GlobalOrdinal;
+  typedef Xpetra::EpetraNode Node;
+  typedef Scalar SC;
   typedef LocalOrdinal LO;
   typedef GlobalOrdinal GO;
-  typedef Xpetra::EpetraNode Node;
-#include "MueLu_UseShortNames.hpp"
+  typedef Node NO;
+  typedef Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> Matrix;
+  typedef Xpetra::CrsMatrixWrap<Scalar,LocalOrdinal,GlobalOrdinal,Node> CrsMatrixWrap;
+  typedef Xpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> CrsMatrix;
+  typedef Xpetra::EpetraCrsMatrixT<GlobalOrdinal,Node> EpetraCrsMatrix;
+  typedef Xpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> MultiVector;
+  typedef Xpetra::EpetraMultiVectorT<GlobalOrdinal,Node> EpetraMultiVector;
+  
 
   Epetra_Time SetupTime(CurlCurl.Comm());
 
-  Teuchos::RCP<CrsMatrix> ccMat = Teuchos::rcp(new Xpetra::EpetraCrsMatrixT<GO,NO>(Teuchos::rcpFromRef(CurlCurl)));
+  Teuchos::RCP<CrsMatrix> ccMat = Teuchos::rcp(new EpetraCrsMatrix(Teuchos::rcpFromRef(CurlCurl)));
   Teuchos::RCP<CrsMatrixWrap> ccOp = Teuchos::rcp(new CrsMatrixWrap(ccMat));
   Teuchos::RCP<Matrix> curlcurlOp = Teuchos::rcp_dynamic_cast<Matrix>(ccOp);
 
-  Teuchos::RCP<CrsMatrix> d0cMat = Teuchos::rcp(new Xpetra::EpetraCrsMatrixT<GO,NO>(Teuchos::rcpFromRef(D0clean)));
+  Teuchos::RCP<CrsMatrix> d0cMat = Teuchos::rcp(new EpetraCrsMatrix(Teuchos::rcpFromRef(D0clean)));
   Teuchos::RCP<CrsMatrixWrap> d0cOp = Teuchos::rcp(new CrsMatrixWrap(d0cMat));
   Teuchos::RCP<Matrix> D0cleanOp = Teuchos::rcp_dynamic_cast<Matrix>(d0cOp);
 
-  Teuchos::RCP<CrsMatrix> m0invMat = Teuchos::rcp(new Xpetra::EpetraCrsMatrixT<GO,NO>(Teuchos::rcpFromRef(M0inv)));
+  Teuchos::RCP<CrsMatrix> m0invMat = Teuchos::rcp(new EpetraCrsMatrix(Teuchos::rcpFromRef(M0inv)));
   Teuchos::RCP<CrsMatrixWrap> m0invOp = Teuchos::rcp(new CrsMatrixWrap(m0invMat));
   Teuchos::RCP<Matrix> M0invOp = Teuchos::rcp_dynamic_cast<Matrix>(m0invOp);
 
-  Teuchos::RCP<CrsMatrix> m1Mat = Teuchos::rcp(new Xpetra::EpetraCrsMatrixT<GO,NO>(Teuchos::rcpFromRef(M1)));
+  Teuchos::RCP<CrsMatrix> m1Mat = Teuchos::rcp(new EpetraCrsMatrix(Teuchos::rcpFromRef(M1)));
   Teuchos::RCP<CrsMatrixWrap> m1Op = Teuchos::rcp(new CrsMatrixWrap(m1Mat));
   Teuchos::RCP<Matrix> M1Op = Teuchos::rcp_dynamic_cast<Matrix>(m1Op);
 
-  Teuchos::RCP<MultiVector> xxh = Teuchos::rcp(new Xpetra::EpetraMultiVectorT<GO,NO>(Teuchos::rcpFromRef(xh)));
-  Teuchos::RCP<MultiVector> xb  = Teuchos::rcp(new Xpetra::EpetraMultiVectorT<GO,NO>(Teuchos::rcpFromRef(b)));
+  Teuchos::RCP<MultiVector> xxh = Teuchos::rcp(new EpetraMultiVector(Teuchos::rcpFromRef(xh)));
+  Teuchos::RCP<MultiVector> xb  = Teuchos::rcp(new EpetraMultiVector(Teuchos::rcpFromRef(b)));
 
-  Teuchos::RCP<MultiVector> xcoords = Teuchos::rcp(new Xpetra::EpetraMultiVectorT<GO,NO>(Teuchos::rcpFromRef(coords)));
+  Teuchos::RCP<MultiVector> xcoords = Teuchos::rcp(new EpetraMultiVector(Teuchos::rcpFromRef(coords)));
 
   MLList.set("parameterlist: syntax","muelu");
 
@@ -2593,13 +2601,12 @@ void TestMueLuMultiLevelPreconditioner_Stratimikos(char ProblemType[],
                                                    double & TotalErrorResidual,
                                                    double & TotalErrorExactSol){
 #if defined(HAVE_MUELU_EPETRA) and defined(HAVE_TRILINOSCOUPLINGS_MUELU)
-  typedef double Scalar;
+  // typedef double Scalar;
   typedef int LocalOrdinal;
   typedef int GlobalOrdinal;
   typedef LocalOrdinal LO;
   typedef GlobalOrdinal GO;
   typedef Xpetra::EpetraNode Node;
-#include "MueLu_UseShortNames.hpp"
 
   using Teuchos::rcp;
   using Teuchos::RCP;
