@@ -925,7 +925,6 @@ namespace MueLu {
         {
           RCP<TimeMonitor> ATime      = rcp(new TimeMonitor(*this, prefix + "Solve : residual calculation (total)"      , Timings0));
           RCP<TimeMonitor> ALevelTime = rcp(new TimeMonitor(*this, prefix + "Solve : residual calculation" + levelSuffix, Timings0));
-          //residual = Utilities::Residual(*A, X, B);
           Utilities::Residual(*A, X, B,*residual_[startLevel]);
           residual = residual_[startLevel];
         }
@@ -943,12 +942,10 @@ namespace MueLu {
           coarseRhs = coarseRhs_[startLevel];
 
           if (implicitTranspose_) {
-            //            coarseRhs = MultiVectorFactory::Build(P->getDomainMap(), X.getNumVectors(), !initializeWithZeros);
             P->apply(*residual, *coarseRhs, Teuchos::TRANS, one, zero);
 
           } else {
             RCP<Operator> R = Coarse->Get< RCP<Operator> >("R");
-            //            coarseRhs = MultiVectorFactory::Build(R->getRangeMap(), X.getNumVectors(), !initializeWithZeros);
             R->apply(*residual, *coarseRhs, Teuchos::NO_TRANS, one, zero);
           }
         }
@@ -958,19 +955,14 @@ namespace MueLu {
           importer = Coarse->Get< RCP<const Import> >("Importer");
 
         coarseX = coarseX_[startLevel]; coarseX->putScalar(SC_ZERO);
-        if (doPRrebalance_ || importer.is_null()) {
-          //          coarseX = MultiVectorFactory::Build(coarseRhs->getMap(), X.getNumVectors(), initializeWithZeros);
-
-        } else {
+        if (!doPRrebalance_ && !importer.is_null()) {
           RCP<TimeMonitor> ITime      = rcp(new TimeMonitor(*this, prefix + "Solve : import (total)"       , Timings0));
           RCP<TimeMonitor> ILevelTime = rcp(new TimeMonitor(*this, prefix + "Solve : import" + levelSuffix1, Timings0));
 
           // Import: range map of R --> domain map of rebalanced Ac (before subcomm replacement)
           RCP<MultiVector> coarseTmp = coarseImport_[startLevel];
-          //          RCP<MultiVector> coarseTmp = MultiVectorFactory::Build(importer->getTargetMap(), coarseRhs->getNumVectors());
           coarseTmp->doImport(*coarseRhs, *importer, Xpetra::INSERT);
           coarseRhs.swap(coarseTmp);
-          //          coarseX = MultiVectorFactory::Build(importer->getTargetMap(), X.getNumVectors(), initializeWithZeros);
         }
 
         RCP<Operator> Ac = Coarse->Get< RCP<Operator> >("A");
@@ -1000,7 +992,6 @@ namespace MueLu {
           RCP<TimeMonitor> ILevelTime = rcp(new TimeMonitor(*this, prefix + "Solve : export" + levelSuffix1, Timings0));
 
           // Import: range map of rebalanced Ac (before subcomm replacement) --> domain map of P
-          //          RCP<MultiVector> coarseTmp = MultiVectorFactory::Build(importer->getSourceMap(), coarseX->getNumVectors());
           RCP<MultiVector> coarseTmp = coarseExport_[startLevel];
           coarseTmp->doExport(*coarseX, *importer, Xpetra::INSERT);
           coarseX.swap(coarseTmp);
