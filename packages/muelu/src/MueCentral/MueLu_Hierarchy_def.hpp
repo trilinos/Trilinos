@@ -1000,7 +1000,8 @@ namespace MueLu {
           RCP<TimeMonitor> ILevelTime = rcp(new TimeMonitor(*this, prefix + "Solve : export" + levelSuffix1, Timings0));
 
           // Import: range map of rebalanced Ac (before subcomm replacement) --> domain map of P
-          RCP<MultiVector> coarseTmp = MultiVectorFactory::Build(importer->getSourceMap(), coarseX->getNumVectors());
+          //          RCP<MultiVector> coarseTmp = MultiVectorFactory::Build(importer->getSourceMap(), coarseX->getNumVectors());
+          RCP<MultiVector> coarseTmp = coarseExport_[startLevel];
           coarseTmp->doExport(*coarseX, *importer, Xpetra::INSERT);
           coarseX.swap(coarseTmp);
         }
@@ -1449,12 +1450,14 @@ namespace MueLu {
           coarseX_[i] = MultiVectorFactory::Build(coarseRhs_[i]->getMap(),numvecs,false);
         else {
           coarseImport_[i] = MultiVectorFactory::Build(importer->getTargetMap(), numvecs,false);
+          coarseExport_[i] = MultiVectorFactory::Build(importer->getSourceMap(), numvecs,false);
           coarseX_[i] = MultiVectorFactory::Build(importer->getTargetMap(),numvecs,false);
         }
       }
     }
 
   }
+
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node>::DeleteLevelMultiVectors() {
