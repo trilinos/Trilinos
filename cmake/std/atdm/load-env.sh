@@ -47,17 +47,19 @@ fi
 THIS_HOSTNAME=`hostname`
 #echo "Hostname = '$THIS_HOSTNAME'"
 
-if [[ $THIS_HOSTNAME == "shiller"* ]] || [[ $THIS_HOSTNAME == "hasen"* ]] ; then
+ATDM_HOSTNAME=
+
+if [[ $THIS_HOSTNAME == "shiller"* ]] || [[ $THIS_HOSTNAME == "hansen"* ]] ; then
   ATDM_HOSTNAME=shiller
 fi
 
 # ToDo: Add more know hosts as you add them!
 
 if [[ $ATDM_HOSTNAME == "" ]] ; then
-  echo "Error, hostname = `$THIS_HOSTNAME` not recongised as a nown ATDM system name!"
+  echo "Error, hostname = '$THIS_HOSTNAME' not recognized as a known ATDM system name!"
   return
 else
-  echo "Hostname = '$THIS_HOSTNAME' matches known ATDM system '$ATDM_HOSTNAME'!"
+  echo "Hostname '$THIS_HOSTNAME' matches known ATDM system '$ATDM_HOSTNAME'!"
 fi
 
 #
