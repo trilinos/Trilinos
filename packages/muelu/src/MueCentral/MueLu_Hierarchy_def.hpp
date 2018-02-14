@@ -914,8 +914,6 @@ namespace MueLu {
           if (Fine->IsAvailable("PreSmoother")) {
             RCP<SmootherBase> preSmoo = Fine->Get< RCP<SmootherBase> >("PreSmoother");
             preSmoo->Apply(X, B, zeroGuess);
-          } else {
-            GetOStream(Warnings1) << "Level " <<  startLevel << ": No PreSmoother!" << std::endl;
           }
         }
 
@@ -1020,9 +1018,6 @@ namespace MueLu {
           if (Fine->IsAvailable("PostSmoother")) {
             RCP<SmootherBase> postSmoo = Fine->Get< RCP<SmootherBase> >("PostSmoother");
             postSmoo->Apply(X, B, false);
-
-          } else {
-            GetOStream(Warnings1) << "Level " <<  startLevel << ": No PostSmoother!" << std::endl;
           }
         }
       }
