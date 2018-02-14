@@ -25,6 +25,7 @@ $ cd <some_build_dir>/
 $ source $TRILINOS_DIR/cmake/std/atdm/load_env.sh <job-name>
 
 $ cmake \
+  -GNinja \
   -DTrilinos_CONFIGURE_OPTIONS_FILE:STRING=cmake/std/atdm/ATDMDevEnv.cmake \
   -DTrilinos_ENABLE_TESTS=ON -DTrilinos_ENABLE_<Package1>=ON \
   $TRILINOS_DIR
