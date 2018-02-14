@@ -431,6 +431,9 @@ int main(int argc,char * argv[])
       if (exodus_output)
         writeToExodus(0,solution_vec,*physics,*stkIOResponseLibrary,*mesh);
 
+      RCP<Thyra::VectorBase<double> > correction_vec = Thyra::createMember(physics->get_x_space());
+      Thyra::assign(correction_vec.ptr(),0.0);
+
       {
         Teuchos::RCP<Teuchos::TimeMonitor> tM = Teuchos::rcp(new Teuchos::TimeMonitor(*Teuchos::TimeMonitor::getNewTimer(std::string("Mini-EM: timestepper"))));
         for(int ts = 1; ts < numTimeSteps+1; ts++)
@@ -438,16 +441,24 @@ int main(int argc,char * argv[])
           RCP<Thyra::VectorBase<double> > x_old = solution_vec->clone_v();
     
           inArgs.set_t(dt*ts);
-          Thyra::V_StVpStV(x_dot.ptr(),1.0/dt,*x,-1.0/dt,*x_old);
+
+          // start Newton loop (nonlinear case)
+          // for() until convergence
+
+          Thyra::V_StVpStV(x_dot.ptr(),1.0/dt,*solution_vec,-1.0/dt,*x_old);
+          inArgs.set_x(solution_vec);
           inArgs.set_x_dot(x_dot);
     
           // construct the residual
           physics->evalModel(inArgs,outArgs);
     
           // solve
-          jacobian->solve(Thyra::NOTRANS,*residual,solution_vec.ptr());
-          Thyra::V_StVpStV(solution_vec.ptr(),1.0,*x_old,-1.0,*solution_vec);
-    
+          jacobian->solve(Thyra::NOTRANS,*residual,correction_vec.ptr());
+          Thyra::V_StVpStV(solution_vec.ptr(),1.0,*solution_vec,-1.0,*correction_vec);
+
+          // end for()
+          // end Newton loop (nonlinear case)
+
           // write to an exodus file
           if (exodus_output)
           {
