@@ -646,8 +646,7 @@ namespace MueLu {
       //if(Coarse->IsAvailable("Pbar"))
       Pbar = Coarse->Get< RCP<Operator> >("Pbar");
 
-      //      coarseRhs = MultiVectorFactory::Build(R->getRangeMap(), B.getNumVectors(), true);
-      coarseRhs = coarsRhs_[startLevel];
+      coarseRhs = MultiVectorFactory::Build(R->getRangeMap(), B.getNumVectors(), true);
 
       Ac = Coarse->Get< RCP< Operator > >("A");
 
@@ -936,19 +935,20 @@ namespace MueLu {
            P = Coarse->Get< RCP<Operator> >("Pbar");
 
         RCP<MultiVector> coarseRhs, coarseX;
-        const bool initializeWithZeros = true;
+        //        const bool initializeWithZeros = true;
         {
           // ============== RESTRICTION ==============
           RCP<TimeMonitor> RTime      = rcp(new TimeMonitor(*this, prefix + "Solve : restriction (total)"      , Timings0));
           RCP<TimeMonitor> RLevelTime = rcp(new TimeMonitor(*this, prefix + "Solve : restriction" + levelSuffix, Timings0));
+          coarseRhs = coarseRhs_[startLevel];
 
           if (implicitTranspose_) {
-            coarseRhs = MultiVectorFactory::Build(P->getDomainMap(), X.getNumVectors(), !initializeWithZeros);
+            //            coarseRhs = MultiVectorFactory::Build(P->getDomainMap(), X.getNumVectors(), !initializeWithZeros);
             P->apply(*residual, *coarseRhs, Teuchos::TRANS, one, zero);
 
           } else {
             RCP<Operator> R = Coarse->Get< RCP<Operator> >("R");
-            coarseRhs = MultiVectorFactory::Build(R->getRangeMap(), X.getNumVectors(), !initializeWithZeros);
+            //            coarseRhs = MultiVectorFactory::Build(R->getRangeMap(), X.getNumVectors(), !initializeWithZeros);
             R->apply(*residual, *coarseRhs, Teuchos::NO_TRANS, one, zero);
           }
         }
@@ -957,9 +957,9 @@ namespace MueLu {
         if (Coarse->IsAvailable("Importer"))
           importer = Coarse->Get< RCP<const Import> >("Importer");
 
+        coarseX = coarseX_[startLevel]; coarseX->putScalar(SC_ZERO);
         if (doPRrebalance_ || importer.is_null()) {
           //          coarseX = MultiVectorFactory::Build(coarseRhs->getMap(), X.getNumVectors(), initializeWithZeros);
-          coarseX = coarseX_[startLevel]; coarseX->putScalar(SC_ZERO);
 
         } else {
           RCP<TimeMonitor> ITime      = rcp(new TimeMonitor(*this, prefix + "Solve : import (total)"       , Timings0));
@@ -969,9 +969,7 @@ namespace MueLu {
           RCP<MultiVector> coarseTmp = MultiVectorFactory::Build(importer->getTargetMap(), coarseRhs->getNumVectors());
           coarseTmp->doImport(*coarseRhs, *importer, Xpetra::INSERT);
           coarseRhs.swap(coarseTmp);
-
           //          coarseX = MultiVectorFactory::Build(importer->getTargetMap(), X.getNumVectors(), initializeWithZeros);
-          coarseX = coarseX_[startLevel]; coarseX->putScalar(SC_ZERO);
         }
 
         RCP<Operator> Ac = Coarse->Get< RCP<Operator> >("A");
