@@ -53,8 +53,8 @@
 #include <iostream>
 
 Teuchos::RCP<Teuchos::ParameterList> maxwellParameterList(const int basis_order, const double epsilon, const double mu);
-std::vector<panzer::BC> homogeneousBoundaries();
-std::vector<panzer::BC> auxiliaryBoundaries();
+std::vector<panzer::BC> homogeneousBoundaries(Teuchos::RCP<panzer_stk::STK_Interface> mesh);
+std::vector<panzer::BC> auxiliaryBoundaries(Teuchos::RCP<panzer_stk::STK_Interface> mesh);
 Teuchos::RCP<Teuchos::ParameterList> auxOpsParameterList(const int basis_order, const double massMultiplier);
 Teuchos::RCP<Teuchos::ParameterList> maxwellSolverParameterList(const bool use_ilu, const bool use_refmaxwell, const bool print_diagnostics);
 void createExodusFile(const std::vector<Teuchos::RCP<panzer::PhysicsBlock> >& physicsBlocks,
@@ -216,7 +216,7 @@ int main(int argc,char * argv[])
   
       // define physics block parameter list and boundary conditions
       Teuchos::RCP<Teuchos::ParameterList> physicsBlock_pl = maxwellParameterList(basis_order, epsilon, mu);
-      std::vector<panzer::BC> bcs = homogeneousBoundaries();
+      std::vector<panzer::BC> bcs = homogeneousBoundaries(mesh);
       std::vector<panzer::BC> aux_bcs;// = auxiliaryBoundaries();
   
       // build the physics blocks objects
@@ -224,15 +224,17 @@ int main(int argc,char * argv[])
       {
         bool build_transient_support = true;
   
-        const panzer::CellData volume_cell_data(workset_size, mesh->getCellTopology("eblock-0_0_0"));
+        std::vector<std::string> block_names;
+        mesh->getElementBlockNames(block_names);
+        const panzer::CellData volume_cell_data(workset_size, mesh->getCellTopology(block_names[0]));
   
         // Can be overridden by the equation set
         int default_integration_order = 2;
         
         // the physics block knows how to build and register evaluator with the field manager
         RCP<panzer::PhysicsBlock> pb 
-  	= rcp(new panzer::PhysicsBlock(physicsBlock_pl,
-  				       "eblock-0_0_0", 
+        = rcp(new panzer::PhysicsBlock(physicsBlock_pl,
+                 block_names[0],
   				       default_integration_order,
   				       volume_cell_data,
   				       eqset_factory,
@@ -253,7 +255,9 @@ int main(int argc,char * argv[])
       {
         bool build_transient_support = false;
   
-        const panzer::CellData volume_cell_data(workset_size, mesh->getCellTopology("eblock-0_0_0"));
+        std::vector<std::string> block_names;
+        mesh->getElementBlockNames(block_names);
+        const panzer::CellData volume_cell_data(workset_size, mesh->getCellTopology(block_names[0]));
   
         // Can be overridden by the equation set
         int default_integration_order = 2;
@@ -261,7 +265,7 @@ int main(int argc,char * argv[])
         // the physics block knows how to build and register evaluator with the field manager
         RCP<panzer::PhysicsBlock> pb 
   	= rcp(new panzer::PhysicsBlock(auxPhysicsBlock_pl,
-  				       "eblock-0_0_0", 
+  	             block_names[0],
   				       default_integration_order,
   				       volume_cell_data,
   				       eqset_factory,
@@ -480,12 +484,15 @@ Teuchos::RCP<Teuchos::ParameterList> maxwellParameterList(const int basis_order,
 }
 
 //! Create BCs for E x n = 0 and B . n = 0 on all boundaries
-std::vector<panzer::BC> homogeneousBoundaries()
+std::vector<panzer::BC> homogeneousBoundaries(Teuchos::RCP<panzer_stk::STK_Interface> mesh )
 {
   std::vector<panzer::BC> bcs;
 
-  std::string sidesets[6] = {"left","right","top","bottom","back","front"};
+  std::vector<std::string> sidesets, block_names;
   std::string dofs[2]     = {"E_edge","B_face"};
+
+  mesh->getElementBlockNames(block_names);
+  mesh->getSidesetNames(sidesets);
 
   std::size_t bc_id = 0;
   for (int s = 0; s < 6; s++)
@@ -493,7 +500,7 @@ std::vector<panzer::BC> homogeneousBoundaries()
     {
       panzer::BCType bctype = panzer::BCT_Dirichlet;
       std::string sideset_id = sidesets[s];
-      std::string element_block_id = "eblock-0_0_0";
+      std::string element_block_id = block_names[0];
       std::string dof_name = dofs[d];
       std::string strategy = "Constant";
       Teuchos::ParameterList p;
@@ -510,11 +517,14 @@ std::vector<panzer::BC> homogeneousBoundaries()
 }
 
 //! Create BCs for auxiliary operators
-std::vector<panzer::BC> auxiliaryBoundaries()
+std::vector<panzer::BC> auxiliaryBoundaries(Teuchos::RCP<panzer_stk::STK_Interface> mesh )
 {
   std::vector<panzer::BC> bcs;
 
-  std::string sidesets[6] = {"left","right","top","bottom","back","front"};
+  std::vector<std::string> sidesets, block_names;
+  mesh->getElementBlockNames(block_names);
+  mesh->getSidesetNames(sidesets);
+
   std::string eq_sets[2]  = {"Mass Matrix AUXILIARY_NODE","Weak Gradient"};
   std::string dofs[2]     = {"AUXILIARY_NODE","AUXILIARY_EDGE"};
 
@@ -524,7 +534,7 @@ std::vector<panzer::BC> auxiliaryBoundaries()
     {
       panzer::BCType bctype = panzer::BCT_Dirichlet;
       std::string sideset_id = sidesets[s];
-      std::string element_block_id = "eblock-0_0_0";
+      std::string element_block_id = block_names[0];
       std::string dof_name = eq_sets[d];
       std::string strategy = "AuxConstant";
       Teuchos::ParameterList p;
@@ -651,10 +661,13 @@ void createExodusFile(const std::vector<Teuchos::RCP<panzer::PhysicsBlock> >& ph
       }
     }
 
+    std::vector<std::string> block_names;
+    mesh->getElementBlockNames(block_names);
+
     Teuchos::ParameterList output_pl("Output");
     Teuchos::ParameterList& cell_avg_q = output_pl.sublist("Cell Average Quantities");
     Teuchos::ParameterList& cell_avg_v = output_pl.sublist("Cell Average Vectors");
-    cell_avg_v.set("eblock-0_0_0","CURRENT");
+    cell_avg_v.set(block_names[0],"CURRENT");
     Teuchos::ParameterList& cell_q = output_pl.sublist("Cell Quantities");
     Teuchos::ParameterList& nodal_q = output_pl.sublist("Nodal Quantities");
     Teuchos::ParameterList& a_nodal_q = output_pl.sublist("Allocate Nodal Quantities");
@@ -689,11 +702,14 @@ buildSTKIOResponseLibrary(const std::vector<Teuchos::RCP<panzer::PhysicsBlock> >
 
   stkIOResponseLibrary->addResponse("Main Field Output",eBlocks,builder);
 
+  std::vector<std::string> block_names;
+  mesh->getElementBlockNames(block_names);
+
   // this automatically adds in the nodal fields
   Teuchos::ParameterList output_pl("Output");
   Teuchos::ParameterList& cell_avg_q = output_pl.sublist("Cell Average Quantities");
   Teuchos::ParameterList& cell_avg_v = output_pl.sublist("Cell Average Vectors");
-  cell_avg_v.set("eblock-0_0_0","CURRENT");
+  cell_avg_v.set(block_names[0],"CURRENT");
   Teuchos::ParameterList& cell_q = output_pl.sublist("Cell Quantities");
   Teuchos::ParameterList& nodal_q = output_pl.sublist("Nodal Quantities");
   Teuchos::ParameterList& a_nodal_q = output_pl.sublist("Allocate Nodal Quantities");
