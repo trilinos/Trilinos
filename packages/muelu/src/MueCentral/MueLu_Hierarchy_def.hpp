@@ -80,7 +80,8 @@ namespace MueLu {
   Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Hierarchy()
     : maxCoarseSize_(GetDefaultMaxCoarseSize()), implicitTranspose_(GetDefaultImplicitTranspose()),
       doPRrebalance_(GetDefaultPRrebalance()), isPreconditioner_(true), Cycle_(GetDefaultCycle()),
-      scalingFactor_(Teuchos::ScalarTraits<double>::one()), lib_(Xpetra::UseTpetra), isDumpingEnabled_(false), dumpLevel_(-1), rate_(-1)
+      scalingFactor_(Teuchos::ScalarTraits<double>::one()), lib_(Xpetra::UseTpetra), isDumpingEnabled_(false), dumpLevel_(-1), rate_(-1),
+      sizeOfAllocatedLevelMultiVectors_(0)
   {
     AddLevel(rcp(new Level));
   }
@@ -89,7 +90,8 @@ namespace MueLu {
   Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Hierarchy(const RCP<Matrix>& A)
     : maxCoarseSize_(GetDefaultMaxCoarseSize()), implicitTranspose_(GetDefaultImplicitTranspose()),
       doPRrebalance_(GetDefaultPRrebalance()), isPreconditioner_(true), Cycle_(GetDefaultCycle()),
-      scalingFactor_(Teuchos::ScalarTraits<double>::one()), isDumpingEnabled_(false), dumpLevel_(-1), rate_(-1)
+      scalingFactor_(Teuchos::ScalarTraits<double>::one()), isDumpingEnabled_(false), dumpLevel_(-1), rate_(-1),
+      sizeOfAllocatedLevelMultiVectors_(0)
   {
     lib_ = A->getDomainMap()->lib();
 
@@ -921,7 +923,9 @@ namespace MueLu {
         {
           RCP<TimeMonitor> ATime      = rcp(new TimeMonitor(*this, prefix + "Solve : residual calculation (total)"      , Timings0));
           RCP<TimeMonitor> ALevelTime = rcp(new TimeMonitor(*this, prefix + "Solve : residual calculation" + levelSuffix, Timings0));
-          residual = Utilities::Residual(*A, X, B);
+          //residual = Utilities::Residual(*A, X, B);
+          Utilities::Residual(*A, X, B,*residual_[startLevel]);
+          residual = residual_[startLevel];
         }
 
         RCP<Operator>    P = Coarse->Get< RCP<Operator> >("P");
@@ -1395,6 +1399,47 @@ namespace MueLu {
     RCP<xdMV> newCoords = Xpetra::MultiVectorFactory<double,LO,GO,NO>::Build(nodeMap, coordDataView(), coords->getNumVectors());
     level.Set("Coordinates", newCoords);
   }
+
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  void Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node>::AllocateLevelMultiVectors(int numvecs) {
+    if(sizeOfAllocatedLevelMultiVectors_ == numvecs || numvecs<=0) return;
+    int N = Levels_.size();  
+
+
+    // If, somehow, we changed the number of levels, delete everything first
+    if(residual_.size() != N) {
+      DeleteLevelMultiVectors();
+
+      residual_.resize(N);
+      coarseRhs_.resize(N);
+      coarseX_.resize(N);
+      coarseImport_.resize(N);
+      coarseExport_.resize(N);
+      correction_.resize(N);
+    }
+
+    for(int i=0; i<N; i++) {
+      RCP<Operator> A = Levels_[i]->Get< RCP<Operator> >("A");
+      if(!A.is_null()) {
+        // This is zero'd by default since it is filled via an operator apply
+        residual_[i] = MultiVectorFactory::Build(A->getRangeMap(), numvecs, true);
+      }
+    }
+
+  }
+
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+void Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node>::DeleteLevelMultiVectors() {
+  if(sizeOfAllocatedLevelMultiVectors_==0) return;
+  residual_.resize(0);
+  coarseRhs_.resize(0);
+  coarseX_.resize(0);
+  coarseImport_.resize(0);
+  coarseExport_.resize(0);
+  correction_.resize(0);
+  sizeOfAllocatedLevelMultiVectors_ = 0;
+}
+
 
 } //namespace MueLu
 
