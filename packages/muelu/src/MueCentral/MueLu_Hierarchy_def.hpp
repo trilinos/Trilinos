@@ -1428,7 +1428,12 @@ namespace MueLu {
       if(!A.is_null()) {
         // This is zero'd by default since it is filled via an operator apply
         residual_[i] = MultiVectorFactory::Build(A->getRangeMap(), numvecs, true);
-        correction_[i] = MultiVectorFactory::Build(A->getRangeMap(), numvecs, false);
+
+        // This dance is because we allow A to have a BlockedMap and X to have (compatible) non-blocked map
+        RCP<const Map> Adm = A->getDomainMap();
+        RCP<const BlockedCrsMatrix> A_as_blocked = Teuchos::rcp_dynamic_cast<const BlockedCrsMatrix>(A);
+        if(!A_as_blocked.is_null()) Adm = A_as_blocked->getFullDomainMap();
+        correction_[i] = MultiVectorFactory::Build(Adm, numvecs, false);
       }
 
       if(i+1<N) {
