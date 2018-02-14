@@ -56,7 +56,6 @@ Teuchos::RCP<Teuchos::ParameterList> maxwellParameterList(const int basis_order,
 std::vector<panzer::BC> homogeneousBoundaries(Teuchos::RCP<panzer_stk::STK_Interface> mesh);
 std::vector<panzer::BC> auxiliaryBoundaries(Teuchos::RCP<panzer_stk::STK_Interface> mesh);
 Teuchos::RCP<Teuchos::ParameterList> auxOpsParameterList(const int basis_order, const double massMultiplier);
-Teuchos::RCP<Teuchos::ParameterList> maxwellSolverParameterList(const bool use_ilu, const bool use_refmaxwell, const bool print_diagnostics);
 void createExodusFile(const std::vector<Teuchos::RCP<panzer::PhysicsBlock> >& physicsBlocks,
                       Teuchos::RCP<panzer_stk::STK_MeshFactory> mesh_factory,
                       Teuchos::RCP<panzer_stk::STK_Interface> mesh,
@@ -126,14 +125,13 @@ int main(int argc,char * argv[])
       std::size_t workset_size = 20;
       bool exodus_output = false;
       bool matrix_output = false;
-      bool use_ilu = false;
       bool use_refmaxwell = false;
-      bool print_diagnostics = false;
       std::string filename;
       int numTimeSteps = 1;
       double epsilon = 8.854187817e-12;
       double mu = 1.2566370614e-6;
       bool build_tet_mesh = false;
+      std::string xml = "";
       Teuchos::CommandLineProcessor clp;
       clp.setOption("x-elements",&x_elements);
       clp.setOption("y-elements",&y_elements);
@@ -147,21 +145,18 @@ int main(int argc,char * argv[])
       clp.setOption("workset-size",&workset_size);
       clp.setOption("exodus-output","no-exodus-output",&exodus_output);
       clp.setOption("matrix-output","no-matrix-output",&matrix_output);
-      clp.setOption("use-ilu","no-ilu",&use_ilu);
       clp.setOption("use-refmaxwell","use-augmentation",&use_refmaxwell);
       clp.setOption("build-tet-mesh","build-hex-mesh",&build_tet_mesh);
-      clp.setOption("subsolve-diagnostics","no-subsolve-diagnostics",&print_diagnostics);
       clp.setOption("numTimeSteps",&numTimeSteps);
       clp.setOption("epsilon",&epsilon);
       clp.setOption("mu",&mu);
-        
+      clp.setOption("xml",&xml);
+
       // parse command-line argument
-      TEUCHOS_ASSERT(clp.parse(argc,argv)==Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL);
-  
-      // compute dt from cfl
-      double c  = std::sqrt(1.0/epsilon/mu);
-      double min_dx = 1.0/std::max(x_elements,std::max(y_elements,z_elements));
-      double dt = cfl*min_dx/c;
+      const Teuchos::CommandLineProcessor::EParseCommandLineReturn parseResult = clp.parse (argc, argv);
+      if (parseResult == Teuchos::CommandLineProcessor::PARSE_HELP_PRINTED)
+        return EXIT_SUCCESS;      
+      TEUCHOS_ASSERT(parseResult==Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL);
   
       RCP<panzer_stk::STK_Interface> mesh;
       Teuchos::RCP<panzer_stk::STK_MeshFactory> mesh_factory;
@@ -202,6 +197,17 @@ int main(int argc,char * argv[])
         mesh_factory->setParameterList(pl);
         mesh = mesh_factory->buildUncommitedMesh(MPI_COMM_WORLD);
       }
+
+      // compute dt from cfl
+      double c  = std::sqrt(1.0/epsilon/mu);
+      double min_dx = 1.0/std::max(x_elements,std::max(y_elements,z_elements));
+      double dt = cfl*min_dx/c;
+
+      std::cout << std::endl << "epsilon: " << epsilon << std::endl;
+      std::cout << "mu:      " << mu << std::endl;
+      std::cout << "c:       " << c << std::endl;
+      std::cout << "min_dx:  " << min_dx << std::endl;
+      std::cout << "dt:      " << dt << std::endl << std::endl;
 
       // data container for auxiliary linear operators used in preconditioning (mass matrix and gradient)
       Teuchos::RCP<panzer::GlobalEvaluationDataContainer> auxGlobalData = Teuchos::rcp(new panzer::GlobalEvaluationDataContainer);
@@ -248,7 +254,7 @@ int main(int argc,char * argv[])
       // build the auxiliary physics blocks objects
       Teuchos::RCP<Teuchos::ParameterList> auxPhysicsBlock_pl;
       if (use_refmaxwell)
-         auxPhysicsBlock_pl = auxOpsParameterList(basis_order, epsilon / dt / cfl / cfl / min_dx / min_dx);
+        auxPhysicsBlock_pl = auxOpsParameterList(basis_order, epsilon / dt / cfl / cfl / min_dx / min_dx);
       else
         auxPhysicsBlock_pl = auxOpsParameterList(basis_order, 1.0);
       std::vector<RCP<panzer::PhysicsBlock> > auxPhysicsBlocks;
@@ -354,9 +360,21 @@ int main(int argc,char * argv[])
 
       // add discrete gradient
       addDiscreteGradientToRequestHandler(auxLinObjFactory,req_handler);
-  
+
+      std::string defaultXMLfile;
+      if (!use_refmaxwell)
+        defaultXMLfile = "solverDefaultsAugmentation.xml";
+      else
+        defaultXMLfile = "solverDefaultsRefMaxwell.xml";
+      RCP<Teuchos::ParameterList> lin_solver_pl = Teuchos::rcp(new Teuchos::ParameterList("Linear Solver"));
+      Teuchos::updateParametersFromXmlFileAndBroadcast(defaultXMLfile,lin_solver_pl.ptr(),*comm);
+      if (xml != "")
+        Teuchos::updateParametersFromXmlFileAndBroadcast(xml,lin_solver_pl.ptr(),*comm);
+
+      lin_solver_pl->print(std::cout,2,true,true);
+
+              
       // build linear solver
-      RCP<Teuchos::ParameterList> lin_solver_pl = maxwellSolverParameterList(use_ilu,use_refmaxwell,print_diagnostics);
       RCP<Thyra::LinearOpWithSolveFactoryBase<double> > lowsFactory
       = panzer_stk::buildLOWSFactory(true, dofManager, conn_manager,
           Teuchos::as<int>(mesh->getDimension()),
@@ -572,58 +590,6 @@ Teuchos::RCP<Teuchos::ParameterList> auxOpsParameterList(const int basis_order, 
     p.set("Scalar Name","AUXILIARY_NODE");
     p.set("Basis Order",basis_order);
     p.set("Integration Order",integration_order);
-  }
-
-  return pl;
-}
-
-//! Create parameter list defining linear solver
-Teuchos::RCP<Teuchos::ParameterList> maxwellSolverParameterList(const bool use_ilu, const bool use_refmaxwell, const bool print_diagnostics)
-{
-  Teuchos::RCP<Teuchos::ParameterList> pl = Teuchos::rcp(new Teuchos::ParameterList("Linear Solver"));
-  pl->set("Linear Solver Type","Belos");
-  {
-    Teuchos::ParameterList& ls_types = pl->sublist("Linear Solver Types");
-    {
-      Teuchos::ParameterList& belos = ls_types.sublist("Belos");
-      belos.set("Solver Type","Pseudo Block GMRES");
-      {
-        Teuchos::ParameterList& solver_types = belos.sublist("Solver Types");
-        {
-          Teuchos::ParameterList& gmres = solver_types.sublist("Pseudo Block GMRES");
-          gmres.set("Convergence Tolerance", 1.0e-5);
-          gmres.set("Output Frequency",      1);
-          gmres.set("Output Style",          1);
-          gmres.set("Verbosity",             33);
-          gmres.set("Maximum Iterations",    100);
-          gmres.set("Block Size",            1);
-          gmres.set("Num Blocks",            100);
-        }
-      }
-      {
-        Teuchos::ParameterList& verb = belos.sublist("VerboseObject");
-        verb.set("Output File", "none");
-        verb.set("Verbosity Level", "medium");
-      }
-    }
-  }
-  pl->set("Preconditioner Type", "Teko");
-  {
-    Teuchos::ParameterList& prec_types = pl->sublist("Preconditioner Types");
-    {
-      Teuchos::ParameterList& teko = prec_types.sublist("Teko");
-      teko.set("Inverse Type", "Maxwell");
-      {
-        Teuchos::ParameterList& inv_fac = teko.sublist("Inverse Factory Library");
-        { // Maxwell block preconditioner settings
-          Teuchos::ParameterList& maxwell = inv_fac.sublist("Maxwell");
-          maxwell.set("Type", "Full Maxwell Preconditioner");
-          maxwell.set("Use ILU", use_ilu);
-          maxwell.set("Use refMaxwell", use_refmaxwell);
-          maxwell.set("Print Diagnostics", print_diagnostics);
-        }
-      }
-    }
   }
 
   return pl;
