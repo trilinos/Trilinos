@@ -1005,7 +1005,8 @@ namespace MueLu {
         // Note that due to what may be round-off error accumulation, use of the fused kernel
         //    P->apply(*coarseX, X, Teuchos::NO_TRANS, one, one);
         // can in some cases result in slightly higher iteration counts.
-        RCP<MultiVector> correction = MultiVectorFactory::Build(X.getMap(), X.getNumVectors(),false);
+        //        RCP<MultiVector> correction = MultiVectorFactory::Build(X.getMap(), X.getNumVectors(),false);
+        RCP<MultiVector> correction = correction_[startLevel];
         {
           // ============== PROLONGATION ==============
           RCP<TimeMonitor> PTime      = rcp(new TimeMonitor(*this, prefix + "Solve : prolongation (total)"      , Timings0));
@@ -1423,6 +1424,7 @@ namespace MueLu {
       if(!A.is_null()) {
         // This is zero'd by default since it is filled via an operator apply
         residual_[i] = MultiVectorFactory::Build(A->getRangeMap(), numvecs, true);
+        correction_[i] = MultiVectorFactory::Build(A->getRangeMap(), numvecs, false);
       }
     }
 
