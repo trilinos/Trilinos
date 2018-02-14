@@ -487,6 +487,10 @@ namespace MueLu {
     Levels_       .resize(levelID);
     levelManagers_.resize(levelID);
 
+    // NOTE: All reuse cases leave all of the maps the same, meaning that we do not
+    // need to reallocated the cached multivectors for Iterate().  If this were to change,
+    // we'd want to do a DeleteLevelMultiVectors() and AllocateLevelMultiVectors() here.
+
     // since the # of levels, etc. may have changed, force re-determination of description during next call to description()
     ResetDescription();
 
@@ -609,6 +613,7 @@ namespace MueLu {
 
     RCP<Operator> A = Fine->Get< RCP<Operator> >("A");
     Teuchos::RCP< const Teuchos::Comm< int > > communicator = A->getDomainMap()->getComm();
+
 
     //Synchronize_beginning->start();
     //communicator->barrier();
@@ -831,6 +836,10 @@ namespace MueLu {
       // we use repartitioning.
       return Undefined;
     }
+
+    // If we switched the number of vectors, we'd need to reallocate here.
+    // If the number of vectors is unchanged, this is a noop.
+    AllocateLevelMultiVectors(X.getNumVectors());
 
     // Print residual information before iterating
     MagnitudeType prevNorm = STS::magnitude(STS::one()), curNorm = STS::magnitude(STS::one());
@@ -1399,9 +1408,8 @@ namespace MueLu {
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node>::AllocateLevelMultiVectors(int numvecs) {
-    if(sizeOfAllocatedLevelMultiVectors_ == numvecs || numvecs<=0) return;
     int N = Levels_.size();  
-
+    if( (sizeOfAllocatedLevelMultiVectors_ == numvecs && residual_.size() == N) || numvecs<=0 ) return;
 
     // If, somehow, we changed the number of levels, delete everything first
     if(residual_.size() != N) {
