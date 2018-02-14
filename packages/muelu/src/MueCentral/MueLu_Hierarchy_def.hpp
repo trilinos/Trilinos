@@ -646,7 +646,8 @@ namespace MueLu {
       //if(Coarse->IsAvailable("Pbar"))
       Pbar = Coarse->Get< RCP<Operator> >("Pbar");
 
-      coarseRhs = MultiVectorFactory::Build(R->getRangeMap(), B.getNumVectors(), true);
+      //      coarseRhs = MultiVectorFactory::Build(R->getRangeMap(), B.getNumVectors(), true);
+      coarseRhs = coarsRhs_[startLevel];
 
       Ac = Coarse->Get< RCP< Operator > >("A");
 
@@ -823,6 +824,8 @@ namespace MueLu {
     using namespace Teuchos;
     RCP<Time> CompCoarse  = Teuchos::TimeMonitor::getNewCounter(prefix + "Coarse: Computational Time");
 
+    const Scalar SC_ZERO = Teuchos::ScalarTraits<Scalar>::zero();
+
     if (A.is_null()) {
       // This processor does not have any data for this process on coarser
       // levels. This can only happen when there are multiple processors and
@@ -955,7 +958,8 @@ namespace MueLu {
           importer = Coarse->Get< RCP<const Import> >("Importer");
 
         if (doPRrebalance_ || importer.is_null()) {
-          coarseX = MultiVectorFactory::Build(coarseRhs->getMap(), X.getNumVectors(), initializeWithZeros);
+          //          coarseX = MultiVectorFactory::Build(coarseRhs->getMap(), X.getNumVectors(), initializeWithZeros);
+          coarseX = coarseX_[startLevel]; coarseX->putScalar(SC_ZERO);
 
         } else {
           RCP<TimeMonitor> ITime      = rcp(new TimeMonitor(*this, prefix + "Solve : import (total)"       , Timings0));
@@ -966,7 +970,8 @@ namespace MueLu {
           coarseTmp->doImport(*coarseRhs, *importer, Xpetra::INSERT);
           coarseRhs.swap(coarseTmp);
 
-          coarseX = MultiVectorFactory::Build(importer->getTargetMap(), X.getNumVectors(), initializeWithZeros);
+          //          coarseX = MultiVectorFactory::Build(importer->getTargetMap(), X.getNumVectors(), initializeWithZeros);
+          coarseX = coarseX_[startLevel]; coarseX->putScalar(SC_ZERO);
         }
 
         RCP<Operator> Ac = Coarse->Get< RCP<Operator> >("A");
@@ -1425,6 +1430,28 @@ namespace MueLu {
         // This is zero'd by default since it is filled via an operator apply
         residual_[i] = MultiVectorFactory::Build(A->getRangeMap(), numvecs, true);
         correction_[i] = MultiVectorFactory::Build(A->getRangeMap(), numvecs, false);
+      }
+
+      if(i+1<N) {
+        // This is zero'd by default since it is filled via an operator apply
+        if(implicitTranspose_) {
+          RCP<Operator> P = Levels_[i+1]->Get< RCP<Operator> >("P");
+          if(!P.is_null()) coarseRhs_[i] = MultiVectorFactory::Build(P->getDomainMap(),numvecs,true);
+        } else {
+          RCP<Operator> R = Levels_[i+1]->Get< RCP<Operator> >("R");
+          if(!R.is_null()) coarseRhs_[i] = MultiVectorFactory::Build(R->getRangeMap(),numvecs,true);
+        }
+
+
+        RCP<const Import> importer;
+        if(Levels_[i+1]->IsAvailable("Importer"))
+          importer = Levels_[i+1]->Get< RCP<const Import> >("Importer");
+        if (doPRrebalance_ || importer.is_null()) 
+          coarseX_[i] = MultiVectorFactory::Build(coarseRhs_[i]->getMap(),numvecs,false);
+        else {
+          //          coarseImport_[i] = MultiVectorFactory::Build(importer->getTargetMap(), numvecs,false);
+          coarseX_[i] = MultiVectorFactory::Build(importer->getTargetMap(),numvecs,false);
+        }
       }
     }
 
