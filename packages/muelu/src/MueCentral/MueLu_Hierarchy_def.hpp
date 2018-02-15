@@ -1424,7 +1424,7 @@ namespace MueLu {
     }
 
     for(int i=0; i<N; i++) {
-      RCP<Operator> A = Levels_[i]->Get< RCP<Operator> >("A");
+      RCP<Operator> A = Levels_[i]->template Get< RCP<Operator> >("A");
       if(!A.is_null()) {
         // This is zero'd by default since it is filled via an operator apply
         residual_[i] = MultiVectorFactory::Build(A->getRangeMap(), numvecs, true);
@@ -1439,17 +1439,17 @@ namespace MueLu {
       if(i+1<N) {
         // This is zero'd by default since it is filled via an operator apply
         if(implicitTranspose_) {
-          RCP<Operator> P = Levels_[i+1]->Get< RCP<Operator> >("P");
+          RCP<Operator> P = Levels_[i+1]->template Get< RCP<Operator> >("P");
           if(!P.is_null()) coarseRhs_[i] = MultiVectorFactory::Build(P->getDomainMap(),numvecs,true);
         } else {
-          RCP<Operator> R = Levels_[i+1]->Get< RCP<Operator> >("R");
+          RCP<Operator> R = Levels_[i+1]->template Get< RCP<Operator> >("R");
           if(!R.is_null()) coarseRhs_[i] = MultiVectorFactory::Build(R->getRangeMap(),numvecs,true);
         }
 
 
         RCP<const Import> importer;
         if(Levels_[i+1]->IsAvailable("Importer"))
-          importer = Levels_[i+1]->Get< RCP<const Import> >("Importer");
+          importer = Levels_[i+1]->template Get< RCP<const Import> >("Importer");
         if (doPRrebalance_ || importer.is_null()) 
           coarseX_[i] = MultiVectorFactory::Build(coarseRhs_[i]->getMap(),numvecs,false);
         else {
