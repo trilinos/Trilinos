@@ -123,9 +123,16 @@ Teko::LinearOp FullMaxwellPreconditionerFactory::buildPreconditionerOperator(Tek
 
      // Inverse of B mass matrix
      *Teko::getOutputStream() << "Building Q_B inverse operator" << std::endl;
-     Teko::LinearOp invDiagQ_B = Teko::getInvDiagonalOp(Q_B,Teko::Diagonal);
-     // Teko::LinearOp invDiagQ_B = Teko::buildInverse(*invLib.getInverseFactory("Q_B Preconditioner"),Q_B);
-     Teko::LinearOp invQ_B = Teko::buildInverse(*invLib.getInverseFactory("Q_B Solve"),Q_B, invDiagQ_B);
+
+     Teko::LinearOp invQ_B;
+     if (use_as_preconditioner)
+       invQ_B = Teko::getInvDiagonalOp(Q_B,Teko::Diagonal);
+     else {
+       Teko::LinearOp invDiagQ_B = Teko::getInvDiagonalOp(Q_B,Teko::Diagonal);
+       // Teko::LinearOp invDiagQ_B = Teko::buildInverse(*invLib.getInverseFactory("Q_B Preconditioner"),Q_B);
+       invQ_B = Teko::buildInverse(*invLib.getInverseFactory("Q_B Solve"),Q_B, invDiagQ_B);
+     }
+     
 
      // Compute the approximate Schur complement
      Teko::LinearOp idQ_B = Teko::getInvDiagonalOp(Q_B,Teko::AbsRowSum);
@@ -151,10 +158,14 @@ Teko::LinearOp FullMaxwellPreconditionerFactory::buildPreconditionerOperator(Tek
      S_E_prec_pl.sublist("Preconditioner Types").sublist("MueLuRefMaxwell-Tpetra").set("Type","MueLuRefMaxwell-Tpetra");
      myInvLib.addInverse("S_E Preconditioner",S_E_prec_pl.sublist("Preconditioner Types").sublist("MueLuRefMaxwell-Tpetra"));
      S_E_prec_factory = myInvLib.getInverseFactory("S_E Preconditioner");
-     
-     // Teko::LinearOp invS_E = Teko::buildInverse(*S_E_prec_factory,S_E);
-     Teko::LinearOp S_E_prec = Teko::buildInverse(*S_E_prec_factory,S_E);
-     Teko::LinearOp invS_E = Teko::buildInverse(*invLib.getInverseFactory("S_E Solve"),S_E,S_E_prec);
+
+     Teko::LinearOp invS_E;
+     if (use_as_preconditioner)
+       invS_E = Teko::buildInverse(*S_E_prec_factory,S_E);
+     else {
+       Teko::LinearOp S_E_prec = Teko::buildInverse(*S_E_prec_factory,S_E);
+       invS_E = Teko::buildInverse(*invLib.getInverseFactory("S_E Solve"),S_E,S_E_prec);
+     }
      
      // Inverse blocks
      std::vector<Teko::LinearOp> diag(2);
@@ -216,6 +227,10 @@ void FullMaxwellPreconditionerFactory::initializeFromParameterList(const Teuchos
      invLib.addInverse("T_E Solve",T_E_pl);
      
    } else { // RefMaxwell based solve
+
+     use_as_preconditioner = false;
+     if(pl.isParameter("Use as preconditioner"))
+       use_as_preconditioner = pl.get<bool>("Use as preconditioner");
      
      // Q_B solve
      Teuchos::ParameterList cg_pl = pl.sublist("Q_B Solve");
