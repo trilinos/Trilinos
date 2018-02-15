@@ -1459,7 +1459,7 @@ namespace MueLu {
         }
       }
     }
-
+    sizeOfAllocatedLevelMultiVectors_ = numvecs;
   }
 
 
