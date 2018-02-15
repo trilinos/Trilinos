@@ -121,10 +121,10 @@ which just runs:
 ## Running locally and debugging
 
 To run locally, first set up a mock Jenkins workspace directory structure and
-set up symlinks to local
+set up symlinks to the local Trilinos git repo as:
 
 ```
-$ cd <some_base_build_dir>
+$ cd <some_base_build_dir>/
 $ mkdir MOCK_jenkins_driver
 $ cd MOCK_jenkins_driver/
 $ ln -s <some_base_dir>/Trilinos .
@@ -134,7 +134,7 @@ $ ln -s <some_base_dir>/Trilinos .
 $ cd ..
 ```
 
-Then any of these builds can be first tested out with:
+Then any of these builds can be tested locally without submitting to CDash with:
 
 ```
 $ cd <some_base_build_dir>/MOCK_jenkins_driver/
@@ -150,7 +150,9 @@ $ time env \
     &> console.out
 ```
 
-or if the `<system_name>/drivers/$JOB_NAME.sh` file already exists, instead use:
+(Where it is **CRITICAL** that you set `CTEST_DO_UPDATES=OFF` or it will hard reset your local Trilinos git repo!)
+
+Or if a `<system_name>/drivers/<some-build-name>.sh` file (e.g. `Trilinos-atdm-hansel-shiller-gnu-debug-openmp.sh`) already exists, instead use:
 
 ```
 $ cd <some_base_build_dir>/MOCK_jenkins_driver/
@@ -166,14 +168,16 @@ $ time env \
     &> console.out
 ```
 
-Then you can examine the `*.xml` configure, build, and test files created
+Then you can examine the generated `*.xml` configure, build, and test files created
 under:
 
+```
   <some_base_build_dir>/MOCK_jenkins_driver/SRC_AND_BUILD/BUILD/Testing/
+```
 
 to see if it is doing the right thing.
 
-If that looks good, you can do an experimental submit (avoiding a rebulid)
+If that looks good, then you can do an experimental submit (avoiding a rebulid)
 with:
 
 ```
@@ -190,6 +194,8 @@ $ time env \
     &> console.out
 ```
 
+If that submit looks good, then the job is ready to set up as a Jenkins job.
+
 ## Setting up Jenkins jobs
 
 To set up a Jenkins build, you must set the following in the Jenkins build
@@ -198,12 +204,12 @@ configuation GUI:
 * "Source Code Management"
   * "Git"
     * "Repository URL": `https://github.com/trilinos/Trilinos.git` (until we
-         can figure out how to clone from `sofware.sandia.gov:/git/Trilinos`)
+         can figure out how to clone from `sofware.sandia.gov:/git/nightly/Trilinos` with Jenkins)
 * "Build Triggers"
-  * "Build Periodically" (checked)
+  * "Build Periodically" (**checked**)
     * "Schedule": `H 0 ***`
 * "Build Environment"
-  * "Abort of the build if it's stuck" (checked)
+  * "Abort of the build if it's stuck" (**checked**)
     * "Time-out strategy": `Deadline`
       * "Deadline time": `20:45`
       * "Deadline tolerence in minues": `1`
