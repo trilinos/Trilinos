@@ -25,5 +25,7 @@ source $WORKSPACE/Trilinos/cmake/std/atdm/shiller/environment.sh
 echo
 module list
 
+set -x
+
 ctest -V -S \
   $WORKSPACE/Trilinos/cmake/ctest/drivers/atdm/shiller/ctest-driver.cmake
