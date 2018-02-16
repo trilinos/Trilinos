@@ -29,24 +29,30 @@ namespace Tempus {
  *
  */
 template<class Scalar>
-class TimeStepControlStrategyBasicVS : virtual public TimeStepControlStrategy<Scalar>
+class TimeStepControlStrategyBasicVS
+  : virtual public TimeStepControlStrategy<Scalar>
 {
 public:
 
   /// Constructor
-  TimeStepControlStrategyBasicVS(Teuchos::RCP<Teuchos::ParameterList> pList = Teuchos::null){
-     this->setParameterList(pList);  
+  TimeStepControlStrategyBasicVS(
+    Teuchos::RCP<Teuchos::ParameterList> pList = Teuchos::null){
+     this->setParameterList(pList);
   }
 
   /// Destructor
   virtual ~TimeStepControlStrategyBasicVS(){}
 
   /** \brief Determine the time step size.*/
-  virtual void getNextTimeStep(const TimeStepControl<Scalar> tsc, Teuchos::RCP<SolutionHistory<Scalar> > solutionHistory,
-        Status & integratorStatus) override {
+  virtual void getNextTimeStep(
+    const TimeStepControl<Scalar> tsc,
+    Teuchos::RCP<SolutionHistory<Scalar> > solutionHistory,
+    Status & integratorStatus) override {
 
-     Teuchos::RCP<SolutionState<Scalar> > workingState=solutionHistory->getWorkingState();
-     Teuchos::RCP<SolutionStateMetaData<Scalar> > metaData = workingState->getMetaData();
+     Teuchos::RCP<SolutionState<Scalar> > workingState =
+       solutionHistory->getWorkingState();
+     Teuchos::RCP<SolutionStateMetaData<Scalar> > metaData =
+       workingState->getMetaData();
      const Scalar errorAbs = metaData->getErrorAbs();
      const Scalar errorRel = metaData->getErrorRel();
      int order = metaData->getOrder();
@@ -139,53 +145,59 @@ public:
 
   /// \name Overridden from Teuchos::ParameterListAcceptor
   //@{
-    void setParameterList(const Teuchos::RCP<Teuchos::ParameterList> & pList){
+    void setParameterList(
+      const Teuchos::RCP<Teuchos::ParameterList> & pList) override
+    {
+      if (pList == Teuchos::null) {
+        // Create default parameters if null, otherwise keep current parameters.
+        if (tscsPL_ == Teuchos::null) {
+           tscsPL_ = Teuchos::parameterList("TimeStepControlStrategyBasicVS");
+           *tscsPL_= *(this->getValidParameters());
+        }
+      } else {
+         tscsPL_ = pList;
+      }
+      tscsPL_->validateParametersAndSetDefaults(*this->getValidParameters());
 
-       if (pList == Teuchos::null) {
-          // Create default parameters if null, otherwise keep current parameters.
-          if (tscsPL_ == Teuchos::null) {
-             tscsPL_ = Teuchos::parameterList("TimeStepControlStrategyBasicVS");
-             *tscsPL_= *(this->getValidParameters());
-          }
-       } else {
-          tscsPL_ = pList;
-       }
-       tscsPL_->validateParametersAndSetDefaults(*this->getValidParameters());
+      TEUCHOS_TEST_FOR_EXCEPTION(getAmplFactor() <= 1.0, std::out_of_range,
+      "Error - Invalid value of Amplification Factor = " << getAmplFactor()
+      << "!  \n" << "Amplification Factor must be > 1.0.\n");
 
-       TEUCHOS_TEST_FOR_EXCEPTION(getAmplFactor() <= 1.0, std::out_of_range,
-       "Error - Invalid value of Amplification Factor = " << getAmplFactor() << "!  \n"
-       << "Amplification Factor must be > 1.0.\n");
+      TEUCHOS_TEST_FOR_EXCEPTION(getReductFactor() >= 1.0, std::out_of_range,
+      "Error - Invalid value of Reduction Factor = " << getReductFactor()
+      << "!  \n" << "Reduction Factor must be < 1.0.\n");
 
-       TEUCHOS_TEST_FOR_EXCEPTION(getReductFactor() >= 1.0, std::out_of_range,
-       "Error - Invalid value of Reduction Factor = " << getReductFactor() << "!  \n"
-       << "Reduction Factor must be < 1.0.\n");
-
-       TEUCHOS_TEST_FOR_EXCEPTION(getMinEta() > getMaxEta(), std::out_of_range,
-       "Error - Invalid values of 'Minimum Value Monitoring Function' = "
-       << getMinEta() << "\n and 'Maximum Value Monitoring Function' = "
-       << getMaxEta() <<"! \n Mininum Value cannot be > Maximum Value! \n");
+      TEUCHOS_TEST_FOR_EXCEPTION(getMinEta() > getMaxEta(), std::out_of_range,
+      "Error - Invalid values of 'Minimum Value Monitoring Function' = "
+      << getMinEta() << "\n and 'Maximum Value Monitoring Function' = "
+      << getMaxEta() <<"! \n Mininum Value cannot be > Maximum Value! \n");
 
     }
 
-    Teuchos::RCP<const Teuchos::ParameterList> getValidParameters() const {
+    Teuchos::RCP<const Teuchos::ParameterList>
+    getValidParameters() const override {
        Teuchos::RCP<Teuchos::ParameterList> pl = Teuchos::parameterList();
 
-       //From (Denner, 2014), amplification factor can be at most 1.91 for stability.
-       pl->set<double>("Amplification Factor" , 1.75   , "Amplification factor");
-       pl->set<double>("Reduction Factor"     , 0.5    , "Reduction factor");
+       // From (Denner, 2014), amplification factor can be at most 1.91 for
+       // stability.
+       pl->set<double>("Amplification Factor", 1.75, "Amplification factor");
+       pl->set<double>("Reduction Factor"    , 0.5 , "Reduction factor");
        //FIXME? may need to modify default values of monitoring function
-       //IKT, 1/5/17: from (Denner, 2014), it seems a reasonable choice for eta_min is 0.1*eta_max
-       //Numerical tests confirm this. TODO: Change default value of eta_min to 1.0e-2?
-       pl->set<double>("Minimum Value Monitoring Function" , 1.0e-6      , "Min value eta");
-       pl->set<double>("Maximum Value Monitoring Function" , 1.0e-1      , "Max value eta");
+       // IKT, 1/5/17: from (Denner, 2014), it seems a reasonable choice
+       // for eta_min is 0.1*eta_max Numerical tests confirm this.
+       // TODO: Change default value of eta_min to 1.0e-2?
+       pl->set<double>("Minimum Value Monitoring Function", 1.0e-6,
+                       "Min value eta");
+       pl->set<double>("Maximum Value Monitoring Function", 1.0e-1,
+                       "Max value eta");
        return pl;
     }
 
-    Teuchos::RCP<Teuchos::ParameterList> getNonconstParameterList() {
+    Teuchos::RCP<Teuchos::ParameterList> getNonconstParameterList() override {
        return tscsPL_;
     }
 
-    Teuchos::RCP<Teuchos::ParameterList> unsetParameterList() {
+    Teuchos::RCP<Teuchos::ParameterList> unsetParameterList() override {
        Teuchos::RCP<Teuchos::ParameterList> temp_plist = tscsPL_;
        tscsPL_ = Teuchos::null;
        return(temp_plist);
