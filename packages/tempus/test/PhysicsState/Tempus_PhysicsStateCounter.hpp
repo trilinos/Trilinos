@@ -40,7 +40,7 @@ public:
   {
     Teuchos::RCP<PhysicsStateCounter<Scalar> > pSC = Teuchos::rcp(
       new PhysicsStateCounter<Scalar> (this->physicsName_,
-                                         this->physicsCounter_));
+                                       this->physicsCounter_));
     return pSC;
   }
 
