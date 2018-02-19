@@ -535,7 +535,7 @@ std::vector<panzer::BC> homogeneousBoundaries(Teuchos::RCP<panzer_stk::STK_Inter
   mesh->getSidesetNames(sidesets);
 
   std::size_t bc_id = 0;
-  for (int s = 0; s < 6; s++)
+  for (size_t s = 0; s < sidesets.size(); s++)
     for (int d = 0; d < 0; d++)
     {
       panzer::BCType bctype = panzer::BCT_Dirichlet;
@@ -569,7 +569,7 @@ std::vector<panzer::BC> auxiliaryBoundaries(Teuchos::RCP<panzer_stk::STK_Interfa
   std::string dofs[2]     = {"AUXILIARY_NODE","AUXILIARY_EDGE"};
 
   std::size_t bc_id = 0;
-  for (int s = 0; s < 6; s++)
+  for (size_t s = 0; s < sidesets.size(); s++)
     for (int d = 0; d < 2; d++)
     {
       panzer::BCType bctype = panzer::BCT_Dirichlet;
