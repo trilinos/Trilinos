@@ -536,7 +536,7 @@ std::vector<panzer::BC> homogeneousBoundaries(Teuchos::RCP<panzer_stk::STK_Inter
 
   std::size_t bc_id = 0;
   for (size_t s = 0; s < sidesets.size(); s++)
-    for (int d = 0; d < 0; d++)
+    for (int d = 0; d < 2; d++)
     {
       panzer::BCType bctype = panzer::BCT_Dirichlet;
       std::string sideset_id = sidesets[s];
