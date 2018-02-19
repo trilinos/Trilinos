@@ -627,7 +627,6 @@ namespace Tpetra {
       lgMapHost_ = lgMap_host;
     }
     else {
-      minMyGID_ = Teuchos::OrdinalTraits<GlobalOrdinal>::max();
       // This insures tests for GIDs in the range
       // [firstContiguousGID_, lastContiguousGID_] fail for processes
       // with no local elements.
@@ -965,7 +964,6 @@ namespace Tpetra {
       lgMapHost_ = lgMap_host;
     }
     else {
-      minMyGID_ = Teuchos::OrdinalTraits<GlobalOrdinal>::max()
       // This insures tests for GIDs in the range
       // [firstContiguousGID_, lastContiguousGID_] fail for processes
       // with no local elements.
