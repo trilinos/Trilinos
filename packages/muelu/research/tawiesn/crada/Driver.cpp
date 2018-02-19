@@ -450,7 +450,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
     // We have the following different formulations:
     // - split the linear system in a 2x2 multiphysics problem using Xpetra style gids
     // - split the linear system in a 2x2 multiphysics problem using Thyra style gids
-    // - solve the problem as a monolithik linear system
+    // - solve the problem as a monolithic linear system
     if(blockedSystem == 1) {
       // split matrix and vectors
 
