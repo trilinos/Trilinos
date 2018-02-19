@@ -320,8 +320,9 @@ namespace Tpetra {
     minAllGID_ = indexBase;
     // numGlobalElements might be GSTI; use numGlobalElements_;
     maxAllGID_ = indexBase + numGlobalElements_ - 1;
-    minMyGID_ = indexBase + myOffset;
-    maxMyGID_ = indexBase + myOffset + numLocalElements - 1;
+    minMyGID_ = (numLocalElements_ == 0) ? std::numeric_limits<GO>::max() : indexBase + myOffset;
+    maxMyGID_ = (numLocalElements_ == 0) ?
+      std::numeric_limits<GO>::lowest() : indexBase + myOffset + numLocalElements - 1;
     firstContiguousGID_ = minMyGID_;
     lastContiguousGID_ = maxMyGID_;
     contiguous_ = true;
@@ -627,7 +628,8 @@ namespace Tpetra {
       lgMapHost_ = lgMap_host;
     }
     else {
-      minMyGID_ = Teuchos::OrdinalTraits<GlobalOrdinal>::max();
+      minMyGID_ = std::numeric_limits<GlobalOrdinal>::max();
+      maxMyGID_ = std::numeric_limits<GlobalOrdinal>::lowest();
       // This insures tests for GIDs in the range
       // [firstContiguousGID_, lastContiguousGID_] fail for processes
       // with no local elements.
@@ -965,7 +967,8 @@ namespace Tpetra {
       lgMapHost_ = lgMap_host;
     }
     else {
-      minMyGID_ = Teuchos::OrdinalTraits<GlobalOrdinal>::max();
+      minMyGID_ = std::numeric_limits<GlobalOrdinal>::max();
+      maxMyGID_ = std::numeric_limits<GlobalOrdinal>::lowest();
       // This insures tests for GIDs in the range
       // [firstContiguousGID_, lastContiguousGID_] fail for processes
       // with no local elements.
