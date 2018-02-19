@@ -82,8 +82,6 @@ namespace {
   ////
   TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( Map, getMinGlobalIndex_nonuniform, LO, GO )
   {
-    typedef Map<LO,GO> Map;
-
     out << "Test: Map, getMinGlobalIndex" << std::endl;
     Teuchos::OSTab tab0 (out);
 
@@ -98,21 +96,19 @@ namespace {
     const GO indexBase = 0;
     //
 
-    Map map (numGlobal, numLocal, indexBase, comm);
+    Map<LO,GO> map (numGlobal, numLocal, indexBase, comm);
     // create data to check validity of the map
     const GO myMinGID =
       (myRank == 0) ? std::numeric_limits<GO>::max() : (myRank - 1)*numLocal;
     const GO myMaxGID =
       (myRank == 0) ? std::numeric_limits<GO>::lowest() : myRank*numLocal - 1;
     GO minAllGIDs, maxAllGIDs;
-    Teuchos::reduceAll<LO, GO>(*comm, Teuchos::REDUCE_MIN, myMinGID, outArg(minAllGIDs));
-    Teuchos::reduceAll<LO, GO>(*comm, Teuchos::REDUCE_MAX, myMaxGID, outArg(maxAllGIDs));
+    Teuchos::reduceAll<int, GO>(*comm, Teuchos::REDUCE_MIN, myMinGID, outArg(minAllGIDs));
+    Teuchos::reduceAll<int, GO>(*comm, Teuchos::REDUCE_MAX, myMaxGID, outArg(maxAllGIDs));
     //
     TEST_EQUALITY(map.getGlobalNumElements(), numGlobal);
     TEST_EQUALITY(map.getNodeNumElements(), numLocal);
     TEST_EQUALITY(map.getIndexBase(), indexBase);
-    TEST_EQUALITY_CONST(map.getMinLocalIndex(), 0);
-    TEST_EQUALITY(map.getMaxLocalIndex(), numLocal - 1);
     TEST_EQUALITY(map.getMinGlobalIndex(), myMinGID);
     TEST_EQUALITY(map.getMaxGlobalIndex(), myMaxGID );
     TEST_EQUALITY(map.getMinAllGlobalIndex(), minAllGIDs);
@@ -126,8 +122,6 @@ namespace {
   ////
   TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( Map, getMinGlobalIndex_noncontiguous, LO, GO )
   {
-    typedef Map<LO,GO> Map;
-
     out << "Test: Map, getMinGlobalIndex" << std::endl;
     Teuchos::OSTab tab0 (out);
 
@@ -151,21 +145,19 @@ namespace {
       }
     }
 
-    Map map (numGlobal, GIDs (), indexBase, comm);
+    Map<LO,GO> map (numGlobal, GIDs (), indexBase, comm);
     // create data to check validity of the map
     const GO myMinGID =
       (myRank == 0) ? std::numeric_limits<GO>::max() : actualBase + myRank*numLocal;
     const GO myMaxGID =
       (myRank == 0) ? std::numeric_limits<GO>::lowest() : actualBase + (myRank + 1)*numLocal - 1;
     GO minAllGIDs, maxAllGIDs;
-    Teuchos::reduceAll<LO, GO>(*comm, Teuchos::REDUCE_MIN, myMinGID, outArg(minAllGIDs));
-    Teuchos::reduceAll<LO, GO>(*comm, Teuchos::REDUCE_MAX, myMaxGID, outArg(maxAllGIDs));
+    Teuchos::reduceAll<int, GO>(*comm, Teuchos::REDUCE_MIN, myMinGID, outArg(minAllGIDs));
+    Teuchos::reduceAll<int, GO>(*comm, Teuchos::REDUCE_MAX, myMaxGID, outArg(maxAllGIDs));
     //
     TEST_EQUALITY(map.getGlobalNumElements(), numGlobal);
     TEST_EQUALITY(map.getNodeNumElements(), numLocal);
     TEST_EQUALITY(map.getIndexBase(), indexBase);
-    TEST_EQUALITY_CONST(map.getMinLocalIndex(), 0);
-    TEST_EQUALITY(map.getMaxLocalIndex(), numLocal - 1);
     TEST_EQUALITY(map.getMinGlobalIndex(), myMinGID);
     TEST_EQUALITY(map.getMaxGlobalIndex(), myMaxGID );
     TEST_EQUALITY(map.getMinAllGlobalIndex(), minAllGIDs);

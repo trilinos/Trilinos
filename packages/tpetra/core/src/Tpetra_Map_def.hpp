@@ -317,9 +317,10 @@ namespace Tpetra {
     }
     numLocalElements_ = numLocalElements;
     indexBase_ = indexBase;
-    minAllGID_ = indexBase;
+    minAllGID_ = (numGlobalElements_ == 0) ? std::numeric_limits<GO>::max() : indexBase;
     // numGlobalElements might be GSTI; use numGlobalElements_;
-    maxAllGID_ = indexBase + numGlobalElements_ - 1;
+    maxAllGID_ = (numGlobalElements_ == 0) ?
+      std::numeric_limits<GO>::lowest() : indexBase + numGlobalElements_ - 1;
     minMyGID_ = (numLocalElements_ == 0) ? std::numeric_limits<GO>::max() : indexBase + myOffset;
     maxMyGID_ = (numLocalElements_ == 0) ?
       std::numeric_limits<GO>::lowest() : indexBase + myOffset + numLocalElements - 1;
