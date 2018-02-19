@@ -75,7 +75,9 @@ Group(const NOX::Thyra::Vector& initial_guess,
       const Teuchos::RCP<const ::Thyra::VectorBase<double> >& weight_vector,
       const Teuchos::RCP<const ::Thyra::VectorBase<double> >& right_weight_vector,
       const bool rightScalingFirst):
-  model_(model), rightScalingFirst_(rightScalingFirst)
+  model_(model),
+  rightScalingFirst_(rightScalingFirst),
+  updatePreconditioner_(true)
 {
   x_vec_ = Teuchos::rcp(new NOX::Thyra::Vector(initial_guess, DeepCopy));
 
@@ -139,13 +141,15 @@ Group(const NOX::Thyra::Vector& initial_guess,
       const Teuchos::RCP< ::Thyra::PreconditionerFactoryBase<double> >& prec_factory,
       const Teuchos::RCP<const ::Thyra::VectorBase<double> >& weight_vector,
       const Teuchos::RCP<const ::Thyra::VectorBase<double> >& right_weight_vector,
-      const bool rightScalingFirst):
+      const bool rightScalingFirst,
+      const bool updatePreconditioner):
   model_(model),
   lop_(linear_op),
   lows_factory_(lows_factory),
   prec_(prec_op),
   prec_factory_(prec_factory),
-  rightScalingFirst_(rightScalingFirst)
+  rightScalingFirst_(rightScalingFirst),
+  updatePreconditioner_(updatePreconditioner)
 {
   x_vec_ = Teuchos::rcp(new NOX::Thyra::Vector(initial_guess, DeepCopy));
 
@@ -880,14 +884,16 @@ void NOX::Thyra::Group::updateLOWS() const
   {
     NOX_FUNC_TIME_MONITOR("NOX Total Preconditioner Construction");
 
-    if (nonnull(prec_) and is_null(prec_factory_)) {
-      // Just use the user supplied static preconditioner
+    if (nonnull(prec_) and (not updatePreconditioner_)) {
+      // Use the preconditioner. If the matrix values need to be
+      // updated, it must be handled by user manually
       ::Thyra::initializePreconditionedOp<double>(*lows_factory_,
                           lop_,
                           prec_,
                           shared_jacobian_->getObject(this).ptr());
     }
     else if (nonnull(prec_factory_)) {
+      // Automatically update using the user supplied prec factory
       prec_factory_->initializePrec(losb_, prec_.get());
 
       ::Thyra::initializePreconditionedOp<double>(*lows_factory_,
@@ -896,6 +902,7 @@ void NOX::Thyra::Group::updateLOWS() const
                           shared_jacobian_->getObject(this).ptr());
     }
     else if ( nonnull(prec_) && (out_args_.supports( ::Thyra::ModelEvaluatorBase::OUT_ARG_W_prec)) ) {
+      // Automatically update using the ModelEvaluator
       in_args_.set_x(x_vec_->getThyraRCPVector().assert_not_null());
       out_args_.set_W_prec(prec_);
       model_->evalModel(in_args_, out_args_);
@@ -909,6 +916,7 @@ void NOX::Thyra::Group::updateLOWS() const
 
     }
     else {
+      // No preconditioner
       ::Thyra::initializeOp<double>(*lows_factory_,
                     lop_,
                     shared_jacobian_->getObject(this).ptr());

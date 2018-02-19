@@ -137,9 +137,15 @@ public:
   /** \brief . */
   void setBasePoint(const ModelEvaluatorBase::InArgs<double> &modelInArgs);
 
-  //! Users can optionally set the preconditioner
+  /** \brief Users can optionally set the preconditioner
+
+      \param[in] precOp The preconditioner operator
+      \param[in] precFactory Optional preconditioner factory
+      \param[in] updatePreconditioner Optional flag, if true the Group will automatically update the preconditioner using precFactory or model evalautor
+   */
   void setPrecOp(const Teuchos::RCP< ::Thyra::PreconditionerBase<double>>& precOp,
-                 const Teuchos::RCP< ::Thyra::PreconditionerFactoryBase<double>>& precFactory = Teuchos::null);
+                 const Teuchos::RCP< ::Thyra::PreconditionerFactoryBase<double>>& precFactory = Teuchos::null,
+                 const bool updatePreconditioner = true);
 
   RCP<const NOX::Solver::Generic> getNOXSolver() const;
 
@@ -184,6 +190,7 @@ private:
 
   Teuchos::RCP< ::Thyra::PreconditionerBase<double>> precOp_;
   Teuchos::RCP< ::Thyra::PreconditionerFactoryBase<double>> precFactory_;
+  bool updatePreconditioner_;
 };
 
 

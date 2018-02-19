@@ -60,7 +60,8 @@
 Thyra::NOXNonlinearSolver::NOXNonlinearSolver():
   do_row_sum_scaling_(false),
   when_to_update_(NOX::RowSumScaling::UpdateInvRowSumVectorAtBeginningOfSolve),
-  rebuild_solver_(true)
+  rebuild_solver_(true),
+  updatePreconditioner_(true)
 {
   param_list_ = Teuchos::rcp(new Teuchos::ParameterList);
   valid_param_list_ = Teuchos::rcp(new Teuchos::ParameterList);
@@ -149,12 +150,14 @@ Thyra::NOXNonlinearSolver::setBasePoint(
 void 
 Thyra::NOXNonlinearSolver::
 setPrecOp(const Teuchos::RCP< ::Thyra::PreconditionerBase<double>>& precOp,
-          const Teuchos::RCP< ::Thyra::PreconditionerFactoryBase<double>>& precFactory)
+          const Teuchos::RCP< ::Thyra::PreconditionerFactoryBase<double>>& precFactory,
+          const bool updatePreconditioner)
 {
   TEUCHOS_TEST_FOR_EXCEPTION(nonnull(solver_),std::runtime_error,
                              "ERROR: Preconditioners must be set on Thyra::NonlinearSolver::NOX object before solver is constructed!");
   precOp_ = precOp;
   precFactory_ = precFactory;
+  updatePreconditioner_ = updatePreconditioner;
 }
 
 // ****************************************************************
@@ -202,7 +205,7 @@ solve(VectorBase<double> *x,
     else {
       auto lowsFactory = model_->get_W_factory();
       auto linOp = model_->create_W_op();
-      nox_group_ = Teuchos::rcp(new NOX::Thyra::Group(initial_guess, model_, linOp, lowsFactory, precOp_, precFactory_, scaling_vector_, right_scaling_vector_, rightScalingFirst_));
+      nox_group_ = Teuchos::rcp(new NOX::Thyra::Group(initial_guess, model_, linOp, lowsFactory, precOp_, precFactory_, scaling_vector_, right_scaling_vector_, rightScalingFirst_, updatePreconditioner_));
     }
 
     nox_group_->getNonconstInArgs() = this->basePoint_;
