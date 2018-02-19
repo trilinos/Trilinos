@@ -107,16 +107,6 @@ namespace {
     GO minAllGIDs, maxAllGIDs;
     Teuchos::reduceAll<LO, GO>(*comm, Teuchos::REDUCE_MIN, myMinGID, outArg(minAllGIDs));
     Teuchos::reduceAll<LO, GO>(*comm, Teuchos::REDUCE_MAX, myMaxGID, outArg(maxAllGIDs));
-    std::cout << "p=" << myRank << " | map.getNodeElementList():" <<map.getNodeElementList()
-              << std::endl;
-    std::cout << "p=" << myRank << " | map.getMinGlobalIndex(): "
-              << map.getMinGlobalIndex() << ", myMinGID=" << myMinGID << std::endl;
-    std::cout << "p=" << myRank << " | map.getMinAllGlobalIndex(): "
-              << map.getMinAllGlobalIndex() << ", minAllGID=" << minAllGIDs << std::endl;
-    std::cout << "p=" << myRank << " | map.getMaxGlobalIndex(): "
-              << map.getMaxGlobalIndex() << ", myMaxGID=" << myMaxGID << std::endl;
-    std::cout << "p=" << myRank << " | map.getMaxAllGlobalIndex(): "
-              << map.getMaxAllGlobalIndex() << ", maxAllGID=" << maxAllGIDs << std::endl;
     //
     TEST_EQUALITY(map.getGlobalNumElements(), numGlobal);
     TEST_EQUALITY(map.getNodeNumElements(), numLocal);
@@ -160,7 +150,6 @@ namespace {
         GIDs[i] = GIDs[i-1]+1;
       }
     }
-    std::cout << "p=" << myRank << " | GIDs: " << GIDs() << std::endl;
 
     Map map (numGlobal, GIDs (), indexBase, comm);
     // create data to check validity of the map
@@ -171,14 +160,6 @@ namespace {
     GO minAllGIDs, maxAllGIDs;
     Teuchos::reduceAll<LO, GO>(*comm, Teuchos::REDUCE_MIN, myMinGID, outArg(minAllGIDs));
     Teuchos::reduceAll<LO, GO>(*comm, Teuchos::REDUCE_MAX, myMaxGID, outArg(maxAllGIDs));
-    std::cout << "p=" << myRank << " | map.getMinGlobalIndex(): "
-              << map.getMinGlobalIndex() << ", myMinGID=" << myMinGID << std::endl;
-    std::cout << "p=" << myRank << " | map.getMinAllGlobalIndex(): "
-              << map.getMinAllGlobalIndex() << ", minAllGID=" << minAllGIDs << std::endl;
-    std::cout << "p=" << myRank << " | map.getMaxGlobalIndex(): "
-              << map.getMaxGlobalIndex() << ", myMaxGID=" << myMaxGID << std::endl;
-    std::cout << "p=" << myRank << " | map.getMaxAllGlobalIndex(): "
-              << map.getMaxAllGlobalIndex() << ", maxAllGID=" << maxAllGIDs << std::endl;
     //
     TEST_EQUALITY(map.getGlobalNumElements(), numGlobal);
     TEST_EQUALITY(map.getNodeNumElements(), numLocal);
