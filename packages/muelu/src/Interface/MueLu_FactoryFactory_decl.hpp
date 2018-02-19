@@ -119,6 +119,7 @@
 #include "MueLu_SchurComplementFactory.hpp"
 #include "MueLu_SimpleSmoother.hpp"
 #include "MueLu_SmootherFactory.hpp"
+#include "MueLu_StructuredAggregationFactory.hpp"
 #include "MueLu_StructuredLineDetectionFactory.hpp"
 #include "MueLu_SubBlockAFactory.hpp"
 #ifdef HAVE_MUELU_TEKO
@@ -237,6 +238,7 @@ namespace MueLu {
       if (factoryName == "RepartitionInterface")               return Build2<RepartitionInterface>               (paramList, factoryMapIn, factoryManagersIn);
       if (factoryName == "SegregatedAFactory")                 return Build2<SegregatedAFactory>                 (paramList, factoryMapIn, factoryManagersIn);
       if (factoryName == "SemiCoarsenPFactory")                return Build2<SemiCoarsenPFactory>                (paramList, factoryMapIn, factoryManagersIn);
+      if (factoryName == "StructuredAggregationFactory")       return Build2<StructuredAggregationFactory>        (paramList, factoryMapIn, factoryManagersIn);
       if (factoryName == "StructuredLineDetectionFactory")     return Build2<StructuredLineDetectionFactory>     (paramList, factoryMapIn, factoryManagersIn);
       if (factoryName == "SubBlockAFactory")                   return Build2<SubBlockAFactory>                   (paramList, factoryMapIn, factoryManagersIn);
       if (factoryName == "TentativePFactory")                  return Build2<TentativePFactory>                  (paramList, factoryMapIn, factoryManagersIn);
