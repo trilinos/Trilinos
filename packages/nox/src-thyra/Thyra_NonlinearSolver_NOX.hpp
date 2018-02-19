@@ -137,6 +137,10 @@ public:
   /** \brief . */
   void setBasePoint(const ModelEvaluatorBase::InArgs<double> &modelInArgs);
 
+  //! Users can optionally set the preconditioner
+  void setPrecOp(const Teuchos::RCP< ::Thyra::PreconditionerBase<double>>& precOp,
+                 const Teuchos::RCP< ::Thyra::PreconditionerFactoryBase<double>>& precFactory = Teuchos::null);
+
   RCP<const NOX::Solver::Generic> getNOXSolver() const;
 
   //! Called to rebuild the solver if a new parameter list is set.
@@ -177,6 +181,9 @@ private:
   bool rightScalingFirst_;
 
   bool rebuild_solver_;
+
+  Teuchos::RCP< ::Thyra::PreconditionerBase<double>> precOp_;
+  Teuchos::RCP< ::Thyra::PreconditionerFactoryBase<double>> precFactory_;
 };
 
 

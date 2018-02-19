@@ -880,7 +880,14 @@ void NOX::Thyra::Group::updateLOWS() const
   {
     NOX_FUNC_TIME_MONITOR("NOX Total Preconditioner Construction");
 
-    if (nonnull(prec_factory_)) {
+    if (nonnull(prec_) and is_null(prec_factory_)) {
+      // Just use the user supplied static preconditioner
+      ::Thyra::initializePreconditionedOp<double>(*lows_factory_,
+                          lop_,
+                          prec_,
+                          shared_jacobian_->getObject(this).ptr());
+    }
+    else if (nonnull(prec_factory_)) {
       prec_factory_->initializePrec(losb_, prec_.get());
 
       ::Thyra::initializePreconditionedOp<double>(*lows_factory_,

@@ -146,6 +146,19 @@ Thyra::NOXNonlinearSolver::setBasePoint(
 
 // ****************************************************************
 // ****************************************************************
+void 
+Thyra::NOXNonlinearSolver::
+setPrecOp(const Teuchos::RCP< ::Thyra::PreconditionerBase<double>>& precOp,
+          const Teuchos::RCP< ::Thyra::PreconditionerFactoryBase<double>>& precFactory)
+{
+  TEUCHOS_TEST_FOR_EXCEPTION(nonnull(solver_),std::runtime_error,
+                             "ERROR: Preconditioners must be set on Thyra::NonlinearSolver::NOX object before solver is constructed!");
+  precOp_ = precOp;
+  precFactory_ = precFactory;
+}
+
+// ****************************************************************
+// ****************************************************************
 Thyra::SolveStatus<double> Thyra::NOXNonlinearSolver::
 solve(VectorBase<double> *x,
       const SolveCriteria<double> *solveCriteria,
@@ -183,7 +196,15 @@ solve(VectorBase<double> *x,
       Teuchos::RCP<NOX::Abstract::Vector> abstract_vec = param_list_->get<RCP<NOX::Abstract::Vector> >("Right Scaling Vector");
       right_scaling_vector_ = Teuchos::rcp_dynamic_cast<NOX::Thyra::Vector>(abstract_vec)->getThyraRCPVector();
     }
-    nox_group_ = Teuchos::rcp(new NOX::Thyra::Group(initial_guess, model_, scaling_vector_, right_scaling_vector_,rightScalingFirst_));
+
+    if (is_null(precOp_))
+      nox_group_ = Teuchos::rcp(new NOX::Thyra::Group(initial_guess, model_, scaling_vector_, right_scaling_vector_, rightScalingFirst_));
+    else {
+      auto lowsFactory = model_->get_W_factory();
+      auto linOp = model_->create_W_op();
+      nox_group_ = Teuchos::rcp(new NOX::Thyra::Group(initial_guess, model_, linOp, lowsFactory, precOp_, precFactory_, scaling_vector_, right_scaling_vector_, rightScalingFirst_));
+    }
+
     nox_group_->getNonconstInArgs() = this->basePoint_;
 
     status_test_ = this->buildStatusTests(*param_list_);
