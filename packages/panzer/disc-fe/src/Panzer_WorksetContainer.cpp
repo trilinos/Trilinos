@@ -336,7 +336,8 @@ applyOrientations(const std::string & eBlock, std::vector<Workset> & worksets) c
           WorksetDetails & details = worksets[i](j);
   
           ortsPerBlock.clear();
-          for (int k=0;k<worksets[i].num_cells;++k) {
+          // for (int k=0;k<worksets[i].num_cells;++k) {
+          for (int k=0;k<details.numOwnedCells();++k) {
             ortsPerBlock.push_back((*orientations_)[details.cell_local_ids[k]]);
           }
   
