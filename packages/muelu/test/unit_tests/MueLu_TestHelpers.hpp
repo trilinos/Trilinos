@@ -84,6 +84,18 @@
 #include "Galeri_XpetraProblemFactory.hpp"
 #include "Galeri_XpetraMatrixTypes.hpp"
 
+namespace Galeri {
+  namespace Xpetra {
+    template <class LocalOrdinal, class GlobalOrdinal, class Map>
+    RCP<Map> CreateMap(const std::string & mapType, const Teuchos::RCP<const Teuchos::Comm<int> >& comm, Teuchos::ParameterList & list);
+
+#ifdef HAVE_GALERI_XPETRA
+    template <class LocalOrdinal, class GlobalOrdinal, class Node>
+    Teuchos::RCP< ::Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > CreateMap(::Xpetra::UnderlyingLib lib, const std::string & mapType, const Teuchos::RCP<const Teuchos::Comm<int> >& comm, Teuchos::ParameterList & list);
+#endif
+  }
+}
+
 #include "MueLu_NoFactory.hpp"
 
 // Conditional Tpetra stuff
