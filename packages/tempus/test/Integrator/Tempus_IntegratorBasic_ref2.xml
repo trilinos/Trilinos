@@ -20,10 +20,6 @@
       <Parameter docString="" id="12" isDefault="true" isUsed="true" name="Minimum Time Step" type="double" value="2.22044604925031308e-12"/>
       <Parameter docString="" id="13" isDefault="true" isUsed="true" name="Initial Time Step" type="double" value="2.22044604925031308e-12"/>
       <Parameter docString="" id="14" isDefault="true" isUsed="true" name="Maximum Time Step" type="double" value="1.79769313486231571e+308"/>
-      <Parameter docString="" id="32" isDefault="true" isUsed="true" name="Amplification Factor" type="double" value="1.75"/>
-      <Parameter docString="" id="33" isDefault="true" isUsed="true" name="Reduction Factor" type="double" value="0.5"/>
-      <Parameter docString="" id="34" isDefault="true" isUsed="true" name="Minimum Value Monitoring Function" type="double" value="1.0e-6"/>
-      <Parameter docString="" id="35" isDefault="true" isUsed="true" name="Maximum Value Monitoring Function" type="double" value="0.1"/>
       <Parameter docString="" id="17" isDefault="true" isUsed="true" name="Minimum Order" type="int" value="1"/>
       <Parameter docString="" id="18" isDefault="true" isUsed="true" name="Initial Order" type="int" value="1"/>
       <Parameter docString="" id="19" isDefault="true" isUsed="true" name="Maximum Order" type="int" value="1"/>
@@ -37,15 +33,8 @@
       <Parameter docString="" id="25" isDefault="true" isUsed="true" name="Maximum Number of Stepper Failures" type="int" value="10"/>
       <Parameter docString="" id="26" isDefault="true" isUsed="true" name="Maximum Number of Consecutive Stepper Failures" type="int" value="5"/>
       <Parameter docString="" id="27" isDefault="true" isUsed="true" name="Number of Time Steps" type="int" value="-1"/>
-      <ParameterList id="37" name="Time Step Control Strategy">
-          <Parameter docString="" id="36" isDefault="true" isUsed="true" name="Time Step Control Strategy List" type="string" value="basic_vs"/>
-          <ParameterList id="38" name="basic_vs">
-              <Parameter docString="" id="43" isDefault="true" isUsed="true" name="Name" type="string" value="Basic VS"/>
-              <Parameter docString="" id="39" isDefault="true" isUsed="true" name="Amplification Factor" type="double" value="1.75"/>
-              <Parameter docString="" id="40" isDefault="true" isUsed="true" name="Reduction Factor" type="double" value="0.5"/>
-              <Parameter docString="" id="41" isDefault="true" isUsed="true" name="Minimum Value Monitoring Function" type="double" value="1.0e-6"/>
-              <Parameter docString="" id="42" isDefault="true" isUsed="true" name="Maximum Value Monitoring Function" type="double" value="0.1"/>
-          </ParameterList>
+      <ParameterList id="32" name="Time Step Control Strategy">
+          <Parameter docString="" id="33" isDefault="true" isUsed="true" name="Time Step Control Strategy List" type="string" value=""/>
       </ParameterList>
     </ParameterList>
   </ParameterList>
