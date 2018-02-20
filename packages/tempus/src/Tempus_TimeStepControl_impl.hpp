@@ -435,43 +435,8 @@ void TimeStepControl<Scalar>::setTimeStepControlStrategy(
       if (getStepType() == "Constant"){
          stepControlStategy_->addStrategy( 
                Teuchos::rcp(new TimeStepControlStrategyConstant<Scalar>()));
-      } 
-
-
-      // For backward compatitibility (so we only need to create on VS strategy)
-      if ( (getStepType() == "Variable") and 
-            tscPL_->isParameter("Amplification Factor") and
-            (tscPL_->sublist("Time Step Control Strategy").
-             get<std::string>("Time Step Control Strategy List") == "")){
-
-         RCP<Teuchos::ParameterList> tscsVSPL = 
-            Teuchos::rcp(new ParameterList("basic vs"));
-
-         tscsVSPL->set<std::string>("Name","Basic VS");
-         tscsVSPL->set<double>("Amplification Factor", 
-               tscPL_->get<double>("Amplification Factor"));
-         tscsVSPL->set<double>("Reduction Factor", 
-               tscPL_->get<double>("Reduction Factor"));
-         tscsVSPL->set<double>("Minimum Value Monitoring Function",
-               tscPL_->get<double>("Minimum Value Monitoring Function"));
-         tscsVSPL->set<double>("Maximum Value Monitoring Function",
-               tscPL_->get<double>("Maximum Value Monitoring Function"));
-
-         tscPL_->sublist("Time Step Control Strategy").
-            set<std::string>("Time Step Control Strategy List", "basic_vs");
-         tscPL_->sublist("Time Step Control Strategy").
-            set("basic_vs", *tscsVSPL);
-
-         //TODO: now remove them from tscPL_ ( no need for them anymore in tscPL_)
-         //tscPL_->remove("Amplification Factor");
-         //tscPL_->remove("Reduction Factor");
-         //tscPL_->remove("Minimum Value Monitoring Function");
-         //tscPL_->remove("Maximum Value Monitoring Function");
-      } 
-
-
-      if ((getStepType() == "Variable") and 
-            tscPL_->isSublist("Time Step Control Strategy")) {
+      } else if (getStepType() == "Variable") {
+         // add TSCS from "Time Step Control Strategy List"
 
          RCP<ParameterList> tscsPL =
             Teuchos::sublist(tscPL_,"Time Step Control Strategy",true);
@@ -504,6 +469,7 @@ void TimeStepControl<Scalar>::setTimeStepControlStrategy(
 
             RCP<TimeStepControlStrategy<Scalar>> ts;
 
+            // construct appropriate TSCS
             if(pl->get<std::string>("Name") == "Integral Controller")
                ts = Teuchos::rcp(new TimeStepControlStrategyIntegralController<Scalar>(pl));
             else if(pl->get<std::string>("Name") == "Basic VS")
@@ -537,6 +503,7 @@ TimeStepControl<Scalar>::getValidParameters() const
   pl->set<double>("Initial Time Step"    , stdMin , "Initial time step size");
   pl->set<double>("Maximum Time Step"    , stdMax , "Maximum time step size");
   //From (Denner, 2014), amplification factor can be at most 1.91 for stability.
+/*
   pl->set<double>("Amplification Factor" , 1.75   , "Amplification factor");
   pl->set<double>("Reduction Factor"     , 0.5    , "Reduction factor");
   //FIXME? may need to modify default values of monitoring function
@@ -545,6 +512,7 @@ TimeStepControl<Scalar>::getValidParameters() const
   //TODO: Change default value of eta_min to 1.0e-2?
   pl->set<double>("Minimum Value Monitoring Function", 1.0e-6, "Min value eta");
   pl->set<double>("Maximum Value Monitoring Function", 1.0e-1, "Max value eta");
+*/
   pl->set<int>   ("Minimum Order", 0,
     "Minimum time-integration order.  If set to zero (default), the\n"
     "Stepper minimum order is used.");
