@@ -223,10 +223,47 @@ namespace Tpetra {
     /// transpose of a sparse matrix.
     Import (const Export<LocalOrdinal,GlobalOrdinal,Node>& exporter);
 
-    /// \bief Full Expert constructor
-    /// Requirements: source and target maps are fully correct
+    /// \brief Constructor that computes optimized target Map.
     ///
+    /// Like every other Import constructor, this must be called
+    /// collectively on all processes in the input Map's communicator.
+    ///
+    /// \pre <tt>sourceMap->isOneToOne() </tt>
+    ///
+    /// \param source [in] Source Map of the Import.
+    ///
+    /// \param targetMapGlobalIndices [in] On the calling process, the
+    ///   global indices that will go into the target Map.  May differ
+    ///   on each process, just like Map's noncontiguous constructor.
+    ///
+    /// \param processFromWhichToReceiveEachOfThoseGlobalIndices [in]
+    ///   For k in 0, ..., <tt>numTargetMapGlobalIndices-1</tt>,
+    ///   <tt>processFromWhichToReceiveEachOfThoseGlobalIndices[k]</tt>
+    ///   is the rank of the MPI process from which to receive data
+    ///   for global index <tt>targetMapGlobalIndices[k]</tt>.
+    ///
+    /// \param numTargetMapGlobalIndices [in] Number of valid entries
+    ///   in the two input arrays.  May differ on different processes.
+    ///   May be zero on some or even all processes.
+    ///
+    /// \param mayReorderTargetMapIndicesLocally [in] If true, then
+    ///   this constructor reserves the right to reorder the target
+    ///   Map indices on each process, for better communication
+    ///   performance.
+    Import (const Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> >& sourceMap,
+            const GlobalOrdinal targetMapGlobalIndices[],
+            const int processFromWhichToReceiveEachOfThoseGlobalIndices[],
+            const std::size_t numTargetMapGlobalIndices,
+            const bool mayReorderTargetMapIndicesLocally,
+            const Teuchos::RCP<Teuchos::ParameterList>& plist = Teuchos::null,
+            const Teuchos::RCP<Teuchos::FancyOStream>& out = Teuchos::null);
 
+    /// \brief Expert constructor.
+    ///
+    /// \warning THIS IS FOR EXPERT USERS ONLY.  More specifically,
+    ///   this constructor exists for MueLu (algebraic multigrid)
+    ///   setup ONLY.  If you aren't a MueLu or Tpetra developer,
+    ///   DON'T USE THIS.
     Import (const Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> >& source,
             const Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> >& target,
             Teuchos::Array<int> & userRemotePIDs,
@@ -236,7 +273,6 @@ namespace Tpetra {
             const bool useRemotePIDs,
             const Teuchos::RCP<Teuchos::ParameterList>& plist = Teuchos::null,
             const Teuchos::RCP<Teuchos::FancyOStream>& out = Teuchos::null);
-
 
     //! Destructor.
     virtual ~Import ();

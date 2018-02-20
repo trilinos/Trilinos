@@ -417,6 +417,27 @@ namespace Tpetra {
   }
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  Import<LocalOrdinal,GlobalOrdinal,Node>::
+  Import (const Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> >& sourceMap,
+          const GlobalOrdinal targetMapGlobalIndices[],
+          const int /* processFromWhichToReceiveEachOfThoseGlobalIndices */ [],
+          const std::size_t numTargetMapGlobalIndices,
+          const bool /* mayReorderTargetMapIndicesLocally */ ,
+          const Teuchos::RCP<Teuchos::ParameterList>& plist,
+          const Teuchos::RCP<Teuchos::FancyOStream>& out) :
+    Import (sourceMap,
+            Teuchos::rcp (new map_type (Teuchos::OrdinalTraits<Tpetra::global_size_t>::invalid (),
+                                        targetMapGlobalIndices,
+                                        numTargetMapGlobalIndices,
+                                        sourceMap->getIndexBase (),
+                                        sourceMap->getComm ())),
+            plist,
+            out)
+  {
+    // stub implementation for now; just dispatch to the usual Import ctor
+  }
+
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
   Import<LocalOrdinal,GlobalOrdinal,Node>::~Import()
   {}
 
