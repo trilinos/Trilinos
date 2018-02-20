@@ -97,8 +97,8 @@ namespace MueLu {
     validParamList->set<RCP<const FactoryBase> >("aggregation: mesh data",  Teuchos::null,
                                                  "Mesh ordering associated data");
 
-    validParamList->set<RCP<const FactoryBase> >("Coordinates",             Teuchos::null,
-                                                 "Generating factory of problem coordinates");
+    validParamList->set<RCP<const FactoryBase> >("Graph",                   Teuchos::null,
+                                                 "Graph of the matrix after amalgamation but without dropping.");
     validParamList->set<RCP<const FactoryBase> >("gNodesPerDim",            Teuchos::null,
                                                  "Number of nodes per spatial dimmension provided by CoordinatesTransferFactory.");
     validParamList->set<RCP<const FactoryBase> >("lNodesPerDim",            Teuchos::null,
@@ -116,7 +116,7 @@ namespace MueLu {
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void StructuredAggregationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   DeclareInput(Level& currentLevel) const {
-    Input(currentLevel, "Coordinates");
+    Input(currentLevel, "Graph");
 
     // Request the global number of nodes per dimensions
     if(currentLevel.GetLevelID() == 0) {
@@ -168,14 +168,11 @@ namespace MueLu {
     bDefinitionPhase_ = false;  // definition phase is finished, now all aggregation algorithm information is fixed
 
     // General problem informations are gathered from data stored in the problem matix.
-    typedef typename Xpetra::MultiVector<double, LO, GO, NO> xdMV;
-    RCP<const xdMV> Coordinates = Get< RCP<const xdMV> >(currentLevel, "Coordinates");
-    TEUCHOS_TEST_FOR_EXCEPTION(Coordinates == Teuchos::null, Exceptions::RuntimeError,
-                               "Coordinates cannot be accessed from fine level!");
-    RCP<const Map> coordMap     = Coordinates->getMap();
-    const int myRank            = coordMap->getComm()->getRank();
-    const int numRanks          = coordMap->getComm()->getSize();
-    const GO  minGlobalIndex    = Coordinates->getMap()->getMinGlobalIndex();
+    RCP<const GraphBase> graph = Get< RCP<GraphBase> >(currentLevel, "Graph");
+    RCP<const Map> fineMap      = graph->GetDomainMap();
+    const int myRank            = fineMap->getComm()->getRank();
+    const int numRanks          = fineMap->getComm()->getSize();
+    const GO  minGlobalIndex    = fineMap->getMinGlobalIndex();
 
     // Since we want to operate on nodes and not dof, we need to modify the rowMap in order to
     // obtain a nodeMap.
@@ -248,28 +245,28 @@ namespace MueLu {
                                                                          minGlobalIndex));
     }
 
-    TEUCHOS_TEST_FOR_EXCEPTION(Coordinates->getLocalLength()
+    TEUCHOS_TEST_FOR_EXCEPTION(fineMap->getNodeNumElements()
                                != static_cast<size_t>(geoData->getNumLocalFineNodes()),
                                Exceptions::RuntimeError,
-                               "The local number of elements in Coordinates is not equal to the"
-                               " number of nodes given by: lNodesPerDim!");
-    TEUCHOS_TEST_FOR_EXCEPTION(Coordinates->getGlobalLength()
+                               "The local number of elements in the graph's map is not equal to "
+                               "the number of nodes given by: lNodesPerDim!");
+    TEUCHOS_TEST_FOR_EXCEPTION(fineMap->getGlobalNumElements()
                                != static_cast<size_t>(geoData->getNumGlobalFineNodes()),
                                Exceptions::RuntimeError,
-                               "The global number of elements in Coordinates is not equal to the"
-                               " number of nodes given by: gNodesPerDim!");
+                               "The global number of elements in the graph's map is not equal to "
+                               "the number of nodes given by: gNodesPerDim!");
 
     std::vector<std::vector<GO> > coarseMeshData = geoData->getCoarseMeshData();
 
-    RCP<const Map> coarseCoordMap;
+    RCP<const Map> coarseMap;
     Array<LO>  ghostedCoarseNodeCoarseLIDs(geoData->getNumLocalGhostedNodes());
     Array<int> ghostedCoarseNodeCoarsePIDs(geoData->getNumLocalGhostedNodes());
 
-    geoData->getGhostedNodesData(coordMap, coarseCoordMap, ghostedCoarseNodeCoarseLIDs,
+    geoData->getGhostedNodesData(fineMap, coarseMap, ghostedCoarseNodeCoarseLIDs,
                                  ghostedCoarseNodeCoarsePIDs);
 
     // Create aggregates object and set basic parameters
-    RCP<Aggregates> aggregates = rcp(new Aggregates(coordMap));
+    RCP<Aggregates> aggregates = rcp(new Aggregates(fineMap));
     aggregates->setObjectLabel("ST");
     aggregates->AggregatesCrossProcessors(true);
     std::vector<unsigned> aggStat(geoData->getNumLocalFineNodes(), READY);

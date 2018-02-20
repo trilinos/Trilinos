@@ -145,24 +145,32 @@ class AggregateGenerator {
 
     // Little utility to generate uncoupled aggregates.
     static RCP<Aggregates>
-    gimmeStructuredAggregates(const RCP<const Xpetra::MultiVector<double,LO,GO,NO> >& Coordinates,
+    gimmeStructuredAggregates(const RCP<Matrix>& A,
                               Array<GO> gNodesPerDir, Array<LO> lNodesPerDir, LO numDimensions,
                               const std::string meshLayout, const Array<GO> meshData)
     {
       Level level;
       TestHelpers::TestFactory<SC,LO,GO,NO>::createSingleLevelHierarchy(level);
-      level.Set("Coordinates", Coordinates);
+
+      RCP<AmalgamationFactory> amalgFact = rcp(new AmalgamationFactory());
+      amalgFact->SetDefaultVerbLevel(MueLu::None);
+      RCP<CoalesceDropFactory> dropFact = rcp(new CoalesceDropFactory());
+      dropFact->SetFactory("UnAmalgamationInfo", amalgFact);
+
+      level.Set("A", A);
       level.Set("gNodesPerDim", gNodesPerDir);
       level.Set("lNodesPerDim", lNodesPerDir);
-      level.Set("meshData", meshData);
+      level.Set("aggregation: mesh data", meshData);
 
       // Setup aggregation factory (use default factory for graph)
       RCP<StructuredAggregationFactory> aggFact = rcp(new StructuredAggregationFactory());
+      aggFact->SetFactory("Graph", dropFact);
+      aggFact->SetParameter("aggregation: mesh layout", Teuchos::ParameterEntry(meshLayout));
       aggFact->SetParameter("aggregation: number of spatial dimensions",
                             Teuchos::ParameterEntry(numDimensions));
+      aggFact->SetParameter("aggregation: coarsening order", Teuchos::ParameterEntry(0));
       aggFact->SetParameter("aggregation: coarsening rate",
                             Teuchos::ParameterEntry(std::string("{3}")));
-      aggFact->SetParameter("meshLayout", Teuchos::ParameterEntry(meshLayout));
 
       level.Request("Aggregates", aggFact.get());
 
@@ -573,10 +581,19 @@ class AggregateGenerator {
       TestHelpers::TestFactory<SC,LO,GO,NO>::BuildGeoCoordinates(numDimensions, gNodesPerDir,
                                                                  lNodesPerDir, meshData);
 
+    Teuchos::ParameterList matrixList;
+    matrixList.set("nx", gNodesPerDir[0]);
+    matrixList.set("matrixType","Laplace1D");
+    RCP<Galeri::Xpetra::Problem<Map,CrsMatrixWrap,MultiVector> > Pr = Galeri::Xpetra::
+      BuildProblem<SC,LO,GO,Map,CrsMatrixWrap,MultiVector>("Laplace1D",
+                                                           Coordinates->getMap(),
+                                                           matrixList);
+    RCP<Matrix> A = Pr->BuildMatrix();
+
     if(myRank == 0) std::cout << "About to build the aggregates" << std::endl;
 
     RCP<Aggregates> aggregates = AggregateGenerator<SC,LO,GO,NO>::
-      gimmeStructuredAggregates(Coordinates, gNodesPerDir, lNodesPerDir, numDimensions, meshLayout,
+      gimmeStructuredAggregates(A, gNodesPerDir, lNodesPerDir, numDimensions, meshLayout,
                                 meshData);
 
     TEST_EQUALITY(aggregates != Teuchos::null, true);
@@ -616,8 +633,17 @@ class AggregateGenerator {
                                                                  lNodesPerDir, meshData,
                                                                  meshLayout);
 
+    Teuchos::ParameterList matrixList;
+    matrixList.set("nx", gNodesPerDir[0]);
+    matrixList.set("matrixType","Laplace1D");
+    RCP<Galeri::Xpetra::Problem<Map,CrsMatrixWrap,MultiVector> > Pr = Galeri::Xpetra::
+      BuildProblem<SC,LO,GO,Map,CrsMatrixWrap,MultiVector>("Laplace1D",
+                                                           Coordinates->getMap(),
+                                                           matrixList);
+    RCP<Matrix> A = Pr->BuildMatrix();
+
     RCP<Aggregates> aggregates = AggregateGenerator<SC,LO,GO,NO>::
-      gimmeStructuredAggregates(Coordinates, gNodesPerDir, lNodesPerDir, numDimensions, meshLayout,
+      gimmeStructuredAggregates(A, gNodesPerDir, lNodesPerDir, numDimensions, meshLayout,
                                 meshData);
 
     TEST_EQUALITY(aggregates != Teuchos::null, true);
