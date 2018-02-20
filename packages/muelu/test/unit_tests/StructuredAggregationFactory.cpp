@@ -49,6 +49,7 @@
 
 #include "MueLu_StructuredAggregationFactory.hpp"
 #include "MueLu_AmalgamationFactory.hpp"
+#include "MueLu_CoalesceDropFactory.hpp"
 #include "MueLu_TentativePFactory.hpp"
 #include "MueLu_TrilinosSmoother.hpp"
 #include "MueLu_Utilities.hpp"
@@ -195,7 +196,10 @@ namespace MueLuTests {
     fineLevel.Set("Nullspace",nullSpace);
 
     RCP<AmalgamationFactory> amalgFact = rcp(new AmalgamationFactory());
+    RCP<CoalesceDropFactory> dropFact = rcp(new CoalesceDropFactory());
+    dropFact->SetFactory("UnAmalgamationInfo", amalgFact);
     RCP<StructuredAggregationFactory> StructuredAggFact = rcp(new StructuredAggregationFactory());
+    StructuredAggFact->SetFactory("Graph", dropFact);
     StructuredAggFact->SetParameter("aggregation: mesh layout",
                                     Teuchos::ParameterEntry(meshLayout));
     StructuredAggFact->SetParameter("aggregation: number of spatial dimensions",
@@ -294,7 +298,10 @@ namespace MueLuTests {
     fineLevel.Set("Nullspace",nullSpace);
 
     RCP<AmalgamationFactory> amalgFact = rcp(new AmalgamationFactory());
+    RCP<CoalesceDropFactory> dropFact = rcp(new CoalesceDropFactory());
+    dropFact->SetFactory("UnAmalgamationInfo", amalgFact);
     RCP<StructuredAggregationFactory> StructuredAggFact = rcp(new StructuredAggregationFactory());
+    StructuredAggFact->SetFactory("Graph", dropFact);
     StructuredAggFact->SetParameter("aggregation: mesh layout",
                                     Teuchos::ParameterEntry(meshLayout));
     StructuredAggFact->SetParameter("aggregation: number of spatial dimensions",
@@ -393,7 +400,10 @@ namespace MueLuTests {
     fineLevel.Set("Nullspace",nullSpace);
 
     RCP<AmalgamationFactory> amalgFact = rcp(new AmalgamationFactory());
+    RCP<CoalesceDropFactory> dropFact = rcp(new CoalesceDropFactory());
+    dropFact->SetFactory("UnAmalgamationInfo", amalgFact);
     RCP<StructuredAggregationFactory> StructuredAggFact = rcp(new StructuredAggregationFactory());
+    StructuredAggFact->SetFactory("Graph", dropFact);
     StructuredAggFact->SetParameter("aggregation: mesh layout",
                                     Teuchos::ParameterEntry(meshLayout));
     StructuredAggFact->SetParameter("aggregation: number of spatial dimensions",
@@ -494,7 +504,10 @@ namespace MueLuTests {
     fineLevel.Set("Nullspace",nullSpace);
 
     RCP<AmalgamationFactory> amalgFact = rcp(new AmalgamationFactory());
+    RCP<CoalesceDropFactory> dropFact = rcp(new CoalesceDropFactory());
+    dropFact->SetFactory("UnAmalgamationInfo", amalgFact);
     RCP<StructuredAggregationFactory> StructuredAggFact = rcp(new StructuredAggregationFactory());
+    StructuredAggFact->SetFactory("Graph", dropFact);
     StructuredAggFact->SetParameter("aggregation: mesh layout",
                                     Teuchos::ParameterEntry(meshLayout));
     StructuredAggFact->SetParameter("aggregation: number of spatial dimensions",
@@ -595,7 +608,10 @@ namespace MueLuTests {
     fineLevel.Set("Nullspace",nullSpace);
 
     RCP<AmalgamationFactory> amalgFact = rcp(new AmalgamationFactory());
+    RCP<CoalesceDropFactory> dropFact = rcp(new CoalesceDropFactory());
+    dropFact->SetFactory("UnAmalgamationInfo", amalgFact);
     RCP<StructuredAggregationFactory> StructuredAggFact = rcp(new StructuredAggregationFactory());
+    StructuredAggFact->SetFactory("Graph", dropFact);
     StructuredAggFact->SetParameter("aggregation: mesh layout",
                                     Teuchos::ParameterEntry(meshLayout));
     StructuredAggFact->SetParameter("aggregation: number of spatial dimensions",
@@ -695,8 +711,12 @@ namespace MueLuTests {
     nullSpace->putScalar(1.0);
     fineLevel.Set("Nullspace",nullSpace);
 
+
     RCP<AmalgamationFactory> amalgFact = rcp(new AmalgamationFactory());
+    RCP<CoalesceDropFactory> dropFact = rcp(new CoalesceDropFactory());
+    dropFact->SetFactory("UnAmalgamationInfo", amalgFact);
     RCP<StructuredAggregationFactory> StructuredAggFact = rcp(new StructuredAggregationFactory());
+    StructuredAggFact->SetFactory("Graph", dropFact);
     StructuredAggFact->SetParameter("aggregation: mesh layout",
                                     Teuchos::ParameterEntry(meshLayout));
     StructuredAggFact->SetParameter("aggregation: number of spatial dimensions",
