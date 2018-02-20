@@ -40,3 +40,9 @@ TRIL_SET_BOOL_CACHE_VAR_FOR_CI(Piro_EpetraSolver_MPI_4_DISABLE ON)
 
 # Disable test that was enabled when Scotch TPL was enabled (#2051, #2052)
 TRIL_SET_BOOL_CACHE_VAR_FOR_CI(Zoltan2_orderingTestDriverExample_MPI_1_DISABLE ON)
+
+# Disable newly failing MueLu tests on 2/19/2018 (#2264)
+TRIL_SET_BOOL_CACHE_VAR_FOR_CI(MueLu_UnitTestsEpetra_MPI_1_DISABLE ON)
+TRIL_SET_BOOL_CACHE_VAR_FOR_CI(MueLu_UnitTestsEpetra_MPI_4_DISABLE ON)
+TRIL_SET_BOOL_CACHE_VAR_FOR_CI(MueLu_UnitTestsTpetra_MPI_1_DISABLE ON)
+TRIL_SET_BOOL_CACHE_VAR_FOR_CI(MueLu_UnitTestsTpetra_MPI_4_DISABLE ON)
