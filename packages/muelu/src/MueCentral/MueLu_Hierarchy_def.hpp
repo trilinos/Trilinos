@@ -977,7 +977,6 @@ namespace MueLu {
         RCP<Operator> Ac = Coarse->Get< RCP<Operator> >("A");
         if (!Ac.is_null()) {
           RCP<const Map> origXMap = coarseX->getMap();
-          RCP<const Map> origRhsMap = coarseRhs->getMap();
 
           // Replace maps with maps with a subcommunicator
           coarseRhs->replaceMap(Ac->getRangeMap());
@@ -995,7 +994,6 @@ namespace MueLu {
             iterateLevelTime = rcp(new TimeMonitor(*this, iterateLevelTimeLabel));  // restart timing this level
           }
           coarseX->replaceMap(origXMap);
-          coarseRhs->replaceMap(origRhsMap);
         }
 
         if (!doPRrebalance_ && !importer.is_null()) {
@@ -1461,7 +1459,7 @@ namespace MueLu {
         }
       }
     }
-    sizeOfAllocatedLevelMultiVectors_ = numvecs;
+
   }
 
 

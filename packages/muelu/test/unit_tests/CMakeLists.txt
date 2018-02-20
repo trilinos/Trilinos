@@ -39,6 +39,7 @@ APPEND_SET(SOURCES
   RAPShiftFactory.cpp
   SaPFactory.cpp
   Smoothers/SmootherFactory.cpp
+  StructuredAggregationFactory.cpp
   StructuredLineDetection.cpp
   TentativePFactory.cpp
   ThresholdAFilterFactory.cpp

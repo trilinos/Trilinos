@@ -51,8 +51,9 @@ const Thyra::SolveStatus<Scalar> StepperImplicit<Scalar>::solveNonLinear(
   Thyra::NonlinearSolverBase<Scalar> & solver,
   const Teuchos::RCP<Thyra::VectorBase<Scalar> > & x)
 {
-  // Set the model to use
-  solver.setModel(model);
+  // Set the model to use. Setting the model causes a rebuild of the solver.
+  if (is_null(solver.getModel()))
+    solver.setModel(model);
 
   // Solve
   const Thyra::SolveStatus<Scalar> solve_status = solver.solve(&*x, NULL, NULL);
