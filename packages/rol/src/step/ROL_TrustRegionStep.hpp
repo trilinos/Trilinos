@@ -578,6 +578,9 @@ public:
                          obj,bnd,*model_);
     algo_state.nfval += state->nfval;
     algo_state.ngrad += state->ngrad;
+    state->flag   = static_cast<int>(TRflag_);
+    state->SPiter = SPiter_;
+    state->SPflag = SPflag_;
     // If step is accepted ...
     // Compute new gradient and update secant storage
     if ( TRflag_ == TRUSTREGION_FLAG_SUCCESS || 
