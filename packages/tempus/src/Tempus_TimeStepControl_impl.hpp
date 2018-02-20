@@ -72,7 +72,7 @@ void TimeStepControl<Scalar>::getNextTimeStep(
     RCP<SolutionStateMetaData<Scalar> > metaData = workingState->getMetaData();
     const Scalar lastTime = solutionHistory->getCurrentState()->getTime();
     const int iStep = metaData->getIStep();
-    volatile int order = metaData->getOrder();
+    int order = metaData->getOrder();
     Scalar dt = metaData->getDt();
     bool output = metaData->getOutput();
 
