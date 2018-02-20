@@ -514,7 +514,7 @@ namespace MueLuTests {
         RCP<Xpetra::MultiVector<double,LO,GO,NO> > Coordinates
           = Xpetra::MultiVectorFactory<double,LO,GO,NO>::Build(coordMap, numDimensions);
         Array<ArrayRCP<double> > myCoords(numDimensions);
-        for(size_t dim = 0; dim < numDimensions; ++dim) {
+        for(int dim = 0; dim < numDimensions; ++dim) {
           myCoords[dim] = Coordinates->getDataNonConst(dim);
         }
 
