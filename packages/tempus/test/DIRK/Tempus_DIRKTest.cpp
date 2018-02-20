@@ -38,6 +38,7 @@ using Tempus::SolutionState;
 #define TEST_CONSTRUCTING_FROM_DEFAULTS
 #define TEST_SINCOS
 #define TEST_VANDERPOL
+#define TEST_EMBEDDED_DIRK
 
 
 #ifdef TEST_PARAMETERLIST
@@ -56,6 +57,7 @@ TEUCHOS_UNIT_TEST(DIRK, ParameterList)
   RKMethods.push_back("SDIRK 3 Stage 4th order");
   RKMethods.push_back("SDIRK 5 Stage 4th order");
   RKMethods.push_back("SDIRK 5 Stage 5th order");
+  RKMethods.push_back("SDIRK 2(1) Pair");
 
   for(std::vector<std::string>::size_type m = 0; m != RKMethods.size(); m++) {
 
@@ -261,6 +263,7 @@ TEUCHOS_UNIT_TEST(DIRK, SinCos)
   RKMethods.push_back("SDIRK 3 Stage 4th order");
   RKMethods.push_back("SDIRK 5 Stage 4th order");
   RKMethods.push_back("SDIRK 5 Stage 5th order");
+  RKMethods.push_back("SDIRK 2(1) Pair");
 
   std::vector<double> RKMethodErrors;
   RKMethodErrors.push_back(0.0124201);
@@ -273,6 +276,7 @@ TEUCHOS_UNIT_TEST(DIRK, SinCos)
   RKMethodErrors.push_back(6.41463e-08);
   RKMethodErrors.push_back(3.30631e-10);
   RKMethodErrors.push_back(1.35728e-11);
+  RKMethodErrors.push_back(0.0001041);
 
   for(std::vector<std::string>::size_type m = 0; m != RKMethods.size(); m++) {
 
@@ -491,7 +495,7 @@ TEUCHOS_UNIT_TEST(DIRK, VanDerPol)
                   solutionsDot, xDotErrorNorm, xDotSlope);
 
   TEST_FLOATING_EQUALITY( xSlope,            order, 0.06   );
-  TEST_FLOATING_EQUALITY( xErrorNorm[0],  3.42577e-05, 1.0e-4 );
+  TEST_FLOATING_EQUALITY( xErrorNorm[0], 1.07525e-05, 1.0e-4 );
   // xDot not yet available for DIRK methods.
   //TEST_FLOATING_EQUALITY( xDotSlope,        1.74898, 0.10 );
   //TEST_FLOATING_EQUALITY( xDotErrorNorm[0],  1.0038, 1.0e-4 );
@@ -499,6 +503,112 @@ TEUCHOS_UNIT_TEST(DIRK, VanDerPol)
   Teuchos::TimeMonitor::summarize();
 }
 #endif // TEST_VANDERPOL
+
+
+#ifdef TEST_EMBEDDED_DIRK
+// ************************************************************
+// ************************************************************
+TEUCHOS_UNIT_TEST(DIRK, EmbeddedVanDerPol)
+{
+
+   std::vector<std::string> IntegratorList;
+   IntegratorList.push_back("Embedded_Integrator_PID");
+   IntegratorList.push_back("Embedded_Integrator");
+
+   // the embedded solution will test the following:
+   const int refIstep = 213;
+
+   for(auto integratorChoice : IntegratorList){
+
+      std::cout << "Using Integrator: " << integratorChoice << " !!!" << std::endl;
+
+      // Read params from .xml file
+      RCP<ParameterList> pList =
+         getParametersFromXmlFile("Tempus_DIRK_VanDerPol.xml");
+
+
+      // Setup the VanDerPolModel
+      RCP<ParameterList> vdpm_pl = sublist(pList, "VanDerPolModel", true);
+      RCP<VanDerPolModel<double> > model =
+         Teuchos::rcp(new VanDerPolModel<double>(vdpm_pl));
+
+      // Set the Integrator and Stepper
+      RCP<ParameterList> pl = sublist(pList, "Tempus", true);
+      pl->set("Integrator Name", integratorChoice);
+
+      // Setup the Integrator
+      RCP<Tempus::IntegratorBasic<double> > integrator =
+         Tempus::integratorBasic<double>(pl, model);
+
+     const std::string RKMethod_ =
+        pl->sublist(integratorChoice).get<std::string>("Stepper Name");
+
+      // Integrate to timeMax
+      bool integratorStatus = integrator->advanceTime();
+      TEST_ASSERT(integratorStatus);
+
+      // Test if at 'Final Time'
+      double time = integrator->getTime();
+      double timeFinal = pl->sublist(integratorChoice)
+         .sublist("Time Step Control").get<double>("Final Time");
+      TEST_FLOATING_EQUALITY(time, timeFinal, 1.0e-14);
+
+
+      // Numerical reference solution at timeFinal (for \epsilon = 0.1)
+      RCP<Thyra::VectorBase<double> > x = integrator->getX();
+      RCP<Thyra::VectorBase<double> > xref = x->clone_v();
+      Thyra::set_ele(0, -1.5484458614405929, xref.ptr());
+      Thyra::set_ele(1,  1.0181127316101317, xref.ptr());
+
+      // Calculate the error
+      RCP<Thyra::VectorBase<double> > xdiff = x->clone_v();
+      Thyra::V_StVpStV(xdiff.ptr(), 1.0, *xref, -1.0, *(x));
+      const double L2norm = Thyra::norm_2(*xdiff);
+
+      // Test number of steps, failures, and accuracy
+      if (integratorChoice == "Embedded_Integrator_PID"){
+         const double absTol = pl->sublist(integratorChoice).
+            sublist("Time Step Control").get<double>("Maximum Absolute Error");
+         const double relTol = pl->sublist(integratorChoice).
+            sublist("Time Step Control").get<double>("Maximum Relative Error");
+
+
+         // get the number of time steps and number of step failure
+         //const int nFailure_c = integrator->getSolutionHistory()->
+         //getCurrentState()->getMetaData()->getNFailures();
+         const int iStep = integrator->getSolutionHistory()->
+            getCurrentState()->getIndex();
+         const int nFail = integrator->getSolutionHistory()->
+            getCurrentState()->getMetaData()->getNRunningFailures();
+
+         // Should be close to the prescribed tolerance
+         TEST_FLOATING_EQUALITY(std::log10(L2norm),std::log10(absTol), 0.3 );
+         TEST_FLOATING_EQUALITY(std::log10(L2norm),std::log10(relTol), 0.3 );
+         // test for number of steps
+         TEST_COMPARE(iStep, <=, refIstep);
+      }
+
+      // Plot sample solution and exact solution
+      std::ofstream ftmp("Tempus_"+integratorChoice+RKMethod_+"_VDP_Example.dat");
+      RCP<const SolutionHistory<double> > solutionHistory =
+         integrator->getSolutionHistory();
+      int nStates = solutionHistory->getNumStates();
+      //RCP<const Thyra::VectorBase<double> > x_exact_plot;
+      for (int i=0; i<nStates; i++) {
+         RCP<const SolutionState<double> > solutionState = (*solutionHistory)[i];
+         double time = solutionState->getTime();
+         RCP<const Thyra::VectorBase<double> > x_plot = solutionState->getX();
+         //x_exact_plot = model->getExactSolution(time).get_x();
+         ftmp << time << "   "
+            << Thyra::get_ele(*(x_plot), 0) << "   "
+            << Thyra::get_ele(*(x_plot), 1) << "   " << std::endl;
+      }
+      ftmp.close();
+   }
+
+   Teuchos::TimeMonitor::summarize();
+}
+#endif
 
 
 } // namespace Tempus_Test

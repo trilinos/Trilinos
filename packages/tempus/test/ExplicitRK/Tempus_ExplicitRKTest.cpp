@@ -48,6 +48,7 @@ TEUCHOS_UNIT_TEST(ExplicitRK, ParameterList)
 {
   std::vector<std::string> RKMethods;
   RKMethods.push_back("Bogacki-Shampine 3(2) Pair");
+  RKMethods.push_back("Merson 4(5) Pair");
   RKMethods.push_back("General ERK");
   RKMethods.push_back("RK Forward Euler");
   RKMethods.push_back("RK Explicit 4 Stage");
@@ -237,6 +238,7 @@ TEUCHOS_UNIT_TEST(ExplicitRK, SinCos)
   RKMethods.push_back("Bogacki-Shampine 3(2) Pair");
   RKMethods.push_back("General ERK");
   RKMethods.push_back("General ERK Embedded");
+  //RKMethods.push_back("Merson 4(5) Pair"); // slope = 3.87816
   std::vector<double> RKMethodErrors;
   RKMethodErrors.push_back(0.051123);
   RKMethodErrors.push_back(8.33251e-07);
@@ -251,6 +253,7 @@ TEUCHOS_UNIT_TEST(ExplicitRK, SinCos)
   RKMethodErrors.push_back(4.16603e-05);
   RKMethodErrors.push_back(8.33251e-07);
   RKMethodErrors.push_back(4.16603e-05);
+  //RKMethodErrors.push_back(1.39383e-07);
 
   for(std::vector<std::string>::size_type m = 0; m != RKMethods.size(); m++) {
 
