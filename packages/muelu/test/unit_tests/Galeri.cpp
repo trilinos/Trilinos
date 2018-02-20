@@ -63,8 +63,8 @@ namespace Galeri {
   namespace Xpetra {
 
 // Add other Galeri functions as needed
-#define MUELU_GALERI_INST(LO,GO,NT) \
-  template Teuchos::RCP<::Xpetra::Map<LO, GO, NT>> CreateMap<LO,GO,NT>(::Xpetra::UnderlyingLib lib, const std::string & mapType, const Teuchos::RCP<const Teuchos::Comm<int> >& comm, Teuchos::ParameterList & list);
+#define MUELU_GALERI_INST(LO,GO,NO) \
+  template Teuchos::RCP<::Xpetra::Map<LO, GO, NO>> CreateMap<LO,GO,NO>(::Xpetra::UnderlyingLib lib, const std::string & mapType, const Teuchos::RCP<const Teuchos::Comm<int> >& comm, Teuchos::ParameterList & list);
 
 TPETRA_INSTANTIATE_LGN(MUELU_GALERI_INST)
   } //Xpetra namespace 
