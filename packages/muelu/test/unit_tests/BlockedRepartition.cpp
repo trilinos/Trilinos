@@ -655,9 +655,9 @@ namespace MueLuTests {
   RCP<const Teuchos::Comm<int> > comm = TestHelpers::Parameters::getDefaultComm();
 
   if(comm->getSize() == 1) {
-  out << "Skip BlockedRepartion test in serial case" << std::endl;
-  return;
-}
+    out << "Skip BlockedRepartion test in serial case" << std::endl;
+    return;
+  }
 
   //    int NumProcs = comm->getSize(); // number of procs used before rebalancing
 

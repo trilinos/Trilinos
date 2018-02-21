@@ -149,8 +149,6 @@ namespace MueLu {
       remapPartitions = false;
     }
 
-    std::cout << "Hello 0!" << std::endl;
-
     // check special cases
     if (numPartitions == 1) {
       // Trivial case: decomposition is the trivial one, all zeros. We skip the call to Zoltan_Interface
@@ -208,8 +206,6 @@ namespace MueLu {
       DeterminePartitionPlacement(*A, *decomposition, numPartitions);
     }
 
-    std::cout << "Hello 1!" << std::endl;
-
     // ======================================================================================================
     // Construct importer
     // ======================================================================================================
@@ -236,8 +232,6 @@ namespace MueLu {
     TEUCHOS_TEST_FOR_EXCEPTION(incorrectGlobalRank >- 1, Exceptions::RuntimeError, "pid " + Teuchos::toString(incorrectGlobalRank) + " encountered a partition number is that out-of-range");
 #endif
 
-    std::cout << "Hello 1.1!" << std::endl;
-
     Array<GO> myGIDs;
     myGIDs.reserve(decomposition->getLocalLength());
 
@@ -257,8 +251,6 @@ namespace MueLu {
     }
     decompEntries = Teuchos::null;
 
-    std::cout << "Hello 1.2!" << std::endl;
-
     if (IsPrint(Statistics2)) {
       GO numLocalKept = myGIDs.size(), numGlobalKept, numGlobalRows = A->getGlobalNumRows();
       MueLu_sumAll(comm,numLocalKept, numGlobalKept);
@@ -273,8 +265,6 @@ namespace MueLu {
     myPart[0] = myRank;
     for (typename map_type::const_iterator it = sendMap.begin(); it != sendMap.end(); it++)
       myParts[cnt++] = it->first;
-
-    std::cout << "Hello 1.3!" << std::endl;
 
     // Step 1: Find out how many processors send me data
     // partsIndexBase starts from zero, as the processors ids start from zero
@@ -295,8 +285,6 @@ namespace MueLu {
     numPartsIRecv->doExport(*partsISend, *partsExport, Xpetra::ADD);
     numRecv = (numPartsIRecv->getData(0))[0];
 
-    std::cout << "Hello 1.4!" << std::endl;
-
     // Step 2: Get my GIDs from everybody else
     MPI_Datatype MpiType = MpiTypeTraits<GO>::getType();
     int msgTag = 12345;  // TODO: use Comm::dup for all internal messaging
@@ -306,8 +294,6 @@ namespace MueLu {
     cnt = 0;
     for (typename map_type::iterator it = sendMap.begin(); it != sendMap.end(); it++)
       MPI_Isend(static_cast<void*>(it->second.getRawPtr()), it->second.size(), MpiType, Teuchos::as<GO>(it->first), msgTag, *rawMpiComm, &sendReqs[cnt++]);
-
-    std::cout << "Hello 1.4!" << std::endl;
 
     map_type recvMap;
     size_t totalGIDs = myGIDs.size();
@@ -324,8 +310,6 @@ namespace MueLu {
 
       totalGIDs += count;
     }
-
-    std::cout << "Hello 1.5!" << std::endl;
 
     // Do waits on send requests
     if (numSend) {
@@ -346,18 +330,11 @@ namespace MueLu {
     // (i.e. it->second) are sorted. Therefore, a merge sort would work well in this situation.
     std::sort(myGIDs.begin(), myGIDs.end());
 
-    std::cout << "p=" << origComm->getRank() << " | Hello 1.6!" << std::endl;
-    std::cout << "p=" << origComm->getRank() << " | rowMap->getGlobalNumElements()="
-              << rowMap->getGlobalNumElements() << std::endl;
-    std::cout << "p=" << origComm->getRank() << " | myGIDs.size()=" << myGIDs.size() << std::endl;
-
     // Step 3: Construct importer
     RCP<Map>          newRowMap      = MapFactory   ::Build(lib, rowMap->getGlobalNumElements(), myGIDs(), indexBase, origComm);
     RCP<const Import> rowMapImporter;
 
     RCP<const BlockedMap> blockedRowMap = Teuchos::rcp_dynamic_cast<const BlockedMap>(rowMap);
-
-    std::cout << "Hello 1.7!" << std::endl;
 
     {
       SubFactoryMonitor m1(*this, "Import construction", currentLevel);
@@ -368,8 +345,6 @@ namespace MueLu {
 	rowMapImporter = ImportFactory::Build(blockedRowMap->getMap(), newRowMap);
       }
     }
-
-    std::cout << "Hello 2!" << std::endl;
 
     // If we're running BlockedCrs we should chop up the newRowMap into a newBlockedRowMap here (and do likewise for importers)
     if(!blockedRowMap.is_null()) {

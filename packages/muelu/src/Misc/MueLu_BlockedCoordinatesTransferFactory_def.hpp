@@ -77,7 +77,7 @@ namespace MueLu {
     const size_t numSubFactories = NumFactories();
     for(size_t i=0; i<numSubFactories; i++) {
       const RCP<const FactoryBase>& myFactory = subFactories_[i];
-      coarseLevel.DeclareInput("Coordinates",&*myFactory, this);
+      coarseLevel.DeclareInput("Coordinates", myFactory.getRawPtr(), this);
     }
 
     // call DeclareInput of all user-given transfer factories
