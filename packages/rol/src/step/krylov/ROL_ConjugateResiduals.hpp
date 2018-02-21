@@ -71,7 +71,7 @@ public:
     : Krylov<Real>(absTol,relTol,maxit), isInitialized_(false), useInexact_(useInexact) {}
 
   // Run Krylov Method
-  void run( Vector<Real> &x, LinearOperator<Real> &A, const Vector<Real> &b, LinearOperator<Real> &M, 
+  Real run( Vector<Real> &x, LinearOperator<Real> &A, const Vector<Real> &b, LinearOperator<Real> &M, 
             int &iter, int &flag ) {
     if ( !isInitialized_ ) {
       r_   = x.clone();
@@ -150,6 +150,7 @@ public:
     else {
       iter++;
     } 
+    return rnorm;
   }
 };
 
