@@ -1,0 +1,303 @@
+// @HEADER
+// ***********************************************************************
+//
+//          Tpetra: Templated Linear Algebra Services Package
+//                 Copyright (2008) Sandia Corporation
+//
+// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
+// the U.S. Government retains certain rights in this software.
+//
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are
+// met:
+//
+// 1. Redistributions of source code must retain the above copyright
+// notice, this list of conditions and the following disclaimer.
+//
+// 2. Redistributions in binary form must reproduce the above copyright
+// notice, this list of conditions and the following disclaimer in the
+// documentation and/or other materials provided with the distribution.
+//
+// 3. Neither the name of the Corporation nor the names of the
+// contributors may be used to endorse or promote products derived from
+// this software without specific prior written permission.
+//
+// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
+// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
+// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+//
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+//
+// ************************************************************************
+// @HEADER
+
+#ifndef __MESHDATABASE_HPP__
+#define __MESHDATABASE_HPP__
+
+#include <iostream>
+#include <sstream>
+
+#include "typedefs.hpp"
+#include "Teuchos_Comm.hpp"
+
+namespace BlockCrsTest {
+  struct MeshDatabase {
+  private:
+    // global perspective to the mesh structure (finite volume interior node only)
+    struct StructuredProcGrid {
+    public:
+      LO _num_procs_i, _num_procs_j, _num_procs_k, _num_procs_jk, _max_num_procs;
+      LO _rank, _proc_i, _proc_j, _proc_k;
+      StructuredProcGrid() = default;
+      StructuredProcGrid(const StructuredProcGrid &b) = default;
+      StructuredProcGrid(const LO num_procs_i, 
+                         const LO num_procs_j, 
+                         const LO num_procs_k) 
+        : _num_procs_i(num_procs_i), 
+          _num_procs_j(num_procs_j), 
+          _num_procs_k(num_procs_k), 
+          _num_procs_jk(num_procs_j*num_procs_k) {
+        const LO bigger_ij = num_procs_i > num_procs_j ? num_procs_i : num_procs_j;
+        const LO bigger_jk = num_procs_j > num_procs_k ? num_procs_j : num_procs_k;
+        _max_num_procs = bigger_ij > bigger_jk ? bigger_ij : bigger_jk;
+      }
+
+      void setRank(const LO rank) {
+        _rank = rank;
+        _proc_i = _rank / _num_procs_jk;
+        _proc_k = _rank % _num_procs_jk;
+        _proc_j = _proc_k / _num_procs_k;
+        _proc_k = _proc_k % _num_procs_k;
+      }
+    };
+    
+    struct StructuredBlock {
+    public:
+      LO _num_global_elements_i, 
+        _num_global_elements_j, 
+        _num_global_elements_k, 
+        _num_global_elements_jk;
+      StructuredBlock() = default;
+      StructuredBlock(const StructuredBlock &b) = default;
+      StructuredBlock(const LO num_global_elements_i,
+                      const LO num_global_elements_j,
+                      const LO num_global_elements_k) 
+        : _num_global_elements_i(num_global_elements_i),
+          _num_global_elements_j(num_global_elements_j),
+          _num_global_elements_k(num_global_elements_k),
+          _num_global_elements_jk(num_global_elements_j*num_global_elements_k){}
+      
+      inline GO ijk_to_idx(const LO i, const LO j, const LO k) const {
+        return (i*_num_global_elements_j + j)*_num_global_elements_k + k;
+      }
+    
+      inline void idx_to_ijk(const GO idx, LO &i, LO &j, LO &k) const {
+        i = idx / _num_global_elements_jk;
+        k = idx % _num_global_elements_jk;
+        j = k   / _num_global_elements_k;
+        k = k   % _num_global_elements_k;
+      }
+    
+      inline GO getNumElements() const { 
+        return _num_global_elements_i*_num_global_elements_jk;
+      }
+    };
+    
+    struct StructureBlockPart {
+      local_ordinal_range_type _range_i, _range_j, _range_k;
+      StructureBlockPart() = default;
+      StructureBlockPart(const StructureBlockPart &b) = default;
+      StructureBlockPart(const LO range_i_beg, const LO range_i_end,
+                         const LO range_j_beg, const LO range_j_end,
+                         const LO range_k_beg, const LO range_k_end) 
+        : _range_i(range_i_beg, range_i_end),
+          _range_j(range_j_beg, range_j_end),
+          _range_k(range_k_beg, range_k_end) {}
+
+      inline void getRemoteRange(const StructuredBlock &sb,
+                                 local_ordinal_range_type &range_i,
+                                 local_ordinal_range_type &range_j,
+                                 local_ordinal_range_type &range_k) {
+        range_i.first  = _range_i.first  - (_range_i.first > 0);
+        range_i.second = _range_i.second + (_range_i.second < sb._num_global_elements_i);
+        
+        range_j.first  = _range_j.first  - (_range_j.first > 0);
+        range_j.second = _range_j.second + (_range_j.second < sb._num_global_elements_j);
+
+        range_k.first  = _range_k.first  - (_range_k.first > 0);
+        range_k.second = _range_k.second + (_range_k.second < sb._num_global_elements_k);
+      }
+
+      inline GO getNumElements() const {
+        return ( (_range_i.second - _range_i.first)*
+                 (_range_j.second - _range_j.first)*
+                 (_range_k.second - _range_k.first) );                 
+      }
+    };
+
+  public:
+    Teuchos::RCP<const Teuchos::Comm<int> > _comm;
+    StructuredBlock _sb;
+    StructuredProcGrid _grid;
+    StructureBlockPart _owned;
+
+    typedef Kokkos::View<GO*,host_space> global_ordinal_view_host_type;
+    
+    global_ordinal_view_host_type _element_gids; 
+    global_ordinal_view_host_type _owned_element_gids;
+    global_ordinal_view_host_type _remote_element_gids;
+
+    MeshDatabase() = default;
+    MeshDatabase(const MeshDatabase &b) = default;
+
+    MeshDatabase(Teuchos::RCP<const Teuchos::Comm<int> > comm, 
+                 LO num_global_elements_i, 
+                 LO num_global_elements_j, 
+                 LO num_global_elements_k,
+                 LO num_procs_i, 
+                 LO num_procs_j,
+                 LO num_procs_k) 
+      : _comm(comm), 
+        _sb(num_global_elements_i, num_global_elements_j, num_global_elements_k),
+        _grid(num_procs_i, num_procs_j, num_procs_k) {
+      _grid.setRank(_comm->getRank());
+    
+      // uniform partitoins on the structured block
+      const LO iparts = _sb._num_global_elements_i / _grid._num_procs_i;
+      const LO jparts = _sb._num_global_elements_j / _grid._num_procs_j;
+      const LO kparts = _sb._num_global_elements_k / _grid._num_procs_k;
+      
+      const LO ibeg = _grid._proc_i * iparts;
+      const LO jbeg = _grid._proc_j * jparts;
+      const LO kbeg = _grid._proc_k * kparts;
+      
+      const LO itmp = ibeg + iparts; 
+      const LO jtmp = jbeg + jparts;
+      const LO ktmp = kbeg + kparts;
+      
+      const LO iend = itmp < _sb._num_global_elements_i ? itmp : _sb._num_global_elements_i;
+      const LO jend = jtmp < _sb._num_global_elements_j ? jtmp : _sb._num_global_elements_j;
+      const LO kend = ktmp < _sb._num_global_elements_k ? ktmp : _sb._num_global_elements_k;
+
+#if 0
+      if (_grid._rank == 0) {
+        printf(" gridsi= %d %d %d\n", _grid._num_procs_i, _grid._num_procs_j, _grid._num_procs_k);
+        printf(" gridid= %d %d %d\n", _grid._proc_i, _grid._proc_j, _grid._proc_k);
+        printf(" parts = %d %d %d\n", iparts, jparts, kparts);
+        printf(" beg   = %d %d %d\n", ibeg, jbeg, kbeg);
+        printf(" tmp   = %d %d %d\n", itmp, jtmp, ktmp);
+        printf(" end   = %d %d %d\n", iend, jend, kend);
+      }
+#endif
+      // local elements owned by this proc
+      _owned = StructureBlockPart(ibeg, iend,
+                                  jbeg, jend, 
+                                  kbeg, kend);
+
+      // count the number of owned elements
+      const GO num_owned_elements = _owned.getNumElements();
+
+      // remote elements ids
+      local_ordinal_range_type remote_range_i, remote_range_j, remote_range_k;
+      _owned.getRemoteRange(_sb, remote_range_i, remote_range_j, remote_range_k);
+
+      // remote elements possibly exist for all six faces
+      const local_ordinal_range_type face[6][3]
+        = { { local_ordinal_range_type( remote_range_i.first, _owned._range_i.first), _owned._range_j, _owned._range_k },
+            { local_ordinal_range_type(_owned._range_i.second, remote_range_i.second), _owned._range_j, _owned._range_k }, 
+            { _owned._range_i, local_ordinal_range_type( remote_range_j.first, _owned._range_j.first), _owned._range_k },
+            { _owned._range_i, local_ordinal_range_type(_owned._range_j.second, remote_range_j.second), _owned._range_k },
+            { _owned._range_i, _owned._range_j, local_ordinal_range_type( remote_range_k.first, _owned._range_k.first) },
+            { _owned._range_i, _owned._range_j, local_ordinal_range_type(_owned._range_k.second, remote_range_k.second) } };
+
+      // count the number of remote elements
+      GO num_remote_elements = 0;
+      for (LO f=0;f<6;++f) 
+        num_remote_elements += ( (face[f][0].second - face[f][0].first) *
+                                 (face[f][1].second - face[f][1].first) *
+                                 (face[f][2].second - face[f][2].first) );
+#if 0
+      if (_grid._rank == 0 ) {
+        for (LO f=0;f<6;++f) {
+          std::cout << "face " << f 
+                    << " 0 - " << face[f][0].first << "," << face[f][0].second 
+                    << " 1 - " << face[f][1].first << "," << face[f][1].second 
+                    << " 2 - " << face[f][2].first << "," << face[f][2].second 
+                    << "\n";
+        }
+        std::cout << "num remote elements = " << num_remote_elements 
+                  << "\n";
+      }
+#endif
+
+      const GO num_elements = num_owned_elements + num_remote_elements;
+      _element_gids = global_ordinal_view_host_type("element gids", num_elements);
+      _owned_element_gids  = Kokkos::subview(_element_gids, global_ordinal_range_type(0,num_owned_elements));
+      _remote_element_gids = Kokkos::subview(_element_gids, global_ordinal_range_type(num_owned_elements,num_elements));
+
+      for (LO l=0,i=_owned._range_i.first;i<_owned._range_i.second;++i) 
+        for (LO j=_owned._range_j.first;j<_owned._range_j.second;++j) 
+          for (LO k=_owned._range_k.first;k<_owned._range_k.second;++k) 
+            _owned_element_gids(l++) = _sb.ijk_to_idx(i,j,k);
+
+      for (LO l=0,f=0;f<6;++f) 
+        for (LO i=face[f][0].first;i<face[f][0].second;++i)
+          for (LO j=face[f][1].first;j<face[f][1].second;++j)
+            for (LO k=face[f][2].first;k<face[f][2].second;++k) 
+              _remote_element_gids(l++) = _sb.ijk_to_idx(i,j,k);      
+    }
+    
+    ~MeshDatabase() = default;
+
+    size_t getNumOwnedElements() const  { return _owned_element_gids.extent(0); }
+    size_t getNumRemoteElements() const { return _remote_element_gids.extent(0); }
+    size_t getNumElements() const {return _element_gids.extent(0);}
+
+    global_ordinal_view_host_type getOwnedElementGlobalIDs() {return _owned_element_gids;}
+    global_ordinal_view_host_type getRemoteElementGlobalIDs() {return _remote_element_gids;}
+
+    global_ordinal_view_host_type getElementGlobalIDs() {return _element_gids;}
+  
+    // Debugging output
+    void print(std::ostream & oss) {
+      std::ostringstream ss;
+      ss << "[" << _grid._rank << "::" 
+         << _grid._proc_i << "," << _grid._proc_j << "," << _grid._proc_k << "]";
+
+      oss << ss.str() << " Global Elements = [" 
+          << _sb._num_global_elements_i << "x" 
+          << _sb._num_global_elements_j << "x" 
+          << _sb._num_global_elements_k <<"]\n";
+
+      oss << ss.str() <<" Stop/Start Elements   = "
+          << "[" << _owned._range_i.first << "," << _owned._range_i.second << ")x"
+          << "[" << _owned._range_j.first << "," << _owned._range_j.second << ")x"
+          << "[" << _owned._range_k.first << "," << _owned._range_k.second << ")\n";
+        
+      oss << ss.str()<<" Owned Global Elements = ";
+      for(size_t i=0;i<_owned_element_gids.extent(0);++i) {
+        oss << _owned_element_gids(i) << " ";
+      }
+      
+      oss<<"\n"<<ss.str()<<" Remote Global Elements = ";
+      for(size_t i=0;i<_remote_element_gids.extent(0);++i) {
+        oss << _remote_element_gids[i] << " ";
+      }
+
+      oss << std::endl;      
+    }
+  };
+
+}
+
+#endif
+
+
