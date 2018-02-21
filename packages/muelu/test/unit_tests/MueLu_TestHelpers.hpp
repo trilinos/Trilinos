@@ -84,6 +84,18 @@
 #include "Galeri_XpetraProblemFactory.hpp"
 #include "Galeri_XpetraMatrixTypes.hpp"
 
+namespace Galeri {
+  namespace Xpetra {
+    template <class LocalOrdinal, class GlobalOrdinal, class Map>
+    RCP<Map> CreateMap(const std::string & mapType, const Teuchos::RCP<const Teuchos::Comm<int> >& comm, Teuchos::ParameterList & list);
+
+#ifdef HAVE_GALERI_XPETRA
+    template <class LocalOrdinal, class GlobalOrdinal, class Node>
+    Teuchos::RCP< ::Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > CreateMap(::Xpetra::UnderlyingLib lib, const std::string & mapType, const Teuchos::RCP<const Teuchos::Comm<int> >& comm, Teuchos::ParameterList & list);
+#endif
+  }
+}
+
 #include "MueLu_NoFactory.hpp"
 
 // Conditional Tpetra stuff
@@ -514,7 +526,7 @@ namespace MueLuTests {
         RCP<Xpetra::MultiVector<double,LO,GO,NO> > Coordinates
           = Xpetra::MultiVectorFactory<double,LO,GO,NO>::Build(coordMap, numDimensions);
         Array<ArrayRCP<double> > myCoords(numDimensions);
-        for(size_t dim = 0; dim < numDimensions; ++dim) {
+        for(int dim = 0; dim < numDimensions; ++dim) {
           myCoords[dim] = Coordinates->getDataNonConst(dim);
         }
 

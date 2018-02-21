@@ -183,13 +183,11 @@ public:
        pl->set<double>("Amplification Factor", 1.75, "Amplification factor");
        pl->set<double>("Reduction Factor"    , 0.5 , "Reduction factor");
        //FIXME? may need to modify default values of monitoring function
-       // IKT, 1/5/17: from (Denner, 2014), it seems a reasonable choice
-       // for eta_min is 0.1*eta_max Numerical tests confirm this.
-       // TODO: Change default value of eta_min to 1.0e-2?
-       pl->set<double>("Minimum Value Monitoring Function", 1.0e-6,
-                       "Min value eta");
-       pl->set<double>("Maximum Value Monitoring Function", 1.0e-1,
-                       "Max value eta");
+       //IKT, 1/5/17: from (Denner, 2014), it seems a reasonable choice for eta_min is 0.1*eta_max
+       //Numerical tests confirm this. TODO: Change default value of eta_min to 1.0e-2?
+       pl->set<double>("Minimum Value Monitoring Function" , 1.0e-6      , "Min value eta");
+       pl->set<double>("Maximum Value Monitoring Function" , 1.0e-1      , "Max value eta");
+       pl->set<std::string>("Name", "Basic VS");
        return pl;
     }
 
