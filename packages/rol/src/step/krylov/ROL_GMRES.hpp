@@ -156,6 +156,13 @@ public:
     std::vector<ROL::Ptr<Vector<Real > > > Z;
 
     (*res_)[0] = r_->norm();
+
+    // This should be a tolerance check
+    if ((*res_)[0] == static_cast<Real>(0)) {
+      iter = 0;
+      flag = 0;
+      return;
+    }
  
     Real rtol  = std::min(absTol_,relTol_*(*res_)[0]);
 
