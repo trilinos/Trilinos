@@ -143,7 +143,7 @@ public:
     }
 
     // Create modified objectives if needed
-    const Real ten(10);
+    const Real one(1), ten(10);
     if( stepType_ == STEP_AUGMENTEDLAGRANGIAN ) {
       ROL::Ptr<Objective<Real> > raw_obj = opt.getObjective();
       con_ = opt.getConstraint();
@@ -167,6 +167,14 @@ public:
       // TODO: Provide access to change initial penalty
       obj_ = ROL::makePtr<InteriorPoint::PenalizedObjective<Real>>(raw_obj,bnd_,*x_,parlist);
       pen_ = parlist.sublist("Step").sublist("Interior Point").get("Initial Barrier Parameter",ten);
+    }
+    else if( stepType_ == STEP_FLETCHER ) {
+      ROL::Ptr<Objective<Real> > raw_obj = opt.getObjective();
+      bnd_ = opt.getBoundConstraint();
+      con_ = opt.getConstraint();
+      // TODO: Provide access to change initial penalty
+      obj_ = ROL::makePtr<Fletcher<Real>>(raw_obj,con_,*x_,*c_,parlist);
+      pen_ = parlist.sublist("Step").sublist("Fletcher").get("Penalty Parameter",one);
     }
     else {
       obj_   = opt.getObjective();

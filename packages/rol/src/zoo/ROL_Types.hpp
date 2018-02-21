@@ -251,6 +251,7 @@ namespace ROL {
     STEP_PRIMALDUALACTIVESET,
     STEP_TRUSTREGION,
     STEP_INTERIORPOINT,
+    STEP_FLETCHER,
     STEP_LAST
   };
 
@@ -265,6 +266,7 @@ namespace ROL {
       case STEP_PRIMALDUALACTIVESET: retString = "Primal Dual Active Set"; break;
       case STEP_TRUSTREGION:         retString = "Trust Region";           break;
       case STEP_INTERIORPOINT:       retString = "Interior Point";         break;
+      case STEP_FLETCHER:            retString = "Fletcher";               break;
       case STEP_LAST:                retString = "Last Type (Dummy)";      break;
       default:                       retString = "INVALID EStep";
     }
@@ -288,12 +290,14 @@ namespace ROL {
         break;
 
       case TYPE_E:    comp = ( (s == STEP_COMPOSITESTEP) ||
-                               (s == STEP_AUGMENTEDLAGRANGIAN) );
+                               (s == STEP_AUGMENTEDLAGRANGIAN) ||
+			       (s == STEP_FLETCHER) );
         break;
 
       case TYPE_EB:   comp = ( (s == STEP_AUGMENTEDLAGRANGIAN) ||
                                (s == STEP_MOREAUYOSIDAPENALTY) ||
-                               (s == STEP_INTERIORPOINT) );
+                               (s == STEP_INTERIORPOINT) ||
+			       (s == STEP_FLETCHER) );
         break;
 
       case TYPE_LAST: comp = false; break;
@@ -329,7 +333,8 @@ namespace ROL {
             (ls == STEP_MOREAUYOSIDAPENALTY) ||
             (ls == STEP_PRIMALDUALACTIVESET) ||
             (ls == STEP_TRUSTREGION) || 
-            (ls == STEP_INTERIORPOINT) ) ;
+            (ls == STEP_INTERIORPOINT) ||
+	    (ls == STEP_FLETCHER) ) ;
   }
 
   inline EStep & operator++(EStep &type) {

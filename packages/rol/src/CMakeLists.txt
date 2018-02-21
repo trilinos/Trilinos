@@ -90,6 +90,7 @@ INCLUDE_DIRECTORIES(${DIR}
                     ${DIR}/moreauyosidapenalty
                     ${DIR}/interiorpoint
                     ${DIR}/nonlinearcg
+                    ${DIR}/fletcher
                    )
 APPEND_GLOB(HEADERS ${DIR}/*.hpp
                     ${DIR}/linesearch/*.hpp 
@@ -101,6 +102,7 @@ APPEND_GLOB(HEADERS ${DIR}/*.hpp
                     ${DIR}/moreauyosidapenalty/*.hpp
                     ${DIR}/interiorpoint/*.hpp
                     ${DIR}/nonlinearcg/*.hpp
+		    ${DIR}/fletcher/*.hpp
                    )
 
 #
