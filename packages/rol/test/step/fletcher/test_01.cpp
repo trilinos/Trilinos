@@ -67,7 +67,7 @@ int main(int argc, char *argv[]) {
 
   Teuchos::GlobalMPISession mpiSession(&argc, &argv);
 
-  std::string filename = "input_01.xml";
+  std::string filename = "input.xml";
   Teuchos::RCP<Teuchos::ParameterList> parlist = Teuchos::rcp( new Teuchos::ParameterList() );
   Teuchos::updateParametersFromXmlFile( filename, parlist.ptr() );
 
