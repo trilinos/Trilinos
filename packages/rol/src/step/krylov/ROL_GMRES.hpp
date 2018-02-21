@@ -118,7 +118,7 @@ public:
        
   }
  
-  void run( Vector<Real> &x, LinearOperator<Real> &A, const Vector<Real> &b,
+  Real run( Vector<Real> &x, LinearOperator<Real> &A, const Vector<Real> &b,
             LinearOperator<Real> &M, int &iter, int &flag ) {
 
     
@@ -158,13 +158,12 @@ public:
     (*res_)[0] = r_->norm();
 
     // This should be a tolerance check
-    if ((*res_)[0] == static_cast<Real>(0)) {
+    Real rtol = std::min(absTol_,relTol_*(*res_)[0]);
+    if ((*res_)[0] <= rtol) {
       iter = 0;
       flag = 0;
-      return;
+      return (*res_)[0];
     }
- 
-    Real rtol  = std::min(absTol_,relTol_*(*res_)[0]);
 
     V.push_back(b.clone());
     (V[0])->set(*r_);
@@ -258,6 +257,7 @@ public:
       flag = 1;
       x.plus(*z_);
     }
+    return (*res_)[iter+1];
   }
 
 }; // class GMRES
