@@ -18,7 +18,7 @@ if (strcmp(filename, 'caseTen') == true)
   
 %   nNodesPerRegion = [36 33 42 27];
 % nNodesPerRegion = [37 34 43 28 52 13 25 22 34];
-nNodesPerRegion = [7 7 10 7];
+nNodesPerRegion = [4 7 4];
 else
   error('Unknown case "%s".', filename);
 end

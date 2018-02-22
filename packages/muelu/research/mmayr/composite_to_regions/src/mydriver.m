@@ -89,7 +89,7 @@
 %
 !rm -f myData_* 
 
-nDims = 1; file='caseFour'; 
+nDims = 1; file='caseTen'; 
 
 if (nDims == 2)
   [globalDims,localDims,relcorners,abscorners]=mk2DRegionFile(file);
