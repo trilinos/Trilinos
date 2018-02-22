@@ -752,6 +752,9 @@ generateLocalMeshInfo(const panzer_stk::STK_Interface & mesh,
   //typedef Tpetra::MultiVector<double,LO,GO> mvec_type;
   //typedef Tpetra::MultiVector<GO,LO,GO> ordmvec_type;
 
+  // Make sure the STK interface is valid
+  TEUCHOS_ASSERT(mesh.isInitialized());
+
   // This is required by some of the STK stuff
   TEUCHOS_ASSERT(typeid(LO) == typeid(int));
 

@@ -172,6 +172,8 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
         continue;
 #endif
       }
+      std::cout << "Testing: "<< xmlFile << std::endl;
+      
       baseFile = baseFile + (lib == Xpetra::UseEpetra ? "_epetra" : "_tpetra");
       std::string goldFile = baseFile + ".gold";
       std::ifstream f(goldFile.c_str());

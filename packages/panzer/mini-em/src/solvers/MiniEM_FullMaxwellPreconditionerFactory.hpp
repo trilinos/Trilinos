@@ -27,6 +27,9 @@ private:
 
    // Use refMaxwell for Schur complement solve
    bool use_refmaxwell;
+
+   // Use refMaxwell as preconditioner 
+   bool use_as_preconditioner;
 };
 
 }

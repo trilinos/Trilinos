@@ -49,7 +49,10 @@
 //#include "Teuchos_TimeMonitor.hpp"
 #include "Teuchos_Assert.hpp"
 #include "Teuchos_as.hpp"
-
+#ifndef _WIN32
+#include "Teuchos_Array.hpp"
+#include "unistd.h"
+#endif
 
 namespace {
 
@@ -302,6 +305,15 @@ CommandLineProcessor::parse(
       continue;
     }
     if( opt_name == pause_opt ) {
+#ifndef _WIN32
+      Array<int> pids;
+      pids.resize(GlobalMPISession::getNProc());
+      int rank_pid = getpid();
+      GlobalMPISession::allGather(rank_pid,pids());
+      if(procRank == 0)
+        for (int k=0; k<GlobalMPISession::getNProc(); k++)
+          std::cerr << "Rank " << k << " has PID " << pids[k] << std::endl;
+#endif
       if(procRank == 0) {
         std::cerr << "\nType 0 and press enter to continue : ";
         int dummy_int = 0;

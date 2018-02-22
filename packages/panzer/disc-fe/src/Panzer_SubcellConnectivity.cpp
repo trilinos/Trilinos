@@ -42,13 +42,74 @@
 
 #include "Panzer_SubcellConnectivity.hpp"
 
+#include "Teuchos_Assert.hpp"
+
 #include "Panzer_LocalMeshInfo.hpp"
 
 namespace panzer
 {
 
+int
+SubcellConnectivity::
+numSubcellsOnCell(const int cell) const
+{
+#ifdef PANZER_DEBUG
+  TEUCHOS_ASSERT(cell >= 0 and cell < _num_cells);
+#endif
+  return _cell_to_subcells_adj(cell+1)-_cell_to_subcells_adj(cell);
+}
+
+int
+SubcellConnectivity::
+numCellsOnSubcell(const int subcell) const
+{
+#ifdef PANZER_DEBUG
+  TEUCHOS_ASSERT(subcell >= 0 and subcell < _num_subcells);
+#endif
+  return _subcell_to_cells_adj(subcell+1)-_subcell_to_cells_adj(subcell);
+}
+
+int
+SubcellConnectivity::
+subcellForCell(const int cell, const int local_subcell_index) const
+{
+#ifdef PANZER_DEBUG
+  TEUCHOS_ASSERT(cell >= 0 and cell < _num_cells);
+  TEUCHOS_ASSERT(local_subcell_index < numSubcellsOnCell(cell));
+#endif
+  const int index = _cell_to_subcells_adj(cell)+local_subcell_index;
+  return _cell_to_subcells(index);
+}
+
+int
+SubcellConnectivity::
+cellForSubcell(const int subcell, const int local_cell_index) const
+{
+#ifdef PANZER_DEBUG
+  TEUCHOS_ASSERT(subcell >= 0 and subcell < _num_subcells);
+  TEUCHOS_ASSERT(local_cell_index < numCellsOnSubcell(subcell));
+#endif
+  const int index = _subcell_to_cells_adj(subcell)+local_cell_index;
+  return _subcell_to_cells(index);
+}
+
+int
+SubcellConnectivity::
+localSubcellForSubcell(const int subcell, const int local_cell_index) const
+{
+#ifdef PANZER_DEBUG
+  TEUCHOS_ASSERT(subcell >= 0 and subcell < _num_subcells);
+  TEUCHOS_ASSERT(local_cell_index < numCellsOnSubcell(subcell));
+#endif
+  const int index = _subcell_to_cells_adj(subcell)+local_cell_index;
+  return _subcell_to_local_subcells(index);
+}
+
+// ========================================================================
+
 void
-FaceConnectivity::setup(const panzer::LocalMeshPartition<int,int> & partition)
+FaceConnectivity::
+setup(const panzer::LocalMeshPartition<int,int> & partition)
 {
   const int num_cells = partition.cell_to_faces.dimension_0();
   const int num_faces = partition.face_to_cells.dimension_0();
@@ -56,6 +117,7 @@ FaceConnectivity::setup(const panzer::LocalMeshPartition<int,int> & partition)
   const int num_cells_per_face = 2;
 
   _num_subcells = num_faces;
+  _num_cells = num_cells;
 
   _subcell_to_cells_adj = Kokkos::View<int*>("subcell_to_cells_adj", num_faces+1);
   _subcell_to_cells = Kokkos::View<int*>("subcell_to_cells", num_faces*num_cells_per_face);

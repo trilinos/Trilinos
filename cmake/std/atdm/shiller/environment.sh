@@ -90,6 +90,8 @@ fi
 
 echo using compiler stack $COMPILER to build $BUILD_TYPE code
 
+module load ninja/1.7.2
+
 if [ "$COMPILER" == "GNU" ]; then
     module load devpack/openmpi/2.1.1/gcc/4.9.3/cuda/8.0.61
     export OMPI_CXX=`which g++`

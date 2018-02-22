@@ -93,6 +93,11 @@ nDims = 1; file='caseFour';
 
 if (nDims == 2)
   [globalDims,localDims,relcorners,abscorners]=mk2DRegionFile(file);
+elseif (nDims == 1) && ...
+    ((strcmp(file,'caseOne') == false) && (strcmp(file,'caseTwo')) == false && ...
+    (strcmp(file,'caseThree') == false) && (strcmp(file,'caseFour') == false))
+  
+  mk1DRegionFile(file);
 end
 
 %
@@ -238,6 +243,7 @@ waitForRmDataFiles(nProcs);
 send('MakeGrpRegRowMaps',nProcs);
 send('MakeGrpRegColMaps',nProcs);
 send('MakeExtendedGrpRegMaps',nProcs);
+send('TestRegionalToComposite',nProcs);
 send('MakeQuasiRegionMatrices',nProcs);
 % send('PrintQuasiRegionMatrices',nProcs);
 % send('PrintGrpRegDomMaps',nProcs);

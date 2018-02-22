@@ -1908,7 +1908,13 @@ void mult_AT_B_newmatrix(
 
   RCP<Teuchos::ParameterList> importParams2 = Teuchos::rcp(new Teuchos::ParameterList);
   if(!params.is_null()) importParams2->set("compute global constants",params->get("compute global constants: temporaries",false));
-  MMdetails::import_and_extract_views(B, B.getRowMap(), Bview, dummyImporter,true, label,importParams2);
+
+  if(B.getRowMap()->isSameAs(*Atrans->getColMap())){
+    MMdetails::import_and_extract_views(B, B.getRowMap(), Bview, dummyImporter,true, label,importParams2);
+  }
+  else {
+    MMdetails::import_and_extract_views(B, Atrans->getColMap(), Bview, dummyImporter,false, label,importParams2);
+  }
 
 #ifdef HAVE_TPETRA_MMM_TIMINGS
   MM = rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix_mmm + std::string("MMM-T AB-core"))));

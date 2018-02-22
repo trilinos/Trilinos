@@ -1817,16 +1817,41 @@ namespace MueLu {
       if (hieraList.isSublist("DataToWrite")) {
         //TODO We should be able to specify any data.  If it exists, write it.
         //TODO This would requires something like std::set<dataName, Array<int> >
+
+        // Process sublist to find data that is supposed to be written to files
         ParameterList foo = hieraList.sublist("DataToWrite");
-        std::string dataName = "Matrices";
+        std::string dataName = "A";
         if (foo.isParameter(dataName))
           this->matricesToPrint_ = Teuchos::getArrayFromStringParameter<int>(foo, dataName);
-        dataName = "Prolongators";
+        dataName = "P";
         if (foo.isParameter(dataName))
           this->prolongatorsToPrint_ = Teuchos::getArrayFromStringParameter<int>(foo, dataName);
-        dataName = "Restrictors";
+        dataName = "R";
         if (foo.isParameter(dataName))
           this->restrictorsToPrint_ = Teuchos::getArrayFromStringParameter<int>(foo, dataName);
+        dataName = "Nullspace";
+        if (foo.isParameter(dataName))
+          this->nullspaceToPrint_ = Teuchos::getArrayFromStringParameter<int>(foo, dataName);
+        dataName = "Coordinates";
+        if (foo.isParameter(dataName))
+          this->coordinatesToPrint_ = Teuchos::getArrayFromStringParameter<int>(foo, dataName);
+
+        // Take care of some deprecated options
+        dataName = "Matrices";
+        if (foo.isParameter(dataName)) {
+          this->GetOStream(Warnings0) << "Parameter 'Matrices' in 'DataToWrite' deprecated. Use 'A' instead." << std::endl;
+          this->matricesToPrint_ = Teuchos::getArrayFromStringParameter<int>(foo, dataName);
+        }
+        dataName = "Prolongators";
+        if (foo.isParameter(dataName)) {
+          this->GetOStream(Warnings0) << "Parameter 'Prolongators' in 'DataToWrite' deprecated. Use 'P' instead." << std::endl;
+          this->prolongatorsToPrint_ = Teuchos::getArrayFromStringParameter<int>(foo, dataName);
+        }
+        dataName = "Restrictors";
+        if (foo.isParameter(dataName)) {
+          this->GetOStream(Warnings0) << "Parameter 'Restrictors' in 'DataToWrite' deprecated. Use 'R' instead." << std::endl;
+          this->restrictorsToPrint_ = Teuchos::getArrayFromStringParameter<int>(foo, dataName);
+        }
       }
 
       // Get level configuration

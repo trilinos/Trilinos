@@ -90,15 +90,11 @@ namespace Tacho {
             if (r_val) {
               Kokkos::respawn(this, _sched, Kokkos::TaskPriority::Low);
             } else {
-              // allocate dependence array to handle variable number of children schur contributions
-              future_type dep[MaxDependenceSize]; /* 4 */
-              
               // spawn children tasks and this (their parent) depends on the children tasks
               for (ordinal_type i=0;i<_s.nchildren;++i) {
                 auto f = Kokkos::task_spawn(Kokkos::TaskSingle(_sched, Kokkos::TaskPriority::Regular),
                                             TaskFunctor_SolveUpperChol(_sched, _bufpool, _info, _s.children[i]));
                 TACHO_TEST_FOR_ABORT(f.is_null(), "task allocation fails");
-                dep[i] = f;
               }
             }
           }

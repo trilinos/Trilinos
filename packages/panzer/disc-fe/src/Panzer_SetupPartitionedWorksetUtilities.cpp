@@ -74,13 +74,14 @@ buildPartitionedWorksets(const panzer::LocalMeshInfo<int,int> & mesh_info,
                          const panzer::WorksetNeeds & needs)
 {
 
+  Teuchos::RCP<std::vector<panzer::Workset> > worksets = Teuchos::rcp(new std::vector<panzer::Workset>());
 
-  // Each workset will be represented by a chunk of the mesh
-  // These chunks can either be partitioned, or just be a set of cells
+  // Make sure it makes sense to partition
+  TEUCHOS_ASSERT(description.requiresPartitioning());
+
+  // Each partition represents a chunk of the mesh
   std::vector<panzer::LocalMeshPartition<int,int> > partitions;
   panzer::generateLocalMeshPartitions<int,int>(mesh_info, description, partitions);
-
-  Teuchos::RCP<std::vector<panzer::Workset> > worksets = Teuchos::rcp(new std::vector<panzer::Workset>());
 
   for(const auto & partition : partitions){
     worksets->push_back(panzer::Workset());

@@ -63,7 +63,7 @@ AssemblyEngine(const Teuchos::RCP<panzer::FieldManagerBuilder>& fmb,
 //===========================================================================
 template <typename EvalT>
 void panzer::AssemblyEngine<EvalT>::
-evaluate(const panzer::AssemblyEngineInArgs& in)
+evaluate(const panzer::AssemblyEngineInArgs& in, const EvaluationFlags flags)
 {
   typedef LinearObjContainer LOC;
 
@@ -71,7 +71,8 @@ evaluate(const panzer::AssemblyEngineInArgs& in)
   in.ghostedContainer_->setRequiresDirichletAdjustment(true);
 
   GlobalEvaluationDataContainer gedc;
-  {
+
+  if ( flags.getValue() & EvaluationFlags::Initialize ) {
     PANZER_FUNC_TIME_MONITOR("panzer::AssemblyEngine::evaluate_gather("+PHX::typeAsString<EvalT>()+")");
 
     in.fillGlobalEvaluationDataContainer(gedc);
@@ -86,7 +87,7 @@ evaluate(const panzer::AssemblyEngineInArgs& in)
   // *********************
   // Volumetric fill
   // *********************
-  {
+  if ( flags.getValue() & EvaluationFlags::VolumetricFill) {
     PANZER_FUNC_TIME_MONITOR("panzer::AssemblyEngine::evaluate_volume("+PHX::typeAsString<EvalT>()+")");
     this->evaluateVolume(in);
   }
@@ -98,23 +99,25 @@ evaluate(const panzer::AssemblyEngineInArgs& in)
   // bcs overwrite equations where neumann sum into equations.  Make
   // sure all neumann are done before dirichlet.
 
-  {
-    PANZER_FUNC_TIME_MONITOR("panzer::AssemblyEngine::evaluate_neumannbcs("+PHX::typeAsString<EvalT>()+")");
-    this->evaluateNeumannBCs(in);
+  if ( flags.getValue() & EvaluationFlags::BoundaryFill) {
+    {
+      PANZER_FUNC_TIME_MONITOR("panzer::AssemblyEngine::evaluate_neumannbcs("+PHX::typeAsString<EvalT>()+")");
+      this->evaluateNeumannBCs(in);
+    }
+
+    {
+      PANZER_FUNC_TIME_MONITOR("panzer::AssemblyEngine::evaluate_interfacebcs("+PHX::typeAsString<EvalT>()+")");
+      this->evaluateInterfaceBCs(in);
+    }
+
+    // Dirchlet conditions require a global matrix
+    {
+      PANZER_FUNC_TIME_MONITOR("panzer::AssemblyEngine::evaluate_dirichletbcs("+PHX::typeAsString<EvalT>()+")");
+      this->evaluateDirichletBCs(in);
+    }
   }
 
-  {
-    PANZER_FUNC_TIME_MONITOR("panzer::AssemblyEngine::evaluate_interfacebcs("+PHX::typeAsString<EvalT>()+")");
-    this->evaluateInterfaceBCs(in);
-  }
-
-  // Dirchlet conditions require a global matrix
-  {
-    PANZER_FUNC_TIME_MONITOR("panzer::AssemblyEngine::evaluate_dirichletbcs("+PHX::typeAsString<EvalT>()+")");
-    this->evaluateDirichletBCs(in);
-  }
-
-  {
+  if ( flags.getValue() & EvaluationFlags::Scatter) {
     PANZER_FUNC_TIME_MONITOR("panzer::AssemblyEngine::evaluate_scatter("+PHX::typeAsString<EvalT>()+")");
     m_lin_obj_factory->ghostToGlobalContainer(*in.ghostedContainer_,*in.container_,LOC::F | LOC::Mat);
 

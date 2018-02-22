@@ -65,6 +65,8 @@ SET(${PROJECT_NAME}_Fortran_COMPILER "${CMAKE_Fortran_COMPILER}")
 ## Compiler flags used by ${PROJECT_NAME} build
 ## ---------------------------------------------------------------------------
 
+SET(${PROJECT_NAME}_CMAKE_BUILD_TYPE "${CMAKE_BUILD_TYPE}")
+
 SET(${PROJECT_NAME}_CXX_COMPILER_FLAGS "${CMAKE_CXX_FLAGS} ${CMAKE_CXX_FLAGS_${CMAKE_BUILD_TYPE}}")
 
 SET(${PROJECT_NAME}_C_COMPILER_FLAGS "${CMAKE_C_FLAGS} ${CMAKE_C_FLAGS_${CMAKE_BUILD_TYPE}}")
