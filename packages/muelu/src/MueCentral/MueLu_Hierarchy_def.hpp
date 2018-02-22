@@ -839,6 +839,9 @@ namespace MueLu {
 
     // If we switched the number of vectors, we'd need to reallocate here.
     // If the number of vectors is unchanged, this is a noop.
+    // NOTE: We need to check against B because the tests in AllocateLevelMultiVectors
+    // will fail on Stokhos Scalar types (due to the so-called 'hidden dimension')
+    if(!residual_[startLevel]->isSameSize(B)) DeleteLevelMultiVectors();
     AllocateLevelMultiVectors(X.getNumVectors());
 
     // Print residual information before iterating
@@ -1428,13 +1431,24 @@ namespace MueLu {
     for(int i=0; i<N; i++) {
       RCP<Operator> A = Levels_[i]->template Get< RCP<Operator> >("A");
       if(!A.is_null()) {
-        // This is zero'd by default since it is filled via an operator apply
-        residual_[i] = MultiVectorFactory::Build(A->getRangeMap(), numvecs, true);
-
-        // This dance is because we allow A to have a BlockedMap and X to have (compatible) non-blocked map
-        RCP<const Map> Adm = A->getDomainMap();
+        // This dance is because we allow A to have a BlockedMap and X/B to have (compatible) non-blocked map
         RCP<const BlockedCrsMatrix> A_as_blocked = Teuchos::rcp_dynamic_cast<const BlockedCrsMatrix>(A);
-        if(!A_as_blocked.is_null()) Adm = A_as_blocked->getFullDomainMap();
+        RCP<const Map> Arm = A->getRangeMap();
+        RCP<const Map> Adm = A->getDomainMap();
+        if(!A_as_blocked.is_null()) { 
+          Arm = A_as_blocked->getFullRangeMap();
+          Adm = A_as_blocked->getFullDomainMap();
+        }
+
+        printf("CMS: Allocate A [%d|%d,?,?,%d|%d]\n",
+               (int)A->getRangeMap()->getGlobalNumElements(),
+               (int)Arm->getGlobalNumElements(),
+               (int)A->getDomainMap()->getGlobalNumElements(),
+               (int)Adm->getGlobalNumElements());
+
+
+        // This is zero'd by default since it is filled via an operator apply        
+        residual_[i] = MultiVectorFactory::Build(Arm, numvecs, true);
         correction_[i] = MultiVectorFactory::Build(Adm, numvecs, false);
       }
 
