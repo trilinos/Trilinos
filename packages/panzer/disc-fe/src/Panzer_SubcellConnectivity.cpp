@@ -79,7 +79,7 @@ subcellForCell(const int cell, const int local_subcell_index) const
 #endif
   const int index = _cell_to_subcells_adj(cell)+local_subcell_index;
   return _cell_to_subcells(index);
-};
+}
 
 int
 SubcellConnectivity::
@@ -91,7 +91,7 @@ cellForSubcell(const int subcell, const int local_cell_index) const
 #endif
   const int index = _subcell_to_cells_adj(subcell)+local_cell_index;
   return _subcell_to_cells(index);
-};
+}
 
 int
 SubcellConnectivity::
@@ -103,7 +103,7 @@ localSubcellForSubcell(const int subcell, const int local_cell_index) const
 #endif
   const int index = _subcell_to_cells_adj(subcell)+local_cell_index;
   return _subcell_to_local_subcells(index);
-};
+}
 
 // ========================================================================
 
