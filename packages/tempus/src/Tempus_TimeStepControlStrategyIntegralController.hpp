@@ -30,19 +30,19 @@ namespace Tempus {
  *
  * PID = Proportional-Integral-Derivative Controller
  * \f[
- *      (\Delta t)_{n+1} = 
+ *      (\Delta t)_{n+1} =
  *      (\Delta t)_n \left( \epsilon_n ^{-k_1 / p) \epsilon_{n-1}^{k_2 / p} \epsilon_{n-2}^{-k_3 / p} \right)
  * \f]
  *
  * PI = Proportional-Integral Controller
  * \f[
- *      (\Delta t)_{n+1} = 
+ *      (\Delta t)_{n+1} =
  *      (\Delta t)_n \left( \epsilon_n ^{-k_1 / p) \epsilon_{n-1}^{k_2 / p} \right)
  * \f]
  *
  * I = Integral Controller
  * \f[
- *      (\Delta t)_{n+1} = 
+ *      (\Delta t)_{n+1} =
  *      (\Delta t)_n \left( \epsilon_n ^{-k_1 / p) \right)
  * \f]
  *
@@ -51,14 +51,14 @@ namespace Tempus {
  * Appropriate for Explicit Methods
  */
 template<class Scalar>
-class TimeStepControlStrategyIntegralController 
-  : virtual public TimeStepControlStrategy<Scalar> 
+class TimeStepControlStrategyIntegralController
+  : virtual public TimeStepControlStrategy<Scalar>
 {
 public:
 
   /// Constructor
   TimeStepControlStrategyIntegralController(Teuchos::RCP<Teuchos::ParameterList> pList = Teuchos::null){
-     this->setParameterList(pList);  
+     this->setParameterList(pList);
   }
 
   /// Destructor
@@ -66,7 +66,7 @@ public:
 
   /** \brief Determine the time step size.*/
   virtual void getNextTimeStep(const TimeStepControl<Scalar> tsc,
-    Teuchos::RCP<SolutionHistory<Scalar> > solutionHistory, 
+    Teuchos::RCP<SolutionHistory<Scalar> > solutionHistory,
     Status & integratorStatus) override
   {
 
@@ -146,7 +146,9 @@ public:
 
   /// \name Overridden from Teuchos::ParameterListAcceptor
   //@{
-  void setParameterList(const Teuchos::RCP<Teuchos::ParameterList> & pList){
+  void setParameterList(
+    const Teuchos::RCP<Teuchos::ParameterList> & pList) override
+  {
 
      if (pList == Teuchos::null) {
         // Create default parameters if null, otherwise keep current parameters.
@@ -190,7 +192,8 @@ public:
 
   }
 
-  Teuchos::RCP<const Teuchos::ParameterList> getValidParameters() const {
+  Teuchos::RCP<const Teuchos::ParameterList> getValidParameters() const override
+  {
      Teuchos::RCP<Teuchos::ParameterList> pl = Teuchos::parameterList();
 
      pl->set<std::string>("Name","Integral Controller","Integral Controller");
@@ -207,11 +210,11 @@ public:
      return pl;
   }
 
-  Teuchos::RCP<Teuchos::ParameterList> getNonconstParameterList() {
+  Teuchos::RCP<Teuchos::ParameterList> getNonconstParameterList() override {
      return tscsPL_;
   }
 
-  Teuchos::RCP<Teuchos::ParameterList> unsetParameterList() {
+  Teuchos::RCP<Teuchos::ParameterList> unsetParameterList() override {
      Teuchos::RCP<Teuchos::ParameterList> temp_plist = tscsPL_;
      tscsPL_ = Teuchos::null;
      return(temp_plist);
