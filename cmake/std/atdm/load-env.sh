@@ -66,7 +66,7 @@ fi
 # C) Set JOB_NAME now that hostname has been asserted
 #
 
-echo "Setting JOB_NAME=$1"
+echo "Setting export JOB_NAME=$1"
 export JOB_NAME=$1
 
 #
