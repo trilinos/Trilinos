@@ -61,10 +61,10 @@ namespace Xpetra {
 
 // TODO: move that elsewhere
 template<class GlobalOrdinal, class Node>
-Epetra_Vector & toEpetra(Vector<int, int, GlobalOrdinal, Node> &);
+Epetra_IntVector & toEpetra(Vector<int, int, GlobalOrdinal, Node> &);
 
 template<class GlobalOrdinal, class Node>
-const Epetra_Vector & toEpetra(const Vector<int, int, GlobalOrdinal, Node> &);
+const Epetra_IntVector & toEpetra(const Vector<int, int, GlobalOrdinal, Node> &);
 //
 
   // stub implementation for EpetraIntVectorT
