@@ -51,7 +51,7 @@
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
 namespace Tpetra {
   // forward declaration of CrsMatrix
-  template<class S, class LO, class GO, class N, const bool classic> class CrsMatrix;
+  template<class S, class LO, class GO, class N> class CrsMatrix;
 } // namespace Tpetra
 #endif // DOXYGEN_SHOULD_SKIP_THIS
 
@@ -109,7 +109,7 @@ public:
                             global_ordinal_type, node_type> row_matrix_type;
   //! Specialization of Tpetra::CrsMatrix used by this class.
   typedef Tpetra::CrsMatrix<scalar_type, local_ordinal_type,
-                            global_ordinal_type, node_type, false> crs_matrix_type;
+                            global_ordinal_type, node_type> crs_matrix_type;
 
   static_assert (std::is_same<MatrixType, row_matrix_type>::value,
                  "Ifpack2::LocalSparseTriangularSolver: The template parameter "
