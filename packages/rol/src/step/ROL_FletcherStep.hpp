@@ -122,8 +122,16 @@ public:
     minPenaltyParam_ = sublist.get("Minimum Penalty Parameter", oem6);     
 
     subStep_ = sublist.get("Subproblem Solver", "Trust Region");
+
+    Teuchos::ParameterList trlist(parlist);
+    bool inexactFletcher = trlist.sublist("Step").sublist("Fletcher").get("Inexact Solves", false);
+    if( inexactFletcher ) {
+      trlist.sublist("General").set("Inexact Objective Value", true);
+      trlist.sublist("General").set("Inexact Gradient", true);
+    }
+
     StepFactory<Real> factory;
-    step_ = factory.getStep(subStep_, parlist);
+    step_ = factory.getStep(subStep_, trlist);
 
     etr_ = StringToETrustRegion(parlist.sublist("Step").sublist("Trust Region").get("Subproblem Solver", "Truncated CG"));
   }
