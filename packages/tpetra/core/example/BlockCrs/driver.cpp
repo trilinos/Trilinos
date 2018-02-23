@@ -56,7 +56,7 @@
 #include "utils.hpp"
 #include "MeshDatabase.hpp"
 
-#define PRINT_VERBOSE 1
+//#define PRINT_VERBOSE 1
 
 using namespace BlockCrsTest;
 
@@ -130,8 +130,9 @@ int main (int argc, char *argv[])
       = Teuchos::OrdinalTraits<global_ordinal_type>::invalid();  
     
     // - all internal views are allocated on device; mirror as mesh database is constructed on host  
+    const auto mesh_gids_host = mesh.getElementGlobalIDs();
     const auto mesh_gids = Kokkos::create_mirror_view(typename exec_space::memory_space(), mesh.getElementGlobalIDs());
-    Kokkos::deep_copy(mesh_gids, mesh.getElementGlobalIDs());
+    Kokkos::deep_copy(mesh_gids, mesh_gids_host);
 
     // for convenience, separate the access to owned and remote gids
     const auto owned_gids  = Kokkos::subview(mesh_gids, local_ordinal_range_type(                 0, num_owned_elements));
@@ -149,13 +150,16 @@ int main (int argc, char *argv[])
     // ------------------
     // local graph is constructed on device space
     typedef tpetra_crs_graph_type::local_graph_type local_graph_type;
-    local_graph_type local_graph;
+    typedef local_graph_type::row_map_type::non_const_type rowptr_view_type;
+    typedef typename local_graph_type::entries_type colidx_view_type;
+
+    rowptr_view_type rowptr;
+    colidx_view_type colidx;
     {
       RCP<TimeMonitor> timerLocalGraphConstruction 
-        = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("1) LocalGraphConstruction")));
+        = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("0) LocalGraphConstruction")));
       
-      typedef local_graph_type::row_map_type::non_const_type rowptr_view_type;
-      rowptr_view_type rowptr("rowptr", num_owned_elements + 1);
+      rowptr = rowptr_view_type("rowptr", num_owned_elements + 1);
       
       local_ordinal_range_type owned_range_i, owned_range_j, owned_range_k;
       local_ordinal_range_type remote_range_i, remote_range_j, remote_range_k;
@@ -198,9 +202,9 @@ int main (int argc, char *argv[])
       auto nnz = Kokkos::subview(rowptr, num_owned_elements);
       const auto nnz_host = Kokkos::create_mirror_view(nnz);
       Kokkos::deep_copy(nnz_host, nnz);
-
+      
       // allocate colidx 
-      typename local_graph_type::entries_type colidx("colidx", nnz_host());
+      colidx = colidx_view_type("colidx", nnz_host());
       
       // fill      
       Kokkos::parallel_for
@@ -226,7 +230,7 @@ int main (int argc, char *argv[])
                                             sb.ijk_to_idx(i_minus_one,j,k));
             } else if (i_minus_one >= remote_range_i.first) {
               colidx(lcnt++) = *lower_bound(&remote_gids(0), &remote_gids(num_remote_elements-1),
-                                            sb.ijk_to_idx(i_minus_one,j,k));
+                                            sb.ijk_to_idx(i_minus_one,j,k)) + num_owned_elements;
             }
             const auto i_plus_one = i+1;
             if (i_plus_one < owned_range_i.second) {
@@ -234,7 +238,7 @@ int main (int argc, char *argv[])
                                             sb.ijk_to_idx(i_plus_one,j,k));
             } else if (i_plus_one < remote_range_i.second) {
               colidx(lcnt++) = *lower_bound(&remote_gids(0), &remote_gids(num_remote_elements-1),
-                                            sb.ijk_to_idx(i_plus_one,j,k));
+                                            sb.ijk_to_idx(i_plus_one,j,k)) + num_owned_elements;
             }
           }
 
@@ -246,7 +250,7 @@ int main (int argc, char *argv[])
                                             sb.ijk_to_idx(i,j_minus_one,k));
             } else if (j_minus_one >= remote_range_j.first) {
               colidx(lcnt++) = *lower_bound(&remote_gids(0), &remote_gids(num_remote_elements-1),
-                                            sb.ijk_to_idx(i,j_minus_one,k));
+                                            sb.ijk_to_idx(i,j_minus_one,k)) + num_owned_elements;
             }
             const auto j_plus_one = j+1;
             if (j_plus_one < owned_range_j.second) {
@@ -254,7 +258,7 @@ int main (int argc, char *argv[])
                                             sb.ijk_to_idx(i,j_plus_one,k));
             } else if (j_plus_one < remote_range_j.second) {
               colidx(lcnt++) = *lower_bound(&remote_gids(0), &remote_gids(num_remote_elements-1),
-                                            sb.ijk_to_idx(i,j_plus_one,k));
+                                            sb.ijk_to_idx(i,j_plus_one,k)) + num_owned_elements;
             }
           }
 
@@ -266,7 +270,7 @@ int main (int argc, char *argv[])
                                             sb.ijk_to_idx(i,j,k_minus_one));
             } else if (k_minus_one >= remote_range_k.first) {
               colidx(lcnt++) = *lower_bound(&remote_gids(0), &remote_gids(num_remote_elements-1),
-                                            sb.ijk_to_idx(i,j,k_minus_one));
+                                            sb.ijk_to_idx(i,j,k_minus_one)) + num_owned_elements;
             }
             const auto k_plus_one = k+1;
             if (k_plus_one < owned_range_k.second) {
@@ -274,7 +278,7 @@ int main (int argc, char *argv[])
                                             sb.ijk_to_idx(i,j,k_plus_one));
             } else if (k_plus_one < remote_range_k.second) {
               colidx(lcnt++) = *lower_bound(&remote_gids(0), &remote_gids(num_remote_elements-1),
-                                            sb.ijk_to_idx(i,j,k_plus_one));
+                                            sb.ijk_to_idx(i,j,k_plus_one)) + num_owned_elements;
             }
           }
 
@@ -282,31 +286,137 @@ int main (int argc, char *argv[])
           heap_sort(&colidx(lbeg), lcnt-lbeg);
         });
       
-      // assign to a local graph
-      local_graph = local_graph_type(colidx, rowptr);
     } // end local graph timer
     
     // Call fillComplete on the crs_graph to finalize it
     RCP<tpetra_crs_graph_type> crs_graph;
     { 
       RCP<TimeMonitor> timerGlobalGraphConstruction
-        = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("2) GlobalGraphConstruction (FillComplete)")));
-      crs_graph = rcp(new tpetra_crs_graph_type(row_map, col_map, local_graph, Teuchos::null));
-      crs_graph->fillComplete();
+        = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("1) GlobalGraphConstruction")));
+      crs_graph = rcp(new tpetra_crs_graph_type(row_map, col_map, local_graph_type(colidx, rowptr),
+                                                Teuchos::null));
     } // end global graph timer
     
 #if PRINT_VERBOSE
     crs_graph->describe(*out, Teuchos::VERB_EXTREME);
 #endif
-
+    
     // Create BlockCrsMatrix
-    RCP<tpetra_blockcrs_type> A = Teuchos::rcp(new tpetra_blockcrs_type(crs_graph, blocksize));
+    RCP<tpetra_blockcrs_type> A = Teuchos::rcp(new tpetra_blockcrs_type(*crs_graph, blocksize));
+    {
+      RCP<TimeMonitor> timerLocalBlockCrsFill
+        = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("2) LocalBlockCrsFill")));
+
+      // Tpetra BlockCrsMatrix only has high level access functions
+      // To fill this on device, we need an access to the meta data of blocks
+      const auto rowptr_host = Kokkos::create_mirror_view(rowptr);      
+      const auto colidx_host = Kokkos::create_mirror_view(colidx);
+      
+      Kokkos::deep_copy(rowptr_host, rowptr);
+      Kokkos::deep_copy(colidx_host, colidx);
+
+      typedef tpetra_blockcrs_type::little_block_type block_type;
+      Kokkos::View<block_type*,exec_space> blocks("blocks", rowptr_host(num_owned_elements));
+
+      const auto blocks_host = Kokkos::create_mirror_view(blocks);
+      Kokkos::parallel_for
+        (Kokkos::RangePolicy<host_space>(0,num_owned_elements), KOKKOS_LAMBDA(const LO row) {
+          for (LO loc=rowptr_host(row);loc<rowptr_host(row+1);++loc) 
+            blocks_host(loc) = A->getLocalBlock(row, colidx(loc));
+        });    
+      Kokkos::deep_copy(blocks, blocks_host);
+      
+      Kokkos::parallel_for
+        (num_owned_elements, KOKKOS_LAMBDA(const LO row) {
+          for (LO loc=rowptr(row);loc<rowptr(row+1);++loc) {
+            const GO gid_row = mesh_gids_host(row);
+            const GO gid_col = mesh_gids_host(colidx(loc));
+            
+            LO i0, j0, k0, i1, j1, k1;
+            sb.idx_to_ijk(gid_row, i0, j0, k0);
+            sb.idx_to_ijk(gid_col, i1, j1, k1);
+            
+            const LO diff_i = i0 - i1;
+            const LO diff_j = j0 - j1;
+            const LO diff_k = j0 - k1;
+            
+            auto block = blocks(loc);
+            for (LO l0=0;l0<blocksize;++l0) 
+              for (LO l1=0;l1<blocksize;++l1) 
+                block(l0, l1) = get_block_crs_entry<value_type>(i0, j0, k0,
+                                                                diff_i, diff_j, diff_k,
+                                                                l0, l1);
+          }
+        });
+    }
+    {
+      RCP<TimeMonitor> timerBlockCrsFillComplete 
+        = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("3) BlockCrsMatrix FillComplete - currently do nothing")));
+      // this function does not exsit 
+      //A->fillComplete();
+    }
+#if PRINT_VERBOSE
+    A->describe(*out, Teuchos::VERB_EXTREME);
+#endif
 
     // Create MultiVector
     RCP<tpetra_multivector_type> X = Teuchos::rcp(new tpetra_multivector_type(A->getDomainMap(), nrhs));
-    RCP<tpetra_multivector_type> B = Teuchos::rcp(new tpetra_multivector_type(A->getRangeMap(),  nrhs));
+    {
+      RCP<TimeMonitor> timerMultiVectorFill
+        = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("4) MultiVectorFill")));
+      
+      auto value = X->getLocalView<typename exec_space::memory_space>();
+      auto map = X->getMap()->getLocalMap();
+      Kokkos::parallel_for
+        (value.extent(0), KOKKOS_LAMBDA(const LO i) {
+          const GO gid = map.getGlobalElement(i);
+          for (LO j=0,jend=value.extent(1);j<jend;++j) 
+            value(i, j) = get_multi_vector_entry<value_type>(gid, j);
+        });
+    }
     
+#if PRINT_VERBOSE
+    X->describe(*out, Teuchos::VERB_EXTREME);
+#endif
+
+    RCP<tpetra_multivector_type> B = Teuchos::rcp(new tpetra_multivector_type(A->getRangeMap(),  nrhs));
+
+    // matrix vector multiplication
+    {
+      for (LO iter=0;iter<repeat;++iter) {
+        RCP<TimeMonitor> timerBlockCrsApply 
+          = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("5) BlockCrs Apply")));        
+        A->apply(*X, *B);
+      }
+    }
+      
+    // direct conversion: block crs -> point crs 
+    {
+      RCP<TimeMonitor> timerConvertBlockCrsToPointCrs 
+        = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("6) Conversion from BlockCrs to PointCrs")));
+      
+    }
+    // perform on point crs matrix
+    {
+      RCP<TimeMonitor> timerPointCrsApply 
+        = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("7) PointCrs Apply")));
+    }
+
+    // Save crs_matrix as a MatrixMarket file.
+    {
+      // no function to export block crs 
+      // RCP<TimeMonitor> timerMatrixMarket 
+      //   = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Export MatrixMarket ")));
+      // std::ofstream ofs("BlockCrsTestMatrix.out", std::ofstream::out);
+      // Tpetra::MatrixMarket::Writer<tpetra_blockcrs_type>::writeSparse(ofs, A);
+      // ofs.close();
+    }      
+
   } // end global timer
+
+  // Print out timing results.
+  TimeMonitor::report(comm.ptr(), std::cout, "");
+
   // Finalize Kokkos
   Kokkos::finalize();
   
@@ -318,61 +428,3 @@ int main (int argc, char *argv[])
   
   return EXIT_SUCCESS;
 }  // END main()
-
-
-
-
-
-
-#if 0
-
-
-    // Get the contributions for the current element
-    ReferenceQuad4(element_matrix);
-
-    // Fill the global column ids array for this element
-    for(size_t element_node_idx=0; element_node_idx<owned_element_to_node_ids.extent(1); element_node_idx++)
-    {
-      column_global_ids[element_node_idx] = owned_element_to_node_ids(element_gidx, element_node_idx);
-    }
-    
-    // For each node (row) on the current element:
-    // - populate the values array
-    // - add the values to the crs_matrix.
-    // Note: hardcoded 4 here because we're using quads.
-    for(size_t element_node_idx=0; element_node_idx<4; element_node_idx++)
-    { 
-      GlobalOrdinal global_row_id = owned_element_to_node_ids(element_gidx, element_node_idx);
-
-      for(size_t col_idx=0; col_idx<4; col_idx++)
-      {
-        column_scalar_values[col_idx] = element_matrix(element_node_idx, col_idx);
-      }
-
-      crs_matrix->sumIntoGlobalValues(global_row_id, column_global_ids, column_scalar_values);
-    }
-  }
-  timerElementLoopMatrix = Teuchos::null;
-
-
-  // After the contributions are added, 'finalize' the matrix using fillComplete()
-  {
-    RCP<TimeMonitor> timerFillCompleteMatrix = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("4) FillComplete (Matrix)")));
-    crs_matrix->fillComplete();
-  }
-
-  timerGlobal = Teuchos::null;
-
-  // Print out crs_matrix details.
-  #if PRINT_VERBOSE
-  crs_matrix->describe(*out, Teuchos::VERB_EXTREME);
-  #endif
-
-  // Save crs_matrix as a MatrixMarket file.
-  std::ofstream ofs("Finite-Element-Matrix-Assembly_Type1.out", std::ofstream::out);
-  Tpetra::MatrixMarket::Writer<MatrixType>::writeSparse(ofs, crs_matrix);
-  ofs.close();
-
-  // Print out timing results.
-  TimeMonitor::report(comm.ptr(), std::cout, "");
-#endif

@@ -49,6 +49,30 @@
 #include "Teuchos_Comm.hpp"
 
 namespace BlockCrsTest {
+
+  template<typename T> 
+  KOKKOS_INLINE_FUNCTION
+  static T
+  get_block_crs_entry(const LO i, const LO j, const LO k, 
+                      const LO diff_i, const LO diff_j, const LO diff_k, 
+                      const LO l0, const LO l1) {
+    // any reasonable deterministic number to fill diagonal blocks 
+    // inside of the block, put some weight on diagonals
+    // make off diagonal blocks a bit smaller than the diagonals
+    // add epsilon to remove clean zeros
+    return ( ( (i%13)/14.0 + (j%17)/12.0 + (k%19)/10.0 ) +  // any number to fill diagonal blocks
+             ( l0 == l1 ? 10.0*(l0%10)/10.0 : ((l0+l1)%10)/10.0) + 
+             ( diff_i*((i-j)%4)/18.0 + diff_j*((i-j)%7)/24.0 + diff_k*((i-j)%5)/16.0) + 
+             ( 1.0e-7 ) );
+  }
+
+  template<typename T> 
+  KOKKOS_INLINE_FUNCTION
+  static T
+  get_multi_vector_entry(const GO gid, const LO j) {
+    return ((gid + j)%100)/100.0 + 1.0e-7;
+  }
+
   struct MeshDatabase {
   private:
     // global perspective to the mesh structure (finite volume interior node only)

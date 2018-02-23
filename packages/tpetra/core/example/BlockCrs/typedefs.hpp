@@ -65,6 +65,8 @@ namespace BlockCrsTest {
   typedef Tpetra::Export<> tpetra_export_type;
   typedef Tpetra::MultiVector<value_type> tpetra_multivector_type;
   typedef Tpetra::MultiVector<magnitude_type> tpetra_multivector_magnitude_type;
+  typedef Tpetra::Vector<value_type> tpetra_vector_type;
+  typedef Tpetra::Vector<magnitude_type> tpetra_vector_magnitude_type;
 
   typedef Tpetra::CrsGraph<> tpetra_crs_graph_type;
   typedef Tpetra::RowMatrix<value_type> tpetra_rowmatrix_type;
