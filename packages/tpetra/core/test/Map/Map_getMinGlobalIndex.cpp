@@ -112,7 +112,7 @@ namespace {
     TEST_EQUALITY(map.getMinGlobalIndex(), myMinGID);
     TEST_EQUALITY(map.getMaxGlobalIndex(), myMaxGID );
     TEST_EQUALITY(map.getMinAllGlobalIndex(), minAllGIDs);
-    TEST_EQUALITY(as<global_size_t>(map.getMaxAllGlobalIndex()), maxAllGIDs);
+    TEST_EQUALITY(map.getMaxAllGlobalIndex(), maxAllGIDs);
     // All procs fail if any proc fails
     int globalSuccess_int = -1;
     Teuchos::reduceAll( *comm, Teuchos::REDUCE_SUM, success ? 0 : 1, outArg(globalSuccess_int) );
@@ -130,9 +130,9 @@ namespace {
     const int numRanks = comm->getSize();
     const int myRank = comm->getRank();
     // create a contiguous uniform distributed map with numLocal entries per node
-    const size_t        numLocalRef = 5;
-    const size_t        numLocal    = (myRank == 0) ? 0 : numLocalRef;
-    const global_size_t numGlobal   = (numRanks - 1)*numLocalRef;
+    const size_t numLocalRef = 5;
+    const size_t numLocal = (myRank == 0) ? static_cast<size_t> (0) : numLocalRef;
+    const global_size_t numGlobal = static_cast<global_size_t>((numRanks - 1) * numLocalRef);
     const GO indexBase = 0;
     const GO actualBase = 1;
     //
@@ -147,10 +147,12 @@ namespace {
 
     Map<LO,GO> map (numGlobal, GIDs (), indexBase, comm);
     // create data to check validity of the map
-    const GO myMinGID =
-      (myRank == 0) ? std::numeric_limits<GO>::max() : actualBase + myRank*numLocal;
-    const GO myMaxGID =
-      (myRank == 0) ? std::numeric_limits<GO>::lowest() : actualBase + (myRank + 1)*numLocal - 1;
+    const GO myMinGID = (myRank == 0) ?
+      std::numeric_limits<GO>::max() :
+      static_cast<GO>(actualBase + myRank*numLocal);
+    const GO myMaxGID = (myRank == 0) ?
+      std::numeric_limits<GO>::lowest() :
+      static_cast<GO>(actualBase + (myRank + 1)*numLocal - 1);
     GO minAllGIDs, maxAllGIDs;
     Teuchos::reduceAll<int, GO>(*comm, Teuchos::REDUCE_MIN, myMinGID, outArg(minAllGIDs));
     Teuchos::reduceAll<int, GO>(*comm, Teuchos::REDUCE_MAX, myMaxGID, outArg(maxAllGIDs));
@@ -161,7 +163,7 @@ namespace {
     TEST_EQUALITY(map.getMinGlobalIndex(), myMinGID);
     TEST_EQUALITY(map.getMaxGlobalIndex(), myMaxGID );
     TEST_EQUALITY(map.getMinAllGlobalIndex(), minAllGIDs);
-    TEST_EQUALITY(as<global_size_t>(map.getMaxAllGlobalIndex()), maxAllGIDs);
+    TEST_EQUALITY(map.getMaxAllGlobalIndex(), maxAllGIDs);
     ArrayView<const GO> glist = map.getNodeElementList();
     TEST_COMPARE_ARRAYS( map.getNodeElementList(), GIDs);
     // All procs fail if any proc fails

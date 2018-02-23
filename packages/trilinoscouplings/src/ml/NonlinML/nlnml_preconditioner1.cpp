@@ -76,12 +76,12 @@ NLNML::NLNML_Preconditioner::NLNML_Preconditioner(
                   RefCountPtr<NLNML::NLNML_FineLevelNoxInterface> interface,
                   ParameterList& mlparams,
                   const Epetra_Comm& comm) :
+label_("nlnML_Preconditioner"),
 isinit_(false),
 comm_(comm),
 interface_(interface),
 ml_(NULL),
-ag_(NULL),
-label_("nlnML_Preconditioner")
+ag_(NULL)
 {
   CheckInputParameters(mlparams);
   params_   = rcp(new Teuchos::ParameterList(mlparams));
@@ -229,9 +229,12 @@ bool NLNML::NLNML_Preconditioner::computePreconditioner(
   int offset = getoffset();
 
   if (offset && ncalls_NewPrec_)
+  {
     if (ncalls_NewPrec_ % offset == 0)
-     setinit(false);
-
+    {
+      setinit(false);
+    }
+  }
   else if ( params_->get("nlnML adaptive recompute",0.0) &&
             ncalls_NewPrec_                              &&
             !params_->get("nlnML is linear preconditioner",true))
@@ -255,7 +258,9 @@ bool NLNML::NLNML_Preconditioner::computePreconditioner(
   if (!isinit())
   {
     if (Comm().MyPID() && OutLevel())
+    {
       std::cout << "ML: NLNML_Preconditioner::computePreconditioner: (re)computing ML-Preconditioner\n";
+    }
 
     // save number of calls to computeF
     int ncalls = interface_->getnumcallscomputeF();
@@ -276,7 +281,10 @@ bool NLNML::NLNML_Preconditioner::computePreconditioner(
     // reset the number of calls to computeF
     interface_->setnumcallscomputeF(ncalls);
 
-    if (flag) setinit(true);
+    if (flag)
+    {
+      setinit(true);
+    }
     else
     {
       std::cout << "**ERR**: NLNML::NLNML_Preconditioner::computePreconditioner:\n"
