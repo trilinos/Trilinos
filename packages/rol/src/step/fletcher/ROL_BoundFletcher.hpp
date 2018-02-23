@@ -42,8 +42,8 @@
 // @HEADER
 
 
-#ifndef ROL_FLETCHER_H
-#define ROL_FLETCHER_H
+#ifndef ROL_BOUNDFLETCHER_H
+#define ROL_BOUNDFLETCHER_H
 
 #include "ROL_Objective.hpp"
 #include "ROL_Constraint.hpp"
@@ -57,12 +57,19 @@
 namespace ROL {
 
 template <class Real>
-class Fletcher : public Objective<Real> {
+class BoundFletcher : public Objective<Real> {
 private:
   // Required for Fletcher penalty function definition
   const Ptr<Objective<Real> > obj_;
   const Ptr<Constraint<Real> > con_;
+  Ptr<const Vector<Real> > low_;
+  Ptr<const Vector<Real> > upp_;
   Real penaltyParameter_;
+
+  Ptr<Vector<Real> > Q_;
+  Ptr<Vector<Real> > umx_;
+  Ptr<Vector<Real> > DQ_;
+  Ptr<Vector<Real> > Qsqrt_;
 
   int HessianApprox_;
 
@@ -81,11 +88,18 @@ private:
   Ptr<Vector<Real> > c_;        // constraint value
   Ptr<Vector<Real> > scaledc_;  // penaltyParameter_ * c_
   Ptr<Vector<Real> > gL_;       // gradient of Lagrangian (g - A*y)
+  Ptr<Vector<Real> > QsgL_;     // scaled gradient of Lagrangian Q^{1/2}*(g-A*y)
+  Ptr<Vector<Real> > QgL_;      // scaled gradient of Lagrangian Q*(g-A*y)
+  Ptr<Vector<Real> > Qsg_;      // Scaled gradient of objective Q^{1/2}*g
+  Ptr<Vector<Real> > DQgL_;     // gradient of Lagrangian scaled by DQ, DQ*(g-A*y)
+  Ptr<Vector<Real> > Qv_;       // used in augmented system solve
 
   // Temporaries
   Ptr<Vector<Real> > Tv_;       // Temporary for matvecs
   Ptr<Vector<Real> > w_;        // first component of augmented system solve solution
   Ptr<Vector<Real> > v_;        // second component of augmented system solve solution
+  Ptr<Vector<Real> > htmp1_;    // Temporary for rhs
+  Ptr<Vector<Real> > htmp2_;    // Temporary for rhs
 
   Ptr<Vector<Real> > xzeros_;   // zero vector
   Ptr<Vector<Real> > czeros_;   // zero vector
@@ -98,10 +112,11 @@ private:
   bool isObjValueComputed_;
   bool isObjGradComputed_;
   bool isConValueComputed_;
+  bool isQComputed_;
+  bool isDQComputed_;
 
   Real multSolverError_;         // Error from augmented system solve in value()
   Real gradSolveError_;          // Error from augmented system solve in gradient()
-  Real hessTol_;                 // Gradient tolerance
 
   Real delta_;                  // regularization parameter
 
@@ -139,24 +154,91 @@ private:
     }
   }
 
+  class DiffLower : public Elementwise::BinaryFunction<Real> {
+  public:
+    DiffLower(void) {}
+    Real apply(const Real& x, const Real& y) const {
+      const Real NINF(ROL_NINF<Real>());
+      return (y <= NINF ? static_cast<Real>(-1.) : x - y);
+    }
+  };
+
+  class DiffUpper : public Elementwise::BinaryFunction<Real> {
+  public:
+    DiffUpper(void) {}
+    Real apply(const Real& x, const Real& y) const {
+      const Real INF(ROL_INF<Real>());
+      return (y >= INF ? static_cast<Real>(-1.) : y - x);
+    }
+  };
+
+  class FormQ : public Elementwise::BinaryFunction<Real> {
+  public:
+    FormQ(void) {}
+    Real apply(const Real& x, const Real& y) const {
+      Real zero(0.);
+      if( x < zero  && y < zero) {
+        return static_cast<Real>(1);
+      }
+      if( x < zero  && y >= zero ) {
+        return y;
+      }
+      if( x >= zero && y < zero ) {
+        return x;
+      }
+      return std::min(x, y);
+    }
+  };
+
+  class FormDQ : public Elementwise::BinaryFunction<Real> {
+  public:
+    FormDQ(void) {}
+    Real apply(const Real& x, const Real& y) const {
+      Real zero(0.), one(1.), mone(-1.);
+      if( x < zero  && y < zero) {
+        return zero;
+      }
+      if( x < zero  && y >= zero ) {
+        return mone;
+      }
+      if( x >= zero && y < zero ) {
+        return one;
+      }
+      if( x < y ) {
+        return one;
+      } else if( y < x) {
+        return mone;
+      } else {
+        return zero;
+      }
+    }
+  };
+
   class AugSystem : public LinearOperator<Real> {
   private:
     const Ptr<Constraint<Real> > con_;
     const Ptr<const Vector<Real> > x_;
+    const Ptr<Vector<Real> > Qsqrt_;
+    const Ptr<Vector<Real> > Qv_;
     const Real delta_;
   public:
     AugSystem(const Ptr<Constraint<Real> > &con,
               const Ptr<const Vector<Real> > &x,
-              const Real delta) : con_(con), x_(x), delta_(delta) {}
+              const Ptr<Vector<Real> > &Qsqrt,
+              const Ptr<Vector<Real> > &Qv,
+              const Real delta) : con_(con), x_(x), Qsqrt_(Qsqrt), Qv_(Qv), delta_(delta) {}
 
     void apply(Vector<Real> &Hv, const Vector<Real> &v, Real &tol) const {
       PartitionedVector<Real> &Hvp = dynamic_cast<PartitionedVector<Real>&>(Hv);
       const PartitionedVector<Real> &vp = dynamic_cast<const PartitionedVector<Real>&>(v);
 
       con_->applyAdjointJacobian(*(Hvp.get(0)), *(vp.get(1)), *x_, tol);
+      Hvp.get(0)->applyBinary(Elementwise::Multiply<Real>(), *Qsqrt_);
       Hvp.get(0)->plus(*(vp.get(0)));
 
-      con_->applyJacobian(*(Hvp.get(1)), *(vp.get(0)), *x_, tol);
+      Qv_->set(*(vp.get(0)));
+      Qv_->applyBinary(Elementwise::Multiply<Real>(), *Qsqrt_);
+      con_->applyJacobian(*(Hvp.get(1)), *(Qv_), *x_, tol);
       Hvp.get(1)->axpy(-delta_*delta_, *(vp.get(1)));
     }
   };
@@ -184,16 +266,21 @@ private:
   };
 
 public:
-  Fletcher(const ROL::Ptr<Objective<Real> > &obj,
-           const ROL::Ptr<Constraint<Real> > &con,
-           const Vector<Real> &optVec,
-           const Vector<Real> &conVec,
-           Teuchos::ParameterList &parlist)
+  BoundFletcher(const ROL::Ptr<Objective<Real> > &obj,
+                const ROL::Ptr<Constraint<Real> > &con,
+                const ROL::Ptr<BoundConstraint<Real> > &bnd,
+                const Vector<Real> &optVec,
+                const Vector<Real> &conVec,
+                Teuchos::ParameterList &parlist)
   : obj_(obj), con_(con), nfval_(0), ngval_(0), ncval_(0),
     fPhi_(0), fval_(0), isValueComputed_(false), isGradientComputed_(false),
     isMultiplierComputed_(false), isObjValueComputed_(false), isObjGradComputed_(false),
-    isConValueComputed_(false), multSolverError_(0), gradSolveError_(0), hessTol_(0),
+    isConValueComputed_(false), isQComputed_(false), isDQComputed_(false),
+    multSolverError_(0), gradSolveError_(0),
     iterKrylov_(0), flagKrylov_(0) {
+
+      low_ = bnd->getLowerBound();
+      upp_ = bnd->getUpperBound();
 
       gPhi_    = optVec.dual().clone();
       y_       = conVec.dual().clone();
@@ -202,9 +289,21 @@ public:
       c_       = conVec.clone();
       scaledc_ = conVec.clone();
 
+      Q_ = optVec.clone();
+      DQ_ = optVec.clone();
+      umx_ = optVec.clone();
+      Qsqrt_ = optVec.clone();
+      Qv_ = optVec.dual().clone();
+      QsgL_ = optVec.dual().clone();
+      QgL_ = optVec.dual().clone();
+      Qsg_ = optVec.dual().clone();
+      DQgL_ = optVec.dual().clone();
+
       Tv_ = optVec.dual().clone();
       w_ = optVec.dual().clone();
       v_ = conVec.dual().clone();
+      htmp1_ = optVec.dual().clone();
+      htmp2_ = conVec.clone();
 
       xzeros_ = optVec.dual().clone();
       xzeros_->zero();
@@ -246,6 +345,8 @@ public:
     isObjValueComputed_ = (flag ? false : isObjValueComputed_);
     isObjGradComputed_ = (flag ? false : isObjGradComputed_);
     isConValueComputed_ = (flag ? false : isConValueComputed_);
+    isQComputed_ = (flag ? false : isQComputed_);
+    isDQComputed_ = (flag ? false : isDQComputed_);
   }
 
   Real value( const Vector<Real> &x, Real &tol ) {
@@ -268,7 +369,6 @@ public:
   }
 
   void gradient( Vector<Real> &g, const Vector<Real> &x, Real &tol ) {
-    hessTol_ = tol;
     if( isGradientComputed_ && gradSolveError_ <= tol) {
       tol = gradSolveError_;
       g.set(*gPhi_);
@@ -281,24 +381,27 @@ public:
     gradSolveError_ = origTol / static_cast<Real>(2);
     computeMultipliers(x, gradSolveError_);
 
-    // gPhi = sum y_i H_i w + sigma w + sum v_i H_i gL - H w + gL
     solveAugmentedSystem( *w_, *v_, *xzeros_, *c_, x, gradSolveError_ );
     gradSolveError_ += multSolverError_;
     tol = gradSolveError_;
 
+    w_->applyBinary(Elementwise::Multiply<Real>(), *Qsqrt_);
     con_->applyAdjointHessian( *gPhi_, *y_, *w_, x, tol2 ); tol2 = origTol;
-    gPhi_->axpy( penaltyParameter_, *w_ );
-
     obj_->hessVec( *Tv_, *w_, x, tol2 ); tol2 = origTol;
     gPhi_->axpy( static_cast<Real>(-1), *Tv_ );
 
-    con_->applyAdjointHessian( *Tv_, *v_, *gL_, x, tol2 ); tol2 = origTol;
+    con_->applyAdjointJacobian( *Tv_, *v_, x, tol2); tol2 = origTol;
+    gPhi_->axpy( -penaltyParameter_, *Tv_);
+    
+    Tv_->applyBinary(Elementwise::Multiply<Real>(), *DQgL_);
+    gPhi_->plus( *Tv_ );
+
+    con_->applyAdjointHessian( *Tv_, *v_, *QgL_, x, tol2 ); tol2 = origTol;
     gPhi_->plus( *Tv_ );
 
     gPhi_->plus( *gL_ );
 
     g.set(*gPhi_);
-
     isGradientComputed_ = true;
   }
 
@@ -307,28 +410,42 @@ public:
     Real origTol = tol;
     Real tol2 = origTol;
 
+    // Make sure everything is already computed
+    value(x, tol2); tol2 = origTol;
     computeMultipliers(x, tol);
+    gradient(*Tv_, x, tol2); tol2 = origTol;
 
+    // hv <- HL*v
     obj_->hessVec( hv, v, x, tol2 ); tol2 = origTol;
     con_->applyAdjointHessian( *Tv_, *y_, v, x, tol2 ); tol2 = origTol;
     hv.axpy(static_cast<Real>(-1), *Tv_ );
 
-    tol2 = tol;
-    solveAugmentedSystem( *w_, *v_, hv, *czeros_, x, tol2 ); tol2 = origTol;
-    hv.scale( static_cast<Real>(-1) );
-    hv.plus( *w_ );
+    // htmp1_ <- Q^{1/2}*hv
+    htmp1_->set(hv);
+    htmp1_->applyBinary(Elementwise::Multiply<Real>(), *Qsqrt_);
+    htmp1_->scale(static_cast<Real>(-1));
+    // htmp2_ <- A'*(R(gL) - sigma*I)*v
+    Tv_->set( *DQgL_ );
+    Tv_->applyBinary( Elementwise::Multiply<Real>(), v );
+    Tv_->axpy(-penaltyParameter_, v);
+    con_->applyJacobian( *htmp2_, *Tv_, x, tol2); tol2 = origTol;
+    // v_ <- - (A'QA)^-1 [A' (R(gL)-sigma I) u + A' Q HL u]
+    solveAugmentedSystem( *w_, *v_, *htmp1_, *htmp2_, x, tol2 ); tol2 = origTol;
+    con_->applyAdjointJacobian( *Tv_, *v_, x, tol2 ); tol2 = origTol;
+    hv.plus(*Tv_);
 
-    Tv_->set(v);
-    tol2 = tol;
-    solveAugmentedSystem( *w_, *v_, *Tv_, *czeros_, x, tol2 ); tol2 = origTol;
-    hv.axpy(static_cast<Real>(-2)*penaltyParameter_, *w_);
-
-    obj_->hessVec( *Tv_, *w_, x, tol2 ); tol2 = origTol;
+    con_->applyJacobian( *htmp2_, v, x, tol2 ); tol2 = origTol;
+    solveAugmentedSystem( *w_, *v_, *xzeros_, *htmp2_, x, tol2 ); tol2 = origTol;
+    con_->applyAdjointJacobian( *Tv_, *v_, x, tol2 ); tol2 = origTol;
+    hv.axpy( -penaltyParameter_, *Tv_);
+    Tv_->applyBinary( Elementwise::Multiply<Real>(), *DQgL_ );
     hv.plus( *Tv_ );
-    con_->applyAdjointHessian( *Tv_, *y_, *w_, x, tol2 ); tol2 = origTol;
-    hv.axpy( static_cast<Real>(-1), *Tv_ );
 
-    hv.axpy(static_cast<Real>(2)*penaltyParameter_, v);
+    w_->applyBinary( Elementwise::Multiply<Real>(), *Qsqrt_ );
+    obj_->hessVec( *Tv_, *w_, x, tol2 ); tol2 = origTol;
+    hv.axpy( static_cast<Real>(-1), *Tv_);
+    con_->applyAdjointHessian( *Tv_, *y_, *w_, x, tol2 ); tol2 = origTol;
+    hv.plus( *Tv_ );
   }
 
   void solveAugmentedSystem(Vector<Real> &v1,
@@ -339,7 +456,7 @@ public:
                             Real &tol) {
     // Ignore tol for now
     ROL::Ptr<LinearOperator<Real> > K
-      = ROL::makePtr<AugSystem>(con_, makePtrFromRef(x), delta_);
+      = ROL::makePtr<AugSystem>(con_, makePtrFromRef(x), Qsqrt_, Qv_, delta_);
     ROL::Ptr<LinearOperator<Real> > P
       = ROL::makePtr<AugSystemPrecond>(con_, makePtrFromRef(x));
 
@@ -367,9 +484,50 @@ public:
     Real tol2 = tol;
     objGrad(x, tol2); tol2 = tol;
     conValue(x, tol2);
+    computeQ(x);
+    computeDQ(x);
+    Qsg_->set(*g_);
+    Qsg_->applyBinary(Elementwise::Multiply<Real>(), *Qsqrt_);
 
     multSolverError_ = tol;
-    solveAugmentedSystem(*gL_, *y_, *g_, *scaledc_, x, multSolverError_);
+    solveAugmentedSystem(*QsgL_, *y_, *Qsg_, *scaledc_, x, multSolverError_);
+
+    gL_->set(*QsgL_);
+    gL_->applyBinary(Elementwise::Divide<Real>(), *Qsqrt_);
+    QgL_->set(*QsgL_);
+    QgL_->applyBinary(Elementwise::Multiply<Real>(), *Qsqrt_);
+    DQgL_->set( *gL_ );
+    DQgL_->applyBinary(Elementwise::Multiply<Real>(), *DQ_);
+  }
+
+  void computeQ(const Vector<Real>& x) {
+    if( isQComputed_ ) {
+      return;
+    }
+
+    Q_->set(x);
+    Q_->applyBinary(DiffLower(), *low_);
+    umx_->set(x);
+    umx_->applyBinary(DiffUpper(), *upp_);
+    Q_->applyBinary(FormQ(), *umx_);
+    Qsqrt_->set(*Q_);
+    Qsqrt_->applyUnary(Elementwise::SquareRoot<Real>());
+
+    isQComputed_ = true;
+  }
+
+  void computeDQ(const Vector<Real> &x) {
+    if( isDQComputed_ ) {
+      return;
+    }
+
+    DQ_->set(x);
+    DQ_->applyBinary(DiffLower(), *low_);
+    umx_->set(x);
+    umx_->applyBinary(DiffUpper(), *upp_);   
+    DQ_->applyBinary(FormDQ(), *umx_);
+
+    isDQComputed_ = true;
   }
 
   // Accessors
