@@ -53,6 +53,7 @@
 #include <Teuchos_FancyOStream.hpp>
 
 #include "typedefs.hpp"
+#include "utils.hpp"
 #include "MeshDatabase.hpp"
 
 #define PRINT_VERBOSE 1
@@ -75,7 +76,7 @@ int main (int argc, char *argv[])
   // Command-line input
   LO num_global_elements_i = 2, num_global_elements_j = 2, num_global_elements_k = 2;
   LO num_procs_i = 1, num_procs_j = 1, num_procs_k = 1;
-  LO blksize = 5, nrhs = 1, repeat = 100;
+  LO blocksize = 5, nrhs = 1, repeat = 100;
 
   Teuchos::CommandLineProcessor clp(false);
   clp.setDocString("BlockCrs performance test using 3D 7 point stencil.\n");
@@ -85,7 +86,7 @@ int main (int argc, char *argv[])
   clp.setOption("num-procs-i", &num_procs_i, "Processor grid of (npi,npj,npk); npi*npj*npk should be equal to the number of MPI ranks.");
   clp.setOption("num-procs-j", &num_procs_j, "Processor grid of (npi,npj,npk); npi*npj*npk should be equal to the number of MPI ranks.");
   clp.setOption("num-procs-k", &num_procs_k, "Processor grid of (npi,npj,npk); npi*npj*npk should be equal to the number of MPI ranks.");
-  clp.setOption("blocksize", &blksize, "Block size. The # of DOFs coupled in a multiphysics flow problem.");
+  clp.setOption("blocksize", &blocksize, "Block size. The # of DOFs coupled in a multiphysics flow problem.");
   clp.setOption("nrhs", &nrhs, "Number of right hand sides to solve for.");
   clp.setOption("repeat", &repeat, "Number of iterations of matvec operations to measure performance.");
 
@@ -107,125 +108,225 @@ int main (int argc, char *argv[])
                     num_procs_i,
                     num_procs_j,
                     num_procs_k);
-  
+
+  const auto sb = mesh.getStructuredBlock();
+  const auto part = mesh.getStructuredBlockPart();
+
+  const auto num_owned_elements = mesh.getNumOwnedElements();
+  const auto num_remote_elements = mesh.getNumRemoteElements();
+  const auto num_owned_and_remote_elements = mesh.getNumElements();
+
 #if PRINT_VERBOSE
   mesh.print(std::cout);
 #endif
+  
+  {
+    RCP<TimeMonitor> timerGlobal = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("X) Global")));
+    
+    // Build Tpetra Maps
+    // -----------------
+    
+    const global_ordinal_type TpetraComputeGlobalNumElements 
+      = Teuchos::OrdinalTraits<global_ordinal_type>::invalid();  
+    
+    // - all internal views are allocated on device; mirror as mesh database is constructed on host  
+    const auto mesh_gids = Kokkos::create_mirror_view(typename exec_space::memory_space(), mesh.getElementGlobalIDs());
+    Kokkos::deep_copy(mesh_gids, mesh.getElementGlobalIDs());
+
+    // for convenience, separate the access to owned and remote gids
+    const auto owned_gids  = Kokkos::subview(mesh_gids, local_ordinal_range_type(                 0, num_owned_elements));
+    const auto remote_gids = Kokkos::subview(mesh_gids, local_ordinal_range_type(num_owned_elements, num_owned_and_remote_elements));
+    
+    RCP<const map_type> row_map = rcp(new map_type(TpetraComputeGlobalNumElements, owned_gids, 0, comm));
+    RCP<const map_type> col_map = rcp(new map_type(TpetraComputeGlobalNumElements, mesh_gids, 0, comm));
+    
+#if PRINT_VERBOSE
+    row_map->describe(*out);
+    col_map->describe(*out);
+#endif
+    
+    // Graph Construction
+    // ------------------
+    // local graph is constructed on device space
+    typedef tpetra_crs_graph_type::local_graph_type local_graph_type;
+    local_graph_type local_graph;
+    {
+      RCP<TimeMonitor> timerLocalGraphConstruction 
+        = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("1) LocalGraphConstruction")));
+      
+      typedef local_graph_type::row_map_type::non_const_type rowptr_view_type;
+      rowptr_view_type rowptr("rowptr", num_owned_elements + 1);
+      
+      local_ordinal_range_type owned_range_i, owned_range_j, owned_range_k;
+      local_ordinal_range_type remote_range_i, remote_range_j, remote_range_k;
+
+      part.getOwnedRange(owned_range_i, owned_range_j, owned_range_k);
+      part.getRemoteRange(sb, remote_range_i, remote_range_j, remote_range_k);
+      
+      // count # of nonzeros per row
+      Kokkos::parallel_scan
+        (num_owned_elements+1,
+         KOKKOS_LAMBDA(const LO &local_idx, 
+                       typename rowptr_view_type::non_const_value_type &update, 
+                       const bool &final) {
+          LO cnt = 0;
+          if (local_idx < num_owned_elements) {
+            LO i, j, k;
+            const GO global_idx = mesh_gids(local_idx);
+            sb.idx_to_ijk(global_idx, i, j, k);
+            
+            cnt = 1; // self
+            
+            cnt += ((i-1) >= remote_range_i.first );
+            cnt += ((i+1) <  remote_range_i.second);
+            
+            cnt += ((j-1) >= remote_range_j.first );
+            cnt += ((j+1) <  remote_range_j.second);
+            
+            cnt += ((k-1) >= remote_range_k.first );
+            cnt += ((k+1) <  remote_range_k.second);
+          } 
+
+          rowptr(local_idx) = cnt;           
+          if (final)
+            rowptr(local_idx) = update;          
+          update += cnt;
+        });
+      
+      // the last entry of rowptr is the total number of nonzeros in the local graph
+      // mirror to host to use the information in constructing colidx
+      auto nnz = Kokkos::subview(rowptr, num_owned_elements);
+      const auto nnz_host = Kokkos::create_mirror_view(nnz);
+      Kokkos::deep_copy(nnz_host, nnz);
+
+      // allocate colidx 
+      typename local_graph_type::entries_type colidx("colidx", nnz_host());
+      
+      // fill      
+      Kokkos::parallel_for
+        (num_owned_elements,
+         KOKKOS_LAMBDA(const LO &local_idx) {
+          LO i, j, k;
+          const GO global_idx = mesh_gids(local_idx);
+          sb.idx_to_ijk(global_idx, i, j, k);
+          
+          const LO lbeg = rowptr(local_idx); 
+          LO lcnt = lbeg;
+          
+          // self
+          colidx(lcnt++) = local_idx;
+
+          // owned and remote gids are separately sorted
+
+          // sides on i
+          { 
+            const auto i_minus_one = i-1;
+            if (i_minus_one >= owned_range_i.first) {
+              colidx(lcnt++) = *lower_bound(&owned_gids(0), &owned_gids(num_owned_elements-1),
+                                            sb.ijk_to_idx(i_minus_one,j,k));
+            } else if (i_minus_one >= remote_range_i.first) {
+              colidx(lcnt++) = *lower_bound(&remote_gids(0), &remote_gids(num_remote_elements-1),
+                                            sb.ijk_to_idx(i_minus_one,j,k));
+            }
+            const auto i_plus_one = i+1;
+            if (i_plus_one < owned_range_i.second) {
+              colidx(lcnt++) = *lower_bound(&owned_gids(0), &owned_gids(num_owned_elements-1),
+                                            sb.ijk_to_idx(i_plus_one,j,k));
+            } else if (i_plus_one < remote_range_i.second) {
+              colidx(lcnt++) = *lower_bound(&remote_gids(0), &remote_gids(num_remote_elements-1),
+                                            sb.ijk_to_idx(i_plus_one,j,k));
+            }
+          }
+
+          // sides on j
+          { 
+            const auto j_minus_one = j-1;
+            if (j_minus_one >= owned_range_j.first) {
+              colidx(lcnt++) = *lower_bound(&owned_gids(0), &owned_gids(num_owned_elements-1),
+                                            sb.ijk_to_idx(i,j_minus_one,k));
+            } else if (j_minus_one >= remote_range_j.first) {
+              colidx(lcnt++) = *lower_bound(&remote_gids(0), &remote_gids(num_remote_elements-1),
+                                            sb.ijk_to_idx(i,j_minus_one,k));
+            }
+            const auto j_plus_one = j+1;
+            if (j_plus_one < owned_range_j.second) {
+              colidx(lcnt++) = *lower_bound(&owned_gids(0), &owned_gids(num_owned_elements-1),
+                                            sb.ijk_to_idx(i,j_plus_one,k));
+            } else if (j_plus_one < remote_range_j.second) {
+              colidx(lcnt++) = *lower_bound(&remote_gids(0), &remote_gids(num_remote_elements-1),
+                                            sb.ijk_to_idx(i,j_plus_one,k));
+            }
+          }
+
+          // sides on k
+          { 
+            const auto k_minus_one = k-1;
+            if (k_minus_one >= owned_range_k.first) {
+              colidx(lcnt++) = *lower_bound(&owned_gids(0), &owned_gids(num_owned_elements-1),
+                                            sb.ijk_to_idx(i,j,k_minus_one));
+            } else if (k_minus_one >= remote_range_k.first) {
+              colidx(lcnt++) = *lower_bound(&remote_gids(0), &remote_gids(num_remote_elements-1),
+                                            sb.ijk_to_idx(i,j,k_minus_one));
+            }
+            const auto k_plus_one = k+1;
+            if (k_plus_one < owned_range_k.second) {
+              colidx(lcnt++) = *lower_bound(&owned_gids(0), &owned_gids(num_owned_elements-1),
+                                            sb.ijk_to_idx(i,j,k_plus_one));
+            } else if (k_plus_one < remote_range_k.second) {
+              colidx(lcnt++) = *lower_bound(&remote_gids(0), &remote_gids(num_remote_elements-1),
+                                            sb.ijk_to_idx(i,j,k_plus_one));
+            }
+          }
+
+          // sort 
+          heap_sort(&colidx(lbeg), lcnt-lbeg);
+        });
+      
+      // assign to a local graph
+      local_graph = local_graph_type(colidx, rowptr);
+    } // end local graph timer
+    
+    // Call fillComplete on the crs_graph to finalize it
+    RCP<tpetra_crs_graph_type> crs_graph;
+    { 
+      RCP<TimeMonitor> timerGlobalGraphConstruction
+        = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("2) GlobalGraphConstruction (FillComplete)")));
+      crs_graph = rcp(new tpetra_crs_graph_type(row_map, col_map, local_graph, Teuchos::null));
+      crs_graph->fillComplete();
+    } // end global graph timer
+    
+#if PRINT_VERBOSE
+    crs_graph->describe(*out, Teuchos::VERB_EXTREME);
+#endif
+
+    // Create BlockCrsMatrix
+    RCP<tpetra_blockcrs_type> A = Teuchos::rcp(new tpetra_blockcrs_type(crs_graph, blocksize));
+
+    // Create MultiVector
+    RCP<tpetra_multivector_type> X = Teuchos::rcp(new tpetra_multivector_type(A->getDomainMap(), nrhs));
+    RCP<tpetra_multivector_type> B = Teuchos::rcp(new tpetra_multivector_type(A->getRangeMap(),  nrhs));
+    
+  } // end global timer
+  // Finalize Kokkos
+  Kokkos::finalize();
+  
+  // This tells the Trilinos test framework that the test passed.
+  if(0 == mpiSession.getRank())
+    {
+      std::cout << "End Result: TEST PASSED" << std::endl;
+    }
+  
+  return EXIT_SUCCESS;
+}  // END main()
+
+
+
+
+
 
 #if 0
-  
-  // Build Tpetra Maps
-  // -----------------
-  // -- https://trilinos.org/docs/dev/packages/tpetra/doc/html/classTpetra_1_1Map.html#a24490b938e94f8d4f31b6c0e4fc0ff77
-  RCP<const MapType> row_map = rcp(new MapType(GO_INVALID, mesh.getOwnedNodeGlobalIDs(), 0, comm));
 
-  #if PRINT_VERBOSE
-  row_map->describe(*out);
-  #endif
 
-  // Type-1: Graph Construction
-  // --------------------------
-  // - Loop over every element in the mesh.
-  //   - Get list of nodes associated with each element.
-  //   - Insert the clique of nodes associated with each element into the graph. 
-  //   
-  auto domain_map = row_map;
-  auto range_map  = row_map;
-
-  auto owned_element_to_node_ids = mesh.getOwnedElementToNode(); 
-
-  RCP<TimeMonitor> timerGlobal = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("X) Global")));
-  RCP<TimeMonitor> timerElementLoopGraph = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("1) ElementLoop  (Graph)")));
-
-  RCP<GraphType> crs_graph = rcp(new GraphType(row_map, 0));
-  
-  // Using 4 because we're using quads for this example, so there will be 4 nodes associated with each element.
-  Teuchos::Array<GlobalOrdinal> global_ids_in_row(4);
-
-  // for each element in the mesh...
-  for(size_t element_gidx=0; element_gidx<mesh.getNumOwnedElements(); element_gidx++)
-  {
-    // Populate global_ids_in_row:
-    // - Copy the global node ids for current element into an array.  
-    // - Since each element's contribution is a clique, we can re-use this for 
-    //   each row associated with this element's contribution.
-    for(size_t element_node_idx=0; element_node_idx<owned_element_to_node_ids.extent(1); element_node_idx++)
-    {
-      global_ids_in_row[element_node_idx] = owned_element_to_node_ids(element_gidx, element_node_idx);
-    }
-
-    // Add the contributions from the current row into the graph.
-    // - For example, if Element 0 contains nodes [0,1,4,5] then we insert the nodes:
-    //   - node 0 inserts [0, 1, 4, 5]
-    //   - node 1 inserts [0, 1, 4, 5]
-    //   - node 4 inserts [0, 1, 4, 5]
-    //   - node 5 inserts [0, 1, 4, 5]
-    for(size_t element_node_idx=0; element_node_idx<owned_element_to_node_ids.extent(1); element_node_idx++)
-    {
-       crs_graph->insertGlobalIndices(global_ids_in_row[element_node_idx], global_ids_in_row());
-    }
-  }
-  timerElementLoopGraph = Teuchos::null;
-
-  // Call fillComplete on the crs_graph to 'finalize' it.
-  {
-    RCP<TimeMonitor> timerFillCompleteGraph = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("2) FillComplete (Graph)")));
-    crs_graph->fillComplete();
-  }
-
-  // Print out verbose information about the crs_graph.
-  #if PRINT_VERBOSE
-  crs_graph->describe(*out, Teuchos::VERB_EXTREME);
-  #endif
-
-  // Matrix Fill
-  // -------------------
-  // In this example, we're using a simple stencil of values for the matrix fill:
-  //
-  //    +-----+-----+-----+-----+
-  //    |  2  | -1  |     | -1  |
-  //    +-----+-----+-----+-----+
-  //    | -1  |  2  | -1  |     |
-  //    +-----+-----+-----+-----+
-  //    |     | -1  |  2  | -1  |
-  //    +-----+-----+-----+-----+
-  //    | -1  |     | -1  |  2  |
-  //    +-----+-----+-----+-----+
-  //
-  // For Type 1 matrix fill, we create the crs_matrix object and will fill it 
-  // in the same manner as we filled in the graph but in this case, nodes 
-  // associated with each element will receive contributions according to 
-  // the row in this stencil.
-  //
-  // In this example, the calls to sumIntoGlobalValues() on 1 core will look like:
-  //   Element 0
-  // - sumIntoGlobalValues( 0,  [  0  1  5  4  ],  [  2  -1  0  -1  ])
-  // - sumIntoGlobalValues( 1,  [  0  1  5  4  ],  [  -1  2  -1  0  ])
-  // - sumIntoGlobalValues( 5,  [  0  1  5  4  ],  [  0  -1  2  -1  ])
-  // - sumIntoGlobalValues( 4,  [  0  1  5  4  ],  [  -1  0  -1  2  ])
-  // Element 1
-  // - sumIntoGlobalValues( 1,  [  1  2  6  5  ],  [  2  -1  0  -1  ])
-  // - sumIntoGlobalValues( 2,  [  1  2  6  5  ],  [  -1  2  -1  0  ])
-  // - sumIntoGlobalValues( 6,  [  1  2  6  5  ],  [  0  -1  2  -1  ])
-  // - sumIntoGlobalValues( 5,  [  1  2  6  5  ],  [  -1  0  -1  2  ])
-  // Element 2
-  // - sumIntoGlobalValues( 2,  [  2  3  7  6  ],  [  2  -1  0  -1  ])
-  // - sumIntoGlobalValues( 3,  [  2  3  7  6  ],  [  -1  2  -1  0  ])
-  // - sumIntoGlobalValues( 7,  [  2  3  7  6  ],  [  0  -1  2  -1  ])
-  // - sumIntoGlobalValues( 6,  [  2  3  7  6  ],  [  -1  0  -1  2  ])
-  RCP<TimeMonitor> timerElementLoopMatrix = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("3) ElementLoop  (Matrix)")));
-
-  RCP<MatrixType> crs_matrix = rcp(new MatrixType(crs_graph));
-
-  scalar_2d_array_type element_matrix;
-  Kokkos::resize(element_matrix, 4, 4);
-
-  Teuchos::Array<GlobalOrdinal> column_global_ids(4);     // global column ids list
-  Teuchos::Array<Scalar> column_scalar_values(4);         // scalar values for each column
-
-  // Loop over elements
-  for(size_t element_gidx=0; element_gidx<mesh.getNumOwnedElements(); element_gidx++)
-  {
     // Get the contributions for the current element
     ReferenceQuad4(element_matrix);
 
@@ -275,14 +376,3 @@ int main (int argc, char *argv[])
   // Print out timing results.
   TimeMonitor::report(comm.ptr(), std::cout, "");
 #endif
-  // Finalize Kokkos
-  Kokkos::finalize();
-
-  // This tells the Trilinos test framework that the test passed.
-  if(0 == mpiSession.getRank())
-  {
-    std::cout << "End Result: TEST PASSED" << std::endl;
-  }
-
-  return EXIT_SUCCESS;
-}  // END main()

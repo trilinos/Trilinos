@@ -111,21 +111,29 @@ namespace BlockCrsTest {
       }
     };
     
-    struct StructureBlockPart {
+    struct StructuredBlockPart {
       local_ordinal_range_type _range_i, _range_j, _range_k;
-      StructureBlockPart() = default;
-      StructureBlockPart(const StructureBlockPart &b) = default;
-      StructureBlockPart(const LO range_i_beg, const LO range_i_end,
-                         const LO range_j_beg, const LO range_j_end,
-                         const LO range_k_beg, const LO range_k_end) 
+      StructuredBlockPart() = default;
+      StructuredBlockPart(const StructuredBlockPart &b) = default;
+      StructuredBlockPart(const LO range_i_beg, const LO range_i_end,
+                          const LO range_j_beg, const LO range_j_end,
+                          const LO range_k_beg, const LO range_k_end) 
         : _range_i(range_i_beg, range_i_end),
           _range_j(range_j_beg, range_j_end),
           _range_k(range_k_beg, range_k_end) {}
 
+      inline void getOwnedRange(local_ordinal_range_type &range_i,
+                                local_ordinal_range_type &range_j,
+                                local_ordinal_range_type &range_k) const {
+        range_i = _range_i;
+        range_j = _range_j;
+        range_k = _range_k;        
+      }
+
       inline void getRemoteRange(const StructuredBlock &sb,
                                  local_ordinal_range_type &range_i,
                                  local_ordinal_range_type &range_j,
-                                 local_ordinal_range_type &range_k) {
+                                 local_ordinal_range_type &range_k) const {
         range_i.first  = _range_i.first  - (_range_i.first > 0);
         range_i.second = _range_i.second + (_range_i.second < sb._num_global_elements_i);
         
@@ -147,7 +155,7 @@ namespace BlockCrsTest {
     Teuchos::RCP<const Teuchos::Comm<int> > _comm;
     StructuredBlock _sb;
     StructuredProcGrid _grid;
-    StructureBlockPart _owned;
+    StructuredBlockPart _owned;
 
     typedef Kokkos::View<GO*,host_space> global_ordinal_view_host_type;
     
@@ -198,9 +206,9 @@ namespace BlockCrsTest {
       }
 #endif
       // local elements owned by this proc
-      _owned = StructureBlockPart(ibeg, iend,
-                                  jbeg, jend, 
-                                  kbeg, kend);
+      _owned = StructuredBlockPart(ibeg, iend,
+                                   jbeg, jend, 
+                                   kbeg, kend);
 
       // count the number of owned elements
       const GO num_owned_elements = _owned.getNumElements();
@@ -224,38 +232,38 @@ namespace BlockCrsTest {
         num_remote_elements += ( (face[f][0].second - face[f][0].first) *
                                  (face[f][1].second - face[f][1].first) *
                                  (face[f][2].second - face[f][2].first) );
-#if 0
-      if (_grid._rank == 0 ) {
-        for (LO f=0;f<6;++f) {
-          std::cout << "face " << f 
-                    << " 0 - " << face[f][0].first << "," << face[f][0].second 
-                    << " 1 - " << face[f][1].first << "," << face[f][1].second 
-                    << " 2 - " << face[f][2].first << "," << face[f][2].second 
-                    << "\n";
-        }
-        std::cout << "num remote elements = " << num_remote_elements 
-                  << "\n";
-      }
-#endif
 
       const GO num_elements = num_owned_elements + num_remote_elements;
       _element_gids = global_ordinal_view_host_type("element gids", num_elements);
       _owned_element_gids  = Kokkos::subview(_element_gids, global_ordinal_range_type(0,num_owned_elements));
       _remote_element_gids = Kokkos::subview(_element_gids, global_ordinal_range_type(num_owned_elements,num_elements));
 
-      for (LO l=0,i=_owned._range_i.first;i<_owned._range_i.second;++i) 
-        for (LO j=_owned._range_j.first;j<_owned._range_j.second;++j) 
-          for (LO k=_owned._range_k.first;k<_owned._range_k.second;++k) 
-            _owned_element_gids(l++) = _sb.ijk_to_idx(i,j,k);
-
-      for (LO l=0,f=0;f<6;++f) 
-        for (LO i=face[f][0].first;i<face[f][0].second;++i)
-          for (LO j=face[f][1].first;j<face[f][1].second;++j)
-            for (LO k=face[f][2].first;k<face[f][2].second;++k) 
-              _remote_element_gids(l++) = _sb.ijk_to_idx(i,j,k);      
+      {
+        LO l = 0;
+        for (LO i=_owned._range_i.first;i<_owned._range_i.second;++i) 
+          for (LO j=_owned._range_j.first;j<_owned._range_j.second;++j) 
+            for (LO k=_owned._range_k.first;k<_owned._range_k.second;++k) 
+              _owned_element_gids(l++) = _sb.ijk_to_idx(i,j,k);
+        
+        GO *beg = _owned_element_gids.data(), *end = beg + l; 
+        std::sort(beg, end);
+      }
+      {
+        LO l = 0;
+        for (LO f=0;f<6;++f) 
+          for (LO i=face[f][0].first;i<face[f][0].second;++i)
+            for (LO j=face[f][1].first;j<face[f][1].second;++j)
+              for (LO k=face[f][2].first;k<face[f][2].second;++k) 
+                _remote_element_gids(l++) = _sb.ijk_to_idx(i,j,k);      
+        GO *beg = _remote_element_gids.data(), *end = beg + l; 
+        std::sort(beg, end);
+      }
     }
     
     ~MeshDatabase() = default;
+
+    StructuredBlock getStructuredBlock() const { return _sb; }
+    StructuredBlockPart getStructuredBlockPart() const { return _owned; }
 
     size_t getNumOwnedElements() const  { return _owned_element_gids.extent(0); }
     size_t getNumRemoteElements() const { return _remote_element_gids.extent(0); }
