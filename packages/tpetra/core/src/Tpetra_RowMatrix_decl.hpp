@@ -395,7 +395,7 @@ namespace Tpetra {
     /// same diagonal element.  You may combine these overlapping
     /// diagonal elements by doing an Export from the row Map Vector
     /// to a range Map Vector.
-    virtual void getLocalDiagCopy (Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node, Node::classic> &diag) const = 0;
+    virtual void getLocalDiagCopy (Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node> &diag) const = 0;
 
     //@}
     //! \name Mathematical methods
@@ -406,14 +406,14 @@ namespace Tpetra {
      *
      * On return, for all entries i,j in the matrix, \f$A(i,j) = x(i)*A(i,j)\f$.
      */
-    virtual void leftScale (const Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node, Node::classic>& x) = 0;
+    virtual void leftScale (const Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& x) = 0;
 
     /**
      * \brief Scale the RowMatrix on the right with the given Vector x.
      *
      * On return, for all entries i,j in the matrix, \f$A(i,j) = x(j)*A(i,j)\f$.
      */
-    virtual void rightScale (const Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node, Node::classic>& x) = 0;
+    virtual void rightScale (const Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& x) = 0;
 
     /// \brief The Frobenius norm of the matrix.
     ///
