@@ -15,7 +15,7 @@ end
 A(end,end - 1) = -1.0;
 A(end,end) = 1.0;
 
-A(1,2) = 1.0e-14;
+A(1,2) = -1.0e-14;
 
 A = sparse(A);
 
