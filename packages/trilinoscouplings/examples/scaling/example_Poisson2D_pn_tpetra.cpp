@@ -913,7 +913,6 @@ int main(int argc, char *argv[]) {
     throw std::runtime_error("Can only specify \"aux P1\" or \"linear P1\", not both.");
   if (inputSolverList.isParameter("linear P1")) {
     printf("Activating Linear scheduled p-coarsening...\n");
-    char hi_basis[80];
     Teuchos::ParameterList & mymuelu = inputSolverList.sublist("MueLu");
     Teuchos::ParameterList & level0  = mymuelu.sublist("level 0");
     level0.set("pcoarsen: element to node map",rcp(&elemToNodeI2,false));

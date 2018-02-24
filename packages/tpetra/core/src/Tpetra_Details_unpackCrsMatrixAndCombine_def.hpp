@@ -1091,7 +1091,7 @@ unpackAndCombineIntoCrsArraysImpl(
 template<typename ST, typename LO, typename GO, typename Node>
 void
 unpackCrsMatrixAndCombine(
-    const CrsMatrix<ST, LO, GO, Node, false>& sourceMatrix,
+    const CrsMatrix<ST, LO, GO, Node>& sourceMatrix,
     const Teuchos::ArrayView<const char>& imports,
     const Teuchos::ArrayView<const size_t>& numPacketsPerLID,
     const Teuchos::ArrayView<const LO>& importLIDs,
@@ -1102,7 +1102,7 @@ unpackCrsMatrixAndCombine(
 {
   using Kokkos::View;
   typedef typename Node::device_type device_type;
-  typedef typename CrsMatrix<ST,LO,GO,Node,false>::local_matrix_type local_matrix_type;
+  typedef typename CrsMatrix<ST, LO, GO, Node>::local_matrix_type local_matrix_type;
   static_assert (std::is_same<device_type, typename local_matrix_type::device_type>::value,
                  "Node::device_type and LocalMatrix::device_type must be the same.");
 
@@ -1139,9 +1139,9 @@ unpackCrsMatrixAndCombine(
 
 template<typename ST, typename LO, typename GO, typename NT>
 void
-unpackCrsMatrixAndCombineNew (const CrsMatrix<ST, LO, GO, NT, false>& sourceMatrix,
-                              const Kokkos::DualView<const char*, typename DistObject<char, LO, GO, NT, false>::buffer_device_type>& imports,
-                              const Kokkos::DualView<const size_t*, typename DistObject<char, LO, GO, NT, false>::buffer_device_type>& numPacketsPerLID,
+unpackCrsMatrixAndCombineNew (const CrsMatrix<ST, LO, GO, NT>& sourceMatrix,
+                              const Kokkos::DualView<const char*, typename DistObject<char, LO, GO, NT>::buffer_device_type>& imports,
+                              const Kokkos::DualView<const size_t*, typename DistObject<char, LO, GO, NT>::buffer_device_type>& numPacketsPerLID,
                               const Kokkos::DualView<const LO*, typename NT::device_type>& importLIDs,
                               const size_t constantNumPackets,
                               Distributor& distor,
@@ -1151,9 +1151,9 @@ unpackCrsMatrixAndCombineNew (const CrsMatrix<ST, LO, GO, NT, false>& sourceMatr
   using Tpetra::Details::castAwayConstDualView;
   using Kokkos::View;
   typedef typename NT::device_type device_type;
-  typedef CrsMatrix<ST, LO, GO, NT, false> crs_matrix_type;
+  typedef CrsMatrix<ST, LO, GO, NT> crs_matrix_type;
   typedef typename crs_matrix_type::local_matrix_type local_matrix_type;
-  typedef DistObject<char, LO, GO, NT, false> dist_object_type;
+  typedef DistObject<char, LO, GO, NT> dist_object_type;
   typedef typename dist_object_type::buffer_device_type buffer_device_type;
   typedef typename buffer_device_type::memory_space BMS;
   typedef typename device_type::memory_space MS;
@@ -1252,7 +1252,7 @@ unpackCrsMatrixAndCombineNew (const CrsMatrix<ST, LO, GO, NT, false>& sourceMatr
 template<typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Node>
 size_t
 unpackAndCombineWithOwningPIDsCount (
-    const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, false> & sourceMatrix,
+    const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> & sourceMatrix,
     const Teuchos::ArrayView<const LocalOrdinal> &importLIDs,
     const Teuchos::ArrayView<const char> &imports,
     const Teuchos::ArrayView<const size_t>& numPacketsPerLID,
@@ -1266,7 +1266,7 @@ unpackAndCombineWithOwningPIDsCount (
   using Kokkos::MemoryUnmanaged;
   using Kokkos::View;
   typedef typename Node::device_type DT;
-  typedef typename DistObject<char, LocalOrdinal, GlobalOrdinal, Node, false>::buffer_device_type BDT;
+  typedef typename DistObject<char, LocalOrdinal, GlobalOrdinal, Node>::buffer_device_type BDT;
   const char prefix[] = "unpackAndCombineWithOwningPIDsCount: ";
 
   TEUCHOS_TEST_FOR_EXCEPTION
@@ -1325,7 +1325,7 @@ unpackAndCombineWithOwningPIDsCount (
 template<typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Node>
 void
 unpackAndCombineIntoCrsArrays (
-    const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, false> & sourceMatrix,
+    const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> & sourceMatrix,
     const Teuchos::ArrayView<const LocalOrdinal>& importLIDs,
     const Teuchos::ArrayView<const char>& imports,
     const Teuchos::ArrayView<const size_t>& numPacketsPerLID,
@@ -1340,7 +1340,7 @@ unpackAndCombineIntoCrsArrays (
     const int MyTargetPID,
     const Teuchos::ArrayView<size_t>& CRS_rowptr,
     const Teuchos::ArrayView<GlobalOrdinal>& CRS_colind,
-    const Teuchos::ArrayView<typename CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, false>::impl_scalar_type>& CRS_vals,
+    const Teuchos::ArrayView<typename CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::impl_scalar_type>& CRS_vals,
     const Teuchos::ArrayView<const int>& SourcePids,
     Teuchos::Array<int>& TargetPids)
 {
@@ -1520,7 +1520,7 @@ unpackAndCombineIntoCrsArrays (
 #define TPETRA_DETAILS_UNPACKCRSMATRIXANDCOMBINE_INSTANT( ST, LO, GO, NT ) \
   template void \
   Details::unpackCrsMatrixAndCombine<ST, LO, GO, NT> ( \
-    const CrsMatrix<ST, LO, GO, NT, false>&, \
+    const CrsMatrix<ST, LO, GO, NT>&, \
     const Teuchos::ArrayView<const char>&, \
     const Teuchos::ArrayView<const size_t>&, \
     const Teuchos::ArrayView<const LO>&, \
@@ -1530,7 +1530,7 @@ unpackAndCombineIntoCrsArrays (
     const bool); \
   template void \
   Details::unpackCrsMatrixAndCombineNew<ST, LO, GO, NT> ( \
-    const CrsMatrix<ST, LO, GO, NT, false>&, \
+    const CrsMatrix<ST, LO, GO, NT>&, \
     const Kokkos::DualView<const char*, typename DistObject<char, LO, GO, NT>::buffer_device_type>&, \
     const Kokkos::DualView<const size_t*, typename DistObject<char, LO, GO, NT>::buffer_device_type>&, \
     const Kokkos::DualView<const LO*, NT::device_type>&, \
@@ -1540,7 +1540,7 @@ unpackAndCombineIntoCrsArrays (
     const bool); \
   template void \
   Details::unpackAndCombineIntoCrsArrays<ST, LO, GO, NT> ( \
-    const CrsMatrix<ST, LO, GO, NT, false> &, \
+    const CrsMatrix<ST, LO, GO, NT> &, \
     const Teuchos::ArrayView<const LO>&, \
     const Teuchos::ArrayView<const char>&, \
     const Teuchos::ArrayView<const size_t>&, \
@@ -1555,12 +1555,12 @@ unpackAndCombineIntoCrsArrays (
     const int, \
     const Teuchos::ArrayView<size_t>&, \
     const Teuchos::ArrayView<GO>&, \
-    const Teuchos::ArrayView<CrsMatrix<ST, LO, GO, NT, false>::impl_scalar_type>&, \
+    const Teuchos::ArrayView<CrsMatrix<ST, LO, GO, NT>::impl_scalar_type>&, \
     const Teuchos::ArrayView<const int>&, \
     Teuchos::Array<int>&); \
   template size_t \
   Details::unpackAndCombineWithOwningPIDsCount<ST, LO, GO, NT> ( \
-    const CrsMatrix<ST, LO, GO, NT, false> &, \
+    const CrsMatrix<ST, LO, GO, NT> &, \
     const Teuchos::ArrayView<const LO> &, \
     const Teuchos::ArrayView<const char> &, \
     const Teuchos::ArrayView<const size_t>&, \
