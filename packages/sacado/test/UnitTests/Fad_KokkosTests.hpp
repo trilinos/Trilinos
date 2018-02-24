@@ -1302,9 +1302,16 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(
 TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(
   Kokkos_View_Fad, Unmanaged, FadType, Layout, Device )
 {
+  // For LayoutContiguous or LayoutNatural, strip out the layout they are templated on
+  // LayoutStride is not used in these tests - hence we check for LayoutLeft, else it is LayoutRight
+  typedef typename std::conditional< std::is_same<Layout, Kokkos::LayoutLeft>::value,
+                                     Kokkos::LayoutLeft,
+                                     Kokkos::LayoutRight
+                                   >::type TestLayout;
+
   typedef typename FadType::value_type scalar_type;
-  typedef Kokkos::View<scalar_type***,Layout,Device> ViewType;
-  typedef Kokkos::View<FadType**,Layout,Device,Kokkos::MemoryUnmanaged> FadViewType;
+  typedef Kokkos::View<scalar_type***,TestLayout,Device> ViewType;
+  typedef Kokkos::View<FadType**,TestLayout,Device,Kokkos::MemoryUnmanaged> FadViewType;
   typedef typename ViewType::size_type size_type;
   typedef typename ViewType::HostMirror host_view_type;
   typedef typename FadViewType::HostMirror fad_host_view_type;
@@ -1317,7 +1324,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(
   ViewType v;
   host_view_type h_v;
   if (Kokkos::is_view_fad_contiguous<FadViewType>::value &&
-      std::is_same<Layout, Kokkos::LayoutLeft >::value) {
+      std::is_same<TestLayout, Kokkos::LayoutLeft >::value) {
     v = ViewType("view", fad_size+1, num_rows, num_cols);
     h_v = Kokkos::create_mirror_view(v);
     for (size_type i=0; i<num_rows; ++i) {
@@ -1363,9 +1370,16 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(
 TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(
   Kokkos_View_Fad, Unmanaged2, FadType, Layout, Device )
 {
+  // For LayoutContiguous or LayoutNatural, strip out the layout they are templated on
+  // LayoutStride is not used in these tests - hence we check for LayoutLeft, else it is LayoutRight
+  typedef typename std::conditional< std::is_same<Layout, Kokkos::LayoutLeft>::value,
+                                     Kokkos::LayoutLeft,
+                                     Kokkos::LayoutRight
+                                   >::type TestLayout;
+
   typedef typename FadType::value_type scalar_type;
-  typedef Kokkos::View<scalar_type***,Layout,Device> ViewType;
-  typedef Kokkos::View<FadType**,Layout,Device> FadViewType;
+  typedef Kokkos::View<scalar_type***,TestLayout,Device> ViewType;
+  typedef Kokkos::View<FadType**,TestLayout,Device> FadViewType;
   typedef typename ViewType::size_type size_type;
   typedef typename ViewType::HostMirror host_view_type;
   typedef typename FadViewType::HostMirror fad_host_view_type;
@@ -1378,7 +1392,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(
   ViewType v;
   host_view_type h_v;
   if (Kokkos::is_view_fad_contiguous<FadViewType>::value &&
-      std::is_same<Layout, Kokkos::LayoutLeft >::value) {
+      std::is_same<TestLayout, Kokkos::LayoutLeft >::value) {
     v = ViewType("view", fad_size+1, num_rows, num_cols);
     h_v = Kokkos::create_mirror_view(v);
     for (size_type i=0; i<num_rows; ++i) {
@@ -1424,11 +1438,18 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(
 TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(
   Kokkos_View_Fad, UnmanagedConst, FadType, Layout, Device )
 {
+  // For LayoutContiguous or LayoutNatural, strip out the layout they are templated on
+  // LayoutStride is not used in these tests - hence we check for LayoutLeft, else it is LayoutRight
+  typedef typename std::conditional< std::is_same<Layout, Kokkos::LayoutLeft>::value,
+                                     Kokkos::LayoutLeft,
+                                     Kokkos::LayoutRight
+                                   >::type TestLayout;
+
   typedef typename FadType::value_type scalar_type;
-  typedef Kokkos::View<scalar_type***,Layout,Device> ViewType;
-  typedef Kokkos::View<const scalar_type***,Layout,Device> ConstViewType;
-  typedef Kokkos::View<FadType**,Layout,Device,Kokkos::MemoryUnmanaged> FadViewType;
-  typedef Kokkos::View<const FadType**,Layout,Device,Kokkos::MemoryUnmanaged> ConstFadViewType;
+  typedef Kokkos::View<scalar_type***,TestLayout,Device> ViewType;
+  typedef Kokkos::View<const scalar_type***,TestLayout,Device> ConstViewType;
+  typedef Kokkos::View<FadType**,TestLayout,Device,Kokkos::MemoryUnmanaged> FadViewType;
+  typedef Kokkos::View<const FadType**,TestLayout,Device,Kokkos::MemoryUnmanaged> ConstFadViewType;
   typedef typename ViewType::size_type size_type;
   typedef typename ViewType::HostMirror host_view_type;
   typedef typename FadViewType::HostMirror fad_host_view_type;
@@ -1441,7 +1462,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(
   ViewType v;
   host_view_type h_v;
   if (Kokkos::is_view_fad_contiguous<FadViewType>::value &&
-      std::is_same<Layout, Kokkos::LayoutLeft >::value) {
+      std::is_same<TestLayout, Kokkos::LayoutLeft >::value) {
     v = ViewType("view", fad_size+1, num_rows, num_cols);
     h_v = Kokkos::create_mirror_view(v);
     for (size_type i=0; i<num_rows; ++i) {
@@ -1489,11 +1510,17 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(
 TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(
   Kokkos_View_Fad, UnmanagedConst2, FadType, Layout, Device )
 {
+  // For LayoutContiguous or LayoutNatural, strip out the layout they are templated on
+  // LayoutStride is not used in these tests - hence we check for LayoutLeft, else it is LayoutRight
+  typedef typename std::conditional< std::is_same<Layout, Kokkos::LayoutLeft>::value,
+                                     Kokkos::LayoutLeft,
+                                     Kokkos::LayoutRight
+                                   >::type TestLayout;
   typedef typename FadType::value_type scalar_type;
-  typedef Kokkos::View<scalar_type***,Layout,Device> ViewType;
-  typedef Kokkos::View<const scalar_type***,Layout,Device> ConstViewType;
-  typedef Kokkos::View<FadType**,Layout,Device> FadViewType;
-  typedef Kokkos::View<const FadType**,Layout,Device> ConstFadViewType;
+  typedef Kokkos::View<scalar_type***,TestLayout,Device> ViewType;
+  typedef Kokkos::View<const scalar_type***,TestLayout,Device> ConstViewType;
+  typedef Kokkos::View<FadType**,TestLayout,Device> FadViewType;
+  typedef Kokkos::View<const FadType**,TestLayout,Device> ConstFadViewType;
   typedef typename ViewType::size_type size_type;
   typedef typename ViewType::HostMirror host_view_type;
   typedef typename FadViewType::HostMirror fad_host_view_type;
@@ -1506,7 +1533,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(
   ViewType v;
   host_view_type h_v;
   if (Kokkos::is_view_fad_contiguous<FadViewType>::value &&
-      std::is_same<Layout, Kokkos::LayoutLeft >::value) {
+      std::is_same<TestLayout, Kokkos::LayoutLeft >::value) {
     v = ViewType("view", fad_size+1, num_rows, num_cols);
     h_v = Kokkos::create_mirror_view(v);
     for (size_type i=0; i<num_rows; ++i) {
