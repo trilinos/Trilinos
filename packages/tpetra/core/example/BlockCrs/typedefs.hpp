@@ -48,6 +48,7 @@
 #include <Tpetra_Import.hpp>
 #include <Tpetra_Export.hpp>
 #include <Tpetra_CrsGraph.hpp>
+#include <Tpetra_CrsMatrix.hpp>
 #include <Tpetra_BlockCrsMatrix.hpp>
 #include <Tpetra_BlockMultiVector.hpp>
 
@@ -65,12 +66,11 @@ namespace BlockCrsTest {
   typedef Tpetra::Export<> tpetra_export_type;
   typedef Tpetra::MultiVector<value_type> tpetra_multivector_type;
   typedef Tpetra::MultiVector<magnitude_type> tpetra_multivector_magnitude_type;
-  typedef Tpetra::Vector<value_type> tpetra_vector_type;
-  typedef Tpetra::Vector<magnitude_type> tpetra_vector_magnitude_type;
 
   typedef Tpetra::CrsGraph<> tpetra_crs_graph_type;
+  typedef Tpetra::CrsMatrix<value_type> tpetra_crs_matrix_type;
   typedef Tpetra::RowMatrix<value_type> tpetra_rowmatrix_type;
-  typedef Tpetra::BlockCrsMatrix<value_type> tpetra_blockcrs_type;
+  typedef Tpetra::BlockCrsMatrix<value_type> tpetra_blockcrs_matrix_type;
 
   typedef Kokkos::DefaultExecutionSpace exec_space;
   typedef Kokkos::DefaultHostExecutionSpace host_space;
