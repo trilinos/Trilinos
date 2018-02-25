@@ -505,7 +505,7 @@ int main (int argc, char *argv[])
     {
       // no function to export block crs 
       RCP<TimeMonitor> timerMatrixMarket 
-        = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Export MatrixMarket ")));
+        = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("8) Export MatrixMarket ")));
       std::ofstream ofs("BlockCrsTestMatrix.out", std::ofstream::out);
       Tpetra::MatrixMarket::Writer<tpetra_crs_matrix_type>::writeSparse(ofs, A_crs);
       ofs.close();
