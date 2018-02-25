@@ -164,6 +164,13 @@ void StepperExplicitRK<Scalar>::initialize()
     stageXDot_[i] = Thyra::createMember(appModel_->get_f_space());
     assign(stageXDot_[i].ptr(), Teuchos::ScalarTraits<Scalar>::zero());
   }
+
+  if (ERK_ButcherTableau_->isEmbedded() and stepperPL_->get<bool>("Use Embedded")){
+     ee_ = Thyra::createMember(appModel_->get_f_space());
+     abs_u0 = Thyra::createMember(appModel_->get_f_space());
+     abs_u = Thyra::createMember(appModel_->get_f_space());
+     sc = Thyra::createMember(appModel_->get_f_space());
+  }
 }
 
 template<class Scalar>
@@ -218,12 +225,49 @@ void StepperExplicitRK<Scalar>::takeStep(
       }
     }
 
-    if (ERK_ButcherTableau_->isEmbedded() ) {
-      TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
-        "Error - Explicit RK embedded methods not implemented yet!.\n");
+
+    // At this point, the stepper has passed.
+    // but when using adaptive time stepping, the embedded method can change the step status
+    workingState->getStepperState()->stepperStatus_ = Status::PASSED;
+
+    if (ERK_ButcherTableau_->isEmbedded() and stepperPL_->get<bool>("Use Embedded")){
+
+       RCP<SolutionStateMetaData<Scalar> > metaData = workingState->getMetaData();
+       const Scalar tolAbs = metaData->getTolRel();
+       const Scalar tolRel = metaData->getTolAbs();
+
+       // just compute the error weight vector
+       // (all that is needed is the error, and not the embedded solution)
+       Teuchos::SerialDenseVector<int,Scalar> errWght = b ;
+       errWght -= ERK_ButcherTableau_->bstar();
+
+       //compute local truncation error estimate: | u^{n+1} - \hat{u}^{n+1} |
+       // Sum for solution: ee_n = Sum{ (b(i) - bstar(i)) * dt*f(i) }
+       assign(ee_.ptr(), Teuchos::ScalarTraits<Scalar>::zero());
+       for (int i=0; i < numStages; ++i) {
+          if (errWght(i) != Teuchos::ScalarTraits<Scalar>::zero()) {
+             Thyra::Vp_StV(ee_.ptr(), dt*errWght(i), *(stageXDot_[i]));
+          }
+       }
+
+       // compute: Atol + max(|u^n|, |u^{n+1}| ) * Rtol
+       Thyra::abs( *(currentState->getX()), abs_u0.ptr());
+       Thyra::abs( *(workingState->getX()), abs_u.ptr());
+       Thyra::pair_wise_max_update(tolRel, *abs_u0, abs_u.ptr());
+       Thyra::add_scalar(tolAbs, abs_u.ptr());
+
+       //compute: || ee / sc ||
+       assign(sc.ptr(), Teuchos::ScalarTraits<Scalar>::zero());
+       Thyra::ele_wise_divide(Teuchos::as<Scalar>(1.0), *ee_, *abs_u, sc.ptr());
+       Scalar err = Thyra::norm_inf(*sc);
+       metaData->setErrorRel(err);
+
+       // test if step should be rejected
+       if (err > 1.0){
+          workingState->getStepperState()->stepperStatus_ = Status::FAILED;
+       }
     }
 
-    workingState->getStepperState()->stepperStatus_ = Status::PASSED;
     workingState->setOrder(this->getOrder());
     stepperExplicitRKObserver_->observeEndTakeStep(solutionHistory, *this);
   }
@@ -275,7 +319,7 @@ void StepperExplicitRK<Scalar>::setParameterList(
     stepperPL_ = pList;
   }
   // Can not validate because of optional Parameters.
-  //stepperPL_->validateParametersAndSetDefaults(*this->getValidParameters());
+  stepperPL_->validateParametersAndSetDefaults(*this->getValidParameters(),0);
 }
 
 
@@ -298,7 +342,13 @@ StepperExplicitRK<Scalar>::getValidParameters() const
   //            << "  RK Explicit 2 Stage 2nd order by Runge\n"
   //            << "  RK Explicit Trapezoidal\n";
 
-  return ERK_ButcherTableau_->getValidParameters();
+  Teuchos::RCP<Teuchos::ParameterList> pl = Teuchos::parameterList();
+  pl->set<bool>("Use Embedded", false,
+    "'Whether to use Embedded Stepper (if available) or not\n"
+    "  'true' - Stepper will compute embedded solution and is adaptive.\n"
+    "  'false' - Stepper is not embedded(adaptive).\n");
+  pl->setParameters(*(ERK_ButcherTableau_->getValidParameters()));
+  return pl;
 }
 
 
@@ -307,7 +357,11 @@ Teuchos::RCP<Teuchos::ParameterList>
 StepperExplicitRK<Scalar>::getDefaultParameters() const
 {
   Teuchos::RCP<Teuchos::ParameterList> pl = Teuchos::parameterList();
-  *pl = *(ERK_ButcherTableau_->getValidParameters());
+  pl->set<bool>("Use Embedded", false,
+    "'Whether to use Embedded Stepper (if available) or not\n"
+    "  'true' - Stepper will compute embedded solution and is adaptive.\n"
+    "  'false' - Stepper is not embedded(adaptive).\n");
+  pl->setParameters(*(ERK_ButcherTableau_->getValidParameters()));
   return pl;
 }
 

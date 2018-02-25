@@ -49,6 +49,7 @@
 
 #include "MueLu_StructuredAggregationFactory.hpp"
 #include "MueLu_AmalgamationFactory.hpp"
+#include "MueLu_CoalesceDropFactory.hpp"
 #include "MueLu_TentativePFactory.hpp"
 #include "MueLu_TrilinosSmoother.hpp"
 #include "MueLu_Utilities.hpp"
@@ -195,7 +196,10 @@ namespace MueLuTests {
     fineLevel.Set("Nullspace",nullSpace);
 
     RCP<AmalgamationFactory> amalgFact = rcp(new AmalgamationFactory());
+    RCP<CoalesceDropFactory> dropFact = rcp(new CoalesceDropFactory());
+    dropFact->SetFactory("UnAmalgamationInfo", amalgFact);
     RCP<StructuredAggregationFactory> StructuredAggFact = rcp(new StructuredAggregationFactory());
+    StructuredAggFact->SetFactory("Graph", dropFact);
     StructuredAggFact->SetParameter("aggregation: mesh layout",
                                     Teuchos::ParameterEntry(meshLayout));
     StructuredAggFact->SetParameter("aggregation: number of spatial dimensions",
@@ -230,10 +234,8 @@ namespace MueLuTests {
     Teuchos::RCP<Xpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > diagVec = Xpetra::VectorFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Build(PtentTPtent->getRowMap());
     PtentTPtent->getLocalDiagCopy(*diagVec);
     if (TST::name().find("complex") == std::string::npos) //skip check for Scalar=complex
-      TEST_EQUALITY(diagVec->norm1(), diagVec->getGlobalLength());
-    TEST_EQUALITY(diagVec->normInf()-1 < 1e-12, true);
-    if (TST::name().find("complex") == std::string::npos) //skip check for Scalar=complex
-      TEST_EQUALITY(diagVec->meanValue(), 1.0);
+      TEST_FLOATING_EQUALITY(diagVec->norm1(), Teuchos::as<double>(diagVec->getGlobalLength()), 1e-12);
+    TEST_FLOATING_EQUALITY(diagVec->normInf(), 1.0,  1e-12);
     TEST_EQUALITY(PtentTPtent->getGlobalNumEntries(), diagVec->getGlobalLength());
 
   } // GlobalLexiTentative1D
@@ -294,7 +296,10 @@ namespace MueLuTests {
     fineLevel.Set("Nullspace",nullSpace);
 
     RCP<AmalgamationFactory> amalgFact = rcp(new AmalgamationFactory());
+    RCP<CoalesceDropFactory> dropFact = rcp(new CoalesceDropFactory());
+    dropFact->SetFactory("UnAmalgamationInfo", amalgFact);
     RCP<StructuredAggregationFactory> StructuredAggFact = rcp(new StructuredAggregationFactory());
+    StructuredAggFact->SetFactory("Graph", dropFact);
     StructuredAggFact->SetParameter("aggregation: mesh layout",
                                     Teuchos::ParameterEntry(meshLayout));
     StructuredAggFact->SetParameter("aggregation: number of spatial dimensions",
@@ -329,10 +334,8 @@ namespace MueLuTests {
     Teuchos::RCP<Xpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > diagVec = Xpetra::VectorFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Build(PtentTPtent->getRowMap());
     PtentTPtent->getLocalDiagCopy(*diagVec);
     if (TST::name().find("complex") == std::string::npos) //skip check for Scalar=complex
-      TEST_EQUALITY(diagVec->norm1(), diagVec->getGlobalLength());
-    TEST_EQUALITY(diagVec->normInf()-1 < 1e-12, true);
-    if (TST::name().find("complex") == std::string::npos) //skip check for Scalar=complex
-      TEST_EQUALITY(diagVec->meanValue(), 1.0);
+      TEST_FLOATING_EQUALITY(diagVec->norm1(), Teuchos::as<double>(diagVec->getGlobalLength()), 1e-12);
+    TEST_FLOATING_EQUALITY(diagVec->normInf(), 1.0,  1e-12);
     TEST_EQUALITY(PtentTPtent->getGlobalNumEntries(), diagVec->getGlobalLength());
 
   } // GlobalLexiTentative2D
@@ -393,7 +396,10 @@ namespace MueLuTests {
     fineLevel.Set("Nullspace",nullSpace);
 
     RCP<AmalgamationFactory> amalgFact = rcp(new AmalgamationFactory());
+    RCP<CoalesceDropFactory> dropFact = rcp(new CoalesceDropFactory());
+    dropFact->SetFactory("UnAmalgamationInfo", amalgFact);
     RCP<StructuredAggregationFactory> StructuredAggFact = rcp(new StructuredAggregationFactory());
+    StructuredAggFact->SetFactory("Graph", dropFact);
     StructuredAggFact->SetParameter("aggregation: mesh layout",
                                     Teuchos::ParameterEntry(meshLayout));
     StructuredAggFact->SetParameter("aggregation: number of spatial dimensions",
@@ -428,10 +434,8 @@ namespace MueLuTests {
     Teuchos::RCP<Xpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > diagVec = Xpetra::VectorFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Build(PtentTPtent->getRowMap());
     PtentTPtent->getLocalDiagCopy(*diagVec);
     if (TST::name().find("complex") == std::string::npos) //skip check for Scalar=complex
-      TEST_EQUALITY(diagVec->norm1(), diagVec->getGlobalLength());
-    TEST_EQUALITY(diagVec->normInf()-1 < 1e-12, true);
-    if (TST::name().find("complex") == std::string::npos) //skip check for Scalar=complex
-      TEST_EQUALITY(diagVec->meanValue(), 1.0);
+      TEST_FLOATING_EQUALITY(diagVec->norm1(), Teuchos::as<double>(diagVec->getGlobalLength()), 1e-12);
+    TEST_FLOATING_EQUALITY(diagVec->normInf(), 1.0,  1e-12);
     TEST_EQUALITY(PtentTPtent->getGlobalNumEntries(), diagVec->getGlobalLength());
 
   } // GlobalLexiTentative3D
@@ -494,7 +498,10 @@ namespace MueLuTests {
     fineLevel.Set("Nullspace",nullSpace);
 
     RCP<AmalgamationFactory> amalgFact = rcp(new AmalgamationFactory());
+    RCP<CoalesceDropFactory> dropFact = rcp(new CoalesceDropFactory());
+    dropFact->SetFactory("UnAmalgamationInfo", amalgFact);
     RCP<StructuredAggregationFactory> StructuredAggFact = rcp(new StructuredAggregationFactory());
+    StructuredAggFact->SetFactory("Graph", dropFact);
     StructuredAggFact->SetParameter("aggregation: mesh layout",
                                     Teuchos::ParameterEntry(meshLayout));
     StructuredAggFact->SetParameter("aggregation: number of spatial dimensions",
@@ -529,10 +536,8 @@ namespace MueLuTests {
     Teuchos::RCP<Xpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > diagVec = Xpetra::VectorFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Build(PtentTPtent->getRowMap());
     PtentTPtent->getLocalDiagCopy(*diagVec);
     if (TST::name().find("complex") == std::string::npos) //skip check for Scalar=complex
-      TEST_EQUALITY(diagVec->norm1(), diagVec->getGlobalLength());
-    TEST_EQUALITY(diagVec->normInf()-1 < 1e-12, true);
-    if (TST::name().find("complex") == std::string::npos) //skip check for Scalar=complex
-      TEST_EQUALITY(diagVec->meanValue(), 1.0);
+      TEST_FLOATING_EQUALITY(diagVec->norm1(), Teuchos::as<double>(diagVec->getGlobalLength()), 1e-12);
+    TEST_FLOATING_EQUALITY(diagVec->normInf(), 1.0,  1e-12);
     TEST_EQUALITY(PtentTPtent->getGlobalNumEntries(), diagVec->getGlobalLength());
 
   } // LocalLexiTentative1D
@@ -595,7 +600,10 @@ namespace MueLuTests {
     fineLevel.Set("Nullspace",nullSpace);
 
     RCP<AmalgamationFactory> amalgFact = rcp(new AmalgamationFactory());
+    RCP<CoalesceDropFactory> dropFact = rcp(new CoalesceDropFactory());
+    dropFact->SetFactory("UnAmalgamationInfo", amalgFact);
     RCP<StructuredAggregationFactory> StructuredAggFact = rcp(new StructuredAggregationFactory());
+    StructuredAggFact->SetFactory("Graph", dropFact);
     StructuredAggFact->SetParameter("aggregation: mesh layout",
                                     Teuchos::ParameterEntry(meshLayout));
     StructuredAggFact->SetParameter("aggregation: number of spatial dimensions",
@@ -630,10 +638,8 @@ namespace MueLuTests {
     Teuchos::RCP<Xpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > diagVec = Xpetra::VectorFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Build(PtentTPtent->getRowMap());
     PtentTPtent->getLocalDiagCopy(*diagVec);
     if (TST::name().find("complex") == std::string::npos) //skip check for Scalar=complex
-      TEST_EQUALITY(diagVec->norm1(), diagVec->getGlobalLength());
-    TEST_EQUALITY(diagVec->normInf()-1 < 1e-12, true);
-    if (TST::name().find("complex") == std::string::npos) //skip check for Scalar=complex
-      TEST_EQUALITY(diagVec->meanValue(), 1.0);
+      TEST_FLOATING_EQUALITY(diagVec->norm1(), Teuchos::as<double>(diagVec->getGlobalLength()), 1e-12);
+    TEST_FLOATING_EQUALITY(diagVec->normInf(), 1.0,  1e-12);
     TEST_EQUALITY(PtentTPtent->getGlobalNumEntries(), diagVec->getGlobalLength());
 
   } // LocalLexiTentative2D
@@ -695,8 +701,12 @@ namespace MueLuTests {
     nullSpace->putScalar(1.0);
     fineLevel.Set("Nullspace",nullSpace);
 
+
     RCP<AmalgamationFactory> amalgFact = rcp(new AmalgamationFactory());
+    RCP<CoalesceDropFactory> dropFact = rcp(new CoalesceDropFactory());
+    dropFact->SetFactory("UnAmalgamationInfo", amalgFact);
     RCP<StructuredAggregationFactory> StructuredAggFact = rcp(new StructuredAggregationFactory());
+    StructuredAggFact->SetFactory("Graph", dropFact);
     StructuredAggFact->SetParameter("aggregation: mesh layout",
                                     Teuchos::ParameterEntry(meshLayout));
     StructuredAggFact->SetParameter("aggregation: number of spatial dimensions",
@@ -731,10 +741,8 @@ namespace MueLuTests {
     Teuchos::RCP<Xpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > diagVec = Xpetra::VectorFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Build(PtentTPtent->getRowMap());
     PtentTPtent->getLocalDiagCopy(*diagVec);
     if (TST::name().find("complex") == std::string::npos) //skip check for Scalar=complex
-      TEST_EQUALITY(diagVec->norm1(), diagVec->getGlobalLength());
-    TEST_EQUALITY(diagVec->normInf()-1 < 1e-12, true);
-    if (TST::name().find("complex") == std::string::npos) //skip check for Scalar=complex
-      TEST_EQUALITY(diagVec->meanValue(), 1.0);
+      TEST_FLOATING_EQUALITY(diagVec->norm1(), Teuchos::as<double>(diagVec->getGlobalLength()), 1e-12);
+    TEST_FLOATING_EQUALITY(diagVec->normInf(), 1.0,  1e-12);
     TEST_EQUALITY(PtentTPtent->getGlobalNumEntries(), diagVec->getGlobalLength());
 
   } // LocalLexiTentative3D

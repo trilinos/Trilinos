@@ -57,70 +57,70 @@
 
 namespace Tpetra {
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
-  Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>::
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   Vector (const Teuchos::RCP<const map_type>& map,
           const bool zeroOut)
     : base_type (map, 1, zeroOut)
   {}
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
-  Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>::
-  Vector (const Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>& source)
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
+  Vector (const Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& source)
     : base_type (source)
   {}
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
-  Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>::
-  Vector (const Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>& source,
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
+  Vector (const Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& source,
           const Teuchos::DataAccess copyOrView)
     : base_type (source, copyOrView)
   {}
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
-  Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>::
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   Vector (const Teuchos::RCP<const map_type>& map,
           const Teuchos::ArrayView<const Scalar>& values)
     : base_type (map, values, values.size (), 1)
   {}
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
-  Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>::
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   Vector (const Teuchos::RCP<const map_type>& map,
           const dual_view_type& view)
     : base_type (map, view)
   {}
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
-  Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>::
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   Vector (const Teuchos::RCP<const map_type>& map,
           const dual_view_type& view,
           const dual_view_type& origView)
     : base_type (map, view, origView)
   {}
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
-  Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>::
-  Vector (const MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>& X,
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
+  Vector (const MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& X,
           const size_t j)
     : base_type (X, j)
   {}
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
-  Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>::
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   ~Vector ()
   {}
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void
-  Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>::
+  Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   replaceGlobalValue (const GlobalOrdinal globalRow, const Scalar& value) const {
     this->base_type::replaceGlobalValue (globalRow, 0, value);
   }
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void
-  Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>::
+  Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   sumIntoGlobalValue (const GlobalOrdinal globalRow,
                       const Scalar& value,
                       const bool atomic) const
@@ -128,16 +128,16 @@ namespace Tpetra {
     this->base_type::sumIntoGlobalValue (globalRow, 0, value, atomic);
   }
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void
-  Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>::
+  Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   replaceLocalValue (const LocalOrdinal myRow, const Scalar& value) const {
     this->base_type::replaceLocalValue (myRow, 0, value);
   }
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void
-  Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>::
+  Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   sumIntoLocalValue (const LocalOrdinal globalRow,
                      const Scalar& value,
                      const bool atomic) const
@@ -145,27 +145,27 @@ namespace Tpetra {
     this->base_type::sumIntoLocalValue (globalRow, 0, value, atomic);
   }
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void
-  Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>::
+  Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   get1dCopy (const Teuchos::ArrayView<Scalar>& A) const {
     const size_t lda = this->getLocalLength ();
     this->get1dCopy (A, lda);
   }
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
-  typename Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>::dot_type
-  Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>::
-  dot (const Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>& y) const
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  typename Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::dot_type
+  Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
+  dot (const Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& y) const
   {
     dot_type result;
     this->dot (y, Teuchos::arrayView (&result, 1));
     return result;
   }
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   Scalar
-  Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>::
+  Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   meanValue () const
   {
     Scalar mean;
@@ -173,9 +173,9 @@ namespace Tpetra {
     return mean;
   }
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
-  typename Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>::mag_type
-  Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>::
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  typename Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::mag_type
+  Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   norm1 () const
   {
     mag_type norm;
@@ -183,9 +183,9 @@ namespace Tpetra {
     return norm;
   }
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
-  typename Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>::mag_type
-  Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>::
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  typename Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::mag_type
+  Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   norm2 () const
   {
     mag_type norm;
@@ -193,9 +193,9 @@ namespace Tpetra {
     return norm;
   }
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
-  typename Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>::mag_type
-  Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>::
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  typename Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::mag_type
+  Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   normInf () const
   {
     mag_type norm;
@@ -203,11 +203,11 @@ namespace Tpetra {
     return norm;
   }
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
-  typename Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>::mag_type
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  typename Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::mag_type
   TPETRA_DEPRECATED
-  Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>::
-  normWeighted (const Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>& weights) const
+  Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
+  normWeighted (const Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& weights) const
   {
     using Kokkos::ALL;
     using Kokkos::subview;
@@ -261,28 +261,28 @@ namespace Tpetra {
     return gblNrm;
   }
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
-  std::string Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>::
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  std::string Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   description () const
   {
     return this->descriptionImpl ("Tpetra::Vector");
   }
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
-  void Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>::
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  void Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   describe (Teuchos::FancyOStream& out,
             const Teuchos::EVerbosityLevel verbLevel) const
   {
     this->describeImpl (out, "Tpetra::Vector", verbLevel);
   }
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
-  Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>
-  createCopy (const Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>& src)
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>
+  createCopy (const Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& src)
   {
     // The 2-argument copy constructor with second argument =
     // Teuchos::Copy does a deep copy of its input.
-    Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic> dst (src, Teuchos::Copy);
+    Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node> dst (src, Teuchos::Copy);
 
     // The Kokkos refactor version of Vector has view semantics, so
     // returning the Vector directly, rather than through RCP, only
@@ -290,16 +290,16 @@ namespace Tpetra {
     return dst;
   }
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
-  Teuchos::RCP<const Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic> >
-  Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>::
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  Teuchos::RCP<const Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node> >
+  Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   offsetView (const Teuchos::RCP<const map_type>& subMap,
               const size_t offset) const
   {
     using Kokkos::ALL;
     using Kokkos::subview;
     using Teuchos::rcp;
-    typedef Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic> V;
+    typedef Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node> V;
 
     const size_t newNumRows = subMap->getNodeNumElements ();
     const bool tooManyElts = newNumRows + offset > this->getOrigNumLocalRows ();
@@ -320,13 +320,13 @@ namespace Tpetra {
                        this->origView_));
   }
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
-  Teuchos::RCP<Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic> >
-  Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>::
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  Teuchos::RCP<Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node> >
+  Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   offsetViewNonConst (const Teuchos::RCP<const map_type>& subMap,
                       const size_t offset)
   {
-    typedef Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic> V;
+    typedef Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node> V;
     return Teuchos::rcp_const_cast<V> (this->offsetView (subMap, offset));
   }
 

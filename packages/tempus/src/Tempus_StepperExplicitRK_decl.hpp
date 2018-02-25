@@ -162,7 +162,11 @@ protected:
 
   Teuchos::RCP<StepperExplicitRKObserver<Scalar> >  stepperExplicitRKObserver_;
 
+  // For Embedded RK
   Teuchos::RCP<Thyra::VectorBase<Scalar> >               ee_;
+  Teuchos::RCP<Thyra::VectorBase<Scalar> >               abs_u0;
+  Teuchos::RCP<Thyra::VectorBase<Scalar> >               abs_u;
+  Teuchos::RCP<Thyra::VectorBase<Scalar> >               sc;
 };
 
 } // namespace Tempus
