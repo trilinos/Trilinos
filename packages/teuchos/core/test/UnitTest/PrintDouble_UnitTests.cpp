@@ -105,6 +105,10 @@ TEUCHOS_UNIT_TEST( PrintDouble, Basic )
   test_print_double(form_double(0, 0, 0), "4503599627370496.", success, out);
   test_print_double(form_double(0, 4503599627370503, -30), "4194304.0000000065", success, out);
   test_print_double(form_double(0, 4503599627370518, -30), "4194304.0000000205", success, out);
+  // tests from Steele and White's paper
+  test_print_double("1.3", success, out);
+  test_print_double(4.0/3.0, "1.3333333333333333", success, out);
+  test_print_double(1.0/10.0, ".1", success, out);
 }
 
 } // namespace
