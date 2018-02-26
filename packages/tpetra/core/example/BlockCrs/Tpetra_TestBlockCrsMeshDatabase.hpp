@@ -39,17 +39,104 @@
 // ************************************************************************
 // @HEADER
 
-#ifndef __MESHDATABASE_HPP__
-#define __MESHDATABASE_HPP__
+
+#ifndef __TPETRA_TEST_BLOCKCRS_MESHDATABASE_HPP__
+#define __TPETRA_TEST_BLOCKCRS_MESHDATABASE_HPP__
 
 #include <iostream>
 #include <sstream>
 
-#include "typedefs.hpp"
-#include "Teuchos_Comm.hpp"
+#include <Teuchos_Comm.hpp>
+#include <Tpetra_DefaultPlatform.hpp>
+#include <Tpetra_Map.hpp>
+#include <Tpetra_Import.hpp>
+#include <Tpetra_Export.hpp>
+#include <Tpetra_CrsGraph.hpp>
+#include <Tpetra_CrsMatrix.hpp>
+#include <Tpetra_BlockCrsMatrix.hpp>
+#include <Tpetra_BlockMultiVector.hpp>
 
 namespace BlockCrsTest {
+  // typedefs
+  typedef double value_type;
+  typedef double magnitude_type;
+  
+  typedef Tpetra::Map<> map_type;
+  typedef typename map_type::local_ordinal_type local_ordinal_type;
+  typedef typename map_type::global_ordinal_type global_ordinal_type;
+  typedef typename map_type::node_type node_type;
+  
+  typedef Tpetra::Import<> tpetra_import_type;
+  typedef Tpetra::Export<> tpetra_export_type;
+  typedef Tpetra::MultiVector<value_type> tpetra_multivector_type;
+  typedef Tpetra::MultiVector<magnitude_type> tpetra_multivector_magnitude_type;
 
+  typedef Tpetra::CrsGraph<> tpetra_crs_graph_type;
+  typedef Tpetra::CrsMatrix<value_type> tpetra_crs_matrix_type;
+  typedef Tpetra::RowMatrix<value_type> tpetra_rowmatrix_type;
+  typedef Tpetra::BlockCrsMatrix<value_type> tpetra_blockcrs_matrix_type;
+
+  typedef Kokkos::DefaultExecutionSpace exec_space;
+  typedef Kokkos::DefaultHostExecutionSpace host_space;
+
+  typedef Kokkos::pair<local_ordinal_type,local_ordinal_type> local_ordinal_range_type;
+  typedef Kokkos::pair<global_ordinal_type,global_ordinal_type> global_ordinal_range_type;
+
+  typedef local_ordinal_type LO;
+  typedef global_ordinal_type GO;
+
+  // utils
+  template<typename T1, typename T2, typename CompareType>
+  KOKKOS_INLINE_FUNCTION
+  static T1* lower_bound(T1* first, T1* last, const T2& val,
+                         CompareType compare) {
+    T1 *it;
+    local_ordinal_type step = 0, count = last - first;
+    while (count > 0) {
+      it = first; step = count/2; it += step;
+      if (compare(*it,val)) {
+        first = ++it;
+        count -= step + 1;
+      } else {
+        count = step;
+      }
+    }
+    return first;
+  }
+  
+  template<typename T1, typename T2>
+  KOKKOS_FORCEINLINE_FUNCTION
+  static T1* lower_bound(T1* first, T1* last, const T2& val) {
+    return lower_bound(first, last, val, [](T1 left, T2 right) { return left < right; });
+  }
+
+  template<typename T1, typename T2>
+  KOKKOS_INLINE_FUNCTION
+  static void heapify(T1 *v, T2 n, T2 i) {
+    T2 largest = i;
+    T2 l = 2*i + 1;
+    T2 r = 2*i + 2;
+
+    if (l < n && v[l] > v[largest]) largest = l;
+    if (r < n && v[r] > v[largest]) largest = r;
+    if (largest != i) {
+      // swap
+      T1 tmp = v[i]; v[i] = v[largest]; v[largest] = tmp;
+      heapify(v, n, largest);
+    }
+  }
+
+  template<typename T1, typename T2>
+  KOKKOS_INLINE_FUNCTION
+  static void heap_sort(T1 *v, T2 n) { 
+    for (T2 i=n/2-1;i>=0;--i) heapify(v, n, i);
+    for (T2 i=n-1;i>=0;--i) {
+      T1 tmp = v[0]; v[0] = v[i]; v[i] = tmp;
+      heapify(v, i, 0);
+    }
+  }
+
+  // mesh database
   template<typename T> 
   KOKKOS_INLINE_FUNCTION
   static T

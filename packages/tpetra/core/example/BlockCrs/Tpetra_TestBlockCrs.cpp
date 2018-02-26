@@ -52,9 +52,7 @@
 #include <Teuchos_GlobalMPISession.hpp>
 #include <Teuchos_FancyOStream.hpp>
 
-#include "typedefs.hpp"
-#include "utils.hpp"
-#include "MeshDatabase.hpp"
+#include "Tpetra_TestBlockCrsMeshDatabase.hpp"
 
 //#define PRINT_VERBOSE 1
 
