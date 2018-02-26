@@ -38,13 +38,6 @@
 //
 // ************************************************************************
 // @HEADER
-#include <cmath>
-#include <iostream>
-#include <iomanip>
-#include <sstream>
-
-#include <Tpetra_DefaultPlatform.hpp>
-#include <Tpetra_Version.hpp>
 
 #include <MatrixMarket_Tpetra.hpp>
 
@@ -64,11 +57,10 @@ int main (int argc, char *argv[])
   using Teuchos::TimeMonitor;
 
   const auto INVALID_GLOBAL_ORDINAL = Teuchos::OrdinalTraits<global_ordinal_type>::invalid();
-
   auto out = Teuchos::getFancyOStream (Teuchos::rcpFromRef (std::cout));
   
   // MPI boilerplate
-  Teuchos::GlobalMPISession mpiSession (&argc, &argv, NULL);
+  Tpetra::initialize(&argc, &argv);
   RCP<const Teuchos::Comm<int> > comm = Tpetra::DefaultPlatform::getDefaultPlatform ().getComm();
 
   // Command-line input
@@ -93,12 +85,17 @@ int main (int argc, char *argv[])
     if (r_parse == Teuchos::CommandLineProcessor::PARSE_HELP_PRINTED) return 0;
     if (r_parse != Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL  ) return -1;
 
-    TEUCHOS_ASSERT(num_procs_i*num_procs_j*num_procs_k == comm->getSize());
+    if (num_procs_i*num_procs_j*num_procs_k != comm->getSize()) {
+      Tpetra::finalize();
+      if (comm->getRank() == 0) {
+        std::cout << "Invalid processor grid ["<<num_procs_i<<"x"<<num_procs_j<<"x"<<num_procs_k<<"]"
+                  << " does not match to the mpi rank size ("<<comm->getSize()<<")" << std::endl;
+        std::cout << "End Result: TEST PASSED" << std::endl;
+      }
+      return -1;
+    }
   }
   
-  // Initialize Kokkos
-  Kokkos::initialize();
-
   if (comm->getRank() == 0) {
     if (std::is_same<exec_space,Kokkos::Serial>::value)
       std::cout << "Kokkos::Serial " << std::endl;
@@ -126,13 +123,13 @@ int main (int argc, char *argv[])
 #endif
   
   {
-    RCP<TimeMonitor> timerGlobal = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("X) Global")));
+    TimeMonitor timerGlobal(*TimeMonitor::getNewTimer("X) Global"));
     
     // Build Tpetra Maps
     // -----------------
     
-    const global_ordinal_type TpetraComputeGlobalNumElements 
-      = Teuchos::OrdinalTraits<global_ordinal_type>::invalid();  
+    const Tpetra::global_size_t TpetraComputeGlobalNumElements 
+      = Teuchos::OrdinalTraits<Tpetra::global_size_t>::invalid();  
     
     // - all internal views are allocated on device; mirror as mesh database is constructed on host  
     const auto mesh_gids_host = mesh.getElementGlobalIDs();
@@ -161,8 +158,7 @@ int main (int argc, char *argv[])
     rowptr_view_type rowptr;
     colidx_view_type colidx;
     {
-      RCP<TimeMonitor> timerLocalGraphConstruction 
-        = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("0) LocalGraphConstruction")));
+      TimeMonitor timerLocalGraphConstruction(*TimeMonitor::getNewTimer("0) LocalGraphConstruction"));
       
       rowptr = rowptr_view_type("rowptr", num_owned_elements + 1);
 
@@ -306,8 +302,7 @@ int main (int argc, char *argv[])
     // Call fillComplete on the bcrs_graph to finalize it
     RCP<tpetra_crs_graph_type> bcrs_graph;
     { 
-      RCP<TimeMonitor> timerGlobalGraphConstruction
-        = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("1) GlobalGraphConstruction")));
+      TimeMonitor timerGlobalGraphConstruction(*TimeMonitor::getNewTimer("1) GlobalGraphConstruction"));
       bcrs_graph = rcp(new tpetra_crs_graph_type(row_map, col_map, local_graph_type(colidx, rowptr),
                                                 Teuchos::null));
     } // end global graph timer
@@ -322,9 +317,8 @@ int main (int argc, char *argv[])
     typedef tpetra_blockcrs_matrix_type::little_block_type block_type;
     Kokkos::View<block_type*,exec_space> blocks;
     {
-      RCP<TimeMonitor> timerLocalBlockCrsFill
-        = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("2) LocalBlockCrsFill")));
-
+      TimeMonitor timerLocalBlockCrsFill(*TimeMonitor::getNewTimer("2) LocalBlockCrsFill"));
+      
       // Tpetra BlockCrsMatrix only has high level access functions
       // To fill this on device, we need an access to the meta data of blocks
       const auto rowptr_host = Kokkos::create_mirror_view(rowptr);      
@@ -367,9 +361,8 @@ int main (int argc, char *argv[])
         });
     }
     {
-      RCP<TimeMonitor> timerBlockCrsFillComplete 
-        = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("3) BlockCrsMatrix FillComplete - currently do nothing")));
-      // this function does not exsit 
+      TimeMonitor timerBlockCrsFillComplete(*TimeMonitor::getNewTimer("3) BlockCrsMatrix FillComplete - currently do nothing"));
+      // this function does not exist
       //A_bcrs->fillComplete();
     }
 #if PRINT_VERBOSE
@@ -379,8 +372,7 @@ int main (int argc, char *argv[])
     // Create MultiVector
     RCP<tpetra_multivector_type> X = Teuchos::rcp(new tpetra_multivector_type(A_bcrs->getDomainMap(), nrhs));
     {
-      RCP<TimeMonitor> timerMultiVectorFill
-        = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("4) MultiVectorFill")));
+      TimeMonitor timerMultiVectorFill(*TimeMonitor::getNewTimer("4) MultiVectorFill"));
       
       auto value = X->getLocalView<typename exec_space::memory_space>();
       auto map = X->getMap()->getLocalMap();
@@ -401,8 +393,7 @@ int main (int argc, char *argv[])
     // matrix vector multiplication
     {
       for (LO iter=0;iter<repeat;++iter) {
-        RCP<TimeMonitor> timerBlockCrsApply 
-          = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("5) BlockCrs Apply")));        
+        TimeMonitor timerBlockCrsApply(*TimeMonitor::getNewTimer("5) BlockCrs Apply"));        
         A_bcrs->apply(*X, *B_bcrs);
       }
     }
@@ -410,13 +401,22 @@ int main (int argc, char *argv[])
     // direct conversion: block crs -> point crs 
     RCP<tpetra_crs_matrix_type> A_crs;
     {
-      RCP<TimeMonitor> timerConvertBlockCrsToPointCrs 
-        = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("6) Conversion from BlockCrs to PointCrs")));
+      TimeMonitor timerConvertBlockCrsToPointCrs(*TimeMonitor::getNewTimer("6) Conversion from BlockCrs to PointCrs"));
 
-      // construct row mapd and column map
-      // row map can be obtained from A_bcrs->getDomainMap();
-      // we anyway need both and Tpetra does not provide an interface to contruct  
-      // crs matrix without column map
+      // construct row map and column map for a point crs matrix
+      // point-wise row map can be obtained from A_bcrs->getDomainMap().
+      // A constructor exist for crs matrix with a local matrix and a row map.
+      // see, Tpetra_CrsMatrix_decl.hpp, line 504
+      //     CrsMatrix (const local_matrix_type& lclMatrix,
+      //                const Teuchos::RCP<const map_type>& rowMap,
+      //                const Teuchos::RCP<const map_type>& colMap = Teuchos::null,
+      //                const Teuchos::RCP<const map_type>& domainMap = Teuchos::null,
+      //                const Teuchos::RCP<const map_type>& rangeMap = Teuchos::null,
+      //                const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
+      // However, this does not work with the following use case.
+      //   A_crs = rcp(new tpetra_crs_matrix_type(local_matrix, A_bcrs->getDomainMap()));
+
+      // here, we create pointwise row and column maps manually.
       decltype(mesh_gids) crs_gids("crs_gids", mesh_gids.extent(0)*blocksize);
       Kokkos::parallel_for
         (num_owned_and_remote_elements,
@@ -473,10 +473,6 @@ int main (int argc, char *argv[])
                                              local_matrix, 
                                              Teuchos::null));
       
-      // this constructor does not work. it requres column map even 
-      // if the constructor can take null map
-      //A_crs = rcp(new tpetra_crs_matrix_type(local_matrix, 
-      //                                       A_bcrs->getDomainMap()));
     } // end conversion timer
 
 #if PRINT_VERBOSE
@@ -488,8 +484,7 @@ int main (int argc, char *argv[])
     // perform on point crs matrix
     {
       for (LO iter=0;iter<repeat;++iter) {
-        RCP<TimeMonitor> timerPointCrsApply 
-          = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("7) PointCrs Apply")));
+        TimeMonitor timerPointCrsApply(*TimeMonitor::getNewTimer("7) PointCrs Apply"));
         A_crs->apply(*X, *B_crs);
       }
     }
@@ -509,8 +504,7 @@ int main (int argc, char *argv[])
     // Save crs_matrix as a MatrixMarket file.
     {
       // no function to export block crs 
-      RCP<TimeMonitor> timerMatrixMarket 
-        = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("8) Export MatrixMarket ")));
+      TimeMonitor timerMatrixMarket(*TimeMonitor::getNewTimer("8) Export MatrixMarket "));
       std::ofstream ofs("BlockCrsTestMatrix.out", std::ofstream::out);
       Tpetra::MatrixMarket::Writer<tpetra_crs_matrix_type>::writeSparse(ofs, A_crs);
       ofs.close();
@@ -521,14 +515,12 @@ int main (int argc, char *argv[])
   // Print out timing results.
   TimeMonitor::report(comm.ptr(), std::cout, "");
 
-  // Finalize Kokkos
-  Kokkos::finalize();
+  Tpetra::finalize();
   
   // This tells the Trilinos test framework that the test passed.
-  if(0 == mpiSession.getRank())
-    {
-      std::cout << "End Result: TEST PASSED" << std::endl;
-    }
+  if (comm->getRank() == 0) {
+    std::cout << "End Result: TEST PASSED" << std::endl;
+  }
   
   return EXIT_SUCCESS;
 }  // END main()

@@ -45,6 +45,8 @@
 
 #include <iostream>
 #include <sstream>
+#include <cmath>
+#include <iomanip>
 
 #include <Teuchos_Comm.hpp>
 #include <Tpetra_DefaultPlatform.hpp>
@@ -167,20 +169,20 @@ namespace BlockCrsTest {
     public:
       LO _num_procs_i, _num_procs_j, _num_procs_k, _num_procs_jk, _max_num_procs;
       LO _rank, _proc_i, _proc_j, _proc_k;
-      StructuredProcGrid() = default;
-      StructuredProcGrid(const StructuredProcGrid &b) = default;
-      StructuredProcGrid(const LO num_procs_i, 
-                         const LO num_procs_j, 
-                         const LO num_procs_k) 
-        : _num_procs_i(num_procs_i), 
-          _num_procs_j(num_procs_j), 
-          _num_procs_k(num_procs_k), 
-          _num_procs_jk(num_procs_j*num_procs_k) {
+
+      void init(const LO num_procs_i, 
+                const LO num_procs_j, 
+                const LO num_procs_k) {
+        _num_procs_i = num_procs_i;
+        _num_procs_j = num_procs_j;
+        _num_procs_k = num_procs_k;
+        _num_procs_jk = num_procs_j*num_procs_k;
+
         const LO bigger_ij = num_procs_i > num_procs_j ? num_procs_i : num_procs_j;
         const LO bigger_jk = num_procs_j > num_procs_k ? num_procs_j : num_procs_k;
         _max_num_procs = bigger_ij > bigger_jk ? bigger_ij : bigger_jk;
       }
-
+        
       void setRank(const LO rank) {
         _rank = rank;
         _proc_i = _rank / _num_procs_jk;
@@ -188,6 +190,26 @@ namespace BlockCrsTest {
         _proc_j = _proc_k / _num_procs_k;
         _proc_k = _proc_k % _num_procs_k;
       }
+
+      StructuredProcGrid() = default;
+      StructuredProcGrid(const StructuredProcGrid &b) = default;
+      StructuredProcGrid(const LO num_procs_i, 
+                         const LO num_procs_j, 
+                         const LO num_procs_k) {
+        init(num_procs_i,
+             num_procs_j,
+             num_procs_k);
+      }
+      StructuredProcGrid(const LO rank, 
+                         const LO num_procs_i, 
+                         const LO num_procs_j, 
+                         const LO num_procs_k) {
+        init(num_procs_i,
+             num_procs_j,
+             num_procs_k);
+        setRank(rank);
+      }
+      
     };
     
     struct StructuredBlock {
@@ -286,10 +308,9 @@ namespace BlockCrsTest {
                  LO num_procs_k) 
       : _comm(comm), 
         _sb(num_global_elements_i, num_global_elements_j, num_global_elements_k),
-        _grid(num_procs_i, num_procs_j, num_procs_k) {
-      _grid.setRank(_comm->getRank());
+        _grid(_comm->getRank(), num_procs_i, num_procs_j, num_procs_k) {
     
-      // uniform partitoins on the structured block
+      // uniform partitions on the structured block
       const LO iparts = _sb._num_global_elements_i / _grid._num_procs_i;
       const LO jparts = _sb._num_global_elements_j / _grid._num_procs_j;
       const LO kparts = _sb._num_global_elements_k / _grid._num_procs_k;
