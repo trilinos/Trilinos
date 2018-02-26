@@ -45,8 +45,8 @@
 #include <iostream>
 #include <Teuchos_BigUIntDecl.hpp>
 
-/*! \file Teuchos_BigUIntDecl.hpp
-    \brief Arbitrary-precision unsigned integer declaration.
+/*! \file Teuchos_BigUInt.hpp
+    \brief Arbitrary-precision unsigned integer definition.
 */
 
 namespace Teuchos {

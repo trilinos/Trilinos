@@ -62,8 +62,10 @@ function for printing floating-point values in a lossless and minimal way.
 */
 
 template <int n>
-struct BigUInt {
+class BigUInt {
+ private:
   std::uint32_t x[n];
+ public:
   BigUInt();
   BigUInt(std::uint64_t v);
   BigUInt(std::string const& s);

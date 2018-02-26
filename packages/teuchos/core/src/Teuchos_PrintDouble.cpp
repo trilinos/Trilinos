@@ -46,13 +46,17 @@
 
 namespace Teuchos {
 
-static int ndigits_for(std::uint32_t x) {
+namespace {
+
+int ndigits_for(std::uint32_t x) {
   int n = 0;
   while (x) {
     ++n;
     x /= 10;
   }
   return n;
+}
+
 }
 
 /**
