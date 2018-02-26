@@ -642,12 +642,12 @@ void createExodusFile(const std::vector<Teuchos::RCP<panzer::PhysicsBlock> >& ph
     mesh->getElementBlockNames(block_names);
 
     Teuchos::ParameterList output_pl("Output");
-    Teuchos::ParameterList& cell_avg_q = output_pl.sublist("Cell Average Quantities");
+    output_pl.sublist("Cell Average Quantities");
     Teuchos::ParameterList& cell_avg_v = output_pl.sublist("Cell Average Vectors");
     cell_avg_v.set(block_names[0],"CURRENT");
-    Teuchos::ParameterList& cell_q = output_pl.sublist("Cell Quantities");
-    Teuchos::ParameterList& nodal_q = output_pl.sublist("Nodal Quantities");
-    Teuchos::ParameterList& a_nodal_q = output_pl.sublist("Allocate Nodal Quantities");
+    output_pl.sublist("Cell Quantities");
+    output_pl.sublist("Nodal Quantities");
+    output_pl.sublist("Allocate Nodal Quantities");
     mini_em::addFieldsToMesh(*mesh,output_pl);
   }
   mesh_factory->completeMeshConstruction(*mesh,MPI_COMM_WORLD);
@@ -684,12 +684,12 @@ buildSTKIOResponseLibrary(const std::vector<Teuchos::RCP<panzer::PhysicsBlock> >
 
   // this automatically adds in the nodal fields
   Teuchos::ParameterList output_pl("Output");
-  Teuchos::ParameterList& cell_avg_q = output_pl.sublist("Cell Average Quantities");
+  output_pl.sublist("Cell Average Quantities");
   Teuchos::ParameterList& cell_avg_v = output_pl.sublist("Cell Average Vectors");
   cell_avg_v.set(block_names[0],"CURRENT");
-  Teuchos::ParameterList& cell_q = output_pl.sublist("Cell Quantities");
-  Teuchos::ParameterList& nodal_q = output_pl.sublist("Nodal Quantities");
-  Teuchos::ParameterList& a_nodal_q = output_pl.sublist("Allocate Nodal Quantities");
+  output_pl.sublist("Cell Quantities");
+  output_pl.sublist("Nodal Quantities");
+  output_pl.sublist("Allocate Nodal Quantities");
   panzer_stk::IOClosureModelFactory_TemplateBuilder<panzer::Traits> io_cm_builder(cm_factory,mesh,
                                                                                   output_pl);
   panzer::ClosureModelFactory_TemplateManager<panzer::Traits> io_cm_factory;
