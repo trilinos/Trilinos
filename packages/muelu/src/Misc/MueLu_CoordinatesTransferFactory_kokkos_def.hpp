@@ -65,11 +65,25 @@ namespace MueLu {
   RCP<const ParameterList> CoordinatesTransferFactory_kokkos<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>>::GetValidParameterList() const {
     RCP<ParameterList> validParamList = rcp(new ParameterList());
 
-    validParamList->set< RCP<const FactoryBase> >("Coordinates",    Teuchos::null, "Factory for coordinates generation");
-    validParamList->set< RCP<const FactoryBase> >("Aggregates",     Teuchos::null, "Factory for coordinates generation");
-    validParamList->set< RCP<const FactoryBase> >("CoarseMap",      Teuchos::null, "Generating factory of the coarse map");
-    validParamList->set< int >                   ("write start",    -1,            "First level at which coordinates should be written to file");
-    validParamList->set< int >                   ("write end",      -1,            "Last level at which coordinates should be written to file");
+    validParamList->set<RCP<const FactoryBase> >("Coordinates",                  Teuchos::null, "Factory for coordinates generation");
+    validParamList->set<RCP<const FactoryBase> >("Aggregates",                   Teuchos::null, "Factory for coordinates generation");
+    validParamList->set<RCP<const FactoryBase> >("CoarseMap",                    Teuchos::null, "Generating factory of the coarse map");
+    validParamList->set<bool>                   ("structured aggregation",       false, "Flag specifying that the geometric data is transferred for StructuredAggregationFactory");
+    validParamList->set<bool>                   ("aggregation coupled",          false, "Flag specifying if the aggregation algorithm was used in coupled mode.");
+    validParamList->set<bool>                   ("Geometric",                    false, "Flag specifying that the coordinates are transferred for GeneralGeometricPFactory");
+    validParamList->set<RCP<const FactoryBase> >("coarseCoordinates",            Teuchos::null, "Factory for coarse coordinates generation");
+    validParamList->set<RCP<const FactoryBase> >("gCoarseNodesPerDim",           Teuchos::null, "Factory providing the global number of nodes per spatial dimensions of the mesh");
+    validParamList->set<RCP<const FactoryBase> >("lCoarseNodesPerDim",           Teuchos::null, "Factory providing the local number of nodes per spatial dimensions of the mesh");
+    validParamList->set<int>                    ("write start",                  -1, "first level at which coordinates should be written to file");
+    validParamList->set<int>                    ("write end",                    -1, "last level at which coordinates should be written to file");
+    validParamList->set<RCP<const FactoryBase> >("aggregationRegionTypeCoarse",  Teuchos::null, "Factory indicating what aggregation type is to be used on the coarse level of the region");
+    validParamList->set<bool>                   ("hybrid aggregation",           false, "Flag specifying that hybrid aggregation data is transfered for HybridAggregationFactory");
+
+    // validParamList->set< RCP<const FactoryBase> >("Coordinates",    Teuchos::null, "Factory for coordinates generation");
+    // validParamList->set< RCP<const FactoryBase> >("Aggregates",     Teuchos::null, "Factory for coordinates generation");
+    // validParamList->set< RCP<const FactoryBase> >("CoarseMap",      Teuchos::null, "Generating factory of the coarse map");
+    // validParamList->set< int >                   ("write start",    -1,            "First level at which coordinates should be written to file");
+    // validParamList->set< int >                   ("write end",      -1,            "Last level at which coordinates should be written to file");
 
     return validParamList;
   }
@@ -77,15 +91,39 @@ namespace MueLu {
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class DeviceType>
   void CoordinatesTransferFactory_kokkos<Scalar, LocalOrdinal, GlobalOrdinal, Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>>::DeclareInput(Level& fineLevel, Level& coarseLevel) const {
     static bool isAvailableCoords = false;
+    const ParameterList& pL = GetParameterList();
+    if(pL.get<bool>("structured aggregation") == true) {
+      if(pL.get<bool>("aggregation coupled") == true) {
+        Input(fineLevel, "gCoarseNodesPerDim");
+      }
+      Input(fineLevel, "lCoarseNodesPerDim");
+    } else if(pL.get<bool>("Geometric") == true) {
+      Input(coarseLevel, "coarseCoordinates");
+      Input(coarseLevel, "gCoarseNodesPerDim");
+      Input(coarseLevel, "lCoarseNodesPerDim");
+    } else {
+      if (coarseLevel.GetRequestMode() == Level::REQUEST)
+        isAvailableCoords = coarseLevel.IsAvailable("Coordinates", this);
 
-    if (coarseLevel.GetRequestMode() == Level::REQUEST)
-      isAvailableCoords = coarseLevel.IsAvailable("Coordinates", this);
-
-    if (isAvailableCoords == false) {
-      Input(fineLevel, "Coordinates");
-      Input(fineLevel, "Aggregates");
-      Input(fineLevel, "CoarseMap");
+      if (isAvailableCoords == false) {
+        Input(fineLevel, "Coordinates");
+        Input(fineLevel, "Aggregates");
+        Input(fineLevel, "CoarseMap");
+      }
     }
+    if(pL.get<bool>("hybrid aggregation") == true) {
+      Input(fineLevel,"aggregationRegionTypeCoarse");
+      Input(fineLevel, "lCoarseNodesPerDim");
+    }
+
+    // if (coarseLevel.GetRequestMode() == Level::REQUEST)
+    //   isAvailableCoords = coarseLevel.IsAvailable("Coordinates", this);
+
+    // if (isAvailableCoords == false) {
+    //   Input(fineLevel, "Coordinates");
+    //   Input(fineLevel, "Aggregates");
+    //   Input(fineLevel, "CoarseMap");
+    // }
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class DeviceType>

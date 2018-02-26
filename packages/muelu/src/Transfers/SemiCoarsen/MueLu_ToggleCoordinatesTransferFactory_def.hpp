@@ -67,10 +67,17 @@ namespace MueLu {
   void ToggleCoordinatesTransferFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::DeclareInput(Level& fineLevel, Level& coarseLevel) const {
     const ParameterList& pL = GetParameterList();
     TEUCHOS_TEST_FOR_EXCEPTION(!pL.isParameter("Chosen P"), Exceptions::RuntimeError, "MueLu::ToggleCoordinatesTransferFactory::DeclareInput: You have to set the 'Chosen P' parameter to a factory name of type TogglePFactory. The ToggleCoordinatesTransferFactory must be used together with a TogglePFactory!");
-    Input(coarseLevel,"Chosen P");
-    for (std::vector<RCP<const FactoryBase> >::const_iterator it = coordFacts_.begin(); it != coordFacts_.end(); ++it) {
-      coarseLevel.DeclareInput("Coordinates", (*it).get(), this);  // request/release coarse coordinates
-      (*it)->CallDeclareInput(coarseLevel); // request dependencies
+
+    // Check that some coordinates are set on level zero and then do the request logic
+    if( fineLevel.GetLevelID() == 0 && fineLevel.IsAvailable("Coordinates", NoFactory::get()) ) {
+      Input(coarseLevel,"Chosen P");
+      for (std::vector<RCP<const FactoryBase> >::const_iterator it = coordFacts_.begin(); it != coordFacts_.end(); ++it) {
+        coarseLevel.DeclareInput("Coordinates", (*it).get(), this);  // request/release coarse coordinates
+        (*it)->CallDeclareInput(coarseLevel); // request dependencies
+      }
+      bTransferCoordinates_ = true;
+    } else if(bTransferCoordinates_) {
+      Input(fineLevel, "Coordinates");
     }
     hasDeclaredInput_ = true;
   }
@@ -81,12 +88,13 @@ namespace MueLu {
 
     typedef Xpetra::MultiVector<double,LO,GO,NO> xdMV;
 
-    TEUCHOS_TEST_FOR_EXCEPTION(coordFacts_.size() != 2, Exceptions::RuntimeError, "MueLu::TogglePFactory::Build: ToggleCoordinatesTransferFactory needs two different transfer operator strategies for toggling.");
+    if(bTransferCoordinates_) {
+      TEUCHOS_TEST_FOR_EXCEPTION(coordFacts_.size() != 2, Exceptions::RuntimeError, "MueLu::TogglePFactory::Build: ToggleCoordinatesTransferFactory needs two different transfer operator strategies for toggling.");
 
-    int chosenP = Get< int >      (coarseLevel, "Chosen P");
-    GetOStream(Runtime1) << "Transfer Coordinates" << chosenP << " to coarse level" << std::endl;
-    RCP<xdMV> coarseCoords = coarseLevel.Get< RCP<xdMV> >("Coordinates",(coordFacts_[chosenP]).get());
-    Set(coarseLevel, "Coordinates", coarseCoords);
+      int chosenP = Get< int >      (coarseLevel, "Chosen P");
+      GetOStream(Runtime1) << "Transfer Coordinates" << chosenP << " to coarse level" << std::endl;
+      RCP<xdMV> coarseCoords = coarseLevel.Get< RCP<xdMV> >("Coordinates",(coordFacts_[chosenP]).get());
+      Set(coarseLevel, "Coordinates", coarseCoords);
 
     // loop through all coord facts and check whether the coarse coordinates are available.
     // This is the coarse coordinate transfer factory which belongs to the execution path
@@ -103,8 +111,9 @@ namespace MueLu {
     }*/
 
     // Release dependencies of all coordinate transfer factories
-    for(size_t t=0; t<coordFacts_.size(); ++t) {
-      coarseLevel.Release(*(coordFacts_[t]));
+      for(size_t t=0; t<coordFacts_.size(); ++t) {
+        coarseLevel.Release(*(coordFacts_[t]));
+      }
     }
 
     //TODO: exception if coarseCoords == Teuchos::null

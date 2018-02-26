@@ -119,6 +119,8 @@ namespace MueLu {
     mutable std::vector<RCP<const FactoryBase> > coordFacts_;
 
     mutable bool hasDeclaredInput_;
+
+    mutable bool bTransferCoordinates_ = false;
   }; // class ToggleCoordinatesTransferFactory
 
 } // namespace MueLu

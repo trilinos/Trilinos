@@ -1118,6 +1118,13 @@ namespace MueLu {
     else
       manager.SetFactory("A", RAPs);
 
+    if (paramList.isParameter("semicoarsen: number of levels")) {
+      if (!RAP.is_null())
+        RAP-> AddTransferFactory(manager.GetFactory("Coordinates"));
+      else
+        RAPs->AddTransferFactory(manager.GetFactory("Coordinates"));
+    }
+
     MUELU_SET_VAR_2LIST(paramList, defaultList, "reuse: type",      std::string, reuseType);
     MUELU_SET_VAR_2LIST(paramList, defaultList, "sa: use filtered matrix", bool, useFiltering);
     bool filteringChangesMatrix = useFiltering && !MUELU_TEST_PARAM_2LIST(paramList, defaultList, "aggregation: drop tol", double, 0);
@@ -1135,7 +1142,7 @@ namespace MueLu {
   }
 
   // =====================================================================================================
-  // ======================================= Restriction =================================================
+  // ======================================= Coordinates =================================================
   // =====================================================================================================
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
@@ -1150,7 +1157,10 @@ namespace MueLu {
       if (have_userCO) {
         manager.SetFactory("Coordinates", NoFactory::getRCP());
 
-      } else {
+        // The toggle factory for semicoarsening might already have set this.
+      } else if(!(paramList.isParameter("semicoarsen: number of levels") &&
+                  paramList.get<int>("semicoarsen: number of levels") > 0)) {
+
         MUELU_KOKKOS_FACTORY(coords, CoordinatesTransferFactory, CoordinatesTransferFactory_kokkos);
         coords->SetFactory("Aggregates", manager.GetFactory("Aggregates"));
         coords->SetFactory("CoarseMap",  manager.GetFactory("CoarseMap"));
