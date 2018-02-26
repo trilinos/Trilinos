@@ -253,7 +253,9 @@ public:
     if(iter == maxit) {
       flag = 1;
       x.plus(*z_);
+      return (*res_)[iter];
     }
+
     return (*res_)[iter+1];
   }
 
