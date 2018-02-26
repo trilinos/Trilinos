@@ -316,7 +316,7 @@ namespace Impl {
 
 #if defined (KOKKOS_HAVE_CUDA) && defined(SACADO_VIEW_CUDA_HIERARCHICAL)
 template< class OutputView >
-struct ViewFill<
+struct SacadoViewFill<
   OutputView,
   typename std::enable_if<
     ( Kokkos::is_view_fad_contiguous<OutputView>::value &&
@@ -367,15 +367,13 @@ struct ViewFill<
       (*this)(i0);
   }
 
-  ViewFill( const OutputView & arg_out , const_value_type & arg_in )
+  SacadoViewFill( const OutputView & arg_out , const_value_type & arg_in )
     : output( arg_out ), input( arg_in )
     {
       const size_t team_size = 256 / stride;
-      team_policy policy( (output.dimension_0()+team_size-1)/team_size , team_size , stride );
-      const Kokkos::Impl::ParallelFor< ViewFill , team_policy > closure( *this , policy );
-
-      closure.execute();
-
+      team_policy policy( (output.dimension_0()+team_size-1)/team_size ,
+                          team_size , stride );
+      Kokkos::parallel_for( policy, *this );
       execution_space::fence();
     }
 };
@@ -1239,6 +1237,7 @@ public:
     struct AssignOffset< DstType, SrcFadType, typename std::enable_if< ((int)DstType::offset_type::dimension_type::rank != (int)SrcFadType::array_offset_type::dimension_type::rank) >::type >
     {
       // ViewOffset's Dimensions Ranks do not match
+      KOKKOS_INLINE_FUNCTION
       static void assign( DstType & dst, const SrcFadType & src ) 
       {
         typedef typename SrcTraits::value_type TraitsValueType;
@@ -1279,7 +1278,7 @@ public:
             dst.m_offset = offset_tmp;
           }
         } else {
-          std::cout << "Sacado error: Applying AssignOffset for case with nested Fads, but without nested Fads - something went wrong" << std::endl;
+          Kokkos::abort("Sacado error: Applying AssignOffset for case with nested Fads, but without nested Fads - something went wrong");
         }
       }
     };
@@ -1287,6 +1286,7 @@ public:
   template < class DstType, class SrcFadType > 
     struct AssignOffset< DstType, SrcFadType, typename std::enable_if< ((int)DstType::offset_type::dimension_type::rank == (int)SrcFadType::array_offset_type::dimension_type::rank) >::type >
     {
+      KOKKOS_INLINE_FUNCTION
       static void assign( DstType & dst, const SrcFadType & src ) 
       {
         typedef typename DstType::offset_type  dst_offset_type ;

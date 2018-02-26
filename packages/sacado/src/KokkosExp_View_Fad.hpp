@@ -230,6 +230,50 @@ struct NaturalArrayType< View<D,P...>,
   typedef View<data_type,natural_layout,device,memory> type;
 };
 
+namespace Impl {
+
+template <class OutputView, typename Enabled = void>
+struct SacadoViewFill
+{
+  typedef typename OutputView::const_value_type  const_value_type ;
+  typedef typename OutputView::execution_space execution_space ;
+
+  const OutputView output ;
+  const_value_type input ;
+
+  KOKKOS_INLINE_FUNCTION
+  void operator()( const size_t i0 ) const
+  {
+    const size_t n1 = output.dimension_1();
+    const size_t n2 = output.dimension_2();
+    const size_t n3 = output.dimension_3();
+    const size_t n4 = output.dimension_4();
+    const size_t n5 = output.dimension_5();
+    const size_t n6 = output.dimension_6();
+    const size_t n7 = output.dimension_7();
+
+    for ( size_t i1 = 0 ; i1 < n1 ; ++i1 ) {
+    for ( size_t i2 = 0 ; i2 < n2 ; ++i2 ) {
+    for ( size_t i3 = 0 ; i3 < n3 ; ++i3 ) {
+    for ( size_t i4 = 0 ; i4 < n4 ; ++i4 ) {
+    for ( size_t i5 = 0 ; i5 < n5 ; ++i5 ) {
+    for ( size_t i6 = 0 ; i6 < n6 ; ++i6 ) {
+    for ( size_t i7 = 0 ; i7 < n7 ; ++i7 ) {
+      output(i0,i1,i2,i3,i4,i5,i6,i7) = input ;
+    }}}}}}}
+  }
+
+  SacadoViewFill( const OutputView & arg_out , const_value_type & arg_in )
+    : output( arg_out ), input( arg_in )
+    {
+      const size_t n0 = output.dimension_0();
+      Kokkos::RangePolicy<execution_space> policy( 0, n0 );
+      Kokkos::parallel_for( policy, *this );
+      execution_space::fence();
+    }
+};
+
+}
 
 // Overload of deep_copy for Fad views intializing to a constant scalar
 template< class DT, class ... DP >
@@ -248,29 +292,7 @@ void deep_copy(
                   typename ViewTraits<DT,DP...>::non_const_value_type >::value
     , "Can only deep copy into non-const type" );
 
-  Kokkos::parallel_for( view.extent(0), KOKKOS_LAMBDA( const int i0 ) {
-
-    const size_t n1 = view.extent(1);
-    const size_t n2 = view.extent(2);
-    const size_t n3 = view.extent(3);
-    const size_t n4 = view.extent(4);
-    const size_t n5 = view.extent(5);
-    const size_t n6 = view.extent(6);
-    const size_t n7 = view.extent(7);
-
-    for ( size_t i1 = 0 ; i1 < n1 ; ++i1 ) {
-    for ( size_t i2 = 0 ; i2 < n2 ; ++i2 ) {
-    for ( size_t i3 = 0 ; i3 < n3 ; ++i3 ) {
-    for ( size_t i4 = 0 ; i4 < n4 ; ++i4 ) {
-    for ( size_t i5 = 0 ; i5 < n5 ; ++i5 ) {
-    for ( size_t i6 = 0 ; i6 < n6 ; ++i6 ) {
-    for ( size_t i7 = 0 ; i7 < n7 ; ++i7 ) {
-      //view.access(i0,i1,i2,i3,i4,i5,i6,i7) = value ;
-      view(i0,i1,i2,i3,i4,i5,i6,i7) = value ;
-    }}}}}}}
-    }
-  );
-  //Kokkos::Impl::ViewFill< View<DT,DP...> >( view , value );
+  Impl::SacadoViewFill< View<DT,DP...> >( view , value );
 }
 
 
@@ -291,28 +313,7 @@ void deep_copy(
                   typename ViewTraits<DT,DP...>::non_const_value_type >::value
     , "Can only deep copy into non-const type" );
 
-  Kokkos::parallel_for( view.extent(0), KOKKOS_LAMBDA( const int i0 ) {
-
-    const size_t n1 = view.extent(1);
-    const size_t n2 = view.extent(2);
-    const size_t n3 = view.extent(3);
-    const size_t n4 = view.extent(4);
-    const size_t n5 = view.extent(5);
-    const size_t n6 = view.extent(6);
-    const size_t n7 = view.extent(7);
-
-    for ( size_t i1 = 0 ; i1 < n1 ; ++i1 ) {
-    for ( size_t i2 = 0 ; i2 < n2 ; ++i2 ) {
-    for ( size_t i3 = 0 ; i3 < n3 ; ++i3 ) {
-    for ( size_t i4 = 0 ; i4 < n4 ; ++i4 ) {
-    for ( size_t i5 = 0 ; i5 < n5 ; ++i5 ) {
-    for ( size_t i6 = 0 ; i6 < n6 ; ++i6 ) {
-    for ( size_t i7 = 0 ; i7 < n7 ; ++i7 ) {
-      //view.access(i0,i1,i2,i3,i4,i5,i6,i7) = value ;
-      view(i0,i1,i2,i3,i4,i5,i6,i7) = value ;
-    }}}}}}}
-    }
-  );
+  Impl::SacadoViewFill< View<DT,DP...> >( view , value );
 }
 
 
@@ -764,6 +765,7 @@ struct prependFadToLayout
   using layout_type = Layout;
   
   template < typename FadSizeType >
+  KOKKOS_INLINE_FUNCTION
   static layout_type returnNewLayoutPlusFad( const layout_type & arg_layout, const FadSizeType fad_dim ) {
 
     layout_type prepended_layout(0,0,0,0,0,0,0,0);
@@ -1215,6 +1217,7 @@ public:
     struct AssignOffset< DstType, SrcFadType, typename std::enable_if< ((int)DstType::offset_type::dimension_type::rank != (int)SrcFadType::offset_type::dimension_type::rank) >::type >
     {
       // ViewOffset's Dimensions Ranks do not match
+      KOKKOS_INLINE_FUNCTION
       static void assign( DstType & dst, const SrcFadType & src ) 
       {
         typedef typename SrcTraits::value_type TraitsValueType;
@@ -1255,7 +1258,7 @@ public:
           }
 
         } else {
-          std::cout << "Sacado error: Applying AssignOffset for case with nested Fads, but without nested Fads - something went wrong" << std::endl;
+          Kokkos::abort("Sacado error: Applying AssignOffset for case with nested Fads, but without nested Fads - something went wrong");
         }
       }
     };
@@ -1263,6 +1266,7 @@ public:
   template < class DstType, class SrcFadType > 
     struct AssignOffset< DstType, SrcFadType, typename std::enable_if< ((int)DstType::offset_type::dimension_type::rank == (int)SrcFadType::offset_type::dimension_type::rank) >::type >
     {
+      KOKKOS_INLINE_FUNCTION
       static void assign( DstType & dst, const SrcFadType & src ) 
       {
 

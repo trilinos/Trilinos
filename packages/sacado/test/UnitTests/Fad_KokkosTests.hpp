@@ -1303,11 +1303,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(
   Kokkos_View_Fad, Unmanaged, FadType, Layout, Device )
 {
   // For LayoutContiguous or LayoutNatural, strip out the layout they are templated on
-  // LayoutStride is not used in these tests - hence we check for LayoutLeft, else it is LayoutRight
-  typedef typename std::conditional< std::is_same<Layout, Kokkos::LayoutLeft>::value,
-                                     Kokkos::LayoutLeft,
-                                     Kokkos::LayoutRight
-                                   >::type TestLayout;
+  typedef typename Kokkos::inner_layout<Layout>::type TestLayout;
 
   typedef typename FadType::value_type scalar_type;
   typedef Kokkos::View<scalar_type***,TestLayout,Device> ViewType;
@@ -1371,11 +1367,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(
   Kokkos_View_Fad, Unmanaged2, FadType, Layout, Device )
 {
   // For LayoutContiguous or LayoutNatural, strip out the layout they are templated on
-  // LayoutStride is not used in these tests - hence we check for LayoutLeft, else it is LayoutRight
-  typedef typename std::conditional< std::is_same<Layout, Kokkos::LayoutLeft>::value,
-                                     Kokkos::LayoutLeft,
-                                     Kokkos::LayoutRight
-                                   >::type TestLayout;
+  typedef typename Kokkos::inner_layout<Layout>::type TestLayout;
 
   typedef typename FadType::value_type scalar_type;
   typedef Kokkos::View<scalar_type***,TestLayout,Device> ViewType;
@@ -1439,11 +1431,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(
   Kokkos_View_Fad, UnmanagedConst, FadType, Layout, Device )
 {
   // For LayoutContiguous or LayoutNatural, strip out the layout they are templated on
-  // LayoutStride is not used in these tests - hence we check for LayoutLeft, else it is LayoutRight
-  typedef typename std::conditional< std::is_same<Layout, Kokkos::LayoutLeft>::value,
-                                     Kokkos::LayoutLeft,
-                                     Kokkos::LayoutRight
-                                   >::type TestLayout;
+  typedef typename Kokkos::inner_layout<Layout>::type TestLayout;
 
   typedef typename FadType::value_type scalar_type;
   typedef Kokkos::View<scalar_type***,TestLayout,Device> ViewType;
@@ -1511,11 +1499,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(
   Kokkos_View_Fad, UnmanagedConst2, FadType, Layout, Device )
 {
   // For LayoutContiguous or LayoutNatural, strip out the layout they are templated on
-  // LayoutStride is not used in these tests - hence we check for LayoutLeft, else it is LayoutRight
-  typedef typename std::conditional< std::is_same<Layout, Kokkos::LayoutLeft>::value,
-                                     Kokkos::LayoutLeft,
-                                     Kokkos::LayoutRight
-                                   >::type TestLayout;
+  typedef typename Kokkos::inner_layout<Layout>::type TestLayout;
   typedef typename FadType::value_type scalar_type;
   typedef Kokkos::View<scalar_type***,TestLayout,Device> ViewType;
   typedef Kokkos::View<const scalar_type***,TestLayout,Device> ConstViewType;
