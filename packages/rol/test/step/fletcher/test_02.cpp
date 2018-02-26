@@ -51,6 +51,11 @@
 #include "ROL_BoundFletcher.hpp"
 #include "ROL_Bounds.hpp"
 #include "ROL_Constraint.hpp"
+#include "ROL_OptimizationSolver.hpp"
+
+#include "Teuchos_oblackholestream.hpp"
+#include "Teuchos_GlobalMPISession.hpp"
+#include "Teuchos_XMLParameterListHelpers.hpp"
 
 typedef double RealT;
 
@@ -62,6 +67,10 @@ int main(int argc, char *argv[]) {
   typedef ROL::Ptr<ROL::Vector<RealT> > PtrV;
 
   Teuchos::GlobalMPISession mpiSession(&argc, &argv);
+
+  std::string filename = "input_ex02.xml";
+  Teuchos::RCP<Teuchos::ParameterList> parlist = Teuchos::rcp( new Teuchos::ParameterList() );
+  Teuchos::updateParametersFromXmlFile( filename, parlist.ptr() );
 
   int iprint     = argc - 1;
   ROL::Ptr<std::ostream> outStream;
@@ -100,36 +109,10 @@ int main(int argc, char *argv[]) {
     PtrV upp = ROL::makePtr<SV>(upp_ptr);
     ROL::Ptr<ROL::BoundConstraint<RealT> > bndx = ROL::makePtr<ROL::Bounds<RealT> >(low, upp);
 
-    Teuchos::RCP<Teuchos::ParameterList> parlist = Teuchos::rcp( new Teuchos::ParameterList() );
     std::string stepname = "Trust Region";
-    parlist->sublist("Step").sublist("Trust Region").set("Subproblem Model", "Coleman-Li");
-    parlist->sublist("Step").sublist("Trust Region").set("Subproblem Solver", "Truncated CG");
-    parlist->sublist("Step").sublist("Fletcher").set("Penalty Parameter", 5.0);
-
-    // RealT mu = 0.1;            // Initial penalty parameter
-    // RealT factor = 0.1;        // Penalty reduction factor
-
-    // // Set solver parameters
-    // parlist->sublist("General").set("Print Verbosity",1);
-    
-    // parlist->sublist("Step").sublist("Interior Point").set("Initial Barrier Penalty",mu);
-    // parlist->sublist("Step").sublist("Interior Point").set("Minimium Barrier Penalty",1e-8);
-    // parlist->sublist("Step").sublist("Interior Point").set("Barrier Penalty Reduction Factor",factor);
-    // parlist->sublist("Step").sublist("Interior Point").set("Subproblem Iteration Limit",30);
-
-    // parlist->sublist("Step").sublist("Composite Step").sublist("Optimality System Solver").set("Nominal Relative Tolerance",1.e-4);
-    // parlist->sublist("Step").sublist("Composite Step").sublist("Optimality System Solver").set("Fix Tolerance",true);
-    // parlist->sublist("Step").sublist("Composite Step").sublist("Tangential Subproblem Solver").set("Iteration Limit",20);
-    // parlist->sublist("Step").sublist("Composite Step").sublist("Tangential Subproblem Solver").set("Relative Tolerance",1e-2);
-    // parlist->sublist("Step").sublist("Composite Step").set("Output Level",0);
-
-    // parlist->sublist("Status Test").set("Gradient Tolerance",1.e-12);
-    // parlist->sublist("Status Test").set("Constraint Tolerance",1.e-8);
-    // parlist->sublist("Status Test").set("Step Tolerance",1.e-8);
-    // parlist->sublist("Status Test").set("Iteration Limit",100);
 
     ROL::OptimizationProblem<RealT> problem( obj_hs29, xopt, bndx, incon_hs29, li, bndcon );  
-    
+
     ROL::Ptr<ROL::Objective<RealT> > obj = problem.getObjective();    
     ROL::Ptr<ROL::Constraint<RealT> > con = problem.getConstraint();
     ROL::Ptr<ROL::BoundConstraint<RealT> > bndxs = problem.getBoundConstraint();
@@ -142,13 +125,15 @@ int main(int argc, char *argv[]) {
     std::vector<std::vector<RealT> > gCheck = fletcher_penalty->checkGradient(*xs, *v, true );
 
     ROL::Ptr<ROL::Vector<RealT> > w = xs->clone(); RandomizeVector(*w);
-    // xs->print(std::cout);
     std::vector<RealT> hCheck = fletcher_penalty->checkHessSym( *xs, *v, *w, true, *outStream);
 
     // Define algorithm.
-    ROL::Ptr<ROL::Algorithm<RealT> > algo;    
-    algo = ROL::makePtr<ROL::Algorithm<RealT>>(stepname, *parlist);
-    algo->run(*xs, *fletcher_penalty, *bndxs, true, *outStream);   
+    // ROL::Ptr<ROL::Algorithm<RealT> > algo;
+    // algo = ROL::makePtr<ROL::Algorithm<RealT>>(stepname, *parlist);
+    // algo->run(*xs, *fletcher_penalty, *bndxs, true, *outStream);   
+
+    ROL::OptimizationSolver<RealT> optSolver(problem, *parlist);
+    optSolver.solve(*outStream);    
 
     *outStream << std::endl << std::setw(20) << "Computed Minimizer" << std::endl;
     for( int i=0;i<xopt_dim;++i ) {   

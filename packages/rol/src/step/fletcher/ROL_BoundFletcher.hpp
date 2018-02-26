@@ -45,6 +45,7 @@
 #ifndef ROL_BOUNDFLETCHER_H
 #define ROL_BOUNDFLETCHER_H
 
+#include "ROL_FletcherBase.hpp"
 #include "ROL_Objective.hpp"
 #include "ROL_Constraint.hpp"
 #include "ROL_Vector.hpp"
@@ -57,14 +58,40 @@
 namespace ROL {
 
 template <class Real>
-class BoundFletcher : public Objective<Real> {
+class BoundFletcher : public FletcherBase<Real> {
 private:
   // Required for Fletcher penalty function definition
-  const Ptr<Objective<Real> > obj_;
-  const Ptr<Constraint<Real> > con_;
+  using FletcherBase<Real>::obj_;
+  using FletcherBase<Real>::con_;
   Ptr<const Vector<Real> > low_;
   Ptr<const Vector<Real> > upp_;
-  Real penaltyParameter_;
+
+  using FletcherBase<Real>::penaltyParameter_;
+
+  // Evaluation counters
+  using FletcherBase<Real>::nfval_;
+  using FletcherBase<Real>::ngval_;
+  using FletcherBase<Real>::ncval_;
+
+  using FletcherBase<Real>::fPhi_;                   // value of penalty function
+  using FletcherBase<Real>::gPhi_;     // gradient of penalty function
+
+  using FletcherBase<Real>::y_;        // multiplier estimate
+
+  using FletcherBase<Real>::fval_;                   // value of objective function
+  using FletcherBase<Real>::g_;        // gradient of objective value
+  using FletcherBase<Real>::c_;        // constraint value
+  using FletcherBase<Real>::scaledc_;  // penaltyParameter_ * c_
+  using FletcherBase<Real>::gL_;       // gradient of Lagrangian (g - A*y)
+
+  using FletcherBase<Real>::isValueComputed_;
+  using FletcherBase<Real>::isGradientComputed_;
+  using FletcherBase<Real>::isMultiplierComputed_;
+  using FletcherBase<Real>::isObjValueComputed_;
+  using FletcherBase<Real>::isObjGradComputed_;
+  using FletcherBase<Real>::isConValueComputed_;
+
+  using FletcherBase<Real>::delta_;                  // regularization parameter
 
   Ptr<Vector<Real> > Q_;
   Ptr<Vector<Real> > umx_;
@@ -73,21 +100,6 @@ private:
 
   int HessianApprox_;
 
-  // Evaluation counters
-  int nfval_;
-  int ngval_;
-  int ncval_;
-
-  Real fPhi_;                   // value of penalty function
-  Ptr<Vector<Real> > gPhi_;     // gradient of penalty function
-
-  Ptr<Vector<Real> > y_;        // multiplier estimate
-
-  Real fval_;                   // value of objective function
-  Ptr<Vector<Real> > g_;        // gradient of objective value
-  Ptr<Vector<Real> > c_;        // constraint value
-  Ptr<Vector<Real> > scaledc_;  // penaltyParameter_ * c_
-  Ptr<Vector<Real> > gL_;       // gradient of Lagrangian (g - A*y)
   Ptr<Vector<Real> > QsgL_;     // scaled gradient of Lagrangian Q^{1/2}*(g-A*y)
   Ptr<Vector<Real> > QgL_;      // scaled gradient of Lagrangian Q*(g-A*y)
   Ptr<Vector<Real> > Qsg_;      // Scaled gradient of objective Q^{1/2}*g
@@ -104,55 +116,24 @@ private:
   Ptr<Vector<Real> > xzeros_;   // zero vector
   Ptr<Vector<Real> > czeros_;   // zero vector
 
-  bool useInexact_;
+  using FletcherBase<Real>::useInexact_;
 
-  bool isValueComputed_;
-  bool isGradientComputed_;
-  bool isMultiplierComputed_;
-  bool isObjValueComputed_;
-  bool isObjGradComputed_;
-  bool isConValueComputed_;
   bool isQComputed_;
   bool isDQComputed_;
 
-  Real multSolverError_;         // Error from augmented system solve in value()
-  Real gradSolveError_;          // Error from augmented system solve in gradient()
-
-  Real delta_;                  // regularization parameter
+  using FletcherBase<Real>::multSolverError_;         // Error from augmented system solve in value()
+  using FletcherBase<Real>::gradSolveError_;          // Error from augmented system solve in gradient()
 
   // For Augmented system solves
-  Ptr<Krylov<Real> > krylov_;
-  int iterKrylov_;
-  int flagKrylov_;
-  Ptr<Vector<Real> > v1_;
-  Ptr<Vector<Real> > v2_;
-  Ptr<PartitionedVector<Real> > vv_;
-  Ptr<Vector<Real> > b1_;
-  Ptr<Vector<Real> > b2_;
-  Ptr<PartitionedVector<Real> > bb_;
-
-  void objValue(const Vector<Real>& x, Real &tol) {
-    if( !isObjValueComputed_ ) {
-      fval_ = obj_->value(x,tol); nfval_++;
-      isObjValueComputed_ = true;
-    }
-  }
-
-  void objGrad(const Vector<Real>& x, Real &tol) {
-    if( !isObjGradComputed_ ) {
-      obj_->gradient(*g_, x, tol); ngval_++;
-      isObjGradComputed_ = true;
-    }    
-  }
-
-  void conValue(const Vector<Real>&x, Real &tol) {
-    if( !isConValueComputed_ ) {
-      con_->value(*c_,x,tol); ncval_++;
-      scaledc_->set(*c_);
-      scaledc_->scale(penaltyParameter_);
-      isConValueComputed_ = true;
-    }
-  }
+  using FletcherBase<Real>::krylov_;
+  using FletcherBase<Real>::iterKrylov_;
+  using FletcherBase<Real>::flagKrylov_;
+  using FletcherBase<Real>::v1_;
+  using FletcherBase<Real>::v2_;
+  using FletcherBase<Real>::vv_;
+  using FletcherBase<Real>::b1_;
+  using FletcherBase<Real>::b2_;
+  using FletcherBase<Real>::bb_;
 
   class DiffLower : public Elementwise::BinaryFunction<Real> {
   public:
@@ -272,13 +253,8 @@ public:
                 const Vector<Real> &optVec,
                 const Vector<Real> &conVec,
                 Teuchos::ParameterList &parlist)
-  : obj_(obj), con_(con), nfval_(0), ngval_(0), ncval_(0),
-    fPhi_(0), fval_(0), isValueComputed_(false), isGradientComputed_(false),
-    isMultiplierComputed_(false), isObjValueComputed_(false), isObjGradComputed_(false),
-    isConValueComputed_(false), isQComputed_(false), isDQComputed_(false),
-    multSolverError_(0), gradSolveError_(0),
-    iterKrylov_(0), flagKrylov_(0) {
-
+  : FletcherBase<Real>(obj, con), isQComputed_(false), isDQComputed_(false) {
+      
       low_ = bnd->getLowerBound();
       upp_ = bnd->getUpperBound();
 
@@ -357,7 +333,7 @@ public:
     Real origTol = tol;
     Real tol2 = origTol;
 
-    objValue(x, tol2); tol2 = origTol;
+    FletcherBase<Real>::objValue(x, tol2); tol2 = origTol;
     multSolverError_ = origTol / static_cast<Real>(2);
     computeMultipliers(x, multSolverError_);
     tol = multSolverError_;
@@ -482,8 +458,8 @@ public:
       return;
     }
     Real tol2 = tol;
-    objGrad(x, tol2); tol2 = tol;
-    conValue(x, tol2);
+    FletcherBase<Real>::objGrad(x, tol2); tol2 = tol;
+    FletcherBase<Real>::conValue(x, tol2);
     computeQ(x);
     computeDQ(x);
     Qsg_->set(*g_);
@@ -528,51 +504,6 @@ public:
     DQ_->applyBinary(FormDQ(), *umx_);
 
     isDQComputed_ = true;
-  }
-
-  // Accessors
-  const Ptr<Vector<Real>> getLagrangianGradient() const {
-    return gL_;
-  }
-
-  const Ptr<Vector<Real>> getConstraintVec() const {
-    return c_;
-  }
-
-  const Ptr<Vector<Real>> getMultiplierVec() {
-    return y_;
-  }
-
-  const Ptr<Vector<Real>> getGradient() {
-    return gPhi_;
-  }
-
-  Real getObjectiveValue() const {
-    return fval_;
-  }
-
-  int getNumberFunctionEvaluations() const {
-    return nfval_;
-  } 
-
-  int getNumberGradientEvaluations() const {
-    return ngval_;
-  } 
-
-  int getNumberConstraintEvaluations() const {
-    return ncval_;
-  }
-
-  void setDelta(Real delta) {
-    delta_ = delta;
-    isValueComputed_ = false;
-    isGradientComputed_ = false;
-  }
-
-  void setPenaltyParameter( Real sigma ) {
-    penaltyParameter_ = sigma;
-    isValueComputed_ = false;
-    isGradientComputed_ = false;
   }
 
 }; // class Fletcher

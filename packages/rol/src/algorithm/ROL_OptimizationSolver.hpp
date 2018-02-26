@@ -95,6 +95,7 @@ public:
   */
   OptimizationSolver( OptimizationProblem<Real> &opt,
                       Teuchos::ParameterList &parlist ) {
+
     // Get optimization problem type: U, E, B, EB
     problemType_ = opt.getProblemType();
 
@@ -172,8 +173,12 @@ public:
       ROL::Ptr<Objective<Real> > raw_obj = opt.getObjective();
       bnd_ = opt.getBoundConstraint();
       con_ = opt.getConstraint();
-      // TODO: Provide access to change initial penalty
-      obj_ = ROL::makePtr<Fletcher<Real>>(raw_obj,con_,*x_,*c_,parlist);
+      if( bnd_->isActivated() ) {
+        obj_ = ROL::makePtr<BoundFletcher<Real> >(raw_obj,con_,bnd_,*x_,*c_,parlist);
+      }
+      else {
+        obj_ = ROL::makePtr<Fletcher<Real> >(raw_obj,con_,*x_,*c_,parlist);
+      }
       pen_ = parlist.sublist("Step").sublist("Fletcher").get("Penalty Parameter",one);
     }
     else {
