@@ -144,8 +144,10 @@ public:
   // Accessors
   const Ptr<Vector<Real>> getLagrangianGradient(const Vector<Real>& x) {
     // TODO: Figure out reasonable tolerance
-    Real tol = static_cast<Real>(1e-12);
-    computeMultipliers(x, tol);
+    if( !isMultiplierComputed_ ) {
+      Real tol = static_cast<Real>(1e-12);
+      computeMultipliers(x, tol);
+    }
     return gL_;
   }
 
@@ -163,9 +165,11 @@ public:
   }
 
   const Ptr<Vector<Real>> getGradient(const Vector<Real>& x) {
-    // TODO: Figure out reasonable tolerance
-    Real tol = static_cast<Real>(1e-12);
-    this->gradient(*gPhi_, x, tol);
+    if( !isGradientComputed_ ) {
+      // TODO: Figure out reasonable tolerance
+      Real tol = static_cast<Real>(1e-12);
+      this->gradient(*gPhi_, x, tol);
+    }
     return gPhi_;
   }
 
