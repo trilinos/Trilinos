@@ -103,6 +103,7 @@ TEUCHOS_UNIT_TEST( PrintDouble, Basic )
   // explicitly form 2^60 to test rare if case in print_double
   test_print_double(form_double(0, 0, 8), "1152921504606847000.", success, out);
   test_print_double(form_double(0, 0, 0), "4503599627370496.", success, out);
+  test_print_double(form_double(0, 4503599627370503, -30), "4194304.0000000065", success, out);
 }
 
 } // namespace
