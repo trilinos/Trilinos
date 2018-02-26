@@ -45,7 +45,7 @@
     \brief Test StatusTest input mechanism in OptimizationSolver.
 */
 
-#include "ROL_TestObjectives.hpp"
+#include "ROL_GetTestProblems.hpp"
 #include "ROL_OptimizationSolver.hpp"
 #include "Teuchos_oblackholestream.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
@@ -98,18 +98,16 @@ int main(int argc, char *argv[]) {
 
     // Setup optimization problem
     ROL::Ptr<ROL::Vector<RealT> > x0, z;
-    ROL::Ptr<ROL::Objective<RealT> > obj;
-    ROL::Ptr<ROL::BoundConstraint<RealT> > bnd;
-    ROL::getTestObjectives<RealT>(obj,bnd,x0,z,ROL::TESTOPTPROBLEM_HS1);
+    ROL::Ptr<ROL::OptimizationProblem<RealT> > optProblem;
+    ROL::GetTestProblem<RealT>(optProblem,x0,z,ROL::TESTOPTPROBLEM_HS1);
     ROL::Ptr<ROL::Vector<RealT> > x = x0->clone(); x->set(*x0);
-    ROL::OptimizationProblem<RealT> optProblem(obj,x,bnd);
 
     // Get Dimension of Problem
     int dim = x0->dimension(); 
     parlist->sublist("General").sublist("Krylov").set("Iteration Limit", 2*dim);
 
     // Check Derivatives
-    optProblem.check(*outStream);
+    optProblem->check(*outStream);
 
     // Error Vector
     ROL::Ptr<ROL::Vector<RealT> > e = x0->clone();
@@ -118,13 +116,13 @@ int main(int argc, char *argv[]) {
     // Setup optimization solver
     parlist->sublist("Status Test").set("Gradient Tolerance",static_cast<RealT>(1e-6));
     parlist->sublist("Step").set("Type", "Interior Point");
-    ROL::OptimizationSolver<RealT> optSolver(optProblem,*parlist);
+    ROL::OptimizationSolver<RealT> optSolver(*optProblem,*parlist);
     ROL::Ptr<ROL::StatusTest<RealT> > myStatus
       = ROL::makePtr<myStatusTest<RealT>>(1.e-8);
     optSolver.solve(*outStream, myStatus, false);
 
     // Compute Error
-    e->set(*x);
+    e->set(*x0);
     e->axpy(static_cast<RealT>(-1),*z);
     RealT enorm = e->norm();
     *outStream << std::endl << "Norm of Error: " << enorm << std::endl;

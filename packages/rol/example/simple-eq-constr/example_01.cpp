@@ -78,19 +78,23 @@ int main(int argc, char *argv[]) {
 
   try {
 
+    int dim = 5;
+    int nc = 3;
     ROL::Ptr<ROL::Objective<RealT> > obj;
     ROL::Ptr<ROL::Constraint<RealT> > constr;
-    ROL::Ptr<std::vector<RealT> > x_ptr = ROL::makePtr<std::vector<RealT>>(0, 0.0);
-    ROL::Ptr<std::vector<RealT> > sol_ptr = ROL::makePtr<std::vector<RealT>>(0, 0.0);
+    ROL::Ptr<std::vector<RealT>> x_ptr = ROL::makePtr<std::vector<RealT>>(dim, 0.0);
+    ROL::Ptr<std::vector<RealT>> sol_ptr = ROL::makePtr<std::vector<RealT>>(dim, 0.0);
     ROL::StdVector<RealT> x(x_ptr);      // Iteration vector.
     ROL::StdVector<RealT> sol(sol_ptr);  // Reference solution vector.
 
     // Retrieve objective, constraint, iteration vector, solution vector.
-    ROL::ZOO::getSimpleEqConstrained <RealT, ROL::StdVector<RealT>, ROL::StdVector<RealT>, ROL::StdVector<RealT>, ROL::StdVector<RealT> > (obj, constr, x, sol);
+    ROL::ZOO::getSimpleEqConstrained <RealT> SEC;
+    obj = SEC.getObjective();
+    constr = SEC.getEqualityConstraint();
+    x.set(*SEC.getInitialGuess());
+    sol.set(*SEC.getSolution());
 
     // Run derivative checks, etc.
-    int dim = 5;
-    int nc = 3;
     RealT left = -1e0, right = 1e0;
     ROL::Ptr<std::vector<RealT> > xtest_ptr = ROL::makePtr<std::vector<RealT>>(dim, 0.0);
     ROL::Ptr<std::vector<RealT> > g_ptr = ROL::makePtr<std::vector<RealT>>(dim, 0.0);

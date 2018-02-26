@@ -122,9 +122,9 @@ int main(int argc, char *argv[]) {
     int probDim = parlist->sublist("Problem").get("Problem Dimension",2);
     ROL::Ptr<MeshManager<RealT> > meshMgr;
     if (probDim == 2) {
-      meshMgr = ROL::makePtr<MeshManager_TopoOpt<RealT>>(*parlist);
+      meshMgr = ROL::makePtr<MeshManager_TopoOpt<RealT> >(*parlist);
     } else if (probDim == 3) {
-      meshMgr = ROL::makePtr<MeshReader<RealT>>(*parlist);
+      meshMgr = ROL::makePtr<MeshReader<RealT> >(*parlist);
     }
     else {
       TEUCHOS_TEST_FOR_EXCEPTION(true, std::invalid_argument,
@@ -132,14 +132,14 @@ int main(int argc, char *argv[]) {
     }
     // Initialize PDE describing elasticity equations.
     ROL::Ptr<PDE_Elasticity<RealT> > pde
-      = ROL::makePtr<PDE_Elasticity<RealT>>(*parlist);
+      = ROL::makePtr<PDE_Elasticity<RealT> >(*parlist);
     ROL::Ptr<ROL::Constraint_SimOpt<RealT> > con
-      = ROL::makePtr<PDE_Constraint<RealT>>(pde,meshMgr,serial_comm,*parlist,*outStream);
+      = ROL::makePtr<PDE_Constraint<RealT> >(pde,meshMgr,serial_comm,*parlist,*outStream);
     // Initialize the filter PDE.
     ROL::Ptr<PDE_Filter<RealT> > pdeFilter
-      = ROL::makePtr<PDE_Filter<RealT>>(*parlist);
+      = ROL::makePtr<PDE_Filter<RealT> >(*parlist);
     ROL::Ptr<ROL::Constraint_SimOpt<RealT> > conFilter
-      = ROL::makePtr<Linear_PDE_Constraint<RealT>>(pdeFilter,meshMgr,serial_comm,*parlist,*outStream);
+      = ROL::makePtr<Linear_PDE_Constraint<RealT> >(pdeFilter,meshMgr,serial_comm,*parlist,*outStream);
     // Cast the constraint and get the assembler.
     ROL::Ptr<PDE_Constraint<RealT> > pdecon
       = ROL::dynamicPtrCast<PDE_Constraint<RealT> >(con);
@@ -153,10 +153,10 @@ int main(int argc, char *argv[]) {
     z_ptr = assembler->createControlVector();  z_ptr->putScalar(1.0);
     r_ptr = assembler->createResidualVector(); r_ptr->putScalar(0.0);
     ROL::Ptr<ROL::Vector<RealT> > up, pp, zp, rp;
-    up = ROL::makePtr<PDE_PrimalSimVector<RealT>>(u_ptr,pde,assembler,*parlist);
-    pp = ROL::makePtr<PDE_PrimalSimVector<RealT>>(p_ptr,pde,assembler,*parlist);
-    zp = ROL::makePtr<PDE_PrimalOptVector<RealT>>(z_ptr,pde,assembler,*parlist);
-    rp = ROL::makePtr<PDE_DualSimVector<RealT>>(r_ptr,pde,assembler,*parlist);
+    up = ROL::makePtr<PDE_PrimalSimVector<RealT> >(u_ptr,pde,assembler,*parlist);
+    pp = ROL::makePtr<PDE_PrimalSimVector<RealT> >(p_ptr,pde,assembler,*parlist);
+    zp = ROL::makePtr<PDE_PrimalOptVector<RealT> >(z_ptr,pde,assembler,*parlist);
+    rp = ROL::makePtr<PDE_DualSimVector<RealT> >(r_ptr,pde,assembler,*parlist);
 
     // Build sampler.
     int nsamp  = parlist->sublist("Problem").get("Number of samples", 4);
@@ -184,11 +184,11 @@ int main(int argc, char *argv[]) {
       }
     }
     ROL::Ptr<ROL::BatchManager<RealT> > xbman
-      = ROL::makePtr<ROL::TpetraTeuchosBatchManager<RealT>>(comm);
+      = ROL::makePtr<ROL::TpetraTeuchosBatchManager<RealT> >(comm);
     ROL::Ptr<ROL::SampleGenerator<RealT> > xsampler
-      = ROL::makePtr<ROL::MonteCarloGenerator<RealT>>(nsamp,distVec,xbman);
+      = ROL::makePtr<ROL::MonteCarloGenerator<RealT> >(nsamp,distVec,xbman);
     ROL::Ptr<ROL::BatchManager<RealT> > cbman
-      = ROL::makePtr<ROL::SingletonTeuchosBatchManager<RealT,int>>(comm);
+      = ROL::makePtr<ROL::SingletonTeuchosBatchManager<RealT,int> >(comm);
 
     // Initialize "filtered" of "unfiltered" constraint.
     ROL::Ptr<ROL::Constraint_SimOpt<RealT> > pdeWithFilter;
@@ -206,9 +206,9 @@ int main(int argc, char *argv[]) {
 
     // Initialize volume objective.
     ROL::Ptr<QoI<RealT> > qoi_vol
-      = ROL::makePtr<QoI_VolumeObj_TopoOpt<RealT>>(pde->getFE(),pde->getFieldHelper());
+      = ROL::makePtr<QoI_VolumeObj_TopoOpt<RealT> >(pde->getFE(),pde->getFieldHelper());
     ROL::Ptr<ROL::Objective<RealT> > vobj
-      = ROL::makePtr<IntegralOptObjective<RealT>>(qoi_vol,assembler);
+      = ROL::makePtr<IntegralOptObjective<RealT> >(qoi_vol,assembler);
 
     // Initialize compliance inequality constraint.
     con->value(*rp, *up, *zp, tol);
@@ -218,10 +218,10 @@ int main(int argc, char *argv[]) {
     }
     std::vector<ROL::Ptr<QoI<RealT> > > qoi_cmp(1,ROL::nullPtr);
     qoi_cmp[0]
-      = ROL::makePtr<QoI_TopoOpt<RealT>>(pde->getFE(), pde->getLoad(),
-                                            pde->getFieldHelper(), objScaling);
+      = ROL::makePtr<QoI_TopoOpt<RealT> >(pde->getFE(), pde->getLoad(),
+                                          pde->getFieldHelper(), objScaling);
     ROL::Ptr<ROL::Objective_SimOpt<RealT> > cobj
-      = ROL::makePtr<PDE_Objective<RealT>>(qoi_cmp,assembler);
+      = ROL::makePtr<PDE_Objective<RealT> >(qoi_cmp,assembler);
 
     // Initialize reduced compliance objective function.
     bool storage     = parlist->sublist("Problem").get("Use state storage",true);
@@ -230,7 +230,7 @@ int main(int argc, char *argv[]) {
     ROL::Ptr<ROL::SimController<RealT> > stateStore
       = ROL::makePtr<ROL::SimController<RealT>>();
     ROL::Ptr<ROL::Reduced_Objective_SimOpt<RealT> > cobjRed
-      = ROL::makePtr<ROL::Reduced_Objective_SimOpt<RealT>>(cobj,
+      = ROL::makePtr<ROL::Reduced_Objective_SimOpt<RealT> >(cobj,
                      pdeWithFilter,stateStore,up,zp,pp,storage);
 
     // Create compliance constraint, multiplier and bounds
@@ -240,24 +240,24 @@ int main(int argc, char *argv[]) {
       mycomp += xsampler->getMyWeight(i)*cobjRed->value(*zp,tol);
     }
     xsampler->sumAll(&mycomp,&comp,1);
-    ROL::Ptr<ROL::Constraint<RealT> > icon
-      = ROL::makePtr<ROL::ConstraintFromObjective<RealT>>(cobjRed);
+    ROL::Ptr<ROL::ConstraintFromObjective<RealT> > icon
+      = ROL::makePtr<ROL::ConstraintFromObjective<RealT> >(cobjRed);
     ROL::Ptr<std::vector<RealT> > imul_ptr, iup_ptr;
     ROL::Ptr<ROL::Vector<RealT> > imul, iup;
-    imul = ROL::makePtr<ROL::SingletonVector<RealT>>(0);
-    iup  = ROL::makePtr<ROL::SingletonVector<RealT>>(cmpFactor*comp);
+    imul = ROL::makePtr<ROL::SingletonVector<RealT> >(0);
+    iup  = ROL::makePtr<ROL::SingletonVector<RealT> >(cmpFactor*comp);
     ROL::Ptr<ROL::BoundConstraint<RealT> > ibnd
-      = ROL::makePtr<ROL::Bounds<RealT>>(*iup,false);
+      = ROL::makePtr<ROL::Bounds<RealT> >(*iup,false);
 
     // Initialize bound constraints.
     ROL::Ptr<Tpetra::MultiVector<> > lo_ptr, hi_ptr;
     lo_ptr = assembler->createControlVector(); lo_ptr->putScalar(0.0);
     hi_ptr = assembler->createControlVector(); hi_ptr->putScalar(1.0);
     ROL::Ptr<ROL::Vector<RealT> > lop, hip;
-    lop = ROL::makePtr<PDE_PrimalOptVector<RealT>>(lo_ptr,pde,assembler);
-    hip = ROL::makePtr<PDE_PrimalOptVector<RealT>>(hi_ptr,pde,assembler);
+    lop = ROL::makePtr<PDE_PrimalOptVector<RealT> >(lo_ptr,pde,assembler);
+    hip = ROL::makePtr<PDE_PrimalOptVector<RealT> >(hi_ptr,pde,assembler);
     ROL::Ptr<ROL::BoundConstraint<RealT> > bnd
-      = ROL::makePtr<ROL::Bounds<RealT>>(lop,hip);
+      = ROL::makePtr<ROL::Bounds<RealT> >(lop,hip);
 
     // Build optimization problem.
     ROL::OptimizationProblem<RealT> optProb(vobj,zp,bnd,icon,imul,ibnd);

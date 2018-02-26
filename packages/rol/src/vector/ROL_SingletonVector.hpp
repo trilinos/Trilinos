@@ -123,6 +123,10 @@ public:
     return value_;
   }
 
+  void setScalar( const Real &C ) {
+    value_ = C;
+  }
+
   void print( std::ostream& os ) const {
     os << value_ << std::endl;
   }

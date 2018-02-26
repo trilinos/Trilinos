@@ -101,7 +101,7 @@ private:
     // If bnd is null, then make a null BoundConstraint
     ROL::Ptr<BoundConstraint<Real> > bnd0;
     if ( bnd == ROL::nullPtr ) {
-      bnd0 = ROL::makePtr<BoundConstraint<Real>>();
+      bnd0 = ROL::makePtr<BoundConstraint<Real>>(*x);
       bnd0->deactivate();
     }
     else {
@@ -129,7 +129,7 @@ private:
             if ( cbnd->isActivated() ) {
               // Set type to inequality
               isInequality_.back() = true;
-              // Create slace variables
+              // Create slack variables
               svec_.push_back(l->dual().clone());
               initializeSlackVariable(con,cbnd,svec_[cnt],x);
               // Create slack bound
@@ -162,7 +162,7 @@ private:
     // Create partitioned optimization vector and bound constraint
     if ( hasInequality_ ) {
       x_   = ROL::makePtr<PartitionedVector<Real>>(svec_);
-      bnd_ = ROL::makePtr<BoundConstraint_Partitioned<Real>>(sbnd_);
+      bnd_ = ROL::makePtr<BoundConstraint_Partitioned<Real>>(sbnd_,svec_);
     }
     else {
       x_   = x;

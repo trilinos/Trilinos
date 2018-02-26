@@ -239,6 +239,12 @@ public:
     return result;
   }
 
+  void setScalar( const Real C ) {
+    for (size_type i=0; i<vecs_.size(); ++i) {
+      vecs_[i]->setScalar(C);
+    }
+  }
+
   void print( std::ostream &outStream ) const {
     for( size_type i=0; i<vecs_.size(); ++i ) {
       outStream << "V[" << i << "]: ";
