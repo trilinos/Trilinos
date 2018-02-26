@@ -24,6 +24,8 @@ INCLUDE_DIRECTORIES(${DIR})
 INCLUDE_DIRECTORIES(${DIR}/Graph)
 INCLUDE_DIRECTORIES(${DIR}/Graph/BrickAggregation)
 INCLUDE_DIRECTORIES(${DIR}/Graph/StructuredAggregation)
+INCLUDE_DIRECTORIES(${DIR}/Graph/StructuredAggregation/coupled)
+INCLUDE_DIRECTORIES(${DIR}/Graph/StructuredAggregation/uncoupled)
 INCLUDE_DIRECTORIES(${DIR}/Graph/UncoupledAggregation)
 INCLUDE_DIRECTORIES(${DIR}/Graph/UserAggregation)
 INCLUDE_DIRECTORIES(${DIR}/Headers)
@@ -378,6 +380,8 @@ APPEND_GLOB(SOURCES Utils/ForwardDeclaration/*.cpp)
 TRILINOS_CREATE_CLIENT_TEMPLATE_HEADERS(${DIR}/Graph NOSIERRABJAM)
 TRILINOS_CREATE_CLIENT_TEMPLATE_HEADERS(${DIR}/Graph/BrickAggregation NOSIERRABJAM)
 TRILINOS_CREATE_CLIENT_TEMPLATE_HEADERS(${DIR}/Graph/StructuredAggregation NOSIERRABJAM)
+TRILINOS_CREATE_CLIENT_TEMPLATE_HEADERS(${DIR}/Graph/StructuredAggregation/coupled NOSIERRABJAM)
+TRILINOS_CREATE_CLIENT_TEMPLATE_HEADERS(${DIR}/Graph/StructuredAggregation/uncoupled NOSIERRABJAM)
 TRILINOS_CREATE_CLIENT_TEMPLATE_HEADERS(${DIR}/Graph/UncoupledAggregation NOSIERRABJAM)
 TRILINOS_CREATE_CLIENT_TEMPLATE_HEADERS(${DIR}/Graph/UserAggregation NOSIERRABJAM)
 TRILINOS_CREATE_CLIENT_TEMPLATE_HEADERS(${DIR}/Interface NOSIERRABJAM)
@@ -454,6 +458,8 @@ TRIBITS_ADD_LIBRARY(
   SOURCES ${SOURCES}
   )
 
+# touch CMakeLists.txt because a new file was created in Utils/ExplicitInstantiation of Utils/ForwardDeclaration
+# touch CMakeLists.txt because a new file was created in Utils/ExplicitInstantiation of Utils/ForwardDeclaration
 # touch CMakeLists.txt because a new file was created in Utils/ExplicitInstantiation of Utils/ForwardDeclaration
 # touch CMakeLists.txt because a new file was created in Utils/ExplicitInstantiation of Utils/ForwardDeclaration
 # touch CMakeLists.txt because a new file was created in Utils/ExplicitInstantiation of Utils/ForwardDeclaration
