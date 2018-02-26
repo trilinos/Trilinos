@@ -75,6 +75,9 @@ TEUCHOS_UNIT_TEST( PrintDouble, Basic )
      value even if people change their IEEE rounding mode,
      this long representation is needed */
   test_print_double("9.999999999999999e22", success, out);
+  test_print_double("inf", success, out);
+  test_print_double("-inf", success, out);
+  test_print_double("nan", success, out);
 }
 
 } // namespace
