@@ -273,8 +273,6 @@ void jacobiIterate(const int maxIter,
   std::vector<Teuchos::RCP<Epetra_Vector> > regRes(maxRegPerProc);
   createRegionalVector(regRes, maxRegPerProc, revisedRowMapPerGrp);
 
-  int myRank = mapComp->Comm().MyPID();
-
   // extract diagonal from region matrices and recover true diagonal values
   std::vector<Teuchos::RCP<Epetra_Vector> > diag(maxRegPerProc);
   for (int j = 0; j < maxRegPerProc; j++) {
@@ -885,7 +883,6 @@ int main(int argc, char *argv[]) {
       for (int k = 0; k < (int) myRegions.size(); k++) {
         revisedGIDs.resize(0);
         int curRegion = myRegions[k];
-        double *jthRegions;
         int *colGIDsComp =  AComp->ColMap().MyGlobalElements();
         std::vector<int> tempRegIDs(nExtended);
 
@@ -1544,15 +1541,15 @@ int main(int argc, char *argv[]) {
        * Then, transform to regional layout and find GIDs with entry 1
        */
       int numNodes = mapComp->NumGlobalPoints() / 3 + 1;
-      double vals[numNodes];
-      int ind[numNodes];
+      std::vector<double> vals(numNodes);
+      std::vector<int> ind(numNodes);
       for (int i = 0; i < numNodes; ++i)
       {
         vals[i] = 1.0;
         ind[i] = 3*i;
       }
       Teuchos::RCP<Epetra_Vector> coarseGridToggle = Teuchos::rcp(new Epetra_Vector(*mapComp, true));
-      coarseGridToggle->ReplaceGlobalValues(numNodes, vals, ind);
+      coarseGridToggle->ReplaceGlobalValues(numNodes, vals.data(), ind.data());
 
       // compute coarse composite row map
       {
@@ -1680,11 +1677,11 @@ int main(int argc, char *argv[]) {
         for (int c = 0; c < regionGrpProlong[j]->NumMyCols(); ++c) {
           for (int r = 0; r < regionGrpProlong[j]->NumMyRows(); ++r) {
             if (regionGrpProlong[j]->ColMap().GID(c) == (*regGIDVec[j])[r]) {
-              double vals[1];
+              double myVals[1];
               int inds[1];
-              vals[0] = 1.0; //1.0/sqrt(3.0); //1.0; // use all ones of the prolongator
+              myVals[0] = 1.0; //1.0/sqrt(3.0); //1.0; // use all ones of the prolongator
               inds[0] = c;
-              regionGrpProlong[j]->InsertMyValues(r, 1, &*vals, &*inds);
+              regionGrpProlong[j]->InsertMyValues(r, 1, &*myVals, &*inds);
             }
           }
         }
@@ -1694,9 +1691,9 @@ int main(int argc, char *argv[]) {
       }
 
       for (int j = 0; j < maxRegPerProc; j++) {
-        double vals[1];
+        double myVals[1];
         int inds[1];
-        vals[0] = 1.0/3.0;
+        myVals[0] = 1.0/3.0;
         regionAltGrpProlong[j] = Teuchos::rcp(new Epetra_CrsMatrix(Copy, *revisedRowMapPerGrp[j], *coarseAltColMapPerGrp[j], 1, false));
 //        int *coarseCol = coarseAltColMapPerGrp[j]->MyGlobalElements();
         int NccSize    = coarseAltColMapPerGrp[j]->NumMyElements();
@@ -1711,20 +1708,20 @@ int main(int argc, char *argv[]) {
           // need to add 1st prolongator row as this is not addressed by loop below
           if (cstart == 1) {
             inds[0] = 0;
-            regionAltGrpProlong[j]->InsertMyValues(0, 1, &*vals, &*inds);
+            regionAltGrpProlong[j]->InsertMyValues(0, 1, &*myVals, &*inds);
           }
           int i;
           for (i = fstart; i < appData.lDim[3*j] ; i += 3) {
             inds[0] = cstart;
-            regionAltGrpProlong[j]->InsertMyValues(i, 1, &*vals, &*inds);
-            if (i > 0)         regionAltGrpProlong[j]->InsertMyValues(i-1, 1, &*vals, &*inds);
-            if (i < NfrSize-1) regionAltGrpProlong[j]->InsertMyValues(i+1, 1, &*vals, &*inds);
+            regionAltGrpProlong[j]->InsertMyValues(i, 1, &*myVals, &*inds);
+            if (i > 0)         regionAltGrpProlong[j]->InsertMyValues(i-1, 1, &*myVals, &*inds);
+            if (i < NfrSize-1) regionAltGrpProlong[j]->InsertMyValues(i+1, 1, &*myVals, &*inds);
             cstart++;
           }
           // last cpoint hasn't been addressed because someone else owns it
           if (cstart < NccSize) {
             inds[0] = cstart;
-            regionAltGrpProlong[j]->InsertMyValues(NfrSize-1, 1, &*vals, &*inds);
+            regionAltGrpProlong[j]->InsertMyValues(NfrSize-1, 1, &*myVals, &*inds);
           }
         }
         regionAltGrpProlong[j]->FillComplete(*coarseRowMapPerGrp[j], *revisedRowMapPerGrp[j]); // ToDo: test this
