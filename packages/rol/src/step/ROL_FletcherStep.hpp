@@ -44,7 +44,7 @@
 #ifndef ROL_FLETCHERSTEP_H
 #define ROL_FLETCHERSTEP_H
 
-#include "ROL_Fletcher.hpp"
+#include "ROL_FletcherBase.hpp"
 #include "ROL_Types.hpp"
 #include "ROL_Step.hpp"
 #include "Teuchos_ParameterList.hpp"
@@ -67,6 +67,10 @@ private:
   ROL::Ptr<Step<Real> > step_;
   ROL::Ptr<BoundConstraint<Real> > bnd_;
 
+  Teuchos::ParameterList parlist_;
+
+  ROL::Ptr<Vector<Real> > x_; 
+
   // Lagrange multiplier update
   Real penaltyUpdate_;
   bool modifyPenalty_;
@@ -81,6 +85,8 @@ private:
   Real deltaUpdate_;
   ETrustRegion etr_;
 
+  bool bnd_activated_;
+
   ROL::Ptr<Vector<Real> > g_;
 
   int numSuccessSteps_;
@@ -93,9 +99,21 @@ private:
 
   mutable int stepHeaderLength_; // For formatting
 
-  Real computeGradient(Vector<Real> &g, const Vector<Real> &x,
-                       const Real mu, Objective<Real> &obj,
-                       BoundConstraint<Real> &bnd) {
+  Real computeProjGradientNorm(const Vector<Real> &g, const Vector<Real> &x,
+                               BoundConstraint<Real> &bnd) {
+    Real gnorm = 0.;
+    // Compute norm of projected gradient
+    if (bnd.isActivated()) {
+      x_->set(x);
+      x_->axpy(-1.,g.dual());
+      bnd.project(*x_);
+      x_->axpy(-1.,x);
+      gnorm = x_->norm();
+    }
+    else {
+      gnorm = g.norm();
+    }
+    return gnorm;
   }
 
 public:
@@ -107,9 +125,10 @@ public:
   ~FletcherStep() {}
 
   FletcherStep(Teuchos::ParameterList &parlist)
-    : Step<Real>(), numSuccessSteps_(0),
+    : Step<Real>(), bnd_activated_(false), numSuccessSteps_(0),
       isDeltaChanged_(true), isPenaltyChanged_(true), stepHeaderLength_(0) {
     Real zero(0), one(1), two(2), oe8(1.e8), oe1(1.e-1), oem6(1e-6), oem8(1.e-8);
+
     Teuchos::ParameterList& sublist = parlist.sublist("Step").sublist("Fletcher");
     Step<Real>::getState()->searchSize = sublist.get("Penalty Parameter",one);
     delta_ = sublist.get("Regularization Parameter",zero);
@@ -123,17 +142,7 @@ public:
 
     subStep_ = sublist.get("Subproblem Solver", "Trust Region");
 
-    Teuchos::ParameterList trlist(parlist);
-    bool inexactFletcher = trlist.sublist("Step").sublist("Fletcher").get("Inexact Solves", false);
-    if( inexactFletcher ) {
-      trlist.sublist("General").set("Inexact Objective Value", true);
-      trlist.sublist("General").set("Inexact Gradient", true);
-    }
-
-    StepFactory<Real> factory;
-    step_ = factory.getStep(subStep_, trlist);
-
-    etr_ = StringToETrustRegion(parlist.sublist("Step").sublist("Trust Region").get("Subproblem Solver", "Truncated CG"));
+    parlist_ = parlist;
   }
 
   /** \brief Initialize step with equality constraint.
@@ -151,12 +160,29 @@ public:
   void initialize( Vector<Real> &x, const Vector<Real> &g, Vector<Real> &l, const Vector<Real> &c,
                    Objective<Real> &obj, Constraint<Real> &con, BoundConstraint<Real> &bnd,
                    AlgorithmState<Real> &algo_state ) {
+    // Determine what kind of step
+    bnd_activated_ = bnd.isActivated();
+
+    Teuchos::ParameterList trlist(parlist_);
+    bool inexactFletcher = trlist.sublist("Step").sublist("Fletcher").get("Inexact Solves", false);
+    if( inexactFletcher ) {
+      trlist.sublist("General").set("Inexact Objective Value", true);
+      trlist.sublist("General").set("Inexact Gradient", true);
+    }
+    if( bnd_activated_ ) {
+      trlist.sublist("Step").sublist("Trust Region").set("Subproblem Model", "Coleman-Li");
+    }
+
+    StepFactory<Real> factory;
+    step_ = factory.getStep(subStep_, trlist);
+    etr_ = StringToETrustRegion(parlist_.sublist("Step").sublist("Trust Region").get("Subproblem Solver", "Truncated CG"));
+
     // Initialize class members
     g_ = x.dual().clone();
+    x_ = x.clone();
 
     // Rest of initialize
-    Fletcher<Real> &fletcher
-      = dynamic_cast<Fletcher<Real>&>(obj);
+    FletcherBase<Real>& fletcher = dynamic_cast<FletcherBase<Real>&>(obj);
 
     tr_algo_state_.iterateVec = x.clone();
     tr_algo_state_.minIterVec = x.clone();
@@ -173,16 +199,13 @@ public:
     algo_state.nfval = 0;
     algo_state.ncval = 0;
     algo_state.ngrad = 0;
-    // Project x onto the feasible set
-    if ( bnd.isActivated() ) {
-      bnd.project(x);
-    }
-    bnd.update(x,true,algo_state.iter);
-    // Update objective and constraint.
-    fletcher.update(x,true,algo_state.iter);
-    algo_state.value = fletcher.getObjectiveValue();
-    algo_state.gnorm = fletcher.getLagrangianGradient()->norm();
-    state->constraintVec->set(*(fletcher.getConstraintVec()));
+
+    algo_state.value = fletcher.getObjectiveValue(x);
+    algo_state.gnorm = computeProjGradientNorm(*(fletcher.getLagrangianGradient(x)),
+                                               x, bnd);
+    algo_state.aggregateGradientNorm = tr_algo_state_.gnorm;
+
+    state->constraintVec->set(*(fletcher.getConstraintVec(x)));
     algo_state.cnorm = (state->constraintVec)->norm();
     // Update evaluation counters
     algo_state.ncval = fletcher.getNumberConstraintEvaluations();
@@ -226,15 +249,14 @@ public:
     isPenaltyChanged_ = false;
     bool modified = false;
 
-    Fletcher<Real> &fletcher
-      = dynamic_cast<Fletcher<Real>&>(obj);
+    FletcherBase<Real> &fletcher = dynamic_cast<FletcherBase<Real>&>(obj);
     ROL::Ptr<StepState<Real> > fletcherState = Step<Real>::getState();
     const ROL::Ptr<const StepState<Real> > state = step_->getStepState();
 
     step_->update(x,s,obj,bnd,tr_algo_state_);
     numSuccessSteps_ += (state->flag == 0);
 
-    Real gPhiNorm = fletcher.getGradient()->norm();
+    Real gPhiNorm = fletcher.getGradient(x)->norm();
     Real cnorm = (fletcherState->constraintVec)->norm();
     bool too_infeasible = cnorm > static_cast<Real>(100.)*gPhiNorm;
     bool too_feasible = cnorm < static_cast<Real>(1e-2)*gPhiNorm;
@@ -275,9 +297,6 @@ public:
         isDeltaChanged_ = true;
         modified = true;
       }
-    } else {
-      // Repurpose aggregateGradientNorm for gradient of penalty
-      algo_state.aggregateGradientNorm = gPhiNorm;
     }
 
     if( modified ) {
@@ -291,7 +310,7 @@ public:
       tr_algo_state_.ncval++;
       tr_algo_state_.minIter = tr_algo_state_.iter;
       tr_algo_state_.minValue = tr_algo_state_.value;
-      tr_algo_state_.gnorm =  g_->norm();
+      tr_algo_state_.gnorm = computeProjGradientNorm(*g_, x, bnd);
     }
 
     // Update the step and store in state
@@ -299,18 +318,21 @@ public:
     algo_state.iter++;
 
     fletcherState->descentVec->set(s);
-    fletcherState->gradientVec->set(*(fletcher.getLagrangianGradient()));
-    fletcherState->constraintVec->set(*(fletcher.getConstraintVec()));
+    fletcherState->gradientVec->set(*(fletcher.getLagrangianGradient(x)));
+    fletcherState->constraintVec->set(*(fletcher.getConstraintVec(x)));
 
     // Update objective function value
-    algo_state.value = fletcher.getObjectiveValue();
+    algo_state.value = fletcher.getObjectiveValue(x);
     // Update constraint value
     algo_state.cnorm = (fletcherState->constraintVec)->norm();
     // Update the step size
     algo_state.snorm = tr_algo_state_.snorm;
     // Compute gradient of the Lagrangian
-    algo_state.gnorm = fletcherState->gradientVec->norm();
-    // Update evaluation counters
+    algo_state.gnorm = computeProjGradientNorm(*(fletcherState->gradientVec),
+                                               x, bnd);
+    // Compute gradient of penalty function
+    algo_state.aggregateGradientNorm = tr_algo_state_.gnorm;
+    // Update evaluation countersgetConstraintVec
     algo_state.nfval = fletcher.getNumberFunctionEvaluations();
     algo_state.ngrad = fletcher.getNumberGradientEvaluations();
     algo_state.ncval = fletcher.getNumberConstraintEvaluations();
@@ -318,7 +340,7 @@ public:
     // fletcher.update(x,true,algo_state.iter);
     // bnd.update(x,true,algo_state.iter);
     // Update multipliers
-    algo_state.lagmultVec->set(*(fletcher.getMultiplierVec()));
+    algo_state.lagmultVec->set(*(fletcher.getMultiplierVec(x)));
   }
 
   /** \brief Print iterate header.
