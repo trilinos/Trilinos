@@ -474,6 +474,8 @@ public:
     QgL_->applyBinary(Elementwise::Multiply<Real>(), *Qsqrt_);
     DQgL_->set( *gL_ );
     DQgL_->applyBinary(Elementwise::Multiply<Real>(), *DQ_);
+    
+    isMultiplierComputed_ = true;
   }
 
   void computeQ(const Vector<Real>& x) {

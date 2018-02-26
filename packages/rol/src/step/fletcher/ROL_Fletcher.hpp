@@ -343,6 +343,8 @@ public:
 
     multSolverError_ = tol;
     solveAugmentedSystem(*gL_, *y_, *g_, *scaledc_, x, multSolverError_);
+
+    isMultiplierComputed_ = true;
   }
 
 }; // class Fletcher
