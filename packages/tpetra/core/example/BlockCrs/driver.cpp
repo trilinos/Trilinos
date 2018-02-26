@@ -101,6 +101,13 @@ int main (int argc, char *argv[])
   // Initialize Kokkos
   Kokkos::initialize();
 
+  if (comm->getRank() == 0) {
+    if (std::is_same<exec_space,Kokkos::Serial>::value)
+      std::cout << "Kokkos::Serial " << std::endl;
+    else
+      exec_space::print_configuration(std::cout, false);
+  }
+
   MeshDatabase mesh(comm,
                     num_global_elements_i,
                     num_global_elements_j,
@@ -310,7 +317,7 @@ int main (int argc, char *argv[])
 #if PRINT_VERBOSE
     bcrs_graph->describe(*out, Teuchos::VERB_EXTREME);
 #endif
-    
+
     // Create BlockCrsMatrix
     RCP<tpetra_blockcrs_matrix_type> A_bcrs = Teuchos::rcp(new tpetra_blockcrs_matrix_type(*bcrs_graph, blocksize));
 
@@ -337,12 +344,12 @@ int main (int argc, char *argv[])
             blocks_host(loc) = A_bcrs->getLocalBlock(row, colidx(loc));
         });    
       Kokkos::deep_copy(blocks, blocks_host);
-      
+
       Kokkos::parallel_for
         (num_owned_elements, KOKKOS_LAMBDA(const LO row) {
           for (LO loc=rowptr(row);loc<rowptr(row+1);++loc) {
-            const GO gid_row = mesh_gids_host(row);
-            const GO gid_col = mesh_gids_host(colidx(loc));
+            const GO gid_row = mesh_gids(row);
+            const GO gid_col = mesh_gids(colidx(loc));
             
             LO i0, j0, k0, i1, j1, k1;
             sb.idx_to_ijk(gid_row, i0, j0, k0);

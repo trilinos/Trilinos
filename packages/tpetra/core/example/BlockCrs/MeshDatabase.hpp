@@ -74,7 +74,7 @@ namespace BlockCrsTest {
   }
 
   struct MeshDatabase {
-  private:
+  public:
     // global perspective to the mesh structure (finite volume interior node only)
     struct StructuredProcGrid {
     public:
