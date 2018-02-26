@@ -82,9 +82,9 @@ in Burger and Dybvig's work.
 
 Note that there is an error in the original paper which is corrected
 in our code:
-on page 4, step 4 of the Interger Arithmetic procedure, stopping
+On page 4, step 4 of the Integer Arithmetic procedure, stopping
 condition (2) has the wrong sign, and should be:
-$r_n + m+n^+ > s_n$
+$r_n + m_n^+ > s_n$
 
 We extend their work slightly to include an intelligent choice of
 leading/trailing zeros versus scientific notation, choosing whichever
