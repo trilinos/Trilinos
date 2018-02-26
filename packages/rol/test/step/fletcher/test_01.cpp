@@ -47,13 +47,9 @@
 */
 
 #include "ROL_SimpleEqConstrained.hpp"
-
 #include "ROL_OptimizationProblem.hpp"
 #include "ROL_OptimizationSolver.hpp"
-
-#include "ROL_Algorithm.hpp"
 #include "ROL_Fletcher.hpp"
-#include "ROL_RandomVector.hpp"
 
 #include "Teuchos_oblackholestream.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
@@ -71,11 +67,8 @@ int main(int argc, char *argv[]) {
   Teuchos::RCP<Teuchos::ParameterList> parlist = Teuchos::rcp( new Teuchos::ParameterList() );
   Teuchos::updateParametersFromXmlFile( filename, parlist.ptr() );
 
-
-  using Obj     = ROL::Objective<RealT>;
-  using Con     = ROL::Constraint<RealT>;
+  using Opt     = ROL::OptimizationProblem<RealT>;
   using V       = ROL::Vector<RealT>;
-  using StdV    = ROL::StdVector<RealT>;
 
   // This little trick lets us print to std::cout only if a (dummy) command-line argument is provided.
   int iprint     = argc - 1;
@@ -96,25 +89,15 @@ int main(int argc, char *argv[]) {
 
   try {
 
-    int xdim = 5;
-    int cdim = 3;
+    // Set up optimization problem
+    ROL::Ptr<V> x, sol;
+    ROL::Ptr<Opt> optProb;
+    ROL::ZOO::getSimpleEqConstrained<RealT> SEC;
+    SEC.get( optProb, x, sol );
+    ROL::Ptr<V> error = sol->clone();
 
-    // Optimization vector
-    ROL::Ptr<V> x  = ROL::makePtr<StdV>( ROL::makePtr<std::vector<RealT>>(xdim) );
-    ROL::Ptr<V> c  = ROL::makePtr<StdV>( ROL::makePtr<std::vector<RealT>>(cdim));
-
-    // Exact solution
-    ROL::Ptr<V> sol   = x->clone();
-    ROL::Ptr<V> error = x->clone();
-
-    ROL::Ptr<Obj> obj = ROL::nullPtr;
-    ROL::Ptr<Con> con = ROL::nullPtr;
-
-    ROL::ZOO::getSimpleEqConstrained<RealT,StdV,StdV,StdV,StdV>( obj, con, *x, *sol );
-
-    ROL::OptimizationProblem<RealT> optProb(obj, x, con, c);
-    // optProb.check(*outStream);
-    ROL::OptimizationSolver<RealT> optSolver(optProb, *parlist);
+    // Solve optimization problem
+    ROL::OptimizationSolver<RealT> optSolver(*optProb, *parlist);
     optSolver.solve(*outStream);
 
     error->set(*sol);

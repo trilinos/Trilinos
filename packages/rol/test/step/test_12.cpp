@@ -48,7 +48,7 @@
 #define USE_HESSVEC 0
 
 #include "ROL_Step.hpp"
-#include "ROL_TestObjectives.hpp"
+#include "ROL_GetTestProblems.hpp"
 
 #include <iostream>
 
@@ -69,9 +69,10 @@ int main(int argc, char *argv[]) {
 
   int errorFlag  = 0;
   ROL::Ptr<ROL::Vector<RealT> > x0, x;
-  ROL::Ptr<ROL::Objective<RealT> > obj;
-  ROL::Ptr<ROL::BoundConstraint<RealT> > bnd;
-  ROL::getTestObjectives<RealT>(obj,bnd,x0,x,ROL::TESTOPTPROBLEM_HS1);
+  ROL::Ptr<ROL::OptimizationProblem<RealT> > problem;
+  ROL::GetTestProblem<RealT>(problem,x0,x,ROL::TESTOPTPROBLEM_HS1);
+  ROL::Ptr<ROL::Objective<RealT> > obj = problem->getObjective();
+  ROL::Ptr<ROL::BoundConstraint<RealT> > bnd = problem->getBoundConstraint();
   ROL::AlgorithmState<RealT> algo_state;
 
   // *** Test body.

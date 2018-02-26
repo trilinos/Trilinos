@@ -79,19 +79,23 @@ int main(int argc, char *argv[]) {
 
   try {
 
+    int dim = 2;
+    int nc = 1;
     ROL::Ptr<ROL::Objective<RealT> > obj;
     ROL::Ptr<ROL::Constraint<RealT> > constr;
-    ROL::Ptr<std::vector<RealT> > x_ptr = ROL::makePtr<std::vector<RealT>>(0, 0.0);
-    ROL::Ptr<std::vector<RealT> > sol_ptr = ROL::makePtr<std::vector<RealT>>(0, 0.0);
+    ROL::Ptr<std::vector<RealT> > x_ptr = ROL::makePtr<std::vector<RealT>>(dim, 0.0);
+    ROL::Ptr<std::vector<RealT> > sol_ptr = ROL::makePtr<std::vector<RealT>>(dim, 0.0);
     ROL::StdVector<RealT> x(x_ptr);      // Iteration vector.
     ROL::StdVector<RealT> sol(sol_ptr);  // Reference solution vector.
 
     // Retrieve objective, constraint, iteration vector, solution vector.
-    ROL::ZOO::getParaboloidCircle <RealT, ROL::StdVector<RealT>, ROL::StdVector<RealT>, ROL::StdVector<RealT>, ROL::StdVector<RealT> > (obj, constr, x, sol);
+    ROL::ZOO::getParaboloidCircle<RealT, ROL::StdVector<RealT>, ROL::StdVector<RealT>, ROL::StdVector<RealT>, ROL::StdVector<RealT> > PC;
+    obj = PC.getObjective();
+    constr = PC.getEqualityConstraint();
+    x.set(*PC.getInitialGuess());
+    sol.set(*PC.getSolution());
 
     // Run derivative checks, etc.
-    int dim = 2;
-    int nc = 1;
     RealT left = -1e0, right = 1e0;
     ROL::Ptr<std::vector<RealT> > xtest_ptr = ROL::makePtr<std::vector<RealT>>(dim, 0.0);
     ROL::Ptr<std::vector<RealT> > g_ptr = ROL::makePtr<std::vector<RealT>>(dim, 0.0);

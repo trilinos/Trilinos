@@ -413,6 +413,21 @@ public:
     return result;
   }
 
+  void setScalar( const Real C ) {
+    vec_->setScalar(C);
+    if (augmentedObj_ && statObj_vec_ != ROL::nullPtr) {
+      statObj_vec_->setScalar(C);
+    }
+    if (augmentedCon_) {
+      int size = statCon_vec_.size();
+      for (int i = 0; i < size; ++i) {
+        if (statCon_vec_[i] != ROL::nullPtr) {
+          statCon_vec_[i]->setScalar(C);
+        }
+      }
+    }
+  }
+
   int dimension(void) const {
     int dim = vec_->dimension();
     if (augmentedObj_) {

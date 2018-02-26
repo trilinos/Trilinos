@@ -88,7 +88,11 @@ int main(int argc, char *argv[]) {
   ROL::Ptr<CON> con;
   ROL::Ptr<OBJ> model;  
 
-  ROL::ZOO::getHS2(obj,con,x0,x);
+  ROL::ZOO::getHS2<RealT> HS2;
+  obj = HS2.getObjective();
+  con = HS2.getBoundConstraint();
+  x0  = HS2.getInitialGuess();
+  x   = HS2.getSolution();
 
   g = x->dual().clone();
 

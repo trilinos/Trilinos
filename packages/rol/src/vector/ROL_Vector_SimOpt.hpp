@@ -150,6 +150,11 @@ public:
     return result;
   }
 
+  void setScalar( const Real C ) {
+    vec1_->setScalar(C);
+    vec2_->setScalar(C);
+  }
+
 
   int dimension() const {
     return (vec1_)->dimension() + (vec2_)->dimension();

@@ -167,8 +167,10 @@ APPEND_GLOB(HEADERS ${DIR}/*.hpp)
 #
 
 SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_SOURCE_DIR}/zoo)
-INCLUDE_DIRECTORIES(${DIR})
-APPEND_GLOB(HEADERS ${DIR}/*.hpp)
+INCLUDE_DIRECTORIES(${DIR}
+                    ${DIR}/testproblems)
+APPEND_GLOB(HEADERS ${DIR}/*.hpp
+                    ${DIR}/testproblems/*.hpp)
 
 #
 # All sources

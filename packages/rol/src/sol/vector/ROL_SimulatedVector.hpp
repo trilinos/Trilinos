@@ -248,6 +248,12 @@ public:
     return result;
   }
 
+  void setScalar(const Real C) {
+    for( size_type i=0; i<vecs_.size(); ++i ) {
+      vecs_[i]->setScalar(C);
+    }
+  }
+
   // Methods that do not exist in the base class
 
   // In distributed batching mode, these are understood to take local indices.
