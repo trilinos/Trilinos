@@ -125,7 +125,7 @@ def plotMem(massifFile,
     assert(len(times) > 0)
 
     # plot the curve of memory usage
-    plt.plot(times, memHeap)
+    plt.plot(times, memHeap, '-x')
 
     if displayTimers:
         # now, filter through the snapshot pairs
@@ -154,7 +154,7 @@ def plotMem(massifFile,
             plt.gca().add_patch(patches.Rectangle((pair[0]['time'], i*height),
                                                   pair[1]['time']-pair[0]['time'],
                                                   height, alpha=0.5, facecolor='red'))
-            plt.text(pair[0]['time'], (i+0.5)*height, tex_escape(pair[0]['label']))
+            plt.text(pair[0]['time'], (i+0.5)*height, "%r"%pair[0]['label'])
             # add vertical lines at start and end for each timer
             plt.plot([pair[0]['time'], pair[0]['time']], [0, max(memHeap)], '-', c='grey', alpha=0.5)
             plt.plot([pair[1]['time'], pair[1]['time']], [0, max(memHeap)], '-', c='grey', alpha=0.5)
@@ -163,7 +163,7 @@ def plotMem(massifFile,
                         [pair[0]['mem_heap'], pair[1]['mem_heap']], c='r')
     plt.xlabel(timeUnit)
     plt.ylabel(memUnit)
-    plt.title(tex_escape(cmd))
+    plt.title("%r"%cmd)
 
 
 if __name__ == '__main__':
@@ -189,7 +189,7 @@ are also included.""",
     parser.add_argument('--filter',
                         help='regexp to filter for timers to include',
                         type=str,
-                        default='\(level|\(total,_level|TpetraExt')
+                        default='')
     parser.add_argument('--memUnit',
                         help='memory unit (KB, MB)',
                         type=str,
