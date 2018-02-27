@@ -290,6 +290,7 @@ namespace BlockCrsTest {
     StructuredProcGrid _grid;
     StructuredBlockPart _owned;
 
+    typedef Kokkos::View<GO*,exec_space> global_ordinal_view_type;
     typedef Kokkos::View<GO*,host_space> global_ordinal_view_host_type;
     
     global_ordinal_view_host_type _element_gids; 
@@ -434,6 +435,214 @@ namespace BlockCrsTest {
 
       oss << std::endl;      
     }
+  };
+
+  struct LocalGraphConstruction {
+  private:
+    MeshDatabase::StructuredBlock _sb;
+    MeshDatabase::global_ordinal_view_type _owned_gids;
+
+    local_ordinal_range_type _remote_range_i, _remote_range_j, _remote_range_k;
+
+    typedef typename tpetra_crs_graph_type::local_graph_type::row_map_type::non_const_type rowptr_view_type;
+    rowptr_view_type _rowptr;
+
+    typedef typename rowptr_view_type::non_const_value_type scan_value_type;
+ 
+  public:
+    LocalGraphConstruction(const MeshDatabase::StructuredBlock &sb,
+                           const MeshDatabase::global_ordinal_view_type &owned_gids,
+                           const local_ordinal_range_type &remote_range_i,
+                           const local_ordinal_range_type &remote_range_j,
+                           const local_ordinal_range_type &remote_range_k,
+                           const rowptr_view_type &rowptr)
+      : _sb(sb), 
+        _owned_gids(owned_gids), 
+        _remote_range_i(remote_range_i),
+        _remote_range_j(remote_range_j),
+        _remote_range_k(remote_range_k),
+        _rowptr(rowptr) {};
+    
+    KOKKOS_INLINE_FUNCTION
+    void operator()(const LO &local_idx, 
+                    scan_value_type &update, 
+                    const bool final) const {
+      LO cnt = 0;
+      if (local_idx < _owned_gids.extent(0)) {
+        LO i, j, k;
+        const GO global_idx = _owned_gids(local_idx);
+        _sb.idx_to_ijk(global_idx, i, j, k);
+
+        cnt = 1; // self
+
+        cnt += ((i-1) >= _remote_range_i.first );
+        cnt += ((i+1) <  _remote_range_i.second);
+
+        cnt += ((j-1) >= _remote_range_j.first );
+        cnt += ((j+1) <  _remote_range_j.second);
+
+        cnt += ((k-1) >= _remote_range_k.first );
+        cnt += ((k+1) <  _remote_range_k.second);
+      }
+      
+      _rowptr(local_idx) = cnt;
+      if (final)
+        _rowptr(local_idx) = update;
+      update += cnt;
+    }
+
+    KOKKOS_INLINE_FUNCTION
+    void init(scan_value_type &update) const { 
+      update = 0; 
+    }
+
+    KOKKOS_INLINE_FUNCTION
+    void join(volatile       scan_value_type &update,
+              volatile const scan_value_type &input) const { 
+      update += input; 
+    }
+
+    inline
+    void run() {
+      Kokkos::parallel_scan(_owned_gids.extent(0)+1, *this);
+    }
+  };
+
+  struct LocalGraphFill {
+  private:
+    typedef typename tpetra_crs_graph_type::local_graph_type::row_map_type::non_const_type rowptr_view_type;
+    typedef typename tpetra_crs_graph_type::local_graph_type::entries_type colidx_view_type;
+ 
+    MeshDatabase::StructuredBlock _sb;
+    MeshDatabase::global_ordinal_view_type _owned_gids;
+    MeshDatabase::global_ordinal_view_type _remote_gids;
+
+    rowptr_view_type _rowptr;
+    colidx_view_type _colidx;
+
+    local_ordinal_range_type _owned_range_i, _owned_range_j, _owned_range_k;
+    local_ordinal_range_type _remote_range_i, _remote_range_j, _remote_range_k;
+
+  public:    
+    LocalGraphFill(const MeshDatabase::StructuredBlock &sb,
+                   const MeshDatabase::global_ordinal_view_type &owned_gids,
+                   const MeshDatabase::global_ordinal_view_type &remote_gids,
+                   const local_ordinal_range_type &owned_range_i,
+                   const local_ordinal_range_type &owned_range_j,
+                   const local_ordinal_range_type &owned_range_k,
+                   const local_ordinal_range_type &remote_range_i,
+                   const local_ordinal_range_type &remote_range_j,
+                   const local_ordinal_range_type &remote_range_k,
+                   const rowptr_view_type &rowptr,
+                   const colidx_view_type &colidx)
+      : _sb(sb), 
+        _owned_gids(owned_gids), 
+        _remote_gids(remote_gids), 
+        _owned_range_i(owned_range_i),
+        _owned_range_j(owned_range_j),
+        _owned_range_k(owned_range_k),
+        _remote_range_i(remote_range_i),
+        _remote_range_j(remote_range_j),
+        _remote_range_k(remote_range_k),
+        _rowptr(rowptr),
+        _colidx(colidx) {};
+
+    KOKKOS_INLINE_FUNCTION
+    void operator()(const LO &local_idx) const {
+      LO i, j, k;
+      const GO global_idx = _owned_gids(local_idx);
+      _sb.idx_to_ijk(global_idx, i, j, k);
+      
+      const LO lbeg = _rowptr(local_idx); 
+      LO lcnt = lbeg;
+      
+      // self
+      _colidx(lcnt++) = local_idx;
+      
+      // owned and remote gids are separately sorted
+      const auto num_owned_elements = _owned_gids.extent(0);
+      const auto num_remote_elements = _remote_gids.extent(0);
+
+      const auto owned_first= &_owned_gids(0);
+      const auto owned_last = &_owned_gids(num_owned_elements-1);
+      const auto remote_first = &_remote_gids(0);
+      const auto remote_last = &_remote_gids(num_remote_elements-1);
+
+      // sides on i
+      { 
+        const auto i_minus_one = i-1;
+        if (i_minus_one >= _owned_range_i.first) {
+          _colidx(lcnt++) = ( lower_bound(owned_first, owned_last, _sb.ijk_to_idx(i_minus_one,j,k)) -
+                              owned_first );
+        } else if (i_minus_one >= _remote_range_i.first) {
+          _colidx(lcnt++) = ( lower_bound(remote_first, remote_last, _sb.ijk_to_idx(i_minus_one,j,k)) - 
+                              remote_first +
+                              num_owned_elements );
+        }
+        const auto i_plus_one = i+1;
+        if (i_plus_one < _owned_range_i.second) {
+          _colidx(lcnt++) = ( lower_bound(owned_first, owned_last, _sb.ijk_to_idx(i_plus_one,j,k)) - 
+                              owned_first );
+        } else if (i_plus_one < _remote_range_i.second) {
+          _colidx(lcnt++) = ( lower_bound(remote_first, remote_last, _sb.ijk_to_idx(i_plus_one,j,k)) - 
+                              remote_first +
+                              num_owned_elements );
+        }
+      }
+      
+      // sides on j
+      { 
+        const auto j_minus_one = j-1;
+        if (j_minus_one >= _owned_range_j.first) {
+          _colidx(lcnt++) = ( lower_bound(owned_first, owned_last, _sb.ijk_to_idx(i,j_minus_one,k)) -
+                              owned_first );
+        } else if (j_minus_one >= _remote_range_j.first) {
+          _colidx(lcnt++) = ( lower_bound(remote_first, remote_last, _sb.ijk_to_idx(i,j_minus_one,k)) -
+                              remote_first +
+                              num_owned_elements );
+        }
+        const auto j_plus_one = j+1;
+        if (j_plus_one < _owned_range_j.second) {
+          _colidx(lcnt++) = ( lower_bound(owned_first, owned_last, _sb.ijk_to_idx(i,j_plus_one,k)) -
+                              owned_first );                                 
+        } else if (j_plus_one < _remote_range_j.second) {
+          _colidx(lcnt++) = ( lower_bound(remote_first, remote_last, _sb.ijk_to_idx(i,j_plus_one,k)) -
+                              remote_first + 
+                              num_owned_elements );
+        }
+      }
+      
+      // sides on k
+      { 
+        const auto k_minus_one = k-1;
+        if (k_minus_one >= _owned_range_k.first) {
+          _colidx(lcnt++) = ( lower_bound(owned_first, owned_last, _sb.ijk_to_idx(i,j,k_minus_one)) - 
+                              owned_first );
+        } else if (k_minus_one >= _remote_range_k.first) {
+          _colidx(lcnt++) = ( lower_bound(remote_first, remote_last, _sb.ijk_to_idx(i,j,k_minus_one)) -
+                              remote_first + 
+                              num_owned_elements );
+        }
+        const auto k_plus_one = k+1;
+        if (k_plus_one < _owned_range_k.second) {
+          _colidx(lcnt++) = ( lower_bound(owned_first, owned_last, _sb.ijk_to_idx(i,j,k_plus_one)) -
+                              owned_first );
+        } else if (k_plus_one < _remote_range_k.second) {
+          _colidx(lcnt++) = ( lower_bound(remote_first, remote_last, _sb.ijk_to_idx(i,j,k_plus_one)) -
+                              remote_first +
+                              num_owned_elements ); 
+        }
+      }
+      
+      // sort 
+      heap_sort(&_colidx(lbeg), lcnt-lbeg);
+    }
+
+    inline
+    void run() {
+      Kokkos::parallel_for(_owned_gids.extent(0), *this);
+    }
+
   };
 
 }

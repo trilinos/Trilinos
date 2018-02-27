@@ -169,35 +169,14 @@ int main (int argc, char *argv[])
       part.getRemoteRange(sb, remote_range_i, remote_range_j, remote_range_k);
       
       // count # of nonzeros per row
-      Kokkos::parallel_scan
-        (num_owned_elements+1,
-         KOKKOS_LAMBDA(const LO &local_idx, 
-                       typename rowptr_view_type::non_const_value_type &update, 
-                       const bool &final) {
-          LO cnt = 0;
-          if (local_idx < num_owned_elements) {
-            LO i, j, k;
-            const GO global_idx = mesh_gids(local_idx);
-            sb.idx_to_ijk(global_idx, i, j, k);
-            
-            cnt = 1; // self
-            
-            cnt += ((i-1) >= remote_range_i.first );
-            cnt += ((i+1) <  remote_range_i.second);
-            
-            cnt += ((j-1) >= remote_range_j.first );
-            cnt += ((j+1) <  remote_range_j.second);
-            
-            cnt += ((k-1) >= remote_range_k.first );
-            cnt += ((k+1) <  remote_range_k.second);
-          } 
+      {
+        LocalGraphConstruction local_graph_construction
+          (sb, owned_gids, 
+           remote_range_i, remote_range_j, remote_range_k,
+           rowptr);
+        local_graph_construction.run();
+      }
 
-          rowptr(local_idx) = cnt;           
-          if (final)
-            rowptr(local_idx) = update;          
-          update += cnt;
-        });
-      
       // the last entry of rowptr is the total number of nonzeros in the local graph
       // mirror to host to use the information in constructing colidx
       auto nnz = Kokkos::subview(rowptr, num_owned_elements);
@@ -208,94 +187,13 @@ int main (int argc, char *argv[])
       colidx = colidx_view_type("colidx", nnz_host());
 
       // fill      
-      Kokkos::parallel_for
-        (num_owned_elements,
-         KOKKOS_LAMBDA(const LO &local_idx) {
-          LO i, j, k;
-          const GO global_idx = mesh_gids(local_idx);
-          sb.idx_to_ijk(global_idx, i, j, k);
-          
-          const LO lbeg = rowptr(local_idx); 
-          LO lcnt = lbeg;
-          
-          // self
-          colidx(lcnt++) = local_idx;
-
-          // owned and remote gids are separately sorted
-          const auto owned_first= &owned_gids(0);
-          const auto owned_last = &owned_gids(num_owned_elements-1);
-          const auto remote_first = &remote_gids(0);
-          const auto remote_last = &remote_gids(num_remote_elements-1);
-          
-          // sides on i
-          { 
-            const auto i_minus_one = i-1;
-            if (i_minus_one >= owned_range_i.first) {
-              colidx(lcnt++) = ( lower_bound(owned_first, owned_last, sb.ijk_to_idx(i_minus_one,j,k)) -
-                                 owned_first );
-            } else if (i_minus_one >= remote_range_i.first) {
-              colidx(lcnt++) = ( lower_bound(remote_first, remote_last, sb.ijk_to_idx(i_minus_one,j,k)) - 
-                                 remote_first +
-                                 num_owned_elements );
-            }
-            const auto i_plus_one = i+1;
-            if (i_plus_one < owned_range_i.second) {
-              colidx(lcnt++) = ( lower_bound(owned_first, owned_last, sb.ijk_to_idx(i_plus_one,j,k)) - 
-                                 owned_first );
-            } else if (i_plus_one < remote_range_i.second) {
-              colidx(lcnt++) = ( lower_bound(remote_first, remote_last, sb.ijk_to_idx(i_plus_one,j,k)) - 
-                                 remote_first +
-                                 num_owned_elements );
-            }
-          }
-
-          // sides on j
-          { 
-            const auto j_minus_one = j-1;
-            if (j_minus_one >= owned_range_j.first) {
-              colidx(lcnt++) = ( lower_bound(owned_first, owned_last, sb.ijk_to_idx(i,j_minus_one,k)) -
-                                 owned_first );
-            } else if (j_minus_one >= remote_range_j.first) {
-              colidx(lcnt++) = ( lower_bound(remote_first, remote_last, sb.ijk_to_idx(i,j_minus_one,k)) -
-                                 remote_first +
-                                 num_owned_elements );
-            }
-            const auto j_plus_one = j+1;
-            if (j_plus_one < owned_range_j.second) {
-              colidx(lcnt++) = ( lower_bound(owned_first, owned_last, sb.ijk_to_idx(i,j_plus_one,k)) -
-                                 owned_first );                                 
-            } else if (j_plus_one < remote_range_j.second) {
-              colidx(lcnt++) = ( lower_bound(remote_first, remote_last, sb.ijk_to_idx(i,j_plus_one,k)) -
-                                 remote_first + 
-                                 num_owned_elements );
-            }
-          }
-
-          // sides on k
-          { 
-            const auto k_minus_one = k-1;
-            if (k_minus_one >= owned_range_k.first) {
-              colidx(lcnt++) = ( lower_bound(owned_first, owned_last, sb.ijk_to_idx(i,j,k_minus_one)) - 
-                                 owned_first );
-            } else if (k_minus_one >= remote_range_k.first) {
-              colidx(lcnt++) = ( lower_bound(remote_first, remote_last, sb.ijk_to_idx(i,j,k_minus_one)) -
-                                 remote_first + 
-                                 num_owned_elements );
-            }
-            const auto k_plus_one = k+1;
-            if (k_plus_one < owned_range_k.second) {
-              colidx(lcnt++) = ( lower_bound(owned_first, owned_last, sb.ijk_to_idx(i,j,k_plus_one)) -
-                                 owned_first );
-            } else if (k_plus_one < remote_range_k.second) {
-              colidx(lcnt++) = ( lower_bound(remote_first, remote_last, sb.ijk_to_idx(i,j,k_plus_one)) -
-                                 remote_first +
-                                 num_owned_elements ); 
-            }
-          }
-
-          // sort 
-          heap_sort(&colidx(lbeg), lcnt-lbeg);
-        });
+      {
+        LocalGraphFill local_graph_fill(sb, owned_gids, remote_gids,
+                                        owned_range_i, owned_range_j, owned_range_k, 
+                                        remote_range_i, remote_range_j, remote_range_k, 
+                                        rowptr, colidx);
+        local_graph_fill.run();
+      }
       
     } // end local graph timer
     

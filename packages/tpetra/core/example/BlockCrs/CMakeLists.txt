@@ -5,6 +5,6 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   BlockCrsPerfTest
   SOURCES Tpetra_TestBlockCrs.cpp
   ARGS 
-  COMM  mpi
+  COMM  mpi serial
   STANDARD_PASS_OUTPUT
 )
