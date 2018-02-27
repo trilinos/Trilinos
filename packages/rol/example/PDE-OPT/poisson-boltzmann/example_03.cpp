@@ -73,18 +73,6 @@
 
 typedef double RealT;
 
-template<class Real>
-Real random(const Teuchos::Comm<int> &comm,
-            const Real a = -1, const Real b = 1) {
-  Real val(0), u(0);
-  if ( Teuchos::rank<int>(comm)==0 ) {
-    u   = static_cast<Real>(rand())/static_cast<Real>(RAND_MAX);
-    val = (b-a)*u + a;
-  }
-  Teuchos::broadcast<int,Real>(comm,0,1,&val);
-  return val;
-}
-
 int main(int argc, char *argv[]) {
   // This little trick lets us print to std::cout only if a (dummy) command-line argument is provided.
   int iprint     = argc - 1;
@@ -95,8 +83,6 @@ int main(int argc, char *argv[]) {
   Teuchos::GlobalMPISession mpiSession (&argc, &argv, &bhs);
   ROL::Ptr<const Teuchos::Comm<int> > comm
     = Tpetra::DefaultPlatform::getDefaultPlatform().getComm();
-  ROL::Ptr<const Teuchos::Comm<int> > serial_comm
-    = ROL::makePtr<Teuchos::SerialComm<int>>();
   const int myRank = comm->getRank();
   if ((iprint > 0) && (myRank == 0)) {
     outStream = ROL::makePtrFromRef(std::cout);
@@ -121,13 +107,13 @@ int main(int argc, char *argv[]) {
     ROL::Ptr<PDE_Poisson_Boltzmann_ex02<RealT> > pde
       = ROL::makePtr<PDE_Poisson_Boltzmann_ex02<RealT>>(*parlist);
     ROL::Ptr<ROL::Constraint_SimOpt<RealT> > con
-      = ROL::makePtr<PDE_Constraint<RealT>>(pde,meshMgr,serial_comm,*parlist,*outStream);
+      = ROL::makePtr<PDE_Constraint<RealT>>(pde,meshMgr,comm,*parlist,*outStream);
     ROL::Ptr<PDE_Constraint<RealT> > pdeCon
       = ROL::dynamicPtrCast<PDE_Constraint<RealT> >(con);
     ROL::Ptr<PDE_Doping<RealT> > pdeDoping
       = ROL::makePtr<PDE_Doping<RealT>>(*parlist);
     ROL::Ptr<ROL::Constraint_SimOpt<RealT> > conDoping
-      = ROL::makePtr<Linear_PDE_Constraint<RealT>>(pdeDoping,meshMgr,serial_comm,*parlist,*outStream,true);
+      = ROL::makePtr<Linear_PDE_Constraint<RealT>>(pdeDoping,meshMgr,comm,*parlist,*outStream,true);
     const ROL::Ptr<Assembler<RealT> > assembler = pdeCon->getAssembler();
     assembler->printMeshData(*outStream);
     con->setSolveParameters(*parlist);
