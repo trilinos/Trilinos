@@ -56,8 +56,8 @@
 #include <iostream>
 #include <algorithm>
 
-#include "ROL_Algorithm.hpp"
 #include "ROL_Reduced_Objective_SimOpt.hpp"
+#include "ROL_BoundConstraint_SimOpt.hpp"
 #include "ROL_Bounds.hpp"
 
 #include "../TOOLS/meshmanager.hpp"
@@ -66,6 +66,8 @@
 #include "../TOOLS/pdevector.hpp"
 #include "pde_allen_cahn.hpp"
 #include "obj_allen_cahn.hpp"
+
+#include "ROL_OptimizationSolver.hpp"
 
 typedef double RealT;
 
@@ -149,37 +151,54 @@ int main(int argc, char *argv[]) {
     /*************************************************************************/
     /***************** BUILD BOUND CONSTRAINT ********************************/
     /*************************************************************************/
-    ROL::Ptr<Tpetra::MultiVector<> > lo_ptr = assembler->createControlVector();
-    ROL::Ptr<Tpetra::MultiVector<> > hi_ptr = assembler->createControlVector();
+    // Control bounds
+    ROL::Ptr<Tpetra::MultiVector<> > zlo_ptr = assembler->createControlVector();
+    ROL::Ptr<Tpetra::MultiVector<> > zhi_ptr = assembler->createControlVector();
     RealT lo = parlist->sublist("Problem").get("Lower Bound",0.0);
     RealT hi = parlist->sublist("Problem").get("Upper Bound",0.0);
-    lo_ptr->putScalar(lo); hi_ptr->putScalar(hi);
-    ROL::Ptr<ROL::Vector<RealT> > lop, hip;
-    lop = ROL::makePtr<PDE_PrimalOptVector<RealT>>(lo_ptr,pde,assembler);
-    hip = ROL::makePtr<PDE_PrimalOptVector<RealT>>(hi_ptr,pde,assembler);
-    ROL::Ptr<ROL::BoundConstraint<RealT> > bnd
-      = ROL::makePtr<ROL::Bounds<RealT>>(lop,hip);
+    zlo_ptr->putScalar(lo); zhi_ptr->putScalar(hi);
+    ROL::Ptr<ROL::Vector<RealT> > zlop, zhip;
+    zlop = ROL::makePtr<PDE_PrimalOptVector<RealT>>(zlo_ptr,pde,assembler);
+    zhip = ROL::makePtr<PDE_PrimalOptVector<RealT>>(zhi_ptr,pde,assembler);
+    ROL::Ptr<ROL::BoundConstraint<RealT> > zbnd
+      = ROL::makePtr<ROL::Bounds<RealT>>(zlop,zhip);
     bool deactivate = parlist->sublist("Problem").get("Deactivate Bound Constraints",false);
     if (deactivate) {
-      bnd->deactivate();
+      zbnd->deactivate();
     }
+    // State bounds
+    ROL::Ptr<Tpetra::MultiVector<> > ulo_ptr = assembler->createStateVector();
+    ROL::Ptr<Tpetra::MultiVector<> > uhi_ptr = assembler->createStateVector();
+    ulo_ptr->putScalar(ROL::ROL_NINF<RealT>()); uhi_ptr->putScalar(ROL::ROL_INF<RealT>());
+    ROL::Ptr<ROL::Vector<RealT> > ulop
+      = ROL::makePtr<PDE_PrimalSimVector<RealT>>(ulo_ptr,pde,assembler);
+    ROL::Ptr<ROL::Vector<RealT> > uhip
+      = ROL::makePtr<PDE_PrimalSimVector<RealT>>(uhi_ptr,pde,assembler);
+    ROL::Ptr<ROL::BoundConstraint<RealT> > ubnd
+      = ROL::makePtr<ROL::Bounds<RealT>>(ulop,uhip);
+    ubnd->deactivate();
+
+    // SimOpt bounds
+    ROL::Ptr<ROL::BoundConstraint<RealT> > bnd
+      = ROL::makePtr<ROL::BoundConstraint_SimOpt<RealT>>(ubnd,zbnd);
+
+    // Create ROL SimOpt vectors
+    ROL::Ptr<Tpetra::MultiVector<> > du_ptr = assembler->createStateVector();
+    ROL::Ptr<Tpetra::MultiVector<> > dz_ptr = assembler->createControlVector();
+    du_ptr->randomize(); //du_ptr->putScalar(static_cast<RealT>(0));
+    dz_ptr->randomize(); //dz_ptr->putScalar(static_cast<RealT>(1));
+    ROL::Ptr<ROL::Vector<RealT> > dup, dzp;
+    dup = ROL::makePtr<PDE_PrimalSimVector<RealT>>(du_ptr,pde,assembler,*parlist);
+    dzp = ROL::makePtr<PDE_PrimalOptVector<RealT>>(dz_ptr,pde,assembler,*parlist);
+
+    ROL::Vector_SimOpt<RealT> x(up,zp);
+    ROL::Vector_SimOpt<RealT> d(dup,dzp);
 
     /*************************************************************************/
     /***************** RUN VECTOR AND DERIVATIVE CHECKS **********************/
     /*************************************************************************/
     bool checkDeriv = parlist->sublist("Problem").get("Check Derivatives",false);
     if ( checkDeriv ) {
-      ROL::Ptr<Tpetra::MultiVector<> > du_ptr = assembler->createStateVector();
-      ROL::Ptr<Tpetra::MultiVector<> > dz_ptr = assembler->createControlVector();
-      du_ptr->randomize(); //du_ptr->putScalar(static_cast<RealT>(0));
-      dz_ptr->randomize(); //dz_ptr->putScalar(static_cast<RealT>(1));
-      ROL::Ptr<ROL::Vector<RealT> > dup, dzp;
-      dup = ROL::makePtr<PDE_PrimalSimVector<RealT>>(du_ptr,pde,assembler,*parlist);
-      dzp = ROL::makePtr<PDE_PrimalOptVector<RealT>>(dz_ptr,pde,assembler,*parlist);
-      // Create ROL SimOpt vectors
-      ROL::Vector_SimOpt<RealT> x(up,zp);
-      ROL::Vector_SimOpt<RealT> d(dup,dzp);
-
       *outStream << "\n\nCheck Gradient of Full Objective Function\n";
       obj->checkGradient(x,d,true,*outStream);
       *outStream << "\n\nCheck Hessian of Full Objective Function\n";
@@ -203,8 +222,18 @@ int main(int argc, char *argv[]) {
       robj->checkHessVec(*zp,*dzp,true,*outStream);
     }
 
-    ROL::Algorithm<RealT> algo("Trust Region",*parlist,false);
-    algo.run(*zp,*robj,*bnd,true,*outStream);
+    bool useFullSpace = parlist->sublist("Problem").get("Full space",false);
+    ROL::Ptr<ROL::Algorithm<RealT> > algo;
+    std::cout << "USE FULL SPACE: " << useFullSpace << std::endl;
+    if ( useFullSpace ) {
+      ROL::OptimizationProblem<RealT> optProb(obj, makePtrFromRef(x), bnd, con, pp);
+      ROL::OptimizationSolver<RealT> optSolver(optProb, *parlist);
+      optSolver.solve(*outStream);
+    }
+    else {
+      ROL::Algorithm<RealT> algo("Trust Region",*parlist,false);
+      algo.run(*zp,*robj,*zbnd,true,*outStream);
+    }
 
     // Output.
     RealT tol(1.e-8);

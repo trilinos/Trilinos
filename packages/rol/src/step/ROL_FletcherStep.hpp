@@ -256,7 +256,7 @@ public:
     step_->update(x,s,obj,bnd,tr_algo_state_);
     numSuccessSteps_ += (state->flag == 0);
 
-    Real gPhiNorm = fletcher.getGradient(x)->norm();
+    Real gPhiNorm = tr_algo_state_.gnorm;
     Real cnorm = (fletcherState->constraintVec)->norm();
     bool too_infeasible = cnorm > static_cast<Real>(100.)*gPhiNorm;
     bool too_feasible = cnorm < static_cast<Real>(1e-2)*gPhiNorm;
