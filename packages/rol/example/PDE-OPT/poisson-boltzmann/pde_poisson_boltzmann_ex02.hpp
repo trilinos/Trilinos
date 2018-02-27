@@ -556,12 +556,14 @@ private:
 
   Real evaluateLambda2(const std::vector<Real> &x) const {
     const std::vector<Real> param = PDE<Real>::getParameter();
-    return static_cast<Real>(2.5)*std::pow(static_cast<Real>(10),param[0]);
+    Real p0 = (param.size()>0 ? param[0] : static_cast<Real>(-1.5));
+    return static_cast<Real>(2.5)*std::pow(static_cast<Real>(10),p0);
   }
 
   Real evaluateDelta2(const std::vector<Real> &x) const {
     const std::vector<Real> param = PDE<Real>::getParameter();
-    return static_cast<Real>(1.45)*std::pow(static_cast<Real>(10),param[1]);
+    Real p1 = (param.size()>1 ? param[1] : static_cast<Real>(-0.5));
+    return static_cast<Real>(1.45)*std::pow(static_cast<Real>(10),p1);
   }
 
   Real evaluateScale(const std::vector<Real> &x) const {
@@ -761,6 +763,7 @@ public:
                 const ROL::Ptr<const Intrepid::FieldContainer<Real> > & z_coeff = ROL::nullPtr,
                 const ROL::Ptr<const std::vector<Real> > & z_param = ROL::nullPtr) {
     const std::vector<Real> param = PDE<Real>::getParameter();
+    Real cond = (param.size()>2 ? param[2] : static_cast<Real>(2e-5));
     // GET DIMENSIONS
     const int c = fe_vol_->gradN()->dimension(0);
     const int f = fe_vol_->gradN()->dimension(1);
@@ -778,7 +781,7 @@ public:
     fe_vol_->evaluateGradient(gradU_eval, u_coeff);
     // ADD STIFFNESS TERM TO RESIDUAL
     Intrepid::FieldContainer<Real> lambda2_gradU_eval(c, p, d);
-    Intrepid::RealSpaceTools<Real>::scale(lambda2_gradU_eval,*gradU_eval,param[2]);
+    Intrepid::RealSpaceTools<Real>::scale(lambda2_gradU_eval,*gradU_eval,cond);
     Intrepid::FunctionSpaceTools::integrate<Real>(*res,
                                                   lambda2_gradU_eval,
                                                   *(fe_vol_->gradNdetJ()),
@@ -821,6 +824,7 @@ public:
                   const ROL::Ptr<const Intrepid::FieldContainer<Real> > & z_coeff = ROL::nullPtr,
                   const ROL::Ptr<const std::vector<Real> > & z_param = ROL::nullPtr) {
     const std::vector<Real> param = PDE<Real>::getParameter();
+    Real cond = (param.size()>2 ? param[2] : static_cast<Real>(2e-5));
     // GET DIMENSIONS
     const int c = fe_vol_->gradN()->dimension(0);
     const int f = fe_vol_->gradN()->dimension(1);
@@ -830,7 +834,7 @@ public:
     jac = ROL::makePtr<Intrepid::FieldContainer<Real>>(c, f, f);
     // ADD STIFFNESS TERM TO JACOBIAN
     Intrepid::FieldContainer<Real> lambda2_gradN_eval(c, f, p, d);
-    Intrepid::RealSpaceTools<Real>::scale(lambda2_gradN_eval,*(fe_vol_->gradN()),param[2]);
+    Intrepid::RealSpaceTools<Real>::scale(lambda2_gradN_eval,*(fe_vol_->gradN()),cond);
     Intrepid::FunctionSpaceTools::integrate<Real>(*jac,
                                                   lambda2_gradN_eval,
                                                   *(fe_vol_->gradNdetJ()),

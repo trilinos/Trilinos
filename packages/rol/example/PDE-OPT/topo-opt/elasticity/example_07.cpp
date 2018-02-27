@@ -57,9 +57,8 @@
 #include <iostream>
 #include <algorithm>
 
-#include "ROL_Algorithm.hpp"
+#include "ROL_OptimizationSolver.hpp"
 #include "ROL_Constraint_Partitioned.hpp"
-#include "ROL_AugmentedLagrangian.hpp"
 #include "ROL_ScaledStdVector.hpp"
 #include "ROL_Reduced_Objective_SimOpt.hpp"
 #include "ROL_Reduced_Constraint_SimOpt.hpp"
@@ -133,41 +132,26 @@ int main(int argc, char *argv[]) {
     conPDE->setSolveParameters(*parlist);
 
     /*** Initialize vector storage. ***/
-    ROL::Ptr<Tpetra::MultiVector<> > u_ptr, du_ptr, p_ptr, z_ptr, dz_ptr,
-                                         rz_ptr, r_ptr, dualu_ptr, dualz_ptr,
-                                         dp_ptr, dr_ptr, yp_ptr, yr_ptr;
+    ROL::Ptr<Tpetra::MultiVector<> > u_ptr, p_ptr, z_ptr, r_ptr, dp_ptr, dr_ptr, yp_ptr, yr_ptr;
     u_ptr  = assembler->createStateVector();    u_ptr->randomize();
-    du_ptr = assembler->createStateVector();    du_ptr->randomize();
     p_ptr  = assembler->createStateVector();    p_ptr->randomize();
     z_ptr  = assembler->createControlVector();  z_ptr->putScalar(volFraction);
-    dz_ptr = assembler->createControlVector();  dz_ptr->randomize(); dz_ptr->scale(0.01);
-    rz_ptr = assembler->createControlVector();  rz_ptr->randomize();
     r_ptr  = assembler->createResidualVector(); r_ptr->randomize();
     dp_ptr = assembler->createStateVector();    dp_ptr->randomize();
     dr_ptr = assembler->createResidualVector(); dr_ptr->randomize();
     yp_ptr = assembler->createStateVector();    yp_ptr->randomize();
     yr_ptr = assembler->createResidualVector(); yr_ptr->randomize();
-    dualu_ptr = assembler->createStateVector();
-    dualz_ptr = assembler->createControlVector();
-    ROL::Ptr<ROL::Vector<RealT> > up, dup, pp, zp, dzp,
-                                      rzp, rp, dualup, dualzp,
-                                      dpp, drp, ypp, yrp;
+    ROL::Ptr<ROL::Vector<RealT> > up, pp, zp, rp, dpp, drp, ypp, yrp;
     up     = ROL::makePtr<PDE_PrimalSimVector<RealT>>(u_ptr,pde,assembler,*parlist);
-    dup    = ROL::makePtr<PDE_PrimalSimVector<RealT>>(du_ptr,pde,assembler,*parlist);
     pp     = ROL::makePtr<PDE_PrimalSimVector<RealT>>(p_ptr,pde,assembler,*parlist);
     zp     = ROL::makePtr<PDE_PrimalOptVector<RealT>>(z_ptr,pde,assembler,*parlist);
-    dzp    = ROL::makePtr<PDE_PrimalOptVector<RealT>>(dz_ptr,pde,assembler,*parlist);
-    rzp    = ROL::makePtr<PDE_PrimalOptVector<RealT>>(rz_ptr,pde,assembler,*parlist);
     rp     = ROL::makePtr<PDE_DualSimVector<RealT>>(r_ptr,pde,assembler,*parlist);
     dpp    = ROL::makePtr<PDE_PrimalSimVector<RealT>>(dp_ptr,pde,assembler,*parlist);
     drp    = ROL::makePtr<PDE_DualSimVector<RealT>>(dr_ptr,pde,assembler,*parlist);
     ypp    = ROL::makePtr<PDE_PrimalSimVector<RealT>>(yp_ptr,pde,assembler,*parlist);
     yrp    = ROL::makePtr<PDE_DualSimVector<RealT>>(yr_ptr,pde,assembler,*parlist);
-    dualup = ROL::makePtr<PDE_DualSimVector<RealT>>(dualu_ptr,pde,assembler,*parlist);
-    dualzp = ROL::makePtr<PDE_DualOptVector<RealT>>(dualz_ptr,pde,assembler,*parlist);
-    ROL::Ptr<ROL::Vector<RealT> > x, d;
+    ROL::Ptr<ROL::Vector<RealT> > x;
     x = ROL::makePtr<ROL::Vector_SimOpt<RealT>>(up,zp);
-    d = ROL::makePtr<ROL::Vector_SimOpt<RealT>>(dup,dzp);
 
     /*** Initialize "filtered" or "unfiltered" constraint. ***/
     ROL::Ptr<ROL::Constraint_SimOpt<RealT> > pdeWithFilter;
@@ -292,63 +276,19 @@ int main(int argc, char *argv[]) {
     ROL::Ptr<ROL::BoundConstraint<RealT> > bnd
       = ROL::makePtr<ROL::BoundConstraint_SimOpt<RealT>>(ubnd,zbnd);
 
-    // Run derivative checks
-    bool checkDeriv = parlist->sublist("Problem").get("Check derivatives",false);
-    if ( checkDeriv ) {
-      *outStream << "\n\nCheck Primal Constraint Vector\n";
-      resv->checkVector(*resv1,*resv2,true,*outStream);
-
-      *outStream << "\n\nCheck Dual Constraint Vector\n";
-      multv->checkVector(*multv1,*multv2,true,*outStream);
-
-      *outStream << "\n\nCheck Gradient of Full Objective Function\n";
-      obj->checkGradient(*x,*d,true,*outStream);
-      *outStream << "\n\nCheck Gradient_1 of Full Objective Function\n";
-      obj->checkGradient_1(*up,*zp,*dup,true,*outStream);
-      *outStream << "\n\nCheck Gradient_2 of Full Objective Function\n";
-      obj->checkGradient_2(*up,*zp,*dzp,true,*outStream);
-      *outStream << "\n\nCheck Hessian of Full Objective Function\n";
-      obj->checkHessVec(*x,*d,true,*outStream);
-      *outStream << "\n\nCheck Hessian_11 of Full Objective Function\n";
-      obj->checkHessVec_11(*up,*zp,*dup,true,*outStream);
-      *outStream << "\n\nCheck Hessian_12 of Full Objective Function\n";
-      obj->checkHessVec_12(*up,*zp,*dzp,true,*outStream);
-      *outStream << "\n\nCheck Hessian_21 of Full Objective Function\n";
-      obj->checkHessVec_21(*up,*zp,*dup,true,*outStream);
-      *outStream << "\n\nCheck Hessian_22 of Full Objective Function\n";
-      obj->checkHessVec_22(*up,*zp,*dzp,true,*outStream);
-
-      *outStream << "\n\nCheck Full Jacobian of PDE Constraint\n";
-      con->checkApplyJacobian(*x,*d,*resv,true,*outStream);
-      *outStream << "\n\nCheck Full Hessian of PDE Constraint\n";
-      con->checkApplyAdjointHessian(*x,*multv,*d,*x,true,*outStream);
-      *outStream << "\n";
-      con->checkAdjointConsistencyJacobian(*resv,*d,*x,true,*outStream);
-      *outStream << "\n";
-    }
-
-    bool useAugLag = parlist->sublist("Problem").get("Use Augmented Lagrangian", false);
+    // Create optimization problem and solve
     pdeWithFilter->solve(*rp,*up,*zp,tol);
     multv->zero();
-    if (useAugLag) {
-      /*** Solve using Augmented Lagrangian. ***/
-      ROL::AugmentedLagrangian<RealT> augLag(obj,con,*multv,1,
-                                             *x,*resv,*parlist);
-      ROL::Algorithm<RealT> algo("Augmented Lagrangian",*parlist,false);
-      Teuchos::Time algoTimer("Algorithm Time", true);
-      algo.run(*x,*multv,augLag,*con,*bnd,true,*outStream);
-      algoTimer.stop();
-      *outStream << "Total optimization time = " << algoTimer.totalElapsedTime() << " seconds.\n";
+    ROL::OptimizationProblem<RealT> optProb(obj,x,bnd,con,multv);
+    bool checkDeriv = parlist->sublist("Problem").get("Check derivatives",false);
+    if (checkDeriv) {
+      optProb.check(*outStream);
     }
-    else {
-      /*** Solve using Moreau-Yosida. ***/
-      ROL::MoreauYosidaPenalty<RealT> myPen(obj,bnd,*x,*parlist);
-      ROL::Algorithm<RealT> algo("Moreau-Yosida Penalty",*parlist,false);
-      Teuchos::Time algoTimer("Algorithm Time", true);
-      algo.run(*x,*multv,myPen,*con,*bnd,true,*outStream);
-      algoTimer.stop();
-      *outStream << "Total optimization time = " << algoTimer.totalElapsedTime() << " seconds.\n";
-    }
+    ROL::OptimizationSolver<RealT>  optSolver(optProb,*parlist);
+    Teuchos::Time algoTimer("Algorithm Time", true);
+    optSolver.solve(*outStream);
+    algoTimer.stop();
+    *outStream << "Total optimization time = " << algoTimer.totalElapsedTime() << " seconds.\n";
 
     // Output.
     pdecon->printMeshData(*outStream);

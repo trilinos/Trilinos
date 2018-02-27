@@ -1,41 +1,31 @@
 <ParameterList name="Inputs">
   <!-- ===========  PROBLEM INPUT PARAMETER SUBLIST  =========== -->
   <ParameterList name="Problem">
-    <Parameter name="Check derivatives"           type="bool"    value="false"         />
-    <!-- STOCHASTIC INFORMATION -->
-    <Parameter name="Number of samples"           type="int"     value="4"             />
-    <!-- PROBLEM INFORMATION -->
-    <Parameter name="Use Energy Objective"        type="bool"    value="false"         />
-    <Parameter name="Young's Modulus"             type="double"  value="1.0"           />
-    <Parameter name="Poisson Ratio"               type="double"  value="0.3"           />
-    <Parameter name="Minimum Density"             type="double"  value="1e-4"          />
-    <Parameter name="Maximum Density"             type="double"  value="1.0"           />
-    <Parameter name="SIMP Power"                  type="double"  value="3.0"           />
-    <Parameter name="Use Plain Stress"            type="bool"    value="true"          />
-    <Parameter name="Volume Fraction"             type="double"  value="0.4"           />
-    <Parameter name="Objective Scaling"           type="double"  value="2.2e-2"        />
-    <Parameter name="Use state storage"           type="bool"    value="true"          />
-    <Parameter name="Use Filter"                  type="bool"    value="true"          />
-    <Parameter name="Filter Radius"               type="double"  value="0.1"           />
-    <!-- ===========  DIRICHLET BOUNDARIES SUBLIST  ============ -->
-    <ParameterList name="Dirichlet">
-      <Parameter name="Sidesets" type="string" value="{3}" />
-      <Parameter name="Types"    type="string" value="{0}" />
-    </ParameterList>
-    <!-- ===========  LOADING SPECIFICATION SUBLIST  =========== -->
-    <ParameterList name="Load">
-      <Parameter name="Magnitude"     type="string"  value="{1.0}"   />
-      <Parameter name="Polar Angle"   type="string"  value="{270.0}" />
-      <Parameter name="Azimuth Angle" type="string"  value="{0.0}"   />
-      <Parameter name="X Location"    type="string"  value="{2.0}"   />
-      <Parameter name="Y Location"    type="string"  value="{0.5}"   />
-      <Parameter name="Z Location"    type="string"  value="{0.0}"   />
-      <Parameter name="X Width"       type="string"  value="{1e-2}"  />
-      <Parameter name="Y Width"       type="string"  value="{1e-2}"  />
-      <Parameter name="Z Width"       type="string"  value="{0.0}"   />
-    </ParameterList>
-    <!-- FINITE ELEMENT INFORMATION -->
-    <Parameter name="Cubature Degree"             type="int"     value="2"             />
+    <Parameter name="Check Derivatives"             type="bool"    value="false"  />
+    <Parameter name="Order of FE discretization"    type="int"     value="1"      />
+    <Parameter name="Deactivate Bound Constraints"  type="bool"    value="false"  />
+    <Parameter name="Use Constant Bounds"           type="bool"    value="false"  />
+    <Parameter name="Lower Bound Value"             type="double"  value="0.0"    />
+    <Parameter name="Upper Bound Value"             type="double"  value="10.0"   />
+    <Parameter name="State Cost Parameter"          type="double"  value="1e0"    />
+    <Parameter name="Desired Current Scale"         type="double"  value="1.5"    />
+    <Parameter name="Control Misfit Parameter"      type="double"  value="0.0"    />
+    <Parameter name="Desired Lower Doping Value"    type="double"  value="0.3"    />
+    <Parameter name="Desired Upper Doping Value"    type="double"  value="1.0"    />
+    <Parameter name="Control Cost Parameter"        type="double"  value="1e-4"   />
+    <Parameter name="Use Robin Conditions"          type="bool"    value="false"  /> 
+    <Parameter name="Robin Coefficient"             type="double"  value="1e2"    />
+  </ParameterList>
+
+  <!-- ===========  GEOMETRY INPUT PARAMETER SUBLIST  =========== -->
+  <ParameterList name="Geometry">
+    <Parameter name="Width"             type="double"  value="0.6"    />
+    <Parameter name="Height"            type="double"  value="0.2"    />
+    <Parameter name="X0"                type="double"  value="0.0"    />
+    <Parameter name="Y0"                type="double"  value="0.0"    />
+    <Parameter name="NX"                type="int"     value="60"     />
+    <Parameter name="NY"                type="int"     value="20"     />
+    <Parameter name="Partition type"    type="int"     value="1"      />
   </ParameterList>
 
   <!-- SOLVER INFORMATION -->
@@ -73,28 +63,16 @@
     </ParameterList>
   </ParameterList>
 
-  <!-- ===========  GEOMETRY INPUT PARAMETER SUBLIST  =========== -->
-  <ParameterList name="Geometry">
-    <!-- === rectangle === -->
-    <Parameter name="Width"             type="double"  value="2.0"  />
-    <Parameter name="Height"            type="double"  value="1.0"  />
-    <Parameter name="X0"                type="double"  value="0.0"  />
-    <Parameter name="Y0"                type="double"  value="0.0"  />
-    <Parameter name="NX"                type="int"     value="32"  />
-    <Parameter name="NY"                type="int"     value="16"  />
-    <Parameter name="Partition type"    type="int"     value="1"    />
-  </ParameterList>
-
   <!-- ===========  SIMOPT SOLVER PARAMETER SUBLIST  =========== -->
   <ParameterList name="SimOpt">
     <ParameterList name="Solve">
-      <Parameter name="Absolute Residual Tolerance"   type="double"  value="1.e-12" />
+      <Parameter name="Absolute Residual Tolerance"   type="double"  value="1.e-8"  />
       <Parameter name="Relative Residual Tolerance"   type="double"  value="1.e0"   />
-      <Parameter name="Iteration Limit"               type="int"     value="1"      />
+      <Parameter name="Iteration Limit"               type="int"     value="20"     />
       <Parameter name="Sufficient Decrease Tolerance" type="double"  value="1.e-4"  />
       <Parameter name="Step Tolerance"                type="double"  value="1.e-8"  />
       <Parameter name="Backtracking Factor"           type="double"  value="0.5"    />
-      <Parameter name="Output Iteration History"      type="bool"    value="false"  />
+      <Parameter name="Output Iteration History"      type="bool"    value="false"   />
     </ParameterList>
   </ParameterList>
 
@@ -114,7 +92,7 @@
       <Parameter name="Type"                   type="string" value="Limited-Memory BFGS" />
       <Parameter name="Use as Preconditioner"  type="bool"   value="false"               />
       <Parameter name="Use as Hessian"         type="bool"   value="false"               />
-      <Parameter name="Maximum Storage"        type="int"    value="20"                  />
+      <Parameter name="Maximum Storage"        type="int"    value="10"                  />
       <Parameter name="Barzilai-Borwein Type"  type="int"    value="1"                   />
     </ParameterList>
 
@@ -123,7 +101,7 @@
       <Parameter name="Type"               type="string" value="Conjugate Gradients" />
       <Parameter name="Absolute Tolerance" type="double" value="1.e-4"               />
       <Parameter name="Relative Tolerance" type="double" value="1.e-2"               />
-      <Parameter name="Iteration Limit"    type="int"    value="20"                  />
+      <Parameter name="Iteration Limit"    type="int"    value="100"                 />
     </ParameterList>
   </ParameterList>
 
@@ -169,9 +147,8 @@
     <!-- ===========  TRUST REGION  =========== -->
     <ParameterList name="Trust Region">
       <Parameter name="Subproblem Solver"                    type="string" value="Truncated CG" />
-      <Parameter name="Subproblem Model"                     type="string" value="Kelley-Sachs" />
-      <Parameter name="Initial Radius"                       type="double" value="100.0"        />
-      <Parameter name="Maximum Radius"                       type="double" value="5.e8"         />
+      <Parameter name="Initial Radius"                       type="double" value="10.0"         />
+      <Parameter name="Maximum Radius"                       type="double" value="5.e3"         />
       <Parameter name="Step Acceptance Threshold"            type="double" value="0.05"         />
       <Parameter name="Radius Shrinking Threshold"           type="double" value="0.05"         />
       <Parameter name="Radius Growing Threshold"             type="double" value="0.9"          />
@@ -225,7 +202,6 @@
 
     <!-- ===========  AUGMENTED LAGRANGIAN  =========== -->
     <ParameterList name="Augmented Lagrangian">
-      <Parameter name="Level of Hessian Approximation"          type="int"    value="0"            />
       <!-- ===========  PENALTY PARAMETER UPDATE  =========== -->
       <Parameter name="Initial Penalty Parameter"               type="double" value="1.e1"         />
       <Parameter name="Penalty Parameter Growth Factor"         type="double" value="1.e1"         />
@@ -241,13 +217,13 @@
       <!-- ===========  SUBPROBLEM SOLVER  =========== -->
       <Parameter name="Print Intermediate Optimization History" type="bool"   value="false"        />
       <Parameter name="Subproblem Step Type"                    type="string" value="Trust Region" />
-      <Parameter name="Subproblem Iteration Limit"              type="int"    value="20"           />
+      <Parameter name="Subproblem Iteration Limit"              type="int"    value="1000"         />
     </ParameterList>
 
     <!-- ===========  MOREAU-YOSIDA PENALTY  =========== -->
     <ParameterList name="Moreau-Yosida Penalty">
       <!-- ===========  PENALTY PARAMETER UPDATE  =========== -->
-      <Parameter name="Initial Penalty Parameter"       type="double" value="1e1"     />
+      <Parameter name="Initial Penalty Parameter"       type="double" value="1e-9"    />
       <Parameter name="Penalty Parameter Growth Factor" type="double" value="1.5"     />
 
       <!-- ===========  SUBPROBLEM SOLVER  =========== -->
@@ -261,12 +237,12 @@
 
     <!-- ============= FLETCHER PENALTY  =========== -->
     <ParameterList name="Fletcher">
-      <Parameter name="Penalty Parameter"            type="double" value="1e-1"  />
-      <Parameter name="Modify Penalty Parameter"     type="bool"   value="false" />
-      <Parameter name="Max Penalty Parameter"        type="double" value="1e6"   />
-      <Parameter name="Min Penalty Parameter"        type="double" value="1e-6"  />
-      <Parameter name="Regularization Parameter"     type="double" value="0"     />
-      <Parameter name="Min Regularization Parameter" type="double" value="1e-6"  />
+      <Parameter name="Penalty Parameter"              type="double" value="1e-1"  />
+      <Parameter name="Modify Penalty Parameter"       type="bool"   value="false" />
+      <Parameter name="Max Penalty Parameter"          type="double" value="1e6"   />
+      <Parameter name="Min Penalty Parameter"          type="double" value="1e-6"  />
+      <Parameter name="Regularization Parameter"       type="double" value="0"     />
+      <Parameter name="Min Regularization Parameter"   type="double" value="1e-6"  />
       <Parameter name="Type of Augmented System Solve" type="int"    value="1"     />
     </ParameterList>
 
@@ -294,9 +270,9 @@
 
   <!-- ===========  STATUS TEST SUBLIST  =========== -->
   <ParameterList name="Status Test">
-    <Parameter name="Gradient Tolerance"   type="double" value="1.e-3"    />
-    <Parameter name="Constraint Tolerance" type="double" value="1.e-5"    />
-    <Parameter name="Step Tolerance"       type="double" value="-1.e-14"  />
-    <Parameter name="Iteration Limit"      type="int"    value="40"       />
+    <Parameter name="Gradient Tolerance"   type="double" value="1.e-8"   />
+    <Parameter name="Constraint Tolerance" type="double" value="1.e-8"   />
+    <Parameter name="Step Tolerance"       type="double" value="1.e-14"  />
+    <Parameter name="Iteration Limit"      type="int"    value="20"      />
   </ParameterList>
 </ParameterList>
