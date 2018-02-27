@@ -212,7 +212,6 @@ public:
       = dynamic_cast<const PartitionedVector<Real>&>(v);
     
     const int ncon = static_cast<int>(cvec_.size());
-    int cnt = 1;
     for (int i = 0; i < ncon; ++i) {
       cvec_[i]->applyPreconditioner(*pvpv.get(i), *vpv.get(i), getOpt(x), getOpt(g), tol);
     }
