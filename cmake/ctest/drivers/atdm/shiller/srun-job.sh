@@ -17,11 +17,13 @@ fi
 cd $SUBDIR/
 echo "Current dir: $PWD"
 
-source $WORKSPACE/Trilinos/cmake/std/atdm/shiller/environment.sh
+source $WORKSPACE/Trilinos/cmake/std/atdm/load-env.sh $JOB_NAME
 echo
 module list
 
 set -x
 
 ctest -V -S \
-  $WORKSPACE/Trilinos/cmake/ctest/drivers/atdm/shiller/ctest-driver.cmake
+  $WORKSPACE/Trilinos/cmake/ctest/drivers/atdm/$ATDM_CONFIG_KNOWN_SYSTEM_NAME/ctest-driver.cmake
+
+# ToDo: Move this entire script one level below to be used for all systems!
