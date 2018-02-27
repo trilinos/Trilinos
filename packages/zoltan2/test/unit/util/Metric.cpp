@@ -110,7 +110,7 @@ int main(int argc, char *argv[])
   // Note that right now these are all going to produce the same graph
   // metrics but could be developed further
   runTestSuite<graph_idInput_t>(comm);
-  
+
   if (rank==0)
     cout << "PASS" << endl;
 }
@@ -227,7 +227,7 @@ int evaluate_result<graph_idInput_t>(RCP<const Comm<int> > comm,
       fail = 1;
     }
   }
-  
+
   return fail;
 }
 
@@ -266,7 +266,7 @@ graph_idInput_t * create_adapter<graph_idInput_t>(RCP<const Comm<int> > comm,
   // Make some stuff in the graph
   size_t maxRowLen = 1;
   Teuchos::RCP<matrix_t> matrix = rcp(new matrix_t(map, maxRowLen));
-  
+
   // TODO: Need to decide what a good test graph is
   // Something we can easily calculate the final result for as we'd like to
   // validate this but not end up rewriting the algorithm we are testing.
@@ -282,7 +282,7 @@ graph_idInput_t * create_adapter<graph_idInput_t>(RCP<const Comm<int> > comm,
   Teuchos::Array<zscalar_t> val(2); val[0] = 1.; val[1] = 1.;
   zgno_t first_id = map->getMinAllGlobalIndex();
   zgno_t last_id = map->getMaxAllGlobalIndex();
-  for (zlno_t i = 0; i < numLocalObj; i++) { 
+  for (zlno_t i = 0; i < numLocalObj; i++) {
     zgno_t id = map->getGlobalElement(i);
     col[0] = first_id;
     col[1] = last_id;
@@ -290,13 +290,13 @@ graph_idInput_t * create_adapter<graph_idInput_t>(RCP<const Comm<int> > comm,
   }
 
   matrix->fillComplete(map, map);
-  
+
   size_t nVwgts = weights.size();
   graph_idInput_t * adapter = new graph_idInput_t(matrix->getCrsGraph(), nVwgts);
-  
+
   // Set the weights
   for (size_t j = 0; j < nVwgts; j++) {
-    adapter->setWeights(weights[j], 1, j);    
+    adapter->setWeights(weights[j], 1, j);
   }
 
   return adapter;
@@ -512,7 +512,7 @@ void doTest(RCP<const Comm<int> > comm, int numLocalObj,
   }
 
   TEST_FAIL_AND_EXIT(*comm, fail==0, "print metrics", 1);
-  
+
   // Now evaluate the result for precision of the results
   // TODO: I'd like to discuss these ideas further before continuing
   // To prototype this, I'll just validate the graph adapter getMaxEdgeCut()

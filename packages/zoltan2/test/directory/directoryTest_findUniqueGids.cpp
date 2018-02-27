@@ -74,9 +74,9 @@ size_t findUniqueGids(
   // Compute the new GIDs
   const bool bUseLocalIDs = false;  // Local IDs not needed
   int debug_level = 0;
-  
+
   typedef int lno_t; // unused
-  
+
   typedef Zoltan2_Directory_Simple<key_t,lno_t,gno_t> directory_t;
 
   directory_t directory(comm, bUseLocalIDs, debug_level);
@@ -100,9 +100,9 @@ size_t findUniqueGids(
   // TODO use Teuchos
 #ifdef HAVE_MPI
   MPI_Allreduce(&nDDEntries, &nUnique, 1, MPI_LONG_LONG, MPI_SUM,
-    Teuchos::getRawMpiComm(*comm)); 
+    Teuchos::getRawMpiComm(*comm));
 #else
-  MPI_Allreduce(&nDDEntries, &nUnique, 1, MPI_LONG_LONG, MPI_SUM, MPI_COMM_WORLD); 
+  MPI_Allreduce(&nDDEntries, &nUnique, 1, MPI_LONG_LONG, MPI_SUM, MPI_COMM_WORLD);
 #endif
 
   return size_t(nUnique);
@@ -111,7 +111,7 @@ size_t findUniqueGids(
 template<typename T>
 struct type_name
 {
-  static const char* name() { 
+  static const char* name() {
     std::cout << "You are missing a DECL_TYPE_NAME" << std::endl;
     return(NULL);
   }
@@ -130,9 +130,9 @@ static const std::string pass = "     ";
 
 // Test for correct number of unique Gids
 void checkNUnique(std::string &name, size_t nUniqueGids, size_t nExpected)
-{  
+{
   if (nUniqueGids != nExpected)
-    std::cout << fail << name 
+    std::cout << fail << name
               << "nUniqueGids " << nUniqueGids << " != " << nExpected
               << std::endl;
 }
@@ -140,10 +140,10 @@ void checkNUnique(std::string &name, size_t nUniqueGids, size_t nExpected)
 // Test for correct maximum Gid
 template <typename gno_t>
 void checkMaxGid(
-  std::string &name, 
+  std::string &name,
   std::vector<gno_t> &gids,
   gno_t maxExpected,
-  Teuchos::RCP<const Teuchos::Comm<int> > &comm 
+  Teuchos::RCP<const Teuchos::Comm<int> > &comm
 )
 {
   gno_t maxGid = 0, gmaxGid = 0;
@@ -154,18 +154,18 @@ void checkMaxGid(
   Teuchos::reduceAll<int, gno_t>(*comm, Teuchos::REDUCE_MAX, 1,
                                  &maxGid, &gmaxGid);
   if (gmaxGid != maxExpected)
-    std::cout << fail << name 
+    std::cout << fail << name
               << "max Gid " << gmaxGid << " != " << maxExpected
               << std::endl;
 }
-  
+
 // Test for correct minimum Gid
 template <typename gno_t>
 void checkMinGid(
-  std::string &name, 
+  std::string &name,
   std::vector<gno_t> &gids,
   gno_t minExpected,
-  Teuchos::RCP<const Teuchos::Comm<int> > &comm 
+  Teuchos::RCP<const Teuchos::Comm<int> > &comm
 )
 {
   gno_t minGid = std::numeric_limits<gno_t>::max(), gminGid;
@@ -176,15 +176,15 @@ void checkMinGid(
   Teuchos::reduceAll<int, gno_t>(*comm, Teuchos::REDUCE_MIN, 1,
                                     &minGid, &gminGid);
   if (gminGid != minExpected)
-    std::cout << fail << name 
+    std::cout << fail << name
               << "min Gid " << gminGid << " != " << minExpected
               << std::endl;
 }
 
-// Test for number of locally unique Gids 
+// Test for number of locally unique Gids
 template <typename gno_t>
 void checkNLocallyUnique(
-  std::string &name, 
+  std::string &name,
   std::vector<gno_t> &gids,
   size_t nExpected)
 {
@@ -197,12 +197,12 @@ void checkNLocallyUnique(
       // Gid is already found locally
       nDups++;
     }
-    else 
+    else
       gidsSet.insert(gids[i]);
   }
   size_t nUnique = gidsLen - nDups;
-  if (nUnique != nExpected) 
-    std::cout << fail << name 
+  if (nUnique != nExpected)
+    std::cout << fail << name
               << "num locally unique Gids " << nUnique << " != " << nExpected
               << std::endl;
 }
@@ -219,7 +219,7 @@ void test1(Teuchos::RCP<const Teuchos::Comm<int> > &comm)
   int me = comm->getRank();
   int np = comm->getSize();
 
-  std::string name = std::string(" test1: ") 
+  std::string name = std::string(" test1: ")
                    + std::string(type_name<gno_t>::name());
   if (me == 0) std::cout << "--------\n  Starting " << name << std::endl;
 
@@ -240,7 +240,7 @@ void test1(Teuchos::RCP<const Teuchos::Comm<int> > &comm)
   size_t nUniqueGids = findUniqueGids<zkey_t, gno_t>(keys,gids,comm);
 
   // Test for correctness
-  if (me == 0) 
+  if (me == 0)
     std::cout << " " << name << " nUniqueGids " << nUniqueGids << std::endl;
 
   checkNUnique(name, nUniqueGids, size_t(np));
@@ -295,7 +295,7 @@ void test2(Teuchos::RCP<const Teuchos::Comm<int> > &comm)
   size_t nUniqueGids = findUniqueGids<zkey_t,gno_t>(keys,gids,comm);
 
   // Test for correctness
-  if (me == 0) 
+  if (me == 0)
     std::cout << " " << name << " nUniqueGids " << nUniqueGids << std::endl;
 
   checkNUnique(name, nUniqueGids, size_t(nKeysHalf*np));
@@ -350,13 +350,13 @@ void test3(Teuchos::RCP<const Teuchos::Comm<int> > &comm)
   size_t nUniqueGids = findUniqueGids<zkey_t,gno_t>(keys,gids,comm);
 
   // for (size_t i = 0; i < nKeys; i++)
-  //   std::cout << me << " Key " << i << ": " 
-  //             << keys[i][0] << " " << keys[i][1] << " " << keys[i][2] 
+  //   std::cout << me << " Key " << i << ": "
+  //             << keys[i][0] << " " << keys[i][1] << " " << keys[i][2]
   //             << " GID " << gids[i]
   //             << std::endl;
 
   // Test for correctness
-  if (me == 0) 
+  if (me == 0)
     std::cout << " " << name << " nUniqueGids " << nUniqueGids << std::endl;
 
   checkNUnique(name, nUniqueGids, size_t(np*np));
@@ -364,7 +364,7 @@ void test3(Teuchos::RCP<const Teuchos::Comm<int> > &comm)
   checkMaxGid(name, gids, gno_t(np*np-1), comm);
 
   checkMinGid(name, gids, gno_t(0), comm);
-  
+
   checkNLocallyUnique(name, gids, size_t(nKeys-1));
 }
 
@@ -403,7 +403,7 @@ void test4(Teuchos::RCP<const Teuchos::Comm<int> > &comm)
   size_t nUniqueGids = findUniqueGids<zkey_t,gno_t>(keys,gids,comm);
 
   // Test for correctness
-  if (me == 0) 
+  if (me == 0)
     std::cout << " " << name << " nUniqueGids " << nUniqueGids << std::endl;
 
   checkNUnique(name, nUniqueGids, size_t(1));
@@ -411,7 +411,7 @@ void test4(Teuchos::RCP<const Teuchos::Comm<int> > &comm)
   checkMaxGid(name, gids, gno_t(0), comm);
 
   checkMinGid(name, gids, gno_t(0), comm);
-  
+
   checkNLocallyUnique(name, gids, (nKeys ? size_t(1): size_t(0)));
 }
 

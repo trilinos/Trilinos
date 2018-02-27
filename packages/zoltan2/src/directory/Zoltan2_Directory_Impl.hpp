@@ -44,6 +44,9 @@
  * @HEADER
  */
 
+#ifndef ZOLTAN2_DIRECTORY_IMPL_H_
+#define ZOLTAN2_DIRECTORY_IMPL_H_
+
 // TODO: A note on the file structure
 // We currently have Zoltan2_Directory.hpp and Zoltan2_Directory_Impl.hpp
 // This evolved and the point of the second file is now doubtful so probably
@@ -1865,3 +1868,5 @@ size_t Zoltan2_Directory<gid_t,lid_t,user_t>::align_size_t(size_t a) const
 } // end namespace Zoltan2
 
 #endif // CONVERT_DIRECTORY_ORIGINAL
+
+#endif // ZOLTAN2_DIRECTORY_IMPL_H_

@@ -89,6 +89,8 @@ typedef Zoltan2::BasicUserTypes<double>          basic_user_t;
 
 int main(int narg, char *arg[]) {
 
+  Kokkos::initialize(narg, arg); // Test uses directory with kokkos
+
   Teuchos::GlobalMPISession mpiSession(&narg, &arg,0);
   Platform &platform = Tpetra::DefaultPlatform::getDefaultPlatform();
   RCP<const Teuchos::Comm<int> > CommT = platform.getComm();
@@ -316,6 +318,8 @@ int main(int narg, char *arg[]) {
 
   if (me == 0)
     std::cout << "PASS" << std::endl;
+
+  Kokkos::finalize(); // Test uses directory with kokkos
 
   return 0;
 }

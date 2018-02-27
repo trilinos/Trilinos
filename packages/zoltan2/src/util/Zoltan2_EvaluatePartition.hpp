@@ -419,8 +419,8 @@ public:
   scalar_t getTotalMessages() const{
     auto graphMetrics = getAllMetricsOfType(GRAPH_METRICS_TYPE_NAME);
     if( graphMetrics.size() < 1 ) {
-      throw std::logic_error("getTotalMessages() was called but no metrics " 
-                             "data was generated for " + 
+      throw std::logic_error("getTotalMessages() was called but no metrics "
+                             "data was generated for " +
                              std::string(GRAPH_METRICS_TYPE_NAME) + "." );
     }
     // TODO: Would be better to avoid hard coding the array access to [1]
@@ -433,14 +433,14 @@ public:
   scalar_t getMaxMessages() const{
     auto graphMetrics = getAllMetricsOfType(GRAPH_METRICS_TYPE_NAME);
     if( graphMetrics.size() < 1 ) {
-      throw std::logic_error("getMaxMessages() was called but no metrics " 
-                             "data was generated for " + 
+      throw std::logic_error("getMaxMessages() was called but no metrics "
+                             "data was generated for " +
                              std::string(GRAPH_METRICS_TYPE_NAME) + "." );
     }
     // TODO: Would be better to avoid hard coding the array access to [1]
     return graphMetrics[1]->getMetricValue("global maximum");
   }
-  
+
   /*! \brief Print all metrics
    */
   void printMetrics(std::ostream &os) const {

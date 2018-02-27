@@ -49,8 +49,7 @@
 #ifndef ZOLTAN2_GRAPHICMETRICVALUESUTILITY_HPP
 #define ZOLTAN2_GRAPHICMETRICVALUESUTILITY_HPP
 
-// temp - use the kokkos mode - this need will be deleted once we eliminate all
-// of the other modes which are temporary for development.
+// TODO: Delete this define once other temporary development modes are removed
 #define CONVERT_DIRECTORY_KOKKOS
 #include <Zoltan2_Directory_Impl.hpp>
 
@@ -346,7 +345,7 @@ void globalWeightedByPart(
           local_parts[n] = n;
         }
       }
-      
+
       std::vector<std::vector<part_info>> find_user_data;
 
       // directory does not yet support SerialComm because it still has older
@@ -366,10 +365,10 @@ void globalWeightedByPart(
         // update
         directory.update(count_total_entries, &part_data[0], NULL, &user_data[0],
           NULL, directory_t::Update_Mode::AggregateAdd);
-        
+
         // get my local_parts (parts managed on this directory)
         directory.get_locally_managed_gids(local_parts);
-        
+
         // set up find_user_data to have the right size
         find_user_data.resize(local_parts.size());
 
