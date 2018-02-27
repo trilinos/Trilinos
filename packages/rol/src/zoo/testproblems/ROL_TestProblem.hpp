@@ -56,6 +56,7 @@ namespace ROL {
 template<class Real>
 class TestProblem {
 public:
+  virtual ~TestProblem(void) {}
   TestProblem(void) {}
   virtual Ptr<Objective<Real> >       getObjective(void) const = 0;
   virtual Ptr<Vector<Real> >          getInitialGuess(void) const = 0;
