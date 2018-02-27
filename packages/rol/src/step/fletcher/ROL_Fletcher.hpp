@@ -245,6 +245,7 @@ public:
     if( isGradientComputed_ && gradSolveError_ <= tol) {
       tol = gradSolveError_;
       g.set(*gPhi_);
+      return;
     }
 
     // Reset tolerances

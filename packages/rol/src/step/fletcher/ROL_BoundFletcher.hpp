@@ -363,6 +363,8 @@ public:
     isConValueComputed_ = (flag ? false : isConValueComputed_);
     isQComputed_ = (flag ? false : isQComputed_);
     isDQComputed_ = (flag ? false : isDQComputed_);
+    multSolverError_ = (flag ? ROL_INF<Real>() : multSolverError_);
+    gradSolveError_ = (flag ? ROL_INF<Real>() : gradSolveError_);
   }
 
   Real value( const Vector<Real> &x, Real &tol ) {
@@ -388,6 +390,7 @@ public:
     if( isGradientComputed_ && gradSolveError_ <= tol) {
       tol = gradSolveError_;
       g.set(*gPhi_);
+      return;
     }
 
     // Reset tolerances
@@ -457,7 +460,7 @@ public:
 
     // Make sure everything is already computed
     value(x, tol2); tol2 = origTol;
-    computeMultipliers(x, tol);
+    computeMultipliers(x, tol2); tol2 = origTol;
     gradient(*Tv_, x, tol2); tol2 = origTol;
 
     switch( AugSolve_ ) {
@@ -571,7 +574,7 @@ public:
     }
     Real tol2 = tol;
     FletcherBase<Real>::objGrad(x, tol2); tol2 = tol;
-    FletcherBase<Real>::conValue(x, tol2);
+    FletcherBase<Real>::conValue(x, tol2); tol2 = tol;
     computeQ(x);
     computeDQ(x);
 
@@ -590,6 +593,7 @@ public:
         break;
       }
       case 1: {
+        multSolverError_ = tol;
         solveAugmentedSystem(*gL_, *y_, *g_, *scaledc_, x, multSolverError_);
         QgL_->set(*gL_);
         QgL_->applyBinary(Elementwise::Multiply<Real>(), *Q_);
