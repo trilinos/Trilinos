@@ -208,7 +208,7 @@ fi
 
 SCRIPT_TRILINOS_ROOT=$( cd "$( dirname "$0" )" && cd ../.. && pwd )
 
-# Set kokkos path.
+# Set trilinos path.
 if [ -z "$TRILINOS_PATH" ]; then
   TRILINOS_PATH=$SCRIPT_TRILINOS_ROOT
 else
@@ -255,8 +255,8 @@ else
   export JENKINS_DO_SERIAL=OFF    
 fi
 
-export TEST=ON
-export EXAMPLES=ON
+export JENKINS_DO_TESTS=ON
+export JENKINS_DO_EXAMPLES=ON
 
 #
 # Machine specific config.
@@ -356,7 +356,7 @@ elif [ "$MACHINE" = "apollo" ]; then
   export OMP_NUM_THREADS=2
   
   export JENKINS_ARCH=${KOKKOS_ARCH}
-  export ARCH_C_FLAG="-mavx"
+  export JENKINS_ARCH_C_FLAG="-mavx"
   export BLAS_LIBRARIES="-lblas"
   export LAPACK_LIBRARIES="-llapack"
   
