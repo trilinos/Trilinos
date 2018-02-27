@@ -62,6 +62,8 @@ else
   echo "Hostname '$THIS_HOSTNAME' matches known ATDM system '$ATDM_HOSTNAME'!"
 fi
 
+export ATDM_CONFIG_KNOWN_SYSTEM_NAME=$ATDM_HOSTNAME
+
 #
 # C) Set JOB_NAME now that hostname has been asserted
 #
