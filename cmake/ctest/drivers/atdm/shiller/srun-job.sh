@@ -5,11 +5,7 @@ if [ "${WORKSPACE}" == ""  ] ; then
   exit 1
 fi
 
-# Shiller/hansen settings
-export SLURM_TASKS_PER_NODE=32
-export CUDA_LAUNCH_BLOCKING=1
-export CUDA_MANAGED_FORCE_DEVICE_ALLOC=1
-export OMP_NUM_THREADS=2
+# Shiller/hansen settings for automated job (rest are set in ./environment.sh)
 ulimit -c 0
 
 export SUBDIR=SRC_AND_BUILD
