@@ -99,6 +99,14 @@ private:
   Ptr<Vector<Real> > Qsqrt_;
 
   int HessianApprox_;
+  // Flag to determine type of augmented system to solve
+  // AugSolve_ = 0 : Symmetric system
+  //   [   I      Q^{1/2} A][w] = [b1]
+  //   [A'Q^{1/2}          ][v]   [b2]
+  // AugSolve_ = 1 : Nonsymmetric system
+  //   [ I  A][w] = [b1]
+  //   [A'Q  ][v]   [b2]
+  int AugSolve_;
 
   Ptr<Vector<Real> > QsgL_;     // scaled gradient of Lagrangian Q^{1/2}*(g-A*y)
   Ptr<Vector<Real> > QgL_;      // scaled gradient of Lagrangian Q*(g-A*y)
@@ -195,7 +203,7 @@ private:
     }
   };
 
-  class AugSystem : public LinearOperator<Real> {
+  class AugSystemSym : public LinearOperator<Real> {
   private:
     const Ptr<Constraint<Real> > con_;
     const Ptr<const Vector<Real> > x_;
@@ -203,11 +211,11 @@ private:
     const Ptr<Vector<Real> > Qv_;
     const Real delta_;
   public:
-    AugSystem(const Ptr<Constraint<Real> > &con,
-              const Ptr<const Vector<Real> > &x,
-              const Ptr<Vector<Real> > &Qsqrt,
-              const Ptr<Vector<Real> > &Qv,
-              const Real delta) : con_(con), x_(x), Qsqrt_(Qsqrt), Qv_(Qv), delta_(delta) {}
+    AugSystemSym(const Ptr<Constraint<Real> > &con,
+                 const Ptr<const Vector<Real> > &x,
+                 const Ptr<Vector<Real> > &Qsqrt,
+                 const Ptr<Vector<Real> > &Qv,
+                 const Real delta) : con_(con), x_(x), Qsqrt_(Qsqrt), Qv_(Qv), delta_(delta) {}
 
     void apply(Vector<Real> &Hv, const Vector<Real> &v, Real &tol) const {
       PartitionedVector<Real> &Hvp = dynamic_cast<PartitionedVector<Real>&>(Hv);
@@ -219,6 +227,34 @@ private:
 
       Qv_->set(*(vp.get(0)));
       Qv_->applyBinary(Elementwise::Multiply<Real>(), *Qsqrt_);
+      con_->applyJacobian(*(Hvp.get(1)), *(Qv_), *x_, tol);
+      Hvp.get(1)->axpy(-delta_*delta_, *(vp.get(1)));
+    }
+  };
+
+  class AugSystemNonSym : public LinearOperator<Real> {
+  private:
+    const Ptr<Constraint<Real> > con_;
+    const Ptr<const Vector<Real> > x_;
+    const Ptr<Vector<Real> > Q_;
+    const Ptr<Vector<Real> > Qv_;
+    const Real delta_;
+  public:
+    AugSystemNonSym(const Ptr<Constraint<Real> > &con,
+                    const Ptr<const Vector<Real> > &x,
+                    const Ptr<Vector<Real> > &Q,
+                    const Ptr<Vector<Real> > &Qv,
+                    const Real delta) : con_(con), x_(x), Q_(Q), Qv_(Qv), delta_(delta) {}
+
+    void apply(Vector<Real> &Hv, const Vector<Real> &v, Real &tol) const {
+      PartitionedVector<Real> &Hvp = dynamic_cast<PartitionedVector<Real>&>(Hv);
+      const PartitionedVector<Real> &vp = dynamic_cast<const PartitionedVector<Real>&>(v);
+
+      con_->applyAdjointJacobian(*(Hvp.get(0)), *(vp.get(1)), *x_, tol);
+      Hvp.get(0)->plus(*(vp.get(0)));
+
+      Qv_->set(*(vp.get(0)));
+      Qv_->applyBinary(Elementwise::Multiply<Real>(), *Q_);
       con_->applyJacobian(*(Hvp.get(1)), *(Qv_), *x_, tol);
       Hvp.get(1)->axpy(-delta_*delta_, *(vp.get(1)));
     }
@@ -296,6 +332,10 @@ public:
 
       Teuchos::ParameterList& sublist = parlist.sublist("Step").sublist("Fletcher");
       HessianApprox_ = sublist.get("Level of Hessian Approximation",  0);
+
+      AugSolve_ = sublist.get("Type of Augmented System Solve",  0);
+      AugSolve_ = (0 < AugSolve_ && AugSolve_ < 2) ? AugSolve_ : 0; 
+
       penaltyParameter_ = sublist.get("Penalty Parameter", 1.0);
 
       delta_ = sublist.get("Regularization Parameter", 0.0);
@@ -357,25 +397,54 @@ public:
     gradSolveError_ = origTol / static_cast<Real>(2);
     computeMultipliers(x, gradSolveError_);
 
-    solveAugmentedSystem( *w_, *v_, *xzeros_, *c_, x, gradSolveError_ );
-    gradSolveError_ += multSolverError_;
-    tol = gradSolveError_;
+    switch( AugSolve_ ) {
+      case 0: {
+        solveAugmentedSystem( *w_, *v_, *xzeros_, *c_, x, gradSolveError_ );
+        gradSolveError_ += multSolverError_;
+        tol = gradSolveError_;
 
-    w_->applyBinary(Elementwise::Multiply<Real>(), *Qsqrt_);
-    con_->applyAdjointHessian( *gPhi_, *y_, *w_, x, tol2 ); tol2 = origTol;
-    obj_->hessVec( *Tv_, *w_, x, tol2 ); tol2 = origTol;
-    gPhi_->axpy( static_cast<Real>(-1), *Tv_ );
+        w_->applyBinary(Elementwise::Multiply<Real>(), *Qsqrt_);
+        con_->applyAdjointHessian( *gPhi_, *y_, *w_, x, tol2 ); tol2 = origTol;
+        obj_->hessVec( *Tv_, *w_, x, tol2 ); tol2 = origTol;
+        gPhi_->axpy( static_cast<Real>(-1), *Tv_ );
 
-    con_->applyAdjointJacobian( *Tv_, *v_, x, tol2); tol2 = origTol;
-    gPhi_->axpy( -penaltyParameter_, *Tv_);
-    
-    Tv_->applyBinary(Elementwise::Multiply<Real>(), *DQgL_);
-    gPhi_->plus( *Tv_ );
+        con_->applyAdjointJacobian( *Tv_, *v_, x, tol2); tol2 = origTol;
+        gPhi_->axpy( -penaltyParameter_, *Tv_);
+        
+        Tv_->applyBinary(Elementwise::Multiply<Real>(), *DQgL_);
+        gPhi_->plus( *Tv_ );
 
-    con_->applyAdjointHessian( *Tv_, *v_, *QgL_, x, tol2 ); tol2 = origTol;
-    gPhi_->plus( *Tv_ );
+        con_->applyAdjointHessian( *Tv_, *v_, *QgL_, x, tol2 ); tol2 = origTol;
+        gPhi_->plus( *Tv_ );
 
-    gPhi_->plus( *gL_ );
+        gPhi_->plus( *gL_ );
+        break;
+      }
+      case 1: {
+        solveAugmentedSystem( *w_, *v_, *xzeros_, *c_, x, gradSolveError_ );
+        gradSolveError_ += multSolverError_;
+        tol = gradSolveError_;
+
+        gPhi_->set( *w_ );
+        gPhi_->scale( penaltyParameter_ );
+        Tv_->set( *w_ );
+        Tv_->applyBinary( Elementwise::Multiply<Real>(), *DQgL_ );
+        gPhi_->axpy(static_cast<Real>(-1), *Tv_);
+        
+        w_->applyBinary( Elementwise::Multiply<Real>(), *Q_ );
+        obj_->hessVec( *Tv_, *w_, x, tol2); tol2 = origTol;
+        gPhi_->axpy( static_cast<Real>(-1), *Tv_ );
+        con_->applyAdjointHessian( *Tv_, *y_, *w_, x, tol2 ); tol2 = origTol;
+        gPhi_->plus( *Tv_ );
+
+        con_->applyAdjointHessian( *Tv_, *v_, *QgL_, x, tol2 ); tol2 = origTol;
+        gPhi_->plus( *Tv_ );
+
+        gPhi_->plus( *gL_ );
+
+        break;
+      }
+    }
 
     g.set(*gPhi_);
     isGradientComputed_ = true;
@@ -391,37 +460,71 @@ public:
     computeMultipliers(x, tol);
     gradient(*Tv_, x, tol2); tol2 = origTol;
 
-    // hv <- HL*v
-    obj_->hessVec( hv, v, x, tol2 ); tol2 = origTol;
-    con_->applyAdjointHessian( *Tv_, *y_, v, x, tol2 ); tol2 = origTol;
-    hv.axpy(static_cast<Real>(-1), *Tv_ );
+    switch( AugSolve_ ) {
+      case 0: {
+        // hv <- HL*v
+        obj_->hessVec( hv, v, x, tol2 ); tol2 = origTol;
+        con_->applyAdjointHessian( *Tv_, *y_, v, x, tol2 ); tol2 = origTol;
+        hv.axpy(static_cast<Real>(-1), *Tv_ );
 
-    // htmp1_ <- Q^{1/2}*hv
-    htmp1_->set(hv);
-    htmp1_->applyBinary(Elementwise::Multiply<Real>(), *Qsqrt_);
-    htmp1_->scale(static_cast<Real>(-1));
-    // htmp2_ <- A'*(R(gL) - sigma*I)*v
-    Tv_->set( *DQgL_ );
-    Tv_->applyBinary( Elementwise::Multiply<Real>(), v );
-    Tv_->axpy(-penaltyParameter_, v);
-    con_->applyJacobian( *htmp2_, *Tv_, x, tol2); tol2 = origTol;
-    // v_ <- - (A'QA)^-1 [A' (R(gL)-sigma I) u + A' Q HL u]
-    solveAugmentedSystem( *w_, *v_, *htmp1_, *htmp2_, x, tol2 ); tol2 = origTol;
-    con_->applyAdjointJacobian( *Tv_, *v_, x, tol2 ); tol2 = origTol;
-    hv.plus(*Tv_);
+        // htmp1_ <- Q^{1/2}*hv
+        htmp1_->set(hv);
+        htmp1_->applyBinary(Elementwise::Multiply<Real>(), *Qsqrt_);
+        htmp1_->scale(static_cast<Real>(-1));
+        // htmp2_ <- A'*(R(gL) - sigma*I)*v
+        Tv_->set( *DQgL_ );
+        Tv_->applyBinary( Elementwise::Multiply<Real>(), v );
+        Tv_->axpy(-penaltyParameter_, v);
+        con_->applyJacobian( *htmp2_, *Tv_, x, tol2); tol2 = origTol;
+        // v_ <- - (A'QA)^-1 [A' (R(gL)-sigma I) u + A' Q HL u]
+        solveAugmentedSystem( *w_, *v_, *htmp1_, *htmp2_, x, tol2 ); tol2 = origTol;
+        con_->applyAdjointJacobian( *Tv_, *v_, x, tol2 ); tol2 = origTol;
+        hv.plus(*Tv_);
 
-    con_->applyJacobian( *htmp2_, v, x, tol2 ); tol2 = origTol;
-    solveAugmentedSystem( *w_, *v_, *xzeros_, *htmp2_, x, tol2 ); tol2 = origTol;
-    con_->applyAdjointJacobian( *Tv_, *v_, x, tol2 ); tol2 = origTol;
-    hv.axpy( -penaltyParameter_, *Tv_);
-    Tv_->applyBinary( Elementwise::Multiply<Real>(), *DQgL_ );
-    hv.plus( *Tv_ );
+        con_->applyJacobian( *htmp2_, v, x, tol2 ); tol2 = origTol;
+        solveAugmentedSystem( *w_, *v_, *xzeros_, *htmp2_, x, tol2 ); tol2 = origTol;
+        con_->applyAdjointJacobian( *Tv_, *v_, x, tol2 ); tol2 = origTol;
+        hv.axpy( -penaltyParameter_, *Tv_);
+        Tv_->applyBinary( Elementwise::Multiply<Real>(), *DQgL_ );
+        hv.plus( *Tv_ );
 
-    w_->applyBinary( Elementwise::Multiply<Real>(), *Qsqrt_ );
-    obj_->hessVec( *Tv_, *w_, x, tol2 ); tol2 = origTol;
-    hv.axpy( static_cast<Real>(-1), *Tv_);
-    con_->applyAdjointHessian( *Tv_, *y_, *w_, x, tol2 ); tol2 = origTol;
-    hv.plus( *Tv_ );
+        w_->applyBinary( Elementwise::Multiply<Real>(), *Qsqrt_ );
+        obj_->hessVec( *Tv_, *w_, x, tol2 ); tol2 = origTol;
+        hv.axpy( static_cast<Real>(-1), *Tv_);
+        con_->applyAdjointHessian( *Tv_, *y_, *w_, x, tol2 ); tol2 = origTol;
+        hv.plus( *Tv_ );
+        break;
+      }
+      case 1: {
+        // hv <- HL*v
+        obj_->hessVec( hv, v, x, tol2 ); tol2 = origTol;
+        con_->applyAdjointHessian( *Tv_, *y_, v, x, tol2 ); tol2 = origTol;
+        hv.axpy(static_cast<Real>(-1), *Tv_ );
+
+        htmp1_->set(hv);
+        Tv_->set(v);
+        Tv_->applyBinary( Elementwise::Multiply<Real>(), *DQgL_ );
+        Tv_->axpy( -penaltyParameter_, v );
+        Tv_->scale( static_cast<Real>(-1) );
+        con_->applyJacobian( *htmp2_, *Tv_, x, tol2 ); tol2 = origTol;
+        solveAugmentedSystem( *w_, *v_, *htmp1_, *htmp2_, x, tol2 ); tol2 = origTol;
+        hv.set( *w_ );
+
+        con_->applyJacobian( *htmp2_, v, x, tol2 ); tol2 = origTol;
+        solveAugmentedSystem( *w_, *v_, *xzeros_, *htmp2_, x, tol2 ); tol2 = origTol;
+        hv.axpy( penaltyParameter_, *w_ );
+        Tv_->set( *w_ );
+        Tv_->applyBinary( Elementwise::Multiply<Real>(), *DQgL_ );
+        hv.axpy( static_cast<Real>(-1), *Tv_ );
+
+        w_->applyBinary( Elementwise::Multiply<Real>(), *Q_ );
+        obj_->hessVec( *Tv_, *w_, x, tol2 ); tol2 = tol;
+        hv.axpy( static_cast<Real>(-1), *Tv_);
+        con_->applyAdjointHessian( *Tv_, *y_, *w_, x, tol2 ); tol2 = origTol;
+        hv.plus( *Tv_ );
+        break;
+      }
+    }
   }
 
   void solveAugmentedSystem(Vector<Real> &v1,
@@ -431,8 +534,17 @@ public:
                             const Vector<Real> &x,
                             Real &tol) {
     // Ignore tol for now
-    ROL::Ptr<LinearOperator<Real> > K
-      = ROL::makePtr<AugSystem>(con_, makePtrFromRef(x), Qsqrt_, Qv_, delta_);
+    ROL::Ptr<LinearOperator<Real> > K;
+    switch( AugSolve_ ) {
+      case 0: {
+        K = ROL::makePtr<AugSystemSym>(con_, makePtrFromRef(x), Qsqrt_, Qv_, delta_);
+        break;
+      }
+      case 1: {
+        K = ROL::makePtr<AugSystemNonSym>(con_, makePtrFromRef(x), Q_, Qv_, delta_);
+        break;        
+      }
+    }
     ROL::Ptr<LinearOperator<Real> > P
       = ROL::makePtr<AugSystemPrecond>(con_, makePtrFromRef(x));
 
@@ -462,19 +574,32 @@ public:
     FletcherBase<Real>::conValue(x, tol2);
     computeQ(x);
     computeDQ(x);
-    Qsg_->set(*g_);
-    Qsg_->applyBinary(Elementwise::Multiply<Real>(), *Qsqrt_);
 
-    multSolverError_ = tol;
-    solveAugmentedSystem(*QsgL_, *y_, *Qsg_, *scaledc_, x, multSolverError_);
+    switch( AugSolve_ ) {
+      case 0: {
+        Qsg_->set(*g_);
+        Qsg_->applyBinary(Elementwise::Multiply<Real>(), *Qsqrt_);
 
-    gL_->set(*QsgL_);
-    gL_->applyBinary(Elementwise::Divide<Real>(), *Qsqrt_);
-    QgL_->set(*QsgL_);
-    QgL_->applyBinary(Elementwise::Multiply<Real>(), *Qsqrt_);
-    DQgL_->set( *gL_ );
-    DQgL_->applyBinary(Elementwise::Multiply<Real>(), *DQ_);
+        multSolverError_ = tol;
+        solveAugmentedSystem(*QsgL_, *y_, *Qsg_, *scaledc_, x, multSolverError_);
+
+        gL_->set(*QsgL_);
+        gL_->applyBinary(Elementwise::Divide<Real>(), *Qsqrt_);
+        QgL_->set(*QsgL_);
+        QgL_->applyBinary(Elementwise::Multiply<Real>(), *Qsqrt_);
+        break;
+      }
+      case 1: {
+        solveAugmentedSystem(*gL_, *y_, *g_, *scaledc_, x, multSolverError_);
+        QgL_->set(*gL_);
+        QgL_->applyBinary(Elementwise::Multiply<Real>(), *Q_);
+        break;
+      }
+    }
     
+    DQgL_->set(*gL_);
+    DQgL_->applyBinary(Elementwise::Multiply<Real>(), *DQ_);
+
     isMultiplierComputed_ = true;
   }
 
