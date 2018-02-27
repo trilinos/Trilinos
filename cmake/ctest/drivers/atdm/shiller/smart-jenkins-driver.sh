@@ -13,6 +13,8 @@ if [ "${WORKSPACE}" == ""  ] ; then
   exit 1
 fi
 
+source $WORKSPACE/Trilinos/cmake/std/atdm/utils/get_known_system_name.sh
+
 set -x
 
-$WORKSPACE/Trilinos/cmake/ctest/drivers/atdm/shiller/drivers/$JOB_NAME.sh
+$WORKSPACE/Trilinos/cmake/ctest/drivers/atdm/$ATDM_CONFIG_KNOWN_SYSTEM_NAME/drivers/$JOB_NAME.sh
