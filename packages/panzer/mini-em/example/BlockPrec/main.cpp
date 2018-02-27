@@ -153,10 +153,15 @@ int main(int argc,char * argv[])
       clp.setOption("xml",&xml);
 
       // parse command-line argument
+      clp.recogniseAllOptions(true);
+      clp.throwExceptions(false);
       const Teuchos::CommandLineProcessor::EParseCommandLineReturn parseResult = clp.parse (argc, argv);
-      if (parseResult == Teuchos::CommandLineProcessor::PARSE_HELP_PRINTED)
-        return EXIT_SUCCESS;      
-      TEUCHOS_ASSERT(parseResult==Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL);
+      switch (parseResult) {
+        case Teuchos::CommandLineProcessor::PARSE_HELP_PRINTED:        return EXIT_SUCCESS;
+        case Teuchos::CommandLineProcessor::PARSE_ERROR:
+        case Teuchos::CommandLineProcessor::PARSE_UNRECOGNIZED_OPTION: return EXIT_FAILURE;
+        case Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL:          break;
+      }
 
       Teuchos::RCP<Teuchos::TimeMonitor> tMmesh = Teuchos::rcp(new Teuchos::TimeMonitor(*Teuchos::TimeMonitor::getNewTimer(std::string("Mini-EM: build mesh"))));
       RCP<panzer_stk::STK_Interface> mesh;
@@ -380,7 +385,11 @@ int main(int argc,char * argv[])
       Teuchos::updateParametersFromXmlFileAndBroadcast(defaultXMLfile,lin_solver_pl.ptr(),*comm);
       if (xml != "")
         Teuchos::updateParametersFromXmlFileAndBroadcast(xml,lin_solver_pl.ptr(),*comm);
-
+      lin_solver_pl->sublist("Preconditioner Types").sublist("Teko").sublist("Inverse Factory Library").sublist("Maxwell").set("mu",mu);
+      lin_solver_pl->sublist("Preconditioner Types").sublist("Teko").sublist("Inverse Factory Library").sublist("Maxwell").set("dt",dt);
+      lin_solver_pl->sublist("Preconditioner Types").sublist("Teko").sublist("Inverse Factory Library").sublist("Maxwell").set("epsilon",epsilon);
+      lin_solver_pl->sublist("Preconditioner Types").sublist("Teko").sublist("Inverse Factory Library").sublist("Maxwell").set("cfl",cfl);
+      lin_solver_pl->sublist("Preconditioner Types").sublist("Teko").sublist("Inverse Factory Library").sublist("Maxwell").set("min_dx",min_dx);
       
       // build linear solver
       RCP<Thyra::LinearOpWithSolveFactoryBase<double> > lowsFactory
