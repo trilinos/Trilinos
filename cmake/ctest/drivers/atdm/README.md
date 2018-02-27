@@ -79,11 +79,11 @@ Given `<system_name>/ctest-driver.cmake`, then:
 can be run using any way desired and it will clone a new Trilinos git repo (if
 not cloned already).
 
-In addition, each `atdm/<system_name>/` directory contains a Jenkins-specific
-driver script:
+In addition, each `atdm/<system_name>/` directory contains a local driver
+script:
 
 ```
-  Trilinos/cmake/ctest/drivers/atdm/<system_name>/jenkins-driver.sh
+  Trilinos/cmake/ctest/drivers/atdm/<system_name>/local-driver.sh
 ```
 
 which runs `ctest -S` in the appropriate way for that system.  This script
@@ -103,16 +103,16 @@ contains specific drivers with the names of the Jenkins build names:
 ```
 
 This file sets some tweaks for that particular build `$JOB_NAME` link which
-CDash Track/Group results are sent to, which tests are currently disabled for
-that build, or any other build-specific tweaks.
+CDash Track/Group results are sent to and other tweaks like this.
 
-To run these files automatically from the Jenkins build configuration, the file:
+To run these files automatically from the Jenkins build configuration, the
+file:
 
 ```
   Trilinos/cmake/ctest/drivers/atdm/<system_name>/smart-jenkins-driver.sh
 ```
 
-which just runs:
+is provided which just runs:
 
 ```
   $WORKSPACE/Trilinos/cmake/ctest/drivers/atdm/shiller/drivers/$JOB_NAME.sh
@@ -146,7 +146,7 @@ $ time env \
     CTEST_DO_SUBMIT=OFF \
     CTEST_DO_UPDATES=OFF \
     CTEST_START_WITH_EMPTY_BINARY_DIRECTORY=TRUE \
-  <some_base_dir>/Trilinos/cmake/ctest/drivers/atdm/<system_name>/jenkins-driver.sh \
+  <some_base_dir>/Trilinos/cmake/ctest/drivers/atdm/<system_name>/local-driver.sh \
     &> console.out
 ```
 
