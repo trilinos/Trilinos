@@ -121,7 +121,7 @@ void deep_copy(
     , "Can only deep copy into non-const type" );
 
   typedef typename FlatArrayType< View<DT,DP...> >::type flat_array_type;
-  Kokkos::Impl::ViewFill< flat_array_type >( view , value );
+  Kokkos::Impl::StokhosViewFill< flat_array_type >( view , value );
 }
 
 // Overload of deep_copy for MP::Vector views intializing to a constant MP::Vector
@@ -146,7 +146,7 @@ void deep_copy(
   //               , Kokkos::HostSpace >::value
   //   , "Deep copy from a FAD type must be statically sized or host space" );
 
-  Kokkos::Impl::ViewFill< View<DT,DP...> >( view , value );
+  Kokkos::Impl::StokhosViewFill< View<DT,DP...> >( view , value );
 }
 
 // Overload of deep_copy for MP::Vector views intializing to a constant scalar
@@ -167,7 +167,7 @@ void deep_copy(
     , "Can only deep copy into non-const type" );
 
   typedef typename FlatArrayType< View<DT,DP...> >::type flat_array_type;
-  Kokkos::Impl::ViewFill< flat_array_type >( view , value );
+  Kokkos::Impl::StokhosViewFill< flat_array_type >( view , value );
 }
 
 // Overload of deep_copy for MP::Vector views intializing to a constant MP::Vector
@@ -194,7 +194,7 @@ void deep_copy(
   //               , Kokkos::HostSpace >::value
   //   , "Deep copy from a FAD type must be statically sized or host space" );
 
-  Kokkos::Impl::ViewFill< View<DT,DP...> >( view , value );
+  Kokkos::Impl::StokhosViewFill< View<DT,DP...> >( view , value );
 }
 
 /* Specialize for deep copy of MP::Vector */
@@ -1463,7 +1463,7 @@ namespace Impl {
 // Specialization for deep_copy( view, view::value_type ) for Cuda
 #if defined( KOKKOS_HAVE_CUDA )
 template< class OutputView >
-struct ViewFill< OutputView ,
+struct StokhosViewFill< OutputView ,
                  typename std::enable_if< std::is_same< typename OutputView::specialize,
                                                         Kokkos::Experimental::Impl::ViewMPVectorContiguous >::value &&
                                      std::is_same< typename OutputView::execution_space,
@@ -1509,7 +1509,7 @@ struct ViewFill< OutputView ,
     }
   };
 
-  ViewFill( const OutputView & output , const_value_type & input )
+  StokhosViewFill( const OutputView & output , const_value_type & input )
   {
     if ( Sacado::is_constant(input) ) {
       deep_copy( output , input.fastAccessCoeff(0) );
