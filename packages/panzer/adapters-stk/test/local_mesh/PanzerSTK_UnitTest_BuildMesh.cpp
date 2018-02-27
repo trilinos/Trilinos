@@ -22,7 +22,7 @@ buildMesh(const std::vector<int> & N,
 
   const int num_dims = N.size();
 
-  TEUCHOS_ASSERT(L.size() == num_dims);
+  TEUCHOS_ASSERT(L.size() == static_cast<std::size_t>(num_dims));
 
   Teuchos::ParameterList mesh_parameters("Mesh");
 
