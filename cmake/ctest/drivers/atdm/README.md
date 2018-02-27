@@ -10,6 +10,7 @@ Trilinos CDash site.
 * <a href="#running-locally-and-debugging">Running locally and debugging</a>
 * <a href="#setting-up-jenkins-jobs">Setting up Jenkins jobs</a>
 * <a href="#specific-system_name-directories">Specific <system_name> directories</a>
+* <a href="#how-add-a-new-system">How add a new system</a>
 
 ## Base CTest/CDash configuration
 
@@ -30,6 +31,14 @@ given in the files defined in the directory:
 That file reads `JOB_NAME` from the env and uses it to set the CDash build
 name.  (Therefore, the Jenkikns `JOB_NAME` is the same as the CDash build name
 for all of these Trilinos ATDM builds.)
+
+This directory also contains the file:
+
+```
+  Trilinos/cmake/ctest/drivers/atdm/ctest-s-driver.sh
+```
+
+which sets up and runs the system-specific ctest -S script.
 
 ## System-specific driver files
 
@@ -220,10 +229,9 @@ The following `<system_name>` sub-directories exist:
 
 * ???
 
+## How add a new system
 
-
-
-
+ToDo: Fill in!
 
 
 

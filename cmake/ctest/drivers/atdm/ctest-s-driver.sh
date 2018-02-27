@@ -1,7 +1,12 @@
 #!/bin/bash -l
 
 if [ "${WORKSPACE}" == ""  ] ; then
-  echo "Error, must set WORKSPACE var before calling"
+  echo "Error, must set WORKSPACE var before calling!"
+  exit 1
+fi
+
+if [ "${JOB_NAME}" == ""  ] ; then
+  echo "Error, must set JOB_NAME var before calling!"
   exit 1
 fi
 
@@ -25,5 +30,3 @@ set -x
 
 ctest -V -S \
   $WORKSPACE/Trilinos/cmake/ctest/drivers/atdm/$ATDM_CONFIG_KNOWN_SYSTEM_NAME/ctest-driver.cmake
-
-# ToDo: Move this entire script one level below to be used for all systems!
