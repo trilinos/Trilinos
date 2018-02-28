@@ -99,9 +99,9 @@ void deep_copy(
   typedef typename view_type::array_type::value_type scalar_type;
   typedef typename FlatArrayType<view_type>::type flat_array_type;
   if (value == scalar_type(0))
-    Kokkos::Impl::ViewFill< flat_array_type >( view , value );
+    Kokkos::Impl::StokhosViewFill< flat_array_type >( view , value );
   else
-    Kokkos::Impl::ViewFill< view_type>( view , value );
+    Kokkos::Impl::StokhosViewFill< view_type>( view , value );
 }
 
 // Overload of deep_copy for UQ::PCE views intializing to a constant UQ::PCE
@@ -119,7 +119,7 @@ void deep_copy(
                   typename ViewTraits<DT,DP...>::non_const_value_type >::value
     , "Can only deep copy into non-const type" );
 
-  Kokkos::Impl::ViewFill< View<DT,DP...> >( view , value );
+  Kokkos::Impl::StokhosViewFill< View<DT,DP...> >( view , value );
 }
 
 // Overload of deep_copy for UQ::PCE views intializing to a constant scalar
@@ -143,9 +143,9 @@ void deep_copy(
   typedef typename view_type::array_type::value_type scalar_type;
   typedef typename FlatArrayType<view_type>::type flat_array_type;
   if (value == scalar_type(0))
-    Kokkos::Impl::ViewFill< flat_array_type >( view , value );
+    Kokkos::Impl::StokhosViewFill< flat_array_type >( view , value );
   else
-    Kokkos::Impl::ViewFill< view_type>( view , value );
+    Kokkos::Impl::StokhosViewFill< view_type>( view , value );
 }
 
 // Overload of deep_copy for UQ::PCE views intializing to a constant UQ::PCE
@@ -165,7 +165,7 @@ void deep_copy(
                   typename ViewTraits<DT,DP...>::non_const_value_type >::value
     , "Can only deep copy into non-const type" );
 
-  Kokkos::Impl::ViewFill< View<DT,DP...> >( view , value );
+  Kokkos::Impl::StokhosViewFill< View<DT,DP...> >( view , value );
 }
 
 namespace Experimental {
@@ -1606,7 +1606,7 @@ namespace Impl {
 // Specialization for deep_copy( view, view::value_type ) for Cuda
 #if defined( KOKKOS_HAVE_CUDA )
 template< class OutputView >
-struct ViewFill< OutputView ,
+struct StokhosViewFill< OutputView ,
                  typename std::enable_if< std::is_same< typename OutputView::specialize,
                                                         Kokkos::Experimental::Impl::ViewPCEContiguous >::value &&
                                      std::is_same< typename OutputView::execution_space,
@@ -1688,7 +1688,7 @@ struct ViewFill< OutputView ,
     }
   };
 
-  ViewFill( const OutputView & output , const_value_type & input )
+  StokhosViewFill( const OutputView & output , const_value_type & input )
   {
     // Coalesced accesses are 128 bytes in size
     typedef typename OutputView::array_type::value_type scalar_type;
@@ -1706,7 +1706,7 @@ struct ViewFill< OutputView ,
 
     if (static_cast<unsigned>(input.size()) != dimension_scalar(output) &&
         input.size() != 1)
-      Kokkos::abort("ViewFill:  Invalid input value size");
+      Kokkos::abort("StokhosViewFill:  Invalid input value size");
 
     if (input.size() == 1)
       parallel_for(
@@ -1716,7 +1716,7 @@ struct ViewFill< OutputView ,
     execution_space::fence();
   }
 
-  ViewFill( const OutputView & output , const scalar_type & input )
+  StokhosViewFill( const OutputView & output , const scalar_type & input )
   {
     // Coalesced accesses are 128 bytes in size
     typedef typename OutputView::array_type::value_type scalar_type;

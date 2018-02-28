@@ -194,6 +194,19 @@ def main():
         fig.savefig(res_evaluator_timings_filename)
 
         #print dir(plt)
+
+
+        # Plot to assess savings
+        filename_f = "raw_data_output_f_nx_%i_ny_%i_nz_%i_ne_%i_ws_%i_ts_%i_vs_%i.csv" % (nx, ny, nz ,ne, ws, ts, vs)
+        write_file = open(filename_f,'w')
+        for i in range(len(workset_range)):
+            write_file.write(str(workset_range[i])+", "+str(timings["Residual Evaluation Time <<Host DAG>>"][i])+"\n")
+
+        filename_J = "raw_data_output_J_nx_%i_ny_%i_nz_%i_ne_%i_ws_%i_ts_%i_vs_%i.csv" % (nx, ny, nz ,ne, ws, ts, vs)
+        write_file = open(filename_J,'w')
+        for i in range(len(workset_range)):
+            write_file.write(str(workset_range[i])+", "+str(timings["Jacobian Evaluation Time <<Host DAG>>"][i])+"\n")
+
         
     print "Finished Workset Analysis"
 

@@ -44,33 +44,22 @@ fi
 # B) Get the system name from the hostname
 #
 
-THIS_HOSTNAME=`hostname`
-#echo "Hostname = '$THIS_HOSTNAME'"
+source $_SCRIPT_DIR/utils/get_known_system_name.sh
 
-ATDM_HOSTNAME=
-
-if [[ $THIS_HOSTNAME == "shiller"* ]] || [[ $THIS_HOSTNAME == "hansen"* ]] ; then
-  ATDM_HOSTNAME=shiller
-fi
-
-# ToDo: Add more know hosts as you add them!
-
-if [[ $ATDM_HOSTNAME == "" ]] ; then
-  echo "Error, hostname = '$THIS_HOSTNAME' not recognized as a known ATDM system name!"
+if [[ $ATDM_CONFIG_KNOWN_SYSTEM_NAME == "" ]] ; then
+  echo "Error, could not determine known system, aborting env loading"
   return
-else
-  echo "Hostname '$THIS_HOSTNAME' matches known ATDM system '$ATDM_HOSTNAME'!"
 fi
 
 #
 # C) Set JOB_NAME now that hostname has been asserted
 #
 
-echo "Setting JOB_NAME=$1"
+echo "Setting export JOB_NAME=$1"
 export JOB_NAME=$1
 
 #
 # D) Load the matching env
 #
 
-source $_SCRIPT_DIR/$ATDM_HOSTNAME/environment.sh
+source $_SCRIPT_DIR/$ATDM_CONFIG_KNOWN_SYSTEM_NAME/environment.sh
