@@ -2,6 +2,7 @@
   <!-- ===========  PROBLEM INPUT PARAMETER SUBLIST  =========== -->
   <ParameterList name="Problem">
     <Parameter name="Use Reduced Space"                   type="bool"    value="true"  />
+    <Parameter name="Initial Solve for Full Space"        type="bool"    value="true"  />
     <!-- OBJECTIVE FUNCTION -->
     <Parameter name="Desired engine temperature"          type="double"  value="363.0" />
     <Parameter name="Use exponential engine cost model"   type="bool"    value="false" />
