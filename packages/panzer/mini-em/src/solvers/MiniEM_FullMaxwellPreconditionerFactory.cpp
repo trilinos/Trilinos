@@ -20,11 +20,7 @@
 #include "Panzer_LinearObjContainer.hpp"
 #include "Panzer_ThyraObjContainer.hpp"
 
-#include "Stratimikos_DefaultLinearSolverBuilder.hpp"
-#include <Stratimikos_MueLuHelpers.hpp>
 #include "Thyra_DefaultDiagonalLinearOp.hpp"
-
-#include <BelosTypes.hpp>
 
 using Teuchos::RCP;
 using Teuchos::rcp_dynamic_cast;
@@ -39,7 +35,25 @@ void writeOut(const std::string & s,const Thyra::LinearOpBase<double> & op)
   const RCP<const Thyra::TpetraLinearOp<double,int,panzer::Ordinal64,NT> > tOp = rcp_dynamic_cast<const Thyra::TpetraLinearOp<double,int,panzer::Ordinal64,NT> >(Teuchos::rcpFromRef(op));
   if(tOp != Teuchos::null) {
     const RCP<const Tpetra::CrsMatrix<double,int,panzer::Ordinal64,NT> > crsOp = rcp_dynamic_cast<const Tpetra::CrsMatrix<double,int,panzer::Ordinal64,NT> >(tOp->getConstTpetraOperator(),true);
+    Tpetra::MatrixMarket::Writer<Tpetra::CrsMatrix<double,int,panzer::Ordinal64,NT> >::writeMapFile(("rowmap_"+s).c_str(),*(crsOp->getRowMap()));
+    Tpetra::MatrixMarket::Writer<Tpetra::CrsMatrix<double,int,panzer::Ordinal64,NT> >::writeMapFile(("colmap_"+s).c_str(),*(crsOp->getColMap()));
+    Tpetra::MatrixMarket::Writer<Tpetra::CrsMatrix<double,int,panzer::Ordinal64,NT> >::writeMapFile(("domainmap_"+s).c_str(),*(crsOp->getDomainMap()));
+    Tpetra::MatrixMarket::Writer<Tpetra::CrsMatrix<double,int,panzer::Ordinal64,NT> >::writeMapFile(("rangemap_"+s).c_str(),*(crsOp->getRangeMap()));
     Tpetra::MatrixMarket::Writer<Tpetra::CrsMatrix<double,int,panzer::Ordinal64,NT> >::writeSparseFile(s.c_str(),crsOp);
+  }
+}
+
+
+void describeMatrix(const std::string & s,const Thyra::LinearOpBase<double> & op,Teuchos::RCP<Teuchos::FancyOStream> out)
+{
+  using Teuchos::RCP;
+
+  typedef Tpetra::DefaultPlatform::DefaultPlatformType::NodeType NT;
+  const RCP<const Thyra::TpetraLinearOp<double,int,panzer::Ordinal64,NT> > tOp = rcp_dynamic_cast<const Thyra::TpetraLinearOp<double,int,panzer::Ordinal64,NT> >(Teuchos::rcpFromRef(op));
+  if(tOp != Teuchos::null) {
+    const RCP<const Tpetra::CrsMatrix<double,int,panzer::Ordinal64,NT> > crsOp = rcp_dynamic_cast<const Tpetra::CrsMatrix<double,int,panzer::Ordinal64,NT> >(tOp->getConstTpetraOperator(),true);
+    *out << "\nDebug: " << s << std::endl;
+    crsOp->describe(*out,Teuchos::VERB_MEDIUM);
   }
 }
 
@@ -52,6 +66,14 @@ Teko::LinearOp FullMaxwellPreconditionerFactory::buildPreconditionerOperator(Tek
 {
    Teuchos::RCP<Teuchos::TimeMonitor> tM = Teuchos::rcp(new Teuchos::TimeMonitor(*Teuchos::TimeMonitor::getNewTimer(std::string("MaxwellPreconditioner::build"))));
 
+   // Output stream for debug information 
+   Teuchos::RCP<Teuchos::FancyOStream> debug;
+   // print debug information
+   if (params.isParameter("Debug") && params.get<bool>("Debug"))
+     debug = Teko::getOutputStream();
+   else
+     debug = Teuchos::getFancyOStream(Teuchos::rcp(new Teuchos::oblackholestream()));
+   
    // Check that system is right size
    int rows = Teko::blockRowCount(blo);
    int cols = Teko::blockColCount(blo);
@@ -61,8 +83,20 @@ Teko::LinearOp FullMaxwellPreconditionerFactory::buildPreconditionerOperator(Tek
    // Extract the blocks
    Teko::LinearOp Q_B   = Teko::getBlock(0,0,blo);  // actually 1/dt * Q_B = mu/dt * M_2(1/mu)
    Teko::LinearOp K     = Teko::getBlock(0,1,blo);  // actually K = Q_B * D_1 = mu * M_2(1/mu) * D_1
-   Teko::LinearOp Kt    = Teko::getBlock(1,0,blo);  // actually -Kt  = - D_1^T * M_2(1/mu) 
+   Teko::LinearOp Kt    = Teko::getBlock(1,0,blo);  // actually -Kt  = - mu * D_1^T * M_2(1/mu) 
    Teko::LinearOp Q_E   = Teko::getBlock(1,1,blo);  // actually 1/(c^2*dt) * Q_E = 1/dt * M_1(eps)
+
+   if (dump) {
+     writeOut("Q_B.mm",*Q_B);
+     writeOut("K.mm",*K);
+     writeOut("Kt.mm",*Kt);
+     writeOut("Q_E.mm",*Q_E);
+   }
+
+   describeMatrix("Q_B",*Q_B,debug);
+   describeMatrix("K",*K,debug);
+   describeMatrix("Kt",*Kt,debug);
+   describeMatrix("Q_E",*Q_E,debug);
 
    //for refmaxwell: Q_rho = M_0(epsilon / dt / cfl^2 / min_dx^2)
    // S_E = Q_E - Kt * Q_B^-1 * K = 1/dt * M_1(eps) + dt * D_1^T * M_2(1/mu) * D_1
@@ -77,12 +111,22 @@ Teko::LinearOp FullMaxwellPreconditionerFactory::buildPreconditionerOperator(Tek
      // Compute the approximate Schur complement
      Teko::LinearOp idQ_B = Teko::getInvDiagonalOp(Q_B,Teko::AbsRowSum);
      Teko::LinearOp KtK   = Teko::explicitMultiply(Kt,idQ_B,K);
+     *Teko::getOutputStream() << "Adding up S_E" << std::endl;
      Teko::LinearOp S_E   = Teko::explicitAdd(Q_E, Thyra::scale(-1.0,KtK));
+     *Teko::getOutputStream() << "Added up S_E" << std::endl;
 
      // Get auxiliary operators for gradient and nodal mass matrix
      Teko::LinearOp G     = getRequestHandler()->request<Teko::LinearOp>(Teko::RequestMesg("Weak Gradient"));
      Teko::LinearOp Gt    = Teko::explicitTranspose(G);
      Teko::LinearOp Q_rho = getRequestHandler()->request<Teko::LinearOp>(Teko::RequestMesg("Mass Matrix AUXILIARY_NODE"));
+
+     if (dump) {
+       writeOut("Q_rho.mm",*Q_rho);
+       writeOut("WeakGradient.mm",*G);
+     }       
+     
+     describeMatrix("Q_rho",*Q_rho,debug);
+     describeMatrix("WeakGradient",*G,debug);
 
      // Compute grad-div term
      Teko::LinearOp idQ_rho = Teko::getInvDiagonalOp(Q_rho,Teko::AbsRowSum);
@@ -92,8 +136,10 @@ Teko::LinearOp FullMaxwellPreconditionerFactory::buildPreconditionerOperator(Tek
      double scaling = Teko::infNorm(Q_E)/Teko::infNorm(GGt);
 
      // Augmented Schur complement and its inverse
+     *debug << "Adding up T_E" << std::endl;
      Teko::LinearOp T_E = Teko::explicitAdd(S_E, Thyra::scale(scaling,GGt));
-     *Teko::getOutputStream() << "Building T_E inverse operator" << std::endl;
+     *debug << "Added up T_E" << std::endl;
+     *debug << "Building T_E inverse operator" << std::endl;
      Teko::LinearOp invT_E = Teko::buildInverse(*invLib.getInverseFactory("T_E Solve"),T_E);
 
      // Correction term
@@ -120,88 +166,74 @@ Teko::LinearOp FullMaxwellPreconditionerFactory::buildPreconditionerOperator(Tek
         Teko::setBlock(0,1,U,K);
      Teko::endBlockFill(U);
 
+     if (dump) {
+       writeOut("S_E.mm",*S_E);
+       writeOut("Z_E.mm",*Z_E);
+     }       
+     
+     describeMatrix("S_E",*S_E,debug);
+     describeMatrix("Z_E",*Z_E,debug);
+
      // return upper tri preconditioner
      return(Teko::createBlockUpperTriInverseOp(U,diag));
    }
    else {// refMaxwell
 
+     bool useAsPreconditioner = true;
+     if (params.isParameter("Use as preconditioner"))
+       useAsPreconditioner = params.get<bool>("Use as preconditioner");
+     
      // Inverse of B mass matrix
      *Teko::getOutputStream() << "Building Q_B inverse operator" << std::endl;
-     Teko::LinearOp invDiagQ_B = Teko::getInvDiagonalOp(Q_B,Teko::Diagonal);
-     Teko::LinearOp invQ_B = Teko::buildInverse(*invLib.getInverseFactory("Q_B Solve"),Q_B, invDiagQ_B);
+
+     Teko::LinearOp invQ_B;
+     // Are we building a solver or a preconditioner?
+     if (useAsPreconditioner)
+       invQ_B = Teko::getInvDiagonalOp(Q_B,Teko::Diagonal);
+     else {
+       Teko::LinearOp invDiagQ_B = Teko::getInvDiagonalOp(Q_B,Teko::Diagonal);
+       // Teko::LinearOp invDiagQ_B = Teko::buildInverse(*invLib.getInverseFactory("Q_B Preconditioner"),Q_B);
+       invQ_B = Teko::buildInverse(*invLib.getInverseFactory("Q_B Solve"),Q_B, invDiagQ_B);
+     }
+     
 
      // Compute the approximate Schur complement
      Teko::LinearOp idQ_B = Teko::getInvDiagonalOp(Q_B,Teko::AbsRowSum);
      Teko::LinearOp KtK   = Teko::explicitMultiply(Kt,idQ_B,K);
      Teko::LinearOp S_E   = Teko::explicitAdd(Q_E, Thyra::scale(-1.0,KtK));
+     if (dump) 
+       writeOut("S_E.mm",*S_E);
+     describeMatrix("S_E",*S_E,debug);
 
-     // Get nodal mass matrix and discrete gradient
-     // Q_rho = M_0(mu)
-     Teko::LinearOp Q_rho = getRequestHandler()->request<Teko::LinearOp>(Teko::RequestMesg("Mass Matrix AUXILIARY_NODE"));
-     Teko::LinearOp T     = getRequestHandler()->request<Teko::LinearOp>(Teko::RequestMesg("Discrete Gradient"));
-     // Teko::LinearOp KT = Teko::explicitMultiply(K,T);
-     // TEUCHOS_ASSERT(Teko::infNorm(KT) < 1.0e-14 * Teko::infNorm(T) * Teko::infNorm(K));
-
-     // Get inverse of lumped Q_rho
-     RCP<Thyra::VectorBase<double> > ones = Thyra::createMember(Q_rho->domain());
-     RCP<Thyra::VectorBase<double> > diagonal = Thyra::createMember(Q_rho->range());
-     // set to all ones
-     Thyra::assign(ones.ptr(),1.0);
-     // compute lumped diagonal
-     Thyra::apply(*Q_rho,Thyra::NOTRANS,*ones,diagonal.ptr());
-     Thyra::reciprocal(*diagonal,diagonal.ptr());
-     RCP<const Thyra::DiagonalLinearOpBase<double> > invDiagQ_rho = rcp(new Thyra::DefaultDiagonalLinearOp<double>(diagonal));
-
-     // Get coordinates
-     Teuchos::ParameterList SList2 = *invLib.getInverseFactory("S_E Solve")->getParameterList();
-     Teuchos::RCP<Tpetra::MultiVector<double, int, panzer::Ordinal64> > Coordinates = SList2.get<Teuchos::RCP<Tpetra::MultiVector<double, int, panzer::Ordinal64> > >("Coordinates");
-
+     // Inverse of Schur complement
      *Teko::getOutputStream() << "Building S_E inverse operator" << std::endl;
+     
+     Teuchos::RCP<Teko::InverseFactory> S_E_prec_factory = invLib.getInverseFactory("S_E Preconditioner"); 
+     Teuchos::ParameterList S_E_prec_pl = *S_E_prec_factory->getParameterList();
+          
+     // Get coordinates
+     Teuchos::RCP<Tpetra::MultiVector<double, int, panzer::Ordinal64> > Coordinates = S_E_prec_pl.get<Teuchos::RCP<Tpetra::MultiVector<double, int, panzer::Ordinal64> > >("Coordinates");
+     S_E_prec_pl.sublist("Preconditioner Types").sublist("MueLuRefMaxwell-Tpetra").set("Coordinates",Coordinates);
+     S_E_prec_pl.remove("Coordinates");
 
-     // Build the rest of the Stratimikos list
-     Teuchos::ParameterList SList;
-     SList.set("Linear Solver Type","Belos");
-     SList.sublist("Linear Solver Types").sublist("Belos").set("Solver Type", "Pseudo Block CG");
-     // SList.sublist("Linear Solver Types").sublist("Belos").sublist("Solver Types").sublist("Pseudo Block CG").set("Output Frequency",1);
-     SList.sublist("Linear Solver Types").sublist("Belos").sublist("Solver Types").sublist("Pseudo Block CG").set("Maximum Iterations",500);
-     SList.sublist("Linear Solver Types").sublist("Belos").sublist("Solver Types").sublist("Pseudo Block CG").set("Convergence Tolerance",1e-5);
-     // SList.sublist("Linear Solver Types").sublist("Belos").sublist("Solver Types").sublist("Pseudo Block CG").set("Output Style",1);
-     // SList.sublist("Linear Solver Types").sublist("Belos").sublist("Solver Types").sublist("Pseudo Block CG").set("Verbosity",33);
-     // SList.sublist("Linear Solver Types").sublist("Belos").sublist("VerboseObject").set("Verbosity Level", "medium");
+     // Set M1 = Q_E.
+     // We do this here, since we cannot get it from the request handler.
+     S_E_prec_pl.sublist("Preconditioner Types").sublist("MueLuRefMaxwell-Tpetra").set("M1",Q_E);
 
-     SList.set("Preconditioner Type","MueLuRefMaxwell");
-     // Teuchos::ParameterList refMaxwellPL = SList.sublist("Preconditioner Types").sublist("MueLuRefMaxwell");
-     Teuchos::ParameterList refMaxwellPL;
-     refMaxwellPL.set("parameterlist: syntax","muelu");
-     refMaxwellPL.set("refmaxwell: mode","additive");
-     refMaxwellPL.set("refmaxwell: disable addon",false);
-     refMaxwellPL.set("refmaxwell: dump matrices",true);
-     refMaxwellPL.set("refmaxwell: max coarse size",25);
-     refMaxwellPL.set("refmaxwell: max levels",4);
-     refMaxwellPL.set("smoother: type","CHEBYSHEV");
+     Teko::InverseLibrary myInvLib = invLib;
+     S_E_prec_pl.sublist("Preconditioner Types").sublist("MueLuRefMaxwell-Tpetra").set("Type","MueLuRefMaxwell-Tpetra");
+     myInvLib.addInverse("S_E Preconditioner",S_E_prec_pl.sublist("Preconditioner Types").sublist("MueLuRefMaxwell-Tpetra"));
+     S_E_prec_factory = myInvLib.getInverseFactory("S_E Preconditioner");
 
-     Teuchos::ParameterList params11 = refMaxwellPL.sublist("refmaxwelll: 11list");
-     params11.set("coarse: max size", 128);
-     params11.set("number of equations",3);
-
-     Teuchos::ParameterList params22 = refMaxwellPL.sublist("refmaxwelll: 22list");
-     params22.set("coarse: max size", 128);
-
-     refMaxwellPL.set("D0",T);
-     refMaxwellPL.set("M0inv",invDiagQ_rho);
-     refMaxwellPL.set("M1",Q_E);
-     refMaxwellPL.set("Coordinates",Coordinates);
-
-     SList.sublist("Preconditioner Types").set("MueLuRefMaxwell",refMaxwellPL);
-
-     /* Stratimikos setup */
-     Stratimikos::DefaultLinearSolverBuilder linearSolverBuilder;
-     Stratimikos::enableMueLuRefMaxwell<int,panzer::Ordinal64>(linearSolverBuilder);                // Register MueLu RefMaxwell as a Stratimikos preconditioner strategy.
-     linearSolverBuilder.setParameterList(rcp(&SList,false));
-     RCP<Thyra::LinearOpWithSolveFactoryBase<double> > lowsFactory = createLinearSolveStrategy(linearSolverBuilder);
-     Teko::SolveInverseFactory siFactory = Teko::SolveInverseFactory(lowsFactory);
-     Teko::LinearOp invS_E = Teko::buildInverse(siFactory, S_E);
-
+     Teko::LinearOp invS_E;
+     // Are we building a solver or a preconditioner?
+     if (useAsPreconditioner)
+       invS_E = Teko::buildInverse(*S_E_prec_factory,S_E);
+     else {
+       Teko::LinearOp S_E_prec = Teko::buildInverse(*S_E_prec_factory,S_E);
+       invS_E = Teko::buildInverse(*invLib.getInverseFactory("S_E Solve"),S_E,S_E_prec);
+     }
+     
      // Inverse blocks
      std::vector<Teko::LinearOp> diag(2);
      diag[0] = invQ_B;
@@ -239,24 +271,28 @@ void FullMaxwellPreconditionerFactory::initializeFromParameterList(const Teuchos
    // Solver options  //
    // //////////////////            
 
-   // Print residual for each sub-solve
-   bool print_diagnostics = false;
-   if(pl.isParameter("Print Diagnostics"))
-     print_diagnostics = pl.get<bool>("Print Diagnostics");
-   std::string name_append = "";
-   if(print_diagnostics)
-     name_append = " Base";
-
-   // Use ILU smoother for Schur complement solve
-   bool use_ilu = false;
-   if(pl.isParameter("Use ILU"))
-     use_ilu = pl.get<bool>("Use ILU");
-
+   params = pl;
+  
    // Don't augment and use refMaxwell for S_E solve
    use_refmaxwell = false;
    if(pl.isParameter("Use refMaxwell"))
      use_refmaxwell = pl.get<bool>("Use refMaxwell");
 
+   // Output stream for debug information 
+   Teuchos::RCP<Teuchos::FancyOStream> debug;
+   // print debug information
+   bool doDebug = false;
+   if (pl.isParameter("Debug"))
+     doDebug = pl.get<bool>("Debug");
+   if (doDebug)
+     debug = Teko::getOutputStream();
+   else
+     debug = Teuchos::getFancyOStream(Teuchos::rcp(new Teuchos::oblackholestream()));
+
+   // dump matrices
+   dump = false;
+   if (pl.isParameter("Dump"))
+     dump = pl.get<bool>("Dump");
 
    //////////////////////////////////
    // Set up sub-solve factories   //
@@ -265,201 +301,61 @@ void FullMaxwellPreconditionerFactory::initializeFromParameterList(const Teuchos
    // New inverse lib to add inverse factories to
    invLib = *getInverseLibrary();
 
-
    if (!use_refmaxwell){
-     { // MueLu with Gauss-Seidel smoother
-       Teuchos::ParameterList ml_pl("MueLu GS");
-       ml_pl.set("Type", "MueLu-Tpetra");
-       ml_pl.set("verbosity", "high");
-       ml_pl.set("multigrid algorithm",      "unsmoothed");
-       ml_pl.set("coarse: type",             "KLU2");
-       ml_pl.set("coarse: max size",         2500);
-       ml_pl.set("aggregation: type",        "uncoupled");
-       ml_pl.set("aggregation: drop scheme", "classical");
-       ml_pl.set("aggregation: drop tol",    0.0);
-       ml_pl.set("smoother: pre or post",    "both");
-       ml_pl.set("smoother: type",           "RELAXATION");
-       {
-         Teuchos::ParameterList& smoother = ml_pl.sublist("smoother: params");
-         smoother.set("relaxation: type",           "MT Gauss-Seidel");
-         smoother.set("relaxation: symmetric matrix structure",         true);
-         smoother.set("relaxation: sweeps",         4);
-         smoother.set("relaxation: damping factor", 1.0);
-       }
-       ml_pl.set("repartition: enable",true);
-       ml_pl.set("repartition: partitioner","zoltan2");
-       ml_pl.set("repartition: start level",2);
-       ml_pl.set("repartition: min rows per proc",1024);
-       ml_pl.set("repartition: max imbalance",1.327);
-       ml_pl.set("repartition: remap parts",true);
-       ml_pl.set("repartition: rebalance P and R",true);
-       {
-         Teuchos::ParameterList& repartition = ml_pl.sublist("repartition: params");
-         repartition.set("algorithm","multijagged");
-       }
-       // add coordinates to parameter list
-       {
-         Teuchos::ParameterList& required = ml_pl.sublist("Required Parameters");
-         required.set("Coordinates","B_face");
-       }
-       invLib.addInverse("Q_B Solve"+name_append,ml_pl);
-     }
+     // Q_B solve
+     Teuchos::ParameterList Q_B_pl = pl.sublist("Q_B Solve");
+     invLib.addInverse("Q_B Solve",Q_B_pl);
 
-     if(!use_ilu)
-       { // MueLu with Chebyshev smoother
-         Teuchos::ParameterList ml_pl("MueLu Cheb");
-         ml_pl.set("Type", "MueLu-Tpetra");
-         ml_pl.set("verbosity", "high");
-         ml_pl.set("multigrid algorithm",      "unsmoothed");
-         ml_pl.set("coarse: type",             "KLU2");
-         ml_pl.set("coarse: max size",         2500);
-         ml_pl.set("aggregation: type",        "uncoupled");
-         ml_pl.set("aggregation: drop scheme", "classical");
-         ml_pl.set("aggregation: drop tol",    0.0);
-         ml_pl.set("smoother: pre or post",    "both");
-         ml_pl.set("smoother: type",           "CHEBYSHEV");
-         {
-           Teuchos::ParameterList& smoother = ml_pl.sublist("smoother: params");
-           smoother.set("chebyshev: degree",2);
-           smoother.set("chebyshev: ratio eigenvalue",20.0);
-           smoother.set("chebyshev: min eigenvalue",1.0);
-           smoother.set("chebyshev: eigenvalue max iterations",15);
-         }
-         ml_pl.set("repartition: enable",true);
-         ml_pl.set("repartition: partitioner","zoltan2");
-         ml_pl.set("repartition: start level",2);
-         ml_pl.set("repartition: min rows per proc",2500);
-         ml_pl.set("repartition: max imbalance",1.327);
-         ml_pl.set("repartition: remap parts",true);
-         ml_pl.set("repartition: rebalance P and R",true);
-         {
-           Teuchos::ParameterList& repartition = ml_pl.sublist("repartition: params");
-           repartition.set("algorithm","multijagged");
-         }
-         // add coordinates to parameter list
-         {
-           Teuchos::ParameterList& required = ml_pl.sublist("Required Parameters");
-           required.set("Coordinates","E_edge");
-         }
-         invLib.addInverse("T_E Solve"+name_append,ml_pl);
-       }
-     else
-       { // MueLu with ILU smoother
-         Teuchos::ParameterList ml_pl("MueLu ILU");
-         ml_pl.set("Type", "MueLu-Tpetra");
-         ml_pl.set("verbosity", "high");
-         // ml_pl.set("number of equations", 3);
-         ml_pl.set("multigrid algorithm",      "unsmoothed");
-         ml_pl.set("coarse: type",             "KLU2");
-         ml_pl.set("coarse: max size",         2500);
-         ml_pl.set("aggregation: type",        "uncoupled");
-         ml_pl.set("aggregation: drop scheme", "classical");
-         ml_pl.set("aggregation: drop tol",    0.0);
-         ml_pl.set("smoother: pre or post",    "both");
-         ml_pl.set("smoother: type",           "SCHWARZ");
-         {
-           Teuchos::ParameterList& smoother = ml_pl.sublist("smoother: params");
-           smoother.set("schwarz: overlap level", 1);
-           smoother.set("schwarz: combine mode", "Zero");
-           smoother.set("subdomain solver name", "RILUK");
-           {
-             Teuchos::ParameterList& subdomain = smoother.sublist("subdomain solver parameters");
-             subdomain.set("fact: iluk level-of-fill", 1);
-           }
-         }
-         ml_pl.set("repartition: enable",true);
-         ml_pl.set("repartition: partitioner","zoltan2");
-         ml_pl.set("repartition: start level",2);
-         ml_pl.set("repartition: min rows per proc",2500);
-         ml_pl.set("repartition: max imbalance",1.327);
-         ml_pl.set("repartition: remap parts",true);
-         ml_pl.set("repartition: rebalance P and R",true);
-         {
-           Teuchos::ParameterList& repartition = ml_pl.sublist("repartition: params");
-           repartition.set("algorithm","multijagged");
-         }
-         // add coordinates to parameter list
-         {
-           Teuchos::ParameterList& required = ml_pl.sublist("Required Parameters");
-           required.set("Coordinates","E_edge");
-         }
-         invLib.addInverse("T_E Solve"+name_append,ml_pl);
-       }
+     // T_E solve
+     Teuchos::ParameterList T_E_pl = pl.sublist("T_E Solve");
+     invLib.addInverse("T_E Solve",T_E_pl);
+     
+   } else { // RefMaxwell based solve
 
-     if(print_diagnostics){
-       { // Diagnostic Q_B solve
-         Teuchos::ParameterList diag_pl("Q_B Solve");
-         diag_pl.set("Type","Diagnostic Inverse");
-         diag_pl.set("Inverse Factory","Q_B Solve Base");
-         diag_pl.set("Descriptive Label","Q_B");
-         diag_pl.set("Print Residual",true);
-         invLib.addInverse("Q_B Solve",diag_pl);
-       }
-       { // Diagnostic T_E solve
-         Teuchos::ParameterList diag_pl("T_E Solve");
-         diag_pl.set("Type","Diagnostic Inverse");
-         diag_pl.set("Inverse Factory","T_E Solve Base");
-         diag_pl.set("Descriptive Label","T_E");
-         diag_pl.set("Print Residual",true);
-         diag_pl.set("Convergence Tolerance", 1.0e-5);
-         invLib.addInverse("T_E Solve",diag_pl);
-       }
-     }
-   } else {
-     { // Q_B solve
-       Teuchos::ParameterList cg_pl("Belos CG");
-       cg_pl.set("Type", "Belos");
-       cg_pl.set("Solver Type", "Block CG");
-       {
-         Teuchos::ParameterList& st_pl = cg_pl.sublist("Solver Types");
-         {
-           Teuchos::ParameterList& bcg_pl = st_pl.sublist("Block CG");
-           // bcg_pl.set("Verbosity", Belos::StatusTestDetails+Belos::FinalSummary+Belos::Warnings);
-           // bcg_pl.set("Output Frequency", 1);
-           // bcg_pl.set("Output Style", Belos::Brief);
-           bcg_pl.set("Convergence Tolerance", 1.0e-5);
-           bcg_pl.set("Maximum Iterations", 100);
-         }
-       }
-       {
-         Teuchos::ParameterList& verb = cg_pl.sublist("VerboseObject");
-         verb.set("Output File", "none");
-         // verb.set("Verbosity Level", "medium");
-       }
-       invLib.addInverse("Q_B Solve"+name_append,cg_pl);
-     }
+     // Q_B solve
+     Teuchos::ParameterList cg_pl = pl.sublist("Q_B Solve");
+     invLib.addInverse("Q_B Solve",cg_pl);
 
-     { // MueLu RefMaxwell
-       Teuchos::ParameterList ml_pl("Belos Block CG");
-       ml_pl.set("Type", "MueLu-Tpetra");
+     // S_E solve
+     Teuchos::ParameterList ml_pl = pl.sublist("S_E Solve");
+     invLib.addInverse("S_E Solve",ml_pl);
 
-       // add coordinates to parameter list
-       {
-         Teuchos::ParameterList& required = ml_pl.sublist("Required Parameters");
-         required.set("Coordinates","AUXILIARY_NODE");
-       }
-       invLib.addInverse("S_E Solve"+name_append,ml_pl);
+     // Q_B preconditioner
+     Teuchos::ParameterList Q_B_prec_pl = pl.sublist("Q_B Preconditioner");
+     invLib.addStratPrecond("Q_B Preconditioner","Ifpack2",Q_B_prec_pl);
+
+     // S_E preconditioner
+     Teuchos::ParameterList S_E_prec_pl = pl.sublist("S_E Preconditioner");
+
+     // add discrete gradient
+     Teko::LinearOp T = getRequestHandler()->request<Teko::LinearOp>(Teko::RequestMesg("Discrete Gradient"));
+     S_E_prec_pl.sublist("Preconditioner Types").sublist("MueLuRefMaxwell-Tpetra").set("D0",T);
+
+     if (dump) {
+       writeOut("DiscreteGradient.mm",*T);
      }
-     if(print_diagnostics){
-       { // Diagnostic Q_B solve
-         Teuchos::ParameterList diag_pl("Q_B Solve");
-         diag_pl.set("Type","Diagnostic Inverse");
-         diag_pl.set("Inverse Factory","Q_B Solve Base");
-         diag_pl.set("Descriptive Label","Q_B");
-         diag_pl.set("Print Residual",true);
-         invLib.addInverse("Q_B Solve",diag_pl);
-       }
-       { // Diagnostic S_E solve
-         Teuchos::ParameterList diag_pl("S_E Solve");
-         diag_pl.set("Type","Diagnostic Inverse");
-         diag_pl.set("Inverse Factory","S_E Solve Base");
-         diag_pl.set("Descriptive Label","S_E");
-         diag_pl.set("Print Residual",true);
-         diag_pl.set("Convergence Tolerance", 1.0e-5);
-         invLib.addInverse("S_E Solve",diag_pl);
-       }
-     }
+     
+     describeMatrix("DiscreteGradient",*T,debug);
+
+     // add edge mass matrix
+     // commented out, since the edge mass matrix isn't registered in the request handler
+     // Teko::LinearOp Q_E = getRequestHandler()->request<Teko::LinearOp>(Teko::RequestMesg("Mass Matrix E_edge"));
+     // S_E_prec_pl.sublist("Preconditioner Types").sublist("MueLuRefMaxwell-Tpetra-Tpetra").set("M1",Q_E);
+
+     // add inverse of lumped diagonal of Q_rho
+     Teko::LinearOp Q_rho = getRequestHandler()->request<Teko::LinearOp>(Teko::RequestMesg("Mass Matrix AUXILIARY_NODE"));
+     // Get inverse of lumped Q_rho
+     RCP<Thyra::VectorBase<double> > ones = Thyra::createMember(Q_rho->domain());
+     RCP<Thyra::VectorBase<double> > diagonal = Thyra::createMember(Q_rho->range());
+     Thyra::assign(ones.ptr(),1.0);
+     // compute lumped diagonal
+     Thyra::apply(*Q_rho,Thyra::NOTRANS,*ones,diagonal.ptr());
+     Thyra::reciprocal(*diagonal,diagonal.ptr());
+     RCP<const Thyra::DiagonalLinearOpBase<double> > invDiagQ_rho = rcp(new Thyra::DefaultDiagonalLinearOp<double>(diagonal));
+     S_E_prec_pl.sublist("Preconditioner Types").sublist("MueLuRefMaxwell-Tpetra").set("M0inv",invDiagQ_rho);
+       
+     invLib.addInverse("S_E Preconditioner",S_E_prec_pl);
    }
 }
  
-}
+} // namespace mini_em

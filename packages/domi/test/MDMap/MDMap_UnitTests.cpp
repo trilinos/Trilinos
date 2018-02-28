@@ -2089,7 +2089,7 @@ TEUCHOS_UNIT_TEST( MDMap, subMapUpperRightNewBndryPad )
     if (axis < 2)
     {
       dim_type nd = dimensions[axis] / 2;
-      int      nc = commDims[axis] / 2;
+      //int      nc = commDims[axis] / 2;
       newCommDims[axis] = commDims[axis] - (nd-newBndryPad[axis])/mySize;
       newDims[axis]     = nd;
       slices[axis]      = Slice(nd+bndryPad[axis],-bndryPad[axis]);

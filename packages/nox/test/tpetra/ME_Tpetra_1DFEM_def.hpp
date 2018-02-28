@@ -347,8 +347,6 @@ evalModelImpl(const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs,
     // Get local Views of data
     int myRank = comm_->getRank();
     std::size_t numMyElements = xGhostedMap_->getNodeNumElements()-1;
-    const tpetra_map& rowMap = *xOwnedMap_;
-    const tpetra_map& colMap = *xGhostedMap_;
 
     xPtr_->template sync<execution_space>();
     uPtr_->template sync<execution_space>();

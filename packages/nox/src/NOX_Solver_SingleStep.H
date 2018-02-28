@@ -72,6 +72,9 @@ namespace Solver {
   solve known linear problems.
   In that case, it is convenient to create a NOX::Solver object which requires
   no status tests and simply executes the linear solver.
+
+  Valid parameters in the ParameterList are:
+  \param[in] "Ignore Linear Solver Failure" (bool) - If set to true, ignore the linear solver status. This is used for iterative methods where the requested tolerance was not explicitly met, but the solve might still be good enough to use. Defaults to false.
  */
 class SingleStep : public Generic {
 
@@ -134,6 +137,7 @@ protected:
   //! Pointer to a user defined NOX::Abstract::PrePostOperator object.
   NOX::Solver::PrePostOperator prePostOperator;
 
+  bool ignoreLinearSolverFailures;
 };
 } // namespace Solver
 } // namespace NOX

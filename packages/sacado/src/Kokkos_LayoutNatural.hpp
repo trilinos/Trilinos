@@ -33,6 +33,7 @@
 #include "Kokkos_Core.hpp"
 #include "Kokkos_Macros.hpp"
 #include "Kokkos_Layout.hpp"
+#include "Kokkos_LayoutContiguous.hpp" // for inner_layout<>
 
 namespace Kokkos {
 
@@ -54,6 +55,22 @@ struct LayoutNatural : public Layout {
     size_t N0 = 0 , size_t N1 = 0 , size_t N2 = 0 , size_t N3 = 0
   , size_t N4 = 0 , size_t N5 = 0 , size_t N6 = 0 , size_t N7 = 0 )
     : Layout( N0 , N1 , N2 , N3 , N4 , N5 , N6 , N7 ) {}
+};
+
+// Is Layout == LayoutNatural<L> for some L
+template <class Layout>
+struct is_layout_natural {
+  static const bool value = false;
+};
+
+template <class Layout>
+struct is_layout_natural< LayoutNatural<Layout> > {
+  static const bool value = true;
+};
+
+template <class Layout>
+struct inner_layout< LayoutNatural<Layout> > {
+  typedef Layout type;
 };
 
 } // namespace Kokkos

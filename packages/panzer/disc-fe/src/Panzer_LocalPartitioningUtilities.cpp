@@ -91,7 +91,7 @@ setupSubLocalMeshInfo(const panzer::LocalMeshInfoBase<LO,GO> & parent_info,
   const int num_parent_total_cells = parent_info.num_owned_cells + parent_info.num_ghstd_cells + parent_info.num_virtual_cells;
 
   // Just as a precaution, make sure the parent_info is setup properly
-  TEUCHOS_ASSERT(parent_info.cell_to_faces.dimension_0() == num_parent_total_cells);
+  TEUCHOS_ASSERT(static_cast<int>(parent_info.cell_to_faces.extent(0)) == num_parent_total_cells);
   const int num_faces_per_cell = parent_info.cell_to_faces.dimension_1();
 
   // The first thing to do is construct a vector containing the parent cell indexes of all
@@ -175,9 +175,9 @@ setupSubLocalMeshInfo(const panzer::LocalMeshInfoBase<LO,GO> & parent_info,
   // We now have the indexing order for our sub_info
 
   // Just as a precaution, make sure the parent_info is setup properly
-  TEUCHOS_ASSERT(parent_info.cell_vertices.dimension_0() == num_parent_total_cells);
-  TEUCHOS_ASSERT(parent_info.local_cells.dimension_0() == num_parent_total_cells);
-  TEUCHOS_ASSERT(parent_info.global_cells.dimension_0() == num_parent_total_cells);
+  TEUCHOS_ASSERT(static_cast<int>(parent_info.cell_vertices.extent(0)) == num_parent_total_cells);
+  TEUCHOS_ASSERT(static_cast<int>(parent_info.local_cells.extent(0)) == num_parent_total_cells);
+  TEUCHOS_ASSERT(static_cast<int>(parent_info.global_cells.extent(0)) == num_parent_total_cells);
 
   const int num_vertices_per_cell = parent_info.cell_vertices.dimension_1();
   const int num_dims = parent_info.cell_vertices.dimension_2();

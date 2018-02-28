@@ -60,12 +60,17 @@ SingleStep(const Teuchos::RCP<NOX::Abstract::Group>& xGrp,
        const Teuchos::RCP<Teuchos::ParameterList>& p) :
   solnPtr(xGrp),                         // pointer to xGrp
   oldSolnPtr(xGrp->clone(DeepCopy)),     // create via clone
-  paramsPtr(p)
+  paramsPtr(p),
+  ignoreLinearSolverFailures(false)
 {
+  Teuchos::ParameterList validParams;
+  validParams.set("Ignore Linear Solver Failures",false);
+  p->sublist("Single Step Solver").validateParametersAndSetDefaults(validParams,0);
   NOX::Solver::validateSolverOptionsSublist(p->sublist("Solver Options"));
   globalDataPtr = Teuchos::rcp(new NOX::GlobalData(p));
   utilsPtr = globalDataPtr->getUtils();
   prePostOperator.reset(utilsPtr,p->sublist("Solver Options"));
+  ignoreLinearSolverFailures = p->sublist("Single Step Solver").get<bool>("Ignore Linear Solver Failures");
   init();
 }
 
@@ -114,7 +119,7 @@ NOX::StatusTest::StatusType NOX::Solver::SingleStep::getStatus()
 bool NOX::Solver::SingleStep::check(NOX::Abstract::Group::ReturnType ret,
     const std::string& task)
 {
-  if (ret != NOX::Abstract::Group::Ok) {
+  if ((ret != NOX::Abstract::Group::Ok) and (not ignoreLinearSolverFailures)) {
     if (utilsPtr->isPrintType(Utils::Error))
       utilsPtr->out() << "NOX::Solver::SingleStep - Unable to " << task << std::endl;
     return false;

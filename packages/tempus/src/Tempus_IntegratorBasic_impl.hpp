@@ -436,6 +436,10 @@ void IntegratorBasic<Scalar>::startTimeStep()
   Teuchos::RCP<SolutionStateMetaData<Scalar> > wsmd =
     solutionHistory_->getWorkingState()->getMetaData();
 
+  //set the Abs/Rel tolerance
+  wsmd->setTolRel(timeStepControl_->getMaxRelError()); 
+  wsmd->setTolAbs(timeStepControl_->getMaxAbsError()); 
+
   // Check if we need to dump screen output this step
   std::vector<int>::const_iterator it =
     std::find(outputScreenIndices_.begin(),

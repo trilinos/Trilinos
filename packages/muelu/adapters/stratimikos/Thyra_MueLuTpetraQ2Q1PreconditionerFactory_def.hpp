@@ -531,7 +531,6 @@ namespace Thyra {
     typedef Xpetra::Matrix<SC,LO,GO,NO>             Matrix;
     typedef MueLu::AmalgamationFactory<SC,LO,GO,NO> AmalgamationFactory;
     typedef MueLu::CoalesceDropFactory<SC,LO,GO,NO> CoalesceDropFactory;
-    typedef MueLu::FactoryManager<SC,LO,GO,NO>      FactoryManager;
     typedef MueLu::FilteredAFactory<SC,LO,GO,NO>    FilteredAFactory;
     typedef MueLu::GraphBase<LO,GO,NO>              GraphBase;
 

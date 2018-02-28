@@ -27,6 +27,12 @@ private:
 
    // Use refMaxwell for Schur complement solve
    bool use_refmaxwell;
+
+   // Dump matrices? 
+   bool dump;
+
+   // parameters
+   Teuchos::ParameterList params;
 };
 
 }
