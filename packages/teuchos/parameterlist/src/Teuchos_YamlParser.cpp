@@ -42,9 +42,6 @@
 //
 // @HEADER
 
-#ifndef TEUCHOS_YAMLPARSER_DEF_H_
-#define TEUCHOS_YAMLPARSER_DEF_H_
-
 #include <iostream>
 #include <iomanip>
 #include <ios>
@@ -171,8 +168,10 @@ struct Scalar {
     }
     return STRING;
   }
-  bool operator==(Scalar const&) const { return false; }
 };
+
+bool operator==(Scalar const&, Scalar const&) { return false; }
+std::ostream& operator<<(std::ostream& os, Scalar const&) { return os; }
 
 void safe_set_entry(ParameterList& list, std::string const& name_in, ParameterEntry const& entry_in) {
   TEUCHOS_TEST_FOR_EXCEPTION(list.isParameter(name_in), ParserFail,
@@ -278,8 +277,8 @@ class Reader : public Teuchos::Reader {
         break;
       }
       case Teuchos::YAML::PROD_BMAP_FSEQ: {
-        TEUCHOS_ASSERT(rhs.at(4).type() == typeid(std::vector<Scalar>) ||
-            rhs.at(4).type() == typeid(std::vector<std::vector<Scalar>>));
+        TEUCHOS_ASSERT(rhs.at(4).type() == typeid(Array<Scalar>) ||
+            rhs.at(4).type() == typeid(Array<Array<Scalar>>));
         int scalar_type = interpret_tag(rhs.at(3));
         map_item(result_any, rhs.at(0), rhs.at(4), scalar_type);
         break;
@@ -329,12 +328,12 @@ class Reader : public Teuchos::Reader {
       }
       case Teuchos::YAML::PROD_FSEQ: {
         swap(result_any, rhs.at(2));
-        TEUCHOS_ASSERT(result_any.type() == typeid(std::vector<Scalar>) ||
-            result_any.type() == typeid(std::vector<std::vector<Scalar>>));
+        TEUCHOS_ASSERT(result_any.type() == typeid(Array<Scalar>) ||
+            result_any.type() == typeid(Array<Array<Scalar>>));
         break;
       }
       case Teuchos::YAML::PROD_FSEQ_EMPTY: {
-        result_any = std::vector<Scalar>();
+        result_any = Array<Scalar>();
         break;
       }
       case Teuchos::YAML::PROD_FSEQ_FIRST: {
@@ -676,8 +675,8 @@ class Reader : public Teuchos::Reader {
       } else {
         value_any = scalar_value.text;
       }
-    } else if (value_any.type() == typeid(std::vector<Scalar>)) {
-      std::vector<Scalar>& scalars = any_ref_cast<std::vector<Scalar> >(value_any);
+    } else if (value_any.type() == typeid(Array<Scalar>)) {
+      Array<Scalar>& scalars = any_ref_cast<Array<Scalar> >(value_any);
       if (scalar_type == -1) {
         if (scalars.size() == 0) {
           throw ParserFail("implicitly typed arrays can't be empty\n"
@@ -686,31 +685,31 @@ class Reader : public Teuchos::Reader {
         /* Teuchos::Array uses std::vector but doesn't account for std::vector<bool>,
            so it can't store bools */
         scalar_type = Scalar::INT;
-        for (std::size_t i = 0; i < scalars.size(); ++i) {
+        for (Teuchos_Ordinal i = 0; i < scalars.size(); ++i) {
           scalar_type = std::min(scalar_type, scalars[i].infer_type());
         }
       }
       if (scalar_type == Scalar::INT) {
         Array<int> result(scalars.size());
-        for (std::size_t i = 0; i < scalars.size(); ++i) {
+        for (Teuchos_Ordinal i = 0; i < scalars.size(); ++i) {
           result[i] = parse_as<int>(scalars[i].text);
         }
         value_any = result;
       } else if (scalar_type == Scalar::DOUBLE) {
         Array<double> result(scalars.size());
-        for (std::size_t i = 0; i < scalars.size(); ++i) {
+        for (Teuchos_Ordinal i = 0; i < scalars.size(); ++i) {
           result[i] = parse_as<double>(scalars[i].text);
         }
         value_any = result;
       } else if (scalar_type == Scalar::STRING) {
         Array<std::string> result(scalars.size());
-        for (std::size_t i = 0; i < scalars.size(); ++i) {
+        for (Teuchos_Ordinal i = 0; i < scalars.size(); ++i) {
           result[i] = scalars[i].text;
         }
         value_any = result;
       }
-    } else if (value_any.type() == typeid(std::vector<std::vector<Scalar>>)) {
-      std::vector<std::vector<Scalar>>& scalars = any_ref_cast<std::vector<std::vector<Scalar>> >(value_any);
+    } else if (value_any.type() == typeid(Array<Array<Scalar>>)) {
+      Array<Array<Scalar>>& scalars = any_ref_cast<Array<Array<Scalar>> >(value_any);
       if (scalar_type == -1) {
         if (scalars.size() == 0) {
           throw ParserFail("implicitly typed 2D arrays can't be empty\n"
@@ -719,7 +718,7 @@ class Reader : public Teuchos::Reader {
         /* Teuchos::Array uses std::vector but doesn't account for std::vector<bool>,
            so it can't store bools */
         scalar_type = Scalar::INT;
-        for (std::size_t i = 0; i < scalars.size(); ++i) {
+        for (Teuchos_Ordinal i = 0; i < scalars.size(); ++i) {
           if (scalars[0].size() == 0) {
             throw ParserFail("implicitly typed 2D arrays can't have empty rows\n"
                              "(need to determine their element type)\n");
@@ -727,7 +726,7 @@ class Reader : public Teuchos::Reader {
           if (scalars[i].size() != scalars[0].size()) {
             throw ParserFail("2D array: sub-arrays are different sizes");
           }
-          for (std::size_t j = 0; j < scalars[i].size(); ++j) {
+          for (Teuchos_Ordinal j = 0; j < scalars[i].size(); ++j) {
             int item_type = scalars[i][j].infer_type();
             scalar_type = std::min(scalar_type, item_type);
           }
@@ -735,24 +734,24 @@ class Reader : public Teuchos::Reader {
       }
       if (scalar_type == Scalar::INT) {
         TwoDArray<int> result(scalars.size(), scalars[0].size());
-        for (std::size_t i = 0; i < scalars.size(); ++i) {
-          for (std::size_t j = 0; j < scalars[0].size(); ++j) {
+        for (Teuchos_Ordinal i = 0; i < scalars.size(); ++i) {
+          for (Teuchos_Ordinal j = 0; j < scalars[0].size(); ++j) {
             result(i, j) = parse_as<int>(scalars[i][j].text);
           }
         }
         value_any = result;
       } else if (scalar_type == Scalar::DOUBLE) {
         TwoDArray<double> result(scalars.size(), scalars[0].size());
-        for (std::size_t i = 0; i < scalars.size(); ++i) {
-          for (std::size_t j = 0; j < scalars[0].size(); ++j) {
+        for (Teuchos_Ordinal i = 0; i < scalars.size(); ++i) {
+          for (Teuchos_Ordinal j = 0; j < scalars[0].size(); ++j) {
             result(i, j) = parse_as<double>(scalars[i][j].text);
           }
         }
         value_any = result;
       } else if (scalar_type == Scalar::STRING) {
         TwoDArray<std::string> result(scalars.size(), scalars[0].size());
-        for (std::size_t i = 0; i < scalars.size(); ++i) {
-          for (std::size_t j = 0; j < scalars[0].size(); ++j) {
+        for (Teuchos_Ordinal i = 0; i < scalars.size(); ++i) {
+          for (Teuchos_Ordinal j = 0; j < scalars[0].size(); ++j) {
             result(i, j) = scalars[i][j].text;
           }
         }
@@ -777,14 +776,14 @@ class Reader : public Teuchos::Reader {
   void seq_first_item(any& result_any, any& first_any) {
     using std::swap;
     if (first_any.type() == typeid(Scalar)) {
-      std::vector<Scalar>& a = make_any_ref<std::vector<Scalar> >(result_any);
+      Array<Scalar>& a = make_any_ref<Array<Scalar> >(result_any);
       Scalar& v = any_ref_cast<Scalar>(first_any);
       a.push_back(Scalar());
       swap(a.back(), v);
-    } else if (first_any.type() == typeid(std::vector<Scalar>)) {
-      std::vector<std::vector<Scalar>>& a = make_any_ref<std::vector<std::vector<Scalar>> >(result_any);
-      std::vector<Scalar>& v = any_ref_cast<std::vector<Scalar> >(first_any);
-      a.push_back(std::vector<Scalar>());
+    } else if (first_any.type() == typeid(Array<Scalar>)) {
+      Array<Array<Scalar>>& a = make_any_ref<Array<Array<Scalar>> >(result_any);
+      Array<Scalar>& v = any_ref_cast<Array<Scalar> >(first_any);
+      a.push_back(Array<Scalar>());
       swap(a.back(), v);
     } else {
       throw Teuchos::ParserFail(
@@ -794,15 +793,15 @@ class Reader : public Teuchos::Reader {
   void seq_next_item(any& result_any, any& items, any& next_item) {
     using std::swap;
     swap(result_any, items);
-    if (result_any.type() == typeid(std::vector<Scalar>)) {
-      std::vector<Scalar>& a = any_ref_cast<std::vector<Scalar> >(result_any);
+    if (result_any.type() == typeid(Array<Scalar>)) {
+      Array<Scalar>& a = any_ref_cast<Array<Scalar> >(result_any);
       Scalar& val = any_ref_cast<Scalar>(next_item);
       a.push_back(Scalar());
       swap(a.back(), val);
-    } else if (result_any.type() == typeid(std::vector<std::vector<Scalar>>)) {
-      std::vector<std::vector<Scalar>>& a = any_ref_cast<std::vector<std::vector<Scalar>> >(result_any);
-      std::vector<Scalar>& v = any_ref_cast<std::vector<Scalar> >(next_item);
-      a.push_back(std::vector<Scalar>());
+    } else if (result_any.type() == typeid(Array<Array<Scalar>>)) {
+      Array<Array<Scalar>>& a = any_ref_cast<Array<Array<Scalar>> >(result_any);
+      Array<Scalar>& v = any_ref_cast<Array<Scalar> >(next_item);
+      a.push_back(Array<Scalar>());
       swap(a.back(), v);
     } else {
       throw Teuchos::ParserFail(
@@ -1315,5 +1314,3 @@ bool stringNeedsQuotes(const std::string& s)
 } //namespace YAMLParameterList
 
 } //namespace Teuchos
-
-#endif
