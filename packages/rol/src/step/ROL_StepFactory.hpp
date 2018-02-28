@@ -63,9 +63,6 @@
 namespace ROL {
 
   template<class Real>
-  class FletcherStep;
-
-  template<class Real>
   class StepFactory {
     public:
     ~StepFactory(void){}

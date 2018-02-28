@@ -639,6 +639,6 @@ public:
 
 }; // class Fletcher
 
-} // namespace ROL_Ptr
+} // namespace ROL
 
 #endif
