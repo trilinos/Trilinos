@@ -45,10 +45,11 @@
 #define ROL_FLETCHERSTEP_H
 
 #include "ROL_FletcherBase.hpp"
-#include "ROL_Types.hpp"
 #include "ROL_Step.hpp"
+#include "ROL_TrustRegionStep.hpp"
+#include "ROL_LineSearchStep.hpp"
+#include "ROL_Types.hpp"
 #include "Teuchos_ParameterList.hpp"
-#include "ROL_StepFactory.hpp"
 
 /** @ingroup step_group
     \class ROL::FletcherStep
@@ -57,9 +58,6 @@
 
 
 namespace ROL {
-
-template<class Real>
-class StepFactory;
 
 template <class Real>
 class FletcherStep : public Step<Real> {
@@ -173,12 +171,16 @@ public:
       trlist.sublist("Step").sublist("Trust Region").set("Subproblem Model", "Coleman-Li");
     }
 
-    StepFactory<Real> factory;
-    step_ = factory.getStep(subStep_, trlist);
+    if ( subStep_ == "Line Search" ) {
+      step_ = makePtr<LineSearchStep<Real>>(trlist);
+    }
+    else {
+      step_ = makePtr<TrustRegionStep<Real>>(trlist);
+    }
     etr_ = StringToETrustRegion(parlist_.sublist("Step").sublist("Trust Region").get("Subproblem Solver", "Truncated CG"));
 
     // Initialize class members
-    g_ = x.dual().clone();
+    g_ = g.clone();
     x_ = x.clone();
 
     // Rest of initialize

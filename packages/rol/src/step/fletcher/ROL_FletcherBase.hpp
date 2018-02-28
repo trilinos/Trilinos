@@ -206,7 +206,7 @@ public:
 
 }; // class Fletcher
 
-} // namespace ROL_Ptr
+} // namespace ROL
 
 #include "ROL_Fletcher.hpp"
 #include "ROL_BoundFletcher.hpp"
