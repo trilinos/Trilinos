@@ -273,6 +273,11 @@ Systems," SIAM Journal on Scientific Computing, 28(5), pp. 1651-1674,
 
     //! Destructor.
     virtual ~GCRODRSolMgr() {};
+
+    //! clone for Inverted Injection (DII)
+    virtual Teuchos::RCP<SolverManager<ScalarType, MV, OP> > clone () const {
+      return Teuchos::rcp(new GCRODRSolMgr<ScalarType,MV,OP,true>);
+    }
     //@}
 
     //! @name Accessor methods

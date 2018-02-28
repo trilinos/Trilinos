@@ -171,6 +171,11 @@ namespace Belos {
       base_type ()
     {}
     virtual ~RCGSolMgr () {}
+
+    //! clone for Inverted Injection (DII)
+    virtual Teuchos::RCP<SolverManager<ScalarType, MV, OP> > clone () const {
+      return Teuchos::rcp(new RCGSolMgr<ScalarType,MV,OP,supportsScalarType>);
+    }
   };
 
   // Partial specialization for real ScalarType.
@@ -224,6 +229,11 @@ namespace Belos {
 
     //! Destructor.
     virtual ~RCGSolMgr() {};
+
+    //! clone for Inverted Injection (DII)
+    virtual Teuchos::RCP<SolverManager<ScalarType, MV, OP> > clone () const {
+      return Teuchos::rcp(new RCGSolMgr<ScalarType,MV,OP>);
+    }
     //@}
 
     //! @name Accessor methods

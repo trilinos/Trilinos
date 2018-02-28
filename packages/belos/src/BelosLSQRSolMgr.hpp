@@ -249,6 +249,11 @@ public:
     base_type ()
   {}
   virtual ~LSQRSolMgr () {}
+
+  //! clone for Inverted Injection (DII)
+  virtual Teuchos::RCP<SolverManager<ScalarType, MV, OP> > clone () const {
+    return Teuchos::rcp(new LSQRSolMgr<ScalarType,MV,OP,scalarTypeIsComplex>);
+  }
 };
 
 
@@ -311,6 +316,10 @@ public:
   //! Destructor (declared virtual for memory safety of base classes).
   virtual ~LSQRSolMgr () {}
 
+  //! clone for Inverted Injection (DII)
+  virtual Teuchos::RCP<SolverManager<ScalarType, MV, OP> > clone () const {
+    return Teuchos::rcp(new LSQRSolMgr<ScalarType,MV,OP>);
+  }
   //@}
   //! \name Accessor methods
   //@{

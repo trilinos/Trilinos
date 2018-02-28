@@ -43,6 +43,90 @@
 #ifndef BELOS_SOLVERMANAGER_HPP
 #define BELOS_SOLVERMANAGER_HPP
 
+// These are here for convenience while developing the DII
+// I wanted to keep each cpp file as minimal as possible but not sure where
+// these macros could best live.
+
+// register the managers for a belos lib setup, such as the test Belos_Factory
+#define DEFINE_REGISTER_SOLVER_MANAGER(manager,name)              \
+  namespace Belos {                                               \
+    namespace Details {                                           \
+      void register##manager() {                                  \
+        typedef double ST;                                        \
+        typedef MultiVec<ST> MV;                                  \
+        typedef Operator<ST> OP;                                  \
+        Impl::registerSolverSubclassForTypes<                     \
+          manager<ST,MV,OP>, ST, MV, OP> (name);                  \
+      }                                                           \
+    }                                                             \
+  }
+
+// Currently only doing this for LSQR and RCG complex registration.
+// Note that this macro is only being used for the belos lib.
+// Then we are manually picking the complex managers to be registered.
+// Note that Tpetra below is currently handled differently. We automatically
+// pick up all the classes and then ignore those with no working complex.
+// This difference is not ideal and confusing but I'd like to discuss
+// before developing further.
+#define DEFINE_REGISTER_SOLVER_MANAGER_COMPLEX(manager,name)      \
+  namespace Belos {                                               \
+    namespace Details {                                           \
+      void registerComplex##manager() {                           \
+        typedef std::complex<double> cST;                         \
+        typedef MultiVec<cST> cMV;                                \
+        typedef Operator<cST> cOP;                                \
+        Impl::registerSolverSubclassForTypes<                     \
+          manager<cST,cMV,cOP>, cST, cMV, cOP> (name);            \
+      }                                                           \
+    }                                                             \
+  }
+
+// Register all the epetra managers
+#define DEFINE_REGISTER_SOLVER_MANAGER_EPETRA(manager,name)       \
+  namespace Belos {                                               \
+    namespace Details {                                           \
+      namespace Epetra {                                          \
+        void register##manager() {                                \
+          Impl::registerSolverSubclassForTypes<                   \
+            manager<double,Epetra_MultiVector,Epetra_Operator>,   \
+            double, Epetra_MultiVector, Epetra_Operator> (name);  \
+        }                                                         \
+      }                                                           \
+    }                                                             \
+  }
+
+// Register all the tpetra managers.
+
+// First DEFINE LCL_CALL_FOR_MANAGER which is used to setup #define LCL_CALL
+// in the cpp, to be followed by REGISTER_SOLVER_MANAGER_TPETRA over all types.
+// This is provided here to keep all the cpp files as simple as possible.
+#define LCL_CALL_FOR_MANAGER(manager,name,SC, LO, GO, NT)         \
+  Impl::registerSolverSubclassForTypes<                           \
+    manager<SC,::Tpetra::MultiVector<SC, LO, GO, NT>,             \
+    ::Tpetra::Operator<SC, LO, GO, NT>>, SC,                      \
+    ::Tpetra::MultiVector<SC, LO, GO, NT>,                        \
+    ::Tpetra::Operator<SC, LO, GO, NT>> (name);
+
+// Second step calls this define over all the tpetra types.
+// If complex is enabled this is going to register managers for complex
+// even if they don't support complex. Search TODO in this file for
+// additional comments on how I temporarily changed the constructors
+// for dummy classes to not throw. This is a temporary setup as I'd
+// like to discuss the design of this before proceeding. This is a working
+// implementation except two complex tests designed to check for the
+// exception in dummy class constructors below will currently fail.
+#define DEFINE_REGISTER_SOLVER_MANAGER_TPETRA(manager,name)       \
+  TPETRA_ETI_MANGLING_TYPEDEFS()                                  \
+  namespace Belos {                                               \
+    namespace Details {                                           \
+      namespace Tpetra {                                          \
+        void register##manager() {                                \
+          TPETRA_INSTANTIATE_SLGN_NO_ORDINAL_SCALAR( LCL_CALL )   \
+        }                                                         \
+      }                                                           \
+    }                                                             \
+  }
+
 /*! \file BelosSolverManager.hpp
     \brief Pure virtual base class which describes the basic interface for a solver manager.
 */
@@ -81,6 +165,11 @@ class SolverManager : virtual public Teuchos::Describable {
 
   //! Destructor.
   virtual ~SolverManager() {};
+
+  /// \brief clone the solver manager.
+  ///
+  /// Implements the DII inversion and injection pattern
+  virtual Teuchos::RCP<SolverManager<ScalarType, MV, OP> > clone () const = 0;
   //@}
 
   //! @name Accessor methods
@@ -239,8 +328,27 @@ namespace Details {
     public SolverManager<ScalarType, MV, OP> {
   public:
     RealSolverManager () {
-      TEUCHOS_TEST_FOR_EXCEPTION( true, std::logic_error,
-        "This solver is not implemented for complex ScalarType." );
+      // TODO: How should we handle Tpetra complex for DII registration?
+      // I allow the construction so automatic registration of Tpetra complex can
+      // proceed in a generic way and build these 'dummy' classes.
+      // But then this class will not actually get used for anything.
+      // I'll need to discuss whether we want to have a universal
+      // automatic registration of all classes and types for Tpetra
+      // and then filter these out later, or perhaps just manually pick and
+      // choose those with working complex and add them in. Note that for the
+      // Belos_Factory test where we just build and register the main belos.a
+      // lib managers, I am doing the complex registration manually. Tpetra is
+      // using the macros to automatically pick up all the types so Tpetra will
+      // need different handling. It's a question of where/how we want to
+      // insert the logic to identify the managers which actually run complex.
+      // This current approach is not efficient and have done this temporarily
+      // to get to a discussion stage.
+
+      // TODO: Reactivate the unit tests looking for these exceptions
+      // Search "Exception disabled for DII" for the two spots.
+
+      //TEUCHOS_TEST_FOR_EXCEPTION( true, std::logic_error,
+      //  "This solver is not implemented for complex ScalarType." );
     }
     virtual ~RealSolverManager () {}
 
@@ -454,11 +562,13 @@ namespace Details {
     public SolverManager<ScalarType, MV, OP> {
   public:
     SolverManagerRequiresRealLapack () {
-      TEUCHOS_TEST_FOR_EXCEPTION
-        (true, std::logic_error, "This solver is not implemented for complex "
-         "ScalarType types, or for ScalarType types for which Teuchos::LAPACK "
-         "does not have a valid implementation."
-         "ScalarType = " << Teuchos::TypeNameTraits<ScalarType>::name () << ".");
+      // TODO: How to handle Tpetra complex for DII registration
+      // Search for TODO above for more complete comment on this issue.
+   //   TEUCHOS_TEST_FOR_EXCEPTION
+   //     (true, std::logic_error, "This solver is not implemented for complex "
+   //      "ScalarType types, or for ScalarType types for which Teuchos::LAPACK "
+   //      "does not have a valid implementation."
+   //      "ScalarType = " << Teuchos::TypeNameTraits<ScalarType>::name () << ".");
     }
     virtual ~SolverManagerRequiresRealLapack () {}
 

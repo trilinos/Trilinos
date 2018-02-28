@@ -46,22 +46,6 @@
 #include <BelosOutputManager.hpp>
 #include <BelosSolverManager.hpp>
 
-#include <BelosBlockCGSolMgr.hpp>
-#include <BelosBlockGmresSolMgr.hpp>
-#include <BelosGCRODRSolMgr.hpp>
-#include <BelosPseudoBlockCGSolMgr.hpp>
-#include <BelosPseudoBlockGmresSolMgr.hpp>
-#include <BelosPseudoBlockStochasticCGSolMgr.hpp>
-#include <BelosLSQRSolMgr.hpp>
-#include <BelosMinresSolMgr.hpp>
-#include <BelosGmresPolySolMgr.hpp>
-#include <BelosPCPGSolMgr.hpp>
-#include <BelosRCGSolMgr.hpp>
-#include <BelosTFQMRSolMgr.hpp>
-#include <BelosPseudoBlockTFQMRSolMgr.hpp>
-#include <BelosFixedPointSolMgr.hpp>
-#include <BelosBiCGStabSolMgr.hpp>
-
 #include "Belos_Details_EBelosSolverType.hpp"
 #include "BelosCustomSolverFactory.hpp"
 
@@ -74,7 +58,46 @@
 #include <stdexcept>
 #include <vector>
 
+// For convenience have a specialized form of registerSolverFactoryForLib()
+// called at construction of SolverFactoryParent which will pick up the proper
+// lib (belos, belosepetra, or belosepetra) based on the template parameters.
+// Then registerSolverFactoryForLib() will link to and register all the managers
+// for the proper lib. These includes were added for the specialization.
+
+// for belos lib
+#include "BelosMultiVec.hpp"
+#include "BelosOperator.hpp"
+
+// for belosepetra lib
+#ifdef HAVE_BELOS_EPETRA
+#include "Epetra_MultiVector.h"
+#include "Epetra_Operator.h"
+#endif
+
+// for belostpetra lib
+#ifdef HAVE_BELOS_TPETRA
+#include "Tpetra_MultiVector.hpp"
+#include "Tpetra_Operator.hpp"
+#include "TpetraCore_ETIHelperMacros.h"
+#endif
+
 namespace Belos {
+
+// Declare the registration methods for the 3 different libs
+// These are included as a cpp for each of the libraries and will be called
+// by the constructor of SolverFactoryParent using specialization to link
+// to the proper library. The cpp then also has a class constructed to call
+// the registration premain similar to what we did with Ifpack2.
+namespace Details {
+  void registerSolverFactory();   // for belos lib
+  namespace Tpetra {
+    void registerSolverFactory(); // for belostpetra lib
+  }
+  namespace Epetra {
+    void registerSolverFactory(); // for belosepetra lib
+  }
+}
+
 namespace Impl {
 
 //! Print the given array of strings, in YAML format, to \c out.
@@ -112,6 +135,18 @@ class SolverFactoryParent :
     public Teuchos::Describable
 {
 public:
+  SolverFactoryParent() {
+    // this method is specialized below for the different template parameters.
+    // This allows this class to determine which lib it will be executing for
+    // without reliance on weak links. For example if SolverFactoryParent is
+    // constructed with a Tpetra template it will call the Tpetra registration
+    // method: Belos::Details::Teptra::registerSolverFactory()
+    registerSolverFactoryForLib();
+  }
+
+  /// \brief specialization of registration for belos, epetra, or tpetra lib.
+  void registerSolverFactoryForLib();
+
   /// \brief The type of the solver returned by create().
   ///
   /// This is a specialization of SolverManager for the same scalar,
@@ -213,6 +248,19 @@ public:
   void
   addFactory (const Teuchos::RCP<custom_solver_factory_type>& factory);
 
+  /// \brief register a solver for Inverted Injection (DII).
+  static void
+  registerSolver (const std::string & solverName,
+    Teuchos::RCP<SolverFactoryParent<Scalar, MV, OP>::solver_base_type > instance)
+  {
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      instance == Teuchos::null,
+      std::invalid_argument, "Belos::SolverFactoryParent::registerSolver "
+      "was given a null solver to register.");
+
+    solverManagers_[solverName] = instance;
+  }
+
   //! @name Implementation of Teuchos::Describable interface
   //@{
 
@@ -233,11 +281,24 @@ public:
 private:
   //! The list of solver factories given to addFactory.
   static std::vector<Teuchos::RCP<custom_solver_factory_type> > factories_;
+
+  static std::map<const std::string,
+    Teuchos::RCP<typename SolverFactoryParent<Scalar, MV, OP>::solver_base_type> > solverManagers_;
 };
 
 template<class Scalar, class MV, class OP>
 std::vector<Teuchos::RCP<typename SolverFactoryParent<Scalar, MV, OP>::custom_solver_factory_type> >
 SolverFactoryParent<Scalar, MV, OP>::factories_;
+
+template<class Scalar, class MV, class OP>
+std::map<const std::string, Teuchos::RCP<typename SolverFactoryParent<Scalar, MV, OP>::solver_base_type> >
+SolverFactoryParent<Scalar, MV, OP>::solverManagers_;
+
+template<class SolverClass, class Scalar, class MV, class OP>
+void registerSolverSubclassForTypes (const std::string & solverName) {
+  Teuchos::RCP<SolverClass> solver (new SolverClass);
+  SolverFactoryParent<Scalar, MV, OP>::registerSolver (solverName, solver);
+}
 
 } // namespace Impl
 
@@ -362,7 +423,7 @@ SolverFactoryParent<Scalar, MV, OP>::factories_;
 ///      implementation suffices. </li>
 /// <li> Add a case for their enum symbol that instantiates their
 ///      solver to the long switch-case statement in
-///      Details::makeSolverManagerFromEnum. </li>
+///      Details::makeSolverManagerFromClone. </li>
 /// <li> In the SolverFactory constructor, define a canonical string
 ///      name for their solver and its mapping to the corresponding
 ///      enum value, following the examples and comments there.  (This
@@ -389,161 +450,48 @@ public:
     custom_solver_factory_type;
 };
 
-namespace Details {
-
-/// \fn makeSolverManagerTmpl
-/// \brief Return a new instance of the desired SolverManager subclass.
-///
-/// This template function is meant to be used only by \c
-/// makeSolverManagerFromEnum.  We separate it out from \c
-/// makeSolverManagerFromEnum in order to avoid duplicated code for
-/// instantiating different \c SolverManager subclasses with the same
-/// syntax (but different template parameters).
-///
-/// \tparam SolverManagerBaseType A specialization of SolverManager.
-///
-/// \tparam SolverManagerType The specific SolverManager subclass to
-///   create.  It should take the same three template parameters
-///   (Scalar, MV, OP) as SolverManagerBaseType.
-///
-/// \param params [in/out] List of parameters with which to configure
-///   the solver.  If null, we configure the solver with default
-///   parameters.
-template<class SolverManagerBaseType, class SolverManagerType>
-Teuchos::RCP<SolverManagerBaseType>
-makeSolverManagerTmpl (const Teuchos::RCP<Teuchos::ParameterList>& params);
-
-/// \fn makeSolverManagerFromEnum
-/// \brief Return a new instance of the desired SolverManager subclass.
-/// \author Mark Hoemmen
-///
-/// The \c SolverFactory class may use this template function
-/// in order to instantiate an instance of the desired subclass of \c
-/// SolverManager.
-///
-/// \tparam Scalar The first template parameter of \c SolverManager.
-/// \tparam MV The second template parameter of \c SolverManager.
-/// \tparam OP The third template parameter of \c SolverManager.
-///
-/// \param solverType [in] Enum value representing the specific
-///   SolverManager subclass to instantiate.
-///
-/// \param params [in/out] List of parameters with which to configure
-///   the solver.  If null, we configure the solver with default
-///   parameters.
-template<class Scalar, class MV, class OP>
-Teuchos::RCP<SolverManager<Scalar, MV, OP> >
-makeSolverManagerFromEnum (const EBelosSolverType solverType,
-                           const Teuchos::RCP<Teuchos::ParameterList>& params)
-{
-  typedef SolverManager<Scalar, MV, OP> base_type;
-
-  switch (solverType) {
-  case SOLVER_TYPE_BLOCK_GMRES: {
-    typedef BlockGmresSolMgr<Scalar, MV, OP> impl_type;
-    return makeSolverManagerTmpl<base_type, impl_type> (params);
-  }
-  case SOLVER_TYPE_PSEUDO_BLOCK_GMRES: {
-    typedef PseudoBlockGmresSolMgr<Scalar, MV, OP> impl_type;
-    return makeSolverManagerTmpl<base_type, impl_type> (params);
-  }
-  case SOLVER_TYPE_BLOCK_CG: {
-    typedef BlockCGSolMgr<Scalar, MV, OP> impl_type;
-    return makeSolverManagerTmpl<base_type, impl_type> (params);
-  }
-  case SOLVER_TYPE_PSEUDO_BLOCK_CG: {
-    typedef PseudoBlockCGSolMgr<Scalar, MV, OP> impl_type;
-    return makeSolverManagerTmpl<base_type, impl_type> (params);
-  }
-  case SOLVER_TYPE_GCRODR: {
-    typedef GCRODRSolMgr<Scalar, MV, OP> impl_type;
-    return makeSolverManagerTmpl<base_type, impl_type> (params);
-  }
-  case SOLVER_TYPE_RCG: {
-    typedef RCGSolMgr<Scalar, MV, OP> impl_type;
-    return makeSolverManagerTmpl<base_type, impl_type> (params);
-  }
-  case SOLVER_TYPE_MINRES: {
-    typedef MinresSolMgr<Scalar, MV, OP> impl_type;
-    return makeSolverManagerTmpl<base_type, impl_type> (params);
-  }
-  case SOLVER_TYPE_LSQR: {
-    typedef LSQRSolMgr<Scalar, MV, OP> impl_type;
-    return makeSolverManagerTmpl<base_type, impl_type> (params);
-  }
-  case SOLVER_TYPE_STOCHASTIC_CG: {
-    typedef PseudoBlockStochasticCGSolMgr<Scalar, MV, OP> impl_type;
-    return makeSolverManagerTmpl<base_type, impl_type> (params);
-  }
-  case SOLVER_TYPE_TFQMR: {
-    typedef TFQMRSolMgr<Scalar, MV, OP> impl_type;
-    return makeSolverManagerTmpl<base_type, impl_type> (params);
-  }
-  case SOLVER_TYPE_PSEUDO_BLOCK_TFQMR: {
-    typedef PseudoBlockTFQMRSolMgr<Scalar, MV, OP> impl_type;
-    return makeSolverManagerTmpl<base_type, impl_type> (params);
-  }
-  case SOLVER_TYPE_GMRES_POLY: {
-    typedef GmresPolySolMgr<Scalar, MV, OP> impl_type;
-    return makeSolverManagerTmpl<base_type, impl_type> (params);
-  }
-  case SOLVER_TYPE_PCPG: {
-    typedef PCPGSolMgr<Scalar, MV, OP> impl_type;
-    return makeSolverManagerTmpl<base_type, impl_type> (params);
-  }
-  case SOLVER_TYPE_FIXED_POINT: {
-    typedef FixedPointSolMgr<Scalar, MV, OP> impl_type;
-    return makeSolverManagerTmpl<base_type, impl_type> (params);
-  }
-  case SOLVER_TYPE_BICGSTAB: {
-    typedef BiCGStabSolMgr<Scalar, MV, OP> impl_type;
-    return makeSolverManagerTmpl<base_type, impl_type> (params);
-  }
-  default: // Fall through; let the code below handle it.
-    TEUCHOS_TEST_FOR_EXCEPTION(
-      true, std::logic_error, "Belos::SolverFactory: Invalid EBelosSolverType "
-      "enum value " << solverType << ".  Please report this bug to the Belos "
-      "developers.");
-  }
-
-  // Compiler guard.  This may result in a warning on some compilers
-  // for an unreachable statement, but it will prevent a warning on
-  // other compilers for a "missing return statement at end of
-  // non-void function."
-  TEUCHOS_UNREACHABLE_RETURN(Teuchos::null);
-}
-
-template<class SolverManagerBaseType, class SolverManagerType>
-Teuchos::RCP<SolverManagerBaseType>
-makeSolverManagerTmpl (const Teuchos::RCP<Teuchos::ParameterList>& params)
-{
-  using Teuchos::ParameterList;
-  using Teuchos::parameterList;
-  using Teuchos::RCP;
-
-  RCP<SolverManagerType> solver = rcp (new SolverManagerType);
-
-  // Some solvers may not like to get a null ParameterList.  If params
-  // is null, replace it with an empty parameter list.  The solver
-  // will fill in default parameters for that case.  Use the name of
-  // the solver's default parameters to name the new empty list.
-  RCP<ParameterList> pl;
-  if (params.is_null()) {
-    pl = parameterList (solver->getValidParameters ()->name ());
-  } else {
-    pl = params;
-  }
-  TEUCHOS_TEST_FOR_EXCEPTION(
-    pl.is_null(), std::logic_error,
-    "Belos::SolverFactory: ParameterList to pass to solver is null.  This "
-    "should never happen.  Please report this bug to the Belos developers.");
-  solver->setParameters (pl);
-  return solver;
-}
-
-} // namespace Details
-
 namespace Impl {
+
+// specialize for Belos registration - such as for Belos_Factory unit test
+template<>
+inline void
+SolverFactoryParent<double, MultiVec<double>, Operator<double> >::
+registerSolverFactoryForLib () {
+  Belos::Details::registerSolverFactory();
+}
+
+// specialize for Epetra registration
+#ifdef HAVE_BELOS_EPETRA
+template<>
+inline void
+SolverFactoryParent<double, Epetra_MultiVector, Epetra_Operator>::
+registerSolverFactoryForLib () {
+  Belos::Details::Epetra::registerSolverFactory();
+}
+#endif // HAVE_BELOS_EPETRA
+
+// specialize for Tpetra registration - for each of the possible types
+#ifdef HAVE_BELOS_TPETRA
+#define SPECIALIZE_FOR_TPETRA(SC, LO, GO, NT) \
+template<> \
+inline void \
+SolverFactoryParent<SC, ::Tpetra::MultiVector<SC, LO, GO, NT>, \
+  ::Tpetra::Operator<SC, LO, GO, NT>>::registerSolverFactoryForLib () { \
+  Belos::Details::Tpetra::registerSolverFactory(); \
+}
+TPETRA_ETI_MANGLING_TYPEDEFS()
+TPETRA_INSTANTIATE_SLGN_NO_ORDINAL_SCALAR(SPECIALIZE_FOR_TPETRA)
+#endif // HAVE_BELOS_TPETRA
+
+// Fall through case. Register nothing such as for a custom SolverFactory.
+// Then user will be registering their own SolverManagers.
+template<class Scalar, class MV, class OP>
+void
+SolverFactoryParent<Scalar, MV, OP>::
+registerSolverFactoryForLib () {
+  // no managers will be preeegistered ...
+}
+
 
 template<class Scalar, class MV, class OP>
 Teuchos::RCP<typename SolverFactoryParent<Scalar, MV, OP>::solver_base_type>
@@ -567,7 +515,6 @@ getSolver (const std::string& solverName,
            const Teuchos::RCP<Teuchos::ParameterList>& solverParams)
 {
   using Teuchos::RCP;
-  const char prefix[] = "Belos::SolverFactoryParent::getSolver: ";
 
   // First, check the overriding factories.
   for (std::size_t k = 0; k < factories_.size (); ++k) {
@@ -590,11 +537,16 @@ getSolver (const std::string& solverName,
   const std::string candidateCanonicalName = aliasResult.first;
   const bool isAnAlias = aliasResult.second;
 
+  // Get the standardized name for enum reference and map
+  std::string standardized_name = isAnAlias ?
+                                  candidateCanonicalName :
+                                  solverNameUC;
+
+  // TODO: For the new DII system do we want to eliminate the enum system?
+/*
   // Get the canonical name.
   const Details::EBelosSolverType solverEnum =
-    Details::getEnumFromCanonicalName (isAnAlias ?
-                                       candidateCanonicalName :
-                                       solverNameUC);
+    Details::getEnumFromCanonicalName (standardized_name);
   const bool validCanonicalName =
     (solverEnum != Details::SOLVER_TYPE_UPPER_BOUND);
   if (! validCanonicalName) {
@@ -605,6 +557,7 @@ getSolver (const std::string& solverName,
        "Please report this bug to the Belos developers.");
     return Teuchos::null; // unsupported / invalid solver name
   }
+*/
 
   // If the input list is null, we create a new list and use that.
   // This is OK because the effect of a null parameter list input is
@@ -618,7 +571,47 @@ getSolver (const std::string& solverName,
     Details::reviseParameterListForAlias (solverNameUC, *pl);
   }
 
-  return Details::makeSolverManagerFromEnum<Scalar, MV, OP> (solverEnum, pl);
+  typename std::map<const std::string, Teuchos::RCP<
+    typename SolverFactoryParent<Scalar, MV, OP>::solver_base_type> >::iterator
+    it = solverManagers_.find (standardized_name);
+
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    it == solverManagers_.end(),
+    std::invalid_argument, "Belos solver manager " << solverNameUC <<
+    " with standardized name " << standardized_name << " has not been"
+    " registered.");
+
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    it->second == Teuchos::null,
+    std::logic_error, "Belos::SolverFactoryParent: The registered "
+    "clone source for " << solverNameUC << " with standardized name "
+    << standardized_name << " is null which should never happen."
+    ".  Please report this bug to the Belos developers.");
+
+  // clone the solver
+  RCP<solver_base_type> solver = (it->second)->clone ();
+
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    solver == Teuchos::null,
+    std::logic_error, "Belos::SolverFactoryParent: Failed "
+    "to clone SolverManager with name " << solverNameUC << " with standardized"
+    " name" << standardized_name << "."
+    ".  Please report this bug to the Belos developers.");
+
+  // Some solvers may not like to get a null ParameterList.  If params
+  // is null, replace it with an empty parameter list.  The solver
+  // will fill in default parameters for that case.  Use the name of
+  // the solver's default parameters to name the new empty list.
+  if (pl.is_null()) {
+    pl = Teuchos::parameterList (solver->getValidParameters ()->name ());
+  }
+
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    pl.is_null(), std::logic_error,
+    "Belos::SolverFactory: ParameterList to pass to solver is null.  This "
+    "should never happen.  Please report this bug to the Belos developers.");
+  solver->setParameters (pl);
+  return solver;
 }
 
 

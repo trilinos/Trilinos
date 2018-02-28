@@ -73,6 +73,7 @@
 #include <BelosTpetraAdapter.hpp>
 #include <BelosXpetraAdapter.hpp>     // => This header defines Belos::XpetraOp
 //#include <BelosMueLuAdapter.hpp>      // => This header defines Belos::MueLuOp
+#include <BelosBlockCGSolMgr.hpp>
 #endif
 
 // Stratimikos
@@ -247,6 +248,13 @@ int MainWrappers<Scalar,LocalOrdinal,GlobalOrdinal,Node>::main_(Teuchos::Command
       // Belos solver
       RCP< Belos::SolverManager<SC, MV, OP> > solver;
       RCP< Belos::SolverFactory<SC, MV,OP> > factory = rcp( new  Belos::SolverFactory<SC,MV,OP>() );
+
+      // We need to register our manager - or do we want these auto registered?
+      // This change happens due to implementing the DII system for Belos with
+      // auto registration of all the solver.
+      Belos::Impl::registerSolverSubclassForTypes<
+        Belos::BlockCGSolMgr<SC, MV, OP>, SC, MV, OP> ("BLOCK CG");
+
       RCP<Teuchos::ParameterList> belosParams
         = rcp( new Teuchos::ParameterList() );
       belosParams->set("Maximum Iterations", 100);
@@ -457,6 +465,13 @@ int MainWrappers<double,LocalOrdinal,GlobalOrdinal,Node>::main_(Teuchos::Command
       // Belos solver
       RCP< Belos::SolverManager<SC, MV, OP> > solver;
       RCP< Belos::SolverFactory<SC, MV,OP> > factory = rcp( new  Belos::SolverFactory<SC,MV,OP>() );
+
+      // We need to register our manager - or do we want these auto registered?
+      // This change happens due to implementing the DII system for Belos with
+      // auto registration of all the solver.
+      Belos::Impl::registerSolverSubclassForTypes<
+        Belos::BlockCGSolMgr<SC, MV, OP>, SC, MV, OP> ("BLOCK CG");
+
       RCP<Teuchos::ParameterList> belosParams
         = rcp( new Teuchos::ParameterList() );
       belosParams->set("Maximum Iterations", 100);

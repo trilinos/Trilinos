@@ -260,6 +260,11 @@ namespace Belos {
 
     //! Destructor.
     virtual ~PseudoBlockGmresSolMgr() {};
+
+    //! clone for Inverted Injection (DII)
+    virtual Teuchos::RCP<SolverManager<ScalarType, MV, OP> > clone () const {
+      return Teuchos::rcp(new PseudoBlockGmresSolMgr<ScalarType,MV,OP>);
+    }
     //@}
 
     //! @name Accessor methods

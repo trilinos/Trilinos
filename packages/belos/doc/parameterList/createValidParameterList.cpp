@@ -67,6 +67,12 @@
 #include "BelosTpetraAdapter.hpp"
 #include "BelosSolverFactory.hpp"
 
+// Added for self-registration of the required solvers for the new DII setup
+#include "BelosPseudoBlockGmresSolMgr.hpp"
+#include "BelosBlockGmresSolMgr.hpp"
+#include "BelosPseudoBlockCGSolMgr.hpp"
+#include "BelosBlockCGSolMgr.hpp"
+
 typedef Tpetra::MultiVector<> multivector_type;
 typedef Tpetra::Operator<> operator_type;
 typedef multivector_type::scalar_type scalar_type;
@@ -85,6 +91,38 @@ void writeXSLHeader( std::ofstream& out )
       out << "<?xml-stylesheet type=\"text/xsl\" "
           << "href=\"common/parameterList/parameterList.xsl\"?>\n";
 }
+
+// This test is a special case with no libs to provide the new DII registration.
+// SolverFactoryParent is now going to run a specialized form of
+// registerSolverFactoryForLib based on the template parameters. For this test
+// that will pick up Tpetra and attempt to call the following method:
+// Belos::Details::Tpetra::registerSolverFactory()
+// For this particular test that won't be available so I have manually recreated
+// it here and then register just the managers actually used in this test.
+// TODO: Decide how we want to handle this  in the new DII setup.
+namespace Belos {
+namespace Details {
+namespace Tpetra {
+  // Note this is going to be called premain due to SolverFactoryParent having
+  // a link to this method via its constructor and a specialized form of
+  // registerSolverFactoryForLib().
+  void registerSolverFactory() {
+    Belos::Impl::registerSolverSubclassForTypes<
+        Belos::PseudoBlockGmresSolMgr<scalar_type, multivector_type, operator_type>,
+        scalar_type, multivector_type, operator_type> ("BLOCK GMRES");
+    Belos::Impl::registerSolverSubclassForTypes<
+        Belos::PseudoBlockGmresSolMgr<scalar_type, multivector_type, operator_type>,
+        scalar_type, multivector_type, operator_type> ("PSEUDOBLOCK GMRES");
+    Belos::Impl::registerSolverSubclassForTypes<
+        Belos::PseudoBlockCGSolMgr<scalar_type, multivector_type, operator_type>,
+        scalar_type, multivector_type, operator_type> ("BLOCK CG");
+    Belos::Impl::registerSolverSubclassForTypes<
+        Belos::PseudoBlockCGSolMgr<scalar_type, multivector_type, operator_type>,
+        scalar_type, multivector_type, operator_type> ("PSEUDOBLOCK CG");
+  }
+} // namespace Tpetra
+} // namespace Details
+} // namespace Belos
 
 int main(int argc, char* argv[])
 {

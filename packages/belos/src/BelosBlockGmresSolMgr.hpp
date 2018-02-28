@@ -168,6 +168,11 @@ public:
 
   //! Destructor.
   virtual ~BlockGmresSolMgr() {};
+
+  //! clone for Inverted Injection (DII)
+  virtual Teuchos::RCP<SolverManager<ScalarType, MV, OP> > clone () const {
+    return Teuchos::rcp(new BlockGmresSolMgr<ScalarType,MV,OP>);
+  }
   //@}
 
   //! @name Accessor methods

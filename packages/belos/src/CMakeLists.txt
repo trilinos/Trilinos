@@ -113,6 +113,20 @@ APPEND_SET(SOURCES
   BelosVersion.cpp
   Belos_Details_registerLinearSolverFactory.cpp
   BelosSolverFactory.cpp
+  Belos_Details_registerSolverFactory.cpp
+  Belos_Details_registerGCRODRSolMgr.cpp
+  Belos_Details_registerPseudoBlockGmresSolMgr.cpp
+  Belos_Details_registerPseudoBlockCGSolMgr.cpp
+  Belos_Details_registerBlockGmresSolMgr.cpp
+  Belos_Details_registerBlockCGSolMgr.cpp
+  Belos_Details_registerFixedPointSolMgr.cpp
+  Belos_Details_registerLSQRSolMgr.cpp
+  Belos_Details_registerPCPGSolMgr.cpp
+  Belos_Details_registerRCGSolMgr.cpp
+  Belos_Details_registerBiCGStabSolMgr.cpp
+  Belos_Details_registerTFQMRSolMgr.cpp
+  Belos_Details_registerPseudoBlockTFQMRSolMgr.cpp
+  Belos_Details_registerMinresSolMgr.cpp
   )
 
 # COMP_H

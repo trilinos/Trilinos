@@ -544,6 +544,10 @@ public:
   Belos::ReturnType solve () {
     TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, "Not implemented");
   }
+
+  virtual Teuchos::RCP<Belos::SolverManager<ScalarType, MV, OP> > clone () const {
+    TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, "clone() not implemented");
+  }
 };
 
 template<class SC, class LO, class GO, class NT>
@@ -640,6 +644,10 @@ public:
     SolverOutput<SC, LO, GO, NT> result = solver_.solve (*X, *B);
     lastSolverOutput_ = result;
     return result.converged ? Belos::Converged : Belos::Unconverged;
+  }
+
+  virtual Teuchos::RCP<Belos::SolverManager<SC, MV, OP> > clone () const {
+    TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, "clone() not implemented");
   }
 
 private:

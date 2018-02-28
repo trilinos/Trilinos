@@ -34,6 +34,20 @@ APPEND_SET(HEADERS
 APPEND_SET(SOURCES
   BelosTpetraAdapter.cpp
   Belos_Details_Tpetra_registerLinearSolverFactory.cpp
+  Belos_Details_Tpetra_registerSolverFactory.cpp
+  Belos_Details_Tpetra_registerBiCGStabSolMgr.cpp
+  Belos_Details_Tpetra_registerBlockCGSolMgr.cpp
+  Belos_Details_Tpetra_registerBlockGmresSolMgr.cpp
+  Belos_Details_Tpetra_registerFixedPointSolMgr.cpp
+  Belos_Details_Tpetra_registerGCRODRSolMgr.cpp
+  Belos_Details_Tpetra_registerLSQRSolMgr.cpp
+  Belos_Details_Tpetra_registerPCPGSolMgr.cpp
+  Belos_Details_Tpetra_registerPseudoBlockCGSolMgr.cpp
+  Belos_Details_Tpetra_registerPseudoBlockGmresSolMgr.cpp
+  Belos_Details_Tpetra_registerRCGSolMgr.cpp
+  Belos_Details_Tpetra_registerTFQMRSolMgr.cpp
+  Belos_Details_Tpetra_registerPseudoBlockTFQMRSolMgr.cpp
+  Belos_Details_Tpetra_registerMinresSolMgr.cpp
   )
 
 #

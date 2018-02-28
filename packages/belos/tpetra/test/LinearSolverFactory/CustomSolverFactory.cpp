@@ -71,6 +71,10 @@ class FooSolver : public Belos::SolverManager<SC, MV, OP>
 public:
   virtual ~FooSolver () {}
 
+  virtual Teuchos::RCP<Belos::SolverManager<SC, MV, OP> > clone () const {
+    return Teuchos::rcp(new FooSolver<SC, MV, OP>);
+  }
+
   virtual const Belos::LinearProblem<SC, MV, OP>&
   getProblem () const {
     return linearProblem_;

@@ -141,6 +141,11 @@ namespace Belos {
 
     //! Destructor.
     virtual ~BiCGStabSolMgr() {};
+
+    //! clone for Inverted Injection (DII)
+    virtual Teuchos::RCP<SolverManager<ScalarType, MV, OP> > clone () const {
+      return Teuchos::rcp(new BiCGStabSolMgr<ScalarType,MV,OP>);
+    }
     //@}
 
     //! @name Accessor methods
