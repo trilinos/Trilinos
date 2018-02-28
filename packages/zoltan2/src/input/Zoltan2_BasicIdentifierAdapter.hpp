@@ -112,7 +112,7 @@ public:
 
   size_t getLocalNumIDs() const { return numIds_; }
 
-  void getIDsView(const gno_t *&Ids) const { Ids = idList_; }
+  void getIDsView(const gno_t *&Ids) const override { Ids = idList_; }
 
   int getNumWeightsPerID() const { return weights_.size(); }
 

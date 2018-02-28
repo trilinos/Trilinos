@@ -51,10 +51,17 @@
 #ifndef _ZOLTAN2_BASICKOKKOSIDENTIFIERADAPTER_HPP_
 #define _ZOLTAN2_BASICKOKKOSIDENTIFIERADAPTER_HPP_
 
-#include <Kokkos_Core.hpp>
-
 #include <Zoltan2_IdentifierAdapter.hpp>
 #include <Zoltan2_StridedData.hpp>
+
+#include <Kokkos_Core.hpp>
+// This may not be needed?
+#include <typeinfo>
+
+using std::make_pair;
+using std::pair;
+
+using Kokkos::ALL;
 
 namespace Zoltan2 {
 
@@ -90,6 +97,7 @@ public:
   typedef typename InputTraits<User>::part_t   part_t;
   typedef typename InputTraits<User>::node_t   node_t;
   typedef User user_t;
+  typedef Kokkos::LayoutLeft weight_layout_t;
 
   /*! \brief Constructor // TODO: Update comments
    *  \param numIds is the number of identifiers in the list
@@ -106,36 +114,51 @@ public:
    *  lifetime of this Adapter.
    */
   BasicKokkosIdentifierAdapter(
-    Kokkos::View<gno_t*> &ids, Kokkos::View<scalar_t**> &weights);
+    Kokkos::View<gno_t*> &ids, Kokkos::View<scalar_t**, weight_layout_t> &weights);
 
   ////////////////////////////////////////////////////////////////
   // The Adapter interface.
   ////////////////////////////////////////////////////////////////
 
 // https://github.com/kokkos/kokkos/wiki/View
-  size_t getLocalNumIDs() const { return _ids.dimension(0); } // Get num elements in Kokkos::View
+  size_t getLocalNumIDs() const { return _ids.dimension(0); }
 
-  void getIDsView(Kokkos::View<gno_t *> &ids) const { ids = _ids; }
+  void getIDsKokkosView(Kokkos::View<gno_t *> &ids) const override { ids = _ids; }
 
   int getNumWeightsPerID() const { return _weights.dimension(1); }
 
-// TODO: Figure out virtual overloading issue when building.
-  void getWeightsView(Kokkos::View<scalar_t *> &wgt, int idx = 0) const {
-// TODO // Returns a subview
-//void getWeightsView(const scalar_t *&weights, int &stride, int idx) const {
-//    if (idx < 0 || idx >= weights_.size()) {
-//      std::ostringstream emsg;
-//      emsg << __FILE__ << ":" << __LINE__
-//           << "  Invalid weight index " << idx << std::endl;
-//      throw std::runtime_error(emsg.str());
-//    }
-//    size_t length;
-//    weights_[idx].getStridedList(length, weights, stride);
+  void getWeightsKokkosView(Kokkos::View<scalar_t *> &wgt, int idx = 0) const {
+    if (idx < 0 || scalar_t(idx) >= _weights.extent(0)) {
+      std::ostringstream emsg;
+      emsg << __FILE__ << ":" << __LINE__
+           << "  Invalid weight index " << idx << std::endl;
+      throw std::runtime_error(emsg.str());
+    }
+    std::cout << "Index: " << idx << std::endl;
+//    wgt = Kokkos::subview(_weights, Kokkos::ALL(), std::pair<scalar_t, scalar_t>(idx, idx + 1)); // Try this first! // Note that it may not work because going from idx to idx+1 should reduce the dimensions, but the compiler may not know that.
+
+//    ************
+
+    //wgt = Kokkos::subview(_weights, ALL, std::pair<int, int>(idx, idx + 1));
+    wgt = Kokkos::subview(_weights, ALL, idx);
+//    wgt = subview;
+
+//    std::string s1 = typeid(wgt).name();
+//    std::cout << s1 << std::endl;
+//    std::string s2 = typeid(subview).name();
+//    std::cout << s2 << std::endl;
+//    std::cout << "Weights Extent 0: " << _weights.extent(0) << std::endl;
+//    std::cout << "Weights Extent 1: " << _weights.extent(1) << std::endl;
+//    std::cout << "subview Extent 0: " << subview.extent(0) << std::endl;
+//    std::cout << "subview Extent 1: " << subview.extent(1) << std::endl;
+//    std::cout << "Output Extent 0: " << wgt.extent(0) << std::endl;
+//    std::cout << "Output Extent 1: " << wgt.extent(1) << std::endl;
+    std::cout << std::endl;
   }
 
 private:
   Kokkos::View<gno_t *> _ids;
-  Kokkos::View<scalar_t **> _weights;
+  Kokkos::View<scalar_t **, weight_layout_t> _weights;
 };
 
 ////////////////////////////////////////////////////////////////
@@ -144,9 +167,9 @@ private:
 
 template <typename User>
   BasicKokkosIdentifierAdapter<User>::BasicKokkosIdentifierAdapter(
-    Kokkos::View<gno_t*> &ids, Kokkos::View<scalar_t**> &weights):
+    Kokkos::View<gno_t*> &ids, Kokkos::View<scalar_t**, weight_layout_t> &weights):
       _ids(ids), _weights(weights) {
-  }
+}
   
 } //namespace Zoltan2
   

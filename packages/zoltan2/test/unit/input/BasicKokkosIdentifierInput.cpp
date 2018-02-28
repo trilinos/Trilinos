@@ -47,6 +47,8 @@
 // Basic testing of Zoltan2::BasicKokkosIdentifierAdapter 
 
 #include <Kokkos_Core.hpp>
+// This may not be needed?
+#include <impl/Kokkos_Timer.hpp>
 
 #include <Zoltan2_BasicKokkosIdentifierAdapter.hpp>
 #include <Zoltan2_TestHelpers.hpp>
@@ -61,32 +63,30 @@ using Teuchos::Comm;
 using Teuchos::DefaultComm;
 
 int main(int argc, char *argv[]) {
+  typedef Zoltan2::BasicUserTypes<zscalar_t, zlno_t, zgno_t> userTypes_t;
+  typedef typename Zoltan2::BasicKokkosIdentifierAdapter<userTypes_t>::weight_layout_t Layout;
+
   Teuchos::GlobalMPISession session(&argc, &argv);
   RCP<const Comm<int> > comm = DefaultComm<int>::getComm();
   int rank = comm->getRank();
   int nprocs = comm->getSize();
   int fail = 0, gfail = 0;
-
-  Kokkos::initialize( argc, argv );
+//  std::cout << "Rank: " << rank << " nprocs: " << nprocs << std::endl;
 
   // Create global identifiers with weights
   zlno_t numLocalIds = 10;
   const int nWeights = 2;
 
-  Kokkos::View<zgno_t*> myIds("myIds", numLocalIds);
+  Kokkos::initialize(argc, argv);
+  Kokkos::View<zgno_t *> myIds("myIds", numLocalIds);
   zgno_t myFirstId = rank * numLocalIds * numLocalIds;
-  Kokkos::View<zscalar_t **> weights("weights", numLocalIds, nWeights);
-  std::cout << "Original weights = " << weights.dimension(1) << std::endl;
+  Kokkos::View<zscalar_t **, Layout> weights("weights", numLocalIds, nWeights);
 
   for (zlno_t i = 0; i < numLocalIds; i++) {
     myIds(i) = zgno_t(myFirstId + i);
-    // Fill in 2D array
     weights(i, 0) = 1.0;
     weights(i, 1) = (nprocs - rank) / (i + 1);
   }
-
-  // These types are from /home/acwantu/UUR_git/Trilinos/packages/zoltan2/test/helpers/Zoltan2_TestHelpers.hpp
-  typedef Zoltan2::BasicUserTypes<zscalar_t, zlno_t, zgno_t> userTypes_t;
 
   Zoltan2::BasicKokkosIdentifierAdapter<userTypes_t> ia(myIds, weights);
 
@@ -94,46 +94,46 @@ int main(int argc, char *argv[]) {
     fail = 4;
   }
   if (!fail && ia.getNumWeightsPerID() != nWeights) {
-    std::cout << "nWeights = " << nWeights << " ia has nweights: " << ia.getNumWeightsPerID() << std::endl;
     fail = 5;
   }
 
-  Kokkos::View<zgno_t *> globalIdsIn; // Pointer which will later point to the IDs
-  Kokkos::View<zscalar_t *> weightsIn[nWeights]; // Pointer which will later point to the weights // It's an array of Views.
+  Kokkos::View<zgno_t *> globalIdsIn; // Pointer will later point to IDs
+  Kokkos::View<zscalar_t *> weightsIn[nWeights]; // Pointer will later point to weights // Array of Views.
 
-  // In the old implementation, Views were pointers to memory containing C arrays.
-  ia.getIDsView(globalIdsIn); // Make the function mutate globalIdsIn to point to a Kokkos::View
+  ia.getIDsKokkosView(globalIdsIn);
 
   for (int w = 0; !fail && w < nWeights; w++) {
-// TODO: Comment this in when code is finished!
-//    ia.getWeightsView(weightsIn[w], w); // This function will need to use the correct Kokkos subview method to get a portion of the view when it's implemented in the adapter.
+    ia.getWeightsKokkosView(weightsIn[w], w);
   }
 
-// TODO: Comment this in when code is finished!
-//  Kokkos::View<zscalar_t *> w0 = weightsIn[0];
-//  Kokkos::View<zscalar_t *> w1 = weightsIn[1];
+  Kokkos::View<zscalar_t *> w0 = weightsIn[0];
+  Kokkos::View<zscalar_t *> w1 = weightsIn[1];
+
+  std::cout << w0(0) << std::endl;
+  std::cout << w0(1) << std::endl;
+  std::cout << w0(2) << std::endl;
+  std::cout << w1(0) << std::endl;
+  std::cout << w1(1) << std::endl;
+  std::cout << w1(2) << std::endl;
 
   for (zlno_t i = 0; !fail && i < numLocalIds; i++){
     if (globalIdsIn(i) != zgno_t(myFirstId + i)) {
       fail = 8;
     }
-// TODO: Comment this in when code is finished!
-//    if (!fail && w0(i) != 1.0) {
-//      fail = 9;
-//    }
-//    if (!fail && w1(i) != weights(i, 1)) {
-//      fail = 10;
-//    }
+    if (!fail && w0(i) != 1.0) {
+      fail = 9;
+    }
+    if (!fail && w1(i) != weights(i, 1)) {
+      fail = 10;
+    }
   }
 
   gfail = globalFail(comm, fail);
   if (gfail) {
-    printFailureCode(comm, fail);   // will exit(1)
+    printFailureCode(comm, fail); // will exit(1)
   }
   if (rank == 0) {
     std::cout << "PASS" << std::endl;
   }
-
   Kokkos::finalize();
 }
-

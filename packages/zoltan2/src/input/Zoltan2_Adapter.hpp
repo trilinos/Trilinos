@@ -111,7 +111,7 @@ public:
 
   /*! \brief Returns the type of adapter.
    */
-  virtual enum BaseAdapterType adapterType() const = 0; // TODO: Note: 'const = 0' means it's required
+  virtual enum BaseAdapterType adapterType() const = 0;
 
   /*! \brief Destructor
    */
@@ -119,7 +119,7 @@ public:
 
   /*! \brief Provide a pointer to this process' identifiers.
 
-      \param Ids will on return point to the list of the global Ids for 
+      \param ids will on return point to the list of the global Ids for 
         this process.
    */
   virtual void getIDsView(const gno_t *&ids) const {
@@ -128,11 +128,10 @@ public:
 
   /*! \brief Provide a pointer to this process' identifiers.
 
-      \param Ids will on return point to the list of the global Ids for 
+      \param ids will on return point to the list of the global Ids for 
         this process.
    */
-// TODO: Question: Is this correct? Parameter in the reference to the View pointer, which contains pointers to global numbers, because the view will be mutated?
-  virtual void getIDsView(Kokkos::View<gno_t *> &ids) const {
+  virtual void getIDsKokkosView(Kokkos::View<gno_t *> &ids) const {
     Z2_THROW_NOT_IMPLEMENTED
   }
 
@@ -150,18 +149,16 @@ public:
     Z2_THROW_NOT_IMPLEMENTED
   }
 
-  ///*! \brief Provide pointer to a weight array with stride.
+  ///*! \brief Provide pointer to a weight View.
   // *    \param wgt on return a pointer to the weights for this idx
-  // *    \param stride on return, the value such that
-  // *       the \t nth weight should be found at <tt> wgt[n*stride] </tt>.
   // *    \param idx  the weight index, zero or greater
   // *   This function must be implemented in derived adapter if
   // *   getNumWeightsPerID > 0.
   // *   This function should not be called if getNumWeightsPerID is zero.
   // */ 
 // TODO: Implement this one for Kokkos::View.
-  virtual void getWeightsView(Kokkos::View<scalar_t *> &wgt, 
-                              int idx = 0) const { // TODO: Note: being const but not 'const = 0' means it doesn't need to be overridden. If it is, it won't throw the exception when used.
+  virtual void getWeightsKokkosView(Kokkos::View<scalar_t *> &wgt, 
+                              int idx = 0) const {
     Z2_THROW_NOT_IMPLEMENTED
   }
 
@@ -174,7 +171,7 @@ public:
    *         the rank 
    *    \param inputPart on return a pointer to input part numbers
    */ 
-  void getPartsView(const part_t *&inputPart) const { // TODO: What does this mean? Ask Karen
+  void getPartsView(const part_t *&inputPart) const { // TODO: Stores info about where the data partitions are stored, since it's scattered across multiple machines. By default, can assume part 1 is on node 1.
     // Default behavior:  return NULL for inputPart array;
     // assume input part == rank
     inputPart = NULL;
