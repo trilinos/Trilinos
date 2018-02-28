@@ -12,6 +12,7 @@ ADD_SUBDIRECTORY(Lesson06-Custom-Operator)
 ADD_SUBDIRECTORY(Lesson07-Kokkos-Fill)
 
 ADD_SUBDIRECTORY(Finite-Element-Assembly)
+ADD_SUBDIRECTORY(BlockCrs)
 
 ADD_SUBDIRECTORY(utilities)
 ADD_SUBDIRECTORY(advanced)
