@@ -37,6 +37,7 @@ if [[ $JOB_NAME == *"cuda"* ]];   then export ATDM_CONFIG_USE_CUDA=ON;     ATDM_
 if [[ $JOB_NAME == *"pthread"* ]];then export ATDM_CONFIG_USE_PTHREADS=ON; ATDM_CONFIG_NODE_TYPE=THREAD; fi
 if [[ $JOB_NAME == *"serial"* ]];then  ATDM_CONFIG_NODE_TYPE=SERIAL; fi
 
+# Assert a consistent set of options
 if [[ $ATDM_CONFIG_USE_OPENMP == "ON" && $ATDM_CONFIG_USE_CUDA == "ON" ]]; then echo "Can't set more than one backend"; return 1; fi
 if [[ $ATDM_CONFIG_USE_OPENMP == "ON" && $ATDM_CONFIG_USE_PTHREADS == "ON" ]]; then echo "Can't set more than one backend"; return 1; fi
 if [[ $ATDM_CONFIG_USE_OPENMP == "ON" && $ATDM_CONFIG_NODE_TYPE == "SERIAL" ]]; then echo "Can't set more than one backend"; return 1; fi
