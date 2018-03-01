@@ -6,29 +6,6 @@
 #
 ################################################################################
 
-# Assert this script is sourced, not run!
-called=$_
-if [ "$called" == "$0" ] ; then
-  echo "This script '$0' is being called.  Instead, it must be sourced!"
-  exit 1
-fi
-
-# Return the absoute directory of some relative directory path.
-function get_abs_dir_path() {
-  [ -z "$1" ] && { pwd; return; }
-  (cd -P -- "$1" && pwd)
-}
-
-# Get the base dir for the sourced script to find the base of Trilinos
-_SCRIPT_DIR=`echo $BASH_SOURCE | sed "s/\(.*\)\/.*\.sh/\1/g"`
-#echo "_SCRIPT_DIR = '$_SCRIPT_DIR'"
-TRILNOS_DIR=`get_abs_dir_path $_SCRIPT_DIR/../../../..`
-echo "Deteched base TRILNOS_DIR = '$TRILNOS_DIR'"
-
-# Parse JOB_NAME to env vars
-source $_SCRIPT_DIR/../utils/set_build_options.sh
-
-# Purge all of the existing modules first
 module purge
 
 export BUILD_COUNT=32
