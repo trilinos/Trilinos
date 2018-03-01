@@ -48,7 +48,10 @@
 #include "typedefs.hpp"
 #include "Teuchos_Comm.hpp"
 
-struct LLA {
+
+
+struct LLA 
+{
   LLA() {data[0]=0; data[1]=0;}
 
   LLA(GlobalOrdinal i, GlobalOrdinal j) {data[0]=i; data[1]=j;}
@@ -135,7 +138,6 @@ private:
 
   void initializeOwnedAndGhostElementGlobalIDs(void);
 
-
   global_ordinal_view_type ownedElementGlobalIDs_;
   global_ordinal_view_type ghostElementGlobalIDs_;
 
@@ -168,10 +170,10 @@ private:
 
 
 MeshDatabase::MeshDatabase(Teuchos::RCP<const Teuchos::Comm<int> > comm, int global_elements_x, int global_elements_y, int procs_x, int procs_y):
-  globalElements_(global_elements_x,global_elements_y),
-  globalNodes_(global_elements_x+1,global_elements_y+1),
-  globalProcs_(procs_x,procs_y),
-  comm_(comm) 
+      globalElements_(global_elements_x,global_elements_y),
+      globalNodes_(global_elements_x+1,global_elements_y+1),
+      globalProcs_(procs_x,procs_y),
+      comm_(comm) 
 {
   
   // NOTE: Elements/nodes are numbered sequentially with x as the "fast" direction

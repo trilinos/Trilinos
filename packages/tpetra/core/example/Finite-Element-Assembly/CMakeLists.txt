@@ -4,7 +4,7 @@
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   FiniteElementAssembly_type1
   SOURCES fem_assembly_type1.cpp
-  ARGS 
+  ARGS
   COMM  mpi
   STANDARD_PASS_OUTPUT
 )
@@ -12,7 +12,7 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   FiniteElementAssembly_type2
   SOURCES fem_assembly_type2.cpp
-  ARGS 
+  ARGS
   COMM  mpi
   STANDARD_PASS_OUTPUT
 )
@@ -20,8 +20,17 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   FiniteElementAssembly_type3
   SOURCES fem_assembly_type3.cpp
-  ARGS 
+  ARGS
   COMM  mpi
   STANDARD_PASS_OUTPUT
 )
+
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  FiniteElementAssembly_type3_staticprofile
+  SOURCES fem_assembly_type3_staticprofile.cpp
+  ARGS
+  COMM  mpi
+  STANDARD_PASS_OUTPUT
+)
+
 
