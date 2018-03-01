@@ -33,7 +33,7 @@ elif [ "$ATDM_CONFIG_COMPILER" == "INTEL" ]; then
 elif [ "$ATDM_CONFIG_COMPILER" == "CUDA" ]; then
     export ATDM_CONFIG_KOKKOS_ARCH=Kepler37
     module load devpack/openmpi/2.1.1/gcc/4.9.3/cuda/8.0.61
-    export OMPI_CXX=$TRILNOS_DIR/packages/kokkos/config/nvcc_wrapper 
+    export OMPI_CXX=$ATDM_CONFIG_TRILNOS_DIR/packages/kokkos/config/nvcc_wrapper 
     if [ ! -x "$OMPI_CXX" ]; then
 	export OMPI_CXX=`which nvcc_wrapper`
         if [ ! -x "$OMPI_CXX" ]; then
