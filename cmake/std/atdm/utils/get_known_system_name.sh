@@ -26,7 +26,7 @@ if [[ $ATDM_HOSTNAME == "" ]] ; then
   echo "Error, hostname = '$THIS_HOSTNAME' not recognized as a known ATDM system name!"
   return
 else
-  echo "Hostname '$THIS_HOSTNAME' matches known ATDM system '$ATDM_HOSTNAME'!"
+  echo "Hostname '$THIS_HOSTNAME' matches known ATDM system '$ATDM_HOSTNAME'"
 fi
 
 export ATDM_CONFIG_KNOWN_SYSTEM_NAME=$ATDM_HOSTNAME
