@@ -59,7 +59,14 @@ echo "Setting export JOB_NAME=$1"
 export JOB_NAME=$1
 
 #
-# D) Load the matching env
+# D) Parse $JOB_NAME for consumption by the system-specific environoment.sh
+# script
+#
+
+source $_SCRIPT_DIR/utils/set_build_options.sh
+
+#
+# E) Load the matching env
 #
 
 source $_SCRIPT_DIR/$ATDM_CONFIG_KNOWN_SYSTEM_NAME/environment.sh
