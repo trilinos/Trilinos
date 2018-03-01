@@ -63,6 +63,48 @@ struct LayoutContiguous : public Layout {
   constexpr LayoutContiguous( Layout && layout ) : Layout(layout) {}
 };
 
+// Is Layout == LayoutContiguous<L> for some L
+template <class Layout>
+struct is_layout_contiguous {
+  static const bool value = false;
+};
+
+template <class Layout>
+struct is_layout_contiguous< LayoutContiguous<Layout> > {
+  static const bool value = true;
+};
+
+// Extract inner layout from LayoutContiguous
+template <class Layout>
+struct inner_layout {
+  typedef Layout type;
+};
+
+template <class Layout>
+struct inner_layout< LayoutContiguous<Layout> > {
+  typedef Layout type;
+};
+
+template <class Layout, int32_t N>
+struct inner_layout< LayoutContiguous<Layout, N> > {
+  typedef Layout type;
+};
+
+template <class Layout, int64_t N>
+struct inner_layout< LayoutContiguous<Layout, N> > {
+  typedef Layout type;
+};
+
+template <class Layout, uint32_t N>
+struct inner_layout< LayoutContiguous<Layout, N> > {
+  typedef Layout type;
+};
+
+template <class Layout, uint64_t N>
+struct inner_layout< LayoutContiguous<Layout, N> > {
+  typedef Layout type;
+};
+
 } // namespace Kokkos
 
 // Make LayoutContiguous<Layout> equivalent to Layout

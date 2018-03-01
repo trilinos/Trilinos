@@ -42,9 +42,6 @@
 //
 // @HEADER
 
-#ifndef TEUCHOS_YAMLPARSER_DEF_H_
-#define TEUCHOS_YAMLPARSER_DEF_H_
-
 #include <iostream>
 #include <iomanip>
 #include <ios>
@@ -173,11 +170,14 @@ struct Scalar {
   }
 };
 
-bool operator==(PLPair const&, PLPair const&) { return false; }
-std::ostream& operator<<(std::ostream& os, PLPair const&) { return os; }
-
 bool operator==(Scalar const&, Scalar const&) { return false; }
 std::ostream& operator<<(std::ostream& os, Scalar const&) { return os; }
+
+void safe_set_entry(ParameterList& list, std::string const& name_in, ParameterEntry const& entry_in) {
+  TEUCHOS_TEST_FOR_EXCEPTION(list.isParameter(name_in), ParserFail,
+      "Parameter \"" << name_in << "\" already exists in list \"" << list.name() << "\"\n");
+  list.setEntry(name_in, entry_in);
+}
 
 namespace YAMLParameterList {
 
@@ -278,7 +278,7 @@ class Reader : public Teuchos::Reader {
       }
       case Teuchos::YAML::PROD_BMAP_FSEQ: {
         TEUCHOS_ASSERT(rhs.at(4).type() == typeid(Array<Scalar>) ||
-            rhs.at(4).type() == typeid(Array<Array<Scalar> >));
+            rhs.at(4).type() == typeid(Array<Array<Scalar>>));
         int scalar_type = interpret_tag(rhs.at(3));
         map_item(result_any, rhs.at(0), rhs.at(4), scalar_type);
         break;
@@ -329,7 +329,7 @@ class Reader : public Teuchos::Reader {
       case Teuchos::YAML::PROD_FSEQ: {
         swap(result_any, rhs.at(2));
         TEUCHOS_ASSERT(result_any.type() == typeid(Array<Scalar>) ||
-            result_any.type() == typeid(Array<Array<Scalar> >));
+            result_any.type() == typeid(Array<Array<Scalar>>));
         break;
       }
       case Teuchos::YAML::PROD_FSEQ_EMPTY: {
@@ -599,14 +599,14 @@ class Reader : public Teuchos::Reader {
     ParameterList& list = make_any_ref<ParameterList>(result_any);
     TEUCHOS_ASSERT(!first_item.empty());
     PLPair& pair = any_ref_cast<PLPair>(first_item);
-    list.setEntry(pair.key, pair.value);
+    safe_set_entry(list, pair.key, pair.value);
   }
   void map_next_item(any& result_any, any& items, any& next_item) {
     using std::swap;
     swap(result_any, items);
     ParameterList& list = any_ref_cast<ParameterList>(result_any);
     PLPair& pair = any_ref_cast<PLPair>(next_item);
-    list.setEntry(pair.key, pair.value);
+    safe_set_entry(list, pair.key, pair.value);
   }
   void map_item(any& result_any, any& key_any, any& value_any, int scalar_type = -1) {
     using std::swap;
@@ -708,8 +708,8 @@ class Reader : public Teuchos::Reader {
         }
         value_any = result;
       }
-    } else if (value_any.type() == typeid(Array<Array<Scalar> >)) {
-      Array<Array<Scalar> >& scalars = any_ref_cast<Array<Array<Scalar> > >(value_any);
+    } else if (value_any.type() == typeid(Array<Array<Scalar>>)) {
+      Array<Array<Scalar>>& scalars = any_ref_cast<Array<Array<Scalar>> >(value_any);
       if (scalar_type == -1) {
         if (scalars.size() == 0) {
           throw ParserFail("implicitly typed 2D arrays can't be empty\n"
@@ -781,7 +781,7 @@ class Reader : public Teuchos::Reader {
       a.push_back(Scalar());
       swap(a.back(), v);
     } else if (first_any.type() == typeid(Array<Scalar>)) {
-      Array<Array<Scalar> >& a = make_any_ref<Array<Array<Scalar> > >(result_any);
+      Array<Array<Scalar>>& a = make_any_ref<Array<Array<Scalar>> >(result_any);
       Array<Scalar>& v = any_ref_cast<Array<Scalar> >(first_any);
       a.push_back(Array<Scalar>());
       swap(a.back(), v);
@@ -798,8 +798,8 @@ class Reader : public Teuchos::Reader {
       Scalar& val = any_ref_cast<Scalar>(next_item);
       a.push_back(Scalar());
       swap(a.back(), val);
-    } else if (result_any.type() == typeid(Array<Array<Scalar> >)) {
-      Array<Array<Scalar> >& a = any_ref_cast<Array<Array<Scalar> > >(result_any);
+    } else if (result_any.type() == typeid(Array<Array<Scalar>>)) {
+      Array<Array<Scalar>>& a = any_ref_cast<Array<Array<Scalar>> >(result_any);
       Array<Scalar>& v = any_ref_cast<Array<Scalar> >(next_item);
       a.push_back(Array<Scalar>());
       swap(a.back(), v);
@@ -1314,5 +1314,3 @@ bool stringNeedsQuotes(const std::string& s)
 } //namespace YAMLParameterList
 
 } //namespace Teuchos
-
-#endif
