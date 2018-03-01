@@ -240,7 +240,7 @@ public:
     typedef typename hash_type::result_type hash_value_type;
 
     const hash_value_type hashVal = hash_type::hashFunc (keys_[i], size_);
-    Kokkos::atomic_fetch_add (&counts_[hashVal], 1);
+    Kokkos::atomic_increment (&counts_[hashVal]);
   }
 
 private:
