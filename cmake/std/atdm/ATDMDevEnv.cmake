@@ -7,15 +7,11 @@
 INCLUDE("${CMAKE_CURRENT_LIST_DIR}/ATDMDevEnvUtils.cmake")
 
 #
-# Base options for all ATDM bulids for Trilinos
-#
-
-ATDM_SET_ENABLE(TPL_ENABLE_MPI ON)
-
-#
 # A) Assert the right env vars are set and set local defaults
 #
 
+ASSERT_DEFINED(ENV{ATDM_CONFIG_KNOWN_SYSTEM_NAME})
+ASSERT_DEFINED(ENV{ATDM_CONFIG_COMPILER})
 ASSERT_DEFINED(ENV{ATDM_CONFIG_BUILD_TYPE})
 ASSERT_DEFINED(ENV{ATDM_CONFIG_BLAS_LIB})
 ASSERT_DEFINED(ENV{ATDM_CONFIG_LAPACK_LIB})
@@ -51,9 +47,40 @@ iF (ATDM_USE_HWLOC AND "$ENV{ATDM_CONFIG_HWLOC_LIBS}" STREQUAL "")
     " HWLOC_LIBS is not set!")
 ENDIF()
 
+SET(ATDM_JOB_NAME_KEYS_STR
+  "$ENV{ATDM_CONFIG_COMPILER}-$ENV{ATDM_CONFIG_BUILD_TYPE}-${ATDM_NODE_TYPE}")
+PRINT_VAR(ATDM_JOB_NAME_KEYS_STR)
+
 #
-# B) Set the comilers
+# B) Look for tweaks file(s) for this build and load the file(s) if it exists
+# 
+
+SET(ATDM_TWEAKS_FILE_DEFAULT_DEFAULT
+  "${CMAKE_CURRENT_LIST_DIR}/$ENV{ATDM_CONFIG_KNOWN_SYSTEM_NAME}/tweaks/${ATDM_JOB_NAME_KEYS_STR}.cmake")
+IF (EXISTS "${ATDM_TWEAKS_FILE_DEFAULT_DEFAULT}")
+  SET(ATDM_TWEAKS_FILES_DEFAULT "${ATDM_TWEAKS_FILE_DEFAULT_DEFAULT}")
+ELSE()
+  SET(ATDM_TWEAKS_FILES_DEFAULT "")
+ENDIF()
+
+ADVANCED_SET(ATDM_TWEAKS_FILES "${ATDM_TWEAKS_FILES_DEFAULT}"
+  CACHE FILEPATH
+  "Extra *.cmake file to include to define tweaks for this ATDM build ${ATDM_JOB_NAME_KEYS_STR}"
+  )
+PRINT_VAR(ATDM_TWEAKS_FILES)
+
+FOREACH(ATDM_TREAKS_FILE ${ATDM_TWEAKS_FILES})
+  MESSAGE("-- " "Including ATDM build treaks file ${ATDM_TREAKS_FILE} ...")
+  TRIBITS_TRACE_FILE_PROCESSING(PROJECT  INCLUDE "${ATDM_TREAKS_FILE}")
+  INCLUDE("${ATDM_TREAKS_FILE}")
+ENDFOREACH()
+
 #
+# C) Set the compilers
+#
+
+# All ATDM builds of Trilinos are MPI builds!
+ATDM_SET_ENABLE(TPL_ENABLE_MPI ON)
 
 ASSERT_DEFINED(ENV{MPICC})
 ASSERT_DEFINED(ENV{MPICXX})
@@ -65,7 +92,7 @@ ATDM_SET_CACHE(CMAKE_Fortran_COMPILER "$ENV{MPIF90}" CACHE FILEPATH)
 ATDM_SET_ENABLE(Trilinos_ENABLE_Fortran OFF)  # ToDo: Remove this once SPARC is using this!
 
 #
-# C) Set up basic compiler flags, link flags etc.
+# D) Set up basic compiler flags, link flags etc.
 #
 
 ATDM_SET_CACHE(BUILD_SHARED_LIBS "${ATDM_SHARED_LIBS}" CACHE BOOL)
@@ -74,7 +101,7 @@ ATDM_SET_CACHE(CMAKE_C_FLAGS "$ENV{EXTRA_C_FLAGS}" CACHE STRING)
 ATDM_SET_CACHE(CMAKE_CXX_FLAGS "$ENV{EXTRA_CXX_FLAGS}" CACHE STRING)
 
 #
-# D) Set up other misc options
+# E) Set up other misc options
 #
 
 ATDM_SET_CACHE(CMAKE_SKIP_RULE_DEPENDENCY ON CACHE BOOL)
@@ -103,17 +130,17 @@ ATDM_SET_CACHE(Tpetra_INST_CUDA "${ATDM_USE_CUDA}" CACHE BOOL)
 ATDM_SET_CACHE(Xpetra_ENABLE_Experimental ON CACHE BOOL)
 
 #
-# E) Set up disables
+# F) Set up disables
 #
 
 INCLUDE("${CMAKE_CURRENT_LIST_DIR}/ATDMDisables.cmake")
 
 #
-# F) TPL locations and enables
+# G) TPL locations and enables
 #
 # Since this is special ATDM configuration of Trilinos, it makes sense to go
 # ahead and enable all of the TPLs by default that are used by the ATDM
-# applications since.
+# applications.
 #
 
 # CUDA
