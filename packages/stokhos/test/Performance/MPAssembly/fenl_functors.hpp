@@ -356,8 +356,8 @@ public:
           const typename SetType::insert_result result = node_node_set.insert( key );
 
           if ( result.success() ) {
-            if ( row_node < row_count.dimension_0() ) { atomic_fetch_add( & row_count( row_node ) , 1 ); }
-            if ( col_node < row_count.dimension_0() && col_node != row_node ) { atomic_fetch_add( & row_count( col_node ) , 1 ); }
+            if ( row_node < row_count.dimension_0() ) { atomic_fetch_add( & row_count( row_node ) , (typename RowMapType::value_type)1 ); }
+            if ( col_node < row_count.dimension_0() && col_node != row_node ) { atomic_fetch_add( & row_count( col_node ) , (typename RowMapType::value_type)1 ); }
           }
         }
       }
@@ -373,12 +373,12 @@ public:
       const unsigned col_node = key.second ;
 
       if ( row_node < row_count.dimension_0() ) {
-        const unsigned offset = graph.row_map( row_node ) + atomic_fetch_add( & row_count( row_node ) , 1 );
+        const unsigned offset = graph.row_map( row_node ) + atomic_fetch_add( & row_count( row_node ) , (typename RowMapType::value_type)1 );
         graph.entries( offset ) = col_node ;
       }
 
       if ( col_node < row_count.dimension_0() && col_node != row_node ) {
-        const unsigned offset = graph.row_map( col_node ) + atomic_fetch_add( & row_count( col_node ) , 1 );
+        const unsigned offset = graph.row_map( col_node ) + atomic_fetch_add( & row_count( col_node ) , (typename RowMapType::value_type)1 );
         graph.entries( offset ) = row_node ;
       }
     }

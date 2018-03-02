@@ -451,6 +451,25 @@ bool compareFloatingArrays(
   }
 
 
+/** \brief Compare an object and a constant using an input comparsion
+ * operator.
+ *
+ * The test succeeds (passes) if and only if "(v1) comp (v2)".
+ * For example, TEUCHOS_TEST_COMPARE( 2, <, 3, out, success )
+ * succeeds, but TEUCHOS_TEST_COMPARE( 2, >, 3, out, success )
+ * and TEUCHOS_TEST_COMPARE( 3, <, 2, out, success ) both fail.
+ *
+ * \ingroup teuchos_testing_grp
+ */
+#define TEUCHOS_TEST_COMPARE_CONST( v1, comp, v2, out, success ) \
+  { \
+    out << #v1" = "<<(v1)<<" "#comp" "<<(v2)<<" : "; \
+    const bool l_result = (v1) comp (v2); \
+    if (!l_result) (success) = false; \
+    (out) << TEUCHOS_PASS_FAIL(l_result) << "\n"; \
+  }
+
+
 /** \brief Test that the chunk of code 'code' throws an expected exception.
  *
  * 'code' is a chunk of code to execute.  It will be executed exactly
