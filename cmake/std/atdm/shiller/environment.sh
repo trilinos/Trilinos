@@ -6,29 +6,6 @@
 #
 ################################################################################
 
-# Assert this script is sourced, not run!
-called=$_
-if [ "$called" == "$0" ] ; then
-  echo "This script '$0' is being called.  Instead, it must be sourced!"
-  exit 1
-fi
-
-# Return the absoute directory of some relative directory path.
-function get_abs_dir_path() {
-  [ -z "$1" ] && { pwd; return; }
-  (cd -P -- "$1" && pwd)
-}
-
-# Get the base dir for the sourced script to find the base of Trilinos
-_SCRIPT_DIR=`echo $BASH_SOURCE | sed "s/\(.*\)\/.*\.sh/\1/g"`
-#echo "_SCRIPT_DIR = '$_SCRIPT_DIR'"
-TRILNOS_DIR=`get_abs_dir_path $_SCRIPT_DIR/../../../..`
-echo "Deteched base TRILNOS_DIR = '$TRILNOS_DIR'"
-
-# Parse JOB_NAME to env vars
-source $_SCRIPT_DIR/../utils/set_build_options.sh
-
-# Purge all of the existing modules first
 module purge
 
 export BUILD_COUNT=32
@@ -56,7 +33,7 @@ elif [ "$ATDM_CONFIG_COMPILER" == "INTEL" ]; then
 elif [ "$ATDM_CONFIG_COMPILER" == "CUDA" ]; then
     export ATDM_CONFIG_KOKKOS_ARCH=Kepler37
     module load devpack/openmpi/2.1.1/gcc/4.9.3/cuda/8.0.61
-    export OMPI_CXX=$TRILNOS_DIR/packages/kokkos/config/nvcc_wrapper 
+    export OMPI_CXX=$ATDM_CONFIG_TRILNOS_DIR/packages/kokkos/config/nvcc_wrapper 
     if [ ! -x "$OMPI_CXX" ]; then
 	export OMPI_CXX=`which nvcc_wrapper`
         if [ ! -x "$OMPI_CXX" ]; then
