@@ -149,6 +149,8 @@ int main(int argc, char *argv[])
 #ifdef HAVE_ZOLTAN2_MPI
   MPI_Allreduce(&(partCounts[0]), &(globalPartCounts[0]), nprocs,
                 MPI_INT, MPI_SUM, MPI_COMM_WORLD);
+#else
+  for (int i = 0; i < nprocs; i++) globalPartCounts[i] = partCounts[i];
 #endif
 
   if (rank == 0) {
