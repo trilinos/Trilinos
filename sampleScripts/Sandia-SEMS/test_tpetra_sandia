@@ -218,6 +218,132 @@ echo "Repository Status: " ${GITSTATUS}
 echo ""
 echo ""
 
+# Machine specific config.
+#
+
+echo "Configure-Only: [" ${CONFIGURE_ONLY} "] Build-Only: [" ${BUILD_ONLY} "] Report-To-CDash: [" ${REPORT_TO_DASHBOARD} "]"
+
+if [ "$MACHINE" = "sems" ]; then
+  source /projects/sems/modulefiles/utils/sems-modules-init.sh
+ 
+  module purge
+  module load sems-env
+  module load kokkos-env
+
+  module load sems-gcc/5.3.0,kokkos-cuda/8.0.44,sems-openmpi/1.10.1,sems-hdf5/1.8.12/base,sems-netcdf/4.4.1/exo
+
+  if [ -z "$KOKKOS_ARCH" ]; then
+    KOKKOS_ARCH="SNB"
+  fi
+
+  if [ -z "$BUILD_LIST" ]; then
+    BUILD_LIST="OpenMP"
+  fi
+  
+  export OMP_NUM_THREADS=2
+  
+  export JENKINS_ARCH_C_FLAG="${OPT_FLAG} -mavx"
+  export JENKINS_EXTRA_CXX_FLAGS="${OPT_FLAG} ${CXX_FLAGS_EXTRA}"
+  export BLAS_LIBRARIES="-lblas"
+  export LAPACK_LIBRARIES="-llapack"
+  
+elif [ "$MACHINE" = "white" ]; then
+  source /etc/profile.d/modules.sh
+  SKIP_HWLOC=True
+
+  module purge
+  module load devpack/openmpi/1.10.4/gcc/5.4.0/cuda/8.0.44
+
+  if [ -z "$KOKKOS_ARCH" ]; then
+    KOKKOS_ARCH="Power8;Pascal60"
+  fi
+
+  if [ -z "$BUILD_LIST" ]; then
+    BUILD_LIST="Cuda;OpenMP"
+  fi
+  
+  export OMP_NUM_THREADS=2
+  
+  export JENKINS_ARCH_C_FLAG="${OPT_FLAG} -mcpu=power8"
+  export JENKINS_EXTRA_CXX_FLAGS="${OPT_FLAG}  ${CXX_FLAGS_EXTRA}"
+  export BLAS_LIBRARIES="${BLAS_ROOT}/lib/libblas.a;gfortran;gomp"
+  export LAPACK_LIBRARIES="${LAPACK_ROOT}/lib/liblapack.a;gfortran;gomp"
+  
+elif [ "$MACHINE" = "bowman" ]; then
+  module purge
+  module load devpack/openmpi/1.10.4/intel/17.0.098
+  module swap intel/compilers/17.0.098 intel/compilers/17.2.174
+
+  if [ -z "$KOKKOS_ARCH" ]; then
+    KOKKOS_ARCH="KNL"
+  fi
+
+  if [ -z "$BUILD_LIST" ]; then
+    BUILD_LIST="OpenMP"
+    export JENKINS_DO_OPENMP=ON
+  fi
+  
+  export OMP_NUM_THREADS=0
+  
+  export JENKINS_ARCH_C_FLAG="${OPT_FLAG} -xMIC-AVX512 -mkl"
+  export JENKINS_EXTRA_CXX_FLAGS="${OPT_FLAG} -mkl ${CXX_FLAGS_EXTRA}"
+  export BLAS_LIBRARIES="-mkl;${MKLROOT}/lib/mic/libmkl_intel_lp64.a;${MKLROOT}/lib/mic/libmkl_intel_thread.a;${MKLROOT}/lib/mic/libmkl_core.a"
+  export LAPACK_LIBRARIES=${BLAS_LIBRARIES}
+  
+elif [ "$MACHINE" = "sullivan" ]; then
+  echo "Sullivan"
+elif [ "$MACHINE" = "shepard" ]; then
+  echo "Shepard"
+  module load devpack/openmpi/2.1.1/intel/17.4.196/cuda/none
+
+  if [ -z "$KOKKOS_ARCH" ]; then
+    KOKKOS_ARCH="HSW"
+  fi
+
+  if [ -z "$BUILD_LIST" ]; then
+    BUILD_LIST="OpenMP"
+  fi
+ 
+  export OMP_NUM_THREADS=2
+
+  export JENKINS_ARCH=${KOKKOS_ARCH}
+  export JENKINS_ARCH_C_FLAG="${OPT_FLAG} -xCORE-AVX2 -mkl"
+  export JENKINS_EXTRA_CXX_FLAG="${OPT_FLAG} -mkl ${CXX_FLAGS_EXTRA}"
+  export BLAS_LIBRARIES="-mkl;${MKLROOT}/lib/intel64/libmkl_intel_lp64.a;${MKLROOT}/lib/intel64/libmkl_intel_thread.a;${MKLROOT}/lib/intel64/libmkl_core.a"
+  export LAPACK_LIBRARIES=${BLAS_LIBRARIES}
+
+
+elif [ "$MACHINE" = "apollo" ]; then
+  source /projects/sems/modulefiles/utils/sems-modules-init.sh
+ 
+  module purge
+  module load sems-env
+  module load kokkos-env
+
+  module load "sems-gcc/5.3.0 kokkos-cuda/8.0.44 sems-openmpi/1.10.1 sems-cmake/3.5.2 sems-hdf5/1.8.12/base sems-netcdf/4.4.1/exo"
+
+  if [ -z "$KOKKOS_ARCH" ]; then
+    KOKKOS_ARCH="SNB;Pascal60"
+  fi
+
+  if [ -z "$BUILD_LIST" ]; then
+    BUILD_LIST="Cuda;OpenMP"
+  fi
+  
+  export OMP_NUM_THREADS=2
+  
+  export JENKINS_ARCH_C_FLAG="${OPT_FLAG} -mavx"
+  export JENKINS_EXTRA_CXX_FLAGS="${OPT_FLAG} ${CXX_FLAGS_EXTRA}"
+  export BLAS_LIBRARIES="-lblas"
+  export LAPACK_LIBRARIES="-llapack"
+  
+else
+  echo "Unhandled machine $MACHINE" >&2
+  exit 1
+fi
+  
+export JENKINS_ARCH=${KOKKOS_ARCH}
+
 export BACKEND_NAME=""
 # Set Backends
 if [[ "$BUILD_LIST" =~ OpenMP ]]; then
@@ -267,144 +393,6 @@ if [ "${CONFIGURE_ONLY}" = "True" ]; then
 fi
 if [ "${BUILD_ONLY}" = "True" ]; then
   export CTEST_DO_TEST=FALSE
-fi
-
-# Machine specific config.
-#
-
-echo "Configure-Only: [" ${CONFIGURE_ONLY} "] Build-Only: [" ${BUILD_ONLY} "] Report-To-CDash: [" ${REPORT_TO_DASHBOARD} "]"
-
-if [ "$MACHINE" = "sems" ]; then
-  source /projects/sems/modulefiles/utils/sems-modules-init.sh
- 
-  module purge
-  module load sems-env
-  module load kokkos-env
-
-  module load sems-gcc/5.3.0,kokkos-cuda/8.0.44,sems-openmpi/1.10.1,sems-hdf5/1.8.12/base,sems-netcdf/4.4.1/exo
-
-  if [ -z "$KOKKOS_ARCH" ]; then
-    KOKKOS_ARCH="SNB"
-  fi
-
-  if [ -z "$BUILD_LIST" ]; then
-    BUILD_LIST="OpenMP"
-    export JENKINS_DO_OPENMP=ON
-  fi
-  
-  export OMP_NUM_THREADS=2
-  
-  export JENKINS_ARCH=${KOKKOS_ARCH}
-  export JENKINS_ARCH_C_FLAG="${OPT_FLAG} -mavx"
-  export JENKINS_EXTRA_CXX_FLAGS="${OPT_FLAG} ${CXX_FLAGS_EXTRA}"
-  export BLAS_LIBRARIES="-lblas"
-  export LAPACK_LIBRARIES="-llapack"
-  
-elif [ "$MACHINE" = "white" ]; then
-  source /etc/profile.d/modules.sh
-  SKIP_HWLOC=True
-
-  module purge
-  module load devpack/openmpi/1.10.4/gcc/5.4.0/cuda/8.0.44
-
-  if [ -z "$KOKKOS_ARCH" ]; then
-    KOKKOS_ARCH="Power8;Pascal60"
-  fi
-
-  if [ -z "$BUILD_LIST" ]; then
-    BUILD_LIST="Cuda;OpenMP"
-    export JENKINS_DO_CUDA=ON
-    export JENKINS_DO_OPENMP=ON
-    export OMPI_CXX=${TRILINOS_PATH}/packages/kokkos/bin/nvcc_wrapper
-  fi
-  
-  export OMP_NUM_THREADS=2
-  
-  export JENKINS_ARCH=${KOKKOS_ARCH}
-  export JENKINS_ARCH_C_FLAG="${OPT_FLAG} -mcpu=power8"
-  export JENKINS_EXTRA_CXX_FLAGS="${OPT_FLAG}  ${CXX_FLAGS_EXTRA}"
-  export BLAS_LIBRARIES="${BLAS_ROOT}/lib/libblas.a;gfortran;gomp"
-  export LAPACK_LIBRARIES="${LAPACK_ROOT}/lib/liblapack.a;gfortran;gomp"
-  
-elif [ "$MACHINE" = "bowman" ]; then
-  module purge
-  module load devpack/openmpi/1.10.4/intel/17.0.098
-  module swap intel/compilers/17.0.098 intel/compilers/17.2.174
-
-  if [ -z "$KOKKOS_ARCH" ]; then
-    KOKKOS_ARCH="KNL"
-  fi
-
-  if [ -z "$BUILD_LIST" ]; then
-    BUILD_LIST="OpenMP"
-    export JENKINS_DO_OPENMP=ON
-  fi
-  
-  export OMP_NUM_THREADS=0
-  
-  export JENKINS_ARCH=${KOKKOS_ARCH}
-  export JENKINS_ARCH_C_FLAG="${OPT_FLAG} -xMIC-AVX512 -mkl"
-  export JENKINS_EXTRA_CXX_FLAGS="${OPT_FLAG} -mkl ${CXX_FLAGS_EXTRA}"
-  export BLAS_LIBRARIES="-mkl;${MKLROOT}/lib/mic/libmkl_intel_lp64.a;${MKLROOT}/lib/mic/libmkl_intel_thread.a;${MKLROOT}/lib/mic/libmkl_core.a"
-  export LAPACK_LIBRARIES=${BLAS_LIBRARIES}
-  
-elif [ "$MACHINE" = "sullivan" ]; then
-  echo "Sullivan"
-elif [ "$MACHINE" = "shepard" ]; then
-  echo "Shepard"
-  module load devpack/openmpi/2.1.1/intel/17.4.196/cuda/none
-
-  if [ -z "$KOKKOS_ARCH" ]; then
-    KOKKOS_ARCH="HSW"
-    export
-  fi
-
-  if [ -z "$BUILD_LIST" ]; then
-    BUILD_LIST="OpenMP"
-    export JENKINS_DO_OPENMP=ON
-  fi
- 
-  export OMP_NUM_THREADS=2
-
-  export JENKINS_ARCH=${KOKKOS_ARCH}
-  export JENKINS_ARCH_C_FLAG="${OPT_FLAG} -xCORE-AVX2 -mkl"
-  export JENKINS_EXTRA_CXX_FLAG="${OPT_FLAG} -mkl ${CXX_FLAGS_EXTRA}"
-  export BLAS_LIBRARIES="-mkl;${MKLROOT}/lib/intel64/libmkl_intel_lp64.a;${MKLROOT}/lib/intel64/libmkl_intel_thread.a;${MKLROOT}/lib/intel64/libmkl_core.a"
-  export LAPACK_LIBRARIES=${BLAS_LIBRARIES}
-
-
-elif [ "$MACHINE" = "apollo" ]; then
-  source /projects/sems/modulefiles/utils/sems-modules-init.sh
- 
-  module purge
-  module load sems-env
-  module load kokkos-env
-
-  module load "sems-gcc/5.3.0 kokkos-cuda/8.0.44 sems-openmpi/1.10.1 sems-cmake/3.5.2 sems-hdf5/1.8.12/base sems-netcdf/4.4.1/exo"
-
-  if [ -z "$KOKKOS_ARCH" ]; then
-    KOKKOS_ARCH="SNB;Pascal60"
-    export 
-  fi
-
-  if [ -z "$BUILD_LIST" ]; then
-    BUILD_LIST="Cuda;OpenMP"
-    export JENKINS_DO_OPENMP=ON
-    export JENKINS_DO_CUDA=ON
-    export OMPI_CXX=${TRILINOS_PATH}/packages/kokkos/bin/nvcc_wrapper
-  fi
-  
-  export OMP_NUM_THREADS=2
-  
-  export JENKINS_ARCH=${KOKKOS_ARCH}
-  export JENKINS_ARCH_C_FLAG="${OPT_FLAG} -mavx"
-  export JENKINS_EXTRA_CXX_FLAGS="${OPT_FLAG} ${CXX_FLAGS_EXTRA}"
-  export BLAS_LIBRARIES="-lblas"
-  export LAPACK_LIBRARIES="-llapack"
-  
-else
-  echo "Unhandled machine $MACHINE" >&2
-  exit 1
 fi
 
 export OMP_PROC_BIND=spread
