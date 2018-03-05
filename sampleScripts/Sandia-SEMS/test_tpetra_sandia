@@ -406,15 +406,57 @@ source ${TRILINOS_PATH}/sampleScripts/Sandia-SEMS/configure-testbeds-tpetra-jenk
 
 if [ "${REPORT_TO_DASHBOARD}" = "True" ]; then
   echo "Calling: make dashboard"
-  make dashboard
+  make dashboard || true
+  FAILED_PACKAGES=`cat failedPackages.txt | wc -l` || true
+  echo ""
+  echo ""
+  echo "*********************************"
+  if [ "${FAILED_PACKAGES}" -gt "0" ]; then
+    echo "Result: FAILED"
+    echo "*********************************"
+    exit 1
+  else
+    echo "Result: PASSED"
+    echo "*********************************"
+  fi
 else
+  BUILD_WARNINGS=0
+  BUILD_ERRORS=0
+  TEST_FAILED=0
+  TEST_TIMEOUT=0
+  TEST_NOTRUN=0
   if [ "${CONFIGURE_ONLY}" = "False" ]; then
     echo "Calling: make -j 32 &> build.out"
-    make -j 32 &> build.out
+    make -j 32 &> build.out || true
+    BUILD_WARNINGS=`grep "warning:" build.out | wc -l` || true
+    BUILD_ERRORS=`grep "error:" build.out | wc -l` || true
     if [ "${BUILD_ONLY}" = "False" ]; then
       echo "Calling: ctest &> test.out"
-      ctest &> test.out
+      ctest &> test.out || true 
+      TEST_FAILED=`grep "(Failed)" test.out | wc -l` || true
+      TEST_TIMEOUT=`grep "(Timeout)" test.out | wc -l` || true
+      TEST_NOTRUN=`grep "(Not Run)" test.out | wc -l` || true
     fi
+  fi
+  TOTAL_PROBLEMS=$((${BUILD_ERRORS} + ${TEST_FAILED} + ${TEST_TIMEOUT} + ${TEST_NOTRUN}))
+  echo ""
+  echo ""
+  echo "*********************************"
+  echo "Build:"
+  echo "   Warnings: " ${BUILD_WARNINGS}
+  echo "   Errors:   " ${BUILD_ERRORS}
+  echo "Test:"
+  echo "   Failed:   " ${TEST_FAILED}
+  echo "   Timeout:  " ${TEST_TIMEOUT}
+  echo "   Not Run:  " ${TEST_NOTRUN} 
+  echo "*********************************"
+  if [ "${TOTAL_PROBLEMS}" -gt "0" ]; then
+    echo "Result: FAILED"
+    echo "*********************************"
+    exit 1
+  else
+    echo "Result: PASSED"
+    echo "*********************************"
   fi
 fi
 cd ..
