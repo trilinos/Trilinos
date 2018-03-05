@@ -712,13 +712,14 @@ setup_row_pointers_for_remotes(
   parallel_reduce ("Setup row pointers for remotes",
     range_policy (0, N),
     KOKKOS_LAMBDA (const size_t i, int& k_error) {
+      typedef typename std::remove_reference< decltype( tgt_rowptr(0) ) >::type atomic_incr_type;
       const size_t num_bytes = num_packets_per_lid(i);
       const size_t offset = offsets(i);
       const size_t num_ent = unpack_crs_matrix_row_count<LO, DT, BDT> (imports, offset, num_bytes);
       if (num_ent == InvalidNum) {
         k_error += 1;
       }
-      Kokkos::atomic_fetch_add (&tgt_rowptr (import_lids(i)), num_ent);
+      Kokkos::atomic_fetch_add (&tgt_rowptr (import_lids(i)), atomic_incr_type(num_ent));
     }, errors);
   return errors;
 }
@@ -769,6 +770,7 @@ copy_data_from_same_ids(
 
   parallel_for(range_policy(0, num_same_ids),
     KOKKOS_LAMBDA(const size_t i) {
+      typedef typename std::remove_reference< decltype( new_start_row(0) ) >::type atomic_incr_type;
 
       const LO src_lid    = static_cast<LO>(i);
       size_t src_row = local_matrix.graph.row_map(src_lid);
@@ -778,7 +780,7 @@ copy_data_from_same_ids(
 
       const size_t nsr = local_matrix.graph.row_map(src_lid+1)
                        - local_matrix.graph.row_map(src_lid);
-      Kokkos::atomic_fetch_add(&new_start_row(tgt_lid), nsr);
+      Kokkos::atomic_fetch_add(&new_start_row(tgt_lid), atomic_incr_type(nsr));
 
       for (size_t j=local_matrix.graph.row_map(src_lid);
                   j<local_matrix.graph.row_map(src_lid+1); ++j) {
@@ -817,6 +819,7 @@ copy_data_from_permute_ids(
 
   parallel_for(range_policy(0, num_permute_to_lids),
     KOKKOS_LAMBDA(const size_t i) {
+      typedef typename std::remove_reference< decltype( new_start_row(0) ) >::type atomic_incr_type;
 
       const LO src_lid = permute_from_lids(i);
       const size_t src_row = local_matrix.graph.row_map(src_lid);
@@ -826,7 +829,7 @@ copy_data_from_permute_ids(
 
       size_t nsr = local_matrix.graph.row_map(src_lid+1)
                  - local_matrix.graph.row_map(src_lid);
-      Kokkos::atomic_fetch_add(&new_start_row(tgt_lid), nsr);
+      Kokkos::atomic_fetch_add(&new_start_row(tgt_lid), atomic_incr_type(nsr));
 
       for (size_t j=local_matrix.graph.row_map(src_lid);
                   j<local_matrix.graph.row_map(src_lid+1); ++j) {
@@ -884,6 +887,7 @@ do_unpack_and_combine_into_crs_arrays(
   parallel_reduce ("Unpack and combine into CRS",
     range_policy (0, num_import_lids),
     KOKKOS_LAMBDA (const size_t i, int& k_error) {
+      typedef typename std::remove_reference< decltype( new_start_row(0) ) >::type atomic_incr_type;
       const size_t num_bytes = num_packets_per_lid(i);
       const size_t offset = offsets(i);
       if (num_bytes == 0) {
@@ -896,7 +900,7 @@ do_unpack_and_combine_into_crs_arrays(
         return;
       }
       const LO lcl_row = import_lids(i);
-      const size_t start_row = atomic_fetch_add(&new_start_row(lcl_row), num_ent);
+      const size_t start_row = atomic_fetch_add(&new_start_row(lcl_row), atomic_incr_type(num_ent));
       const size_t end_row = start_row + num_ent;
 
       gids_out_type gids_out = subview(tgt_colind, slice(start_row, end_row));
