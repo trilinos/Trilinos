@@ -277,19 +277,29 @@ struct ScalarType {
 };
 
 #if defined(__KOKKOSBATCHED_PROMOTION__)
-template <typename ExeSpace>
-struct DefaultVectorizationMethod<ExeSpace, double> {
+#if defined(KOKKOS_ENABLE_SERIAL)
+template <>
+struct DefaultVectorizationMethod<Kokkos::Serial, double> {
   typedef SIMD<double> type;
 };
+#endif
+#if defined(KOKKOS_ENABLE_OPENMP)
+template <>
+struct DefaultVectorizationMethod<Kokkos::OpenMP, double> {
+  typedef SIMD<double> type;
+};
+#endif
+#if defined(KOKKOS_ENABLE_CUDA)
+template <>
+struct DefaultVectorizationMethod<Kokkos::Cuda, double> {
+  typedef BatchedNonVector<Kokkos::Cuda, double> type;
+};
+#endif
 template <>
 struct VectorizationTraits<SIMD<double> > {
   typedef double value_type;
   typedef Kokkos::DefaultHostExecutionSpace exec_space; 
-#if defined(KOKKOS_ENABLE_CUDA)
-  enum : int { vector_length = 1 };
-#else
   enum : int { vector_length = DefaultVectorLength<double,typename exec_space::memory_space>::value };
-#endif
   typedef Vector<SIMD<double>, vector_length> vector_type;
 };
 template <>
