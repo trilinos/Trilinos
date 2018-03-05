@@ -18,6 +18,8 @@ ATDM_HOSTNAME=
 
 if [[ $THIS_HOSTNAME == "shiller"* ]] || [[ $THIS_HOSTNAME == "hansen"* ]] ; then
   ATDM_HOSTNAME=shiller
+elif [[ $THIS_HOSTNAME == "ride"* ]] || [[ $THIS_HOSTNAME == "white"* ]] ; then
+  ATDM_HOSTNAME=ride
 fi
 
 # ToDo: Add more know hosts as you add them!
