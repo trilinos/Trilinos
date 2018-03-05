@@ -2267,12 +2267,15 @@ void mult_A_B_newmatrix(
     // mfh 27 Sep 2016: B has no "remotes," so B and C have the same column Map.
     Cimport = Bimport;
     Ccolmap = Bview.colMap;
+    const LO colMapSize = static_cast<LO>(Bview.colMap->getNodeNumElements());
     // Bcol2Ccol is trivial
-    Kokkos::parallel_for("Tpetra::mult_A_B_newmatrix::Bcol2Ccol_fill",range_type(0,Bview.colMap->getNodeNumElements()),KOKKOS_LAMBDA(const size_t i) {
-        Bcol2Ccol(i) = Teuchos::as<LO>(i);
+    Kokkos::parallel_for("Tpetra::mult_A_B_newmatrix::Bcol2Ccol_fill",
+      Kokkos::RangePolicy<execution_space, LO>(0, colMapSize),
+      KOKKOS_LAMBDA(const LO i) {
+        Bcol2Ccol(i) = i;
       });
-
-  } else {
+  }
+  else {
     // mfh 27 Sep 2016: B has "remotes," so we need to build the
     // column Map of C, as well as C's Import object (from its domain
     // Map to its column Map).  C's column Map is the union of the
@@ -2281,18 +2284,18 @@ void mult_A_B_newmatrix(
     // operation on Import objects and Maps.
 
     // Choose the right variant of setUnion
-    if (!Bimport.is_null() && !Iimport.is_null())
+    if (!Bimport.is_null() && !Iimport.is_null()) {
       Cimport = Bimport->setUnion(*Iimport);
-
-    else if (!Bimport.is_null() && Iimport.is_null())
+    }
+    else if (!Bimport.is_null() && Iimport.is_null()) {
       Cimport = Bimport->setUnion();
-
-    else if (Bimport.is_null() && !Iimport.is_null())
+    }
+    else if (Bimport.is_null() && !Iimport.is_null()) {
       Cimport = Iimport->setUnion();
-
-    else
+    }
+    else {
       throw std::runtime_error("TpetraExt::MMM status of matrix importers is nonsensical");
-
+    }
     Ccolmap = Cimport->getTargetMap();
 
     // FIXME (mfh 27 Sep 2016) This error check requires an all-reduce
