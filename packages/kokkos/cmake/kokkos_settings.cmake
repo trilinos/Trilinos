@@ -14,6 +14,7 @@
 #-------------------------------------------------------------------------------
 
 # Ensure that KOKKOS_ARCH is in the ARCH_LIST
+string(REPLACE "," ";" KOKKOS_ARCH "${KOKKOS_ARCH}")  # Interpret as as CMake array
 foreach(arch ${KOKKOS_ARCH})
   list(FIND KOKKOS_ARCH_LIST ${arch} indx)
   if (indx EQUAL -1)
@@ -22,9 +23,8 @@ foreach(arch ${KOKKOS_ARCH})
   endif ()
 endforeach()
 
-# KOKKOS_SETTINGS uses KOKKOS_ARCH
+# KOKKOS_SETTINGS uses KOKKOS_ARCH (with commas, not semi-colons)
 string(REPLACE ";" "," KOKKOS_ARCH "${KOKKOS_ARCH}")
-set(KOKKOS_ARCH ${KOKKOS_ARCH})
 
 # From Makefile.kokkos: Options: yes,no
 if(${KOKKOS_ENABLE_DEBUG})
