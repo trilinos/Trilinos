@@ -159,7 +159,8 @@ namespace MueLu {
     Kokkos::parallel_reduce("MueLu:Aggregates:GetGraph:compute_cols", range_type(0, procWinner.size()),
       KOKKOS_LAMBDA(const LO i, size_t& nnz) {
         if (procWinner(i, 0) == myPID) {
-          auto idx = Kokkos::atomic_fetch_add( &offsets(vertex2AggId(i,0)), 1);
+          typedef typename std::remove_reference< decltype( offsets(0) ) >::type atomic_incr_type;
+          auto idx = Kokkos::atomic_fetch_add( &offsets(vertex2AggId(i,0)), atomic_incr_type(1));
           cols(idx) = i;
           nnz++;
         }
