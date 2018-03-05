@@ -285,7 +285,11 @@ template <>
 struct VectorizationTraits<SIMD<double> > {
   typedef double value_type;
   typedef Kokkos::DefaultHostExecutionSpace exec_space; 
+#if defined(KOKKOS_ENABLE_CUDA)
+  enum : int { vector_length = 1 };
+#else
   enum : int { vector_length = DefaultVectorLength<double,typename exec_space::memory_space>::value };
+#endif
   typedef Vector<SIMD<double>, vector_length> vector_type;
 };
 template <>
