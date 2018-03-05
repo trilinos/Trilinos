@@ -15,7 +15,7 @@ echo "Using hansen/shiller compiler stack $ATDM_CONFIG_COMPILER to build $ATDM_C
 
 module load ninja/1.7.2
 
-export ATDM_CONFIG_KOKKOS_ARCH=BDW
+export ATDM_CONFIG_KOKKOS_ARCH=HSW
 if [ "$ATDM_CONFIG_COMPILER" == "GNU" ]; then
     module load devpack/openmpi/2.1.1/gcc/4.9.3/cuda/8.0.61
     export OMPI_CXX=`which g++`

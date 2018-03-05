@@ -176,7 +176,7 @@ BigUInt<n>& BigUInt<n>::operator>>=(std::uint32_t b) {
   auto ndigits = b / 32;
   auto nbits = b - (ndigits * 32);
   for (int i = 0; i < n; ++i) {
-    std::uint32_t xi;
+    std::uint32_t xi = 0;
     if (i + ndigits < n) xi = x[i + ndigits] >> nbits;
     if (nbits && i + ndigits + 1 < n) xi |= x[i + ndigits + 1] << (32 - nbits);
     x[i] = xi;

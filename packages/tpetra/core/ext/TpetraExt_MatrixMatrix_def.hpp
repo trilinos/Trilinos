@@ -2268,7 +2268,7 @@ void mult_A_B_newmatrix(
     Cimport = Bimport;
     Ccolmap = Bview.colMap;
     // Bcol2Ccol is trivial
-    Kokkos::parallel_for(range_type(0,Bview.colMap->getNodeNumElements()),KOKKOS_LAMBDA(const size_t i) {
+    Kokkos::parallel_for("Tpetra::mult_A_B_newmatrix::Bcol2Ccol_fill",range_type(0,Bview.colMap->getNodeNumElements()),KOKKOS_LAMBDA(const size_t i) {
         Bcol2Ccol(i) = Teuchos::as<LO>(i);
       });
 
@@ -2308,10 +2308,10 @@ void mult_A_B_newmatrix(
     // local index - to - local index look-up tables.
     Tpetra::MatrixMatrix::Kokkos_resize_1DView(Icol2Ccol,Bview.importMatrix->getColMap()->getNodeNumElements());
     local_map_type Ccolmap_local = Ccolmap->getLocalMap();
-    Kokkos::parallel_for(range_type(0,Bview.origMatrix->getColMap()->getNodeNumElements()),KOKKOS_LAMBDA(const LO i) {
+    Kokkos::parallel_for("Tpetra::mult_A_B_newmatrix::Bcol2Ccol_getGlobalElement",range_type(0,Bview.origMatrix->getColMap()->getNodeNumElements()),KOKKOS_LAMBDA(const LO i) {
         Bcol2Ccol(i) = Ccolmap_local.getLocalElement(Bcolmap_local.getGlobalElement(i));
       });
-    Kokkos::parallel_for(range_type(0,Bview.importMatrix->getColMap()->getNodeNumElements()),KOKKOS_LAMBDA(const LO i) {
+    Kokkos::parallel_for("Tpetra::mult_A_B_newmatrix::Icol2Ccol_getGlobalElement",range_type(0,Bview.importMatrix->getColMap()->getNodeNumElements()),KOKKOS_LAMBDA(const LO i) {
         Icol2Ccol(i) = Ccolmap_local.getLocalElement(Icolmap_local.getGlobalElement(i));
       });
 
@@ -2341,7 +2341,8 @@ void mult_A_B_newmatrix(
   // Run through all the hash table lookups once and for all
   lo_view_t targetMapToOrigRow(Kokkos::ViewAllocateWithoutInitializing("targetMapToOrigRow"),Aview.colMap->getNodeNumElements());
   lo_view_t targetMapToImportRow(Kokkos::ViewAllocateWithoutInitializing("targetMapToImportRow"),Aview.colMap->getNodeNumElements());
-  Kokkos::parallel_for(range_type(Aview.colMap->getMinLocalIndex(), Aview.colMap->getMaxLocalIndex()+1),KOKKOS_LAMBDA(const LO i) {
+  Kokkos::fence();
+  Kokkos::parallel_for("Tpetra::mult_A_B_newmatrix::construct_tables",range_type(Aview.colMap->getMinLocalIndex(), Aview.colMap->getMaxLocalIndex()+1),KOKKOS_LAMBDA(const LO i) {
       GO aidx = Acolmap_local.getGlobalElement(i);
       LO B_LID = Browmap_local.getLocalElement(aidx);
       if (B_LID != LO_INVALID) {
@@ -3698,6 +3699,8 @@ merge_matrices(CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Aview
     RCP<const KCRS> Ik_;
     if(!Bview.importMatrix.is_null()) Ik_ = Teuchos::rcpFromRef<const KCRS>(Bview.importMatrix->getLocalMatrix());
     const KCRS * Ik     = Bview.importMatrix.is_null() ? 0 : &*Ik_;
+    KCRS Iks;
+    if(Ik!=0) Iks = *Ik;
     size_t merge_numrows =  Ak.numCols();
     lno_view_t Mrowptr("Mrowptr", merge_numrows + 1);
     
@@ -3706,14 +3709,15 @@ merge_matrices(CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Aview
     // Use a Kokkos::parallel_scan to build the rowptr
     typedef typename Node::execution_space execution_space;
     typedef Kokkos::RangePolicy<execution_space, size_t> range_type;
-    Kokkos::parallel_scan ("Tpetra_MatrixMatrix_merge_matrices_buildRowptr", range_type (0, merge_numrows), KOKKOS_LAMBDA(const size_t i, size_t& update, const bool final) {
+    Kokkos::parallel_scan ("Tpetra_MatrixMatrix_merge_matrices_buildRowptr", range_type (0, merge_numrows), 
+      KOKKOS_LAMBDA(const size_t i, size_t& update, const bool final) {
         if(final) Mrowptr(i) = update;
         // Get the row count
         size_t ct=0;
         if(Acol2Brow(i)!=LO_INVALID)
           ct = Bk.graph.row_map(Acol2Brow(i)+1) - Bk.graph.row_map(Acol2Brow(i));
         else
-          ct = Ik->graph.row_map(Acol2Irow(i)+1) - Ik->graph.row_map(Acol2Irow(i));
+          ct = Iks.graph.row_map(Acol2Irow(i)+1) - Iks.graph.row_map(Acol2Irow(i));
         update+=ct;
         
         if(final && i+1==merge_numrows)
@@ -3738,10 +3742,10 @@ merge_matrices(CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Aview
         }
         else {
           size_t row   = Acol2Irow(i);
-          size_t start = Ik->graph.row_map(row);
+          size_t start = Iks.graph.row_map(row);
           for(size_t j= Mrowptr(i); j<Mrowptr(i+1); j++) {
-            Mvalues(j) = Ik->values(j-Mrowptr(i)+start);
-            Mcolind(j) = Icol2Ccol(Ik->graph.entries(j-Mrowptr(i)+start));
+            Mvalues(j) = Iks.values(j-Mrowptr(i)+start);
+            Mcolind(j) = Icol2Ccol(Iks.graph.entries(j-Mrowptr(i)+start));
           }
         }
       });
