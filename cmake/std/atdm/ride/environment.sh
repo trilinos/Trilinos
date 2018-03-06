@@ -9,7 +9,12 @@
 module purge
 
 export OMPI_CXX=
-export BUILD_COUNT=128
+
+export ATDM_CONFIG_SYSTEM_CDASH_SITE=white/ride
+export ATDM_CONFIG_USE_MAKEFILES=ON
+export ATDM_CONFIG_BUILD_COUNT=128
+export ATDM_CONFIG_CTEST_PARALLEL_LEVEL=32
+export OMP_NUM_THREADS=2
 
 echo "Using white/ride compiler stack $ATDM_CONFIG_COMPILER to build $ATDM_CONFIG_BUILD_TYPE code with Kokkos node type $ATDM_CONFIG_NODE_TYPE"
 
@@ -58,9 +63,6 @@ export ATDM_CONFIG_NETCDF_LIBS="-L${BOOST_ROOT}/lib;-L${NETCDF_ROOT}/lib;-L${NET
 
 module swap yamlcpp/0.3.0 yaml-cpp/20170104 
 if [ $? ]; then module load  yaml-cpp/20170104; fi
-
-# If you are running OpenMP
-export OMP_NUM_THREADS=2
 
 # Set MPI wrappers
 export MPICC=`which mpicc`
