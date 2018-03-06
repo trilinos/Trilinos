@@ -253,25 +253,35 @@ MACRO(TRIBITS_PROJECT_IMPL)
   # K) Write dummy makefiles for Ninja
   #
 
-  IF (CMAKE_GENERATOR STREQUAL "Ninja" AND ${PROJECT_NAME}_WRITE_NINJA_MAKEFILES)
+  IF (CMAKE_GENERATOR STREQUAL "Ninja")
 
-    MESSAGE("")
-    MESSAGE("Generating dummy makefiles in each directory to call Ninja ...")
-    MESSAGE("")
+    IF (${PROJECT_NAME}_WRITE_NINJA_MAKEFILES)
 
-    IF (${PROJECT_NAME}_ENABLE_CONFIGURE_TIMING)
-      TIMER_GET_RAW_SECONDS(NINJA_MAKEFILES_TIME_START_SECONDS)
+      MESSAGE("")
+      MESSAGE("Generating dummy makefiles in each directory to call Ninja ...")
+      MESSAGE("")
+  
+      IF (${PROJECT_NAME}_ENABLE_CONFIGURE_TIMING)
+        TIMER_GET_RAW_SECONDS(NINJA_MAKEFILES_TIME_START_SECONDS)
+      ENDIF()
+  
+      INCLUDE(GenerateNinjaMakefiles)
+      GENERATE_NINJA_MAKEFILES(${CMAKE_SOURCE_DIR})
+  
+      IF (${PROJECT_NAME}_ENABLE_CONFIGURE_TIMING)
+        TIMER_GET_RAW_SECONDS(NINJA_MAKEFILES_TIME_END_SECONDS)
+        TIMER_PRINT_REL_TIME(${NINJA_MAKEFILES_TIME_START_SECONDS}
+         ${NINJA_MAKEFILES_TIME_END_SECONDS}
+           "Total time generate Ninja makefiles ${PROJECT_NAME}")
+      ENDIF()
+
+    ELSE()
+
+      MESSAGE("\nNOTE: *NOT* generating dummy Ninja makefiles (see above note"
+        " and check CMake version)")
+
     ENDIF()
 
-    INCLUDE(GenerateNinjaMakefiles)
-    GENERATE_NINJA_MAKEFILES(${CMAKE_SOURCE_DIR})
-
-    IF (${PROJECT_NAME}_ENABLE_CONFIGURE_TIMING)
-      TIMER_GET_RAW_SECONDS(NINJA_MAKEFILES_TIME_END_SECONDS)
-      TIMER_PRINT_REL_TIME(${NINJA_MAKEFILES_TIME_START_SECONDS}
-       ${NINJA_MAKEFILES_TIME_END_SECONDS}
-         "Total time generate Ninja makefiles ${PROJECT_NAME}")
-    ENDIF()
 
   ENDIF()
 
