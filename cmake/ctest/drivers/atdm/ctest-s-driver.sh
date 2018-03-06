@@ -26,6 +26,8 @@ source $WORKSPACE/Trilinos/cmake/std/atdm/load-env.sh $JOB_NAME
 echo
 module list
 
+export Trilinos_REPOSITORY_LOCATION=https://github.com/trilinos/Trilinos.git
+
 set -x
 
 ctest -V -S \

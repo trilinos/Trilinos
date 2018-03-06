@@ -366,9 +366,11 @@ int main(int argc,char * argv[])
 
       // add discrete gradient
       Teuchos::RCP<Teuchos::TimeMonitor> tMdiscGrad = Teuchos::rcp(new Teuchos::TimeMonitor(*Teuchos::TimeMonitor::getNewTimer(std::string("Mini-EM: add discrete gradient"))));
-      addDiscreteGradientToRequestHandler(auxLinObjFactory,req_handler);
+      if (use_refmaxwell)
+        addDiscreteGradientToRequestHandler(auxLinObjFactory,req_handler);
       tMdiscGrad = Teuchos::null;
-      
+
+
       std::string defaultXMLfile;
       if (!use_refmaxwell)
         defaultXMLfile = "solverDefaultsAugmentation.xml";

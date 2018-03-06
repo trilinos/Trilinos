@@ -36,9 +36,6 @@ elif [ "$ATDM_CONFIG_COMPILER" == "CUDA" ]; then
     export OMPI_CXX=$ATDM_CONFIG_TRILNOS_DIR/packages/kokkos/config/nvcc_wrapper 
     if [ ! -x "$OMPI_CXX" ]; then
 	export OMPI_CXX=`which nvcc_wrapper`
-        if [ ! -x "$OMPI_CXX" ]; then
-            export OMPI_CXX=$INSTALL_DIR/bin/nvcc_wrapper 
-        fi
     fi
     if [ ! -x "$OMPI_CXX" ]; then
         echo "No nvcc_wrapper found"
