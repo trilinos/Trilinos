@@ -56,7 +56,7 @@
 
 #include <Kokkos_Core.hpp>
 // This may not be needed?
-#include <typeinfo>
+//#include <typeinfo>
 
 using std::make_pair;
 using std::pair;
@@ -71,21 +71,21 @@ namespace Zoltan2 {
  *  The user supplies the identifiers and weights by way of pointers
  *    to arrays.  
  *
-    The template parameter (\c User) is a C++ class type which provides the
-    actual data types with which the Zoltan2 library will be compiled, through
-    a Traits mechanism.  \c User may be the
-    actual class used by application to represent coordinates, or it may be
-    the empty helper class \c BasicUserTypes with which a Zoltan2 user
-    can easily supply the data types for the library.
-
-    The \c scalar_t type, representing use data such as matrix values, is
-    used by Zoltan2 for weights, coordinates, part sizes and
-    quality metrics.
-    Some User types (like Tpetra::CrsMatrix) have an inherent scalar type,
-    and some
-    (like Tpetra::CrsGraph) do not.  For such objects, the scalar type is
-    set by Zoltan2 to \c float.  If you wish to change it to double, set
-    the second template parameter to \c double.
+ *  The template parameter (\c User) is a C++ class type which provides the
+ *  actual data types with which the Zoltan2 library will be compiled, through
+ *  a Traits mechanism.  \c User may be the
+ *  actual class used by application to represent coordinates, or it may be
+ *  the empty helper class \c BasicUserTypes with which a Zoltan2 user
+ *  can easily supply the data types for the library.
+ *
+ *  The \c scalar_t type, representing use data such as matrix values, is
+ *  used by Zoltan2 for weights, coordinates, part sizes and
+ *  quality metrics.
+ *  Some User types (like Tpetra::CrsMatrix) have an inherent scalar type,
+ *  and some
+ *  (like Tpetra::CrsGraph) do not.  For such objects, the scalar type is
+ *  set by Zoltan2 to \c float.  If you wish to change it to double, set
+ *  the second template parameter to \c double.
  */
 template <typename User>
   class BasicKokkosIdentifierAdapter: public IdentifierAdapter<User> {
@@ -99,12 +99,11 @@ public:
   typedef User user_t;
   typedef Kokkos::LayoutLeft weight_layout_t;
 
-  /*! \brief Constructor // TODO: Update comments
-   *  \param numIds is the number of identifiers in the list
-   *  \param ids should point to a list of numIds identifiers.
+  /*! \brief Constructor
+   *  \param ids should point to a View of identifiers.
    *  \param weights  a list of pointers to arrays of weights.
    *      The number of weights per identifier is assumed to be
-   *      \c weights.size().
+   *      \c weights.extent(0).
    *  \param weightStrides  a list of strides for the \c weights.
    *     The weight for weight index \c n for \c ids[k] should be
    *     found at <tt>weights[n][weightStrides[n] * k]</tt>.
@@ -113,17 +112,16 @@ public:
    *  The values pointed to the arguments must remain valid for the
    *  lifetime of this Adapter.
    */
-  BasicKokkosIdentifierAdapter(
-    Kokkos::View<gno_t*> &ids, Kokkos::View<scalar_t**, weight_layout_t> &weights);
+  BasicKokkosIdentifierAdapter(Kokkos::View<gno_t*> &ids,
+                            Kokkos::View<scalar_t**, weight_layout_t> &weights);
 
   ////////////////////////////////////////////////////////////////
   // The Adapter interface.
   ////////////////////////////////////////////////////////////////
 
-// https://github.com/kokkos/kokkos/wiki/View
   size_t getLocalNumIDs() const { return _ids.dimension(0); }
 
-  void getIDsKokkosView(Kokkos::View<gno_t *> &ids) const override { ids = _ids; }
+  void getIDsKokkosView(Kokkos::View<gno_t *> &ids) const override {ids = _ids;}
 
   int getNumWeightsPerID() const { return _weights.dimension(1); }
 
@@ -134,26 +132,7 @@ public:
            << "  Invalid weight index " << idx << std::endl;
       throw std::runtime_error(emsg.str());
     }
-    std::cout << "Index: " << idx << std::endl;
-//    wgt = Kokkos::subview(_weights, Kokkos::ALL(), std::pair<scalar_t, scalar_t>(idx, idx + 1)); // Try this first! // Note that it may not work because going from idx to idx+1 should reduce the dimensions, but the compiler may not know that.
-
-//    ************
-
-    //wgt = Kokkos::subview(_weights, ALL, std::pair<int, int>(idx, idx + 1));
     wgt = Kokkos::subview(_weights, ALL, idx);
-//    wgt = subview;
-
-//    std::string s1 = typeid(wgt).name();
-//    std::cout << s1 << std::endl;
-//    std::string s2 = typeid(subview).name();
-//    std::cout << s2 << std::endl;
-//    std::cout << "Weights Extent 0: " << _weights.extent(0) << std::endl;
-//    std::cout << "Weights Extent 1: " << _weights.extent(1) << std::endl;
-//    std::cout << "subview Extent 0: " << subview.extent(0) << std::endl;
-//    std::cout << "subview Extent 1: " << subview.extent(1) << std::endl;
-//    std::cout << "Output Extent 0: " << wgt.extent(0) << std::endl;
-//    std::cout << "Output Extent 1: " << wgt.extent(1) << std::endl;
-    std::cout << std::endl;
   }
 
 private:

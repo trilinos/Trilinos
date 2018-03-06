@@ -52,7 +52,6 @@
 #define _ZOLTAN2_ADAPTER_HPP_
 
 #include <Kokkos_Core.hpp>
-
 #include <Zoltan2_Standards.hpp>
 #include <Zoltan2_InputTraits.hpp>
 #include <Zoltan2_PartitioningSolution.hpp>
@@ -156,7 +155,6 @@ public:
   // *   getNumWeightsPerID > 0.
   // *   This function should not be called if getNumWeightsPerID is zero.
   // */ 
-// TODO: Implement this one for Kokkos::View.
   virtual void getWeightsKokkosView(Kokkos::View<scalar_t *> &wgt, 
                               int idx = 0) const {
     Z2_THROW_NOT_IMPLEMENTED
@@ -171,7 +169,7 @@ public:
    *         the rank 
    *    \param inputPart on return a pointer to input part numbers
    */ 
-  void getPartsView(const part_t *&inputPart) const { // TODO: Stores info about where the data partitions are stored, since it's scattered across multiple machines. By default, can assume part 1 is on node 1.
+  void getPartsView(const part_t *&inputPart) const {
     // Default behavior:  return NULL for inputPart array;
     // assume input part == rank
     inputPart = NULL;
