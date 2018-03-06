@@ -102,8 +102,6 @@ cmake \
 -D TPL_ENABLE_DLlib=ON \
 \
 \
--D Trilinos_ENABLE_Kokkos=ON \
-  -D Kokkos_ENABLE_TESTS:BOOL=${TESTS} \
 -D Trilinos_ENABLE_Tpetra=ON \
   -D Tpetra_INST_SERIAL:BOOL=${SERIAL} \
   -D Tpetra_INST_OPENMP:BOOL=${OPENMP} \

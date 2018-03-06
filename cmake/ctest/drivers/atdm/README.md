@@ -42,13 +42,33 @@ That file reads `JOB_NAME` from the env and uses it to set the CDash build
 name.  (Therefore, the Jenkikns `JOB_NAME` is the same as the CDash build name
 for all of these Trilinos ATDM builds.)
 
+
+That directory contains a CTest -S driver script:
+
+```
+  Trilinos/cmake/ctest/drivers/atdm/ctest-driver.cmake
+```
+
+This files sets other CMake and CTest options that are pulled out of the env
+set by the `cmake/std/atdm/<system_name>/environment.sh` script.
+
+Given this file `atdm/ctest-driver.cmake`, then:
+
+```
+  ctest -S <base-dir>/Trilinos/cmake/ctest/drivers/atdm/ctest-driver.cmake
+```
+
+can be run using any way desired and it will clone a new Trilinos git repo (if
+not cloned already).  (But this file get directly run by the universal driver
+script `ctest-s-driver.sh` described above.)
+
 This directory contains the file:
 
 ```
   Trilinos/cmake/ctest/drivers/atdm/ctest-s-driver.sh
 ```
 
-which sets up and runs the system-specific ctest -S script.
+which sets up and runs `ctest -S .../atdm/ctest-driver.cmake`.
 
 This base directly also contains the script:
 
@@ -72,47 +92,7 @@ Each system `<system_name>` is given a subdirectory under this directory:
   Trilinos/cmake/ctest/drivers/atdm/<system_name>/
 ```
 
-That directory contains a CTest -S driver script:
-
-```
-  Trilinos/cmake/ctest/drivers/atdm/<system_name>/ctest-driver.cmake
-```
-
-which is directly run with `ctest -S`.  A good example of this file is:
-
-```
-  Trilinos/cmake/ctest/drivers/atdm/shiller/ctest-driver.cmake
-```
-
-The `<system_name>/ctest-driver.cmake` files sets any CMake or CTest options
-that are specific to that system like:
-
-* `CTEST_NOTES_FILES`: Append any extra notes files to CDash.
-
-* `CTEST_BUILD_FLAGS`: The flags to pass to the build (e.g. `"-j32 -k 999999"`
-  for Ninja)
-
-* `CTEST_PARALLEL_LEVEL`: Set the parallel level for running tests (e.g. `16`
-  if using 2 MPI threads per core).
-
-* `CTEST_CMAKE_GENERATOR`: Set to `Ninja` if using Ninja on that system.
-
-* `CTEST_SITE`: Set to the name of the site to show up on CDash (i.e. to avoid
-  different site names for different nodes like `shiller01`, `shiller02`, or
-  `shiller03` messing up previous/next on CDash).
-
-Given this file `<system_name>/ctest-driver.cmake`, then:
-
-```
-  ctest -S <base-dir>/Trilinos/cmake/ctest/drivers/atdm/<system_name>/ctest-driver.cmake
-```
-
-can be run using any way desired and it will clone a new Trilinos git repo (if
-not cloned already).  (But this file get directly run by the universal driver
-script `ctest-s-driver.sh` described above.)
-
-In addition, each `atdm/<system_name>/` directory contains a local driver
-script:
+Each `atdm/<system_name>/` directory minimally contains a local driver script:
 
 ```
   Trilinos/cmake/ctest/drivers/atdm/<system_name>/local-driver.sh
