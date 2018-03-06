@@ -48,7 +48,7 @@
 #include "typedefs.hpp"
 #include "Teuchos_Comm.hpp"
 
-
+namespace TpetraExamples {
 
 struct LLA 
 {
@@ -387,12 +387,7 @@ void MeshDatabase::print(std::ostream & oss)
 }
 
 
-// Generates a dummy finite element stiffness matrix for quads
-//scalar_2d_array_type generateFiniteElementMatrix() {
-
-
-
-//}
+} // end of namespace TpetraExamples
 
 #endif
 

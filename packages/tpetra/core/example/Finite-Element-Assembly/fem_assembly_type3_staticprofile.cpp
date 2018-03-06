@@ -56,6 +56,8 @@
 
 #define PRINT_VERBOSE 0
 
+using namespace TpetraExamples;
+
 
 
 int main (int argc, char *argv[]) 
@@ -72,7 +74,7 @@ int main (int argc, char *argv[])
   RCP<const Teuchos::Comm<int> > comm = Tpetra::DefaultPlatform::getDefaultPlatform ().getComm();
 
   // Initialize Kokkos
-  Kokkos::initialize();
+  Kokkos::initialize(argc, argv);
 
   // Processor decomp (only works on perfect squares)
   int numProcs  = comm->getSize();

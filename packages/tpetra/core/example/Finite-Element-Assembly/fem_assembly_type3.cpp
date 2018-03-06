@@ -56,6 +56,8 @@
 
 #define PRINT_VERBOSE 0
 
+using namespace TpetraExamples;
+
 
 
 int main (int argc, char *argv[]) 

@@ -44,7 +44,7 @@
 #include <iomanip>
 #include "Kokkos_View.hpp"
 
-
+namespace TpetraExamples {
 
 //
 // This function does a very rough approximation of 2D finite-difference
@@ -108,4 +108,8 @@ void PrettyPrintQuad4(scalar_2d_array_type & elementMatrix)
     std::cout << "]" << std::endl;
   }
 }
+
+} // end of namespace TpetraExamples
+
+
 #endif
