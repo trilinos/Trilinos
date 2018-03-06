@@ -157,7 +157,7 @@ int main(int argc, char *argv[])
     int ierr = 0;
     for (int i = 0; i < nprocs; i++)
       if (globalPartCounts[i] != targetCount) 
-        std::cout << "FAIL: part " << i << " has " << partCounts[i]
+        std::cout << "FAIL: part " << i << " has " << globalPartCounts[i]
                   << " != " << targetCount << "; " << ++ierr << " errors"
                   << std::endl;
     if (ierr == 0)
