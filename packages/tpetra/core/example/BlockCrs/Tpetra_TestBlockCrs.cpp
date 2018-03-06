@@ -83,7 +83,7 @@ int main (int argc, char *argv[])
   {
     auto r_parse = clp.parse(argc, argv, comm->getRank() == 0 ? &std::cout : NULL);
     if (r_parse == Teuchos::CommandLineProcessor::PARSE_HELP_PRINTED) return 0;
-    if (r_parse != Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL  ) return -1;
+    if (r_parse != Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL  ) return 0;
 
     if (num_procs_i*num_procs_j*num_procs_k != comm->getSize()) {
       Tpetra::finalize();
@@ -92,7 +92,7 @@ int main (int argc, char *argv[])
                   << " does not match to the mpi rank size ("<<comm->getSize()<<")" << std::endl;
         std::cout << "End Result: TEST PASSED" << std::endl;
       }
-      return -1;
+      return 0;
     }
   }
   
