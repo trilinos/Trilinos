@@ -8,8 +8,13 @@
 
 module purge
 
-export BUILD_COUNT=32
 export OMPI_CXX=
+
+export ATDM_CONFIG_SYSTEM_CDASH_SITE=hansen/shiller
+export ATDM_CONFIG_USE_MAKEFILES=ON
+export ATDM_CONFIG_BUILD_COUNT=32
+export ATDM_CONFIG_CTEST_PARALLEL_LEVEL=16
+export OMP_NUM_THREADS=2
 
 echo "Using hansen/shiller compiler stack $ATDM_CONFIG_COMPILER to build $ATDM_CONFIG_BUILD_TYPE code with Kokkos node type $ATDM_CONFIG_NODE_TYPE"
 
@@ -64,9 +69,6 @@ export ATDM_CONFIG_HDF5_LIBS="-L${HDF5_ROOT}/lib;-lhdf5_hl;-lhdf5;-lz;-ldl"
 export ATDM_CONFIG_NETCDF_LIBS="-L${BOOST_ROOT}/lib;-L${NETCDF_ROOT}/lib;-L${NETCDF_ROOT}/lib;-L${PNETCDF_ROOT}/lib;${BOOST_ROOT}/lib/libboost_program_options.a;${BOOST_ROOT}/lib/libboost_system.a;${NETCDF_ROOT}/lib/libnetcdf.a;${PNETCDF_ROOT}/lib/libpnetcdf.a;${ATDM_CONFIG_HDF5_LIBS}"
 
 export ATDM_CONFIG_MPI_POST_FLAG="-map-by;socket:PE=16;--oversubscribe"
-
-# Just in case the user runs srun
-export SLURM_TASKS_PER_NODE=32
 
 # Just in case the user runs with an OpenMP build
 export OMP_NUM_THREADS=2

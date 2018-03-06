@@ -31,4 +31,4 @@ export Trilinos_REPOSITORY_LOCATION=https://github.com/trilinos/Trilinos.git
 set -x
 
 ctest -V -S \
-  $WORKSPACE/Trilinos/cmake/ctest/drivers/atdm/$ATDM_CONFIG_KNOWN_SYSTEM_NAME/ctest-driver.cmake
+  $WORKSPACE/Trilinos/cmake/ctest/drivers/atdm/ctest-driver.cmake
