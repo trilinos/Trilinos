@@ -63,7 +63,9 @@ using ROL::StdVector;
 
 // Casting helpers
 template<typename Real, template<typename> class VectorType>
-inline const auto getVector( const Vector<Real>& x ) -> 
+inline
+// const // Certain versions of Intel compiler object to the const modifier
+auto getVector( const Vector<Real>& x ) -> 
   const decltype(*declval<const VectorType<Real>>().getVector())& {
   return *(dynamic_cast<const VectorType<Real>&>(x).getVector());
 }
