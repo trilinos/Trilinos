@@ -9,10 +9,14 @@
 #
 ################################################################################
 
+MACRO(ATDM_ASSERT_ENV_VAR_SET VAR_NAME)
+  IF ("$ENV{${VAR_NAME}}" STREQUAL "")
+    MESSAGE(FATAL_ERROR "Error, must set env var ${VAR_NAME}")
+  ENDIF()
+ENDMACRO()
+
 # Must set the Jenkins JOB_NAME which will be the CDash build name 
-IF ("$ENV{JOB_NAME}" STREQUAL "")
-  MESSAGE(FATAL_ERROR "Error, must set env var JOB_NAME")
-ENDIF()
+ATDM_ASSERT_ENV_VAR_SET(JOB_NAME)
 SET(CTEST_BUILD_NAME "$ENV{JOB_NAME}")
 
 SET(THIS_FILE_LIST_DIR "${CMAKE_CURRENT_LIST_DIR}")

@@ -27,7 +27,7 @@ TEST( CrsMatrixBase, constructor ) {
   CrsMatrixBaseHostType Ah("A host", m, n, nnz);
   EXPECT_EQ(Ah.NumRows(), m);
   EXPECT_EQ(Ah.NumCols(), n);
-  EXPECT_EQ(Ah.NumNonZeros(), nnz);
+  EXPECT_EQ(ordinal_type(Ah.NumNonZeros()), nnz);
 
   ordinal_type cnt = 0;
   for (ordinal_type i=0;i<m;++i) {
@@ -39,7 +39,7 @@ TEST( CrsMatrixBase, constructor ) {
     Ah.RowPtrEnd(i) = cnt;
   }
 
-  for (ordinal_type i=0;i<m;++i) {
+  for (size_type i=0;i<m;++i) {
     EXPECT_EQ(Ah.RowPtrBegin(i), i*n);
     EXPECT_EQ(Ah.RowPtrEnd(i), i*n + n);
   }
@@ -79,11 +79,11 @@ TEST( CrsMatrixBase, constructor ) {
   Bh.clear();
   EXPECT_EQ(Bh.NumRows(), 0);
   EXPECT_EQ(Bh.NumCols(), 0);
-  EXPECT_EQ(Bh.NumNonZeros(), 0);
+  EXPECT_EQ(Bh.NumNonZeros(), size_type(0));
 
-  EXPECT_EQ(Bh.RowPtr().dimension_0(), 0);
-  EXPECT_EQ(Bh.Cols().dimension_0(), 0);
-  EXPECT_EQ(Bh.Values().dimension_0(), 0);
+  EXPECT_EQ(Bh.RowPtr().dimension_0(), size_type(0));
+  EXPECT_EQ(Bh.Cols().dimension_0(), size_type(0));
+  EXPECT_EQ(Bh.Values().dimension_0(), size_type(0));
 
   EXPECT_TRUE(Bh.RowPtr().data() == NULL);
   EXPECT_TRUE(Bh.Cols().data() == NULL);

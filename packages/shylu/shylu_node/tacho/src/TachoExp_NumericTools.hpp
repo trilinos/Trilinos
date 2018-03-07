@@ -1067,7 +1067,7 @@ namespace Tacho {
                               const value_type_matrix_host &x,
                               const value_type_matrix_host &b) {
         TACHO_TEST_FOR_EXCEPTION(A.NumRows() != A.NumCols() ||
-                                 A.NumRows() != b.dimension_0() ||
+                                 A.NumRows() != ordinal_type(b.dimension_0()) ||
                                  x.dimension_0() != b.dimension_0() ||
                                  x.dimension_1() != b.dimension_1(), std::logic_error,
                                  "A,x and b dimensions are not compatible");
