@@ -47,75 +47,199 @@
 
 #include "Tpetra_TestBlockCrsMeshDatabase.hpp"
 
+namespace { // (anonymous)
+
+  int cubeRootRoundedToInt (const double input) {
+    constexpr double power = 1.0 / 3.0;
+    return static_cast<int> (std::pow (input, power));
+  }
+
+  int cubeRootLowerBound (const int P) { // P >= 1
+    double input = static_cast<double> (P);
+    int estimate = cubeRootRoundedToInt (input);
+    int cube = estimate * estimate * estimate;
+
+    if (cube > P && input >= 1.0 && estimate >= 1.0) {
+      // If rounding resulted in too big of a result, reduce input by
+      // one until result is a lower bound.  do-while avoids redundant
+      // condition check.
+      do {
+        input = input - 1.0;
+        estimate = cubeRootRoundedToInt (input);
+        cube = estimate * estimate * estimate;
+      }
+      while (cube > P && input >= 1.0 && estimate >= 1.0);
+    }
+    else if (cube < P) {
+      // See if we can increment the result to get it closer.
+      do {
+        input = input + 1.0;
+        estimate = cubeRootRoundedToInt (input);
+        cube = estimate * estimate * estimate;
+      }
+      while (cube < P);
+
+      if (cube > P && estimate > 1) {
+        estimate = estimate - 1;
+      }
+    }
+
+    return estimate; // estimate*estimate*estimate <= P
+  }
+
+#if 0
+  void
+  runTest (const Teuchos::RCP<const Teuchos::Comm<int> >& commTest,
+           const LO num_global_elements_i,
+           const LO num_global_elements_j,
+           const LO num_global_elements_k,
+           const LO num_procs_i,
+           const LO num_procs_j,
+           const LO num_procs_k,
+           const LO blocksize,
+           const LO nrhs,
+           const LO repeat,
+           const bool debug,
+           const bool verbose)
+  {
+
+  }
+#endif // 0
+
+} // namespace (anonymous)
+
 using namespace BlockCrsTest;
 
 int main (int argc, char *argv[])
 {
   using Teuchos::RCP;
   using Teuchos::TimeMonitor;
+  using std::endl;
 
   auto out = Teuchos::getFancyOStream (Teuchos::rcpFromRef (std::cout));
 
   // Initialize MPI and Kokkos
   Tpetra::initialize (&argc, &argv);
-  auto comm = Tpetra::getDefaultComm ();
-  const int numProcs = comm->getSize ();
+  auto commWorld = Tpetra::getDefaultComm ();
+
+  // Don't try to read environment variables until after MPI_Init has
+  // been called.  I'm not sure whether all the processes can see them
+  // before.
+  const bool debug = Tpetra::Details::Behavior::debug ();
+  const bool verbose = Tpetra::Details::Behavior::verbose ();
+  std::unique_ptr<std::string> debugPrefix;
+  if (debug) {
+    std::ostringstream os;
+    os << "Proc " << commWorld->getRank () << ": ";
+    debugPrefix = std::unique_ptr<std::string> (new std::string (os.str ()));
+  }
+
+  // By default, distribute the problem over a defaultProcGridDim^3 cube.
+  const int defaultProcGridDim = cubeRootLowerBound (commWorld->getSize ());
+  if (debug) {
+    std::ostringstream os;
+    os << *debugPrefix << "defaultProcGridDim: " << defaultProcGridDim << endl;
+    std::cerr << os.str ();
+  }
 
   // Command-line input
-  LO num_global_elements_i = 2, num_global_elements_j = 2, num_global_elements_k = 2;
-  LO num_procs_i = 1, num_procs_j = 1, num_procs_k = 1;
+  LO num_procs_i = defaultProcGridDim;
+  LO num_procs_j = defaultProcGridDim;
+  LO num_procs_k = defaultProcGridDim;
+
+  constexpr LO defaultNumElementsMultiplierAlongEachDim = 10;
+
+  LO num_global_elements_i = defaultNumElementsMultiplierAlongEachDim * defaultProcGridDim;
+  LO num_global_elements_j = defaultNumElementsMultiplierAlongEachDim * defaultProcGridDim;
+  LO num_global_elements_k = defaultNumElementsMultiplierAlongEachDim * defaultProcGridDim;
+
   LO blocksize = 5, nrhs = 1, repeat = 100;
 
-  Teuchos::CommandLineProcessor clp(false);
-  clp.setDocString("BlockCrs performance test using 3D 7 point stencil.\n");
-  clp.setOption("num-elements-i", &num_global_elements_i, "Number of cells in the I dimension.");
-  clp.setOption("num-elements-j", &num_global_elements_j, "Number of cells in the J dimension.");
-  clp.setOption("num-elements-k", &num_global_elements_k, "Number of cells in the K dimension.");
-  clp.setOption("num-procs-i", &num_procs_i, "Processor grid of (npi,npj,npk); npi*npj*npk should be equal to the number of MPI ranks.");
-  clp.setOption("num-procs-j", &num_procs_j, "Processor grid of (npi,npj,npk); npi*npj*npk should be equal to the number of MPI ranks.");
-  clp.setOption("num-procs-k", &num_procs_k, "Processor grid of (npi,npj,npk); npi*npj*npk should be equal to the number of MPI ranks.");
-  clp.setOption("blocksize", &blocksize, "Block size. The # of DOFs coupled in a multiphysics flow problem.");
-  clp.setOption("nrhs", &nrhs, "Number of right hand sides to solve for.");
-  clp.setOption("repeat", &repeat, "Number of iterations of matvec operations to measure performance.");
+  Teuchos::CommandLineProcessor clp (false);
+  clp.setDocString ("Tpetra::BlockCrsMatrix performance test using 3-D 7-point stencil.\n");
+  clp.setOption ("num-elements-i", &num_global_elements_i, "Number of cells in the I dimension.");
+  clp.setOption ("num-elements-j", &num_global_elements_j, "Number of cells in the J dimension.");
+  clp.setOption ("num-elements-k", &num_global_elements_k, "Number of cells in the K dimension.");
+  clp.setOption ("num-procs-i", &num_procs_i,
+                 "Process grid of (npi,npj,npk); npi*npj*npk <= number of MPI ranks.");
+  clp.setOption ("num-procs-j", &num_procs_j,
+                 "Process grid of (npi,npj,npk); npi*npj*npk <= number of MPI ranks.");
+  clp.setOption ("num-procs-k", &num_procs_k,
+                 "Process grid of (npi,npj,npk); npi*npj*npk <= number of MPI ranks.");
+  clp.setOption ("blocksize", &blocksize,
+                 "Block size. The # of DOFs coupled in a multiphysics flow problem.");
+  clp.setOption ("nrhs", &nrhs,
+                 "Number of right-hand sides for which to solve.");
+  clp.setOption ("repeat", &repeat,
+                 "Number of iterations of matvec operations to measure performance.");
 
   {
-    auto r_parse = clp.parse(argc, argv, comm->getRank() == 0 ? &std::cout : NULL);
-    if (r_parse == Teuchos::CommandLineProcessor::PARSE_HELP_PRINTED) return 0;
-    if (r_parse != Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL  ) return 0;
+    bool returnEarly = false;
+    bool returnSuccess = true;
 
-    if (num_procs_i*num_procs_j*num_procs_k != numProcs) {
-      if (comm->getRank () == 0) {
-        std::cout << "Invalid process grid: "
-                  << num_procs_i << " x " << num_procs_j << " x " << num_procs_k << " != "
-                  << " number of MPI processes "<< numProcs << std::endl;
-        std::cout << "End Result: TEST FAILED" << std::endl;
+    auto r_parse = clp.parse(argc, argv, commWorld->getRank() == 0 ? &std::cout : NULL);
+    if (r_parse == Teuchos::CommandLineProcessor::PARSE_HELP_PRINTED) {
+      returnEarly = true;
+      returnSuccess = true; // printing help doesn't mean the test failed
+    }
+    else if (r_parse != Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL) {
+      returnEarly = true;
+      returnSuccess = false;
+      if (commWorld->getRank () == 0) {
+        std::cout << "Failed to parse command-line arguments." << endl;
       }
+    }
+    else if (num_procs_i*num_procs_j*num_procs_k > commWorld->getSize ()) {
+      returnEarly = true;
+      returnSuccess = false;
+      if (commWorld->getRank () == 0) {
+        std::cout << "Invalid process grid: "
+                  << num_procs_i << " x " << num_procs_j << " x " << num_procs_k << " > "
+                  << " number of MPI processes "<< commWorld->getSize () << endl;
+      }
+    }
+
+    if (! returnSuccess && commWorld->getRank () == 0) {
+      std::cout << "End Result: TEST FAILED" << endl;
+    }
+    if (returnEarly) {
       Tpetra::finalize();
-      return 0;
+      return returnSuccess ? EXIT_SUCCESS : EXIT_FAILURE;
     }
   }
 
-  if (comm->getRank() == 0) {
-#ifdef KOKKOS_HAVE_SERIAL
-    constexpr bool isSerial = std::is_same<exec_space, Kokkos::Serial>::value;
-#else
-    constexpr bool isSerial = false;
-#endif // KOKKOS_HAVE_SERIAL
-    if (isSerial) {
-      std::cout << "Kokkos::Serial " << std::endl;
-    }
-    else {
-      exec_space::print_configuration(std::cout, false);
-    }
+  // Create a communicator just for the test, that excludes processes
+  // outside the process grid.
+  const bool myProcessIsIncludedInTheTest =
+    commWorld->getRank () < num_procs_i*num_procs_j*num_procs_k;
+  auto commTest = commWorld->split (myProcessIsIncludedInTheTest ? 0 : 1,
+                                    commWorld->getRank ());
+  if (! myProcessIsIncludedInTheTest) {
+    Tpetra::finalize ();
+    return EXIT_SUCCESS;
   }
 
-  MeshDatabase mesh(comm,
-                    num_global_elements_i,
-                    num_global_elements_j,
-                    num_global_elements_k,
-                    num_procs_i,
-                    num_procs_j,
-                    num_procs_k);
+  ////////////////////////////////////////////////////////////////
+  // At this point, the only processes left are those in commTest.
+  ////////////////////////////////////////////////////////////////
+  const bool myProcessPrintsDuringTheTest = commTest->getRank () == 0;
+
+  if (myProcessPrintsDuringTheTest) {
+    exec_space::print_configuration (std::cout, false);
+  }
+
+  if (debug) {
+    std::ostringstream os;
+    os << *debugPrefix << "Make MeshDatabase" << endl;
+    std::cerr << os.str ();
+  }
+  MeshDatabase mesh (commTest,
+                     num_global_elements_i,
+                     num_global_elements_j,
+                     num_global_elements_k,
+                     num_procs_i,
+                     num_procs_j,
+                     num_procs_k);
 
   const auto sb = mesh.getStructuredBlock();
   const auto part = mesh.getStructuredBlockPart();
@@ -123,11 +247,15 @@ int main (int argc, char *argv[])
   const auto num_owned_elements = mesh.getNumOwnedElements();
   const auto num_owned_and_remote_elements = mesh.getNumElements();
 
-  const bool verbose = Tpetra::Details::Behavior::verbose ();
   if (verbose) {
     mesh.print(std::cout);
   }
 
+  if (debug) {
+    std::ostringstream os;
+    os << *debugPrefix << "Start global timer" << endl;
+    std::cerr << os.str ();
+  }
   {
     TimeMonitor timerGlobal(*TimeMonitor::getNewTimer("X) Global"));
 
@@ -153,14 +281,24 @@ int main (int argc, char *argv[])
                        local_ordinal_range_type (num_owned_elements,
                                                  num_owned_and_remote_elements));
 
-    RCP<const map_type> row_map (new map_type (TpetraComputeGlobalNumElements, owned_gids, 0, comm));
-    RCP<const map_type> col_map (new map_type (TpetraComputeGlobalNumElements, mesh_gids, 0, comm));
+    if (debug) {
+      std::ostringstream os;
+      os << *debugPrefix << "Make row and column Maps" << endl;
+      std::cerr << os.str ();
+    }
+    RCP<const map_type> row_map (new map_type (TpetraComputeGlobalNumElements, owned_gids, 0, commTest));
+    RCP<const map_type> col_map (new map_type (TpetraComputeGlobalNumElements, mesh_gids, 0, commTest));
 
     if (verbose) {
       row_map->describe(*out);
       col_map->describe(*out);
     }
 
+    if (debug) {
+      std::ostringstream os;
+      os << *debugPrefix << "Make local graph" << endl;
+      std::cerr << os.str ();
+    }
     // Graph Construction
     // ------------------
     // local graph is constructed on device space
@@ -210,6 +348,11 @@ int main (int argc, char *argv[])
 
     } // end local graph timer
 
+    if (debug) {
+      std::ostringstream os;
+      os << *debugPrefix << "Make global graph" << endl;
+      std::cerr << os.str ();
+    }
     // Call fillComplete on the bcrs_graph to finalize it
     RCP<tpetra_crs_graph_type> bcrs_graph;
     {
@@ -222,9 +365,19 @@ int main (int argc, char *argv[])
       bcrs_graph->describe(*out, Teuchos::VERB_EXTREME);
     }
 
+    if (debug) {
+      std::ostringstream os;
+      os << *debugPrefix << "Make BlockCrsMatrix" << endl;
+      std::cerr << os.str ();
+    }
     // Create BlockCrsMatrix
-    RCP<tpetra_blockcrs_matrix_type> A_bcrs = Teuchos::rcp(new tpetra_blockcrs_matrix_type(*bcrs_graph, blocksize));
+    RCP<tpetra_blockcrs_matrix_type> A_bcrs (new tpetra_blockcrs_matrix_type (*bcrs_graph, blocksize));
 
+    if (debug) {
+      std::ostringstream os;
+      os << *debugPrefix << "Fill BlockCrsMatrix" << endl;
+      std::cerr << os.str ();
+    }
     typedef tpetra_blockcrs_matrix_type::little_block_type block_type;
     Kokkos::View<block_type*,exec_space> blocks;
     {
@@ -271,6 +424,7 @@ int main (int argc, char *argv[])
           }
         });
     }
+
     {
       TimeMonitor timerBlockCrsFillComplete(*TimeMonitor::getNewTimer("3) BlockCrsMatrix FillComplete - currently do nothing"));
       // this function does not exist
@@ -281,6 +435,11 @@ int main (int argc, char *argv[])
       A_bcrs->describe(*out, Teuchos::VERB_EXTREME);
     }
 
+    if (debug) {
+      std::ostringstream os;
+      os << *debugPrefix << "Make and fill MultiVector" << endl;
+      std::cerr << os.str ();
+    }
     // Create MultiVector
     RCP<tpetra_multivector_type> X = Teuchos::rcp(new tpetra_multivector_type(A_bcrs->getDomainMap(), nrhs));
     {
@@ -300,8 +459,18 @@ int main (int argc, char *argv[])
       X->describe(*out, Teuchos::VERB_EXTREME);
     }
 
+    if (debug) {
+      std::ostringstream os;
+      os << *debugPrefix << "Make B_bcrs MultiVector" << endl;
+      std::cerr << os.str ();
+    }
     RCP<tpetra_multivector_type> B_bcrs = Teuchos::rcp(new tpetra_multivector_type(A_bcrs->getRangeMap(),  nrhs));
 
+    if (debug) {
+      std::ostringstream os;
+      os << *debugPrefix << "Benchmark BlockCrsMatrix sparse matrix-vector multiply" << endl;
+      std::cerr << os.str ();
+    }
     // matrix vector multiplication
     {
       for (LO iter=0;iter<repeat;++iter) {
@@ -310,6 +479,11 @@ int main (int argc, char *argv[])
       }
     }
 
+    if (debug) {
+      std::ostringstream os;
+      os << *debugPrefix << "Convert BlockCrsMatrix to CrsMatrix" << endl;
+      std::cerr << os.str ();
+    }
     // direct conversion: block crs -> point crs
     RCP<tpetra_crs_matrix_type> A_crs;
     {
@@ -338,8 +512,10 @@ int main (int argc, char *argv[])
         });
       const auto owned_crs_gids = Kokkos::subview(crs_gids, local_ordinal_range_type(0, num_owned_elements*blocksize));
 
-      RCP<const map_type> row_crs_map = rcp(new map_type(TpetraComputeGlobalNumElements, owned_crs_gids, 0, comm));
-      RCP<const map_type> col_crs_map = rcp(new map_type(TpetraComputeGlobalNumElements, crs_gids, 0, comm));
+      RCP<const map_type> row_crs_map (new map_type (TpetraComputeGlobalNumElements,
+                                                     owned_crs_gids, 0, commTest));
+      RCP<const map_type> col_crs_map (new map_type (TpetraComputeGlobalNumElements,
+                                                     crs_gids, 0, commTest));
 
       rowptr_view_type crs_rowptr = rowptr_view_type("crs_rowptr", num_owned_elements*blocksize+1);
       colidx_view_type crs_colidx = colidx_view_type("crs_colidx", colidx.extent(0)*blocksize*blocksize);
@@ -391,8 +567,18 @@ int main (int argc, char *argv[])
       A_crs->describe(*out, Teuchos::VERB_EXTREME);
     }
 
+    if (debug) {
+      std::ostringstream os;
+      os << *debugPrefix << "Make B_crs MultiVector" << endl;
+      std::cerr << os.str ();
+    }
     RCP<tpetra_multivector_type> B_crs = Teuchos::rcp(new tpetra_multivector_type(A_bcrs->getRangeMap(),  nrhs));
 
+    if (debug) {
+      std::ostringstream os;
+      os << *debugPrefix << "Benchmark CrsMatrix sparse matrix-vector multiply" << endl;
+      std::cerr << os.str ();
+    }
     // perform on point crs matrix
     {
       for (LO iter=0;iter<repeat;++iter) {
@@ -401,17 +587,32 @@ int main (int argc, char *argv[])
       }
     }
 
-    // veryfy B_bcrs and B_crs are identical
+    if (debug) {
+      std::ostringstream os;
+      os << *debugPrefix << "Check results" << endl;
+      std::cerr << os.str ();
+    }
+    // Check B_bcrs against B_crs
     {
       B_crs->update(-1.0, *B_bcrs, 1.0);
 
-      Kokkos::View<typename tpetra_multivector_type::dot_type*,host_space>
-        norm2("norm2", nrhs), diff2("diff2", nrhs);;
+      Kokkos::View<typename tpetra_multivector_type::dot_type*, host_space> norm2 ("norm2", nrhs);
+      Kokkos::View<typename tpetra_multivector_type::dot_type*, host_space> diff2 ("diff2", nrhs);
       B_bcrs->dot(*B_bcrs, norm2);
       B_crs->dot(*B_crs, diff2);
-      if (comm->getRank() == 0)
-        for (LO i=0;i<nrhs;++i)
-          std::cout << "Column = " << i << "  Error norm = " << std::sqrt(diff2(i)/norm2(i)) << "\n";
+
+      if (myProcessPrintsDuringTheTest) {
+        for (LO i = 0; i < nrhs; ++i) {
+          std::cout << "Column = " << i << "  Error norm = "
+                    << std::sqrt(diff2(i)/norm2(i)) << endl;
+        }
+      }
+    }
+
+    if (debug) {
+      std::ostringstream os;
+      os << *debugPrefix << "Write CrsMatrix to Matrix Market file" << endl;
+      std::cerr << os.str ();
     }
     // Save crs_matrix as a MatrixMarket file.
     {
@@ -425,13 +626,13 @@ int main (int argc, char *argv[])
   } // end global timer
 
   // Print out timing results.
-  TimeMonitor::report(comm.ptr(), std::cout, "");
+  TimeMonitor::report(commTest.ptr(), std::cout);
 
   // This tells the Trilinos test framework that the test passed.
-  if (comm->getRank() == 0) {
-    std::cout << "End Result: TEST PASSED" << std::endl;
+  if (commTest->getRank() == 0) {
+    std::cout << "End Result: TEST PASSED" << endl;
   }
 
-  Tpetra::finalize();
+  Tpetra::finalize ();
   return EXIT_SUCCESS;
-}  // END main()
+}
