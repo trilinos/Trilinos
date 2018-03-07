@@ -5,6 +5,7 @@
 /// \author Kyungjoo Kim (kyukim@sandia.gov)
 
 #include "KokkosBatched_Util.hpp"
+#include "KokkosBatched_Vector.hpp"
 #include "KokkosBatched_InnerLU_Serial_Impl.hpp"
 #include "KokkosBatched_InnerTrsm_Serial_Impl.hpp"
 #include "KokkosBatched_Gemm_Serial_Internal.hpp"
@@ -23,7 +24,8 @@ namespace KokkosBatched {
       KOKKOS_INLINE_FUNCTION
       static int 
       invoke(const int m, const int n,
-             ValueType *__restrict__ A, const int as0, const int as1);
+             ValueType *__restrict__ A, const int as0, const int as1,
+             const typename MagnitudeScalarType<ValueType>::type tiny);
     };
 
     template<>
@@ -32,26 +34,35 @@ namespace KokkosBatched {
     int
     SerialLU_Internal<Algo::LU::Unblocked>::
     invoke(const int m, const int n,
-           ValueType *__restrict__ A, const int as0, const int as1) {
+           ValueType *__restrict__ A, const int as0, const int as1,
+           const typename MagnitudeScalarType<ValueType>::type tiny) {
       const int k = (m < n ? m : n);
       if (k <= 0) return 0;
+
+      const auto       abs_tiny =  tiny > 0 ? tiny : -tiny;
+      const auto minus_abs_tiny = -abs_tiny;
 
       for (int p=0;p<k;++p) {
         const int iend = m-p-1, jend = n-p-1;
 
-        const ValueType 
-          // inv_alpha11 = 1.0/A(p,p),
-          alpha11 = A[p*as0+p*as1],
+        ValueType
+          alpha11 = A[p*as0+p*as1];
+
+        const ValueType
           *__restrict__ a12t = A+(p  )*as0+(p+1)*as1;
         
         ValueType
           *__restrict__ a21  = A+(p+1)*as0+(p  )*as1,
           *__restrict__ A22  = A+(p+1)*as0+(p+1)*as1;
-        
+
+        if (tiny != 0) {
+          const auto alpha11_real = RealPart(alpha11);
+          alpha11 += minus_abs_tiny*ValueType(alpha11_real <  0);
+          alpha11 +=       abs_tiny*ValueType(alpha11_real >= 0);
+        }
         for (int i=0;i<iend;++i) {
           // a21[i*as0] *= inv_alpha11; 
           a21[i*as0] /= alpha11;
-
               
 #if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
 #pragma unroll
@@ -69,14 +80,16 @@ namespace KokkosBatched {
     int
     SerialLU_Internal<Algo::LU::Blocked>::
     invoke(const int m, const int n,
-           ValueType *__restrict__ A, const int as0, const int as1) {
+           ValueType *__restrict__ A, const int as0, const int as1,
+           const typename MagnitudeScalarType<ValueType>::type tiny) {
       enum : int {
         mbAlgo = Algo::LU::Blocked::mb<Kokkos::Impl::ActiveExecutionMemorySpace>()
       };
-      const typename Kokkos::Details::ArithTraits<ValueType>::mag_type one(1.0), minus_one(-1.0);          
+      const typename MagnitudeScalarType<ValueType>::type one(1.0), minus_one(-1.0);
+
       const int k = (m < n ? m : n);
       if (k <= 0) return 0;
-
+      
       InnerLU<mbAlgo> lu(as0, as1);
           
       InnerTrsmLeftLowerUnitDiag<mbAlgo>    trsm_llu(as0, as1, as0, as1);

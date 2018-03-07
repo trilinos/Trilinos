@@ -467,6 +467,27 @@ public:
   /// square of the result will not equal x.
   static KOKKOS_FORCEINLINE_FUNCTION T sqrt (const T& x);
 
+  /// \brief The cubic root of x.
+  ///
+  /// If T is an integer type, this is the floor of the cubic root.
+  /// If T is a complex-valued type, then this method returns the
+  /// principal branch of the cubic root.
+  ///
+  /// If T is real-valued and x is negative, the result of the cubic
+  /// root is undefined in general.  (CUDA does not allow throwing
+  /// exceptions in device functions.)  Implementations should return
+  /// NaN if the type T supports this.  Of course, in that case, the
+  /// cubic of the result will not equal x.
+  static KOKKOS_FORCEINLINE_FUNCTION T cbrt (const T& x);  
+
+  /// \brief The natural (base e) exponential function of x.
+  ///
+  /// If T is an integer type, this is the floor of the exponential 
+  /// function.  If T is a complex-valued type, then this method 
+  /// returns \f$e^{x+iy} = e^x ( cos(y) + i sin(y) )\f$.
+  ///
+  static KOKKOS_FORCEINLINE_FUNCTION T exp (const T& x);
+
   /// \brief The natural (base e) logarithm of x.
   ///
   /// If T is an integer type, this is the floor of the logarithm.  If
@@ -492,6 +513,50 @@ public:
   /// should return NaN if the type T supports this.  Of course, in
   /// that case, if y is the result, \f$10^y\f$ will not equal x.
   static KOKKOS_FORCEINLINE_FUNCTION T log10 (const T& x);
+
+  /// Trigonometric and hyperbolic functions are not available 
+  /// for integer types. This is because asin(sin(x)) is not x
+  /// when x is integer with a rounding error.
+  ///
+  ///  KJ: log, exp also has this problem. We probably need to 
+  ///      disable them for integer types instead of providing 
+  ///      functionality with floor.
+
+  /// \brief The sin function of x
+  ///
+  static KOKKOS_FORCEINLINE_FUNCTION T sin (const T& x);
+
+  /// \brief The cos function of x
+  ///
+  static KOKKOS_FORCEINLINE_FUNCTION T cos (const T& x);
+
+  /// \brief The tan function of x
+  ///
+  static KOKKOS_FORCEINLINE_FUNCTION T tan (const T& x);
+  
+  /// \brief The sin hyperbolic function of x
+  ///
+  static KOKKOS_FORCEINLINE_FUNCTION T sinh (const T& x);
+
+  /// \brief The cos hyperbolic function of x
+  ///
+  static KOKKOS_FORCEINLINE_FUNCTION T cosh (const T& x);
+
+  /// \brief The tan hyperbolic function of x
+  ///
+  static KOKKOS_FORCEINLINE_FUNCTION T tanh (const T& x);
+  
+  /// \brief The asin function of x
+  ///
+  static KOKKOS_FORCEINLINE_FUNCTION T asin (const T& x);
+
+  /// \brief The acos function of x
+  ///
+  static KOKKOS_FORCEINLINE_FUNCTION T acos (const T& x);
+
+  /// \brief The atan function of x
+  ///
+  static KOKKOS_FORCEINLINE_FUNCTION T atan (const T& x);
 
   /// \brief Return a silent NaN, if appropriate for T.
   ///
@@ -648,11 +713,44 @@ public:
   static KOKKOS_FORCEINLINE_FUNCTION float sqrt (const float x) {
     return ::sqrt (x);
   }
+  static KOKKOS_FORCEINLINE_FUNCTION float cbrt (const float x) {
+    return ::cbrt (x);
+  }
+  static KOKKOS_FORCEINLINE_FUNCTION float exp (const float x) {
+    return ::exp (x);
+  }
   static KOKKOS_FORCEINLINE_FUNCTION float log (const float x) {
     return ::log (x);
   }
   static KOKKOS_FORCEINLINE_FUNCTION float log10 (const float x) {
     return ::log10 (x);
+  }
+  static KOKKOS_FORCEINLINE_FUNCTION float sin (const float x) {
+    return ::sin (x);
+  }
+  static KOKKOS_FORCEINLINE_FUNCTION float cos (const float x) {
+    return ::cos (x);
+  }
+  static KOKKOS_FORCEINLINE_FUNCTION float tan (const float x) {
+    return ::tan (x);
+  }
+  static KOKKOS_FORCEINLINE_FUNCTION float sinh (const float x) {
+    return ::sinh (x);
+  }
+  static KOKKOS_FORCEINLINE_FUNCTION float cosh (const float x) {
+    return ::cosh (x);
+  }
+  static KOKKOS_FORCEINLINE_FUNCTION float tanh (const float x) {
+    return ::tanh (x);
+  }
+  static KOKKOS_FORCEINLINE_FUNCTION float asin (const float x) {
+    return ::asin (x);
+  }
+  static KOKKOS_FORCEINLINE_FUNCTION float acos (const float x) {
+    return ::acos (x);
+  }
+  static KOKKOS_FORCEINLINE_FUNCTION float atan (const float x) {
+    return ::atan (x);
   }
   static KOKKOS_FORCEINLINE_FUNCTION mag_type epsilon () {
     return FLT_EPSILON;
@@ -789,14 +887,58 @@ public:
       return std::pow (x, y);
     }
   }
+  static std::complex<RealFloatType>
+  pow (const std::complex<RealFloatType>& x, const RealFloatType & y) {
+    // Fix for some weird gcc 4.2.1 inaccuracy.
+    if (y == ArithTraits<RealFloatType>::one ()) {
+      return x;
+    } else if (y == ArithTraits<RealFloatType>::one () + ArithTraits<RealFloatType>::one ()) {
+      return x * x;
+    } else {
+      return std::pow (x, y);
+    }
+  }
   static std::complex<RealFloatType> sqrt (const std::complex<RealFloatType>& x) {
     return std::sqrt (x);
+  }
+  static std::complex<RealFloatType> cbrt (const std::complex<RealFloatType>& x) {
+    return std::cbrt (x);
+  }
+  static std::complex<RealFloatType> exp (const std::complex<RealFloatType>& x) {
+    return std::exp (x);
   }
   static std::complex<RealFloatType> log (const std::complex<RealFloatType>& x) {
     return std::log (x);
   }
   static std::complex<RealFloatType> log10 (const std::complex<RealFloatType>& x) {
     return std::log10 (x);
+  }
+  static std::complex<RealFloatType> sin (const std::complex<RealFloatType>& x) {
+    return std::sin (x);
+  }
+  static std::complex<RealFloatType> cos (const std::complex<RealFloatType>& x) {
+    return std::cos (x);
+  }
+  static std::complex<RealFloatType> tan (const std::complex<RealFloatType>& x) {
+    return std::tan (x);
+  }
+  static std::complex<RealFloatType> sinh (const std::complex<RealFloatType>& x) {
+    return std::sinh (x);
+  }
+  static std::complex<RealFloatType> cosh (const std::complex<RealFloatType>& x) {
+    return std::cosh (x);
+  }
+  static std::complex<RealFloatType> tanh (const std::complex<RealFloatType>& x) {
+    return std::tanh (x);
+  }
+  static std::complex<RealFloatType> asin (const std::complex<RealFloatType>& x) {
+    return std::asin (x);
+  }
+  static std::complex<RealFloatType> acos (const std::complex<RealFloatType>& x) {
+    return std::acos (x);
+  }
+  static std::complex<RealFloatType> atan (const std::complex<RealFloatType>& x) {
+    return std::atan (x);
   }
   static std::complex<RealFloatType> nan () {
     const mag_type mag_nan = ArithTraits<mag_type>::nan ();
@@ -917,11 +1059,44 @@ public:
   static KOKKOS_FORCEINLINE_FUNCTION val_type sqrt (const val_type x) {
     return ::sqrt (x);
   }
+  static KOKKOS_FORCEINLINE_FUNCTION val_type cbrt (const val_type x) {
+    return ::cbrt (x);
+  }
+  static KOKKOS_FORCEINLINE_FUNCTION val_type exp (const val_type x) {
+    return ::exp (x);
+  }
   static KOKKOS_FORCEINLINE_FUNCTION val_type log (const val_type x) {
     return ::log (x);
   }
   static KOKKOS_FORCEINLINE_FUNCTION val_type log10 (const val_type x) {
     return ::log10 (x);
+  }
+  static KOKKOS_FORCEINLINE_FUNCTION val_type sin (const val_type x) {
+    return ::sin (x);
+  }
+  static KOKKOS_FORCEINLINE_FUNCTION val_type cos (const val_type x) {
+    return ::cos (x);
+  }
+  static KOKKOS_FORCEINLINE_FUNCTION val_type tan (const val_type x) {
+    return ::tan (x);
+  }
+  static KOKKOS_FORCEINLINE_FUNCTION val_type sinh (const val_type x) {
+    return ::sinh (x);
+  }
+  static KOKKOS_FORCEINLINE_FUNCTION val_type cosh (const val_type x) {
+    return ::cosh (x);
+  }
+  static KOKKOS_FORCEINLINE_FUNCTION val_type tanh (const val_type x) {
+    return ::tanh (x);
+  }
+  static KOKKOS_FORCEINLINE_FUNCTION val_type asin (const val_type x) {
+    return ::asin (x);
+  }
+  static KOKKOS_FORCEINLINE_FUNCTION val_type acos (const val_type x) {
+    return ::acos (x);
+  }
+  static KOKKOS_FORCEINLINE_FUNCTION val_type atan (const val_type x) {
+    return ::atan (x);
   }
   static KOKKOS_FORCEINLINE_FUNCTION val_type nan () {
 #ifdef __CUDA_ARCH__
@@ -1052,11 +1227,44 @@ public:
   static val_type sqrt (const val_type& x) {
     return ::sqrt (x);
   }
+  static val_type cbrt (const val_type& x) {
+    return ::cbrtl (x);
+  }
+  static val_type exp (const val_type& x) {
+    return ::exp (x);
+  }
   static val_type log (const val_type& x) {
     return ::log (x);
   }
   static val_type log10 (const val_type& x) {
     return ::log10 (x);
+  }
+  static val_type sin (const val_type& x) {
+    return ::sin (x);
+  }
+  static val_type cos (const val_type& x) {
+    return ::cos (x);
+  }
+  static val_type tan (const val_type& x) {
+    return ::tan (x);
+  }
+  static val_type sinh (const val_type& x) {
+    return ::sinh (x);
+  }
+  static val_type cosh (const val_type& x) {
+    return ::cosh (x);
+  }
+  static val_type tanh (const val_type& x) {
+    return ::tanh (x);
+  }
+  static val_type asin (const val_type& x) {
+    return ::asin (x);
+  }
+  static val_type acos (const val_type& x) {
+    return ::acos (x);
+  }
+  static val_type atan (const val_type& x) {
+    return ::atan (x);
   }
   static val_type nan () {
     return std::numeric_limits<val_type>::quiet_NaN();
@@ -1176,11 +1384,44 @@ public:
   static __float128 sqrt (const __float128 x) {
     return sqrtq (x);
   }
+  static __float128 cbrt (const __float128 x) {
+    return cbrtq (x);
+  }
+  static __float128 exp (const __float128 x) {
+    return exp (x);
+  }
   static __float128 log (const __float128 x) {
     return logq (x);
   }
   static __float128 log10 (const __float128 x) {
     return log10q (x);
+  }
+  static __float128 sin (const __float128 x) {
+    return sinq (x);
+  }
+  static __float128 cos (const __float128 x) {
+    return cosq (x);
+  }
+  static __float128 tan (const __float128 x) {
+    return tanq (x);
+  }
+  static __float128 sinh (const __float128 x) {
+    return sinhq (x);
+  }
+  static __float128 cosh (const __float128 x) {
+    return coshq (x);
+  }
+  static __float128 tanh (const __float128 x) {
+    return tanhq (x);
+  }
+  static __float128 asin (const __float128 x) {
+    return asinq (x);
+  }
+  static __float128 acos (const __float128 x) {
+    return acosq (x);
+  }
+  static __float128 atan (const __float128 x) {
+    return atanq (x);
   }
   static mag_type epsilon () {
     return FLT128_EPSILON;
@@ -1293,16 +1534,97 @@ public:
     return ::Kokkos::conj (x);
   }
   // static KOKKOS_FORCEINLINE_FUNCTION val_type pow (const val_type x, const val_type y) {
-  //   return ::pow (x, y);
+  //   const mag_type abs_x_square = x.real()*x.real() + x.imag()*x.imag();
+  //   const mag_type arg_x = ArithTraits<mag_type>::atan(x.imag()/x.real());
+  //   const mag_type half = mag_type(0.5);
+  //   const mag_type alpha = (ArithTraits<mag_type>::pow(abs_x_square, half*y.real()) * 
+  //                           ArithTraits<mag_type>::exp(-y.imag()*arg_x));
+  //   return val_type(alpha* ArithTraits<mag_type>::cos(y.real()*arg_x + half*y.imag()*ArithTraits<mag_type>::log(abs_x_square)),
+  //                   alpha* ArithTraits<mag_type>::sin(y.real()*arg_x + half*y.imag()*ArithTraits<mag_type>::log(abs_x_square)));
+  // }
+  // static KOKKOS_FORCEINLINE_FUNCTION val_type pow (const val_type x, const mag_type y) {
+  //   const mag_type arg_x = ArithTraits<mag_type>::atan(x.imag()/x.real());
+  //   const mag_type alpha = ArithTraits<mag_type>::pow(abs(x),y);
+  //   return val_type(alpha* ArithTraits<mag_type>::cos(y*arg_x), 
+  //                   alpha* ArithTraits<mag_type>::sin(y*arg_x));
   // }
   static KOKKOS_FORCEINLINE_FUNCTION val_type sqrt (const val_type x) {
     return ::Kokkos::sqrt (x);
   }
+  // static KOKKOS_FORCEINLINE_FUNCTION val_type cbrt (const val_type x) {
+  //   const mag_type r = ::Kokkos::abs(x);
+  //   const mag_type phi = ::atan(x.imag()/x.real())/mag_type(3);
+  //   const mag_type re = r* ::cos(phi);
+  //   const mag_type im = r* ::sin(phi);
+  //   return val_type(re,im);
+  // }
+  // static KOKKOS_FORCEINLINE_FUNCTION val_type exp (const val_type x) {
+  //   const mag_type xx = ::exp(x.real());
+  //   const mag_type re = xx* ::cos(x.imag());
+  //   const mag_type im = xx* ::sin(x.imag());
+  //   return val_type(re,im);
+  // }
   // static KOKKOS_FORCEINLINE_FUNCTION val_type log (const val_type x) {
-  //   return ::log (x);
+  //   return val_type(ArithTraits<mag_type>::log(abs(x)), ArithTraits<mag_type>::atan(x.imag()/x.real()));
   // }
   // static KOKKOS_FORCEINLINE_FUNCTION val_type log10 (const val_type x) {
-  //   return ::log10 (x);
+  //   return log(x)/ArithTraits<mag_type>::log(mag_type(10));
+  // }
+  // static KOKKOS_FORCEINLINE_FUNCTION val_type sin (const val_type x) {
+  //   const val_type ii = val_type(0, 1);
+  //   const val_type xx = exp(-ii*x) - exp(ii*x);
+  //   const mag_type half = 0.5;
+  //   return val_type(-half*xx.imag(),half*xx.real());
+  // }
+  // static KOKKOS_FORCEINLINE_FUNCTION val_type cos (const val_type x) {
+  //   const val_type xx = exp(x) - exp(-x);
+  //   const mag_type half = 0.5;
+  //   return val_type(half*xx.real(),half*xx.imag());
+  // }
+  // static KOKKOS_FORCEINLINE_FUNCTION val_type tan (const val_type x) {
+  //   const val_type ii(0, 1);
+  //   const val_type e_nix = exp(-ii*x);
+  //   const val_type e_pix = exp( ii*x);
+  //   return ii*(e_nix - e_pix)/(e_nix + e_pix);
+  // }
+  // static KOKKOS_FORCEINLINE_FUNCTION val_type sinh (const val_type x) {
+  //   const val_type xx = exp(x) - exp(-x);
+  //   const mag_type half = 0.5;
+  //   return val_type(half*xx.real(), half*xx.imag());
+  // }
+  // static KOKKOS_FORCEINLINE_FUNCTION val_type cosh (const val_type x) {
+  //   const val_type xx = exp(x) + exp(-x);
+  //   const mag_type half = 0.5;
+  //   return val_type(half*xx.real(), half*xx.imag());
+  // }
+  // static KOKKOS_FORCEINLINE_FUNCTION val_type tanh (const val_type x) {
+  //   const val_type e_2x = exp(2*x);
+  //   return (e_2x - 1)/(e_2x + 1);
+  // }
+  // static KOKKOS_FORCEINLINE_FUNCTION val_type asin (const val_type x) {
+  //   const val_type ii(0, 1);
+  //   const val_type xx = -ii*log(ii*x + sqrt(val_type(1) - x*x));
+  //   return val_type(xx.imag(),-xx.real());
+  // }
+  // static KOKKOS_FORCEINLINE_FUNCTION val_type acos (const val_type x) {
+  //   const val_type ii = val_type(0, 1);
+  //   const val_type xx = -ii*log(x + ii*sqrt(val_type(1) - x*x));
+  //   return val_type(xx.imag(),-xx.real());
+  // }
+  // static KOKKOS_FORCEINLINE_FUNCTION val_type atan (const val_type x) {
+  //   val_type r_val;
+  //   const val_type ii = val_type(0, 1);
+  //   if (x == ii) {
+  //     r_val = val_type(ArithTraits<mag_type>::nan(),  std::numeric_limits<mag_type>::infinity());
+  //   } if (x == -ii) {
+  //     r_val = val_type(ArithTraits<mag_type>::nan(), -std::numeric_limits<mag_type>::infinity());
+  //   } else {
+  //     const val_type ii_x = ii*x;
+  //     const mag_type half = 0.5;
+  //     const val_type xx = log(val_type(1) - ii_x) - log(val_type(1) + ii_x);
+  //     r_val = val_type(-half*xx.imag(), half*xx.real());
+  //   }
+  //   return r_val;
   // }
   static KOKKOS_FORCEINLINE_FUNCTION val_type nan () {
     // ???
@@ -1414,16 +1736,98 @@ public:
     return ::Kokkos::conj (x);
   }
   // static KOKKOS_FORCEINLINE_FUNCTION val_type pow (const val_type x, const val_type y) {
-  //   return ::pow (x, y);
+  //   const mag_type abs_x_square = x.real()*x.real() + x.imag()*x.imag();
+  //   const mag_type arg_x = ArithTraits<mag_type>::atan(x.imag()/x.real());
+  //   const mag_type half = mag_type(0.5);
+  //   const mag_type alpha = (ArithTraits<mag_type>::pow(abs_x_square, half*y.real()) * 
+  //                           ArithTraits<mag_type>::exp(-y.imag()*arg_x));
+  //   return val_type(alpha* ArithTraits<mag_type>::cos(y.real()*arg_x + half*y.imag()*ArithTraits<mag_type>::log(abs_x_square)),
+  //                   alpha* ArithTraits<mag_type>::sin(y.real()*arg_x + half*y.imag()*ArithTraits<mag_type>::log(abs_x_square)));
+
+  // }
+  // static KOKKOS_FORCEINLINE_FUNCTION val_type pow (const val_type x, const mag_type y) {
+  //   const mag_type arg_x = ArithTraits<mag_type>::atan(x.imag()/x.real());
+  //   const mag_type alpha = ArithTraits<mag_type>::pow(abs(x),y);
+  //   return val_type(alpha* ArithTraits<mag_type>::cos(y*arg_x), 
+  //                   alpha* ArithTraits<mag_type>::sin(y*arg_x));
   // }
   static KOKKOS_FORCEINLINE_FUNCTION val_type sqrt (const val_type x) {
      return ::Kokkos::sqrt (x);
   }
+  // static KOKKOS_FORCEINLINE_FUNCTION val_type cbrt (const val_type x) {
+  //   const mag_type r = ::Kokkos::abs(x);
+  //   const mag_type phi = ::atan(x.imag()/x.real())/mag_type(3);
+  //   const mag_type re = r* ::cos(phi);
+  //   const mag_type im = r* ::sin(phi);
+  //   return val_type(re,im);
+  // }
+  // static KOKKOS_FORCEINLINE_FUNCTION val_type exp (const val_type x) {
+  //   const mag_type xx = ::exp(x.real());
+  //   const mag_type re = xx* ::cos(x.imag());
+  //   const mag_type im = xx* ::sin(x.imag());
+  //   return val_type(re,im);
+  // }
   // static KOKKOS_FORCEINLINE_FUNCTION val_type log (const val_type x) {
-  //   return ::log (x);
+  //   return val_type(ArithTraits<mag_type>::log(abs(x)), ArithTraits<mag_type>::atan(x.imag()/x.real()));
   // }
   // static KOKKOS_FORCEINLINE_FUNCTION val_type log10 (const val_type x) {
-  //   return ::log10 (x);
+  //   return log(x)/ArithTraits<mag_type>::log(mag_type(10));
+  // }
+  // static KOKKOS_FORCEINLINE_FUNCTION val_type sin (const val_type x) {
+  //   const val_type ii = val_type(0, 1);
+  //   const val_type xx = exp(-ii*x) - exp(ii*x);
+  //   const mag_type half = 0.5;
+  //   return val_type(-half*xx.imag(),half*xx.real());
+  // }
+  // static KOKKOS_FORCEINLINE_FUNCTION val_type cos (const val_type x) {
+  //   const val_type xx = exp(x) - exp(-x);
+  //   const mag_type half = 0.5;
+  //   return val_type(half*xx.real(),half*xx.imag());
+  // }
+  // static KOKKOS_FORCEINLINE_FUNCTION val_type tan (const val_type x) {
+  //   const val_type ii = val_type(0, 1);
+  //   const val_type e_nix = exp(-ii*x);
+  //   const val_type e_pix = exp( ii*x);
+  //   return ii*(e_nix - e_pix)/(e_nix + e_pix);
+  // }
+  // static KOKKOS_FORCEINLINE_FUNCTION val_type sinh (const val_type x) {
+  //   const val_type xx = exp(x) - exp(-x);
+  //   const mag_type half = 0.5;
+  //   return val_type(half*xx.real(), half*xx.imag());
+  // }
+  // static KOKKOS_FORCEINLINE_FUNCTION val_type cosh (const val_type x) {
+  //   const val_type xx = exp(x) + exp(-x);
+  //   const mag_type half = 0.5;
+  //   return val_type(half*xx.real(), half*xx.imag());
+  // }
+  // static KOKKOS_FORCEINLINE_FUNCTION val_type tanh (const val_type x) {
+  //   const val_type e_2x = exp(2*x);
+  //   return (e_2x - 1)/(e_2x + 1);
+  // }
+  // static KOKKOS_FORCEINLINE_FUNCTION val_type asin (const val_type x) {
+  //   const val_type ii(0, 1);
+  //   const val_type xx = -ii*log(ii*x + sqrt(val_type(1) - x*x));
+  //   return val_type(xx.imag(),-xx.real());
+  // }
+  // static KOKKOS_FORCEINLINE_FUNCTION val_type acos (const val_type x) {
+  //   const val_type ii = val_type(0, 1);
+  //   const val_type xx = -ii*log(x + ii*sqrt(val_type(1) - x*x));
+  //   return val_type(xx.imag(),-xx.real());
+  // }
+  // static KOKKOS_FORCEINLINE_FUNCTION val_type atan (const val_type x) {
+  //   val_type r_val;
+  //   const val_type ii = val_type(0, 1);
+  //   if (x == ii) {
+  //     r_val = val_type(ArithTraits<mag_type>::nan(),  std::numeric_limits<mag_type>::infinity());
+  //   } if (x == -ii) {
+  //     r_val = val_type(ArithTraits<mag_type>::nan(), -std::numeric_limits<mag_type>::infinity());
+  //   } else {
+  //     const val_type ii_x = ii*x;
+  //     const mag_type half = 0.5;
+  //     const val_type xx = log(val_type(1) - ii_x) - log(val_type(1) + ii_x);
+  //     r_val = val_type(-half*xx.imag(), half*xx.real());
+  //   }
+  //   return r_val;
   // }
   static KOKKOS_FORCEINLINE_FUNCTION val_type nan () {
     // ???
@@ -1566,12 +1970,45 @@ public:
     // operator.
     return static_cast<val_type> ( ::sqrt (static_cast<float> (abs (x))));
   }
+  static KOKKOS_FORCEINLINE_FUNCTION val_type cbrt (const val_type x) {
+    return static_cast<val_type> ( ::cbrt (static_cast<float> (abs (x))));
+  }
+  static KOKKOS_FORCEINLINE_FUNCTION val_type exp (const val_type x) {
+    return static_cast<val_type> ( ::exp (static_cast<float> (abs (x))));
+  }
   static KOKKOS_FORCEINLINE_FUNCTION val_type log (const val_type x) {
     return static_cast<val_type> ( ::log (static_cast<float> (abs (x))));
   }
   static KOKKOS_FORCEINLINE_FUNCTION val_type log10 (const val_type x) {
     return static_cast<val_type> ( ::log10 (static_cast<float> (abs (x))));
   }
+  // static KOKKOS_FORCEINLINE_FUNCTION val_type sin (const val_type x) {
+  //   return static_cast<val_type> ( ::sin (static_cast<float> (x)));
+  // }
+  // static KOKKOS_FORCEINLINE_FUNCTION val_type cos (const val_type x) {
+  //   return static_cast<val_type> ( ::cos (static_cast<float> (x)));
+  // }
+  // static KOKKOS_FORCEINLINE_FUNCTION val_type tan (const val_type x) {
+  //   return static_cast<val_type> ( ::tan (static_cast<float> (x)));
+  // }
+  // static KOKKOS_FORCEINLINE_FUNCTION val_type sinh (const val_type x) {
+  //   return static_cast<val_type> ( ::sinh (static_cast<float> (x)));
+  // }
+  // static KOKKOS_FORCEINLINE_FUNCTION val_type cosh (const val_type x) {
+  //   return static_cast<val_type> ( ::cosh (static_cast<float> (x)));
+  // }
+  // static KOKKOS_FORCEINLINE_FUNCTION val_type tanh (const val_type x) {
+  //   return static_cast<val_type> ( ::tanh (static_cast<float> (x)));
+  // }
+  // static KOKKOS_FORCEINLINE_FUNCTION val_type asin (const val_type x) {
+  //   return static_cast<val_type> ( ::asin (static_cast<float> (x)));
+  // }
+  // static KOKKOS_FORCEINLINE_FUNCTION val_type acos (const val_type x) {
+  //   return static_cast<val_type> ( ::acos (static_cast<float> (x)));
+  // }
+  // static KOKKOS_FORCEINLINE_FUNCTION val_type atan (const val_type x) {
+  //   return static_cast<val_type> ( ::atan (static_cast<float> (x)));
+  // }
   static KOKKOS_FORCEINLINE_FUNCTION mag_type epsilon () {
     return zero ();
   }
@@ -1652,12 +2089,45 @@ public:
   static KOKKOS_FORCEINLINE_FUNCTION val_type sqrt (const val_type x) {
     return static_cast<val_type> ( ::sqrt (static_cast<float> (abs (x))));
   }
+  static KOKKOS_FORCEINLINE_FUNCTION val_type cbrt (const val_type x) {
+    return static_cast<val_type> ( ::cbrt (static_cast<float> (abs (x))));
+  }
+  static KOKKOS_FORCEINLINE_FUNCTION val_type exp (const val_type x) {
+    return static_cast<val_type> ( ::exp (static_cast<float> (abs (x))));
+  }
   static KOKKOS_FORCEINLINE_FUNCTION val_type log (const val_type x) {
     return static_cast<val_type> ( ::log (static_cast<float> (abs (x))));
   }
   static KOKKOS_FORCEINLINE_FUNCTION val_type log10 (const val_type x) {
     return static_cast<val_type> ( ::log10 (static_cast<float> (abs (x))));
   }
+  // static KOKKOS_FORCEINLINE_FUNCTION val_type sin (const val_type x) {
+  //   return static_cast<val_type> ( ::sin (static_cast<float> (x)));
+  // }
+  // static KOKKOS_FORCEINLINE_FUNCTION val_type cos (const val_type x) {
+  //   return static_cast<val_type> ( ::cos (static_cast<float> (x)));
+  // }
+  // static KOKKOS_FORCEINLINE_FUNCTION val_type tan (const val_type x) {
+  //   return static_cast<val_type> ( ::tan (static_cast<float> (x)));
+  // }
+  // static KOKKOS_FORCEINLINE_FUNCTION val_type sinh (const val_type x) {
+  //   return static_cast<val_type> ( ::sinh (static_cast<float> (x)));
+  // }
+  // static KOKKOS_FORCEINLINE_FUNCTION val_type cosh (const val_type x) {
+  //   return static_cast<val_type> ( ::cosh (static_cast<float> (x)));
+  // }
+  // static KOKKOS_FORCEINLINE_FUNCTION val_type tanh (const val_type x) {
+  //   return static_cast<val_type> ( ::tanh (static_cast<float> (x)));
+  // }
+  // static KOKKOS_FORCEINLINE_FUNCTION val_type asin (const val_type x) {
+  //   return static_cast<val_type> ( ::asin (static_cast<float> (x)));
+  // }
+  // static KOKKOS_FORCEINLINE_FUNCTION val_type acos (const val_type x) {
+  //   return static_cast<val_type> ( ::acos (static_cast<float> (x)));
+  // }
+  // static KOKKOS_FORCEINLINE_FUNCTION val_type atan (const val_type x) {
+  //   return static_cast<val_type> ( ::atan (static_cast<float> (x)));
+  // }
   static KOKKOS_FORCEINLINE_FUNCTION mag_type epsilon () {
     return zero ();
   }
@@ -1741,13 +2211,45 @@ public:
     // bit operations.
     return static_cast<val_type> ( ::sqrt (static_cast<float> (x)));
   }
-
+  static KOKKOS_FORCEINLINE_FUNCTION val_type cbrt (const val_type x) {
+    return static_cast<val_type> ( ::cbrt (static_cast<float> (x)));
+  }
+  static KOKKOS_FORCEINLINE_FUNCTION val_type exp (const val_type x) {
+    return static_cast<val_type> ( ::exp (static_cast<float> (x)));
+  }
   static KOKKOS_FORCEINLINE_FUNCTION val_type log (const val_type x) {
     return static_cast<val_type> ( ::log (static_cast<float> (x)));
   }
   static KOKKOS_FORCEINLINE_FUNCTION val_type log10 (const val_type x) {
     return static_cast<val_type> ( ::log10 (static_cast<float> (x)));
   }
+  // static KOKKOS_FORCEINLINE_FUNCTION val_type sin (const val_type x) {
+  //   return static_cast<val_type> ( ::sin (static_cast<float> (x)));
+  // }
+  // static KOKKOS_FORCEINLINE_FUNCTION val_type cos (const val_type x) {
+  //   return static_cast<val_type> ( ::cos (static_cast<float> (x)));
+  // }
+  // static KOKKOS_FORCEINLINE_FUNCTION val_type tan (const val_type x) {
+  //   return static_cast<val_type> ( ::tan (static_cast<float> (x)));
+  // }
+  // static KOKKOS_FORCEINLINE_FUNCTION val_type sinh (const val_type x) {
+  //   return static_cast<val_type> ( ::sinh (static_cast<float> (x)));
+  // }
+  // static KOKKOS_FORCEINLINE_FUNCTION val_type cosh (const val_type x) {
+  //   return static_cast<val_type> ( ::cosh (static_cast<float> (x)));
+  // }
+  // static KOKKOS_FORCEINLINE_FUNCTION val_type tanh (const val_type x) {
+  //   return static_cast<val_type> ( ::tanh (static_cast<float> (x)));
+  // }
+  // static KOKKOS_FORCEINLINE_FUNCTION val_type asin (const val_type x) {
+  //   return static_cast<val_type> ( ::asin (static_cast<float> (x)));
+  // }
+  // static KOKKOS_FORCEINLINE_FUNCTION val_type acos (const val_type x) {
+  //   return static_cast<val_type> ( ::acos (static_cast<float> (x)));
+  // }
+  // static KOKKOS_FORCEINLINE_FUNCTION val_type atan (const val_type x) {
+  //   return static_cast<val_type> ( ::atan (static_cast<float> (x)));
+  // }
   static KOKKOS_FORCEINLINE_FUNCTION mag_type epsilon () {
     return zero ();
   }
@@ -1839,12 +2341,45 @@ public:
     // bit operations.
     return static_cast<val_type> ( ::sqrt (static_cast<float> (abs (x))));
   }
+  static KOKKOS_FORCEINLINE_FUNCTION val_type cbrt (const val_type x) {
+    return static_cast<val_type> ( ::cbrt (static_cast<float> (abs (x))));
+  }
+  static KOKKOS_FORCEINLINE_FUNCTION val_type exp (const val_type x) {
+    return static_cast<val_type> ( ::exp (static_cast<float> (abs (x))));
+  }
   static KOKKOS_FORCEINLINE_FUNCTION val_type log (const val_type x) {
     return static_cast<val_type> ( ::log (static_cast<float> (abs (x))));
   }
   static KOKKOS_FORCEINLINE_FUNCTION val_type log10 (const val_type x) {
     return static_cast<val_type> ( ::log10 (static_cast<float> (abs (x))));
   }
+  // static KOKKOS_FORCEINLINE_FUNCTION val_type sin (const val_type x) {
+  //   return static_cast<val_type> ( ::sin (static_cast<float> (x)));
+  // }
+  // static KOKKOS_FORCEINLINE_FUNCTION val_type cos (const val_type x) {
+  //   return static_cast<val_type> ( ::cos (static_cast<float> (x)));
+  // }
+  // static KOKKOS_FORCEINLINE_FUNCTION val_type tan (const val_type x) {
+  //   return static_cast<val_type> ( ::tan (static_cast<float> (x)));
+  // }
+  // static KOKKOS_FORCEINLINE_FUNCTION val_type sinh (const val_type x) {
+  //   return static_cast<val_type> ( ::sinh (static_cast<float> (x)));
+  // }
+  // static KOKKOS_FORCEINLINE_FUNCTION val_type cosh (const val_type x) {
+  //   return static_cast<val_type> ( ::cosh (static_cast<float> (x)));
+  // }
+  // static KOKKOS_FORCEINLINE_FUNCTION val_type tanh (const val_type x) {
+  //   return static_cast<val_type> ( ::tanh (static_cast<float> (x)));
+  // }
+  // static KOKKOS_FORCEINLINE_FUNCTION val_type asin (const val_type x) {
+  //   return static_cast<val_type> ( ::asin (static_cast<float> (x)));
+  // }
+  // static KOKKOS_FORCEINLINE_FUNCTION val_type acos (const val_type x) {
+  //   return static_cast<val_type> ( ::acos (static_cast<float> (x)));
+  // }
+  // static KOKKOS_FORCEINLINE_FUNCTION val_type atan (const val_type x) {
+  //   return static_cast<val_type> ( ::atan (static_cast<float> (x)));
+  // }
   static KOKKOS_FORCEINLINE_FUNCTION val_type nan () {
     // short doesn't implement a NaN value, but we can still have it
     // return some "flag" value that can help users find use of
@@ -1934,12 +2469,45 @@ public:
     // bit operations.
     return static_cast<val_type> ( ::sqrt (static_cast<float> (x)));
   }
+  static KOKKOS_FORCEINLINE_FUNCTION val_type cbrt (const val_type x) {
+    return static_cast<val_type> ( ::cbrt (static_cast<float> (x)));
+  }
+  static KOKKOS_FORCEINLINE_FUNCTION val_type exp (const val_type x) {
+    return static_cast<val_type> ( ::exp (static_cast<float> (x)));
+  }
   static KOKKOS_FORCEINLINE_FUNCTION val_type log (const val_type x) {
     return static_cast<val_type> ( ::log (static_cast<float> (x)));
   }
   static KOKKOS_FORCEINLINE_FUNCTION val_type log10 (const val_type x) {
     return static_cast<val_type> ( ::log10 (static_cast<float> (x)));
   }
+  // static KOKKOS_FORCEINLINE_FUNCTION val_type sin (const val_type x) {
+  //   return static_cast<val_type> ( ::sin (static_cast<float> (x)));
+  // }
+  // static KOKKOS_FORCEINLINE_FUNCTION val_type cos (const val_type x) {
+  //   return static_cast<val_type> ( ::cos (static_cast<float> (x)));
+  // }
+  // static KOKKOS_FORCEINLINE_FUNCTION val_type tan (const val_type x) {
+  //   return static_cast<val_type> ( ::tan (static_cast<float> (x)));
+  // }
+  // static KOKKOS_FORCEINLINE_FUNCTION val_type sinh (const val_type x) {
+  //   return static_cast<val_type> ( ::sinh (static_cast<float> (x)));
+  // }
+  // static KOKKOS_FORCEINLINE_FUNCTION val_type cosh (const val_type x) {
+  //   return static_cast<val_type> ( ::cosh (static_cast<float> (x)));
+  // }
+  // static KOKKOS_FORCEINLINE_FUNCTION val_type tanh (const val_type x) {
+  //   return static_cast<val_type> ( ::tanh (static_cast<float> (x)));
+  // }
+  // static KOKKOS_FORCEINLINE_FUNCTION val_type asin (const val_type x) {
+  //   return static_cast<val_type> ( ::asin (static_cast<float> (x)));
+  // }
+  // static KOKKOS_FORCEINLINE_FUNCTION val_type acos (const val_type x) {
+  //   return static_cast<val_type> ( ::acos (static_cast<float> (x)));
+  // }
+  // static KOKKOS_FORCEINLINE_FUNCTION val_type atan (const val_type x) {
+  //   return static_cast<val_type> ( ::atan (static_cast<float> (x)));
+  // }
   static KOKKOS_FORCEINLINE_FUNCTION val_type nan () {
     // unsigned short doesn't implement a NaN value, but we can still
     // have it return some "flag" value that can help users find use
@@ -2037,12 +2605,45 @@ public:
     // bit operations.
     return static_cast<val_type> ( ::sqrt (static_cast<double> (abs (x))));
   }
+  static KOKKOS_FORCEINLINE_FUNCTION val_type cbrt (const val_type x) {
+    return static_cast<val_type> ( ::cbrt (static_cast<double> (abs (x))));
+  }
+  static KOKKOS_FORCEINLINE_FUNCTION val_type exp (const val_type x) {
+    return static_cast<val_type> ( ::exp (static_cast<double> (abs (x))));
+  }
   static KOKKOS_FORCEINLINE_FUNCTION val_type log (const val_type x) {
     return static_cast<val_type> ( ::log (static_cast<double> (abs (x))));
   }
   static KOKKOS_FORCEINLINE_FUNCTION val_type log10 (const val_type x) {
     return static_cast<val_type> ( ::log10 (static_cast<double> (abs (x))));
   }
+  // static KOKKOS_FORCEINLINE_FUNCTION val_type sin (const val_type x) {
+  //   return static_cast<val_type> ( ::sin (static_cast<double> (x)));
+  // }
+  // static KOKKOS_FORCEINLINE_FUNCTION val_type cos (const val_type x) {
+  //   return static_cast<val_type> ( ::cos (static_cast<double> (x)));
+  // }
+  // static KOKKOS_FORCEINLINE_FUNCTION val_type tan (const val_type x) {
+  //   return static_cast<val_type> ( ::tan (static_cast<double> (x)));
+  // }
+  // static KOKKOS_FORCEINLINE_FUNCTION val_type sinh (const val_type x) {
+  //   return static_cast<val_type> ( ::sinh (static_cast<double> (x)));
+  // }
+  // static KOKKOS_FORCEINLINE_FUNCTION val_type cosh (const val_type x) {
+  //   return static_cast<val_type> ( ::cosh (static_cast<double> (x)));
+  // }
+  // static KOKKOS_FORCEINLINE_FUNCTION val_type tanh (const val_type x) {
+  //   return static_cast<val_type> ( ::tanh (static_cast<double> (x)));
+  // }
+  // static KOKKOS_FORCEINLINE_FUNCTION val_type asin (const val_type x) {
+  //   return static_cast<val_type> ( ::asin (static_cast<double> (x)));
+  // }
+  // static KOKKOS_FORCEINLINE_FUNCTION val_type acos (const val_type x) {
+  //   return static_cast<val_type> ( ::acos (static_cast<double> (x)));
+  // }
+  // static KOKKOS_FORCEINLINE_FUNCTION val_type atan (const val_type x) {
+  //   return static_cast<val_type> ( ::atan (static_cast<double> (x)));
+  // }
   static KOKKOS_FORCEINLINE_FUNCTION val_type nan () {
     // int doesn't implement a NaN value, but we can still have it
     // return some "flag" value that can help users find use of
@@ -2132,12 +2733,45 @@ public:
     // bit operations.
     return static_cast<val_type> ( ::sqrt (static_cast<double> (x)));
   }
+  static KOKKOS_FORCEINLINE_FUNCTION val_type cbrt (const val_type x) {
+    return static_cast<val_type> ( ::cbrt (static_cast<double> (x)));
+  }
+  static KOKKOS_FORCEINLINE_FUNCTION val_type exp (const val_type x) {
+    return static_cast<val_type> ( ::exp (static_cast<double> (x)));
+  }
   static KOKKOS_FORCEINLINE_FUNCTION val_type log (const val_type x) {
     return static_cast<val_type> ( ::log (static_cast<double> (x)));
   }
   static KOKKOS_FORCEINLINE_FUNCTION val_type log10 (const val_type x) {
     return static_cast<val_type> ( ::log10 (static_cast<double> (x)));
   }
+  // static KOKKOS_FORCEINLINE_FUNCTION val_type sin (const val_type x) {
+  //   return static_cast<val_type> ( ::sin (static_cast<double> (x)));
+  // }
+  // static KOKKOS_FORCEINLINE_FUNCTION val_type cos (const val_type x) {
+  //   return static_cast<val_type> ( ::cos (static_cast<double> (x)));
+  // }
+  // static KOKKOS_FORCEINLINE_FUNCTION val_type tan (const val_type x) {
+  //   return static_cast<val_type> ( ::tan (static_cast<double> (x)));
+  // }
+  // static KOKKOS_FORCEINLINE_FUNCTION val_type sinh (const val_type x) {
+  //   return static_cast<val_type> ( ::sinh (static_cast<double> (x)));
+  // }
+  // static KOKKOS_FORCEINLINE_FUNCTION val_type cosh (const val_type x) {
+  //   return static_cast<val_type> ( ::cosh (static_cast<double> (x)));
+  // }
+  // static KOKKOS_FORCEINLINE_FUNCTION val_type tanh (const val_type x) {
+  //   return static_cast<val_type> ( ::tanh (static_cast<double> (x)));
+  // }
+  // static KOKKOS_FORCEINLINE_FUNCTION val_type asin (const val_type x) {
+  //   return static_cast<val_type> ( ::asin (static_cast<double> (x)));
+  // }
+  // static KOKKOS_FORCEINLINE_FUNCTION val_type acos (const val_type x) {
+  //   return static_cast<val_type> ( ::acos (static_cast<double> (x)));
+  // }
+  // static KOKKOS_FORCEINLINE_FUNCTION val_type atan (const val_type x) {
+  //   return static_cast<val_type> ( ::atan (static_cast<double> (x)));
+  // }
   static KOKKOS_FORCEINLINE_FUNCTION val_type nan () {
     // unsigned int doesn't implement a NaN value, but we can still
     // have it return some "flag" value that can help users find use
@@ -2234,6 +2868,33 @@ public:
   static KOKKOS_FORCEINLINE_FUNCTION val_type log10 (const val_type x) {
     return static_cast<val_type> ( ::log10 (static_cast<double> (abs (x))));
   }
+  // static KOKKOS_FORCEINLINE_FUNCTION val_type sin (const val_type x) {
+  //   return static_cast<val_type> ( ::sin (static_cast<double> (x)));
+  // }
+  // static KOKKOS_FORCEINLINE_FUNCTION val_type cos (const val_type x) {
+  //   return static_cast<val_type> ( ::cos (static_cast<double> (x)));
+  // }
+  // static KOKKOS_FORCEINLINE_FUNCTION val_type tan (const val_type x) {
+  //   return static_cast<val_type> ( ::tan (static_cast<double> (x)));
+  // }
+  // static KOKKOS_FORCEINLINE_FUNCTION val_type sinh (const val_type x) {
+  //   return static_cast<val_type> ( ::sinh (static_cast<double> (x)));
+  // }
+  // static KOKKOS_FORCEINLINE_FUNCTION val_type cosh (const val_type x) {
+  //   return static_cast<val_type> ( ::cosh (static_cast<double> (x)));
+  // }
+  // static KOKKOS_FORCEINLINE_FUNCTION val_type tanh (const val_type x) {
+  //   return static_cast<val_type> ( ::tanh (static_cast<double> (x)));
+  // }
+  // static KOKKOS_FORCEINLINE_FUNCTION val_type asin (const val_type x) {
+  //   return static_cast<val_type> ( ::asin (static_cast<double> (x)));
+  // }
+  // static KOKKOS_FORCEINLINE_FUNCTION val_type acos (const val_type x) {
+  //   return static_cast<val_type> ( ::acos (static_cast<double> (x)));
+  // }
+  // static KOKKOS_FORCEINLINE_FUNCTION val_type atan (const val_type x) {
+  //   return static_cast<val_type> ( ::atan (static_cast<double> (x)));
+  // }
   static KOKKOS_FORCEINLINE_FUNCTION val_type nan () {
     // long doesn't implement a NaN value, but we can still have it
     // return some "flag" value that can help users find use of
@@ -2323,12 +2984,49 @@ public:
     return static_cast<val_type> ( ::sqrt (static_cast<long double> (x)));
 #endif // __CUDA_ARCH__
   }
+  static KOKKOS_FORCEINLINE_FUNCTION val_type cbrt (const val_type x) {
+#ifdef __CUDA_ARCH__
+    return static_cast<val_type> ( ::cbrt (static_cast<double> (x)));
+#else
+    return static_cast<val_type> ( ::cbrtl (static_cast<long double> (x)));
+#endif // __CUDA_ARCH__
+  }
+  static KOKKOS_FORCEINLINE_FUNCTION val_type exp (const val_type x) {
+    return static_cast<val_type> ( ::exp (static_cast<double> (x)));
+  }
   static KOKKOS_FORCEINLINE_FUNCTION val_type log (const val_type x) {
     return static_cast<long> ( ::log (static_cast<double> (x)));
   }
   static KOKKOS_FORCEINLINE_FUNCTION val_type log10 (const val_type x) {
     return static_cast<long> ( ::log10 (static_cast<double> (x)));
   }
+  // static KOKKOS_FORCEINLINE_FUNCTION val_type sin (const val_type x) {
+  //   return static_cast<val_type> ( ::sin (static_cast<double> (x)));
+  // }
+  // static KOKKOS_FORCEINLINE_FUNCTION val_type cos (const val_type x) {
+  //   return static_cast<val_type> ( ::cos (static_cast<double> (x)));
+  // }
+  // static KOKKOS_FORCEINLINE_FUNCTION val_type tan (const val_type x) {
+  //   return static_cast<val_type> ( ::tan (static_cast<double> (x)));
+  // }
+  // static KOKKOS_FORCEINLINE_FUNCTION val_type sinh (const val_type x) {
+  //   return static_cast<val_type> ( ::sinh (static_cast<double> (x)));
+  // }
+  // static KOKKOS_FORCEINLINE_FUNCTION val_type cosh (const val_type x) {
+  //   return static_cast<val_type> ( ::cosh (static_cast<double> (x)));
+  // }
+  // static KOKKOS_FORCEINLINE_FUNCTION val_type tanh (const val_type x) {
+  //   return static_cast<val_type> ( ::tanh (static_cast<double> (x)));
+  // }
+  // static KOKKOS_FORCEINLINE_FUNCTION val_type asin (const val_type x) {
+  //   return static_cast<val_type> ( ::asin (static_cast<double> (x)));
+  // }
+  // static KOKKOS_FORCEINLINE_FUNCTION val_type acos (const val_type x) {
+  //   return static_cast<val_type> ( ::acos (static_cast<double> (x)));
+  // }
+  // static KOKKOS_FORCEINLINE_FUNCTION val_type atan (const val_type x) {
+  //   return static_cast<val_type> ( ::atan (static_cast<double> (x)));
+  // }
   static KOKKOS_FORCEINLINE_FUNCTION val_type nan () {
     // unsigned long doesn't implement a NaN value, but we can still
     // have it return some "flag" value that can help users find use
@@ -2433,12 +3131,49 @@ public:
     return static_cast<val_type> ( ::sqrt (static_cast<long double> (abs (x))));
 #endif // __CUDA_ARCH__
   }
+  static KOKKOS_FORCEINLINE_FUNCTION val_type cbrt (const val_type x) {
+#ifdef __CUDA_ARCH__
+    return static_cast<val_type> ( ::cbrt (static_cast<double> (abs (x))));
+#else
+    return static_cast<val_type> ( ::cbrtl (static_cast<long double> (abs (x))));
+#endif // __CUDA_ARCH__
+  }
+  static KOKKOS_FORCEINLINE_FUNCTION val_type exp (const val_type x) {
+    return static_cast<val_type> ( ::exp (static_cast<double> (abs (x))));
+  }
   static KOKKOS_FORCEINLINE_FUNCTION val_type log (const val_type x) {
     return static_cast<val_type> ( ::log (static_cast<double> (abs (x))));
   }
   static KOKKOS_FORCEINLINE_FUNCTION val_type log10 (const val_type x) {
     return static_cast<val_type> ( ::log10 (static_cast<double> (abs (x))));
   }
+  // static KOKKOS_FORCEINLINE_FUNCTION val_type sin (const val_type x) {
+  //   return static_cast<val_type> ( ::sin (static_cast<double> (x)));
+  // }
+  // static KOKKOS_FORCEINLINE_FUNCTION val_type cos (const val_type x) {
+  //   return static_cast<val_type> ( ::cos (static_cast<double> (x)));
+  // }
+  // static KOKKOS_FORCEINLINE_FUNCTION val_type tan (const val_type x) {
+  //   return static_cast<val_type> ( ::tan (static_cast<double> (x)));
+  // }
+  // static KOKKOS_FORCEINLINE_FUNCTION val_type sinh (const val_type x) {
+  //   return static_cast<val_type> ( ::sinh (static_cast<double> (x)));
+  // }
+  // static KOKKOS_FORCEINLINE_FUNCTION val_type cosh (const val_type x) {
+  //   return static_cast<val_type> ( ::cosh (static_cast<double> (x)));
+  // }
+  // static KOKKOS_FORCEINLINE_FUNCTION val_type tanh (const val_type x) {
+  //   return static_cast<val_type> ( ::tanh (static_cast<double> (x)));
+  // }
+  // static KOKKOS_FORCEINLINE_FUNCTION val_type asin (const val_type x) {
+  //   return static_cast<val_type> ( ::asin (static_cast<double> (x)));
+  // }
+  // static KOKKOS_FORCEINLINE_FUNCTION val_type acos (const val_type x) {
+  //   return static_cast<val_type> ( ::acos (static_cast<double> (x)));
+  // }
+  // static KOKKOS_FORCEINLINE_FUNCTION val_type atan (const val_type x) {
+  //   return static_cast<val_type> ( ::atan (static_cast<double> (x)));
+  // }
   static KOKKOS_FORCEINLINE_FUNCTION val_type nan () {
     // long long doesn't implement a NaN value, but we can still have
     // it return some "flag" value that can help users find use of
@@ -2529,12 +3264,49 @@ public:
     return static_cast<val_type> ( ::sqrt (static_cast<long double> (x)));
 #endif // __CUDA_ARCH__
   }
+  static KOKKOS_FORCEINLINE_FUNCTION val_type cbrt (const val_type x) {
+#ifdef __CUDA_ARCH__
+    return static_cast<val_type> ( ::cbrt (static_cast<double> (x)));
+#else
+    return static_cast<val_type> ( ::cbrtl (static_cast<long double> (x)));
+#endif // __CUDA_ARCH__
+  }
+  static KOKKOS_FORCEINLINE_FUNCTION val_type exp (const val_type x) {
+    return static_cast<val_type> ( ::exp (static_cast<double> (x)));
+  }
   static KOKKOS_FORCEINLINE_FUNCTION val_type log (const val_type x) {
     return static_cast<val_type> ( ::log (static_cast<double> (x)));
   }
   static KOKKOS_FORCEINLINE_FUNCTION val_type log10 (const val_type x) {
     return static_cast<val_type> ( ::log10 (static_cast<double> (x)));
   }
+  // static KOKKOS_FORCEINLINE_FUNCTION val_type sin (const val_type x) {
+  //   return static_cast<val_type> ( ::sin (static_cast<double> (x)));
+  // }
+  // static KOKKOS_FORCEINLINE_FUNCTION val_type cos (const val_type x) {
+  //   return static_cast<val_type> ( ::cos (static_cast<double> (x)));
+  // }
+  // static KOKKOS_FORCEINLINE_FUNCTION val_type tan (const val_type x) {
+  //   return static_cast<val_type> ( ::tan (static_cast<double> (x)));
+  // }
+  // static KOKKOS_FORCEINLINE_FUNCTION val_type sinh (const val_type x) {
+  //   return static_cast<val_type> ( ::sinh (static_cast<double> (x)));
+  // }
+  // static KOKKOS_FORCEINLINE_FUNCTION val_type cosh (const val_type x) {
+  //   return static_cast<val_type> ( ::cosh (static_cast<double> (x)));
+  // }
+  // static KOKKOS_FORCEINLINE_FUNCTION val_type tanh (const val_type x) {
+  //   return static_cast<val_type> ( ::tanh (static_cast<double> (x)));
+  // }
+  // static KOKKOS_FORCEINLINE_FUNCTION val_type asin (const val_type x) {
+  //   return static_cast<val_type> ( ::asin (static_cast<double> (x)));
+  // }
+  // static KOKKOS_FORCEINLINE_FUNCTION val_type acos (const val_type x) {
+  //   return static_cast<val_type> ( ::acos (static_cast<double> (x)));
+  // }
+  // static KOKKOS_FORCEINLINE_FUNCTION val_type atan (const val_type x) {
+  //   return static_cast<val_type> ( ::atan (static_cast<double> (x)));
+  // }
   static KOKKOS_FORCEINLINE_FUNCTION val_type nan () {
     // unsigned long long doesn't implement a NaN value, but we can
     // still have it return some "flag" value that can help users find
@@ -2634,12 +3406,45 @@ struct ArithTraits<dd_real>
   static inline val_type sqrt (const val_type& x) {
       return ::sqrt (x);
   }
+  static inline val_type cbrt (const val_type& x) {
+      return ::cbrt (x);
+  }
+  static inline val_type exp (const val_type& x) {
+      return ::exp (x);
+  }
   static inline val_type log (const val_type& x) {
     // dd_real puts its transcendental functions in the global namespace.
     return ::log (x);
   }
   static inline val_type log10 (const val_type& x) {
     return ::log10 (x);
+  }
+  static KOKKOS_FORCEINLINE_FUNCTION val_type sin (const val_type x) {
+    return ::sin (x);
+  }
+  static KOKKOS_FORCEINLINE_FUNCTION val_type cos (const val_type x) {
+    return ::cos (x);
+  }
+  static KOKKOS_FORCEINLINE_FUNCTION val_type tan (const val_type x) {
+    return ::tan (x);
+  }
+  static KOKKOS_FORCEINLINE_FUNCTION val_type sinh (const val_type x) {
+    return ::sinh (x);
+  }
+  static KOKKOS_FORCEINLINE_FUNCTION val_type cosh (const val_type x) {
+    return ::cosh (x);
+  }
+  static KOKKOS_FORCEINLINE_FUNCTION val_type tanh (const val_type x) {
+    return ::tanh (x);
+  }
+  static KOKKOS_FORCEINLINE_FUNCTION val_type asin (const val_type x) {
+    return ::asin (x);
+  }
+  static KOKKOS_FORCEINLINE_FUNCTION val_type acos (const val_type x) {
+    return ::acos (x);
+  }
+  static KOKKOS_FORCEINLINE_FUNCTION val_type atan (const val_type x) {
+    return ::atan (x);
   }
   static inline val_type nan () {
     return val_type::_nan;
@@ -2751,7 +3556,13 @@ struct ArithTraits<qd_real>
     return ::pow (x, y);
   }
   static inline val_type sqrt (const val_type& x) {
-      return ::sqrt (x);
+    return ::sqrt (x);
+  }
+  static inline val_type cbrt (const val_type& x) {
+    return ::cbrt (x);
+  }
+  static inline val_type exp (const val_type& x) {
+    return ::exp (x);
   }
   static inline val_type log (const val_type& x) {
     // val_type puts its transcendental functions in the global namespace.
@@ -2759,6 +3570,33 @@ struct ArithTraits<qd_real>
   }
   static inline val_type log10 (const val_type& x) {
     return ::log10 (x);
+  }
+  static KOKKOS_FORCEINLINE_FUNCTION val_type sin (const val_type x) {
+    return ::sin (x);
+  }
+  static KOKKOS_FORCEINLINE_FUNCTION val_type cos (const val_type x) {
+    return ::cos (x);
+  }
+  static KOKKOS_FORCEINLINE_FUNCTION val_type tan (const val_type x) {
+    return ::tan (x);
+  }
+  static KOKKOS_FORCEINLINE_FUNCTION val_type sinh (const val_type x) {
+    return ::sinh (x);
+  }
+  static KOKKOS_FORCEINLINE_FUNCTION val_type cosh (const val_type x) {
+    return ::cosh (x);
+  }
+  static KOKKOS_FORCEINLINE_FUNCTION val_type tanh (const val_type x) {
+    return ::tanh (x);
+  }
+  static KOKKOS_FORCEINLINE_FUNCTION val_type asin (const val_type x) {
+    return ::asin (x);
+  }
+  static KOKKOS_FORCEINLINE_FUNCTION val_type acos (const val_type x) {
+    return ::acos (x);
+  }
+  static KOKKOS_FORCEINLINE_FUNCTION val_type atan (const val_type x) {
+    return ::atan (x);
   }
   static inline val_type nan () {
     return val_type::_nan;
