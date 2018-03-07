@@ -49,16 +49,12 @@ ifeq ($(KOKKOS_INTERNAL_USE_CUDA), 1)
 	OBJ_CUDA += TestCudaHostPinned_ViewAPI.o
 	OBJ_CUDA += TestCudaHostPinned_ViewMapping_a.o TestCudaHostPinned_ViewMapping_b.o TestCudaHostPinned_ViewMapping_subview.o
 	OBJ_CUDA += TestCuda_ViewOfClass.o
-ifeq ($(KOKKOS_INTERNAL_COMPILER_XL), 1)
-	OBJ_CUDA += TestCuda_SubView_c_all.o
-else
 	OBJ_CUDA += TestCuda_SubView_a.o TestCuda_SubView_b.o
 	OBJ_CUDA += TestCuda_SubView_c01.o TestCuda_SubView_c02.o TestCuda_SubView_c03.o
 	OBJ_CUDA += TestCuda_SubView_c04.o TestCuda_SubView_c05.o TestCuda_SubView_c06.o
 	OBJ_CUDA += TestCuda_SubView_c07.o TestCuda_SubView_c08.o TestCuda_SubView_c09.o
 	OBJ_CUDA += TestCuda_SubView_c10.o TestCuda_SubView_c11.o TestCuda_SubView_c12.o
 	OBJ_CUDA += TestCuda_SubView_c13.o
-endif
 	OBJ_CUDA += TestCuda_Reductions.o TestCuda_Scan.o
 	OBJ_CUDA += TestCuda_Complex.o
 	OBJ_CUDA += TestCuda_AtomicOperations.o TestCuda_AtomicViews.o TestCuda_Atomics.o
@@ -72,7 +68,7 @@ endif
 	OBJ_CUDA += TestCuda_UniqueToken.o
 	
 	TARGETS += KokkosCore_UnitTest_Cuda
-
+    TARGETS += KokkosCore_UnitTest_CudaInterOp
 	TEST_TARGETS += test-cuda
 endif
 
@@ -80,18 +76,18 @@ ifeq ($(KOKKOS_INTERNAL_USE_ROCM), 1)
         OBJ_ROCM = UnitTestMainInit.o gtest-all.o
         OBJ_ROCM += TestROCm_Init.o
         OBJ_ROCM += TestROCm_Complex.o
-#        OBJ_ROCM += TestROCm_RangePolicy.o
-# rocm.range_scan locking up
+        OBJ_ROCM += TestROCm_RangePolicy.o
         OBJ_ROCM += TestROCm_AtomicOperations.o
         OBJ_ROCM += TestROCm_Atomics.o
 # complex failing
         OBJ_ROCM += TestROCm_AtomicViews.o
         OBJ_ROCM += TestROCm_Other.o
+#        OBJ_ROCM += TestROCm_MDRange.o
 # rocm.memory_pool
         OBJ_ROCM += TestROCm_Scan.o
         OBJ_ROCM += TestROCm_SharedAlloc.o
         OBJ_ROCM += TestROCm_SubView_a.o
-#        OBJ_ROCM += TestROCm_SubView_b.o
+        OBJ_ROCM += TestROCm_SubView_b.o
 # relies on host accessable device memory
 #        OBJ_ROCM += TestROCm_SubView_c01.o
 #        OBJ_ROCM += TestROCm_SubView_c02.o
@@ -111,9 +107,7 @@ ifeq ($(KOKKOS_INTERNAL_USE_ROCM), 1)
 #        OBJ_ROCM += TestROCm_TeamReductionScan.o
 # compile fails
 #        OBJ_ROCM += TestROCm_TeamScratch.o
-# compile fails
         OBJ_ROCM += TestROCm_ViewAPI_b.o
-#  test fail in view_api
         OBJ_ROCM += TestROCm_ViewMapping_a.o
         OBJ_ROCM += TestROCm_ViewMapping_b.o
         OBJ_ROCM += TestROCm_ViewMapping_subview.o
@@ -163,16 +157,12 @@ ifeq ($(KOKKOS_INTERNAL_USE_OPENMP), 1)
 	OBJ_OPENMP += TestOpenMP_ViewAPI_b.o
 	OBJ_OPENMP += TestOpenMP_ViewMapping_a.o TestOpenMP_ViewMapping_b.o TestOpenMP_ViewMapping_subview.o
 	OBJ_OPENMP += TestOpenMP_ViewOfClass.o
-ifeq ($(KOKKOS_INTERNAL_COMPILER_XL), 1)
-	OBJ_OPENMP += TestOpenMP_SubView_c_all.o
-else
 	OBJ_OPENMP += TestOpenMP_SubView_a.o TestOpenMP_SubView_b.o
 	OBJ_OPENMP += TestOpenMP_SubView_c01.o TestOpenMP_SubView_c02.o TestOpenMP_SubView_c03.o
 	OBJ_OPENMP += TestOpenMP_SubView_c04.o TestOpenMP_SubView_c05.o TestOpenMP_SubView_c06.o
 	OBJ_OPENMP += TestOpenMP_SubView_c07.o TestOpenMP_SubView_c08.o TestOpenMP_SubView_c09.o
 	OBJ_OPENMP += TestOpenMP_SubView_c10.o TestOpenMP_SubView_c11.o TestOpenMP_SubView_c12.o
 	OBJ_OPENMP += TestOpenMP_SubView_c13.o
-endif
 	OBJ_OPENMP += TestOpenMP_Reductions.o TestOpenMP_Scan.o
 	OBJ_OPENMP += TestOpenMP_Complex.o
 	OBJ_OPENMP += TestOpenMP_AtomicOperations.o TestOpenMP_AtomicViews.o TestOpenMP_Atomics.o
@@ -185,6 +175,7 @@ endif
 	OBJ_OPENMP += TestOpenMP_UniqueToken.o
 	
 	TARGETS += KokkosCore_UnitTest_OpenMP
+    TARGETS += KokkosCore_UnitTest_OpenMPInterOp
 
 	TEST_TARGETS += test-openmp
 endif
@@ -227,14 +218,10 @@ endif
 ifeq ($(KOKKOS_INTERNAL_USE_QTHREADS), 1)
 	OBJ_QTHREADS = TestQthreads_Other.o TestQthreads_Reductions.o TestQthreads_Atomics.o TestQthreads_Team.o
 	OBJ_QTHREADS += TestQthreads_SubView_a.o TestQthreads_SubView_b.o
-ifeq ($(KOKKOS_INTERNAL_COMPILER_XL), 1)
-	OBJ_QTHREADS += TestQthreads_SubView_c_all.o
-else
 	OBJ_QTHREADS += TestQthreads_SubView_c01.o TestQthreads_SubView_c02.o TestQthreads_SubView_c03.o
 	OBJ_QTHREADS += TestQthreads_SubView_c04.o TestQthreads_SubView_c05.o TestQthreads_SubView_c06.o
 	OBJ_QTHREADS += TestQthreads_SubView_c07.o TestQthreads_SubView_c08.o TestQthreads_SubView_c09.o
 	OBJ_QTHREADS += TestQthreads_SubView_c10.o TestQthreads_SubView_c11.o TestQthreads_SubView_c12.o
-endif
 	OBJ_QTHREADS += TestQthreads_ViewAPI_a.o TestQthreads_ViewAPI_b.o UnitTestMain.o gtest-all.o
 	TARGETS += KokkosCore_UnitTest_Qthreads
 
@@ -253,16 +240,12 @@ ifeq ($(KOKKOS_INTERNAL_USE_SERIAL), 1)
         OBJ_SERIAL += TestSerial_ViewAPI_b.o
         OBJ_SERIAL += TestSerial_ViewMapping_a.o TestSerial_ViewMapping_b.o TestSerial_ViewMapping_subview.o
         OBJ_SERIAL += TestSerial_ViewOfClass.o
-ifeq ($(KOKKOS_INTERNAL_COMPILER_XL), 1)
-	    OBJ_SERIAL += TestSerial_SubView_c_all.o
-else
         OBJ_SERIAL += TestSerial_SubView_a.o TestSerial_SubView_b.o
         OBJ_SERIAL += TestSerial_SubView_c01.o TestSerial_SubView_c02.o TestSerial_SubView_c03.o
         OBJ_SERIAL += TestSerial_SubView_c04.o TestSerial_SubView_c05.o TestSerial_SubView_c06.o
         OBJ_SERIAL += TestSerial_SubView_c07.o TestSerial_SubView_c08.o TestSerial_SubView_c09.o
         OBJ_SERIAL += TestSerial_SubView_c10.o TestSerial_SubView_c11.o TestSerial_SubView_c12.o
         OBJ_SERIAL += TestSerial_SubView_c13.o
-endif
         OBJ_SERIAL += TestSerial_Reductions.o TestSerial_Scan.o
         OBJ_SERIAL += TestSerial_Complex.o
         OBJ_SERIAL += TestSerial_AtomicOperations.o TestSerial_AtomicViews.o TestSerial_Atomics.o
@@ -310,7 +293,10 @@ TEST_TARGETS += ${INITTESTS_TEST_TARGETS}
 
 KokkosCore_UnitTest_Cuda: $(OBJ_CUDA) $(KOKKOS_LINK_DEPENDS)
 	$(LINK) $(EXTRA_PATH) $(OBJ_CUDA) $(KOKKOS_LIBS) $(LIB) $(KOKKOS_LDFLAGS) $(LDFLAGS) -o KokkosCore_UnitTest_Cuda
-
+	
+KokkosCore_UnitTest_CudaInterOp: UnitTestMain.o gtest-all.o TestCuda_InterOp.o
+	$(LINK) $(EXTRA_PATH) UnitTestMain.o gtest-all.o TestCuda_InterOp.o $(KOKKOS_LIBS) $(LIB) $(KOKKOS_LDFLAGS) $(LDFLAGS) -o KokkosCore_UnitTest_CudaInterOp
+	
 KokkosCore_UnitTest_ROCm: $(OBJ_ROCM) $(KOKKOS_LINK_DEPENDS)
 	$(LINK) $(EXTRA_PATH) $(OBJ_ROCM) $(KOKKOS_LIBS) $(LIB) $(KOKKOS_LDFLAGS) $(LDFLAGS) -o KokkosCore_UnitTest_ROCm
 
@@ -319,6 +305,9 @@ KokkosCore_UnitTest_Threads: $(OBJ_THREADS) $(KOKKOS_LINK_DEPENDS)
 
 KokkosCore_UnitTest_OpenMP: $(OBJ_OPENMP) $(KOKKOS_LINK_DEPENDS)
 	$(LINK) $(EXTRA_PATH) $(OBJ_OPENMP) $(KOKKOS_LIBS) $(LIB) $(KOKKOS_LDFLAGS) $(LDFLAGS) -o KokkosCore_UnitTest_OpenMP
+
+KokkosCore_UnitTest_OpenMPInterOp: UnitTestMain.o gtest-all.o TestOpenMP_InterOp.o
+	$(LINK) $(EXTRA_PATH) UnitTestMain.o gtest-all.o TestOpenMP_InterOp.o $(KOKKOS_LIBS) $(LIB) $(KOKKOS_LDFLAGS) $(LDFLAGS) -o KokkosCore_UnitTest_OpenMPInterOp
 
 KokkosCore_UnitTest_OpenMPTarget: $(OBJ_OPENMPTARGET) $(KOKKOS_LINK_DEPENDS)
 	$(LINK) $(KOKKOS_LDFLAGS) $(LDFLAGS) $(EXTRA_PATH) $(OBJ_OPENMPTARGET) $(KOKKOS_LIBS) $(LIB) -o KokkosCore_UnitTest_OpenMPTarget
@@ -353,6 +342,7 @@ ${INITTESTS_TARGETS}: KokkosCore_UnitTest_DefaultDeviceTypeInit_%: TestDefaultDe
 
 test-cuda: KokkosCore_UnitTest_Cuda
 	./KokkosCore_UnitTest_Cuda
+	./KokkosCore_UnitTest_CudaInterOp
 
 test-rocm: KokkosCore_UnitTest_ROCm
 	./KokkosCore_UnitTest_ROCm
@@ -362,6 +352,7 @@ test-threads: KokkosCore_UnitTest_Threads
 
 test-openmp: KokkosCore_UnitTest_OpenMP
 	./KokkosCore_UnitTest_OpenMP
+	./KokkosCore_UnitTest_OpenMPInterOp
 
 test-openmptarget: KokkosCore_UnitTest_OpenMPTarget
 	./KokkosCore_UnitTest_OpenMPTarget
