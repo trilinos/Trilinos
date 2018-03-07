@@ -49,7 +49,6 @@
 #include <iomanip>
 
 #include <Teuchos_Comm.hpp>
-#include <Tpetra_DefaultPlatform.hpp>
 #include <Tpetra_Map.hpp>
 #include <Tpetra_Import.hpp>
 #include <Tpetra_Export.hpp>

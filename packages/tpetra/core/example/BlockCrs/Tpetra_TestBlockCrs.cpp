@@ -39,15 +39,13 @@
 // ************************************************************************
 // @HEADER
 
-#include <MatrixMarket_Tpetra.hpp>
-
-#include <Teuchos_RCP.hpp>
-#include <Teuchos_GlobalMPISession.hpp>
-#include <Teuchos_FancyOStream.hpp>
+#include "MatrixMarket_Tpetra.hpp"
+#include "Tpetra_Details_Behavior.hpp"
+#include "Tpetra_Core.hpp"
+#include "Teuchos_FancyOStream.hpp"
+#include "Teuchos_RCP.hpp"
 
 #include "Tpetra_TestBlockCrsMeshDatabase.hpp"
-
-//#define PRINT_VERBOSE 1
 
 using namespace BlockCrsTest;
 
@@ -58,9 +56,9 @@ int main (int argc, char *argv[])
 
   auto out = Teuchos::getFancyOStream (Teuchos::rcpFromRef (std::cout));
 
-  // MPI boilerplate
-  Tpetra::initialize(&argc, &argv);
-  RCP<const Teuchos::Comm<int> > comm = Tpetra::DefaultPlatform::getDefaultPlatform ().getComm();
+  // Initialize MPI and Kokkos
+  Tpetra::initialize (&argc, &argv);
+  auto comm = Tpetra::getDefaultComm ();
 
   // Command-line input
   LO num_global_elements_i = 2, num_global_elements_j = 2, num_global_elements_k = 2;
@@ -96,10 +94,17 @@ int main (int argc, char *argv[])
   }
 
   if (comm->getRank() == 0) {
-    if (std::is_same<exec_space,Kokkos::Serial>::value)
+#ifdef KOKKOS_HAVE_SERIAL
+    constexpr bool isSerial = std::is_same<exec_space, Kokkos::Serial>::value;
+#else
+    constexpr bool isSerial = false;
+#endif // KOKKOS_HAVE_SERIAL
+    if (isSerial) {
       std::cout << "Kokkos::Serial " << std::endl;
-    else
+    }
+    else {
       exec_space::print_configuration(std::cout, false);
+    }
   }
 
   MeshDatabase mesh(comm,
@@ -116,9 +121,10 @@ int main (int argc, char *argv[])
   const auto num_owned_elements = mesh.getNumOwnedElements();
   const auto num_owned_and_remote_elements = mesh.getNumElements();
 
-#if PRINT_VERBOSE
-  mesh.print(std::cout);
-#endif
+  const bool verbose = Tpetra::Details::Behavior::verbose ();
+  if (verbose) {
+    mesh.print(std::cout);
+  }
 
   {
     TimeMonitor timerGlobal(*TimeMonitor::getNewTimer("X) Global"));
@@ -131,20 +137,27 @@ int main (int argc, char *argv[])
 
     // - all internal views are allocated on device; mirror as mesh database is constructed on host
     const auto mesh_gids_host = mesh.getElementGlobalIDs();
-    const auto mesh_gids = Kokkos::create_mirror_view(typename exec_space::memory_space(), mesh.getElementGlobalIDs());
+    const auto mesh_gids =
+      Kokkos::create_mirror_view (typename exec_space::memory_space {},
+                                  mesh.getElementGlobalIDs ());
     Kokkos::deep_copy(mesh_gids, mesh_gids_host);
 
     // for convenience, separate the access to owned and remote gids
-    const auto owned_gids  = Kokkos::subview(mesh_gids, local_ordinal_range_type(                 0, num_owned_elements));
-    const auto remote_gids = Kokkos::subview(mesh_gids, local_ordinal_range_type(num_owned_elements, num_owned_and_remote_elements));
+    const auto owned_gids =
+      Kokkos::subview (mesh_gids,
+                       local_ordinal_range_type (0, num_owned_elements));
+    const auto remote_gids =
+      Kokkos::subview (mesh_gids,
+                       local_ordinal_range_type (num_owned_elements,
+                                                 num_owned_and_remote_elements));
 
-    RCP<const map_type> row_map = rcp(new map_type(TpetraComputeGlobalNumElements, owned_gids, 0, comm));
-    RCP<const map_type> col_map = rcp(new map_type(TpetraComputeGlobalNumElements, mesh_gids, 0, comm));
+    RCP<const map_type> row_map (new map_type (TpetraComputeGlobalNumElements, owned_gids, 0, comm));
+    RCP<const map_type> col_map (new map_type (TpetraComputeGlobalNumElements, mesh_gids, 0, comm));
 
-#if PRINT_VERBOSE
-    row_map->describe(*out);
-    col_map->describe(*out);
-#endif
+    if (verbose) {
+      row_map->describe(*out);
+      col_map->describe(*out);
+    }
 
     // Graph Construction
     // ------------------
@@ -203,9 +216,9 @@ int main (int argc, char *argv[])
                                                 Teuchos::null));
     } // end global graph timer
 
-#if PRINT_VERBOSE
-    bcrs_graph->describe(*out, Teuchos::VERB_EXTREME);
-#endif
+    if (verbose) {
+      bcrs_graph->describe(*out, Teuchos::VERB_EXTREME);
+    }
 
     // Create BlockCrsMatrix
     RCP<tpetra_blockcrs_matrix_type> A_bcrs = Teuchos::rcp(new tpetra_blockcrs_matrix_type(*bcrs_graph, blocksize));
@@ -261,9 +274,10 @@ int main (int argc, char *argv[])
       // this function does not exist
       //A_bcrs->fillComplete();
     }
-#if PRINT_VERBOSE
-    A_bcrs->describe(*out, Teuchos::VERB_EXTREME);
-#endif
+
+    if (verbose) {
+      A_bcrs->describe(*out, Teuchos::VERB_EXTREME);
+    }
 
     // Create MultiVector
     RCP<tpetra_multivector_type> X = Teuchos::rcp(new tpetra_multivector_type(A_bcrs->getDomainMap(), nrhs));
@@ -280,9 +294,9 @@ int main (int argc, char *argv[])
         });
     }
 
-#if PRINT_VERBOSE
-    X->describe(*out, Teuchos::VERB_EXTREME);
-#endif
+    if (verbose) {
+      X->describe(*out, Teuchos::VERB_EXTREME);
+    }
 
     RCP<tpetra_multivector_type> B_bcrs = Teuchos::rcp(new tpetra_multivector_type(A_bcrs->getRangeMap(),  nrhs));
 
@@ -371,9 +385,9 @@ int main (int argc, char *argv[])
 
     } // end conversion timer
 
-#if PRINT_VERBOSE
-    A_crs->describe(*out, Teuchos::VERB_EXTREME);
-#endif
+    if (verbose) {
+      A_crs->describe(*out, Teuchos::VERB_EXTREME);
+    }
 
     RCP<tpetra_multivector_type> B_crs = Teuchos::rcp(new tpetra_multivector_type(A_bcrs->getRangeMap(),  nrhs));
 
