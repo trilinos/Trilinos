@@ -158,6 +158,7 @@ int main (int argc, char *argv[])
   LO num_global_elements_k = defaultNumElementsMultiplierAlongEachDim * defaultProcGridDim;
 
   LO blocksize = 5, nrhs = 1, repeat = 100;
+  bool dump_sparse_matrix = false;
 
   Teuchos::CommandLineProcessor clp (false);
   clp.setDocString ("Tpetra::BlockCrsMatrix performance test using 3-D 7-point stencil.\n");
@@ -176,6 +177,10 @@ int main (int argc, char *argv[])
                  "Number of right-hand sides for which to solve.");
   clp.setOption ("repeat", &repeat,
                  "Number of iterations of matvec operations to measure performance.");
+  clp.setOption ("dump-sparse-matrix", "dont-dump-sparse-matrix", &dump_sparse_matrix,
+                 "If true, dump the test sparse matrix to a MatrixMarket file "
+                 "in the current directory.  This is a debugging option and may "
+                 "take a lot of disk space and time.");
 
   {
     bool returnEarly = false;
@@ -628,20 +633,18 @@ int main (int argc, char *argv[])
       }
     }
 
-    if (debug) {
-      std::ostringstream os;
-      os << *debugPrefix << "Write CrsMatrix to Matrix Market file" << endl;
-      std::cerr << os.str ();
-    }
-    // Save crs_matrix as a MatrixMarket file.
-    {
+    if (dump_sparse_matrix) {
+      if (debug) {
+        std::ostringstream os;
+        os << *debugPrefix << "Write CrsMatrix to Matrix Market file" << endl;
+        std::cerr << os.str ();
+      }
       // no function to export block crs
       TimeMonitor timerMatrixMarket(*TimeMonitor::getNewTimer("8) Export MatrixMarket "));
       std::ofstream ofs("BlockCrsTestMatrix.out", std::ofstream::out);
       Tpetra::MatrixMarket::Writer<tpetra_crs_matrix_type>::writeSparse(ofs, A_crs);
       ofs.close();
     }
-
   } // end global timer
 
   // Print out timing results.
