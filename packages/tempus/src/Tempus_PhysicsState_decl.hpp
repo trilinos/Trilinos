@@ -36,44 +36,33 @@ template<class Scalar>
 class PhysicsState :
   public Teuchos::Describable,
   public Teuchos::VerboseObject<Tempus::PhysicsState<Scalar> >
-
 {
 public:
 
   /// Constructor
-  PhysicsState(std::string pN = "Tempus::PhysicsState") : physicsName_(pN) {}
+  PhysicsState(std::string pN = "Tempus::PhysicsState");
 
   /// Destructor
   virtual ~PhysicsState() {}
 
   /// Clone constructor
-  virtual Teuchos::RCP<PhysicsState<Scalar> > clone() const
-  {
-    Teuchos::RCP<PhysicsState<Scalar> > pSB =
-      Teuchos::rcp(new PhysicsState<Scalar> ());
-    return pSB;
-  }
+  virtual Teuchos::RCP<PhysicsState<Scalar> > clone() const;
 
   /// This is a deep copy
-  virtual void copy(const Teuchos::RCP<const PhysicsState<Scalar> >& pS)
-  { physicsName_ = pS->getName(); }
+  virtual void copy(const Teuchos::RCP<const PhysicsState<Scalar> >& pS);
 
   /// Return name of PhysicsState
-  virtual std::string getName() const { return physicsName_; }
+  virtual std::string getName() const;
 
   /// Set name of PhysicsState
-  virtual void setName(std::string pN) { physicsName_ = pN; }
+  virtual void setName(std::string pN);
 
   /// \name Overridden from Teuchos::Describable
   //@{
-    virtual std::string description() const { return(physicsName_); }
+    virtual std::string description() const;
 
     virtual void describe(Teuchos::FancyOStream        & out,
-                          const Teuchos::EVerbosityLevel verbLevel) const
-    {
-      out << description() << "::describe" << std::endl
-          << "  physicsName   = " << physicsName_ << std::endl;
-    }
+                          const Teuchos::EVerbosityLevel verbLevel) const;
   //@}
 
 protected:
