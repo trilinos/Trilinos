@@ -166,23 +166,34 @@ namespace BlockCrsTest {
     // global perspective to the mesh structure (finite volume interior node only)
     struct StructuredProcGrid {
     public:
-      LO _num_procs_i, _num_procs_j, _num_procs_k, _num_procs_jk, _max_num_procs;
-      LO _rank, _proc_i, _proc_j, _proc_k;
+      typedef int process_rank_type;
 
-      void init(const LO num_procs_i,
-                const LO num_procs_j,
-                const LO num_procs_k) {
+      process_rank_type _num_procs_i;
+      process_rank_type _num_procs_j;
+      process_rank_type _num_procs_k;
+      process_rank_type _num_procs_jk;
+      process_rank_type _max_num_procs;
+      process_rank_type _rank;
+      process_rank_type _proc_i;
+      process_rank_type _proc_j;
+      process_rank_type _proc_k;
+
+      void
+      init (const process_rank_type num_procs_i,
+            const process_rank_type num_procs_j,
+            const process_rank_type num_procs_k)
+      {
         _num_procs_i = num_procs_i;
         _num_procs_j = num_procs_j;
         _num_procs_k = num_procs_k;
         _num_procs_jk = num_procs_j*num_procs_k;
 
-        const LO bigger_ij = num_procs_i > num_procs_j ? num_procs_i : num_procs_j;
-        const LO bigger_jk = num_procs_j > num_procs_k ? num_procs_j : num_procs_k;
+        const process_rank_type bigger_ij = num_procs_i > num_procs_j ? num_procs_i : num_procs_j;
+        const process_rank_type bigger_jk = num_procs_j > num_procs_k ? num_procs_j : num_procs_k;
         _max_num_procs = bigger_ij > bigger_jk ? bigger_ij : bigger_jk;
       }
 
-      void setRank(const LO rank) {
+      void setRank (const process_rank_type rank) {
         _rank = rank;
         _proc_i = _rank / _num_procs_jk;
         _proc_k = _rank % _num_procs_jk;
@@ -192,23 +203,25 @@ namespace BlockCrsTest {
 
       StructuredProcGrid() = default;
       StructuredProcGrid(const StructuredProcGrid &b) = default;
-      StructuredProcGrid(const LO num_procs_i,
-                         const LO num_procs_j,
-                         const LO num_procs_k) {
-        init(num_procs_i,
-             num_procs_j,
-             num_procs_k);
-      }
-      StructuredProcGrid(const LO rank,
-                         const LO num_procs_i,
-                         const LO num_procs_j,
-                         const LO num_procs_k) {
-        init(num_procs_i,
-             num_procs_j,
-             num_procs_k);
-        setRank(rank);
+      StructuredProcGrid (const process_rank_type num_procs_i,
+                          const process_rank_type num_procs_j,
+                          const process_rank_type num_procs_k)
+      {
+        init (num_procs_i,
+              num_procs_j,
+              num_procs_k);
       }
 
+      StructuredProcGrid (const process_rank_type rank,
+                          const process_rank_type num_procs_i,
+                          const process_rank_type num_procs_j,
+                          const process_rank_type num_procs_k)
+      {
+        init (num_procs_i,
+              num_procs_j,
+              num_procs_k);
+        setRank (rank);
+      }
     };
 
     struct StructuredBlock {
