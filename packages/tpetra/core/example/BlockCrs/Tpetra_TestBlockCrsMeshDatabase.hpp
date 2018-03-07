@@ -469,7 +469,7 @@ namespace BlockCrsTest {
                     scan_value_type &update,
                     const bool final) const {
       LO cnt = 0;
-      if (local_idx < _owned_gids.extent(0)) {
+      if (local_idx < static_cast<LO> (_owned_gids.extent (0))) {
         LO i, j, k;
         const GO global_idx = _owned_gids(local_idx);
         _sb.idx_to_ijk(global_idx, i, j, k);

@@ -47,6 +47,9 @@
 
 #include "Tpetra_TestBlockCrsMeshDatabase.hpp"
 
+#include <memory>
+#include <type_traits>
+
 namespace { // (anonymous)
 
   int cubeRootRoundedToInt (const double input) {
@@ -395,33 +398,42 @@ int main (int argc, char *argv[])
 
       const auto blocks_host = Kokkos::create_mirror_view(blocks);
       Kokkos::parallel_for
-        (Kokkos::RangePolicy<host_space>(0,num_owned_elements), KOKKOS_LAMBDA(const LO row) {
-          for (LO loc=rowptr_host(row);loc<rowptr_host(row+1);++loc)
+        (Kokkos::RangePolicy<host_space, LO> (0, num_owned_elements),
+         KOKKOS_LAMBDA (const LO row) { // FIXME don't use KOKKOS_LAMBDA; this never needs to be built for device
+          const auto beg = rowptr_host(row);
+          const auto end = rowptr_host(row+1);
+          typedef typename std::remove_const<decltype (beg) >::type offset_type;
+          for (offset_type loc = beg; loc < end; ++loc) {
             blocks_host(loc) = A_bcrs->getLocalBlock(row, colidx(loc));
+          }
         });
       Kokkos::deep_copy(blocks, blocks_host);
 
       Kokkos::parallel_for
-        (num_owned_elements, KOKKOS_LAMBDA(const LO row) {
-          for (LO loc=rowptr(row);loc<rowptr(row+1);++loc) {
-            const GO gid_row = mesh_gids(row);
-            const GO gid_col = mesh_gids(colidx(loc));
+        (Kokkos::RangePolicy<exec_space, LO> (0, num_owned_elements),
+         KOKKOS_LAMBDA (const LO row) {
+           const auto beg = rowptr(row);
+           const auto end = rowptr(row+1);
+           typedef typename std::remove_const<decltype (beg) >::type offset_type;
+           for (offset_type loc = beg; loc < end; ++loc) {
+             const GO gid_row = mesh_gids(row);
+             const GO gid_col = mesh_gids(colidx(loc));
 
-            LO i0, j0, k0, i1, j1, k1;
-            sb.idx_to_ijk(gid_row, i0, j0, k0);
-            sb.idx_to_ijk(gid_col, i1, j1, k1);
+             LO i0, j0, k0, i1, j1, k1;
+             sb.idx_to_ijk(gid_row, i0, j0, k0);
+             sb.idx_to_ijk(gid_col, i1, j1, k1);
 
-            const LO diff_i = i0 - i1;
-            const LO diff_j = j0 - j1;
-            const LO diff_k = j0 - k1;
+             const LO diff_i = i0 - i1;
+             const LO diff_j = j0 - j1;
+             const LO diff_k = j0 - k1;
 
-            auto block = blocks(loc);
-            for (LO l0=0;l0<blocksize;++l0)
-              for (LO l1=0;l1<blocksize;++l1)
-                block(l0, l1) = get_block_crs_entry<value_type>(i0, j0, k0,
-                                                                diff_i, diff_j, diff_k,
-                                                                l0, l1);
-          }
+             auto block = blocks(loc);
+             for (LO l0=0;l0<blocksize;++l0)
+               for (LO l1=0;l1<blocksize;++l1)
+                 block(l0, l1) = get_block_crs_entry<value_type>(i0, j0, k0,
+                                                                 diff_i, diff_j, diff_k,
+                                                                 l0, l1);
+           }
         });
     }
 
@@ -523,21 +535,24 @@ int main (int argc, char *argv[])
         crs_values("crs_values", colidx.extent(0)*blocksize*blocksize);
 
       Kokkos::parallel_for
-        (num_owned_elements,
-         KOKKOS_LAMBDA(const LO &idx) {
-          const GO nnz_per_block_row = rowptr(idx+1)-rowptr(idx);
+        (Kokkos::RangePolicy<exec_space, LO> (0, num_owned_elements),
+         KOKKOS_LAMBDA (const LO &idx) {
+          const GO nnz_per_block_row = rowptr(idx+1)-rowptr(idx); // FIXME could be LO if no duplicates
           const GO nnz_per_point_row = nnz_per_block_row*blocksize;
           const GO crs_rowptr_begin  = idx*blocksize;
           const GO crs_colidx_begin  = rowptr(idx)*blocksize*blocksize;
 
-          for (LO i=0;i<(blocksize+1);++i)
+          for (LO i=0;i<(blocksize+1);++i) {
             crs_rowptr(crs_rowptr_begin+i) = crs_colidx_begin + i*nnz_per_point_row;
+          }
 
           GO loc = crs_colidx_begin;
           // loop over the rows in a block
           for (LO l0=0;l0<blocksize;++l0) {
             // loop over the block row
-            for (GO jj=rowptr(idx);jj<rowptr(idx+1);++jj) {
+            typedef typename std::decay<decltype (rowptr(idx)) >::type offset_type;
+
+            for (offset_type jj = rowptr(idx); jj < rowptr(idx+1); ++jj) {
               const auto block = blocks(jj);
               // loop over the cols in a block
               const GO offset = colidx(jj)*blocksize;
