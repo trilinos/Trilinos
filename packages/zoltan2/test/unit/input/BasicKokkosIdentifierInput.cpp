@@ -47,16 +47,12 @@
 // Basic testing of Zoltan2::BasicKokkosIdentifierAdapter 
 
 #include <Kokkos_Core.hpp>
-// This may not be needed?
-#include <impl/Kokkos_Timer.hpp>
-
-#include <Zoltan2_BasicKokkosIdentifierAdapter.hpp>
-#include <Zoltan2_TestHelpers.hpp>
-
 #include <Teuchos_GlobalMPISession.hpp>
 #include <Teuchos_DefaultComm.hpp>
 #include <Teuchos_RCP.hpp>
 #include <Teuchos_CommHelpers.hpp>
+#include <Zoltan2_BasicKokkosIdentifierAdapter.hpp>
+#include <Zoltan2_TestHelpers.hpp>
 
 using Teuchos::RCP;
 using Teuchos::Comm;
@@ -71,7 +67,6 @@ int main(int argc, char *argv[]) {
   int rank = comm->getRank();
   int nprocs = comm->getSize();
   int fail = 0, gfail = 0;
-//  std::cout << "Rank: " << rank << " nprocs: " << nprocs << std::endl;
 
   // Create global identifiers with weights
   zlno_t numLocalIds = 10;
@@ -97,8 +92,8 @@ int main(int argc, char *argv[]) {
     fail = 5;
   }
 
-  Kokkos::View<zgno_t *> globalIdsIn; // Pointer will later point to IDs
-  Kokkos::View<zscalar_t *> weightsIn[nWeights]; // Pointer will later point to weights // Array of Views.
+  Kokkos::View<zgno_t *> globalIdsIn;
+  Kokkos::View<zscalar_t *> weightsIn[nWeights];
 
   ia.getIDsKokkosView(globalIdsIn);
 
@@ -108,13 +103,6 @@ int main(int argc, char *argv[]) {
 
   Kokkos::View<zscalar_t *> w0 = weightsIn[0];
   Kokkos::View<zscalar_t *> w1 = weightsIn[1];
-
-  std::cout << w0(0) << std::endl;
-  std::cout << w0(1) << std::endl;
-  std::cout << w0(2) << std::endl;
-  std::cout << w1(0) << std::endl;
-  std::cout << w1(1) << std::endl;
-  std::cout << w1(2) << std::endl;
 
   for (zlno_t i = 0; !fail && i < numLocalIds; i++){
     if (globalIdsIn(i) != zgno_t(myFirstId + i)) {

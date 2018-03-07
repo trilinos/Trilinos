@@ -51,15 +51,9 @@
 #ifndef _ZOLTAN2_BASICKOKKOSIDENTIFIERADAPTER_HPP_
 #define _ZOLTAN2_BASICKOKKOSIDENTIFIERADAPTER_HPP_
 
+#include <Kokkos_Core.hpp>
 #include <Zoltan2_IdentifierAdapter.hpp>
 #include <Zoltan2_StridedData.hpp>
-
-#include <Kokkos_Core.hpp>
-// This may not be needed?
-//#include <typeinfo>
-
-using std::make_pair;
-using std::pair;
 
 using Kokkos::ALL;
 
@@ -146,7 +140,8 @@ private:
 
 template <typename User>
   BasicKokkosIdentifierAdapter<User>::BasicKokkosIdentifierAdapter(
-    Kokkos::View<gno_t*> &ids, Kokkos::View<scalar_t**, weight_layout_t> &weights):
+    Kokkos::View<gno_t*> &ids,
+    Kokkos::View<scalar_t**, weight_layout_t> &weights):
       _ids(ids), _weights(weights) {
 }
   

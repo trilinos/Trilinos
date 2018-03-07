@@ -129,7 +129,6 @@ public:
   inline size_t getGlobalNumObjects() const {return getGlobalNumIdentifiers();}
 
 private:
-
   gno_t numGlobalIdentifiers_;
   const RCP<const Environment> env_;
   const RCP<const Comm<int> > comm_;
