@@ -59,6 +59,7 @@ int main (int argc, char *argv[])
   // Initialize MPI and Kokkos
   Tpetra::initialize (&argc, &argv);
   auto comm = Tpetra::getDefaultComm ();
+  const int numProcs = comm->getSize ();
 
   // Command-line input
   LO num_global_elements_i = 2, num_global_elements_j = 2, num_global_elements_k = 2;
@@ -82,13 +83,14 @@ int main (int argc, char *argv[])
     if (r_parse == Teuchos::CommandLineProcessor::PARSE_HELP_PRINTED) return 0;
     if (r_parse != Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL  ) return 0;
 
-    if (num_procs_i*num_procs_j*num_procs_k != comm->getSize()) {
-      Tpetra::finalize();
-      if (comm->getRank() == 0) {
-        std::cout << "Invalid processor grid ["<<num_procs_i<<"x"<<num_procs_j<<"x"<<num_procs_k<<"]"
-                  << " does not match to the mpi rank size ("<<comm->getSize()<<")" << std::endl;
-        std::cout << "End Result: TEST PASSED" << std::endl;
+    if (num_procs_i*num_procs_j*num_procs_k != numProcs) {
+      if (comm->getRank () == 0) {
+        std::cout << "Invalid process grid: "
+                  << num_procs_i << " x " << num_procs_j << " x " << num_procs_k << " != "
+                  << " number of MPI processes "<< numProcs << std::endl;
+        std::cout << "End Result: TEST FAILED" << std::endl;
       }
+      Tpetra::finalize();
       return 0;
     }
   }
@@ -425,12 +427,11 @@ int main (int argc, char *argv[])
   // Print out timing results.
   TimeMonitor::report(comm.ptr(), std::cout, "");
 
-  Tpetra::finalize();
-
   // This tells the Trilinos test framework that the test passed.
   if (comm->getRank() == 0) {
     std::cout << "End Result: TEST PASSED" << std::endl;
   }
 
+  Tpetra::finalize();
   return EXIT_SUCCESS;
 }  // END main()
