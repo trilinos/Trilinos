@@ -96,9 +96,9 @@ namespace { // (anonymous)
            const LO num_global_elements_i,
            const LO num_global_elements_j,
            const LO num_global_elements_k,
-           const LO num_procs_i,
-           const LO num_procs_j,
-           const LO num_procs_k,
+           const process_rank_type num_procs_i,
+           const process_rank_type num_procs_j,
+           const process_rank_type num_procs_k,
            const LO blocksize,
            const LO nrhs,
            const LO repeat,
@@ -118,6 +118,7 @@ int main (int argc, char *argv[])
   using Teuchos::RCP;
   using Teuchos::TimeMonitor;
   using std::endl;
+  typedef int process_rank_type;
 
   auto out = Teuchos::getFancyOStream (Teuchos::rcpFromRef (std::cout));
 
@@ -146,9 +147,9 @@ int main (int argc, char *argv[])
   }
 
   // Command-line input
-  LO num_procs_i = defaultProcGridDim;
-  LO num_procs_j = defaultProcGridDim;
-  LO num_procs_k = defaultProcGridDim;
+  process_rank_type num_procs_i = defaultProcGridDim;
+  process_rank_type num_procs_j = defaultProcGridDim;
+  process_rank_type num_procs_k = defaultProcGridDim;
 
   constexpr LO defaultNumElementsMultiplierAlongEachDim = 10;
 

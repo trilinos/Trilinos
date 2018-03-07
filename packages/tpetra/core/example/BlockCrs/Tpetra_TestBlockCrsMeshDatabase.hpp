@@ -47,6 +47,7 @@
 #include <sstream>
 #include <cmath>
 #include <iomanip>
+#include <type_traits>
 
 #include <Teuchos_Comm.hpp>
 #include <Tpetra_Map.hpp>
@@ -226,25 +227,34 @@ namespace BlockCrsTest {
 
     struct StructuredBlock {
     public:
-      LO _num_global_elements_i;
-      LO _num_global_elements_j;
-      LO _num_global_elements_k;
-      LO _num_global_elements_jk;
+      GO _num_global_elements_i;
+      GO _num_global_elements_j;
+      GO _num_global_elements_k;
+      GO _num_global_elements_jk;
       StructuredBlock() = default;
       StructuredBlock(const StructuredBlock &b) = default;
-      StructuredBlock(const LO num_global_elements_i,
-                      const LO num_global_elements_j,
-                      const LO num_global_elements_k)
-        : _num_global_elements_i(num_global_elements_i),
-          _num_global_elements_j(num_global_elements_j),
-          _num_global_elements_k(num_global_elements_k),
-          _num_global_elements_jk(num_global_elements_j*num_global_elements_k){}
+      StructuredBlock(const GO num_global_elements_i,
+                      const GO num_global_elements_j,
+                      const GO num_global_elements_k)
+        : _num_global_elements_i (num_global_elements_i),
+          _num_global_elements_j (num_global_elements_j),
+          _num_global_elements_k (num_global_elements_k),
+          _num_global_elements_jk (num_global_elements_j * num_global_elements_k)
+      {}
 
-      KOKKOS_INLINE_FUNCTION GO ijk_to_idx(const LO i, const LO j, const LO k) const {
+      template<class IndexType>
+      KOKKOS_INLINE_FUNCTION GO
+      ijk_to_idx (const IndexType i, const IndexType j, const IndexType k) const {
+        static_assert (std::is_integral<IndexType>::value,
+                       "IndexType must be a built-in integer type.");
         return (i*_num_global_elements_j + j)*_num_global_elements_k + k;
       }
 
-      KOKKOS_INLINE_FUNCTION void idx_to_ijk(const GO idx, LO &i, LO &j, LO &k) const {
+      template<class IndexType>
+      KOKKOS_INLINE_FUNCTION void
+      idx_to_ijk (const GO idx, IndexType& i, IndexType& j, IndexType& k) const {
+        static_assert (std::is_integral<IndexType>::value,
+                       "IndexType must be a built-in integer type.");
         i = idx / _num_global_elements_jk;
         k = idx % _num_global_elements_jk;
         j = k   / _num_global_elements_k;
@@ -297,6 +307,8 @@ namespace BlockCrsTest {
     };
 
   public:
+    typedef StructuredProcGrid::process_rank_type process_rank_type;
+
     Teuchos::RCP<const Teuchos::Comm<int> > _comm;
     StructuredBlock _sb;
     StructuredProcGrid _grid;
@@ -316,9 +328,9 @@ namespace BlockCrsTest {
                  LO num_global_elements_i,
                  LO num_global_elements_j,
                  LO num_global_elements_k,
-                 LO num_procs_i,
-                 LO num_procs_j,
-                 LO num_procs_k)
+                 const process_rank_type num_procs_i,
+                 const process_rank_type num_procs_j,
+                 const process_rank_type num_procs_k)
       : _comm(comm),
         _sb(num_global_elements_i, num_global_elements_j, num_global_elements_k),
         _grid(_comm->getRank(), num_procs_i, num_procs_j, num_procs_k) {
