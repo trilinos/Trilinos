@@ -1,23 +1,15 @@
 #!/bin/bash -l
 
 if [ "${BSUB_CTEST_TIME_LIMIT}" == "" ] ; then
-  export BSUB_CTEST_TIME_LIMIT=04:00:00
+  export BSUB_CTEST_TIME_LIMIT=04:00
 fi
-
-# We have to generate the file bsub-ctest-job.sh because it has values in
-# comments that we need to produce.  Just a regular bash script will not
-# evaluate $<var_name> in a comment.
-
-echo "#! /bin/bash
-#PBS -l nodes=1:ppn=64
-#PBS -l cput=$BSUB_CTEST_TIME_LIMIT
-#PBS -N $JOB_NAME
-
-$WORKSPACE/Trilinos/cmake/ctest/drivers/atdm/ctest-s-driver.sh
-" > bsub-ctest-job.sh
-
-chmod a+x bsub-ctest-job.sh
 
 set -x
 
-bsub -x -I $PWD/bsub-ctest-job.sh
+bsub -x -I -q rhel7F -n 16 -J $JOB_NAME -W $BSUB_CTEST_TIME_LIMIT \
+  $WORKSPACE/Trilinos/cmake/ctest/drivers/atdm/ctest-s-driver.sh
+
+# NOTE: Above, this bsub command should grab a single rhel7F (Firestone,
+# Dual-Socket POWER8, 8 cores per socket, K80 GPUs) node.  The option '-x'
+# makes sure that only this job runs on that node.  The options '-n 16' and
+# '-q rhel7G' should make bsub allocate a single one of these nodes.
