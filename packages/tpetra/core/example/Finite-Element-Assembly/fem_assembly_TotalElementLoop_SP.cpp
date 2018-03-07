@@ -65,7 +65,7 @@ int main (int argc, char *argv[])
   using Teuchos::RCP;
   using Teuchos::TimeMonitor;
 
-  const GlobalOrdinal GO_INVALID = Teuchos::OrdinalTraits<GlobalOrdinal>::invalid();
+  const global_ordinal_t GO_INVALID = Teuchos::OrdinalTraits<global_ordinal_t>::invalid();
 
   auto out = Teuchos::getFancyOStream (Teuchos::rcpFromRef (std::cout));
   
@@ -90,14 +90,17 @@ int main (int argc, char *argv[])
   int nex = 3;
   int ney = 3;
   MeshDatabase mesh(comm,nex,ney,procx,procy);
+
+  #if PRINT_VERBOSE
   mesh.print(std::cout);
+  #endif
 
   int maxEntriesPerRow = 16;
 
   // Build Tpetra Maps
   // -----------------
   // -- https://trilinos.org/docs/dev/packages/tpetra/doc/html/classTpetra_1_1Map.html#a24490b938e94f8d4f31b6c0e4fc0ff77
-  RCP<const MapType> row_map = rcp(new MapType(GO_INVALID, mesh.getOwnedNodeGlobalIDs(), 0, comm));
+  RCP<const map_t> row_map = rcp(new map_t(GO_INVALID, mesh.getOwnedNodeGlobalIDs(), 0, comm));
 
   #if PRINT_VERBOSE
   row_map->describe(*out);
@@ -118,10 +121,10 @@ int main (int argc, char *argv[])
   RCP<TimeMonitor> timerGlobal = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("X) Global")));
   RCP<TimeMonitor> timerElementLoopGraph = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("1) ElementLoop  (Graph)")));
 
-  RCP<GraphType> crs_graph = rcp(new GraphType(row_map, maxEntriesPerRow, Tpetra::StaticProfile));
+  RCP<graph_t> crs_graph = rcp(new graph_t(row_map, maxEntriesPerRow, Tpetra::StaticProfile));
   
   // Using 4 because we're using quads for this example, so there will be 4 nodes associated with each element.
-  Teuchos::Array<GlobalOrdinal> global_ids_in_row(4);
+  Teuchos::Array<global_ordinal_t> global_ids_in_row(4);
 
   // Insert node contributions for every OWNED element:
   for(size_t element_gidx=0; element_gidx<mesh.getNumOwnedElements(); element_gidx++)
@@ -221,12 +224,12 @@ int main (int argc, char *argv[])
   //
   RCP<TimeMonitor> timerElementLoopMatrix = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("3) ElementLoop  (Matrix)")));
 
-  RCP<MatrixType> crs_matrix = rcp(new MatrixType(crs_graph));
+  RCP<matrix_t> crs_matrix = rcp(new matrix_t(crs_graph));
 
-  scalar_2d_array_type element_matrix;
+  scalar_2d_array_t element_matrix;
   Kokkos::resize(element_matrix, 4, 4);
 
-  Teuchos::Array<GlobalOrdinal> column_global_ids(4);     // global column ids list
+  Teuchos::Array<global_ordinal_t> column_global_ids(4);     // global column ids list
   Teuchos::Array<Scalar> column_scalar_values(4);         // scalar values for each column
 
   // Loop over owned elements:
@@ -247,7 +250,7 @@ int main (int argc, char *argv[])
     //   Note: hardcoded 4 here because we're using quads.
     for(size_t element_node_idx=0; element_node_idx<4; element_node_idx++)
     { 
-      GlobalOrdinal global_row_id = owned_element_to_node_ids(element_gidx, element_node_idx);
+      global_ordinal_t global_row_id = owned_element_to_node_ids(element_gidx, element_node_idx);
       if(mesh.nodeIsOwned(global_row_id)) 
       {
         for(size_t col_idx=0; col_idx<4; col_idx++)
@@ -273,7 +276,7 @@ int main (int argc, char *argv[])
     
     for(size_t element_node_idx=0; element_node_idx<4; element_node_idx++)
     { 
-      GlobalOrdinal global_row_id = ghost_element_to_node_ids(element_gidx, element_node_idx);
+      global_ordinal_t global_row_id = ghost_element_to_node_ids(element_gidx, element_node_idx);
       if(mesh.nodeIsOwned(global_row_id)) 
       {
         for(size_t col_idx=0; col_idx<4; col_idx++)
@@ -302,7 +305,7 @@ int main (int argc, char *argv[])
   // Save crs_matrix as a MatrixMarket file.
   std::ofstream ofs("FEMAssembly_TotalElementLoop_SP.out", std::ofstream::out);
 
-  Tpetra::MatrixMarket::Writer<MatrixType>::writeSparse(ofs, crs_matrix);
+  Tpetra::MatrixMarket::Writer<matrix_t>::writeSparse(ofs, crs_matrix);
   ofs.close();
 
   // Print out timing results.

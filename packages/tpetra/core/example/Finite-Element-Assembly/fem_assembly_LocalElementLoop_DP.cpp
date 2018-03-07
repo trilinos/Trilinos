@@ -65,7 +65,7 @@ int main (int argc, char *argv[])
   using Teuchos::RCP;
   using Teuchos::TimeMonitor;
 
-  const GlobalOrdinal GO_INVALID = Teuchos::OrdinalTraits<GlobalOrdinal>::invalid();
+  const global_ordinal_t GO_INVALID = Teuchos::OrdinalTraits<global_ordinal_t>::invalid();
 
   auto out = Teuchos::getFancyOStream (Teuchos::rcpFromRef (std::cout));
   
@@ -90,14 +90,17 @@ int main (int argc, char *argv[])
   int nex = 3;
   int ney = 3;
   MeshDatabase mesh(comm,nex,ney,procx,procy);
+
+  #if PRINT_VERBOSE
   mesh.print(std::cout);
+  #endif
 
   // Build Tpetra Maps
   // -----------------
   // - Doxygen: https://trilinos.org/docs/dev/packages/tpetra/doc/html/classTpetra_1_1Map.html#a24490b938e94f8d4f31b6c0e4fc0ff77
-  RCP<const MapType> owned_row_map       = rcp(new MapType(GO_INVALID, mesh.getOwnedNodeGlobalIDs(), 0, comm));
-  RCP<const MapType> overlapping_row_map = rcp(new MapType(GO_INVALID, mesh.getOwnedAndGhostNodeGlobalIDs(), 0, comm));
-  ExportType exporter(overlapping_row_map, owned_row_map); 
+  RCP<const map_t> owned_row_map       = rcp(new map_t(GO_INVALID, mesh.getOwnedNodeGlobalIDs(), 0, comm));
+  RCP<const map_t> overlapping_row_map = rcp(new map_t(GO_INVALID, mesh.getOwnedAndGhostNodeGlobalIDs(), 0, comm));
+  export_t exporter(overlapping_row_map, owned_row_map); 
 
   #if PRINT_VERBOSE
   owned_row_map->describe(*out);
@@ -123,11 +126,11 @@ int main (int argc, char *argv[])
   // the overlapping graph.  Next we export contributions from overlapping graph 
   // to the owned graph and call fillComplete on the owned graph.
   //
-  RCP<GraphType> crs_graph_owned = rcp(new GraphType(owned_row_map, 0));
-  RCP<GraphType> crs_graph_overlapping = rcp(new GraphType(overlapping_row_map, 0));
+  RCP<graph_t> crs_graph_owned = rcp(new graph_t(owned_row_map, 0));
+  RCP<graph_t> crs_graph_overlapping = rcp(new graph_t(overlapping_row_map, 0));
 
   // Note: Using 4 because we're using quads for this example, so there will be 4 nodes associated with each element.
-  Teuchos::Array<GlobalOrdinal> global_ids_in_row(4);
+  Teuchos::Array<global_ordinal_t> global_ids_in_row(4);
 
   // for each element in the mesh...
   for(size_t element_gidx=0; element_gidx<mesh.getNumOwnedElements(); element_gidx++)
@@ -218,13 +221,13 @@ int main (int argc, char *argv[])
   RCP<TimeMonitor> timerElementLoopMatrix = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("5) ElementLoop  (All Matrix)")));
 
   // Create owned and overlapping CRS Matrices
-  RCP<MatrixType> crs_matrix_owned       = rcp(new MatrixType(crs_graph_owned));
-  RCP<MatrixType> crs_matrix_overlapping = rcp(new MatrixType(crs_graph_overlapping));
+  RCP<matrix_t> crs_matrix_owned       = rcp(new matrix_t(crs_graph_owned));
+  RCP<matrix_t> crs_matrix_overlapping = rcp(new matrix_t(crs_graph_overlapping));
 
-  scalar_2d_array_type element_matrix;
+  scalar_2d_array_t element_matrix;
   Kokkos::resize(element_matrix, 4, 4);
 
-  Teuchos::Array<GlobalOrdinal> column_global_ids(4);     // global column ids list
+  Teuchos::Array<global_ordinal_t> column_global_ids(4);     // global column ids list
   Teuchos::Array<Scalar> column_scalar_values(4);         // scalar values for each column
 
   // Loop over elements
@@ -245,7 +248,7 @@ int main (int argc, char *argv[])
     // Note: hardcoded 4 here because we're using quads.
     for(size_t element_node_idx=0; element_node_idx<4; element_node_idx++)
     { 
-      GlobalOrdinal global_row_id = owned_element_to_node_ids(element_gidx, element_node_idx);
+      global_ordinal_t global_row_id = owned_element_to_node_ids(element_gidx, element_node_idx);
 
       for(size_t col_idx=0; col_idx<4; col_idx++)
       {
@@ -289,7 +292,7 @@ int main (int argc, char *argv[])
   // Save crs_matrix as a MatrixMarket file.
   std::ofstream ofs("FEMAssembly_LocalElementLoop_DP.out", std::ofstream::out);
 
-  Tpetra::MatrixMarket::Writer<MatrixType>::writeSparse(ofs, crs_matrix_owned);
+  Tpetra::MatrixMarket::Writer<matrix_t>::writeSparse(ofs, crs_matrix_owned);
   ofs.close();
 
   // Print out timing results.
