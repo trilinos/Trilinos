@@ -50,7 +50,7 @@
 #include <Tpetra_CrsGraph.hpp>
 #include <Tpetra_CrsMatrix.hpp>
 
-namespace TpetraExamples {
+namespace TpetraExamples {}
 
 typedef double Scalar;
 
@@ -77,7 +77,6 @@ typedef Kokkos::View<LocalOrdinal*[4],ExecutionSpace> local_ordinal_2d_array_typ
 typedef Kokkos::View<GlobalOrdinal*[4],ExecutionSpace> global_ordinal_2d_array_type;
 typedef Kokkos::View<Scalar*[4],ExecutionSpace> scalar_2d_array_type;
 
-
-} // end of namespace TpetraExamples
-
 #endif
+
+

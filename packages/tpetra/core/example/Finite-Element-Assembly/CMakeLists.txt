@@ -2,32 +2,32 @@
 # This example works whether or not MPI is enabled.
 # It does not refer to MPI explicitly.
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
-  FiniteElementAssembly_type1
-  SOURCES fem_assembly_type1.cpp
+  FEMAssembly_InsertGlobalIndices_DP
+  SOURCES fem_assembly_InsertGlobalIndices_DP.cpp
   ARGS
   COMM  mpi
   STANDARD_PASS_OUTPUT
 )
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
-  FiniteElementAssembly_type2
-  SOURCES fem_assembly_type2.cpp
+  FEMAssembly_LocalElementLoop_DP
+  SOURCES fem_assembly_LocalElementLoop_DP.cpp
   ARGS
   COMM  mpi
   STANDARD_PASS_OUTPUT
 )
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
-  FiniteElementAssembly_type3
-  SOURCES fem_assembly_type3.cpp
+  FEMAssembly_TotalElementLoop_DP
+  SOURCES fem_assembly_TotalElementLoop_DP.cpp
   ARGS
   COMM  mpi
   STANDARD_PASS_OUTPUT
 )
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
-  FiniteElementAssembly_type3_staticprofile
-  SOURCES fem_assembly_type3_staticprofile.cpp
+  FEMAssembly_TotalElementLoop_SP
+  SOURCES fem_assembly_TotalElementLoop_SP.cpp
   ARGS
   COMM  mpi
   STANDARD_PASS_OUTPUT

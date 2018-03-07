@@ -48,7 +48,10 @@
 #include "typedefs.hpp"
 #include "Teuchos_Comm.hpp"
 
+
 namespace TpetraExamples {
+
+
 
 struct LLA 
 {
@@ -57,16 +60,21 @@ struct LLA
   LLA(GlobalOrdinal i, GlobalOrdinal j) {data[0]=i; data[1]=j;}
 
   GlobalOrdinal operator[](GlobalOrdinal i) const {return data[i];}
-  GlobalOrdinal & operator[](GlobalOrdinal i){return data[i];}
+  GlobalOrdinal & operator[](GlobalOrdinal i) {return data[i];}
 
   GlobalOrdinal data[2];
 };
 
 
+
 class MeshDatabase 
 {
 public:
-  MeshDatabase(Teuchos::RCP<const Teuchos::Comm<int> > comm, int global_elements_x, int global_elements_y, int procs_x, int procs_y);
+  MeshDatabase(Teuchos::RCP<const Teuchos::Comm<int> > comm,
+               GlobalOrdinal global_elements_x,
+               GlobalOrdinal global_elements_y,
+               GlobalOrdinal procs_x,
+               GlobalOrdinal procs_y);
 
   ~MeshDatabase(){}
 
@@ -114,7 +122,7 @@ public:
 
 private:
 
-  inline bool nodeIsOwned(GlobalOrdinal i, GlobalOrdinal j) { 
+  inline bool nodeIsOwned(GlobalOrdinal i, GlobalOrdinal j) {
     return myNodeStart_[0] <= i &&  i < myNodeStop_[0] && myNodeStart_[1] <= j &&  j < myNodeStop_[1];
   }
 
@@ -125,11 +133,11 @@ private:
   // TODO: Add elementIsOwned()  (useful for Type-3 Assembly)
 
 
-  inline GlobalOrdinal idx_from_ij(int num_x, GlobalOrdinal i, GlobalOrdinal j) const {
+  inline GlobalOrdinal idx_from_ij(GlobalOrdinal num_x, GlobalOrdinal i, GlobalOrdinal j) const {
     return j*num_x+i;
   }
 
-  inline void ij_from_idx(int num_x, GlobalOrdinal idx, GlobalOrdinal &i, GlobalOrdinal&j) const { 
+  inline void ij_from_idx(GlobalOrdinal num_x, GlobalOrdinal idx, GlobalOrdinal &i, GlobalOrdinal&j) const { 
     i = idx%num_x;
     j = (GlobalOrdinal)((idx-i)/num_x);
   }
@@ -163,13 +171,17 @@ private:
 
   // Comm info
   Teuchos::RCP<const Teuchos::Comm<int> > comm_;
-  int MyRank_;
+  size_t MyRank_;
   LLA myProcIJ_;
 };
 
 
 
-MeshDatabase::MeshDatabase(Teuchos::RCP<const Teuchos::Comm<int> > comm, int global_elements_x, int global_elements_y, int procs_x, int procs_y):
+MeshDatabase::MeshDatabase(Teuchos::RCP<const Teuchos::Comm<int> > comm,
+                           GlobalOrdinal global_elements_x,
+                           GlobalOrdinal global_elements_y,
+                           GlobalOrdinal procs_x,
+                           GlobalOrdinal procs_y):
       globalElements_(global_elements_x,global_elements_y),
       globalNodes_(global_elements_x+1,global_elements_y+1),
       globalProcs_(procs_x,procs_y),
