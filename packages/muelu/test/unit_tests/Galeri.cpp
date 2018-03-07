@@ -50,16 +50,12 @@
 
 #include <Galeri_XpetraMaps.hpp>
 
-#ifdef HAVE_MUELU_TPETRA
-
-//FIXME guard for ETI
-//FIXME guard for Tpetra enabled
-
-//#ifdef HAVE_MUELU_EXPLICIT_INSTANTIATION
 #ifdef HAVE_GALERI_XPETRA
 
+#ifdef HAVE_MUELU_TPETRA
 #include <TpetraCore_ETIHelperMacros.h>
 TPETRA_ETI_MANGLING_TYPEDEFS()
+#endif
 
 namespace Galeri {
   namespace Xpetra {
@@ -68,10 +64,14 @@ namespace Galeri {
 #define MUELU_GALERI_INST(LO,GO,NO) \
   template Teuchos::RCP<::Xpetra::Map<LO, GO, NO>> CreateMap<LO,GO,NO>(::Xpetra::UnderlyingLib lib, const std::string & mapType, const Teuchos::RCP<const Teuchos::Comm<int> >& comm, Teuchos::ParameterList & list);
 
-TPETRA_INSTANTIATE_LGN(MUELU_GALERI_INST)
+#ifdef HAVE_MUELU_TPETRA
+  TPETRA_INSTANTIATE_LGN(MUELU_GALERI_INST)
+#else
+  // Because only Epetra is available, instantiate directly.
+  MUELU_GALERI_INST(int,int,KokkosClassic::DefaultNode::DefaultNodeType)
+#endif
   } //Xpetra namespace
 } //Galeri namespace
 
 #endif //ifdef HAVE_GALERI_XPETRA
-#endif // HAVE_MUELU_TPETRA
 //#endif //ifdef HAVE_MUELU_EXPLICIT_INSTANTIATION
