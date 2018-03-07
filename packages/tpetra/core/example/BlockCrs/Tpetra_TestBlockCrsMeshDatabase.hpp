@@ -213,10 +213,10 @@ namespace BlockCrsTest {
 
     struct StructuredBlock {
     public:
-      LO _num_global_elements_i,
-        _num_global_elements_j,
-        _num_global_elements_k,
-        _num_global_elements_jk;
+      LO _num_global_elements_i;
+      LO _num_global_elements_j;
+      LO _num_global_elements_k;
+      LO _num_global_elements_jk;
       StructuredBlock() = default;
       StructuredBlock(const StructuredBlock &b) = default;
       StructuredBlock(const LO num_global_elements_i,
@@ -227,18 +227,18 @@ namespace BlockCrsTest {
           _num_global_elements_k(num_global_elements_k),
           _num_global_elements_jk(num_global_elements_j*num_global_elements_k){}
 
-      inline GO ijk_to_idx(const LO i, const LO j, const LO k) const {
+      KOKKOS_INLINE_FUNCTION GO ijk_to_idx(const LO i, const LO j, const LO k) const {
         return (i*_num_global_elements_j + j)*_num_global_elements_k + k;
       }
 
-      inline void idx_to_ijk(const GO idx, LO &i, LO &j, LO &k) const {
+      KOKKOS_INLINE_FUNCTION void idx_to_ijk(const GO idx, LO &i, LO &j, LO &k) const {
         i = idx / _num_global_elements_jk;
         k = idx % _num_global_elements_jk;
         j = k   / _num_global_elements_k;
         k = k   % _num_global_elements_k;
       }
 
-      inline GO getNumElements() const {
+      KOKKOS_INLINE_FUNCTION GO getNumElements() const {
         return _num_global_elements_i*_num_global_elements_jk;
       }
     };

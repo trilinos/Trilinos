@@ -397,9 +397,12 @@ int main (int argc, char *argv[])
       blocks = Kokkos::View<block_type*,exec_space>("blocks", rowptr_host(num_owned_elements));
 
       const auto blocks_host = Kokkos::create_mirror_view(blocks);
+      // This MUST run on host, since it invokes a host-only method,
+      // getLocalBlock.  This means we must NOT use KOKKOS_LAMBDA,
+      // since that would build the lambda for both host AND device.
       Kokkos::parallel_for
         (Kokkos::RangePolicy<host_space, LO> (0, num_owned_elements),
-         KOKKOS_LAMBDA (const LO row) { // FIXME don't use KOKKOS_LAMBDA; this never needs to be built for device
+         [=] (const LO row) {
           const auto beg = rowptr_host(row);
           const auto end = rowptr_host(row+1);
           typedef typename std::remove_const<decltype (beg) >::type offset_type;
