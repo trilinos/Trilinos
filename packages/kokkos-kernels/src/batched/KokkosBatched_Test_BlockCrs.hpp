@@ -2,6 +2,7 @@
 #include <vector>
 #include <algorithm>
 
+#include "KokkosBatched_Util.hpp"
 #if defined(__KOKKOSBATCHED_INTEL_MKL__)
 #include "mkl.h"
 #endif
@@ -15,11 +16,13 @@
 #include "Kokkos_Core.hpp"
 #include "impl/Kokkos_Timer.hpp"
 
-#include "KokkosBatched_Util.hpp"
 #include "KokkosBatched_Vector.hpp"
 
 #include "KokkosBatched_Copy_Decl.hpp"
 #include "KokkosBatched_Copy_Impl.hpp"
+
+#include "KokkosBatched_AddRadial_Decl.hpp"
+#include "KokkosBatched_AddRadial_Impl.hpp"
 
 #include "KokkosBatched_Gemv_Decl.hpp"
 #include "KokkosBatched_Gemv_Serial_Impl.hpp"
@@ -68,6 +71,7 @@ namespace KokkosBatched {
       ordinal_type _ntridiag, _m, _blocksize, _shmemlvl;
 
       UnmanagedViewType<typename block_tridiag_matrices_type::value_array_type> _TA, _TB, _TC;
+      typedef typename MagnitudeScalarType<value_type>::type magnitude_scalar_type;
 
     public:
       FactorizeBlockTridiagMatrices() {}
@@ -79,24 +83,32 @@ namespace KokkosBatched {
         auto B = Kokkos::subview(_TB, ij, Kokkos::ALL(), Kokkos::ALL(), Kokkos::ALL());
         auto C = Kokkos::subview(_TC, ij, Kokkos::ALL(), Kokkos::ALL(), Kokkos::ALL());
 
+        auto AA = Kokkos::subview(A, 0,   Kokkos::ALL(), Kokkos::ALL());
+        auto BB = Kokkos::subview(B, 0,   Kokkos::ALL(), Kokkos::ALL());
+        auto CC = Kokkos::subview(C, 0,   Kokkos::ALL(), Kokkos::ALL());
+        auto DD = AA;
+
+        const auto tiny = Kokkos::Details::ArithTraits<magnitude_scalar_type>::epsilon()*100;
+
         const ordinal_type kend = _m - 1;
         for (ordinal_type k=0;k<kend;++k) {
-          auto AA = Kokkos::subview(A, k,   Kokkos::ALL(), Kokkos::ALL());
-          auto BB = Kokkos::subview(B, k,   Kokkos::ALL(), Kokkos::ALL());
-          auto CC = Kokkos::subview(C, k,   Kokkos::ALL(), Kokkos::ALL());
-          auto DD = Kokkos::subview(A, k+1, Kokkos::ALL(), Kokkos::ALL());
+          AA.assign_data( &A(k  ,0,0) );
+          BB.assign_data( &B(k  ,0,0) );
+          CC.assign_data( &C(k  ,0,0) );
+          DD.assign_data( &A(k+1,0,0) );
 
-          Serial::LU<LU_AlgoTagType>
+          SerialAddRadial::invoke(tiny, AA);
+          SerialLU<LU_AlgoTagType>
             ::invoke(AA);
-          Serial::Trsm<Side::Left,Uplo::Lower,Trans::NoTranspose,Diag::Unit,Trsm_AlgoTagType>
+          SerialTrsm<Side::Left,Uplo::Lower,Trans::NoTranspose,Diag::Unit,Trsm_AlgoTagType>
             ::invoke(1.0, AA, BB);
-          Serial::Trsm<Side::Right,Uplo::Upper,Trans::NoTranspose,Diag::NonUnit,Trsm_AlgoTagType>
+          SerialTrsm<Side::Right,Uplo::Upper,Trans::NoTranspose,Diag::NonUnit,Trsm_AlgoTagType>
             ::invoke(1.0, AA, CC);
-          Serial::Gemm<Trans::NoTranspose,Trans::NoTranspose,Gemm_AlgoTagType>
+          SerialGemm<Trans::NoTranspose,Trans::NoTranspose,Gemm_AlgoTagType>
             ::invoke(-1.0, CC, BB, 1.0, DD);
         }
-        auto AA = Kokkos::subview(A, kend, Kokkos::ALL(), Kokkos::ALL());
-        Serial::LU<LU_AlgoTagType>
+        AA.assign_data( &A(kend,0,0) );
+        SerialLU<LU_AlgoTagType>
           ::invoke(AA);
       }
 
@@ -113,33 +125,44 @@ namespace KokkosBatched {
               auto B = Kokkos::subview(_TB, ij, Kokkos::ALL(), Kokkos::ALL(), Kokkos::ALL());
               auto C = Kokkos::subview(_TC, ij, Kokkos::ALL(), Kokkos::ALL(), Kokkos::ALL());
 
+              const auto tiny = Kokkos::Details::ArithTraits<magnitude_scalar_type>::epsilon()*100;
+
               const ordinal_type kend = _m - 1;
-              // {
-              //   for (ordinal_type k=0;k<kend;++k) {
-              //     auto AA = Kokkos::subview(A, k,   Kokkos::ALL(), Kokkos::ALL());
-              //     auto BB = Kokkos::subview(B, k,   Kokkos::ALL(), Kokkos::ALL());
-              //     auto CC = Kokkos::subview(C, k,   Kokkos::ALL(), Kokkos::ALL());
-              //     auto DD = Kokkos::subview(A, k+1, Kokkos::ALL(), Kokkos::ALL());
+              {
+                auto AA = Kokkos::subview(A, 0,   Kokkos::ALL(), Kokkos::ALL());
+                auto BB = Kokkos::subview(B, 0,   Kokkos::ALL(), Kokkos::ALL());
+                auto CC = Kokkos::subview(C, 0,   Kokkos::ALL(), Kokkos::ALL());
+                auto DD = AA;
+
+                for (ordinal_type k=0;k<kend;++k) {
+
+                  AA.assign_data( &A(k  ,0,0) );
+                  BB.assign_data( &B(k  ,0,0) );
+                  CC.assign_data( &C(k  ,0,0) );
+                  DD.assign_data( &A(k+1,0,0) );
                   
-              //     member.team_barrier();
-              //     Team::LU<MemberType,LU_AlgoTagType>
-              //       ::invoke(member, AA);
-              //     member.team_barrier();
-              //     Team::Trsm<MemberType,Side::Left,Uplo::Lower,Trans::NoTranspose,Diag::Unit,Trsm_AlgoTagType>
-              //       ::invoke(member, 1.0, AA, BB);
-              //     Team::Trsm<MemberType,Side::Right,Uplo::Upper,Trans::NoTranspose,Diag::NonUnit,Trsm_AlgoTagType>
-              //       ::invoke(member, 1.0, AA, CC);
-              //     member.team_barrier();
-              //     Team::Gemm<MemberType,Trans::NoTranspose,Trans::NoTranspose,Gemm_AlgoTagType>
-              //       ::invoke(member, -1.0, CC, BB, 1.0, DD);
-              //   }
-              //   {
-              //     member.team_barrier();
-              //     auto AA = Kokkos::subview(A, kend, Kokkos::ALL(), Kokkos::ALL());
-              //     Team::LU<MemberType,LU_AlgoTagType>
-              //       ::invoke(member, AA);
-              //   }
-              // }
+                  member.team_barrier();
+                  TeamAddRadial<MemberType>::invoke(member, tiny, AA);
+                  member.team_barrier();
+                  TeamLU<MemberType,LU_AlgoTagType>
+                    ::invoke(member, AA);
+                  member.team_barrier();
+                  TeamTrsm<MemberType,Side::Left,Uplo::Lower,Trans::NoTranspose,Diag::Unit,Trsm_AlgoTagType>
+                    ::invoke(member, 1.0, AA, BB);
+                  TeamTrsm<MemberType,Side::Right,Uplo::Upper,Trans::NoTranspose,Diag::NonUnit,Trsm_AlgoTagType>
+                    ::invoke(member, 1.0, AA, CC);
+                  member.team_barrier();
+                  TeamGemm<MemberType,Trans::NoTranspose,Trans::NoTranspose,Gemm_AlgoTagType>
+                    ::invoke(member, -1.0, CC, BB, 1.0, DD);
+                }
+                {
+                  member.team_barrier();
+                  AA.assign_data( &A(kend,0,0) );
+                  TeamLU<MemberType,LU_AlgoTagType>
+                    ::invoke(member, AA);
+                }
+              }
+#if 0
               { // 0.028 vs 0.035; without subview it performs 0.028
                 const int as0 = A.stride_1(), as1 = A.stride_2();
                 const int bs0 = B.stride_1(), bs1 = B.stride_2();
@@ -152,17 +175,17 @@ namespace KokkosBatched {
                   auto DD = &A(k+1,0,0);
                   
                   member.team_barrier();
-                  Team::LU_Internal<LU_AlgoTagType>
+                  TeamLU_Internal<LU_AlgoTagType>
                     ::invoke(member, _blocksize, _blocksize, AA, as0, as1);
                   member.team_barrier();
-                  Team::TrsmInternalLeftLower<Trsm_AlgoTagType>
+                  TeamTrsmInternalLeftLower<Trsm_AlgoTagType>
                     ::invoke(member, true, _blocksize, _blocksize,
                              1.0, AA, as0, as1, BB, bs0, bs1);
-                  Team::TrsmInternalLeftLower<Trsm_AlgoTagType>
+                  TeamTrsmInternalLeftLower<Trsm_AlgoTagType>
                     ::invoke(member, false, _blocksize, _blocksize,
                              1.0, AA, as1, as0, CC, cs1, cs0);
                   member.team_barrier();
-                  Team::GemmInternal<Gemm_AlgoTagType>::
+                  TeamGemmInternal<Gemm_AlgoTagType>::
                     invoke(member, _blocksize, _blocksize, _blocksize, 
                            -1.0, 
                            CC, cs0, cs1, BB, bs0, bs1,
@@ -172,10 +195,11 @@ namespace KokkosBatched {
                 {
                   member.team_barrier();
                   auto AA = &A(kend, 0,0);
-                  Team::LU_Internal<LU_AlgoTagType>
+                  TeamLU_Internal<LU_AlgoTagType>
                     ::invoke(member, _blocksize, _blocksize, AA, as0, as1);
                 }
               }
+#endif
             }
           });
       }
@@ -204,29 +228,29 @@ namespace KokkosBatched {
                 auto CC = Kokkos::subview(C, k,   Kokkos::ALL(), Kokkos::ALL());
                 auto DD = Kokkos::subview(A, k+1, Kokkos::ALL(), Kokkos::ALL());
 
-                Team::Copy<MemberType,Trans::NoTranspose>::invoke(member, AA, sAA);
+                TeamCopy<MemberType,Trans::NoTranspose>::invoke(member, AA, sAA);
                 member.team_barrier();
 
-                Team::LU<MemberType,LU_AlgoTagType>
+                TeamLU<MemberType,LU_AlgoTagType>
                   ::invoke(member, sAA);
                 member.team_barrier();
 
-                Team::Copy<MemberType,Trans::NoTranspose>::invoke(member, sAA, AA);
+                TeamCopy<MemberType,Trans::NoTranspose>::invoke(member, sAA, AA);
 
-                Team::Trsm<MemberType,Side::Left,Uplo::Lower,Trans::NoTranspose,Diag::Unit,Trsm_AlgoTagType>
+                TeamTrsm<MemberType,Side::Left,Uplo::Lower,Trans::NoTranspose,Diag::Unit,Trsm_AlgoTagType>
                   ::invoke(member, 1.0, sAA, BB);
-                Team::Trsm<MemberType,Side::Right,Uplo::Upper,Trans::NoTranspose,Diag::NonUnit,Trsm_AlgoTagType>
+                TeamTrsm<MemberType,Side::Right,Uplo::Upper,Trans::NoTranspose,Diag::NonUnit,Trsm_AlgoTagType>
                   ::invoke(member, 1.0, sAA, CC);
                 member.team_barrier();
 
-                Team::Gemm<MemberType,Trans::NoTranspose,Trans::NoTranspose,Gemm_AlgoTagType>
+                TeamGemm<MemberType,Trans::NoTranspose,Trans::NoTranspose,Gemm_AlgoTagType>
                   ::invoke(member, -1.0, CC, BB, 1.0, DD);
               }
 
               {
                 member.team_barrier();
                 auto AA = Kokkos::subview(A, kend, Kokkos::ALL(), Kokkos::ALL());
-                Team::LU<MemberType,LU_AlgoTagType>
+                TeamLU<MemberType,LU_AlgoTagType>
                   ::invoke(member, AA);
               }
             }
@@ -258,12 +282,14 @@ namespace KokkosBatched {
 
         // parallel over the instances of tridiagonal matrices
         if (!fake) {
+#if defined(KOKKOS_ENABLE_CUDA) && defined(__KOKKOSBATCHED_TEST_ENABLE_CUDA__)
           typedef FactorizeBlockTridiagMatrices<exec_space,value_type,array_layout,
 	    VectorLength,
 	    LU_AlgoTagType,
 	    Trsm_AlgoTagType,
 	    Gemm_AlgoTagType> functor_type;
-          
+#endif
+
           switch (op) {
           case 0: {
             std::cout << "KokkosBatched::RangeTag::" << Gemm_AlgoTagType::name() << "\n";
@@ -271,7 +297,7 @@ namespace KokkosBatched {
             Kokkos::parallel_for(policy, *this);
             break;
           }
-#if defined(KOKKOS_ENABLE_CUDA)
+#if defined(KOKKOS_ENABLE_CUDA) && defined(__KOKKOSBATCHED_TEST_ENABLE_CUDA__)
           case 1: {
             typedef Kokkos::TeamPolicy<exec_space,TeamTag> policy_type;
             typedef typename policy_type::member_type member_type;
@@ -482,70 +508,98 @@ namespace KokkosBatched {
         auto B = Kokkos::subview(_TB, ij, Kokkos::ALL(), Kokkos::ALL(), Kokkos::ALL());
         auto C = Kokkos::subview(_TC, ij, Kokkos::ALL(), Kokkos::ALL(), Kokkos::ALL());
 
+        // subview patterns
+        auto A_0_all_all = Kokkos::subview(A, 0, Kokkos::ALL(), Kokkos::ALL());
+        auto B_0_all_all = Kokkos::subview(B, 0, Kokkos::ALL(), Kokkos::ALL());
+        auto C_0_all_all = Kokkos::subview(C, 0, Kokkos::ALL(), Kokkos::ALL());
+        
+        auto mx_0_0_all_all = Kokkos::subview(_x, 0, 0, Kokkos::ALL(), Kokkos::ALL());
+        auto mb_0_0_all_all = Kokkos::subview(_b, 0, 0, Kokkos::ALL(), Kokkos::ALL());
+
+        auto x_0_all = Kokkos::subview(mx_0_0_all_all, 0, Kokkos::ALL());
+        auto b_0_all = Kokkos::subview(mb_0_0_all_all, 0, Kokkos::ALL());
+
         ///
         /// loop over multivectors
         ///
-        for (int jvec=0;jvec<_nvectors;++jvec) {
-          auto x = Kokkos::subview(_x, ij, jvec, Kokkos::ALL(), Kokkos::ALL());
-          auto b = Kokkos::subview(_b, ij, jvec, Kokkos::ALL(), Kokkos::ALL());
 
+        auto &x = mx_0_0_all_all;
+        auto &b = mb_0_0_all_all;
+
+        auto &xt = x_0_all;
+        auto  xb = x_0_all;
+
+        auto &bt = b_0_all;
+        auto  bb = b_0_all;
+
+        for (int jvec=0;jvec<_nvectors;++jvec) {
+          x.assign_data( &_x(ij,jvec,0,0) );
+          b.assign_data( &_b(ij,jvec,0,0) );
+          
           ///
           /// forward substitution
           ///
           {
+            auto &LT = A_0_all_all; 
+            auto &LB = C_0_all_all; 
+            
             const bool is_same_x_and_b = (x.data() == b.data());
             {
               if (!is_same_x_and_b) {
-                auto x0 = Kokkos::subview(x, 0, Kokkos::ALL());          
-                auto b0 = Kokkos::subview(b, 0, Kokkos::ALL());
-                Serial::Copy<Trans::NoTranspose>::invoke(b0, x0);
+                xt.assign_data( &x(0,0) );
+                bt.assign_data( &b(0,0) );
+                SerialCopy<Trans::NoTranspose>::invoke(bt, xt);
               }
             }
             const ordinal_type kend = _m - 1;
             for (ordinal_type k=0;k<kend;++k) {
-              auto LT = Kokkos::subview(A, k,   Kokkos::ALL(), Kokkos::ALL());
-              auto LB = Kokkos::subview(C, k,   Kokkos::ALL(), Kokkos::ALL());
-
-              auto xt = Kokkos::subview(x, k,   Kokkos::ALL());
-              auto xb = Kokkos::subview(x, k+1, Kokkos::ALL());
+              LT.assign_data( &A(k,0,0) );
+              LB.assign_data( &C(k,0,0) );
+              
+              xt.assign_data( &x(k  ,0) );
+              xb.assign_data( &x(k+1,0) );
 
               if (!is_same_x_and_b) {
-                auto bb = Kokkos::subview(b, k+1, Kokkos::ALL());
-                Serial::Copy<Trans::NoTranspose>::invoke(bb, xb);
+                bb.assign_data( &b(k+1,0) );
+                SerialCopy<Trans::NoTranspose>::invoke(bb, xb);
               }
-
-              Serial::Trsv<Uplo::Lower,Trans::NoTranspose,Diag::Unit,Trsv_AlgoTagType>
+              
+              SerialTrsv<Uplo::Lower,Trans::NoTranspose,Diag::Unit,Trsv_AlgoTagType>
                 ::invoke(1.0, LT, xt);
-              Serial::Gemv<Trans::NoTranspose,Gemv_AlgoTagType>
+              SerialGemv<Trans::NoTranspose,Gemv_AlgoTagType>
                 ::invoke(-1.0, LB, xt, 1.0, xb);
             }
-            auto LL = Kokkos::subview(A, kend, Kokkos::ALL(), Kokkos::ALL());
-            auto xx = Kokkos::subview(x, kend, Kokkos::ALL());
-            Serial::Trsv<Uplo::Lower,Trans::NoTranspose,Diag::Unit,Trsv_AlgoTagType>
-              ::invoke(1.0, LL, xx);
+            
+            LT.assign_data( &A(kend,0,0) );
+            xt.assign_data( &x(kend,0) );
+            SerialTrsv<Uplo::Lower,Trans::NoTranspose,Diag::Unit,Trsv_AlgoTagType>
+              ::invoke(1.0, LT, xt);
           }
 
           ///
           /// backward substitution
           ///
           {
+            auto &UT = B_0_all_all;
+            auto &UB = A_0_all_all;
+
             const ordinal_type kbegin = _m - 1;
             for (ordinal_type k=kbegin;k>0;--k) {
-              auto UT = Kokkos::subview(B, k-1, Kokkos::ALL(), Kokkos::ALL());
-              auto UB = Kokkos::subview(A, k,   Kokkos::ALL(), Kokkos::ALL());
-            
-              auto xt = Kokkos::subview(x, k-1, Kokkos::ALL());
-              auto xb = Kokkos::subview(x, k,   Kokkos::ALL());
+              UT.assign_data( &B(k-1,0,0) );
+              UB.assign_data( &A(k  ,0,0) );
+              
+              xt.assign_data( &x(k-1,0) );
+              xb.assign_data( &x(k  ,0) );
 
-              Serial::Trsv<Uplo::Upper,Trans::NoTranspose,Diag::NonUnit,Trsv_AlgoTagType>
+              SerialTrsv<Uplo::Upper,Trans::NoTranspose,Diag::NonUnit,Trsv_AlgoTagType>
                 ::invoke(1.0, UB, xb);
-              Serial::Gemv<Trans::NoTranspose,Gemv_AlgoTagType>
+              SerialGemv<Trans::NoTranspose,Gemv_AlgoTagType>
                 ::invoke(-1.0, UT, xb, 1.0, xt);
             }
-            auto UU = Kokkos::subview(A, 0, Kokkos::ALL(), Kokkos::ALL());
-            auto xx = Kokkos::subview(x, 0, Kokkos::ALL());
-            Serial::Trsv<Uplo::Upper,Trans::NoTranspose,Diag::NonUnit,Trsv_AlgoTagType>
-              ::invoke(1.0, UU, xx);
+            UT.assign_data( &A(0,0,0) );
+            xt.assign_data( &x(0,0) );
+            SerialTrsv<Uplo::Upper,Trans::NoTranspose,Diag::NonUnit,Trsv_AlgoTagType>
+              ::invoke(1.0, UT, xt);
           }
         }
       }
@@ -579,7 +633,7 @@ namespace KokkosBatched {
                     if (!is_same_x_and_b) {
                       auto x0 = Kokkos::subview(x, 0, Kokkos::ALL());          
                       auto b0 = Kokkos::subview(b, 0, Kokkos::ALL());
-                      Team::Copy<MemberType,Trans::NoTranspose>::invoke(member, b0, x0);
+                      TeamCopy<MemberType,Trans::NoTranspose>::invoke(member, b0, x0);
                       member.team_barrier();
                     }
                   }
@@ -593,22 +647,22 @@ namespace KokkosBatched {
 
                     if (!is_same_x_and_b) {
                       auto bb = Kokkos::subview(b, k+1, Kokkos::ALL());
-                      Team::Copy<MemberType,Trans::NoTranspose>::invoke(member, bb, xb);
+                      TeamCopy<MemberType,Trans::NoTranspose>::invoke(member, bb, xb);
                     }
 
                     member.team_barrier();
-                    Team::Trsv<MemberType,Uplo::Lower,Trans::NoTranspose,Diag::Unit,Trsv_AlgoTagType>
+                    TeamTrsv<MemberType,Uplo::Lower,Trans::NoTranspose,Diag::Unit,Trsv_AlgoTagType>
                       ::invoke(member, 1.0, LT, xt);
 
                     member.team_barrier();
-                    Team::Gemv<MemberType,Trans::NoTranspose,Gemv_AlgoTagType>
+                    TeamGemv<MemberType,Trans::NoTranspose,Gemv_AlgoTagType>
                       ::invoke(member, -1.0, LB, xt, 1.0, xb);
                   }
                   {
                     auto LL = Kokkos::subview(A, kend, Kokkos::ALL(), Kokkos::ALL());
                     auto xx = Kokkos::subview(x, kend, Kokkos::ALL());
                     member.team_barrier();
-                    Team::Trsv<MemberType,Uplo::Lower,Trans::NoTranspose,Diag::Unit,Trsv_AlgoTagType>
+                    TeamTrsv<MemberType,Uplo::Lower,Trans::NoTranspose,Diag::Unit,Trsv_AlgoTagType>
                       ::invoke(member, 1.0, LL, xx);
                   }
                 }
@@ -626,11 +680,11 @@ namespace KokkosBatched {
                     auto xb = Kokkos::subview(x, k,   Kokkos::ALL());
 
                     member.team_barrier();
-                    Team::Trsv<MemberType,Uplo::Upper,Trans::NoTranspose,Diag::NonUnit,Trsv_AlgoTagType>
+                    TeamTrsv<MemberType,Uplo::Upper,Trans::NoTranspose,Diag::NonUnit,Trsv_AlgoTagType>
                       ::invoke(member, 1.0, UB, xb);
 
                     member.team_barrier();
-                    Team::Gemv<MemberType,Trans::NoTranspose,Gemv_AlgoTagType>
+                    TeamGemv<MemberType,Trans::NoTranspose,Gemv_AlgoTagType>
                       ::invoke(member, -1.0, UT, xb, 1.0, xt);
                   }
                   {
@@ -638,7 +692,7 @@ namespace KokkosBatched {
                     auto xx = Kokkos::subview(x, 0, Kokkos::ALL());
 
                     member.team_barrier();
-                    Team::Trsv<MemberType,Uplo::Upper,Trans::NoTranspose,Diag::NonUnit,Trsv_AlgoTagType>
+                    TeamTrsv<MemberType,Uplo::Upper,Trans::NoTranspose,Diag::NonUnit,Trsv_AlgoTagType>
                       ::invoke(member, 1.0, UU, xx);
                   }
                 }
@@ -673,7 +727,7 @@ namespace KokkosBatched {
                 auto b = Kokkos::subview(_b, ij, jvec, Kokkos::ALL(), Kokkos::ALL());
 
                 // copy the entire vector into shared memory (if necessary it needs chunking)
-                Team::Copy<MemberType,Trans::NoTranspose>::invoke(member, b, sx);
+                TeamCopy<MemberType,Trans::NoTranspose>::invoke(member, b, sx);
                 member.team_barrier();
                 
                 ///
@@ -689,18 +743,18 @@ namespace KokkosBatched {
                     auto xb = Kokkos::subview(sx, k+1, Kokkos::ALL());
 
                     member.team_barrier();
-                    Team::Trsv<MemberType,Uplo::Lower,Trans::NoTranspose,Diag::Unit,Trsv_AlgoTagType>
+                    TeamTrsv<MemberType,Uplo::Lower,Trans::NoTranspose,Diag::Unit,Trsv_AlgoTagType>
                       ::invoke(member, 1.0, LT, xt);
 
                     member.team_barrier();
-                    Team::Gemv<MemberType,Trans::NoTranspose,Gemv_AlgoTagType>
+                    TeamGemv<MemberType,Trans::NoTranspose,Gemv_AlgoTagType>
                       ::invoke(member, -1.0, LB, xt, 1.0, xb);
                   }
                   {
                     auto LL = Kokkos::subview(A, kend, Kokkos::ALL(), Kokkos::ALL());
                     auto xx = Kokkos::subview(sx, kend, Kokkos::ALL());
                     member.team_barrier();
-                    Team::Trsv<MemberType,Uplo::Lower,Trans::NoTranspose,Diag::Unit,Trsv_AlgoTagType>
+                    TeamTrsv<MemberType,Uplo::Lower,Trans::NoTranspose,Diag::Unit,Trsv_AlgoTagType>
                       ::invoke(member, 1.0, LL, xx);
                   }
                 }
@@ -718,11 +772,11 @@ namespace KokkosBatched {
                     auto xb = Kokkos::subview(sx, k,   Kokkos::ALL());
 
                     member.team_barrier();
-                    Team::Trsv<MemberType,Uplo::Upper,Trans::NoTranspose,Diag::NonUnit,Trsv_AlgoTagType>
+                    TeamTrsv<MemberType,Uplo::Upper,Trans::NoTranspose,Diag::NonUnit,Trsv_AlgoTagType>
                       ::invoke(member, 1.0, UB, xb);
 
                     member.team_barrier();
-                    Team::Gemv<MemberType,Trans::NoTranspose,Gemv_AlgoTagType>
+                    TeamGemv<MemberType,Trans::NoTranspose,Gemv_AlgoTagType>
                       ::invoke(member, -1.0, UT, xb, 1.0, xt);
                   }
                   {
@@ -730,12 +784,12 @@ namespace KokkosBatched {
                     auto xx = Kokkos::subview(sx, 0, Kokkos::ALL());
 
                     member.team_barrier();
-                    Team::Trsv<MemberType,Uplo::Upper,Trans::NoTranspose,Diag::NonUnit,Trsv_AlgoTagType>
+                    TeamTrsv<MemberType,Uplo::Upper,Trans::NoTranspose,Diag::NonUnit,Trsv_AlgoTagType>
                       ::invoke(member, 1.0, UU, xx);
                   }
                 }
                 // copy the entire vector into shared memory (if necessary it needs chunking)
-                Team::Copy<MemberType,Trans::NoTranspose>::invoke(member, sx, x);
+                TeamCopy<MemberType,Trans::NoTranspose>::invoke(member, sx, x);
                 member.team_barrier();
               }
             }
@@ -765,17 +819,20 @@ namespace KokkosBatched {
         _b = b.Values();
 
         {
+#if defined(KOKKOS_ENABLE_CUDA) && defined(__KOKKOSBATCHED_TEST_ENABLE_CUDA__)
           typedef SolveBlockTridiagMatrices<exec_space,value_type,array_layout,
 	    VectorLength,
 	    Trsv_AlgoTagType,
 	    Gemv_AlgoTagType> functor_type;
+#endif
+
           switch (op) {
           case 0: {
             const Kokkos::RangePolicy<exec_space,RangeTag> policy(0, _ntridiag);
             Kokkos::parallel_for(policy, *this);
             break;
           }
-#if defined(KOKKOS_ENABLE_CUDA)
+#if defined(KOKKOS_ENABLE_CUDA) && defined(__KOKKOSBATCHED_TEST_ENABLE_CUDA__)
           case 1: {
             typedef Kokkos::TeamPolicy<exec_space,TeamTag> policy_type;
             typedef typename policy_type::member_type member_type;
@@ -864,7 +921,7 @@ namespace KokkosBatched {
         
         // diffs
         Kokkos::View<value_type****,Kokkos::DefaultHostExecutionSpace> 
-          rr("rr", bb.dimension_0(), bb.dimension_1(), bb.dimension_2(), bb.dimension_3()); 
+          rr("rr", bb.extent(0), bb.extent(1), bb.extent(2), bb.extent(3)); 
         
         Kokkos::deep_copy(rr, bb);
 
@@ -1083,7 +1140,7 @@ namespace KokkosBatched {
     
     // performance tests
     template<typename DeviceSpace, typename ValueType, int VectorLength>
-    int run(const Input &input, const bool test_tpl = false) { 
+    int run(const Input<DeviceSpace> &input, const bool test_tpl = false) { 
       typedef typename DeviceSpace::array_layout DeviceArrayLayout;
       typedef Kokkos::DefaultHostExecutionSpace HostSpace;
 
@@ -1129,7 +1186,7 @@ namespace KokkosBatched {
       }
 
       // memory size
-      const double memsize_A = A_device.Values().dimension_0()*blocksize*blocksize*8;
+      const double memsize_A = A_device.Values().extent(0)*blocksize*blocksize*8;
       
       ///
       /// matrix vector multiplication test

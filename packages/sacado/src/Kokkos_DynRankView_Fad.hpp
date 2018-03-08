@@ -44,7 +44,6 @@
 #include "Kokkos_View_Fad.hpp"
 
 namespace Kokkos {
-namespace Experimental {
 namespace Impl {
 
 template <>
@@ -266,7 +265,7 @@ struct DynRankDimTraits<Kokkos::Impl::ViewSpecializeSacadoFad> {
 
 };
 
-}}} // namespace Kokkos::Experimental::Impl
+}} // namespace Kokkos::Impl
 
 namespace Kokkos {
 namespace Impl {
@@ -486,7 +485,7 @@ struct ViewMapping
         std::is_same< typename SrcTraits::array_layout
                     , Kokkos::LayoutStride >::value
       ) 
-    ), Kokkos::Experimental::Impl::DynRankSubviewTag >::type
+    ), Kokkos::Impl::DynRankSubviewTag >::type
   , SrcTraits
   , Args ... >
 {
@@ -560,7 +559,7 @@ public:
 
   template < typename T , class ... P >
   KOKKOS_INLINE_FUNCTION
-  static ret_type subview( const unsigned src_rank , Kokkos::Experimental::DynRankView< T , P...> const & src , Args ... args )
+  static ret_type subview( const unsigned src_rank , Kokkos::DynRankView< T , P...> const & src , Args ... args )
   {
 
     typedef ViewMapping< traits_type, void >  DstType ;
@@ -684,7 +683,7 @@ class ViewMapping< DstTraits , SrcTraits ,
     // Source view has FAD only
     std::is_same< typename SrcTraits::specialize
                 , ViewSpecializeSacadoFad >::value
-  ), Kokkos::Experimental::Impl::ViewToDynRankViewTag >::type >
+  ), Kokkos::Impl::ViewToDynRankViewTag >::type >
 {
 public:
 
@@ -812,7 +811,7 @@ void deep_copy(
                   typename ViewTraits<DT,DP...>::non_const_value_type >::value
     , "Can only deep copy into non-const type" );
 
-  Kokkos::Experimental::Impl::DynRankViewFill< DynRankView<DT,DP...> >( view , value );
+  Kokkos::Impl::DynRankViewFill< DynRankView<DT,DP...> >( view , value );
 }
 
 // Overload of deep_copy for Fad views intializing to a constant Fad
@@ -832,7 +831,7 @@ void deep_copy(
                   typename ViewTraits<DT,DP...>::non_const_value_type >::value
     , "Can only deep copy into non-const type" );
 
-  Kokkos::Experimental::Impl::DynRankViewFill< DynRankView<DT,DP...> >( view , value );
+  Kokkos::Impl::DynRankViewFill< DynRankView<DT,DP...> >( view , value );
 }
 
 template< class DstType , class SrcType >
@@ -851,7 +850,7 @@ void deep_copy
     std::is_same< typename SrcType::traits::specialize
                 , Kokkos::Impl::ViewSpecializeSacadoFadContiguous >::value )
   &&
-  ( Kokkos::Experimental::is_dyn_rank_view<DstType>::value || Kokkos::Experimental::is_dyn_rank_view<SrcType
+  ( Kokkos::is_dyn_rank_view<DstType>::value || Kokkos::is_dyn_rank_view<SrcType
 >::value )
   )>::type * = 0 )
 {
@@ -967,11 +966,11 @@ void deep_copy
     }
     else if ( DstExecCanAccessSrc ) {
       // Copying data between views in accessible memory spaces and either non-contiguous or incompatible shape.
-      Kokkos::Experimental::Impl::DynRankViewRemap< dst_type , src_type >( dst , src );
+      Kokkos::Impl::DynRankViewRemap< dst_type , src_type >( dst , src );
     }
     else if ( SrcExecCanAccessDst ) {
       // Copying data between views in accessible memory spaces and either non-contiguous or incompatible shape.
-      Kokkos::Experimental::Impl::DynRankViewRemap< dst_type , src_type , src_execution_space >( dst , src );
+      Kokkos::Impl::DynRankViewRemap< dst_type , src_type , src_execution_space >( dst , src );
     }
     else {
       Kokkos::Impl::throw_runtime_exception("deep_copy given views that would require a temporary allocation");

@@ -533,7 +533,9 @@ void
     }
 
     timer1.reset();
-    Kokkos::parallel_for(
+    //this is basically kkmem without memory pools.
+    //only executed for to check the effect of memory pools.
+    Kokkos::parallel_for( "KokkosSparse::NumericCMEM::KKSPEED::GPU",
         gpu_team_policy_t(
             a_row_cnt / team_row_chunk_size + 1 ,
             suggested_team_size ,
@@ -602,10 +604,10 @@ void
     timer1.reset();
 
     if (use_dynamic_schedule){
-      Kokkos::parallel_for( dynamic_multicore_team_policy_t(a_row_cnt / team_row_chunk_size + 1 , suggested_team_size, suggested_vector_size), sc);
+      Kokkos::parallel_for( "KokkosSparse::NumericCMEM_CPU::DENSE::DYNAMIC", dynamic_multicore_team_policy_t(a_row_cnt / team_row_chunk_size + 1 , suggested_team_size, suggested_vector_size), sc);
     }
     else {
-      Kokkos::parallel_for( multicore_team_policy_t(a_row_cnt / team_row_chunk_size + 1 , suggested_team_size, suggested_vector_size), sc);
+      Kokkos::parallel_for( "KokkosSparse::NumericCMEM_CPU::DENSE::STATIC", multicore_team_policy_t(a_row_cnt / team_row_chunk_size + 1 , suggested_team_size, suggested_vector_size), sc);
     }
 
     MyExecSpace::fence();

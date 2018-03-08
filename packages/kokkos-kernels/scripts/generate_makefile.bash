@@ -412,16 +412,16 @@ echo "KOKKOS_SETTINGS=${KOKKOS_SETTINGS}" > Makefile
 
 echo "" >> Makefile
 echo "kokkos-lib:" >> Makefile
-echo -e "\t\$(MAKE) -C kokkos install-lib" >> Makefile
+echo -e "\tcd kokkos && \$(MAKE) install-lib" >> Makefile
 echo "" >> Makefile
 
 echo "" >> Makefile
 echo "kokkoskernels-lib: kokkos-lib" >> Makefile
-echo -e "\t\$(MAKE) -C src build" >> Makefile
+echo -e "\tcd src && \$(MAKE) build" >> Makefile
 echo "" >> Makefile
 
 echo "install-lib: kokkoskernels-lib" >> Makefile
-echo -e "\t\$(MAKE) -C src install-lib" >> Makefile
+echo -e "\tcd src && \$(MAKE) install-lib" >> Makefile
 echo "" >> Makefile
 
 echo "build-test: install-lib" >> Makefile

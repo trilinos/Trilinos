@@ -135,7 +135,8 @@ struct TransposeMatrix{
           [&] (nnz_lno_t i) {
         const size_type adjind = i + col_begin;
         const nnz_lno_t colIndex = adj[adjind];
-        Kokkos::atomic_fetch_add(&(t_xadj(colIndex)),1);
+        typedef typename std::remove_reference< decltype( t_xadj(0) ) >::type atomic_incr_type;
+        Kokkos::atomic_fetch_add(&(t_xadj(colIndex)), atomic_incr_type(1));
       });
     });
   }
@@ -157,7 +158,8 @@ struct TransposeMatrix{
           [&] (nnz_lno_t i) {
         const size_type adjind = i + col_begin;
         const nnz_lno_t colIndex = adj[adjind];
-        const size_type pos = Kokkos::atomic_fetch_add(&(tmp_txadj(colIndex)),1);
+        typedef typename std::remove_reference< decltype( tmp_txadj(0) ) >::type atomic_incr_type;
+        const size_type pos = Kokkos::atomic_fetch_add(&(tmp_txadj(colIndex)), atomic_incr_type(1));
 
         t_adj(pos) = row_index;
         if (transpose_values){
@@ -300,7 +302,8 @@ struct Fill_Reverse_Scale_Functor{
     forward_type fm = forward_map[ii];
     fm = fm << multiply_shift_for_scale;
     fm += ii >> division_shift_for_bucket;
-    Kokkos::atomic_fetch_add( &(reverse_map_xadj(fm)), 1);
+    typedef typename std::remove_reference< decltype( reverse_map_xadj(0) ) >::type atomic_incr_type;
+    Kokkos::atomic_fetch_add( &(reverse_map_xadj(fm)), atomic_incr_type(1));
   }
 
   KOKKOS_INLINE_FUNCTION
@@ -309,7 +312,8 @@ struct Fill_Reverse_Scale_Functor{
 
     fm = fm << multiply_shift_for_scale;
     fm += ii >> division_shift_for_bucket;
-    const reverse_type future_index = Kokkos::atomic_fetch_add( &(reverse_map_xadj(fm )), 1);
+    typedef typename std::remove_reference< decltype( reverse_map_xadj(0) ) >::type atomic_incr_type;
+    const reverse_type future_index = Kokkos::atomic_fetch_add( &(reverse_map_xadj(fm) ), atomic_incr_type(1));
     reverse_map_adj(future_index) = ii;
   }
 };
@@ -358,13 +362,15 @@ struct Reverse_Map_Functor{
   KOKKOS_INLINE_FUNCTION
   void operator()(const CountTag&, const size_t &ii) const {
     forward_type fm = forward_map[ii];
-    Kokkos::atomic_fetch_add( &(reverse_map_xadj(fm)), 1);
+    typedef typename std::remove_reference< decltype( reverse_map_xadj(0) ) >::type atomic_incr_type;
+    Kokkos::atomic_fetch_add( &(reverse_map_xadj(fm)), atomic_incr_type(1));
   }
 
   KOKKOS_INLINE_FUNCTION
   void operator()(const FillTag&, const size_t &ii) const {
     forward_type c = forward_map[ii];
-    const reverse_type future_index = Kokkos::atomic_fetch_add( &(reverse_map_xadj(c)), 1);
+    typedef typename std::remove_reference< decltype( reverse_map_xadj(0) ) >::type atomic_incr_type;
+    const reverse_type future_index = Kokkos::atomic_fetch_add( &(reverse_map_xadj(c)), atomic_incr_type(1));
     reverse_map_adj(future_index) = ii;
   }
 };
@@ -1657,7 +1663,8 @@ void kk_create_incidence_matrix_from_lower_triangle(
 
   Kokkos::parallel_for(my_exec_space(0, ne),
       KOKKOS_LAMBDA(const lno_t& i) {
-    Kokkos::atomic_fetch_add(&(out_rowmap[in_lower_entries[i]]),1);
+    typedef typename std::remove_reference< decltype( out_rowmap[0] ) >::type atomic_incr_type;
+    Kokkos::atomic_fetch_add(&(out_rowmap[in_lower_entries[i]]), atomic_incr_type(1));
   });
 
   exec_space::fence();
@@ -1694,7 +1701,8 @@ void kk_create_incidence_matrix_from_lower_triangle(
   Kokkos::parallel_for(my_exec_space(0, ne),
       KOKKOS_LAMBDA(const size_type& edge_ind) {
     lno_t col = in_lower_entries[edge_ind];
-    size_type write_ind = Kokkos::atomic_fetch_add(&(out_rowmap_copy(col)),1);
+    typedef typename std::remove_reference< decltype( out_rowmap_copy(0) ) >::type atomic_incr_type;
+    size_type write_ind = Kokkos::atomic_fetch_add(&(out_rowmap_copy(col)), atomic_incr_type(1));
     out_entries[write_ind] = edge_ind;
   });
 
@@ -1786,8 +1794,9 @@ void kk_create_incidence_matrix_from_original_matrix(
         lno_t col_perm = col;
         if (perm) col_perm = perm[col];
         if (row_perm > col_perm){
-          size_type row_write_index = Kokkos::atomic_fetch_add(&(out_rowmap_copy[row]),1);
-          size_type col_write_index = Kokkos::atomic_fetch_add(&(out_rowmap_copy[col]),1);
+          typedef typename std::remove_reference< decltype( out_rowmap_copy[0] ) >::type atomic_incr_type;
+          size_type row_write_index = Kokkos::atomic_fetch_add(&(out_rowmap_copy[row]), atomic_incr_type(1));
+          size_type col_write_index = Kokkos::atomic_fetch_add(&(out_rowmap_copy[col]), atomic_incr_type(1));
           out_entries[row_write_index] = used_edge_index + used_count;
           out_entries[col_write_index] = used_edge_index + used_count;
           ++used_count;
@@ -1817,8 +1826,9 @@ void kk_create_incidence_matrix_from_original_matrix(
       lno_t col_perm = col;
       if (perm) col_perm = perm[col];
       if (row_perm < col_perm){
-        size_type row_write_index = Kokkos::atomic_fetch_add(&(out_rowmap_copy[row]),1);
-        size_type col_write_index = Kokkos::atomic_fetch_add(&(out_rowmap_copy[col]),1);
+        typedef typename std::remove_reference< decltype( out_rowmap_copy[0] ) >::type atomic_incr_type;
+        size_type row_write_index = Kokkos::atomic_fetch_add(&(out_rowmap_copy[row]), atomic_incr_type(1));
+        size_type col_write_index = Kokkos::atomic_fetch_add(&(out_rowmap_copy[col]), atomic_incr_type(1));
         out_entries[row_write_index] = used_edge_index + used_count;
         out_entries[col_write_index] = used_edge_index + used_count;
         ++used_count;

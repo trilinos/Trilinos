@@ -44,10 +44,10 @@
 #ifndef _KOKKOSSPGEMMMKL2_HPP
 #define _KOKKOSSPGEMMMKL2_HPP
 
-//#define HAVE_KOKKOSKERNELS_MKL
+//#define KOKKOSKERNELS_ENABLE_TPL_MKL
 
 
-#ifdef HAVE_KOKKOSKERNELS_MKL_DISABLED
+#ifdef KOKKOSKERNELS_ENABLE_TPL_MKL
 #include "mkl.h"
 #endif
 
@@ -81,7 +81,7 @@ void mkl2phase_symbolic(
     cin_row_index_view_type row_mapC,
     bool verbose = false){
 
-#ifdef HAVE_KOKKOSKERNELS_MKL_DISABLED
+#ifdef KOKKOSKERNELS_ENABLE_TPL_MKL
 
   typedef typename KernelHandle::nnz_lno_t idx;
   
@@ -166,7 +166,7 @@ void mkl2phase_symbolic(
         mynullptr, mynulladj, c_xadj,
         &nzmax, &info);
     if (verbose)
-      std::cout << "Sort:" << sort << "Actual MKL2 Symbolic Time:" << timer1.seconds() << std::endl;
+      std::cout << "Sort:" << sort << " Actual MKL2 Symbolic Time:" << timer1.seconds() << std::endl;
 
     if (handle->mkl_convert_to_1base){
       KokkosKernels::Impl::kk_a_times_x_plus_b< cin_row_index_view_type, int_persistent_work_view_t,  int, int, MyExecSpace>(m + 1, row_mapC, handle->persistent_c_xadj,  1, -1);
@@ -216,7 +216,7 @@ void mkl2phase_symbolic(
       cin_nonzero_value_view_type &valuesC,
       bool verbose = false){
 
-#ifdef HAVE_KOKKOSKERNELS_MKL_DISABLED
+#ifdef KOKKOSKERNELS_ENABLE_TPL_MKL
 
     typedef typename KernelHandle::nnz_lno_t idx;
     
@@ -248,8 +248,8 @@ void mkl2phase_symbolic(
       int *b_adj = (int *)entriesB.ptr_on_device();
       
 
-      value_type *a_ew = valuesA.ptr_on_device();
-      value_type *b_ew = valuesB.ptr_on_device();
+      const value_type *a_ew = valuesA.ptr_on_device();
+      const value_type *b_ew = valuesB.ptr_on_device();
 
       if (handle->mkl_convert_to_1base)
       {
