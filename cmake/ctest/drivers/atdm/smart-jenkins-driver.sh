@@ -29,6 +29,8 @@ set -x
 
 $WORKSPACE/Trilinos/cmake/ctest/drivers/atdm/$ATDM_CONFIG_KNOWN_SYSTEM_NAME/drivers/$JOB_NAME.sh
 
+set +x
+
 echo
 echo "Time when smart-jenkins-driver.sh completed called:"
 echo
