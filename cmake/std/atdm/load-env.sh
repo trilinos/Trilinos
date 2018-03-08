@@ -72,4 +72,26 @@ source $_SCRIPT_DIR/utils/set_build_options.sh
 # E) Load the matching env
 #
 
+# Set other vaues to empty by default
+export OMP_NUM_THREADS=
+export OMPI_CC=
+export OMPI_CXX=
+export OMPI_FC=
+export ATDM_CONFIG_SYSTEM_CDASH_SITE=
+export ATDM_CONFIG_USE_MAKEFILES=
+export ATDM_CONFIG_BUILD_COUNT=
+export ATDM_CONFIG_KOKKOS_ARCH=
+export ATDM_CONFIG_CTEST_PARALLEL_LEVEL=
+export ATDM_CONFIG_BLAS_LIB=
+export ATDM_CONFIG_LAPACK_LIB=
+export ATDM_CONFIG_USE_HWLOC=
+export ATDM_CONFIG_HWLOC_LIBS=
+export ATDM_CONFIG_USE_CUDA=
+export ATDM_CONFIG_HDF5_LIBS=
+export ATDM_CONFIG_NETCDF_LIBS=
+export ATDM_CONFIG_MPI_POST_FLAG=
+
 source $_SCRIPT_DIR/$ATDM_CONFIG_KNOWN_SYSTEM_NAME/environment.sh
+
+# NOTE: The ATDMDevEnv.cmake module when processed will assert that all of
+# these are set!

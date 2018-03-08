@@ -6,30 +6,28 @@
 #
 ################################################################################
 
-module purge
-
 echo "Using white/ride compiler stack $ATDM_CONFIG_COMPILER to build $ATDM_CONFIG_BUILD_TYPE code with Kokkos node type $ATDM_CONFIG_NODE_TYPE"
 
 export ATDM_CONFIG_SYSTEM_CDASH_SITE=white/ride
-export OMPI_CXX=
 export ATDM_CONFIG_USE_MAKEFILES=OFF
 export ATDM_CONFIG_BUILD_COUNT=128
-export ATDM_CONFIG_CTEST_PARALLEL_LEVEL=
-export OMP_NUM_THREADS=
 # NOTE: Above settings are used for running on a single rhel7F (Firestone,
 # Dual-Socket POWER8, 8 cores per socket, K80 GPUs) node.
 
+module purge
+
 module load ninja/1.7.2
+
+if [ "$ATDM_CONFIG_NODE_TYPE" == "OPENMP" ] ; then
+  export ATDM_CONFIG_CTEST_PARALLEL_LEVEL=16
+  export OMP_NUM_THREADS=2
+else
+  export ATDM_CONFIG_CTEST_PARALLEL_LEVEL=32
+fi
 
 if [ "$ATDM_CONFIG_COMPILER" == "GNU" ]; then
     export ATDM_CONFIG_KOKKOS_ARCH=Power8
     module load devpack/openmpi/1.10.4/gcc/5.4.0/cuda/8.0.44
-    if [ "$ATDM_CONFIG_NODE_TYPE" == "OPENMP" ] ; then
-      export ATDM_CONFIG_CTEST_PARALLEL_LEVEL=16
-      export OMP_NUM_THREADS=2
-    else
-      export ATDM_CONFIG_CTEST_PARALLEL_LEVEL=32
-    fi
     export OMPI_CXX=`which g++`
     export OMPI_CC=`which gcc`
     export OMPI_FC=`which gfortran`
@@ -42,13 +40,10 @@ elif [ "$ATDM_CONFIG_COMPILER" == "CUDA" ]; then
     export ATDM_CONFIG_KOKKOS_ARCH=Kepler37
     export ATDM_CONFIG_CTEST_PARALLEL_LEVEL=32
     module load devpack/openmpi/1.10.4/gcc/5.4.0/cuda/8.0.44
-    export OMPI_CXX=$ATDM_CONFIG_TRILNOS_DIR/packages/kokkos/config/nvcc_wrapper
-    if [ ! -x "$OMPI_CXX" ]; then
-	export OMPI_CXX=`which nvcc_wrapper`
-    fi
+    export OMPI_CXX=$ATDM_CONFIG_TRILNOS_DIR/packages/kokkos/bin/nvcc_wrapper
     if [ ! -x "$OMPI_CXX" ]; then
         echo "No nvcc_wrapper found"
-        exit 1
+        return
     fi
     export OMPI_CC=`which gcc`
     export OMPI_FC=`which gfortran`
@@ -59,10 +54,8 @@ elif [ "$ATDM_CONFIG_COMPILER" == "CUDA" ]; then
     export CUDA_MANAGED_FORCE_DEVICE_ALLOC=1
 else
     echo "No valid compiler found"
-
+    return
 fi
-
-export ATDM_CONFIG_MPI_POST_FLAG="-map-by;socket:PE=8;--oversubscribe"
 
 export ATDM_CONFIG_USE_HWLOC=OFF
 
@@ -78,3 +71,5 @@ if [ $? ]; then module load  yaml-cpp/20170104; fi
 export MPICC=`which mpicc`
 export MPICXX=`which mpicxx`
 export MPIF90=`which mpif90`
+
+export ATDM_CONFIG_MPI_POST_FLAG="-map-by;socket:PE=8;--oversubscribe"
