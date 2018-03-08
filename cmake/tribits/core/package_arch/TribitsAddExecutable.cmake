@@ -391,7 +391,6 @@ FUNCTION(TRIBITS_ADD_EXECUTABLE EXE_NAME)
   IF(PARSE_ADDED_EXE_TARGET_NAME_OUT)
     SET(${PARSE_ADDED_EXE_TARGET_NAME_OUT} PARENT_SCOPE)
   ENDIF()
-
   #
   # B) Exclude building the test executable based on some criteria
   #
@@ -439,14 +438,6 @@ FUNCTION(TRIBITS_ADD_EXECUTABLE EXE_NAME)
 
   IF(DEFINED PACKAGE_NAME AND NOT PARSE_NOEXEPREFIX)
     SET(EXE_BINARY_NAME ${PACKAGE_NAME}_${EXE_BINARY_NAME})
-  ENDIF()
-
-  # Exclude the build if requested
-  IF (${EXE_BINARY_NAME}_EXE_DISABLE)
-    MESSAGE("-- "
-      "${EXE_BINARY_NAME} EXE NOT being built due to ${EXE_BINARY_NAME}_EXE_DISABLE="
-      "'${${EXE_BINARY_NAME}_EXE_DISABLE}'")
-    RETURN()
   ENDIF()
 
   # If exe is in subdirectory prepend that dir name to the source files
