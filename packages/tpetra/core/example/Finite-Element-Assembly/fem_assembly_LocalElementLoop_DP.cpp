@@ -290,10 +290,10 @@ int main (int argc, char *argv[])
   #endif
 
   // Save crs_matrix as a MatrixMarket file.
-  std::ofstream ofs("FEMAssembly_LocalElementLoop_DP.out", std::ofstream::out);
-
-  Tpetra::MatrixMarket::Writer<matrix_t>::writeSparse(ofs, crs_matrix_owned);
-  ofs.close();
+  // (disabled until we get this under command-line option control)
+  //std::ofstream ofs("FEMAssembly_LocalElementLoop_DP.out", std::ofstream::out);
+  //Tpetra::MatrixMarket::Writer<matrix_t>::writeSparse(ofs, crs_matrix_owned);
+  //ofs.close();
 
   // Print out timing results.
   TimeMonitor::report(comm.ptr(), std::cout, "");
