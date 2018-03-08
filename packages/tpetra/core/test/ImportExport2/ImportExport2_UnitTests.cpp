@@ -45,6 +45,8 @@
 
 #include <map>
 #include <vector>
+#include <random>
+#include <algorithm>
 #include <Teuchos_OrdinalTraits.hpp>
 #include <Teuchos_ScalarTraits.hpp>
 #include <Teuchos_VerboseObject.hpp>
@@ -1988,6 +1990,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( Import_Util, UnpackAndCombineWithOwningPIDs, 
         colind[i]=Bmap.getLocalElement(colind[i]);
       }
 
+      // Make copies to test non-value interface to sortCrsEntries
+      Teuchos::Array<size_t> rowptr2(rowptr);
+
       // Sort the GIDs
       Tpetra::Import_Util::sortCrsEntries<Scalar, GO> (rowptr (), colind (), vals ());
 
@@ -2005,6 +2010,123 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( Import_Util, UnpackAndCombineWithOwningPIDs, 
   }
 
   TEST_EQUALITY(total_err,0);
+}
+
+
+// Unit Test the functionality in Tpetra_Import_Util
+TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( Import_Util, SortCrsEntries, LO, GO, Scalar)  {
+
+  typedef typename Teuchos::Array<GO>::size_type size_type;
+
+  int max_num_entries_per_row = 7;  // should be odd
+  int num_cols = 15; // should be odd
+
+  Teuchos::Array<size_t>  rowptr, rowptr2;
+  Teuchos::Array<GO>  colind, colind2;
+  Teuchos::Array<Scalar> vals, vals2;
+
+  // Fill the CRS arrays, use random values
+  std::random_device rd;
+  std::mt19937 gen(rd());
+  std::uniform_real_distribution<Scalar> dist(1.0, 2.0);
+  int row = 0;
+  while (true) {
+    int m = (max_num_entries_per_row - 1) / 2;
+    int start = std::max(0, row - m);
+    int num_cols_this_row = std::min(row + 1 + m,
+        std::min(max_num_entries_per_row, m+num_cols-row));
+    int end = start + num_cols_this_row;
+
+    rowptr.push_back(static_cast<size_t>(colind.size()));
+    rowptr2.push_back(static_cast<size_t>(colind2.size()));
+
+    for (int col=start; col<end; col++) {
+      colind.push_back(col);
+      colind2.push_back(col);
+
+      Scalar rands = dist(gen);
+      vals.push_back(rands);
+      vals2.push_back(rands);
+
+      // Create duplicate for merge test
+      colind2.push_back(col);
+      vals2.push_back(rands);
+    }
+
+    if (row > 1 && num_cols_this_row == 1 + m) break;
+    row++;
+
+  }
+  size_type num_entries = colind.size();
+  rowptr.push_back(static_cast<size_t>(num_entries));
+
+  size_type num_entries2 = colind2.size();
+  rowptr2.push_back(static_cast<size_t>(num_entries2));
+
+  // Randomly shuffle values and column indices
+  Teuchos::Array<Scalar>  vals_rand(num_entries);
+  Teuchos::Array<GO>  colind_rand1(num_entries), colind_rand2(num_entries);
+  for (size_t i=0; i < static_cast<size_t>(rowptr.size()-1); ++i) {
+    size_t num_cols_this_row = rowptr[i+1] - rowptr[i];
+    Teuchos::Array<GO> ix(num_cols_this_row);
+    std::iota(ix.begin(), ix.end(), rowptr[i]);
+    std::shuffle(ix.begin(), ix.end(), gen);
+    for (size_t j=rowptr[i], k=0; j < rowptr[i+1]; ++j, ++k) {
+      vals_rand[j] = vals[ix[k]];
+      colind_rand1[j] = colind[ix[k]];
+      colind_rand2[j] = colind_rand1[j];
+    }
+  }
+
+  // Sort the GIDs and associated values
+  Tpetra::Import_Util::sortCrsEntries<Scalar, GO>(rowptr(), colind_rand1(), vals_rand());
+
+  // Sort the GIDs
+  Tpetra::Import_Util::sortCrsEntries<GO>(rowptr(), colind_rand2());
+
+  // Compare
+  TEST_COMPARE_ARRAYS(colind, colind_rand1);
+  TEST_COMPARE_ARRAYS(colind, colind_rand2);
+  TEST_COMPARE_FLOATING_ARRAYS(vals, vals_rand, 1.e-12);
+
+  // Randomly shuffle values and column indices for merge test
+  Teuchos::Array<Scalar>  vals2_rand(num_entries2);
+  Teuchos::Array<GO>  colind2_rand1(num_entries2), colind2_rand2(num_entries2);
+  for (size_t i=0; i < static_cast<size_t>(rowptr2.size()-1); ++i) {
+    size_t num_cols_this_row = rowptr2[i+1] - rowptr2[i];
+    Teuchos::Array<GO> ix(num_cols_this_row);
+    std::iota(ix.begin(), ix.end(), rowptr2[i]);
+    std::shuffle(ix.begin(), ix.end(), gen);
+    for (size_t j=rowptr2[i], k=0; j < rowptr2[i+1]; ++j, ++k) {
+      vals2_rand[j] = vals2[ix[k]];
+      colind2_rand1[j] = colind2[ix[k]];
+      colind2_rand2[j] = colind2_rand1[j];
+    }
+  }
+
+  // Sort and merge the GIDs and associated values
+  Teuchos::Array<size_t> rowptr2_1(rowptr2);
+  Tpetra::Import_Util::sortAndMergeCrsEntries<Scalar, GO>(rowptr2(), colind2_rand1(), vals2_rand());
+
+  // Sort and merge the GIDs
+  Tpetra::Import_Util::sortAndMergeCrsEntries<GO>(rowptr2_1(), colind2_rand2());
+
+  size_type new_num_entries = rowptr2[rowptr2.size()-1];
+  TEST_EQUALITY(num_entries, new_num_entries);
+
+  TEST_COMPARE_ARRAYS(rowptr, rowptr2);
+
+  colind2_rand1.resize(num_entries);
+  TEST_COMPARE_ARRAYS(colind, colind2_rand1);
+
+  colind2_rand2.resize(num_entries);
+  TEST_COMPARE_ARRAYS(colind, colind2_rand2);
+
+  vals2.resize(num_entries);
+  vals2_rand.resize(num_entries);
+  for (size_type i=0; i<num_entries; i++) vals2[i] = 2.*vals[i];
+  TEST_COMPARE_FLOATING_ARRAYS(vals2, vals2_rand, 1.e-12);
+
 }
 
 
@@ -2567,6 +2689,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( Import_Util,GetTwoTransferOwnershipVector, LO
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsMatrixImportExport, doImport, LO, GO, SC ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( FusedImportExport, doImport, LO, GO, SC ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Import_Util, UnpackAndCombineWithOwningPIDs, LO, GO, SC ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Import_Util, SortCrsEntries, LO, GO, SC ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( FusedImportExport, MueLuStyle, LO, GO, SC )
 
   // Note: This test fails.  Should fix later.
