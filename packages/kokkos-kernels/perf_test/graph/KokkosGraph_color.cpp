@@ -49,7 +49,7 @@
 #include <algorithm>    // std::shuffle
 #include <vector>
 
-#include "KokkosGraph_GraphColor.hpp"
+#include "KokkosGraph_graph_color.hpp"
 #include "KokkosKernels_IOUtils.hpp"
 #include "KokkosKernels_MyCRSMatrix.hpp"
 #include "KokkosKernels_TestParameters.hpp"
@@ -61,41 +61,41 @@ void print_options(){
 }
 int parse_inputs (KokkosKernels::Experiment::Parameters &params, int argc, char **argv){
   for ( int i = 1 ; i < argc ; ++i ) {
-    if ( 0 == strcasecmp( argv[i] , "threads" ) ) {
+    if ( 0 == strcasecmp( argv[i] , "--threads" ) ) {
       params.use_threads = atoi( argv[++i] );
     }
-    else if ( 0 == strcasecmp( argv[i] , "serial" ) ) {
+    else if ( 0 == strcasecmp( argv[i] , "--serial" ) ) {
       params.use_serial = atoi( argv[++i] );
     }
-    else if ( 0 == strcasecmp( argv[i] , "openmp" ) ) {
+    else if ( 0 == strcasecmp( argv[i] , "--openmp" ) ) {
       params.use_openmp = atoi( argv[++i] );
     }
-    else if ( 0 == strcasecmp( argv[i] , "cuda" ) ) {
+    else if ( 0 == strcasecmp( argv[i] , "--cuda" ) ) {
       params.use_cuda = 1;
     }
-    else if ( 0 == strcasecmp( argv[i] , "repeat" ) ) {
+    else if ( 0 == strcasecmp( argv[i] , "--repeat" ) ) {
       params.repeat = atoi( argv[++i] );
     }
 
-    else if ( 0 == strcasecmp( argv[i] , "chunksize" ) ) {
+    else if ( 0 == strcasecmp( argv[i] , "--chunksize" ) ) {
       params.chunk_size = atoi( argv[++i] ) ;
     }
-    else if ( 0 == strcasecmp( argv[i] , "teamsize" ) ) {
+    else if ( 0 == strcasecmp( argv[i] , "--teamsize" ) ) {
       params.team_size = atoi( argv[++i] ) ;
     }
-    else if ( 0 == strcasecmp( argv[i] , "vectorsize" ) ) {
+    else if ( 0 == strcasecmp( argv[i] , "--vectorsize" ) ) {
       params.vector_size  = atoi( argv[++i] ) ;
     }
-    else if ( 0 == strcasecmp( argv[i] , "amtx" ) ) {
+    else if ( 0 == strcasecmp( argv[i] , "--amtx" ) ) {
       params.a_mtx_bin_file = argv[++i];
     }
-    else if ( 0 == strcasecmp( argv[i] , "dynamic" ) ) {
+    else if ( 0 == strcasecmp( argv[i] , "--dynamic" ) ) {
       params.use_dynamic_scheduling = 1;
     }
-    else if ( 0 == strcasecmp( argv[i] , "verbose" ) ) {
+    else if ( 0 == strcasecmp( argv[i] , "--verbose" ) ) {
       params.verbose = 1;
     }
-    else if ( 0 == strcasecmp( argv[i] , "algorithm" ) ) {
+    else if ( 0 == strcasecmp( argv[i] , "--algorithm" ) ) {
       ++i;
       if ( 0 == strcasecmp( argv[i] , "COLORING_DEFAULT" ) ) {
         params.algorithm = 1;

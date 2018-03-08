@@ -1318,6 +1318,7 @@ struct KokkosSPGEMM
 
     //used_hash_sizes hold the size of 1st and 2nd level hashes
     volatile nnz_lno_t *used_hash_sizes = (volatile nnz_lno_t *) (all_shared_memory);
+    typedef typename std::remove_reference< decltype( *used_hash_sizes ) >::type atomic_incr_type;
     all_shared_memory += sizeof(nnz_lno_t) * 2;
 
     nnz_lno_t *globally_used_hash_count = (nnz_lno_t *) (all_shared_memory);
@@ -1569,7 +1570,7 @@ struct KokkosSPGEMM
 
             while (c_rows){
               if (c_rows & unit){
-                size_type wind = Kokkos::atomic_fetch_add(used_hash_sizes, 1);
+                size_type wind = Kokkos::atomic_fetch_add(used_hash_sizes, atomic_incr_type(1));
                 entriesC[wind + row_begin] = set_size * c_rows_setind + current_row;
               }
               current_row++;
@@ -1592,7 +1593,7 @@ struct KokkosSPGEMM
               while (c_rows){
                 if (c_rows & unit){
 
-                  size_type wind = Kokkos::atomic_fetch_add(used_hash_sizes, 1);
+                  size_type wind = Kokkos::atomic_fetch_add(used_hash_sizes, atomic_incr_type(1));
                   entriesC[wind + row_begin] = set_size * c_rows_setind + current_row;
                 }
                 current_row++;

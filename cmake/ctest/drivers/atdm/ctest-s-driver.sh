@@ -1,5 +1,13 @@
 #!/bin/bash -l
 
+echo "Loading env and running ctest -S comamnd ..."
+
+echo
+echo "Time when the actual 'ctest -S ctest-driver.cmake' command was called:"
+echo
+echo "  ==> `date`"
+echo
+
 if [ "${WORKSPACE}" == ""  ] ; then
   echo "Error, must set WORKSPACE var before calling!"
   exit 1

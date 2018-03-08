@@ -98,10 +98,12 @@ namespace {
 
     Map<LO,GO> map (numGlobal, numLocal, indexBase, comm);
     // create data to check validity of the map
-    const GO myMinGID =
-      (myRank == 0) ? std::numeric_limits<GO>::max() : (myRank - 1)*numLocal;
-    const GO myMaxGID =
-      (myRank == 0) ? std::numeric_limits<GO>::lowest() : myRank*numLocal - 1;
+    const GO myMinGID = (myRank == 0) ?
+      std::numeric_limits<GO>::max () :
+      static_cast<GO> ((myRank - 1)*numLocal);
+    const GO myMaxGID = (myRank == 0) ?
+      std::numeric_limits<GO>::lowest () :
+      static_cast<GO> (myRank*numLocal - 1);
     GO minAllGIDs, maxAllGIDs;
     Teuchos::reduceAll<int, GO>(*comm, Teuchos::REDUCE_MIN, myMinGID, outArg(minAllGIDs));
     Teuchos::reduceAll<int, GO>(*comm, Teuchos::REDUCE_MAX, myMaxGID, outArg(maxAllGIDs));

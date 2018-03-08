@@ -46,9 +46,58 @@
 #  include <Teuchos_DefaultSerialComm.hpp>
 #endif // HAVE_TPETRACORE_MPI
 #include <Kokkos_Core.hpp>
+#include <Teuchos_oblackholestream.hpp>
 
 namespace Tpetra {
   namespace { // (anonymous)
+
+#ifdef HAVE_TPETRACORE_MPI
+    bool mpiIsInitialized (const bool throwExceptionOnFailure = true)
+    {
+      int isInitialized = 0;
+      int err = MPI_Initialized (&isInitialized);
+
+      if (throwExceptionOnFailure) {
+        TEUCHOS_TEST_FOR_EXCEPTION
+          (err != MPI_SUCCESS, std::runtime_error, "MPI_Initialized failed with "
+           "error code " << err << " != MPI_SUCCESS.  This probably indicates "
+           "that your MPI library is corrupted or that it is incorrectly linked "
+           "to your program, since this function should otherwise always "
+           "succeed.");
+      }
+      else if (err != MPI_SUCCESS) {
+        using std::cerr;
+        using std::endl;
+        cerr << "MPI_Initialized failed with error code " << err << " != "
+          "MPI_SUCCESS.  This probably indicates that your MPI library is "
+          "corrupted or that it is incorrectly linked to your program, since "
+          "this function should otherwise always succeed." << endl;
+        return false; // the best we can do in this case is nothing
+      }
+      return isInitialized != 0;
+    }
+#endif // HAVE_TPETRACORE_MPI
+
+    class HideOutputExceptOnProcess0 {
+    public:
+      HideOutputExceptOnProcess0 (std::ostream& stream, const int myRank) :
+        stream_ (stream),
+        originalBuffer_ (stream.rdbuf ())
+      {
+        if (myRank != 0) {
+          stream.rdbuf (blackHole_.rdbuf ());
+        }
+      }
+
+      ~HideOutputExceptOnProcess0 () {
+        stream_.rdbuf (originalBuffer_);
+      }
+    private:
+      std::ostream& stream_;
+      decltype (std::cout.rdbuf ()) originalBuffer_;
+      Teuchos::oblackholestream blackHole_;
+    };
+
     // Whether one of the Tpetra::initialize() functions has been called before.
     bool tpetraIsInitialized_ = false;
 
@@ -80,6 +129,17 @@ namespace Tpetra {
         const bool kokkosIsInitialized =
           Kokkos::DefaultExecutionSpace::is_initialized ();
         if (! kokkosIsInitialized) {
+          int myRank = 0;
+#ifdef HAVE_TPETRACORE_MPI
+          const bool mpiHasBeenInitialized = mpiIsInitialized (false);
+          if (mpiHasBeenInitialized) {
+            auto comm = getDefaultComm ();
+            myRank = comm->getRank ();
+          }
+#endif // HAVE_TPETRACORE_MPI
+          HideOutputExceptOnProcess0 hideCerr (std::cerr, myRank);
+          HideOutputExceptOnProcess0 hideCout (std::cout, myRank);
+
           // Unlike MPI_Init, Kokkos promises not to modify argc and argv.
           Kokkos::initialize (*argc, *argv);
           tpetraInitializedKokkos_ = true;
@@ -95,31 +155,6 @@ namespace Tpetra {
     }
 
 #ifdef HAVE_TPETRACORE_MPI
-    bool mpiIsInitialized (const bool throwExceptionOnFailure = true)
-    {
-      int isInitialized = 0;
-      int err = MPI_Initialized (&isInitialized);
-
-      if (throwExceptionOnFailure) {
-        TEUCHOS_TEST_FOR_EXCEPTION
-          (err != MPI_SUCCESS, std::runtime_error, "MPI_Initialized failed with "
-           "error code " << err << " != MPI_SUCCESS.  This probably indicates "
-           "that your MPI library is corrupted or that it is incorrectly linked "
-           "to your program, since this function should otherwise always "
-           "succeed.");
-      }
-      else if (err != MPI_SUCCESS) {
-        using std::cerr;
-        using std::endl;
-        cerr << "MPI_Initialized failed with error code " << err << " != "
-          "MPI_SUCCESS.  This probably indicates that your MPI library is "
-          "corrupted or that it is incorrectly linked to your program, since "
-          "this function should otherwise always succeed." << endl;
-        return false; // the best we can do in this case is nothing
-      }
-      return isInitialized != 0;
-    }
-
     // Initialize MPI, if needed, and check for errors.  This takes
     // the same arguments as MPI_Init and the first two arguments of
     // initialize().

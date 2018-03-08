@@ -128,6 +128,9 @@ namespace panzer {
 
     const std::size_t workset_size = 20;
     linBasis = buildLinearBasis(workset_size);
+    Kokkos::push_finalize_hook( [=] { 
+      linBasis = Teuchos::RCP<panzer::PureBasis>(); 
+    });
 
     Teuchos::RCP<panzer_stk::STK_Interface> mesh = buildMesh(20,20,true);
 
@@ -212,6 +215,9 @@ namespace panzer {
 
     const std::size_t workset_size = 5;
     linBasis = buildLinearBasis(workset_size);
+    Kokkos::push_finalize_hook( [=] { 
+      linBasis = Teuchos::RCP<panzer::PureBasis>(); 
+    });
 
     Teuchos::RCP<panzer_stk::STK_Interface> mesh = buildMesh(5,5,false);
 

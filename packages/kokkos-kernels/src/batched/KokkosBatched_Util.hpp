@@ -3,6 +3,7 @@
 
 /// \author Kyungjoo Kim (kyukim@sandia.gov)
 
+#define __KOKKOSBATCHED_PROMOTION__ 1
 
 #include <iomanip>
 #include <random>
@@ -19,8 +20,24 @@
 #include "Kokkos_ArithTraits.hpp"
 #include "impl/Kokkos_Timer.hpp"
 
+#include "KokkosKernels_config.h"
+
 namespace KokkosBatched {
   namespace Experimental {
+
+    // TPL macros
+#if defined (KOKKOSKERNELS_ENABLE_TPL_MKL) 
+#define __KOKKOSBATCHED_INTEL_MKL__ 1
+#include "mkl_version.h"
+#if __INTEL_MKL__ >= 18
+#define __KOKKOSBATCHED_INTEL_MKL_BATCHED__ 1    
+#define __KOKKOSBATCHED_INTEL_MKL_COMPACT_BATCHED__ 1
+#endif
+#endif
+
+#if defined (KOKKOSKERNELS_ENABLE_TPL_CUBLAS)
+#define __KOKKOSKERNELS_NVIDIA_CUBLAS__ 1
+#endif
 
 #define Int2StringHelper(A) #A
 #define Int2String(A) Int2StringHelper(A)
@@ -28,18 +45,15 @@ namespace KokkosBatched {
 
     void print_compiler_info();
 
-    template<typename T>
-    struct is_vector {
-      static const bool value = false;
-    };
+    template<typename T> struct is_vector : public std::false_type {};
 
     template<typename Ta, typename Tb>
     struct is_same_mag_type {
       static const bool is_specialized = ( Kokkos::Details::ArithTraits<Ta>::is_specialized &&
-                                               Kokkos::Details::ArithTraits<Tb>::is_specialized );
+                                           Kokkos::Details::ArithTraits<Tb>::is_specialized );
       
       static const bool is_mag_type_same = std::is_same<typename Kokkos::Details::ArithTraits<Ta>::mag_type,
-                                                            typename Kokkos::Details::ArithTraits<Tb>::mag_type>::value;
+                                                        typename Kokkos::Details::ArithTraits<Tb>::mag_type>::value;
       
       static const bool value = is_specialized && is_mag_type_same;
     };
@@ -138,7 +152,10 @@ namespace KokkosBatched {
     struct Random<T, typename std::enable_if<std::is_same<T,double>::value ||
                                              std::is_same<T,float>::value, T>::type> {
       Random(const unsigned int seed = 0) { srand(seed); }
-      T value() { return rand()/((T) RAND_MAX + 1.0); }
+      T value() { 
+        const auto val = (rand()/((T) RAND_MAX) - 0.5)*2.0;
+        return val > 0 ? val + 1.0e-3 : val - 1.0e-3;
+      }
     };
 
     template<typename T>
@@ -146,9 +163,12 @@ namespace KokkosBatched {
                                              std::is_same<T,std::complex<double> >::value ||
                                              std::is_same<T,Kokkos::complex<float> >::value ||
                                              std::is_same<T,Kokkos::complex<double> >::value, T>::type> {
+      Random(const unsigned int seed = 0) { srand(seed); }
       T value() {
-	return T(rand()/((double) RAND_MAX + 1.0),
-                 rand()/((double) RAND_MAX + 1.0));
+        const auto rval = (rand()/((double) RAND_MAX) - 0.5)*2.0;        
+        const auto ival = (rand()/((double) RAND_MAX) - 0.5)*2.0;        
+	return T(rval > 0 ? rval + 1.0e-3 : rval - 1.0e-3,
+                 ival > 0 ? ival + 1.0e-3 : ival - 1.0e-3);
       }
     };
 
@@ -170,75 +190,29 @@ namespace KokkosBatched {
     };
 
     // Implicit vectorization
-    template<typename T,
-	     typename SpT = Kokkos::DefaultHostExecutionSpace>
+    template<typename T>
     struct SIMD {
-      static_assert( std::is_same<T,double>::value                   ||
+      static_assert( std::is_same<T,bool>::value                     ||
+                     std::is_same<T,int>::value                      ||
+                     std::is_same<T,size_t>::value                   ||
+                     std::is_same<T,double>::value                   ||
 		     std::is_same<T,float>::value                    ||
 		     std::is_same<T,Kokkos::complex<double> >::value ||
 		     std::is_same<T,std::complex<double> >::value,
 		     "KokkosKernels:: Invalid SIMD<> type." );
-
-      static_assert( Kokkos::Impl::VerifyExecutionCanAccessMemorySpace<typename SpT::memory_space,Kokkos::HostSpace>::value,
-		     "KokkosKernels:: Invalid SIMD<> exec space." );
-
       using value_type = T;
-      using exec_space = SpT;
     };
 
     // Intel AVX instruction device (explicit vectorization)
-    template<typename T,
-	     typename SpT = Kokkos::DefaultHostExecutionSpace>
+    template<typename T>
     struct AVX {
       static_assert( std::is_same<T,double>::value                   ||
 		     std::is_same<T,float>::value                    ||
 		     std::is_same<T,Kokkos::complex<double> >::value ||
 		     std::is_same<T,std::complex<double> >::value,
 		     "KokkosKernels:: Invalid AVX<> type." );
-
-      static_assert( Kokkos::Impl::VerifyExecutionCanAccessMemorySpace<typename SpT::memory_space,Kokkos::HostSpace>::value,
-		     "KokkosKernels:: Invalid AVX<> exec space." );
-
       using value_type = T;
-      using exec_space = SpT;
     };
-
-    //       // Cuda threading (explicit thread vectorization)
-    //       template<typename T,
-    //                typename SpT = Kokkos::DefaultExecutionSpace>
-    //       struct SIMT {
-    //         static_assert( std::is_same<T,double>::value ||
-    //                        std::is_same<T,float>::value,
-    //                        "KokkosKernels:: Invalid SIMT<> type." );
-
-    //         static_assert( !std::is_same<SpT,Kokkos::Serial>::value &&
-    //                        !std::is_same<SpT,Kokkos::OpenMP>::value,
-    //                        "KokkosKernels:: Invalid AVX<> exec space." );
-
-    // #if defined(KOKKOS_ENABLE_CUDA)
-    //         static_assert( std::is_same<SpT,Kokkos::Cuda>::value,
-    //                        "KokkosKernels:: Invalid SIMT<> exec space." );
-    // #endif
-
-    //         using value_type = T;
-    //         using exec_space = SpT;
-    //       };
-
-    template<class T, int l>
-    struct VectorTag {
-      using value_type = typename T::value_type;
-      using exec_space = typename T::exec_space;
-      using member_type = typename Kokkos::Impl::TeamPolicyInternal<exec_space>::member_type;
-
-      static_assert( std::is_same<T,SIMD<value_type,exec_space> >::value || // host compiler vectorization
-		     std::is_same<T,AVX<value_type, exec_space> >::value, // || // host AVX vectorization
-		     // std::is_same<T,SIMT<value_type,exec_space> >::value,   // cuda thread vectorization
-		     "KokkosKernels:: Invalid VectorUnitTag<> type." );
-
-      using type = VectorTag;
-      static const int length = l;
-    };
-
 
     // Tags for BLAS
     struct Trans {

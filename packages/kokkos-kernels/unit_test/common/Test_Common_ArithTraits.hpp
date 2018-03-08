@@ -634,6 +634,45 @@ public:
       }
     }
 
+    if (!equal(AT::cbrt (zero) , zero)) {
+      printf ("AT::cbrt(0) != 0\n");
+      success = 0;
+    }
+    if (!equal(AT::cbrt (one) , one)) {
+      printf ("AT::cbrt(1) != 1\n");
+      success = 0;
+    }
+    if (!equal(AT::cbrt (twentySeven) , three)) {
+      printf ("AT::cbrt(27) != 3\n");
+      success = 0;
+    }
+    if (!equal(AT::cbrt (sixtyFour) , four)) {
+      printf ("AT::cbrt(64) != 4\n");
+      success = 0;
+    }
+    if (AT::is_integer) {
+      if (!equal(AT::cbrt (fortyTwo) , three)) {
+        printf ("AT:cbrt(42) != 3\n");
+        success = 0;
+      }
+      if (!equal(AT::cbrt (oneTwentySeven) , five)) {
+        printf ("AT::cbrt(127) != 5\n");
+        success = 0;
+      }
+    }
+
+    if (!equal(AT::exp (zero) , one)) {
+      printf ("AT::cbrt(0) != 1\n");
+      success = 0;
+    }
+    if (AT::is_complex) {
+      const ScalarType val = two; //(two.real(), two.real());
+      if (!equal(AT::conj (AT::exp  (val)) , 
+                 AT::exp  (AT::conj (val)))) {
+        printf ("AT::conj(exp(complex(2,2))) != AT::exp(conj(complex(2,2)))\n");
+        success = 0;
+      }
+    }
     if (!equal(AT::log (one) , zero)) {
       printf ("AT::log(1) != 0\n");
       success = 0;
@@ -642,6 +681,45 @@ public:
       printf ("AT::log10(1) != 0\n");
       success = 0;
     }
+
+    if (AT::is_complex) {
+      ScalarType val = two; //(two, two);
+      const auto val_sin = AT::sin (val);
+      const auto val_cos = AT::cos (val);
+      if (!equal(val_sin*val_sin + val_cos*val_cos , one)) {
+        printf ("AT(complex):: sin(val)*sin(val) + cos(val)*cos(val) != 1\n");
+        success = 0;
+      } 
+      if (!equal(val_sin/val_cos , AT::tan(val))) {
+        printf ("AT(complex):: sin(val)/cos(val) != AT(real)::tan(val)\n");
+        success = 0;
+      } 
+    } else {
+      ScalarType val = three; 
+      const auto val_sin = AT::sin (val);
+      const auto val_cos = AT::cos (val);
+      if (!equal(val_sin*val_sin + val_cos*val_cos , one)) {
+        printf ("AT(real):: sin(val)*sin(val) + cos(a)*cos(a) != 1\n");
+        success = 0;
+      } 
+      if (!equal(val_sin/val_cos , AT::tan(val))) {
+        printf ("AT(real):: sin(val)/cos(val) != AT(real)::tan(val)\n");
+        success = 0;
+      } 
+    }
+
+    if (!equal(AT::asin (AT::sin (one)), one)) {
+      printf ("AT::asin(sin(1)) != 1\n");
+      success = 0;
+    } 
+    if (!equal(AT::acos (AT::cos (one)), one)) {
+      printf ("AT::acos(cos(1)) != 1\n");
+      success = 0;
+    } 
+    if (!equal(AT::atan (AT::tan (one)), one)) {
+      printf ("AT::atan(tan(1)) != 1\n");
+      success = 0;
+    } 
 
     // Call the base class' implementation.  Every subclass'
     // implementation of operator() must do this, in order to include
@@ -765,6 +843,45 @@ protected:
       }
     }
 
+    if (!equal(AT::cbrt (zero) , zero)) {
+      printf ("AT::cbrt(0) != 0\n");
+      success = 0;
+    }
+    if (!equal(AT::cbrt (one) , one)) {
+      printf ("AT::cbrt(1) != 1\n");
+      success = 0;
+    }
+    if (!equal(AT::cbrt (twentySeven) , three)) {
+      printf ("AT::cbrt(27) != 3\n");
+      success = 0;
+    }
+    if (!equal(AT::cbrt (sixtyFour) , four)) {
+      printf ("AT::cbrt(64) != 4\n");
+      success = 0;
+    }
+    if (AT::is_integer) {
+      if (!equal(AT::cbrt (fortyTwo) , three)) {
+        printf ("AT:cbrt(42) != 3\n");
+        success = 0;
+      }
+      if (!equal(AT::cbrt (oneTwentySeven) , five)) {
+        printf ("AT::cbrt(127) != 5\n");
+        success = 0;
+      }
+    }
+
+    if (!equal(AT::exp (zero) , one)) {
+      printf ("AT::cbrt(0) != 1\n");
+      success = 0;
+    }
+    if (AT::is_complex) {
+      const ScalarType val = two; //(two.real(), two.real());
+      if (!equal(AT::conj (AT::exp  (val)) , 
+                 AT::exp  (AT::conj (val)))) {
+        printf ("AT::conj(exp(complex(2,0))) != AT::exp(conj(complex(2,0)))\n");
+        success = 0;
+      }
+    }
     if (AT::log (one) != zero) {
       out << "AT::log (one) != zero" << endl;
       success = 0;
@@ -773,6 +890,45 @@ protected:
       out << "AT::log10 (one) != zero" << endl;
       success = 0;
     }
+
+    if (AT::is_complex) {
+      const ScalarType val = two; // (two.real(), two.real());
+      const auto val_sin = AT::sin (val);
+      const auto val_cos = AT::cos (val);
+      if (!equal(val_sin*val_sin + val_cos*val_cos , one)) {
+        printf ("AT(complex):: sin(val)*sin(val) + cos(val)*cos(val) != 1\n");
+        success = 0;
+      } 
+      if (!equal(val_sin/val_cos , AT::tan(val))) {
+        printf ("AT(complex):: sin(val)/cos(val) != AT(real)::tan(val)\n");
+        success = 0;
+      } 
+    } else {
+      const ScalarType val = three; 
+      const auto val_sin = AT::sin (val);
+      const auto val_cos = AT::cos (val);
+      if (!equal(val_sin*val_sin + val_cos*val_cos , one)) {
+        printf ("AT(real):: sin(val)*sin(val) + cos(a)*cos(a) != 1\n");
+        success = 0;
+      } 
+      if (!equal(val_sin/val_cos , AT::tan(val))) {
+        printf ("AT(real):: sin(val)/cos(val) != AT(real)::tan(val)\n");
+        success = 0;
+      } 
+    }
+
+    if (!equal(AT::asin (AT::sin (three)), three)) {
+      printf ("AT::asin(sin(3)) != 3\n");
+      success = 0;
+    } 
+    if (!equal(AT::acos (AT::cos (three)), three)) {
+      printf ("AT::acos(cos(3)) != 3\n");
+      success = 0;
+    } 
+    if (!equal(AT::atan (AT::tan (three)), three)) {
+      printf ("AT::atan(tan(3)) != 3\n");
+      success = 0;
+    } 
 
     // Call the base class' implementation.  Every subclass'
     // implementation of testHostImpl() should (must) do this, in
@@ -1429,11 +1585,13 @@ int runAllArithTraitsHostTests (std::ostream& out, const int verbose)
 
   success = success && curSuccess; curSuccess = testArithTraitsOnHost<float, DeviceType> (out, verbose);
   success = success && curSuccess; curSuccess = testArithTraitsOnHost<double, DeviceType> (out, verbose);
+#ifndef KOKKOS_ENABLE_CUDA
+  // This would spill tons of warnings about host device stuff otherwise
   success = success && curSuccess; curSuccess = testArithTraitsOnHost<long double, DeviceType> (out, verbose);
   success = success && curSuccess; curSuccess = testArithTraitsOnHost<std::complex<float>, DeviceType> (out, verbose);
   success = success && curSuccess; curSuccess = testArithTraitsOnHost<std::complex<double>, DeviceType> (out, verbose);
   success = success && curSuccess; curSuccess = testArithTraitsOnHost<std::complex<long double>, DeviceType> (out, verbose);
-
+#endif
   //
   // Kokkos' complex floating-point types
   //

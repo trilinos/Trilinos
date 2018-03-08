@@ -79,8 +79,7 @@ namespace PHX {
     typedef DataT value_type;
     typedef DataT& reference_type;
  
-    // typedef typename Kokkos::Experimental::DynRankView <DataT,PHX::Device,Kokkos::MemoryUnmanaged> array_type;
-    typedef typename Kokkos::Experimental::DynRankView<DataT,typename PHX::DevLayout<DataT>::type,PHX::Device> array_type;
+    typedef typename Kokkos::DynRankView<DataT,typename PHX::DevLayout<DataT>::type,PHX::Device> array_type;
       
     typedef typename PHX::Device::size_type size_type;
 
