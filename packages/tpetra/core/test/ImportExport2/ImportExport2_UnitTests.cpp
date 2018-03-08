@@ -1990,9 +1990,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( Import_Util, UnpackAndCombineWithOwningPIDs, 
         colind[i]=Bmap.getLocalElement(colind[i]);
       }
 
-      // Make copies to test non-value interface to sortCrsEntries
-      Teuchos::Array<size_t> rowptr2(rowptr);
-
       // Sort the GIDs
       Tpetra::Import_Util::sortCrsEntries<Scalar, GO> (rowptr (), colind (), vals ());
 
