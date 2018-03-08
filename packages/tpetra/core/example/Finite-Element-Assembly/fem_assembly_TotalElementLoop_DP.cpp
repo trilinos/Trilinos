@@ -172,7 +172,7 @@ int main (int argc, char *argv[])
 
   // 'finalize' the crs_graph by calling fillComplete().
   {
-    RCP<TimeMonitor> timerFillCompleteGraph = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("2) FillComplete (Graph)")));
+    TimeMonitor timer(*TimeMonitor::getNewTimer("2) FillComplete (Graph)"));
     crs_graph->fillComplete();
   }
 
@@ -289,7 +289,7 @@ int main (int argc, char *argv[])
 
   // After the contributions are added, 'finalize' the matrix using fillComplete()
   {
-    RCP<TimeMonitor> timerFillCompleteMatrix = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("4) FillComplete (Matrix)")));
+    TimeMonitor timer(*TimeMonitor::getNewTimer("4) FillComplete (Matrix)"));
     crs_matrix->fillComplete();
   }
 

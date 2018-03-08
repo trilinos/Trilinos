@@ -160,19 +160,19 @@ int main (int argc, char *argv[])
 
   // Call fillComplete on the crs_graph_owned to 'finalize' it.
   {
-    RCP<TimeMonitor> timerFillCompleteOverlappingGraph = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("2) FillComplete (Overlapping Graph)")));
+    TimeMonitor timer(*TimeMonitor::getNewTimer("2) FillComplete (Overlapping Graph)"));
     crs_graph_overlapping->fillComplete();
   }
 
   // Need to Export and fillComplete the crs_graph_owned structure...
   // NOTE: Need to implement a graph transferAndFillComplete() method.
   {
-    RCP<TimeMonitor> timerExportOwnedGraph = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("3) Export       (Owned Graph)")));
+    TimeMonitor timer(*TimeMonitor::getNewTimer("3) Export       (Owned Graph)"));
     crs_graph_owned->doExport(*crs_graph_overlapping, exporter, Tpetra::INSERT);
   }
 
   {
-    RCP<TimeMonitor> timerFillCompleteOwnedGraph = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("4) FillComplete (Owned Graph)")));
+    TimeMonitor timer(*TimeMonitor::getNewTimer("4) FillComplete (Owned Graph)"));
     crs_graph_owned->fillComplete();
   }
 
@@ -267,17 +267,17 @@ int main (int argc, char *argv[])
   // export contributions to the owned matrix using the exporter, then
   // fillComplete the owned matrix.
   {
-    RCP<TimeMonitor> timerFillCompleteOverlappingMatrix = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("6) FillComplete (Overlapping Matrix)")));
+    TimeMonitor timer(*TimeMonitor::getNewTimer("6) FillComplete (Overlapping Matrix)"));
     crs_matrix_overlapping->fillComplete();
   }
 
   {
-    RCP<TimeMonitor> timerExportOwnedMatrix = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("7) Export       (Owned Matrix)")));
+    TimeMonitor timer(*TimeMonitor::getNewTimer("7) Export       (Owned Matrix)"));
     crs_matrix_owned->doExport(*crs_matrix_overlapping, exporter, Tpetra::ADD);
   }
   
   {
-    RCP<TimeMonitor> timerFillCompleteOwnedMatrix = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("8) FillComplete (Owned Matrix)")));
+    TimeMonitor timer(*TimeMonitor::getNewTimer("8) FillComplete (Owned Matrix)"));
     crs_matrix_owned->fillComplete();
   }
 
