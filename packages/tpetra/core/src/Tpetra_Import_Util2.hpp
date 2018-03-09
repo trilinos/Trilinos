@@ -178,13 +178,15 @@ sortCrsEntries (const Teuchos::ArrayView<size_t> &CRS_rowptr,
   size_t NumRows = CRS_rowptr.size()-1;
   size_t nnz = CRS_colind.size();
 
+  const bool permute_values_array = CRS_vals.size() > 0;
+
   for(size_t i = 0; i < NumRows; i++){
     size_t start=CRS_rowptr[i];
     if(start >= nnz) continue;
 
     size_t NumEntries   = CRS_rowptr[i+1] - start;
     Teuchos::ArrayRCP<Scalar> locValues;
-    if (CRS_vals.size())
+    if (permute_values_array)
       locValues = Teuchos::arcp<Scalar>(&CRS_vals[start], 0, NumEntries, false);
     Teuchos::ArrayRCP<Ordinal> locIndices(&CRS_colind[start], 0, NumEntries, false);
 
@@ -199,7 +201,7 @@ sortCrsEntries (const Teuchos::ArrayView<size_t> &CRS_rowptr,
         for(Ordinal k = j; k >= 0; k-=m) {
           if(locIndices[k+m] >= locIndices[k])
             break;
-          if (!Teuchos::is_null(locValues)) {
+          if (permute_values_array) {
             Scalar dtemp = locValues[k+m];
             locValues[k+m] = locValues[k];
             locValues[k] = dtemp;
@@ -249,6 +251,7 @@ public:
   {
     const size_t nnz = ind_.dimension_0 ();
     const size_t start = ptr_(i);
+    const bool permute_values_array = val_.dimension_0() > 0;
 
     if (start < nnz) {
       const size_t NumEntries = ptr_(i+1) - start;
@@ -266,7 +269,7 @@ public:
             if (ind_(sk+m) >= ind_(sk)) {
               break;
             }
-            if (val_.dimension_0()) {
+            if (permute_values_array) {
               const scalar_type dtemp = val_(sk+m);
               val_(sk+m)   = val_(sk);
               val_(sk)     = dtemp;
@@ -329,9 +332,11 @@ sortCrsEntries (const rowptr_array_type& CRS_rowptr,
                 const colind_array_type& CRS_colind)
 {
   // Generate dummy values array
-  colind_array_type CRS_vals;
-  Impl::SortCrsEntries<rowptr_array_type, colind_array_type,
-    colind_array_type>::sortCrsEntries (CRS_rowptr, CRS_colind, CRS_vals);
+  typedef typename CrsMatrix<>::local_matrix_type local_matrix_type;
+  typedef typename local_matrix_type::values_type::non_const_type scalar_view_type;
+  scalar_view_type CRS_vals;
+  sortCrsEntries<rowptr_array_type, colind_array_type,
+    scalar_view_type>(CRS_rowptr, CRS_colind, CRS_vals);
 }
 
 // Note: This should get merged with the other Tpetra sort routines eventually.
@@ -354,6 +359,8 @@ sortAndMergeCrsEntries (const Teuchos::ArrayView<size_t> &CRS_rowptr,
   size_t new_curr = CRS_rowptr[0];
   size_t old_curr = CRS_rowptr[0];
 
+  const bool permute_values_array = CRS_vals.size() > 0;
+
   for(size_t i = 0; i < NumRows; i++){
     const size_t old_rowptr_i=CRS_rowptr[i];
     CRS_rowptr[i] = old_curr;
@@ -361,7 +368,7 @@ sortAndMergeCrsEntries (const Teuchos::ArrayView<size_t> &CRS_rowptr,
 
     size_t NumEntries   = CRS_rowptr[i+1] - old_rowptr_i;
     Teuchos::ArrayRCP<Scalar> locValues;
-    if (CRS_vals.size())
+    if (permute_values_array)
       locValues = Teuchos::arcp<Scalar>(&CRS_vals[old_rowptr_i], 0, NumEntries, false);
     Teuchos::ArrayRCP<Ordinal> locIndices(&CRS_colind[old_rowptr_i], 0, NumEntries, false);
 
@@ -375,7 +382,7 @@ sortAndMergeCrsEntries (const Teuchos::ArrayView<size_t> &CRS_rowptr,
         for(Ordinal k = j; k >= 0; k-=m) {
           if(locIndices[k+m] >= locIndices[k])
             break;
-          if (!Teuchos::is_null(locValues)) {
+          if (permute_values_array) {
             Scalar dtemp = locValues[k+m];
             locValues[k+m] = locValues[k];
             locValues[k] = dtemp;
