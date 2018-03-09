@@ -51,10 +51,8 @@
 #include <Kokkos_ArithTraits.hpp>
 #include <KokkosBatched_Util.hpp>
 #include <KokkosBatched_Vector.hpp>
-#if defined(__KOKKOSBATCHED_PROMOTION__)
 #include <KokkosBatched_AddRadial_Decl.hpp>
 #include <KokkosBatched_AddRadial_Impl.hpp>
-#endif // __KOKKOSBATCHED_PROMOTION__
 #include <KokkosBatched_Gemm_Decl.hpp>
 #include <KokkosBatched_Gemm_Serial_Impl.hpp>
 #include <KokkosBatched_Gemv_Decl.hpp>
@@ -67,177 +65,18 @@
 #include <KokkosBatched_LU_Serial_Impl.hpp>
 
 #include "Ifpack2_BlockTriDiContainer_decl.hpp"
+#include "Ifpack2_BlockTriDiContainer_impl.hpp"
 
 #include <memory>
 
-//todo Move to KokkosKernels.
-#if !defined(__KOKKOSBATCHED_PROMOTION__)
-namespace KokkosBatched {
-namespace Details {
-namespace Todo {
-using KokkosBatched::Experimental::Vector;
-using KokkosBatched::Experimental::VectorTag;
-using KokkosBatched::Experimental::AVX;
-
-template <typename ST1, typename ST2> KOKKOS_INLINE_FUNCTION ST1
-add_radial (const ST1& a, const ST2& r) { return a >= 0 ? a+r : a-r; }
-
-#ifdef HAVE_TEUCHOS_COMPLEX
-template <typename ST1, typename ST2> KOKKOS_INLINE_FUNCTION Kokkos::complex<ST1>
-add_radial (const Kokkos::complex<ST1>& a, const ST2& r) {
-  const auto a_abs = Kokkos::abs(a);
-  const auto sign = a_abs == Kokkos::ArithTraits<ST1>::zero() ? 1 : a/a_abs;
-  return sign*(a_abs + r);
-}
-#endif
-
-#if defined(__AVX__) || defined(__AVX2__) || defined(__AVX512F__)
-inline static __m256d add_radial_impl (const __m256d& a, const double r) {
-  // Make the mask 10...0.
-  const __m256d mask = _mm256_set1_pd(-0.);
-  // Use it to get the sign.
-  const __m256d sign = _mm256_and_pd(mask, a);
-  // Load r.
-  const __m256d pr = _mm256_set1_pd(r);
-  // Now use the opposite mask, 01...1, to get b = abs(a).
-  __m256d pb = _mm256_andnot_pd(mask, a);
-  // Compute abs(a) + r.
-  pb = _mm256_add_pd(pb, pr);
-  // Bit-or the sign back in.
-  pb = _mm256_or_pd(pb, sign);
-  return pb;
-}
-#endif
-
-#if defined(__AVX__) || defined(__AVX2__)
-template<typename SpT, typename ScalarType>
-inline
-static Vector<VectorTag<AVX<double,SpT>,4> >
-add_radial (Vector<VectorTag<AVX<double,SpT>,4> > const& a, const ScalarType& r) {
-  return add_radial_impl(a, r);
-}
-#endif
-
-#if defined(__AVX512F__)
-template<typename SpT, typename ScalarType>
-inline
-static Vector<VectorTag<AVX<double,SpT>,8> >
-add_radial (Vector<VectorTag<AVX<double,SpT>,8> > const& a, const ScalarType& r) {
-  // AVX512F doesn't support _mm512_{and,or,andnot}_pd, so do two 256-bit
-  // ops. Might do slightly better by doing the add instruction with a 512-bit
-  // operation. It's also possible we could use _mm512_{and,or,andnot}_epi64 by
-  // reinterpreting __m512d as __mm512i, but I decided not to do that, as I'm
-  // not sure how legal that is.
-  const __m256d* pa = (const __m256d*) &a;
-  __m512d out;
-  __m256d* pout = (__m256d*) &out;
-  pout[0] = add_radial_impl(pa[0], r);
-  pout[1] = add_radial_impl(pa[1], r);
-  return out;
-}
-#endif
-
-template <typename ValueType, typename ScalarType>
-KOKKOS_INLINE_FUNCTION int
-Serial_LU_Internal_Unblocked_invoke(
-  const int m, const int n, ValueType *__restrict__ A, const int as0, const int as1,
-  const ScalarType &diag_safety)
-{
-  typedef ValueType value_type;
-  const int k = (m < n ? m : n);
-  if (k <= 0) return 0;
-
-  for (int p=0;p<k;++p) {
-    const int iend = m-p-1, jend = n-p-1;
-
-    const int idx = p*(as0+as1);
-    A[idx] = add_radial(A[idx], diag_safety);
-
-    const value_type
-      alpha11 = A[idx],
-      *__restrict__ a12t = A+(p  )*as0+(p+1)*as1;
-
-    value_type
-      *__restrict__ a21  = A+(p+1)*as0+(p  )*as1,
-      *__restrict__ A22  = A+(p+1)*as0+(p+1)*as1;
-
-    for (int i=0;i<iend;++i) {
-      // a21[i*as0] *= inv_alpha11;
-      a21[i*as0] /= alpha11;
-      for (int j=0;j<jend;++j)
-        A22[i*as0+j*as1] -= a21[i*as0] * a12t[j*as1];
-    }
-  }
-  return 0;
-}
-
-} // namespace Todo
-} // namespace Details
-} // namespace KokkosBatched
-
-#endif // __KOKKOSBATCHED_PROMOTION__
-
 namespace Ifpack2 {
-#if !defined(__KOKKOSBATCHED_PROMOTION__)
-namespace Details {
-namespace Todo {
-
-template <typename Object, typename Vector>
-int test_add_radial_impl (Object& o, Vector& v, const int len) {
-  using KokkosBatched::Details::Todo::add_radial;
-  int nerr = 0;
-  const double r = 1.7;
-  for (const double a : {-1.2, 4.2}) {
-    const double t = (a >= 0 ? 1 : -1)*(std::abs(a) + r);
-    for (int i = 0; i < len; ++i) v[i] = a;
-    o = add_radial(o, r);
-    for (int i = 0; i < len; ++i)
-      if (v[i] != t)
-        ++nerr;
-  }
-  return nerr;
-}
-
-inline int test_add_radial () {
-  using KokkosBatched::Experimental::Vector;
-  using KokkosBatched::Experimental::VectorTag;
-  using KokkosBatched::Experimental::AVX;
-
-  int nerr = 0;
-  {
-    double v;
-    double* v_vector = &v;
-    nerr += test_add_radial_impl(v, v_vector, 1);
-  }
-#if defined(__AVX__) || defined(__AVX2__)
-  {
-    Vector<VectorTag<AVX<double>, 4> > v;
-    nerr += test_add_radial_impl<>(v, v, v.vector_length);
-  }
-#endif
-#if defined(__AVX512F__)
-  {
-    Vector<VectorTag<AVX<double>, 8> > v;
-    nerr += test_add_radial_impl<>(v, v, v.vector_length);
-  }
-#endif
-  return nerr;
-}
-}
-}
-#endif // __KOKKOSBATCHED_PROMOTION__
 
 namespace Details {
 namespace Batched {
-#if defined(__KOKKOSBATCHED_PROMOTION__)
 using KokkosBatched::Experimental::Vector;
 using KokkosBatched::Experimental::SIMD;
 using KokkosBatched::Experimental::DefaultVectorLength;
-#else // __KOKKOSBATCHED_PROMOTION__
-using KokkosBatched::Experimental::Vector;
-using KokkosBatched::Experimental::VectorTag;
-using KokkosBatched::Experimental::AVX;
-#endif // __KOKKOSBATCHED_PROMOTION__
+
 template <typename ExeSpace>
 struct DeviceType {
    typedef Kokkos::Device<typename ExeSpace::execution_space,
@@ -276,10 +115,15 @@ struct ScalarType {
   typedef VectorType type;
 };
 
-#if defined(__KOKKOSBATCHED_PROMOTION__)
 #if defined(KOKKOS_ENABLE_SERIAL)
 template <>
 struct DefaultVectorizationMethod<Kokkos::Serial, double> {
+  typedef SIMD<double> type;
+};
+#endif
+#if defined(KOKKOS_ENABLE_THREADS)
+template <>
+struct DefaultVectorizationMethod<Kokkos::Threads, double> {
   typedef SIMD<double> type;
 };
 #endif
@@ -295,6 +139,7 @@ struct DefaultVectorizationMethod<Kokkos::Cuda, double> {
   typedef BatchedNonVector<Kokkos::Cuda, double> type;
 };
 #endif
+
 template <>
 struct VectorizationTraits<SIMD<double> > {
   typedef double value_type;
@@ -310,44 +155,6 @@ template <>
 struct ScalarType<VectorizationTraits<SIMD<double> >::vector_type> {
   typedef VectorizationTraits<SIMD<double> >::vector_type::value_type type;
 };
-#else //__KOKKOSBATCHED_PROMOTION__
-#if defined(__AVX512F__) || defined(__AVX2__) || defined(__AVX__)
-template <typename ExeSpace>
-struct DefaultVectorizationMethod<ExeSpace, double> {
-  typedef AVX<double> type;
-};
-#endif
-
-#if defined(__AVX512F__)
-template <>
-struct VectorizationTraits<AVX<double> > {
-  typedef typename AVX<double>::value_type value_type;
-  typedef typename AVX<double>::exec_space exec_space;
-  enum : int { vector_length = 8 };
-  typedef Vector<VectorTag<AVX<double>, vector_length> > vector_type;
-};
-#elif defined(__AVX2__) || defined(__AVX__)
-template <>
-struct VectorizationTraits<AVX<double> > {
-  typedef typename AVX<double>::value_type value_type;
-  typedef typename AVX<double>::exec_space exec_space;
-  enum : int { vector_length = 4 };
-  typedef Vector<VectorTag<AVX<double>, vector_length> > vector_type;
-};
-#endif
-
-#if defined(__AVX512F__) || defined(__AVX2__) || defined(__AVX__)
-template <>
-struct VectorLength<VectorizationTraits<AVX<double> >::vector_type> {
-  enum : int { value = VectorizationTraits<AVX<double> >::vector_length };
-};
-template <>
-struct ScalarType<VectorizationTraits<AVX<double> >::vector_type> {
-  typedef VectorizationTraits<AVX<double> >::vector_type::value_type type;
-};
-#endif
-#endif //__KOKKOSBATCHED_PROMOTION__
-
 
 template <typename Int1, typename Int2, typename View, typename... Indices>
 KOKKOS_INLINE_FUNCTION
@@ -1751,7 +1558,6 @@ public: // Intended to be private, but public for Cuda.
 
     template <typename AViewType>
     KOKKOS_INLINE_FUNCTION void LU (const AViewType& A) const {
-#if defined(__KOKKOSBATCHED_PROMOTION__)
       {
         namespace kbe = KokkosBatched::Experimental;
         if (add_to_diag) {
@@ -1759,15 +1565,6 @@ public: // Intended to be private, but public for Cuda.
         }
         kbe::SerialLU<kbe::Algo::LU::Blocked>::invoke(A);
       }
-#else // __KOKKOSBATCHED_PROMOTION__
-      if (add_to_diag)
-        KokkosBatched::Details::Todo::Serial_LU_Internal_Unblocked_invoke(
-          A.dimension_0(), A.dimension_1(), A.data(), A.stride_0(), A.stride_1(), diag_safety);
-      else {
-        namespace kbe = KokkosBatched::Experimental;
-        kbe::SerialLU<kbe::Algo::LU::Blocked>::invoke(A);
-      }
-#endif // __KOKKOSBATCHED_PROMOTION__
     }
 
     KOKKOS_INLINE_FUNCTION void factorize (const LO& packidx) const {
