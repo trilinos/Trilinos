@@ -56,312 +56,312 @@
 
 namespace Ifpack2 {
 
-// Impl for BlockTriDiContainer. Can't be an internal class because we need to
-// partially specialize Impl.
-namespace BlockTriDiContainerDetails {
-template <typename MatrixType, typename LocalScalarType, typename ExeSpace> class Impl;
-}
+  // Impl for BlockTriDiContainer. Can't be an internal class because we need to
+  // partially specialize Impl.
+  namespace BlockTriDiContainerDetails {
+    template <typename MatrixType, typename LocalScalarType, typename ExeSpace> class Impl;
+  }
 
-/// \class BlockTriDiContainer
-/// \brief Store and solve local block tridiagonal linear problems.
-/// \tparam MatrixType A specialization of Tpetra::RowMatrix.
-///
-/// This class can be used as a Container for BlockRelaxation, in which case
-/// please refer to the documentation of the Container interface, or
-/// standalone. In standalone use, there are special constructor,
-/// <tt>compute</tt>, and <tt>applyInverseJacobi</tt> functions that may be
-/// called, with extra non-ParameterList inputs.
-///
-/// If the partitioner returns an empty set of partitions, then this class
-/// performs pure block-Jacobi, i.e., where the preconditioner is the diagonal
-/// of little blocks or, in other words, block tridiagonal matrices of size one
-/// block.
-///
-/// BlockTriDiContainer requires the Tpetra::RowMatrix to be
-/// Tpetra::BlockCrsMatrix. It also requires LocalScalarType to be the same as
-/// MatrixType::scalar_type, unlike some other containers.
-///
-/// This class currently assumes the following about the column and
-/// row Maps of the input matrix:
-/// <ol>
-/// <li> The domain and range maps are the same.
-/// <li> On all processes, all off-process indices in the column Map of the
-///      input matrix occur after that initial set.</li>
-/// </ol>
-/// These assumptions may be violated if the input matrix was constructed with a
-/// user-provided column Map.
-///
-/// Currently, this class is expected to perform well on conventional CPU and
-/// Intel Xeon Phi. It does *not* yet perform well on GPU.
-template <typename MatrixType, typename LocalScalarType = typename MatrixType::scalar_type>
-class BlockTriDiContainer : public Container<MatrixType> {
-  //! @name Internal typedefs (private)
-  //@{
-private:
-  /// \brief The first template parameter of this class.
+  /// \class BlockTriDiContainer
+  /// \brief Store and solve local block tridiagonal linear problems.
+  /// \tparam MatrixType A specialization of Tpetra::RowMatrix.
   ///
-  /// This must be a Tpetra::RowMatrix specialization.  It may have
-  /// entirely different template parameters (e.g., \c scalar_type)
-  /// than \c InverseType.
-  typedef MatrixType matrix_type;
-  //! The second template parameter of this class.
-  typedef LocalScalarType local_scalar_type;
-
-  //! The type of entries in the input (global) matrix.
-  typedef typename Container<MatrixType>::scalar_type scalar_type;
-  //! The magnitude of entries in the input (global) matrix.
-  typedef typename Kokkos::ArithTraits<scalar_type>::magnitudeType magnitude_type;
-  //! The type of local indices in the input (global) matrix.
-  typedef typename Container<MatrixType>::local_ordinal_type local_ordinal_type;
-  //! The type of global indices in the input (global) matrix.
-  typedef typename Container<MatrixType>::global_ordinal_type global_ordinal_type;
-  //! The Node type of the input (global) matrix.
-  typedef typename Container<MatrixType>::node_type node_type;
-
-  typedef typename Container<MatrixType>::mv_type mv_type;
-  typedef typename Container<MatrixType>::map_type map_type;
-  typedef typename Container<MatrixType>::vector_type vector_type;
-  typedef typename Container<MatrixType>::partitioner_type partitioner_type;
-  typedef typename Container<MatrixType>::import_type import_type;
-
-  typedef typename Container<MatrixType>::HostView HostView;
-  typedef Tpetra::MultiVector<local_scalar_type, local_ordinal_type, global_ordinal_type, node_type> local_mv_type;
-  typedef typename Kokkos::View<local_scalar_type**, Kokkos::HostSpace> HostViewLocal;
-
-  typedef Tpetra::Experimental::BlockCrsMatrix<scalar_type, local_ordinal_type, global_ordinal_type, node_type>
-  block_crs_matrix_type;
-
-  /// \brief The (base class) type of the input matrix.
+  /// This class can be used as a Container for BlockRelaxation, in which case
+  /// please refer to the documentation of the Container interface, or
+  /// standalone. In standalone use, there are special constructor,
+  /// <tt>compute</tt>, and <tt>applyInverseJacobi</tt> functions that may be
+  /// called, with extra non-ParameterList inputs.
   ///
-  /// The input matrix to the constructor must be a Tpetra::BlockCrsMatrix.
-  /// However, we want to make the constructor as general as possible, so we
-  /// always accept the matrix as a Tpetra::RowMatrix.  This typedef is the
-  /// appropriate specialization of Tpetra::RowMatrix.
-  typedef typename Container<MatrixType>::row_matrix_type row_matrix_type;
-
-  static_assert (std::is_same<MatrixType, row_matrix_type>::value,
-                 "Ifpack2::BlockTriDiContainer: MatrixType must be a Tpetra::RowMatrix specialization.");
-  //@}
-public:
-  //! \name Constructor and destructor
-  //@{
-
-  /// \brief Constructor.
+  /// If the partitioner returns an empty set of partitions, then this class
+  /// performs pure block-Jacobi, i.e., where the preconditioner is the diagonal
+  /// of little blocks or, in other words, block tridiagonal matrices of size one
+  /// block.
   ///
-  /// \brief matrix [in] The original input matrix.  This Container
-  ///   will construct a local diagonal block from the rows given by
-  ///   <tt>localRows</tt>.
+  /// BlockTriDiContainer requires the Tpetra::RowMatrix to be
+  /// Tpetra::BlockCrsMatrix. It also requires LocalScalarType to be the same as
+  /// MatrixType::scalar_type, unlike some other containers.
   ///
-  /// \param partitions [in] The set of (local) rows assigned to this
-  ///   container.  <tt>partitions[i] == j</tt>, where i (from 0 to
-  ///   <tt>getNumRows() - 1</tt>) indicates the SparseContainer's
-  ///   row, and j indicates the local row in the calling process.
-  ///   <tt>partitions.size()</tt> gives the number of rows in the
-  ///   local matrix on each process.  This may be different on
-  ///   different processes. If partitions is empty, then a local
-  ///   block-Jacobi preconditioner is formed; this is equivalent to
-  ///   every part of partitions having size 1.
-  BlockTriDiContainer (const Teuchos::RCP<const row_matrix_type>& matrix,
-                       const Teuchos::Array<Teuchos::Array<local_ordinal_type> >& partitions,
-                       const Teuchos::RCP<const import_type>& importer,
-                       int OverlapLevel,
-                       scalar_type DampingFactor);
-
-  /// \brief Constructor for bare construction.
+  /// This class currently assumes the following about the column and
+  /// row Maps of the input matrix:
+  /// <ol>
+  /// <li> The domain and range maps are the same.
+  /// <li> On all processes, all off-process indices in the column Map of the
+  ///      input matrix occur after that initial set.</li>
+  /// </ol>
+  /// These assumptions may be violated if the input matrix was constructed with a
+  /// user-provided column Map.
   ///
-  /// Constructor for users who want to use BlockTriDiContainer directly. See
-  /// main constructor for documentation. This constructor removes the
-  /// Container-general arguments that are not used in BlockTriDiContainer.
-  ///
-  /// \param overlapCommAndComp [in] Overlap communication and computation. This
-  ///   is not always better; it depends on (at least) the MPI implementation
-  ///   and the machine architecture. Defaults to false. It has to be specified
-  ///   at construction because the core data structures depend on whether
-  ///   overlapCommAndComp is true or false.
-  ///
-  /// \param useSequentialMethod [in] This is for development and testing
-  ///   purposes only.
-  BlockTriDiContainer (const Teuchos::RCP<const row_matrix_type>& matrix,
-                       const Teuchos::Array<Teuchos::Array<local_ordinal_type> >& partitions,
-                       bool overlapCommAndComp = false, bool useSequentialMethod = false);
+  /// Currently, this class is expected to perform well on conventional CPU and
+  /// Intel Xeon Phi. It does *not* yet perform well on GPU.
+  template <typename MatrixType, typename LocalScalarType = typename MatrixType::scalar_type>
+  class BlockTriDiContainer : public Container<MatrixType> {
+    //! @name Internal typedefs (private)
+    //@{
+  private:
+    /// \brief The first template parameter of this class.
+    ///
+    /// This must be a Tpetra::RowMatrix specialization.  It may have
+    /// entirely different template parameters (e.g., \c scalar_type)
+    /// than \c InverseType.
+    typedef MatrixType matrix_type;
+    //! The second template parameter of this class.
+    typedef LocalScalarType local_scalar_type;
 
-  //! Destructor (declared virtual for memory safety of derived classes).
-  ~BlockTriDiContainer () override;
+    //! The type of entries in the input (global) matrix.
+    typedef typename Container<MatrixType>::scalar_type scalar_type;
+    //! The magnitude of entries in the input (global) matrix.
+    typedef typename Kokkos::ArithTraits<scalar_type>::magnitudeType magnitude_type;
+    //! The type of local indices in the input (global) matrix.
+    typedef typename Container<MatrixType>::local_ordinal_type local_ordinal_type;
+    //! The type of global indices in the input (global) matrix.
+    typedef typename Container<MatrixType>::global_ordinal_type global_ordinal_type;
+    //! The Node type of the input (global) matrix.
+    typedef typename Container<MatrixType>::node_type node_type;
 
-  //@}
-  //! \name Get and set methods
-  //@{
+    typedef typename Container<MatrixType>::mv_type mv_type;
+    typedef typename Container<MatrixType>::map_type map_type;
+    typedef typename Container<MatrixType>::vector_type vector_type;
+    typedef typename Container<MatrixType>::partitioner_type partitioner_type;
+    typedef typename Container<MatrixType>::import_type import_type;
 
-  //! Whether the container has been successfully initialized.
-  bool isInitialized() const override;
+    typedef typename Container<MatrixType>::HostView host_view_type;
+    //typedef Tpetra::MultiVector<local_scalar_type, local_ordinal_type, global_ordinal_type, node_type> local_mv_type;
+    //typedef typename Kokkos::View<local_scalar_type**, Kokkos::HostSpace> HostViewLocal;
 
-  //! Whether the container has been successfully computed.
-  bool isComputed() const override;
+    typedef Tpetra::Experimental::BlockCrsMatrix
+    <scalar_type,local_ordinal_type,global_ordinal_type,node_type> block_crs_matrix_type;
 
-  //! Set all necessary parameters.
-  void setParameters(const Teuchos::ParameterList& List) override;
+    /// \brief The (base class) type of the input matrix.
+    ///
+    /// The input matrix to the constructor must be a Tpetra::BlockCrsMatrix.
+    /// However, we want to make the constructor as general as possible, so we
+    /// always accept the matrix as a Tpetra::RowMatrix.  This typedef is the
+    /// appropriate specialization of Tpetra::RowMatrix.
+    typedef typename Container<MatrixType>::row_matrix_type row_matrix_type;
 
-  void clearBlocks() override;
+    static_assert (std::is_same<MatrixType, row_matrix_type>::value,
+                   "Ifpack2::BlockTriDiContainer: MatrixType must be a Tpetra::RowMatrix specialization.");
+    //@}
+  public:
+    //! \name Constructor and destructor
+    //@{
 
-  //@}
-  //! \name Mathematical functions
-  //@{
+    /// \brief Constructor.
+    ///
+    /// \brief matrix [in] The original input matrix.  This Container
+    ///   will construct a local diagonal block from the rows given by
+    ///   <tt>localRows</tt>.
+    ///
+    /// \param partitions [in] The set of (local) rows assigned to this
+    ///   container.  <tt>partitions[i] == j</tt>, where i (from 0 to
+    ///   <tt>getNumRows() - 1</tt>) indicates the SparseContainer's
+    ///   row, and j indicates the local row in the calling process.
+    ///   <tt>partitions.size()</tt> gives the number of rows in the
+    ///   local matrix on each process.  This may be different on
+    ///   different processes. If partitions is empty, then a local
+    ///   block-Jacobi preconditioner is formed; this is equivalent to
+    ///   every part of partitions having size 1.
+    BlockTriDiContainer (const Teuchos::RCP<const row_matrix_type>& matrix,
+                         const Teuchos::Array<Teuchos::Array<local_ordinal_type> >& partitions,
+                         const Teuchos::RCP<const import_type>& importer,
+                         int OverlapLevel,
+                         scalar_type DampingFactor);
 
-  //! Do all set-up operations that only require matrix structure.
-  void initialize () override;
+    /// \brief Constructor for bare construction.
+    ///
+    /// Constructor for users who want to use BlockTriDiContainer directly. See
+    /// main constructor for documentation. This constructor removes the
+    /// Container-general arguments that are not used in BlockTriDiContainer.
+    ///
+    /// \param overlapCommAndComp [in] Overlap communication and computation. This
+    ///   is not always better; it depends on (at least) the MPI implementation
+    ///   and the machine architecture. Defaults to false. It has to be specified
+    ///   at construction because the core data structures depend on whether
+    ///   overlapCommAndComp is true or false.
+    ///
+    /// \param useSequentialMethod [in] This is for development and testing
+    ///   purposes only.
+    BlockTriDiContainer (const Teuchos::RCP<const row_matrix_type>& matrix,
+                         const Teuchos::Array<Teuchos::Array<local_ordinal_type> >& partitions,
+                         bool overlapCommAndComp = false, bool useSequentialMethod = false);
 
-  //! Extract the local tridiagonal block and prepare the solver.
-  void compute () override;
+    //! Destructor (declared virtual for memory safety of derived classes).
+    ~BlockTriDiContainer () override;
 
-  // \brief Compute <tt>Y := D^{-1} (X - R*Y)</tt>.
-  void applyInverseJacobi (const mv_type& X, mv_type& Y,
-                           bool zeroStartingSolution = false,
-                           int numSweeps = 1) const override;
+    //@}
+    //! \name Get and set methods
+    //@{
 
-  struct ComputeParameters {
-    //! addRadiallyToDiagonal [in] Add a constant to each diagonal entry of the
-    //! matrix. It is added according to the (possibly complex) sign of the
-    //! digonal entry at the time that the entry is the pivot in the LU
-    //! factorization, such that the entry is moved radially outward in the
-    //! complex plane. N.B. that this constant modifies the matrix in the linear
-    //! equation, not simply the diagonal preconditioner.
-    magnitude_type addRadiallyToDiagonal;
-    ComputeParameters();
-  };
+    //! Whether the container has been successfully initialized.
+    bool isInitialized() const override;
 
-  /// \brief Create a ComputeParameters struct with default values.
-  ComputeParameters createDefaultComputeParameters () const;
+    //! Whether the container has been successfully computed.
+    bool isComputed() const override;
 
-  /// \brief Extract the local tridiagonal block and prepare the solver.
-  ///
-  /// This version of <tt>applyInverseJacobi</tt> is meant to be called by
-  /// direct users of this class, rather than by <tt>BlockRelaxation</tt>.
-  ///
-  /// \param addRadiallyToDiagonal [in] Add a constant to each diagonal entry of
-  ///   the matrix. It is added according to the (possibly complex) sign of the
-  ///   digonal entry at the time that the entry is the pivot in the LU
-  ///   factorization, such that the entry is moved radially outward in the
-  ///   complex plane. N.B. that this constant modifies the matrix in the linear
-  ///   equation, not simply the diagonal preconditioner.
-  void compute (const ComputeParameters& input);
+    //! Set all necessary parameters.
+    void setParameters(const Teuchos::ParameterList& List) override;
 
-  //! Input arguments to <tt>applyInverseJacobi</tt>
-  struct ApplyParameters {
-    //! Set this to true if <tt>Y</tt> is meant to be treated as 0 on
-    //! entry. Defaults to false.
-    bool zeroStartingSolution;
-    //! Damping factor. Defaults to 1.
-    scalar_type dampingFactor;
-    //! The maximum number of sweeps. If the norm-based criterion is not used,
-    //! it's exactly the number of sweeps. Defaults to 1.
-    int maxNumSweeps;
-    //! The 2-norm-based termination criterion. If it is larger than 0, then it
-    //! is used. Termination is then based on <tt>maxNumSweeps</tt> and this
-    //! criterion, whichever is reached first. In the case of multiple right
-    //! hand sides, norm-based termination occurs only when each vector
-    //! satisfies the criterion. The criterion for a vector is <tt>f(D^{-1} (x -
-    //! A*y)) <= tolerance * f(D^{-1} (x - R*y_0))</tt>, where <tt>y_0</tt> is
-    //! the input <tt>y</tt>, often 0, and <tt>f</tt> is the maximum of the
-    //! 2-norms of each degree of freedom, i.e., index of a block. Defaults to
-    //! 0.
-    magnitude_type tolerance;
-    //! Check the norm-based termination criterion every
-    //! <tt>checkToleranceEvery</tt> iterations. Defaults to 1. A norm
-    //! computation requires a global reduction, which is expensive. Hence it
-    //! can make sense to check for termination only every 2 or 3 iterations if
-    //! it is anticipated that the number of iterations required to terminate
-    //! will be sufficiently large to make 1 or 2 extra iterations relatively
-    //! cheap. Defaults to 1.
-    int checkToleranceEvery;
-    ApplyParameters();
-  };
+    void clearBlocks() override;
 
-  /// \brief Create an ApplyParameters struct with default values.
-  ApplyParameters createDefaultApplyParameters () const;
+    //@}
+    //! \name Mathematical functions
+    //@{
 
-  /// \brief Compute <tt>Y := D^{-1} (X - R*Y)</tt>.
-  ///
-  /// This version of <tt>applyInverseJacobi</tt> is meant to be called by
-  /// direct users of this class, rather than by <tt>BlockRelaxation</tt>. It
-  /// supports 2-norm-based termination. It returns the number of sweeps
-  /// performed.
-  int applyInverseJacobi (const mv_type& X, mv_type& Y, const ApplyParameters& input) const;
+    //! Do all set-up operations that only require matrix structure.
+    void initialize () override;
 
-  /// \brief If a norm-based method was used, return a buffer containing the
-  ///        norms, ordered by degrees of freedom, then RHS; otherwise, return a
-  ///        null ArrayRCp.
-  const Teuchos::ArrayRCP<const magnitude_type> getNorms0 () const;
+    //! Extract the local tridiagonal block and prepare the solver.
+    void compute () override;
 
-  /// \brief If a norm-based method was used, return a buffer containing the
-  ///        norms, ordered by degrees of freedom, then RHS; otherwise, return a
-  ///        null ArrayRCp.
-  const Teuchos::ArrayRCP<const magnitude_type> getNormsFinal () const;
+    // \brief Compute <tt>Y := D^{-1} (X - R*Y)</tt>.
+    void applyInverseJacobi (const mv_type& X, mv_type& Y,
+                             bool zeroStartingSolution = false,
+                             int numSweeps = 1) const override;
+
+    struct ComputeParameters {
+      //! addRadiallyToDiagonal [in] Add a constant to each diagonal entry of the
+      //! matrix. It is added according to the (possibly complex) sign of the
+      //! digonal entry at the time that the entry is the pivot in the LU
+      //! factorization, such that the entry is moved radially outward in the
+      //! complex plane. N.B. that this constant modifies the matrix in the linear
+      //! equation, not simply the diagonal preconditioner.
+      magnitude_type addRadiallyToDiagonal;
+      ComputeParameters();
+    };
+
+    /// \brief Create a ComputeParameters struct with default values.
+    ComputeParameters createDefaultComputeParameters () const;
+
+    /// \brief Extract the local tridiagonal block and prepare the solver.
+    ///
+    /// This version of <tt>applyInverseJacobi</tt> is meant to be called by
+    /// direct users of this class, rather than by <tt>BlockRelaxation</tt>.
+    ///
+    /// \param addRadiallyToDiagonal [in] Add a constant to each diagonal entry of
+    ///   the matrix. It is added according to the (possibly complex) sign of the
+    ///   digonal entry at the time that the entry is the pivot in the LU
+    ///   factorization, such that the entry is moved radially outward in the
+    ///   complex plane. N.B. that this constant modifies the matrix in the linear
+    ///   equation, not simply the diagonal preconditioner.
+    void compute (const ComputeParameters& input);
+
+    //! Input arguments to <tt>applyInverseJacobi</tt>
+    struct ApplyParameters {
+      //! Set this to true if <tt>Y</tt> is meant to be treated as 0 on
+      //! entry. Defaults to false.
+      bool zeroStartingSolution;
+      //! Damping factor. Defaults to 1.
+      scalar_type dampingFactor;
+      //! The maximum number of sweeps. If the norm-based criterion is not used,
+      //! it's exactly the number of sweeps. Defaults to 1.
+      int maxNumSweeps;
+      //! The 2-norm-based termination criterion. If it is larger than 0, then it
+      //! is used. Termination is then based on <tt>maxNumSweeps</tt> and this
+      //! criterion, whichever is reached first. In the case of multiple right
+      //! hand sides, norm-based termination occurs only when each vector
+      //! satisfies the criterion. The criterion for a vector is <tt>f(D^{-1} (x -
+      //! A*y)) <= tolerance * f(D^{-1} (x - R*y_0))</tt>, where <tt>y_0</tt> is
+      //! the input <tt>y</tt>, often 0, and <tt>f</tt> is the maximum of the
+      //! 2-norms of each degree of freedom, i.e., index of a block. Defaults to
+      //! 0.
+      magnitude_type tolerance;
+      //! Check the norm-based termination criterion every
+      //! <tt>checkToleranceEvery</tt> iterations. Defaults to 1. A norm
+      //! computation requires a global reduction, which is expensive. Hence it
+      //! can make sense to check for termination only every 2 or 3 iterations if
+      //! it is anticipated that the number of iterations required to terminate
+      //! will be sufficiently large to make 1 or 2 extra iterations relatively
+      //! cheap. Defaults to 1.
+      int checkToleranceEvery;
+      ApplyParameters();
+    };
+
+    /// \brief Create an ApplyParameters struct with default values.
+    ApplyParameters createDefaultApplyParameters () const;
+
+    /// \brief Compute <tt>Y := D^{-1} (X - R*Y)</tt>.
+    ///
+    /// This version of <tt>applyInverseJacobi</tt> is meant to be called by
+    /// direct users of this class, rather than by <tt>BlockRelaxation</tt>. It
+    /// supports 2-norm-based termination. It returns the number of sweeps
+    /// performed.
+    int applyInverseJacobi (const mv_type& X, mv_type& Y, const ApplyParameters& input) const;
+
+    /// \brief If a norm-based method was used, return a buffer containing the
+    ///        norms, ordered by degrees of freedom, then RHS; otherwise, return a
+    ///        null ArrayRCp.
+    const Teuchos::ArrayRCP<const magnitude_type> getNorms0 () const;
+
+    /// \brief If a norm-based method was used, return a buffer containing the
+    ///        norms, ordered by degrees of freedom, then RHS; otherwise, return a
+    ///        null ArrayRCp.
+    const Teuchos::ArrayRCP<const magnitude_type> getNormsFinal () const;
   
-  //! Compute <tt>Y := (1 - a) Y + a D^{-1} (X - R*Y)</tt>. Not supported. Call
-  //! <tt>applyInverseJacobi</tt> instead.
-  void
-  apply (HostView& X,
-         HostView& Y,
-         int blockIndex,
-         int stride,
-         Teuchos::ETransp mode = Teuchos::NO_TRANS,
-         scalar_type alpha = Teuchos::ScalarTraits<scalar_type>::one(),
-         scalar_type beta = Teuchos::ScalarTraits<scalar_type>::zero()) const override;
+    //! Compute <tt>Y := (1 - a) Y + a D^{-1} (X - R*Y)</tt>. Not supported. Call
+    //! <tt>applyInverseJacobi</tt> instead.
+    void
+    apply (host_view_type& X,
+           host_view_type& Y,
+           int blockIndex,
+           int stride,
+           Teuchos::ETransp mode = Teuchos::NO_TRANS,
+           scalar_type alpha = Teuchos::ScalarTraits<scalar_type>::one(),
+           scalar_type beta = Teuchos::ScalarTraits<scalar_type>::zero()) const override;
 
-  //! Compute <tt>Y := alpha * diag(D) * M^{-1} (diag(D) * X) + beta*Y</tt>. Not
-  //! supported.
-  void
-  weightedApply (HostView& X,
-                 HostView& Y,
-                 HostView& W,
-                 int blockIndex,
-                 int stride,
-                 Teuchos::ETransp mode = Teuchos::NO_TRANS,
-                 scalar_type alpha = Teuchos::ScalarTraits<scalar_type>::one(),
-                 scalar_type beta = Teuchos::ScalarTraits<scalar_type>::zero()) const override;
+    //! Compute <tt>Y := alpha * diag(D) * M^{-1} (diag(D) * X) + beta*Y</tt>. Not
+    //! supported.
+    void
+    weightedApply (host_view_type& X,
+                   host_view_type& Y,
+                   host_view_type& W,
+                   int blockIndex,
+                   int stride,
+                   Teuchos::ETransp mode = Teuchos::NO_TRANS,
+                   scalar_type alpha = Teuchos::ScalarTraits<scalar_type>::one(),
+                   scalar_type beta = Teuchos::ScalarTraits<scalar_type>::zero()) const override;
 
-  //@}
-  //! \name Miscellaneous methods
-  //@{
+    //@}
+    //! \name Miscellaneous methods
+    //@{
 
-  /// \brief Print information about this object to the given output stream.
-  ///
-  /// operator<< uses this method.
-  std::ostream& print (std::ostream& os) const override;
+    /// \brief Print information about this object to the given output stream.
+    ///
+    /// operator<< uses this method.
+    std::ostream& print (std::ostream& os) const override;
 
-  //@}
-  //! @name Implementation of Teuchos::Describable
-  //@{
+    //@}
+    //! @name Implementation of Teuchos::Describable
+    //@{
 
-  //! A one-line description of this object.
-  std::string description () const override;
+    //! A one-line description of this object.
+    std::string description () const override;
 
-  //! Print the object with some verbosity level to the given FancyOStream.
-  void
-  describe (Teuchos::FancyOStream &out,
-            const Teuchos::EVerbosityLevel verbLevel =
-            Teuchos::Describable::verbLevel_default) const override;
+    //! Print the object with some verbosity level to the given FancyOStream.
+    void
+    describe (Teuchos::FancyOStream &out,
+              const Teuchos::EVerbosityLevel verbLevel =
+              Teuchos::Describable::verbLevel_default) const override;
 
-  //@}
+    //@}
 
-  /// \brief Get the name of this container type for Details::constructContainer()
-  static std::string getName();
+    /// \brief Get the name of this container type for Details::constructContainer()
+    static std::string getName();
 
-private:
-  //! Copy constructor: Declared but not implemented, to forbid copy construction.
-  BlockTriDiContainer (const BlockTriDiContainer<MatrixType, LocalScalarType>& rhs);
+  private:
+    //! Copy constructor: Declared but not implemented, to forbid copy construction.
+    BlockTriDiContainer (const BlockTriDiContainer<MatrixType, LocalScalarType>& rhs);
 
-  //! If \c true, the container has been successfully initialized.
-  bool IsInitialized_;
+    //! If \c true, the container has been successfully initialized.
+    bool IsInitialized_;
 
-  //! If \c true, the container has been successfully computed.
-  bool IsComputed_;
+    //! If \c true, the container has been successfully computed.
+    bool IsComputed_;
 
-  typedef BlockTriDiContainerDetails::Impl<MatrixType, LocalScalarType,
-                                           typename MatrixType::node_type::device_type::execution_space>
-          ImplWithES;
-  Teuchos::RCP<ImplWithES> impl_;
-};
+    typedef BlockTriDiContainerDetails::Impl<MatrixType, LocalScalarType,
+                                             typename MatrixType::node_type::device_type::execution_space>
+    ImplWithES;
+    Teuchos::RCP<ImplWithES> impl_;
+  };
 
 } // namespace Ifpack2
 

@@ -71,222 +71,222 @@
 
 namespace Ifpack2 {
 
-template <typename MatrixType, typename LocalScalarType>
-BlockTriDiContainer<MatrixType, LocalScalarType>::
-BlockTriDiContainer (const Teuchos::RCP<const row_matrix_type>& matrix,
-                     const Teuchos::Array<Teuchos::Array<local_ordinal_type> >& partitions,
-                     const Teuchos::RCP<const import_type>& importer,
-                     int OverlapLevel, scalar_type DampingFactor)
-  : Container<MatrixType>(matrix, partitions, importer, OverlapLevel, DampingFactor)
-{
-  impl_ = Teuchos::rcp(new ImplWithES(*this, matrix, partitions, importer, OverlapLevel, false));
-}
+  template <typename MatrixType, typename LocalScalarType>
+  BlockTriDiContainer<MatrixType, LocalScalarType>::
+  BlockTriDiContainer (const Teuchos::RCP<const row_matrix_type>& matrix,
+                       const Teuchos::Array<Teuchos::Array<local_ordinal_type> >& partitions,
+                       const Teuchos::RCP<const import_type>& importer,
+                       int OverlapLevel, 
+                       scalar_type DampingFactor)
+    : Container<MatrixType>(matrix, partitions, importer, OverlapLevel, DampingFactor) {
+    impl_ = Teuchos::rcp(new ImplWithES(*this, matrix, partitions, importer, OverlapLevel, false));
+  }
 
-template <typename MatrixType, typename LocalScalarType>
-BlockTriDiContainer<MatrixType, LocalScalarType>::
-BlockTriDiContainer (const Teuchos::RCP<const row_matrix_type>& matrix,
-                     const Teuchos::Array<Teuchos::Array<local_ordinal_type> >& partitions,
-                     const bool overlapCommAndComp, const bool useSeqMethod)
-  : Container<MatrixType>(matrix, partitions, Teuchos::null, 0,
-                          Kokkos::ArithTraits<magnitude_type>::one())
-{
-  impl_ = Teuchos::rcp(new ImplWithES(*this, matrix, partitions, Teuchos::null, 0, overlapCommAndComp,
-                                      useSeqMethod));
-}
+  template <typename MatrixType, typename LocalScalarType>
+  BlockTriDiContainer<MatrixType, LocalScalarType>::
+  BlockTriDiContainer (const Teuchos::RCP<const row_matrix_type>& matrix,
+                       const Teuchos::Array<Teuchos::Array<local_ordinal_type> >& partitions,
+                       const bool overlapCommAndComp, const bool useSeqMethod)
+    : Container<MatrixType>(matrix, partitions, Teuchos::null, 0,
+                            Kokkos::ArithTraits<magnitude_type>::one())
+  {
+    impl_ = Teuchos::rcp(new ImplWithES(*this, matrix, partitions, Teuchos::null, 0, overlapCommAndComp,
+                                        useSeqMethod));
+  }
 
-template <typename MatrixType, typename LocalScalarType>
-BlockTriDiContainer<MatrixType, LocalScalarType>::~BlockTriDiContainer ()
-{
-}
+  template <typename MatrixType, typename LocalScalarType>
+  BlockTriDiContainer<MatrixType, LocalScalarType>::~BlockTriDiContainer ()
+  {
+  }
 
-template <typename MatrixType, typename LocalScalarType>
-bool BlockTriDiContainer<MatrixType, LocalScalarType>::isInitialized () const
-{
-  return IsInitialized_;
-}
+  template <typename MatrixType, typename LocalScalarType>
+  bool BlockTriDiContainer<MatrixType, LocalScalarType>::isInitialized () const
+  {
+    return IsInitialized_;
+  }
 
-template <typename MatrixType, typename LocalScalarType>
-bool BlockTriDiContainer<MatrixType, LocalScalarType>::isComputed () const
-{
-  return IsComputed_;
-}
+  template <typename MatrixType, typename LocalScalarType>
+  bool BlockTriDiContainer<MatrixType, LocalScalarType>::isComputed () const
+  {
+    return IsComputed_;
+  }
 
-template <typename MatrixType, typename LocalScalarType>
-void BlockTriDiContainer<MatrixType, LocalScalarType>::
-setParameters (const Teuchos::ParameterList& /* List */)
-{
-  // the solver doesn't currently take any parameters
-}
+  template <typename MatrixType, typename LocalScalarType>
+  void BlockTriDiContainer<MatrixType, LocalScalarType>::
+  setParameters (const Teuchos::ParameterList& /* List */)
+  {
+    // the solver doesn't currently take any parameters
+  }
 
-template <typename MatrixType, typename LocalScalarType>
-void BlockTriDiContainer<MatrixType, LocalScalarType>::initialize ()
-{
-  IsInitialized_ = true;
-  // We assume that if you called this method, you intend to recompute
-  // everything.
-  IsComputed_ = false;
-  TEUCHOS_ASSERT( ! impl_.is_null());
-  impl_->symbolic();
-}
+  template <typename MatrixType, typename LocalScalarType>
+  void BlockTriDiContainer<MatrixType, LocalScalarType>::initialize ()
+  {
+    IsInitialized_ = true;
+    // We assume that if you called this method, you intend to recompute
+    // everything.
+    IsComputed_ = false;
+    TEUCHOS_ASSERT( ! impl_.is_null());
+    impl_->symbolic();
+  }
 
-template <typename MatrixType, typename LocalScalarType>
-void BlockTriDiContainer<MatrixType, LocalScalarType>::compute ()
-{
-  IsComputed_ = false;
-  if ( ! this->isInitialized())
-    this->initialize();
-  impl_->numeric();
-  IsComputed_ = true;
-}
+  template <typename MatrixType, typename LocalScalarType>
+  void BlockTriDiContainer<MatrixType, LocalScalarType>::compute ()
+  {
+    IsComputed_ = false;
+    if ( ! this->isInitialized())
+      this->initialize();
+    impl_->numeric();
+    IsComputed_ = true;
+  }
 
-template <typename MatrixType, typename LocalScalarType>
-void BlockTriDiContainer<MatrixType, LocalScalarType>::clearBlocks ()
-{
-  impl_ = Teuchos::null;
-  IsInitialized_ = false;
-  IsComputed_ = false;
-}
+  template <typename MatrixType, typename LocalScalarType>
+  void BlockTriDiContainer<MatrixType, LocalScalarType>::clearBlocks ()
+  {
+    impl_ = Teuchos::null;
+    IsInitialized_ = false;
+    IsComputed_ = false;
+  }
 
-template <typename MatrixType, typename LocalScalarType>
-void BlockTriDiContainer<MatrixType, LocalScalarType>
-::applyInverseJacobi (const mv_type& X, mv_type& Y, bool zeroStartingSolution,
-                      int numSweeps) const
-{
-  impl_->applyInverseJacobi(X, Y, this->DampingFactor_, zeroStartingSolution, numSweeps,
-                            Kokkos::ArithTraits<magnitude_type>::zero(), 1);
-}
+  template <typename MatrixType, typename LocalScalarType>
+  void BlockTriDiContainer<MatrixType, LocalScalarType>
+  ::applyInverseJacobi (const mv_type& X, mv_type& Y, bool zeroStartingSolution,
+                        int numSweeps) const
+  {
+    impl_->applyInverseJacobi(X, Y, this->DampingFactor_, zeroStartingSolution, numSweeps,
+                              Kokkos::ArithTraits<magnitude_type>::zero(), 1);
+  }
 
-template <typename MatrixType, typename LocalScalarType>
-BlockTriDiContainer<MatrixType, LocalScalarType>::ComputeParameters::ComputeParameters ()
-  : addRadiallyToDiagonal(Kokkos::ArithTraits<magnitude_type>::zero())
-{}
+  template <typename MatrixType, typename LocalScalarType>
+  BlockTriDiContainer<MatrixType, LocalScalarType>::ComputeParameters::ComputeParameters ()
+    : addRadiallyToDiagonal(Kokkos::ArithTraits<magnitude_type>::zero())
+  {}
 
-template <typename MatrixType, typename LocalScalarType>
-typename BlockTriDiContainer<MatrixType, LocalScalarType>::ComputeParameters
-BlockTriDiContainer<MatrixType, LocalScalarType>::createDefaultComputeParameters () const
-{
-  return ComputeParameters();
-}
+  template <typename MatrixType, typename LocalScalarType>
+  typename BlockTriDiContainer<MatrixType, LocalScalarType>::ComputeParameters
+  BlockTriDiContainer<MatrixType, LocalScalarType>::createDefaultComputeParameters () const
+  {
+    return ComputeParameters();
+  }
 
-template <typename MatrixType, typename LocalScalarType>
-void BlockTriDiContainer<MatrixType, LocalScalarType>::compute (const ComputeParameters& in)
-{
-  IsComputed_ = false;
-  if ( ! this->isInitialized())
-    this->initialize();
-  impl_->numeric(in.addRadiallyToDiagonal);
-  IsComputed_ = true;
-}
+  template <typename MatrixType, typename LocalScalarType>
+  void BlockTriDiContainer<MatrixType, LocalScalarType>::compute (const ComputeParameters& in)
+  {
+    IsComputed_ = false;
+    if ( ! this->isInitialized())
+      this->initialize();
+    impl_->numeric(in.addRadiallyToDiagonal);
+    IsComputed_ = true;
+  }
 
-template <typename MatrixType, typename LocalScalarType>
-BlockTriDiContainer<MatrixType, LocalScalarType>::ApplyParameters::ApplyParameters ()
-  : zeroStartingSolution(false), dampingFactor(Kokkos::ArithTraits<magnitude_type>::one()),
-    maxNumSweeps(1), tolerance(Kokkos::ArithTraits<magnitude_type>::zero()),
-    checkToleranceEvery(1)
-{}
+  template <typename MatrixType, typename LocalScalarType>
+  BlockTriDiContainer<MatrixType, LocalScalarType>::ApplyParameters::ApplyParameters ()
+    : zeroStartingSolution(false), dampingFactor(Kokkos::ArithTraits<magnitude_type>::one()),
+      maxNumSweeps(1), tolerance(Kokkos::ArithTraits<magnitude_type>::zero()),
+      checkToleranceEvery(1)
+  {}
 
-template <typename MatrixType, typename LocalScalarType>
-typename BlockTriDiContainer<MatrixType, LocalScalarType>::ApplyParameters
-BlockTriDiContainer<MatrixType, LocalScalarType>::createDefaultApplyParameters () const
-{
-  ApplyParameters in;
-  in.dampingFactor = this->DampingFactor_;
-  return in;
-}
+  template <typename MatrixType, typename LocalScalarType>
+  typename BlockTriDiContainer<MatrixType, LocalScalarType>::ApplyParameters
+  BlockTriDiContainer<MatrixType, LocalScalarType>::createDefaultApplyParameters () const
+  {
+    ApplyParameters in;
+    in.dampingFactor = this->DampingFactor_;
+    return in;
+  }
 
-template <typename MatrixType, typename LocalScalarType>
-int BlockTriDiContainer<MatrixType, LocalScalarType>
-::applyInverseJacobi (const mv_type& X, mv_type& Y, const ApplyParameters& in) const
-{
-  return impl_->applyInverseJacobi(X, Y, in.dampingFactor, in.zeroStartingSolution, in.maxNumSweeps,
-                                   in.tolerance, in.checkToleranceEvery);
-}
+  template <typename MatrixType, typename LocalScalarType>
+  int BlockTriDiContainer<MatrixType, LocalScalarType>
+  ::applyInverseJacobi (const mv_type& X, mv_type& Y, const ApplyParameters& in) const
+  {
+    return impl_->applyInverseJacobi(X, Y, in.dampingFactor, in.zeroStartingSolution, in.maxNumSweeps,
+                                     in.tolerance, in.checkToleranceEvery);
+  }
 
-template <typename MatrixType, typename LocalScalarType>
-const Teuchos::ArrayRCP<const typename BlockTriDiContainer<MatrixType, LocalScalarType>::magnitude_type>
-BlockTriDiContainer<MatrixType, LocalScalarType>::getNorms0 () const {
-  const auto p = impl_->get_norms0();
-  return Teuchos::arcp(p, 0, p ? impl_->get_nvec() : 0, false);
-}
+  template <typename MatrixType, typename LocalScalarType>
+  const Teuchos::ArrayRCP<const typename BlockTriDiContainer<MatrixType, LocalScalarType>::magnitude_type>
+  BlockTriDiContainer<MatrixType, LocalScalarType>::getNorms0 () const {
+    const auto p = impl_->get_norms0();
+    return Teuchos::arcp(p, 0, p ? impl_->get_nvec() : 0, false);
+  }
 
-template <typename MatrixType, typename LocalScalarType>
-const Teuchos::ArrayRCP<const typename BlockTriDiContainer<MatrixType, LocalScalarType>::magnitude_type>
-BlockTriDiContainer<MatrixType, LocalScalarType>::getNormsFinal () const {
-  const auto p = impl_->get_norms_final();
-  return Teuchos::arcp(p, 0, p ? impl_->get_nvec() : 0, false);
-}
+  template <typename MatrixType, typename LocalScalarType>
+  const Teuchos::ArrayRCP<const typename BlockTriDiContainer<MatrixType, LocalScalarType>::magnitude_type>
+  BlockTriDiContainer<MatrixType, LocalScalarType>::getNormsFinal () const {
+    const auto p = impl_->get_norms_final();
+    return Teuchos::arcp(p, 0, p ? impl_->get_nvec() : 0, false);
+  }
 
-template <typename MatrixType, typename LocalScalarType>
-void BlockTriDiContainer<MatrixType, LocalScalarType>
-::apply (HostView& X, HostView& Y, int blockIndex, int stride, Teuchos::ETransp mode,
-         scalar_type alpha, scalar_type beta) const
-{
-  TEUCHOS_TEST_FOR_EXCEPT_MSG(
-    true, "BlockTriDiContainer::apply is not implemented. You may have reached this message "
-    << "because you want to use this container's performance-portable Jacobi iteration. In "
-    << "that case, set \"relaxation: type\" to \"MT Split Jacobi\" rather than \"Jacobi\".");
-}
+  template <typename MatrixType, typename LocalScalarType>
+  void BlockTriDiContainer<MatrixType, LocalScalarType>
+  ::apply (HostView& X, HostView& Y, int blockIndex, int stride, Teuchos::ETransp mode,
+           scalar_type alpha, scalar_type beta) const
+  {
+    TEUCHOS_TEST_FOR_EXCEPT_MSG(
+                                true, "BlockTriDiContainer::apply is not implemented. You may have reached this message "
+                                << "because you want to use this container's performance-portable Jacobi iteration. In "
+                                << "that case, set \"relaxation: type\" to \"MT Split Jacobi\" rather than \"Jacobi\".");
+  }
 
-template <typename MatrixType, typename LocalScalarType>
-void BlockTriDiContainer<MatrixType, LocalScalarType>
-::weightedApply (HostView& X, HostView& Y, HostView& D, int blockIndex, int stride,
-                 Teuchos::ETransp mode, scalar_type alpha, scalar_type beta) const
-{
-  TEUCHOS_TEST_FOR_EXCEPT_MSG(true, "BlockTriDiContainer::weightedApply is not implemented.");
-}
+  template <typename MatrixType, typename LocalScalarType>
+  void BlockTriDiContainer<MatrixType, LocalScalarType>
+  ::weightedApply (HostView& X, HostView& Y, HostView& D, int blockIndex, int stride,
+                   Teuchos::ETransp mode, scalar_type alpha, scalar_type beta) const
+  {
+    TEUCHOS_TEST_FOR_EXCEPT_MSG(true, "BlockTriDiContainer::weightedApply is not implemented.");
+  }
 
-template <typename MatrixType, typename LocalScalarType>
-std::ostream& BlockTriDiContainer<MatrixType, LocalScalarType>::print (std::ostream& os) const
-{
-  Teuchos::FancyOStream fos(Teuchos::rcp(&os,false));
-  fos.setOutputToRootOnly(0);
-  describe(fos);
-  return os;
-}
+  template <typename MatrixType, typename LocalScalarType>
+  std::ostream& BlockTriDiContainer<MatrixType, LocalScalarType>::print (std::ostream& os) const
+  {
+    Teuchos::FancyOStream fos(Teuchos::rcp(&os,false));
+    fos.setOutputToRootOnly(0);
+    describe(fos);
+    return os;
+  }
 
-template <typename MatrixType, typename LocalScalarType>
-std::string BlockTriDiContainer<MatrixType, LocalScalarType>::description () const
-{
-  std::ostringstream oss;
-  oss << Teuchos::Describable::description();
-  if (isInitialized()) {
-    if (isComputed()) {
-      oss << "{status = initialized, computed";
+  template <typename MatrixType, typename LocalScalarType>
+  std::string BlockTriDiContainer<MatrixType, LocalScalarType>::description () const
+  {
+    std::ostringstream oss;
+    oss << Teuchos::Describable::description();
+    if (isInitialized()) {
+      if (isComputed()) {
+        oss << "{status = initialized, computed";
+      }
+      else {
+        oss << "{status = initialized, not computed";
+      }
     }
     else {
-      oss << "{status = initialized, not computed";
+      oss << "{status = not initialized, not computed";
     }
+
+    oss << "}";
+    return oss.str();
   }
-  else {
-    oss << "{status = not initialized, not computed";
+
+  template <typename MatrixType, typename LocalScalarType>
+  void
+  BlockTriDiContainer<MatrixType, LocalScalarType>::
+  describe (Teuchos::FancyOStream& os,
+            const Teuchos::EVerbosityLevel verbLevel) const
+  {
+    using std::endl;
+    if(verbLevel==Teuchos::VERB_NONE) return;
+    os << "================================================================================" << endl
+       << "Ifpack2::BlockTriDiContainer" << endl
+       << "Number of blocks        = " << this->numBlocks_ << endl
+       << "isInitialized()         = " << IsInitialized_ << endl
+       << "isComputed()            = " << IsComputed_ << endl
+       << "impl                    = " << impl_->describe() << endl
+       << "================================================================================" << endl
+       << endl;
   }
 
-  oss << "}";
-  return oss.str();
-}
+  template <typename MatrixType, typename LocalScalarType>
+  std::string BlockTriDiContainer<MatrixType, LocalScalarType>::getName() { return "BlockTriDi"; }
 
-template <typename MatrixType, typename LocalScalarType>
-void
-BlockTriDiContainer<MatrixType, LocalScalarType>::
-describe (Teuchos::FancyOStream& os,
-          const Teuchos::EVerbosityLevel verbLevel) const
-{
-  using std::endl;
-  if(verbLevel==Teuchos::VERB_NONE) return;
-  os << "================================================================================" << endl
-     << "Ifpack2::BlockTriDiContainer" << endl
-     << "Number of blocks        = " << this->numBlocks_ << endl
-     << "isInitialized()         = " << IsInitialized_ << endl
-     << "isComputed()            = " << IsComputed_ << endl
-     << "impl                    = " << impl_->describe() << endl
-     << "================================================================================" << endl
-     << endl;
-}
-
-template <typename MatrixType, typename LocalScalarType>
-std::string BlockTriDiContainer<MatrixType, LocalScalarType>::getName() { return "BlockTriDi"; }
-
-#define IFPACK2_BLOCKTRIDICONTAINER_INSTANT(S,LO,GO,N) \
+#define IFPACK2_BLOCKTRIDICONTAINER_INSTANT(S,LO,GO,N)                  \
   template class Ifpack2::BlockTriDiContainer< Tpetra::RowMatrix<S, LO, GO, N>, S >;
 
 } // namespace Ifpack2
