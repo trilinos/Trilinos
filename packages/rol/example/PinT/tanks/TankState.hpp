@@ -45,48 +45,95 @@
 #ifndef TANKSTATE_HPP
 #define TANKSTATE_HPP
 
-#include <vector>
 #include "ROL_Ptr.hpp"
+#include <utility>
 
 /** \class TankState 
     \brief Provides a convenient access to the blocks and elements of the
-           tank system state vector while working with the existing 
-           ROL::StdVector 
+           tank system state vector where VectorImpl<Real>::getVector()
+           returns a pointer to a subscriptable container
 */
 
 namespace details {
 
 using namespace std;
 
-template<typename Real> 
-class TankState {
+using ROL::Vector;
+using ROL::StdVector;
 
-  using VectorType = vector<Real>;
+// Casting helpers
+template<typename Real, template<typename> class VectorType>
+inline
+// const // Certain versions of Intel compiler object to the const modifier
+auto getVector( const Vector<Real>& x ) -> 
+  const decltype(*declval<const VectorType<Real>>().getVector())& {
+  return *(dynamic_cast<const VectorType<Real>&>(x).getVector());
+}
 
+template<typename Real, template<typename> class VectorType>
+inline auto getVector( Vector<Real>& x ) -> 
+  decltype(*declval<VectorType<Real>>().getVector())& {
+  return *(dynamic_cast<VectorType<Real>&>(x).getVector());
+}
+
+
+template<typename Real, bool isConst> class TankState;
+
+template<typename Real>
+class TankState<Real,true> {
 private:
 
- VectorType& state_;
- int r, c, N;
+  using container_type = vector<Real>;
+  const container_type& state_;
+  int r, c, N;
 
 public:
 
-  TankState( VectorType& state, int rows, int cols ) : 
-    state_(state), r(rows), c(cols), N(r*c) {}
+  TankState( const Vector<Real>& state, int rows, int cols ) : 
+    state_( getVector<StdVector>(state) ), r(rows), c(cols), N(r*c) {}
 
-  Real& h   ( int i, int j ) { return state_[c*j+i];     }
-  Real& Qin ( int i, int j ) { return state_[N+c*j+i];   }
-  Real& Qout( int i, int j ) { return state_[2*N+c*j+i]; }
-
-  const Real& h   ( int i, int j ) const { return state_[c*j+i];     }
-  const Real& Qin ( int i, int j ) const { return state_[N+c*j+i];   }
-  const Real& Qout( int i, int j ) const { return state_[2*N+c*j+i]; }
+  const Real& h   ( int i, int j ) const { return state_[c*j+i];     }  // Level
+  const Real& Qin ( int i, int j ) const { return state_[N+c*j+i];   }  // Inflow
+  const Real& Qout( int i, int j ) const { return state_[2*N+c*j+i]; }  // Outflow
 
 }; // class TankState
+
+
+template<typename Real> // Non-constant specialization
+class TankState<Real,false> : public TankState<Real,true> {
+private:
+  using container_type = vector<Real>;
+  container_type& state_;
+  int r,c,N;
+
+public:
+
+  TankState( Vector<Real>& state, int rows, int cols ) :
+    TankState<Real,true>::TankState(state,rows,cols), 
+    state_( getVector<StdVector>(state) ), r(rows), c(cols), N(r*c) {}
+
+  Real& h   ( int i, int j ) { return state_[c*j+i];     }  // Level
+  Real& Qin ( int i, int j ) { return state_[N+c*j+i];   }  // Inflow
+  Real& Qout( int i, int j ) { return state_[2*N+c*j+i]; }  // Outflow
+
+}; // class TankState
+
+template<typename Real>
+auto make_tank_state( const Vector<Real>& x, int r, int c ) -> TankState<Real,true> {
+  TankState<Real,true> ts( x, r, c );
+  return move(ts);
+}
+
+template<typename Real>
+auto make_tank_state( Vector<Real>& x, int r, int c ) -> TankState<Real,false> {
+  TankState<Real,false> ts( x, r, c );
+  return move(ts);
+}
 
 } // namespace details
 
 using details::TankState;
-
+using details::make_tank_state;
 
 #endif // TANKSTATE_HPP
 
