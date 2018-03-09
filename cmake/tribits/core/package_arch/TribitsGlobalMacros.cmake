@@ -100,7 +100,7 @@ MACRO(TRIBITS_ASSERT_AND_SETUP_PROJECT_AND_STATIC_SYSTEM_VARS)
   IF (EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/CMakeCache.txt")
     MESSAGE(FATAL_ERROR "ERROR! "
       "The file ${CMAKE_CURRENT_SOURCE_DIR}/CMakeCache.txt exists from a"
-      " likely prior attempt to do an in-soruce build."
+      " likely prior attempt to do an in-source build."
       "${IN_SOURCE_ERROR_COMMON_MSG}"
       )
   ENDIF()

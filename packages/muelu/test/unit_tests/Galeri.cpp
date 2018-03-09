@@ -57,6 +57,15 @@
 TPETRA_ETI_MANGLING_TYPEDEFS()
 #endif
 
+// I don't particularly like having these typdef's here.
+// They duplicate typdefs in MueLu_ETI_3arg.hpp,
+// MueLu_ETI_4arg.hpp, and Xpetra_Map.hpp.
+#ifdef EPETRA_HAVE_OMP
+  typedef Kokkos::Compat::KokkosOpenMPWrapperNode EpetraNode;
+#else
+    typedef Kokkos::Compat::KokkosSerialWrapperNode EpetraNode;
+#endif
+
 namespace Galeri {
   namespace Xpetra {
 
@@ -67,8 +76,9 @@ namespace Galeri {
 #ifdef HAVE_MUELU_TPETRA
   TPETRA_INSTANTIATE_LGN(MUELU_GALERI_INST)
 #else
-  // Because only Epetra is available, instantiate directly.
-  MUELU_GALERI_INST(int,int,KokkosClassic::DefaultNode::DefaultNodeType)
+  // MueLu requires at least one of T/Epetra.  Getting to this point indicates Tpetra is
+  // not available and so Epetra must be.  Therefore, we must instantiate directly.
+  MUELU_GALERI_INST(int,int,EpetraNode)
 #endif
   } //Xpetra namespace
 } //Galeri namespace

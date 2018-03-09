@@ -5,7 +5,10 @@
 # This script is not system-specific so it can be usesd on all systems.
 #
 
-echo "Running $JOB_NAME.sh script in smart Jenkins driver"
+echo "Start: smart-jenkins-drivers.sh"
+echo
+echo "  ==> `date`"
+echo
 
 if [ "${JOB_NAME}" == ""  ] ; then
   echo "Error, must set JOB_NAME var before calling!"
@@ -20,21 +23,12 @@ fi
 source $WORKSPACE/Trilinos/cmake/std/atdm/utils/get_known_system_name.sh
 
 echo
-echo "Time when smart-jenkins-driver.sh was first called:"
-echo
-echo "  ==> `date`"
-echo
-
-set -x
+echo "Running: $WORKSPACE/Trilinos/cmake/ctest/drivers/atdm/$ATDM_CONFIG_KNOWN_SYSTEM_NAME/drivers/$JOB_NAME.sh ..."
 
 $WORKSPACE/Trilinos/cmake/ctest/drivers/atdm/$ATDM_CONFIG_KNOWN_SYSTEM_NAME/drivers/$JOB_NAME.sh
 
-set +x
-
 echo
-echo "Time when smart-jenkins-driver.sh completed called:"
+echo "End: smart-jenkins-drivers.sh"
 echo
 echo "  ==> `date`"
-echo
-echo "DONE"
 echo

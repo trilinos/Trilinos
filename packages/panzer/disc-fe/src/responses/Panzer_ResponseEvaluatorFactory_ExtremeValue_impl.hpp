@@ -84,7 +84,8 @@ buildAndRegisterEvaluators(const std::string & responseName,
      RCP<IntegrationRule> ir = rcp(new IntegrationRule(cubatureDegree_,physicsBlock.cellData()));
 
      Teuchos::ParameterList pl;
-     pl.set("Extreme Name",field);
+     // add prefix_ to help identify
+     pl.set("Extreme Name",prefix_+field);
      pl.set("Field Name",field);
      pl.set("IR",ir);
      pl.set("Use Max",useMax_);
@@ -101,6 +102,7 @@ buildAndRegisterEvaluators(const std::string & responseName,
      Teuchos::RCP<ExtremeValueScatterBase> scatterObj =
          (globalIndexer_!=Teuchos::null) ?  Teuchos::rcp(new ExtremeValueScatter<LO,GO>(globalIndexer_)) : Teuchos::null;
      std::string field = (quadPointField_=="" ? responseName : quadPointField_);
+     field = prefix_+field; // add prefix to help identify
 
      // build useful evaluator
      Teuchos::RCP<PHX::Evaluator<panzer::Traits> > eval 
