@@ -1,15 +1,7 @@
 #!/bin/bash -e
 
-#
-# Run a single <job-name-key> build with checkin-test.py script
-#
-# Usage:
-#
-#   ./checkin-test-atdm-single.sh \
-#     <job-name-keys0> <job-name-keys1> ... <job-name-keysn> \
-#     [other checkin-test options]
-#
-#
+# NOTE: This script should only be run by checkin-test-atdm.sh.  It does not
+# have enough info to run on its own.
 
 ATDM_JOB_NAME_KEYS=$1 ; shift
 
@@ -34,5 +26,7 @@ $ATDM_TRILINOS_DIR/cmake/tribits/ci_support/checkin-test.py \
   &> checkin-test.$ATDM_JOB_NAME_KEYS.out
 
 set +x
+
+echo "source $STD_ATDM_DIR/load-env.sh $ATDM_JOB_NAME_KEYS" > $ATDM_JOB_NAME_KEYS/load-env.sh
 
 # ToDo: Read env var ATDM_CONFIG_USE_NINJA and set --use-ninja!
