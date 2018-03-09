@@ -57,7 +57,29 @@ namespace panzer {
 
       int(n \cdot (flux * phi) )
   */
-PANZER_EVALUATOR_CLASS(InterfaceResidual)
+template<typename EvalT, typename Traits>
+class InterfaceResidual
+  :
+  public panzer::EvaluatorWithBaseImpl<Traits>,
+  public PHX::EvaluatorDerived<EvalT, Traits>
+{
+  public:
+
+    InterfaceResidual(
+      const Teuchos::ParameterList& p);
+
+    void
+    postRegistrationSetup(
+      typename Traits::SetupData d,
+      PHX::FieldManager<Traits>& fm);
+
+    void
+    evaluateFields(
+      typename Traits::EvalData d);
+
+  private:
+
+    using ScalarT = typename EvalT::ScalarT;
   
   PHX::MDField<ScalarT> residual;
   PHX::MDField<ScalarT> normal_dot_flux;
@@ -69,7 +91,8 @@ PANZER_EVALUATOR_CLASS(InterfaceResidual)
   std::size_t num_ip;
   std::size_t num_dim;
 
-PANZER_EVALUATOR_CLASS_END
+}; // end of class InterfaceResidual
+
 
 }
 

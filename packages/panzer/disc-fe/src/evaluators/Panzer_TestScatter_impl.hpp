@@ -48,7 +48,10 @@ namespace panzer {
 template <typename EvalT,typename TRAITS>
 int panzer::TestScatter<EvalT, TRAITS>::offset = 0;
 
-PHX_EVALUATOR_CTOR(TestScatter,p)
+template<typename EvalT, typename Traits>
+TestScatter<EvalT, Traits>::
+TestScatter(
+  const Teuchos::ParameterList& p)
 {
   std::string test_name     = p.get<std::string>("Test Name");
   std::string test_name_res = p.get<std::string>("Test Name Residual");
@@ -68,7 +71,12 @@ PHX_EVALUATOR_CTOR(TestScatter,p)
   this->setName(n);
 }
 
-PHX_POST_REGISTRATION_SETUP(TestScatter, /* setupData */, fm)
+template<typename EvalT, typename Traits>
+void
+TestScatter<EvalT, Traits>::
+postRegistrationSetup(
+  typename Traits::SetupData  /* setupData */,
+  PHX::FieldManager<Traits>&  fm)
 {
   this->utils.setFieldData(scatter_value,fm);
   this->utils.setFieldData(value,fm);
@@ -76,7 +84,11 @@ PHX_POST_REGISTRATION_SETUP(TestScatter, /* setupData */, fm)
   num_nodes = scatter_value.dimension(1);
 }
 
-PHX_EVALUATE_FIELDS(TestScatter,workset)
+template<typename EvalT, typename Traits>
+void
+TestScatter<EvalT, Traits>::
+evaluateFields(
+  typename Traits::EvalData workset)
 { 
  // for (int i=0; i < scatter_value.size(); ++i)
  //   scatter_value[i] = 0.0;

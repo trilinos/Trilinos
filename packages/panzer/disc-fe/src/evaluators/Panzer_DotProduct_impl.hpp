@@ -73,7 +73,10 @@ buildEvaluator_DotProduct(const std::string & resultName,
 }
 
 //**********************************************************************
-PHX_EVALUATOR_CTOR(DotProduct,p)
+template<typename EvalT, typename Traits>
+DotProduct<EvalT, Traits>::
+DotProduct(
+  const Teuchos::ParameterList& p)
   : multiplier_field_on(false)
 {
   std::string result_name = p.get<std::string>("Result Name");
@@ -110,7 +113,12 @@ PHX_EVALUATOR_CTOR(DotProduct,p)
 }
 
 //**********************************************************************
-PHX_POST_REGISTRATION_SETUP(DotProduct, /* sd */, fm)
+template<typename EvalT, typename Traits>
+void
+DotProduct<EvalT, Traits>::
+postRegistrationSetup(
+  typename Traits::SetupData  /* sd */,
+  PHX::FieldManager<Traits>&  fm)
 {
   this->utils.setFieldData(vec_a_dot_vec_b,fm);
   this->utils.setFieldData(vec_a,fm);
@@ -127,7 +135,11 @@ PHX_POST_REGISTRATION_SETUP(DotProduct, /* sd */, fm)
 }
 
 //**********************************************************************
-PHX_EVALUATE_FIELDS(DotProduct,workset)
+template<typename EvalT, typename Traits>
+void
+DotProduct<EvalT, Traits>::
+evaluateFields(
+  typename Traits::EvalData workset)
 { 
   for (index_t cell = 0; cell < workset.num_cells; ++cell) {
     for (int p = 0; p < num_pts; ++p) {

@@ -53,7 +53,10 @@
 namespace panzer {
 
 //**********************************************************************
-PHX_EVALUATOR_CTOR(CrossProduct,p)
+template<typename EvalT, typename Traits>
+CrossProduct<EvalT, Traits>::
+CrossProduct(
+  const Teuchos::ParameterList& p)
 {
   std::string result_name = p.get<std::string>("Result Name");
   std::string vec_a_name = p.get<std::string>("Vector A Name");
@@ -82,7 +85,12 @@ PHX_EVALUATOR_CTOR(CrossProduct,p)
 }
 
 //**********************************************************************
-PHX_POST_REGISTRATION_SETUP(CrossProduct, /* sd */, fm)
+template<typename EvalT, typename Traits>
+void
+CrossProduct<EvalT, Traits>::
+postRegistrationSetup(
+  typename Traits::SetupData  /* sd */,
+  PHX::FieldManager<Traits>&  fm)
 {
   this->utils.setFieldData(vec_a_cross_vec_b,fm);
   this->utils.setFieldData(vec_a,fm);
@@ -96,7 +104,11 @@ PHX_POST_REGISTRATION_SETUP(CrossProduct, /* sd */, fm)
 }
 
 //**********************************************************************
-PHX_EVALUATE_FIELDS(CrossProduct,workset)
+template<typename EvalT, typename Traits>
+void
+CrossProduct<EvalT, Traits>::
+evaluateFields(
+  typename Traits::EvalData workset)
 { 
   if(useScalarField) {
     for (index_t cell = 0; cell < workset.num_cells; ++cell) {

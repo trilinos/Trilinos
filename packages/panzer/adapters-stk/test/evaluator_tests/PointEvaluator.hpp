@@ -58,7 +58,29 @@ public:
                                   PHX::MDField<ScalarT> & field) const = 0;
 };
 
-PANZER_EVALUATOR_CLASS(PointEvaluator)
+template<typename EvalT, typename Traits>
+class PointEvaluator
+  :
+  public panzer::EvaluatorWithBaseImpl<Traits>,
+  public PHX::EvaluatorDerived<EvalT, Traits>
+{
+  public:
+
+    PointEvaluator(
+      const Teuchos::ParameterList& p);
+
+    void
+    postRegistrationSetup(
+      typename Traits::SetupData d,
+      PHX::FieldManager<Traits>& fm);
+
+    void
+    evaluateFields(
+      typename Traits::EvalData d);
+
+  private:
+
+    using ScalarT = typename EvalT::ScalarT;
 
   PHX::MDField<ScalarT> scalar;
   PHX::MDField<ScalarT> vectorField;
@@ -67,10 +89,14 @@ PANZER_EVALUATOR_CLASS(PointEvaluator)
   int quad_order;
   int quad_index;
   Teuchos::RCP<const PointEvaluation<ScalarT> > function;
-PANZER_EVALUATOR_CLASS_END
+}; // end of class PointEvaluator
+
 
 //**********************************************************************
-PHX_EVALUATOR_CTOR(PointEvaluator,p)
+template<typename EvalT, typename Traits>
+PointEvaluator<EvalT, Traits>::
+PointEvaluator(
+  const Teuchos::ParameterList& p)
 {
   // Read from parameters
   const std::string name = p.get<std::string>("Name");
@@ -97,7 +123,12 @@ PHX_EVALUATOR_CTOR(PointEvaluator,p)
 }
 
 //**********************************************************************
-PHX_POST_REGISTRATION_SETUP(PointEvaluator,sd,fm)
+template<typename EvalT, typename Traits>
+void
+PointEvaluator<EvalT, Traits>::
+postRegistrationSetup(
+  typename Traits::SetupData sd,
+  PHX::FieldManager<Traits>& fm)
 {
   if(isVector)
      this->utils.setFieldData(vectorField,fm);
@@ -108,7 +139,11 @@ PHX_POST_REGISTRATION_SETUP(PointEvaluator,sd,fm)
 }
 
 //**********************************************************************
-PHX_EVALUATE_FIELDS(PointEvaluator,workset)
+template<typename EvalT, typename Traits>
+void
+PointEvaluator<EvalT, Traits>::
+evaluateFields(
+  typename Traits::EvalData workset)
 {
    if(isVector)
       function->evaluateContainer(this->wda(workset).int_rules[quad_index]->ip_coordinates,vectorField);

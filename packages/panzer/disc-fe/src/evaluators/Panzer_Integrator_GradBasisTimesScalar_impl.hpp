@@ -52,7 +52,10 @@
 namespace panzer {
 
 //**********************************************************************
-PHX_EVALUATOR_CTOR(Integrator_GradBasisTimesScalar,p):
+template<typename EvalT, typename Traits>
+Integrator_GradBasisTimesScalar<EvalT, Traits>::
+Integrator_GradBasisTimesScalar(
+  const Teuchos::ParameterList& p):
   _num_basis_nodes(0),
   _num_quadrature_points(0),
   _basis_index(-1)
@@ -112,7 +115,12 @@ PHX_EVALUATOR_CTOR(Integrator_GradBasisTimesScalar,p):
 }
 
 //**********************************************************************
-PHX_POST_REGISTRATION_SETUP(Integrator_GradBasisTimesScalar,sd,fm)
+template<typename EvalT, typename Traits>
+void
+Integrator_GradBasisTimesScalar<EvalT, Traits>::
+postRegistrationSetup(
+  typename Traits::SetupData sd,
+  PHX::FieldManager<Traits>& fm)
 {
 
   for (auto & residual : _residuals){
@@ -135,7 +143,11 @@ PHX_POST_REGISTRATION_SETUP(Integrator_GradBasisTimesScalar,sd,fm)
 }
 
 //**********************************************************************
-PHX_EVALUATE_FIELDS(Integrator_GradBasisTimesScalar,workset)
+template<typename EvalT, typename Traits>
+void
+Integrator_GradBasisTimesScalar<EvalT, Traits>::
+evaluateFields(
+  typename Traits::EvalData workset)
 { 
 
   // Zero the residuals

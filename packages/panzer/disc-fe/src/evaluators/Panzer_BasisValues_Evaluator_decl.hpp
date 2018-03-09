@@ -54,7 +54,29 @@
 namespace panzer {
     
 //! Interpolates basis DOF values to IP DOF values
-PANZER_EVALUATOR_CLASS(BasisValues_Evaluator)
+template<typename EvalT, typename Traits>
+class BasisValues_Evaluator
+  :
+  public panzer::EvaluatorWithBaseImpl<Traits>,
+  public PHX::EvaluatorDerived<EvalT, Traits>
+{
+  public:
+
+    BasisValues_Evaluator(
+      const Teuchos::ParameterList& p);
+
+    void
+    postRegistrationSetup(
+      typename Traits::SetupData d,
+      PHX::FieldManager<Traits>& fm);
+
+    void
+    evaluateFields(
+      typename Traits::EvalData d);
+
+  private:
+
+    using ScalarT = typename EvalT::ScalarT;
  
   Teuchos::RCP<const panzer::PureBasis> basis;
   
@@ -80,7 +102,8 @@ public:
                         const Teuchos::RCP<const panzer::PureBasis> & basis,
                         bool derivativesRequired);
 
-PANZER_EVALUATOR_CLASS_END
+}; // end of class BasisValues_Evaluator
+
 
 }
 

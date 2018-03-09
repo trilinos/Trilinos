@@ -58,7 +58,10 @@
 
 namespace panzer_stk {
 
-PHX_EVALUATOR_CTOR(ScatterVectorFields,p) :
+template<typename EvalT, typename Traits>
+ScatterVectorFields<EvalT, Traits>::
+ScatterVectorFields(
+  const Teuchos::ParameterList& p) :
    mesh_(p.get<Teuchos::RCP<STK_Interface> >("Mesh"))
 {
    TEUCHOS_ASSERT(false);
@@ -99,7 +102,12 @@ ScatterVectorFields(const std::string & scatterName,
   this->setName(scatterName+": STK-Scatter Vector Fields");
 }
 
-PHX_POST_REGISTRATION_SETUP(ScatterVectorFields, /* d */, fm)
+template<typename EvalT, typename Traits>
+void
+ScatterVectorFields<EvalT, Traits>::
+postRegistrationSetup(
+  typename Traits::SetupData  /* d */,
+  PHX::FieldManager<Traits>&  fm)
 {
   // this->utils.setFieldData(pointField_,fm);
 
@@ -109,7 +117,11 @@ PHX_POST_REGISTRATION_SETUP(ScatterVectorFields, /* d */, fm)
   }
 }
 
-PHX_EVALUATE_FIELDS(ScatterVectorFields, /* workset */)
+template<typename EvalT, typename Traits>
+void
+ScatterVectorFields<EvalT, Traits>::
+evaluateFields(
+  typename Traits::EvalData  /* workset */)
 {
    TEUCHOS_ASSERT(false);
 }
