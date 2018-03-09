@@ -193,7 +193,7 @@ protected:
     int numLeft = 0;
     int numRight = 0;
  
-    for(int i=0;i<stencil_.size();i++) {
+    for(int i=0;i<(int)stencil_.size();i++) {
       if(stencil_[i]<0) 
         numLeft = std::max(numLeft,std::abs(stencil_[i]));
       else if(stencil_[i]>0) 
@@ -288,11 +288,11 @@ public:
       return true;
 
     // these are "neighbor" unowned vectors (left)
-    if(-leftVectors_.size() <= i && i < 0)
+    if(-(int)leftVectors_.size() <= i && i < 0)
       return true;
 
     // these are "neighbor" unowned vectors (right)
-    if(numOwnedSteps() <= i && i<numOwnedSteps()+rightVectors_.size())
+    if(numOwnedSteps() <= i && i<(int)(numOwnedSteps()+rightVectors_.size()))
       return true;
 
     return false;
@@ -309,11 +309,11 @@ public:
       return stepVectors_->get(i);
 
     // these are "neighbor" unowned vectors (left)
-    if(-leftVectors_.size() <= i && i < 0) 
+    if(-(int)leftVectors_.size() <= i && i < 0) 
       return leftVectors_[leftVectors_.size()+i];
 
     // these are "neighbor" unowned vectors (right)
-    if(numOwnedSteps() <= i && i<numOwnedSteps()+rightVectors_.size())
+    if((int)numOwnedSteps() <= i && i<(int)(numOwnedSteps()+rightVectors_.size()))
       return rightVectors_[i-numOwnedSteps()];
 
     return nullPtr;
