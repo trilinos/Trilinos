@@ -1,12 +1,14 @@
 #!/bin/bash -l
 
-echo "Loading env and running ctest -S comamnd ..."
+set +x
 
 echo
-echo "Time when the actual 'ctest -S ctest-driver.cmake' command was called:"
+echo "Start: ctest-s-driver.sh"
 echo
 echo "  ==> `date`"
 echo
+
+echo "Loading env and running ctest -S comamnd ..."
 
 if [ "${WORKSPACE}" == ""  ] ; then
   echo "Error, must set WORKSPACE var before calling!"
@@ -36,7 +38,19 @@ module list
 
 export Trilinos_REPOSITORY_LOCATION=https://github.com/trilinos/Trilinos.git
 
-set -x
+echo
+echo "Running: ctest -V -S $WORKSPACE/Trilinos/cmake/ctest/drivers/atdm/ctest-driver.cmake ..."
 
 ctest -V -S \
   $WORKSPACE/Trilinos/cmake/ctest/drivers/atdm/ctest-driver.cmake
+
+echo
+echo "End: ctest-s-driver.sh"
+echo
+echo "  ==> `date`"
+echo
+echo
+
+# NOTE: The above output is important in order to determine if this script as
+# run by the batch scheduler for the machine lets this script complete without
+# killing it!
