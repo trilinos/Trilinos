@@ -52,7 +52,10 @@
 namespace panzer {
 
 //**********************************************************************
-PHX_EVALUATOR_CTOR(Normals,p)
+template<typename EvalT, typename Traits>
+Normals<EvalT, Traits>::
+Normals(
+  const Teuchos::ParameterList& p)
    : normalize(true)
 {
   // Read from parameters
@@ -76,7 +79,12 @@ PHX_EVALUATOR_CTOR(Normals,p)
 }
 
 //**********************************************************************
-PHX_POST_REGISTRATION_SETUP(Normals,sd,fm)
+template<typename EvalT, typename Traits>
+void
+Normals<EvalT, Traits>::
+postRegistrationSetup(
+  typename Traits::SetupData sd,
+  PHX::FieldManager<Traits>& fm)
 {
   this->utils.setFieldData(normals,fm);
 
@@ -87,7 +95,11 @@ PHX_POST_REGISTRATION_SETUP(Normals,sd,fm)
 }
 
 //**********************************************************************
-PHX_EVALUATE_FIELDS(Normals,workset)
+template<typename EvalT, typename Traits>
+void
+Normals<EvalT, Traits>::
+evaluateFields(
+  typename Traits::EvalData workset)
 { 
   // ECC Fix: Get Physical Side Normals
 

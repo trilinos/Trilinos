@@ -57,7 +57,10 @@
 namespace panzer {
 
 //**********************************************************************
-PHX_EVALUATOR_CTOR(GlobalStatistics,p)
+template<typename EvalT, typename Traits>
+GlobalStatistics<EvalT, Traits>::
+GlobalStatistics(
+  const Teuchos::ParameterList& p)
 {
   comm = p.get< Teuchos::RCP<const Teuchos::Comm<int> > >("Comm");
 
@@ -104,7 +107,12 @@ PHX_EVALUATOR_CTOR(GlobalStatistics,p)
 }
 
 //**********************************************************************
-PHX_POST_REGISTRATION_SETUP(GlobalStatistics,sd,fm)
+template<typename EvalT, typename Traits>
+void
+GlobalStatistics<EvalT, Traits>::
+postRegistrationSetup(
+  typename Traits::SetupData sd,
+  PHX::FieldManager<Traits>& fm)
 {
   this->utils.setFieldData(volumes,fm);
   this->utils.setFieldData(tmp,fm);
@@ -122,7 +130,11 @@ PHX_POST_REGISTRATION_SETUP(GlobalStatistics,sd,fm)
 }
 
 //**********************************************************************
-PHX_EVALUATE_FIELDS(GlobalStatistics,workset)
+template<typename EvalT, typename Traits>
+void
+GlobalStatistics<EvalT, Traits>::
+evaluateFields(
+  typename Traits::EvalData workset)
 { 
   if (workset.num_cells == 0)
     return;
@@ -155,7 +167,11 @@ PHX_EVALUATE_FIELDS(GlobalStatistics,workset)
 }
 
 //**********************************************************************
-PHX_PRE_EVALUATE_FIELDS(GlobalStatistics, /* data */)
+template<typename EvalT, typename Traits>
+void
+GlobalStatistics<EvalT, Traits>::
+preEvaluate(
+  typename Traits::PreEvalData  /* data */)
 {
   total_volume = Teuchos::ScalarTraits<ScalarT>::zero();
 
@@ -170,7 +186,11 @@ PHX_PRE_EVALUATE_FIELDS(GlobalStatistics, /* data */)
 }
 
 //**********************************************************************
-PHX_POST_EVALUATE_FIELDS(GlobalStatistics, /* data */)
+template<typename EvalT, typename Traits>
+void
+GlobalStatistics<EvalT, Traits>::
+postEvaluate(
+  typename Traits::PostEvalData  /* data */)
 {
   this->postprocess(*(global_data->os));
 }

@@ -50,7 +50,10 @@
 namespace panzer {
 
 //**********************************************************************
-PHX_EVALUATOR_CTOR(DirichletResidual,p)
+template<typename EvalT, typename Traits>
+DirichletResidual<EvalT, Traits>::
+DirichletResidual(
+  const Teuchos::ParameterList& p)
 {
   std::string residual_name = p.get<std::string>("Residual Name");
   std::string dof_name = p.get<std::string>("DOF Name"); 
@@ -72,7 +75,12 @@ PHX_EVALUATOR_CTOR(DirichletResidual,p)
 }
 
 //**********************************************************************
-PHX_POST_REGISTRATION_SETUP(DirichletResidual, /* worksets */, fm)
+template<typename EvalT, typename Traits>
+void
+DirichletResidual<EvalT, Traits>::
+postRegistrationSetup(
+  typename Traits::SetupData  /* worksets */,
+  PHX::FieldManager<Traits>&  fm)
 {
   this->utils.setFieldData(residual,fm);
   this->utils.setFieldData(dof,fm);
@@ -82,7 +90,11 @@ PHX_POST_REGISTRATION_SETUP(DirichletResidual, /* worksets */, fm)
 }
 
 //**********************************************************************
-PHX_EVALUATE_FIELDS(DirichletResidual,workset)
+template<typename EvalT, typename Traits>
+void
+DirichletResidual<EvalT, Traits>::
+evaluateFields(
+  typename Traits::EvalData workset)
 { 
   for (index_t i = 0; i < workset.num_cells; ++i)
     for (std::size_t j = 0; j < cell_data_size; ++j)

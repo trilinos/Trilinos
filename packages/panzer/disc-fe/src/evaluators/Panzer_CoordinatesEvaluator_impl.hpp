@@ -46,7 +46,10 @@
 namespace panzer {
 
 //**********************************************************************
-PHX_EVALUATOR_CTOR(CoordinatesEvaluator,p) :
+template<typename EvalT, typename Traits>
+CoordinatesEvaluator<EvalT, Traits>::
+CoordinatesEvaluator(
+  const Teuchos::ParameterList& p) :
   dimension(p.get<int>("Dimension")),
   coordinate( p.get<std::string>("Field Name"), 
 	      p.get< Teuchos::RCP<PHX::DataLayout> >("Data Layout") )
@@ -58,14 +61,23 @@ PHX_EVALUATOR_CTOR(CoordinatesEvaluator,p) :
 }
 
 //**********************************************************************
-PHX_POST_REGISTRATION_SETUP(CoordinatesEvaluator, /* worksets */, fm)
+template<typename EvalT, typename Traits>
+void
+CoordinatesEvaluator<EvalT, Traits>::
+postRegistrationSetup(
+  typename Traits::SetupData  /* worksets */,
+  PHX::FieldManager<Traits>&  fm)
 {
   using namespace PHX;
   this->utils.setFieldData(coordinate,fm);
 }
 
 //**********************************************************************
-PHX_EVALUATE_FIELDS(CoordinatesEvaluator,d)
+template<typename EvalT, typename Traits>
+void
+CoordinatesEvaluator<EvalT, Traits>::
+evaluateFields(
+  typename Traits::EvalData d)
 { 
   PHX::MDField<double,Cell,NODE,Dim> coords = this->wda(d).cell_vertex_coordinates;
   // const Kokkos::DynRankView<double,PHX::Device> & coords = this->wda(d).cell_vertex_coordinates;

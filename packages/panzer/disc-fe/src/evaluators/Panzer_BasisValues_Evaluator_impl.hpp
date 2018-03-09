@@ -50,7 +50,10 @@
 namespace panzer {
 
 //**********************************************************************
-PHX_EVALUATOR_CTOR(BasisValues_Evaluator,p)
+template<typename EvalT, typename Traits>
+BasisValues_Evaluator<EvalT, Traits>::
+BasisValues_Evaluator(
+  const Teuchos::ParameterList& p)
   : derivativesRequired_(true)
 {
   Teuchos::RCP<const panzer::PointRule> pointRule 
@@ -155,7 +158,12 @@ void BasisValues_Evaluator<EvalT,TRAITST>::initialize(const Teuchos::RCP<const p
 }
 
 //**********************************************************************
-PHX_POST_REGISTRATION_SETUP(BasisValues_Evaluator, sd, fm)
+template<typename EvalT, typename Traits>
+void
+BasisValues_Evaluator<EvalT, Traits>::
+postRegistrationSetup(
+  typename Traits::SetupData  sd,
+  PHX::FieldManager<Traits>&  fm)
 {
   int space_dim = basis->dimension();
 
@@ -208,7 +216,11 @@ PHX_POST_REGISTRATION_SETUP(BasisValues_Evaluator, sd, fm)
 }
 
 //**********************************************************************
-PHX_EVALUATE_FIELDS(BasisValues_Evaluator, workset)
+template<typename EvalT, typename Traits>
+void
+BasisValues_Evaluator<EvalT, Traits>::
+evaluateFields(
+  typename Traits::EvalData  workset)
 { 
   // evaluate the point values (construct jacobians etc...)
   basisValues->evaluateValues(pointValues.coords_ref,
