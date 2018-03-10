@@ -59,13 +59,9 @@ struct create_views {
   typename DeviceViewType::HostMirror h;
   create_views(const std::vector<typename DeviceViewType::value_type>& x)
   {
-    using Kokkos::RangePolicy;
-    using Kokkos::HostSpace;
-    typedef RangePolicy<HostSpace::execution_space> range_policy;
     d = DeviceViewType("x_d", x.size());
     h = Kokkos::create_mirror_view(d);
-    Kokkos::parallel_for(range_policy(0, x.size()),
-        KOKKOS_LAMBDA (const int &i) {h(i) = x[i];});
+    for (size_t i=0; i<static_cast<size_t>(x.size()); i++) h(i) = x[i];
     copy_to_device();
   }
   void copy_to_host() { Kokkos::deep_copy(h, d); }
@@ -73,18 +69,18 @@ struct create_views {
 };
 
 
-template<class Ordinal, class Scalar>
+template<class scalar_type, class ordinal_type, class index_type>
 void
-generate_crs_entries(std::vector<size_t>& rowptr,
-                     std::vector<size_t>& rowptr2,
-                     std::vector<Ordinal>& colind,
-                     std::vector<Ordinal>& colind2,
-                     std::vector<Scalar>& vals,
-                     std::vector<Scalar>& vals2,
+generate_crs_entries(std::vector<index_type>& rowptr,
+                     std::vector<index_type>& rowptr2,
+                     std::vector<ordinal_type>& colind,
+                     std::vector<ordinal_type>& colind2,
+                     std::vector<scalar_type>& vals,
+                     std::vector<scalar_type>& vals2,
                      int max_num_entries_per_row,
                      int num_cols)
 {
-  typedef typename std::vector<Ordinal>::size_type size_type;
+  typedef typename std::vector<ordinal_type>::size_type size_type;
 
   TEUCHOS_TEST_FOR_EXCEPTION(max_num_entries_per_row % 2 == 0,
     std::logic_error, "max_num_entries_per_row must be an odd integer!");
@@ -95,7 +91,7 @@ generate_crs_entries(std::vector<size_t>& rowptr,
   // Fill the CRS arrays, use random values
   std::random_device rd;
   std::mt19937 gen(rd());
-  std::uniform_real_distribution<Scalar> dist(1.0, 2.0);
+  std::uniform_real_distribution<scalar_type> dist(1.0, 2.0);
   int row = 0;
   while (true) {
     int m = (max_num_entries_per_row - 1) / 2;
@@ -104,14 +100,14 @@ generate_crs_entries(std::vector<size_t>& rowptr,
         std::min(max_num_entries_per_row, m+num_cols-row));
     int end = start + num_cols_this_row;
 
-    rowptr.push_back(static_cast<size_t>(colind.size()));
-    rowptr2.push_back(static_cast<size_t>(colind2.size()));
+    rowptr.push_back(static_cast<index_type>(colind.size()));
+    rowptr2.push_back(static_cast<index_type>(colind2.size()));
 
     for (int col=start; col<end; col++) {
       colind.push_back(col);
       colind2.push_back(col);
 
-      Scalar rands = dist(gen);
+      scalar_type rands = dist(gen);
       vals.push_back(rands);
       vals2.push_back(rands);
 
@@ -125,37 +121,38 @@ generate_crs_entries(std::vector<size_t>& rowptr,
 
   }
   size_type num_entries = colind.size();
-  rowptr.push_back(static_cast<size_t>(num_entries));
+  rowptr.push_back(static_cast<index_type>(num_entries));
 
   size_type num_entries2 = colind2.size();
-  rowptr2.push_back(static_cast<size_t>(num_entries2));
+  rowptr2.push_back(static_cast<index_type>(num_entries2));
 
   return;
 }
 
 
-template<class Ordinal, class Scalar>
+template<class scalar_type, class ordinal_type, class index_type>
 void
-shuffle_crs_entries(std::vector<Ordinal>& colind_rand,
-                    std::vector<Scalar>& vals_rand,
-                    const std::vector<size_t>& rowptr,
-                    const std::vector<Ordinal>& colind,
-                    const std::vector<Scalar>& vals)
+shuffle_crs_entries(std::vector<ordinal_type>& colind_rand,
+                    std::vector<scalar_type>& vals_rand,
+                    const std::vector<index_type>& rowptr,
+                    const std::vector<ordinal_type>& colind,
+                    const std::vector<scalar_type>& vals)
 {
 
-  typedef typename std::vector<Ordinal> colind_type;
+  typedef typename std::vector<ordinal_type> colind_type;
+  typedef typename std::vector<index_type>::size_type size_type;
 
   // Randomly shuffle values and column indices
   std::random_device rd;
   std::mt19937 gen(rd());
-  std::uniform_real_distribution<Scalar> dist(1.0, 2.0);
+  std::uniform_real_distribution<scalar_type> dist(1.0, 2.0);
 
-  for (size_t i=0; i < static_cast<size_t>(rowptr.size()-1); ++i) {
-    size_t num_cols_this_row = rowptr[i+1] - rowptr[i];
+  for (size_type i=0; i < static_cast<size_type>(rowptr.size()-1); ++i) {
+    size_type num_cols_this_row = rowptr[i+1] - rowptr[i];
     colind_type ix(num_cols_this_row);
     std::iota(ix.begin(), ix.end(), rowptr[i]);
     std::shuffle(ix.begin(), ix.end(), gen);
-    for (size_t j=rowptr[i], k=0; j<rowptr[i+1]; ++j, ++k) {
+    for (size_type j=rowptr[i], k=0; j<rowptr[i+1]; ++j, ++k) {
       vals_rand[j] = vals[ix[k]];
       colind_rand[j] = colind[ix[k]];
     }
@@ -174,9 +171,16 @@ shuffle_crs_entries(std::vector<Ordinal>& colind_rand,
 TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( Import_Util, SortCrsEntries, Scalar, LO, GO)
 {
 
-  typedef typename std::vector<size_t>  rowptr_type;
-  typedef typename std::vector<GO>  colind_type;
-  typedef typename std::vector<Scalar> vals_type;
+  using Tpetra::Import_Util::sortCrsEntries;
+  using Tpetra::Import_Util::sortAndMergeCrsEntries;
+
+  typedef size_t index_type;
+  typedef Scalar scalar_type;
+  typedef GO ordinal_type;
+
+  typedef typename std::vector<index_type>  rowptr_type;
+  typedef typename std::vector<ordinal_type>  colind_type;
+  typedef typename std::vector<scalar_type> vals_type;
   typedef typename colind_type::size_type size_type;
 
   int max_num_entries_per_row = 7;  // should be odd
@@ -186,8 +190,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( Import_Util, SortCrsEntries, Scalar, LO, GO)
   colind_type  colind, colind2;
   vals_type vals, vals2;
 
-  generate_crs_entries(rowptr, rowptr2, colind, colind2, vals, vals2,
-                       max_num_entries_per_row, num_cols);
+  generate_crs_entries<scalar_type,ordinal_type,index_type>(
+      rowptr, rowptr2, colind, colind2, vals, vals2, max_num_entries_per_row, num_cols);
 
   {
 
@@ -200,7 +204,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( Import_Util, SortCrsEntries, Scalar, LO, GO)
     // Randomly shuffle values and column indices
     vals_type  vals_rand(num_entries);
     colind_type  colind_rand(num_entries);
-    shuffle_crs_entries(colind_rand, vals_rand, rowptr, colind, vals);
+    shuffle_crs_entries<scalar_type, ordinal_type, index_type>(
+        colind_rand, vals_rand, rowptr, colind, vals);
 
     // Make copy for sortCrsEntries w/o values
     colind_type colind_rand_copy(colind_rand.begin(), colind_rand.end());
@@ -210,12 +215,12 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( Import_Util, SortCrsEntries, Scalar, LO, GO)
     //
 
     // Create array views of data
-    auto rowptr_av = Teuchos::ArrayView<size_t>(rowptr);
-    auto colind_rand_av = Teuchos::ArrayView<GO>(colind_rand);
-    auto vals_rand_av = Teuchos::ArrayView<Scalar>(vals_rand);
+    auto rowptr_av = Teuchos::ArrayView<index_type>(rowptr);
+    auto colind_rand_av = Teuchos::ArrayView<ordinal_type>(colind_rand);
+    auto vals_rand_av = Teuchos::ArrayView<scalar_type>(vals_rand);
 
     // Do the sort
-    Tpetra::Import_Util::sortCrsEntries<Scalar, GO>(rowptr_av, colind_rand_av, vals_rand_av);
+    sortCrsEntries<scalar_type, ordinal_type>(rowptr_av, colind_rand_av, vals_rand_av);
 
     // At this point, colind_rand and vals_rand should be sorted and equal to
     // their original arrays, respectively.
@@ -227,10 +232,10 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( Import_Util, SortCrsEntries, Scalar, LO, GO)
     //
 
     // Create array views of data
-    auto colind_rand_copy_av = Teuchos::ArrayView<GO>(colind_rand_copy);
+    auto colind_rand_copy_av = Teuchos::ArrayView<ordinal_type>(colind_rand_copy);
 
     // Do the sort
-    Tpetra::Import_Util::sortCrsEntries<GO>(rowptr_av, colind_rand_copy_av);
+    sortCrsEntries<ordinal_type>(rowptr_av, colind_rand_copy_av);
 
     // At this point, colind_rand_copy should be sorted and equal to their
     // original array
@@ -248,7 +253,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( Import_Util, SortCrsEntries, Scalar, LO, GO)
     // Randomly shuffle values and column indices for merge test
     vals_type  vals_rand(num_entries);
     colind_type  colind_rand(num_entries);
-    shuffle_crs_entries(colind_rand, vals_rand, rowptr2, colind2, vals2);
+    shuffle_crs_entries<scalar_type,ordinal_type,index_type>(
+        colind_rand, vals_rand, rowptr2, colind2, vals2);
 
     // Make copies for sortAndMergeCrsEntries w/o values
     rowptr_type rowptr2_copy(rowptr2.begin(), rowptr2.end());
@@ -259,12 +265,12 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( Import_Util, SortCrsEntries, Scalar, LO, GO)
     //
 
     // Create array views of data
-    auto rowptr_av = Teuchos::ArrayView<size_t>(rowptr2);
-    auto colind_rand_av = Teuchos::ArrayView<GO>(colind_rand);
-    auto vals_rand_av = Teuchos::ArrayView<Scalar>(vals_rand);
+    auto rowptr_av = Teuchos::ArrayView<index_type>(rowptr2);
+    auto colind_rand_av = Teuchos::ArrayView<ordinal_type>(colind_rand);
+    auto vals_rand_av = Teuchos::ArrayView<scalar_type>(vals_rand);
 
     // Do the sort
-    Tpetra::Import_Util::sortAndMergeCrsEntries<Scalar, GO>(rowptr_av, colind_rand_av, vals_rand_av);
+    sortAndMergeCrsEntries<scalar_type,ordinal_type>(rowptr_av, colind_rand_av, vals_rand_av);
 
     // At this point, the row pointers and column indices should be the same as
     // the version above due to the merge/shrink
@@ -288,11 +294,11 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( Import_Util, SortCrsEntries, Scalar, LO, GO)
     //
 
     // Create array views of data
-    auto rowptr_copy_av = Teuchos::ArrayView<size_t>(rowptr2_copy);
-    auto colind_rand_copy_av = Teuchos::ArrayView<GO>(colind_rand_copy);
+    auto rowptr_copy_av = Teuchos::ArrayView<index_type>(rowptr2_copy);
+    auto colind_rand_copy_av = Teuchos::ArrayView<ordinal_type>(colind_rand_copy);
 
     // Do the sort
-    Tpetra::Import_Util::sortAndMergeCrsEntries<GO>(rowptr_copy_av, colind_rand_copy_av);
+    sortAndMergeCrsEntries<ordinal_type>(rowptr_copy_av, colind_rand_copy_av);
 
     // At this point, the row pointers and column indices should be the same as
     // the version above due to the merge/shrink
@@ -311,15 +317,21 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( Import_Util, SortCrsEntries, Scalar, LO, GO)
 TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( Import_Util, SortCrsEntriesKokkos, Scalar, LO, GO, NT)
 {
 
+  using Tpetra::Import_Util::sortCrsEntries;
+
   typedef typename Tpetra::CrsMatrix<Scalar,LO,GO,NT>::local_matrix_type local_matrix_type;
   typedef typename local_matrix_type::StaticCrsGraphType graph_type;
   typedef typename graph_type::row_map_type::non_const_type rowptr_view_type;
   typedef typename graph_type::entries_type::non_const_type colind_view_type;
   typedef typename local_matrix_type::values_type::non_const_type vals_view_type;
 
-  typedef typename std::vector<typename rowptr_view_type::value_type> rowptr_type;
-  typedef typename std::vector<typename colind_view_type::value_type> colind_type;
-  typedef typename std::vector<typename vals_view_type::value_type> vals_type;
+  typedef typename rowptr_view_type::value_type index_type;
+  typedef typename colind_view_type::value_type ordinal_type;
+  typedef typename vals_view_type::value_type scalar_type;
+
+  typedef typename std::vector<index_type> rowptr_type;
+  typedef typename std::vector<ordinal_type> colind_type;
+  typedef typename std::vector<scalar_type> vals_type;
   typedef typename colind_type::size_type size_type;
 
   // Map is not actually used, but is needed to instantiate Kokkos
@@ -335,8 +347,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( Import_Util, SortCrsEntriesKokkos, Scalar, LO
   colind_type  colind, colind2;
   vals_type vals, vals2;
 
-  generate_crs_entries(rowptr, rowptr2, colind, colind2, vals, vals2,
-                       max_num_entries_per_row, num_cols);
+  generate_crs_entries<scalar_type,ordinal_type,index_type>(
+      rowptr, rowptr2, colind, colind2, vals, vals2, max_num_entries_per_row, num_cols);
 
   {
     //
@@ -348,7 +360,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( Import_Util, SortCrsEntriesKokkos, Scalar, LO
     // Randomly shuffle values and column indices
     vals_type  vals_rand(num_entries);
     colind_type  colind_rand(num_entries);
-    shuffle_crs_entries(colind_rand, vals_rand, rowptr, colind, vals);
+    shuffle_crs_entries<scalar_type,ordinal_type,index_type>(
+        colind_rand, vals_rand, rowptr, colind, vals);
 
     // Create mirror views of the CRS entries
     auto rowptr_views = create_views<rowptr_view_type>(rowptr);
@@ -359,10 +372,11 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( Import_Util, SortCrsEntriesKokkos, Scalar, LO
     //
     // Sort the GIDs and associated values
     //
-    Tpetra::Import_Util::sortCrsEntries<rowptr_view_type, colind_view_type,
-      vals_view_type>(rowptr_views.d, colind_rand_views.d, vals_rand_views.d);
+    sortCrsEntries<rowptr_view_type,colind_view_type,vals_view_type>(
+        rowptr_views.d, colind_rand_views.d, vals_rand_views.d);
 
     // Copy back to host
+    rowptr_views.copy_to_host();
     colind_rand_views.copy_to_host();
     vals_rand_views.copy_to_host();
 
@@ -376,10 +390,11 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( Import_Util, SortCrsEntriesKokkos, Scalar, LO
     //
 
     // Do the sort
-    Tpetra::Import_Util::sortCrsEntries<rowptr_view_type, colind_view_type>(
+    sortCrsEntries<rowptr_view_type, colind_view_type>(
         rowptr_views.d, colind_rand_copy_views.d);
 
     // Copy back to host
+    rowptr_views.copy_to_host();
     colind_rand_copy_views.copy_to_host();
 
     // At this point, colind_rand_copy should be sorted and equal to their

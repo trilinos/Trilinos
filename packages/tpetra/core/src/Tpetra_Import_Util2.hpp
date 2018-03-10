@@ -332,8 +332,9 @@ sortCrsEntries (const rowptr_array_type& CRS_rowptr,
                 const colind_array_type& CRS_colind)
 {
   // Generate dummy values array
-  typedef typename CrsMatrix<>::local_matrix_type local_matrix_type;
-  typedef typename local_matrix_type::values_type::non_const_type scalar_view_type;
+  typedef typename colind_array_type::execution_space execution_space;
+  typedef typename CrsMatrix<>::impl_scalar_type scalar_type;
+  typedef typename Kokkos::View<scalar_type*, execution_space> scalar_view_type;
   scalar_view_type CRS_vals;
   sortCrsEntries<rowptr_array_type, colind_array_type,
     scalar_view_type>(CRS_rowptr, CRS_colind, CRS_vals);
