@@ -106,6 +106,8 @@ namespace panzer {
 
     Array_CellIPDim surface_normals;    // <Cell,IP,Dim>
     Array_CellIPDimDim surface_rotation_matrices;    // <Cell,IP,Dim,Dim>
+      // this (appears) is a matrix where the first row is the "normal" direction
+      // and the remaining two rows lie in the hyperplane
 
     Teuchos::RCP<const panzer::IntegrationRule> int_rule;
 
