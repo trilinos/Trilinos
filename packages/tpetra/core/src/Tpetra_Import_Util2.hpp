@@ -399,14 +399,14 @@ sortAndMergeCrsEntries (const Teuchos::ArrayView<size_t> &CRS_rowptr,
     // Merge & shrink
     for(size_t j=old_rowptr_i; j < CRS_rowptr[i+1]; j++) {
       if(j > old_rowptr_i && CRS_colind[j]==CRS_colind[new_curr-1]) {
-        if (CRS_vals.size()) CRS_vals[new_curr-1] += CRS_vals[j];
+        if (permute_values_array) CRS_vals[new_curr-1] += CRS_vals[j];
       }
       else if(new_curr==j) {
         new_curr++;
       }
       else {
         CRS_colind[new_curr] = CRS_colind[j];
-        if (CRS_vals.size()) CRS_vals[new_curr]   = CRS_vals[j];
+        if (permute_values_array) CRS_vals[new_curr]   = CRS_vals[j];
         new_curr++;
       }
     }
