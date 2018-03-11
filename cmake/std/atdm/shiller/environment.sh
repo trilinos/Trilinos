@@ -8,7 +8,7 @@
 
 echo "Using hansen/shiller compiler stack $ATDM_CONFIG_COMPILER to build $ATDM_CONFIG_BUILD_TYPE code with Kokkos node type $ATDM_CONFIG_NODE_TYPE"
 
-export ATDM_CONFIG_USE_MAKEFILES=OFF
+export ATDM_CONFIG_USE_NINJA=ON
 export ATDM_CONFIG_BUILD_COUNT=32
 
 module purge
