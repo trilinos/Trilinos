@@ -4,8 +4,6 @@
 ###
 #####################################################
 
-INCLUDE("${CMAKE_CURRENT_LIST_DIR}/ATDMDevEnvUtils.cmake")
-
 ATDM_SET_CACHE(TPL_ENABLE_GLM OFF CACHE BOOL)
 ATDM_SET_CACHE(TPL_ENABLE_Matio OFF CACHE BOOL)
 ATDM_SET_CACHE(TPL_ENABLE_SuperLU OFF CACHE BOOL)
