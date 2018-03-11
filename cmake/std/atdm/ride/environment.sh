@@ -8,7 +8,6 @@
 
 echo "Using white/ride compiler stack $ATDM_CONFIG_COMPILER to build $ATDM_CONFIG_BUILD_TYPE code with Kokkos node type $ATDM_CONFIG_NODE_TYPE"
 
-export ATDM_CONFIG_SYSTEM_CDASH_SITE=white/ride
 export ATDM_CONFIG_USE_MAKEFILES=OFF
 export ATDM_CONFIG_BUILD_COUNT=128
 # NOTE: Above settings are used for running on a single rhel7F (Firestone,
