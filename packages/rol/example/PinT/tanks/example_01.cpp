@@ -45,9 +45,20 @@
 #include "Teuchos_XMLParameterListHelpers.hpp"
 
 #include "TankConstraint.hpp"
+#include "LowerBandedMatrix.hpp"
+
+#include <iostream>
+
+
+
+
+using RealT = double;
+using size_type = std::vector<RealT>::size_type;
 
 int main( int argc, char* argv[] ) {
   
+  using std::vector;
+
   Teuchos::GlobalMPISession mpiSession(&argc, &argv);  
 
   int iprint     = argc - 1;
@@ -60,14 +71,50 @@ int main( int argc, char* argv[] ) {
 
   int errorFlag  = 0;
 
+  auto print_vector = [outStream]( const vector<RealT>& x) { 
+    *outStream << "\n";
+    for( auto e : x ) *outStream << e << " ";
+    *outStream << "\n";
+  };
   // *** Example body.
- 
+
   try {   
 
-    auto tank_parameters = ROL::makePtr<Teuchos::ParameterList>();
-    std::string tank_xml("tank-parameters.xml");
-    Teuchos::updateParametersFromXmlFile(tank_xml, tank_parameters.ptr());
+//    auto tank_parameters = ROL::makePtr<Teuchos::ParameterList>();
+//    std::string tank_xml("tank-parameters.xml");
+//    Teuchos::updateParametersFromXmlFile(tank_xml, tank_parameters.ptr());
   
+    size_type N = 8;
+    vector<size_type> band_index{0,2};
+    
+    vector<vector<RealT>> A_band;
+    vector<RealT> Ax(N);
+    vector<RealT> x(N);
+    vector<RealT> y(N);
+
+    vector<RealT> band0(N);
+    vector<RealT> band2(N-2);
+
+    for( auto& e: band0 ) e = RealT(1.0);
+    for( auto& e: band2 ) e = RealT(1.0);
+    
+    
+
+    A_band.push_back(band0);
+    A_band.push_back(band2);
+ 
+    for( size_type i=0; i<N; ++i ) x[i] = RealT(1.0+i);
+
+    LowerBandedMatrix<RealT> A( band_index, A_band );
+
+    print_vector(x);
+
+    A.apply(Ax,x);
+    
+    print_vector(Ax);
+
+    A.solve(y,Ax);
+    print_vector(y);
 
 
   }
