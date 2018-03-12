@@ -44,7 +44,6 @@
 #include <Teuchos_UnitTestHarness.hpp>
 
 #include <map>
-#include <vector>
 #include <Teuchos_OrdinalTraits.hpp>
 #include <Teuchos_ScalarTraits.hpp>
 #include <Teuchos_VerboseObject.hpp>
@@ -2549,7 +2548,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( Import_Util,GetTwoTransferOwnershipVector, LO
   TEST_EQUALITY(gblErr,0);
 }
 
-
   //
   // INSTANTIATIONS
   //
@@ -2583,5 +2581,3 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( Import_Util,GetTwoTransferOwnershipVector, LO
   TPETRA_INSTANTIATE_SLG_NO_ORDINAL_SCALAR( UNIT_TEST_GROUP_SC_LO_GO )
 
 }
-
-
