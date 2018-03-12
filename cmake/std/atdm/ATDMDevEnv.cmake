@@ -4,7 +4,7 @@
 #
 ###############################################################################
 
-INCLUDE("${CMAKE_CURRENT_LIST_DIR}/ATDMDevEnvUtils.cmake")
+INCLUDE("${CMAKE_CURRENT_LIST_DIR}/utils/ATDMDevEnvUtils.cmake")
 
 #
 # A) Assert the right env vars are set and set local defaults

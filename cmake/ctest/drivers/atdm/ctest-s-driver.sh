@@ -43,7 +43,10 @@ echo "Running: ctest -V -S $WORKSPACE/Trilinos/cmake/ctest/drivers/atdm/ctest-dr
 
 ctest -V -S \
   $WORKSPACE/Trilinos/cmake/ctest/drivers/atdm/ctest-driver.cmake
+ATDM_TCD_CTEST_S_RETURN_CODE=$?
 
+echo
+echo "The 'ctest -S ctest-drivers.cmake' command returned code '$ATDM_TCD_CTEST_S_RETURN_CODE'"
 echo
 echo "End: ctest-s-driver.sh"
 echo
