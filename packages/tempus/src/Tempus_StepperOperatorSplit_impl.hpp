@@ -70,7 +70,17 @@ template<class Scalar>
 Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >
 StepperOperatorSplit<Scalar>::getModel()
 {
-  return subStepperList_[0]->getModel();
+  Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > model;
+  typename std::vector<Teuchos::RCP<Stepper<Scalar> > >::const_iterator
+    subStepperIter = subStepperList_.begin();
+  for (; subStepperIter < subStepperList_.end(); subStepperIter++) {
+    model = (*subStepperIter)->getModel();
+    if (model != Teuchos::null) break;
+  }
+  TEUCHOS_TEST_FOR_EXCEPTION( model == Teuchos::null, std::logic_error,
+    "Error - StepperOperatorSplit::getModel() Could not find a valid model!\n");
+
+  return model;
 }
 
 template<class Scalar>
