@@ -92,9 +92,15 @@ public:
   TankState( const Vector<Real>& state, int rows, int cols ) : 
     state_( getVector<StdVector>(state) ), r(rows), c(cols), N(r*c) {}
 
-  const Real& h   ( int i, int j ) const { return state_[c*j+i];     }  // Level
-  const Real& Qin ( int i, int j ) const { return state_[N+c*j+i];   }  // Inflow
+  // Row-column accessors
+  const Real& h   ( int i, int j ) const { return state_[    c*j+i]; }  // Level
+  const Real& Qin ( int i, int j ) const { return state_[  N+c*j+i]; }  // Inflow
   const Real& Qout( int i, int j ) const { return state_[2*N+c*j+i]; }  // Outflow
+
+  // Get the row and column indices from the single index
+  void getRowCol( const int k, int& i, int& j ) const {
+    j = k % c;  i = (k - j)/c;
+  }
 
 }; // class TankState
 
@@ -112,8 +118,8 @@ public:
     TankState<Real,true>::TankState(state,rows,cols), 
     state_( getVector<StdVector>(state) ), r(rows), c(cols), N(r*c) {}
 
-  Real& h   ( int i, int j ) { return state_[c*j+i];     }  // Level
-  Real& Qin ( int i, int j ) { return state_[N+c*j+i];   }  // Inflow
+  Real& h   ( int i, int j ) { return state_[    c*j+i]; }  // Level
+  Real& Qin ( int i, int j ) { return state_[  N+c*j+i]; }  // Inflow
   Real& Qout( int i, int j ) { return state_[2*N+c*j+i]; }  // Outflow
 
 }; // class TankState
