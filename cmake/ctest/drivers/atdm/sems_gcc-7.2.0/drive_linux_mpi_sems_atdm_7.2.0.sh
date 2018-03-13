@@ -33,5 +33,7 @@ if [ ! -e $TEST_DIR ] ; then
 fi
 cd $TEST_DIR/
 
+export Trilinos_REPOSITORY_LOCATION=https://github.com/trilinos/Trilinos.git
+
 env CTEST_DASHBOARD_ROOT=$PWD \
   ctest -V -S $DRIVER_SCRIPT_DIR/ctest_linux_mpi_sems_atdm_7.2.0.cmake
