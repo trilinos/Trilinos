@@ -449,7 +449,6 @@ void CDR_Model<Scalar>::evalModelImpl(
             }
           }
           if (nonnull(M_inv)) {
-            TEUCHOS_TEST_FOR_EXCEPTION(true,std::runtime_error,"CDR_Model: Preconditioner is NOT implemented for transient term yet!!!");
             for(int j=0;j < 2; j++) {
               if (x_owned_map_->MyGID(row)) {
                 int column=x_ghosted_map_->GID(ne+j);
