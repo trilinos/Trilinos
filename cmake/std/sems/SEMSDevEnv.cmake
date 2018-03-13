@@ -2,6 +2,20 @@
 # Base options for all SEMS Dev Env bulids for Trilinos
 #
 
+
+# Handle this being passed in with -C option instead of
+# <Project>_CONFIGURE_OPTIONS_FILE.
+IF ("${PROJECT_NAME}" STREQUAL "")
+  SET(PROJECT_NAME Trilinos)
+  FUNCTION(ASSERT_DEFINED VARS)
+    FOREACH(VAR ${VARS})
+      IF(NOT DEFINED ${VAR})
+        MESSAGE(SEND_ERROR "Error, the variable ${VAR} is not defined!")
+      ENDIF()
+    ENDFOREACH()
+  ENDFUNCTION()
+ENDIF()
+
 #
 # A) Define the compilers and basic env
 #
