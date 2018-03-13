@@ -1,4 +1,3 @@
-// @HEADER
 // ************************************************************************
 //
 //               Rapid Optimization Library (ROL) Package
@@ -41,48 +40,93 @@
 // ************************************************************************
 // @HEADER
 
-#ifndef ROL_STEPFACTORY_H
-#define ROL_STEPFACTORY_H
+#include "Teuchos_oblackholestream.hpp"
+#include "Teuchos_GlobalMPISession.hpp"
+#include "Teuchos_XMLParameterListHelpers.hpp"
 
-#include "ROL_Types.hpp"
+#include "TankConstraint.hpp"
+#include "LowerBandedMatrix.hpp"
 
-#include "Teuchos_ParameterList.hpp"
-#include "ROL_Ptr.hpp"
+#include <iostream>
 
-#include "ROL_Step.hpp"
-#include "ROL_LineSearchStep.hpp"
-#include "ROL_TrustRegionStep.hpp"
-#include "ROL_PrimalDualActiveSetStep.hpp"
-#include "ROL_CompositeStep.hpp"
-#include "ROL_AugmentedLagrangianStep.hpp"
-#include "ROL_MoreauYosidaPenaltyStep.hpp"
-#include "ROL_BundleStep.hpp"
-#include "ROL_InteriorPointStep.hpp"
 
-namespace ROL {
 
-  template<class Real>
-  class StepFactory {
-    public:
-    ~StepFactory(void){}
 
-    ROL::Ptr<Step<Real> > getStep(const std::string &type,
-                                  Teuchos::ParameterList &parlist) const {
-      EStep els = StringToEStep(type);
-      switch(els) {
-        case STEP_AUGMENTEDLAGRANGIAN: return ROL::makePtr<AugmentedLagrangianStep<Real>>(parlist);
-        case STEP_BUNDLE:              return ROL::makePtr<BundleStep<Real>>(parlist);
-        case STEP_COMPOSITESTEP:       return ROL::makePtr<CompositeStep<Real>>(parlist);
-        case STEP_LINESEARCH:          return ROL::makePtr<LineSearchStep<Real>>(parlist);
-        case STEP_MOREAUYOSIDAPENALTY: return ROL::makePtr<MoreauYosidaPenaltyStep<Real>>(parlist);
-        case STEP_PRIMALDUALACTIVESET: return ROL::makePtr<PrimalDualActiveSetStep<Real>>(parlist);
-        case STEP_TRUSTREGION:         return ROL::makePtr<TrustRegionStep<Real>>(parlist);
-        case STEP_INTERIORPOINT:       return ROL::makePtr<InteriorPointStep<Real>>(parlist); 
-        default:                       return ROL::nullPtr;
-      }
-    }
+using RealT = double;
+using size_type = std::vector<RealT>::size_type;
+
+int main( int argc, char* argv[] ) {
+  
+  using std::vector;
+
+  Teuchos::GlobalMPISession mpiSession(&argc, &argv);  
+
+  int iprint     = argc - 1;
+  ROL::Ptr<std::ostream> outStream;
+  Teuchos::oblackholestream bhs; // outputs nothing
+  if (iprint > 0)
+    outStream = ROL::makePtrFromRef(std::cout);
+  else
+    outStream = ROL::makePtrFromRef(bhs);
+
+  int errorFlag  = 0;
+
+  auto print_vector = [outStream]( const vector<RealT>& x) { 
+    *outStream << "\n";
+    for( auto e : x ) *outStream << e << " ";
+    *outStream << "\n";
   };
+  // *** Example body.
 
+  try {   
+
+//    auto tank_parameters = ROL::makePtr<Teuchos::ParameterList>();
+//    std::string tank_xml("tank-parameters.xml");
+//    Teuchos::updateParametersFromXmlFile(tank_xml, tank_parameters.ptr());
+  
+    size_type N = 8;
+    vector<size_type> band_index{0,2};
+    
+    vector<vector<RealT>> A_band;
+    vector<RealT> Ax(N);
+    vector<RealT> x(N);
+    vector<RealT> y(N);
+
+    vector<RealT> band0(N);
+    vector<RealT> band2(N-2);
+
+    for( auto& e: band0 ) e = RealT(1.0);
+    for( auto& e: band2 ) e = RealT(1.0);
+    
+    
+
+    A_band.push_back(band0);
+    A_band.push_back(band2);
+ 
+    for( size_type i=0; i<N; ++i ) x[i] = RealT(1.0+i);
+
+    LowerBandedMatrix<RealT> A( band_index, A_band );
+
+    print_vector(x);
+
+    A.apply(Ax,x);
+    
+    print_vector(Ax);
+
+    A.solve(y,Ax);
+    print_vector(y);
+
+
+  }
+  catch (std::logic_error err) {
+    *outStream << err.what() << "\n";
+    errorFlag = -1000;
+  }; // end try
+
+  if (errorFlag != 0)
+    std::cout << "End Result: TEST FAILED\n";
+  else
+    std::cout << "End Result: TEST PASSED\n";
+
+  return 0;
 }
-
-#endif

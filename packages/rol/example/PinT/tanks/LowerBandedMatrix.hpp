@@ -41,48 +41,82 @@
 // ************************************************************************
 // @HEADER
 
-#ifndef ROL_STEPFACTORY_H
-#define ROL_STEPFACTORY_H
+#pragma once
+#ifndef LOWER_BANDED_MATRIX_HPP
+#define LOWER_BANDED_MATRIX_HPP
 
-#include "ROL_Types.hpp"
+#include<algorithm>
+#include<vector>
+#include<exception>
+#include<iostream>
 
-#include "Teuchos_ParameterList.hpp"
-#include "ROL_Ptr.hpp"
+namespace details {
+using namespace std;
 
-#include "ROL_Step.hpp"
-#include "ROL_LineSearchStep.hpp"
-#include "ROL_TrustRegionStep.hpp"
-#include "ROL_PrimalDualActiveSetStep.hpp"
-#include "ROL_CompositeStep.hpp"
-#include "ROL_AugmentedLagrangianStep.hpp"
-#include "ROL_MoreauYosidaPenaltyStep.hpp"
-#include "ROL_BundleStep.hpp"
-#include "ROL_InteriorPointStep.hpp"
+template<typename Real>
+class LowerBandedMatrix {
+  
+  using size_type = typename vector<Real>::size_type;
 
-namespace ROL {
+private:
 
-  template<class Real>
-  class StepFactory {
-    public:
-    ~StepFactory(void){}
+  vector<size_type>     index;
+  vector<vector<Real>>  band;
+  size_type             num_bands;
+  bool                  is_invertible;
 
-    ROL::Ptr<Step<Real> > getStep(const std::string &type,
-                                  Teuchos::ParameterList &parlist) const {
-      EStep els = StringToEStep(type);
-      switch(els) {
-        case STEP_AUGMENTEDLAGRANGIAN: return ROL::makePtr<AugmentedLagrangianStep<Real>>(parlist);
-        case STEP_BUNDLE:              return ROL::makePtr<BundleStep<Real>>(parlist);
-        case STEP_COMPOSITESTEP:       return ROL::makePtr<CompositeStep<Real>>(parlist);
-        case STEP_LINESEARCH:          return ROL::makePtr<LineSearchStep<Real>>(parlist);
-        case STEP_MOREAUYOSIDAPENALTY: return ROL::makePtr<MoreauYosidaPenaltyStep<Real>>(parlist);
-        case STEP_PRIMALDUALACTIVESET: return ROL::makePtr<PrimalDualActiveSetStep<Real>>(parlist);
-        case STEP_TRUSTREGION:         return ROL::makePtr<TrustRegionStep<Real>>(parlist);
-        case STEP_INTERIORPOINT:       return ROL::makePtr<InteriorPointStep<Real>>(parlist); 
-        default:                       return ROL::nullPtr;
+public:   
+
+  LowerBandedMatrix( vector<size_type> band_index, 
+                     vector<vector<Real>> band_value ) : 
+    index(band_index), band(band_value), 
+    num_bands(index.size()), is_invertible(true) {
+      
+    auto it = find( index.begin(), index.end(), 0 );
+
+    if( it == index.end() ) // no diagonal band
+      is_invertible = false;
+    else {
+      for( auto e: band[0] ) {
+        if( e == 0 ) {
+          is_invertible = false;
+          break;
+        } // if( e == 0 )
+      } // for( auto e: band[0] )
+    } // else 
+  } // end Constructor
+
+  void apply( vector<Real>& Ax, const vector<Real>& x ) {
+ 
+    for( size_type row=0; row<x.size(); ++row ) {
+      Ax[row] = 0;
+      for( size_type i=0; i < num_bands; i++ ) {
+        size_t col = row - index[i];
+        if( col >= 0 ) Ax[row] += x[col]*band[i][col];
+        else break;
       }
     }
-  };
+  }
 
-}
+  void solve( vector<Real>& x, const vector<Real>& Ax ) {
+    if( !is_invertible ) {
+      throw logic_error("\nError: Cannot solve system. Matrix is singular.\n");
+    }
 
-#endif
+    for( size_type row=0; row<Ax.size(); ++row ) {
+      x[row] = Ax[row]/band[0][row];
+      for( size_type i=1; i < num_bands; i++ ) {
+        size_t col = row - index[i];
+        if( col >= 0 ) x[row] -= x[col]*band[i][col];
+        else break;
+      }
+    } 
+  }
+}; // class LowerBandedMatrix
+
+} // namespace details
+
+using details::LowerBandedMatrix;
+
+#endif // LOWER_BANDED_MATRIX_HPP
+
