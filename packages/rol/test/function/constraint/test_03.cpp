@@ -340,7 +340,6 @@ int main(int argc, char* argv[]) {
     // check inverses adjoint Jacobian_1_new
     *outStream << "Checking apply Jacobian 2 new" << std::endl;
     {
-      ROL::Vector<RealT> & v_un = *dynamic_cast<ROL::PartitionedVector<RealT>&>(*v_u).get(1);
       dynamic_cast<ROL::PartitionedVector<RealT>&>(*v_u).get(0)->scale(0.0);
 
       PtrVector jv_u = un_vec->clone();
