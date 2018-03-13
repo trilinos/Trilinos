@@ -53,11 +53,12 @@ namespace MueLu {
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   GlobalLexicographicIndexManager<LocalOrdinal, GlobalOrdinal, Node>::
-  GlobalLexicographicIndexManager(const int NumDimensions, const int interpolationOrder,
+  GlobalLexicographicIndexManager(const RCP<const Teuchos::Comm<int> > comm, const bool coupled,
+                                  const int NumDimensions, const int interpolationOrder,
                                   const Array<GO> GFineNodesPerDir,
                                   const Array<LO> LFineNodesPerDir, const Array<LO> CoarseRate,
                                   const GO MinGlobalIndex) :
-    IndexManager(NumDimensions, interpolationOrder, GFineNodesPerDir, LFineNodesPerDir) {
+    IndexManager(comm, coupled, NumDimensions, interpolationOrder, GFineNodesPerDir, LFineNodesPerDir) {
 
     // Load coarse rate, being careful about formating.
     for(int dim = 0; dim < 3; ++dim) {
@@ -92,6 +93,9 @@ namespace MueLu {
   void GlobalLexicographicIndexManager<LocalOrdinal, GlobalOrdinal, Node>::
   getGhostedNodesData(const RCP<const Map> fineMap, RCP<const Map> coarseMap,
                      Array<LO>& ghostedNodeCoarseLIDs, Array<int>& ghostedNodeCoarsePIDs) const {
+
+    ghostedNodeCoarseLIDs.resize(this->getNumLocalGhostedNodes());
+    ghostedNodeCoarsePIDs.resize(this->getNumLocalGhostedNodes());
 
     // Find the GIDs, LIDs and PIDs of the coarse points on the fine mesh and coarse
     // mesh as this data will be used to fill vertex2AggId and procWinner vectors.

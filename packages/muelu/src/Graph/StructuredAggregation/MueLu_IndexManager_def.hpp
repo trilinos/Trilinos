@@ -57,12 +57,15 @@
 namespace MueLu {
 
   template<class LocalOrdinal, class GlobalOrdinal, class Node>
-  IndexManager<LocalOrdinal, GlobalOrdinal, Node>::IndexManager(const int NumDimensions,
+  IndexManager<LocalOrdinal, GlobalOrdinal, Node>::IndexManager(const RCP<const Teuchos::Comm<int> > comm,
+                                                                const bool coupled,
+                                                                const int NumDimensions,
                                                                 const int interpolationOrder,
                                                                 const Array<GO> GFineNodesPerDir,
                                                                 const Array<LO> LFineNodesPerDir) :
-    numDimensions(NumDimensions), interpolationOrder_(interpolationOrder),
-    gFineNodesPerDir(GFineNodesPerDir), lFineNodesPerDir(LFineNodesPerDir) {
+    comm_(comm), coupled_(coupled), numDimensions(NumDimensions),
+    interpolationOrder_(interpolationOrder), gFineNodesPerDir(GFineNodesPerDir),
+    lFineNodesPerDir(LFineNodesPerDir) {
 
     coarseRate.resize(3);
     endRate.resize(3);
@@ -79,37 +82,73 @@ namespace MueLu {
   template<class LocalOrdinal, class GlobalOrdinal, class Node>
   void IndexManager<LocalOrdinal, GlobalOrdinal, Node>::computeMeshParameters() {
 
+    // RCP<Teuchos::FancyOStream> out = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
+    // out->setShowAllFrontMatter(false).setShowProcRank(true);
+
     gNumFineNodes10 = gFineNodesPerDir[1]*gFineNodesPerDir[0];
     gNumFineNodes   = gFineNodesPerDir[2]*gNumFineNodes10;
     lNumFineNodes10 = lFineNodesPerDir[1]*lFineNodesPerDir[0];
     lNumFineNodes   = lFineNodesPerDir[2]*lNumFineNodes10;
     for(int dim = 0; dim < 3; ++dim) {
       if(dim < numDimensions) {
-        offsets[dim]     = Teuchos::as<LO>(startIndices[dim]) % coarseRate[dim];
+        if(coupled_) {
+          if(startIndices[dim] == 0) {
+            meshEdge[2*dim] = true;
+          }
+          if(startIndices[dim + 3] + 1 == gFineNodesPerDir[dim]) {
+            meshEdge[2*dim + 1] = true;
+            endRate[dim] = startIndices[dim + 3] % coarseRate[dim];
+          }
+        } else { // With uncoupled problem each rank might require a different endRate
+          meshEdge[2*dim]     = true;
+          meshEdge[2*dim + 1] = true;
+          endRate[dim] = (lFineNodesPerDir[dim] - 1) % coarseRate[dim];
+        }
+        if(endRate[dim] == 0) {endRate[dim] = coarseRate[dim];}
 
-        if(interpolationOrder_ == 0) {
-          int rem  = startIndices[dim] % coarseRate[dim];
-          if((rem != 0) && (rem <= Teuchos::as<double>(coarseRate[dim]) / 2.0)) {
-            ghostInterface[2*dim] = true;
-          }
-          rem  = startIndices[dim + 3] % coarseRate[dim];
-          if((startIndices[dim + 3] != gFineNodesPerDir[dim] - 1) &&
-             (rem > Teuchos::as<double>(coarseRate[dim]) / 2.0)) {
-            ghostInterface[2*dim + 1] = true;
-          }
+        // If uncoupled aggregation is used, offsets[dim] = 0, so nothing to do.
+        if(coupled_) {
+          offsets[dim] = Teuchos::as<LO>(startIndices[dim]) % coarseRate[dim];
 
-        } else if(interpolationOrder_ == 1) {
-          if(startIndices[dim] % coarseRate[dim] != 0 ||
-             startIndices[dim] == gFineNodesPerDir[dim]-1) {
-            ghostInterface[2*dim] = true;
-          }
-          if((startIndices[dim + 3] != gFineNodesPerDir[dim] - 1) &&
-             ((lFineNodesPerDir[dim] == 1) || (startIndices[dim + 3] % coarseRate[dim] != 0))) {
-            ghostInterface[2*dim+1] = true;
+          if(interpolationOrder_ == 0) {
+            int rem  = startIndices[dim] % coarseRate[dim];
+            if( (rem != 0) && (rem <= Teuchos::as<double>(coarseRate[dim]) / 2.0)) {
+              ghostInterface[2*dim] = true;
+            }
+            rem  = startIndices[dim + 3] % coarseRate[dim];
+            // uncoupled by nature does not require ghosts nodes
+            if(coupled_ && (startIndices[dim + 3] != gFineNodesPerDir[dim] - 1) &&
+               (rem > Teuchos::as<double>(coarseRate[dim]) / 2.0)) {
+              ghostInterface[2*dim + 1] = true;
+            }
+
+          } else if(interpolationOrder_ == 1) {
+            if(coupled_ && (startIndices[dim] % coarseRate[dim] != 0 ||
+                            startIndices[dim] == gFineNodesPerDir[dim]-1)) {
+              ghostInterface[2*dim] = true;
+            }
+            if(coupled_ && (startIndices[dim + 3] != gFineNodesPerDir[dim] - 1) &&
+               ((lFineNodesPerDir[dim] == 1) || (startIndices[dim + 3] % coarseRate[dim] != 0))) {
+              ghostInterface[2*dim+1] = true;
+            }
           }
         }
+      } else { // Default value for dim >= numDimensions
+        endRate[dim] = 1;
       }
     }
+
+    // *out << "gFineNodesPerDir: " << gFineNodesPerDir << std::endl;
+    // *out << "lFineNodesPerDir: " << lFineNodesPerDir << std::endl;
+    // *out << "endRate: " << endRate << std::endl;
+    // *out << "ghostInterface: {" << ghostInterface[0] << ", " << ghostInterface[1] << ", "
+    //           << ghostInterface[2] << ", " << ghostInterface[3] << ", " << ghostInterface[4] << ", "
+    //           << ghostInterface[5] << "}" << std::endl;
+    // *out << "meshEdge: {" << meshEdge[0] << ", " << meshEdge[1] << ", "
+    //           << meshEdge[2] << ", " << meshEdge[3] << ", " << meshEdge[4] << ", "
+    //           << meshEdge[5] << "}" << std::endl;
+    // *out << "startIndices: " << startIndices << std::endl;
+    // *out << "offsets: " << offsets << std::endl;
 
     // Here one element can represent either the degenerate case of one node or the more general
     // case of two nodes, i.e. x---x is a 1D element with two nodes and x is a 1D element with
@@ -126,21 +165,10 @@ namespace MueLu {
     // !!! while the variables starting with an l are in the local basis.                    !!!
     for(int dim = 0; dim < 3; ++dim) {
       if(dim < numDimensions) {
-        // This array is passed to the RAPFactory and eventually becomes gFineNodePerDir on the next
-        // level.
-        gCoarseNodesPerDir[dim] = (gFineNodesPerDir[dim] - 1) / coarseRate[dim];
-        endRate[dim] = Teuchos::as<LO>((gFineNodesPerDir[dim] - 1) % coarseRate[dim]);
-        if(endRate[dim] == 0) {
-          endRate[dim] = coarseRate[dim];
-          ++gCoarseNodesPerDir[dim];
-        } else {
-          gCoarseNodesPerDir[dim] += 2;
-        }
-
         // Check whether the partition includes the "end" of the mesh which means that endRate
         // will apply. Also make sure that endRate is not 0 which means that the mesh does not
         // require a particular treatment at the boundaries.
-        if( (startIndices[dim] + lFineNodesPerDir[dim]) == gFineNodesPerDir[dim] ) {
+        if( meshEdge[2*dim + 1] ) {
           lCoarseNodesPerDir[dim] = (lFineNodesPerDir[dim] - endRate[dim] + offsets[dim] - 1)
             / coarseRate[dim] + 1;
           if(offsets[dim] == 0) {++lCoarseNodesPerDir[dim];}
@@ -166,8 +194,17 @@ namespace MueLu {
             startGhostedCoarseNode[dim] = startIndices[dim] / coarseRate[dim];
           }
         }
+
+        // This array is passed to the RAPFactory and eventually becomes gFineNodePerDir on the next
+        // level.
+        gCoarseNodesPerDir[dim] = (gFineNodesPerDir[dim] - 1) / coarseRate[dim];
+        if((gFineNodesPerDir[dim] - 1) % coarseRate[dim] == 0) {
+          ++gCoarseNodesPerDir[dim];
+        } else {
+          gCoarseNodesPerDir[dim] += 2;
+        }
       } else { // Default value for dim >= numDimensions
-        endRate[dim] = 1;
+        // endRate[dim] = 1;
         gCoarseNodesPerDir[dim] = 1;
         lCoarseNodesPerDir[dim] = 1;
       } // if (dim < numDimensions)
@@ -182,15 +219,34 @@ namespace MueLu {
       if(ghostInterface[2*dim + 1]) {ghostedNodesPerDir[dim] += 1;}
     } // Loop for dim=0:3
 
+    // With uncoupled aggregation we need to communicate to compute the global number of coarse points
+    if(!coupled_) {
+      for(int dim = 0; dim < 3; ++dim) {
+        gCoarseNodesPerDir[dim] = -1;
+      }
+    }
 
     // Compute cummulative values
-    gNumCoarseNodes10 = gCoarseNodesPerDir[0]*gCoarseNodesPerDir[1];
-    gNumCoarseNodes   = gNumCoarseNodes10*gCoarseNodesPerDir[2];
     lNumCoarseNodes10 = lCoarseNodesPerDir[0]*lCoarseNodesPerDir[1];
     lNumCoarseNodes   = lNumCoarseNodes10*lCoarseNodesPerDir[2];
     numGhostedNodes10 = ghostedNodesPerDir[1]*ghostedNodesPerDir[0];
     numGhostedNodes   = numGhostedNodes10*ghostedNodesPerDir[2];
     numGhostNodes     = numGhostedNodes - lNumCoarseNodes;
+    gNumCoarseNodes10 = coupled_ ? gCoarseNodesPerDir[0]*gCoarseNodesPerDir[1] : -1;
+    if(coupled_) {
+      gNumCoarseNodes   = gNumCoarseNodes10*gCoarseNodesPerDir[2];
+    } else {
+      GO input[1] = {as<GO>(lNumCoarseNodes)}, output[1] = {0};
+      Teuchos::reduceAll(*comm_, Teuchos::REDUCE_SUM, 1, input, output);
+      gNumCoarseNodes = output[0];
+    }
+
+    // *out << "lCoarseNodesPerDir: " << lCoarseNodesPerDir << std::endl;
+    // *out << "gCoarseNodesPerDir: " << gCoarseNodesPerDir << std::endl;
+    // *out << "ghostedNodesPerDir: " << ghostedNodesPerDir << std::endl;
+    // *out << "gNumCoarseNodes=" << gNumCoarseNodes << std::endl;
+    // *out << "lNumCoarseNodes=" << lNumCoarseNodes << std::endl;
+    // *out << "numGhostedNodes=" << numGhostedNodes << std::endl;
   }
 
 } //namespace MueLu

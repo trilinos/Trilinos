@@ -46,6 +46,9 @@
 #ifndef MUELU_GLOBALLEXICOGRPHICINDEXMANAGER_DECL_HPP
 #define MUELU_GLOBALLEXICOGRPHICINDEXMANAGER_DECL_HPP
 
+// use for Teuchos:Comm<T>
+#include "Teuchos_CommHelpers.hpp"
+
 #include <Xpetra_Map_fwd.hpp>
 #include <Xpetra_Vector_fwd.hpp>
 #include <Xpetra_VectorFactory_fwd.hpp>
@@ -86,7 +89,8 @@ namespace MueLu {
 
     GlobalLexicographicIndexManager();
 
-    GlobalLexicographicIndexManager(const int NumDimensions, const int interpolationOrder,
+    GlobalLexicographicIndexManager(const RCP< const Teuchos::Comm<int> > comm, const bool coupled,
+                                    const int NumDimensions, const int interpolationOrder,
                                     const Array<GO> GFineNodesPerDir,
                                     const Array<LO> LFineNodesPerDir, const Array<LO> CoarseRate,
                                     const GO MinGlobalIndex);

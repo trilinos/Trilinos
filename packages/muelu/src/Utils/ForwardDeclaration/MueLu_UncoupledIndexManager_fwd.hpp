@@ -1,8 +1,9 @@
 // @HEADER
+//
 // ***********************************************************************
 //
-//          Tpetra: Templated Linear Algebra Services Package
-//                 Copyright (2008) Sandia Corporation
+//        MueLu: A package for multigrid based preconditioning
+//                  Copyright 2012 Sandia Corporation
 //
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
@@ -34,45 +35,29 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+// Questions? Contact
+//                    Jonathan Hu       (jhu@sandia.gov)
+//                    Andrey Prokopenko (aprokop@sandia.gov)
+//                    Ray Tuminaro      (rstumin@sandia.gov)
 //
-// ************************************************************************
+// ***********************************************************************
+//
 // @HEADER
+#ifndef MUELU_UNCOUPLEDINDEXMANAGER_FWD_HPP
+#define MUELU_UNCOUPLEDINDEXMANAGER_FWD_HPP
 
 
-#ifndef TYPEDEFS_HPP
-#define TYPEDEFS_HPP
 
-#include <Kokkos_View.hpp>
-#include <Tpetra_DefaultPlatform.hpp>
-#include <Tpetra_Export.hpp>
-#include <Tpetra_Map.hpp>
-#include <Tpetra_CrsGraph.hpp>
-#include <Tpetra_CrsMatrix.hpp>
 
-namespace TpetraExamples {}
+namespace MueLu {
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  class UncoupledIndexManager;
+}
 
-typedef double Scalar;
-
-// Get LocalOrdinal & GlobalOrdinal from Map defaults.
-typedef Tpetra::Map<>::local_ordinal_type  local_ordinal_t;
-typedef Tpetra::Map<>::global_ordinal_type global_ordinal_t;
-typedef Tpetra::Map<>::node_type           node_t;
-
-typedef Kokkos::DefaultExecutionSpace execution_space_t;
-
-typedef Kokkos::View<global_ordinal_t*, execution_space_t> global_ordinal_view_t;
-
-typedef typename Tpetra::Map<>             map_t;
-typedef typename Tpetra::CrsGraph<>        graph_t;
-typedef typename Tpetra::CrsMatrix<Scalar> matrix_t;
-typedef typename Tpetra::Export<>          export_t;
-
-// NOTE: Arrays are hardwired for QUAD4
-typedef Kokkos::View<local_ordinal_t*[4], execution_space_t>  local_ordinal_2d_array_t;
-typedef Kokkos::View<global_ordinal_t*[4], execution_space_t> global_ordinal_2d_array_t;
-typedef Kokkos::View<Scalar*[4], execution_space_t>           scalar_2d_array_t;
-
+#ifndef MUELU_UNCOUPLEDINDEXMANAGER_SHORT
+#define MUELU_UNCOUPLEDINDEXMANAGER_SHORT
 #endif
 
 
+
+#endif // MUELU_UNCOUPLEDINDEXMANAGER_FWD_HPP

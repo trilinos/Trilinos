@@ -29,11 +29,11 @@ typedef MueLu::BlockedDirectSolver<Scalar,LocalOrdinal,GlobalOrdinal,Node> Block
 #ifdef MUELU_BLOCKEDGAUSSSEIDELSMOOTHER_SHORT
 typedef MueLu::BlockedGaussSeidelSmoother<Scalar,LocalOrdinal,GlobalOrdinal,Node> BlockedGaussSeidelSmoother;
 #endif
-#ifdef MUELU_BLOCKEDPFACTORY_SHORT
-typedef MueLu::BlockedPFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node> BlockedPFactory;
-#endif
 #ifdef MUELU_BLOCKEDJACOBISMOOTHER_SHORT
 typedef MueLu::BlockedJacobiSmoother<Scalar,LocalOrdinal,GlobalOrdinal,Node> BlockedJacobiSmoother;
+#endif
+#ifdef MUELU_BLOCKEDPFACTORY_SHORT
+typedef MueLu::BlockedPFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node> BlockedPFactory;
 #endif
 #ifdef MUELU_BLOCKEDRAPFACTORY_SHORT
 typedef MueLu::BlockedRAPFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node> BlockedRAPFactory;
@@ -79,9 +79,6 @@ typedef MueLu::CoordinatesTransferFactory_kokkos<Scalar,LocalOrdinal,GlobalOrdin
 #endif
 #ifdef MUELU_COUPLEDRBMFACTORY_SHORT
 typedef MueLu::CoupledRBMFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node> CoupledRBMFactory;
-#endif
-#ifdef MUELU_CREATEXPETRAPRECONDITIONER_SHORT
-typedef MueLu::CreateXpetraPreconditioner<Scalar,LocalOrdinal,GlobalOrdinal,Node> CreateXpetraPreconditioner;
 #endif
 #ifdef MUELU_DEMOFACTORY_SHORT
 typedef MueLu::DemoFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node> DemoFactory;

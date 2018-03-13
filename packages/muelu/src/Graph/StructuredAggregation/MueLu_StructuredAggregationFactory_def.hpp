@@ -62,6 +62,7 @@
 #include "MueLu_MasterList.hpp"
 #include "MueLu_Monitor.hpp"
 #include "MueLu_Utilities.hpp"
+#include "MueLu_UncoupledIndexManager.hpp"
 #include "MueLu_LocalLexicographicIndexManager.hpp"
 #include "MueLu_GlobalLexicographicIndexManager.hpp"
 
@@ -88,6 +89,8 @@ namespace MueLu {
     // general variables needed in AggregationFactory
     validParamList->set<std::string >           ("aggregation: mesh layout","Global Lexicographic",
                                                  "Type of mesh ordering");
+    validParamList->set<std::string >           ("aggregation: coupling","coupled",
+                                                 "aggregation coupling mode: coupled or uncoupled");
     validParamList->set<int>                    ("aggregation: number of spatial dimensions", 3,
                                                   "The number of spatial dimensions in the problem");
     validParamList->set<int>                    ("aggregation: coarsening order", 0,
@@ -164,6 +167,9 @@ namespace MueLu {
   Build(Level &currentLevel) const {
     FactoryMonitor m(*this, "Build", currentLevel);
 
+    // RCP<Teuchos::FancyOStream> out = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
+    // out->setShowAllFrontMatter(false).setShowProcRank(true);
+
     ParameterList pL = GetParameterList();
     bDefinitionPhase_ = false;  // definition phase is finished, now all aggregation algorithm information is fixed
 
@@ -179,6 +185,8 @@ namespace MueLu {
     const int numDimensions = pL.get<int>("aggregation: number of spatial dimensions");
     const int interpolationOrder = pL.get<int>("aggregation: coarsening order");
     std::string meshLayout = pL.get<std::string>("aggregation: mesh layout");
+    std::string coupling = pL.get<std::string>("aggregation: coupling");
+    const bool coupled = (coupling == "coupled" ? true : false);
     Array<GO> gFineNodesPerDir(3);
     Array<LO> lFineNodesPerDir(3);
     if(currentLevel.GetLevelID() == 0) {
@@ -208,8 +216,18 @@ namespace MueLu {
 
     // Now that we have extracted info from the level, create the IndexManager
     RCP<MueLu::IndexManager<LO,GO,NO> > geoData;
-    Array<GO> meshData;
-    if(meshLayout == "Local Lexicographic") {
+    if(!coupled) {
+      geoData = rcp(new MueLu::UncoupledIndexManager<LO,GO,NO>(fineMap->getComm(),
+                                                               coupled,
+                                                               numDimensions,
+                                                               interpolationOrder,
+                                                               myRank,
+                                                               numRanks,
+                                                               gFineNodesPerDir,
+                                                               lFineNodesPerDir,
+                                                               coarseRate));
+    } else if(meshLayout == "Local Lexicographic") {
+      Array<GO> meshData;
       if(currentLevel.GetLevelID() == 0) {
         // On level 0, data is provided by applications and has no associated factory.
         meshData = currentLevel.Get<Array<GO> >("aggregation: mesh data", NoFactory::get());
@@ -224,7 +242,9 @@ namespace MueLu {
       // I think that it might make sense to pass ghostInterface rather than interpolationOrder.
       // For that I need to make sure that ghostInterface can be computed with minimal mesh
       // knowledge outside of the IndexManager...
-      geoData = rcp(new MueLu::LocalLexicographicIndexManager<LO,GO,NO>(numDimensions,
+      geoData = rcp(new MueLu::LocalLexicographicIndexManager<LO,GO,NO>(fineMap->getComm(),
+                                                                        coupled,
+                                                                        numDimensions,
                                                                         interpolationOrder,
                                                                         myRank,
                                                                         numRanks,
@@ -237,7 +257,9 @@ namespace MueLu {
       // I think that it might make sense to pass ghostInterface rather than interpolationOrder.
       // For that I need to make sure that ghostInterface can be computed with minimal mesh
       // knowledge outside of the IndexManager...
-      geoData = rcp(new MueLu::GlobalLexicographicIndexManager<LO,GO,NO>(numDimensions,
+      geoData = rcp(new MueLu::GlobalLexicographicIndexManager<LO,GO,NO>(fineMap->getComm(),
+                                                                         coupled,
+                                                                         numDimensions,
                                                                          interpolationOrder,
                                                                          gFineNodesPerDir,
                                                                          lFineNodesPerDir,
@@ -245,30 +267,38 @@ namespace MueLu {
                                                                          minGlobalIndex));
     }
 
+    // *out << "numLocalFineNodes:  " << geoData->getNumLocalFineNodes() << std::endl;
+    // *out << "numGlobalFineNodes: " << geoData->getNumGlobalFineNodes() << std::endl;
+
     TEUCHOS_TEST_FOR_EXCEPTION(fineMap->getNodeNumElements()
                                != static_cast<size_t>(geoData->getNumLocalFineNodes()),
                                Exceptions::RuntimeError,
                                "The local number of elements in the graph's map is not equal to "
                                "the number of nodes given by: lNodesPerDim!");
-    TEUCHOS_TEST_FOR_EXCEPTION(fineMap->getGlobalNumElements()
-                               != static_cast<size_t>(geoData->getNumGlobalFineNodes()),
-                               Exceptions::RuntimeError,
-                               "The global number of elements in the graph's map is not equal to "
-                               "the number of nodes given by: gNodesPerDim!");
+    if(coupled) {
+      TEUCHOS_TEST_FOR_EXCEPTION(fineMap->getGlobalNumElements()
+                                 != static_cast<size_t>(geoData->getNumGlobalFineNodes()),
+                                 Exceptions::RuntimeError,
+                                 "The global number of elements in the graph's map is not equal to "
+                                 "the number of nodes given by: gNodesPerDim!");
+    }
 
     std::vector<std::vector<GO> > coarseMeshData = geoData->getCoarseMeshData();
 
     RCP<const Map> coarseMap;
-    Array<LO>  ghostedCoarseNodeCoarseLIDs(geoData->getNumLocalGhostedNodes());
-    Array<int> ghostedCoarseNodeCoarsePIDs(geoData->getNumLocalGhostedNodes());
+    Array<LO>  ghostedCoarseNodeCoarseLIDs;
+    Array<int> ghostedCoarseNodeCoarsePIDs;
 
+    // *out << "Extract data for ghosted nodes" << std::endl;
     geoData->getGhostedNodesData(fineMap, coarseMap, ghostedCoarseNodeCoarseLIDs,
                                  ghostedCoarseNodeCoarsePIDs);
+    // *out << "ghostedCoarseNodeCoarsePIDs: " << ghostedCoarseNodeCoarsePIDs << std::endl;
+    // *out << "ghostedCoarseNodeCoarseLIDs: " << ghostedCoarseNodeCoarseLIDs << std::endl;
 
     // Create aggregates object and set basic parameters
     RCP<Aggregates> aggregates = rcp(new Aggregates(fineMap));
     aggregates->setObjectLabel("ST");
-    aggregates->AggregatesCrossProcessors(true);
+    aggregates->AggregatesCrossProcessors(coupled);
     std::vector<unsigned> aggStat(geoData->getNumLocalFineNodes(), READY);
     aggregates->SetNumAggregates(geoData->getNumLocalCoarseNodes());
 
@@ -280,42 +310,43 @@ namespace MueLu {
     ArrayRCP<LO> procWinner   = aggregates->GetProcWinner()  ->getDataNonConst(0);
     LO iGhosted, jGhosted, kGhosted, iCoarse, jCoarse, kCoarse, iRem, jRem, kRem;
     LO ghostedCoarseNodeCoarseLID, aggId, rate;
+    // *out << "Loop over fine nodes and assign them to an aggregate and a rank" << std::endl;
     for(LO nodeIdx = 0; nodeIdx < geoData->getNumLocalFineNodes(); ++nodeIdx) {
       // Compute coarse ID associated with fine LID
       geoData->getFineNodeGhostedTuple(nodeIdx, iGhosted, jGhosted, kGhosted);
       iCoarse = iGhosted / geoData->getCoarseningRate(0);
       iRem    = iGhosted % geoData->getCoarseningRate(0);
-      if(iGhosted + geoData->getStartIndex(0) - geoData->getOffset(0)
-         < geoData->getGlobalFineNodesInDir(0) - geoData->getCoarseningEndRate(0)) {
+      if(iGhosted - geoData->getOffset(0)
+         < geoData->getLocalFineNodesInDir(0) - geoData->getCoarseningEndRate(0)) {
         rate = geoData->getCoarseningRate(0);
       } else {
         rate = geoData->getCoarseningEndRate(0);
       }
       if(iRem > (rate / 2)) { ++iCoarse; }
-      if(geoData->getStartGhostedCoarseNode(0)*geoData->getCoarseningRate(0)
-         > geoData->getStartIndex(0)) { --iCoarse; }
+      if(coupled && (geoData->getStartGhostedCoarseNode(0)*geoData->getCoarseningRate(0)
+                     > geoData->getStartIndex(0))) { --iCoarse; }
       jCoarse = jGhosted / geoData->getCoarseningRate(1);
       jRem    = jGhosted % geoData->getCoarseningRate(1);
-      if(jGhosted + geoData->getStartIndex(1) - geoData->getOffset(1)
-         < geoData->getGlobalFineNodesInDir(1) - geoData->getCoarseningEndRate(1)) {
+      if(jGhosted - geoData->getOffset(1)
+         < geoData->getLocalFineNodesInDir(1) - geoData->getCoarseningEndRate(1)) {
         rate = geoData->getCoarseningRate(1);
       } else {
         rate = geoData->getCoarseningEndRate(1);
       }
-      if(jRem > (geoData->getCoarseningRate(1) / 2)) { ++jCoarse; }
-      if(geoData->getStartGhostedCoarseNode(1)*geoData->getCoarseningRate(1)
-         > geoData->getStartIndex(1)) { --jCoarse; }
+      if(jRem > (rate / 2)) { ++jCoarse; }
+      if(coupled && (geoData->getStartGhostedCoarseNode(1)*geoData->getCoarseningRate(1)
+                     > geoData->getStartIndex(1))) { --jCoarse; }
       kCoarse = kGhosted / geoData->getCoarseningRate(2);
       kRem    = kGhosted % geoData->getCoarseningRate(2);
-      if(kGhosted + geoData->getStartIndex(2) - geoData->getOffset(2)
-         < geoData->getGlobalFineNodesInDir(2) - geoData->getCoarseningEndRate(2)) {
+      if(kGhosted - geoData->getOffset(2)
+         < geoData->getLocalFineNodesInDir(2) - geoData->getCoarseningEndRate(2)) {
         rate = geoData->getCoarseningRate(2);
       } else {
         rate = geoData->getCoarseningEndRate(2);
       }
-      if(kRem > (geoData->getCoarseningRate(2) / 2)) { ++kCoarse; }
-      if(geoData->getStartGhostedCoarseNode(2)*geoData->getCoarseningRate(2)
-         > geoData->getStartIndex(2)) { --kCoarse; }
+      if(kRem > (rate / 2)) { ++kCoarse; }
+      if(coupled && (geoData->getStartGhostedCoarseNode(2)*geoData->getCoarseningRate(2)
+                     > geoData->getStartIndex(2))) { --kCoarse; }
       geoData->getCoarseNodeGhostedLID(iCoarse, jCoarse, kCoarse, ghostedCoarseNodeCoarseLID);
 
       aggId                 = ghostedCoarseNodeCoarseLIDs[ghostedCoarseNodeCoarseLID];
@@ -325,13 +356,18 @@ namespace MueLu {
       --numNonAggregatedNodes;
     }
 
+    // *out << "procWinner: " << procWinner() << std::endl;
+    // *out << "vertex2AggId: " << vertex2AggId() << std::endl;
+
     TEUCHOS_TEST_FOR_EXCEPTION(numNonAggregatedNodes, Exceptions::RuntimeError,
                                "MueLu::StructuredAggregationFactory::Build: Leftover nodes found! Error!");
 
     // aggregates->AggregatesCrossProcessors(false);
     aggregates->ComputeAggregateSizes(true/*forceRecompute*/);
 
-    Set(currentLevel, "Aggregates", aggregates);
+    Set(currentLevel, "Aggregates",         aggregates);
+    Set(currentLevel, "gCoarseNodesPerDim", geoData->getGlobalCoarseNodesPerDir());
+    Set(currentLevel, "lCoarseNodesPerDim", geoData->getLocalCoarseNodesPerDir());
 
     GetOStream(Statistics1) << aggregates->description() << std::endl;
   }

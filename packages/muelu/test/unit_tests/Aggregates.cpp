@@ -146,11 +146,14 @@ class AggregateGenerator {
     // Little utility to generate uncoupled aggregates.
     static RCP<Aggregates>
     gimmeStructuredAggregates(const RCP<Matrix>& A,
-                              Array<GO> gNodesPerDir, Array<LO> lNodesPerDir, LO numDimensions,
-                              const std::string meshLayout, const Array<GO> meshData)
+                              Array<GO> gNodesPerDir, Array<LO> lNodesPerDir, const bool coupled,
+                              const LO numDimensions, const std::string meshLayout,
+                              const Array<GO> meshData)
     {
       Level level;
       TestHelpers::TestFactory<SC,LO,GO,NO>::createSingleLevelHierarchy(level);
+
+      const std::string coupling = (coupled ? "coupled" : "uncoupled");
 
       RCP<AmalgamationFactory> amalgFact = rcp(new AmalgamationFactory());
       amalgFact->SetDefaultVerbLevel(MueLu::None);
@@ -165,6 +168,7 @@ class AggregateGenerator {
       // Setup aggregation factory (use default factory for graph)
       RCP<StructuredAggregationFactory> aggFact = rcp(new StructuredAggregationFactory());
       aggFact->SetFactory("Graph", dropFact);
+      aggFact->SetParameter("aggregation: coupling", Teuchos::ParameterEntry(coupling));
       aggFact->SetParameter("aggregation: mesh layout", Teuchos::ParameterEntry(meshLayout));
       aggFact->SetParameter("aggregation: number of spatial dimensions",
                             Teuchos::ParameterEntry(numDimensions));
@@ -561,6 +565,7 @@ class AggregateGenerator {
     LO myRank   = comm->getRank();
 
     // Set global geometric data
+    const bool coupled = true;
     LO numDimensions = 3;
     Array<LO> lNodesPerDir(3);
     Array<GO> gNodesPerDir(3);
@@ -593,7 +598,7 @@ class AggregateGenerator {
     if(myRank == 0) std::cout << "About to build the aggregates" << std::endl;
 
     RCP<Aggregates> aggregates = AggregateGenerator<SC,LO,GO,NO>::
-      gimmeStructuredAggregates(A, gNodesPerDir, lNodesPerDir, numDimensions, meshLayout,
+      gimmeStructuredAggregates(A, gNodesPerDir, lNodesPerDir, coupled, numDimensions, meshLayout,
                                 meshData);
 
     TEST_EQUALITY(aggregates != Teuchos::null, true);
@@ -614,6 +619,7 @@ class AggregateGenerator {
     LO myRank   = comm->getRank();
 
     // Set global geometric data
+    const bool coupled = true;
     const std::string meshLayout = std::string("Local Lexicographic");
     LO numDimensions = 2;
     Array<LO> lNodesPerDir(3);
@@ -643,7 +649,7 @@ class AggregateGenerator {
     RCP<Matrix> A = Pr->BuildMatrix();
 
     RCP<Aggregates> aggregates = AggregateGenerator<SC,LO,GO,NO>::
-      gimmeStructuredAggregates(A, gNodesPerDir, lNodesPerDir, numDimensions, meshLayout,
+      gimmeStructuredAggregates(A, gNodesPerDir, lNodesPerDir, coupled, numDimensions, meshLayout,
                                 meshData);
 
     TEST_EQUALITY(aggregates != Teuchos::null, true);
