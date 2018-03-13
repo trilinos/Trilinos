@@ -50,6 +50,8 @@
 #include "Tpetra_Directory.hpp" // must include for implicit instantiation to work
 #include "Tpetra_Details_FixedHashTable.hpp"
 #include "Tpetra_Details_gathervPrint.hpp"
+#include "Tpetra_Details_printOnce.hpp"
+#include "Tpetra_Core.hpp"
 #include "Tpetra_Util.hpp"
 #include "Teuchos_as.hpp"
 #include "Teuchos_TypeNameTraits.hpp"
@@ -1047,7 +1049,18 @@ namespace Tpetra {
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   Map<LocalOrdinal,GlobalOrdinal,Node>::~Map ()
-  {}
+  {
+    if (! Tpetra::isInitialized ()) {
+      std::ostringstream os;
+      os << "WARNING: Tpetra::Map destructor (~Map()) is being called after "
+	"Tpetra::finalize() has been called.  This is user error!  This may "
+	"happen if you create a Tpetra::Map (or RCP or shared_ptr of a "
+	"Tpetra::Map) at the same scope in main() as Tpetra::finalize().  "
+	"Don't do that.  Please refer to GitHib Issue #2372." << std::endl;
+      ::Tpetra::Details::printOnce (std::cerr, os.str (),
+				    this->getComm ().getRawPtr ());
+    }
+  }
 
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
