@@ -58,9 +58,11 @@
 
 using namespace TpetraExamples;
 
+#define COMM_T Teuchos::RCP<const Teuchos::Comm<int> >
 
 
-int main (int argc, char *argv[]) 
+
+int execute( COMM_T& comm )
 {
   using Teuchos::RCP;
   using Teuchos::TimeMonitor;
@@ -68,10 +70,6 @@ int main (int argc, char *argv[])
   const global_ordinal_t GO_INVALID = Teuchos::OrdinalTraits<global_ordinal_t>::invalid();
 
   auto out = Teuchos::getFancyOStream (Teuchos::rcpFromRef (std::cout));
-  
-  // MPI boilerplate
-  Tpetra::initialize(&argc, &argv);
-  RCP<const Teuchos::Comm<int> > comm = Tpetra::DefaultPlatform::getDefaultPlatform ().getComm();
 
   // Processor decomp (only works on perfect squares)
   int numProcs  = comm->getSize();
@@ -306,8 +304,27 @@ int main (int argc, char *argv[])
   //Tpetra::MatrixMarket::Writer<matrix_t>::writeSparse(ofs, crs_matrix);
   //ofs.close();
 
+  return 0;
+}
+
+
+
+int main (int argc, char *argv[]) 
+{
+  int status = EXIT_SUCCESS;
+
+  // MPI boilerplate
+  Tpetra::initialize(&argc, &argv);
+  COMM_T comm = Tpetra::DefaultPlatform::getDefaultPlatform ().getComm();
+
+  // Entry point
+  if(execute(comm))
+  {
+    status = EXIT_FAILURE;
+  }
+
   // Print out timing results.
-  TimeMonitor::report(comm.ptr(), std::cout, "");
+  Teuchos::TimeMonitor::report(comm.ptr(), std::cout, "");
 
   // Finalize
   Tpetra::finalize();
@@ -315,8 +332,9 @@ int main (int argc, char *argv[])
   // This tells the Trilinos test framework that the test passed.
   if(0 == comm->getRank())
   {
-    std::cout << "End Result: TEST PASSED" << std::endl;
+    if(0 == status) std::cout << "End Result: TEST PASSED" << std::endl;
+    else            std::cout << "End Result: TEST FAILED" << std::endl;
   }
 
-  return 0;
+  return status;
 }  // END main()
