@@ -61,7 +61,7 @@ int dim4 = 4;
 
 TEUCHOS_STATIC_SETUP()
 {
-  Teuchos::CommandLineProcessor & clp = Teuchos::UnitTestRepository::getCLP();
+  //Teuchos::CommandLineProcessor & clp = Teuchos::UnitTestRepository::getCLP();
 }
 
 TEUCHOS_UNIT_TEST( MDArray, parenOperator1D )

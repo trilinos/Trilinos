@@ -143,7 +143,7 @@ generate_test_matrix (const Teuchos::RCP<const Teuchos::Comm<int> >& comm)
 
 TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(CrsMatrix, PackThenUnpackAndCombine, SC, LO, GO, NT)
 {
-  typedef Tpetra::CrsMatrix<SC, LO, GO, NT, false> crs_matrix_type;
+  typedef Tpetra::CrsMatrix<SC, LO, GO, NT> crs_matrix_type;
   typedef typename NT::device_type device_type;
   typedef typename device_type::execution_space execution_space;
 
@@ -397,7 +397,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(CrsMatrix, PackThenUnpackAndCombine, SC, LO, G
 TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(CrsMatrix, PackWithError, SC, LO, GO, NT)
 {
 
-  typedef Tpetra::CrsMatrix<SC, LO, GO, NT, false> crs_matrix_type;
+  typedef Tpetra::CrsMatrix<SC, LO, GO, NT> crs_matrix_type;
 
   RCP<const Comm<int> > comm = getDefaultComm();
   const int world_rank = comm->getRank();
@@ -505,7 +505,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(CrsMatrix, PackWithError, SC, LO, GO, NT)
 // caused existing code to fail.  See Issues #1374 and #1408
 TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(CrsMatrix, PackPartial, SC, LO, GO, NT)
 {
-  typedef Tpetra::CrsMatrix<SC, LO, GO, NT, false> crs_matrix_type;
+  typedef Tpetra::CrsMatrix<SC, LO, GO, NT> crs_matrix_type;
   typedef typename NT::device_type device_type;
   typedef typename device_type::execution_space execution_space;
 

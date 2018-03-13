@@ -39,6 +39,7 @@ APPEND_SET(SOURCES
   RAPShiftFactory.cpp
   SaPFactory.cpp
   Smoothers/SmootherFactory.cpp
+  StructuredAggregationFactory.cpp
   StructuredLineDetection.cpp
   TentativePFactory.cpp
   ThresholdAFilterFactory.cpp
@@ -159,6 +160,8 @@ IF (${PACKAGE_NAME}_ENABLE_Zoltan AND TPL_ENABLE_MPI)
 ENDIF()
 
 IF (${PACKAGE_NAME}_ENABLE_Galeri) #TMP
+  APPEND_SET(SOURCES Galeri.cpp)
+
   TRIBITS_ADD_EXECUTABLE(
     UnitTests
     SOURCES ${SOURCES}

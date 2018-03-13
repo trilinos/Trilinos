@@ -406,6 +406,12 @@ namespace Sacado {
     static const bool value = false;
   };
 
+  //! Base template specification for whether a type is a Fad type
+  template <typename T> struct IsFad< const T >
+  {
+    static const bool value = IsFad<T>::value;
+  };
+
   //! Remove const from a type
   template <typename T>
   struct RemoveConst {

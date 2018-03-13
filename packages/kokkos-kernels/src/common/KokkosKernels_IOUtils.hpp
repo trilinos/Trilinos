@@ -676,7 +676,7 @@ void write_graph_crs(lno_t nv, size_type ne,const size_type *xadj,const  lno_t *
   myFile << nv << " " << ne << std::endl;
 
   for (lno_t i = 0; i <= nv; ++i){
-    myFile  << (xadj)[i] << " ";
+    myFile  << xadj[i] << " ";
   }
   myFile  << std::endl;
 
@@ -684,12 +684,12 @@ void write_graph_crs(lno_t nv, size_type ne,const size_type *xadj,const  lno_t *
     size_type b = xadj[i];
     size_type e = xadj[i + 1];
     for (size_type j = b; j < e; ++j){
-      myFile  << (adj)[j] << " ";
+      myFile  << adj[j] << " ";
     }
     myFile  << std::endl;
   }
   for (lno_t i = 0; i < ne; ++i){
-    myFile  << (ew)[i] << " ";
+    myFile  << ew[i] << " ";
   }
   myFile  << std::endl;
 

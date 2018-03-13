@@ -369,6 +369,8 @@ TEUCHOS_UNIT_TEST(BDF2, SinCosAdapt)
     // For the SinCos problem eta is directly related to dt
     pl->sublist("Default Integrator")
        .sublist("Time Step Control")
+       .sublist("Time Step Control Strategy")
+       .sublist("basic_vs")
        .set("Minimum Value Monitoring Function", dt*0.99);
     RCP<Tempus::IntegratorBasic<double> > integrator =
        Tempus::integratorBasic<double>(pl, model);

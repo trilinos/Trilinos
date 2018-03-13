@@ -257,7 +257,7 @@ namespace BaskerNS
 
       volatile BASKER_BOOL spin = BASKER_TRUE;
 
-      if(Kokkos::atomic_fetch_add(&(value),1) == (l_size-1))
+      if(Kokkos::atomic_fetch_add(&(value), Int(1)) == (l_size-1))
       {
         value = 0;
         //Kokkos::atomic_fetch_add(&(value), -1*l_size);
@@ -272,7 +272,7 @@ namespace BaskerNS
     BASKER_INLINE
     void atomic_barrier_fanout(volatile Int &value, const Int l_size)
     {
-      Kokkos::atomic_fetch_add(&(value), 1);
+      Kokkos::atomic_increment(&(value));
       while(value < l_size)
       {
         BASKER_NO_OP;

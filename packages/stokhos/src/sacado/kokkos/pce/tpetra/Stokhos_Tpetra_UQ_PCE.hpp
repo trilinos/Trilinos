@@ -310,14 +310,14 @@ struct PackTraits< Sacado::UQ::PCE<S>, D > {
 } // namespace Tpetra
 
 namespace Tpetra {
-  template <class S, class L, class G, class N, bool> class MultiVector;
-  template <class S, class L, class G, class N, bool> class Vector;
+  template <class S, class L, class G, class N> class MultiVector;
+  template <class S, class L, class G, class N> class Vector;
 }
 
 namespace Kokkos {
-  template <class S, class L, class G, class N, bool c>
-  size_t dimension_scalar(const Tpetra::MultiVector<S,L,G,N,c>& mv) {
-    typedef Tpetra::MultiVector<S,L,G,N,c> MV;
+  template <class S, class L, class G, class N>
+  size_t dimension_scalar(const Tpetra::MultiVector<S,L,G,N>& mv) {
+    typedef Tpetra::MultiVector<S,L,G,N> MV;
     typedef typename MV::dual_view_type dual_view_type;
     typedef typename dual_view_type::t_dev device_type;
     typedef typename dual_view_type::t_host host_type;
@@ -327,9 +327,9 @@ namespace Kokkos {
     return dimension_scalar(dual_view.template view<host_type>());
   }
 
-  template <class S, class L, class G, class N, bool c>
-  size_t dimension_scalar(const Tpetra::Vector<S,L,G,N,c>& v) {
-    typedef Tpetra::Vector<S,L,G,N,c> V;
+  template <class S, class L, class G, class N>
+  size_t dimension_scalar(const Tpetra::Vector<S,L,G,N>& v) {
+    typedef Tpetra::Vector<S,L,G,N> V;
     typedef typename V::dual_view_type dual_view_type;
     typedef typename dual_view_type::t_dev device_type;
     typedef typename dual_view_type::t_host host_type;

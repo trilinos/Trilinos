@@ -86,7 +86,7 @@ class ChanJac(Epetra.Operator):
             y.Multiply(2.0, x, self.x_jac, 0.0)
             y.Update(self.alpha_, y, self.beta_, x,0.0)
             return 0
-        except Exception, e:
+        except Exception as e:
             print("A python exception was raised in ChanJac>.Apply:")
             print(e)
             return -1
@@ -143,7 +143,7 @@ class ChanProblemInterface(LOCA.Epetra.Interface.TimeDependent,
           for i in range(0,n):
               F[i] = x[i]**2 - self.sigma_ * float(i)
           return True
-      except Exception, e:
+      except Exception as e:
           print("Proc", self.__myPID,
                 "ChanProblemInterface.computeF() has thrown an exception:")
           print(str(type(e))[18:-2] + ":", e)
@@ -157,7 +157,7 @@ class ChanProblemInterface(LOCA.Epetra.Interface.TimeDependent,
           self.Jaco_.x_jac = x.copy()
           self.Jaco_.setShMat(1.0,0.0);
           return True
-      except Exception, e:
+      except Exception as e:
           print("Proc", self.__myPID, "ChanProblemInterface.computeJacobian() "
                 "has thrown an exception:")
           print(str(type(e))[18:-2] + ":", e)

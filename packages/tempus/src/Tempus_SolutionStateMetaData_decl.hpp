@@ -75,6 +75,8 @@ public:
     bool   getIsSynced()             const {return isSynced_;}
     bool   getIsInterpolated()       const {return isInterpolated_;}
     Scalar getAccuracy()             const {return accuracy_;}
+    Scalar getTolAbs()               const {return tolAbs_;}
+    Scalar getTolRel()               const {return tolRel_;}
 
     void setTime(Scalar time) {time_ = time;}
     void setIStep(int iStep) {iStep_ = iStep;}
@@ -93,6 +95,9 @@ public:
     void setIsInterpolated(bool isInterpolated)
       {isInterpolated_ = isInterpolated;}
     void setAccuracy(Scalar accuracy) {accuracy_ = accuracy;}
+    void setTolAbs(Scalar tolAbs){tolAbs_ = tolAbs;}
+    void setTolRel(Scalar tolRel){tolRel_ = tolRel;}
+       
   //@}
 
   /// \name Overridden from Teuchos::Describable
@@ -111,6 +116,8 @@ protected:
   Scalar order_;             ///< Order of this solution
   int nFailures_;            ///< Total number of stepper failures
   int nConsecutiveFailures_; ///< Consecutive number of stepper failures
+  Scalar tolRel_;            ///< Absolute tolerance 
+  Scalar tolAbs_;            ///< Relative tolerance
 
   /** \brief The solutionStatus is used to indicate
       - if the solution is still being worked on; WORKING

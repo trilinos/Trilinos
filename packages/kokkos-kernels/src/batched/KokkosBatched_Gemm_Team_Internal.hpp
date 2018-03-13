@@ -47,8 +47,6 @@ namespace KokkosBatched {
            const ValueType *__restrict__ B, const int bs0, const int bs1,
            const ScalarType beta,
            /**/  ValueType *__restrict__ C, const int cs0, const int cs1) {
-      static_assert(is_same_mag_type<ScalarType,ValueType>::value && !is_vector<ScalarType>::value,
-                    "TeamGemmInternal:: not valid template types");
 
       // C = beta C + alpha A B
       // C (m x n), A(m x k), B(k x n)
@@ -99,8 +97,6 @@ namespace KokkosBatched {
            const ValueType *__restrict__ B, const int bs0, const int bs1,
            const ScalarType beta,
            /**/  ValueType *__restrict__ C, const int cs0, const int cs1) {
-      static_assert(is_same_mag_type<ScalarType,ValueType>::value && !is_vector<ScalarType>::value,
-                    "TeamGemmInternal:: not valid template types");
       // C = beta C + alpha A B
       // C (m x n), A(m x k), B(k x n)
 

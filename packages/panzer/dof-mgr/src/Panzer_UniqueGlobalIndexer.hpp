@@ -302,6 +302,11 @@ public:
   const Kokkos::View<const LocalOrdinalT*,Kokkos::LayoutRight,PHX::Device> getElementLIDs(LocalOrdinalT localElmtId) const
     { return Kokkos::subview(localIDs_k_, localElmtId, Kokkos::ALL() ); }
 
+  /** Return all the element LIDS for a given indexer
+   */
+  const Kokkos::View<const LocalOrdinalT**,Kokkos::LayoutRight,PHX::Device> getLIDs() const
+    {return localIDs_k_;}
+
    /** Access the local IDs for an element. The local ordering is according to
      * the <code>getOwnedAndGhostedIndices</code> method. Note
      */

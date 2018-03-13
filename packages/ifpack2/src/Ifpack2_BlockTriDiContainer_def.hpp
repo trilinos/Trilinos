@@ -49,7 +49,12 @@
 #include <Tpetra_BlockMultiVector.hpp>
 
 #include <Kokkos_ArithTraits.hpp>
+#include <KokkosBatched_Util.hpp>
 #include <KokkosBatched_Vector.hpp>
+#if defined(__KOKKOSBATCHED_PROMOTION__)
+#include <KokkosBatched_AddRadial_Decl.hpp>
+#include <KokkosBatched_AddRadial_Impl.hpp>
+#endif // __KOKKOSBATCHED_PROMOTION__
 #include <KokkosBatched_Gemm_Decl.hpp>
 #include <KokkosBatched_Gemm_Serial_Impl.hpp>
 #include <KokkosBatched_Gemv_Decl.hpp>
@@ -66,6 +71,7 @@
 #include <memory>
 
 //todo Move to KokkosKernels.
+#if !defined(__KOKKOSBATCHED_PROMOTION__)
 namespace KokkosBatched {
 namespace Details {
 namespace Todo {
@@ -169,10 +175,13 @@ Serial_LU_Internal_Unblocked_invoke(
 } // namespace Details
 } // namespace KokkosBatched
 
-namespace Ifpack2 {
+#endif // __KOKKOSBATCHED_PROMOTION__
 
+namespace Ifpack2 {
+#if !defined(__KOKKOSBATCHED_PROMOTION__)
 namespace Details {
 namespace Todo {
+
 template <typename Object, typename Vector>
 int test_add_radial_impl (Object& o, Vector& v, const int len) {
   using KokkosBatched::Details::Todo::add_radial;
@@ -216,13 +225,19 @@ inline int test_add_radial () {
 }
 }
 }
+#endif // __KOKKOSBATCHED_PROMOTION__
 
 namespace Details {
 namespace Batched {
+#if defined(__KOKKOSBATCHED_PROMOTION__)
+using KokkosBatched::Experimental::Vector;
+using KokkosBatched::Experimental::SIMD;
+using KokkosBatched::Experimental::DefaultVectorLength;
+#else // __KOKKOSBATCHED_PROMOTION__
 using KokkosBatched::Experimental::Vector;
 using KokkosBatched::Experimental::VectorTag;
 using KokkosBatched::Experimental::AVX;
-
+#endif // __KOKKOSBATCHED_PROMOTION__
 template <typename ExeSpace>
 struct DeviceType {
    typedef Kokkos::Device<typename ExeSpace::execution_space,
@@ -261,6 +276,41 @@ struct ScalarType {
   typedef VectorType type;
 };
 
+#if defined(__KOKKOSBATCHED_PROMOTION__)
+#if defined(KOKKOS_ENABLE_SERIAL)
+template <>
+struct DefaultVectorizationMethod<Kokkos::Serial, double> {
+  typedef SIMD<double> type;
+};
+#endif
+#if defined(KOKKOS_ENABLE_OPENMP)
+template <>
+struct DefaultVectorizationMethod<Kokkos::OpenMP, double> {
+  typedef SIMD<double> type;
+};
+#endif
+#if defined(KOKKOS_ENABLE_CUDA)
+template <>
+struct DefaultVectorizationMethod<Kokkos::Cuda, double> {
+  typedef BatchedNonVector<Kokkos::Cuda, double> type;
+};
+#endif
+template <>
+struct VectorizationTraits<SIMD<double> > {
+  typedef double value_type;
+  typedef Kokkos::DefaultHostExecutionSpace exec_space; 
+  enum : int { vector_length = DefaultVectorLength<double,typename exec_space::memory_space>::value };
+  typedef Vector<SIMD<double>, vector_length> vector_type;
+};
+template <>
+struct VectorLength<VectorizationTraits<SIMD<double> >::vector_type> {
+  enum : int { value = VectorizationTraits<SIMD<double> >::vector_length };
+};
+template <>
+struct ScalarType<VectorizationTraits<SIMD<double> >::vector_type> {
+  typedef VectorizationTraits<SIMD<double> >::vector_type::value_type type;
+};
+#else //__KOKKOSBATCHED_PROMOTION__
 #if defined(__AVX512F__) || defined(__AVX2__) || defined(__AVX__)
 template <typename ExeSpace>
 struct DefaultVectorizationMethod<ExeSpace, double> {
@@ -296,6 +346,8 @@ struct ScalarType<VectorizationTraits<AVX<double> >::vector_type> {
   typedef VectorizationTraits<AVX<double> >::vector_type::value_type type;
 };
 #endif
+#endif //__KOKKOSBATCHED_PROMOTION__
+
 
 template <typename Int1, typename Int2, typename View, typename... Indices>
 KOKKOS_INLINE_FUNCTION
@@ -1699,6 +1751,15 @@ public: // Intended to be private, but public for Cuda.
 
     template <typename AViewType>
     KOKKOS_INLINE_FUNCTION void LU (const AViewType& A) const {
+#if defined(__KOKKOSBATCHED_PROMOTION__)
+      {
+        namespace kbe = KokkosBatched::Experimental;
+        if (add_to_diag) {
+          kbe::SerialAddRadial::invoke(diag_safety, A);
+        }
+        kbe::SerialLU<kbe::Algo::LU::Blocked>::invoke(A);
+      }
+#else // __KOKKOSBATCHED_PROMOTION__
       if (add_to_diag)
         KokkosBatched::Details::Todo::Serial_LU_Internal_Unblocked_invoke(
           A.dimension_0(), A.dimension_1(), A.data(), A.stride_0(), A.stride_1(), diag_safety);
@@ -1706,6 +1767,7 @@ public: // Intended to be private, but public for Cuda.
         namespace kbe = KokkosBatched::Experimental;
         kbe::SerialLU<kbe::Algo::LU::Blocked>::invoke(A);
       }
+#endif // __KOKKOSBATCHED_PROMOTION__
     }
 
     KOKKOS_INLINE_FUNCTION void factorize (const LO& packidx) const {

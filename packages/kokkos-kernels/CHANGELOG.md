@@ -1,5 +1,19 @@
 # Change Log
 
+## [2.6.00](https://github.com/kokkos/kokkos-kernels/tree/2.6.00) (2018-03-07)
+[Full Changelog](https://github.com/kokkos/kokkos-kernels/compare/2.5.00...2.6.00)
+
+**Implemented enhancements:**
+
+- Spgemm hash promotion [\#171](https://github.com/kokkos/kokkos-kernels/issues/171)
+- Batched BLAS enhancement [\#170](https://github.com/kokkos/kokkos-kernels/issues/170)
+
+**Fixed bugs:**
+
+- d2\_graph\_color doesn't have a default coloring mechanism [\#168](https://github.com/kokkos/kokkos-kernels/issues/168)
+- Build error when MKL TPL is enabled [\#135](https://github.com/kokkos/kokkos-kernels/issues/135)
+
+
 ## [2.5.00](https://github.com/kokkos/kokkos-kernels/tree/2.5.00) (2017-12-15)
 [Full Changelog](https://github.com/kokkos/kokkos-kernels/compare/0.10.03...2.5.00)
 

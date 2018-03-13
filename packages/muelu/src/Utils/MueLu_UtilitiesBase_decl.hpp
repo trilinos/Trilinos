@@ -353,6 +353,17 @@ namespace MueLu {
         RES->update(one, RHS, negone);
         return RES;
     }
+    
+
+    static void Residual(const Xpetra::Operator<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Op, const MultiVector& X, const MultiVector& RHS, MultiVector & Resid) {
+      TEUCHOS_TEST_FOR_EXCEPTION(X.getNumVectors() != RHS.getNumVectors(), Exceptions::RuntimeError, "Number of solution vectors != number of right-hand sides");
+      TEUCHOS_TEST_FOR_EXCEPTION(Resid.getNumVectors() != RHS.getNumVectors(), Exceptions::RuntimeError, "Number of residual vectors != number of right-hand sides");
+      Scalar one = Teuchos::ScalarTraits<Scalar>::one(), negone = -one, zero = Teuchos::ScalarTraits<Scalar>::zero();
+      // TODO Op.getRangeMap should return a BlockedMap if it is a BlockedCrsOperator
+      Op.apply(X, Resid, Teuchos::NO_TRANS, one, zero);
+      Resid.update(one, RHS, negone);
+    }
+
 
 #ifndef _WIN32
     static void PauseForDebugger() {

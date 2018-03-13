@@ -136,7 +136,7 @@ TEUCHOS_UNIT_TEST(tIOSSConnManager, basic)
 					"Error, Test was run with " << np << " processes,"
 					<< "but is only valid for up to " << MAX_PROCESSES << " processes." << std::endl);
 
-	typedef Kokkos::Experimental::DynRankView<double, PHX::Device> FieldContainer;
+	typedef Kokkos::DynRankView<double, PHX::Device> FieldContainer;
 
     // For printing
 	bool print = false;

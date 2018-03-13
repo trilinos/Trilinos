@@ -41,6 +41,7 @@
 //@HEADER
 */
 #include <Kokkos_Atomic.hpp>
+#include <atomic>
 namespace KokkosKernels{
 
 namespace Experimental{
@@ -52,7 +53,7 @@ struct HashmapAccumulator{
   size_type max_value_size;
   size_type used_size;
 
-  volatile  size_type *hash_begins;
+  size_type *hash_begins;
   size_type *hash_nexts;
   key_type *keys;
   value_type *values;
@@ -367,7 +368,7 @@ struct HashmapAccumulator{
       }
     }
 
-    if (*used_size_ >= max_value_size_) return INSERT_FULL;
+    //if (*used_size_ >= max_value_size_) return INSERT_FULL;
     size_type my_index = (*used_size_)++;
 
     if (hash_begins[hash] == -1){
@@ -376,6 +377,72 @@ struct HashmapAccumulator{
     hash_nexts[my_index] = hash_begins[hash];
 
     hash_begins[hash] = my_index;
+    keys[my_index] = key;
+    values[my_index] = value;
+    return INSERT_SUCCESS;
+  }
+
+  //function to be called from device.
+  //Accumulation is OR operation.
+  //Insertion is sequential, no race condition for the insertion.
+  KOKKOS_INLINE_FUNCTION
+  int sequential_sorted_insert_into_hash_mergeAdd_TrackHashes (
+      size_type hash,
+      key_type key,
+      value_type value,
+
+      size_type *used_size_,
+      const size_type max_value_size_,
+      size_type *used_hash_size,
+      size_type *used_hashes){
+
+    size_type i = hash_begins[hash];
+
+    if (i != -1){
+        if (keys[i] == key){
+          values[i] = values[i] + value;
+          return INSERT_SUCCESS;
+        }
+        else if (keys[i] < key){
+        	//if not equal at the same time not larger than the key, than rest is gouing to be even smaller so insert here.
+            size_type my_index = (*used_size_)++;
+            hash_nexts[my_index] = hash_begins[hash];
+            hash_begins[hash] = my_index;
+            keys[my_index] = key;
+            values[my_index] = value;
+        	return INSERT_SUCCESS;
+        }
+    }
+    else {
+    	//insert.
+        size_type my_index = (*used_size_)++;
+        used_hashes[used_hash_size[0]++] = hash;
+        hash_nexts[my_index] = hash_begins[hash];
+        hash_begins[hash] = my_index;
+        keys[my_index] = key;
+        values[my_index] = value;
+    	return INSERT_SUCCESS;
+    }
+    size_type prev = i;
+    i = hash_nexts[i];
+    for (; i != -1; i = hash_nexts[i]){
+      if (keys[i] == key){
+        values[i] = values[i] + value;
+        return INSERT_SUCCESS;
+      } else if (keys[i] < key){
+    	  size_type my_index = (*used_size_)++;
+    	  hash_nexts[my_index] = hash_nexts[prev];
+    	  hash_nexts[prev] = my_index;
+    	  keys[my_index] = key;
+    	  values[my_index] = value;
+    	  return INSERT_SUCCESS;
+      }
+      prev = i;
+    }
+
+    size_type my_index = (*used_size_)++;
+    hash_nexts[my_index] = hash_nexts[prev];
+    hash_nexts[prev] = my_index;
     keys[my_index] = key;
     values[my_index] = value;
     return INSERT_SUCCESS;
@@ -630,48 +697,23 @@ struct HashmapAccumulator{
       ){
 
 
-    char key_not_found = 1;
 
     if (hash != -1){
       size_type i = hash_begins[hash];
-      //int count = 0;
+
       for (; i != -1; i = hash_nexts[i]){
-        /*
-        if (print && hash == 31 && key == 2436 && (value - 0.197059 < 0.00001)){
-          printf("inside --- hash:%d key:%d val:%lf i:%d hash_nexts[i]:%d keys[i]:%d count:%d\n", hash, key, value, i, hash_nexts[i], keys[i], count);
-        }
-
-        count++;
-
-
-        if (print && count > 1000) {
-          break;
-        }
-        */
-
         if (keys[i] == key){
-          key_not_found = 0;
           values[i] = values[i] + value;
-
-          break;
+          return INSERT_SUCCESS;
         }
       }
     }
     else {
-      key_not_found = 0;
-    }
-
-
-    if ((*used_size_) >= max_value_size_){
-      if (key_not_found == 0) {
         return INSERT_SUCCESS;
-      }
-      else {
-        return INSERT_FULL;
-      }
     }
 
-    int write_pos = 0;
+
+    /*
     Kokkos::parallel_scan(
         Kokkos::ThreadVectorRange(teamMember, vector_size),
         [&] (const int threadid, int &update, const bool final) {
@@ -694,8 +736,8 @@ struct HashmapAccumulator{
     Kokkos::single(Kokkos::PerThread(teamMember),[=] () {
       (*used_size_) += num_writes;
     });
-
-    if (key_not_found == 0) return INSERT_SUCCESS;
+     */
+    size_type my_write_index = Kokkos::atomic_fetch_add(used_size_, size_type(1));
 
 
     if (my_write_index >= max_value_size_) {
@@ -707,7 +749,7 @@ struct HashmapAccumulator{
       values[my_write_index] = value;
       size_type hashbeginning = Kokkos::atomic_exchange(hash_begins+hash, my_write_index);
       if (hashbeginning == -1){
-        used_hashes[Kokkos::atomic_fetch_add(used_hash_size, 1)] = hash;
+        used_hashes[Kokkos::atomic_fetch_add(used_hash_size, size_type(1))] = hash;
       }
       hash_nexts[my_write_index] = hashbeginning;
       return INSERT_SUCCESS;
@@ -736,25 +778,88 @@ struct HashmapAccumulator{
       ){
 
 
+
+	    if (hash != -1){
+	      size_type i = hash_begins[hash];
+
+	      for (; i != -1; i = hash_nexts[i]){
+	        if (keys[i] == key){
+	          values[i] = values[i] + value;
+	          return INSERT_SUCCESS;
+	        }
+	      }
+	    }
+	    else {
+	        return INSERT_SUCCESS;
+	    }
+
+
+	    /*
+	    Kokkos::parallel_scan(
+	        Kokkos::ThreadVectorRange(teamMember, vector_size),
+	        [&] (const int threadid, int &update, const bool final) {
+	      if (final){
+	        write_pos = update;
+	      }
+	      update += key_not_found;
+	    });
+
+	    size_type my_write_index = (*used_size_) + write_pos;
+	    int num_writes = 0;
+	    Kokkos::parallel_reduce(
+	            Kokkos::ThreadVectorRange(teamMember, vector_size),
+	            [&] (const int threadid, int &num_writes_) {
+	          if (key_not_found){
+	            num_writes_ += 1;
+	          }
+	        }, num_writes);
+
+	    Kokkos::single(Kokkos::PerThread(teamMember),[=] () {
+	      (*used_size_) += num_writes;
+	    });
+	     */
+	    if (used_size_[0] >= max_value_size_){
+	    	return INSERT_FULL;
+	    }
+	    size_type my_write_index = Kokkos::atomic_fetch_add(used_size_, size_type(1));
+
+
+	    if (my_write_index >= max_value_size_) {
+	      return INSERT_FULL;
+	    }
+	    else {
+
+	      keys[my_write_index] = key;
+	      values[my_write_index] = value;
+	      size_type hashbeginning = Kokkos::atomic_exchange(hash_begins+hash, my_write_index);
+	      hash_nexts[my_write_index] = hashbeginning;
+	      return INSERT_SUCCESS;
+	    }
+	  }
+
+  //used_size should be a shared pointer among the thread vectors
+  template <typename team_member_t>
+  KOKKOS_INLINE_FUNCTION
+  int team_atomic_insert_into_hash_mergeAdd_TrackHashes (
+      const team_member_t & teamMember,
+      const int vector_size,
+
+      size_type &hash,
+      const key_type key,
+      const value_type value,
+      volatile size_type *used_size_,
+      const size_type max_value_size_,
+      size_type *used_hash_size,
+      size_type *used_hashes
+      //,bool print = false
+      ){
+
+
     char key_not_found = 1;
 
     if (hash != -1){
       size_type i = hash_begins[hash];
-      //int count = 0;
       for (; i != -1; i = hash_nexts[i]){
-        /*
-        if (print && hash == 31 && key == 2436 && (value - 0.197059 < 0.00001)){
-          printf("inside --- hash:%d key:%d val:%lf i:%d hash_nexts[i]:%d keys[i]:%d count:%d\n", hash, key, value, i, hash_nexts[i], keys[i], count);
-        }
-
-        count++;
-
-
-        if (print && count > 1000) {
-          break;
-        }
-        */
-
         if (keys[i] == key){
           key_not_found = 0;
           values[i] = values[i] + value;
@@ -767,41 +872,26 @@ struct HashmapAccumulator{
       key_not_found = 0;
     }
 
-
     if ((*used_size_) >= max_value_size_){
+    	return key_not_found; // success means 0, full means 1.
+#if 0
       if (key_not_found == 0) {
         return INSERT_SUCCESS;
       }
       else {
         return INSERT_FULL;
       }
+#endif
     }
 
-    int write_pos = 0;
-    Kokkos::parallel_scan(
-        Kokkos::ThreadVectorRange(teamMember, vector_size),
-        [&] (const int threadid, int &update, const bool final) {
-      if (final){
-        write_pos = update;
-      }
-      update += key_not_found;
-    });
-
-    size_type my_write_index = (*used_size_) + write_pos;
-    int num_writes = 0;
-    Kokkos::parallel_reduce(
-            Kokkos::ThreadVectorRange(teamMember, vector_size),
-            [&] (const int threadid, int &num_writes_) {
-          if (key_not_found){
-            num_writes_ += 1;
-          }
-        }, num_writes);
-
-    Kokkos::single(Kokkos::PerThread(teamMember),[=] () {
-      (*used_size_) += num_writes;
-    });
-
-    if (key_not_found == 0) return INSERT_SUCCESS;
+    size_type my_write_index = 0;
+    if (key_not_found){
+    	my_write_index = Kokkos::atomic_fetch_add(used_size_, size_type(1));
+    	//my_write_index = used_size_[0]++;
+    }
+    else {
+    	return INSERT_SUCCESS;
+    }
 
 
     if (my_write_index >= max_value_size_) {
@@ -811,10 +901,423 @@ struct HashmapAccumulator{
 
       keys[my_write_index] = key;
       values[my_write_index] = value;
-      size_type hashbeginning = Kokkos::atomic_exchange(hash_begins+hash, my_write_index);
+
+
+      size_type hashbeginning = hash_begins[hash];
+      hash_nexts[my_write_index] = hashbeginning;
+
+      hashbeginning = Kokkos::atomic_exchange(hash_begins+hash, my_write_index);
+      hash_nexts[my_write_index] = hashbeginning;
+
+      if (hashbeginning == -1){
+        used_hashes[Kokkos::atomic_fetch_add(used_hash_size, 1)] = hash;
+      }
+      return INSERT_SUCCESS;
+    }
+  }
+
+
+  //function to be called from device.
+  //Accumulation is Add operation. It is not atomicAdd, as this
+  //is for the cases where we know that none of the simultanous
+  //insertions will have the same key.
+  //Insertion is simulteanous for the threads of a team
+  //used_size should be a shared pointer among the thread
+  template <typename team_member_t>
+  KOKKOS_INLINE_FUNCTION
+  int team_atomic_insert_into_hash_mergeAdd (
+      const team_member_t & teamMember,
+      const int vector_size,
+
+      size_type &hash,
+      const key_type key,
+      const value_type value,
+      volatile size_type *used_size_,
+      const size_type max_value_size_
+      //,bool print = false
+      ){
+
+
+    int key_not_found = 1;
+
+    if (hash != -1){
+      size_type i = hash_begins[hash];
+#if 0
+      std::cout << "hash" <<  hash << " hash_begins[hash]:" << hash_begins[hash] << std::endl;
+#endif
+      for (; i != -1; i = hash_nexts[i]){
+#if 0
+      std::cout << "hash" << " hash" << " hash_begins[hash]:" << hash_begins[hash] << " keys[i]:" << keys[i] << std::endl;
+#endif
+        if (keys[i] == key){
+          key_not_found = 0;
+          values[i] = values[i] + value;
+          break;
+        }
+      }
+    }
+    else {
+      key_not_found = 0;
+    }
+
+
+    if ((*used_size_) >= max_value_size_){
+    	return key_not_found; // success means 0, full means 1.
+#if 0
+      if (key_not_found == 0) {
+        return INSERT_SUCCESS;
+      }
+      else {
+        return INSERT_FULL;
+      }
+#endif
+    }
+
+    size_type my_write_index = 0;
+    if (key_not_found){
+    	my_write_index = Kokkos::atomic_fetch_add(used_size_, size_type(1));
+    	//my_write_index = used_size_[0]++;
+    }
+    else {
+    	return INSERT_SUCCESS;
+    }
+
+    if (my_write_index >= max_value_size_) {
+      return INSERT_FULL;
+    }
+    else {
+      keys[my_write_index] = key;
+      values[my_write_index] = value;
+
+
+      size_type hashbeginning = hash_begins[hash];
+      hash_nexts[my_write_index] = hashbeginning;
+      //MD Nov. 2017: I need to do this twice. If I skip above below gets errors.
+      //This is because until_hash_next are set, some other threads reads hash_begins and it does not find anything useful.
+      //I need to set it again with atomic exchange because of race conditions.
+      //It is possible that hash_nexts[my_write_index] might point to a further one in the hashmap.
+      //But this is okay as no insertions can have same value at the same time.
+      hashbeginning = Kokkos::atomic_exchange(hash_begins+hash, my_write_index);
       hash_nexts[my_write_index] = hashbeginning;
       return INSERT_SUCCESS;
     }
+
+	//  return 0;
+  }
+
+  //function to be called from device.
+  //Accumulation is Add operation.
+  //It is an atomicAdd, we might have simultanous insertions with the same key.
+  template <typename team_member_t>
+  KOKKOS_INLINE_FUNCTION
+  int team_atomic_insert_into_hash_mergeAddAtomic (
+      const team_member_t & teamMember,
+      const int vector_size,
+
+	  size_type &hash,
+      const key_type key,
+	  const value_type value,
+	  volatile size_type *used_size_,
+	  const size_type max_value_size_,
+	  const size_type & first_bit,
+	  const size_type & rest_bit, bool print = false
+      ){
+
+#if 0
+	  if (print) std::cout << "\tcol:" << key << " val:" << value << " hash:" << hash << " used_size_:" << *used_size_ << std::endl;
+#endif
+	//in this one we represent the end of link with 0.
+    const size_type end_of_link = 0;
+
+
+    size_type i = end_of_link;
+
+    if (hash != -1){
+      i = hash_begins[hash] & rest_bit;
+
+#if 0
+      if (print) std::cout << "\t 1 hash_begins[hash]:" << hash_begins[hash] << std::endl;
+#endif
+
+      if (i == end_of_link) {
+        //we need to insert it to beginning.
+      }
+      else if (keys[i] == key){
+#if 0
+        if (print) std::cout << "\t 2 keys[i]:" << keys[i] << std::endl;
+#endif
+        Kokkos::atomic_add(values + i, value);
+        return 0;
+      }
+      else if (keys[i] > key){
+#if 0
+    	  if (print) std::cout << "\t 3 keys[i]:" << keys[i] << " key:" << key << std::endl;
+#endif
+    	  //we need to insert it to beginning.
+    	  i = end_of_link;
+    	  //revert i.
+      } else {
+    	  size_type next = hash_nexts[i] & rest_bit;
+    	  for (; next != end_of_link; next = hash_nexts[next] & rest_bit){
+#if 0
+    		  if (print) std::cout << "\t 4 keys[next] :" << keys[next]  << " key:" << key << std::endl;
+#endif
+    		  if (keys[next] == key){
+    			  Kokkos::atomic_add(values + next, value);
+    			  return 0;
+    		  }
+    		  else if (keys[next] > key){
+    			  //this means we need to insert between i and next.
+    			  //i will be some positive value.
+    			  break;
+    		  }
+                  i = next;
+    	  }
+    	  //if we come here, it means we need to insert at the end after i.
+    	  //i will be some positive value.
+      }
+    }
+    else {
+    	return 0;
+    }
+
+    //if we are here, it means we could not insert it.
+    //we will try to insert it below.
+
+
+    while(1){
+    	if (i == end_of_link){
+#if 0
+    		if (print) std::cout << "\t 5 i :" << i << std::endl;
+#endif
+
+    		//lock hash_begins[hash];
+    		volatile size_type initial_hash_begin =  hash_begins[hash] & rest_bit;
+    		volatile size_type locked_hash_begin =  initial_hash_begin | first_bit;
+    		//if (hash_begins[hash] == initial_hash_begin){ hash_begins[hash] = locked_hash_begin;
+    		if (!Kokkos::atomic_compare_exchange_strong(hash_begins + hash, initial_hash_begin, locked_hash_begin)){
+    			continue;
+    		}
+    		//std::atomic_thread_fence(std::memory_order_acquire);
+    		//volatile int tmp = 0;
+    		//md note somehow commented part
+    		if (initial_hash_begin == end_of_link || (keys[initial_hash_begin] > key)){
+    			{
+    				volatile size_type my_write_index = Kokkos::atomic_fetch_add(used_size_, size_type(1));
+#if 0
+    				if (print) std::cout << "\t 8 my_write_index :" << my_write_index << " max_value_size_:" << max_value_size_ << std::endl;
+#endif
+    				if (my_write_index >= max_value_size_){
+    					hash_begins[hash] = initial_hash_begin;
+    					return 1;
+    				}
+    				//Kokkos::volatile_store(&(keys[my_write_index]), key);
+    				//Kokkos::volatile_store(&(values[my_write_index]), value);
+    				//Kokkos::volatile_store(&(hash_nexts[my_write_index]), initial_hash_begin);
+
+    				keys[my_write_index] = key;
+    				values[my_write_index] = value;
+    				hash_nexts[my_write_index] = initial_hash_begin;
+
+    				//std::atomic_thread_fence(std::memory_order_release);
+    				hash_begins[hash] = my_write_index;
+    				//Kokkos::volatile_store(&(hash_begins[hash]), my_write_index);
+
+    				/*
+    				if( keys[initial_hash_begin] == key)
+    					std::cout 	<< "initial_hash_begin:" << initial_hash_begin
+									<< " key:" << key
+									<< " keys[initial_hash_begin]:" << keys[initial_hash_begin]
+							        << std::endl;
+    				 */
+    				return 0;
+
+    			}
+
+    		}
+#if 0
+    		else if ((tmp = Kokkos::volatile_load(&(keys[initial_hash_begin]))) > key) {
+				if( keys[initial_hash_begin] == key) std::cout << "1 tmp:" << tmp << " initial_hash_begin:" << initial_hash_begin << " key:" << key << " keys[initial_hash_begin]:" << keys[initial_hash_begin] << std::endl;
+
+#if 0
+    			if (print) std::cout << "\t 6 initial_hash_begin :" << initial_hash_begin << std::endl;
+    			if (print && initial_hash_begin != end_of_link) std::cout << "\t 7 keys[initial_hash_begin] :" << keys[initial_hash_begin] << " key:" << key<< std::endl;
+#endif
+    			//we need to insert it to beginning.
+    			{
+    				volatile size_type my_write_index = Kokkos::atomic_fetch_add(used_size_, 1);
+#if 0
+    				if (print) std::cout << "\t 8 my_write_index :" << my_write_index << " max_value_size_:" << max_value_size_ << std::endl;
+#endif
+    				if (my_write_index >= max_value_size_){
+    					hash_begins[hash] = initial_hash_begin;
+    					return 1;
+    				}
+    				if( keys[initial_hash_begin] == key) std::cout << "2 tmp:" << tmp << " initial_hash_begin:" << initial_hash_begin << " key:" << key << " keys[initial_hash_begin]:" << keys[initial_hash_begin] << std::endl;
+
+
+    				//Kokkos::volatile_store(&(keys[my_write_index]), key);
+    				//Kokkos::volatile_store(&(values[my_write_index]), value);
+    				//Kokkos::volatile_store(&(hash_nexts[my_write_index]), initial_hash_begin);
+
+    				keys[my_write_index] = key;
+    				values[my_write_index] = value;
+    				hash_nexts[my_write_index] = initial_hash_begin;
+
+    				//std::atomic_thread_fence(std::memory_order_release);
+    				//Kokkos::volatile_store(&(hash_begins[hash]), my_write_index);
+
+    				hash_begins[hash] = my_write_index;
+    				if( keys[initial_hash_begin] == key) std::cout << " 3 tmp:" << tmp << " initial_hash_begin:" << initial_hash_begin << " key:" << key << " keys[initial_hash_begin]:" << keys[initial_hash_begin] << std::endl;
+    				return 0;
+
+    			}
+    		}
+#endif
+
+    		else if (keys[initial_hash_begin] == key){
+#if 0
+    			if (print) std::cout << "\t 9 keys[initial_hash_begin] :" << keys[initial_hash_begin] << " key:" << key << std::endl;
+#endif
+    			Kokkos::atomic_add(values + initial_hash_begin, value);
+    			hash_begins[hash] = initial_hash_begin;
+    			//release lock
+    			return 0;
+    		}
+    		else {
+#if 0
+    			if (print) std::cout << "\t 9 keys[initial_hash_begin] :" << keys[initial_hash_begin] << " key:" << key << std::endl;
+#endif
+
+    			hash_begins[hash] = initial_hash_begin;
+    			//release lock
+    			i = initial_hash_begin;
+    			size_type next = hash_nexts[initial_hash_begin] & rest_bit;
+    			for (; next != end_of_link; next = hash_nexts[next] & rest_bit){
+#if 0
+    				if (print) std::cout << "\t 10 keys[next] :" << keys[next]  << " key:" << key << std::endl;
+#endif
+
+    				if (keys[next] == key){
+    					Kokkos::atomic_add(values + next, value);
+    					return 0;
+    				}
+    				else if (keys[next] > key){
+    					break;
+    				}
+    				i = next;
+    			}
+    			//if we come here, it means we need to insert at the end after i.
+    			//i will be some positive value.
+    		}
+
+
+    		//if hash_begin is not - 1 anymore,
+    		//loop through it
+    		//if found atomic
+    		//increment the value and spin = 0;
+    		//if not found
+    		//find new i.
+    		//release the lock.
+    		//otherwise
+    		//allocate new one, insert and spin 0.
+    		//release lock
+    	}
+#if 0
+    	else if (1){
+    		return 0;
+    	}
+#endif
+    	else {
+    		//lock hash_begin[hash];
+    		size_type initial_hash_begin = hash_nexts[i] & rest_bit;
+    		size_type locked_hash_begin =  initial_hash_begin | first_bit;
+
+
+    		if (keys[i] == key){
+    			Kokkos::atomic_add(values + i, value);
+    			return 0;
+    		}
+    		//std::atomic_thread_fence(std::memory_order_acquire);
+
+
+    		if (!Kokkos::atomic_compare_exchange_strong(hash_nexts + i, initial_hash_begin, locked_hash_begin)){
+#if 0
+    			std::cout << "spinning here2 initial_hash_begin:" << initial_hash_begin << " locked_hash_begin:" << locked_hash_begin << std::endl;
+#endif
+    			continue;
+    		}
+
+    		if (initial_hash_begin == end_of_link || keys[initial_hash_begin] > key) {
+#if 0
+    			if (print) std::cout << "\t 11 initial_hash_begin :" << initial_hash_begin << std::endl;
+    			if (print && initial_hash_begin != end_of_link) std::cout << "\t 12 keys[initial_hash_begin] :" << keys[initial_hash_begin] << " key:" << key<< std::endl;
+#endif
+    			//we need to insert it to beginning.
+    			{
+    				size_type my_write_index = Kokkos::atomic_fetch_add(used_size_, size_type(1));
+#if 0
+    				if (print) std::cout << "\t 13 my_write_index :" << my_write_index << " max_value_size_:" << max_value_size_ << std::endl;
+#endif
+    				if (my_write_index >= max_value_size_){
+    					hash_nexts[i] = initial_hash_begin;
+    					return 1;
+    				}
+    				keys[my_write_index] = key;
+    				values[my_write_index] = value;
+    				hash_nexts[my_write_index] = initial_hash_begin;
+
+    				//std::atomic_thread_fence(std::memory_order_release);
+    				hash_nexts[i] = my_write_index;
+
+    				return 0;
+    			}
+    		}
+    		else if (keys[initial_hash_begin] == key){
+#if 0
+    			if (print) std::cout << "\t 14 keys[initial_hash_begin] :" << keys[initial_hash_begin] << " key:" << key << std::endl;
+#endif
+    			Kokkos::atomic_add(values + initial_hash_begin, value);
+    			hash_nexts[i] = initial_hash_begin;
+    			//release lock
+    			return 0;
+    		}
+    		else {
+    			hash_nexts[i] = initial_hash_begin;
+    			i = initial_hash_begin;
+    			//release lock
+    			size_type next = hash_nexts[initial_hash_begin] & rest_bit;
+    			for (; next != end_of_link; next = hash_nexts[next] & rest_bit){
+#if 0
+    				if (print) std::cout << "\t 15 keys[next] :" << keys[next]  << " key:" << key << std::endl;
+#endif
+    				if (keys[next] == key){
+    					Kokkos::atomic_add(values + next, value);
+    					return 0;
+    				}
+    				else if (keys[next] > key){
+    					break;
+    				}
+    				i = next;
+    			}
+    			//if we come here, it means we need to insert at the end after i.
+    			//i will be some positive value.
+    		}
+
+    		//lock hash_next[i];
+    		//if hash_next[hash_next[i]] is now smaller than my value
+    		//loop through it
+    		//if found atomic
+    		//increment the value and spin = 0;
+    		//if not found
+    		//find new i.
+    		//release the lock.
+    		//otherwise
+    		//allocate new one, insert and spin 0.
+    		//release lock
+    	}
+    }
+	//return 0;
   }
 
 
@@ -1205,12 +1708,53 @@ struct HashmapAccumulator{
     values[my_write_index] = value;
     size_type hashbeginning = Kokkos::atomic_exchange(hash_begins+hash, my_write_index);
     if (hashbeginning == -1){
-      used_hashes[Kokkos::atomic_fetch_add(used_hash_size, 1)] = hash;
+      used_hashes[Kokkos::atomic_fetch_add(used_hash_size, size_type(1))] = hash;
     }
     hash_nexts[my_write_index] = hashbeginning;
     vals_counts_gmem[my_write_index] = 1;
     return INSERT_SUCCESS;
    // }
+  }
+
+  template <typename team_member_t>
+  KOKKOS_INLINE_FUNCTION
+  int vector_atomic_insert_into_hash (
+      const team_member_t & teamMember,
+      const int &vector_size,
+
+      const size_type &hash,
+      const key_type &key,
+      volatile size_type *used_size_,
+      const size_type &max_value_size_
+      ){
+
+
+    if (hash != -1){
+      size_type i = hash_begins[hash];
+      for (; i != -1; i = hash_nexts[i]){
+        if (keys[i] == key){
+          //values[i] = (key_type)values[i] | (key_type)value;
+          return INSERT_SUCCESS;
+        }
+      }
+    }
+    else {
+        return INSERT_SUCCESS;
+    }
+
+    size_type my_write_index = Kokkos::atomic_fetch_add(used_size_, size_type(1));
+
+    if (my_write_index >= max_value_size_) {
+      return INSERT_FULL;
+    }
+    else {
+
+      keys[my_write_index] = key;
+      //values[my_write_index] = value;
+      size_type hashbeginning = Kokkos::atomic_exchange(hash_begins+hash, my_write_index);
+      hash_nexts[my_write_index] = hashbeginning;
+      return INSERT_SUCCESS;
+    }
   }
 
   //function to be called from device.
@@ -1232,58 +1776,21 @@ struct HashmapAccumulator{
       const size_type &max_value_size_
       ){
 
-    char key_not_found = 1;
 
     if (hash != -1){
       size_type i = hash_begins[hash];
       for (; i != -1; i = hash_nexts[i]){
         if (keys[i] == key){
-          key_not_found = 0;
           values[i] = (key_type)values[i] | (key_type)value;
-          break;
+          return INSERT_SUCCESS;
         }
       }
     }
     else {
-      key_not_found = 0;
-    }
-
-
-    if ((*used_size_) >= max_value_size_){
-      if (key_not_found == 0) {
         return INSERT_SUCCESS;
-      }
-      else {
-        return INSERT_FULL;
-      }
     }
 
-    int write_pos = 0;
-    Kokkos::parallel_scan(
-        Kokkos::ThreadVectorRange(teamMember, vector_size),
-        [&] (const int threadid, int &update, const bool final) {
-      if (final){
-        write_pos = update;
-      }
-      update += key_not_found;
-    });
-
-    size_type my_write_index = (*used_size_) + write_pos;
-    int num_writes = 0;
-    Kokkos::parallel_reduce(
-            Kokkos::ThreadVectorRange(teamMember, vector_size),
-            [&] (const int threadid, int &num_writes_) {
-          if (key_not_found){
-            num_writes_ += 1;
-          }
-        }, num_writes);
-
-    Kokkos::single(Kokkos::PerThread(teamMember),[=] () {
-      (*used_size_) += num_writes;
-    });
-
-    if (key_not_found == 0) return INSERT_SUCCESS;
-
+    size_type my_write_index = Kokkos::atomic_fetch_add(used_size_, size_type(1));
 
     if (my_write_index >= max_value_size_) {
       return INSERT_FULL;
@@ -1355,77 +1862,81 @@ struct HashmapAccumulator{
       volatile size_type *used_size_,
       const size_type &max_value_size_,
       size_type *used_hash_size,
-      size_type *used_hashes
-      ){
+      size_type *used_hashes){
 
-    char key_not_found = 1;
+	  if (hash != -1){
+		  size_type i = hash_begins[hash];
+		  for (; i != -1; i = hash_nexts[i]){
+			  if (keys[i] == key){
+				  values[i] = (key_type)values[i] | (key_type)value;
+				  return INSERT_SUCCESS;
+			  }
+		  }
+	  }
+	  else {
+		  return INSERT_SUCCESS;
+	  }
 
-    if (hash != -1){
-      size_type i = hash_begins[hash];
-      for (; i != -1; i = hash_nexts[i]){
-        if (keys[i] == key){
-          key_not_found = 0;
-          values[i] = (key_type)values[i] | (key_type)value;
-          break;
-        }
-      }
-    }
-    else {
-      key_not_found = 0;
-    }
+	  size_type my_write_index = Kokkos::atomic_fetch_add(used_size_, size_type(1));
 
+	  if (my_write_index >= max_value_size_) {
+		  return INSERT_FULL;
+	  }
+	  else {
 
-    if ((*used_size_) >= max_value_size_){
-      if (key_not_found == 0) {
-        return INSERT_SUCCESS;
-      }
-      else {
-        return INSERT_FULL;
-      }
-    }
+		  keys[my_write_index] = key;
+		  values[my_write_index] = value;
+		  size_type hashbeginning = Kokkos::atomic_exchange(hash_begins+hash, my_write_index);
+		  if (hashbeginning == -1){
+			  used_hashes[Kokkos::atomic_fetch_add(used_hash_size, size_type(1))] = hash;
+		  }
+		  hash_nexts[my_write_index] = hashbeginning;
+		  return INSERT_SUCCESS;
+	  }
+  }
 
-    int write_pos = 0;
-    Kokkos::parallel_scan(
-        Kokkos::ThreadVectorRange(teamMember, vector_size),
-        [&] (const int threadid, int &update, const bool final) {
-      if (final){
-        write_pos = update;
-      }
-      update += key_not_found;
-    });
+  template <typename team_member_t>
+  KOKKOS_INLINE_FUNCTION
+  int vector_atomic_insert_into_hash_TrackHashes (
+      const team_member_t & teamMember,
+      const int &vector_size,
 
-    size_type my_write_index = (*used_size_) + write_pos;
-    int num_writes = 0;
-    Kokkos::parallel_reduce(
-            Kokkos::ThreadVectorRange(teamMember, vector_size),
-            [&] (const int threadid, int &num_writes_) {
-          if (key_not_found){
-            num_writes_ += 1;
-          }
-        }, num_writes);
+      const size_type &hash,
+      const key_type &key,
+      volatile size_type *used_size_,
+      const size_type &max_value_size_,
+      size_type *used_hash_size,
+      size_type *used_hashes){
 
-    Kokkos::single(Kokkos::PerThread(teamMember),[=] () {
-      (*used_size_) += num_writes;
-    });
+	  if (hash != -1){
+		  size_type i = hash_begins[hash];
+		  for (; i != -1; i = hash_nexts[i]){
+			  if (keys[i] == key){
+				  //values[i] = (key_type)values[i] | (key_type)value;
+				  return INSERT_SUCCESS;
+			  }
+		  }
+	  }
+	  else {
+		  return INSERT_SUCCESS;
+	  }
 
-    if (key_not_found == 0) return INSERT_SUCCESS;
+	  size_type my_write_index = Kokkos::atomic_fetch_add(used_size_, size_type(1));
 
+	  if (my_write_index >= max_value_size_) {
+		  return INSERT_FULL;
+	  }
+	  else {
 
-    if (my_write_index >= max_value_size_) {
-      return INSERT_FULL;
-    }
-    else {
-
-      keys[my_write_index] = key;
-      values[my_write_index] = value;
-      size_type hashbeginning = Kokkos::atomic_exchange(hash_begins+hash, my_write_index);
-      if (hashbeginning == -1){
-        //Kokkos::atomic_fetch_add(used_hash_size, 1);
-        used_hashes[Kokkos::atomic_fetch_add(used_hash_size, 1)] = hash;
-      }
-      hash_nexts[my_write_index] = hashbeginning;
-      return INSERT_SUCCESS;
-    }
+		  keys[my_write_index] = key;
+		  //values[my_write_index] = value;
+		  size_type hashbeginning = Kokkos::atomic_exchange(hash_begins+hash, my_write_index);
+		  if (hashbeginning == -1){
+			  used_hashes[Kokkos::atomic_fetch_add(used_hash_size, size_type(1))] = hash;
+		  }
+		  hash_nexts[my_write_index] = hashbeginning;
+		  return INSERT_SUCCESS;
+	  }
   }
 
   //function to be called from device.

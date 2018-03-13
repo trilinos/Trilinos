@@ -389,8 +389,10 @@ endif
 KOKKOSKERNELS_INTERNAL_HEADERS = $(wildcard ${KOKKOSKERNELS_PATH}/src/impl/*.hpp)
 KOKKOSKERNELS_INTERNAL_HEADERS += $(wildcard ${KOKKOSKERNELS_PATH}/src/impl/generated_specializations_hpp/*/*eti_spec*.hpp)
 
+ifdef KOKKOSKERNELS_INTERNAL_SRC_SPARSE
 vpath %.cpp $(sort $(dir $(KOKKOSKERNELS_INTERNAL_SRC_SPARSE)))
 vpath %.cpp $(sort $(dir $(KOKKOSKERNELS_INTERNAL_SRC_BLAS)))
+endif
 
 DEPFLAGS = -M
 

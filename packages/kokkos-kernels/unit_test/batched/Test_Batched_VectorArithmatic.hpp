@@ -12,10 +12,35 @@ using namespace KokkosBatched::Experimental;
 
 namespace Test {
 
-  template<typename VectorTagType>
+  template<typename VectorTagType, int VectorLength>
+  void impl_test_complex_real_imag_value() {
+    typedef Vector<VectorTagType,VectorLength> vector_type;
+
+    typedef typename vector_type::value_type value_type;
+    const int vector_length = vector_type::vector_length;
+
+    vector_type a;
+
+    for (int k=0;k<vector_length;++k) {
+      a[k].real() = k*3 + 1;
+      a[k].imag() = k*5 + 4;
+    }
+
+    const auto a_real = RealPart(a);
+    const auto a_imag = ImagPart(a);
+
+    typedef Kokkos::Details::ArithTraits<value_type> ats;
+    const typename ats::mag_type eps = 1.0e3 * ats::epsilon();
+    for (int k=0;k<vector_length;++k) {
+      EXPECT_NEAR_KK( a[k].real(), a_real[k], eps);
+      EXPECT_NEAR_KK( a[k].imag(), a_imag[k], eps);
+    }
+  }
+  template<typename VectorTagType,int VectorLength>
   void impl_test_batched_vector_arithmatic() {
     /// random data initialization
-    typedef Vector<VectorTagType> vector_type;
+    typedef Vector<VectorTagType,VectorLength> vector_type;
+
     typedef typename vector_type::value_type value_type;    
     const int vector_length = vector_type::vector_length;
     
@@ -37,7 +62,7 @@ namespace Test {
       }
       alpha = a_random.value();
       beta  = b_random.value();
-
+      
       const mag_type eps = 1.0e3 * ats::epsilon();
 
       {
@@ -150,18 +175,37 @@ namespace Test {
         for (int k=0;k<vector_length;++k) 
           EXPECT_NEAR_KK( c[k], -a[k], eps*c[k]);      
       }
+#if defined(__DO_NOT_TEST__)
+      {
+        /// test : add radial
+        const mag_type tiny = 1.0;
+
+        c = vector_type(0); 
+        c += -vector_type(tiny)*vector_type(a <  0);
+        c +=  vector_type(tiny)*vector_type(a >= 0);
+
+        for (int k=0;k<vector_length;++k) 
+          EXPECT_NEAR_KK( c[k], (a[k] < 0 ? -tiny : tiny), eps*c[k]);      
+      }
+#endif
     }    
   }
 }
 
-template<typename DeviceType,typename VectorTagType>
+template<typename DeviceType,typename VectorTagType,int VectorLength>
 int test_batched_vector_arithmatic() {
-
-
   static_assert(Kokkos::Impl::SpaceAccessibility<DeviceType,Kokkos::HostSpace >::accessible,
                 "vector datatype is only tested on host space");
-  Test::impl_test_batched_vector_arithmatic<VectorTagType>();
+  Test::impl_test_batched_vector_arithmatic<VectorTagType,VectorLength>();
   
+  return 0;
+}
+template<typename DeviceType,typename VectorTagType,int VectorLength>
+int test_batched_complex_real_imag_value() {
+  static_assert(Kokkos::Impl::SpaceAccessibility<DeviceType,Kokkos::HostSpace >::accessible,
+                "vector datatype is only tested on host space");
+  Test::impl_test_complex_real_imag_value<VectorTagType,VectorLength>();
+
   return 0;
 }
 
@@ -171,76 +215,86 @@ int test_batched_vector_arithmatic() {
 ///
 
 #if defined(KOKKOSKERNELS_INST_FLOAT)
+TEST_F( TestCategory, batched_vector_arithmatic_simd_float3 ) {
+  test_batched_vector_arithmatic<TestExecSpace,SIMD<float>,3>();
+}
+TEST_F( TestCategory, batched_vector_arithmatic_simd_float4 ) {
+  test_batched_vector_arithmatic<TestExecSpace,SIMD<float>,4>();
+}
+// avx
 TEST_F( TestCategory, batched_vector_arithmatic_simd_float8 ) {
-  typedef VectorTag<SIMD<float,TestExecSpace>, 8> vector_tag_type;
-  test_batched_vector_arithmatic<TestExecSpace,vector_tag_type>();
+  test_batched_vector_arithmatic<TestExecSpace,SIMD<float>,8>();
+}
+// avx 512
+TEST_F( TestCategory, batched_vector_arithmatic_simd_float16 ) {
+  test_batched_vector_arithmatic<TestExecSpace,SIMD<float>,16>();
 }
 #endif
 
 #if defined(KOKKOSKERNELS_INST_DOUBLE)
+TEST_F( TestCategory, batched_vector_arithmatic_simd_double3 ) {
+  test_batched_vector_arithmatic<TestExecSpace,SIMD<double>,3>();
+}
+// avx
 TEST_F( TestCategory, batched_vector_arithmatic_simd_double4 ) {
-  typedef VectorTag<SIMD<double,TestExecSpace>, 4> vector_tag_type;
-  test_batched_vector_arithmatic<TestExecSpace,vector_tag_type>();
+  test_batched_vector_arithmatic<TestExecSpace,SIMD<double>,4>();
+}
+//avx 512
+TEST_F( TestCategory, batched_vector_arithmatic_simd_double8 ) {
+  test_batched_vector_arithmatic<TestExecSpace,SIMD<double>,8>();
+}
+#endif
+
+#define __DO_NOT_TEST__ 
+#if defined(KOKKOSKERNELS_INST_COMPLEX_FLOAT)
+TEST_F( TestCategory, batched_vector_arithmatic_simd_scomplex3 ) {
+  test_batched_vector_arithmatic<TestExecSpace,SIMD<Kokkos::complex<float> >,3>();
+}
+// avx
+TEST_F( TestCategory, batched_vector_arithmatic_simd_scomplex4 ) {
+  test_batched_vector_arithmatic<TestExecSpace,SIMD<Kokkos::complex<float> >,4>();
+}
+// avx 512
+TEST_F( TestCategory, batched_vector_arithmatic_simd_scomplex8 ) {
+  test_batched_vector_arithmatic<TestExecSpace,SIMD<Kokkos::complex<float> >,8>();
+}
+
+TEST_F( TestCategory, batched_vector_scomplex_real_imag_value3 ) {
+  test_batched_complex_real_imag_value<TestExecSpace,SIMD<Kokkos::complex<float> >,3>();
+}
+// avx
+TEST_F( TestCategory, batched_vector_scomplex_real_imag_value2 ) {
+  test_batched_complex_real_imag_value<TestExecSpace,SIMD<Kokkos::complex<float> >,2>();
+}
+// avx 512
+TEST_F( TestCategory, batched_vector_scomplex_real_imag_value4 ) {
+  test_batched_complex_real_imag_value<TestExecSpace,SIMD<Kokkos::complex<float> >,4>();
 }
 #endif
 
 #if defined(KOKKOSKERNELS_INST_COMPLEX_DOUBLE)
+TEST_F( TestCategory, batched_vector_arithmatic_simd_dcomplex3 ) {
+  test_batched_vector_arithmatic<TestExecSpace,SIMD<Kokkos::complex<double> >,3>();
+}
+// avx
 TEST_F( TestCategory, batched_vector_arithmatic_simd_dcomplex2 ) {
-  typedef VectorTag<SIMD<Kokkos::complex<double>,TestExecSpace>, 2> vector_tag_type;
-  test_batched_vector_arithmatic<TestExecSpace,vector_tag_type>();
+  test_batched_vector_arithmatic<TestExecSpace,SIMD<Kokkos::complex<double> >,2>();
+}
+// avx 512
+TEST_F( TestCategory, batched_vector_arithmatic_simd_dcomplex4 ) {
+  test_batched_vector_arithmatic<TestExecSpace,SIMD<Kokkos::complex<double> >,4>();
+}
+
+TEST_F( TestCategory, batched_vector_dcomplex_real_imag_value3 ) {
+  test_batched_complex_real_imag_value<TestExecSpace,SIMD<Kokkos::complex<double> >,3>();
+}
+// avx
+TEST_F( TestCategory, batched_vector_dcomplex_real_imag_value2 ) {
+  test_batched_complex_real_imag_value<TestExecSpace,SIMD<Kokkos::complex<double> >,2>();
+}
+// avx 512
+TEST_F( TestCategory, batched_vector_dcomplex_real_imag_value4 ) {
+  test_batched_complex_real_imag_value<TestExecSpace,SIMD<Kokkos::complex<double> >,4>();
 }
 #endif
-
-///
-/// AVX
-///
-
-#if defined(__AVX__) || defined(__AVX2__)
-#if defined(KOKKOSKERNELS_INST_FLOAT)
-// TEST_F( TestCategory, batched_vector_arithmatic_avx_float8 ) {
-//   typedef VectorTag<AVX<float,TestExecSpace>, 8> vector_tag_type;
-//   test_batched_vector_arithmatic<TestExecSpace,vector_tag_type>();
-// }
-#endif
-
-#if defined(KOKKOSKERNELS_INST_DOUBLE)
-TEST_F( TestCategory, batched_vector_arithmatic_avx_double4 ) {
-  typedef VectorTag<AVX<double,TestExecSpace>, 4> vector_tag_type;
-  test_batched_vector_arithmatic<TestExecSpace,vector_tag_type>();
-}
-#endif
-
-#if defined(KOKKOSKERNELS_INST_COMPLEX_DOUBLE)
-TEST_F( TestCategory, batched_vector_arithmatic_avx_dcomplex2 ) {
-  typedef VectorTag<AVX<Kokkos::complex<double>,TestExecSpace>, 2> vector_tag_type;
-  test_batched_vector_arithmatic<TestExecSpace,vector_tag_type>();
-}
-#endif
-#endif
-
-///
-/// AVX 512
-///
-
-#if defined(__AVX512F__)
-#if defined(KOKKOSKERNELS_INST_FLOAT)
-// TEST_F( TestCategory, batched_vector_arithmatic_avx_float16 ) {
-//   typedef VectorTag<AVX<float,TestExecSpace>, 16> vector_tag_type;
-//   test_batched_vector_arithmatic<TestExecSpace,vector_tag_type>();
-// }
-#endif
-
-#if defined(KOKKOSKERNELS_INST_DOUBLE)
-TEST_F( TestCategory, batched_vector_arithmatic_avx_double8 ) {
-  typedef VectorTag<AVX<double,TestExecSpace>, 8> vector_tag_type;
-  test_batched_vector_arithmatic<TestExecSpace,vector_tag_type>();
-}
-#endif
-
-#if defined(KOKKOSKERNELS_INST_COMPLEX_DOUBLE)
-TEST_F( TestCategory, batched_vector_arithmatic_avx_dcomplex4 ) {
-  typedef VectorTag<AVX<Kokkos::complex<double>,TestExecSpace>, 4> vector_tag_type;
-  test_batched_vector_arithmatic<TestExecSpace,vector_tag_type>();
-}
-#endif
-#endif
+#undef __DO_NOT_TEST__

@@ -44,9 +44,9 @@
 #ifndef _KOKKOSSPGEMMCUSPARSE_HPP
 #define _KOKKOSSPGEMMCUSPARSE_HPP
 
-//#define KERNELS_HAVE_CUSPARSE
+//#define KOKKOSKERNELS_ENABLE_TPL_CUSPARSE
 
-#ifdef KERNELS_HAVE_CUSPARSE
+#ifdef KOKKOSKERNELS_ENABLE_TPL_CUSPARSE
 #include "cusparse.h"
 #endif
 namespace KokkosSparse{
@@ -75,7 +75,7 @@ namespace Impl{
       cin_row_index_view_type row_mapC
       ){
 
-#ifdef KERNELS_HAVE_CUSPARSE
+#ifdef KOKKOSKERNELS_ENABLE_TPL_CUSPARSE
 
     typedef typename ain_row_index_view_type::device_type device1;
     typedef typename ain_nonzero_index_view_type::device_type device2;
@@ -180,7 +180,7 @@ namespace Impl{
       cin_nonzero_index_view_type entriesC,
       cin_nonzero_value_view_type valuesC){
 
-#ifdef KERNELS_HAVE_CUSPARSE
+#ifdef KOKKOSKERNELS_ENABLE_TPL_CUSPARSE
     typedef typename KernelHandle::nnz_lno_t idx;
     typedef ain_row_index_view_type idx_array_type;
 
@@ -222,9 +222,9 @@ namespace Impl{
       int nnzA = entriesA.dimension_0();
       int nnzB = entriesB.dimension_0();
 
-      value_type *a_ew = valuesA.ptr_on_device();
-      value_type *b_ew = valuesB.ptr_on_device();
-      value_type *c_ew = valuesC.ptr_on_device();
+      value_type *a_ew = (value_type *)valuesA.ptr_on_device();
+      value_type *b_ew = (value_type *)valuesB.ptr_on_device();
+      value_type *c_ew = (value_type *)valuesC.ptr_on_device();
 
       if (Kokkos::Impl::is_same<value_type, float>::value){
         cusparseScsrgemm(
