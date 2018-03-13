@@ -974,6 +974,10 @@ def runProjectTestsWithCommandLineArgs(commandLineArgs, configuration = {}):
     clp )
 
   clp.add_option(
+    "--log-file", dest="logFile", type="string", default="",
+    help="File used for detailed log info." )
+
+  clp.add_option(
     "--send-email-for-all", dest="sendEmailOnlyOnFailure", action="store_false",
     help="If set, then emails will get sent out for all operations. [default]" )
   clp.add_option(
@@ -1390,8 +1394,15 @@ def main(cmndLineArgs):
   # See if --show-defaults was set or not
   showDefaultsOpt = len( set(cmndLineArgs) & set(("--show-defaults", "dummy")) ) > 0
 
+
   if (not helpOpt) and (not showDefaultsOpt):
-    logFile = file("checkin-test.out", "w")
+    # Get the name of the log file from the input arguments
+    logFileName = "checkin-test.out"
+    for cmndLineArg in cmndLineArgs:
+      cmndLineSplit = cmndLineArg.split("=")
+      if cmndLineSplit[0].strip() == "--log-file":
+        logFileName = cmndLineSplit[1].strip()
+    logFile = file(logFileName, "w")
   else:
     logFile = None
 

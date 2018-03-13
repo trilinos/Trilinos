@@ -48,7 +48,7 @@ SCRIPT_DIR=`cd "\`dirname \"$0\"\`";pwd`
 if [ "${JENKINS_DO_CUDA}" == 'ON' ]; then
   module load kokkos-${CUDA_SUFFIX}
   module load kokkos-${MPI_SUFFIX}/cuda
-  export OMPI_CXX=$WORKSPACE/Trilinos/packages/kokkos/config/nvcc_wrapper
+  export OMPI_CXX=$WORKSPACE/Trilinos/packages/kokkos/bin/nvcc_wrapper
 else
   module load sems-${MPI_SUFFIX}
 fi

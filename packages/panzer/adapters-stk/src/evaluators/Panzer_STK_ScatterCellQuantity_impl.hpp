@@ -59,7 +59,10 @@
 
 namespace panzer_stk {
 
-PHX_EVALUATOR_CTOR(ScatterCellQuantity,p) :
+template<typename EvalT, typename Traits>
+ScatterCellQuantity<EvalT, Traits>::
+ScatterCellQuantity(
+  const Teuchos::ParameterList& p) :
    mesh_(p.get<Teuchos::RCP<STK_Interface> >("Mesh"))
 {
   using panzer::Cell;
@@ -87,7 +90,12 @@ PHX_EVALUATOR_CTOR(ScatterCellQuantity,p) :
   this->setName(scatterName+": STK-Scatter Cell Quantity Fields");
 }
 
-PHX_POST_REGISTRATION_SETUP(ScatterCellQuantity, /* d */, fm)
+template<typename EvalT, typename Traits>
+void
+ScatterCellQuantity<EvalT, Traits>::
+postRegistrationSetup(
+  typename Traits::SetupData  /* d */,
+  PHX::FieldManager<Traits>&  fm)
 {
   for (std::size_t fd = 0; fd < scatterFields_.size(); ++fd) {
     std::string fieldName = scatterFields_[fd].fieldTag().name();
@@ -97,7 +105,11 @@ PHX_POST_REGISTRATION_SETUP(ScatterCellQuantity, /* d */, fm)
   }
 }
 
-PHX_EVALUATE_FIELDS(ScatterCellQuantity,workset)
+template<typename EvalT, typename Traits>
+void
+ScatterCellQuantity<EvalT, Traits>::
+evaluateFields(
+  typename Traits::EvalData workset)
 {
    panzer::MDFieldArrayFactory af("",true);
 

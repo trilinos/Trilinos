@@ -63,6 +63,9 @@ SET(${EXPORT_FILE_VAR_PREFIX}_FORTRAN_COMPILER "${CMAKE_Fortran_COMPILER}")
 ## Compiler flags used by ${PROJECT_NAME}/${PACKAGE_NAME} build
 ## ---------------------------------------------------------------------------
 
+## Give the build type
+SET(${EXPORT_FILE_VAR_PREFIX}_CMAKE_BUILD_TYPE "${CMAKE_BUILD_TYPE}")
+
 ## Set compiler flags, including those determined by build type
 SET(${EXPORT_FILE_VAR_PREFIX}_CXX_FLAGS "${CMAKE_CXX_FLAGS_ESCAPED} ${CMAKE_CXX_FLAGS_${CMAKE_BUILD_TYPE}}")
 

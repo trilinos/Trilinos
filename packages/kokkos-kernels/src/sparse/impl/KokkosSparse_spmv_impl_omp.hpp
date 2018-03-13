@@ -62,7 +62,7 @@ void spmv_raw_openmp_no_transpose(typename YVector::const_value_type& s_a, AMatr
 #if defined(KOKKOS_ENABLE_PROFILING)
     uint64_t kpID = 0;
      if(Kokkos::Profiling::profileLibraryLoaded()) {
-      Kokkos::Profiling::beginParallelFor("KokkosSparse::SPMV_raw_openmp_no_transpose", 0, &kpID);
+      Kokkos::Profiling::beginParallelFor("KokkosSparse::spmv<RawOpenMP,NoTranspose>", 0, &kpID);
      }
 #endif
 

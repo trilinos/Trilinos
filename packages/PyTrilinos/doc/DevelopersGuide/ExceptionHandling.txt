@@ -59,7 +59,7 @@ method.  Simply change the ``%exception`` directive to::
 and this will convert the vast majority of standard exceptions to
 appropriate python exceptions with useful error messages.
 
-There are Trilnios packages that throw exceptions other than those
+There are Trilinos packages that throw exceptions other than those
 found in the standard library.  These can be caught anywhere prior to
 the ``catch(...)`` syntax, although in general, it is best to put them
 before the ``SWIG_CATCH_STDEXCEPT`` macro, especially if the package

@@ -54,6 +54,7 @@ Level 1
      [empty list]
     
    Build (MueLu::CoordinatesTransferFactory)
+   structured aggregation = 0   [default]
    Geometric = 0   [default]
    write start = -1   [default]
    write end = -1   [default]
@@ -152,6 +153,7 @@ Level 2
      [empty list]
     
    Build (MueLu::CoordinatesTransferFactory)
+   structured aggregation = 0   [default]
    Geometric = 0   [default]
    write start = -1   [default]
    write end = -1   [default]
@@ -252,6 +254,7 @@ Level 1
    Reusing previous AP data
    Reusing previous RAP data
   Build (MueLu::CoordinatesTransferFactory)
+  structured aggregation = 0   [default]
   Geometric = 0   [default]
   write start = -1   [default]
   write end = -1   [default]
@@ -321,6 +324,7 @@ Level 2
      [empty list]
     
    Build (MueLu::CoordinatesTransferFactory)
+   structured aggregation = 0   [default]
    Geometric = 0   [default]
    write start = -1   [default]
    write end = -1   [default]

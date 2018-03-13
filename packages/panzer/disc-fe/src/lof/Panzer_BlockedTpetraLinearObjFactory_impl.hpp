@@ -1078,7 +1078,7 @@ Teuchos::RCP<Tpetra::Vector<ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT> >
 BlockedTpetraLinearObjFactory<Traits,ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT>::
 getGhostedTpetraDomainVector(int i) const
 {
-   Teuchos::RCP<const MapType> tMap = getMap(i); 
+   Teuchos::RCP<const MapType> tMap = getGhostedMap(i); 
    return Teuchos::rcp(new VectorType(tMap));
 }
 
@@ -1096,7 +1096,7 @@ Teuchos::RCP<Tpetra::Vector<ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT> >
 BlockedTpetraLinearObjFactory<Traits,ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT>::
 getGhostedTpetraRangeVector(int i) const
 {
-   Teuchos::RCP<const MapType> tMap = getMap(i); 
+   Teuchos::RCP<const MapType> tMap = getGhostedMap(i); 
    return Teuchos::rcp(new VectorType(tMap));
 }
 

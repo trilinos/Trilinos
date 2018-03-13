@@ -1,5 +1,7 @@
 IF (${Trilinos_ENABLE_Kokkos})
 
+  PRINT_VAR(KOKKOS_ARCH)
+
   # This is where to generate the gen_kokkos.cmake and KokkosCore_config.h 
   # that we will use in the configuration
   set(Kokkos_GEN_DIR ${CMAKE_BINARY_DIR})
@@ -26,8 +28,12 @@ IF (${Trilinos_ENABLE_Kokkos})
     COMMAND ${KOKKOS_SETTINGS} make -f ${KOKKOS_SRC_PATH}/cmake/Makefile.generate_cmake_settings CXX=${CMAKE_CXX_COMPILER} generate_build_settings
     WORKING_DIRECTORY "${Kokkos_GEN_DIR}"
     OUTPUT_FILE ${Kokkos_GEN_DIR}/core_src_make.out
-    RESULT_VARIABLE res
+    RESULT_VARIABLE GEN_SETTINGS_RESULT
   )
+  if (GEN_SETTINGS_RESULT)
+    message(FATAL_ERROR "Kokkos settings generation failed:\n"
+        "${KOKKOS_SETTINGS} make -f ${KOKKOS_SRC_PATH}/cmake/Makefile.generate_cmake_settings CXX=${CMAKE_CXX_COMPILER} generate_build_settings")
+  endif()
   include(${Kokkos_GEN_DIR}/kokkos_generated_settings.cmake)
 
   IF (NOT KOKKOS_ARCH STREQUAL "None")

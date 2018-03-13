@@ -23,8 +23,32 @@ namespace Tempus {
 // Forward Declaration for recursive includes (this Stepper <--> StepperFactory)
 template<class Scalar> class StepperFactory;
 
+template<class Scalar>
+StepperDIRK<Scalar>::StepperDIRK(
+  const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel,
+  std::string stepperType)
+{
+  this->setTableau(Teuchos::null, stepperType);
+  this->setParameterList(Teuchos::null);
+  this->setModel(appModel);
+  this->setSolver();
+  this->setObserver();
+  this->initialize();
+}
 
-// StepperDIRK definitions:
+template<class Scalar>
+StepperDIRK<Scalar>::StepperDIRK(
+  const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel,
+  Teuchos::RCP<Teuchos::ParameterList>                      pList)
+{
+  this->setTableau(pList, "SDIRK 2 Stage 2nd order");
+  this->setParameterList(pList);
+  this->setModel(appModel);
+  this->setSolver();
+  this->setObserver();
+  this->initialize();
+}
+
 template<class Scalar>
 StepperDIRK<Scalar>::StepperDIRK(
   const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel,
@@ -104,7 +128,7 @@ void StepperDIRK<Scalar>::setSolver(
       << "\n" << "  Solver Name  = "<<solverName<<"\n");
     solverName = solverPL->name();
     stepperPL_->set("Solver Name", solverName);
-    stepperPL_->set(solverName, solverPL);      // Add sublist
+    stepperPL_->set(solverName, *solverPL);      // Add sublist
     solver_ = rcp(new Thyra::NOXNonlinearSolver());
     RCP<ParameterList> noxPL = Teuchos::sublist(solverPL, "NOX", true);
     solver_->setParameterList(noxPL);
@@ -126,7 +150,7 @@ void StepperDIRK<Scalar>::setSolver(
   RCP<ParameterList> solverPL = solver->getNonconstParameterList();
   std::string solverName = solverPL->name();
   stepperPL_->set("Solver Name", solverName);
-  stepperPL_->set(solverName, solverPL);      // Add sublist
+  stepperPL_->set(solverName, *solverPL);      // Add sublist
   solver_ = solver;
 }
 
@@ -138,9 +162,10 @@ void StepperDIRK<Scalar>::setTableau(
 {
   if (stepperType == "") {
     if (pList == Teuchos::null)
-      stepperType = "Forward Euler";
+      stepperType = "SDIRK 2 Stage 2nd order";
     else
-      stepperType = pList->get<std::string>("Stepper Type");
+      stepperType = pList->get<std::string>("Stepper Type",
+                                            "SDIRK 2 Stage 2nd order");
   }
 
   DIRK_ButcherTableau_ = createRKBT<Scalar>(stepperType,pList);

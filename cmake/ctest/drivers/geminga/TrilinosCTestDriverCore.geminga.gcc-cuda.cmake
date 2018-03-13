@@ -82,7 +82,7 @@ MACRO(TRILINOS_SYSTEM_SPECIFIC_CTEST_DRIVER)
   SET(EXTRA_SYSTEM_CONFIGURE_OPTIONS
       "-DCMAKE_BUILD_TYPE:STRING=${BUILD_TYPE}"
 
-      "-DTrilinos_ENABLE_COMPLEX:BOOL=ON"
+      "-DTrilinos_ENABLE_COMPLEX:BOOL=OFF"
       # Adding the following as a possible fix for github issue #2115.
       "-DCMAKE_CXX_USE_RESPONSE_FILE_FOR_OBJECTS:BOOL=ON"
 
@@ -105,6 +105,7 @@ MACRO(TRILINOS_SYSTEM_SPECIFIC_CTEST_DRIVER)
           "-DKokkos_ENABLE_Cuda:BOOL=ON"
           "-DKokkos_ENABLE_Cuda_UVM:BOOL=ON"
           "-DKokkos_ENABLE_Cuda_Lambda:BOOL=ON"
+          "-DTrilinos_ENABLE_Epetra:BOOL=OFF"
 
       ### MISC ###
       "-DCMAKE_VERBOSE_MAKEFILE:BOOL=ON"

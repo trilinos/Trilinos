@@ -46,7 +46,7 @@ public:
   /// Create default stepper from stepper type (e.g., "Forward Euler").
   Teuchos::RCP<Stepper<Scalar> > createStepper(
     const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& model,
-    std::string stepperType = "")
+    std::string stepperType = "Forward Euler")
   {
     if (stepperType == "") stepperType = "Forward Euler";
     return this->createStepper(model, stepperType, Teuchos::null);
@@ -57,7 +57,9 @@ public:
     const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& model,
     Teuchos::RCP<Teuchos::ParameterList> stepperPL)
   {
-    std::string stepperType = stepperPL->get<std::string>("Stepper Type");
+    std::string stepperType = "Forward Euler";
+    if (stepperPL != Teuchos::null)
+      stepperType = stepperPL->get<std::string>("Stepper Type","Forward Euler");
     return this->createStepper(model, stepperType, stepperPL);
   }
 
@@ -103,6 +105,7 @@ private:
       stepperType == "RK Explicit 3 Stage 3rd order by Heun" ||
       stepperType == "RK Explicit 2 Stage 2nd order by Runge" ||
       stepperType == "RK Explicit Trapezoidal" ||
+      stepperType == "Bogacki-Shampine 3(2) Pair" ||
       stepperType == "General ERK" )
       return rcp(new StepperExplicitRK<Scalar>(model, stepperType, stepperPL));
     else if (

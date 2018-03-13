@@ -44,7 +44,7 @@ namespace KokkosBatched {
         typedef typename vector_type::value_type value_type;
         
         const int
-          m = b.dimension_0(),
+          m = b.extent(0),
           n = 1,
           vl = vector_type::vector_length;
         
@@ -88,7 +88,7 @@ namespace KokkosBatched {
              const bViewType &b) {
         return SerialTrsvInternalLower<Algo::Trsv::Unblocked>::
           invoke(ArgDiag::use_unit_diag,
-                 A.dimension_0(), 
+                 A.extent(0), 
                  alpha,
                  A.data(), A.stride_0(), A.stride_1(),
                  b.data(), b.stride_0());
@@ -107,7 +107,7 @@ namespace KokkosBatched {
              const bViewType &b) {
         return SerialTrsvInternalLower<Algo::Trsv::Blocked>::
           invoke(ArgDiag::use_unit_diag,
-                 A.dimension_0(), 
+                 A.extent(0), 
                  alpha,
                  A.data(), A.stride_0(), A.stride_1(),
                  b.data(), b.stride_0());
@@ -136,7 +136,7 @@ namespace KokkosBatched {
         typedef typename vector_type::value_type value_type;
         
         const int
-          m = b.dimension_0(),
+          m = b.extent(0),
           n = 1,
           vl = vector_type::vector_length;
         
@@ -180,7 +180,7 @@ namespace KokkosBatched {
              const bViewType &b) {
         return SerialTrsvInternalUpper<Algo::Trsv::Unblocked>::
           invoke(ArgDiag::use_unit_diag,
-                 A.dimension_1(), 
+                 A.extent(1), 
                  alpha,
                  A.data(), A.stride_1(), A.stride_0(),
                  b.data(), b.stride_0());
@@ -199,7 +199,7 @@ namespace KokkosBatched {
              const bViewType &b) {
         return SerialTrsvInternalUpper<Algo::Trsv::Blocked>::
           invoke(ArgDiag::use_unit_diag,
-                 A.dimension_1(), 
+                 A.extent(1), 
                  alpha,
                  A.data(), A.stride_1(), A.stride_0(),
                  b.data(), b.stride_0());
@@ -228,7 +228,7 @@ namespace KokkosBatched {
         typedef typename vector_type::value_type value_type;
         
         const int
-          m = b.dimension_0(),
+          m = b.extent(0),
           n = 1,
           vl = vector_type::vector_length;
 
@@ -272,7 +272,7 @@ namespace KokkosBatched {
              const bViewType &b) {
         return SerialTrsvInternalUpper<Algo::Trsv::Unblocked>::
           invoke(ArgDiag::use_unit_diag,
-                 A.dimension_0(), 
+                 A.extent(0), 
                  alpha,
                  A.data(), A.stride_0(), A.stride_1(),
                  b.data(), b.stride_0());
@@ -291,7 +291,7 @@ namespace KokkosBatched {
              const bViewType &b) {
         return SerialTrsvInternalUpper<Algo::Trsv::Blocked>::
           invoke(ArgDiag::use_unit_diag,
-                 A.dimension_0(), 
+                 A.extent(0), 
                  alpha,
                  A.data(), A.stride_0(), A.stride_1(),
                  b.data(), b.stride_0());
@@ -320,7 +320,7 @@ namespace KokkosBatched {
         typedef typename vector_type::value_type value_type;
         
         const int
-          m = b.dimension_0(),
+          m = b.extent(0),
           n = 1,
           vl = vector_type::vector_length;
 
@@ -364,7 +364,7 @@ namespace KokkosBatched {
              const bViewType &b) {
         return SerialTrsvInternalLower<Algo::Trsv::Unblocked>::
           invoke(ArgDiag::use_unit_diag,
-                 A.dimension_1(), 
+                 A.extent(1), 
                  alpha,
                  A.data(), A.stride_1(), A.stride_0(),
                  b.data(), b.stride_0());
@@ -383,7 +383,7 @@ namespace KokkosBatched {
              const bViewType &b) {
         return SerialTrsvInternalLower<Algo::Trsv::Blocked>::
           invoke(ArgDiag::use_unit_diag,
-                 A.dimension_1(), 
+                 A.extent(1), 
                  alpha,
                  A.data(), A.stride_1(), A.stride_0(),
                  b.data(), b.stride_0());

@@ -35,7 +35,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact  H. Carter Edwards (hcedwar@sandia.gov)
+// Questions? Contact Christian R. Trott (crtrott@sandia.gov)
 //
 // ************************************************************************
 //@HEADER
@@ -78,6 +78,7 @@
 #include <Kokkos_ROCm.hpp>
 #endif
 
+#include <Kokkos_AnonymousSpace.hpp>
 #include <Kokkos_Pair.hpp>
 #include <Kokkos_MemoryPool.hpp>
 #include <Kokkos_Array.hpp>
@@ -89,6 +90,7 @@
 
 #include <Kokkos_Complex.hpp>
 
+#include <Kokkos_CopyViews.hpp>
 #include <functional>
 #include <iosfwd>
 

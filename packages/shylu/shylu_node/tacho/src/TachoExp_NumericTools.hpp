@@ -526,17 +526,18 @@ namespace Tacho {
         timer.reset();
         typedef typename sched_type_host::memory_space memory_space;
         typedef TaskFunctor_FactorizeChol<value_type,host_exec_space> functor_type;
-        //typedef Kokkos::Future<int,host_exec_space> future_type;
+        typedef Kokkos::Future<int,host_exec_space> future_type;
         
         sched_type_host sched;
         {
           const size_t max_functor_size = sizeof(functor_type);
+          const size_t max_dep_future_size = _info.max_nchildren*sizeof(future_type);
           const size_t estimate_max_numtasks = _sid_block_colidx.dimension_0() >> 3;
           
           const size_t
             task_queue_capacity = max(estimate_max_numtasks,128)*max_functor_size,
             min_block_size  = 1,
-            max_block_size  = max_functor_size,
+            max_block_size  = (max_functor_size + max_dep_future_size),
             num_superblock  = 32, // various small size blocks
             superblock_size = task_queue_capacity/num_superblock;
           
@@ -630,17 +631,18 @@ namespace Tacho {
         timer.reset();
         typedef typename sched_type_host::memory_space memory_space;
         typedef TaskFunctor_FactorizeCholPanel<value_type,host_exec_space> functor_type;
-        //typedef Kokkos::Future<int,host_exec_space> future_type;
+        typedef Kokkos::Future<int,host_exec_space> future_type;
         
         sched_type_host sched;
         {
           const size_t max_functor_size = sizeof(functor_type);
+          const size_t max_dep_future_size = _info.max_nchildren*sizeof(future_type);
           const size_t estimate_max_numtasks = _sid_block_colidx.dimension_0() >> 3;
           
           const size_t
             task_queue_capacity = max(estimate_max_numtasks,128)*max_functor_size,
             min_block_size  = 1,
-            max_block_size  = max_functor_size,
+            max_block_size  = (max_functor_size + max_dep_future_size),
             num_superblock  = 32, // various small size blocks
             superblock_size = task_queue_capacity/num_superblock;
           
@@ -850,7 +852,7 @@ namespace Tacho {
         
         sched_type_host sched;
         {
-          const size_t max_dep_future_size = max_ncols_of_blocks*max_ncols_of_blocks*sizeof(future_type);
+          const size_t max_dep_future_size = (_info.max_nchildren + max_ncols_of_blocks*max_ncols_of_blocks)*sizeof(future_type);
           const size_t max_functor_size = sizeof(functor_type);
           const size_t estimate_max_numtasks = _sid_block_colidx.dimension_0() >> 3;
           
@@ -963,7 +965,7 @@ namespace Tacho {
         
         sched_type_host sched;
         {
-          const size_t max_dep_future_size = max_nrows_of_blocks*max_ncols_of_blocks*sizeof(future_type);
+          const size_t max_dep_future_size = (_info.max_nchildren + max_nrows_of_blocks*max_ncols_of_blocks)*sizeof(future_type);
           const size_t max_functor_size = sizeof(functor_type);
           const size_t estimate_max_numtasks = _sid_block_colidx.dimension_0() >> 3;
           
@@ -1065,7 +1067,7 @@ namespace Tacho {
                               const value_type_matrix_host &x,
                               const value_type_matrix_host &b) {
         TACHO_TEST_FOR_EXCEPTION(A.NumRows() != A.NumCols() ||
-                                 A.NumRows() != b.dimension_0() ||
+                                 A.NumRows() != ordinal_type(b.dimension_0()) ||
                                  x.dimension_0() != b.dimension_0() ||
                                  x.dimension_1() != b.dimension_1(), std::logic_error,
                                  "A,x and b dimensions are not compatible");

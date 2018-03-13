@@ -84,10 +84,36 @@ namespace panzer {
 typedef Kokkos::DynRankView<double,PHX::Device> FieldArray;
 
 //**********************************************************************
-PHX_EVALUATOR_CLASS(DummyFieldEvaluator)
+template<typename EvalT, typename Traits>
+class DummyFieldEvaluator
+  :
+  public PHX::EvaluatorWithBaseImpl<Traits>,
+  public PHX::EvaluatorDerived<EvalT, Traits>
+{
+  public:
+
+    DummyFieldEvaluator(
+      const Teuchos::ParameterList& p);
+
+    void
+    postRegistrationSetup(
+      typename Traits::SetupData d,
+      PHX::FieldManager<Traits>& fm);
+
+    void
+    evaluateFields(
+      typename Traits::EvalData d);
+
+  private:
+
+    using ScalarT = typename EvalT::ScalarT;
   PHX::MDField<ScalarT,Cell,panzer::BASIS> fieldValue;
-PHX_EVALUATOR_CLASS_END
-PHX_EVALUATOR_CTOR(DummyFieldEvaluator,p)
+}; // end of class DummyFieldEvaluator
+
+template<typename EvalT, typename Traits>
+DummyFieldEvaluator<EvalT, Traits>::
+DummyFieldEvaluator(
+  const Teuchos::ParameterList& p)
 {
   // Read from parameters
   const std::string name = p.get<std::string>("Name");
@@ -102,14 +128,23 @@ PHX_EVALUATOR_CTOR(DummyFieldEvaluator,p)
   std::string n = "DummyFieldEvaluator: " + name;
   this->setName(n);
 }
-PHX_POST_REGISTRATION_SETUP(DummyFieldEvaluator, /* sd */, fm)
+template<typename EvalT, typename Traits>
+void
+DummyFieldEvaluator<EvalT, Traits>::
+postRegistrationSetup(
+  typename Traits::SetupData  /* sd */,
+  PHX::FieldManager<Traits>&  fm)
 {
   this->utils.setFieldData(fieldValue,fm);
 
   
 }
 
-PHX_EVALUATE_FIELDS(DummyFieldEvaluator, /* workset */)
+template<typename EvalT, typename Traits>
+void
+DummyFieldEvaluator<EvalT, Traits>::
+evaluateFields(
+  typename Traits::EvalData  /* workset */)
 { 
   fieldValue(0,0) = 1.0;
   fieldValue(0,1) = 2.0;

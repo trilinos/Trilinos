@@ -226,7 +226,9 @@ namespace MueLu {
         isLastLevel = r || (levelID == lastLevelID);
         levelID++;
       }
-
+      // FIXME: Should allow specification of NumVectors on parameterlist
+      H.AllocateLevelMultiVectors(1);
+      
       RCP<Teuchos::FancyOStream> fos = this->getOStream();
       fos->setOutputToRootOnly(0);
       H.describe(*fos, verbosity_);

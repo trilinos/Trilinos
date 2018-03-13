@@ -114,7 +114,7 @@ namespace Tacho {
     ///
     enum : int { 
       LabelSize = 64,
-      MaxDependenceSize = 8,
+      MaxDependenceSize = 4,
       ThresholdSolvePhaseUsingBlas3 = 12 
     };
 
@@ -462,6 +462,9 @@ namespace Tacho {
     struct Conjugate {
       enum : int { tag = 801 };
       
+      Conjugate() {} 
+      Conjugate(const Conjugate &b) {} 
+
       KOKKOS_FORCEINLINE_FUNCTION float operator()(const float &v) const { return v; }
       KOKKOS_FORCEINLINE_FUNCTION double operator()(const double &v) const { return v; }
       inline std::complex<float> operator()(const std::complex<float> &v) const { return std::conj(v); }
@@ -472,6 +475,9 @@ namespace Tacho {
     
     struct NoConjugate {
       enum : int {tag = 802 };
+
+      NoConjugate() {}
+      NoConjugate(const NoConjugate &b) {}
       
       KOKKOS_FORCEINLINE_FUNCTION float operator()(const float &v) const { return v; }
       KOKKOS_FORCEINLINE_FUNCTION double operator()(const double &v) const { return v; }

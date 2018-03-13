@@ -52,7 +52,10 @@
 namespace panzer {
 
 //**********************************************************************
-PHX_EVALUATOR_CTOR(SubcellSum,p) 
+template<typename EvalT, typename Traits>
+SubcellSum<EvalT, Traits>::
+SubcellSum(
+  const Teuchos::ParameterList& p) 
   : evaluateOnClosure_(false)
 {
   Teuchos::RCP<Teuchos::ParameterList> valid_params = this->getValidParameters();
@@ -79,14 +82,23 @@ PHX_EVALUATOR_CTOR(SubcellSum,p)
 }
 
 //**********************************************************************
-PHX_POST_REGISTRATION_SETUP(SubcellSum, /* sd */, fm)
+template<typename EvalT, typename Traits>
+void
+SubcellSum<EvalT, Traits>::
+postRegistrationSetup(
+  typename Traits::SetupData  /* sd */,
+  PHX::FieldManager<Traits>&  fm)
 {
   this->utils.setFieldData(inField,fm);
   this->utils.setFieldData(outField,fm);
 }
 
 //**********************************************************************
-PHX_EVALUATE_FIELDS(SubcellSum,workset)
+template<typename EvalT, typename Traits>
+void
+SubcellSum<EvalT, Traits>::
+evaluateFields(
+  typename Traits::EvalData workset)
 { 
   std::vector<int> indices;
  

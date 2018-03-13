@@ -117,14 +117,55 @@ BlockRelaxation<MatrixType,ContainerType>::
 {}
 
 template<class MatrixType,class ContainerType>
+Teuchos::RCP<const Teuchos::ParameterList>
+BlockRelaxation<MatrixType,ContainerType>::
+getValidParameters () const
+{
+  Teuchos::RCP<Teuchos::ParameterList> validParams = Teuchos::parameterList ("Ifpack2::BlockRelaxation");
+
+  validParams->set("relaxation: container", "TriDi");
+  validParams->set("relaxation: backward mode",false);
+  validParams->set("relaxation: type", "Jacobi");
+  validParams->set("relaxation: sweeps", (int)1);
+  validParams->set("relaxation: damping factor", STS::one());
+  validParams->set("relaxation: zero starting solution", true);
+  validParams->set("schwarz: compute condest", false); // mfh 24 Mar 2015: for backwards compatibility ONLY
+  validParams->set("schwarz: combine mode", "ZERO"); // use string mode for this
+  validParams->set("schwarz: use reordering", true);
+  validParams->set("schwarz: filter singletons", false);
+  validParams->set("schwarz: overlap level", (int)0);
+  validParams->set("partitioner: type", "greedy");
+  validParams->set("partitioner: local parts", (int)1);
+  validParams->set("partitioner: overlap", (int)0);
+  Teuchos::Array<Teuchos::ArrayRCP<int>> tmp0;
+  validParams->set("partitioner: parts", tmp0);
+  validParams->set("partitioner: maintain sparsity", false);
+
+  Teuchos::ParameterList dummyList;
+  validParams->set("Amesos2",dummyList);
+  validParams->sublist("Amesos2").disableRecursiveValidation();
+  validParams->set("Amesos2 solver name", "KLU2");
+  
+  Teuchos::ArrayRCP<int> tmp;
+  validParams->set("partitioner: map", tmp);
+
+  validParams->set("partitioner: line detection threshold",(double)0.0);
+  validParams->set("partitioner: PDE equations",(int)1);
+  Teuchos::RCP<Tpetra::MultiVector<> > dummy;
+  validParams->set("partitioner: coordinates",dummy);
+  
+  return validParams;
+}
+
+template<class MatrixType,class ContainerType>
 void
 BlockRelaxation<MatrixType,ContainerType>::
 setParameters (const Teuchos::ParameterList& List)
 {
   // Note that the validation process does not change List.
-  Teuchos::ParameterList validparams;
-  Ifpack2::getValidParameters (validparams);
-  List.validateParameters (validparams);
+  Teuchos::RCP<const Teuchos::ParameterList> validparams;
+  validparams = this->getValidParameters();
+  List.validateParameters (*validparams);
 
   if (List.isParameter ("relaxation: container")) {
     // If the container type isn't a string, this will throw, but it

@@ -70,10 +70,12 @@ public:
                                const std::string & quadPointField="",
                                const Teuchos::RCP<const panzer::LinearObjFactory<panzer::Traits> > & linearObjFactory=Teuchos::null,
                                const Teuchos::RCP<const panzer::UniqueGlobalIndexer<LO,GO> > & globalIndexer=Teuchos::null,
-                               bool applyDirichletToDerivative=false)
+                               bool applyDirichletToDerivative=false,
+                               std::string in_prefix="")
      : comm_(comm), cubatureDegree_(cubatureDegree), requiresCellExtreme_(requiresCellReduction), useMax_(useMax)
      , quadPointField_(quadPointField), linearObjFactory_(linearObjFactory), globalIndexer_(globalIndexer)
      , applyDirichletToDerivative_(applyDirichletToDerivative)
+     , prefix_(in_prefix)
    {
      TEUCHOS_ASSERT((linearObjFactory==Teuchos::null && globalIndexer==Teuchos::null) ||
                     (linearObjFactory!=Teuchos::null && globalIndexer!=Teuchos::null));
@@ -134,6 +136,7 @@ private:
    Teuchos::RCP<const panzer::LinearObjFactory<panzer::Traits> > linearObjFactory_;
    Teuchos::RCP<const panzer::UniqueGlobalIndexer<LO,GO> > globalIndexer_;
    bool applyDirichletToDerivative_;
+   std::string prefix_;
 };
 
 template <typename LO,typename GO> 
@@ -146,6 +149,7 @@ struct ExtremeValueResponse_Builder : public ResponseMESupportBuilderBase {
   bool applyDirichletToDerivative; // if this is set to true, then the dirichlet values will be zerod out in
                                    // the DgDx vector
 
+  std::string prefix;
   ExtremeValueResponse_Builder() : applyDirichletToDerivative(false) {}
 
   virtual ~ExtremeValueResponse_Builder() {}
@@ -171,7 +175,7 @@ struct ExtremeValueResponse_Builder : public ResponseMESupportBuilderBase {
   template <typename T>
   Teuchos::RCP<panzer::ResponseEvaluatorFactoryBase> build() const
   { return Teuchos::rcp(new ResponseEvaluatorFactory_ExtremeValue<T,LO,GO>(comm,cubatureDegree,requiresCellExtreme,useMax,quadPointField,
-                                                                         linearObjFactory,globalIndexer,applyDirichletToDerivative)); }
+                                                                         linearObjFactory,globalIndexer,applyDirichletToDerivative,prefix)); }
 
   virtual Teuchos::RCP<panzer::ResponseEvaluatorFactoryBase> buildValueFactory() const
   { return build<panzer::Traits::Residual>(); }

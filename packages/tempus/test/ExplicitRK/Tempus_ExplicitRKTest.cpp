@@ -14,8 +14,10 @@
 #include "Thyra_VectorStdOps.hpp"
 
 #include "Tempus_IntegratorBasic.hpp"
+#include "Tempus_StepperExplicitRK.hpp"
 
 #include "../TestModels/SinCosModel.hpp"
+#include "../TestModels/VanDerPolModel.hpp"
 #include "../TestUtils/Tempus_ConvergenceTestUtils.hpp"
 
 #include <fstream>
@@ -38,6 +40,7 @@ using Tempus::SolutionState;
 TEUCHOS_UNIT_TEST(ExplicitRK, ParameterList)
 {
   std::vector<std::string> RKMethods;
+  RKMethods.push_back("Bogacki-Shampine 3(2) Pair");
   RKMethods.push_back("General ERK");
   RKMethods.push_back("RK Forward Euler");
   RKMethods.push_back("RK Explicit 4 Stage");
@@ -85,7 +88,7 @@ TEUCHOS_UNIT_TEST(ExplicitRK, ParameterList)
         integrator->getStepper()->getDefaultParameters();
       defaultPL->remove("Description");
 
-      TEST_ASSERT(haveSameValues(*stepperPL,*defaultPL))
+      TEST_ASSERT(haveSameValues(*stepperPL, *defaultPL, true));
     }
 
     // Test constructor IntegratorBasic(model, stepperType)
@@ -100,10 +103,108 @@ TEUCHOS_UNIT_TEST(ExplicitRK, ParameterList)
         integrator->getStepper()->getDefaultParameters();
       defaultPL->remove("Description");
 
-      TEST_ASSERT(haveSameValues(*stepperPL,*defaultPL))
+      TEST_ASSERT(haveSameValues(*stepperPL, *defaultPL, true))
     }
   }
 }
+
+// ************************************************************
+// ************************************************************
+TEUCHOS_UNIT_TEST(ExplicitRK, ConstructingFromDefaults)
+{
+  double dt = 0.1;
+
+  // Read params from .xml file
+  RCP<ParameterList> pList =
+    getParametersFromXmlFile("Tempus_ExplicitRK_SinCos.xml");
+  RCP<ParameterList> pl = sublist(pList, "Tempus", true);
+
+  // Setup the SinCosModel
+  RCP<ParameterList> scm_pl = sublist(pList, "SinCosModel", true);
+  //RCP<SinCosModel<double> > model = sineCosineModel(scm_pl);
+  RCP<SinCosModel<double> > model =
+    Teuchos::rcp(new SinCosModel<double>(scm_pl));
+
+  // Setup Stepper for field solve ----------------------------
+  RCP<Tempus::StepperExplicitRK<double> > stepper =
+    Teuchos::rcp(new Tempus::StepperExplicitRK<double>(model));
+
+  // Setup TimeStepControl ------------------------------------
+  RCP<Tempus::TimeStepControl<double> > timeStepControl =
+    Teuchos::rcp(new Tempus::TimeStepControl<double>());
+  ParameterList tscPL = pl->sublist("Demo Integrator")
+                           .sublist("Time Step Control");
+  timeStepControl->setStepType (tscPL.get<std::string>("Integrator Step Type"));
+  timeStepControl->setInitIndex(tscPL.get<int>   ("Initial Time Index"));
+  timeStepControl->setInitTime (tscPL.get<double>("Initial Time"));
+  timeStepControl->setFinalTime(tscPL.get<double>("Final Time"));
+  timeStepControl->setInitTimeStep(dt);
+
+  // Setup initial condition SolutionState --------------------
+  Thyra::ModelEvaluatorBase::InArgs<double> inArgsIC =
+    stepper->getModel()->getNominalValues();
+  RCP<Thyra::VectorBase<double> > icSolution =
+    Teuchos::rcp_const_cast<Thyra::VectorBase<double> > (inArgsIC.get_x());
+  RCP<Tempus::SolutionState<double> > icState =
+      Teuchos::rcp(new Tempus::SolutionState<double>(icSolution));
+  icState->setTime    (timeStepControl->getInitTime());
+  icState->setIndex   (timeStepControl->getInitIndex());
+  icState->setTimeStep(0.0);
+  icState->setOrder   (stepper->getOrder());
+  icState->setSolutionStatus(Tempus::Status::PASSED);  // ICs are passing.
+
+  // Setup SolutionHistory ------------------------------------
+  RCP<Tempus::SolutionHistory<double> > solutionHistory =
+    Teuchos::rcp(new Tempus::SolutionHistory<double>());
+  solutionHistory->setName("Forward States");
+  solutionHistory->setStorageType(Tempus::STORAGE_TYPE_STATIC);
+  solutionHistory->setStorageLimit(2);
+  solutionHistory->addState(icState);
+
+  // Setup Integrator -----------------------------------------
+  RCP<Tempus::IntegratorBasic<double> > integrator =
+    Tempus::integratorBasic<double>();
+  integrator->setStepperWStepper(stepper);
+  integrator->setTimeStepControl(timeStepControl);
+  integrator->setSolutionHistory(solutionHistory);
+  //integrator->setObserver(...);
+  integrator->initialize();
+
+
+  // Integrate to timeMax
+  bool integratorStatus = integrator->advanceTime();
+  TEST_ASSERT(integratorStatus)
+
+
+  // Test if at 'Final Time'
+  double time = integrator->getTime();
+  double timeFinal =pl->sublist("Demo Integrator")
+     .sublist("Time Step Control").get<double>("Final Time");
+  TEST_FLOATING_EQUALITY(time, timeFinal, 1.0e-14);
+
+  // Time-integrated solution and the exact solution
+  RCP<Thyra::VectorBase<double> > x = integrator->getX();
+  RCP<const Thyra::VectorBase<double> > x_exact =
+    model->getExactSolution(time).get_x();
+
+  // Calculate the error
+  RCP<Thyra::VectorBase<double> > xdiff = x->clone_v();
+  Thyra::V_StVpStV(xdiff.ptr(), 1.0, *x_exact, -1.0, *(x));
+
+  // Check the order and intercept
+  std::cout << "  Stepper = RK Explicit 4 Stage" << std::endl;
+  std::cout << "  =========================" << std::endl;
+  std::cout << "  Exact solution   : " << get_ele(*(x_exact), 0) << "   "
+                                       << get_ele(*(x_exact), 1) << std::endl;
+  std::cout << "  Computed solution: " << get_ele(*(x      ), 0) << "   "
+                                       << get_ele(*(x      ), 1) << std::endl;
+  std::cout << "  Difference       : " << get_ele(*(xdiff  ), 0) << "   "
+                                       << get_ele(*(xdiff  ), 1) << std::endl;
+  std::cout << "  =========================" << std::endl;
+  TEST_FLOATING_EQUALITY(get_ele(*(x), 0), 0.841470, 1.0e-4 );
+  TEST_FLOATING_EQUALITY(get_ele(*(x), 1), 0.540303, 1.0e-4 );
+}
+
 
 // ************************************************************
 // ************************************************************
@@ -120,7 +221,9 @@ TEUCHOS_UNIT_TEST(ExplicitRK, SinCos)
   RKMethods.push_back("RK Explicit 3 Stage 3rd order by Heun");
   RKMethods.push_back("RK Explicit 2 Stage 2nd order by Runge");
   RKMethods.push_back("RK Explicit Trapezoidal");
+  RKMethods.push_back("Bogacki-Shampine 3(2) Pair");
   RKMethods.push_back("General ERK");
+  RKMethods.push_back("General ERK Embedded");
   std::vector<double> RKMethodErrors;
   RKMethodErrors.push_back(0.051123);
   RKMethodErrors.push_back(8.33251e-07);
@@ -132,7 +235,9 @@ TEUCHOS_UNIT_TEST(ExplicitRK, SinCos)
   RKMethodErrors.push_back(4.16603e-05);
   RKMethodErrors.push_back(0.00166645);
   RKMethodErrors.push_back(0.00166645);
+  RKMethodErrors.push_back(4.16603e-05);
   RKMethodErrors.push_back(8.33251e-07);
+  RKMethodErrors.push_back(4.16603e-05);
 
   for(std::vector<std::string>::size_type m = 0; m != RKMethods.size(); m++) {
 
@@ -163,9 +268,11 @@ TEUCHOS_UNIT_TEST(ExplicitRK, SinCos)
       // Set the Stepper
       RCP<ParameterList> pl = sublist(pList, "Tempus", true);
       if (RKMethods[m] == "General ERK") {
-        pl->sublist("Demo Integrator").set("Stepper Name", "Demo Stepper 2");
+         pl->sublist("Demo Integrator").set("Stepper Name", "Demo Stepper 2");
+      } else if (RKMethods[m] == "General ERK Embedded"){
+         pl->sublist("Demo Integrator").set("Stepper Name", "General ERK Embedded Stepper");
       } else {
-        pl->sublist("Demo Stepper").set("Stepper Type", RKMethods[m]);
+         pl->sublist("Demo Stepper").set("Stepper Type", RKMethods[m]);
       }
 
 
@@ -248,6 +355,117 @@ TEUCHOS_UNIT_TEST(ExplicitRK, SinCos)
     }
     ftmp.close();
 
+  }
+
+  Teuchos::TimeMonitor::summarize();
+}
+
+
+// ************************************************************
+// ************************************************************
+TEUCHOS_UNIT_TEST(ExplicitRK, EmbeddedVanDerPol)
+{
+
+  std::vector<std::string> IntegratorList;
+  IntegratorList.push_back("Embedded_Integrator_PID");
+  IntegratorList.push_back("Demo_Integrator");
+  IntegratorList.push_back("Embedded_Integrator");
+  IntegratorList.push_back("General_Embedded_Integrator");
+  IntegratorList.push_back("Embedded_Integrator_PID_General");
+
+  // the embedded solution will test the following:
+  const int refIstep = 47;
+
+  for(auto integratorChoice : IntegratorList){
+
+     std::cout << "Using Integrator: " << integratorChoice << " !!!" << std::endl;
+
+     // Read params from .xml file
+     RCP<ParameterList> pList =
+        getParametersFromXmlFile("Tempus_ExplicitRK_VanDerPol.xml");
+
+
+     // Setup the VanDerPolModel
+     RCP<ParameterList> vdpm_pl = sublist(pList, "VanDerPolModel", true);
+     RCP<VanDerPolModel<double> > model =
+        Teuchos::rcp(new VanDerPolModel<double>(vdpm_pl));
+
+
+     // Set the Integrator and Stepper
+     RCP<ParameterList> pl = sublist(pList, "Tempus", true);
+     pl->set("Integrator Name", integratorChoice);
+
+     // Setup the Integrator
+     RCP<Tempus::IntegratorBasic<double> > integrator =
+        Tempus::integratorBasic<double>(pl, model);
+
+     const std::string RKMethod_ =
+        pl->sublist(integratorChoice).get<std::string>("Stepper Name");
+
+     // Integrate to timeMax
+     bool integratorStatus = integrator->advanceTime();
+     TEST_ASSERT(integratorStatus);
+
+     // Test if at 'Final Time'
+     double time = integrator->getTime();
+     double timeFinal = pl->sublist(integratorChoice)
+        .sublist("Time Step Control").get<double>("Final Time");
+     TEST_FLOATING_EQUALITY(time, timeFinal, 1.0e-14);
+
+
+     // Numerical reference solution at timeFinal (for \epsilon = 0.1)
+     RCP<Thyra::VectorBase<double> > x = integrator->getX();
+     RCP<Thyra::VectorBase<double> > xref = x->clone_v();
+     Thyra::set_ele(0, -1.5484458614405929, xref.ptr());
+     Thyra::set_ele(1,  1.0181127316101317, xref.ptr());
+
+     // Calculate the error
+     RCP<Thyra::VectorBase<double> > xdiff = x->clone_v();
+     Thyra::V_StVpStV(xdiff.ptr(), 1.0, *xref, -1.0, *(x));
+     const double L2norm = Thyra::norm_2(*xdiff);
+
+     // Test number of steps, failures, and accuracy
+     if ((integratorChoice == "Embedded_Integrator_PID") or
+           (integratorChoice == "Embedded_Integrator_PID_General")) {
+
+        const double absTol = pl->sublist(integratorChoice).
+           sublist("Time Step Control").get<double>("Maximum Absolute Error");
+        const double relTol = pl->sublist(integratorChoice).
+           sublist("Time Step Control").get<double>("Maximum Relative Error");
+
+        // Should be close to the prescribed tolerance (magnitude)
+        TEST_COMPARE(std::log10(L2norm), <, std::log10(absTol));
+        TEST_COMPARE(std::log10(L2norm), <, std::log10(relTol));
+
+        // get the number of time steps and number of step failure
+        //const int nFailure_c = integrator->getSolutionHistory()->
+        //getCurrentState()->getMetaData()->getNFailures();
+        const int iStep = integrator->getSolutionHistory()->
+           getCurrentState()->getIndex();
+
+        // test for number of steps
+        TEST_EQUALITY(iStep, refIstep);
+        std::cout << "Tolerance = " << absTol
+           << " L2norm = "   << L2norm
+           << " iStep = "    << iStep  << std::endl;
+     }
+
+     // Plot sample solution and exact solution
+     std::ofstream ftmp("Tempus_"+integratorChoice+RKMethod_+"_VDP_Example.dat");
+     RCP<const SolutionHistory<double> > solutionHistory =
+        integrator->getSolutionHistory();
+     int nStates = solutionHistory->getNumStates();
+     //RCP<const Thyra::VectorBase<double> > x_exact_plot;
+     for (int i=0; i<nStates; i++) {
+        RCP<const SolutionState<double> > solutionState = (*solutionHistory)[i];
+        double time = solutionState->getTime();
+        RCP<const Thyra::VectorBase<double> > x_plot = solutionState->getX();
+        //x_exact_plot = model->getExactSolution(time).get_x();
+        ftmp << time << "   "
+           << Thyra::get_ele(*(x_plot), 0) << "   "
+           << Thyra::get_ele(*(x_plot), 1) << "   " << std::endl;
+     }
+     ftmp.close();
   }
 
   Teuchos::TimeMonitor::summarize();

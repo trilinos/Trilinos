@@ -65,11 +65,20 @@ class StepperExplicitRK : virtual public Tempus::Stepper<Scalar>
 {
 public:
 
-  /// Constructor
+  /// Constructor to use default Stepper parameters.
   StepperExplicitRK(
     const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel,
-    std::string stepperType,
-    Teuchos::RCP<Teuchos::ParameterList> pList = Teuchos::null);
+    std::string stepperType = "RK Explicit 4 Stage");
+
+  /// Constructor to specialize Stepper parameters.
+  StepperExplicitRK(
+    const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel,
+    Teuchos::RCP<Teuchos::ParameterList> pList);
+
+  /// Constructor for StepperFactory.
+  StepperExplicitRK(
+    const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel,
+    std::string stepperType, Teuchos::RCP<Teuchos::ParameterList> pList);
 
   /// \name Basic stepper methods
   //@{
@@ -153,7 +162,11 @@ protected:
 
   Teuchos::RCP<StepperExplicitRKObserver<Scalar> >  stepperExplicitRKObserver_;
 
+  // For Embedded RK
   Teuchos::RCP<Thyra::VectorBase<Scalar> >               ee_;
+  Teuchos::RCP<Thyra::VectorBase<Scalar> >               abs_u0;
+  Teuchos::RCP<Thyra::VectorBase<Scalar> >               abs_u;
+  Teuchos::RCP<Thyra::VectorBase<Scalar> >               sc;
 };
 
 } // namespace Tempus

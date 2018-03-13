@@ -92,6 +92,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( vector, sizedConstruct, T )
   TEST_EQUALITY( as<int>(a.size()), n );
   TEST_COMPARE( a.max_size(), >=, as<size_type>(n) );
   TEST_COMPARE( as<int>(a.capacity()), >=, n );
+  TEST_COMPARE_CONST( as<int>(a.capacity()), >=, n );
 }
 
 

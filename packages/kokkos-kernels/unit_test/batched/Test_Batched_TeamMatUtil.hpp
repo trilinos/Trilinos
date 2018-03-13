@@ -54,7 +54,7 @@ namespace Test {
       if (member.team_rank() == 0) {
         const int k = member.league_rank();
         auto A = Kokkos::subview(_a, k, Kokkos::ALL(), Kokkos::ALL());
-        const int m = A.dimension_0(), n = A.dimension_1();
+        const int m = A.extent(0), n = A.extent(1);
         switch (TestID) {
         case BatchedSet: {
           for (int i=0;i<m;++i) 
@@ -74,7 +74,7 @@ namespace Test {
 
     inline
     int run() {
-      const int league_size = _a.dimension_0();
+      const int league_size = _a.extent(0);
       Kokkos::TeamPolicy<DeviceType,AlgoTagType> policy(league_size, Kokkos::AUTO);
       Kokkos::parallel_for(policy, *this);
 

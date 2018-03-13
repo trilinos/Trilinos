@@ -70,6 +70,36 @@ Building Kokkoskernels
   1. Modify example/buildlib/compileKokkosKernelsSimple.sh or
      example/buildlib/compileKokkosKernels.sh for your environment
      and run it to generate the required makefiles. 
+     - KOKKOS_DEVICES can be as below. You can remove any backend 
+       that you don't need. If cuda backend is used, CXX compiler should point to ${KOKKOS_PATH}/config/nvcc_wrapper.
+       If you enable Cuda, a host space, either OpenMP or Serial should be enabled.
+       KOKKOS_DEVICES=OpenMP,Serial,Cuda
+
+     - For the best performance give the architecture flag to proper architecture.
+       e.g. KNLs: KOKKOS_ARCHS=KNL, KOKKOS_ARCHS=HSW. 
+       If you compile for P100 GPUs with Power8 Processor, give both architectures.
+       KOKKOS_ARCHS=Pascal60,Power8
      
+       For the architecture flags, run below command.
+       %: scripts/generate_makefile.bash --help     
   2. Run "make build-test" to compile the tests.
+
+
+Using Kokkoskernels Test Drivers 
+--------------------------
+
+In perf_test there are test drivers.
+
+-- KokkosGraph_triangle.exe : Triangle counting driver. 
+-- KokkosSparse_spgemm.exe : Sparse Matrix Sparse Matrix Multiply: 
+   *****NOTE: KKMEM is outdated. Use default algorithm: KKSPGEMM = KKDEFAULT = DEFAULT****
+   Or within the code:
+       kh.create_spgemm_handle(KokkosSparse::SPGEMM_KK);
+-- KokkosSparse_spmv.exe : Sparse matvec.
+-- KokkosSparse_pcg.exe: CG method with Gauss Seidel as preconditioner.
+-- KokkosGraph_color.exe: Distance-1 Graph coloring 
+-- KokkosKernels_MatrixConverter.exe: given a matrix market format, converts it ".bin"
+   binary format for fast input output readings, which can be read by other test drivers.
+   
+Please report bugs or performance issues to: https://github.com/kokkos/kokkos-kernels/issues
 

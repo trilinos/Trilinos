@@ -23,7 +23,7 @@
 template <typename EvalT>
 mini_em::BCStrategy_Dirichlet_AuxConstant<EvalT>::
 BCStrategy_Dirichlet_AuxConstant(const panzer::BC& bc,
-    const Teuchos::RCP<panzer::GlobalData>& global_data) 
+    const Teuchos::RCP<panzer::GlobalData>& /* global_data */) 
   : panzer::BCStrategy<EvalT>(bc)
 {
   TEUCHOS_ASSERT(this->m_bc.strategy() == "AuxConstant");
@@ -33,7 +33,7 @@ BCStrategy_Dirichlet_AuxConstant(const panzer::BC& bc,
 template <typename EvalT>
 void mini_em::BCStrategy_Dirichlet_AuxConstant<EvalT>::
 setup(const panzer::PhysicsBlock& side_pb,
-      const Teuchos::ParameterList& user_data)
+      const Teuchos::ParameterList& /* user_data */)
 {
   using Teuchos::RCP;
   using std::vector;
@@ -63,10 +63,10 @@ setup(const panzer::PhysicsBlock& side_pb,
 template <typename EvalT>
 void mini_em::BCStrategy_Dirichlet_AuxConstant<EvalT>::
 buildAndRegisterEvaluators(PHX::FieldManager<panzer::Traits>& fm,
-			   const panzer::PhysicsBlock& pb,
-			   const panzer::ClosureModelFactory_TemplateManager<panzer::Traits>& factory,
-			   const Teuchos::ParameterList& models,
-			   const Teuchos::ParameterList& user_data) const
+			   const panzer::PhysicsBlock& /* pb */,
+			   const panzer::ClosureModelFactory_TemplateManager<panzer::Traits>& /* factory */,
+			   const Teuchos::ParameterList& /* models */,
+			   const Teuchos::ParameterList& /* user_data */) const
 {
   using Teuchos::ParameterList;
   using Teuchos::RCP;
@@ -109,17 +109,17 @@ buildAndRegisterGatherScatterEvaluators(PHX::FieldManager<panzer::Traits>& fm,
 
 template <typename EvalT>
 void mini_em::BCStrategy_Dirichlet_AuxConstant<EvalT>::
-buildAndRegisterScatterEvaluators(PHX::FieldManager<panzer::Traits>& fm,
-                                  const panzer::PhysicsBlock& side_pb,
-				  const panzer::LinearObjFactory<panzer::Traits> & lof,
-				  const Teuchos::ParameterList& user_data) const {}
+buildAndRegisterScatterEvaluators(PHX::FieldManager<panzer::Traits>& /* fm */,
+                                  const panzer::PhysicsBlock& /* side_pb */,
+				  const panzer::LinearObjFactory<panzer::Traits> & /* lof */,
+				  const Teuchos::ParameterList& /* user_data */) const {}
 
 template <typename EvalT>
 void mini_em::BCStrategy_Dirichlet_AuxConstant<EvalT>::
-buildAndRegisterGatherAndOrientationEvaluators(PHX::FieldManager<panzer::Traits>& fm,
-                                                 const panzer::PhysicsBlock& side_pb,
-                                                 const panzer::LinearObjFactory<panzer::Traits> & lof,
-                                                 const Teuchos::ParameterList& user_data) const {}
+buildAndRegisterGatherAndOrientationEvaluators(PHX::FieldManager<panzer::Traits>& /* fm */,
+                                                 const panzer::PhysicsBlock& /* side_pb */,
+                                                 const panzer::LinearObjFactory<panzer::Traits> & /* lof */,
+                                                 const Teuchos::ParameterList& /* user_data */) const {}
 
 template < >
 void mini_em::BCStrategy_Dirichlet_AuxConstant<panzer::Traits::Jacobian>::
@@ -135,9 +135,9 @@ buildAndRegisterGatherScatterEvaluators(PHX::FieldManager<panzer::Traits>& fm,
 template < >
 void mini_em::BCStrategy_Dirichlet_AuxConstant<panzer::Traits::Jacobian>::
 buildAndRegisterGatherAndOrientationEvaluators(PHX::FieldManager<panzer::Traits>& fm,
-                                                 const panzer::PhysicsBlock& side_pb,
+                                                 const panzer::PhysicsBlock& /* side_pb */,
                                                  const panzer::LinearObjFactory<panzer::Traits> & lof,
-                                                 const Teuchos::ParameterList& user_data) const 
+                                                 const Teuchos::ParameterList& /* user_data */) const 
 {
   typedef panzer::Traits::Jacobian EvalT;
 
@@ -168,7 +168,7 @@ void mini_em::BCStrategy_Dirichlet_AuxConstant<panzer::Traits::Jacobian>::
 buildAndRegisterScatterEvaluators(PHX::FieldManager<panzer::Traits>& fm,
                                   const panzer::PhysicsBlock& side_pb,
 				  const panzer::LinearObjFactory<panzer::Traits> & lof,
-				  const Teuchos::ParameterList& user_data) const 
+				  const Teuchos::ParameterList& /* user_data */) const 
 {
   typedef panzer::Traits::Jacobian EvalT;
 

@@ -1,0 +1,2 @@
+#ATDM_SET_ENABLE(KokkosCore_UnitTest_OpenMP_MPI_1_DISABLE ON)
+#ATDM_SET_ENABLE(KokkosCore_UnitTest_Serial_MPI_1_DISABLE ON)

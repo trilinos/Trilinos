@@ -433,12 +433,12 @@ namespace MueLuTests {
     typedef MueLu::Utilities<SC,LO,GO,NO> Utils;
     typedef Xpetra::MultiVector<double,LO,GO,NO> dMultiVector;
 
+#if defined(HAVE_MUELU_ZOLTAN) && defined(HAVE_MPI)
+
     Xpetra::UnderlyingLib          lib  = TestHelpers::Parameters::getLib();
     RCP<const Teuchos::Comm<int> > comm = TestHelpers::Parameters::getDefaultComm();
 
     GO nx = 972;
-
-#if defined(HAVE_MUELU_ZOLTAN) && defined(HAVE_MPI)
 
     for (int k = 0; k < 2; k++) {
       std::string xmlFileName;

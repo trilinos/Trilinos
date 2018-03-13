@@ -61,12 +61,35 @@ namespace panzer {
     <ParameterList/>
     \endverbatim
   */
-PANZER_EVALUATOR_CLASS(Copy)
+template<typename EvalT, typename Traits>
+class Copy
+  :
+  public panzer::EvaluatorWithBaseImpl<Traits>,
+  public PHX::EvaluatorDerived<EvalT, Traits>
+{
+  public:
+
+    Copy(
+      const Teuchos::ParameterList& p);
+
+    void
+    postRegistrationSetup(
+      typename Traits::SetupData d,
+      PHX::FieldManager<Traits>& fm);
+
+    void
+    evaluateFields(
+      typename Traits::EvalData d);
+
+  private:
+
+    using ScalarT = typename EvalT::ScalarT;
   
   PHX::MDField<const ScalarT> input;
   PHX::MDField<ScalarT> output;
 
-PANZER_EVALUATOR_CLASS_END
+}; // end of class Copy
+
 
 }
 

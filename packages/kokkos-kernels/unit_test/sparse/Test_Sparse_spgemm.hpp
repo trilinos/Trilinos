@@ -308,7 +308,7 @@ void test_spgemm(lno_t numRows, size_type nnz, lno_t bandwidth, lno_t row_size_v
 
     case SPGEMM_MKL:
       algo = "SPGEMM_MKL";
-#ifndef HAVE_KOKKOSKERNELS_MKL_DISABLED
+#ifndef HAVE_KOKKOSKERNELS_MKL
       is_expected_to_fail = true;
 #endif
       //MKL requires scalar to be either float or double

@@ -48,22 +48,33 @@
 #include "typedefs.hpp"
 #include "Teuchos_Comm.hpp"
 
-struct LLA {
+
+namespace TpetraExamples {
+
+
+
+struct LLA 
+{
   LLA() {data[0]=0; data[1]=0;}
 
-  LLA(GlobalOrdinal i, GlobalOrdinal j) {data[0]=i; data[1]=j;}
+  LLA(global_ordinal_t i, global_ordinal_t j) {data[0]=i; data[1]=j;}
 
-  GlobalOrdinal operator[](GlobalOrdinal i) const {return data[i];}
-  GlobalOrdinal & operator[](GlobalOrdinal i){return data[i];}
+  global_ordinal_t operator[](global_ordinal_t i) const {return data[i];}
+  global_ordinal_t & operator[](global_ordinal_t i) {return data[i];}
 
-  GlobalOrdinal data[2];
+  global_ordinal_t data[2];
 };
+
 
 
 class MeshDatabase 
 {
 public:
-  MeshDatabase(Teuchos::RCP<const Teuchos::Comm<int> > comm, int global_elements_x, int global_elements_y, int procs_x, int procs_y);
+  MeshDatabase(Teuchos::RCP<const Teuchos::Comm<int> > comm,
+               global_ordinal_t global_elements_x,
+               global_ordinal_t global_elements_y,
+               global_ordinal_t procs_x,
+               global_ordinal_t procs_y);
 
   ~MeshDatabase(){}
 
@@ -81,29 +92,29 @@ public:
   size_t getNumOwnedAndGhostElements() const {return ownedAndGhostElementGlobalIDs_.dimension(0);}
 
   // Data accessors
-  global_ordinal_view_type getOwnedElementGlobalIDs() {return ownedElementGlobalIDs_;}
-  global_ordinal_view_type getGhostElementGlobalIDs() {return ghostElementGlobalIDs_;}
+  global_ordinal_view_t getOwnedElementGlobalIDs() {return ownedElementGlobalIDs_;}
+  global_ordinal_view_t getGhostElementGlobalIDs() {return ghostElementGlobalIDs_;}
 
-  global_ordinal_view_type getOwnedNodeGlobalIDs() {return ownedNodeGlobalIDs_;}
-  global_ordinal_view_type getGhostNodeGlobalIDs() {return ghostNodeGlobalIDs_;}
+  global_ordinal_view_t getOwnedNodeGlobalIDs() {return ownedNodeGlobalIDs_;}
+  global_ordinal_view_t getGhostNodeGlobalIDs() {return ghostNodeGlobalIDs_;}
 
-  global_ordinal_view_type getOwnedAndGhostNodeGlobalIDs() {return ownedAndGhostNodeGlobalIDs_;}
-  global_ordinal_view_type getOwnedAndGhostElementGlobalIDs() {return ownedAndGhostElementGlobalIDs_;}
+  global_ordinal_view_t getOwnedAndGhostNodeGlobalIDs() {return ownedAndGhostNodeGlobalIDs_;}
+  global_ordinal_view_t getOwnedAndGhostElementGlobalIDs() {return ownedAndGhostElementGlobalIDs_;}
 
-  global_ordinal_2d_array_type getOwnedElementToNode() {return ownedElementToNode_;}
-  global_ordinal_2d_array_type getGhostElementToNode() {return ghostElementToNode_;}
+  global_ordinal_2d_array_t getOwnedElementToNode() {return ownedElementToNode_;}
+  global_ordinal_2d_array_t getGhostElementToNode() {return ghostElementToNode_;}
   
   // Debugging output
   void print(std::ostream & oss);
 
-  inline bool nodeIsOwned(GlobalOrdinal idx) {
-    GlobalOrdinal i,j; 
+  inline bool nodeIsOwned(global_ordinal_t idx) {
+    global_ordinal_t i,j; 
     ij_from_idx(globalNodes_[0],idx,i,j); 
     return nodeIsOwned(i,j);
   }
 
-  inline bool elementIsOwned(GlobalOrdinal idx) {
-    GlobalOrdinal i,j;
+  inline bool elementIsOwned(global_ordinal_t idx) {
+    global_ordinal_t i,j;
     ij_from_idx(globalElements_[0], idx, i, j);
     return elementIsOwned(i,j);
   }
@@ -111,42 +122,41 @@ public:
 
 private:
 
-  inline bool nodeIsOwned(GlobalOrdinal i, GlobalOrdinal j) { 
+  inline bool nodeIsOwned(global_ordinal_t i, global_ordinal_t j) {
     return myNodeStart_[0] <= i &&  i < myNodeStop_[0] && myNodeStart_[1] <= j &&  j < myNodeStop_[1];
   }
 
-  inline bool elementIsOwned(GlobalOrdinal i, GlobalOrdinal j) {
+  inline bool elementIsOwned(global_ordinal_t i, global_ordinal_t j) {
     return myElementStart_[0] <= i && i < myElementStop_[0] && myElementStart_[1] <= j && myElementStop_[1];
   }
 
   // TODO: Add elementIsOwned()  (useful for Type-3 Assembly)
 
 
-  inline GlobalOrdinal idx_from_ij(int num_x, GlobalOrdinal i, GlobalOrdinal j) const {
+  inline global_ordinal_t idx_from_ij(global_ordinal_t num_x, global_ordinal_t i, global_ordinal_t j) const {
     return j*num_x+i;
   }
 
-  inline void ij_from_idx(int num_x, GlobalOrdinal idx, GlobalOrdinal &i, GlobalOrdinal&j) const { 
+  inline void ij_from_idx(global_ordinal_t num_x, global_ordinal_t idx, global_ordinal_t &i, global_ordinal_t&j) const { 
     i = idx%num_x;
-    j = (GlobalOrdinal)((idx-i)/num_x);
+    j = (global_ordinal_t)((idx-i)/num_x);
   }
 
   void initializeOwnedAndGhostNodeGlobalIDs(void);
 
   void initializeOwnedAndGhostElementGlobalIDs(void);
 
+  global_ordinal_view_t ownedElementGlobalIDs_;
+  global_ordinal_view_t ghostElementGlobalIDs_;
 
-  global_ordinal_view_type ownedElementGlobalIDs_;
-  global_ordinal_view_type ghostElementGlobalIDs_;
+  global_ordinal_view_t ownedNodeGlobalIDs_;
+  global_ordinal_view_t ghostNodeGlobalIDs_;
 
-  global_ordinal_view_type ownedNodeGlobalIDs_;
-  global_ordinal_view_type ghostNodeGlobalIDs_;
+  global_ordinal_view_t ownedAndGhostNodeGlobalIDs_;
+  global_ordinal_view_t ownedAndGhostElementGlobalIDs_;
 
-  global_ordinal_view_type ownedAndGhostNodeGlobalIDs_;
-  global_ordinal_view_type ownedAndGhostElementGlobalIDs_;
-
-  global_ordinal_2d_array_type ownedElementToNode_;
-  global_ordinal_2d_array_type ghostElementToNode_;
+  global_ordinal_2d_array_t ownedElementToNode_;
+  global_ordinal_2d_array_t ghostElementToNode_;
 
   // Global Mesh Info
   LLA globalElements_;
@@ -154,24 +164,28 @@ private:
   LLA globalProcs_;
 
   // Local Mesh Info
-  GlobalOrdinal myElementStart_[2];
-  GlobalOrdinal myElementStop_[2];
-  GlobalOrdinal myNodeStart_[2];
-  GlobalOrdinal myNodeStop_[2];
+  global_ordinal_t myElementStart_[2];
+  global_ordinal_t myElementStop_[2];
+  global_ordinal_t myNodeStart_[2];
+  global_ordinal_t myNodeStop_[2];
 
   // Comm info
   Teuchos::RCP<const Teuchos::Comm<int> > comm_;
-  int MyRank_;
+  size_t MyRank_;
   LLA myProcIJ_;
 };
 
 
 
-MeshDatabase::MeshDatabase(Teuchos::RCP<const Teuchos::Comm<int> > comm, int global_elements_x, int global_elements_y, int procs_x, int procs_y):
-  globalElements_(global_elements_x,global_elements_y),
-  globalNodes_(global_elements_x+1,global_elements_y+1),
-  globalProcs_(procs_x,procs_y),
-  comm_(comm) 
+MeshDatabase::MeshDatabase(Teuchos::RCP<const Teuchos::Comm<int> > comm,
+                           global_ordinal_t global_elements_x,
+                           global_ordinal_t global_elements_y,
+                           global_ordinal_t procs_x,
+                           global_ordinal_t procs_y):
+      globalElements_(global_elements_x,global_elements_y),
+      globalNodes_(global_elements_x+1,global_elements_y+1),
+      globalProcs_(procs_x,procs_y),
+      comm_(comm) 
 {
   
   // NOTE: Elements/nodes are numbered sequentially with x as the "fast" direction
@@ -181,9 +195,9 @@ MeshDatabase::MeshDatabase(Teuchos::RCP<const Teuchos::Comm<int> > comm, int glo
   ij_from_idx(globalProcs_[0],MyRank_,myProcIJ_[0],myProcIJ_[1]);
   
   // Get local element & node start / stop
-  GlobalOrdinal num_my_elements=1, num_my_nodes=1;
+  global_ordinal_t num_my_elements=1, num_my_nodes=1;
   for(int k=0; k<2; k++) {
-    GlobalOrdinal eper = globalElements_[k] / globalProcs_[k];
+    global_ordinal_t eper = globalElements_[k] / globalProcs_[k];
     
     myElementStart_[k] = myProcIJ_[k] * eper;
     myElementStop_[k]  = (myProcIJ_[k] == globalProcs_[k]-1) ? globalElements_[k] : (myProcIJ_[k]+1) * eper;
@@ -197,9 +211,9 @@ MeshDatabase::MeshDatabase(Teuchos::RCP<const Teuchos::Comm<int> > comm, int glo
   // Generate the owned element ids
   Kokkos::resize(ownedElementGlobalIDs_,num_my_elements);
   int ect=0;
-  for(GlobalOrdinal j=myElementStart_[1]; j<myElementStop_[1]; j++) {
-    for(GlobalOrdinal i=myElementStart_[0]; i<myElementStop_[0]; i++) {
-      GlobalOrdinal idx=idx_from_ij(globalElements_[0],i,j);
+  for(global_ordinal_t j=myElementStart_[1]; j<myElementStop_[1]; j++) {
+    for(global_ordinal_t i=myElementStart_[0]; i<myElementStop_[0]; i++) {
+      global_ordinal_t idx=idx_from_ij(globalElements_[0],i,j);
       ownedElementGlobalIDs_(ect) = idx;
       ect++;
     }
@@ -208,9 +222,9 @@ MeshDatabase::MeshDatabase(Teuchos::RCP<const Teuchos::Comm<int> > comm, int glo
   // Generate the owned node ids
   Kokkos::resize(ownedNodeGlobalIDs_,num_my_nodes);
   int nct=0;
-  for(GlobalOrdinal j=myNodeStart_[1]; j<myNodeStop_[1]; j++) {
-    for(GlobalOrdinal i=myNodeStart_[0]; i<myNodeStop_[0]; i++) {
-      GlobalOrdinal idx=idx_from_ij(globalNodes_[0],i,j);
+  for(global_ordinal_t j=myNodeStart_[1]; j<myNodeStop_[1]; j++) {
+    for(global_ordinal_t i=myNodeStart_[0]; i<myNodeStop_[0]; i++) {
+      global_ordinal_t idx=idx_from_ij(globalNodes_[0],i,j);
       ownedNodeGlobalIDs_(nct) = idx;
       nct++;
     }
@@ -220,10 +234,10 @@ MeshDatabase::MeshDatabase(Teuchos::RCP<const Teuchos::Comm<int> > comm, int glo
   // NOTE: Hardwired to QUAD4's.  Nodes are ordered exodus-style (counter-clockwise) within an element
   Kokkos::resize(ownedElementToNode_,num_my_elements,4);
   int cct=0;
-  for(GlobalOrdinal j=myElementStart_[1]; j<myElementStop_[1]; j++) {
-    for(GlobalOrdinal i=myElementStart_[0]; i<myElementStop_[0]; i++) {
+  for(global_ordinal_t j=myElementStart_[1]; j<myElementStop_[1]; j++) {
+    for(global_ordinal_t i=myElementStart_[0]; i<myElementStop_[0]; i++) {
       // The (i,j) of the bottom left corner matches for elements & nodes
-      GlobalOrdinal nidx=idx_from_ij(globalNodes_[0],i,j);
+      global_ordinal_t nidx=idx_from_ij(globalNodes_[0],i,j);
       
       ownedElementToNode_(cct,0) = nidx;
       ownedElementToNode_(cct,1) = nidx+1;
@@ -236,17 +250,17 @@ MeshDatabase::MeshDatabase(Teuchos::RCP<const Teuchos::Comm<int> > comm, int glo
   // Generate the list of "ghost" elements & ghostElement2NodeMap
   // NOTE: This only generates a halo for elements where I own at least one node.  On the x/y hi sides,
   // the highers element does not own all the nodes on that proc.  Ergo, no halo in that direction
-  std::vector<GlobalOrdinal> my_ghost_elements;
-  for(GlobalOrdinal j=myElementStart_[1]-1; j<myElementStop_[1]; j++) {
+  std::vector<global_ordinal_t> my_ghost_elements;
+  for(global_ordinal_t j=myElementStart_[1]-1; j<myElementStop_[1]; j++) {
     if(j<0 || j>=globalElements_[1]) continue; // Ignore stuff off the mesh
-    for(GlobalOrdinal i=myElementStart_[0]-1; i<myElementStop_[0]; i++) {
+    for(global_ordinal_t i=myElementStart_[0]-1; i<myElementStop_[0]; i++) {
       if(i<0 || i>=globalElements_[0]) continue; // Ignore stuff off the mesh
       
       // Ignore proc interior
       if( j>myElementStart_[1]-1 && j<myElementStop_[1] && i>myElementStart_[0]-1 && i<myElementStop_[0])
         continue;
       
-      GlobalOrdinal idx=idx_from_ij(globalElements_[0],i,j);
+      global_ordinal_t idx=idx_from_ij(globalElements_[0],i,j);
       my_ghost_elements.push_back(idx);
     }
   }
@@ -255,12 +269,12 @@ MeshDatabase::MeshDatabase(Teuchos::RCP<const Teuchos::Comm<int> > comm, int glo
   Kokkos::resize(ghostElementGlobalIDs_,my_ghost_elements.size());
   Kokkos::resize(ghostElementToNode_,my_ghost_elements.size(),4);
   for(size_t k=0; k<my_ghost_elements.size(); k++) {
-    GlobalOrdinal i,j, eidx= my_ghost_elements[k];
+    global_ordinal_t i,j, eidx= my_ghost_elements[k];
     ghostElementGlobalIDs_(k) = eidx;
     ij_from_idx(globalElements_[0],eidx,i,j);
 
     // The (i,j) of the bottom left corner matches for elements & nodes
-    GlobalOrdinal nidx=idx_from_ij(globalNodes_[0],i,j);
+    global_ordinal_t nidx=idx_from_ij(globalNodes_[0],i,j);
       
     ghostElementToNode_(k,0) = nidx;
     ghostElementToNode_(k,1) = nidx+1;
@@ -269,10 +283,10 @@ MeshDatabase::MeshDatabase(Teuchos::RCP<const Teuchos::Comm<int> > comm, int glo
   }
  
   // Generate the list of "ghost" nodes (aka any node that exists on the ownedElement list that isn't owned
-  std::set<GlobalOrdinal> my_ghost_nodes;
+  std::set<global_ordinal_t> my_ghost_nodes;
   for(size_t k=0; k<ownedElementToNode_.dimension(0); k++) {
     for(size_t l=0; l<ownedElementToNode_.dimension(1); l++) {
-      GlobalOrdinal nidx=ownedElementToNode_(k,l);
+      global_ordinal_t nidx=ownedElementToNode_(k,l);
       if(!nodeIsOwned(nidx)) {
         my_ghost_nodes.insert(nidx);
       }
@@ -385,12 +399,7 @@ void MeshDatabase::print(std::ostream & oss)
 }
 
 
-// Generates a dummy finite element stiffness matrix for quads
-//scalar_2d_array_type generateFiniteElementMatrix() {
-
-
-
-//}
+} // end of namespace TpetraExamples
 
 #endif
 

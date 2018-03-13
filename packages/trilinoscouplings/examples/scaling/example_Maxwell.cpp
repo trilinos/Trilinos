@@ -173,7 +173,6 @@
 
 
 /*** Uncomment if you would like output data for plotting ***/
-//#define DUMP_DATA
 
 using namespace std;
 using namespace Intrepid;
@@ -403,7 +402,7 @@ int main(int argc, char *argv[]) {
   // Values of command-line arguments.
   int nx, ny, nz;
   std::string xmlInFileName;
-  bool verbose, debug;
+  bool verbose, debug, jiggle, dump;
   std::string solverName;
   double scaling = 1.0;
 
@@ -415,6 +414,8 @@ int main(int argc, char *argv[]) {
   solverName = "MueLu";
   verbose = false;
   debug = false;
+  jiggle = false;
+  dump = false;
   // Parse and validate command-line arguments.
   Teuchos::CommandLineProcessor cmdp (false, true);
   cmdp.setOption ("nx", &nx, "Number of cells along the x dimension");
@@ -427,14 +428,17 @@ int main(int argc, char *argv[]) {
                   "Otherwise, we tell Pamgen to make a cube, using "
                   "nx, ny, and nz.");
   cmdp.setOption ("solverName", &solverName, "Name of iterative linear solver "
-                  "to use for solving the linear system.  You may use any name "
-                  "that Belos::SolverFactory understands.  Examples include "
-                  "\"GMRES\" and \"CG\".");
+                  "to use for solving the linear system.  Examples include "
+                  "\"ML\", \"MueLu\", \"ML-Stratimikos\" and \"MueLu-Stratimikos\".");
   cmdp.setOption ("verbose", "quiet", &verbose,
                   "Whether to print verbose status output.");
   cmdp.setOption ("debug", "release", &debug,
                   "Whether to print copious debugging output to stderr.");
   cmdp.setOption ("scaling", &scaling, "scale mass matrix");
+  cmdp.setOption ("jiggle", "nojiggle", &jiggle,
+                  "Whether to randomly perturb the mesh.");
+  cmdp.setOption ("dump", "nodump", &dump,
+                  "Whether to dump data.");
 
   if (MyPID == 0) {
     std::cout                                                           \
@@ -995,35 +999,56 @@ int main(int argc, char *argv[]) {
     }
   }
 
+  // Define global epetra maps
+  Epetra_Map globalMapG(-1,ownedNodes,ownedGIDs,0,Comm);
+  Epetra_Map globalMapC(-1,numOwnedEdges,ownedEdgeIds,0,Comm);
+  
+  if (jiggle) {
+    /***********************************************************************************/
+    /* This block of code will create a randomly perturbed mesh by jiggling the node   */
+    /* coordinates away from their initial location.                                   */
+    /***********************************************************************************/
 
-#ifdef RANDOM_GRID
-  /***********************************************************************************/
-  /* This block of code will create a randomly perturbed mesh by jiggling the node
-     coordinates up to 1/4 of an edge length away from their initial location.
-     !!!NOTE: THIS WILL ONLY WORK CORRECTLY ON A SINGLE PROCESSOR!!!           */
-  /***********************************************************************************/
-  // Side length assuming an initially regular grid
-  double hx = nodeCoord(elemToNode(0,1),0)-nodeCoord(elemToNode(0,0),0);
-  double hy = nodeCoord(elemToNode(0,3),1)-nodeCoord(elemToNode(0,0),1);
-  double hz = nodeCoord(elemToNode(0,4),2)-nodeCoord(elemToNode(0,0),2);
+    if(MyPID==0) {std::cout << "Jiggling the mesh" << std::endl << std::endl;}
 
-  // Loop over nodes
-  for (int inode = 0; inode < numNodes; inode++){
-    if (!nodeOnBoundary(inode) & nodeIsOwned[inode]) {
-      // random numbers between -1.0 and 1.0
-      double rx = 2.0 * (double)rand()/RAND_MAX - 1.0;
-      double ry = 2.0 * (double)rand()/RAND_MAX - 1.0;
-      double rz = 2.0 * (double)rand()/RAND_MAX - 1.0;
-      // limit variation to 1/4 edge length
-      nodeCoord(inode,0) = nodeCoord(inode,0) + 0.125 * hx * rx;
-      nodeCoord(inode,1) = nodeCoord(inode,1) + 0.125 * hy * ry;
-      nodeCoord(inode,2) = nodeCoord(inode,2) + 0.125 * hz * rz;
-      nodeCoordx[inode] = nodeCoord(inode,0);
-      nodeCoordy[inode] = nodeCoord(inode,1);
-      nodeCoordz[inode] = nodeCoord(inode,2);
+    // Build an overlapping map. To match globalMapG, we need to convert to int.
+    int * globalNodeIdsInt = new int[numNodes];
+    for (int i=0; i<numNodes; i++)
+      globalNodeIdsInt[i]=(int)globalNodeIds[i];
+    Epetra_Map globalMapAllNodes(-1,numNodes,globalNodeIdsInt,0,Comm);
+
+    // get random numbers between -1.0 and 1.0 wrt to 1-to-1 map
+    Epetra_MultiVector displacementTemp(globalMapG,3);
+    displacementTemp.Random();
+
+    // import that to overlapping map
+    Epetra_MultiVector displacement(globalMapAllNodes,3);
+    Epetra_Export MyImporter(globalMapAllNodes,globalMapG);
+    displacement.Import(displacementTemp,MyImporter,Insert);
+
+    // Side length assuming an initially regular grid
+    double hx = nodeCoord(elemToNode(0,1),0)-nodeCoord(elemToNode(0,0),0);
+    double hy = nodeCoord(elemToNode(0,3),1)-nodeCoord(elemToNode(0,0),1);
+    double hz = nodeCoord(elemToNode(0,4),2)-nodeCoord(elemToNode(0,0),2);
+
+    const double fac = 0.05;
+
+    // Loop over nodes
+    for (int inode = 0; inode < numNodes; inode++){
+      if (!nodeOnBoundary(inode)) {
+        double rx = displacement[0][inode];
+        double ry = displacement[1][inode];
+        double rz = displacement[2][inode]; 
+
+        nodeCoord(inode,0) = nodeCoord(inode,0) + fac * hx * rx;
+        nodeCoord(inode,1) = nodeCoord(inode,1) + fac * hy * ry;
+        nodeCoord(inode,2) = nodeCoord(inode,2) + fac * hz * rz;
+        nodeCoordx[inode] = nodeCoord(inode,0);
+        nodeCoordy[inode] = nodeCoord(inode,1);
+        nodeCoordz[inode] = nodeCoord(inode,2);
+      }
     }
   }
-#endif
 
   /**********************************************************************************/
   /********************************* GET CUBATURE ***********************************/
@@ -1117,10 +1142,6 @@ int main(int argc, char *argv[]) {
   /********************* BUILD MAPS FOR GLOBAL SOLUTION *****************************/
   /**********************************************************************************/
 
-  // Define global epetra maps
-  Epetra_Map globalMapG(-1,ownedNodes,ownedGIDs,0,Comm);
-  Epetra_Map globalMapC(-1,numOwnedEdges,ownedEdgeIds,0,Comm);
-
   Epetra_FECrsMatrix StiffMatrixC(Copy, globalMapC, numFieldsC);
   Epetra_FECrsMatrix MassMatrixC (Copy, globalMapC, numFieldsC);
   Epetra_FECrsMatrix MassMatrixG (Copy, globalMapG, numFieldsG);
@@ -1146,60 +1167,59 @@ int main(int argc, char *argv[]) {
     }
 
 
-#ifdef DUMP_DATA
-  // Put coordinates in multivector for output
-  Epetra_MultiVector nCoord(globalMapG,3);
+  Epetra_Map globalMapElem(numElemsGlobal, numElems, 0, Comm);
+  if (dump){
+    // Put coordinates in multivector for output
+    Epetra_MultiVector nCoord(globalMapG,3);
 
-  int ownedNode = 0;
-  for (int inode=0; inode<numNodes; inode++) {
-    if (nodeIsOwned[inode]) {
-      nCoord[0][ownedNode]=nodeCoord(inode,0);
-      nCoord[1][ownedNode]=nodeCoord(inode,1);
-      nCoord[2][ownedNode]=nodeCoord(inode,2);
-      ownedNode++;
-    }
-  }
-  EpetraExt::MultiVectorToMatrixMarketFile("coords.dat",nCoord,0,0,false);
-
-#ifdef DUMP_DATA_MORE
-  // Put element to node mapping in multivector for output
-  Epetra_Map   globalMapElem(numElemsGlobal, numElems, 0, Comm);
-  Epetra_MultiVector elem2node(globalMapElem, numNodesPerElem);
-  for (int ielem=0; ielem<numElems; ielem++) {
-    for (int inode=0; inode<numNodesPerElem; inode++) {
-      elem2node[inode][ielem]=globalNodeIds[elemToNode(ielem,inode)];
-    }
-  }
-  EpetraExt::MultiVectorToMatrixMarketFile("elem2node.dat",elem2node,0,0,false);
-
-  // Put element to edge mapping in multivector for output
-  Epetra_MultiVector elem2edge(globalMapElem, numEdgesPerElem);
-  for (int ielem=0; ielem<numElems; ielem++) {
-    for (int iedge=0; iedge<numEdgesPerElem; iedge++) {
-      elem2edge[iedge][ielem]=globalEdgeIds[elemToEdge(ielem,iedge)];
-    }
-  }
-  EpetraExt::MultiVectorToMatrixMarketFile("elem2edge.dat",elem2edge,0,0,false);
-
-  // Put edge to node mapping in multivector for output
-  Epetra_MultiVector edge2node(globalMapC, numNodesPerEdge);
-  int ownedEdge = 0;
-  for (int iedge=0; iedge<numEdges; iedge++) {
-    if (edgeIsOwned[iedge]) {
-      for (int inode=0; inode<numNodesPerEdge; inode++) {
-        edge2node[inode][ownedEdge]=globalNodeIds[edgeToNode(iedge,inode)];
+    int ownedNode = 0;
+    for (int inode=0; inode<numNodes; inode++) {
+      if (nodeIsOwned[inode]) {
+        nCoord[0][ownedNode]=nodeCoord(inode,0);
+        nCoord[1][ownedNode]=nodeCoord(inode,1);
+        nCoord[2][ownedNode]=nodeCoord(inode,2);
+        ownedNode++;
       }
-      ownedEdge++;
     }
-  }
-  EpetraExt::MultiVectorToMatrixMarketFile("edge2node.dat",edge2node,0,0,false);
+    EpetraExt::MultiVectorToMatrixMarketFile("coords.dat",nCoord,0,0,false);
 
+    // Put element to node mapping in multivector for output
+    Epetra_MultiVector elem2node(globalMapElem, numNodesPerElem);
+    for (int ielem=0; ielem<numElems; ielem++) {
+      for (int inode=0; inode<numNodesPerElem; inode++) {
+        elem2node[inode][ielem]=globalNodeIds[elemToNode(ielem,inode)];
+      }
+    }
+    EpetraExt::MultiVectorToMatrixMarketFile("elem2node.dat",elem2node,0,0,false);
+
+    // Put element to edge mapping in multivector for output
+    Epetra_MultiVector elem2edge(globalMapElem, numEdgesPerElem);
+    for (int ielem=0; ielem<numElems; ielem++) {
+      for (int iedge=0; iedge<numEdgesPerElem; iedge++) {
+        elem2edge[iedge][ielem]=globalEdgeIds[elemToEdge(ielem,iedge)];
+      }
+    }
+    EpetraExt::MultiVectorToMatrixMarketFile("elem2edge.dat",elem2edge,0,0,false);
+
+    // Put edge to node mapping in multivector for output
+    Epetra_MultiVector edge2node(globalMapC, numNodesPerEdge);
+    int ownedEdge = 0;
+    for (int iedge=0; iedge<numEdges; iedge++) {
+      if (edgeIsOwned[iedge]) {
+        for (int inode=0; inode<numNodesPerEdge; inode++) {
+          edge2node[inode][ownedEdge]=globalNodeIds[edgeToNode(iedge,inode)];
+        }
+        ownedEdge++;
+      }
+    }
+    EpetraExt::MultiVectorToMatrixMarketFile("edge2node.dat",edge2node,0,0,false);
+
+    
+    if(MyPID==0) {Time.ResetStartTime();}
+  }
+  
   // Define multi-vector for cell edge sign (fill during cell loop)
   Epetra_MultiVector edgeSign(globalMapElem, numEdgesPerElem);
-#endif
-
-  if(MyPID==0) {Time.ResetStartTime();}
-#endif
 
 
   /**********************************************************************************/
@@ -1408,11 +1428,11 @@ int main(int argc, char *argv[]) {
         worksetEdgeSigns(cellCounter,7)=-1.0*worksetEdgeSigns(cellCounter,7);
       }
 
-#ifdef DUMP_DATA_MORE
-      for (int iedge=0; iedge<numEdgesPerElem; iedge++) {
-        edgeSign[iedge][cell] = worksetEdgeSigns(cellCounter,iedge);
+      if (dump){
+        for (int iedge=0; iedge<numEdgesPerElem; iedge++) {
+          edgeSign[iedge][cell] = worksetEdgeSigns(cellCounter,iedge);
+        }
       }
-#endif
 
       cellCounter++;
 
@@ -1794,28 +1814,26 @@ int main(int argc, char *argv[]) {
   if(MyPID==0) {std::cout << "Global assembly                             "
                           << Time.ElapsedTime() << " sec \n"; Time.ResetStartTime();}
 
-#ifdef DUMP_DATA
-  // Node Coordinates
-  EpetraExt::VectorToMatrixMarketFile("coordx.dat",Nx,0,0,false);
-  EpetraExt::VectorToMatrixMarketFile("coordy.dat",Ny,0,0,false);
-  EpetraExt::VectorToMatrixMarketFile("coordz.dat",Nz,0,0,false);
+  if (dump) {
+    // Node Coordinates
+    EpetraExt::VectorToMatrixMarketFile("coordx.dat",Nx,0,0,false);
+    EpetraExt::VectorToMatrixMarketFile("coordy.dat",Ny,0,0,false);
+    EpetraExt::VectorToMatrixMarketFile("coordz.dat",Nz,0,0,false);
 
-  // Edge Coordinates
-  EpetraExt::VectorToMatrixMarketFile("ecoordx.dat",EDGE_X);
-  EpetraExt::VectorToMatrixMarketFile("ecoordy.dat",EDGE_Y);
-  EpetraExt::VectorToMatrixMarketFile("ecoordz.dat",EDGE_Z);
+    // Edge Coordinates
+    EpetraExt::VectorToMatrixMarketFile("ecoordx.dat",EDGE_X);
+    EpetraExt::VectorToMatrixMarketFile("ecoordy.dat",EDGE_Y);
+    EpetraExt::VectorToMatrixMarketFile("ecoordz.dat",EDGE_Z);
 
 
-  // Edge signs
-#ifdef DUMP_DATA_MORE
-  EpetraExt::MultiVectorToMatrixMarketFile("edge_signs.dat",edgeSign,0,0,false);
-#endif
+    // Edge signs
+    EpetraExt::MultiVectorToMatrixMarketFile("edge_signs.dat",edgeSign,0,0,false);
 
-  EpetraExt::RowMatrixToMatlabFile("mag_k1_matrix.dat",StiffMatrixC);
-  EpetraExt::RowMatrixToMatlabFile("mag_m1_matrix.dat",MassMatrixC);
-  EpetraExt::RowMatrixToMatlabFile("mag_t_matrix.dat",DGrad);
-#endif
-
+    EpetraExt::RowMatrixToMatlabFile("mag_k1_matrix.dat",StiffMatrixC);
+    EpetraExt::RowMatrixToMatlabFile("mag_m1_matrix.dat",MassMatrixC);
+    EpetraExt::RowMatrixToMatlabFile("mag_t_matrix.dat",DGrad);
+  }
+  
 
   /**********************************************************************************/
   /*********************** ADJUST MATRICES AND RHS FOR BCs **************************/
@@ -1879,11 +1897,10 @@ int main(int argc, char *argv[]) {
   if(MyPID==0) {std::cout << "Adjust global matrix and rhs due to BCs     " << Time.ElapsedTime()
                           << " sec \n"; Time.ResetStartTime();}
 
-#ifdef DUMP_DATA
-  EpetraExt::RowMatrixToMatlabFile("mag_m0_matrix.dat",MassMatrixG);
-  EpetraExt::RowMatrixToMatlabFile("edge_matrix.dat",StiffMatrixC);
-#endif
-#undef DUMP_DATA
+  if (dump) {
+    EpetraExt::RowMatrixToMatlabFile("mag_m0_matrix.dat",MassMatrixG);
+    EpetraExt::RowMatrixToMatlabFile("edge_matrix.dat",StiffMatrixC);
+  }
 
   /**********************************************************************************/
   /*********************************** SOLVE ****************************************/
@@ -2375,33 +2392,41 @@ void TestMueLuMultiLevelPreconditioner_Maxwell(char ProblemType[],
   typedef double Scalar;
   typedef int LocalOrdinal;
   typedef int GlobalOrdinal;
+  typedef Xpetra::EpetraNode Node;
+  typedef Scalar SC;
   typedef LocalOrdinal LO;
   typedef GlobalOrdinal GO;
-  typedef Xpetra::EpetraNode Node;
-#include "MueLu_UseShortNames.hpp"
+  typedef Node NO;
+  typedef Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> Matrix;
+  typedef Xpetra::CrsMatrixWrap<Scalar,LocalOrdinal,GlobalOrdinal,Node> CrsMatrixWrap;
+  typedef Xpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> CrsMatrix;
+  typedef Xpetra::EpetraCrsMatrixT<GlobalOrdinal,Node> EpetraCrsMatrix;
+  typedef Xpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> MultiVector;
+  typedef Xpetra::EpetraMultiVectorT<GlobalOrdinal,Node> EpetraMultiVector;
+  
 
   Epetra_Time SetupTime(CurlCurl.Comm());
 
-  Teuchos::RCP<CrsMatrix> ccMat = Teuchos::rcp(new Xpetra::EpetraCrsMatrixT<GO,NO>(Teuchos::rcpFromRef(CurlCurl)));
+  Teuchos::RCP<CrsMatrix> ccMat = Teuchos::rcp(new EpetraCrsMatrix(Teuchos::rcpFromRef(CurlCurl)));
   Teuchos::RCP<CrsMatrixWrap> ccOp = Teuchos::rcp(new CrsMatrixWrap(ccMat));
   Teuchos::RCP<Matrix> curlcurlOp = Teuchos::rcp_dynamic_cast<Matrix>(ccOp);
 
-  Teuchos::RCP<CrsMatrix> d0cMat = Teuchos::rcp(new Xpetra::EpetraCrsMatrixT<GO,NO>(Teuchos::rcpFromRef(D0clean)));
+  Teuchos::RCP<CrsMatrix> d0cMat = Teuchos::rcp(new EpetraCrsMatrix(Teuchos::rcpFromRef(D0clean)));
   Teuchos::RCP<CrsMatrixWrap> d0cOp = Teuchos::rcp(new CrsMatrixWrap(d0cMat));
   Teuchos::RCP<Matrix> D0cleanOp = Teuchos::rcp_dynamic_cast<Matrix>(d0cOp);
 
-  Teuchos::RCP<CrsMatrix> m0invMat = Teuchos::rcp(new Xpetra::EpetraCrsMatrixT<GO,NO>(Teuchos::rcpFromRef(M0inv)));
+  Teuchos::RCP<CrsMatrix> m0invMat = Teuchos::rcp(new EpetraCrsMatrix(Teuchos::rcpFromRef(M0inv)));
   Teuchos::RCP<CrsMatrixWrap> m0invOp = Teuchos::rcp(new CrsMatrixWrap(m0invMat));
   Teuchos::RCP<Matrix> M0invOp = Teuchos::rcp_dynamic_cast<Matrix>(m0invOp);
 
-  Teuchos::RCP<CrsMatrix> m1Mat = Teuchos::rcp(new Xpetra::EpetraCrsMatrixT<GO,NO>(Teuchos::rcpFromRef(M1)));
+  Teuchos::RCP<CrsMatrix> m1Mat = Teuchos::rcp(new EpetraCrsMatrix(Teuchos::rcpFromRef(M1)));
   Teuchos::RCP<CrsMatrixWrap> m1Op = Teuchos::rcp(new CrsMatrixWrap(m1Mat));
   Teuchos::RCP<Matrix> M1Op = Teuchos::rcp_dynamic_cast<Matrix>(m1Op);
 
-  Teuchos::RCP<MultiVector> xxh = Teuchos::rcp(new Xpetra::EpetraMultiVectorT<GO,NO>(Teuchos::rcpFromRef(xh)));
-  Teuchos::RCP<MultiVector> xb  = Teuchos::rcp(new Xpetra::EpetraMultiVectorT<GO,NO>(Teuchos::rcpFromRef(b)));
+  Teuchos::RCP<MultiVector> xxh = Teuchos::rcp(new EpetraMultiVector(Teuchos::rcpFromRef(xh)));
+  Teuchos::RCP<MultiVector> xb  = Teuchos::rcp(new EpetraMultiVector(Teuchos::rcpFromRef(b)));
 
-  Teuchos::RCP<MultiVector> xcoords = Teuchos::rcp(new Xpetra::EpetraMultiVectorT<GO,NO>(Teuchos::rcpFromRef(coords)));
+  Teuchos::RCP<MultiVector> xcoords = Teuchos::rcp(new EpetraMultiVector(Teuchos::rcpFromRef(coords)));
 
   MLList.set("parameterlist: syntax","muelu");
 
@@ -2573,13 +2598,12 @@ void TestMueLuMultiLevelPreconditioner_Stratimikos(char ProblemType[],
                                                    double & TotalErrorResidual,
                                                    double & TotalErrorExactSol){
 #if defined(HAVE_MUELU_EPETRA) and defined(HAVE_TRILINOSCOUPLINGS_MUELU)
-  typedef double Scalar;
+  // typedef double Scalar;
   typedef int LocalOrdinal;
   typedef int GlobalOrdinal;
   typedef LocalOrdinal LO;
   typedef GlobalOrdinal GO;
   typedef Xpetra::EpetraNode Node;
-#include "MueLu_UseShortNames.hpp"
 
   using Teuchos::rcp;
   using Teuchos::RCP;

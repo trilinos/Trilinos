@@ -50,30 +50,28 @@
 #include <Tpetra_CrsGraph.hpp>
 #include <Tpetra_CrsMatrix.hpp>
 
+namespace TpetraExamples {}
+
 typedef double Scalar;
 
 // Get LocalOrdinal & GlobalOrdinal from Map defaults.
-typedef Tpetra::Map<>::local_ordinal_type LocalOrdinal;
-typedef Tpetra::Map<>::global_ordinal_type GlobalOrdinal;
-typedef Tpetra::Map<>::node_type NT;
+typedef Tpetra::Map<>::local_ordinal_type  local_ordinal_t;
+typedef Tpetra::Map<>::global_ordinal_type global_ordinal_t;
+typedef Tpetra::Map<>::node_type           node_t;
 
-typedef Kokkos::DefaultExecutionSpace ExecutionSpace;
+typedef Kokkos::DefaultExecutionSpace execution_space_t;
 
-typedef Kokkos::View<GlobalOrdinal*,ExecutionSpace> global_ordinal_view_type;
+typedef Kokkos::View<global_ordinal_t*, execution_space_t> global_ordinal_view_t;
 
-typedef typename Tpetra::Map<> MapType;
-typedef typename Tpetra::CrsGraph<> GraphType;
-typedef typename Tpetra::CrsMatrix<Scalar> MatrixType;
-typedef typename Tpetra::Export<> ExportType;
-
-
-typedef Kokkos::DefaultExecutionSpace ExecutionSpace;
-typedef Kokkos::View<GlobalOrdinal*,ExecutionSpace> global_ordinal_view_type;
+typedef typename Tpetra::Map<>             map_t;
+typedef typename Tpetra::CrsGraph<>        graph_t;
+typedef typename Tpetra::CrsMatrix<Scalar> matrix_t;
+typedef typename Tpetra::Export<>          export_t;
 
 // NOTE: Arrays are hardwired for QUAD4
-typedef Kokkos::View<LocalOrdinal*[4],ExecutionSpace> local_ordinal_2d_array_type;
-typedef Kokkos::View<GlobalOrdinal*[4],ExecutionSpace> global_ordinal_2d_array_type;
-typedef Kokkos::View<Scalar*[4],ExecutionSpace> scalar_2d_array_type;
+typedef Kokkos::View<local_ordinal_t*[4], execution_space_t>  local_ordinal_2d_array_t;
+typedef Kokkos::View<global_ordinal_t*[4], execution_space_t> global_ordinal_2d_array_t;
+typedef Kokkos::View<Scalar*[4], execution_space_t>           scalar_2d_array_t;
 
 #endif
 

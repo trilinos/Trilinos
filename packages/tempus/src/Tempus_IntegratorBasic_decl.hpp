@@ -155,8 +155,8 @@ public:
 
     Teuchos::RCP<Teuchos::ParameterList> getIntegratorParameterList()
       { return integratorPL_; }
-    
-    //virtual Teuchos::RCP<Teuchos::Time> getIntegratorTimer() const 
+
+    //virtual Teuchos::RCP<Teuchos::Time> getIntegratorTimer() const
       //{return integratorTimer_;}
   //@}
 

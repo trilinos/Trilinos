@@ -51,8 +51,6 @@ namespace KokkosBatched {
            const ScalarType alpha,
            const ValueType *__restrict__ A, const int as0, const int as1,
            /**/  ValueType *__restrict__ b, const int bs0) {
-      static_assert(is_same_mag_type<ScalarType,ValueType>::value && !is_vector<ScalarType>::value,
-                    "TeamTrsvInternal:: not valid template types");
 
       const ScalarType one(1.0), zero(0.0);
 
@@ -102,8 +100,6 @@ namespace KokkosBatched {
            const ScalarType alpha,
            const ValueType *__restrict__ A, const int as0, const int as1,
            /**/  ValueType *__restrict__ b, const int bs0) {
-      static_assert(is_same_mag_type<ScalarType,ValueType>::value && !is_vector<ScalarType>::value,
-                    "TeamTrsvInternal:: not valid template types");
 
       const ScalarType one(1.0), zero(0.0), minus_one(-1.0);
 
@@ -182,8 +178,6 @@ namespace KokkosBatched {
            const ScalarType alpha,
            const ValueType *__restrict__ A, const int as0, const int as1,
            /**/  ValueType *__restrict__ b, const int bs0) {
-      static_assert(is_same_mag_type<ScalarType,ValueType>::value && !is_vector<ScalarType>::value,
-                    "TeamTrsvInternal:: not valid template types");
 
       const ScalarType one(1.0), zero(0.0);
 
@@ -231,8 +225,6 @@ namespace KokkosBatched {
            const ScalarType alpha,
            const ValueType *__restrict__ A, const int as0, const int as1,
            /**/  ValueType *__restrict__ b, const int bs0) {
-      static_assert(is_same_mag_type<ScalarType,ValueType>::value && !is_vector<ScalarType>::value,
-                    "TeamTrsvInternal:: not valid template types");
 
       const ScalarType one(1.0), zero(0.0), minus_one(-1.0);
 

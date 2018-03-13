@@ -281,6 +281,31 @@ by adding the following to your CMake invocation line:
 -D CMAKE_CXX_FLAGS_DEBUG:STRING="-g -Os"
 #+END_EXAMPLE
 
+** "Error 127" link error in CUDA builds
+
+In a CUDA build of kokkos-kernels (upstream of Tpetra) with complex
+arithmetic and explicit template instantiation (ETI) enabled, one
+might see a link error with the mysterious "Error 127" message.
+
+Short answer: Try setting the following CMake option:
+#+BEGIN_EXAMPLE
+-D CMAKE_CXX_USE_RESPONSE_FILE_FOR_OBJECTS:BOOL=ON
+#+END_EXAMPLE
+
+For details, see the following GitHub issue:
+
+https://github.com/trilinos/Trilinos/issues/2141
+
+and the following instructions:
+
+http://trilinos.org/docs/files/TrilinosBuildReference.html#enabling-the-usage-of-resource-files-to-reduce-length-of-build-lines
+
+If you have trouble seeing the above trilinos.org link, due to web
+page certificate issues, please refer to the following tribits.org
+link instead:
+
+https://tribits.org/doc/TribitsBuildReference.html#enabling-the-usage-of-resource-files-to-reduce-length-of-build-lines
+
 * Thread safety
 ** Weak and strong thread safety
 

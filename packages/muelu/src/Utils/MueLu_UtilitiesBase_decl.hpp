@@ -353,6 +353,17 @@ namespace MueLu {
         RES->update(one, RHS, negone);
         return RES;
     }
+    
+
+    static void Residual(const Xpetra::Operator<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Op, const MultiVector& X, const MultiVector& RHS, MultiVector & Resid) {
+      TEUCHOS_TEST_FOR_EXCEPTION(X.getNumVectors() != RHS.getNumVectors(), Exceptions::RuntimeError, "Number of solution vectors != number of right-hand sides");
+      TEUCHOS_TEST_FOR_EXCEPTION(Resid.getNumVectors() != RHS.getNumVectors(), Exceptions::RuntimeError, "Number of residual vectors != number of right-hand sides");
+      Scalar one = Teuchos::ScalarTraits<Scalar>::one(), negone = -one, zero = Teuchos::ScalarTraits<Scalar>::zero();
+      // TODO Op.getRangeMap should return a BlockedMap if it is a BlockedCrsOperator
+      Op.apply(X, Resid, Teuchos::NO_TRANS, one, zero);
+      Resid.update(one, RHS, negone);
+    }
+
 
 #ifndef _WIN32
     static void PauseForDebugger() {
@@ -694,9 +705,8 @@ namespace MueLu {
 
     // Zeros out rows
     static void ZeroDirichletRows(Teuchos::RCP<Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >& A,
-                               const std::vector<LocalOrdinal>& dirichletRows) {
-      Scalar zero =Teuchos::ScalarTraits<Scalar>::zero();
-
+                                  const std::vector<LocalOrdinal>& dirichletRows,
+                                  Scalar replaceWith=Teuchos::ScalarTraits<Scalar>::zero()) {
       for(size_t i=0; i<dirichletRows.size(); i++) {
         Teuchos::ArrayView<const LocalOrdinal> indices;
         Teuchos::ArrayView<const Scalar> values;
@@ -704,7 +714,23 @@ namespace MueLu {
         // NOTE: This won't work with fancy node types.
         Scalar* valuesNC = const_cast<Scalar*>(values.getRawPtr());
         for(size_t j=0; j<(size_t)indices.size(); j++)
-            valuesNC[j]=zero;
+            valuesNC[j]=replaceWith;
+      }
+    }
+
+    // Zeros out columns
+    static void ZeroDirichletCols(Teuchos::RCP<Matrix>& A,
+                                  const std::vector<LocalOrdinal>& dirichletCols,
+                                  Scalar replaceWith=Teuchos::ScalarTraits<Scalar>::zero()) {
+      for(size_t i=0; i<A->getNodeNumRows(); i++) {
+        Teuchos::ArrayView<const LocalOrdinal> indices;
+        Teuchos::ArrayView<const Scalar> values;
+        A->getLocalRowView(i,indices,values);
+        // NOTE: This won't work with fancy node types.
+        Scalar* valuesNC = const_cast<Scalar*>(values.getRawPtr());
+        for(size_t j=0; j<static_cast<size_t>(indices.size()); j++)
+          if (dirichletCols[indices[j]]==1)
+            valuesNC[j] = replaceWith;
       }
     }
 
