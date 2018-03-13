@@ -295,8 +295,6 @@ public:
     PinTVector<Real>       & pint_u = dynamic_cast<PinTVector<Real>&>(u);
     const PinTVector<Real> & pint_z = dynamic_cast<const PinTVector<Real>&>(z);
        // its possible we won't always want to cast to a PinT vector here
-       
-    int timeRank = pint_u.communicators().getTimeRank();
  
     TEUCHOS_ASSERT(pint_c.numOwnedSteps()==pint_u.numOwnedSteps());
 

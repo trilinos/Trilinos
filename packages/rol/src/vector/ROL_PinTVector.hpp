@@ -231,7 +231,7 @@ protected:
     int numLeft = 0;
     int numRight = 0;
  
-    for(int i=0;i<stencil_.size();i++) {
+    for(int i=0;i<(int)stencil_.size();i++) {
       if(stencil_[i]<0) 
         numLeft = std::max(numLeft,std::abs(stencil_[i]));
       else if(stencil_[i]>0) 
@@ -303,7 +303,7 @@ public:
     stepVectors.resize(stepEnd_-stepStart_ + rightVectors_.size() + leftVectors_.size());
     
     // build up local vectors
-    for(int i=0;i<stepVectors.size();i++) {
+    for(int i=0;i<(int)stepVectors.size();i++) {
       stepVectors[i]  = localVector_->clone();
       stepVectors[i]->set(*localVector_);      // make sure each subvector is initialized
     }
@@ -370,7 +370,7 @@ public:
     }
 
     // these are "neighbor" unowned vectors (right)
-    if(numOwnedSteps() <= i && i<numOwnedSteps()+rightCount) {
+    if((int)numOwnedSteps() <= i && i<numOwnedSteps()+rightCount) {
       return true;
     }
 

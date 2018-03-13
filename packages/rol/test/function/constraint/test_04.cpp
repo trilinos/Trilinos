@@ -139,7 +139,6 @@ int main(int argc, char* argv[])
 double run_test(MPI_Comm comm, const ROL::Ptr<std::ostream> & outStream,int numSteps)
 {
   typedef ROL::Ptr<ROL::Vector<Real>> PtrVector;
-  typedef ROL::Ptr<const ROL::Vector<Real>> CPtrVector;
 
   int numRanks = -1;
   int myRank = -1;

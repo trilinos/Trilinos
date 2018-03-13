@@ -97,7 +97,7 @@ int main(int argc, char *argv[]) {
 
     RCP<Tempus::IntegratorBasic<RealT> > integrator = Tempus::integratorBasic<RealT>(tempusParList, model);
 
-//    bool integratorStatus = integrator->advanceTime(); // Unused
+    integrator->advanceTime();
 
     // Test if at 'Final Time'
 //    RealT time = integrator->getTime(); // Unused

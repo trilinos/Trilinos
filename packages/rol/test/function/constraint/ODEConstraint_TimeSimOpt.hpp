@@ -269,8 +269,6 @@ public:
                                           Real &tol) override
   {
     auto & ahwv_data = getVector(ahwv_old);
-    auto & w_data = getVector(w); 
-    auto & v_data = getVector(v_old); 
 
     ahwv_data[0] = 0.0;
     ahwv_data[1] = 0.0;
