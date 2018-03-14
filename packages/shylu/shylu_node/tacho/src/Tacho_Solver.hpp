@@ -12,8 +12,6 @@
 
 namespace Tacho {
 
-  using namespace Experimental;
-
   template<typename ValueType,
            typename DeviceSpaceType>
   struct Solver {

@@ -4,23 +4,23 @@
 #include <Kokkos_DualView.hpp>
 #include <impl/Kokkos_Timer.hpp>
 
-#include "TachoExp_Util.hpp"
-#include "TachoExp_DenseMatrixView.hpp"
-#include "TachoExp_DenseFlopCount.hpp"
+#include "Tacho_Util.hpp"
+#include "Tacho_DenseMatrixView.hpp"
+#include "Tacho_DenseFlopCount.hpp"
 
-#include "TachoExp_Chol_ByBlocks.hpp"
-#include "TachoExp_Gemm_ByBlocks.hpp"
-#include "TachoExp_Herk_ByBlocks.hpp"
-#include "TachoExp_Trsm_ByBlocks.hpp"
+#include "Tacho_Chol_ByBlocks.hpp"
+#include "Tacho_Gemm_ByBlocks.hpp"
+#include "Tacho_Herk_ByBlocks.hpp"
+#include "Tacho_Trsm_ByBlocks.hpp"
 
-#include "TachoExp_CommandLineParser.hpp" 
+#include "Tacho_CommandLineParser.hpp" 
 
 #ifdef TACHO_HAVE_MKL
 #include "mkl_service.h"
 #endif
 
 using namespace Tacho;
-using namespace Tacho::Experimental;
+using namespace Tacho;
 
 #define PRINT_TIMER                                                     \
   printf("  Time \n");                                                  \
