@@ -20,7 +20,6 @@
 #endif
 
 using namespace Tacho;
-using namespace Tacho;
 
 #define PRINT_TIMER                                                     \
   printf("  Time \n");                                                  \
