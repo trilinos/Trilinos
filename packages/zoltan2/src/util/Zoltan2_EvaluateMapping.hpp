@@ -150,7 +150,7 @@ protected:
       ArrayRCP<typename Adapter::scalar_t> &_globalSums){
 
 
-    globalWeightedCutsMessagesHopsByPart <Adapter,MachineRep>(_env,
+    globalWeightedCutsMessagesByPart <Adapter,MachineRep>(_env,
             _problemComm, _graph, _partArray,
             _numGlobalParts, _metricsBase,
             _globalSums,

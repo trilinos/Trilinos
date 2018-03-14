@@ -51,6 +51,7 @@
 #include "zoltan_dd_const.h"
 
 
+
 #ifdef __cplusplus
 /* if C++, define the rest of this header file as extern C */
 extern "C" {
@@ -124,6 +125,7 @@ int Zoltan_DD_Find (
    char            *yo = "Zoltan_DD_Find";
 
 
+START_CLOCK(find_init)
    /* input sanity check */
    if (dd == NULL || count < 0 || (gid == NULL && count > 0))  {
       ZOLTAN_PRINT_ERROR (dd ? dd->my_proc : ZOLTAN_DD_NO_PROC, yo,
@@ -143,6 +145,9 @@ int Zoltan_DD_Find (
          return ZOLTAN_MEMERR;
       }
    }
+END_CLOCK(find_init)
+
+START_CLOCK(find_sbuff_alloc)
 
    /* allocate memory for DD_Find_Msg send buffer */
    if (count)  {
@@ -158,6 +163,10 @@ int Zoltan_DD_Find (
 
    if (dd->debug_level > 6)
       ZOLTAN_PRINT_INFO(dd->my_proc, yo, "After mallocs");
+
+END_CLOCK(find_sbuff_alloc)
+
+START_CLOCK(find_prep)
 
    /* for each GID, fill DD_Find_Msg buffer and contact list */
    sbufftmp = sbuff;
@@ -182,13 +191,18 @@ int Zoltan_DD_Find (
    if (err != ZOLTAN_OK)
       goto fini;
 
+END_CLOCK(find_prep)
+
+START_CLOCK(find_comm)
    /* allocate receive buffer */
    if (nrec)  {
+START_CLOCK(find_rbuff_alloc)
       rbuff = (char*) ZOLTAN_MALLOC ((size_t)nrec*(size_t)(dd->find_msg_size));
       if (rbuff == NULL)  {
          err = ZOLTAN_MEMERR;
          goto fini;
       }
+END_CLOCK(find_rbuff_alloc)
    }
 
    /* send out find messages across entire system */
@@ -199,6 +213,10 @@ int Zoltan_DD_Find (
 
    if (dd->debug_level > 6)
       ZOLTAN_PRINT_INFO(dd->my_proc, yo, "After Comm_Do");
+
+END_CLOCK(find_comm)
+
+START_CLOCK(find_locals)
 
    /* get find messages directed to me, fill in return information */
    errcount = 0;
@@ -214,6 +232,10 @@ int Zoltan_DD_Find (
    }
    if (dd->debug_level > 6)
       ZOLTAN_PRINT_INFO(dd->my_proc, yo, "After fill in return info");
+
+END_CLOCK(find_locals)
+
+START_CLOCK(find_reverse)
 
    /* send return information back to requester */
    err = Zoltan_Comm_Do_Reverse(plan, ZOLTAN_DD_FIND_MSG_TAG+2, rbuff,
@@ -243,6 +265,10 @@ int Zoltan_DD_Find (
       ZOLTAN_PRINT_INFO(dd->my_proc, yo, "After fill return lists");
 /*    err = ZOLTAN_OK;     */
 
+END_CLOCK(find_reverse)
+
+START_CLOCK(find_cleanup)
+
    MPI_Allreduce(&errcount, &err, 1, MPI_INT, MPI_SUM, dd->comm);
    err = (err) ? ZOLTAN_WARN : ZOLTAN_OK;
 
@@ -252,6 +278,8 @@ int Zoltan_DD_Find (
       sprintf (str, "Processed %d GIDs, GIDs not found: %d", count, errcount);
       ZOLTAN_PRINT_INFO (dd->my_proc, yo, str);
    }
+
+END_CLOCK(find_cleanup)
 
 fini:
    ZOLTAN_FREE (&sbuff);

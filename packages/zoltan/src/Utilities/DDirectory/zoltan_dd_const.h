@@ -47,6 +47,13 @@
 #ifndef ZOLTAN_DD_H
 #define ZOLTAN_DD_H
 
+// A temporary addition for profiling
+// This will be removed in the final version
+#include <time.h>
+#define GET_TIME ((double)(clock())/(double)(CLOCKS_PER_SEC))
+#define START_CLOCK(name) double clock_##name = GET_TIME;
+#define END_CLOCK(name) { int my_proc = -1; MPI_Comm_rank (dd->comm,  &my_proc); if(my_proc == 0) printf("Clock %s: %.2f\n", #name, (GET_TIME-clock_##name)); }
+
 #include "zoltan_mem.h"
 #include "zoltan_comm.h"
 #include "zoltan_types.h"
