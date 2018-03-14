@@ -150,15 +150,28 @@ for ATDM_JOB_NAME_KEYS in $ATDM_JOB_NAME_KEYS_LIST ; do
   ATDM_NUM_BULDS=$((ATDM_NUM_BULDS+1))
 done
 
+#
+# B) Remove log files
+#
+
+if [ -f checkin-test.final.out ] ; then
+  rm checkin-test.final.out
+fi
+
+for ATDM_JOB_NAME_KEYS in $ATDM_JOB_NAME_KEYS_LIST ; do
+  if [ -f checkin-test.$ATDM_JOB_NAME_KEYS.out ] ; then
+    rm checkin-test.$ATDM_JOB_NAME_KEYS.out
+  fi
+done
 
 #
-# B) Do an initial pull
+# C) Do an initial pull
 #
 
 # ToDo: Implement
 
 #
-# C) Loop over individual builds and run them
+# D) Loop over individual builds and run them
 #
 
 echo
@@ -183,7 +196,7 @@ for ATDM_JOB_NAME_KEYS in $ATDM_JOB_NAME_KEYS_LIST ; do
 done
 
 #
-# D) Collect the results from all the builds
+# E) Collect the results from all the builds
 #
 
 echo
@@ -195,13 +208,17 @@ echo
 $ATDM_TRILINOS_DIR/cmake/tribits/ci_support/checkin-test.py \
   --default-builds= --st-extra-builds=$ATDM_JOB_NAME_KEYS_COMMA_LIST \
   --allow-no-pull "$ATDM_CHT_ENABLE_PACKAGES_ARG" \
-  &> checkin-test.final.out
+  --log-file=checkin-test.final.out \
+  &> /dev/null
 
 ATDM_CHT_RETURN_CODE=$?
 
 # NOTE The return value will be 0 if everything passed!
 
-# Print final status
+#
+# F) Print final status
+#
+
 echo
 grep -A 1000 "Commit status email being sent" checkin-test.final.out \
   | grep -B 1000 "Commits for repo" \
