@@ -64,7 +64,6 @@ private:
   vector<vector<Real>>  band;
   size_type             num_bands;
   bool                  is_invertible;
-
 public:   
 
   LowerBandedMatrix( vector<size_type> band_index, 
@@ -86,28 +85,38 @@ public:
     } // else 
   } // end Constructor
 
-  void apply( vector<Real>& Ax, const vector<Real>& x ) {
+
+  // Compute Ax += alpha*A*x for the range specified
+  void apply( vector<Real>& Ax, 
+              const vector<Real>& x,
+              Real alpha,
+              size_type begin, 
+              size_type end ) {
  
-    for( size_type row=0; row<x.size(); ++row ) {
-      Ax[row] = 0;
+    for( size_type row=begin; row<end; ++row ) {
       for( size_type i=0; i < num_bands; i++ ) {
         size_t col = row - index[i];
-        if( col >= 0 ) Ax[row] += x[col]*band[i][col];
+        if( row >= index[i] ) Ax[row] += alpha*x[col]*band[i][col];
         else break;
       }
     }
   }
 
-  void solve( vector<Real>& x, const vector<Real>& Ax ) {
+  // Compute x += alpha*Ainv*(Ax) for the range specified
+  void solve( vector<Real>& x, 
+              const vector<Real>& Ax, 
+              Real alpha,
+              size_type begin, 
+              size_type end ) {
     if( !is_invertible ) {
       throw logic_error("\nError: Cannot solve system. Matrix is singular.\n");
     }
 
     for( size_type row=0; row<Ax.size(); ++row ) {
-      x[row] = Ax[row]/band[0][row];
+      x[row] += alpha*Ax[row]/band[0][row];
       for( size_type i=1; i < num_bands; i++ ) {
         size_t col = row - index[i];
-        if( col >= 0 ) x[row] -= x[col]*band[i][col];
+        if( row >= index[i] ) x[row] -= x[col]*band[i][col];
         else break;
       }
     } 

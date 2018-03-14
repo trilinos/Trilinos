@@ -84,37 +84,37 @@ int main( int argc, char* argv[] ) {
 //    std::string tank_xml("tank-parameters.xml");
 //    Teuchos::updateParametersFromXmlFile(tank_xml, tank_parameters.ptr());
   
-    size_type N = 8;
-    vector<size_type> band_index{0,2};
-    
-    vector<vector<RealT>> A_band;
-    vector<RealT> Ax(N);
-    vector<RealT> x(N);
-    vector<RealT> y(N);
-
-    vector<RealT> band0(N);
-    vector<RealT> band2(N-2);
-
-    for( auto& e: band0 ) e = RealT(1.0);
-    for( auto& e: band2 ) e = RealT(1.0);
-    
-    
-
-    A_band.push_back(band0);
-    A_band.push_back(band2);
- 
-    for( size_type i=0; i<N; ++i ) x[i] = RealT(1.0+i);
-
-    LowerBandedMatrix<RealT> A( band_index, A_band );
-
-    print_vector(x);
-
-    A.apply(Ax,x);
-    
-    print_vector(Ax);
-
-    A.solve(y,Ax);
-    print_vector(y);
+//    size_type N = 8;
+//    vector<size_type> band_index{0,2};
+//    
+//    vector<vector<RealT>> A_band;
+//    vector<RealT> Ax(N);
+//    vector<RealT> x(N);
+//    vector<RealT> y(N);
+//
+//    vector<RealT> band0(N);
+//    vector<RealT> band2(N-2);
+//
+//    for( auto& e: band0 ) e = RealT(1.0);
+//    for( auto& e: band2 ) e = RealT(1.0);
+//    
+//    
+//
+//    A_band.push_back(band0);
+//    A_band.push_back(band2);
+// 
+//    for( size_type i=0; i<N; ++i ) x[i] = RealT(1.0+i);
+//
+//    LowerBandedMatrix<RealT> A( band_index, A_band );
+//
+//    print_vector(x);
+//
+//    A.apply(Ax,x);
+//    
+//    print_vector(Ax);
+//
+//    A.solve(y,Ax);
+//    print_vector(y);
 
 
   }
