@@ -54,13 +54,9 @@
 #include <type_traits>
 #include <string>
 
-namespace Ifpack2 {
+#include "Ifpack2_BlockTriDiContainer_impl.hpp"
 
-  // Impl for BlockTriDiContainer. Can't be an internal class because we need to
-  // partially specialize Impl.
-  namespace BlockTriDiContainerDetails {
-    template <typename MatrixType, typename LocalScalarType, typename ExeSpace> class Impl;
-  }
+namespace Ifpack2 {
 
   /// \class BlockTriDiContainer
   /// \brief Store and solve local block tridiagonal linear problems.
@@ -125,6 +121,7 @@ namespace Ifpack2 {
     typedef typename Container<MatrixType>::import_type import_type;
 
     typedef typename Container<MatrixType>::HostView host_view_type;
+    typedef host_view_type HostView;
     //typedef Tpetra::MultiVector<local_scalar_type, local_ordinal_type, global_ordinal_type, node_type> local_mv_type;
     //typedef typename Kokkos::View<local_scalar_type**, Kokkos::HostSpace> HostViewLocal;
 
@@ -357,10 +354,9 @@ namespace Ifpack2 {
     //! If \c true, the container has been successfully computed.
     bool IsComputed_;
 
-    typedef BlockTriDiContainerDetails::Impl<MatrixType, LocalScalarType,
-                                             typename MatrixType::node_type::device_type::execution_space>
-    ImplWithES;
-    Teuchos::RCP<ImplWithES> impl_;
+    // objects required from this container
+    typename BlockTriDiContainerDetails::Impl<MatrixType>::tpetra_block_crs_matrix_type A_;
+    typename BlockTriDiContainerDetails::Impl<MatrixType>::tpetra_import_type tpetra_importer_;
   };
 
 } // namespace Ifpack2
