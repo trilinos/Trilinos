@@ -262,6 +262,7 @@ public:
     AugmentedLagrangian<Real> &augLag
       = dynamic_cast<AugmentedLagrangian<Real>&>(obj);
     ROL::Ptr<StepState<Real> > state = Step<Real>::getState();
+    state->SPiter = subproblemIter_;
     // Update the step and store in state
     x.plus(s);
     algo_state.iterateVec->set(x);

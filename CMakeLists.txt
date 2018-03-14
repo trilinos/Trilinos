@@ -85,9 +85,6 @@ SET(${PROJECT_NAME}_ENABLE_INSTALL_CMAKE_CONFIG_FILES_DEFAULT ON)
 SET(${PROJECT_NAME}_ENABLE_CPACK_PACKAGING_DEFAULT ON)
 # Don't allow disabled subpackages to be excluded from tarball
 SET(${PROJECT_NAME}_EXCLUDE_DISABLED_SUBPACKAGES_FROM_DISTRIBUTION_DEFAULT FALSE)
-# Set up to automatically use standard dev envs by default
-SET(${PROJECT_NAME}_CONFIGURE_OPTIONS_FILE_APPEND
-  "${CMAKE_CURRENT_LIST_DIR}/cmake/StdDevEnvs.cmake" )
 
 # Do all of the processing for this Tribits project
 TRIBITS_PROJECT()

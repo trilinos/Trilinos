@@ -1,7 +1,7 @@
 #!/bin/bash -l
 
 if [ "${BSUB_CTEST_TIME_LIMIT}" == "" ] ; then
-  export BSUB_CTEST_TIME_LIMIT=04:00
+  export BSUB_CTEST_TIME_LIMIT=12:00
 fi
 
 set -x

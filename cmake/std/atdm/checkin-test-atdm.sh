@@ -1,36 +1,5 @@
 #!/bin/bash
 
-#
-# Test ATDM configurations of Trilinos
-#
-# Usage:
-#
-#   ./checkin-test-atdm.sh \
-#     <job-name-keys0> <job-name-keys1> ... <job-name-keysn> \
-#     [other checkin-test options]
-#
-# If just 'all' is passsed in for the <job-name-keys> list, then the list of
-# all of of the supported jobs for that current system will be loaded from
-# <system_name>/all_supported_builds.sh.
-#
-# To use this script, just symlink this into any desired directory where to
-# run from like:
-#
-#   cd <some-base-dir>/
-#   ln -s $TRILNOS_DIR/cmake/std/atdm/checkin-test-atdm.sh .
-#
-# then run it as above.  For example, to locally test a few builds for just
-# Kokkos use:
-#
-#   ./checkin-test-atdm.sh \
-#     gnu-opt-openmp intel-debug-serial \
-#     --no-enable-fwd-packages --enable-packages=Kokkos \
-#     --local-do-all
-#
-# This will only send email for the final check of all of the builds
-# specified.
-#
-
 echo
 echo "***"
 echo "*** $0 " "$@"
@@ -57,6 +26,58 @@ fi
 echo
 source $STD_ATDM_DIR/utils/get_known_system_name.sh
 
+ATDM_CHT_HELP_STR="
+usage: ./checkin-test-atdm.sh \\
+         <job-name-keys0> <job-name-keys1> ... <job-name-keysn> \\
+         [other checkin-test options]
+
+This script drives local confiugre, build and testing for each of the
+<job-name-keyi> builds.
+
+If just 'all' is passsed in for the <job-name-keys> list, then the list of all
+of the supported jobs for that current system will be loaded from
+<system_name>/all_supported_builds.sh.
+
+To use this script, just symlink this into any desired directory like:
+
+   cd <some-base-dir>/
+   ln -s $TRILNOS_DIR/cmake/std/atdm/checkin-test-atdm.sh .
+
+and then load an env to make sure that at least some env is loaded that is
+needed to provide git, python, cmake using, for example:
+
+  source $TRILNOS_DIR/cmake/std/atdm/load-env.sh gnu
+
+Then, for example, to locally test a few builds for just Kokkos use:
+
+  ./checkin-test-atdm.sh \\
+     gnu-opt-openmp intel-debug-serial \\
+     --no-enable-fwd-packages --enable-packages=Kokkos \\
+     --local-do-all
+
+This will only send email for the final check of all of the builds specified
+(currently you can't turn that final email off).
+
+Note that this will auatomatically use the full number processors for building
+and running tests as specified in the <system_name>/environment.sh file.
+Therefore, be caseful to only run this on a dedicated compute node for the
+system and not the login node or it will completely fill up the login node.
+
+To reproduce any build just do:
+
+  cd <job-name-keys>/
+  soruce load-env.sh
+  ./do-configure
+  make -j16
+  ctest -j16
+
+or any combination of configure, build, and test commands you want.
+
+NOTE: To see checkin-test.py --help, run:
+
+  $STD_ATDM_DIR/../../../checkin-test.py --help
+"
+
 #
 # A) Parse the arguments
 #
@@ -73,7 +94,41 @@ while [[ ! "$1" == "--"* ]] && [[ ! "$1" == "" ]] ; do
   shift
 done
 
+# A.2) Look for --pull and --push arguments and pull them out
+
+ATDM_CHT_FOUND_HELP=0
+ATDM_CHT_FOUND_PULL=0
+ATDM_CHT_FOUND_PUSH=0
+ATDM_CHT_ENABLE_PACKAGES_ARG=
+
+for ATDM_CHT_CURENT_ARG in "$@" ; do
+  if [[ "$ATDM_CHT_CURENT_ARG" == "--help" ]] ; then
+    #echo "Found --help"
+    ATDM_CHT_FOUND_HELP=1
+  elif [[ "$ATDM_CHT_CURENT_ARG" == "-h" ]] ; then
+    #echo "Found -h"
+    ATDM_CHT_FOUND_HELP=1
+  elif [[ "$ATDM_CHT_CURENT_ARG" == "--pull" ]] ; then
+    #echo "Found --pull"
+    ATDM_CHT_FOUND_PULL=1
+  elif [[ "$ATDM_CHT_CURENT_ARG" == "--push" ]] ; then
+    #echo "Found --push"
+    ATDM_CHT_FOUND_PUSH=1
+  elif [[ "$ATDM_CHT_CURENT_ARG" == "--enable-packages"* ]] ; then
+    #echo "Found --enable-packages"
+    ATDM_CHT_ENABLE_PACKAGES_ARG="$ATDM_CHT_CURENT_ARG"
+  fi
+done
+
+if [[ "$ATDM_CHT_FOUND_HELP" == "1" ]] ; then
+  echo "$ATDM_CHT_HELP_STR"
+  exit 0
+fi
+
+# A.3) Inspect the <job-name-keys> args and deal with 'all'
+
 if [[ "$ATDM_JOB_NAME_KEYS_LIST" == "" ]] ; then
+  echo
   echo "Error, at least one <job-name-keys> (e.g. gnu-opt-openmp) argument is required!"
   exit 1
 fi
@@ -95,22 +150,6 @@ for ATDM_JOB_NAME_KEYS in $ATDM_JOB_NAME_KEYS_LIST ; do
   ATDM_NUM_BULDS=$((ATDM_NUM_BULDS+1))
 done
 
-# A.2) Look for --pull and --push arguments and pull them out
-
-ATDM_CHT_FOUND_PULL=0
-ATDM_CHT_FOUND_PUSH=0
-ARG_ITX=1
-
-for ATDM_CHT_CURENT_ARG in "$@" ; do
-  if [[ "$ATDM_CHT_CURENT_ARG" == "--pull" ]] ; then
-    echo "Found --pull"
-    ATDM_CHT_FOUND_PULL=1
-  fi
-  if [[ "ATDM_CHT_CURENT_ARG" == "--push" ]] ; then
-    echo "Found --push"
-    ATDM_CHT_FOUND_PUSH=1
-  fi
-done
 
 #
 # B) Do an initial pull
@@ -133,8 +172,8 @@ for ATDM_JOB_NAME_KEYS in $ATDM_JOB_NAME_KEYS_LIST ; do
   echo "*** $ATDM_CHT_BUILD_CASE_IDX) Process build case $ATDM_JOB_NAME_KEYS"
   echo "***"
   echo
-  $STD_ATDM_DIR/utils/checkin-test-atdm-single.sh $ATDM_JOB_NAME_KEYS "$@" \
-    --default-builds= --allow-no-pull --send-email-to=
+  $STD_ATDM_DIR/utils/checkin-test-atdm-single.sh $ATDM_JOB_NAME_KEYS \
+    --default-builds= --allow-no-pull --send-email-to= "$@"
   if [[ "$?" == "0" ]] ; then
     echo "$ATDM_JOB_NAME_KEYS: PASSED!"
   else
@@ -154,7 +193,8 @@ echo "  ==> See output file checkin-test.final.out"
 echo
 
 $ATDM_TRILINOS_DIR/cmake/tribits/ci_support/checkin-test.py \
-  --allow-no-pull --default-builds= --st-extra-builds=$ATDM_JOB_NAME_KEYS_COMMA_LIST \
+  --default-builds= --st-extra-builds=$ATDM_JOB_NAME_KEYS_COMMA_LIST \
+  --allow-no-pull "$ATDM_CHT_ENABLE_PACKAGES_ARG" \
   &> checkin-test.final.out
 
 ATDM_CHT_RETURN_CODE=$?

@@ -4,7 +4,7 @@
 #
 ###############################################################################
 
-INCLUDE("${CMAKE_CURRENT_LIST_DIR}/ATDMDevEnvUtils.cmake")
+INCLUDE("${CMAKE_CURRENT_LIST_DIR}/utils/ATDMDevEnvUtils.cmake")
 
 #
 # A) Assert the right env vars are set and set local defaults
@@ -126,6 +126,9 @@ ATDM_SET_CACHE(MueLu_ENABLE_Experimental ON CACHE BOOL)
 ATDM_SET_CACHE(Panzer_ENABLE_FADTYPE "Sacado::Fad::DFad<RealType>" CACHE STRING)
 ATDM_SET_CACHE(Phalanx_KOKKOS_DEVICE_TYPE "${ATDM_NODE_TYPE}" CACHE STRING)
 ATDM_SET_CACHE(Phalanx_SHOW_DEPRECATED_WARNINGS OFF CACHE BOOL)
+IF (ATDM_USE_CUDA)
+  ATDM_SET_CACHE(Tpetra_INST_SERIAL "${ATDM_USE_CUDA}" CACHE BOOL)
+ENDIF()
 ATDM_SET_CACHE(Tpetra_INST_CUDA "${ATDM_USE_CUDA}" CACHE BOOL)
 ATDM_SET_CACHE(Xpetra_ENABLE_Experimental ON CACHE BOOL)
 

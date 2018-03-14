@@ -59,7 +59,29 @@ namespace panzer {
   *
   * where \f$\phi\f$ is a vector HDIV basis.
   */
-PANZER_EVALUATOR_CLASS(Integrator_DivBasisTimesScalar)
+template<typename EvalT, typename Traits>
+class Integrator_DivBasisTimesScalar
+  :
+  public panzer::EvaluatorWithBaseImpl<Traits>,
+  public PHX::EvaluatorDerived<EvalT, Traits>
+{
+  public:
+
+    Integrator_DivBasisTimesScalar(
+      const Teuchos::ParameterList& p);
+
+    void
+    postRegistrationSetup(
+      typename Traits::SetupData d,
+      PHX::FieldManager<Traits>& fm);
+
+    void
+    evaluateFields(
+      typename Traits::EvalData d);
+
+  private:
+
+    using ScalarT = typename EvalT::ScalarT;
   
   PHX::MDField<ScalarT,Cell,BASIS> residual;
   PHX::MDField<const ScalarT,Cell,IP> scalar;
@@ -80,7 +102,8 @@ PANZER_EVALUATOR_CLASS(Integrator_DivBasisTimesScalar)
 
 private:
   Teuchos::RCP<Teuchos::ParameterList> getValidParameters() const;
-PANZER_EVALUATOR_CLASS_END
+}; // end of class Integrator_DivBasisTimesScalar
+
 
 }
 

@@ -52,13 +52,36 @@
 
 namespace panzer {
     
-PANZER_EVALUATOR_CLASS(ConstantVector)
+template<typename EvalT, typename Traits>
+class ConstantVector
+  :
+  public panzer::EvaluatorWithBaseImpl<Traits>,
+  public PHX::EvaluatorDerived<EvalT, Traits>
+{
+  public:
+
+    ConstantVector(
+      const Teuchos::ParameterList& p);
+
+    void
+    postRegistrationSetup(
+      typename Traits::SetupData d,
+      PHX::FieldManager<Traits>& fm);
+
+    void
+    evaluateFields(
+      typename Traits::EvalData d);
+
+  private:
+
+    using ScalarT = typename EvalT::ScalarT;
   
   ScalarT vals[3]; // 3 dimensional vector
   
   PHX::MDField<ScalarT> vector;
 
-PANZER_EVALUATOR_CLASS_END
+}; // end of class ConstantVector
+
 
 }
 

@@ -159,7 +159,7 @@ public:
     lambda_ = list.get<Real>("Convex Combination Parameter");
     order_ = (unsigned)list.get<int>("Order",2);
     // Build (approximate) plus function
-    plusFunction_  = ROL::makePtr<PlusFunction<Real>>(list);
+    plusFunction_ = ROL::makePtr<PlusFunction<Real> >(list);
     // Check inputs
     checkInputs();
     const Real one(1);
@@ -248,7 +248,7 @@ public:
     RiskMeasure<Real>::dualVector_->scale(one-lambda_);
     Real var = lambda_;
     // If the higher moment term is positive then compute gradient
-    if ( val_in[0] > zero ) {
+    if ( val_out[0] > zero ) {
       const Real rorder0 = static_cast<Real>(order_);
       const Real rorder1 = rorder0 - one;
       Real denom = std::pow(val_out[0],rorder1/rorder0);
