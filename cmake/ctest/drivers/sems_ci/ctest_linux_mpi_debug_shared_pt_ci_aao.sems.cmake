@@ -87,7 +87,7 @@ SET(Trilinos_BRANCH develop)
 SET(EXTRA_EXCLUDE_PACKAGES)
 
 SET( EXTRA_CONFIGURE_OPTIONS
-  "-DTrilinos_CONFIGURE_OPTIONS_FILE:STRING=cmake/std/MpiReleaseDebugSharedPtSettings.cmake,cmake/std/BasicCiTestingSettings.cmake"
+  "-DTrilinos_CONFIGURE_OPTIONS_FILE:STRING=cmake/std/MpiReleaseDebugSharedPtSettings.cmake,cmake/std/BasicCiTestingSettings.cmake,cmake/std/sems/SEMSDevEnv.cmake"
   "-DTrilinos_TEST_CATEGORIES=BASIC"
   "-DTrilinos_ENABLE_CONFIGURE_TIMING=ON"
   )
