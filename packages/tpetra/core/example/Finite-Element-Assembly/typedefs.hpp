@@ -38,8 +38,6 @@
 //
 // ************************************************************************
 // @HEADER
-
-
 #ifndef TYPEDEFS_HPP
 #define TYPEDEFS_HPP
 
@@ -50,7 +48,7 @@
 #include <Tpetra_CrsGraph.hpp>
 #include <Tpetra_CrsMatrix.hpp>
 
-namespace TpetraExamples {}
+namespace TpetraExamples {
 
 typedef double Scalar;
 
@@ -73,6 +71,7 @@ typedef Kokkos::View<local_ordinal_t*[4], execution_space_t>  local_ordinal_2d_a
 typedef Kokkos::View<global_ordinal_t*[4], execution_space_t> global_ordinal_2d_array_t;
 typedef Kokkos::View<Scalar*[4], execution_space_t>           scalar_2d_array_t;
 
-#endif
+}
 
+#endif
 

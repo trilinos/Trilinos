@@ -130,9 +130,6 @@ private:
     return myElementStart_[0] <= i && i < myElementStop_[0] && myElementStart_[1] <= j && myElementStop_[1];
   }
 
-  // TODO: Add elementIsOwned()  (useful for Type-3 Assembly)
-
-
   inline global_ordinal_t idx_from_ij(global_ordinal_t num_x, global_ordinal_t i, global_ordinal_t j) const {
     return j*num_x+i;
   }
