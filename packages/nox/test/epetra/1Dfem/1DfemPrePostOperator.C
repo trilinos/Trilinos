@@ -98,3 +98,19 @@ runPostSolve(const NOX::Solver::Generic& solver)
   utils.out(NOX::Utils::Details)
     << "1Dfem's runPostSolve() routine called!" << std::endl;
 }
+
+void UserPrePostOperator::
+runPreLineSearch(const NOX::Solver::Generic& solver)
+{
+  ++numRunPreLineSearch;
+  utils.out(NOX::Utils::Details)
+    << "1Dfem's runPreLineSearch() routine called!" << std::endl;
+}
+
+void UserPrePostOperator::
+runPostLineSearch(const NOX::Solver::Generic& solver)
+{
+  ++numRunPostLineSearch;
+  utils.out(NOX::Utils::Details)
+    << "1Dfem's runPostLineSearch() routine called!" << std::endl;
+}

@@ -72,6 +72,18 @@ void NOX::PrePostOperatorVector::runPostSolve(const NOX::Solver::Generic& solver
     (*i)->runPostSolve(solver);
 }
 
+void NOX::PrePostOperatorVector::runPreLineSearch(const NOX::Solver::Generic& solver)
+{
+  for (it i=ppop_vec_.begin(); i != ppop_vec_.end(); ++i)
+    (*i)->runPreLineSearch(solver);
+}
+
+void NOX::PrePostOperatorVector::runPostLineSearch(const NOX::Solver::Generic& solver)
+{
+  for (it i=ppop_vec_.begin(); i != ppop_vec_.end(); ++i)
+    (*i)->runPostLineSearch(solver);
+}
+
 void NOX::PrePostOperatorVector::pushBack(const Teuchos::RCP<NOX::Abstract::PrePostOperator>& ppop)
 {
   ppop_vec_.push_back(ppop);
