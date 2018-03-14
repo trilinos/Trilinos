@@ -34,7 +34,7 @@ configuration = {
         'default-builds': [
 
             ('MPI_RELEASE_DEBUG_SHARED_PT', [
-                '-DTrilinos_CONFIGURE_OPTIONS_FILE:STRING=cmake/std/MpiReleaseDebugSharedPtSettings.cmake,cmake/std/BasicCiTestingSettings.cmake',
+                '-DTrilinos_CONFIGURE_OPTIONS_FILE:STRING=cmake/std/MpiReleaseDebugSharedPtSettings.cmake,cmake/std/BasicCiTestingSettings.cmake,cmake/std/sems/SEMSDevEnv.cmake',
                 ]),
 
             ## Options for the SERIAL_RELEASE build.

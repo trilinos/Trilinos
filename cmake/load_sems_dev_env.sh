@@ -138,9 +138,3 @@ module load $sems_superlu_and_version_default
 if [ "${TRILINOS_SEMS_DEV_ENV_VERBOSE}" == "1" ] ; then
   module list
 fi
-
-#
-# D) Remember the loaded SEMS Dev Env
-#
-
-export TRILINOS_SEMS_DEV_ENV_LOADED="$TRILINOS_SEMS_DEV_ENV_TO_LOAD"
