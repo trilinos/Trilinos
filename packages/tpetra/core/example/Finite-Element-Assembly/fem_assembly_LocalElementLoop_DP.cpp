@@ -58,10 +58,11 @@
 
 using namespace TpetraExamples;
 
-#define COMM_T Teuchos::RCP<const Teuchos::Comm<int> >
+using comm_ptr_t = Teuchos::RCP<const Teuchos::Comm<int> >;
 
 
-int execute (COMM_T &comm)
+
+int execute (comm_ptr_t& comm)
 {
 
   using Teuchos::RCP;
@@ -304,7 +305,7 @@ int main (int argc, char *argv[])
   
   // MPI boilerplate
   Tpetra::initialize(&argc, &argv);
-  COMM_T comm = Tpetra::DefaultPlatform::getDefaultPlatform ().getComm();
+  comm_ptr_t comm = Tpetra::DefaultPlatform::getDefaultPlatform ().getComm();
 
   // Entry point
   if(execute(comm))
@@ -315,14 +316,14 @@ int main (int argc, char *argv[])
   // Print out timing results.
   Teuchos::TimeMonitor::report(comm.ptr(), std::cout, "");
 
-  // Finalize
-  Tpetra::finalize();
- 
   // This tells the Trilinos test framework that the test passed.
   if(0 == comm->getRank())
   {
     std::cout << "End Result: TEST PASSED" << std::endl;
   }
+
+  // Finalize
+  Tpetra::finalize();
 
   return 0;
 }  // END main()
