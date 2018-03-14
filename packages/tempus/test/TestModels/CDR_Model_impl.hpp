@@ -452,11 +452,17 @@ void CDR_Model<Scalar>::evalModelImpl(
             for(int j=0;j < 2; j++) {
               if (x_owned_map_->MyGID(row)) {
                 int column=x_ghosted_map_->GID(ne+j);
+                // The prec will be the diagonal of J. No need to assemble the other entries
                 if (row == column) {
-                  double jac = basis.wt*basis.dz*((1.0/(basis.dz*basis.dz))*
-                                  basis.dphide[j]*basis.dphide[i]
-                                  +2.0*k_*basis.uu*basis.phi[j]*
-                                 basis.phi[i]);
+                  double jac=
+                    basis.wt*basis.dz*(
+                                       alpha * basis.phi[i] * basis.phi[j] // transient
+                                       + beta * (
+                                                 +a_/basis.dz*basis.dphide[j]*basis.phi[i] // convection
+                                                 +(1.0/(basis.dz*basis.dz))*basis.dphide[j]*basis.dphide[i] // diffusion
+                                                 +2.0*k_*basis.uu*basis.phi[j]*basis.phi[i] // source
+                                                 )
+                                       );
                   ierr = M_inv->SumIntoGlobalValues(row, 1, &jac, &column);
                 }
               }
