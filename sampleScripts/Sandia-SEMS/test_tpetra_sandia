@@ -407,7 +407,7 @@ source ${TRILINOS_PATH}/sampleScripts/Sandia-SEMS/configure-testbeds-tpetra-jenk
 if [ "${REPORT_TO_DASHBOARD}" = "True" ]; then
   echo "Calling: make dashboard"
   make dashboard || true
-  FAILED_PACKAGES=`cat failedPackages.txt | wc -l` || true
+  FAILED_PACKAGES=`grep -v '^\s*$' failedPackages.txt | wc -l` || true
   echo ""
   echo ""
   echo "*********************************"

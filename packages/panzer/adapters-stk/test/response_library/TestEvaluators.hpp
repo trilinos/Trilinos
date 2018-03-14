@@ -51,15 +51,41 @@
 
 namespace panzer {
 
-PANZER_EVALUATOR_CLASS(TestEvaluator)
+template<typename EvalT, typename Traits>
+class TestEvaluator
+  :
+  public panzer::EvaluatorWithBaseImpl<Traits>,
+  public PHX::EvaluatorDerived<EvalT, Traits>
+{
+  public:
+
+    TestEvaluator(
+      const Teuchos::ParameterList& p);
+
+    void
+    postRegistrationSetup(
+      typename Traits::SetupData d,
+      PHX::FieldManager<Traits>& fm);
+
+    void
+    evaluateFields(
+      typename Traits::EvalData d);
+
+  private:
+
+    using ScalarT = typename EvalT::ScalarT;
 
   PHX::MDField<ScalarT,Cell> dogValues;
   PHX::MDField<ScalarT,Cell> hrsValues;
 
-PANZER_EVALUATOR_CLASS_END
+}; // end of class TestEvaluator
+
 
 //**********************************************************************
-PHX_EVALUATOR_CTOR(TestEvaluator,p)
+template<typename EvalT, typename Traits>
+TestEvaluator<EvalT, Traits>::
+TestEvaluator(
+  const Teuchos::ParameterList& p)
 {
   // Read from parameters
   int worksetSize = p.get<int>("Workset Size");
@@ -77,14 +103,23 @@ PHX_EVALUATOR_CTOR(TestEvaluator,p)
 }
 
 //**********************************************************************
-PHX_POST_REGISTRATION_SETUP(TestEvaluator, /* sd */, fm)
+template<typename EvalT, typename Traits>
+void
+TestEvaluator<EvalT, Traits>::
+postRegistrationSetup(
+  typename Traits::SetupData  /* sd */,
+  PHX::FieldManager<Traits>&  fm)
 {
   this->utils.setFieldData(dogValues,fm);
   this->utils.setFieldData(hrsValues,fm);
 }
 
 //**********************************************************************
-PHX_EVALUATE_FIELDS(TestEvaluator,workset)
+template<typename EvalT, typename Traits>
+void
+TestEvaluator<EvalT, Traits>::
+evaluateFields(
+  typename Traits::EvalData workset)
 { 
    double extra = 0.0;
    if(this->wda(workset).block_id=="block_1")

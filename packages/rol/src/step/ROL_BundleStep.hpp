@@ -390,6 +390,8 @@ public:
   void update( Vector<Real> &x, const Vector<Real> &s, Objective<Real> &obj, 
                BoundConstraint<Real> &con, AlgorithmState<Real> &algo_state ) {
     ROL::Ptr<StepState<Real> > state = Step<Real>::getState();
+    state->flag = step_flag_;
+    state->SPiter = QPiter_;
     if ( !algo_state.flag ) {
       /*************************************************************/
       /******** Reset Bundle If Maximum Size Reached ***************/

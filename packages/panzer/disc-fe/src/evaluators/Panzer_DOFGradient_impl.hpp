@@ -85,7 +85,10 @@ struct evaluateGrad_withSens {
 }
 
 //**********************************************************************
-PHX_EVALUATOR_CTOR(DOFGradient,p) :
+template<typename EvalT, typename Traits>
+DOFGradient<EvalT, Traits>::
+DOFGradient(
+  const Teuchos::ParameterList& p) :
   use_descriptors_(false),
   dof_value( p.get<std::string>("Name"), 
 	     p.get< Teuchos::RCP<panzer::BasisIRLayout> >("Basis")->functional),
@@ -132,7 +135,12 @@ DOFGradient(const PHX::FieldTag & input,
 }
 
 //**********************************************************************
-PHX_POST_REGISTRATION_SETUP(DOFGradient,sd,fm)
+template<typename EvalT, typename Traits>
+void
+DOFGradient<EvalT, Traits>::
+postRegistrationSetup(
+  typename Traits::SetupData sd,
+  PHX::FieldManager<Traits>& fm)
 {
   this->utils.setFieldData(dof_value,fm);
   this->utils.setFieldData(dof_gradient,fm);
@@ -142,7 +150,11 @@ PHX_POST_REGISTRATION_SETUP(DOFGradient,sd,fm)
 }
 
 //**********************************************************************
-PHX_EVALUATE_FIELDS(DOFGradient,workset)
+template<typename EvalT, typename Traits>
+void
+DOFGradient<EvalT, Traits>::
+evaluateFields(
+  typename Traits::EvalData workset)
 { 
   if (workset.num_cells == 0 )
     return;

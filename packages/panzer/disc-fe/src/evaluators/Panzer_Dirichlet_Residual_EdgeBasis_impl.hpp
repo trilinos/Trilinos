@@ -59,7 +59,10 @@
 namespace panzer {
 
 //**********************************************************************
-PHX_EVALUATOR_CTOR(DirichletResidual_EdgeBasis,p)
+template<typename EvalT, typename Traits>
+DirichletResidual_EdgeBasis<EvalT, Traits>::
+DirichletResidual_EdgeBasis(
+  const Teuchos::ParameterList& p)
 {
   std::string residual_name = p.get<std::string>("Residual Name");
 
@@ -106,7 +109,12 @@ PHX_EVALUATOR_CTOR(DirichletResidual_EdgeBasis,p)
 }
 
 //**********************************************************************
-PHX_POST_REGISTRATION_SETUP(DirichletResidual_EdgeBasis,sd,fm)
+template<typename EvalT, typename Traits>
+void
+DirichletResidual_EdgeBasis<EvalT, Traits>::
+postRegistrationSetup(
+  typename Traits::SetupData sd,
+  PHX::FieldManager<Traits>& fm)
 {
   orientations = sd.orientations_;
 
@@ -117,7 +125,11 @@ PHX_POST_REGISTRATION_SETUP(DirichletResidual_EdgeBasis,sd,fm)
 }
 
 //**********************************************************************
-PHX_EVALUATE_FIELDS(DirichletResidual_EdgeBasis,workset)
+template<typename EvalT, typename Traits>
+void
+DirichletResidual_EdgeBasis<EvalT, Traits>::
+evaluateFields(
+  typename Traits::EvalData workset)
 { 
   const int numCells = workset.num_cells;
   if(numCells <= 0)

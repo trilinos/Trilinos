@@ -4,9 +4,12 @@
 
 namespace panzer {
 
-  DomainEvaluator::DomainEvaluator(int domain) : domain_(domain) {}
+  DomainEvaluator::DomainEvaluator(DomainEvaluator::DomainType domain) : domain_(domain) {}
 
-  void DomainEvaluator::setDomain(const int domain)
+  DomainEvaluator::DomainType DomainEvaluator::getDomain()
+  {return domain_;}
+  
+  void DomainEvaluator::setDomain(const DomainEvaluator::DomainType domain)
   {domain_=domain;}
 
   int DomainEvaluator::cellStartIndex(const panzer::Workset & workset) const

@@ -48,13 +48,36 @@
 
 namespace user_app {
     
-PHX_EVALUATOR_CLASS(ConstantModel)
+template<typename EvalT, typename Traits>
+class ConstantModel
+  :
+  public PHX::EvaluatorWithBaseImpl<Traits>,
+  public PHX::EvaluatorDerived<EvalT, Traits>
+{
+  public:
+
+    ConstantModel(
+      const Teuchos::ParameterList& p);
+
+    void
+    postRegistrationSetup(
+      typename Traits::SetupData d,
+      PHX::FieldManager<Traits>& fm);
+
+    void
+    evaluateFields(
+      typename Traits::EvalData d);
+
+  private:
+
+    using ScalarT = typename EvalT::ScalarT;
   
   ScalarT value;
   
   PHX::MDField<ScalarT> constant;
   
-PHX_EVALUATOR_CLASS_END
+}; // end of class ConstantModel
+
 
 }
 

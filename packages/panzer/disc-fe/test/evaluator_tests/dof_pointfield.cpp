@@ -84,10 +84,36 @@ namespace panzer {
 typedef Kokkos::DynRankView<double,PHX::Device> FieldArray;
 
 //**********************************************************************
-PHX_EVALUATOR_CLASS(DummyFieldEvaluator)
+template<typename EvalT, typename Traits>
+class DummyFieldEvaluator
+  :
+  public PHX::EvaluatorWithBaseImpl<Traits>,
+  public PHX::EvaluatorDerived<EvalT, Traits>
+{
+  public:
+
+    DummyFieldEvaluator(
+      const Teuchos::ParameterList& p);
+
+    void
+    postRegistrationSetup(
+      typename Traits::SetupData d,
+      PHX::FieldManager<Traits>& fm);
+
+    void
+    evaluateFields(
+      typename Traits::EvalData d);
+
+  private:
+
+    using ScalarT = typename EvalT::ScalarT;
   PHX::MDField<ScalarT,Cell,panzer::BASIS> fieldValue;
-PHX_EVALUATOR_CLASS_END
-PHX_EVALUATOR_CTOR(DummyFieldEvaluator,p)
+}; // end of class DummyFieldEvaluator
+
+template<typename EvalT, typename Traits>
+DummyFieldEvaluator<EvalT, Traits>::
+DummyFieldEvaluator(
+  const Teuchos::ParameterList& p)
 {
   // Read from parameters
   const std::string name = p.get<std::string>("Name");
@@ -102,9 +128,18 @@ PHX_EVALUATOR_CTOR(DummyFieldEvaluator,p)
   std::string n = "DummyFieldEvaluator: " + name;
   this->setName(n);
 }
-PHX_POST_REGISTRATION_SETUP(DummyFieldEvaluator, /* sd */, fm)
+template<typename EvalT, typename Traits>
+void
+DummyFieldEvaluator<EvalT, Traits>::
+postRegistrationSetup(
+  typename Traits::SetupData  /* sd */,
+  PHX::FieldManager<Traits>&  fm)
 { this->utils.setFieldData(fieldValue,fm); }
-PHX_EVALUATE_FIELDS(DummyFieldEvaluator, /* workset */)
+template<typename EvalT, typename Traits>
+void
+DummyFieldEvaluator<EvalT, Traits>::
+evaluateFields(
+  typename Traits::EvalData  /* workset */)
 { 
   int i = 0;
   for(int cell=0;cell<fieldValue.extent_int(0);cell++) {
@@ -115,13 +150,39 @@ PHX_EVALUATE_FIELDS(DummyFieldEvaluator, /* workset */)
   }
 }
 //**********************************************************************
-PHX_EVALUATOR_CLASS(RefCoordEvaluator)
+template<typename EvalT, typename Traits>
+class RefCoordEvaluator
+  :
+  public PHX::EvaluatorWithBaseImpl<Traits>,
+  public PHX::EvaluatorDerived<EvalT, Traits>
+{
+  public:
+
+    RefCoordEvaluator(
+      const Teuchos::ParameterList& p);
+
+    void
+    postRegistrationSetup(
+      typename Traits::SetupData d,
+      PHX::FieldManager<Traits>& fm);
+
+    void
+    evaluateFields(
+      typename Traits::EvalData d);
+
+  private:
+
+    using ScalarT = typename EvalT::ScalarT;
   PHX::MDField<ScalarT,panzer::Point,panzer::Dim> fieldValue;
   Teuchos::RCP<panzer::IntegrationValues2<double> > quadValues;
 public:
   Teuchos::RCP<PHX::DataLayout> coordsLayout;
-PHX_EVALUATOR_CLASS_END
-PHX_EVALUATOR_CTOR(RefCoordEvaluator,p)
+}; // end of class RefCoordEvaluator
+
+template<typename EvalT, typename Traits>
+RefCoordEvaluator<EvalT, Traits>::
+RefCoordEvaluator(
+  const Teuchos::ParameterList& p)
 {
   // Read from parameters
   const std::string name = p.get<std::string>("Name");
@@ -137,9 +198,18 @@ PHX_EVALUATOR_CTOR(RefCoordEvaluator,p)
   std::string n = "RefCoordEvaluator: " + name;
   this->setName(n);
 }
-PHX_POST_REGISTRATION_SETUP(RefCoordEvaluator, /* sd */, fm)
+template<typename EvalT, typename Traits>
+void
+RefCoordEvaluator<EvalT, Traits>::
+postRegistrationSetup(
+  typename Traits::SetupData  /* sd */,
+  PHX::FieldManager<Traits>&  fm)
 { this->utils.setFieldData(fieldValue,fm); }
-PHX_EVALUATE_FIELDS(RefCoordEvaluator, /* workset */)
+template<typename EvalT, typename Traits>
+void
+RefCoordEvaluator<EvalT, Traits>::
+evaluateFields(
+  typename Traits::EvalData  /* workset */)
 { 
   for(int cell=0;cell<fieldValue.extent_int(0);cell++)
     for(int pt=0;pt<fieldValue.extent_int(1);pt++)
