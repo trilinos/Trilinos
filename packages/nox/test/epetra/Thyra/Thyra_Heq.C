@@ -98,7 +98,7 @@ int main(int argc, char *argv[])
 
   bool success = false;
   bool verbose = false;
-  int StorageDepth = 10;
+  int StorageDepth = 2;
   double ParamC = 0.999;
   std::string LineSearch = "Full Step";
   int Reorthogonalize = 0;
@@ -250,7 +250,7 @@ int main(int argc, char *argv[])
     {
       numIterations = *numItersPtr;
     } 
-    TEUCHOS_TEST_EQUALITY_CONST(numIterations, 18, *out, loc_success);
+    TEUCHOS_TEST_EQUALITY_CONST(numIterations, 11, *out, loc_success);
     // 3. Same reset solution
     TEUCHOS_TEST_COMPARE_CONST(diff->norm(), <=, 1.0e-14, *out, loc_success);
 
