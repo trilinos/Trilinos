@@ -10,7 +10,7 @@
 #define Tempus_WrapperModelEvaluatorSecondOrder_decl_hpp
 
 #include <functional>
-#include "Thyra_StateFuncModelEvaluatorBase.hpp"
+#include "Tempus_WrapperModelEvaluator.hpp"
 #include "Thyra_VectorBase.hpp"
 #include "Thyra_VectorStdOps.hpp"
 
@@ -30,7 +30,7 @@ namespace Tempus {
  */
 template <typename Scalar>
 class WrapperModelEvaluatorSecondOrder
- : public Thyra::StateFuncModelEvaluatorBase<Scalar>
+ : public Tempus::WrapperModelEvaluator<Scalar>
 {
 public:
   typedef Thyra::VectorBase<Scalar>  Vector;
@@ -140,6 +140,9 @@ public:
       return appModel_->get_x_space();
     }
 
+    Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> > get_g_space(int i) const
+    { return appModel_->get_g_space(i); }
+
     Thyra::ModelEvaluatorBase::InArgs<Scalar> getNominalValues() const
     {
 #ifdef VERBOSE_DEBUG_OUTPUT
@@ -148,6 +151,32 @@ public:
       Thyra::ModelEvaluatorBase::InArgs<Scalar> nominalValues = appModel_->getNominalValues();
       nominalValues.set_x(a_);
       return nominalValues;
+    }
+
+    /// Set InArgs the wrapper ModelEvalutor.
+    virtual void setInArgs(Thyra::ModelEvaluatorBase::InArgs<Scalar> inArgs)
+    { wrapperInArgs_.setArgs(inArgs); }
+
+    /// Get InArgs the wrapper ModelEvalutor.
+    virtual Thyra::ModelEvaluatorBase::InArgs<Scalar> getInArgs()
+    { return wrapperInArgs_; }
+
+    /// Set OutArgs the wrapper ModelEvalutor.
+    virtual void setOutArgs(Thyra::ModelEvaluatorBase::OutArgs<Scalar> outArgs)
+    { wrapperOutArgs_.setArgs(outArgs); }
+
+    /// Get OutArgs the wrapper ModelEvalutor.
+    virtual Thyra::ModelEvaluatorBase::OutArgs<Scalar> getOutArgs()
+    { return wrapperOutArgs_; }
+
+    /// Set parameters for application implicit ModelEvaluator solve.
+    virtual void setForSolve(Teuchos::RCP<TimeDerivative<Scalar> > timeDer,
+      Thyra::ModelEvaluatorBase::InArgs<Scalar>   inArgs,
+      Thyra::ModelEvaluatorBase::OutArgs<Scalar>  outArgs)
+    {
+      timeDer_ = timeDer;
+      wrapperInArgs_.setArgs(inArgs);
+      wrapperOutArgs_.setArgs(outArgs);
     }
 
     Thyra::ModelEvaluatorBase::InArgs<Scalar> createInArgs() const;
@@ -177,6 +206,10 @@ private:
   Teuchos::RCP<Vector> v_pred_;
   Teuchos::RCP<Teuchos::FancyOStream> out_;
   SCHEME_TYPE schemeType_;
+
+  Teuchos::RCP<TimeDerivative<Scalar> >              timeDer_;
+  Thyra::ModelEvaluatorBase::InArgs<Scalar>          wrapperInArgs_;
+  Thyra::ModelEvaluatorBase::OutArgs<Scalar>         wrapperOutArgs_;
 
 };
 

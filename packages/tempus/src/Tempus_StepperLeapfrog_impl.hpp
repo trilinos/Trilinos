@@ -10,7 +10,6 @@
 #define Tempus_StepperLeapfrog_impl_hpp
 
 #include "Teuchos_VerboseObjectParameterListHelpers.hpp"
-#include "Teuchos_TimeMonitor.hpp"
 #include "Thyra_VectorStdOps.hpp"
 
 
