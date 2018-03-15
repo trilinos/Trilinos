@@ -142,7 +142,8 @@ Group(const NOX::Thyra::Vector& initial_guess,
       const Teuchos::RCP<const ::Thyra::VectorBase<double> >& weight_vector,
       const Teuchos::RCP<const ::Thyra::VectorBase<double> >& right_weight_vector,
       const bool rightScalingFirst,
-      const bool updatePreconditioner):
+      const bool updatePreconditioner,
+      const bool jacobianIsEvaluated):
   model_(model),
   lop_(linear_op),
   lows_factory_(lows_factory),
@@ -151,6 +152,9 @@ Group(const NOX::Thyra::Vector& initial_guess,
   rightScalingFirst_(rightScalingFirst),
   updatePreconditioner_(updatePreconditioner)
 {
+  TEUCHOS_TEST_FOR_EXCEPTION(jacobianIsEvaluated && Teuchos::is_null(linear_op),std::runtime_error,
+                             "ERROR - NOX::Thyra::Group(...) - linear_op is null but JacobianIsEvaluated is true. Impossible combination!");
+
   x_vec_ = Teuchos::rcp(new NOX::Thyra::Vector(initial_guess, DeepCopy));
 
   // To support implicit function scaling, all vectors must be copy
@@ -190,6 +194,11 @@ Group(const NOX::Thyra::Vector& initial_guess,
   out_args_ = model_->createOutArgs();
 
   resetIsValidFlags();
+
+  if (jacobianIsEvaluated) {
+    is_valid_jacobian_ = true;
+    shared_jacobian_->getObject(this);
+  }
 }
 
 NOX::Thyra::Group::Group(const NOX::Thyra::Group& source, NOX::CopyType type) :
