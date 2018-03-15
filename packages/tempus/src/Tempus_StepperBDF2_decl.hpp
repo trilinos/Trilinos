@@ -180,7 +180,7 @@ private:
   Teuchos::RCP<const Thyra::VectorBase<Scalar> > xOld_;
   Teuchos::RCP<const Thyra::VectorBase<Scalar> > xOldOld_;
   Scalar                                         dt_;    // = t_n - t_{n-1}
-  Scalar                                         dtOld_;    // = t_{n-1} - t_{n-2}
+  Scalar                                         dtOld_; // = t_{n-1} - t_{n-2}
 };
 
 
