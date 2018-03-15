@@ -680,9 +680,9 @@ class Explicit4Stage4thOrder_RKBT :
  *                            & 2/9  & 1/3 & 4/9 & 0 \\
  *                            & 7/24 & 1/4 & 1/3 & 1/8 \end{array}
  *  \f]
- *  Reference:  P. Bogacki and L.F. Shampine. 
- *              A 3(2) pair of Runge–Kutta formulas. 
- *              Applied Mathematics Letters, 2(4):321 – 325, 1989.*
+ *  Reference:  P. Bogacki and L.F. Shampine.
+ *              A 3(2) pair of Runge–Kutta formulas.
+ *              Applied Mathematics Letters, 2(4):321 – 325, 1989.
  *
  */
 template<class Scalar>

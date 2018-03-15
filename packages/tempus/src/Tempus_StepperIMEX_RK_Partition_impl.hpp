@@ -563,6 +563,7 @@ void StepperIMEX_RK_Partition<Scalar>::takeStep(
 
         stepperIMEX_RKPartObserver_->observeBeforeSolve(solutionHistory, *this);
 
+        this->solver_->setModel(wrapperModelPairIMEX);
         sStatus = (*this->solver_).solve(&*stageX);
         if (sStatus.solveStatus != Thyra::SOLVE_STATUS_CONVERGED) pass = false;
 
