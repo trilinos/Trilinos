@@ -3,7 +3,7 @@
     <Parameter name="verbosity" type="string" value="extreme"/>
     <Parameter name="coarse: max size" type="int" value="2"/>
     <Parameter name="multigrid algorithm" type="string" value="unsmoothed"/>
-    <Parameter name="max levels" type="int" value="5"/>
+    <Parameter name="max levels" type="int" value="2"/>
     <Parameter name="number of equations" type="int" value="1"/>
 
     <Parameter name="aggregation: type" type="string" value="uncoupled"/>
