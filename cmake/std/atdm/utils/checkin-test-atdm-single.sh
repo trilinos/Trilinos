@@ -7,9 +7,16 @@ ATDM_JOB_NAME_KEYS=$1 ; shift
 
 source $STD_ATDM_DIR/load-env.sh $ATDM_JOB_NAME_KEYS
 
-echo "-GNinja
--DTrilinos_CONFIGURE_OPTIONS_FILE:STRING=cmake/std/atdm/ATDMDevEnv.cmake
-" > $ATDM_JOB_NAME_KEYS.config
+if [ "${ATDM_CONFIG_USE_NINJA}" == "ON" ] ; then
+  echo "-GNinja" > $ATDM_JOB_NAME_KEYS.config
+  CHECKIN_TEST_USE_NINJA_ARG=--use-ninja
+else
+  echo > $ATDM_JOB_NAME_KEYS.config
+  CHECKIN_TEST_USE_NINJA_ARG=
+fi
+
+echo "-DTrilinos_CONFIGURE_OPTIONS_FILE:STRING=cmake/std/atdm/ATDMDevEnv.cmake" \
+>> $ATDM_JOB_NAME_KEYS.config
 
 echo
 echo "Running: checkin-test.py --st-extra-builds=$ATDM_JOB_NAME_KEYS ..."
@@ -23,7 +30,9 @@ $ATDM_TRILINOS_DIR/cmake/tribits/ci_support/checkin-test.py \
   --make-options="-j $ATDM_CONFIG_BUILD_COUNT" \
   --ctest-options="-j $ATDM_CONFIG_CTEST_PARALLEL_LEVEL" \
   --st-extra-builds=$ATDM_JOB_NAME_KEYS "$@" \
-  &> checkin-test.$ATDM_JOB_NAME_KEYS.out
+  $CHECKIN_TEST_USE_NINJA_ARG \
+  --log-file=checkin-test.$ATDM_JOB_NAME_KEYS.out \
+  &> /dev/null
 
 set +x
 

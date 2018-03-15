@@ -56,7 +56,7 @@ Then, for example, to locally test a few builds for just Kokkos use:
      --local-do-all
 
 This will only send email for the final check of all of the builds specified
-(currently you can't turn that final email off).
+(email can be turned off by passing in --send-email-to=).
 
 Note that this will auatomatically use the full number processors for building
 and running tests as specified in the <system_name>/environment.sh file.
@@ -99,6 +99,7 @@ done
 ATDM_CHT_FOUND_HELP=0
 ATDM_CHT_FOUND_PULL=0
 ATDM_CHT_FOUND_PUSH=0
+ATDM_CHT_SEND_EMAIL_TO_ARG=
 ATDM_CHT_ENABLE_PACKAGES_ARG=
 
 for ATDM_CHT_CURENT_ARG in "$@" ; do
@@ -114,8 +115,9 @@ for ATDM_CHT_CURENT_ARG in "$@" ; do
   elif [[ "$ATDM_CHT_CURENT_ARG" == "--push" ]] ; then
     #echo "Found --push"
     ATDM_CHT_FOUND_PUSH=1
+  elif [[ "$ATDM_CHT_CURENT_ARG" == "--send-email-to"* ]] ; then
+    ATDM_CHT_SEND_EMAIL_TO_ARG="$ATDM_CHT_CURENT_ARG"
   elif [[ "$ATDM_CHT_CURENT_ARG" == "--enable-packages"* ]] ; then
-    #echo "Found --enable-packages"
     ATDM_CHT_ENABLE_PACKAGES_ARG="$ATDM_CHT_CURENT_ARG"
   fi
 done
@@ -150,15 +152,28 @@ for ATDM_JOB_NAME_KEYS in $ATDM_JOB_NAME_KEYS_LIST ; do
   ATDM_NUM_BULDS=$((ATDM_NUM_BULDS+1))
 done
 
+#
+# B) Remove log files
+#
+
+if [ -f checkin-test.final.out ] ; then
+  rm checkin-test.final.out
+fi
+
+for ATDM_JOB_NAME_KEYS in $ATDM_JOB_NAME_KEYS_LIST ; do
+  if [ -f checkin-test.$ATDM_JOB_NAME_KEYS.out ] ; then
+    rm checkin-test.$ATDM_JOB_NAME_KEYS.out
+  fi
+done
 
 #
-# B) Do an initial pull
+# C) Do an initial pull
 #
 
 # ToDo: Implement
 
 #
-# C) Loop over individual builds and run them
+# D) Loop over individual builds and run them
 #
 
 echo
@@ -183,7 +198,7 @@ for ATDM_JOB_NAME_KEYS in $ATDM_JOB_NAME_KEYS_LIST ; do
 done
 
 #
-# D) Collect the results from all the builds
+# E) Collect the results from all the builds
 #
 
 echo
@@ -195,13 +210,18 @@ echo
 $ATDM_TRILINOS_DIR/cmake/tribits/ci_support/checkin-test.py \
   --default-builds= --st-extra-builds=$ATDM_JOB_NAME_KEYS_COMMA_LIST \
   --allow-no-pull "$ATDM_CHT_ENABLE_PACKAGES_ARG" \
-  &> checkin-test.final.out
+  $ATDM_CHT_SEND_EMAIL_TO_ARG \
+  --log-file=checkin-test.final.out \
+  &> /dev/null
 
 ATDM_CHT_RETURN_CODE=$?
 
 # NOTE The return value will be 0 if everything passed!
 
-# Print final status
+#
+# F) Print final status
+#
+
 echo
 grep -A 1000 "Commit status email being sent" checkin-test.final.out \
   | grep -B 1000 "Commits for repo" \

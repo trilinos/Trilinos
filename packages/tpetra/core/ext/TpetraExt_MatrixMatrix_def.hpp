@@ -872,7 +872,6 @@ void Add(
   Scalar scalarB,
   Teuchos::RCP<CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > C)
 {
-  using Teuchos::as;
   using Teuchos::Array;
   using Teuchos::ArrayRCP;
   using Teuchos::ArrayView;
@@ -2494,7 +2493,7 @@ void KernelWrappers<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalOrdinalViewType>
         // the calling process).
 
         // Local matrix
-        size_t Bk = Teuchos::as<size_t>(targetMapToOrigRow[Aik]);
+        size_t Bk = static_cast<size_t> (targetMapToOrigRow[Aik]);
 
         // mfh 27 Sep 2016: Go through all entries in that row of B_local.
         for (size_t j = Browptr[Bk]; j < Browptr[Bk+1]; ++j) {
@@ -2520,7 +2519,7 @@ void KernelWrappers<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalOrdinalViewType>
         // in B_local (i.e., it lives on the calling process).
 
         // Remote matrix
-        size_t Ik = Teuchos::as<size_t>(targetMapToImportRow[Aik]);
+        size_t Ik = static_cast<size_t> (targetMapToImportRow[Aik]);
         for (size_t j = Irowptr[Ik]; j < Irowptr[Ik+1]; ++j) {
           LO Ikj = Icolind[j];
           LO Cij = Icol2Ccol[Ikj];
@@ -2788,7 +2787,7 @@ void KernelWrappers<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalOrdinalViewType>
 
       if (targetMapToOrigRow[Aik] != LO_INVALID) {
         // Local matrix
-        size_t Bk = Teuchos::as<size_t>(targetMapToOrigRow[Aik]);
+        size_t Bk = static_cast<size_t> (targetMapToOrigRow[Aik]);
 
         for (size_t j = Browptr[Bk]; j < Browptr[Bk+1]; ++j) {
           LO Bkj = Bcolind[j];
@@ -2803,7 +2802,7 @@ void KernelWrappers<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalOrdinalViewType>
 
       } else {
         // Remote matrix
-        size_t Ik = Teuchos::as<size_t>(targetMapToImportRow[Aik]);
+        size_t Ik = static_cast<size_t> (targetMapToImportRow[Aik]);
         for (size_t j = Irowptr[Ik]; j < Irowptr[Ik+1]; ++j) {
           LO Ikj = Icolind[j];
           LO Cij = Icol2Ccol[Ikj];
@@ -2897,8 +2896,10 @@ void jacobi_A_B_newmatrix(
     Ccolmap = Bview.colMap;
     // Bcol2Ccol is trivial
     // Bcol2Ccol is trivial
-    Kokkos::parallel_for(range_type(0,Bview.colMap->getNodeNumElements()),KOKKOS_LAMBDA(const size_t i) {
-        Bcol2Ccol(i) = Teuchos::as<LO>(i);
+
+    Kokkos::RangePolicy<execution_space, LO> range (0, static_cast<LO> (Bview.colMap->getNodeNumElements ()));
+    Kokkos::parallel_for (range, KOKKOS_LAMBDA (const size_t i) {
+        Bcol2Ccol(i) = static_cast<LO> (i);
       });
   } else {
     // mfh 27 Sep 2016: B has "remotes," so we need to build the
@@ -3145,7 +3146,7 @@ void KernelWrappers2<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalOrdinalViewType
 
       if (targetMapToOrigRow[Aik] != LO_INVALID) {
         // Local matrix
-        size_t Bk = Teuchos::as<size_t>(targetMapToOrigRow[Aik]);
+        size_t Bk = static_cast<size_t> (targetMapToOrigRow[Aik]);
 
         for (size_t j = Browptr[Bk]; j < Browptr[Bk+1]; ++j) {
           LO Bkj = Bcolind[j];
@@ -3165,7 +3166,7 @@ void KernelWrappers2<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalOrdinalViewType
 
       } else {
         // Remote matrix
-        size_t Ik = Teuchos::as<size_t>(targetMapToImportRow[Aik]);
+        size_t Ik = static_cast<size_t> (targetMapToImportRow[Aik]);
         for (size_t j = Irowptr[Ik]; j < Irowptr[Ik+1]; ++j) {
           LO Ikj = Icolind[j];
           LO Cij = Icol2Ccol[Ikj];
@@ -3462,7 +3463,7 @@ void KernelWrappers2<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalOrdinalViewType
 
       if (targetMapToOrigRow[Aik] != LO_INVALID) {
         // Local matrix
-        size_t Bk = Teuchos::as<size_t>(targetMapToOrigRow[Aik]);
+        size_t Bk = static_cast<size_t> (targetMapToOrigRow[Aik]);
 
         for (size_t j = Browptr[Bk]; j < Browptr[Bk+1]; ++j) {
           LO Bkj = Bcolind[j];
@@ -3476,7 +3477,7 @@ void KernelWrappers2<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalOrdinalViewType
 
       } else {
         // Remote matrix
-        size_t Ik = Teuchos::as<size_t>(targetMapToImportRow[Aik]);
+        size_t Ik = static_cast<size_t> (targetMapToImportRow[Aik]);
         for (size_t j = Irowptr[Ik]; j < Irowptr[Ik+1]; ++j) {
           LO Ikj = Icolind[j];
           LO Cij = Icol2Ccol[Ikj];

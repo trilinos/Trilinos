@@ -343,6 +343,10 @@ int main(int argc, char *argv[])
         status = 4;
       if (ppo2.getNumRunPostSolve() != 1)
         status = 4;
+      if (ppo2.getNumRunPreLineSearch() != 10)
+        status = 4;
+      if (ppo2.getNumRunPostLineSearch() != 10)
+        status = 4;
     }
 
     success = status==0;

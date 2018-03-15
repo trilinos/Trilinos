@@ -75,7 +75,7 @@ SET(Trilinos_EXTRAREPOS_FILE NONE)
 # Just test all the packages
 #SET(Trilinos_PACKAGES)
 SET( EXTRA_CONFIGURE_OPTIONS
-  "-DTrilinos_CONFIGURE_OPTIONS_FILE:STRING=cmake/std/sems/atdm/SEMSATDMSettings.cmake,cmake/std/MpiReleaseDebugSharedPtSettings.cmake,cmake/std/BasicCiTestingSettings.cmake"
+  "-DTrilinos_CONFIGURE_OPTIONS_FILE:STRING=cmake/std/sems/atdm/SEMSATDMSettings.cmake,cmake/std/MpiReleaseDebugSharedPtSettings.cmake,cmake/std/BasicCiTestingSettings.cmake,cmake/std/sems/SEMSDevEnv.cmake"
   "-DTrilinos_ENABLE_CONFIGURE_TIMING=ON"
   )
 SET(CTEST_TEST_TYPE Nightly)
