@@ -36,6 +36,11 @@ if [[ "$HOSTNAME" =~ node.* ]]; then # Warning: very generic name
   fi
 fi
 
+if [[ "$HOSTNAME" =~ blake ]]; then
+  MACHINE=blake
+  module load git
+fi
+
 if [[ "$HOSTNAME" =~ apollo ]]; then
   MACHINE=apollo
   module load sems-git
@@ -318,6 +323,27 @@ elif [ "$MACHINE" = "shepard" ]; then
     BUILD_LIST="OpenMP"
   fi
  
+  export OMP_NUM_THREADS=2
+
+  export JENKINS_ARCH=${KOKKOS_ARCH}
+  export JENKINS_ARCH_C_FLAG="${OPT_FLAG} -xCORE-AVX2 -mkl"
+  export JENKINS_EXTRA_CXX_FLAG="${OPT_FLAG} -mkl ${CXX_FLAGS_EXTRA}"
+  export BLAS_LIBRARIES="-mkl;${MKLROOT}/lib/intel64/libmkl_intel_lp64.a;${MKLROOT}/lib/intel64/libmkl_intel_thread.a;${MKLROOT}/lib/intel64/libmkl_core.a"
+  export LAPACK_LIBRARIES=${BLAS_LIBRARIES}
+
+
+elif [ "$MACHINE" = "blake" ]; then
+  echo "Blake"
+  module load devpack/latest/openmpi/2.1.2/intel/18.1.163
+
+  if [ -z "$KOKKOS_ARCH" ]; then
+    KOKKOS_ARCH="SKX"
+  fi
+
+  if [ -z "$BUILD_LIST" ]; then
+    BUILD_LIST="OpenMP"
+  fi
+
   export OMP_NUM_THREADS=2
 
   export JENKINS_ARCH=${KOKKOS_ARCH}
