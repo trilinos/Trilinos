@@ -74,6 +74,8 @@ source $_SCRIPT_DIR/utils/set_build_options.sh
 
 # Set other vaues to empty by default
 unset OMP_NUM_THREADS
+unset OMP_PROC_BIND
+unset OMP_PLACES
 unset OMPI_CC
 unset OMPI_CXX
 unset OMPI_FC
