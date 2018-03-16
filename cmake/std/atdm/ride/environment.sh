@@ -37,7 +37,7 @@ elif [ "$ATDM_CONFIG_COMPILER" == "INTEL" ]; then
     return
 elif [ "$ATDM_CONFIG_COMPILER" == "CUDA" ]; then
     export ATDM_CONFIG_KOKKOS_ARCH=Kepler37
-    export ATDM_CONFIG_CTEST_PARALLEL_LEVEL=32
+    export ATDM_CONFIG_CTEST_PARALLEL_LEVEL=16
     module load devpack/openmpi/1.10.4/gcc/5.4.0/cuda/8.0.44
     export OMPI_CXX=$ATDM_CONFIG_TRILNOS_DIR/packages/kokkos/bin/nvcc_wrapper
     if [ ! -x "$OMPI_CXX" ]; then

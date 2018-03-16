@@ -57,7 +57,9 @@ UserPrePostOperator::UserPrePostOperator(const NOX::Utils& u) :
   numRunPreIterate(0),
   numRunPostIterate(0),
   numRunPreSolve(0),
-  numRunPostSolve(0)
+  numRunPostSolve(0),
+  numRunPreLineSearch(0),
+  numRunPostLineSearch(0)
 {
   utils = u;
 }

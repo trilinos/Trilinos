@@ -134,6 +134,7 @@ namespace NOX {
           \param[in] rightWeightVector Optional solution vector weighting
           \param[in] rightScalingFirst Optional bool to select if right scaling should be applied before left scaling
           \param[in] updatePreconditioner Optional bool to select if the Group should auotmatically update the preconditioner matrix values between Newton iterations
+          \param[in] jacobianIsEvaluated Optional bool, if true this means that the input Jacobian operator (linearOp) has been evaluated externally and is consistent with the initialGuess. In this case, the isJacobian() flag is initialized to true.
       */
       Group(const NOX::Thyra::Vector& initialGuess,
             const Teuchos::RCP<const ::Thyra::ModelEvaluator<double> >& model,
@@ -144,7 +145,8 @@ namespace NOX {
             const Teuchos::RCP<const ::Thyra::VectorBase<double> >& weightVector = Teuchos::null,
             const Teuchos::RCP<const ::Thyra::VectorBase<double> >& rightWeightVector = Teuchos::null,
             const bool rightScalingFirst = false,
-            const bool updatePreconditioner = true);
+            const bool updatePreconditioner = true,
+            const bool jacobianIsEvaluated = false);
 
       //! Copy constructor
       Group(const NOX::Thyra::Group& source, NOX::CopyType type = DeepCopy);
