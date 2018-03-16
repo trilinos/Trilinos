@@ -1,4 +1,4 @@
-#!/bin/bash -e
+#!/bin/bash
 
 # NOTE: This script should only be run by checkin-test-atdm.sh.  It does not
 # have enough info to run on its own.
@@ -33,9 +33,13 @@ $ATDM_TRILINOS_DIR/cmake/tribits/ci_support/checkin-test.py \
   $CHECKIN_TEST_USE_NINJA_ARG \
   --log-file=checkin-test.$ATDM_JOB_NAME_KEYS.out \
   &> /dev/null
+ATDM_CHT_SINGLE_RETURN_CODE=$?
 
 set +x
 
-echo "source $STD_ATDM_DIR/load-env.sh $ATDM_JOB_NAME_KEYS" > $ATDM_JOB_NAME_KEYS/load-env.sh
+echo "source $STD_ATDM_DIR/load-env.sh $ATDM_JOB_NAME_KEYS" \
+ > $ATDM_JOB_NAME_KEYS/load-env.sh
+
+exit $ATDM_CHT_SINGLE_RETURN_CODE
 
 # ToDo: Read env var ATDM_CONFIG_USE_NINJA and set --use-ninja!
