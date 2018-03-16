@@ -190,7 +190,7 @@ void StepperNewmarkImplicitAForm<Scalar>::takeStep(
       Thyra::put_scalar(0.0, a_init.ptr());
       wrapperModel->initializeNewmark(a_init,v_init,d_init,0.0,time,beta_,gamma_);
       const Thyra::SolveStatus<Scalar> sStatus =
-        (*this->solver_).solve(&*a_init);
+        this->solveImplicitODE(a_init);
 
       if (sStatus.solveStatus == Thyra::SOLVE_STATUS_CONVERGED )
         workingState->getStepperState()->stepperStatus_ = Status::PASSED;
@@ -215,7 +215,7 @@ void StepperNewmarkImplicitAForm<Scalar>::takeStep(
     //inject d_pred, v_pred, a and other relevant data into wrapperModel
     wrapperModel->initializeNewmark(a_old,v_pred,d_pred,dt,t,beta_,gamma_);
 
-    const Thyra::SolveStatus<Scalar> sStatus = (*this->solver_).solve(&*a_old);
+    const Thyra::SolveStatus<Scalar> sStatus = this->solveImplicitODE(a_old);
 
     if (sStatus.solveStatus == Thyra::SOLVE_STATUS_CONVERGED )
       workingState->getStepperState()->stepperStatus_ = Status::PASSED;
@@ -377,6 +377,7 @@ StepperNewmarkImplicitAForm<Scalar>::getValidParameters() const
   Teuchos::RCP<Teuchos::ParameterList> pl = Teuchos::parameterList();
   pl->setName("Default Stepper - " + this->description());
   pl->set("Stepper Type", this->description());
+  pl->set("Zero Initial Guess", false);
   pl->set("Solver Name", "",
           "Name of ParameterList containing the solver specifications.");
 
@@ -395,6 +396,7 @@ StepperNewmarkImplicitAForm<Scalar>::getDefaultParameters() const
   RCP<ParameterList> pl = Teuchos::parameterList();
   pl->setName("Default Stepper - " + this->description());
   pl->set<std::string>("Stepper Type", this->description());
+  pl->set<bool>       ("Zero Initial Guess", false);
   pl->set<std::string>("Solver Name", "Default Solver");
 
   RCP<ParameterList> solverPL = this->defaultSolverParameters();

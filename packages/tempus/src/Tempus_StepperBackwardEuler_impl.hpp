@@ -172,7 +172,7 @@ void StepperBackwardEuler<Scalar>::takeStep(
 
     stepperBEObserver_->observeBeforeSolve(solutionHistory, *this);
 
-    const Thyra::SolveStatus<Scalar> sStatus = (*this->solver_).solve(&*x);
+    const Thyra::SolveStatus<Scalar> sStatus = this->solveImplicitODE(x);
 
     stepperBEObserver_->observeAfterSolve(solutionHistory, *this);
 
@@ -278,7 +278,7 @@ void StepperBackwardEuler<Scalar>::setParameterList(
   TEUCHOS_TEST_FOR_EXCEPTION( stepperType != "Backward Euler",
     std::logic_error,
        "Error - Stepper Type is not 'Backward Euler'!\n"
-    << "  Stepper Type = "<< pList->get<std::string>("Stepper Type") << "\n");
+    << "  Stepper Type = "<<stepperPL->get<std::string>("Stepper Type")<<"\n");
 
   this->stepperPL_ = stepperPL;
 }
@@ -291,6 +291,7 @@ StepperBackwardEuler<Scalar>::getValidParameters() const
   Teuchos::RCP<Teuchos::ParameterList> pl = Teuchos::parameterList();
   pl->setName("Default Stepper - " + this->description());
   pl->set("Stepper Type", this->description());
+  pl->set("Zero Initial Guess", false);
   pl->set("Solver Name", "",
     "Name of ParameterList containing the solver specifications.");
 
@@ -308,6 +309,7 @@ StepperBackwardEuler<Scalar>::getDefaultParameters() const
   RCP<ParameterList> pl = Teuchos::parameterList();
   pl->setName("Default Stepper - " + this->description());
   pl->set<std::string>("Stepper Type", this->description());
+  pl->set<bool>       ("Zero Initial Guess", false);
   pl->set<std::string>("Solver Name", "Default Solver");
 
   RCP<ParameterList> solverPL = this->defaultSolverParameters();

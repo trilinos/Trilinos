@@ -534,7 +534,7 @@ void StepperIMEX_RK<Scalar>::takeStep(
 
         stepperIMEX_RKObserver_->observeBeforeSolve(solutionHistory, *this);
 
-        sStatus = (*this->solver_).solve(&*stageX_);
+        sStatus = this->solveImplicitODE(stageX_);
 
         if (sStatus.solveStatus != Thyra::SOLVE_STATUS_CONVERGED) pass = false;
 
@@ -628,6 +628,7 @@ StepperIMEX_RK<Scalar>::getValidParameters() const
   Teuchos::RCP<Teuchos::ParameterList> pl = Teuchos::parameterList();
   pl->setName("Default Stepper - IMEX RK SSP2");
   pl->set("Stepper Type", "IMEX RK SSP2");
+  pl->set("Zero Initial Guess", false);
   pl->set("Solver Name", "",
     "Name of ParameterList containing the solver specifications.");
 
@@ -641,6 +642,7 @@ StepperIMEX_RK<Scalar>::getDefaultParameters() const
   Teuchos::RCP<Teuchos::ParameterList> pl = Teuchos::parameterList();
   pl->setName("Default Stepper - IMEX RK SSP2");
   pl->set<std::string>("Stepper Type", "IMEX RK SSP2");
+  pl->set<bool>       ("Zero Initial Guess", false);
   pl->set<std::string>("Solver Name", "Default Solver");
   Teuchos::RCP<Teuchos::ParameterList> solverPL=this->defaultSolverParameters();
   pl->set("Default Solver", *solverPL);

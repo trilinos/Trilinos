@@ -71,6 +71,8 @@ TEUCHOS_UNIT_TEST(DIRK, ParameterList)
       tempusPL->sublist("Default Stepper").remove("Default Solver");
       tempusPL->sublist("Default Stepper")
            .set<double>("gamma", 0.2928932188134524);
+      tempusPL->sublist("Default Stepper").remove("Zero Initial Guess");
+      tempusPL->sublist("Default Stepper").set<bool>("Zero Initial Guess", 0);
       tempusPL->sublist("Default Stepper").set("Default Solver", *solverPL);
     } else if (RKMethods[m] == "SDIRK 2 Stage 3rd order") {
       // Construct in the same order as default.
@@ -82,6 +84,8 @@ TEUCHOS_UNIT_TEST(DIRK, ParameterList)
       tempusPL->sublist("Default Stepper").set("2nd Order L-stable", false);
       tempusPL->sublist("Default Stepper")
            .set<double>("gamma", 0.7886751345948128);
+      tempusPL->sublist("Default Stepper").remove("Zero Initial Guess");
+      tempusPL->sublist("Default Stepper").set<bool>("Zero Initial Guess", 0);
       tempusPL->sublist("Default Stepper").set("Default Solver", *solverPL);
     }
 
@@ -108,6 +112,9 @@ TEUCHOS_UNIT_TEST(DIRK, ParameterList)
         integrator->getStepper()->getDefaultParameters();
       defaultPL->remove("Description");
 
+    //std::cout << std::endl;
+    //std::cout << "stepperPL ----------------- \n" << *stepperPL << std::endl;
+    //std::cout << "defaultPL ----------------- \n" << *defaultPL << std::endl;
       TEST_ASSERT(haveSameValues(*stepperPL, *defaultPL, true))
     }
   }
