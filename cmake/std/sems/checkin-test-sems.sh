@@ -116,7 +116,6 @@ echo "
 # because load_sems_dev_env.sh was sourced above.
 
 echo "
--DZoltan2_OrderingScotch_MPI_4_DISABLE=TRUE
 " > MPI_RELEASE_DEBUG_SHARED_PT.config
 
 #
