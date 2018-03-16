@@ -311,6 +311,25 @@ elif [ "$MACHINE" = "bowman" ]; then
   
 elif [ "$MACHINE" = "sullivan" ]; then
   echo "Sullivan"
+
+  module purge
+  module load "devpack"
+
+  if [ -z "$KOKKOS_ARCH" ]; then
+    KOKKOS_ARCH="ARMv8-ThunderX"
+  fi
+
+  if [ -z "$BUILD_LIST" ]; then
+    BUILD_LIST="OpenMP"
+  fi
+
+  export OMP_NUM_THREADS=2
+
+  export JENKINS_ARCH_C_FLAG="${OPT_FLAG} -march=armv8-a -mtune=thunderx"
+  export JENKINS_EXTRA_CXX_FLAGS="${OPT_FLAG} ${CXX_FLAGS_EXTRA}"
+  export BLAS_LIBRARIES="-L${BLAS_ROOT} -lblas"
+  export LAPACK_LIBRARIES="-L${LAPACK_ROOT} -llapack"
+
 elif [ "$MACHINE" = "shepard" ]; then
   echo "Shepard"
   module load devpack/openmpi/2.1.1/intel/17.4.196/cuda/none
@@ -455,6 +474,8 @@ if [ "${DRYRUN}" = "False" ]; then
   source ${CONFIGURE_SCRIPT} &> configure.out
 fi
 
+date +"%Y_%m_%d_%H.%M.%S"
+
 if [ "${REPORT_TO_DASHBOARD}" = "True" ]; then
   echo "Calling: make dashboard"
   echo "Report Name: " ${CTEST_BUILD_NAME}
@@ -484,6 +505,7 @@ else
     if [ "${DRYRUN}" = "False" ]; then
       make -j 32 &> build.out || true
     fi
+    date +"%Y_%m_%d_%H.%M.%S"
     BUILD_WARNINGS=`grep "warning:" build.out | wc -l` || true
     BUILD_ERRORS=`grep "error:" build.out | wc -l` || true
     if [ "${BUILD_ONLY}" = "False" ]; then
@@ -491,6 +513,7 @@ else
       if [ "${DRYRUN}" = "False" ]; then
         ctest &> test.out || true
       fi
+      date +"%Y_%m_%d_%H.%M.%S"
       TEST_FAILED=`grep "(Failed)" test.out | wc -l` || true
       TEST_TIMEOUT=`grep "(Timeout)" test.out | wc -l` || true
       TEST_NOTRUN=`grep "(Not Run)" test.out | wc -l` || true
