@@ -42,6 +42,7 @@
         <Parameter name="Scheme Name"    type="string" value="Newmark Beta Average Acceleration"/>
       </ParameterList>
       <Parameter name="Solver Name"    type="string" value="Default Solver"/>
+      <Parameter name="Zero Initial Guess" type="bool" value="0"/>
 
       <ParameterList name="Default Solver">
         <ParameterList name="NOX">

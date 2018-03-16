@@ -184,7 +184,6 @@ void StepperBDF2<Scalar>::takeStep(
     RCP<Thyra::VectorBase<Scalar> > xDot = workingState->getXDot();
     if (xDot == Teuchos::null) xDot = getXDotTemp(x);
 
-
     //get time, dt and dtOld
     const Scalar time  = workingState->getTime();
     const Scalar dt    = workingState->getTimeStep();
@@ -216,7 +215,7 @@ void StepperBDF2<Scalar>::takeStep(
 
     stepperBDF2Observer_->observeBeforeSolve(solutionHistory, *this);
 
-    const Thyra::SolveStatus<Scalar> sStatus = (*this->solver_).solve(&*x);
+    const Thyra::SolveStatus<Scalar> sStatus = this->solveImplicitODE(x);
 
     stepperBDF2Observer_->observeAfterSolve(solutionHistory, *this);
 
@@ -315,7 +314,7 @@ void StepperBDF2<Scalar>::setParameterList(
   std::string stepperType = stepperPL->get<std::string>("Stepper Type");
   TEUCHOS_TEST_FOR_EXCEPTION( stepperType != "BDF2", std::logic_error,
        "Error - Stepper Type is not 'BDF2'!\n"
-    << "  Stepper Type = "<< pList->get<std::string>("Stepper Type") << "\n");
+    << "  Stepper Type = "<<stepperPL->get<std::string>("Stepper Type")<<"\n");
 
   this->stepperPL_ = stepperPL;
 }
@@ -328,6 +327,7 @@ StepperBDF2<Scalar>::getValidParameters() const
   Teuchos::RCP<Teuchos::ParameterList> pl = Teuchos::parameterList();
   pl->setName("Default Stepper - " + this->description());
   pl->set("Stepper Type", this->description());
+  pl->set("Zero Initial Guess", false);
   pl->set("Solver Name", "",
     "Name of ParameterList containing the solver specifications.");
 
@@ -345,6 +345,7 @@ StepperBDF2<Scalar>::getDefaultParameters() const
   RCP<ParameterList> pl = Teuchos::parameterList();
   pl->setName("Default Stepper - " + this->description());
   pl->set<std::string>("Stepper Type", this->description());
+  pl->set<bool>       ("Zero Initial Guess", false);
   pl->set<std::string>("Solver Name", "Default Solver");
 
   RCP<ParameterList> solverPL = this->defaultSolverParameters();

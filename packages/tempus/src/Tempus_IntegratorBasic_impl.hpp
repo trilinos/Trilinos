@@ -437,8 +437,8 @@ void IntegratorBasic<Scalar>::startTimeStep()
     solutionHistory_->getWorkingState()->getMetaData();
 
   //set the Abs/Rel tolerance
-  wsmd->setTolRel(timeStepControl_->getMaxRelError()); 
-  wsmd->setTolAbs(timeStepControl_->getMaxAbsError()); 
+  wsmd->setTolRel(timeStepControl_->getMaxRelError());
+  wsmd->setTolAbs(timeStepControl_->getMaxAbsError());
 
   // Check if we need to dump screen output this step
   std::vector<int>::const_iterator it =

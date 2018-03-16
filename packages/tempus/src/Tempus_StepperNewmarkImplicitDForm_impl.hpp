@@ -293,7 +293,7 @@ StepperNewmarkImplicitDForm<Scalar>::takeStep(
         a_old, v_pred, d_pred, dt, t, beta_, gamma_);
 
     const Thyra::SolveStatus<Scalar> status =
-      (*this->solver_).solve(&*d_old_copy);
+      this->solveImplicitODE(d_old_copy);
 
     if (status.solveStatus == Thyra::SOLVE_STATUS_CONVERGED)
       workingState->getStepperState()->stepperStatus_ = Status::PASSED;
@@ -464,6 +464,7 @@ StepperNewmarkImplicitDForm<Scalar>::getValidParameters() const {
   Teuchos::RCP<Teuchos::ParameterList> pl = Teuchos::parameterList();
   pl->setName("Default Stepper - " + this->description());
   pl->set("Stepper Type", this->description());
+  pl->set("Zero Initial Guess", false);
   pl->set("Solver Name", "",
       "Name of ParameterList containing the solver specifications.");
 
@@ -481,6 +482,7 @@ StepperNewmarkImplicitDForm<Scalar>::getDefaultParameters() const {
   RCP<ParameterList> pl = Teuchos::parameterList();
   pl->setName("Default Stepper - " + this->description());
   pl->set<std::string>("Stepper Type", this->description());
+  pl->set<bool>       ("Zero Initial Guess", false);
   pl->set<std::string>("Solver Name", "Default Solver");
 
   RCP<ParameterList> solverPL = this->defaultSolverParameters();
