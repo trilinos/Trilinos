@@ -71,4 +71,4 @@ export MPICC=`which mpicc`
 export MPICXX=`which mpicxx`
 export MPIF90=`which mpif90`
 
-export ATDM_CONFIG_MPI_POST_FLAG="-map-by;socket:PE=8;--oversubscribe"
+export ATDM_CONFIG_MPI_POST_FLAG="-map-by;socket:PE=4"
