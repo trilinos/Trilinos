@@ -43,11 +43,6 @@ To use this script, just symlink this into any desired directory like:
    cd <some-base-dir>/
    ln -s $TRILNOS_DIR/cmake/std/atdm/checkin-test-atdm.sh .
 
-and then load an env to make sure that at least some env is loaded that is
-needed to provide git, python, cmake using, for example:
-
-  source $TRILNOS_DIR/cmake/std/atdm/load-env.sh gnu
-
 Then, for example, to locally test a few builds for just Kokkos use:
 
   ./checkin-test-atdm.sh \\
@@ -66,7 +61,7 @@ system and not the login node or it will completely fill up the login node.
 To reproduce any build just do:
 
   cd <job-name-keys>/
-  soruce load-env.sh
+  source load-env.sh
   ./do-configure
   make -j16
   ctest -j16
@@ -175,6 +170,18 @@ done
 #
 # D) Loop over individual builds and run them
 #
+
+echo
+echo "Load some env to get python, cmake, etc ..."
+echo
+source $STD_ATDM_DIR/load-env.sh gnu
+# NOTE: Above, it does not matter which env you load.  Any of them will
+# provide the right python, cmake, etc.  Here we just assume that the 'gnu'
+# compilers will be on every ATDM system.
+
+# TODO: If every env does not have 'gnu', then add a special keyword 'default'
+# for the load-env.sh script to allow some default env to be loaded on a
+# system.
 
 echo
 echo "Running configure, build, and/or testing for $ATDM_NUM_BULDS builds: $ATDM_JOB_NAME_KEYS_LIST"
