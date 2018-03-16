@@ -50,6 +50,12 @@
 #include<exception>
 #include<iostream>
 
+/** \class LowerBandedMatrix
+    \brief Implements GAXPY-like operations with a lower banded matrix 
+           and its inverse if it exists.
+*/
+
+
 namespace details {
 using namespace std;
 
@@ -64,6 +70,7 @@ private:
   vector<vector<Real>>  band;
   size_type             num_bands;
   bool                  is_invertible;
+
 public:   
 
   LowerBandedMatrix( vector<size_type> band_index, 
