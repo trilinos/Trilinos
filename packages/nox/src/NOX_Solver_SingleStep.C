@@ -61,16 +61,21 @@ SingleStep(const Teuchos::RCP<NOX::Abstract::Group>& xGrp,
   solnPtr(xGrp),                         // pointer to xGrp
   oldSolnPtr(xGrp->clone(DeepCopy)),     // create via clone
   paramsPtr(p),
-  ignoreLinearSolverFailures(false)
+  ignoreLinearSolverFailures(false),
+  updateJacobian(true)
 {
   Teuchos::ParameterList validParams;
   validParams.set("Ignore Linear Solver Failures",false);
+  validParams.set("Update Jacobian",true);
   p->sublist("Single Step Solver").validateParametersAndSetDefaults(validParams,0);
   NOX::Solver::validateSolverOptionsSublist(p->sublist("Solver Options"));
   globalDataPtr = Teuchos::rcp(new NOX::GlobalData(p));
   utilsPtr = globalDataPtr->getUtils();
   prePostOperator.reset(utilsPtr,p->sublist("Solver Options"));
   ignoreLinearSolverFailures = p->sublist("Single Step Solver").get<bool>("Ignore Linear Solver Failures");
+  updateJacobian = p->sublist("Single Step Solver").get<bool>("Update Jacobian");
+  if (not updateJacobian)
+    frozenJacobianPtr = solnPtr->clone(DeepCopy); // take ownership of Jacobian
   init();
 }
 
@@ -119,7 +124,7 @@ NOX::StatusTest::StatusType NOX::Solver::SingleStep::getStatus()
 bool NOX::Solver::SingleStep::check(NOX::Abstract::Group::ReturnType ret,
     const std::string& task)
 {
-  if ((ret != NOX::Abstract::Group::Ok) and (not ignoreLinearSolverFailures)) {
+  if (ret != NOX::Abstract::Group::Ok) {
     if (utilsPtr->isPrintType(Utils::Error))
       utilsPtr->out() << "NOX::Solver::SingleStep - Unable to " << task << std::endl;
     return false;
@@ -129,15 +134,30 @@ bool NOX::Solver::SingleStep::check(NOX::Abstract::Group::ReturnType ret,
 
 bool NOX::Solver::SingleStep::try_step()
 {
-  if (!check(solnPtr->computeJacobian(), "compute Jacobian"))
-    return false;
   if (!check(solnPtr->computeF(), "compute F"))
     return false;
-  if (!check(solnPtr->computeNewton(paramsPtr->sublist("Linear Solver")),
-             "solve Newton system"))
-    return false;
-  const NOX::Abstract::Vector& dir = solnPtr->getNewton();
-  solnPtr->computeX(*oldSolnPtr, dir, 1.0);
+
+  if (updateJacobian) {
+    if (!check(solnPtr->computeJacobian(), "compute Jacobian"))
+      return false;
+  }
+
+  // Pick Jacobian matrix to use
+  Teuchos::RCP<NOX::Abstract::Group> jacobian = updateJacobian ? solnPtr : frozenJacobianPtr;
+
+  // Reuse memory in group instead of new allocation for dir
+  NOX::Abstract::Vector& dir = const_cast<NOX::Abstract::Vector&>(solnPtr->getNewton());
+  const auto status = jacobian->applyJacobianInverse(paramsPtr->sublist("Linear Solver"),
+                                                     solnPtr->getF(),
+                                                     dir);
+
+  if (!ignoreLinearSolverFailures) {
+    if (!check(status,"solve Newton system"))
+      return false;
+  }
+
+  solnPtr->computeX(*oldSolnPtr, dir, -1.0);
+
   return true;
 }
 
