@@ -209,9 +209,14 @@ namespace Tpetra {
   void initialize (int* argc, char*** argv, MPI_Comm comm)
   {
     initialize (argc, argv);
-    // Set the default communicator.  What if users have already
-    // called initialize() before, but with a different default
-    // communicator?  There are two possible things we could do here:
+    // Set the default communicator.  We set it here, after the above
+    // initialize() call, just in case users have not yet initialized
+    // MPI.  (This is legal if users pass in a predefined
+    // communicator, like MPI_COMM_WORLD or MPI_COMM_SELF.)
+    //
+    // What if users have already called initialize() before, but with
+    // a different default communicator?  There are two possible
+    // things we could do here:
     //
     //   1. Test via MPI_Comm_compare whether comm differs from the
     //      raw MPI communicator in wrappedDefaultComm_ (if indeed it
@@ -235,23 +240,8 @@ namespace Tpetra {
               const Teuchos::RCP<const Teuchos::Comm<int> >& comm)
   {
     initialize (argc, argv);
-    // Set the default communicator.  What if users have already
-    // called initialize() before, but with a different default
-    // communicator?  There are two possible things we could do here:
-    //
-    //   1. Test via MPI_Comm_compare whether comm differs from the
-    //      raw MPI communicator in wrappedDefaultComm_ (if indeed it
-    //      is an MpiComm).
-    //   2. Accept that the user might want to change the default
-    //      communicator, and let them do it.
-    //
-    // I prefer #2.  Perhaps it would be sensible to print a warning
-    // here, but on which process?  Would we use the old or the new
-    // communicator to find that process' rank?  We don't want to use
-    // MPI_COMM_WORLD's Process 0, since neither communicator might
-    // include that process.  Furthermore, in some environments, only
-    // Process 0 in MPI_COMM_WORLD is allowed to do I/O.  Thus, we
-    // just let the change go without a warning.
+    // See notes above on why we set the default communicator after
+    // calling two-argument initialize().
     wrappedDefaultComm_ = comm;
   }
 
