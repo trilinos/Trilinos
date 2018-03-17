@@ -80,17 +80,16 @@ void testMain (bool& success, int argc, char* argv[])
   }
   const int myRank = getRankInCommWorld ();
 
-  Kokkos::initialize (argc, argv);
-  if (! Kokkos::is_initialized ()) {
+  if (Kokkos::is_initialized ()) {
     success = false;
-    cout << "Kokkos::is_initialized claims Kokkos was not initialized, "
-      "even after Kokkos::initialize was called." << endl;
+    cout << "Kokkos::is_initialized() is true, "
+      "even though Kokkos::initialize was not yet called." << endl;
     return;
   }
 
-  // In this example, the "user" has called MPI_Init before
-  // Tpetra::initialize is called.  Tpetra::initialize must not try to
-  // call it again.
+  // This test exercises the case where the "user" has called MPI_Init
+  // before calling Tpetra::initialize, but has not yet called
+  // Kokkos::initialize.
   Tpetra::initialize (&argc, &argv);
   if (! isMpiInitialized ()) {
     success = false;
@@ -102,8 +101,8 @@ void testMain (bool& success, int argc, char* argv[])
   if (! Kokkos::is_initialized ()) {
     success = false;
     cout << "Kokkos::is_initialized() is false, "
-      "even after Kokkos::initialize and Tpetra::initialize were called."
-      << endl;
+      "even after Tpetra::initialize was called." << endl;
+    Tpetra::finalize (); // just for completeness
     return;
   }
 
@@ -116,6 +115,9 @@ void testMain (bool& success, int argc, char* argv[])
     if (myRank == 0) {
       cout << "Tpetra::isInitialized() is false on at least one process"
 	", even after Tpetra::initialize has been called." << endl;
+    }
+    if (Kokkos::is_initialized ()) {
+      Kokkos::finalize ();
     }
     (void) MPI_Finalize (); // just for completeness
     return;
@@ -132,7 +134,7 @@ void testMain (bool& success, int argc, char* argv[])
     }
   }
 
-  const int myTpetraRank = comm.is_null () ? 0 : comm->getRank ();
+  const int myTpetraRank = comm.is_null () ? 0 : comm->getRank ();  
   const bool ranksSame = allTrueInCommWorld (myRank == myTpetraRank);
   if (! ranksSame) {
     success = false;
@@ -149,11 +151,10 @@ void testMain (bool& success, int argc, char* argv[])
   if (myRank == 0) {
     cout << "Called Tpetra::finalize" << endl;
   }
-  // Since the "user" is responsible for calling Kokkos::finalize,
-  // Tpetra::finalize should NOT have called Kokkos::finalize.
-  if (! Kokkos::is_initialized ()) {
+  // Tpetra::finalize was responsible for calling Kokkos::finalize.
+  if (Kokkos::is_initialized ()) {
     success = false;
-    cout << "Kokkos::is_initialized() is false, "
+    cout << "Kokkos::is_initialized() is true, "
       "after Tpetra::initialize was called." << endl;
   }
   // Since the "user" is responsible for calling MPI_Finalize,

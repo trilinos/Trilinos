@@ -1,5 +1,6 @@
 #include <cstdlib>
 #include <iostream>
+#include <stdexcept>
 #include "Tpetra_Core.hpp"
 #include "Kokkos_Core.hpp"
 
@@ -18,6 +19,13 @@ bool isMpiInitialized ()
   return mpiInitializedInt != 0;
 }
 
+bool isMpiFinalized ()
+{
+  int mpiFinalizedInt = 0;
+  (void) MPI_Finalized (&mpiFinalizedInt);
+  return mpiFinalizedInt != 0;
+}
+  
 int getRankInCommWorld ()
 {
   int myRank = 0;
@@ -65,60 +73,72 @@ void testMain (bool& success, int argc, char* argv[])
   using std::cout;
   using std::endl;
 
+  // In this example, Tpetra::initialize is responsible for calling
+  // MPI_Init and MPI_Finalize, but the "user" is responsible for
+  // calling Kokkos::initialize and Kokkos::finalize.
   if (isMpiInitialized ()) {
     success = false;
-    cout << "MPI_Initialized claims MPI is initialized, "
-      "before MPI_Init was called" << endl;
+    cout << "MPI_Initialized claims MPI was initialized, "
+      "before Tpetra::initialize was called." << endl;
     return;
   }
-  (void) MPI_Init (&argc, &argv);
-  if (! isMpiInitialized ()) {
-    success = false;
-    cout << "MPI_Initialized claims MPI is not initialized, "
-      "even after MPI_Init was called" << endl;
-    return;
-  }
-  const int myRank = getRankInCommWorld ();
 
+  if (Kokkos::is_initialized ()) {
+    success = false;
+    cout << "Kokkos::is_initialized() is true, "
+      "before Kokkos::initialize was called." << endl;
+    return;
+  }
   Kokkos::initialize (argc, argv);
   if (! Kokkos::is_initialized ()) {
     success = false;
-    cout << "Kokkos::is_initialized claims Kokkos was not initialized, "
-      "even after Kokkos::initialize was called." << endl;
+    cout << "Kokkos::is_initialized() is false, "
+      "after Kokkos::initialize was called." << endl;
     return;
   }
 
-  // In this example, the "user" has called MPI_Init before
-  // Tpetra::initialize is called.  Tpetra::initialize must not try to
-  // call it again.
-  Tpetra::initialize (&argc, &argv);
+  cout << "Calling Tpetra::initialize" << endl;
+  try {
+    Tpetra::initialize (&argc, &argv);
+  }
+  catch (std::exception& e) {
+    success = false;
+    cout << "Tpetra::initialize threw an exception: "
+	 << e.what () << endl;
+  }
+  catch (...) {
+    success = false;
+    cout << "Tpetra::initialize threw an exception "
+      "not a subclass of std::exception." << endl;
+  }
+  cout << "Done with Tpetra::initialize" << endl;
+  
   if (! isMpiInitialized ()) {
     success = false;
-    cout << "MPI_Initialized claims MPI was not initialized, "
-      "even after MPI_Init and Tpetra::initialize were called" << endl;
-    Tpetra::finalize (); // just for completeness
+    cout << "MPI_Initialized claims MPI is not initialized, "
+      "even after MPI_Init and Tpetra::initialize were called." << endl;
+    Kokkos::finalize (); // for completeness
     return;
   }
-  if (! Kokkos::is_initialized ()) {
-    success = false;
-    cout << "Kokkos::is_initialized() is false, "
-      "even after Kokkos::initialize and Tpetra::initialize were called."
-      << endl;
-    return;
-  }
+  // MPI claims to have been initialized, so after this point and
+  // before Tpetra::finalize, it should be safe to use MPI functions.
+  
+  const int myRank = getRankInCommWorld ();
 
-  // MPI is initialized, so we can check whether all processes report
-  // Tpetra as initialized.
-  const bool tpetraIsNowInitialized =
-    allTrueInCommWorld (Tpetra::isInitialized ());
-  if (! tpetraIsNowInitialized) {
+  // Do all processes report Tpetra as initialized?
+  const bool tpetraInitialized = allTrueInCommWorld (Tpetra::isInitialized ());
+  if (! tpetraInitialized) {
     success = false;
     if (myRank == 0) {
-      cout << "Tpetra::isInitialized() is false on at least one process"
-	", even after Tpetra::initialize has been called." << endl;
+      cout << "Tpetra::isInitialized() is false on at least one process, "
+	"even after Tpetra::initialize() has been called." << endl;
     }
-    (void) MPI_Finalize (); // just for completeness
-    return;
+  }
+  
+  if (! Kokkos::is_initialized ()) {
+    success = false;
+    cout << "Kokkos::is_initialized() is false, even after "
+      "Kokkos::initialize and Tpetra::initialize were called." << endl;
   }
 
   auto comm = Tpetra::getDefaultComm ();
@@ -132,6 +152,7 @@ void testMain (bool& success, int argc, char* argv[])
     }
   }
 
+  // Means we should run on at least two MPI processes.
   const int myTpetraRank = comm.is_null () ? 0 : comm->getRank ();
   const bool ranksSame = allTrueInCommWorld (myRank == myTpetraRank);
   if (! ranksSame) {
@@ -149,36 +170,38 @@ void testMain (bool& success, int argc, char* argv[])
   if (myRank == 0) {
     cout << "Called Tpetra::finalize" << endl;
   }
-  // Since the "user" is responsible for calling Kokkos::finalize,
-  // Tpetra::finalize should NOT have called Kokkos::finalize.
+  // Since Tpetra is responsible for calling MPI_Finalize,
+  // Tpetra::finalize MUST have called MPI_Finalize.
+  if (! isMpiFinalized ()) {
+    success = false;
+    cout << "Tpetra::finalize() did not call MPI_Finalize." << endl;
+  }
+  // Kokkos is like Tpetra; Kokkos::is_initialized() means "was
+  // initialized and was not finalized."  That differs from MPI, where
+  // MPI_Initialized only refers to MPI_Init and MPI_Finalized only
+  // refers to MPI_Finalize.
   if (! Kokkos::is_initialized ()) {
     success = false;
-    cout << "Kokkos::is_initialized() is false, "
-      "after Tpetra::initialize was called." << endl;
-  }
-  // Since the "user" is responsible for calling MPI_Finalize,
-  // Tpetra::finalize should NOT have called MPI_Finalize.
-  if (! isMpiInitialized ()) {
-    success = false;
-    cout << "Tpetra::finalize() seems to have called MPI_Finalize, "
-      "even though the user was responsible for initializing and "
-      "finalizing MPI." << endl;
+    cout << "Tpetra::finalize was not supposed to call "
+      "Kokkos::finalize, but apparently did." << endl;
     return;
   }
 
-  // MPI is still initialized, so we can check whether processes are
-  // consistent.
-  const bool tpetraGloballyFinalized =
-    allTrueInCommWorld (! Tpetra::isInitialized ());
-  if (! tpetraGloballyFinalized) {
+  // MPI is no longer initialized, so we can't all-reduce on this.
+  if (Tpetra::isInitialized ()) {
     success = false;
     if (myRank == 0) {
-      cout << "Tpetra::isInitialized() returns true on some process, "
+      cout << "Tpetra::isInitialized() returns true, "
 	"even after Tpetra::finalize() has been called" << endl;
     }
   }
 
-  (void) MPI_Finalize ();
+  Kokkos::finalize ();
+  if (Kokkos::is_initialized ()) {
+    success = false;
+    cout << "Kokkos::is_initialized() is false "
+      "even after calling Kokkos::finalize." << endl;
+  }
 }
 
 class CaptureOstream {

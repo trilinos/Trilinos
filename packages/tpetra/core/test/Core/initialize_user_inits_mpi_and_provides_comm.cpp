@@ -1,7 +1,6 @@
 #include <cstdlib>
 #include <iostream>
 #include "Tpetra_Core.hpp"
-#include "Kokkos_Core.hpp"
 
 #if ! defined(HAVE_TPETRACORE_MPI)
 #  error "Building and testing this example requires MPI."
@@ -18,24 +17,25 @@ bool isMpiInitialized ()
   return mpiInitializedInt != 0;
 }
 
-int getRankInCommWorld ()
+int getRankInComm (MPI_Comm comm)
 {
   int myRank = 0;
-  (void) MPI_Comm_rank (MPI_COMM_WORLD, &myRank);
+  (void) MPI_Comm_rank (comm, &myRank);
   return myRank;
 }
-
-bool allTrueInCommWorld (const bool lclTruth)
+  
+bool allTrueInComm (const bool lclTruth, MPI_Comm comm)
 {
   int lclTruthInt = lclTruth ? 1 : 0;
   int gblTruthInt = 0;
-  MPI_Allreduce (&lclTruthInt, &gblTruthInt, 1, MPI_INT,
-		 MPI_MIN, MPI_COMM_WORLD);
+  (void) MPI_Allreduce (&lclTruthInt, &gblTruthInt, 1,
+			MPI_INT, MPI_MIN, comm);
   return gblTruthInt != 0;
 }
 
 bool
-tpetraCommIsLocallyLegit (const Teuchos::Comm<int>* wrappedTpetraComm)
+tpetraCommIsLocallyLegit (const Teuchos::Comm<int>* wrappedTpetraComm,
+			  MPI_Comm expectedMpiComm)
 {
   if (wrappedTpetraComm == nullptr) {
     return false;
@@ -52,8 +52,8 @@ tpetraCommIsLocallyLegit (const Teuchos::Comm<int>* wrappedTpetraComm)
     return false;
   }
   int result = MPI_UNEQUAL;
-  (void) MPI_Comm_compare (MPI_COMM_WORLD, tpetraComm, &result);
-  // Tpetra reserves the right to MPI_Comm_dup on the input comm.
+  (void) MPI_Comm_compare (expectedMpiComm, tpetraComm, &result);
+  // Tpetra reserves the right to MPI_Comm_dup the input comm.
   return result == MPI_IDENT || result == MPI_CONGRUENT;
 }
   
@@ -67,117 +67,125 @@ void testMain (bool& success, int argc, char* argv[])
 
   if (isMpiInitialized ()) {
     success = false;
-    cout << "MPI_Initialized claims MPI is initialized, "
-      "before MPI_Init was called" << endl;
+    cout << "TEST FAILED: MPI_Initialized claims MPI is "
+      "initialized, before MPI_Init was called." << endl;
     return;
   }
   (void) MPI_Init (&argc, &argv);
   if (! isMpiInitialized ()) {
     success = false;
-    cout << "MPI_Initialized claims MPI is not initialized, "
-      "even after MPI_Init was called" << endl;
-    return;
-  }
-  const int myRank = getRankInCommWorld ();
-
-  Kokkos::initialize (argc, argv);
-  if (! Kokkos::is_initialized ()) {
-    success = false;
-    cout << "Kokkos::is_initialized claims Kokkos was not initialized, "
-      "even after Kokkos::initialize was called." << endl;
+    cout << "TEST FAILED: MPI_Initialized claims MPI is not "
+      "initialized, even after MPI_Init was called." << endl;
     return;
   }
 
-  // In this example, the "user" has called MPI_Init before
-  // Tpetra::initialize is called.  Tpetra::initialize must not try to
-  // call it again.
-  Tpetra::initialize (&argc, &argv);
+  // Split off Process 0 into a comm by itself.  Only invoke
+  // Tpetra::initialize and Tpetra::finalize on the remaining
+  // processes.  The point is to test that there are no hidden
+  // dependencies on MPI_COMM_WORLD, since those often manifest as
+  // asking Process 0 in MPI_COMM_WORLD to do something.
+  const int color = (getRankInComm (MPI_COMM_WORLD) == 0) ? 0 : 1;
+  MPI_Comm splitComm = MPI_COMM_NULL;
+  {
+    const int key = 0;
+    const int errCode =
+      MPI_Comm_split (MPI_COMM_WORLD, color, key, &splitComm);
+    if (errCode != MPI_SUCCESS) {
+      success = false;
+      cout << "TEST FAILED: MPI_Comm_split failed!" << endl;
+      (void) MPI_Abort (MPI_COMM_WORLD, EXIT_FAILURE);
+    }
+  }
+
+  if (color == 0) { // this subcomm doesn't participate
+    MPI_Comm_free (&splitComm);
+    MPI_Finalize ();
+    return;
+  }
+  // Invariant: color == 1, and we're on the corresp. splitComm.
+  const int mySplitRank = getRankInComm (splitComm);
+
+  // Test the case where users call MPI_Init themselves,
+  Tpetra::initialize (&argc, &argv, splitComm);
   if (! isMpiInitialized ()) {
     success = false;
-    cout << "MPI_Initialized claims MPI was not initialized, "
-      "even after MPI_Init and Tpetra::initialize were called" << endl;
+    cout << "TEST FAILED: MPI_Initialized claims MPI was not initialized, "
+      "even after MPI_Init and Tpetra::initialize were called." << endl;
     Tpetra::finalize (); // just for completeness
-    return;
-  }
-  if (! Kokkos::is_initialized ()) {
-    success = false;
-    cout << "Kokkos::is_initialized() is false, "
-      "even after Kokkos::initialize and Tpetra::initialize were called."
-      << endl;
     return;
   }
 
   // MPI is initialized, so we can check whether all processes report
   // Tpetra as initialized.
   const bool tpetraIsNowInitialized =
-    allTrueInCommWorld (Tpetra::isInitialized ());
+    allTrueInComm (Tpetra::isInitialized (), splitComm);
   if (! tpetraIsNowInitialized) {
     success = false;
-    if (myRank == 0) {
-      cout << "Tpetra::isInitialized() is false on at least one process"
-	", even after Tpetra::initialize has been called." << endl;
+    if (mySplitRank == 0) {
+      cout << "TEST FAILED: Tpetra::isInitialized() is false on at least one "
+	"process, even after Tpetra::initialize was called." << endl;
     }
-    (void) MPI_Finalize (); // just for completeness
-    return;
+    (void) MPI_Abort (MPI_COMM_WORLD, EXIT_FAILURE);
   }
 
   auto comm = Tpetra::getDefaultComm ();
+  const bool tpetraCommLocallyValid =
+    tpetraCommIsLocallyLegit (comm.get (), splitComm);
   const bool tpetraCommGloballyValid =
-    allTrueInCommWorld (tpetraCommIsLocallyLegit (comm.get ()));
+    allTrueInComm (tpetraCommLocallyValid, splitComm);
   if (! tpetraCommGloballyValid) {
     success = false;
-    if (myRank == 0) {
-      cout << "Tpetra::getDefaultComm() returns an invalid comm "
-	"on at least one process." << endl;
+    if (mySplitRank == 0) {
+      cout << "TEST FAILED: Tpetra::getDefaultComm() returns "
+	"an invalid comm on at least one process." << endl;
     }
   }
 
-  const int myTpetraRank = comm.is_null () ? 0 : comm->getRank ();
-  const bool ranksSame = allTrueInCommWorld (myRank == myTpetraRank);
-  if (! ranksSame) {
-    success = false;
-    if (myRank == 0) {
-      cout << "MPI rank does not match Tpetra rank "
-	"on at least one process" << endl;
+  {
+    // The above check already tests whether comm is null, so we just
+    // need to make sure that error case won't dereference nullptr.
+    const int myTpetraRank = comm.is_null () ? 0 : comm->getRank ();
+    const bool ranksSame =
+      allTrueInComm (mySplitRank == myTpetraRank, splitComm);
+    if (! ranksSame) {
+      success = false;
+      if (mySplitRank == 0) {
+	cout << "TEST FAILED: MPI rank does not match Tpetra rank "
+	  "on at least one process." << endl;
+      }
     }
   }
 
-  if (myRank == 0) {
+  if (mySplitRank == 0) {
     cout << "About to call Tpetra::finalize" << endl;
   }
   Tpetra::finalize ();
-  if (myRank == 0) {
+  if (mySplitRank == 0) {
     cout << "Called Tpetra::finalize" << endl;
-  }
-  // Since the "user" is responsible for calling Kokkos::finalize,
-  // Tpetra::finalize should NOT have called Kokkos::finalize.
-  if (! Kokkos::is_initialized ()) {
-    success = false;
-    cout << "Kokkos::is_initialized() is false, "
-      "after Tpetra::initialize was called." << endl;
   }
   // Since the "user" is responsible for calling MPI_Finalize,
   // Tpetra::finalize should NOT have called MPI_Finalize.
   if (! isMpiInitialized ()) {
     success = false;
-    cout << "Tpetra::finalize() seems to have called MPI_Finalize, "
-      "even though the user was responsible for initializing and "
-      "finalizing MPI." << endl;
+    cout << "TEST FAILED: Tpetra::finalize() seems to have called "
+      "MPI_Finalize, even though the user was supposed to be responsible for "
+      "initializing and finalizing MPI." << endl;
     return;
   }
 
   // MPI is still initialized, so we can check whether processes are
   // consistent.
   const bool tpetraGloballyFinalized =
-    allTrueInCommWorld (! Tpetra::isInitialized ());
+    allTrueInComm (! Tpetra::isInitialized (), splitComm);
   if (! tpetraGloballyFinalized) {
     success = false;
-    if (myRank == 0) {
-      cout << "Tpetra::isInitialized() returns true on some process, "
-	"even after Tpetra::finalize() has been called" << endl;
+    if (mySplitRank == 0) {
+      cout << "TEST FAILED: Tpetra::isInitialized() returns true on some "
+	"process, even after Tpetra::finalize() has been called." << endl;
     }
   }
 
+  (void) MPI_Comm_free (&splitComm);
   (void) MPI_Finalize ();
 }
 
