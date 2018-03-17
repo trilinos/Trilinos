@@ -422,7 +422,19 @@ TEUCHOS_UNIT_TEST( asSafe, stringToReal ) {
   // Test string -> double conversions that should throw,
   // if sizeof(long double) > sizeof(double).
   //
-  if (sizeof (long double) > sizeof (double)) {
+  const int sizeof_long_double = sizeof(long double);
+  const int sizeof_double = sizeof(double);
+  const int max_exponent10_long_double = std::numeric_limits<long double>::max_exponent10;
+  const int max_exponent10_double = std::numeric_limits<double>::max_exponent10;
+
+  out << "sizeof_long_double = " << sizeof_long_double << "\n";
+  out << "sizeof_double = " << sizeof_double << "\n";
+  out << "max_exponent10_long_double = " << max_exponent10_long_double << "\n";
+  out << "max_exponent10_double = " << max_exponent10_double << "\n";
+ 
+  if (sizeof_long_double > sizeof_double
+    && max_exponent10_long_double > max_exponent10_double)
+  {
     out << "Testing converting from 'long double' to 'double' that does not fit ...\n";
     {
       TEST_THROW(valD = asSafe<double>(valToString(minLD)), std::range_error);
