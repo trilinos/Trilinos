@@ -1,6 +1,7 @@
 #include <cstdlib>
 #include <iostream>
 #include "Tpetra_Core.hpp"
+#include "Kokkos_Core.hpp"
 
 #if ! defined(HAVE_TPETRACORE_MPI)
 #  error "Building and testing this example requires MPI."
@@ -72,10 +73,17 @@ void testMain (bool& success, int argc, char* argv[])
   using std::endl;
 
   // In this example, Tpetra::initialize is responsible for calling
-  // MPI_Init and MPI_Finalize.
+  // MPI_Init and MPI_Finalize.  Ditto for Kokkos::initialize and
+  // Kokkos::finalize.
   if (isMpiInitialized ()) {
     success = false;
-    cout << "MPI_Initialized claims MPI is initialized, "
+    cout << "MPI_Initialized claims MPI was initialized, "
+      "before Tpetra::initialize was called." << endl;
+    return;
+  }
+  if (Kokkos::is_initialized ()) {
+    success = false;
+    cout << "Kokkos::is_initialized() is true, "
       "before Tpetra::initialize was called." << endl;
     return;
   }
@@ -86,6 +94,12 @@ void testMain (bool& success, int argc, char* argv[])
     cout << "MPI_Initialized claims MPI is not initialized, "
       "even after MPI_Init and Tpetra::initialize were called." << endl;
     Tpetra::finalize (); // just for completeness
+    return;
+  }
+  if (! Kokkos::is_initialized ()) {
+    success = false;
+    cout << "Kokkos::is_initialized returned false, "
+      "after Tpetra::initialize was called." << endl;
     return;
   }
   const int myRank = getRankInCommWorld ();
@@ -137,6 +151,15 @@ void testMain (bool& success, int argc, char* argv[])
   if (! isMpiFinalized ()) {
     success = false;
     cout << "Tpetra::finalize() did not call MPI_Finalize." << endl;
+  }
+  // Kokkos is like Tpetra; Kokkos::is_initialized() means "was
+  // initialized and was not finalized."  That differs from MPI, where
+  // MPI_Initialized only refers to MPI_Init and MPI_Finalized only
+  // refers to MPI_Finalize.
+  if (Kokkos::is_initialized ()) {
+    success = false;
+    cout << "Tpetra::finalize did not call Kokkos::finalize." << endl;
+    return;
   }
 
   // MPI is no longer initialized, so we can't all-reduce on this.
