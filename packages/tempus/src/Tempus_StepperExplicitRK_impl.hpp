@@ -13,6 +13,7 @@
 #include "Tempus_RKButcherTableau.hpp"
 #include "Teuchos_VerboseObjectParameterListHelpers.hpp"
 #include "Thyra_VectorStdOps.hpp"
+#include "Tempus_StepperRKStartingStepSize.hpp"
 
 
 namespace Tempus {
@@ -134,8 +135,12 @@ void StepperExplicitRK<Scalar>::setObserver(
   if (obs == Teuchos::null) {
     // Create default observer, otherwise keep current observer.
     if (stepperExplicitRKObserver_ == Teuchos::null) {
-      stepperExplicitRKObserver_ =
-        Teuchos::rcp(new StepperExplicitRKObserver<Scalar>());
+       if (stepperPL_->get<bool>("Use Embedded",false))
+          stepperExplicitRKObserver_ =
+             Teuchos::rcp(new StepperRKStartingStepSize<Scalar>());
+       else
+          stepperExplicitRKObserver_ =
+             Teuchos::rcp(new StepperExplicitRKObserver<Scalar>());
     }
   } else {
     stepperExplicitRKObserver_ = obs;
@@ -228,6 +233,7 @@ void StepperExplicitRK<Scalar>::takeStep(
     // At this point, the stepper has passed.
     // but when using adaptive time stepping, the embedded method can change the step status
     workingState->getStepperState()->stepperStatus_ = Status::PASSED;
+    workingState->setTime(time + dt);
 
     if (ERK_ButcherTableau_->isEmbedded() and stepperPL_->get<bool>("Use Embedded")){
 
@@ -264,6 +270,7 @@ void StepperExplicitRK<Scalar>::takeStep(
        // test if step should be rejected
        if (err > 1.0){
           workingState->getStepperState()->stepperStatus_ = Status::FAILED;
+          workingState->setTime(time);
        }
     }
 
