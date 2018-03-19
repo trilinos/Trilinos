@@ -7,14 +7,14 @@
 #include <Kokkos_Random.hpp>
 #include <impl/Kokkos_Timer.hpp>
 
-#include "TachoExp_Util.hpp"
-#include "TachoExp_Blas_Team.hpp"
-#include "TachoExp_Blas_External.hpp"
+#include "Tacho_Util.hpp"
+#include "Tacho_Blas_Team.hpp"
+#include "Tacho_Blas_External.hpp"
 
-#include "TachoExp_Lapack_Team.hpp"
-#include "TachoExp_Lapack_External.hpp"
+#include "Tacho_Lapack_Team.hpp"
+#include "Tacho_Lapack_External.hpp"
 
-using namespace Tacho::Experimental;
+using namespace Tacho;
 using std::abs;
 using Kokkos::abs;
 

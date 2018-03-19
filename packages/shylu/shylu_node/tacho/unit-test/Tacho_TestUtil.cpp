@@ -1,9 +1,9 @@
 #include <gtest/gtest.h>
 #include <Kokkos_Core.hpp>
 
-#include "TachoExp_Util.hpp"
+#include "Tacho_Util.hpp"
 
-using namespace Tacho::Experimental;
+using namespace Tacho;
 
 TEST( Util, is_complex_type ) {
   EXPECT_FALSE(int(ArithTraits<double>::is_complex));

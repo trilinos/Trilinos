@@ -25,7 +25,7 @@ static const std::string MM_TEST_FILE="test_double";
 
 #include "Tacho_TestDenseLinearAlgebra.hpp"
 
-using namespace Tacho::Experimental;
+using namespace Tacho;
 
 int main (int argc, char *argv[]) {
 
