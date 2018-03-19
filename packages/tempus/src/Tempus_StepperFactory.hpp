@@ -23,6 +23,7 @@
 #include "Tempus_StepperIMEX_RK_Partition.hpp"
 #include "Tempus_StepperLeapfrog.hpp"
 #include "Tempus_StepperOperatorSplit.hpp"
+#include "Tempus_StepperTrapezoidal.hpp"
 
 
 namespace Tempus {
@@ -84,6 +85,8 @@ private:
       return rcp(new StepperForwardEuler<Scalar>(model, stepperPL));
     else if (stepperType == "Backward Euler")
       return rcp(new StepperBackwardEuler<Scalar>(model, stepperPL));
+    else if (stepperType == "Trapezoidal Method")
+      return rcp(new StepperTrapezoidal<Scalar>(model, stepperPL));
     else if (stepperType == "BDF2")
       return rcp(new StepperBDF2<Scalar>(model, stepperPL));
     else if (stepperType == "Newmark Implicit a-Form")

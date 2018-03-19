@@ -6,8 +6,8 @@
 // ****************************************************************************
 // @HEADER
 
-#ifndef Tempus_StepperBackwardEuler_impl_hpp
-#define Tempus_StepperBackwardEuler_impl_hpp
+#ifndef Tempus_StepperTrapezoidal_impl_hpp
+#define Tempus_StepperTrapezoidal_impl_hpp
 
 #include "Tempus_config.hpp"
 #include "Tempus_StepperFactory.hpp"
@@ -22,15 +22,12 @@ namespace Tempus {
 template<class Scalar> class StepperFactory;
 
 
-// StepperBackwardEuler definitions:
+// StepperTrapezoidal definitions:
 template<class Scalar>
-StepperBackwardEuler<Scalar>::StepperBackwardEuler(
+StepperTrapezoidal<Scalar>::StepperTrapezoidal(
   const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel,
   Teuchos::RCP<Teuchos::ParameterList> pList)
 {
-  using Teuchos::RCP;
-  using Teuchos::ParameterList;
-
   // Set all the input parameters and call initialize
   this->setParameterList(pList);
   this->setModel(appModel);
@@ -38,124 +35,61 @@ StepperBackwardEuler<Scalar>::StepperBackwardEuler(
 }
 
 
-/** \brief Set the predictor to a pre-defined predictor in the ParameterList.
- *  The predictor is set to predictorName sublist in the Stepper's
- *  ParameterList.  The predictorName sublist should already be defined
- *  in the Stepper's ParameterList.  Otherwise it will fail.
- */
 template<class Scalar>
-void StepperBackwardEuler<Scalar>::setPredictor(std::string predictorName)
-{
-  using Teuchos::RCP;
-  using Teuchos::ParameterList;
-
-  RCP<ParameterList> predPL =
-    Teuchos::sublist(this->stepperPL_, predictorName, true);
-  this->stepperPL_->set("Predictor Name", predictorName);
-  if (predictorStepper_ != Teuchos::null) predictorStepper_ = Teuchos::null;
-  RCP<StepperFactory<Scalar> > sf = Teuchos::rcp(new StepperFactory<Scalar>());
-}
-
-
-/** \brief Set the predictor to the supplied Parameter sublist.
- *  This adds a new predictor Parameter sublist to the Stepper's ParameterList.
- *  If the predictor sublist is null, it tests if the predictor is set in
- *  the Stepper's ParameterList.
- */
-template<class Scalar>
-void StepperBackwardEuler<Scalar>::setPredictor(
-  Teuchos::RCP<Teuchos::ParameterList> predPL)
-{
-  using Teuchos::RCP;
-  using Teuchos::ParameterList;
-
-  Teuchos::RCP<Teuchos::ParameterList> stepperPL = this->stepperPL_;
-  std::string predictorName =
-    stepperPL->get<std::string>("Predictor Name","None");
-  if (is_null(predPL)) {
-    if (predictorName != "None") {
-      RCP<ParameterList> predPL =
-        Teuchos::sublist(stepperPL, predictorName, true);
-      RCP<StepperFactory<Scalar> > sf =
-        Teuchos::rcp(new StepperFactory<Scalar>());
-      predictorStepper_ =
-        sf->createStepper(this->wrapperModel_->getAppModel(), predPL);
-    }
-  } else {
-    TEUCHOS_TEST_FOR_EXCEPTION( predictorName == predPL->name(),
-      std::logic_error,
-         "Error - Trying to add a predictor that is already in ParameterList!\n"
-      << "  Stepper Type = " << stepperPL->get<std::string>("Stepper Type")
-      << "\n" << "  Predictor Name  = "<<predictorName<<"\n");
-    predictorName = predPL->name();
-    stepperPL->set("Predictor Name", predictorName);
-    stepperPL->set(predictorName, *predPL);           // Add sublist
-    if (predictorStepper_ != Teuchos::null) predictorStepper_ = Teuchos::null;
-    RCP<StepperFactory<Scalar> > sf =
-      Teuchos::rcp(new StepperFactory<Scalar>());
-    predictorStepper_ =
-      sf->createStepper(this->wrapperModel_->getAppModel(), predPL);
-  }
-}
-
-
-template<class Scalar>
-void StepperBackwardEuler<Scalar>::setObserver(
-  Teuchos::RCP<StepperBackwardEulerObserver<Scalar> > obs)
+void StepperTrapezoidal<Scalar>::setObserver(
+  Teuchos::RCP<StepperTrapezoidalObserver<Scalar> > obs)
 {
   if (obs == Teuchos::null) {
     // Create default observer, otherwise keep current observer.
-    if (stepperBEObserver_ == Teuchos::null) {
-      stepperBEObserver_ =
-        Teuchos::rcp(new StepperBackwardEulerObserver<Scalar>());
+    if (stepperObserver_ == Teuchos::null) {
+      stepperObserver_ =
+        Teuchos::rcp(new StepperTrapezoidalObserver<Scalar>());
     }
   } else {
-    stepperBEObserver_ = obs;
+    stepperObserver_ = obs;
   }
 }
 
 
 template<class Scalar>
-void StepperBackwardEuler<Scalar>::initialize()
+void StepperTrapezoidal<Scalar>::initialize()
 {
   TEUCHOS_TEST_FOR_EXCEPTION(
     this->wrapperModel_ == Teuchos::null, std::logic_error,
     "Error - Need to set the model, setModel(), before calling "
-    "StepperBackwardEuler::initialize()\n");
+    "StepperTrapezoidal::initialize()\n");
 
   this->setSolver();
-  this->setPredictor();
   this->setObserver();
 }
 
 
 template<class Scalar>
-void StepperBackwardEuler<Scalar>::takeStep(
+void StepperTrapezoidal<Scalar>::takeStep(
   const Teuchos::RCP<SolutionHistory<Scalar> >& solutionHistory)
 {
   using Teuchos::RCP;
 
-  TEMPUS_FUNC_TIME_MONITOR("Tempus::StepperBackwardEuler::takeStep()");
+  TEMPUS_FUNC_TIME_MONITOR("Tempus::StepperTrapezoidal::takeStep()");
   {
-    stepperBEObserver_->observeBeginTakeStep(solutionHistory, *this);
+    stepperObserver_->observeBeginTakeStep(solutionHistory, *this);
     RCP<SolutionState<Scalar> > workingState=solutionHistory->getWorkingState();
     RCP<SolutionState<Scalar> > currentState=solutionHistory->getCurrentState();
 
-    RCP<const Thyra::VectorBase<Scalar> > xOld = currentState->getX();
+    RCP<const Thyra::VectorBase<Scalar> > xOld    = currentState->getX();
+    RCP<const Thyra::VectorBase<Scalar> > xDotOld = currentState->getXDot();
     RCP<Thyra::VectorBase<Scalar> > x    = workingState->getX();
     RCP<Thyra::VectorBase<Scalar> > xDot = workingState->getXDot();
     if (xDot == Teuchos::null) xDot = getXDotTemp(x);
 
-    computePredictor(solutionHistory);
-    if (workingState->getStepperState()->stepperStatus_ == Status::FAILED)
-      return;
-
-    const Scalar time = workingState->getTime();
-    const Scalar dt   = workingState->getTimeStep();
+    const Scalar time  = workingState->getTime();
+    const Scalar dt    = workingState->getTimeStep();
+    const Scalar alpha = 2.0/dt;
 
     // Setup TimeDerivative
     Teuchos::RCP<TimeDerivative<Scalar> > timeDer =
-      Teuchos::rcp(new StepperBackwardEulerTimeDerivative<Scalar>(1.0/dt,xOld));
+      Teuchos::rcp(new StepperTrapezoidalTimeDerivative<Scalar>(
+        alpha, xOld, xDotOld));
 
     // Setup InArgs and OutArgs
     typedef Thyra::ModelEvaluatorBase MEB;
@@ -165,16 +99,16 @@ void StepperBackwardEuler<Scalar>::takeStep(
     if (inArgs.supports(MEB::IN_ARG_x_dot    )) inArgs.set_x_dot    (xDot);
     if (inArgs.supports(MEB::IN_ARG_t        )) inArgs.set_t        (time);
     if (inArgs.supports(MEB::IN_ARG_step_size)) inArgs.set_step_size(dt);
-    if (inArgs.supports(MEB::IN_ARG_alpha    )) inArgs.set_alpha    (1.0/dt);
+    if (inArgs.supports(MEB::IN_ARG_alpha    )) inArgs.set_alpha    (alpha);
     if (inArgs.supports(MEB::IN_ARG_beta     )) inArgs.set_beta     (1.0);
 
     this->wrapperModel_->setForSolve(timeDer, inArgs, outArgs);
 
-    stepperBEObserver_->observeBeforeSolve(solutionHistory, *this);
+    stepperObserver_->observeBeforeSolve(solutionHistory, *this);
 
     const Thyra::SolveStatus<Scalar> sStatus = this->solveImplicitODE(x);
 
-    stepperBEObserver_->observeAfterSolve(solutionHistory, *this);
+    stepperObserver_->observeAfterSolve(solutionHistory, *this);
 
     if (workingState->getXDot() != Teuchos::null)
       timeDer->compute(x, xDot);
@@ -184,14 +118,14 @@ void StepperBackwardEuler<Scalar>::takeStep(
     else
       workingState->getStepperState()->stepperStatus_ = Status::FAILED;
     workingState->setOrder(this->getOrder());
-    stepperBEObserver_->observeEndTakeStep(solutionHistory, *this);
+    stepperObserver_->observeEndTakeStep(solutionHistory, *this);
   }
   return;
 }
 
 template<class Scalar>
 Teuchos::RCP<Thyra::VectorBase<Scalar> >
-StepperBackwardEuler<Scalar>::
+StepperTrapezoidal<Scalar>::
 getXDotTemp(Teuchos::RCP<Thyra::VectorBase<Scalar> > x)
 {
   if (xDotTemp_ == Teuchos::null) {
@@ -201,27 +135,6 @@ getXDotTemp(Teuchos::RCP<Thyra::VectorBase<Scalar> > x)
   return xDotTemp_;
 }
 
-template<class Scalar>
-void StepperBackwardEuler<Scalar>::computePredictor(
-      const Teuchos::RCP<SolutionHistory<Scalar> >& solutionHistory)
-{
-  if (predictorStepper_ == Teuchos::null) return;
-  predictorStepper_->takeStep(solutionHistory);
-
-  Status & stepperStatus =
-    solutionHistory->getWorkingState()->getStepperState()->stepperStatus_;
-
-  if (stepperStatus == Status::FAILED) {
-    Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
-    Teuchos::OSTab ostab(out,1,"StepperBackwardEuler::computePredictor");
-    *out << "Warning - predictorStepper has failed." << std::endl;
-  } else {
-    // Reset status to WORKING since this is the predictor
-    stepperStatus = Status::WORKING;
-  }
-}
-
-
 /** \brief Provide a StepperState to the SolutionState.
  *  This Stepper does not have any special state data,
  *  so just provide the base class StepperState with the
@@ -230,7 +143,7 @@ void StepperBackwardEuler<Scalar>::computePredictor(
  */
 template<class Scalar>
 Teuchos::RCP<Tempus::StepperState<Scalar> >
-StepperBackwardEuler<Scalar>::
+StepperTrapezoidal<Scalar>::
 getDefaultStepperState()
 {
   Teuchos::RCP<Tempus::StepperState<Scalar> > stepperState =
@@ -240,15 +153,15 @@ getDefaultStepperState()
 
 
 template<class Scalar>
-std::string StepperBackwardEuler<Scalar>::description() const
+std::string StepperTrapezoidal<Scalar>::description() const
 {
-  std::string name = "Backward Euler";
+  std::string name = "Trapezoidal Method";
   return(name);
 }
 
 
 template<class Scalar>
-void StepperBackwardEuler<Scalar>::describe(
+void StepperTrapezoidal<Scalar>::describe(
    Teuchos::FancyOStream               &out,
    const Teuchos::EVerbosityLevel      verbLevel) const
 {
@@ -258,7 +171,7 @@ void StepperBackwardEuler<Scalar>::describe(
 
 
 template <class Scalar>
-void StepperBackwardEuler<Scalar>::setParameterList(
+void StepperTrapezoidal<Scalar>::setParameterList(
   Teuchos::RCP<Teuchos::ParameterList> const& pList)
 {
   Teuchos::RCP<Teuchos::ParameterList> stepperPL = this->stepperPL_;
@@ -278,9 +191,9 @@ void StepperBackwardEuler<Scalar>::setParameterList(
   // stepperPL->validateParametersAndSetDefaults(*this->getValidParameters());
 
   std::string stepperType = stepperPL->get<std::string>("Stepper Type");
-  TEUCHOS_TEST_FOR_EXCEPTION( stepperType != "Backward Euler",
+  TEUCHOS_TEST_FOR_EXCEPTION( stepperType != "Trapezoidal Method",
     std::logic_error,
-       "Error - Stepper Type is not 'Backward Euler'!\n"
+       "Error - Stepper Type is not 'Trapezoidal Method'!\n"
     << "  Stepper Type = "<<stepperPL->get<std::string>("Stepper Type")<<"\n");
 
   this->stepperPL_ = stepperPL;
@@ -289,7 +202,7 @@ void StepperBackwardEuler<Scalar>::setParameterList(
 
 template<class Scalar>
 Teuchos::RCP<const Teuchos::ParameterList>
-StepperBackwardEuler<Scalar>::getValidParameters() const
+StepperTrapezoidal<Scalar>::getValidParameters() const
 {
   Teuchos::RCP<Teuchos::ParameterList> pl = Teuchos::parameterList();
   pl->setName("Default Stepper - " + this->description());
@@ -304,7 +217,7 @@ StepperBackwardEuler<Scalar>::getValidParameters() const
 
 template<class Scalar>
 Teuchos::RCP<Teuchos::ParameterList>
-StepperBackwardEuler<Scalar>::getDefaultParameters() const
+StepperTrapezoidal<Scalar>::getDefaultParameters() const
 {
   using Teuchos::RCP;
   using Teuchos::ParameterList;
@@ -324,7 +237,7 @@ StepperBackwardEuler<Scalar>::getDefaultParameters() const
 
 template <class Scalar>
 Teuchos::RCP<Teuchos::ParameterList>
-StepperBackwardEuler<Scalar>::getNonconstParameterList()
+StepperTrapezoidal<Scalar>::getNonconstParameterList()
 {
   return(this->stepperPL_);
 }
@@ -332,7 +245,7 @@ StepperBackwardEuler<Scalar>::getNonconstParameterList()
 
 template <class Scalar>
 Teuchos::RCP<Teuchos::ParameterList>
-StepperBackwardEuler<Scalar>::unsetParameterList()
+StepperTrapezoidal<Scalar>::unsetParameterList()
 {
   Teuchos::RCP<Teuchos::ParameterList> temp_plist = this->stepperPL_;
   this->stepperPL_ = Teuchos::null;
@@ -341,4 +254,4 @@ StepperBackwardEuler<Scalar>::unsetParameterList()
 
 
 } // namespace Tempus
-#endif // Tempus_StepperBackwardEuler_impl_hpp
+#endif // Tempus_StepperTrapezoidal_impl_hpp
