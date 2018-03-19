@@ -143,7 +143,10 @@ Teuchos::RCP<Thyra::VectorBase<Scalar> >
 StepperForwardEuler<Scalar>::
 getXDotTemp(Teuchos::RCP<Thyra::VectorBase<Scalar> > x)
 {
-  if (xDotTemp_ == Teuchos::null) xDotTemp_ = x->clone_v();
+  if (xDotTemp_ == Teuchos::null) {
+    xDotTemp_ = x->clone_v();
+    Thyra::assign(xDotTemp_.ptr(), Scalar(0.0));
+  }
   return xDotTemp_;
 }
 

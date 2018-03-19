@@ -305,14 +305,38 @@ void IntegratorBasic<Scalar>::initialize()
   this->setSolutionHistory();
   this->setObserver();
 
-  if (timeStepControl_->getMinOrder() == 0)
+  // Ensure TimeStepControl orders match the Stepper orders.
+  if (timeStepControl_->getMinOrder() < stepper_->getOrderMin())
       timeStepControl_->setMinOrder(stepper_->getOrderMin());
-  if (timeStepControl_->getMaxOrder() == 0)
+  if (timeStepControl_->getMinOrder() > stepper_->getOrderMax())
+      timeStepControl_->setMinOrder(stepper_->getOrderMax());
+
+  if (timeStepControl_->getMaxOrder() == 0 ||
+      timeStepControl_->getMaxOrder() > stepper_->getOrderMax())
       timeStepControl_->setMaxOrder(stepper_->getOrderMax());
+  if (timeStepControl_->getMaxOrder() < timeStepControl_->getMinOrder())
+      timeStepControl_->setMaxOrder(timeStepControl_->getMinOrder());
+
   if (timeStepControl_->getInitOrder() < timeStepControl_->getMinOrder())
       timeStepControl_->setInitOrder(timeStepControl_->getMinOrder());
   if (timeStepControl_->getInitOrder() > timeStepControl_->getMaxOrder())
       timeStepControl_->setInitOrder(timeStepControl_->getMaxOrder());
+
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    timeStepControl_->getMinOrder() > timeStepControl_->getMaxOrder(),
+    std::out_of_range,
+       "Error - Invalid TimeStepControl min order greater than max order.\n"
+    << "        Min order = " << timeStepControl_->getMinOrder() << "\n"
+    << "        Max order = " << timeStepControl_->getMaxOrder() << "\n");
+
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    timeStepControl_->getInitOrder() < timeStepControl_->getMinOrder() ||
+    timeStepControl_->getInitOrder() > timeStepControl_->getMaxOrder(),
+    std::out_of_range,
+       "Error - Initial TimeStepControl order is out of min/max range.\n"
+    << "        Initial order = " << timeStepControl_->getInitOrder() << "\n"
+    << "        Min order     = " << timeStepControl_->getMinOrder()  << "\n"
+    << "        Max order     = " << timeStepControl_->getMaxOrder()  << "\n");
 
   if (integratorTimer_ == Teuchos::null)
     integratorTimer_ = rcp(new Teuchos::Time("Integrator Timer"));
