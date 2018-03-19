@@ -881,12 +881,12 @@ int AlgPTScotch<Adapter>::localOrder(
     delete [] peritab;
 
     const ArrayRCP<lno_t> arv_range = solution->getSeparatorRangeRCP();
-    for (size_t i = 0; i <= nVtx; i++)
+    for (lno_t i = 0; i <= nSepBlocks; i++)
       TPL_Traits<lno_t, SCOTCH_Num>::ASSIGN(arv_range[i], rangetab[i]);
     delete [] rangetab;
 
     const ArrayRCP<lno_t> arv_tree = solution->getSeparatorTreeRCP();
-    for (size_t i = 0; i < nVtx; i++)
+    for (lno_t i = 0; i < nSepBlocks; i++)
       TPL_Traits<lno_t, SCOTCH_Num>::ASSIGN(arv_tree[i], treetab[i]);
     delete [] treetab;
   }
