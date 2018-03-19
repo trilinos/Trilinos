@@ -841,7 +841,11 @@ namespace MueLu {
     // If the number of vectors is unchanged, this is a noop.
     // NOTE: We need to check against B because the tests in AllocateLevelMultiVectors
     // will fail on Stokhos Scalar types (due to the so-called 'hidden dimension')
-    if(!residual_[startLevel]->isSameSize(B)) DeleteLevelMultiVectors();
+    const BlockedMultiVector * Bblocked = dynamic_cast<const BlockedMultiVector*>(&B);  
+    if(residual_.size() > startLevel &&
+       ( ( Bblocked && !Bblocked->isSameSize(*residual_[startLevel])) ||
+         (!Bblocked && !residual_[startLevel]->isSameSize(B))))
+      DeleteLevelMultiVectors();
     AllocateLevelMultiVectors(X.getNumVectors());
 
     // Print residual information before iterating
@@ -1015,7 +1019,6 @@ namespace MueLu {
         // Note that due to what may be round-off error accumulation, use of the fused kernel
         //    P->apply(*coarseX, X, Teuchos::NO_TRANS, one, one);
         // can in some cases result in slightly higher iteration counts.
-        //        RCP<MultiVector> correction = MultiVectorFactory::Build(X.getMap(), X.getNumVectors(),false);
         RCP<MultiVector> correction = correction_[startLevel];
         {
           // ============== PROLONGATION ==============
@@ -1436,16 +1439,8 @@ namespace MueLu {
         RCP<const Map> Arm = A->getRangeMap();
         RCP<const Map> Adm = A->getDomainMap();
         if(!A_as_blocked.is_null()) { 
-          Arm = A_as_blocked->getFullRangeMap();
           Adm = A_as_blocked->getFullDomainMap();
         }
-
-        printf("CMS: Allocate A [%d|%d,?,?,%d|%d]\n",
-               (int)A->getRangeMap()->getGlobalNumElements(),
-               (int)Arm->getGlobalNumElements(),
-               (int)A->getDomainMap()->getGlobalNumElements(),
-               (int)Adm->getGlobalNumElements());
-
 
         // This is zero'd by default since it is filled via an operator apply        
         residual_[i] = MultiVectorFactory::Build(Arm, numvecs, true);
