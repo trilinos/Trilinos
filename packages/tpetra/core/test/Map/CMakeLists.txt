@@ -200,3 +200,19 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   NUM_MPI_PROCS 1-4
   STANDARD_PASS_OUTPUT
   )
+
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  Map_warn_on_post_finalize_destruction_issue_2372
+  SOURCES
+    Map_warn_on_post_finalize_destruction
+  COMM serial mpi
+  STANDARD_PASS_OUTPUT
+  )
+
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  Map_no_warn_on_pre_finalize_destruction_issue_2372
+  SOURCES
+    Map_no_warn_on_pre_finalize_destruction
+  COMM serial mpi
+  STANDARD_PASS_OUTPUT
+  )
