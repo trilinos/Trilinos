@@ -5170,10 +5170,10 @@ namespace Tpetra {
     }
   }
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   bool
-  MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>::
-  isSameSize (const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node, classic> & vec) const {
+  MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
+  isSameSize (const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> & vec) const {
     typedef impl_scalar_type ST;
     typedef typename Kokkos::View<int*, device_type>::HostMirror::execution_space HES;
     size_t l1 = this->getLocalLength();
@@ -5191,8 +5191,8 @@ namespace Tpetra {
   }
 
 
-  template <class Scalar, class LO, class GO, class NT, const bool classic>
-  Teuchos::RCP<MultiVector<Scalar, LO, GO, NT, classic> >
+  template <class Scalar, class LO, class GO, class NT>
+  Teuchos::RCP<MultiVector<Scalar, LO, GO, NT> >
   createMultiVector (const Teuchos::RCP<const Map<LO, GO, NT> >& map,
                      size_t numVectors)
   {

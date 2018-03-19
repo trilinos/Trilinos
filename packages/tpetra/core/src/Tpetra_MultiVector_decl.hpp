@@ -2191,7 +2191,7 @@ namespace Tpetra {
     ///
     /// \post Any outstanding views of \c src or \c *this remain valid.
     ///
-    bool isSameSize(const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node, classic> & vec) const;
+    bool isSameSize(const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> & vec) const;
 
   protected:
     template <class DS, class DL, class DG, class DN,
