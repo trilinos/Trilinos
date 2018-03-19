@@ -663,22 +663,24 @@ namespace Tacho {
 
         track_free(work.span()*sizeof(ordinal_type));
         track_free(parent.span()*sizeof(ordinal_type));
-        
+
         stat.nnz_u = ap(_m);
         stat.nsupernodes = _supernodes.dimension_0() - 1;
+        stat.max_nchildren = 0;
         stat.largest_supernode = 0;
         stat.largest_schur = 0;
-        stat.max_nchildren = 0;
+
         for (ordinal_type sid=0;sid<stat.nsupernodes;++sid) {
           const ordinal_type m = _supernodes(sid+1) - _supernodes(sid);
           const ordinal_type n = _blk_super_panel_colidx(_sid_super_panel_ptr(sid+1)-1);
           const ordinal_type nchildren = _stree_ptr(sid+1) - _stree_ptr(sid);
+
+          stat.max_nchildren     = max(stat.max_nchildren, nchildren); 
           stat.largest_supernode = max(stat.largest_supernode, m);
           stat.largest_schur     = max(stat.largest_schur,     n-m);
-          stat.max_nchildren     = max(stat.max_nchildren,     nchildren);
         }
         stat.nroots = _stree_roots.dimension_0();
-
+        
         if (verbose) {
           printf("Summary: SymbolicTools\n");
           printf("======================\n");

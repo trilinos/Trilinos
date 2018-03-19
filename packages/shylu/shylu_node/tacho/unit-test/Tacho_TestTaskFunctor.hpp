@@ -12,6 +12,7 @@
 using namespace Tacho::Experimental;
 
 TEST( TaskFunctor, MemoryPool ) {
+  TEST_BEGIN;
   typedef Kokkos::TaskScheduler<HostSpaceType> sched_type;
   typedef Kokkos::MemoryPool<HostSpaceType> memory_pool_type;
   
@@ -47,6 +48,8 @@ TEST( TaskFunctor, MemoryPool ) {
   Kokkos::host_spawn( Kokkos::TaskSingle(f_view_see), functor_deallocate(pool, f_alloc, bufsize) );
 
   Kokkos::wait( sched );  
+
+  TEST_END;
 }
 
 #endif

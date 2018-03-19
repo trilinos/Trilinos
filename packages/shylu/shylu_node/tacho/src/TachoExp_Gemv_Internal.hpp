@@ -1,8 +1,8 @@
-#ifndef __TACHOEXP_GEMM_INTERNAL_HPP__
-#define __TACHOEXP_GEMM_INTERNAL_HPP__
+#ifndef __TACHOEXP_GEMV_INTERNAL_HPP__
+#define __TACHOEXP_GEMV_INTERNAL_HPP__
 
 
-/// \file  Tacho_Gemm_Internal.hpp
+/// \file  Tacho_Gemv_Internal.hpp
 /// \brief BLAS general matrix matrix multiplication
 /// \author Kyungjoo Kim (kyukim@sandia.gov)
 
@@ -12,8 +12,8 @@ namespace Tacho {
 
   namespace Experimental {
 
-    template<typename ArgTransA, typename ArgTransB>
-    struct Gemm<ArgTransA,ArgTransB,Algo::Internal> {
+    template<typename ArgTrans>
+    struct Gemv<ArgTrans,Algo::Internal> {
       template<typename PolicyType,
                typename MemberType,
                typename ScalarType,
@@ -29,7 +29,7 @@ namespace Tacho {
              const ViewTypeB &B,
              const ScalarType beta,
              const ViewTypeC &C) {
-        
+
         typedef typename ViewTypeA::non_const_value_type value_type;
         typedef typename ViewTypeB::non_const_value_type value_type_b;
         typedef typename ViewTypeC::non_const_value_type value_type_c;
@@ -42,20 +42,21 @@ namespace Tacho {
                       std::is_same<value_type_b,value_type_c>::value,
                       "A, B and C do not have the same value type.");
 
-        const ordinal_type m = C.dimension_0();
-        const ordinal_type n = C.dimension_1();
-        const ordinal_type 
-          k = (std::is_same<ArgTransB,Trans::NoTranspose>::value ? B.dimension_0() : B.dimension_1());
-        
+        const ordinal_type m = A.dimension_0();
+        const ordinal_type n = A.dimension_1();
+        const ordinal_type k = C.dimension_1();
+
         if (m > 0 && n > 0 && k > 0) 
-          BlasTeam<value_type>::gemm(member,
-                                     ArgTransA::param, ArgTransB::param,
-                                     m, n, k,
-                                     value_type(alpha),
-                                     A.data(), A.stride_1(),
-                                     B.data(), B.stride_1(),
-                                     value_type(beta),
-                                     C.data(), C.stride_1());
+          for (ordinal_type p=0,offsB=0,offsC=0;p<k;++p,offsB+=B.stride_1(),offsC+=C.stride_1()) {
+            BlasTeam<value_type>::gemv(member,
+                                       ArgTrans::param, 
+                                       m, n, 
+                                       value_type(alpha),
+                                       A.data(), A.stride_1(),
+                                       (B.data() + offsB), B.stride_0(),
+                                       value_type(beta), 
+                                       (C.data() + offsC), C.stride_0());
+          }
         return 0;
       }
     };

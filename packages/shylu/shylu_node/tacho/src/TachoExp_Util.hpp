@@ -99,13 +99,13 @@ namespace Tacho {
     ///
 
 #if defined( TACHO_USE_INT_INT )
-    typedef int    ordinal_type;
-    typedef int    size_type;
+    typedef int ordinal_type;
+    typedef int size_type;
 #elif defined( TACHO_USE_INT_SIZE_T )
-    typedef int    ordinal_type;
+    typedef int ordinal_type;
     typedef size_t size_type;
 #else
-    typedef int    ordinal_type;
+    typedef int ordinal_type;
     typedef size_t size_type;
 #endif
 
@@ -113,11 +113,10 @@ namespace Tacho {
     /// label size used to identify object name
     ///
     enum : int { 
-      LabelSize = 64,
       MaxDependenceSize = 4,
-      ThresholdSolvePhaseUsingBlas3 = 12 
+      ThresholdSolvePhaseUsingBlas3 = 12,
+      CudaVectorSize = 4
     };
-
 
     ///
     /// later, this would be replaced with Kokkos::ArithTraits
@@ -131,6 +130,7 @@ namespace Tacho {
       typedef float mag_type;
 
       enum : bool { is_complex = false };
+      static KOKKOS_FORCEINLINE_FUNCTION mag_type abs (const val_type& x) { return x > 0 ? x : -x; }
       static KOKKOS_FORCEINLINE_FUNCTION mag_type real(const val_type& x) { return x; }
       static KOKKOS_FORCEINLINE_FUNCTION mag_type imag(const val_type& x) { return x; }
       static KOKKOS_FORCEINLINE_FUNCTION val_type conj(const val_type& x) { return x; }
@@ -142,6 +142,7 @@ namespace Tacho {
       typedef double mag_type;
 
       enum : bool { is_complex = false };
+      static KOKKOS_FORCEINLINE_FUNCTION mag_type abs (const val_type& x) { return x > 0 ? x : -x; }
       static KOKKOS_FORCEINLINE_FUNCTION mag_type real(const val_type& x) { return x; }
       static KOKKOS_FORCEINLINE_FUNCTION mag_type imag(const val_type& x) { return x; }
       static KOKKOS_FORCEINLINE_FUNCTION val_type conj(const val_type& x) { return x; }
@@ -153,6 +154,7 @@ namespace Tacho {
       typedef float mag_type;
 
       enum : bool { is_complex = true };
+      static inline mag_type abs (const val_type& x) { return std::abs(x); }
       static inline mag_type real(const val_type& x) { return x.real(); }
       static inline mag_type imag(const val_type& x) { return x.imag(); }
       static inline val_type conj(const val_type& x) { return std::conj(x); }
@@ -164,6 +166,7 @@ namespace Tacho {
       typedef double mag_type;
 
       enum : bool { is_complex = true };
+      static inline mag_type abs (const val_type& x) { return std::abs(x); }
       static inline mag_type real(const val_type& x) { return x.real(); }
       static inline mag_type imag(const val_type& x) { return x.imag(); }
       static inline val_type conj(const val_type& x) { return std::conj(x); }
@@ -175,6 +178,7 @@ namespace Tacho {
       typedef float mag_type;
 
       enum : bool { is_complex = true };
+      static KOKKOS_FORCEINLINE_FUNCTION mag_type abs (const val_type& x) { return Kokkos::abs(x); }
       static KOKKOS_FORCEINLINE_FUNCTION mag_type real(const val_type& x) { return x.real(); }
       static KOKKOS_FORCEINLINE_FUNCTION mag_type imag(const val_type& x) { return x.imag(); }
       static KOKKOS_FORCEINLINE_FUNCTION val_type conj(const val_type& x) { return Kokkos::conj(x); }
@@ -186,6 +190,7 @@ namespace Tacho {
       typedef double mag_type;
 
       enum : bool { is_complex = true };
+      static KOKKOS_FORCEINLINE_FUNCTION mag_type abs (const val_type& x) { return Kokkos::abs(x); }
       static KOKKOS_FORCEINLINE_FUNCTION mag_type real(const val_type& x) { return x.real(); }
       static KOKKOS_FORCEINLINE_FUNCTION mag_type imag(const val_type& x) { return x.imag(); }
       static KOKKOS_FORCEINLINE_FUNCTION val_type conj(const val_type& x) { return Kokkos::conj(x); }
@@ -254,6 +259,43 @@ namespace Tacho {
       for (size_type i=0;i<bufsize;++i) buf[i] = 0;
 #endif
     } 
+    
+    template<typename MemberType>
+    KOKKOS_FORCEINLINE_FUNCTION
+    static void clear(MemberType &member, char *buf, size_type bufsize) {
+#if defined( KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_HOST )
+      memset(buf, 0, bufsize);
+#else
+      const ordinal_type team_index_range = (bufsize/CudaVectorSize) + (bufsize%CudaVectorSize > 0);
+      Kokkos::parallel_for(Kokkos::TeamThreadRange(member,team_index_range),[&](const int &idx) {
+          const int ioff = idx * CudaVectorSize;
+          const int itmp = bufsize - ioff;
+          const int icnt = itmp > CudaVectorSize ? CudaVectorSize : itmp;
+          Kokkos::parallel_for(Kokkos::ThreadVectorRange(member,icnt),[&](const int &ii) {
+              const int i = ioff + ii;
+              buf[i] = 0;
+            });
+        });
+#endif
+    } 
+
+    template<typename T1, typename T2, typename CompareType>
+    KOKKOS_INLINE_FUNCTION
+    static T1* lower_bound(T1* first, T1* last, const T2& val, 
+                           CompareType compare) {
+      T1 *it;
+      ordinal_type step = 0, count = last - first;
+      while (count > 0) {
+        it = first; step = count/2; it += step;
+        if (compare(*it,val)) {
+          first = ++it;
+          count -= step + 1;
+        } else {
+          count = step;
+        }
+      }
+      return first;
+    }
     
     template<size_t BufSize, typename SpaceType = Kokkos::DefaultExecutionSpace>
     struct Flush {
@@ -462,8 +504,8 @@ namespace Tacho {
     struct Conjugate {
       enum : int { tag = 801 };
       
-      Conjugate() {} 
-      Conjugate(const Conjugate &b) {} 
+      KOKKOS_FORCEINLINE_FUNCTION Conjugate() {} 
+      KOKKOS_FORCEINLINE_FUNCTION Conjugate(const Conjugate &b) {} 
 
       KOKKOS_FORCEINLINE_FUNCTION float operator()(const float &v) const { return v; }
       KOKKOS_FORCEINLINE_FUNCTION double operator()(const double &v) const { return v; }
@@ -476,8 +518,8 @@ namespace Tacho {
     struct NoConjugate {
       enum : int {tag = 802 };
 
-      NoConjugate() {}
-      NoConjugate(const NoConjugate &b) {}
+      KOKKOS_FORCEINLINE_FUNCTION NoConjugate() {}
+      KOKKOS_FORCEINLINE_FUNCTION NoConjugate(const NoConjugate &b) {}
       
       KOKKOS_FORCEINLINE_FUNCTION float operator()(const float &v) const { return v; }
       KOKKOS_FORCEINLINE_FUNCTION double operator()(const double &v) const { return v; }
@@ -516,20 +558,6 @@ namespace Tacho {
                                        typename ViewType::memory_traits>;
     template <typename ViewType>
     using ConstUnmanagedViewType = ConstViewType<UnmanagedViewType<ViewType> >;
-
-    template<typename T>
-    KOKKOS_FORCEINLINE_FUNCTION
-    typename std::enable_if<!std::is_integral<T>::value,ordinal_type>::type
-    get_team_rank(const T& member) {
-      return member.team_rank();
-    }
-
-    template<typename T>
-    KOKKOS_FORCEINLINE_FUNCTION
-    typename std::enable_if<std::is_integral<T>::value,ordinal_type>::type
-    get_team_rank(const T& member) {
-      return 0;
-    }
 
   }
 }

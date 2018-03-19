@@ -14,22 +14,18 @@ namespace Tacho {
 
     template<typename ArgTrans>
     struct Gemv<ArgTrans,Algo::External> {
-      template<typename PolicyType,
-               typename MemberType,
-               typename ScalarType,
+      template<typename ScalarType,
                typename ViewTypeA,
                typename ViewTypeB,
                typename ViewTypeC>
       inline
       static int
-      invoke(const PolicyType &policy,
-             const MemberType &member,
-             const ScalarType alpha,
+      invoke(const ScalarType alpha,
              const ViewTypeA &A,
              const ViewTypeB &B,
              const ScalarType beta,
              const ViewTypeC &C) {
-        
+#if defined( KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_HOST )        
         typedef typename ViewTypeA::non_const_value_type value_type;
         typedef typename ViewTypeB::non_const_value_type value_type_b;
         typedef typename ViewTypeC::non_const_value_type value_type_c;
@@ -48,22 +44,44 @@ namespace Tacho {
           k = C.dimension_1();
 
         if (m > 0 && n > 0 && k > 0) {
-          if (get_team_rank(member) == 0) {
-#if defined( KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_HOST )
-            for (ordinal_type p=0,offsB=0,offsC=0;p<k;++p,offsB+=B.stride_1(),offsC+=C.stride_1()) {
-              Blas<value_type>::gemv(ArgTrans::param, 
-                                     m, n, 
-                                     value_type(alpha),
-                                     A.data(), A.stride_1(),
-                                     (B.data() + offsB), B.stride_0(),
-                                     value_type(beta), 
-                                     (C.data() + offsC), C.stride_0());
-            }
-#else
-            TACHO_TEST_FOR_ABORT( true, ">> This function is only allowed in host space.");
-#endif
+          for (ordinal_type p=0,offsB=0,offsC=0;p<k;++p,offsB+=B.stride_1(),offsC+=C.stride_1()) {
+            Blas<value_type>::gemv(ArgTrans::param, 
+                                   m, n, 
+                                   value_type(alpha),
+                                   A.data(), A.stride_1(),
+                                   (B.data() + offsB), B.stride_0(),
+                                   value_type(beta), 
+                                   (C.data() + offsC), C.stride_0());
           }
         }
+#else
+        TACHO_TEST_FOR_ABORT( true, ">> This function is only allowed in host space.");
+#endif
+        return 0;
+      }
+      
+      template<typename PolicyType,
+               typename MemberType,
+               typename ScalarType,
+               typename ViewTypeA,
+               typename ViewTypeB,
+               typename ViewTypeC>
+      inline
+      static int
+      invoke(PolicyType &policy,
+             MemberType &member,
+             const ScalarType alpha,
+             const ViewTypeA &A,
+             const ViewTypeB &B,
+             const ScalarType beta,
+             const ViewTypeC &C) {
+#if defined( KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_HOST )        
+        Kokkos::single(Kokkos::PerTeam(member), [&]() {        
+            invoke(alpha, A, B, beta, C);
+          });
+#else
+        TACHO_TEST_FOR_ABORT( true, ">> This function is only allowed in host space.");
+#endif
         return 0;
       }
     };

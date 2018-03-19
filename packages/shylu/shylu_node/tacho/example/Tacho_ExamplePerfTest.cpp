@@ -94,7 +94,7 @@ int main (int argc, char *argv[]) {
     ///
     /// problem setting
     ///
-    CrsMatrixBaseType A("A");
+    CrsMatrixBaseType A;
     {
       {
         std::ifstream in;
@@ -104,7 +104,7 @@ int main (int argc, char *argv[]) {
           return -1;
         }
       }
-      A = Tacho::Experimental::MatrixMarket<value_type>::read(file, verbose);
+      Tacho::Experimental::MatrixMarket<value_type>::read(file, A, verbose);
     }
 
     DenseMultiVectorType
@@ -471,5 +471,4 @@ int main (int argc, char *argv[]) {
   Kokkos::finalize();
   return r_val;
 }
-
 

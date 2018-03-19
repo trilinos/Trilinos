@@ -40,12 +40,12 @@ namespace Tacho {
 
       KOKKOS_INLINE_FUNCTION
       void operator()(member_type &member, value_type &r_val) {
-        if (get_team_rank(member) == 0) {
-          if (_bufsize)
-            r_val = (void*)_pool.allocate(_bufsize);
-          else
-            r_val = NULL;
-        }
+        Kokkos::single(Kokkos::PerTeam(member), [&]() {
+            if (_bufsize)
+              r_val = (void*)_pool.allocate(_bufsize);
+            else
+              r_val = NULL;
+          });
       }
     };
     
@@ -83,10 +83,10 @@ namespace Tacho {
 
       KOKKOS_INLINE_FUNCTION
       void operator()(member_type &member) {
-        if (get_team_rank(member) == 0) {
-          // if (_bufsize)
-          //   _pool.deallocate((void*)_ptr.get(), _bufsize);
-        }
+        Kokkos::single(Kokkos::PerTeam(member), [&]() {
+            // if (_bufsize)
+            //   _pool.deallocate((void*)_ptr.get(), _bufsize);
+          });
       }
     };
 
@@ -125,19 +125,19 @@ namespace Tacho {
       
       inline
       void operator()(member_type &member, value_type &r_val) {
-        if (get_team_rank(member) == 0) {
-          printf("TestView construct view in future\n");
-          if (_m && _n) {
-            value_type A((double*)_ptr.get(), _m, _n);
-            ordinal_type cnt = 0;
-            for (ordinal_type i=0;i<_m;++i)
-              for (ordinal_type j=0;j<_n;++j)
-                A(i,j) = cnt++;
-            r_val = A;
-          } else {
-            r_val = value_type();
-          }
-        }
+        Kokkos::single(Kokkos::PerTeam(member), [&]() {
+            printf("TestView construct view in future\n");
+            if (_m && _n) {
+              value_type A((double*)_ptr.get(), _m, _n);
+              ordinal_type cnt = 0;
+              for (ordinal_type i=0;i<_m;++i)
+                for (ordinal_type j=0;j<_n;++j)
+                  A(i,j) = cnt++;
+              r_val = A;
+            } else {
+              r_val = value_type();
+            }
+          });
       }
     };
     
@@ -174,19 +174,19 @@ namespace Tacho {
       
       inline
       void operator()(member_type &member) {
-        if (get_team_rank(member) == 0) {
-          const auto A = _A.get();
-
-          const ordinal_type m = A.dimension_0();
-          const ordinal_type n = A.dimension_1();
-
-          printf("A in TestViewSee: %lu\n", (long unsigned int)A.data());
-          for (ordinal_type i=0;i<m;++i) {
-            for (ordinal_type j=0;j<n;++j)
-              printf(" %4d ", int(A(i,j)));
-            printf("\n");
-          }
-        }
+        Kokkos::single(Kokkos::PerTeam(member), [&]() {
+            const auto A = _A.get();
+            
+            const ordinal_type m = A.dimension_0();
+            const ordinal_type n = A.dimension_1();
+            
+            printf("A in TestViewSee: %lu\n", (long unsigned int)A.data());
+            for (ordinal_type i=0;i<m;++i) {
+              for (ordinal_type j=0;j<n;++j)
+                printf(" %4d ", int(A(i,j)));
+              printf("\n");
+            }
+          });
       }
     };
   }

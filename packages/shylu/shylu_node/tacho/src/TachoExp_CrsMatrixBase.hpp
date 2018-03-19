@@ -13,7 +13,7 @@ namespace Tacho {
     /// \class CrsMatrixBase
     /// \breif CRS matrix base object using Kokkos view and subview
     template<typename ValueType,
-             typename SpaceType = Kokkos::DefaultHostExecutionSpace>
+             typename SpaceType>
     class CrsMatrixBase {
     public:
       typedef ValueType    value_type;
@@ -27,8 +27,6 @@ namespace Tacho {
       friend class CrsMatrixBase;
     
     private:
-      char               _label[LabelSize];   //!< object label
-
       ordinal_type       _m;          //!< # of rows
       ordinal_type       _n;          //!< # of cols
       size_type          _nnz;        //!< # of nonzeros
@@ -96,17 +94,9 @@ namespace Tacho {
       }
 
       KOKKOS_INLINE_FUNCTION
-      void setLabel(const char *label) { 
-        strncpy(_label, label, min(strlen(label)+1, LabelSize));
-      }
-
-      KOKKOS_INLINE_FUNCTION
       void setNumNonZeros() { 
         if (_m) _nnz = _ap(_m);
       }
-
-      KOKKOS_INLINE_FUNCTION
-      const char* Label() const { return _label; }
 
       KOKKOS_INLINE_FUNCTION
       size_type_array& RowPtr() { return _ap; }
@@ -163,24 +153,10 @@ namespace Tacho {
           _aj(),
           _ax()
       { 
-        setLabel("CrsMatrixBase");
       }
 
       /// \brief Constructor with label
-      CrsMatrixBase(const char *label) 
-        : _m(0),
-          _n(0),
-          _nnz(0),
-          _ap(),
-          _aj(),
-          _ax()
-      { 
-        setLabel(label); 
-      }
-
-      /// \brief Constructor with label
-      CrsMatrixBase(const char *label,
-                    const ordinal_type m,
+      CrsMatrixBase(const ordinal_type m,
                     const ordinal_type n,
                     const size_type nnz) 
         : _m(0),
@@ -190,7 +166,6 @@ namespace Tacho {
           _aj(),
           _ax()
       { 
-        setLabel(label); 
         createInternal(m, n, nnz);
       }
 
@@ -203,7 +178,6 @@ namespace Tacho {
           _aj(b._aj),
           _ax(b._ax) 
       { 
-        setLabel(b._label); 
       }
     
       KOKKOS_INLINE_FUNCTION
@@ -270,7 +244,7 @@ namespace Tacho {
         os.precision(16);
         os << std::scientific;
 
-        os << " -- " << _label << " -- " << std::endl
+        os << " -- CrsMatrixBase -- " << std::endl
            << "    # of Rows          = " << _m << std::endl
            << "    # of Cols          = " << _n << std::endl
            << "    # of NonZeros      = " << _nnz << std::endl
