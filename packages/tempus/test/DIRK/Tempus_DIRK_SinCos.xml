@@ -1,4 +1,4 @@
-<ParameterList name="BackwardEuler_SinCos">
+<ParameterList name="DIRK_SinCos">
   <ParameterList name="SinCosModel">
     <Parameter name="Accept model parameters"    type="bool" value="true"/>
     <Parameter name="Provide nominal values"     type="bool" value="true"/>

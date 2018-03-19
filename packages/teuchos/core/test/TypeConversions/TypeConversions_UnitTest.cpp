@@ -78,6 +78,19 @@ typedef long long long_long_type;
 typedef unsigned long long unsigned_long_long_type;
 #endif // HAVE_TEUCHOS_LONG_LONG_INT
 
+
+template <class T>
+std::string valToString(const T &val)
+{
+  const int precision = std::numeric_limits<T>::digits10 + 10; // Be super safe!
+  //std::cout << "precision = " << precision << "\n";
+  std::ostringstream os;
+  os.precision(precision);
+  os << val;
+  return os.str();
+}
+
+
 //
 // Tests for conversions between built-in floating-point types.
 //
@@ -308,12 +321,16 @@ TEUCHOS_UNIT_TEST( asSafe, stringToReal ) {
   const long double minusOneLD = -1;
   const long double maxLD = std::numeric_limits<long double>::max ();
 
+  out << "minLD = " << minLD << "\n";
+  out << "minusOneLD = " << minusOneLD << "\n";
+  out << "maxLD = " << maxLD << "\n";
+
   float valF = 0;
   double valD = 0;
   long double valLD = 0;
 
   //
-  // Test string -> float conversions.
+  out << "Testing string -> float conversions ...\n";
   //
   {
     std::ostringstream os;
@@ -358,7 +375,7 @@ TEUCHOS_UNIT_TEST( asSafe, stringToReal ) {
   }
 
   //
-  // Test string -> float conversions that should throw.
+  out << "Testing string -> float conversions that should throw ...\n";
   //
   {
     std::ostringstream os;
@@ -374,7 +391,7 @@ TEUCHOS_UNIT_TEST( asSafe, stringToReal ) {
   }
 
   //
-  // Test string -> double conversions.
+  out << "Testing string -> double conversions ...\n";
   //
   {
     std::ostringstream os;
@@ -395,12 +412,9 @@ TEUCHOS_UNIT_TEST( asSafe, stringToReal ) {
     TEST_EQUALITY_CONST(valD, maxD);
   }
   {
-    std::ostringstream os;
-    os.precision (17);
-    os << minusOneD;
-    TEST_NOTHROW(valD = asSafe<double> (os.str ()));
+    TEST_NOTHROW(valD = asSafe<double> (valToString(minusOneD)));
     TEST_EQUALITY_CONST(valD, minusOneD);
-    TEST_NOTHROW(valD = as<double> (os.str ()));
+    TEST_NOTHROW(valD = as<double> (valToString(minusOneD)));
     TEST_EQUALITY_CONST(valD, minusOneD);
   }
 
@@ -408,23 +422,34 @@ TEUCHOS_UNIT_TEST( asSafe, stringToReal ) {
   // Test string -> double conversions that should throw,
   // if sizeof(long double) > sizeof(double).
   //
-  if (sizeof (long double) > sizeof (double)) {
+  const int sizeof_long_double = sizeof(long double);
+  const int sizeof_double = sizeof(double);
+  const int max_exponent10_long_double = std::numeric_limits<long double>::max_exponent10;
+  const int max_exponent10_double = std::numeric_limits<double>::max_exponent10;
+
+  out << "sizeof_long_double = " << sizeof_long_double << "\n";
+  out << "sizeof_double = " << sizeof_double << "\n";
+  out << "max_exponent10_long_double = " << max_exponent10_long_double << "\n";
+  out << "max_exponent10_double = " << max_exponent10_double << "\n";
+ 
+  if (sizeof_long_double > sizeof_double
+    && max_exponent10_long_double > max_exponent10_double)
+  {
+    out << "Testing converting from 'long double' to 'double' that does not fit ...\n";
     {
-      std::ostringstream os;
-      os.precision (36);
-      os << minLD;
-      TEST_THROW(valD = asSafe<double> (os.str ()), std::range_error);
+      TEST_THROW(valD = asSafe<double>(valToString(minLD)), std::range_error);
+      out << "valD = " << valD << "\n";
     }
     {
       std::ostringstream os;
       os.precision (36);
-      os << maxLD;
-      TEST_THROW(valD = asSafe<double> (os.str ()), std::range_error);
+      TEST_THROW(valD = asSafe<double>(valToString(maxLD)), std::range_error);
+      out << "valD = " << valD << "\n";
     }
   }
 
   //
-  // Test string -> long double conversions.
+  out << "Testing string -> long double conversions ...\n";
   //
   {
     std::ostringstream os;

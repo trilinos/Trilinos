@@ -1,4 +1,4 @@
-<ParameterList name="ExplicitRK_SinCos">
+<ParameterList name="DIRK_SteadyQuadratic">
   <ParameterList name="SteadyQuadraticModel">
     <Parameter name="Coeff b" type="double" value="1.0"/>
   </ParameterList>
