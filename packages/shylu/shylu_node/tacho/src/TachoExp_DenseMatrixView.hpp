@@ -18,9 +18,9 @@ namespace Tacho {
       typedef ValueType value_type;
       typedef value_type non_const_value_type;
 
-      typedef ExecSpace exec_space;
+      typedef ExecSpace execution_space;
 
-      typedef Kokkos::Future<int,exec_space> future_type;
+      typedef Kokkos::Future<int,execution_space> future_type;
 
     private:
       ordinal_type _offm, _offn, _m, _n, _rs, _cs;
@@ -130,12 +130,28 @@ namespace Tacho {
     KOKKOS_INLINE_FUNCTION
     void 
     clearFutureOfBlocks(const MatrixOfBlocksViewType &H) {
-      const ordinal_type m = H.dimension_0(), n = H.dimension_1();
+      const ordinal_type m = H.dimension_0();
+      const ordinal_type n = H.dimension_1();
       for (ordinal_type j=0;j<n;++j)
         for (ordinal_type i=0;i<m;++i)
           H(i,j).set_future();
     }
 
+    template<typename MemberType, 
+             typename MatrixOfBlocksViewType>
+    KOKKOS_INLINE_FUNCTION
+    void 
+    clearFutureOfBlocks(/* */ MemberType &member, 
+                        const MatrixOfBlocksViewType &H) {
+      const ordinal_type m = H.dimension_0();
+      const ordinal_type n = H.dimension_1();
+      Kokkos::parallel_for(Kokkos::TeamThreadRange(member,n),[&](const int &j) {
+          Kokkos::parallel_for(Kokkos::ThreadVectorRange(member,m),[&](const int &i) {
+              H(i,j).set_future();
+            });
+        });
+    }
+    
     template<typename MatrixOfBlocksViewType>
     KOKKOS_INLINE_FUNCTION
     void 
@@ -144,9 +160,8 @@ namespace Tacho {
                       const ordinal_type n,
                       const ordinal_type mb,
                       const ordinal_type nb) {     
-      const ordinal_type 
-        bm = H.dimension_0(),
-        bn = H.dimension_1();
+      const ordinal_type bm = H.dimension_0();
+      const ordinal_type bn = H.dimension_1();
       
       for (ordinal_type j=0;j<bn;++j) {
         const ordinal_type
@@ -175,6 +190,50 @@ namespace Tacho {
                       const ordinal_type mb) {
       setMatrixOfBlocks(H, m, n, mb, mb);
     }
+    
+    
+    template<typename MemberType,
+             typename MatrixOfBlocksViewType>
+    KOKKOS_INLINE_FUNCTION
+    void 
+    setMatrixOfBlocks(/* */ MemberType &member, 
+                      const MatrixOfBlocksViewType &H,
+                      const ordinal_type m,
+                      const ordinal_type n,
+                      const ordinal_type mb,
+                      const ordinal_type nb) {     
+      const ordinal_type bm = H.dimension_0();
+      const ordinal_type bn = H.dimension_1();
+      
+      Kokkos::parallel_for(Kokkos::TeamThreadRange(member,bn),[&](const int &j) {
+          const ordinal_type
+            jbeg = j*nb, jtmp = jbeg + nb,
+            jend = jtmp > n ? n : jtmp,
+            jdiff = (jend > jbeg)*(jend - jbeg);
+
+          Kokkos::parallel_for(Kokkos::ThreadVectorRange(member,bm),[&](const int &i) {
+              const ordinal_type
+                ibeg = i*mb, itmp = ibeg + mb,
+                iend = itmp > m ? m : itmp,
+                idiff = (iend > ibeg)*(iend - ibeg);
+              
+              H(i,j).set_view(ibeg, idiff, 
+                              jbeg, jdiff);
+            });
+        });
+    }
+    
+    template<typename MemberType, 
+             typename MatrixOfBlocksViewType>
+    KOKKOS_INLINE_FUNCTION
+    void 
+    setMatrixOfBlocks(/* */ MemberType &member, 
+                      const MatrixOfBlocksViewType &H,
+                      const ordinal_type m,
+                      const ordinal_type n,
+                      const ordinal_type mb) {
+      setMatrixOfBlocks(member, H, m, n, mb, mb);
+    }
 
     template<typename MatrixOfBlocksViewType,
              typename BaseBufferPtrType>
@@ -189,6 +248,25 @@ namespace Tacho {
         for (ordinal_type i=0;i<m;++i) 
           H(i,j).attach_buffer(rs, cs, ptr);
     }
+
+    template<typename MemberType, 
+             typename MatrixOfBlocksViewType,
+             typename BaseBufferPtrType>
+    KOKKOS_INLINE_FUNCTION
+    void 
+    attachBaseBuffer(/* */ MemberType &member, 
+                     const MatrixOfBlocksViewType &H,
+                     const BaseBufferPtrType ptr,
+                     const ordinal_type rs,
+                     const ordinal_type cs) {
+      const ordinal_type m = H.dimension_0();
+      const ordinal_type n = H.dimension_1();
+      Kokkos::parallel_for(Kokkos::TeamThreadRange(member,n),[&](const int &j) {
+          Kokkos::parallel_for(Kokkos::ThreadVectorRange(member,m),[&](const int &i) {
+              H(i,j).attach_buffer(rs, cs, ptr);
+            });
+        });
+    }
     
     template<typename MatrixOfBlocksViewType,
              typename MemoryPoolType>
@@ -199,7 +277,8 @@ namespace Tacho {
       typedef typename MatrixOfBlocksViewType::value_type dense_block_type;
       typedef typename dense_block_type::value_type value_type;
 
-      const ordinal_type m = H.dimension_0(), n = H.dimension_1();
+      const ordinal_type m = H.dimension_0();
+      const ordinal_type n = H.dimension_1();
       for (ordinal_type j=0;j<n;++j)
         for (ordinal_type i=0;i<m;++i) {
           const ordinal_type mm = H(i,j).dimension_0(), nn = H(i,j).dimension_1();
@@ -296,40 +375,35 @@ namespace Tacho {
       }
     }
 
-    template<typename DenseMatrixViewTypeA, 
-             typename DenseMatrixViewTypeB, 
-             typename OrdinalTypeArray>
-    KOKKOS_INLINE_FUNCTION
-    void
-    applyRowPermutation(const DenseMatrixViewTypeA &A, 
-                        const DenseMatrixViewTypeB &B,
-                        const OrdinalTypeArray &p) {
-      const ordinal_type m = A.dimension_0(), n = A.dimension_1();
-      for (ordinal_type i=0;i<m;++i)
-        for (ordinal_type j=0;j<n;++j)
-          A(p(i), j) = B(i, j);
-    }
-
-    template<typename DenseMatrixViewTypeA, 
-             typename DenseMatrixViewTypeB, 
+    template<typename DenseMatrixViewType,
              typename OrdinalTypeArray>
     inline
     void
-    applyRowPermutation_Device(const DenseMatrixViewTypeA &A, 
-                               const DenseMatrixViewTypeB &B,
-                               const OrdinalTypeArray &p) {
+    applyRowPermutation(const DenseMatrixViewType &A, 
+                        const DenseMatrixViewType &B,
+                        const OrdinalTypeArray &p) {
       const ordinal_type m = A.dimension_0(), n = A.dimension_1();
-      typedef typename DenseMatrixViewTypeA::execution_space exec_space;
+      typedef typename DenseMatrixViewType::execution_space execution_space;
 
-      Kokkos::TeamPolicy<exec_space,
-        Kokkos::Schedule<Kokkos::Static> > policy(m, 1 /* teamsize */, 1024 /* worksetsize */);
-
-      Kokkos::parallel_for
-        (policy, KOKKOS_LAMBDA (const typename Kokkos::TeamPolicy<exec_space>::member_type &member) {
-          const ordinal_type i = member.league_rank();
+      if (std::is_same<typename execution_space::memory_space,Kokkos::HostSpace>::value) {
+        // serial copy on host
+        for (ordinal_type i=0;i<m;++i)
           for (ordinal_type j=0;j<n;++j)
             A(p(i), j) = B(i, j);
-        });
+      } else {      
+        // this probably is not good for layout left... 
+        Kokkos::TeamPolicy<execution_space,Kokkos::Schedule<Kokkos::Static> > policy(m, 1);
+        Kokkos::parallel_for
+          (policy, KOKKOS_LAMBDA (const typename Kokkos::TeamPolicy<execution_space>::member_type &member) {
+            const ordinal_type i = member.league_rank();
+            Kokkos::parallel_for(Kokkos::ThreadVectorRange(member,n),[&](const int &j) {
+                Kokkos::single(Kokkos::PerThread(member), [&]() {
+                    A(p(i), j) = B(i, j);
+                  });
+              });
+          });
+      }
+
     }
 
   }

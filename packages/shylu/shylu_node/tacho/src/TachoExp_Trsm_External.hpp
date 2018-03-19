@@ -14,20 +14,18 @@ namespace Tacho {
     
     template<typename ArgSide, typename ArgUplo, typename ArgTransA>
     struct Trsm<ArgSide,ArgUplo,ArgTransA,Algo::External> {      
-      template<typename PolicyType,
-               typename MemberType,
-               typename DiagType,
+
+      template<typename DiagType,
                typename ScalarType,
                typename ViewTypeA,
                typename ViewTypeB>
       inline
       static int
-      invoke(const PolicyType &policy,
-             const MemberType &member,
-             const DiagType diagA,
+      invoke(const DiagType diagA,
              const ScalarType alpha,
              const ViewTypeA &A,
              const ViewTypeB &B) {
+#if defined( KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_HOST )
         typedef typename ViewTypeA::non_const_value_type value_type;
         typedef typename ViewTypeB::non_const_value_type value_type_b;
         
@@ -37,24 +35,45 @@ namespace Tacho {
         static_assert(std::is_same<value_type,value_type_b>::value,
                       "A and B do not have the same value type.");
         
-        const ordinal_type m = B.dimension_0(), n = B.dimension_1();
+        const ordinal_type m = B.dimension_0();
+        const ordinal_type n = B.dimension_1();
         
-        if (m > 0 && n > 0) {
-          if (get_team_rank(member) == 0) {
-#if defined( KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_HOST )
-            Blas<value_type>::trsm(ArgSide::param, 
-                                   ArgUplo::param, 
-                                   ArgTransA::param, 
-                                   diagA.param,
-                                   m, n,
-                                   value_type(alpha),
-                                   A.data(), A.stride_1(),
-                                   B.data(), B.stride_1());
+        if (m > 0 && n > 0) 
+          Blas<value_type>::trsm(ArgSide::param, 
+                                 ArgUplo::param, 
+                                 ArgTransA::param, 
+                                 diagA.param,
+                                 m, n,
+                                 value_type(alpha),
+                                 A.data(), A.stride_1(),
+                                 B.data(), B.stride_1());
 #else
-            TACHO_TEST_FOR_ABORT( true, "This function is only allowed in host space.");
+        TACHO_TEST_FOR_ABORT( true, "This function is only allowed in host space.");
 #endif
-          }
-        }
+        return 0;
+      }
+      
+      template<typename PolicyType,
+               typename MemberType,
+               typename DiagType,
+               typename ScalarType,
+               typename ViewTypeA,
+               typename ViewTypeB>
+      inline
+      static int
+      invoke(PolicyType &policy,
+             MemberType &member,
+             const DiagType diagA,
+             const ScalarType alpha,
+             const ViewTypeA &A,
+             const ViewTypeB &B) {
+#if defined( KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_HOST )
+        Kokkos::single(Kokkos::PerTeam(member), [&]() {
+            invoke(diagA, alpha, A, B);
+          });
+#else
+        TACHO_TEST_FOR_ABORT( true, "This function is only allowed in host space.");
+#endif
         return 0;
       }
     };

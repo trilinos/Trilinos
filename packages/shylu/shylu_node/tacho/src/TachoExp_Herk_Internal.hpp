@@ -21,8 +21,8 @@ namespace Tacho {
                typename ViewTypeC>
       KOKKOS_INLINE_FUNCTION
       static int
-      invoke(const SchedType &sched,
-             const MemberType &member,
+      invoke(SchedType &sched,
+             MemberType &member,
              const ScalarType alpha,
              const ViewTypeA &A,
              const ScalarType beta,
@@ -37,9 +37,10 @@ namespace Tacho {
         static_assert(std::is_same<value_type,value_type_c>::value,
                       "A and C do not have the same value type.");
         
-        const ordinal_type 
-          n = C.dimension_0(), 
+        const ordinal_type n = C.dimension_0();
+        const ordinal_type
           k = (std::is_same<ArgTrans,Trans::NoTranspose>::value ? A.dimension_1() : A.dimension_0());
+        
         if (n > 0 && k > 0) 
           BlasTeam<value_type>::herk(member,
                                      ArgUplo::param,

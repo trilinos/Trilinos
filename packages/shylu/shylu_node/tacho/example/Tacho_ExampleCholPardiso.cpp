@@ -36,16 +36,18 @@ int main (int argc, char *argv[]) {
   if (r_parse) return 0; // print help return
 
   const bool skip_factorize = false, skip_solve = false;
+
+  typedef Kokkos::DefaultHostExecutionSpace host_space;
   
   Kokkos::initialize(argc, argv);
-  Kokkos::DefaultHostExecutionSpace::print_configuration(std::cout, false);
+  host_space::print_configuration(std::cout, false);
 
   int r_val = 0;
 #if defined (__INTEL_MKL__)
   {
     typedef double value_type;
-    typedef CrsMatrixBase<value_type> CrsMatrixBaseType;
-    typedef Kokkos::View<value_type**,Kokkos::LayoutLeft,Kokkos::DefaultHostExecutionSpace> DenseMatrixBaseType;
+    typedef CrsMatrixBase<value_type,host_space> CrsMatrixBaseType;
+    typedef Kokkos::View<value_type**,Kokkos::LayoutLeft,host_space> DenseMatrixBaseType;
     
     // mkl nthreads setting 
     mkl_set_dynamic(0);
@@ -103,7 +105,7 @@ int main (int argc, char *argv[]) {
     t = timer.seconds();
 
     // 32bit vs 64bit integers; A uses size_t for size array
-    Kokkos::View<ordinal_type*,Kokkos::DefaultHostExecutionSpace> rowptr("rowptr", Asym.NumRows()+1);
+    Kokkos::View<ordinal_type*,host_space> rowptr("rowptr", Asym.NumRows()+1);
     {      
       for (ordinal_type i=0;i<=Asym.NumRows();++i)
         rowptr(i) = Asym.RowPtrBegin(i);
@@ -183,7 +185,7 @@ int main (int argc, char *argv[]) {
     }
     
     {
-      const double res = NumericTools<value_type,Kokkos::DefaultHostExecutionSpace>::computeRelativeResidual(A, X, B);
+      const double res = NumericTools<value_type,host_space>::computeRelativeResidual(A, X, B);
       std::cout << "PardisoChol:: residual = " << res << std::endl;
     }
     

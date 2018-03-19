@@ -40,7 +40,7 @@ namespace Tacho {
       supernode_info_type _info;
       ordinal_type _sid;
 
-      supernode_type _s;
+      //supernode_type _s;
 
     public:
       KOKKOS_INLINE_FUNCTION
@@ -54,8 +54,8 @@ namespace Tacho {
         : _sched(sched),
           _bufpool(bufpool),
           _info(info),
-          _sid(sid),
-          _s(info.supernodes(sid)) {}
+          _sid(sid) {}
+          //_s(info.supernodes(sid)) {}
 
       KOKKOS_INLINE_FUNCTION
       ordinal_type 
@@ -63,43 +63,51 @@ namespace Tacho {
         const ordinal_type nrhs = _info.x.dimension_1();
         const size_t bufsize = n*nrhs*sizeof(mat_value_type);
 
-        mat_value_type *buf = bufsize > 0 ? (mat_value_type*)_bufpool.allocate(bufsize) : NULL;
-        //TACHO_TEST_FOR_ABORT(buf == NULL && bufsize != 0, "bufmemory pool allocation fails");
+        mat_value_type* buf = NULL;
+        Kokkos::single(Kokkos::PerTeam(member), [&](mat_value_type *&val) {        
+            val = bufsize > 0 ? (mat_value_type*)_bufpool.allocate(bufsize) : NULL;
+          }, buf);
+
         if (buf == NULL && bufsize)
           return -1;
-
+        
         CholSupernodes<Algo::Workflow::Serial>
           ::solve_upper_recursive_serial(_sched, member, _info, _sid, final, buf, bufsize);
 
-        if (bufsize)
-          _bufpool.deallocate(buf, bufsize);
-
+        Kokkos::single(Kokkos::PerTeam(member), [&]() {
+            if (bufsize)
+              _bufpool.deallocate(buf, bufsize);
+          });
+        
         return 0;
       }
 
       KOKKOS_INLINE_FUNCTION
       void operator()(member_type &member, value_type &r_val) {
-        if (get_team_rank(member) == 0) {
-
-          if (_info.serial_thres_size > _s.max_decendant_supernode_size) {
-            r_val = solve_internal(member, _s.max_decendant_schur_size, true);
-            if (r_val) 
-              Kokkos::respawn(this, _sched, Kokkos::TaskPriority::Low);
-          } else {
-            r_val = solve_internal(member, _s.n - _s.m, false);
-            if (r_val) {
-              Kokkos::respawn(this, _sched, Kokkos::TaskPriority::Low);
-            } else {
-              // spawn children tasks and this (their parent) depends on the children tasks
-              for (ordinal_type i=0;i<_s.nchildren;++i) {
-                auto f = Kokkos::task_spawn(Kokkos::TaskSingle(_sched, Kokkos::TaskPriority::Regular),
-                                            TaskFunctor_SolveUpperChol(_sched, _bufpool, _info, _s.children[i]));
-                TACHO_TEST_FOR_ABORT(f.is_null(), "task allocation fails");
+        const auto &_s = _info.supernodes(_sid);
+        if (_info.serial_thres_size > _s.max_decendant_supernode_size) {
+          r_val = solve_internal(member, _s.max_decendant_schur_size, true);
+          Kokkos::single(Kokkos::PerTeam(member), [&]() {
+              if (r_val) 
+                Kokkos::respawn(this, _sched, Kokkos::TaskPriority::Low);
+            });
+        } else {
+          r_val = solve_internal(member, _s.n - _s.m, false);
+          Kokkos::single(Kokkos::PerTeam(member), [&]() {
+              if (r_val) {
+                Kokkos::respawn(this, _sched, Kokkos::TaskPriority::Low);
+              } else {
+                // spawn children tasks and this (their parent) depends on the children tasks
+                for (ordinal_type i=0;i<_s.nchildren;++i) {
+                  auto f = Kokkos::task_spawn(Kokkos::TaskTeam(_sched, Kokkos::TaskPriority::Regular),
+                                              TaskFunctor_SolveUpperChol(_sched, _bufpool, _info, _s.children[i]));
+                  TACHO_TEST_FOR_ABORT(f.is_null(), "task allocation fails");
+                }
               }
-            }
-          }
+            });
         }
       }
+
     };
   }
 }

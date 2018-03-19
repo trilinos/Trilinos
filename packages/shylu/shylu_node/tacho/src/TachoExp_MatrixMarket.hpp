@@ -12,7 +12,7 @@ namespace Tacho {
   namespace Experimental {
     
     template<typename ValueType>
-    KOKKOS_FORCEINLINE_FUNCTION
+    inline
     typename std::enable_if<std::is_same<ValueType,double>::value ||
                             std::is_same<ValueType,float>::value>::type
     impl_read_value_from_file(std::ifstream &file,
@@ -22,7 +22,7 @@ namespace Tacho {
       file >> row >> col >> val;
     }  
     template<typename ValueType>
-    KOKKOS_FORCEINLINE_FUNCTION
+    inline
     typename std::enable_if<std::is_same<ValueType,Kokkos::complex<double> >::value ||
                             std::is_same<ValueType,Kokkos::complex<float> >::value>::type
     impl_read_value_from_file(std::ifstream &file,
@@ -35,7 +35,7 @@ namespace Tacho {
     }
 
     template<typename ValueType>
-    KOKKOS_FORCEINLINE_FUNCTION
+    inline
     typename std::enable_if<std::is_same<ValueType,double>::value ||
                             std::is_same<ValueType,float>::value>::type
     impl_write_value_to_file(std::ofstream &file,
@@ -50,7 +50,7 @@ namespace Tacho {
 
 
     template<typename ValueType>
-    KOKKOS_FORCEINLINE_FUNCTION
+    inline
     typename std::enable_if<std::is_same<ValueType,Kokkos::complex<double> >::value ||
                             std::is_same<ValueType,Kokkos::complex<float> >::value>::type
     impl_write_value_to_file(std::ofstream &file,
@@ -68,8 +68,16 @@ namespace Tacho {
     struct MatrixMarket {
 
       /// \brief matrix market reader
-      static CrsMatrixBase<ValueType,Kokkos::DefaultHostExecutionSpace>
-      read(const std::string &filename, const ordinal_type verbose = 0) {
+      template<typename ExecSpaceType>
+      static void
+      read(const std::string &filename, 
+           CrsMatrixBase<ValueType,ExecSpaceType> &A,
+           const ordinal_type verbose = 0) {
+        static_assert(Kokkos::Impl::MemorySpaceAccess< 
+                      Kokkos::HostSpace, 
+                      typename ExecSpaceType::memory_space >::assignable, 
+                      "ExecSpaceType is not assignable from HostSpace" );
+        
         typedef ArithTraits<ValueType> ats;
         Kokkos::Impl::Timer timer;
 
@@ -132,10 +140,9 @@ namespace Tacho {
         }
 
         // change mm to crs
-        typedef Kokkos::DefaultHostExecutionSpace host_space;
-        Kokkos::View<size_type*,   host_space> ap("ap", m+1);
-        Kokkos::View<ordinal_type*,host_space> aj("aj", nnz);
-        Kokkos::View<value_type*,  host_space> ax("ax", nnz);
+        Kokkos::View<size_type*,   ExecSpaceType> ap("ap", m+1);
+        Kokkos::View<ordinal_type*,ExecSpaceType> aj("aj", nnz);
+        Kokkos::View<value_type*,  ExecSpaceType> ax("ax", nnz);
         {
           ordinal_type icnt = 0;
           size_type jcnt = 0;
@@ -165,7 +172,7 @@ namespace Tacho {
         }
 
         // create crs matrix view
-        CrsMatrixBase<value_type,host_space> A;
+        A.clear();
         A.setExternalMatrix(m, n, nnz, ap, aj, ax);
 
         const double t = timer.seconds();
@@ -183,15 +190,21 @@ namespace Tacho {
           printf("             number of nonzeros:                              %10d\n", ordinal_type(nnz));
           printf("\n");
         }
-        return A;
       }
 
       /// \brief matrix marker writer
-      template<typename uplo=void>
+      template<typename ExecSpaceType, 
+               typename uplo=void>
       static void
       write(std::ofstream &file,
-            const CrsMatrixBase<ValueType,Kokkos::DefaultHostExecutionSpace> &A,
+            const CrsMatrixBase<ValueType,ExecSpaceType> &A,
             const std::string comment = "%% Tacho::MatrixMarket::Export") {
+        static_assert(Kokkos::Impl::MemorySpaceAccess< 
+                      Kokkos::HostSpace, 
+                      typename ExecSpaceType::memory_space
+                      >::assignable, 
+                      "ExecSpaceType is not assignable from HostSpace" );
+
         typedef ArithTraits<ValueType> ats;
         typedef ValueType value_type;
 

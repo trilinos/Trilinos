@@ -1,8 +1,8 @@
-#ifndef __TACHOEXP_TRSM_INTERNAL_HPP__
-#define __TACHOEXP_TRSM_INTERNAL_HPP__
+#ifndef __TACHOEXP_TRSV_INTERNAL_HPP__
+#define __TACHOEXP_TRSV_INTERNAL_HPP__
 
 
-/// \file  Tacho_Trsm_Internal.hpp
+/// \file  Tacho_Trsv_Internal.hpp
 /// \brief BLAS triangular solve matrix
 /// \author Kyungjoo Kim (kyukim@sandia.gov)
 
@@ -12,12 +12,11 @@ namespace Tacho {
   
   namespace Experimental {
     
-    template<typename ArgSide, typename ArgUplo, typename ArgTransA>
-    struct Trsm<ArgSide,ArgUplo,ArgTransA,Algo::Internal> {      
+    template<typename ArgUplo, typename ArgTransA>
+    struct Trsv<ArgUplo,ArgTransA,Algo::Internal> {      
       template<typename PolicyType,
                typename MemberType,
                typename DiagType,
-               typename ScalarType,
                typename ViewTypeA,
                typename ViewTypeB>
       KOKKOS_INLINE_FUNCTION
@@ -25,7 +24,6 @@ namespace Tacho {
       invoke(PolicyType &policy,
              MemberType &member,
              const DiagType diagA,
-             const ScalarType alpha,
              const ViewTypeA &A,
              const ViewTypeB &B) {
         typedef typename ViewTypeA::non_const_value_type value_type;
@@ -39,17 +37,16 @@ namespace Tacho {
         
         const ordinal_type m = B.dimension_0();
         const ordinal_type n = B.dimension_1();
-
+        
         if (m > 0 && n > 0) 
-          BlasTeam<value_type>::trsm(member,
-                                     ArgSide::param, 
-                                     ArgUplo::param, 
-                                     ArgTransA::param, 
-                                     diagA.param,
-                                     m, n,
-                                     value_type(alpha),
-                                     A.data(), A.stride_1(),
-                                     B.data(), B.stride_1());
+          for (ordinal_type p=0,offsB=0;p<n;++p,offsB+=B.stride_1()) {  
+            BlasTeam<value_type>::trsv(member,
+                                       ArgUplo::param, ArgTransA::param, 
+                                       diagA.param, 
+                                       m,
+                                       A.data(), A.stride_1(), 
+                                       (B.data() + offsB), B.stride_0());
+          }
         return 0;
       }
     };

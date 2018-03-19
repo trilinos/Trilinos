@@ -51,14 +51,14 @@ IF(Kokkos_ENABLE_OpenMP)
     FAIL_REGULAR_EXPRESSION "  FAILED  "
   )
 
-  # TRIBITS_ADD_EXECUTABLE_AND_TEST(
-  #   Tacho_TestOpenMP_dcomplex
-  #   NOEXEPREFIX
-  #   SOURCES Tacho_TestOpenMP_dcomplex.cpp
-  #   ARGS PrintItAll
-  #   NUM_MPI_PROCS 1
-  #   FAIL_REGULAR_EXPRESSION "  FAILED  "
-  # )
+  TRIBITS_ADD_EXECUTABLE_AND_TEST(
+    Tacho_TestOpenMP_dcomplex
+    NOEXEPREFIX
+    SOURCES Tacho_TestOpenMP_dcomplex.cpp
+    ARGS PrintItAll
+    NUM_MPI_PROCS 1
+    FAIL_REGULAR_EXPRESSION "  FAILED  "
+  )
 
 ENDIF()
 

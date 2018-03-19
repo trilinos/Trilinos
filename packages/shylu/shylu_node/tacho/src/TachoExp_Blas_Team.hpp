@@ -18,41 +18,61 @@ namespace Tacho {
         template<typename MemberType>
         static 
         KOKKOS_INLINE_FUNCTION
-        void set(const MemberType &member,
+        void set(MemberType &member,
                  int m, 
                  const T alpha, 
                  /* */ T *a, int as0) {
-          if (as0 == 1) 
-            Kokkos::parallel_for(Kokkos::ThreadVectorRange(member,m),[&](const int &i) {            
-                a[i] = alpha;
-              });
-          else
-            Kokkos::parallel_for(Kokkos::ThreadVectorRange(member,m),[&](const int &i) {            
-                a[i*as0] = alpha;
-              });
+#if 0
+          Kokkos::parallel_for(Kokkos::TeamThreadRange(member,m),[&](const int &i) {
+              Kokkos::single(Kokkos::PerThread(member), [&]() {              
+                  a[i*as0] = alpha;
+                });
+            });
+#else 
+          const int team_index_range = (m/CudaVectorSize) + (m%CudaVectorSize > 0);
+          Kokkos::parallel_for(Kokkos::TeamThreadRange(member,team_index_range),[&](const int &idx) {
+              const int ioff = idx * CudaVectorSize;
+              const int itmp = m - ioff;
+              const int icnt = itmp > CudaVectorSize ? CudaVectorSize : itmp;
+              Kokkos::parallel_for(Kokkos::ThreadVectorRange(member,icnt),[&](const int &ii) {            
+                  const int i = ioff + ii;
+                  a[i*as0] = alpha;
+                });
+            });
+#endif
         }
         
         template<typename MemberType>
         static 
         KOKKOS_INLINE_FUNCTION
-        void scale(const MemberType &member,
+        void scale(MemberType &member,
                    int m, 
                    const T alpha, 
                    /* */ T *a, int as0) {
-          if (as0 == 1) 
-            Kokkos::parallel_for(Kokkos::ThreadVectorRange(member,m),[&](const int &i) {            
-                a[i] *= alpha;
-              });
-          else
-            Kokkos::parallel_for(Kokkos::ThreadVectorRange(member,m),[&](const int &i) {            
-                a[i*as0] *= alpha;
-              });
+#if 0
+          Kokkos::parallel_for(Kokkos::TeamThreadRange(member,m),[&](const int &i) {
+              Kokkos::single(Kokkos::PerThread(member), [&]() {              
+                  a[i*as0] *= alpha;
+                });
+            });
+#else 
+          const int team_index_range = (m/CudaVectorSize) + (m%CudaVectorSize > 0);
+          Kokkos::parallel_for(Kokkos::TeamThreadRange(member,team_index_range),[&](const int &idx) {
+              const int ioff = idx * CudaVectorSize;
+              const int itmp = m - ioff;
+              const int icnt = itmp > CudaVectorSize ? CudaVectorSize : itmp;
+              Kokkos::parallel_for(Kokkos::ThreadVectorRange(member,icnt),[&](const int &ii) {            
+                  const int i = ioff + ii;
+                  a[i*as0] *= alpha;
+                });
+            });
+#endif
         }
         
         template<typename MemberType>
         static 
         KOKKOS_INLINE_FUNCTION
-        void set(const MemberType &member,
+        void set(MemberType &member,
                  int m, int n, 
                  const T alpha, 
                  /* */ T *a, int as0, int as1) {
@@ -73,7 +93,7 @@ namespace Tacho {
         template<typename MemberType>
         static 
         KOKKOS_INLINE_FUNCTION
-        void scale(const MemberType &member,
+        void scale(MemberType &member,
                    int m, int n, 
                    const T alpha, 
                    /* */ T *a, int as0, int as1) {
@@ -94,7 +114,7 @@ namespace Tacho {
         template<typename MemberType>
         static 
         KOKKOS_INLINE_FUNCTION
-        void set_upper(const MemberType &member,
+        void set_upper(MemberType &member,
                        int m, int n, int offset,
                        const T alpha, 
                        /* */ T *a, int as0, int as1) {
@@ -108,7 +128,7 @@ namespace Tacho {
         template<typename MemberType>
         static 
         KOKKOS_INLINE_FUNCTION
-        void scale_upper(const MemberType &member,
+        void scale_upper(MemberType &member,
                          int m, int n, int offset, 
                          const T alpha, 
                          /* */ T *a, int as0, int as1) {
@@ -123,7 +143,7 @@ namespace Tacho {
         template<typename MemberType>
         static 
         KOKKOS_INLINE_FUNCTION
-        void set_lower(const MemberType &member,
+        void set_lower(MemberType &member,
                        int m, int n, int offset,
                        const T alpha, 
                        /* */ T *a, int as0, int as1) {
@@ -138,7 +158,7 @@ namespace Tacho {
         template<typename MemberType>
         static 
         KOKKOS_INLINE_FUNCTION
-        void scale_lower(const MemberType &member,
+        void scale_lower(MemberType &member,
                          int m, int n, int offset, 
                          const T alpha, 
                          /* */ T *a, int as0, int as1) {
@@ -153,7 +173,7 @@ namespace Tacho {
         template<typename ConjType, typename MemberType>
         static 
         KOKKOS_INLINE_FUNCTION
-        void gemv(const MemberType &member, const ConjType &cj,
+        void gemv(MemberType &member, const ConjType &cj,
                   const int m, const int n, 
                   const T alpha, 
                   const T *A, const int as0, const int as1,
@@ -167,18 +187,24 @@ namespace Tacho {
           
           if (alpha != zero) {
             if (m <=0 || n <=0) return;
-            
-            if (beta != one) {
-              member.team_barrier();
 
+            member.team_barrier();            
+            {
               // need better impl for column major layout
               Kokkos::parallel_for(Kokkos::TeamThreadRange(member,m),[&](const int &i) {
                   T t(0);
                   const T *__restrict__ tA = (A+i*as0);
-                  Kokkos::parallel_reduce(Kokkos::ThreadVectorRange(member,n),[&](const int &j, T &val) {
-                      val += cj(tA[j*as1])*x[j*xs0];
-                    }, t);                  
-                  y[i*ys0] += alpha*t;
+                  Kokkos::parallel_for(Kokkos::ThreadVectorRange(member,n),[&](const int &j) {
+                      t += cj(tA[j*as1])*x[j*xs0];
+                    });                  
+                  Kokkos::atomic_add(&y[i*ys0], alpha*t);
+                  // probably the above impl is better
+                  // Kokkos::parallel_reduce(Kokkos::ThreadVectorRange(member,n),[&](const int &j, T &val) {
+                  //     val += cj(tA[j*as1])*x[j*xs0];
+                  //   }, t);
+                  // Kokkos::single(Kokkos::PerTeam(member), [&]() {
+                  //     y[i*ys0] += alpha*t;
+                  //   });
                 });
             }
           }
@@ -188,34 +214,50 @@ namespace Tacho {
         template<typename ConjType, typename MemberType>
         static 
         KOKKOS_INLINE_FUNCTION
-        void trsv_upper(const MemberType &member, const ConjType &cjA,
+        void trsv_upper(MemberType &member, const ConjType &cjA,
                         const char diag, 
                         const int m, 
                         const T *A, const int as0, const int as1,
                         /* */ T *b, const int bs0) {          
           if (m <= 0) return;
-
+          
           const bool use_unit_diag = diag == 'U'|| diag == 'u';
           T *__restrict__ b0 = b;
           for (int p=(m-1);p>=0;--p) {
             const int iend = p;
-
+            
             const T *__restrict__ a01   = A+p*as1;
             /**/  T *__restrict__ beta1 = b+p*bs0;
-
+            
             member.team_barrier();
             T local_beta1 = *beta1;
             if (!use_unit_diag) {
               const T alpha11 = cjA(A[p*as0+p*as1]);
               local_beta1 /= alpha11;
-              
-              if (member.team_rank() == 0)
-                *beta1 = local_beta1;
+
+              Kokkos::single(Kokkos::PerTeam(member), [&]() {
+                  *beta1 = local_beta1;
+                });
             }
 
-            Kokkos::parallel_for(Kokkos::ThreadVectorRange(member,iend),[&](const int &i) {
-                b0[i*bs0] -= cjA(a01[i*as0]) * local_beta1;
+#if 0
+            Kokkos::parallel_for(Kokkos::TeamThreadRange(member,iend),[&](const int &i) {
+                Kokkos::single(Kokkos::PerThread(member), [&]() {              
+                    b0[i*bs0] -= cjA(a01[i*as0]) * local_beta1;
+                  });
               });
+#else 
+            const int team_index_range = (iend/CudaVectorSize) + (iend%CudaVectorSize > 0);
+            Kokkos::parallel_for(Kokkos::TeamThreadRange(member,team_index_range),[&](const int &idx) {
+                const int ioff = idx * CudaVectorSize;
+                const int itmp = iend - ioff;
+                const int icnt = itmp > CudaVectorSize ? CudaVectorSize : itmp;
+                Kokkos::parallel_for(Kokkos::ThreadVectorRange(member,icnt),[&](const int &ii) {            
+                    const int i = ioff + ii;
+                    b0[i*bs0] -= cjA(a01[i*as0]) * local_beta1;
+                  });
+              });
+#endif
           }
         } 
 
@@ -223,7 +265,7 @@ namespace Tacho {
         template<typename ConjType, typename MemberType>
         static 
         KOKKOS_INLINE_FUNCTION
-        void trsv_lower(const MemberType &member, const ConjType &cjA,
+        void trsv_lower(MemberType &member, const ConjType &cjA,
                         const char diag, 
                         const int m, 
                         const T *A, const int as0, const int as1,
@@ -247,14 +289,30 @@ namespace Tacho {
             if (!use_unit_diag) {
               const T alpha11 = A[p*as0+p*as1];
               local_beta1 /= alpha11;
-              
-              if (member.team_rank() == 0)
+
+              Kokkos::single(Kokkos::PerTeam(member), [&]() {              
                 *beta1 = local_beta1;
+                });
             }
 
-            Kokkos::parallel_for(Kokkos::TeamThreadRange(member,0,iend),[&](const int &i) {
-                b2[i*bs0] -= a21[i*as0] * local_beta1;
+#if 0
+            Kokkos::parallel_for(Kokkos::TeamThreadRange(member,iend),[&](const int &i) {
+                Kokkos::single(Kokkos::PerThread(member), [&]() {              
+                    b2[i*bs0] -= a21[i*as0] * local_beta1;
+                  });
               });
+#else 
+            const int team_index_range = (iend/CudaVectorSize) + (iend%CudaVectorSize > 0);
+            Kokkos::parallel_for(Kokkos::TeamThreadRange(member,team_index_range),[&](const int &idx) {
+                const int ioff = idx * CudaVectorSize;
+                const int itmp = iend - ioff;
+                const int icnt = itmp > CudaVectorSize ? CudaVectorSize : itmp;
+                Kokkos::parallel_for(Kokkos::ThreadVectorRange(member,icnt),[&](const int &ii) {            
+                    const int i = ioff + ii;
+                    b2[i*bs0] -= a21[i*as0] * local_beta1;
+                  });
+              });
+#endif
           }
         }
 
@@ -262,7 +320,7 @@ namespace Tacho {
         template<typename ConjTypeA, typename ConjTypeB, typename MemberType>
         static 
         KOKKOS_INLINE_FUNCTION
-        void gemm(const MemberType &member, const ConjTypeA &cjA, const ConjTypeB &cjB,
+        void gemm(MemberType &member, const ConjTypeA &cjA, const ConjTypeB &cjB,
                   const int m, const int n, const int k,
                   const T alpha, 
                   const T *A, const int as0, const int as1,
@@ -277,20 +335,43 @@ namespace Tacho {
           if (alpha != zero) {
             if (m <= 0 || n <= 0 || k <= 0) return;
             
-            if (beta != one)
-              member.team_barrier();
-            
-            Kokkos::parallel_for(Kokkos::TeamThreadRange(member,n),[&](const int &j) {
-                Kokkos::parallel_for(Kokkos::ThreadVectorRange(member,m),[&](const int &i) {
-                    const T 
-                      *__restrict__ pA = A+i*as0, 
-                      *__restrict__ pB = B+j*bs1;
-                    T c(0);
-                    for (int p=0;p<k;++p)
-                      c += cjA(pA[p*as1])*cjB(pB[p*bs0]);
-                    C[i*cs0+j*cs1] += alpha*c;
-                  });
-              });
+            member.team_barrier();
+            // {
+            //   constexpr int bm = 8;
+            //   constexpr int bn = 4;
+            //   for (int i=0;i<m;i+=bm) {
+            //     const T *__restrict__ pA = A + i*as0;
+            //     for (int j=0;j<n;j+=bn) {
+            //       const T *__restrict__ pB = B + j*bs1;
+            //       /* */ T *__restrict__ pC = C + i*cs0 + j*cs1; 
+            //       Kokkos::parallel_for(Kokkos::TeamThreadRange(member,min(bm,m-i)),[&](const int &ii) {
+            //           Kokkos::parallel_for(Kokkos::ThreadVectorRange(member,min(bn,n-j)),[&](const int &jj) {
+            //               const T 
+            //                 *__restrict__ pAA = pA+ii*as0, 
+            //                 *__restrict__ pBB = pB+jj*bs1;
+
+            //               T cc(0);
+            //               for (int pp=0;pp<k;++pp)
+            //                 cc += cjA(pAA[pp*as1])*cjB(pBB[pp*bs0]);
+            //               pC[ii*cs0+jj*cs1] += alpha*cc;
+            //             });
+            //         });
+            //     }
+            //   }
+            // }
+            {
+              Kokkos::parallel_for(Kokkos::TeamThreadRange(member,n),[&](const int &j) {
+                  Kokkos::parallel_for(Kokkos::ThreadVectorRange(member,m),[&](const int &i) {
+                      const T 
+                        *__restrict__ pA = A+i*as0, 
+                        *__restrict__ pB = B+j*bs1;
+                      T c(0);
+                      for (int p=0;p<k;++p)
+                        c += cjA(pA[p*as1])*cjB(pB[p*bs0]);
+                      C[i*cs0+j*cs1] += alpha*c;
+                    });
+                });
+            }
           } 
         }
 
@@ -298,7 +379,7 @@ namespace Tacho {
         template<typename ConjTypeA, typename ConjTypeB, typename MemberType>
         static 
         KOKKOS_INLINE_FUNCTION
-        void herk_upper(const MemberType &member, const ConjTypeA &cjA, const ConjTypeB &cjB,  
+        void herk_upper(MemberType &member, const ConjTypeA &cjA, const ConjTypeB &cjB,  
                         const int n, const int k,
                         const T alpha, 
                         const T *A, const int as0, const int as1,
@@ -312,20 +393,19 @@ namespace Tacho {
           if (alpha != zero) {
             if (n <= 0 || k <= 0) return;
             
-            if (beta != one)
-              member.team_barrier();
-            
-            Kokkos::parallel_for(Kokkos::TeamThreadRange(member,n),[&](const int &j) {
-                Kokkos::parallel_for(Kokkos::ThreadVectorRange(member,j+1),[&](const int &i) {
-                    const T 
-                      *__restrict__ pA = A+j*as0,
-                      *__restrict__ pB = A+i*as0;
-                    T c(0);
-                    for (int p=0;p<k;++p) 
-                      c += cjA(pA[p*as1])*cjB(pB[p*as1]);
-                    C[i*cs0+j*cs1] += alpha*c;
-                  });
-              });
+            member.team_barrier();
+            {
+              Kokkos::parallel_for(Kokkos::TeamThreadRange(member,n),[&](const int &j) {
+                  const T *__restrict__ pA = A+j*as0;
+                  Kokkos::parallel_for(Kokkos::ThreadVectorRange(member,j+1),[&](const int &i) {
+                      const T *__restrict__ pB = A+i*as0;
+                      T c(0);
+                      for (int p=0;p<k;++p) 
+                        c += cjA(pA[p*as1])*cjB(pB[p*as1]);
+                      C[i*cs0+j*cs1] += alpha*c;
+                    });
+                });
+            }
           } 
         }
 
@@ -333,7 +413,7 @@ namespace Tacho {
         template<typename ConjTypeA, typename ConjTypeB, typename MemberType>
         static 
         KOKKOS_INLINE_FUNCTION
-        void herk_lower(const MemberType &member, const ConjTypeA &cjA, const ConjTypeB &cjB,
+        void herk_lower(MemberType &member, const ConjTypeA &cjA, const ConjTypeB &cjB,
                         const int n, const int k,
                         const T alpha, 
                         const T *A, const int as0, const int as1,
@@ -347,21 +427,21 @@ namespace Tacho {
           if (alpha != zero) {
             if (n <= 0 || k <= 0) return;
             
-            if (beta != one)
-              member.team_barrier();
-            
-            Kokkos::parallel_for(Kokkos::TeamThreadRange(member,n),[&](const int &j) {
-                Kokkos::parallel_for(Kokkos::ThreadVectorRange(member,n-j),[&](const int &i) {
-                    const int ii = i+j;
-                    const T 
-                      *__restrict__ pA = A+j*as0,
-                      *__restrict__ pB = A+ii*as0;
-                    T c(0);
-                    for (int p=0;p<k;++p)
-                      c += cjA(pA[p*as1])*cjB(pB[p*as1]);
-                    C[ii*cs0+j*cs1] += alpha*c;
-                  });
-              });
+            member.team_barrier();
+            {
+              Kokkos::parallel_for(Kokkos::TeamThreadRange(member,n),[&](const int &j) {
+                  Kokkos::parallel_for(Kokkos::ThreadVectorRange(member,n-j),[&](const int &i) {
+                      const int ii = i+j;
+                      const T 
+                        *__restrict__ pA = A+j*as0,
+                        *__restrict__ pB = A+ii*as0;
+                      T c(0);
+                      for (int p=0;p<k;++p)
+                        c += cjA(pA[p*as1])*cjB(pB[p*as1]);
+                      C[ii*cs0+j*cs1] += alpha*c;
+                    });
+                });
+            }
           } 
         }
 
@@ -369,7 +449,7 @@ namespace Tacho {
         template<typename ConjType, typename MemberType>
         static 
         KOKKOS_INLINE_FUNCTION
-        void trsm_left_lower(const MemberType &member, const ConjType &cjA, 
+        void trsm_left_lower(MemberType &member, const ConjType &cjA, 
                              const char diag, 
                              const int m, const int n, 
                              const T alpha, 
@@ -396,11 +476,13 @@ namespace Tacho {
               member.team_barrier();
               if (!use_unit_diag) {
                 const T alpha11 = cjA(A[p*as0+p*as1]);
-                Kokkos::parallel_for(Kokkos::TeamThreadRange(member,0,jend),[&](const int &j) {
-                    b1t[j*bs1] /= alpha11;
+                Kokkos::parallel_for(Kokkos::TeamThreadRange(member,jend),[&](const int &j) {
+                    Kokkos::single(Kokkos::PerThread(member), [&]() {
+                        b1t[j*bs1] /= alpha11;
+                      });
                   });
-                member.team_barrier();
               }
+
               Kokkos::parallel_for(Kokkos::TeamThreadRange(member,jend),[&](const int &j) {
                   Kokkos::parallel_for(Kokkos::ThreadVectorRange(member,iend),[&](const int &i) {
                       B2[i*bs0+j*bs1] -= cjA(a21[i*as0]) * b1t[j*bs1];
@@ -409,12 +491,12 @@ namespace Tacho {
             }
           }
         } 
-
+        
 
         template<typename ConjType, typename MemberType>
         static 
         KOKKOS_INLINE_FUNCTION
-        void trsm_left_upper(const MemberType &member, const ConjType &cjA, 
+        void trsm_left_upper(MemberType &member, const ConjType &cjA, 
                              const char diag, 
                              const int m, const int n, 
                              const T alpha, 
@@ -440,9 +522,10 @@ namespace Tacho {
               if (!use_unit_diag) {
                 const T alpha11 = cjA(A[p*as0+p*as1]);
                 Kokkos::parallel_for(Kokkos::TeamThreadRange(member,jend),[&](const int &j) {
-                    b1t[j*bs1] /= alpha11;
+                    Kokkos::single(Kokkos::PerThread(member), [&]() {
+                        b1t[j*bs1] /= alpha11;
+                      });
                   });
-                member.team_barrier();
               }
 
               Kokkos::parallel_for(Kokkos::TeamThreadRange(member,jend),[&](const int &j) {
@@ -455,11 +538,11 @@ namespace Tacho {
         }
         
       };
-
+      
       template<typename MemberType>
       static 
       KOKKOS_INLINE_FUNCTION
-      void gemv(const MemberType &member,
+      void gemv(MemberType &member,
                 const char trans, 
                 const int m, const int n, 
                 const T alpha, 
@@ -513,7 +596,7 @@ namespace Tacho {
       template<typename MemberType>
       static 
       KOKKOS_INLINE_FUNCTION
-      void trsv(const MemberType &member,
+      void trsv(MemberType &member,
                 const char uplo, const char trans, const char diag, 
                 const int m, 
                 const T *a, const int lda,
@@ -588,7 +671,7 @@ namespace Tacho {
       template<typename MemberType>
       static 
       KOKKOS_INLINE_FUNCTION
-      void gemm(const MemberType &member, 
+      void gemm(MemberType &member, 
                 const char transa, const char transb, 
                 const int m, const int n, const int k,
                 const T alpha, 
@@ -732,7 +815,7 @@ namespace Tacho {
       template<typename MemberType>
       static 
       KOKKOS_INLINE_FUNCTION
-      void herk(const MemberType &member, 
+      void herk(MemberType &member, 
                 const char uplo, const char trans, 
                 const int n, const int k,
                 const T alpha, 
@@ -755,8 +838,8 @@ namespace Tacho {
           }
           case 'C':
           case 'c': {
-            const Conjugate cjA;
-            const NoConjugate cjB;
+            const NoConjugate cjA;
+            const Conjugate cjB;
             Impl::herk_upper(member, cjA, cjB,
                              n, k,
                              alpha, 
@@ -784,8 +867,8 @@ namespace Tacho {
           }
           case 'C':
           case 'c': {
-            const Conjugate cjA;
-            const NoConjugate cjB;
+            const NoConjugate cjA;
+            const Conjugate cjB;
             Impl::herk_lower(member, cjA, cjB, 
                              n, k, 
                              alpha, 
@@ -805,7 +888,7 @@ namespace Tacho {
       template<typename MemberType>
       static 
       KOKKOS_INLINE_FUNCTION
-      void trsm(const MemberType &member, 
+      void trsm(MemberType &member, 
                 const char side, const char uplo, const char trans, const char diag,
                 const int m, const int n, 
                 const T alpha, 

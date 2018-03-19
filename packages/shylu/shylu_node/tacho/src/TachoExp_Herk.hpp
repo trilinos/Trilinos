@@ -64,10 +64,10 @@ namespace Tacho {
         const int ierr = Herk<ArgUplo,ArgTrans,ArgAlgo>
           ::invoke(_sched, member, _alpha, _A, _beta, _C);
 
-        if (member.team_rank() == 0) {
-          _C.set_future();
-          r_val = ierr;
-        }
+        Kokkos::single(Kokkos::PerThread(member), [&] () {
+            _C.set_future();
+            r_val = ierr;
+          });
       }
     };
     
