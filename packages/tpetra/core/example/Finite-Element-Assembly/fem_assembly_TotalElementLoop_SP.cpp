@@ -46,6 +46,7 @@
 #include <Tpetra_DefaultPlatform.hpp>
 #include <Tpetra_Version.hpp>
 #include <MatrixMarket_Tpetra.hpp>
+#include <Teuchos_CommandLineProcessor.hpp>
 #include <Teuchos_RCP.hpp>
 #include <Teuchos_GlobalMPISession.hpp>
 #include <Teuchos_FancyOStream.hpp>
@@ -53,8 +54,8 @@
 #include "typedefs.hpp"
 #include "MeshDatabase.hpp"
 #include "Element.hpp"
-
-#define PRINT_VERBOSE 0
+#include "fem_assembly_utility.hpp"
+#include "fem_assembly_commandLineOpts.hpp"
 
 using namespace TpetraExamples;
 
@@ -62,7 +63,7 @@ using comm_ptr_t = Teuchos::RCP<const Teuchos::Comm<int> >;
 
 
 
-int execute (comm_ptr_t& comm)
+int execute (comm_ptr_t& comm, const struct CmdLineOpts& opts)
 {
   using Teuchos::RCP;
   using Teuchos::TimeMonitor;
@@ -85,13 +86,12 @@ int execute (comm_ptr_t& comm)
   int procy = sqrtProcs;
 
   // Generate a simple 3x3 mesh
-  int nex = 3;
-  int ney = 3;
+  int nex = opts.numElementsX;
+  int ney = opts.numElementsY;
+
   MeshDatabase mesh(comm,nex,ney,procx,procy);
 
-  #if PRINT_VERBOSE
-  mesh.print(std::cout);
-  #endif
+  if(opts.verbose) mesh.print(std::cout);
 
   int maxEntriesPerRow = 16;
 
@@ -100,9 +100,7 @@ int execute (comm_ptr_t& comm)
   // -- https://trilinos.org/docs/dev/packages/tpetra/doc/html/classTpetra_1_1Map.html#a24490b938e94f8d4f31b6c0e4fc0ff77
   RCP<const map_t> row_map = rcp(new map_t(GO_INVALID, mesh.getOwnedNodeGlobalIDs(), 0, comm));
 
-  #if PRINT_VERBOSE
-  row_map->describe(*out);
-  #endif
+  if(opts.verbose) row_map->describe(*out);
 
   // Graph Construction
   // ------------------
@@ -177,9 +175,7 @@ int execute (comm_ptr_t& comm)
   }
 
   // Print out the crs_graph in detail...
-  #if PRINT_VERBOSE
-  crs_graph->describe(*out, Teuchos::VERB_EXTREME);
-  #endif
+  if(opts.verbose) crs_graph->describe(*out, Teuchos::VERB_EXTREME);
 
   // Matrix Fill
   // -------------------
@@ -294,9 +290,7 @@ int execute (comm_ptr_t& comm)
   }
 
   // Print out crs_matrix details.
-  #if PRINT_VERBOSE
-  crs_matrix->describe(*out, Teuchos::VERB_EXTREME);
-  #endif
+  if(opts.verbose) crs_matrix->describe(*out, Teuchos::VERB_EXTREME);
 
   timerGlobal = Teuchos::null;
 
@@ -312,27 +306,40 @@ int execute (comm_ptr_t& comm)
 
 int main (int argc, char *argv[]) 
 {
+  using std::endl;
+  using Teuchos::RCP;
+
   int status = EXIT_SUCCESS;
   
   // MPI boilerplate
   Tpetra::initialize(&argc, &argv);
   comm_ptr_t comm = Tpetra::DefaultPlatform::getDefaultPlatform ().getComm();
 
+  // The output stream 'out' will ignore any output not from Process 0.
+  RCP<Teuchos::FancyOStream> pOut = getOutputStream(*comm);
+  Teuchos::FancyOStream& out = *pOut;
+
+  // Read command-line options into the 'opts' struct.
+  struct CmdLineOpts opts;
+
+  status = readCmdLineOpts(out, opts, argc, argv);
+  if(EXIT_SUCCESS != status)
+  {
+    return status;
+  }
+
   // Entry point
-  if(execute(comm))
+  if(execute(comm,opts))
   {
     status = EXIT_FAILURE;
   }
 
   // Print out timing results.
-  Teuchos::TimeMonitor::report(comm.ptr(), std::cout, "");
+  if(opts.timing) Teuchos::TimeMonitor::report(comm.ptr(), std::cout, "");
 
   // This tells the Trilinos test framework that the test passed.
-  if(0 == comm->getRank())
-  {
-    if(0 == status) std::cout << "End Result: TEST PASSED" << std::endl;
-    else            std::cout << "End Result: TEST FAILED" << std::endl;
-  }
+  if(EXIT_SUCCESS == status) out << "End Result: TEST PASSED" << endl;
+  else                       out << "End Result: TEST FAILED" << endl;
 
   // Finalize
   Tpetra::finalize();

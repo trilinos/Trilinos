@@ -53,8 +53,8 @@
 #include "typedefs.hpp"
 #include "MeshDatabase.hpp"
 #include "Element.hpp"
-
-#define PRINT_VERBOSE 0
+#include "fem_assembly_utility.hpp"
+#include "fem_assembly_commandLineOpts.hpp"
 
 using namespace TpetraExamples;
 
@@ -62,9 +62,8 @@ using comm_ptr_t = Teuchos::RCP<const Teuchos::Comm<int> >;
 
 
 
-int execute (comm_ptr_t& comm)
+int execute (comm_ptr_t& comm, const struct CmdLineOpts& opts)
 {
-
   using Teuchos::RCP;
   using Teuchos::TimeMonitor;
 
@@ -86,13 +85,12 @@ int execute (comm_ptr_t& comm)
   int procy = sqrtProcs;
 
   // Generate a simple 3x3 mesh
-  int nex = 3;
-  int ney = 3;
+  int nex = opts.numElementsX;
+  int ney = opts.numElementsY;
+
   MeshDatabase mesh(comm,nex,ney,procx,procy);
 
-  #if PRINT_VERBOSE
-  mesh.print(std::cout);
-  #endif
+  if(opts.verbose) mesh.print(std::cout);
 
   // Build Tpetra Maps
   // -----------------
@@ -101,10 +99,11 @@ int execute (comm_ptr_t& comm)
   RCP<const map_t> overlapping_row_map = rcp(new map_t(GO_INVALID, mesh.getOwnedAndGhostNodeGlobalIDs(), 0, comm));
   export_t exporter(overlapping_row_map, owned_row_map); 
 
-  #if PRINT_VERBOSE
-  owned_row_map->describe(*out);
-  overlapping_row_map->describe(*out);
-  #endif
+  if(opts.verbose)
+  {
+    owned_row_map->describe(*out);
+    overlapping_row_map->describe(*out);
+  }
 
   // Graph Construction
   // ------------------
@@ -176,10 +175,11 @@ int execute (comm_ptr_t& comm)
   }
 
   // Let's see what we have
-  #if PRINT_VERBOSE
-  crs_graph_owned->describe(*out, Teuchos::VERB_EXTREME);
-  crs_graph_overlapping->describe(*out, Teuchos::VERB_EXTREME);
-  #endif
+  if(opts.verbose)
+  {
+    crs_graph_owned->describe(*out, Teuchos::VERB_EXTREME);
+    crs_graph_overlapping->describe(*out, Teuchos::VERB_EXTREME);
+  }
 
   // Matrix Fill
   // -------------------
@@ -283,10 +283,11 @@ int execute (comm_ptr_t& comm)
   timerGlobal = Teuchos::null;
 
   // Print out crs_matrix_owned and crs_matrix_overlapping details.
-  #if PRINT_VERBOSE
-  crs_matrix_owned->describe(*out, Teuchos::VERB_EXTREME);
-  crs_matrix_overlapping->describe(*out, Teuchos::VERB_EXTREME);
-  #endif
+  if(opts.verbose)
+  {
+    crs_matrix_owned->describe(*out, Teuchos::VERB_EXTREME);
+    crs_matrix_overlapping->describe(*out, Teuchos::VERB_EXTREME);
+  }
 
   // Save crs_matrix as a MatrixMarket file.
   // (disabled until we get this under command-line option control)
@@ -301,30 +302,44 @@ int execute (comm_ptr_t& comm)
 
 int main (int argc, char *argv[]) 
 {
+  using std::endl;
+  using Teuchos::RCP;
+
   int status = EXIT_SUCCESS;
   
   // MPI boilerplate
   Tpetra::initialize(&argc, &argv);
   comm_ptr_t comm = Tpetra::DefaultPlatform::getDefaultPlatform ().getComm();
 
+  // The output stream 'out' will ignore any output not from Process 0.
+  RCP<Teuchos::FancyOStream> pOut = getOutputStream(*comm);
+  Teuchos::FancyOStream& out = *pOut;
+
+  // Read command-line options into the 'opts' struct.
+  struct CmdLineOpts opts;
+
+  status = readCmdLineOpts(out, opts, argc, argv);
+  if(EXIT_SUCCESS != status)
+  {
+    return status;
+  }
+
   // Entry point
-  if(execute(comm))
+  if(execute(comm,opts))
   {
     status = EXIT_FAILURE;
   }
 
   // Print out timing results.
-  Teuchos::TimeMonitor::report(comm.ptr(), std::cout, "");
+  if(opts.timing) Teuchos::TimeMonitor::report(comm.ptr(), std::cout, "");
 
   // This tells the Trilinos test framework that the test passed.
-  if(0 == comm->getRank())
-  {
-    std::cout << "End Result: TEST PASSED" << std::endl;
-  }
+  if(EXIT_SUCCESS == comm->getRank()) out << "End Result: TEST PASSED" << endl;
+  else                                out << "End Result: TEST FAILED" << endl;
 
   // Finalize
   Tpetra::finalize();
 
-  return 0;
+  return status;
 }  // END main()
 
