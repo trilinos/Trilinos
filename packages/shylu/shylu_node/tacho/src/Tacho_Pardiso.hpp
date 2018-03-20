@@ -4,7 +4,7 @@
 #if defined (__INTEL_MKL__)
 using namespace std;
 
-#include "TachoExp_Util.hpp"
+#include "Tacho_Util.hpp"
 #include "mkl_pardiso.h"
 
 namespace Tacho {

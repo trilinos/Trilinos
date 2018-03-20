@@ -6,10 +6,10 @@
 #include <Kokkos_Core.hpp>
 #include <impl/Kokkos_Timer.hpp>
 
-#include "TachoExp_Util.hpp"
-#include "TachoExp_DenseMatrixView.hpp"
+#include "Tacho_Util.hpp"
+#include "Tacho_DenseMatrixView.hpp"
 
-using namespace Tacho::Experimental;
+using namespace Tacho;
 
 typedef Kokkos::View<ValueType*,HostSpaceType> value_type_array_host;
 //typedef Kokkos::View<ValueType*,DeviceSpaceType> value_type_array_device;

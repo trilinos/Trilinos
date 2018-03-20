@@ -53,7 +53,7 @@ public:
     virtual void setZeroInitialGuess(bool zIG)
       { stepperPL_->set<bool>("Zero Initial Guess", zIG); }
     virtual bool getZeroInitialGuess() const
-      { return stepperPL_->get<bool>("Zero Initial Guess"); }
+      { return stepperPL_->get<bool>("Zero Initial Guess", false); }
   //@}
 
 protected:

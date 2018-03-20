@@ -59,6 +59,14 @@
 
 namespace Xpetra {
 
+// TODO: move that elsewhere
+template<class GlobalOrdinal, class Node>
+Epetra_IntVector & toEpetra(Vector<int, int, GlobalOrdinal, Node> &);
+
+template<class GlobalOrdinal, class Node>
+const Epetra_IntVector & toEpetra(const Vector<int, int, GlobalOrdinal, Node> &);
+//
+
   // stub implementation for EpetraIntVectorT
   template<class EpetraGlobalOrdinal, class Node>
   class EpetraIntVectorT
@@ -251,6 +259,9 @@ namespace Xpetra {
 
     //! Returns the global vector length of vectors in the multi-vector.
     global_size_t getGlobalLength() const {  return 0; }
+   
+    //! Checks to see if the local length, number of vectors and size of Scalar type match
+    bool isSameSize(const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> & vec) const { return false; }
 
     //@}
 
@@ -584,6 +595,15 @@ namespace Xpetra {
 
       //! Returns the global vector length of vectors in the multi-vector.
       global_size_t getGlobalLength() const {  return vec_->GlobalLength64(); }
+
+      //! Checks to see if the local length, number of vectors and size of Scalar type match
+      bool isSameSize(const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> & vec) const { 
+        XPETRA_MONITOR("EpetraIntVectorT::isSameSize"); 
+        const Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> *asvec = dynamic_cast<const Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> *>(&vec);
+        if(!asvec) return false;
+        auto vv = toEpetra(*asvec); 
+        return ( (vec_->MyLength() == vv.MyLength()) && (getNumVectors() == vec.getNumVectors()));
+      }
 
       //@}
 
@@ -1015,6 +1035,15 @@ namespace Xpetra {
       //! Returns the global vector length of vectors in the multi-vector.
       global_size_t getGlobalLength() const {  return vec_->GlobalLength64(); }
 
+
+      //! Checks to see if the local length, number of vectors and size of Scalar type match
+      bool isSameSize(const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> & vec) const { 
+        XPETRA_MONITOR("EpetraIntVectorT::isSameSize"); 
+        const Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node>  *asvec = dynamic_cast<const Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node>* >(&vec);
+        if(!asvec) return false;
+        auto vv = toEpetra(*asvec); 
+        return ( (vec_->MyLength() == vv.MyLength()) && (getNumVectors() == vec.getNumVectors()));
+      }
       //@}
 
       //! @name Overridden from Teuchos::Describable

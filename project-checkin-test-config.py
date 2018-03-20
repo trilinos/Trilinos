@@ -12,6 +12,7 @@ configuration = {
     # developers.
     'defaults': {
         '--send-email-to-on-push': 'trilinos-checkin-tests@software.sandia.gov',
+        '--no-rebase' : '',
         },
 
     # CMake options for various build configurations. All entries in

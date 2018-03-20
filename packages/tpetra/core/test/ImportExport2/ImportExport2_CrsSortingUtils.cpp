@@ -50,6 +50,7 @@
 #include "Kokkos_DefaultNode.hpp"
 #include "Tpetra_CrsMatrix.hpp"
 #include "Tpetra_Import_Util2.hpp"
+#include "Kokkos_ArithTraits.hpp"
 
 namespace {
 
@@ -91,7 +92,7 @@ generate_crs_entries(std::vector<index_type>& rowptr,
   // Fill the CRS arrays, use random values
   std::random_device rd;
   std::mt19937 gen(rd());
-  std::uniform_real_distribution<scalar_type> dist(1.0, 2.0);
+  std::uniform_real_distribution<typename Kokkos::ArithTraits<scalar_type>::mag_type> dist(1.0, 2.0);
   int row = 0;
   while (true) {
     int m = (max_num_entries_per_row - 1) / 2;
@@ -107,7 +108,7 @@ generate_crs_entries(std::vector<index_type>& rowptr,
       colind.push_back(col);
       colind2.push_back(col);
 
-      scalar_type rands = dist(gen);
+      scalar_type rands = static_cast<scalar_type> (dist(gen));
       vals.push_back(rands);
       vals2.push_back(rands);
 
@@ -145,7 +146,6 @@ shuffle_crs_entries(std::vector<ordinal_type>& colind_rand,
   // Randomly shuffle values and column indices
   std::random_device rd;
   std::mt19937 gen(rd());
-  std::uniform_real_distribution<scalar_type> dist(1.0, 2.0);
 
   for (size_type i=0; i < static_cast<size_type>(rowptr.size()-1); ++i) {
     size_type num_cols_this_row = rowptr[i+1] - rowptr[i];
@@ -383,7 +383,23 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( Import_Util, SortCrsEntriesKokkos, Scalar, LO
     // At this point, colind_rand and vals_rand should be sorted and equal to
     // their original arrays, respectively.
     TEST_COMPARE_ARRAYS(colind, colind_rand_views.h);
-    TEST_COMPARE_FLOATING_ARRAYS(vals, vals_rand_views.h, 1.e-12);
+
+    // mfh 20 Mar 2018: This doesn't work for complex numbers.
+    //
+    //TEST_COMPARE_FLOATING_ARRAYS(vals, vals_rand_views.h, 1.e-12);
+    {
+      const bool equal_sizes =
+        static_cast<std::size_t> (vals.size ()) == static_cast<std::size_t> (vals_rand_views.h.size ());
+      TEST_ASSERT( equal_sizes );
+      if (! equal_sizes) {
+        for (std::size_t k = 0; k < vals.size (); ++k) {
+          const auto diff = vals[k] - vals_rand_views.h[k];
+
+          // FIXME (mfh 20 Mar 2018) Use a more appropriate tolerance for scalar_type.
+          TEST_ASSERT( Kokkos::ArithTraits<scalar_type>::abs (diff) <= 1.e-12 );
+        }
+      }
+    }
 
     //
     // Sort the GIDs w/o values

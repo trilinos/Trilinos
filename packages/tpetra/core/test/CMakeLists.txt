@@ -9,6 +9,7 @@ ADD_SUBDIRECTORIES(
   Block
   BugTests
   Comm
+  Core  
   CrsGraph
   CrsMatrix
   Directory
