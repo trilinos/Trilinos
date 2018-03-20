@@ -59,7 +59,9 @@ elif [ "$ATDM_CONFIG_COMPILER" == "CUDA" ]; then
     export ATDM_CONFIG_LAPACK_LIB="-L${LAPACK_ROOT}/lib;-llapack;-lgfortran"
     export ATDM_CONFIG_BLAS_LIB="-L${BLAS_ROOT}/lib;-lblas;-lgfortran"
 else
-    echo "No valid compiler found"
+    echo "***"
+    echo "*** ERROR: COMPILER=$ATDM_CONFIG_COMPILER is not supported on this system!"
+    echo "***"
     return
 fi
 
@@ -74,3 +76,5 @@ export MPICXX=`which mpicxx`
 export MPIF90=`which mpif90`
 
 export ATDM_CONFIG_MPI_POST_FLAG="-map-by;socket:PE=16;--oversubscribe"
+
+export ATDM_CONFIG_COMPLETED_ENV_SETUP=TRUE
