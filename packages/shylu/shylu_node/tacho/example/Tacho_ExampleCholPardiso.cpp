@@ -3,13 +3,13 @@
 #include <Kokkos_Core.hpp>
 #include <impl/Kokkos_Timer.hpp>
 
-#include "TachoExp_Util.hpp"
-#include "TachoExp_CrsMatrixBase.hpp"
-#include "TachoExp_MatrixMarket.hpp"
+#include "Tacho_Util.hpp"
+#include "Tacho_CrsMatrixBase.hpp"
+#include "Tacho_MatrixMarket.hpp"
 
-#include "TachoExp_NumericTools.hpp"
+#include "Tacho_NumericTools.hpp"
 
-#include "TachoExp_CommandLineParser.hpp"
+#include "Tacho_CommandLineParser.hpp"
 
 #if defined (TACHO_HAVE_MKL)
 #include "mkl.h"
@@ -17,7 +17,6 @@
 #endif
 
 using namespace Tacho;
-using namespace Tacho::Experimental;
 
 int main (int argc, char *argv[]) {
   CommandLineParser opts("This example program measure the performance of Pardiso on Kokkos::OpenMP");

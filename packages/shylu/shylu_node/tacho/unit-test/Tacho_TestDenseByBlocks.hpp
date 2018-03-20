@@ -8,15 +8,15 @@
 
 #include <impl/Kokkos_Timer.hpp>
 
-#include "TachoExp_Util.hpp"
-#include "TachoExp_DenseMatrixView.hpp"
+#include "Tacho_Util.hpp"
+#include "Tacho_DenseMatrixView.hpp"
 
-#include "TachoExp_Chol_ByBlocks.hpp"
-#include "TachoExp_Gemm_ByBlocks.hpp"
-#include "TachoExp_Herk_ByBlocks.hpp"
-#include "TachoExp_Trsm_ByBlocks.hpp"
+#include "Tacho_Chol_ByBlocks.hpp"
+#include "Tacho_Gemm_ByBlocks.hpp"
+#include "Tacho_Herk_ByBlocks.hpp"
+#include "Tacho_Trsm_ByBlocks.hpp"
 
-using namespace Tacho::Experimental;
+using namespace Tacho;
 
 typedef Kokkos::View<ValueType*,HostSpaceType>   value_type_array_host;
 typedef Kokkos::View<ValueType*,DeviceSpaceType> value_type_array;

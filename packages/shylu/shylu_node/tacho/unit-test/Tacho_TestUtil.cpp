@@ -1,9 +1,9 @@
 #include <gtest/gtest.h>
 #include <Kokkos_Core.hpp>
 
-#include "TachoExp_Util.hpp"
+#include "Tacho_Util.hpp"
 
-using namespace Tacho::Experimental;
+using namespace Tacho;
 
 typedef Kokkos::DefaultHostExecutionSpace HostSpaceType;
 typedef Kokkos::DefaultExecutionSpace     DeviceSpaceType;

@@ -17,7 +17,7 @@ static const std::string MM_TEST_FILE="test_dcomplex";
 #include "ShyLU_NodeTacho_config.h"
 #include "Tacho_Test.hpp"
 
-using namespace Tacho::Experimental;
+using namespace Tacho;
 
 int main (int argc, char *argv[]) {
 
