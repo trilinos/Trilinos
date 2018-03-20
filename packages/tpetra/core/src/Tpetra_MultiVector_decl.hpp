@@ -2167,20 +2167,31 @@ namespace Tpetra {
 
     /// \brief Copy the contents of \c src into \c *this (deep copy).
     ///
-    /// \param src [in] Source MultiVector (input of the deep copy).
+    /// \param src [in] Source MultiVector (input of the deep copy). 
     ///
     /// \pre <tt> ! src.getMap ().is_null () && ! this->getMap ().is_null () </tt>
     /// \pre <tt> src.getMap ()->isCompatible (* (this->getMap ()) </tt>
     ///
     /// \post Any outstanding views of \c src or \c *this remain valid.
     ///
-    /// \note To implementers: The postcondition implies that the
+   /// \note To implementers: The postcondition implies that the
     ///   implementation must not reallocate any memory of \c *this,
     ///   or otherwise change its dimensions.  This is <i>not</i> an
     ///   assignment operator; it does not change anything in \c *this
     ///   other than the contents of storage.
     void
     assign (const MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& src);
+
+
+    // \brief Checks to see if the local length, number of vectors and size of Scalar type match
+    /// \param src [in] MultiVector 
+    ///
+    /// \pre <tt> ! vec.getMap ().is_null () && ! this->getMap ().is_null () </tt>
+    /// \pre <tt> vec.getMap ()->isCompatible (* (this->getMap ()) </tt>
+    ///
+    /// \post Any outstanding views of \c src or \c *this remain valid.
+    ///
+    bool isSameSize(const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> & vec) const;
 
   protected:
     template <class DS, class DL, class DG, class DN,
