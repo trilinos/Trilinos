@@ -23,21 +23,21 @@ namespace Tacho {
     
     /// task construction for the above chol implementation
     // Chol<ArgUplo,ArgAlgo>::invoke(_sched, member, _A);
-    template<typename SchedType,
+    template<typename SchedulerType,
              typename DenseMatrixViewType,
              typename ArgUplo,
              typename ArgAlgo>
     struct TaskFunctor_Chol {
     public:
-      typedef SchedType sched_type;
-      typedef typename sched_type::member_type member_type;
+      typedef SchedulerType scheduler_type;
+      typedef typename scheduler_type::member_type member_type;
 
       typedef DenseMatrixViewType dense_block_type;
       typedef typename dense_block_type::future_type future_type;
       typedef typename future_type::value_type value_type;
       
     private:
-      sched_type _sched;
+      scheduler_type _sched;
       dense_block_type _A;
       
     public:
@@ -45,7 +45,7 @@ namespace Tacho {
       TaskFunctor_Chol() = delete;
       
       KOKKOS_INLINE_FUNCTION
-      TaskFunctor_Chol(const sched_type &sched,
+      TaskFunctor_Chol(const scheduler_type &sched,
                        const dense_block_type &A)
         : _sched(sched), 
           _A(A) {}

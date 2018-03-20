@@ -22,19 +22,19 @@ namespace Tacho {
 
     template<>
     struct Herk<Uplo::Upper,Trans::ConjTranspose,Algo::ByBlocks> {
-      template<typename SchedType,
+      template<typename SchedulerType,
                typename MemberType,
                typename ScalarType,
                typename MatrixOfDenseBlocksType>
       KOKKOS_INLINE_FUNCTION
       static int
-      invoke(SchedType &sched,
+      invoke(SchedulerType &sched,
              MemberType &member,
              const ScalarType alpha,
              const MatrixOfDenseBlocksType &A,
              const ScalarType beta,
              const MatrixOfDenseBlocksType &C) {
-        typedef SchedType sched_type;
+        typedef SchedulerType scheduler_type;
         typedef ScalarType scalar_type;
         typedef typename MatrixOfDenseBlocksType::value_type dense_block_type;
         typedef typename dense_block_type::future_type future_type;
@@ -61,7 +61,7 @@ namespace Tacho {
                     future_type f =
                       Kokkos::task_spawn(Kokkos::TaskTeam(sched, Kokkos::when_all(dep, 2), Kokkos::TaskPriority::High),
                                          TaskFunctor_Herk
-                                         <sched_type,scalar_type,dense_block_type,
+                                         <scheduler_type,scalar_type,dense_block_type,
                                          Uplo::Upper,Trans::ConjTranspose,
                                          HerkAlgoType>
                                          (sched, alpha, aa, beta_select, cc));
@@ -73,7 +73,7 @@ namespace Tacho {
                     future_type f =
                       Kokkos::task_spawn(Kokkos::TaskTeam(sched, Kokkos::when_all(dep, 3), Kokkos::TaskPriority::High),
                                          TaskFunctor_Gemm
-                                         <sched_type,scalar_type,dense_block_type,
+                                         <scheduler_type,scalar_type,dense_block_type,
                                          Trans::ConjTranspose,Trans::NoTranspose,
                                          GemmAlgoType>
                                          (sched, alpha, aa, bb, beta_select, cc));

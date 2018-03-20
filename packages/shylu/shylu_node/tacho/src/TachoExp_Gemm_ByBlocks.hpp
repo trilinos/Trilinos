@@ -17,20 +17,20 @@ namespace Tacho {
 
     template<>
     struct Gemm<Trans::ConjTranspose,Trans::NoTranspose,Algo::ByBlocks> {
-      template<typename SchedType,
+      template<typename SchedulerType,
                typename MemberType,
                typename ScalarType,
                typename MatrixOfDenseBlocksType>
       KOKKOS_INLINE_FUNCTION
       static int
-      invoke(SchedType &sched,
+      invoke(SchedulerType &sched,
              MemberType &member,
              const ScalarType alpha,
              const MatrixOfDenseBlocksType &A,
              const MatrixOfDenseBlocksType &B,
              const ScalarType beta,
              const MatrixOfDenseBlocksType &C) {
-        typedef SchedType sched_type;
+        typedef SchedulerType scheduler_type;
         typedef ScalarType scalar_type;
         typedef typename MatrixOfDenseBlocksType::value_type dense_block_type;
         typedef typename dense_block_type::future_type future_type;
@@ -55,7 +55,7 @@ namespace Tacho {
                   future_type f =
                     Kokkos::task_spawn(Kokkos::TaskTeam(sched, Kokkos::when_all(dep, 3), Kokkos::TaskPriority::High),
                                        TaskFunctor_Gemm
-                                       <sched_type,scalar_type,dense_block_type,
+                                       <scheduler_type,scalar_type,dense_block_type,
                                        Trans::ConjTranspose,Trans::NoTranspose,
                                        GemmAlgoType>
                                        (sched, alpha, aa, bb, beta_select, cc));
@@ -72,20 +72,20 @@ namespace Tacho {
 
     template<>
     struct Gemm<Trans::NoTranspose,Trans::NoTranspose,Algo::ByBlocks> {
-      template<typename SchedType,
+      template<typename SchedulerType,
                typename MemberType,
                typename ScalarType,
                typename MatrixOfDenseBlocksType>
       KOKKOS_INLINE_FUNCTION
       static int
-      invoke(SchedType &sched,
+      invoke(SchedulerType &sched,
              MemberType &member,
              const ScalarType alpha,
              const MatrixOfDenseBlocksType &A,
              const MatrixOfDenseBlocksType &B,
              const ScalarType beta,
              const MatrixOfDenseBlocksType &C) {
-        typedef SchedType sched_type;
+        typedef SchedulerType scheduler_type;
         typedef ScalarType scalar_type;
         typedef typename MatrixOfDenseBlocksType::value_type dense_block_type;
         typedef typename dense_block_type::future_type future_type;
@@ -110,7 +110,7 @@ namespace Tacho {
                   future_type f =
                     Kokkos::task_spawn(Kokkos::TaskTeam(sched, Kokkos::when_all(dep, 3), Kokkos::TaskPriority::High),
                                        TaskFunctor_Gemm
-                                       <sched_type,scalar_type,dense_block_type,
+                                       <scheduler_type,scalar_type,dense_block_type,
                                        Trans::NoTranspose,Trans::NoTranspose,
                                        GemmAlgoType>
                                        (sched, alpha, aa, bb, beta_select, cc));

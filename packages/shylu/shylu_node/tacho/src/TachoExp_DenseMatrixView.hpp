@@ -385,25 +385,27 @@ namespace Tacho {
       const ordinal_type m = A.dimension_0(), n = A.dimension_1();
       typedef typename DenseMatrixViewType::execution_space execution_space;
 
-      if (std::is_same<typename execution_space::memory_space,Kokkos::HostSpace>::value) {
+      if (true) { //std::is_same<typename execution_space::memory_space,Kokkos::HostSpace>::value) {
         // serial copy on host
-        for (ordinal_type i=0;i<m;++i)
-          for (ordinal_type j=0;j<n;++j)
-            A(p(i), j) = B(i, j);
-      } else {      
-        // this probably is not good for layout left... 
-        Kokkos::TeamPolicy<execution_space,Kokkos::Schedule<Kokkos::Static> > policy(m, 1);
-        Kokkos::parallel_for
-          (policy, KOKKOS_LAMBDA (const typename Kokkos::TeamPolicy<execution_space>::member_type &member) {
-            const ordinal_type i = member.league_rank();
-            Kokkos::parallel_for(Kokkos::ThreadVectorRange(member,n),[&](const int &j) {
-                Kokkos::single(Kokkos::PerThread(member), [&]() {
-                    A(p(i), j) = B(i, j);
-                  });
-              });
+        Kokkos::RangePolicy<execution_space,Kokkos::Schedule<Kokkos::Static> > policy(0, m);
+        Kokkos::parallel_for(policy, KOKKOS_LAMBDA(const ordinal_type &i) {
+            for (ordinal_type j=0;j<n;++j)
+              A(p(i), j) = B(i, j);
           });
+      } else {      
+        // gcc has compiler errors
+        // Kokkos::TeamPolicy<execution_space,Kokkos::Schedule<Kokkos::Static> > policy(m, 1);
+        // Kokkos::parallel_for
+        //   (policy, KOKKOS_LAMBDA (const typename Kokkos::TeamPolicy<execution_space>::member_type &member) {
+        //     const ordinal_type i = member.league_rank();
+        //     Kokkos::parallel_for(Kokkos::ThreadVectorRange(member,n),[&](const int &j) {
+        //         Kokkos::single(Kokkos::PerThread(member), [&]() {
+        //             A(p(i), j) = B(i, j);
+        //           });
+        //       });
+        //   });
       }
-
+      
     }
 
   }

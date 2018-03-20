@@ -117,8 +117,10 @@ namespace Tacho {
           <std::is_same<Kokkos::Impl::ActiveExecutionMemorySpace,Kokkos::HostSpace>::value,
            Algo::External,Algo::Internal>::type GemmAlgoType;
 
+#if defined (KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_HOST)
+#else
         member.team_barrier();
-
+#endif
         // get current supernode
         const auto &cur = info.supernodes(sid);
 

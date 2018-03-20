@@ -62,9 +62,9 @@ namespace Tacho {
              const ViewTypeA &A,
              const ViewTypeB &B) {
 #if defined( KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_HOST )
-        Kokkos::single(Kokkos::PerTeam(member), [&]() {
-            invoke(diagA, A, B);
-          });
+        //Kokkos::single(Kokkos::PerTeam(member), [&]() {
+        invoke(diagA, A, B);
+        //});
 #else
         TACHO_TEST_FOR_ABORT( true, "This function is only allowed in host space.");
 #endif

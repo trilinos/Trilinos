@@ -99,7 +99,7 @@ TEST( Numeric, constructor ) {
 TEST( Numeric, Cholesky_Serial ) {
   TEST_BEGIN;
   std::string inputfilename = MM_TEST_FILE + ".mtx";
-  CrsMatrixBaseHostType A;
+  CrsMatrixBaseDeviceType A;
   MatrixMarket<ValueType>::read(inputfilename, A);
 
   Graph G(A);
@@ -116,7 +116,7 @@ TEST( Numeric, Cholesky_Serial ) {
   SymbolicTools S(A, T);
   S.symbolicFactorize();
   
-  NumericTools<ValueType,DeviceSpaceType> N(A.NumRows(), A.RowPtr(), A.Cols(), A.Values(),
+  NumericTools<ValueType,DeviceSpaceType> N(A.NumRows(), A.RowPtr(), A.Cols(), 
                                             T.PermVector(), T.InvPermVector(),
                                             S.NumSupernodes(), S.Supernodes(),
                                             S.gidSuperPanelPtr(), S.gidSuperPanelColIdx(),
@@ -124,7 +124,7 @@ TEST( Numeric, Cholesky_Serial ) {
                                             S.SupernodesTreeParent(), S.SupernodesTreePtr(), S.SupernodesTreeChildren(), S.SupernodesTreeRoots());
   N.factorizeCholesky_Serial(A.Values());
   
-  CrsMatrixBaseHostType F;
+  CrsMatrixBaseDeviceType F;
   N.exportFactorsToCrsMatrix(F);
   
   std::ofstream out("test_numeric_factorize_serial.mtx");

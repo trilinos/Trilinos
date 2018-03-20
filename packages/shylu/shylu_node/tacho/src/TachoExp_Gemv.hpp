@@ -21,15 +21,15 @@ namespace Tacho {
 
     /// task construction for the above chol implementation
     /// Gemm<ArgTransA,ArgTransB,ArgAlgo>::invoke(_sched, member, _alpha, _A, _B, _beta, _C);
-    template<typename SchedType,
+    template<typename SchedulerType,
              typename ScalarType,
              typename DenseMatrixViewType,
              typename ArgTrans,
              typename ArgAlgo>
     struct TaskFunctor_Gemv {
     public:
-      typedef SchedType sched_type;
-      typedef typename sched_type::member_type member_type;
+      typedef SchedulerType scheduler_type;
+      typedef typename scheduler_type::member_type member_type;
       
       typedef ScalarType scalar_type;
       
@@ -38,7 +38,7 @@ namespace Tacho {
       typedef typename future_type::value_type value_type;
 
     private:
-      sched_type _sched;
+      scheduler_type _sched;
       scalar_type _alpha, _beta;
       dense_block_type _A, _B, _C;
 
@@ -47,7 +47,7 @@ namespace Tacho {
       TaskFunctor_Gemv() = delete;
 
       KOKKOS_INLINE_FUNCTION
-      TaskFunctor_Gemv(const sched_type &sched,
+      TaskFunctor_Gemv(const scheduler_type &sched,
                        const scalar_type alpha,
                        const dense_block_type &A,
                        const dense_block_type &B,

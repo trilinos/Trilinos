@@ -23,7 +23,7 @@ namespace Tacho {
 
     /// task construction for the above chol implementation
     /// Trsm<ArgSide,ArgUplo,ArgTrans,ArgAlgo>::invoke(_sched, member, ArgDiag(), _alpha, _A, _B);
-    template<typename SchedType,
+    template<typename SchedulerType,
              typename ScalarType,
              typename DenseMatrixViewType,
              typename ArgSide,
@@ -33,8 +33,8 @@ namespace Tacho {
              typename ArgAlgo>
     struct TaskFunctor_Trsm {
     public:
-      typedef SchedType sched_type;
-      typedef typename sched_type::member_type member_type;
+      typedef SchedulerType scheduler_type;
+      typedef typename scheduler_type::member_type member_type;
 
       typedef ScalarType scalar_type;
 
@@ -43,7 +43,7 @@ namespace Tacho {
       typedef typename future_type::value_type value_type;
       
     private:
-      sched_type _sched;
+      scheduler_type _sched;
       scalar_type _alpha;
       dense_block_type _A, _B;
 
@@ -52,7 +52,7 @@ namespace Tacho {
       TaskFunctor_Trsm() = delete;
       
       KOKKOS_INLINE_FUNCTION
-      TaskFunctor_Trsm(const sched_type &sched,
+      TaskFunctor_Trsm(const scheduler_type &sched,
                        const scalar_type alpha,
                        const dense_block_type &A,
                        const dense_block_type &B) 

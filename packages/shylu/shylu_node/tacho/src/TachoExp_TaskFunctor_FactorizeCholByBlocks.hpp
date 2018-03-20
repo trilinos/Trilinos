@@ -25,8 +25,8 @@ namespace Tacho {
     public:
       typedef ExecSpace exec_space;
 
-      typedef Kokkos::TaskScheduler<exec_space> sched_type;
-      typedef typename sched_type::member_type member_type;
+      typedef Kokkos::TaskScheduler<exec_space> scheduler_type;
+      typedef typename scheduler_type::member_type member_type;
 
       typedef Kokkos::MemoryPool<exec_space> memory_pool_type;
 
@@ -43,7 +43,7 @@ namespace Tacho {
       typedef typename supernode_info_type::dense_matrix_of_blocks_type dense_matrix_of_blocks_type;
 
     private:
-      sched_type _sched;
+      scheduler_type _sched;
       memory_pool_type _bufpool;
 
       supernode_info_type _info;
@@ -64,7 +64,7 @@ namespace Tacho {
       TaskFunctor_FactorizeCholByBlocks() = delete;
 
       KOKKOS_INLINE_FUNCTION
-      TaskFunctor_FactorizeCholByBlocks(const sched_type &sched,
+      TaskFunctor_FactorizeCholByBlocks(const scheduler_type &sched,
                                         const memory_pool_type &bufpool,
                                         const supernode_info_type &info,
                                         const ordinal_type sid,

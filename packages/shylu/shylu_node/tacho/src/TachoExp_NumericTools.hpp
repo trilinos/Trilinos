@@ -70,7 +70,7 @@ namespace Tacho {
       typedef typename supernode_info_type::dense_block_type dense_block_type;
       typedef typename supernode_info_type::dense_matrix_of_blocks_type dense_matrix_of_blocks_type;
 
-      typedef Kokkos::TaskScheduler<exec_space> sched_type;
+      typedef Kokkos::TaskScheduler<exec_space> scheduler_type;
       typedef Kokkos::MemoryPool<exec_space> memory_pool_type;
 
       typedef Kokkos::DefaultHostExecutionSpace host_space;
@@ -122,7 +122,7 @@ namespace Tacho {
       /// 
       /// solve phase memory pool (reused when it repeat solve)
       ///   - pool capacity returns garbage.
-      sched_type _sched_solve; size_t _sched_solve_capacity;
+      scheduler_type _sched_solve; size_t _sched_solve_capacity;
       memory_pool_type _bufpool_solve; size_t _bufpool_solve_capacity;
       
       ///
@@ -307,7 +307,7 @@ namespace Tacho {
         // release scheduler for solve
         if (_sched_solve_capacity) {
           track_free(_sched_solve_capacity);
-          _sched_solve = sched_type();
+          _sched_solve = scheduler_type();
         }
 
         // release supernode buffer
@@ -539,7 +539,7 @@ namespace Tacho {
         typedef TaskFunctor_FactorizeChol<value_type,exec_space> functor_type;
         typedef Kokkos::Future<int,exec_space> future_type;
 
-        sched_type sched;
+        scheduler_type sched;
         {
           const size_t max_functor_size = 2*sizeof(functor_type);
           const size_t max_dep_future_size = _info.max_nchildren*sizeof(future_type);          
@@ -552,7 +552,7 @@ namespace Tacho {
             num_superblock  = 32, // various small size blocks
             superblock_size = task_queue_capacity/num_superblock;
           
-          sched = sched_type(typename sched_type::memory_space(),
+          sched = scheduler_type(typename scheduler_type::memory_space(),
                              task_queue_capacity,
                              min_block_size,
                              max_block_size,
@@ -655,7 +655,7 @@ namespace Tacho {
         typedef TaskFunctor_FactorizeCholPanel<value_type,exec_space> functor_type;
         typedef Kokkos::Future<int,exec_space> future_type;
         
-        sched_type sched;
+        scheduler_type sched;
         {
           const size_t max_functor_size = 2*sizeof(functor_type);
           const size_t max_dep_future_size = _info.max_nchildren*sizeof(future_type);          
@@ -668,7 +668,7 @@ namespace Tacho {
             num_superblock  = 32, // various small size blocks
             superblock_size = task_queue_capacity/num_superblock;
           
-          sched = sched_type(typename sched_type::memory_space(),
+          sched = scheduler_type(typename scheduler_type::memory_space(),
                              task_queue_capacity,
                              min_block_size,
                              max_block_size,
@@ -807,7 +807,7 @@ namespace Tacho {
               superblock_size = task_queue_capacity/num_superblock;
 
             if (_sched_solve_capacity < task_queue_capacity) {
-              _sched_solve = sched_type(typename sched_type::memory_space(),
+              _sched_solve = scheduler_type(typename scheduler_type::memory_space(),
                                         task_queue_capacity,
                                         min_block_size,
                                         max_block_size,
@@ -895,7 +895,7 @@ namespace Tacho {
           max_nrows_of_blocks = _info.max_supernode_size/blksize + 1,
           max_ncols_of_blocks = _info.max_schur_size/blksize + 1;
         
-        sched_type sched;
+        scheduler_type sched;
         {
           const size_t max_dep_future_size 
             = (_info.max_nchildren + max_ncols_of_blocks*max_ncols_of_blocks)*sizeof(future_type);
@@ -909,7 +909,7 @@ namespace Tacho {
             num_superblock  = 32, // various small size blocks
             superblock_size = task_queue_capacity/num_superblock;
           
-          sched = sched_type(typename sched_type::memory_space(),
+          sched = scheduler_type(typename scheduler_type::memory_space(),
                              task_queue_capacity,
                              min_block_size,
                              max_block_size,
@@ -1020,7 +1020,7 @@ namespace Tacho {
           max_nrows_of_blocks = _info.max_supernode_size/blksize + 1,
           max_ncols_of_blocks = _info.max_schur_size/blksize + 1;
         
-        sched_type sched;
+        scheduler_type sched;
         {
           const size_t max_dep_future_size 
             = (_info.max_nchildren + max_nrows_of_blocks*max_ncols_of_blocks)*sizeof(future_type);
@@ -1034,7 +1034,7 @@ namespace Tacho {
             num_superblock  = 32, // various small size blocks
             superblock_size = task_queue_capacity/num_superblock;
           
-          sched = sched_type(typename sched_type::memory_space(),
+          sched = scheduler_type(typename scheduler_type::memory_space(),
                              task_queue_capacity,
                              min_block_size,
                              max_block_size,

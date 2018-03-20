@@ -41,21 +41,21 @@ namespace Tacho {
       }
 
 
-      template<typename SchedType,
+      template<typename SchedulerType,
                typename MemberType,
                typename ViewTypeA>
       inline
       static int
-      invoke(SchedType &sched,
+      invoke(SchedulerType &sched,
              MemberType &member,
              const ViewTypeA &A) {
 #if defined( KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_HOST )
         int r_val = 0;      
-        Kokkos::single(Kokkos::PerTeam(member), [&]() {
-            r_val = invoke(A);
-            TACHO_TEST_FOR_EXCEPTION(r_val, std::runtime_error, 
-                                     "LAPACK (potrf) returns non-zero error code.");
-          });
+        //Kokkos::single(Kokkos::PerTeam(member), [&]() {
+        r_val = invoke(A);
+        TACHO_TEST_FOR_EXCEPTION(r_val, std::runtime_error, 
+                                 "LAPACK (potrf) returns non-zero error code.");
+        //});
         return r_val;
 #else
         TACHO_TEST_FOR_ABORT( true, ">> This function is only allowed in host space." );

@@ -51,23 +51,23 @@ namespace Tacho {
         return 0;
       }
 
-      template<typename SchedType,
+      template<typename SchedulerType,
                typename MemberType,
                typename ScalarType,
                typename ViewTypeA,
                typename ViewTypeC>
       inline
       static int
-      invoke(SchedType &sched,
+      invoke(SchedulerType &sched,
              MemberType &member,
              const ScalarType alpha,
              const ViewTypeA &A,
              const ScalarType beta,
              const ViewTypeC &C) {
 #if defined( KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_HOST )        
-        Kokkos::single(Kokkos::PerTeam(member), [&]() {
-            invoke(alpha, A, beta, C);
-          });
+        //Kokkos::single(Kokkos::PerTeam(member), [&]() {
+        invoke(alpha, A, beta, C);
+        //});
 #else
         TACHO_TEST_FOR_ABORT( true, ">> This function is only allowed in host space.");
 #endif
