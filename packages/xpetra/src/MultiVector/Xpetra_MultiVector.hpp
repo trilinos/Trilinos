@@ -197,9 +197,6 @@ namespace Xpetra {
 
     //! Global number of rows in the multivector.
     virtual global_size_t getGlobalLength() const = 0;
-   
-    // \brief Checks to see if the local length, number of vectors and size of Scalar type match
-    virtual bool isSameSize(const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> & vec) const =0;
 
     //@}
 
@@ -212,7 +209,7 @@ namespace Xpetra {
     //! Print the object with the given verbosity level to a FancyOStream.
     virtual void describe(Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel verbLevel=Teuchos::Describable::verbLevel_default) const = 0;
 
-    virtual void replaceMap(const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& map) = 0;    
+    virtual void replaceMap(const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& map) = 0;
 
     //@}
 
@@ -242,8 +239,6 @@ namespace Xpetra {
             }
         }
     }
-
-
 
 #ifdef HAVE_XPETRA_KOKKOS_REFACTOR
     typedef typename Kokkos::Details::ArithTraits<Scalar>::val_type impl_scalar_type;
