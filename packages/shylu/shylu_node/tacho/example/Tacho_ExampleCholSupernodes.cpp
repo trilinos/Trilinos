@@ -4,26 +4,26 @@
 #include <Kokkos_Random.hpp>
 #include <impl/Kokkos_Timer.hpp>
 
-#include "TachoExp_Util.hpp"
-#include "TachoExp_CrsMatrixBase.hpp"
-#include "TachoExp_MatrixMarket.hpp"
+#include "Tacho_Util.hpp"
+#include "Tacho_CrsMatrixBase.hpp"
+#include "Tacho_MatrixMarket.hpp"
 
-#include "TachoExp_Graph.hpp"
-#include "TachoExp_SymbolicTools.hpp"
+#include "Tacho_Graph.hpp"
+#include "Tacho_SymbolicTools.hpp"
 
 #if defined(TACHO_HAVE_SCOTCH)
-#include "TachoExp_GraphTools_Scotch.hpp"
+#include "Tacho_GraphTools_Scotch.hpp"
 #endif
 
 #if defined(TACHO_HAVE_METIS)
-#include "TachoExp_GraphTools_Metis.hpp"
+#include "Tacho_GraphTools_Metis.hpp"
 #endif
 
-#include "TachoExp_GraphTools_CAMD.hpp"
+#include "Tacho_GraphTools_CAMD.hpp"
 
-#include "TachoExp_NumericTools.hpp"
+#include "Tacho_NumericTools.hpp"
 
-#include "TachoExp_CommandLineParser.hpp"
+#include "Tacho_CommandLineParser.hpp"
 
 #ifdef TACHO_HAVE_MKL
 #include "mkl_service.h"

@@ -1,7 +1,7 @@
 #include <gtest/gtest.h>
 #include <Kokkos_Core.hpp>
 
-#include "TachoExp_Util.hpp"
+#include "Tacho_Util.hpp"
 
 using namespace Tacho;
 

@@ -1,7 +1,7 @@
 #include "Tacho.hpp"
 #include "Tacho_Solver.hpp"
 
-#include "TachoExp_CommandLineParser.hpp"
+#include "Tacho_CommandLineParser.hpp"
 
 #ifdef TACHO_HAVE_VTUNE
 #include "ittnotify.h"

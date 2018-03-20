@@ -6,8 +6,8 @@
 #include <Kokkos_Core.hpp>
 #include <impl/Kokkos_Timer.hpp>
 
-#include "TachoExp_Util.hpp"
-#include "TachoExp_DenseMatrixView.hpp"
+#include "Tacho_Util.hpp"
+#include "Tacho_DenseMatrixView.hpp"
 
 using namespace Tacho;
 
