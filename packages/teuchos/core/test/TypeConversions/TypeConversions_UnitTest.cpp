@@ -292,9 +292,15 @@ TEUCHOS_UNIT_TEST( asSafe, stringToReal ) {
   const float minusOneF = -1;
   const float maxF = std::numeric_limits<float>::max ();
 
+  out << "minF = " << minF << "\n";
+  out << "maxF = " << maxF << "\n";
+
   const double minD = -std::numeric_limits<double>::max ();
   const double minusOneD = -1;
   const double maxD = std::numeric_limits<double>::max ();
+
+  out << "minD = " << minD << "\n";
+  out << "maxD = " << maxD << "\n";
 
   // mfh 26 Nov 2012: C89 does not mandate that "long double"
   // implement the extended-precision 80-bit format of IEEE 754.  In
@@ -322,7 +328,6 @@ TEUCHOS_UNIT_TEST( asSafe, stringToReal ) {
   const long double maxLD = std::numeric_limits<long double>::max ();
 
   out << "minLD = " << minLD << "\n";
-  out << "minusOneLD = " << minusOneLD << "\n";
   out << "maxLD = " << maxLD << "\n";
 
   float valF = 0;
