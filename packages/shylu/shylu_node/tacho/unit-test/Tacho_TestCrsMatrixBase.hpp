@@ -10,7 +10,7 @@
 #include "TachoExp_CrsMatrixBase.hpp"
 #include "TachoExp_MatrixMarket.hpp"
 
-using namespace Tacho::Experimental;
+using namespace Tacho;
 
 typedef CrsMatrixBase<ValueType,HostSpaceType> CrsMatrixBaseHostType;
 typedef CrsMatrixBase<ValueType,DeviceSpaceType> CrsMatrixBaseDeviceType;

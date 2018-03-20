@@ -30,7 +30,6 @@
 #endif
 
 using namespace Tacho;
-using namespace Tacho::Experimental;
 
 int main (int argc, char *argv[]) {
   CommandLineParser opts("This example program measure the performance of Tacho on Kokkos::OpenMP");

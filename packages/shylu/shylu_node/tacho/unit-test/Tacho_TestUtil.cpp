@@ -3,7 +3,7 @@
 
 #include "TachoExp_Util.hpp"
 
-using namespace Tacho::Experimental;
+using namespace Tacho;
 
 typedef Kokkos::DefaultHostExecutionSpace HostSpaceType;
 typedef Kokkos::DefaultExecutionSpace     DeviceSpaceType;

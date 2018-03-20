@@ -16,7 +16,7 @@
 #include "TachoExp_Lapack_Team.hpp"
 #include "TachoExp_Lapack_External.hpp"
 
-using namespace Tacho::Experimental;
+using namespace Tacho;
 using std::abs;
 using Kokkos::abs;
 

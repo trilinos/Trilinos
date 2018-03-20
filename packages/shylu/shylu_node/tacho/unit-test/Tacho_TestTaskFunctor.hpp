@@ -9,7 +9,7 @@
 #include "TachoExp_Util.hpp"
 #include "TachoExp_TaskFunctor_MemoryPool.hpp"
 
-using namespace Tacho::Experimental;
+using namespace Tacho;
 
 TEST( TaskFunctor, MemoryPool ) {
   TEST_BEGIN;

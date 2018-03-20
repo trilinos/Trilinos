@@ -16,7 +16,7 @@
 #include "TachoExp_Herk_ByBlocks.hpp"
 #include "TachoExp_Trsm_ByBlocks.hpp"
 
-using namespace Tacho::Experimental;
+using namespace Tacho;
 
 typedef Kokkos::View<ValueType*,HostSpaceType>   value_type_array_host;
 typedef Kokkos::View<ValueType*,DeviceSpaceType> value_type_array;

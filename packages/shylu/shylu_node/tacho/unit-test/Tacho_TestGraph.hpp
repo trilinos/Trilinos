@@ -22,7 +22,7 @@
 
 #include "TachoExp_GraphTools_CAMD.hpp"
 
-using namespace Tacho::Experimental;
+using namespace Tacho;
 
 typedef CrsMatrixBase<ValueType,HostSpaceType>   CrsMatrixBaseHostType;
 //typedef CrsMatrixBase<ValueType,DeviceSpaceType> CrsMatrixBaseDeviceType;
