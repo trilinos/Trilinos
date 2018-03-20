@@ -10,6 +10,13 @@ INCLUDE("${CMAKE_CURRENT_LIST_DIR}/utils/ATDMDevEnvUtils.cmake")
 # A) Assert the right env vars are set and set local defaults
 #
 
+IF (NOT "$ENV{ATDM_CONFIG_COMPLETED_ENV_SETUP}" STREQUAL "TRUE")
+  MESSAGE(FATAL_ERROR
+    "Error, env var ATDM_CONFIG_COMPLETED_ENV_SETUP not set to true!"
+    "  Check load-env.sh output for error loading the env!"
+    ) 
+ENDIF()
+
 ASSERT_DEFINED(ENV{ATDM_CONFIG_KNOWN_SYSTEM_NAME})
 ASSERT_DEFINED(ENV{ATDM_CONFIG_COMPILER})
 ASSERT_DEFINED(ENV{ATDM_CONFIG_BUILD_TYPE})
