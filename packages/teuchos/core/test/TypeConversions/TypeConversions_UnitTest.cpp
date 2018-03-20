@@ -441,16 +441,36 @@ TEUCHOS_UNIT_TEST( asSafe, stringToReal ) {
     && max_exponent10_long_double > max_exponent10_double)
   {
     out << "Testing converting from 'long double' to 'double' that does not fit ...\n";
+
+    const long double maxTooBigLD_for_D = static_cast<long double>(maxD) * 10.0;
+    const long double minTooBigLD_for_D = static_cast<long double>(minD) * 10.0;
+    out << "maxTooBigLD_for_D = " << maxTooBigLD_for_D << "\n";
+    out << "minTooBigLD_for_D = " << minTooBigLD_for_D << "\n";
+
     {
-      TEST_THROW(valD = asSafe<double>(valToString(minLD)), std::range_error);
+      TEST_THROW(valD = asSafe<double>(valToString(minTooBigLD_for_D)), std::range_error);
       out << "valD = " << valD << "\n";
     }
     {
       std::ostringstream os;
       os.precision (36);
-      TEST_THROW(valD = asSafe<double>(valToString(maxLD)), std::range_error);
+      TEST_THROW(valD = asSafe<double>(valToString(maxTooBigLD_for_D)), std::range_error);
       out << "valD = " << valD << "\n";
     }
+
+    // NOTE: The above test avoids using std::numeric_limits<long
+    // double>::max() because with the CUDA compiler on shiller/hansen it
+    // returns 'inf'.  That completely breaks the test since "inf" is a valid
+    // value to read into a 'double'.
+    //
+    // This updated test takes std::numeric_limits<double>::max() * 10.0,
+    // writes to a string and then tries to read that back in as a 'dobule'.
+    // That cathces the bad conversion and thowns an exception as it should.
+    // This will work on any system where std::numeric_limits<long
+    // double>::max_expoent10 > std::numeric_limits<double>::max_expoent10
+    // (and this test is only run in cases where that is true).  See Trilinos
+    // GitHub issue #2407.
+
   }
 
   //
