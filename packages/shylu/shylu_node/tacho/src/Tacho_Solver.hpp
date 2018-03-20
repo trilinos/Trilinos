@@ -103,8 +103,8 @@ namespace Tacho {
   public:
     Solver()
       : _m(0), _nnz(0),
-        _ap(), _aj(),          _h_ap(), _h_aj(),
-        _perm(), _peri(),      _h_perm(), _h_peri(),
+        _ap(), _h_ap(),_aj(), _h_aj(),
+        _perm(), _h_perm(), _peri(), _h_peri(),
         _verbose(0),
         _small_problem_thres(1024),
         _serial_thres_size(-1),

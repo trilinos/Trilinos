@@ -49,11 +49,11 @@ int driver (int argc, char *argv[]) {
   
   {
     /// crs matrix format and dense multi vector
-    typedef Tacho::CrsMatrixBase<value_type,exec_space> CrsMatrixBaseType;
+    //typedef Tacho::CrsMatrixBase<value_type,exec_space> CrsMatrixBaseType;
     typedef Tacho::CrsMatrixBase<value_type,host_space> CrsMatrixBaseTypeHost;
     
     typedef Kokkos::View<value_type**,Kokkos::LayoutLeft,exec_space> DenseMultiVectorType;
-    typedef Kokkos::View<value_type**,Kokkos::LayoutLeft,host_space> DenseMultiVectorTypeHost;
+    //typedef Kokkos::View<value_type**,Kokkos::LayoutLeft,host_space> DenseMultiVectorTypeHost;
 
     /// read a spd matrix of matrix market format
     CrsMatrixBaseTypeHost A;
