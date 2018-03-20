@@ -47,7 +47,7 @@
 
 namespace Tpetra {
   namespace Details {
-    
+
     bool mpiIsInitialized ()
     {
 #ifdef HAVE_TPETRACORE_MPI
@@ -60,6 +60,19 @@ namespace Tpetra {
       return false; // Tpetra was not built with MPI support
 #endif // HAVE_TPETRACORE_MPI
     }
-    
+
+    bool mpiIsFinalized ()
+    {
+#ifdef HAVE_TPETRACORE_MPI
+      int isFinalized = 0;
+      const int errCode = MPI_Finalized (&isFinalized);
+      // If the call failed, then assume MPI wasn't implemented
+      // correctly and return false.
+      return errCode == MPI_SUCCESS && (isFinalized != 0);
+#else
+      return false; // Tpetra was not built with MPI support
+#endif // HAVE_TPETRACORE_MPI
+    }
+
   } // namespace Details
 } // namespace Tpetra
