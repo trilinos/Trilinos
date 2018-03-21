@@ -1,0 +1,272 @@
+/*
+// @HEADER
+// ***********************************************************************
+//
+//          Tpetra: Templated Linear Algebra Services Package
+//                 Copyright (2008) Sandia Corporation
+//
+// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
+// the U.S. Government retains certain rights in this software.
+//
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are
+// met:
+//
+// 1. Redistributions of source code must retain the above copyright
+// notice, this list of conditions and the following disclaimer.
+//
+// 2. Redistributions in binary form must reproduce the above copyright
+// notice, this list of conditions and the following disclaimer in the
+// documentation and/or other materials provided with the distribution.
+//
+// 3. Neither the name of the Corporation nor the names of the
+// contributors may be used to endorse or promote products derived from
+// this software without specific prior written permission.
+//
+// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
+// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
+// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+//
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+//
+// ************************************************************************
+// @HEADER
+*/
+
+#include "Tpetra_Map.hpp"
+#include "Tpetra_DefaultPlatform.hpp"
+
+#include <vector>
+#include <unordered_map>
+
+// Test program exhibiting github issue #2431
+// Submitted by Denis Ridzal, 3/21/18
+
+static int me;
+
+namespace {
+template <typename LocalOrdinal,typename GlobalOrdinal>
+class GreedyTieBreak : 
+      public Tpetra::Details::TieBreak<LocalOrdinal,GlobalOrdinal> 
+{
+public:
+  GreedyTieBreak() { }
+
+  virtual bool mayHaveSideEffects() const {
+    return true;
+  }
+
+  virtual std::size_t selectedIndex(
+    GlobalOrdinal GID,
+    const std::vector<std::pair<int,LocalOrdinal> > & pid_and_lid) const
+  {
+    // always choose index of pair with smallest pid
+    auto numLids = pid_and_lid.size();
+    decltype(numLids) idx = 0;
+    auto minpid = pid_and_lid[0].first;
+    decltype(minpid) minidx = 0;
+std::cout << me << " GID " << GID << ": ";
+    for (idx = 0; idx < numLids; ++idx) {
+std::cout << "(" << pid_and_lid[idx].second << " on " << pid_and_lid[idx].first << ") ";
+      if (pid_and_lid[idx].first < minpid) {
+        minpid = pid_and_lid[idx].first;
+        minidx = idx;
+      }
+    }
+std::cout << " CHOSE " << pid_and_lid[minidx].first << std::endl;
+
+    return minidx;
+  }
+};
+
+}
+
+
+int main(int argc, char *argv[]) {
+
+  typedef Tpetra::Map<>::local_ordinal_type LO;
+  typedef Tpetra::Map<>::global_ordinal_type GO;
+  typedef Tpetra::Map<>::node_type NO;
+
+  Teuchos::GlobalMPISession mpiSession(&argc, &argv);
+
+  Teuchos::RCP<const Teuchos::Comm<int>> comm = 
+           Tpetra::DefaultPlatform::getDefaultPlatform().getComm();
+  me = comm->getRank();
+
+  if (comm->getSize() != 4) {
+    if (comm->getRank() == 0) 
+      std::cout << "TEST FAILED: This test is written for four processes only. "
+                << "You are running on " << comm->getSize() << " processes."
+                << std::endl;
+    return 0;
+  }
+
+  // This little trick lets us print to std::cout only 
+  // if a (dummy) command-line argument is provided.
+  int iprint     = argc - 1;
+  Teuchos::oblackholestream bhs; // outputs nothing
+  std::ostream &outStream(iprint > 0 ? std::cout : bhs);
+
+  int errorFlag  = 0;
+
+  // *** Test body.
+
+  try {
+    std::vector<GO> vecP0 = 
+      { 0, 1, 3, 4, 9, 10, 12, 13, 18, 19, 21, 22, 27, 31, 36, 37, 38, 39, 40,
+        41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58,
+        59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 70, 71, 72, 73, 74, 75, 76,
+        77, 78, 79, 80, 81, 82};
+    std::vector<GO> vecP1 = 
+      { 1, 2, 4, 5, 10, 11, 13, 14, 19, 20, 22, 23, 28, 32, 37, 46, 55, 56,
+        58, 67, 76, 77, 79, 996, 997, 998, 999, 1000, 1001, 1002, 1004, 1005,
+        1006, 1007, 1009, 1010, 1013, 1015, 1016, 1017, 1018, 1019, 1020, 1021,
+        1022, 1023, 1024, 1025, 1026, 1027, 1028, 1030, 1031, 1034, 1036, 1037,
+        1038, 1039, 1040, 1041, 1042};
+    std::vector<GO> vecP2 = 
+      { 3, 4, 6, 7, 12, 13, 15, 16, 21, 22, 24, 25, 29, 33, 42, 54, 58, 59,
+        60, 75, 79, 80, 81, 1957, 1958, 1959, 1960, 1961, 1962, 1963, 1964,
+        1967, 1970, 1971, 1972, 1973, 1974, 1975, 1976, 1977, 1978, 1979, 1980,
+        1981, 1982, 1983, 1984, 1985, 1988, 1991, 1992, 1993, 1994, 1995, 1996,
+        1997, 1998, 1999, 2000, 2001, 2002};
+    std::vector<GO> vecP3 = 
+      { 4, 5, 7, 8, 13, 14, 16, 17, 22, 23, 25, 26, 30, 34, 58, 79, 1002,
+        1018, 1019, 1020, 1039, 1040, 1041, 1957, 1975, 1976, 1978, 1996, 1997,
+        1999, 2917, 2918, 2919, 2920, 2921, 2922, 2924, 2927, 2930, 2933, 2935,
+        2936, 2937, 2938, 2939, 2940, 2941, 2942, 2943, 2944, 2945, 2948, 2951,
+        2954, 2956, 2957, 2958, 2959, 2960, 2961, 2962};
+
+    Teuchos::Array<GO> arrP0(vecP0), arrP1(vecP1), arrP2(vecP2), arrP3(vecP3);
+
+    typedef Tpetra::Map<LO,GO,NO> map_t;
+    Teuchos::RCP<map_t> overlapMap;
+    GreedyTieBreak<LO,GO> greedy_tie_break;
+
+    auto pid = comm->getRank();
+    auto dummy = Teuchos::OrdinalTraits<Tpetra::global_size_t>::invalid();
+
+    if (pid == 0) {
+      overlapMap = Teuchos::rcp(new map_t(dummy, arrP0(), 0, comm));
+    }
+    else if (pid == 1) {
+      overlapMap = Teuchos::rcp(new map_t(dummy, arrP1(), 0, comm));
+    }
+    else if (pid == 2) {
+      overlapMap = Teuchos::rcp(new map_t(dummy, arrP2(), 0, comm));
+    }
+    else if (pid == 3) {
+      overlapMap = Teuchos::rcp(new map_t(dummy, arrP3(), 0, comm));
+    }
+
+    std::cout << "\nBefore Tpetra::createOneToOne on " << "Proc " 
+              << overlapMap->getComm()->getRank() 
+              << "; nGids = " << overlapMap->getNodeNumElements() << "\n";
+
+    auto myidx_o =  overlapMap->getMyGlobalIndices();
+    outStream << "IDs on Proc " << comm->getRank() << ": ";
+    for (std::size_t idx=0; idx<myidx_o.size(); ++idx) {
+      outStream << myidx_o[idx] << ", ";
+    }
+    outStream << "\n";
+
+    // Create non-overlap Map with TieBreak function
+    Teuchos::RCP<const map_t> nonOverlapMapTB =
+             Tpetra::createOneToOne<LO,GO,NO>(overlapMap, greedy_tie_break);
+
+    std::cout << "\nAfter Tpetra::createOneToOne with TieBreak on Proc " 
+              << overlapMap->getComm()->getRank() 
+              << "; nGids = " << nonOverlapMapTB->getNodeNumElements() << "\n";
+
+    auto myidx_notb =  nonOverlapMapTB->getMyGlobalIndices();
+    outStream << "IDs on Proc " << comm->getRank() << ": ";
+    for (std::size_t idx=0; idx<myidx_notb.size(); ++idx) {
+      outStream << myidx_notb[idx] << ", ";
+    }
+    outStream << "\n";
+
+    // Create non-overlap Map without TieBreak function
+    Teuchos::RCP<const map_t> nonOverlapMap =
+             Tpetra::createOneToOne<LO,GO,NO>(overlapMap);
+
+    std::cout << "\nAfter Tpetra::createOneToOne without TieBreak on Proc " 
+              << overlapMap->getComm()->getRank() 
+              << "; nGids = " << nonOverlapMap->getNodeNumElements() << "\n";
+
+    auto myidx_no =  nonOverlapMap->getMyGlobalIndices();
+    outStream << "IDs on Proc " << comm->getRank() << ": ";
+    for (std::size_t idx=0; idx<myidx_no.size(); ++idx) {
+      outStream << myidx_no[idx] << ", ";
+    }
+    outStream << "\n";
+
+    // Discover how many unique GIDs we had initially
+    std::unordered_map<GO,int> uniqueGids;
+
+    for (auto i = arrP0.begin(); i != arrP0.end(); i++) {
+      if (uniqueGids.find(*i) != uniqueGids.end()) 
+        uniqueGids[*i]++;
+      else
+        uniqueGids[*i] = 1;
+    }
+    for (auto i = arrP1.begin(); i != arrP1.end(); i++) {
+      if (uniqueGids.find(*i) != uniqueGids.end()) 
+        uniqueGids[*i]++;
+      else
+        uniqueGids[*i] = 1;
+    }
+    for (auto i = arrP2.begin(); i != arrP2.end(); i++) {
+      if (uniqueGids.find(*i) != uniqueGids.end()) 
+        uniqueGids[*i]++;
+      else
+        uniqueGids[*i] = 1;
+    }
+    for (auto i = arrP3.begin(); i != arrP3.end(); i++) {
+      if (uniqueGids.find(*i) != uniqueGids.end()) 
+        uniqueGids[*i]++;
+      else
+        uniqueGids[*i] = 1;
+    }
+
+    GO ncopies = 0;
+    for (auto i = uniqueGids.begin(); i != uniqueGids.end(); i++)
+      if (i->second > 1) ncopies += (i->second - 1);
+
+    if (pid == 0) {
+      std::cout << "\n\n\nBefore Tpetra::createOneToOne, there were " 
+                << uniqueGids.size() << " ids, with " 
+                << ncopies << " copies.\n";
+      std::cout << "After  Tpetra::createOneToOne with TieBreak, there are " 
+                << nonOverlapMapTB->getGlobalNumElements() << " ids.\n";
+      std::cout << "After  Tpetra::createOneToOne without TieBreak, there are " 
+                << nonOverlapMap->getGlobalNumElements() << " ids.\n";
+    }
+
+    // Check the results; number of unique GIDs should be the same in all Maps.
+    if (uniqueGids.size() != nonOverlapMapTB->getGlobalNumElements())
+      errorFlag = -1;
+    if (uniqueGids.size() != nonOverlapMap->getGlobalNumElements())
+      errorFlag = -1;
+  }
+  catch (std::logic_error err) {
+    outStream << err.what() << "\n";
+    errorFlag = -1000;
+  }; // end try
+
+  if (errorFlag != 0)
+    std::cout << "End Result: TEST FAILED\n";
+  else
+    std::cout << "End Result: TEST PASSED\n";
+
+  return 0;
+
+}
+
