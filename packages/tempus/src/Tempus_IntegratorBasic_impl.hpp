@@ -405,6 +405,7 @@ void IntegratorBasic<Scalar>::startIntegrator()
     return;
   }
   integratorTimer_->start();
+  // get optimal starting step size
   integratorStatus_ = WORKING;
 }
 

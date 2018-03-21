@@ -95,7 +95,6 @@ public:
 
      // b) first guess for the step size
      Scalar dt = Teuchos::as<Scalar>(0.01)*(d0/d1);
-     if ((d0 < 1e-5) or (d1 < 1e-5)) dt = 1e-6;
 
      // c) perform one explicit Euler step (X_1)
      Thyra::Vp_StV(stageX_.ptr(), dt, *(stageXDot_[0]));
@@ -115,14 +114,9 @@ public:
      Thyra::V_VmV(errX.ptr(), *(stageXDot_[1]), *(stageXDot_[0]));
      Scalar d2 = err_func(errX, errorRel, errorAbs, scratchX) / dt;
 
-     // e) compute step size h_1
+     // e) compute step size h_1 (from m = 0 order Taylor series)
      Scalar max_d1_d2 = std::max(d1, d2);
-     Scalar h1 = dt;
-
-     if (max_d1_d2 <= 1e-5)
-        h1 = std::max(1e-6, 1e-3*dt);
-     else
-        h1 = std::pow((0.01/max_d1_d2),(1.0/(order+1)));
+     Scalar h1 = std::pow((0.01/max_d1_d2),(1.0/(order+1)));
 
      // f) propse starting step size
      dt = std::min(100*dt, h1);
