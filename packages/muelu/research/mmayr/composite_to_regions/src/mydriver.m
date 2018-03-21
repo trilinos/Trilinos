@@ -89,8 +89,8 @@
 %
 !rm -f myData_* compX.mm map_compX.mm
 
-nDims = 1; file='caseTen'; 
-% nDims = 2; file='caseNine'; 
+% nDims = 1; file='caseTen'; 
+nDims = 2; file='caseFifteen'; 
 
 if (nDims == 2)
   [globalDims,localDims,relcorners,abscorners]=mk2DRegionFile(file);
