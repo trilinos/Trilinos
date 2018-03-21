@@ -6,26 +6,26 @@
 #include <Kokkos_Core.hpp>
 #include <impl/Kokkos_Timer.hpp>
 
-#include "TachoExp_Util.hpp"
-#include "TachoExp_CrsMatrixBase.hpp"
-#include "TachoExp_MatrixMarket.hpp"
+#include "Tacho_Util.hpp"
+#include "Tacho_CrsMatrixBase.hpp"
+#include "Tacho_MatrixMarket.hpp"
 
-#include "TachoExp_Graph.hpp"
-#include "TachoExp_SymbolicTools.hpp"
+#include "Tacho_Graph.hpp"
+#include "Tacho_SymbolicTools.hpp"
 
 #if defined(TACHO_HAVE_SCOTCH)
-#include "TachoExp_GraphTools_Scotch.hpp"
+#include "Tacho_GraphTools_Scotch.hpp"
 #endif
 
 #if defined(TACHO_HAVE_METIS)
-#include "TachoExp_GraphTools_Metis.hpp"
+#include "Tacho_GraphTools_Metis.hpp"
 #endif
 
-#include "TachoExp_GraphTools_CAMD.hpp"
+#include "Tacho_GraphTools_CAMD.hpp"
 
-#include "TachoExp_NumericTools.hpp"
+#include "Tacho_NumericTools.hpp"
 
-using namespace Tacho::Experimental;
+using namespace Tacho;
 
 typedef CrsMatrixBase<ValueType,HostSpaceType> CrsMatrixBaseHostType;
 typedef CrsMatrixBase<ValueType,DeviceSpaceType> CrsMatrixBaseDeviceType;
@@ -99,7 +99,7 @@ TEST( Numeric, constructor ) {
 TEST( Numeric, Cholesky_Serial ) {
   TEST_BEGIN;
   std::string inputfilename = MM_TEST_FILE + ".mtx";
-  CrsMatrixBaseHostType A;
+  CrsMatrixBaseDeviceType A;
   MatrixMarket<ValueType>::read(inputfilename, A);
 
   Graph G(A);
@@ -116,7 +116,7 @@ TEST( Numeric, Cholesky_Serial ) {
   SymbolicTools S(A, T);
   S.symbolicFactorize();
   
-  NumericTools<ValueType,DeviceSpaceType> N(A.NumRows(), A.RowPtr(), A.Cols(), A.Values(),
+  NumericTools<ValueType,DeviceSpaceType> N(A.NumRows(), A.RowPtr(), A.Cols(), 
                                             T.PermVector(), T.InvPermVector(),
                                             S.NumSupernodes(), S.Supernodes(),
                                             S.gidSuperPanelPtr(), S.gidSuperPanelColIdx(),
@@ -124,7 +124,7 @@ TEST( Numeric, Cholesky_Serial ) {
                                             S.SupernodesTreeParent(), S.SupernodesTreePtr(), S.SupernodesTreeChildren(), S.SupernodesTreeRoots());
   N.factorizeCholesky_Serial(A.Values());
   
-  CrsMatrixBaseHostType F;
+  CrsMatrixBaseDeviceType F;
   N.exportFactorsToCrsMatrix(F);
   
   std::ofstream out("test_numeric_factorize_serial.mtx");

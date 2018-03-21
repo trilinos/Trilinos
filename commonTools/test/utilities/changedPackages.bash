@@ -20,7 +20,7 @@ declare PackageEnables=""
 #Trilinos/packages/<package>/cmake, we will just build <package> and its
 #forward dependencies.
 
-if grep cmake gitchanges.txt |grep -qv packages; then
+if grep -i cmake gitchanges.txt |grep -qv packages; then
       PackageEnables+="-DTrilinos_ENABLE_ALL_PACKAGES=ON "
 else #If we aren't building everything, figure out which packages to bulid
 
@@ -231,7 +231,7 @@ else #If we aren't building everything, figure out which packages to bulid
 fi
 
 #Turn some things off that are currently problematic
-PackageEnables+="-DIfpack2_ENABLE_TESTS=OFF -DMueLu_ENABLE_TESTS=OFF -DAnasazi_ENABLE_TESTS=OFF "
+#PackageEnables+="-DIfpack2_ENABLE_TESTS=OFF -DMueLu_ENABLE_TESTS=OFF -DAnasazi_ENABLE_TESTS=OFF "
 
 echo "$PackageEnables"
 

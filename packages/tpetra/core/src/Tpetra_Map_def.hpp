@@ -50,9 +50,13 @@
 #include "Tpetra_Directory.hpp" // must include for implicit instantiation to work
 #include "Tpetra_Details_FixedHashTable.hpp"
 #include "Tpetra_Details_gathervPrint.hpp"
+#include "Tpetra_Details_printOnce.hpp"
+#include "Tpetra_Core.hpp"
 #include "Tpetra_Util.hpp"
 #include "Teuchos_as.hpp"
 #include "Teuchos_TypeNameTraits.hpp"
+#include "Tpetra_Details_mpiIsInitialized.hpp"
+#include "Tpetra_Details_extractMpiCommFromTeuchos.hpp" // teuchosCommIsAnMpiComm
 #include <stdexcept>
 #include <typeinfo>
 
@@ -1047,7 +1051,53 @@ namespace Tpetra {
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   Map<LocalOrdinal,GlobalOrdinal,Node>::~Map ()
-  {}
+  {
+    if (! Kokkos::is_initialized ()) {
+      std::ostringstream os;
+      os << "WARNING: Tpetra::Map destructor (~Map()) is being called after "
+        "Kokkos::finalize() has been called.  This is user error!  There are "
+        "two likely causes: " << std::endl <<
+        "  1. You have a static Tpetra::Map (or RCP or shared_ptr of a Map)"
+         << std::endl <<
+        "  2. You declare and construct a Tpetra::Map (or RCP or shared_ptr "
+        "of a Tpetra::Map) at the same scope in main() as Kokkos::finalize() "
+        "or Tpetra::finalize()." << std::endl << std::endl <<
+        "Don't do either of these!  Please refer to GitHib Issue #2372."
+         << std::endl;
+      ::Tpetra::Details::printOnce (std::cerr, os.str (),
+                                    this->getComm ().getRawPtr ());
+    }
+    else {
+      using ::Tpetra::Details::mpiIsInitialized;
+      using ::Tpetra::Details::mpiIsFinalized;
+      using ::Tpetra::Details::teuchosCommIsAnMpiComm;
+
+      Teuchos::RCP<const Teuchos::Comm<int> > comm = this->getComm ();
+      if (! comm.is_null () && teuchosCommIsAnMpiComm (*comm) &&
+          mpiIsInitialized () && mpiIsFinalized ()) {
+        // Tpetra itself does not require MPI, even if building with
+        // MPI.  It is legal to create Tpetra objects that do not use
+        // MPI, even in an MPI program.  However, calling Tpetra stuff
+        // after MPI_Finalize() has been called is a bad idea, since
+        // some Tpetra defaults may use MPI if available.
+        std::ostringstream os;
+        os << "WARNING: Tpetra::Map destructor (~Map()) is being called after "
+          "MPI_Finalize() has been called.  This is user error!  There are "
+          "two likely causes: " << std::endl <<
+          "  1. You have a static Tpetra::Map (or RCP or shared_ptr of a Map)"
+           << std::endl <<
+          "  2. You declare and construct a Tpetra::Map (or RCP or shared_ptr "
+          "of a Tpetra::Map) at the same scope in main() as MPI_finalize() or "
+          "Tpetra::finalize()." << std::endl << std::endl <<
+          "Don't do either of these!  Please refer to GitHib Issue #2372."
+           << std::endl;
+        ::Tpetra::Details::printOnce (std::cerr, os.str (), comm.getRawPtr ());
+      }
+    }
+    // mfh 20 Mar 2018: We can't check Tpetra::isInitialized() yet,
+    // because Tpetra does not yet require Tpetra::initialize /
+    // Tpetra::finalize.
+  }
 
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>

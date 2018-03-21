@@ -91,8 +91,17 @@ unset ATDM_CONFIG_USE_CUDA
 unset ATDM_CONFIG_HDF5_LIBS
 unset ATDM_CONFIG_NETCDF_LIBS
 unset ATDM_CONFIG_MPI_POST_FLAG
+unset ATDM_CONFIG_COMPLETED_ENV_SETUP
 
 source $_SCRIPT_DIR/$ATDM_CONFIG_KNOWN_SYSTEM_NAME/environment.sh
+
+if [ "$ATDM_CONFIG_COMPLETED_ENV_SETUP" != "TRUE" ] ; then
+  echo
+  echo "***"
+  echo "*** ERROR: Environment setup was not successful, see above errors!"
+  echo "***"
+  echo
+fi
 
 # NOTE: The ATDMDevEnv.cmake module when processed will assert that all of
 # these are set!

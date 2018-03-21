@@ -244,6 +244,10 @@ namespace Xpetra {
     //! Global number of rows in the multivector.
     global_size_t getGlobalLength() const { XPETRA_MONITOR("TpetraMultiVector::getGlobalLength"); return vec_->getGlobalLength(); }
 
+    // \brief Checks to see if the local length, number of vectors and size of Scalar type match
+    bool isSameSize(const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> & vec) const { XPETRA_MONITOR("TpetraMultiVector::isSameSize"); return vec_->isSameSize(toTpetra(vec));}
+                          
+
     //@}
 
     //! @name Overridden from Teuchos::Describable
@@ -621,6 +625,9 @@ namespace Xpetra {
     //! Global number of rows in the multivector.
     global_size_t getGlobalLength() const { return 0; }
 
+    // \! Checks to see if the local length, number of vectors and size of Scalar type match
+    bool isSameSize(const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> & vec) const { return false; }
+  
     //@}
 
     //! @name Overridden from Teuchos::Describable
@@ -891,6 +898,9 @@ namespace Xpetra {
 
     //! Global number of rows in the multivector.
     global_size_t getGlobalLength() const { return 0; }
+
+    // \! Checks to see if the local length, number of vectors and size of Scalar type match
+    bool isSameSize(const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> & vec) const { return false; }
 
     //@}
 

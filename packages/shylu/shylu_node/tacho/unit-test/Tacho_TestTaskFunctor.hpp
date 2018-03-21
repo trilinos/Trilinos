@@ -6,10 +6,10 @@
 #include <Kokkos_Core.hpp>
 #include <impl/Kokkos_Timer.hpp>
 
-#include "TachoExp_Util.hpp"
-#include "TachoExp_TaskFunctor_MemoryPool.hpp"
+#include "Tacho_Util.hpp"
+#include "Tacho_TaskFunctor_MemoryPool.hpp"
 
-using namespace Tacho::Experimental;
+using namespace Tacho;
 
 TEST( TaskFunctor, MemoryPool ) {
   TEST_BEGIN;
