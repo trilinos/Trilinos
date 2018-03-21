@@ -77,16 +77,12 @@ public:
     decltype(numLids) idx = 0;
     auto minpid = pid_and_lid[0].first;
     decltype(minpid) minidx = 0;
-std::cout << me << " GID " << GID << ": ";
     for (idx = 0; idx < numLids; ++idx) {
-std::cout << "(" << pid_and_lid[idx].second << " on " << pid_and_lid[idx].first << ") ";
       if (pid_and_lid[idx].first < minpid) {
         minpid = pid_and_lid[idx].first;
         minidx = idx;
       }
     }
-std::cout << " CHOSE " << pid_and_lid[minidx].first << std::endl;
-
     return minidx;
   }
 };
@@ -137,7 +133,7 @@ int runTest(
       overlapMap = Teuchos::rcp(new map_t(dummy, arrP3(), 0, comm));
     }
 
-    std::cout << "\n" << message 
+    std::cout << message 
               << ": Before Tpetra::createOneToOne on " << "Proc " 
               << overlapMap->getComm()->getRank() 
               << "; nGids = " << overlapMap->getNodeNumElements() << "\n";
@@ -153,7 +149,7 @@ int runTest(
     Teuchos::RCP<const map_t> nonOverlapMapTB =
              Tpetra::createOneToOne<LO,GO,NO>(overlapMap, greedy_tie_break);
 
-    std::cout << "\n" << message 
+    std::cout << message 
               << ": After Tpetra::createOneToOne with TieBreak on Proc " 
               << overlapMap->getComm()->getRank() 
               << "; nGids = " << nonOverlapMapTB->getNodeNumElements() << "\n";
@@ -169,7 +165,7 @@ int runTest(
     Teuchos::RCP<const map_t> nonOverlapMap =
              Tpetra::createOneToOne<LO,GO,NO>(overlapMap);
 
-    std::cout << "\n" << message 
+    std::cout << message 
               << ": After Tpetra::createOneToOne without TieBreak on Proc " 
               << overlapMap->getComm()->getRank() 
               << "; nGids = " << nonOverlapMap->getNodeNumElements() << "\n";
@@ -214,7 +210,7 @@ int runTest(
       if (i->second > 1) ncopies += (i->second - 1);
 
     if (pid == 0) {
-      std::cout << "\n\n\n" << message
+      std::cout << "\n\n" << message
                 << ": Before Tpetra::createOneToOne, there are " 
                 << uniqueGids.size() << " ids, with " 
                 << ncopies << " copies.\n";
@@ -224,6 +220,7 @@ int runTest(
       std::cout << message 
                 << ": After Tpetra::createOneToOne without TieBreak, there are "
                 << nonOverlapMap->getGlobalNumElements() << " ids.\n";
+      std::cout << "\n\n";
     }
 
     // Check the results; number of unique GIDs should be the same in all Maps.
@@ -298,6 +295,11 @@ int main(int argc, char *argv[]) {
 
     errorFlag += runTest<LO,GO,NO>("sparseTest", outStream, comm,
                                    vecP0, vecP1, vecP2, vecP3);
+
+    // Make sure it works if some process has no data
+    std::vector<GO> empty = { } ;
+    errorFlag += runTest<LO,GO,NO>("sparseTestEmptyP2", outStream, comm,
+                                   vecP0, vecP1, empty, vecP3);
   }
 
   // Dense test that does not use hash tables in directory.
@@ -331,9 +333,15 @@ int main(int argc, char *argv[]) {
 
     errorFlag += runTest<LO,GO,NO>("denseTest", outStream, comm,
                                    vecP0, vecP1, vecP2, vecP3);
+
+    // Make sure it works if some process has no data
+    std::vector<GO> empty = { } ;
+    errorFlag += runTest<LO,GO,NO>("denseTestEmptyP2", outStream, comm,
+                                   vecP0, vecP1, empty, vecP3);
   }
 
-  if (errorFlag != 0) std::cout << "End Result: TEST FAILED\n";
+  if (errorFlag != 0) std::cout << "End Result: TEST FAILED" << std::endl;
+  else                std::cout << "End Result: TEST PASSED" << std::endl;
 
   return 0;
 }
