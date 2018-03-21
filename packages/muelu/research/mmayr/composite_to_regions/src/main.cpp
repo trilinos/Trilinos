@@ -1405,9 +1405,19 @@ int main(int argc, char *argv[]) {
             gNodesPerDim[i] = -1;
 
           Array<int> lNodesPerDim(3);
-          lNodesPerDim[0] = revisedRowMapPerGrp[j]->NumMyElements();
-          lNodesPerDim[1] = 1;
-          lNodesPerDim[2] = 1;
+          // One-dimensional problems
+          {
+//            lNodesPerDim[0] = revisedRowMapPerGrp[j]->NumMyElements();
+//            lNodesPerDim[1] = 1;
+//            lNodesPerDim[2] = 1;
+          }
+
+          // Two-dimensional problems
+          {
+            lNodesPerDim[0] = 4;
+            lNodesPerDim[1] = 4;
+            lNodesPerDim[2] = 1;
+          }
 
           regGrpHierarchy[j]->GetLevel(0)->Set("gNodesPerDim", gNodesPerDim);
           regGrpHierarchy[j]->GetLevel(0)->Set("lNodesPerDim", lNodesPerDim);
