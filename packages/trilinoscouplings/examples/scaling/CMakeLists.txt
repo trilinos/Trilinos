@@ -407,3 +407,28 @@ IF(${PACKAGE_NAME}_ENABLE_Epetra AND ${PACKAGE_NAME}_ENABLE_Tpetra)
     COMM serial mpi
     )
 ENDIF()
+
+# lbv 22 March 2018
+#
+# Just build this executable; don't run it as a test (yet).
+#
+IF(${PACKAGE_NAME}_ENABLE_Belos AND
+   ${PACKAGE_NAME}_ENABLE_Intrepid AND
+   ${PACKAGE_NAME}_ENABLE_Pamgen AND
+   ${PACKAGE_NAME}_ENABLE_Tpetra)
+  TRIBITS_ADD_EXECUTABLE(
+    StructuredIntrepidPoisson_Pamgen_Tpetra
+    SOURCES StructuredIntrepidPoisson_Pamgen_Tpetra_main.cpp
+      TrilinosCouplings_IntrepidPoissonExampleHelpers.cpp
+      TrilinosCouplings_TpetraIntrepidStructuredPoissonExample.cpp
+      TrilinosCouplings_TpetraIntrepidPoissonExample_SolveWithBelos.cpp
+      TrilinosCouplings_Pamgen_Utils.cpp
+    COMM serial mpi
+    )
+
+  TRIBITS_COPY_FILES_TO_BINARY_DIR(TestCopyMueLuStructuredFiles
+    SOURCE_FILES muelu_structured_aggregation.xml
+    SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}
+    DEST_DIR ${CMAKE_CURRENT_BINARY_DIR}
+    )
+ENDIF()
