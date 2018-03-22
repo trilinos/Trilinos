@@ -286,8 +286,7 @@ namespace Tpetra {
   }
   // cblcbl
   // This is the "createExpert" version of the constructor to be used with pid/gid pairs obtained from
-  // the reverse round of communication.
-
+  // reverse communication
    template <class LocalOrdinal, class GlobalOrdinal, class Node>
    Import<LocalOrdinal,GlobalOrdinal,Node>::
    Import(const Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> >& source,
@@ -311,7 +310,7 @@ namespace Tpetra {
     typedef GlobalOrdinal GO;
     typedef Teuchos::Array<int>::size_type size_type;
     typedef ImportExportData<LocalOrdinal,GlobalOrdinal,Node> data_type;
-
+    const int myRank = source->getComm ()->getRank ();
     // Read "Debug" parameter from the input ParameterList.
     bool debug = tpetraImportDebugDefault;
     if (! plist.is_null ()) {
@@ -320,29 +319,12 @@ namespace Tpetra {
       } catch (Teuchos::Exceptions::InvalidParameter&) {}
     }
     debug_ = debug;
-    // if (debug_ && ! out_.is_null ()) {
-    //    const int myRank = source->getComm ()->getRank ();
-    //   std::ostringstream os;
-    //   os << myRank << ": constructExpert " << std::endl;
-    //   *out_ << os.str ();
-    // }
-
     ArrayView<const GO> sourceGIDs = source->getNodeElementList ();
     ArrayView<const GO> targetGIDs = target->getNodeElementList ();
     const size_type numSrcGids = sourceGIDs.size ();
     const size_type numTgtGids = targetGIDs.size ();
     const size_type numGids = std::min (numSrcGids, numTgtGids);
     const LO LINVALID = Teuchos::OrdinalTraits<LO>::invalid ();
-
-#ifdef HAVE_TPETRA_MMM_TIMINGS
-    using Teuchos::TimeMonitor;
-    std::string label;
-    if(!plist.is_null())
-      label = plist->get("Timer Label",label);
-    std::string prefix = std::string("Tpetra ")+ label + std::string(":iport_ctor:preIData: ");
-    auto MM = rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix)));
-#endif
-
 
     ImportData_ = rcp (new data_type (source, target, out_, plist));
 
@@ -372,7 +354,7 @@ namespace Tpetra {
     prefix = std::string("Tpetra ")+ label + std::string(":iport_ctor:presort ");
     auto MM2 = rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix)));
 #endif
-
+    
     sort3 (tRemotePIDs.begin (),
            tRemotePIDs.end (),
            tRemoteGIDs.begin (),
@@ -427,7 +409,6 @@ namespace Tpetra {
     prefix = std::string("Tpetra ")+ label + std::string(":iport_ctor:cFSAR ");
     auto MM3 = rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix)));
 #endif
-
     ImportData_->distributor_.createFromSendsAndRecvs(ImportData_->exportPIDs_,tRemotePIDs);
   }
 

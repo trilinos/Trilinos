@@ -62,6 +62,12 @@
 #include <unistd.h>
 #include <set>
 
+// Tpetra::CrsMatrix uses the functions below in its implementation.
+// To avoid a circular include issue, only include the declarations
+// for CrsMatrix.  We will include the definition after the functions
+// here have been defined.
+#include "Tpetra_CrsMatrix_decl.hpp"
+
 namespace Tpetra {
 namespace Import_Util {
 
@@ -191,14 +197,14 @@ template<typename Scalar,
          typename Node>
 void
 reverseNeighborDiscovery(const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>  & SourceMatrix,
-                         Teuchos::ArrayRCP<const size_t> & rowptr,
-                         Teuchos::ArrayRCP<const LocalOrdinal> & colind,
+                         const Teuchos::ArrayRCP<const size_t> & rowptr,
+                         const Teuchos::ArrayRCP<const LocalOrdinal> & colind,
                          const Tpetra::Details::Transfer<LocalOrdinal,GlobalOrdinal,Node>& RowTransfer,
 
                          Teuchos::RCP<const Tpetra::Import<LocalOrdinal,GlobalOrdinal,Node> > MyImporter,
                          Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > MyDomainMap,
-                         Teuchos::ArrayRCP<int>& reversePIDs,
-                         Teuchos::ArrayRCP<LocalOrdinal>& reverseLIDs,
+                         Teuchos::ArrayRCP<int>& type3PIDs,
+                         Teuchos::ArrayRCP<LocalOrdinal>& type3LIDs,
                          Teuchos::RCP<const Teuchos::Comm<int> >& rcomm)
 {
     using Teuchos::TimeMonitor;
@@ -211,14 +217,12 @@ reverseNeighborDiscovery(const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, No
     typedef std::pair<GO,GO> pidgidpair_t;
     using Teuchos::RCP;
     const std::string prefix {" Import_Util2::ReverseND:: "};
-
     typedef typename Tpetra::MultiVector< pidgidpair_t, LocalOrdinal, GlobalOrdinal, Node>::dual_view_type dual_view_type;
     typedef typename dual_view_type::t_dev dev_view_type;
     const std::string label ("IU2::Neighbor");
 
     std::ostringstream errstr;
     bool error = false;
-
     auto const comm             = MyDomainMap->getComm();
     MPI_Comm rawComm            = getRawMpiComm(*comm);
     const int MyPID             = rcomm->getRank ();
@@ -265,17 +269,14 @@ reverseNeighborDiscovery(const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, No
     // GID) pairs, in order to build a list of such pairs for each of
     // those processes.  Since this is building a reverse, we will send
     // to these processes.
-
-
     Teuchos::Array<int> ReverseSendSizes(NumRecvs,0);
-
     // do this as C array to avoid Teuchos::Array value initialization of all reserved memory
     Teuchos::Array< Teuchos::ArrayRCP<pidgidpair_t > > RSB(NumRecvs);
+
     if(0) {
 #ifdef HAVE_TPETRA_MMM_TIMINGS
 	TimeMonitor rsb(*TimeMonitor::getNewTimer(prefix + std::string("isMMallaRCPbuild")));
 #endif
-
         for(uint i=0;i<NumRecvs;++i) {
             RSB[i] = Teuchos::arcp(new pidgidpair_t[NumExportLIDs],0,NumExportLIDs,true);
             assert(RSB[i].size() == NumExportLIDs);
@@ -303,6 +304,7 @@ reverseNeighborDiscovery(const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, No
                             auto tmp = Teuchos::arcp(new pidgidpair_t[newsize],0,newsize,true);
                             std::copy(RSB[pid_order],RSB[pid_order]+RSB[pid_order].size(),tmp);
                             RSB[pid_order]=tmp;
+			    
                         }
                     }
                 }
@@ -322,21 +324,14 @@ reverseNeighborDiscovery(const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, No
 #ifdef HAVE_TPETRA_MMM_TIMINGS
 	TimeMonitor set_insert(*TimeMonitor::getNewTimer(prefix + std::string("isMMallSetRSBinsert")));
 #endif	
-	
-
         for(size_t i=0; i < NumExportLIDs; i++) {
             LO lid = ExportLIDs[i];
             GO exp_pid = ExportPIDs[i];
             for(auto j=rowptr[lid]; j<rowptr[lid+1]; j++){
                 int pid_order = RemotePIDOrder[colind[j]];
-
                 if(pid_order!=-1) {
                     GO gid = MyColMap->getGlobalElement(colind[j]); //Epetra SM.GCID46 =>sm->graph-> {colmap(colind)}
                     auto tpair = pidgidpair_t(exp_pid,gid);
-                    // Even with a set, you could use insert hints.
-                    // One of the insert() overloads takes an
-                    // additional iterator argument, that is "near"
-                    // the place where the thing will live.
                     pidsets[pid_order].insert(pidsets[pid_order].end(),tpair);
                 }
             }
@@ -347,26 +342,19 @@ reverseNeighborDiscovery(const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, No
 #ifdef HAVE_TPETRA_MMM_TIMINGS
 	    TimeMonitor set_cpy(*TimeMonitor::getNewTimer(prefix + std::string("isMMallSetRSBcpy")));
 #endif  
-        int ii = 0;
-        for(auto && s: ReverseSendSizes){
-            s = pidsets.size();
-            RSB[ii++] = Teuchos::arcp(new pidgidpair_t[ s ],0, s ,true);
-        }
         int jj = 0;
         for(auto &&ps : pidsets)  {
+            auto s = ps.size();
+            RSB[jj] = Teuchos::arcp(new pidgidpair_t[ s ],0, s ,true);
             std::copy(ps.begin(),ps.end(),RSB[jj]);
+	    ReverseSendSizes[jj]=s;
             ++jj;
         }
 	}
     } // end of set based packing.
 
     Teuchos::Array<int> ReverseRecvSizes(NumSends,-1);
-
-    // Teuchos::Array<MPI_Request> rawRreq(ProcsTo.size(), MPI_REQUEST_NULL);
-    // Teuchos::Array<MPI_Request> rawSreq(ProcsFrom.size(), MPI_REQUEST_NULL);
-
     Teuchos::Array<MPI_Request> rawBreq(ProcsFrom.size()+ProcsTo.size(), MPI_REQUEST_NULL);
-
     // 25 Jul 2018: MPI_TAG_UB is the largest tag value; could be < 32768.
     const int mpi_tag_base_ = 3;
 
@@ -397,32 +385,6 @@ reverseNeighborDiscovery(const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, No
                   &rawRequest);
         rawBreq[mpireq_idx++]=rawRequest;
     }
-
-    // 25 Jul 2018: Can wait on both sends and receives in the same MPI_Waitall.
-
- //    Teuchos::Array<MPI_Status> rawRstatus(rawRreq.size());
-//     Teuchos::Array<MPI_Status> rawSstatus(rawSreq.size());
-
-//     const int err1 = MPI_Waitall (rawRreq.size(), rawRreq.getRawPtr(),
-//                                   rawRstatus.getRawPtr());
-
-//     if(err1) {
-//         errstr <<MyPID<< "rE1 reverseNeighborDiscovery Mpi_Waitall error on receive ";
-//         error=true;
-//     }
-
-
-//     const int errss = MPI_Waitall (rawSreq.size(),
-//                                    rawSreq.getRawPtr(),
-//                                    rawSstatus.getRawPtr());
-// #ifdef HAVE_TPETRA_DEBUG
-//     if(errss) {
-//         errstr <<MyPID<< "sE1 reverseNeighborDiscovery Mpi_Waitall error on send ";
-//         error=true;
-//         std::cerr<<errstr.str()<<std::flush;
-//     }
-// #endif
-
     Teuchos::Array<MPI_Status> rawBstatus(rawBreq.size());
     const int err1 = MPI_Waitall (rawBreq.size(), rawBreq.getRawPtr(),
 				  rawBstatus.getRawPtr());
@@ -463,7 +425,6 @@ reverseNeighborDiscovery(const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, No
                   &rawRequest);
         rawBreq[mpireq_idx++]=rawRequest;
     }
-
     for(int ii=0;ii<ProcsFrom.size();++ii) {
         GO * send_bptr = (GO*) (RSB[ii].getRawPtr());
         MPI_Request rawSequest = MPI_REQUEST_NULL;
@@ -479,8 +440,6 @@ reverseNeighborDiscovery(const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, No
 
         rawBreq[mpireq_idx++]=rawSequest;
     }
-
-
     const int err = MPI_Waitall (rawBreq.size(),
                                  rawBreq.getRawPtr(),
                                  rawBstatus.getRawPtr());
@@ -491,28 +450,11 @@ reverseNeighborDiscovery(const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, No
         std::cerr<<errstr.str()<<std::flush;
     }
 #endif
- 
-    // 25 Jul 2018: Time the sort and unique, but not the "auto itr" loop.
-
     std::sort(AllReverseRecv.begin(), AllReverseRecv.end(), Tpetra::Import_Util::sort_PID_then_GID<GlobalOrdinal, GlobalOrdinal>);
 
     auto newEndOfPairs = std::unique(AllReverseRecv.begin(), AllReverseRecv.end());
 // don't resize to remove non-unique, just use the end-of-unique iterator
     if(AllReverseRecv.begin() == newEndOfPairs)  return;
-
-    // 25 Jul 2018: We know the actual sizes of reversePIDs and
-    // reverseLIDs, so we could just allocate here.
-
-    // 25 Jul 2018: If we want reversePIDs and reverseLIDs to be
-    // ArrayRCP, we could return owning subviews via
-    // ArrayRCP::persistingView.
-
-    // reversePIDs.clear();
-    // reverseLIDs.clear();
-
-    // reversePIDs.reserve(AllReverseRecv.size());
-    // reverseLIDs.reserve(AllReverseRecv.size());
-
     int ARRsize = std::distance(AllReverseRecv.begin(),newEndOfPairs);
     auto rPIDs = Teuchos::arcp(new int[ARRsize],0,ARRsize,true);
     auto rLIDs = Teuchos::arcp(new LocalOrdinal[ARRsize],0,ARRsize,true);
@@ -520,15 +462,15 @@ reverseNeighborDiscovery(const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, No
     int tsize=0;
     for(auto itr = AllReverseRecv.begin();  itr!=newEndOfPairs; ++itr ) {
         if((int)(itr->first) != MyPID) {
-            reversePIDs[tsize]=(int)itr->first;
+            rPIDs[tsize]=(int)itr->first;
             LocalOrdinal lid = MyDomainMap->getLocalElement(itr->second);
-            reverseLIDs[tsize++]=lid;
+            rLIDs[tsize]=lid;
 	    tsize++;
         }
     }
 
-    reversePIDs=rPIDs.persistingView(0,tsize);
-    reverseLIDs=rLIDs.persistingView(0,tsize);
+    type3PIDs=rPIDs.persistingView(0,tsize);
+    type3LIDs=rLIDs.persistingView(0,tsize);
 
     if(error){
         std::cerr<<errstr.str()<<std::flush;
@@ -1039,8 +981,6 @@ lowCommunicationMakeColMapAndReindex (const Teuchos::ArrayView<const size_t> &ro
     std::cerr<<os.str()<<std::flush;
   }
 }
-
-
 
 
 // Generates an list of owning PIDs based on two transfer (aka import/export objects)
