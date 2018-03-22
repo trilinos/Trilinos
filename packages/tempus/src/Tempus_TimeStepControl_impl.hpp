@@ -425,7 +425,7 @@ void TimeStepControl<Scalar>::setTimeStepControlStrategy(
    using Teuchos::ParameterList;
 
    if (stepControlStategy_ == Teuchos::null){
-      stepControlStategy_ = 
+      stepControlStategy_ =
          Teuchos::rcp(new TimeStepControlStrategyComposite<Scalar>());
    }
 
@@ -433,7 +433,7 @@ void TimeStepControl<Scalar>::setTimeStepControlStrategy(
       // Create stepControlStategy_ if null, otherwise keep current parameters.
 
       if (getStepType() == "Constant"){
-         stepControlStategy_->addStrategy( 
+         stepControlStategy_->addStrategy(
                Teuchos::rcp(new TimeStepControlStrategyConstant<Scalar>()));
       } else if (getStepType() == "Variable") {
          // add TSCS from "Time Step Control Strategy List"

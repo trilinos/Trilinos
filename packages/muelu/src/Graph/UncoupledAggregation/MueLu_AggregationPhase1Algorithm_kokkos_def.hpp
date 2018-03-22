@@ -63,7 +63,7 @@
 #include "MueLu_LWGraph_kokkos.hpp"
 #include "MueLu_Monitor.hpp"
 
-#include "KokkosGraph_GraphColor.hpp"
+#include "KokkosGraph_graph_color.hpp"
 
 namespace MueLu {
 

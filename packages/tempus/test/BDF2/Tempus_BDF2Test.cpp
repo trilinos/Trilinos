@@ -91,6 +91,9 @@ TEUCHOS_UNIT_TEST(BDF2, ParameterList)
     RCP<ParameterList> defaultPL =
       integrator->getStepper()->getDefaultParameters();
 
+    //std::cout << std::endl;
+    //std::cout << "stepperPL ----------------- \n" << *stepperPL << std::endl;
+    //std::cout << "defaultPL ----------------- \n" << *defaultPL << std::endl;
     TEST_ASSERT(haveSameValues(*stepperPL, *defaultPL, true))
   }
 }

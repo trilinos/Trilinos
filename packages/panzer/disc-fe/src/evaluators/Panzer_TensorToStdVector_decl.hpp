@@ -61,7 +61,29 @@ namespace panzer {
  *
  *  \author mayr.mt \date 09/2015
  */
-PHX_EVALUATOR_CLASS(TensorToStdVector)
+template<typename EvalT, typename Traits>
+class TensorToStdVector
+  :
+  public PHX::EvaluatorWithBaseImpl<Traits>,
+  public PHX::EvaluatorDerived<EvalT, Traits>
+{
+  public:
+
+    TensorToStdVector(
+      const Teuchos::ParameterList& p);
+
+    void
+    postRegistrationSetup(
+      typename Traits::SetupData d,
+      PHX::FieldManager<Traits>& fm);
+
+    void
+    evaluateFields(
+      typename Traits::EvalData d);
+
+  private:
+
+    using ScalarT = typename EvalT::ScalarT;
 
     //! Tensor (to be distributed to vector)
     PHX::MDField<const ScalarT,Cell,Point,Dim,Dim> tensor_field;
@@ -69,7 +91,8 @@ PHX_EVALUATOR_CLASS(TensorToStdVector)
     //! Vector (to be filled)
     std::vector<PHX::MDField<ScalarT,Cell,Point,Dim> > vector_fields;
 
-PHX_EVALUATOR_CLASS_END
+}; // end of class TensorToStdVector
+
 
 /** This is a function constructor for an evaluator
   * that builds vectors from a single tensor field. The user specifies

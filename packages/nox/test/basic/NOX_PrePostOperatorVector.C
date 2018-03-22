@@ -61,6 +61,8 @@ namespace NOX_UNIT_TEST {
     int post_it_count_;
     int pre_solve_count_;
     int post_solve_count_;
+    int pre_linesearch_count_;
+    int post_linesearch_count_;
 
   public:
 
@@ -68,7 +70,9 @@ namespace NOX_UNIT_TEST {
       pre_it_count_(0),
       post_it_count_(0),
       pre_solve_count_(0),
-      post_solve_count_(0)
+      post_solve_count_(0),
+      pre_linesearch_count_(0),
+      post_linesearch_count_(0)
     {}
 
     void runPreIterate(const NOX::Solver::Generic& solver)
@@ -83,6 +87,12 @@ namespace NOX_UNIT_TEST {
     void runPostSolve(const NOX::Solver::Generic& solver)
     {post_solve_count_ += 1;}
 
+    void runPreLineSearch(const NOX::Solver::Generic& solver)
+    {pre_linesearch_count_ += 1;}
+
+    void runPostLineSearch(const NOX::Solver::Generic& solver)
+    {post_linesearch_count_ += 1;}
+
     int preIterateCount() const
     {return pre_it_count_;}
 
@@ -94,6 +104,12 @@ namespace NOX_UNIT_TEST {
 
     int postSolveCount() const
     {return post_solve_count_;}
+
+    int preLineSearchCount() const
+    {return pre_linesearch_count_;}
+
+    int postLineSearchCount() const
+    {return post_linesearch_count_;}
 
   };
 
@@ -170,20 +186,39 @@ namespace NOX_UNIT_TEST {
     ppop_vec.runPostSolve(solver);
     ppop_vec.runPostSolve(solver);
 
+    ppop_vec.runPreLineSearch(solver);
+    ppop_vec.runPreLineSearch(solver);
+    ppop_vec.runPreLineSearch(solver);
+    ppop_vec.runPreLineSearch(solver);
+    ppop_vec.runPreLineSearch(solver);
+
+    ppop_vec.runPostLineSearch(solver);
+    ppop_vec.runPostLineSearch(solver);
+    ppop_vec.runPostLineSearch(solver);
+    ppop_vec.runPostLineSearch(solver);
+    ppop_vec.runPostLineSearch(solver);
+    ppop_vec.runPostLineSearch(solver);
+
     TEST_EQUALITY(mock_ppop_1->preIterateCount(), 1);
     TEST_EQUALITY(mock_ppop_1->postIterateCount(), 2);
     TEST_EQUALITY(mock_ppop_1->preSolveCount(), 3);
     TEST_EQUALITY(mock_ppop_1->postSolveCount(), 4);
+    TEST_EQUALITY(mock_ppop_1->preLineSearchCount(), 5);
+    TEST_EQUALITY(mock_ppop_1->postLineSearchCount(), 6);
 
     TEST_EQUALITY(mock_ppop_2->preIterateCount(), 1);
     TEST_EQUALITY(mock_ppop_2->postIterateCount(), 2);
     TEST_EQUALITY(mock_ppop_2->preSolveCount(), 3);
     TEST_EQUALITY(mock_ppop_2->postSolveCount(), 4);
+    TEST_EQUALITY(mock_ppop_2->preLineSearchCount(), 5);
+    TEST_EQUALITY(mock_ppop_2->postLineSearchCount(), 6);
 
     TEST_EQUALITY(mock_ppop_3->preIterateCount(), 0);
     TEST_EQUALITY(mock_ppop_3->postIterateCount(), 0);
     TEST_EQUALITY(mock_ppop_3->preSolveCount(), 0);
     TEST_EQUALITY(mock_ppop_3->postSolveCount(), 0);
+    TEST_EQUALITY(mock_ppop_3->preLineSearchCount(), 0);
+    TEST_EQUALITY(mock_ppop_3->postLineSearchCount(), 0);
 
   }
 

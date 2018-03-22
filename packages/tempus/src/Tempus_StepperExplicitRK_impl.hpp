@@ -12,7 +12,6 @@
 #include "Tempus_RKButcherTableauBuilder.hpp"
 #include "Tempus_RKButcherTableau.hpp"
 #include "Teuchos_VerboseObjectParameterListHelpers.hpp"
-#include "Teuchos_TimeMonitor.hpp"
 #include "Thyra_VectorStdOps.hpp"
 
 

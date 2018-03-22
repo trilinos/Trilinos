@@ -38,6 +38,7 @@
     <ParameterList name="Default Stepper">
 
       <Parameter name="Stepper Type"   type="string" value="Newmark Implicit a-Form"/>
+      <Parameter name="Zero Initial Guess" type="bool" value="0"/>
       <ParameterList name="Newmark Parameters">
         <Parameter name="Beta"    type="double" value="0.25"/>
         <Parameter name="Gamma"   type="double" value="0.33"/>

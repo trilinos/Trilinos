@@ -64,7 +64,29 @@ namespace panzer {
   * at a set of points defined by a point rule. Note that this assumes
   * a vector basis is used.
   */
-PANZER_EVALUATOR_CLASS(DirichletResidual_FaceBasis)
+template<typename EvalT, typename Traits>
+class DirichletResidual_FaceBasis
+  :
+  public panzer::EvaluatorWithBaseImpl<Traits>,
+  public PHX::EvaluatorDerived<EvalT, Traits>
+{
+  public:
+
+    DirichletResidual_FaceBasis(
+      const Teuchos::ParameterList& p);
+
+    void
+    postRegistrationSetup(
+      typename Traits::SetupData d,
+      PHX::FieldManager<Traits>& fm);
+
+    void
+    evaluateFields(
+      typename Traits::EvalData d);
+
+  private:
+
+    using ScalarT = typename EvalT::ScalarT;
   
   PHX::MDField<ScalarT,Cell,BASIS> residual;
   PHX::MDField<const ScalarT,Cell,Point,Dim> dof;
@@ -81,7 +103,8 @@ PANZER_EVALUATOR_CLASS(DirichletResidual_FaceBasis)
 
   Teuchos::RCP<const std::vector<Intrepid2::Orientation> > orientations;
 
-PANZER_EVALUATOR_CLASS_END
+}; // end of class DirichletResidual_FaceBasis
+
 
 }
 

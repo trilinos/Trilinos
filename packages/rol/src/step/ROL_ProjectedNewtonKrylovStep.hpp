@@ -286,6 +286,8 @@ public:
                AlgorithmState<Real> &algo_state ) {
     Real tol = std::sqrt(ROL_EPSILON<Real>()), one(1);
     ROL::Ptr<StepState<Real> > step_state = Step<Real>::getState();
+    step_state->SPiter = iterKrylov_;
+    step_state->SPflag = flagKrylov_;
 
     // Update iterate and store previous step
     algo_state.iter++;

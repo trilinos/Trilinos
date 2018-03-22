@@ -189,6 +189,8 @@ struct SPGEMM_SYMBOLIC < KernelHandle,
           row_mapC);
       break;
     case SPGEMM_CUSP:
+    case SPGEMM_VIENNA:
+
       break;
 
     case SPGEMM_MKL2PHASE:
@@ -200,15 +202,7 @@ struct SPGEMM_SYMBOLIC < KernelHandle,
           row_mapC,handle->get_verbose());
       break;
 
-    case SPGEMM_DEFAULT:
-    case SPGEMM_KK_MEMSPEED:
-    case SPGEMM_KK_SPEED:
-    case SPGEMM_KK_MEMORY:
-    case SPGEMM_KK_MEMORY2:
-    case SPGEMM_KK_COLOR:
-    case SPGEMM_KK_MULTICOLOR:
-    case SPGEMM_KK_MULTICOLOR2:
-    case SPGEMM_KK_MULTIMEM:
+    default:
     {
       KokkosSPGEMM
       <KernelHandle,
@@ -236,7 +230,12 @@ struct SPGEMM_SYMBOLIC < KernelHandle,
           );
       break;
     case SPGEMM_MKL:
-    default:
+    	mkl_symbolic(
+                  sh,
+                  m,n,k,
+                  row_mapA, entriesA,  transposeA,
+                  row_mapB, entriesB,  transposeB,
+                  row_mapC, handle->get_verbose());
       break;
     }
     sh->set_call_symbolic();

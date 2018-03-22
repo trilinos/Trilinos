@@ -1,5 +1,7 @@
 IF (${Trilinos_ENABLE_Kokkos})
 
+  PRINT_VAR(KOKKOS_ARCH)
+
   # This is where to generate the gen_kokkos.cmake and KokkosCore_config.h 
   # that we will use in the configuration
   set(Kokkos_GEN_DIR ${CMAKE_BINARY_DIR})

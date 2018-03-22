@@ -104,6 +104,9 @@ typedef MueLu::UncoupledAggregationFactory<LocalOrdinal,GlobalOrdinal,Node> Unco
 #ifdef MUELU_UNCOUPLEDAGGREGATIONFACTORY_KOKKOS_SHORT
 typedef MueLu::UncoupledAggregationFactory_kokkos<LocalOrdinal,GlobalOrdinal,Node> UncoupledAggregationFactory_kokkos;
 #endif
+#ifdef MUELU_UNCOUPLEDINDEXMANAGER_SHORT
+typedef MueLu::UncoupledIndexManager<LocalOrdinal,GlobalOrdinal,Node> UncoupledIndexManager;
+#endif
 #ifdef MUELU_USERAGGREGATIONFACTORY_SHORT
 typedef MueLu::UserAggregationFactory<LocalOrdinal,GlobalOrdinal,Node> UserAggregationFactory;
 #endif

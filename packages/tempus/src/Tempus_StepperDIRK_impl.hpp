@@ -63,97 +63,6 @@ StepperDIRK<Scalar>::StepperDIRK(
   this->initialize();
 }
 
-template<class Scalar>
-void StepperDIRK<Scalar>::setModel(
-  const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel)
-{
-  this->validImplicitODE_DAE(appModel);
-  wrapperModel_ =
-    Teuchos::rcp(new WrapperModelEvaluatorBasic<Scalar>(appModel));
-}
-
-template<class Scalar>
-void StepperDIRK<Scalar>::setNonConstModel(
-  const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >& appModel)
-{
-  this->setModel(appModel);
-}
-
-
-/** \brief Set the solver to a pre-defined solver in the ParameterList.
- *  The solver is set to solverName sublist in the Stepper's ParameterList.
- *  The solverName sublist should already be defined in the Stepper's
- *  ParameterList.  Otherwise it will fail.
- */
-template<class Scalar>
-void StepperDIRK<Scalar>::setSolver(std::string solverName)
-{
-  using Teuchos::RCP;
-  using Teuchos::ParameterList;
-
-  RCP<ParameterList> solverPL = Teuchos::sublist(stepperPL_, solverName, true);
-  stepperPL_->set("Solver Name", solverName);
-  solver_ = rcp(new Thyra::NOXNonlinearSolver());
-  RCP<ParameterList> noxPL = Teuchos::sublist(solverPL, "NOX", true);
-  solver_->setParameterList(noxPL);
-}
-
-
-/** \brief Set the solver to the supplied Parameter sublist.
- *  This adds a new solver Parameter sublist to the Stepper's ParameterList.
- *  If the solver sublist is null, the solver is set to the solver name
- *  in the Stepper's ParameterList.
- */
-template<class Scalar>
-void StepperDIRK<Scalar>::setSolver(
-  Teuchos::RCP<Teuchos::ParameterList> solverPL)
-{
-  using Teuchos::RCP;
-  using Teuchos::ParameterList;
-
-  std::string solverName = stepperPL_->get<std::string>("Solver Name");
-  if (is_null(solverPL)) {
-    // Create default solver, otherwise keep current solver.
-    if (solver_ == Teuchos::null) {
-      solverPL = Teuchos::sublist(stepperPL_, solverName, true);
-      solver_ = rcp(new Thyra::NOXNonlinearSolver());
-      RCP<ParameterList> noxPL = Teuchos::sublist(solverPL, "NOX", true);
-      solver_->setParameterList(noxPL);
-    }
-  } else {
-    TEUCHOS_TEST_FOR_EXCEPTION( solverName == solverPL->name(),
-      std::logic_error,
-         "Error - Trying to add a solver that is already in ParameterList!\n"
-      << "  Stepper Type = "<< stepperPL_->get<std::string>("Stepper Type")
-      << "\n" << "  Solver Name  = "<<solverName<<"\n");
-    solverName = solverPL->name();
-    stepperPL_->set("Solver Name", solverName);
-    stepperPL_->set(solverName, *solverPL);      // Add sublist
-    solver_ = rcp(new Thyra::NOXNonlinearSolver());
-    RCP<ParameterList> noxPL = Teuchos::sublist(solverPL, "NOX", true);
-    solver_->setParameterList(noxPL);
-  }
-}
-
-
-/** \brief Set the solver.
- *  This sets the solver to supplied solver and adds solver's ParameterList
- *  to the Stepper ParameterList.
- */
-template<class Scalar>
-void StepperDIRK<Scalar>::setSolver(
-  Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> > solver)
-{
-  using Teuchos::RCP;
-  using Teuchos::ParameterList;
-
-  RCP<ParameterList> solverPL = solver->getNonconstParameterList();
-  std::string solverName = solverPL->name();
-  stepperPL_->set("Solver Name", solverName);
-  stepperPL_->set(solverName, *solverPL);      // Add sublist
-  solver_ = solver;
-}
-
 
 template<class Scalar>
 void StepperDIRK<Scalar>::setTableau(
@@ -202,19 +111,20 @@ void StepperDIRK<Scalar>::initialize()
     "Error - Need to set the Butcher Tableau, setTableau(), before calling "
     "StepperDIRK::initialize()\n");
 
-  TEUCHOS_TEST_FOR_EXCEPTION( wrapperModel_ == Teuchos::null, std::logic_error,
+  TEUCHOS_TEST_FOR_EXCEPTION( this->wrapperModel_ == Teuchos::null,
+    std::logic_error,
     "Error - Need to set the model, setModel(), before calling "
     "StepperDIRK::initialize()\n");
 
   // Initialize the stage vectors
   const int numStages = DIRK_ButcherTableau_->numStages();
-  stageX_    = wrapperModel_->getNominalValues().get_x()->clone_v();
+  stageX_    = this->wrapperModel_->getNominalValues().get_x()->clone_v();
   stageXDot_.resize(numStages);
   for (int i=0; i<numStages; ++i) {
-    stageXDot_[i] = Thyra::createMember(wrapperModel_->get_f_space());
+    stageXDot_[i] = Thyra::createMember(this->wrapperModel_->get_f_space());
     assign(stageXDot_[i].ptr(), Teuchos::ScalarTraits<Scalar>::zero());
   }
-  xTilde_    = Thyra::createMember(wrapperModel_->get_x_space());
+  xTilde_    = Thyra::createMember(this->wrapperModel_->get_x_space());
   assign(xTilde_.ptr(),    Teuchos::ScalarTraits<Scalar>::zero());
 }
 
@@ -260,8 +170,8 @@ void StepperDIRK<Scalar>::takeStep(
           assign(stageXDot_[i].ptr(), Teuchos::ScalarTraits<Scalar>::zero());
         } else {
           typedef Thyra::ModelEvaluatorBase MEB;
-          MEB::InArgs<Scalar>  inArgs  = wrapperModel_->getInArgs();
-          MEB::OutArgs<Scalar> outArgs = wrapperModel_->getOutArgs();
+          MEB::InArgs<Scalar>  inArgs  = this->wrapperModel_->getInArgs();
+          MEB::OutArgs<Scalar> outArgs = this->wrapperModel_->getOutArgs();
           inArgs.set_x(xTilde_);
           if (inArgs.supports(MEB::IN_ARG_t)) inArgs.set_t(ts);
           if (inArgs.supports(MEB::IN_ARG_x_dot))
@@ -269,7 +179,7 @@ void StepperDIRK<Scalar>::takeStep(
           outArgs.set_f(stageXDot_[i]);
 
           stepperDIRKObserver_->observeBeforeExplicit(solutionHistory,*this);
-          wrapperModel_->getAppModel()->evalModel(inArgs,outArgs);
+          this->wrapperModel_->getAppModel()->evalModel(inArgs,outArgs);
         }
       } else {
         // Implicit stage for the ImplicitODE_DAE
@@ -282,8 +192,8 @@ void StepperDIRK<Scalar>::takeStep(
 
         // Setup InArgs and OutArgs
         typedef Thyra::ModelEvaluatorBase MEB;
-        MEB::InArgs<Scalar>  inArgs  = wrapperModel_->getInArgs();
-        MEB::OutArgs<Scalar> outArgs = wrapperModel_->getOutArgs();
+        MEB::InArgs<Scalar>  inArgs  = this->wrapperModel_->getInArgs();
+        MEB::OutArgs<Scalar> outArgs = this->wrapperModel_->getOutArgs();
         inArgs.set_x(stageX_);
         if (inArgs.supports(MEB::IN_ARG_x_dot)) inArgs.set_x_dot(stageXDot_[i]);
         if (inArgs.supports(MEB::IN_ARG_t        )) inArgs.set_t        (ts);
@@ -291,11 +201,12 @@ void StepperDIRK<Scalar>::takeStep(
         if (inArgs.supports(MEB::IN_ARG_alpha    )) inArgs.set_alpha    (alpha);
         if (inArgs.supports(MEB::IN_ARG_beta     )) inArgs.set_beta     (1.0);
 
-        wrapperModel_->setForSolve(timeDer, inArgs, outArgs);
+        this->wrapperModel_->setForSolve(timeDer, inArgs, outArgs);
 
         stepperDIRKObserver_->observeBeforeSolve(solutionHistory, *this);
 
-        sStatus = this->solveNonLinear(wrapperModel_, *solver_, stageX_);
+        sStatus = this->solveImplicitODE(stageX_);
+
         if (sStatus.solveStatus != Thyra::SOLVE_STATUS_CONVERGED ) pass=false;
 
         stepperDIRKObserver_->observeAfterSolve(solutionHistory, *this);
@@ -358,7 +269,7 @@ void StepperDIRK<Scalar>::describe(
    const Teuchos::EVerbosityLevel      verbLevel) const
 {
   out << description() << "::describe:" << std::endl
-      << "wrapperModel_ = " << wrapperModel_->description() << std::endl;
+      << "wrapperModel_ = " << this->wrapperModel_->description() << std::endl;
 }
 
 
@@ -368,9 +279,9 @@ void StepperDIRK<Scalar>::setParameterList(
 {
   if (pList == Teuchos::null) {
     // Create default parameters if null, otherwise keep current parameters.
-    if (stepperPL_ == Teuchos::null) stepperPL_ = this->getDefaultParameters();
+    if (this->stepperPL_ == Teuchos::null) this->stepperPL_ = this->getDefaultParameters();
   } else {
-    stepperPL_ = pList;
+    this->stepperPL_ = pList;
   }
   // Can not validate because of optional Parameters.
   //stepperPL_->validateParametersAndSetDefaults(*this->getValidParameters());
@@ -381,7 +292,10 @@ template<class Scalar>
 Teuchos::RCP<const Teuchos::ParameterList>
 StepperDIRK<Scalar>::getValidParameters() const
 {
-  return DIRK_ButcherTableau_->getValidParameters();
+  Teuchos::RCP<Teuchos::ParameterList> pl = Teuchos::parameterList();
+  *pl = *(DIRK_ButcherTableau_->getValidParameters());
+  pl->set<bool>       ("Zero Initial Guess", false);
+  return pl;
 }
 
 template <class Scalar>
@@ -391,6 +305,7 @@ StepperDIRK<Scalar>::getDefaultParameters() const
   Teuchos::RCP<Teuchos::ParameterList> pl = Teuchos::parameterList();
   *pl = *(DIRK_ButcherTableau_->getValidParameters());
   pl->set<std::string>("Solver Name", "Default Solver");
+  pl->set<bool>       ("Zero Initial Guess", false);
   Teuchos::RCP<Teuchos::ParameterList> solverPL=this->defaultSolverParameters();
   pl->set("Default Solver", *solverPL);
 
@@ -401,7 +316,7 @@ template <class Scalar>
 Teuchos::RCP<Teuchos::ParameterList>
 StepperDIRK<Scalar>::getNonconstParameterList()
 {
-  return(stepperPL_);
+  return(this->stepperPL_);
 }
 
 
@@ -409,8 +324,8 @@ template <class Scalar>
 Teuchos::RCP<Teuchos::ParameterList>
 StepperDIRK<Scalar>::unsetParameterList()
 {
-  Teuchos::RCP<Teuchos::ParameterList> temp_plist = stepperPL_;
-  stepperPL_ = Teuchos::null;
+  Teuchos::RCP<Teuchos::ParameterList> temp_plist = this->stepperPL_;
+  this->stepperPL_ = Teuchos::null;
   return(temp_plist);
 }
 

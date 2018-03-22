@@ -10,7 +10,6 @@
 #define Tempus_StepperOperatorSplit_impl_hpp
 
 #include "Teuchos_VerboseObjectParameterListHelpers.hpp"
-#include "Teuchos_TimeMonitor.hpp"
 #include "Thyra_VectorStdOps.hpp"
 #include "Tempus_StepperFactory.hpp"
 
@@ -70,7 +69,17 @@ template<class Scalar>
 Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >
 StepperOperatorSplit<Scalar>::getModel()
 {
-  return subStepperList_[0]->getModel();
+  Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > model;
+  typename std::vector<Teuchos::RCP<Stepper<Scalar> > >::const_iterator
+    subStepperIter = subStepperList_.begin();
+  for (; subStepperIter < subStepperList_.end(); subStepperIter++) {
+    model = (*subStepperIter)->getModel();
+    if (model != Teuchos::null) break;
+  }
+  TEUCHOS_TEST_FOR_EXCEPTION( model == Teuchos::null, std::logic_error,
+    "Error - StepperOperatorSplit::getModel() Could not find a valid model!\n");
+
+  return model;
 }
 
 template<class Scalar>
@@ -290,20 +299,22 @@ template <class Scalar>
 void StepperOperatorSplit<Scalar>::setParameterList(
   const Teuchos::RCP<Teuchos::ParameterList> & pList)
 {
+  Teuchos::RCP<Teuchos::ParameterList> stepperPL = this->stepperPL_;
   if (pList == Teuchos::null) {
     // Create default parameters if null, otherwise keep current parameters.
-    if (stepperPL_ == Teuchos::null) stepperPL_ = this->getDefaultParameters();
+    if (stepperPL == Teuchos::null) stepperPL = this->getDefaultParameters();
   } else {
-    stepperPL_ = pList;
+    stepperPL = pList;
   }
   // Can not validate because of optional Parameters, e.g. operators.
-  //stepperPL_->validateParametersAndSetDefaults(*this->getValidParameters());
+  //stepperPL->validateParametersAndSetDefaults(*this->getValidParameters());
 
-  std::string stepperType = stepperPL_->get<std::string>("Stepper Type");
-  TEUCHOS_TEST_FOR_EXCEPTION( stepperType != "Operator Split",
-    std::logic_error,
+  std::string stepperType = stepperPL->get<std::string>("Stepper Type");
+  TEUCHOS_TEST_FOR_EXCEPTION( stepperType != "Operator Split", std::logic_error,
        "Error - Stepper Type is not 'Operator Split'!\n"
     << "  Stepper Type = "<< pList->get<std::string>("Stepper Type") << "\n");
+
+  this->stepperPL_ = stepperPL;
 }
 
 

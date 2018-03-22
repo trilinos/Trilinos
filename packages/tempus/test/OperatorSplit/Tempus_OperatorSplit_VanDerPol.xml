@@ -67,6 +67,7 @@
       <ParameterList name="Operator 2">
 
         <Parameter name="Stepper Type"   type="string" value="Backward Euler"/>
+        <Parameter name="Zero Initial Guess" type="bool" value="0"/>
         <Parameter name="Solver Name"    type="string" value="Demo Solver"/>
 
         <ParameterList name="Demo Solver">

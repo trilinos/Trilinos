@@ -21,7 +21,7 @@ namespace KokkosBatched {
     invoke(const ScalarType alpha,
            const AViewType &A) {
       return SerialScaleInternal::
-        invoke(A.dimension_0(), A.dimension_1(),
+        invoke(A.extent(0), A.extent(1),
                alpha, 
                A.data(), A.stride_0(), A.stride_1());
     }
@@ -41,7 +41,7 @@ namespace KokkosBatched {
            const AViewType &A) {
       return TeamScaleInternal::
         invoke(member, 
-               A.dimension_0(), A.dimension_1(),
+               A.extent(0), A.extent(1),
                alpha, 
                A.data(), A.stride_0(), A.stride_1());
     }

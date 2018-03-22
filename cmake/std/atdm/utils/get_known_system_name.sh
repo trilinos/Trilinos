@@ -15,20 +15,30 @@ THIS_HOSTNAME=`hostname`
 #echo "Hostname = '$THIS_HOSTNAME'"
 
 ATDM_HOSTNAME=
+ATDM_SYSTEM_NAME=
 
-if [[ $THIS_HOSTNAME == "shiller"* ]] || [[ $THIS_HOSTNAME == "hansen"* ]] ; then
+if [[ $THIS_HOSTNAME == "hansen"* ]] ; then
+  ATDM_HOSTNAME=hansen
+  ATDM_SYSTEM_NAME=shiller
+elif [[ $THIS_HOSTNAME == "shiller"* ]] ; then
   ATDM_HOSTNAME=shiller
-elif [[ $THIS_HOSTNAME == "ride"* ]] || [[ $THIS_HOSTNAME == "white"* ]] ; then
+  ATDM_SYSTEM_NAME=shiller
+elif [[ $THIS_HOSTNAME == "white"* ]] ; then
+  ATDM_HOSTNAME=white
+  ATDM_SYSTEM_NAME=ride
+elif [[ $THIS_HOSTNAME == "ride"* ]] ; then
   ATDM_HOSTNAME=ride
+  ATDM_SYSTEM_NAME=ride
 fi
 
 # ToDo: Add more know hosts as you add them!
 
-if [[ $ATDM_HOSTNAME == "" ]] ; then
+if [[ $ATDM_SYSTEM_NAME == "" ]] ; then
   echo "Error, hostname = '$THIS_HOSTNAME' not recognized as a known ATDM system name!"
   return
 else
-  echo "Hostname '$THIS_HOSTNAME' matches known ATDM system '$ATDM_HOSTNAME'"
+  echo "Hostname '$THIS_HOSTNAME' matches known ATDM host '$ATDM_HOSTNAME' and system '$ATDM_SYSTEM_NAME'"
 fi
 
-export ATDM_CONFIG_KNOWN_SYSTEM_NAME=$ATDM_HOSTNAME
+export ATDM_CONFIG_KNOWN_HOSTNAME=$ATDM_HOSTNAME
+export ATDM_CONFIG_KNOWN_SYSTEM_NAME=$ATDM_SYSTEM_NAME

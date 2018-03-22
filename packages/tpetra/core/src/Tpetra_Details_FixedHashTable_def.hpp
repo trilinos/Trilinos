@@ -240,7 +240,7 @@ public:
     typedef typename hash_type::result_type hash_value_type;
 
     const hash_value_type hashVal = hash_type::hashFunc (keys_[i], size_);
-    Kokkos::atomic_fetch_add (&counts_[hashVal], 1);
+    Kokkos::atomic_increment (&counts_[hashVal]);
   }
 
 private:
@@ -455,6 +455,7 @@ public:
     typedef typename hash_type::result_type hash_value_type;
     typedef typename offsets_view_type::non_const_value_type offset_type;
     typedef typename pair_type::second_type val_type;
+    typedef typename std::remove_reference< decltype( counts_[0] ) >::type atomic_incr_type;
 
     const key_type key = keys_[i];
     if (key > dst.maxKey_) {
@@ -467,7 +468,7 @@ public:
     const hash_value_type hashVal = hash_type::hashFunc (key, size_);
 
     // Return the old count; decrement afterwards.
-    const offset_type count = Kokkos::atomic_fetch_add (&counts_[hashVal], -1);
+    const offset_type count = Kokkos::atomic_fetch_add (&counts_[hashVal], atomic_incr_type(-1));
     if (count == 0) {
       dst.success_ = false; // FAILURE!
     }

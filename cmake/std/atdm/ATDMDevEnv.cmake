@@ -4,11 +4,18 @@
 #
 ###############################################################################
 
-INCLUDE("${CMAKE_CURRENT_LIST_DIR}/ATDMDevEnvUtils.cmake")
+INCLUDE("${CMAKE_CURRENT_LIST_DIR}/utils/ATDMDevEnvUtils.cmake")
 
 #
 # A) Assert the right env vars are set and set local defaults
 #
+
+IF (NOT "$ENV{ATDM_CONFIG_COMPLETED_ENV_SETUP}" STREQUAL "TRUE")
+  MESSAGE(FATAL_ERROR
+    "Error, env var ATDM_CONFIG_COMPLETED_ENV_SETUP not set to true!"
+    "  Check load-env.sh output for error loading the env!"
+    ) 
+ENDIF()
 
 ASSERT_DEFINED(ENV{ATDM_CONFIG_KNOWN_SYSTEM_NAME})
 ASSERT_DEFINED(ENV{ATDM_CONFIG_COMPILER})
@@ -123,6 +130,7 @@ ATDM_SET_CACHE(Kokkos_ENABLE_Debug_Bounds_Check "${ATDM_BOUNDS_CHECK}" CACHE BOO
 ATDM_SET_CACHE(KOKKOS_ARCH "$ENV{ATDM_CONFIG_KOKKOS_ARCH}" CACHE STRING)
 ATDM_SET_CACHE(EpetraExt_ENABLE_HDF5 OFF CACHE BOOL)
 ATDM_SET_CACHE(MueLu_ENABLE_Experimental ON CACHE BOOL)
+ATDM_SET_CACHE(MueLu_ENABLE_Epetra OFF CACHE BOOL)
 ATDM_SET_CACHE(Panzer_ENABLE_FADTYPE "Sacado::Fad::DFad<RealType>" CACHE STRING)
 ATDM_SET_CACHE(Phalanx_KOKKOS_DEVICE_TYPE "${ATDM_NODE_TYPE}" CACHE STRING)
 ATDM_SET_CACHE(Phalanx_SHOW_DEPRECATED_WARNINGS OFF CACHE BOOL)

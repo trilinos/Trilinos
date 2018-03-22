@@ -275,11 +275,11 @@ make_view(typename ViewType::pointer_type ptr,
 template <typename ViewType>
 ViewType
 make_view(const std::string& label,
-          const Experimental::Impl::WithoutInitializing_t& init,
+          const Impl::WithoutInitializing_t& init,
           size_t N0 = 0, size_t N1 = 0, size_t N2 = 0, size_t N3 = 0,
           size_t N4 = 0, size_t N5 = 0, size_t N6 = 0, size_t N7 = 0)
 {
-  return ViewType(Experimental::view_alloc(label,init),
+  return ViewType(view_alloc(label,init),
                   N0, N1, N2, N3, N4, N5, N6, N7);
 }
 

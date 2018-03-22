@@ -105,8 +105,8 @@ public:
   /** \brief . */
   SolveStatus<double> solve(
     VectorBase<double> *x,
-    const SolveCriteria<double> *solveCriteria,
-    VectorBase<double> *delta
+    const SolveCriteria<double> *solveCriteria = nullptr,
+    VectorBase<double> *delta = nullptr
     );
   /** \brief . */
   RCP<const VectorBase<double> > get_current_x() const;
@@ -146,6 +146,12 @@ public:
   void setPrecOp(const Teuchos::RCP< ::Thyra::PreconditionerBase<double>>& precOp,
                  const Teuchos::RCP< ::Thyra::PreconditionerFactoryBase<double>>& precFactory = Teuchos::null,
                  const bool updatePreconditioner = true);
+
+  /** \brief Power user function to set the NOX solution Group. Normally, this will be created automatically but there are exceptional use cases where we need to set manually.
+
+      \param[in] group The nox group with the initial guess
+   */
+  void setGroup(const Teuchos::RCP<NOX::Thyra::Group>& group);
 
   RCP<const NOX::Solver::Generic> getNOXSolver() const;
 
@@ -191,6 +197,8 @@ private:
   Teuchos::RCP< ::Thyra::PreconditionerBase<double>> precOp_;
   Teuchos::RCP< ::Thyra::PreconditionerFactoryBase<double>> precFactory_;
   bool updatePreconditioner_;
+
+  RCP<NOX::Thyra::Group> user_defined_nox_group_;
 };
 
 

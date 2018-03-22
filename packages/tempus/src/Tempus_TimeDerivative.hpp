@@ -11,6 +11,8 @@
 
 // Thrya
 #include "Thyra_VectorBase.hpp"
+#include "Thyra_VectorStdOps.hpp"
+
 
 namespace Tempus {
 

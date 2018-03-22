@@ -53,7 +53,7 @@ namespace Test {
     
     inline
     void run() {
-      Kokkos::RangePolicy<DeviceType,ParamTagType> policy(0, _c.dimension_0());
+      Kokkos::RangePolicy<DeviceType,ParamTagType> policy(0, _c.extent(0));
       Kokkos::parallel_for(policy, *this);            
     }
   };
@@ -127,7 +127,7 @@ int test_batched_gemm() {
     typedef Kokkos::View<ValueType***,Kokkos::LayoutLeft,DeviceType> ViewType;
     Test::impl_test_batched_gemm<DeviceType,ViewType,ScalarType,ParamTagType,AlgoTagType>(     0, 10);
     for (int i=0;i<10;++i) {                                                                                        
-      printf("Testing: LayoutLeft,  Blksize %d\n", i);
+      //printf("Testing: LayoutLeft,  Blksize %d\n", i);
       Test::impl_test_batched_gemm<DeviceType,ViewType,ScalarType,ParamTagType,AlgoTagType>(1024,  i);
     }
   }
@@ -137,7 +137,7 @@ int test_batched_gemm() {
     typedef Kokkos::View<ValueType***,Kokkos::LayoutRight,DeviceType> ViewType;
     Test::impl_test_batched_gemm<DeviceType,ViewType,ScalarType,ParamTagType,AlgoTagType>(     0, 10);
     for (int i=0;i<10;++i) {                                                                                        
-      printf("Testing: LayoutRight, Blksize %d\n", i);
+      //printf("Testing: LayoutRight, Blksize %d\n", i);
       Test::impl_test_batched_gemm<DeviceType,ViewType,ScalarType,ParamTagType,AlgoTagType>(1024,  i);
     }
   }

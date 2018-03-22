@@ -61,7 +61,10 @@
 #include "Tpetra_Details_lclDot.hpp"
 #include "Tpetra_Details_Profiling.hpp"
 #include "Tpetra_Details_reallocDualViewIfNeeded.hpp"
+#include "Tpetra_Details_PackTraits.hpp"
 #include "Tpetra_KokkosRefactor_Details_MultiVectorDistObjectKernels.hpp"
+
+
 
 #include "KokkosCompat_View.hpp"
 #include "KokkosBlas.hpp"
@@ -5166,6 +5169,27 @@ namespace Tpetra {
       }
     }
   }
+
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  bool
+  MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
+  isSameSize (const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> & vec) const {
+    typedef impl_scalar_type ST;
+    typedef typename Kokkos::View<int*, device_type>::HostMirror::execution_space HES;
+    size_t l1 = this->getLocalLength();
+    size_t l2 = vec.getLocalLength();
+    if ((l1!=l2) || (this->getNumVectors() != vec.getNumVectors()))
+      return false;    
+    if(l1==0)  return true;
+     
+    auto v1 = this->template getLocalView<HES>();
+    auto v2 = vec.template getLocalView<HES>();
+    if(Details::PackTraits<ST,HES>::packValueCount(v1(0,0)) != Details::PackTraits<ST,HES>::packValueCount(v2(0,0)))
+      return false;
+
+    return true;
+  }
+
 
   template <class Scalar, class LO, class GO, class NT>
   Teuchos::RCP<MultiVector<Scalar, LO, GO, NT> >

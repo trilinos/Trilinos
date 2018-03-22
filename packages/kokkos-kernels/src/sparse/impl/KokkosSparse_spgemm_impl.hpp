@@ -64,7 +64,7 @@
 #include "KokkosKernels_HashmapAccumulator.hpp"
 #include "KokkosKernels_Uniform_Initialized_MemoryPool.hpp"
 #include "KokkosSparse_spgemm_handle.hpp"
-#include "KokkosGraph_GraphColor.hpp"
+#include "KokkosGraph_graph_color.hpp"
 
 namespace KokkosSparse{
 
@@ -163,7 +163,16 @@ public:
   struct MultiCoreTag{};
   struct MultiCoreTag2{};
   struct MultiCoreTag3{};
+  struct MultiCoreTag4{};
+  struct MultiCoreTag5{};
+  struct MultiCoreTag6{};
   struct GPUTag{};
+  struct GPUTag2{};
+  struct GPUTag3{};
+  struct GPUTag4{};
+  struct GPUTag5{};
+  struct GPUTag6{};
+
 
   struct Numeric1Tag{};
   struct Numeric2Tag{};
@@ -186,8 +195,18 @@ public:
   typedef Kokkos::TeamPolicy<MultiCoreTag, MyExecSpace> multicore_team_policy_t ;
   typedef Kokkos::TeamPolicy<MultiCoreTag2, MyExecSpace> multicore_team_policy2_t ;
   typedef Kokkos::TeamPolicy<MultiCoreTag3, MyExecSpace> multicore_team_policy3_t ;
+  typedef Kokkos::TeamPolicy<MultiCoreTag4, MyExecSpace> multicore_team_policy4_t ;
+  typedef Kokkos::TeamPolicy<MultiCoreTag5, MyExecSpace> multicore_team_policy5_t ;
+  typedef Kokkos::TeamPolicy<MultiCoreTag6, MyExecSpace> multicore_team_policy6_t ;
 
   typedef Kokkos::TeamPolicy<GPUTag, MyExecSpace> gpu_team_policy_t ;
+  typedef Kokkos::TeamPolicy<GPUTag2, MyExecSpace> gpu_team_policy2_t ;
+  typedef Kokkos::TeamPolicy<GPUTag3, MyExecSpace> gpu_team_policy3_t ;
+  typedef Kokkos::TeamPolicy<GPUTag4, MyExecSpace> gpu_team_policy4_t ;
+  typedef Kokkos::TeamPolicy<GPUTag5, MyExecSpace> gpu_team_policy5_t ;
+  typedef Kokkos::TeamPolicy<GPUTag6, MyExecSpace> gpu_team_policy6_t ;
+
+
   typedef Kokkos::TeamPolicy<CountTag, MyExecSpace> team_count_policy_t ;
   typedef Kokkos::TeamPolicy<CountTag2, MyExecSpace> team_count2_policy_t ;
 
@@ -208,6 +227,10 @@ public:
   typedef Kokkos::TeamPolicy<MultiCoreTag, MyExecSpace, Kokkos::Schedule<Kokkos::Dynamic> > dynamic_multicore_team_policy_t ;
   typedef Kokkos::TeamPolicy<MultiCoreTag2, MyExecSpace, Kokkos::Schedule<Kokkos::Dynamic> > dynamic_multicore_team_policy2_t ;
   typedef Kokkos::TeamPolicy<MultiCoreTag3, MyExecSpace, Kokkos::Schedule<Kokkos::Dynamic> > dynamic_multicore_team_policy3_t ;
+  typedef Kokkos::TeamPolicy<MultiCoreTag4, MyExecSpace, Kokkos::Schedule<Kokkos::Dynamic> > dynamic_multicore_team_policy4_t ;
+  typedef Kokkos::TeamPolicy<MultiCoreTag5, MyExecSpace, Kokkos::Schedule<Kokkos::Dynamic> > dynamic_multicore_team_policy5_t ;
+  typedef Kokkos::TeamPolicy<MultiCoreTag6, MyExecSpace, Kokkos::Schedule<Kokkos::Dynamic> > dynamic_multicore_team_policy6_t ;
+
 
   typedef Kokkos::TeamPolicy<CountTag, MyExecSpace, Kokkos::Schedule<Kokkos::Dynamic> > dynamic_team_count_policy_t ;
   typedef Kokkos::TeamPolicy<FillTag, MyExecSpace, Kokkos::Schedule<Kokkos::Dynamic> > dynamic_team_fill_policy_t ;
@@ -260,7 +283,7 @@ private:
    *
    */
   template <typename in_row_view_t, typename in_nnz_view_t, typename out_rowmap_view_t, typename out_nnz_view_t>
-  void compressMatrix(
+  bool compressMatrix(
       nnz_lno_t n, size_type nnz,
       in_row_view_t in_row_map, in_nnz_view_t in_entries,
       out_rowmap_view_t out_row_map,
@@ -630,6 +653,13 @@ public:
             typename pool_memory_space>
   struct StructureC;
 
+  template <typename a_row_view_t, typename a_nnz_view_t,
+            typename b_original_row_view_t,
+            typename b_compressed_row_view_t, typename b_nnz_view_t,
+            typename c_row_view_t, //typename nnz_lno_temp_work_view_t,
+            typename pool_memory_space>
+  struct StructureC_NC;
+
 
 
   template <typename a_row_view_t, typename a_nnz_view_t,
@@ -666,7 +696,8 @@ private:
       a_nnz_view_t entriesA_,
 
       b_oldrow_view_t row_pointers_begin_B,
-      b_row_view_t row_pointers_end_B);
+      b_row_view_t row_pointers_end_B
+	  ,size_type *flops_per_row = NULL);
 
 
   size_t getMaxRoughRowNNZ_p(
@@ -705,6 +736,21 @@ private:
       nnz_lno_t maxNumRoughNonzeros
   );
 
+  template <typename a_r_view_t, typename a_nnz_view_t,
+              typename b_original_row_view_t,
+              typename b_compressed_row_view_t, typename b_nnz_view_t,
+              typename c_row_view_t>
+  void symbolic_c_no_compression(
+		    nnz_lno_t m,
+		    a_r_view_t row_mapA_,
+		    a_nnz_view_t entriesA_,
+
+		    b_original_row_view_t b_rowmap_begin,
+		    b_compressed_row_view_t b_rowmap_end,
+		    b_nnz_view_t entriesb_,
+		    c_row_view_t rowmapC,
+		    nnz_lno_t maxNumRoughNonzeros
+		  );
 };
 
 

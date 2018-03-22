@@ -64,8 +64,8 @@ SET(BUILD_DIR_NAME MPI_RELEASE_DEBUG_SHARED_PT_CI)
 #SET(CTEST_TEST_TIMEOUT 900)
 
 #override the default number of processors to run on.
-SET( CTEST_BUILD_FLAGS "-j8 -i" )
-SET( CTEST_PARALLEL_LEVEL "8" )
+SET( CTEST_BUILD_FLAGS "-j16 -i" )
+SET( CTEST_PARALLEL_LEVEL "16" )
 
 SET(Trilinos_ENABLE_SECONDARY_TESTED_CODE OFF)
 
@@ -76,7 +76,7 @@ SET(Trilinos_BRANCH develop)
 SET(EXTRA_EXCLUDE_PACKAGES)
 
 SET( EXTRA_CONFIGURE_OPTIONS
-  "-DTrilinos_CONFIGURE_OPTIONS_FILE:STRING=cmake/std/MpiReleaseDebugSharedPtSettings.cmake,cmake/std/BasicCiTestingSettings.cmake"
+  "-DTrilinos_CONFIGURE_OPTIONS_FILE:STRING=cmake/std/MpiReleaseDebugSharedPtSettings.cmake,cmake/std/BasicCiTestingSettings.cmake,cmake/std/sems/SEMSDevEnv.cmake"
   "-DTrilinos_TEST_CATEGORIES=BASIC"
   "-DTrilinos_ENABLE_CONFIGURE_TIMING=ON"
   )

@@ -50,16 +50,21 @@
 
 #include <Galeri_XpetraMaps.hpp>
 
-#ifdef HAVE_MUELU_TPETRA
-
-//FIXME guard for ETI
-//FIXME guard for Tpetra enabled
-
-//#ifdef HAVE_MUELU_EXPLICIT_INSTANTIATION
 #ifdef HAVE_GALERI_XPETRA
 
+#ifdef HAVE_MUELU_TPETRA
 #include <TpetraCore_ETIHelperMacros.h>
 TPETRA_ETI_MANGLING_TYPEDEFS()
+#endif
+
+// I don't particularly like having these typdef's here.
+// They duplicate typdefs in MueLu_ETI_3arg.hpp,
+// MueLu_ETI_4arg.hpp, and Xpetra_Map.hpp.
+#ifdef EPETRA_HAVE_OMP
+  typedef Kokkos::Compat::KokkosOpenMPWrapperNode EpetraNode;
+#else
+    typedef Kokkos::Compat::KokkosSerialWrapperNode EpetraNode;
+#endif
 
 namespace Galeri {
   namespace Xpetra {
@@ -68,10 +73,15 @@ namespace Galeri {
 #define MUELU_GALERI_INST(LO,GO,NO) \
   template Teuchos::RCP<::Xpetra::Map<LO, GO, NO>> CreateMap<LO,GO,NO>(::Xpetra::UnderlyingLib lib, const std::string & mapType, const Teuchos::RCP<const Teuchos::Comm<int> >& comm, Teuchos::ParameterList & list);
 
-TPETRA_INSTANTIATE_LGN(MUELU_GALERI_INST)
+#ifdef HAVE_MUELU_TPETRA
+  TPETRA_INSTANTIATE_LGN(MUELU_GALERI_INST)
+#else
+  // MueLu requires at least one of T/Epetra.  Getting to this point indicates Tpetra is
+  // not available and so Epetra must be.  Therefore, we must instantiate directly.
+  MUELU_GALERI_INST(int,int,EpetraNode)
+#endif
   } //Xpetra namespace
 } //Galeri namespace
 
 #endif //ifdef HAVE_GALERI_XPETRA
-#endif // HAVE_MUELU_TPETRA
 //#endif //ifdef HAVE_MUELU_EXPLICIT_INSTANTIATION

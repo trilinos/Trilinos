@@ -228,6 +228,7 @@ struct FillSymmetricEdgesHashMap{
 
   KOKKOS_INLINE_FUNCTION
   void operator()(const team_member & teamMember/*, idx &nnz*/) const {
+    typedef typename std::remove_reference< decltype( pre_pps(0) ) >::type atomic_incr_type;
     idx ii = teamMember.league_rank()  * teamMember.team_size()+ teamMember.team_rank();
     if (ii >= num_rows) {
       return;
@@ -244,22 +245,22 @@ struct FillSymmetricEdgesHashMap{
           Kokkos::UnorderedMapInsertResult r = umap.insert(Kokkos::pair<idx, idx>(colIndex, ii));
           if (r.success()){
 
-            Kokkos::atomic_fetch_add(&(pre_pps(ii)),1);
+            Kokkos::atomic_fetch_add(&(pre_pps(ii)), atomic_incr_type(1));
 
-            Kokkos::atomic_fetch_add(&(pre_pps(colIndex)),1);
+            Kokkos::atomic_fetch_add(&(pre_pps(colIndex)), atomic_incr_type(1));
           }
         }
         else if (colIndex > ii){
 
           Kokkos::UnorderedMapInsertResult r = umap.insert(Kokkos::pair<idx, idx>(ii, colIndex));
           if (r.success()){
-            Kokkos::atomic_fetch_add(&(pre_pps(colIndex)),1);
+            Kokkos::atomic_fetch_add(&(pre_pps(colIndex)), atomic_incr_type(1));
 
-            Kokkos::atomic_fetch_add(&(pre_pps(ii)),1);
+            Kokkos::atomic_fetch_add(&(pre_pps(ii)), atomic_incr_type(1));
           }
         }
         else {
-          Kokkos::atomic_fetch_add(&(pre_pps(ii)),1);
+          Kokkos::atomic_fetch_add(&(pre_pps(ii)), atomic_incr_type(1));
         }
       }
 
@@ -295,6 +296,7 @@ struct FillSymmetricLowerEdgesHashMap{
 
   KOKKOS_INLINE_FUNCTION
   void operator()(const team_member & teamMember/*, idx &nnz*/) const {
+    typedef typename std::remove_reference< decltype( pre_pps(0) ) >::type atomic_incr_type;
     idx ii = teamMember.league_rank()  * teamMember.team_size()+ teamMember.team_rank();
     if (ii >= num_rows) {
       return;
@@ -312,14 +314,14 @@ struct FillSymmetricLowerEdgesHashMap{
           Kokkos::UnorderedMapInsertResult r = umap.insert(Kokkos::pair<idx, idx>(colIndex, ii));
           if (r.success()){
 
-            Kokkos::atomic_fetch_add(&(pre_pps(colIndex)),1);
+            Kokkos::atomic_fetch_add(&(pre_pps(colIndex)), atomic_incr_type(1));
           }
         }
         else if (colIndex > ii){
 
           Kokkos::UnorderedMapInsertResult r = umap.insert(Kokkos::pair<idx, idx>(ii, colIndex));
           if (r.success()){
-            Kokkos::atomic_fetch_add(&(pre_pps(ii)),1);
+            Kokkos::atomic_fetch_add(&(pre_pps(ii)), atomic_incr_type(1));
           }
         }
 
@@ -357,6 +359,7 @@ struct FillSymmetricCRS_HashMap{
 
   KOKKOS_INLINE_FUNCTION
   void operator()(const team_member_t & teamMember) const {
+    typedef typename std::remove_reference< decltype( pre_pps(0) ) >::type atomic_incr_type;
     idx ii = teamMember.league_rank()  * teamMember.team_size()+ teamMember.team_rank();
     if (ii >= num_rows) {
       return;
@@ -372,22 +375,22 @@ struct FillSymmetricCRS_HashMap{
       if (colIndex < num_rows){
         if (colIndex < ii){
           if (umap.insert(Kokkos::pair<idx, idx>(colIndex, ii)).success()){
-            idx cAdjInd = Kokkos::atomic_fetch_add(&(pre_pps(colIndex)),1);
-            idx iAdjInd = Kokkos::atomic_fetch_add(&(pre_pps(ii)),1);
+            idx cAdjInd = Kokkos::atomic_fetch_add(&(pre_pps(colIndex)), atomic_incr_type(1));
+            idx iAdjInd = Kokkos::atomic_fetch_add(&(pre_pps(ii)), atomic_incr_type(1));
             sym_adj[cAdjInd] = ii;
             sym_adj[iAdjInd] = colIndex;
           }
         }
         else if (colIndex > ii){
           if (umap.insert(Kokkos::pair<idx, idx>(ii, colIndex)).success()){
-            idx cAdjInd = Kokkos::atomic_fetch_add(&(pre_pps(colIndex)),1);
-            idx iAdjInd = Kokkos::atomic_fetch_add(&(pre_pps(ii)),1);
+            idx cAdjInd = Kokkos::atomic_fetch_add(&(pre_pps(colIndex)), atomic_incr_type(1));
+            idx iAdjInd = Kokkos::atomic_fetch_add(&(pre_pps(ii)), atomic_incr_type(1));
             sym_adj[cAdjInd] = ii;
             sym_adj[iAdjInd] = colIndex;
           }
         }
         else {
-          idx cAdjInd = Kokkos::atomic_fetch_add(&(pre_pps(colIndex)),1);
+          idx cAdjInd = Kokkos::atomic_fetch_add(&(pre_pps(colIndex)), atomic_incr_type(1));
           sym_adj[cAdjInd] = ii;
         }
       }
@@ -428,6 +431,7 @@ struct FillSymmetricEdgeList_HashMap{
 
   KOKKOS_INLINE_FUNCTION
   void operator()(const team_member_t & teamMember) const {
+    typedef typename std::remove_reference< decltype( pps(0) ) >::type atomic_incr_type;
     idx ii = teamMember.league_rank()  * teamMember.team_size()+ teamMember.team_rank();
     if (ii >= num_rows) {
       return;
@@ -443,14 +447,14 @@ struct FillSymmetricEdgeList_HashMap{
       if (colIndex < num_rows){
         if (colIndex < ii){
           if (umap.insert(Kokkos::pair<idx, idx>(colIndex, ii)).success()){
-            idx cAdjInd = Kokkos::atomic_fetch_add(&(pps(colIndex)),1);
+            idx cAdjInd = Kokkos::atomic_fetch_add(&(pps(colIndex)), atomic_incr_type(1));
             sym_src[cAdjInd] = colIndex;
             sym_dst[cAdjInd] = ii;
           }
         }
         else if (colIndex > ii){
           if (umap.insert(Kokkos::pair<idx, idx>(ii, colIndex)).success()){
-            idx cAdjInd = Kokkos::atomic_fetch_add(&(pps(ii)),1);
+            idx cAdjInd = Kokkos::atomic_fetch_add(&(pps(ii)), atomic_incr_type(1));
             sym_src[cAdjInd] = ii;
             sym_dst[cAdjInd] = colIndex;
           }
@@ -485,8 +489,9 @@ struct Reverse_Map_Init{
 
   KOKKOS_INLINE_FUNCTION
   void operator()(const size_t &ii) const {
+    typedef typename std::remove_reference< decltype( reverse_map_xadj(0) ) >::type atomic_incr_type;
     forward_type fm = forward_map[ii];
-    Kokkos::atomic_fetch_add( &(reverse_map_xadj(fm)), 1);
+    Kokkos::atomic_fetch_add( &(reverse_map_xadj(fm)), atomic_incr_type(1));
   }
 
   /*
@@ -524,8 +529,9 @@ struct Fill_Reverse_Map{
 
   KOKKOS_INLINE_FUNCTION
   void operator()(const size_t &ii) const {
+    typedef typename std::remove_reference< decltype( reverse_map_xadj(0) ) >::type atomic_incr_type;
     forward_type c = forward_map[ii];
-    const reverse_type future_index = Kokkos::atomic_fetch_add( &(reverse_map_xadj(c - 1)), 1);
+    const reverse_type future_index = Kokkos::atomic_fetch_add( &(reverse_map_xadj(c - 1)), atomic_incr_type(1));
     reverse_map_adj(future_index) = ii;
   }
 };
@@ -658,10 +664,11 @@ struct Reverse_Map_Scale_Init{
 
   KOKKOS_INLINE_FUNCTION
   void operator()(const size_t &ii) const {
+    typedef typename std::remove_reference< decltype( reverse_map_xadj(0) ) >::type atomic_incr_type;
     forward_type fm = forward_map[ii];
     fm = fm << multiply_shift_for_scale;
     fm += ii >> division_shift_for_bucket;
-    Kokkos::atomic_fetch_add( &(reverse_map_xadj(fm)), 1);
+    Kokkos::atomic_fetch_add( &(reverse_map_xadj(fm)), atomic_incr_type(1));
   }
 };
 
@@ -691,11 +698,12 @@ struct Fill_Reverse_Scale_Map{
 
   KOKKOS_INLINE_FUNCTION
   void operator()(const size_t &ii) const {
+    typedef typename std::remove_reference< decltype( reverse_map_xadj(0) ) >::type atomic_incr_type;
     forward_type fm = forward_map[ii];
 
     fm = fm << multiply_shift_for_scale;
     fm += ii >> division_shift_for_bucket;
-    const reverse_type future_index = Kokkos::atomic_fetch_add( &(reverse_map_xadj(fm - 1)), 1);
+    const reverse_type future_index = Kokkos::atomic_fetch_add( &(reverse_map_xadj(fm - 1)), atomic_incr_type(1));
     reverse_map_adj(future_index) = ii;
   }
 };
@@ -774,18 +782,18 @@ void create_reverse_map(
         tmp_color_xadj,
         multiply_shift_for_scale,
         division_shift_for_bucket);
-    Kokkos::parallel_for (my_exec_space (0, num_forward_elements) , rmi);
+    Kokkos::parallel_for ("KokkosKernels::Impl::ReverseMapScaleInit",my_exec_space (0, num_forward_elements) , rmi);
     MyExecSpace::fence();
 
 
     inclusive_parallel_prefix_sum<reverse_array_type, MyExecSpace>(tmp_reverse_size + 1, tmp_color_xadj);
     MyExecSpace::fence();
 
-    Kokkos::parallel_for (my_exec_space (0, num_reverse_elements + 1) , StridedCopy<reverse_array_type, reverse_array_type>(tmp_color_xadj, reverse_map_xadj, scale_size));
+    Kokkos::parallel_for ("KokkosKernels::Impl::StridedCopy",my_exec_space (0, num_reverse_elements + 1) , StridedCopy<reverse_array_type, reverse_array_type>(tmp_color_xadj, reverse_map_xadj, scale_size));
     MyExecSpace::fence();
     Fill_Reverse_Scale_Map<forward_array_type, reverse_array_type> frm (forward_map, tmp_color_xadj, reverse_map_adj,
         multiply_shift_for_scale, division_shift_for_bucket);
-    Kokkos::parallel_for (my_exec_space (0, num_forward_elements) , frm);
+    Kokkos::parallel_for ("KokkosKernels::Impl::FillReverseMap",my_exec_space (0, num_forward_elements) , frm);
     MyExecSpace::fence();
   }
   else
@@ -795,7 +803,7 @@ void create_reverse_map(
 
     Reverse_Map_Init<forward_array_type, reverse_array_type> rmi(forward_map, reverse_map_xadj);
 
-    Kokkos::parallel_for (my_exec_space (0, num_forward_elements) , rmi);
+    Kokkos::parallel_for ("KokkosKernels::Impl::ReverseMapInit",my_exec_space (0, num_forward_elements) , rmi);
     MyExecSpace::fence();
     //print_1Dview(reverse_map_xadj);
 
@@ -805,7 +813,7 @@ void create_reverse_map(
     Kokkos::deep_copy (tmp_color_xadj, reverse_map_xadj);
     MyExecSpace::fence();
     Fill_Reverse_Map<forward_array_type, reverse_array_type> frm (forward_map, tmp_color_xadj, reverse_map_adj);
-    Kokkos::parallel_for (my_exec_space (0, num_forward_elements) , frm);
+    Kokkos::parallel_for ("KokkosKernels::Impl::FillReverseMap",my_exec_space (0, num_forward_elements) , frm);
     MyExecSpace::fence();
   }
 }
@@ -842,7 +850,7 @@ void permute_vector(
     ){
   typedef Kokkos::RangePolicy<MyExecSpace> my_exec_space;
 
-  Kokkos::parallel_for( my_exec_space(0,num_elements),
+  Kokkos::parallel_for("KokkosKernels::Impl::PermuteVector", my_exec_space(0,num_elements),
       PermuteVector<value_array_type, out_value_array_type, idx_array_type>(old_vector, new_vector, old_to_new_index_map));
 
 }
@@ -1482,6 +1490,7 @@ struct TransposeMatrix2{
 
   KOKKOS_INLINE_FUNCTION
   void operator()(const CountTag&, const team_count_member_t & teamMember) const {
+    typedef typename std::remove_reference< decltype( t_xadj(0) ) >::type atomic_incr_type;
 
     const nnz_lno_t row_index = teamMember.league_rank() * teamMember.team_size() + teamMember.team_rank();
 
@@ -1495,12 +1504,13 @@ struct TransposeMatrix2{
           [&] (nnz_lno_t i) {
       const size_type adjind = i + col_begin;
       const nnz_lno_t colIndex = adj[adjind];
-      Kokkos::atomic_fetch_add(&(t_xadj(colIndex)),1);
+      Kokkos::atomic_fetch_add(&(t_xadj(colIndex)), atomic_incr_type(1));
     });
   }
 
   KOKKOS_INLINE_FUNCTION
   void operator()(const FillTag&, const team_fill_member_t & teamMember) const {
+    typedef typename std::remove_reference< decltype( tmp_txadj(0) ) >::type atomic_incr_type;
     const nnz_lno_t row_index = teamMember.league_rank() * teamMember.team_size() + teamMember.team_rank();
 
     if (row_index >= num_rows) return;
@@ -1512,7 +1522,7 @@ struct TransposeMatrix2{
         [&] (nnz_lno_t i) {
       const size_type adjind = i + col_begin;
       const nnz_lno_t colIndex = adj[adjind];
-      const size_type pos = Kokkos::atomic_fetch_add(&(tmp_txadj(colIndex)),1);
+      const size_type pos = Kokkos::atomic_fetch_add(&(tmp_txadj(colIndex)), atomic_incr_type(1));
 
       t_adj(pos) = row_index;
       if (transpose_values){

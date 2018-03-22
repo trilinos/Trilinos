@@ -308,6 +308,7 @@ public:
     }
 
     ROL::Ptr<StepState<Real> > state = Step<Real>::getState();
+    state->SPiter = subproblemIter_;
  
     // Update optimization vector
     x.plus(s);

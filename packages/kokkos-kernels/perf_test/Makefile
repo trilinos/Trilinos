@@ -77,11 +77,31 @@ EXECUTABLES += $(wildcard ${KOKKOSKERNELS_SRC_PATH}/perf_test/sparse/*cpp)
 EXECUTABLES += $(wildcard ${KOKKOSKERNELS_SRC_PATH}/perf_test/graph/*cpp) 
 EXECUTABLES += $(wildcard ${KOKKOSKERNELS_SRC_PATH}/perf_test/common/*cpp) 
 
+
+
+#=======================================================================
+#===================== BATCHED BLAS/LAPACK PERF ========================
+#=======================================================================
+
+BATCHEDINC = -I$(KOKKOSKERNELS_SRC_PATH)/perf_test/batched
+INC += $(BATCHEDINC)
+
+BATCHED_HEADERS = $(wildcard $(KOKKOSKERNELS_SRC_PATH)/perf_test/batched/*.hpp)
+TEST_HEADERS += $(BATCHED_HEADERS)
+
+BATCHED_EXECUTABLES = $(wildcard ${KOKKOSKERNELS_SRC_PATH}/perf_test/batched/*cpp)
+EXECUTABLES += $(BATCHED_EXECUTABLES)
+
+#=======================================================================
+#===================== TEST TARGETS ====================================
+#=======================================================================
+
 vpath %.cpp $(sort $(dir $(EXECUTABLES)))
 OBJS = $(notdir $(EXECUTABLES:.cpp=.o))
 TEST_TARGETS = $(notdir $(EXECUTABLES:.cpp=.exe))
-
 #TEST_TARGETS = $(patsubst %.cpp, %.exe, $(EXECUTABLES))
+
+
 #=======================================================================
 #=================== Make Rules ========================================
 #=======================================================================
@@ -93,7 +113,7 @@ clean: kokkos-clean kokkoskernels-clean
 default: $(TEST_TARGETS)
 
 build: $(TEST_TARGETS)
-	
+
 %.exe:%.o $(KOKKOS_LINK_DEPENDS) $(KOKKOSKERNELS_LINK_DEPENDS) $(TEST_HEADERS)
 	$(LINK) $(EXTRA_PATH) $< $(KOKKOSKERNELS_LDFLAGS) $(KOKKOSKERNELS_LIBS) $(KOKKOS_LIBS) $(LIB) $(KOKKOS_LDFLAGS) $(LDFLAGS) -o $@
 

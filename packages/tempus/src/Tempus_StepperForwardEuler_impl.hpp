@@ -10,7 +10,6 @@
 #define Tempus_StepperForwardEuler_impl_hpp
 
 #include "Teuchos_VerboseObjectParameterListHelpers.hpp"
-#include "Teuchos_TimeMonitor.hpp"
 #include "Thyra_VectorStdOps.hpp"
 
 
@@ -144,7 +143,10 @@ Teuchos::RCP<Thyra::VectorBase<Scalar> >
 StepperForwardEuler<Scalar>::
 getXDotTemp(Teuchos::RCP<Thyra::VectorBase<Scalar> > x)
 {
-  if (xDotTemp_ == Teuchos::null) xDotTemp_ = x->clone_v();
+  if (xDotTemp_ == Teuchos::null) {
+    xDotTemp_ = x->clone_v();
+    Thyra::assign(xDotTemp_.ptr(), Scalar(0.0));
+  }
   return xDotTemp_;
 }
 

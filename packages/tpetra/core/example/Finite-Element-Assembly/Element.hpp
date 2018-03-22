@@ -44,7 +44,7 @@
 #include <iomanip>
 #include "Kokkos_View.hpp"
 
-
+namespace TpetraExamples {
 
 //
 // This function does a very rough approximation of 2D finite-difference
@@ -69,7 +69,7 @@
 //    2 |    -1   2  -1
 //    3 |-1      -1   2
 // 
-void ReferenceQuad4(scalar_2d_array_type & elementMatrix) {
+void ReferenceQuad4(scalar_2d_array_t & elementMatrix) {
   size_t lr[4] = {1,0,3,2};
   size_t ud[4] = {3,2,1,0};
 
@@ -95,7 +95,7 @@ void ReferenceQuad4(scalar_2d_array_type & elementMatrix) {
 // This function prints out the quad4 array in a nice way.
 //  rows x cols?
 //
-void PrettyPrintQuad4(scalar_2d_array_type & elementMatrix)
+void PrettyPrintQuad4(scalar_2d_array_t & elementMatrix)
 {
   size_t nr = elementMatrix.dimension(0);
   size_t nc = elementMatrix.dimension(1);
@@ -108,4 +108,8 @@ void PrettyPrintQuad4(scalar_2d_array_type & elementMatrix)
     std::cout << "]" << std::endl;
   }
 }
+
+} // end of namespace TpetraExamples
+
+
 #endif

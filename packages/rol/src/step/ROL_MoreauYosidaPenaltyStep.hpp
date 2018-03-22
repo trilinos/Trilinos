@@ -311,6 +311,7 @@ public:
     MoreauYosidaPenalty<Real> &myPen
       = dynamic_cast<MoreauYosidaPenalty<Real>&>(obj);
     ROL::Ptr<StepState<Real> > state = Step<Real>::getState();
+    state->SPiter = subproblemIter_;
     state->descentVec->set(s);
     // Update iterate and Lagrange multiplier
     x.plus(s);

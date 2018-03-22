@@ -185,8 +185,8 @@ void RKButcherTableauBuilder<Scalar>::initializeDefaults_()
 
   builder_.setObjectFactory(
       abstractFactoryStd< RKButcherTableau<Scalar>,
-                          IRK2StageTheta_RKBT<Scalar> >(),
-      "IRK 2 Stage Theta Method");
+                          EDIRK2StageTheta_RKBT<Scalar> >(),
+      "EDIRK 2 Stage Theta Method");
 
   // SDIRK
   builder_.setObjectFactory(

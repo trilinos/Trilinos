@@ -71,6 +71,8 @@ TEUCHOS_UNIT_TEST(NewmarkExplicitAForm, BallParabolic)
 
   // Setup the Integrator and reset initial time step
   RCP<ParameterList> pl = sublist(pList, "Tempus", true);
+  RCP<ParameterList> stepperPL = sublist(pl, "Default Stepper", true);
+  stepperPL->remove("Zero Initial Guess");
 
   RCP<Tempus::IntegratorBasic<double> > integrator =
     Tempus::integratorBasic<double>(pl, model);
@@ -141,6 +143,8 @@ TEUCHOS_UNIT_TEST(NewmarkExplicitAForm, SinCos)
 
   // Setup the Integrator and reset initial time step
   RCP<ParameterList> pl = sublist(pList, "Tempus", true);
+  RCP<ParameterList> stepperPL = sublist(pl, "Default Stepper", true);
+  stepperPL->remove("Zero Initial Guess");
 
   //Set initial time step = 2*dt specified in input file (for convergence study)
   //
@@ -244,6 +248,8 @@ TEUCHOS_UNIT_TEST(NewmarkExplicitAForm, HarmonicOscillatorDamped)
 
   // Setup the Integrator and reset initial time step
   RCP<ParameterList> pl = sublist(pList, "Tempus", true);
+  RCP<ParameterList> stepperPL = sublist(pl, "Default Stepper", true);
+  stepperPL->remove("Zero Initial Guess");
 
   //Set initial time step = 2*dt specified in input file (for convergence study)
   //

@@ -153,9 +153,12 @@ $ time env \
     &> console.out
 ```
 
-(Where it is **CRITICAL** that you set `CTEST_DO_UPDATES=OFF` or it will hard reset your local Trilinos git repo!)
+(Where it is **CRITICAL** that you set `CTEST_DO_UPDATES=OFF` or it will hard
+reset your local Trilinos git repo!)
 
-Or if a `<system_name>/drivers/<some-build-name>.sh` file (e.g. `Trilinos-atdm-hansel-shiller-gnu-debug-openmp.sh`) already exists, instead use:
+Or if a `<system_name>/drivers/<some-build-name>.sh` file
+(e.g. `Trilinos-atdm-hansel-shiller-gnu-debug-openmp.sh`) already exists,
+instead use:
 
 ```
 $ cd <some_base_build_dir>/MOCK_jenkins_driver/
@@ -227,6 +230,9 @@ there is no tractability for changes in these settings!
 ## Specific <system_name> directories
 
 The following `<system_name>` sub-directories exist:
+
+* `ride/`: Contains the files to drive builds on the SRN test bed machine
+  `ride` which also can be run on the SON machine `white`.
 
 * `shiller/`: Contains the files to drive builds on the SRN test bed machine
   `shiller` which also can be run on the SON machine `hansen`.

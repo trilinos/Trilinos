@@ -55,6 +55,7 @@
     <ParameterList name="Default Stepper">
 
       <Parameter name="Stepper Type"   type="string" value="fill-in"/>
+      <Parameter name="Zero Initial Guess" type="bool" value="0"/>
       <Parameter name="Solver Name"    type="string" value="Default Solver"/>
 
       <ParameterList name="Default Solver">
@@ -143,6 +144,7 @@
       </ParameterList>
 
   <Parameter name="Solver Name"    type="string" value="Default Solver"/>
+  <Parameter name="Zero Initial Guess" type="bool" value="0"/>
   <ParameterList name="Default Solver">
       <ParameterList name="NOX">
           <ParameterList name="Direction">
