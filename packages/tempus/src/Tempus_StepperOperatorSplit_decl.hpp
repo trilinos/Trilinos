@@ -78,6 +78,9 @@ public:
       {return stepperPL_->get<int>("Minimum Order");}
     virtual Scalar getOrderMax() const
       {return stepperPL_->get<int>("Maximum Order");}
+    virtual Scalar getInitTimeStep(
+        const Teuchos::RCP<SolutionHistory<Scalar> >& solutionHistory) const
+      {return std::numeric_limits<Scalar>::max();}
     virtual void setOrder   (Scalar ord)
       {stepperPL_->set<int>("Order", ord);}
     virtual void setOrderMin(Scalar ord)

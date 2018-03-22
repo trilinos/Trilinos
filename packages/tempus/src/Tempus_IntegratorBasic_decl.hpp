@@ -81,8 +81,6 @@ public:
       if (pl != Teuchos::null) *tempusPL_ = *pl;
       this->setParameterList(Teuchos::null);
     }
-    // Compute the optimal initial step size
-    virtual void computeInitialStepSize();
   //@}
 
   /// \name Accessor methods
