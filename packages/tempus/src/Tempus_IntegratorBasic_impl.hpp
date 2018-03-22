@@ -579,10 +579,11 @@ void IntegratorBasic<Scalar>::endIntegrator()
 
   integratorTimer_->stop();
   runtime_ = integratorTimer_->totalElapsedTime();
-
-  Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
-  //outputObserver_->observeEndIntegrator(*this, out, runtime);
 }
+
+template <class Scalar>
+void IntegratorBasic<Scalar>::computeInitialStepSize()
+{}
 
 
 template <class Scalar>
