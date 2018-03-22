@@ -83,7 +83,6 @@
 
 using Teuchos::rcpFromRef;
 
-
 extern bool isMMOverride;
 
 namespace Tpetra {
@@ -8205,8 +8204,7 @@ namespace Tpetra {
         else os<<"NOver";
         tlstr=os.str();
     }
-        Teuchos::RCP<Teuchos::TimeMonitor> MMall = Teuchos::rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix + std::string("TAFC All") +tlstr )));
-
+    Teuchos::RCP<Teuchos::TimeMonitor> MMall = Teuchos::rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix + std::string("TAFC All") +tlstr )));
 #endif
 
     // Make sure that the input argument rowTransfer is either an
@@ -8420,6 +8418,7 @@ namespace Tpetra {
     }
 
 
+
     /***************************************************/
     /***** 2) From Tpera::DistObject::doTransfer() ****/
     /***************************************************/
@@ -8537,7 +8536,6 @@ namespace Tpetra {
         "getDomainMap () == getRowMap ()).");
     }
 
-
 #ifdef HAVE_TPETRA_MMM_TIMINGS
     MM2 = Teuchos::rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix + std::string("TAFC Pack-2"))));
 #endif
@@ -8614,20 +8612,16 @@ namespace Tpetra {
 
 #else
 
-
-
-    // CBL packAndPrepare* methods modify numExportPacketsPerLID_.
-      destMat->numExportPacketsPerLID_.template modify<Kokkos::HostSpace> ();
-      Teuchos::ArrayView<size_t> numExportPacketsPerLID =
+    destMat->numExportPacketsPerLID_.template modify<Kokkos::HostSpace> ();
+    Teuchos::ArrayView<size_t> numExportPacketsPerLID =
         getArrayViewFromDualView (destMat->numExportPacketsPerLID_);
-      packCrsMatrixWithOwningPIDs (*this,
-                                   destMat->exports_,
-                                   numExportPacketsPerLID,
-                                   ExportLIDs,
-                                   SourcePids,
-                                   constantNumPackets,
-                                   Distor);
-
+    packCrsMatrixWithOwningPIDs (*this, 
+				 destMat->exports_,
+				 numExportPacketsPerLID, 
+				 ExportLIDs,
+				 SourcePids, 
+				 constantNumPackets, 
+				 Distor);
 #endif // HAVE_TPETRA_DEBUG
 
     // Do the exchange of remote data.
@@ -8761,7 +8755,6 @@ namespace Tpetra {
                                            NumSameIDs,
                                            PermuteToLIDs,
                                            PermuteFromLIDs);
-
     size_t N = BaseRowMap->getNodeNumElements ();
 
     // Allocations
@@ -9076,7 +9069,6 @@ namespace Tpetra {
 #endif
             Teuchos::RCP<Teuchos::ParameterList> mypars = rcp(new Teuchos::ParameterList);
             mypars->set("Timer Label","notMMFrom_tAFC");
-
             MyImport = rcp (new import_type (MyDomainMap, MyColMap, RemotePids, mypars));
         }
         {

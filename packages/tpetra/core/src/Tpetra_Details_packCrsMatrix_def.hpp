@@ -1068,13 +1068,12 @@ packCrsMatrixWithOwningPIDs (const CrsMatrix<ST, LO, GO, NT>& sourceMatrix,
                                             sourcePIDs.size (), true,
                                             "export_pids");
   constexpr bool pack_pids = true;
-  PackCrsMatrixImpl::packCrsMatrix(
+ PackCrsMatrixImpl::packCrsMatrix(
       sourceMatrix, exports_dv, num_packets_per_lid_d, export_lids_d,
       export_pids_d, constantNumPackets, pack_pids, distor);
 
   // The counts are an output of PackCrsMatrixImpl::packCrsMatrix, so we have to
   // copy them back to host.
-
   Kokkos::View<size_t*, host_dev_type> num_packets_per_lid_h
     (numPacketsPerLID.getRawPtr (), numPacketsPerLID.size ());
   Kokkos::deep_copy (num_packets_per_lid_h, num_packets_per_lid_d);

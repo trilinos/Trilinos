@@ -199,7 +199,6 @@ namespace Tpetra {
     if (! out_.is_null ()) {
       out_->popTab ();
     }
-
   }
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -210,22 +209,6 @@ namespace Tpetra {
     debug_(tpetraImportDebugDefault)
   {
     Teuchos::Array<int> dummy;
-    // static int first = true;
-    // if(first && :: isMMdump) {
-    //  first = false;
-    //  Teuchos::RCP<Teuchos::FancyOStream>  cerrptr = Teuchos::getFancyOStream (Teuchos::rcpFromRef (std::cerr)) ;
-    //  cerrptr->setTabIndentStr(std::string("T"));
-    //  Teuchos::FancyOStream& fancyCERR = *cerrptr;
-
-    //  fancyCERR<<std::flush;
-    //  source->describe(fancyCERR,Teuchos::VERB_EXTREME);
-    //  fancyCERR<<std::flush;
-    //  cerrptr->setTabIndentStr(std::string("S"));
-    //  target->describe(fancyCERR,Teuchos::VERB_EXTREME);
-    //  fancyCERR<<std::flush;
-    // }
-
-
 #ifdef HAVE_TPETRA_MMM_TIMINGS
     Teuchos::RCP<Teuchos::ParameterList> mypars = rcp(new Teuchos::ParameterList);
     mypars->set("Timer Label","Naive_tAFC");

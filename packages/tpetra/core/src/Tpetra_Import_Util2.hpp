@@ -60,10 +60,7 @@
 #include <Teuchos_Array.hpp>
 #include <utility>
 #include <unistd.h>
-#include <tuple>
-#include <set> // debug only, remove CBL
-#include <unordered_set>// debug only, remove CBL
-#include <functional>// debug only, remove CBL
+#include <set>
 
 namespace Tpetra {
 namespace Import_Util {
@@ -1041,8 +1038,6 @@ lowCommunicationMakeColMapAndReindex (const Teuchos::ArrayView<const size_t> &ro
     os<<" Size missmatch in lowCommunicationMakeColMapAndReindex "<<remotePIDs.size()<<" "<<RemoteGIDList.size()<<" "<<NumRemoteColGIDs <<std::endl;
     std::cerr<<os.str()<<std::flush;
   }
-
-
 }
 
 
