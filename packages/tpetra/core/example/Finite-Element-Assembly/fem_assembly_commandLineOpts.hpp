@@ -64,6 +64,8 @@ struct CmdLineOpts
   bool verbose;
   // timing - Print out timing information at the end of the run.
   bool timing;
+  // saveMM - Save the crsMatrix into a MatrixMarket file.
+  bool saveMM;
 };
 
 
@@ -81,11 +83,13 @@ void setCmdLineOpts(struct CmdLineOpts& opts, Teuchos::CommandLineProcessor& clp
   opts.numElementsY = 3;
   opts.verbose = false;
   opts.timing = true;
+  opts.saveMM = false;
 
   clp.setOption ("num-elements-x", &(opts.numElementsX), "Number of elements to generate in the X-directon of the 2D grid.");
   clp.setOption ("num-elements-y", &(opts.numElementsY), "Number of elements to generate in the Y-direction of the 2D grid.");
   clp.setOption ("verbose", "no-verbose", &(opts.verbose), "Execute example with high verbosity.");
   clp.setOption ("timing",  "no-timing",  &(opts.timing),  "Print out timing information at the end of execution.");
+  clp.setOption ("save-mm", "no-save-mm", &(opts.saveMM), "Save the generated CrsMatrix into a Matrix Market file.");
 }
 
 
@@ -176,15 +180,13 @@ int readCmdLineOpts(std::ostream& out, struct CmdLineOpts& opts, int argc, char*
           << "numElementsY: " << opts.numElementsY << endl
           << "verbose     : " << opts.verbose      << endl
           << "timing      : " << opts.timing       << endl
+          << "saveMM      : " << opts.saveMM       << endl
           << endl;
     }
   }
 
   return EXIT_SUCCESS;
 }
-
-
-
 
 
 

@@ -242,10 +242,12 @@ int execute(comm_ptr_t& comm, const struct CmdLineOpts& opts)
   if(opts.verbose) crs_matrix->describe(*out, Teuchos::VERB_EXTREME);
 
   // Save crs_matrix as a MatrixMarket file.
-  // (Disabled until we get this under command-line option control)
-  //std::ofstream ofs("FEMAssembly_InsertGlobalIndices_DP.out", std::ofstream::out);
-  //Tpetra::MatrixMarket::Writer<matrix_t>::writeSparse(ofs, crs_matrix);
-  //ofs.close();
+  if(opts.saveMM)
+  {
+    std::ofstream ofs("crsMatrix_InsertGlobalIndices_DP.out", std::ofstream::out);
+    Tpetra::MatrixMarket::Writer<matrix_t>::writeSparse(ofs, crs_matrix);
+    ofs.close();
+  }
 
   return 0;
 }

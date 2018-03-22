@@ -290,10 +290,12 @@ int execute (comm_ptr_t& comm, const struct CmdLineOpts& opts)
   }
 
   // Save crs_matrix as a MatrixMarket file.
-  // (disabled until we get this under command-line option control)
-  //std::ofstream ofs("FEMAssembly_LocalElementLoop_DP.out", std::ofstream::out);
-  //Tpetra::MatrixMarket::Writer<matrix_t>::writeSparse(ofs, crs_matrix_owned);
-  //ofs.close();
+  if(opts.saveMM)
+  {
+    std::ofstream ofs("crsMatrix_LocalElementLoop_DP.out", std::ofstream::out);
+    Tpetra::MatrixMarket::Writer<matrix_t>::writeSparse(ofs, crs_matrix_owned);
+    ofs.close();
+  }
 
   return 0;
 }

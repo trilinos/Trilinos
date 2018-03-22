@@ -295,10 +295,12 @@ int execute (comm_ptr_t& comm, const struct CmdLineOpts& opts)
   timerGlobal = Teuchos::null;
 
   // Save crs_matrix as a MatrixMarket file.
-  // (Disabled until we can get this under command-line option control.)
-  //std::ofstream ofs("FEMAssembly_TotalElementLoop_SP.out", std::ofstream::out);
-  //Tpetra::MatrixMarket::Writer<matrix_t>::writeSparse(ofs, crs_matrix);
-  //ofs.close();
+  if(opts.saveMM)
+  {
+    std::ofstream ofs("FEMAssembly_TotalElementLoop_SP.out", std::ofstream::out);
+    Tpetra::MatrixMarket::Writer<matrix_t>::writeSparse(ofs, crs_matrix);
+    ofs.close();
+  }
 
   return 0;
 }
