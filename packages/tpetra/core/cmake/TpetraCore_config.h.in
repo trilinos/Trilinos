@@ -11,6 +11,12 @@
 #  define HAVE_TPETRA_EPETRA
 #endif // HAVE_TPETRACORE_EPETRA
 
+/* Define if want to build with epetraExt enabled */
+#cmakedefine HAVE_TPETRACORE_EPETRAEXT
+#ifdef HAVE_TPETRACORE_EPETRAEXT
+#  define HAVE_TPETRA_EPETRAEXT
+#endif // HAVE_TPETRACORE_EPETRAEXT
+
 /* Define if want to build teuchos-debug */
 #cmakedefine HAVE_TPETRA_DEBUG
 

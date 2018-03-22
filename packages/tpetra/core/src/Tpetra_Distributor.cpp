@@ -77,6 +77,8 @@ namespace Tpetra {
         return "By createFromSends";
       case Details::DISTRIBUTOR_INITIALIZED_BY_CREATE_FROM_RECVS:
         return "By createFromRecvs";
+      case Details::DISTRIBUTOR_INITIALIZED_BY_CREATE_FROM_SENDS_N_RECVS:
+        return "By createFromSendsAndRecvs";
       case Details::DISTRIBUTOR_INITIALIZED_BY_REVERSE:
         return "By createReverseDistributor";
       case Details::DISTRIBUTOR_INITIALIZED_BY_COPY:

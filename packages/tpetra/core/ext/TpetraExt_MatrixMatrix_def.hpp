@@ -715,6 +715,11 @@ add (const Scalar& alpha,
   {
     //import Aprime into Bprime's row map so the local matrices have same # of rows
     auto import = rcp(new import_type(Aprime->getRowMap(), Bprime->getRowMap()));
+    // cbl do not set 
+    // parameterlist "isMatrixMatrix_TransferAndFillComplete" true here as
+    // this import _may_ take the form of a transfer. In practice it would be unlikely, 
+    // but the general case is not so forgiving.
+
     Aprime = importAndFillCompleteCrsMatrix<crs_matrix_type>(Aprime, *import, Bprime->getDomainMap(), Bprime->getRangeMap());
   }
   bool matchingColMaps = Aprime->getColMap()->isSameAs(*(Bprime->getColMap()));
@@ -1495,7 +1500,8 @@ void mult_AT_B_newmatrix(
     Teuchos::ParameterList labelList;
     labelList.set("Timer Label", label);
     if(!params.is_null()) labelList.set("compute global constants",params->get("compute global constants",true));
-
+    labelList.set("isMatrixMatrix_TransferAndFillComplete",true,
+                  "This parameter should be set to true only for MatrixMatrix operations: the optimization in Epetra that was ported to Tpetra does _not_ take into account the possibility that for any given source PID, a particular GID may not exist on the target PID: i.e. a transfer operation. A fix for this general case is in development.");
     Ctemp->exportAndFillComplete(Crcp,*Ctemp->getGraph()->getExporter(),
                                  B.getDomainMap(),A.getDomainMap(),rcp(&labelList,false));
   }
@@ -3195,6 +3201,9 @@ void import_and_extract_views(
     // Now create a new matrix into which we can import the remote rows of A that we need.
     Teuchos::ParameterList labelList;
     labelList.set("Timer Label", label);
+    labelList.set("isMatrixMatrix_TransferAndFillComplete",true,
+                  "This parameter should be set to true only for MatrixMatrix operations: the optimization in Epetra that was ported to Tpetra does _not_ take into account the possibility that for any given source PID, a particular GID may not exist on the target PID: i.e. a transfer operation. A fix for this general case is in development.");
+
     // Minor speedup tweak - avoid computing the global constants
     if(!params.is_null())
       labelList.set("compute global constants", params->get("compute global constants",false));
