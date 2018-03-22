@@ -49,33 +49,24 @@
 #include "Teuchos_ParameterList.hpp"
 #include "ROL_Constraint_TimeSimOpt.hpp"
 #include "ROL_StdVector.hpp"
-
 #include "TankState.hpp"
-
 #include <utility>
 
 /** \class TankConstraint
     \brief Compute time-step for the coupled tank network
-
 */
-
 namespace details {
 
-using namespace std;
-
+using std::vector;
 
 template<typename Real>
 class TankConstraint : public ROL::Constraint_TimeSimOpt<Real> {
 
-private:
-
   using Vector    = ROL::Vector<Real>;
   using StdVector = ROL::StdVector<Real>;
 
+private:
   TankState<Real> tankState_;
-
-  // Tank Array Numbers
-  Real Qin00_;           // Corner inflow 
 
   vector<Real>& getVector( Vector& x ) const {
     return *( dynamic_cast<StdVector&>(x).getVector() );
@@ -86,50 +77,54 @@ private:
   }
 
 public:
-
   TankConstraint( Teuchos::ParameterList& pl ) :
-    tankState_( pl),
-    Qin00_( pl.get( "Corner Inflow", 100.0 ) ) {
+    tankState_(pl) {}
 
-  } // end Constructor
-
-
-  void value(       Vector &c,     const Vector &u_old,
-              const Vector &u_new, const Vector &z,
-              Real &tol) override {
-
+  void value( Vector &c, const Vector &u_old, const Vector &u_new, 
+              const Vector &z, Real &tol ) override {
     tankState_.value( getVector(c),     getVector(u_old), 
                       getVector(u_new), getVector(z) );
-    
   }
 
-  void solve(Vector &c,     const Vector &u_old, 
-             Vector &u_new, const Vector &z, Real &tol) override {
-
-    auto c_v  = getVector(c);
-    auto uo_v = getVector(u_old);
-    auto un_v = getVector(u_new);
-    auto z_v  = getVector(z);
+  void solve( Vector &c, const Vector &u_old, Vector &u_new, 
+              const Vector &z, Real &tol ) override {
+    auto c_v  = getVector(c);       auto uo_v = getVector(u_old);
+    auto un_v = getVector(u_new);   auto z_v  = getVector(z);
  
-    // Solve the for the new level
     tankState_.solve_level( uo_v, un_v, z_v );
-
-    // Compute the in/out flows
     tankState_.compute_flow( un_v, z_v );
-
     value(c,u_old,u_new,z);
   }
 
-  void applyJacobian_1_old(Vector &jv,
-                           const Vector &v_old,
-                           const Vector &u_old, const Vector &u_new,
-                           const Vector &z,
-                           Real &tol) {
-     tankState_.value( getVector(jv), getVector(v_old), 
-                       getVector(u_new), getVector(z) );
+  //----------------------------------------------------------------------------
+
+  void applyJacobian_1_old( Vector &jv, const Vector &v_old,
+                            const Vector &u_old, const Vector &u_new,
+                            const Vector &z, Real &tol ) override {
+     tankState_.applyJacobian_1_old( getVector(jv), getVector(v_old) );
   }
 
+  void applyJacobian_1_new( Vector &jv, const Vector &v_new,
+                            const Vector &u_old, const Vector &u_new,
+                            const Vector &z, Real &tol ) override {
+     tankState_.applyJacobian_1_new( getVector(jv), getVector(v_new) );
+  }
+  
+  void applyInverseJacobian_1_new( Vector &ijv, const Vector &v_new,
+                                   const Vector &u_old, const Vector &u_new,
+                                   const Vector &z, Real &tol ) override {
+//    tankState_.solve( getVector(ijv), 
+  }
 
+  //----------------------------------------------------------------------------
+
+  void applyJacobian_2( Vector &jv, const Vector &v_new,
+                        const Vector &u_old, const Vector &u_new,
+                        const Vector &z, Real &tol ) override {
+    tankState_.applyJacobian_2( getVector(jv), getVector(v_new) );
+  }
+
+  //----------------------------------------------------------------------------
 }; // class TankConstraint
 
 } // namespace details

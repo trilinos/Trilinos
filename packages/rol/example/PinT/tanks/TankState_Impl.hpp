@@ -82,16 +82,72 @@ void TankState<Real>::value( vector<Real>& c, const vector<Real>* u_old,
       auto Qout_val = Qout(c,i,j); auto Qout_new = Qout(u_new,i,j); auto Qout_old = Qout(u_old,i,j);
       auto Qin_val  = Qin(c,i,j);  auto Qin_new  = Qin(u_new,i,j);  auto Qin_old  = Qin(u_old,i,j);
 
-      h_val = h_new - h_old - p_[l]*( betaL_*(Qin_new-Qout_new) +
-                                      betaR_*(Qin_old-Qout_old) );
-
-      Qout_val = Qout_new - coeff1_*h_val;
-
-      Qin_val = Qin_new - z[l];
+      h_val    = h_new - h_old - p_[l]*( betaL_*(Qin_new-Qout_new) + betaR_*(Qin_old-Qout_old) );
+      Qout_val = Qout_new - coeff1_*h_new;
+      Qin_val  = Qin_new - z[l];
 
       if( i>0 ) Qin_val -= 0.5*Qout(u_new,i-1,j);
       if( j>0 ) Qin_val -= 0.5*Qout(u_new,i,j-1);
+    }
+  }  
+}
 
+template<typename Real>
+void TankState<Real>::applyJacobian_1_old( vector<Real>& jv, const vector<Real>& v_old ) const {
+
+  for( size_type i=0; i<rows_; ++i ) {
+    for( size_type j=0; j<cols_; ++j ) {
+      size_type l = cols_*i+j;
+
+      auto h_jv    = h(jv,i,j);    auto h_vo    = h(v_old,i,j);    
+      auto Qout_jv = Qout(jv,i,j); auto Qout_vo = Qout(v_old,i,j); 
+      auto Qin_jv  = Qin(jv,i,j);  auto Qin_vo  = Qin(v_old,i,j);  
+
+      h_jv    = - h_vo - p_[l]*( betaR_*(Qin_vo-Qout_vo) );
+      Qout_jv = 0; 
+      Qin_jv  = 0;
+    }
+  }  
+}
+
+template<typename Real>
+void TankState<Real>::applyJacobian_1_new( vector<Real>& jv, const vector<Real>& v_new ) const {
+
+  for( size_type i=0; i<rows_; ++i ) {
+    for( size_type j=0; j<cols_; ++j ) {
+      size_type l = cols_*i+j;
+
+      auto h_jv    = h(jv,i,j);    auto h_vn    = h(v_new,i,j);    
+      auto Qout_jv = Qout(jv,i,j); auto Qout_vn = Qout(v_new,i,j); 
+      auto Qin_jv  = Qin(jv,i,j);  auto Qin_vn  = Qin(v_new,i,j);  
+
+      h_jv    = h_vn - p_[l]*( betaL_*(Qin_vn-Qout_vn) );
+      Qout_jv = Qout_vn - coeff1_*h_vn;
+      Qin_jv  = Qin_vn;
+
+      if( i>0 ) Qin_jv -= 0.5*Qout(v_new,i-1,j);
+      if( j>0 ) Qin_jv -= 0.5*Qout(v_new,i,j-1);
+    }
+  }  
+}
+
+template<typename Real>
+void TankState<Real>::applyJacobian_2( vector<Real> &jv, const vector<Real> &v_new ) const {
+
+  for( size_type i=0; i<rows_; ++i ) {
+    for( size_type j=0; j<cols_; ++j ) {
+      size_type l = cols_*i+j;
+
+      auto h_jv    = h(jv,i,j);    auto h_vn    = h(v_new,i,j);    
+      auto Qout_jv = Qout(jv,i,j); auto Qout_vn = Qout(v_new,i,j); 
+      auto Qin_jv  = Qin(jv,i,j);  auto Qin_vn  = Qin(v_new,i,j);  
+
+      h_jv    = 0;
+      Qout_jv = 0;
+      Qin_jv  = -v_new[l];
+
+      if( i>0 ) Qin_jv -= 0.5*Qout(v_new,i-1,j);
+      if( j>0 ) Qin_jv -= 0.5*Qout(v_new,i,j-1);
     }
   }  
 }
@@ -126,8 +182,6 @@ void TankState<Real>::solve_level(       vector<Real>& c,
 
   L_->solve(u_new,c,1.0,0,Ntanks_);
 } // solve_level
-
-
 
 } // namespace details
 

@@ -46,23 +46,17 @@
 #define TANKSTATE_HPP
 
 #include <memory>
-
 #include "Teuchos_ParameterList.hpp"
 #include "LowerBandedMatrix.hpp"
-
 
 namespace details {
 
 using namespace std;
 
-
-
 template<typename Real> 
 class TankState {
 public:
-
-  using Vector     = ROL::Vector<Real>;
-  using StdVector  = ROL::StdVector<Real>;
+  using Vector     = vector<Real>;
   using Matrix     = LowerBandedMatrix<Real>;
   using size_type  = typename vector<Real>::size_type;
    
@@ -70,15 +64,16 @@ public:
 
   void value( vector<Real>& c, const vector<Real>* u_old, 
               const vector<Real>& u_new, const vector<Real>& z ) const;
+ 
+  void applyJacobian_1_old( vector<Real>& jv, const vector<Real>& v_old ) const;
+  void applyJacobian_1_new( vector<Real>& jv, const vector<Real>& v_old ) const;
+  void applyJacobian_2( vector<Real> &jv, const vector<Real> &v_new ) const;
 
   // Given a vector u=(h,Qin,Qout) and f, update Qin and Qout from h
   void compute_flow( vector<Real>& u, const vector<Real>& f ) const;
 
-
-  void solve_level(       vector<Real>& c,           
-                          vector<Real>& u_new, 
-                    const vector<Real>& u_old, 
-                    const vector<Real>& f     ) const;
+  void solve_level( vector<Real>& c, vector<Real>& u_new, 
+                    const vector<Real>& u_old, const vector<Real>& f ) const;
 
   // Subvector Accessor Methods
         Real& h( vector<Real>& x,       size_type r, size_type c ) const { return x[cols_*r+c]; }
@@ -119,7 +114,6 @@ private:
   shared_ptr<Matrix> L_, R_;
 
 }; // class TankState
-
 
 } // namespace details
 
