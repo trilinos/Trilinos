@@ -541,6 +541,7 @@ void IntegratorBasic<Scalar>::acceptTimeStep()
     }
 
     wsmd->setNFailures(wsmd->getNFailures()+1);
+    wsmd->setNRunningFailures(wsmd->getNRunningFailures()+1);
     wsmd->setNConsecutiveFailures(wsmd->getNConsecutiveFailures()+1);
     wsmd->setSolutionStatus(FAILED);
     return;

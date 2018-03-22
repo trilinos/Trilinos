@@ -265,6 +265,7 @@ void SolutionHistory<Scalar>::promoteWorkingState()
     getWorkingState()->getMetaData();
   md->setNFailures(std::max(0,md->getNFailures()-1));
   md->setNConsecutiveFailures(0);
+  md->setNRunningFailures(md->getNRunningFailures());
   md->setSolutionStatus(Status::PASSED);
   //md->setIsSynced(true);
   md->setIsInterpolated(false);
