@@ -348,8 +348,8 @@ namespace Tacho {
                     const ordinal_type k  = kk + kbeg;
                     const ordinal_type jj = peri(aj(k) /* col in A */); // col in U
                     if (ii <= jj) {
-                      ordinal_type *first = &self.gid_colidx(s.gid_col_begin);
-                      ordinal_type *last  = &self.gid_colidx(s.gid_col_end);
+                      ordinal_type *first = self.gid_colidx.data() + s.gid_col_begin; 
+                      ordinal_type *last  = self.gid_colidx.data() + s.gid_col_end;
                       ordinal_type *loc   = lower_bound(first, last, jj,
                                                         [](ordinal_type left, ordinal_type right) { 
                                                           return left < right; });                      
