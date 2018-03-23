@@ -899,8 +899,8 @@ bool KokkosSPGEMM
     	nnz_lno_t compressed_maxNumRoughZeros = 0;
     	size_t compressedoverall_flops = 0;
   		Kokkos::Impl::Timer timer1_t;
-  		auto new_row_mapB_begin = Kokkos::subview (out_row_map, std::make_pair (nnz_lno_t(0), b_row_cnt - 1));
-  		auto new_row_mapB_end = Kokkos::subview (out_row_map, std::make_pair (nnz_lno_t(1), b_row_cnt));
+  		auto new_row_mapB_begin = Kokkos::subview (out_row_map, std::make_pair (nnz_lno_t(0), b_row_cnt));
+  		auto new_row_mapB_end = Kokkos::subview (out_row_map, std::make_pair (nnz_lno_t(1), b_row_cnt + 1));
   		row_lno_persistent_work_view_t compressed_flops_per_row(Kokkos::ViewAllocateWithoutInitializing("origianal row flops"), a_row_cnt);
 
   		compressed_maxNumRoughZeros = this->getMaxRoughRowNNZ(a_row_cnt, row_mapA, entriesA, new_row_mapB_begin, new_row_mapB_end, compressed_flops_per_row.data());
