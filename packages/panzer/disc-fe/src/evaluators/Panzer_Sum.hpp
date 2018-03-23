@@ -101,6 +101,7 @@ public:
   struct PanzerSumTag{};
 
   template<unsigned int RANK>
+  KOKKOS_INLINE_FUNCTION
   void operator() (PanzerSumTag<RANK>, const int &i) const;
 
 }; // end of class Sum
