@@ -15,7 +15,8 @@ else
   CHECKIN_TEST_USE_NINJA_ARG=
 fi
 
-echo "-DTrilinos_CONFIGURE_OPTIONS_FILE:STRING=cmake/std/atdm/ATDMDevEnv.cmake" \
+echo "-DTrilinos_CONFIGURE_OPTIONS_FILE:STRING=cmake/std/atdm/ATDMDevEnv.cmake
+-DTrilinos_TRACE_ADD_TEST=ON" \
 >> $ATDM_JOB_NAME_KEYS.config
 
 echo
