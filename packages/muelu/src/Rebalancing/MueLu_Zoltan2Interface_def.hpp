@@ -154,7 +154,7 @@ namespace MueLu {
     for (ParameterList::ConstIterator param = defaultZoltan2Params->begin(); param != defaultZoltan2Params->end(); param++) {
       const std::string& pName = defaultZoltan2Params->name(param);
       if (!Zoltan2Params.isParameter(pName))
-        Zoltan2Params.set(pName, defaultZoltan2Params->get<std::string>(pName));
+        Zoltan2Params.setEntry(pName, defaultZoltan2Params->getEntry(pName));
     }
     Zoltan2Params.set("num_global_parts", Teuchos::as<int>(numParts));
 
