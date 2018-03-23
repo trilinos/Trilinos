@@ -32,9 +32,6 @@ if [ "$ATDM_CONFIG_COMPILER" == "GNU" ]; then
     export OMPI_FC=`which gfortran`
     export ATDM_CONFIG_LAPACK_LIB="-L${LAPACK_ROOT}/lib;-llapack;-lgfortran;-lgomp"
     export ATDM_CONFIG_BLAS_LIB="-L${BLAS_ROOT}/lib;-lblas;-lgfortran;-lgomp"
-elif [ "$ATDM_CONFIG_COMPILER" == "INTEL" ]; then
-    echo "Intel compiler not supported"
-    return
 elif [ "$ATDM_CONFIG_COMPILER" == "CUDA" ]; then
     export ATDM_CONFIG_KOKKOS_ARCH=Kepler37
     export ATDM_CONFIG_CTEST_PARALLEL_LEVEL=16
@@ -52,7 +49,9 @@ elif [ "$ATDM_CONFIG_COMPILER" == "CUDA" ]; then
     export CUDA_LAUNCH_BLOCKING=1
     export CUDA_MANAGED_FORCE_DEVICE_ALLOC=1
 else
-    echo "No valid compiler found"
+    echo "***"
+    echo "*** ERROR: COMPILER=$ATDM_CONFIG_COMPILER is not supported on this system!"
+    echo "***"
     return
 fi
 
@@ -71,4 +70,6 @@ export MPICC=`which mpicc`
 export MPICXX=`which mpicxx`
 export MPIF90=`which mpif90`
 
-export ATDM_CONFIG_MPI_POST_FLAG="-map-by;socket:PE=8;--oversubscribe"
+export ATDM_CONFIG_MPI_POST_FLAG="-map-by;socket:PE=4"
+
+export ATDM_CONFIG_COMPLETED_ENV_SETUP=TRUE

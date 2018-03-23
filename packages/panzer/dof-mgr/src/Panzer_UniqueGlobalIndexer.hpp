@@ -350,7 +350,7 @@ public:
      KOKKOS_INLINE_FUNCTION
      void operator()(const int cell) const
      {
-       for(int i=0;i<Teuchos::as<int>(local_lids.dimension_1());i++) 
+       for(int i=0;i<static_cast<int>(local_lids.dimension_1());i++) 
          local_lids(cell,i) = global_lids(cellIds(cell),i);
      }
      

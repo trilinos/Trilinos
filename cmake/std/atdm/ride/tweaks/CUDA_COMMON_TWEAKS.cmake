@@ -1,9 +1,2 @@
-ATDM_SET_ENABLE(Panzer_ENABLE_EXAMPLES OFF)
-ATDM_SET_ENABLE(PanzerCore_ENABLE_EXAMPLES OFF)
-ATDM_SET_ENABLE(PanzerDofMgr_ENABLE_EXAMPLES OFF)
-ATDM_SET_ENABLE(PanzerDiscFE_ENABLE_EXAMPLES OFF)
-ATDM_SET_ENABLE(PanzerAdaptersSTK_ENABLE_EXAMPLES OFF)
-ATDM_SET_ENABLE(PanzerAdaptersIOSS_ENABLE_EXAMPLES OFF)
-ATDM_SET_ENABLE(PanzerMiniEM_ENABLE_EXAMPLES OFF)
-# ToDo: Change TriBITS so that, by default, Panzer_ENABLE_EXAMPLES=OFF will
-# disable examples in the Panzer subpackages!q
+# Don't disable Panzer examples becuase these test behavior that EMPIRE really
+# needs!  (See #2318)

@@ -195,7 +195,7 @@ $ cmake \
 
 $ make NP=16
 
-$ bsub -x -I -q rhel7F ctest -j16
+$ bsub -x -I -q rhel7F -n 16 ctest -j16
 ```
 
 The ATDM configuration of Trilinos is set up to run on the Firestone nodes
@@ -208,7 +208,8 @@ href="#checkin-test-atdmsh">checkin-test-atdm.sh</a> script as:
 ```
 $ cd <some_build_dir>/
 $ ln -s $TRILINOS_DIR/cmake/std/atdm/checkin-test-sems.sh .
-$ srun ./checkin-test-sems.sh cuda-debug \
+$ bsub -x -I -q rhel7F -n 16 \
+  ./checkin-test-sems.sh cuda-debug \
   --enable-all-packages=off --no-enable-fwd-packages \
   --enable-packages=MueLu \
   --local-do-all

@@ -137,5 +137,19 @@ void StepperImplicit<Scalar>::setSolver(
 }
 
 
+template<class Scalar>
+const Thyra::SolveStatus<Scalar>
+StepperImplicit<Scalar>::solveImplicitODE(
+  const Teuchos::RCP<Thyra::VectorBase<Scalar> > & x)
+{
+  if (getZeroInitialGuess())
+    Thyra::assign(x.ptr(), Teuchos::ScalarTraits<Scalar>::zero());
+
+  const Thyra::SolveStatus<Scalar> sStatus = (*solver_).solve(&*x);
+
+  return sStatus;
+}
+
+
 } // namespace Tempus
 #endif // Tempus_StepperImplicit_impl_hpp

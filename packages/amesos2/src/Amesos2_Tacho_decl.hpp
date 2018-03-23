@@ -93,8 +93,8 @@ public:
   typedef FunctionMap<Amesos2::TachoSolver,tacho_type>         function_map;
 
   // TODO - Not sure yet best place for organizing these typedefs
-  typedef Tacho::Experimental::ordinal_type                    ordinal_type;
-  typedef Tacho::Experimental::size_type                          size_type;
+  typedef Tacho::ordinal_type                                  ordinal_type;
+  typedef Tacho::size_type                                        size_type;
   typedef Kokkos::DefaultHostExecutionSpace                   HostSpaceType;
   typedef Kokkos::View<size_type*,HostSpaceType>            size_type_array;
   typedef Kokkos::View<ordinal_type*,HostSpaceType>      ordinal_type_array;

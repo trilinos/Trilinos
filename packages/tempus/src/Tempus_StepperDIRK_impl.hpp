@@ -205,7 +205,7 @@ void StepperDIRK<Scalar>::takeStep(
 
         stepperDIRKObserver_->observeBeforeSolve(solutionHistory, *this);
 
-        sStatus = (*this->solver_).solve(&*stageX_);
+        sStatus = this->solveImplicitODE(stageX_);
 
         if (sStatus.solveStatus != Thyra::SOLVE_STATUS_CONVERGED ) pass=false;
 
@@ -292,7 +292,10 @@ template<class Scalar>
 Teuchos::RCP<const Teuchos::ParameterList>
 StepperDIRK<Scalar>::getValidParameters() const
 {
-  return DIRK_ButcherTableau_->getValidParameters();
+  Teuchos::RCP<Teuchos::ParameterList> pl = Teuchos::parameterList();
+  *pl = *(DIRK_ButcherTableau_->getValidParameters());
+  pl->set<bool>       ("Zero Initial Guess", false);
+  return pl;
 }
 
 template <class Scalar>
@@ -302,6 +305,7 @@ StepperDIRK<Scalar>::getDefaultParameters() const
   Teuchos::RCP<Teuchos::ParameterList> pl = Teuchos::parameterList();
   *pl = *(DIRK_ButcherTableau_->getValidParameters());
   pl->set<std::string>("Solver Name", "Default Solver");
+  pl->set<bool>       ("Zero Initial Guess", false);
   Teuchos::RCP<Teuchos::ParameterList> solverPL=this->defaultSolverParameters();
   pl->set("Default Solver", *solverPL);
 

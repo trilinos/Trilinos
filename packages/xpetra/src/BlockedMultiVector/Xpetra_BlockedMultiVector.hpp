@@ -562,6 +562,22 @@ namespace Xpetra {
       return map_->getFullMap()->getGlobalNumElements();
     }
 
+    //! Local number of rows on the calling process.
+    virtual bool isSameSize(const Xpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> & vec) const {
+      const BlockedMultiVector * Vb = dynamic_cast<const BlockedMultiVector *>(&vec);
+      if(!Vb) return false;
+      for (size_t r = 0; r < map_->getNumMaps(); ++r) {
+        RCP<const MultiVector> a = getMultiVector(r);
+        RCP<const MultiVector> b = Vb->getMultiVector(r);
+        if((a==Teuchos::null && b != Teuchos::null) || 
+           (a!=Teuchos::null && b == Teuchos::null)) 
+          return false;           
+        if(a!=Teuchos::null  && b !=Teuchos::null && !a->isSameSize(*b)) 
+          return false;        
+      }
+      return true;
+    }
+
     //@}
 
     //! @name Overridden from Teuchos::Describable

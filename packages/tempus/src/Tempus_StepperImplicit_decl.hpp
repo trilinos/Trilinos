@@ -44,6 +44,16 @@ public:
       Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> > solver);
     virtual Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> > getSolver() const
       { return solver_; }
+
+    /// Solve problem using x in-place.
+    const Thyra::SolveStatus<Scalar> solveImplicitODE(
+      const Teuchos::RCP<Thyra::VectorBase<Scalar> > & x);
+
+    /// Set parameter so that the initial guess is set to zero (=True) or use last timestep (=False).
+    virtual void setZeroInitialGuess(bool zIG)
+      { stepperPL_->set<bool>("Zero Initial Guess", zIG); }
+    virtual bool getZeroInitialGuess() const
+      { return stepperPL_->get<bool>("Zero Initial Guess", false); }
   //@}
 
 protected:
@@ -51,7 +61,6 @@ protected:
   Teuchos::RCP<Teuchos::ParameterList>                stepperPL_;
   Teuchos::RCP<WrapperModelEvaluator<Scalar> >        wrapperModel_;
   Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> >   solver_;
-
 };
 
 } // namespace Tempus

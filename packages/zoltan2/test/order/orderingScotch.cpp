@@ -460,16 +460,9 @@ int mainExecute(int narg, char** arg, RCP<const Teuchos::Comm<int> > comm)
     }
   }
   catch (std::exception &e) {
-    if (comm->getSize() != 1) {
-      // need to resolve - exactly why is this placed here?
-      std::cout << "Ordering does not support distributed matrices." <<
-        std::endl;
-    }
-    else {
-      std::cout << "Exception caught in ordering" << std::endl;
-      std::cout << e.what() << std::endl;
-      return 1;
-    }
+    std::cout << "Exception caught in ordering" << std::endl;
+    std::cout << e.what() << std::endl;
+    return 1;
   }
 
   return 0;

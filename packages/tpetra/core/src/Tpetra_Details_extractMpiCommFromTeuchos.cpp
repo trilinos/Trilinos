@@ -42,14 +42,15 @@
 #include "Tpetra_Details_extractMpiCommFromTeuchos.hpp"
 
 #ifdef HAVE_TPETRACORE_MPI
-
-#include "Teuchos_DefaultMpiComm.hpp"
-#include "Teuchos_DefaultSerialComm.hpp"
-#include <stdexcept>
+#  include "Teuchos_DefaultMpiComm.hpp"
+#  include "Teuchos_DefaultSerialComm.hpp"
+#  include <stdexcept>
+#endif // HAVE_TPETRACORE_MPI
 
 namespace Tpetra {
 namespace Details {
 
+#ifdef HAVE_TPETRACORE_MPI
 MPI_Comm
 extractMpiCommFromTeuchos (const Teuchos::Comm<int>& comm)
 {
@@ -77,9 +78,22 @@ extractMpiCommFromTeuchos (const Teuchos::Comm<int>& comm)
     }
   }
 }
+#endif // HAVE_TPETRACORE_MPI
+
+#ifdef HAVE_TPETRACORE_MPI
+bool teuchosCommIsAnMpiComm (const Teuchos::Comm<int>& comm)
+{
+  const Teuchos::MpiComm<int>* mpiComm =
+    dynamic_cast<const Teuchos::MpiComm<int>* > (&comm);
+  return mpiComm != nullptr;
+}
+#else
+bool teuchosCommIsAnMpiComm (const Teuchos::Comm<int>&)
+{
+  return false;
+}
+#endif // HAVE_TPETRACORE_MPI
 
 } // namespace Details
 } // namespace Tpetra
-
-#endif // HAVE_TPETRACORE_MPI
 

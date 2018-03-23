@@ -36,6 +36,11 @@ if [[ "$HOSTNAME" =~ node.* ]]; then # Warning: very generic name
   fi
 fi
 
+if [[ "$HOSTNAME" =~ blake ]]; then
+  MACHINE=blake
+  module load git
+fi
+
 if [[ "$HOSTNAME" =~ apollo ]]; then
   MACHINE=apollo
   module load sems-git
@@ -306,6 +311,25 @@ elif [ "$MACHINE" = "bowman" ]; then
   
 elif [ "$MACHINE" = "sullivan" ]; then
   echo "Sullivan"
+
+  module purge
+  module load "devpack"
+
+  if [ -z "$KOKKOS_ARCH" ]; then
+    KOKKOS_ARCH="ARMv8-ThunderX"
+  fi
+
+  if [ -z "$BUILD_LIST" ]; then
+    BUILD_LIST="OpenMP"
+  fi
+
+  export OMP_NUM_THREADS=2
+
+  export JENKINS_ARCH_C_FLAG="${OPT_FLAG} -march=armv8-a -mtune=thunderx"
+  export JENKINS_EXTRA_CXX_FLAGS="${OPT_FLAG} ${CXX_FLAGS_EXTRA}"
+  export BLAS_LIBRARIES="-L${BLAS_ROOT} -lblas"
+  export LAPACK_LIBRARIES="-L${LAPACK_ROOT} -llapack"
+
 elif [ "$MACHINE" = "shepard" ]; then
   echo "Shepard"
   module load devpack/openmpi/2.1.1/intel/17.4.196/cuda/none
@@ -318,6 +342,27 @@ elif [ "$MACHINE" = "shepard" ]; then
     BUILD_LIST="OpenMP"
   fi
  
+  export OMP_NUM_THREADS=2
+
+  export JENKINS_ARCH=${KOKKOS_ARCH}
+  export JENKINS_ARCH_C_FLAG="${OPT_FLAG} -xCORE-AVX2 -mkl"
+  export JENKINS_EXTRA_CXX_FLAG="${OPT_FLAG} -mkl ${CXX_FLAGS_EXTRA}"
+  export BLAS_LIBRARIES="-mkl;${MKLROOT}/lib/intel64/libmkl_intel_lp64.a;${MKLROOT}/lib/intel64/libmkl_intel_thread.a;${MKLROOT}/lib/intel64/libmkl_core.a"
+  export LAPACK_LIBRARIES=${BLAS_LIBRARIES}
+
+
+elif [ "$MACHINE" = "blake" ]; then
+  echo "Blake"
+  module load devpack/latest/openmpi/2.1.2/intel/18.1.163
+
+  if [ -z "$KOKKOS_ARCH" ]; then
+    KOKKOS_ARCH="SKX"
+  fi
+
+  if [ -z "$BUILD_LIST" ]; then
+    BUILD_LIST="OpenMP"
+  fi
+
   export OMP_NUM_THREADS=2
 
   export JENKINS_ARCH=${KOKKOS_ARCH}
@@ -429,6 +474,8 @@ if [ "${DRYRUN}" = "False" ]; then
   source ${CONFIGURE_SCRIPT} &> configure.out
 fi
 
+date +"%Y_%m_%d_%H.%M.%S"
+
 if [ "${REPORT_TO_DASHBOARD}" = "True" ]; then
   echo "Calling: make dashboard"
   echo "Report Name: " ${CTEST_BUILD_NAME}
@@ -458,6 +505,7 @@ else
     if [ "${DRYRUN}" = "False" ]; then
       make -j 32 &> build.out || true
     fi
+    date +"%Y_%m_%d_%H.%M.%S"
     BUILD_WARNINGS=`grep "warning:" build.out | wc -l` || true
     BUILD_ERRORS=`grep "error:" build.out | wc -l` || true
     if [ "${BUILD_ONLY}" = "False" ]; then
@@ -465,6 +513,7 @@ else
       if [ "${DRYRUN}" = "False" ]; then
         ctest &> test.out || true
       fi
+      date +"%Y_%m_%d_%H.%M.%S"
       TEST_FAILED=`grep "(Failed)" test.out | wc -l` || true
       TEST_TIMEOUT=`grep "(Timeout)" test.out | wc -l` || true
       TEST_NOTRUN=`grep "(Not Run)" test.out | wc -l` || true

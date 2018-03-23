@@ -40,6 +40,7 @@
     <ParameterList name="Default Stepper">
 
       <Parameter name="Stepper Type"   type="string" value="Backward Euler"/>
+      <Parameter name="Zero Initial Guess" type="bool" value="0"/>
       <Parameter name="Solver Name"    type="string" value="Default Solver"/>
       <Parameter name="Predictor Name" type="string" value="Default Predictor"/>
 

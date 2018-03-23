@@ -72,9 +72,9 @@ static string fnParams[NUMFN][3]={
 
 // Value is a particular string
 #ifdef HAVE_ZOLTAN2_PULP
-#define NUMSTR 35
+#define NUMSTR 36
 #else
-#define NUMSTR 33
+#define NUMSTR 34
 #endif
 
 static string strParams[NUMSTR][3]={
@@ -114,6 +114,7 @@ static string strParams[NUMSTR][3]={
   {"mj_keep_part_boxes", "true", "invalid_bool_setting"},      // BoolParameterEntryValidator - accepts true/false/"true"/"false"
   {"num_global_parts", "1", "invalid_value"},                  // EnhancedNumberValidator
   {"num_local_parts", "0", "invalid_value"},                   // EnhancedNumberValidator
+  {"mj_premigration_option", "1", "invalid_value"},               // EnhancedNumberValidator
   {"mj_migration_option", "2", "invalid_value"},               // EnhancedNumberValidator
 };
 

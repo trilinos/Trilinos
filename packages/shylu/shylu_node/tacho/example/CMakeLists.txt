@@ -8,13 +8,33 @@ FILE(GLOB SOURCES *.cpp)
 
 SET(LIBRARIES shyluchol)
 
+TRIBITS_ADD_EXECUTABLE(
+  Tacho_ExampleCholSupernodes
+  NOEXEPREFIX
+  SOURCES Tacho_ExampleCholSupernodes.cpp
+  COMM serial mpi
+)
+TRIBITS_ADD_EXECUTABLE(
+  Tacho_ExampleSolver_double
+  NOEXEPREFIX
+  SOURCES Tacho_ExampleSolver_double.cpp
+  COMM serial mpi
+)
+TRIBITS_ADD_EXECUTABLE(
+  Tacho_ExampleSolver_dcomplex
+  NOEXEPREFIX
+  SOURCES Tacho_ExampleSolver_dcomplex.cpp
+  COMM serial mpi
+)
+TRIBITS_ADD_EXECUTABLE(
+  Tacho_ExampleDenseByBlocks
+  NOEXEPREFIX
+  SOURCES Tacho_ExampleDenseByBlocks.cpp
+  COMM serial mpi
+)
+
+
 IF(Kokkos_ENABLE_OpenMP OR Kokkos_ENABLE_Serial)
-  TRIBITS_ADD_EXECUTABLE(
-    Tacho_ExampleCholSupernodes
-    NOEXEPREFIX
-    SOURCES Tacho_ExampleCholSupernodes.cpp
-    COMM serial mpi
-  )
   IF(TPL_ENABLE_MKL)
     TRIBITS_ADD_EXECUTABLE(
       Tacho_ExampleCholPardiso
@@ -24,33 +44,11 @@ IF(Kokkos_ENABLE_OpenMP OR Kokkos_ENABLE_Serial)
     )
   ENDIF()
   TRIBITS_ADD_EXECUTABLE(
-    Tacho_ExampleSolver_double
-    NOEXEPREFIX
-    SOURCES Tacho_ExampleSolver_double.cpp
-    COMM serial mpi
-  )
-  TRIBITS_ADD_EXECUTABLE(
-    Tacho_ExampleSolver_dcomplex
-    NOEXEPREFIX
-    SOURCES Tacho_ExampleSolver_dcomplex.cpp
-    COMM serial mpi
-  )
-  TRIBITS_ADD_EXECUTABLE(
-    Tacho_ExampleDenseByBlocks
-    NOEXEPREFIX
-    SOURCES Tacho_ExampleDenseByBlocks.cpp
-    COMM serial mpi
-  )
-
-  ##
-  ## test with pardiso
-  TRIBITS_ADD_EXECUTABLE(
     Tacho_ExamplePerfTest
     NOEXEPREFIX
     SOURCES Tacho_ExamplePerfTest.cpp
     COMM serial mpi
   )
-
 ENDIF()
 
 TRIBITS_COPY_FILES_TO_BINARY_DIR(ShyLUTacho_SimpleSparseTest_File
