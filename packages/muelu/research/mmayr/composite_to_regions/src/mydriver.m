@@ -281,4 +281,4 @@ send('RunVCycle',nProcs);
 send('Terminate',nProcs);
 
 solution = mmread('compX.mm');
-plot(solution);
+plotSolution(solution, nDims);
