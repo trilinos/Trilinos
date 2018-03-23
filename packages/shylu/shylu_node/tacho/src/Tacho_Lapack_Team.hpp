@@ -22,7 +22,7 @@ namespace Tacho {
                          int *info) {
           if (m <= 0) return;
 
-          typedef ArithTraits<T> ats;
+          typedef ArithTraits<T> arith_traits;
           for (int p=0;p<m;++p) {
             const int jend = m-p-1;
             
@@ -32,15 +32,15 @@ namespace Tacho {
               *__restrict__ A22     = A+(p+1)*as0+(p+1)*as1;
             
             Kokkos::single(Kokkos::PerTeam(member), [&] (){
-                *alpha11 = sqrt(ats::real(*alpha11));                
+                *alpha11 = sqrt(arith_traits::real(*alpha11));                
               });
             member.team_barrier();
-            const auto alpha = ats::real(*alpha11);
+            const auto alpha = arith_traits::real(*alpha11);
             Kokkos::parallel_for(Kokkos::TeamThreadRange(member,jend),[&](const int &j) {
                 Kokkos::single(Kokkos::PerThread(member), [&] () {
                     a12t[j*as1] /= alpha;
                   });
-                const T aa = ats::conj(a12t[j*as1]);
+                const T aa = arith_traits::conj(a12t[j*as1]);
                 Kokkos::parallel_for(Kokkos::ThreadVectorRange(member,j+1),[&](const int &i) {
                     const T bb = a12t[i*as1];
                     A22[i*as0+j*as1] -= aa*bb;
@@ -57,7 +57,7 @@ namespace Tacho {
         //                 const int m, 
         //                 const T *A, const int as0, const int as1) {
         //   if (m <= 0) return 0;
-        //   typedef ArithTraits<T> ats;
+        //   typedef ArithTraits<T> arith_traits;
         //   for (int p=0;p<m;++p) {
         //     const int jend = m-p-1;
             
