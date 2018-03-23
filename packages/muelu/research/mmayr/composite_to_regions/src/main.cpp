@@ -180,7 +180,7 @@ void printRegionalVector(const std::string vectorName, ///< string to be used fo
 }
 
 void printRegionalMap(const std::string mapName, ///< string to be used for screen output
-    const std::vector<Teuchos::RCP<const Epetra_Map> > regMaps, ///< regional map to be printed to screen
+    const std::vector<Teuchos::RCP<Epetra_Map> > regMaps, ///< regional map to be printed to screen
     const int myRank ///< rank of calling proc
     )
 {
@@ -1351,6 +1351,12 @@ int main(int argc, char *argv[]) {
     }
     else if (strcmp(command,"MakeMueLuTransferOperators") == 0) {
 
+//      printRegionalMap("rowMapPerGrp", rowMapPerGrp, myRank);
+//
+//      sleep(3);
+//
+//      printRegionalMap("revisedRowMapPerGrp", revisedRowMapPerGrp, myRank);
+
       typedef MueLu::HierarchyManager<double,int,int,Xpetra::EpetraNode> HierarchyManager;
       typedef MueLu::Hierarchy<double,int,int,Xpetra::EpetraNode> Hierarchy;
       typedef MueLu::ParameterListInterpreter<double,int,int,Xpetra::EpetraNode> ParameterListInterpreter;
@@ -1492,7 +1498,7 @@ int main(int argc, char *argv[]) {
 
       enum ECoarseMapReconstruction {
         use_aggregates, // first implementation relying on aggregate information and root points
-        prolongator_based, // rely on prolongator, but perform communications manually
+        prolongator_based, // rely on prolongator, but perform communications manually. DO NOT USE!
         prolongator_based_importer // rely on prolongator, but use Import() to perform communications
       };
       ECoarseMapReconstruction coarseMapReconstruction = prolongator_based_importer;
@@ -1544,16 +1550,16 @@ int main(int argc, char *argv[]) {
               if (regRowMaps[l][j]->GID(interfaceLIDs[l][j][i]) != quasiRegRowMaps[l][j]->GID(interfaceLIDs[l][j][i]))
                 interfaceGIDPairs[l][j][i].push_back(regRowMaps[l][j]->GID(interfaceLIDs[l][j][i]));
 
-          std::cout << myRank << " | Print interfaceGIDPairs:" << std::endl;
-          for (int j = 0; j < maxRegPerProc; j++) {
-            std::cout << myRank << " | " << "Level " << l <<" | Group " << j << ":" << std::endl;
-            for (std::size_t i = 0; i < interfaceGIDPairs[l][j].size(); ++i) {
-              std::cout << "   " << myRank << " | ";
-              for (std::size_t k = 0; k < interfaceGIDPairs[l][j][i].size(); ++k)
-                std::cout << interfaceGIDPairs[l][j][i][k] << ", ";
-              std::cout << std::endl;
-            }
-          }
+//          std::cout << myRank << " | Print interfaceGIDPairs:" << std::endl;
+//          for (int j = 0; j < maxRegPerProc; j++) {
+//            std::cout << myRank << " | " << "Level " << l <<" | Group " << j << ":" << std::endl;
+//            for (std::size_t i = 0; i < interfaceGIDPairs[l][j].size(); ++i) {
+//              std::cout << "   " << myRank << " | ";
+//              for (std::size_t k = 0; k < interfaceGIDPairs[l][j][i].size(); ++k)
+//                std::cout << interfaceGIDPairs[l][j][i][k] << ", ";
+//              std::cout << std::endl;
+//            }
+//          }
 
           std::vector<RCP<Epetra_Vector> > regDupGIDVec(maxRegPerProc); // Vector with zeros everywhere, but ones at duplicated GID spots
           std::vector<RCP<Epetra_Vector> > quasiRegDupGIDVec(maxRegPerProc); // Vector with zeros everywhere, but ones at duplicated GID spots
@@ -1587,10 +1593,10 @@ int main(int argc, char *argv[]) {
 
             duplicateMap = rcp(new Epetra_Map(Teuchos::OrdinalTraits<int>::invalid(), myIntGIDs.size(), myIntGIDs.data(), 0, Comm));
 
-            sleep(1);
-            Comm.Barrier();
-            std::cout << myRank << " | duplicateMap:" << std::endl;
-            duplicateMap->Print(std::cout);
+//            sleep(1);
+//            Comm.Barrier();
+//            std::cout << myRank << " | duplicateMap:" << std::endl;
+//            duplicateMap->Print(std::cout);
           }
 
           // create row/range/domain map for the transpose of the fine level duplicates mapping matrix
@@ -1609,10 +1615,10 @@ int main(int argc, char *argv[]) {
 
             fullDuplicateMap = rcp(new Epetra_Map(Teuchos::OrdinalTraits<int>::invalid(), myIntGIDs.size(), myIntGIDs.data(), 0, Comm));
 
-            sleep(1);
-            Comm.Barrier();
-            std::cout << myRank << " | fullDuplicateMap:" << std::endl;
-            fullDuplicateMap->Print(std::cout);
+//            sleep(1);
+//            Comm.Barrier();
+//            std::cout << myRank << " | fullDuplicateMap:" << std::endl;
+//            fullDuplicateMap->Print(std::cout);
           }
 
           // Create and fill matrix
@@ -1648,25 +1654,25 @@ int main(int argc, char *argv[]) {
           err = duplicateMatrix->FillComplete();
           TEUCHOS_ASSERT(err == 0);
 
-          sleep(1);
-          Comm.Barrier();
-          std::cout << myRank << " | duplicateMatrix:" << std::endl;
-          duplicateMatrix->Print(std::cout);
-
-          sleep(1);
-          Comm.Barrier();
-          std::cout << myRank << " | duplicateMatrix->RangeMap():" << std::endl;
-          duplicateMatrix->OperatorRangeMap().Print(std::cout);
-
-          sleep(1);
-          Comm.Barrier();
-          std::cout << myRank << " | duplicateMatrix->DomainMap():" << std::endl;
-          duplicateMatrix->OperatorDomainMap().Print(std::cout);
-
-          sleep(1);
-          Comm.Barrier();
-          std::cout << myRank << " | duplicateMatrix->ColMap():" << std::endl;
-          duplicateMatrix->ColMap().Print(std::cout);
+//          sleep(1);
+//          Comm.Barrier();
+//          std::cout << myRank << " | duplicateMatrix:" << std::endl;
+//          duplicateMatrix->Print(std::cout);
+//
+//          sleep(1);
+//          Comm.Barrier();
+//          std::cout << myRank << " | duplicateMatrix->RangeMap():" << std::endl;
+//          duplicateMatrix->OperatorRangeMap().Print(std::cout);
+//
+//          sleep(1);
+//          Comm.Barrier();
+//          std::cout << myRank << " | duplicateMatrix->DomainMap():" << std::endl;
+//          duplicateMatrix->OperatorDomainMap().Print(std::cout);
+//
+//          sleep(1);
+//          Comm.Barrier();
+//          std::cout << myRank << " | duplicateMatrix->ColMap():" << std::endl;
+//          duplicateMatrix->ColMap().Print(std::cout);
 
           EpetraExt::RowMatrix_Transpose transposer;
           RCP<Epetra_CrsMatrix> transDuplicateMatrix =
@@ -1677,10 +1683,10 @@ int main(int argc, char *argv[]) {
           err = transDuplicateMatrix->FillComplete();
           TEUCHOS_ASSERT(err == 0);
 
-          sleep(1);
-          Comm.Barrier();
-          std::cout << myRank << " | transDuplicateMatrix:" << std::endl;
-          transDuplicateMatrix->Print(std::cout);
+//          sleep(1);
+//          Comm.Barrier();
+//          std::cout << myRank << " | transDuplicateMatrix:" << std::endl;
+//          transDuplicateMatrix->Print(std::cout);
 
 
           summedDuplicateMatrix = rcp(new Epetra_CrsMatrix(Copy, *fullDuplicateMap, 2));
@@ -1692,10 +1698,10 @@ int main(int argc, char *argv[]) {
 //          err = summedDuplicateMatrix->FillComplete();
           TEUCHOS_ASSERT(err == 0);
 
-          sleep(1);
-          Comm.Barrier();
-          std::cout << myRank << " | summedDuplicateMatrix:" << std::endl;
-          summedDuplicateMatrix->Print(std::cout);
+//          sleep(1);
+//          Comm.Barrier();
+//          std::cout << myRank << " | summedDuplicateMatrix:" << std::endl;
+//          summedDuplicateMatrix->Print(std::cout);
           }
         }
 
@@ -1705,7 +1711,7 @@ int main(int argc, char *argv[]) {
           int numEntries = 0;
           double* vals;
           int* inds;
-          std::cout << myRank << " | Extracting my row " << i << ", global row " << summedDuplicateMatrix->RowMap().GID(i) << std::endl;
+//          std::cout << myRank << " | Extracting my row " << i << ", global row " << summedDuplicateMatrix->RowMap().GID(i) << std::endl;
           err = summedDuplicateMatrix->ExtractMyRowView(i, numEntries, vals, inds);
           TEUCHOS_ASSERT(err == 0);
 
@@ -1715,12 +1721,39 @@ int main(int argc, char *argv[]) {
             gidsToSort.push_back(summedDuplicateMatrix->ColMap().GID(inds[k]));
           }
 
-          sleep(1);
-          std::cout << myRank << " | gidsToSort:" << std::endl << "  ";
-          for (auto gid : gidsToSort)
-             std::cout << gid << ", ";
-           std::cout << std::endl;
-           sleep(1);
+          // mayr.mt: hardcoded
+          switch (myRank)
+          {
+          case 0: { break; }
+          case 1: {
+            if (gidsToSort[0] == 55) {
+              gidsToSort.push_back(56);
+              gidsToSort.push_back(57);
+            }
+            break;
+          }
+          case 2: {
+            if (gidsToSort[0] == 56) {
+              gidsToSort.push_back(55);
+              gidsToSort.push_back(57);
+            }
+            break;
+          }
+          case 3: {
+            if (gidsToSort[0] == 57) {
+              gidsToSort.push_back(55);
+              gidsToSort.push_back(56);
+            }
+            break;
+          }
+          }
+
+//          sleep(1);
+//          std::cout << myRank << " | gidsToSort:" << std::endl << "  ";
+//          for (auto gid : gidsToSort)
+//             std::cout << gid << ", ";
+//           std::cout << std::endl;
+//           sleep(1);
 
           /* sort s.t. my GID is first
            *
@@ -1752,68 +1785,17 @@ int main(int argc, char *argv[]) {
         }
 
 //        sleep(myRank);
-//        for (std::size_t i = 0; myDuplicates.size(); ++i) {
+//        std::cout << std::endl << std::endl << std::endl << std::endl;
+//        for (std::size_t i = 0; i < myDuplicates.size(); ++i) {
 //          std::cout << myRank << " | myDuplicates:" << std::endl << "  ";
-//          for (auto gid : myDuplicates[i])
-//            std::cout << gid << ", ";
+//          for (std::size_t k = 0; k < myDuplicates[i].size(); ++k)
+//            std::cout << myDuplicates[i][k] << ", ";
 //          std::cout << std::endl;
 //        }
+//        std::cout << std::endl << std::endl << std::endl << std::endl;
 
         std::vector<std::vector<int> > myCoarseDuplicates; // pairs of duplicates with locally owned GID listed first on coarse level.
         myCoarseDuplicates.resize(myDuplicates.size());
-
-//        sleep(1);
-//        std::cout << "Calling exit(0) on proc " << myRank << " now." << std::endl;
-//        exit(0);
-
-//        std::vector<std::vector<int> > myDuplicates; // pairs of duplicates with locally owned GID listed first.
-//        std::vector<std::vector<int> > myCoarseDuplicates; // pairs of duplicates with locally owned GID listed first on coarse level.
-//        switch (myRank) {
-//        case 0:
-//        {
-//          myDuplicates.resize(1);
-//          myDuplicates[0].push_back(3);
-//          myDuplicates[0].push_back(13);
-//
-////          myCoarseInterfaceGIDs.push_back(1);
-//
-//          myCoarseDuplicates.resize(1);
-//
-//          break;
-//        }
-//        case 1:
-//        {
-//          myDuplicates.resize(2);
-//          myDuplicates[0].push_back(13);
-//          myDuplicates[0].push_back(3);
-//          myDuplicates[1].push_back(9);
-//          myDuplicates[1].push_back(14);
-//
-////          myCoarseInterfaceGIDs.push_back(2);
-////          myCoarseInterfaceGIDs.push_back(4);
-//
-//          myCoarseDuplicates.resize(2);
-//
-//          break;
-//        }
-//        case 2:
-//        {
-//          myDuplicates.resize(1);
-//          myDuplicates[0].push_back(14);
-//          myDuplicates[0].push_back(9);
-//
-////          myCoarseInterfaceGIDs.push_back(5);
-//
-//          myCoarseDuplicates.resize(1);
-//
-//          break;
-//        }
-//        default:
-//        {
-//          TEUCHOS_ASSERT(false);
-//          break;
-//        }
-//        }
 
         std::vector<int> myCoarseInterfaceGIDs;
         for (std::size_t i = 0; i < myDuplicates.size(); ++i) {
@@ -1823,18 +1805,18 @@ int main(int argc, char *argv[]) {
           double* vals;
           int* inds;
           int err = regProlong[1][0]->ExtractMyRowView(rowLID, numEntries, vals, inds);
-          std::cout << myRank << " | ExtractMyRowView err = " << err << std::endl;
+//          std::cout << myRank << " | ExtractMyRowView err = " << err << std::endl;
           TEUCHOS_ASSERT(err == 0);
           TEUCHOS_ASSERT(numEntries == 1); // tentative P: only one entry per row
 
           myCoarseInterfaceGIDs.push_back(regProlong[1][0]->ColMap().GID(inds[0]));
         }
 
-        std::cout << "myCoarseInterfaceGIDs on proc " << myRank << ": ";
-        for (auto gid : myCoarseInterfaceGIDs) {
-          std::cout << gid << ", ";
-        }
-        std::cout << std::endl;
+//        std::cout << "myCoarseInterfaceGIDs on proc " << myRank << ": ";
+//        for (auto gid : myCoarseInterfaceGIDs) {
+//          std::cout << gid << ", ";
+//        }
+//        std::cout << std::endl;
 
         // Build row/range/domain map of duplicate mapping matrix
         RCP<Epetra_Map> interfaceMap = Teuchos::null;
@@ -1844,11 +1826,11 @@ int main(int argc, char *argv[]) {
             interfaceMapGIDs[i] = myDuplicates[i][0];
           }
 
-          std::cout << "interfaceMapGIDs on proc " << myRank << ": ";
-          for (auto gid : interfaceMapGIDs) {
-            std::cout << gid << ", ";
-          }
-          std::cout << std::endl;
+//          std::cout << "interfaceMapGIDs on proc " << myRank << ":      ";
+//          for (auto gid : interfaceMapGIDs) {
+//            std::cout << gid << ", ";
+//          }
+//          std::cout << std::endl;
 
           interfaceMap = rcp(new Epetra_Map(Teuchos::OrdinalTraits<int>::invalid(), interfaceMapGIDs.size(), interfaceMapGIDs.data(), 0, Comm));
         }
@@ -1871,19 +1853,17 @@ int main(int argc, char *argv[]) {
             }
           }
 
-          for (int rowIdx = 0; rowIdx < numRows; ++rowIdx) {
-            std::cout << myRank << " | rowIdx = " << rowIdx << ", rowGID = " << rowPtr[rowIdx] << ":";
-            for (std::size_t i = 0; i < vals[rowIdx].size(); ++i)
-              std::cout << "(" << colInds[rowIdx][i] << "|" << vals[rowIdx][i] << "), ";
-            std::cout << std::endl;
-          }
-
-          int err = 0;
+//          for (int rowIdx = 0; rowIdx < numRows; ++rowIdx) {
+//            std::cout << myRank << " | rowIdx = " << rowIdx << ", rowGID = " << rowPtr[rowIdx] << ":";
+//            for (std::size_t i = 0; i < vals[rowIdx].size(); ++i)
+//              std::cout << "(" << colInds[rowIdx][i] << "|" << vals[rowIdx][i] << "), ";
+//            std::cout << std::endl;
+//          }
 
           // local dummy insertion
           for (int rowIdx = 0; rowIdx < numRows; ++rowIdx) {
             err = duplicateMapping->InsertGlobalValues(rowPtr[rowIdx], colInds[rowIdx].size(), vals[rowIdx].data(), colInds[rowIdx].data());
-            TEUCHOS_ASSERT(err == 0);
+            TEUCHOS_ASSERT(err >= 0);
           }
 
           err = duplicateMapping->FillComplete();
@@ -1931,10 +1911,10 @@ int main(int argc, char *argv[]) {
             myCoarseInterfaceDuplicates[i].resize(numEntries);
             myCoarseInterfaceDuplicates[i].assign(myVals, myVals+numEntries);
 
-            std::cout << myRank << " | i = " << i << ": ";
-            for (auto id : myCoarseInterfaceDuplicates[i])
-              std::cout << id << ", ";
-            std::cout << std::endl;
+//            std::cout << myRank << " | myCoarseInterfaceDuplicates[" << i << "] = ";
+//            for (auto id : myCoarseInterfaceDuplicates[i])
+//              std::cout << id << ", ";
+//            std::cout << std::endl;
           }
 
         }
@@ -1945,27 +1925,59 @@ int main(int argc, char *argv[]) {
         {
           // create quasiRegional map
           {
+
             std::vector<int> myQuasiRegGIDs;
             for (int i = 0; i < regRowMaps[1][0]->NumMyElements(); ++i) {
-              const int myGID = regRowMaps[1][0]->GID(i);
-              int myQuasiGID = myGID;
+              int myGID = regRowMaps[1][0]->GID(i);
 
-              bool duplicate = false;
-
-              for (int k = 0; k < myCoarseInterfaceDuplicates.size(); ++k) {
-                for (int kk = 0; kk < myCoarseInterfaceDuplicates[k].size(); ++kk) {
-                  if (myGID == myCoarseInterfaceDuplicates[k][kk]) {
-                    duplicate = true;
-                    continue;
-                  }
+              // check if myGID is interface GID
+              bool isInterface = false;
+              for (std::size_t k = 0; k < myCoarseInterfaceDuplicates.size(); ++k) {
+                for (std::size_t kk = 0; kk < myCoarseInterfaceDuplicates[k].size(); ++kk) {
+                  if (myGID == myCoarseInterfaceDuplicates[k][kk])
+                    isInterface = true;
                 }
-
-                if (duplicate)
-                  for (int kk = 0; kk < myCoarseInterfaceDuplicates[k].size(); ++kk)
-                    myQuasiGID = std::min(myQuasiGID, Teuchos::as<int>(myCoarseInterfaceDuplicates[k][kk]));
               }
 
-              myQuasiRegGIDs.push_back(myQuasiGID);
+              if (not isInterface) {
+                myQuasiRegGIDs.push_back(myGID);
+              }
+              else {
+                // find GIDs that identify an aggregate
+                std::vector<int> identifyingGIDs;
+                for (std::size_t k = 0; k < myCoarseInterfaceDuplicates.size(); ++k) {
+                  identifyingGIDs.push_back(myCoarseInterfaceDuplicates[k][0]);
+                }
+                std::sort(identifyingGIDs.begin(), identifyingGIDs.end());
+                identifyingGIDs.erase(std::unique(identifyingGIDs.begin(), identifyingGIDs.end()), identifyingGIDs.end());
+
+//                std::cout << "identifyingGIDs on proc " << myRank << ": ";
+//                for (auto gid : identifyingGIDs) {
+//                  std::cout << gid << ", ";
+//                }
+//                std::cout << std::endl;
+
+                // find quasiGID for each aggregate in identifyingGIDs
+                for (std::size_t k = 0; k < identifyingGIDs.size(); ++k) {
+                  int aggIdent = identifyingGIDs[k];
+                  int myQuasiGID = aggIdent;
+                  for (std::size_t kk = 0; kk < myCoarseInterfaceDuplicates.size(); ++kk) {
+                    if (myCoarseInterfaceDuplicates[kk][0] == aggIdent) {
+                      for (std::size_t kkk = 0; kkk < myCoarseInterfaceDuplicates[kk].size(); ++kkk) {
+                        myQuasiGID = std::min(myQuasiGID, Teuchos::as<int>(myCoarseInterfaceDuplicates[kk][kkk]));
+                      }
+                    }
+                  }
+
+                  bool found = false;
+                  for (std::size_t kk = 0; kk < myQuasiRegGIDs.size(); ++kk) {
+                    if (myQuasiGID == myQuasiRegGIDs[kk])
+                      found = true;
+                  }
+                  if (not found)
+                    myQuasiRegGIDs.push_back(myQuasiGID);
+                }
+              }
             }
 
             quasiRegRowMaps[1][0] = rcp(new Epetra_Map(Teuchos::OrdinalTraits<int>::invalid(), myQuasiRegGIDs.size(), myQuasiRegGIDs.data(), 0, Comm));
@@ -2006,10 +2018,6 @@ int main(int argc, char *argv[]) {
             TEUCHOS_ASSERT(!regRowImporters[l+1][j].is_null());
           }
         }
-
-//        sleep(1);
-//        std::cout << "Calling exit(0) on proc " << myRank << " now." << std::endl;
-//        exit(0);
 
         break;
       }
@@ -2683,19 +2691,55 @@ int main(int argc, char *argv[]) {
 //compX->Print(std::cout);
       // forcing vector
       Teuchos::RCP<Epetra_Vector> compB = Teuchos::rcp(new Epetra_Vector(*mapComp, true));
+
+      // 1D
       {
-        compB->ReplaceGlobalValue(compB->GlobalLength() - 1, 0, 1.0e-3);
+        {
+          compB->ReplaceGlobalValue(compB->GlobalLength() - 1, 0, 1.0e-3);
+        }
+//        {
+//        compB->PutScalar(1.0);
+//        compB->ReplaceGlobalValue(0, 0, 0.0);
+//        }
+//        {
+//          compB->ReplaceGlobalValue(15, 0, 1.0);
+//        }
+//        {
+//          compB->ReplaceGlobalValue(16, 0, 1.0);
+//        }
       }
-//      {
-//      compB->PutScalar(1.0);
-//      compB->ReplaceGlobalValue(0, 0, 0.0);
-//      }
-//      {
-//        compB->ReplaceGlobalValue(15, 0, 1.0);
-//      }
-//      {
-//        compB->ReplaceGlobalValue(16, 0, 1.0);
-//      }
+
+      // 2D
+      std::vector<int> dirichletGIDs;
+      dirichletGIDs.push_back(0);
+      dirichletGIDs.push_back(1);
+      dirichletGIDs.push_back(2);
+      dirichletGIDs.push_back(3);
+      dirichletGIDs.push_back(4);
+      dirichletGIDs.push_back(5);
+      dirichletGIDs.push_back(6);
+      dirichletGIDs.push_back(7);
+      dirichletGIDs.push_back(13);
+      dirichletGIDs.push_back(14);
+      dirichletGIDs.push_back(20);
+      dirichletGIDs.push_back(21);
+      dirichletGIDs.push_back(27);
+      dirichletGIDs.push_back(28);
+      dirichletGIDs.push_back(34);
+      dirichletGIDs.push_back(35);
+      dirichletGIDs.push_back(41);
+      dirichletGIDs.push_back(42);
+      dirichletGIDs.push_back(43);
+      dirichletGIDs.push_back(44);
+      dirichletGIDs.push_back(45);
+      dirichletGIDs.push_back(46);
+      dirichletGIDs.push_back(47);
+      dirichletGIDs.push_back(48);
+      {
+        compB->PutScalar(1.0e-3);
+        for (std::size_t i = 0; i < dirichletGIDs.size(); ++i)
+          compB->ReplaceGlobalValue(dirichletGIDs[i], 0, 0.0);
+      }
 
       // residual vector
       Teuchos::RCP<Epetra_Vector> compRes = Teuchos::rcp(new Epetra_Vector(*mapComp, true));
@@ -2725,7 +2769,7 @@ int main(int argc, char *argv[]) {
       /////////////////////////////////////////////////////////////////////////
 
       // define max iteration counts
-      const int maxVCycle = 1;
+      const int maxVCycle = 100;
       const int maxFineIter = 10;
       const int maxCoarseIter = 100;
       const double omega = 0.67;
