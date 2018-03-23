@@ -141,11 +141,11 @@ int main(int argc, char* argv[]) {
       = ROL::makePtr<Constraint_BurgersControl<RealT>>(nx);
     ROL::Ptr<ROL::Objective<RealT> > pObj
       = ROL::makePtr<ROL::Reduced_Objective_SimOpt<RealT>>(pobjSimOpt,pconSimOpt,up,z,pp);
-    //ROL::Ptr<ROL::Objective<RealT> > obj = ROL::makePtr<ROL::RiskNeutralObjective<RealT>>(pObj, sampler, true);
-    ROL::Ptr<ROL::Distribution<RealT> > dist  = ROL::makePtr<ROL::Parabolic<RealT>>(-0.5, 0.5);
-    ROL::Ptr<ROL::PlusFunction<RealT> > pfunc = ROL::makePtr<ROL::PlusFunction<RealT>>(dist, pfuncSmoothing);
-    ROL::Ptr<ROL::RiskMeasure<RealT> >  rmeas = ROL::makePtr<ROL::CVaR<RealT>>(cvarLevel, 1.0, pfunc);
-    ROL::Ptr<ROL::Objective<RealT> >    obj   = ROL::makePtr<ROL::RiskAverseObjective<RealT>>(pObj, rmeas, sampler);
+    //ROL::Ptr<ROL::Objective<RealT>> obj = ROL::makePtr<ROL::RiskNeutralObjective<RealT>>(pObj, sampler, true);
+    ROL::Ptr<ROL::Distribution<RealT>>      dist  = ROL::makePtr<ROL::Parabolic<RealT>>(-0.5, 0.5);
+    ROL::Ptr<ROL::PlusFunction<RealT>>      pfunc = ROL::makePtr<ROL::PlusFunction<RealT>>(dist, pfuncSmoothing);
+    ROL::Ptr<ROL::RandVarFunctional<RealT>> rmeas = ROL::makePtr<ROL::CVaR<RealT>>(cvarLevel, 1.0, pfunc);
+    ROL::Ptr<ROL::Objective<RealT>>         obj   = ROL::makePtr<ROL::StochasticObjective<RealT>>(pObj, rmeas, sampler);
     // Test parametrized objective functions
     *outStream << "Check Derivatives of Parametrized Objective Function\n";
     //x1.set(xr);

@@ -110,6 +110,29 @@ namespace ROL {
   template<class Real>
   inline Real ROL_UNDERFLOW(void) { return std::abs(Teuchos::ScalarTraits<Real>::rmin()); }
 
+  /** \brief Enum for algorithm termination.
+   */
+  enum EExitStatus {
+    EXITSTATUS_CONVERGED = 0,
+    EXITSTATUS_MAXITER,
+    EXITSTATUS_STEPTOL,
+    EXITSTATUS_USERDEFINED,
+    EXITSTATUS_LAST
+  };
+
+  inline std::string EExitStatusToString(EExitStatus tr) {
+    std::string retString;
+    switch(tr) {
+      case EXITSTATUS_CONVERGED:   retString = "Converged";                break;
+      case EXITSTATUS_MAXITER:     retString = "Iteration Limit Exceeded"; break;
+      case EXITSTATUS_STEPTOL:     retString = "Step Tolerance Met";       break;
+      case EXITSTATUS_USERDEFINED: retString = "User Defined";             break;
+      case EXITSTATUS_LAST:        retString = "Last Type (Dummy)";        break;
+      default:                     retString = "INVALID EExitStatus";
+    }
+    return retString;
+  }
+
   /** \brief  State for algorithm class.  Will be used for restarts.
    */
   template<class Real>
@@ -130,6 +153,7 @@ namespace ROL {
     ROL::Ptr<Vector<Real> > iterateVec;
     ROL::Ptr<Vector<Real> > lagmultVec;
     ROL::Ptr<Vector<Real> > minIterVec;
+    EExitStatus statusFlag;
 
     AlgorithmState(void) : iter(0), minIter(0), nfval(0), ngrad(0), value(0), minValue(0), 
       gnorm(std::numeric_limits<Real>::max()),
@@ -138,7 +162,8 @@ namespace ROL {
       aggregateGradientNorm(std::numeric_limits<Real>::max()),
       aggregateModelError(std::numeric_limits<Real>::max()),
       flag(false),
-      iterateVec(ROL::nullPtr), lagmultVec(ROL::nullPtr), minIterVec(ROL::nullPtr) {}
+      iterateVec(ROL::nullPtr), lagmultVec(ROL::nullPtr), minIterVec(ROL::nullPtr),
+      statusFlag(EXITSTATUS_LAST) {}
 
     void reset(void) {
       iter                  = 0;
