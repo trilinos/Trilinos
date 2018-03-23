@@ -301,13 +301,22 @@ makeMatrixAndRightHandSide (Teuchos::RCP<sparse_matrix_type>& A,
     lNodesPerDim[dim] = local_num_ijk[dim];
   }
 
+  Teuchos::Array<LO> nodesPerDim(3);
+  long long num_ijk[3];
+  im_ne_get_num_ijk_l (id, num_ijk);
+  for(int dim = 0; dim < 3; ++dim) {
+    nodesPerDim[dim] = num_ijk[dim];
+  }
+
   // Print mesh information
   {
     Teuchos::OSTab tab2 (out);
     *out << "Global number of elements:                     "
          << numElemsGlobal << endl
          << "Global number of nodes (incl. boundary nodes): "
-         << numNodesGlobal << endl;
+         << numNodesGlobal << endl
+         << "lNodesPerDim: " << lNodesPerDim << endl
+         << "nodesPerDim: " << nodesPerDim << endl;
   }
 
   long long * block_ids = new long long [numElemBlk];
@@ -563,6 +572,47 @@ makeMatrixAndRightHandSide (Teuchos::RCP<sparse_matrix_type>& A,
     coordXArray.resize(ownedNodes);
     coordYArray.resize(ownedNodes);
     coordZArray.resize(ownedNodes);
+
+    // It is expected that some nodes are duplicated locally
+    // so the values extracted with lNodePerDim are possibly
+    // wrong... Check that node i=0 and node i=nx are owned.
+    Teuchos::Array<LO> lNodesPerDimOld(3);
+    for(int k = 0; k < 3; ++k) {lNodesPerDimOld[k] = lNodesPerDim[k];}
+    if(lNodesPerDimOld[0] > 2 && lNodesPerDimOld[1] > 2 && lNodesPerDimOld[2] > 2) {
+      LO idx = 0;
+      Teuchos::Array<LO> factors(3);
+      for(int k = 0; k < 3; ++k) {factors[k] = lNodesPerDimOld[k] / 2;}
+
+      // check ilo face
+      idx = factors[2]*lNodesPerDimOld[1]*lNodesPerDimOld[0]
+        + factors[1]*lNodesPerDimOld[0];
+      if(!nodeIsOwned[idx]) {--lNodesPerDim[0];}
+
+      // check ihi face
+      idx = factors[2]*lNodesPerDimOld[1]*lNodesPerDimOld[0]
+        + factors[1]*lNodesPerDimOld[0] + lNodesPerDimOld[0] - 1;
+      if(!nodeIsOwned[idx]) {--lNodesPerDim[0];}
+
+      // check jlo face
+      idx = factors[2]*lNodesPerDimOld[1]*lNodesPerDimOld[0]
+        + 0*lNodesPerDimOld[0] + factors[0];
+      if(!nodeIsOwned[idx]) {--lNodesPerDim[1];}
+
+      // check jhi face
+      idx = factors[2]*lNodesPerDimOld[1]*lNodesPerDimOld[0]
+        + (lNodesPerDimOld[1] - 1)*lNodesPerDimOld[0] + factors[0];
+      if(!nodeIsOwned[idx]) {--lNodesPerDim[1];}
+
+      // check klo face
+      idx = 0*lNodesPerDimOld[1]*lNodesPerDimOld[0]
+        + factors[1]*lNodesPerDimOld[0] + factors[0];
+      if(!nodeIsOwned[idx]) {--lNodesPerDim[2];}
+
+      // check khi face
+      idx = (lNodesPerDimOld[2] - 1)*lNodesPerDimOld[1]*lNodesPerDimOld[0]
+        + factors[1]*lNodesPerDimOld[0] + factors[0];
+      if(!nodeIsOwned[idx]) {--lNodesPerDim[2];}
+    }
 
     int oidx = 0;
     for (int i = 0; i < numNodes; ++i) {

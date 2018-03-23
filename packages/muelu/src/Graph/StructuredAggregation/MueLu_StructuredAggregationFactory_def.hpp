@@ -166,7 +166,12 @@ namespace MueLu {
   Build(Level &currentLevel) const {
     FactoryMonitor m(*this, "Build", currentLevel);
 
-    RCP<Teuchos::FancyOStream> out = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
+    RCP<Teuchos::FancyOStream> out;
+    if(const char* dbg = std::getenv("MUELU_STRUCTUREDAGGREGATION_DEBUG")) {
+      out = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
+    } else {
+      out = Teuchos::getFancyOStream(rcp(new Teuchos::oblackholestream()));
+    }
     out->setShowAllFrontMatter(false).setShowProcRank(true);
 
     *out << "Entering structured aggregation" << std::endl;
@@ -270,9 +275,6 @@ namespace MueLu {
 
 
     *out << "The index manager has now been built" << std::endl;
-    *out << "numLocalFineNodes:  " << geoData->getNumLocalFineNodes() << std::endl;
-    *out << "numGlobalFineNodes: " << geoData->getNumGlobalFineNodes() << std::endl;
-
     TEUCHOS_TEST_FOR_EXCEPTION(fineMap->getNodeNumElements()
                                != static_cast<size_t>(geoData->getNumLocalFineNodes()),
                                Exceptions::RuntimeError,
@@ -286,17 +288,16 @@ namespace MueLu {
                                  "the number of nodes given by: gNodesPerDim!");
     }
 
+    *out << "Compute coarse mesh data" << std::endl;
     std::vector<std::vector<GO> > coarseMeshData = geoData->getCoarseMeshData();
 
     RCP<const Map> coarseMap;
     Array<LO>  ghostedCoarseNodeCoarseLIDs;
     Array<int> ghostedCoarseNodeCoarsePIDs;
 
-    // *out << "Extract data for ghosted nodes" << std::endl;
+    *out << "Extract data for ghosted nodes" << std::endl;
     geoData->getGhostedNodesData(fineMap, coarseMap, ghostedCoarseNodeCoarseLIDs,
                                  ghostedCoarseNodeCoarsePIDs);
-    // *out << "ghostedCoarseNodeCoarsePIDs: " << ghostedCoarseNodeCoarsePIDs << std::endl;
-    // *out << "ghostedCoarseNodeCoarseLIDs: " << ghostedCoarseNodeCoarseLIDs << std::endl;
 
     // Create aggregates object and set basic parameters
     RCP<Aggregates> aggregates = rcp(new Aggregates(fineMap));
@@ -305,8 +306,6 @@ namespace MueLu {
     std::vector<unsigned> aggStat(geoData->getNumLocalFineNodes(), READY);
     aggregates->SetNumAggregates(geoData->getNumLocalCoarseNodes());
 
-    *out << "Ready to perform the big aggregation loop" << std::endl;
-
     // Now we are ready for the big loop over the fine node that will assign each
     // node on the fine grid to an aggregate and a processor.
     LO numNonAggregatedNodes = geoData->getNumLocalFineNodes();
@@ -314,7 +313,7 @@ namespace MueLu {
     ArrayRCP<LO> procWinner   = aggregates->GetProcWinner()  ->getDataNonConst(0);
     LO iGhosted, jGhosted, kGhosted, iCoarse, jCoarse, kCoarse, iRem, jRem, kRem;
     LO ghostedCoarseNodeCoarseLID, aggId, rate;
-    // *out << "Loop over fine nodes and assign them to an aggregate and a rank" << std::endl;
+    *out << "Loop over fine nodes and assign them to an aggregate and a rank" << std::endl;
     for(LO nodeIdx = 0; nodeIdx < geoData->getNumLocalFineNodes(); ++nodeIdx) {
       // Compute coarse ID associated with fine LID
       geoData->getFineNodeGhostedTuple(nodeIdx, iGhosted, jGhosted, kGhosted);
@@ -359,9 +358,6 @@ namespace MueLu {
       aggStat[nodeIdx]      = AGGREGATED;
       --numNonAggregatedNodes;
     }
-
-    *out << "procWinner: " << procWinner() << std::endl;
-    *out << "vertex2AggId: " << vertex2AggId() << std::endl;
 
     TEUCHOS_TEST_FOR_EXCEPTION(numNonAggregatedNodes, Exceptions::RuntimeError,
                                "MueLu::StructuredAggregationFactory::Build: Leftover nodes found! Error!");
