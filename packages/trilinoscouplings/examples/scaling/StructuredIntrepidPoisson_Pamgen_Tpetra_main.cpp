@@ -64,7 +64,7 @@
 #include "Teuchos_StandardCatchMacros.hpp"
 
 #include "TrilinosCouplings_config.h"
-#include "TrilinosCouplings_TpetraIntrepidPoissonExample.hpp"
+#include "TrilinosCouplings_TpetraIntrepidStructuredPoissonExample.hpp"
 #include "TrilinosCouplings_IntrepidPoissonExampleHelpers.hpp"
 
 #ifdef HAVE_TRILINOSCOUPLINGS_MUELU

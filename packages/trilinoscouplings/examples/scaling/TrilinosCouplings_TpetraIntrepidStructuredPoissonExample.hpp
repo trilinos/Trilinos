@@ -28,8 +28,8 @@
 // ************************************************************************
 // @HEADER
 
-#ifndef __TrilinosCouplings_TpetraIntrepidPoissonExample_hpp
-#define __TrilinosCouplings_TpetraIntrepidPoissonExample_hpp
+#ifndef __TrilinosCouplings_TpetraIntrepidStructuredPoissonExample_hpp
+#define __TrilinosCouplings_TpetraIntrepidStructuredPoissonExample_hpp
 
 #include "Tpetra_DefaultPlatform.hpp"
 #include "Tpetra_CrsMatrix.hpp"
@@ -286,7 +286,7 @@ solveWithBelosGPU (
   const Teuchos::RCP<const operator_type>& M_left=Teuchos::null,
   const Teuchos::RCP<const operator_type>& M_right=Teuchos::null);
 
-} // namespace TpetraIntrepidPoissonExample
+} // namespace TpetraIntrepidStructuredPoissonExample
 } // namespace TrilinosCouplings
 
-#endif // __TrilinosCouplings_TpetraIntrepidPoissonExample_hpp
+#endif // __TrilinosCouplings_TpetraIntrepidStructuredPoissonExample_hpp

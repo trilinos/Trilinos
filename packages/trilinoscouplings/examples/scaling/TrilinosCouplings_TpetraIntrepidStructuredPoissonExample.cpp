@@ -60,7 +60,7 @@
 #endif
 
 // My includes
-#include "TrilinosCouplings_TpetraIntrepidPoissonExample.hpp"
+#include "TrilinosCouplings_TpetraIntrepidStructuredPoissonExample.hpp"
 #include "TrilinosCouplings_Pamgen_Utils.hpp"
 #include "TrilinosCouplings_IntrepidPoissonExampleHelpers.hpp"
 

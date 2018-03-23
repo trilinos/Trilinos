@@ -79,7 +79,6 @@ namespace MueLu {
   GetValidParameterList() const {
     RCP<ParameterList> validParamList = rcp(new ParameterList());
 
-    typedef Teuchos::StringToIntegralParameterEntryValidator<int> validatorType;
 #define SET_VALID_ENTRY(name) validParamList->setEntry(name, MasterList::getEntry(name))
     SET_VALID_ENTRY("aggregation: preserve Dirichlet points");
     SET_VALID_ENTRY("aggregation: allow user-specified singletons");
@@ -167,8 +166,10 @@ namespace MueLu {
   Build(Level &currentLevel) const {
     FactoryMonitor m(*this, "Build", currentLevel);
 
-    // RCP<Teuchos::FancyOStream> out = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
-    // out->setShowAllFrontMatter(false).setShowProcRank(true);
+    RCP<Teuchos::FancyOStream> out = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
+    out->setShowAllFrontMatter(false).setShowProcRank(true);
+
+    *out << "Entering structured aggregation" << std::endl;
 
     ParameterList pL = GetParameterList();
     bDefinitionPhase_ = false;  // definition phase is finished, now all aggregation algorithm information is fixed
@@ -267,8 +268,10 @@ namespace MueLu {
                                                                          minGlobalIndex));
     }
 
-    // *out << "numLocalFineNodes:  " << geoData->getNumLocalFineNodes() << std::endl;
-    // *out << "numGlobalFineNodes: " << geoData->getNumGlobalFineNodes() << std::endl;
+
+    *out << "The index manager has now been built" << std::endl;
+    *out << "numLocalFineNodes:  " << geoData->getNumLocalFineNodes() << std::endl;
+    *out << "numGlobalFineNodes: " << geoData->getNumGlobalFineNodes() << std::endl;
 
     TEUCHOS_TEST_FOR_EXCEPTION(fineMap->getNodeNumElements()
                                != static_cast<size_t>(geoData->getNumLocalFineNodes()),
@@ -302,6 +305,7 @@ namespace MueLu {
     std::vector<unsigned> aggStat(geoData->getNumLocalFineNodes(), READY);
     aggregates->SetNumAggregates(geoData->getNumLocalCoarseNodes());
 
+    *out << "Ready to perform the big aggregation loop" << std::endl;
 
     // Now we are ready for the big loop over the fine node that will assign each
     // node on the fine grid to an aggregate and a processor.
@@ -356,13 +360,12 @@ namespace MueLu {
       --numNonAggregatedNodes;
     }
 
-    // *out << "procWinner: " << procWinner() << std::endl;
-    // *out << "vertex2AggId: " << vertex2AggId() << std::endl;
+    *out << "procWinner: " << procWinner() << std::endl;
+    *out << "vertex2AggId: " << vertex2AggId() << std::endl;
 
     TEUCHOS_TEST_FOR_EXCEPTION(numNonAggregatedNodes, Exceptions::RuntimeError,
                                "MueLu::StructuredAggregationFactory::Build: Leftover nodes found! Error!");
 
-    // aggregates->AggregatesCrossProcessors(false);
     aggregates->ComputeAggregateSizes(true/*forceRecompute*/);
 
     Set(currentLevel, "Aggregates",         aggregates);
