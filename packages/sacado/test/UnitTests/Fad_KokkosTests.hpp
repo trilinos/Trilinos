@@ -1655,6 +1655,51 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(
 #endif
 }
 
+TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(
+  Kokkos_View_Fad, AssignLayoutContiguousToLayoutStride, FadType, Layout, Device )
+{
+  typedef Kokkos::View<FadType**,Kokkos::LayoutContiguous<Layout>,Device> ContViewType;
+  typedef Kokkos::View<FadType**,Kokkos::LayoutStride,Device> StrideViewType;
+  typedef typename ContViewType::size_type size_type;
+  typedef typename ContViewType::HostMirror cont_host_view_type;
+  typedef typename StrideViewType::HostMirror stride_host_view_type;
+
+  const size_type num_rows = global_num_rows;
+  const size_type num_cols = global_num_cols;
+  const size_type fad_size = global_fad_size;
+
+  // Create and fill view
+  ContViewType v("view", num_rows, num_cols, fad_size+1);
+  cont_host_view_type h_v = Kokkos::create_mirror_view(v);
+
+  for (size_type i=0; i<num_rows; ++i) {
+    for (size_type j=0; j<num_cols; ++j) {
+      FadType f = generate_fad<FadType>(num_rows, num_cols, fad_size, i, j);
+      h_v(i,j) = f;
+    }
+  }
+  Kokkos::deep_copy(v, h_v);
+
+  // Assign to LayoutStride view
+  StrideViewType vs = v;
+
+  // Copy back
+  stride_host_view_type h_vs = Kokkos::create_mirror_view(vs);
+  Kokkos::deep_copy(h_vs, vs);
+
+  // Check
+  success = true;
+  TEUCHOS_TEST_EQUALITY(h_vs.dimension_0(), num_rows, out, success);
+  TEUCHOS_TEST_EQUALITY(h_vs.dimension_1(), num_cols, out, success);
+  TEUCHOS_TEST_EQUALITY(Kokkos::dimension_scalar(h_vs), fad_size+1, out, success);
+  for (size_type i=0; i<num_rows; ++i) {
+    for (size_type j=0; j<num_cols; ++j) {
+      FadType f = generate_fad<FadType>(num_rows, num_cols, fad_size, i, j);
+      success = success && checkFads(f, h_vs(i,j), out);
+    }
+  }
+}
+
 #else
 
 TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(
@@ -1696,6 +1741,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(
 TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(
   Kokkos_View_Fad, Partition, FadType, Layout, Device ) {}
 
+TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(
+  Kokkos_View_Fad, AssignLayoutContiguousToLayoutStride, FadType, Layout, Device ) {}
+
 #endif
 
 #define VIEW_FAD_TESTS_FLD( F, L, D )                                   \
@@ -1736,7 +1784,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(
   using Kokkos::LayoutLeft;                                             \
   using Kokkos::LayoutRight;                                            \
   VIEW_FAD_TESTS_FLD( F, LayoutLeft, D )                                \
-  VIEW_FAD_TESTS_FLD( F, LayoutRight, D )
+  VIEW_FAD_TESTS_FLD( F, LayoutRight, D )                               \
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Kokkos_View_Fad, AssignLayoutContiguousToLayoutStride, F, LayoutLeft, D ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Kokkos_View_Fad, AssignLayoutContiguousToLayoutStride, F, LayoutRight, D )
 #define VIEW_FAD_TESTS_SFDI( F, D )                                     \
   using Kokkos::LayoutLeft;                                             \
   using Kokkos::LayoutRight;                                            \
