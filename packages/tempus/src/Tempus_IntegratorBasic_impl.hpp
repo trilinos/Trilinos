@@ -281,12 +281,16 @@ void IntegratorBasic<Scalar>::setObserver(
     if (integratorObserver_ == Teuchos::null) {
       integratorObserver_ =
         Teuchos::rcp(new IntegratorObserverComposite<Scalar>);
-      // add obsever to output integrator time step info
-      Teuchos::RCP<IntegratorObserverBasic<Scalar> > outputObs =
+      // Add basic observer to output time step info
+      Teuchos::RCP<IntegratorObserverBasic<Scalar> > basicObs =
           Teuchos::rcp(new IntegratorObserverBasic<Scalar>);
-      integratorObserver_->addObserver(outputObs);
+      integratorObserver_->addObserver(basicObs);
     }
   } else {
+    if (integratorObserver_ == Teuchos::null) {
+      integratorObserver_ =
+        Teuchos::rcp(new IntegratorObserverComposite<Scalar>);
+    }
     integratorObserver_->addObserver(obs);
   }
 
