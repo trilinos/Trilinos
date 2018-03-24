@@ -79,7 +79,7 @@ public:
 
   template <typename BuilderOpT>
   void buildObjects(const BuilderOpT & builder)
-  { Sacado::mpl::for_each<TypesVector>(BuildObjects<BuilderOpT>(mapValues_,builder)); }
+  { Sacado::mpl::for_each_no_kokkos<TypesVector>(BuildObjects<BuilderOpT>(mapValues_,builder)); }
 
 public:
 
