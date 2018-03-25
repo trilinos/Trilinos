@@ -112,7 +112,7 @@ using std::string;
 
 // Teuchos::RCP<> support
 #ifdef TEUCHOS
-%include "Teuchos_RCP.i"
+%include "Teuchos_RCP_typemaps.i"
 #endif
 
 // External Trilinos modules

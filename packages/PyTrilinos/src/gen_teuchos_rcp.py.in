@@ -1,0 +1,130 @@
+#! /usr/bin/env python
+#! ${PYTHON_EXECUTABLE}
+# -*- python -*-
+
+import re
+import sys
+
+################################################################################
+
+def parse_class(classname):
+    result = {}
+    if classname[-1] != ">":
+        name = classname
+        templates = []
+    else:
+        open_brackets = 1
+        index = len(classname) - 1
+        while open_brackets > 0 and index > 0:
+            index -= 1
+            if classname[index] == ">":
+                open_brackets += 1
+            elif classname[index] == "<":
+                open_brackets -= 1
+        name = classname[:index]
+        templates = classname[index:].split(",")
+    components = name.split("::")
+    if len(components) == 1:
+        result["namespaces"] = []
+    else:
+        result["namespaces"] = components[:-1]
+    result["name"] = components[-1]
+    result["template_args"] = []
+    for i in range(len(templates)):
+        result["template_args"].append("ARG%d" % (i+1))
+    return result
+
+################################################################################
+
+def forward_decl(classname):
+    result = ""
+    parsing = parse_class(classname)
+    namespaces = parsing["namespaces"]
+    if namespaces:
+        for namespace in namespaces:
+            result += "namespace %s{ " % namespace
+    template_args = parsing["template_args"]
+    if template_args:
+        result += "template< "
+        for arg in template_args:
+            result += "class %s" % arg
+            if arg != template_args[-1]:
+                result += ","
+            result += " "
+        result += "> "
+    result += "class %s; " % parsing["name"]
+    if namespaces:
+        for namespace in namespaces:
+            result += "} "
+    return result
+
+################################################################################
+
+def get_rcp_classes(swig_filenames):
+    regexes = [re.compile(r"%teuchos_rcp\((.+)\)"       , re.MULTILINE),
+               re.compile(r"%teuchos_rcp_dap\(.+,(.+)\)", re.MULTILINE)]
+    result = set()
+    for filename in swig_filenames:
+        text = open(filename, 'r').read()
+        for regex in regexes:
+            matches = regex.findall(text)
+            for match in matches:
+                if "##" not in match and "CLASS" not in match:
+                    match = match.replace("< ","<")
+                    match = match.replace(" >",">")
+                    match = match.replace(">>","> >")
+                    result.add(match)
+    # Hack for Tpetra
+    if "Tpetra.i" in swig_filenames:
+        regex = re.compile(r"%tpetra_scalars\((.+),.+\)", re.MULTILINE)
+        text = open("Tpetra.i",'r').read()
+        matches = regex.findall(text)
+        for scalar in matches:
+            if "SCALAR" not in scalar:
+                scalar = scalar.strip()
+                result.add("Tpetra::DistObject<%s, PYTRILINOS_LOCAL_ORD, PYTRILINOS_GLOBAL_ORD, DefaultNodeType>" % scalar)
+                result.add("Tpetra::MultiVector<%s, PYTRILINOS_LOCAL_ORD, PYTRILINOS_GLOBAL_ORD, DefaultNodeType>" % scalar)
+                result.add("Tpetra::Vector<%s, PYTRILINOS_LOCAL_ORD, PYTRILINOS_GLOBAL_ORD, DefaultNodeType>" % scalar)
+    # End hack for Tpetra
+    result = list(result)
+    for i in range(len(result)):
+        rcp = result[i].strip()
+        result[i] = rcp
+    result.sort()
+    return result
+
+################################################################################
+
+def list_forward_decl(rcp_classes):
+    result = set()
+    for classname in rcp_classes:
+        result.add(forward_decl(classname))
+    result = list(result)
+    result.sort()
+    return result
+
+################################################################################
+
+def main():
+    swig_files = sys.argv[1:]
+    exclude = "Teuchos_RCP.i"
+    if swig_files.count(exclude):
+        swig_files.remove(exclude)
+
+    teuchos_rcps  = get_rcp_classes(swig_files)
+    forward_decls = list_forward_decl(teuchos_rcps)
+
+    for cls in teuchos_rcps:
+        print(cls)
+
+    print("// Forward declarations")
+    for decl in forward_decls:
+        print(decl)
+
+    #print("Classes found = %d" % len(teuchos_rcps))
+    #print("Forward declarations = %d" % len(forward_decls))
+
+################################################################################
+
+if __name__ == "__main__":
+    main()

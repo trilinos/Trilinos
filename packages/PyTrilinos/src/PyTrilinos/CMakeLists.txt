@@ -95,6 +95,9 @@ IF(PyTrilinos_ENABLE_Isorropia)
   ADD_SUBDIRECTORY(Isorropia)
 ENDIF(PyTrilinos_ENABLE_Isorropia)
 
+# The Teuchos module employs namespaces, so include the Teuchos directory
+ADD_SUBDIRECTORY(Teuchos)
+
 # The NOX module employs namespaces, so include the NOX directory
 IF(PyTrilinos_ENABLE_NOX)
   ADD_SUBDIRECTORY(NOX)

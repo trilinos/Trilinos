@@ -1585,7 +1585,6 @@ public:
 %tpetra_scalars(int       , int   )
 %tpetra_scalars(long long , long  )
 %tpetra_scalars(double    , double)
-//%tpetra_scalars(float     , float )
 
 /////////////////////////////////////////////////////
 // Python code that consolidates templated classes //

@@ -80,11 +80,11 @@ ParameterList will accept a python dictionary.
 "
 %enddef
 
-%module(package      = "PyTrilinos",
+%module(package      = "PyTrilinos.Teuchos",
 	directors    = "1",
 	autodoc      = "1",
 	implicitconv = "1",
-	docstring    = %teuchos_docstring) Teuchos
+	docstring    = %teuchos_docstring) __init__
 
 // Includes
 %{
@@ -192,7 +192,7 @@ using std::string;
 // stored internally as a Teuchos::RCP<> as well.  This is
 // accomplished by %include-ing Teuchos_RCP.i and calling the provided
 // macro %teuchos_rcp() on the class.
-%include "Teuchos_RCP.i"
+%include "Teuchos_RCP_typemaps.i"
 %include "Teuchos_RCP_DAP.i"
 %teuchos_rcp(std::basic_ostream)
 %teuchos_rcp(std::ostream)

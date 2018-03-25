@@ -253,7 +253,7 @@ char* strtok;
 %include "Epetra_DLLExportMacro.h"
 
 // Teuchos::RCP<> support
-%include "Teuchos_RCP.i"
+%include "Teuchos_RCP_typemaps.i"
 %include "Teuchos_RCP_DAP.i"
 
 // Include Epetra documentation

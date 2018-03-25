@@ -62,8 +62,9 @@ SET(PyTrilinos_VERSION 12.13)
 SET(PyTrilinos_PACKAGES "")
 SET(PyTrilinos_MODULES  "")
 
-APPEND_SET(PyTrilinos_PACKAGES Teuchos)
-APPEND_SET(PyTrilinos_MODULES  Teuchos)
+APPEND_SET(PyTrilinos_PACKAGES Teuchos         )
+APPEND_SET(PyTrilinos_MODULES  Teuchos.__init__)
+APPEND_SET(PyTrilinos_MODULES  Teuchos.RCP     )
 
 IF(PyTrilinos_ENABLE_Epetra)
   APPEND_SET(PyTrilinos_PACKAGES Epetra)

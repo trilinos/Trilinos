@@ -294,6 +294,22 @@ ADD_SUBDIRECTORY(scripts)
 # Initialize the list of additional clean files
 SET(ADDITIONAL_CLEAN_FILES "")
 
+# Generate the gen_teuchos_rcp_funcs.py script
+CONFIGURE_FILE(${CMAKE_CURRENT_SOURCE_DIR}/gen_teuchos_rcp.py.in
+  ${CMAKE_CURRENT_BINARY_DIR}/gen_teuchos_rcp.py)
+
+#
+# Define the target for the Teuchos_RCP_funcs.i swig file
+SET(TEUCHOS_RCP Teuchos_RCP.i)
+ADD_CUSTOM_COMMAND(
+  OUTPUT ${TEUCHOS_RCP}
+  COMMAND ${PYTHON_EXECUTABLE}
+          ${CMAKE_CURRENT_BINARY_DIR}/gen_teuchos_rcp.py
+          ${CMAKE_CURRENT_SOURCE_DIR}/*.i >
+          ${CMAKE_CURRENT_BINARY_DIR}/${TEUCHOS_RCP}
+  )
+LIST(APPEND HEADERS ${CMAKE_CURRENT_BINARY_DIR}/${SWIG_RUNTIME})
+
 #
 # Set the Domi library name
 IF(PyTrilinos_ENABLE_Domi)
@@ -331,21 +347,25 @@ FOREACH(MODULE ${PyTrilinos_MODULES})
   # Choosing the Trilinos libraries to link against, the python module
   # to byte-compile and the installation rules requires a little bit
   # of logic.
-  #
+
+  # PyTrilinos.Teuchos
+  IF("${MODULE_OUTDIR}" MATCHES "PyTrilinos/Teuchos")
+    ADD_CUSTOM_COMMAND(TARGET ${PyTrilinos_TARGET_NAME} POST_BUILD
+      COMMAND ${PYTHON_EXECUTABLE} -c "import py_compile; py_compile.compile('PyTrilinos/Teuchos/${MODULE_NAME}.py', 'PyTrilinos/Teuchos/${MODULE_NAME}.pyc')"
+      COMMENT "Byte compiling Teuchos/${MODULE_NAME}.py"
+      VERBATIM)
+    INSTALL(FILES
+      ${CMAKE_CURRENT_BINARY_DIR}/PyTrilinos/Teuchos/${MODULE_NAME}.py
+      ${CMAKE_CURRENT_BINARY_DIR}/PyTrilinos/Teuchos/${MODULE_NAME}.pyc
+      DESTINATION ${PyTrilinos_INSTALL_DIR}/Teuchos)
+    INSTALL(TARGETS ${PyTrilinos_TARGET_NAME}
+      DESTINATION ${PyTrilinos_INSTALL_DIR}/Teuchos)
+    LIST(APPEND ADDITIONAL_CLEAN_FILES "PyTrilinos/Teuchos/${MODULE_NAME}.pyc")
+  ENDIF("${MODULE_OUTDIR}" MATCHES "PyTrilinos/Teuchos")
+
   # PyTrilinos.NOX.Epetra
   IF("${MODULE_OUTDIR}" MATCHES "PyTrilinos/NOX/Epetra")
     SET(TRILINOS_LIBS ${NOXEPETRA_LIBRARIES})
-    ADD_CUSTOM_COMMAND(TARGET ${PyTrilinos_TARGET_NAME} POST_BUILD
-      COMMAND ${PYTHON_EXECUTABLE} -c "import py_compile; py_compile.compile('PyTrilinos/NOX/Epetra/${MODULE_NAME}.py', 'PyTrilinos/NOX/Epetra/${MODULE_NAME}.pyc')"
-      COMMENT "Byte compiling NOX/Epetra/${MODULE_NAME}.py"
-      VERBATIM)
-    INSTALL(FILES
-      ${CMAKE_CURRENT_BINARY_DIR}/PyTrilinos/NOX/Epetra/${MODULE_NAME}.py
-      ${CMAKE_CURRENT_BINARY_DIR}/PyTrilinos/NOX/Epetra/${MODULE_NAME}.pyc
-      DESTINATION ${PyTrilinos_INSTALL_DIR}/NOX/Epetra)
-    INSTALL(TARGETS ${PyTrilinos_TARGET_NAME}
-      DESTINATION ${PyTrilinos_INSTALL_DIR}/NOX/Epetra)
-    LIST(APPEND ADDITIONAL_CLEAN_FILES "PyTrilinos/NOX/Epetra/${MODULE_NAME}.pyc")
   #
   # PyTrilinos.NOX.PETSc
   ELSEIF("${MODULE_OUTDIR}" MATCHES "PyTrilinos/NOX/PETSc")

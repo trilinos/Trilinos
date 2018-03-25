@@ -1086,3 +1086,20 @@
   class_array_add_math(FEVector)
   class_array_add_comp(FEVector)
 %}
+
+// Access RCP methods
+%inline
+{
+  int strong_count(Teuchos::RCP< Epetra_Vector > & ev)
+  {
+    return ev.strong_count();
+  }
+  int weak_count(Teuchos::RCP< Epetra_Vector > & ev)
+  {
+    return ev.weak_count();
+  }
+  int total_count(Teuchos::RCP< Epetra_Vector > & ev)
+  {
+    return ev.total_count();
+  }
+}

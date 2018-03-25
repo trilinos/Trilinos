@@ -178,6 +178,13 @@
     $result = %const_cast(%reinterpret_cast(argp, Teuchos::RCP< CONST TYPE > *)->get(), $1_ltype);
   }
 }
+
+// %inline
+// {
+//   int strong_count(Teuchos::RCP< TYPE > instance) { return instance.strong_count(); }
+//   int weak_count(  Teuchos::RCP< TYPE > instance) { return instance.weak_count();   }
+//   int total_count( Teuchos::RCP< TYPE > instance) { return instance.total_count();  }
+// }
 %enddef
 
 // Define the %teuchos_rcp() macro to implement all of the typemaps
