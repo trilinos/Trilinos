@@ -83,9 +83,18 @@ int main (int argc, char *argv[])
   // Read command-line options into the 'opts' struct.
   struct CmdLineOpts opts;
 
-  status = readCmdLineOpts(out, opts, argc, argv);
+  try
+  {
+    status = readCmdLineOpts(out, opts, argc, argv);
+  }
+  catch(...)
+  {
+    status = EXIT_FAILURE;
+  }
+
   if(EXIT_SUCCESS != status)
   {
+    Tpetra::finalize();
     return status;
   }
 
