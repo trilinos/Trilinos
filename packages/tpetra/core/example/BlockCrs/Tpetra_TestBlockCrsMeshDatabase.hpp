@@ -594,10 +594,10 @@ namespace BlockCrsTest {
       const auto num_owned_elements = _owned_gids.extent(0);
       const auto num_remote_elements = _remote_gids.extent(0);
 
-      const auto owned_first= &_owned_gids(0);
-      const auto owned_last = &_owned_gids(num_owned_elements-1);
-      const auto remote_first = &_remote_gids(0);
-      const auto remote_last = &_remote_gids(num_remote_elements-1);
+      const auto owned_first= _owned_gids.data();
+      const auto owned_last = owned_first + (num_owned_elements - 1);
+      const auto remote_first = _remote_gids.data();
+      const auto remote_last = remote_first + (num_remote_elements-1);
 
       // sides on i
       {

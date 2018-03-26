@@ -136,11 +136,16 @@ IF (Kokkos_ENABLE_Serial)
   
   APPEND_GLOB(SERIAL_BLAS_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/serial/Test_Serial_Blas*.cpp)
 
+  IF (KOKKOS_ENABLE_DEBUG)
+    SET(DISABLE_SLOW_DGEMM_DOUBLE_TEST "--gtest_filter=-serial.gemm_double")
+  ENDIF()
+
   TRIBITS_ADD_EXECUTABLE_AND_TEST(
     blas_serial
     SOURCES
       Test_Main.cpp
       ${SERIAL_BLAS_SOURCES}
+    ARGS ${DISABLE_SLOW_DGEMM_DOUBLE_TEST}
     COMM serial mpi
     NUM_MPI_PROCS 1
     TESTONLYLIBS kokkoskernels_gtest
