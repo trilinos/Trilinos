@@ -23,6 +23,7 @@
 // Tempus
 #include "Tempus_config.hpp"
 #include "Tempus_SolutionHistory.hpp"
+#include "Tempus_StepperObserver.hpp"
 
 
 namespace Tempus {
@@ -89,6 +90,10 @@ public:
     /// Get solver
     virtual Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> >
       getSolver() const = 0;
+
+    /// Set Observer
+    virtual void setObserver(
+      Teuchos::RCP<StepperObserver<Scalar> > obs = Teuchos::null) = 0;
 
     /// Initialize during construction and after changing input parameters.
     virtual void initialize() = 0;

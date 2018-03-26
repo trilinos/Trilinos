@@ -116,16 +116,21 @@ void StepperOperatorSplit<Scalar>::setSolver(
 
 template<class Scalar>
 void StepperOperatorSplit<Scalar>::setObserver(
-  Teuchos::RCP<StepperOperatorSplitObserver<Scalar> > obs)
+  Teuchos::RCP<StepperObserver<Scalar> > obs)
 {
   if (obs == Teuchos::null) {
     // Create default observer, otherwise keep current observer.
-    if (stepperOSObserver_ == Teuchos::null) {
+    if (stepperObserver_ == Teuchos::null) {
       stepperOSObserver_ =
         Teuchos::rcp(new StepperOperatorSplitObserver<Scalar>());
-    }
+      stepperObserver_ =
+        Teuchos::rcp_dynamic_cast<StepperObserver<Scalar> >(stepperOSObserver_);
+     }
   } else {
-    stepperOSObserver_ = obs;
+    stepperObserver_ = obs;
+    stepperOSObserver_ =
+      Teuchos::rcp_dynamic_cast<StepperOperatorSplitObserver<Scalar> >
+        (stepperObserver_);
   }
 }
 

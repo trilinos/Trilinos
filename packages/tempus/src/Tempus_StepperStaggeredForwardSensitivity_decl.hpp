@@ -84,6 +84,10 @@ public:
     virtual Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> > getSolver() const
     { return stateStepper_->getSolver(); }
 
+    /// Set Observer
+    virtual void setObserver(
+      Teuchos::RCP<StepperObserver<Scalar> > obs = Teuchos::null){}
+
     /// Initialize during construction and after changing input parameters.
     virtual void initialize();
 

@@ -94,7 +94,7 @@ public:
     virtual Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> > getSolver() const
       { return Teuchos::null; }
     virtual void setObserver(
-      Teuchos::RCP<StepperLeapfrogObserver<Scalar> > obs = Teuchos::null);
+      Teuchos::RCP<StepperObserver<Scalar> > obs = Teuchos::null);
 
     /// Initialize during construction and after changing input parameters.
     virtual void initialize() { this->setObserver(); }
@@ -152,6 +152,7 @@ protected:
   Thyra::ModelEvaluatorBase::InArgs<Scalar>          inArgs_;
   Thyra::ModelEvaluatorBase::OutArgs<Scalar>         outArgs_;
 
+  Teuchos::RCP<StepperObserver<Scalar> >             stepperObserver_;
   Teuchos::RCP<StepperLeapfrogObserver<Scalar> >     stepperLFObserver_;
 };
 
