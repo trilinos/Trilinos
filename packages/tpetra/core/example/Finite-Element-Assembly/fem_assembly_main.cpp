@@ -44,7 +44,6 @@
 #include <sstream>
 
 #include <Tpetra_Core.hpp>
-#include <Tpetra_DefaultPlatform.hpp>
 #include <Tpetra_Version.hpp>
 #include <MatrixMarket_Tpetra.hpp>
 #include <Teuchos_RCP.hpp>
@@ -75,7 +74,7 @@ int main (int argc, char *argv[])
   
   // MPI boilerplate
   Tpetra::initialize(&argc, &argv);
-  comm_ptr_t comm = Tpetra::DefaultPlatform::getDefaultPlatform().getComm();
+  comm_ptr_t comm = Tpetra::getDefaultComm();
 
   // The output stream 'out' will ignore any output not from Process 0.
   RCP<Teuchos::FancyOStream> pOut = getOutputStream(*comm);

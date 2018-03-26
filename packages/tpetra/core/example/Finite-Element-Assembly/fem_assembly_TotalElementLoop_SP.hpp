@@ -46,7 +46,7 @@
 #include <iomanip>
 #include <sstream>
 
-#include <Tpetra_DefaultPlatform.hpp>
+#include <Tpetra_Core.hpp>
 #include <Tpetra_Version.hpp>
 #include <MatrixMarket_Tpetra.hpp>
 #include <Teuchos_CommandLineProcessor.hpp>

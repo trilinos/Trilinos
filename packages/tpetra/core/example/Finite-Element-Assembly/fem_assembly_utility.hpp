@@ -44,7 +44,6 @@
 #include <iostream>
 
 #include <Teuchos_FancyOStream.hpp>
-#include <Teuchos_GlobalMPISession.hpp>
 #include <Teuchos_RCP.hpp>
 
 
