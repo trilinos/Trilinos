@@ -101,6 +101,9 @@ public:
     virtual Scalar getOrder() const {return stateStepper_->getOrder();}
     virtual Scalar getOrderMin() const {return stateStepper_->getOrderMin();}
     virtual Scalar getOrderMax() const {return stateStepper_->getOrderMax();}
+    virtual Scalar getInitTimeStep(
+        const Teuchos::RCP<SolutionHistory<Scalar> >& solutionHistory) const
+      {return std::numeric_limits<Scalar>::max();}
 
     virtual bool isExplicit()         const
       {return stateStepper_->isExplicit() or sensitivityStepper_->isExplicit();}

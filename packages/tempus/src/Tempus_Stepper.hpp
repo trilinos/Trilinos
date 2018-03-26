@@ -107,6 +107,8 @@ public:
     virtual Scalar getOrder() const = 0;
     virtual Scalar getOrderMin() const = 0;
     virtual Scalar getOrderMax() const = 0;
+    virtual Scalar getInitTimeStep(
+      const Teuchos::RCP<SolutionHistory<Scalar> >& solutionHistory) const = 0;
     virtual Teuchos::RCP<Teuchos::ParameterList> getDefaultParameters() const=0;
 
     virtual bool isExplicit() const = 0;
