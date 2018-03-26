@@ -51,8 +51,6 @@
 // Submitted by Denis Ridzal, 3/20/18
 // Modified and augmentd by Karen Devine, 3/21/18
 
-static int me;
-
 //////////////////////////////////////////////////////////////////////////////
 // Tie-break function that assigns shared IDs to the lowest process that
 // has a copy.
@@ -239,31 +237,28 @@ int runTest(
 
 //////////////////////////////////////////////////////////////////////////////
 
-int main(int argc, char *argv[]) {
+int main(int narg, char *arg[]) {
 
   typedef Tpetra::Map<>::local_ordinal_type LO;
   typedef Tpetra::Map<>::global_ordinal_type GO;
   typedef Tpetra::Map<>::node_type NO;
 
-  Teuchos::GlobalMPISession mpiSession(&argc, &argv);
-
-  Teuchos::RCP<const Teuchos::Comm<int>> comm = 
-           Tpetra::DefaultPlatform::getDefaultPlatform().getComm();
-  me = comm->getRank();
+  Tpetra::initialize(&narg, &arg);
+  Teuchos::RCP<const Teuchos::Comm<int>> comm = Tpetra::getDefaultComm();
 
   if (comm->getSize() != 4) {
     if (comm->getRank() == 0) 
       std::cout << "TEST FAILED: This test is written for four processes only. "
                 << "You are running on " << comm->getSize() << " processes."
                 << std::endl;
-    return 0;
+    return EXIT_FAILURE;
   }
 
   int errorFlag  = 0;
 
   // This little trick lets us print to std::cout only 
   // if a (dummy) command-line argument is provided.
-  int iprint     = argc - 1;
+  int iprint     = narg - 1;
   Teuchos::oblackholestream bhs; // outputs nothing
   std::ostream &outStream(iprint > 0 ? std::cout : bhs);
 
@@ -340,8 +335,15 @@ int main(int argc, char *argv[]) {
                                    vecP0, vecP1, empty, vecP3);
   }
 
-  if (errorFlag != 0) std::cout << "End Result: TEST FAILED" << std::endl;
-  else                std::cout << "End Result: TEST PASSED" << std::endl;
+  Tpetra::finalize();
 
-  return 0;
+  if (errorFlag != 0) {
+    std::cout << "End Result: TEST FAILED" << std::endl;
+    return EXIT_FAILURE;
+  }
+  else {
+    std::cout << "End Result: TEST PASSED" << std::endl;
+    return EXIT_SUCCESS;
+  }
+
 }
