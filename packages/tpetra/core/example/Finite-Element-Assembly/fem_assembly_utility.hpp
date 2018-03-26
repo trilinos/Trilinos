@@ -38,8 +38,8 @@
 //
 // ************************************************************************
 // @HEADER
-#ifndef FEM_ASSEMBLY_UTILITY_HPP
-#define FEM_ASSEMBLY_UTILITY_HPP
+#ifndef TPETRAEXAMPLES_FEM_ASSEMBLY_UTILITY_HPP
+#define TPETRAEXAMPLES_FEM_ASSEMBLY_UTILITY_HPP
 
 #include <iostream>
 
@@ -78,5 +78,5 @@ getOutputStream(const Teuchos::Comm<int>& comm)
 
 } // namespace TpetraExamples
 
-#endif  // FEM_ASSEMBLY_UTILITY_HPP
+#endif  // TPETRAEXAMPLES_FEM_ASSEMBLY_UTILITY_HPP
 

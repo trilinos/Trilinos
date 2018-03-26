@@ -38,8 +38,8 @@
 //
 // ************************************************************************
 // @HEADER
-#ifndef FEM_ASSEMBLY_COMMANDLINEOPTS_HPP
-#define FEM_ASSEMBLY_COMMANDLINEOPTS_HPP
+#ifndef TPETRAEXAMPLES_FEM_ASSEMBLY_COMMANDLINEOPTS_HPP
+#define TPETRAEXAMPLES_FEM_ASSEMBLY_COMMANDLINEOPTS_HPP
 
 #include <Teuchos_CommandLineProcessor.hpp>
 
@@ -61,14 +61,14 @@ struct CmdLineOpts
   bool timing;
   // saveMM - Save the crsMatrix into a MatrixMarket file.
   bool saveMM;
-  // execInsertGlobalIndicesDP - execute the Insert Global Indices (Dynamic Profile) kernel
-  bool execInsertGlobalIndicesDP;
-  // execLocalElementLoopDP - execute the Local Element Loop (Dynamic Profile) kernel
-  bool execLocalElementLoopDP;
-  // execTotalElementLoopDP - execute the Total Element Loop (Dynamic Profile) kernel
-  bool execTotalElementLoopDP;
-  // execTotalElementLoopSP - execute the Total Element Loop (Static Profile) kernel
-  bool execTotalElementLoopSP;
+  // StaticProfile
+  bool useStaticProfile;
+  // execInsertGlobalIndicesDP - execute the Insert Global Indices kernel
+  bool execInsertGlobalIndices;
+  // execLocalElementLoopDP - execute the Local Element Loop kernel
+  bool execLocalElementLoop;
+  // execTotalElementLoopDP - execute the Total Element Loop kernel
+  bool execTotalElementLoop;
 };
 
 
@@ -87,10 +87,10 @@ void setCmdLineOpts(struct CmdLineOpts& opts, Teuchos::CommandLineProcessor& clp
   opts.verbose = false;
   opts.timing = true;
   opts.saveMM = false;
-  opts.execInsertGlobalIndicesDP = false;
-  opts.execLocalElementLoopDP    = false;
-  opts.execTotalElementLoopDP    = false;
-  opts.execTotalElementLoopSP    = false;
+  opts.useStaticProfile  = true;
+  opts.execInsertGlobalIndices = false;
+  opts.execLocalElementLoop    = false;
+  opts.execTotalElementLoop    = false;
 
   clp.setOption("num-elements-x", &(opts.numElementsX), "Number of elements to generate in the X-directon of the 2D grid.");
   clp.setOption("num-elements-y", &(opts.numElementsY), "Number of elements to generate in the Y-direction of the 2D grid.");
@@ -99,14 +99,14 @@ void setCmdLineOpts(struct CmdLineOpts& opts, Teuchos::CommandLineProcessor& clp
   clp.setOption("timing",  "without-timing",  &(opts.timing),  "Print out timing information at the end of execution.");
   clp.setOption("save-mm", "without-save-mm", &(opts.saveMM),  "Save the generated CrsMatrix into a Matrix Market file.");
 
-  clp.setOption("with-insert-global-indices-dp", "without-insert-global-indices-dp", &(opts.execInsertGlobalIndicesDP),
-                "Execute the Insert Global Indices (Dynamic Profile) FEM Assembly kernel.");
-  clp.setOption("with-local-element-loop-dp",    "without-local-element-loop-dp",    &(opts.execLocalElementLoopDP),
-                "Execute the Local Element Loop (Dynamic Profile) FEM Assembly kernel.");
-  clp.setOption("with-total-element-loop-dp",    "without-total-element-loop-dp",    &(opts.execTotalElementLoopDP),
-                "Execute the Total Element Loop (Dynamic Profile) FEM Assembly kernel.");
-  clp.setOption("with-total-element-loop-sp",    "without-total-element-loop-sp",    &(opts.execTotalElementLoopSP),
-                "Execute the Total Element Loop (Static Profile) FEM Assembly kernel.");
+  clp.setOption("with-StaticProfile", "with-DynamicProfile", &(opts.useStaticProfile), "Use StaticProfile or DynamicProfile");
+
+  clp.setOption("with-insert-global-indices", "without-insert-global-indices", &(opts.execInsertGlobalIndices),
+                "Execute the Insert Global Indices FEM Assembly kernel.");
+  clp.setOption("with-local-element-loop",    "without-local-element-loop",    &(opts.execLocalElementLoop),
+                "Execute the Local Element Loop FEM Assembly kernel.");
+  clp.setOption("with-total-element-loop",    "without-total-element-loop",    &(opts.execTotalElementLoop),
+                "Execute the Total Element Loop FEM Assembly kernel.");
 }
 
 
@@ -149,23 +149,28 @@ int parseCmdLineOpts(Teuchos::CommandLineProcessor& clp, int argc, char* argv[])
 int checkCmdLineOpts(std::ostream& out, const struct CmdLineOpts& opts)
 {
   int err = 0;
-  #if 0
-  // Boiler plate of how to check parameters.  Since numElement[X|Y] are size_t and thus unsigned 
-  // we don't really need to check them... keeping this here as an example though.
-  if(opts.numElementsX < 0) 
+
+  if( 1 != (opts.execInsertGlobalIndices + opts.execLocalElementLoop + opts.execTotalElementLoop))
   {
-    out << "numElementsX = " << opts.numElementsX << " < 0." << std::endl;
+    out << std::endl
+        << "Please select one algorithm to run.  Options are:" << std::endl
+        << "  --with-insert-global-indices  :  Execute the Insert Global Indices example." << std::endl
+        << "  --with-local-element-loop     :  Execute the Local Element Loop example." << std::endl
+        << "  --with-total-element-loop     :  Execute the Total Element Loop example." << std::endl
+        << std::endl;
     err = -1;
   }
-  #endif
-  if(!opts.execInsertGlobalIndicesDP && !opts.execLocalElementLoopDP && !opts.execTotalElementLoopDP && !opts.execTotalElementLoopSP)
+  else
   {
-    out << "Please select an algorithm to run.  Options are:" << std::endl
-        << "  --with-insert-global-indices-dp  :  Execute the Insert Global Indices (Dynamic Profile) example." << std::endl
-        << "  --with-local-element-loop-dp     :  Execute the Local Element Loop (Dynamic Profile) example." << std::endl
-        << "  --with-total-element-loop-dp     :  Execute the Total Element Loop (Dynamic Profile) example." << std::endl
-        << "  --with-total-element-loop-sp     :  Example the Total Element Loop (Static Profile) example." << std::endl;
-    err = -1;
+    // Currently we only have StaticProfile for TotalElementLoop
+    if(opts.useStaticProfile && !(opts.execTotalElementLoop))
+    {
+      out << std::endl
+          << "StaticProfile is currently only implemented with Total Element Loop, please use:" << std::endl
+          << "  --with-total-element-loop :  Execute the Total Element Loop example." << std::endl
+          << std::endl;
+      err = 1;
+    }
   }
   return err;
 }
@@ -202,16 +207,16 @@ int readCmdLineOpts(std::ostream& out, struct CmdLineOpts& opts, int argc, char*
     out << "Command-line options:" << endl;
     {
       Teuchos::OSTab tab1(out); // push one tab in this scope
-      out << "numElementsX: " << opts.numElementsX << endl
-          << "numElementsY: " << opts.numElementsY << endl
-          << "verbose     : " << opts.verbose      << endl
-          << "timing      : " << opts.timing       << endl
-          << "saveMM      : " << opts.saveMM       << endl
+      out << "numElementsX : " << opts.numElementsX     << endl
+          << "numElementsY : " << opts.numElementsY     << endl
+          << "verbose      : " << opts.verbose          << endl
+          << "timing       : " << opts.timing           << endl
+          << "saveMM       : " << opts.saveMM           << endl
+          << "staticProfile: " << opts.useStaticProfile << endl
           << endl
-          << "execInsertGlobalIndicesDP: " << opts.execInsertGlobalIndicesDP << endl 
-          << "execLocalElementLoopDP   : " << opts.execLocalElementLoopDP    << endl
-          << "execTotalElementLoopDP   : " << opts.execTotalElementLoopDP    << endl
-          << "execTotalElementLoopSP   : " << opts.execTotalElementLoopSP    << endl
+          << "execInsertGlobalIndices: " << opts.execInsertGlobalIndices << endl 
+          << "execLocalElementLoop   : " << opts.execLocalElementLoop    << endl
+          << "execTotalElementLoop   : " << opts.execTotalElementLoop    << endl
           << endl;
     }
   }
@@ -223,5 +228,5 @@ int readCmdLineOpts(std::ostream& out, struct CmdLineOpts& opts, int argc, char*
 
 } // namespace TpetraExamples
 
-#endif
+#endif  // TPETRAEXAMPLES_FEM_ASSEMBLY_COMMANDLINEOPTS_HPP
 

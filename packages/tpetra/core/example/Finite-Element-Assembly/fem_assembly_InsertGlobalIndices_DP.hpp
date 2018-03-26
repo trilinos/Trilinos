@@ -38,8 +38,8 @@
 //
 // ************************************************************************
 // @HEADER
-#ifndef FEM_ASSEMBLY_INSERTGLOBALINDICES_DP_HPP
-#define FEM_ASSEMBLY_INSERTGLOBALINDICES_DP_HPP
+#ifndef TPETRAEXAMPLES_FEM_ASSEMBLY_INSERTGLOBALINDICES_DP_HPP
+#define TPETRAEXAMPLES_FEM_ASSEMBLY_INSERTGLOBALINDICES_DP_HPP
 
 #include <cmath>
 #include <iostream>
@@ -51,7 +51,6 @@
 #include <MatrixMarket_Tpetra.hpp>
 #include <Teuchos_CommandLineProcessor.hpp>
 #include <Teuchos_RCP.hpp>
-#include <Teuchos_GlobalMPISession.hpp>
 #include <Teuchos_FancyOStream.hpp>
 
 #include "fem_assembly_typedefs.hpp"
@@ -66,7 +65,7 @@ using comm_ptr_t = Teuchos::RCP<const Teuchos::Comm<int> >;
 
 
 
-int executeInsertGlobalIndicesDP(comm_ptr_t& comm, const struct CmdLineOpts& opts)
+int executeInsertGlobalIndicesDP(const comm_ptr_t& comm, const struct CmdLineOpts& opts)
 {
   using Teuchos::RCP;
   using Teuchos::TimeMonitor;
@@ -263,4 +262,4 @@ int executeInsertGlobalIndicesDP(comm_ptr_t& comm, const struct CmdLineOpts& opt
 
 } // namespace TpetraExamples
 
-#endif // FEM_ASSEMBLY_INSERTGLOBALINDICES_DP_HPP
+#endif // TPETRAEXAMPLES_FEM_ASSEMBLY_INSERTGLOBALINDICES_DP_HPP

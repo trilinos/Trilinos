@@ -38,8 +38,8 @@
 //
 // ************************************************************************
 // @HEADER
-#ifndef FEM_ASSEMBLY_MESHDATABASE_HPP
-#define FEM_ASSEMBLY_MESHDATABASE_HPP
+#ifndef TPETRAEXAMPLES_FEM_ASSEMBLY_MESHDATABASE_HPP
+#define TPETRAEXAMPLES_FEM_ASSEMBLY_MESHDATABASE_HPP
 
 #include <iostream>
 #include <iterator>
@@ -400,6 +400,6 @@ void MeshDatabase::print(std::ostream & oss)
 
 } // end of namespace TpetraExamples
 
-#endif // FEM_ASSEMBLY_MESH_DATABASE
+#endif // TPETRAEXAMPLES_FEM_ASSEMBLY_MESH_DATABASE
 
 
