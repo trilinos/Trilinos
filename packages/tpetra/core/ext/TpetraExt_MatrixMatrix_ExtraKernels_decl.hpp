@@ -56,10 +56,6 @@ namespace MatrixMatrix {
                                       , typename Kokkos::MemoryTraits< Kokkos::Unmanaged>
                                       >;
 
-  // This is a placeholder function until Kokkos Issue #1270 is resolved and pushed into Trilinos
-  template<class ViewType>
-  void Kokkos_resize_1DView(ViewType & v, const size_t N);
-
   namespace ExtraKernels {
 
     template<class CrsMatrixType>

@@ -47,22 +47,6 @@ namespace Tpetra {
 
 namespace MatrixMatrix{
 
-
-  // This is a placeholder function until Kokkos Issue #1270 is resolved and pushed into Trilinos
-template<class ViewType>
-void Kokkos_resize_1DView(ViewType & v, const size_t N) {
-  if(v.extent(0) == N) return;
-  typedef typename ViewType::execution_space execution_space;
-  typedef Kokkos::RangePolicy<execution_space, size_t> range_type;
-
-  ViewType newv("newv",N);
-  Kokkos::parallel_for(range_type(0,std::min(N,v.extent(0))), KOKKOS_LAMBDA(const size_t i) {
-      newv(i) = v(i);
-    });
-  v = newv;// This is a shallow copy
-}
-
-
 namespace ExtraKernels{
 
 
