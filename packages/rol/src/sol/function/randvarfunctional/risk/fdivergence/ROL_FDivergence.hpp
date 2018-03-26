@@ -273,7 +273,7 @@ public:
 
     std::vector<Real> stat(2);
     Real xlam = xstat[0];
-    Real xmu  = xstat[1];
+    //Real xmu  = xstat[1];
     Real vlam = vstat[0];
     Real vmu  = vstat[1];
     hvstat[0] = (vlam * hval[1] + vmu * hval[0] + hval[2])/xlam;

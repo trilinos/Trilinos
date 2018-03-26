@@ -56,7 +56,6 @@ inline void DeviationMeasureInfo(Teuchos::ParameterList &parlist, std::string &n
                             const bool printToStream = false,
                             std::ostream &outStream = std::cout) {
   name = parlist.sublist("SOL").sublist("Deviation Measure").get<std::string>("Name");
-  Real zero(0);
   lower.clear(); upper.clear();
   nStatistic = 0; isBoundActivated = false;
   if ( name == "CVaR"                           ||

@@ -237,7 +237,7 @@ public:
                 const std::vector<Real> &xstat,
                 SampleGenerator<Real>   &sampler) {
     // Compute expected value
-    Real ev(0), zero(0);
+    Real ev(0);
     sampler.sumAll(&val_,&ev,1);
     // Compute deviation
     Real val(0), diff(0), pf0(0), var(0), weight(0);

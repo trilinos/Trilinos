@@ -201,7 +201,7 @@ public:
 
   SpectralRisk( const std::vector<Real> &pts, const std::vector<Real> &wts,
                 const ROL::Ptr<PlusFunction<Real> > &pf)
-    : RandVarFunctional<Real>(), isSet_(false) {
+    : RandVarFunctional<Real>() {
     buildMixedQuantile(pts,wts,pf);
     // Check inputs
     checkInputs();

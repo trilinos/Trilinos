@@ -56,7 +56,6 @@ inline void RegretMeasureInfo(Teuchos::ParameterList &parlist, std::string &name
                             const bool printToStream = false,
                             std::ostream &outStream = std::cout) {
   name = parlist.sublist("SOL").sublist("Regret Measure").get<std::string>("Name");
-  Real zero(0);
   lower.clear(); upper.clear();
   nStatistic = 0; isBoundActivated = false;
   if ( name == "Mean Absolute Loss" ||

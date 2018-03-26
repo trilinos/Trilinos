@@ -181,7 +181,7 @@ public:
   ChebyshevSpectral(const Real lower, const Real upper,
                    const int nQuad, const int wType,
                    const ROL::Ptr<PlusFunction<Real> > &pf)
-    : RiskMeasure<Real>(), plusFunction_(pf),
+    : SpectralRisk<Real>(), plusFunction_(pf),
       lower_(lower), upper_(upper), nQuad_(nQuad), wType_(wType) {
     // Check inputs
     checkInputs();
