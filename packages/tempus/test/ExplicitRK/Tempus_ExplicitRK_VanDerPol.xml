@@ -76,7 +76,7 @@
             <ParameterList name="Time Step Control">
                 <Parameter name="Initial Time"           type="double" value="0.0"/>
                 <Parameter name="Final Time"             type="double" value="2.0"/>
-                <Parameter name="Initial Time Step"      type="double" value="1e-3"/>
+                <Parameter name="Initial Time Step"      type="double" value="1e-1"/>
                 <Parameter name="Initial Time Index"     type="int"    value="0"/>
                 <Parameter name="Final Time Index"       type="int"    value="1000000"/>
                 <Parameter name="Maximum Absolute Error" type="double" value="1.0e-3"/>
@@ -84,7 +84,7 @@
                 <Parameter name="Output Index Interval"  type="int"    value="1"/>
                 <Parameter name="Integrator Step Type"  type="string" value="Variable"/>
                 <Parameter name="Maximum Number of Stepper Failures" type="int" value="12"/>
-                <Parameter name="Maximum Number of Consecutive Stepper Failures" type="int" value="3"/>
+                <Parameter name="Maximum Number of Consecutive Stepper Failures" type="int" value="5"/>
                 <ParameterList name="Time Step Control Strategy">
                     <Parameter name="Time Step Control Strategy List" type="string" value="pid"/>
                     <ParameterList name="pid">
@@ -106,7 +106,7 @@
             <ParameterList name="Time Step Control">
                 <Parameter name="Initial Time"           type="double" value="0.0"/>
                 <Parameter name="Final Time"             type="double" value="2.0"/>
-                <Parameter name="Initial Time Step"      type="double" value="1e-3"/>
+                <Parameter name="Initial Time Step"      type="double" value="1e-1"/>
                 <Parameter name="Initial Time Index"     type="int"    value="0"/>
                 <Parameter name="Final Time Index"       type="int"    value="1000000"/>
                 <Parameter name="Maximum Absolute Error" type="double" value="1.0e-3"/>
@@ -114,7 +114,7 @@
                 <Parameter name="Output Index Interval"  type="int"    value="1"/>
                 <Parameter name="Integrator Step Type"  type="string" value="Variable"/>
                 <Parameter name="Maximum Number of Stepper Failures" type="int" value="12"/>
-                <Parameter name="Maximum Number of Consecutive Stepper Failures" type="int" value="3"/>
+                <Parameter name="Maximum Number of Consecutive Stepper Failures" type="int" value="5"/>
                 <ParameterList name="Time Step Control Strategy">
                     <Parameter name="Time Step Control Strategy List" type="string" value="pid"/>
                     <ParameterList name="pid">

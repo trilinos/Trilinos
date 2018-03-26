@@ -374,7 +374,8 @@ TEUCHOS_UNIT_TEST(ExplicitRK, EmbeddedVanDerPol)
   IntegratorList.push_back("Embedded_Integrator_PID_General");
 
   // the embedded solution will test the following:
-  const int refIstep = 47;
+  // using the starting stepsize routine, this has now decreased
+  const int refIstep = 45; 
 
   for(auto integratorChoice : IntegratorList){
 
@@ -442,12 +443,15 @@ TEUCHOS_UNIT_TEST(ExplicitRK, EmbeddedVanDerPol)
         //getCurrentState()->getMetaData()->getNFailures();
         const int iStep = integrator->getSolutionHistory()->
            getCurrentState()->getIndex();
+        const int nFail = integrator->getSolutionHistory()->
+           getCurrentState()->getMetaData()->getNRunningFailures();
 
         // test for number of steps
         TEST_EQUALITY(iStep, refIstep);
         std::cout << "Tolerance = " << absTol
            << " L2norm = "   << L2norm
-           << " iStep = "    << iStep  << std::endl;
+           << " iStep = "    << iStep  
+           << " nFail = "    << nFail << std::endl;
      }
 
      // Plot sample solution and exact solution

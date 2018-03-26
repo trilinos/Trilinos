@@ -54,6 +54,9 @@ public:
       { stepperPL_->set<bool>("Zero Initial Guess", zIG); }
     virtual bool getZeroInitialGuess() const
       { return stepperPL_->get<bool>("Zero Initial Guess", false); }
+    virtual Scalar getInitTimeStep(
+        const Teuchos::RCP<SolutionHistory<Scalar> >& solutionHistory) const
+      {return std::numeric_limits<Scalar>::max();}
   //@}
 
 protected:
