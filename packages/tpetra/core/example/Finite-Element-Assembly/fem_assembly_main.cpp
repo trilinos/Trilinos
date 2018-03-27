@@ -43,11 +43,10 @@
 #include <iomanip>
 #include <sstream>
 
-#include <Tpetra_DefaultPlatform.hpp>
+#include <Tpetra_Core.hpp>
 #include <Tpetra_Version.hpp>
 #include <MatrixMarket_Tpetra.hpp>
 #include <Teuchos_RCP.hpp>
-#include <Teuchos_GlobalMPISession.hpp>
 #include <Teuchos_FancyOStream.hpp>
 
 #include "fem_assembly_commandLineOpts.hpp"
@@ -75,7 +74,7 @@ int main (int argc, char *argv[])
   
   // MPI boilerplate
   Tpetra::initialize(&argc, &argv);
-  comm_ptr_t comm = Tpetra::DefaultPlatform::getDefaultPlatform ().getComm();
+  comm_ptr_t comm = Tpetra::getDefaultComm();
 
   // The output stream 'out' will ignore any output not from Process 0.
   RCP<Teuchos::FancyOStream> pOut = getOutputStream(*comm);
@@ -84,17 +83,32 @@ int main (int argc, char *argv[])
   // Read command-line options into the 'opts' struct.
   struct CmdLineOpts opts;
 
-  status = readCmdLineOpts(out, opts, argc, argv);
+  try
+  {
+    status = readCmdLineOpts(out, opts, argc, argv);
+  }
+  catch(...)
+  {
+    status = EXIT_FAILURE;
+  }
+
   if(EXIT_SUCCESS != status)
   {
+    Tpetra::finalize();
     return status;
   }
 
   // Entry point
-  if(opts.execInsertGlobalIndicesDP && executeInsertGlobalIndicesDP(comm, opts))  status = EXIT_FAILURE;
-  if(opts.execLocalElementLoopDP    && executeLocalElementLoopDP(comm, opts))     status = EXIT_FAILURE;
-  if(opts.execTotalElementLoopDP    && executeTotalElementLoopDP(comm, opts))     status = EXIT_FAILURE;
-  if(opts.execTotalElementLoopSP    && executeTotalElementLoopSP(comm, opts))     status = EXIT_FAILURE;
+  if(opts.useStaticProfile)
+  {
+    if(opts.execTotalElementLoop && executeTotalElementLoopSP(comm, opts))        status = EXIT_FAILURE;
+  }
+  else
+  {
+    if(opts.execInsertGlobalIndices && executeInsertGlobalIndicesDP(comm, opts))  status = EXIT_FAILURE;
+    if(opts.execLocalElementLoop    && executeLocalElementLoopDP(comm, opts))     status = EXIT_FAILURE;
+    if(opts.execTotalElementLoop    && executeTotalElementLoopDP(comm, opts))     status = EXIT_FAILURE;
+  }
 
   // Print out timing results.
   if(opts.timing) Teuchos::TimeMonitor::report(comm.ptr(), std::cout, "");

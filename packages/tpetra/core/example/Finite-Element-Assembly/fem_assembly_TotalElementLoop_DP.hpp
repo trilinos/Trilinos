@@ -38,19 +38,18 @@
 //
 // ************************************************************************
 // @HEADER
-#ifndef FEM_ASSEMBLY_TOTALELEMENTLOOP_DP_HPP
-#define FEM_ASSEMBLY_TOTALELEMENTLOOP_DP_HPP
+#ifndef TPETRAEXAMPLES_FEM_ASSEMBLY_TOTALELEMENTLOOP_DP_HPP
+#define TPETRAEXAMPLES_FEM_ASSEMBLY_TOTALELEMENTLOOP_DP_HPP
 
 #include <cmath>
 #include <iostream>
 #include <iomanip>
 #include <sstream>
 
-#include <Tpetra_DefaultPlatform.hpp>
+#include <Tpetra_Core.hpp>
 #include <Tpetra_Version.hpp>
 #include <MatrixMarket_Tpetra.hpp>
 #include <Teuchos_RCP.hpp>
-#include <Teuchos_GlobalMPISession.hpp>
 #include <Teuchos_FancyOStream.hpp>
 
 #include "fem_assembly_typedefs.hpp"
@@ -66,7 +65,7 @@ using comm_ptr_t = Teuchos::RCP<const Teuchos::Comm<int> >;
 
 
 
-int executeTotalElementLoopDP(comm_ptr_t& comm, const struct CmdLineOpts& opts)
+int executeTotalElementLoopDP(const comm_ptr_t& comm, const struct CmdLineOpts& opts)
 {
   using Teuchos::RCP;
   using Teuchos::TimeMonitor;
@@ -317,4 +316,4 @@ int executeTotalElementLoopDP(comm_ptr_t& comm, const struct CmdLineOpts& opts)
 } // namespace TpetraExamples
 
 
-#endif // FEM_ASSEMBLY_TOTALELEMENTLOOP_DP_HPP
+#endif // TPETRAEXAMPLES_FEM_ASSEMBLY_TOTALELEMENTLOOP_DP_HPP
