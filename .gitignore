@@ -38,6 +38,9 @@ doxygen_objdb_*.tmp
 # Allow github Kokkos to be cloned under Trilinos
 /kokkos/
 
+# Allow github kokkos-kernels under Trilinos
+/kokkos-kernels/
+
 # RPI SCOREC extra repos
 /SCOREC
 

@@ -115,6 +115,8 @@ public:
     virtual Scalar getOrder() const {return ERK_ButcherTableau_->order();}
     virtual Scalar getOrderMin() const {return ERK_ButcherTableau_->orderMin();}
     virtual Scalar getOrderMax() const {return ERK_ButcherTableau_->orderMax();}
+    virtual Scalar getInitTimeStep(
+        const Teuchos::RCP<SolutionHistory<Scalar> >& solutionHistory) const;
 
     virtual bool isExplicit()         const {return true;}
     virtual bool isImplicit()         const {return false;}

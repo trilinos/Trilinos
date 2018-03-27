@@ -146,6 +146,8 @@ setInitialState(Teuchos::RCP<SolutionState<Scalar> >  state)
     newState->setTime    (timeStepControl_->getInitTime());
     newState->setIndex   (timeStepControl_->getInitIndex());
     newState->setTimeStep(timeStepControl_->getInitTimeStep());
+    newState->getMetaData()->setTolRel(timeStepControl_->getMaxRelError());
+    newState->getMetaData()->setTolAbs(timeStepControl_->getMaxAbsError());
     int order = timeStepControl_->getInitOrder();
     if (order == 0) order = stepper_->getOrder();
     if (order < stepper_->getOrderMin()) order = stepper_->getOrderMin();
@@ -409,6 +411,12 @@ void IntegratorBasic<Scalar>::startIntegrator()
     return;
   }
   integratorTimer_->start();
+  // get optimal initial time step
+  const Scalar initDt = 
+     std::min(timeStepControl_->getInitTimeStep(),
+              stepper_->getInitTimeStep(solutionHistory_));
+  // update initial time step
+  timeStepControl_->setInitTimeStep(initDt);
   integratorStatus_ = WORKING;
 }
 
@@ -544,6 +552,7 @@ void IntegratorBasic<Scalar>::acceptTimeStep()
     }
 
     wsmd->setNFailures(wsmd->getNFailures()+1);
+    wsmd->setNRunningFailures(wsmd->getNRunningFailures()+1);
     wsmd->setNConsecutiveFailures(wsmd->getNConsecutiveFailures()+1);
     wsmd->setSolutionStatus(FAILED);
     return;
@@ -581,9 +590,6 @@ void IntegratorBasic<Scalar>::endIntegrator()
 
   integratorTimer_->stop();
   runtime_ = integratorTimer_->totalElapsedTime();
-
-  Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
-  //outputObserver_->observeEndIntegrator(*this, out, runtime);
 }
 
 

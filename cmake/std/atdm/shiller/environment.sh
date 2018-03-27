@@ -58,6 +58,8 @@ elif [ "$ATDM_CONFIG_COMPILER" == "CUDA" ]; then
     export CUDA_MANAGED_FORCE_DEVICE_ALLOC=1
     export ATDM_CONFIG_LAPACK_LIB="-L${LAPACK_ROOT}/lib;-llapack;-lgfortran"
     export ATDM_CONFIG_BLAS_LIB="-L${BLAS_ROOT}/lib;-lblas;-lgfortran"
+    export ATDM_CONFIG_CTEST_PARALLEL_LEVEL=8
+    # Avoids timeouts due to not running on seprate GPUs (see #2446)
 else
     echo "***"
     echo "*** ERROR: COMPILER=$ATDM_CONFIG_COMPILER is not supported on this system!"
