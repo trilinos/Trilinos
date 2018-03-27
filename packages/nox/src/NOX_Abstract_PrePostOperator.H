@@ -93,8 +93,8 @@ namespace Abstract {
   <li> Create the appropriate entries in the parameter list, as follows.
 
   \code
-  Teuchos::RCP<Foo> foo = Teuchos::rcp(new Foo);
-  params.sublist("Sovler Options").set<NOX::Abstract::PrePostOperator>("User Defined Pre/Post Operator", foo);
+  Teuchos::RCP<NOX::Abstract::PrePostOperator> foo = Teuchos::rcp(new Foo);
+  params.sublist("Sovler Options").set("User Defined Pre/Post Operator", foo);
   \endcode
 
   </ol>
