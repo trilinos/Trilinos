@@ -94,7 +94,7 @@ namespace Abstract {
 
   \code
   Teuchos::RCP<NOX::Abstract::PrePostOperator> foo = Teuchos::rcp(new Foo);
-  params.sublist("Sovler Options").set("User Defined Pre/Post Operator", foo);
+  params.sublist("Solver Options").set("User Defined Pre/Post Operator", foo);
   \endcode
 
   </ol>
