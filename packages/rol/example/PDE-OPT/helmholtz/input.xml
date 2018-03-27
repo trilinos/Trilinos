@@ -1,7 +1,7 @@
 <ParameterList name="Inputs">
   <!-- ===========  PROBLEM INPUT PARAMETER SUBLIST  =========== -->
   <ParameterList name="Problem">
-    <Parameter name="Full space"                  type="bool"    value="true"          />
+    <Parameter name="Full space"                  type="bool"    value="false"         />
     <!-- OUTPUT -->
     <Parameter name="Check derivatives"           type="bool"    value="false"         />
     <Parameter name="Number of output samples"    type="int"     value="4"             />
