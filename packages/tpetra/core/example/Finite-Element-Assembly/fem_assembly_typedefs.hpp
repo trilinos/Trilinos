@@ -38,11 +38,10 @@
 //
 // ************************************************************************
 // @HEADER
-#ifndef FEM_ASSEMBLY_TYPEDEFS_HPP
-#define FEM_ASSEMBLY_TYPEDEFS_HPP
+#ifndef TPETRAEXAMPLES_FEM_ASSEMBLY_TYPEDEFS_HPP
+#define TPETRAEXAMPLES_FEM_ASSEMBLY_TYPEDEFS_HPP
 
 #include <Kokkos_View.hpp>
-#include <Tpetra_DefaultPlatform.hpp>
 #include <Tpetra_Export.hpp>
 #include <Tpetra_Map.hpp>
 #include <Tpetra_CrsGraph.hpp>
@@ -73,5 +72,5 @@ typedef Kokkos::View<Scalar*[4], execution_space_t>           scalar_2d_array_t;
 
 }
 
-#endif  // FEM_ASSEMBLY_TYPEDEFS_HPP
+#endif  // TPETRAEXAMPLES_FEM_ASSEMBLY_TYPEDEFS_HPP
 

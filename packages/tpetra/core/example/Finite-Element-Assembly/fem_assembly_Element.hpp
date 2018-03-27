@@ -38,8 +38,8 @@
 //
 // ************************************************************************
 // @HEADER
-#ifndef FEM_ASSEMBLY_ELEMENT_HPP
-#define FEM_ASSEMBLY_ELEMENT_HPP
+#ifndef TPETRAEXAMPLES_FEM_ASSEMBLY_ELEMENT_HPP
+#define TPETRAEXAMPLES_FEM_ASSEMBLY_ELEMENT_HPP
 
 #include <iomanip>
 #include "Kokkos_View.hpp"
@@ -113,4 +113,4 @@ void PrettyPrintQuad4(scalar_2d_array_t & elementMatrix)
 } // end of namespace TpetraExamples
 
 
-#endif  // FEM_ASSEMBLY_ELEMENT_HPP
+#endif  // TPETRAEXAMPLES_FEM_ASSEMBLY_ELEMENT_HPP
