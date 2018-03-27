@@ -8565,9 +8565,13 @@ namespace Tpetra {
         destMat->numExportPacketsPerLID_.template modify<Kokkos::HostSpace> ();
         Teuchos::ArrayView<size_t> numExportPacketsPerLID =
           getArrayViewFromDualView (destMat->numExportPacketsPerLID_);
-        packCrsMatrixWithOwningPIDs (*this, destMat->exports_,
-                                     numExportPacketsPerLID, ExportLIDs,
-                                     SourcePids, constantNumPackets, Distor);
+        packCrsMatrixWithOwningPIDs (*this, 
+                                     destMat->exports_,
+                                     numExportPacketsPerLID, 
+                                     ExportLIDs,
+                                     SourcePids, 
+                                     constantNumPackets, 
+                                     Distor);
       }
       catch (std::exception& e) {
         os << "Proc " << myRank << ": " << e.what ();
@@ -8734,11 +8738,24 @@ namespace Tpetra {
     destMat->imports_.template sync<Kokkos::HostSpace> ();
     Teuchos::ArrayView<const char> hostImports =
       getArrayViewFromDualView (destMat->imports_);
+
+    // cbl dbg
+    Teuchos::Array<LO> copyRemoteLIDs(RemoteLIDs.size());
+    std::copy(RemoteLIDs.begin(),RemoteLIDs.end(),copyRemoteLIDs.begin());
+    // cbl dbg
+
     size_t mynnz =
-      unpackAndCombineWithOwningPIDsCount (*this, RemoteLIDs, hostImports,
+      unpackAndCombineWithOwningPIDsCount (*this, 
+                                           RemoteLIDs, 
+                                           hostImports,
                                            numImportPacketsPerLID,
-                                           constantNumPackets, Distor, INSERT,
-                                           NumSameIDs, PermuteToLIDs, PermuteFromLIDs);
+                                           constantNumPackets, 
+                                           Distor, 
+                                           INSERT,
+                                           NumSameIDs, 
+                                           PermuteToLIDs, 
+                                           PermuteFromLIDs);
+
     size_t N = BaseRowMap->getNodeNumElements ();
 
     // Allocations
@@ -8763,13 +8780,24 @@ namespace Tpetra {
     // in a huge list of arrays is icky.  Can't we have a bit of an
     // abstraction?  Implementing a concrete DistObject subclass only
     // takes five methods.
-    unpackAndCombineIntoCrsArrays (*this, RemoteLIDs, hostImports,
-                                   numImportPacketsPerLID, constantNumPackets,
-                                   Distor, INSERT, NumSameIDs, PermuteToLIDs,
-                                   PermuteFromLIDs, N, mynnz, MyPID,
-                                   CSR_rowptr (), CSR_colind_GID (),
+    unpackAndCombineIntoCrsArrays (*this, 
+                                   RemoteLIDs, 
+                                   hostImports,
+                                   numImportPacketsPerLID, 
+                                   constantNumPackets,
+                                   Distor, 
+                                   INSERT, 
+                                   NumSameIDs, 
+                                   PermuteToLIDs,
+                                   PermuteFromLIDs, 
+                                   N, 
+                                   mynnz, 
+                                   MyPID,
+                                   CSR_rowptr (), 
+                                   CSR_colind_GID (),
                                    Teuchos::av_reinterpret_cast<impl_scalar_type> (CSR_vals ()),
-                                   SourcePids (), TargetPids);
+                                   SourcePids (), 
+                                   TargetPids);
 
     /**************************************************************/
     /**** 4) Call Optimized MakeColMap w/ no Directory Lookups ****/
@@ -8865,7 +8893,9 @@ namespace Tpetra {
     //cbl REALLY MAKE SURE IT'S A DEEP COPY
     Teuchos::Array<int> copyRemotePids (RemotePids.size ());
     std::copy (RemotePids.begin (), RemotePids.end (), copyRemotePids.begin ());
-        
+    // cbl
+
+
     MyImport = rcp (new import_type (MyDomainMap, MyColMap, RemotePids));
 
     bool pass = Import_Util::checkImportValidity(*MyImport);
@@ -8884,12 +8914,12 @@ namespace Tpetra {
       fancyCERR<<std::flush;
       MyImport->describe(fancyCERR,Teuchos::VERB_HIGH);
       fancyCERR<<std::flush;
-       cerrptr->setTabIndentStr(std::string("s"));
-      this->describe(fancyCERR,Teuchos::VERB_HIGH);
-      comm->barrier ();comm->barrier ();comm->barrier ();
+      // cerrptr->setTabIndentStr(std::string("s"));
+      // this->describe(fancyCERR,Teuchos::VERB_HIGH);
+      // comm->barrier ();comm->barrier ();comm->barrier ();
       cerrptr->setTabIndentStr(std::string("R"));
       rowTransfer.describe(fancyCERR,Teuchos::VERB_HIGH);
-      comm->barrier ();comm->barrier ();comm->barrier ();
+       comm->barrier ();comm->barrier ();comm->barrier ();
     }
 
 #ifdef HAVE_TPETRA_MMM_TIMINGS
@@ -8900,14 +8930,6 @@ namespace Tpetra {
     if(!params.is_null())
       esfc_params.set("compute global constants",params->get("compute global constants",true));
 
-    // if( isMM ) {
-    //   if(MyImporter.is_null()) {
-    //     std::ostringstream os;
-    //     os << " MM importer requested, but MyImporter is null "<<MyPID<<std::endl;
-    //     std::cerr<<os.str()<<std::flush;
-    //   }
-    // }
-        
     if( isMM && !MyImporter.is_null()) { 
 
       // The isMatrixMatrix_TransferAndFillComplete parameter is set to true. This means the unfiltered
@@ -8954,27 +8976,13 @@ namespace Tpetra {
                                             type3LIDs,
                                             type3GIDs,
                                             fromRemoteGID,
-                                            ReducedComm);  
+                                            ReducedComm);
    
-      // {
-      //   comm->barrier();
-      //    std::ostringstream os;
-      //    os<<MyPID<<" fromRemoteGIDpairs "; 
-      //    for(auto &&A : fromRemoteGID) {
-      //      int pid; GO gid;
-      //      std::tie(pid,gid) = A ;
-      //      os<<"<"<<pid<<","<<gid<<"> ";
-      //    }
-      //    os<<std::endl;
-      //    std::cerr<<os.str()<<std::flush;
-      // }
-
-
       // cblcbl set parameterlist to debug, true
       Teuchos::RCP<Teuchos::ParameterList> plist = rcp(new Teuchos::ParameterList());
       plist->set ("Debug", true);
     
-      Teuchos::Array<LocalOrdinal> userExportLIDs;
+      Teuchos::Array<LocalOrdinal>  userExportLIDs;
       Teuchos::Array<GlobalOrdinal> userExportGIDs;
       Teuchos::Array<int> userExportPIDs;
     
@@ -9044,45 +9052,6 @@ namespace Tpetra {
         
         Teuchos::Array<int> & EPID3  = type3PIDs;
         Teuchos::Array< LO> & ELID3  = type3LIDs;
-        if(0)
-          {
-            {
-              comm->barrier ();
-              std::ostringstream os;
-              os<<MyPID<<" ";
-              for(uint p=0;p<EPID1.size();++p) {
-                LO tlid = ELID1[p];
-                if(tlid<0) {
-                  os<<" T1 neg lid at idx "<<p<<" pid "<<EPID1[p]<<" ";
-                }
-              }
-              std::cerr<<os.str()<<std::flush;
-            }
-            {
-              comm->barrier ();
-              std::ostringstream os;
-              os<<MyPID<<" ";
-              for(uint p=0;p<EPID2.size();++p) {
-                LO tlid = ELID2[p];
-                if(tlid<0) {
-                  os<<" T2 neg lid at idx "<<p<<" pid "<<EPID2[p]<<" ";
-                }
-              }
-              std::cerr<<os.str()<<std::flush;
-            }
-            {
-              comm->barrier ();
-              std::ostringstream os;
-              os<<MyPID<<" ";
-              for(uint p=0;p<EPID3.size();++p) {
-                LO tlid = ELID3[p];
-                if(tlid<0) {
-                  os<<" T3 neg lid at idx "<<p<<" pid "<<EPID3[p]<<" ";
-                }
-              }
-              std::cerr<<os.str()<<std::flush;
-            }
-          }
         GO InfGID = std::numeric_limits<GO>::max();
         int InfPID = INT_MAX;
 #define MIN(x,y)    ((x)<(y)?(x):(y))
@@ -9097,13 +9066,10 @@ namespace Tpetra {
         userExportLIDs.reserve(MyLen);
         userExportGIDs.reserve(MyLen);
      
-        if(true) 
+        if(false) 
           {  // Seifert sort, or CBL sort.
             
-
             comm->barrier ();
-
-
             while(i1 < Len1 || i2 < Len2 || i3 < Len3){
               int PID1 = (i1<Len1)?(EPID1[i1]):InfPID;
               int PID2 = (i2<Len2)?(EPID2[i2]):InfPID;
@@ -9184,7 +9150,39 @@ namespace Tpetra {
             
             for(uint i =0; i < EPID3.size();++i)  
               mms.insert(pgl_t(EPID3[i],getDomainMap()->getGlobalElement(ELID3[i]),ELID3[i]));
-                    
+            {
+              std::ostringstream os;            
+              for(auto && f : mms) {
+                GO gid;               LO lid;               int pid;
+                std::tie(pid,gid,lid) = f;
+                os<<MyPID<<" mms p="<<pid<<" g="<<gid<<" l="<<lid<<std::endl;
+              }
+              std::cerr<<os.str()<<std::flush;
+            }
+                
+
+            // now add in missing
+            // this is just wrong, don't do it. 
+            // for( auto &&a : fromRemoteGID) {
+            //   bool ever =  false;
+            //   std::ostringstream os;
+            
+            //   GO gid; LO lid; int pid;
+            //   std::tie(pid,gid) = a;
+            //   auto tlid = getRowMap()->getLocalElement(gid);
+            //   if(gid != Teuchos::OrdinalTraits<GlobalOrdinal>::invalid () && tlid != Teuchos::OrdinalTraits<LocalOrdinal>::invalid () )
+            //     {
+            //       ever = true;
+            //       os<<MyPID<<" MM Adding missing from fromRemoteGID "<<pid<<" "<<tlid<<" "<<gid<<std::endl;
+            //       mms.insert(pgl_t(pid,gid,tlid));
+            //       // userExportPIDs.push_back(pid);
+            //       // userExportLIDs.push_back(tlid);
+            //       // userExportGIDs.push_back(gid);
+            //     }
+            //   if(ever)
+            //     std::cerr<<os.str()<<std::flush;
+            // }
+            
             std::vector<pgl_t> vs;
             vs.reserve(mms.size());
             comm->barrier ();
@@ -9199,7 +9197,7 @@ namespace Tpetra {
               if(gid != Teuchos::OrdinalTraits<GlobalOrdinal>::invalid() && !dumpit)
                 vs.push_back(me);
               else if(dumpit) {
-                os<<MyPID<<"; Dumpit pid/gid "<<pid<<" x "<<gid<<" "<<std::endl;
+                os<<MyPID<<"; Dumpit pid/gid/lid "<<pid<<" x "<<gid<<" l "<<lid<<std::endl;
                 ever = true;
               }
             }
@@ -9219,26 +9217,6 @@ namespace Tpetra {
               userExportGIDs.push_back(gid);
             }
           } // cbl sort
-        
-        // // now add in missing
-        // for( auto &&a : fromRemoteGID) {
-        //   bool ever =  false;
-        //   std::ostringstream os;
-   
-        //   GO gid; LO lid; int pid;
-        //   std::tie(pid,gid) = a;
-        //   auto tlid = getRowMap()->getLocalElement(gid);
-        //   if(tlid != Teuchos::OrdinalTraits<LocalOrdinal>::invalid () )
-        //     {
-        //       ever = true;
-        //       os<<MyPID<<" MM Adding missing from fromRemoteGID "<<pid<<" "<<tlid<<" "<<gid<<std::endl;
-        //       userExportPIDs.push_back(pid);
-        //       userExportLIDs.push_back(tlid);
-        //       userExportGIDs.push_back(gid);
-        //     }
-        //   if(ever)
-        //     std::cerr<<os.str()<<std::flush;
-        // }
 
         // // old filter
         // if(false) // filtering of LIDs.
@@ -9310,7 +9288,7 @@ namespace Tpetra {
         //   }
        
 
-        if(0){
+        if(isMM){
           comm->barrier ();
           std::ostringstream os;
 
@@ -9346,7 +9324,7 @@ namespace Tpetra {
           std::cerr<<os.str()<<std::flush;
         }
 
-        if(1){
+        if(isMM){
           comm->barrier ();
           std::ostringstream os;
           
@@ -9368,7 +9346,7 @@ namespace Tpetra {
                                            );
 
 
-        {    
+        if(isMM){    
           comm->barrier ();
           bool cblpass = Import_Util::checkImportValidity(*NewImport);
           std::ostringstream os;
@@ -9381,7 +9359,7 @@ namespace Tpetra {
           std::cerr << os.str()<<std::flush;
         }
 
-        if(1) {
+        if(isMM) {
           comm->barrier ();
           Teuchos::RCP<Teuchos::FancyOStream>  cerrptr = Teuchos::getFancyOStream (Teuchos::rcpFromRef (std::cerr)) ;
           cerrptr->setTabIndentStr(std::string("N"));

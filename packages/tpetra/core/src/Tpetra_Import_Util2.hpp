@@ -328,7 +328,8 @@ reverseNeighborDiscovery(const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, No
                          Teuchos::Array<std::pair<int,GlobalOrdinal> > & fromRemoteGID,
                          Teuchos::RCP<const Teuchos::Comm<int> >& rcomm)
 {
-  // need to bring in the target row map, as I don't want to replicate the logic for forward/reverse and reduced rowMap tht is in the exportAndFillComplete routine.
+  // need to bring in the target row map, as I don't want to replicate the logic for forward/reverse
+  // and reduced rowMap that is in the exportAndFillComplete routine.
 
   std::string pfx = std::string(" Import_Util2::pAPRC:: ");
 
@@ -564,7 +565,13 @@ reverseNeighborDiscovery(const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, No
   for(auto && pgPair : AllReverseRecv) {
     if((int)pgPair.first != MyPID) {
       // if this pair is not found in fromRemoteGID, it's bogus, skip it. 
-      if(std::find(fromRemoteGID.begin(),fromRemoteGID.end(),pgPair) == fromRemoteGID.end()) continue;
+      // if(std::find(fromRemoteGID.begin(),fromRemoteGID.end(),pgPair) == fromRemoteGID.end()) 
+      //   {
+      //     std::ostringstream os;
+      //     os<<MyPID<<"  RND not found "<<pgPair.first<<" "<<pgPair.second<<std::endl;
+      //     std::cerr<<os.str()<<std::flush;
+      //     continue;
+      //   }
       reversePIDs.push_back((int)pgPair.first);
       reverseGIDs.push_back(pgPair.second);
       LocalOrdinal lid = MyDomainMap->getLocalElement(pgPair.second);

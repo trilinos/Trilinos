@@ -909,8 +909,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Tpetra_MatMat, operations_test,SC,LO, GO, NT) 
 
     if (op == "multiply") {
       if (verbose)
-        newOut << "Running multiply test (manual FC) for " << currentSystem.name() << endl;
-
+        newOut << "Running multiply test (manual FC) for " << currentSystem.name() <<" from "<<matnamesFile<<" with AT="<<AT<<" BT="<<BT<< endl;
       mult_test_results results = multiply_test_manualfc(name, A, B, AT, BT, C, comm, newOut);
 
       if (verbose) {
@@ -924,7 +923,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Tpetra_MatMat, operations_test,SC,LO, GO, NT) 
       TEUCHOS_TEST_FOR_EXCEPTION(!results.isImportValid,std::logic_error,std::string("ManualFC: Import validity failed: ") + currentSystem.name());
 
       if (verbose)
-        newOut << "Running multiply test (auto FC) for " << currentSystem.name() << endl;
+        newOut << "Running multiply test (auto FC) for " << currentSystem.name() <<" with AT="<<AT<<" BT="<<BT<< endl;
 
       results = multiply_test_autofc(name, A, B, AT, BT, C, comm, newOut);
 
@@ -939,7 +938,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Tpetra_MatMat, operations_test,SC,LO, GO, NT) 
       TEUCHOS_TEST_FOR_EXCEPTION(!results.isImportValid,std::logic_error,std::string("AutoFC: Import validity failed: ") + currentSystem.name());
 
       if (verbose)
-        newOut << "Running multiply reuse test for " << currentSystem.name() << endl;
+        newOut << "Running multiply reuse test for " << currentSystem.name() <<" with AT="<<AT<<" BT="<<BT<< endl;
 
       results = multiply_reuse_test(name, A, B, AT, BT, C, comm, newOut);
 
@@ -1681,11 +1680,11 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Tpetra_MatMat, threaded_add_unsorted, SC, LO, 
 
 
 #define UNIT_TEST_GROUP_SC_LO_GO_NO( SC, LO, GO, NT )                   \
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Tpetra_MatMat, operations_test,SC, LO, GO, NT) \
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Tpetra_MatMat, range_row_test, SC, LO, GO, NT) \
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Tpetra_MatMat, ATI_range_row_test, SC, LO, GO, NT) \
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Tpetra_MatMat, threaded_add_sorted, SC, LO, GO, NT) \
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Tpetra_MatMat, threaded_add_unsorted, SC, LO, GO, NT)
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Tpetra_MatMat, operations_test,SC, LO, GO, NT) 
+  // TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Tpetra_MatMat, range_row_test, SC, LO, GO, NT) \
+  // TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Tpetra_MatMat, ATI_range_row_test, SC, LO, GO, NT) \
+  // TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Tpetra_MatMat, threaded_add_sorted, SC, LO, GO, NT) \
+  // TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Tpetra_MatMat, threaded_add_unsorted, SC, LO, GO, NT)
 
   TPETRA_ETI_MANGLING_TYPEDEFS()
 
