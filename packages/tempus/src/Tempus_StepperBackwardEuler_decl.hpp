@@ -41,7 +41,7 @@ public:
   /// \name Basic stepper methods
   //@{
     virtual void setObserver(
-      Teuchos::RCP<StepperBackwardEulerObserver<Scalar> > obs = Teuchos::null);
+      Teuchos::RCP<StepperObserver<Scalar> > obs = Teuchos::null);
 
     /// Set the predictor
     void setPredictor(std::string predictorName);
@@ -100,6 +100,7 @@ private:
 private:
 
   Teuchos::RCP<Stepper<Scalar> >                      predictorStepper_;
+  Teuchos::RCP<StepperObserver<Scalar> >              stepperObserver_;
   Teuchos::RCP<StepperBackwardEulerObserver<Scalar> > stepperBEObserver_;
 
   Teuchos::RCP<Thyra::VectorBase<Scalar> >            xDotTemp_;

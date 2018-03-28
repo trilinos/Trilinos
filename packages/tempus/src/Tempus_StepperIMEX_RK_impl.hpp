@@ -341,16 +341,22 @@ void StepperIMEX_RK<Scalar>::setModelPair(
 
 template<class Scalar>
 void StepperIMEX_RK<Scalar>::setObserver(
-  Teuchos::RCP<StepperIMEX_RKObserver<Scalar> > obs)
+  Teuchos::RCP<StepperObserver<Scalar> > obs)
 {
   if (obs == Teuchos::null) {
     // Create default observer, otherwise keep current observer.
-    if (stepperIMEX_RKObserver_ == Teuchos::null) {
+    if (stepperObserver_ == Teuchos::null) {
       stepperIMEX_RKObserver_ =
         Teuchos::rcp(new StepperIMEX_RKObserver<Scalar>());
-    }
+      stepperObserver_ =
+        Teuchos::rcp_dynamic_cast<StepperObserver<Scalar> >
+          (stepperIMEX_RKObserver_);
+     }
   } else {
-    stepperIMEX_RKObserver_ = obs;
+    stepperObserver_ = obs;
+    stepperIMEX_RKObserver_ =
+      Teuchos::rcp_dynamic_cast<StepperIMEX_RKObserver<Scalar> >
+        (stepperObserver_);
   }
 }
 
@@ -462,7 +468,7 @@ void StepperIMEX_RK<Scalar>::takeStep(
 
   TEMPUS_FUNC_TIME_MONITOR("Tempus::StepperIMEX_RK::takeStep()");
   {
-    stepperIMEX_RKObserver_->observeBeginTakeStep(solutionHistory, *this);
+    stepperObserver_->observeBeginTakeStep(solutionHistory, *this);
     RCP<SolutionState<Scalar> > currentState=solutionHistory->getCurrentState();
     RCP<SolutionState<Scalar> > workingState=solutionHistory->getWorkingState();
     const Scalar dt = workingState->getTimeStep();
@@ -483,7 +489,8 @@ void StepperIMEX_RK<Scalar>::takeStep(
 
     // Compute stage solutions
     for (int i = 0; i < numStages; ++i) {
-      stepperIMEX_RKObserver_->observeBeginStage(solutionHistory, *this);
+      if (!Teuchos::is_null(stepperIMEX_RKObserver_))
+        stepperIMEX_RKObserver_->observeBeginStage(solutionHistory, *this);
       Thyra::assign(xTilde_.ptr(), *(currentState->getX()));
       for (int j = 0; j < i; ++j) {
         if (AHat(i,j) != Teuchos::ScalarTraits<Scalar>::zero())
@@ -504,8 +511,9 @@ void StepperIMEX_RK<Scalar>::takeStep(
           assign(stageG_[i].ptr(), Teuchos::ScalarTraits<Scalar>::zero());
         } else {
           Thyra::assign(stageX_.ptr(), *xTilde_);
-          stepperIMEX_RKObserver_->
-            observeBeforeImplicitExplicitly(solutionHistory, *this);
+          if (!Teuchos::is_null(stepperIMEX_RKObserver_))
+            stepperIMEX_RKObserver_->
+              observeBeforeImplicitExplicitly(solutionHistory, *this);
           evalImplicitModelExplicitly(stageX_, ts, dt, i, stageG_[i]);
         }
       } else {
@@ -532,21 +540,25 @@ void StepperIMEX_RK<Scalar>::takeStep(
 
         this->wrapperModel_->setForSolve(timeDer, inArgs, outArgs);
 
-        stepperIMEX_RKObserver_->observeBeforeSolve(solutionHistory, *this);
+        if (!Teuchos::is_null(stepperIMEX_RKObserver_))
+          stepperIMEX_RKObserver_->observeBeforeSolve(solutionHistory, *this);
 
         sStatus = this->solveImplicitODE(stageX_);
 
         if (sStatus.solveStatus != Thyra::SOLVE_STATUS_CONVERGED) pass = false;
 
-        stepperIMEX_RKObserver_->observeAfterSolve(solutionHistory, *this);
+        if (!Teuchos::is_null(stepperIMEX_RKObserver_))
+          stepperIMEX_RKObserver_->observeAfterSolve(solutionHistory, *this);
 
         // Update contributions to stage values
         Thyra::V_StVpStV(stageG_[i].ptr(), -alpha, *stageX_, alpha, *xTilde_);
       }
 
-      stepperIMEX_RKObserver_->observeBeforeExplicit(solutionHistory, *this);
+      if (!Teuchos::is_null(stepperIMEX_RKObserver_))
+        stepperIMEX_RKObserver_->observeBeforeExplicit(solutionHistory, *this);
       evalExplicitModel(stageX_, tHats, dt, i, stageF_[i]);
-      stepperIMEX_RKObserver_->observeEndStage(solutionHistory, *this);
+      if (!Teuchos::is_null(stepperIMEX_RKObserver_))
+        stepperIMEX_RKObserver_->observeEndStage(solutionHistory, *this);
     }
 
     // Sum for solution: x_n = x_n-1 - dt*Sum{ bHat(i)*f(i) + b(i)*g(i) }
@@ -563,7 +575,7 @@ void StepperIMEX_RK<Scalar>::takeStep(
     else
       workingState->getStepperState()->stepperStatus_ = Status::FAILED;
     workingState->setOrder(this->getOrder());
-    stepperIMEX_RKObserver_->observeEndTakeStep(solutionHistory, *this);
+    stepperObserver_->observeEndTakeStep(solutionHistory, *this);
   }
   return;
 }

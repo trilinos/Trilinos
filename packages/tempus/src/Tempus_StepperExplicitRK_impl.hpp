@@ -144,7 +144,7 @@ Scalar StepperExplicitRK<Scalar>::getInitTimeStep(
          const Scalar rtol, const Scalar atol,
          Teuchos::RCP<Thyra::VectorBase<Scalar> > absU)
    {
-      // compute err = Norm_{WRMS} with w = Atol + Rtol * | U | 
+      // compute err = Norm_{WRMS} with w = Atol + Rtol * | U |
       Thyra::assign(absU.ptr(), *U);
       Thyra::abs(*U, absU.ptr()); // absU = | X0 |
       Thyra::Vt_S(absU.ptr(), rtol); // absU *= Rtol
@@ -185,7 +185,7 @@ Scalar StepperExplicitRK<Scalar>::getInitTimeStep(
    // f) propse starting step size
    dt = std::min(100*dt, h1);
    return dt;
-} 
+}
 
 template<class Scalar>
 void StepperExplicitRK<Scalar>::setTableau(
@@ -212,16 +212,22 @@ void StepperExplicitRK<Scalar>::setTableau(
 
 template<class Scalar>
 void StepperExplicitRK<Scalar>::setObserver(
-  Teuchos::RCP<StepperExplicitRKObserver<Scalar> > obs)
+  Teuchos::RCP<StepperObserver<Scalar> > obs)
 {
   if (obs == Teuchos::null) {
     // Create default observer, otherwise keep current observer.
-    if (stepperExplicitRKObserver_ == Teuchos::null) {
-          stepperExplicitRKObserver_ =
-             Teuchos::rcp(new StepperExplicitRKObserver<Scalar>());
-    }
+    if (stepperObserver_ == Teuchos::null) {
+      stepperExplicitRKObserver_ =
+        Teuchos::rcp(new StepperExplicitRKObserver<Scalar>());
+      stepperObserver_ =
+        Teuchos::rcp_dynamic_cast<StepperObserver<Scalar> >
+          (stepperExplicitRKObserver_);
+     }
   } else {
-    stepperExplicitRKObserver_ = obs;
+    stepperObserver_ = obs;
+    stepperExplicitRKObserver_ =
+      Teuchos::rcp_dynamic_cast<StepperExplicitRKObserver<Scalar> >
+        (stepperObserver_);
   }
 }
 
@@ -263,7 +269,7 @@ void StepperExplicitRK<Scalar>::takeStep(
 
   TEMPUS_FUNC_TIME_MONITOR("Tempus::StepperExplicitRK::takeStep()");
   {
-    stepperExplicitRKObserver_->observeBeginTakeStep(solutionHistory, *this);
+    stepperObserver_->observeBeginTakeStep(solutionHistory, *this);
     RCP<SolutionState<Scalar> > currentState=solutionHistory->getCurrentState();
     RCP<SolutionState<Scalar> > workingState=solutionHistory->getWorkingState();
     const Scalar dt = workingState->getTimeStep();
@@ -276,7 +282,8 @@ void StepperExplicitRK<Scalar>::takeStep(
 
     // Compute stage solutions
     for (int i=0; i < numStages; ++i) {
-      stepperExplicitRKObserver_->observeBeginStage(solutionHistory, *this);
+      if (!Teuchos::is_null(stepperExplicitRKObserver_))
+        stepperExplicitRKObserver_->observeBeginStage(solutionHistory, *this);
       Thyra::assign(stageX_.ptr(), *(currentState->getX()));
       for (int j=0; j < i; ++j) {
         if (A(i,j) != Teuchos::ScalarTraits<Scalar>::zero()) {
@@ -293,10 +300,12 @@ void StepperExplicitRK<Scalar>::takeStep(
       if (inArgs_.supports(MEB::IN_ARG_x_dot)) inArgs_.set_x_dot(Teuchos::null);
       outArgs_.set_f(stageXDot_[i]);
 
-      stepperExplicitRKObserver_->observeBeforeExplicit(solutionHistory, *this);
+      if (!Teuchos::is_null(stepperExplicitRKObserver_))
+        stepperExplicitRKObserver_->observeBeforeExplicit(solutionHistory, *this);
       appModel_->evalModel(inArgs_,outArgs_);
       // --------------------------------
-      stepperExplicitRKObserver_->observeEndStage(solutionHistory, *this);
+      if (!Teuchos::is_null(stepperExplicitRKObserver_))
+        stepperExplicitRKObserver_->observeEndStage(solutionHistory, *this);
     }
 
     // Sum for solution: x_n = x_n-1 + Sum{ b(i) * dt*f(i) }
@@ -351,7 +360,7 @@ void StepperExplicitRK<Scalar>::takeStep(
     }
 
     workingState->setOrder(this->getOrder());
-    stepperExplicitRKObserver_->observeEndTakeStep(solutionHistory, *this);
+    stepperObserver_->observeEndTakeStep(solutionHistory, *this);
   }
   return;
 }

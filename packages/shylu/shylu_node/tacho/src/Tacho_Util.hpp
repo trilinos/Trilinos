@@ -86,10 +86,7 @@ namespace Tacho {
                                std::logic_error,
                                "SpT is not Kokkos execution space.");
       std::cout << std::setw(16) << name << "::  ";
-      if (std::is_same<SpT,Kokkos::Serial>::value)
-        std::cout << "Kokkos::Serial " << std::endl;
-      else
-        SpT::print_configuration(std::cout, detail);
+      SpT::print_configuration(std::cout, detail);
     }
 
     ///

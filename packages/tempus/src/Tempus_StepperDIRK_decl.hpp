@@ -102,7 +102,7 @@ public:
   /// \name Basic stepper methods
   //@{
     virtual void setObserver(
-      Teuchos::RCP<StepperDIRKObserver<Scalar> > obs = Teuchos::null);
+      Teuchos::RCP<StepperObserver<Scalar> > obs = Teuchos::null);
 
     void setTableau(
       Teuchos::RCP<Teuchos::ParameterList> pList,
@@ -167,6 +167,7 @@ protected:
   Teuchos::RCP<Thyra::VectorBase<Scalar> >               stageX_;
   Teuchos::RCP<Thyra::VectorBase<Scalar> >               xTilde_;
 
+  Teuchos::RCP<StepperObserver<Scalar> >                 stepperObserver_;
   Teuchos::RCP<StepperDIRKObserver<Scalar> >             stepperDIRKObserver_;
 
   Teuchos::RCP<Thyra::VectorBase<Scalar> >               ee_;
