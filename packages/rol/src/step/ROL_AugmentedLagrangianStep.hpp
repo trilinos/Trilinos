@@ -54,6 +54,87 @@
 /** @ingroup step_group
     \class ROL::AugmentedLagrangianStep
     \brief Provides the interface to compute augmented Lagrangian steps.
+
+    The Augmented Lagrangian algorithm is used to solve Type-EB problems.
+    This algorithm solves the scaled problem
+    \f[
+        \min_{x} w_J J(x) \quad\text{subject to}\quad
+           w_c c(x) = 0,\quad \ell \le x \le u
+    \f]
+    for some positive consants \f$w_J,\, w_c\f$.  These constants are
+    either input by the user or automatically estimated.  To solve this
+    scaled problem, the Augmented Lagrangian algorithm minimizes the
+    so-called Augmented Lagrangian functional
+    \f[
+        L(x,\lambda,r) := w_J J(x) + w_c \langle \lambda, c(x)\rangle_{X^*,X}
+              + \frac{w_c^2 r}{2} \|c(x)\|_X^2
+    \f]
+    subject to the bound constraints \f$\ell \le x \le u\f$.  The multiplier
+    estimate \f$\lambda\f$ is updated as
+    \f[
+       \lambda \leftarrow \lambda + r w_c c(x).
+    \f]
+    The penalty parameter \f$r>0\f$ is also updated based on the progress
+    of the algorithm.  The initial penalty parameter is either input by
+    the user or automatically computed.
+
+    User Input Parameters:
+    bool    Step -> Augmented Lagrangian -> Use Default initial Penalty Parameter
+      Use automatically determined initial penalty parameter.  Default: true
+
+    Real    Step -> Augmented Lagrangian -> Initial Penalty Parameter
+      Initial penalty parameter.  Default: 10
+
+    Real    Step -> Augmented Lagrangian -> Use Scaled Augmented Lagrangian
+      Use Augmented Lagrangian scaled by the reciprocal of the penalty parameter.  Default: false
+
+    Real    Step -> Augmented Lagrangian -> Penalty Parameter Reciprocal Lower Bound
+      Minimum penalty parameter reciprocal for tolerance updates.  Default: 0.1
+
+    Real    Step -> Augmented Lagrangian -> Penalty Parameter Growth Factor
+      Rate of growth for penalty parameter.  Default: 10
+
+    Real    Step -> Augmented Lagrangian -> Maximum Penalty Parameter
+      Maximum penalty parameter size.  Default: 1e8
+
+    Real    Step -> Augmented Lagrangian -> Optimality Tolerance Update Exponent
+      Rate at which to update optimality tolerance.  Default: 1
+
+    Real    Step -> Augmented Lagrangian -> Optimality Tolerance Decrease Exponent
+      Rate at which to decrease optimality tolerance.  Default: 1
+
+    Real    Step -> Augmented Lagrangian -> Initial Optimality Tolerance
+      Initial tolerance for optimality.  Default: 1
+
+    Real    Step -> Augmented Lagrangian -> Feasibility Tolerance Update Exponent
+      Rate at which to update feasibility tolerance.  Default: 0.1
+
+    Real    Step -> Augmented Lagrangian -> Feasibility Tolerance Decrease Exponent
+      Rate at which to decrease feasibility tolerance.  Default: 0.9
+
+    Real    Step -> Augmented Lagrangian -> Initial Feasibility Tolerance
+      Initial tolerance for equality constraint feasibility.  Default: 1
+
+    bool    Step -> Augmented Lagrangian -> Print Intermediate Optimization History
+      Print iteration history for subproblem solve.  Default: false
+
+    int     Step -> Augmented Lagrangian -> Subproblem Iteration Limit
+      Subproblem iteration limit.  Default: 1000
+
+    string  Step -> Augmented Lagrangian -> Subproblem Step Type
+      Subproblem (bound constrained) solver type. Default: Trust Region
+
+    bool    Step -> Augmented Lagrangian -> Use Default Problem Scaling
+      Use automatic constraint and objective scaling.  Default: true
+
+    Real    Step -> Augmented Lagrangian -> Objective Scaling
+      Positive scaling constant for objective. Default: 1
+
+    Real    Step -> Augmented Lagrangian -> Constraint Scaling
+      Positive scaling constant for constraint. Default: 1
+
+    int     General -> Print Verbosity
+      Print additional information to screen for debugging purposes.  Default: 0
 */
 
 
@@ -112,9 +193,9 @@ private:
     // Compute norm of projected gradient
     if (bnd.isActivated()) {
       x_->set(x);
-      x_->axpy(-1.,g.dual());
+      x_->axpy(static_cast<Real>(-1),g.dual());
       bnd.project(*x_);
-      x_->axpy(-1.,x);
+      x_->axpy(static_cast<Real>(-1),x);
       gnorm = x_->norm();
     }
     else {
@@ -317,7 +398,8 @@ public:
     augLag.getConstraintVec(*(state->constraintVec),x);
     algo_state.cnorm = (state->constraintVec)->norm();
     // Compute gradient of the augmented Lagrangian
-    algo_state.gnorm = computeGradient(*(state->gradientVec),x,state->searchSize,obj,bnd);
+    algo_state.gnorm  = computeGradient(*(state->gradientVec),x,state->searchSize,obj,bnd);
+    algo_state.gnorm /= std::min(fscale_,cscale_);
     // Update evaluation counters
     algo_state.nfval += augLag.getNumberFunctionEvaluations();
     algo_state.ngrad += augLag.getNumberGradientEvaluations();
@@ -327,14 +409,14 @@ public:
     bnd.update(x,true,algo_state.iter);
     // Update multipliers
     minPenaltyReciprocal_ = std::min(one/state->searchSize,minPenaltyLowerBound_);
-    if ( algo_state.cnorm < feasTolerance_ ) {
-      l.axpy(state->searchSize,(state->constraintVec)->dual());
+    if ( cscale_*algo_state.cnorm < feasTolerance_ ) {
+      l.axpy(state->searchSize*cscale_,(state->constraintVec)->dual());
       optTolerance_  = std::max(oem2*outerOptTolerance_,
                        optTolerance_*std::pow(minPenaltyReciprocal_,optIncreaseExponent_));
       feasTolerance_ = std::max(oem2*outerFeasTolerance_,
                        feasTolerance_*std::pow(minPenaltyReciprocal_,feasIncreaseExponent_));
       // Update Algorithm State
-      algo_state.snorm += state->searchSize*algo_state.cnorm;
+      algo_state.snorm += state->searchSize*cscale_*algo_state.cnorm;
       algo_state.lagmultVec->set(l);
     }
     else {
