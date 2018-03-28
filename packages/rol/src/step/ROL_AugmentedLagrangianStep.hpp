@@ -45,14 +45,8 @@
 #define ROL_AUGMENTEDLAGRANGIANSTEP_H
 
 #include "ROL_AugmentedLagrangian.hpp"
-#include "ROL_Vector.hpp"
-#include "ROL_Objective.hpp"
-#include "ROL_BoundConstraint.hpp"
-#include "ROL_Constraint.hpp"
 #include "ROL_Types.hpp"
 #include "ROL_Algorithm.hpp"
-#include "ROL_StatusTest.hpp"
-#include "ROL_Step.hpp"
 #include "ROL_LineSearchStep.hpp"
 #include "ROL_TrustRegionStep.hpp"
 #include "Teuchos_ParameterList.hpp"
@@ -162,6 +156,7 @@ public:
     print_   = sublist.get("Print Intermediate Optimization History", false);
     maxit_   = sublist.get("Subproblem Iteration Limit",              1000);
     subStep_ = sublist.get("Subproblem Step Type",                    "Trust Region");
+    parlist_.sublist("Step").set("Type",subStep_);
     parlist_.sublist("Status Test").set("Iteration Limit",maxit_);
     // Verbosity setting
     verbosity_          = parlist.sublist("General").get("Print Verbosity", 0);
