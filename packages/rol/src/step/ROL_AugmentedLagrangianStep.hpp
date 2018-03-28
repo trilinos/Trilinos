@@ -356,6 +356,24 @@ public:
   */
   std::string printHeader( void ) const {
     std::stringstream hist;
+
+    if(verbosity_>0) {
+      hist << std::string(114,'-') << std::endl;
+      hist << "Augmented Lagrangian status output definitions" << std::endl << std::endl;
+      hist << "  iter    - Number of iterates (steps taken)"            << std::endl;
+      hist << "  fval    - Objective function value"                    << std::endl;
+      hist << "  cnorm   - Norm of the constraint violation"            << std::endl;
+      hist << "  gLnorm  - Norm of the gradient of the Lagrangian"      << std::endl;
+      hist << "  snorm   - Norm of the step"                            << std::endl;
+      hist << "  penalty - Penalty parameter"                           << std::endl;
+      hist << "  feasTol - Feasibility tolerance"                       << std::endl;
+      hist << "  optTol  - Optimality tolerance"                        << std::endl;
+      hist << "  #fval   - Number of times the objective was computed"  << std::endl;
+      hist << "  #grad   - Number of times the gradient was computed"   << std::endl;
+      hist << "  #cval   - Number of times the constraint was computed" << std::endl;
+      hist << "  subIter - Number of iterations to solve subproblem"    << std::endl;
+      hist << std::string(114,'-') << std::endl;
+    }
     hist << "  ";
     hist << std::setw(6)  << std::left << "iter";
     hist << std::setw(15) << std::left << "fval";
@@ -365,11 +383,11 @@ public:
     hist << std::setw(10) << std::left << "penalty";
     hist << std::setw(10) << std::left << "feasTol";
     hist << std::setw(10) << std::left << "optTol";
-    hist << std::setw(8) << std::left << "#fval";
-    hist << std::setw(8) << std::left << "#grad";
-    hist << std::setw(8) << std::left << "#cval";
-    hist << std::setw(8) << std::left << "subIter";
-    hist << "\n";
+    hist << std::setw(8)  << std::left << "#fval";
+    hist << std::setw(8)  << std::left << "#grad";
+    hist << std::setw(8)  << std::left << "#cval";
+    hist << std::setw(8)  << std::left << "subIter";
+    hist << std::endl;
     return hist.str();
   }
 
@@ -377,8 +395,9 @@ public:
   */
   std::string printName( void ) const {
     std::stringstream hist;
-    hist << "\n" << " Augmented Lagrangian solver";
-    hist << "\n";
+    hist << std::endl << " Augmented Lagrangian Solver";
+    hist << std::endl;
+    hist << "Subproblem Solver: " << subStep_ << std::endl;
     return hist.str();
   }
 
@@ -404,7 +423,7 @@ public:
       hist << std::setw(10) << std::left << Step<Real>::getStepState()->searchSize;
       hist << std::setw(10) << std::left << std::max(feasTolerance_,outerFeasTolerance_);
       hist << std::setw(10) << std::left << std::max(optTolerance_,outerOptTolerance_);
-      hist << "\n";
+      hist << std::endl;
     }
     else {
       hist << "  ";
@@ -422,7 +441,7 @@ public:
       hist << std::setw(8) << std::left << algo_state.ngrad;
       hist << std::setw(8) << std::left << algo_state.ncval;
       hist << std::setw(8) << std::left << subproblemIter_;
-      hist << "\n";
+      hist << std::endl;
     }
     return hist.str();
   }
