@@ -163,15 +163,6 @@ namespace Tpetra {
       setupExport (remoteGIDs,useRemotePIDs,remotePIDs);
     }
 
-    if(0) {
-      const int myRank = source->getComm ()->getRank ();
-      source->getComm()->barrier();
-      std::ostringstream os;
-      os<<myRank<<" import::head-ctor via init; ImportData_->exportLIDs_  "<<ImportData_->exportLIDs_<<std::endl;
-      os<<myRank<<" import::head-ctor via init; useRemotePIDs, ,remotePIDs  "<<useRemotePIDs<<" :: "<<remotePIDs<<std::endl;
-      std::cout<<os.str()<<std::flush;
-    }
-
     if (debug_) {
       std::ostringstream os;
       const int myRank = source->getComm ()->getRank ();
@@ -289,8 +280,6 @@ namespace Tpetra {
     typedef GlobalOrdinal GO;
     typedef Teuchos::Array<int>::size_type size_type;
     typedef ImportExportData<LocalOrdinal,GlobalOrdinal,Node> data_type;
-    const int myRank = source->getComm ()->getRank ();
-    //    const int numProcs = source->getComm ()->getSize ();
 
     // Read "Debug" parameter from the input ParameterList.  
     bool debug = tpetraImportDebugDefault;
@@ -300,11 +289,12 @@ namespace Tpetra {
       } catch (Teuchos::Exceptions::InvalidParameter&) {}
     }
     debug_ = debug;
-    if (debug_ && ! out_.is_null ()) {
-      std::ostringstream os;
-      os << myRank << ": constructExpert " << std::endl;
-      *out_ << os.str ();
-    }
+    // if (debug_ && ! out_.is_null ()) {
+    //    const int myRank = source->getComm ()->getRank ();
+    //   std::ostringstream os;
+    //   os << myRank << ": constructExpert " << std::endl;
+    //   *out_ << os.str ();
+    // }
    
     ArrayView<const GO> sourceGIDs = source->getNodeElementList ();
     ArrayView<const GO> targetGIDs = target->getNodeElementList ();
@@ -322,66 +312,23 @@ namespace Tpetra {
     Array<LO>& tRemoteLIDs = ImportData_->remoteLIDs_;
     Teuchos::Array<int> tRemotePIDs(userRemotePIDs);
 
-    {
-      std::ostringstream os;
-
-        os<<myRank<<"cbl::import::ctor remoteGID and userRemotePID rGID:: "<<tRemoteGIDs<<" :: uRemPID :: "<<userRemotePIDs<<std::endl;
-
-      std::cerr<<os.str()<<std::flush;
-    }
-
-
-      // done by setupSamePermuteRemote(remoteGIDs)
-    // Array<LO>& permuteToLIDs =   ImportData_->permuteToLIDs_;
-    // Array<LO>& permuteFromLIDs = ImportData_->permuteFromLIDs_;    
-    // permuteToLIDs.clear();                permuteFromLIDs.clear();
-    // permuteToLIDs.resize(NumPermuteIDs); permuteFromLIDs.resize(NumPermuteIDs);
-
-    // userRemotePIDs only has entries for remotes, not for all GIDs.
-    // size_type indexIntoRemotePIDs = 0;
-    // size_type idx=0; 
-    // for (LO tgtLid = numSameGIDs; tgtLid < numTgtLids; ++tgtLid) {
-    //   const LO srcLid = source->getLocalElement ( targetGIDs[tgtLid]);
-    //   if (srcLid != LINVALID) {
-    //     permuteToLIDs[idx] = tgtLid;
-    //     permuteFromLIDs[idx] = srcLid;
-    //     idx++;
-    //   }
-    //   else {
-    //     const int tgtPID = userRemotePIDs[indexIntoRemotePIDs];
-    //     if (tgtPID < 0 || tgtPID >= numProcs) {
-    //       std::ostringstream os;
-    //       os << "Proc " << myRank << ": userRemotePIDs[indexIntoRemotePIDs="
-    //          << indexIntoRemotePIDs
-    //          << "] (GID " << targetGIDs[tgtLid] << ") = " << tgtPID
-    //          << " is out of the valid range [0," << (numProcs-1) << "]."
-    //          << std::endl;
-    //       std::cerr << os.str()<<std::flush;
-    //     }
-    //     tRemoteGIDs[indexIntoRemotePIDs] = targetGIDs[tgtLid];
-    //     tRemoteLIDs[indexIntoRemotePIDs] = tgtLid;
-    //     tRemotePIDs[indexIntoRemotePIDs] = tgtPID;
-    //     indexIntoRemotePIDs++;
-    //   }
-    // }
-
     TPETRA_ABUSE_WARNING(
                          getNumRemoteIDs() > 0 && ! source->isDistributed(),
                          std::runtime_error,
                          "::constructExpert(): Target has remote LIDs but Source is not "
                          "distributed globally." << std::endl
                          << "Importing to a submap of the target map.");
-  TEUCHOS_TEST_FOR_EXCEPTION
+    TEUCHOS_TEST_FOR_EXCEPTION
       ( !(tRemotePIDs.size() == tRemoteGIDs.size() &&
           tRemoteGIDs.size() == tRemoteLIDs.size()), 
         std::runtime_error,
         "Import::Import createExpert version: Size miss match on userRemotePIDs, remoteGIDs and remoteLIDs Array's to sort3. This will produce produce an error, aborting ");
-
+    
     sort3 (tRemotePIDs.begin (),
            tRemotePIDs.end (),
            tRemoteGIDs.begin (),
            tRemoteLIDs.begin ());
-
+    
   //Get rid of IDs that don't exist in SourceMap
     int cnt = 0;
     int indexIntoRemotePIDs = tRemotePIDs.size();
@@ -424,50 +371,7 @@ namespace Tpetra {
 
     ImportData_->isLocallyComplete_ = locallyComplete;
 
-    {
-       std::ostringstream os;
-       os << myRank<<"  import::ctor IData->exportPID "<<ImportData_->exportPIDs_<<std::endl; 
-       os << myRank<<"  import::ctor tRemotePIDs "<<tRemotePIDs<<std::endl;
-       std::cerr<<os.str()<<std::flush;
-    }
-    
-
     ImportData_->distributor_.createFromSendsAndRecvs(ImportData_->exportPIDs_,tRemotePIDs);
-
-    {
-      bool diff = false;
-      if(ImportData_->exportPIDs_.size()!=userExportPIDs.size()) diff = true;
-      else {
-        for(int i=0;i<ImportData_->exportPIDs_.size();++i)
-              if(ImportData_->exportPIDs_[i]!=userExportPIDs[i]) diff = true;
-      }
-
-      if(ImportData_->exportLIDs_.size()!=userExportLIDs.size()) diff = true;
-      else {
-        for(int i=0;i<ImportData_->exportLIDs_.size();++i)
-              if(ImportData_->exportLIDs_[i]!=userExportLIDs[i]) diff = true;
-      }
-      
-      std::ostringstream os;
-      os << " Timport ID->exportPID post createFSAR "<<myRank<<" ::: "<<ImportData_->exportPIDs_.size()<<" :: "<<ImportData_->exportPIDs_<<std::endl;
-      os << " Timport ID->exportLID post createFSAR "<<myRank<<" ::: "<<ImportData_->exportLIDs_.size()<<" :: "<<ImportData_->exportLIDs_<<std::endl;
-      os << " Timport ID->exportGID post createFSAR "<<myRank<<" ::: "<<ImportData_->exportLIDs_.size()<<" ::  { ";
-      for(uint i=0;i<ImportData_->exportLIDs_.size();++i) 
-        os << sourceGIDs[ImportData_->exportLIDs_[i]]<<" ";
-      os<<std::endl;
-
-      if(diff) {
-        os<<myRank<<" T-diff expImp() :: distor.ctor "<<std::endl;
-        os<<myRank<<" uEP "<<userExportPIDs<<std::endl;
-        os<<myRank<<" ID_->eP "<<ImportData_->exportPIDs_<<std::endl;
-      }
-      
-      auto nr  = ImportData_->distributor_.getProcsFrom();      
-
-      std::cerr<<os.str()<<std::flush;
-    }
-
-
   }
 
 

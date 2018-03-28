@@ -8511,21 +8511,6 @@ namespace Tpetra {
         "getDomainMap () == getRowMap ()).");
     }
     
-      {
-        std::ostringstream os;
-        IntVectorType TR_pids (domainMap);
-        IntVectorType SR_pids (getRowMap ());
-        IntVectorType SC_pids (getColMap ());
-        os<<MyPID<<" TR_pids(domainMap) "<<TR_pids<<std::endl;
-        os<<MyPID<<" SR_pids(getRowMap()) "<<SR_pids<<std::endl;
-        os<<MyPID<<" SC_pids(getColMap()) "<<SC_pids<<std::endl;
-        os<<MyPID<<" SourcePids() "<<SourcePids()<<std::endl;
-        std::cerr<<os.str()<<std::flush;
-      }
-    
-
-
-
 
 #ifdef HAVE_TPETRA_MMM_TIMINGS
     MM = Teuchos::rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix + std::string("TAFC Pack-2"))));
@@ -8888,40 +8873,15 @@ namespace Tpetra {
 #endif
     RCP<import_type> MyImport;
 
-    RCP<const Teuchos::Comm<int> > comm = this->getComm ();
-
-    //cbl REALLY MAKE SURE IT'S A DEEP COPY
+     //cbl REALLY MAKE SURE IT'S A DEEP COPY
     Teuchos::Array<int> copyRemotePids (RemotePids.size ());
     std::copy (RemotePids.begin (), RemotePids.end (), copyRemotePids.begin ());
     // cbl
 
-
+    if( !( isMM && !MyImporter.is_null()) ) { 
     MyImport = rcp (new import_type (MyDomainMap, MyColMap, RemotePids));
-
-    bool pass = Import_Util::checkImportValidity(*MyImport);
-    if(!pass) {
-      std::cerr<<MyPID<<"cbl Head importer fails "<<std::endl;
     }
-    else {
-      std::cerr<<MyPID<<"cbl Head importer passes"<<std::endl;
-    }
-    
-    
-    if(isMM ) { // \tmp
-      Teuchos::RCP<Teuchos::FancyOStream>  cerrptr = Teuchos::getFancyOStream (Teuchos::rcpFromRef (std::cerr)) ;
-      cerrptr->setTabIndentStr(std::string("O"));
-      Teuchos::FancyOStream& fancyCERR = *cerrptr;
-      fancyCERR<<std::flush;
-      MyImport->describe(fancyCERR,Teuchos::VERB_HIGH);
-      fancyCERR<<std::flush;
-      // cerrptr->setTabIndentStr(std::string("s"));
-      // this->describe(fancyCERR,Teuchos::VERB_HIGH);
-      // comm->barrier ();comm->barrier ();comm->barrier ();
-      cerrptr->setTabIndentStr(std::string("R"));
-      rowTransfer.describe(fancyCERR,Teuchos::VERB_HIGH);
-       comm->barrier ();comm->barrier ();comm->barrier ();
-    }
-
+ 
 #ifdef HAVE_TPETRA_MMM_TIMINGS
     MM = Teuchos::rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix + std::string("TAFC ESFC"))));
 
@@ -9056,7 +9016,7 @@ namespace Tpetra {
         int InfPID = INT_MAX;
 #define MIN(x,y)    ((x)<(y)?(x):(y))
 #define MIN3(x,y,z) ((x)<(y)?(MIN(x,z)):(MIN(y,z)))
-        int i1=0, i2=0, i3=0, current=0;
+        int i1=0, i2=0, i3=0;
         int Len1 = EPID1.size();
         int Len2 = EPID2.size();
         int Len3 = EPID3.size();
@@ -9068,8 +9028,6 @@ namespace Tpetra {
      
         if(false) 
           {  // Seifert sort, or CBL sort.
-            
-            comm->barrier ();
             while(i1 < Len1 || i2 < Len2 || i3 < Len3){
               int PID1 = (i1<Len1)?(EPID1[i1]):InfPID;
               int PID2 = (i2<Len2)?(EPID2[i2]):InfPID;
@@ -9087,14 +9045,7 @@ namespace Tpetra {
               if(true) {
                 // filter against the communicated RemoteGID's for ProcsTo
                 std::pair<int,GlobalOrdinal> pgPair(MIN_PID,MIN_GID);
-                dumpit = (std::find(fromRemoteGID.begin(),fromRemoteGID.end(),pgPair) == fromRemoteGID.end());
-                if(dumpit) {
-                  std::cerr<<std::flush;
-                  std::ostringstream os;
-                  LO lid= getRowMap()->getLocalElement(pgPair.second);
-                  os<<MyPID<<" Dumping pid="<<pgPair.first<<" gid "<<pgPair.second<<" lid "<<lid<<std::endl;
-                  std::cerr<<os.str()<<std::flush;
-                }
+                dumpit = (std::find(fromRemoteGID.begin(),fromRemoteGID.end(),pgPair) == fromRemoteGID.end());                      
               }
 
               // Case 1: Add off list 1
@@ -9103,7 +9054,6 @@ namespace Tpetra {
                   userExportLIDs.push_back(ELID1[i1]);
                   userExportPIDs.push_back(EPID1[i1]);
                   userExportGIDs.push_back(MIN_GID);
-                  current++;
                 }
                 i1++;
                 added_entry=true;
@@ -9116,7 +9066,6 @@ namespace Tpetra {
                     userExportLIDs.push_back(ELID2[i2]);
                     userExportPIDs.push_back(EPID2[i2]);
                     userExportGIDs.push_back(MIN_GID);
-                    current++;
                   }
                   added_entry=true;
                 }
@@ -9130,7 +9079,6 @@ namespace Tpetra {
                     userExportLIDs.push_back(ELID3[i3]);
                     userExportPIDs.push_back(EPID3[i3]);
                     userExportGIDs.push_back(MIN_GID);
-                    current++;
                   }
                 }
                 i3++;
@@ -9150,17 +9098,7 @@ namespace Tpetra {
             
             for(uint i =0; i < EPID3.size();++i)  
               mms.insert(pgl_t(EPID3[i],getDomainMap()->getGlobalElement(ELID3[i]),ELID3[i]));
-            {
-              std::ostringstream os;            
-              for(auto && f : mms) {
-                GO gid;               LO lid;               int pid;
-                std::tie(pid,gid,lid) = f;
-                os<<MyPID<<" mms p="<<pid<<" g="<<gid<<" l="<<lid<<std::endl;
-              }
-              std::cerr<<os.str()<<std::flush;
-            }
-                
-
+           
             // now add in missing
             // this is just wrong, don't do it. 
             // for( auto &&a : fromRemoteGID) {
@@ -9181,14 +9119,12 @@ namespace Tpetra {
             //     }
             //   if(ever)
             //     std::cerr<<os.str()<<std::flush;
-            // }
-            
+            // }      
+      
             std::vector<pgl_t> vs;
             vs.reserve(mms.size());
-            comm->barrier ();
-            std::ostringstream os; 
-            os<<std::endl;
-            bool ever=false;
+
+            //            bool ever=false;
             for( auto && me : mms) {
               GO gid;               LO lid;               int pid;
               std::tie(pid,gid,lid) = me;
@@ -9196,12 +9132,12 @@ namespace Tpetra {
               bool dumpit = (std::find(fromRemoteGID.begin(),fromRemoteGID.end(),pgPair) == fromRemoteGID.end());
               if(gid != Teuchos::OrdinalTraits<GlobalOrdinal>::invalid() && !dumpit)
                 vs.push_back(me);
-              else if(dumpit) {
-                os<<MyPID<<"; Dumpit pid/gid/lid "<<pid<<" x "<<gid<<" l "<<lid<<std::endl;
-                ever = true;
-              }
+              // else if(dumpit) {
+              //   os<<MyPID<<"; Dumpit pid/gid/lid "<<pid<<" x "<<gid<<" l "<<lid<<std::endl;
+              //   ever = true;
+              // }
             }
-            if(ever) std::cerr<<os.str()<<std::endl<<std::flush;
+            //            if(ever) std::cerr<<os.str()<<std::endl<<std::flush;
            
             // The default comparitor for std::pair sorts on .first, then .second. 
             // Which, if .second is a pair of <global,local> will give us exactly what is needed. 
@@ -9218,257 +9154,13 @@ namespace Tpetra {
             }
           } // cbl sort
 
-        // // old filter
-        // if(false) // filtering of LIDs.
-        //   {
-        //     Teuchos::Array<int> tmpEPID;
-        //     tmpEPID.reserve(userExportPIDs.size());
-        //     Teuchos::Array<LocalOrdinal> tmpELID;
-        //     tmpELID.reserve(userExportLIDs.size());
-        //     int i=-1;
-        //     for(auto && targLID : userExportLIDs)  {
-        //       i++; // for pid array : note above we start at -1, so i is sync'ed correctly
-
-        //       // auto targGID0  = userExportGIDs[i];
-        //       // auto targGIDC   = rowTransfer.getTargetMap()->getGlobalElement(userExportLIDs[i]);
-        //       // auto targGIDR   = rowTransfer.getSourceMap()->getGlobalElement(userExportLIDs[i]);
-
-        //       // auto tLID0 = getRowMap()->getLocalElement(targGID0);
-        //       // auto tLIDC = getRowMap()->getLocalElement(targGIDC);
-        //       // auto tLIDR = getRowMap()->getLocalElement(targGIDR);
-
-        //       // if( MyPID == 0 ) {
-        //       //   if(
-        //       //      (targLID == 0 && userExportPIDs[i] == 1) ||
-        //       //      (userExportPIDs[i] == 3 && (targLID == 1 || targLID == 15 || targLID == 18) )
-        //       //      ) {
-        //       //     std::ostringstream os;
-        //       //     os<<MyPID<<"  toPID "<<userExportPIDs[i]<<" lid gid:{Dom,Col,Row} "<<std::setw(2)<<targLID<<":"
-        //       //       <<std::setw(2)<<targGID0<<","<<std::setw(2)<<tLID0<<" "
-        //       //       <<std::setw(2)<<targGIDC<<","<<std::setw(2)<<tLIDC<<" "
-        //       //       <<std::setw(2)<<targGIDR<<","<<std::setw(2)<<tLIDR<<std::endl;
-        //       //     std::cerr<<os.str()<<std::flush;
-        //       //   }
-        //       //   else {
-        //       //     std::ostringstream os;
-        //       //     os<<MyPID<<" ?toPID "<<userExportPIDs[i]<<" lid gid:{Dom,Col,Row} "<<std::setw(2)<<targLID<<":"
-        //       //       <<std::setw(2)<<targGID0<<","<<std::setw(2)<<tLID0<<" "
-        //       //       <<std::setw(2)<<targGIDC<<","<<std::setw(2)<<tLIDC<<" "
-        //       //       <<std::setw(2)<<targGIDR<<","<<std::setw(2)<<tLIDR<<std::endl;
-        //       //     std::cerr<<os.str()<<std::flush;
-        //       //   }
-        //       // }
-                
-        //       GlobalOrdinal targGID =  MyRowMap->getGlobalElement(userExportLIDs[i]);
-   
-        //       if(targGID != Teuchos::OrdinalTraits<GlobalOrdinal>::invalid () )
-        //         {
-        //           // MyRowMap is set correctly above dependent on reverseMode
-        //           auto srcLID = getRowMap()->getLocalElement(targGID);
-        //           //                  auto srcLID = getColMap()->getLocalElement(targGID);
-        //           if(srcLID !=  Teuchos::OrdinalTraits<LocalOrdinal>::invalid () ) {
-        //             tmpELID.push_back(targLID);
-        //             tmpEPID.push_back(userExportPIDs[i]);
-        //           }
-        //           else { 
-        //             std::ostringstream os;
-        //             os << MyPID<<" valid Target GID not found on source: filtered out ExportLID "<<targLID<<" at loc "<<i<<" gid= "<<targGID<<std::endl;
-        //             std::cerr<<os.str()<<std::endl<<std::flush; 
-
-        //           }
-        //         }
-        //       else {
-        //         std::ostringstream os;
-        //         os << MyPID<<" no valid Target GID found: filtered out ExportLID "<<targLID<<" at loc "<<i<<" gid= "<<targGID<<std::endl;
-        //         std::cerr<<os.str()<<std::endl<<std::flush; 
-        //       }
-        //     } // targLID loop
-        //     userExportPIDs = tmpEPID;
-        //     userExportLIDs = tmpELID;
-        //   }
-       
-
-        if(isMM){
-          comm->barrier ();
-          std::ostringstream os;
-
-          os<<"Tpetra "<< MyPID<<" type1 EPID :: "<<EPID1.size()<<" ::: ";
-          for(auto &&p :EPID1) os<<p<<" ";
-          os<<std::endl;
-          os<<"Tpetra "<< MyPID<<" type1 ELID :: "<<ELID1.size()<<" ::: ";
-          for(auto &&p :ELID1) os<<p<<" ";
-          os<<std::endl;
-          os<<"Tpetra "<< MyPID<<" type1 EGID :: "<<ELID1.size()<<" ::: ";
-          for(auto &&p :ELID1) os<<  rowTransfer.getTargetMap()->getGlobalElement(p)  <<" ";
-          os<<std::endl;
-
-          os<<"Tpetra "<< MyPID<<" type2 EPID :: "<<EPID2.size()<<" ::: ";
-          for(auto &&p :EPID2) os<<p<<" ";
-          os<<std::endl;
-          os<<"Tpetra "<< MyPID<<" type2 ELID :: "<<ELID2.size()<<" ::: ";
-          for(auto &&p :ELID2) os<<p<<" ";
-          os<<std::endl;
-          os<<"Tpetra "<< MyPID<<" type2 EGID :: "<<ELID2.size()<<" ::: ";
-          for(auto &&p :ELID2) os<< rowTransfer.getTargetMap()->getGlobalElement(p)<<" ";
-          os<<std::endl;
-
-          os<<"Tpetra "<< MyPID<<" type3 EPID :: "<<EPID3.size()<<" ::: ";
-          for(auto &&p :EPID3) os<<p<<" ";
-          os<<std::endl;
-          os<<"Tpetra "<< MyPID<<" type3 ELID :: "<<ELID3.size()<<" ::: ";
-          for(auto &&p :ELID3) os<<p<<" ";
-          os<<std::endl; 
-          os<<"Tpetra "<< MyPID<<" type3 EGID :: "<<ELID3.size()<<" ::: ";
-          for(auto &&p :ELID3) os<< rowTransfer.getTargetMap()->getGlobalElement(p)<<" ";
-          os<<std::endl;
-          std::cerr<<os.str()<<std::flush;
-        }
-
-        if(isMM){
-          comm->barrier ();
-          std::ostringstream os;
-          
-          os<<MyPID<<" TpetraX "<< " copyRemotePids "<< copyRemotePids<<std::endl;
-          os<<MyPID<<" TpetraX "<< " userExportLIDs "<< userExportLIDs<<std::endl;
-          os<<MyPID<<" TpetraX "<< " userExportPIDs "<< userExportPIDs<<std::endl;
-          os<<std::endl;
-          std::cerr<<os.str()<<std::flush;
-        }
-
-  // cblcbl expert constructor
-        
-        RCP<import_type> NewImport = rcp ( new import_type (MyDomainMap,
+          MyImport = rcp ( new import_type (MyDomainMap,
                                                             MyColMap,
                                                             copyRemotePids,
                                                             userExportLIDs().getConst(),
                                                             userExportPIDs().getConst(),
                                                             plist) 
                                            );
-
-
-        if(isMM){    
-          comm->barrier ();
-          bool cblpass = Import_Util::checkImportValidity(*NewImport);
-          std::ostringstream os;
-          if(cblpass) {            
-            os<<" cbl NewImport passed"<<std::endl;
-          }
-          else {
-            os<<" cbl NewImport failed"<<std::endl;
-          }
-          std::cerr << os.str()<<std::flush;
-        }
-
-        if(isMM) {
-          comm->barrier ();
-          Teuchos::RCP<Teuchos::FancyOStream>  cerrptr = Teuchos::getFancyOStream (Teuchos::rcpFromRef (std::cerr)) ;
-          cerrptr->setTabIndentStr(std::string("N"));
-          Teuchos::FancyOStream& fancyCERR = *cerrptr;
-          
-          fancyCERR<<std::flush;
-          NewImport->describe(fancyCERR,Teuchos::VERB_EXTREME);
-          fancyCERR<<std::flush;
-        }
-        
-        comm->barrier ();
-        if(!NewImport->getSourceMap()->isSameAs( *MyImport->getSourceMap())) {
-            std::ostringstream os;
-            os<<MyPID<<" new and old sourcemap don't match "<<std::endl;
-            std::cerr <<std::flush<<os.str()<<std::flush;
-          }
-        if(!NewImport->getTargetMap()->isSameAs( *MyImport->getTargetMap())) {
-          std::ostringstream os;
-          os<<MyPID<<" new and old target map don't match "<<std::endl;
-          std::cerr <<std::flush<<os.str()<<std::flush;
-        }
-        
-
-        {
-          std::ostringstream os;
-          os<<"Tpetra "<< MyPID<<" exportPIDs :: "<<userExportPIDs.size()<<" ::: ";
-          for(auto &&p :userExportPIDs) os<<p<<" ";
-          os<<std::endl;
-          os<<"Tpetra "<< MyPID<<" exportLIDs :: "<<userExportLIDs.size()<<" ::: ";
-          for(auto &&p :userExportLIDs) os<<p<<" ";
-          os<<std::endl;
-
-          os<<"Tpetra "<< MyPID<<" RemotePids :: "<<RemotePids.size()<<" ::: ";
-          for(auto &&p :RemotePids) os<<p<<" ";
-          os<<std::endl;
-
-          auto sRemoteLids = MyImporter->getRemoteLIDs();
-          os<<"Tsrc "<< MyPID<<" Remotelids :: "<<sRemoteLids.size()<<" ::: "<<sRemoteLids<<std::endl;
-
-          auto oRemoteLids = MyImport->getRemoteLIDs(); // MyImport is legacy, MyImporter is srcmatrix, NewImport is cbl way
-          os<<"Told "<< MyPID<<" Remotelids :: "<<oRemoteLids.size()<<" ::: "<<oRemoteLids<<std::endl;
-   
-          auto nRemoteLids = NewImport->getRemoteLIDs();
-          os<<"Tnew "<< MyPID<<" Remotelids :: "<<nRemoteLids.size()<<" ::: "<<nRemoteLids<<std::endl;
-
-          std::cerr<<std::flush<<os.str()<<std::flush;
-        }   
-  
-        // test that the two importers are the same. cblcbl
-        int lclSuccess = 1;
-
-        auto OldImport =  MyImport; // destMat->getGraph()->getImporter();
-
-        if (!OldImport->getSourceMap ()->isSameAs (* (NewImport->getSourceMap()))) {
-          lclSuccess = 0;
-        }
-        else if (!OldImport->getTargetMap ()->isSameAs (* (NewImport->getTargetMap()))) {
-          lclSuccess = 0;
-        }
-
-        Teuchos::ArrayView<const LO> newexportLIDs = NewImport->getExportLIDs();
-        Teuchos::ArrayView<const LO> MyexportLIDs = OldImport->getExportLIDs();
-
-        Teuchos::ArrayView<const LO> newexportPIDs = NewImport->getExportPIDs();
-        Teuchos::ArrayView<const LO> MyexportPIDs = OldImport->getExportPIDs();
-
-        // error checking      
-        using Teuchos::reduceAll;
-        using Teuchos::REDUCE_MIN;
-        using Teuchos::outArg;
-      
-        std::ostringstream os;
-        if(newexportLIDs.size() != MyexportLIDs.size() ) {
-          os <<" T "<<MyPID<<" newexportLIDs.size does not match exportLIDs.size() "<<newexportLIDs.size()<<" vs "<<MyexportLIDs.size()<<std::endl;
-          Teuchos::Array<std::pair<int,LO> > oldp;
-          Teuchos::Array<std::pair<int,LO> > newp;
-          for(uint i=0;i<MyexportLIDs.size();++i) 
-            oldp.push_back(std::pair<int,LO>(MyexportPIDs[i],MyexportLIDs[i]));
-          for(uint i=0;i<newexportLIDs.size();++i)
-            newp.push_back(std::pair<int,LO>(newexportPIDs[i],newexportLIDs[i]));
-          os<<" T "<<MyPID<<" old not found in new:: ";
-          for( auto && p : oldp) {
-            if(std::find(begin(newp),end(newp),p) == end(newp)) os<<std::setw(3)<<p.first<<":"<<std::setw(3)<<p.second<<" ";
-          }
-          os<<std::endl;
-          os<<" T "<<MyPID<<" new not found in old:: ";
-          for( auto && p : newp) {
-            if(std::find(begin(oldp),end(oldp),p) == end(oldp)) os<<std::setw(3)<<p.first<<":"<<std::setw(3)<<p.second<<" ";
-          }
-          os<<std::endl;
-          lclSuccess = 0;
-        }
-        else {
-          for(size_t i=0;i<(size_t)MyexportLIDs.size();++i) {
-            if(MyexportLIDs[i]!=newexportLIDs[i]){
-              os <<MyPID<<": exportLIDs["<<i<<"] ="<<MyexportLIDs[i]<<" != newexportLIDs[i] = "<<newexportLIDs[i]<<std::endl;
-              lclSuccess = 0;
-              break;
-            }
-          }
-        }
-
-        if(lclSuccess == 0) {
-          std::cerr << os.str()<<std::flush;
-          TEUCHOS_TEST_FOR_EXCEPTION(lclSuccess != 1,std::runtime_error, " CrsMatrix::transferAndFillComplete: no match between importers ");
-        }
-
-        MyImport = NewImport;
-
     }  // if(isMM)
 
     destMat->expertStaticFillComplete (MyDomainMap, MyRangeMap, MyImport,Teuchos::null,rcp(&esfc_params,false));
