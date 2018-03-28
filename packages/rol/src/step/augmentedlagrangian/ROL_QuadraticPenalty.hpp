@@ -165,7 +165,6 @@ public:
     // Evaluate constraint
     evaluateConstraint(x,tol);
     // Compute gradient of Augmented Lagrangian
-    const Real one(1);
     primalMultiplierVector_->set(conValue_->dual());
     if ( useScaling_ ) {
       primalMultiplierVector_->scale(cscale_*cscale_);
@@ -192,7 +191,6 @@ public:
 
       if (HessianApprox_ == 1) {
         // Apply Augmented Lagrangian Hessian to a vector
-        const Real one(1);
         primalMultiplierVector_->set(*multiplier_);
         if ( useScaling_ ) {
           primalMultiplierVector_->scale(cscale_/penaltyParameter_);
@@ -208,7 +206,6 @@ public:
         // Evaluate constraint
         evaluateConstraint(x,tol);
         // Apply Augmented Lagrangian Hessian to a vector
-        const Real one(1);
         primalMultiplierVector_->set(conValue_->dual());
         if ( useScaling_ ) {
           primalMultiplierVector_->scale(cscale_*cscale_);

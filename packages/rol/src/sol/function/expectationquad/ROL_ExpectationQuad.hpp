@@ -86,7 +86,7 @@ namespace ROL {
 template<class Real>
 class ExpectationQuad {
 public:
-  ~ExpectationQuad(void) {}
+  virtual ~ExpectationQuad(void) {}
   ExpectationQuad(void) {}
 
   /** \brief Evaluate the scalar regret function at x.
