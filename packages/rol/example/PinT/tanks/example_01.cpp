@@ -83,39 +83,31 @@ int main( int argc, char* argv[] ) {
     auto tank_parameters = ROL::makePtr<Teuchos::ParameterList>();
     std::string tank_xml("tank-parameters.xml");
     Teuchos::updateParametersFromXmlFile(tank_xml, tank_parameters.ptr());
+    auto& pl = *tank_parameters;
 
-    size_type N = 8;
-    vector<size_type> band_index{0,2};
+    TankConstraint<RealT> con(pl);
+
+    RealT Qin00 = pl.get("Corner Inflow",100.0);
+    auto nrows  = static_cast<size_type>( pl.get("Number of Rows",3) );
+    auto ncols  = static_cast<size_type>( pl.get("Number of Columns",3) );
+    auto N  = nrows*ncols;
+    auto N3 = N*3;    
+
+    auto z_p = ROL::makePtr<vector<RealT>>(N,0.0);
+    (*z_p)[0] = Qin00;
     
-    vector<vector<RealT>> A_band;
-    vector<RealT> Ax(N);
-    vector<RealT> x(N);
-    vector<RealT> y(N);
-
-    vector<RealT> band0(N);
-    vector<RealT> band2(N-2);
-
-    for( auto& e: band0 ) e = RealT(1.0);
-    for( auto& e: band2 ) e = RealT(1.0);
-    
-    
-
-    A_band.push_back(band0);
-    A_band.push_back(band2);
+    auto un_p = ROL::makePtr<vector<RealT>>(N3,0.0);
+    auto uo_p = ROL::makePtr<vector<RealT>>(N3,0.0);
+    auto c_p  = ROL::makePtr<vector<RealT>>(N3,0.0);
  
-    for( size_type i=0; i<N; ++i ) x[i] = RealT(1.0+i);
 
-    LowerBandedMatrix<RealT> A( band_index, A_band );
+    ROL::StdVector<RealT> z(z_p);    
+    ROL::StdVector<RealT> un(un_p);
+    ROL::StdVector<RealT> uo(uo_p);
+    ROL::StdVector<RealT> c(c_p);
 
-    print_vector(x);
-
-    A.applyTranspose(Ax,x, 1.0, 0, N);
-    
-    print_vector(Ax);
-
-    A.solveTranspose(y,Ax, 1.0, 0, N);
-    print_vector(y);
-
+//    RealT tol = 0;
+//    con.solve( c, uo, un, z, tol );
 
   }
   catch (std::logic_error err) {

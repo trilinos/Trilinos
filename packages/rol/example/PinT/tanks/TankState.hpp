@@ -62,7 +62,7 @@ public:
    
   TankState( Teuchos::ParameterList& pl );
 
-  void value( vector<Real>& c, const vector<Real>* u_old, 
+  void value( vector<Real>& c, const vector<Real>& u_old, 
               const vector<Real>& u_new, const vector<Real>& z ) const;
  
   void applyJacobian_1_old( vector<Real>& jv, const vector<Real>& v_old ) const;

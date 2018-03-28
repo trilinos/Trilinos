@@ -39,7 +39,7 @@ TankState<Real>::TankState( Teuchos::ParameterList& pl ) :
   for( size_type j=0; j<cols_; ++j ) w[j]       = 0.0;
   for( size_type i=0; i<rows_; ++i ) w[i*cols_] = 0.0;
 
-  for( size_type i=0; i<ptrows.size(); ++i ) {
+  for( size_type i=0; i<static_cast<size_type>(ptrows.size()); ++i ) {
     size_type k = cols_*ptrows[i]+ptcols[i];
     p_[k] = 0.0;
   }
@@ -67,10 +67,17 @@ TankState<Real>::TankState( Teuchos::ParameterList& pl ) :
       }
     } 
   } // end for
+ 
+  vector<vector<Real>> lbands{band_L0,band_L1,band_Lc};
+  vector<vector<Real>> rbands{band_R0,band_R1,band_Rc};
+
+  L_ = make_shared<Matrix>( band_index, lbands );
+  R_ = make_shared<Matrix>( band_index, rbands );
+
 } // end Constructor
 
 template<typename Real>
-void TankState<Real>::value( vector<Real>& c, const vector<Real>* u_old, 
+void TankState<Real>::value( vector<Real>& c, const vector<Real>& u_old, 
                              const vector<Real>& u_new, const vector<Real>& z ) const {
 
   for( size_type i=0; i<rows_; ++i ) {
@@ -78,9 +85,9 @@ void TankState<Real>::value( vector<Real>& c, const vector<Real>* u_old,
 
       size_type l = cols_*i+j;
 
-      auto h_val    = h(c,i,j);    auto h_new    = h(u_new,i,j);    auto h_old    = h(u_old,i,j);
-      auto Qout_val = Qout(c,i,j); auto Qout_new = Qout(u_new,i,j); auto Qout_old = Qout(u_old,i,j);
-      auto Qin_val  = Qin(c,i,j);  auto Qin_new  = Qin(u_new,i,j);  auto Qin_old  = Qin(u_old,i,j);
+      auto& h_val    = h(c,i,j);    auto& h_new    = h(u_new,i,j);    auto& h_old    = h(u_old,i,j);
+      auto& Qout_val = Qout(c,i,j); auto& Qout_new = Qout(u_new,i,j); auto& Qout_old = Qout(u_old,i,j);
+      auto& Qin_val  = Qin(c,i,j);  auto& Qin_new  = Qin(u_new,i,j);  auto& Qin_old  = Qin(u_old,i,j);
 
       h_val    = h_new - h_old - p_[l]*( betaL_*(Qin_new-Qout_new) + betaR_*(Qin_old-Qout_old) );
       Qout_val = Qout_new - coeff1_*h_new;
@@ -99,9 +106,9 @@ void TankState<Real>::applyJacobian_1_old( vector<Real>& jv, const vector<Real>&
     for( size_type j=0; j<cols_; ++j ) {
       size_type l = cols_*i+j;
 
-      auto h_jv    = h(jv,i,j);    auto h_vo    = h(v_old,i,j);    
-      auto Qout_jv = Qout(jv,i,j); auto Qout_vo = Qout(v_old,i,j); 
-      auto Qin_jv  = Qin(jv,i,j);  auto Qin_vo  = Qin(v_old,i,j);  
+      auto& h_jv    = h(jv,i,j);    auto& h_vo    = h(v_old,i,j);    
+      auto& Qout_jv = Qout(jv,i,j); auto& Qout_vo = Qout(v_old,i,j); 
+      auto& Qin_jv  = Qin(jv,i,j);  auto& Qin_vo  = Qin(v_old,i,j);  
 
       h_jv    = - h_vo - p_[l]*( betaR_*(Qin_vo-Qout_vo) );
       Qout_jv = 0; 
@@ -117,9 +124,9 @@ void TankState<Real>::applyJacobian_1_new( vector<Real>& jv, const vector<Real>&
     for( size_type j=0; j<cols_; ++j ) {
       size_type l = cols_*i+j;
 
-      auto h_jv    = h(jv,i,j);    auto h_vn    = h(v_new,i,j);    
-      auto Qout_jv = Qout(jv,i,j); auto Qout_vn = Qout(v_new,i,j); 
-      auto Qin_jv  = Qin(jv,i,j);  auto Qin_vn  = Qin(v_new,i,j);  
+      auto& h_jv    = h(jv,i,j);    auto& h_vn    = h(v_new,i,j);    
+      auto& Qout_jv = Qout(jv,i,j); auto& Qout_vn = Qout(v_new,i,j); 
+      auto& Qin_jv  = Qin(jv,i,j);  auto& Qin_vn  = Qin(v_new,i,j);  
 
       h_jv    = h_vn - p_[l]*( betaL_*(Qin_vn-Qout_vn) );
       Qout_jv = Qout_vn - coeff1_*h_vn;
@@ -138,9 +145,9 @@ void TankState<Real>::applyJacobian_2( vector<Real> &jv, const vector<Real> &v_n
     for( size_type j=0; j<cols_; ++j ) {
       size_type l = cols_*i+j;
 
-      auto h_jv    = h(jv,i,j);    auto h_vn    = h(v_new,i,j);    
-      auto Qout_jv = Qout(jv,i,j); auto Qout_vn = Qout(v_new,i,j); 
-      auto Qin_jv  = Qin(jv,i,j);  auto Qin_vn  = Qin(v_new,i,j);  
+      auto& h_jv    = h(jv,i,j);    
+      auto& Qout_jv = Qout(jv,i,j); 
+      auto& Qin_jv  = Qin(jv,i,j);  
 
       h_jv    = 0;
       Qout_jv = 0;
@@ -161,7 +168,7 @@ void TankState<Real>::compute_flow(       vector<Real>& u,
     for( size_type j=0; j<cols_; ++j ) {
       size_type l = cols_*i+j;
       Qout(u,i,j) = coeff1_*h(u,i,j);   
-      Qin(u,i,j)  = f(i,j);
+      Qin(u,i,j)  = f[l];
       if( i>0 ) Qin(u,i,j) += 0.5*Qout(u,i-1,j);
       if( j>0 ) Qin(u,i,j) += 0.5*Qout(u,i,j-1);
     }
