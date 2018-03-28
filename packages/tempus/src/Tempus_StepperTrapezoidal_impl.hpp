@@ -37,16 +37,22 @@ StepperTrapezoidal<Scalar>::StepperTrapezoidal(
 
 template<class Scalar>
 void StepperTrapezoidal<Scalar>::setObserver(
-  Teuchos::RCP<StepperTrapezoidalObserver<Scalar> > obs)
+  Teuchos::RCP<StepperObserver<Scalar> > obs)
 {
   if (obs == Teuchos::null) {
     // Create default observer, otherwise keep current observer.
     if (stepperObserver_ == Teuchos::null) {
-      stepperObserver_ =
+      stepperTrapObserver_ =
         Teuchos::rcp(new StepperTrapezoidalObserver<Scalar>());
-    }
+      stepperObserver_ =
+        Teuchos::rcp_dynamic_cast<StepperObserver<Scalar> >
+          (stepperTrapObserver_);
+     }
   } else {
     stepperObserver_ = obs;
+    stepperTrapObserver_ =
+      Teuchos::rcp_dynamic_cast<StepperTrapezoidalObserver<Scalar> >
+        (stepperObserver_);
   }
 }
 
@@ -104,11 +110,11 @@ void StepperTrapezoidal<Scalar>::takeStep(
 
     this->wrapperModel_->setForSolve(timeDer, inArgs, outArgs);
 
-    stepperObserver_->observeBeforeSolve(solutionHistory, *this);
+    stepperTrapObserver_->observeBeforeSolve(solutionHistory, *this);
 
     const Thyra::SolveStatus<Scalar> sStatus = this->solveImplicitODE(x);
 
-    stepperObserver_->observeAfterSolve(solutionHistory, *this);
+    stepperTrapObserver_->observeAfterSolve(solutionHistory, *this);
 
     if (workingState->getXDot() != Teuchos::null)
       timeDer->compute(x, xDot);

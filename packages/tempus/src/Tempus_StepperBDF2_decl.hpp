@@ -53,7 +53,7 @@ public:
   /// \name Basic stepper methods
   //@{
     virtual void setObserver(
-      Teuchos::RCP<StepperBDF2Observer<Scalar> > obs = Teuchos::null);
+      Teuchos::RCP<StepperObserver<Scalar> > obs = Teuchos::null);
 
     /// Set the stepper to use in first step
     void setStartUpStepper(std::string startupStepperName);
@@ -111,12 +111,13 @@ private:
 
 private:
 
-  Teuchos::RCP<Stepper<Scalar> >                     startUpStepper_;
+  Teuchos::RCP<Stepper<Scalar> >             startUpStepper_;
 
+  Teuchos::RCP<StepperObserver<Scalar> >     stepperObserver_;
   Teuchos::RCP<StepperBDF2Observer<Scalar> > stepperBDF2Observer_;
-  Scalar                                             order_;
+  Scalar                                     order_;
 
-  Teuchos::RCP<Thyra::VectorBase<Scalar> >           xDotTemp_;
+  Teuchos::RCP<Thyra::VectorBase<Scalar> >   xDotTemp_;
 };
 
 /** \brief Time-derivative interface for BDF2.

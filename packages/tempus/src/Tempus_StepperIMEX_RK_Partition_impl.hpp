@@ -335,16 +335,22 @@ void StepperIMEX_RK_Partition<Scalar>::setModelPair(
 
 template<class Scalar>
 void StepperIMEX_RK_Partition<Scalar>::setObserver(
-  Teuchos::RCP<StepperIMEX_RKPartObserver<Scalar> > obs)
+  Teuchos::RCP<StepperObserver<Scalar> > obs)
 {
   if (obs == Teuchos::null) {
     // Create default observer, otherwise keep current observer.
-    if (stepperIMEX_RKPartObserver_ == Teuchos::null) {
+    if (stepperObserver_ == Teuchos::null) {
       stepperIMEX_RKPartObserver_ =
         Teuchos::rcp(new StepperIMEX_RKPartObserver<Scalar>());
-    }
+      stepperObserver_ =
+        Teuchos::rcp_dynamic_cast<StepperObserver<Scalar> >
+          (stepperIMEX_RKPartObserver_);
+     }
   } else {
-    stepperIMEX_RKPartObserver_ = obs;
+    stepperObserver_ = obs;
+    stepperIMEX_RKPartObserver_ =
+      Teuchos::rcp_dynamic_cast<StepperIMEX_RKPartObserver<Scalar> >
+        (stepperObserver_);
   }
 }
 
@@ -467,7 +473,7 @@ void StepperIMEX_RK_Partition<Scalar>::takeStep(
 
   TEMPUS_FUNC_TIME_MONITOR("Tempus::StepperIMEX_RK_Partition::takeStep()");
   {
-    stepperIMEX_RKPartObserver_->observeBeginTakeStep(solutionHistory, *this);
+    stepperObserver_->observeBeginTakeStep(solutionHistory, *this);
     RCP<SolutionState<Scalar> > currentState=solutionHistory->getCurrentState();
     RCP<SolutionState<Scalar> > workingState=solutionHistory->getWorkingState();
     const Scalar dt = workingState->getTimeStep();
@@ -497,7 +503,8 @@ void StepperIMEX_RK_Partition<Scalar>::takeStep(
 
     // Compute stage solutions
     for (int i = 0; i < numStages; ++i) {
-      stepperIMEX_RKPartObserver_->observeBeginStage(solutionHistory, *this);
+      if (!Teuchos::is_null(stepperIMEX_RKPartObserver_))
+        stepperIMEX_RKPartObserver_->observeBeginStage(solutionHistory, *this);
 
       Thyra::assign(stageY.ptr(),
         *(wrapperModelPairIMEX->getExplicitOnlyVector(currentState->getX())));
@@ -528,8 +535,9 @@ void StepperIMEX_RK_Partition<Scalar>::takeStep(
           assign(stageGx_[i].ptr(), Teuchos::ScalarTraits<Scalar>::zero());
         } else {
           Thyra::assign(stageX.ptr(), *xTilde_);
-          stepperIMEX_RKPartObserver_->
-            observeBeforeImplicitExplicitly(solutionHistory, *this);
+          if (!Teuchos::is_null(stepperIMEX_RKPartObserver_))
+            stepperIMEX_RKPartObserver_->
+              observeBeforeImplicitExplicitly(solutionHistory, *this);
           evalImplicitModelExplicitly(stageX, stageY, ts, dt, i, stageGx_[i]);
         }
       } else {
@@ -561,7 +569,8 @@ void StepperIMEX_RK_Partition<Scalar>::takeStep(
 
         wrapperModelPairIMEX->setForSolve(timeDer, inArgs, outArgs);
 
-        stepperIMEX_RKPartObserver_->observeBeforeSolve(solutionHistory, *this);
+        if (!Teuchos::is_null(stepperIMEX_RKPartObserver_))
+          stepperIMEX_RKPartObserver_->observeBeforeSolve(solutionHistory, *this);
 
         this->solver_->setModel(wrapperModelPairIMEX);
         sStatus = this->solveImplicitODE(stageX);
@@ -569,15 +578,18 @@ void StepperIMEX_RK_Partition<Scalar>::takeStep(
 
         wrapperModelPairIMEX->setUseImplicitModel(false);
 
-        stepperIMEX_RKPartObserver_->observeAfterSolve(solutionHistory, *this);
+        if (!Teuchos::is_null(stepperIMEX_RKPartObserver_))
+          stepperIMEX_RKPartObserver_->observeAfterSolve(solutionHistory, *this);
 
         // Update contributions to stage values
         Thyra::V_StVpStV(stageGx_[i].ptr(), -alpha, *stageX, alpha, *xTilde_);
       }
 
-      stepperIMEX_RKPartObserver_->observeBeforeExplicit(solutionHistory,*this);
+      if (!Teuchos::is_null(stepperIMEX_RKPartObserver_))
+        stepperIMEX_RKPartObserver_->observeBeforeExplicit(solutionHistory,*this);
       evalExplicitModel(stageZ_, tHats, dt, i, stageF_[i]);
-      stepperIMEX_RKPartObserver_->observeEndStage(solutionHistory, *this);
+      if (!Teuchos::is_null(stepperIMEX_RKPartObserver_))
+        stepperIMEX_RKPartObserver_->observeEndStage(solutionHistory, *this);
     }
 
     // Sum for solution: y_n = y_n-1 - dt*Sum{ bHat(i)*fy(i)            }
@@ -597,7 +609,7 @@ void StepperIMEX_RK_Partition<Scalar>::takeStep(
     else
       workingState->getStepperState()->stepperStatus_ = Status::FAILED;
     workingState->setOrder(this->getOrder());
-    stepperIMEX_RKPartObserver_->observeEndTakeStep(solutionHistory, *this);
+    stepperObserver_->observeEndTakeStep(solutionHistory, *this);
   }
   return;
 }

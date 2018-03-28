@@ -61,7 +61,7 @@ public:
     virtual Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> > getSolver() const
       { return Teuchos::null; }
     virtual void setObserver(
-      Teuchos::RCP<StepperOperatorSplitObserver<Scalar> > obs = Teuchos::null);
+      Teuchos::RCP<StepperObserver<Scalar> > obs = Teuchos::null);
 
     /// Initialize during construction and after changing input parameters.
     virtual void initialize();
@@ -156,6 +156,7 @@ protected:
   std::vector<Teuchos::RCP<Stepper<Scalar> > >        subStepperList_;
   Teuchos::RCP<SolutionHistory<Scalar> >              OpSpSolnHistory_;
   Teuchos::RCP<SolutionState<Scalar> >                tempState_;
+  Teuchos::RCP<StepperObserver<Scalar> >              stepperObserver_;
   Teuchos::RCP<StepperOperatorSplitObserver<Scalar> > stepperOSObserver_;
 };
 

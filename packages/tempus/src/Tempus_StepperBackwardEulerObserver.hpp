@@ -33,6 +33,7 @@ template<class Scalar> class StepperBackwardEuler;
  */
 template<class Scalar>
 class StepperBackwardEulerObserver
+ : virtual public Tempus::StepperObserver<Scalar>
 {
 public:
 
@@ -45,7 +46,7 @@ public:
   /// Observe Stepper at beginning of takeStep.
   virtual void observeBeginTakeStep(
     Teuchos::RCP<SolutionHistory<Scalar> > sh,
-    StepperBackwardEuler<Scalar> & stepperBE){}
+    Stepper<Scalar> & stepper){}
 
   /// Observe Stepper before nonlinear solve.
   virtual void observeBeforeSolve(
@@ -60,7 +61,7 @@ public:
   /// Observe Stepper at end of takeStep.
   virtual void observeEndTakeStep(
     Teuchos::RCP<SolutionHistory<Scalar> > sh,
-    StepperBackwardEuler<Scalar> & stepperBE){}
+    Stepper<Scalar> & stepper){}
 };
 } // namespace Tempus
 #endif // Tempus_StepperBackwardEulerObserver_hpp

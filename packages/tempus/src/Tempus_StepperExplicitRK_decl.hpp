@@ -97,7 +97,7 @@ public:
     virtual Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> > getSolver() const
     { return Teuchos::null; }
     virtual void setObserver(
-      Teuchos::RCP<StepperExplicitRKObserver<Scalar> > obs = Teuchos::null);
+      Teuchos::RCP<StepperObserver<Scalar> > obs = Teuchos::null);
 
     void setTableau(
       Teuchos::RCP<Teuchos::ParameterList> pList,
@@ -162,6 +162,7 @@ protected:
   std::vector<Teuchos::RCP<Thyra::VectorBase<Scalar> > > stageXDot_;
   Teuchos::RCP<Thyra::VectorBase<Scalar> >               stageX_;
 
+  Teuchos::RCP<StepperObserver<Scalar> >            stepperObserver_;
   Teuchos::RCP<StepperExplicitRKObserver<Scalar> >  stepperExplicitRKObserver_;
 
   // For Embedded RK
