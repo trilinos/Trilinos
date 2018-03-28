@@ -232,7 +232,12 @@
     <!-- ===========  AUGMENTED LAGRANGIAN  =========== -->
     <ParameterList name="Augmented Lagrangian">
       <Parameter name="Level of Hessian Approximation"          type="int"    value="0"            />
+      <!-- ===========  PROBLEM SCALING =========== -->
+      <Parameter name="Use Default Problem Scaling"             type="bool"   value="false"        />
+      <Parameter name="Objective Scaling"                       type="double" value="1.e-2"        />
+      <Parameter name="Constraint Scaling"                      type="double" value="1.e0"         />
       <!-- ===========  PENALTY PARAMETER UPDATE  =========== -->
+      <Parameter name="Use Default Initial Penalty Parameter"   type="bool"   value="true"         />
       <Parameter name="Initial Penalty Parameter"               type="double" value="1.e1"         />
       <Parameter name="Penalty Parameter Growth Factor"         type="double" value="1.e1"         />
       <Parameter name="Minimum Penalty Parameter Reciprocal"    type="double" value="0.1"          />

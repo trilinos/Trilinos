@@ -74,6 +74,7 @@ private:
 
   Teuchos::ParameterList parlist_;
   // Lagrange multiplier update
+  bool useDefaultInitPen_;
   bool scaleLagrangian_;
   Real minPenaltyReciprocal_;
   Real minPenaltyLowerBound_;
@@ -97,6 +98,12 @@ private:
   Real outerOptTolerance_;
   Real outerFeasTolerance_;
   Real outerStepTolerance_;
+  // Scaling information
+  bool useDefaultScaling_;
+  Real fscale_;
+  Real cscale_;
+  // Verbosity flag
+  int verbosity_;
 
   Real computeGradient(Vector<Real> &g, const Vector<Real> &x,
                        const Real mu, Objective<Real> &obj,
@@ -135,6 +142,7 @@ public:
       x_(ROL::nullPtr), parlist_(parlist), subproblemIter_(0) {
     Real one(1), p1(0.1), p9(0.9), ten(1.e1), oe8(1.e8), oem8(1.e-8);
     Teuchos::ParameterList& sublist = parlist.sublist("Step").sublist("Augmented Lagrangian");
+    useDefaultInitPen_    = sublist.get("Use Default initial Penalty Parameter",true);
     Step<Real>::getState()->searchSize = sublist.get("Initial Penalty Parameter",ten);
     // Multiplier update parameters
     scaleLagrangian_      = sublist.get("Use Scaled Augmented Lagrangian",          false);
@@ -155,10 +163,17 @@ public:
     maxit_   = sublist.get("Subproblem Iteration Limit",              1000);
     subStep_ = sublist.get("Subproblem Step Type",                    "Trust Region");
     parlist_.sublist("Status Test").set("Iteration Limit",maxit_);
+    // Verbosity setting
+    verbosity_          = parlist.sublist("General").get("Print Verbosity", 0);
+    print_              = (verbosity_ > 0 ? true : print_);
     // Outer iteration tolerances
     outerFeasTolerance_ = parlist.sublist("Status Test").get("Constraint Tolerance", oem8);
     outerOptTolerance_  = parlist.sublist("Status Test").get("Gradient Tolerance",   oem8);
     outerStepTolerance_ = parlist.sublist("Status Test").get("Step Tolerance",       oem8);
+    // Scaling
+    useDefaultScaling_  = sublist.get("Use Default Problem Scaling", true);
+    fscale_             = sublist.get("Objective Scaling", 1.0);
+    cscale_             = sublist.get("Constraint Scaling", 1.0);
   }
 
   /** \brief Initialize step with equality constraint.
@@ -176,6 +191,7 @@ public:
   void initialize( Vector<Real> &x, const Vector<Real> &g, Vector<Real> &l, const Vector<Real> &c,
                    Objective<Real> &obj, Constraint<Real> &con, BoundConstraint<Real> &bnd,
                    AlgorithmState<Real> &algo_state ) {
+    Real one(1), TOL(1.e-2);
     AugmentedLagrangian<Real> &augLag
       = dynamic_cast<AugmentedLagrangian<Real>&>(obj);
     // Initialize step state
@@ -196,22 +212,53 @@ public:
     bnd.update(x,true,algo_state.iter);
     // Update objective and constraint.
     augLag.update(x,true,algo_state.iter);
+    if (useDefaultScaling_) {
+      fscale_ = one/std::max(one,augLag.getObjectiveGradient(x)->norm());
+      try {
+        Real tol = std::sqrt(ROL_EPSILON<Real>());
+        Ptr<Vector<Real>> ji = x.clone();
+        Real maxji(0), normji(0);
+        for (int i = 0; i < c.dimension(); ++i) {
+          con.applyAdjointJacobian(*ji,*c.basis(i),x,tol);
+          normji = ji->norm();
+          maxji  = std::max(normji,maxji);
+        }
+        cscale_ = one/std::max(one,maxji);
+      }
+      catch (std::exception &e) {
+        cscale_ = one;
+      }
+    }
+    augLag.setScaling(fscale_,cscale_);
     algo_state.value = augLag.getObjectiveValue(x);
     algo_state.gnorm = computeGradient(*(state->gradientVec),x,state->searchSize,obj,bnd);
     augLag.getConstraintVec(*(state->constraintVec),x);
     algo_state.cnorm = (state->constraintVec)->norm();
+    if (useDefaultInitPen_) {
+      Step<Real>::getState()->searchSize
+        = std::max(static_cast<Real>(1e-8),std::min(static_cast<Real>(10)*
+            std::max(one,std::abs(fscale_*algo_state.value))
+              /std::max(one,std::pow(cscale_*algo_state.cnorm,2)),
+            static_cast<Real>(1e-2)*maxPenaltyParam_));
+    }
     // Update evaluation counters
     algo_state.ncval += augLag.getNumberConstraintEvaluations();
     algo_state.nfval += augLag.getNumberFunctionEvaluations();
     algo_state.ngrad += augLag.getNumberGradientEvaluations();
     // Initialize intermediate stopping tolerances
-    Real one(1), TOL(1.e-2);
     minPenaltyReciprocal_ = std::min(one/state->searchSize,minPenaltyLowerBound_);
     optTolerance_  = std::max(TOL*outerOptTolerance_,
                               optToleranceInitial_*std::pow(minPenaltyReciprocal_,optDecreaseExponent_));
     optTolerance_  = std::min(optTolerance_,TOL*algo_state.gnorm);
     feasTolerance_ = std::max(TOL*outerFeasTolerance_,
                               feasToleranceInitial_*std::pow(minPenaltyReciprocal_,feasDecreaseExponent_));
+    if (verbosity_ > 0) {
+      std::cout << std::endl;
+      std::cout << "Augmented Lagrangian Initialize" << std::endl;
+      std::cout << "Objective Scaling:  " << fscale_ << std::endl;
+      std::cout << "Constraint Scaling: " << cscale_ << std::endl;
+      std::cout << std::endl;
+    }
   }
 
   /** \brief Compute step (equality constraint).
