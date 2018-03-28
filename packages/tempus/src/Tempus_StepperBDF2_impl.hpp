@@ -91,7 +91,8 @@ void StepperBDF2<Scalar>::setStartUpStepper(
         RCP<StepperFactory<Scalar> > sf =
           Teuchos::rcp(new StepperFactory<Scalar>());
         startUpStepper_ =
-          sf->createStepper(this->wrapperModel_->getAppModel(), "RK Forward Euler");
+          sf->createStepper(this->wrapperModel_->getAppModel(),
+                            "IRK 1 Stage Theta Method");
 
         startupStepperName = startUpStepper_->description();
         startupStepperPL = startUpStepper_->getNonconstParameterList();
