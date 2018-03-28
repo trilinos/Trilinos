@@ -84,6 +84,8 @@
 
 #cmakedefine HAVE_MUELU_VIENNACL
 
+#cmakedefine HAVE_MUELU_MKL
+
 /* Flags for active Tpetra nodes if Tpetra is enabled */
 #cmakedefine HAVE_MUELU_SERIAL
 #cmakedefine HAVE_MUELU_PTHREAD
