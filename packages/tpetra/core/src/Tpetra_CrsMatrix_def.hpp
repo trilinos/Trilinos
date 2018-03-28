@@ -8890,7 +8890,12 @@ namespace Tpetra {
     if(!params.is_null())
       esfc_params.set("compute global constants",params->get("compute global constants",true));
 
-    if( isMM && !MyImporter.is_null()) { 
+    if( isMM && !MyImporter.is_null()) {
+      static bool first = true;
+      if(first) {
+        first = false;
+        std::cerr<<" isMM "<<std::endl;
+      }
 
       // The isMatrixMatrix_TransferAndFillComplete parameter is set to true. This means the unfiltered
       // reverseNeighborDiscovery is safe (by assertion?!?). 
@@ -9155,11 +9160,11 @@ namespace Tpetra {
           } // cbl sort
 
           MyImport = rcp ( new import_type (MyDomainMap,
-                                                            MyColMap,
-                                                            copyRemotePids,
-                                                            userExportLIDs().getConst(),
-                                                            userExportPIDs().getConst(),
-                                                            plist) 
+                                            MyColMap,
+                                            copyRemotePids,
+                                            userExportLIDs().getConst(),
+                                            userExportPIDs().getConst(),
+                                            plist) 
                                            );
     }  // if(isMM)
 
