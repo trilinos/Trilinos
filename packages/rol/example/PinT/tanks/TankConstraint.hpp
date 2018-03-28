@@ -80,14 +80,14 @@ public:
   TankConstraint( Teuchos::ParameterList& pl ) :
     tankState_(pl) {}
 
-  void value( Vector &c, const Vector &u_old, const Vector &u_new, 
-              const Vector &z, Real &tol ) override {
+  void value( Vector& c, const Vector& u_old, const Vector& u_new, 
+              const Vector& z, Real& tol ) override {
     tankState_.value( getVector(c),     getVector(u_old), 
                       getVector(u_new), getVector(z) );
   }
 
-  void solve( Vector &c, const Vector &u_old, Vector &u_new, 
-              const Vector &z, Real &tol ) override {
+  void solve( Vector& c, const Vector& u_old, Vector& u_new, 
+              const Vector& z, Real& tol ) override {
     auto c_v  = getVector(c);       auto uo_v = getVector(u_old);
     auto un_v = getVector(u_new);   auto z_v  = getVector(z);
  
@@ -98,22 +98,40 @@ public:
 
   //----------------------------------------------------------------------------
 
-  void applyJacobian_1_old( Vector &jv, const Vector &v_old,
-                            const Vector &u_old, const Vector &u_new,
-                            const Vector &z, Real &tol ) override {
+  void applyJacobian_1_old( Vector& jv, const Vector& v_old,
+                            const Vector& u_old, const Vector& u_new,
+                            const Vector& z, Real& tol ) override {
      tankState_.applyJacobian_1_old( getVector(jv), getVector(v_old) );
   }
 
-  void applyJacobian_1_new( Vector &jv, const Vector &v_new,
-                            const Vector &u_old, const Vector &u_new,
-                            const Vector &z, Real &tol ) override {
+  void applyAdjointJacobian_1_old( Vector &ajv_old, const Vector &dualv,
+                                   const Vector &u_old, const Vector &u_new,
+                                   const Vector &z, Real& tol) override { 
+  }
+
+  //----------------------------------------------------------------------------
+
+  void applyJacobian_1_new( Vector& jv, const Vector& v_new,
+                            const Vector& u_old, const Vector& u_new,
+                            const Vector& z, Real& tol ) override {
      tankState_.applyJacobian_1_new( getVector(jv), getVector(v_new) );
   }
-  
+ 
+  void applyAdjointJacobian_1_new( Vector& ajv_new, const Vector &dualv,
+                                   const Vector &u_old, const Vector& u_new,
+                                   const Vector &z, Real& tol) override {
+
+  }
+
   void applyInverseJacobian_1_new( Vector &ijv, const Vector &v_new,
                                    const Vector &u_old, const Vector &u_new,
-                                   const Vector &z, Real &tol ) override {
-//    tankState_.solve( getVector(ijv), 
+                                   const Vector &z, Real& tol ) override {
+  }
+
+  void applyInverseAdjointJacobian_1_new( Vector& iajv, const Vector& v_new,
+                                          const Vector& u_old, const Vector& u_new,
+                                          const Vector& z, Real& tol) override {
+
   }
 
   //----------------------------------------------------------------------------
@@ -124,7 +142,15 @@ public:
     tankState_.applyJacobian_2( getVector(jv), getVector(v_new) );
   }
 
-  //----------------------------------------------------------------------------
+  void applyAdjointJacobian_2_time( Vector& ajv, const Vector &dualv,
+                                    const Vector &u_old, const Vector& u_new,
+                                    const Vector &z, Real &tol) override {
+  }
+
+
+  //-----------------------------------------------------------------------------
+
+
 }; // class TankConstraint
 
 } // namespace details

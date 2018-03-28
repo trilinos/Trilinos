@@ -40,17 +40,12 @@
 // ************************************************************************
 // @HEADER
 
+#include <iostream>
+#include <iomanip>
+#include "ROL_Ptr.hpp"
 #include "Teuchos_oblackholestream.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
-#include "Teuchos_XMLParameterListHelpers.hpp"
-
-#include "TankConstraint.hpp"
 #include "LowerBandedMatrix.hpp"
-
-#include <iostream>
-
-
-
 
 using RealT = double;
 using size_type = std::vector<RealT>::size_type;
@@ -76,45 +71,46 @@ int main( int argc, char* argv[] ) {
     for( auto e : x ) *outStream << e << " ";
     *outStream << "\n";
   };
-  // *** Example body.
 
-  try {   
-
-    auto tank_parameters = ROL::makePtr<Teuchos::ParameterList>();
-    std::string tank_xml("tank-parameters.xml");
-    Teuchos::updateParametersFromXmlFile(tank_xml, tank_parameters.ptr());
+  try {
 
     size_type N = 8;
-    vector<size_type> band_index{0,2};
-    
+    vector<size_type> band_index{0,1};
     vector<vector<RealT>> A_band;
-    vector<RealT> Ax(N);
-    vector<RealT> x(N);
-    vector<RealT> y(N);
 
-    vector<RealT> band0(N);
-    vector<RealT> band2(N-2);
+    vector<RealT> x{1, -1,  1, -1,   1, -1,  1, -1}; 
+    vector<RealT> b{1, -1,  2, -7, -10,  5, -4,  2};
+    vector<RealT> c{0,  0,  3, -6,  -9,  6, -3,  1};
 
-    for( auto& e: band0 ) e = RealT(1.0);
-    for( auto& e: band2 ) e = RealT(1.0);
-    
-    
+    vector<RealT> y(N), z(N);
+
+    vector<RealT> Ax(N);    
+    vector<RealT> Atx(N);    
+
+    vector<RealT> band0{ 1,  2,  4,  8, -8, -4, -2, -1 };
+    vector<RealT> band1{ 1,  2,  1,  2,  1,  2,  1     };
 
     A_band.push_back(band0);
-    A_band.push_back(band2);
+    A_band.push_back(band1);
  
-    for( size_type i=0; i<N; ++i ) x[i] = RealT(1.0+i);
-
     LowerBandedMatrix<RealT> A( band_index, A_band );
 
-    print_vector(x);
-
-    A.applyTranspose(Ax,x, 1.0, 0, N);
+    A.apply(Ax,  x, 1.0, 0, N);
+    A.applyTranspose(Atx, x, 1.0, 0, N);
+    A.solve(y, Ax, 1.0, 0, N);
+    A.solveTranspose(z, Atx, 1.0, 0, N);
     
-    print_vector(Ax);
+//    RealT error2  = 0;
+//    RealT errort2 = 0;
 
-    A.solveTranspose(y,Ax, 1.0, 0, N);
-    print_vector(y);
+    for( size_type i=0; i<N; ++i ) {
+      *outStream << std::setw(8) <<  x[i]    << " " 
+                 << std::setw(8) <<  y[i]    << " "
+                 << std::setw(8) <<  Ax[i]   << " "
+                 << std::setw(8) <<  Atx[i]  << " "
+                 << std::setw(8) <<  b[i]    << " "
+                 << std::setw(8) <<  c[i]    << std::endl;
+    }
 
 
   }

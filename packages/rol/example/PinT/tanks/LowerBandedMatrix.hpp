@@ -102,9 +102,23 @@ public:
  
     for( size_type row=begin; row<end; ++row ) {
       for( size_type i=0; i < num_bands; i++ ) {
-        size_t col = row - index[i];
-        if( row >= index[i] ) Ax[row] += alpha*x[col]*band[i][col];
+        size_type col = row - index.at(i);
+        if( row >= index.at(i) ) Ax[row] += alpha*x.at(col)*band.at(i).at(col);
         else break;
+      }
+    }
+  }
+
+  void applyTranspose( vector<Real>& Ax,
+                       const vector<Real>& x, 
+                       Real alpha,
+                       size_type begin,
+                       size_type end ) {
+    for( size_type row = begin; row<end; ++row ) {
+      for( size_type i=0; i < num_bands; ++i ) {
+        size_type col = row + index.at(i);
+          if( row + index.at(i) < end ) Ax[row] += alpha*x.at(col)*band.at(i).at(row);
+          else break;
       }
     }
   }
@@ -120,14 +134,34 @@ public:
     }
 
     for( size_type row=0; row<Ax.size(); ++row ) {
-      x[row] += alpha*Ax[row]/band[0][row];
+      x[row] += alpha*Ax.at(row)/band.at(0).at(row);
       for( size_type i=1; i < num_bands; i++ ) {
-        size_t col = row - index[i];
-        if( row >= index[i] ) x[row] -= x[col]*band[i][col];
+        size_type col = row - index.at(i);
+        if( row >= index.at(i) ) x[row] -= alpha*x.at(col)*band.at(i).at(col);
         else break;
       }
     } 
   }
+
+
+  void solveTranspose( vector<Real>& x, 
+                       const vector<Real>& Ax, 
+                       Real alpha,
+                       size_type begin,
+                       size_type end ) {
+    if( !is_invertible ) {
+      throw logic_error("\nError: Cannot solve system. Matrix is singular.\n");
+    } 
+
+    for( size_type row=0; row<Ax.size(); ++row ) {
+      x[row] += alpha*Ax.at(row)/band.at(0).at(row);
+      for( size_type i=1; i < num_bands; ++i ) {
+        size_type col = row + index.at(i);
+        if( row + index.at(i) < end ) x[row] -= alpha*x.at(col)*band.at(i).at(row);                      
+      }
+    }
+  }
+
 }; // class LowerBandedMatrix
 
 } // namespace details
