@@ -1,5 +1,5 @@
 #!/bin/bash
-user="csiefer2"
+user="GITHUBUSERNAME"
 fork="trilinos"
 repo="Trilinos"
 mainBranch="develop"
@@ -8,7 +8,11 @@ tokenfile=~/.githubOAuth/token
 
 TMPFILE=/tmp/.ac$$
 
-
+# Check for a message
+if [ $# -eq 0 ]; then
+    echo "A message must be included"
+    exit -1
+fi
 
 # Make sure there are no diff'd files
 git diff-index --quiet HEAD
@@ -38,17 +42,15 @@ MESSAGE="$*"
 token=$(cat $tokenfile)
 h="'Authorization: token $token'"
 d="{\"title\": \"$TITLE_STRING\" , \"head\": \"$REMOTE\" ,\"base\": \"$mainBranch\", \"body\": \"$MESSAGE\"}" 
-curl -i -H $h -d $d https://api.github.com/repos/$user/$repo/pulls >$TMPFILE 2> $TMPFILE
+curl -i -H $h -d $d https://api.github.com/repos/$fork/$repo/pulls >$TMPFILE 2> $TMPFILE
 
 # Get the PR number
 PRN=`grep number\": $TMPFILE | cut -f2 -d:`
 
 if grep Created $TMPFILE > /dev/null; then
     echo "PR $PRN created successfully"
-    cp $TMPFILE ~/success
 else
     echo "PR Generation failed"; 
-    cp $TMPFILE ~/fail
     exit 1
 fi
 
