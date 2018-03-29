@@ -82,14 +82,17 @@ public:
 
   void value( Vector& c, const Vector& u_old, const Vector& u_new, 
               const Vector& z, Real& tol ) override {
-    tankState_.value( getVector(c),     getVector(u_old), 
-                      getVector(u_new), getVector(z) );
+
+    auto& c_v = getVector(c);      auto& uo_v = getVector(u_old);
+    auto& un_v = getVector(u_new); auto& z_v = getVector(z);
+
+    tankState_.value( c_v, uo_v, un_v, z_v ) ;
   }
 
   void solve( Vector& c, const Vector& u_old, Vector& u_new, 
               const Vector& z, Real& tol ) override {
-    auto c_v  = getVector(c);       auto uo_v = getVector(u_old);
-    auto un_v = getVector(u_new);   auto z_v  = getVector(z);
+    auto& c_v  = getVector(c);       auto& uo_v = getVector(u_old);
+    auto& un_v = getVector(u_new);   auto& z_v  = getVector(z);
  
     tankState_.solve_level( c_v, un_v, uo_v, z_v );
     tankState_.compute_flow( un_v, z_v );

@@ -134,8 +134,11 @@ void TankState<Real>::value( vector<Real>& c, const vector<Real>& u_old,
 
       if( i>0 ) Qin_val -= 0.5*Qout(u_new,i-1,j);
       if( j>0 ) Qin_val -= 0.5*Qout(u_new,i,j-1);
+
     }
+      cout << endl;
   }  
+
 }
 
 template<typename Real>
