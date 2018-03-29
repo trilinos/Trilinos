@@ -1,5 +1,4 @@
 #!/bin/bash
-user="GITHUBUSERNAME"
 fork="trilinos"
 repo="Trilinos"
 mainBranch="develop"
@@ -30,7 +29,7 @@ fi
 
 # Get SHA1 of current HEAD (cut down to 7 characters)
 SHA=`git rev-parse HEAD | cut -c1-7`
-REMOTE=$user-$SHA
+REMOTE=$USER-$SHA
 
 # Push this branch to remote with a new name
 git push origin $CBRANCH:$REMOTE
@@ -41,8 +40,8 @@ TITLE_STRING="Auto-PR for SHA $SHA"
 MESSAGE="$*"
 token=$(cat $tokenfile)
 h="'Authorization: token $token'"
-d="{\"title\": \"$TITLE_STRING\" , \"head\": \"$REMOTE\" ,\"base\": \"$mainBranch\", \"body\": \"$MESSAGE\"}" 
-curl -i -H $h -d $d https://api.github.com/repos/$fork/$repo/pulls >$TMPFILE 2> $TMPFILE
+CMD=$(echo curl -i -H $h -d \'{\"title\": \"$TITLE_STRING\" , \"head\": \"$REMOTE\" ,\"base\": \"$mainBranch\", \"body\": \"$MESSAGE\"}\' https://api.github.com/repos/$fork/$repo/pulls)
+eval $CMD >$TMPFILE 2> $TMPFILE
 
 # Get the PR number
 PRN=`grep number\": $TMPFILE | cut -f2 -d:`
