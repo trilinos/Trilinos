@@ -127,7 +127,7 @@ void Multiply_ViennaCL(const Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,No
       });
 
     Kokkos::parallel_for(Acolind.extent(0),KOKKOS_LAMBDA(const size_t i) {
-        AcolindVCL(i) = Arowptr(i);
+        AcolindVCL(i) = Acolind(i);
       });
 
     Kokkos::parallel_for(Bcolind.extent(0),KOKKOS_LAMBDA(const size_t i) {
