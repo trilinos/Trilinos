@@ -140,21 +140,21 @@ private:
   void setCallbacksGraph(
     const RCP<const GraphAdapter<user_t,userCoord_t> > &adp)
   {
-    // std::cout << "NotReadyForGraphYet" << std::endl;
+    // std::cout << "NotReadyForGraphCallbacksYet" << std::endl;
     // TODO
   }
 
   void setCallbacksGraph(
     const RCP<const MatrixAdapter<user_t,userCoord_t> > &adp)
   {
-    // std::cout << "NotReadyForGraphYet" << std::endl;
+    // std::cout << "NotReadyForGraphCallbacksYet" << std::endl;
     // TODO
   }
 
   void setCallbacksGraph(
     const RCP<const MeshAdapter<user_t> > &adp)
   {
-    // std::cout << "NotReadyForGraphYet" << std::endl;
+    // std::cout << "NotReadyForGraphCallbacksYet" << std::endl;
     // TODO
   }
 
@@ -173,6 +173,21 @@ private:
     //                             (void *) &(*adapter));
     // zz->Set_HG_Edge_Wts_Fn(zoltanHGSizeEdgeWts_withMatrixAdapter<Adapter>,
     //                             (void *) &(*adapter));
+  }
+
+  void setCallbacksHypergraph(
+    const RCP<const GraphAdapter<user_t,userCoord_t> > &adp)
+  {
+    zz->Set_HG_Size_CS_Fn(zoltanHGSizeCS_withGraphAdapter<Adapter>,
+                          (void *) &(*adp));
+    zz->Set_HG_CS_Fn(zoltanHGCS_withGraphAdapter<Adapter>,
+                     (void *) &(*adp));
+
+    // zz->Set_HG_Size_Edge_Wts_Fn(zoltanHGSizeEdgeWts_withMatrixAdapter<Adapter>,
+    //                             (void *) &(*adapter));
+    // zz->Set_HG_Edge_Wts_Fn(zoltanHGSizeEdgeWts_withMatrixAdapter<Adapter>,
+    //                             (void *) &(*adapter));
+  
   }
 
   void setCallbacksHypergraph(const RCP<const MeshAdapter<user_t> > &adp)
@@ -535,6 +550,7 @@ public:
     zz = rcp(new Zoltan(mpicomm)); 
     setCallbacksIDs();
     setCallbacksGraph(adapter);
+    setCallbacksHypergraph(adapter);
     if (adapter->coordinatesAvailable()) {
       setCallbacksGeom(adapter->getCoordinateInput());
     }

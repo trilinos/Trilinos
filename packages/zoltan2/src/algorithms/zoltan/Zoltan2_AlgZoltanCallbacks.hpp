@@ -174,6 +174,81 @@ static void zoltanGeom(void *data, int nGidEnt, int nLidEnt, int nObj,
 }
 
 /////////////////////////////////////////////////////////////////////////////
+// HYPERGRAPH CALLBACKS USING A GRAPH ADAPTER
+// Building the most straightforward hypergraph from a graph and, thus,
+// avoiding use of HypergraphModel.
+// Assuming one hyperedge per vertex, containing vertex and all its nbors
+/////////////////////////////////////////////////////////////////////////////
+
+///////////////////////
+// ZOLTAN_HG_SIZE_CS_FN
+template <typename Adapter>
+static void zoltanHGSizeCS_withGraphAdapter(void *data, 
+                                            int *nLists, int *nPins,
+                                            int *format, int *ierr
+) 
+{
+  const Adapter *adp = static_cast<Adapter *>(data);
+  *ierr = ZOLTAN_OK;
+
+  *nLists = Teuchos::as<int>(adp->getLocalNumVertices());
+  *nPins = Teuchos::as<int>(adp->getLocalNumEdges()+adp->getLocalNumVertices());
+           // number of given edges + self pin for each vertex
+  *format = ZOLTAN_COMPRESSED_VERTEX;
+}
+
+//////////////////
+// ZOLTAN_HG_CS_FN
+template <typename Adapter>
+static void zoltanHGCS_withGraphAdapter(void *data, int nGidEnt, int nLists, 
+                                        int nPins, int format, 
+                                        ZOLTAN_ID_PTR listIds, int *listIdx,
+                                        ZOLTAN_ID_PTR pinIds, int *ierr
+)
+{
+  typedef typename Adapter::gno_t gno_t;
+  // typedef typename Adapter::lno_t lno_t;
+  typedef typename Adapter::offset_t offset_t;
+  typedef typename Adapter::user_t user_t;
+  const GraphAdapter<user_t>* adp = static_cast<GraphAdapter<user_t>* >(data);
+
+  *ierr = ZOLTAN_OK;  
+
+  const gno_t *ids;
+  const gno_t *adjIds;
+  const offset_t *offsets;
+
+  try {
+    adp->getIDsView(ids);
+    adp->getEdgesView(offsets, adjIds);
+  }
+  catch (std::exception &e) {
+    *ierr = ZOLTAN_FATAL;
+  }
+
+  if (*ierr == ZOLTAN_OK) {
+    // copy into Zoltan's memory
+    for (int i=0; i < nLists; i++) {
+      ZOLTAN_ID_PTR idPtr = &(listIds[i*nGidEnt]);
+      TPL_Traits<ZOLTAN_ID_PTR,gno_t>::ASSIGN(idPtr, ids[i]);
+      listIdx[i] = Teuchos::as<int>(offsets[i]+i);  // adding self pin 
+    }
+    listIdx[nLists] = Teuchos::as<int>(offsets[nLists]);
+    int pinCnt = 0;
+    for (int i=0; i < nLists; i++) {
+      ZOLTAN_ID_PTR idPtr = &(pinIds[pinCnt*nGidEnt]);
+      TPL_Traits<ZOLTAN_ID_PTR,gno_t>::ASSIGN(idPtr, ids[i]);
+      pinCnt++;
+      for (offset_t j = offsets[i]; j < offsets[i+1]; j++) {
+        idPtr = &(pinIds[pinCnt*nGidEnt]);
+        TPL_Traits<ZOLTAN_ID_PTR,gno_t>::ASSIGN(idPtr, adjIds[j]);
+        pinCnt++;
+      }
+    }
+  }
+}
+
+/////////////////////////////////////////////////////////////////////////////
 // HYPERGRAPH CALLBACKS USING A MATRIX ADAPTER
 // Building the most straightforward hypergraph from a matrix and, thus,
 // avoiding use of HypergraphModel.
@@ -183,7 +258,8 @@ static void zoltanGeom(void *data, int nGidEnt, int nLidEnt, int nObj,
 ///////////////////////
 // ZOLTAN_HG_SIZE_CS_FN
 template <typename Adapter>
-static void zoltanHGSizeCS_withMatrixAdapter(void *data, int *nLists, int *nPins,
+static void zoltanHGSizeCS_withMatrixAdapter(void *data, 
+                                             int *nLists, int *nPins,
                                              int *format, int *ierr
 ) 
 {
@@ -281,7 +357,6 @@ static void zoltanHGCS_withMatrixAdapter(void *data, int nGidEnt, int nLists,
 
 /////////////////////////////////////////////////////////////////////////////
 // TODO:  GRAPH ADAPTER CALLBACKS
-
 
 /////////////////////////////////////////////////////////////////////////////
 // HYPERGRAPH CALLBACKS USING A MESH ADAPTER

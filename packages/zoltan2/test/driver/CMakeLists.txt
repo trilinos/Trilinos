@@ -163,6 +163,17 @@ TRIBITS_ADD_TEST(
     FAIL_REGULAR_EXPRESSION "FAIL"
 )
 
+TRIBITS_ADD_TEST(
+    test_driver
+    NAME zoltanWithGraphAdapter
+    NUM_MPI_PROCS 4
+    COMM serial mpi
+    ARGS
+    "./driverinputs/zoltanGraphAdapter.xml"
+    PASS_REGULAR_EXPRESSION "PASS"
+    FAIL_REGULAR_EXPRESSION "FAIL"
+)
+
 IF (${PROJECT_NAME}_ENABLE_Pamgen)
   TRIBITS_ADD_TEST(
     test_driver
