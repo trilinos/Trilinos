@@ -147,10 +147,6 @@ public:
     Z2_THROW_EXPERIMENTAL("Zoltan2 AlgND is strictly experimental software ")
 #endif
 
-#ifndef INCLUDE_ZOLTAN2_EXPERIMENTAL_WOLF
-    Z2_THROW_EXPERIMENTAL_WOLF("Zoltan2 algND is strictly experimental software ")
-#endif
-
     if(mProblemComm->getSize()!=1)
     {
       Z2_THROW_SERIAL("Zoltan2 AlgND is strictly serial!");
