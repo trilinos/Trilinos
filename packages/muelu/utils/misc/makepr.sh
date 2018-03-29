@@ -29,7 +29,7 @@ SHA=`git rev-parse HEAD | cut -c1-7`
 REMOTE=$user-$SHA
 
 # Push this branch to remote with a new name
-#git push origin $CBRANCH:$REMOTE
+git push origin $CBRANCH:$REMOTE
 
 TITLE_STRING="Auto-PR for SHA $SHA"
 
