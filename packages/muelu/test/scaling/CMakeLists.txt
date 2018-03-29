@@ -308,7 +308,7 @@ IF (${PACKAGE_NAME}_ENABLE_Experimental AND ${PACKAGE_NAME}_ENABLE_Tpetra)
       MMKernelDriver
       NAME "MatrixMatrixKernelDriver"
       ARGS "--linAlgebra=Tpetra"
-      NUM_MPI_PROCS 4
+      NUM_MPI_PROCS 1
       COMM serial mpi
       )
   ENDIF()
