@@ -189,6 +189,32 @@ namespace {
   }
 
   ////
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( MultiVector, Cloner, LO, GO, Scalar , Node )
+  {
+    typedef Tpetra::Map<LO, GO, Node> map_type;
+    typedef Tpetra::MultiVector<Scalar,LO,GO,Node> MV;
+    typedef Tpetra::Details::MultiVectorCloner<MV,MV> cloner_type;
+
+    const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid ();
+    // create a Map
+    const size_t numLocal = 13;
+    const size_t numVecs  = 7;
+    const GO indexBase = 0;
+    RCP<const map_type> map =
+      rcp (new map_type (INVALID, numLocal, indexBase, getDefaultComm ()));
+
+    // Create a MultiVector
+    RCP<MV> mvec = Tpetra::createMultiVector<Scalar>(map,numVecs);
+
+    // Clone the MultiVector
+    RCP<MV> mvec_clone = cloner_type::clone(*mvec,mvec->getMap()->getNode());
+
+    // Check that the vectors are the same: same map, same values
+    TEST_EQUALITY(mvec->getMap()->isSameAs(*mvec_clone->getMap()), true);
+    TEST_COMPARE_FLOATING_ARRAYS(mvec->get1dView(),mvec_clone->get1dView(),0.0);
+  }
+
+  ////
   TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( MultiVector, basic, LO, GO, Scalar , Node )
   {
     typedef Tpetra::Map<LO, GO, Node> map_type;
