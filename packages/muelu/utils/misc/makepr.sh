@@ -37,7 +37,8 @@ TITLE_STRING="Auto-PR for SHA $SHA"
 MESSAGE="$*"
 token=$(cat $tokenfile)
 h="'Authorization: token $token'"
-curl -i -H $h -d \'{\"title\": \"$TITLE_STRING\" , \"head\": \"$REMOTE\" ,\"base\": \"$mainBranch\" , \"body\": \"$MESSAGE\"}\' https://api.github.com/repos/$user/$repo/pulls >$TMPFILE 2> $TMPFILE
+d="{\"title\": \"$TITLE_STRING\" , \"head\": \"$REMOTE\" ,\"base\": \"$mainBranch\", \"body\": \"$MESSAGE\"}" 
+curl -i -H $h -d $d https://api.github.com/repos/$user/$repo/pulls >$TMPFILE 2> $TMPFILE
 
 # Get the PR number
 PRN=`grep number\": $TMPFILE | cut -f2 -d:`
