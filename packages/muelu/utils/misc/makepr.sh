@@ -29,7 +29,7 @@ SHA=`git rev-parse HEAD | cut -c1-7`
 REMOTE=$user-$SHA
 
 # Push this branch to remote with a new name
-git push origin $CBRANCH:$REMOTE
+#git push origin $CBRANCH:$REMOTE
 
 TITLE_STRING="Auto-PR for SHA $SHA"
 
@@ -39,5 +39,6 @@ token=$(cat $tokenfile)
 h="'Authorization: token $token'"
 curl -i -H $h -d \'{\"title\": \"$TITLE_STRING\" , \"head\": \"$REMOTE\" ,\"base\": \"$mainBranch\" , \"body\": \"$MESSAGE\"}\' https://api.github.com/repos/$user/$repo/pulls >$TMPFILE 2> $TMPFILE
 
+cp $TMPFILE zuul
 
-rm -f $TMPFILE
+#rm -f $TMPFILE
