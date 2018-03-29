@@ -70,20 +70,22 @@ public:
   void applyJacobian_2( vector<Real> &jv, const vector<Real> &v_new ) const;
 
   // Given a vector u=(h,Qin,Qout) and f, update Qin and Qout from h
-  void compute_flow( vector<Real>& u, const vector<Real>& f ) const;
+  void compute_flow( vector<Real>& u, const vector<Real>& z ) const;
 
   void solve_level( vector<Real>& c, vector<Real>& u_new, 
-                    const vector<Real>& u_old, const vector<Real>& f ) const;
+                    const vector<Real>& u_old, const vector<Real>& z ) const;
 
   // Subvector Accessor Methods
-        Real& h( vector<Real>& x,       size_type r, size_type c ) const { return x[cols_*r+c]; }
-  const Real& h( const vector<Real>& x, size_type r, size_type c ) const { return x[cols_*r+c]; }
+        Real& h( vector<Real>& x,       size_type r, size_type c ) const { return x.at(cols_*r+c); }
+  const Real& h( const vector<Real>& x, size_type r, size_type c ) const { return x.at(cols_*r+c); }
 
-        Real& Qout(       vector<Real>& x, size_type r, size_type c ) const { return x[Ntanks_+cols_*r+c]; }
-  const Real& Qout( const vector<Real>& x, size_type r, size_type c ) const { return x[Ntanks_+cols_*r+c]; }
+        Real& Qout(       vector<Real>& x, size_type r, size_type c ) const { return x.at(Ntanks_+cols_*r+c); }
+  const Real& Qout( const vector<Real>& x, size_type r, size_type c ) const { return x.at(Ntanks_+cols_*r+c); }
   
-        Real& Qin(       vector<Real>& x, size_type r, size_type c ) const { return x[2*Ntanks_+cols_*r+c]; }
-  const Real& Qin( const vector<Real>& x, size_type r, size_type c ) const { return x[2*Ntanks_+cols_*r+c]; }
+        Real& Qin(       vector<Real>& x, size_type r, size_type c ) const { return x.at(2*Ntanks_+cols_*r+c); }
+  const Real& Qin( const vector<Real>& x, size_type r, size_type c ) const { return x.at(2*Ntanks_+cols_*r+c); }
+
+  void print_members( ostream& os ) const;
 
 private:
   size_type rows_;             // Number of tank rows
@@ -99,9 +101,9 @@ private:
   
   //---------- Time Discretization ---------------------------------------------
   Real T_;                     // Total time
-  Real dt_;                    // Time step size
   Real theta_;                 // Implicit/Explicit splitting factor
   int  Nt_;                    // Number of Time steps
+  Real dt_;                    // Time step size
 
   size_type    Ntanks_;        // Total number of tanks 
   vector<Real> p_;             // Passthrough coefficients

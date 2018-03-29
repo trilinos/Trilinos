@@ -49,6 +49,7 @@
 #include<vector>
 #include<exception>
 #include<iostream>
+#include<iomanip>
 
 /** \class LowerBandedMatrix
     \brief Implements GAXPY-like operations with a lower banded matrix 
@@ -83,7 +84,7 @@ public:
     if( it == index.end() ) // no diagonal band
       is_invertible = false;
     else {
-      for( auto e: band[0] ) {
+      for( auto e: band.at(0) ) {
         if( e == 0 ) {
           is_invertible = false;
           break;
@@ -103,7 +104,7 @@ public:
     for( size_type row=begin; row<end; ++row ) {
       for( size_type i=0; i < num_bands; i++ ) {
         size_type col = row - index.at(i);
-        if( row >= index.at(i) ) Ax[row] += alpha*x.at(col)*band.at(i).at(col);
+        if( row >= index.at(i) ) Ax.at(row) += alpha*x.at(col)*band.at(i).at(col-begin);
         else break;
       }
     }
@@ -117,7 +118,7 @@ public:
     for( size_type row = begin; row<end; ++row ) {
       for( size_type i=0; i < num_bands; ++i ) {
         size_type col = row + index.at(i);
-          if( row + index.at(i) < end ) Ax[row] += alpha*x.at(col)*band.at(i).at(row);
+          if( row + index.at(i) < end ) Ax.at(row) += alpha*x.at(col)*band.at(i).at(row-begin);
           else break;
       }
     }
@@ -133,11 +134,11 @@ public:
       throw logic_error("\nError: Cannot solve system. Matrix is singular.\n");
     }
 
-    for( size_type row=0; row<Ax.size(); ++row ) {
-      x[row] += alpha*Ax.at(row)/band.at(0).at(row);
+    for( size_type row=begin; row<end; ++row ) {
+      x.at(row) += alpha*Ax.at(row)/band.at(0).at(row);
       for( size_type i=1; i < num_bands; i++ ) {
         size_type col = row - index.at(i);
-        if( row >= index.at(i) ) x[row] -= alpha*x.at(col)*band.at(i).at(col);
+        if( row >= index.at(i) ) x.at(row) -= alpha*x.at(col)*band.at(i).at(col-begin);
         else break;
       }
     } 
@@ -153,14 +154,39 @@ public:
       throw logic_error("\nError: Cannot solve system. Matrix is singular.\n");
     } 
 
-    for( size_type row=0; row<Ax.size(); ++row ) {
+    for( size_type row=begin; row<end; ++row ) {
       x[row] += alpha*Ax.at(row)/band.at(0).at(row);
       for( size_type i=1; i < num_bands; ++i ) {
         size_type col = row + index.at(i);
-        if( row + index.at(i) < end ) x[row] -= alpha*x.at(col)*band.at(i).at(row);                      
+        if( row + index.at(i) < end ) x.at(row) -= alpha*x.at(col)*band.at(i).at(row-begin);                      
       }
     }
   }
+
+  void print( ostream& os ) {
+  
+    int fieldWidth = 16;
+
+    os << "Band indicies and values" << endl;
+    for( auto i: index ) os << setw(16) << i;
+    os << endl;
+    
+    size_type N = band.at(0).size();
+    os << string(fieldWidth*3,'-') << endl;
+    for( size_type l=0; l<N; ++l ) {
+      for( size_type k=0; k<num_bands; ++k ) {
+        if( l<band.at(k).size() )  os << setw(16) << band.at(k).at(l);
+        else                    os << setw(16) << "*";
+      }  
+      os << endl;
+    } 
+  }
+
+  const vector<Real>& at( size_type i ) const { return band.at(index.at(i)); }
+  vector<Real>& at( size_type i ) { return band.at(index.at(i)); }
+
+  const vector<Real>& operator[]( size_type i ) const { return band[index[i]]; }
+  vector<Real>& operator[]( size_type i ) { return band[index[i]]; }
 
 }; // class LowerBandedMatrix
 

@@ -91,7 +91,7 @@ public:
     auto c_v  = getVector(c);       auto uo_v = getVector(u_old);
     auto un_v = getVector(u_new);   auto z_v  = getVector(z);
  
-    tankState_.solve_level( c_v, uo_v, un_v, z_v );
+    tankState_.solve_level( c_v, un_v, uo_v, z_v );
     tankState_.compute_flow( un_v, z_v );
     value(c,u_old,u_new,z,tol);
   }

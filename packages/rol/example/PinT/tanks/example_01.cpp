@@ -78,7 +78,7 @@ int main( int argc, char* argv[] ) {
   };
   // *** Example body.
 
-  try {   
+//  try {   
 
     auto tank_parameters = ROL::makePtr<Teuchos::ParameterList>();
     std::string tank_xml("tank-parameters.xml");
@@ -87,33 +87,41 @@ int main( int argc, char* argv[] ) {
 
     TankConstraint<RealT> con(pl);
 
-    RealT Qin00 = pl.get("Corner Inflow",100.0);
+    auto Qin00 = pl.get("Corner Inflow",100.0);
+    auto hinit = pl.get("Initial Fluid Level", 2.0);
     auto nrows  = static_cast<size_type>( pl.get("Number of Rows",3) );
     auto ncols  = static_cast<size_type>( pl.get("Number of Columns",3) );
     auto N  = nrows*ncols;
     auto N3 = N*3;    
 
     auto z_p = ROL::makePtr<vector<RealT>>(N,0.0);
-    (*z_p)[0] = Qin00;
-    
     auto un_p = ROL::makePtr<vector<RealT>>(N3,0.0);
     auto uo_p = ROL::makePtr<vector<RealT>>(N3,0.0);
     auto c_p  = ROL::makePtr<vector<RealT>>(N3,0.0);
- 
+
+    (*z_p)[0] = Qin00;
+    for( size_type i=0; i<N; ++i ) (*uo_p)[i] = hinit;
 
     ROL::StdVector<RealT> z(z_p);    
     ROL::StdVector<RealT> un(un_p);
     ROL::StdVector<RealT> uo(uo_p);
     ROL::StdVector<RealT> c(c_p);
 
-//    RealT tol = 0;
-//    con.solve( c, uo, un, z, tol );
+    RealT tol = 0;
+    con.solve( c, uo, un, z, tol );
+ 
+    *outStream << "u_new = "; 
+    un.print(*outStream);
 
-  }
-  catch (std::logic_error err) {
-    *outStream << err.what() << "\n";
-    errorFlag = -1000;
-  }; // end try
+    *outStream << "c = "; 
+    c.print(*outStream);
+
+
+//  }
+//  catch (std::logic_error err) {
+//    *outStream << err.what() << "\n";
+//    errorFlag = -1000;
+//  }; // end try
 
   if (errorFlag != 0)
     std::cout << "End Result: TEST FAILED\n";
