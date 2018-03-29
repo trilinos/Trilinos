@@ -39,6 +39,17 @@ token=$(cat $tokenfile)
 h="'Authorization: token $token'"
 curl -i -H $h -d \'{\"title\": \"$TITLE_STRING\" , \"head\": \"$REMOTE\" ,\"base\": \"$mainBranch\" , \"body\": \"$MESSAGE\"}\' https://api.github.com/repos/$user/$repo/pulls >$TMPFILE 2> $TMPFILE
 
-cp $TMPFILE zuul
+# Get the PR number
+PRN=`grep number\": $TMPFILE | cut -f2 -d:`
 
-#rm -f $TMPFILE
+if grep Created $TMPFILE > /dev/null; then
+    echo "PR $PRN created successfully"
+    cp $TMPFILE ~/success
+else
+    echo "PR Generation failed"; 
+    cp $TMPFILE ~/fail
+    exit 1
+fi
+
+
+rm -f $TMPFILE
