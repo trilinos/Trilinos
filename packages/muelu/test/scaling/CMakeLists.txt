@@ -72,7 +72,7 @@ IF (${PACKAGE_NAME}_ENABLE_Tpetra AND ${PACKAGE_NAME}_ENABLE_Ifpack2 AND ${PACKA
 ENDIF()
 
 TRIBITS_COPY_FILES_TO_BINARY_DIR(ReadMatrix_cp
-  SOURCE_FILES A.mm simple.xml
+  SOURCE_FILES A.mm B.mm simple.xml
 )
 
   TRIBITS_COPY_FILES_TO_BINARY_DIR(ImportPerformance_cp
@@ -287,5 +287,32 @@ IF (${PACKAGE_NAME}_ENABLE_Tpetra AND ${PACKAGE_NAME}_ENABLE_Ifpack2 AND ${PACKA
   ENDIF()
 
 ENDIF()
+
+
+# Driver to evaluate low level Matrix Matrix multiply kernels potentially using different TPLs
+# This differs from the existing Matrix Matrix driver that forms parallel random matrices for testing
+# This particular driver does not require MPI and is focused on evaluations using smaller
+# MatrixMarket matrices.
+IF (${PACKAGE_NAME}_ENABLE_Experimental AND ${PACKAGE_NAME}_ENABLE_Kokkos_Refactor AND ${PACKAGE_NAME}_ENABLE_Tpetra)
+
+  # Reading a matrix saved in real format as complex does not work.
+  IF (NOT ${PACKAGE_NAME}_INST_COMPLEX_INT_INT)
+    TRIBITS_ADD_EXECUTABLE(
+      MMKernelDriver
+      SOURCES MMKernelDriver.cpp
+      COMM mpi
+      )
+  
+
+    TRIBITS_ADD_TEST(
+      MMKernelDriver
+      NAME "MatrixMatrixKernelDriver"
+      ARGS "--linAlgebra=Tpetra"
+      NUM_MPI_PROCS 4
+      COMM serial mpi
+      )
+  ENDIF()
+ENDIF()
+
 
 ENDIF() # Galeri
