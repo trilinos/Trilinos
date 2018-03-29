@@ -114,7 +114,7 @@ int main(int argc, char* argv[]) {
     ROL::Ptr<ROL::BatchManager<RealT> > bman =
       ROL::makePtr<ROL::EpetraBatchManager<RealT>>(comm);
     ROL::Ptr<ROL::SampleGenerator<RealT> > sampler =
-      ROL::makePtr<ROL::SROMGenerator<RealT>>(*parlist,bman,distVec);
+      ROL::makePtr<ROL::SROMGenerator<RealT>>(*parlist,bman,distVec,*outStream);
 
     RealT val = 0., error = 0., data = 0., sum = 0.;
     *outStream << std::endl;

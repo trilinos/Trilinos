@@ -217,7 +217,7 @@ public:
       x_(ROL::nullPtr), parlist_(parlist), subproblemIter_(0) {
     Real one(1), p1(0.1), p9(0.9), ten(1.e1), oe8(1.e8), oem8(1.e-8);
     Teuchos::ParameterList& sublist = parlist.sublist("Step").sublist("Augmented Lagrangian");
-    useDefaultInitPen_    = sublist.get("Use Default initial Penalty Parameter",true);
+    useDefaultInitPen_    = sublist.get("Use Default Initial Penalty Parameter",true);
     Step<Real>::getState()->searchSize = sublist.get("Initial Penalty Parameter",ten);
     // Multiplier update parameters
     scaleLagrangian_      = sublist.get("Use Scaled Augmented Lagrangian",          false);
