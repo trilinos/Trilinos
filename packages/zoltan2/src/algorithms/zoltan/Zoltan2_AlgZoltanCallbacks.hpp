@@ -194,7 +194,7 @@ static void zoltanHGSizeCS_withGraphAdapter(void *data,
   *nLists = Teuchos::as<int>(adp->getLocalNumVertices());
   *nPins = Teuchos::as<int>(adp->getLocalNumEdges()+adp->getLocalNumVertices());
            // number of given edges + self pin for each vertex
-  *format = ZOLTAN_COMPRESSED_VERTEX;
+  *format = ZOLTAN_COMPRESSED_EDGE;
 }
 
 //////////////////
