@@ -147,10 +147,6 @@ public:
     Z2_THROW_EXPERIMENTAL("Zoltan2 AlgND is strictly experimental software ")
 #endif
 
-#ifndef INCLUDE_ZOLTAN2_EXPERIMENTAL_WOLF
-    Z2_THROW_EXPERIMENTAL_WOLF("Zoltan2 algND is strictly experimental software ")
-#endif
-
     if(mProblemComm->getSize()!=1)
     {
       Z2_THROW_SERIAL("Zoltan2 AlgND is strictly serial!");
@@ -540,7 +536,7 @@ void AlgND<Adapter>::getBoundLayer(part_t levelIndx, const std::vector<part_t> &
   typedef typename Adapter::scalar_t scalar_t;   // scalars
   typedef StridedData<lno_t, scalar_t> input_t;
 
-  size_t numVerts = mGraphModel->getLocalNumVertices();
+  lno_t numVerts = mGraphModel->getLocalNumVertices();
 
   //Teuchos ArrayView
   ArrayView< const lno_t > eIDs;
@@ -741,7 +737,7 @@ buildPartTree(part_t level, std::vector<part_t> &levIndx,
   {
 
 
-    if(levIndx.size() < level+1)
+    if((part_t)levIndx.size() < level+1)
     {
       levIndx.push_back(0);
     }

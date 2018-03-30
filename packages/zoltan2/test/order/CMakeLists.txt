@@ -84,8 +84,6 @@ ENDIF()
 ##########################################
 IF (${PACKAGE_NAME}_ENABLE_Experimental)
 
-IF (${PACKAGE_NAME}_ENABLE_Experimental_Wolf)
-
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   ND
   SOURCES nd.cpp
@@ -109,8 +107,6 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
     FAIL_REGULAR_EXPRESSION "FAIL"
   )
 
-ENDIF()
-#
 ENDIF()
 ##########################################
 
