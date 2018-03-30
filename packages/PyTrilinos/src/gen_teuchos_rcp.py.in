@@ -69,7 +69,10 @@ def get_rcp_classes(swig_filenames):
         for regex in regexes:
             matches = regex.findall(text)
             for match in matches:
-                if "##" not in match and "CLASS" not in match:
+                if "##" not in match and \
+                   "CLASS" not in match and \
+                   "%shared_ptr" not in match and \
+                   "ostream" not in match:
                     match = match.replace("< ","<")
                     match = match.replace(" >",">")
                     match = match.replace(">>","> >")
@@ -114,12 +117,52 @@ def main():
     teuchos_rcps  = get_rcp_classes(swig_files)
     forward_decls = list_forward_decl(teuchos_rcps)
 
-    for cls in teuchos_rcps:
-        print(cls)
+    #for cls in teuchos_rcps:
+    #    print(cls)
 
+    print("%define %teuchos_rcp_docstring")
+    print('"')
+    print("PyTrilinos.Teuchos.RCP is a special PyTrilinos module designed to")
+    print("provide access to RCP methods for PyTrilinos variables that are")
+    print("stored internally via Teuchos::RCP reference counted pointers.")
+    print("")
+    print("Inspired by the python function sys.getrefcount(object), this module")
+    print("provides a number of Teuchos::RCP methods as functions that take a")
+    print("PyTrilinos object as their argument. These functions include:")
+    print("")
+    print("    * is_null(obj)        - Return True if underlying pointer is NULL")
+    print("    * is_valid_ptr(obj)   - Return True if underlying pointer is valid")
+    print("    * has_ownership(obj)  - Return True if this RCP owns the object")
+    print("    * strong_count(obj)   - Return the strong reference count")
+    print("    * weak_count(obj)     - Return the weak reference count")
+    print("    * total_count(obj)    - Return the total reference count")
+    print('"')
+    print("%enddef")
+    print("")
+    print('%module(package   = "PyTrilinos.Teuchos",')
+    print("        docstring = %teuchos_rcp_docstring) RCP")
+    print("")
+    print("%{")
     print("// Forward declarations")
     for decl in forward_decls:
         print(decl)
+    print("%}")
+    print("")
+    print('%include "Teuchos_RCP_typemaps.i"')
+    print("")
+    print("%inline")
+    print("{")
+    print("")
+    for classname in teuchos_rcps:
+        print("// %s" % classname)
+        print("bool is_null(      Teuchos::RCP< %s > object){ return object.is_null()      ; }" % classname)
+        print("bool is_valid_ptr( Teuchos::RCP< %s > object){ return object.is_valid_ptr() ; }" % classname)
+        print("bool has_ownership(Teuchos::RCP< %s > object){ return object.has_ownership(); }" % classname)
+        print("int  strong_count( Teuchos::RCP< %s > object){ return object.strong_count() ; }" % classname)
+        print("int  weak_count(   Teuchos::RCP< %s > object){ return object.weak_count()   ; }" % classname)
+        print("int  total_count(  Teuchos::RCP< %s > object){ return object.total_count()  ; }" % classname)
+        print("")
+    print("}")
 
     #print("Classes found = %d" % len(teuchos_rcps))
     #print("Forward declarations = %d" % len(forward_decls))
