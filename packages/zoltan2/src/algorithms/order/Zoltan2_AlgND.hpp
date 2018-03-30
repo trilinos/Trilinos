@@ -473,23 +473,26 @@ int AlgND<Adapter>::localOrder(const RCP<LocalOrderingSolution<lno_t> > &solutio
     //////////////////////////////////////////////////////////////////////
     // Output separators
     //////////////////////////////////////////////////////////////////////
-    // std::cout << "Separators: " << std::endl;
-    // for(part_t level=0;level<sepVertsByLevel.size();level++)
-    // {
-    //   sepVertsByLevel[level].resize(sepsInLev[level]);
+    std::cout << "Separators: " << std::endl;
 
-    //   for(part_t levIndx=0;levIndx<sepVertsByLevel[level].size();levIndx++)
-    //   {
-    // 	std::cout << "  Separator " << level << " " << levIndx << ": ";
+    part_t nLevels = sepVertsByLevel.size();
+    for(part_t level=0;level<nLevels;level++)
+    {
+      //sepVertsByLevel[level].resize(sepsInLev[level]);
+      part_t nSepsOnLev = sepVertsByLevel[level].size();
 
-    // 	typename std::set<lno_t>::const_iterator iterS;
-    // 	for (iterS=sepVertsByLevel[level][levIndx].begin();iterS!=sepVertsByLevel[level][levIndx].end();++iterS)
-    // 	{
-    // 	  std::cout << *iterS << " ";
-    // 	}
-    // 	std::cout << std::endl;
-    //   }
-    // }
+      for(part_t levIndx=0;levIndx<nSepsOnLev;levIndx++)
+      {
+    	std::cout << "  Separator " << level << " " << levIndx << ": ";
+
+    	typename std::set<lno_t>::const_iterator iterS;
+    	for (iterS=sepVertsByLevel[level][levIndx].begin();iterS!=sepVertsByLevel[level][levIndx].end();++iterS)
+    	{
+    	  std::cout << *iterS << " ";
+    	}
+    	std::cout << std::endl;
+      }
+    }
     //////////////////////////////////////////////////////////////////////
 
 
@@ -544,9 +547,10 @@ void AlgND<Adapter>::getBoundLayer(part_t levelIndx, const std::vector<part_t> &
   ArrayView< input_t > wgts;
 
   // For some reason getLocalEdgeList seems to be returning empty eIDs
-  //size_t numEdges = ( (GraphModel<typename Adapter::base_adapter_t>)  *mGraphModel).getLocalEdgeList(eIDs, vOffsets, wgts);
-  //size_t numEdges = ( (GraphModel<typename Adapter::base_adapter_t>)  *mGraphModel).getEdgeList(eIDs, vOffsets, wgts);
-  ( (GraphModel<typename Adapter::base_adapter_t>)  *mGraphModel).getEdgeList(eIDs, vOffsets, wgts);
+  mGraphModel->getEdgeList(eIDs, vOffsets, wgts);
+
+  // original
+  //  ( (GraphModel<typename Adapter::base_adapter_t>)  *mGraphModel).getEdgeList(eIDs, vOffsets, wgts);
 
 
   std::map<lno_t,std::set<lno_t> > bigraphEs;
