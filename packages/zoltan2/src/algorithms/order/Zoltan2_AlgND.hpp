@@ -215,7 +215,7 @@ int AlgND<Adapter>::localOrder(const RCP<LocalOrderingSolution<lno_t> > &solutio
     /////////////////////////////////////////////////////////////////
     Teuchos::ParameterList partParams;
 
-    part_t numParts = mEnv->getParameters().get<part_t>("num_global_parts");
+    part_t numParts = mEnv->getParameters().template get<part_t>("num_global_parts");
 
     partParams.set("num_global_parts", numParts);
 
