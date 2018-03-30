@@ -102,7 +102,6 @@ int main(int argc, char *argv[]) {
 
     // Problem dimensions
     const int controlDim = 9;
-    const RealT one(1); 
 
     /*************************************************************************/
     /***************** BUILD GOVERNING PDE ***********************************/

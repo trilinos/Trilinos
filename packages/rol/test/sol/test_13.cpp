@@ -113,85 +113,65 @@ int main(int argc, char* argv[]) {
       std::string name = ROL::EErrorMeasureToString(ed);
       *outStream << name << std::endl;
       parlist.sublist("SOL").sublist("Error Measure").set("Name",name);
-      switch(ed) {
-        case ROL::ERRORMEASURE_MEANVARIANCEQUADRANGLE:
-        {
-          Teuchos::ParameterList &list
-            = parlist.sublist("SOL").sublist("Error Measure").sublist("Least Squares");
-          parlist.sublist("Step").set("Type","Trust Region");
-          parlist.sublist("Step").sublist("Trust Region").set("Subproblem Solver","Truncated CG");
-          break;
-        }
-        case ROL::ERRORMEASURE_TRUNCATEDMEANQUADRANGLE:
-        {
-          Teuchos::ParameterList &list
-            = parlist.sublist("SOL").sublist("Error Measure").sublist("Huber");
-          list.set("Threshold",1e-1);
-          parlist.sublist("Step").set("Type","Trust Region");
-          parlist.sublist("Step").sublist("Trust Region").set("Subproblem Solver","Truncated CG");
-          break;
-        }
-        case ROL::ERRORMEASURE_QUANTILEQUADRANGLE:
-        {
-          Teuchos::ParameterList &list
-            = parlist.sublist("SOL").sublist("Error Measure").sublist("Koenker-Bassett");
-          list.set("Confidence Level",0.75);
-          list.set("Convex Combination Parameter",0.0);
-          list.set("Smoothing Parameter",1e-4);
-          parlist.sublist("Step").set("Type","Bundle");
-          parlist.sublist("Step").sublist("Bundle").set("Distance Measure Coefficient",0.0);
-          break;
-        }
-        case ROL::ERRORMEASURE_MOREAUYOSIDACVAR:
-        {
-          Teuchos::ParameterList &list
-            = parlist.sublist("SOL").sublist("Error Measure").sublist("Moreau-Yosida-Koenker-Bassett");
-          list.set("Confidence Level",0.75);
-          list.set("Smoothing Parameter",1e-2);
-          parlist.sublist("Step").set("Type","Trust Region");
-          parlist.sublist("Step").sublist("Trust Region").set("Subproblem Solver","Truncated CG");
-          break;
-        }
-        case ROL::ERRORMEASURE_GENMOREAUYOSIDACVAR:
-        {
-          Teuchos::ParameterList &list
-            = parlist.sublist("SOL").sublist("Error Measure").sublist("Generalized Moreau-Yosida-Koenker-Bassett");
-          list.set("Confidence Level",0.75);
-          list.set("Convex Combination Parameter",0.0);
-          list.set("Smoothing Parameter",1e-2);
-          parlist.sublist("Step").set("Type","Trust Region");
-          parlist.sublist("Step").sublist("Trust Region").set("Subproblem Solver","Truncated CG");
-          break;
-        }
-        case ROL::ERRORMEASURE_LOGEXPONENTIALQUADRANGLE:
-        {
-          Teuchos::ParameterList &list
-            = parlist.sublist("SOL").sublist("Error Measure").sublist("Exponential");
-          list.set("Rate",1.0);
-          parlist.sublist("Step").set("Type","Trust Region");
-          parlist.sublist("Step").sublist("Trust Region").set("Subproblem Solver","Truncated CG");
-          break;
-        }
-        case ROL::ERRORMEASURE_LOGQUANTILEQUADRANGLE:
-        {
-          Teuchos::ParameterList &list
-            = parlist.sublist("SOL").sublist("Error Measure").sublist("Log Quantile");
-          list.set("Slope for Linear Growth",0.5);
-          list.set("Rate for Exponential Growth",1.0);
-          list.set("Smoothing Parameter",1e-2);
-          parlist.sublist("Step").set("Type","Bundle");
-          parlist.sublist("Step").sublist("Bundle").set("Distance Measure Coefficient",0.0);
-          break;
-        }
-        case ROL::ERRORMEASURE_SMOOTHEDWORSTCASEQUADRANGLE:
-        {
-          Teuchos::ParameterList &list
-            = parlist.sublist("SOL").sublist("Error Measure").sublist("Smoothed Worst Case");
-          list.set("Smoothing Parameter",1e-4);
-          parlist.sublist("Step").set("Type","Trust Region");
-          parlist.sublist("Step").sublist("Trust Region").set("Subproblem Solver","Truncated CG");
-          break;
-        }
+      if (ed == ROL::ERRORMEASURE_MEANVARIANCEQUADRANGLE) {
+        parlist.sublist("Step").set("Type","Trust Region");
+        parlist.sublist("Step").sublist("Trust Region").set("Subproblem Solver","Truncated CG");
+      }
+      else if (ed == ROL::ERRORMEASURE_TRUNCATEDMEANQUADRANGLE) {
+        Teuchos::ParameterList &list
+          = parlist.sublist("SOL").sublist("Error Measure").sublist("Huber");
+        list.set("Threshold",1e-1);
+        parlist.sublist("Step").set("Type","Trust Region");
+        parlist.sublist("Step").sublist("Trust Region").set("Subproblem Solver","Truncated CG");
+      }
+      else if (ed == ROL::ERRORMEASURE_QUANTILEQUADRANGLE) {
+        Teuchos::ParameterList &list
+          = parlist.sublist("SOL").sublist("Error Measure").sublist("Koenker-Bassett");
+        list.set("Confidence Level",0.75);
+        list.set("Convex Combination Parameter",0.0);
+        list.set("Smoothing Parameter",1e-4);
+        parlist.sublist("Step").set("Type","Bundle");
+        parlist.sublist("Step").sublist("Bundle").set("Distance Measure Coefficient",0.0);
+      }
+      else if (ed == ROL::ERRORMEASURE_MOREAUYOSIDACVAR) {
+        Teuchos::ParameterList &list
+          = parlist.sublist("SOL").sublist("Error Measure").sublist("Moreau-Yosida-Koenker-Bassett");
+        list.set("Confidence Level",0.75);
+        list.set("Smoothing Parameter",1e-2);
+        parlist.sublist("Step").set("Type","Trust Region");
+        parlist.sublist("Step").sublist("Trust Region").set("Subproblem Solver","Truncated CG");
+      }
+      else if (ed == ROL::ERRORMEASURE_GENMOREAUYOSIDACVAR) {
+        Teuchos::ParameterList &list
+          = parlist.sublist("SOL").sublist("Error Measure").sublist("Generalized Moreau-Yosida-Koenker-Bassett");
+        list.set("Confidence Level",0.75);
+        list.set("Convex Combination Parameter",0.0);
+        list.set("Smoothing Parameter",1e-2);
+        parlist.sublist("Step").set("Type","Trust Region");
+        parlist.sublist("Step").sublist("Trust Region").set("Subproblem Solver","Truncated CG");
+      }
+      else if (ed == ROL::ERRORMEASURE_LOGEXPONENTIALQUADRANGLE) {
+        Teuchos::ParameterList &list
+          = parlist.sublist("SOL").sublist("Error Measure").sublist("Exponential");
+        list.set("Rate",1.0);
+        parlist.sublist("Step").set("Type","Trust Region");
+        parlist.sublist("Step").sublist("Trust Region").set("Subproblem Solver","Truncated CG");
+      }
+      else if (ed == ROL::ERRORMEASURE_LOGQUANTILEQUADRANGLE) {
+        Teuchos::ParameterList &list
+          = parlist.sublist("SOL").sublist("Error Measure").sublist("Log Quantile");
+        list.set("Slope for Linear Growth",0.5);
+        list.set("Rate for Exponential Growth",1.0);
+        list.set("Smoothing Parameter",1e-2);
+        parlist.sublist("Step").set("Type","Bundle");
+        parlist.sublist("Step").sublist("Bundle").set("Distance Measure Coefficient",0.0);
+      }
+      else if (ed == ROL::ERRORMEASURE_SMOOTHEDWORSTCASEQUADRANGLE) {
+        Teuchos::ParameterList &list
+          = parlist.sublist("SOL").sublist("Error Measure").sublist("Smoothed Worst Case");
+        list.set("Smoothing Parameter",1e-4);
+        parlist.sublist("Step").set("Type","Trust Region");
+        parlist.sublist("Step").sublist("Trust Region").set("Subproblem Solver","Truncated CG");
       }
       linReg.setErrorMeasure(parlist,true);
       problem = linReg.getOptimizationProblem();

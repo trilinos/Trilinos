@@ -100,42 +100,39 @@ int main(int argc, char *argv[]) {
       if (problem->getProblemType() == ROL::TYPE_B) {
         if ( prob != ROL::TESTOPTPROBLEM_HS5 ) {
           // PDAS parameters.
-          switch (prob) {
-            case ROL::TESTOPTPROBLEM_HS1:
-            case ROL::TESTOPTPROBLEM_HS2:
-            case ROL::TESTOPTPROBLEM_HS3:
-            case ROL::TESTOPTPROBLEM_HS4:
-            case ROL::TESTOPTPROBLEM_HS45:
-              parlist->sublist("Step").sublist("Primal Dual Active Set").set("Relative Step Tolerance",1.e-10);
-              parlist->sublist("Step").sublist("Primal Dual Active Set").set("Relative Gradient Tolerance",1.e-8);
-              parlist->sublist("Step").sublist("Primal Dual Active Set").set("Iteration Limit",1);
-              parlist->sublist("Step").sublist("Primal Dual Active Set").set("Dual Scaling",1.e8);
-              break;
-            case ROL::TESTOPTPROBLEM_HS5:
-              parlist->sublist("Step").sublist("Primal Dual Active Set").set("Relative Step Tolerance",1.e-10);
-              parlist->sublist("Step").sublist("Primal Dual Active Set").set("Relative Gradient Tolerance",1.e-8);
-              parlist->sublist("Step").sublist("Primal Dual Active Set").set("Iteration Limit",10);
-              parlist->sublist("Step").sublist("Primal Dual Active Set").set("Dual Scaling",1.e-2);
-              break;
-            case ROL::TESTOPTPROBLEM_HS25:
-              parlist->sublist("Step").sublist("Primal Dual Active Set").set("Relative Step Tolerance",1.e-10);
-              parlist->sublist("Step").sublist("Primal Dual Active Set").set("Relative Gradient Tolerance",1.e-8);
-              parlist->sublist("Step").sublist("Primal Dual Active Set").set("Iteration Limit",10);
-              parlist->sublist("Step").sublist("Primal Dual Active Set").set("Dual Scaling",1.e10);
-              break;
-            case ROL::TESTOPTPROBLEM_HS38:
-              parlist->sublist("Step").sublist("Primal Dual Active Set").set("Relative Step Tolerance",1.e-10);
-              parlist->sublist("Step").sublist("Primal Dual Active Set").set("Relative Gradient Tolerance",1.e-8);
-              parlist->sublist("Step").sublist("Primal Dual Active Set").set("Iteration Limit",1);
-              parlist->sublist("Step").sublist("Primal Dual Active Set").set("Dual Scaling",1.e-3);
-              break;
-            case ROL::TESTOPTPROBLEM_BVP:
-              parlist->sublist("Step").sublist("Primal Dual Active Set").set("Relative Step Tolerance",1.e-10);
-              parlist->sublist("Step").sublist("Primal Dual Active Set").set("Relative Gradient Tolerance",1.e-8);
-              parlist->sublist("Step").sublist("Primal Dual Active Set").set("Iteration Limit",1);
-              parlist->sublist("Step").sublist("Primal Dual Active Set").set("Dual Scaling",1.e0);
-              break;
-            case ROL::TESTOPTPROBLEM_LAST: break;
+          if (prob == ROL::TESTOPTPROBLEM_HS1 ||
+              prob == ROL::TESTOPTPROBLEM_HS2 ||
+              prob == ROL::TESTOPTPROBLEM_HS3 ||
+              prob == ROL::TESTOPTPROBLEM_HS4 ||
+              prob ==  ROL::TESTOPTPROBLEM_HS45) {
+            parlist->sublist("Step").sublist("Primal Dual Active Set").set("Relative Step Tolerance",1.e-10);
+            parlist->sublist("Step").sublist("Primal Dual Active Set").set("Relative Gradient Tolerance",1.e-8);
+            parlist->sublist("Step").sublist("Primal Dual Active Set").set("Iteration Limit",1);
+            parlist->sublist("Step").sublist("Primal Dual Active Set").set("Dual Scaling",1.e8);
+          }
+          else if (prob == ROL::TESTOPTPROBLEM_HS5) {
+            parlist->sublist("Step").sublist("Primal Dual Active Set").set("Relative Step Tolerance",1.e-10);
+            parlist->sublist("Step").sublist("Primal Dual Active Set").set("Relative Gradient Tolerance",1.e-8);
+            parlist->sublist("Step").sublist("Primal Dual Active Set").set("Iteration Limit",10);
+            parlist->sublist("Step").sublist("Primal Dual Active Set").set("Dual Scaling",1.e-2);
+          }
+          else if (prob == ROL::TESTOPTPROBLEM_HS25) {
+            parlist->sublist("Step").sublist("Primal Dual Active Set").set("Relative Step Tolerance",1.e-10);
+            parlist->sublist("Step").sublist("Primal Dual Active Set").set("Relative Gradient Tolerance",1.e-8);
+            parlist->sublist("Step").sublist("Primal Dual Active Set").set("Iteration Limit",10);
+            parlist->sublist("Step").sublist("Primal Dual Active Set").set("Dual Scaling",1.e10);
+          }
+          else if (prob == ROL::TESTOPTPROBLEM_HS38) {
+            parlist->sublist("Step").sublist("Primal Dual Active Set").set("Relative Step Tolerance",1.e-10);
+            parlist->sublist("Step").sublist("Primal Dual Active Set").set("Relative Gradient Tolerance",1.e-8);
+            parlist->sublist("Step").sublist("Primal Dual Active Set").set("Iteration Limit",1);
+            parlist->sublist("Step").sublist("Primal Dual Active Set").set("Dual Scaling",1.e-3);
+          }
+          else if (prob == ROL::TESTOPTPROBLEM_BVP) {
+            parlist->sublist("Step").sublist("Primal Dual Active Set").set("Relative Step Tolerance",1.e-10);
+            parlist->sublist("Step").sublist("Primal Dual Active Set").set("Relative Gradient Tolerance",1.e-8);
+            parlist->sublist("Step").sublist("Primal Dual Active Set").set("Iteration Limit",1);
+            parlist->sublist("Step").sublist("Primal Dual Active Set").set("Dual Scaling",1.e0);
           }
           *outStream << std::endl << std::endl << ROL:: ETestOptProblemToString(prob)  << std::endl << std::endl;
   

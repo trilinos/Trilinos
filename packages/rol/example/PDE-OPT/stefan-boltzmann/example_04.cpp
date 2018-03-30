@@ -103,7 +103,6 @@ int main(int argc, char *argv[]) {
 
     // Problem dimensions
     const int controlDim = 1;
-    const RealT one(1); 
     RealT tol(1e-8);
 
     /*************************************************************************/
