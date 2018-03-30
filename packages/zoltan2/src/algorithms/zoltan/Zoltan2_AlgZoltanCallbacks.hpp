@@ -188,6 +188,7 @@ static void zoltanHGSizeCS_withGraphAdapter(void *data,
                                             int *format, int *ierr
 ) 
 {
+  // Assuming one hyperedge per vertex consisting of vertex and its graph nbors.
   const Adapter *adp = static_cast<Adapter *>(data);
   *ierr = ZOLTAN_OK;
 
@@ -206,11 +207,13 @@ static void zoltanHGCS_withGraphAdapter(void *data, int nGidEnt, int nLists,
                                         ZOLTAN_ID_PTR pinIds, int *ierr
 )
 {
+  // Assuming one hyperedge per vertex consisting of vertex and its graph nbors.
   typedef typename Adapter::gno_t gno_t;
-  // typedef typename Adapter::lno_t lno_t;
   typedef typename Adapter::offset_t offset_t;
   typedef typename Adapter::user_t user_t;
-  const GraphAdapter<user_t>* adp = static_cast<GraphAdapter<user_t>* >(data);
+  typedef typename Adapter::userCoord_t userCoord_t;
+  const GraphAdapter<user_t, userCoord_t>* adp = 
+        static_cast<GraphAdapter<user_t, userCoord_t>* >(data);
 
   *ierr = ZOLTAN_OK;  
 
@@ -244,6 +247,80 @@ static void zoltanHGCS_withGraphAdapter(void *data, int nGidEnt, int nLists,
         TPL_Traits<ZOLTAN_ID_PTR,gno_t>::ASSIGN(idPtr, adjIds[j]);
         pinCnt++;
       }
+    }
+  }
+}
+
+//////////////////////////////
+// ZOLTAN_HG_SIZE_EDGE_WGTS_FN
+template <typename Adapter>
+static void zoltanHGSizeEdgeWts_withGraphAdapter(
+  void *data, 
+  int *nEdges,
+  int *ierr
+) 
+{
+  // Assuming one hyperedge per vertex consisting of vertex and its graph nbors.
+  typedef typename Adapter::user_t user_t;
+  typedef typename Adapter::userCoord_t userCoord_t;
+  const GraphAdapter<user_t, userCoord_t>* adp = 
+        static_cast<GraphAdapter<user_t, userCoord_t>* >(data);
+  *ierr = ZOLTAN_OK;
+  *nEdges = Teuchos::as<int>(adp->getLocalNumVertices()); // one edge per vertex
+}
+
+//////////////////////////////
+// ZOLTAN_HG_EDGE_WGTS_FN
+template <typename Adapter>
+static void zoltanHGEdgeWts_withGraphAdapter(
+  void *data, 
+  int nGidEnt, 
+  int nLidEnt, 
+  int nEdges, 
+  int eWgtDim, 
+  ZOLTAN_ID_PTR edgeGids, 
+  ZOLTAN_ID_PTR edgeLids, 
+  float *edgeWgts,
+  int *ierr
+)
+{
+  // Assuming one hyperedge per vertex consisting of vertex and its graph nbors.
+  // Hyperedge weight is then sum of edge weights to nbors.
+  typedef typename Adapter::gno_t gno_t;
+  typedef typename Adapter::offset_t offset_t;
+  typedef typename Adapter::scalar_t scalar_t;
+  typedef typename Adapter::user_t user_t;
+  typedef typename Adapter::userCoord_t userCoord_t;
+  const GraphAdapter<user_t, userCoord_t>* adp = 
+        static_cast<GraphAdapter<user_t, userCoord_t>* >(data);
+
+  *ierr = ZOLTAN_OK;
+
+  const gno_t *ids;
+  const gno_t *adjIds;
+  const offset_t *offsets;
+  const scalar_t *ewgts;
+  int stride;
+  try {
+    adp->getIDsView(ids);
+    adp->getEdgesView(offsets, adjIds);
+    adp->getEdgeWeightsView(ewgts, stride, 0);  // Use only first weight
+  }
+  catch (std::exception &e) {
+    *ierr = ZOLTAN_FATAL;
+  }
+  if (ierr == ZOLTAN_OK) {
+    for (int i = 0; i < nEdges; i++) {
+      float sum = 0;
+      for (offset_t j = offsets[i]; j < offsets[i+1]; j++)
+        sum += ewgts[j*stride];
+      ZOLTAN_ID_PTR idPtr = &(edgeGids[i*nGidEnt]);
+      TPL_Traits<ZOLTAN_ID_PTR,gno_t>::ASSIGN(idPtr, ids[i]);
+      if (nLidEnt) {
+        idPtr = &(edgeLids[i*nLidEnt]);
+        TPL_Traits<ZOLTAN_ID_PTR,int>::ASSIGN(idPtr, i);
+      }
+      edgeWgts[i] = sum;
     }
   }
 }
