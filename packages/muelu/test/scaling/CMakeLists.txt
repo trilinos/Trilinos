@@ -293,7 +293,7 @@ ENDIF()
 # This differs from the existing Matrix Matrix driver that forms parallel random matrices for testing
 # This particular driver does not require MPI and is focused on evaluations using smaller
 # MatrixMarket matrices.
-IF (${PACKAGE_NAME}_ENABLE_Experimental AND ${PACKAGE_NAME}_ENABLE_Kokkos_Refactor AND ${PACKAGE_NAME}_ENABLE_Tpetra)
+IF (${PACKAGE_NAME}_ENABLE_Experimental AND ${PACKAGE_NAME}_ENABLE_Tpetra)
 
   # Reading a matrix saved in real format as complex does not work.
   IF (NOT ${PACKAGE_NAME}_INST_COMPLEX_INT_INT)
@@ -308,7 +308,7 @@ IF (${PACKAGE_NAME}_ENABLE_Experimental AND ${PACKAGE_NAME}_ENABLE_Kokkos_Refact
       MMKernelDriver
       NAME "MatrixMatrixKernelDriver"
       ARGS "--linAlgebra=Tpetra"
-      NUM_MPI_PROCS 4
+      NUM_MPI_PROCS 1
       COMM serial mpi
       )
   ENDIF()
