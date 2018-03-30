@@ -64,7 +64,7 @@ SET(PyTrilinos_MODULES  "")
 
 APPEND_SET(PyTrilinos_PACKAGES Teuchos         )
 APPEND_SET(PyTrilinos_MODULES  Teuchos.__init__)
-APPEND_SET(PyTrilinos_MODULES  Teuchos.RCP     )
+# APPEND_SET(PyTrilinos_MODULES  Teuchos.RCP     )
 
 IF(PyTrilinos_ENABLE_Epetra)
   APPEND_SET(PyTrilinos_PACKAGES Epetra)
@@ -225,8 +225,12 @@ IF(NOX_ENABLE_PETSC)
 ENDIF(NOX_ENABLE_PETSC)
 
 # Print the enabled PyTrilinos packages
-MESSAGE(STATUS "Enabled PyTrilinos modules:")
+MESSAGE(STATUS "Enabled PyTrilinos packages:")
 MESSAGE(STATUS "    ${PyTrilinos_PACKAGES}")
+
+# Print the enabled PyTrilinos modules
+MESSAGE(STATUS "Enabled PyTrilinos modules:")
+MESSAGE(STATUS "    ${PyTrilinos_MODULES}")
 
 # Determine the PyTrilinos default installation directory prefix.  If
 # CMAKE_INSTALL_PREFIX is set by the user, then use it.  Else the
