@@ -201,7 +201,6 @@ int main(int argc, char *argv[]) {
 
     // Build sampler.
     BuildSampler<RealT> buildSampler(parlist->sublist("Problem"),probDim,example);
-    int stochDim   = buildSampler.getDimension();
     int nsamp      = parlist->sublist("Problem").get("Number of samples", 1);
     int nsamp_dist = parlist->sublist("Problem").get("Number of output samples",1000);
     ROL::Ptr<ROL::BatchManager<RealT> > bman

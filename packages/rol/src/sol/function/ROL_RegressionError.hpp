@@ -93,7 +93,6 @@ public:
     // Parse Data
     const std::vector<Real> data = Objective<Real>::getParameter();
     std::vector<Real> X; X.assign(data.begin()+1,data.end());
-    Real Y = data[0];
     // Build Error
     int Xdim = X.size();
     g[0] = static_cast<Real>(-1);

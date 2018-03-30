@@ -106,7 +106,7 @@ int main(int argc, char *argv[]) {
 
   // *** Example body.
   try {
-    RealT tol(1e-8), one(1);
+    RealT tol(1e-8);
 
     /*** Read in XML input ***/
     std::string filename = "input_ex02.xml";
@@ -117,6 +117,7 @@ int main(int argc, char *argv[]) {
     const std::string example = parlist->sublist("Problem").get("Example", "Default");
     const RealT domainWidth   = parlist->sublist("Geometry").get("Width", 1.0);
     const RealT domainHeight  = parlist->sublist("Geometry").get("Height", 1.0);
+    const RealT domainDepth   = parlist->sublist("Geometry").get("Depth", 1.0);
     const RealT volFraction   = parlist->sublist("Problem").get("Volume Fraction", 0.4);
     const RealT cmpFactor     = parlist->sublist("Problem").get("Compliance Factor", 1.1);
     RealT cmpScaling          = parlist->sublist("Problem").get("Compliance Scaling", 1e-4);
@@ -277,10 +278,7 @@ int main(int argc, char *argv[]) {
         obj  = robj_com;
         icon = ROL::makePtr<ROL::ConstraintFromObjective<RealT>>(obj_vol);
         // Set upper bound to fraction of total volume.
-        RealT domainWidth  = parlist->sublist("Geometry").get("Width", 2.0);
-        RealT domainHeight = parlist->sublist("Geometry").get("Height", 1.0);
-        RealT domainDepth  = parlist->sublist("Geometry").get("Depth", 1.0);
-        RealT vol          = domainHeight*domainWidth*domainDepth;
+        RealT vol = domainHeight*domainWidth*domainDepth;
         iup  = ROL::makePtr<ROL::SingletonVector<RealT>>(volFraction*vol);
         imul = ROL::makePtr<ROL::SingletonVector<RealT>>(0);
         ibnd = ROL::makePtr<ROL::Bounds<RealT>>(*iup,false);
@@ -344,10 +342,7 @@ int main(int argc, char *argv[]) {
         obj  = ROL::makePtr<ROL::LinearCombinationObjective<RealT>>(weights,obj_vec);
         icon = ROL::makePtr<ROL::ConstraintFromObjective<RealT>>(obj_vol);
         // Set upper bound to fraction of total volume.
-        RealT domainWidth  = parlist->sublist("Geometry").get("Width", 2.0);
-        RealT domainHeight = parlist->sublist("Geometry").get("Height", 1.0);
-        RealT domainDepth  = parlist->sublist("Geometry").get("Depth", 1.0);
-        RealT vol          = domainHeight*domainWidth*domainDepth;
+        RealT vol = domainHeight*domainWidth*domainDepth;
         iup  = ROL::makePtr<ROL::SingletonVector<RealT>>(volFraction*vol);
         imul = ROL::makePtr<ROL::SingletonVector<RealT>>(0);
         ibnd = ROL::makePtr<ROL::Bounds<RealT>>(*iup,false);

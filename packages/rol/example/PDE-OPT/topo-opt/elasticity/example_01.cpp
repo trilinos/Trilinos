@@ -112,6 +112,7 @@ int main(int argc, char *argv[]) {
     const std::string example = parlist->sublist("Problem").get("Example", "Default");
     const RealT domainWidth   = parlist->sublist("Geometry").get("Width", 1.0);
     const RealT domainHeight  = parlist->sublist("Geometry").get("Height", 1.0);
+    const RealT domainDepth   = parlist->sublist("Geometry").get("Depth", 1.0);
     const RealT volFraction   = parlist->sublist("Problem").get("Volume Fraction", 0.4);
     const RealT cmpFactor     = parlist->sublist("Problem").get("Compliance Factor", 1.1);
     RealT cmpScaling          = parlist->sublist("Problem").get("Compliance Scaling", 1e-4);
@@ -184,6 +185,7 @@ int main(int argc, char *argv[]) {
     u_ptr = assembler->createStateVector();    u_ptr->putScalar(0.0);
     p_ptr = assembler->createStateVector();    p_ptr->putScalar(0.0);
     z_ptr = assembler->createControlVector();  z_ptr->putScalar(1.0);
+    //z_ptr = assembler->createControlVector();  z_ptr->putScalar((minType=="Compliance" ? volFraction : 1.0));
     r_ptr = assembler->createResidualVector(); r_ptr->putScalar(0.0);
     ROL::Ptr<ROL::Vector<RealT> > up, pp, zp, rp;
     up = ROL::makePtr<PDE_PrimalSimVector<RealT>>(u_ptr,pde,assembler,*parlist);
@@ -256,10 +258,7 @@ int main(int argc, char *argv[]) {
         obj  = robj_com;
         icon = ROL::makePtr<ROL::ConstraintFromObjective<RealT>>(obj_vol);
         // Set upper bound to fraction of total volume.
-        RealT domainWidth  = parlist->sublist("Geometry").get("Width", 2.0);
-        RealT domainHeight = parlist->sublist("Geometry").get("Height", 1.0);
-        RealT domainDepth  = parlist->sublist("Geometry").get("Depth", 1.0);
-        RealT vol          = domainHeight*domainWidth*domainDepth;
+        RealT vol = domainHeight*domainWidth*domainDepth;
         iup  = ROL::makePtr<ROL::SingletonVector<RealT>>(volFraction*vol);
         imul = ROL::makePtr<ROL::SingletonVector<RealT>>(0);
         ibnd = ROL::makePtr<ROL::Bounds<RealT>>(*iup,false);
@@ -318,10 +317,7 @@ int main(int argc, char *argv[]) {
         obj  = ROL::makePtr<ROL::LinearCombinationObjective<RealT>>(weights,obj_vec);
         icon = ROL::makePtr<ROL::ConstraintFromObjective<RealT>>(obj_vol);
         // Set upper bound to fraction of total volume.
-        RealT domainWidth  = parlist->sublist("Geometry").get("Width", 2.0);
-        RealT domainHeight = parlist->sublist("Geometry").get("Height", 1.0);
-        RealT domainDepth  = parlist->sublist("Geometry").get("Depth", 1.0);
-        RealT vol          = domainHeight*domainWidth*domainDepth;
+        RealT vol = domainHeight*domainWidth*domainDepth;
         iup  = ROL::makePtr<ROL::SingletonVector<RealT>>(volFraction*vol);
         imul = ROL::makePtr<ROL::SingletonVector<RealT>>(0);
         ibnd = ROL::makePtr<ROL::Bounds<RealT>>(*iup,false);
