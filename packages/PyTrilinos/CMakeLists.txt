@@ -195,8 +195,9 @@ FIND_PACKAGE(PythonInclude REQUIRED)
 # Python module numpy is required
 FIND_PACKAGE(NumPy 1.0 REQUIRED)
 
-# Simple wrapper interface generator (SWIG) is required
-SET(SWIG_VERSION_FLOOR   3.0.0)
+# Simple wrapper interface generator (SWIG) is required. SWIG 3.0.11
+# is required to support the %module(moduleimport=...) option
+SET(SWIG_VERSION_FLOOR   3.0.11)
 FIND_PACKAGE(SWIG REQUIRED)
 IF(${SWIG_VERSION} VERSION_LESS ${SWIG_VERSION_FLOOR})
   MESSAGE(FATAL_ERROR
