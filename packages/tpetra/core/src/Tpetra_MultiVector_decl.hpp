@@ -2167,7 +2167,7 @@ namespace Tpetra {
 
     /// \brief Copy the contents of \c src into \c *this (deep copy).
     ///
-    /// \param src [in] Source MultiVector (input of the deep copy). 
+    /// \param src [in] Source MultiVector (input of the deep copy).
     ///
     /// \pre <tt> ! src.getMap ().is_null () && ! this->getMap ().is_null () </tt>
     /// \pre <tt> src.getMap ()->isCompatible (* (this->getMap ()) </tt>
@@ -2184,7 +2184,7 @@ namespace Tpetra {
 
 
     // \brief Checks to see if the local length, number of vectors and size of Scalar type match
-    /// \param src [in] MultiVector 
+    /// \param src [in] MultiVector
     ///
     /// \pre <tt> ! vec.getMap ().is_null () && ! this->getMap ().is_null () </tt>
     /// \pre <tt> vec.getMap ()->isCompatible (* (this->getMap ()) </tt>
@@ -2406,7 +2406,7 @@ namespace Tpetra {
 
       RCP<dst_mv_type> Y (new dst_mv_type (map2, Y_view));
       // Let deep_copy do the work for us, to avoid code duplication.
-      ::Tpetra::deep_copy (Y, X);
+      ::Tpetra::deep_copy (*Y, X);
       return Y ;
     }
 
