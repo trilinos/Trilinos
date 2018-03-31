@@ -2,8 +2,67 @@
 #! ${PYTHON_EXECUTABLE}
 # -*- python -*-
 
+import glob
+import os
 import re
-import sys
+
+################################################################################
+
+def get_input_files():
+    os.chdir("${CMAKE_CURRENT_SOURCE_DIR}")
+    result = glob.glob("Teuchos*.i")
+    if ("${PyTrilinos_ENABLE_Epetra}"):
+        result.extend(glob.glob("Epetra*.i"))
+    if ("${PyTrilinos_ENABLE_Triutils}"):
+        result.extend(glob.glob("TriUtils*.i"))
+    if ("${PyTrilinos_ENABLE_Tpetra}"):
+        result.extend(glob.glob("Tpetra*.i"))
+    if ("${PyTrilinos_ENABLE_Domi}"):
+        result.extend(glob.glob("Domi*.i"))
+    if ("${PyTrilinos_ENABLE_EpetraExt}"):
+        result.extend(glob.glob("EpetraExt*.i"))
+    if ("${PyTrilinos_ENABLE_Isorropia}"):
+        swig_files = glob.glob("Isorropia*.i")
+        for file in swig_files:
+            if "Epetra" in file:
+                if "${PyTrilinos_ENABLE_Epetra}":
+                    result.append(file)
+            else:
+                result.append(file)
+    if ("${PyTrilinos_ENABLE_Pliris}"):
+        result.extend(glob.glob("Pliris*.i"))
+    if ("${PyTrilinos_ENABLE_AztecOO}"):
+        result.extend(glob.glob("AztecOO*.i"))
+    if ("${PyTrilinos_ENABLE_Galeri}"):
+        result.extend(glob.glob("Galeri*.i"))
+    if ("${PyTrilinos_ENABLE_Amesos}"):
+        result.extend(glob.glob("Amesos*.i"))
+    if ("${PyTrilinos_ENABLE_Ifpack}"):
+        result.extend(glob.glob("IFPACK*.i"))
+    if ("${PyTrilinos_ENABLE_Komplex}"):
+        result.extend(glob.glob("Komplex*.i"))
+    if ("${PyTrilinos_ENABLE_Anasazi}"):
+        result.extend(glob.glob("Anasazi*.i"))
+    if ("${PyTrilinos_ENABLE_ML}"):
+        result.extend(glob.glob("ML*.i"))
+    if ("${PyTrilinos_ENABLE_NOX}"):
+        swig_files = glob.glob("NOX*.i")
+        for file in swig_files:
+            if "Epetra" in file:
+                if "${PyTrilinos_ENABLE_Epetra}":
+                    result.append(file)
+            else:
+                result.append(file)
+    if ("${PyTrilinos_ENABLE_LOCA}"):
+        swig_files = glob.glob("LOCA*.i")
+        for file in swig_files:
+            if "Epetra" in file:
+                if "${PyTrilinos_ENABLE_Epetra}":
+                    result.append(file)
+            else:
+                result.append(file)
+
+    return result
 
 ################################################################################
 
@@ -109,8 +168,8 @@ def list_forward_decl(rcp_classes):
 ################################################################################
 
 def main():
-    swig_files = sys.argv[1:]
-    exclude = "Teuchos_RCP.i"
+    swig_files = get_input_files()
+    exclude = "Teuchos_RCP_typemaps.i"
     if swig_files.count(exclude):
         swig_files.remove(exclude)
 
@@ -150,17 +209,54 @@ def main():
     print("")
     print('%include "Teuchos_RCP_typemaps.i"')
     print("")
+    print('%feature("docstring")')
+    print("is_null")
+    print('"is_null(obj) -> bool')
+    print("")
+    print("Return true if obj is a python wrapper for a C++ object stored as a")
+    print('Teuchos::RCP and the underlying pointer is NULL"')
+    print('%feature("docstring")')
+    print("is_valid_ptr")
+    print('"is_valid_ptr(obj) -> bool')
+    print("")
+    print("Return true if obj is a python wrapper for a C++ object stored as a")
+    print('Teuchos::RCP and the underlying pointer is valid"')
+    print('%feature("docstring")')
+    print("has_ownership")
+    print('"has_ownership(obj) -> bool')
+    print("")
+    print("Return true if obj is a python wrapper for a C++ object stored as a")
+    print('Teuchos::RCP that has ownership of the underlying pointer"')
+    print('%feature("docstring")')
+    print("strong_count")
+    print('"strong_count(obj) -> int')
+    print("")
+    print("If obj is a python wrapper for a C++ object stored as a Teuchos::RCP,")
+    print('return the strong reference count"')
+    print('%feature("docstring")')
+    print("weak_count")
+    print('"weak_count(obj) -> int')
+    print("")
+    print("If obj is a python wrapper for a C++ object stored as a Teuchos::RCP,")
+    print('return the weak reference count"')
+    print('%feature("docstring")')
+    print("total_count")
+    print('"total_count(obj) -> int')
+    print("")
+    print("If obj is a python wrapper for a C++ object stored as a Teuchos::RCP,")
+    print('return the total reference count"')
+    print("")
     print("%inline")
     print("{")
     print("")
     for classname in teuchos_rcps:
         print("// %s" % classname)
-        print("bool is_null(      Teuchos::RCP< %s > object){ return object.is_null()      ; }" % classname)
-        print("bool is_valid_ptr( Teuchos::RCP< %s > object){ return object.is_valid_ptr() ; }" % classname)
-        print("bool has_ownership(Teuchos::RCP< %s > object){ return object.has_ownership(); }" % classname)
-        print("int  strong_count( Teuchos::RCP< %s > object){ return object.strong_count() ; }" % classname)
-        print("int  weak_count(   Teuchos::RCP< %s > object){ return object.weak_count()   ; }" % classname)
-        print("int  total_count(  Teuchos::RCP< %s > object){ return object.total_count()  ; }" % classname)
+        print("bool is_null(      Teuchos::RCP< %s > & object){ return object.is_null()      ; }" % classname)
+        print("bool is_valid_ptr( Teuchos::RCP< %s > & object){ return object.is_valid_ptr() ; }" % classname)
+        print("bool has_ownership(Teuchos::RCP< %s > & object){ return object.has_ownership(); }" % classname)
+        print("int  strong_count( Teuchos::RCP< %s > & object){ return object.strong_count() ; }" % classname)
+        print("int  weak_count(   Teuchos::RCP< %s > & object){ return object.weak_count()   ; }" % classname)
+        print("int  total_count(  Teuchos::RCP< %s > & object){ return object.total_count()  ; }" % classname)
         print("")
     print("}")
 
