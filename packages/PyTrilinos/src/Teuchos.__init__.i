@@ -80,10 +80,21 @@ ParameterList will accept a python dictionary.
 "
 %enddef
 
+%define %teuchos_import_code
+"
+import os, sys
+thisDir = os.path.abspath(os.path.split(__file__)[0])
+sys.path.insert(0, thisDir)
+import $module
+sys.path.remove(thisDir)
+"
+%enddef
+
 %module(package      = "PyTrilinos.Teuchos",
 	directors    = "1",
 	autodoc      = "1",
 	implicitconv = "1",
+        moduleimport = %teuchos_import_code,
 	docstring    = %teuchos_docstring) __init__
 
 // Includes
@@ -126,6 +137,9 @@ using Teuchos::RCP;
 
 // Namespace flattening
 using std::string;
+
+// Pull the RCP module into the Teuchos package
+%import "Teuchos.RCP.i"
 
 // Standard exception handling
 %include "exception.i"
