@@ -542,11 +542,14 @@ void AlgND<Adapter>::getBoundLayer(part_t levelIndx, const std::vector<part_t> &
   lno_t numVerts = mGraphModel->getLocalNumVertices();
 
   //Teuchos ArrayView
-  ArrayView< const lno_t > eIDs;
+  // Original --  ArrayView< const lno_t > eIDs;
+  ArrayView< const gno_t > eIDs;
   ArrayView< const offset_t > vOffsets;
   ArrayView< input_t > wgts;
 
   // For some reason getLocalEdgeList seems to be returning empty eIDs
+
+  // I think might need to change eIDs to gno_t
   mGraphModel->getEdgeList(eIDs, vOffsets, wgts);
 
   // original
