@@ -107,7 +107,7 @@ LOCA.TurningPoint.MinimallyAugmented supports the following classes:
 %ignore operator=;
 
 // Trilinos module imports
-%import "Teuchos.i"
+%import "Teuchos.__init__.i"
 
 // Teuchos::RCP handling
 %teuchos_rcp(LOCA::MultiContinuation::AbstractGroup)

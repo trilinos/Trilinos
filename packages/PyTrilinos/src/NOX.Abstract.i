@@ -127,7 +127,7 @@ del sys, op
 %}
 
 // Trilinos module imports
-%import "Teuchos.i"
+%import "Teuchos.__init__.i"
 %import "Epetra.i"
 
 // General exception handling

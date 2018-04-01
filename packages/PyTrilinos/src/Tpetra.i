@@ -506,7 +506,7 @@ import numpy
 %include "PyTrilinos_config.h"
 
 // Teuchos support
-%import "Teuchos.i"
+%import "Teuchos.__init__.i"
 %include "Teuchos_Array.i"
 
 // Include Tpetra documentation

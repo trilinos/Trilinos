@@ -130,7 +130,7 @@ and classes:
 %ignore operator[];
 
 // Trilinos module imports
-%import "Teuchos.i"
+%import "Teuchos.__init__.i"
 
 // Base class imports
 %pythoncode

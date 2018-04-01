@@ -127,7 +127,7 @@ from . import ___init__
 %include "Epetra_DLLExportMacro.h"
 
 // Teuchos and Epetra interface support
-%import "Teuchos.i"
+%import "Teuchos.__init__.i"
 %include "Epetra_Base.i"    // For PyExc_EpetraError
 %import "Epetra.i"
 

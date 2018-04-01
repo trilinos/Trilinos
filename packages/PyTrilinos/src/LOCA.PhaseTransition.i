@@ -99,7 +99,7 @@ LOCA.PhaseTransition supports the following classes:
 %include "LOCA_dox.i"
 
 // PyTrilinos module imports
-%import "Teuchos.i"
+%import "Teuchos.__init__.i"
 
 // Teuchos::RCP handling
 %teuchos_rcp(LOCA::MultiContinuation::AbstractGroup)

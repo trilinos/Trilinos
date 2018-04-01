@@ -100,7 +100,7 @@ NOX.Epetra.Interface provides the following user-level class:
 %include "stl.i"
 
 // Trilinos module imports
-%import "Teuchos.i"
+%import "Teuchos.__init__.i"
 
 // Exception handling
 %include "exception.i"

@@ -142,7 +142,7 @@ The purpose of Isorropia.Epetra is to ....
 %ignore operator<<;
 
 // Teuchos interface import
-%import "Teuchos.i"
+%import "Teuchos.__init__.i"
 
 // numpy interface import
 %include "numpy.i"

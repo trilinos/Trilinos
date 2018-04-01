@@ -106,7 +106,7 @@ sys.path.insert(0, os.path.split(__file__)[0])
 %include "Isorropia_dox.i"
 
 // Trilinos interface import
-%import "Teuchos.i"
+%import "Teuchos.__init__.i"
 
 ///////////////////////////////
 // Isorropia Version support //

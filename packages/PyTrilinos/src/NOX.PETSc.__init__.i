@@ -145,7 +145,7 @@ using namespace NOX::Petsc;
 %include "stl.i"
 
 // Trilinos interface import
-%import "Teuchos.i"
+%import "Teuchos.__init__.i"
 
 %pythonbegin
 %{

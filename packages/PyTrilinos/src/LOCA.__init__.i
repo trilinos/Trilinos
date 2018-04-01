@@ -146,9 +146,9 @@ from . import ___init__
 // SWIG library includes
 %include "stl.i"
 
-// Trilinos interface import.  Note: Teuchos.i turns off warnings for
+// Trilinos interface import.  Note: Teuchos.__init__.i turns off warnings for
 // nested classes, so we do not have to do it again.
-%import "Teuchos.i"
+%import "Teuchos.__init__.i"
 
 // Exception handling
 %include "exception.i"

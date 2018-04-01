@@ -106,7 +106,7 @@ NOX.Epetra.Interface provides the following user-level classes:
 %include "stl.i"
 
 // Trilinos module imports
-%import "Teuchos.i"
+%import "Teuchos.__init__.i"
 
 // Teuchos::RCPs typemaps
 %teuchos_rcp(NOX::Abstract::Group)

@@ -101,7 +101,7 @@ using Teuchos::RCP;
 %ignore *::operator=;
 
 // Trilinos module imports
-%import "Teuchos.i"
+%import "Teuchos.__init__.i"
 %import "NOX.Abstract.i"
 
 // Teuchos::RCP support

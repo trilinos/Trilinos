@@ -148,7 +148,7 @@ import numpy
 %include "Domi_exceptions.i"
 
 // External Teuchos interface imports
-%import "Teuchos.i"
+%import "Teuchos.__init__.i"
 %include "Teuchos_Array.i"
 %teuchos_array_typemaps(Domi::dim_type , NPY_INT )
 %teuchos_array_typemaps(Domi::size_type, NPY_LONG)

@@ -164,7 +164,7 @@ exAmesos_Factory.py.
 %include "stl.i"
 
 // External Trilinos packages
-%import "Teuchos.i"
+%import "Teuchos.__init__.i"
 #ifdef HAVE_EPETRA
 %import "Epetra.i"
 #endif

@@ -117,7 +117,7 @@ NOX.StatusTest provides the following user-level classes:
 %ignore *::print(ostream& stream, int indent = 0) const;
 
 // Trilinos interface file imports
-%import "Teuchos.i"
+%import "Teuchos.__init__.i"
 
 // NOX::Abstract import
 %ignore NOX::Abstract::Group::operator=(const NOX::Abstract::Group&);
