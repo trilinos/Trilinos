@@ -44,6 +44,7 @@
 #include "Teuchos_TimeMonitor.hpp"
 #include "Teuchos_DefaultComm.hpp"
 #include "Teuchos_UnitTestHarness.hpp"
+#include "Teuchos_GlobalMPISession.hpp"
 
 // slowLoop does not reliably make a timer nonzero (RHEL6, gcc 4.4.7, OpenMPI 1.5.4).
 // Thus, I'm introducing headers to make sleep() available.
@@ -152,8 +153,10 @@ namespace Teuchos {
       out << oss.str () << std::endl;
 
       // Make sure that the timer's name shows up in the output.
-      const size_t substr_i = oss.str ().find ("FUNC_TIME_MONITOR1");
-      TEST_INEQUALITY(substr_i, std::string::npos);
+      if (Teuchos::GlobalMPISession::getRank() == 0) {
+        const size_t substr_i = oss.str ().find ("FUNC_TIME_MONITOR1");
+        TEST_INEQUALITY(substr_i, std::string::npos);
+      }
     }
 
     { // Repeat test for YAML output, compact style.
@@ -287,8 +290,10 @@ namespace Teuchos {
       // Make sure that each timer's name shows up in the output.
       for (size_type i = 0; i < numTimers; ++i) {
         const std::string name = timers[i]->name ();
-        const size_t substr_i = oss.str ().find (name);
-        TEST_INEQUALITY(substr_i, std::string::npos);
+        if (Teuchos::GlobalMPISession::getRank() == 0) {
+          const size_t substr_i = oss.str ().find (name);
+          TEST_INEQUALITY(substr_i, std::string::npos);
+        }
       }
     }
 
@@ -507,9 +512,11 @@ namespace Teuchos {
 
           // Check whether the labels that were supposed to be printed
           // were actually printed.
-          for (size_type j = 0; j < outLabels[i].size(); ++j) {
-            const size_t pos = oss.str ().find (outLabels[i][j]);
-            TEST_INEQUALITY(pos, std::string::npos);
+          if (Teuchos::GlobalMPISession::getRank() == 0) {
+            for (size_type j = 0; j < outLabels[i].size(); ++j) {
+              const size_t pos = oss.str ().find (outLabels[i][j]);
+              TEST_INEQUALITY(pos, std::string::npos);
+            }
           }
 
           // Check whether the labels that were _not_ supposed to be
@@ -653,10 +660,12 @@ namespace Teuchos {
       // show-all-test-details mode.
       out << oss.str() << std::endl;
 
-      const size_t substr_i = oss.str().find ("FUNC_TIME_MONITOR2");
-      TEST_INEQUALITY(substr_i, std::string::npos);
-      const size_t substr_inner_i = oss.str().find ("FUNC_TIME_MONITOR2_inner");
-      TEST_INEQUALITY(substr_inner_i, std::string::npos);
+      if (Teuchos::GlobalMPISession::getRank() == 0) {
+        const size_t substr_i = oss.str().find ("FUNC_TIME_MONITOR2");
+        TEST_INEQUALITY(substr_i, std::string::npos);
+        const size_t substr_inner_i = oss.str().find ("FUNC_TIME_MONITOR2_inner");
+        TEST_INEQUALITY(substr_inner_i, std::string::npos);
+      }
     }
 
     { // Repeat test for YAML output, compact style.
@@ -772,11 +781,13 @@ namespace Teuchos {
 
     // Since setOp == Intersection, only Timer A should be reported,
     // unless there is only one (MPI) process.
-    size_t substr_i = oss.str().find ("Timer A");
-    TEST_INEQUALITY(substr_i, std::string::npos);
-    if (numProcs > 1) {
-      substr_i = oss.str().find ("Timer B");
-      TEST_EQUALITY(substr_i, std::string::npos);
+    if (Teuchos::GlobalMPISession::getRank() == 0) {
+     size_t substr_i = oss.str().find ("Timer A");
+     TEST_INEQUALITY(substr_i, std::string::npos);
+     if (numProcs > 1) {
+       substr_i = oss.str().find ("Timer B");
+       TEST_EQUALITY(substr_i, std::string::npos);
+     }
     }
 
     // Now call summarize(), but ask for a union of timers.
@@ -792,10 +803,12 @@ namespace Teuchos {
 
     // Since setOp == Union, both Timer A and Timer B should be
     // reported.
-    substr_i = ossUnion.str().find ("Timer A");
-    TEST_INEQUALITY(substr_i, std::string::npos);
-    substr_i = ossUnion.str().find ("Timer B");
-    TEST_INEQUALITY(substr_i, std::string::npos);
+    if (Teuchos::GlobalMPISession::getRank() == 0) {
+      size_t substr_i = ossUnion.str().find ("Timer A");
+      TEST_INEQUALITY(substr_i, std::string::npos);
+      substr_i = ossUnion.str().find ("Timer B");
+      TEST_INEQUALITY(substr_i, std::string::npos);
+    }
 
     // This sets up for the next unit test.
     TimeMonitor::clearCounters ();
@@ -848,15 +861,17 @@ namespace Teuchos {
     out << oss.str() << std::endl;
 
     // Timers A and B should be reported.
-    size_t substr_i = oss.str().find ("Timer A");
-    TEST_INEQUALITY(substr_i, std::string::npos);
-    substr_i = oss.str().find ("Timer B");
-    TEST_INEQUALITY(substr_i, std::string::npos);
+    if (Teuchos::GlobalMPISession::getRank() == 0) {
+      size_t substr_i = oss.str().find ("Timer A");
+      TEST_INEQUALITY(substr_i, std::string::npos);
+      substr_i = oss.str().find ("Timer B");
+      TEST_INEQUALITY(substr_i, std::string::npos);
 
-    // Timer C should NOT be reported.
-    substr_i = oss.str().find ("Timer C");
-    TEST_EQUALITY(substr_i, std::string::npos);
-
+      // Timer C should NOT be reported.
+      substr_i = oss.str().find ("Timer C");
+      TEST_EQUALITY(substr_i, std::string::npos);
+    }
+      
     // This sets up for the next unit test.
     TimeMonitor::clearCounters ();
   }
@@ -931,16 +946,18 @@ namespace Teuchos {
     // show-all-test-details mode.
     out << oss.str() << std::endl;
 
-    // Timers A and B should both be reported.
-    size_t substr_i = oss.str().find ("Timer A");
-    TEST_INEQUALITY(substr_i, std::string::npos);
-    substr_i = oss.str().find ("Timer B");
-    TEST_INEQUALITY(substr_i, std::string::npos);
-
-    // Timer C should NOT be reported.
-    substr_i = oss.str().find ("Timer C");
-    TEST_EQUALITY(substr_i, std::string::npos);
-
+    if (Teuchos::GlobalMPISession::getRank() == 0) {
+      // Timers A and B should both be reported.
+      size_t substr_i = oss.str().find ("Timer A");
+      TEST_INEQUALITY(substr_i, std::string::npos);
+      substr_i = oss.str().find ("Timer B");
+      TEST_INEQUALITY(substr_i, std::string::npos);
+      
+      // Timer C should NOT be reported.
+      substr_i = oss.str().find ("Timer C");
+      TEST_EQUALITY(substr_i, std::string::npos);
+    }
+      
     // This sets up for the next unit test (if there is one).
     TimeMonitor::clearCounters ();
   }
@@ -1015,8 +1032,10 @@ namespace Teuchos {
 
     if (comm->getSize() > 1) {
       // The min should be 0
-      size_t substr_i = oss.str().find ("0 (0)");
-      TEST_INEQUALITY(substr_i, std::string::npos);
+      if (Teuchos::GlobalMPISession::getRank() == 0) {
+        size_t substr_i = oss.str().find ("0 (0)");
+        TEST_INEQUALITY(substr_i, std::string::npos);
+      }
     }
 
     //version 2, no comm provided
@@ -1026,8 +1045,10 @@ namespace Teuchos {
     out << oss2.str() << std::endl;
     if (comm->getSize() > 1) {
       // The min should be 0
-      size_t substr_i = oss2.str().find ("0 (0)");
-      TEST_INEQUALITY(substr_i, std::string::npos);
+      if (Teuchos::GlobalMPISession::getRank() == 0) {
+        size_t substr_i = oss2.str().find ("0 (0)");
+        TEST_INEQUALITY(substr_i, std::string::npos);
+      }
     }
 
     //////////////////////////////////////////////////////////////
