@@ -9,6 +9,8 @@ import re
 ################################################################################
 
 def get_input_files():
+    excludes = ("Teuchos_RCP_typemaps.i")
+
     os.chdir("${CMAKE_CURRENT_SOURCE_DIR}")
     result = glob.glob("Teuchos*.i")
     if ("${PyTrilinos_ENABLE_Epetra}"):
@@ -61,6 +63,37 @@ def get_input_files():
                     result.append(file)
             else:
                 result.append(file)
+
+    for e in excludes:
+        if e in result:
+            result.remove(e)
+
+    return result
+
+################################################################################
+
+def get_header_files():
+    result = ["PyTrilinos_config.h"]
+    if ("${PyTrilinos_ENABLE_Domi}"):
+        result.append("Domi_DefaultNode.hpp")
+    if ("${PyTrilinos_ENABLE_Tpetra}"):
+        result.append("Tpetra_ConfigDefs.hpp")
+
+    return result
+
+################################################################################
+
+def get_typedefs():
+    result = []
+    if ("${PyTrilinos_ENABLE_Tpetra}"):
+        result.append(("Tpetra::Details::DefaultTypes::scalar_type",
+                       "DefaultScalarType"))
+        result.append(("Tpetra::Details::DefaultTypes::local_ordinal_type",
+                       "DefaultLOType"))
+        result.append(("Tpetra::Details::DefaultTypes::global_ordinal_type",
+                       "DefaultGOType"))
+        result.append(("Tpetra::Details::DefaultTypes::node_type",
+                       "DefaultNodeType"))
 
     return result
 
@@ -120,6 +153,7 @@ def forward_decl(classname):
 ################################################################################
 
 def get_rcp_classes(swig_filenames):
+    match_excludes = ("##", "CLASS", "%shared_ptr", "ostream", "std::vector")
     regexes = [re.compile(r"%teuchos_rcp\((.+)\)"       , re.MULTILINE),
                re.compile(r"%teuchos_rcp_dap\(.+,(.+)\)", re.MULTILINE)]
     result = set()
@@ -128,10 +162,10 @@ def get_rcp_classes(swig_filenames):
         for regex in regexes:
             matches = regex.findall(text)
             for match in matches:
-                if "##" not in match and \
-                   "CLASS" not in match and \
-                   "%shared_ptr" not in match and \
-                   "ostream" not in match:
+                add_match = True
+                for me in match_excludes:
+                    if me in match: add_match = False
+                if add_match:
                     match = match.replace("< ","<")
                     match = match.replace(" >",">")
                     match = match.replace(">>","> >")
@@ -168,17 +202,13 @@ def list_forward_decl(rcp_classes):
 ################################################################################
 
 def main():
-    swig_files = get_input_files()
-    exclude = "Teuchos_RCP_typemaps.i"
-    if swig_files.count(exclude):
-        swig_files.remove(exclude)
-
+    swig_files    = get_input_files()
+    header_files  = get_header_files()
+    typedefs      = get_typedefs()
     teuchos_rcps  = get_rcp_classes(swig_files)
     forward_decls = list_forward_decl(teuchos_rcps)
 
-    #for cls in teuchos_rcps:
-    #    print(cls)
-
+    # Generate the SWIG interface file for Teuchos.RCP
     print("%define %teuchos_rcp_docstring")
     print('"')
     print("PyTrilinos.Teuchos.RCP is a special PyTrilinos module designed to")
@@ -202,13 +232,27 @@ def main():
     print("        docstring = %teuchos_rcp_docstring) RCP")
     print("")
     print("%{")
+    if header_files:
+        print("// Include files")
+        for filename in header_files:
+            print('#include "%s"' % filename)
+        print("")
     print("// Forward declarations")
     for decl in forward_decls:
         print(decl)
     print("%}")
     print("")
+    print("// Include the Teuchos::RCP typemaps")
     print('%include "Teuchos_RCP_typemaps.i"')
     print("")
+    if typedefs:
+        print("// Define the SWIG-inlined typedefs")
+        print("%inline")
+        print("{")
+        for typedef in typedefs:
+            print("typedef %s %s;" % typedef)
+        print("}")
+        print("")
     print('%feature("docstring")')
     print("is_null")
     print('"is_null(obj) -> bool')
@@ -259,9 +303,6 @@ def main():
         print("int  total_count(  Teuchos::RCP< %s > & object){ return object.total_count()  ; }" % classname)
         print("")
     print("}")
-
-    #print("Classes found = %d" % len(teuchos_rcps))
-    #print("Forward declarations = %d" % len(forward_decls))
 
 ################################################################################
 
