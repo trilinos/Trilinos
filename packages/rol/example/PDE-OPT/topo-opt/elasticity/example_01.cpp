@@ -101,7 +101,7 @@ int main(int argc, char *argv[]) {
 
   // *** Example body.
   try {
-    RealT tol(1e-8), one(1);
+    RealT tol(1e-8);
 
     /*** Read in XML input ***/
     std::string filename = "input_ex01.xml";

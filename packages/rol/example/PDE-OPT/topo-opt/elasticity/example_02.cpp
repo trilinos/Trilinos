@@ -199,7 +199,7 @@ int main(int argc, char *argv[]) {
 
     // Build sampler.
     BuildSampler<RealT> buildSampler(parlist->sublist("Problem"),probDim,example);
-    int stochDim = buildSampler.getDimension();
+    //int stochDim = buildSampler.getDimension();
     int nsamp    = parlist->sublist("Problem").get("Number of samples", 1);
     ROL::Ptr<ROL::BatchManager<RealT> > bman
       = ROL::makePtr<ROL::TpetraTeuchosBatchManager<RealT>>(comm);
