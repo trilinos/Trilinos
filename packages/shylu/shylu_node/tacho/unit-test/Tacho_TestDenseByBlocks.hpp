@@ -141,7 +141,6 @@ TEST( DenseByBlocks, chol ) {
 #endif
 TEST( DenseByBlocks, gemm ) {
   TEST_BEGIN;
-  typedef ArithTraits<ValueType> ats;
 
   double alpha = 2.0, beta = 0.5;
   const ordinal_type m = 100, n = 100, k = 100, mb = 32;
@@ -303,7 +302,6 @@ TEST( DenseByBlocks, gemm ) {
 
 TEST( DenseByBlocks, herk ) {
   TEST_BEGIN;
-  typedef ArithTraits<ValueType> ats;
 
   double alpha = 2.0, beta = 0.5;
   const ordinal_type n = 100, k = 50, mb = 32;
@@ -443,7 +441,6 @@ TEST( DenseByBlocks, herk ) {
 
 TEST( DenseByBlocks, trsm ) {
   TEST_BEGIN;
-  typedef ArithTraits<ValueType> ats;
 
   double alpha = 2.0;
   const ordinal_type m = 4, n = 4, mb = 4; 

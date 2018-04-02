@@ -47,22 +47,6 @@ namespace Tpetra {
 
 namespace MatrixMatrix{
 
-
-  // This is a placeholder function until Kokkos Issue #1270 is resolved and pushed into Trilinos
-template<class ViewType>
-void Kokkos_resize_1DView(ViewType & v, const size_t N) {
-  if(v.extent(0) == N) return;
-  typedef typename ViewType::execution_space execution_space;
-  typedef Kokkos::RangePolicy<execution_space, size_t> range_type;
-
-  ViewType newv("newv",N);
-  Kokkos::parallel_for(range_type(0,std::min(N,v.extent(0))), KOKKOS_LAMBDA(const size_t i) {
-      newv(i) = v(i);
-    });
-  v = newv;// This is a shallow copy
-}
-
-
 namespace ExtraKernels{
 
 
@@ -150,6 +134,7 @@ void mult_A_B_newmatrix_LowThreadGustavsonKernel(CrsMatrixStruct<Scalar, LocalOr
   c_lno_view_t Arowptr = Amat.graph.row_map, Browptr = Bmat.graph.row_map;
   const lno_nnz_view_t Acolind = Amat.graph.entries, Bcolind = Bmat.graph.entries;
   const scalar_view_t Avals = Amat.values, Bvals = Bmat.values;
+  size_t b_max_nnz_per_row = Bview.origMatrix->getNodeMaxNumRowEntries();
 
   c_lno_view_t  Irowptr;
   lno_nnz_view_t  Icolind;
@@ -158,6 +143,7 @@ void mult_A_B_newmatrix_LowThreadGustavsonKernel(CrsMatrixStruct<Scalar, LocalOr
     Irowptr = Bview.importMatrix->getLocalMatrix().graph.row_map;
     Icolind = Bview.importMatrix->getLocalMatrix().graph.entries;
     Ivals   = Bview.importMatrix->getLocalMatrix().values;
+    b_max_nnz_per_row = std::max(b_max_nnz_per_row,Bview.importMatrix->getNodeMaxNumRowEntries());
   }
 
   // Sizes
@@ -201,7 +187,6 @@ void mult_A_B_newmatrix_LowThreadGustavsonKernel(CrsMatrixStruct<Scalar, LocalOr
       // For each row of A/C
       size_t CSR_ip = 0, OLD_ip = 0;
       for (size_t i = my_thread_start; i < my_thread_stop; i++) {
-        //        printf("CMS: row %d CSR_alloc = %d\n",(int)i,(int)CSR_alloc);fflush(stdout);
         // mfh 27 Sep 2016: m is the number of rows in the input matrix A
         // on the calling process.
         Crowptr(i-my_thread_start) = CSR_ip;
@@ -266,7 +251,7 @@ void mult_A_B_newmatrix_LowThreadGustavsonKernel(CrsMatrixStruct<Scalar, LocalOr
         }
         
         // Resize for next pass if needed
-        if (CSR_ip + n > CSR_alloc) {
+        if (i+1 < my_thread_stop && CSR_ip + std::min(n,(Arowptr(i+2)-Arowptr(i+1))*b_max_nnz_per_row) > CSR_alloc) {
           CSR_alloc *= 2;
           Ccolind = u_lno_nnz_view_t((typename u_lno_nnz_view_t::data_type)realloc(Ccolind.data(),u_lno_nnz_view_t::shmem_size(CSR_alloc)),CSR_alloc);
           Cvals = u_scalar_view_t((typename u_scalar_view_t::data_type)realloc(Cvals.data(),u_scalar_view_t::shmem_size(CSR_alloc)),CSR_alloc);
@@ -523,6 +508,7 @@ void jacobi_A_B_newmatrix_LowThreadGustavsonKernel(Scalar omega,
   c_lno_view_t Arowptr = Amat.graph.row_map, Browptr = Bmat.graph.row_map;
   const lno_nnz_view_t Acolind = Amat.graph.entries, Bcolind = Bmat.graph.entries;
   const scalar_view_t Avals = Amat.values, Bvals = Bmat.values;
+  size_t b_max_nnz_per_row = Bview.origMatrix->getNodeMaxNumRowEntries();
 
   c_lno_view_t  Irowptr;
   lno_nnz_view_t  Icolind;
@@ -531,6 +517,7 @@ void jacobi_A_B_newmatrix_LowThreadGustavsonKernel(Scalar omega,
     Irowptr = Bview.importMatrix->getLocalMatrix().graph.row_map;
     Icolind = Bview.importMatrix->getLocalMatrix().graph.entries;
     Ivals   = Bview.importMatrix->getLocalMatrix().values;
+    b_max_nnz_per_row = std::max(b_max_nnz_per_row,Bview.importMatrix->getNodeMaxNumRowEntries());
   }
 
   // Jacobi-specific inner stuff
@@ -660,7 +647,7 @@ void jacobi_A_B_newmatrix_LowThreadGustavsonKernel(Scalar omega,
         }
         
         // Resize for next pass if needed
-        if (CSR_ip + n > CSR_alloc) {
+        if (i+1 < my_thread_stop && CSR_ip + std::min(n,(Arowptr(i+2)-Arowptr(i+1)+1)*b_max_nnz_per_row) > CSR_alloc) {
           CSR_alloc *= 2;
           Ccolind = u_lno_nnz_view_t((typename u_lno_nnz_view_t::data_type)realloc(Ccolind.data(),u_lno_nnz_view_t::shmem_size(CSR_alloc)),CSR_alloc);
           Cvals = u_scalar_view_t((typename u_scalar_view_t::data_type)realloc(Cvals.data(),u_scalar_view_t::shmem_size(CSR_alloc)),CSR_alloc);

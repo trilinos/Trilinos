@@ -77,7 +77,7 @@ namespace Tacho {
                       typename ExecSpaceType::memory_space >::assignable, 
                       "ExecSpaceType is not assignable from HostSpace" );
         
-        typedef ArithTraits<ValueType> ats;
+        typedef ArithTraits<ValueType> arith_traits;
         Kokkos::Impl::Timer timer;
 
         timer.reset();
@@ -130,7 +130,7 @@ namespace Tacho {
 
             mm.push_back(ijv_type(row, col, val));
             if (symmetry && row != col) 
-              mm.push_back(ijv_type(col, row, hermitian ? ats::conj(val) : val));
+              mm.push_back(ijv_type(col, row, hermitian ? arith_traits::conj(val) : val));
           }
           std::sort(mm.begin(), mm.end(), std::less<ijv_type>());
 
@@ -204,7 +204,7 @@ namespace Tacho {
                       >::assignable, 
                       "ExecSpaceType is not assignable from HostSpace" );
 
-        typedef ArithTraits<ValueType> ats;
+        typedef ArithTraits<ValueType> arith_traits;
         typedef ValueType value_type;
 
         std::streamsize prec = file.precision();
@@ -213,7 +213,7 @@ namespace Tacho {
 
         {
           file << "%%MatrixMarket matrix coordinate "
-               << (ats::is_complex ? "complex " : "real ")
+               << (arith_traits::is_complex ? "complex " : "real ")
                << (is_valid_uplo_tag<uplo>::value ? "symmetric " : "general ")
                << std::endl;
           file << comment << std::endl;

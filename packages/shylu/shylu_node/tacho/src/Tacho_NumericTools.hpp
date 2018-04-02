@@ -1161,7 +1161,7 @@ namespace Tacho {
         auto h_x = Kokkos::create_mirror_view(x); Kokkos::deep_copy(h_x, x);
         auto h_b = Kokkos::create_mirror_view(b); Kokkos::deep_copy(h_b, b);
 
-        typedef ArithTraits<value_type> ats;
+        typedef ArithTraits<value_type> arith_traits;
         const ordinal_type m = h_A.NumRows(), k = h_b.dimension_1();
         double diff = 0, norm = 0;
         for (ordinal_type i=0;i<m;++i) {
@@ -1172,8 +1172,8 @@ namespace Tacho {
               const ordinal_type col = h_A.Col(j);
               s += h_A.Value(j)*h_x(col,p);
             }
-            norm += ats::real(h_b(i,p)*ats::conj(h_b(i,p)));
-            diff += ats::real((h_b(i,p) - s)*ats::conj(h_b(i,p) - s));
+            norm += arith_traits::real(h_b(i,p)*arith_traits::conj(h_b(i,p)));
+            diff += arith_traits::real((h_b(i,p) - s)*arith_traits::conj(h_b(i,p) - s));
           }
         }
         return sqrt(diff/norm);

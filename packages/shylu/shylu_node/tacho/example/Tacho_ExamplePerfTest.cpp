@@ -74,10 +74,7 @@ int main (int argc, char *argv[]) {
   if (r_parse) return 0; 
 
   Kokkos::initialize(argc, argv);
-  if (std::is_same<Kokkos::DefaultHostExecutionSpace,Kokkos::Serial>::value)
-    std::cout << "Kokkos::Serial\n";
-  else
-    Kokkos::DefaultHostExecutionSpace::print_configuration(std::cout, false);
+  Kokkos::DefaultHostExecutionSpace::print_configuration(std::cout, false);
 
   int r_val = 0;
 

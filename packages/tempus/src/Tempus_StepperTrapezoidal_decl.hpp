@@ -41,7 +41,7 @@ public:
   /// \name Basic stepper methods
   //@{
     virtual void setObserver(
-      Teuchos::RCP<StepperTrapezoidalObserver<Scalar> > obs = Teuchos::null);
+      Teuchos::RCP<StepperObserver<Scalar> > obs = Teuchos::null);
 
     /// Initialize during construction and after changing input parameters.
     virtual void initialize();
@@ -92,7 +92,8 @@ private:
 private:
 
   Teuchos::RCP<Stepper<Scalar> >                    predictorStepper_;
-  Teuchos::RCP<StepperTrapezoidalObserver<Scalar> > stepperObserver_;
+  Teuchos::RCP<StepperObserver<Scalar> >            stepperObserver_;
+  Teuchos::RCP<StepperTrapezoidalObserver<Scalar> > stepperTrapObserver_;
   Teuchos::RCP<Thyra::VectorBase<Scalar> >          xDotTemp_;
 };
 
