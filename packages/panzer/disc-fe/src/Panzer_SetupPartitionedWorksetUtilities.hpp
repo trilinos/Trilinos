@@ -52,7 +52,7 @@
 namespace panzer
 {
 class WorksetDescriptor;
-class WorksetNeeds;
+struct WorksetNeeds;
 template<typename LO, typename GO>
 class LocalMeshInfo;
 }
