@@ -136,12 +136,13 @@ main (int argc, char *argv[])
     std::string solverName = "GMRES";
     ST materialTensorOffDiagonalValue = 0.0;
 
+
     // Set default values of command-line arguments.
-    setCommandLineArgumentDefaults (nx, ny, nz, xmlInputParamsFile,
+    setCommandLineArgumentDefaults (nx, ny, nz, xmlInputParamsFile, 
                                     solverName, verbose, debug);
     // Parse and validate command-line arguments.
     Teuchos::CommandLineProcessor cmdp (false, true);
-    setUpCommandLineArguments (cmdp, nx, ny, nz, xmlInputParamsFile,
+    setUpCommandLineArguments (cmdp, nx, ny, nz, xmlInputParamsFile, 
                                solverName, tolFromCmdLine,
                                maxNumItersFromCmdLine,
                                verbose, debug);
