@@ -16,23 +16,23 @@
   <ParameterList name="SOL">
     <Parameter name="Stochastic Component Type" type="string" value="Mean Value"   />
     <!--
-      <Parameter name="Stochastic Component Type" type="string" value="Risk Averse"  />
-      <Parameter name="Stochastic Component Type" type="string" value="Risk Neutral" />
+    <Parameter name="Stochastic Component Type" type="string" value="Risk Averse"  />
+    <Parameter name="Stochastic Component Type" type="string" value="Risk Neutral" />
+    <Parameter name="Stochastic Component Type" type="string" value="Probability"  />
     -->
     <ParameterList name="Risk Measure">
-      <Parameter name="Name" type="string" value="Exponential Utility" />
+      <Parameter name="Name" type="string" value="Entropic Risk" />
       <!--
-        <Parameter name="Name" type="string" value="KL Divergence" />
-        <Parameter name="Name" type="string" value="Quantile-Based Quadrangle" />
-        <Parameter name="Name" type="string" value="Log-Quantile Quadrangle" />
-        <Parameter name="Name" type="string" value="bPOE" />
+      <Parameter name="Name" type="string" value="KL Divergence" />
+      <Parameter name="Name" type="string" value="CVaR"          />
+      <Parameter name="Name" type="string" value="Log Quantile"  />
       -->
 
       <ParameterList name="KL Divergence">
         <Parameter name="Threshold" type="double" value="1.e-4" />
       </ParameterList>
 
-      <ParameterList name="Quantile-Based Quadrangle">
+      <ParameterList name="CVaR">
         <Parameter name="Confidence Level"             type="double" value="0.95"  />
         <Parameter name="Convex Combination Parameter" type="double" value="0.0"   />
         <Parameter name="Smoothing Parameter"          type="double" value="1.e-4" />
@@ -45,11 +45,11 @@
         </ParameterList>
       </ParameterList>
 
-      <ParameterList name="Exponential Utility">
+      <ParameterList name="Entropic Risk">
         <Parameter name="Rate" type="double" value="2.0" />
       </ParameterList>
 
-      <ParameterList name="Log-Quantile Quadrangle">
+      <ParameterList name="Log Quantile">
         <Parameter name="Slope for Linear Growth"     type="double" value="0.0"   />
         <Parameter name="Rate for Exponential Growth" type="double" value="2.0"   />
         <Parameter name="Smoothing Parameter"         type="double" value="1.e-4" />
@@ -61,12 +61,14 @@
           </ParameterList>
         </ParameterList>
       </ParameterList>
+    </ParameterList>
 
+    <ParameterList name="Probability">
+      <Parameter name="Name" type="string" value="bPOE" />
       <ParameterList name="bPOE">
         <Parameter name="Moment Order" type="double" value="2.0" />
         <Parameter name="Threshold"    type="double" value="6.0" />
       </ParameterList>
-
     </ParameterList>
   </ParameterList>
 

@@ -58,6 +58,7 @@
 #include "ROL_MoreauYosidaPenaltyStep.hpp"
 #include "ROL_BundleStep.hpp"
 #include "ROL_InteriorPointStep.hpp"
+#include "ROL_FletcherStep.hpp"
 
 namespace ROL {
 
@@ -67,7 +68,7 @@ namespace ROL {
     ~StepFactory(void){}
 
     ROL::Ptr<Step<Real> > getStep(const std::string &type,
-                                  Teuchos::ParameterList &parlist) const {
+                                      Teuchos::ParameterList &parlist) const {
       EStep els = StringToEStep(type);
       switch(els) {
         case STEP_AUGMENTEDLAGRANGIAN: return ROL::makePtr<AugmentedLagrangianStep<Real>>(parlist);
@@ -78,6 +79,7 @@ namespace ROL {
         case STEP_PRIMALDUALACTIVESET: return ROL::makePtr<PrimalDualActiveSetStep<Real>>(parlist);
         case STEP_TRUSTREGION:         return ROL::makePtr<TrustRegionStep<Real>>(parlist);
         case STEP_INTERIORPOINT:       return ROL::makePtr<InteriorPointStep<Real>>(parlist); 
+        case STEP_FLETCHER:            return ROL::makePtr<FletcherStep<Real>>(parlist);
         default:                       return ROL::nullPtr;
       }
     }

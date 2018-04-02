@@ -107,7 +107,7 @@ namespace ROL {
 
 
             /// \brief Compute solution vector
-            void run( V &x, OP& A, const V &b, OP &M, int &iter, int &flag )  {
+            Real run( V &x, OP& A, const V &b, OP &M, int &iter, int &flag )  {
 
                 
                 
@@ -141,6 +141,8 @@ namespace ROL {
                 flag = static_cast<int>(solver_->solve());
 
                 iter = solver_->getNumIters();
+
+                return solver_->achievedTol();
             }
     };
 }

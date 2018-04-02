@@ -427,12 +427,14 @@ private:
     const Real xi = std::sqrt(sqrtpi*lc), sqrt3 = std::sqrt(three);
     const std::vector<Real> param = PDE<Real>::getParameter();
     Real f(0), phi(0);                                          
-    Real val = one + sqrt3*param[25]*std::sqrt(sqrtpi*lc*half);
+    Real p25 = (param.size() > 25 ? param[25] : static_cast<Real>(0)); 
+    Real val = one + sqrt3*p25*std::sqrt(sqrtpi*lc*half);
     Real arg = one + sqrt3*std::sqrt(sqrtpi*lc*half);
     for (int i = 1; i < ns; ++i) {
       f = floor(half*static_cast<Real>(i+1));     
       phi = ((i+1)%2 ? std::sin(f*M_PI*x[0]) : std::cos(f*M_PI*x[0]));
-      val += xi*std::exp(-std::pow(f*M_PI*lc,two)/eight)*phi*sqrt3*param[i+25];
+      Real pi25 = (static_cast<int>(param.size()) > i+25 ? param[i+25] : static_cast<Real>(0));
+      val += xi*std::exp(-std::pow(f*M_PI*lc,two)/eight)*phi*sqrt3*pi25;
       arg += xi*std::exp(-std::pow(f*M_PI*lc,two)/eight)*std::abs(phi)*sqrt3;
     }
     return half + two*std::exp(val)/std::exp(arg);
@@ -441,8 +443,10 @@ private:
   void evaluateVelocity(std::vector<Real> &adv, const std::vector<Real> &x) const {
     const Real half(0.5), one(1), five(5), ten(10);
     const std::vector<Real> param = PDE<Real>::getParameter();
-    const Real a = five*half*(param[36]+one);
-    const Real b = five + (ten-five)*half*(param[35]+one);
+    Real p35 = (param.size() > 35 ? param[35] : static_cast<Real>(0));
+    Real p36 = (param.size() > 36 ? param[36] : static_cast<Real>(0));
+    const Real a = five*half*(p36+one);
+    const Real b = five + (ten-five)*half*(p35+one);
     adv[0] = b - a*x[0];
     adv[1] =     a*x[1];
   }
@@ -466,11 +470,17 @@ private:
     const std::vector<Real> syl = {0.04, 0.01, 0.02, 0.02, 0.01};
     const std::vector<Real> syu = {0.12, 0.05, 0.04, 0.04, 0.03};
     for (int i=0; i<ns; ++i) {
-      mag  = ml[i] + (mu[i]-ml[i])*half*(param[i]+one);
-      x0   = xl[i] + (xu[i]-xl[i])*half*(param[i+1*ns]+one);
-      y0   = yl[i] + (yu[i]-yl[i])*half*(param[i+3*ns]+one);
-      sx   = sxl[i] + (sxu[i]-sxl[i])*half*(param[i+2*ns]+one);
-      sy   = syl[i] + (syu[i]-syl[i])*half*(param[i+4*ns]+one);
+      Real pi  = (static_cast<int>(param.size()) > i      ? param[i]      : static_cast<Real>(0));
+      Real pi1 = (static_cast<int>(param.size()) > i+1*ns ? param[i+1*ns] : static_cast<Real>(0));
+      Real pi2 = (static_cast<int>(param.size()) > i+2*ns ? param[i+2*ns] : static_cast<Real>(0));
+      Real pi3 = (static_cast<int>(param.size()) > i+3*ns ? param[i+3*ns] : static_cast<Real>(0));
+      Real pi4 = (static_cast<int>(param.size()) > i+4*ns ? param[i+4*ns] : static_cast<Real>(0));
+
+      mag  = ml[i] + (mu[i]-ml[i])*half*(pi+one);
+      x0   = xl[i] + (xu[i]-xl[i])*half*(pi1+one);
+      y0   = yl[i] + (yu[i]-yl[i])*half*(pi3+one);
+      sx   = sxl[i] + (sxu[i]-sxl[i])*half*(pi2+one);
+      sy   = syl[i] + (syu[i]-syl[i])*half*(pi4+one);
       arg1 = std::pow((x[0]-x0)/sx, two);
       arg2 = std::pow((x[1]-y0)/sy, two);
       source += mag*std::exp(-half*(arg1+arg2));

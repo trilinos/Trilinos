@@ -87,6 +87,10 @@ public:
       return true;
     }
     else {
+      state.statusFlag = ((state.gnorm <= gtol_) && (state.cnorm <= ctol_) ? EXITSTATUS_CONVERGED
+                           : state.snorm <= stol_ ? EXITSTATUS_STEPTOL
+                           : state.iter  >= max_iter_ ? EXITSTATUS_MAXITER
+                           : EXITSTATUS_LAST);
       return false;
     }
   }

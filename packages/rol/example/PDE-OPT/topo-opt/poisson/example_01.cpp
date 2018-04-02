@@ -97,7 +97,7 @@ int main(int argc, char *argv[]) {
     RealT tol(1.e-8), one(1);
 
     /*** Read in XML input ***/
-    std::string filename = "input.xml";
+    std::string filename = "input_ex01.xml";
     Teuchos::RCP<Teuchos::ParameterList> parlist = Teuchos::rcp( new Teuchos::ParameterList() );
     Teuchos::updateParametersFromXmlFile( filename, parlist.ptr() );
 

@@ -52,13 +52,12 @@
 #include "ROL_StdVector.hpp"
 #include "ROL_StdBoundConstraint.hpp"
 #include "ROL_Types.hpp"
-#include "ROL_Algorithm.hpp"
 
-#include "ROL_Objective.hpp"
 #include "ROL_MonteCarloGenerator.hpp"
 #include "ROL_StdTeuchosBatchManager.hpp"
 
-#include "ROL_OptimizationProblem.hpp"
+#include "ROL_OptimizationSolver.hpp"
+#include "ROL_RiskMeasureFactory.hpp"
 
 typedef double RealT;
 
@@ -112,13 +111,13 @@ void setUpAndSolve(Teuchos::ParameterList &list,
                    ROL::Ptr<ROL::Vector<RealT> > &x,
                    ROL::Ptr<ROL::BoundConstraint<RealT> > &bnd,
                    std::ostream & outStream) {
-  ROL::OptimizationProblem<RealT> opt(pObj,x,bnd);
-  opt.setStochasticObjective(list,sampler);
-  outStream << "\nCheck Derivatives of Stochastic Objective Function\n";
-  opt.check(outStream);
-  // Run ROL algorithm
-  ROL::Algorithm<RealT> algo("Trust Region",list,false);
-  algo.run(opt,true,outStream);
+  x->zero();
+  ROL::OptimizationProblem<RealT> problem(pObj,x,bnd);
+  problem.setStochasticObjective(list,sampler);
+  //outStream << "\nCheck Derivatives of Stochastic Objective Function\n";
+  //problem.check(outStream);
+  ROL::OptimizationSolver<RealT> solver(problem,list);
+  solver.solve(outStream);
 }
 
 template<class Real>
@@ -187,8 +186,8 @@ int main(int argc, char* argv[]) {
     ROL::Ptr<ROL::Vector<RealT> > x  = ROL::makePtr<ROL::StdVector<RealT>>(x_ptr);
     ROL::Ptr<std::vector<RealT> > d_ptr  = ROL::makePtr<std::vector<RealT>>(dim,0.0);
     ROL::Ptr<ROL::Vector<RealT> > d  = ROL::makePtr<ROL::StdVector<RealT>>(d_ptr);
-    setRandomVector(*x_ptr,commptr);
-    setRandomVector(*d_ptr,commptr);
+    //setRandomVector(*x_ptr,commptr);
+    //setRandomVector(*d_ptr,commptr);
     // Build samplers
     int nSamp = 1000;
     unsigned sdim = dim + 2;
@@ -212,146 +211,138 @@ int main(int argc, char* argv[]) {
     pObj->setParameter(sampler->getMyPoint(0));
     pObj->checkGradient(*x,*d,true,*outStream);
     pObj->checkHessVec(*x,*d,true,*outStream);
+    // Storage for solutions
+    std::vector<std::tuple<std::string,std::string,std::vector<RealT>>> solution;
     /**********************************************************************************************/
     /************************* MEAN VALUE *********************************************************/
     /**********************************************************************************************/
-    *outStream << "\nMEAN VALUE\n";
+    *outStream << "\nMean Value\n";
     list.sublist("SOL").set("Stochastic Component Type","Mean Value"); 
-    setRandomVector(*x_ptr,commptr);
+    //setRandomVector(*x_ptr,commptr);
     setUpAndSolve(list,pObj,sampler,x,bnd,*outStream);
     printSolution(*x_ptr,*outStream);
+    solution.push_back(std::tuple<std::string,std::string,std::vector<RealT>>("","Mean Value",*x_ptr));
     /**********************************************************************************************/
     /************************* RISK NEUTRAL *******************************************************/
     /**********************************************************************************************/
-    *outStream << "\nRISK NEUTRAL\n";
+    *outStream << "\nRisk Neutral\n";
     list.sublist("SOL").set("Stochastic Component Type","Risk Neutral"); 
-    setRandomVector(*x_ptr,commptr);
+    //setRandomVector(*x_ptr,commptr);
     setUpAndSolve(list,pObj,sampler,x,bnd,*outStream);
     printSolution(*x_ptr,*outStream);
+    solution.push_back(std::tuple<std::string,std::string,std::vector<RealT>>("","Risk Neutral",*x_ptr));
     /**********************************************************************************************/
-    /************************* MEAN PLUS DEVIATION ************************************************/
+    /************************* RISK AVERSE ********************************************************/
     /**********************************************************************************************/
-    *outStream << "\nMEAN PLUS DEVIATION\n";
+    for (ROL::ERiskMeasure er = ROL::RISKMEASURE_CVAR; er != ROL::RISKMEASURE_LAST; er++) {
+      std::string name = ROL::ERiskMeasureToString(er);
+      *outStream << std::endl << name << std::endl;
+      list.sublist("SOL").set("Stochastic Component Type","Risk Averse"); 
+      list.sublist("SOL").sublist("Risk Measure").set("Name",name);
+      if (er == ROL::RISKMEASURE_MEANDEVIATION           ||
+          er == ROL::RISKMEASURE_MEANVARIANCE            ||
+          er == ROL::RISKMEASURE_MEANDEVIATIONFROMTARGET ||
+          er == ROL::RISKMEASURE_MEANVARIANCEFROMTARGET) {
+        list.sublist("SOL").sublist("Risk Measure").sublist(name).set("Deviation Type","Absolute");
+        //setRandomVector(*x_ptr,commptr);
+        setUpAndSolve(list,pObj,sampler,x,bnd,*outStream);
+        printSolution(*x_ptr,*outStream);
+        solution.push_back(std::tuple<std::string,std::string,std::vector<RealT>>("Risk",name,*x_ptr));
+
+        list.sublist("SOL").sublist("Risk Measure").sublist(name).set("Deviation Type","Upper");
+        //setRandomVector(*x_ptr,commptr);
+        setUpAndSolve(list,pObj,sampler,x,bnd,*outStream);
+        printSolution(*x_ptr,*outStream);
+        solution.push_back(std::tuple<std::string,std::string,std::vector<RealT>>("Risk",name,*x_ptr));
+      }
+      else if (er == ROL::RISKMEASURE_CHEBYSHEVSPECTRAL) {
+        list.sublist("SOL").sublist("Risk Measure").sublist(name).set("Weight Type",1);
+        //setRandomVector(*x_ptr,commptr);
+        setUpAndSolve(list,pObj,sampler,x,bnd,*outStream);
+        printSolution(*x_ptr,*outStream);
+        solution.push_back(std::tuple<std::string,std::string,std::vector<RealT>>("Risk",name,*x_ptr));
+
+        list.sublist("SOL").sublist("Risk Measure").sublist(name).set("Weight Type",2);
+        //setRandomVector(*x_ptr,commptr);
+        setUpAndSolve(list,pObj,sampler,x,bnd,*outStream);
+        printSolution(*x_ptr,*outStream);
+        solution.push_back(std::tuple<std::string,std::string,std::vector<RealT>>("Risk",name,*x_ptr));
+
+        list.sublist("SOL").sublist("Risk Measure").sublist(name).set("Weight Type",3);
+        //setRandomVector(*x_ptr,commptr);
+        setUpAndSolve(list,pObj,sampler,x,bnd,*outStream);
+        printSolution(*x_ptr,*outStream);
+        solution.push_back(std::tuple<std::string,std::string,std::vector<RealT>>("Risk",name,*x_ptr));
+      }
+      else {
+        //setRandomVector(*x_ptr,commptr);
+        setUpAndSolve(list,pObj,sampler,x,bnd,*outStream);
+        printSolution(*x_ptr,*outStream);
+        solution.push_back(std::tuple<std::string,std::string,std::vector<RealT>>("Risk",name,*x_ptr));
+      }
+    }
+    /**********************************************************************************************/
+    /************************* CONVEX COMBINATION OF RISK MEASURES ********************************/
+    /**********************************************************************************************/
+    *outStream << "\nConvex Combination if Risk Measures\n";
     list.sublist("SOL").set("Stochastic Component Type","Risk Averse"); 
-    list.sublist("SOL").sublist("Risk Measure").set("Name","Mean Plus Deviation");
-    list.sublist("SOL").sublist("Risk Measure").sublist("Mean Plus Deviation").set("Deviation Type","Absolute");
-    setRandomVector(*x_ptr,commptr);
+    list.sublist("SOL").sublist("Risk Measure").set("Name","Convex Combination Risk Measure");
+    //setRandomVector(*x_ptr,commptr);
     setUpAndSolve(list,pObj,sampler,x,bnd,*outStream);
     printSolution(*x_ptr,*outStream);
+    solution.push_back(std::tuple<std::string,std::string,std::vector<RealT>>("Risk","Convex Combination of Risk Measures",*x_ptr));
     /**********************************************************************************************/
-    /************************* MEAN PLUS VARIANCE *************************************************/
+    /************************* DEVIATION **********************************************************/
     /**********************************************************************************************/
-    *outStream << "\nMEAN PLUS VARIANCE\n";
-    list.sublist("SOL").set("Stochastic Component Type","Risk Averse"); 
-    list.sublist("SOL").sublist("Risk Measure").set("Name","Mean Plus Variance");
-    list.sublist("SOL").sublist("Risk Measure").sublist("Mean Plus Variance").set("Deviation Type","Absolute");
-    setRandomVector(*x_ptr,commptr);
-    setUpAndSolve(list,pObj,sampler,x,bnd,*outStream);
-    printSolution(*x_ptr,*outStream);
+    for (ROL::EDeviationMeasure ed = ROL::DEVIATIONMEASURE_MEANVARIANCEQUADRANGLE; ed != ROL::DEVIATIONMEASURE_LAST; ed++) {
+      std::string name = ROL::EDeviationMeasureToString(ed);
+      *outStream << std::endl << "Deviation: " << name << std::endl;
+      list.sublist("SOL").set("Stochastic Component Type","Deviation"); 
+      list.sublist("SOL").sublist("Deviation Measure").set("Name",name);
+      //setRandomVector(*x_ptr);
+      setUpAndSolve(list,pObj,sampler,x,bnd,*outStream);
+      printSolution(*x_ptr,*outStream);
+      solution.push_back(std::tuple<std::string,std::string,std::vector<RealT>>("Deviation",name,*x_ptr));
+    }
     /**********************************************************************************************/
-    /************************* MEAN PLUS DEVIATION FROM TARGET ************************************/
+    /************************* REGRET *************************************************************/
     /**********************************************************************************************/
-    *outStream << "\nMEAN PLUS DEVIATION FROM TARGET\n";
-    list.sublist("SOL").set("Stochastic Component Type","Risk Averse"); 
-    list.sublist("SOL").sublist("Risk Measure").set("Name","Mean Plus Deviation From Target");
-    list.sublist("SOL").sublist("Risk Measure").sublist("Mean Plus Deviation From Target").set("Deviation Type","Absolute");
-    setRandomVector(*x_ptr,commptr);
-    setUpAndSolve(list,pObj,sampler,x,bnd,*outStream);
-    printSolution(*x_ptr,*outStream);
+    for (ROL::ERegretMeasure er = ROL::REGRETMEASURE_MEANABSOLUTELOSS; er != ROL::REGRETMEASURE_LAST; er++) {
+      std::string name = ROL::ERegretMeasureToString(er);
+      *outStream << std::endl << "Regret: " << name << std::endl;
+      list.sublist("SOL").set("Stochastic Component Type","Regret"); 
+      list.sublist("SOL").sublist("Regret Measure").set("Name",name);
+      //setRandomVector(*x_ptr);
+      setUpAndSolve(list,pObj,sampler,x,bnd,*outStream);
+      printSolution(*x_ptr,*outStream);
+      solution.push_back(std::tuple<std::string,std::string,std::vector<RealT>>("Regret",name,*x_ptr));
+    }
     /**********************************************************************************************/
-    /************************* MEAN PLUS VARIANCE FROM TARGET *************************************/
+    /************************* PROBABILITY ********************************************************/
     /**********************************************************************************************/
-    *outStream << "\nMEAN PLUS VARIANCE FROM TARGET\n";
-    list.sublist("SOL").set("Stochastic Component Type","Risk Averse"); 
-    list.sublist("SOL").sublist("Risk Measure").set("Name","Mean Plus Variance From Target");
-    list.sublist("SOL").sublist("Risk Measure").sublist("Mean Plus Variance From Target").set("Deviation Type","Absolute");
-    setRandomVector(*x_ptr,commptr);
-    setUpAndSolve(list,pObj,sampler,x,bnd,*outStream);
-    printSolution(*x_ptr,*outStream);
-    /**********************************************************************************************/
-    /************************* MEAN PLUS SEMIDEVIATION ********************************************/
-    /**********************************************************************************************/
-    *outStream << "\nMEAN PLUS SEMIDEVIATION\n";
-    list.sublist("SOL").set("Stochastic Component Type","Risk Averse"); 
-    list.sublist("SOL").sublist("Risk Measure").set("Name","Mean Plus Deviation");
-    list.sublist("SOL").sublist("Risk Measure").sublist("Mean Plus Deviation").set("Deviation Type","Upper");
-    setRandomVector(*x_ptr,commptr);
-    setUpAndSolve(list,pObj,sampler,x,bnd,*outStream);
-    printSolution(*x_ptr,*outStream);
-    /**********************************************************************************************/
-    /************************* MEAN PLUS SEMIVARIANCE *********************************************/
-    /**********************************************************************************************/
-    *outStream << "\nMEAN PLUS SEMIVARIANCE\n";
-    list.sublist("SOL").set("Stochastic Component Type","Risk Averse"); 
-    list.sublist("SOL").sublist("Risk Measure").set("Name","Mean Plus Variance");
-    list.sublist("SOL").sublist("Risk Measure").sublist("Mean Plus Variance").set("Deviation Type","Upper");
-    setRandomVector(*x_ptr,commptr);
-    setUpAndSolve(list,pObj,sampler,x,bnd,*outStream);
-    printSolution(*x_ptr,*outStream);
-    /**********************************************************************************************/
-    /************************* MEAN PLUS SEMIDEVIATION FROM TARGET ********************************/
-    /**********************************************************************************************/
-    *outStream << "\nMEAN PLUS SEMIDEVIATION FROM TARGET\n";
-    list.sublist("SOL").set("Stochastic Component Type","Risk Averse"); 
-    list.sublist("SOL").sublist("Risk Measure").set("Name","Mean Plus Deviation From Target");
-    list.sublist("SOL").sublist("Risk Measure").sublist("Mean Plus Deviation From Target").set("Deviation Type","Upper");
-    setRandomVector(*x_ptr,commptr);
-    setUpAndSolve(list,pObj,sampler,x,bnd,*outStream);
-    printSolution(*x_ptr,*outStream);
-    /**********************************************************************************************/
-    /************************* MEAN PLUS SEMIVARIANCE FROM TARGET *********************************/
-    /**********************************************************************************************/
-    *outStream << "\nMEAN PLUS SEMIVARIANCE FROM TARGET\n";
-    list.sublist("SOL").set("Stochastic Component Type","Risk Averse"); 
-    list.sublist("SOL").sublist("Risk Measure").set("Name","Mean Plus Variance From Target");
-    list.sublist("SOL").sublist("Risk Measure").sublist("Mean Plus Variance From Target").set("Deviation Type","Upper");
-    setRandomVector(*x_ptr,commptr);
-    setUpAndSolve(list,pObj,sampler,x,bnd,*outStream);
-    printSolution(*x_ptr,*outStream);
-    /**********************************************************************************************/
-    /************************* MEAN PLUS CVAR *****************************************************/
-    /**********************************************************************************************/
-    *outStream << "\nMEAN PLUS CONDITIONAL VALUE AT RISK\n";
-    list.sublist("SOL").set("Stochastic Component Type","Risk Averse"); 
-    list.sublist("SOL").sublist("Risk Measure").set("Name","CVaR");
-    setRandomVector(*x_ptr,commptr);
-    setUpAndSolve(list,pObj,sampler,x,bnd,*outStream);
-    printSolution(*x_ptr,*outStream);
-    /**********************************************************************************************/
-    /************************* SMOOTHED CVAR QUADRANGLE *******************************************/
-    /**********************************************************************************************/
-    *outStream << "\nQUANTILE-BASED QUADRANGLE RISK MEASURE\n";
-    list.sublist("SOL").set("Stochastic Component Type","Risk Averse"); 
-    list.sublist("SOL").sublist("Risk Measure").set("Name","Quantile-Based Quadrangle");
-    setRandomVector(*x_ptr,commptr);
-    setUpAndSolve(list,pObj,sampler,x,bnd,*outStream);
-    printSolution(*x_ptr,*outStream);
-    /**********************************************************************************************/
-    /************************* MEAN PLUS HMCR *****************************************************/
-    /**********************************************************************************************/
-//    *outStream << "\nMEAN PLUS HIGHER MOMENT COHERENT RISK MEASURE\n";
-//    list.sublist("SOL").sublist("Risk Measure").set("Name","HMCR");
-//    setRandomVector(*x_ptr,commptr);
-//    setUpAndSolve(list,pObj,sampler,x,bnd,*outStream);
-//    printSolution(*x_ptr,*outStream);
-    /**********************************************************************************************/
-    /************************* EXPONENTIAL UTILITY FUNCTION ***************************************/
-    /**********************************************************************************************/
-    *outStream << "\nEXPONENTIAL UTILITY FUNCTION\n";
-    list.sublist("SOL").set("Stochastic Component Type","Risk Averse"); 
-    list.sublist("SOL").sublist("Risk Measure").set("Name","Exponential Utility");
-    setRandomVector(*x_ptr,commptr);
-    setUpAndSolve(list,pObj,sampler,x,bnd,*outStream);
-    printSolution(*x_ptr,*outStream);
-    /**********************************************************************************************/
-    /************************* BPOE ***************************************************************/
-    /**********************************************************************************************/
-    *outStream << "\nBUFFERED PROBABILITY OF EXCEEDANCE\n";
-    list.sublist("SOL").set("Stochastic Component Type","Risk Averse"); 
-    list.sublist("SOL").sublist("Risk Measure").set("Name","bPOE");
-    setRandomVector(*x_ptr,commptr);
-    setUpAndSolve(list,pObj,sampler,x,bnd,*outStream);
-    printSolution(*x_ptr,*outStream);
+    for (ROL::EProbability ep = ROL::PROBABILITY_BPOE; ep != ROL::PROBABILITY_LAST; ep++) {
+      std::string name = ROL::EProbabilityToString(ep);
+      *outStream << std::endl << "Probability: " << name << std::endl;
+      list.sublist("SOL").set("Stochastic Component Type","Probability"); 
+      list.sublist("SOL").sublist("Probability").set("Name",name);
+      //setRandomVector(*x_ptr);
+      setUpAndSolve(list,pObj,sampler,x,bnd,*outStream);
+      printSolution(*x_ptr,*outStream);
+      solution.push_back(std::tuple<std::string,std::string,std::vector<RealT>>("Probability",name,*x_ptr));
+    }
+
+    std::vector<std::tuple<std::string,std::string,std::vector<RealT>>>::iterator it;
+    *outStream << std::endl << std::scientific << std::setprecision(6);
+    for (it = solution.begin(); it != solution.end(); ++it) {
+      *outStream << "  ";
+      *outStream << std::setw(20) << std::left << std::get<0>(*it);
+      *outStream << std::setw(50) << std::left << std::get<1>(*it);
+      for (unsigned i = 0; i < dim; ++i) {
+        *outStream << std::setw(18) << std::left << (std::get<2>(*it))[i];
+      }
+      *outStream << std::endl;
+    }
+    *outStream << std::endl;
   }
   catch (std::logic_error err) {
     *outStream << err.what() << "\n";

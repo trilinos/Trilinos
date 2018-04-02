@@ -49,8 +49,9 @@
 #include "ROL_Algorithm.hpp"
 
 #include "ROL_Reduced_Objective_SimOpt.hpp"
-#include "ROL_HMCRObjective.hpp"
+//#include "ROL_HMCRObjective.hpp"
 #include "ROL_RiskVector.hpp"
+#include "ROL_StochasticObjective.hpp"
 
 #include "ROL_MonteCarloGenerator.hpp"
 
@@ -193,10 +194,15 @@ int main(int argc, char *argv[]) {
     ROL::Ptr<ROL::Objective<RealT> > robj
       = ROL::makePtr<ROL::Reduced_Objective_SimOpt<RealT>>(
           pobj,pcon,up,zp,lp,gup,gzp,cp,storage,fdhess);
-    RealT order = 2.0, prob = 0.95;
+    //RealT order = 2.0, prob = 0.95;
+    //ROL::Ptr<ROL::Objective<RealT> > obj
+    //  = ROL::makePtr<ROL::HMCRObjective<RealT>>(
+    //      robj,order,prob,sampler,storage);
+    hmcrlist->sublist("SOL").sublist("Risk Measure").sublist("HMCR").set("Order",2);
+    hmcrlist->sublist("SOL").sublist("Risk Measure").sublist("HMCR").set("Confidence Level",0.95);
+    hmcrlist->sublist("SOL").sublist("Risk Measure").sublist("HMCR").set("Convex Combination Parameter",0.0);
     ROL::Ptr<ROL::Objective<RealT> > obj
-      = ROL::makePtr<ROL::HMCRObjective<RealT>>(
-          robj,order,prob,sampler,storage);
+      = ROL::makePtr<ROL::StochasticObjective<RealT> >(robj,*hmcrlist,sampler);
     /*************************************************************************/
     /************* CHECK DERIVATIVES AND CONSISTENCY *************************/
     /*************************************************************************/
