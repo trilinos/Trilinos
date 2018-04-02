@@ -547,9 +547,16 @@ void AlgND<Adapter>::getBoundLayer(part_t levelIndx, const std::vector<part_t> &
   ArrayView< const offset_t > vOffsets;
   ArrayView< input_t > wgts;
 
+  // MMW:
   // For some reason getLocalEdgeList seems to be returning empty eIDs
+  // getEdgeList expects eIDs to be an array of gno_t
+  // I wanted eIDs to be lno_t since this ordering is computed on a single node and
+  // it seems unnecessary to use the potentially larger gno_t.
+  // The problem might be that the partitioning is being calculated on the gno_t.
+  // Perhaps a solution would be set gno_t = lno_t in the partitioning.
+  // For now, I'll leave this since the edgelist is unlikely to be prohibitively big
 
-  // I think might need to change eIDs to gno_t
+
   mGraphModel->getEdgeList(eIDs, vOffsets, wgts);
 
   // original
