@@ -50,8 +50,6 @@
 #include <iostream>
 
 
-
-
 using RealT = double;
 using size_type = std::vector<RealT>::size_type;
 
@@ -94,7 +92,7 @@ int main( int argc, char* argv[] ) {
     auto N  = nrows*ncols;
     auto N3 = N*3;    
 
-    auto z_p = ROL::makePtr<vector<RealT>>(N,0.0);
+    auto z_p  = ROL::makePtr<vector<RealT>>(N ,0.0);
     auto un_p = ROL::makePtr<vector<RealT>>(N3,0.0);
     auto uo_p = ROL::makePtr<vector<RealT>>(N3,0.0);
     auto c_p  = ROL::makePtr<vector<RealT>>(N3,0.0);

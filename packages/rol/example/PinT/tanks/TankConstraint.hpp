@@ -83,6 +83,7 @@ public:
   void value( Vector& c, const Vector& u_old, const Vector& u_new, 
               const Vector& z, Real& tol ) override {
 
+    c.zero();
     auto& c_v = getVector(c);      auto& uo_v = getVector(u_old);
     auto& un_v = getVector(u_new); auto& z_v = getVector(z);
 
@@ -91,11 +92,14 @@ public:
 
   void solve( Vector& c, const Vector& u_old, Vector& u_new, 
               const Vector& z, Real& tol ) override {
+
+    u_new.zero();
+
     auto& c_v  = getVector(c);       auto& uo_v = getVector(u_old);
     auto& un_v = getVector(u_new);   auto& z_v  = getVector(z);
  
-    tankState_.solve_level( c_v, un_v, uo_v, z_v );
-    tankState_.compute_flow( un_v, z_v );
+    tankState_.solve( c_v, un_v, uo_v, z_v );
+    c.zero();
     value(c,u_old,u_new,z,tol);
   }
 
@@ -156,12 +160,12 @@ public:
   void applyAdjointHessian_11_old( Vector& ahwv_old, const Vector& w,
                                    const Vector& v_new, const Vector& u_old, 
                                    const Vector& u_new, const Vector& z,
-                                   Real &tol) { ahwv_old.zero(); }
+                                   Real &tol) override { ahwv_old.zero(); }
 
   void applyAdjointHessian_11_new( Vector& ahwv_new, const Vector &w,
                                    const Vector &v_new, const Vector &u_old, 
                                    const Vector &u_new, const Vector &z,
-                                   Real &tol) { ahwv_new.zero(); }
+                                   Real &tol) override { ahwv_new.zero(); }
 
 
 }; // class TankConstraint

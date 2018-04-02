@@ -1,3 +1,46 @@
+// ************************************************************************
+//
+//               Rapid Optimization Library (ROL) Package
+//                 Copyright (2014) Sandia Corporation
+//
+// Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
+// license for use of this work by or on behalf of the U.S. Government.
+//
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are
+// met:
+//
+// 1. Redistributions of source code must retain the above copyright
+// notice, this list of conditions and the following disclaimer.
+//
+// 2. Redistributions in binary form must reproduce the above copyright
+// notice, this list of conditions and the following disclaimer in the
+// documentation and/or other materials provided with the distribution.
+//
+// 3. Neither the name of the Corporation nor the names of the
+// contributors may be used to endorse or promote products derived from
+// this software without specific prior written permission.
+//
+// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
+// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
+// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+//
+// Questions? Contact lead developers:
+//              Drew Kouri   (dpkouri@sandia.gov) and
+//              Denis Ridzal (dridzal@sandia.gov)
+//
+// ************************************************************************
+// @HEADER
+
+
 #pragma once
 #ifndef TANKSTATE_IMPL_HPP
 #define TANKSTATE_IMPL_HPP
@@ -24,53 +67,51 @@ TankState<Real>::TankState( Teuchos::ParameterList& pl ) :
   dt_( T_/Nt_ ),
   Ntanks_(rows_*cols_),
   p_(Ntanks_,1.0), 
-  coeff1_( Cv_*rho_*g_ ), 
-  kappa_( 0.5*coeff1_*dt_/A_ ),
-  betaL_( (theta_-1)*dt_/A_ ),
-  betaR_( theta_*dt_/A_ ) {
+  w_(Ntanks_,1.0),
+  kappa_( Cv_*rho_*g_ ), 
+  betaL_( (1-theta_)*dt_/A_ ),
+  betaR_( theta_*dt_/A_ ),
+  alphaL_( 0.5*kappa_*betaL_ ),
+  alphaR_( 0.5*kappa_*betaR_ ) {
   // ------------- End Initializer List ----------------//
 
   auto ptrows = Teuchos::getArrayFromStringParameter<int>( pl, "Pass-Through Rows"    );
   auto ptcols = Teuchos::getArrayFromStringParameter<int>( pl, "Pass-Through Columns" );
 
-  vector<Real> w(Ntanks_,1.0);
-
   vector<size_type> band_index{0, 1, cols_};
   
-  for( size_type j=0; j<cols_; ++j ) w.at(j)       = 0.0;
-  for( size_type i=0; i<rows_; ++i ) w.at(i*cols_) = 0.0;
+  for( size_type j=0; j<cols_; ++j ) w_.at(j)       = 0.0;
+  for( size_type i=0; i<rows_; ++i ) w_.at(i*cols_) = 0.0;
 
   for( size_type i=0; i<static_cast<size_type>(ptrows.size()); ++i ) {
     size_type k = cols_*ptrows.at(i)+ptcols.at(i);
-    p_[k] = 0.0;
+ //   p_[k] = 0.0;
   }
 
-  vector<Real> band_L0(Ntanks_);       vector<Real> band_R0(Ntanks_);
-  vector<Real> band_L1(Ntanks_-1);     vector<Real> band_R1(Ntanks_-1);
-  vector<Real> band_Lc(Ntanks_-cols_); vector<Real> band_Rc(Ntanks_-cols_);
+  vector<Real> band_L0( Ntanks_ );       vector<Real> band_R0( Ntanks_ );
+  vector<Real> band_L1( Ntanks_-1 );     vector<Real> band_R1( Ntanks_-1 );
+  vector<Real> band_Lc( Ntanks_-cols_ ); vector<Real> band_Rc( Ntanks_-cols_ );
 
-  Real alpha_L = (1-theta_)*kappa_;    Real alpha_R = theta_*kappa_;
-
-  band_L0[0] = 1.0-2.0*alpha_L*p_[0];
-  band_R0[0] = 1.0-2.0*alpha_R*p_[0];
+  band_L0.at(0) = 1.0 + 2.0*alphaL_*p_.at(0);
+  band_R0.at(0) = 1.0 - 2.0*alphaR_*p_.at(0);
 
   for( size_type l=1; l<Ntanks_; ++l ) {
-    band_L0[l]   = 1.0-2.0*alpha_L*p_[l];
-    band_R0[l]   = 1.0-2.0*alpha_R*p_[l];
+    band_L0.at(l) = 1.0 + 2.0*alphaL_*p_.at(l);
+    band_R0.at(l) = 1.0 - 2.0*alphaR_*p_.at(l);
 
     if( l>=1 ) {
-      band_L1[l-1] = alpha_L*w[l]*p_[l] * (l%cols_!=0);
-      band_R1[l-1] = alpha_R*w[l]*p_[l] * (l%cols_!=0);
+      band_L1.at(l-1) = -alphaL_*p_.at(l)*(l%cols_!=0);
+      band_R1.at(l-1) =  alphaR_*p_.at(l)*(l%cols_!=0);
 
       if( l>=cols_ ) {
-        band_Lc[l-cols_] = alpha_L*w[l]*p_[l];
-        band_Rc[l-cols_] = alpha_R*w[l]*p_[l];
+        band_Lc.at(l-cols_) = -alphaL_*p_.at(l);
+        band_Rc.at(l-cols_) =  alphaR_*p_.at(l);
       }
     } 
   } // end for
  
-  vector<vector<Real>> lbands{band_L0,band_L1,band_Lc};
-  vector<vector<Real>> rbands{band_R0,band_R1,band_Rc};
+  vector<vector<Real>> lbands{ band_L0, band_L1, band_Lc };
+  vector<vector<Real>> rbands{ band_R0, band_R1, band_Rc };
 
   L_ = make_shared<Matrix>( band_index, lbands );
   R_ = make_shared<Matrix>( band_index, rbands );
@@ -80,40 +121,26 @@ TankState<Real>::TankState( Teuchos::ParameterList& pl ) :
 } // end Constructor
 
 template<typename Real>
-void TankState<Real>::print_members( ostream& os ) const {
+void TankState<Real>::solve( vector<Real>& c, vector<Real>& u_new, 
+                             const vector<Real>& u_old, const vector<Real>& z ) const {
 
-  os << "Number of rows       = " << rows_   << endl;          
-  os << "Number of columns    = " << cols_   << endl;          
-  os << "Valve Constant       = " << Cv_     << endl; 
-  os << "Density of Fluid     = " << rho_    << endl; 
-  os << "Initial Fluid Level  = " << h0_     << endl; 
-  os << "Height of Tank       = " << H_      << endl; 
-  os << "Cross-sectional Area = " << A_      << endl; 
-  os << "Gravity Constant     = " << g_      << endl; 
-  os << "Total Time           = " << T_      << endl; 
-  os << "Theta                = " << theta_  << endl; 
-  os << "Number of Time Steps = " << Nt_     << endl; 
-  os << "Ntanks_              = " << Ntanks_ << endl;  
-  os << "coeff1_              = " << coeff1_ << endl;
-  os << "kappa_               = " << kappa_  << endl;
-  os << "betaL_               = " << betaL_  << endl;
-  os << "betaR_               = " << betaR_  << endl;
+  for( size_type l=0; l<Ntanks_; ++l ) c.at(l) = (betaL_+betaR_)*p_.at(l)*z.at(l);
 
-  os << "\nPass Throughs" << endl;
+  R_->apply( c, u_old, 1.0, 0, Ntanks_ );  // c += R*h(u_old)
+
+  L_->solve( u_new, c, 1.0, 0, Ntanks_ );  // L*h(u_new) = c
+
   for( size_type i=0; i<rows_; ++i ) {
     for( size_type j=0; j<cols_; ++j ) {
-      size_type k = cols_*i+j;
-      os << p_[k] << " ";
+      Qout(u_new,i,j) = kappa_*h(u_new,i,j);   
+      Qin(u_new,i,j)  = h(z,i,j);
+      if( i>0 ) Qin(u_new,i,j) += 0.5*Qout(u_new,i-1,j);
+      if( j>0 ) Qin(u_new,i,j) += 0.5*Qout(u_new,i,j-1);
     }
-    os << endl;
   }
+  
+} // solve_level
 
-  os << "\nLHS Matrix" << endl;
-  L_->print(os);
-  os << "\nRHS Matrix" << endl;
-  R_->print(os);
-
-}
 
 template<typename Real>
 void TankState<Real>::value( vector<Real>& c, const vector<Real>& u_old, 
@@ -121,22 +148,27 @@ void TankState<Real>::value( vector<Real>& c, const vector<Real>& u_old,
 
   for( size_type i=0; i<rows_; ++i ) {
     for( size_type j=0; j<cols_; ++j ) {
+ 
+      h(c,i,j) = (1.0+2.0*alphaL_*p(i,j))*h(u_new,i,j) 
+               - (1.0-2.0*alphaR_*p(i,j))*h(u_old,i,j)
+               - p(i,j)*h(z,i,j)*dt_/A_;
 
-      size_type l = cols_*i+j;
+      Qout(c,i,j) = Qout(u_new,i,j) - kappa_*h(u_new,i,j);
+      Qin(c,i,j)  = Qin(u_new,i,j)  - h(z,i,j);
 
-      auto& h_val    = h(c,i,j);    auto& h_new    = h(u_new,i,j);    auto& h_old    = h(u_old,i,j);
-      auto& Qout_val = Qout(c,i,j); auto& Qout_new = Qout(u_new,i,j); auto& Qout_old = Qout(u_old,i,j);
-      auto& Qin_val  = Qin(c,i,j);  auto& Qin_new  = Qin(u_new,i,j);  auto& Qin_old  = Qin(u_old,i,j);
+      if( i>0 ) {
+        h(c,i,j)   -= p(i,j)*( alphaL_*h(u_new,i-1,j) +
+                               alphaR_*h(u_old,i-1,j) );
+        Qin(c,i,j) -= 0.5*Qout(u_new,i-1,j);
+      }
 
-      h_val    = h_new - h_old - p_.at(l)*( betaL_*(Qin_new-Qout_new) + betaR_*(Qin_old-Qout_old) );
-      Qout_val = Qout_new - coeff1_*h_new;
-      Qin_val  = Qin_new - dt_*z.at(l);
-
-      if( i>0 ) Qin_val -= 0.5*Qout(u_new,i-1,j);
-      if( j>0 ) Qin_val -= 0.5*Qout(u_new,i,j-1);
-
+      if( j>0 ) {
+        h(c,i,j)   -= p(i,j)*( alphaL_*h(u_new,i,j-1) +
+                               alphaR_*h(u_old,i,j-1) );
+        Qin(c,i,j) -= 0.5*Qout(u_new,i,j-1);
+      }
     }
-      cout << endl;
+    cout << endl;
   }  
 
 }
@@ -171,7 +203,7 @@ void TankState<Real>::applyJacobian_1_new( vector<Real>& jv, const vector<Real>&
       auto& Qin_jv  = Qin(jv,i,j);  auto& Qin_vn  = Qin(v_new,i,j);  
 
       h_jv    = h_vn - p_.at(l)*( betaL_*(Qin_vn-Qout_vn) );
-      Qout_jv = Qout_vn - coeff1_*h_vn;
+      Qout_jv = Qout_vn - kappa_*h_vn;
       Qin_jv  = Qin_vn;
 
       if( i>0 ) Qin_jv -= 0.5*Qout(v_new,i-1,j);
@@ -202,43 +234,44 @@ void TankState<Real>::applyJacobian_2( vector<Real> &jv, const vector<Real> &v_n
 }
 
 
-
 template<typename Real>
-void TankState<Real>::compute_flow(       vector<Real>& u, 
-                                    const vector<Real>& z ) const {
+void TankState<Real>::print_members( ostream& os ) const {
+
+  os << "Number of rows       = " << rows_   << endl;          
+  os << "Number of columns    = " << cols_   << endl;          
+  os << "Valve Constant       = " << Cv_     << endl; 
+  os << "Density of Fluid     = " << rho_    << endl; 
+  os << "Initial Fluid Level  = " << h0_     << endl; 
+  os << "Height of Tank       = " << H_      << endl; 
+  os << "Cross-sectional Area = " << A_      << endl; 
+  os << "Gravity Constant     = " << g_      << endl; 
+  os << "Total Time           = " << T_      << endl; 
+  os << "Theta                = " << theta_  << endl; 
+  os << "Number of Time Steps = " << Nt_     << endl; 
+  os << "Ntanks_              = " << Ntanks_ << endl;  
+  os << "kappa_               = " << kappa_  << endl;
+  os << "alphaL_              = " << alphaL_ << endl;
+  os << "alphaR_              = " << alphaR_ << endl;
+  os << "betaL_               = " << betaL_  << endl;
+  os << "betaR_               = " << betaR_  << endl;
+
+  os << "\nPass Throughs" << endl;
   for( size_type i=0; i<rows_; ++i ) {
     for( size_type j=0; j<cols_; ++j ) {
-      size_type l = cols_*i+j;
-      Qout(u,i,j) = coeff1_*h(u,i,j);   
-      Qin(u,i,j)  = dt_*z.at(l);
-      if( i>0 ) Qin(u,i,j) += 0.5*Qout(u,i-1,j);
-      if( j>0 ) Qin(u,i,j) += 0.5*Qout(u,i,j-1);
+      size_type k = cols_*i+j;
+      os << p_[k] << " ";
     }
+    os << endl;
   }
-  cout << "u_new = ";
-  for( auto e: u ) cout << e << " ";
-  cout << endl;
-} // compute_flow
+
+  os << "\nLHS Matrix" << endl;
+  L_->print(os);
+  os << "\nRHS Matrix" << endl;
+  R_->print(os);
+
+}
 
 
-
-template<typename Real>
-void TankState<Real>::solve_level(       vector<Real>& c, 
-                                         vector<Real>& u_new, 
-                                   const vector<Real>& u_old, 
-                                   const vector<Real>& z     ) const {
-  // c += R*u_new
-  R_->apply(c,u_old,1.0,0,Ntanks_);
-
-  for( size_type l=0; l<Ntanks_; ++l )  c.at(l) += dt_*p_.at(l)*z.at(l)/A_;
-
-  cout << "c = ";
-  for( auto e: c ) cout << e << " ";
-  L_->solve(u_new,c,1.0,0,Ntanks_);
-  cout << "\nu_new = ";
-  for( auto e: u_new ) cout << e << " ";
-  cout << endl;
-} // solve_level
 
 } // namespace details
 

@@ -69,11 +69,8 @@ public:
   void applyJacobian_1_new( vector<Real>& jv, const vector<Real>& v_old ) const;
   void applyJacobian_2( vector<Real> &jv, const vector<Real> &v_new ) const;
 
-  // Given a vector u=(h,Qin,Qout) and f, update Qin and Qout from h
-  void compute_flow( vector<Real>& u, const vector<Real>& z ) const;
-
-  void solve_level( vector<Real>& c, vector<Real>& u_new, 
-                    const vector<Real>& u_old, const vector<Real>& z ) const;
+  void solve( vector<Real>& c, vector<Real>& u_new, 
+              const vector<Real>& u_old, const vector<Real>& z ) const;
 
   // Subvector Accessor Methods
         Real& h( vector<Real>& x,       size_type r, size_type c ) const { return x.at(cols_*r+c); }
@@ -84,6 +81,9 @@ public:
   
         Real& Qin(       vector<Real>& x, size_type r, size_type c ) const { return x.at(2*Ntanks_+cols_*r+c); }
   const Real& Qin( const vector<Real>& x, size_type r, size_type c ) const { return x.at(2*Ntanks_+cols_*r+c); }
+
+  const Real& p( size_type r, size_type c ) const { return p_.at(cols_*r+c); }
+  const Real& w( size_type r, size_type c ) const { return w_.at(cols_*r+c); }
 
   void print_members( ostream& os ) const;
 
@@ -107,11 +107,13 @@ private:
 
   size_type    Ntanks_;        // Total number of tanks 
   vector<Real> p_;             // Passthrough coefficients
- 
-  Real         coeff1_;        // Cv*rho*g
-  Real         kappa_;         // Cv*rho*g*dt/2A
-  Real         betaL_;         // (theta-1)*dt/A
+  vector<Real> w_;             // Flow coupling weights 
+
+  Real         kappa_;         // Cv*rho*g
+  Real         betaL_;         // (1-theta)*dt/A
   Real         betaR_;         // theta*dt/A
+  Real         alphaL_;        // kappa*(theta-1)
+  Real         alphaR_;        // kappa*theta
 
   shared_ptr<Matrix> L_, R_;
 
