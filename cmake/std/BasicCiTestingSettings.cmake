@@ -35,6 +35,10 @@ TRIL_SET_BOOL_CACHE_VAR_FOR_CI(TPL_ENABLE_SuperLU ON)
 # problems.
 TRIL_SET_BOOL_CACHE_VAR_FOR_CI(Trilinos_TRACE_ADD_TEST ON)
 
+# Enable experimental features in Trilinos used by ATDM (#2462)
+TRIL_SET_BOOL_CACHE_VAR_FOR_CI(Xpetra_ENABLE_Experimental ON)
+TRIL_SET_BOOL_CACHE_VAR_FOR_CI(MueLu_ENABLE_Experimental ON)
+
 # Disable long-failing Piro test until it can be fixed (#826)
 TRIL_SET_BOOL_CACHE_VAR_FOR_CI(Piro_EpetraSolver_MPI_4_DISABLE ON)
 

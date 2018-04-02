@@ -111,6 +111,12 @@ int main(int argc, char* argv[])
       *outStream << "\n\nZ = " << std::endl;
       z_pint->print(*outStream);
       */
+
+      if(x_pint->numOwnedVectors()!=4) {
+        std::stringstream ss;
+        ss << procStr << "Number owned vectors is " << x_pint->numOwnedVectors() << " is not 4!";
+        throw std::logic_error("Rank " + ss.str());
+      }
   
       if(x_pint->numOwnedSteps()!=3) {
         std::stringstream ss;
@@ -128,7 +134,9 @@ int main(int argc, char* argv[])
       }
     }
 
-    // test boundary exchange
+    // test boundary exchange (insert into buffer from vector)
+    /////////////////////////////////////////////////////////////////////////////////////////////
+    
     *outStream << "Testing boundary exchange (left stencil)" << std::endl;
  
     {
@@ -138,18 +146,20 @@ int main(int argc, char* argv[])
       PtrVector p_vec = ROL::makePtr<ROL::StdVector<RealT>>(ROL::makePtrFromRef(p_data));
       ROL::Ptr<ROL::PinTVector<RealT>> p_pint = ROL::makePtr<ROL::PinTVector<RealT>>(pintComm,p_vec,3*numRanks,stencil);
 
-      TEUCHOS_ASSERT(p_pint->getVectorPtr(0)!=Teuchos::null);
-      TEUCHOS_ASSERT(p_pint->getVectorPtr(1)!=Teuchos::null);
-      TEUCHOS_ASSERT(p_pint->getVectorPtr(2)!=Teuchos::null);
+      TEUCHOS_ASSERT(p_pint->getVectorPtr(-1)!=Teuchos::null);  // backwards time is owned for this stencil
+      TEUCHOS_ASSERT(p_pint->getVectorPtr( 0)!=Teuchos::null);
+      TEUCHOS_ASSERT(p_pint->getVectorPtr( 1)!=Teuchos::null);
+      TEUCHOS_ASSERT(p_pint->getVectorPtr( 2)!=Teuchos::null);
 
-      p_pint->getVectorPtr(0)->scale((myRank+1)*100+0);
-      p_pint->getVectorPtr(1)->scale((myRank+1)*100+1);
-      p_pint->getVectorPtr(2)->scale((myRank+1)*100+2);
+      p_pint->getVectorPtr(-1)->scale((myRank+1)*100-1); // backwards time is owned for this stencil
+      p_pint->getVectorPtr( 0)->scale((myRank+1)*100+0);
+      p_pint->getVectorPtr( 1)->scale((myRank+1)*100+1);
+      p_pint->getVectorPtr( 2)->scale((myRank+1)*100+2);
 
       p_pint->boundaryExchange();
 
       if(myRank!=0) { // no left boundary exchange to check
-        const std::vector<RealT> & p_std = *dynamic_cast<ROL::StdVector<RealT>&>(*p_pint->getVectorPtr(-1)).getVector();
+        const std::vector<RealT> & p_std = *dynamic_cast<ROL::StdVector<RealT>&>(*p_pint->getRemoteBufferPtr(-1)).getVector();
 
         for(auto v : p_std) {
           bool correct = (v== (myRank)*100+2); 
@@ -162,6 +172,8 @@ int main(int argc, char* argv[])
       } // end if myRank
 
     } // end check left
+
+    *outStream << "Passed left boundary exchange" << std::endl;
 
     *outStream << "Testing boundary exchange (right stencil)" << std::endl;
  
@@ -176,14 +188,15 @@ int main(int argc, char* argv[])
       TEUCHOS_ASSERT(p_pint->getVectorPtr(1)!=Teuchos::null);
       TEUCHOS_ASSERT(p_pint->getVectorPtr(2)!=Teuchos::null);
 
-      p_pint->getVectorPtr(0)->scale((myRank+1)*100+-2);
-      p_pint->getVectorPtr(1)->scale((myRank+1)*100+1);
-      p_pint->getVectorPtr(2)->scale((myRank+1)*100+2);
+      p_pint->getVectorPtr( 0)->scale((myRank+1)*100+-2);
+      p_pint->getVectorPtr( 1)->scale((myRank+1)*100+1);
+      p_pint->getVectorPtr( 2)->scale((myRank+1)*100+2);
+      p_pint->getVectorPtr( 3)->scale((myRank+1)*100+3);
 
       p_pint->boundaryExchange();
 
       if(myRank!=2) { // no right boundary exchange to check
-        const std::vector<RealT> & p_std = *dynamic_cast<ROL::StdVector<RealT>&>(*p_pint->getVectorPtr(p_pint->numOwnedSteps())).getVector();
+        const std::vector<RealT> & p_std = *dynamic_cast<ROL::StdVector<RealT>&>(*p_pint->getRemoteBufferPtr(p_pint->numOwnedSteps())).getVector();
 
         for(auto v : p_std) {
           bool correct = (v== (myRank+2)*100-2); 
@@ -196,6 +209,8 @@ int main(int argc, char* argv[])
       } // end if myRank
 
     } // end check right
+
+    *outStream << "Passed right boundary exchange" << std::endl;
 
     *outStream << "Testing boundary exchange (left,right stencil)" << std::endl;
  
@@ -210,14 +225,16 @@ int main(int argc, char* argv[])
       TEUCHOS_ASSERT(p_pint->getVectorPtr(1)!=Teuchos::null);
       TEUCHOS_ASSERT(p_pint->getVectorPtr(2)!=Teuchos::null);
 
-      p_pint->getVectorPtr(0)->scale((myRank+1)*100-2);
-      p_pint->getVectorPtr(1)->scale((myRank+1)*100+1);
-      p_pint->getVectorPtr(2)->scale((myRank+1)*100+2);
+      p_pint->getVectorPtr(-1)->scale((myRank+1)*100-3);
+      p_pint->getVectorPtr( 0)->scale((myRank+1)*100-2); // this vector is actually sent (because of the stencil)
+      p_pint->getVectorPtr( 1)->scale((myRank+1)*100+1);
+      p_pint->getVectorPtr( 2)->scale((myRank+1)*100+2); // this vector is actually sent (because of the stencil)
+      p_pint->getVectorPtr( 3)->scale((myRank+1)*100+3);
 
       p_pint->boundaryExchange();
 
       if(myRank!=0) { // no left boundary exchange to check
-        const std::vector<RealT> & p_std = *dynamic_cast<ROL::StdVector<RealT>&>(*p_pint->getVectorPtr(-1)).getVector();
+        const std::vector<RealT> & p_std = *dynamic_cast<ROL::StdVector<RealT>&>(*p_pint->getRemoteBufferPtr(-1)).getVector();
 
         for(auto v : p_std) {
           bool correct = (v== (myRank)*100+2); 
@@ -230,7 +247,7 @@ int main(int argc, char* argv[])
       } // end if myRank
 
       if(myRank!=2) { // no right boundary exchange to check
-        const std::vector<RealT> & p_std = *dynamic_cast<ROL::StdVector<RealT>&>(*p_pint->getVectorPtr(p_pint->numOwnedSteps())).getVector();
+        const std::vector<RealT> & p_std = *dynamic_cast<ROL::StdVector<RealT>&>(*p_pint->getRemoteBufferPtr(p_pint->numOwnedSteps())).getVector();
 
         for(auto v : p_std) {
           bool correct = (v== (myRank+2)*100-2); 
@@ -243,6 +260,154 @@ int main(int argc, char* argv[])
       } // end if myRank
 
     } // end check left/rigth
+
+    *outStream << "Passed left/right boundary exchange" << std::endl;
+
+    // test boundary exchange (sum into vector from buffer)
+    /////////////////////////////////////////////////////////////////////////////////////////////
+    
+    *outStream << "Testing sum boundary exchange (left stencil)" << std::endl;
+ 
+    {
+      std::vector<int> stencil = {-1,0};
+
+      std::vector<RealT> p_data(2); p_data[0] = 1.0; p_data[1] = 1.0;
+      PtrVector p_vec = ROL::makePtr<ROL::StdVector<RealT>>(ROL::makePtrFromRef(p_data));
+      ROL::Ptr<ROL::PinTVector<RealT>> p_pint = ROL::makePtr<ROL::PinTVector<RealT>>(pintComm,p_vec,3*numRanks,stencil);
+
+      TEUCHOS_ASSERT(p_pint->getVectorPtr(-1)!=Teuchos::null);  // backwards time is owned for this stencil
+      TEUCHOS_ASSERT(p_pint->getVectorPtr( 0)!=Teuchos::null);
+      TEUCHOS_ASSERT(p_pint->getVectorPtr( 1)!=Teuchos::null);
+      TEUCHOS_ASSERT(p_pint->getVectorPtr( 2)!=Teuchos::null);
+      TEUCHOS_ASSERT(p_pint->getVectorPtr( 3)==Teuchos::null);
+
+      p_pint->getRemoteBufferPtr(-1)->scale((myRank)*100-5);
+
+      p_pint->getVectorPtr(-1)->scale((myRank)*100-1); 
+      p_pint->getVectorPtr( 0)->scale((myRank)*100+0);
+      p_pint->getVectorPtr( 1)->scale((myRank)*100+1);
+      p_pint->getVectorPtr( 2)->scale((myRank)*100+2);
+
+      p_pint->boundaryExchangeSumInto();
+
+      if(myRank!=2) { 
+        const std::vector<RealT> & p_std = *dynamic_cast<ROL::StdVector<RealT>&>(*p_pint->getVectorPtr(2)).getVector();
+
+        for(auto v : p_std) {
+          double correct_value = ((myRank)*100+2) + ((myRank+1)*100-5); 
+          bool correct = (v== correct_value);
+          if(not correct) { 
+            std::stringstream ss;
+            ss << procStr << "Checking of left boundary exchange failed: expected " << correct_value << " found " << v << std::endl;
+            throw std::logic_error("Rank " + ss.str());
+          }
+        }
+      } // end if myRank
+
+    } // end check left
+
+    *outStream << "Passed left sum boundary exchange" << std::endl;
+
+    *outStream << "Testing sum boundary exchange (right stencil)" << std::endl;
+ 
+    {
+      std::vector<int> stencil = {1,0};
+
+      std::vector<RealT> p_data(2); p_data[0] = 1.0; p_data[1] = 1.0;
+      PtrVector p_vec = ROL::makePtr<ROL::StdVector<RealT>>(ROL::makePtrFromRef(p_data));
+      ROL::Ptr<ROL::PinTVector<RealT>> p_pint = ROL::makePtr<ROL::PinTVector<RealT>>(pintComm,p_vec,3*numRanks,stencil);
+
+      TEUCHOS_ASSERT(p_pint->getVectorPtr(-1)==Teuchos::null);
+      TEUCHOS_ASSERT(p_pint->getVectorPtr( 0)!=Teuchos::null);
+      TEUCHOS_ASSERT(p_pint->getVectorPtr( 1)!=Teuchos::null);
+      TEUCHOS_ASSERT(p_pint->getVectorPtr( 2)!=Teuchos::null);
+      TEUCHOS_ASSERT(p_pint->getVectorPtr( 3)!=Teuchos::null);
+
+      p_pint->getRemoteBufferPtr(3)->scale((myRank)*100+5); 
+
+      p_pint->getVectorPtr( 0)->scale((myRank)*100+-2);
+      p_pint->getVectorPtr( 1)->scale((myRank)*100+1);
+      p_pint->getVectorPtr( 2)->scale((myRank)*100+2);
+      p_pint->getVectorPtr( 3)->scale((myRank)*100+3);
+
+      p_pint->boundaryExchangeSumInto();
+
+      if(myRank!=0) { 
+        const std::vector<RealT> & p_std = *dynamic_cast<ROL::StdVector<RealT>&>(*p_pint->getVectorPtr(0)).getVector();
+
+        for(auto v : p_std) {
+          double correct_value = ((myRank)*100-2) + ((myRank-1)*100+5); 
+          bool correct = (v== correct_value);
+          if(not correct) { 
+            std::stringstream ss;
+            ss << procStr << "Checking of right boundary exchange failed: expected " << correct_value << " found " << v << std::endl;
+            throw std::logic_error("Rank " + ss.str());
+          }
+        }
+      } // end if myRank
+
+    } // end check right
+
+    *outStream << "Passed right sum boundary exchange" << std::endl;
+
+    *outStream << "Testing sum boundary exchange (left,right stencil)" << std::endl;
+ 
+    // comments are correct in this block: ECC 1/25/2018
+    {
+      std::vector<int> stencil = {-1,0,1};
+
+      std::vector<RealT> p_data(2); p_data[0] = 1.0; p_data[1] = 1.0;
+      PtrVector p_vec = ROL::makePtr<ROL::StdVector<RealT>>(ROL::makePtrFromRef(p_data));
+      ROL::Ptr<ROL::PinTVector<RealT>> p_pint = ROL::makePtr<ROL::PinTVector<RealT>>(pintComm,p_vec,3*numRanks,stencil);
+
+      TEUCHOS_ASSERT(p_pint->getVectorPtr(-1)!=Teuchos::null); // this comes from the stencil
+      TEUCHOS_ASSERT(p_pint->getVectorPtr( 0)!=Teuchos::null);
+      TEUCHOS_ASSERT(p_pint->getVectorPtr( 1)!=Teuchos::null);
+      TEUCHOS_ASSERT(p_pint->getVectorPtr( 2)!=Teuchos::null);
+      TEUCHOS_ASSERT(p_pint->getVectorPtr( 3)!=Teuchos::null); // this comes from the stencil
+
+      p_pint->getRemoteBufferPtr(-1)->scale((myRank)*100-5); // this vector is being sent to left
+      p_pint->getRemoteBufferPtr( 3)->scale((myRank)*100+5); // this vector is being sent to right
+
+      p_pint->getVectorPtr(-1)->scale((myRank)*100-3);
+      p_pint->getVectorPtr( 0)->scale((myRank)*100-2); // this vector is recv (from left) 
+      p_pint->getVectorPtr( 1)->scale((myRank)*100+1);
+      p_pint->getVectorPtr( 2)->scale((myRank)*100+2); // this vector is recv (from right)
+      p_pint->getVectorPtr( 3)->scale((myRank)*100+3);
+
+      p_pint->boundaryExchangeSumInto();
+
+      if(myRank!=2) {
+        const std::vector<RealT> & p_std = *dynamic_cast<ROL::StdVector<RealT>&>(*p_pint->getVectorPtr(2)).getVector();
+
+        for(auto v : p_std) {
+          double correct_value = ((myRank)*100+2) + ((myRank+1)*100-5); 
+          bool correct = (v== correct_value); 
+          if(not correct) { 
+            std::stringstream ss;
+            ss << procStr << "Checking of left/right boundary exchange failed: expected " << correct_value << " found " << v << std::endl;
+            throw std::logic_error("Rank " + ss.str());
+          }
+        }
+      } // end if myRank
+
+      if(myRank!=0) {
+        const std::vector<RealT> & p_std = *dynamic_cast<ROL::StdVector<RealT>&>(*p_pint->getVectorPtr(0)).getVector();
+
+        for(auto v : p_std) {
+          double correct_value = ((myRank)*100-2) + ((myRank-1)*100+5); 
+          bool correct = (v== correct_value); 
+          if(not correct) { 
+            std::stringstream ss;
+            ss << procStr << "Checking of left/right boundary exchange failed: expected " << correct_value << " found " << v << std::endl;
+            throw std::logic_error("Rank " + ss.str());
+          }
+        }
+      } // end if myRank
+
+    } // end check left/rigth
+
+    *outStream << "Passed left/right sum boundary exchange" << std::endl;
   }
   catch (std::logic_error err) {
     *outStream << err.what() << "\n";

@@ -63,7 +63,29 @@ namespace panzer {
     </ParameterList>
     \endverbatim
   */
-PANZER_EVALUATOR_CLASS(Sum)
+template<typename EvalT, typename Traits>
+class Sum
+  :
+  public panzer::EvaluatorWithBaseImpl<Traits>,
+  public PHX::EvaluatorDerived<EvalT, Traits>
+{
+  public:
+
+    Sum(
+      const Teuchos::ParameterList& p);
+
+    void
+    postRegistrationSetup(
+      typename Traits::SetupData d,
+      PHX::FieldManager<Traits>& fm);
+
+    void
+    evaluateFields(
+      typename Traits::EvalData d);
+
+  private:
+
+    using ScalarT = typename EvalT::ScalarT;
   static const int MAX_VALUES=20;
   
   PHX::MDField<ScalarT> sum;
@@ -79,9 +101,11 @@ public:
   struct PanzerSumTag{};
 
   template<unsigned int RANK>
+  KOKKOS_INLINE_FUNCTION
   void operator() (PanzerSumTag<RANK>, const int &i) const;
 
-PANZER_EVALUATOR_CLASS_END
+}; // end of class Sum
+
 
 /** A template version of Sum that specializes on the
   * rank type. This must be done at run time.

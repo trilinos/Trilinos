@@ -51,7 +51,29 @@
 namespace panzer {
     
 //! Interpolates basis DOF values to IP DOF values
-PANZER_EVALUATOR_CLASS(ScalarToVector)
+template<typename EvalT, typename Traits>
+class ScalarToVector
+  :
+  public panzer::EvaluatorWithBaseImpl<Traits>,
+  public PHX::EvaluatorDerived<EvalT, Traits>
+{
+  public:
+
+    ScalarToVector(
+      const Teuchos::ParameterList& p);
+
+    void
+    postRegistrationSetup(
+      typename Traits::SetupData d,
+      PHX::FieldManager<Traits>& fm);
+
+    void
+    evaluateFields(
+      typename Traits::EvalData d);
+
+  private:
+
+    using ScalarT = typename EvalT::ScalarT;
   std::vector< PHX::MDField<const ScalarT,Cell,Point> > scalar_fields;
   PHX::MDField<ScalarT,Cell,Point,Dim> vector_field;
 
@@ -67,7 +89,8 @@ public:
   ScalarToVector(const std::vector<PHX::Tag<ScalarT>> & input,
                  const PHX::FieldTag & output);
 
-PANZER_EVALUATOR_CLASS_END
+}; // end of class ScalarToVector
+
 
 }
 

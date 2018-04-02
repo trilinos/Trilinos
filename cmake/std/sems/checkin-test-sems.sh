@@ -93,7 +93,7 @@ fi
 
 if [ "$TRILINOS_CHECKIN_TEST_SEMS_SKIP_MODULE_LOAD" == "" ] ; then
   export TRILINOS_SEMS_DEV_ENV_VERBOSE=1
-  source $TRILINOS_DIR/cmake/load_ci_sems_dev_env.sh ""
+  source $TRILINOS_DIR/cmake/load_sems_dev_env.sh ""
   # NOTE: Above, must pass empty arg "" or bash will pass in "$@" which is
   # bad!
 else
@@ -113,10 +113,9 @@ echo "
 # All of the options needed for the --default-builds
 # MPI_RELEASE_DEBUG_SHARED_PT are in project-checkin-test-config.py so no need
 # to set them here.  Also note that the SEMS env will be read in automatically
-# because load_ci_sems_dev_env.sh was sourced above.
+# because load_sems_dev_env.sh was sourced above.
 
 echo "
--DZoltan2_OrderingScotch_MPI_4_DISABLE=TRUE
 " > MPI_RELEASE_DEBUG_SHARED_PT.config
 
 #
@@ -129,19 +128,20 @@ echo "
 #
 
 echo "
--DTrilinos_CONFIGURE_OPTIONS_FILE:STRING=cmake/std/MpiReleaseDebugSharedPtSettings.cmake,cmake/std/BasicCiTestingSettings.cmake
+-DTrilinos_CONFIGURE_OPTIONS_FILE:STRING=cmake/std/MpiReleaseDebugSharedPtSettings.cmake,cmake/std/BasicCiTestingSettings.cmake,cmake/std/sems/SEMSDevEnv.cmake
 -DTrilinos_ENABLE_COMPLEX=ON
 -DTrilinos_ENABLE_SECONDARY_TESTED_CODE=OFF
 -DIntrepid2_refactor_perf-test_DynRankView_Serial_Test_01_MPI_1_DISABLE=ON
 " > MPI_RELEASE_DEBUG_SHARED_PT_COMPLEX.config
 
 echo "
--DTrilinos_CONFIGURE_OPTIONS_FILE:STRING=cmake/std/MpiReleaseDebugSharedPtSettings.cmake,cmake/std/BasicCiTestingSettings.cmake
+-DTrilinos_CONFIGURE_OPTIONS_FILE:STRING=cmake/std/MpiReleaseDebugSharedPtSettings.cmake,cmake/std/BasicCiTestingSettings.cmake,cmake/std/sems/SEMSDevEnv.cmake
 -DTrilinos_ENABLE_DEBUG=OFF
 -DTrilinos_ENABLE_SECONDARY_TESTED_CODE=OFF
 " > MPI_RELEASE_SHARED_PT.config
 
 echo "
+-DTrilinos_CONFIGURE_OPTIONS_FILE:STRING=cmake/std/sems/SEMSDevEnv.cmake
 -DTPL_ENABLE_MPI=OFF
 -DCMAKE_BUILD_TYPE=RELEASE
 -DBUILD_SHARED_LIBS=ON
@@ -149,6 +149,7 @@ echo "
 " > SERIAL_RELEASE_SHARED_PT.config
 
 echo "
+-DTrilinos_CONFIGURE_OPTIONS_FILE:STRING=cmake/std/sems/SEMSDevEnv.cmake
 -DTPL_ENABLE_MPI=ON
 -DCMAKE_BUILD_TYPE=RELEASE
 -DTrilinos_ENABLE_DEBUG=ON
@@ -159,6 +160,7 @@ echo "
 " > MPI_RELEASE_DEBUG_SHARED_ST.config
 
 echo "
+-DTrilinos_CONFIGURE_OPTIONS_FILE:STRING=cmake/std/sems/SEMSDevEnv.cmake
 -DTPL_ENABLE_MPI=OFF
 -DCMAKE_BUILD_TYPE=RELEASE
 -DBUILD_SHARED_LIBS=ON

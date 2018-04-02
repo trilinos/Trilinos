@@ -842,14 +842,6 @@ void PartitioningProblem<Adapter>::createPartitioningProblem(bool newData)
       }
       algName_ = algorithm;
     }
-#ifdef INCLUDE_ZOLTAN2_EXPERIMENTAL_WOLF
-    else if (algorithm == std::string("nd"))
-    {
-      modelAvail_[GraphModelType]=true;
-      modelAvail_[CoordinateModelType]=true;
-      algName_ = algorithm;
-    }
-#endif
     else
     {
       // Parameter list should ensure this does not happen.

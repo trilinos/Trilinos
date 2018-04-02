@@ -1,7 +1,7 @@
 #include "Tacho.hpp"
 #include "Tacho_Solver.hpp"
 
-#include "TachoExp_CommandLineParser.hpp"
+#include "Tacho_CommandLineParser.hpp"
 
 #ifdef TACHO_HAVE_VTUNE
 #include "ittnotify.h"
@@ -40,7 +40,7 @@ int main (int argc, char *argv[]) {
 
   bool use_same_ordering = true;
 
-  Tacho::Experimental::CommandLineParser opts("This is Tacho performance test comparing with Pardiso and Cholmod on OpenMP and Cuda spaces");
+  Tacho::CommandLineParser opts("This is Tacho performance test comparing with Pardiso and Cholmod on OpenMP and Cuda spaces");
 
   // threading environment
   opts.set_option<int>("kokkos-threads", "Number of threads", &nthreads);
@@ -74,10 +74,7 @@ int main (int argc, char *argv[]) {
   if (r_parse) return 0; 
 
   Kokkos::initialize(argc, argv);
-  if (std::is_same<Kokkos::DefaultHostExecutionSpace,Kokkos::Serial>::value)
-    std::cout << "Kokkos::Serial\n";
-  else
-    Kokkos::DefaultHostExecutionSpace::print_configuration(std::cout, false);
+  Kokkos::DefaultHostExecutionSpace::print_configuration(std::cout, false);
 
   int r_val = 0;
 
@@ -87,14 +84,14 @@ int main (int argc, char *argv[]) {
     typedef double value_type;
 
     /// crs matrix format and dense multi vector
-    typedef Tacho::Experimental::CrsMatrixBase<value_type,Kokkos::DefaultHostExecutionSpace> CrsMatrixBaseType;
+    typedef Tacho::CrsMatrixBase<value_type,Kokkos::DefaultHostExecutionSpace> CrsMatrixBaseType;
     typedef Kokkos::View<value_type**,Kokkos::LayoutLeft,Kokkos::DefaultHostExecutionSpace> DenseMultiVectorType;
     //typedef Kokkos::View<ordinal_type*,Kokkos::DefaultHostExecutionSpace> OrdinalTypeArray;
 
     ///
     /// problem setting
     ///
-    CrsMatrixBaseType A("A");
+    CrsMatrixBaseType A;
     {
       {
         std::ifstream in;
@@ -104,7 +101,7 @@ int main (int argc, char *argv[]) {
           return -1;
         }
       }
-      A = Tacho::Experimental::MatrixMarket<value_type>::read(file, verbose);
+      Tacho::MatrixMarket<value_type>::read(file, A, verbose);
     }
 
     DenseMultiVectorType
@@ -112,18 +109,18 @@ int main (int argc, char *argv[]) {
       x("x", A.NumRows(), nrhs), // solution multivector
       t("t", A.NumRows(), nrhs); // temp workspace (store permuted rhs)
 
-    Tacho::Experimental::Graph graph(A.NumRows(), A.NumNonZeros(), A.RowPtr(), A.Cols());
+    Tacho::Graph graph(A.NumRows(), A.NumNonZeros(), A.RowPtr(), A.Cols());
 #if   defined(TACHO_HAVE_METIS)
-    Tacho::Experimental::GraphTools_Metis G(graph);
+    Tacho::GraphTools_Metis G(graph);
 #elif defined(TACHO_HAVE_SCOTCH)
-    Tacho::Experimental::GraphTools_Scotch G(graph);
+    Tacho::GraphTools_Scotch G(graph);
 #else
-    Tacho::Experimental::GraphTools_CAMD G(graph);
+    Tacho::GraphTools_CAMD G(graph);
 #endif
     G.reorder(verbose);
 
     {
-      Tacho::Experimental::Random<value_type> random;
+      Tacho::Random<value_type> random;
       const ordinal_type m = A.NumRows();
       for (ordinal_type rhs=0;rhs<nrhs;++rhs)
         for (ordinal_type i=0;i<m;++i)
@@ -134,7 +131,7 @@ int main (int argc, char *argv[]) {
     // Skylake - 33 MB shared L3
     // V100 - do I need to flush ?
     constexpr size_t LLC_CAPACITY = 34*1024*1024;
-    Tacho::Experimental::Flush<LLC_CAPACITY> flush;
+    Tacho::Flush<LLC_CAPACITY> flush;
 
     // -----------------------------------------------------------------
     if (test_pardiso) {
@@ -244,7 +241,7 @@ int main (int argc, char *argv[]) {
         pardiso.showStat(std::cout, Pardiso::Solve) << std::endl;   
       }
 
-      const double res = Tacho::Experimental::NumericTools<value_type,Kokkos::DefaultHostExecutionSpace>::computeRelativeResidual(A, x, b);
+      const double res = Tacho::NumericTools<value_type,Kokkos::DefaultHostExecutionSpace>::computeRelativeResidual(A, x, b);
       std::cout << "PardisoChol:: residual = " << res << "\n\n";
 
       r_val = pardiso.run(Pardiso::ReleaseAll);
@@ -471,5 +468,4 @@ int main (int argc, char *argv[]) {
   Kokkos::finalize();
   return r_val;
 }
-
 

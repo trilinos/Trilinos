@@ -67,7 +67,6 @@ namespace Sacado {
       };
 
       //! Default constructor
-      KOKKOS_INLINE_FUNCTION
       StaticFixedStorage() = default;
 
       //! Constructor with value
@@ -106,7 +105,6 @@ namespace Sacado {
       }
 
       //! Destructor
-      KOKKOS_INLINE_FUNCTION
       ~StaticFixedStorage() = default;
 
       //! Assignment

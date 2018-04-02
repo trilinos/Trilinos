@@ -61,7 +61,7 @@
 namespace PHX {
 
   class any;
-  template<typename Traits> class DeviceEvaluator;
+  template<typename Traits> struct DeviceEvaluator;
   template<typename Traits> class FieldManager;
 
   /*! Pure virtual base class that provides field evaluation

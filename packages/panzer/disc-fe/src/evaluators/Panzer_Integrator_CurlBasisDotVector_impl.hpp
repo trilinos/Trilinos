@@ -53,7 +53,10 @@
 namespace panzer {
 
 //**********************************************************************
-PHX_EVALUATOR_CTOR(Integrator_CurlBasisDotVector,p) :
+template<typename EvalT, typename Traits>
+Integrator_CurlBasisDotVector<EvalT, Traits>::
+Integrator_CurlBasisDotVector(
+  const Teuchos::ParameterList& p) :
   use_descriptors_(false),
   residual( p.get<std::string>("Residual Name"), 
 	    p.get< Teuchos::RCP<panzer::BasisIRLayout> >("Basis")->functional),
@@ -163,7 +166,12 @@ Integrator_CurlBasisDotVector(const PHX::FieldTag & input,
 }
 
 //**********************************************************************
-PHX_POST_REGISTRATION_SETUP(Integrator_CurlBasisDotVector,sd,fm)
+template<typename EvalT, typename Traits>
+void
+Integrator_CurlBasisDotVector<EvalT, Traits>::
+postRegistrationSetup(
+  typename Traits::SetupData sd,
+  PHX::FieldManager<Traits>& fm)
 {
   // setup the output field
   this->utils.setFieldData(residual,fm);
@@ -314,7 +322,11 @@ public:
 } // end internal namespace
 
 //**********************************************************************
-PHX_EVALUATE_FIELDS(Integrator_CurlBasisDotVector,workset)
+template<typename EvalT, typename Traits>
+void
+Integrator_CurlBasisDotVector<EvalT, Traits>::
+evaluateFields(
+  typename Traits::EvalData workset)
 { 
   const panzer::BasisValues2<double> & bv = use_descriptors_ ?  this->wda(workset).getBasisValues(bd_,id_)
                                                              : *this->wda(workset).bases[basis_index];

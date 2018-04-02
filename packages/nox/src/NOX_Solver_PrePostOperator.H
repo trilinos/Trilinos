@@ -126,6 +126,12 @@ public:
   //! User defined method that will be executed at the end of a call to NOX::Solver::Generic::solve().
   virtual void runPostSolve(const NOX::Solver::Generic& solver);
 
+  //! User defined method that will be executed before a call to NOX::LineSearch::Generic::compute(). Only to be used in NOX::Solver::LineSearchBased!
+  virtual void runPreLineSearch(const NOX::Solver::Generic& solver);
+
+  //! User defined method that will be executed after a call to NOX::LineSearch::Generic::compute(). Only to be used in NOX::Solver::LineSearchBased!
+  virtual void runPostLineSearch(const NOX::Solver::Generic& solver);
+
 protected:
 
   //! Flag that determines if a pre/post operator has been supplied by user.
@@ -164,6 +170,20 @@ runPostSolve(const NOX::Solver::Generic& solver)
 {
   if (havePrePostOperator)
     prePostOperatorPtr->runPostSolve(solver);
+}
+
+inline void NOX::Solver::PrePostOperator::
+runPreLineSearch(const NOX::Solver::Generic& solver)
+{
+  if (havePrePostOperator)
+    prePostOperatorPtr->runPreLineSearch(solver);
+}
+
+inline void NOX::Solver::PrePostOperator::
+runPostLineSearch(const NOX::Solver::Generic& solver)
+{
+  if (havePrePostOperator)
+    prePostOperatorPtr->runPostLineSearch(solver);
 }
 
 #endif

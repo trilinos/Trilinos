@@ -35,15 +35,20 @@ public:
   virtual ~TimeStepControlStrategy(){}
 
   /// Determine the time step size.
-  virtual void getNextTimeStep(const TimeStepControl<Scalar> tsc, Teuchos::RCP<SolutionHistory<Scalar> > sh ,
-        Status & integratorStatus){}
+  virtual void getNextTimeStep(
+    const TimeStepControl<Scalar> tsc,
+    Teuchos::RCP<SolutionHistory<Scalar> > sh,
+    Status & integratorStatus){}
 
   /// \name Overridden from Teuchos::ParameterListAcceptor
   //@{
     void setParameterList(const Teuchos::RCP<Teuchos::ParameterList> & pl){}
-    Teuchos::RCP<const Teuchos::ParameterList> getValidParameters() const { return  Teuchos::null;}
-    Teuchos::RCP<Teuchos::ParameterList> getNonconstParameterList() { return  Teuchos::null;}
-    Teuchos::RCP<Teuchos::ParameterList> unsetParameterList() { return  Teuchos::null;}
+    Teuchos::RCP<const Teuchos::ParameterList> getValidParameters() const
+      { return  Teuchos::null;}
+    Teuchos::RCP<Teuchos::ParameterList> getNonconstParameterList()
+      { return  Teuchos::null;}
+    Teuchos::RCP<Teuchos::ParameterList> unsetParameterList()
+      { return  Teuchos::null;}
   //@}
 };
 } // namespace Tempus

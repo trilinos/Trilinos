@@ -69,11 +69,34 @@ namespace panzer_stk {
   * "Workset Size" of type <code>int</code>
   * "Mesh" of type <code>Teuchos::RCP<const panzer_stk::STK_Interface></code>.
   */
-PANZER_EVALUATOR_CLASS(ScatterCellQuantity)
+template<typename EvalT, typename Traits>
+class ScatterCellQuantity
+  :
+  public panzer::EvaluatorWithBaseImpl<Traits>,
+  public PHX::EvaluatorDerived<EvalT, Traits>
+{
+  public:
+
+    ScatterCellQuantity(
+      const Teuchos::ParameterList& p);
+
+    void
+    postRegistrationSetup(
+      typename Traits::SetupData d,
+      PHX::FieldManager<Traits>& fm);
+
+    void
+    evaluateFields(
+      typename Traits::EvalData d);
+
+  private:
+
+    using ScalarT = typename EvalT::ScalarT;
   std::vector< PHX::MDField<const ScalarT,panzer::Cell> > scatterFields_;
   Teuchos::RCP<STK_Interface> mesh_;
 
-PANZER_EVALUATOR_CLASS_END
+}; // end of class ScatterCellQuantity
+
 
 }
 

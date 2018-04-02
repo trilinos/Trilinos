@@ -40,22 +40,8 @@ public:
 
   /// \name Basic stepper methods
   //@{
-    virtual void setModel(
-      const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel);
-    virtual void setNonConstModel(
-      const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >& appModel);
-    virtual Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >
-      getModel(){return wrapperModel_->getAppModel();}
-
-    virtual void setSolver(std::string solverName);
-    virtual void setSolver(
-      Teuchos::RCP<Teuchos::ParameterList> solverPL=Teuchos::null);
-    virtual void setSolver(
-      Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> > solver);
-    virtual Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> > getSolver() const
-      { return solver_; }
     virtual void setObserver(
-      Teuchos::RCP<StepperBackwardEulerObserver<Scalar> > obs = Teuchos::null);
+      Teuchos::RCP<StepperObserver<Scalar> > obs = Teuchos::null);
 
     /// Set the predictor
     void setPredictor(std::string predictorName);
@@ -113,10 +99,8 @@ private:
 
 private:
 
-  Teuchos::RCP<Teuchos::ParameterList>                stepperPL_;
-  Teuchos::RCP<WrapperModelEvaluator<Scalar> >        wrapperModel_;
-  Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> >   solver_;
   Teuchos::RCP<Stepper<Scalar> >                      predictorStepper_;
+  Teuchos::RCP<StepperObserver<Scalar> >              stepperObserver_;
   Teuchos::RCP<StepperBackwardEulerObserver<Scalar> > stepperBEObserver_;
 
   Teuchos::RCP<Thyra::VectorBase<Scalar> >            xDotTemp_;

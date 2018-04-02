@@ -50,14 +50,40 @@
 
 namespace panzer {
 
-PHX_EVALUATOR_CLASS(UnitValueEvaluator)
+template<typename EvalT, typename Traits>
+class UnitValueEvaluator
+  :
+  public PHX::EvaluatorWithBaseImpl<Traits>,
+  public PHX::EvaluatorDerived<EvalT, Traits>
+{
+  public:
+
+    UnitValueEvaluator(
+      const Teuchos::ParameterList& p);
+
+    void
+    postRegistrationSetup(
+      typename Traits::SetupData d,
+      PHX::FieldManager<Traits>& fm);
+
+    void
+    evaluateFields(
+      typename Traits::EvalData d);
+
+  private:
+
+    using ScalarT = typename EvalT::ScalarT;
 
   PHX::MDField<ScalarT,Cell,panzer::IP> unitValue;
 
-PHX_EVALUATOR_CLASS_END
+}; // end of class UnitValueEvaluator
+
 
 //**********************************************************************
-PHX_EVALUATOR_CTOR(UnitValueEvaluator,p)
+template<typename EvalT, typename Traits>
+UnitValueEvaluator<EvalT, Traits>::
+UnitValueEvaluator(
+  const Teuchos::ParameterList& p)
 {
   // Read from parameters
   const std::string name = p.get<std::string>("Name");
@@ -74,13 +100,22 @@ PHX_EVALUATOR_CTOR(UnitValueEvaluator,p)
 }
 
 //**********************************************************************
-PHX_POST_REGISTRATION_SETUP(UnitValueEvaluator, /* sd */, fm)
+template<typename EvalT, typename Traits>
+void
+UnitValueEvaluator<EvalT, Traits>::
+postRegistrationSetup(
+  typename Traits::SetupData  /* sd */,
+  PHX::FieldManager<Traits>&  fm)
 {
   this->utils.setFieldData(unitValue,fm);
 }
 
 //**********************************************************************
-PHX_EVALUATE_FIELDS(UnitValueEvaluator, /* workset */)
+template<typename EvalT, typename Traits>
+void
+UnitValueEvaluator<EvalT, Traits>::
+evaluateFields(
+  typename Traits::EvalData  /* workset */)
 { 
   for(int cell=0;cell<unitValue.extent_int(0);++cell)
     for(int ip=0;ip<unitValue.extent_int(1);++ip)

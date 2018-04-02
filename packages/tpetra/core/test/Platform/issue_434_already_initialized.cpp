@@ -209,7 +209,7 @@ main (int argc, char* argv[])
       goto EndOfTest;
     }
     else {
-      if (mpiIsFinalized == 0) {
+      if (mpiIsFinalized == 1) {
         err << "*** MPI_Finalized says MPI was finalized" << endl;
         success = false;
         goto EndOfTest; // MPI is finalized, so this is safe to do

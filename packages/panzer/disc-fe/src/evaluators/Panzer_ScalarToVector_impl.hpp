@@ -48,7 +48,10 @@
 namespace panzer {
 
 //**********************************************************************
-PHX_EVALUATOR_CTOR(ScalarToVector,p)
+template<typename EvalT, typename Traits>
+ScalarToVector<EvalT, Traits>::
+ScalarToVector(
+  const Teuchos::ParameterList& p)
 {
   Teuchos::RCP<PHX::DataLayout> scalar_dl = 
     p.get< Teuchos::RCP<PHX::DataLayout> >("Data Layout Scalar");
@@ -103,7 +106,12 @@ ScalarToVector(const std::vector<PHX::Tag<ScalarT>> & input,
 }
 
 //**********************************************************************
-PHX_POST_REGISTRATION_SETUP(ScalarToVector, /* worksets */, fm)
+template<typename EvalT, typename Traits>
+void
+ScalarToVector<EvalT, Traits>::
+postRegistrationSetup(
+  typename Traits::SetupData  /* worksets */,
+  PHX::FieldManager<Traits>&  fm)
 {
   internal_scalar_fields = Kokkos::View<KokkosScalarFields_t*>("ScalarToVector::internal_scalar_fields", scalar_fields.size());
   for (std::size_t i=0; i < scalar_fields.size(); ++i) {
@@ -131,7 +139,11 @@ void ScalarToVector<EvalT, TRAITS>::operator()(const size_t &cell) const {
 
 }
 //**********************************************************************
-PHX_EVALUATE_FIELDS(ScalarToVector,workset)
+template<typename EvalT, typename Traits>
+void
+ScalarToVector<EvalT, Traits>::
+evaluateFields(
+  typename Traits::EvalData workset)
 { 
 
   // Loop over cells

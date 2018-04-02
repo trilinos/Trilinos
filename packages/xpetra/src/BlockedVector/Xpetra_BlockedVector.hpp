@@ -421,6 +421,12 @@ namespace Xpetra {
       return this->getBlockedMap()->getFullMap()->getGlobalNumElements();
     }
 
+    //! Local number of rows on the calling process.
+    virtual bool isSameSize(const Xpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> & vec) const {
+      throw Xpetra::Exceptions::RuntimeError("BlockedVector::isSameSize: routine not implemented. It has no value as one must iterate on the partial vectors.");
+      TEUCHOS_UNREACHABLE_RETURN(0);
+    }
+
     //@}
 
     //! @name Overridden from Teuchos::Describable

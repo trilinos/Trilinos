@@ -510,6 +510,8 @@ public:
   void update( Vector<Real> &x, const Vector<Real> &s, Objective<Real> &obj, BoundConstraint<Real> &con,
                AlgorithmState<Real> &algo_state ) {
     ROL::Ptr<StepState<Real> > step_state = Step<Real>::getState();
+    step_state->SPiter = (maxit_ > 1) ? iter_ : iterCR_;
+    step_state->SPflag = (maxit_ > 1) ? flag_ : flagCR_;
 
     x.plus(s);
     feasible_ = con.isFeasible(x);

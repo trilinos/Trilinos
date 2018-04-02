@@ -176,13 +176,19 @@ namespace ROL {
     int nfval;
     int ngrad;
     Real searchSize; // line search parameter (alpha) or trust-region radius (delta)
+    int flag; // Was step successful?
+    int SPiter; // Subproblem iteration count
+    int SPflag; // Subproblem termination flag
 
     StepState(void) : gradientVec(ROL::nullPtr),
                       descentVec(ROL::nullPtr),
                       constraintVec(ROL::nullPtr),
                       nfval(0),
                       ngrad(0),
-                      searchSize(0) {}
+                      searchSize(0),
+                      flag(0),
+                      SPiter(0),
+                      SPflag(0) {}
 
     void reset(const Real searchSizeInput = 1.0) {
       if (gradientVec != ROL::nullPtr) {
@@ -197,6 +203,9 @@ namespace ROL {
       nfval = 0;
       ngrad = 0;
       searchSize = searchSizeInput;
+      flag = 0;
+      SPiter = 0;
+      SPflag = 0;
     }
   };
 

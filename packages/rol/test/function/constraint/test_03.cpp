@@ -44,187 +44,9 @@
 #include "Teuchos_oblackholestream.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
 
-#include "ROL_Constraint_TimeSimOpt.hpp"
-#include "ROL_Vector.hpp"
-#include "ROL_PartitionedVector.hpp"
-#include "ROL_StdVector.hpp"
-#include "ROL_RandomVector.hpp"
+#include "ODEConstraint_TimeSimOpt.hpp"
 
 typedef double RealT;
-
-template <typename Real>
-class ODE_Constraint : public ROL::Constraint_TimeSimOpt<Real> {
-private:
-  typedef ROL::StdVector<Real> VectorType;
-
-  const std::vector<Real> & getVector( const ROL::Vector<Real> & x ) {
-    return *dynamic_cast<const VectorType&>(x).getVector();
-  }
-
-  std::vector<Real> & getVector( ROL::Vector<Real>  & x ) {
-    return *dynamic_cast<VectorType&>(x).getVector();
-  }
-
-  Real timestep_; 
-  Real omega_; 
-
-public:
-   
-  ODE_Constraint(double dt,double omega) : timestep_(dt), omega_(omega) {}
-
-  virtual void value(ROL::Vector<Real> &c,
-             const ROL::Vector<Real> &u_old,
-             const ROL::Vector<Real> &u_new,
-             const ROL::Vector<Real> &z,
-             Real &tol) override
-  {
-    auto & c_data = getVector(c);
-    auto & uo_data = getVector(u_old);
-    auto & un_data = getVector(u_new);
-    auto & z_data = getVector(z);
-
-    // solving (u,v are states, z is control)
-    // 
-    //    u' = v, v'=-omega^2 * u + z
-    //    u(0) = 0
-    //
-    //    u(t) = sin(omega*t)
-    //
-    // using backward euler
-    
-    c_data[0] = un_data[0]-uo_data[0] - timestep_*(un_data[1] + z_data[0]);
-    c_data[1] = un_data[1]-uo_data[1] + timestep_*omega_*omega_*un_data[0];
-  }
-
-  virtual void solve(ROL::Vector<Real> &c,
-                     const ROL::Vector<Real> &u_old, ROL::Vector<Real> &u_new,
-                     const ROL::Vector<Real> &z,
-                     Real &tol) override
-  {
-    auto & uo_data = getVector(u_old);
-    auto & un_data = getVector(u_new);
-    auto & z_data = getVector(z);
-
-    Real a = omega_*omega_*timestep_;
-    Real b = timestep_;
-    Real gamma = 1.0/(a*b+1.0);
-
-    Real rhs_0 = uo_data[0]+timestep_*z_data[0];
-    Real rhs_1 = uo_data[1];
-
-    un_data[0] = gamma*(1.0 * rhs_0 +   b * rhs_1);
-    un_data[1] = gamma*( -a * rhs_0 + 1.0 * rhs_1);
-
-    value(c,u_old,u_new,z,tol);
-  }
-
-  virtual void applyJacobian_1_old(ROL::Vector<Real> &jv,
-                                   const ROL::Vector<Real> &v_old,
-                                   const ROL::Vector<Real> &u_old, const ROL::Vector<Real> &u_new,
-                                   const ROL::Vector<Real> &z,
-                                   Real &tol) override {
-    auto & jv_data = getVector(jv);
-    auto & vo_data = getVector(v_old);
-
-    jv_data[0] = -vo_data[0];
-    jv_data[1] = -vo_data[1];
-  }
-
-  virtual void applyJacobian_1_new(ROL::Vector<Real> &jv,
-                                   const ROL::Vector<Real> &v_new,
-                                   const ROL::Vector<Real> &u_old, const ROL::Vector<Real> &u_new,
-                                   const ROL::Vector<Real> &z,
-                                   Real &tol) override {
-    auto & jv_data = getVector(jv);
-    auto & vn_data = getVector(v_new);
-
-    jv_data[0] = vn_data[0] - timestep_*vn_data[1];
-    jv_data[1] = vn_data[1] + timestep_*omega_*omega_*vn_data[0];
-
-             // [      1,   -dt ]
-             // [ dt*w*w,     1 ]
-  }
-
-  virtual void applyInverseJacobian_1_new(ROL::Vector<Real> &ijv,
-                                          const ROL::Vector<Real> &v_new,
-                                          const ROL::Vector<Real> &u_old, const ROL::Vector<Real> &u_new,
-                                          const ROL::Vector<Real> &z,
-                                          Real &tol) override {
-    auto & ijv_data = getVector(ijv);
-    auto & v_data = getVector(v_new); 
-      
-    Real a = omega_*omega_*timestep_;
-    Real b = timestep_;
-    Real gamma = 1.0/(a*b+1.0);
-
-    ijv_data[0] = gamma*(1.0 * v_data[0] +   b * v_data[1]);
-    ijv_data[1] = gamma*( -a * v_data[0] + 1.0 * v_data[1]);
-  }
-
-  virtual void applyJacobian_2(ROL::Vector<Real> &jv,
-                                   const ROL::Vector<Real> &v_new,
-                                   const ROL::Vector<Real> &u_old, const ROL::Vector<Real> &u_new,
-                                   const ROL::Vector<Real> &z,
-                                   Real &tol) override {
-    auto & jv_data = getVector(jv);
-    auto & vn_data = getVector(v_new);
-
-    jv_data[0] = -timestep_*vn_data[0];
-    jv_data[1] = 0.0;
-  }
-
-  virtual void applyAdjointJacobian_1_old(ROL::Vector<Real> &ajv_old,
-                                      const ROL::Vector<Real> &dualv,
-                                      const ROL::Vector<Real> &u_old, const ROL::Vector<Real> &u_new,
-                                      const ROL::Vector<Real> &z,
-                                      Real &tol) override {
-    auto & ajv_data = getVector(ajv_old);
-    auto & v_data = getVector(dualv);
-
-    ajv_data[0] = -v_data[0];
-    ajv_data[1] = -v_data[1];
-  }
-
-  virtual void applyAdjointJacobian_1_new(ROL::Vector<Real> &ajv_new,
-                                      const ROL::Vector<Real> &dualv,
-                                      const ROL::Vector<Real> &u_old, const ROL::Vector<Real> &u_new,
-                                      const ROL::Vector<Real> &z,
-                                      Real &tol) override {
-
-    auto & ajv_data = getVector(ajv_new);
-    auto & v_data = getVector(dualv);
-
-    ajv_data[0] = v_data[0] + timestep_*omega_*omega_*v_data[1];
-    ajv_data[1] = v_data[1] - timestep_*v_data[0];
-  }
-
-  virtual void applyAdjointJacobian_2_time(ROL::Vector<Real> &ajv,
-                                      const ROL::Vector<Real> &dualv,
-                                      const ROL::Vector<Real> &u_old, const ROL::Vector<Real> &u_new,
-                                      const ROL::Vector<Real> &z,
-                                      Real &tol) override {
-    auto & ajv_data = getVector(ajv);
-    auto & v_data = getVector(dualv);
-
-    ajv_data[0] = -timestep_*v_data[0];
-  }
-
-  virtual void applyInverseAdjointJacobian_1_new(ROL::Vector<Real> &iajv,
-                                                 const ROL::Vector<Real> &v_new,
-                                                 const ROL::Vector<Real> &u_old, const ROL::Vector<Real> &u_new,
-                                                 const ROL::Vector<Real> &z,
-                                                 Real &tol) override {
-    auto & iajv_data = getVector(iajv);
-    auto & v_data = getVector(v_new); 
-      
-    Real a = omega_*omega_*timestep_;
-    Real b = timestep_;
-    Real gamma = 1.0/(a*b+1.0);
-
-    iajv_data[0] = gamma*(1.0 * v_data[0] -   a * v_data[1]);
-    iajv_data[1] = gamma*(  b * v_data[0] + 1.0 * v_data[1]);
-  }
-};
 
 int main(int argc, char* argv[]) {
 
@@ -249,37 +71,46 @@ int main(int argc, char* argv[]) {
     double tol = 1e-15;
 
     // allocate state vector
-    std::vector<RealT> uo_data(2), un_data(2);
+    std::vector<RealT> uo_data(3), un_data(3);
+    uo_data[0] = 0.0; uo_data[1] = 2.0*M_PI; uo_data[2] = 1.0;
+    un_data[0] = 0.0; un_data[1] = 0.0;      un_data[2] = 0.1;
     PtrVector uo_vec = ROL::makePtr<ROL::StdVector<RealT>>(ROL::makePtrFromRef(uo_data));
     PtrVector un_vec = ROL::makePtr<ROL::StdVector<RealT>>(ROL::makePtrFromRef(un_data));
-    PtrVector u = ROL::makePtr<ROL::PartitionedVector<RealT>>(std::vector<PtrVector>({un_vec,uo_vec}));
+    PtrVector u = ROL::makePtr<ROL::PartitionedVector<RealT>>(std::vector<PtrVector>({uo_vec,un_vec}));
     CPtrVector cu = u;
     PtrVector v_u = u->clone();
+    PtrVector hv_u = u->clone();
 
+    u->print(std::cout);
 
     // allocate control vector
     std::vector<RealT> z_data(1);
     PtrVector z = ROL::makePtr<ROL::StdVector<RealT>>(ROL::makePtrFromRef(z_data));
     CPtrVector cz = z;
     PtrVector v_z = z->clone();
+    PtrVector hv_z = z->clone();
 
     // allocate constraint vector
-    std::vector<RealT> c_data(2);
+    std::vector<RealT> c_data(3);
     PtrVector c = ROL::makePtr<ROL::StdVector<RealT>>(ROL::makePtrFromRef(c_data));
-    CPtrVector cc = c;
-    PtrVector jv = c->clone();
-    PtrVector w = c->clone();
-    PtrVector v_c = c->clone();
+    CPtrVector cc  = c;
+    PtrVector jv   = c->clone();
+    PtrVector w    = c->clone();
+    PtrVector w_c    = c->clone();
+    PtrVector v_c  = c->clone();
 
     ROL::Ptr<ROL::Constraint_TimeSimOpt<RealT>> constraint = ROL::makePtr<ODE_Constraint<RealT>>(dt,2.0*M_PI);
 
-    ROL::RandomizeVector<RealT>(*u);
+    // ROL::RandomizeVector<RealT>(*u);
     ROL::RandomizeVector<RealT>(*z);
     ROL::RandomizeVector<RealT>(*v_u);
     ROL::RandomizeVector<RealT>(*v_z);
     ROL::RandomizeVector<RealT>(*v_c);
     ROL::RandomizeVector<RealT>(*jv);
+    ROL::RandomizeVector<RealT>(*hv_u);
+    ROL::RandomizeVector<RealT>(*hv_z);
     ROL::RandomizeVector<RealT>(*w);
+    ROL::RandomizeVector<RealT>(*w_c);
 
     // check the solve
     *outStream << "Checking solve" << std::endl;
@@ -289,7 +120,7 @@ int main(int argc, char* argv[]) {
     *outStream << "Checking apply Jacobian 1" << std::endl;
     { 
       auto errors = constraint->checkApplyJacobian_1(*u,*z,*v_u,*jv,true,*outStream);
-      if(errors[6][3] >= 1e-8)
+      if(errors[6][3] >= 1e-6)
         throw std::logic_error("Constraint apply jacobian 1 is incorrect");
     }
 
@@ -297,7 +128,7 @@ int main(int argc, char* argv[]) {
     *outStream << "Checking apply Jacobian 2" << std::endl;
     {
       auto errors = constraint->checkApplyJacobian_2(*u,*z,*v_z,*jv,true,*outStream);
-      if(errors[6][3] >= 1e-8)
+      if(errors[6][3] >= 1e-6)
         throw std::logic_error("Constraint apply jacobian 2 is incorrect");
     }
 
@@ -337,10 +168,41 @@ int main(int argc, char* argv[]) {
         throw std::logic_error("Constraint apply adjoint jacobian 2 is incorrect");
     }
 
-    // check inverses adjoint Jacobian_1_new
-    *outStream << "Checking apply Jacobian 2 new" << std::endl;
+    // check the Adjoint Hessian_11
+    *outStream << "Checking apply Adjoint Hessian_11" << std::endl;
     {
-      ROL::Vector<RealT> & v_un = *dynamic_cast<ROL::PartitionedVector<RealT>&>(*v_u).get(1);
+      auto errors = constraint->checkApplyAdjointHessian_11(*u,*z,*w_c,*v_u,*hv_u,true,*outStream);
+      if(errors[6][3] >= 1e-5)
+        throw std::logic_error("Constraint apply Adjoint Hessian 11 is incorrect");
+    }
+
+    // check the Adjoint Hessian_12
+    *outStream << "Checking apply Adjoint Hessian_12" << std::endl;
+    {
+      auto errors = constraint->checkApplyAdjointHessian_12(*u,*z,*w_c,*v_u,*hv_z,true,*outStream);
+      if(errors[6][3] >= 1e-5)
+        throw std::logic_error("Constraint apply Adjoint Hessian 12 is incorrect");
+    }
+
+    // check the Adjoint Hessian_21
+    *outStream << "Checking apply Adjoint Hessian_21" << std::endl;
+    {
+      auto errors = constraint->checkApplyAdjointHessian_21(*u,*z,*w_c,*v_z,*hv_u,true,*outStream);
+      if(errors[6][3] >= 1e-5)
+        throw std::logic_error("Constraint apply Adjoint Hessian 12 is incorrect");
+    }
+
+    // check the Adjoint Hessian_22
+    *outStream << "Checking apply Adjoint Hessian_22" << std::endl;
+    {
+      auto errors = constraint->checkApplyAdjointHessian_22(*u,*z,*w_c,*v_z,*hv_z,true,*outStream);
+      if(errors[6][3] >= 1e-5)
+        throw std::logic_error("Constraint apply Adjoint Hessian 12 is incorrect");
+    }
+
+    // check inverses adjoint Jacobian_1_new
+    *outStream << "Checking apply Inverse Adjoint Jacobian 2 new" << std::endl;
+    {
       dynamic_cast<ROL::PartitionedVector<RealT>&>(*v_u).get(0)->scale(0.0);
 
       PtrVector jv_u = un_vec->clone();

@@ -48,7 +48,10 @@
 namespace panzer {
 
 //**********************************************************************
-PHX_EVALUATOR_CTOR(TensorToStdVector, p)
+template<typename EvalT, typename Traits>
+TensorToStdVector<EvalT, Traits>::
+TensorToStdVector(
+  const Teuchos::ParameterList&  p)
 {
   Teuchos::RCP<PHX::DataLayout> vector_dl = 
     p.get< Teuchos::RCP<PHX::DataLayout> >("Data Layout Vector");
@@ -78,7 +81,12 @@ PHX_EVALUATOR_CTOR(TensorToStdVector, p)
 }
 
 //**********************************************************************
-PHX_POST_REGISTRATION_SETUP(TensorToStdVector, /* worksets */, fm)
+template<typename EvalT, typename Traits>
+void
+TensorToStdVector<EvalT, Traits>::
+postRegistrationSetup(
+  typename Traits::SetupData  /* worksets */,
+  PHX::FieldManager<Traits>&  fm)
 {
   for (std::size_t i=0; i < vector_fields.size(); ++i)
     this->utils.setFieldData(vector_fields[i], fm);
@@ -87,7 +95,11 @@ PHX_POST_REGISTRATION_SETUP(TensorToStdVector, /* worksets */, fm)
 }
 
 //**********************************************************************
-PHX_EVALUATE_FIELDS(TensorToStdVector, workset)
+template<typename EvalT, typename Traits>
+void
+TensorToStdVector<EvalT, Traits>::
+evaluateFields(
+  typename Traits::EvalData  workset)
 { 
 
   typedef typename PHX::MDField<ScalarT,Cell,Point,Dim>::size_type size_type;

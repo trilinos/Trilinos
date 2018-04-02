@@ -48,7 +48,10 @@
 namespace panzer {
 
 //**********************************************************************
-PHX_EVALUATOR_CTOR(VectorToScalar,p)
+template<typename EvalT, typename Traits>
+VectorToScalar<EvalT, Traits>::
+VectorToScalar(
+  const Teuchos::ParameterList& p)
 {
   Teuchos::RCP<PHX::DataLayout> scalar_dl = 
     p.get< Teuchos::RCP<PHX::DataLayout> >("Data Layout Scalar");
@@ -103,7 +106,12 @@ VectorToScalar(const PHX::FieldTag & input,
 }
 
 //**********************************************************************
-PHX_POST_REGISTRATION_SETUP(VectorToScalar, /* worksets */, fm)
+template<typename EvalT, typename Traits>
+void
+VectorToScalar<EvalT, Traits>::
+postRegistrationSetup(
+  typename Traits::SetupData  /* worksets */,
+  PHX::FieldManager<Traits>&  fm)
 {
   for (std::size_t i=0; i < scalar_fields.size(); ++i)
     this->utils.setFieldData(scalar_fields[i],fm);
@@ -112,7 +120,11 @@ PHX_POST_REGISTRATION_SETUP(VectorToScalar, /* worksets */, fm)
 }
 
 //**********************************************************************
-PHX_EVALUATE_FIELDS(VectorToScalar,workset)
+template<typename EvalT, typename Traits>
+void
+VectorToScalar<EvalT, Traits>::
+evaluateFields(
+  typename Traits::EvalData workset)
 { 
 
   typedef typename PHX::MDField<ScalarT,Cell,Point>::size_type size_type;
@@ -125,7 +137,7 @@ PHX_EVALUATE_FIELDS(VectorToScalar,workset)
     // Loop over cells
     Kokkos::parallel_for(workset.num_cells, KOKKOS_LAMBDA (const index_t cell) {
       // Loop over points
-      for (size_type pt = 0; pt < vector_field.dimension(1); ++pt) {
+      for (size_type pt = 0; pt < local_vector_field.dimension(1); ++pt) {
         local_scalar_field(cell,pt) = local_vector_field(cell,pt,sc);
       }
     });

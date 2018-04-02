@@ -839,6 +839,13 @@ namespace MueLu {
 
     // If we switched the number of vectors, we'd need to reallocate here.
     // If the number of vectors is unchanged, this is a noop.
+    // NOTE: We need to check against B because the tests in AllocateLevelMultiVectors
+    // will fail on Stokhos Scalar types (due to the so-called 'hidden dimension')
+    const BlockedMultiVector * Bblocked = dynamic_cast<const BlockedMultiVector*>(&B);  
+    if(residual_.size() > startLevel &&
+       ( ( Bblocked && !Bblocked->isSameSize(*residual_[startLevel])) ||
+         (!Bblocked && !residual_[startLevel]->isSameSize(B))))
+      DeleteLevelMultiVectors();
     AllocateLevelMultiVectors(X.getNumVectors());
 
     // Print residual information before iterating
@@ -977,6 +984,7 @@ namespace MueLu {
         RCP<Operator> Ac = Coarse->Get< RCP<Operator> >("A");
         if (!Ac.is_null()) {
           RCP<const Map> origXMap = coarseX->getMap();
+          RCP<const Map> origRhsMap = coarseRhs->getMap();
 
           // Replace maps with maps with a subcommunicator
           coarseRhs->replaceMap(Ac->getRangeMap());
@@ -994,6 +1002,7 @@ namespace MueLu {
             iterateLevelTime = rcp(new TimeMonitor(*this, iterateLevelTimeLabel));  // restart timing this level
           }
           coarseX->replaceMap(origXMap);
+          coarseRhs->replaceMap(origRhsMap);
         }
 
         if (!doPRrebalance_ && !importer.is_null()) {
@@ -1010,7 +1019,6 @@ namespace MueLu {
         // Note that due to what may be round-off error accumulation, use of the fused kernel
         //    P->apply(*coarseX, X, Teuchos::NO_TRANS, one, one);
         // can in some cases result in slightly higher iteration counts.
-        //        RCP<MultiVector> correction = MultiVectorFactory::Build(X.getMap(), X.getNumVectors(),false);
         RCP<MultiVector> correction = correction_[startLevel];
         {
           // ============== PROLONGATION ==============
@@ -1426,13 +1434,16 @@ namespace MueLu {
     for(int i=0; i<N; i++) {
       RCP<Operator> A = Levels_[i]->template Get< RCP<Operator> >("A");
       if(!A.is_null()) {
-        // This is zero'd by default since it is filled via an operator apply
-        residual_[i] = MultiVectorFactory::Build(A->getRangeMap(), numvecs, true);
-
-        // This dance is because we allow A to have a BlockedMap and X to have (compatible) non-blocked map
-        RCP<const Map> Adm = A->getDomainMap();
+        // This dance is because we allow A to have a BlockedMap and X/B to have (compatible) non-blocked map
         RCP<const BlockedCrsMatrix> A_as_blocked = Teuchos::rcp_dynamic_cast<const BlockedCrsMatrix>(A);
-        if(!A_as_blocked.is_null()) Adm = A_as_blocked->getFullDomainMap();
+        RCP<const Map> Arm = A->getRangeMap();
+        RCP<const Map> Adm = A->getDomainMap();
+        if(!A_as_blocked.is_null()) { 
+          Adm = A_as_blocked->getFullDomainMap();
+        }
+
+        // This is zero'd by default since it is filled via an operator apply        
+        residual_[i] = MultiVectorFactory::Build(Arm, numvecs, true);
         correction_[i] = MultiVectorFactory::Build(Adm, numvecs, false);
       }
 
@@ -1459,7 +1470,7 @@ namespace MueLu {
         }
       }
     }
-
+    sizeOfAllocatedLevelMultiVectors_ = numvecs;
   }
 
 

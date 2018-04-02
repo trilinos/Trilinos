@@ -59,7 +59,29 @@ namespace panzer {
     <Parameter name="Vector A Name" type="string" value="<vector a name>"/>
     <Parameter name="Vector B Name" type="string" value="<vector b name>"/>
   */
-PANZER_EVALUATOR_CLASS(CrossProduct)
+template<typename EvalT, typename Traits>
+class CrossProduct
+  :
+  public panzer::EvaluatorWithBaseImpl<Traits>,
+  public PHX::EvaluatorDerived<EvalT, Traits>
+{
+  public:
+
+    CrossProduct(
+      const Teuchos::ParameterList& p);
+
+    void
+    postRegistrationSetup(
+      typename Traits::SetupData d,
+      PHX::FieldManager<Traits>& fm);
+
+    void
+    evaluateFields(
+      typename Traits::EvalData d);
+
+  private:
+
+    using ScalarT = typename EvalT::ScalarT;
   
   PHX::MDField<ScalarT> vec_a_cross_vec_b;
   PHX::MDField<const ScalarT> vec_a, vec_b;
@@ -69,7 +91,8 @@ PANZER_EVALUATOR_CLASS(CrossProduct)
   int num_pts;
   int num_dim;
 
-PANZER_EVALUATOR_CLASS_END
+}; // end of class CrossProduct
+
 
 }
 

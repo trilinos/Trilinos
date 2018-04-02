@@ -23,6 +23,7 @@ SolutionStateMetaData<Scalar>::SolutionStateMetaData()
    errorRel_      (0.0),
    order_         (1),
    nFailures_     (0),
+   nRunningFailures_(0),
    nConsecutiveFailures_(0),
    solutionStatus_(WORKING),
    output_        (false),
@@ -41,6 +42,7 @@ SolutionStateMetaData<Scalar>::SolutionStateMetaData(
   const Scalar errorRel,
   const int    order,
   const int    nFailures,
+  const int    nRunningFailures,
   const int    nConsecutiveFailures,
   const Status solutionStatus,
   const bool   output,
@@ -55,6 +57,7 @@ SolutionStateMetaData<Scalar>::SolutionStateMetaData(
    errorRel_      (errorRel),
    order_         (order),
    nFailures_     (nFailures),
+   nRunningFailures_(nRunningFailures),
    nConsecutiveFailures_(nConsecutiveFailures),
    solutionStatus_(solutionStatus),
    output_        (output),
@@ -73,6 +76,7 @@ SolutionStateMetaData<Scalar>::SolutionStateMetaData(const SolutionStateMetaData
    errorRel_      (ssmd.errorRel_),
    order_         (ssmd.order_),
    nFailures_     (ssmd.nFailures_),
+   nRunningFailures_(ssmd.nRunningFailures_),
    nConsecutiveFailures_(ssmd.nConsecutiveFailures_),
    solutionStatus_(ssmd.solutionStatus_),
    output_        (ssmd.output_),
@@ -95,6 +99,7 @@ Teuchos::RCP<SolutionStateMetaData<Scalar> > SolutionStateMetaData<Scalar>::clon
       errorRel_,
       order_,
       nFailures_,
+      nRunningFailures_,
       nConsecutiveFailures_,
       solutionStatus_,
       output_,
@@ -118,6 +123,7 @@ copy(const Teuchos::RCP<const SolutionStateMetaData<Scalar> >& ssmd)
   errorRel_       = ssmd->errorRel_;
   order_          = ssmd->order_;
   nFailures_      = ssmd->nFailures_;
+  nRunningFailures_= ssmd->nRunningFailures_;
   nConsecutiveFailures_ = ssmd->nConsecutiveFailures_;
   solutionStatus_ = ssmd->solutionStatus_;
   output_         = ssmd->output_;
@@ -150,6 +156,7 @@ void SolutionStateMetaData<Scalar>::describe(
         << "errorRel       = " << errorRel_ << std::endl
         << "order          = " << order_ << std::endl
         << "nFailures      = " << nFailures_ << std::endl
+        << "nRunningFailures= " << nRunningFailures_<< std::endl
         << "nConsecutiveFailures = " << nConsecutiveFailures_ << std::endl
         << "solutionStatus = " << toString(solutionStatus_) << std::endl
         << "output         = " << output_ << std::endl
