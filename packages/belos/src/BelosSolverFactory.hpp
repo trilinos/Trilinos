@@ -416,18 +416,8 @@ void registerSolverSubclassForTypes (const std::string & solverName) {
 /// available through the factory should do the following:
 ///
 /// <ol>
-/// <li> Add a new symbol corresponding to their solver to the
-///      Details::EBelosSolverType enum. </li>
-/// <li> If necessary, specialize Details::makeSolverManagerTmpl for
-///      their SolverManager subclass.  In most cases, the default
-///      implementation suffices. </li>
-/// <li> Add a case for their enum symbol that instantiates their
-///      solver to the long switch-case statement in
-///      Details::makeSolverManagerFromClone. </li>
-/// <li> In the SolverFactory constructor, define a canonical string
-///      name for their solver and its mapping to the corresponding
-///      enum value, following the examples and comments there.  (This
-///      takes one line of code.) </li>
+/// <li> Implement the clone() method for that solver. </li>
+/// <li> Implement registration for the DII system. </li>
 /// </ol>
 ///
 template<class Scalar, class MV, class OP>
@@ -490,6 +480,9 @@ void
 SolverFactoryParent<Scalar, MV, OP>::
 registerSolverFactoryForLib () {
   // no managers will be preeegistered ...
+  // for special MV and OP types the templated method
+  // Belos::Details::registerCustomSolverFactory<ST, MV, OP> lives in
+  // Belos_Details_registerCustomSolverFactory.hpp. 
 }
 
 
@@ -541,23 +534,6 @@ getSolver (const std::string& solverName,
   std::string standardized_name = isAnAlias ?
                                   candidateCanonicalName :
                                   solverNameUC;
-
-  // TODO: For the new DII system do we want to eliminate the enum system?
-/*
-  // Get the canonical name.
-  const Details::EBelosSolverType solverEnum =
-    Details::getEnumFromCanonicalName (standardized_name);
-  const bool validCanonicalName =
-    (solverEnum != Details::SOLVER_TYPE_UPPER_BOUND);
-  if (! validCanonicalName) {
-    TEUCHOS_TEST_FOR_EXCEPTION
-      (isAnAlias, std::logic_error, prefix << "Valid alias \"" << solverName
-       << "\" has candidate canonical name \"" << candidateCanonicalName
-       << "\", which is not a canonical solver name.  "
-       "Please report this bug to the Belos developers.");
-    return Teuchos::null; // unsupported / invalid solver name
-  }
-*/
 
   // If the input list is null, we create a new list and use that.
   // This is OK because the effect of a null parameter list input is
@@ -776,15 +752,8 @@ isSupported (const std::string& solverName) const
   std::pair<std::string, bool> aliasResult =
     Details::getCanonicalNameFromAlias (solverNameUC);
   const std::string candidateCanonicalName = aliasResult.first;
-  const bool isAnAlias = aliasResult.second;
-
-  // Get the canonical name.
-  const Details::EBelosSolverType solverEnum =
-    Details::getEnumFromCanonicalName (isAnAlias ?
-                                       candidateCanonicalName :
-                                       solverNameUC);
   const bool validCanonicalName =
-    (solverEnum != Details::SOLVER_TYPE_UPPER_BOUND);
+    (solverManagers_.find(candidateCanonicalName) != solverManagers_.end());
   return validCanonicalName;
 }
 

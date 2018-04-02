@@ -54,8 +54,8 @@
 #define ROL_BELOS_KRYLOV_HPP
 
 #include "BelosSolverFactory.hpp"   
+#include "Belos_Details_registerCustomSolverFactory.hpp"
 #include "BelosSolverManager.hpp"   
-#include "BelosMinresSolMgr.hpp"
 
 #include "ROL_Krylov.hpp"
 #include "ROL_BelosMultiVector.hpp"
@@ -103,11 +103,8 @@ namespace ROL {
                 solverParams->set("Convergence Tolerance",abstol);  
                 solverParams->set("Num Blocks",numVectors);
 
-                // make sure our solver is registered
-                // TODO: In setting up the DII this was an issue - need to figure
-                // out how we want to organize this.
-                Belos::Impl::registerSolverSubclassForTypes<
-                  Belos::MinresSolMgr<ST, MV, OP>, ST, MV, OP> ("MINRES");
+                // Using LinearOperator OP so auto registration won't be available.
+                Belos::Details::registerCustomSolverFactory<ST, MV, OP>();
 
                 solver_ = factory_.create(solverName,solverParams);                 
             }

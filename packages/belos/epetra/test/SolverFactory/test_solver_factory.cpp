@@ -70,8 +70,9 @@
 #include <stdexcept>
 
 // These are added to so we can preserve the type checking of the manager.
-// However with the new DII setup these includes could all be removed if we
-// wanted to remove that part of the test.
+// TODO: With the new DII system we can consider adding a second test like
+// this which does not have these included and does not do the type check.
+// However the test should still work.
 #include "BelosBlockGmresSolMgr.hpp"
 #include "BelosPseudoBlockGmresSolMgr.hpp"
 #include "BelosBlockCGSolMgr.hpp"

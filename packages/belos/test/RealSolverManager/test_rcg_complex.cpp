@@ -85,13 +85,6 @@ TEUCHOS_UNIT_TEST( RCG, RealDoesNotThrow )
   TEST_NOTHROW( solver = rcp (new sol_mgr_type ()) );
 }
 
-// TODO: Reenable this test - Exception disabled for DII
-// I have temporarily removed the exception from the constructor to
-// demonstrate a working build wiht the new DII system. Currently all the
-// Tpetra classes will auto register complex. I need to discuss how we want
-// to handle this. Right now the DII system constructs and registers the
-// dummy classes but does not actually use them.
-/*
 TEUCHOS_UNIT_TEST( RCG, ComplexThrows )
 {
   using Teuchos::RCP;
@@ -103,7 +96,7 @@ TEUCHOS_UNIT_TEST( RCG, ComplexThrows )
   // typedef Belos::OperatorTraits<ST, MV, OP> OPT;
   typedef Belos::RCGSolMgr<ST, MV, OP> sol_mgr_type;
 
-  RCP<sol_mgr_type> solver;
-  TEST_THROW( solver = rcp (new sol_mgr_type ()), std::logic_error );
+  // no longer throws due to DII system needing to make dummy constructor
+  RCP<sol_mgr_type> solver = rcp (new sol_mgr_type ());
+  TEST_THROW( solver->getNumIters() , std::logic_error ); // throws!
 }
-*/

@@ -42,51 +42,68 @@
 /// \file Belos_Details_registerSolverFactory
 /// \brief Implement Injection and Inversion (DII) for Belos
 
+#include "BelosSolverFactory.hpp"
+
+#include "BelosBiCGStabSolMgr.hpp"
+#include "BelosBlockCGSolMgr.hpp"
+#include "BelosBlockGmresSolMgr.hpp"
+#include "BelosFixedPointSolMgr.hpp"
+#include "BelosGCRODRSolMgr.hpp"
+#include "BelosLSQRSolMgr.hpp"
+#include "BelosMinresSolMgr.hpp"
+#include "BelosPCPGSolMgr.hpp"
+#include "BelosPseudoBlockCGSolMgr.hpp"
+#include "BelosPseudoBlockGmresSolMgr.hpp"
+#include "BelosPseudoBlockTFQMRSolMgr.hpp"
+#include "BelosRCGSolMgr.hpp"
+#include "BelosTFQMRSolMgr.hpp"
+
 namespace Belos {
 namespace Details {
 
-void registerGCRODRSolMgr();
-void registerPseudoBlockGmresSolMgr();
-void registerPseudoBlockCGSolMgr();
-void registerBlockGmresSolMgr();
-void registerBlockCGSolMgr();
-void registerFixedPointSolMgr();
-void registerLSQRSolMgr();
-void registerLSQRSolMgr();
-void registerPCPGSolMgr();
-void registerRCGSolMgr();
-void registerBiCGStabSolMgr();
-void registerMinresSolMgr();
-void registerTFQMRSolMgr();
-void registerPseudoBlockTFQMRSolMgr();
-
-/// \brief Register SolverFactory Managers for belos lib
-void registerSolverFactory () {
-  registerGCRODRSolMgr();
-  registerPseudoBlockGmresSolMgr();
-  registerPseudoBlockCGSolMgr();
-  registerBlockGmresSolMgr();
-  registerBlockCGSolMgr();
-  registerFixedPointSolMgr();
-  registerLSQRSolMgr();
-  registerPCPGSolMgr();
-  registerRCGSolMgr();
-  registerBiCGStabSolMgr();
-  registerMinresSolMgr();
-  registerTFQMRSolMgr();
-  registerPseudoBlockTFQMRSolMgr();
-
-  // Need to discuss how to organize and handle complex
-  // This is setup for the currently tested complex LSQR and RCG cases
 #ifdef HAVE_TEUCHOS_COMPLEX
-  registerComplexLSQRSolMgr();
-  registerComplexRCGSolMgr();
+#define BELOS_DEFINE_REGISTER_SOLVER_MANAGER(manager,name)                           \
+  Impl::registerSolverSubclassForTypes<manager<ST,MV,OP>, ST, MV, OP> (name);        \
+  Impl::registerSolverSubclassForTypes<manager<cST,cMV,cOP>, cST, cMV, cOP> (name);
+#else // HAVE_TEUCHOS_COMPLEX
+#define BELOS_DEFINE_REGISTER_SOLVER_MANAGER(manager,name)            \
+  Impl::registerSolverSubclassForTypes<manager<ST,MV,OP>, ST, MV, OP> (name);
 #endif // HAVE_TEUCHOS_COMPLEX
+
+void registerSolverFactory () {
+  typedef double ST;
+  typedef MultiVec<ST> MV;
+  typedef Operator<ST> OP;
+
+#ifdef HAVE_TEUCHOS_COMPLEX
+  typedef std::complex<double> cST;
+  typedef MultiVec<cST> cMV;
+  typedef Operator<cST> cOP;
+#endif // HAVE_TEUCHOS_COMPLEX
+
+  BELOS_DEFINE_REGISTER_SOLVER_MANAGER(BiCGStabSolMgr, "BICGSTAB")
+  BELOS_DEFINE_REGISTER_SOLVER_MANAGER(BlockCGSolMgr, "BLOCK CG")
+  BELOS_DEFINE_REGISTER_SOLVER_MANAGER(BlockGmresSolMgr, "BLOCK GMRES")
+  BELOS_DEFINE_REGISTER_SOLVER_MANAGER(FixedPointSolMgr, "FIXED POINT")
+  BELOS_DEFINE_REGISTER_SOLVER_MANAGER(GCRODRSolMgr, "GCRODR")
+  BELOS_DEFINE_REGISTER_SOLVER_MANAGER(LSQRSolMgr, "LSQR")
+  BELOS_DEFINE_REGISTER_SOLVER_MANAGER(MinresSolMgr, "MINRES")
+  BELOS_DEFINE_REGISTER_SOLVER_MANAGER(PCPGSolMgr, "PCPG")
+  BELOS_DEFINE_REGISTER_SOLVER_MANAGER(PseudoBlockCGSolMgr, "PSEUDOBLOCK CG")
+  BELOS_DEFINE_REGISTER_SOLVER_MANAGER(PseudoBlockGmresSolMgr, "PSEUDOBLOCK GMRES")
+  BELOS_DEFINE_REGISTER_SOLVER_MANAGER(PseudoBlockTFQMRSolMgr, "PSEUDOBLOCK TFQMR")
+  BELOS_DEFINE_REGISTER_SOLVER_MANAGER(RCGSolMgr, "RCG")
+  BELOS_DEFINE_REGISTER_SOLVER_MANAGER(TFQMRSolMgr, "TFQMR")
 }
 
 } // namespace Details
 } // namespace Belos
 
+// Disable pre-main registration until further discussion.
+// The static parameters in BiCGStabSolMgr, for example, may have out of order
+// initialization in which case, simply calling new BiCGStabSolMgr will crash.
+// This behavior will be indeterminate.
+/*
 namespace { // (anonymous)
   class Register_Belos_Details_SolverFactory {
   public:
@@ -95,17 +112,9 @@ namespace { // (anonymous)
     }
   };
 
-  // ensure that the function actually gets called as premain
-  // if it doesn't SolverFactoryParent constructor will manually call
-  // this registerSolverFactory() at construction.
-
-  // This would add premain registration.
-  // However two tests were seg faulting on clang (not linux) for parallel:
-  // Belos_Tpetra_MultipleSolves_MPI_4 & Ifpack2_AdditiveSchwarz_RILUK_MPI_4
-  // Note there are three places where I commented this out.
-  // TODO: Investigate that and decide if we want premain solve.
-
-  // Register_Belos_Details_SolverFactory
-  //  register_belos_details_solverFactory;
+  // SolverFactoryParent constructor calls above registerSolverFactory which
+  // then causes this to link and execute registerSolverFactory pre-main.
+  Register_Belos_Details_SolverFactory register_belos_details_solverFactory;
 
 } // namespace (anonymous)
+*/

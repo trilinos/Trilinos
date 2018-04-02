@@ -74,7 +74,7 @@
 #include "BelosSolverFactory.hpp"
 #include "BelosXpetraAdapter.hpp"
 #include "BelosMueLuAdapter.hpp"
-#include "BelosPseudoBlockCGSolMgr.hpp"
+#include "Belos_Details_registerCustomSolverFactory.hpp"
 #endif
 
 using Teuchos::RCP;
@@ -119,11 +119,8 @@ namespace MueLuExamples {
     belosProblem->setProblem(X,B);
     Belos::SolverFactory<Scalar, MV, OP> BelosFactory;
 
-    // We need to register our manager - or do we want these auto registered?
-    // This change happens due to implementing the DII system for Belos with
-    // auto registration of all the solver.
-    Belos::Impl::registerSolverSubclassForTypes<
-      Belos::PseudoBlockCGSolMgr<SC, MV, OP>, SC, MV, OP> ("PSEUDOBLOCK CG");
+    // Using Xpetra MV so auto registration won't be available.
+    Belos::Details::registerCustomSolverFactory<SC, MV, OP>();
 
     RCP<Belos::SolverManager<Scalar, MV, OP> > BelosSolver =
         BelosFactory.create(std::string("CG"), SList);
@@ -161,12 +158,8 @@ namespace MueLuExamples {
 
     Belos::SolverFactory<SC, MV, OP> BelosFactory;
 
-    // We need to register our manager - or do we want these auto registered?
-    // This change happens due to implementing the DII system for Belos with
-    // auto registration of all the solver.
-    Belos::Impl::registerSolverSubclassForTypes<
-      Belos::PseudoBlockCGSolMgr<SC, MV, OP>, SC, MV, OP> ("PSEUDOBLOCK CG");
-
+    // Using Xpetra MV so auto registration won't be available.
+    Belos::Details::registerCustomSolverFactory<SC, MV, OP>();
 
     Teuchos::RCP<Belos::SolverManager<SC, MV, OP> > BelosSolver = BelosFactory.create(std::string("CG"), SList);
     BelosSolver->setProblem(belosProblem);

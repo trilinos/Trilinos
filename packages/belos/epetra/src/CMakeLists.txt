@@ -36,19 +36,6 @@ APPEND_SET(SOURCES
   BelosEpetraUtils.cpp
   Belos_Details_Epetra_registerLinearSolverFactory.cpp
   Belos_Details_Epetra_registerSolverFactory.cpp
-  Belos_Details_Epetra_registerBiCGStabSolMgr.cpp
-  Belos_Details_Epetra_registerBlockCGSolMgr.cpp
-  Belos_Details_Epetra_registerBlockGmresSolMgr.cpp
-  Belos_Details_Epetra_registerFixedPointSolMgr.cpp
-  Belos_Details_Epetra_registerGCRODRSolMgr.cpp
-  Belos_Details_Epetra_registerLSQRSolMgr.cpp
-  Belos_Details_Epetra_registerPCPGSolMgr.cpp
-  Belos_Details_Epetra_registerPseudoBlockCGSolMgr.cpp
-  Belos_Details_Epetra_registerPseudoBlockGmresSolMgr.cpp
-  Belos_Details_Epetra_registerRCGSolMgr.cpp
-  Belos_Details_Epetra_registerMinresSolMgr.cpp
-  Belos_Details_Epetra_registerTFQMRSolMgr.cpp
-  Belos_Details_Epetra_registerPseudoBlockTFQMRSolMgr.cpp
   )
 
 #

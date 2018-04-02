@@ -251,7 +251,7 @@ public:
   virtual ~LSQRSolMgr () {}
 
   //! clone for Inverted Injection (DII)
-  virtual Teuchos::RCP<SolverManager<ScalarType, MV, OP> > clone () const {
+  Teuchos::RCP<SolverManager<ScalarType, MV, OP> > clone () const override {
     return Teuchos::rcp(new LSQRSolMgr<ScalarType,MV,OP,scalarTypeIsComplex>);
   }
 };
@@ -317,7 +317,7 @@ public:
   virtual ~LSQRSolMgr () {}
 
   //! clone for Inverted Injection (DII)
-  virtual Teuchos::RCP<SolverManager<ScalarType, MV, OP> > clone () const {
+  Teuchos::RCP<SolverManager<ScalarType, MV, OP> > clone () const override {
     return Teuchos::rcp(new LSQRSolMgr<ScalarType,MV,OP>);
   }
   //@}
@@ -326,17 +326,17 @@ public:
 
   /*! \brief Get current linear problem being solved for in this object.
    */
-  const LinearProblem<ScalarType,MV,OP>& getProblem () const {
+  const LinearProblem<ScalarType,MV,OP>& getProblem () const override {
     return *problem_;
   }
 
   /*! \brief Get a parameter list containing the valid parameters for this object.
    */
-  Teuchos::RCP<const Teuchos::ParameterList> getValidParameters() const;
+  Teuchos::RCP<const Teuchos::ParameterList> getValidParameters() const override;
 
   /*! \brief Get a parameter list containing the current parameters for this object.
    */
-  Teuchos::RCP<const Teuchos::ParameterList> getCurrentParameters() const {
+  Teuchos::RCP<const Teuchos::ParameterList> getCurrentParameters() const override {
     return params_;
   }
 
@@ -350,7 +350,7 @@ public:
   }
 
   //! Iteration count from the last solve.
-  int getNumIters () const {
+  int getNumIters () const override {
     return numIters_;
   }
 
@@ -395,7 +395,7 @@ public:
   /// least-squares sense.  "Loss of accuracy" would correspond to the
   /// difference between the preconditioned residual and the
   /// unpreconditioned residual.
-  bool isLOADetected () const { return false; }
+  bool isLOADetected () const override { return false; }
 
   //@}
 
@@ -403,12 +403,12 @@ public:
   //@{
 
   //! Set the linear problem that needs to be solved.
-  void setProblem (const Teuchos::RCP<LinearProblem<ScalarType,MV,OP> >& problem) {
+  void setProblem (const Teuchos::RCP<LinearProblem<ScalarType,MV,OP> >& problem) override {
     problem_ = problem;
   }
 
   //! Set the parameters the solver manager should use to solve the linear problem.
-  void setParameters (const Teuchos::RCP<Teuchos::ParameterList>& params);
+  void setParameters (const Teuchos::RCP<Teuchos::ParameterList>& params) override;
 
   //@}
 
@@ -418,7 +418,7 @@ public:
    *  solver manager that the solver should prepare for the next call to solve
    *  by resetting certain elements of the iterative solver strategy.
    */
-  void reset (const ResetType type) {
+  void reset (const ResetType type) override {
     if ((type & Belos::Problem) && ! problem_.is_null ()) {
       problem_->setProblem ();
     }
@@ -446,14 +446,14 @@ public:
    *     - ::Unconverged: the linear problem was not solved to the specification desired by
    *                      the solver manager.
    */
-  ReturnType solve();
+  ReturnType solve() override;
 
   //@}
   //! \name Overridden from Teuchos::Describable
   //@{
 
   //! One-line description of this solver.
-  std::string description () const;
+  std::string description () const override;
 
   //@}
 

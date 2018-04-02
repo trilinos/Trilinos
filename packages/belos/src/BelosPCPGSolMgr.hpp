@@ -174,7 +174,7 @@ namespace Belos {
     virtual ~PCPGSolMgr () {}
 
     //! clone for Inverted Injection (DII)
-    virtual Teuchos::RCP<SolverManager<ScalarType, MV, OP> > clone () const {
+    Teuchos::RCP<SolverManager<ScalarType, MV, OP> > clone () const override {
       return Teuchos::rcp(new PCPGSolMgr<ScalarType,MV,OP,supportsScalarType>);
     }
   };

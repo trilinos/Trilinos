@@ -43,45 +43,98 @@
 /// \file Belos_Details_Tpetra_registerSolverFactory
 /// \brief Implement Injection and Inversion (DII) for Tpetra
 
+#include "BelosSolverFactory.hpp"
+#include "BelosTpetraAdapter.hpp"
+
+#include "BelosBiCGStabSolMgr.hpp"
+#include "BelosBlockCGSolMgr.hpp"
+#include "BelosBlockGmresSolMgr.hpp"
+#include "BelosFixedPointSolMgr.hpp"
+#include "BelosGCRODRSolMgr.hpp"
+#include "BelosLSQRSolMgr.hpp"
+#include "BelosMinresSolMgr.hpp"
+#include "BelosPCPGSolMgr.hpp"
+#include "BelosPseudoBlockCGSolMgr.hpp"
+#include "BelosPseudoBlockGmresSolMgr.hpp"
+#include "BelosPseudoBlockTFQMRSolMgr.hpp"
+#include "BelosRCGSolMgr.hpp"
+#include "BelosTFQMRSolMgr.hpp"
+
+TPETRA_ETI_MANGLING_TYPEDEFS()
+
 namespace Belos {
 namespace Details {
 namespace Tpetra {
 
-void registerGCRODRSolMgr();
-void registerPseudoBlockGmresSolMgr();
-void registerPseudoBlockCGSolMgr();
-void registerBlockGmresSolMgr();
-void registerBlockCGSolMgr();
-void registerFixedPointSolMgr();
-void registerLSQRSolMgr();
-void registerLSQRSolMgr();
-void registerPCPGSolMgr();
-void registerRCGSolMgr();
-void registerBiCGStabSolMgr();
-void registerMinresSolMgr();
-void registerTFQMRSolMgr();
-void registerPseudoBlockTFQMRSolMgr();
-
 void registerSolverFactory() {
-  registerGCRODRSolMgr();
-  registerPseudoBlockGmresSolMgr();
-  registerPseudoBlockCGSolMgr();
-  registerBlockGmresSolMgr();
-  registerBlockCGSolMgr();
-  registerFixedPointSolMgr();
-  registerLSQRSolMgr();
-  registerPCPGSolMgr();
-  registerRCGSolMgr();
-  registerBiCGStabSolMgr();
-  registerMinresSolMgr();
-  registerTFQMRSolMgr();
-  registerPseudoBlockTFQMRSolMgr();
+  #define BELOS_LCL_CALL_FOR_MANAGER(manager,name,SC, LO, GO, NT)   \
+    Impl::registerSolverSubclassForTypes<                           \
+      manager<SC,::Tpetra::MultiVector<SC, LO, GO, NT>,             \
+      ::Tpetra::Operator<SC, LO, GO, NT>>, SC,                      \
+      ::Tpetra::MultiVector<SC, LO, GO, NT>,                        \
+      ::Tpetra::Operator<SC, LO, GO, NT>> (name);
+
+  #define LCL_CALL( SC, LO, GO, NT ) BELOS_LCL_CALL_FOR_MANAGER(BiCGStabSolMgr, "BICGSTAB", SC, LO, GO, NT)
+  TPETRA_INSTANTIATE_SLGN_NO_ORDINAL_SCALAR( LCL_CALL )
+
+  #undef LCL_CALL
+  #define LCL_CALL( SC, LO, GO, NT ) BELOS_LCL_CALL_FOR_MANAGER(BlockCGSolMgr, "BLOCK CG", SC, LO, GO, NT)
+  TPETRA_INSTANTIATE_SLGN_NO_ORDINAL_SCALAR( LCL_CALL )
+
+  #undef LCL_CALL
+  #define LCL_CALL( SC, LO, GO, NT ) BELOS_LCL_CALL_FOR_MANAGER(BlockGmresSolMgr, "BLOCK GMRES", SC, LO, GO, NT)
+  TPETRA_INSTANTIATE_SLGN_NO_ORDINAL_SCALAR( LCL_CALL )
+
+  #undef LCL_CALL
+  #define LCL_CALL( SC, LO, GO, NT ) BELOS_LCL_CALL_FOR_MANAGER(FixedPointSolMgr, "FIXED POINT", SC, LO, GO, NT)
+  TPETRA_INSTANTIATE_SLGN_NO_ORDINAL_SCALAR( LCL_CALL )
+
+  #undef LCL_CALL
+  #define LCL_CALL( SC, LO, GO, NT ) BELOS_LCL_CALL_FOR_MANAGER(GCRODRSolMgr, "GCRODR", SC, LO, GO, NT)
+  TPETRA_INSTANTIATE_SLGN_NO_ORDINAL_SCALAR( LCL_CALL )
+
+  #undef LCL_CALL
+  #define LCL_CALL( SC, LO, GO, NT ) BELOS_LCL_CALL_FOR_MANAGER(LSQRSolMgr, "LSQR", SC, LO, GO, NT)
+  TPETRA_INSTANTIATE_SLGN_NO_ORDINAL_SCALAR( LCL_CALL )
+
+  #undef LCL_CALL
+  #define LCL_CALL( SC, LO, GO, NT ) BELOS_LCL_CALL_FOR_MANAGER(MinresSolMgr, "MINRES", SC, LO, GO, NT)
+  TPETRA_INSTANTIATE_SLGN_NO_ORDINAL_SCALAR( LCL_CALL )
+
+  #undef LCL_CALL
+  #define LCL_CALL( SC, LO, GO, NT ) BELOS_LCL_CALL_FOR_MANAGER(PCPGSolMgr, "PCPG", SC, LO, GO, NT)
+  TPETRA_INSTANTIATE_SLGN_NO_ORDINAL_SCALAR( LCL_CALL )
+
+  #undef LCL_CALL
+  #define LCL_CALL( SC, LO, GO, NT ) BELOS_LCL_CALL_FOR_MANAGER(PseudoBlockCGSolMgr, "PSEUDOBLOCK CG", SC, LO, GO, NT)
+  TPETRA_INSTANTIATE_SLGN_NO_ORDINAL_SCALAR( LCL_CALL )
+
+  #undef LCL_CALL
+  #define LCL_CALL( SC, LO, GO, NT ) BELOS_LCL_CALL_FOR_MANAGER(PseudoBlockGmresSolMgr, "PSEUDOBLOCK GMRES", SC, LO, GO, NT)
+  TPETRA_INSTANTIATE_SLGN_NO_ORDINAL_SCALAR( LCL_CALL )
+
+  #undef LCL_CALL
+  #define LCL_CALL( SC, LO, GO, NT ) BELOS_LCL_CALL_FOR_MANAGER(PseudoBlockTFQMRSolMgr, "PSEUDOBLOCK TFQMR", SC, LO, GO, NT)
+  TPETRA_INSTANTIATE_SLGN_NO_ORDINAL_SCALAR( LCL_CALL )
+
+  #undef LCL_CALL
+  #define LCL_CALL( SC, LO, GO, NT ) BELOS_LCL_CALL_FOR_MANAGER(RCGSolMgr, "RCG", SC, LO, GO, NT)
+  TPETRA_INSTANTIATE_SLGN_NO_ORDINAL_SCALAR( LCL_CALL )
+
+  #undef LCL_CALL
+  #define LCL_CALL( SC, LO, GO, NT ) BELOS_LCL_CALL_FOR_MANAGER(TFQMRSolMgr, "TFQMR", SC, LO, GO, NT)
+  TPETRA_INSTANTIATE_SLGN_NO_ORDINAL_SCALAR( LCL_CALL )
 }
 
 } // namespace Tpetra
 } // namespace Details
 } // namespace Belos
 
+// Disable pre-main registration until further discussion.
+// The static parameters in BiCGStabSolMgr, for example, may have out of order
+// initialization in which case, simply calling new BiCGStabSolMgr will crash.
+// This behavior will be indeterminate.
+/*
 namespace { // (anonymous)
   class Register_Belos_Details_Tpetra_SolverFactory {
   public:
@@ -90,17 +143,10 @@ namespace { // (anonymous)
     }
   };
 
-  // ensure that the function actually gets called as premain
-  // if it doesn't SolverFactoryParent constructor will manually call
-  // this registerSolverFactory() at construction.
-
-  // This would add premain registration.
-  // However two tests were seg faulting on clang (not linux) for parallel:
-  // Belos_Tpetra_MultipleSolves_MPI_4 & Ifpack2_AdditiveSchwarz_RILUK_MPI_4
-  // Note there are three places where I commented this out.
-  // TODO: Investigate that and decide if we want premain solve.
-
-  // Register_Belos_Details_Tpetra_SolverFactory
-  //   register_belos_details_tpetra_solverFactory;
+  // SolverFactoryParent constructor calls above registerSolverFactory which
+  // then causes this to link and execute registerSolverFactory pre-main.
+  Register_Belos_Details_Tpetra_SolverFactory
+    register_belos_details_tpetra_solverFactory;
 
 } // namespace (anonymous)
+*/

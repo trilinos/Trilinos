@@ -71,7 +71,7 @@ class FooSolver : public Belos::SolverManager<SC, MV, OP>
 public:
   virtual ~FooSolver () {}
 
-  virtual Teuchos::RCP<Belos::SolverManager<SC, MV, OP> > clone () const {
+  Teuchos::RCP<Belos::SolverManager<SC, MV, OP> > clone () const override {
     return Teuchos::rcp(new FooSolver<SC, MV, OP>);
   }
 

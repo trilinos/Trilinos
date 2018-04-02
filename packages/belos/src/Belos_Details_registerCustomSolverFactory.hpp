@@ -39,12 +39,13 @@
 // ************************************************************************
 //@HEADER
 
+#ifndef BELOS_DETAILS_REGISTERCUSTOMSOLVERFACTORY_HPP
+#define BELOS_DETAILS_REGISTERCUSTOMSOLVERFACTORY_HPP
 
-/// \file Belos_Details_Epetra_registerSolverFactory
-/// \brief Implement Injection and Inversion (DII) for Epetra
+/// \file Belos_Details_registerCustomSolverFactory
+/// \brief Implement Injection and Inversion (DII) for Belos
 
 #include "BelosSolverFactory.hpp"
-#include "BelosEpetraAdapter.hpp"
 
 #include "BelosBiCGStabSolMgr.hpp"
 #include "BelosBlockCGSolMgr.hpp"
@@ -62,13 +63,10 @@
 
 namespace Belos {
 namespace Details {
-namespace Epetra {
 
-void registerSolverFactory() {
-  typedef double ST;
-  typedef Epetra_MultiVector MV;
-  typedef Epetra_Operator OP;
-
+// For manual registration if a class has special defined MV, OP
+template<class ST, class MV, class OP>
+void registerCustomSolverFactory() {
   Impl::registerSolverSubclassForTypes<BiCGStabSolMgr<ST,MV,OP>, ST, MV, OP> ("BICGSTAB");
   Impl::registerSolverSubclassForTypes<BlockCGSolMgr<ST,MV,OP>, ST, MV, OP> ("BLOCK CG");
   Impl::registerSolverSubclassForTypes<BlockGmresSolMgr<ST,MV,OP>, ST, MV, OP> ("BLOCK GMRES");
@@ -84,27 +82,7 @@ void registerSolverFactory() {
   Impl::registerSolverSubclassForTypes<TFQMRSolMgr<ST,MV,OP>, ST, MV, OP> ("TFQMR");
 }
 
-} // namespace Epetra
 } // namespace Details
 } // namespace Belos
 
-// Disable pre-main registration until further discussion.
-// The static parameters in BiCGStabSolMgr, for example, may have out of order
-// initialization in which case, simply calling new BiCGStabSolMgr will crash.
-// This behavior will be indeterminate.
-/*
-namespace { // (anonymous)
-  class Register_Belos_Details_Epetra_SolverFactory {
-  public:
-    Register_Belos_Details_Epetra_SolverFactory () {
-      Belos::Details::Epetra::registerSolverFactory();
-    }
-  };
-
-  // SolverFactoryParent constructor calls above registerSolverFactory which
-  // then causes this to link and execute registerSolverFactory pre-main.
-  Register_Belos_Details_Epetra_SolverFactory
-    register_belos_details_epetra_solverFactory;
-
-} // namespace (anonymous)
-*/
+#endif // BELOS_DETAILS_REGISTERCUSTOMSOLVERFACTORY_HPP
