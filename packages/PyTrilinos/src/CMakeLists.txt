@@ -363,8 +363,25 @@ FOREACH(MODULE ${PyTrilinos_MODULES})
   # to byte-compile and the installation rules requires a little bit
   # of logic.
 
-  # PyTrilinos.Teuchos
-  IF("${MODULE_OUTDIR}" MATCHES "PyTrilinos/Teuchos")
+  # PyTrilinos.Teuchos: Generate PyTrilinos/Teuchos.py, and move it to
+  # PyTrilinos/Teuchos/__init__.py. This causes other packages to
+  # "import Teuchos" properly.
+  IF("${MODULE_NAME}" MATCHES "Teuchos")
+    ADD_CUSTOM_COMMAND(TARGET ${PyTrilinos_TARGET_NAME} POST_BUILD
+      COMMAND mv
+      ARGS    PyTrilinos/${MODULE_NAME}.py PyTrilinos/${MODULE_NAME}/__init__.py
+      COMMAND ${PYTHON_EXECUTABLE}
+      ARGS    -c "import py_compile; py_compile.compile('PyTrilinos/${MODULE_NAME}/__init__.py', 'PyTrilinos/${MODULE_NAME}/__init__.pyc')"
+      COMMENT "Moving and byte compiling ${MODULE_NAME}/__init__.py"
+      VERBATIM)
+    INSTALL(FILES
+      ${CMAKE_CURRENT_BINARY_DIR}/PyTrilinos/${MODULE_NAME}/__init__.py
+      ${CMAKE_CURRENT_BINARY_DIR}/PyTrilinos/${MODULE_NAME}/__init__.pyc
+      DESTINATION ${PyTrilinos_INSTALL_DIR}/${MODULE_NAME})
+    INSTALL(TARGETS ${PyTrilinos_TARGET_NAME}
+      DESTINATION ${PyTrilinos_INSTALL_DIR}/${MODULE_NAME})
+    LIST(APPEND ADDITIONAL_CLEAN_FILES "PyTrilinos/${MODULE_NAME}/__init__.pyc")
+  ELSEIF("${MODULE_OUTDIR}" MATCHES "PyTrilinos/Teuchos")
     ADD_CUSTOM_COMMAND(TARGET ${PyTrilinos_TARGET_NAME} POST_BUILD
       COMMAND ${PYTHON_EXECUTABLE} -c "import py_compile; py_compile.compile('PyTrilinos/Teuchos/${MODULE_NAME}.py', 'PyTrilinos/Teuchos/${MODULE_NAME}.pyc')"
       COMMENT "Byte compiling Teuchos/${MODULE_NAME}.py"
@@ -515,7 +532,7 @@ FOREACH(MODULE ${PyTrilinos_MODULES})
     INSTALL(TARGETS ${PyTrilinos_TARGET_NAME}
       DESTINATION ${PyTrilinos_INSTALL_DIR})
     LIST(APPEND ADDITIONAL_CLEAN_FILES "PyTrilinos/${MODULE}.pyc")
-  ENDIF("${MODULE_OUTDIR}" MATCHES "PyTrilinos/Teuchos")
+  ENDIF("${MODULE_NAME}" MATCHES "Teuchos")
   #
   SWIG_LINK_LIBRARIES(${PyTrilinos_TARGET_NAME} ${TRILINOS_LIBS})
   SET_TARGET_PROPERTIES(${PyTrilinos_TARGET_NAME} PROPERTIES

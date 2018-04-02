@@ -73,6 +73,7 @@ FOREACH(MODULE ${LOCAL_MODULES})
   ADD_CUSTOM_COMMAND(TARGET PyTrilinos_Pure_Python_Modules
     COMMAND ${PYTHON_EXECUTABLE} -c "import py_compile; py_compile.compile('${MODULE}.py', '${MODULE}.pyc')"
     COMMENT "Byte compiling ${MODULE}.py"
+    BYPRODUCTS ${MODULE}.pyc
     VERBATIM)
   INSTALL(FILES
     ${CMAKE_CURRENT_BINARY_DIR}/${MODULE}.py
@@ -89,14 +90,14 @@ LIST(REMOVE_DUPLICATES clean_files)
 LIST(REMOVE_ITEM       clean_files "")
 SET_DIRECTORY_PROPERTIES(PROPERTIES ADDITIONAL_MAKE_CLEAN_FILES "${clean_files}")
 
+# The Teuchos module employs namespaces, so include the Teuchos directory
+ADD_SUBDIRECTORY(Teuchos)
+
 # The Isorropia module employs namespaces, so include the Isorropia
 # directory
 IF(PyTrilinos_ENABLE_Isorropia)
   ADD_SUBDIRECTORY(Isorropia)
 ENDIF(PyTrilinos_ENABLE_Isorropia)
-
-# The Teuchos module employs namespaces, so include the Teuchos directory
-ADD_SUBDIRECTORY(Teuchos)
 
 # The NOX module employs namespaces, so include the NOX directory
 IF(PyTrilinos_ENABLE_NOX)
