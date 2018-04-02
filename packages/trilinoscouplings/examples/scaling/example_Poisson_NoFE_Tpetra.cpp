@@ -126,6 +126,7 @@
 #include "pamgen_im_exodusII_l.h"
 #include "pamgen_im_ne_nemesisI_l.h"
 #include "pamgen_extras.h"
+#include "RTC_FunctionRTC.hh"
 
 // Belos includes
 #include "BelosLinearProblem.hpp"
@@ -469,7 +470,7 @@ int main(int argc, char *argv[]) {
       error += im_ex_get_elem_conn_l(id,block_ids[b],elmt_node_linkage[b]);
     }
 
-  // Get node-element connectivity
+    // Get node-element connectivity
     int telct = 0;
     FieldContainer<int> elemToNode(numElems,numNodesPerElem);
     for(long long b = 0; b < numElemBlk; b++){
@@ -530,14 +531,12 @@ int main(int argc, char *argv[]) {
     }
 
     // Get node-element connectivity and set element mu/sigma value
-    int telct = 0;
-    FieldContainer<int> elemToNode(numElems,numNodesPerElem);
+    telct = 0;
     FieldContainer<double> sigmaVal(numElems);
     for(long long b = 0; b < numElemBlk; b++){
       for(long long el = 0; el < elements[b]; el++){
 	std::vector<double> centercoord(3,0);
 	for (int j=0; j<numNodesPerElem; j++) {
-          elemToNode(telct,j) = elmt_node_linkage[b][el*numNodesPerElem + j]-1;
           centercoord[0] += nodeCoord(elemToNode(telct,j),0) / numNodesPerElem;
 	  centercoord[1] += nodeCoord(elemToNode(telct,j),1) / numNodesPerElem;
 	  centercoord[2] += nodeCoord(elemToNode(telct,j),2) / numNodesPerElem;
