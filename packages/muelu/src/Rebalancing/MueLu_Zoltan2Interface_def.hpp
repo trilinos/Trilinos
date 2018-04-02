@@ -71,6 +71,11 @@ namespace MueLu {
     defaultZoltan2Params = rcp(new ParameterList());
     defaultZoltan2Params->set("algorithm",             "multijagged");
     defaultZoltan2Params->set("partitioning_approach", "partition");
+
+    // Improve scaling for communication bound algorithms by premigrating
+    // coordinates to a subset of processors.
+    // For more information, see Github issue #1538
+    defaultZoltan2Params->set("mj_premigration_option", 1);
  }
 
  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -149,7 +154,7 @@ namespace MueLu {
     for (ParameterList::ConstIterator param = defaultZoltan2Params->begin(); param != defaultZoltan2Params->end(); param++) {
       const std::string& pName = defaultZoltan2Params->name(param);
       if (!Zoltan2Params.isParameter(pName))
-        Zoltan2Params.set(pName, defaultZoltan2Params->get<std::string>(pName));
+        Zoltan2Params.setEntry(pName, defaultZoltan2Params->getEntry(pName));
     }
     Zoltan2Params.set("num_global_parts", Teuchos::as<int>(numParts));
 

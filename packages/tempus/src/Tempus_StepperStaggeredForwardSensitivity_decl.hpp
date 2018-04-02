@@ -84,6 +84,10 @@ public:
     virtual Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> > getSolver() const
     { return stateStepper_->getSolver(); }
 
+    /// Set Observer
+    virtual void setObserver(
+      Teuchos::RCP<StepperObserver<Scalar> > obs = Teuchos::null){}
+
     /// Initialize during construction and after changing input parameters.
     virtual void initialize();
 
@@ -97,6 +101,9 @@ public:
     virtual Scalar getOrder() const {return stateStepper_->getOrder();}
     virtual Scalar getOrderMin() const {return stateStepper_->getOrderMin();}
     virtual Scalar getOrderMax() const {return stateStepper_->getOrderMax();}
+    virtual Scalar getInitTimeStep(
+        const Teuchos::RCP<SolutionHistory<Scalar> >& solutionHistory) const
+      {return std::numeric_limits<Scalar>::max();}
 
     virtual bool isExplicit()         const
       {return stateStepper_->isExplicit() or sensitivityStepper_->isExplicit();}

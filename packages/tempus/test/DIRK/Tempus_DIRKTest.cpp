@@ -39,10 +39,13 @@ using Tempus::SolutionState;
 TEUCHOS_UNIT_TEST(DIRK, ParameterList)
 {
   std::vector<std::string> RKMethods;
+  RKMethods.push_back("RK Backward Euler");
+  RKMethods.push_back("IRK 1 Stage Theta Method");
   RKMethods.push_back("SDIRK 1 Stage 1st order");
   RKMethods.push_back("SDIRK 2 Stage 2nd order");
   RKMethods.push_back("SDIRK 2 Stage 3rd order");
   RKMethods.push_back("EDIRK 2 Stage 3rd order");
+  RKMethods.push_back("EDIRK 2 Stage Theta Method");
   RKMethods.push_back("SDIRK 3 Stage 4th order");
   RKMethods.push_back("SDIRK 5 Stage 4th order");
   RKMethods.push_back("SDIRK 5 Stage 5th order");
@@ -63,7 +66,19 @@ TEUCHOS_UNIT_TEST(DIRK, ParameterList)
     RCP<ParameterList> tempusPL  = sublist(pList, "Tempus", true);
     tempusPL->sublist("Default Stepper").set("Stepper Type", RKMethods[m]);
 
-    if (RKMethods[m] == "SDIRK 2 Stage 2nd order") {
+    if (RKMethods[m] == "IRK 1 Stage Theta Method" ||
+        RKMethods[m] == "EDIRK 2 Stage Theta Method") {
+      // Construct in the same order as default.
+      RCP<ParameterList> stepperPL = sublist(tempusPL, "Default Stepper", true);
+      RCP<ParameterList> solverPL = Teuchos::parameterList();
+      *solverPL  = *(sublist(stepperPL, "Default Solver", true));
+      tempusPL->sublist("Default Stepper").remove("Default Solver");
+      tempusPL->sublist("Default Stepper")
+           .set<double>("theta", 0.5);
+      tempusPL->sublist("Default Stepper").remove("Zero Initial Guess");
+      tempusPL->sublist("Default Stepper").set<bool>("Zero Initial Guess", 0);
+      tempusPL->sublist("Default Stepper").set("Default Solver", *solverPL);
+    } else if (RKMethods[m] == "SDIRK 2 Stage 2nd order") {
       // Construct in the same order as default.
       RCP<ParameterList> stepperPL = sublist(tempusPL, "Default Stepper", true);
       RCP<ParameterList> solverPL = Teuchos::parameterList();
@@ -71,6 +86,8 @@ TEUCHOS_UNIT_TEST(DIRK, ParameterList)
       tempusPL->sublist("Default Stepper").remove("Default Solver");
       tempusPL->sublist("Default Stepper")
            .set<double>("gamma", 0.2928932188134524);
+      tempusPL->sublist("Default Stepper").remove("Zero Initial Guess");
+      tempusPL->sublist("Default Stepper").set<bool>("Zero Initial Guess", 0);
       tempusPL->sublist("Default Stepper").set("Default Solver", *solverPL);
     } else if (RKMethods[m] == "SDIRK 2 Stage 3rd order") {
       // Construct in the same order as default.
@@ -82,6 +99,8 @@ TEUCHOS_UNIT_TEST(DIRK, ParameterList)
       tempusPL->sublist("Default Stepper").set("2nd Order L-stable", false);
       tempusPL->sublist("Default Stepper")
            .set<double>("gamma", 0.7886751345948128);
+      tempusPL->sublist("Default Stepper").remove("Zero Initial Guess");
+      tempusPL->sublist("Default Stepper").set<bool>("Zero Initial Guess", 0);
       tempusPL->sublist("Default Stepper").set("Default Solver", *solverPL);
     }
 
@@ -108,6 +127,9 @@ TEUCHOS_UNIT_TEST(DIRK, ParameterList)
         integrator->getStepper()->getDefaultParameters();
       defaultPL->remove("Description");
 
+    //std::cout << std::endl;
+    //std::cout << "stepperPL ----------------- \n" << *stepperPL << std::endl;
+    //std::cout << "defaultPL ----------------- \n" << *defaultPL << std::endl;
       TEST_ASSERT(haveSameValues(*stepperPL, *defaultPL, true))
     }
   }
@@ -216,19 +238,25 @@ TEUCHOS_UNIT_TEST(DIRK, ConstructingFromDefaults)
 TEUCHOS_UNIT_TEST(DIRK, SinCos)
 {
   std::vector<std::string> RKMethods;
+  RKMethods.push_back("RK Backward Euler");
+  RKMethods.push_back("IRK 1 Stage Theta Method");
   RKMethods.push_back("SDIRK 1 Stage 1st order");
   RKMethods.push_back("SDIRK 2 Stage 2nd order");
   RKMethods.push_back("SDIRK 2 Stage 3rd order");
   RKMethods.push_back("EDIRK 2 Stage 3rd order");
+  RKMethods.push_back("EDIRK 2 Stage Theta Method");
   RKMethods.push_back("SDIRK 3 Stage 4th order");
   RKMethods.push_back("SDIRK 5 Stage 4th order");
   RKMethods.push_back("SDIRK 5 Stage 5th order");
 
   std::vector<double> RKMethodErrors;
   RKMethodErrors.push_back(0.0124201);
+  RKMethodErrors.push_back(5.20785e-05);
+  RKMethodErrors.push_back(0.0124201);
   RKMethodErrors.push_back(2.52738e-05);
   RKMethodErrors.push_back(1.40223e-06);
   RKMethodErrors.push_back(2.17004e-07);
+  RKMethodErrors.push_back(5.20785e-05);
   RKMethodErrors.push_back(6.41463e-08);
   RKMethodErrors.push_back(3.30631e-10);
   RKMethodErrors.push_back(1.35728e-11);
@@ -261,12 +289,15 @@ TEUCHOS_UNIT_TEST(DIRK, SinCos)
       // Set the Stepper
       RCP<ParameterList> pl = sublist(pList, "Tempus", true);
       pl->sublist("Default Stepper").set("Stepper Type", RKMethods[m]);
-      if (RKMethods[m] == "SDIRK 2 Stage 2nd order") {
-        pl->sublist("Default Stepper").set("gamma", 0.2928932190);
+      if (RKMethods[m] == "IRK 1 Stage Theta Method" ||
+          RKMethods[m] == "EDIRK 2 Stage Theta Method") {
+        pl->sublist("Default Stepper").set<double>("theta", 0.5);
+      } else if (RKMethods[m] == "SDIRK 2 Stage 2nd order") {
+        pl->sublist("Default Stepper").set("gamma", 0.2928932188134524);
       } else if (RKMethods[m] == "SDIRK 2 Stage 3rd order") {
         pl->sublist("Default Stepper").set("3rd Order A-stable", true);
         pl->sublist("Default Stepper").set("2nd Order L-stable", false);
-        pl->sublist("Default Stepper").set("gamma", 0.7886751347);
+        pl->sublist("Default Stepper").set("gamma", 0.7886751345948128);
       }
 
       dt /= 2;

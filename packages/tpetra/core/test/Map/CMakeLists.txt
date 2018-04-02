@@ -9,6 +9,16 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   STANDARD_PASS_OUTPUT
   )
 
+# kdd Test for bug 2431
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  Map_Bug2431
+  SOURCES
+    Map_Bug2431
+  COMM mpi
+  NUM_MPI_PROCS 4
+  STANDARD_PASS_OUTPUT
+  )
+
 # tjf 20 Oct 2016 modified to use default LO, GO types
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   Map_Bug5378
@@ -198,5 +208,21 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
     ${TEUCHOS_STD_UNIT_TEST_MAIN}
   COMM mpi
   NUM_MPI_PROCS 1-4
+  STANDARD_PASS_OUTPUT
+  )
+
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  Map_warn_on_post_finalize_destruction_issue_2372
+  SOURCES
+    Map_warn_on_post_finalize_destruction
+  COMM serial mpi
+  STANDARD_PASS_OUTPUT
+  )
+
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  Map_no_warn_on_pre_finalize_destruction_issue_2372
+  SOURCES
+    Map_no_warn_on_pre_finalize_destruction
+  COMM serial mpi
   STANDARD_PASS_OUTPUT
   )

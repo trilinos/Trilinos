@@ -6,6 +6,15 @@ IF (${Trilinos_ENABLE_Kokkos})
   # that we will use in the configuration
   set(Kokkos_GEN_DIR ${CMAKE_BINARY_DIR})
 
+  # Enable debug checking in Kokkos by default if
+  # ${PROJECT_NAME}_ENABLE_DEBUG=ON
+  set(KOKKOS_ENABLE_DEBUG ${${PROJECT_NAME}_ENABLE_DEBUG}
+    CACHE BOOL
+    "Enable debug checking in Kokkos.")
+  set(Kokkos_ENABLE_Debug_Bounds_Check ${KOKKOS_ENABLE_DEBUG}
+    CACHE BOOL
+    "Enable bounds checking in Kokkos array classes.")
+
   # Basic initialization (Used in KOKKOS_SETTINGS)
   set(KOKKOS_SRC_PATH ${Kokkos_SOURCE_DIR})
   set(KOKKOS_PATH ${KOKKOS_SRC_PATH})

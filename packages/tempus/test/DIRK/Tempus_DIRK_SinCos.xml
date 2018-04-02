@@ -1,4 +1,4 @@
-<ParameterList name="BackwardEuler_SinCos">
+<ParameterList name="DIRK_SinCos">
   <ParameterList name="SinCosModel">
     <Parameter name="Accept model parameters"    type="bool" value="true"/>
     <Parameter name="Provide nominal values"     type="bool" value="true"/>
@@ -29,9 +29,9 @@
         <Parameter name="Minimum Time Step"      type="double" value="0.00001"/>
         <Parameter name="Initial Time Step"      type="double" value="0.1"/>
         <Parameter name="Maximum Time Step"      type="double" value="0.1"/>
-        <Parameter name="Minimum Order"          type="int" value="0"/>
+        <Parameter name="Minimum Order"          type="int"    value="0"/>
         <Parameter name="Initial Order"          type="int"    value="0"/>
-        <Parameter name="Maximum Order"          type="int" value="0"/>
+        <Parameter name="Maximum Order"          type="int"    value="0"/>
         <Parameter name="Maximum Absolute Error" type="double" value="1.0e-8"/>
         <Parameter name="Maximum Relative Error" type="double" value="1.0e-8"/>
         <Parameter name="Integrator Step Type"  type="string" value="Constant"/>
@@ -48,6 +48,7 @@
 
       <Parameter name="Stepper Type"   type="string" value="fill-in"/>
       <Parameter name="Solver Name"    type="string" value="Default Solver"/>
+      <Parameter name="Zero Initial Guess" type="bool" value="0"/>
 
       <ParameterList name="Default Solver">
         <ParameterList name="NOX">

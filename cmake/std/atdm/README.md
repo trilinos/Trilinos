@@ -14,6 +14,7 @@ build locally as described below.
 
 **Outline:**
 * <a href="#quick-start">Quick-start</a>
+* <a href="#checkin-test-atdmsh">checkin-test-atdm.sh</a>
 * <a href="#specific-instructions-for-each-system">Specific instructions for each system</a>
 * <a href="#directory-structure-and-contents">Directory structure and contents</a>
 * <a href="#specific-systems-supported">Specific systems supported</a>
@@ -121,14 +122,103 @@ defined for a build, then it will be picked up in the CMake cache var <a
 href="#ATDM_TWEAKS_FILES">ATDM_TWEAKS_FILES</a> and that file will be read in
 using `INCLUDE()` to process the extra options contained within it.
 
+
+## checkin-test-atdm.sh
+
+For those Trilinos developers comfortable with using the
+`Trilinos/checkin-test.py` script, multiple local builds and testing on a
+system can also be driven with the provided `checkin-test-atdm.sh` wrapper
+script.  This can be used to drive a number of builds on system as:
+
+```
+$ cd <some_build_dir>/
+
+$ ln -s $TRILINOS_DIR/cmake/std/atdm/checkin-test-sems.sh .
+
+$ ./checkin-test-sems.sh <job-name-0> <job-name-1> ... \
+  --enable-all-packages=off --no-enable-fwd-packages \
+  --enable-packages=<Package> --local-do-all
+```
+
+That will configure, build, and run tests for each specified build
+`<job-name-0>` and send a summary email when complete.  See comments at the
+top of the script `checkin-test-atdm.sh` for more details.
+
+Note that to run tests for a CUDA build, one will need to run these on a
+compute node on the system that has a GPU.  See <a
+href="#specific-instructions-for-each-system">Specific instructions for each
+system</a> for details.
+
+Also note that one can create a `local-checkin-test-defaults.py` file to set
+defaults like:
+
+```
+defaults = [
+  "--no-enable-fwd-packages",
+  "--enable-all-packages=off",
+  ]
+```
+
+and then run:
+
+```
+$ ./checkin-test-sems.sh <job-name-0> <job-name-1> ... \
+  --enable-packages=<Package> --local-do-all
+```
+
+
 ## Specific instructions for each system
 
-* <a href="#hansenshiller">hansen/shiller</a>
-* ???
+* <a href="#ridewhite">ride/white</a>
+* <a href="#shillerhansen">shiller/hansen</a>
 
-### hansen/shiller
 
-Once logging on to `hansen` (on the SON) or `shiller` (on the SRN), one can
+### ride/white
+
+Once logged on to `white` (on the SON) or `shiller` (on the SRN), one can
+directly configure and build on the login node (being careful not to overload
+the node).  But to run the tests, one must run on the compute nodes using the
+`bsub` command to run if using a CUDA build.  For example, to configure, build
+and run the tests for the `cuda-debug` build for say `MueuLu` on `white`,
+(after cloning Trilinos on the `develop` branch) one would do:
+
+```
+$ cd <some_build_dir>/
+
+$ source $TRILINOS_DIR/cmake/std/atdm/load-env.sh cuda-debug
+
+$ cmake \
+  -GNinja \
+  -DTrilinos_CONFIGURE_OPTIONS_FILE:STRING=cmake/std/atdm/ATDMDevEnv.cmake \
+  -DTrilinos_ENABLE_TESTS=ON -DTrilinos_ENABLE_MueLu=ON \
+  $TRILINOS_DIR
+
+$ make NP=16
+
+$ bsub -x -I -q rhel7F -n 16 ctest -j16
+```
+
+The ATDM configuration of Trilinos is set up to run on the Firestone nodes
+(Dual-Socket POWER8, 8 cores per socket, K80 GPUs).  This confiugration will
+not work on the other GPU nodes currently.
+
+Note that one can also run the same build a tests using the <a
+href="#checkin-test-atdmsh">checkin-test-atdm.sh</a> script as:
+
+```
+$ cd <some_build_dir>/
+$ ln -s $TRILINOS_DIR/cmake/std/atdm/checkin-test-sems.sh .
+$ bsub -x -I -q rhel7F -n 16 \
+  ./checkin-test-sems.sh cuda-debug \
+  --enable-all-packages=off --no-enable-fwd-packages \
+  --enable-packages=MueLu \
+  --local-do-all
+```
+
+
+### shiller/hansen
+
+Once logged on to `hansen` (on the SON) or `shiller` (on the SRN), one can
 directly configure and build on the login node (being careful not to overload
 the node).  But to run the tests, one must run on the compute nodes using the
 `srun` command.  For example, to configure, build and run the tests for say
@@ -152,6 +242,19 @@ $ make NP=16
 $ srun ctest -j16
 ```
 
+Note that one can also run the same build a tests using the <a
+href="#checkin-test-atdmsh">checkin-test-atdm.sh</a> script as:
+
+```
+$ cd <some_build_dir>/
+$ ln -s $TRILINOS_DIR/cmake/std/atdm/checkin-test-sems.sh .
+$ srun ./checkin-test-sems.sh intel-opt-openmp \
+  --enable-all-packages=off --no-enable-fwd-packages \
+  --enable-packages=MueLu \
+  --local-do-all
+```
+
+
 ## Directory structure and contents
 
 This base directory:
@@ -172,8 +275,9 @@ contains the following files:
   -S` driver script code for ATDM builds of Trilinos which is needed for
   correct package-by-package testing of Trilinos.
 
-* **ATDMDevEnvUtils.cmake**: Defines some simple macros and functions used in
-  the above `*.cmake` files.
+* **checkin-test-atdm.sh**: Uses the `Trilinos/checkin-test.py` script to
+  drive builds and tests on the given platform.  (See comments in the top of
+  the script for instructions.)
 
 Each supported ATDM system `<system-name>` has its own sub-directory with the
 contents:
@@ -181,11 +285,22 @@ contents:
 ```
   <system-name>/
     environment.sh  # Load env for the given system based on $JOB_NAME keys
+    all_supported_builds.sh  # [Optional] List of all supported builds
     tweaks/
-       <COMPILER0>-<BUILD_TYPE0>-<NODE_TYPE0>.cmake
-       <COMPILER1>-<BUILD_TYPE1>-<NODE_TYPE1>.cmake
+       <COMPILER0>-<BUILD_TYPE0>-<NODE_TYPE0>.cmake  # [Optional]
+       <COMPILER1>-<BUILD_TYPE1>-<NODE_TYPE1>.cmake  # [Optional]
        ...
 ```
+
+The optional file `<system-name>/all_supported_builds.sh` contains a list of
+all of the supported builds on the system.  This sets the environment variable `ATDM_CONFIG_ALL_SUPPORTED_BUILDS` as:
+
+```
+  export ATDM_CONFIG_ALL_SUPPORTED_BUILDS="gnu-debug-openmp gnu-opt-openmp ..."
+```
+
+This is used in the `checkin-test-atdm.sh` script to run all of the builds for
+a system with `checkin-test-atdm.sh all [other options]`.
 
 <a name="ATDM_TWEAKS_FILES"/>
 
@@ -208,6 +323,9 @@ options are read.
 
 The specific `cmake/std/atdm/<system-name>/` sub-directories and the systems
 they support are:
+
+* `ride/`: Supports GNU and CUDA builds on both the SRN machine `ride` and the
+  mirror SON machine `white`.
 
 * `shiller/`: Supports GNU, Intel, and CUDA builds on both the SRN machine
   `shiller` and the mirror SON machine `hansen`.

@@ -73,6 +73,10 @@ public:
 
   void runPostSolve(const NOX::Solver::Generic& solver);
 
+  void runPreLineSearch(const NOX::Solver::Generic& solver);
+
+  void runPostLineSearch(const NOX::Solver::Generic& solver);
+
   int getNumRunPreIterate() const { return numRunPreIterate; };
 
   int getNumRunPostIterate() const { return numRunPostIterate; };
@@ -80,6 +84,10 @@ public:
   int getNumRunPreSolve() const { return numRunPreSolve; };
 
   int getNumRunPostSolve() const { return numRunPostSolve; };
+
+  int getNumRunPreLineSearch() const { return numRunPreLineSearch; };
+
+  int getNumRunPostLineSearch() const { return numRunPostLineSearch; };
 
 protected:
 
@@ -89,6 +97,8 @@ protected:
   int numRunPostIterate;
   int numRunPreSolve;
   int numRunPostSolve;
+  int numRunPreLineSearch;
+  int numRunPostLineSearch;
 
 };
 #endif

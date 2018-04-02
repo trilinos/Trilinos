@@ -1,9 +1,8 @@
-ATDM_SET_ENABLE(Panzer_ENABLE_EXAMPLES OFF)
-ATDM_SET_ENABLE(PanzerCore_ENABLE_EXAMPLES OFF)
-ATDM_SET_ENABLE(PanzerDofMgr_ENABLE_EXAMPLES OFF)
-ATDM_SET_ENABLE(PanzerDiscFE_ENABLE_EXAMPLES OFF)
-ATDM_SET_ENABLE(PanzerAdaptersSTK_ENABLE_EXAMPLES OFF)
-ATDM_SET_ENABLE(PanzerAdaptersIOSS_ENABLE_EXAMPLES OFF)
-ATDM_SET_ENABLE(PanzerMiniEM_ENABLE_EXAMPLES OFF)
-# ToDo: Change TriBITS so that, by default, Panzer_ENABLE_EXAMPLES=OFF will
-# disable examples in the Panzer subpackages!q
+# Disable test that runs over 30 min currently (#2446)
+ATDM_SET_ENABLE(PanzerAdaptersSTK_MixedPoissonExample-ConvTest-Hex-Order-3_DISABLE ON)
+
+# Disable test that times out after 10 minutes (#2455)
+ATDM_SET_ENABLE(Anasazi_Epetra_BlockDavidson_auxtest_MPI_4_DISABLE ON)
+
+# Disable test takes a long time to complete for some reason (#2455)
+ATDM_SET_ENABLE(Anasazi_Epetra_LOBPCG_auxtest_MPI_4_DISABLE ON)

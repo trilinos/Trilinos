@@ -36,9 +36,11 @@
 
 //IKT, 11/20/17: comment out any of the following
 //if you wish not to build/run all the test cases.
-#define TEST_CDR
+#define TEST_PARAMETERLIST
+#define TEST_CONSTRUCTING_FROM_DEFAULTS
 #define TEST_SINCOS
 #define TEST_SINCOS_ADAPT
+#define TEST_CDR
 #define TEST_VANDERPOL
 
 namespace Tempus_Test {
@@ -53,6 +55,7 @@ using Tempus::SolutionHistory;
 using Tempus::SolutionState;
 
 
+#ifdef TEST_PARAMETERLIST
 // ************************************************************
 // ************************************************************
 TEUCHOS_UNIT_TEST(BDF2, ParameterList)
@@ -91,11 +94,16 @@ TEUCHOS_UNIT_TEST(BDF2, ParameterList)
     RCP<ParameterList> defaultPL =
       integrator->getStepper()->getDefaultParameters();
 
+    //std::cout << std::endl;
+    //std::cout << "stepperPL ----------------- \n" << *stepperPL << std::endl;
+    //std::cout << "defaultPL ----------------- \n" << *defaultPL << std::endl;
     TEST_ASSERT(haveSameValues(*stepperPL, *defaultPL, true))
   }
 }
+#endif // TEST_PARAMETERLIST
 
 
+#ifdef TEST_CONSTRUCTING_FROM_DEFAULTS
 // ************************************************************
 // ************************************************************
 TEUCHOS_UNIT_TEST(BDF2, ConstructingFromDefaults)
@@ -197,14 +205,15 @@ TEUCHOS_UNIT_TEST(BDF2, ConstructingFromDefaults)
   std::cout << "  Difference       : " << get_ele(*(xdiff  ), 0) << "   "
                                        << get_ele(*(xdiff  ), 1) << std::endl;
   std::cout << "  =========================" << std::endl;
-  TEST_FLOATING_EQUALITY(get_ele(*(x), 0), 0.845467, 1.0e-4 );
-  TEST_FLOATING_EQUALITY(get_ele(*(x), 1), 0.547390, 1.0e-4 );
+  TEST_FLOATING_EQUALITY(get_ele(*(x), 0), 0.839732, 1.0e-4 );
+  TEST_FLOATING_EQUALITY(get_ele(*(x), 1), 0.542663, 1.0e-4 );
 }
+#endif // TEST_CONSTRUCTING_FROM_DEFAULTS
 
 
-// ************************************************************
-// ************************************************************
 #ifdef TEST_SINCOS
+// ************************************************************
+// ************************************************************
 TEUCHOS_UNIT_TEST(BDF2, SinCos)
 {
   std::vector<double> StepSize;
@@ -307,21 +316,22 @@ TEUCHOS_UNIT_TEST(BDF2, SinCos)
     std::cout << "  =========================" << std::endl;
     TEST_FLOATING_EQUALITY( slope, order, 0.01 );
   }
-  TEST_FLOATING_EQUALITY( ErrorNorm[0], 0.00778269, 1.0e-4 );
+  TEST_FLOATING_EQUALITY( ErrorNorm[0], 5.1013e-05, 1.0e-4 );
 
   std::ofstream ftmp(err_out_file_name);
   double error0 = 0.8*ErrorNorm[0];
   for (int n=0; n<nTimeStepSizes; n++) {
     ftmp << StepSize[n]  << "   " << ErrorNorm[n] << "   "
-         << error0*(StepSize[n]/StepSize[0]) << std::endl;
+         << error0*(pow(StepSize[n]/StepSize[0],order)) << std::endl;
   }
   ftmp.close();
 }
-#endif //TEST_SINCOS
+#endif // TEST_SINCOS
 
-// ************************************************************
-// ************************************************************
+
 #ifdef TEST_SINCOS_ADAPT
+// ************************************************************
+// ************************************************************
 TEUCHOS_UNIT_TEST(BDF2, SinCosAdapt)
 {
   std::vector<double> StepSize;
@@ -451,14 +461,16 @@ TEUCHOS_UNIT_TEST(BDF2, SinCosAdapt)
   double error0 = 0.8*ErrorNorm[0];
   for (int n=0; n<nTimeStepSizes; n++) {
     ftmp << StepSize[n]  << "   " << ErrorNorm[n] << "   "
-         << error0*(StepSize[n]/StepSize[0]) << std::endl;
+         << error0*(pow(StepSize[n]/StepSize[0],order)) << std::endl;
   }
   ftmp.close();
 }
-#endif //TEST_SINCOS_ADAPT
+#endif // TEST_SINCOS_ADAPT
 
-// ************************************************************
+
 #ifdef TEST_CDR
+// ************************************************************
+// ************************************************************
 TEUCHOS_UNIT_TEST(BDF2, CDR)
 {
   // Create a communicator for Epetra objects
@@ -607,7 +619,7 @@ TEUCHOS_UNIT_TEST(BDF2, CDR)
     double error0 = 0.8*ErrorNorm[0];
     for (std::size_t n = 0; n < StepSizeCheck.size(); n++) {
       ftmp << StepSizeCheck[n]  << "   " << ErrorNorm[n] << "   "
-           << error0*(StepSize[n]/StepSize[0]) << std::endl;
+           << error0*(pow(StepSize[n]/StepSize[0],order)) << std::endl;
     }
     ftmp.close();
   }
@@ -636,11 +648,12 @@ TEUCHOS_UNIT_TEST(BDF2, CDR)
 
   Teuchos::TimeMonitor::summarize();
 }
-#endif //TEST_CDR
+#endif // TEST_CDR
 
-// ************************************************************
-// ************************************************************
+
 #ifdef TEST_VANDERPOL
+// ************************************************************
+// ************************************************************
 TEUCHOS_UNIT_TEST(BDF2, VanDerPol)
 {
   std::vector<RCP<Thyra::VectorBase<double>>> solutions;
@@ -748,13 +761,13 @@ TEUCHOS_UNIT_TEST(BDF2, VanDerPol)
     double error0 = 0.8*ErrorNorm[0];
     for (std::size_t n = 0; n < StepSizeCheck.size(); n++) {
       ftmp << StepSizeCheck[n]  << "   " << ErrorNorm[n] << "   "
-           << error0*(StepSize[n]/StepSize[0]) << std::endl;
+           << error0*(pow(StepSize[n]/StepSize[0],order)) << std::endl;
     }
     ftmp.close();
   }
 
   Teuchos::TimeMonitor::summarize();
 }
-#endif //TEST_VANDERPOL
+#endif // TEST_VANDERPOL
 
 } // namespace Tempus_Test

@@ -18,8 +18,14 @@ module load ninja/1.7.2
 if [[ "$ATDM_CONFIG_NODE_TYPE" == "OPENMP" ]] ; then
   export ATDM_CONFIG_CTEST_PARALLEL_LEVEL=16
   export OMP_NUM_THREADS=2
+  # NOTE: With hyper-threading enabled, the 16 cores can run two threads each
+  # or 32 threads total.
 else
-   export ATDM_CONFIG_CTEST_PARALLEL_LEVEL=32
+  export ATDM_CONFIG_CTEST_PARALLEL_LEVEL=16
+  # NOTE: When running in serial, the second hyperthread can't see to run a
+  # sperate MPI process and if you try to run with -j32 with ctest, you get a
+  # bunch of failures that say "libgomp: Thread creation failed: Resource
+  # temporarily unavailable".  Therefore, we need to run with -j16, not -j32.
 fi
 
 if [ "$ATDM_CONFIG_COMPILER" == "GNU" ]; then
@@ -52,8 +58,12 @@ elif [ "$ATDM_CONFIG_COMPILER" == "CUDA" ]; then
     export CUDA_MANAGED_FORCE_DEVICE_ALLOC=1
     export ATDM_CONFIG_LAPACK_LIB="-L${LAPACK_ROOT}/lib;-llapack;-lgfortran"
     export ATDM_CONFIG_BLAS_LIB="-L${BLAS_ROOT}/lib;-lblas;-lgfortran"
+    export ATDM_CONFIG_CTEST_PARALLEL_LEVEL=8
+    # Avoids timeouts due to not running on seprate GPUs (see #2446)
 else
-    echo "No valid compiler found"
+    echo "***"
+    echo "*** ERROR: COMPILER=$ATDM_CONFIG_COMPILER is not supported on this system!"
+    echo "***"
     return
 fi
 
@@ -68,3 +78,5 @@ export MPICXX=`which mpicxx`
 export MPIF90=`which mpif90`
 
 export ATDM_CONFIG_MPI_POST_FLAG="-map-by;socket:PE=16;--oversubscribe"
+
+export ATDM_CONFIG_COMPLETED_ENV_SETUP=TRUE

@@ -33,6 +33,7 @@ template<class Scalar> class StepperOperatorSplit;
  */
 template<class Scalar>
 class StepperOperatorSplitObserver
+ : virtual public Tempus::StepperObserver<Scalar>
 {
 public:
 
@@ -45,7 +46,7 @@ public:
   /// Observe Stepper at beginning of takeStep.
   virtual void observeBeginTakeStep(
     Teuchos::RCP<SolutionHistory<Scalar> > sh,
-    StepperOperatorSplit<Scalar> & stepperOS){}
+    Stepper<Scalar> & stepper){}
 
   /// Observe Stepper before index subStepper->takeStep()
   virtual void observeBeforeStepper(int index,
@@ -60,7 +61,7 @@ public:
   /// Observe Stepper at end of takeStep.
   virtual void observeEndTakeStep(
     Teuchos::RCP<SolutionHistory<Scalar> > sh,
-    StepperOperatorSplit<Scalar> & stepperOS){}
+    Stepper<Scalar> & stepperOS){}
 };
 } // namespace Tempus
 #endif // Tempus_StepperOperatorSplitObserver_hpp

@@ -23,6 +23,7 @@
 #include "Tempus_StepperIMEX_RK_Partition.hpp"
 #include "Tempus_StepperLeapfrog.hpp"
 #include "Tempus_StepperOperatorSplit.hpp"
+#include "Tempus_StepperTrapezoidal.hpp"
 
 
 namespace Tempus {
@@ -84,6 +85,8 @@ private:
       return rcp(new StepperForwardEuler<Scalar>(model, stepperPL));
     else if (stepperType == "Backward Euler")
       return rcp(new StepperBackwardEuler<Scalar>(model, stepperPL));
+    else if (stepperType == "Trapezoidal Method")
+      return rcp(new StepperTrapezoidal<Scalar>(model, stepperPL));
     else if (stepperType == "BDF2")
       return rcp(new StepperBDF2<Scalar>(model, stepperPL));
     else if (stepperType == "Newmark Implicit a-Form")
@@ -109,23 +112,23 @@ private:
       stepperType == "General ERK" )
       return rcp(new StepperExplicitRK<Scalar>(model, stepperType, stepperPL));
     else if (
+      stepperType == "RK Backward Euler" ||
+      stepperType == "IRK 1 Stage Theta Method" ||
       stepperType == "SDIRK 1 Stage 1st order" ||
       stepperType == "SDIRK 2 Stage 2nd order" ||
       stepperType == "SDIRK 2 Stage 3rd order" ||
+      stepperType == "EDIRK 2 Stage 3rd order" ||
+      stepperType == "EDIRK 2 Stage Theta Method" ||
       stepperType == "SDIRK 3 Stage 4th order" ||
       stepperType == "SDIRK 5 Stage 4th order" ||
       stepperType == "SDIRK 5 Stage 5th order" ||
-      stepperType == "EDIRK 2 Stage 3rd order" ||
       stepperType == "General DIRK"
       )
       return rcp(new StepperDIRK<Scalar>(model, stepperType, stepperPL));
     else if (
-      stepperType == "RK Backward Euler" ||
       stepperType == "RK Implicit 3 Stage 6th Order Kuntzmann & Butcher" ||
       stepperType == "RK Implicit 4 Stage 8th Order Kuntzmann & Butcher" ||
       stepperType == "RK Implicit 2 Stage 4th Order Hammer & Hollingsworth" ||
-      stepperType == "IRK 1 Stage Theta Method" ||
-      stepperType == "IRK 2 Stage Theta Method" ||
       stepperType == "RK Implicit 1 Stage 2nd order Gauss" ||
       stepperType == "RK Implicit 2 Stage 4th order Gauss" ||
       stepperType == "RK Implicit 3 Stage 6th order Gauss" ||

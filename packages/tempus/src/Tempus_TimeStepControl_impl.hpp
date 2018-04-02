@@ -218,14 +218,16 @@ bool TimeStepControl<Scalar>::indexInRange(const int iStep) const{
 
 
 template<class Scalar>
-void TimeStepControl<Scalar>::setNumTimeSteps(int numTimeSteps) {
-  if (numTimeSteps > 0) {
+void TimeStepControl<Scalar>::setNumTimeSteps(int numTimeSteps)
+{
+  if (numTimeSteps >= 0) {
     tscPL_->set<int>        ("Number of Time Steps", numTimeSteps);
     const int initIndex = getInitIndex();
     tscPL_->set<int>        ("Final Time Index", initIndex + numTimeSteps);
     const double initTime = tscPL_->get<double>("Initial Time");
     const double finalTime = tscPL_->get<double>("Final Time");
-    const double initTimeStep = (finalTime - initTime)/numTimeSteps;
+    double initTimeStep = (finalTime - initTime)/numTimeSteps;
+    if (numTimeSteps == 0) initTimeStep = Scalar(0.0);
     tscPL_->set<double>     ("Initial Time Step", initTimeStep);
     tscPL_->set<std::string>("Integrator Step Type", "Constant");
 
@@ -425,7 +427,7 @@ void TimeStepControl<Scalar>::setTimeStepControlStrategy(
    using Teuchos::ParameterList;
 
    if (stepControlStategy_ == Teuchos::null){
-      stepControlStategy_ = 
+      stepControlStategy_ =
          Teuchos::rcp(new TimeStepControlStrategyComposite<Scalar>());
    }
 
@@ -433,7 +435,7 @@ void TimeStepControl<Scalar>::setTimeStepControlStrategy(
       // Create stepControlStategy_ if null, otherwise keep current parameters.
 
       if (getStepType() == "Constant"){
-         stepControlStategy_->addStrategy( 
+         stepControlStategy_->addStrategy(
                Teuchos::rcp(new TimeStepControlStrategyConstant<Scalar>()));
       } else if (getStepType() == "Variable") {
          // add TSCS from "Time Step Control Strategy List"

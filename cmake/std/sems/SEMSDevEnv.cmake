@@ -2,6 +2,20 @@
 # Base options for all SEMS Dev Env bulids for Trilinos
 #
 
+
+# Handle this being passed in with -C option instead of
+# <Project>_CONFIGURE_OPTIONS_FILE.
+IF ("${PROJECT_NAME}" STREQUAL "")
+  SET(PROJECT_NAME Trilinos)
+  FUNCTION(ASSERT_DEFINED VARS)
+    FOREACH(VAR ${VARS})
+      IF(NOT DEFINED ${VAR})
+        MESSAGE(SEND_ERROR "Error, the variable ${VAR} is not defined!")
+      ENDIF()
+    ENDFOREACH()
+  ENDFUNCTION()
+ENDIF()
+
 #
 # A) Define the compilers and basic env
 #
@@ -65,16 +79,20 @@ SET(SEMS_MPI_VERSION $ENV{SEMS_MPI_VERSION})
 #PRINT_VAR(SEMS_MPI_VERSION)
 
 #
-# Define helper function for finding the serial version of a TPL of this is a
-# serial build.
+# Define helper function for finding the serial (non-MPI) version of a TPL for
+# as serial build
 #
 # Called as:
 #
 #   SEMS_SELECT_TPL_ROOT_DIR( <semsTPLName> <tplRootDirOut>
 #     [PARALLEL_EXT <parallelExt> SERIAL_EXT <serialExt>] )
 #
-# If PARALLEL_EXT <parallelExt> SERIAL_EXT <serialExt> is not given, then it
-# is assumed that <parallelExt>=parallel and <serialExt>=base.
+# If arguments:
+#
+#   PARALLEL_EXT <parallelExt> SERIAL_EXT <serialExt>
+#
+# are not given, then it is assumed that <parallelExt>=parallel and
+# <serialExt>=base.
 #
 FUNCTION(SEMS_SELECT_TPL_ROOT_DIR  SEMS_TPL_NAME  TPL_ROOT_DIR_OUT)
 

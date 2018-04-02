@@ -33,6 +33,7 @@ template<class Scalar> class StepperBDF2;
  */
 template<class Scalar>
 class StepperBDF2Observer
+ : virtual public Tempus::StepperObserver<Scalar>
 {
 public:
 
@@ -45,7 +46,7 @@ public:
   /// Observe Stepper at beginning of takeStep.
   virtual void observeBeginTakeStep(
     Teuchos::RCP<SolutionHistory<Scalar> > sh,
-    StepperBDF2<Scalar> & stepperBDF2){}
+    Stepper<Scalar> & stepper){}
 
   /// Observe Stepper before nonlinear solve.
   virtual void observeBeforeSolve(
@@ -60,7 +61,7 @@ public:
   /// Observe Stepper at end of takeStep.
   virtual void observeEndTakeStep(
     Teuchos::RCP<SolutionHistory<Scalar> > sh,
-    StepperBDF2<Scalar> & stepperBDF2){}
+    Stepper<Scalar> & stepper){}
 };
 } // namespace Tempus
 #endif // Tempus_StepperBDF2Observer_hpp
