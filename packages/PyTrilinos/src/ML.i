@@ -161,7 +161,7 @@ example subdirectory of the PyTrilinos package:
 %ignore *::operator[];
 
 // External Trilinos package imports
-%import "Teuchos.__init__.i"
+%import "Teuchos.i"
 
 #ifdef HAVE_EPETRA
 %include "Epetra_RowMatrix_Utils.i"

@@ -90,7 +90,7 @@ The python version of LOCA.Parameter supports the following classes:
 %include "LOCA_dox.i"
 
 // Teuchos support
-%import "Teuchos.__init__.i"
+%import "Teuchos.i"
 
 // Teuchos::RCP support
 %teuchos_rcp(LOCA::Parameter::Library)

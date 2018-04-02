@@ -191,7 +191,7 @@ package:
 %rename(_global) global;
 
 // Support for other Trilinos packages
-%import "Teuchos.__init__.i"
+%import "Teuchos.i"
 
 #ifdef HAVE_EPETRA
 %include "numpy.i"

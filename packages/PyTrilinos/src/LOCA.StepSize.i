@@ -88,7 +88,7 @@ following classes:
 %ignore *::operator=;
 
 // Trilinos module imports
-%import "Teuchos.__init__.i"
+%import "Teuchos.i"
 %import "LOCA.Parameter.i"
 
 // Teuchos::RCP support

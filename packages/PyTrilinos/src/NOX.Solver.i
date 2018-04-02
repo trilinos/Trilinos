@@ -131,7 +131,7 @@ in addition to the following factory function:
 %rename(StatusTest_None   ) NOX::StatusTest::None;
 
 // Trilinos imports
-%import  "Teuchos.__init__.i"
+%import  "Teuchos.i"
 %import  "NOX.Abstract.i"
 %import  "NOX.StatusTest.i"
 

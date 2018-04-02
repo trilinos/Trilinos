@@ -95,7 +95,7 @@ the following classes:
 %rename(Print) *::print(ostream& stream, int indent = 0) const;
 
 // Import base class declarations
-%import "Teuchos.__init__.i"
+%import "Teuchos.i"
 %import "LOCA.MultiContinuation.i"
 %import "LOCA.Parameter.i"
 

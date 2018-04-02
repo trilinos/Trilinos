@@ -90,7 +90,7 @@ using Teuchos::RCP;
 %ignore *::operator=;
 
 // Trilinos module imports
-%import "Teuchos.__init__.i"
+%import "Teuchos.i"
 
 // Teuchos::RCP support
 %teuchos_rcp(LOCA::Eigensolver::Factory)

@@ -135,7 +135,7 @@ example subdirectory of the PyTrilinos package:
 %include "stl.i"
 
 // Trilinos package imports
-%import "Teuchos.__init__.i"
+%import "Teuchos.i"
 #ifdef HAVE_EPETRA
 %import "Epetra.i"
 #endif

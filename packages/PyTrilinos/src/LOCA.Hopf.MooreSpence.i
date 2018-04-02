@@ -138,7 +138,7 @@ version of LOCA.Hopf.MooreSpence supports the following classes:
 %ignore *::operator=;
 
 // Trilinos module imports
-%import "Teuchos.__init__.i"
+%import "Teuchos.i"
 
 // Learn about LOCA::Abstract::Iterator::StepStatus enumeration
 %import "LOCA_Abstract_Iterator.H"

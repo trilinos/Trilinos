@@ -90,7 +90,7 @@ python version of LOCA.StatusTest supports the following classes:
 %ignore *::operator=;
 
 // Trilinos module imports
-%import "Teuchos.__init__.i"
+%import "Teuchos.i"
 %import "NOX.StatusTest.i"
 
 // Teuchos::RCP support

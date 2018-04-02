@@ -138,7 +138,7 @@ supports the following classes:
 %ignore *::operator=;
 
 // Trilinos module imports
-%import "Teuchos.__init__.i"
+%import "Teuchos.i"
 
 // The following #define is to change the name of LOCA method
 // arguments that conflict with a SWIG director method argument

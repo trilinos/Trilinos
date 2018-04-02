@@ -143,7 +143,7 @@ example subdirectory of the PyTrilinos package:
 %include "IFPACK_dox.i"
 
 // External Trilinos modules
-%import "Teuchos.__init__.i"
+%import "Teuchos.i"
 #ifdef HAVE_EPETRA
 %ignore Epetra_Version();
 %import "Epetra.i"

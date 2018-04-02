@@ -111,7 +111,7 @@ LOCA.Epetra.Interface supports the following classes:
 %include "stl.i"
 
 // Trilinos module imports
-%import "Teuchos.__init__.i"
+%import "Teuchos.i"
 
 // Exception handling
 %include "exception.i"

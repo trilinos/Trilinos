@@ -118,7 +118,7 @@ the following classes:
 // Ignore/renames
 %ignore *::operator=;
 
-%import "Teuchos.__init__.i"
+%import "Teuchos.i"
 
 // Learn about LOCA::Abstract::Iterator::StepStatus enumeration
 %import "LOCA_Abstract_Iterator.H"

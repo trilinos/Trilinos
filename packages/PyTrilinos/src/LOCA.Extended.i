@@ -127,7 +127,7 @@ following classes:
 %ignore *::operator=;
 
 // Trilinos module imports
-%import "Teuchos.__init__.i"
+%import "Teuchos.i"
 %import "NOX.Abstract.i"
 
 // Teuchos::RCP support

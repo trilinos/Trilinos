@@ -152,7 +152,7 @@ using namespace NOX::Epetra;
 %include "stl.i"
 
 // Trilinos interface import
-%import "Teuchos.__init__.i"
+%import "Teuchos.i"
 %teuchos_rcp(NOX::Abstract::Group)
 %teuchos_rcp(NOX::Epetra::Interface::Required)
 %teuchos_rcp(NOX::Epetra::Interface::Jacobian)

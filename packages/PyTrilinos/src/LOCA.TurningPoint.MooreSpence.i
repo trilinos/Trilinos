@@ -109,7 +109,7 @@ LOCA.TurningPoint.MooreSpence supports the following classes:
 %ignore operator=;
 
 // Trilinos module imports
-%import "Teuchos.__init__.i"
+%import "Teuchos.i"
 
 // Teuchos::RCP handling
 %teuchos_rcp(LOCA::MultiContinuation::AbstractGroup)

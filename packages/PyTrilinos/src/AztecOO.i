@@ -183,7 +183,7 @@ struct OperatorData
 %import "Epetra.i"
 #endif
 #ifdef HAVE_AZTECOO_TEUCHOS
-%import "Teuchos.__init__.i"
+%import "Teuchos.i"
 #endif
 
 // General exception handling
