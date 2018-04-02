@@ -160,6 +160,7 @@ makeMatrixAndRightHandSide (Teuchos::RCP<sparse_matrix_type>& A,
                             const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
                             const Teuchos::RCP<Node>& node,
                             const std::string& meshInput,
+                            Teuchos::ParameterList & inputList,
                             const Teuchos::RCP<Teuchos::FancyOStream>& out,
                             const Teuchos::RCP<Teuchos::FancyOStream>& err,
                             const bool verbose,
@@ -169,7 +170,7 @@ makeMatrixAndRightHandSide (Teuchos::RCP<sparse_matrix_type>& A,
   using Teuchos::rcp_implicit_cast;
 
   RCP<vector_type> b, x_exact, x;
-  makeMatrixAndRightHandSide (A, b, x_exact, x, comm, node, meshInput,
+  makeMatrixAndRightHandSide (A, b, x_exact, x, comm, node, meshInput, inputList,
                               out, err, verbose, debug);
 
   B = rcp_implicit_cast<multivector_type> (b);
@@ -185,6 +186,7 @@ makeMatrixAndRightHandSide (Teuchos::RCP<sparse_matrix_type>& A,
                             const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
                             const Teuchos::RCP<Node>& node,
                             const std::string& meshInput,
+                            Teuchos::ParameterList & inputList,
                             const Teuchos::RCP<Teuchos::FancyOStream>& out,
                             const Teuchos::RCP<Teuchos::FancyOStream>& err,
                             const bool verbose,
@@ -355,8 +357,8 @@ makeMatrixAndRightHandSide (Teuchos::RCP<sparse_matrix_type>& A,
 
   // Get the "time" value for the RTC
   double time = 0.0;
-  if(inputMeshList.isParameter("time"))
-    time = inputMeshList.get("time",time);
+  if(inputList.isParameter("time"))
+    time = inputList.get("time",time);
   
   // Get sigma value for each block of elements from parameter list
   std::vector<double>  sigma(numElemBlk);
@@ -367,11 +369,11 @@ makeMatrixAndRightHandSide (Teuchos::RCP<sparse_matrix_type>& A,
     std::stringstream sigmaBlock, mysigmaRTC;
     sigmaBlock << "sigma" << b;
     mysigmaRTC << "sigma RTC " << b;
-    if(inputMeshList.isParameter(sigmaBlock.str()))
-      sigma[b] = inputMeshList.get(sigmaBlock.str(),1.0);
-    else if(inputMeshList.isParameter(mysigmaRTC.str())) {
+    if(inputList.isParameter(sigmaBlock.str()))
+      sigma[b] = inputList.get(sigmaBlock.str(),1.0);
+    else if(inputList.isParameter(mysigmaRTC.str())) {
       std::string mystr;
-      mystr = inputMeshList.get(mysigmaRTC.str(),mystr);
+      mystr = inputList.get(mysigmaRTC.str(),mystr);
       if(!sigmaRTC[b].addVar("double","x")) {printf("ERROR: sigmaRTC.addVar(x) failed\n");exit(-1);}
       if(!sigmaRTC[b].addVar("double","y")) {printf("ERROR: sigmaRTC.addVar(y) failed\n");exit(-1);}
       if(!sigmaRTC[b].addVar("double","z")) {printf("ERROR: sigmaRTC.addVar(z) failed\n");exit(-1);}

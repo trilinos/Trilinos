@@ -264,7 +264,7 @@ main (int argc, char *argv[])
       RCP<vector_type> B, X_exact, X;
       {
         TEUCHOS_FUNC_TIME_MONITOR_DIFF("Total Assembly", total_assembly);
-        makeMatrixAndRightHandSide (A, B, X_exact, X, comm, node, meshInput,
+        makeMatrixAndRightHandSide (A, B, X_exact, X, comm, node, meshInput, inputList,
                                     out, err, verbose, debug);
       }
 
