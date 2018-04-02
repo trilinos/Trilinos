@@ -1290,8 +1290,10 @@ int main(int argc, char *argv[]) {
    gl_StiffMatrixT->fillComplete();
 
    //save global stiffness matrix and rhs vector to matrix market file
+#if 0
    Tpetra::MatrixMarket::Writer<sparse_matrix_type >::writeSparseFile("gl_StiffMatrixT.dat",gl_StiffMatrixT);
    Tpetra::MatrixMarket::Writer<sparse_matrix_type >::writeDenseFile("gl_rhsVectorT.dat",gl_rhsVectorT);
+#endif
 
    /**********************************************************************************/
   /*******************SOLVE GLOBAL SYSTEM USING BELOS + CG **************************/
