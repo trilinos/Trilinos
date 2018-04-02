@@ -51,6 +51,7 @@
 #include <pamgen_im_exodusII_l.h>
 #include <pamgen_im_ne_nemesisI_l.h>
 #include <pamgen_extras.h>
+#include "RTC_FunctionRTC.hh"
 
 #ifdef HAVE_INTREPID_KOKKOSCORE
 #include "Sacado.hpp"
@@ -159,6 +160,7 @@ makeMatrixAndRightHandSide (Teuchos::RCP<sparse_matrix_type>& A,
                             const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
                             const Teuchos::RCP<Node>& node,
                             const std::string& meshInput,
+                            Teuchos::ParameterList & inputList,
                             const Teuchos::RCP<Teuchos::FancyOStream>& out,
                             const Teuchos::RCP<Teuchos::FancyOStream>& err,
                             const bool verbose,
@@ -168,7 +170,7 @@ makeMatrixAndRightHandSide (Teuchos::RCP<sparse_matrix_type>& A,
   using Teuchos::rcp_implicit_cast;
 
   RCP<vector_type> b, x_exact, x;
-  makeMatrixAndRightHandSide (A, b, x_exact, x, comm, node, meshInput,
+  makeMatrixAndRightHandSide (A, b, x_exact, x, comm, node, meshInput, inputList,
                               out, err, verbose, debug);
 
   B = rcp_implicit_cast<multivector_type> (b);
@@ -184,6 +186,7 @@ makeMatrixAndRightHandSide (Teuchos::RCP<sparse_matrix_type>& A,
                             const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
                             const Teuchos::RCP<Node>& node,
                             const std::string& meshInput,
+                            Teuchos::ParameterList & inputList,
                             const Teuchos::RCP<Teuchos::FancyOStream>& out,
                             const Teuchos::RCP<Teuchos::FancyOStream>& err,
                             const bool verbose,
@@ -352,6 +355,62 @@ makeMatrixAndRightHandSide (Teuchos::RCP<sparse_matrix_type>& A,
   delete [] nodeCoordy;
   delete [] nodeCoordz;
 
+  // Get the "time" value for the RTC
+  double time = 0.0;
+  if(inputList.isParameter("time"))
+    time = inputList.get("time",time);
+  
+  // Get sigma value for each block of elements from parameter list
+  std::vector<double>  sigma(numElemBlk);
+  std::vector<PG_RuntimeCompiler::Function> sigmaRTC(numElemBlk);
+  std::vector<bool> useSigmaRTC(numElemBlk,false);
+  
+  for(int b = 0; b < numElemBlk; b++){
+    std::stringstream sigmaBlock, mysigmaRTC;
+    sigmaBlock << "sigma" << b;
+    mysigmaRTC << "sigma RTC " << b;
+    if(inputList.isParameter(sigmaBlock.str()))
+      sigma[b] = inputList.get(sigmaBlock.str(),1.0);
+    else if(inputList.isParameter(mysigmaRTC.str())) {
+      std::string mystr;
+      mystr = inputList.get(mysigmaRTC.str(),mystr);
+      if(!sigmaRTC[b].addVar("double","x")) {printf("ERROR: sigmaRTC.addVar(x) failed\n");exit(-1);}
+      if(!sigmaRTC[b].addVar("double","y")) {printf("ERROR: sigmaRTC.addVar(y) failed\n");exit(-1);}
+      if(!sigmaRTC[b].addVar("double","z")) {printf("ERROR: sigmaRTC.addVar(z) failed\n");exit(-1);}
+      if(!sigmaRTC[b].addVar("double","time")) {printf("ERROR: sigmaRTC.addVar(time) failed\n");exit(-1);}
+      if(!sigmaRTC[b].addVar("double","sigma")) {printf("ERROR: sigmaRTC.addVar(sigma) failed\n");exit(-1);}
+      if(!sigmaRTC[b].addBody(mystr)) {printf("ERROR: sigmaRTC[%d].addBody failed\n",b);exit(-1);}
+      useSigmaRTC[b]=true;
+    }
+    else
+	sigma[b]=1.0;
+  }
+
+  // Get node-element connectivity and set element mu/sigma value
+  telct = 0;
+  FieldContainer<double> sigmaVal(numElems);
+  for(long long b = 0; b < numElemBlk; b++){
+    for(long long el = 0; el < elements[b]; el++){
+      std::vector<double> centercoord(3,0);
+      for (int j=0; j<numNodesPerElem; j++) {
+        centercoord[0] += nodeCoord(elemToNode(telct,j),0) / numNodesPerElem;
+        centercoord[1] += nodeCoord(elemToNode(telct,j),1) / numNodesPerElem;
+        centercoord[2] += nodeCoord(elemToNode(telct,j),2) / numNodesPerElem;
+      }
+      if(useSigmaRTC[b]) {
+        sigmaRTC[b].varAddrFill(0,&centercoord[0]);
+        sigmaRTC[b].varAddrFill(1,&centercoord[1]);
+        sigmaRTC[b].varAddrFill(2,&centercoord[2]);
+        sigmaRTC[b].varAddrFill(3,&time);
+        sigmaRTC[b].varAddrFill(4,&sigmaVal(telct));
+        sigmaRTC[b].execute();
+      }
+      else
+        sigmaVal(telct) = sigma[b];
+      telct ++;
+    }
+  }
+  
   // parallel info
   long long num_internal_nodes;
   long long num_border_nodes;
@@ -825,6 +884,10 @@ makeMatrixAndRightHandSide (Teuchos::RCP<sparse_matrix_type>& A,
     FieldContainer<ST> worksetStiffMatrix (worksetSize, numFieldsG, numFieldsG);
     FieldContainer<ST> worksetRHS         (worksetSize, numFieldsG);
 
+    // Weighted measure for material parameters
+    FieldContainer<ST> weightedMeasureSigma      (worksetSize, numCubPoints);
+
+
     {
     TEUCHOS_FUNC_TIME_MONITOR_DIFF(
       "Matrix/RHS fill:  1-Element discretization", elem_discretization);
@@ -862,9 +925,19 @@ makeMatrixAndRightHandSide (Teuchos::RCP<sparse_matrix_type>& A,
     IntrepidFSTools::computeCellMeasure<ST> (worksetCubWeights, // Det(DF)*w = J*w
                                              worksetJacobDet,
                                              cubWeights);
+
+    // Combine sigma value with weighted measure
+    cellCounter = 0;
+    for(int cell = worksetBegin; cell < worksetEnd; cell++){
+      for (int nPt = 0; nPt < numCubPoints; nPt++){
+        weightedMeasureSigma(cellCounter,nPt) = worksetCubWeights(cellCounter,nPt) * sigmaVal(cell);
+      }
+      cellCounter++;
+    }   
+    
     // Multiply transformed (workset) gradients with weighted measure
     IntrepidFSTools::multiplyMeasure<ST> (worksetHGBGradsWeighted, // DF^{-T}(grad u)*J*w
-                                          worksetCubWeights,
+                                          weightedMeasureSigma, 
                                           worksetHGBGrads);
     // Compute the diffusive flux:
     IntrepidFSTools::tensorMultiplyDataField<ST> (worksetDiffusiveFlux, // A*(DF^{-T}(grad u)
