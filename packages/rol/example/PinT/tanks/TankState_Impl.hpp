@@ -69,10 +69,11 @@ TankState<Real>::TankState( Teuchos::ParameterList& pl ) :
   p_(Ntanks_,1.0), 
   w_(Ntanks_,1.0),
   kappa_( Cv_*rho_*g_ ), 
-  betaL_( (1-theta_)*dt_/A_ ),
-  betaR_( theta_*dt_/A_ ),
-  alphaL_( 0.5*kappa_*betaL_ ),
-  alphaR_( 0.5*kappa_*betaR_ ) {
+  beta_( dt_/A_ ),
+//  betaL_( (1-theta_)*dt_/A_ ),
+//  betaR_( theta_*dt_/A_ ),
+  alphaL_( 0.5*kappa_*(1-theta_)*beta_ ),
+  alphaR_( 0.5*kappa_*theta_*beta_ ) {
   // ------------- End Initializer List ----------------//
 
   auto ptrows = Teuchos::getArrayFromStringParameter<int>( pl, "Pass-Through Rows"    );
@@ -121,21 +122,115 @@ TankState<Real>::TankState( Teuchos::ParameterList& pl ) :
 } // end Constructor
 
 template<typename Real>
-void TankState<Real>::solve( vector<Real>& c, vector<Real>& u_new, 
-                             const vector<Real>& u_old, const vector<Real>& z ) const {
+void TankState<Real>::solve( StateVector& c, StateVector& u_new, 
+                             const StateVector& u_old, const ControlVector& z ) const {
 
-  for( size_type l=0; l<Ntanks_; ++l ) c.at(l) = (betaL_+betaR_)*p_.at(l)*z.at(l);
 
-  R_->apply( c, u_old, 1.0, 0, Ntanks_ );  // c += R*h(u_old)
 
-  L_->solve( u_new, c, 1.0, 0, Ntanks_ );  // L*h(u_new) = c
+  //----------------------------------------------------------------------------
+
+  u_new.h(0,0) = ( u_old.h(0,0) 
+               + p(0,0)*( beta_*z(0,0)-2.0*alphaR_*u_old.h(0,0) )  )/
+                 (1.0+2.0*alphaL_*p(0,0));
+
+  c.h(0,0) = (1.0+2.0*alphaL_*p(0,0))*u_new.h(0,0) - u_old.h(0,0) 
+                   - p(0,0)*( beta_*z(0,0)-2.0*alphaR_*u_old.h(0,0) );
+
+  //----------------------------------------------------------------------------
+
+  u_new.h(0,1) = ( u_old.h(0,1) 
+                 + p(0,1)*( beta_*z(0,1)-2.0*alphaR_*u_old.h(0,1) 
+                            + alphaL_*u_new.h(0,0) + alphaR_*u_old.h(0,0) ) ) /
+                           (1.0+2.0*alphaL_*p(0,1));
+
+  c.h(0,1) = (1.0+2.0*alphaL_*p(0,1))*u_new.h(0,1) - u_old.h(0,1) 
+            - p(0,1)*(  beta_*z(0,1)-2.0*alphaR_*u_old.h(0,1) 
+                      + alphaL_*u_new.h(0,0) + alphaR_*u_old.h(0,0) );
+
+  //----------------------------------------------------------------------------
+
+  u_new.h(1,0) = ( u_old.h(1,0) + p(1,0)*(beta_*z(1,0)-2.0*alphaR_*u_old.h(1,0) 
+                   + alphaL_*u_new.h(0,0) + alphaR_*u_old.h(0,0) ) ) /
+                 (1.0+2.0*alphaL_*p(1,0));
+
+  c.h(1,0) =  (1.0+2.0*alphaL_*p(1,0))*u_new.h(1,0) - u_old.h(1,0) 
+             - p(1,0)*( beta_*z(1,0)-2.0*alphaR_*u_old.h(1,0) 
+                   + alphaL_*u_new.h(0,0) + alphaR_*u_old.h(0,0) );
+
+  //----------------------------------------------------------------------------
+
+  u_new.h(2,0) = ( u_old.h(2,0) + p(2,0)*(beta_*z(2,0)-2.0*alphaR_*u_old.h(2,0) 
+                   + alphaL_*u_new.h(1,0) + alphaR_*u_old.h(1,0) ) ) /
+                   (1.0+2.0*alphaL_*p(2,0));
+
+  c.h(2,0) = (1.0+2.0*alphaL_*p(2,0))*u_new.h(2,0) - u_old.h(2,0) 
+             - p(2,0)*( beta_*z(2,0)-2.0*alphaR_*u_old.h(2,0) 
+                        + alphaL_*u_new.h(1,0) + alphaR_*u_old.h(1,0) );
+
+  //----------------------------------------------------------------------------
+
+  u_new.h(1,1) = ( u_old.h(1,1) + p(1,1)*(beta_*z(1,1)-2.0*alphaR_*u_old.h(1,1) 
+                   + alphaL_*u_new.h(0,1) + alphaR_*u_old.h(0,1) 
+                   + alphaL_*u_new.h(1,0) + alphaR_*u_old.h(1,0) ) ) /
+                   (1.0+2.0*alphaL_*p(1,1));
+
+  c.h(1,1) =  (1.0+2.0*alphaL_*p(1,1))*u_new.h(1,1) - u_old.h(1,1) 
+              - p(1,1)*( beta_*z(1,1)-2.0*alphaR_*u_old.h(1,1) 
+                         + alphaL_*u_new.h(0,1) + alphaR_*u_old.h(0,1) 
+                         + alphaL_*u_new.h(1,0) + alphaR_*u_old.h(1,0) );
+
+  //----------------------------------------------------------------------------
+
+  u_new.h(0,2) = ( u_old.h(0,2) + p(0,2)*(beta_*z(0,2)-2.0*alphaR_*u_old.h(0,2) 
+                   + alphaL_*u_new.h(0,1) + alphaR_*u_old.h(0,1) ) ) /
+                   (1.0+2.0*alphaL_*p(0,2));
+
+  c.h(0,2) =  (1.0+2.0*alphaL_*p(0,2))*u_new.h(0,2) - u_old.h(0,2)
+               - p(0,2)*(beta_*z(0,2)-2.0*alphaR_*u_old.h(0,2) 
+                   + alphaL_*u_new.h(0,1) + alphaR_*u_old.h(0,1) );
+
+
+  //----------------------------------------------------------------------------
+
+  u_new.h(2,1) = ( u_old.h(2,1) + p(2,1)*(beta_*z(2,1)-2.0*alphaR_*u_old.h(2,1) 
+                              + alphaL_*u_new.h(2,0) + alphaR_*u_old.h(2,0)
+                              + alphaL_*u_new.h(1,1) + alphaR_*u_old.h(1,1) ) ) /
+                              (1.0+2.0*alphaL_*p(2,1));
+
+  c.h(2,1) = (1.0+2.0*alphaL_*p(2,1))*u_new.h(2,1) - u_old.h(2,1) 
+                            - p(2,1)*(beta_*z(2,1)-2.0*alphaR_*u_old.h(2,1) 
+                              + alphaL_*u_new.h(2,0) + alphaR_*u_old.h(2,0)
+                              + alphaL_*u_new.h(1,1) + alphaR_*u_old.h(1,1) );
+
+  //----------------------------------------------------------------------------
+  u_new.h(1,2) = ( u_old.h(1,2) + p(1,2)*(beta_*z(1,2)-2.0*alphaR_*u_old.h(1,2) 
+                              + alphaL_*u_new.h(1,1) + alphaR_*u_old.h(1,1)
+                              + alphaL_*u_new.h(0,2) + alphaR_*u_old.h(0,2) ) ) /
+                              (1.0+2.0*alphaL_*p(1,2));
+
+  c.h(1,2) = (1.0+2.0*alphaL_*p(1,2))*u_new.h(1,2) - u_old.h(1,2) 
+                            - p(1,2)*(beta_*z(1,2)-2.0*alphaR_*u_old.h(1,2) 
+                              + alphaL_*u_new.h(1,1) + alphaR_*u_old.h(1,1) 
+                              + alphaL_*u_new.h(0,2) + alphaR_*u_old.h(0,2) );
+
+  //----------------------------------------------------------------------------
+  u_new.h(2,2) = ( u_old.h(2,2) + p(2,2)*(beta_*z(2,2)-2.0*alphaR_*u_old.h(2,2) 
+                              + alphaL_*u_new.h(2,1) + alphaR_*u_old.h(2,1)
+                              + alphaL_*u_new.h(1,2) + alphaR_*u_old.h(1,2) ) ) /
+                              (1.0+2.0*alphaL_*p(2,2));
+
+  c.h(2,2) = (1.0+2.0*alphaL_*p(2,2))*u_new.h(2,2) - u_old.h(2,2) 
+                             - p(2,2)*(beta_*z(2,2)-2.0*alphaR_*u_old.h(2,2) 
+                              + alphaL_*u_new.h(2,1) + alphaR_*u_old.h(2,1)
+                              + alphaL_*u_new.h(1,2) + alphaR_*u_old.h(1,2) );
+
 
   for( size_type i=0; i<rows_; ++i ) {
     for( size_type j=0; j<cols_; ++j ) {
-      Qout(u_new,i,j) = kappa_*h(u_new,i,j);   
-      Qin(u_new,i,j)  = h(z,i,j);
-      if( i>0 ) Qin(u_new,i,j) += 0.5*Qout(u_new,i-1,j);
-      if( j>0 ) Qin(u_new,i,j) += 0.5*Qout(u_new,i,j-1);
+      u_new.Qout(i,j) = kappa_*u_new.h(i,j);   
+      u_new.Qin(i,j)  = 1.0*z(i,j);
+      if( i>0 ) u_new.Qin(i,j) += 0.5*u_new.Qout(i-1,j);
+      if( j>0 ) u_new.Qin(i,j) += 0.5*u_new.Qout(i,j-1);
     }
   }
   
@@ -143,94 +238,103 @@ void TankState<Real>::solve( vector<Real>& c, vector<Real>& u_new,
 
 
 template<typename Real>
-void TankState<Real>::value( vector<Real>& c, const vector<Real>& u_old, 
-                             const vector<Real>& u_new, const vector<Real>& z ) const {
+void TankState<Real>::value( StateVector& c, const StateVector& u_old, 
+                             const StateVector& u_new, const ControlVector& z ) const {
 
-  for( size_type i=0; i<rows_; ++i ) {
-    for( size_type j=0; j<cols_; ++j ) {
- 
-      h(c,i,j) = (1.0+2.0*alphaL_*p(i,j))*h(u_new,i,j) 
-               - (1.0-2.0*alphaR_*p(i,j))*h(u_old,i,j)
-               - p(i,j)*h(z,i,j)*dt_/A_;
+  for( size_type s=0; s<rows_+cols_-1; ++s )  {
+    for( size_type j=min(s,rows_); j<min(s,cols_); ++j ) {
+      size_type i=s-j;
+      cout << "s=" << s << ", i=" << i << ", j=" << j << endl;
+      c.h(i,j) = (1.0+2.0*alphaL_*p(i,j))*u_new.h(i,j) - u_old.h(i,j) 
+                  - p(i,j)*( beta_*z(i,j)-2.0*alphaR_*u_old.h(i,j) );
 
-      Qout(c,i,j) = Qout(u_new,i,j) - kappa_*h(u_new,i,j);
-      Qin(c,i,j)  = Qin(u_new,i,j)  - h(z,i,j);
+      if( i>0 ) c.h(i,j) += p(i,j)*(alphaL_*u_new.h(i-1,j)+alphaR_*u_old.h(i-1,j));
 
-      if( i>0 ) {
-        h(c,i,j)   -= p(i,j)*( alphaL_*h(u_new,i-1,j) +
-                               alphaR_*h(u_old,i-1,j) );
-        Qin(c,i,j) -= 0.5*Qout(u_new,i-1,j);
-      }
+      if( j>0 ) c.h(i,j) += p(i,j)*(alphaL_*u_new.h(i,j-1)+alphaR_*u_old.h(i,j-1));
 
-      if( j>0 ) {
-        h(c,i,j)   -= p(i,j)*( alphaL_*h(u_new,i,j-1) +
-                               alphaR_*h(u_old,i,j-1) );
-        Qin(c,i,j) -= 0.5*Qout(u_new,i,j-1);
-      }
     }
-    cout << endl;
-  }  
+  }
+
+for( size_type i=0; i<rows_; ++i ) {
+  for( size_type j=0; j<cols_; ++j ) {
+
+    c.Qout(i,j) = u_new.Qout(i,j) - kappa_*u_new.h(i,j);
+    c.Qin(i,j)  = u_new.Qin(i,j)  - z(i,j);
+
+    if( i>0 ) {
+//        c.h(i,j)   -= p(i,j)*( alphaL_*u_new.h(i-1,j) +
+//                               alphaR_*u_old.h(i-1,j) );
+      c.Qin(i,j) -= 0.5*u_new.Qout(i-1,j);
+    }
+
+    if( j>0 ) {
+//        c.h(i,j)   -= p(i,j)*( alphaL_*u_new.h(i,j-1) +
+//                               alphaR_*u_old.h(i,j-1) );
+      c.Qin(i,j) -= 0.5*u_new.Qout(i,j-1);
+    }
+  }
+}  
 
 }
 
 template<typename Real>
-void TankState<Real>::applyJacobian_1_old( vector<Real>& jv, const vector<Real>& v_old ) const {
-
-  for( size_type i=0; i<rows_; ++i ) {
-    for( size_type j=0; j<cols_; ++j ) {
-      size_type l = cols_*i+j;
-
-      auto& h_jv    = h(jv,i,j);    auto& h_vo    = h(v_old,i,j);    
-      auto& Qout_jv = Qout(jv,i,j); auto& Qout_vo = Qout(v_old,i,j); 
-      auto& Qin_jv  = Qin(jv,i,j);  auto& Qin_vo  = Qin(v_old,i,j);  
-
-      h_jv    = - h_vo - p_.at(l)*( betaR_*(Qin_vo-Qout_vo) );
-      Qout_jv = 0; 
-      Qin_jv  = 0;
-    }
-  }  
+void TankState<Real>::applyJacobian_1_old( StateVector& jv, const StateVector& v_old ) const {
+//
+//  for( size_type i=0; i<rows_; ++i ) {
+//    for( size_type j=0; j<cols_; ++j ) {
+//      size_type l = cols_*i+j;
+//
+//      auto& h_jv    = h(jv,i,j);    auto& h_vo    = h(v_old,i,j);    
+//      auto& Qout_jv = Qout(jv,i,j); auto& Qout_vo = Qout(v_old,i,j); 
+//      auto& Qin_jv  = Qin(jv,i,j);  auto& Qin_vo  = Qin(v_old,i,j);  
+//
+//      h_jv    = - h_vo - p_.at(l)*( betaR_*(Qin_vo-Qout_vo) );
+//      Qout_jv = 0; 
+//      Qin_jv  = 0;
+//    }
+//  }  
 }
 
 template<typename Real>
-void TankState<Real>::applyJacobian_1_new( vector<Real>& jv, const vector<Real>& v_new ) const {
-
-  for( size_type i=0; i<rows_; ++i ) {
-    for( size_type j=0; j<cols_; ++j ) {
-      size_type l = cols_*i+j;
-
-      auto& h_jv    = h(jv,i,j);    auto& h_vn    = h(v_new,i,j);    
-      auto& Qout_jv = Qout(jv,i,j); auto& Qout_vn = Qout(v_new,i,j); 
-      auto& Qin_jv  = Qin(jv,i,j);  auto& Qin_vn  = Qin(v_new,i,j);  
-
-      h_jv    = h_vn - p_.at(l)*( betaL_*(Qin_vn-Qout_vn) );
-      Qout_jv = Qout_vn - kappa_*h_vn;
-      Qin_jv  = Qin_vn;
-
-      if( i>0 ) Qin_jv -= 0.5*Qout(v_new,i-1,j);
-      if( j>0 ) Qin_jv -= 0.5*Qout(v_new,i,j-1);
-    }
-  }  
+void TankState<Real>::applyJacobian_1_new( StateVector& jv, const StateVector& v_new ) const {
+//
+//  for( size_type i=0; i<rows_; ++i ) {
+//    for( size_type j=0; j<cols_; ++j ) {
+//      size_type l = cols_*i+j;
+//
+//      auto& h_jv    = h(jv,i,j);    auto& h_vn    = h(v_new,i,j);    
+//      auto& Qout_jv = Qout(jv,i,j); auto& Qout_vn = Qout(v_new,i,j); 
+//      auto& Qin_jv  = Qin(jv,i,j);  auto& Qin_vn  = Qin(v_new,i,j);  
+//
+//      h_jv    = h_vn - p_.at(l)*( betaL_*(Qin_vn-Qout_vn) );
+//      Qout_jv = Qout_vn - kappa_*h_vn;
+//      Qin_jv  = Qin_vn;
+//
+//      if( i>0 ) Qin_jv -= 0.5*Qout(v_new,i-1,j);
+//      if( j>0 ) Qin_jv -= 0.5*Qout(v_new,i,j-1);
+//    }
+//  }  
 }
 
 template<typename Real>
-void TankState<Real>::applyJacobian_2( vector<Real> &jv, const vector<Real> &v_new ) const {
-
-  for( size_type i=0; i<rows_; ++i ) {
-    for( size_type j=0; j<cols_; ++j ) {
-      size_type l = cols_*i+j;
-
-      auto& h_jv    = h(jv,i,j);    
-      auto& Qout_jv = Qout(jv,i,j); 
-      auto& Qin_jv  = Qin(jv,i,j);  
-
-      h_jv    = 0;
-      Qout_jv = 0;
-      Qin_jv  = -v_new.at(l);
-
-      if( i>0 ) Qin_jv -= 0.5*Qout(v_new,i-1,j);
-      if( j>0 ) Qin_jv -= 0.5*Qout(v_new,i,j-1);
-    }
-  }  
+void TankState<Real>::applyJacobian_2( StateVector& jv, const ControlVector &v_new ) const {
+//
+//  for( size_type i=0; i<rows_; ++i ) {
+//    for( size_type j=0; j<cols_; ++j ) {
+//      size_type l = cols_*i+j;
+//
+//      auto& h_jv    = h(jv,i,j);    
+//      auto& Qout_jv = Qout(jv,i,j); 
+//      auto& Qin_jv  = Qin(jv,i,j);  
+//
+//      h_jv    = 0;
+//      Qout_jv = 0;
+//      Qin_jv  = -v_new.at(l);
+//
+//      if( i>0 ) Qin_jv -= 0.5*Qout(v_new,i-1,j);
+//      if( j>0 ) Qin_jv -= 0.5*Qout(v_new,i,j-1);
+//    }
+//  }  
 }
 
 
@@ -252,8 +356,6 @@ void TankState<Real>::print_members( ostream& os ) const {
   os << "kappa_               = " << kappa_  << endl;
   os << "alphaL_              = " << alphaL_ << endl;
   os << "alphaR_              = " << alphaR_ << endl;
-  os << "betaL_               = " << betaL_  << endl;
-  os << "betaR_               = " << betaR_  << endl;
 
   os << "\nPass Throughs" << endl;
   for( size_type i=0; i<rows_; ++i ) {

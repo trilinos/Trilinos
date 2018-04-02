@@ -64,6 +64,9 @@ class TankConstraint : public ROL::Constraint_TimeSimOpt<Real> {
 
   using Vector    = ROL::Vector<Real>;
   using StdVector = ROL::StdVector<Real>;
+ 
+  using StateVector = TankStateVector<Real>;
+  using ControlVector = TankControlVector<Real>;
 
 private:
   TankState<Real> tankState_;
@@ -84,10 +87,14 @@ public:
               const Vector& z, Real& tol ) override {
 
     c.zero();
-    auto& c_v = getVector(c);      auto& uo_v = getVector(u_old);
-    auto& un_v = getVector(u_new); auto& z_v = getVector(z);
 
-    tankState_.value( c_v, uo_v, un_v, z_v ) ;
+    StateVector& c_state  = dynamic_cast<StateVector&>(c);      
+
+    const StateVector& uo_state = dynamic_cast<const StateVector&>(u_old);
+    const StateVector& un_state = dynamic_cast<const StateVector&>(u_new);
+    const ControlVector& z_ctrl = dynamic_cast<const ControlVector&>(z);
+
+    tankState_.value( c_state, uo_state, un_state, z_ctrl ) ;
   }
 
   void solve( Vector& c, const Vector& u_old, Vector& u_new, 
@@ -95,12 +102,13 @@ public:
 
     u_new.zero();
 
-    auto& c_v  = getVector(c);       auto& uo_v = getVector(u_old);
-    auto& un_v = getVector(u_new);   auto& z_v  = getVector(z);
+    StateVector& c_state  = dynamic_cast<StateVector&>(c);      
+    StateVector& un_state = dynamic_cast<StateVector&>(u_new);
+
+    const StateVector& uo_state = dynamic_cast<const StateVector&>(u_old);
+    const ControlVector& z_ctrl = dynamic_cast<const ControlVector&>(z);
  
-    tankState_.solve( c_v, un_v, uo_v, z_v );
-    c.zero();
-    value(c,u_old,u_new,z,tol);
+    tankState_.solve( c_state, un_state, uo_state, z_ctrl );
   }
 
   //----------------------------------------------------------------------------
@@ -108,7 +116,7 @@ public:
   void applyJacobian_1_old( Vector& jv, const Vector& v_old,
                             const Vector& u_old, const Vector& u_new,
                             const Vector& z, Real& tol ) override {
-     tankState_.applyJacobian_1_old( getVector(jv), getVector(v_old) );
+//     tankState_.applyJacobian_1_old( getVector(jv), getVector(v_old) );
   }
 
   void applyAdjointJacobian_1_old( Vector &ajv_old, const Vector &dualv,
@@ -121,7 +129,7 @@ public:
   void applyJacobian_1_new( Vector& jv, const Vector& v_new,
                             const Vector& u_old, const Vector& u_new,
                             const Vector& z, Real& tol ) override {
-     tankState_.applyJacobian_1_new( getVector(jv), getVector(v_new) );
+ //    tankState_.applyJacobian_1_new( getVector(jv), getVector(v_new) );
   }
  
   void applyAdjointJacobian_1_new( Vector& ajv_new, const Vector &dualv,
@@ -146,7 +154,7 @@ public:
   void applyJacobian_2( Vector &jv, const Vector &v_new,
                         const Vector &u_old, const Vector &u_new,
                         const Vector &z, Real &tol ) override {
-    tankState_.applyJacobian_2( getVector(jv), getVector(v_new) );
+//    tankState_.applyJacobian_2( getVector(jv), getVector(v_new) );
   }
 
   void applyAdjointJacobian_2_time( Vector& ajv, const Vector &dualv,

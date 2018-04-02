@@ -45,6 +45,7 @@
 #include "Teuchos_XMLParameterListHelpers.hpp"
 
 #include "TankConstraint.hpp"
+#include "TankVector.hpp"
 #include "LowerBandedMatrix.hpp"
 
 #include <iostream>
@@ -89,29 +90,30 @@ int main( int argc, char* argv[] ) {
     auto hinit = pl.get("Initial Fluid Level", 2.0);
     auto nrows  = static_cast<size_type>( pl.get("Number of Rows",3) );
     auto ncols  = static_cast<size_type>( pl.get("Number of Columns",3) );
-    auto N  = nrows*ncols;
-    auto N3 = N*3;    
 
-    auto z_p  = ROL::makePtr<vector<RealT>>(N ,0.0);
-    auto un_p = ROL::makePtr<vector<RealT>>(N3,0.0);
-    auto uo_p = ROL::makePtr<vector<RealT>>(N3,0.0);
-    auto c_p  = ROL::makePtr<vector<RealT>>(N3,0.0);
+    TankControlVector<RealT> z(nrows,ncols,"z");    
+    TankStateVector<RealT>   un(nrows,ncols,"u_new");
+    TankStateVector<RealT>   uo(nrows,ncols,"u_old");
+    TankStateVector<RealT>   c(nrows,ncols,"c");
 
-    (*z_p)[0] = Qin00;
-    for( size_type i=0; i<N; ++i ) (*uo_p)[i] = hinit;
+    z(0,0) = Qin00;
 
-    ROL::StdVector<RealT> z(z_p);    
-    ROL::StdVector<RealT> un(un_p);
-    ROL::StdVector<RealT> uo(uo_p);
-    ROL::StdVector<RealT> c(c_p);
+    for( size_type i=0; i<nrows; ++i ) {
+      for( size_type j=0; j<ncols; ++j ) {
+        uo.h(i,j) = hinit;
+      }
+    }
+
+
+    uo.print(*outStream);
 
     RealT tol = 0;
     con.solve( c, uo, un, z, tol );
  
-    *outStream << "u_new = "; 
     un.print(*outStream);
+    c.print(*outStream);
 
-    *outStream << "c = "; 
+    con.value( c, uo, un, z, tol );
     c.print(*outStream);
 
 
