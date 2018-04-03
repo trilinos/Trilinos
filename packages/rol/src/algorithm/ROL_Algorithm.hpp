@@ -235,6 +235,14 @@ public:
         outStream << step_->print(*state_,printHeader_);
       }
     }
+    std::stringstream hist;
+    hist << "Optimization Terminated with Status: ";
+    hist << EExitStatusToString(state_->statusFlag);
+    hist << "\n";
+    output.push_back(hist.str());
+    if ( print ) {
+      outStream << hist.str();
+    }
     return output;
   }
 
@@ -320,6 +328,14 @@ public:
         outStream << step_->print(*state_,printHeader_);
       }
     }
+    std::stringstream hist;
+    hist << "Optimization Terminated with Status: ";
+    hist << EExitStatusToString(state_->statusFlag);
+    hist << "\n";
+    output.push_back(hist.str());
+    if ( print ) {
+      outStream << hist.str();
+    }
     return output;
   }
 
@@ -400,6 +416,14 @@ public:
       if ( print ) {
         outStream << step_->print(*state_,printHeader_);
       }
+    }
+    std::stringstream hist;
+    hist << "Optimization Terminated with Status: ";
+    hist << EExitStatusToString(state_->statusFlag);
+    hist << "\n";
+    output.push_back(hist.str());
+    if ( print ) {
+      outStream << hist.str();
     }
     return output;
   }

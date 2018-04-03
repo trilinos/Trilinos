@@ -1,9 +1,9 @@
 #include "Tacho.hpp"
 #include "Tacho_Solver.hpp"
 
-#include "TachoExp_CommandLineParser.hpp" 
+#include "Tacho_CommandLineParser.hpp" 
 
-using ordinal_type = Tacho::Experimental::ordinal_type;
+using ordinal_type = Tacho::ordinal_type;
 
 template<typename value_type>
 int driver (int argc, char *argv[]) {
@@ -18,7 +18,7 @@ int driver (int argc, char *argv[]) {
   int mb = -1;
   int nb = -1;
 
-  Tacho::Experimental::CommandLineParser opts("This example program measure the Tacho on Kokkos::OpenMP");
+  Tacho::CommandLineParser opts("This example program measure the Tacho on Kokkos::OpenMP");
 
   opts.set_option<int>("kokkos-threads", "Number of threads", &nthreads);
   opts.set_option<int>("max-num-superblocks", "Max number of superblocks", &max_num_superblocks);
@@ -35,25 +35,28 @@ int driver (int argc, char *argv[]) {
   if (r_parse) return 0; // print help return
 
   Kokkos::initialize(argc, argv);
-  if (std::is_same<Kokkos::DefaultHostExecutionSpace,Kokkos::Serial>::value) 
-    std::cout << "Kokkos::Serial\n";
-  else
-    Kokkos::DefaultHostExecutionSpace::print_configuration(std::cout, false);
+
+  const bool detail = false;
+
+  typedef Kokkos::DefaultExecutionSpace exec_space;
+  //typedef Kokkos::DefaultHostExecutionSpace exec_space;
+  typedef Kokkos::DefaultHostExecutionSpace host_space;
+
+  Tacho::printExecSpaceConfiguration<exec_space>("DeviceSpace", detail);
+  Tacho::printExecSpaceConfiguration<host_space>("HostSpace",   detail);
   
   int r_val = 0;
   
   {
-    /// basic typedef
-    //typedef int ordinal_type;
-    //typedef size_t size_type; // not used here
-    //typedef double value_type;
-    
     /// crs matrix format and dense multi vector
-    typedef Tacho::Experimental::CrsMatrixBase<value_type,Kokkos::DefaultHostExecutionSpace> CrsMatrixBaseType;
-    typedef Kokkos::View<value_type**,Kokkos::LayoutLeft,Kokkos::DefaultHostExecutionSpace> DenseMultiVectorType;
+    //typedef Tacho::CrsMatrixBase<value_type,exec_space> CrsMatrixBaseType;
+    typedef Tacho::CrsMatrixBase<value_type,host_space> CrsMatrixBaseTypeHost;
+    
+    typedef Kokkos::View<value_type**,Kokkos::LayoutLeft,exec_space> DenseMultiVectorType;
+    //typedef Kokkos::View<value_type**,Kokkos::LayoutLeft,host_space> DenseMultiVectorTypeHost;
 
     /// read a spd matrix of matrix market format
-    CrsMatrixBaseType A("A");
+    CrsMatrixBaseTypeHost A;
     {
       {
         std::ifstream in;
@@ -63,7 +66,7 @@ int driver (int argc, char *argv[]) {
           return -1;
         }
       }
-      A = Tacho::Experimental::MatrixMarket<value_type>::read(file, verbose);
+      Tacho::MatrixMarket<value_type>::read(file, A, verbose);
     }
     
     ///
@@ -86,7 +89,7 @@ int driver (int argc, char *argv[]) {
     ///   CrsMatrixBaseType A;
     ///   A.setExternalMatrix(nrows, ncols, nnzm ap, aj, ax);
     ///  
-    Tacho::Solver<value_type,Kokkos::DefaultHostExecutionSpace> solver;
+    Tacho::Solver<value_type,exec_space> solver;
     solver.setMatrixType(sym, posdef);
     solver.setVerbose(verbose);
     solver.setMaxNumberOfSuperblocks(max_num_superblocks);
@@ -94,30 +97,29 @@ int driver (int argc, char *argv[]) {
     solver.setBlocksize(mb);
     solver.setPanelsize(nb);
 
+    auto values_on_device = Kokkos::create_mirror_view(typename exec_space::memory_space(), A.Values());
+    Kokkos::deep_copy(values_on_device, A.Values());
+
     /// inputs are used for graph reordering and analysis
     solver.analyze(A.NumRows(),
                    A.RowPtr(),
                    A.Cols());
     
     /// symbolic structure can be reused
-    solver.factorize(A.Values());
-
+    solver.factorize(values_on_device);
+    
     DenseMultiVectorType 
       b("b", A.NumRows(), nrhs), // rhs multivector
       x("x", A.NumRows(), nrhs), // solution multivector
       t("t", A.NumRows(), nrhs); // temp workspace (store permuted rhs)
-
-    {
-      Tacho::Experimental::Random<value_type> random;
-      const ordinal_type m = A.NumRows();
-      for (ordinal_type rhs=0;rhs<nrhs;++rhs)
-        for (ordinal_type i=0;i<m;++i) 
-          b(i, rhs) = random.value();
-    }
     
+    {
+      Kokkos::Random_XorShift64_Pool<exec_space> random(13718);
+      Kokkos::fill_random(b, random, value_type(1));
+    }
     solver.solve(x, b, t);
     
-    const double res = solver.computeRelativeResidual(A.Values(), x, b);
+    const double res = solver.computeRelativeResidual(values_on_device, x, b);
 
     std::cout << "TachoSolver: residual = " << res << "\n\n";
 

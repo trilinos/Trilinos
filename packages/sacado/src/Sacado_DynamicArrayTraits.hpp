@@ -763,7 +763,7 @@ namespace Sacado {
     //! Copy array from \c src to \c dest of length \c sz
     KOKKOS_INLINE_FUNCTION
     static void copy(const T* src, T* dest, int sz) {
-      if (sz > 0)
+      if (sz > 0 && dest != NULL && src != NULL)
 #ifdef __CUDACC__
         for (int i=0; i<sz; ++i)
           dest[i] = src[i];
@@ -786,7 +786,7 @@ namespace Sacado {
     //! Zero out array \c dest of length \c sz
     KOKKOS_INLINE_FUNCTION
     static void zero(T* dest, int sz) {
-      if (sz > 0)
+      if (sz > 0 && dest != NULL)
 #ifdef __CUDACC__
         for (int i=0; i<sz; ++i)
           dest[i] = T(0.);

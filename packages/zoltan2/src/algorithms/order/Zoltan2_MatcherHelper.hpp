@@ -184,7 +184,10 @@ Matcher<LO>::~Matcher()
     delete [] lookahead_;
     delete [] unmatchedU_;
 
-    if (parent_) delete [] parent_; parent_ = NULL;
+    if (parent_)
+    { 
+      delete [] parent_; parent_ = NULL;
+    }
 
     if(visitedV_)
       {

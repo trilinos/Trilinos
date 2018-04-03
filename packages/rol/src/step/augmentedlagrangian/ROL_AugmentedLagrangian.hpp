@@ -97,6 +97,9 @@ private:
   Real fval_;
   ROL::Ptr<Vector<Real> > gradient_;
 
+  // Objective function scaling
+  Real fscale_;
+
   // Evaluation counters
   int nfval_;
   int ngval_;
@@ -128,7 +131,9 @@ public:
                       const Vector<Real> &conVec,
                       Teuchos::ParameterList &parlist)
     : obj_(obj), penaltyParameter_(penaltyParameter),
-      fval_(0), nfval_(0), ngval_(0), isValueComputed_(false), isGradientComputed_(false) {
+      fval_(0), fscale_(1),
+      nfval_(0), ngval_(0),
+      isValueComputed_(false), isGradientComputed_(false) {
 
     gradient_      = optVec.dual().clone();
     dualOptVector_ = optVec.dual().clone();
@@ -147,7 +152,8 @@ public:
   */
   AugmentedLagrangian()
    : obj_(ROL::nullPtr), pen_(ROL::nullPtr), dualOptVector_(ROL::nullPtr),
-     fval_(0), gradient_(ROL::nullPtr), nfval_(0), ngval_(0),
+     fval_(0), gradient_(ROL::nullPtr), fscale_(1),
+     nfval_(0), ngval_(0),
      scaleLagrangian_(false), isValueComputed_(false), isGradientComputed_(false) {}
 
   virtual void update( const Vector<Real> &x, bool flag = true, int iter = -1 ) {
@@ -155,6 +161,11 @@ public:
     pen_->update(x,flag,iter);
     isValueComputed_ = (flag ? false : isValueComputed_);
     isGradientComputed_ = (flag ? false : isGradientComputed_);
+  }
+
+  void setScaling(const Real fscale, const Real cscale = 1.0) {
+    fscale_ = fscale;
+    pen_->setScaling(cscale);
   }
 
   virtual Real value( const Vector<Real> &x, Real &tol ) {
@@ -166,7 +177,7 @@ public:
     // Compute penalty term
     Real pval = pen_->value(x,tol);
     // Compute augmented Lagrangian
-    Real val = fval_;
+    Real val = fscale_*fval_;
     if (scaleLagrangian_) {
       val /= penaltyParameter_;
     }
@@ -180,6 +191,7 @@ public:
       isGradientComputed_ = true;
     }
     g.set(*gradient_);
+    g.scale(fscale_);
     // Compute gradient of penalty
     pen_->gradient(*dualOptVector_,x,tol);
     // Compute gradient of Augmented Lagrangian
@@ -192,6 +204,7 @@ public:
   virtual void hessVec( Vector<Real> &hv, const Vector<Real> &v, const Vector<Real> &x, Real &tol ) {
     // Apply objective Hessian to a vector
     obj_->hessVec(hv,v,x,tol);
+    hv.scale(fscale_);
     // Apply penalty Hessian to a vector
     pen_->hessVec(*dualOptVector_,v,x,tol);
     // Build hessVec of Augmented Lagrangian
@@ -210,6 +223,16 @@ public:
       isValueComputed_ = true;
     }
     return fval_;
+  }
+
+  const Ptr<const Vector<Real>> getObjectiveGradient(const Vector<Real> &x) {
+    Real tol = std::sqrt(ROL_EPSILON<Real>());
+    // Compute objective function gradient
+    if ( !isGradientComputed_ ) {
+      obj_->gradient(*gradient_,x,tol); ngval_++;
+      isGradientComputed_ = true;
+    }
+    return gradient_;
   }
 
   // Return constraint value

@@ -73,24 +73,35 @@ source $_SCRIPT_DIR/utils/set_build_options.sh
 #
 
 # Set other vaues to empty by default
-export OMP_NUM_THREADS=
-export OMPI_CC=
-export OMPI_CXX=
-export OMPI_FC=
-export ATDM_CONFIG_USE_NINJA=
-export ATDM_CONFIG_BUILD_COUNT=
-export ATDM_CONFIG_KOKKOS_ARCH=
-export ATDM_CONFIG_CTEST_PARALLEL_LEVEL=
-export ATDM_CONFIG_BLAS_LIB=
-export ATDM_CONFIG_LAPACK_LIB=
-export ATDM_CONFIG_USE_HWLOC=
-export ATDM_CONFIG_HWLOC_LIBS=
-export ATDM_CONFIG_USE_CUDA=
-export ATDM_CONFIG_HDF5_LIBS=
-export ATDM_CONFIG_NETCDF_LIBS=
-export ATDM_CONFIG_MPI_POST_FLAG=
+unset OMP_NUM_THREADS
+unset OMP_PROC_BIND
+unset OMP_PLACES
+unset OMPI_CC
+unset OMPI_CXX
+unset OMPI_FC
+unset ATDM_CONFIG_USE_NINJA
+unset ATDM_CONFIG_BUILD_COUNT
+unset ATDM_CONFIG_KOKKOS_ARCH
+unset ATDM_CONFIG_CTEST_PARALLEL_LEVEL
+unset ATDM_CONFIG_BLAS_LIB
+unset ATDM_CONFIG_LAPACK_LIB
+unset ATDM_CONFIG_USE_HWLOC
+unset ATDM_CONFIG_HWLOC_LIBS
+unset ATDM_CONFIG_USE_CUDA
+unset ATDM_CONFIG_HDF5_LIBS
+unset ATDM_CONFIG_NETCDF_LIBS
+unset ATDM_CONFIG_MPI_POST_FLAG
+unset ATDM_CONFIG_COMPLETED_ENV_SETUP
 
 source $_SCRIPT_DIR/$ATDM_CONFIG_KNOWN_SYSTEM_NAME/environment.sh
+
+if [ "$ATDM_CONFIG_COMPLETED_ENV_SETUP" != "TRUE" ] ; then
+  echo
+  echo "***"
+  echo "*** ERROR: Environment setup was not successful, see above errors!"
+  echo "***"
+  echo
+fi
 
 # NOTE: The ATDMDevEnv.cmake module when processed will assert that all of
 # these are set!

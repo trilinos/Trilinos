@@ -6,12 +6,13 @@
 #include <Kokkos_Core.hpp>
 #include <impl/Kokkos_Timer.hpp>
 
-#include "TachoExp_Util.hpp"
-#include "TachoExp_TaskFunctor_MemoryPool.hpp"
+#include "Tacho_Util.hpp"
+#include "Tacho_TaskFunctor_MemoryPool.hpp"
 
-using namespace Tacho::Experimental;
+using namespace Tacho;
 
 TEST( TaskFunctor, MemoryPool ) {
+  TEST_BEGIN;
   typedef Kokkos::TaskScheduler<HostSpaceType> sched_type;
   typedef Kokkos::MemoryPool<HostSpaceType> memory_pool_type;
   
@@ -47,6 +48,8 @@ TEST( TaskFunctor, MemoryPool ) {
   Kokkos::host_spawn( Kokkos::TaskSingle(f_view_see), functor_deallocate(pool, f_alloc, bufsize) );
 
   Kokkos::wait( sched );  
+
+  TEST_END;
 }
 
 #endif

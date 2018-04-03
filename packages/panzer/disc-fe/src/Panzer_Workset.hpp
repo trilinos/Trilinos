@@ -62,7 +62,7 @@
 
 namespace panzer {
 
-  class WorksetNeeds;
+  struct WorksetNeeds;
 
   template<typename LO, typename GO>
   class LocalMeshPartition;

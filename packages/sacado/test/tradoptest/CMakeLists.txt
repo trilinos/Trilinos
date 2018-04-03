@@ -25,10 +25,25 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
     PROPERTY COMPILE_DEFINITIONS "RAD_AUTO_AD_Const" 
     )
 
-TRIBITS_ADD_EXECUTABLE_AND_TEST(
+# Don't link Sacado library to this test as it results in duplicate symbols.
+# So we can't use TRIBITS_ADD_EXECUTABLE_AND_TEST and instead have to create
+# the executable using raw CMake and then add the test.
+
+# TRIBITS_ADD_EXECUTABLE_AND_TEST(
+#   hesopcheck_ADC
+#   SOURCES hesopcheck_ADC.cpp radops2_ADC.cpp
+#   ARGS 
+#   COMM serial mpi
+#   NUM_MPI_PROCS 1
+#   PASS_REGULAR_EXPRESSION "OK"
+#   )
+
+GET_PROPERTY(Sacado_lib_deps TARGET "${${PROJECT_NAME}_LIBRARY_NAME_PREFIX}sacado" PROPERTY LINK_LIBRARIES)
+ADD_EXECUTABLE("Sacado_hesopcheck_ADC${${PROJECT_NAME}_CMAKE_EXECUTABLE_SUFFIX}" hesopcheck_ADC.cpp radops2_ADC.cpp)
+TARGET_LINK_LIBRARIES("Sacado_hesopcheck_ADC${${PROJECT_NAME}_CMAKE_EXECUTABLE_SUFFIX}" ${Sacado_lib_deps})
+TRIBITS_ADD_TEST(
   hesopcheck_ADC
-  SOURCES hesopcheck_ADC.cpp radops2_ADC.cpp
-  ARGS 
+  ARGS
   COMM serial mpi
   NUM_MPI_PROCS 1
   PASS_REGULAR_EXPRESSION "OK"

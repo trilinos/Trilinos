@@ -264,18 +264,9 @@ int main(int narg, char** arg)
   cout << "Permuted Bandwidth: " << computeBandwidth(origMatrix, iperm) << endl;
 
   } catch (std::exception &e){
-      if (comm->getSize() != 1)
-      {
-          std::cout << "Ordering does not support distributed matrices."
-             << std::endl;
-          std::cout << "PASS" << std::endl;
-      }
-      else
-      {
-          std::cout << "Exception caught in ordering" << std::endl;
-          std::cout << e.what() << std::endl;
-          std::cout << "FAIL" << std::endl;
-      }
+      std::cout << "Exception caught in ordering" << std::endl;
+      std::cout << e.what() << std::endl;
+      std::cout << "FAIL" << std::endl;
       return 0;
   }
 
