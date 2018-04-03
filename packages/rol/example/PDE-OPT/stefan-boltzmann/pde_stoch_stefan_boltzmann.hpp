@@ -918,7 +918,8 @@ private:
       // Water Thermal Conductivity: 0.5818 at 280K and 0.6797 at 370K
       std::vector<Real> param_w(size_w,0);
       for (int i = 0; i < size_w; ++i) {
-        param_w[i] = 0.01*param[i];
+        Real pi = (static_cast<int>(param.size()) > i ? param[i] : static_cast<Real>(0.5));
+        param_w[i] = 0.01*pi;
       }
       std::vector<Real> c(3,0);
       getWaterCoeff(c,param_w);
@@ -936,7 +937,8 @@ private:
       // Aluminum Thermal Conductivity: 236 at 273K and 240 at 400K
       std::vector<Real> param_a(size_a,0);
       for (int i = 0; i < size_a; ++i) {
-        param_a[i] = param[size_w+i];
+        Real pi = (static_cast<int>(param.size()) > size_w+i ? param[size_w+i] : static_cast<Real>(0.5));
+        param_a[i] = pi;
       }
       std::vector<Real> c(5,0);
       getAluminumCoeff(c,param_a);
@@ -961,9 +963,10 @@ private:
   void evaluateVelocity(std::vector<Real> &adv, const std::vector<Real> &x, const std::vector<Real> &z_param) const {
     if ( x[1] < xmid_ ) {
       const std::vector<Real> param = PDE<Real>::getParameter();
+      Real p20 = (param.size() > 20 ? param[20] : static_cast<Real>(0.5));
       const Real min = static_cast<Real>(0.1)*xmid_;
       const Real max = static_cast<Real>(0.9)*xmid_;
-      const Real x1  = static_cast<Real>(0.5)*((max-min)*param[20] + (max+min));
+      const Real x1  = static_cast<Real>(0.5)*((max-min)*p20 + (max+min));
       const Real mag = ((x[1] <  x1) ? x[1]/x1 : (xmid_-x[1])/(xmid_-x1));
       adv[0] = -z_param[0]*mag;
       adv[1] = static_cast<Real>(0);
@@ -988,19 +991,28 @@ private:
     // c3 is the thermal convectivity of air (5), oil (40), and water (440)
     Real c1(0), c2(0), c3(0), sig(5.67e-8);
     if ( sideset == 2 ) {
-      c1 = SBscale_ * sig * (static_cast<Real>(0.09) + static_cast<Real>(5.e-3) * param[21]);
-      c2 = airTemp_             + static_cast<Real>(0.02*airTemp_) * param[22];
-      c3 = static_cast<Real>(5) + static_cast<Real>(0.5)           * param[23];
+      Real p21 = (param.size()>21 ? param[21] : static_cast<Real>(0.5));
+      Real p22 = (param.size()>22 ? param[22] : static_cast<Real>(0.5));
+      Real p23 = (param.size()>23 ? param[23] : static_cast<Real>(0.5));
+      c1 = SBscale_ * sig * (static_cast<Real>(0.09) + static_cast<Real>(5.e-3) * p21);
+      c2 = airTemp_             + static_cast<Real>(0.02*airTemp_) * p22;
+      c3 = static_cast<Real>(5) + static_cast<Real>(0.5)           * p23;
     }
     else if ( sideset == 4 || sideset == 5 ) {
-      c1 = SBscale_ * sig * (static_cast<Real>(0.09) + static_cast<Real>(5.e-3) * param[24]);
-      c2 = engTemp_ + static_cast<Real>(0.2)*engTemp_ * param[25];
-      c3 = static_cast<Real>(40) + static_cast<Real>(2) * param[26];
+      Real p24 = (param.size()>24 ? param[24] : static_cast<Real>(0.5));
+      Real p25 = (param.size()>25 ? param[25] : static_cast<Real>(0.5));
+      Real p26 = (param.size()>26 ? param[26] : static_cast<Real>(0.5));
+      c1 = SBscale_ * sig * (static_cast<Real>(0.09) + static_cast<Real>(5.e-3) * p24);
+      c2 = engTemp_ + static_cast<Real>(0.2)*engTemp_ * p25;
+      c3 = static_cast<Real>(40) + static_cast<Real>(2) * p26;
     }
     else if ( sideset == 1 ) {
-      c1 = SBscale_ * sig * (static_cast<Real>(0.09) + static_cast<Real>(5.e-3) * param[27]);
-      c2 = H2OTemp_ + static_cast<Real>(0.05)*H2OTemp_ * (param[28] + static_cast<Real>(1));
-      c3 = static_cast<Real>(440) + static_cast<Real>(20) * param[29];
+      Real p27 = (param.size()>27 ? param[27] : static_cast<Real>(0.5));
+      Real p28 = (param.size()>28 ? param[28] : static_cast<Real>(0.5));
+      Real p29 = (param.size()>29 ? param[29] : static_cast<Real>(0.5));
+      c1 = SBscale_ * sig * (static_cast<Real>(0.09) + static_cast<Real>(5.e-3) * p27);
+      c2 = H2OTemp_ + static_cast<Real>(0.05)*H2OTemp_ * (p28 + static_cast<Real>(1));
+      c3 = static_cast<Real>(440) + static_cast<Real>(20) * p29;
     }
     if ( deriv == 1 ) {
       return c1 * static_cast<Real>(4) * std::pow(u,3) + c3;
@@ -1015,8 +1027,9 @@ private:
                      const int sideset, const int locSideId,
                      const int deriv = 0, const int component = 1) const {
     const std::vector<Real> param = PDE<Real>::getParameter();
+    Real p30 = (param.size()>30 ? param[30] : static_cast<Real>(0.5));
     // c is the thermal convectivity of water (440)
-    Real c = static_cast<Real>(440) + static_cast<Real>(20) * param[30];
+    Real c = static_cast<Real>(440) + static_cast<Real>(20) * p30;
     if ( deriv == 1 ) {
       return (component==1) ? c : -c;
     }
@@ -1030,8 +1043,9 @@ private:
                      const int sideset, const int locSideId,
                      const int deriv = 0, const int component = 1) const {
     const std::vector<Real> param = PDE<Real>::getParameter();
+    Real p31 = (param.size()>31 ? param[31] : static_cast<Real>(0.5));
     // c is the thermal convectivity of water (440)
-    Real c = static_cast<Real>(440) + static_cast<Real>(20) * param[31];
+    Real c = static_cast<Real>(440) + static_cast<Real>(20) * p31;
     if ( deriv == 1 ) {
       return (component==1) ? c : static_cast<Real>(0);
     }

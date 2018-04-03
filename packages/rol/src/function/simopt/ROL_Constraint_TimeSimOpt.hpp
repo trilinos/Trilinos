@@ -167,7 +167,7 @@ public:
                 flag = true if optimization variable is changed,
                 iter is the outer algorithm iterations count.
   */
-  virtual void update_2( const Vector<Real> &z, bool flag = true, int iter = -1 ) {}
+  virtual void update_2( const Vector<Real> &z, bool flag = true, int iter = -1 ) override {}
 
   /** \brief Evaluate the constraint operator \f$c:\mathcal{U_o}\times\mathcal{U_n}\times\mathcal{Z} \rightarrow \mathcal{C}\f$
              at \f$(u,z)\f$.
@@ -402,7 +402,7 @@ public:
                                       const Vector<Real> &v,
                                       const Vector<Real> &u,
                                       const Vector<Real> &z,
-                                      Real &tol) 
+                                      Real &tol) override
   {
     Vector<Real> & ahwv_old = getOldVector(ahwv);
     Vector<Real> & ahwv_new = getNewVector(ahwv);
@@ -440,7 +440,7 @@ public:
                                       const Vector<Real> &v,
                                       const Vector<Real> &u,
                                       const Vector<Real> &z,
-                                      Real &tol) 
+                                      Real &tol) override
   {
     ahwv.zero();
   }
@@ -467,7 +467,7 @@ public:
                                       const Vector<Real> &v, 
                                       const Vector<Real> &u, 
                                       const Vector<Real> &z, 
-                                      Real &tol) { 
+                                      Real &tol) override { 
     ahwv.zero();
   }
 
@@ -493,7 +493,7 @@ public:
                                       const Vector<Real> &v,
                                       const Vector<Real> &u,
                                       const Vector<Real> &z,
-                                      Real &tol) {
+                                      Real &tol) override {
     ahwv.zero();
   }
 

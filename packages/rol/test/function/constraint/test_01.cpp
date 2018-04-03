@@ -112,7 +112,11 @@ int main(int argc, char *argv[]) {
     ROL::Ptr<Obj> obj = ROL::nullPtr; 
     ROL::Ptr<Con> con = ROL::nullPtr;
     
-    ROL::ZOO::getSimpleEqConstrained<RealT,StdV,StdV,StdV,StdV>( obj, con, *x, *sol );
+    ROL::ZOO::getSimpleEqConstrained<RealT> SEC;
+    obj = SEC.getObjective();
+    con = SEC.getEqualityConstraint();
+    x   = SEC.getInitialGuess();
+    sol = SEC.getSolution();
 
     error->set(*sol);
 

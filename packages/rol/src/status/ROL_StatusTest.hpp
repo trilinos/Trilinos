@@ -53,7 +53,6 @@
 
 namespace ROL {
 
-
 template <class Real>
 class StatusTest {
 private:
@@ -85,6 +84,10 @@ public:
        return true;
      }
      else {
+       state.statusFlag = (state.gnorm <= gtol_ ? EXITSTATUS_CONVERGED
+                           : state.snorm <= stol_ ? EXITSTATUS_STEPTOL
+                           : state.iter >= max_iter_ ? EXITSTATUS_MAXITER
+                           : EXITSTATUS_LAST);
        return false;
      }
   }

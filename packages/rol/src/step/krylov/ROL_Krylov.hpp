@@ -74,13 +74,13 @@ public:
   }
 
   // Run Krylov Method
-  virtual void run( Vector<Real> &x, LinearOperator<Real> &A, const Vector<Real> &b, LinearOperator<Real> &M, 
+  virtual Real run( Vector<Real> &x, LinearOperator<Real> &A, const Vector<Real> &b, LinearOperator<Real> &M, 
                     int &iter, int &flag ) = 0;
 
-  void resetAbsoluteTolerance(const Real absTol) const {
+  void resetAbsoluteTolerance(const Real absTol) {
     absTol_ = absTol;
   }
-  void resetRelativeTolerance(const Real relTol) const {
+  void resetRelativeTolerance(const Real relTol) {
     relTol_ = relTol;
   }
   void resetMaximumIteration(const unsigned maxit) {

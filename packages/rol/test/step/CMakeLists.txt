@@ -1,4 +1,5 @@
 ADD_SUBDIRECTORY(interiorpoint)
+ADD_SUBDIRECTORY(fletcher)
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
    LineSearch

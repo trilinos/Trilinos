@@ -205,9 +205,9 @@ int main(int argc, char* argv[]) {
     std::vector<RealT> error(20), norm(20), obj(20), objErr(20);
     *outStream << "\nSUPER QUANTILE QUADRANGLE RISK MEASURE\n";
     list.sublist("SOL").set("Stochastic Component Type","Risk Averse"); 
-    list.sublist("SOL").sublist("Risk Measure").set("Name","Super Quantile Quadrangle");
+    list.sublist("SOL").sublist("Risk Measure").set("Name","Second Order CVaR");
     for (int i = 0; i < 20; ++i) {
-      list.sublist("SOL").sublist("Risk Measure").sublist("Super Quantile Quadrangle").set("Number of Quadrature Points",i+1);
+      list.sublist("SOL").sublist("Risk Measure").sublist("Second Order CVaR").set("Number of Quadrature Points",i+1);
       setRandomVector(*x_ptr);
       obj[i] = setUpAndSolve(list,pObj,sampler,x,bnd,*outStream);
       printSolution(*x_ptr,*outStream);
