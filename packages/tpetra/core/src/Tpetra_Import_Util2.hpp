@@ -60,7 +60,6 @@
 #include <Teuchos_Array.hpp>
 #include <utility>
 #include <unistd.h>
-#include <set>
 #include <tuple>
 
 namespace Tpetra {
@@ -389,7 +388,9 @@ reverseNeighborDiscovery(const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, No
   // GID) pairs, in order to build a list of such pairs for each of
   // those processes.  Since this is building a reverse, we will send
   // to these processes.
-  std::vector<std::set<pidgidpair_t> > ReversePGIDs(NumRecvs); // needs to be size of ProcsFrom
+  std::vector<std::vector<pidgidpair_t> > ReversePGIDs(NumRecvs); // needs to be size of ProcsFrom
+  for(auto & v : ReversePGIDs) v.reserve(NumExportLIDs);
+
   Teuchos::ArrayRCP<const size_t> rowptr;
   Teuchos::ArrayRCP<const LO> colind;
   Teuchos::ArrayRCP<const Scalar> vals;
@@ -404,11 +405,11 @@ reverseNeighborDiscovery(const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, No
       int pid_order = RemotePIDOrder[colind[j]];
       if(pid_order!=-1) {
         GO gid = MyColMap->getGlobalElement(colind[j]);  //Epetra SM.GCID46 =>sm->graph-> {colmap(colind)}
-        ReversePGIDs[pid_order].insert(pidgidpair_t(exp_pid,gid));
+        ReversePGIDs[pid_order].push_back(pidgidpair_t(exp_pid,gid));
       }
     }
   }
-
+  
   // Step 2: Count sizes
   Teuchos::Array<std::pair<size_t,size_t>> ReverseSendSizes(NumRecvs);
   size_t totalcount=0;
@@ -425,12 +426,12 @@ reverseNeighborDiscovery(const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, No
     ReverseSendBuffer[i].reserve(ReverseSendSizes[i].first + ReverseSendSizes[i].second); // send remoteGID's to everyone
 
   uint pididx=0;
-  for(auto&& setOfPairs : ReversePGIDs) {
+  for(auto&& vecofPairs : ReversePGIDs) {
     if( pididx >= NumRecvs) {
       std::cerr<<"  size missmatch in Import_Util::reverseNeighborDiscovery "<<std::endl;
       MPI_Abort (MPI_COMM_WORLD, -1);
     }
-    for(auto&& pidGidPair : setOfPairs) {
+    for(auto&& pidGidPair : vecofPairs) {
       ReverseSendBuffer[pididx].push_back(pidGidPair);
     }
     // now tack on tgtRemoteGIDs: Note it would be more space efficient to omit MyPID, and just pack the tgtRemoteGIDs

@@ -8890,12 +8890,16 @@ namespace Tpetra {
     if(!params.is_null())
       esfc_params.set("compute global constants",params->get("compute global constants",true));
 
+#ifdef HAVE_TPETRA_MMM_TIMINGS
+    MM = Teuchos::rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix + std::string("is MM Block"))));
+#endif
+
     if( isMM && !MyImporter.is_null()) {
-      static bool first = true;
-      if(first) {
-        first = false;
-        std::cerr<<" isMM "<<std::endl;
-      }
+      // static bool first = true;
+      // if(first) {
+      //   first = false;
+      //   std::cerr<<" isMM "<<std::endl;
+      // }
 
       // The isMatrixMatrix_TransferAndFillComplete parameter is set to true. This means the unfiltered
       // reverseNeighborDiscovery is safe (by assertion?!?). 
@@ -8932,16 +8936,21 @@ namespace Tpetra {
     
       const ArrayView<const GO> const_fullRemoteGIDs(fullRemoteGIDs); // gotta be a better way
 
-      Import_Util::reverseNeighborDiscovery(*this,
-                                            rowTransfer,
-                                            const_fullRemoteGIDs,
-                                            MyImporter,
-                                            MyDomainMap,
-                                            type3PIDs,
-                                            type3LIDs,
-                                            type3GIDs,
-                                            fromRemoteGID,
-                                            ReducedComm);
+      {
+#ifdef HAVE_TPETRA_MMM_TIMINGS
+        MM = Teuchos::rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix + std::string("Import_Util::reverseNeighborDiscovery"))));
+#endif
+        Import_Util::reverseNeighborDiscovery(*this,
+                                              rowTransfer,
+                                              const_fullRemoteGIDs,
+                                              MyImporter,
+                                              MyDomainMap,
+                                              type3PIDs,
+                                              type3LIDs,
+                                              type3GIDs,
+                                              fromRemoteGID,
+                                              ReducedComm);
+      }
    
       // cblcbl set parameterlist to debug, true
       Teuchos::RCP<Teuchos::ParameterList> plist = rcp(new Teuchos::ParameterList());
@@ -8979,7 +8988,8 @@ namespace Tpetra {
         Teuchos::ArrayRCP<const Scalar> vals;      
         getAllValues(rowptr,colind,vals);  // may be dup
       
-        std::set<std::pair<int,GO> > srtg; // does unique for us. 
+        std::vector<std::pair<int,GO> > usrtg;
+        usrtg.reserve(TEPID2.size());
        
         for(uint i=0;i<TEPID2.size() ;++i) {
             LO  row = TELID2[i];
@@ -8990,142 +9000,121 @@ namespace Tpetra {
               if(IsOwned[col] && SentTo[col]!=pid){
                 SentTo[col]    = pid;
                 GO gid = this->getColMap()->getGlobalElement(col); // *this is sourcematrix
-                srtg.insert(std::pair<int,GO>(pid,gid));
+                usrtg.push_back(std::pair<int,GO>(pid,gid));
               }
             }
           }
-          std::vector<std::pair<int,GO> > usrtg(srtg.begin(),srtg.end());
-          std::sort(usrtg.begin(),usrtg.end()); // default comparator does the right thing, now sorted in gid order  
-            const uint type2_us_size= usrtg.size();
-            EGID2.resize(type2_us_size);
-            ELID2.resize(type2_us_size);
-            EPID2.resize(type2_us_size);
-          {
-            auto eopg = std ::unique(usrtg.begin(),usrtg.end());
-            usrtg.erase(eopg,usrtg.end());
-            if(usrtg.size()!=type2_us_size) std::cerr<<MyPID<<"Type 2 is not pid,gid unique"<<std::endl<<std::flush;
-          }
+        std::sort(usrtg.begin(),usrtg.end()); // default comparator does the right thing, now sorted in gid order  
+        auto eopg = std ::unique(usrtg.begin(),usrtg.end());
+        usrtg.erase(eopg,usrtg.end());
 
-          int pos=0;
-          for(auto && p : usrtg) {
-            EPID2[pos]= p.first;
-            EGID2[pos]= p.second;
-            ELID2[pos]= this->getDomainMap()->getLocalElement(EGID2[pos]); 
-            pos++;
-          }
+        const uint type2_us_size= usrtg.size();
+        EGID2.resize(type2_us_size);
+        ELID2.resize(type2_us_size);
+        EPID2.resize(type2_us_size);
+       
+        int pos=0;
+        for(auto && p : usrtg) {
+          EPID2[pos]= p.first;
+          EGID2[pos]= p.second;
+          ELID2[pos]= this->getDomainMap()->getLocalElement(EGID2[pos]); 
+          pos++;
         }
-        
-        Teuchos::Array<int> & EPID3  = type3PIDs;
-        Teuchos::Array< LO> & ELID3  = type3LIDs;
-        GO InfGID = std::numeric_limits<GO>::max();
-        int InfPID = INT_MAX;
+      }
+      
+      Teuchos::Array<int> & EPID3  = type3PIDs;
+      Teuchos::Array< LO> & ELID3  = type3LIDs;
+      GO InfGID = std::numeric_limits<GO>::max();
+      int InfPID = INT_MAX;
 #define MIN(x,y)    ((x)<(y)?(x):(y))
 #define MIN3(x,y,z) ((x)<(y)?(MIN(x,z)):(MIN(y,z)))
-        int i1=0, i2=0, i3=0;
-        int Len1 = EPID1.size();
-        int Len2 = EPID2.size();
-        int Len3 = EPID3.size();
+      int i1=0, i2=0, i3=0;
+      int Len1 = EPID1.size();
+      int Len2 = EPID2.size();
+      int Len3 = EPID3.size();
+      
+      int MyLen=Len1+Len2+Len3;
+      userExportPIDs.reserve(MyLen);
+      userExportLIDs.reserve(MyLen);
+      userExportGIDs.reserve(MyLen);
+      
+      if(true) 
+        {  // Seifert sort, or CBL sort.
+          while(i1 < Len1 || i2 < Len2 || i3 < Len3){
+            int PID1 = (i1<Len1)?(EPID1[i1]):InfPID;
+            int PID2 = (i2<Len2)?(EPID2[i2]):InfPID;
+            int PID3 = (i3<Len3)?(EPID3[i3]):InfPID;
+            
+            GO GID1 = (i1<Len1)?getDomainMap()->getGlobalElement(ELID1[i1]):InfGID;
+            GO GID2 = (i2<Len2)?getDomainMap()->getGlobalElement(ELID2[i2]):InfGID;
+            GO GID3 = (i3<Len3)?getDomainMap()->getGlobalElement(ELID3[i3]):InfGID;
+            
+            int MIN_PID = MIN3(PID1,PID2,PID3);
+            GO  MIN_GID = MIN3( ((PID1==MIN_PID)?GID1:InfGID), ((PID2==MIN_PID)?GID2:InfGID), ((PID3==MIN_PID)?GID3:InfGID));
+            bool added_entry=false;
 
-        int MyLen=Len1+Len2+Len3;
-        userExportPIDs.reserve(MyLen);
-        userExportLIDs.reserve(MyLen);
-        userExportGIDs.reserve(MyLen);
-     
-        if(false) 
-          {  // Seifert sort, or CBL sort.
-            while(i1 < Len1 || i2 < Len2 || i3 < Len3){
-              int PID1 = (i1<Len1)?(EPID1[i1]):InfPID;
-              int PID2 = (i2<Len2)?(EPID2[i2]):InfPID;
-              int PID3 = (i3<Len3)?(EPID3[i3]):InfPID;
-        
-              GO GID1 = (i1<Len1)?getDomainMap()->getGlobalElement(ELID1[i1]):InfGID;
-              GO GID2 = (i2<Len2)?getDomainMap()->getGlobalElement(ELID2[i2]):InfGID;
-              GO GID3 = (i3<Len3)?getDomainMap()->getGlobalElement(ELID3[i3]):InfGID;
-        
-              int MIN_PID = MIN3(PID1,PID2,PID3);
-              GO  MIN_GID = MIN3( ((PID1==MIN_PID)?GID1:InfGID), ((PID2==MIN_PID)?GID2:InfGID), ((PID3==MIN_PID)?GID3:InfGID));
-              bool added_entry=false;
+            bool dumpit = false;
+            if(true) {
+              // filter against the communicated RemoteGID's for ProcsTo
+              std::pair<int,GlobalOrdinal> pgPair(MIN_PID,MIN_GID);
+              dumpit = (std::find(fromRemoteGID.begin(),fromRemoteGID.end(),pgPair) == fromRemoteGID.end());                      
+            }
 
-              bool dumpit = false;
-              if(true) {
-                // filter against the communicated RemoteGID's for ProcsTo
-                std::pair<int,GlobalOrdinal> pgPair(MIN_PID,MIN_GID);
-                dumpit = (std::find(fromRemoteGID.begin(),fromRemoteGID.end(),pgPair) == fromRemoteGID.end());                      
+            // Case 1: Add off list 1
+            if(PID1 == MIN_PID && GID1 == MIN_GID){
+              if(!dumpit) {
+                userExportLIDs.push_back(ELID1[i1]);
+                userExportPIDs.push_back(EPID1[i1]);
+                userExportGIDs.push_back(MIN_GID);
               }
-
-              // Case 1: Add off list 1
-              if(PID1 == MIN_PID && GID1 == MIN_GID){
+              i1++;
+              added_entry=true;
+            }
+        
+            // Case 2: Add off list 2
+            if(PID2 == MIN_PID && GID2 == MIN_GID){
+              if(!added_entry) {
                 if(!dumpit) {
-                  userExportLIDs.push_back(ELID1[i1]);
-                  userExportPIDs.push_back(EPID1[i1]);
+                  userExportLIDs.push_back(ELID2[i2]);
+                  userExportPIDs.push_back(EPID2[i2]);
                   userExportGIDs.push_back(MIN_GID);
                 }
-                i1++;
                 added_entry=true;
               }
+              i2++;
+            }
         
-              // Case 2: Add off list 2
-              if(PID2 == MIN_PID && GID2 == MIN_GID){
-                if(!added_entry) {
-                  if(!dumpit) {
-                    userExportLIDs.push_back(ELID2[i2]);
-                    userExportPIDs.push_back(EPID2[i2]);
-                    userExportGIDs.push_back(MIN_GID);
-                  }
-                  added_entry=true;
+            // Case 3: Add off list 3
+            if(PID3 == MIN_PID && GID3 == MIN_GID){
+              if(!added_entry) {
+                if(!dumpit) {
+                  userExportLIDs.push_back(ELID3[i3]);
+                  userExportPIDs.push_back(EPID3[i3]);
+                  userExportGIDs.push_back(MIN_GID);
                 }
-                i2++;
               }
-        
-              // Case 3: Add off list 3
-              if(PID3 == MIN_PID && GID3 == MIN_GID){
-                if(!added_entry) {
-                  if(!dumpit) {
-                    userExportLIDs.push_back(ELID3[i3]);
-                    userExportPIDs.push_back(EPID3[i3]);
-                    userExportGIDs.push_back(MIN_GID);
-                  }
-                }
-                i3++;
-              }
-            }// end while
-          }
+              i3++;
+            }
+          }// end while
+        }
         else // do  cbl sort
           { 
             typedef std::tuple<int,GO,LO> pgl_t;
-            std::set< pgl_t > mms;
+            std::vector< pgl_t > mms;
         
             for(uint i =0; i < EPID1.size();++i) 
-              mms.insert(pgl_t(EPID1[i],getDomainMap()->getGlobalElement(ELID1[i]),ELID1[i]));
+              mms.push_back(pgl_t(EPID1[i],getDomainMap()->getGlobalElement(ELID1[i]),ELID1[i]));
             
             for(uint i =0; i < EPID2.size();++i)  
-              mms.insert(pgl_t(EPID2[i],getDomainMap()->getGlobalElement(ELID2[i]),ELID2[i]));
+              mms.push_back(pgl_t(EPID2[i],getDomainMap()->getGlobalElement(ELID2[i]),ELID2[i]));
             
             for(uint i =0; i < EPID3.size();++i)  
-              mms.insert(pgl_t(EPID3[i],getDomainMap()->getGlobalElement(ELID3[i]),ELID3[i]));
-           
-            // now add in missing
-            // this is just wrong, don't do it. 
-            // for( auto &&a : fromRemoteGID) {
-            //   bool ever =  false;
-            //   std::ostringstream os;
-            
-            //   GO gid; LO lid; int pid;
-            //   std::tie(pid,gid) = a;
-            //   auto tlid = getRowMap()->getLocalElement(gid);
-            //   if(gid != Teuchos::OrdinalTraits<GlobalOrdinal>::invalid () && tlid != Teuchos::OrdinalTraits<LocalOrdinal>::invalid () )
-            //     {
-            //       ever = true;
-            //       os<<MyPID<<" MM Adding missing from fromRemoteGID "<<pid<<" "<<tlid<<" "<<gid<<std::endl;
-            //       mms.insert(pgl_t(pid,gid,tlid));
-            //       // userExportPIDs.push_back(pid);
-            //       // userExportLIDs.push_back(tlid);
-            //       // userExportGIDs.push_back(gid);
-            //     }
-            //   if(ever)
-            //     std::cerr<<os.str()<<std::flush;
-            // }      
+              mms.push_back(pgl_t(EPID3[i],getDomainMap()->getGlobalElement(ELID3[i]),ELID3[i]));
       
+            std::sort(mms.begin(),mms.end());
+            auto unptr = std::unique(mms.begin(),mms.end());
+            mms.resize(std::distance(mms.begin(),unptr));
+
             std::vector<pgl_t> vs;
             vs.reserve(mms.size());
 
