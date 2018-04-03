@@ -70,37 +70,39 @@
 namespace MueLu {
 
   template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  void RefMaxwell<Scalar,LocalOrdinal,GlobalOrdinal,Node>::findDirichletCols(Teuchos::RCP<Matrix> A,
-                                                                             std::vector<LocalOrdinal>& dirichletRows,
-                                                                             std::vector<LocalOrdinal>& dirichletCols) {
+  Teuchos::ArrayRCP<const bool> RefMaxwell<Scalar,LocalOrdinal,GlobalOrdinal,Node>::findDirichletCols(Teuchos::RCP<Matrix> A,
+                                                                                                      Teuchos::ArrayRCP<const bool>& dirichletRows) {
     SC zero = Teuchos::ScalarTraits<Scalar>::zero();
     SC one = Teuchos::ScalarTraits<Scalar>::one();
     magnitudeType eps = Teuchos::ScalarTraits<magnitudeType>::eps();
     Teuchos::RCP<const Map> domMap = A->getDomainMap();
     Teuchos::RCP<const Map> colMap = A->getColMap();
-    Teuchos::RCP<Export> exporter = ExportFactory::Build(colMap,domMap);
     Teuchos::RCP<MultiVector> myColsToZero = MultiVectorFactory::Build(colMap,1);
-    Teuchos::RCP<MultiVector> globalColsToZero = MultiVectorFactory::Build(domMap,1);
     myColsToZero->putScalar(zero);
-    globalColsToZero->putScalar(zero);
-    // Find all column indices in Dirichlet rows, record in myColsToZero
+    // Find all local column indices that are in Dirichlet rows, record in myColsToZero as 1.0
     for(size_t i=0; i<dirichletRows.size(); i++) {
-      Teuchos::ArrayView<const LocalOrdinal> indices;
-      Teuchos::ArrayView<const Scalar> values;
-      A->getLocalRowView(dirichletRows[i],indices,values);
-      for(size_t j=0; j<static_cast<size_t>(indices.size()); j++)
-        myColsToZero->replaceLocalValue(indices[j],0,one);
+      if (dirichletRows[i]) {
+        Teuchos::ArrayView<const LocalOrdinal> indices;
+        Teuchos::ArrayView<const Scalar> values;
+        A->getLocalRowView(i,indices,values);
+        for(size_t j=0; j<static_cast<size_t>(indices.size()); j++)
+          myColsToZero->replaceLocalValue(indices[j],0,one);
+      }
     }
+    
+    Teuchos::RCP<MultiVector> globalColsToZero = MultiVectorFactory::Build(domMap,1);
+    globalColsToZero->putScalar(zero);
+    Teuchos::RCP<Export> exporter = ExportFactory::Build(colMap,domMap);
+    // export to domain map
     globalColsToZero->doExport(*myColsToZero,*exporter,Xpetra::ADD);
+    // import to column map
     myColsToZero->doImport(*globalColsToZero,*exporter,Xpetra::INSERT);
     Teuchos::ArrayRCP<const Scalar> myCols = myColsToZero->getData(0);
-    dirichletCols.resize(colMap->getNodeNumElements());
+    Teuchos::ArrayRCP<bool> dirichletCols(colMap->getNodeNumElements(), true);
     for(size_t i=0; i<colMap->getNodeNumElements(); i++) {
-      if(Teuchos::ScalarTraits<Scalar>::magnitude(myCols[i])>2.0*eps)
-        dirichletCols[i]=1;
-      else
-        dirichletCols[i]=0;
+      dirichletCols[i] = Teuchos::ScalarTraits<Scalar>::magnitude(myCols[i])>2.0*eps;
     }
+    return dirichletCols;
   }
 
   template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -109,7 +111,6 @@ namespace MueLu {
     SC zero = Teuchos::ScalarTraits<Scalar>::zero();
     Teuchos::RCP<const Map> rowMap = A->getRowMap();
     RCP<Matrix> DiagMatrix = MatrixFactory::Build(rowMap,1);
-    RCP<Matrix> NewMatrix  = MatrixFactory::Build(rowMap,1);
     for(size_t i=0; i<A->getNodeNumRows(); i++) {
       Teuchos::ArrayView<const LocalOrdinal> indices;
       Teuchos::ArrayView<const Scalar> values;
@@ -131,6 +132,7 @@ namespace MueLu {
     DiagMatrix->fillComplete();
     A->fillComplete();
     // add matrices together
+    RCP<Matrix> NewMatrix  = MatrixFactory::Build(rowMap,1);
     RCP<Teuchos::FancyOStream> out = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
     Xpetra::MatrixMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>::TwoMatrixAdd(*DiagMatrix,false,one,*A,false,one,NewMatrix,*out);
     NewMatrix->fillComplete();
@@ -179,8 +181,10 @@ namespace MueLu {
 
     // clean rows associated with boundary conditions
     // Find rows with only 1 or 2 nonzero entries, record them in BCrows_.
-    Utilities::FindDirichletRows(SM_Matrix_,BCrows_,/*count_twos_as_dirichlet=*/true);
-    findDirichletCols(D0_Matrix_,BCrows_,BCcols_);
+    // BCrows_[i] is true, when i is a boundary row
+    BCrows_ = Utilities::DetectDirichletRows(*SM_Matrix_,Teuchos::ScalarTraits<magnitudeType>::eps(),/*count_twos_as_dirichlet=*/true);
+    // BCcols_[i] is true, when i is a boundary column
+    BCcols_ = findDirichletCols(D0_Matrix_,BCrows_);
 
     // build nullspace if necessary
     if(Nullspace_ != Teuchos::null) {
@@ -193,7 +197,6 @@ namespace MueLu {
       for (size_t i=0;i<Coords_->getNumVectors();i++) {
         norms[i] = ((Magnitude)1.0)/norms[i];
       }
-      // Coords_->scale(norms);
       for(size_t j=0;j<Coords_->getNumVectors();j++) {
         Teuchos::ArrayRCP<double> datavec = Coords_->getDataNonConst(j);
         for(size_t i=0;i<static_cast<size_t>(datavec.size());i++)
@@ -229,7 +232,8 @@ namespace MueLu {
     for(size_t j=0;j<dim;j++) {
       Teuchos::ArrayRCP<Scalar> datavec = Nullspace_->getDataNonConst(j);
       for(size_t i=0;i<BCrows_.size();i++)
-        datavec[BCrows_[i]]=zero;
+        if (BCrows_[i])
+          datavec[i]=zero;
     }
 
     if (dump_matrices_)
@@ -555,13 +559,13 @@ namespace MueLu {
         for (size_t jj = Prowptr[l]; jj < Prowptr[l+1]; jj++) {
           LO j = Pcolind[jj];
           SC v = Pvals[jj];
-          if (v == SC_ZERO)
-            continue;
+          // if (v == SC_ZERO)
+          //   continue;
           for (size_t k = 0; k < dim; k++) {
             LO jNew = dim*j+k;
             SC n = nullspace[k][i];
-            if (n == SC_ZERO)
-              continue;
+            // if (n == SC_ZERO)
+            //   continue;
             // do we already have an entry for (i, jNew)?
             if (P11_status[jNew] == ST_INVALID || P11_status[jNew] < nnz_old) {
               P11_status[jNew] = nnz;

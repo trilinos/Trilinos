@@ -294,9 +294,8 @@ namespace MueLu {
 
   private:
 
-    void findDirichletCols(Teuchos::RCP<Matrix> A,
-                           std::vector<LocalOrdinal>& dirichletRows,
-                           std::vector<LocalOrdinal>& dirichletCols);
+    Teuchos::ArrayRCP<const bool> findDirichletCols(Teuchos::RCP<Matrix> A,
+                                                    Teuchos::ArrayRCP<const bool>& dirichletRows);
 
     // Builds diagonal matrix DiagMatrix with one on diagonal for zero rows of A
     // Assigns A = DiagMatrix + A.
@@ -333,7 +332,8 @@ namespace MueLu {
     Teuchos::RCP<Matrix> SM_Matrix_, D0_Matrix_, M0inv_Matrix_, M1_Matrix_, Ms_Matrix_;
     Teuchos::RCP<Matrix> A_nodal_Matrix_, P11_, AH_, A22_;
     //! Vectors for BCs
-    std::vector<LocalOrdinal> BCrows_, BCcols_;
+    Teuchos::ArrayRCP<const bool> BCrows_;
+    Teuchos::ArrayRCP<const bool> BCcols_;
     //! Nullspace
     Teuchos::RCP<MultiVector> Nullspace_;
     Teuchos::RCP<Xpetra::MultiVector<double, LocalOrdinal, GlobalOrdinal, Node> > Coords_;
