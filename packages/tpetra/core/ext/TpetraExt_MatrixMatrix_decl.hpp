@@ -138,6 +138,7 @@ struct AddKernels
   typedef Tpetra::Map<LocalOrdinal, GlobalOrdinal, Node> map_type;
   typedef typename Node::device_type device_type;
   typedef typename device_type::execution_space execution_space;
+  typedef typename execution_space::memory_space memory_space;
   typedef typename crs_matrix_type::impl_scalar_type impl_scalar_type;
   typedef typename crs_matrix_type::local_matrix_type KCRS;
   typedef typename KCRS::values_type::non_const_type values_array;
@@ -225,34 +226,6 @@ struct AddKernels
     values_array& Cvals,
     row_ptrs_array& Crowptrs,
     col_inds_array& Ccolinds);
-
-  /// \brief Given two matrices in CRS format, return their sum
-  /// \pre A and B don't need to be sorted
-  /// \param Avals Values array for A
-  /// \param Arowptrs Row pointers array for A
-  /// \param Acolinds Column indices array for A
-  /// \param scalarA Scaling factor for A
-  /// \param Bvals Values array for B
-  /// \param Browptrs Row pointers array for B
-  /// \param Bcolinds Column indices array for B
-  /// \param scalarB Scaling factor for B
-  /// \param globalNumCols The global size of the column map
-  /// \param[Out] Cvals Values array for C (allocated inside function)
-  /// \param[Out] Crowptrs Row pointers array for C (allocated inside function)
-  /// \param[Out] Ccolinds Column indices array for C (allocated inside function)
-  static void addUnsortedGlobalCols(
-    const values_array& Avals,
-    const row_ptrs_array_const& Arowptrs,
-    const global_col_inds_array& Acolinds, 
-    const impl_scalar_type scalarA,
-    const values_array& Bvals,
-    const row_ptrs_array_const& Browptrs,
-    const global_col_inds_array& Bcolinds, 
-    const impl_scalar_type scalarB,
-    GlobalOrdinal numGlobalCols,
-    values_array& Cvals,
-    row_ptrs_array& Crowptrs,
-    global_col_inds_array& Ccolinds);
 
   static Teuchos::RCP<map_type> makeColMapAndConvertGids(GlobalOrdinal ncols, const global_col_inds_array& gids, col_inds_array& lids, const Teuchos::RCP<const Teuchos::Comm<int>>& comm);
 };

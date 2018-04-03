@@ -1358,9 +1358,10 @@ int main(int argc, char *argv[]) {
    if (MyPID == 0) cout << "Belos converged!" << endl;
 
 
+#if 0
    //write gl_solVector to MatrixMarket file
    Tpetra::MatrixMarket::Writer<sparse_matrix_type >::writeDenseFile("gl_solVectorT.dat", gl_solVectorT);
-
+#endif
 
    //summarize timings
    TimeMonitor::summarize( cout );
