@@ -230,6 +230,8 @@ namespace MueLu {
 
     static RCP<Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > Transpose(Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Op, bool optimizeTranspose = false,const std::string & label = std::string(),const Teuchos::RCP<Teuchos::ParameterList> &params=Teuchos::null);
 
+    static RCP<Xpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > RealValuedToScalarMultiVector(RCP<Xpetra::MultiVector<double,LocalOrdinal,GlobalOrdinal,Node> > X);
+
     static RCP<Xpetra::MultiVector<double,LocalOrdinal,GlobalOrdinal,Node> > ExtractCoordinatesFromParameterList(ParameterList& paramList);
 
     static void FindDirichletRows(Teuchos::RCP<Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > & A, std::vector<LocalOrdinal>& dirichletRows,bool count_twos_as_dirichlet=false) {
@@ -251,6 +253,10 @@ namespace MueLu {
 
     static void ZeroDirichletRows(Teuchos::RCP<Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >& A,const Teuchos::ArrayRCP<const bool>& dirichletRows, Scalar replaceWith=Teuchos::ScalarTraits<Scalar>::zero()) {
       MueLu::UtilitiesBase<Scalar,LocalOrdinal,GlobalOrdinal,Node>::ZeroDirichletRows(A,dirichletRows,replaceWith);
+    }
+
+    static void ZeroDirichletRows(Teuchos::RCP<Xpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> >& X,const Teuchos::ArrayRCP<const bool>& dirichletRows,Scalar replaceWith=Teuchos::ScalarTraits<Scalar>::zero()) {
+      MueLu::UtilitiesBase<Scalar,LocalOrdinal,GlobalOrdinal,Node>::ZeroDirichletRows(X,dirichletRows,replaceWith);
     }
 
     static void ZeroDirichletCols(Teuchos::RCP<Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >& A,const Teuchos::ArrayRCP<const bool>& dirichletCols, Scalar replaceWith=Teuchos::ScalarTraits<Scalar>::zero()) {
@@ -783,6 +789,12 @@ namespace MueLu {
       }
 
       TEUCHOS_UNREACHABLE_RETURN(Teuchos::null);
+    }
+
+    static RCP<Xpetra::MultiVector<double,LocalOrdinal,GlobalOrdinal,Node> >
+    RealValuedToScalarMultiVector(RCP<Xpetra::MultiVector<double,LocalOrdinal,GlobalOrdinal,Node> > X) {
+      RCP<Xpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > Xscalar = rcp_dynamic_cast<Xpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> >(X);
+      return Xscalar;
     }
 
     /*! @brief Extract coordinates from parameter list and return them in a Xpetra::MultiVector

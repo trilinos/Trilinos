@@ -833,6 +833,19 @@ namespace MueLu {
       }
     }
 
+    // Zeros out rows
+    // Takes a Boolean ArrayRCP
+    static void ZeroDirichletRows(Teuchos::RCP<Xpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> >& X,
+                                  const Teuchos::ArrayRCP<const bool>& dirichletRows,
+                                  Scalar replaceWith=Teuchos::ScalarTraits<Scalar>::zero()) {
+      for(size_t i=0; i<dirichletRows.size(); i++) {
+        if (dirichletRows[i]) {
+          for(size_t j=0; j<X->getNumVectors(); j++)
+            X->replaceLocalValue(i,j,replaceWith);
+        }
+      }
+    }
+
     // Zeros out columns
     // Takes a Boolean vector
     static void ZeroDirichletCols(Teuchos::RCP<Matrix>& A,
