@@ -273,6 +273,9 @@ namespace MueLu {
     //! apply 2-1-2 algorithm for 2x2 solve
     void applyInverse212(const MultiVector& RHS, MultiVector& X) const;
 
+    //! apply solve to 1-1 block only
+    void applyInverse11only(const MultiVector& RHS, MultiVector& X) const;
+
     //! Returns in Y the result of a Xpetra::Operator applied to a Xpetra::MultiVector X.
     //! \param[in]  X - MultiVector of dimension NumVectors to multiply with matrix.
     //! \param[out] Y - MultiVector of dimension NumVectors containing result.

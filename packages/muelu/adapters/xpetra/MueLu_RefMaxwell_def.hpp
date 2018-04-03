@@ -700,6 +700,24 @@ namespace MueLu {
 
   }
 
+  template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  void RefMaxwell<Scalar,LocalOrdinal,GlobalOrdinal,Node>::applyInverse11only(const MultiVector& RHS, MultiVector& X) const {
+
+    // compute residuals
+    Scalar one = Teuchos::ScalarTraits<Scalar>::one(), negone = -one, zero = Teuchos::ScalarTraits<Scalar>::zero();
+    SM_Matrix_->apply(X, *residual_, Teuchos::NO_TRANS, one, zero);
+    residual_->update(one, RHS, negone);
+    P11_->apply(*residual_,*P11res_,Teuchos::TRANS);
+
+    // block diagonal preconditioner on 2x2 (V-cycle for diagonal blocks)
+    HierarchyH_->Iterate(*P11res_, *P11x_, 1, true);
+
+    // update current solution
+    P11_->apply(*P11x_,*residual_,Teuchos::NO_TRANS);
+    X.update(one, *residual_, one);
+
+  }
+
 
   template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void RefMaxwell<Scalar,LocalOrdinal,GlobalOrdinal,Node>::apply (const MultiVector& RHS, MultiVector& X,
@@ -734,6 +752,8 @@ namespace MueLu {
       applyInverse121(RHS,X);
     else if(mode_=="212")
       applyInverse212(RHS,X);
+    else if(mode_=="11only")
+      applyInverse11only(RHS,X);
     else if(mode_=="none") {
       // do nothing
     }
