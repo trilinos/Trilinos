@@ -1,0 +1,174 @@
+#! ${PYTHON_EXECUTABLE}
+# -*- python -*-
+
+# @HEADER
+# ***********************************************************************
+#
+#          PyTrilinos: Python Interfaces to Trilinos Packages
+#                 Copyright (2014) Sandia Corporation
+#
+# Under the terms of Contract DE-AC04-94AL85000 with Sandia
+# Corporation, the U.S. Government retains certain rights in this
+# software.
+#
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions are
+# met:
+#
+# 1. Redistributions of source code must retain the above copyright
+# notice, this list of conditions and the following disclaimer.
+#
+# 2. Redistributions in binary form must reproduce the above copyright
+# notice, this list of conditions and the following disclaimer in the
+# documentation and/or other materials provided with the distribution.
+#
+# 3. Neither the name of the Corporation nor the names of the
+# contributors may be used to endorse or promote products derived from
+# this software without specific prior written permission.
+#
+# THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
+# EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+# PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
+# CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+# EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+# PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+# PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+# LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+# NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+# SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+#
+# Questions? Contact William F. Spotz (wfspotz@sandia.gov)
+#
+# ***********************************************************************
+# @HEADER
+
+#
+# System imports
+from   __future__ import print_function
+from   numpy      import *
+import os
+import sys
+import unittest
+
+#
+# Parse the command-line arguments
+from optparse import *
+parser = OptionParser()
+parser.add_option("-t", "--testharness", action="store_true",
+                  dest="testharness", default=False,
+                  help="test local build modules; prevent loading system-installed modules")
+parser.add_option("-v", "--verbosity", type="int", dest="verbosity", default=2,
+                  help="set the verbosity level [default 2]")
+options,args = parser.parse_args()
+#
+# Under normal usage, simply use 'from PyTrilinos import Teuchos'.  For testing,
+# we want to be able to control whether we import from the build directory or
+# from a system-installed version of PyTrilinos.
+from testutil import fromPyTrilinosImport
+Teuchos = fromPyTrilinosImport('Teuchos', options.testharness)
+
+##########################################################################
+
+class TeuchosRCPTeuchosTestCase(unittest.TestCase):
+    "Test the Teuchos.RCP functions on a Teuchos object"
+
+    def setUp(self):
+        self.p = Teuchos.ParameterList()
+
+    def testIsNull(self):
+        "Test Teuchos.RCP.is_null() for a Teuchos object"
+        self.assertEquals(Teuchos.RCP.is_null(self.p), False)
+
+    def testIsValidPtr(self):
+        "Test Teuchos.RCP.is_valid_ptr() for a Teuchos object"
+        self.assertEquals(Teuchos.RCP.is_valid_ptr(self.p), True)
+
+    def testHasOwnership(self):
+        "Test Teuchos.RCP.has_ownership() for a Teuchos object"
+        self.assertEquals(Teuchos.RCP.has_ownership(self.p), True)
+
+    def testStrongCount(self):
+        "Test Teuchos.RCP.strong_count() for a Teuchos object"
+        self.assertEquals(Teuchos.RCP.strong_count(self.p), 1)
+
+    def testWeakCount(self):
+        "Test Teuchos.RCP.weak_count() for a Teuchos object"
+        self.assertEquals(Teuchos.RCP.weak_count(self.p), 0)
+
+    def testTotalCount(self):
+        "Test Teuchos.RCP.total_count() for a Teuchos object"
+        self.assertEquals(Teuchos.RCP.total_count(self.p), 1)
+
+##########################################################################
+
+if (${Trilinos_ENABLE_Epetra}):
+    Epetra = fromPyTrilinosImport('Epetra', options.testharness)
+    
+    class TeuchosRCPEpetraTestCase(unittest.TestCase):
+        "Test the Teuchos.RCP functions on an Epetra object"
+
+        def setUp(self):
+            self.comm = Epetra.PyComm()
+            self.map  = Epetra.Map(100,0,self.comm)
+            self.vec  = Epetra.Vector(self.map)
+
+        def testIsNull(self):
+            "Test Teuchos.RCP.is_null() for an Epetra object"
+            self.assertEquals(Teuchos.RCP.is_null(self.comm), False)
+
+        def testIsValidPtr(self):
+            "Test Teuchos.RCP.is_valid_ptr() for an Epetra object"
+            self.assertEquals(Teuchos.RCP.is_valid_ptr(self.comm), True)
+
+        def testHasOwnership(self):
+            "Test Teuchos.RCP.has_ownership() for an Epetra object"
+            self.assertEquals(Teuchos.RCP.has_ownership(self.comm), True)
+
+        def testStrongCount(self):
+            "Test Teuchos.RCP.strong_count() for an Epetra object"
+            self.assertEquals(Teuchos.RCP.strong_count(self.comm), 1)
+            self.assertEquals(Teuchos.RCP.strong_count(self.map), 1)
+            self.assertEquals(Teuchos.RCP.strong_count(self.vec), 1)
+
+        def testWeakCount(self):
+            "Test Teuchos.RCP.weak_count() for an Epetra object"
+            self.assertEquals(Teuchos.RCP.weak_count(self.comm), 0)
+
+        def testTotalCount(self):
+            "Test Teuchos.RCP.total_count() for an Epetra object"
+            self.assertEquals(Teuchos.RCP.total_count(self.comm), 1)
+
+##########################################################################
+
+if __name__ == "__main__":
+
+    # Create the test suite object
+    suite = unittest.TestSuite()
+
+    # Add the test cases to the test suite
+    suite.addTest(unittest.makeSuite(TeuchosRCPTeuchosTestCase))
+    if (${Trilinos_ENABLE_Epetra}):
+        suite.addTest(unittest.makeSuite(TeuchosRCPEpetraTestCase))
+
+    # Create a communicator
+    comm    = Teuchos.DefaultComm.getComm()
+    iAmRoot = comm.getRank() == 0
+
+    # Run the test suite
+    if iAmRoot:
+        print("\n********************\nTesting Teuchos.RCP\n"
+              "********************\n", file=sys.stderr)
+    v = options.verbosity * int(iAmRoot)
+    result = unittest.TextTestRunner(verbosity=v).run(suite)
+
+    # Compute the total number of errors and failures
+    errsPlusFails = comm.reduceAll(Teuchos.REDUCE_SUM,
+                                   len(result.errors) + len(result.failures))
+    if errsPlusFails == 0 and iAmRoot: print("End Result: TEST PASSED")
+
+    # Some versions of python don't properly delete suite upon exit
+    del suite
+
+    # Exit with error/nonerror code
+    sys.exit(errsPlusFails)
