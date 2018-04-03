@@ -580,6 +580,53 @@ namespace MueLu {
       return boundaryNodes;
     }
 
+
+    /*! @brief Detect Dirichlet columns based on Dirichlet rows
+
+        The routine finds all column indices that are in Dirichlet rows, where Dirichlet rows are described by dirichletRows,
+        as returned by DetectDirichletRows.
+
+        @param[in] A matrix
+        @param[in] dirichletRows array of Dirichlet rows.
+
+        @return boolean array.  The ith entry is true iff row i is a Dirichlet column.
+    */
+    static Teuchos::ArrayRCP<const bool> DetectDirichletCols(const Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>& A,
+                                                             const Teuchos::ArrayRCP<const bool>& dirichletRows) {
+      Scalar zero = Teuchos::ScalarTraits<Scalar>::zero();
+      Scalar one = Teuchos::ScalarTraits<Scalar>::one();
+      Teuchos::RCP<const Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > domMap = A.getDomainMap();
+      Teuchos::RCP<const Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > colMap = A.getColMap();
+      Teuchos::RCP<Xpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > myColsToZero = Xpetra::MultiVectorFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Build(colMap,1);
+      myColsToZero->putScalar(zero);
+      // Find all local column indices that are in Dirichlet rows, record in myColsToZero as 1.0
+      for(size_t i=0; i<dirichletRows.size(); i++) {
+        if (dirichletRows[i]) {
+          Teuchos::ArrayView<const LocalOrdinal> indices;
+          Teuchos::ArrayView<const Scalar> values;
+          A.getLocalRowView(i,indices,values);
+          for(size_t j=0; j<static_cast<size_t>(indices.size()); j++)
+            myColsToZero->replaceLocalValue(indices[j],0,one);
+        }
+      }
+    
+      Teuchos::RCP<Xpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > globalColsToZero = Xpetra::MultiVectorFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Build(domMap,1);
+      globalColsToZero->putScalar(zero);
+      Teuchos::RCP<Xpetra::Export<LocalOrdinal,GlobalOrdinal,Node> > exporter = Xpetra::ExportFactory<LocalOrdinal,GlobalOrdinal,Node>::Build(colMap,domMap);
+      // export to domain map
+      globalColsToZero->doExport(*myColsToZero,*exporter,Xpetra::ADD);
+      // import to column map
+      myColsToZero->doImport(*globalColsToZero,*exporter,Xpetra::INSERT);
+      Teuchos::ArrayRCP<const Scalar> myCols = myColsToZero->getData(0);
+      Teuchos::ArrayRCP<bool> dirichletCols(colMap->getNodeNumElements(), true);
+      Magnitude eps = Teuchos::ScalarTraits<Magnitude>::eps();
+      for(size_t i=0; i<colMap->getNodeNumElements(); i++) {
+        dirichletCols[i] = Teuchos::ScalarTraits<Scalar>::magnitude(myCols[i])>2.0*eps;
+      }
+      return dirichletCols;
+    }
+
+
     /*! @brief Frobenius inner product of two matrices
 
        Used in energy minimization algorithms
