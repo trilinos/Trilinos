@@ -724,6 +724,7 @@ namespace MueLu {
     }
 
     // Zeros out rows
+    // Takes a vector containg Dirichlet row indices
     static void ZeroDirichletRows(Teuchos::RCP<Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >& A,
                                   const std::vector<LocalOrdinal>& dirichletRows,
                                   Scalar replaceWith=Teuchos::ScalarTraits<Scalar>::zero()) {
@@ -738,9 +739,28 @@ namespace MueLu {
       }
     }
 
+    // Zeros out rows
+    // Takes a Boolean ArrayRCP
+    static void ZeroDirichletRows(Teuchos::RCP<Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >& A,
+                                  const Teuchos::ArrayRCP<const bool>& dirichletRows,
+                                  Scalar replaceWith=Teuchos::ScalarTraits<Scalar>::zero()) {
+      for(size_t i=0; i<dirichletRows.size(); i++) {
+        if (dirichletRows[i]) {
+          Teuchos::ArrayView<const LocalOrdinal> indices;
+          Teuchos::ArrayView<const Scalar> values;
+          A->getLocalRowView(i,indices,values);
+          // NOTE: This won't work with fancy node types.
+          Scalar* valuesNC = const_cast<Scalar*>(values.getRawPtr());
+          for(size_t j=0; j<(size_t)indices.size(); j++)
+            valuesNC[j]=replaceWith;
+        }
+      }
+    }
+
     // Zeros out columns
+    // Takes a Boolean vector
     static void ZeroDirichletCols(Teuchos::RCP<Matrix>& A,
-                                  const std::vector<LocalOrdinal>& dirichletCols,
+                                  const Teuchos::ArrayRCP<const bool>& dirichletCols,
                                   Scalar replaceWith=Teuchos::ScalarTraits<Scalar>::zero()) {
       for(size_t i=0; i<A->getNodeNumRows(); i++) {
         Teuchos::ArrayView<const LocalOrdinal> indices;
@@ -749,7 +769,7 @@ namespace MueLu {
         // NOTE: This won't work with fancy node types.
         Scalar* valuesNC = const_cast<Scalar*>(values.getRawPtr());
         for(size_t j=0; j<static_cast<size_t>(indices.size()); j++)
-          if (dirichletCols[indices[j]]==1)
+          if (dirichletCols[indices[j]])
             valuesNC[j] = replaceWith;
       }
     }
