@@ -497,21 +497,41 @@ namespace MueLu {
 
         @return boolean array.  The ith entry is true iff row i is a Dirichlet row.
     */
-    static Teuchos::ArrayRCP<const bool> DetectDirichletRows(const Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>& A, const Magnitude& tol = Teuchos::ScalarTraits<Scalar>::zero()) {
+    static Teuchos::ArrayRCP<const bool> DetectDirichletRows(const Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>& A, const Magnitude& tol = Teuchos::ScalarTraits<Scalar>::zero(), bool count_twos_as_dirichlet=false) {
       LocalOrdinal numRows = A.getNodeNumRows();
       typedef Teuchos::ScalarTraits<Scalar> STS;
       ArrayRCP<bool> boundaryNodes(numRows, true);
-      for (LocalOrdinal row = 0; row < numRows; row++) {
-        ArrayView<const LocalOrdinal> indices;
-        ArrayView<const Scalar> vals;
-        A.getLocalRowView(row, indices, vals);
-        size_t nnz = A.getNumEntriesInLocalRow(row);
-        if (nnz > 1)
-          for (size_t col = 0; col < nnz; col++)
-            if ( (indices[col] != row) && STS::magnitude(vals[col]) > tol) {
-              boundaryNodes[row] = false;
-              break;
-            }
+      if (count_twos_as_dirichlet) {
+        for (LocalOrdinal row = 0; row < numRows; row++) {
+          ArrayView<const LocalOrdinal> indices;
+          ArrayView<const Scalar> vals;
+          A.getLocalRowView(row, indices, vals);
+          size_t nnz = A.getNumEntriesInLocalRow(row);
+          if (nnz > 2) {
+            size_t col;
+            for (col = 0; col < nnz; col++)
+              if ( (indices[col] != row) && STS::magnitude(vals[col]) > tol) {
+                if (!boundaryNodes[row])
+                  break;
+                boundaryNodes[row] = false;
+              }
+            if (col == nnz)
+              boundaryNodes[row] = true;
+          }
+        }
+      } else {
+        for (LocalOrdinal row = 0; row < numRows; row++) {
+          ArrayView<const LocalOrdinal> indices;
+          ArrayView<const Scalar> vals;
+          A.getLocalRowView(row, indices, vals);
+          size_t nnz = A.getNumEntriesInLocalRow(row);
+          if (nnz > 1) 
+            for (size_t col = 0; col < nnz; col++)
+              if ( (indices[col] != row) && STS::magnitude(vals[col]) > tol) {
+                boundaryNodes[row] = false;
+                break;
+              }
+        }
       }
       return boundaryNodes;
     }
