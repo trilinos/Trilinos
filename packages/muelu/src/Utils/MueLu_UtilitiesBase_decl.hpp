@@ -746,6 +746,7 @@ namespace MueLu {
     }
 
     // Applies Ones-and-Zeros to matrix rows
+    // Takes a vector of row indices
     static void ApplyOAZToMatrixRows(Teuchos::RCP<Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >& A,
                                const std::vector<LocalOrdinal>& dirichletRows) {
       RCP<const Map> Rmap = A->getColMap();
@@ -766,6 +767,34 @@ namespace MueLu {
             valuesNC[j]=one;
           else
             valuesNC[j]=zero;
+        }
+      }
+    }
+
+    // Applies Ones-and-Zeros to matrix rows
+    // Takes a Boolean array.
+    static void ApplyOAZToMatrixRows(Teuchos::RCP<Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >& A,
+                                     const Teuchos::ArrayRCP<const bool>& dirichletRows) {
+      RCP<const Map> Rmap = A->getColMap();
+      RCP<const Map> Cmap = A->getColMap();
+      Scalar one  =Teuchos::ScalarTraits<Scalar>::one();
+      Scalar zero =Teuchos::ScalarTraits<Scalar>::zero();
+
+      for(size_t i=0; i<dirichletRows.size(); i++) {
+        if (dirichletRows[i]){
+          GlobalOrdinal row_gid = Rmap->getGlobalElement(i);
+
+          Teuchos::ArrayView<const LocalOrdinal> indices;
+          Teuchos::ArrayView<const Scalar> values;
+          A->getLocalRowView(i,indices,values);
+          // NOTE: This won't work with fancy node types.
+          Scalar* valuesNC = const_cast<Scalar*>(values.getRawPtr());
+          for(size_t j=0; j<(size_t)indices.size(); j++) {
+            if(Cmap->getGlobalElement(indices[j])==row_gid)
+              valuesNC[j]=one;
+            else
+              valuesNC[j]=zero;
+          }
         }
       }
     }

@@ -241,6 +241,10 @@ namespace MueLu {
       MueLu::UtilitiesBase<Scalar,LocalOrdinal,GlobalOrdinal,Node>::ApplyOAZToMatrixRows(A,dirichletRows);
     }
 
+    static void ApplyOAZToMatrixRows(Teuchos::RCP<Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >& A,const Teuchos::ArrayRCP<const bool>& dirichletRows) {
+      MueLu::UtilitiesBase<Scalar,LocalOrdinal,GlobalOrdinal,Node>::ApplyOAZToMatrixRows(A,dirichletRows);
+    }
+
     static void ZeroDirichletRows(Teuchos::RCP<Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >& A,const std::vector<LocalOrdinal>& dirichletRows, Scalar replaceWith=Teuchos::ScalarTraits<Scalar>::zero()) {
       MueLu::UtilitiesBase<Scalar,LocalOrdinal,GlobalOrdinal,Node>::ZeroDirichletRows(A,dirichletRows,replaceWith);
     }
