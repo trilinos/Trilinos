@@ -294,15 +294,6 @@ namespace MueLu {
 
   private:
 
-    Teuchos::ArrayRCP<const bool> findDirichletCols(Teuchos::RCP<Matrix> A,
-                                                    Teuchos::ArrayRCP<const bool>& dirichletRows);
-
-    // Builds diagonal matrix DiagMatrix with one on diagonal for zero rows of A
-    // Assigns A = DiagMatrix + A.
-    // We apply this to A_nodal.
-    void Remove_Zeroed_Rows(Teuchos::RCP<Matrix>& A, magnitudeType tol=1.0e-14);
-
-
     /** Initialize with matrices except the Jacobian (don't compute the preconditioner)
      *
      * \param[in] D0_Matrix Discrete Gradient
