@@ -99,56 +99,56 @@ def get_typedefs():
 
 ################################################################################
 
-def parse_class(classname):
-    result = {}
-    if classname[-1] != ">":
-        name = classname
-        templates = []
-    else:
-        open_brackets = 1
-        index = len(classname) - 1
-        while open_brackets > 0 and index > 0:
-            index -= 1
-            if classname[index] == ">":
-                open_brackets += 1
-            elif classname[index] == "<":
-                open_brackets -= 1
-        name = classname[:index]
-        templates = classname[index:].split(",")
-    components = name.split("::")
-    if len(components) == 1:
-        result["namespaces"] = []
-    else:
-        result["namespaces"] = components[:-1]
-    result["name"] = components[-1]
-    result["template_args"] = []
-    for i in range(len(templates)):
-        result["template_args"].append("ARG%d" % (i+1))
-    return result
+# def parse_class(classname):
+#     result = {}
+#     if classname[-1] != ">":
+#         name = classname
+#         templates = []
+#     else:
+#         open_brackets = 1
+#         index = len(classname) - 1
+#         while open_brackets > 0 and index > 0:
+#             index -= 1
+#             if classname[index] == ">":
+#                 open_brackets += 1
+#             elif classname[index] == "<":
+#                 open_brackets -= 1
+#         name = classname[:index]
+#         templates = classname[index:].split(",")
+#     components = name.split("::")
+#     if len(components) == 1:
+#         result["namespaces"] = []
+#     else:
+#         result["namespaces"] = components[:-1]
+#     result["name"] = components[-1]
+#     result["template_args"] = []
+#     for i in range(len(templates)):
+#         result["template_args"].append("ARG%d" % (i+1))
+#     return result
 
 ################################################################################
 
-def forward_decl(classname):
-    result = ""
-    parsing = parse_class(classname)
-    namespaces = parsing["namespaces"]
-    if namespaces:
-        for namespace in namespaces:
-            result += "namespace %s{ " % namespace
-    template_args = parsing["template_args"]
-    if template_args:
-        result += "template< "
-        for arg in template_args:
-            result += "class %s" % arg
-            if arg != template_args[-1]:
-                result += ","
-            result += " "
-        result += "> "
-    result += "class %s; " % parsing["name"]
-    if namespaces:
-        for namespace in namespaces:
-            result += "} "
-    return result
+# def forward_decl(classname):
+#     result = ""
+#     parsing = parse_class(classname)
+#     namespaces = parsing["namespaces"]
+#     if namespaces:
+#         for namespace in namespaces:
+#             result += "namespace %s{ " % namespace
+#     template_args = parsing["template_args"]
+#     if template_args:
+#         result += "template< "
+#         for arg in template_args:
+#             result += "class %s" % arg
+#             if arg != template_args[-1]:
+#                 result += ","
+#             result += " "
+#         result += "> "
+#     result += "class %s; " % parsing["name"]
+#     if namespaces:
+#         for namespace in namespaces:
+#             result += "} "
+#     return result
 
 ################################################################################
 
@@ -191,13 +191,13 @@ def get_rcp_classes(swig_filenames):
 
 ################################################################################
 
-def list_forward_decl(rcp_classes):
-    result = set()
-    for classname in rcp_classes:
-        result.add(forward_decl(classname))
-    result = list(result)
-    result.sort()
-    return result
+# def list_forward_decl(rcp_classes):
+#     result = set()
+#     for classname in rcp_classes:
+#         result.add(forward_decl(classname))
+#     result = list(result)
+#     result.sort()
+#     return result
 
 ################################################################################
 
@@ -206,7 +206,6 @@ def main():
     header_files  = get_header_files()
     typedefs      = get_typedefs()
     teuchos_rcps  = get_rcp_classes(swig_files)
-    forward_decls = list_forward_decl(teuchos_rcps)
 
     # Generate the SWIG interface file for Teuchos.RCP
     print("%define %teuchos_rcp_docstring")
@@ -232,57 +231,54 @@ def main():
     print("        docstring = %teuchos_rcp_docstring) RCP")
     print("")
     print("%{")
-    if header_files:
-        print("// Include files")
-        for filename in header_files:
-            print('#include "%s"' % filename)
-        print("")
-    print("// Forward declarations")
-    for decl in forward_decls:
-        print(decl)
+    print("// Import the NumPy interface")
+    print("#define NO_IMPORT_ARRAY")
+    print('#include "numpy_include.hpp"')
     print("%}")
     print("")
-    print("// Include the Teuchos::RCP typemaps")
-    print('%include "Teuchos_RCP_typemaps.i"')
+    print("// Import the module files")
+    for swig_file in swig_files:
+        line = 'import "%s"' % swig_file
+        print("%" + line)
     print("")
-    if typedefs:
-        print("// Define the SWIG-inlined typedefs")
-        print("%inline")
-        print("{")
-        for typedef in typedefs:
-            print("typedef %s %s;" % typedef)
-        print("}")
-        print("")
+    print("// SWIG NumPy interface file")
+    print('%include "numpy.i"')
+    print("")
     print('%feature("docstring")')
     print("is_null")
     print('"is_null(obj) -> bool')
     print("")
     print("Return true if obj is a python wrapper for a C++ object stored as a")
     print('Teuchos::RCP and the underlying pointer is NULL"')
+    print("")
     print('%feature("docstring")')
     print("is_valid_ptr")
     print('"is_valid_ptr(obj) -> bool')
     print("")
     print("Return true if obj is a python wrapper for a C++ object stored as a")
     print('Teuchos::RCP and the underlying pointer is valid"')
+    print("")
     print('%feature("docstring")')
     print("has_ownership")
     print('"has_ownership(obj) -> bool')
     print("")
     print("Return true if obj is a python wrapper for a C++ object stored as a")
     print('Teuchos::RCP that has ownership of the underlying pointer"')
+    print("")
     print('%feature("docstring")')
     print("strong_count")
     print('"strong_count(obj) -> int')
     print("")
     print("If obj is a python wrapper for a C++ object stored as a Teuchos::RCP,")
     print('return the strong reference count"')
+    print("")
     print('%feature("docstring")')
     print("weak_count")
     print('"weak_count(obj) -> int')
     print("")
     print("If obj is a python wrapper for a C++ object stored as a Teuchos::RCP,")
     print('return the weak reference count"')
+    print("")
     print('%feature("docstring")')
     print("total_count")
     print('"total_count(obj) -> int')
