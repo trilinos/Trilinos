@@ -354,9 +354,27 @@ namespace Ifpack2 {
     //! If \c true, the container has been successfully computed.
     bool IsComputed_;
 
-    // objects required from this container
-    typename BlockTriDiContainerDetails::Impl<MatrixType>::tpetra_block_crs_matrix_type A_;
-    typename BlockTriDiContainerDetails::Impl<MatrixType>::tpetra_import_type tpetra_importer_;
+    using impl_type = typename BlockTriDiContainerDetails::ImplType<MatrixType>;
+    using part_interface_type = BlockTriDiContainerDetails::PartInterface<MatrixType>;
+    using block_tridiags_type = BlockTriDiContainerDetails::BlockTridiags<MatrixType>;
+    using amd_type = BlockTriDiContainerDetails::AmD<MatrixType>;
+
+    // distructed objects
+    Teuchos::RCP<const typename impl_type::tpetra_block_crs_matrix_type> A_;
+    Teuchos::RCP<const typename impl_type::tpetra_import_type> tpetra_importer_;
+    // copy of Y (mutable to penentrate const)
+    mutable typename impl_type::tpetra_multivector_type Z_;
+
+    // local objects
+    part_interface_type part_interface_;
+    block_tridiags_type block_tridiags_; // D
+    amd_type a_minus_d_; // R = A - D
+    mutable typename impl_type::vector_type_1d_view work_; // right hand side workspace
+    
+    // initialize distributed and local objects
+    void initInternal (const Teuchos::RCP<const row_matrix_type>& matrix,
+                       const Teuchos::Array<Teuchos::Array<local_ordinal_type> >& partitions);
+
   };
 
 } // namespace Ifpack2
