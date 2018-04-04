@@ -78,6 +78,12 @@ public:
          && (state.flag == false) ) {
        stat = true;
      }
+     else {
+       state.statusFlag = (std::max(state.aggregateGradientNorm,state.aggregateModelError) <= tol_ ? EXITSTATUS_CONVERGED
+                           : state.iter >= max_iter_ ? EXITSTATUS_MAXITER
+                           : state.flag == true ? EXITSTATUS_CONVERGED
+                           : EXITSTATUS_LAST);
+     }
      return stat;
   }
 

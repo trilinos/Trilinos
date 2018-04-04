@@ -175,7 +175,8 @@ int main(int argc,char * argv[])
    std::string celltype = "Quad"; // or "Tri" (2d), Hex or Tet (3d)
    double x_size=1.,y_size=1.,z_size=1.;
    int basis_order = 1;
-
+   std::string output_filename="output_";
+   
    Teuchos::CommandLineProcessor clp;
    clp.throwExceptions(false);
    clp.setDocString("This example solves curl laplacian problem with Hex and Tet inline mesh with high order.\n");
@@ -190,6 +191,7 @@ int main(int argc,char * argv[])
    clp.setOption("y-size",&y_size);
    clp.setOption("z-size",&z_size);
    clp.setOption("basis-order",&basis_order);
+   clp.setOption("output-filename",&output_filename);
 
    // parse commandline argument
    Teuchos::CommandLineProcessor::EParseCommandLineReturn r_parse= clp.parse( argc, argv );
@@ -543,7 +545,7 @@ int main(int argc,char * argv[])
       // same order are ok as they are staged one after another in the
       // ADD_ADVANCED_TEST cmake macro.
       std::ostringstream filename;
-      filename << "output_" << basis_order << ".exo";
+      filename << output_filename << basis_order << ".exo";
       mesh->writeToExodus(filename.str());
    }
 

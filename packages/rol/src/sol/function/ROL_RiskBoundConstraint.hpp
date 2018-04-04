@@ -80,9 +80,13 @@ private:
     lower.clear(); upper.clear();
     // Get stochastic optimization information
     std::string optType = parlist.sublist("SOL").get("Stochastic Component Type","Risk Averse");
-    if ( optType == "bPOE" || optType == "Risk Averse" ) {
+    if ( optType == "Risk Averse" ||
+         optType == "Deviation"   ||
+         optType == "Regret"      ||
+         optType == "Error"       ||
+         optType == "Probability" ) {
       std::string name;
-      RiskMeasureInfo<Real>(parlist,name,nStat,lower,upper,activated);
+      RandVarFunctionalInfo<Real>(parlist,name,nStat,lower,upper,activated);
       augmented = (nStat > 0) ? true : false;
     }
     else if ( optType == "Risk Neutral" || optType == "Mean Value" ) {
@@ -213,6 +217,19 @@ public:
       if ( bc == ROL::nullPtr || (bc != ROL::nullPtr && !bc->isActivated()) ) {
         BoundConstraint<Real>::deactivate();
       }
+    }
+  }
+
+  // Objective only -- no statistic
+  RiskBoundConstraint(const Ptr<BoundConstraint<Real> > &bc)
+   : BoundConstraint<Real>(), bc_(bc), statObj_bc_(nullPtr),
+     augmentedObj_(false), activatedObj_(false),
+     augmentedCon_(false),
+     isLOinitialized_(false), isHIinitialized_(false) {
+    activatedObj_ = bc_->isActivated();
+    BoundConstraint<Real>::activate();
+    if (!activatedObj_) {
+      BoundConstraint<Real>::deactivate();
     }
   }
 

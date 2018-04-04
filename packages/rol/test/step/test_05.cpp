@@ -47,8 +47,8 @@
 
 #define USE_HESSVEC 1
 
-#include "ROL_TestObjectives.hpp"
-#include "ROL_Algorithm.hpp"
+#include "ROL_GetTestProblems.hpp"
+#include "ROL_OptimizationSolver.hpp"
 #include "Teuchos_oblackholestream.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
 #include "Teuchos_XMLParameterListHelpers.hpp"
@@ -89,79 +89,79 @@ int main(int argc, char *argv[]) {
     parlist->sublist("General").sublist("Krylov").set("Absolute Tolerance", 1.e-8);
     parlist->sublist("General").sublist("Krylov").set("Relative Tolerance", 1.e-4);
     parlist->sublist("General").sublist("Krylov").set("Iteration Limit", 50);
+    parlist->sublist("Step").set("Type","Primal Dual Active Set");
 
-    for ( ROL::ETestOptProblem prob = ROL::TESTOPTPROBLEM_HS1; prob < ROL::TESTOPTPROBLEM_LAST; prob++ ) { 
-      if ( prob != ROL::TESTOPTPROBLEM_HS5 ) {
-        // PDAS parameters.
-        switch (prob) {
-          case ROL::TESTOPTPROBLEM_HS1:
-          case ROL::TESTOPTPROBLEM_HS2:
-          case ROL::TESTOPTPROBLEM_HS3:
-          case ROL::TESTOPTPROBLEM_HS4:
-          case ROL::TESTOPTPROBLEM_HS45:
+    for ( ROL::ETestOptProblem prob = ROL::TESTOPTPROBLEM_ROSENBROCK; prob < ROL::TESTOPTPROBLEM_LAST; prob++ ) { 
+      // Get Objective Function
+      ROL::Ptr<ROL::Vector<RealT> > x0, z;
+      ROL::Ptr<ROL::OptimizationProblem<RealT> > problem;
+      ROL::GetTestProblem<RealT>(problem,x0,z,prob);
+
+      if (problem->getProblemType() == ROL::TYPE_B) {
+        if ( prob != ROL::TESTOPTPROBLEM_HS5 ) {
+          // PDAS parameters.
+          if (prob == ROL::TESTOPTPROBLEM_HS1 ||
+              prob == ROL::TESTOPTPROBLEM_HS2 ||
+              prob == ROL::TESTOPTPROBLEM_HS3 ||
+              prob == ROL::TESTOPTPROBLEM_HS4 ||
+              prob ==  ROL::TESTOPTPROBLEM_HS45) {
             parlist->sublist("Step").sublist("Primal Dual Active Set").set("Relative Step Tolerance",1.e-10);
             parlist->sublist("Step").sublist("Primal Dual Active Set").set("Relative Gradient Tolerance",1.e-8);
             parlist->sublist("Step").sublist("Primal Dual Active Set").set("Iteration Limit",1);
             parlist->sublist("Step").sublist("Primal Dual Active Set").set("Dual Scaling",1.e8);
-            break;
-          case ROL::TESTOPTPROBLEM_HS5:
+          }
+          else if (prob == ROL::TESTOPTPROBLEM_HS5) {
             parlist->sublist("Step").sublist("Primal Dual Active Set").set("Relative Step Tolerance",1.e-10);
             parlist->sublist("Step").sublist("Primal Dual Active Set").set("Relative Gradient Tolerance",1.e-8);
             parlist->sublist("Step").sublist("Primal Dual Active Set").set("Iteration Limit",10);
             parlist->sublist("Step").sublist("Primal Dual Active Set").set("Dual Scaling",1.e-2);
-            break;
-          case ROL::TESTOPTPROBLEM_HS25:
+          }
+          else if (prob == ROL::TESTOPTPROBLEM_HS25) {
             parlist->sublist("Step").sublist("Primal Dual Active Set").set("Relative Step Tolerance",1.e-10);
             parlist->sublist("Step").sublist("Primal Dual Active Set").set("Relative Gradient Tolerance",1.e-8);
             parlist->sublist("Step").sublist("Primal Dual Active Set").set("Iteration Limit",10);
             parlist->sublist("Step").sublist("Primal Dual Active Set").set("Dual Scaling",1.e10);
-            break;
-          case ROL::TESTOPTPROBLEM_HS38:
+          }
+          else if (prob == ROL::TESTOPTPROBLEM_HS38) {
             parlist->sublist("Step").sublist("Primal Dual Active Set").set("Relative Step Tolerance",1.e-10);
             parlist->sublist("Step").sublist("Primal Dual Active Set").set("Relative Gradient Tolerance",1.e-8);
             parlist->sublist("Step").sublist("Primal Dual Active Set").set("Iteration Limit",1);
             parlist->sublist("Step").sublist("Primal Dual Active Set").set("Dual Scaling",1.e-3);
-            break;
-          case ROL::TESTOPTPROBLEM_BVP:
+          }
+          else if (prob == ROL::TESTOPTPROBLEM_BVP) {
             parlist->sublist("Step").sublist("Primal Dual Active Set").set("Relative Step Tolerance",1.e-10);
             parlist->sublist("Step").sublist("Primal Dual Active Set").set("Relative Gradient Tolerance",1.e-8);
             parlist->sublist("Step").sublist("Primal Dual Active Set").set("Iteration Limit",1);
             parlist->sublist("Step").sublist("Primal Dual Active Set").set("Dual Scaling",1.e0);
-            break;
-          case ROL::TESTOPTPROBLEM_LAST: break;
+          }
+          *outStream << std::endl << std::endl << ROL:: ETestOptProblemToString(prob)  << std::endl << std::endl;
+  
+          ROL::Ptr<ROL::Vector<RealT> > x = x0->clone();
+  
+          // Get Dimension of Problem
+          int dim = x0->dimension(); 
+          parlist->sublist("General").sublist("Krylov").set("Iteration Limit", 2*dim);
+  
+          // Error Vector
+          ROL::Ptr<ROL::Vector<RealT> > e = x0->clone();
+          e->zero();
+          
+          // Define Solver
+          ROL::OptimizationSolver<RealT> solver(*problem,*parlist);
+
+          // Run Solver
+          x->set(*x0);
+          solver.solve(*outStream);
+  
+          // Compute Error
+          e->set(*x);
+          e->axpy(-1.0,*z);
+          *outStream << std::endl << "Norm of Error: " << e->norm() << std::endl;
+  
+          // Update error flag
+          ROL::Ptr<const ROL::AlgorithmState<RealT> > state = solver.getAlgorithmState();
+          errorFlag += ((e->norm() < std::max(1.e-6*z->norm(),1.e-8) || (state->gnorm < 1.e-6)) ? 0 : 1);
         }
-        *outStream << std::endl << std::endl << ROL:: ETestOptProblemToString(prob)  << std::endl << std::endl;
-  
-        // Get Objective Function
-        ROL::Ptr<ROL::Vector<RealT> > x0, z;
-        ROL::Ptr<ROL::Objective<RealT> > obj;
-        ROL::Ptr<ROL::BoundConstraint<RealT> > con;
-        ROL::getTestObjectives<RealT>(obj,con,x0,z,prob);
-        ROL::Ptr<ROL::Vector<RealT> > x = x0->clone();
-  
-        // Get Dimension of Problem
-        int dim = x0->dimension(); 
-        parlist->sublist("General").sublist("Krylov").set("Iteration Limit", 2*dim);
-  
-        // Error Vector
-        ROL::Ptr<ROL::Vector<RealT> > e = x0->clone();
-        e->zero();
-        
-        // Define Algorithm
-        ROL::Algorithm<RealT> algo("Primal Dual Active Set",*parlist,false);
-  
-        // Run Algorithm
-        x->set(*x0);
-        algo.run(*x, *obj, *con, true, *outStream);
-  
-        // Compute Error
-        e->set(*x);
-        e->axpy(-1.0,*z);
-        *outStream << std::endl << "Norm of Error: " << e->norm() << std::endl;
-  
-        // Update error flag
-        ROL::Ptr<const ROL::AlgorithmState<RealT> > state = algo.getState();
-        errorFlag += ((e->norm() < std::max(1.e-6*z->norm(),1.e-8) || (state->gnorm < 1.e-6)) ? 0 : 1);
       }
     }
   }

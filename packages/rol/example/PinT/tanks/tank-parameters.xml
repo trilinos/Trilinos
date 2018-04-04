@@ -4,8 +4,8 @@
   <Parameter name="Number of Rows"          type="int"        value="3"                                          />
   <Parameter name="Number of Columns"       type="int"        value="3"                                          />
   <Parameter name="Number of Pass-Throughs" type="int"        value="2"      unit="number"                       />
-  <Parameter name="Pass-Through Rows"       type="Array(int)" value="{2,3}"  unit="int array"  symbol="pt_row"   />
-  <Parameter name="Pass-Through Columns"    type="Array(int)" value="{2,3}"  unit="int array"  symbol="pt_col"   />
+  <Parameter name="Pass-Through Rows"       type="string"     value="{1,2}"  unit="int array"  symbol="pt_row"   />
+  <Parameter name="Pass-Through Columns"    type="string"     value="{1,2}"  unit="int array"  symbol="pt_col"   />
   <!--==========================================================================================================--> 
   <!-- Physical Parameters                                                                                      --> 
   <Parameter name="Valve Constant"          type="double"     value="1.0e-2" unit="m^3/(s Pa)" symbol="Cv"       />
@@ -19,7 +19,7 @@
   <!-- Time Discretization                                                                                      --> 
   <Parameter name="Total Time"              type="double"     value="20.0"   unit="s"          symbol="T"        />
   <Parameter name="Number of Time Steps"    type="int"        value="100"                      symbol="Nt"       />
-  <Parameter name="Theta"                   type="double"     value="0.5"                      symbol="theta"    />
+  <Parameter name="Theta"                   type="double"     value="1.0"                      symbol="theta"    />
   <!--==========================================================================================================--> 
 </ParameterList>
 

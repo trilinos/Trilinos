@@ -201,6 +201,22 @@ public:
     }
   }
 
+  virtual void applyPreconditioner(Vector<Real> &pv,
+                                   const Vector<Real> &v,
+                                   const Vector<Real> &x,
+                                   const Vector<Real> &g,
+                                   Real &tol) {
+    PartitionedVector<Real> &pvpv
+      = dynamic_cast<PartitionedVector<Real>&>(pv);
+    const PartitionedVector<Real> &vpv
+      = dynamic_cast<const PartitionedVector<Real>&>(v);
+    
+    const int ncon = static_cast<int>(cvec_.size());
+    for (int i = 0; i < ncon; ++i) {
+      cvec_[i]->applyPreconditioner(*pvpv.get(i), *vpv.get(i), getOpt(x), getOpt(g), tol);
+    }
+  }
+
 // Definitions for parametrized (stochastic) equality constraints
 public:
   void setParameter(const std::vector<Real> &param) {

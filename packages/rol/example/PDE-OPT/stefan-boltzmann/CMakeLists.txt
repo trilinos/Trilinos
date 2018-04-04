@@ -42,11 +42,18 @@ IF(${PROJECT_NAME}_ENABLE_Intrepid AND
     ADD_DIR_TO_NAME
   )
 
+  TRIBITS_ADD_EXECUTABLE(
+    example_04
+    SOURCES example_04.cpp
+    ADD_DIR_TO_NAME
+  )
+
   TRIBITS_COPY_FILES_TO_BINARY_DIR(
     StochasticStefanBoltzmannDataCopy
     SOURCE_FILES
       input.xml
       input_app.xml
+      input_ex04.xml
       SROMinput.xml
       plotresults.m
       plotstats.m
