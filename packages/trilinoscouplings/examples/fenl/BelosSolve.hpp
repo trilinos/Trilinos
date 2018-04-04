@@ -164,16 +164,11 @@ belos_solve(
 
     RCP<ParameterList> mueluParams = Teuchos::sublist(fenlParams, "MueLu");
     if (use_mean_based) {
-      preconditioner =
-        Teuchos::rcp(new MeanBasedPreconditioner<SM, LO, GO, N>());
-      precOp = preconditioner->setupPreconditioner(rcpFromRef(A), mueluParams,
-                                                   coords);
+      precOp = build_mean_based_muelu_preconditioner(rcpFromRef(A), mueluParams,
+                                                     coords);
     }
     else {
-      preconditioner =
-        Teuchos::rcp(new MueLuPreconditioner<SM, LO, GO, N>());
-      precOp = preconditioner->setupPreconditioner(rcpFromRef(A), mueluParams,
-                                                   coords);
+      precOp = build_muelu_preconditioner(rcpFromRef(A), mueluParams, coords);
     }
   }
 
