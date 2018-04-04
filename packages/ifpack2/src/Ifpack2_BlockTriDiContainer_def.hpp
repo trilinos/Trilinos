@@ -92,6 +92,29 @@ namespace Ifpack2 {
   }
 
   template <typename MatrixType, typename LocalScalarType>
+  void
+  BlockTriDiContainer<MatrixType, LocalScalarType>::
+  clearInternal ()
+  {
+    using impl_type = BlockTriDiContainerDetails::ImplType<MatrixType>;
+    using part_interface_type = BlockTriDiContainerDetails::PartInterface<MatrixType>;
+    using block_tridiags_type = BlockTriDiContainerDetails::BlockTridiags<MatrixType>;
+    using amd_type = BlockTriDiContainerDetails::AmD<MatrixType>;
+    using norm_manager_type = BlockTriDiContainerDetails::NormManager<MatrixType>;
+    
+    A_ = Teuchos::null;
+    tpetra_importer_ = Teuchos::null;
+
+    Z_ = typename impl_type::tpetra_multivector_type();
+
+    part_interface_  = part_interface_type();
+    block_tridiags_  = block_tridiags_type();
+    a_minus_d_       = amd_type();
+    work_            = typename impl_type::vector_type_1d_view();
+    norm_manager_    = norm_manager_type();
+  }
+
+  template <typename MatrixType, typename LocalScalarType>
   BlockTriDiContainer<MatrixType, LocalScalarType>::
   BlockTriDiContainer (const Teuchos::RCP<const row_matrix_type>& matrix,
                        const Teuchos::Array<Teuchos::Array<local_ordinal_type> >& partitions,
@@ -147,8 +170,7 @@ namespace Ifpack2 {
     TEUCHOS_ASSERT(!A_.is_null()); // when initInternal is called, A_ must be set
     {
       const bool overlap_comm = false;
-      BlockTriDiContainerDetails::
-        performSymbolicPhase<MatrixType>
+      BlockTriDiContainerDetails::performSymbolicPhase<MatrixType>
         (A_, part_interface_, block_tridiags_, a_minus_d_, overlap_comm);    
     }
   }
@@ -160,7 +182,8 @@ namespace Ifpack2 {
     if (!this->isInitialized())
       this->initialize();
     {
-
+      BlockTriDiContainerDetails::performNumericPhase<MatrixType>
+        (A_, part_interface_, block_tridiags_, Kokkos::ArithTraits<magnitude_type>::zero());
     }
     IsComputed_ = true;
   }
@@ -168,7 +191,7 @@ namespace Ifpack2 {
   template <typename MatrixType, typename LocalScalarType>
   void BlockTriDiContainer<MatrixType, LocalScalarType>::clearBlocks ()
   {
-    //impl_ = Teuchos::null;
+    clearInternal();
     IsInitialized_ = false;
     IsComputed_ = false;
   }
@@ -178,9 +201,8 @@ namespace Ifpack2 {
   ::applyInverseJacobi (const mv_type& X, mv_type& Y, bool zeroStartingSolution,
                         int numSweeps) const
   {
-    using impl_type = BlockTriDiContainerDetails::ImplType<MatrixType>;
-
-    const auto tol = Kokkos::ArithTraits<typename impl_type::magnitude_type>::zero();
+    const magnitude_type tol = Kokkos::ArithTraits<magnitude_type>::zero();
+    const int check_tol_every = 1;
     BlockTriDiContainerDetails::applyInverseJacobi<MatrixType>
       (A_,
        tpetra_importer_, 
@@ -191,7 +213,8 @@ namespace Ifpack2 {
        this->DampingFactor_,
        zeroStartingSolution,
        numSweeps,
-       tol);
+       tol,
+       check_tol_every);
   }
 
   template <typename MatrixType, typename LocalScalarType>
@@ -210,9 +233,12 @@ namespace Ifpack2 {
   void BlockTriDiContainer<MatrixType, LocalScalarType>::compute (const ComputeParameters& in)
   {
     IsComputed_ = false;
-    if ( ! this->isInitialized())
+    if (!this->isInitialized())
       this->initialize();
-    //impl_->numeric(in.addRadiallyToDiagonal);
+    {
+      BlockTriDiContainerDetails::performNumericPhase<MatrixType>
+        (A_, part_interface_, block_tridiags_, in.addRadiallyToDiagonal);
+    }
     IsComputed_ = true;
   }
 
@@ -236,25 +262,36 @@ namespace Ifpack2 {
   int BlockTriDiContainer<MatrixType, LocalScalarType>
   ::applyInverseJacobi (const mv_type& X, mv_type& Y, const ApplyParameters& in) const
   {
-    return 0;
-    //return impl_->applyInverseJacobi(X, Y, in.dampingFactor, in.zeroStartingSolution, in.maxNumSweeps,
-    //in.tolerance, in.checkToleranceEvery);
+    int r_val = 0;
+    {
+      r_val = BlockTriDiContainerDetails::applyInverseJacobi<MatrixType>
+        (A_,
+         tpetra_importer_, 
+         X, Y, Z_,
+         part_interface_, block_tridiags_, a_minus_d_,
+         work_,
+         norm_manager_,
+         in.dampingFactor,
+         in.zeroStartingSolution,
+         in.maxNumSweeps,
+         in.tolerance,
+         in.checkToleranceEvery);
+    }
+    return r_val;
   }
 
   template <typename MatrixType, typename LocalScalarType>
   const Teuchos::ArrayRCP<const typename BlockTriDiContainer<MatrixType, LocalScalarType>::magnitude_type>
   BlockTriDiContainer<MatrixType, LocalScalarType>::getNorms0 () const {
-    //const auto p = impl_->get_norms0();
-    //return Teuchos::arcp(p, 0, p ? impl_->get_nvec() : 0, false);
-    return Teuchos::arcp<const typename BlockTriDiContainer<MatrixType, LocalScalarType>::magnitude_type>(NULL, 0, 0, false);
+    const auto p = norm_manager_.getNorms0();
+    return Teuchos::arcp(p, 0, p ? norm_manager_.getNumVectors() : 0, false);
   }
 
   template <typename MatrixType, typename LocalScalarType>
   const Teuchos::ArrayRCP<const typename BlockTriDiContainer<MatrixType, LocalScalarType>::magnitude_type>
   BlockTriDiContainer<MatrixType, LocalScalarType>::getNormsFinal () const {
-    //const auto p = impl_->get_norms_final();
-    //return Teuchos::arcp(p, 0, p ? impl_->get_nvec() : 0, false);
-    return Teuchos::arcp<const typename BlockTriDiContainer<MatrixType, LocalScalarType>::magnitude_type>(NULL, 0, 0, false);
+    const auto p = norm_manager_.getNormsFinal();
+    return Teuchos::arcp(p, 0, p ? norm_manager_.getNumVectors() : 0, false);
   }
 
   template <typename MatrixType, typename LocalScalarType>

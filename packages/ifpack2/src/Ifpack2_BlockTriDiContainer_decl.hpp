@@ -354,7 +354,7 @@ namespace Ifpack2 {
     //! If \c true, the container has been successfully computed.
     bool IsComputed_;
 
-    using impl_type = typename BlockTriDiContainerDetails::ImplType<MatrixType>;
+    using impl_type = BlockTriDiContainerDetails::ImplType<MatrixType>;
     using part_interface_type = BlockTriDiContainerDetails::PartInterface<MatrixType>;
     using block_tridiags_type = BlockTriDiContainerDetails::BlockTridiags<MatrixType>;
     using amd_type = BlockTriDiContainerDetails::AmD<MatrixType>;
@@ -377,6 +377,7 @@ namespace Ifpack2 {
     void initInternal (const Teuchos::RCP<const row_matrix_type>& matrix,
                        const Teuchos::Array<Teuchos::Array<local_ordinal_type> >& partitions);
 
+    void clearInternal();
   };
 
 } // namespace Ifpack2

@@ -467,6 +467,9 @@ namespace Ifpack2 {
       // tridiag's pack, and i % vector_length gives the position in the pack.
       vector_type_3d_view values;
 
+      BlockTridiags() = default;
+      BlockTridiags(const BlockTridiags &b) = default;
+
       // Index into row-major block of a tridiag.
       template <typename idx_type> 
       static KOKKOS_FORCEINLINE_FUNCTION
@@ -590,6 +593,9 @@ namespace Ifpack2 {
 
       // If is_tpetra_block_crs, then this is a pointer to A_'s value data.
       impl_scalar_type_1d_view tpetra_values;
+
+      AmD() = default;
+      AmD(const AmD &b) = default;
     };
 
     ///
@@ -907,11 +913,9 @@ namespace Ifpack2 {
       ConstUnmanaged<size_type_1d_view> A_rowptr;
       ConstUnmanaged<impl_scalar_type_1d_view> A_values;
       // block tridiags 
-      ConstUnmanaged<size_type_1d_view> D_pack_td_ptr, D_flat_td_ptr;
-      ConstUnmanaged<local_ordinal_type_1d_view> D_colindsub;
-      // block tridiags values
-      Unmanaged<vector_type_3d_view> D_vector_values;
-      //Unmanaged<impl_scalar_type_4d_view> D_scalar_values;
+      ConstUnmanaged<size_type_1d_view> pack_td_ptr, flat_td_ptr;
+      ConstUnmanaged<local_ordinal_type_1d_view> A_colindsub;
+      Unmanaged<vector_type_3d_view> vector_values;
       // diagonal safety
       const magnitude_type tiny;
       // shared information
@@ -920,26 +924,24 @@ namespace Ifpack2 {
     public:
       ExtractAndFactorizeTridiags(const BlockTridiags<MatrixType> &btdm_, 
                                   const PartInterface<MatrixType> &interf_,
-                                  const Teuchos::RCP<block_crs_matrix_type> &A_,
+                                  const Teuchos::RCP<const block_crs_matrix_type> &A_,
                                   const magnitude_type& tiny_) : 
         // interface
         partptr(interf_.partptr), 
         lclrow(interf_.lclrow), 
         packptr(interf_.packptr),
         // block crs matrix
-        A_rowptr(A_->getLocalGraph().row_map), 
-        A_values(A_->template getValues<typename device_type::memory_space>()),
+        A_rowptr(A_->getCrsGraph().getLocalGraph().row_map), 
+        A_values(const_cast<block_crs_matrix_type*>(A_.get())->
+                 template getValues<typename device_type::memory_space>()),
         // block tridiags 
-        D_flat_td_ptr(btdm_.flat_td_ptr), 
-        D_pack_td_ptr(btdm_.pack_td_ptr), 
-        D_vector_values(btdm_.values),
-        // D_scalar_values(impl_scalar_type_4d_view(btdm_.values.data(), 
-        //                                          btdm_.values.extent(0),
-        //                                          btdm_.values.extent(1),
-        //                                          btdm_.values.extent(2),
-        //                                          vector_length)),
+        flat_td_ptr(btdm_.flat_td_ptr), 
+        pack_td_ptr(btdm_.pack_td_ptr), 
+        A_colindsub(btdm_.A_colindsub),
+        vector_values(btdm_.values),
         blocksize(btdm_.values.extent(1)),
         blocksize_square(blocksize*blocksize),
+        // diagonal weight to avoid zero pivots
         tiny(tiny_) {}
       
       KOKKOS_INLINE_FUNCTION 
@@ -954,7 +956,7 @@ namespace Ifpack2 {
         local_ordinal_type nrows[vector_length] = {};
 
         for (local_ordinal_type vi=0;vi<npacks;++vi,++partidx) {
-          kfs[vi] = D_flat_td_ptr(partidx);
+          kfs[vi] = flat_td_ptr(partidx);
           ri0[vi] = partptr(partidx);
           nrows[vi] = partptr(partidx+1) - ri0[vi];
         }
@@ -962,7 +964,7 @@ namespace Ifpack2 {
           for (local_ordinal_type e=0;e<3;++e) {
             const impl_scalar_type* block[vector_length] = {};
             for (local_ordinal_type vi=0;vi<npacks;++vi) {
-              const size_type Aj = A_rowptr(lclrow(ri0[vi] + tr)) + D_A_colindsub(kfs[vi] + j);
+              const size_type Aj = A_rowptr(lclrow(ri0[vi] + tr)) + A_colindsub(kfs[vi] + j);
               block[vi] = &A_values(Aj*blocksize_square);
             }
             const size_type pi = kps + j;
@@ -970,7 +972,7 @@ namespace Ifpack2 {
             for (local_ordinal_type ii=0;ii<blocksize;++ii) {
               for (local_ordinal_type jj=0;jj<blocksize;++jj) {
                 const auto idx = ii*blocksize + jj;
-                auto& v = D_vector_values(pi, ii, jj);
+                auto& v = vector_values(pi, ii, jj);
                 for (local_ordinal_type vi=0;vi<npacks;++vi)
                   v[vi] = block[vi][idx];
               }
@@ -997,7 +999,7 @@ namespace Ifpack2 {
         const auto one = Kokkos::ArithTraits<magnitude_type>::one();
         
         // subview pattern
-        auto A = Kokkos::subview(D_vector_values, 0, Kokkos::ALL(), Kokkos::ALL());
+        auto A = Kokkos::subview(vector_values, 0, Kokkos::ALL(), Kokkos::ALL());
         auto B = A;
         auto C = A;
         
@@ -1005,16 +1007,16 @@ namespace Ifpack2 {
         const local_ordinal_type nrows 
           = BlockTridiags<MatrixType>::IndexToRow(pack_td_ptr(packptr(packidx+1)) - i0 - 1) + 1;
         
-        A.assign_data( &D_vector_values(i0,0,0) );
+        A.assign_data( &vector_values(i0,0,0) );
         SerialLU<Algo::LU::Unblocked>::invoke(A, tiny);
         for (local_ordinal_type i=1;i<nrows;++i,i0+=3) {
-          B.assign_data( &D_vector_values(i0+1,0,0) );
+          B.assign_data( &vector_values(i0+1,0,0) );
           SerialTrsm<Side::Left,Uplo::Lower,Trans::NoTranspose,Diag::Unit,Algo::Trsm::Blocked>
             ::invoke(one, A, B);
-          C.assign_data( &D_vector_values(i0+2,0,0) );
+          C.assign_data( &vector_values(i0+2,0,0) );
           SerialTrsm<Side::Right,Uplo::Upper,Trans::NoTranspose,Diag::NonUnit,Algo::Trsm::Blocked>
             ::invoke(one, A, C);
-          A.assign_data( &D_vector_values(i0+3,0,0) );
+          A.assign_data( &vector_values(i0+3,0,0) );
           SerialGemm<Trans::NoTranspose,Trans::NoTranspose,Algo::Gemm::Blocked>
             ::invoke(-one, C, B, one, A);
           SerialLU<Algo::LU::Unblocked>::invoke(A, tiny);
@@ -1051,7 +1053,7 @@ namespace Ifpack2 {
         // #if defined(HAVE_IFPACK2_CUDA) && defined (KOKKOS_ENABLE_CUDA)
         //         Kokkos::TeamPolicy<device_type> policy(packptr.extent(0) - 1, Kokkos::AUTO(), vector_length);
         // #else
-        Kokkos::RangePolicy<device_type> policy(0, packptr.extent(0) - 1);
+        Kokkos::RangePolicy<typename device_type::execution_space> policy(0, packptr.extent(0) - 1);
         //#endif
         Kokkos::parallel_for(policy, *this);
       }
@@ -1164,6 +1166,8 @@ namespace Ifpack2 {
       typedef magnitude_type value_type[];
       int value_count;
 
+      
+
       KOKKOS_INLINE_FUNCTION
       void 
       init(magnitude_type *dst) const {
@@ -1177,7 +1181,9 @@ namespace Ifpack2 {
         for (int i=0;i<value_count;++i) 
           dst[i] += src[i];
       }          
-      
+
+      MultiVectorConverter() = default;
+      MultiVectorConverter(const MultiVectorConverter &b) = default;
       MultiVectorConverter(const PartInterface<MatrixType> &interf,                    
                            const vector_type_3d_view &pmv) 
         : partptr(interf.partptr),
@@ -1507,6 +1513,9 @@ namespace Ifpack2 {
         }
       }
 
+      int getBlocksize() const { return blocksize_; }
+      int getNumVectors() const { return num_vectors_; }
+
       // Resize the buffer to accommodate nvec vectors in the multivector, for a
       // matrix having block size block_size.
       void resize(const int& blocksize, const int& num_vectors) {
@@ -1638,7 +1647,8 @@ namespace Ifpack2 {
                        const typename ImplType<MatrixType>::impl_scalar_type &damping_factor, 
                        /* */ bool is_y_zero,
                        const int max_num_sweeps, 
-                       const typename ImplType<MatrixType>::magnitude_type tol) { // if tol is zero, then we do not compute error norm
+                       const typename ImplType<MatrixType>::magnitude_type tol,
+                       const int check_tol_every) { 
       
 #ifdef HAVE_IFPACK2_BLOCKTRIDICONTAINER_TIMERS
       TEUCHOS_FUNC_TIME_MONITOR("BlockTriDi::applyInverseJacobi");
@@ -1684,9 +1694,11 @@ namespace Ifpack2 {
         compute_residual_vector(amd, A->getCrsGraph().getLocalGraph(), blocksize);
 
       // norm manager workspace resize
-      if (is_norm_manager_active) 
+      if (is_norm_manager_active) {
         norm_manager.resize(blocksize, num_vectors);
-        
+        norm_manager.setCheckFrequency(check_tol_every);
+      }
+
       // iterate
       int sweep;
       for (sweep=0;sweep<max_num_sweeps;++sweep) {
