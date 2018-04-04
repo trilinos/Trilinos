@@ -365,6 +365,8 @@ main (int argc, char *argv[])
                         maxNumIters, num_steps, X, A, B, Teuchos::null, M);
       }
 
+      *out<<"Total Iterations: "<<numItersPerformed<<std::endl;
+
       // Compute ||X-X_exact||_2
       const MT norm_x = X_exact->norm2 ();
       X_exact->update (-1.0, *X, 1.0);

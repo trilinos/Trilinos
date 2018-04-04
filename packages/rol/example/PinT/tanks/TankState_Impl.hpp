@@ -125,105 +125,114 @@ template<typename Real>
 void TankState<Real>::solve( StateVector& c, StateVector& u_new, 
                              const StateVector& u_old, const ControlVector& z ) const {
 
+  for( size_type i=0; i<rows_; ++i ) {
+    for( size_type j=0; j<cols_; ++j ) {
+      u_new.h(i,j) =  u_old.h(i,j) + p(i,j)*(beta_*z(i,j)-2.0*alphaR_*u_old.h(i,j));
 
+      if( i>0 ) u_new.h(i,j) += p(i,j)*(alphaL_*u_new.h(i-1,j) + alphaR_*u_old.h(i-1,j));
+      if( j>0 ) u_new.h(i,j) += p(i,j)*(alphaL_*u_new.h(i,j-1) + alphaR_*u_old.h(i,j-1));
+      u_new.h(i,j) /= (1.0+2.0*alphaL_*p(i,j));
+    }
+  }
 
-  //----------------------------------------------------------------------------
-
-  u_new.h(0,0) = ( u_old.h(0,0) 
-               + p(0,0)*( beta_*z(0,0)-2.0*alphaR_*u_old.h(0,0) )  )/
-                 (1.0+2.0*alphaL_*p(0,0));
-
-  c.h(0,0) = (1.0+2.0*alphaL_*p(0,0))*u_new.h(0,0) - u_old.h(0,0) 
-                   - p(0,0)*( beta_*z(0,0)-2.0*alphaR_*u_old.h(0,0) );
-
-  //----------------------------------------------------------------------------
-
-  u_new.h(0,1) = ( u_old.h(0,1) 
-                 + p(0,1)*( beta_*z(0,1)-2.0*alphaR_*u_old.h(0,1) 
-                            + alphaL_*u_new.h(0,0) + alphaR_*u_old.h(0,0) ) ) /
-                           (1.0+2.0*alphaL_*p(0,1));
-
-  c.h(0,1) = (1.0+2.0*alphaL_*p(0,1))*u_new.h(0,1) - u_old.h(0,1) 
-            - p(0,1)*(  beta_*z(0,1)-2.0*alphaR_*u_old.h(0,1) 
-                      + alphaL_*u_new.h(0,0) + alphaR_*u_old.h(0,0) );
-
-  //----------------------------------------------------------------------------
-
-  u_new.h(1,0) = ( u_old.h(1,0) + p(1,0)*(beta_*z(1,0)-2.0*alphaR_*u_old.h(1,0) 
-                   + alphaL_*u_new.h(0,0) + alphaR_*u_old.h(0,0) ) ) /
-                 (1.0+2.0*alphaL_*p(1,0));
-
-  c.h(1,0) =  (1.0+2.0*alphaL_*p(1,0))*u_new.h(1,0) - u_old.h(1,0) 
-             - p(1,0)*( beta_*z(1,0)-2.0*alphaR_*u_old.h(1,0) 
-                   + alphaL_*u_new.h(0,0) + alphaR_*u_old.h(0,0) );
-
-  //----------------------------------------------------------------------------
-
-  u_new.h(2,0) = ( u_old.h(2,0) + p(2,0)*(beta_*z(2,0)-2.0*alphaR_*u_old.h(2,0) 
-                   + alphaL_*u_new.h(1,0) + alphaR_*u_old.h(1,0) ) ) /
-                   (1.0+2.0*alphaL_*p(2,0));
-
-  c.h(2,0) = (1.0+2.0*alphaL_*p(2,0))*u_new.h(2,0) - u_old.h(2,0) 
-             - p(2,0)*( beta_*z(2,0)-2.0*alphaR_*u_old.h(2,0) 
-                        + alphaL_*u_new.h(1,0) + alphaR_*u_old.h(1,0) );
-
-  //----------------------------------------------------------------------------
-
-  u_new.h(1,1) = ( u_old.h(1,1) + p(1,1)*(beta_*z(1,1)-2.0*alphaR_*u_old.h(1,1) 
-                   + alphaL_*u_new.h(0,1) + alphaR_*u_old.h(0,1) 
-                   + alphaL_*u_new.h(1,0) + alphaR_*u_old.h(1,0) ) ) /
-                   (1.0+2.0*alphaL_*p(1,1));
-
-  c.h(1,1) =  (1.0+2.0*alphaL_*p(1,1))*u_new.h(1,1) - u_old.h(1,1) 
-              - p(1,1)*( beta_*z(1,1)-2.0*alphaR_*u_old.h(1,1) 
-                         + alphaL_*u_new.h(0,1) + alphaR_*u_old.h(0,1) 
-                         + alphaL_*u_new.h(1,0) + alphaR_*u_old.h(1,0) );
-
-  //----------------------------------------------------------------------------
-
-  u_new.h(0,2) = ( u_old.h(0,2) + p(0,2)*(beta_*z(0,2)-2.0*alphaR_*u_old.h(0,2) 
-                   + alphaL_*u_new.h(0,1) + alphaR_*u_old.h(0,1) ) ) /
-                   (1.0+2.0*alphaL_*p(0,2));
-
-  c.h(0,2) =  (1.0+2.0*alphaL_*p(0,2))*u_new.h(0,2) - u_old.h(0,2)
-               - p(0,2)*(beta_*z(0,2)-2.0*alphaR_*u_old.h(0,2) 
-                   + alphaL_*u_new.h(0,1) + alphaR_*u_old.h(0,1) );
-
-
-  //----------------------------------------------------------------------------
-
-  u_new.h(2,1) = ( u_old.h(2,1) + p(2,1)*(beta_*z(2,1)-2.0*alphaR_*u_old.h(2,1) 
-                              + alphaL_*u_new.h(2,0) + alphaR_*u_old.h(2,0)
-                              + alphaL_*u_new.h(1,1) + alphaR_*u_old.h(1,1) ) ) /
-                              (1.0+2.0*alphaL_*p(2,1));
-
-  c.h(2,1) = (1.0+2.0*alphaL_*p(2,1))*u_new.h(2,1) - u_old.h(2,1) 
-                            - p(2,1)*(beta_*z(2,1)-2.0*alphaR_*u_old.h(2,1) 
-                              + alphaL_*u_new.h(2,0) + alphaR_*u_old.h(2,0)
-                              + alphaL_*u_new.h(1,1) + alphaR_*u_old.h(1,1) );
-
-  //----------------------------------------------------------------------------
-  u_new.h(1,2) = ( u_old.h(1,2) + p(1,2)*(beta_*z(1,2)-2.0*alphaR_*u_old.h(1,2) 
-                              + alphaL_*u_new.h(1,1) + alphaR_*u_old.h(1,1)
-                              + alphaL_*u_new.h(0,2) + alphaR_*u_old.h(0,2) ) ) /
-                              (1.0+2.0*alphaL_*p(1,2));
-
-  c.h(1,2) = (1.0+2.0*alphaL_*p(1,2))*u_new.h(1,2) - u_old.h(1,2) 
-                            - p(1,2)*(beta_*z(1,2)-2.0*alphaR_*u_old.h(1,2) 
-                              + alphaL_*u_new.h(1,1) + alphaR_*u_old.h(1,1) 
-                              + alphaL_*u_new.h(0,2) + alphaR_*u_old.h(0,2) );
-
-  //----------------------------------------------------------------------------
-  u_new.h(2,2) = ( u_old.h(2,2) + p(2,2)*(beta_*z(2,2)-2.0*alphaR_*u_old.h(2,2) 
-                              + alphaL_*u_new.h(2,1) + alphaR_*u_old.h(2,1)
-                              + alphaL_*u_new.h(1,2) + alphaR_*u_old.h(1,2) ) ) /
-                              (1.0+2.0*alphaL_*p(2,2));
-
-  c.h(2,2) = (1.0+2.0*alphaL_*p(2,2))*u_new.h(2,2) - u_old.h(2,2) 
-                             - p(2,2)*(beta_*z(2,2)-2.0*alphaR_*u_old.h(2,2) 
-                              + alphaL_*u_new.h(2,1) + alphaR_*u_old.h(2,1)
-                              + alphaL_*u_new.h(1,2) + alphaR_*u_old.h(1,2) );
-
+//  //----------------------------------------------------------------------------
+//
+//  u_new.h(0,0) = ( u_old.h(0,0) 
+//               + p(0,0)*( beta_*z(0,0)-2.0*alphaR_*u_old.h(0,0) )  )/
+//                 (1.0+2.0*alphaL_*p(0,0));
+//
+//  c.h(0,0) = (1.0+2.0*alphaL_*p(0,0))*u_new.h(0,0) - u_old.h(0,0) 
+//                   - p(0,0)*( beta_*z(0,0)-2.0*alphaR_*u_old.h(0,0) );
+//
+//  //----------------------------------------------------------------------------
+//
+//  u_new.h(0,1) = ( u_old.h(0,1) 
+//                 + p(0,1)*( beta_*z(0,1)-2.0*alphaR_*u_old.h(0,1) 
+//                            + alphaL_*u_new.h(0,0) + alphaR_*u_old.h(0,0) ) ) /
+//                           (1.0+2.0*alphaL_*p(0,1));
+//
+//  c.h(0,1) = (1.0+2.0*alphaL_*p(0,1))*u_new.h(0,1) - u_old.h(0,1) 
+//            - p(0,1)*(  beta_*z(0,1)-2.0*alphaR_*u_old.h(0,1) 
+//                      + alphaL_*u_new.h(0,0) + alphaR_*u_old.h(0,0) );
+//
+//  //----------------------------------------------------------------------------
+//
+//  u_new.h(0,2) = ( u_old.h(0,2) + p(0,2)*(beta_*z(0,2)-2.0*alphaR_*u_old.h(0,2) 
+//                   + alphaL_*u_new.h(0,1) + alphaR_*u_old.h(0,1) ) ) /
+//                   (1.0+2.0*alphaL_*p(0,2));
+//
+//  c.h(0,2) =  (1.0+2.0*alphaL_*p(0,2))*u_new.h(0,2) - u_old.h(0,2)
+//               - p(0,2)*(beta_*z(0,2)-2.0*alphaR_*u_old.h(0,2) 
+//                   + alphaL_*u_new.h(0,1) + alphaR_*u_old.h(0,1) );
+//
+//
+//  //----------------------------------------------------------------------------
+//
+//  u_new.h(1,0) = ( u_old.h(1,0) + p(1,0)*(beta_*z(1,0)-2.0*alphaR_*u_old.h(1,0) 
+//                   + alphaL_*u_new.h(0,0) + alphaR_*u_old.h(0,0) ) ) /
+//                 (1.0+2.0*alphaL_*p(1,0));
+//
+//  c.h(1,0) =  (1.0+2.0*alphaL_*p(1,0))*u_new.h(1,0) - u_old.h(1,0) 
+//             - p(1,0)*( beta_*z(1,0)-2.0*alphaR_*u_old.h(1,0) 
+//                   + alphaL_*u_new.h(0,0) + alphaR_*u_old.h(0,0) );
+//
+//  //----------------------------------------------------------------------------
+//
+//  u_new.h(2,0) = ( u_old.h(2,0) + p(2,0)*(beta_*z(2,0)-2.0*alphaR_*u_old.h(2,0) 
+//                   + alphaL_*u_new.h(1,0) + alphaR_*u_old.h(1,0) ) ) /
+//                   (1.0+2.0*alphaL_*p(2,0));
+//
+//  c.h(2,0) = (1.0+2.0*alphaL_*p(2,0))*u_new.h(2,0) - u_old.h(2,0) 
+//             - p(2,0)*( beta_*z(2,0)-2.0*alphaR_*u_old.h(2,0) 
+//                        + alphaL_*u_new.h(1,0) + alphaR_*u_old.h(1,0) );
+//
+//  //----------------------------------------------------------------------------
+//
+//  u_new.h(1,1) = ( u_old.h(1,1) + p(1,1)*(beta_*z(1,1)-2.0*alphaR_*u_old.h(1,1) 
+//                   + alphaL_*u_new.h(0,1) + alphaR_*u_old.h(0,1) 
+//                   + alphaL_*u_new.h(1,0) + alphaR_*u_old.h(1,0) ) ) /
+//                   (1.0+2.0*alphaL_*p(1,1));
+//
+//  c.h(1,1) =  (1.0+2.0*alphaL_*p(1,1))*u_new.h(1,1) - u_old.h(1,1) 
+//              - p(1,1)*( beta_*z(1,1)-2.0*alphaR_*u_old.h(1,1) 
+//                         + alphaL_*u_new.h(0,1) + alphaR_*u_old.h(0,1) 
+//                         + alphaL_*u_new.h(1,0) + alphaR_*u_old.h(1,0) );
+//
+//
+//  //----------------------------------------------------------------------------
+//
+//  u_new.h(2,1) = ( u_old.h(2,1) + p(2,1)*(beta_*z(2,1)-2.0*alphaR_*u_old.h(2,1) 
+//                              + alphaL_*u_new.h(2,0) + alphaR_*u_old.h(2,0)
+//                              + alphaL_*u_new.h(1,1) + alphaR_*u_old.h(1,1) ) ) /
+//                              (1.0+2.0*alphaL_*p(2,1));
+//
+//  c.h(2,1) = (1.0+2.0*alphaL_*p(2,1))*u_new.h(2,1) - u_old.h(2,1) 
+//                            - p(2,1)*(beta_*z(2,1)-2.0*alphaR_*u_old.h(2,1) 
+//                              + alphaL_*u_new.h(2,0) + alphaR_*u_old.h(2,0)
+//                              + alphaL_*u_new.h(1,1) + alphaR_*u_old.h(1,1) );
+//
+//  //----------------------------------------------------------------------------
+//  u_new.h(1,2) = ( u_old.h(1,2) + p(1,2)*(beta_*z(1,2)-2.0*alphaR_*u_old.h(1,2) 
+//                              + alphaL_*u_new.h(1,1) + alphaR_*u_old.h(1,1)
+//                              + alphaL_*u_new.h(0,2) + alphaR_*u_old.h(0,2) ) ) /
+//                              (1.0+2.0*alphaL_*p(1,2));
+//
+//  c.h(1,2) = (1.0+2.0*alphaL_*p(1,2))*u_new.h(1,2) - u_old.h(1,2) 
+//                            - p(1,2)*(beta_*z(1,2)-2.0*alphaR_*u_old.h(1,2) 
+//                              + alphaL_*u_new.h(1,1) + alphaR_*u_old.h(1,1) 
+//                              + alphaL_*u_new.h(0,2) + alphaR_*u_old.h(0,2) );
+//
+//  //----------------------------------------------------------------------------
+//  u_new.h(2,2) = ( u_old.h(2,2) + p(2,2)*(beta_*z(2,2)-2.0*alphaR_*u_old.h(2,2) 
+//                              + alphaL_*u_new.h(2,1) + alphaR_*u_old.h(2,1)
+//                              + alphaL_*u_new.h(1,2) + alphaR_*u_old.h(1,2) ) ) /
+//                              (1.0+2.0*alphaL_*p(2,2));
+//
+//  c.h(2,2) = (1.0+2.0*alphaL_*p(2,2))*u_new.h(2,2) - u_old.h(2,2) 
+//                             - p(2,2)*(beta_*z(2,2)-2.0*alphaR_*u_old.h(2,2) 
+//                              + alphaL_*u_new.h(2,1) + alphaR_*u_old.h(2,1)
+//                              + alphaL_*u_new.h(1,2) + alphaR_*u_old.h(1,2) );
+//
 
   for( size_type i=0; i<rows_; ++i ) {
     for( size_type j=0; j<cols_; ++j ) {
@@ -241,39 +250,86 @@ template<typename Real>
 void TankState<Real>::value( StateVector& c, const StateVector& u_old, 
                              const StateVector& u_new, const ControlVector& z ) const {
 
-  for( size_type s=0; s<rows_+cols_-1; ++s )  {
-    for( size_type j=min(s,rows_); j<min(s,cols_); ++j ) {
-      size_type i=s-j;
-      cout << "s=" << s << ", i=" << i << ", j=" << j << endl;
-      c.h(i,j) = (1.0+2.0*alphaL_*p(i,j))*u_new.h(i,j) - u_old.h(i,j) 
-                  - p(i,j)*( beta_*z(i,j)-2.0*alphaR_*u_old.h(i,j) );
 
-      if( i>0 ) c.h(i,j) += p(i,j)*(alphaL_*u_new.h(i-1,j)+alphaR_*u_old.h(i-1,j));
-
-      if( j>0 ) c.h(i,j) += p(i,j)*(alphaL_*u_new.h(i,j-1)+alphaR_*u_old.h(i,j-1));
-
+  for(size_type i=0; i<rows_; ++i ) {
+    for( size_type j=0; j<cols_; ++j ) {
+       c.h(i,j) =  (1.0+2.0*alphaL_*p(i,j))*u_new.h(i,j) - u_old.h(i,j) 
+                   - p(i,j)*( beta_*z(i,j)-2.0*alphaR_*u_old.h(i,j) );
+       if( i>0 ) c.h(i,j) -= p(i,j)*(alphaL_*u_new.h(i-1,j) + alphaR_*u_old.h(i-1,j));
+       if( j>0 ) c.h(i,j) -= p(i,j)*(alphaL_*u_new.h(i,j-1) + alphaR_*u_old.h(i,j-1));
     }
   }
+ 
 
-for( size_type i=0; i<rows_; ++i ) {
-  for( size_type j=0; j<cols_; ++j ) {
+//  //----------------------------------------------------------------------------
+//
+//  c.h(0,0) = (1.0+2.0*alphaL_*p(0,0))*u_new.h(0,0) - u_old.h(0,0) 
+//                   - p(0,0)*( beta_*z(0,0)-2.0*alphaR_*u_old.h(0,0) );
+//
+//
+//  c.h(0,1) = (1.0+2.0*alphaL_*p(0,1))*u_new.h(0,1) - u_old.h(0,1) 
+//            - p(0,1)*(  beta_*z(0,1)-2.0*alphaR_*u_old.h(0,1) 
+//                      + alphaL_*u_new.h(0,0) + alphaR_*u_old.h(0,0) );
+//
+//
+//  c.h(0,2) =  (1.0+2.0*alphaL_*p(0,2))*u_new.h(0,2) - u_old.h(0,2)
+//               - p(0,2)*(beta_*z(0,2)-2.0*alphaR_*u_old.h(0,2) 
+//                   + alphaL_*u_new.h(0,1) + alphaR_*u_old.h(0,1) );
+//
+//
+//  //----------------------------------------------------------------------------
+//
+//  c.h(1,0) =  (1.0+2.0*alphaL_*p(1,0))*u_new.h(1,0) - u_old.h(1,0) 
+//             - p(1,0)*( beta_*z(1,0)-2.0*alphaR_*u_old.h(1,0) 
+//                   + alphaL_*u_new.h(0,0) + alphaR_*u_old.h(0,0) );
+//
+//  c.h(1,1) =  (1.0+2.0*alphaL_*p(1,1))*u_new.h(1,1) - u_old.h(1,1) 
+//              - p(1,1)*( beta_*z(1,1)-2.0*alphaR_*u_old.h(1,1) 
+//                         + alphaL_*u_new.h(0,1) + alphaR_*u_old.h(0,1) 
+//                         + alphaL_*u_new.h(1,0) + alphaR_*u_old.h(1,0) );
+//
+//  c.h(1,2) = (1.0+2.0*alphaL_*p(1,2))*u_new.h(1,2) - u_old.h(1,2) 
+//                            - p(1,2)*(beta_*z(1,2)-2.0*alphaR_*u_old.h(1,2) 
+//                              + alphaL_*u_new.h(1,1) + alphaR_*u_old.h(1,1) 
+//                              + alphaL_*u_new.h(0,2) + alphaR_*u_old.h(0,2) );
+//
+//  //----------------------------------------------------------------------------
+//
+//  c.h(2,0) = (1.0+2.0*alphaL_*p(2,0))*u_new.h(2,0) - u_old.h(2,0) 
+//             - p(2,0)*( beta_*z(2,0)-2.0*alphaR_*u_old.h(2,0) 
+//                        + alphaL_*u_new.h(1,0) + alphaR_*u_old.h(1,0) );
+//
+//
+//  c.h(2,1) = (1.0+2.0*alphaL_*p(2,1))*u_new.h(2,1) - u_old.h(2,1) 
+//                            - p(2,1)*(beta_*z(2,1)-2.0*alphaR_*u_old.h(2,1) 
+//                              + alphaL_*u_new.h(2,0) + alphaR_*u_old.h(2,0)
+//                              + alphaL_*u_new.h(1,1) + alphaR_*u_old.h(1,1) );
+//
+//  c.h(2,2) = (1.0+2.0*alphaL_*p(2,2))*u_new.h(2,2) - u_old.h(2,2) 
+//                             - p(2,2)*(beta_*z(2,2)-2.0*alphaR_*u_old.h(2,2) 
+//                              + alphaL_*u_new.h(2,1) + alphaR_*u_old.h(2,1)
+//                              + alphaL_*u_new.h(1,2) + alphaR_*u_old.h(1,2) );
 
-    c.Qout(i,j) = u_new.Qout(i,j) - kappa_*u_new.h(i,j);
-    c.Qin(i,j)  = u_new.Qin(i,j)  - z(i,j);
 
-    if( i>0 ) {
-//        c.h(i,j)   -= p(i,j)*( alphaL_*u_new.h(i-1,j) +
-//                               alphaR_*u_old.h(i-1,j) );
-      c.Qin(i,j) -= 0.5*u_new.Qout(i-1,j);
+  for( size_type i=0; i<rows_; ++i ) {
+    for( size_type j=0; j<cols_; ++j ) {
+  
+      c.Qout(i,j) = u_new.Qout(i,j) - kappa_*u_new.h(i,j);
+      c.Qin(i,j)  = u_new.Qin(i,j)  - z(i,j);
+  
+      if( i>0 ) {
+  //        c.h(i,j)   -= p(i,j)*( alphaL_*u_new.h(i-1,j) +
+  //                               alphaR_*u_old.h(i-1,j) );
+        c.Qin(i,j) -= 0.5*u_new.Qout(i-1,j);
+      }
+  
+      if( j>0 ) {
+  //        c.h(i,j)   -= p(i,j)*( alphaL_*u_new.h(i,j-1) +
+  //                               alphaR_*u_old.h(i,j-1) );
+        c.Qin(i,j) -= 0.5*u_new.Qout(i,j-1);
+      }
     }
-
-    if( j>0 ) {
-//        c.h(i,j)   -= p(i,j)*( alphaL_*u_new.h(i,j-1) +
-//                               alphaR_*u_old.h(i,j-1) );
-      c.Qin(i,j) -= 0.5*u_new.Qout(i,j-1);
-    }
-  }
-}  
+  }  
 
 }
 
