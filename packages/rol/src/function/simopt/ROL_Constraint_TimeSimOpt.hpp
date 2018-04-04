@@ -527,6 +527,38 @@ public:
     return cnorm;
   }
   
+  // Verify that ||v-Jinv*J*v|| < tol
+  virtual Real checkInverseJacobian_1_new( const ROL::Vector<Real> &c,
+                                           const ROL::Vector<Real> &u_new,
+                                           const ROL::Vector<Real> &u_old,
+                                           const ROL::Vector<Real> &z,
+                                           const ROL::Vector<Real> &v_new,
+                                           const bool printToStream = true,
+                                           std::ostream & outStream = std::cout) {
+     Real tol = ROL_EPSILON<Real>();
+     auto Jv   = c.clone();
+     update( u_new, u_old, z );
+     applyJacobian_1_new( *Jv, v_new, u_old, u_new, z, tol );
+     auto iJJv = u_new.clone();
+     update( u_new, u_old, z );
+     applyInverseJacobian_1_new( *iJJv, *Jv, u_old, u_new, z, tol );
+     auto diff = v_new.clone();
+     diff->set(v_new);
+     diff->axpy(-1.0,*iJJv);
+     Real dnorm = diff->norm();
+     Real vnorm = v_new.norm();
+     if ( printToStream ) {
+       std::stringstream hist;
+       hist << std::scientific << std::setprecision(8);
+       hist << "\nTest TimeSimOpt consistency of inverse Jacobian_1_new: \n  ||v-inv(J)Jv|| = " 
+            << dnorm << "\n";
+       hist << "  ||v||          = " << vnorm << "\n";
+       hist << "  Relative Error = " << dnorm / (vnorm+ROL_UNDERFLOW<Real>()) << "\n";
+       outStream << hist.str();
+     }
+     return dnorm;
+   }
+
 
 }; // class Constraint_SimOpt
 

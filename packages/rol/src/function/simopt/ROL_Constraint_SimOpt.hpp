@@ -1018,7 +1018,9 @@ public:
              the user does not define the dual() operation.
 
              @param[out]      w              is a dual constraint-space vector
-             @param[in]       v              is a simulation-space vector
+             @param[in]       v              is a simulation-space vector    u_lo->zero();
+    u_up->setScalar( height );
+
              @param[in]       u              is the constraint argument; a simulation-space vector
              @param[in]       z              is the constraint argument; an optimization-space vector
              @param[in]       dualw          is a constraint-space vector 
@@ -1136,7 +1138,7 @@ public:
     update(u,z);
     applyJacobian_1(*Jv,v,u,z,tol);
     ROL::Ptr<Vector<Real> > iJJv = u.clone();
-    update(u,z);
+    update(u,z); // Does this update do anything?
     applyInverseJacobian_1(*iJJv,*Jv,u,z,tol);
     ROL::Ptr<Vector<Real> > diff = v.clone();
     diff->set(v);
