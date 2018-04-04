@@ -195,7 +195,7 @@ $ cmake \
 
 $ make NP=16
 
-$ bsub -x -I -q rhel7F -n 16 ctest -j16
+$ bsub -x -Is -q rhel7F -n 16 ctest -j16
 ```
 
 The ATDM configuration of Trilinos is set up to run on the Firestone nodes
