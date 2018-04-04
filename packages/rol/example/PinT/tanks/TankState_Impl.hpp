@@ -85,37 +85,37 @@ TankState<Real>::TankState( Teuchos::ParameterList& pl ) :
     p_.at( cols_*ptrows.at(i)+ptcols.at(i) ) = 0.0;
   }
  
-  vector<Real> band_D1(Ntanks_-1); 
-  vector<Real> band_Dc(Ntanks_-cols_);  
+//  vector<Real> band_D1(Ntanks_-1); 
+//  vector<Real> band_Dc(Ntanks_-cols_);  
+//
+//  vector<Real> band_L0( Ntanks_ );       vector<Real> band_R0( Ntanks_ );
+//  vector<Real> band_L1( Ntanks_-1 );     vector<Real> band_R1( Ntanks_-1 );
+//  vector<Real> band_Lc( Ntanks_-cols_ ); vector<Real> band_Rc( Ntanks_-cols_ );
+//
+//  for( size_type l=0; l<Ntanks_; ++l ) {
+//    band_L0.at(l) = 1.0 + 2.0*alphaL_*p_.at(l);
+//    band_R0.at(l) = 1.0 - 2.0*alphaR_*p_.at(l);
+//
+//    if( l>=1 ) {
+//      band_D1.at(l-1) = 0.5*(l%cols_!=0);
+//      band_L1.at(l-1) = -alphaL_*p_.at(l)*(l%cols_!=0);
+//      band_R1.at(l-1) =  alphaR_*p_.at(l)*(l%cols_!=0);
+//
+//      if( l>=cols_ ) {
+//        band_Dc.at(l-cols_) = 0.5*(l%cols_!=0);
+//        band_Lc.at(l-cols_) = -alphaL_*p_.at(l);
+//        band_Rc.at(l-cols_) =  alphaR_*p_.at(l);
+//      }
+//    } 
+//  } // end for
+// 
+//  vector<vector<Real>> lbands{ band_L0, band_L1, band_Lc };
+//  vector<vector<Real>> rbands{ band_R0, band_R1, band_Rc };
+//  vector<vector<Real>> dbands{ band_D1, band_Dc };
 
-  vector<Real> band_L0( Ntanks_ );       vector<Real> band_R0( Ntanks_ );
-  vector<Real> band_L1( Ntanks_-1 );     vector<Real> band_R1( Ntanks_-1 );
-  vector<Real> band_Lc( Ntanks_-cols_ ); vector<Real> band_Rc( Ntanks_-cols_ );
-
-  for( size_type l=0; l<Ntanks_; ++l ) {
-    band_L0.at(l) = 1.0 + 2.0*alphaL_*p_.at(l);
-    band_R0.at(l) = 1.0 - 2.0*alphaR_*p_.at(l);
-
-    if( l>=1 ) {
-      band_D1.at(l-1) = 0.5*(l%cols_!=0);
-      band_L1.at(l-1) = -alphaL_*p_.at(l)*(l%cols_!=0);
-      band_R1.at(l-1) =  alphaR_*p_.at(l)*(l%cols_!=0);
-
-      if( l>=cols_ ) {
-        band_Dc.at(l-cols_) = 0.5*(l%cols_!=0);
-        band_Lc.at(l-cols_) = -alphaL_*p_.at(l);
-        band_Rc.at(l-cols_) =  alphaR_*p_.at(l);
-      }
-    } 
-  } // end for
- 
-  vector<vector<Real>> lbands{ band_L0, band_L1, band_Lc };
-  vector<vector<Real>> rbands{ band_R0, band_R1, band_Rc };
-  vector<vector<Real>> dbands{ band_D1, band_Dc };
-
-  L_ = make_shared<Matrix>( band_index, lbands );
-  R_ = make_shared<Matrix>( band_index, rbands );
-  D_ = make_shared<Matrix>( shift_index, dbands );
+  L_ = make_shared<TankLevelMatrix<Real>>( rows_, cols_, alphaL_, p_ );
+//  R_ = make_shared<Matrix>( band_index, rbands );
+  S_ = make_shared<SplitterMatrix<Real>>( rows_, cols_ );
 //  print_members(cout);
 
 } // end Constructor
@@ -144,23 +144,29 @@ template<typename Real>
 void TankState<Real>::value( StateVector& c, const StateVector& u_old, 
                              const StateVector& u_new, const ControlVector& z ) const {
 
+  L_->apply( *(c.getVector()), *(u_new.getVector()), 1.0, 0, 0 ); 
+
   for(size_type i=0; i<rows_; ++i ) {
     for( size_type j=0; j<cols_; ++j ) {
-      c.h(i,j) =  (1.0+2.0*alphaL_*p(i,j))*u_new.h(i,j) - u_old.h(i,j) 
+      c.h(i,j) += // (1.0+2.0*alphaL_*p(i,j))*u_new.h(i,j) 
+                   - u_old.h(i,j) 
                    - p(i,j)*( beta_*z(i,j)-2.0*alphaR_*u_old.h(i,j) );
       c.Qout(i,j) = u_new.Qout(i,j) - kappa_*u_new.h(i,j);
       c.Qin(i,j)  = u_new.Qin(i,j)  - z(i,j);
  
       if( i>0 ) {
-        c.h(i,j)   -= p(i,j)*(alphaL_*u_new.h(i-1,j) + alphaR_*u_old.h(i-1,j));
-        c.Qin(i,j) -= 0.5*u_new.Qout(i-1,j);
+        c.h(i,j)   -=// p(i,j)*(alphaL_*u_new.h(i-1,j) + 
+                        p(i,j)*alphaR_*u_old.h(i-1,j);
+//        c.Qin(i,j) -= 0.5*u_new.Qout(i-1,j);
       }
       if( j>0 ) {
-        c.h(i,j)   -= p(i,j)*(alphaL_*u_new.h(i,j-1) + alphaR_*u_old.h(i,j-1));
-        c.Qin(i,j) -= 0.5*u_new.Qout(i,j-1);
+        c.h(i,j)   -= //p(i,j)*(alphaL_*u_new.h(i,j-1) + 
+                      p(i,j)*alphaR_*u_old.h(i,j-1);
+//        c.Qin(i,j) -= 0.5*u_new.Qout(i,j-1);
       }
     }
   }
+  S_->apply( *(c.getVector()), *(u_new.getVector()), -1.0, Ntanks_, 2*Ntanks_ );
 }
 
 template<typename Real>
@@ -175,8 +181,10 @@ void TankState<Real>::applyJacobian_1_new( StateVector& jv, const StateVector& v
  
   for(size_type i=0; i<rows_; ++i ) {                                  
     for( size_type j=0; j<cols_; ++j ) {        
+                       
       jv.Qout(i,j) = v_new.Qout(i,j) - kappa_*v_new.h(i,j);                                  
       jv.Qin(i,j)  = v_new.Qin(i,j);                                   
+                                                                     
       if( i>0 ) jv.Qin(i,j) -= 0.5*v_new.Qout(i-1,j);                           
       if( j>0 ) jv.Qin(i,j) -= 0.5*v_new.Qout(i,j-1);                           
     }
@@ -190,8 +198,12 @@ void TankState<Real>::applyInverseJacobian_1_new( StateVector& ijv, const StateV
     for( size_type j=0; j<cols_; ++j ) {                               
       ijv.Qout(i,j) = v_new.Qout(i,j) + kappa_*ijv.h(i,j);
       ijv.Qin(i,j)  = v_new.Qin(i,j);
-      if( i>0 ) ijv.Qin(i,j) += 0.5*ijv.Qout(i-1,j);                           
-      if( j>0 ) ijv.Qin(i,j) += 0.5*ijv.Qout(i,j-1);                           
+      if( i>0 ) {                                                       
+        ijv.Qin(i,j) += 0.5*ijv.Qout(i-1,j);                           
+      }                                                                 
+      if( j>0 ) {                                                       
+        ijv.Qin(i,j) += 0.5*ijv.Qout(i,j-1);                           
+      }
     }
   }
 }
@@ -251,10 +263,10 @@ void TankState<Real>::print_members( ostream& os ) const {
     os << endl;
   }
 
-  os << "\nLHS Matrix" << endl;
-  L_->print(os);
-  os << "\nRHS Matrix" << endl;
-  R_->print(os);
+//  os << "\nLHS Matrix" << endl;
+//  L_->print(os);
+//  os << "\nRHS Matrix" << endl;
+//  R_->print(os);
 
 }
 

@@ -116,7 +116,7 @@ private:
   Real         alphaL_;        // kappa*(theta-1)
   Real         alphaR_;        // kappa*theta
 
-  shared_ptr<Matrix> L_, R_, D_;
+  shared_ptr<Matrix> L_, R_, S_;
 
 }; // class TankState
 

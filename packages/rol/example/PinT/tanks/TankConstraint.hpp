@@ -89,6 +89,8 @@ public:
     zero_state_(rows_,cols_,"Zero State"), zero_ctrl_(rows_,cols_,"Zero Control") {
   }
 
+  void print_tankstate_parameters( std::ostream& os ) { tankState_.print_members(os); }
+
   void value( Vector& c, const Vector& u_old, const Vector& u_new, 
               const Vector& z, Real& tol ) override {
 
@@ -96,13 +98,13 @@ public:
     auto& uo_state = to_state(u_old);
     auto& un_state = to_state(u_new);
     auto& z_ctrl   = to_control(z);
-
+    c.zero();
     tankState_.value( c_state, uo_state, un_state, z_ctrl ) ;
   }
 
   void solve( Vector& c, const Vector& u_old, Vector& u_new, 
               const Vector& z, Real& tol ) override {
-
+    
     auto& c_state  = to_state(c);      
     auto& un_state = to_state(u_new);
     auto& uo_state = to_state(u_old);

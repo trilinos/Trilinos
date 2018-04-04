@@ -87,6 +87,7 @@ int main( int argc, char* argv[] ) {
     outStream = makePtrFromRef(bhs);
 
   int errorFlag  = 0;
+  RealT tol = ROL::ROL_EPSILON<RealT>();
 
   // *** Example body.
 
@@ -155,6 +156,16 @@ int main( int argc, char* argv[] ) {
 
     RandomizeVector( *vu );
     RandomizeVector( *vz ); 
+    RandomizeVector( *c ) ;
+    
+    c->print( *outStream );
+    u_new->print( *outStream );
+
+    con->solve( *c, *u_old, *u_new, *z, tol );
+    con->value( *c, *u_old, *u_new, *z, tol );
+    c->print( *outStream );
+    u_new->print( *outStream );
+
 
     auto u_old_bnd = u_new_bnd; 
   
@@ -162,31 +173,32 @@ int main( int argc, char* argv[] ) {
 
     auto x = ROL::makePtr<ROL::Vector_SimOpt<RealT>>( u, z );
 
-    RealT tol = ROL::ROL_EPSILON<RealT>();
 
-    con->checkSolve(*u, *z, *c, true, *outStream ); 
+//    con->print_tankstate_parameters( *outStream );
 
-    con->checkApplyJacobian_1( *u, *z, *vu, *Jvu, true, *outStream );
-    con->checkApplyJacobian_2( *u, *z, *vz, *Jvz, true, *outStream );
- 
-    con->applyJacobian_1_new( *Jvu, *vu_new, *u_old, *u_new, *z, tol );
-
-    vu_new->print( *outStream );
-    Jvu->print( *outStream );
-  
-    auto iJJvu = vu_new->clone("Inverse Jacobian applied to Jvu");
-    con->applyInverseJacobian_1_new( *iJJvu, *Jvu, *u_old, *u_new, *z, tol);
-
-    iJJvu->print( *outStream );   
-
-    auto err = vu_new->clone("Jacobian inverse error");
-
-    err->set(*vu_new);
-    err->axpy(-1.0,*iJJvu);
-
-    err->print( *outStream );
-
-    con->checkInverseJacobian_1_new( *c, *u_new, *u_old, *z, *vu_new, true, *outStream );
+//    con->checkSolve(*u, *z, *c, true, *outStream ); 
+//
+//    con->checkApplyJacobian_1( *u, *z, *vu, *Jvu, true, *outStream );
+//    con->checkApplyJacobian_2( *u, *z, *vz, *Jvz, true, *outStream );
+// 
+//    con->applyJacobian_1_new( *Jvu, *vu_new, *u_old, *u_new, *z, tol );
+//
+////    vu_new->print( *outStream );
+////    Jvu->print( *outStream );
+//  
+//    auto iJJvu = vu_new->clone("Inverse Jacobian applied to Jvu");
+//    con->applyInverseJacobian_1_new( *iJJvu, *Jvu, *u_old, *u_new, *z, tol);
+//
+//    iJJvu->print( *outStream );   
+//
+//    auto err = vu_new->clone("Jacobian inverse error");
+//
+//    err->set(*vu_new);
+//    err->axpy(-1.0,*iJJvu);
+//
+////    err->print( *outStream );
+//
+//    con->checkInverseJacobian_1_new( *c, *u_new, *u_old, *z, *vu_new, true, *outStream );
   
     
 
