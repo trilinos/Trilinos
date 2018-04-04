@@ -51,6 +51,8 @@
 #include <Kokkos_ArithTraits.hpp>
 #include <KokkosBatched_Util.hpp>
 #include <KokkosBatched_Vector.hpp>
+#include <KokkosBatched_Copy_Decl.hpp>
+#include <KokkosBatched_Copy_Impl.hpp>
 #include <KokkosBatched_AddRadial_Decl.hpp>
 #include <KokkosBatched_AddRadial_Impl.hpp>
 #include <KokkosBatched_Gemm_Decl.hpp>
@@ -198,6 +200,7 @@ namespace Ifpack2 {
       typedef Tpetra::Import<local_ordinal_type,global_ordinal_type,node_type> tpetra_import_type;
       typedef Tpetra::RowMatrix<scalar_type,local_ordinal_type,global_ordinal_type,node_type> tpetra_row_matrix_type;
       typedef Tpetra::BlockCrsMatrix<scalar_type,local_ordinal_type,global_ordinal_type,node_type> tpetra_block_crs_matrix_type;
+      typedef typename tpetra_block_crs_matrix_type::little_block_type tpetra_block_access_view_type;
       typedef Tpetra::BlockMultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type> tpetra_block_multivector_type;
       typedef typename tpetra_block_crs_matrix_type::crs_graph_type::local_graph_type local_crs_graph_type;
 
@@ -816,44 +819,44 @@ namespace Ifpack2 {
               }
             });
           
-          // typedef ArrayValueType<size_type,2> update_type;
-          // Kokkos::parallel_scan
-          //   (Kokkos::RangePolicy<host_execution_space>(0,nrows+1),
-          //    KOKKOS_LAMBDA(const local_ordinal_type &lr, 
-          //                  update_type &update, 
-          //                  const bool &final) {
-          //     if (final) {
-          //       R_rowptr(lr) += update.v[0];
-          //       R_rowptr_remote(lr) += update.v[1];
+          typedef ArrayValueType<size_type,2> update_type;
+          Kokkos::parallel_scan
+            (Kokkos::RangePolicy<host_execution_space>(0,nrows+1),
+             KOKKOS_LAMBDA(const local_ordinal_type &lr, 
+                           update_type &update, 
+                           const bool &final) {
+              if (final) {
+                R_rowptr(lr) += update.v[0];
+                R_rowptr_remote(lr) += update.v[1];
 
-          //       if (lr < nrows) {
-          //         const local_ordinal_type ri0 = lclrow2idx[lr];
-          //         const local_ordinal_type pi0 = rowidx2part(ri0);
+                if (lr < nrows) {
+                  const local_ordinal_type ri0 = lclrow2idx[lr];
+                  const local_ordinal_type pi0 = rowidx2part(ri0);
                   
-          //         size_type cnt_rowptr = R_rowptr(lr);
-          //         size_type cnt_rowptr_remote = R_rowptr_remote(lr);
+                  size_type cnt_rowptr = R_rowptr(lr);
+                  size_type cnt_rowptr_remote = R_rowptr_remote(lr);
 
-          //         const size_type j0 = local_graph_rowptr(lr);
-          //         for (size_type j=j0;j<local_graph_rowptr(lr+1);++j) {
-          //           const local_ordinal_type lc = local_graph_colidx(j);
-          //           const local_ordinal_type lc2r = col2row[lc];
-          //           if (lc2r != Teuchos::OrdinalTraits<local_ordinal_type>::invalid()) {
-          //             const local_ordinal_type ri = lclrow2idx[lc2r];
-          //             const local_ordinal_type pi = rowidx2part(ri);
-          //             if (pi == pi0 && ri + 1 >= ri0 && ri <= ri0 + 1)
-          //               continue;
-          //           }
-          //           const local_ordinal_type row_entry = j - j0;
-          //           if ( !overlap_comm || lc < nrows) 
-          //             R_A_colindsub(cnt_rowptr++) = row_entry;
-          //           else 
-          //             R_A_colindsub_remote(cnt_rowptr_remote++) = row_entry;
-          //         }
-          //       }
-          //     }
-          //     update.v[0] += R_rowptr(lr);
-          //     update.v[1] += R_rowptr_remote(lr);
-          //   });
+                  const size_type j0 = local_graph_rowptr(lr);
+                  for (size_type j=j0;j<local_graph_rowptr(lr+1);++j) {
+                    const local_ordinal_type lc = local_graph_colidx(j);
+                    const local_ordinal_type lc2r = col2row[lc];
+                    if (lc2r != Teuchos::OrdinalTraits<local_ordinal_type>::invalid()) {
+                      const local_ordinal_type ri = lclrow2idx[lc2r];
+                      const local_ordinal_type pi = rowidx2part(ri);
+                      if (pi == pi0 && ri + 1 >= ri0 && ri <= ri0 + 1)
+                        continue;
+                    }
+                    const local_ordinal_type row_entry = j - j0;
+                    if ( !overlap_comm || lc < nrows) 
+                      R_A_colindsub(cnt_rowptr++) = row_entry;
+                    else 
+                      R_A_colindsub_remote(cnt_rowptr_remote++) = row_entry;
+                  }
+                }
+              }
+              update.v[0] += R_rowptr(lr);
+              update.v[1] += R_rowptr_remote(lr);
+            });
 
           TEUCHOS_ASSERT(R_rowptr(nrows) == R_nnz_owned);
           Kokkos::deep_copy(amd.rowptr, R_rowptr);
@@ -1080,6 +1083,8 @@ namespace Ifpack2 {
       using impl_type = ImplType<MatrixType>;
       using device_type = typename impl_type::device_type;
       using local_ordinal_type = typename impl_type::local_ordinal_type;
+      using impl_scalar_type = typename impl_type::impl_scalar_type;
+      using magnitude_type = typename impl_type::magnitude_type;
       using tpetra_multivector_type = typename impl_type::tpetra_multivector_type;
       using local_ordinal_type_1d_view = typename impl_type::local_ordinal_type_1d_view;
       using vector_type_3d_view = typename impl_type::vector_type_3d_view;
@@ -1095,11 +1100,83 @@ namespace Ifpack2 {
       ConstUnmanaged<local_ordinal_type_1d_view> lclrow;
       local_ordinal_type blocksize;
       local_ordinal_type num_vectors;
+      impl_scalar_type damping_factor;
+
+      struct ToPackedMultiVectorTag       { enum : int { id = 0 }; };
+      struct ToScalarMultiVectorFirstTag  { enum : int { id = 1 }; };
+      struct ToScalarMultiVectorSecondTag { enum : int { id = 2 }; };
+
+      template<typename TagType>
+      KOKKOS_INLINE_FUNCTION
+      void copy_multivectors(const local_ordinal_type &j, 
+                             const local_ordinal_type &vi, 
+                             const local_ordinal_type &pri, 
+                             const local_ordinal_type &nrow,  
+                             const local_ordinal_type &ri0) const {
+        if (TagType::id == 0) { // ToPackedMultiVectorTag
+          for (local_ordinal_type col=0;col<num_vectors;++col) 
+            for (local_ordinal_type i=0;i<blocksize;++i)
+              packed_multivector(pri, i, col)[vi] = scalar_multivector(blocksize*lclrow(ri0+j)+i,col);
+        } else if (TagType::id > 0) { //ToScalarMultiVector
+          const impl_scalar_type zero(0), df = damping_factor;
+          for (local_ordinal_type col=0;col<num_vectors;++col) 
+            for (local_ordinal_type i=0;i<blocksize;++i) {
+              impl_scalar_type &y = scalar_multivector(blocksize*lclrow(ri0+j)+i,col);
+              const impl_scalar_type yc = packed_multivector(pri, i, col)[vi];
+              if (TagType::id == 1) y  = df*yc;
+              else                  y += df*(yc - y); 
+            }
+        }
+      }
+
+      template<typename TagType>
+      KOKKOS_INLINE_FUNCTION
+      void copy_multivectors_with_norm(const local_ordinal_type &j, 
+                                       const local_ordinal_type &vi, 
+                                       const local_ordinal_type &pri, 
+                                       const local_ordinal_type &nrow,  
+                                       const local_ordinal_type &ri0,
+                                       /* */ magnitude_type *norm) const {
+        if (TagType::id > 0) { //ToScalarMultiVector
+          const impl_scalar_type zero(0), df = damping_factor;
+          for (local_ordinal_type col=0;col<num_vectors;++col) {
+            const local_ordinal_type offset = col*blocksize;
+            for (local_ordinal_type i=0;i<blocksize;++i) {
+              impl_scalar_type &y = scalar_multivector(blocksize*lclrow(ri0+j)+i,col);
+              const impl_scalar_type yc = packed_multivector(pri, i, col)[vi];
+              const impl_scalar_type yd = TagType::id == 1 ? yc : yc - y;
+              const magnitude_type abs_yd = Kokkos::ArithTraits<impl_scalar_type>::abs(yd);
+              norm[offset+i] += abs_yd*abs_yd;
+              if (TagType::id == 1) y  = df*yc;
+              else                  y += df*yd; 
+            }
+          }
+        }
+      }
 
     public:
       // packed multivector output (or input)
       Unmanaged<vector_type_3d_view> packed_multivector;
       Unmanaged<impl_scalar_type_2d_view> scalar_multivector;
+
+      // local reduction of norms with runtime array 
+      // this value type and value_count is required for Kokkos
+      typedef magnitude_type value_type[];
+      int value_count;
+
+      KOKKOS_INLINE_FUNCTION
+      void 
+      init(magnitude_type *dst) const {
+        for (int i=0;i<value_count;++i)         
+          dst[i] = Kokkos::reduction_identity<magnitude_type>::sum();
+      }
+
+      KOKKOS_INLINE_FUNCTION
+      void 
+      join(volatile magnitude_type *dst, const volatile magnitude_type *src) const {
+        for (int i=0;i<value_count;++i) 
+          dst[i] += src[i];
+      }          
       
       MultiVectorConverter(const PartInterface<MatrixType> &interf,                    
                            const vector_type_3d_view &pmv) 
@@ -1111,22 +1188,11 @@ namespace Ifpack2 {
           packed_multivector(pmv),
           blocksize(pmv.extent(1)),
           num_vectors(pmv.extent(2)) {}
-      
-      KOKKOS_INLINE_FUNCTION
-      void copy_to_packed_multivector(const local_ordinal_type &j, 
-                                      const local_ordinal_type &vi, 
-                                      const local_ordinal_type &pri, 
-                                      const local_ordinal_type &nrow,  
-                                      const local_ordinal_type &ri0) const {
-        for (local_ordinal_type col=0;col<num_vectors;++col) {
-          for (local_ordinal_type i=0;i<blocksize;++i)
-            packed_multivector(pri, i, col)[vi] = scalar_multivector(blocksize*lclrow(ri0+j)+i,col);
-        }
-      }
-      
+
+      template<typename TagType>
       KOKKOS_INLINE_FUNCTION
       void 
-      operator() (const local_ordinal_type &packidx) const {
+      operator() (const TagType&, const local_ordinal_type &packidx, magnitude_type* const norm = NULL) const {
         local_ordinal_type partidx = packptr(packidx);
         local_ordinal_type npacks = packptr(packidx+1) - partidx;
         const local_ordinal_type pri0 = part2packrowidx0(partidx);
@@ -1142,20 +1208,52 @@ namespace Ifpack2 {
           for (;cnt<npacks && j!= nrows[cnt];++cnt);
           npacks = cnt;
           const local_ordinal_type pri = pri0 + j;
-          // team parallel later
           for (local_ordinal_type vi=0;vi<npacks;++vi) 
-            copy_to_packed_multivector(j, vi, pri, nrows[vi], ri0[vi]);
+            if (norm == NULL)
+              copy_multivectors<TagType>(j, vi, pri, nrows[vi], ri0[vi]);
+            else 
+              copy_multivectors_with_norm<TagType>(j, vi, pri, nrows[vi], ri0[vi], norm);            
         }
       }
-
+      
       template<typename TpetraLocalViewType>
       void to_packed_multivector(const TpetraLocalViewType &scalar_multivector_) {
 #ifdef HAVE_IFPACK2_BLOCKTRIDICONTAINER_TIMERS
         TEUCHOS_FUNC_TIME_MONITOR("BlockTriDi::PermuteAndRepack");
 #endif
         scalar_multivector = scalar_multivector_;
-        const Kokkos::RangePolicy<typename device_type::execution_space> policy(0, packptr.extent(0) - 1);
+        const Kokkos::RangePolicy
+          <ToPackedMultiVectorTag,typename device_type::execution_space> policy(0, packptr.extent(0) - 1);
         Kokkos::parallel_for(policy, *this);
+      }
+
+      template<typename TpetraLocalViewType>
+      void to_scalar_multivector(const TpetraLocalViewType &scalar_multivector_, 
+                                 const impl_scalar_type &damping_factor_,
+                                 const bool &is_vectors_zero,
+                                 /* */ magnitude_type *norm = NULL) {
+#ifdef HAVE_IFPACK2_BLOCKTRIDICONTAINER_TIMERS
+        TEUCHOS_FUNC_TIME_MONITOR("BlockTriDi::PermuteAndRepack");
+#endif
+        scalar_multivector = scalar_multivector_;
+        damping_factor = damping_factor_;
+        if (norm != NULL) {
+          value_count = blocksize*num_vectors;
+          for (int i=0;i<value_count;++i)
+            norm[i] = Kokkos::ArithTraits<magnitude_type>::zero();
+        }
+
+        if (is_vectors_zero) {
+          const Kokkos::RangePolicy
+            <ToScalarMultiVectorFirstTag,typename device_type::execution_space> policy(0, packptr.extent(0) - 1);
+          if (norm == NULL)  Kokkos::parallel_for(policy, *this);
+          else               Kokkos::parallel_reduce(policy, *this, norm);              
+        } else {
+          const Kokkos::RangePolicy
+            <ToScalarMultiVectorSecondTag,typename device_type::execution_space> policy(0, packptr.extent(0) - 1);
+          if (norm == NULL)  Kokkos::parallel_for(policy, *this);
+          else               Kokkos::parallel_reduce(policy, *this, norm);              
+        }
       }
     };
 
@@ -1197,7 +1295,6 @@ namespace Ifpack2 {
       //ConstUnmanaged<impl_scalar_type_4d_view> D_scalar_values;
 
     public:
-      SolveTridiags() = default;
       SolveTridiags(const PartInterface<MatrixType> &interf,                    
                     const BlockTridiags<MatrixType> &btdm, 
                     const vector_type_3d_view &pmv) 
@@ -1220,90 +1317,329 @@ namespace Ifpack2 {
       KOKKOS_INLINE_FUNCTION 
       void 
       operator() (const local_ordinal_type& packidx) const {
-        // using namespace KokkosBatched::Experimental;
+        using namespace KokkosBatched::Experimental;
         
-        // // constant
-        // const auto one = Kokkos::ArithTraits<magnitude_type>::one();
+        // constant
+        const auto one = Kokkos::ArithTraits<magnitude_type>::one();
         
-        // // subview pattern
-        // auto A = Kokkos::subview(D_vector_values, 0, Kokkos::ALL(), Kokkos::ALL());
-        // auto B = A;
-        // auto X1 = Kokkos::subview(X_vector_values, 0, Kokkos::ALL(), Kokkos::ALL());
-        // auto X2 = X1;
+        // subview pattern
+        auto A = Kokkos::subview(D_vector_values, 0, Kokkos::ALL(), Kokkos::ALL());
+        auto B = A;
+        auto X1 = Kokkos::subview(X_vector_values, 0, Kokkos::ALL(), Kokkos::ALL());
+        auto X2 = X1;
 
-        // // index counting
-        // const local_ordinal_type partidx = packptr(packidx);
-        // size_type i0 = pack_td_ptr(partidx);
-        // local_ordinal_type r0 = part2packrowidx0(partidx);
-        // const local_ordinal_type nrows = part2packrowidx0(packptr(packidx+1)) - r0;
+        // index counting
+        const local_ordinal_type partidx = packptr(packidx);
+        size_type i0 = pack_td_ptr(partidx);
+        local_ordinal_type r0 = part2packrowidx0(partidx);
+        const local_ordinal_type nrows = part2packrowidx0(packptr(packidx+1)) - r0;
 
-        // // solve Lx = x
-        // A.assign_data( &D_vector_values(i0,0,0) );
-        // X1.assign_data( &X_vector_values(r0,0,0) );
-        // SerialTrsv<Uplo::Lower,Trans::NoTranspose,Diag::Unit,Algo::Trsv::Blocked>
-        //   ::invoke(one, A, X1);
-        // for (local_ordinal_type i=1;i<nrows;++i,i0+=3) {
-        //   B.assign_data( &D_vector_values(i0+2,0,0) );
-        //   X2.assign_data( &X_vector_values(++r0,0,0) );
-        //   SerialGemv<Trans::NoTranspose,Algo::Gemv::Blocked>
-        //     ::invoke(-one, B, X1, one, X2);
-        //   A.assign_data( &D_vector_values(i0+3,0,0) );
-        //   SerialTrsv<Uplo::Lower,Trans::NoTranspose,Diag::Unit,Algo::Trsv::Blocked>
-        //     ::invoke(one, A, X1);
-        //   X1.assign_data( X2.data() );
-        // }
+        // solve Lx = x
+        A.assign_data( &D_vector_values(i0,0,0) );
+        X1.assign_data( &X_vector_values(r0,0,0) );
+        SerialTrsv<Uplo::Lower,Trans::NoTranspose,Diag::Unit,Algo::Trsv::Blocked>
+          ::invoke(one, A, X1);
+        for (local_ordinal_type i=1;i<nrows;++i,i0+=3) {
+          B.assign_data( &D_vector_values(i0+2,0,0) );
+          X2.assign_data( &X_vector_values(++r0,0,0) );
+          SerialGemv<Trans::NoTranspose,Algo::Gemv::Blocked>
+            ::invoke(-one, B, X1, one, X2);
+          A.assign_data( &D_vector_values(i0+3,0,0) );
+          SerialTrsv<Uplo::Lower,Trans::NoTranspose,Diag::Unit,Algo::Trsv::Blocked>
+            ::invoke(one, A, X1);
+          X1.assign_data( X2.data() );
+        }
 
-        // // solve Ux = x
-        // SerialTrsv<Uplo::Upper,Trans::NoTranspose,Diag::NonUnit,Algo::Trsv::Blocked>
-        //   ::invoke(one, A, X1);
-        // for (local_ordinal_type i=nrows;i>1;--i) {
-        //   i0 -= 3;
-        //   B.assign_data( &D_vector_values(i0+1,0,0) );
-        //   X2.assign_data( &X_vector_values(--r0,0,0) );          
-        //   SerialGemv<Trans::NoTranspose,Algo::Gemv::Blocked>
-        //     ::invoke(-one, B, X1, one, X2); 
-        //   A.assign_data( &D_vector_values(i0,0,0) );          
-        //   SerialTrsv<Uplo::Upper,Trans::NoTranspose,Diag::NonUnit,Algo::Trsv::Blocked>
-        //     ::invoke(one, A, X2);
-        //   X1.assign_data( X2.data() );
-        // }
+        // solve Ux = x
+        SerialTrsv<Uplo::Upper,Trans::NoTranspose,Diag::NonUnit,Algo::Trsv::Blocked>
+          ::invoke(one, A, X1);
+        for (local_ordinal_type i=nrows;i>1;--i) {
+          i0 -= 3;
+          B.assign_data( &D_vector_values(i0+1,0,0) );
+          X2.assign_data( &X_vector_values(--r0,0,0) );          
+          SerialGemv<Trans::NoTranspose,Algo::Gemv::Blocked>
+            ::invoke(-one, B, X1, one, X2); 
+          A.assign_data( &D_vector_values(i0,0,0) );          
+          SerialTrsv<Uplo::Upper,Trans::NoTranspose,Diag::NonUnit,Algo::Trsv::Blocked>
+            ::invoke(one, A, X2);
+          X1.assign_data( X2.data() );
+        }
       }
       
-      // void run() {
-      //   // #if defined(HAVE_IFPACK2_CUDA) && defined (KOKKOS_ENABLE_CUDA)
-      //   //         Kokkos::TeamPolicy<device_type> policy(packptr.extent(0) - 1, Kokkos::AUTO(), vector_length);
-      //   // #else
-      //   Kokkos::RangePolicy<device_type> policy(local_ordinal_type(0), 
-      //                                           local_ordinal_type(packptr.extent(0) - 1));
-      //   //#endif
-      //   //Kokkos::parallel_for(policy, *this);
-      //   Kokkos::parallel_for(policy, KOKKOS_LAMBDA(const local_ordinal_type &i) { printf("0\n"); });
-      // }
+      void run() {
+        // #if defined(HAVE_IFPACK2_CUDA) && defined (KOKKOS_ENABLE_CUDA)
+        //         Kokkos::TeamPolicy<device_type> policy(packptr.extent(0) - 1, Kokkos::AUTO(), vector_length);
+        // #else
+        Kokkos::RangePolicy<typename device_type::execution_space> policy(0, packptr.extent(0) - 1);
+        //#endif
+        Kokkos::parallel_for(policy, *this);
+      }
     }; 
+
+    ///
+    /// compute local residula vector y = b - R x 
+    ///
+    template<typename MatrixType>
+    struct ComputeResidualVector {
+    public:
+      using impl_type = ImplType<MatrixType>;
+      using device_type = typename impl_type::device_type;
+      using local_ordinal_type = typename impl_type::local_ordinal_type;
+      using size_type = typename impl_type::size_type;
+      using magnitude_type = typename impl_type::magnitude_type;
+      /// views
+      using local_ordinal_type_1d_view = typename impl_type::local_ordinal_type_1d_view;
+      using size_type_1d_view = typename impl_type::size_type_1d_view; 
+      using tpetra_block_access_view_type = typename impl_type::tpetra_block_access_view_type; // block crs (layout right)
+      using impl_scalar_type_1d_view = typename impl_type::impl_scalar_type_1d_view; 
+      using impl_scalar_type_2d_view = typename impl_type::impl_scalar_type_2d_view; // block multivector (layout left)
+
+      /// team policy member type (used in cuda)
+      //using member_type = typename Kokkos::TeamPolicy<device_type>::member_type;      
+ 
+    private:
+      ConstUnmanaged<impl_scalar_type_2d_view> b;
+      ConstUnmanaged<impl_scalar_type_2d_view> x;
+      /* */Unmanaged<impl_scalar_type_2d_view> y;
+
+      // AmD information
+      ConstUnmanaged<size_type_1d_view> rowptr;
+      ConstUnmanaged<local_ordinal_type_1d_view> colindsub;
+      ConstUnmanaged<impl_scalar_type_1d_view> tpetra_values;
+
+      // block crs graph information
+      ConstUnmanaged<size_type_1d_view> A_rowptr;
+      ConstUnmanaged<local_ordinal_type_1d_view> A_colind;
+      ConstUnmanaged<tpetra_block_access_view_type> A_null_block;
+      const local_ordinal_type blocksize, blocksize_square;
+
+    public:
+      template<typename LocalCrsGraphType>
+      ComputeResidualVector(const AmD<MatrixType> &amd,
+                            const LocalCrsGraphType &graph,
+                            const local_ordinal_type blocksize_) 
+        : rowptr(amd.rowptr),
+          colindsub(amd.A_colindsub),
+          tpetra_values(amd.tpetra_values),
+          A_rowptr(graph.row_map),
+          A_colind(graph.entries),
+          A_null_block(NULL, blocksize_, blocksize_),
+          blocksize(blocksize_), 
+          blocksize_square(blocksize_*blocksize_) {}
+      
+      ///
+      /// host serial 
+      ///
+      KOKKOS_INLINE_FUNCTION 
+      void 
+      operator() (const local_ordinal_type& i) const {
+        using namespace KokkosBatched::Experimental;
+
+        // constants
+        const magnitude_type one(1);
+        const Kokkos::pair<local_ordinal_type,local_ordinal_type> block_range(0, blocksize);
+
+        // subview pattern
+        auto bb = Kokkos::subview(b, block_range, block_range);
+        auto xx = bb;
+        auto yy = Kokkos::subview(y, block_range, block_range);
+  
+        // y := b
+        const local_ordinal_type row = i*blocksize;
+        yy.assign_data(&y(row, 0));
+        bb.assign_data(&b(row, 0));
+        SerialCopy<Trans::NoTranspose>::invoke(bb, yy);
+        
+        // y -= Rx
+        const size_type A_k0 = A_rowptr[i];
+        auto A_block = A_null_block;
+        for (size_type k=rowptr[i];k<rowptr[i+1];++k) {
+          const size_type j = A_k0 + colindsub[k];
+          A_block.assign_data(tpetra_values.data() + j*blocksize_square);
+          xx.assign_data(x.data() + A_colind[j]*blocksize);
+          SerialGemv<Trans::NoTranspose,Algo::Gemv::Blocked>::invoke(-one, A_block, xx, one, yy);  
+        }
+      }
+      
+      // y = b - Rx;
+      template<typename MultiVectorLocalViewTypeY,
+               typename MultiVectorLocalViewTypeB,
+               typename MultiVectorLocalViewTypeX>
+      void run(const MultiVectorLocalViewTypeY &y_, 
+               const MultiVectorLocalViewTypeB &b_, 
+               const MultiVectorLocalViewTypeX &x_) {
+        y = y_; b = b_; x = x_; 
+        Kokkos::RangePolicy<typename device_type::execution_space> policy(0, rowptr.extent(0) - 1);
+        Kokkos::parallel_for(policy, *this);
+      }
+    }; 
+
+    ///
+    /// Manage the distributed part of the computation of residual norms.
+    ///
+    template<typename MatrixType>
+    struct NormManager {
+    public: 
+      using impl_type = ImplType<MatrixType>;
+      using magnitude_type = typename impl_type::magnitude_type;
+
+    private:
+      bool collective_;
+      int sweep_step_, blocksize_, num_vectors_;
+#ifdef HAVE_MPI
+      MPI_Request mpi_request_;
+      MPI_Comm comm_;
+#endif
+      std::vector<magnitude_type> work_;
+
+    public:
+      NormManager() = default;
+      NormManager(const NormManager &b) = default;
+      NormManager(const Teuchos::RCP<const Teuchos::Comm<int> >& comm) {
+        sweep_step_ = 1;
+        collective_ = comm->getSize() > 1;
+        if (collective_) {
+#ifdef HAVE_MPI
+          const auto mpi_comm = Teuchos::rcp_dynamic_cast<const Teuchos::MpiComm<int> >(comm);
+          TEUCHOS_ASSERT( ! mpi_comm.is_null());
+          comm_ = *mpi_comm->getRawMpiComm();
+#endif
+        }
+      }
+
+      // Resize the buffer to accommodate nvec vectors in the multivector, for a
+      // matrix having block size block_size.
+      void resize(const int& blocksize, const int& num_vectors) {
+        blocksize_ = blocksize;
+        num_vectors_ = num_vectors;
+        work_.resize((2*blocksize_ + 1)*num_vectors_);
+      }
+      
+      // Check the norm every sweep_step sweeps.
+      void setCheckFrequency(const int& sweep_step) {
+        TEUCHOS_TEST_FOR_EXCEPT_MSG(sweep_step < 1, "sweep step must be >= 1");
+        sweep_step_ = sweep_step;
+      }
+      
+      // Get the buffer into which to store rank-local squared norms.
+      magnitude_type* getBuffer() { return work_.data(); }
+
+      // Call MPI_Iallreduce to find the global squared norms.
+      void ireduce(const int& sweep, const bool force = false) {
+        if ( ! force && sweep % sweep_step_) return;
+        const int n = blocksize_*num_vectors_;
+        if (collective_) {
+          std::copy(work_.begin(), work_.begin() + n, work_.begin() + n);
+#ifdef HAVE_MPI
+# if MPI_VERSION >= 3
+          MPI_Iallreduce(work_.data() + n, work_.data(), n,
+                         Teuchos::Details::MpiTypeTraits<magnitude_type>::getType(),
+                         MPI_SUM, comm_, &mpi_request_);
+# else
+          MPI_Allreduce (work_.data() + n, work_.data(), n,
+                         Teuchos::Details::MpiTypeTraits<magnitude_type>::getType(),
+                         MPI_SUM, comm_);
+# endif
+#endif
+        }
+      }
+      
+      // Check if the norm-based termination criterion is met. tol2 is the
+      // tolerance squared. Sweep is the sweep index. If not every iteration is
+      // being checked, this function immediately returns false. If a check must
+      // be done at this iteration, it waits for the reduction triggered by
+      // ireduce to complete, then checks the global norm against the tolerance.
+      bool checkDone (const int& sweep, const magnitude_type& tol2, const bool force = false) {
+#ifdef HAVE_IFPACK2_BLOCKTRIDICONTAINER_TIMERS
+        TEUCHOS_FUNC_TIME_MONITOR("BlockTriDi::NormManager::check_done");
+#endif
+        TEUCHOS_ASSERT(sweep >= 1);
+        if ( ! force && (sweep - 1) % sweep_step_) return false;
+        if (collective_) {
+#ifdef HAVE_MPI
+# if MPI_VERSION >= 3
+          MPI_Wait(&mpi_request_, MPI_STATUS_IGNORE);
+# else
+          // Do nothing.
+# endif
+#endif
+        }
+        const auto n = blocksize_*num_vectors_;
+        if (sweep == 1) {
+          magnitude_type* const n0 = work_.data() + 2*n;
+          for (int v = 0; v < num_vectors_; ++v) {
+            const magnitude_type* const dn0 = work_.data() + v*blocksize_;
+            magnitude_type mdn0 = 0;
+            for (int i = 0; i < blocksize_; ++i)
+              mdn0 = std::max(mdn0, dn0[i]);
+            n0[v] = mdn0;
+          }
+          return false;
+        } else {
+          const auto n0 = work_.data() + 2*n;
+          bool done = true;
+          for (int v = 0; v < num_vectors_; ++v) {
+            const magnitude_type* const dnf = work_.data() + v*blocksize_;
+            magnitude_type mdnf = 0;
+            for (int i = 0; i < blocksize_; ++i)
+              mdnf = std::max(mdnf, dnf[i]);
+            if (mdnf > tol2*n0[v]) {
+              done = false;
+              break;
+            }
+          }
+          return done;
+        }
+      }
+      
+      // After termination has occurred, finalize the norms for use in
+      // get_norms{0,final}.
+      void finalize () {
+        for (int v = 0; v < num_vectors_; ++v) {
+          const magnitude_type* const dnf = work_.data() + v*blocksize_;
+          magnitude_type mdnf = 0;
+          for (int i = 0; i < blocksize_; ++i)
+            mdnf = std::max(mdnf, dnf[i]);
+          // This overwrites the receive buffer, but that's OK; at the time of
+          // this write, we no longer need the data in this slot.
+          work_[v] = mdnf;
+        }
+        for (int i = 0; i < num_vectors_; ++i)
+          work_[i] = std::sqrt(work_[i]);
+        magnitude_type* const nf = work_.data() + 2*blocksize_*num_vectors_;
+        for (int v = 0; v < num_vectors_; ++v)
+          nf[v] = std::sqrt(nf[v]);
+      }
+      
+      // Report norms to the caller.
+      const magnitude_type* getNorms0 () const { return work_.data() + 2*blocksize_*num_vectors_; }
+      const magnitude_type* getNormsFinal () const { return work_.data(); }
+    };
 
     ///
     /// top level apply interface
     ///
     template<typename MatrixType>
     int 
-    applyInverseJacobi 
-    (// tpetra importer
-     const Teuchos::RCP<const typename ImplType<MatrixType>::tpetra_import_type> &importer,
-     // tpetra interface
-     const typename ImplType<MatrixType>::tpetra_multivector_type &X,  // tpetra interface
-     /* */ typename ImplType<MatrixType>::tpetra_multivector_type &Y,  // tpetra interface
-     /* */ typename ImplType<MatrixType>::tpetra_multivector_type &Z,  // temporary tpetra interface
-     // local object interface
-     const PartInterface<MatrixType> &interf, // mesh interface
-     const BlockTridiags<MatrixType> &btdm, // packed block tridiagonal matrices
-     /* */ typename ImplType<MatrixType>::vector_type_1d_view &work, // workspace for packed multivector of right hand side 
-     //const NormManager<MatrixType> &norm_manager,
-     // preconditioner parameters
-     const typename ImplType<MatrixType>::impl_scalar_type &damping_factor, 
-     /* */ bool is_y_zero,
-     const int max_num_sweeps, 
-     const typename ImplType<MatrixType>::magnitude_type tol) { // if tol is zero, then we do not compute error norm
-
+    applyInverseJacobi(// tpetra importer
+                       const Teuchos::RCP<const typename ImplType<MatrixType>::tpetra_block_crs_matrix_type> &A,
+                       const Teuchos::RCP<const typename ImplType<MatrixType>::tpetra_import_type> &importer,
+                       // tpetra interface
+                       const typename ImplType<MatrixType>::tpetra_multivector_type &X,  // tpetra interface
+                       /* */ typename ImplType<MatrixType>::tpetra_multivector_type &Y,  // tpetra interface
+                       /* */ typename ImplType<MatrixType>::tpetra_multivector_type &Z,  // temporary tpetra interface
+                       // local object interface
+                       const PartInterface<MatrixType> &interf, // mesh interface
+                       const BlockTridiags<MatrixType> &btdm, // packed block tridiagonal matrices
+                       const AmD<MatrixType> &amd, // R = A - D
+                       /* */ typename ImplType<MatrixType>::vector_type_1d_view &work, // workspace for packed multivector of right hand side 
+                       /* */ NormManager<MatrixType> &norm_manager,
+                       // preconditioner parameters
+                       const typename ImplType<MatrixType>::impl_scalar_type &damping_factor, 
+                       /* */ bool is_y_zero,
+                       const int max_num_sweeps, 
+                       const typename ImplType<MatrixType>::magnitude_type tol) { // if tol is zero, then we do not compute error norm
+      
 #ifdef HAVE_IFPACK2_BLOCKTRIDICONTAINER_TIMERS
       TEUCHOS_FUNC_TIME_MONITOR("BlockTriDi::applyInverseJacobi");
 #endif
@@ -1320,6 +1656,7 @@ namespace Ifpack2 {
       TEUCHOS_TEST_FOR_EXCEPT_MSG(max_num_sweeps <= 0, "Maximum number of sweeps must be >= 1.");
 
       // const parameters
+      const bool is_norm_manager_active = tol > Kokkos::ArithTraits<magnitude_type>::zero();
       const magnitude_type tolerance = tol*tol;
       const local_ordinal_type blocksize = btdm.values.extent(1);
       const local_ordinal_type num_vectors = Y.getNumVectors();
@@ -1337,12 +1674,19 @@ namespace Ifpack2 {
       // wrap the workspace with 3d view
       vector_type_3d_view pmv(work.data(), num_blockrows, blocksize, num_vectors);
       const auto XX = X.template getLocalView<typename device_type::memory_space>();
-      const auto YY = Y.template getLocalView<device_type>();
-      //const auto ZZ = Z.getLocalView<device_type>();
+      const auto YY = Y.template getLocalView<typename device_type::memory_space>();
+      const auto ZZ = Z.template getLocalView<typename device_type::memory_space>();
 
       MultiVectorConverter<MatrixType> multivector_converter(interf, pmv);
       SolveTridiags<MatrixType> solve_tridiags(interf, btdm, pmv);
-      
+
+      ComputeResidualVector<MatrixType> 
+        compute_residual_vector(amd, A->getCrsGraph().getLocalGraph(), blocksize);
+
+      // norm manager workspace resize
+      if (is_norm_manager_active) 
+        norm_manager.resize(blocksize, num_vectors);
+        
       // iterate
       int sweep;
       for (sweep=0;sweep<max_num_sweeps;++sweep) {
@@ -1350,669 +1694,39 @@ namespace Ifpack2 {
           // pmv := x(lclrow)
           multivector_converter.to_packed_multivector(XX);
         } else {
-          // y := x - R y.
+          // y := x - R y; in this notation, zz = yy, yy = xx - amd zz
           Z.doImport(Y, *importer, Tpetra::REPLACE);
-          //computeBMinusRX(YY, XX, Amd, ZZ);
+          compute_residual_vector.run(YY, XX, ZZ);
           // pmv := y(lclrow).
           multivector_converter.to_packed_multivector(YY);
         }
-
+        
         // pmv := inv(D) pmv.
-        // Kokkos::parallel_for(10, KOKKOS_LAMBDA(const local_ordinal_type i) { 
-        //     solve_tridiags(i);
-        //   });
-        {
-          Kokkos::RangePolicy<typename device_type::execution_space> policy(0,10);
-          Kokkos::parallel_for(policy, solve_tridiags);
-        }
-        //solve_tridiags.run();
-
+        solve_tridiags.run();
+        
         // y(lclrow) = (b - a) y(lclrow) + a pmv, with b = 1 always.
-        //packMultiVectorAndComputeNorm();
-        // PermuteAndRepack(pmv_, Y, damping_factor, part2rowidx0_, part2packrowidx0_, lclrow_, packptr_,
-        //                  y_is_zero, do_norm ? norm_mgr_->get_buffer() : nullptr).run();
+        multivector_converter.to_scalar_multivector(YY, damping_factor, is_y_zero,
+                                                    is_norm_manager_active ? norm_manager.getBuffer() : NULL);
 
-        // if (norm_manager.is_active) {
-        //   if (sweep + 1 == max_num_sweeps) {
-        //     norm_manager.ireduce(sweep, true);
-        //     norm_manager.checkDone(sweep + 1, tolerance, true);
-        //   } else {
-        //     norm_manager.ireduce(sweep);
-        //   }
-        // }
+        if (is_norm_manager_active) {
+          if (sweep + 1 == max_num_sweeps) {
+            norm_manager.ireduce(sweep, true);
+            norm_manager.checkDone(sweep + 1, tolerance, true);
+          } else {
+            norm_manager.ireduce(sweep);
+          }
+        }
 
         is_y_zero = false;
       }
 
       // sqrt the norms for the caller's use.
-      //if (norm_manager.is_active) norm_manager.finalize();
+      if (is_norm_manager_active) norm_manager.finalize();
 
       return sweep;
     }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    
-
-    //     // Manage the distributed part of the computation of residual norms.
-    //     template<typename MatrixType>
-    //     struct NormManager {
-    //     public: 
-    //       using ImplType<MatrixType>::magnitude_type;
-      
-    //     private:
-    //       bool collective_;
-    //       int sweep_step_, bsz_, nvec_;
-    //       std::vector<magnitude_type> wrk_;
-    //       magnitude_type n0_;
-    // #ifdef HAVE_MPI
-    //       MPI_Request mpi_request_;
-    //       MPI_Comm comm_;
-    // #endif
-
-    //     public:
-    //       NormManager (const Teuchos::RCP<const Teuchos::Comm<int> >& comm) {
-    //         sweep_step_ = 1;
-    //         n0_ = 0;
-    //         collective_ = comm->getSize() > 1;
-    //         if (collective_) {
-    // #ifdef HAVE_MPI
-    //           const auto mpi_comm = Teuchos::rcp_dynamic_cast<const Teuchos::MpiComm<int> >(comm);
-    //           TEUCHOS_ASSERT( ! mpi_comm.is_null());
-    //           comm_ = *mpi_comm->getRawMpiComm();
-    // #endif
-    //         }
-    //       }
-
-    //       // Resize the buffer to accommodate nvec vectors in the multivector, for a
-    //       // matrix having block size block_size.
-    //       void resize (const int& block_size, const int& nvec) {
-    //         bsz_ = block_size;
-    //         nvec_ = nvec;
-    //         wrk_.resize((2*block_size + 1)*nvec);
-    //       }
-      
-    //       // Check the norm every sweep_step sweeps.
-    //       void setCheckFrequency (const int& sweep_step) {
-    //         TEUCHOS_TEST_FOR_EXCEPT_MSG(sweep_step < 1, "sweep step must be >= 1");
-    //         sweep_step_ = sweep_step;
-    //       }
-      
-    //       // Get the buffer into which to store rank-local squared norms.
-    //       magnitude_type* get_buffer () { return wrk_.data(); }
-
-    //       // Call MPI_Iallreduce to find the global squared norms.
-    //       void ireduce (const int& sweep, const bool force = false) {
-    //         if ( ! force && sweep % sweep_step_) return;
-    //         const int n = bsz_*nvec_;
-    //         if (collective_) {
-    //           std::copy(wrk_.begin(), wrk_.begin() + n, wrk_.begin() + n);
-    // #ifdef HAVE_MPI
-    // #if MPI_VERSION >= 3
-    //           MPI_Iallreduce(wrk_.data() + n, wrk_.data(), n,
-    //                          Teuchos::Details::MpiTypeTraits<magnitude_type>::getType(),
-    //                          MPI_SUM, comm_, &mpi_request_);
-    // #else
-    //           MPI_Allreduce (wrk_.data() + n, wrk_.data(), n,
-    //                          Teuchos::Details::MpiTypeTraits<magnitude_type>::getType(),
-    //                          MPI_SUM, comm_);
-    // #endif
-    // #endif
-    //         }
-    //       }
-      
-    //       // Check if the norm-based termination criterion is met. tol2 is the
-    //       // tolerance squared. Sweep is the sweep index. If not every iteration is
-    //       // being checked, this function immediately returns false. If a check must
-    //       // be done at this iteration, it waits for the reduction triggered by
-    //       // ireduce to complete, then checks the global norm against the tolerance.
-    //       bool checkDone (const int& sweep, const magnitude_type& tol2, const bool force = false) {
-    // #ifdef HAVE_IFPACK2_BLOCKTRIDICONTAINER_TIMERS
-    //         TEUCHOS_FUNC_TIME_MONITOR("BlockTriDi::NormManager::check_done");
-    // #endif
-    //         TEUCHOS_ASSERT(sweep >= 1);
-    //         if ( ! force && (sweep - 1) % sweep_step_) return false;
-    //         if (collective_) {
-    // #ifdef HAVE_MPI
-    // # if MPI_VERSION >= 3
-    //           MPI_Wait(&mpi_request_, MPI_STATUS_IGNORE);
-    // # else
-    //           // Do nothing.
-    // # endif
-    // #endif
-    //         }
-    //         const auto n = bsz_*nvec_;
-    //         if (sweep == 1) {
-    //           magnitude_type* const n0 = wrk_.data() + 2*n;
-    //           for (int v = 0; v < nvec_; ++v) {
-    //             const magnitude_type* const dn0 = wrk_.data() + v*bsz_;
-    //             magnitude_type mdn0 = 0;
-    //             for (int i = 0; i < bsz_; ++i)
-    //               mdn0 = std::max(mdn0, dn0[i]);
-    //             n0[v] = mdn0;
-    //           }
-    //           return false;
-    //         } else {
-    //           const auto n0 = wrk_.data() + 2*n;
-    //           bool done = true;
-    //           for (int v = 0; v < nvec_; ++v) {
-    //             const magnitude_type* const dnf = wrk_.data() + v*bsz_;
-    //             magnitude_type mdnf = 0;
-    //             for (int i = 0; i < bsz_; ++i)
-    //               mdnf = std::max(mdnf, dnf[i]);
-    //             if (mdnf > tol2*n0[v]) {
-    //               done = false;
-    //               break;
-    //             }
-    //           }
-    //           return done;
-    //         }
-    //       }
-      
-    //       // After termination has occurred, finalize the norms for use in
-    //       // get_norms{0,final}.
-    //       void finalize () {
-    //         for (int v = 0; v < nvec_; ++v) {
-    //           const magnitude_type* const dnf = wrk_.data() + v*bsz_;
-    //           magnitude_type mdnf = 0;
-    //           for (int i = 0; i < bsz_; ++i)
-    //             mdnf = std::max(mdnf, dnf[i]);
-    //           // This overwrites the receive buffer, but that's OK; at the time of
-    //           // this write, we no longer need the data in this slot.
-    //           wrk_[v] = mdnf;
-    //         }
-    //         for (int i = 0; i < nvec_; ++i)
-    //           wrk_[i] = std::sqrt(wrk_[i]);
-    //         magnitude_type* const nf = wrk_.data() + 2*bsz_*nvec_;
-    //         for (int v = 0; v < nvec_; ++v)
-    //           nf[v] = std::sqrt(nf[v]);
-    //       }
-      
-    //       // Report norms to the caller.
-    //       const magnitude_type* getNorms0 () const { return wrk_.data() + 2*bsz_*nvec_; }
-    //       const magnitude_type* getNormsFinal () const { return wrk_.data(); }
-    //     };
-
-    
-    //     // Repack from the BlockCrsMatrix to the tridiagonal storage, and factorize
-    //     // the data in the latter.
-    //     template<typename MatrixType> 
-
-    //       // Solve D X = Y, where A + D + R. This general implementation uses subviews
-    //       // and works on any platform.
-    //       template <typename Layout, typename PartialSpecialization>
-    //       class Solve {
-    //       public: // for Cuda
-    //         // Whether RHS is a vector or a multivector.
-    //         struct VecTag {};
-    //         struct MatTag {};
-
-    //       private:
-    //         ConstUnmanaged<SizeList> pack_td_ptr;
-    //         ConstUnmanaged<typename BlockTridiags::Values> values;
-    //         ConstUnmanaged<LOList> packptr, part2packrowidx0;
-    //         Unmanaged<typename BlockTridiags::PackedMultiVector> X;
-
-    //         template <typename Tag> void run () {
-    //           Kokkos::RangePolicy<Tag, typename device_type::execution_space> rp(0, packptr.size() - 1);
-    //           Kokkos::parallel_for(rp, *this);
-    //         }
-
-    //         // X := a T \ X
-    //         template <typename Tag, typename UploType, typename DiagType,
-    //                   typename Scalar, typename MatA, typename MatX>
-    //         KOKKOS_FORCEINLINE_FUNCTION static void
-    //         trsmv (const Scalar& a, const MatA& A, MatX& X,
-    //                typename std::enable_if<std::is_same<Tag, VecTag>::value>::type* = 0) {
-    //           namespace kbe = KokkosBatched::Experimental;
-    //           kbe::SerialTrsv<UploType, kbe::Trans::NoTranspose, DiagType, kbe::Algo::Trsv::Unblocked>
-    //             ::invoke(a, A, X);
-    //         }
-
-    //         template <typename Tag, typename UploType, typename DiagType,
-    //                   typename Scalar, typename MatA, typename MatX>
-    //         KOKKOS_FORCEINLINE_FUNCTION static void
-    //         trsmv (const Scalar& a, const MatA& A, MatX& X,
-    //                typename std::enable_if<std::is_same<Tag, MatTag>::value>::type* = 0) {
-    //           namespace kbe = KokkosBatched::Experimental;
-    //           kbe::SerialTrsm<kbe::Side::Left, UploType, kbe::Trans::NoTranspose, DiagType, kbe::Algo::Trsm::Blocked>
-    //             ::invoke(a, A, X);
-    //         }
-
-    //         // C := b C + a A B
-    //         template <typename Tag, typename Scalar, typename MatA, typename MatB, typename MatC>
-    //         KOKKOS_FORCEINLINE_FUNCTION static void
-    //         gemmv (const Scalar& a, const MatA& A, const MatB& B, const Scalar& b, MatC& C,
-    //                typename std::enable_if<std::is_same<Tag, VecTag>::value>::type* = 0) {
-    //           namespace kbe = KokkosBatched::Experimental;
-    //           kbe::SerialGemv<kbe::Trans::NoTranspose, kbe::Algo::Gemv::Unblocked>::invoke(a, A, B, b, C);
-    //         }
-
-    //         template <typename Tag, typename Scalar, typename MatA, typename MatB, typename MatC>
-    //         KOKKOS_FORCEINLINE_FUNCTION static void
-    //         gemmv (const Scalar& a, const MatA& A, const MatB& B, const Scalar& b, MatC& C,
-    //                typename std::enable_if<std::is_same<Tag, MatTag>::value>::type* = 0) {
-    //           namespace kbe = KokkosBatched::Experimental;
-    //           kbe::SerialGemm<kbe::Trans::NoTranspose, kbe::Trans::NoTranspose, kbe::Algo::Gemm::Blocked>
-    //             ::invoke(a, A, B, b, C);
-    //         }
-
-    //       public:
-    //         Solve (const Tridiags& btdm, const LOList& packptr_, const LOList& part2packrowidx0_,
-    //                const typename BlockTridiags::PackedMultiVector& X_)
-    //           : pack_td_ptr(btdm.pack_td_ptr), values(btdm.values),
-    //             packptr(packptr_), part2packrowidx0(part2packrowidx0_),
-    //             X(X_)
-    //         {}
-
-    //         template <typename Tag>
-    //         KOKKOS_INLINE_FUNCTION void operator() (const Tag&, const LO& packidx) const {
-    //           using Kokkos::subview;
-    //           using Kokkos::ALL;
-    //           namespace kbe = KokkosBatched::Experimental;
-
-    //           const auto one = Kokkos::ArithTraits<magnitude_type>::one();
-
-    //           const auto partidx = packptr(packidx);
-    //           Size i0 = pack_td_ptr(partidx);
-    //           LO r0 = part2packrowidx0(partidx);
-    //           const LO nrows = part2packrowidx0(packptr(packidx+1)) - r0;
-
-    //           // Solve L x = x.
-    //           auto A = subview(values, i0, ALL(), ALL());
-    //           auto X1 = subview(X, r0, ALL(), ALL());
-    //           trsmv<Tag, kbe::Uplo::Lower, kbe::Diag::Unit>(one, A, X1);
-    //           for (LO i = 1; i < nrows; ++i) {
-    //             const auto B = subview(values, i0+2, ALL(), ALL());
-    //             r0++;
-    //             const auto X2 = subview(X, r0, ALL(), ALL());
-    //             gemmv<Tag>(-one, B, X1, one, X2);
-    //             i0 += 3;
-    //             A = subview(values, i0, ALL(), ALL());
-    //             trsmv<Tag, kbe::Uplo::Lower, kbe::Diag::Unit>(one, A, X2);
-    //             X1 = X2;
-    //           }
-
-    //           // Solve U x = x.
-    //           trsmv<Tag, kbe::Uplo::Upper, kbe::Diag::NonUnit>(one, A, X1);
-    //           for (LO i = nrows; i > 1; --i) {
-    //             i0 -= 3;
-    //             const auto B = subview(values, i0+1, ALL(), ALL());
-    //             r0--;
-    //             const auto X2 = subview(X, r0, ALL(), ALL());
-    //             gemmv<Tag>(-one, B, X1, one, X2);
-    //             A = subview(values, i0, ALL(), ALL());
-    //             trsmv<Tag, kbe::Uplo::Upper, kbe::Diag::NonUnit>(one, A, X2);
-    //             X1 = X2;
-    //           }
-    //         }
-
-    //         void run () {
-    // #ifdef HAVE_IFPACK2_BLOCKTRIDICONTAINER_TIMERS
-    //           TEUCHOS_FUNC_TIME_MONITOR("BlockTriDi::Solve");
-    // #endif
-    //           if (X.extent(2) == 1)
-    //             run<VecTag>();
-    //           else
-    //             run<MatTag>();
-    //         }
-    //       };
-
-    //       // This specialization is for CPU and KNL. On KNL, it speeds up the solve by
-    //       // ~20% for block size 5, more for smaller, less for bigger. The importance of
-    //       // the apply phase of a preconditioner justifies the extra complexity of this
-    //       // specialization.
-    //       template <typename PartialSpecialization>
-    //       class Solve<Kokkos::LayoutRight, PartialSpecialization> {
-    //       public: // for Cuda
-    //         // Whether RHS is a vector or a multivector.
-    //         struct VecTag {};
-    //         struct MatTag {};
-
-    //       private:
-    //         ConstUnmanaged<SizeList> pack_td_ptr;
-    //         ConstUnmanaged<typename BlockTridiags::Values> values;
-    //         ConstUnmanaged<LOList> packptr, part2packrowidx0;
-    //         Unmanaged<typename BlockTridiags::PackedMultiVector> X;
-    //         const int bs2, xsz;
-
-    //         template <typename Tag> void run () {
-    //           Kokkos::RangePolicy<Tag, typename device_type::execution_space> rp(0, packptr.size() - 1);
-    //           Kokkos::parallel_for(rp, *this);
-    //         }
-
-    //         // For speed in this important, O(nnz) operation, we don't use subviews, but
-    //         // instead go directly to the raw-array interface.
-
-    //         // X := a T \ X
-
-    //         template <typename Tag>
-    //         KOKKOS_FORCEINLINE_FUNCTION void
-    //         trsmvlo (const magnitude_type& a, const LO& i0, const LO& r0,
-    //                  typename std::enable_if<std::is_same<Tag, VecTag>::value>::type* = 0) const {
-    //           namespace kbe = KokkosBatched::Experimental;
-    //           kbe::SerialTrsvInternalLower<kbe::Algo::Trsv::Unblocked>::invoke(
-    //                                                                            true,
-    //                                                                            values.dimension_1(),
-    //                                                                            a,
-    //                                                                            values.data() + i0*bs2, values.stride_1(), values.stride_2(),
-    //                                                                            X.data() + r0*xsz, X.stride_1());
-    //         }
-
-    //         template <typename Tag>
-    //         KOKKOS_FORCEINLINE_FUNCTION void
-    //         trsmvlo (const magnitude_type& a, const LO& i0, const LO& r0,
-    //                  typename std::enable_if<std::is_same<Tag, MatTag>::value>::type* = 0) const {
-    //           namespace kbe = KokkosBatched::Experimental;
-    //           kbe::SerialTrsmInternalLeftLower<kbe::Algo::Trsm::Blocked>::invoke(
-    //                                                                              true,
-    //                                                                              values.dimension_1(), X.dimension_2(),
-    //                                                                              a,
-    //                                                                              values.data() + i0*bs2, values.stride_1(), values.stride_2(),
-    //                                                                              X.data() + r0*xsz, X.stride_1(), X.stride_2());
-    //         }
-
-    //         template <typename Tag>
-    //         KOKKOS_FORCEINLINE_FUNCTION void
-    //         trsmvup (const magnitude_type& a, const LO& i0, const LO& r0,
-    //                  typename std::enable_if<std::is_same<Tag, VecTag>::value>::type* = 0) const {
-    //           namespace kbe = KokkosBatched::Experimental;
-    //           kbe::SerialTrsvInternalUpper<kbe::Algo::Trsv::Unblocked>::invoke(
-    //                                                                            false,
-    //                                                                            values.dimension_1(),
-    //                                                                            a,
-    //                                                                            values.data() + i0*bs2, values.stride_1(), values.stride_2(),
-    //                                                                            X.data() + r0*xsz, X.stride_1());
-    //         }
-
-    //         template <typename Tag>
-    //         KOKKOS_FORCEINLINE_FUNCTION void
-    //         trsmvup (const magnitude_type& a, const LO& i0, const LO& r0,
-    //                  typename std::enable_if<std::is_same<Tag, MatTag>::value>::type* = 0) const {
-    //           namespace kbe = KokkosBatched::Experimental;
-    //           kbe::SerialTrsmInternalLeftUpper<kbe::Algo::Trsm::Blocked>::invoke(
-    //                                                                              false,
-    //                                                                              values.dimension_1(), X.dimension_2(),
-    //                                                                              a,
-    //                                                                              values.data() + i0*bs2, values.stride_1(), values.stride_2(),
-    //                                                                              X.data() + r0*xsz, X.stride_1(), X.stride_2());
-    //         }
-
-    //         // C := b C + a A B
-
-    //         template <typename Tag>
-    //         KOKKOS_FORCEINLINE_FUNCTION void
-    //         gemmv (const magnitude_type& a, const magnitude_type& b, const LO& a0, const LO& b0, const LO& c0,
-    //                typename std::enable_if<std::is_same<Tag, VecTag>::value>::type* = 0) const {
-    //           namespace kbe = KokkosBatched::Experimental;
-    //           kbe::SerialGemvInternal<kbe::Algo::Gemv::Unblocked>::invoke(
-    //                                                                       values.dimension_1(), values.dimension_2(),
-    //                                                                       a,
-    //                                                                       values.data() + a0*bs2, values.stride_1(), values.stride_2(),
-    //                                                                       X.data() + b0*xsz, X.stride_1(),
-    //                                                                       b,
-    //                                                                       X.data() + c0*xsz, X.stride_1());
-    //         }
-
-    //         template <typename Tag>
-    //         KOKKOS_FORCEINLINE_FUNCTION void
-    //         gemmv (const magnitude_type& a, const magnitude_type& b, const LO& a0, const LO& b0, const LO& c0,
-    //                typename std::enable_if<std::is_same<Tag, MatTag>::value>::type* = 0) const {
-    //           namespace kbe = KokkosBatched::Experimental;
-    //           kbe::SerialGemmInternal<kbe::Algo::Gemm::Blocked>::invoke(
-    //                                                                     X.dimension_1(), X.dimension_2(), values.dimension_2(),
-    //                                                                     a,
-    //                                                                     values.data() + a0*bs2, values.stride_1(), values.stride_2(),
-    //                                                                     X.data() + b0*xsz, X.stride_1(), X.stride_2(),
-    //                                                                     b,
-    //                                                                     X.data() + c0*xsz, X.stride_1(), X.stride_2());
-    //         }
-
-    //       public:
-    //         Solve (const Tridiags& btdm, const LOList& packptr_, const LOList& part2packrowidx0_,
-    //                const typename BlockTridiags::PackedMultiVector& X_)
-    //           : pack_td_ptr(btdm.pack_td_ptr), values(btdm.values),
-    //             packptr(packptr_), part2packrowidx0(part2packrowidx0_),
-    //             X(X_), bs2(values.dimension_1()*values.dimension_1()),
-    //             xsz(values.dimension_1()*X.dimension_2())
-    //         {}
-
-    //         template <typename Tag>
-    //         KOKKOS_INLINE_FUNCTION void operator() (const Tag&, const LO& packidx) const {
-    //           using Kokkos::subview;
-    //           using Kokkos::ALL;
-    //           namespace kbe = KokkosBatched::Experimental;
-
-    //           const auto one = Kokkos::ArithTraits<magnitude_type>::one();
-
-    //           const auto partidx = packptr(packidx);
-    //           Size i0 = pack_td_ptr(partidx);
-    //           LO r0 = part2packrowidx0(partidx);
-    //           const LO nrows = part2packrowidx0(packptr(packidx+1)) - r0;
-
-    //           // Solve L x = x.
-    //           trsmvlo<Tag>(one, i0, r0);
-    //           for (LO i = 1; i < nrows; ++i) {
-    //             r0++;
-    //             gemmv<Tag>(-one, one, i0+2, r0-1, r0);
-    //             i0 += 3;
-    //             trsmvlo<Tag>(one, i0, r0);
-    //           }
-
-    //           // Solve U x = x.
-    //           trsmvup<Tag>(one, i0, r0);
-    //           for (LO i = nrows; i > 1; --i) {
-    //             i0 -= 3;
-    //             r0--;
-    //             gemmv<Tag>(-one, one, i0+1, r0+1, r0);
-    //             trsmvup<Tag>(one, i0, r0);
-    //           }
-    //         }
-
-    //         void run () {
-    // #ifdef HAVE_IFPACK2_BLOCKTRIDICONTAINER_TIMERS
-    //           TEUCHOS_FUNC_TIME_MONITOR("BlockTriDi::Solve");
-    // #endif
-    //           if (X.extent(2) == 1)
-    //             run<VecTag>();
-    //           else
-    //             run<MatTag>();
-    //         }
-    //       };
-
-    //     private:
-
-    //       template <typename T> static KOKKOS_INLINE_FUNCTION constexpr T square (const T& x) { return x*x; }
-
-
-    //       // Top-level Impl object initialization.
-    //       void init (const Teuchos::RCP<const row_matrix_type>& matrix,
-    //                  const Teuchos::Array<Teuchos::Array<local_ordinal_type> >& partitions,
-    //                  const Teuchos::RCP<const import_type>& importer, int overlapLevel,
-    //                  bool overlapCommAndComp, bool useSeqMethod) {
-    //         seq_method_ = useSeqMethod;
-    //         overlap_comm_ = overlapCommAndComp;
-    //         validate_ = true;
-
-    //         TEUCHOS_TEST_FOR_EXCEPT_MSG(
-    //                                     overlapLevel != 0,
-    //                                     "BlockTriDiContainer does not curently support OverlapLevel != 0; user provided "
-    //                                     << overlapLevel);
-
-    //         A_bcrs_ = Teuchos::rcp_dynamic_cast<const block_crs_matrix_type>(matrix);
-    //         TEUCHOS_TEST_FOR_EXCEPT_MSG(
-    //                                     A_bcrs_.is_null(), "BlockTriDiContainer currently supports Tpetra::BlockCrsMatrix only.");
-
-    //         init_importer(importer);
-    //         init_parts(partitions);
-    //         init_btdm();
-    //       }
-
-    //       }
-
-
-
-
-    //       // Wrappers to the compute_b_minus_Rx implementations.
-    //       // Y := B - R X, where A = D + R.
-    //       void compute_b_minus_Rx (const mv_type& B, const mv_type& X, mv_type& Y) const {
-    // #ifdef HAVE_IFPACK2_BLOCKTRIDICONTAINER_TIMERS
-    //         TEUCHOS_FUNC_TIME_MONITOR("BlockTriDi::compute_b_minus_Rx");
-    // #endif
-    //         const auto Bv = B.template getLocalView<device_type>();
-    //         const auto Xv = X.template getLocalView<device_type>();
-    //         const auto Yv = Y.template getLocalView<device_type>();
-    //         if (amd_.is_tpetra_block_crs) {
-    //           const auto& g = A_bcrs_->getCrsGraph().getLocalGraph();
-    //           BlockTriDiContainerDetails::compute_b_minus_Rx(Bv, Xv, Yv, A_bcrs_->getBlockSize(),
-    //                                                          amd_.rowptr, amd_.A_colindsub,
-    //                                                          g.row_map, g.entries, amd_.tpetra_values);
-    //         }
-    //       }
-
-    //       template <typename MvView>
-    //       void compute_b_minus_Rx (const mv_type& B, const MvView& Xv,
-    //                                typename BlockTridiags::PackedMultiVector& Y,
-    //                                const bool first_apply) const {
-    // #ifdef HAVE_IFPACK2_BLOCKTRIDICONTAINER_TIMERS
-    //         TEUCHOS_FUNC_TIME_MONITOR("BlockTriDi::compute_b_minus_Rx");
-    // #endif
-    //         const auto Bv = B.template getLocalView<device_type>();
-    //         if (amd_.is_tpetra_block_crs) {
-    //           const auto& g = A_bcrs_->getCrsGraph().getLocalGraph();
-    //           BlockTriDiContainerDetails::compute_b_minus_Rx(
-    //                                                          first_apply ? amd_.rowptr : amd_.rowptr_remote,
-    //                                                          first_apply ? amd_.A_colindsub : amd_.A_colindsub_remote,
-    //                                                          g.row_map, g.entries, amd_.tpetra_values,
-    //                                                          Bv, Xv, Y, part2rowidx0_, part2packrowidx0_, lclrow_, dm2cm_, first_apply);
-    //         }
-    //       }
-
-    //       template <typename MvView>
-    //       void compute_b_minus_Rx (const mv_type& B, const MvView& X_owned, const MvView& X_remote,
-    //                                typename BlockTridiags::PackedMultiVector& Y) const {
-    // #ifdef HAVE_IFPACK2_BLOCKTRIDICONTAINER_TIMERS
-    //         TEUCHOS_FUNC_TIME_MONITOR("BlockTriDi::compute_b_minus_Rx");
-    // #endif
-    //         const auto Bv = B.template getLocalView<device_type>();
-    //         if (amd_.is_tpetra_block_crs) {
-    //           const auto& g = A_bcrs_->getCrsGraph().getLocalGraph();
-    //           BlockTriDiContainerDetails::compute_b_minus_Rx(
-    //                                                          amd_.rowptr, amd_.A_colindsub,
-    //                                                          g.row_map, g.entries, amd_.tpetra_values,
-    //                                                          Bv, X_owned, X_remote, Y, part2rowidx0_, part2packrowidx0_, lclrow_, dm2cm_);
-    //         }
-    //       }
-
-    //     public:
-    //       Impl (BlockTriDiContainer<MatrixType, LocalScalarType>& container,
-    //             const Teuchos::RCP<const row_matrix_type>& matrix,
-    //             const Teuchos::Array<Teuchos::Array<local_ordinal_type> >& partitions,
-    //             const Teuchos::RCP<const import_type>& importer, int overlapLevel,
-    //             bool overlapCommAndComp = false, bool useSeqMethod = false)
-    //         : container_(container)
-    //       {
-    //         init(matrix, partitions, importer, overlapLevel, overlapCommAndComp, useSeqMethod);
-    //       }
-
-    //       std::string describe () const {
-    //         std::stringstream ss;
-    //         ss << "seq_method " << seq_method_
-    //            << " overlap_comm " << overlap_comm_
-    //            << " dm2cm " << (dm2cm_.data() ? true : false);
-    //         return ss.str();
-    //       }
-
-
-    //       static void debug_print (const Tridiags& t) {
-    //         const auto& v = t.values;
-    //         std::stringstream ss;
-    //         ss << "v = [";
-    //         for (size_t pi = 0; pi < t.pack_td_ptr.size() - 1; ++pi)
-    //           for (LO i1 = 0; i1 < vectorization_traits::vector_length; ++i1)
-    //             for (Size ind = t.pack_td_ptr(pi); ind < t.pack_td_ptr(pi+1); ++ind) {
-    //               const auto i = Kokkos::make_pair(ind,i1);
-    //               for (LO j = 0; j < v.extent_int(1); ++j)
-    //                 for (LO k = 0; k < v.extent_int(2); ++k)
-    //                   ss << " " << Details::Batched::idx(v,i,j,k);
-    //             }
-    //         ss << "]\n";
-    //         std::cout << ss.str();
-    //       }
-
-
-    //     // Base class for any unimplemented typename combinations.
-    //     template <typename MatrixType, typename LocalScalarType, typename ExeSpace>
-    //     struct UnImpl {
-    //       typedef typename MatrixType::scalar_type scalar_type;
-    //       typedef typename Teuchos::ScalarTraits<scalar_type>::magnitudeType magnitude_type;
-    //       typedef typename MatrixType::local_ordinal_type local_ordinal_type;
-    //       typedef typename MatrixType::global_ordinal_type global_ordinal_type;
-    //       typedef typename MatrixType::node_type node_type;
-    //       typedef Tpetra::MultiVector<scalar_type, local_ordinal_type, global_ordinal_type, node_type> mv_type;
-    //       typedef Tpetra::Import<local_ordinal_type, global_ordinal_type, node_type> import_type;
-    //       typedef Tpetra::RowMatrix<scalar_type, local_ordinal_type, global_ordinal_type, node_type> row_matrix_type;
-
-    //       std::string describe () const { return ""; }
-    //       int get_block_size () const { return 0; }
-    //       int get_nvec () const { return 0; }
-    //       const magnitude_type* get_norms0 () const { return nullptr; }
-    //       const magnitude_type* get_norms_final () const { return nullptr; }
-    //       void symbolic () {}
-    //       void numeric (const magnitude_type add_to_diag = 0) {}
-    //       int applyInverseJacobi (const mv_type& X, mv_type& Y, const scalar_type damping_factor,
-    //                               bool y_is_zero, const int max_num_sweeps, magnitude_type tolerance,
-    //                               const int check_tol_every) const
-    //       { return 0; }
-    //     };
-
-    // #if defined HAVE_STOKHOS_IFPACK2
-    //     // BlockTriDiContainer is built on KokkosBatch's SIMD type, which doesn't work
-    //     // directly with Stokhos composite types. Hence, catch these with UnImpl.
-    // #define IFPACK2_BLOCKTRIDICONTAINER_UNIMPL_STOKHOS(Type)                \
-    //     template <typename MatrixType, typename T, typename ExeSpace>       \
-    //     struct ImplType<MatrixType, Type<T>, ExeSpace> : UnImplType<MatrixType, Type<T>, ExeSpace> { \
-    //       typedef UnImplType<MatrixType, Type<T>, ExeSpace> ui;                 \
-    //       Impl (BlockTriDiContainer<MatrixType, typename ui::scalar_type>& container, \
-    //             const Teuchos::RCP<const typename ui::row_matrix_type>& matrix, \
-    //             const Teuchos::Array<Teuchos::Array<typename ui::local_ordinal_type> >& partitions, \
-    //             const Teuchos::RCP<const typename ui::import_type>& importer, int overlapLevel, \
-    //             bool overlapCommAndComp = false, bool useSeqMethod = false) { \
-    //         TEUCHOS_TEST_FOR_EXCEPT_MSG(                                    \
-    //                                     true, "BlockTriDiContainer is not currently supported for Stokhos composite types."); \
-    //       }                                                                 \
-    //     };
-    //     IFPACK2_BLOCKTRIDICONTAINER_UNIMPL_STOKHOS(Sacado::MP::Vector)
-    //     IFPACK2_BLOCKTRIDICONTAINER_UNIMPL_STOKHOS(Sacado::UQ::PCE)
-    // #undef IFPACK2_BLOCKTRIDICONTAINER_UNIMPL_STOKHOS
-    // #endif
   
-} // namespace BlockTriDiContainerDetails
+  } // namespace BlockTriDiContainerDetails
 
 } // namespace Ifpack2
 

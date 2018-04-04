@@ -87,7 +87,8 @@ namespace Ifpack2 {
 
     tpetra_importer_ = BlockTriDiContainerDetails::createBlockCrsTpetraImporter<MatrixType>(A_);
     part_interface_  = BlockTriDiContainerDetails::createPartInterface<MatrixType>(A_, partitions);
-    block_tridiags_  = BlockTriDiContainerDetails::createBlockTridiags(part_interface_);
+    block_tridiags_  = BlockTriDiContainerDetails::createBlockTridiags<MatrixType>(part_interface_);
+    norm_manager_    = BlockTriDiContainerDetails::NormManager<MatrixType>(A_->getComm());
   }
 
   template <typename MatrixType, typename LocalScalarType>
@@ -181,10 +182,12 @@ namespace Ifpack2 {
 
     const auto tol = Kokkos::ArithTraits<typename impl_type::magnitude_type>::zero();
     BlockTriDiContainerDetails::applyInverseJacobi<MatrixType>
-      (tpetra_importer_, 
+      (A_,
+       tpetra_importer_, 
        X, Y, Z_,
-       part_interface_, block_tridiags_, 
+       part_interface_, block_tridiags_, a_minus_d_,
        work_,
+       norm_manager_,
        this->DampingFactor_,
        zeroStartingSolution,
        numSweeps,

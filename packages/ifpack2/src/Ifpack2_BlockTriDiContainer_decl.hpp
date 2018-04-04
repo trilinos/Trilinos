@@ -358,6 +358,7 @@ namespace Ifpack2 {
     using part_interface_type = BlockTriDiContainerDetails::PartInterface<MatrixType>;
     using block_tridiags_type = BlockTriDiContainerDetails::BlockTridiags<MatrixType>;
     using amd_type = BlockTriDiContainerDetails::AmD<MatrixType>;
+    using norm_manager_type = BlockTriDiContainerDetails::NormManager<MatrixType>;
 
     // distructed objects
     Teuchos::RCP<const typename impl_type::tpetra_block_crs_matrix_type> A_;
@@ -370,6 +371,7 @@ namespace Ifpack2 {
     block_tridiags_type block_tridiags_; // D
     amd_type a_minus_d_; // R = A - D
     mutable typename impl_type::vector_type_1d_view work_; // right hand side workspace
+    mutable norm_manager_type norm_manager_;
     
     // initialize distributed and local objects
     void initInternal (const Teuchos::RCP<const row_matrix_type>& matrix,
