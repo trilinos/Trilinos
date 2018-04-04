@@ -42,6 +42,8 @@
 
 #include <iostream>
 #include <iomanip>
+#include <random>
+#include <utility>
 #include "ROL_Ptr.hpp"
 #include "Teuchos_oblackholestream.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
@@ -49,6 +51,48 @@
 
 using RealT = double;
 using size_type = std::vector<RealT>::size_type;
+
+
+template<typename Real>
+struct Test {
+
+  static ROL::Ptr<LowerBandedMatrix<Real>> random_matrix( size_type N ) {
+   
+    using namespace std;
+    random_device r;
+    default_random_engine gen(r());
+    uniform_real_distribution<Real> dist(-1.0, 1.0);
+    vector<size_type> index(N);
+    vector<vector<Real>> bands(N, vector<Real>(N));
+    
+    for( size_type i=0; i<N; ++i ) {
+      index[i] = i;
+      for( size_type j=0; j<N-i; ++j ) {
+        bands.at(i).at(j) = 2.0*(i==0) + dist(gen) ;
+      }
+    }
+    
+    return ROL::makePtr<LowerBandedMatrix<Real>>( index, bands );
+  }
+ 
+ static ROL::Ptr<std::vector<Real>> random_vector( size_type N ) {
+   
+    using namespace std;
+    random_device r;
+    default_random_engine gen(r());
+    uniform_real_distribution<Real> dist(-1.0, 1.0);
+    auto x = ROL::makePtr<vector<Real>>(N);
+    
+    for( auto &e : *x ) e = dist(gen);
+    
+    return x;
+  }
+
+ static ROL::Ptr<std::vector<Real>> zero_vector( size_type N ) {
+    return ROL::makePtr<std::vector<Real>>(N,0);
+ }
+
+};
 
 int main( int argc, char* argv[] ) {
   
@@ -72,7 +116,7 @@ int main( int argc, char* argv[] ) {
     *outStream << "\n";
   };
 
-  try {
+//  try {
 
     size_type N = 8;
     vector<size_type> band_index{0,1};
@@ -113,11 +157,25 @@ int main( int argc, char* argv[] ) {
     }
 
 
-  }
-  catch (std::logic_error err) {
-    *outStream << err.what() << "\n";
-    errorFlag = -1000;
-  }; // end try
+    size_type d = 10;
+    auto B  = Test<RealT>::random_matrix(d);
+    auto v  = Test<RealT>::random_vector(d);
+    auto Bv = Test<RealT>::zero_vector(d);
+    auto u  = Test<RealT>::zero_vector(d);
+
+  //  B->print( *outStream );
+    B->apply( *Bv, *v, 1.0, 0, d );
+    B->solve( *u, *Bv, 1.0, 0, d );
+
+    for( size_type k=0; k<d; ++k ) {
+      *outStream << std::setw(12) << v->at(k) << std::setw(12) << Bv->at(k) << std::setw(12) << u->at(k) << std::endl;
+    }    
+
+//  }
+//  catch (std::logic_error err) {
+//    *outStream << err.what() << "\n";
+//    errorFlag = -1000;
+//  }; // end try
 
   if (errorFlag != 0)
     std::cout << "End Result: TEST FAILED\n";
