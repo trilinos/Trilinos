@@ -106,12 +106,14 @@ ifeq ($(KOKKOSKERNELS_INTERNAL_TEST_OPENMP), 1)
   OBJ_OPENMP += Test_OpenMP_Sparse_spmv.o
   OBJ_OPENMP += Test_OpenMP_Sparse_trsv.o
   OBJ_OPENMP += Test_OpenMP_Sparse_spgemm.o
+  OBJ_OPENMP += Test_OpenMP_Sparse_spadd.o
   OBJ_OPENMP += Test_OpenMP_Sparse_gauss_seidel.o
   OBJ_OPENMP += Test_OpenMP_Sparse_CrsMatrix.o
   OBJ_OPENMP += Test_OpenMP_Sparse_findRelOffset.o
   OBJ_OPENMP += Test_OpenMP_Sparse_replaceSumIntoLonger.o
   OBJ_OPENMP += Test_OpenMP_Sparse_replaceSumInto.o
   OBJ_OPENMP += Test_OpenMP_Graph_graph_color.o
+  OBJ_OPENMP += Test_OpenMP_Graph_graph_color_d2.o
   OBJ_OPENMP += Test_OpenMP_Common_ArithTraits.o
   OBJ_OPENMP += Test_OpenMP_Common_set_bit_count.o
 #  OBJ_OPENMP += Test_OpenMP_Common_float128.o
@@ -141,7 +143,13 @@ ifeq ($(KOKKOSKERNELS_INTERNAL_TEST_OPENMP), 1)
   OBJ_OPENMP += Test_OpenMP_Batched_TeamLU_Complex.o
   OBJ_OPENMP += Test_OpenMP_Batched_TeamGemv_Complex.o
   OBJ_OPENMP += Test_OpenMP_Batched_TeamTrsv_Complex.o
+  # Vector
   OBJ_OPENMP += Test_OpenMP_Batched_VectorArithmatic.o
+  OBJ_OPENMP += Test_OpenMP_Batched_VectorMath.o
+  OBJ_OPENMP += Test_OpenMP_Batched_VectorRelation.o
+  OBJ_OPENMP += Test_OpenMP_Batched_VectorLogical.o
+  OBJ_OPENMP += Test_OpenMP_Batched_VectorMisc.o
+  OBJ_OPENMP += Test_OpenMP_Batched_VectorView.o
   TARGETS += KokkosKernels_UnitTest_OpenMP
   TEST_TARGETS += test-openmp
 endif
@@ -190,12 +198,14 @@ ifeq ($(KOKKOSKERNELS_INTERNAL_TEST_CUDA), 1)
   #OBJ_CUDA += Test_Cuda_Sparse_spmv.o
   #OBJ_CUDA += Test_Cuda_Sparse_trsv.o #removing trsv from cuda unit test as it runs only sequential.
   OBJ_CUDA += Test_Cuda_Sparse_spgemm.o
+  OBJ_CUDA += Test_Cuda_Sparse_spadd.o
   OBJ_CUDA += Test_Cuda_Sparse_gauss_seidel.o
   OBJ_CUDA += Test_Cuda_Sparse_CrsMatrix.o
  #OBJ_CUDA += Test_Cuda_Sparse_findRelOffset.o #removing findRelOffset from cuda test as the implementation is sequential.
   OBJ_CUDA += Test_Cuda_Sparse_replaceSumIntoLonger.o
   OBJ_CUDA += Test_Cuda_Sparse_replaceSumInto.o
   OBJ_CUDA += Test_Cuda_Graph_graph_color.o
+  OBJ_CUDA += Test_Cuda_Graph_graph_color_d2.o
   OBJ_CUDA += Test_Cuda_Common_ArithTraits.o
   OBJ_CUDA += Test_Cuda_Common_set_bit_count.o
   # Real
@@ -273,12 +283,14 @@ ifeq ($(KOKKOSKERNELS_INTERNAL_TEST_SERIAL), 1)
   OBJ_SERIAL += Test_Serial_Sparse_spmv.o
   OBJ_SERIAL += Test_Serial_Sparse_trsv.o
   OBJ_SERIAL += Test_Serial_Sparse_spgemm.o
+  OBJ_SERIAL += Test_Serial_Sparse_spadd.o
   OBJ_SERIAL += Test_Serial_Sparse_gauss_seidel.o
   OBJ_SERIAL += Test_Serial_Sparse_CrsMatrix.o
   OBJ_SERIAL += Test_Serial_Sparse_findRelOffset.o
   OBJ_SERIAL += Test_Serial_Sparse_replaceSumIntoLonger.o
   OBJ_SERIAL += Test_Serial_Sparse_replaceSumInto.o
   OBJ_SERIAL += Test_Serial_Graph_graph_color.o
+  OBJ_SERIAL += Test_Serial_Graph_graph_color_d2.o
   OBJ_SERIAL += Test_Serial_Common_ArithTraits.o
   OBJ_SERIAL += Test_Serial_Common_set_bit_count.o
 #  OBJ_SERIAL += Test_Serial_Common_float128.o
@@ -308,7 +320,13 @@ ifeq ($(KOKKOSKERNELS_INTERNAL_TEST_SERIAL), 1)
   OBJ_SERIAL += Test_Serial_Batched_TeamLU_Complex.o
   OBJ_SERIAL += Test_Serial_Batched_TeamGemv_Complex.o
   OBJ_SERIAL += Test_Serial_Batched_TeamTrsv_Complex.o
+  # Vector
   OBJ_SERIAL += Test_Serial_Batched_VectorArithmatic.o
+  OBJ_SERIAL += Test_Serial_Batched_VectorMath.o
+  OBJ_SERIAL += Test_Serial_Batched_VectorRelation.o
+  OBJ_SERIAL += Test_Serial_Batched_VectorLogical.o
+  OBJ_SERIAL += Test_Serial_Batched_VectorMisc.o
+  OBJ_SERIAL += Test_Serial_Batched_VectorView.o
   TARGETS += KokkosKernels_UnitTest_Serial
   TEST_TARGETS += test-serial
 endif
@@ -357,12 +375,14 @@ ifeq ($(KOKKOSKERNELS_INTERNAL_TEST_THREADS), 1)
   OBJ_THREADS += Test_Threads_Sparse_spmv.o
   OBJ_THREADS += Test_Threads_Sparse_trsv.o
   OBJ_THREADS += Test_Threads_Sparse_spgemm.o
+  OBJ_THREADS += Test_Threads_Sparse_spadd.o
   OBJ_THREADS += Test_Threads_Sparse_gauss_seidel.o
   OBJ_THREADS += Test_Threads_Sparse_findRelOffset.o
   OBJ_THREADS += Test_Threads_Sparse_replaceSumIntoLonger.o
   OBJ_THREADS += Test_Threads_Sparse_replaceSumInto.o
   OBJ_THREADS += Test_Threads_Sparse_CrsMatrix.o
   OBJ_THREADS += Test_Threads_Graph_graph_color.o
+  OBJ_THREADS += Test_Threads_Graph_graph_color_d2.o
   OBJ_THREADS += Test_Threads_Common_ArithTraits.o
   OBJ_THREADS += Test_Threads_Common_set_bit_count.o
 #  OBJ_THREADS += Test_Threads_Common_float128.o

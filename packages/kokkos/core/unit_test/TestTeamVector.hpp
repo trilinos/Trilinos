@@ -35,7 +35,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact  H. Carter Edwards (hcedwar@sandia.gov)
+// Questions? Contact Christian R. Trott (crtrott@sandia.gov)
 //
 // ************************************************************************
 //@HEADER
@@ -47,6 +47,7 @@
 #include <iostream>
 #include <cstdlib>
 #include <cstdint>
+#include <cinttypes>
 
 namespace TestTeamVector {
 
@@ -203,7 +204,7 @@ struct functor_team_for {
     const size_type shmemSize = team.team_size() * 13;
     shared_int values = shared_int( team.team_shmem(), shmemSize );
 
-    if ( values.ptr_on_device() == NULL || values.dimension_0() < shmemSize ) {
+    if ( values.data() == nullptr || values.extent(0) < shmemSize ) {
       printf( "FAILED to allocate shared memory of size %u\n",
               static_cast<unsigned int>( shmemSize ) );
     }
@@ -352,7 +353,7 @@ struct functor_team_vector_for {
     const size_type shmemSize = team.team_size() * 13;
     shared_int values = shared_int( team.team_shmem(), shmemSize );
 
-    if ( values.ptr_on_device() == NULL || values.dimension_0() < shmemSize ) {
+    if ( values.data() == nullptr || values.extent(0) < shmemSize ) {
       printf( "FAILED to allocate shared memory of size %u\n",
               static_cast<unsigned int>( shmemSize ) );
     }
@@ -542,7 +543,7 @@ struct functor_vec_for {
 
     shared_int values = shared_int( team.team_shmem(), team.team_size() * 13 );
 
-    if ( values.ptr_on_device() == NULL || values.dimension_0() < (unsigned) team.team_size() * 13 ) {
+    if ( values.data() == nullptr || values.extent(0) < (unsigned) team.team_size() * 13 ) {
       printf( "FAILED to allocate memory of size %i\n", static_cast<int>( team.team_size() * 13 ) );
       flag() = 1;
     }
@@ -899,8 +900,17 @@ TEST_F( TEST_CATEGORY, team_vector )
 #ifndef SKIP_TEST
 TEST_F( TEST_CATEGORY, triple_nested_parallelism )
 {
+// With KOKKOS_DEBUG enabled, the functor uses too many registers to run
+// with a team size of 32 on GPUs, 16 is the max possible (at least on a K80 GPU)
+// See https://github.com/kokkos/kokkos/issues/1513
+#if defined(KOKKOS_DEBUG) && defined(KOKKOS_ENABLE_CUDA)
+  if (!std::is_same<TEST_EXECSPACE, Kokkos::Cuda>::value) {
+#endif
   TestTripleNestedReduce< double, TEST_EXECSPACE >( 8192, 2048, 32, 32 );
   TestTripleNestedReduce< double, TEST_EXECSPACE >( 8192, 2048, 32, 16 );
+#if defined(KOKKOS_DEBUG) && defined(KOKKOS_ENABLE_CUDA)
+  }
+#endif
   TestTripleNestedReduce< double, TEST_EXECSPACE >( 8192, 2048, 16, 16 );
 }
 #endif

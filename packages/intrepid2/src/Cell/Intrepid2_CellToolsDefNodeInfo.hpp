@@ -129,6 +129,36 @@ namespace Intrepid2 {
       Kokkos::deep_copy(refNodeData_.wedge_18,        referenceNodeDataViewHostType(&refNodeDataStatic_.wedge_18[0][0],        18, 3));    
     }
 
+    Kokkos::push_finalize_hook( [=] {
+      refNodeData_.line            = referenceNodeDataViewType();
+      refNodeData_.line_3          = referenceNodeDataViewType();
+
+      refNodeData_.triangle        = referenceNodeDataViewType();
+      refNodeData_.triangle_4      = referenceNodeDataViewType();
+      refNodeData_.triangle_6      = referenceNodeDataViewType();
+
+      refNodeData_.quadrilateral   = referenceNodeDataViewType();
+      refNodeData_.quadrilateral_8 = referenceNodeDataViewType();
+      refNodeData_.quadrilateral_9 = referenceNodeDataViewType();
+
+      refNodeData_.tetrahedron     = referenceNodeDataViewType();
+      refNodeData_.tetrahedron_8   = referenceNodeDataViewType();
+      refNodeData_.tetrahedron_10  = referenceNodeDataViewType();
+      refNodeData_.tetrahedron_11  = referenceNodeDataViewType();
+
+      refNodeData_.hexahedron      = referenceNodeDataViewType();
+      refNodeData_.hexahedron_20   = referenceNodeDataViewType();
+      refNodeData_.hexahedron_27   = referenceNodeDataViewType();
+
+      refNodeData_.pyramid         = referenceNodeDataViewType();
+      refNodeData_.pyramid_13      = referenceNodeDataViewType();
+      refNodeData_.pyramid_14      = referenceNodeDataViewType();
+
+      refNodeData_.wedge           = referenceNodeDataViewType();
+      refNodeData_.wedge_15        = referenceNodeDataViewType();
+      refNodeData_.wedge_18        = referenceNodeDataViewType();
+    } );
+
     isReferenceNodeDataSet_ = true;
   }
 

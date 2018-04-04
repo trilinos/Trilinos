@@ -26,7 +26,6 @@ IF (${PACKAGE_NAME}_ENABLE_Amesos       AND
   TRIBITS_COPY_FILES_TO_BINARY_DIR(tutorial_laplace2d_cp
     SOURCE_FILES hands-on.py MueLu_Agg2VTK.py
     tmpl/MueLu_Agg2VTK.py_TMPL tmpl/muelu.xml_TMPL tmpl/muelu_easy.xml_TMPL
-    laplace2d.cpp
     xml/s1_easy.xml xml/s1_easy_3levels_smoothed.xml xml/s1_easy_3levels_unsmoothed.xml
     xml/s1_easy_10levels.xml xml/s1_easy_exercise.xml xml/s1_easy_jacobi.xml xml/s1_easy_jacobi2.xml
     xml/s2_adv_a.xml xml/s2_adv_b.xml xml/s2_adv_c.xml
@@ -37,6 +36,7 @@ IF (${PACKAGE_NAME}_ENABLE_Amesos       AND
     xml/s2_easy.xml xml/s3a_easy.xml xml/s3b_easy.xml xml/s3c_easy.xml
     xml/n1_easy.xml xml/n1_easy_pg.xml
     xml/n2_easy_agg.xml xml/n2_easy_agg2.xml xml/n2_easy_agg3.xml xml/n2_easy_export.xml
+    EXEDEPS tutorial_laplace2d
     )
 
   TRIBITS_ADD_EXECUTABLE(
@@ -47,6 +47,7 @@ IF (${PACKAGE_NAME}_ENABLE_Amesos       AND
 
   TRIBITS_COPY_FILES_TO_BINARY_DIR(tutorial_recirc2d_cp
     SOURCE_FILES xml/s3a.xml xml/s3b.xml xml/s3c.xml xml/s3b1.xml xml/s3b2.xml xml/s3b3.xml
+    EXEDEPS tutorial_recirc2d
     )
 
   TRIBITS_ADD_EXECUTABLE(
@@ -57,6 +58,7 @@ IF (${PACKAGE_NAME}_ENABLE_Amesos       AND
 
   TRIBITS_COPY_FILES_TO_BINARY_DIR(userguide_srcfiles_cp
     SOURCE_FILES ScalingTest.cpp ScalingTestParamList.cpp
+    EXEDEPS tutorial_recirc2d_api
     )
 
   TRIBITS_ADD_EXECUTABLE(

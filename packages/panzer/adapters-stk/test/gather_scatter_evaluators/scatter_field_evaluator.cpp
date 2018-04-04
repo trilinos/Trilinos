@@ -89,12 +89,38 @@ namespace panzer {
   Teuchos::RCP<panzer::PureBasis> linBasis;
 
   //! Interpolates basis DOF values to IP DOF values
-  PANZER_EVALUATOR_CLASS(XCoordinate)
+  template<typename EvalT, typename Traits>
+  class XCoordinate
+    :
+    public panzer::EvaluatorWithBaseImpl<Traits>,
+    public PHX::EvaluatorDerived<EvalT, Traits>
+  {
+    public:
+
+      XCoordinate(
+        const Teuchos::ParameterList& p);
+
+      void
+      postRegistrationSetup(
+        typename Traits::SetupData d,
+        PHX::FieldManager<Traits>& fm);
+
+      void
+      evaluateFields(
+        typename Traits::EvalData d);
+
+    private:
+
+      using ScalarT = typename EvalT::ScalarT;
      PHX::MDField<ScalarT,Cell,NODE> xcoord;
      int nodes;
-  PANZER_EVALUATOR_CLASS_END
+  }; // end of class XCoordinate
 
-  PHX_EVALUATOR_CTOR(XCoordinate,p)
+
+  template<typename EvalT, typename Traits>
+  XCoordinate<EvalT, Traits>::
+  XCoordinate(
+    const Teuchos::ParameterList& p)
   {
      nodes = 4;
      if(p.isType<int>("Nodes"))
@@ -104,10 +130,19 @@ namespace panzer {
      this->addEvaluatedField(xcoord);
   }
 
-  PHX_POST_REGISTRATION_SETUP(XCoordinate, /* sd */, fm)
+  template<typename EvalT, typename Traits>
+  void
+  XCoordinate<EvalT, Traits>::
+  postRegistrationSetup(
+    typename Traits::SetupData  /* sd */,
+    PHX::FieldManager<Traits>&  fm)
   { this->utils.setFieldData(xcoord,fm); }
 
-  PHX_EVALUATE_FIELDS(XCoordinate,workset)
+  template<typename EvalT, typename Traits>
+  void
+  XCoordinate<EvalT, Traits>::
+  evaluateFields(
+    typename Traits::EvalData workset)
   { 
      std::size_t numcells = workset.num_cells;
 
@@ -128,6 +163,9 @@ namespace panzer {
 
     const std::size_t workset_size = 20;
     linBasis = buildLinearBasis(workset_size);
+    Kokkos::push_finalize_hook( [=] { 
+      linBasis = Teuchos::RCP<panzer::PureBasis>(); 
+    });
 
     Teuchos::RCP<panzer_stk::STK_Interface> mesh = buildMesh(20,20,true);
 
@@ -212,6 +250,9 @@ namespace panzer {
 
     const std::size_t workset_size = 5;
     linBasis = buildLinearBasis(workset_size);
+    Kokkos::push_finalize_hook( [=] { 
+      linBasis = Teuchos::RCP<panzer::PureBasis>(); 
+    });
 
     Teuchos::RCP<panzer_stk::STK_Interface> mesh = buildMesh(5,5,false);
 

@@ -24,6 +24,7 @@ ADD_SUBDIRECTORY(paraboloid-circle)
 ADD_SUBDIRECTORY(putting)
 ADD_SUBDIRECTORY(tensor-opt)
 ADD_SUBDIRECTORY(PDE-OPT)
+ADD_SUBDIRECTORY(PinT)
 
 # Conditionally built examples.
 IF(${PROJECT_NAME}_ENABLE_Tempus)

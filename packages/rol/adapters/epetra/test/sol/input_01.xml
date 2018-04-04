@@ -57,7 +57,7 @@
     <ParameterList name="Risk Measure">
       <Parameter name="Name" type="string" value="CVaR" />
       <!-- ===========  EXPONENTIAL UTILITY  =========== -->
-      <ParameterList name="Exponential Utility">
+      <ParameterList name="Entropic Risk">
         <Parameter name="Rate" type="double" value="2.0" />
       </ParameterList>
       <!-- ===========  KL DIVERGENCE  =========== -->
@@ -80,11 +80,6 @@
             <Parameter name="Upper Bound" type="double" value="0.5"  />
           </ParameterList>
         </ParameterList>
-      </ParameterList>
-      <!-- ===========  BPOE SUBLIST  =========== -->
-      <ParameterList name="bPOE">
-        <Parameter name="Moment Order" type="double" value="2.0" />
-        <Parameter name="Threshold"    type="double" value="1.0" />
       </ParameterList>
       <!-- ===========  HMCR SUBLIST  =========== -->
       <ParameterList name="HMCR">
@@ -166,22 +161,8 @@
         </ParameterList>
       </ParameterList>
 
-      <!-- ===========  QUANTILE-BASED QUADRANGLE SUBLIST  =========== -->
-      <ParameterList name="Quantile-Based Quadrangle">
-        <Parameter name="Confidence Level"             type="double" value="0.8"   />
-        <Parameter name="Convex Combination Parameter" type="double" value="0.1"   />
-        <Parameter name="Smoothing Parameter"          type="double" value="1.e-2" />
-        <ParameterList name="Distribution">
-          <Parameter name="Name" type="string" value="Parabolic" />
-          <ParameterList name="Parabolic">
-            <Parameter name="Lower Bound" type="double" value="0.0" />
-            <Parameter name="Upper Bound" type="double" value="1.0" />
-          </ParameterList>
-        </ParameterList>
-      </ParameterList>
-
       <!-- ===========  MIXED-QUANTILE QUADRANGLE SUBLIST  =========== -->
-      <ParameterList name="Mixed-Quantile Quadrangle">
+      <ParameterList name="Mixed CVaR">
         <Parameter name="Probability Array"   type="string" value="{ 0.1, 0.5, 0.9 }" />
         <Parameter name="Coefficient Array"   type="string" value="{ 0.2, 0.3, 0.5 }" />
         <Parameter name="Smoothing Parameter" type="double" value="1.e-2" />
@@ -195,7 +176,7 @@
       </ParameterList>
 
       <!-- ===========  CVAR SUBLIST  =========== -->
-      <ParameterList name="Quantile-Radius Quadrangle">
+      <ParameterList name="Quantile Radius">
         <Parameter name="Confidence Level"    type="double" value="0.8"   />
         <Parameter name="Coefficient"         type="double" value="2.0"   />
         <Parameter name="Smoothing Parameter" type="double" value="1.e-2" />
@@ -209,7 +190,7 @@
       </ParameterList>
 
       <!-- ===========  TRUNCATED MEAN QUADRANGLE SUBLIST  =========== -->
-      <ParameterList name="Truncated Mean Quadrangle">
+      <ParameterList name="Truncated Mean">
         <Parameter name="Threshold" type="double" value="1.e-2" />
       </ParameterList>
 

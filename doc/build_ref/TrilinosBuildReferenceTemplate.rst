@@ -126,7 +126,7 @@ perforamnt code and for C++ software that uses Kokkos.
 ============================    ======================================
 Functionality                   CMake Cache Varaible
 ============================    ======================================
-Specify architecture            ``KOKKOS_HOST_ARCH``
+Specify architecture            ``KOKKOS_ARCH``
 Debug builds                    ``KOKKOS_DEBUG``
 Device options:
 * Enable Cuda                   ``TPL_ENABLE_CUDA``
@@ -150,14 +150,26 @@ CUDA Options:
 * Enable CUDA LAMBDA            ``KOKKOS_ENABLE_CUDA_LAMBDA``
 ============================    ======================================
 
-If the cache var ``KOKKOS_HOST_ARCH`` is not set (or is set to ``None``) then
+If the cache var ``KOKKOS_ARCH`` is not set (or is set to ``None``) then
 the Kokkos settings are not used and the default Trilinos CMake configuration
 is used as described below.
 
-If ``KOKKOS_HOST_ARCH != None`` is set, then the correct compiler flags for
+If ``KOKKOS_ARCH != None`` is set, then the correct compiler flags for
 C++11 and OpenMP are selected by the Kokkos system and the values of the cache
 vars ``Trilinos_CXX11_FLAGS`` and ``OpenMP_CXX_FLAGS`` set by the user will be
 ignored.
+
+``KOKKOS_ARCH`` can be set to a list of entries using semi-colons as::
+
+  -DKOKKOS_ARCH="<arch0>;<arch1>"
+
+or as a list of etries using comas as::
+
+  -DKOKKOS_ARCH=<arch0>,<arch1>
+
+Using commas is more robust since it will not get accidentally interepreted as
+a shell command sperator or with differnet CMake logic that is trying to
+handle an array of entries which include one being `${KOKKOS_ARCH}`.
 
 To see more documentation for each of these options, run a configure with
 ``-DTrilinos_ENABLE_Kokkos=ON`` and then look in the CMakeCache.txt file (as

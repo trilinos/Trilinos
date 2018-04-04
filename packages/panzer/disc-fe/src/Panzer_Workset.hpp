@@ -62,7 +62,7 @@
 
 namespace panzer {
 
-  class WorksetNeeds;
+  struct WorksetNeeds;
 
   template<typename LO, typename GO>
   class LocalMeshPartition;
@@ -79,6 +79,13 @@ namespace panzer {
 
     typedef std::size_t GO;
     typedef int LO;
+
+    //! Default constructor
+    WorksetDetails()
+      : _num_owned_cells(-1)
+      , _num_ghost_cells(-1)
+      , _num_virtual_cells(-1)
+    { }
 
     //! Constructs the workset details from a given chunk of the mesh
     void setup(const panzer::LocalMeshPartition<int,int> & partition, const panzer::WorksetNeeds & needs);
@@ -144,6 +151,14 @@ namespace panzer {
 
     /// Number of cells not owned by any workset - these are used for boundary conditions
     int numVirtualCells() const {return _num_virtual_cells;}
+
+    /// Provides access to set numbers of cells (required for backwards compatibility)
+    void setNumberOfCells(int o_cells,int g_cells,int v_cells)
+    {
+      _num_owned_cells = o_cells;
+      _num_ghost_cells = g_cells;
+      _num_virtual_cells = v_cells;
+    }
 
   protected:
 

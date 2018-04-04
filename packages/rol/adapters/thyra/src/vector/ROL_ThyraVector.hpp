@@ -293,6 +293,12 @@ public:
 
   /**  \brief Set all entries of the vector to alpha.
     */
+  void setScalar(const Real C) {
+      ::Thyra::put_scalar(C, thyra_vec_.ptr());
+    }
+
+  /**  \brief Set all entries of the vector to alpha.
+    */
   void putScalar(Real alpha) {
       ::Thyra::put_scalar(alpha, thyra_vec_.ptr());
     }

@@ -65,8 +65,8 @@ private:
   ROL::Ptr<StatusTest<Real> >       status_;
   ROL::Ptr<Step<Real> >             step_;  
   ROL::Ptr<Algorithm<Real> >        algo_;
-  Teuchos::RCP<Teuchos::ParameterList>  parlist_;
   ROL::Ptr<BoundConstraint<Real> >  bnd_;
+  Teuchos::ParameterList            parlist_;
 
   // Storage
   ROL::Ptr<Vector<Real> > x_;
@@ -78,17 +78,17 @@ private:
   Real mumin_;   // Minimal value of barrier parameter
   Real mumax_;   // Maximal value of barrier parameter 
   Real rho_;     // Barrier parameter reduction factor
-  int  maxit_;   // Maximum number of interior point subproblem solves
 
   // For the subproblem
-  Real gtol_;           // Status test gradient tolerance
-  Real ctol_;           // Status test constraint tolerance
-  Real stol_;           // Status test step tolerance
   int subproblemIter_;  // Status test maximum number of iterations
 
   int verbosity_;       // Adjust level of detail in printing step information
+  bool print_;
 
   bool hasEquality_;
+
+  EStep stepType_;
+  std::string stepname_;
 
 public:
  
@@ -103,35 +103,39 @@ public:
     status_(ROL::nullPtr), 
     step_(ROL::nullPtr),
     algo_(ROL::nullPtr), 
+    parlist_(parlist),
     x_(ROL::nullPtr),
     g_(ROL::nullPtr),
     l_(ROL::nullPtr),
     c_(ROL::nullPtr),
-    hasEquality_(false) {
+    hasEquality_(false),
+    stepType_(STEP_COMPOSITESTEP),
+    stepname_("Composite Step") {
 
     using Teuchos::ParameterList;
     
     verbosity_ = parlist.sublist("General").get("Print Verbosity",0);
 
     // List of general Interior Point parameters
-    ParameterList& iplist  = parlist.sublist("Step").sublist("Interior Point");
-
+    ParameterList& iplist = parlist.sublist("Step").sublist("Interior Point");
     mu_             = iplist.get("Initial Barrier Penalty",1.0);
     mumin_          = iplist.get("Minimum Barrier Penalty",1.e-4);
     mumax_          = iplist.get("Maximum Barrier Penalty",1e8);
     rho_            = iplist.get("Barrier Penalty Reduction Factor",0.5);
-    subproblemIter_ = iplist.get("Subproblem Iteration Limit",10);
 
-
-    // List of Status Test parameters
-    ParameterList& stlist  = parlist.sublist("Status Test");
-
-    gtol_  = stlist.get("Gradient Tolerance", 1.e-8);
-    ctol_  = stlist.get("Constraint Tolerance", 1.e-8);
-    stol_  = stlist.get("Step Tolerance", 1.e-8);
-    maxit_ = stlist.get("Iteration Limit", 100);
- 
-    parlist_ = ROL::makePtrFromRef(parlist);
+    // Subproblem step information
+    print_ = iplist.sublist("Subproblem").get("Print History",false);
+    Real gtol = iplist.sublist("Subproblem").get("Optimality Tolerance",1e-8);
+    Real ctol = iplist.sublist("Subproblem").get("Feasibility Tolerance",1e-8);
+    Real stol = static_cast<Real>(1e-6)*std::min(gtol,ctol);
+    int maxit = iplist.sublist("Subproblem").get("Iteration Limit",1000);
+    parlist_.sublist("Status Test").set("Gradient Tolerance",   gtol);
+    parlist_.sublist("Status Test").set("Constraint Tolerance", ctol);
+    parlist_.sublist("Status Test").set("Step Tolerance",       stol);
+    parlist_.sublist("Status Test").set("Iteration Limit",      maxit);
+    // Get step name from parameterlist
+    stepname_ = iplist.sublist("Subproblem").get("Step Type","Composite Step");
+    stepType_ = StringToEStep(stepname_);
   }
 
   /** \brief Initialize step with equality constraint 
@@ -241,16 +245,36 @@ public:
                 Constraint<Real>     &con, 
                 AlgorithmState<Real> &algo_state ) {
     // Grab interior point objective and constraint
-    auto& ipobj = dynamic_cast<IPOBJ&>(obj);
-    auto& ipcon = dynamic_cast<IPCON&>(con);
+    //auto& ipobj = dynamic_cast<IPOBJ&>(obj);
+    //auto& ipcon = dynamic_cast<IPCON&>(con);
 
+    Real one(1);
     // Create the algorithm 
-    algo_ = ROL::makePtr<Algorithm<Real>>("Composite Step",*parlist_,false);
+    Ptr<Objective<Real>> penObj;
+    if (stepType_ == STEP_AUGMENTEDLAGRANGIAN) {
+      Ptr<Objective<Real>>  raw_obj = makePtrFromRef(obj);
+      Ptr<Constraint<Real>> raw_con = makePtrFromRef(con);
+      Ptr<StepState<Real>>  state   = Step<Real>::getState();
+      penObj = makePtr<AugmentedLagrangian<Real>>(raw_obj,raw_con,l,one,x,*(state->constraintVec()),parlist_);
+    }
+    else if (stepType_ == STEP_FLETCHER) {
+      Ptr<Objective<Real>>  raw_obj = makePtrFromRef(obj);
+      Ptr<Constraint<Real>> raw_con = makePtrFromRef(con);
+      Ptr<StepState<Real>>  state   = Step<Real>::getState();
+      penObj = makePtr<Fletcher<Real>>(raw_obj,raw_con,x,*(state->constraintVec()),parlist_);
+    }
+    else {
+      penObj = makePtrFromRef(obj);
+      stepname_ = "Composite Step";
+      stepType_ = STEP_COMPOSITESTEP;
+    }
+    algo_ = ROL::makePtr<Algorithm<Real>>(stepname_,parlist_,false);
+    //algo_ = ROL::makePtr<Algorithm<Real>>("Composite Step",parlist_,false);
 
     //  Run the algorithm
-    x_->set(x);
-    algo_->run(*x_,*g_,*l_,*c_,ipobj,ipcon,false);
-    s.set(*x_); s.axpy(-1.0,x);
+    x_->set(x); l_->set(l);
+    algo_->run(*x_,*g_,*l_,*c_,*penObj,con,print_);
+    s.set(*x_); s.axpy(-one,x);
 
     // Get number of iterations from the subproblem solve
     subproblemIter_ = (algo_->getState())->iter;
@@ -276,11 +300,11 @@ public:
     auto& ipobj = dynamic_cast<IPOBJ&>(obj);
 
     // Create the algorithm 
-    algo_ = ROL::makePtr<Algorithm<Real>>("Trust Region",*parlist_,false);
+    algo_ = ROL::makePtr<Algorithm<Real>>("Trust Region",parlist_,false);
 
     //  Run the algorithm
     x_->set(x);
-    algo_->run(*x_,*g_,ipobj,*bnd_,false);
+    algo_->run(*x_,*g_,ipobj,*bnd_,print_);
     s.set(*x_); s.axpy(-1.0,x);
 
     // Get number of iterations from the subproblem solve
@@ -308,6 +332,7 @@ public:
     }
 
     ROL::Ptr<StepState<Real> > state = Step<Real>::getState();
+    state->SPiter = subproblemIter_;
  
     // Update optimization vector
     x.plus(s);

@@ -1,0 +1,549 @@
+#!/bin/bash -e
+
+#
+# Global config
+#
+
+set -o pipefail
+
+# Determine current machine.
+
+MACHINE=""
+HOSTNAME=$(hostname)
+PROCESSOR=`uname -p`
+
+if [[ "$HOSTNAME" =~ (white|ride).* ]]; then
+  MACHINE=white
+  module load git
+fi
+
+if [[ "$HOSTNAME" =~ .*bowman.* ]]; then
+  MACHINE=bowman
+  module load git
+fi
+
+if [[ "$HOSTNAME" =~ n.* ]]; then # Warning: very generic name
+  if [[ "$PROCESSOR" = "aarch64" ]]; then
+    MACHINE=sullivan
+    module load git
+  fi
+fi
+
+if [[ "$HOSTNAME" =~ node.* ]]; then # Warning: very generic name
+  if [[ "$MACHINE" = "" ]]; then
+    MACHINE=shepard
+    module load git
+  fi
+fi
+
+if [[ "$HOSTNAME" =~ blake ]]; then
+  MACHINE=blake
+  module load git
+fi
+
+if [[ "$HOSTNAME" =~ apollo ]]; then
+  MACHINE=apollo
+  module load sems-git
+fi
+
+if [[ "$HOSTNAME" =~ sullivan ]]; then
+  MACHINE=sullivan
+  module load git
+fi
+
+if [ ! -z "$SEMS_MODULEFILES_ROOT" ]; then
+  if [[ "$MACHINE" = "" ]]; then
+    MACHINE=sems
+    module load sems-git
+  fi  
+fi
+
+if [[ "$MACHINE" = "" ]]; then
+  echo "Unrecognized machine" >&2
+  exit 1
+fi
+
+echo "Running on machine: $MACHINE"
+
+GCC_WARNING_FLAGS="-Wall,-Wshadow,-pedantic,-Wsign-compare,-Wtype-limits,-Wignored-qualifiers,-Wempty-body,-Wclobbered,-Wuninitialized"
+IBM_WARNING_FLAGS="-Wall,-Wshadow,-pedantic,-Wsign-compare,-Wtype-limits,-Wuninitialized"
+CLANG_WARNING_FLAGS="-Wall,-Wshadow,-pedantic,-Wsign-compare,-Wtype-limits,-Wuninitialized"
+INTEL_WARNING_FLAGS="-Wall,-Wshadow,-pedantic,-Wsign-compare,-Wtype-limits,-Wuninitialized"
+CUDA_WARNING_FLAGS="-Wall,-Wshadow,-pedantic,-Wsign-compare,-Wtype-limits,-Wuninitialized"
+PGI_WARNING_FLAGS=""
+
+# Default. Machine specific can override.
+DEBUG=False
+ARGS=""
+BUILD_LIST=""
+TEST_NAME=Tpetra
+DRYRUN=False
+CONFIGURE_ONLY=False
+BUILD_ONLY=False
+REPORT_TO_DASHBOARD=False
+
+PRINT_HELP=False
+OPT_FLAG="-O3"
+CXX_FLAGS_EXTRA=""
+LD_FLAGS_EXTRA=""
+KOKKOS_ARCH=""
+KOKKOS_OPTIONS=""
+KOKKOS_CUDA_OPTIONS=""
+TRILINOS_PATH=""
+CONFIGURE_SCRIPT=""
+COMPLEX_POSTFIX=""
+export JENKINS_DO_COMPLEX=OFF
+
+#
+# Handle arguments.
+#
+
+while [[ $# > 0 ]]
+do
+  key="$1"
+
+  case $key in
+    --trilinos-path*)
+      TRILINOS_PATH="${key#*=}"
+      ;;
+    --build-list*)
+      BUILD_LIST="${key#*=}"
+      ;;
+    --configure-script*)
+      CONFIGURE_SCRIPT="${key#*=}"
+      ;;
+    --debug*)
+      DEBUG=True
+      ;;
+    --configure-only*)
+      CONFIGURE_ONLY=True
+      ;;
+    --build-only*)
+      BUILD_ONLY=True
+      ;;
+    --report-to-cdash*)
+      REPORT_TO_DASHBOARD=True
+      ;;
+    --dry-run*)
+      DRYRUN=True
+      echo "DRYRUN: ${DRYRUN}"
+      ;;
+    --kokkos-arch*)
+      KOKKOS_ARCH="${key#*=}"
+      ;;
+    --opt-flag*)
+      OPT_FLAG="${key#*=}"
+      ;;
+    --kokkos-options*)
+      KOKKOS_OPTIONS="--kokkos-options=${key#*=}"
+      ;;
+    --kokkos-cuda-options*)
+      KOKKOS_CUDA_OPTIONS="--kokkos-cuda-options=${key#*=}"
+      ;;
+    --with-complex)
+      export JENKINS_DO_COMPLEX=ON
+      COMPLEX_POSTFIX=_Complex
+      ;;
+    --test-name*)
+      TEST_NAME="${key#*=}"
+      ;;
+    --cxxflags-extra*)
+      CXX_FLAGS_EXTRA="${key#*=}"
+      ;;
+    --ldflags-extra*)
+      LD_FLAGS_EXTRA="${key#*=}"
+      ;;
+    --help*)
+      PRINT_HELP=True
+      ;;
+    *)
+      # args, just append
+      ARGS="$ARGS $1"
+      ;;
+  esac
+
+  shift
+done
+
+if [ "$PRINT_HELP" = "True" ]; then
+  echo "test_all_sandia <ARGS> <OPTIONS>:"
+  echo "--trilinos-path=/Path/To/Trilinos: Path to the Trilinos root directory"
+  echo "    Defaults to root repo containing this script"
+  echo "--debug: Run tests in debug. Defaults to False"
+  echo "--configure-script=/Path/To/Script: provide a non-default test-script"
+  echo "--spot-check: Minimal test set to issue pull request"
+  echo "--dry-run: Just print what would be executed"
+  echo "--configure-only: Just configure, don't even build anything"
+  echo "--build-only: Just do builds, don't run anything"
+  echo "--opt-flag=FLAG: Optimization flag (default: -O3)"
+  echo "--cxxflags-extra=FLAGS: Extra flags to be added to CXX_FLAGS"
+  echo "--ldflags-extra=FLAGS: Extra flags to be added to LD_FLAGS"
+  echo "--arch=ARCHITECTURE: overwrite architecture flags"
+  echo "--with-cuda-options=OPT: set KOKKOS_CUDA_OPTIONS"
+  echo "--test-name=NAME: change the test name prefix for cdash report"
+  echo "--build-list=BUILD,BUILD,BUILD..."
+  echo "    Provide a comma-separated list of builds instead of running all builds"
+  echo "    Valid items:"
+  echo "      OpenMP, Pthread, Qthreads, Serial, OpenMP_Serial, Pthread_Serial"
+  echo "      Qthreads_Serial, Cuda_OpenMP, Cuda_Pthread, Cuda_Serial"
+  echo ""
+
+  echo "ARGS: list of expressions matching compilers to test"
+  echo "  supported compilers sems"
+  for COMPILER_DATA in "${COMPILERS[@]}"; do
+    ARR=($COMPILER_DATA)
+    COMPILER=${ARR[0]}
+    echo "    $COMPILER"
+  done
+  echo ""
+
+  echo "Examples:"
+  echo "  Run all tests"
+  echo "  % test_sandia_tpetra"
+  echo ""
+  echo "If you want to kill the tests, do:"
+  echo "  hit ctrl-z"
+  echo "  % kill -9 %1"
+  echo
+  exit 0
+fi
+
+SCRIPT_TRILINOS_ROOT=$( cd "$( dirname "$0" )" && cd ../.. && pwd )
+
+# Set trilinos path.
+if [ -z "$TRILINOS_PATH" ]; then
+  TRILINOS_PATH=$SCRIPT_TRILINOS_ROOT
+else
+  # Ensure KOKKOS_PATH is abs path.
+  TRILINOS_PATH=$( cd $TRILINOS_PATH && pwd )
+fi
+
+# Set configure path.
+if [ -z "$CONFIGURE_SCRIPT" ]; then
+  CONFIGURE_SCRIPT=${TRILINOS_PATH}/sampleScripts/Sandia-SEMS/configure-testbeds-tpetra-jenkins
+else
+  CONFIGURE_SCRIPT=`echo "$(cd "$(dirname "$CONFIGURE_SCRIPT")" && pwd)/$(basename "$CONFIGURE_SCRIPT")"`
+fi
+
+UNCOMMITTED=`cd ${TRILINOS_PATH}; git status --porcelain 2>/dev/null`
+if ! [ -z "$UNCOMMITTED" ]; then
+  echo "WARNING!! THE FOLLOWING CHANGES ARE UNCOMMITTED!! :"
+  echo "$UNCOMMITTED"
+  echo ""
+fi
+
+GITSTATUS=`cd ${TRILINOS_PATH}; git log -n 1 --format=oneline`
+echo "Repository Status: " ${GITSTATUS}
+echo ""
+echo ""
+
+# Machine specific config.
+#
+
+echo "Configure-Only: [" ${CONFIGURE_ONLY} "] Build-Only: [" ${BUILD_ONLY} "] Report-To-CDash: [" ${REPORT_TO_DASHBOARD} "]"
+
+if [ "$MACHINE" = "sems" ]; then
+  source /projects/sems/modulefiles/utils/sems-modules-init.sh
+ 
+  module purge
+  module load sems-env
+  module load kokkos-env
+
+  module load sems-gcc/5.3.0,kokkos-cuda/8.0.44,sems-openmpi/1.10.1,sems-hdf5/1.8.12/base,sems-netcdf/4.4.1/exo
+
+  if [ -z "$KOKKOS_ARCH" ]; then
+    KOKKOS_ARCH="SNB"
+  fi
+
+  if [ -z "$BUILD_LIST" ]; then
+    BUILD_LIST="OpenMP"
+  fi
+  
+  export OMP_NUM_THREADS=2
+  
+  export JENKINS_ARCH_C_FLAG="${OPT_FLAG} -mavx"
+  export JENKINS_EXTRA_CXX_FLAGS="${OPT_FLAG} ${CXX_FLAGS_EXTRA}"
+  export BLAS_LIBRARIES="-lblas"
+  export LAPACK_LIBRARIES="-llapack"
+  
+elif [ "$MACHINE" = "white" ]; then
+  source /etc/profile.d/modules.sh
+  SKIP_HWLOC=True
+
+  module purge
+  module load devpack/openmpi/1.10.4/gcc/5.4.0/cuda/8.0.44
+
+  if [ -z "$KOKKOS_ARCH" ]; then
+    KOKKOS_ARCH="Power8;Pascal60"
+  fi
+
+  if [ -z "$BUILD_LIST" ]; then
+    BUILD_LIST="Cuda;OpenMP"
+  fi
+  
+  export OMP_NUM_THREADS=2
+  
+  export JENKINS_ARCH_C_FLAG="${OPT_FLAG} -mcpu=power8"
+  export JENKINS_EXTRA_CXX_FLAGS="${OPT_FLAG}  ${CXX_FLAGS_EXTRA}"
+  export BLAS_LIBRARIES="${BLAS_ROOT}/lib/libblas.a;gfortran;gomp"
+  export LAPACK_LIBRARIES="${LAPACK_ROOT}/lib/liblapack.a;gfortran;gomp"
+  
+elif [ "$MACHINE" = "bowman" ]; then
+  module purge
+  module load devpack/openmpi/1.10.4/intel/17.0.098
+  module swap intel/compilers/17.0.098 intel/compilers/17.2.174
+
+  if [ -z "$KOKKOS_ARCH" ]; then
+    KOKKOS_ARCH="KNL"
+  fi
+
+  if [ -z "$BUILD_LIST" ]; then
+    BUILD_LIST="OpenMP"
+    export JENKINS_DO_OPENMP=ON
+  fi
+  
+  export OMP_NUM_THREADS=0
+  
+  export JENKINS_ARCH_C_FLAG="${OPT_FLAG} -xMIC-AVX512 -mkl"
+  export JENKINS_EXTRA_CXX_FLAGS="${OPT_FLAG} -mkl ${CXX_FLAGS_EXTRA}"
+  export BLAS_LIBRARIES="-mkl;${MKLROOT}/lib/mic/libmkl_intel_lp64.a;${MKLROOT}/lib/mic/libmkl_intel_thread.a;${MKLROOT}/lib/mic/libmkl_core.a"
+  export LAPACK_LIBRARIES=${BLAS_LIBRARIES}
+  
+elif [ "$MACHINE" = "sullivan" ]; then
+  echo "Sullivan"
+
+  module purge
+  module load "devpack"
+
+  if [ -z "$KOKKOS_ARCH" ]; then
+    KOKKOS_ARCH="ARMv8-ThunderX"
+  fi
+
+  if [ -z "$BUILD_LIST" ]; then
+    BUILD_LIST="OpenMP"
+  fi
+
+  export OMP_NUM_THREADS=2
+
+  export JENKINS_ARCH_C_FLAG="${OPT_FLAG} -march=armv8-a -mtune=thunderx"
+  export JENKINS_EXTRA_CXX_FLAGS="${OPT_FLAG} ${CXX_FLAGS_EXTRA}"
+  export BLAS_LIBRARIES="-L${BLAS_ROOT} -lblas"
+  export LAPACK_LIBRARIES="-L${LAPACK_ROOT} -llapack"
+
+elif [ "$MACHINE" = "shepard" ]; then
+  echo "Shepard"
+  module load devpack/openmpi/2.1.1/intel/17.4.196/cuda/none
+
+  if [ -z "$KOKKOS_ARCH" ]; then
+    KOKKOS_ARCH="HSW"
+  fi
+
+  if [ -z "$BUILD_LIST" ]; then
+    BUILD_LIST="OpenMP"
+  fi
+ 
+  export OMP_NUM_THREADS=2
+
+  export JENKINS_ARCH=${KOKKOS_ARCH}
+  export JENKINS_ARCH_C_FLAG="${OPT_FLAG} -xCORE-AVX2 -mkl"
+  export JENKINS_EXTRA_CXX_FLAG="${OPT_FLAG} -mkl ${CXX_FLAGS_EXTRA}"
+  export BLAS_LIBRARIES="-mkl;${MKLROOT}/lib/intel64/libmkl_intel_lp64.a;${MKLROOT}/lib/intel64/libmkl_intel_thread.a;${MKLROOT}/lib/intel64/libmkl_core.a"
+  export LAPACK_LIBRARIES=${BLAS_LIBRARIES}
+
+
+elif [ "$MACHINE" = "blake" ]; then
+  echo "Blake"
+  module load devpack/latest/openmpi/2.1.2/intel/18.1.163
+
+  if [ -z "$KOKKOS_ARCH" ]; then
+    KOKKOS_ARCH="SKX"
+  fi
+
+  if [ -z "$BUILD_LIST" ]; then
+    BUILD_LIST="OpenMP"
+  fi
+
+  export OMP_NUM_THREADS=2
+
+  export JENKINS_ARCH=${KOKKOS_ARCH}
+  export JENKINS_ARCH_C_FLAG="${OPT_FLAG} -xCORE-AVX2 -mkl"
+  export JENKINS_EXTRA_CXX_FLAG="${OPT_FLAG} -mkl ${CXX_FLAGS_EXTRA}"
+  export BLAS_LIBRARIES="-mkl;${MKLROOT}/lib/intel64/libmkl_intel_lp64.a;${MKLROOT}/lib/intel64/libmkl_intel_thread.a;${MKLROOT}/lib/intel64/libmkl_core.a"
+  export LAPACK_LIBRARIES=${BLAS_LIBRARIES}
+
+
+elif [ "$MACHINE" = "apollo" ]; then
+  source /projects/sems/modulefiles/utils/sems-modules-init.sh
+ 
+  module purge
+  module load sems-env
+  module load kokkos-env
+
+  module load "sems-gcc/5.3.0 kokkos-cuda/8.0.44 sems-openmpi/1.10.1 sems-cmake/3.5.2 sems-hdf5/1.8.12/base sems-netcdf/4.4.1/exo"
+
+  if [ -z "$KOKKOS_ARCH" ]; then
+    KOKKOS_ARCH="SNB;Pascal60"
+  fi
+
+  if [ -z "$BUILD_LIST" ]; then
+    BUILD_LIST="Cuda;OpenMP"
+  fi
+  
+  export OMP_NUM_THREADS=2
+  
+  export JENKINS_ARCH_C_FLAG="${OPT_FLAG} -mavx"
+  export JENKINS_EXTRA_CXX_FLAGS="${OPT_FLAG} ${CXX_FLAGS_EXTRA}"
+  export BLAS_LIBRARIES="-lblas"
+  export LAPACK_LIBRARIES="-llapack"
+  
+else
+  echo "Unhandled machine $MACHINE" >&2
+  exit 1
+fi
+  
+export JENKINS_ARCH=${KOKKOS_ARCH}
+
+export BACKEND_NAME=""
+# Set Backends
+if [[ "$BUILD_LIST" =~ OpenMP ]]; then
+  export JENKINS_DO_OPENMP=ON
+  export BACKEND_NAME=${BACKEND_NAME}_OpenMP
+else
+  export JENKINS_DO_OPENMP=OFF    
+fi
+
+if [[ "$BUILD_LIST" =~ Cuda ]]; then
+  export JENKINS_DO_CUDA=ON
+  export OMPI_CXX=${TRILINOS_PATH}/packages/kokkos/bin/nvcc_wrapper
+  export CUDA_LAUNCH_BLOCKING=1
+  export CUDA_MANAGED_FORCE_DEVICE_ALLOC=1
+  export BACKEND_NAME=${BACKEND_NAME}_CUDA
+else
+  unset OMPI_CXX
+  export JENKINS_DO_CUDA=OFF    
+fi
+
+if [[ "$BUILD_LIST" =~ Pthread ]]; then
+  export JENKINS_DO_PTHREAD=ON
+  export BACKEND_NAME=${BACKEND_NAME}_Pthreads
+else
+  export JENKINS_DO_PTHREAD=OFF    
+fi
+
+if [[ "$BUILD_LIST" =~ Serial ]]; then
+  export JENKINS_DO_SERIAL=ON
+  export BACKEND_NAME=${BACKEND_NAME}_Serial
+else
+  export JENKINS_DO_SERIAL=OFF    
+fi
+
+export JENKINS_DO_TESTS=ON
+export JENKINS_DO_EXAMPLES=ON
+
+if [[ "$DEBUG" = True ]]; then
+  export JENKINS_DO_DEBUG=ON
+  DEBUG_POSTFIX=_Debug
+else
+  export JENKINS_DO_DEBUG=OFF
+  DEBUG_POSTFIX=""
+fi
+
+#Set Generic DashBoard submission settings
+ARCH_POSTFIX=`echo ${KOKKOS_ARCH} | sed 's/\;/_/g'`
+export CTEST_TEST_TYPE=Experimental
+export Trilinos_TRACK=Experimental
+export CTEST_BUILD_FLAGS="-j32"
+export CTEST_BUILD_NAME=${TEST_NAME}_${MACHINE}${BACKEND_NAME}${DEBUG_POSTFIX}${COMPLEX_POSTFIX}_${ARCH_POSTFIX}
+export CTEST_SITE=${MACHINE}
+if [ "${CONFIGURE_ONLY}" = "True" ]; then
+  export CTEST_DO_BUILD=FALSE
+  export CTEST_DO_TEST=FALSE
+fi
+if [ "${BUILD_ONLY}" = "True" ]; then
+  export CTEST_DO_TEST=FALSE
+fi
+
+export OMP_PROC_BIND=spread
+export OMP_PLACES=cores
+
+DATE=$(date +"%Y_%m_%d_%H.%M.%S")
+mkdir Test_${MACHINE}_${DATE}
+cd Test_${MACHINE}_${DATE}
+echo "Calling: ${CONFIGURE_SCRIPT} &> configure.out {$DRYRUN}"
+if [ "${DRYRUN}" = "False" ]; then
+  source ${CONFIGURE_SCRIPT} &> configure.out
+fi
+
+date +"%Y_%m_%d_%H.%M.%S"
+
+if [ "${REPORT_TO_DASHBOARD}" = "True" ]; then
+  echo "Calling: make dashboard"
+  echo "Report Name: " ${CTEST_BUILD_NAME}
+  if [ "${DRYRUN}" = "False" ]; then
+    make dashboard || true
+  fi
+  FAILED_PACKAGES=`grep -v '^\s*$' failedPackages.txt | wc -l` || true
+  echo ""
+  echo ""
+  echo "*********************************"
+  if [ "${FAILED_PACKAGES}" -gt "0" ]; then
+    echo "Result: FAILED"
+    echo "*********************************"
+    exit 1
+  else
+    echo "Result: PASSED"
+    echo "*********************************"
+  fi
+else
+  BUILD_WARNINGS=0
+  BUILD_ERRORS=0
+  TEST_FAILED=0
+  TEST_TIMEOUT=0
+  TEST_NOTRUN=0
+  if [ "${CONFIGURE_ONLY}" = "False" ]; then
+    echo "Calling: make -j 32 &> build.out"
+    if [ "${DRYRUN}" = "False" ]; then
+      make -j 32 &> build.out || true
+    fi
+    date +"%Y_%m_%d_%H.%M.%S"
+    BUILD_WARNINGS=`grep "warning:" build.out | wc -l` || true
+    BUILD_ERRORS=`grep "error:" build.out | wc -l` || true
+    if [ "${BUILD_ONLY}" = "False" ]; then
+      echo "Calling: ctest &> test.out"
+      if [ "${DRYRUN}" = "False" ]; then
+        ctest &> test.out || true
+      fi
+      date +"%Y_%m_%d_%H.%M.%S"
+      TEST_FAILED=`grep "(Failed)" test.out | wc -l` || true
+      TEST_TIMEOUT=`grep "(Timeout)" test.out | wc -l` || true
+      TEST_NOTRUN=`grep "(Not Run)" test.out | wc -l` || true
+    fi
+  fi
+  TOTAL_PROBLEMS=$((${BUILD_ERRORS} + ${TEST_FAILED} + ${TEST_TIMEOUT} + ${TEST_NOTRUN}))
+  echo ""
+  echo ""
+  echo "*********************************"
+  echo "Options:"
+  echo "   BuildList: " ${BUILD_LIST}
+  echo "   Arch:      " ${JENKINS_ARCH}
+  echo "   Debug:     " ${JENKINS_DO_DEBUG}
+  echo "   Complex:   " ${JENKINS_DO_COMPLEX}
+  echo "*********************************"
+  echo "Build:"
+  echo "   Warnings: " ${BUILD_WARNINGS}
+  echo "   Errors:   " ${BUILD_ERRORS}
+  echo "Test:"
+  echo "   Failed:   " ${TEST_FAILED}
+  echo "   Timeout:  " ${TEST_TIMEOUT}
+  echo "   Not Run:  " ${TEST_NOTRUN}
+  echo "*********************************"
+  if [ "${TOTAL_PROBLEMS}" -gt "0" ]; then
+    echo "Result: FAILED"
+    echo "*********************************"
+    exit 1
+  else
+    echo "Result: PASSED"
+    echo "*********************************"
+  fi
+fi
+cd ..

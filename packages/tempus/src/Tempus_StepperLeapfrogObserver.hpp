@@ -33,6 +33,7 @@ template<class Scalar> class StepperLeapfrog;
  */
 template<class Scalar>
 class StepperLeapfrogObserver
+ : virtual public Tempus::StepperObserver<Scalar>
 {
 public:
 
@@ -45,37 +46,37 @@ public:
   /// Observe Stepper at beginning of takeStep.
   virtual void observeBeginTakeStep(
     Teuchos::RCP<SolutionHistory<Scalar> > sh,
-    StepperLeapfrog<Scalar> & stepper){}
+    Stepper<Scalar> & stepper){}
 
   /// Observe Stepper before Explicit ME evaluation while initializing xDotDot
   virtual void observeBeforeExplicitInitialize(
     Teuchos::RCP<SolutionHistory<Scalar> > sh,
-    StepperLeapfrog<Scalar> & stepper){}
+    StepperLeapfrog<Scalar> & stepperLF){}
 
   /// Observe Stepper before updating xDot while initializing xDotDot
   virtual void observeBeforeXDotUpdateInitialize(
     Teuchos::RCP<SolutionHistory<Scalar> > sh,
-    StepperLeapfrog<Scalar> & stepper){}
+    StepperLeapfrog<Scalar> & stepperLF){}
 
   /// Observe Stepper before updating x
   virtual void observeBeforeXUpdate(
     Teuchos::RCP<SolutionHistory<Scalar> > sh,
-    StepperLeapfrog<Scalar> & stepper){}
+    StepperLeapfrog<Scalar> & stepperLF){}
 
   /// Observe Stepper before Explicit ME evaluation.
   virtual void observeBeforeExplicit(
     Teuchos::RCP<SolutionHistory<Scalar> > sh,
-    StepperLeapfrog<Scalar> & stepper){}
+    StepperLeapfrog<Scalar> & stepperLF){}
 
   /// Observe Stepper before updating xDot
   virtual void observeBeforeXDotUpdate(
     Teuchos::RCP<SolutionHistory<Scalar> > sh,
-    StepperLeapfrog<Scalar> & stepper){}
+    StepperLeapfrog<Scalar> & stepperLF){}
 
   /// Observe Stepper at end of takeStep.
   virtual void observeEndTakeStep(
     Teuchos::RCP<SolutionHistory<Scalar> > sh,
-    StepperLeapfrog<Scalar> & stepper){}
+    Stepper<Scalar> & stepper){}
 };
 } // namespace Tempus
 #endif // Tempus_StepperLeapfrogObserver_hpp

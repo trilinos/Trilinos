@@ -45,6 +45,7 @@
 
 #include "KokkosSparse_gauss_seidel_spec.hpp"
 #include "KokkosKernels_Handle.hpp"
+#include "KokkosKernels_helpers.hpp"
 
 namespace KokkosSparse{
 

@@ -8,7 +8,7 @@
     <Parameter name="IC x0"   type="double" value="0.0"/>
     <Parameter name="IC x1"   type="double" value="1.0"/>
     <Parameter name="IC t0"   type="double" value="0.0"/>
-    <Parameter name="Number of Time Step Sizes" type="int" value = "7"/>
+    <Parameter name="Number of Time Step Sizes" type="int" value = "4"/>
   </ParameterList>
   <ParameterList name="Tempus">
     <Parameter name="Integrator Name" type="string" value="Default Integrator"/>
@@ -29,7 +29,7 @@
         <Parameter name="Initial Time Index"     type="int"    value="0"/>
         <Parameter name="Final Time Index"       type="int"    value="10000"/>
         <Parameter name="Minimum Time Step"      type="double" value="0.00001"/>
-        <Parameter name="Initial Time Step"      type="double" value="0.1"/>
+        <Parameter name="Initial Time Step"      type="double" value="0.0125"/>
         <Parameter name="Maximum Time Step"      type="double" value="0.1"/>
         <Parameter name="Minimum Order"          type="int"    value="1"/>
         <Parameter name="Initial Order"          type="int"    value="1"/>
@@ -49,6 +49,7 @@
     <ParameterList name="Default Stepper">
 
       <Parameter name="Stepper Type"   type="string" value="BDF2"/>
+      <Parameter name="Zero Initial Guess" type="bool" value="0"/>
       <Parameter name="Solver Name"    type="string" value="Default Solver"/>
       <Parameter name="Start Up Stepper Name" type="string" value="Default Start Up Stepper"/>
 
@@ -103,7 +104,62 @@
       </ParameterList>
 
       <ParameterList name="Default Start Up Stepper">
-        <Parameter name="Stepper Type" type="string" value="RK Forward Euler"/>
+        <Parameter name="Stepper Type" type="string" value="IRK 1 Stage Theta Method"/>
+        <Parameter name="Zero Initial Guess" type="bool" value="0"/>
+        <Parameter name="Solver Name"    type="string" value="Default Solver"/>
+        <Parameter name="Start Up Stepper Name" type="string" value="Default Start Up Stepper"/>
+
+        <ParameterList name="Default Solver">
+          <ParameterList name="NOX">
+            <ParameterList name="Direction">
+              <Parameter name="Method" type="string" value="Newton"/>
+              <ParameterList name="Newton">
+                <Parameter name="Forcing Term Method" type="string" value="Constant"/>
+                <Parameter name="Rescue Bad Newton Solve" type="bool" value="1"/>
+              </ParameterList>
+            </ParameterList>
+            <ParameterList name="Line Search">
+              <Parameter name="Method" type="string" value="Full Step"/>
+              <ParameterList name="Full Step">
+                <Parameter name="Full Step" type="double" value="1"/>
+              </ParameterList>
+            </ParameterList>
+            <Parameter name="Nonlinear Solver" type="string" value="Line Search Based"/>
+            <ParameterList name="Printing">
+              <Parameter name="Output Precision" type="int" value="3"/>
+              <Parameter name="Output Processor" type="int" value="0"/>
+              <ParameterList name="Output Information">
+                <Parameter name="Error" type="bool" value="1"/>
+                <Parameter name="Warning" type="bool" value="1"/>
+                <Parameter name="Outer Iteration" type="bool" value="0"/>
+                <Parameter name="Parameters" type="bool" value="0"/>
+                <Parameter name="Details" type="bool" value="0"/>
+                <Parameter name="Linear Solver Details" type="bool" value="1"/>
+                <Parameter name="Stepper Iteration" type="bool" value="1"/>
+                <Parameter name="Stepper Details" type="bool" value="1"/>
+                <Parameter name="Stepper Parameters" type="bool" value="1"/>
+              </ParameterList>
+            </ParameterList>
+            <ParameterList name="Solver Options">
+              <Parameter name="Status Test Check Type" type="string" value="Minimal"/>
+            </ParameterList>
+            <ParameterList name="Status Tests">
+              <Parameter name="Test Type" type="string" value="Combo"/>
+              <Parameter name="Combo Type" type="string" value="OR"/>
+              <Parameter name="Number of Tests" type="int" value="2"/>
+              <ParameterList name="Test 0">
+                <Parameter name="Test Type" type="string" value="NormF"/>
+                <Parameter name="Tolerance" type="double" value="1.0e-8"/>
+              </ParameterList>
+              <ParameterList name="Test 1">
+                <Parameter name="Test Type" type="string" value="MaxIters"/>
+                <Parameter name="Maximum Iterations" type="int" value="10"/>
+              </ParameterList>
+            </ParameterList>
+          </ParameterList>
+
+        </ParameterList>
+
       </ParameterList>
 
     </ParameterList>

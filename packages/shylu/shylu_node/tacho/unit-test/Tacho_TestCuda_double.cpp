@@ -10,30 +10,28 @@ typedef double MagnitudeType;
 
 static const std::string MM_TEST_FILE="test_double";
 
+#define TEST_BEGIN 
+#define TEST_END   
+//#define TEST_BEGIN Kokkos::initialize()
+//#define TEST_END   Kokkos::finalize()
+
 #define __TACHO_TEST_CUDA__
 #include "ShyLU_NodeTacho_config.h"
-//#include "Tacho_Test.hpp"
+#include "Tacho_Test.hpp"
 
-//#include "Tacho_TestCrsMatrixBase.hpp"
-//#include "Tacho_TestGraph.hpp"
-//#include "Tacho_TestSymbolic.hpp"
-//#include "Tacho_TestNumeric.hpp"
-//#include "Tacho_TestTaskFunctor.hpp"
-
-//#include "Tacho_TestDenseMatrixView.hpp"
-//#include "Tacho_TestDenseByBlocks.hpp"
-
-#include "Tacho_TestDenseLinearAlgebra.hpp"
-
-using namespace Tacho::Experimental;
+using namespace Tacho;
 
 int main (int argc, char *argv[]) {
+
+  Kokkos::initialize(argc, argv);
+
+  TEST_BEGIN;
 
   const bool detail = false;
   printExecSpaceConfiguration<DeviceSpaceType>("DeviceSpace", detail);
   printExecSpaceConfiguration<HostSpaceType>  ("HostSpace",   detail);
-  
-  Kokkos::initialize(argc, argv);
+
+  TEST_END;
 
   ::testing::InitGoogleTest(&argc, argv);
   const int r_val = RUN_ALL_TESTS();

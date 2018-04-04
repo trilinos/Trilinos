@@ -25,11 +25,12 @@ list(APPEND KOKKOS_INTERNAL_ENABLE_OPTIONS_LIST
      Cuda_LDG_Intrinsic
      Debug
      Debug_DualView_Modify_Check
-     Debug_Bounds_Checkt
+     Debug_Bounds_Check
      Compiler_Warnings
      Profiling
      Profiling_Load_Print
      Aggressive_Vectorization
+     Deprecated_Code
      )
 
 #-------------------------------------------------------------------------------
@@ -102,6 +103,8 @@ list(APPEND KOKKOS_ARCH_LIST
      Maxwell53       # (GPU) NVIDIA Maxwell generation CC 5.3
      Pascal60        # (GPU) NVIDIA Pascal generation CC 6.0
      Pascal61        # (GPU) NVIDIA Pascal generation CC 6.1
+     Volta70         # (GPU) NVIDIA Volta generation CC 7.0
+     Volta72         # (GPU) NVIDIA Volta generation CC 7.2
     )
 
 # List of possible device architectures.
@@ -263,7 +266,8 @@ set(KOKKOS_ENABLE_PROFILING ${KOKKOS_INTERNAL_ENABLE_PROFILING_DEFAULT} CACHE BO
 set_kokkos_default_default(PROFILING_LOAD_PRINT OFF)
 set(KOKKOS_ENABLE_PROFILING_LOAD_PRINT ${KOKKOS_INTERNAL_ENABLE_PROFILING_LOAD_PRINT_DEFAULT} CACHE BOOL "Enable profile load print.")
 
-
+set_kokkos_default_default(DEPRECATED_CODE ON)
+set(KOKKOS_ENABLE_DEPRECATED_CODE ${KOKKOS_INTERNAL_ENABLE_DEPRECATED_CODE_DEFAULT} CACHE BOOL "Enable deprecated code.")
 
 
 #-------------------------------------------------------------------------------

@@ -9,6 +9,12 @@ TRIBITS_ADD_EXECUTABLE(
   SOURCES ${BLOCK_PREC_SOURCES}
   )
 
+TRIBITS_COPY_FILES_TO_BINARY_DIR(CopyBlockPrecFiles
+    SOURCE_FILES solverDefaultsAugmentation.xml solverDefaultsRefMaxwell.xml solverAugmentationUseILU.xml
+    SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}
+    DEST_DIR ${CMAKE_CURRENT_BINARY_DIR}
+    )
+
 TRIBITS_ADD_TEST(
    BlockPrec
    NAME "MiniEM-BlockPrec_Augmentation"

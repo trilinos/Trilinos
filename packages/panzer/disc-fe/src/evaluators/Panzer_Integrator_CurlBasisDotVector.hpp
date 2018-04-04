@@ -61,7 +61,29 @@ namespace panzer {
   * in 2D is simply a scalar, here the evaluators handles
   * both cases.
   */
-PANZER_EVALUATOR_CLASS(Integrator_CurlBasisDotVector)
+template<typename EvalT, typename Traits>
+class Integrator_CurlBasisDotVector
+  :
+  public panzer::EvaluatorWithBaseImpl<Traits>,
+  public PHX::EvaluatorDerived<EvalT, Traits>
+{
+  public:
+
+    Integrator_CurlBasisDotVector(
+      const Teuchos::ParameterList& p);
+
+    void
+    postRegistrationSetup(
+      typename Traits::SetupData d,
+      PHX::FieldManager<Traits>& fm);
+
+    void
+    evaluateFields(
+      typename Traits::EvalData d);
+
+  private:
+
+    using ScalarT = typename EvalT::ScalarT;
 public:
 
   Integrator_CurlBasisDotVector(const PHX::FieldTag & input,
@@ -101,7 +123,8 @@ private:
 
 private:
   Teuchos::RCP<Teuchos::ParameterList> getValidParameters() const;
-PANZER_EVALUATOR_CLASS_END
+}; // end of class Integrator_CurlBasisDotVector
+
 
 }
 

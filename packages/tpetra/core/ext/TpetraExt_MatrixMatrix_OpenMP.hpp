@@ -147,14 +147,7 @@ void KernelWrappers<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosOpen
 
   // Options
   int team_work_size = 16;  // Defaults to 16 as per Deveci 12/7/16 - csiefer
-
-  // NOTE: GNU 7.2.0 (with optimizations turned on) generates a collection of Heisenbug-like errors in the merge_matrices wrapper to
-  // the SPGEMM_KK kernels.  In this case, we switch the default kernel to LTG.  See Tpetra Issue #2161.
-#if defined(__GNUC__) && defined(__GNUC_MINOR__) && defined(__GNUC_PATCHLEVEL__) && (__GNUC__ == 7) && (__GNUC_MINOR__ == 2) && (__GNUC_PATCHLEVEL__ == 0)
-  std::string myalg("LTG");
-#else
   std::string myalg("SPGEMM_KK_MEMORY");
-#endif
 
 
   if(!params.is_null()) {

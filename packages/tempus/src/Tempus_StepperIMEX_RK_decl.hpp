@@ -271,11 +271,8 @@ public:
     virtual void setModel(
       const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel);
 
-    virtual void setNonConstModel(
-      const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >& appModel);
-
     virtual Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > getModel()
-     { return wrapperModelPairIMEX_; }
+     { return this->wrapperModel_; }
 
     virtual void setModelPair(
       const Teuchos::RCP<WrapperModelEvaluatorPairIMEX_Basic<Scalar> >& mePair);
@@ -284,18 +281,8 @@ public:
       const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& explicitModel,
       const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& implicitModel);
 
-    /// Set solver via ParameterList solver name.
-    virtual void setSolver(std::string solverName);
-    /// Set solver via solver ParameterList.
-    virtual void setSolver(
-      Teuchos::RCP<Teuchos::ParameterList> solverPL=Teuchos::null);
-    /// Set solver.
-    virtual void setSolver(
-      Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> > solver);
-    virtual Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> > getSolver() const
-      { return solver_; }
     virtual void setObserver(
-      Teuchos::RCP<StepperIMEX_RKObserver<Scalar> > obs = Teuchos::null);
+      Teuchos::RCP<StepperObserver<Scalar> > obs = Teuchos::null);
 
     /// Initialize during construction and after changing input parameters.
     virtual void initialize();
@@ -351,9 +338,6 @@ private:
 protected:
 
   std::string                                            description_;
-  Teuchos::RCP<Teuchos::ParameterList>                   stepperPL_;
-  Teuchos::RCP<WrapperModelEvaluatorPairIMEX<Scalar> >   wrapperModelPairIMEX_;
-  Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> >      solver_;
 
   Teuchos::RCP<const RKButcherTableau<Scalar> >          explicitTableau_;
   Teuchos::RCP<const RKButcherTableau<Scalar> >          implicitTableau_;
@@ -366,6 +350,7 @@ protected:
 
   Teuchos::RCP<Thyra::VectorBase<Scalar> >               xTilde_;
 
+  Teuchos::RCP<StepperObserver<Scalar> >         stepperObserver_;
   Teuchos::RCP<StepperIMEX_RKObserver<Scalar> >  stepperIMEX_RKObserver_;
 };
 

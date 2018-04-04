@@ -9,7 +9,8 @@ TRILINOS_DIR=`readlink -f ${DRIVER_SCRIPT_DIR}/../../../..`
 echo "TRILINOS_DIR='${TRILINOS_DIR}'"
 
 source /etc/bashrc
-source $TRILINOS_DIR/cmake/load_ci_sems_dev_env.sh
+TRILINOS_SEMS_DEV_ENV_VERBOSE=1
+source $TRILINOS_DIR/cmake/load_sems_dev_env.sh
 
 export CTEST_DASHBOARD_ROOT=$PWD
 

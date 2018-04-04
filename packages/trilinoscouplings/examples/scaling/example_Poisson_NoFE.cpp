@@ -709,7 +709,7 @@ int main(int argc, char *argv[]) {
       for(int workset = 0; workset < numWorksets; workset++){
 
         // Compute cell numbers where the workset starts and ends
-        int worksetSize  = 0;
+        // int worksetSize  = 0;
         int worksetBegin = (workset + 0)*desiredWorksetSize;
         int worksetEnd   = (workset + 1)*desiredWorksetSize;
 
@@ -717,7 +717,7 @@ int main(int argc, char *argv[]) {
         worksetEnd   = (worksetEnd <= numElems) ? worksetEnd : numElems;
 
         // Now we know the actual workset size and can allocate the array for the cell nodes
-        worksetSize  = worksetEnd - worksetBegin;
+        // worksetSize  = worksetEnd - worksetBegin;
 
         //"WORKSET CELL" loop: local cell ordinal is relative to numElems
         for(int cell = worksetBegin; cell < worksetEnd; cell++){

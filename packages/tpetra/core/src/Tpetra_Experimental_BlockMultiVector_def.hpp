@@ -81,10 +81,10 @@ namespace { // anonymous
   ///   time.
   ///
   /// \note To Tpetra developers: This function exists to smooth over
-  ///   differences between the "classic" and Kokkos refactor versions
-  ///   of Tpetra::MultiVector.  It also makes the
-  ///   Tpetra::Experimental::BlockMultiVector implementation below a
-  ///   bit easier to read.
+  ///   differences between the "classic" and current ("Kokkos
+  ///   refactor," circa 2014/5) versions of Tpetra::MultiVector.  It
+  ///   also makes the Tpetra::Experimental::BlockMultiVector
+  ///   implementation below a bit easier to read.
   template<class S, class LO, class GO, class N>
   typename Tpetra::MultiVector<S, LO, GO, N>::impl_scalar_type*
   getRawHostPtrFromMultiVector (Tpetra::MultiVector<S, LO, GO, N>& X) {

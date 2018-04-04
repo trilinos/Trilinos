@@ -78,13 +78,15 @@ int main(int argc, char *argv[]) {
 
   try { 
 
-    ROL::Ptr<V>    x     = ROL::ZOO::getInitialGuess_HS24<RealT>();
-    ROL::Ptr<V>    xs    = ROL::ZOO::getSolution_HS24<RealT>();
-    ROL::Ptr<V>    inmul = ROL::ZOO::getInequalityMultiplier_HS24<RealT>();    
+    ROL::ZOO::getHS24<RealT> HS24;
+    ROL::Ptr<V>    x     = HS24.getInitialGuess();
+    ROL::Ptr<V>    xs    = HS24.getSolution();
+    ROL::Ptr<V>    inmul = HS24.getInequalityMultiplier();    
 
-    ROL::Ptr<BC>   bnd   = ROL::ZOO::getBoundConstraint_HS24<RealT>();
-    ROL::Ptr<OBJ>  obj   = ROL::ZOO::getObjective_HS24<RealT>();
-    ROL::Ptr<INEQ> incon = ROL::ZOO::getInequalityConstraint_HS24<RealT>();
+    ROL::Ptr<BC>   bnd   = HS24.getBoundConstraint();
+    ROL::Ptr<OBJ>  obj   = HS24.getObjective();
+    ROL::Ptr<INEQ> incon = HS24.getInequalityConstraint();
+    ROL::Ptr<BC>   inbnd = HS24.getSlackBoundConstraint();
    
     Teuchos::RCP<Teuchos::ParameterList> parlist = Teuchos::rcp( new Teuchos::ParameterList() );
 
@@ -111,7 +113,7 @@ int main(int argc, char *argv[]) {
     parlist->sublist("Status Test").set("Iteration Limit",100);
 
     // Define Optimization Problem 
-    ROL::OptimizationProblem<RealT> problem( obj, x, bnd, incon, inmul, parlist );
+    ROL::OptimizationProblem<RealT> problem( obj, x, bnd, incon, inmul, inbnd );
 
     ROL::Ptr<V> d = x->clone();
     RandomizeVector(*d);

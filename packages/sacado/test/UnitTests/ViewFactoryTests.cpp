@@ -160,7 +160,7 @@ TEUCHOS_UNIT_TEST(view_factory, dyn_rank_views)
 		TEST_EQUALITY(vct1.extent(0), v1.extent(0));
 		TEST_EQUALITY(vct1.extent(1), v1.extent(1));
 		TEST_EQUALITY(vct1.extent(2), v1.extent(2));
-		TEST_EQUALITY(Kokkos::Experimental::rank(vct1), 2);
+		TEST_EQUALITY(Kokkos::rank(vct1), 2);
     bool check_neq_kokkos_type = std::is_same < CommonValueType, ScalarArrayType >::value;
     bool check_eq_fad_type = std::is_same < CommonValueType, FadType >::value;
     bool check_eq_scalar_double = std::is_same < double, ScalarArrayType >::value;
@@ -192,7 +192,7 @@ TEUCHOS_UNIT_TEST(view_factory, dyn_rank_views)
 		TEST_EQUALITY(vct1.extent(0), v1.extent(0));
 		TEST_EQUALITY(vct1.extent(1), v1.extent(1));
 		TEST_EQUALITY(vct1.extent(2), v1.extent(2));
-		TEST_EQUALITY(Kokkos::Experimental::rank(vct1), 2);
+		TEST_EQUALITY(Kokkos::rank(vct1), 2);
     bool check_neq_kokkos_type = std::is_same < CommonValueType, ScalarArrayType >::value;
     bool check_eq_fad_type = std::is_same < CommonValueType, FadType >::value;
     bool check_eq_scalar_double = std::is_same < double, ScalarArrayType >::value;

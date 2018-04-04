@@ -53,70 +53,70 @@
 
 void print_options(){
   std::cerr << "Options\n" << std::endl;
-  std::cerr << "Choose BackEnd                     : openmp [numthreads] | cuda" << std::endl;
-  std::cerr << "Input Matrix                       : amtx [path_to_input_matrix]" << std::endl;
+  std::cerr << "Choose BackEnd                     : --openmp [numthreads] | --cuda" << std::endl;
+  std::cerr << "Input Matrix                       : --amtx [path_to_input_matrix]" << std::endl;
   std::cerr << "\tInput Matrix format can be multiple formats. If it ends with:" << std::endl;
   std::cerr << "\t\t.mtx: it will read matrix market format." << std::endl;
   std::cerr << "\t\t.bin: it will read binary crs matrix format." << std::endl;
   std::cerr << "\t\t.crs: it will read text crs matrix format." << std::endl;
-  std::cerr << "algorithm                          :" << std::endl;
+  std::cerr << "--algorithm                          :" << std::endl;
   std::cerr << "\tTRIANGLEAI: for Adj x Incidence" << std::endl;
   std::cerr << "\tTRIANGLEIA: for Incidence x Adj -- implementing set intersection (2D) -- 3rd fastest"  << std::endl;
   std::cerr << "\tTRIANGLEIAUNION: for Incidence x Adj -- implementing set union " << std::endl;
   std::cerr << "\tTRIANGLELL: Lower x Lower -- usually fastest " << std::endl;
   std::cerr << "\tTRIANGLELU: Lower x Upper -- usually 2nd fastest " << std::endl;
-  std::cerr << "FLOP                               : Calculate and prints the number of operations. This will be calculated on the first run." << std::endl;
-  std::cerr << "COMPRESION [0|1]                   : Enable disable compression. Default:1." << std::endl;
-  std::cerr << "RS [0|1|2]                         : Whether to sort lower triangular matrix. 0 - no sort, 1 - sort, 2 - algorithm decides based on max row size (default)" << std::endl;
-  std::cerr << "accumulator [default|dense|sparse] : what type of accumulator to use." << std::endl;
-  std::cerr << "RLT                                : If given, lower triangle will be used for AdjxIncidence or Incidence x Adj algorithms." << std::endl;
-  std::cerr << "dynamic                            : If set, dynamic schedule will be used. Currently default is dynamic scheduling as well." << std::endl;
-  std::cerr << "verbose                            : If set, the inner timer stats will be printed." << std::endl;
-  std::cerr << "repeat [repeatnum]                 : how many repeats will be run." << std::endl;
-  std::cerr << "chunksize [chunksize]              : how many vertices are executed with in a loop index. Default is 16." << std::endl;
-  std::cerr << "sort_option [0|1|2]                : How lower triangle will be sorted. 0: for largest to bottom, 1 for largest to top, 2 for interleaved." << std::endl;
-  std::cerr << "cache_flush [0|1|2]                : Flush between repetitions. 0 - no flush, 1 - soft flush, 2 - hard flush with random numbers." << std::endl;
+  std::cerr << "--FLOP                               : Calculate and print the number of operations. This will be calculated on the first run." << std::endl;
+  std::cerr << "--COMPRESSION [0|1]                   : Enable disable compression. Default:1." << std::endl;
+  std::cerr << "--RS [0|1|2]                         : Whether to sort lower triangular matrix. 0 - no sort, 1 - sort, 2 - algorithm decides based on max row size (default)" << std::endl;
+  std::cerr << "--accumulator [default|dense|sparse] : what type of accumulator to use." << std::endl;
+  std::cerr << "--RLT                                : If given, lower triangle will be used for AdjxIncidence or Incidence x Adj algorithms." << std::endl;
+  std::cerr << "--dynamic                            : If set, dynamic schedule will be used. Currently default is dynamic scheduling as well." << std::endl;
+  std::cerr << "--verbose                            : If set, the inner timer stats will be printed." << std::endl;
+  std::cerr << "--repeat [repeatnum]                 : how many repeats will be run." << std::endl;
+  std::cerr << "--chunksize [chunksize]              : how many vertices are executed with in a loop index. Default is 16." << std::endl;
+  std::cerr << "--sort_option [0|1|2]                : How lower triangle will be sorted. 0: for largest to bottom, 1 for largest to top, 2 for interleaved." << std::endl;
+  std::cerr << "--cache_flush [0|1|2]                : Flush between repetitions. 0 - no flush, 1 - soft flush, 2 - hard flush with random numbers." << std::endl;
 
-  std::cerr << "\nSuggested use of LL: executable amtx path_to_file.bin algorithm TRIANGLELL repeat 6 verbose chunksize [4|16]" << std::endl;
-  std::cerr << "Suggested use of LU: executable amtx path_to_file.bin algorithm TRIANGLELU repeat 6 verbose chunksize [4|16]" << std::endl;
-  std::cerr << "Suggested use of AI: executable amtx path_to_file.bin algorithm TRIANGLEIA repeat 6 verbose chunksize [4|16] rlt" << std::endl;
+  std::cerr << "\nSuggested use of LL: executable --amtx path_to_file.bin --algorithm TRIANGLELL --repeat 6 --verbose --chunksize [4|16]" << std::endl;
+  std::cerr << "Suggested use of LU: executable --amtx path_to_file.bin --algorithm TRIANGLELU --repeat 6 --verbose --chunksize [4|16]" << std::endl;
+  std::cerr << "Suggested use of AI: executable --amtx path_to_file.bin --algorithm TRIANGLEIA --repeat 6 --verbose --chunksize [4|16] rlt" << std::endl;
 
 }
 
 
 int parse_inputs (KokkosKernels::Experiment::Parameters &params, int argc, char **argv){
   for ( int i = 1 ; i < argc ; ++i ) {
-    if ( 0 == strcasecmp( argv[i] , "threads" ) ) {
+    if ( 0 == strcasecmp( argv[i] , "--threads" ) ) {
       params.use_threads = atoi( argv[++i] );
     }
-    else if ( 0 == strcasecmp( argv[i] , "openmp" ) ) {
+    else if ( 0 == strcasecmp( argv[i] , "--openmp" ) ) {
       params.use_openmp = atoi( argv[++i] );
     }
-    else if ( 0 == strcasecmp( argv[i] , "cuda" ) ) {
+    else if ( 0 == strcasecmp( argv[i] , "--cuda" ) ) {
       params.use_cuda = 1;
     }
-    else if ( 0 == strcasecmp( argv[i] , "repeat" ) ) {
+    else if ( 0 == strcasecmp( argv[i] , "--repeat" ) ) {
       params.repeat = atoi( argv[++i] );
     }
-    else if ( 0 == strcasecmp( argv[i] , "triangle_operation" ) ) {
+    else if ( 0 == strcasecmp( argv[i] , "--triangle_operation" ) ) {
       params.triangle_options = atoi( argv[++i] );
     }
-    else if ( 0 == strcasecmp( argv[i] , "chunksize" ) ) {
+    else if ( 0 == strcasecmp( argv[i] , "--chunksize" ) ) {
       params.chunk_size = atoi( argv[++i] ) ;
     }
-    else if ( 0 == strcasecmp( argv[i] , "teamsize" ) ) {
+    else if ( 0 == strcasecmp( argv[i] , "--teamsize" ) ) {
       params.team_size = atoi( argv[++i] ) ;
     }
-    else if ( 0 == strcasecmp( argv[i] , "vectorsize" ) ) {
+    else if ( 0 == strcasecmp( argv[i] , "--vectorsize" ) ) {
       params.vector_size  = atoi( argv[++i] ) ;
     }
-    else if ( 0 == strcasecmp( argv[i] , "compression" ) ) {
+    else if ( 0 == strcasecmp( argv[i] , "--compression" ) ) {
       params.apply_compression = atoi( argv[++i] ) ;
     }
-    else if ( 0 == strcasecmp( argv[i] , "sort_option" ) ) {
+    else if ( 0 == strcasecmp( argv[i] , "--sort_option" ) ) {
       params.sort_option = atoi( argv[++i] ) ;
     }
-    else if ( 0 == strcasecmp( argv[i] , "memspaces" ) ) {
+    else if ( 0 == strcasecmp( argv[i] , "--memspaces" ) ) {
       int memspaces = atoi( argv[++i] ) ;
       int memspaceinfo = memspaces;
       std::cout << "memspaceinfo:" << memspaceinfo << std::endl;
@@ -157,37 +157,37 @@ int parse_inputs (KokkosKernels::Experiment::Parameters &params, int argc, char 
       }
       memspaceinfo  = memspaceinfo >> 1;
     }
-    else if ( 0 == strcasecmp( argv[i] , "flop" ) ) {
+    else if ( 0 == strcasecmp( argv[i] , "--flop" ) ) {
       params.calculate_read_write_cost = 1;
     }
-    else if ( 0 == strcasecmp( argv[i] , "CIF" ) ) {
+    else if ( 0 == strcasecmp( argv[i] , "--CIF" ) ) {
       params.coloring_input_file = argv[++i];
     }
-    else if ( 0 == strcasecmp( argv[i] , "COF" ) ) {
+    else if ( 0 == strcasecmp( argv[i] , "--COF" ) ) {
       params.coloring_output_file = argv[++i];
     }
-    else if ( 0 == strcasecmp( argv[i] , "mhscale" ) ) {
+    else if ( 0 == strcasecmp( argv[i] , "--mhscale" ) ) {
       params.minhashscale = atoi( argv[++i] ) ;
     }
-    else if ( 0 == strcasecmp( argv[i] , "mcscale" ) ) {
+    else if ( 0 == strcasecmp( argv[i] , "--mcscale" ) ) {
       params.multi_color_scale = atoi( argv[++i] ) ;
     }
-    else if ( 0 == strcasecmp( argv[i] , "shmem" ) ) {
+    else if ( 0 == strcasecmp( argv[i] , "--shmem" ) ) {
       params.shmemsize =  atoi( argv[++i] ) ;
     }
-    else if ( 0 == strcasecmp( argv[i] , "compression2step" ) ) {
+    else if ( 0 == strcasecmp( argv[i] , "--compression2step" ) ) {
       params.compression2step =  true ;
     }
-    else if ( 0 == strcasecmp( argv[i] , "mklsort" ) ) {
+    else if ( 0 == strcasecmp( argv[i] , "--mklsort" ) ) {
       params.mkl_sort_option = atoi( argv[++i] ) ;
     }
-    else if ( 0 == strcasecmp( argv[i] , "mklkeepout" ) ) {
+    else if ( 0 == strcasecmp( argv[i] , "--mklkeepout" ) ) {
       params.mkl_keep_output = atoi( argv[++i] ) ;
     }
-    else if ( 0 == strcasecmp( argv[i] , "checkoutput" ) ) {
+    else if ( 0 == strcasecmp( argv[i] , "--checkoutput" ) ) {
       params.check_output = 1;
     }
-    else if ( 0 == strcasecmp( argv[i] , "amtx" ) ) {
+    else if ( 0 == strcasecmp( argv[i] , "--amtx" ) ) {
       params.a_mtx_bin_file = argv[++i];
     }
     /*
@@ -198,26 +198,26 @@ int parse_inputs (KokkosKernels::Experiment::Parameters &params, int argc, char 
       params.b_mtx_bin_file = argv[++i];
     }
     */
-    else if ( 0 == strcasecmp( argv[i] , "dynamic" ) ) {
+    else if ( 0 == strcasecmp( argv[i] , "--dynamic" ) ) {
       params.use_dynamic_scheduling = 1;
     }
-    else if ( 0 == strcasecmp( argv[i] , "cache_flush" ) ) {
+    else if ( 0 == strcasecmp( argv[i] , "--cache_flush" ) ) {
       params.cache_flush = atoi(argv[++i]);
     }
 
 
-    else if ( 0 == strcasecmp( argv[i] , "RLT" ) ) {
+    else if ( 0 == strcasecmp( argv[i] , "--RLT" ) ) {
       params.right_lower_triangle = 1;
     }
-    else if ( 0 == strcasecmp( argv[i] , "RS" ) ) {
+    else if ( 0 == strcasecmp( argv[i] , "--RS" ) ) {
       params.right_sort = atoi(argv[++i]);
     }
 
-    else if ( 0 == strcasecmp( argv[i] , "verbose" ) ) {
+    else if ( 0 == strcasecmp( argv[i] , "--verbose" ) ) {
       params.verbose = 1;
     }
 
-    else if ( 0 == strcasecmp( argv[i] , "accumulator" ) ) {
+    else if ( 0 == strcasecmp( argv[i] , "--accumulator" ) ) {
       ++i;
       if ( 0 == strcasecmp( argv[i] , "default" ) ) {
         params.accumulator = 0;
@@ -234,55 +234,9 @@ int parse_inputs (KokkosKernels::Experiment::Parameters &params, int argc, char 
         return 1;
       }
     }
-    else if ( 0 == strcasecmp( argv[i] , "algorithm" ) ) {
+    else if ( 0 == strcasecmp( argv[i] , "--algorithm" ) ) {
       ++i;
-      if ( 0 == strcasecmp( argv[i] , "MKL" ) ) {
-        params.algorithm = 1;
-      }
-      else if ( 0 == strcasecmp( argv[i] , "CUSPARSE" ) ) {
-        params.algorithm = 2;
-      }
-      else if ( 0 == strcasecmp( argv[i] , "CUSP" ) ) {
-        params.algorithm = 3;
-      }
-      else if ( 0 == strcasecmp( argv[i] , "KKDEBUG" ) ) {
-        params.algorithm = 4;
-      }
-      else if ( 0 == strcasecmp( argv[i] , "MKL2" ) ) {
-        params.algorithm = 5;
-      }
-      else if ( 0 == strcasecmp( argv[i] , "KKMEM2" ) ) {
-        params.algorithm = 6;
-      }
-      else if ( 0 == strcasecmp( argv[i] , "KKMEM" ) ) {
-        params.algorithm = 7;
-      }
-      else if ( 0 == strcasecmp( argv[i] , "KKSPEED" ) ) {
-        params.algorithm = 8;
-      }
-      else if ( 0 == strcasecmp( argv[i] , "KKCOLOR" ) ) {
-        params.algorithm = 9;
-      }
-      else if ( 0 == strcasecmp( argv[i] , "KKMULTICOLOR" ) ) {
-        params.algorithm = 10;
-      }
-      else if ( 0 == strcasecmp( argv[i] , "KKMULTICOLOR2" ) ) {
-        params.algorithm = 11;
-      }
-      else if ( 0 == strcasecmp( argv[i] , "VIENNA" ) ) {
-        params.algorithm = 12;
-      }
-      else if ( 0 == strcasecmp( argv[i] , "KKMEMSPEED" ) ) {
-        params.algorithm = 13;
-      }
-      else if ( 0 == strcasecmp( argv[i] , "MULTIMEM" ) ) {
-        params.algorithm = 14;
-      }
-      else if ( 0 == strcasecmp( argv[i] , "OUTER" ) ) {
-        params.algorithm = 15;
-      }
-
-      else if ( 0 == strcasecmp( argv[i] , "TRIANGLEAI" ) ) {
+      if ( 0 == strcasecmp( argv[i] , "TRIANGLEAI" ) ) {
         params.algorithm = 16;
       }
       else if ( 0 == strcasecmp( argv[i] , "TRIANGLEIA" ) ) {

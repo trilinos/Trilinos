@@ -33,6 +33,7 @@ template<class Scalar> class StepperIMEX_RK;
  */
 template<class Scalar>
 class StepperIMEX_RKObserver
+ : virtual public Tempus::StepperObserver<Scalar>
 {
 public:
 
@@ -45,7 +46,7 @@ public:
   /// Observe Stepper at beginning of takeStep.
   virtual void observeBeginTakeStep(
     Teuchos::RCP<SolutionHistory<Scalar> > sh,
-    StepperIMEX_RK<Scalar> & stepperIMEX_RK){}
+    Stepper<Scalar> & stepper){}
 
   /// Observe Stepper at beginning of each stage.
   virtual void observeBeginStage(
@@ -80,7 +81,7 @@ public:
   /// Observe Stepper at end of takeStep.
   virtual void observeEndTakeStep(
     Teuchos::RCP<SolutionHistory<Scalar> > sh,
-    StepperIMEX_RK<Scalar> & stepperIMEX_RK){}
+    Stepper<Scalar> & stepper){}
 };
 } // namespace Tempus
 #endif // Tempus_StepperIMEX_RKObserver_hpp

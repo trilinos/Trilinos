@@ -455,10 +455,10 @@ convertNormalToRotationMatrix(const T normal[3], T transverse[3], T binormal[3])
       transverse[0]=1.;transverse[1]=0.;
     }
 
-    const T nt = sqrt(normal[0]*transverse[0]+normal[1]*transverse[1]+normal[2]*transverse[2]);
+    const T nt = normal[0]*transverse[0]+normal[1]*transverse[1]+normal[2]*transverse[2];
 
     // Note normal has unit length
-    const T mult = nt/n; // = nt
+    const T mult = nt/(n*n); // = nt
 
     // Remove normal projection from transverse
     for(int dim=0;dim<3;++dim){

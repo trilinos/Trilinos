@@ -1,4 +1,10 @@
 <!---
+Be sure to select `develop` as the `base` branch against which to create this
+pull request.  Only pull requests against `develop` will undergo Trilinos'
+automated testing.  Pull requests against `master` will be ignored.
+-->
+
+<!---
 Provide a general summary of your changes in the Title above.  If this pull
 request pertains to a particular package in Trilinos, it's worthwhile to start
 the title with "PackageName:  ".

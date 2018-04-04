@@ -55,8 +55,6 @@
 #include <Xpetra_Vector.hpp>
 #include <Xpetra_MatrixMatrix.hpp>
 
-#include <Galeri_XpetraMaps.hpp>
-
 #include "MueLu_CoupledAggregationFactory.hpp"
 #include "MueLu_CoalesceDropFactory.hpp"
 #include "MueLu_AmalgamationFactory.hpp"

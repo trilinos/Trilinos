@@ -93,8 +93,8 @@ namespace Abstract {
   <li> Create the appropriate entries in the parameter list, as follows.
 
   \code
-  Teuchos::RCP<Foo> foo = Teuchos::rcp(new Foo);
-  params.sublist("Sovler Options").set<NOX::Abstract::PrePostOperator>("User Defined Pre/Post Operator", foo);
+  Teuchos::RCP<NOX::Abstract::PrePostOperator> foo = Teuchos::rcp(new Foo);
+  params.sublist("Solver Options").set("User Defined Pre/Post Operator", foo);
   \endcode
 
   </ol>
@@ -127,6 +127,12 @@ public:
   //! User defined method that will be executed at the end of a call to NOX::Solver::Generic::solve().
   virtual void runPostSolve(const NOX::Solver::Generic& solver);
 
+  //! User defined method that will be executed before a call to NOX::LineSearch::Generic::compute(). Only to be used in NOX::Solver::LineSearchBased!
+  virtual void runPreLineSearch(const NOX::Solver::Generic& solver);
+
+  //! User defined method that will be executed after a call to NOX::LineSearch::Generic::compute(). Only to be used in NOX::Solver::LineSearchBased!
+  virtual void runPostLineSearch(const NOX::Solver::Generic& solver);
+
 }; // class PrePostOperator
 } // namespace Abstract
 } // namespace NOX
@@ -148,6 +154,16 @@ runPreSolve(const NOX::Solver::Generic& /*solver*/) {
 
 inline void NOX::Abstract::PrePostOperator::
 runPostSolve(const NOX::Solver::Generic& /*solver*/) {
+  return;
+}
+
+inline void NOX::Abstract::PrePostOperator::
+runPreLineSearch(const NOX::Solver::Generic& /*solver*/) {
+  return;
+}
+
+inline void NOX::Abstract::PrePostOperator::
+runPostLineSearch(const NOX::Solver::Generic& /*solver*/) {
   return;
 }
 

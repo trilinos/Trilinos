@@ -46,7 +46,10 @@
 namespace panzer {
 
 //**********************************************************************
-PHX_EVALUATOR_CTOR(ConstantVector,p) :
+template<typename EvalT, typename Traits>
+ConstantVector<EvalT, Traits>::
+ConstantVector(
+  const Teuchos::ParameterList& p) :
   vector(p.get<std::string>("Name"), 
          p.get< Teuchos::RCP<PHX::DataLayout> >("Data Layout") )
 {
@@ -65,14 +68,23 @@ PHX_EVALUATOR_CTOR(ConstantVector,p) :
 }
 
 //**********************************************************************
-PHX_POST_REGISTRATION_SETUP(ConstantVector, /* worksets */, fm)
+template<typename EvalT, typename Traits>
+void
+ConstantVector<EvalT, Traits>::
+postRegistrationSetup(
+  typename Traits::SetupData  /* worksets */,
+  PHX::FieldManager<Traits>&  fm)
 {
   using namespace PHX;
   this->utils.setFieldData(vector,fm);
 }
 
 //**********************************************************************
-PHX_EVALUATE_FIELDS(ConstantVector, /* d */)
+template<typename EvalT, typename Traits>
+void
+ConstantVector<EvalT, Traits>::
+evaluateFields(
+  typename Traits::EvalData  /* d */)
 { 
   for(int c=0;c<vector.extent_int(0);c++)
     for(int p=0;p<vector.extent_int(1);p++)

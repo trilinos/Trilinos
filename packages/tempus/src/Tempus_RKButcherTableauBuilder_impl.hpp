@@ -167,6 +167,11 @@ void RKButcherTableauBuilder<Scalar>::initializeDefaults_()
                           Explicit3_8Rule_RKBT<Scalar> >(),
       "RK Explicit 3/8 Rule");
 
+  builder_.setObjectFactory(
+      abstractFactoryStd< RKButcherTableau<Scalar>,
+                          ExplicitBogackiShampine32_RKBT<Scalar> >(),
+      "Bogacki-Shampine 3(2) Pair");
+
   // Implicit
   builder_.setObjectFactory(
       abstractFactoryStd< RKButcherTableau<Scalar>,
@@ -180,8 +185,8 @@ void RKButcherTableauBuilder<Scalar>::initializeDefaults_()
 
   builder_.setObjectFactory(
       abstractFactoryStd< RKButcherTableau<Scalar>,
-                          IRK2StageTheta_RKBT<Scalar> >(),
-      "IRK 2 Stage Theta Method");
+                          EDIRK2StageTheta_RKBT<Scalar> >(),
+      "EDIRK 2 Stage Theta Method");
 
   // SDIRK
   builder_.setObjectFactory(

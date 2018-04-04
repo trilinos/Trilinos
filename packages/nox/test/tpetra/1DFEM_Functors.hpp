@@ -59,26 +59,26 @@ struct RowCountsFunctor
   void operator() (const LO localRow, std::size_t& curNumLocalEntries) const
   {
     // Add a diagonal matrix entry
-    Kokkos::atomic_fetch_add(&counts_(localRow), 1);
+    Kokkos::atomic_increment(&counts_(localRow));
     ++curNumLocalEntries;
     // Contribute a matrix entry to the previous row
     if (localRow > 0) {
-      Kokkos::atomic_fetch_add(&counts_(localRow-1), 1);
+      Kokkos::atomic_increment(&counts_(localRow-1));
       ++curNumLocalEntries;
     }
     // Contribute a matrix entry to the next row
     if (localRow < numMyNodes_-1) {
-      Kokkos::atomic_fetch_add(&counts_(localRow+1), 1);
+      Kokkos::atomic_increment(&counts_(localRow+1));
       ++curNumLocalEntries;
     }
     // MPI process to the left sends us an entry
     if ((myRank_ > 0) && (localRow == 0)) {
-      Kokkos::atomic_fetch_add(&counts_(localRow), 1);
+      Kokkos::atomic_increment(&counts_(localRow));
       ++curNumLocalEntries;
     }
     // MPI process to the right sends us an entry
     if ((myRank_ < numProcs_-1) && (localRow == numMyNodes_-1)) {
-      Kokkos::atomic_fetch_add(&counts_(localRow), 1);
+      Kokkos::atomic_increment(&counts_(localRow));
       ++curNumLocalEntries;
     }
   }

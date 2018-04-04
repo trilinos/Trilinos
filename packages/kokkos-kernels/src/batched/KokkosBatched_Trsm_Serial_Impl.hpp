@@ -78,7 +78,7 @@ namespace KokkosBatched {
              const AViewType &A,
              const BViewType &B) {
         return SerialTrsmInternalLeftLower<Algo::Trsm::Unblocked>::invoke(ArgDiag::use_unit_diag,
-                                                                    B.dimension_0(), B.dimension_1(),
+                                                                    B.extent(0), B.extent(1),
                                                                     alpha, 
                                                                     A.data(), A.stride_0(), A.stride_1(),
                                                                     B.data(), B.stride_0(), B.stride_1());
@@ -96,7 +96,7 @@ namespace KokkosBatched {
              const AViewType &A,
              const BViewType &B) {
         return SerialTrsmInternalLeftLower<Algo::Trsm::Blocked>::invoke(ArgDiag::use_unit_diag,
-                                                                  B.dimension_0(), B.dimension_1(),
+                                                                  B.extent(0), B.extent(1),
                                                                   alpha, 
                                                                   A.data(), A.stride_0(), A.stride_1(),
                                                                   B.data(), B.stride_0(), B.stride_1());
@@ -169,7 +169,7 @@ namespace KokkosBatched {
              const AViewType &A,
              const BViewType &B) {
         return SerialTrsmInternalLeftLower<Algo::Trsm::Unblocked>::invoke(ArgDiag::use_unit_diag,
-                                                                          B.dimension_1(), B.dimension_0(),
+                                                                          B.extent(1), B.extent(0),
                                                                           alpha, 
                                                                           A.data(), A.stride_1(), A.stride_0(),
                                                                           B.data(), B.stride_1(), B.stride_0());
@@ -187,7 +187,7 @@ namespace KokkosBatched {
              const AViewType &A,
              const BViewType &B) {
         return SerialTrsmInternalLeftLower<Algo::Trsm::Blocked>::invoke(ArgDiag::use_unit_diag,
-                                                                        B.dimension_1(), B.dimension_0(),
+                                                                        B.extent(1), B.extent(0),
                                                                         alpha, 
                                                                         A.data(), A.stride_1(), A.stride_0(),
                                                                         B.data(), B.stride_1(), B.stride_0());
@@ -260,7 +260,7 @@ namespace KokkosBatched {
              const AViewType &A,
              const BViewType &B) {
         return SerialTrsmInternalLeftUpper<Algo::Trsm::Unblocked>::invoke(ArgDiag::use_unit_diag,
-                                                                    B.dimension_0(), B.dimension_1(),
+                                                                    B.extent(0), B.extent(1),
                                                                     alpha, 
                                                                     A.data(), A.stride_0(), A.stride_1(),
                                                                     B.data(), B.stride_0(), B.stride_1());
@@ -278,7 +278,7 @@ namespace KokkosBatched {
              const AViewType &A,
              const BViewType &B) {
         return SerialTrsmInternalLeftUpper<Algo::Trsm::Blocked>::invoke(ArgDiag::use_unit_diag,
-                                                                  B.dimension_0(), B.dimension_1(),
+                                                                  B.extent(0), B.extent(1),
                                                                   alpha, 
                                                                   A.data(), A.stride_0(), A.stride_1(),
                                                                   B.data(), B.stride_0(), B.stride_1());

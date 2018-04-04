@@ -75,8 +75,8 @@ private:
 
   Real ftol_old_;
 
-  Real scale_, omega_, force_;
-  int updateIter_, forceFactor_, cnt_;
+  Real scale_, omega_, force_, forceFactor_;
+  int updateIter_, cnt_;
 
   unsigned verbosity_;
 

@@ -4,6 +4,7 @@
 
 /// \author Kyungjoo Kim (kyukim@sandia.gov)
 
+#include "KokkosBatched_Vector.hpp"
 
 namespace KokkosBatched {
   namespace Experimental {
@@ -14,7 +15,8 @@ namespace KokkosBatched {
       template<typename AViewType>
       KOKKOS_INLINE_FUNCTION
       static int
-      invoke(const AViewType &A);
+      invoke(const AViewType &A,
+             const typename MagnitudeScalarType<typename AViewType::non_const_value_type>::type tiny = 0);
     };       
 
     template<typename MemberType,
@@ -25,7 +27,8 @@ namespace KokkosBatched {
       KOKKOS_INLINE_FUNCTION
       static int
       invoke(const MemberType &member, 
-             const AViewType &A);
+             const AViewType &A,
+             const typename MagnitudeScalarType<typename AViewType::non_const_value_type>::type tiny = 0);
     };       
       
   }

@@ -30,6 +30,7 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   Simple_UnitTests
   SOURCES
     Int_UnitTests.cpp
+    PrintDouble_UnitTests.cpp
     TemplateFunc_UnitTests.cpp
     vector_UnitTests.cpp
     ${TEUCHOS_STD_UNIT_TEST_MAIN}
@@ -38,13 +39,13 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   )
 
 IF (${PARENT_PACKAGE_NAME}_ENABLE_COMPLEX AND ${PARENT_PACKAGE_NAME}_ENABLE_FLOAT)
-  SET(PASS_STRING "Summary: total = 18, run = 17, passed = 17, failed = 0")
+  SET(PASS_STRING "Summary: total = 19, run = 18, passed = 18, failed = 0")
 ELSEIF (${PARENT_PACKAGE_NAME}_ENABLE_COMPLEX AND NOT ${PARENT_PACKAGE_NAME}_ENABLE_FLOAT)
-  SET(PASS_STRING "Summary: total = 16, run = 15, passed = 15, failed = 0")
+  SET(PASS_STRING "Summary: total = 17, run = 16, passed = 16, failed = 0")
 ELSEIF (NOT ${PARENT_PACKAGE_NAME}_ENABLE_COMPLEX AND ${PARENT_PACKAGE_NAME}_ENABLE_FLOAT)
-  SET(PASS_STRING "Summary: total = 16, run = 15, passed = 15, failed = 0")
+  SET(PASS_STRING "Summary: total = 17, run = 16, passed = 16, failed = 0")
 ELSEIF (NOT ${PARENT_PACKAGE_NAME}_ENABLE_COMPLEX AND NOT ${PARENT_PACKAGE_NAME}_ENABLE_FLOAT)
-  SET(PASS_STRING "Summary: total = 15, run = 14, passed = 14, failed = 0")
+  SET(PASS_STRING "Summary: total = 16, run = 15, passed = 15, failed = 0")
 ENDIF()
 
 

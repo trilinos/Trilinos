@@ -533,9 +533,9 @@ namespace phalanx_test {
   TEUCHOS_UNIT_TEST(kokkos, DynRankView)
   { 
     using array_type = 
-      Kokkos::Experimental::DynRankView<int, PHX::exec_space>;
+      Kokkos::DynRankView<int, PHX::exec_space>;
 
-    //using val_t = Kokkos::Experimental::DynRankView<int, PHX::exec_space>::value_type;
+    //using val_t = Kokkos::DynRankView<int, PHX::exec_space>::value_type;
 
     array_type a("a",10,4);    
     Kokkos::parallel_for(a.extent(0),AssignValue<array_type>(a));
@@ -873,11 +873,11 @@ namespace phalanx_test {
 
     // Tests for assignments from static View to DynRankView
     Kokkos::View<FadType**,typename PHX::DevLayout<FadType>::type,PHX::Device> static_a("static_a",100,8,64);
-    Kokkos::Experimental::DynRankView<FadType,typename PHX::DevLayout<FadType>::type,PHX::Device> dyn_a;
+    Kokkos::DynRankView<FadType,typename PHX::DevLayout<FadType>::type,PHX::Device> dyn_a;
     dyn_a = static_a;
 
     Kokkos::View<FadType**,Kokkos::LayoutLeft,PHX::Device> static_a_ll("static_a",100,8,64);
-    Kokkos::Experimental::DynRankView<FadType,Kokkos::LayoutLeft,PHX::Device> dyn_a_ll;
+    Kokkos::DynRankView<FadType,Kokkos::LayoutLeft,PHX::Device> dyn_a_ll;
     dyn_a_ll = static_a_ll;
   }
 }

@@ -94,7 +94,7 @@ public:
     virtual Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> > getSolver() const
       { return Teuchos::null; }
     virtual void setObserver(
-      Teuchos::RCP<StepperLeapfrogObserver<Scalar> > obs = Teuchos::null);
+      Teuchos::RCP<StepperObserver<Scalar> > obs = Teuchos::null);
 
     /// Initialize during construction and after changing input parameters.
     virtual void initialize() { this->setObserver(); }
@@ -108,6 +108,9 @@ public:
     virtual Scalar getOrder() const {return 2.0;}
     virtual Scalar getOrderMin() const {return 2.0;}
     virtual Scalar getOrderMax() const {return 2.0;}
+    virtual Scalar getInitTimeStep(
+        const Teuchos::RCP<SolutionHistory<Scalar> >& solutionHistory) const
+      {return std::numeric_limits<Scalar>::max();}
 
     virtual bool isExplicit()         const {return true;}
     virtual bool isImplicit()         const {return false;}
@@ -152,6 +155,7 @@ protected:
   Thyra::ModelEvaluatorBase::InArgs<Scalar>          inArgs_;
   Thyra::ModelEvaluatorBase::OutArgs<Scalar>         outArgs_;
 
+  Teuchos::RCP<StepperObserver<Scalar> >             stepperObserver_;
   Teuchos::RCP<StepperLeapfrogObserver<Scalar> >     stepperLFObserver_;
 };
 

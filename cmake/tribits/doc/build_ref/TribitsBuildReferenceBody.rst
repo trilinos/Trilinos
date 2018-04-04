@@ -8,6 +8,9 @@
 
 .. _TRIBITS_CTEST_DRIVER(): https://tribits.org/doc/TribitsDevelopersGuide.html#tribits-ctest-driver
 
+.. _Ninja: https://ninja-build.org
+
+
 
 Getting set up to use CMake
 ===========================
@@ -49,6 +52,27 @@ To get help for installing CMake with this script use::
 
 NOTE: you will want to read the help message about how to use sudo to
 install in a privileged location (like the default ``/usr/local/bin``).
+
+
+Installing Ninja from Source
+----------------------------
+
+The `Ninja`_ tool allows for much faster parallel builds for some large CMake
+projects and performs much faster dependency analysis than the Makefiles
+back-end build system.  It also provides some other nice features like ``ninja
+-n -d explain`` to show why the build system decides to (re)build the targets
+that it decides to build.
+
+The Kitware fork of Ninja at:
+
+  https://github.com/Kitware/ninja/releases
+
+provides releases of Ninja that allows CMake 3.7.0+ to build Fortran code with
+Ninja.  For example, the Kitware Ninja release ``1.7.2.git.kitware.dyndep-1``
+works with Fortran.
+
+Ninja is easy to install from source.  It is a simple ``configure
+--prefix=<dir>``, ``make`` and ``make install``.
 
 
 Getting CMake Help
@@ -782,6 +806,47 @@ To get the compiler to add debug symbols to the build, configure with::
 This will add ``-g`` on most compilers.  NOTE: One does **not** generally
 need to create a fully debug build to get debug symbols on most compilers.
 
+Enabling support for Ninja
+--------------------------
+
+The `Ninja`_ build tool can be used as the back-end build tool instead of
+Makefiles by adding::
+
+  -GNinja
+
+to the CMake configure line (the default on most Linux and OSX platforms is
+``-G"Unix Makefiles"``).  This instructs CMake to create the back-end
+``ninja`` build files instead of back-end Makefiles (see `Building (Ninja
+generator)`_).
+
+.. _<Project>_WRITE_NINJA_MAKEFILES:
+
+In addition, for versions of CMake 3.7.0+, the TriBITS build system will, by
+default, generate Makefiles in every binary directory where there is a
+CMakeLists.txt file in the source tree.  These Makefiles have targets scoped
+to that subdirectory that use ``ninja`` to build targets in that subdirectory
+just like with the native CMake recursive ``-G"Unix Makefiles"`` generator.
+This allows one to ``cd`` into any binary directory and type ``make`` to build
+just the targets in that directory.  These TriBITS-generated Ninja makefiles
+also support ``help`` and ``help-objects`` targets making it easy to build
+individual exectuables, libraries and object files in any binary subdirectory.
+
+**WARNING:** Using ``make -j<N>`` with these TriBITS-generated Ninja Makefiles
+will **not** result in using ``<N>`` processes to build in parallel and will
+instead use **all** of the free cores to build on the machine!  To control the
+number of processes used, run ``make NP=<N>`` instead!  See `Building in
+parallel with Ninja`_.
+
+The generation of these Ninja makefiles can be disabled by setting::
+
+  -D<Project>_WRITE_NINJA_MAKEFILES=OFF
+
+(But these Ninja Makefiles get created very quickly even for a very large
+CMake project so there is usually little reason to not generate them.)  Trying
+to set ``-D<Project>_WRITE_NINJA_MAKEFILES=ON`` for versions of CMake older
+than 3.7.0 will not work since features were added to CMake 3.7.0+ that allow
+for the generation of these makefiles.
+
 
 Enabling support for C++11
 --------------------------
@@ -1161,13 +1226,61 @@ Some machines, such as the Cray XT5, require static executables.  To build
 
 The first flag tells cmake to build static versions of the <Project>
 libraries.  The second flag tells cmake to locate static library versions of
-any required TPLs.  The third flag tells the autodetection routines that
+any required TPLs.  The third flag tells the auto-detection routines that
 search for extra required libraries (such as the mpi library and the gfortran
 library for gnu compilers) to locate static versions.
 
 NOTE: The flag ``<Project>_LINK_SEARCH_START_STATIC`` is only supported in
 cmake version 2.8.5 or higher.  The variable will be ignored in prior releases
 of cmake.
+
+
+Enabling the usage of resource files to reduce length of build lines
+--------------------------------------------------------------------
+
+CMake supports three very useful (undocumented) options for reducing the
+length of the command-lines used to build object files, create libraries, and
+link executables.  Using these options can avoid troublesome "command-line too
+long" errors, "Error 127" library creation errors, and other similar errors
+related to excessively long command lines to build various targets.
+
+To aggregate the list of all of the include directories (e.g. ``'-I
+<full_path>'``) into a single ``*.rsp`` file for compiling object files, set::
+
+  -D CMAKE_CXX_USE_RESPONSE_FILE_FOR_INCLUDES=ON
+
+To aggregate the list of all of the object files (e.g. ``'<path>/<name>.o'``)
+into a single ``*.rsp`` file for creating libraries or linking executables,
+set::
+
+  -D CMAKE_CXX_USE_RESPONSE_FILE_FOR_OBJECTS=ON
+
+To aggregate the list of all of the libraries (e.g. ``'<path>/<libname>.a'``)
+into a single ``*.rsp`` file for creating shared libraries library or linking
+executables, set::
+
+  -D CMAKE_CXX_USE_RESPONSE_FILE_FOR_LIBRARIES=ON
+
+WARNING: Some of these options don't work with some compilers (or some
+versions of CMake don't know how pass these files to these compilers
+correctly).  For example, some versions of ``gfortran`` do not accept
+``*.rsp`` files as produced with some versions of CMake.  Because of problems
+like this, TriBITS cannot robustly automatically turn on these options.
+Therefore, it is up to the user to try these options out to see if they work
+with their specific version of CMake, compilers, and OS.
+
+NOTE: One can decide to set any combination of these three options based on
+need and preference and what actually works with a given OS, version of CMake,
+and provided compilers.  For example, on one system
+``CMAKE_CXX_USE_RESPONSE_FILE_FOR_OBJECTS=ON`` may work but
+``CMAKE_CXX_USE_RESPONSE_FILE_FOR_INCLUDES=ON`` may not (which is the case for
+``gfortran`` mentioned above).  Therefore, one should experiment carefully and
+inspect the build lines using ``make VERBOSE=1 <target>`` as described in
+`Building with verbose output without reconfiguring`_ when deciding which of
+these options to enable.
+
+NOTE: Newer versions of CMake may automatically determine when these options
+need to be turned on so watch for that in looking at the build lines.
 
 
 Enabling support for an optional Third-Party Library (TPL)
@@ -1668,14 +1781,31 @@ and don't nest with the other categories.
 Disabling specific tests
 ------------------------
 
-Any TriBTS added ctest test (i.e. listed in ``ctest -N``) can be disabled at
+Any TriBTS-added ctest test (i.e. listed in ``ctest -N``) can be disabled at
 configure time by setting::
 
   -D <fullTestName>_DISABLE=ON
 
 where ``<fulltestName>`` must exactly match the test listed out by ``ctest
 -N``.  Of course specific tests can also be excluded from ``ctest`` using the
-``-E`` argument.
+``-E`` argument.  This will result in the printing of a line for the excluded
+test when `Trace test addition or exclusion`_ is enabled.
+
+
+Disabling specific test executable builds
+-----------------------------------------
+
+Any TriBITS-added exectuable (i.e. listed in ``make help``) can be disabled
+from being built by setting::
+
+  -D <exeTargetName>_EXE_DISABLE=ON
+
+where ``<exeTargetName>`` is the name of the target in the build system.
+
+Note that one should also disable any ctest tests that might use this
+executable as well with ``-D<fullTestName>_DISABLE=ON`` (see above).  This
+will result in the printing of a line for the executable target being
+disabled.
 
 
 Trace test addition or exclusion
@@ -2245,6 +2375,222 @@ CMake provides a way to rebuild a target without considering its dependencies
 using::
 
   $ make <SOME_TARGET>/fast
+
+
+Building (Ninja generator)
+==========================
+
+When using the Ninja back-end (see `Enabling support for Ninja`_), one can
+build with simply::
+
+  ninja -j<N>
+
+or use any options and workflows that the raw ``ninja`` executable supports
+(see ``ninja --help``).  In general, the ``ninja`` command can only be run
+from the base project binary directory and running it from the subdirectory
+will not work without having to use the ``-C <dir>`` option pointing to the
+base dir and one will need to pass in specific target names or the entire
+project targets will get built with the default ``all`` target.
+
+But if the TriBITS-created Ninja makefiles are also generated (see
+`<Project>_WRITE_NINJA_MAKEFILES`_), then ``make`` can be run from any
+subdirectory to build targets in that subdirectory.  Because of this and other
+advantages of these makefiles, the majority of the instructions below will be
+for running with these makefiles, not the raw ``ninja`` command.  These
+makefiles define many of the standard targets that are provided by the default
+CMake-generated makefiles like ``all``, ``clean``, ``install``, and
+``package_source`` (run ``make help`` to see all of the targets).
+
+
+Building in parallel with Ninja
+-------------------------------
+
+By default, running the raw ``ninja`` command::
+
+  ninja
+
+will use **all** of the free cores on the node to build targets in parallel on
+the machine!  This will not overload the machine but it will not leave any
+unused cores either (see Ninja documentation).
+
+To run the raw ``ninja`` command to build with a specific number of build
+processes (regardless of machine load), e.g. ``16`` build processes, use::
+
+  ninja -j16
+
+When using the TriBITS-generated Ninja makefiles, running with::
+
+  make
+
+will also use all of the free cores, and **not** just one process like with
+the default CMake-generated makefiles.
+
+But with the TriBITS-generated Ninja makefiles, to build with a specific
+number of build processes (regardless of machine load), e.g. ``16`` build
+processes, one can **not** use ``-j<N>`` but instead must use the ``NP=<N>``
+argument with::
+
+  make NP=16
+
+which will call ``ninja -j16`` internally.
+
+That reason that ``-j16`` cannot be used with these TriBITS-generated Ninja
+Makefiles is that the ``make`` program does not inform the executed
+``Makefile`` the value of this option and therefore this can't be passed on to
+the underlying ``ninja`` command.  Therefore the ``make`` option ``-j<N>`` is
+essentially ignored.  Therefore, running ``make -j16`` will result in calling
+raw ``ninja`` which will use all of the free cores on the machine.  Arguably
+that is better than using only one core and will not overload the machine but
+still this is behavior the user must be aware.
+
+
+Building in a subdirectory with Ninja
+-------------------------------------
+
+To build from a binary subdirectory in the build tree with the
+TriBITS-generated Ninja makefiles, just ``cd`` into that directory and build
+with::
+
+  cd <some-subdir>/
+  make NP=16
+
+and this will only build targets that are defined in that subdirectory.  (See
+the raw ``ninja`` command that gets called in this case which is echoed at the
+top.)
+
+
+Building verbose without reconfiguring with Ninja
+-------------------------------------------------
+
+To build targets and see the full build lines for each with the Ninja
+makefiles, build with::
+
+  make NP=10 VERBOSE=1 <target_name>
+
+But note that ``ninja`` will automatically provide the full build command for
+a build target when that target fails so the ``VERBOSE=1`` option is not
+needed in the case were a build target is failing but is useful in other cases
+none the less.
+
+
+Discovering what targets are available to build with Ninja
+----------------------------------------------------------
+
+To determine the target names for library, executable (or any other general
+target except for object files) that can be built in any binary directory with
+the TriBITS-generated Ninja Makefiles, use::
+
+  make help
+
+which will return::
+
+  This Makefile supports the following standard targets:
+  
+    all (default)
+    clean
+    help
+    install
+    test
+    package
+    package_source
+    edit_cache
+    rebuild_cache
+  
+  and the following project targets:
+  
+    <target0>
+    <target1>
+    ...
+  
+  Run 'make help-objects' to list object files.
+
+To determine the target names for building any object files that can be run in
+any directory with the TriBITS-generated Ninja Makefiles, use::
+
+  make help-objects
+
+which will return::
+
+  This Makefile supports the following object files:
+  
+    <object-target-0>
+    <object-target-1>
+    ...
+
+NOTE: The raw ``ninja`` command does not provide a compact way to list all of
+the targets that can be built in any given directory.
+
+
+Building specific targets with Ninja
+------------------------------------
+
+To build with any specific target, use::
+
+  make NP=16 <target>
+
+See `Discovering what targets are available to build with Ninja`_ for how to get
+a list of targets.
+
+
+Building single object files with Ninja
+---------------------------------------
+
+To build any object file, use::
+
+  make NP=16 <object-target>
+
+See `Discovering what targets are available to build with Ninja`_ for how to get
+a list of the object file targets.
+
+Note that unlike the native CMake-generated Makefiles, when an object target
+like this gets built, Ninja will build all of the upstream targets as well.
+For example, if you change an upstream header file and just want to see the
+impact of building a single ``*.o`` file, this target will build **all** of
+the targets for the library where the object fill will gets used.  But this is
+not generally what one wants to do to iteratively develop the compilation of a
+single object file.
+
+To avoid that behavior and instead just build a single ``*.o`` file, first one
+must instead use::
+
+  make VERBOSE=1 <object-target>
+
+to print the command-line for building the one object file, and then ``cd`` to
+the base project binary directory and manually run that command to build only
+that object file.  (This can be considered a regression w.r.t. the native
+CMake-generated Makefiles.)
+
+NOTE: The raw ``ninja`` command does not provide a compact way to list all of
+the object files that can be built and does not make it easy to build a single
+object file.
+
+
+Cleaning build targets with Ninja
+---------------------------------
+
+With the TriBITS-generated Ninja Makefiles, when one runs::
+
+  make clean
+
+in a subdirectory to clean out the targets in that subdirectory, the
+underlying ``ninja`` command will actually delete not only the targets in that
+subdirectory but instead will clean **all** the targets upstream from the
+targets in the current subdirectory as well!  This is **not** the behavior of
+the default CMake-generated Makefiles where only the generated files in that
+subdirectory will be removed and files for upstream dependencies.
+
+Therefore, if one then wants to clean only the object files, libraries, and
+executbles in a subdirectory, one should just manually delete them with::
+
+  cd <some-subdir>/
+  find . -name "*.o" -exec rm {} \;
+  find . -name "lib*.a" -exec rm {} \;
+  find . -name "lib*.so*" -exec rm {} \;
+  find . -name "*.exe" -exec rm {} \;
+
+then one can rebuild just the targets in that subdirectory with::
+
+  make NP=10
 
 
 Testing with CTest

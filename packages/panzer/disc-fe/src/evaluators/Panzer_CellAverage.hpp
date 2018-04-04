@@ -66,7 +66,29 @@ namespace panzer {
     </ParameterList>
   \endverbatim
   */
-PANZER_EVALUATOR_CLASS(CellAverage)
+template<typename EvalT, typename Traits>
+class CellAverage
+  :
+  public panzer::EvaluatorWithBaseImpl<Traits>,
+  public PHX::EvaluatorDerived<EvalT, Traits>
+{
+  public:
+
+    CellAverage(
+      const Teuchos::ParameterList& p);
+
+    void
+    postRegistrationSetup(
+      typename Traits::SetupData d,
+      PHX::FieldManager<Traits>& fm);
+
+    void
+    evaluateFields(
+      typename Traits::EvalData d);
+
+  private:
+
+    using ScalarT = typename EvalT::ScalarT;
   
   PHX::MDField<ScalarT,Cell> average;  // result
     
@@ -87,7 +109,8 @@ public:
 private:
   Teuchos::RCP<Teuchos::ParameterList> getValidParameters() const;
 
-PANZER_EVALUATOR_CLASS_END
+}; // end of class CellAverage
+
 
 /** This is a function constructor for an evaluator
   * that builds scalars from a single vector field. The user specifies

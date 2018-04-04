@@ -58,6 +58,7 @@
 #include "ROL_MoreauYosidaPenaltyStep.hpp"
 #include "ROL_BundleStep.hpp"
 #include "ROL_InteriorPointStep.hpp"
+#include "ROL_FletcherStep.hpp"
 
 namespace ROL {
 
@@ -78,6 +79,7 @@ namespace ROL {
         case STEP_PRIMALDUALACTIVESET: return ROL::makePtr<PrimalDualActiveSetStep<Real>>(parlist);
         case STEP_TRUSTREGION:         return ROL::makePtr<TrustRegionStep<Real>>(parlist);
         case STEP_INTERIORPOINT:       return ROL::makePtr<InteriorPointStep<Real>>(parlist); 
+        case STEP_FLETCHER:            return ROL::makePtr<FletcherStep<Real>>(parlist);
         default:                       return ROL::nullPtr;
       }
     }

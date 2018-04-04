@@ -51,8 +51,6 @@
 #include <Zoltan2_PartitioningProblem.hpp>
 #include <Zoltan2_PartitioningSolution.hpp>
 
-using namespace std;
-
 /*! \example block.cpp
     An example of the use of the Block algorithm to partition data.
     \todo error handling
@@ -80,18 +78,20 @@ int main(int argc, char *argv[])
   ///////////////////////////////////////////////////////////////////////
   // Generate some input data.
 
-  size_t localCount = 40*(rank+1);
-  globalId_t *globalIds = new globalId_t [localCount];
+  int localCount = 40*(rank+1);
+  int totalCount = 20*nprocs*(nprocs+1);
+  int targetCount = totalCount / nprocs;
+  globalId_t *globalIds = new globalId_t[localCount];
 
   if (rank==0)
-    for (int i=0, num=40; i <= nprocs ; i++, num+=40)
-      cout << "Rank " << i << " has " << num << " ids." << endl;
+    for (int i=0, num=40; i < nprocs ; i++, num+=40)
+      std::cout << "Rank " << i << " generates " << num << " ids." << std::endl;
 
   globalId_t offset = 0;
   for (int i=1; i <= rank; i++)
     offset += 40*i;
 
-  for (size_t i=0; i < localCount; i++)
+  for (int i=0; i < localCount; i++)
     globalIds[i] = offset++;
    
   ///////////////////////////////////////////////////////////////////////
@@ -132,10 +132,37 @@ int main(int argc, char *argv[])
   problem->solve();
 
   ///////////////////////////////////////////////////////////////////////
-  // Check the solution.
+  // Check and print the solution.
+  // Count number of IDs assigned to each part; compare to targetCount
 
-  if (rank == 0)
-    cout << "PASS" << endl;
+  const globalId_t *ids = NULL;
+  ia.getIDsView(ids);
+  std::vector<int> partCounts(nprocs, 0), globalPartCounts(nprocs, 0);
+
+  for (size_t i = 0; i < ia.getLocalNumIDs(); i++) {
+    int pp = problem->getSolution().getPartListView()[i];
+    std::cout << rank << " LID " << i << " GID " << ids[i]
+                << " PART " << pp << std::endl;
+    partCounts[pp]++;
+  }
+
+#ifdef HAVE_ZOLTAN2_MPI
+  MPI_Allreduce(&(partCounts[0]), &(globalPartCounts[0]), nprocs,
+                MPI_INT, MPI_SUM, MPI_COMM_WORLD);
+#else
+  for (int i = 0; i < nprocs; i++) globalPartCounts[i] = partCounts[i];
+#endif
+
+  if (rank == 0) {
+    int ierr = 0;
+    for (int i = 0; i < nprocs; i++)
+      if (globalPartCounts[i] != targetCount) 
+        std::cout << "FAIL: part " << i << " has " << globalPartCounts[i]
+                  << " != " << targetCount << "; " << ++ierr << " errors"
+                  << std::endl;
+    if (ierr == 0)
+      std::cout << "PASS" << std::endl;
+  }
 
   delete [] globalIds;
   delete problem;

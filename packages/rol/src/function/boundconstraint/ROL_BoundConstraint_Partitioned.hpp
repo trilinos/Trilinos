@@ -78,7 +78,8 @@ private:
 public:
   ~BoundConstraint_Partitioned() {}
 
-  BoundConstraint_Partitioned(const std::vector<ROL::Ptr<BoundConstraint<Real> > > &bnd)
+  BoundConstraint_Partitioned(const std::vector<ROL::Ptr<BoundConstraint<Real> > > &bnd,
+                              const std::vector<ROL::Ptr<Vector<Real> > > &x)
     : bnd_(bnd), dim_(bnd.size()), hasLvec_(true), hasUvec_(true) {
     BoundConstraint<Real>::deactivate();
     for( uint k=0; k<dim_; ++k ) {
@@ -91,20 +92,42 @@ public:
     std::vector<ROL::Ptr<Vector<Real> > > up(dim_);
     for( uint k=0; k<dim_; ++k ) {
       try {
-        lp[k] = bnd[k]->getLowerBound()->clone();
-        lp[k]->set(*bnd_[k]->getLowerBound());
+        lp[k] = x[k]->clone();
+        if (bnd_[k]->isLowerActivated()) {
+          lp[k]->set(*bnd_[k]->getLowerBound());
+        }
+        else {
+          lp[k]->setScalar(ROL_NINF<Real>());
+        }
       }
-      catch (std::exception &e) {
-        lp[k] = ROL::nullPtr;
-        hasLvec_ = false;
+      catch (std::exception &e1) {
+        try {
+          lp[k] = x[k]->clone();
+          lp[k]->setScalar(ROL_NINF<Real>());
+        }
+        catch (std::exception &e2) {
+          lp[k] = ROL::nullPtr;
+          hasLvec_ = false;
+        }
       }
       try {
-        up[k] = bnd[k]->getUpperBound()->clone();
-        up[k]->set(*bnd_[k]->getUpperBound());
+        up[k] = x[k]->clone();
+        if (bnd_[k]->isUpperActivated()) {
+          up[k]->set(*bnd_[k]->getUpperBound());
+        }
+        else {
+          up[k]->setScalar(ROL_INF<Real>());
+        }
       }
-      catch (std::exception &e) {
-        up[k] = ROL::nullPtr;
-        hasUvec_ = false;
+      catch (std::exception &e1) {
+        try {
+          up[k] = x[k]->clone();
+          up[k]->setScalar(ROL_INF<Real>());
+        }
+        catch (std::exception &e2) {
+          up[k] = ROL::nullPtr;
+          hasUvec_ = false;
+        }
       }
     }
     if (hasLvec_) {

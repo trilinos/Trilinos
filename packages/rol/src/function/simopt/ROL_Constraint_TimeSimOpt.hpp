@@ -167,7 +167,7 @@ public:
                 flag = true if optimization variable is changed,
                 iter is the outer algorithm iterations count.
   */
-  virtual void update_2( const Vector<Real> &z, bool flag = true, int iter = -1 ) {}
+  virtual void update_2( const Vector<Real> &z, bool flag = true, int iter = -1 ) override {}
 
   /** \brief Evaluate the constraint operator \f$c:\mathcal{U_o}\times\mathcal{U_n}\times\mathcal{Z} \rightarrow \mathcal{C}\f$
              at \f$(u,z)\f$.
@@ -245,6 +245,20 @@ public:
                                       const Vector<Real> &u_old, const Vector<Real> &u_new,
                                       const Vector<Real> &z,
                                       Real &tol) = 0;
+
+  virtual void applyAdjointHessian_11_old(Vector<Real> &ahwv_old,
+                                          const Vector<Real> &w,
+                                          const Vector<Real> &v_new,
+                                          const Vector<Real> &u_old, const Vector<Real> &u_new,
+                                          const Vector<Real> &z,
+                                          Real &tol) = 0;
+
+  virtual void applyAdjointHessian_11_new(Vector<Real> &ahwv_new,
+                                          const Vector<Real> &w,
+                                          const Vector<Real> &v_new,
+                                          const Vector<Real> &u_old, const Vector<Real> &u_new,
+                                          const Vector<Real> &z,
+                                          Real &tol) = 0;
 
   // Functions from SimOpt that are overriden
   ///////////////////////////////////////////////////////////////////////////////////////////////////
@@ -336,27 +350,25 @@ public:
                                       const Vector<Real> &v,
                                       const Vector<Real> &u,
                                       const Vector<Real> &z,
-                                      const Vector<Real> &dualv,
                                       Real &tol) override {
     Vector<Real> & ajv_old = getOldVector(ajv);
     Vector<Real> & ajv_new = getNewVector(ajv);
     const Vector<Real> & u_old = getOldVector(u);
     const Vector<Real> & u_new = getNewVector(u);
     
-    applyAdjointJacobian_1_old(ajv_old,dualv,u_old,u_new,z,tol);
-    applyAdjointJacobian_1_new(ajv_new,dualv,u_old,u_new,z,tol);
+    applyAdjointJacobian_1_old(ajv_old,v,u_old,u_new,z,tol);
+    applyAdjointJacobian_1_new(ajv_new,v,u_old,u_new,z,tol);
   }
 
   virtual void applyAdjointJacobian_2(Vector<Real> &ajv,
                                       const Vector<Real> &v,
                                       const Vector<Real> &u,
                                       const Vector<Real> &z,
-                                      const Vector<Real> &dualv,
                                       Real &tol) override {
     const Vector<Real> & u_old = getOldVector(u);
     const Vector<Real> & u_new = getNewVector(u);
     
-    applyAdjointJacobian_2_time(ajv,dualv,u_old,u_new,z,tol);
+    applyAdjointJacobian_2_time(ajv,v,u_old,u_new,z,tol);
   }
 
   virtual void applyInverseAdjointJacobian_1(Vector<Real> &iajv,
@@ -367,6 +379,154 @@ public:
     TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
       "The method applyInverseAdjointJacobian_1 is used but not implemented!\n");
   };
+
+  /** \brief Apply the simulation-space derivative of the adjoint of the constraint
+             simulation-space Jacobian at \f$(u,z)\f$ to the vector \f$w\f$ in the
+             direction \f$v\f$, according to \f$v\mapsto c_{uu}(u,z)(v,\cdot)^*w\f$.
+
+             @param[out]      ahwv is the result of applying the simulation-space derivative of the adjoint of the constraint simulation-space Jacobian at @b \f$(u,z)\f$ to the vector @b \f$w\f$ in direction @b \f$w\f$; a dual simulation-space vector
+             @param[in]       w    is the direction vector; a dual constraint-space vector
+             @param[in]       v    is a simulation-space vector
+             @param[in]       u    is the constraint argument; a simulation-space vector
+             @param[in]       z    is the constraint argument; an optimization-space vector
+             @param[in,out]   tol  is a tolerance for inexact evaluations; currently unused
+
+             On return, \f$\mathsf{ahwv} = c_{uu}(u,z)(v,\cdot)^*w\f$, where
+             \f$w \in \mathcal{C}^*\f$, \f$v \in \mathcal{U}\f$, and
+             \f$\mathsf{ahwv} \in \mathcal{U}^*\f$.
+
+             ---
+  */
+  virtual void applyAdjointHessian_11(Vector<Real> &ahwv,
+                                      const Vector<Real> &w,
+                                      const Vector<Real> &v,
+                                      const Vector<Real> &u,
+                                      const Vector<Real> &z,
+                                      Real &tol) override
+  {
+    Vector<Real> & ahwv_old = getOldVector(ahwv);
+    Vector<Real> & ahwv_new = getNewVector(ahwv);
+    const Vector<Real> & v_old = getOldVector(v);
+    const Vector<Real> & v_new = getNewVector(v);
+    const Vector<Real> & u_old = getOldVector(u);
+    const Vector<Real> & u_new = getNewVector(u);
+
+    // this implicitly assumes that there is no cross coupling
+    // between the old state and the new state. Is that true? For 
+    // simple (Euler, Theta method) integrators yes.
+    applyAdjointHessian_11_old(ahwv_old,w,v_old,u_old,u_new,z,tol);
+    applyAdjointHessian_11_new(ahwv_new,w,v_new,u_old,u_new,z,tol);
+  }
+
+  /** \brief Apply the optimization-space derivative of the adjoint of the constraint
+             simulation-space Jacobian at \f$(u,z)\f$ to the vector \f$w\f$ in the
+             direction \f$v\f$, according to \f$v\mapsto c_{uz}(u,z)(v,\cdot)^*w\f$.
+
+             @param[out]      ahwv is the result of applying the optimization-space derivative of the adjoint of the constraint simulation-space Jacobian at @b \f$(u,z)\f$ to the vector @b \f$w\f$ in direction @b \f$w\f$; a dual optimization-space vector
+             @param[in]       w    is the direction vector; a dual constraint-space vector
+             @param[in]       v    is a simulation-space vector
+             @param[in]       u    is the constraint argument; a simulation-space vector
+             @param[in]       z    is the constraint argument; an optimization-space vector
+             @param[in,out]   tol  is a tolerance for inexact evaluations; currently unused
+
+             On return, \f$\mathsf{ahwv} = c_{uz}(u,z)(v,\cdot)^*w\f$, where
+             \f$w \in \mathcal{C}^*\f$, \f$v \in \mathcal{U}\f$, and
+             \f$\mathsf{ahwv} \in \mathcal{Z}^*\f$.
+
+             ---
+  */
+  virtual void applyAdjointHessian_12(Vector<Real> &ahwv,
+                                      const Vector<Real> &w,
+                                      const Vector<Real> &v,
+                                      const Vector<Real> &u,
+                                      const Vector<Real> &z,
+                                      Real &tol) override
+  {
+    ahwv.zero();
+  }
+
+  /** \brief Apply the simulation-space derivative of the adjoint of the constraint 
+             optimization-space Jacobian at \f$(u,z)\f$ to the vector \f$w\f$ in the 
+             direction \f$v\f$, according to \f$v\mapsto c_{zu}(u,z)(v,\cdot)^*w\f$. 
+ 
+             @param[out]      ahwv is the result of applying the simulation-space derivative of the adjoint of the constraint optimization-space Jacobian at @b \f$(u,z)\f$ to the vector @b \f$w\f$ in direction @b \f$w\f$; a dual simulation-space vector 
+             @param[in]       w    is the direction vector; a dual constraint-space vector 
+             @param[in]       v    is a optimization-space vector 
+             @param[in]       u    is the constraint argument; a simulation-space vector 
+             @param[in]       z    is the constraint argument; an optimization-space vector 
+             @param[in,out]   tol  is a tolerance for inexact evaluations; currently unused 
+ 
+             On return, \f$\mathsf{ahwv} = c_{zu}(u,z)(v,\cdot)^*w\f$, where 
+             \f$w \in \mathcal{C}^*\f$, \f$v \in \mathcal{Z}\f$, and 
+             \f$\mathsf{ahwv} \in \mathcal{U}^*\f$. 
+ 
+             --- 
+  */ 
+  virtual void applyAdjointHessian_21(Vector<Real> &ahwv, 
+                                      const Vector<Real> &w, 
+                                      const Vector<Real> &v, 
+                                      const Vector<Real> &u, 
+                                      const Vector<Real> &z, 
+                                      Real &tol) override { 
+    ahwv.zero();
+  }
+
+  /** \brief Apply the optimization-space derivative of the adjoint of the constraint
+             optimization-space Jacobian at \f$(u,z)\f$ to the vector \f$w\f$ in the
+             direction \f$v\f$, according to \f$v\mapsto c_{zz}(u,z)(v,\cdot)^*w\f$.
+
+             @param[out]      ahwv is the result of applying the optimization-space derivative of the adjoint of the constraint optimization-space Jacobian at @b \f$(u,z)\f$ to the vector @b \f$w\f$ in direction @b \f$w\f$; a dual optimization-space vector
+             @param[in]       w    is the direction vector; a dual constraint-space vector
+             @param[in]       v    is a optimization-space vector
+             @param[in]       u    is the constraint argument; a simulation-space vector
+             @param[in]       z    is the constraint argument; an optimization-space vector
+             @param[in,out]   tol  is a tolerance for inexact evaluations; currently unused
+
+             On return, \f$\mathsf{ahwv} = c_{zz}(u,z)(v,\cdot)^*w\f$, where
+             \f$w \in \mathcal{C}^*\f$, \f$v \in \mathcal{Z}\f$, and
+             \f$\mathsf{ahwv} \in \mathcal{Z}^*\f$.
+
+             ---
+  */
+  virtual void applyAdjointHessian_22(Vector<Real> &ahwv,
+                                      const Vector<Real> &w,
+                                      const Vector<Real> &v,
+                                      const Vector<Real> &u,
+                                      const Vector<Real> &z,
+                                      Real &tol) override {
+    ahwv.zero();
+  }
+
+  // We override the check solve routine because we are abusing SimOpt
+  virtual Real checkSolve(const ROL::Vector<Real> &u,
+                          const ROL::Vector<Real> &z,
+                          const ROL::Vector<Real> &c,
+                          const bool printToStream = true,
+                          std::ostream & outStream = std::cout) override {
+    // Solve constraint for u. 
+    Real tol = ROL_EPSILON<Real>();
+    ROL::Ptr<ROL::Vector<Real> > r = c.clone();
+    ROL::Ptr<ROL::Vector<Real> > s = u.clone();
+    s->set(u);
+    solve(*r,*s,z,tol);
+    // Evaluate constraint residual at (u,z).
+    ROL::Ptr<ROL::Vector<Real> > cs = c.clone();
+    update(*s,z);
+    value(*cs,*s,z,tol);
+    // Output norm of residual.
+    Real rnorm = r->norm();
+    Real cnorm = cs->norm();
+    if ( printToStream ) {
+      std::stringstream hist;
+      hist << std::scientific << std::setprecision(8);
+      hist << "\nTest SimOpt solve at feasible (u,z):\n";
+      hist << "  Solver Residual = " << rnorm << "\n";
+      hist << "       ||c(u,z)|| = " << cnorm << "\n";
+      outStream << hist.str();
+    }
+    return cnorm;
+  }
+  
 
 }; // class Constraint_SimOpt
 

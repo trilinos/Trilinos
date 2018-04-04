@@ -1091,7 +1091,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(
 
   // Create subview of first column
   size_type col = 1;
-  auto s = Kokkos::Experimental::subdynrankview(v, Kokkos::ALL(), col);
+  auto s = Kokkos::subdynrankview(v, Kokkos::ALL(), col);
 
   // Copy back
   typedef decltype(s) SubviewType;
@@ -1302,9 +1302,12 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(
 TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(
   Kokkos_View_Fad, Unmanaged, FadType, Layout, Device )
 {
+  // For LayoutContiguous or LayoutNatural, strip out the layout they are templated on
+  typedef typename Kokkos::inner_layout<Layout>::type TestLayout;
+
   typedef typename FadType::value_type scalar_type;
-  typedef Kokkos::View<scalar_type***,Layout,Device> ViewType;
-  typedef Kokkos::View<FadType**,Layout,Device,Kokkos::MemoryUnmanaged> FadViewType;
+  typedef Kokkos::View<scalar_type***,TestLayout,Device> ViewType;
+  typedef Kokkos::View<FadType**,TestLayout,Device,Kokkos::MemoryUnmanaged> FadViewType;
   typedef typename ViewType::size_type size_type;
   typedef typename ViewType::HostMirror host_view_type;
   typedef typename FadViewType::HostMirror fad_host_view_type;
@@ -1317,7 +1320,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(
   ViewType v;
   host_view_type h_v;
   if (Kokkos::is_view_fad_contiguous<FadViewType>::value &&
-      std::is_same<Layout, Kokkos::LayoutLeft >::value) {
+      std::is_same<TestLayout, Kokkos::LayoutLeft >::value) {
     v = ViewType("view", fad_size+1, num_rows, num_cols);
     h_v = Kokkos::create_mirror_view(v);
     for (size_type i=0; i<num_rows; ++i) {
@@ -1363,9 +1366,12 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(
 TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(
   Kokkos_View_Fad, Unmanaged2, FadType, Layout, Device )
 {
+  // For LayoutContiguous or LayoutNatural, strip out the layout they are templated on
+  typedef typename Kokkos::inner_layout<Layout>::type TestLayout;
+
   typedef typename FadType::value_type scalar_type;
-  typedef Kokkos::View<scalar_type***,Layout,Device> ViewType;
-  typedef Kokkos::View<FadType**,Layout,Device> FadViewType;
+  typedef Kokkos::View<scalar_type***,TestLayout,Device> ViewType;
+  typedef Kokkos::View<FadType**,TestLayout,Device> FadViewType;
   typedef typename ViewType::size_type size_type;
   typedef typename ViewType::HostMirror host_view_type;
   typedef typename FadViewType::HostMirror fad_host_view_type;
@@ -1378,7 +1384,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(
   ViewType v;
   host_view_type h_v;
   if (Kokkos::is_view_fad_contiguous<FadViewType>::value &&
-      std::is_same<Layout, Kokkos::LayoutLeft >::value) {
+      std::is_same<TestLayout, Kokkos::LayoutLeft >::value) {
     v = ViewType("view", fad_size+1, num_rows, num_cols);
     h_v = Kokkos::create_mirror_view(v);
     for (size_type i=0; i<num_rows; ++i) {
@@ -1424,11 +1430,14 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(
 TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(
   Kokkos_View_Fad, UnmanagedConst, FadType, Layout, Device )
 {
+  // For LayoutContiguous or LayoutNatural, strip out the layout they are templated on
+  typedef typename Kokkos::inner_layout<Layout>::type TestLayout;
+
   typedef typename FadType::value_type scalar_type;
-  typedef Kokkos::View<scalar_type***,Layout,Device> ViewType;
-  typedef Kokkos::View<const scalar_type***,Layout,Device> ConstViewType;
-  typedef Kokkos::View<FadType**,Layout,Device,Kokkos::MemoryUnmanaged> FadViewType;
-  typedef Kokkos::View<const FadType**,Layout,Device,Kokkos::MemoryUnmanaged> ConstFadViewType;
+  typedef Kokkos::View<scalar_type***,TestLayout,Device> ViewType;
+  typedef Kokkos::View<const scalar_type***,TestLayout,Device> ConstViewType;
+  typedef Kokkos::View<FadType**,TestLayout,Device,Kokkos::MemoryUnmanaged> FadViewType;
+  typedef Kokkos::View<const FadType**,TestLayout,Device,Kokkos::MemoryUnmanaged> ConstFadViewType;
   typedef typename ViewType::size_type size_type;
   typedef typename ViewType::HostMirror host_view_type;
   typedef typename FadViewType::HostMirror fad_host_view_type;
@@ -1441,7 +1450,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(
   ViewType v;
   host_view_type h_v;
   if (Kokkos::is_view_fad_contiguous<FadViewType>::value &&
-      std::is_same<Layout, Kokkos::LayoutLeft >::value) {
+      std::is_same<TestLayout, Kokkos::LayoutLeft >::value) {
     v = ViewType("view", fad_size+1, num_rows, num_cols);
     h_v = Kokkos::create_mirror_view(v);
     for (size_type i=0; i<num_rows; ++i) {
@@ -1489,11 +1498,13 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(
 TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(
   Kokkos_View_Fad, UnmanagedConst2, FadType, Layout, Device )
 {
+  // For LayoutContiguous or LayoutNatural, strip out the layout they are templated on
+  typedef typename Kokkos::inner_layout<Layout>::type TestLayout;
   typedef typename FadType::value_type scalar_type;
-  typedef Kokkos::View<scalar_type***,Layout,Device> ViewType;
-  typedef Kokkos::View<const scalar_type***,Layout,Device> ConstViewType;
-  typedef Kokkos::View<FadType**,Layout,Device> FadViewType;
-  typedef Kokkos::View<const FadType**,Layout,Device> ConstFadViewType;
+  typedef Kokkos::View<scalar_type***,TestLayout,Device> ViewType;
+  typedef Kokkos::View<const scalar_type***,TestLayout,Device> ConstViewType;
+  typedef Kokkos::View<FadType**,TestLayout,Device> FadViewType;
+  typedef Kokkos::View<const FadType**,TestLayout,Device> ConstFadViewType;
   typedef typename ViewType::size_type size_type;
   typedef typename ViewType::HostMirror host_view_type;
   typedef typename FadViewType::HostMirror fad_host_view_type;
@@ -1506,7 +1517,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(
   ViewType v;
   host_view_type h_v;
   if (Kokkos::is_view_fad_contiguous<FadViewType>::value &&
-      std::is_same<Layout, Kokkos::LayoutLeft >::value) {
+      std::is_same<TestLayout, Kokkos::LayoutLeft >::value) {
     v = ViewType("view", fad_size+1, num_rows, num_cols);
     h_v = Kokkos::create_mirror_view(v);
     for (size_type i=0; i<num_rows; ++i) {
@@ -1644,6 +1655,51 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(
 #endif
 }
 
+TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(
+  Kokkos_View_Fad, AssignLayoutContiguousToLayoutStride, FadType, Layout, Device )
+{
+  typedef Kokkos::View<FadType**,Kokkos::LayoutContiguous<Layout>,Device> ContViewType;
+  typedef Kokkos::View<FadType**,Kokkos::LayoutStride,Device> StrideViewType;
+  typedef typename ContViewType::size_type size_type;
+  typedef typename ContViewType::HostMirror cont_host_view_type;
+  typedef typename StrideViewType::HostMirror stride_host_view_type;
+
+  const size_type num_rows = global_num_rows;
+  const size_type num_cols = global_num_cols;
+  const size_type fad_size = global_fad_size;
+
+  // Create and fill view
+  ContViewType v("view", num_rows, num_cols, fad_size+1);
+  cont_host_view_type h_v = Kokkos::create_mirror_view(v);
+
+  for (size_type i=0; i<num_rows; ++i) {
+    for (size_type j=0; j<num_cols; ++j) {
+      FadType f = generate_fad<FadType>(num_rows, num_cols, fad_size, i, j);
+      h_v(i,j) = f;
+    }
+  }
+  Kokkos::deep_copy(v, h_v);
+
+  // Assign to LayoutStride view
+  StrideViewType vs = v;
+
+  // Copy back
+  stride_host_view_type h_vs = Kokkos::create_mirror_view(vs);
+  Kokkos::deep_copy(h_vs, vs);
+
+  // Check
+  success = true;
+  TEUCHOS_TEST_EQUALITY(h_vs.dimension_0(), num_rows, out, success);
+  TEUCHOS_TEST_EQUALITY(h_vs.dimension_1(), num_cols, out, success);
+  TEUCHOS_TEST_EQUALITY(Kokkos::dimension_scalar(h_vs), fad_size+1, out, success);
+  for (size_type i=0; i<num_rows; ++i) {
+    for (size_type j=0; j<num_cols; ++j) {
+      FadType f = generate_fad<FadType>(num_rows, num_cols, fad_size, i, j);
+      success = success && checkFads(f, h_vs(i,j), out);
+    }
+  }
+}
+
 #else
 
 TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(
@@ -1685,6 +1741,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(
 TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(
   Kokkos_View_Fad, Partition, FadType, Layout, Device ) {}
 
+TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(
+  Kokkos_View_Fad, AssignLayoutContiguousToLayoutStride, FadType, Layout, Device ) {}
+
 #endif
 
 #define VIEW_FAD_TESTS_FLD( F, L, D )                                   \
@@ -1725,7 +1784,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(
   using Kokkos::LayoutLeft;                                             \
   using Kokkos::LayoutRight;                                            \
   VIEW_FAD_TESTS_FLD( F, LayoutLeft, D )                                \
-  VIEW_FAD_TESTS_FLD( F, LayoutRight, D )
+  VIEW_FAD_TESTS_FLD( F, LayoutRight, D )                               \
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Kokkos_View_Fad, AssignLayoutContiguousToLayoutStride, F, LayoutLeft, D ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Kokkos_View_Fad, AssignLayoutContiguousToLayoutStride, F, LayoutRight, D )
 #define VIEW_FAD_TESTS_SFDI( F, D )                                     \
   using Kokkos::LayoutLeft;                                             \
   using Kokkos::LayoutRight;                                            \

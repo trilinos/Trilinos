@@ -40,6 +40,7 @@
     <ParameterList name="Default Stepper">
 
       <Parameter name="Stepper Type"   type="string" value="BDF2"/>
+      <Parameter name="Zero Initial Guess" type="bool" value="0"/>
       <Parameter name="Solver Name"    type="string" value="Default Solver"/>
       <Parameter name="Start Up Stepper Name" type="string" value="Default Start Up Stepper"/>
 

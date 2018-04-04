@@ -90,6 +90,7 @@ INCLUDE_DIRECTORIES(${DIR}
                     ${DIR}/moreauyosidapenalty
                     ${DIR}/interiorpoint
                     ${DIR}/nonlinearcg
+                    ${DIR}/fletcher
                    )
 APPEND_GLOB(HEADERS ${DIR}/*.hpp
                     ${DIR}/linesearch/*.hpp 
@@ -101,6 +102,7 @@ APPEND_GLOB(HEADERS ${DIR}/*.hpp
                     ${DIR}/moreauyosidapenalty/*.hpp
                     ${DIR}/interiorpoint/*.hpp
                     ${DIR}/nonlinearcg/*.hpp
+		    ${DIR}/fletcher/*.hpp
                    )
 
 #
@@ -125,9 +127,19 @@ APPEND_GLOB(HEADERS ${DIR}/*.hpp)
 SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_SOURCE_DIR}/sol)
 INCLUDE_DIRECTORIES(${DIR}/function
                     ${DIR}/function/distribution
-                    ${DIR}/function/riskmeasure
-                    ${DIR}/function/riskmeasure/quadrangle
-                    ${DIR}/function/riskmeasure/fdivergence
+                    ${DIR}/function/expectationquad
+                    ${DIR}/function/randvarfunctional
+                    ${DIR}/function/randvarfunctional/risk
+                    ${DIR}/function/randvarfunctional/risk/fdivergence
+                    ${DIR}/function/randvarfunctional/risk/spectral
+                    ${DIR}/function/randvarfunctional/error
+                    ${DIR}/function/randvarfunctional/regret
+                    ${DIR}/function/randvarfunctional/deviation
+                    ${DIR}/function/randvarfunctional/probability
+#                    ${DIR}/function/riskmeasure
+#                    ${DIR}/function/riskmeasure/quadrangle
+#                    ${DIR}/function/riskmeasure/fdivergence
+#                    ${DIR}/function/errormeasure
                     ${DIR}/algorithm
                     ${DIR}/vector
                     ${DIR}/sampler
@@ -136,8 +148,18 @@ INCLUDE_DIRECTORIES(${DIR}/function
 APPEND_GLOB(HEADERS ${DIR}/function/*.hpp 
                     ${DIR}/function/distribution/*.hpp
                     ${DIR}/function/riskmeasure/*.hpp
-                    ${DIR}/function/riskmeasure/quadrangle/*.hpp
-                    ${DIR}/function/riskmeasure/fdivergence/*.hpp
+                    ${DIR}/function/expectationquad/*.hpp
+                    ${DIR}/function/randvarfunctional/*.hpp
+                    ${DIR}/function/randvarfunctional/risk/*.hpp
+                    ${DIR}/function/randvarfunctional/risk/fdivergence/*.hpp
+                    ${DIR}/function/randvarfunctional/risk/spectral/*.hpp
+                    ${DIR}/function/randvarfunctional/error/*.hpp
+                    ${DIR}/function/randvarfunctional/regret/*.hpp
+                    ${DIR}/function/randvarfunctional/deviation/*.hpp
+                    ${DIR}/function/randvarfunctional/probability/*.hpp
+#                    ${DIR}/function/riskmeasure/quadrangle/*.hpp
+#                    ${DIR}/function/riskmeasure/fdivergence/*.hpp
+#                    ${DIR}/function/errormeasure/*.hpp
                     ${DIR}/algorithm/*.hpp
                     ${DIR}/vector/*.hpp
                     ${DIR}/sampler/*.hpp
@@ -165,8 +187,10 @@ APPEND_GLOB(HEADERS ${DIR}/*.hpp)
 #
 
 SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_SOURCE_DIR}/zoo)
-INCLUDE_DIRECTORIES(${DIR})
-APPEND_GLOB(HEADERS ${DIR}/*.hpp)
+INCLUDE_DIRECTORIES(${DIR}
+                    ${DIR}/testproblems)
+APPEND_GLOB(HEADERS ${DIR}/*.hpp
+                    ${DIR}/testproblems/*.hpp)
 
 #
 # All sources

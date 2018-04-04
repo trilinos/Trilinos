@@ -281,7 +281,7 @@ TEUCHOS_UNIT_TEST(ForwardEuler, SinCos)
   double error0 = 0.8*ErrorNorm[0];
   for (int n=0; n<nTimeStepSizes; n++) {
     ftmp << StepSize[n]  << "   " << ErrorNorm[n] << "   "
-         << error0*(StepSize[n]/StepSize[0]) << std::endl;
+         << error0*(pow(StepSize[n]/StepSize[0],order)) << std::endl;
   }
   ftmp.close();
 
@@ -388,7 +388,7 @@ TEUCHOS_UNIT_TEST(ForwardEuler, VanDerPol)
     double error0 = 0.8*ErrorNorm[0];
     for (std::size_t n = 0; n < StepSizeCheck.size(); n++) {
       ftmp << StepSizeCheck[n]  << "   " << ErrorNorm[n] << "   "
-           << error0*(StepSize[n]/StepSize[0]) << std::endl;
+           << error0*(pow(StepSize[n]/StepSize[0],order)) << std::endl;
     }
     ftmp.close();
   }
@@ -404,7 +404,7 @@ TEUCHOS_UNIT_TEST(ForwardEuler, NumberTimeSteps)
   std::vector<double> StepSize;
   std::vector<double> ErrorNorm;
   //const int nTimeStepSizes = 7;
-  double dt = 0.2;
+  //double dt = 0.2;
   //double order = 0.0;
 
     // Read params from .xml file
@@ -419,9 +419,9 @@ TEUCHOS_UNIT_TEST(ForwardEuler, NumberTimeSteps)
     // Setup the Integrator and reset initial time step
     RCP<ParameterList> pl = sublist(pList, "Tempus", true);
 
-    dt = pl->sublist("Demo Integrator")
-            .sublist("Time Step Control")
-            .get<double>("Initial Time Step");
+    //dt = pl->sublist("Demo Integrator")
+    //        .sublist("Time Step Control")
+    //        .get<double>("Initial Time Step");
     const int numTimeSteps = pl->sublist("Demo Integrator")
                                 .sublist("Time Step Control")
                                 .get<int>("Number of Time Steps");

@@ -17,4 +17,3 @@
 #
 
 module purge 
-export TRILINOS_SEMS_DEV_ENV_LOADED=

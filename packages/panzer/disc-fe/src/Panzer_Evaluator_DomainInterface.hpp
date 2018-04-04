@@ -27,7 +27,7 @@ namespace panzer {
      *
      * \param[in] domain (optional) Cell domain to iterate over (defaults to ALL)
      */
-    DomainEvaluator(int domain=ALL);
+    DomainEvaluator(DomainType domain=ALL);
 
     /**
      * \brief Default destructor
@@ -39,7 +39,13 @@ namespace panzer {
      *
      * \param[in] domain Domain to set
      */
-    void setDomain(const int domain);
+    void setDomain(const DomainType domain);
+    
+    /**
+     * \brief Get the domain for the evaluator
+     *
+     */
+    DomainType getDomain();
 
     /**
      * \brief Returns the starting cell for the specified domain for a given workset
@@ -70,7 +76,7 @@ namespace panzer {
   private:
 
     /// Domain for this evaluator
-    int domain_;
+    DomainType domain_;
 
   };
 

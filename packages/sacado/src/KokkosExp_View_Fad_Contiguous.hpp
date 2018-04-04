@@ -316,7 +316,7 @@ namespace Impl {
 
 #if defined (KOKKOS_HAVE_CUDA) && defined(SACADO_VIEW_CUDA_HIERARCHICAL)
 template< class OutputView >
-struct ViewFill<
+struct SacadoViewFill<
   OutputView,
   typename std::enable_if<
     ( Kokkos::is_view_fad_contiguous<OutputView>::value &&
@@ -367,15 +367,13 @@ struct ViewFill<
       (*this)(i0);
   }
 
-  ViewFill( const OutputView & arg_out , const_value_type & arg_in )
+  SacadoViewFill( const OutputView & arg_out , const_value_type & arg_in )
     : output( arg_out ), input( arg_in )
     {
       const size_t team_size = 256 / stride;
-      team_policy policy( (output.dimension_0()+team_size-1)/team_size , team_size , stride );
-      const Kokkos::Impl::ParallelFor< ViewFill , team_policy > closure( *this , policy );
-
-      closure.execute();
-
+      team_policy policy( (output.dimension_0()+team_size-1)/team_size ,
+                          team_size , stride );
+      Kokkos::parallel_for( policy, *this );
       execution_space::fence();
     }
 };
@@ -1205,6 +1203,113 @@ public:
 
 /**\brief  Assign compatible Sacado FAD view mappings.
  *
+ *  View<FAD,LayoutStride>      = View<FAD,LayoutContiguous>
+ */
+template< class DstTraits , class SrcTraits >
+class ViewMapping< DstTraits , SrcTraits ,
+  typename std::enable_if<(
+    std::is_same< typename DstTraits::memory_space
+                , typename SrcTraits::memory_space >::value
+    &&
+    // Destination view has FAD
+    std::is_same< typename DstTraits::specialize
+                , ViewSpecializeSacadoFad >::value
+    &&
+    // Source view has FAD contiguous
+    std::is_same< typename SrcTraits::specialize
+                , ViewSpecializeSacadoFadContiguous >::value
+    &&
+    // Destination view is LayoutStride
+    std::is_same< typename DstTraits::array_layout
+                , Kokkos::LayoutStride >::value
+  )>::type >
+{
+public:
+
+  enum { is_assignable = true };
+
+  typedef Kokkos::Impl::SharedAllocationTracker  TrackType ;
+  typedef ViewMapping< DstTraits , void >  DstType ;
+  typedef ViewMapping< SrcTraits , void >  SrcFadType ;
+
+  template< class DstType >
+  KOKKOS_INLINE_FUNCTION static
+  void assign( DstType & dst
+             , const SrcFadType & src
+             , const TrackType & )
+    {
+      static_assert(
+        std::is_same< typename SrcTraits::array_layout
+                    , Kokkos::LayoutLeft >::value ||
+        std::is_same< typename SrcTraits::array_layout
+                    , Kokkos::LayoutRight >::value ||
+        std::is_same< typename SrcTraits::array_layout
+                    , Kokkos::LayoutStride >::value ,
+        "View of FAD requires LayoutLeft, LayoutRight, or LayoutStride" );
+
+      static_assert(
+        std::is_same< typename DstTraits::value_type
+                    , typename SrcTraits::value_type >::value ||
+        std::is_same< typename DstTraits::value_type
+                    , typename SrcTraits::const_value_type >::value ,
+        "View assignment must have same value type or const = non-const" );
+
+      static_assert(
+        DstTraits::dimension::rank == SrcTraits::dimension::rank,
+        "View assignment must have same rank" );
+
+      typedef typename DstType::offset_type  dst_offset_type ;
+
+      dst.m_handle  = src.m_handle ;
+      dst.m_fad_size = src.m_fad_size.value ;
+      dst.m_fad_stride = src.m_fad_stride ;
+
+      size_t N[8], S[8];
+      N[0] = src.m_array_offset.dimension_0();
+      N[1] = src.m_array_offset.dimension_1();
+      N[2] = src.m_array_offset.dimension_2();
+      N[3] = src.m_array_offset.dimension_3();
+      N[4] = src.m_array_offset.dimension_4();
+      N[5] = src.m_array_offset.dimension_5();
+      N[6] = src.m_array_offset.dimension_6();
+      N[7] = src.m_array_offset.dimension_7();
+      S[0] = src.m_array_offset.stride_0();
+      S[1] = src.m_array_offset.stride_1();
+      S[2] = src.m_array_offset.stride_2();
+      S[3] = src.m_array_offset.stride_3();
+      S[4] = src.m_array_offset.stride_4();
+      S[5] = src.m_array_offset.stride_5();
+      S[6] = src.m_array_offset.stride_6();
+      S[7] = src.m_array_offset.stride_7();
+
+      // For LayoutLeft, we have to move the Sacado dimension from the first
+      // to the last
+      if (std::is_same< typename SrcTraits::array_layout
+                      , Kokkos::LayoutLeft >::value)
+      {
+        const size_t N_fad = N[0];
+        const size_t S_fad = S[0];
+        for (int i=0; i<7; ++i) {
+          N[i] = N[i+1];
+          S[i] = S[i+1];
+        }
+        N[DstTraits::dimension::rank] = N_fad;
+        S[DstTraits::dimension::rank] = S_fad;
+      }
+      Kokkos::LayoutStride ls( N[0], S[0],
+                               N[1], S[1],
+                               N[2], S[2],
+                               N[3], S[3],
+                               N[4], S[4],
+                               N[5], S[5],
+                               N[6], S[6],
+                               N[7], S[7] );
+      dst.m_offset  = dst_offset_type(std::integral_constant<unsigned,0>(), ls);
+    }
+};
+
+/**\brief  Assign compatible Sacado FAD view mappings.
+ *
  *  View<ordinary> = View<FAD>
  */
 template< class DstTraits , class SrcTraits >
@@ -1229,11 +1334,79 @@ public:
   typedef ViewMapping< DstTraits , void >  DstType ;
   typedef ViewMapping< SrcTraits , void >  SrcFadType ;
 
+
+  // Helpers to assign, and generate if necessary, ViewOffset to the dst map
+  // These are necessary to use Kokkos' deep_copy with nested fads
+  template < class DstType, class SrcFadType, class Enable = void > 
+    struct AssignOffset;
+
+  template < class DstType, class SrcFadType > 
+    struct AssignOffset< DstType, SrcFadType, typename std::enable_if< ((int)DstType::offset_type::dimension_type::rank != (int)SrcFadType::array_offset_type::dimension_type::rank) >::type >
+    {
+      // ViewOffset's Dimensions Ranks do not match
+      KOKKOS_INLINE_FUNCTION
+      static void assign( DstType & dst, const SrcFadType & src ) 
+      {
+        typedef typename SrcTraits::value_type TraitsValueType;
+
+        if ( Sacado::IsFad<TraitsValueType>::value 
+            && Sacado::IsStaticallySized< typename Sacado::ValueType< TraitsValueType >::type >::value 
+           ) 
+        {
+
+          typedef typename DstType::offset_type::array_layout DstLayoutType;
+          //typedef typename ViewArrayLayoutSelector<typename DstType::offset_type::array_layout>::type DstLayoutType;
+          typedef typename SrcFadType::array_offset_type::dimension_type SrcViewDimension;
+
+          // This is the static dimension of the inner fad, missing from ViewDimension
+          const size_t InnerStaticDim = Sacado::StaticSize< typename Sacado::ValueType< TraitsValueType >::type >::value;
+
+          static constexpr bool is_layout_left =
+            std::is_same< DstLayoutType, Kokkos::LayoutLeft>::value;
+
+          typedef typename std::conditional< is_layout_left, 
+                                             typename SrcViewDimension:: template prepend< InnerStaticDim+1 >::type,
+                                             typename SrcViewDimension:: template append < InnerStaticDim+1 >::type
+                    >::type SrcViewDimensionAppended;
+
+          typedef std::integral_constant< unsigned , 0 >  padding ;
+
+          typedef ViewOffset< SrcViewDimensionAppended, DstLayoutType > TmpOffsetType;
+
+          auto src_layout = src.m_array_offset.layout();
+
+          if ( is_layout_left ) {
+            auto prepend_layout = Kokkos::Impl::prependFadToLayout< DstLayoutType >::returnNewLayoutPlusFad(src_layout, InnerStaticDim+1);
+            TmpOffsetType offset_tmp( padding(), prepend_layout );
+            dst.m_offset = offset_tmp;
+          }
+          else {
+            TmpOffsetType offset_tmp( padding(), src_layout );
+            dst.m_offset = offset_tmp;
+          }
+        } else {
+          Kokkos::abort("Sacado error: Applying AssignOffset for case with nested Fads, but without nested Fads - something went wrong");
+        }
+      }
+    };
+
+  template < class DstType, class SrcFadType > 
+    struct AssignOffset< DstType, SrcFadType, typename std::enable_if< ((int)DstType::offset_type::dimension_type::rank == (int)SrcFadType::array_offset_type::dimension_type::rank) >::type >
+    {
+      KOKKOS_INLINE_FUNCTION
+      static void assign( DstType & dst, const SrcFadType & src ) 
+      {
+        typedef typename DstType::offset_type  dst_offset_type ;
+        dst.m_offset  = dst_offset_type( src.m_array_offset );
+      }
+    };
+
   template< class DstType >
   KOKKOS_INLINE_FUNCTION static
   void assign( DstType & dst
              , const SrcFadType & src
-             , const TrackType & )
+             , const TrackType & 
+             )
     {
       static_assert(
         (
@@ -1262,27 +1435,12 @@ public:
                     , Kokkos::LayoutStride >::value ,
         "View assignment must have compatible layout" );
 
-      static_assert(
-        std::is_same< typename DstTraits::scalar_array_type
-                    , typename SrcTraits::scalar_array_type >::value ||
-        std::is_same< typename DstTraits::scalar_array_type
-                    , typename SrcTraits::const_scalar_array_type >::value ,
-        "View assignment must have same value type or const = non-const" );
-
-      static_assert(
-        ViewDimensionAssignable
-          < typename DstType::offset_type::dimension_type
-          , typename SrcFadType::array_offset_type::dimension_type >::value ,
-        "View assignment must have compatible dimensions" );
-
       if ( src.m_fad_index != 0 || src.m_fad_stride != 1 ) {
         Kokkos::abort("\n\n ******  Kokkos::View< Sacado::Fad ... > Cannot assign to array with partitioned view ******\n\n");
       }
 
-      typedef typename DstType::offset_type  dst_offset_type ;
-
-      dst.m_offset  = dst_offset_type( src.m_array_offset );
-      dst.m_handle  = src.m_handle ;
+      AssignOffset< DstType, SrcFadType >::assign( dst, src );
+      dst.m_handle  = reinterpret_cast< typename DstType::handle_type >(src.m_handle) ;
     }
 };
 
