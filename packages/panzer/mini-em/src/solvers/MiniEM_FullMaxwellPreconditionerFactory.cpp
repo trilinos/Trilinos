@@ -47,13 +47,14 @@ void writeOut(const std::string & s,const Thyra::LinearOpBase<double> & op)
 void describeMatrix(const std::string & s,const Thyra::LinearOpBase<double> & op,Teuchos::RCP<Teuchos::FancyOStream> out)
 {
   using Teuchos::RCP;
-
   typedef Tpetra::DefaultPlatform::DefaultPlatformType::NodeType NT;
-  const RCP<const Thyra::TpetraLinearOp<double,int,panzer::Ordinal64,NT> > tOp = rcp_dynamic_cast<const Thyra::TpetraLinearOp<double,int,panzer::Ordinal64,NT> >(Teuchos::rcpFromRef(op));
-  if(tOp != Teuchos::null) {
-    const RCP<const Tpetra::CrsMatrix<double,int,panzer::Ordinal64,NT> > crsOp = rcp_dynamic_cast<const Tpetra::CrsMatrix<double,int,panzer::Ordinal64,NT> >(tOp->getConstTpetraOperator(),true);
-    *out << "\nDebug: " << s << std::endl;
-    crsOp->describe(*out,Teuchos::VERB_MEDIUM);
+  if (out!=Teuchos::null) {
+    const RCP<const Thyra::TpetraLinearOp<double,int,panzer::Ordinal64,NT> > tOp = rcp_dynamic_cast<const Thyra::TpetraLinearOp<double,int,panzer::Ordinal64,NT> >(Teuchos::rcpFromRef(op));
+    if(tOp != Teuchos::null) {
+      const RCP<const Tpetra::CrsMatrix<double,int,panzer::Ordinal64,NT> > crsOp = rcp_dynamic_cast<const Tpetra::CrsMatrix<double,int,panzer::Ordinal64,NT> >(tOp->getConstTpetraOperator(),true);
+      *out << "\nDebug: " << s << std::endl;
+      crsOp->describe(*out,Teuchos::VERB_MEDIUM);
+    }
   }
 }
 
@@ -72,8 +73,8 @@ Teko::LinearOp FullMaxwellPreconditionerFactory::buildPreconditionerOperator(Tek
    if (params.isParameter("Debug") && params.get<bool>("Debug"))
      debug = Teko::getOutputStream();
    else
-     debug = Teuchos::getFancyOStream(Teuchos::rcp(new Teuchos::oblackholestream()));
-   
+     debug = Teuchos::null;
+
    // Check that system is right size
    int rows = Teko::blockRowCount(blo);
    int cols = Teko::blockColCount(blo);
@@ -83,23 +84,28 @@ Teko::LinearOp FullMaxwellPreconditionerFactory::buildPreconditionerOperator(Tek
    // Extract the blocks
    Teko::LinearOp Q_B   = Teko::getBlock(0,0,blo);  // actually 1/dt * Q_B = mu/dt * M_2(1/mu)
    Teko::LinearOp K     = Teko::getBlock(0,1,blo);  // actually K = Q_B * D_1 = mu * M_2(1/mu) * D_1
-   Teko::LinearOp Kt    = Teko::getBlock(1,0,blo);  // actually -Kt  = - mu * D_1^T * M_2(1/mu) 
+   Teko::LinearOp Kt    = Teko::getBlock(1,0,blo);  // actually -Kt  = - D_1^T * M_2(1/mu) 
    Teko::LinearOp Q_E   = Teko::getBlock(1,1,blo);  // actually 1/(c^2*dt) * Q_E = 1/dt * M_1(eps)
+
+   Teko::LinearOp Q_rho = getRequestHandler()->request<Teko::LinearOp>(Teko::RequestMesg("Mass Matrix AUXILIARY_NODE"));
 
    if (dump) {
      writeOut("Q_B.mm",*Q_B);
      writeOut("K.mm",*K);
      writeOut("Kt.mm",*Kt);
      writeOut("Q_E.mm",*Q_E);
+     writeOut("Q_rho.mm",*Q_rho);
    }
 
    describeMatrix("Q_B",*Q_B,debug);
    describeMatrix("K",*K,debug);
    describeMatrix("Kt",*Kt,debug);
    describeMatrix("Q_E",*Q_E,debug);
+   describeMatrix("Q_rho",*Q_rho,debug);
 
    //for refmaxwell: Q_rho = M_0(epsilon / dt / cfl^2 / min_dx^2)
-   // S_E = Q_E - Kt * Q_B^-1 * K = 1/dt * M_1(eps) + dt * D_1^T * M_2(1/mu) * D_1
+   // S_E = Q_E - Kt * Q_B^-1 * K
+   //     = 1/dt * M_1(eps) + dt * D_1^T * M_2(1/mu) * D_1
    // addon: dt * M_1(1) * D_0 * M_0(mu)^-1 * D_0^T * M_1(1) 
    
    if(!use_refmaxwell) // Augmentation based solver
@@ -111,14 +117,15 @@ Teko::LinearOp FullMaxwellPreconditionerFactory::buildPreconditionerOperator(Tek
      // Compute the approximate Schur complement
      Teko::LinearOp idQ_B = Teko::getInvDiagonalOp(Q_B,Teko::AbsRowSum);
      Teko::LinearOp KtK   = Teko::explicitMultiply(Kt,idQ_B,K);
-     *Teko::getOutputStream() << "Adding up S_E" << std::endl;
+     if (debug != Teuchos::null) 
+       *debug << "Adding up S_E" << std::endl;
      Teko::LinearOp S_E   = Teko::explicitAdd(Q_E, Thyra::scale(-1.0,KtK));
-     *Teko::getOutputStream() << "Added up S_E" << std::endl;
+     if (debug != Teuchos::null) 
+       *debug << "Added up S_E" << std::endl;
 
      // Get auxiliary operators for gradient and nodal mass matrix
      Teko::LinearOp G     = getRequestHandler()->request<Teko::LinearOp>(Teko::RequestMesg("Weak Gradient"));
      Teko::LinearOp Gt    = Teko::explicitTranspose(G);
-     Teko::LinearOp Q_rho = getRequestHandler()->request<Teko::LinearOp>(Teko::RequestMesg("Mass Matrix AUXILIARY_NODE"));
 
      if (dump) {
        writeOut("Q_rho.mm",*Q_rho);
@@ -136,10 +143,12 @@ Teko::LinearOp FullMaxwellPreconditionerFactory::buildPreconditionerOperator(Tek
      double scaling = Teko::infNorm(Q_E)/Teko::infNorm(GGt);
 
      // Augmented Schur complement and its inverse
-     *debug << "Adding up T_E" << std::endl;
+     if (debug != Teuchos::null)
+       *debug << "Adding up T_E" << std::endl;
      Teko::LinearOp T_E = Teko::explicitAdd(S_E, Thyra::scale(scaling,GGt));
-     *debug << "Added up T_E" << std::endl;
-     *debug << "Building T_E inverse operator" << std::endl;
+     if (debug != Teuchos::null) 
+       *debug << "Added up T_E" << std::endl;
+     *Teko::getOutputStream() << "Building T_E inverse operator" << std::endl;
      Teko::LinearOp invT_E = Teko::buildInverse(*invLib.getInverseFactory("T_E Solve"),T_E);
 
      // Correction term
@@ -287,7 +296,7 @@ void FullMaxwellPreconditionerFactory::initializeFromParameterList(const Teuchos
    if (doDebug)
      debug = Teko::getOutputStream();
    else
-     debug = Teuchos::getFancyOStream(Teuchos::rcp(new Teuchos::oblackholestream()));
+     debug = Teuchos::null;
 
    // dump matrices
    dump = false;
