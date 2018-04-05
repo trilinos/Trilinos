@@ -1,5 +1,3 @@
-// -*- c++ -*-
-
 // @HEADER
 // ***********************************************************************
 //
@@ -42,84 +40,60 @@
 // ***********************************************************************
 // @HEADER
 
-%define %pliris_docstring
-"
-PyTrilinos.Pliris is the python interface to the Trilinos package
-Pliris, an LU solver for dense matrices:
+#ifndef PYTRILINOS_TEUCHOS_HEADERS_
+#define PYTRILINOS_TEUCHOS_HEADERS_
 
-    http://trilinos.sandia.gov/packages/pliris
-
-The purpose of Pliris is to provide an object-oriented interface to an
-LU solver for dense matrices on parallel platforms. These matrices are
-double precision real matrices distributed on a parallel machine.  The
-python version of the Pliris package supports the following class:
-
-    * Pliris  - Primary solver class.
-"
-%enddef
-
-%module(package   = "PyTrilinos",
-	autodoc   = "1",
-	docstring = %pliris_docstring) Pliris
-
-%{
-// Configuration include files
+// Configuration
+#include "Python3Compat.hpp"
 #include "PyTrilinos_config.h"
-
-// Epetra include files
-#ifdef HAVE_EPETRA
+#include "PyTrilinos_PythonException.hpp"
+#include "Teuchos_config.h"
+#include "Teuchos_DLLExportMacro.h"
+#ifdef HAVE_INTTYPES_H
 #undef HAVE_INTTYPES_H
+#endif
+#ifdef HAVE_STDINT_H
 #undef HAVE_STDINT_H
-#include "PyTrilinos_Epetra_Headers.hpp"
-
-// NumPy include files
-#define NO_IMPORT_ARRAY
-#include "numpy_include.hpp"
-
-// Pliris include files
-#include "PlirisVersion.h"
-#include "Pliris.h"
-
 #endif
 
-%}
-
-// Auto-documentation feature
-%feature("autodoc", "1");
-
-// C++ STL support.  If the wrapped class uses standard template
-// library containers, the following %include wraps the containers
-// and makes certain conversions seamless, such as between std::string
-// and python strings.
-%include "std_except.i"
-%include "std_string.i"
-using std::string;
-
-// Include Pliris documentation
-// %include "Pliris_dox.i"
-
-// External Trilinos modules
-#ifdef HAVE_EPETRA
-%ignore Epetra_Version();
-%import "Epetra.i"
+// Teuchos includes
+#include "PyTrilinos_Teuchos_Util.hpp"
+#include "Teuchos_ArrayView.hpp"
+#include "Teuchos_Comm.hpp"
+#include "Teuchos_CommHelpers.hpp"
+#include "Teuchos_DataAccess.hpp"
+#include "Teuchos_DefaultComm.hpp"
+#ifdef HAVE_MPI
+#include "Teuchos_DefaultMpiComm.hpp"
 #endif
+#include "Teuchos_DefaultSerialComm.hpp"
+#include "Teuchos_Describable.hpp"
+#include "Teuchos_FILEstream.hpp"
+#include "Teuchos_FancyOStream.hpp"
+#include "Teuchos_FileInputSource.hpp"
+#include "Teuchos_LabeledObject.hpp"
+#include "Teuchos_NullIteratorTraits.hpp"
+#include "Teuchos_OpaqueWrapper.hpp"
+#include "Teuchos_ParameterEntry.hpp"
+#include "Teuchos_ParameterList.hpp"
+#include "Teuchos_ParameterListAcceptor.hpp"
+#include "Teuchos_ParameterListExceptions.hpp"
+#include "Teuchos_RCP.hpp"
+#include "Teuchos_RCPDecl.hpp"
+#include "Teuchos_ReductionOp.hpp"
+#include "Teuchos_ScalarTraitsDecl.hpp"
+#include "Teuchos_SerialDenseMatrix.hpp"
+#include "Teuchos_SerializationTraits.hpp"
+#include "Teuchos_StringInputSource.hpp"
+#include "Teuchos_Time.hpp"
+#include "Teuchos_VerbosityLevel.hpp"
+#include "Teuchos_Version.hpp"
+#include "Teuchos_XMLInputSource.hpp"
+#include "Teuchos_XMLObject.hpp"
+#include "Teuchos_XMLObjectImplem.hpp"
+#include "Teuchos_XMLParameterListReader.hpp"
+#include "Teuchos_XMLParameterListWriter.hpp"
+#include "Teuchos_any.hpp"
+#include "Teuchos_iostream_helpers.hpp"
 
-///////////////////////////////////
-// Pliris configuration support //
-///////////////////////////////////
-%include "Pliris_config.h"
-
-////////////////////////////
-// Pliris Version support //
-////////////////////////////
-%rename(Version) Pliris_Version;
-%include "PlirisVersion.h"
-%pythoncode
-{
-  __version__ = Version()
-}
-
-////////////////////
-// Pliris support //
-////////////////////
-%include "Pliris.h"
+#endif

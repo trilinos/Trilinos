@@ -64,7 +64,7 @@ following class:
 	docstring = %komplex_docstring) Komplex
 
 %{
-// Configuration includes
+// Configuration include files
 #include "PyTrilinos_config.h"
 #ifdef HAVE_INTTYPES_H
 #undef HAVE_INTTYPES_H
@@ -73,7 +73,7 @@ following class:
 #undef HAVE_STDINT_H
 #endif
 
-// Epetra includes
+// Epetra include files
 #ifdef HAVE_EPETRA
 #include "PyTrilinos_Epetra_Headers.hpp"
 
@@ -81,7 +81,7 @@ following class:
 #define NO_IMPORT_ARRAY
 #include "numpy_include.hpp"
 
-// Komplex includes
+// Komplex include files
 #include "Komplex_Version.h"
 #include "Komplex_LinearProblem.h"
 
@@ -95,7 +95,7 @@ following class:
 // Include Komplex documentation
 %include "Komplex_dox.i"
 
-// SWIG library includes
+// SWIG library include files
 using std::string;
 %include "stl.i"
 

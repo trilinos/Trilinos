@@ -96,11 +96,11 @@ package:
 	docstring = %anasazi_docstring) Anasazi
 
 %{
-// System includes
+// System include files
 #include <ostream>
 #include <sstream>
 
-// Configuration includes
+// Configuration include files
 #include "PyTrilinos_config.h"
 #include "Anasazi_config.h"
 #ifdef HAVE_EPETRA
@@ -109,30 +109,18 @@ package:
 #define NO_IMPORT_ARRAY
 #include "numpy_include.hpp"
 
-// Local includes
+// Local include files
 #include "PyTrilinos_FILEstream.hpp"
 
-// Teuchos includes
-#ifdef HAVE_INTTYPES_H
-#undef HAVE_INTTYPES_H
-#endif
-#ifdef HAVE_STDINT_H
-#undef HAVE_STDINT_H
-#endif
-#include "Teuchos_DefaultComm.hpp"
-#include "Teuchos_DefaultSerialComm.hpp"
-#ifdef HAVE_MPI
-#include "Teuchos_DefaultMpiComm.hpp"
-#endif
-#include "Teuchos_ScalarTraits.hpp"
-#include "PyTrilinos_Teuchos_Util.hpp"
+// Teuchos include files
+#include "PyTrilinos_Teuchos_Headers.hpp"
 
-// Epetra includes
+// Epetra include files
 #ifdef HAVE_EPETRA
 #include "PyTrilinos_Epetra_Headers.hpp"
 #endif
 
-// Anasazi includes
+// Anasazi include files
 #include "AnasaziVersion.cpp"
 #include "AnasaziTypes.hpp"
 #include "AnasaziOutputManager.hpp"

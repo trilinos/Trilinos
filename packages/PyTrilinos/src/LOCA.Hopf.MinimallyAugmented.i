@@ -77,37 +77,32 @@ supports the following classes:
         docstring = %loca_hopf_minimallyaugmented_docstring) MinimallyAugmented
 
 %{
-// PyTrilinos includes
+// PyTrilinos include files
 #include "PyTrilinos_config.h"
 #include "PyTrilinos_LinearProblem.hpp"
 
-// Teuchos includes
-#include "Teuchos_Comm.hpp"
-#include "Teuchos_DefaultSerialComm.hpp"
-#ifdef HAVE_MPI
-#include "Teuchos_DefaultMpiComm.hpp"
-#endif
-#include "PyTrilinos_Teuchos_Util.hpp"
+// Teuchos include files
+#include "PyTrilinos_Teuchos_Headers.hpp"
 
-// Epetra includes
+// Epetra include files
 #ifdef HAVE_EPETRA
 #include "PyTrilinos_Epetra_Headers.hpp"
 #endif
 
-// NOX-Epetra includes
+// NOX-Epetra include files
 #ifdef HAVE_NOX_EPETRA
 //#include "Epetra_Vector.h"
 #include "NOX_Epetra_Group.H"
 #include "NOX_Epetra_Vector.H"
 #endif
 
-// NOX-PETSc includes
+// NOX-PETSc include files
 #include "NOX_Abstract_Vector.H"
 #ifdef HAVE_NOX_PETSC
 #include "NOX_Petsc_Vector.H"
 #endif
 
-// LOCA includes
+// LOCA include files
 #include "LOCA.H"
 #include "LOCA_Hopf_MinimallyAugmented_ExtendedGroup.H"
 #include "LOCA_Hopf_MinimallyAugmented_Constraint.H"
@@ -116,7 +111,7 @@ supports the following classes:
 #include "LOCA_Hopf_MooreSpence_ExtendedVector.H"
 #include "LOCA_Hopf_MooreSpence_SalingerBordering.H"
 
-// Local includes
+// Local include files
 #define NO_IMPORT_ARRAY
 #include "numpy_include.hpp"
 %}

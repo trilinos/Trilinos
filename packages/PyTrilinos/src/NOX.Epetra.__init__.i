@@ -72,41 +72,27 @@ NOX.Epetra provides the following user-level classes:
 	docstring    = %nox_epetra_docstring) __init__
 
 %{
-// System includes
+// System include files
 #include <vector>
 
 // Configuration
 #include "PyTrilinos_config.h"
 
-// Teuchos includes
-#ifdef HAVE_INTTYPES_H
-#undef HAVE_INTTYPES_H
-#endif
-#ifdef HAVE_STDINT_H
-#undef HAVE_STDINT_H
-#endif
-#include "Teuchos_RCPDecl.hpp"
-#include "Teuchos_DefaultSerialComm.hpp"
-#ifdef HAVE_MPI
-#include "Teuchos_DefaultMpiComm.hpp"
-#endif
-#include "PyTrilinos_Teuchos_Util.hpp"
+// Teuchos include files
+#include "PyTrilinos_Teuchos_Headers.hpp"
 
-// Teuchos includes
-#include "Teuchos_DefaultComm.hpp"
+// Teuchos include files
+#include "PyTrilinos_Teuchos_Headers.hpp"
 
-// Epetra includes
+// Epetra include files
 #include "PyTrilinos_Epetra_Headers.hpp"
 
-// EpetraExt includes
+// EpetraExt include files
 #ifdef HAVE_NOX_EPETRAEXT
-#include "EpetraExt_MapColoring.h"
-#include "EpetraExt_MapColoringIndex.h"
-#include "EpetraExt_ModelEvaluator.h"
-#include "PyTrilinos_EpetraExt_Util.hpp"
+#include "PyTrilinos_EpetraExt_Headers.hpp"
 #endif
 
-// NOX includes
+// NOX include files
 #include "NOX_Abstract_Group.H"
 #include "NOX_Abstract_Vector.H"
 #include "NOX_Epetra_Group.H"
@@ -148,7 +134,7 @@ using namespace NOX::Epetra;
 %ignore *::operator<<;
 %ignore *::operator[];
 
-// SWIG library includes
+// SWIG library include files
 %include "stl.i"
 
 // Trilinos interface import

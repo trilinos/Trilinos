@@ -43,18 +43,18 @@
 // @HEADER
 
 %{
-// Teuchos includes
-#include "Teuchos_RCP.hpp"
-
-// PyTrilinos includes
+// PyTrilinos include files
 #include "PyTrilinos_config.h"
 
-// Epetra includes
+// Teuchos include files
+#include "PyTrilinos_Teuchos_Headers.hpp"
+
+// Epetra include files
 #ifdef HAVE_NOX_EPETRA
-#include "Epetra_Vector.h"
+#include "PyTrilinos_Epetra_Headers.h"
 #endif
 
-// NOX includes
+// NOX include files
 #include "NOX_Abstract_Vector.H"
 #ifdef HAVE_NOX_PETSC
 #include "NOX_Petsc_Vector.H"

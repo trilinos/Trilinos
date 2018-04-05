@@ -64,28 +64,24 @@ the following classes:
 	docstring    = %loca_epetra_docstring) __init__
 
 %{
-// System includes
+// System include files
 #include <vector>
 
-// Teuchos includes
-#include "Teuchos_Comm.hpp"
-#include "Teuchos_DefaultSerialComm.hpp"
-#ifdef HAVE_MPI
-#include "Teuchos_DefaultMpiComm.hpp"
-#endif
+// Teuchos include files
+#include "PyTrilinos_Teuchos_Headers.hpp"
 
-// PyTrilinos includes
+// PyTrilinos include files
 #include "PyTrilinos_Teuchos_Util.hpp"
 #include "PyTrilinos_Epetra_Util.hpp"
 
-// Epetra includes
+// Epetra include files
 #include "PyTrilinos_Epetra_Headers.hpp"
 
-// NOX includes
+// NOX include files
 #include "NOX.H"
 #include "NOX_Epetra_Group.H"
 
-// LOCA includes
+// LOCA include files
 #include "LOCA.H"
 #include "LOCA_Hopf_MooreSpence_ExtendedMultiVector.H"
 #include "LOCA_Hopf_MooreSpence_ExtendedVector.H"
@@ -114,7 +110,7 @@ from . import ___init__
 
 %ignore *::operator=;
 
-// SWIG library includes
+// SWIG library include files
 %include "stl.i"
 
 // Exception handling

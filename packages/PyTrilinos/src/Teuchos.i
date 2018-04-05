@@ -93,29 +93,12 @@ from .. import _Teuchos
         moduleimport = %teuchos_import_code,
 	docstring    = %teuchos_docstring) Teuchos
 
-// Includes
+// Include Files
 %{
-// Configuration includes
-#include "PyTrilinos_config.h"
-#ifdef HAVE_INTTYPES_H
-#undef HAVE_INTTYPES_H
-#endif
-#ifdef HAVE_STDINT_H
-#undef HAVE_STDINT_H
-#endif
-#include "Teuchos_ConfigDefs.hpp"
-#include "Teuchos_DLLExportMacro.h"
-#include "Teuchos_iostream_helpers.hpp"
+// Teuchos include files
+#include "PyTrilinos_Teuchos_Headers.hpp"
 
-// Teuchos includes
-#include "Teuchos_Version.hpp"
-#include "Teuchos_NullIteratorTraits.hpp"
-#include "Teuchos_RCPDecl.hpp"
-#include "Teuchos_ParameterListExceptions.hpp"
-#include "Teuchos_Time.hpp"
-#include "Teuchos_DataAccess.hpp"
-
-// Local includes
+// Local include files
 #define NO_IMPORT_ARRAY
 #include "numpy_include.hpp"
 
@@ -216,7 +199,7 @@ import RCP
 %import "Teuchos_TypeNameTraits.hpp"
 %import "Teuchos_NullIteratorTraits.hpp"
 
-// Teuchos includes
+// Teuchos include files
 %include "Teuchos_Traits.i"
 %include "Teuchos_Comm.i"
 %include "Teuchos_ParameterList.i"

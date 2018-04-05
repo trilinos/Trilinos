@@ -62,19 +62,13 @@ The purpose of Isorropia.Epetra is to ....
 // Configuration
 #include "PyTrilinos_config.h"
 
-// Teuchos includes
-#include "Teuchos_RCP.hpp"
-#include "Teuchos_Comm.hpp"
-#include "Teuchos_DefaultComm.hpp"
-#include "Teuchos_DefaultSerialComm.hpp"
-#ifdef HAVE_MPI
-#include "Teuchos_DefaultMpiComm.hpp"
-#endif
+// Teuchos include files
+#include "PyTrilinos_Teuchos_Headers.hpp"
 
-// Epetra includes
+// Epetra include files
 #include "PyTrilinos_Epetra_Headers.hpp"
 
-// Isorropia includes
+// Isorropia include files
 #include "Isorropia_EpetraOperator.hpp"
 #include "Isorropia_EpetraColorer.hpp"
 #include "Isorropia_EpetraPartitioner.hpp"
@@ -84,7 +78,7 @@ The purpose of Isorropia.Epetra is to ....
 #include "Isorropia_EpetraOrderer.hpp"
 #include "Isorropia_EpetraLevelScheduler.hpp"
 
-// Local includes
+// Local include files
 #define NO_IMPORT_ARRAY
 #define SWIG_FILE_WITH_INIT
 #include "numpy_include.hpp"

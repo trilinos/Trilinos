@@ -106,12 +106,12 @@ struct OperatorData
 #endif
 
 %{
-// System includes
+// System include files
 #include <iostream>
 #include <sstream>
 #include <vector>
 
-// Configuration includes
+// Configuration include files
 #include "PyTrilinos_config.h"
 #ifdef HAVE_SYS_TIME_H
 #undef HAVE_SYS_TIME_H
@@ -126,16 +126,10 @@ struct OperatorData
 
 // Optional Teuchos support
 #ifdef HAVE_AZTECOO_TEUCHOS
-#include "Teuchos_Comm.hpp"
-#include "Teuchos_DefaultComm.hpp"
-#include "Teuchos_DefaultSerialComm.hpp"
-#ifdef HAVE_MPI
-#include "Teuchos_DefaultMpiComm.hpp"
-#endif
-#include "PyTrilinos_Teuchos_Util.hpp"
+#include "PyTrilinos_Teuchos_Headers.hpp"
 #endif
 
-// Epetra includes
+// Epetra include files
 #ifdef HAVE_EPETRA
 #include "PyTrilinos_Epetra_Headers.hpp"
 
@@ -144,7 +138,7 @@ struct OperatorData
 #include "numpy_include.hpp"
 #endif
 
-// AztecOO includes
+// AztecOO include files
 #include "AztecOO.h"
 #include "AztecOO_Version.h"
 

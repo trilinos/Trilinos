@@ -74,19 +74,14 @@ in addition to the following factory function:
 	docstring    = %nox_solver_docstring) Solver
 
 %{
-// PyTrilinos includes
+// PyTrilinos include files
 #include "PyTrilinos_config.h"
 #include "PyTrilinos_LinearProblem.hpp"
 
-// Teuchos includes
-#include "Teuchos_Comm.hpp"
-#include "Teuchos_DefaultSerialComm.hpp"
-#ifdef HAVE_MPI
-#include "Teuchos_DefaultMpiComm.hpp"
-#endif
-#include "PyTrilinos_Teuchos_Util.hpp"
+// Teuchos include files
+#include "PyTrilinos_Teuchos_Headers.hpp"
 
-// NOX includes
+// NOX include files
 #include "NOX_StatusTest_Generic.H"
 #include "NOX_StatusTest_NormWRMS.H"
 #include "NOX_StatusTest_Stagnation.H"
@@ -103,12 +98,12 @@ in addition to the following factory function:
 #include "NOX_Solver_TensorBased.H"
 #include "NOX_Solver_Factory.H"
 
-// Local includes
+// Local include files
 #define NO_IMPORT_ARRAY
 #include "numpy_include.hpp"
 %}
 
-// Configuration and optional includes
+// Configuration and optional include files
 %include "PyTrilinos_config.h"
 #ifdef HAVE_NOX_EPETRA
 %{

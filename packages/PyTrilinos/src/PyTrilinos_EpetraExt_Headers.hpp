@@ -1,5 +1,3 @@
-// -*- c++ -*-
-
 // @HEADER
 // ***********************************************************************
 //
@@ -42,84 +40,32 @@
 // ***********************************************************************
 // @HEADER
 
-%define %pliris_docstring
-"
-PyTrilinos.Pliris is the python interface to the Trilinos package
-Pliris, an LU solver for dense matrices:
+#ifndef PYTRILINOS_EPETRAEXT_HEADERS_
+#define PYTRILINOS_EPETRAEXT_HEADERS_
 
-    http://trilinos.sandia.gov/packages/pliris
-
-The purpose of Pliris is to provide an object-oriented interface to an
-LU solver for dense matrices on parallel platforms. These matrices are
-double precision real matrices distributed on a parallel machine.  The
-python version of the Pliris package supports the following class:
-
-    * Pliris  - Primary solver class.
-"
-%enddef
-
-%module(package   = "PyTrilinos",
-	autodoc   = "1",
-	docstring = %pliris_docstring) Pliris
-
-%{
-// Configuration include files
+// Configuration
 #include "PyTrilinos_config.h"
+#include "EpetraExt_config.h"
 
-// Epetra include files
-#ifdef HAVE_EPETRA
-#undef HAVE_INTTYPES_H
-#undef HAVE_STDINT_H
-#include "PyTrilinos_Epetra_Headers.hpp"
-
-// NumPy include files
-#define NO_IMPORT_ARRAY
-#include "numpy_include.hpp"
-
-// Pliris include files
-#include "PlirisVersion.h"
-#include "Pliris.h"
+// EpetraExt include files
+#include "PyTrilinos_EpetraExt_Util.hpp"
+#include "EpetraExt_BlockMapIn.h"
+#include "EpetraExt_BlockMapOut.h"
+#include "EpetraExt_CrsMatrixIn.h"
+#include "EpetraExt_Exception.h"
+#include "EpetraExt_HDF5.h"
+#include "EpetraExt_MapColoring.h"
+#include "EpetraExt_MapColoringIndex.h"
+#include "EpetraExt_MatrixMatrix.h"
+#include "EpetraExt_ModelEvaluator.h"
+#include "EpetraExt_MultiVectorIn.h"
+#include "EpetraExt_MultiVectorOut.h"
+#include "EpetraExt_RowMatrixOut.h"
+#include "EpetraExt_SubCopy_CrsMatrix.h"
+#include "EpetraExt_VectorIn.h"
+#include "EpetraExt_VectorOut.h"
+#include "EpetraExt_Version.h"
+#include "EpetraExt_XMLReader.h"
+#include "EpetraExt_XMLWriter.h"
 
 #endif
-
-%}
-
-// Auto-documentation feature
-%feature("autodoc", "1");
-
-// C++ STL support.  If the wrapped class uses standard template
-// library containers, the following %include wraps the containers
-// and makes certain conversions seamless, such as between std::string
-// and python strings.
-%include "std_except.i"
-%include "std_string.i"
-using std::string;
-
-// Include Pliris documentation
-// %include "Pliris_dox.i"
-
-// External Trilinos modules
-#ifdef HAVE_EPETRA
-%ignore Epetra_Version();
-%import "Epetra.i"
-#endif
-
-///////////////////////////////////
-// Pliris configuration support //
-///////////////////////////////////
-%include "Pliris_config.h"
-
-////////////////////////////
-// Pliris Version support //
-////////////////////////////
-%rename(Version) Pliris_Version;
-%include "PlirisVersion.h"
-%pythoncode
-{
-  __version__ = Version()
-}
-
-////////////////////
-// Pliris support //
-////////////////////
-%include "Pliris.h"

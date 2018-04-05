@@ -49,14 +49,10 @@
 // PyTrilinos configuration
 #include "PyTrilinos_config.h"
 
-// Teuchos includes
-#include "Teuchos_Comm.hpp"
-#include "Teuchos_DefaultSerialComm.hpp"
-#ifdef HAVE_MPI
-#include "Teuchos_DefaultMpiComm.hpp"
-#endif
+// Teuchos include files
+#include "PyTrilinos_Teuchos_Headers.hpp"
 
-// Isorropia includes
+// Isorropia include files
 #include "Isorropia_Version.hpp"
 #include "Isorropia_Operator.hpp"
 #include "Isorropia_Colorer.hpp"
@@ -67,7 +63,7 @@
 #include "Isorropia_Orderer.hpp"
 #include "Isorropia_LevelScheduler.hpp"
 
-// Local includes
+// Local include files
 #define NO_IMPORT_ARRAY
 #include "numpy_include.hpp"
 #include "PyTrilinos_Teuchos_Util.hpp"

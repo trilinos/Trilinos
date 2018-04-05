@@ -84,16 +84,16 @@ example subdirectory of the PyTrilinos package:
 	docstring = %ml_docstring) ML
 
 %{
-//  PyTrilinos includes
+//  PyTrilinos include files
 #include "PyTrilinos_PythonException.hpp"
 #include "PyTrilinos_FILEstream.hpp"
 
-// System includes
+// System include files
 #include <iostream>
 #include <sstream>
 #include <vector>
 
-// Configuration includes
+// Configuration include files
 #include "PyTrilinos_config.h"
 #ifdef HAVE_INTTYPES_H
 #undef HAVE_INTTYPES_H
@@ -102,17 +102,10 @@ example subdirectory of the PyTrilinos package:
 #undef HAVE_STDINT_H
 #endif
 
-// Teuchos includes
-#include "Teuchos_RCPDecl.hpp"
-#include "Teuchos_Comm.hpp"
-#include "Teuchos_DefaultComm.hpp"
-#include "Teuchos_DefaultSerialComm.hpp"
-#ifdef HAVE_MPI
-#include "Teuchos_DefaultMpiComm.hpp"
-#endif
-#include "PyTrilinos_Teuchos_Util.hpp"
+// Teuchos include files
+#include "PyTrilinos_Teuchos_Headers.hpp"
 
-// Epetra includes
+// Epetra include files
 #ifdef HAVE_EPETRA
 #include "PyTrilinos_Epetra_Headers.hpp"
 
@@ -121,7 +114,7 @@ example subdirectory of the PyTrilinos package:
 #include "numpy_include.hpp"
 #endif
 
-// IFPACK includes
+// IFPACK include files
 #ifdef HAVE_IFPACK
 #include "Ifpack_IC.h"
 #include "Ifpack_ICT.h"
@@ -131,7 +124,7 @@ example subdirectory of the PyTrilinos package:
 #include "Ifpack_Amesos.h"
 #endif
 
-// ML includes
+// ML include files
 #undef HAVE_STDINT_H
 #undef HAVE_INTTYPES_H
 #undef HAVE_SYS_TIME_H

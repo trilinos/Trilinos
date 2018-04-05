@@ -46,24 +46,19 @@
 	autodoc   = "1") __init__
 
 %{
-// System includes
+// System include files
 #include <sstream>
 
 // PyTrilinos configuration
 #include "PyTrilinos_config.h"
 
-// Teuchos include
-#include "Teuchos_Comm.hpp"
-#include "Teuchos_DefaultSerialComm.hpp"
-#ifdef HAVE_MPI
-#include "Teuchos_DefaultMpiComm.hpp"
-#endif
-#include "PyTrilinos_Teuchos_Util.hpp"
+// Teuchos include files
+#include "PyTrilinos_Teuchos_Headers.hpp"
 
-// NOX includes
+// NOX include files
 #include "NOX_Version.H"
 
-// Local includes
+// Local include files
 #define NO_IMPORT_ARRAY
 #include "numpy_include.hpp"
 %}
@@ -114,7 +109,7 @@ sys.path.insert(0, os.path.split(__file__)[0])
 // Include NOX documentation
 %include "NOX_dox.i"
 
-// SWIG library includes
+// SWIG library include files
 %include "stl.i"
 
 // Trilinos interface import

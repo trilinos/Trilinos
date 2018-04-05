@@ -61,7 +61,7 @@ operators, and dense and sparse matrices.
         docstring = %tpetra_docstring) Tpetra
 
 %{
-// PyTrilinos includes
+// PyTrilinos include files
 #include "PyTrilinos_config.h"
 #include "PyTrilinos_PythonException.hpp"
 #include "PyTrilinos_NumPy_Util.hpp"
@@ -73,18 +73,14 @@ operators, and dense and sparse matrices.
 #define NO_IMPORT_ARRAY
 #include "numpy_include.hpp"
 
-// Teuchos includes
-#include "Teuchos_RCP.hpp"
-#include "Teuchos_Array.hpp"
-#include "Teuchos_ArrayView.hpp"
-#include "Teuchos_ArrayRCP.hpp"
+// Teuchos include files
+#include "PyTrilinos_Teuchos_Headers.hpp"
 using Teuchos::RCP;
 using Teuchos::Array;
 using Teuchos::ArrayView;
 using Teuchos::ArrayRCP;
-#include "Teuchos_DefaultComm.hpp"
 
-// Tpetra includes
+// Tpetra include files
 #include "Tpetra_ConfigDefs.hpp"
 #include "Tpetra_Version.hpp"
 #include "Tpetra_CombineMode.hpp"
@@ -93,7 +89,7 @@ using Teuchos::ArrayRCP;
 #include "Tpetra_Vector.hpp"
 
 #ifdef HAVE_DOMI
-// Domi includes
+// Domi include files
 #include "Domi_MDVector.hpp"
 #include "PyTrilinos_Domi_Util.hpp"
 #endif
@@ -491,7 +487,7 @@ convertPythonToTpetraVector(PyObject * pyobj,
 %feature("autodoc", "1");
 %feature("compactdefaultargs");
 
-// SWIG standard library includes
+// SWIG standard library include files
 using std::string;
 %include "stl.i"
 

@@ -78,12 +78,12 @@ exAmesos_Factory.py.
 	docstring = %amesos_docstring) Amesos
 
 %{
-// System includes
+// System include files
 #include <iostream>
 #include <sstream>
 #include <vector>
 
-// Configuration includes
+// Configuration include files
 #include "PyTrilinos_config.h"
 #ifdef HAVE_INTTYPES_H
 #undef HAVE_INTTYPES_H
@@ -93,21 +93,15 @@ exAmesos_Factory.py.
 #endif
 #include "Amesos_ConfigDefs.h"
 
-// Epetra includes
+// Epetra include files
 #ifdef HAVE_EPETRA
 #include "PyTrilinos_Epetra_Headers.hpp"
 #endif
 
-// Teuchos includes
-#include "Teuchos_RCPDecl.hpp"
-#include "Teuchos_Comm.hpp"
-#include "Teuchos_DefaultSerialComm.hpp"
-#ifdef HAVE_MPI
-#include "Teuchos_DefaultMpiComm.hpp"
-#endif
-#include "PyTrilinos_Teuchos_Util.hpp"
+// Teuchos include files
+#include "PyTrilinos_Teuchos_Headers.hpp"
 
-// Amesos includes
+// Amesos include files
 #include "Amesos.h"
 #include "Amesos_BaseSolver.h"
 #ifdef HAVE_AMESOS_LAPACK
@@ -141,7 +135,7 @@ exAmesos_Factory.py.
 #include "Amesos_Mumps.h"
 #endif
 
-// Local includes
+// Local include files
 #define NO_IMPORT_ARRAY
 #include "numpy_include.hpp"
 #include "PyTrilinos_Epetra_Util.hpp"
@@ -160,7 +154,7 @@ exAmesos_Factory.py.
 // Include Amesos documentation
 %include "Amesos_dox.i"
 
-// SWIG library includes
+// SWIG library include files
 %include "stl.i"
 
 // External Trilinos packages

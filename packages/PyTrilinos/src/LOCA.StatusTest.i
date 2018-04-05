@@ -64,17 +64,12 @@ python version of LOCA.StatusTest supports the following classes:
 
 %{
 // Teuchos include
-#include "Teuchos_Comm.hpp"
-#include "Teuchos_DefaultSerialComm.hpp"
-#ifdef HAVE_MPI
-#include "Teuchos_DefaultMpiComm.hpp"
-#endif
-#include "PyTrilinos_Teuchos_Util.hpp"
+#include "PyTrilinos_Teuchos_Headers.hpp"
 
-// LOCA includes
+// LOCA include files
 #include "LOCA.H"
 
-// Local includes
+// Local include files
 #define NO_IMPORT_ARRAY
 #include "numpy_include.hpp"
 %}
