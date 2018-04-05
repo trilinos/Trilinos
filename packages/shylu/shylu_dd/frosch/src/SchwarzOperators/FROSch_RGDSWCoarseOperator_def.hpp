@@ -183,6 +183,12 @@ namespace FROSch {
                 numEntitiesGlobal[2] += 1;
             }
             
+            for (UN i=0; i<numEntitiesGlobal.size(); i++) {
+                if (numEntitiesGlobal[i]<0) {
+                    numEntitiesGlobal[i] = 0;
+                }
+            }
+            
             if (this->MpiComm_->getRank() == 0) {
                 std::cout << "\n\
                 --------------------------------------------\n\

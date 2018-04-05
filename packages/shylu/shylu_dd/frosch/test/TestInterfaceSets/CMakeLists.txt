@@ -8,7 +8,7 @@ TRIBITS_ADD_TEST(
 	NAME test_frosch_interfacesets_2D
 	ARGS "--DIM=2 --M=4"
 	COMM mpi
-	NUM_MPI_PROCS 9
+	NUM_MPI_PROCS 4
 )
 
 TRIBITS_ADD_TEST(
@@ -16,5 +16,5 @@ TRIBITS_ADD_TEST(
     NAME test_frosch_interfacesets_3D
     ARGS "--DIM=3 --M=4"
     COMM mpi
-    NUM_MPI_PROCS 27
+    NUM_MPI_PROCS 8
 )

@@ -312,7 +312,7 @@ namespace FROSch {
                 assembledMapTmp[i] = globalstart + mapVector[j]->getGlobalElement(i-localstart);
                 i++;
             }
-            globalstart += mapVector[j]->getMaxAllGlobalIndex();
+            globalstart += std::max(mapVector[j]->getMaxAllGlobalIndex(),0); // AH 04/05/2018: mapVector[j]->getMaxAllGlobalIndex() can result in -2147483648 if the map is empty on the process => introducing max(,)
             if (mapVector[0]->lib()==Xpetra::UseEpetra || mapVector[j]->getGlobalNumElements()>0) {
                 globalstart += 1;
             }
