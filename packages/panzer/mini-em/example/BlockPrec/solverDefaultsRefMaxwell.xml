@@ -33,6 +33,8 @@
           <Parameter name="Use as preconditioner" type="bool" value="true"/>
           <Parameter name="Debug" type="bool" value="false"/>
           <Parameter name="Dump" type="bool" value="false"/>
+          <Parameter name="Use discrete gradient" type="bool" value="true"/>
+          <Parameter name="Solve lower triangular" type="bool" value="true"/>
 
           <ParameterList name="Q_B Solve">
             <Parameter name="Type" type="string" value="Belos"/>

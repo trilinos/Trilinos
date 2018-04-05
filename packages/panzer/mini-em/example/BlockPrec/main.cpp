@@ -263,9 +263,12 @@ int main(int argc,char * argv[])
       // build the auxiliary physics blocks objects
       Teuchos::RCP<Teuchos::TimeMonitor> tMaux_physics = Teuchos::rcp(new Teuchos::TimeMonitor(*Teuchos::TimeMonitor::getNewTimer(std::string("Mini-EM: build auxiliary physics blocks"))));
       Teuchos::RCP<Teuchos::ParameterList> auxPhysicsBlock_pl;
-      if (use_refmaxwell)
+      if (use_refmaxwell) {
         auxPhysicsBlock_pl = auxOpsParameterList(basis_order, epsilon / dt / cfl / cfl / min_dx / min_dx);
-      else
+        // We actually want Q_rho with weight 1/mu but for that we
+        // would need to be able to request a Q_E with weight 1
+        // instead of eps/dt.
+      } else
         auxPhysicsBlock_pl = auxOpsParameterList(basis_order, 1.0);
       std::vector<RCP<panzer::PhysicsBlock> > auxPhysicsBlocks;
       {
@@ -371,8 +374,7 @@ int main(int argc,char * argv[])
 
       // add discrete gradient
       Teuchos::RCP<Teuchos::TimeMonitor> tMdiscGrad = Teuchos::rcp(new Teuchos::TimeMonitor(*Teuchos::TimeMonitor::getNewTimer(std::string("Mini-EM: add discrete gradient"))));
-      if (use_refmaxwell)
-        addDiscreteGradientToRequestHandler(auxLinObjFactory,req_handler);
+      addDiscreteGradientToRequestHandler(auxLinObjFactory,req_handler);
       tMdiscGrad = Teuchos::null;
 
 

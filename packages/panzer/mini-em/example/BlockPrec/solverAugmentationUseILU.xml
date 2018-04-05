@@ -32,6 +32,7 @@
           <Parameter name="Use refMaxwell" type="bool" value="false"/>
           <Parameter name="Debug" type="bool" value="false"/>
           <Parameter name="Dump" type="bool" value="false"/>
+          <Parameter name="Use discrete gradient" type="bool" value="false"/>
 
           <ParameterList name="Q_B Solve">
             <Parameter name="Type" type="string" value="MueLu-Tpetra"/>
