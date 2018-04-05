@@ -106,38 +106,55 @@ if (${Trilinos_ENABLE_Epetra}):
     Epetra = fromPyTrilinosImport('Epetra', options.testharness)
     
     class TeuchosRCPEpetraTestCase(unittest.TestCase):
-        "Test the Teuchos.RCP functions on an Epetra object"
+        "Test the Teuchos.RCP functions on Epetra objects"
 
         def setUp(self):
             self.comm = Epetra.PyComm()
             self.map  = Epetra.Map(100,0,self.comm)
             self.vec  = Epetra.Vector(self.map)
+            self.mvec = Epetra.MultiVector(self.map,4)
 
         def testIsNull(self):
             "Test Teuchos.RCP.is_null() for an Epetra object"
             self.assertEquals(Teuchos.RCP.is_null(self.comm), False)
+            self.assertEquals(Teuchos.RCP.is_null(self.map ), False)
+            self.assertEquals(Teuchos.RCP.is_null(self.vec ), False)
+            self.assertEquals(Teuchos.RCP.is_null(self.mvec), False)
 
         def testIsValidPtr(self):
             "Test Teuchos.RCP.is_valid_ptr() for an Epetra object"
             self.assertEquals(Teuchos.RCP.is_valid_ptr(self.comm), True)
+            self.assertEquals(Teuchos.RCP.is_valid_ptr(self.map ), True)
+            self.assertEquals(Teuchos.RCP.is_valid_ptr(self.vec ), True)
+            self.assertEquals(Teuchos.RCP.is_valid_ptr(self.mvec), True)
 
         def testHasOwnership(self):
             "Test Teuchos.RCP.has_ownership() for an Epetra object"
             self.assertEquals(Teuchos.RCP.has_ownership(self.comm), True)
+            self.assertEquals(Teuchos.RCP.has_ownership(self.map ), True)
+            self.assertEquals(Teuchos.RCP.has_ownership(self.vec ), True)
+            self.assertEquals(Teuchos.RCP.has_ownership(self.mvec), True)
 
         def testStrongCount(self):
             "Test Teuchos.RCP.strong_count() for an Epetra object"
             self.assertEquals(Teuchos.RCP.strong_count(self.comm), 1)
-            self.assertEquals(Teuchos.RCP.strong_count(self.map), 1)
-            self.assertEquals(Teuchos.RCP.strong_count(self.vec), 1)
+            self.assertEquals(Teuchos.RCP.strong_count(self.map ), 1)
+            self.assertEquals(Teuchos.RCP.strong_count(self.vec ), 1)
+            self.assertEquals(Teuchos.RCP.strong_count(self.mvec), 1)
 
         def testWeakCount(self):
             "Test Teuchos.RCP.weak_count() for an Epetra object"
             self.assertEquals(Teuchos.RCP.weak_count(self.comm), 0)
+            self.assertEquals(Teuchos.RCP.weak_count(self.map ), 0)
+            self.assertEquals(Teuchos.RCP.weak_count(self.vec ), 0)
+            self.assertEquals(Teuchos.RCP.weak_count(self.mvec), 0)
 
         def testTotalCount(self):
             "Test Teuchos.RCP.total_count() for an Epetra object"
             self.assertEquals(Teuchos.RCP.total_count(self.comm), 1)
+            self.assertEquals(Teuchos.RCP.total_count(self.map ), 1)
+            self.assertEquals(Teuchos.RCP.total_count(self.vec ), 1)
+            self.assertEquals(Teuchos.RCP.total_count(self.mvec), 1)
 
 ##########################################################################
 
