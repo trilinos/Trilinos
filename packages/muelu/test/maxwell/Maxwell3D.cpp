@@ -143,7 +143,7 @@ int MainWrappers<Scalar,LocalOrdinal,GlobalOrdinal,Node>::main_(Teuchos::Command
     RCP<TimeMonitor> tm                = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Maxwell: 1 - Read and Build Matrices")));
 
     // Read matrices in from files
-    Xpetra::global_size_t nedges=540, nnodes=216;
+    Xpetra::global_size_t nedges=3630, nnodes=1331;
     // maps for nodal and edge matrices
     RCP<Map> edge_map = MapFactory::Build(lib,nedges,0,comm);
     RCP<Map> node_map = MapFactory::Build(lib,nnodes,0,comm);
@@ -249,7 +249,7 @@ int MainWrappers<Scalar,LocalOrdinal,GlobalOrdinal,Node>::main_(Teuchos::Command
       RCP<Teuchos::ParameterList> belosParams
         = rcp( new Teuchos::ParameterList() );
       belosParams->set("Maximum Iterations", 100);
-      belosParams->set("Convergence Tolerance",1e-4);
+      belosParams->set("Convergence Tolerance",1e-10);
       belosParams->set("Verbosity", Belos::Errors + Belos::Warnings + Belos::StatusTestDetails);
       belosParams->set("Output Frequency",1);
       belosParams->set("Output Style",Belos::Brief);
@@ -352,7 +352,7 @@ int MainWrappers<double,LocalOrdinal,GlobalOrdinal,Node>::main_(Teuchos::Command
     RCP<TimeMonitor> tm                = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Maxwell: 1 - Read and Build Matrices")));
 
     // Read matrices in from files
-    Xpetra::global_size_t nedges=540, nnodes=216;
+    Xpetra::global_size_t nedges=3630, nnodes=1331;
     // maps for nodal and edge matrices
     RCP<Map> edge_map = MapFactory::Build(lib,nedges,0,comm);
     RCP<Map> node_map = MapFactory::Build(lib,nnodes,0,comm);
@@ -459,11 +459,11 @@ int MainWrappers<double,LocalOrdinal,GlobalOrdinal,Node>::main_(Teuchos::Command
       RCP<Teuchos::ParameterList> belosParams
         = rcp( new Teuchos::ParameterList() );
       belosParams->set("Maximum Iterations", 100);
-      belosParams->set("Convergence Tolerance",1e-4);
+      belosParams->set("Convergence Tolerance",1e-10);
       belosParams->set("Verbosity", Belos::Errors + Belos::Warnings + Belos::StatusTestDetails);
       belosParams->set("Output Frequency",1);
       belosParams->set("Output Style",Belos::Brief);
-      solver = factory->create("Block CG",belosParams);
+      solver = factory->create("Pseudo Block CG",belosParams);
 
       comm->barrier();
       tm = Teuchos::null;
