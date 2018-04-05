@@ -237,7 +237,7 @@ public:
     return ROL::makePtr<StdVector<Real>>(x0p);
   }
 
-  Ptr<Vector<Real>> getSolution(void) const {
+  Ptr<Vector<Real>> getSolution(const int i = 0) const {
     // Problem dimension
     int n = 4;
     // Get Solution

@@ -41,8 +41,8 @@
 // ************************************************************************
 // @HEADER
 
-/*! \file  test_02.cpp
-    \brief Test trust region.
+/*! \file  test_04.cpp
+    \brief Test bound constrained trust-region steps.
 */
 
 #define USE_HESSVEC 1
@@ -54,10 +54,12 @@
 #include "Teuchos_XMLParameterListHelpers.hpp"
 
 #include <iostream>
+//#include <fenv.h>
 
 typedef double RealT;
 
 int main(int argc, char *argv[]) {
+//  feenableexcept(FE_DIVBYZERO | FE_INVALID | FE_OVERFLOW);
 
   Teuchos::GlobalMPISession mpiSession(&argc, &argv);
 
@@ -79,56 +81,74 @@ int main(int argc, char *argv[]) {
     std::string filename = "input.xml";
     Teuchos::RCP<Teuchos::ParameterList> parlist = Teuchos::rcp( new Teuchos::ParameterList() );
     Teuchos::updateParametersFromXmlFile( filename, parlist.ptr() );
+    parlist->sublist("General").set("Inexact Hessian-Times-A-Vector",true);
+#if USE_HESSVEC
+    parlist->sublist("General").set("Inexact Hessian-Times-A-Vector",false);
+#endif
     parlist->sublist("Step").set("Type","Trust Region");
 
-    // Loop Through Test Objectives
-    for ( ROL::ETestOptProblem objFunc = ROL::TESTOPTPROBLEM_ROSENBROCK; objFunc < ROL::TESTOPTPROBLEM_LAST; objFunc++ ) {
-      for ( ROL::ETrustRegion tr = ROL::TRUSTREGION_CAUCHYPOINT; tr < ROL::TRUSTREGION_LAST; tr++ ) {
-        if ( tr != ROL::TRUSTREGION_LINMORE ) {
-          // Set Up Optimization Problem
-          ROL::Ptr<ROL::Vector<RealT> > x0;
-          std::vector<ROL::Ptr<ROL::Vector<RealT> > > z;
-          ROL::Ptr<ROL::OptimizationProblem<RealT> > problem;
-          ROL::GetTestProblem<RealT>(problem,x0,z,objFunc);
+    for ( ROL::ETestOptProblem prob = ROL::TESTOPTPROBLEM_ROSENBROCK; prob < ROL::TESTOPTPROBLEM_LAST; prob++ ) { 
+      // Get Objective Function
+      ROL::Ptr<ROL::Vector<RealT> > x0;
+      std::vector<ROL::Ptr<ROL::Vector<RealT> > > z;
+      ROL::Ptr<ROL::OptimizationProblem<RealT> > problem;
+      ROL::GetTestProblem<RealT>(problem,x0,z,prob);
+      if (problem->getProblemType() == ROL::TYPE_B) {
+        if ( prob == ROL::TESTOPTPROBLEM_HS2 || prob == ROL::TESTOPTPROBLEM_BVP ) {
+          parlist->sublist("Step").sublist("Line Search").set("Initial Step Size",1.e-4);
+          parlist->sublist("Step").sublist("Trust Region").set("Initial Radius",-1.e1);
+          parlist->sublist("Step").sublist("Trust Region").set("Safeguard Size",1.e-4);
+          parlist->sublist("Status Test").set("Gradient Tolerance",1.e-6);
+        }
+        else if ( prob == ROL::TESTOPTPROBLEM_HS25 ) {
+          parlist->sublist("Step").sublist("Line Search").set("Initial Step Size",1.0);
+          parlist->sublist("Step").sublist("Trust Region").set("Initial Radius",1.e3);
+          parlist->sublist("Step").sublist("Trust Region").set("Safeguard Size",1.e4);
+          parlist->sublist("Status Test").set("Gradient Tolerance",1.e-8);
+        }
+        else {
+          parlist->sublist("Step").sublist("Line Search").set("Initial Step Size",1.0);
+          parlist->sublist("Step").sublist("Trust Region").set("Initial Radius",-1.e1);
+          parlist->sublist("Step").sublist("Trust Region").set("Safeguard Size",1.e4);
+          parlist->sublist("Status Test").set("Gradient Tolerance",1.e-6);
+        }
+        parlist->sublist("General").set("Scale for Epsilon Active Sets",1.0);
+        if ( prob == ROL::TESTOPTPROBLEM_HS4 ) {
+          parlist->sublist("General").set("Scale for Epsilon Active Sets",1.e-2);
+        }
+        *outStream << std::endl << std::endl << ROL:: ETestOptProblemToString(prob)  << std::endl << std::endl;
 
-          if (problem->getProblemType() == ROL::TYPE_U
-              && objFunc != ROL::TESTOPTPROBLEM_MINIMAX1
-              && objFunc != ROL::TESTOPTPROBLEM_MINIMAX2
-              && objFunc != ROL::TESTOPTPROBLEM_MINIMAX3) {
-            *outStream << std::endl << std::endl << ROL::ETestOptProblemToString(objFunc) << std::endl << std::endl;
+        // Get Dimension of Problem
+        int dim = x0->dimension();
+        parlist->sublist("General").sublist("Krylov").set("Iteration Limit", 2*dim);
 
-            // Get Dimension of Problem
-            int dim = x0->dimension();
-            parlist->sublist("General").sublist("Krylov").set("Iteration Limit", 5*dim);
+        // Error Vector
+        ROL::Ptr<ROL::Vector<RealT> > e = x0->clone();
+        e->zero();
 
-            // Error Vector
-            ROL::Ptr<ROL::Vector<RealT> > e = x0->clone();
-            e->zero();
+        parlist->sublist("Step").sublist("Trust Region").set("Subproblem Solver", "Lin-More");
+        parlist->sublist("Step").sublist("Trust Region").set("Subproblem Model", "Lin-More");
+        *outStream << std::endl << std::endl << "Lin-More" << std::endl << std::endl;
 
-            *outStream << "\n\n" << ROL::ETrustRegionToString(tr) << "\n\n";
-            parlist->sublist("Step").sublist("Trust Region").set("Subproblem Solver", ETrustRegionToString(tr));
+        // Define Solver
+        ROL::OptimizationSolver<RealT> solver(*problem,*parlist);
 
-            // Define Solver
-            ROL::OptimizationSolver<RealT> solver(*problem,*parlist);
+        // Run Solver
+        solver.solve(*outStream);
 
-            // Run Solver
-            solver.solve(*outStream);
-
-            // Compute Error 
-            RealT err(0);
-            for (int i = 0; i < static_cast<int>(z.size()); ++i) {
-              e->set(*x0);
-              e->axpy(-1.0,*z[i]);
-              if (i == 0) {
-                err = e->norm();
-              }
-              else {
-                err = std::min(err,e->norm());
-              }
-            }
-            *outStream << std::endl << "Norm of Error: " << err << std::endl;
+        // Compute Error
+        RealT err(0);
+        for (int i = 0; i < static_cast<int>(z.size()); ++i) {
+          e->set(*x0);
+          e->axpy(-1.0,*z[i]);
+          if (i == 0) {
+            err = e->norm();
+          }
+          else {
+            err = std::min(err,e->norm());
           }
         }
+        *outStream << std::endl << "Norm of Error: " << err << std::endl;
       }
     }
   }

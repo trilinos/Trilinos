@@ -246,7 +246,7 @@ namespace ROL {
   template<class Real>
   void GetTestProblem( Ptr<OptimizationProblem<Real> > &problem,
                        Ptr<Vector<Real> > &x0,
-                       Ptr<Vector<Real> > &x, 
+                       std::vector<Ptr<Vector<Real> > > &x, 
                        const ETestOptProblem test ) {
     Ptr<TestProblem<Real>> tp;
     switch (test) {

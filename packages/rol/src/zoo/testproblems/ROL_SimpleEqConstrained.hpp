@@ -459,7 +459,7 @@ namespace ZOO {
       return makePtr<XPrim>(x0p);
     }
 
-    Ptr<Vector<Real>> getSolution(void) const { 
+    Ptr<Vector<Real>> getSolution(const int i = 0) const { 
       uint n = 5;
       // Get solution.
       Ptr<vector> solp = makePtr<vector>(n,0);

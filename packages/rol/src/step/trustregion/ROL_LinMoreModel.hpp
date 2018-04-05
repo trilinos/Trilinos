@@ -41,67 +41,64 @@
 // ************************************************************************
 // @HEADER
 
-/** \file
-    \brief  Contains definitions of test objective functions.
-    \author Created by D. Ridzal and D. Kouri.
- */
+#ifndef ROL_LINMOREMODEL_HPP
+#define ROL_LINMOREMODEL_HPP
 
-#ifndef ROL_TESTPROBLEMS_HPP
-#define ROL_TESTPROBLEMS_HPP
+#include "ROL_TrustRegionModel.hpp"
+#include "ROL_BoundConstraint.hpp"
 
-#include "ROL_OptimizationProblem.hpp"
+/** @ingroup func_group
+    \class ROL::LinMoreModel
+    \brief Provides the interface to evaluate projected trust-region model
+    functions from the Kelley-Sachs bound constrained trust-region algorithm.
+
+    -----
+*/
 
 namespace ROL {
 
 template<class Real>
-class TestProblem {
+class LinMoreModel : public TrustRegionModel<Real> {
+private:
+  Ptr<Vector<Real>> pwa_, dwa_;
+
 public:
-  virtual ~TestProblem(void) {}
-  TestProblem(void) {}
-  virtual Ptr<Objective<Real>>           getObjective(void) const = 0;
-  virtual Ptr<Vector<Real>>              getInitialGuess(void) const = 0;
-  virtual Ptr<Vector<Real>>              getSolution(const int i = 0) const = 0;
-  virtual int                            getNumSolutions(void) const {
-    return 1;
-  }
-  virtual Ptr<BoundConstraint<Real>>     getBoundConstraint(void) const {
-    return nullPtr;
-  }
-  virtual Ptr<Constraint<Real>>          getEqualityConstraint(void) const {
-    return nullPtr;
-  }
-  virtual Ptr<Vector<Real>>              getEqualityMultiplier(void) const {
-    return nullPtr;
-  }
-  virtual Ptr<Constraint<Real>>          getInequalityConstraint(void) const {
-    return nullPtr;
-  }
-  virtual Ptr<Vector<Real>>              getInequalityMultiplier(void) const {
-    return nullPtr;
-  }
-  virtual Ptr<BoundConstraint<Real>>     getSlackBoundConstraint(void) const {
-    return nullPtr;
+
+  LinMoreModel(Objective<Real> &obj, BoundConstraint<Real> &bnd,
+            const Vector<Real> &x, const Vector<Real> &g,
+            const Ptr<Secant<Real>> &secant = nullPtr,
+            const bool useSecantPrecond = false, const bool useSecantHessVec = false)
+    : TrustRegionModel<Real>::TrustRegionModel(obj,bnd,x,g,secant,useSecantPrecond,useSecantHessVec) {
+    pwa_ = x.clone();
+    dwa_ = g.clone();
   }
 
-  void get(Ptr<OptimizationProblem<Real>> &problem,
-           Ptr<Vector<Real>>              &x0,
-           std::vector<Ptr<Vector<Real>>> &x) const {
-    x0 = getInitialGuess()->clone(); x0->set(*getInitialGuess());
-    x.resize(getNumSolutions());
-    for (int i = 0; i < getNumSolutions(); ++i) {
-      x[i] = getSolution(i)->clone(); x[i]->set(*getSolution(i));
-    }
-    
-    problem = makePtr<OptimizationProblem<Real>>(getObjective(),
-                                                 x0,
-                                                 getBoundConstraint(),
-                                                 getEqualityConstraint(),
-                                                 getEqualityMultiplier(),
-                                                 getInequalityConstraint(),
-                                                 getInequalityMultiplier(),
-                                                 getSlackBoundConstraint());
+  void applyFullHessian(Vector<Real> &hv, const Vector<Real> &v, Real &tol) {
+    TrustRegionModel<Real>::applyHessian(hv,v,tol);
   }
+
+  void applyFreeHessian(Vector<Real> &hv, const Vector<Real> &v, const Vector<Real> &x, Real &tol) {
+    const Real zero(0);
+    pwa_->set(v);
+    TrustRegionModel<Real>::getBoundConstraint()->pruneActive(*pwa_,x,zero);
+    applyFullHessian(hv,*pwa_,tol);
+    TrustRegionModel<Real>::getBoundConstraint()->pruneActive(hv,x,zero);
+  }
+
+  void applyFullPrecond(Vector<Real> &pv, const Vector<Real> &v, Real &tol) {
+    TrustRegionModel<Real>::applyPrecond(pv,v,tol);
+  }
+
+  void applyFreePrecond(Vector<Real> &pv, const Vector<Real> &v, const Vector<Real> &x, Real &tol) {
+    const Real zero(0);
+    dwa_->set(v);
+    TrustRegionModel<Real>::getBoundConstraint()->pruneActive(*dwa_,x,zero);
+    applyFullPrecond(pv,*dwa_,tol);
+    TrustRegionModel<Real>::getBoundConstraint()->pruneActive(pv,x,zero);
+  }
+
 };
+
 } // namespace ROL
 
-#endif
+#endif 
