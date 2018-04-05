@@ -77,9 +77,8 @@ private:
   Real alpha_;
   Real beta_;
 
-protected:
 
-  Real coeff( size_type i ) const { return (1.0-static_cast<Real>(i==c_)); }
+  Real coeff( size_type i ) const { return (1.0-static_cast<Real>(i%c_==0)); }
 
 public:   
   LowerBandedMatrix(){}
@@ -164,6 +163,8 @@ private:
   size_type c_;  
   size_type n_;
 
+  Real coeff( size_type i ) const { return (1.0-static_cast<Real>(i%c_==0)); }
+
 public:
   SplitterMatrix( size_type r, size_type c ) : c_{c}, n_{r*c} {}
 
@@ -171,10 +172,10 @@ public:
                       size_type bi0=0, size_type xi0=0 ) const override {
 
     for( size_type i=1; i<c_; ++i ) 
-      b.at(bi0+i) += 0.5*kappa*x.at(xi0+i-1);
+      b.at(bi0+i) += 0.5*kappa*x.at(xi0+i-1)*coeff(i);
 
     for( size_type i=c_; i<n_; ++i ) 
-      b.at(bi0+i) += 0.5*kappa*( this->coeff(i)*x.at(xi0+i-1) + x.at(xi0+i-c_) );
+      b.at(bi0+i) += 0.5*kappa*( coeff(i)*x.at(xi0+i-1) + x.at(xi0+i-c_) );
   } 
 
   void solve( vector<Real>& x, const vector<Real>& b, Real kappa=1.0,
@@ -191,7 +192,7 @@ public:
     }
     for( size_type j=c_; j<n_; ++j ) {
       size_type i=n_-j-1;
-      b.at(bi0+i) += 0.5*kappa*(this->coeff(i+1)*x.at(xi0+i+1) + x.at(xi0+i+c_)); 
+      b.at(bi0+i) += 0.5*kappa*(coeff(i+1)*x.at(xi0+i+1) + x.at(xi0+i+c_)); 
     }
   }
 
@@ -220,7 +221,7 @@ private:
   size_type n_;
   vector<Real> alpha_;
 
-  Real coeff( size_type i ) const { return (1.0-static_cast<Real>(i==c_)); }
+  Real coeff( size_type i ) const { return (1.0-static_cast<Real>(i%c_==0)); }
 
 public:   
 
