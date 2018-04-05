@@ -119,7 +119,7 @@ void Multiply_ViennaCL(const Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,No
     KCRS Cmat = Cu->getLocalMatrix();
     
     c_lno_view_t Arowptr = Amat.graph.row_map, Browptr = Bmat.graph.row_map;
-    lno_view_t Crowptr("Crowptr",Cmat.graph.row_map.extent(0));// Because const
+    lno_view_t Crowptr("Crowptr",C.getNodeNumRows()+1);
     c_lno_nnz_view_t Acolind = Amat.graph.entries, Bcolind = Bmat.graph.entries;
     lno_nnz_view_t Ccolind = Cmat.graph.entries;
     const scalar_view_t Avals = Amat.values, Bvals = Bmat.values;
@@ -225,9 +225,10 @@ void Multiply_MKL_SPMM(const Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,No
     const KCRS & Amat = Au->getLocalMatrix();
     const KCRS & Bmat = Bu->getLocalMatrix();
     KCRS Cmat = Cu->getLocalMatrix();
-    
+    if(A.getNodeNumRows()!=C.getNodeNumRows())  throw std::runtime_error("C is not sized correctly");
+
     c_lno_view_t Arowptr = Amat.graph.row_map, Browptr = Bmat.graph.row_map;
-    lno_view_t Crowptr("Crowptr",Cmat.graph.row_map.extent(0));// Because const
+    lno_view_t Crowptr("Crowptr",C.getNodeNumRows()+1);
     c_lno_nnz_view_t Acolind = Amat.graph.entries, Bcolind = Bmat.graph.entries;
     lno_nnz_view_t Ccolind = Cmat.graph.entries;
     const scalar_view_t Avals = Amat.values, Bvals = Bmat.values;
@@ -276,11 +277,11 @@ void Multiply_MKL_SPMM(const Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,No
     MKL_INT c_rows, c_cols, *rows_start, *rows_end, *columns;
     double * values;
     mkl_sparse_d_export_csr(CMKL,&c_indexing, &c_rows, &c_cols, &rows_start, &rows_end, &columns, &values);                          
-    size_t cnnz = rows_end[A.getNodeNumRows()-1];
+    size_t cnnz = rows_end[c_rows-1];
     Kokkos::resize(Ccolind,cnnz);
     Kokkos::resize(Cvals,cnnz);
-
-    copy_view_n(A.getNodeNumRows(),rows_start,Crowptr); Crowptr(A.getNodeNumRows()) = rows_end[A.getNodeNumRows()-1];
+    if(c_rows != A.getNodeNumRows() || c_rows+1 != Crowptr.extent(0)) throw std::runtime_error("C row size mismatch");
+    copy_view_n(c_rows,rows_start,Crowptr); Crowptr(c_rows) = rows_end[c_rows-1];
     copy_view_n(cnnz,columns,Ccolind);
     copy_view_n(cnnz,values,Cvals);
      
