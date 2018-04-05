@@ -49,7 +49,7 @@
 #include<iostream>
 #include<iomanip>
 
-#include "ROL_Types.hpp"
+#include "ROL_StdVector.hpp"
 
 namespace details {
 using namespace std;
@@ -102,6 +102,12 @@ public:
                              beta_*(coeff(i)*x.at(xi0+i-1) + x.at(xi0+i-c_)));
   } 
 
+  void apply( ROL::StdVector<Real>& b, const ROL::StdVector<Real> &x, Real kappa=1.0, 
+                      size_type bi0=0, size_type xi0=0 ) const {
+    apply( *(b.getVector()), *(x.getVector()), kappa, bi0, xi0 ); 
+  }
+
+
   virtual void solve( vector<Real>& x, const vector<Real>& b, Real kappa=1.0,
                       size_type xi0=0, size_type bi0=0 ) const {
     x.at(xi0) += b.at(bi0)*kappa/alpha_;
@@ -113,6 +119,12 @@ public:
       x.at(xi0+i) += ( b.at(bi0+i) - beta_*(coeff(i)*x.at(xi0+i-1) 
                                             +x.at(xi0+i-c_)))*kappa/alpha_;
   }
+
+  void solve( ROL::StdVector<Real>& x, const ROL::StdVector<Real>& b, Real kappa=1.0,
+                      size_type xi0=0, size_type bi0=0 ) const { 
+    solve( *(x.getVector()), *(b.getVector()), kappa, xi0, bi0 );
+  }
+
 
   virtual void applyTranspose( vector<Real>&b, const vector<Real>& x, Real kappa=1.0,
                                size_type bi0=0, size_type xi0=0 ) const {
@@ -130,6 +142,12 @@ public:
     }
   }
 
+  void applyTranspose( ROL::StdVector<Real>&b, const ROL::StdVector<Real>& x, Real kappa=1.0,
+                               size_type bi0=0, size_type xi0=0 ) const {
+    applyTranspose( *(b.getVector()), *(x.getVector()), kappa, bi0, xi0 );
+  }
+
+
   virtual void solveTranspose( vector<Real>& x, const vector<Real>& b, Real kappa=1.0,
                                size_type xi0=0, size_type bi0=0 ) const {
 
@@ -144,6 +162,12 @@ public:
                        x.at(xi0+i+c_) ) )*kappa/alpha_;
     }
   }
+
+  void solveTranspose( ROL::StdVector<Real>& x, const ROL::StdVector<Real>& b, Real kappa=1.0,
+                               size_type xi0=0, size_type bi0=0 ) const {
+    solveTranspose( *(x.getVector()), *(b.getVector()), kappa, xi0, bi0 );
+  }
+
 }; // class LowerBandedMatrix
 
 

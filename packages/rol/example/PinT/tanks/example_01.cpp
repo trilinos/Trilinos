@@ -176,12 +176,12 @@ int main( int argc, char* argv[] ) {
 
 //    con->print_tankstate_parameters( *outStream );
 
-//    con->checkSolve(*u, *z, *c, true, *outStream ); 
-//
-//    con->checkApplyJacobian_1( *u, *z, *vu, *Jvu, true, *outStream );
-//    con->checkApplyJacobian_2( *u, *z, *vz, *Jvz, true, *outStream );
+    con->checkSolve(*u, *z, *c, true, *outStream ); 
+
+    con->checkApplyJacobian_1( *u, *z, *vu, *Jvu, true, *outStream );
+    con->checkApplyJacobian_2( *u, *z, *vz, *Jvz, true, *outStream );
 // 
-//    con->applyJacobian_1_new( *Jvu, *vu_new, *u_old, *u_new, *z, tol );
+    con->applyJacobian_1_new( *Jvu, *vu_new, *u_old, *u_new, *z, tol );
 //
 ////    vu_new->print( *outStream );
 ////    Jvu->print( *outStream );
@@ -198,7 +198,7 @@ int main( int argc, char* argv[] ) {
 //
 ////    err->print( *outStream );
 //
-//    con->checkInverseJacobian_1_new( *c, *u_new, *u_old, *z, *vu_new, true, *outStream );
+    con->checkInverseJacobian_1_new( *c, *u_new, *u_old, *z, *vu_new, true, *outStream );
   
     
 

@@ -113,8 +113,8 @@ TankState<Real>::TankState( Teuchos::ParameterList& pl ) :
 //  vector<vector<Real>> rbands{ band_R0, band_R1, band_Rc };
 //  vector<vector<Real>> dbands{ band_D1, band_Dc };
 
-  L_ = make_shared<TankLevelMatrix<Real>>( rows_, cols_, alphaL_, p_ );
-//  R_ = make_shared<Matrix>( band_index, rbands );
+  L_ = make_shared<TankLevelMatrix<Real>>( rows_, cols_,  alphaL_, p_ );
+  R_ = make_shared<TankLevelMatrix<Real>>( rows_, cols_, -alphaR_, p_ );
   S_ = make_shared<SplitterMatrix<Real>>( rows_, cols_ );
 //  print_members(cout);
 
@@ -144,86 +144,58 @@ template<typename Real>
 void TankState<Real>::value( StateVector& c, const StateVector& u_old, 
                              const StateVector& u_new, const ControlVector& z ) const {
 
-  L_->apply( *(c.getVector()), *(u_new.getVector()), 1.0, 0, 0 ); 
-
   for(size_type i=0; i<rows_; ++i ) {
     for( size_type j=0; j<cols_; ++j ) {
-      c.h(i,j) += // (1.0+2.0*alphaL_*p(i,j))*u_new.h(i,j) 
-                   - u_old.h(i,j) 
-                   - p(i,j)*( beta_*z(i,j)-2.0*alphaR_*u_old.h(i,j) );
+      c.h(i,j)    = beta_*p(i,j)*z(i,j);
       c.Qout(i,j) = u_new.Qout(i,j) - kappa_*u_new.h(i,j);
       c.Qin(i,j)  = u_new.Qin(i,j)  - z(i,j);
- 
-      if( i>0 ) {
-        c.h(i,j)   -=// p(i,j)*(alphaL_*u_new.h(i-1,j) + 
-                        p(i,j)*alphaR_*u_old.h(i-1,j);
-//        c.Qin(i,j) -= 0.5*u_new.Qout(i-1,j);
-      }
-      if( j>0 ) {
-        c.h(i,j)   -= //p(i,j)*(alphaL_*u_new.h(i,j-1) + 
-                      p(i,j)*alphaR_*u_old.h(i,j-1);
-//        c.Qin(i,j) -= 0.5*u_new.Qout(i,j-1);
-      }
     }
   }
-  S_->apply( *(c.getVector()), *(u_new.getVector()), -1.0, Ntanks_, 2*Ntanks_ );
+
+  L_->apply( c, u_new,  1.0, 0, 0 ); 
+  R_->apply( c, u_old, -1.0, 0 ,0 );
+  S_->apply( c, u_new, -1.0, Ntanks_, 2*Ntanks_ );
 }
 
 template<typename Real>
 void TankState<Real>::applyJacobian_1_old( StateVector& jv, const StateVector& v_old ) const {
-  R_->apply( *(jv.getVector()), *(v_old.getVector()), -1.0, 0, Ntanks_ );  
+  R_->apply( *(jv.getVector()), *(v_old.getVector()), -1.0, 0, 0);  
 }
 
 template<typename Real>
 void TankState<Real>::applyJacobian_1_new( StateVector& jv, const StateVector& v_new ) const {
 
-  L_->apply( *(jv.getVector()), *(v_new.getVector()), 1.0, 0, Ntanks_ );  
+  L_->apply( *(jv.getVector()), *(v_new.getVector()), 1.0, 0, 0 );  
  
   for(size_type i=0; i<rows_; ++i ) {                                  
     for( size_type j=0; j<cols_; ++j ) {        
                        
       jv.Qout(i,j) = v_new.Qout(i,j) - kappa_*v_new.h(i,j);                                  
       jv.Qin(i,j)  = v_new.Qin(i,j);                                   
-                                                                     
-      if( i>0 ) jv.Qin(i,j) -= 0.5*v_new.Qout(i-1,j);                           
-      if( j>0 ) jv.Qin(i,j) -= 0.5*v_new.Qout(i,j-1);                           
     }
   }
+  S_->apply( jv, v_new, -1.0, Ntanks_, 2*Ntanks_ );
 }
 
 template<typename Real>
 void TankState<Real>::applyInverseJacobian_1_new( StateVector& ijv, const StateVector& v_new ) const {
-  L_->solve( *(ijv.getVector()), *(v_new.getVector()), 1.0, 0, Ntanks_ );  
+  L_->solve( ijv, v_new, 1.0, 0, 0 );  
   for(size_type i=0; i<rows_; ++i ) {                                  
     for( size_type j=0; j<cols_; ++j ) {                               
       ijv.Qout(i,j) = v_new.Qout(i,j) + kappa_*ijv.h(i,j);
       ijv.Qin(i,j)  = v_new.Qin(i,j);
-      if( i>0 ) {                                                       
-        ijv.Qin(i,j) += 0.5*ijv.Qout(i-1,j);                           
-      }                                                                 
-      if( j>0 ) {                                                       
-        ijv.Qin(i,j) += 0.5*ijv.Qout(i,j-1);                           
-      }
     }
   }
+
+  S_->apply( ijv, ijv, 1.0, Ntanks_, 2*Ntanks_ );
 }
 
 template<typename Real>
 void TankState<Real>::applyJacobian_2( StateVector& jv, const ControlVector &v_new ) const {
-  for(size_type i=0; i<rows_; ++i ) {                                  
-    for( size_type j=0; j<cols_; ++j ) {                               
-      jv.h(i,j) =  (1.0+2.0*alphaL_*p(i,j))*v_new.h(i,j);              
-      jv.Qout(i,j) = v_new.Qout(i,j);                                  
-      jv.Qin(i,j)  = v_new.Qin(i,j);                                   
-                                                                       
-     if( i>0 ) {                                                       
-       jv.h(i,j) -= p(i,j)*alphaL_*v_new.h(i-1,j);                     
-       jv.Qin(i,j) -= 0.5*v_new.Qout(i-1,j);                           
-     }                                                                 
-     if( j>0 ) {                                                       
-       jv.h(i,j) -= p(i,j)*alphaL_*v_new.h(i,j-1);                     
-       jv.Qin(i,j) -= 0.5*v_new.Qout(i,j-1);                           
-     }
+  for(size_type i=0; i<rows_; ++i ) {
+    for( size_type j=0; j<cols_; ++j ) {
+      jv.h(i,j)    = beta_*p(i,j)*v_new(i,j);
+      jv.Qin(i,j)  = -v_new(i,j);
     }
   }
 }

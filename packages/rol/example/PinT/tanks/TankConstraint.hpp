@@ -168,9 +168,11 @@ public:
   void applyJacobian_2( Vector &jv, const Vector &v,
                         const Vector &u_old, const Vector &u_new,
                         const Vector &z, Real &tol ) override {
+    jv.zero();
     auto& jv_state = to_state(jv);
     auto& v_ctrl   = to_control(v);
-    tankState_.value( jv_state, zero_state_, zero_state_, v_ctrl );
+//    tankState_.value( jv_state, zero_state_, zero_state_, v_ctrl );
+    tankState_.applyJacobian_2( jv_state, v_ctrl );
 }
 
   void applyAdjointJacobian_2_time( Vector& ajv, const Vector &dualv,
