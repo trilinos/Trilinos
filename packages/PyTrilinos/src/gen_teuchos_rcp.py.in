@@ -74,6 +74,11 @@ def get_input_files():
 
 def get_header_files():
     result = ["PyTrilinos_config.h"]
+    result.append("PyTrilinos_Teuchos_Headers.hpp")
+    if ("${PyTrilinos_ENABLE_Epetra}"):
+        result.append("PyTrilinos_Epetra_Headers.hpp")
+    if ("${PyTrilinos_ENABLE_Epetra}"):
+        result.append("PyTrilinos_EpetraExt_Headers.hpp")
     if ("${PyTrilinos_ENABLE_Domi}"):
         result.append("Domi_DefaultNode.hpp")
     if ("${PyTrilinos_ENABLE_Tpetra}"):
@@ -99,56 +104,68 @@ def get_typedefs():
 
 ################################################################################
 
-# def parse_class(classname):
-#     result = {}
-#     if classname[-1] != ">":
-#         name = classname
-#         templates = []
-#     else:
-#         open_brackets = 1
-#         index = len(classname) - 1
-#         while open_brackets > 0 and index > 0:
-#             index -= 1
-#             if classname[index] == ">":
-#                 open_brackets += 1
-#             elif classname[index] == "<":
-#                 open_brackets -= 1
-#         name = classname[:index]
-#         templates = classname[index:].split(",")
-#     components = name.split("::")
-#     if len(components) == 1:
-#         result["namespaces"] = []
-#     else:
-#         result["namespaces"] = components[:-1]
-#     result["name"] = components[-1]
-#     result["template_args"] = []
-#     for i in range(len(templates)):
-#         result["template_args"].append("ARG%d" % (i+1))
-#     return result
+def parse_class(classname):
+    result = {}
+    if classname[-1] != ">":
+        name = classname
+        templates = []
+    else:
+        open_brackets = 1
+        index = len(classname) - 1
+        while open_brackets > 0 and index > 0:
+            index -= 1
+            if classname[index] == ">":
+                open_brackets += 1
+            elif classname[index] == "<":
+                open_brackets -= 1
+        name = classname[:index]
+        templates = classname[index:].split(",")
+    components = name.split("::")
+    if len(components) == 1:
+        result["namespaces"] = []
+    else:
+        result["namespaces"] = components[:-1]
+    result["name"] = components[-1]
+    result["template_args"] = []
+    for i in range(len(templates)):
+        result["template_args"].append("ARG%d" % (i+1))
+    return result
 
 ################################################################################
 
-# def forward_decl(classname):
-#     result = ""
-#     parsing = parse_class(classname)
-#     namespaces = parsing["namespaces"]
-#     if namespaces:
-#         for namespace in namespaces:
-#             result += "namespace %s{ " % namespace
-#     template_args = parsing["template_args"]
-#     if template_args:
-#         result += "template< "
-#         for arg in template_args:
-#             result += "class %s" % arg
-#             if arg != template_args[-1]:
-#                 result += ","
-#             result += " "
-#         result += "> "
-#     result += "class %s; " % parsing["name"]
-#     if namespaces:
-#         for namespace in namespaces:
-#             result += "} "
-#     return result
+def form_class_filename(parsed_class):
+    if parsed_class["name"].startswith("Epetra_"):
+        ext = ".h"
+    elif parsed_class["name"].startswith("Amesos_"):
+        ext = ".h"
+    elif parsed_class["name"].startswith("AztecOO_"):
+        ext = ".h"
+    elif parsed_class["name"].startswith("Ifpack_"):
+        ext = ".h"
+    elif parsed_class["name"].startswith("Komplex_"):
+        ext = ".h"
+    elif parsed_class["name"] == "Pliris":
+        ext = ".h"
+    elif parsed_class["name"].startswith("Trilinos_Util_"):
+        ext = ".h"
+    elif parsed_class["namespaces"][0] == "EpetraExt":
+        ext = ".h"
+    elif parsed_class["namespaces"][0] == "MLAPI":
+        ext = ".h"
+    elif parsed_class["namespaces"][0] in ("NOX", "LOCA"):
+        ext = ".H"
+    else:
+        ext = ".hpp"
+    result = ""
+    for namespace in parsed_class["namespaces"]:
+        result += (namespace + "_")
+    if parsed_class["namespaces"] == ["Teuchos"] and \
+       parsed_class["name"].endswith("Comm"):
+        result += ("Default" + parsed_class["name"] + ext)
+    else:
+        result += (parsed_class["name"] + ext)
+
+    return result    
 
 ################################################################################
 
@@ -191,13 +208,25 @@ def get_rcp_classes(swig_filenames):
 
 ################################################################################
 
-# def list_forward_decl(rcp_classes):
-#     result = set()
-#     for classname in rcp_classes:
-#         result.add(forward_decl(classname))
-#     result = list(result)
-#     result.sort()
-#     return result
+def reorder_classnames(classnames):
+    base_classes = ["Epetra_VbrMatrix",
+                    "Epetra_RowMatrix",
+                    "Epetra_Operator",
+                    "Epetra_SerialDenseOperator",
+                    "Epetra_MultiVector",
+                    "Epetra_BLAS",
+                    "Epetra_Map",
+                    "Epetra_BlockMap",
+                    "Epetra_DistObject",
+                    "Epetra_SrcDistObject",
+                    "Epetra_CompObject",
+                    "Epetra_Object",
+                    "Teuchos::Describable",
+                    "Teuchos::LabeledObject"]
+    for classname in base_classes:
+        if classname in classnames:
+            classnames.remove(classname)
+            classnames.insert(0,classname)
 
 ################################################################################
 
@@ -206,8 +235,13 @@ def main():
     header_files  = get_header_files()
     typedefs      = get_typedefs()
     teuchos_rcps  = get_rcp_classes(swig_files)
+    reorder_classnames(teuchos_rcps)
 
+    ############################################################
     # Generate the SWIG interface file for Teuchos.RCP
+    ############################################################
+
+    # Define the module
     print("%define %teuchos_rcp_docstring")
     print('"')
     print("PyTrilinos.Teuchos.RCP is a special PyTrilinos module designed to")
@@ -230,20 +264,45 @@ def main():
     print('%module(package   = "PyTrilinos.Teuchos",')
     print("        docstring = %teuchos_rcp_docstring) RCP")
     print("")
+
+    # Specify include files directly into the wrapper file
     print("%{")
     print("// Import the NumPy interface")
     print("#define NO_IMPORT_ARRAY")
     print('#include "numpy_include.hpp"')
-    print("%}")
     print("")
-    print("// Import the module files")
-    for swig_file in swig_files:
-        line = 'import "%s"' % swig_file
+    print("// Include the header files")
+    for header in header_files:
+        print('#include "%s"' % header)
+    print("%}")
+
+    # Tell SWIG about the DLL export macro
+    print("")
+    print("// Tell SWIG about the DLL export macros")
+    print('%include "Teuchos_DLLExportMacro.h"')
+    if ("${PyTrilinos_ENABLE_Epetra}"):
+        print('%include "Epetra_DLLExportMacro.h"')
+
+    # Turn off warnings
+    print("")
+    print("# pragma SWIG nowarn=314")
+    print("# pragma SWIG nowarn=317")
+    print("# pragma SWIG nowarn=325")
+    print("# pragma SWIG nowarn=362")
+    print("# pragma SWIG nowarn=389")
+
+    # %import the Trilinos header files
+    print("")
+    print("// Import the Trilinos header files")
+    for classname in teuchos_rcps:
+        line = 'import "%s"' % form_class_filename(parse_class(classname))
         print("%" + line)
     print("")
     print("// SWIG NumPy interface file")
     print('%include "numpy.i"')
     print("")
+
+    # Specify the python docstrings for the Teuchos.RCP functions
     print('%feature("docstring")')
     print("is_null")
     print('"is_null(obj) -> bool')
@@ -285,11 +344,14 @@ def main():
     print("")
     print("If obj is a python wrapper for a C++ object stored as a Teuchos::RCP,")
     print('return the total reference count"')
+
+    # Define the Teuchos.RCP functions
     print("")
     print("%inline")
     print("{")
     print("")
-    for classname in teuchos_rcps:
+    # Note: reverse teuchos_rcps to define functions for the base classes last
+    for classname in reversed(teuchos_rcps):
         print("// %s" % classname)
         print("bool is_null(      Teuchos::RCP< %s > & object){ return object.is_null()      ; }" % classname)
         print("bool is_valid_ptr( Teuchos::RCP< %s > & object){ return object.is_valid_ptr() ; }" % classname)
