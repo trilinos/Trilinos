@@ -99,16 +99,16 @@ int main( int argc, char* argv[] ) {
     auto& pl = *tank_parameters;
     auto con = makePtr<TankConstraint<RealT>>(pl);
 
-    auto height = pl.get("Height of Tank",      10.0  );
-    auto Qin00  = pl.get("Corner Inflow",       100.0 );
-    auto h_init = pl.get("Initial Fluid Level", 2.0   );
+    auto height = pl.get("Height of Tank",              10.0  );
+    auto Qin00  = pl.get("Corner Inflow",               100.0 );
+    auto h_init = pl.get("Initial Fluid Level",         2.0   );
+    auto fdstep = pl.get("Finite Difference Step Size", 1.0   );
 
     auto nrows  = static_cast<size_type>( pl.get("Number of Rows",3) );
     auto ncols  = static_cast<size_type>( pl.get("Number of Columns",3) );
 
-    auto z      = makePtr<ControlVector>( nrows, ncols, 
-                                         "Control (z)" );    
 
+    auto z      = makePtr<ControlVector>( nrows, ncols, "Control (z)" );    
     auto vz     = z->clone( "Control direction (vz)"       );
     auto z_lo   = z->clone( "Control Lower Bound (z_lo)"   );
 
@@ -117,17 +117,12 @@ int main( int argc, char* argv[] ) {
     auto z_bnd  = makePtr<Bounds>( *z_lo );
 
     // State
-    auto u_new  = makePtr<StateVector>( nrows, ncols, 
-                                        "New state (u_new)" );
-
-    auto u_old  = u_new->clone( "Old state (u_old)"        );
-
+    auto u_new    = makePtr<StateVector>( nrows, ncols, "New state (u_new)" );
+    auto u_old    = u_new->clone( "Old state (u_old)"        );
     auto u_new_lo = u_new->clone( "State lower bound (u_lo)" );
     auto u_new_up = u_new->clone( "State upper bound (u_up)" );
 
-  
     auto u    = PartitionedVector::create( { u_old, u_new } );
-
     auto u_lo = PartitionedVector::create( { u_new_lo, u_new_lo } );
     auto u_up = PartitionedVector::create( { u_new_up, u_new_up } );
 
@@ -139,10 +134,13 @@ int main( int argc, char* argv[] ) {
     auto vu_old = u_old->clone( "Old state direction (vu_old)" );
     auto vu     = PartitionedVector::create( { vu_old, vu_new } );
 
-    auto c      = u_new->clone( "State residual (c)"       );
-
-    auto Jvu    = u_new->clone( "State dir-deriv (Jvu)"    );
-    auto Jvz    = u_new->clone( "Control dir-deriv (Jvz)"  );
+    auto c        = u_new->clone( "State residual (c)"              );
+    auto dc       = u_new->clone( "Change in residual (dc)"         );
+    auto Jerr     = u_new->clone( "Jacobian error (Jerr)"           );
+    auto w        = u_new->clone( "Constraint dual test vector (w)" );
+    auto Jvu_new  = u_new->clone( "New state dir-deriv (Jvu_new)"   );
+    auto Jvu_old  = u_new->clone( "Old state dir-deriv (Jvu_old)"   );
+    auto Jvz      = u_new->clone( "Control dir-deriv (Jvz)"         );
 
     (*z)(0,0) = Qin00;
 
@@ -153,18 +151,18 @@ int main( int argc, char* argv[] ) {
 
     auto u_new_bnd = makePtr<Bounds>( u_new_lo, u_new_up );
     RandomizeFeasibleVector( *u_new, *u_new_bnd );
-
     RandomizeVector( *vu );
     RandomizeVector( *vz ); 
     RandomizeVector( *c ) ;
+    RandomizeVector( *w ) ;
     
-    c->print( *outStream );
-    u_new->print( *outStream );
-
-    con->solve( *c, *u_old, *u_new, *z, tol );
-    con->value( *c, *u_old, *u_new, *z, tol );
-    c->print( *outStream );
-    u_new->print( *outStream );
+//    c->print( *outStream );
+//    u_new->print( *outStream );
+//
+//    con->solve( *c, *u_old, *u_new, *z, tol );
+//    con->value( *c, *u_old, *u_new, *z, tol );
+//    c->print( *outStream );
+//    u_new->print( *outStream );
 
 
     auto u_old_bnd = u_new_bnd; 
@@ -173,35 +171,87 @@ int main( int argc, char* argv[] ) {
 
     auto x = ROL::makePtr<ROL::Vector_SimOpt<RealT>>( u, z );
 
+    con->print_tankstate_parameters( *outStream );
 
-//    con->print_tankstate_parameters( *outStream );
+//    con->checkSolve(*u, *z, *c, true, *outStream ); 
 
-    con->checkSolve(*u, *z, *c, true, *outStream ); 
+    auto du_new = u_new->clone("Change in new state (du_new)");
+    auto du_old = u_old->clone("Change in old state (du_old)");
+    auto dz     = z->clone("Change in control (dz)");
 
-    con->checkApplyJacobian_1( *u, *z, *vu, *Jvu, true, *outStream );
-    con->checkApplyJacobian_2( *u, *z, *vz, *Jvz, true, *outStream );
-// 
-    con->applyJacobian_1_new( *Jvu, *vu_new, *u_old, *u_new, *z, tol );
-//
-////    vu_new->print( *outStream );
-////    Jvu->print( *outStream );
-//  
-//    auto iJJvu = vu_new->clone("Inverse Jacobian applied to Jvu");
-//    con->applyInverseJacobian_1_new( *iJJvu, *Jvu, *u_old, *u_new, *z, tol);
-//
-//    iJJvu->print( *outStream );   
-//
-//    auto err = vu_new->clone("Jacobian inverse error");
-//
-//    err->set(*vu_new);
-//    err->axpy(-1.0,*iJJvu);
-//
-////    err->print( *outStream );
-//
-    con->checkInverseJacobian_1_new( *c, *u_new, *u_old, *z, *vu_new, true, *outStream );
-  
+    du_new->set(*u_new);   du_new->axpy(1.0, *vu_new);
+    du_old->set(*u_old);   du_old->axpy(1.0, *vu_old);
+    dz->set( *z );         dz->axpy(1.0, *vz);
+ 
+    //=========================================================================
+    *outStream << std::string(80,'=') << std::endl;
+    *outStream << "\nTesting value (dc uses Matrix implementation)" << std::endl;
+
+    // Compare two approaches towards computing value
+    dc->zero(); Jerr->zero();
+    con->value( *c,  *u_old,  *u_new, *z, tol );
+    con->value_with_matrix( *dc, *u_old, *u_new, *z, tol );
+    Jerr->set(*c); Jerr->axpy(-1.0, *dc);
+    c->print(*outStream);
+    dc->print(*outStream);
+    Jerr->print(*outStream);
     
+    
+    //=========================================================================
 
+    //=========================================================================
+    *outStream << std::string(80,'=') << std::endl;
+    *outStream << "\nTesting applyJacobian_1_old" << std::endl;
+    
+    c->zero(); dc->zero(); Jerr->zero();
+    con->value( *dc, *du_old, *u_new, *z, tol );
+    dc->axpy(-fdstep,*c); Jerr->set(*dc); Jerr->scale(1.0/fdstep); 
+    con->applyJacobian_1_old( *Jvu_old, *vu_old, *u_old, *u_new, *z, tol );
+    Jerr->axpy(-1.0,*Jvu_old);
+    dc->print( *outStream );
+    Jvu_old->print( *outStream ) ;
+    Jerr->print( *outStream );
+
+    //=========================================================================
+    *outStream << std::string(80,'=') << std::endl;
+    *outStream << "\nTesting applyJacobian_1_new" << std::endl;
+
+    dc->zero(); Jerr->zero();    
+    con->value( *dc, *u_old,  *du_new, *z, tol );
+    dc->axpy(-fdstep,*c); Jerr->set(*dc); Jerr->scale(1.0/fdstep);
+    con->applyJacobian_1_new( *Jvu_new, *vu_new, *u_old, *u_new, *z, tol );
+    Jerr->axpy(-1.0,*Jvu_new);
+    dc->print( *outStream );
+    Jvu_new->print( *outStream ) ;
+    Jerr->print( *outStream );
+
+    //=========================================================================
+    *outStream << std::string(80,'=') << std::endl;
+    *outStream << "\nTesting applyJacobian_2" << std::endl;
+
+    dc->zero(); Jerr->zero();    
+    con->value( *dc, *u_old,  *u_new, *dz, tol );
+    dc->axpy(-fdstep,*c); Jerr->set(*dc); Jerr->scale(1.0/fdstep);
+    con->applyJacobian_2( *Jvu_new, *vz, *u_old, *u_new, *z, tol );
+    Jerr->axpy(-1.0,*Jvz);
+    dc->print( *outStream );
+    Jvz->print( *outStream ) ;
+    Jerr->print( *outStream );
+
+    //=========================================================================
+
+
+//    con->checkApplyJacobian_1_new( *u_new, *u_old, *z, *vu_new, *c, true, *outStream );
+//    con->checkApplyJacobian_1( *u, *z, *vu, *Jvz, true, *outStream );
+//    con->checkApplyJacobian_2( *u, *z, *vz, *Jvz, true, *outStream );
+// 
+//    con->applyJacobian_1_new( *c, *vu_new, *u_old, *u_new, *z, tol );
+//
+//    con->checkAdjointConsistencyJacobian_1( *w, *vu, *u, *z, true, *outStream );
+//
+//    con->checkInverseJacobian_1_new( *c, *u_new, *u_old, *z, *vu_new, true, *outStream );
+//    con->checkInverseAdjointJacobian_1_new( *c, *u_new, *u_old, *z, *vu_new, true, *outStream );
+  
 //  }
 //  catch (std::logic_error err) {
 //    *outStream << err.what() << "\n";

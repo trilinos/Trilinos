@@ -559,6 +559,160 @@ public:
      return dnorm;
    }
 
+  virtual Real checkInverseAdjointJacobian_1_new( const ROL::Vector<Real> &c,
+                                                  const ROL::Vector<Real> &u_new,
+                                                  const ROL::Vector<Real> &u_old,
+                                                  const ROL::Vector<Real> &z,
+                                                  const ROL::Vector<Real> &v_new,
+                                                  const bool printToStream = true,
+                                                  std::ostream & outStream = std::cout) {
+     Real tol = ROL_EPSILON<Real>();
+     auto Jv   = c.clone();
+     update( u_new, u_old, z );
+     applyAdjointJacobian_1_new( *Jv, v_new, u_old, u_new, z, tol );
+     auto iJJv = u_new.clone();
+     update( u_new, u_old, z );
+     applyInverseAdjointJacobian_1_new( *iJJv, *Jv, u_old, u_new, z, tol );
+     auto diff = v_new.clone();
+     diff->set(v_new);
+     diff->axpy(-1.0,*iJJv);
+     Real dnorm = diff->norm();
+     Real vnorm = v_new.norm();
+     if ( printToStream ) {
+       std::stringstream hist;
+       hist << std::scientific << std::setprecision(8);
+       hist << "\nTest TimeSimOpt consistency of inverse adjoint Jacobian_1_new: \n  ||v-inv(adj(J))adj(J)v|| = " 
+            << dnorm << "\n";
+       hist << "  ||v||          = " << vnorm << "\n";
+       hist << "  Relative Error = " << dnorm / (vnorm+ROL_UNDERFLOW<Real>()) << "\n";
+       outStream << hist.str();
+     }
+     return dnorm;
+   }
+
+  std::vector<std::vector<Real> > checkApplyJacobian_1_new(const Vector<Real> &u_new,
+                                                       const Vector<Real> &u_old,
+                                                       const Vector<Real> &z,
+                                                       const Vector<Real> &v,
+                                                       const Vector<Real> &jv,
+                                                       const bool printToStream = true,
+                                                       std::ostream & outStream = std::cout,
+                                                       const int numSteps = ROL_NUM_CHECKDERIV_STEPS,
+                                                       const int order = 1) {
+    std::vector<Real> steps(numSteps);
+    for(int i=0;i<numSteps;++i) {
+      steps[i] = pow(10,-i);
+    }
+   
+    return checkApplyJacobian_1_new(u_new,u_old,z,v,jv,steps,printToStream,outStream,order);
+  }
+  
+  std::vector<std::vector<Real> > checkApplyJacobian_1_new(const Vector<Real> &u_new, 
+                                                         const Vector<Real> &u_old, 
+                                                         const Vector<Real> &z,
+                                                         const Vector<Real> &v,
+                                                         const Vector<Real> &jv,
+                                                         const std::vector<Real> &steps, 
+                                                         const bool printToStream = true,
+                                                         std::ostream & outStream = std::cout,
+                                                         const int order = 1) {
+ 
+    TEUCHOS_TEST_FOR_EXCEPTION( order<1 || order>4, std::invalid_argument, 
+                                "Error: finite difference order must be 1,2,3, or 4" );
+ 
+    Real one(1.0);
+ 
+    using Finite_Difference_Arrays::shifts;
+    using Finite_Difference_Arrays::weights;
+ 
+    Real tol = std::sqrt(ROL_EPSILON<Real>());
+ 
+    int numSteps = steps.size();
+    int numVals = 4;
+    std::vector<Real> tmp(numVals);
+    std::vector<std::vector<Real> > jvCheck(numSteps, tmp);
+ 
+    // Save the format state of the original outStream.
+    Teuchos::oblackholestream oldFormatState;
+    oldFormatState.copyfmt(outStream);
+ 
+    // Compute constraint value at x.
+    ROL::Ptr<Vector<Real> > c = jv.clone();
+    this->update(u_new, u_old, z);
+    this->value(*c, u_new, u_old, z, tol);
+ 
+    // Compute (Jacobian at x) times (vector v).
+    ROL::Ptr<Vector<Real> > Jv = jv.clone();
+    this->applyJacobian_1_new(*Jv, v, u_new, u_old, z, tol);
+    Real normJv = Jv->norm();
+ 
+    // Temporary vectors.
+    ROL::Ptr<Vector<Real> > cdif = jv.clone();
+    ROL::Ptr<Vector<Real> > cnew = jv.clone();
+    ROL::Ptr<Vector<Real> > u_2 = u_new.clone();
+ 
+    for (int i=0; i<numSteps; i++) {
+ 
+      Real eta = steps[i];
+ 
+      u_2->set(u_new);
+ 
+      cdif->set(*c);
+      cdif->scale(weights[order-1][0]);
+ 
+      for(int j=0; j<order; ++j) {
+ 
+         u_2->axpy(eta*shifts[order-1][j], v);
+
+         if( weights[order-1][j+1] != 0 ) {
+             this->update(*u_2,u_old,z);
+             this->value(*cnew,*u_2,u_old,z,tol);
+             cdif->axpy(weights[order-1][j+1],*cnew);
+         }
+
+      }
+ 
+      cdif->scale(one/eta);
+ 
+      // Compute norms of Jacobian-vector products, finite-difference approximations, and error.
+      jvCheck[i][0] = eta;
+      jvCheck[i][1] = normJv;
+      jvCheck[i][2] = cdif->norm();
+      cdif->axpy(-one, *Jv);
+      jvCheck[i][3] = cdif->norm();
+ 
+      if (printToStream) {
+        std::stringstream hist;
+        if (i==0) {
+        hist << std::right
+             << std::setw(20) << "Step size"
+             << std::setw(20) << "norm(Jac*vec)"
+             << std::setw(20) << "norm(FD approx)"
+             << std::setw(20) << "norm(abs error)"
+             << "\n"
+             << std::setw(20) << "---------"
+             << std::setw(20) << "-------------"
+             << std::setw(20) << "---------------"
+             << std::setw(20) << "---------------"
+             << "\n";
+        }
+        hist << std::scientific << std::setprecision(11) << std::right
+             << std::setw(20) << jvCheck[i][0]
+             << std::setw(20) << jvCheck[i][1]
+             << std::setw(20) << jvCheck[i][2]
+             << std::setw(20) << jvCheck[i][3]
+             << "\n";
+        outStream << hist.str();
+      }
+ 
+    }
+ 
+    // Reset format state of outStream.
+    outStream.copyfmt(oldFormatState);
+ 
+    return jvCheck;
+  } // checkApplyJacobian_1_new
+
 
 }; // class Constraint_SimOpt
 

@@ -83,10 +83,17 @@ private:
   StateVector   zero_state_;
   ControlVector zero_ctrl_;
 
+  bool has_applyJacobian_1_old_;
+  bool has_applyJacobian_1_new_;
+  bool has_applyJacobian_2_;
+
 public:
   TankConstraint( Teuchos::ParameterList& pl ) : tankState_(pl), 
     rows_(pl.get("Number of Rows", 3)), cols_(pl.get("Number of Columns", 3)),
-    zero_state_(rows_,cols_,"Zero State"), zero_ctrl_(rows_,cols_,"Zero Control") {
+    zero_state_(rows_,cols_,"Zero State"), zero_ctrl_(rows_,cols_,"Zero Control"),
+    has_applyJacobian_1_old_( pl.get("Has applyJacobian_1_old", false ) ),
+    has_applyJacobian_1_new_( pl.get("Has applyJacobian_1_new", false ) ),
+    has_applyJacobian_2_( pl.get("Has applyJacobian_2", false ) ) {
   }
 
   void print_tankstate_parameters( std::ostream& os ) { tankState_.print_members(os); }
@@ -102,9 +109,22 @@ public:
     tankState_.value( c_state, uo_state, un_state, z_ctrl ) ;
   }
 
+  void value_with_matrix( Vector& c, const Vector& u_old, const Vector& u_new, 
+              const Vector& z, Real& tol ) {
+
+    auto& c_state  = to_state(c); 
+    auto& uo_state = to_state(u_old);
+    auto& un_state = to_state(u_new);
+    auto& z_ctrl   = to_control(z);
+    c.zero();
+    tankState_.value_with_matrix( c_state, uo_state, un_state, z_ctrl ) ;
+  }
+
+
   void solve( Vector& c, const Vector& u_old, Vector& u_new, 
               const Vector& z, Real& tol ) override {
-    
+  
+    u_new.zero();  
     auto& c_state  = to_state(c);      
     auto& un_state = to_state(u_new);
     auto& uo_state = to_state(u_old);
@@ -121,13 +141,19 @@ public:
     jv.zero();
     auto& jv_state = to_state(jv);
     auto& vo_state = to_state(v_old);
-//    tankState_.value( jv_state, vo_state, zero_state_, zero_ctrl_ );
-    tankState_.applyJacobian_1_old(jv_state,vo_state);
+    if( has_applyJacobian_1_old_ ) 
+      tankState_.applyJacobian_1_old(jv_state,vo_state);
+    else
+      tankState_.value(jv_state, zero_state_, vo_state, zero_ctrl_ );
   }
 
   void applyAdjointJacobian_1_old( Vector &ajv_old, const Vector &dualv,
                                    const Vector &u_old, const Vector &u_new,
                                    const Vector &z, Real& tol) override { 
+    ajv_old.zero();
+    auto& ajv_state = to_state(ajv_old);
+    auto& dv_state  = to_state(dualv);
+    tankState_.applyAdjointJacobian_1_old( ajv_state, dv_state );
   }
 
   //----------------------------------------------------------------------------
@@ -138,14 +164,19 @@ public:
     jv.zero();
     auto& jv_state = to_state(jv);
     auto& vn_state = to_state(v_new);
-//    tankState_.value( jv_state, zero_state_, vn_state, zero_ctrl_ );
-    tankState_.applyJacobian_1_new(jv_state,vn_state);
+    if( has_applyJacobian_1_new_ )
+      tankState_.applyJacobian_1_new(jv_state,vn_state);
+    else 
+      tankState_.value(jv_state, vn_state, zero_state_, zero_ctrl_);
   }
  
   void applyAdjointJacobian_1_new( Vector& ajv_new, const Vector &dualv,
                                    const Vector &u_old, const Vector& u_new,
                                    const Vector &z, Real& tol) override {
-
+    ajv_new.zero();
+    auto& ajv_state = to_state(ajv_new);
+    auto& dv_state  = to_state(dualv);
+    tankState_.applyAdjointJacobian_1_new( ajv_state, dv_state );
   }
 
   void applyInverseJacobian_1_new( Vector &ijv, const Vector &v_new,
@@ -160,7 +191,10 @@ public:
   void applyInverseAdjointJacobian_1_new( Vector& iajv, const Vector& v_new,
                                           const Vector& u_old, const Vector& u_new,
                                           const Vector& z, Real& tol) override {
-
+    iajv.zero();
+    auto& iajv_state = to_state(iajv);      
+    auto& vn_state  = to_state(v_new);
+    tankState_.applyInverseAdjointJacobian_1_new(iajv_state,vn_state);
   }
 
   //----------------------------------------------------------------------------
@@ -171,8 +205,10 @@ public:
     jv.zero();
     auto& jv_state = to_state(jv);
     auto& v_ctrl   = to_control(v);
-//    tankState_.value( jv_state, zero_state_, zero_state_, v_ctrl );
-    tankState_.applyJacobian_2( jv_state, v_ctrl );
+    if( has_applyJacobian_2_ ) 
+      tankState_.applyJacobian_2( jv_state, v_ctrl );
+    else 
+      tankState_.value(jv_state, zero_state_, zero_state_, v_ctrl);
 }
 
   void applyAdjointJacobian_2_time( Vector& ajv, const Vector &dualv,
