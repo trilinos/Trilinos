@@ -180,7 +180,6 @@ public:
       {
         q.second.put("<xmlattr>.value", value);
         // FIXME: check type
-        std::cout << " Set " << name << " = " << value << "\n";
         return;
       }
     }
@@ -192,7 +191,6 @@ public:
     new_node.put("<xmlattr>.value", value);
     root_->second.add_child("Parameter", new_node);
 
-    std::cout << "Set NEW Parameter " << name << " = " << value << "(" << get_type(value) << ")\n";
 
   }
 
@@ -203,13 +201,9 @@ public:
       if (r.first == "Parameter" and
           r.second.get<std::string>("<xmlattr>.name") == name)
       {
-        std::cout << " Get Parameter '" << name << "' = [";
-        std::cout << r.second.get<string>("<xmlattr>.type") << "] ";
-        std::cout << r.second.get<T>("<xmlattr>.value") << "\n";
         return r.second.get<T>("<xmlattr>.value");
       }
     }
-    std::cout << "Failed to find parameter " << name << "\n";
     exit(-1);
     return T();
   }
@@ -225,15 +219,9 @@ public:
       if (r.first == "Parameter" and
           r.second.get<std::string>("<xmlattr>.name") == name)
       {
-        std::cout << "Get Parameter '" << name << "' = [";
-        std::cout << r.second.get<string>("<xmlattr>.type") << "] ";
-        std::cout << r.second.get<T>("<xmlattr>.value") << "\n";
         return r.second.get<T>("<xmlattr>.value");
       }
     }
-
-    std::cout << "Get Parameter '" << name << "' = default [";
-    std::cout << default_value << "]\n";
 
     return default_value;
   }
@@ -269,13 +257,11 @@ public:
         const std::string xml_name = r->second.get<std::string>("<xmlattr>.name");
         if (xml_name == name)
         {
-          std::cout << "Found ParameterList " << name << "\n";
           refs_.push_back(std::shared_ptr<ParameterList>(new ParameterList(r)));
           return *refs_.back();
         }
       }
     }
-    std::cout << "Failed to find " << name << "\nCreating...\n";
 
     // Create node and retry
     pt::ptree tr;
