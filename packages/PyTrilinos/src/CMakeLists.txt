@@ -347,11 +347,19 @@ FOREACH(MODULE ${PyTrilinos_MODULES})
 
   # Define the target for this module
   SET(PyTrilinos_TARGET_NAME "PyTrilinos_${MODULE_NODOT}")
-  SWIG_ADD_MODULE(${PyTrilinos_TARGET_NAME}
-    python
-    "${MODULE}.i"
-    "${MODULE_OUTDIR}"
-    "${MODULE_NAME}")
+  IF("${MODULE_NAME}" MATCHES "Teuchos")
+    SWIG_ADD_MODULE(${PyTrilinos_TARGET_NAME}
+      python
+      "${MODULE}.i"
+      "${MODULE_OUTDIR}/${MODULE_NAME}"
+      "__init__")
+  ELSE("${MODULE_NAME}" MATCHES "Teuchos")
+    SWIG_ADD_MODULE(${PyTrilinos_TARGET_NAME}
+      python
+      "${MODULE}.i"
+      "${MODULE_OUTDIR}"
+      "${MODULE_NAME}")
+  ENDIF("${MODULE_NAME}" MATCHES "Teuchos")
   SET_PROPERTY(TARGET ${PyTrilinos_TARGET_NAME} PROPERTY NO_SONAME 1)
   SWIG_LINK_LIBRARIES(${PyTrilinos_TARGET_NAME} pytrilinos ${DOMI_LIB})
 
@@ -363,16 +371,14 @@ FOREACH(MODULE ${PyTrilinos_MODULES})
   # to byte-compile and the installation rules requires a little bit
   # of logic.
 
-  # PyTrilinos.Teuchos: Generate PyTrilinos/Teuchos.py, and move it to
-  # PyTrilinos/Teuchos/__init__.py. This causes other packages to
-  # "import Teuchos" properly.
+  # PyTrilinos.Teuchos: From Teuchos.i, generate
+  # PyTrilinos/Teuchos/__init__.py, which violates the pattern.  This
+  # causes other packages to "import Teuchos" properly.
   IF("${MODULE_NAME}" MATCHES "Teuchos")
     ADD_CUSTOM_COMMAND(TARGET ${PyTrilinos_TARGET_NAME} POST_BUILD
-      COMMAND mv
-      ARGS    PyTrilinos/${MODULE_NAME}.py PyTrilinos/${MODULE_NAME}/__init__.py
       COMMAND ${PYTHON_EXECUTABLE}
       ARGS    -c "import py_compile; py_compile.compile('PyTrilinos/${MODULE_NAME}/__init__.py', 'PyTrilinos/${MODULE_NAME}/__init__.pyc')"
-      COMMENT "Moving and byte compiling ${MODULE_NAME}/__init__.py"
+      COMMENT "Byte compiling ${MODULE_NAME}/__init__.py"
       VERBATIM)
     INSTALL(FILES
       ${CMAKE_CURRENT_BINARY_DIR}/PyTrilinos/${MODULE_NAME}/__init__.py
