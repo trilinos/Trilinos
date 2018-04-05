@@ -61,6 +61,23 @@
 #include "MueLu_TestHelpers.hpp"
 
 // =========================================================================
+// Support Routines
+// =========================================================================
+template<class View1, class View2>
+inline void copy_view_n(const int n, const View1 x1, View2 x2) {
+  Kokkos::parallel_for(n,KOKKOS_LAMBDA(const size_t i) {
+      x2[i] = x1[i];
+    });
+}
+
+template<class View1, class View2>
+inline void copy_view(const View1 x1, View2 x2) {
+  copy_view_n(x1.extent(0),x1,x2);
+}
+
+
+
+// =========================================================================
 // ViennaCL Testing
 // =========================================================================
 #ifdef HAVE_MUELU_VIENNACL
@@ -118,21 +135,10 @@ void Multiply_ViennaCL(const Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,No
     vcl_size_t_type AcolindVCL("Acolind",Acolind.extent(0));
     vcl_size_t_type BcolindVCL("Bcolind",Bcolind.extent(0));
 
-    Kokkos::parallel_for(Arowptr.extent(0),KOKKOS_LAMBDA(const size_t i) {
-        ArowptrVCL(i) = Arowptr(i);
-      });
-
-    Kokkos::parallel_for(Browptr.extent(0),KOKKOS_LAMBDA(const size_t i) {
-        BrowptrVCL(i) = Browptr(i);
-      });
-
-    Kokkos::parallel_for(Acolind.extent(0),KOKKOS_LAMBDA(const size_t i) {
-        AcolindVCL(i) = Acolind(i);
-      });
-
-    Kokkos::parallel_for(Bcolind.extent(0),KOKKOS_LAMBDA(const size_t i) {
-        BcolindVCL(i) = Bcolind(i);
-      });
+    copy_view(Arowptr,ArowptrVCL);
+    copy_view(Browptr,BrowptrVCL);
+    copy_view(Acolind,AcolindVCL);
+    copy_view(Bcolind,BcolindVCL);
 
     viennacl::compressed_matrix<Scalar> AVCL, BVCL; 
     AVCL.set(ArowptrVCL.ptr_on_device(), AcolindVCL.ptr_on_device(), Avals.ptr_on_device(),Au->getNodeNumRows(),Au->getNodeNumCols(),Au->getNodeNumEntries());
@@ -164,15 +170,9 @@ void Multiply_ViennaCL(const Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,No
     const Scalar * CvalsVCL   = viennacl::linalg::host_based::detail::extract_raw_pointer<Scalar>(CVCL.handle());
 #endif
 
-    Kokkos::parallel_for(Crowptr.extent(0),KOKKOS_LAMBDA(const size_t i) {
-        Crowptr(i) = CrowptrVCL[i];
-      });
-
-
-     Kokkos::parallel_for(Ccolind.extent(0),KOKKOS_LAMBDA(const size_t i) {
-         Ccolind(i) = CcolindVCL[i];
-         Cvals(i)  = CvalsVCL[i];
-      });
+    copy_view_n(Crowptr.extent(0),CrowptrVCL,Crowptr);
+    copy_view_n(cnnz,CcolindVCL,Ccolind);
+    copy_view_n(cnnz,CvalsVCL,Cvals);
      
     Cmat.graph.row_map = Crowptr;
     Cmat.graph.entries = Ccolind;
@@ -193,9 +193,110 @@ void Multiply_ViennaCL(const Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,No
 // MKL Testing
 // =========================================================================
 #ifdef HAVE_MUELU_MKL
+#include "mkl.h"
 
+  // mkl_sparse_spmm
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-void Multiply_MKL(const Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> &A,  const Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> &B, Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> &C) {
+void Multiply_MKL_SPMM(const Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> &A,  const Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> &B, Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> &C) {
+#include <MueLu_UseShortNames.hpp>
+  using Teuchos::RCP;
+  using Teuchos::rcp;
+  using Teuchos::TimeMonitor;
+  // NOTE: MKL uses int as its columnn index type and the either double or float for its Scalar type
+
+  Xpetra::UnderlyingLib lib = A.getRowMap()->lib();
+  RCP<TimeMonitor> tm;
+#if defined(HAVE_MUELU_TPETRA)    
+    typedef Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> crs_matrix_type;
+    typedef typename crs_matrix_type::local_matrix_type    KCRS;
+    typedef typename KCRS::StaticCrsGraphType              graph_t;
+    typedef typename graph_t::row_map_type::non_const_type lno_view_t;
+    typedef typename graph_t::row_map_type::const_type     c_lno_view_t;
+    typedef typename graph_t::entries_type::non_const_type lno_nnz_view_t;
+    typedef typename graph_t::entries_type::const_type     c_lno_nnz_view_t;
+    typedef typename KCRS::values_type::non_const_type     scalar_view_t;
+
+    typedef typename Kokkos::View<MKL_INT*,typename lno_nnz_view_t::array_layout,typename lno_nnz_view_t::device_type> mkl_int_type;
+
+    RCP<const crs_matrix_type> Au = Utilities::Op2TpetraCrs(rcp(&A,false));
+    RCP<const crs_matrix_type> Bu = Utilities::Op2TpetraCrs(rcp(&B,false));
+    RCP<const crs_matrix_type> Cu = Utilities::Op2TpetraCrs(rcp(&C,false));
+
+    const KCRS & Amat = Au->getLocalMatrix();
+    const KCRS & Bmat = Bu->getLocalMatrix();
+    KCRS Cmat = Cu->getLocalMatrix();
+    
+    c_lno_view_t Arowptr = Amat.graph.row_map, Browptr = Bmat.graph.row_map;
+    lno_view_t Crowptr("Crowptr",Cmat.graph.row_map.extent(0));// Because const
+    c_lno_nnz_view_t Acolind = Amat.graph.entries, Bcolind = Bmat.graph.entries;
+    lno_nnz_view_t Ccolind = Cmat.graph.entries;
+    const scalar_view_t Avals = Amat.values, Bvals = Bmat.values;
+    scalar_view_t Cvals = Cmat.values;
+
+    sparse_matrix_t AMKL;
+    sparse_matrix_t BMKL;
+    sparse_matrix_t CMKL;
+
+    // **********************************
+    // Copy in the data for MKL
+    tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("MM MKL: CopyIn")));
+
+    mkl_int_type ArowptrMKL("Arowptr",Arowptr.extent(0));
+    mkl_int_type BrowptrMKL("Browptr",Browptr.extent(0));
+
+    mkl_int_type AcolindMKL("Acolind",Acolind.extent(0));
+    mkl_int_type BcolindMKL("Bcolind",Bcolind.extent(0));
+
+    copy_view(Arowptr,ArowptrMKL);
+    copy_view(Browptr,BrowptrMKL);
+    copy_view(Acolind,AcolindMKL);
+    copy_view(Bcolind,BcolindMKL);
+
+    if(Kokkos::Impl::is_same<Scalar,double>::value) {
+      mkl_sparse_d_create_csr(&AMKL, SPARSE_INDEX_BASE_ZERO, Au->getNodeNumRows(), Au->getNodeNumCols(), ArowptrMKL.data(),ArowptrMKL.data()+1,AcolindMKL.data(),(double*)Avals.data());
+      mkl_sparse_d_create_csr(&BMKL, SPARSE_INDEX_BASE_ZERO, Bu->getNodeNumRows(), Bu->getNodeNumCols(), BrowptrMKL.data(),BrowptrMKL.data()+1,BcolindMKL.data(),(double*)Bvals.data());
+    }
+    else
+      throw std::runtime_error("MKL Type Mismatch");
+    
+
+    tm = Teuchos::null;
+    Au->getComm()->barrier();
+
+    // **********************************
+    // Multiply
+    tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("MM MKL: Multiply")));
+    mkl_sparse_spmm(SPARSE_OPERATION_NON_TRANSPOSE, AMKL, BMKL, &CMKL);
+    KCRS::execution_space::fence();
+      
+    // **********************************
+    // Copy out the data for MKL
+    tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("MM MKL: Copy Out")));
+    sparse_index_base_t c_indexing;
+    MKL_INT c_rows, c_cols, *rows_start, *rows_end, *columns;
+    double * values;
+    mkl_sparse_d_export_csr(CMKL,&c_indexing, &c_rows, &c_cols, &rows_start, &rows_end, &columns, &values);                          
+    size_t cnnz = rows_end[A.getNodeNumRows()-1];
+    Kokkos::resize(Ccolind,cnnz);
+    Kokkos::resize(Cvals,cnnz);
+
+    copy_view_n(A.getNodeNumRows(),rows_start,Crowptr); Crowptr(A.getNodeNumRows()) = rows_end[A.getNodeNumRows()-1];
+    copy_view_n(cnnz,columns,Ccolind);
+    copy_view_n(cnnz,values,Cvals);
+     
+    Cmat.graph.row_map = Crowptr;
+    Cmat.graph.entries = Ccolind;
+    Cmat.values = Cvals;
+
+    mkl_sparse_destroy(AMKL);
+    mkl_sparse_destroy(BMKL);
+    mkl_sparse_destroy(CMKL);
+#endif
+
+
+
+  tm = Teuchos::null;
+  Au->getComm()->barrier();
 
 }
 
@@ -203,6 +304,9 @@ void Multiply_MKL(const Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> &
 
 
 
+// =========================================================================
+// =========================================================================
+// =========================================================================
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int argc, char *argv[]) {
 #include <MueLu_UseShortNames.hpp>
@@ -279,12 +383,12 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
         comm->barrier();
 #endif
       
-        // MKL
+        // MKL_SPMM
 #ifdef HAVE_MUELU_MKL
         C = Xpetra::MatrixFactory<SC,LO,GO,Node>::Build(A->getRowMap(),0);
         {
           TimeMonitor t(*TimeMonitor::getNewTimer("MM MKL: Total"));
-          Multiply_MKL(*A,*B,*C);
+          Multiply_MKL_SPMM(*A,*B,*C);
         }
         comm->barrier();
 #endif
