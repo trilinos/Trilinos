@@ -375,7 +375,8 @@ namespace Ifpack2 {
     
     // initialize distributed and local objects
     void initInternal (const Teuchos::RCP<const row_matrix_type>& matrix,
-                       const Teuchos::Array<Teuchos::Array<local_ordinal_type> >& partitions);
+                       const Teuchos::Array<Teuchos::Array<local_ordinal_type> >& partitions,
+                       const Teuchos::RCP<const import_type> &importer);
 
     void clearInternal();
   };

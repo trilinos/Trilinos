@@ -119,8 +119,8 @@ namespace Ifpack2 {
     template<typename T, int N>
     struct ArrayValueType {
       T v[N];
-      inline ArrayValueType() = default;
-      inline ArrayValueType(const ArrayValueType &b) {
+      ArrayValueType() = default;
+      ArrayValueType(const ArrayValueType &b) {
         for (int i=0;i<N;++i) 
           this->v[i] = b.v[i];
       }      
@@ -603,14 +603,13 @@ namespace Ifpack2 {
     ///
     template<typename MatrixType>
     void
-    performSymbolicPhase
-    (const Teuchos::RCP<const typename ImplType<MatrixType>::tpetra_block_crs_matrix_type> &A,
-     const PartInterface<MatrixType> &interf,
-     BlockTridiags<MatrixType> &btdm,
-     AmD<MatrixType> &amd,
-     const bool overlap_comm) {
+    performSymbolicPhase(const Teuchos::RCP<const typename ImplType<MatrixType>::tpetra_block_crs_matrix_type> &A,
+                         const PartInterface<MatrixType> &interf,
+                         BlockTridiags<MatrixType> &btdm,
+                         AmD<MatrixType> &amd,
+                         const bool overlap_comm) {
 #ifdef HAVE_IFPACK2_BLOCKTRIDICONTAINER_TIMERS
-      TEUCHOS_FUNC_TIME_MONITOR("BlockTriDi::symbolic");
+      TEUCHOS_FUNC_TIME_MONITOR("BlockTriDi::SymbolicPhase");
 #endif
       using local_ordinal_type = typename ImplType<MatrixType>::local_ordinal_type;
       using global_ordinal_type = typename ImplType<MatrixType>::global_ordinal_type;
@@ -663,7 +662,7 @@ namespace Ifpack2 {
             }
           });
       }
-      
+
       // construct the D and R graphs in A = D + R.
       { 
         const auto& local_graph = g.getLocalGraph();
@@ -717,11 +716,11 @@ namespace Ifpack2 {
               }
             }
           }, sum_reducer_type(sum_reducer_value));
-        
+
         size_type D_nnz = sum_reducer_value.v[0];
         size_type R_nnz_owned = sum_reducer_value.v[1];
         size_type R_nnz_remote = sum_reducer_value.v[2];
-        
+
         if (!overlap_comm) {
           R_nnz_owned += R_nnz_remote;
           R_nnz_remote = 0;
@@ -790,18 +789,17 @@ namespace Ifpack2 {
         // Construct the R graph.        
         { 
           amd.rowptr = size_type_1d_view("amd.rowptr", nrows + 1);
-          amd.A_colindsub = local_ordinal_type_1d_view("amd.A_colindsub", R_nnz_owned);
-          const auto R_rowptr = Kokkos::create_mirror_view(amd.rowptr);
+          amd.A_colindsub = local_ordinal_type_1d_view(Kokkos::ViewAllocateWithoutInitializing("amd.A_colindsub"), R_nnz_owned);
+
+          const auto R_rowptr = Kokkos::create_mirror_view(amd.rowptr); 
           const auto R_A_colindsub = Kokkos::create_mirror_view(amd.A_colindsub);
-          R_rowptr(0) = 0;
-          if (overlap_comm) {
-            amd.rowptr_remote = size_type_1d_view("amd.rowptr_remote", nrows + 1);
-            amd.A_colindsub_remote = local_ordinal_type_1d_view("amd.A_colindsub_remote", R_nnz_remote);
-          }
+          
+          amd.rowptr_remote = size_type_1d_view("amd.rowptr_remote", overlap_comm ? nrows + 1 : 0);
+          amd.A_colindsub_remote = local_ordinal_type_1d_view(Kokkos::ViewAllocateWithoutInitializing("amd.A_colindsub_remote"), R_nnz_remote);
+          
           const auto R_rowptr_remote = Kokkos::create_mirror_view(amd.rowptr_remote);
           const auto R_A_colindsub_remote = Kokkos::create_mirror_view(amd.A_colindsub_remote);
-          if (overlap_comm) R_rowptr_remote(0) = 0;
-
+          
           Kokkos::parallel_for
             (Kokkos::RangePolicy<host_execution_space>(0,nrows),
              KOKKOS_LAMBDA(const local_ordinal_type &lr) {
@@ -818,6 +816,7 @@ namespace Ifpack2 {
                     continue;
                 }
                 const local_ordinal_type row_entry = j - j0;
+                // exclusive scan will be performed later
                 if (!overlap_comm || lc < nrows) 
                   ++R_rowptr(lr);
                 else 
@@ -825,22 +824,29 @@ namespace Ifpack2 {
               }
             });
           
+          // exclusive scan
           typedef ArrayValueType<size_type,2> update_type;
           Kokkos::parallel_scan
             (Kokkos::RangePolicy<host_execution_space>(0,nrows+1),
              KOKKOS_LAMBDA(const local_ordinal_type &lr, 
                            update_type &update, 
                            const bool &final) {
+              update_type val;
+              val.v[0] = R_rowptr(lr);
+              if (overlap_comm)
+                val.v[1] = R_rowptr_remote(lr);
+              
               if (final) {
-                R_rowptr(lr) += update.v[0];
-                R_rowptr_remote(lr) += update.v[1];
-
+                R_rowptr(lr) = update.v[0];
+                if (overlap_comm)
+                  R_rowptr_remote(lr) = update.v[1];
+                
                 if (lr < nrows) {
                   const local_ordinal_type ri0 = lclrow2idx[lr];
                   const local_ordinal_type pi0 = rowidx2part(ri0);
                   
                   size_type cnt_rowptr = R_rowptr(lr);
-                  size_type cnt_rowptr_remote = R_rowptr_remote(lr);
+                  size_type cnt_rowptr_remote = overlap_comm ? R_rowptr_remote(lr) : 0; // when not overlap_comm, this value is garbage
 
                   const size_type j0 = local_graph_rowptr(lr);
                   for (size_type j=j0;j<local_graph_rowptr(lr+1);++j) {
@@ -853,15 +859,14 @@ namespace Ifpack2 {
                         continue;
                     }
                     const local_ordinal_type row_entry = j - j0;
-                    if ( !overlap_comm || lc < nrows) 
+                    if (!overlap_comm || lc < nrows) 
                       R_A_colindsub(cnt_rowptr++) = row_entry;
                     else 
                       R_A_colindsub_remote(cnt_rowptr_remote++) = row_entry;
                   }
                 }
-              }
-              update.v[0] += R_rowptr(lr);
-              update.v[1] += R_rowptr_remote(lr);
+              } 
+              update += val;
             });
 
           TEUCHOS_ASSERT(R_rowptr(nrows) == R_nnz_owned);
@@ -879,7 +884,7 @@ namespace Ifpack2 {
         }
       }
     }
-
+    
     ///
     /// numeric phase, initialize the preconditioner
     ///
@@ -1064,18 +1069,17 @@ namespace Ifpack2 {
     ///
     template<typename MatrixType>
     void
-    performNumericPhase
-    (const Teuchos::RCP<const typename ImplType<MatrixType>::tpetra_block_crs_matrix_type> &A,
-     const PartInterface<MatrixType> &interf,
-     BlockTridiags<MatrixType> &btdm,
-     const typename ImplType<MatrixType>::magnitude_type tiny) {
+    performNumericPhase(const Teuchos::RCP<const typename ImplType<MatrixType>::tpetra_block_crs_matrix_type> &A,
+                        const PartInterface<MatrixType> &interf,
+                        BlockTridiags<MatrixType> &btdm,
+                        const typename ImplType<MatrixType>::magnitude_type tiny) {
 #ifdef HAVE_IFPACK2_BLOCKTRIDICONTAINER_TIMERS
-      TEUCHOS_FUNC_TIME_MONITOR("BlockTriDi::numeric");
+      TEUCHOS_FUNC_TIME_MONITOR("BlockTriDi::NumericPhase");
 #endif
       ExtractAndFactorizeTridiags<MatrixType> function(btdm, interf, A, tiny);
       function.run();
     }
-
+    
     ///
     /// pack multivector
     ///
@@ -1103,6 +1107,10 @@ namespace Ifpack2 {
       local_ordinal_type blocksize;
       local_ordinal_type num_vectors;
       impl_scalar_type damping_factor;
+
+      // packed multivector output (or input)
+      Unmanaged<vector_type_3d_view> packed_multivector;
+      Unmanaged<impl_scalar_type_2d_view> scalar_multivector;
 
       struct ToPackedMultiVectorTag       { enum : int { id = 0 }; };
       struct ToScalarMultiVectorFirstTag  { enum : int { id = 1 }; };
@@ -1157,16 +1165,10 @@ namespace Ifpack2 {
       }
 
     public:
-      // packed multivector output (or input)
-      Unmanaged<vector_type_3d_view> packed_multivector;
-      Unmanaged<impl_scalar_type_2d_view> scalar_multivector;
-
       // local reduction of norms with runtime array 
       // this value type and value_count is required for Kokkos
       typedef magnitude_type value_type[];
       int value_count;
-
-      
 
       KOKKOS_INLINE_FUNCTION
       void 
@@ -1214,19 +1216,19 @@ namespace Ifpack2 {
           for (;cnt<npacks && j!= nrows[cnt];++cnt);
           npacks = cnt;
           const local_ordinal_type pri = pri0 + j;
-          for (local_ordinal_type vi=0;vi<npacks;++vi) 
-            if (norm == NULL)
-              copy_multivectors<TagType>(j, vi, pri, nrows[vi], ri0[vi]);
-            else 
-              copy_multivectors_with_norm<TagType>(j, vi, pri, nrows[vi], ri0[vi], norm);            
+          for (local_ordinal_type vi=0;vi<npacks;++vi) {
+            if (norm == NULL) copy_multivectors<TagType>(j, vi, pri, nrows[vi], ri0[vi]);
+            else              copy_multivectors_with_norm<TagType>(j, vi, pri, nrows[vi], ri0[vi], norm);
+          }
         }
       }
       
       template<typename TpetraLocalViewType>
       void to_packed_multivector(const TpetraLocalViewType &scalar_multivector_) {
 #ifdef HAVE_IFPACK2_BLOCKTRIDICONTAINER_TIMERS
-        TEUCHOS_FUNC_TIME_MONITOR("BlockTriDi::PermuteAndRepack");
+        TEUCHOS_FUNC_TIME_MONITOR("BlockTriDi::MultiVectorConverter::ToPackedMultiVector");
 #endif
+        value_count = 0;
         scalar_multivector = scalar_multivector_;
         const Kokkos::RangePolicy
           <ToPackedMultiVectorTag,typename device_type::execution_space> policy(0, packptr.extent(0) - 1);
@@ -1239,14 +1241,16 @@ namespace Ifpack2 {
                                  const bool &is_vectors_zero,
                                  /* */ magnitude_type *norm = NULL) {
 #ifdef HAVE_IFPACK2_BLOCKTRIDICONTAINER_TIMERS
-        TEUCHOS_FUNC_TIME_MONITOR("BlockTriDi::PermuteAndRepack");
+        TEUCHOS_FUNC_TIME_MONITOR("BlockTriDi::MultiVectorConverter::ToScalarMultiVector");
 #endif
         scalar_multivector = scalar_multivector_;
         damping_factor = damping_factor_;
         if (norm != NULL) {
           value_count = blocksize*num_vectors;
           for (int i=0;i<value_count;++i)
-            norm[i] = Kokkos::ArithTraits<magnitude_type>::zero();
+          norm[i] = Kokkos::ArithTraits<magnitude_type>::zero();
+        } else {
+          value_count = 0;
         }
 
         if (is_vectors_zero) {
@@ -1262,7 +1266,6 @@ namespace Ifpack2 {
         }
       }
     };
-
 
     ///
     /// solve tridiags
@@ -1327,11 +1330,12 @@ namespace Ifpack2 {
         
         // constant
         const auto one = Kokkos::ArithTraits<magnitude_type>::one();
-        
+        const local_ordinal_type num_vectors = X_vector_values.extent(2);
+
         // subview pattern
         auto A = Kokkos::subview(D_vector_values, 0, Kokkos::ALL(), Kokkos::ALL());
         auto B = A;
-        auto X1 = Kokkos::subview(X_vector_values, 0, Kokkos::ALL(), Kokkos::ALL());
+        auto X1 = Kokkos::subview(X_vector_values, 0, Kokkos::ALL(), 0);
         auto X2 = X1;
 
         // index counting
@@ -1340,35 +1344,37 @@ namespace Ifpack2 {
         local_ordinal_type r0 = part2packrowidx0(partidx);
         const local_ordinal_type nrows = part2packrowidx0(packptr(packidx+1)) - r0;
 
-        // solve Lx = x
-        A.assign_data( &D_vector_values(i0,0,0) );
-        X1.assign_data( &X_vector_values(r0,0,0) );
-        SerialTrsv<Uplo::Lower,Trans::NoTranspose,Diag::Unit,Algo::Trsv::Blocked>
-          ::invoke(one, A, X1);
-        for (local_ordinal_type i=1;i<nrows;++i,i0+=3) {
-          B.assign_data( &D_vector_values(i0+2,0,0) );
-          X2.assign_data( &X_vector_values(++r0,0,0) );
-          SerialGemv<Trans::NoTranspose,Algo::Gemv::Blocked>
-            ::invoke(-one, B, X1, one, X2);
-          A.assign_data( &D_vector_values(i0+3,0,0) );
+        for (local_ordinal_type col=0;col<num_vectors;++col) {
+          // solve Lx = x
+          A.assign_data( &D_vector_values(i0,0,0) );
+          X1.assign_data( &X_vector_values(r0,0,col) );
           SerialTrsv<Uplo::Lower,Trans::NoTranspose,Diag::Unit,Algo::Trsv::Blocked>
             ::invoke(one, A, X1);
-          X1.assign_data( X2.data() );
-        }
-
-        // solve Ux = x
-        SerialTrsv<Uplo::Upper,Trans::NoTranspose,Diag::NonUnit,Algo::Trsv::Blocked>
-          ::invoke(one, A, X1);
-        for (local_ordinal_type i=nrows;i>1;--i) {
-          i0 -= 3;
-          B.assign_data( &D_vector_values(i0+1,0,0) );
-          X2.assign_data( &X_vector_values(--r0,0,0) );          
-          SerialGemv<Trans::NoTranspose,Algo::Gemv::Blocked>
-            ::invoke(-one, B, X1, one, X2); 
-          A.assign_data( &D_vector_values(i0,0,0) );          
+          for (local_ordinal_type i=1;i<nrows;++i,i0+=3) {
+            B.assign_data( &D_vector_values(i0+2,0,0) );
+            X2.assign_data( &X_vector_values(++r0,0,col) );
+            SerialGemv<Trans::NoTranspose,Algo::Gemv::Blocked>
+              ::invoke(-one, B, X1, one, X2);
+            A.assign_data( &D_vector_values(i0+3,0,0) );
+            SerialTrsv<Uplo::Lower,Trans::NoTranspose,Diag::Unit,Algo::Trsv::Blocked>
+              ::invoke(one, A, X2);
+            X1.assign_data( X2.data() );
+          }
+          
+          // solve Ux = x
           SerialTrsv<Uplo::Upper,Trans::NoTranspose,Diag::NonUnit,Algo::Trsv::Blocked>
-            ::invoke(one, A, X2);
-          X1.assign_data( X2.data() );
+            ::invoke(one, A, X1);
+          for (local_ordinal_type i=nrows;i>1;--i) {
+            i0 -= 3;
+            B.assign_data( &D_vector_values(i0+1,0,0) );
+            X2.assign_data( &X_vector_values(--r0,0,col) );          
+            SerialGemv<Trans::NoTranspose,Algo::Gemv::Blocked>
+              ::invoke(-one, B, X1, one, X2); 
+            A.assign_data( &D_vector_values(i0,0,0) );          
+            SerialTrsv<Uplo::Upper,Trans::NoTranspose,Diag::NonUnit,Algo::Trsv::Blocked>
+              ::invoke(one, A, X2);
+            X1.assign_data( X2.data() );
+          }
         }
       }
       
@@ -1416,9 +1422,11 @@ namespace Ifpack2 {
       // block crs graph information
       ConstUnmanaged<size_type_1d_view> A_rowptr;
       ConstUnmanaged<local_ordinal_type_1d_view> A_colind;
-      ConstUnmanaged<tpetra_block_access_view_type> A_null_block;
       const local_ordinal_type blocksize, blocksize_square;
 
+      // block access
+      ConstUnmanaged<tpetra_block_access_view_type> A_null_block;
+      
     public:
       template<typename LocalCrsGraphType>
       ComputeResidualVector(const AmD<MatrixType> &amd,
@@ -1429,9 +1437,9 @@ namespace Ifpack2 {
           tpetra_values(amd.tpetra_values),
           A_rowptr(graph.row_map),
           A_colind(graph.entries),
-          A_null_block(NULL, blocksize_, blocksize_),
           blocksize(blocksize_), 
-          blocksize_square(blocksize_*blocksize_) {}
+          blocksize_square(blocksize_*blocksize_),
+          A_null_block(NULL, blocksize_, blocksize_) {}
       
       ///
       /// host serial 
@@ -1444,26 +1452,29 @@ namespace Ifpack2 {
         // constants
         const magnitude_type one(1);
         const Kokkos::pair<local_ordinal_type,local_ordinal_type> block_range(0, blocksize);
+        const local_ordinal_type num_vectors = y.extent(1);
 
         // subview pattern
-        auto bb = Kokkos::subview(b, block_range, block_range);
+        auto bb = Kokkos::subview(b, block_range, 0);
         auto xx = bb;
-        auto yy = Kokkos::subview(y, block_range, block_range);
-  
-        // y := b
-        const local_ordinal_type row = i*blocksize;
-        yy.assign_data(&y(row, 0));
-        bb.assign_data(&b(row, 0));
-        SerialCopy<Trans::NoTranspose>::invoke(bb, yy);
+        auto yy = Kokkos::subview(y, block_range, 0);
+        auto A_block = A_null_block; // A_block is assumed to be compact (a dimension is equal to stride)
         
-        // y -= Rx
-        const size_type A_k0 = A_rowptr[i];
-        auto A_block = A_null_block;
-        for (size_type k=rowptr[i];k<rowptr[i+1];++k) {
-          const size_type j = A_k0 + colindsub[k];
-          A_block.assign_data(tpetra_values.data() + j*blocksize_square);
-          xx.assign_data(x.data() + A_colind[j]*blocksize);
-          SerialGemv<Trans::NoTranspose,Algo::Gemv::Blocked>::invoke(-one, A_block, xx, one, yy);  
+        const local_ordinal_type row = i*blocksize;
+        for (local_ordinal_type col=0;col<num_vectors;++col) {
+          // y := b
+          yy.assign_data(&y(row, col));
+          bb.assign_data(&b(row, col));
+          SerialCopy<Trans::NoTranspose>::invoke(bb, yy);
+        
+          // y -= Rx
+          const size_type A_k0 = A_rowptr[i];
+          for (size_type k=rowptr[i];k<rowptr[i+1];++k) {
+            const size_type j = A_k0 + colindsub[k];
+            A_block.assign_data( &tpetra_values(j*blocksize_square) );
+            xx.assign_data( &x(A_colind[j]*blocksize, col) );
+            SerialGemv<Trans::NoTranspose,Algo::Gemv::Blocked>::invoke(-one, A_block, xx, one, yy);  
+          }
         }
       }
       
@@ -1560,7 +1571,7 @@ namespace Ifpack2 {
       // ireduce to complete, then checks the global norm against the tolerance.
       bool checkDone (const int& sweep, const magnitude_type& tol2, const bool force = false) {
 #ifdef HAVE_IFPACK2_BLOCKTRIDICONTAINER_TIMERS
-        TEUCHOS_FUNC_TIME_MONITOR("BlockTriDi::NormManager::check_done");
+        TEUCHOS_FUNC_TIME_MONITOR("BlockTriDi::NormManager::checkDone");
 #endif
         TEUCHOS_ASSERT(sweep >= 1);
         if ( ! force && (sweep - 1) % sweep_step_) return false;
@@ -1692,16 +1703,16 @@ namespace Ifpack2 {
 
       ComputeResidualVector<MatrixType> 
         compute_residual_vector(amd, A->getCrsGraph().getLocalGraph(), blocksize);
-
+      
       // norm manager workspace resize
       if (is_norm_manager_active) {
         norm_manager.resize(blocksize, num_vectors);
         norm_manager.setCheckFrequency(check_tol_every);
       }
-
-      // iterate
-      int sweep;
-      for (sweep=0;sweep<max_num_sweeps;++sweep) {
+      
+      // // iterate
+      int sweep = 0;
+      for (;sweep<max_num_sweeps;++sweep) {
         if (is_y_zero) {
           // pmv := x(lclrow)
           multivector_converter.to_packed_multivector(XX);
@@ -1719,7 +1730,7 @@ namespace Ifpack2 {
         // y(lclrow) = (b - a) y(lclrow) + a pmv, with b = 1 always.
         multivector_converter.to_scalar_multivector(YY, damping_factor, is_y_zero,
                                                     is_norm_manager_active ? norm_manager.getBuffer() : NULL);
-
+        
         if (is_norm_manager_active) {
           if (sweep + 1 == max_num_sweeps) {
             norm_manager.ireduce(sweep, true);
@@ -1732,9 +1743,16 @@ namespace Ifpack2 {
         is_y_zero = false;
       }
 
-      // sqrt the norms for the caller's use.
+      //sqrt the norms for the caller's use.
       if (is_norm_manager_active) norm_manager.finalize();
-
+      
+      printf("sweep = %d, X extents %d, %d, Y extents %d %d\n", 
+             sweep, XX.extent(0), XX.extent(1), YY.extent(0), YY.extent(1));
+      
+      for (int j=0;j<XX.extent(1);++j) 
+        for (int i=0;i<XX.extent(0);++i) 
+          std::cout << " (i,j) = " << i << " " << j << " X = " << XX(i,j) << " Y = " << YY(i,j) << "\n";
+      
       return sweep;
     }
   

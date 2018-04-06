@@ -76,16 +76,20 @@ namespace Ifpack2 {
   void
   BlockTriDiContainer<MatrixType, LocalScalarType>::
   initInternal (const Teuchos::RCP<const row_matrix_type>& matrix,
-                const Teuchos::Array<Teuchos::Array<local_ordinal_type> >& partitions) 
+                const Teuchos::Array<Teuchos::Array<local_ordinal_type> >& partitions,
+                const Teuchos::RCP<const import_type>& importer) 
   {
     using impl_type = BlockTriDiContainerDetails::ImplType<MatrixType>;
     using block_crs_matrix_type = typename impl_type::tpetra_block_crs_matrix_type;
-    
+
     A_ = Teuchos::rcp_dynamic_cast<const block_crs_matrix_type>(matrix);
     TEUCHOS_TEST_FOR_EXCEPT_MSG
       (A_.is_null(), "BlockTriDiContainer currently supports Tpetra::BlockCrsMatrix only.");
 
-    tpetra_importer_ = BlockTriDiContainerDetails::createBlockCrsTpetraImporter<MatrixType>(A_);
+    tpetra_importer_ = (importer == Teuchos::null ? BlockTriDiContainerDetails::createBlockCrsTpetraImporter<MatrixType>(A_) : importer);
+
+    Z_ = typename impl_type::tpetra_multivector_type();
+
     part_interface_  = BlockTriDiContainerDetails::createPartInterface<MatrixType>(A_, partitions);
     block_tridiags_  = BlockTriDiContainerDetails::createBlockTridiags<MatrixType>(part_interface_);
     norm_manager_    = BlockTriDiContainerDetails::NormManager<MatrixType>(A_->getComm());
@@ -122,7 +126,7 @@ namespace Ifpack2 {
                        int OverlapLevel, scalar_type DampingFactor)
     : Container<MatrixType>(matrix, partitions, importer, OverlapLevel, DampingFactor)
   {
-    initInternal(matrix, partitions);
+    initInternal(matrix, partitions, importer);
   }
 
   template <typename MatrixType, typename LocalScalarType>
@@ -133,7 +137,7 @@ namespace Ifpack2 {
     : Container<MatrixType>(matrix, partitions, Teuchos::null, 0,
                             Kokkos::ArithTraits<magnitude_type>::one())
   {
-    initInternal(matrix, partitions);
+    initInternal(matrix, partitions, Teuchos::null);
   }
 
   template <typename MatrixType, typename LocalScalarType>
