@@ -125,8 +125,7 @@ protected:
   ///
   /// Keep a message to inform what went wrong above.
   char const *
-  failure_message{nullptr};
-  
+  failure_message{nullptr};  
 };
 
 ///
@@ -327,8 +326,7 @@ public:
   failure_message{"No failure detected"};
 
   char const *
-  warning_message{"No warning detected"};
-  
+  warning_message{"No warning detected"};  
 };
 
 ///
