@@ -29,6 +29,12 @@ elif [[ $THIS_HOSTNAME == "white"* ]] ; then
 elif [[ $THIS_HOSTNAME == "ride"* ]] ; then
   ATDM_HOSTNAME=ride
   ATDM_SYSTEM_NAME=ride
+elif [[ -f /projects/sems/modulefiles/utils/get-platform ]] ; then
+  ATDM_SYSTEM_NAME=`source /projects/sems/modulefiles/utils/get-platform`
+  if [[ $ATDM_SYSTEM_NAME == "rhel6-x86_64" ]] ; then
+    ATDM_HOSTNAME=$THIS_HOSTNAME
+    ATDM_SYSTEM_NAME=rhel6
+  fi
 fi
 
 # ToDo: Add more know hosts as you add them!
