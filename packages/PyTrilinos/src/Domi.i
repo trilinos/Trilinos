@@ -67,20 +67,6 @@ other Trilinos solver technologies.
 #include <sstream>
 #include <vector>
 
-// Configuration include files
-#include "PyTrilinos_config.h"
-#ifdef HAVE_SYS_TIME_H
-#undef HAVE_SYS_TIME_H
-#endif
-#ifdef HAVE_INTTYPES_H
-#undef HAVE_INTTYPES_H
-#endif
-#ifdef HAVE_STDINT_H
-#undef HAVE_STDINT_H
-#endif
-#include "Domi_ConfigDefs.hpp"
-#include "PyTrilinos_PythonException.hpp"
-
 // Teuchos include files
 #include "PyTrilinos_Teuchos_Headers.hpp"
 
@@ -89,24 +75,13 @@ other Trilinos solver technologies.
 #include "PyTrilinos_Epetra_Headers.hpp"
 #endif
 
+// Tpetra include files
 #ifdef HAVE_TPETRA
-#include "Tpetra_Map.hpp"
-#include "Tpetra_MultiVector.hpp"
-#include "Tpetra_Vector.hpp"
+#include "PyTrilinos_Tpetra_Headers.hpp"
 #endif
 
 // Domi include files
-#include "Domi_Utils.hpp"
-#include "Domi_Version.hpp"
-#include "Domi_getValidParameters.hpp"
-#include "Domi_Slice.hpp"
-#include "Domi_MDArrayView.hpp"
-#include "Domi_MDArray.hpp"
-#include "Domi_MDArrayRCP.hpp"
-#include "Domi_MDComm.hpp"
-#include "Domi_MDMap.hpp"
-#include "Domi_MDVector.hpp"
-#include "PyTrilinos_Domi_Util.hpp"
+#include "PyTrilinos_Domi_Headers.hpp"
 
 %}
 

@@ -66,7 +66,6 @@ operators, and dense and sparse matrices.
 #include "PyTrilinos_PythonException.hpp"
 #include "PyTrilinos_NumPy_Util.hpp"
 #include "PyTrilinos_Teuchos_Util.hpp"
-#include "PyTrilinos_Tpetra_Util.hpp"
 #include "PyTrilinos_DAP.hpp"
 
 // Import the numpy interface
@@ -81,17 +80,11 @@ using Teuchos::ArrayView;
 using Teuchos::ArrayRCP;
 
 // Tpetra include files
-#include "Tpetra_ConfigDefs.hpp"
-#include "Tpetra_Version.hpp"
-#include "Tpetra_CombineMode.hpp"
-#include "Tpetra_Map.hpp"
-#include "Tpetra_MultiVector.hpp"
-#include "Tpetra_Vector.hpp"
+#include "PyTrilinos_Tpetra_Headers.hpp"
 
 #ifdef HAVE_DOMI
 // Domi include files
-#include "Domi_MDVector.hpp"
-#include "PyTrilinos_Domi_Util.hpp"
+#include "PyTrilinos_Domi_Headers.hpp"
 #endif
 
 %}

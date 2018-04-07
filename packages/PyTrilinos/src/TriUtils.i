@@ -100,8 +100,7 @@ example subdirectory of the PyTrilinos package:
 #endif
 
 // Trilinos utility include files
-#include "Trilinos_Util_CrsMatrixGallery.h"
-#include "Trilinos_Util_Version.h"
+#include "PyTrilinos_TriUtils_Headers.hpp"
 %}
 
 // Include PyTrilinos configuration
