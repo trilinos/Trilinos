@@ -46,7 +46,7 @@
 #
 # System imports
 from   __future__ import print_function
-from   numpy      import *
+import numpy
 import os
 import sys
 import unittest
@@ -158,6 +158,125 @@ if (${Trilinos_ENABLE_Epetra}):
 
 ##########################################################################
 
+# if (${Trilinos_ENABLE_Triutils}):
+#     TriUtils = fromPyTrilinosImport('TriUtils', options.testharness)
+
+#     class TeuchosRCPTriUtilsTestCase(unittest.TestCase):
+#         "Test the Teuchos.RCP functions on a TriUtils object"
+
+#         def setUp(self):
+#             self.comm = Epetra.PyComm()
+#             self.gallery = TriUtils.CrsMatrixGallery("laplace_2d",
+#                                                      self.comm,
+#                                                      False)
+
+#         def testIsNull(self):
+#             "Test Teuchos.RCP.is_null() for an Epetra object"
+#             self.assertEquals(Teuchos.RCP.is_null(self.gallery), False)
+
+#         def testIsValidPtr(self):
+#             "Test Teuchos.RCP.is_valid_ptr() for an Epetra object"
+#             self.assertEquals(Teuchos.RCP.is_valid_ptr(self.gallery), True)
+
+#         def testHasOwnership(self):
+#             "Test Teuchos.RCP.has_ownership() for an Epetra object"
+#             self.assertEquals(Teuchos.RCP.has_ownership(self.gallery), True)
+
+#         def testStrongCount(self):
+#             "Test Teuchos.RCP.strong_count() for an Epetra object"
+#             self.assertEquals(Teuchos.RCP.strong_count(self.gallery), 1)
+
+#         def testWeakCount(self):
+#             "Test Teuchos.RCP.weak_count() for an Epetra object"
+#             self.assertEquals(Teuchos.RCP.weak_count(self.gallery), 0)
+
+#         def testTotalCount(self):
+#             "Test Teuchos.RCP.total_count() for an Epetra object"
+#             self.assertEquals(Teuchos.RCP.total_count(self.gallery), 1)
+
+##########################################################################
+
+if (${Trilinos_ENABLE_Tpetra}):
+    Tpetra = fromPyTrilinosImport('Tpetra', options.testharness)
+
+    class TeuchosRCPTpetraTestCase(unittest.TestCase):
+        "Test the Teuchos.RCP functions on Tpetra objects"
+
+        def setUp(self):
+            self.comm = Teuchos.DefaultComm.getComm()
+            self.map  = Tpetra.Map(100,0,self.comm)
+
+        def testIsNull(self):
+            "Test Teuchos.RCP.is_null() for a Tpetra object"
+            self.assertEquals(Teuchos.RCP.is_null(self.map), False)
+
+        def testIsValidPtr(self):
+            "Test Teuchos.RCP.is_valid_ptr() for a Tpetra object"
+            self.assertEquals(Teuchos.RCP.is_valid_ptr(self.map), True)
+
+        def testHasOwnership(self):
+            "Test Teuchos.RCP.has_ownership() for a Tpetra object"
+            self.assertEquals(Teuchos.RCP.has_ownership(self.map), True)
+
+        def testStrongCount(self):
+            "Test Teuchos.RCP.strong_count() for a Tpetra object"
+            self.assertEquals(Teuchos.RCP.strong_count(self.map), 1)
+
+        def testWeakCount(self):
+            "Test Teuchos.RCP.weak_count() for a Tpetra object"
+            self.assertEquals(Teuchos.RCP.weak_count(self.map), 0)
+
+        def testTotalCount(self):
+            "Test Teuchos.RCP.total_count() for a Tpetra object"
+            self.assertEquals(Teuchos.RCP.total_count(self.map), 1)
+
+##########################################################################
+
+if (${Trilinos_ENABLE_Domi}):
+    Domi = fromPyTrilinosImport('Domi', options.testharness)
+
+    class TeuchosRCPDomiTestCase(unittest.TestCase):
+        "Test the Teuchos.RCP functions on Domi objects"
+
+        def setUp(self):
+            self.comm   = Teuchos.DefaultComm.getComm()
+            self.p      = {"comm dimensions" : numpy.array((-1,-1),dtype='i'),
+                           "dimensions"      : numpy.array((50, 75),dtype='i')}
+            self.mdMap  = Domi.MDMap(self.comm, self.p)
+            self.mdVec  = Domi.MDVector(self.mdMap)
+
+        def testIsNull(self):
+            "Test Teuchos.RCP.is_null() for a Domi object"
+            self.assertEquals(Teuchos.RCP.is_null(self.mdMap), False)
+            self.assertEquals(Teuchos.RCP.is_null(self.mdVec), False)
+
+        def testIsValidPtr(self):
+            "Test Teuchos.RCP.is_valid_ptr() for a Domi object"
+            self.assertEquals(Teuchos.RCP.is_valid_ptr(self.mdMap), True)
+            self.assertEquals(Teuchos.RCP.is_valid_ptr(self.mdVec), True)
+
+        def testHasOwnership(self):
+            "Test Teuchos.RCP.has_ownership() for a Domi object"
+            self.assertEquals(Teuchos.RCP.has_ownership(self.mdMap), True)
+            self.assertEquals(Teuchos.RCP.has_ownership(self.mdVec), True)
+
+        def testStrongCount(self):
+            "Test Teuchos.RCP.strong_count() for a Domi object"
+            self.assertEquals(Teuchos.RCP.strong_count(self.mdMap), 2)
+            self.assertEquals(Teuchos.RCP.strong_count(self.mdVec), 1)
+
+        def testWeakCount(self):
+            "Test Teuchos.RCP.weak_count() for a Domi object"
+            self.assertEquals(Teuchos.RCP.weak_count(self.mdMap), 0)
+            self.assertEquals(Teuchos.RCP.weak_count(self.mdVec), 0)
+
+        def testTotalCount(self):
+            "Test Teuchos.RCP.total_count() for a Domi object"
+            self.assertEquals(Teuchos.RCP.total_count(self.mdMap), 2)
+            self.assertEquals(Teuchos.RCP.total_count(self.mdVec), 1)
+
+##########################################################################
+
 if __name__ == "__main__":
 
     # Create the test suite object
@@ -167,6 +286,12 @@ if __name__ == "__main__":
     suite.addTest(unittest.makeSuite(TeuchosRCPTeuchosTestCase))
     if (${Trilinos_ENABLE_Epetra}):
         suite.addTest(unittest.makeSuite(TeuchosRCPEpetraTestCase))
+    # if (${Trilinos_ENABLE_Triutils}):
+    #     suite.addTest(unittest.makeSuite(TeuchosRCPTriUtilsTestCase))
+    if (${Trilinos_ENABLE_Tpetra}):
+        suite.addTest(unittest.makeSuite(TeuchosRCPTpetraTestCase))
+    if (${Trilinos_ENABLE_Domi}):
+        suite.addTest(unittest.makeSuite(TeuchosRCPDomiTestCase))
 
     # Create a communicator
     comm    = Teuchos.DefaultComm.getComm()
