@@ -8,58 +8,104 @@ import re
 
 ################################################################################
 
+def cmake_bool(value):
+    """
+    Return a Python boolean corresponding to a CMAKE string representation of a
+    boolean
+    """
+    if value.upper() in ("", "0", "FALSE", "N", "NO", "OFF"):
+        return False
+    return True
+
+################################################################################
+
+# Get the PyTrilinos configuration
+WITH_EPETRA    = cmake_bool("${PyTrilinos_ENABLE_Epetra}"   )
+WITH_TRIUTILS  = cmake_bool("${PyTrilinos_ENABLE_Triutils}" )
+WITH_TPETRA    = cmake_bool("${PyTrilinos_ENABLE_Tpetra}"   )
+WITH_DOMI      = cmake_bool("${PyTrilinos_ENABLE_Domi}"     )
+WITH_EPETRAEXT = cmake_bool("${PyTrilinos_ENABLE_EpetraExt}")
+WITH_ISORROPIA = cmake_bool("${PyTrilinos_ENABLE_Isorropia}")
+WITH_PLIRIS    = cmake_bool("${PyTrilinos_ENABLE_Pliris}"   )
+WITH_AZTECOO   = cmake_bool("${PyTrilinos_ENABLE_AztecOO}"  )
+WITH_GALERI    = cmake_bool("${PyTrilinos_ENABLE_Galeri}"   )
+WITH_AMESOS    = cmake_bool("${PyTrilinos_ENABLE_Amesos}"   )
+WITH_IFPACK    = cmake_bool("${PyTrilinos_ENABLE_Ifpack}"   )
+WITH_KOMPLEX   = cmake_bool("${PyTrilinos_ENABLE_Komplex}"  )
+WITH_ANASAZI   = cmake_bool("${PyTrilinos_ENABLE_Anasazi}"  )
+WITH_ML        = cmake_bool("${PyTrilinos_ENABLE_ML}"       )
+WITH_NOX       = cmake_bool("${PyTrilinos_ENABLE_NOX}"      )
+WITH_LOCA      = cmake_bool("${NOX_ENABLE_LOCA}"            )
+WITH_MPI       = cmake_bool("${TPL_ENABLE_MPI}"             )
+
+################################################################################
+
+def get_mpi_version():
+    header = "${MPI_BASE_DIR}/include/mpi.h"
+    version = ""
+    for line in open(header, 'r').readlines():
+        if "MPI_VERSION" in line:
+            version = line.split(" ")[2]
+            break
+    return version
+
+################################################################################
+
 def get_input_files():
+    """
+    Return the list of SWIG interface files that should be processed
+    """
     excludes = ("Teuchos_RCP_typemaps.i")
 
     os.chdir("${CMAKE_CURRENT_SOURCE_DIR}")
     result = glob.glob("Teuchos*.i")
-    if ("${PyTrilinos_ENABLE_Epetra}"):
+    if (WITH_EPETRA):
         result.extend(glob.glob("Epetra*.i"))
-    if ("${PyTrilinos_ENABLE_Triutils}"):
+    if (WITH_TRIUTILS):
         result.extend(glob.glob("TriUtils*.i"))
-    if ("${PyTrilinos_ENABLE_Tpetra}"):
+    if (WITH_TPETRA):
         result.extend(glob.glob("Tpetra*.i"))
-    if ("${PyTrilinos_ENABLE_Domi}"):
+    if (WITH_DOMI):
         result.extend(glob.glob("Domi*.i"))
-    if ("${PyTrilinos_ENABLE_EpetraExt}"):
+    if (WITH_EPETRAEXT):
         result.extend(glob.glob("EpetraExt*.i"))
-    if ("${PyTrilinos_ENABLE_Isorropia}"):
+    if (WITH_ISORROPIA):
         swig_files = glob.glob("Isorropia*.i")
         for file in swig_files:
             if "Epetra" in file:
-                if "${PyTrilinos_ENABLE_Epetra}":
+                if (WITH_EPETRA):
                     result.append(file)
             else:
                 result.append(file)
-    if ("${PyTrilinos_ENABLE_Pliris}"):
+    if (WITH_PLIRIS):
         result.extend(glob.glob("Pliris*.i"))
-    if ("${PyTrilinos_ENABLE_AztecOO}"):
+    if (WITH_AZTECOO):
         result.extend(glob.glob("AztecOO*.i"))
-    if ("${PyTrilinos_ENABLE_Galeri}"):
+    if (WITH_GALERI):
         result.extend(glob.glob("Galeri*.i"))
-    if ("${PyTrilinos_ENABLE_Amesos}"):
+    if (WITH_AMESOS):
         result.extend(glob.glob("Amesos*.i"))
-    if ("${PyTrilinos_ENABLE_Ifpack}"):
+    if (WITH_IFPACK):
         result.extend(glob.glob("IFPACK*.i"))
-    if ("${PyTrilinos_ENABLE_Komplex}"):
+    if (WITH_KOMPLEX):
         result.extend(glob.glob("Komplex*.i"))
-    if ("${PyTrilinos_ENABLE_Anasazi}"):
+    if (WITH_ANASAZI):
         result.extend(glob.glob("Anasazi*.i"))
-    if ("${PyTrilinos_ENABLE_ML}"):
+    if (WITH_ML):
         result.extend(glob.glob("ML*.i"))
-    if ("${PyTrilinos_ENABLE_NOX}"):
+    if (WITH_NOX):
         swig_files = glob.glob("NOX*.i")
         for file in swig_files:
             if "Epetra" in file:
-                if "${PyTrilinos_ENABLE_Epetra}":
+                if (WITH_EPETRA):
                     result.append(file)
             else:
                 result.append(file)
-    if ("${PyTrilinos_ENABLE_LOCA}"):
+    if (WITH_LOCA):
         swig_files = glob.glob("LOCA*.i")
         for file in swig_files:
             if "Epetra" in file:
-                if "${PyTrilinos_ENABLE_Epetra}":
+                if (WITH_EPETRA):
                     result.append(file)
             else:
                 result.append(file)
@@ -73,24 +119,34 @@ def get_input_files():
 ################################################################################
 
 def get_header_files():
+    """
+    Return the list of header files that should be #include-d in the generated
+    SWIG interface file
+    """
     result = ["PyTrilinos_config.h"]
     result.append("PyTrilinos_Teuchos_Headers.hpp")
-    if ("${PyTrilinos_ENABLE_Epetra}"):
+    if (WITH_EPETRA):
         result.append("PyTrilinos_Epetra_Headers.hpp")
-    if ("${PyTrilinos_ENABLE_Epetra}"):
+    if (WITH_TRIUTILS):
+        result.append("PyTrilinos_TriUtils_Headers.hpp")
+    if (WITH_EPETRAEXT):
         result.append("PyTrilinos_EpetraExt_Headers.hpp")
-    if ("${PyTrilinos_ENABLE_Domi}"):
-        result.append("Domi_DefaultNode.hpp")
-    if ("${PyTrilinos_ENABLE_Tpetra}"):
-        result.append("Tpetra_ConfigDefs.hpp")
+    if (WITH_DOMI):
+        result.append("PyTrilinos_Domi_Headers.hpp")
+    if (WITH_TPETRA):
+        result.append("PyTrilinos_Tpetra_Headers.hpp")
 
     return result
 
 ################################################################################
 
 def get_typedefs():
+    """
+    Return the list of typedefs that should be defined in the generated SWIG
+    interface file
+    """
     result = []
-    if ("${PyTrilinos_ENABLE_Tpetra}"):
+    if (WITH_TPETRA):
         result.append(("Tpetra::Details::DefaultTypes::scalar_type",
                        "DefaultScalarType"))
         result.append(("Tpetra::Details::DefaultTypes::local_ordinal_type",
@@ -105,6 +161,14 @@ def get_typedefs():
 ################################################################################
 
 def parse_class(classname):
+    """
+    Given a string representation of a C++ class name, return a dictionary with
+    three key-value pairs:
+
+        "namespaces"    : a list of the class namespaces, possibly empty
+        "name"          : the class name
+        "template-args" : a list of template arguments (e.g. ["ARG1", "ARG2", ...])
+    """
     result = {}
     if classname[-1] != ">":
         name = classname
@@ -134,6 +198,12 @@ def parse_class(classname):
 ################################################################################
 
 def form_class_filename(parsed_class):
+    """
+    Given a class name dictionary obtained from parse_class(), return the
+    Trilinos filename that contains the prototype for that class
+    """
+
+    # Determine the extension
     if parsed_class["name"].startswith("Epetra_"):
         ext = ".h"
     elif parsed_class["name"].startswith("Amesos_"):
@@ -156,6 +226,8 @@ def form_class_filename(parsed_class):
         ext = ".H"
     else:
         ext = ".hpp"
+
+    # Generate the filename
     result = ""
     for namespace in parsed_class["namespaces"]:
         result += (namespace + "_")
@@ -165,11 +237,24 @@ def form_class_filename(parsed_class):
     else:
         result += (parsed_class["name"] + ext)
 
+    # Make exceptions
+    if result == "Tpetra_Map.hpp":
+        result = "Tpetra_Map_decl.hpp"
+    if result == "Tpetra_Export.hpp":
+        result = "Tpetra_Export_decl.hpp"
+    if result == "Tpetra_Import.hpp":
+        result = "Tpetra_Import_decl.hpp"
+
     return result    
 
 ################################################################################
 
 def get_rcp_classes(swig_filenames):
+    """
+    Return a list of strings that represent the C++ classes that are stored
+    using a Teucho::RCP in PyTrilinos. The input argument, swig_filenames, is a
+    list of SWIG interface files to search.
+    """
     match_excludes = ("##", "CLASS", "%shared_ptr", "ostream", "std::vector")
     regexes = [re.compile(r"%teuchos_rcp\((.+)\)"       , re.MULTILINE),
                re.compile(r"%teuchos_rcp_dap\(.+,(.+)\)", re.MULTILINE)]
@@ -189,6 +274,10 @@ def get_rcp_classes(swig_filenames):
                     result.add(match)
     # Hack for Tpetra
     if "Tpetra.i" in swig_filenames:
+        result.add("Tpetra::Map<PYTRILINOS_LOCAL_ORD, PYTRILINOS_GLOBAL_ORD, DefaultNodeType>")
+        result.add("Tpetra::Details::Transfer<PYTRILINOS_LOCAL_ORD, PYTRILINOS_GLOBAL_ORD, DefaultNodeType>")
+        result.add("Tpetra::Export<PYTRILINOS_LOCAL_ORD, PYTRILINOS_GLOBAL_ORD, DefaultNodeType>")
+        result.add("Tpetra::Import<PYTRILINOS_LOCAL_ORD, PYTRILINOS_GLOBAL_ORD, DefaultNodeType>")
         regex = re.compile(r"%tpetra_scalars\((.+),.+\)", re.MULTILINE)
         text = open("Tpetra.i",'r').read()
         matches = regex.findall(text)
@@ -199,6 +288,7 @@ def get_rcp_classes(swig_filenames):
                 result.add("Tpetra::MultiVector<%s, PYTRILINOS_LOCAL_ORD, PYTRILINOS_GLOBAL_ORD, DefaultNodeType>" % scalar)
                 result.add("Tpetra::Vector<%s, PYTRILINOS_LOCAL_ORD, PYTRILINOS_GLOBAL_ORD, DefaultNodeType>" % scalar)
     # End hack for Tpetra
+
     result = list(result)
     for i in range(len(result)):
         rcp = result[i].strip()
@@ -209,6 +299,13 @@ def get_rcp_classes(swig_filenames):
 ################################################################################
 
 def reorder_classnames(classnames):
+    """
+    Given a list of class names, reorder them such that base classes appear at
+    the beginning of the list. This will be the order in which the %import
+    statements are listed in the generated SWIG interfae file, so the
+    lowest-level base classes must appear first. Based on the logic here, the
+    highest-level classes should appear first in the base_classes list.
+    """
     base_classes = ["Epetra_VbrMatrix",
                     "Epetra_RowMatrix",
                     "Epetra_Operator",
@@ -231,6 +328,10 @@ def reorder_classnames(classnames):
 ################################################################################
 
 def main():
+    """
+    Generate the SWIG interface file by printing the SWIG directives to stdout
+    """
+
     swig_files    = get_input_files()
     header_files  = get_header_files()
     typedefs      = get_typedefs()
@@ -249,8 +350,8 @@ def main():
     print("stored internally via Teuchos::RCP reference counted pointers.")
     print("")
     print("Inspired by the python function sys.getrefcount(object), this module")
-    print("provides a number of Teuchos::RCP methods as functions that take a")
-    print("PyTrilinos object as their argument. These functions include:")
+    print("provides a number of Teuchos::RCP methods as python functions that")
+    print("take a PyTrilinos object as their argument. These functions include:")
     print("")
     print("    * is_null(obj)        - Return True if underlying pointer is NULL")
     print("    * is_valid_ptr(obj)   - Return True if underlying pointer is valid")
@@ -265,7 +366,7 @@ def main():
     print("        docstring = %teuchos_rcp_docstring) RCP")
     print("")
 
-    # Specify include files directly into the wrapper file
+    # Specify include files and define typedefs directly into the wrapper file
     print("%{")
     print("// Import the NumPy interface")
     print("#define NO_IMPORT_ARRAY")
@@ -274,29 +375,59 @@ def main():
     print("// Include the header files")
     for header in header_files:
         print('#include "%s"' % header)
-    print("%}")
-
-    # Tell SWIG about the DLL export macro
     print("")
+    # print("// Define the typedefs for the compiler")
+    # for typedef in typedefs:
+    #     print("typedef %s %s;" % typedef)
+    print("%}")
+    print("")
+
+    # Define the typedefs for SWIG processing
+    print("// Define the typedefs for SWIG processing")
+    print("%inline")
+    print("%{")
+    for typedef in typedefs:
+        print("  typedef %s %s;" % typedef)
+    print("%}")
+    print("")
+
+    # Tell SWIG about the PyTrilinos configuration
+    print("// Tell SWIG about the PyTrilinos configuration")
+    print('%include "PyTrilinos_config.h"')
+    print("")
+
+    # Tell SWIG about MPI
+    if (WITH_MPI):
+        print("// Tell SWIG the MPI version")
+        print("#define MPI_VERSION %s" % get_mpi_version())
+        print("")
+
+    # Tell SWIG about the DLL export macros
     print("// Tell SWIG about the DLL export macros")
     print('%include "Teuchos_DLLExportMacro.h"')
-    if ("${PyTrilinos_ENABLE_Epetra}"):
+    if (WITH_EPETRA):
         print('%include "Epetra_DLLExportMacro.h"')
+    print("")
 
     # Turn off warnings
-    print("")
+    print("// Turn off warnings")
+    print("# pragma SWIG nowarn=302")
     print("# pragma SWIG nowarn=314")
     print("# pragma SWIG nowarn=317")
     print("# pragma SWIG nowarn=325")
     print("# pragma SWIG nowarn=362")
     print("# pragma SWIG nowarn=389")
+    print("")
 
     # %import the Trilinos header files
-    print("")
     print("// Import the Trilinos header files")
+    imported = []
     for classname in teuchos_rcps:
-        line = 'import "%s"' % form_class_filename(parse_class(classname))
-        print("%" + line)
+        filename = form_class_filename(parse_class(classname))
+        if filename not in imported:
+            imported.append(filename)
+            line = 'import "%s"' % filename
+            print("%" + line)
     print("")
     print("// SWIG NumPy interface file")
     print('%include "numpy.i"')
@@ -344,9 +475,9 @@ def main():
     print("")
     print("If obj is a python wrapper for a C++ object stored as a Teuchos::RCP,")
     print('return the total reference count"')
+    print("")
 
     # Define the Teuchos.RCP functions
-    print("")
     print("%inline")
     print("{")
     print("")
@@ -356,7 +487,8 @@ def main():
         print("bool is_null(      Teuchos::RCP< %s > & object){ return object.is_null()      ; }" % classname)
         print("bool is_valid_ptr( Teuchos::RCP< %s > & object){ return object.is_valid_ptr() ; }" % classname)
         print("bool has_ownership(Teuchos::RCP< %s > & object){ return object.has_ownership(); }" % classname)
-        print("int  strong_count( Teuchos::RCP< %s > & object){ return object.strong_count() ; }" % classname)
+        #print("int  strong_count( Teuchos::RCP< %s > & object){ return object.strong_count() ; }" % classname)
+        print('int  strong_count( Teuchos::RCP< %s > & object){ std::cout << "%s" << std::endl; return object.strong_count() ; }' % (classname, classname))
         print("int  weak_count(   Teuchos::RCP< %s > & object){ return object.weak_count()   ; }" % classname)
         print("int  total_count(  Teuchos::RCP< %s > & object){ return object.total_count()  ; }" % classname)
         print("")
