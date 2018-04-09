@@ -139,6 +139,9 @@ public:
     return v_->reduce(r); 
   }
 
+  void setScalar( const Real C ) {
+    v_->setScalar(C);
+  }
 
   ROL::Ptr<V> getVector( void ) { 
     return v_;
@@ -216,6 +219,10 @@ public:
 
   Real reduce( const Elementwise::ReductionOp<Real> &r ) const {
     return v_->reduce(r); 
+  }
+
+  void setScalar( const Real C ) {
+    v_->setScalar(C);
   }
 
 

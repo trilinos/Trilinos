@@ -48,7 +48,7 @@
 //#define USE_HESSVEC 0
 
 #include "ROL_StdVector.hpp"
-#include "ROL_TestObjectives.hpp"
+#include "ROL_GetTestProblems.hpp"
 #include "ROL_HelperFunctions.hpp"
 #include "Teuchos_oblackholestream.hpp"
 #include "Teuchos_GlobalMPISession.hpp"

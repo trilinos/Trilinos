@@ -45,7 +45,7 @@
 #define ROL_RISKVECTOR_HPP
 
 #include "ROL_StdVector.hpp"
-#include "ROL_RiskMeasureInfo.hpp"
+#include "ROL_RandVarFunctionalInfo.hpp"
 #include "Teuchos_ParameterList.hpp"
 
 namespace ROL {
@@ -78,7 +78,7 @@ private:
       std::string name;
       std::vector<Real> lower, upper;
       bool activated(false);
-      RiskMeasureInfo<Real>(*parlist,name,nStatObj_,lower,upper,activated);
+      RandVarFunctionalInfo<Real>(*parlist,name,nStatObj_,lower,upper,activated);
       augmentedObj_ = (nStatObj_ > 0) ? true : false;
       // Initialize statistic vector
       if (augmentedObj_) {
@@ -102,7 +102,7 @@ private:
         std::string name;
         std::vector<Real> lower, upper;
         bool activated(false);
-        RiskMeasureInfo<Real>(*parlist[i],name,nStatCon_[i],lower,upper,activated);
+        RandVarFunctionalInfo<Real>(*parlist[i],name,nStatCon_[i],lower,upper,activated);
         augmentedCon_ = (nStatCon_[i] > 0) ? true : augmentedCon_;
         // Initialize statistic vector
         if (nStatCon_[i] > 0) {
@@ -185,6 +185,12 @@ public:
       }
     }
   }
+
+  // Build from components -- Objective only...no statistic
+  RiskVector( const ROL::Ptr<Vector<Real> > &vec )
+    : statObj_(ROL::nullPtr), statObj_vec_(ROL::nullPtr),
+      augmentedObj_(false), nStatObj_(0), augmentedCon_(false),
+      vec_(vec), isDualInitialized_(false) {}
 
   void set( const Vector<Real> &x ) {
     const RiskVector<Real> &xs = dynamic_cast<const RiskVector<Real>&>(x);
@@ -411,6 +417,21 @@ public:
       }
     }
     return result;
+  }
+
+  void setScalar( const Real C ) {
+    vec_->setScalar(C);
+    if (augmentedObj_ && statObj_vec_ != ROL::nullPtr) {
+      statObj_vec_->setScalar(C);
+    }
+    if (augmentedCon_) {
+      int size = statCon_vec_.size();
+      for (int i = 0; i < size; ++i) {
+        if (statCon_vec_[i] != ROL::nullPtr) {
+          statCon_vec_[i]->setScalar(C);
+        }
+      }
+    }
   }
 
   int dimension(void) const {

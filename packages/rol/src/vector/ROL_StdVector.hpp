@@ -196,6 +196,11 @@ public:
     return result;
   }
 
+  void setScalar( const Real C ) {
+    uint dim = std_vec_->size();
+    std_vec_->assign(dim,C);
+  }
+
   void print( std::ostream &outStream ) const {
     uint dim = std_vec_->size();
     for(uint i=0; i<dim; ++i) {

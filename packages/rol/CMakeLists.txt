@@ -72,6 +72,10 @@ IF (ROL_ENABLE_Boost AND ROL_ENABLE_MiniTensor)
   ADD_SUBDIRECTORY(adapters/minitensor)
 ENDIF()
 
+IF (ROL_ENABLE_PEBBL)
+  ADD_SUBDIRECTORY(adapters/pebbl)
+ENDIF()
+
 IF (ROL_ENABLE_Experimental)
   ADD_SUBDIRECTORY(experimental)
 ENDIF()

@@ -45,101 +45,96 @@
 #ifndef TANKSTATE_HPP
 #define TANKSTATE_HPP
 
-#include "ROL_Ptr.hpp"
-#include <utility>
-
-/** \class TankState 
-    \brief Provides a convenient access to the blocks and elements of the
-           tank system state vector where VectorImpl<Real>::getVector()
-           returns a pointer to a subscriptable container
-*/
+#include <memory>
+#include "Teuchos_ParameterList.hpp"
+#include "LowerBandedMatrix.hpp"
+#include "TankVector.hpp"
 
 namespace details {
 
 using namespace std;
 
-using ROL::Vector;
-using ROL::StdVector;
-
-// Casting helpers
-template<typename Real, template<typename> class VectorType>
-inline
-// const // Certain versions of Intel compiler object to the const modifier
-auto getVector( const Vector<Real>& x ) -> 
-  const decltype(*declval<const VectorType<Real>>().getVector())& {
-  return *(dynamic_cast<const VectorType<Real>&>(x).getVector());
-}
-
-template<typename Real, template<typename> class VectorType>
-inline auto getVector( Vector<Real>& x ) -> 
-  decltype(*declval<VectorType<Real>>().getVector())& {
-  return *(dynamic_cast<VectorType<Real>&>(x).getVector());
-}
-
-
-template<typename Real, bool isConst> class TankState;
-
-template<typename Real>
-class TankState<Real,true> {
-private:
-
-  using container_type = vector<Real>;
-  const container_type& state_;
-  int r, c, N;
-
+template<typename Real> 
+class TankState {
 public:
+  using Vector        = vector<Real>;
+  using Matrix        = LowerBandedMatrix<Real>;
+  using StateVector   = TankStateVector<Real>;
+  using ControlVector = TankControlVector<Real>;
 
-  TankState( const Vector<Real>& state, int rows, int cols ) : 
-    state_( getVector<StdVector>(state) ), r(rows), c(cols), N(r*c) {}
+  using size_type  = typename vector<Real>::size_type;
+   
+  TankState( Teuchos::ParameterList& pl );
 
-  // Row-column accessors
-  const Real& h   ( int i, int j ) const { return state_[    c*j+i]; }  // Level
-  const Real& Qin ( int i, int j ) const { return state_[  N+c*j+i]; }  // Inflow
-  const Real& Qout( int i, int j ) const { return state_[2*N+c*j+i]; }  // Outflow
+  void solve( StateVector& c, StateVector& u_new, 
+              const StateVector& u_old, const ControlVector& z ) const;
 
-  // Get the row and column indices from the single index
-  void getRowCol( const int k, int& i, int& j ) const {
-    j = k % c;  i = (k - j)/c;
-  }
+  void value( StateVector& c, const StateVector& u_old, 
+              const StateVector& u_new, const ControlVector& z ) const;
+ 
+
+  void applyJacobian_1_old( StateVector& jv, const StateVector& v_old ) const;
+
+
+  void applyJacobian_1_new( StateVector& jv, const StateVector& v_old ) const;
+
+
+  void applyJacobian_2( StateVector &jv, const ControlVector &v_new ) const;
+
+
+  // Subvector Accessor Methods
+ //       Real& h( vector<Real>& x,       size_type r, size_type c ) const { return x.at(cols_*r+c); }
+ // const Real& h( const vector<Real>& x, size_type r, size_type c ) const { return x.at(cols_*r+c); }
+
+ //       Real& Qout(       vector<Real>& x, size_type r, size_type c ) const { return x.at(Ntanks_+cols_*r+c); }
+ // const Real& Qout( const vector<Real>& x, size_type r, size_type c ) const { return x.at(Ntanks_+cols_*r+c); }
+ // 
+ //       Real& Qin(       vector<Real>& x, size_type r, size_type c ) const { return x.at(2*Ntanks_+cols_*r+c); }
+ // const Real& Qin( const vector<Real>& x, size_type r, size_type c ) const { return x.at(2*Ntanks_+cols_*r+c); }
+
+  const Real& p( size_type r, size_type c ) const { return p_.at(cols_*r+c); }
+ // const Real& w( size_type r, size_type c ) const { return w_.at(cols_*r+c); }
+
+  void print_members( ostream& os ) const;
+
+private:
+  size_type rows_;             // Number of tank rows
+  size_type cols_;             // Number of tank columns
+
+  //---------- Physical Parameters ---------------------------------------------
+  Real Cv_;                    // Valve constant 
+  Real rho_;                   // Density of fluid
+  Real h0_;                    // Initial fluid level
+  Real H_;                     // Height of tanks
+  Real A_;                     // Cross-sectional area of tanks
+  Real g_;                     // Gravity constant
+  
+  //---------- Time Discretization ---------------------------------------------
+  Real T_;                     // Total time
+  Real theta_;                 // Implicit/Explicit splitting factor
+  int  Nt_;                    // Number of Time steps
+  Real dt_;                    // Time step size
+
+  size_type    Ntanks_;        // Total number of tanks 
+  vector<Real> p_;             // Passthrough coefficients
+  vector<Real> w_;             // Flow coupling weights 
+
+  Real         kappa_;         // Cv*rho*g
+  Real         beta_;          // dt/A
+//  Real         betaL_;         // (1-theta)*dt/A
+//  Real         betaR_;         // theta*dt/A
+  Real         alphaL_;        // kappa*(theta-1)
+  Real         alphaR_;        // kappa*theta
+
+  shared_ptr<Matrix> L_, R_;
 
 }; // class TankState
-
-
-template<typename Real> // Non-constant specialization
-class TankState<Real,false> : public TankState<Real,true> {
-private:
-  using container_type = vector<Real>;
-  container_type& state_;
-  int r,c,N;
-
-public:
-
-  TankState( Vector<Real>& state, int rows, int cols ) :
-    TankState<Real,true>::TankState(state,rows,cols), 
-    state_( getVector<StdVector>(state) ), r(rows), c(cols), N(r*c) {}
-
-  Real& h   ( int i, int j ) { return state_[    c*j+i]; }  // Level
-  Real& Qin ( int i, int j ) { return state_[  N+c*j+i]; }  // Inflow
-  Real& Qout( int i, int j ) { return state_[2*N+c*j+i]; }  // Outflow
-
-}; // class TankState
-
-template<typename Real>
-auto make_tank_state( const Vector<Real>& x, int r, int c ) -> TankState<Real,true> {
-  TankState<Real,true> ts( x, r, c );
-  return move(ts);
-}
-
-template<typename Real>
-auto make_tank_state( Vector<Real>& x, int r, int c ) -> TankState<Real,false> {
-  TankState<Real,false> ts( x, r, c );
-  return move(ts);
-}
 
 } // namespace details
 
 using details::TankState;
-using details::make_tank_state;
+
+#include "TankState_Impl.hpp"
 
 #endif // TANKSTATE_HPP
 

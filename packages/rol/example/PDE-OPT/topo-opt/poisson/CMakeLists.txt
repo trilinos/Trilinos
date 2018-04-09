@@ -18,13 +18,32 @@ IF(${PROJECT_NAME}_ENABLE_Intrepid AND
     ADD_DIR_TO_NAME
   )
 
+#  TRIBITS_ADD_EXECUTABLE_AND_TEST(
+#    example_02
+#    SOURCES example_02.cpp
+#    ARGS PrintItAll
+#    NUM_MPI_PROCS 4
+#    NUM_TOTAL_CORES_USED 4
+#    PASS_REGULAR_EXPRESSION "TEST PASSED"
+#    ADD_DIR_TO_NAME
+#  )
+
   TRIBITS_COPY_FILES_TO_BINARY_DIR(
     PoissonTopOptDataCopy
     SOURCE_FILES
-      input.xml plotresults.m
+      input_ex01.xml plotresults.m
     SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}"
     DEST_DIR "${CMAKE_CURRENT_BINARY_DIR}"
   )
+
+#  TRIBITS_COPY_FILES_TO_BINARY_DIR(
+#    PoissonTopOptDataCopy
+#    SOURCE_FILES
+#      input_ex01.xml plotresults.m
+#      input_ex01.xml input_ex02.xml plotresults.m
+#    SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}"
+#    DEST_DIR "${CMAKE_CURRENT_BINARY_DIR}"
+#  )
 
 
 ENDIF()

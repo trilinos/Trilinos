@@ -68,6 +68,8 @@
 #include "pde_helmholtz.hpp"
 #include "obj_helmholtz.hpp"
 
+#include "ROL_OptimizationSolver.hpp"
+
 typedef double RealT;
 
 int main(int argc, char *argv[]) {
@@ -270,9 +272,18 @@ int main(int argc, char *argv[]) {
     con->solve(*rp,*up,*zp,tol);
     pdecon->outputTpetraVector(u_ptr,"state_uncontrolled.txt");
 
-    ROL::Algorithm<RealT> algo("Trust Region",*parlist,false);
+    bool useFullSpace = parlist->sublist("Problem").get("Full space",false);
+    ROL::Ptr<ROL::Algorithm<RealT> > algo;
     Teuchos::Time algoTimer("Algorithm Time", true);
-    algo.run(*zp,*robj,true,*outStream);
+    if ( useFullSpace ) {
+      ROL::OptimizationProblem<RealT> optProb(obj, makePtrFromRef(x), con, rp);
+      ROL::OptimizationSolver<RealT> optSolver(optProb, *parlist);
+      optSolver.solve(*outStream);
+    }
+    else {
+      ROL::Algorithm<RealT> algo("Trust Region",*parlist,false);
+      algo.run(*zp,*robj,true,*outStream);
+    }
     algoTimer.stop();
     *outStream << "Total optimization time = " << algoTimer.totalElapsedTime() << " seconds.\n";
 

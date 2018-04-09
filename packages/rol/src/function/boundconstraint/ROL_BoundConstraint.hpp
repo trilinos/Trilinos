@@ -73,12 +73,28 @@ class BoundConstraint {
 private:
   bool Lactivated_; ///< Flag that determines whether or not the lower bounds are being used.
   bool Uactivated_; ///< Flag that determines whether or not the upper bounds are being used.
+  Ptr<Vector<Real> > lower_;
+  Ptr<Vector<Real> > upper_;
+  bool hasSetScalar_;
 
 public:
 
   virtual ~BoundConstraint() {}
 
-  BoundConstraint(void) : Lactivated_(true), Uactivated_(true) {}
+  BoundConstraint(void) : Lactivated_(true), Uactivated_(true), hasSetScalar_(false) {}
+
+  BoundConstraint(const Vector<Real> &x) : Lactivated_(false), Uactivated_(false), hasSetScalar_(false) {
+    try {
+      lower_ = x.clone(); lower_->setScalar(ROL_NINF<Real>());
+      upper_ = x.clone(); upper_->setScalar(ROL_INF<Real>());
+      hasSetScalar_ = true;
+    }
+    catch(std::exception &e) {
+      hasSetScalar_ = false;
+      // Do nothing.  If someone calls getLowerBound or getUpperBound,
+      // an exception will be thrown.
+    }
+  }
 
 
   // REQUIRED FUNCTIONS (VIRTUAL)
@@ -101,7 +117,9 @@ public:
        @param[in,out]      x is the optimization variable.
   */
   virtual void project( Vector<Real> &x ) {
-    throw Exception::NotImplemented(">>> ROL::BoundConstraint::project: Not Implemented!");
+    if (isActivated()) {
+      throw Exception::NotImplemented(">>> ROL::BoundConstraint::project: Not Implemented!");
+    }
   }
 
   /** \brief Project optimization variables into the interior of the feasible set.
@@ -115,7 +133,9 @@ public:
        @param[in,out]      x is the optimization variable.
   */
   virtual void projectInterior( Vector<Real> &x ) {
-    throw Exception::NotImplemented(">>> ROL::BoundConstraint::projectInterior: Not Implemented!");
+    if (isActivated()) {
+      throw Exception::NotImplemented(">>> ROL::BoundConstraint::projectInterior: Not Implemented!");
+    }
   }
 
   /** \brief Set variables to zero if they correspond to the upper \f$\epsilon\f$-active set.
@@ -130,7 +150,9 @@ public:
       @param[in]       eps is the active-set tolerance \f$\epsilon\f$.
   */
   virtual void pruneUpperActive( Vector<Real> &v, const Vector<Real> &x, Real eps = 0 ) {
-    throw Exception::NotImplemented(">>> ROL::BoundConstraint::pruneUpperActive: Not Implemented!");
+    if (isUpperActivated()) {
+      throw Exception::NotImplemented(">>> ROL::BoundConstraint::pruneUpperActive: Not Implemented!");
+    }
   }
 
   /** \brief Set variables to zero if they correspond to the upper \f$\epsilon\f$-binding set.
@@ -147,7 +169,9 @@ public:
       @param[in]       eps is the active-set tolerance \f$\epsilon\f$.
   */
   virtual void pruneUpperActive( Vector<Real> &v, const Vector<Real> &g, const Vector<Real> &x, Real eps = 0 ) {
-    throw Exception::NotImplemented(">>> ROL::BoundConstraint::pruneUpperActive: Not Implemented!");
+    if (isUpperActivated()) {
+      throw Exception::NotImplemented(">>> ROL::BoundConstraint::pruneUpperActive: Not Implemented!");
+    }
   }
 
   /** \brief Set variables to zero if they correspond to the lower \f$\epsilon\f$-active set.
@@ -162,7 +186,9 @@ public:
       @param[in]       eps is the active-set tolerance \f$\epsilon\f$.
   */
   virtual void pruneLowerActive( Vector<Real> &v, const Vector<Real> &x, Real eps = 0 ) {
-    throw Exception::NotImplemented(">>> ROL::BoundConstraint::pruneLowerActive: Not Implemented!");
+    if (isLowerActivated()) {
+      throw Exception::NotImplemented(">>> ROL::BoundConstraint::pruneLowerActive: Not Implemented!");
+    }
   }
 
   /** \brief Set variables to zero if they correspond to the \f$\epsilon\f$-binding set.
@@ -179,7 +205,9 @@ public:
       @param[in]       eps is the active-set tolerance \f$\epsilon\f$.
   */
   virtual void pruneLowerActive( Vector<Real> &v, const Vector<Real> &g, const Vector<Real> &x, Real eps = 0 ) {
-    throw Exception::NotImplemented(">>> ROL::BoundConstraint::pruneLowerActive: Not Implemented!");
+    if (isLowerActivated()) {
+      throw Exception::NotImplemented(">>> ROL::BoundConstraint::pruneLowerActive: Not Implemented!");
+    }
   }
 
 
@@ -187,11 +215,17 @@ public:
 
   /** \brief Return the ref count pointer to the lower bound vector */
   virtual const ROL::Ptr<const Vector<Real> > getLowerBound( void ) const {
+    if (hasSetScalar_) {
+      return lower_;
+    }
     throw Exception::NotImplemented(">>> ROL::BoundConstraint::getLowerBound: Not implemented!");
   }
 
   /** \brief Return the ref count pointer to the upper bound vector */
   virtual const ROL::Ptr<const Vector<Real> > getUpperBound( void ) const {
+    if (hasSetScalar_) {
+      return upper_;
+    }
     throw Exception::NotImplemented(">>> ROL::BoundConstraint::getUpperBound: Not implemented!");
   }
 
@@ -201,7 +235,10 @@ public:
       @param[in]    v   is the vector to be checked.
   */
   virtual bool isFeasible( const Vector<Real> &v ) { 
-    throw Exception::NotImplemented(">>> ROL::BoundConstraint::isFeasible: Not implemented!");
+    if (isActivated()) {
+      throw Exception::NotImplemented(">>> ROL::BoundConstraint::isFeasible: Not implemented!");
+    }
+    return true;
   }
 
   /** \brief Turn on lower bound.

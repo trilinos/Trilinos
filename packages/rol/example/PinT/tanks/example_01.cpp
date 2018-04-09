@@ -45,11 +45,10 @@
 #include "Teuchos_XMLParameterListHelpers.hpp"
 
 #include "TankConstraint.hpp"
+#include "TankVector.hpp"
 #include "LowerBandedMatrix.hpp"
 
 #include <iostream>
-
-
 
 
 using RealT = double;
@@ -78,50 +77,51 @@ int main( int argc, char* argv[] ) {
   };
   // *** Example body.
 
-  try {   
+//  try {   
 
-//    auto tank_parameters = ROL::makePtr<Teuchos::ParameterList>();
-//    std::string tank_xml("tank-parameters.xml");
-//    Teuchos::updateParametersFromXmlFile(tank_xml, tank_parameters.ptr());
-  
-    size_type N = 8;
-    vector<size_type> band_index{0,2};
-    
-    vector<vector<RealT>> A_band;
-    vector<RealT> Ax(N);
-    vector<RealT> x(N);
-    vector<RealT> y(N);
+    auto tank_parameters = ROL::makePtr<Teuchos::ParameterList>();
+    std::string tank_xml("tank-parameters.xml");
+    Teuchos::updateParametersFromXmlFile(tank_xml, tank_parameters.ptr());
+    auto& pl = *tank_parameters;
 
-    vector<RealT> band0(N);
-    vector<RealT> band2(N-2);
+    TankConstraint<RealT> con(pl);
 
-    for( auto& e: band0 ) e = RealT(1.0);
-    for( auto& e: band2 ) e = RealT(1.0);
-    
-    
+    auto Qin00 = pl.get("Corner Inflow",100.0);
+    auto hinit = pl.get("Initial Fluid Level", 2.0);
+    auto nrows  = static_cast<size_type>( pl.get("Number of Rows",3) );
+    auto ncols  = static_cast<size_type>( pl.get("Number of Columns",3) );
 
-    A_band.push_back(band0);
-    A_band.push_back(band2);
+    TankControlVector<RealT> z(nrows,ncols,"z");    
+    TankStateVector<RealT>   un(nrows,ncols,"u_new");
+    TankStateVector<RealT>   uo(nrows,ncols,"u_old");
+    TankStateVector<RealT>   c(nrows,ncols,"c");
+
+    z(0,0) = Qin00;
+
+    for( size_type i=0; i<nrows; ++i ) {
+      for( size_type j=0; j<ncols; ++j ) {
+        uo.h(i,j) = hinit;
+      }
+    }
+
+
+    uo.print(*outStream);
+
+    RealT tol = 0;
+    con.solve( c, uo, un, z, tol );
  
-    for( size_type i=0; i<N; ++i ) x[i] = RealT(1.0+i);
+    un.print(*outStream);
+    c.print(*outStream);
 
-    LowerBandedMatrix<RealT> A( band_index, A_band );
-
-    print_vector(x);
-
-    A.apply(Ax,x);
-    
-    print_vector(Ax);
-
-    A.solve(y,Ax);
-    print_vector(y);
+    con.value( c, uo, un, z, tol );
+    c.print(*outStream);
 
 
-  }
-  catch (std::logic_error err) {
-    *outStream << err.what() << "\n";
-    errorFlag = -1000;
-  }; // end try
+//  }
+//  catch (std::logic_error err) {
+//    *outStream << err.what() << "\n";
+//    errorFlag = -1000;
+//  }; // end try
 
   if (errorFlag != 0)
     std::cout << "End Result: TEST FAILED\n";

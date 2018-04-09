@@ -327,7 +327,7 @@ TEUCHOS_UNIT_TEST(HHTAlpha, SinCos_SecondOrder)
   double error0 = 0.8*ErrorNorm[0];
   for (int n=0; n<nTimeStepSizes; n++) {
     ftmp << StepSize[n]  << "   " << ErrorNorm[n] << "   "
-         << error0*(StepSize[n]/StepSize[0]) << std::endl;
+         << error0*(pow(StepSize[n]/StepSize[0],order)) << std::endl;
   }
   ftmp.close();
 }
@@ -443,7 +443,7 @@ TEUCHOS_UNIT_TEST(HHTAlpha, SinCos_FirstOrder)
   double error0 = 0.8*ErrorNorm[0];
   for (int n=0; n<nTimeStepSizes; n++) {
     ftmp << StepSize[n]  << "   " << ErrorNorm[n] << "   "
-         << error0*(StepSize[n]/StepSize[0]) << std::endl;
+         << error0*(pow(StepSize[n]/StepSize[0],order)) << std::endl;
   }
   ftmp.close();
 }
@@ -559,7 +559,7 @@ TEUCHOS_UNIT_TEST(NewmarkExplicit, SinCos_CD)
   double error0 = 0.8*ErrorNorm[0];
   for (int n=0; n<nTimeStepSizes; n++) {
     ftmp << StepSize[n]  << "   " << ErrorNorm[n] << "   "
-         << error0*(StepSize[n]/StepSize[0]) << std::endl;
+         << error0*(pow(StepSize[n]/StepSize[0],order)) << std::endl;
   }
   ftmp.close();
 }

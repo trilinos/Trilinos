@@ -281,7 +281,7 @@ public:
       const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& implicitModel);
 
     virtual void setObserver(
-      Teuchos::RCP<StepperIMEX_RKPartObserver<Scalar> > obs = Teuchos::null);
+      Teuchos::RCP<StepperObserver<Scalar> > obs = Teuchos::null);
 
     /// Initialize during construction and after changing input parameters.
     virtual void initialize();
@@ -349,6 +349,7 @@ protected:
 
   Teuchos::RCP<Thyra::VectorBase<Scalar> >               xTilde_;
 
+  Teuchos::RCP<StepperObserver<Scalar> >            stepperObserver_;
   Teuchos::RCP<StepperIMEX_RKPartObserver<Scalar> > stepperIMEX_RKPartObserver_;
 };
 

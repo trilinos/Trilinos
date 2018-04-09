@@ -6,7 +6,7 @@ fi
 
 set -x
 
-bsub -x -I -q rhel7F -n 16 -J $JOB_NAME -W $BSUB_CTEST_TIME_LIMIT \
+bsub -x -Is -q rhel7F -n 16 -J $JOB_NAME -W $BSUB_CTEST_TIME_LIMIT \
   $WORKSPACE/Trilinos/cmake/ctest/drivers/atdm/ctest-s-driver.sh
 
 # NOTE: Above, this bsub command should grab a single rhel7F (Firestone,

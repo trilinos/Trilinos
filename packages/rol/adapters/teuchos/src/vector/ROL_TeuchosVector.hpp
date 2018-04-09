@@ -112,6 +112,12 @@ public:
     return result;
   }
 
+  void setScalar(const Real C) {
+    for( Ordinal i=0; i<vec_->length(); ++i ) {
+      (*vec_)(i) = C;
+    }    
+  }
+
   Ptr<Vector<Real>> clone() const { 
     return makePtr<TeuchosVector>( vec_->length() );
   }

@@ -83,45 +83,42 @@ private:
   bool isInitialized_;
   bool useInexact_;
   bool useInitialGuess_;    // If false, inital x will be ignored and zero vec used
-  int maxit_; 
-  Real absTol_;
-  Real relTol_;
  
   Teuchos::LAPACK<int,Real> lapack_;
 
 public:
   
-  GMRES( Teuchos::ParameterList &parlist ) : isInitialized_(false) {
+  GMRES( Teuchos::ParameterList &parlist ) : Krylov<Real>(parlist), isInitialized_(false) {
 
     
     
     using std::vector; 
 
-    Real zero(0), oem2(1.e-2), oem4(1.e-4);
+    Real zero(0);
 
     Teuchos::ParameterList &gList = parlist.sublist("General");
     Teuchos::ParameterList &kList = gList.sublist("Krylov");
     
     useInexact_      = gList.get("Inexact Hessian-Times-A-Vector",false);
-    maxit_           = kList.get("Iteration Limit",50);
-    absTol_          = kList.get("Absolute Tolerance", oem4);
-    relTol_          = kList.get("Relative Tolerance", oem2);
     useInitialGuess_ = kList.get("Use Initial Guess",false);
+    int maxit = Krylov<Real>::getMaximumIteration();
 
-    H_     = ROL::makePtr<SDMatrix>( maxit_+1, maxit_ );
-    cs_    = ROL::makePtr<SDVector>( maxit_ );
-    sn_    = ROL::makePtr<SDVector>( maxit_ );
-    s_     = ROL::makePtr<SDVector>( maxit_+1 ); 
-    y_     = ROL::makePtr<SDVector>( maxit_+1 );
-    cnorm_ = ROL::makePtr<SDVector>( maxit_ );   
-    res_   = ROL::makePtr<std::vector<Real>>(maxit_+1,zero);
+    H_     = ROL::makePtr<SDMatrix>( maxit+1, maxit );
+    cs_    = ROL::makePtr<SDVector>( maxit );
+    sn_    = ROL::makePtr<SDVector>( maxit );
+    s_     = ROL::makePtr<SDVector>( maxit+1 ); 
+    y_     = ROL::makePtr<SDVector>( maxit+1 );
+    cnorm_ = ROL::makePtr<SDVector>( maxit );   
+    res_   = ROL::makePtr<std::vector<Real>>(maxit+1,zero);
        
   }
  
-  void run( Vector<Real> &x, LinearOperator<Real> &A, const Vector<Real> &b,
+  Real run( Vector<Real> &x, LinearOperator<Real> &A, const Vector<Real> &b,
             LinearOperator<Real> &M, int &iter, int &flag ) {
 
-    
+    Real absTol = Krylov<Real>::getAbsoluteTolerance();
+    Real relTol = Krylov<Real>::getRelativeTolerance();
+    int maxit = Krylov<Real>::getMaximumIteration();
  
     flag = 0;
 
@@ -156,8 +153,14 @@ public:
     std::vector<ROL::Ptr<Vector<Real > > > Z;
 
     (*res_)[0] = r_->norm();
- 
-    Real rtol  = std::min(absTol_,relTol_*(*res_)[0]);
+
+    // This should be a tolerance check
+    Real rtol = std::min(absTol,relTol*(*res_)[0]);
+    if ((*res_)[0] <= rtol) {
+      iter = 0;
+      flag = 0;
+      return (*res_)[0];
+    }
 
     V.push_back(b.clone());
     (V[0])->set(*r_);
@@ -165,12 +168,12 @@ public:
 
     (*s_)(0) = (*res_)[0];
 
-    for( iter=0; iter<maxit_; ++iter ) {
+    for( iter=0; iter<maxit; ++iter ) {
 
       //std::cout << "iter = " << iter << "  rnorm = " << (*res_)[iter] << "  xnorm = " << x.norm() << "  bnorm = " << b.norm() << std::endl;
 
       if( useInexact_ ) {
-        itol = rtol/(maxit_*(*res_)[iter]);
+        itol = rtol/(maxit*(*res_)[iter]);
       }
 
       Z.push_back(x.clone());
@@ -232,7 +235,7 @@ public:
       Real scaling = zero;
       int info = 0;
       *y_ = *s_;
-      lapack_.LATRS(uplo, trans, diag, normin, iter+1, H_->values(), maxit_+1, y_->values(), &scaling, cnorm_->values(), &info);
+      lapack_.LATRS(uplo, trans, diag, normin, iter+1, H_->values(), maxit+1, y_->values(), &scaling, cnorm_->values(), &info);
 
       z_->zero();
 
@@ -247,10 +250,13 @@ public:
       }
     } // loop over iter
 
-    if(iter == maxit_) {
+    if(iter == maxit) {
       flag = 1;
       x.plus(*z_);
+      return (*res_)[iter];
     }
+
+    return (*res_)[iter+1];
   }
 
 }; // class GMRES

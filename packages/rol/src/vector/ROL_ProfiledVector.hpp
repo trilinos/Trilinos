@@ -84,10 +84,11 @@ struct VectorFunctionCalls {
   Ordinal applyUnary_;
   Ordinal applyBinary_;
   Ordinal reduce_;
+  Ordinal setScalar_;
   VectorFunctionCalls() :
     constructor_(0), destructor_(0), plus_(0), scale_(0), dot_(0), norm_(0), clone_(0),
     axpy_(0), zero_(0), basis_(0), dimension_(0), set_(0), dual_(0), applyUnary_(0),
-    applyBinary_(0), reduce_(0) {}
+    applyBinary_(0), reduce_(0), setScalar_(0) {}
 
 }; // struct VectorFunctionCalls
 
@@ -121,6 +122,7 @@ void printVectorFunctionCalls( const ProfiledVector<Ordinal,Real> &x, std::ostre
   outStream << "applyUnary  : " << x.functionCalls_.applyUnary_   << std::endl;
   outStream << "applyBinary : " << x.functionCalls_.applyBinary_  << std::endl;
   outStream << "reduce      : " << x.functionCalls_.reduce_       << std::endl;
+  outStream << "setScalar   : " << x.functionCalls_.setScalar_    << std::endl;
 }
 
 
@@ -233,6 +235,11 @@ public:
   Real reduce( const Elementwise::ReductionOp<Real> &r ) const {
     functionCalls_.reduce_++;
     return v_->reduce(r);
+  }
+
+  void setScalar( const Real C ) {
+    functionCalls_.setScalar_++;
+    v_->setScalar(C);
   }
 
   void print( std::ostream &outStream ) const {

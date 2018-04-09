@@ -248,6 +248,20 @@ public:
     outStream << "The method print was called, but not implemented" << std::endl;
   }
 
+  /** \brief Set \f$y \leftarrow C\f$ where \f$C\in\mathbb{R}\f$.
+
+             @param[in]      C     is a scalar.
+
+             On return \f$\mathtt{*this} = C\f$.
+             Uses #applyUnary methods for the computation.
+             Please overload if a more efficient implementation is needed.
+
+             ---
+  */
+  virtual void setScalar( const Real C ) {
+    this->applyUnary(Elementwise::Fill<Real>(C));
+  }
+
 
   /** \brief Verify vector-space methods.
 

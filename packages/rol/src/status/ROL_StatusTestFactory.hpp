@@ -52,6 +52,7 @@
 #include "ROL_StatusTest.hpp"
 #include "ROL_BundleStatusTest.hpp"
 #include "ROL_ConstraintStatusTest.hpp"
+#include "ROL_FletcherStatusTest.hpp"
 
 namespace ROL {
   template<class Real>
@@ -71,6 +72,7 @@ namespace ROL {
         case STEP_LINESEARCH:          return ROL::makePtr<StatusTest<Real>>(parlist);
         case STEP_PRIMALDUALACTIVESET: return ROL::makePtr<StatusTest<Real>>(parlist);
         case STEP_TRUSTREGION:         return ROL::makePtr<StatusTest<Real>>(parlist);
+        case STEP_FLETCHER:            return ROL::makePtr<FletcherStatusTest<Real>>(parlist);
         default:                       return ROL::nullPtr;
       } 
     }

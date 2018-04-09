@@ -107,24 +107,28 @@ public:
 
   /** \brief Compute \f$y \leftarrow \alpha x + y\f$ where \f$y = \mbox{*this}\f$.
   */
-  virtual void axpy( const Real alpha, const Vector<Real> &x ) {
+  void axpy( const Real alpha, const Vector<Real> &x ) {
     const EpetraMultiVector &ex = dynamic_cast<const EpetraMultiVector&>(x);
     epetra_vec_->Update( alpha, *ex.getVector(), 1.0 );
   }
 
   /**  \brief Set to zero vector.
   */
-  virtual void zero() {
+  void zero() {
     epetra_vec_->PutScalar(0.0);
   }
 
-  virtual void PutScalar(Real alpha) {
-    epetra_vec_->PutScalar((double) alpha);
+  void PutScalar(const Real C) {
+    epetra_vec_->PutScalar(static_cast<double>(C));
+  }
+
+  void setScalar(const Real C) {
+    epetra_vec_->PutScalar(static_cast<double>(C));
   }
 
   /**  \brief Set \f$y \leftarrow x\f$ where \f$y = \mbox{*this}\f$.
   */
-  virtual void set( const Vector<Real> &x ) {
+  void set( const Vector<Real> &x ) {
     const EpetraMultiVector &ex = dynamic_cast<const EpetraMultiVector&>(x);
     epetra_vec_->Scale(1.0,*ex.getVector());
   }

@@ -47,7 +47,7 @@
 
 #define USE_HESSVEC 1
 
-#include "ROL_TestObjectives.hpp"
+#include "ROL_GetTestProblems.hpp"
 #include "ROL_Algorithm.hpp"
 #include "Teuchos_oblackholestream.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
@@ -77,9 +77,8 @@ int main(int argc, char *argv[]) {
   try {
     // Get Objective Function
     ROL::Ptr<ROL::Vector<RealT> > x0, z;
-    ROL::Ptr<ROL::Objective<RealT> > obj;
-    ROL::Ptr<ROL::BoundConstraint<RealT> > con;
-    ROL::getTestObjectives<RealT>(obj,con,x0,z,ROL::TESTOPTPROBLEM_HS38);
+    ROL::Ptr<ROL::OptimizationProblem<RealT> > problem;
+    ROL::GetTestProblem<RealT>(problem,x0,z,ROL::TESTOPTPROBLEM_HS38);
     ROL::Ptr<ROL::Vector<RealT> > x = x0->clone();;
     x->set(*x0);
     // Parse input
@@ -113,7 +112,6 @@ int main(int argc, char *argv[]) {
     parlist->sublist("Status Test").set("Iteration Limit",100);
 
     // Solve optimization problem with interior points
-    ROL::OptimizationProblem<RealT> optProb(obj,x,con,parlist);
     ROL::Algorithm<RealT> algo("Interior Point",*parlist,false);
     algo.run(optProb, true, *outStream);
 
