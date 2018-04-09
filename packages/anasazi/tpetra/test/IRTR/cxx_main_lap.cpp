@@ -39,7 +39,7 @@
 // ***********************************************************************
 // @HEADER
 //
-// This test is for SIRTR/IRTR solving a standard (Ax=xl) complex Hermitian
+// This test is for SIRTR/IRTR solving a standard (Ax=xl) Hermitian
 // eigenvalue problem where the operator (A) is the 1D finite-differenced Laplacian
 // operator.
 
@@ -220,7 +220,7 @@ int main(int argc, char *argv[])
     MVT::MvTimesMatAddMv( -ONE, *evecs, T, ONE, *Kvecs );
     MVT::MvNorm( *Kvecs, normV );
 
-    os << "Direct residual norms computed in Tpetra_IRTR_complex_lap_test.exe" << endl
+    os << "Direct residual norms computed in Tpetra_IRTR_lap_test.exe" << endl
        << std::setw(20) << "Eigenvalue" << std::setw(20) << "Residual  " << endl
        << "----------------------------------------" << endl;
     for (int i=0; i<numev; i++) {
