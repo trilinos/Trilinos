@@ -379,7 +379,9 @@ void run_sed(const std::string& pattern, const std::string& baseFile) {
 #ifdef __APPLE__
   sed_pref = sed_pref +  "\"\" ";
 #endif
-
-  system((sed_pref + pattern + " " + baseFile + ".gold_filtered").c_str());
-  system((sed_pref + pattern + " " + baseFile + ".out_filtered").c_str());
+  int ret;
+  ret = system((sed_pref + pattern + " " + baseFile + ".gold_filtered").c_str());
+  TEUCHOS_ASSERT_EQUALITY(ret,0);
+  ret = system((sed_pref + pattern + " " + baseFile + ".out_filtered").c_str());
+  TEUCHOS_ASSERT_EQUALITY(ret,0);
 }
