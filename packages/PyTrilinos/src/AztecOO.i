@@ -113,15 +113,15 @@ struct OperatorData
 
 // Configuration include files
 #include "PyTrilinos_config.h"
-#ifdef HAVE_SYS_TIME_H
-#undef HAVE_SYS_TIME_H
-#endif
-#ifdef HAVE_INTTYPES_H
-#undef HAVE_INTTYPES_H
-#endif
-#ifdef HAVE_STDINT_H
-#undef HAVE_STDINT_H
-#endif
+// #ifdef HAVE_SYS_TIME_H
+// #undef HAVE_SYS_TIME_H
+// #endif
+// #ifdef HAVE_INTTYPES_H
+// #undef HAVE_INTTYPES_H
+// #endif
+// #ifdef HAVE_STDINT_H
+// #undef HAVE_STDINT_H
+// #endif
 #include "AztecOO_ConfigDefs.h"
 
 // Optional Teuchos support
@@ -139,9 +139,7 @@ struct OperatorData
 #endif
 
 // AztecOO include files
-#include "AztecOO.h"
-#include "AztecOO_Version.h"
-
+#include "PyTrilinos_AztecOO_Headers.hpp"
 %}
 
 // Auto-documentation feature
