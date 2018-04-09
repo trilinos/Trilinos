@@ -172,7 +172,8 @@ void Ifpack2PreconditionerFactory<MatrixType>::initializePrec(
   // value of "Overlap".  This avoids use of the newly deprecated
   // three-argument version of Ifpack2::Factory::create() that takes
   // the overlap as an integer.
-  if (constParamList->isType<int> ("Overlap") && ! packageParamList.is_null () && ! packageParamList->isType<int> ("schwarz: overlap level")) {
+  if (constParamList->isType<int> ("Overlap") && ! packageParamList.is_null () && ! packageParamList->isType<int> ("schwarz: overlap level") &&
+      (preconditionerType == "schwarz" || preconditionerType == "SCHWARZ")) {
     const int overlap = constParamList->get<int> ("Overlap");
     Teuchos::RCP<Teuchos::ParameterList> nonconstPackageParamList =
       Teuchos::sublist (paramList_, "Ifpack2 Settings");
