@@ -56,7 +56,7 @@
 #undef HAVE_STDINT_H
 #endif
 
-// Teuchos includes
+// Teuchos include files
 #include "PyTrilinos_Teuchos_Util.hpp"
 #include "Teuchos_ArrayView.hpp"
 #include "Teuchos_Comm.hpp"

@@ -46,7 +46,7 @@
 // Configuration
 #include "PyTrilinos_config.h"
 
-// TriUtils includes
+// TriUtils include files
 #include "Trilinos_Util_CrsMatrixGallery.h"
 #include "Trilinos_Util_Version.h"
 

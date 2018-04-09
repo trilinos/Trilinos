@@ -47,7 +47,7 @@
 #include "PyTrilinos_config.h"
 #include "Tpetra_ConfigDefs.hpp"
 
-// Tpetra includes
+// Tpetra include files
 #include "PyTrilinos_Tpetra_Util.hpp"
 #include "Tpetra_Version.hpp"
 #include "Tpetra_CombineMode.hpp"

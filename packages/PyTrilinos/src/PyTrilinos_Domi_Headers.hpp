@@ -47,7 +47,7 @@
 #include "PyTrilinos_config.h"
 #include "Domi_ConfigDefs.hpp"
 
-// Domi includes
+// Domi include files
 #include "PyTrilinos_Domi_Util.hpp"
 #include "Domi_DefaultNode.hpp"
 #include "Domi_Utils.hpp"
