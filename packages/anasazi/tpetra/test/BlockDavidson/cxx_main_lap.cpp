@@ -39,7 +39,7 @@
 // ***********************************************************************
 // @HEADER
 //
-// This test is for BlockKrylovSchur solving a standard (Ax=xl) complex Hermitian
+// This test is for BlockDavidson solving a standard (Ax=xl) Hermitian
 // eigenvalue problem where the operator (A) is the 1D finite-differenced Laplacian
 // operator.
 
@@ -48,7 +48,7 @@
 
 #include "AnasaziTpetraAdapter.hpp"
 #include "AnasaziBasicEigenproblem.hpp"
-#include "AnasaziBlockKrylovSchurSolMgr.hpp"
+#include "AnasaziBlockDavidsonSolMgr.hpp"
 #include <Teuchos_CommandLineProcessor.hpp>
 
 #include <Teuchos_GlobalMPISession.hpp>
@@ -89,7 +89,7 @@ int main(int argc, char *argv[])
   bool debug = false;
   bool insitu = false;
   std::string which("LM");
-  int nev = 4;
+  int nev = 2;
   int blockSize = 2;
   MT tol = 1.0e-6;
   int numBlocks = 3 * NumImages;
@@ -102,7 +102,7 @@ int main(int argc, char *argv[])
   cmdp.setOption("sort",&which,"Targetted eigenvalues (SM or LM).");
   cmdp.setOption("nev",&nev,"Number of eigenvalues to compute.");
   cmdp.setOption("blockSize",&blockSize,"Block size for the algorithm.");
-  cmdp.setOption("numBlocks",&numBlocks,"Number of blocks in Krylov basis.");
+  cmdp.setOption("numBlocks",&numBlocks,"Number of blocks in basis.");
   cmdp.setOption("maxRestarts",&maxRestarts,"Number of restarts allowed.");
   cmdp.setOption("tol",&tol,"Tolerance for convergence.");
   if (cmdp.parse(argc,argv) != Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL) {
@@ -184,10 +184,9 @@ int main(int argc, char *argv[])
   MyPL.set( "Maximum Restarts", maxRestarts );
   MyPL.set( "Convergence Tolerance", tol );
   MyPL.set( "In Situ Restarting", insitu );
-  // MyPL.set( "Orthogonalization", "DGKS");
   //
   // Create the solver manager
-  Anasazi::BlockKrylovSchurSolMgr<ST,MV,OP> MySolverMgr(problem, MyPL);
+  Anasazi::BlockDavidsonSolMgr<ST,MV,OP> MySolverMgr(problem, MyPL);
 
   // Solve the problem to the specified tolerances or length
   Anasazi::ReturnType returnCode = MySolverMgr.solve();
@@ -219,7 +218,7 @@ int main(int argc, char *argv[])
     MVT::MvTimesMatAddMv( -ONE, *evecs, T, ONE, *Kvecs );
     MVT::MvNorm( *Kvecs, normV );
 
-    os << "Direct residual norms computed in Tpetra_BlockKrylovSchur_complex_lap_test.exe" << endl
+    os << "Direct residual norms computed in Tpetra_BlockDavidson_lap_test.exe" << endl
        << std::setw(20) << "Eigenvalue" << std::setw(20) << "Residual  " << endl
        << "----------------------------------------" << endl;
     for (int i=0; i<numev; i++) {
