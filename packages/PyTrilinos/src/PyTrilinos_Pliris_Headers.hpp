@@ -47,7 +47,7 @@
 #include "PyTrilinos_config.h"
 #include "Pliris_ConfigDefs.h"
 
-// Domi include files
+// Pliris include files
 #include "PlirisVersion.h"
 #include "Pliris.h"
 
