@@ -301,6 +301,12 @@ IF(PyTrilinos_ENABLE_Domi)
 ENDIF(PyTrilinos_ENABLE_Domi)
 
 #
+# Helper script for generating sub-packages
+SET(FIX_PACKAGE_FILES fix_package_files.py)
+CONFIGURE_FILE(${CMAKE_CURRENT_SOURCE_DIR}/${FIX_PACKAGE_FILES}.in
+  ${CMAKE_CURRENT_BINARY_DIR}/${FIX_PACKAGE_FILES})
+
+#
 # Teuchos.RCP.i has to be generated. For this reason, it has to be
 # handled separately
 SET(TEUCHOS_RCP_SCRIPT gen_teuchos_rcp.py    )
@@ -377,8 +383,10 @@ FOREACH(MODULE ${PyTrilinos_MODULES})
   IF("${MODULE_NAME}" MATCHES "Teuchos")
     ADD_CUSTOM_COMMAND(TARGET ${PyTrilinos_TARGET_NAME} POST_BUILD
       COMMAND ${PYTHON_EXECUTABLE}
+      ARGS    ${FIX_PACKAGE_FILES} ${MODULE_NAME}
+      COMMAND ${PYTHON_EXECUTABLE}
       ARGS    -c "import py_compile; py_compile.compile('PyTrilinos/${MODULE_NAME}/__init__.py', 'PyTrilinos/${MODULE_NAME}/__init__.pyc')"
-      COMMENT "Byte compiling ${MODULE_NAME}/__init__.py"
+      COMMENT "Moving and byte compiling ${MODULE_NAME}/__init__.py"
       VERBATIM)
     INSTALL(FILES
       ${CMAKE_CURRENT_BINARY_DIR}/PyTrilinos/${MODULE_NAME}/__init__.py

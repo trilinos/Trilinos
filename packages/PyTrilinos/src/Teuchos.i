@@ -82,7 +82,7 @@ ParameterList will accept a python dictionary.
 
 %define %teuchos_import_code
 "
-from . import ___init__ as _Teuchos
+from . import _Teuchos
 "
 %enddef
 
