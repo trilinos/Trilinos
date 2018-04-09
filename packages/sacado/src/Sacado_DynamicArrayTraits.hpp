@@ -37,6 +37,9 @@
 #include "Sacado_Traits.hpp"
 #if defined(HAVE_SACADO_KOKKOSCORE)
 #include "Kokkos_Core.hpp"
+#if defined(KOKKOS_HAVE_CUDA)
+#include "Cuda/Kokkos_Cuda_Vectorization.hpp"
+#endif
 #if !defined(SACADO_DISABLE_CUDA_IN_KOKKOS)
 #include "Kokkos_MemoryPool.hpp"
 #endif
@@ -139,7 +142,7 @@ namespace Sacado {
 
 #endif
 
-#if !defined(SACADO_DISABLE_CUDA_IN_KOKKOS) && defined(__CUDACC__)
+#if !defined(SACADO_DISABLE_CUDA_IN_KOKKOS) && defined(KOKKOS_HAVE_CUDA) && defined(__CUDACC__)
 
   namespace Impl {
 
