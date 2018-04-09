@@ -76,6 +76,7 @@ Level 1
      [empty list]
     
    Build (MueLu::CoordinatesTransferFactory)
+   structured aggregation = 0   [default]
    Geometric = 0   [default]
    write start = -1   [default]
    write end = -1   [default]
@@ -196,6 +197,7 @@ Level 2
      [empty list]
     
    Build (MueLu::CoordinatesTransferFactory)
+   structured aggregation = 0   [default]
    Geometric = 0   [default]
    write start = -1   [default]
    write end = -1   [default]
@@ -316,6 +318,7 @@ Level 3
      [empty list]
     
    Build (MueLu::CoordinatesTransferFactory)
+   structured aggregation = 0   [default]
    Geometric = 0   [default]
    write start = -1   [default]
    write end = -1   [default]
