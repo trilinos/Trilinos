@@ -161,6 +161,7 @@ makeMatrixAndRightHandSide (Teuchos::RCP<sparse_matrix_type>& A,
                             const Teuchos::RCP<Node>& node,
                             const std::string& meshInput,
                             Teuchos::ParameterList & inputList,
+                            Teuchos::ParameterList & problemStatistics,
                             const Teuchos::RCP<Teuchos::FancyOStream>& out,
                             const Teuchos::RCP<Teuchos::FancyOStream>& err,
                             const bool verbose,
@@ -170,7 +171,7 @@ makeMatrixAndRightHandSide (Teuchos::RCP<sparse_matrix_type>& A,
   using Teuchos::rcp_implicit_cast;
 
   RCP<vector_type> b, x_exact, x;
-  makeMatrixAndRightHandSide (A, b, x_exact, x, comm, node, meshInput, inputList,
+  makeMatrixAndRightHandSide (A, b, x_exact, x, comm, node, meshInput, inputList, problemStatistics,
                               out, err, verbose, debug);
 
   B = rcp_implicit_cast<multivector_type> (b);
@@ -187,6 +188,7 @@ makeMatrixAndRightHandSide (Teuchos::RCP<sparse_matrix_type>& A,
                             const Teuchos::RCP<Node>& node,
                             const std::string& meshInput,
                             Teuchos::ParameterList & inputList,
+                            Teuchos::ParameterList & problemStatistics,
                             const Teuchos::RCP<Teuchos::FancyOStream>& out,
                             const Teuchos::RCP<Teuchos::FancyOStream>& err,
                             const bool verbose,
@@ -410,6 +412,24 @@ makeMatrixAndRightHandSide (Teuchos::RCP<sparse_matrix_type>& A,
       telct ++;
     }
   }
+
+  // Compute max / min of sigma parameter
+  double local_sigma_max = numElems > 0 ? sigmaVal(0) : 0.0;
+  double local_sigma_min = numElems > 0 ? sigmaVal(0) : 0.0;
+  double local_sigma_sum = 0.0;
+  for(int i=0; i<numElems; i++) {
+    local_sigma_max = std::max(local_sigma_max,sigmaVal(i));
+    local_sigma_min = std::max(local_sigma_min,sigmaVal(i));
+    local_sigma_sum += sigmaVal(i);
+  }
+  double global_sigma_max=0.0, global_sigma_min=0.0, global_sigma_sum=0.0;
+  Teuchos::reduceAll(*comm,Teuchos::REDUCE_MIN,local_sigma_min,Teuchos::outArg(global_sigma_min));
+  Teuchos::reduceAll(*comm,Teuchos::REDUCE_MAX,local_sigma_max,Teuchos::outArg(global_sigma_max));
+  Teuchos::reduceAll(*comm,Teuchos::REDUCE_SUM,local_sigma_sum,Teuchos::outArg(global_sigma_sum));
+  problemStatistics.set("sigma: min",global_sigma_min);
+  problemStatistics.set("sigma: max",global_sigma_max);
+  problemStatistics.set("sigma: mean",global_sigma_sum / numElemsGlobal);
+  
   
   // parallel info
   long long num_internal_nodes;
