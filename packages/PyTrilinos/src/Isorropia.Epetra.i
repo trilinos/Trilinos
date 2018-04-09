@@ -69,14 +69,7 @@ The purpose of Isorropia.Epetra is to ....
 #include "PyTrilinos_Epetra_Headers.hpp"
 
 // Isorropia include files
-#include "Isorropia_EpetraOperator.hpp"
-#include "Isorropia_EpetraColorer.hpp"
-#include "Isorropia_EpetraPartitioner.hpp"
-#include "Isorropia_EpetraPartitioner2D.hpp"
-#include "Isorropia_EpetraRedistributor.hpp"
-#include "Isorropia_EpetraCostDescriber.hpp"
-#include "Isorropia_EpetraOrderer.hpp"
-#include "Isorropia_EpetraLevelScheduler.hpp"
+#include "PyTrilinos_Isorropia_Headers.hpp"
 
 // Local include files
 #define NO_IMPORT_ARRAY
@@ -197,8 +190,6 @@ del sys, op
 //////////////////////////////////////////////
 // Isorropia::Epetra::Partitioner2D support //
 //////////////////////////////////////////////
-//%teuchos_rcp(Isorropia::Epetra::Partioner2D)
-//%include "Isorropia_EpetraPartitioner2D.hpp"
 
 //////////////////////////////////////////////
 // Isorropia::Epetra::Redistributor support //

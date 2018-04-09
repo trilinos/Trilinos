@@ -1,5 +1,3 @@
-// -*- c++ -*-
-
 // @HEADER
 // ***********************************************************************
 //
@@ -42,81 +40,32 @@
 // ***********************************************************************
 // @HEADER
 
-%define %pliris_docstring
-"
-PyTrilinos.Pliris is the python interface to the Trilinos package
-Pliris, an LU solver for dense matrices:
+#ifndef PYTRILINOS_ISORROPIA_HEADERS_
+#define PYTRILINOS_ISORROPIA_HEADERS_
 
-    http://trilinos.sandia.gov/packages/pliris
-
-The purpose of Pliris is to provide an object-oriented interface to an
-LU solver for dense matrices on parallel platforms. These matrices are
-double precision real matrices distributed on a parallel machine.  The
-python version of the Pliris package supports the following class:
-
-    * Pliris  - Primary solver class.
-"
-%enddef
-
-%module(package   = "PyTrilinos",
-	autodoc   = "1",
-	docstring = %pliris_docstring) Pliris
-
-%{
-// PyTrilinos configuration
+// Configuration
 #include "PyTrilinos_config.h"
+#include "Isorropia_ConfigDefs.hpp"
 
-// Epetra include files
+// Isorropia include files
+#include "Isorropia_Version.hpp"
+#include "Isorropia_Operator.hpp"
+#include "Isorropia_Colorer.hpp"
+#include "Isorropia_Partitioner.hpp"
+#include "Isorropia_Partitioner2D.hpp"
+#include "Isorropia_Redistributor.hpp"
+#include "Isorropia_CostDescriber.hpp"
+#include "Isorropia_Orderer.hpp"
+#include "Isorropia_LevelScheduler.hpp"
 #ifdef HAVE_EPETRA
-// #undef HAVE_INTTYPES_H
-// #undef HAVE_STDINT_H
-#include "PyTrilinos_Epetra_Headers.hpp"
-
-// NumPy include files
-#define NO_IMPORT_ARRAY
-#include "numpy_include.hpp"
-
-// Pliris include files
-#include "PyTrilinos_Pliris_Headers.hpp"
-#endif
-%}
-
-// Auto-documentation feature
-%feature("autodoc", "1");
-
-// C++ STL support.  If the wrapped class uses standard template
-// library containers, the following %include wraps the containers
-// and makes certain conversions seamless, such as between std::string
-// and python strings.
-%include "std_except.i"
-%include "std_string.i"
-using std::string;
-
-// Include Pliris documentation
-// %include "Pliris_dox.i"
-
-// External Trilinos modules
-#ifdef HAVE_EPETRA
-%ignore Epetra_Version();
-%import "Epetra.i"
+#include "Isorropia_EpetraOperator.hpp"
+#include "Isorropia_EpetraColorer.hpp"
+#include "Isorropia_EpetraPartitioner.hpp"
+#include "Isorropia_EpetraPartitioner2D.hpp"
+#include "Isorropia_EpetraRedistributor.hpp"
+#include "Isorropia_EpetraCostDescriber.hpp"
+#include "Isorropia_EpetraOrderer.hpp"
+#include "Isorropia_EpetraLevelScheduler.hpp"
 #endif
 
-///////////////////////////////////
-// Pliris configuration support //
-///////////////////////////////////
-%include "Pliris_config.h"
-
-////////////////////////////
-// Pliris Version support //
-////////////////////////////
-%rename(Version) Pliris_Version;
-%include "PlirisVersion.h"
-%pythoncode
-{
-  __version__ = Version()
-}
-
-////////////////////
-// Pliris support //
-////////////////////
-%include "Pliris.h"
+#endif

@@ -277,6 +277,68 @@ if (${Trilinos_ENABLE_Domi}):
 
 ##########################################################################
 
+if (${Trilinos_ENABLE_Isorropia}):
+    if (${Trilinos_ENABLE_Epetra}):
+        Isorropia = fromPyTrilinosImport('Isorropia', options.testharness)
+
+        def buildGraph(comm, nRows):
+            map = Epetra.Map(nRows, 0, comm)
+            graph = Epetra.CrsGraph(Epetra.Copy, map, 3)
+            for gid in map.MyGlobalElements():
+                if gid == 0:
+                    indices = [0, 1]
+                elif gid == nRows-1:
+                    indices = [nRows-2, nRows-1]
+                else:
+                    indices = [gid-1, gid, gid+1]
+                graph.InsertGlobalIndices(gid, indices)
+            graph.FillComplete()
+            return graph
+
+        class TeuchosRCPIsorropiaTestCase(unittest.TestCase):
+            "Test the Teuchos.RCP functions on Isorropia objects"
+
+            def setUp(self):
+                self.p     = Teuchos.ParameterList({"PARTITIONING METHOD" : "CYCLIC"})
+                self.comm  = Epetra.PyComm()
+                self.nRows = 10 * self.comm.NumProc()
+                self.map   = Epetra.Map(self.nRows, 0, self.comm)
+                self.crsg  = buildGraph(self.comm, self.nRows)
+                self.part  = Isorropia.Epetra.Partitioner(self.crsg, self.p)
+                self.costs = Isorropia.Epetra.CostDescriber()
+
+            def testIsNull(self):
+                "Test Teuchos.RCP.is_null() for Isorropia objects"
+                self.assertEquals(Teuchos.RCP.is_null(self.part ), False)
+                self.assertEquals(Teuchos.RCP.is_null(self.costs), False)
+
+            def testIsValidPtr(self):
+                "Test Teuchos.RCP.is_valid_ptr() for Isorropia objects"
+                self.assertEquals(Teuchos.RCP.is_valid_ptr(self.part ), True)
+                self.assertEquals(Teuchos.RCP.is_valid_ptr(self.costs), True)
+
+            def testHasOwnership(self):
+                "Test Teuchos.RCP.has_ownership() for Isorropia objects"
+                self.assertEquals(Teuchos.RCP.has_ownership(self.part ), True)
+                self.assertEquals(Teuchos.RCP.has_ownership(self.costs), True)
+
+            def testStrongCount(self):
+                "Test Teuchos.RCP.strong_count() for Isorropia objects"
+                self.assertEquals(Teuchos.RCP.strong_count(self.part ), 1)
+                self.assertEquals(Teuchos.RCP.strong_count(self.costs), 1)
+
+            def testWeakCount(self):
+                "Test Teuchos.RCP.weak_count() for Isorropia objects"
+                self.assertEquals(Teuchos.RCP.weak_count(self.part ), 0)
+                self.assertEquals(Teuchos.RCP.weak_count(self.costs), 0)
+
+            def testTotalCount(self):
+                "Test Teuchos.RCP.total_count() for Isorropia objects"
+                self.assertEquals(Teuchos.RCP.total_count(self.part ), 1)
+                self.assertEquals(Teuchos.RCP.total_count(self.costs), 1)
+
+##########################################################################
+
 if __name__ == "__main__":
 
     # Create the test suite object
@@ -292,6 +354,9 @@ if __name__ == "__main__":
         suite.addTest(unittest.makeSuite(TeuchosRCPTpetraTestCase))
     if (${Trilinos_ENABLE_Domi}):
         suite.addTest(unittest.makeSuite(TeuchosRCPDomiTestCase))
+    if (${Trilinos_ENABLE_Isorropia}):
+        if (${Trilinos_ENABLE_Epetra}):
+            suite.addTest(unittest.makeSuite(TeuchosRCPIsorropiaTestCase))
 
     # Create a communicator
     comm    = Teuchos.DefaultComm.getComm()
