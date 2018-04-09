@@ -85,12 +85,6 @@ example subdirectory of the PyTrilinos package:
 
 // Configuration include files
 #include "PyTrilinos_config.h"
-#ifdef HAVE_INTTYPES_H
-#undef HAVE_INTTYPES_H
-#endif
-#ifdef HAVE_STDINT_H
-#undef HAVE_STDINT_H
-#endif
 
 // Epetra include files
 #ifdef HAVE_EPETRA
@@ -105,12 +99,7 @@ example subdirectory of the PyTrilinos package:
 #include "PyTrilinos_Teuchos_Headers.hpp"
 
 // Galeri include files
-#include "Galeri_Version.h"
-#include "Galeri_Utils.h"
-#include "Galeri_Maps.h"
-#include "Galeri_CrsMatrices.h"
-#include "Galeri_VbrMatrices.h"
-#include "Galeri_ReadHB.h"
+#include "PyTrilinos_Galeri_Headers.hpp"
 %}
 
 // Include PyTrilinos configuration

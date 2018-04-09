@@ -136,6 +136,12 @@ def get_header_files():
         result.append("PyTrilinos_Tpetra_Headers.hpp")
     if (WITH_ISORROPIA):
         result.append("PyTrilinos_Isorropia_Headers.hpp")
+    if (WITH_PLIRIS):
+        result.append("PyTrilinos_Pliris_Headers.hpp")
+    if (WITH_AZTECOO):
+        result.append("PyTrilinos_AztecOO_Headers.hpp")
+    if (WITH_GALERI):
+        result.append("PyTrilinos_Galeri_Headers.hpp")
 
     return result
 
