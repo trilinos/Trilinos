@@ -85,12 +85,6 @@ exAmesos_Factory.py.
 
 // Configuration include files
 #include "PyTrilinos_config.h"
-#ifdef HAVE_INTTYPES_H
-#undef HAVE_INTTYPES_H
-#endif
-#ifdef HAVE_STDINT_H
-#undef HAVE_STDINT_H
-#endif
 #include "Amesos_ConfigDefs.h"
 
 // Epetra include files
@@ -102,44 +96,11 @@ exAmesos_Factory.py.
 #include "PyTrilinos_Teuchos_Headers.hpp"
 
 // Amesos include files
-#include "Amesos.h"
-#include "Amesos_BaseSolver.h"
-#ifdef HAVE_AMESOS_LAPACK
-#include "Amesos_Lapack.h"
-#endif
-#ifdef HAVE_AMESOS_KLU
-#include "Amesos_Klu.h"
-#endif
-#ifdef HAVE_AMESOS_UMFPACK
-#include "Amesos_Umfpack.h"
-#endif
-#ifdef HAVE_AMESOS_SCALAPACK
-#include "Amesos_Scalapack.h"
-#endif
-#ifdef HAVE_AMESOS_SUPERLU
-#include "Amesos_Superlu.h"
-#endif
-#ifdef HAVE_AMESOS_SUPERLUDIST
-#include "Amesos_Superludist.h"
-#endif
-#ifdef HAVE_AMESOS_TAUCS
-#include "Amesos_Taucs.h"
-#endif
-#ifdef HAVE_AMESOS_PARDISO
-#include "Amesos_Pardiso.h"
-#endif
-#ifdef HAVE_AMESOS_DSCPACK
-#include "Amesos_Dscpack.h"
-#endif
-#ifdef HAVE_AMESOS_MUMPS
-#include "Amesos_Mumps.h"
-#endif
+#include "PyTrilinos_Amesos_Headers.hpp"
 
 // Local include files
 #define NO_IMPORT_ARRAY
 #include "numpy_include.hpp"
-#include "PyTrilinos_Epetra_Util.hpp"
-
 %}
 
 // Include PyTrilinos configuration

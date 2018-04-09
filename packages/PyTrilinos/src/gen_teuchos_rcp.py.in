@@ -142,6 +142,8 @@ def get_header_files():
         result.append("PyTrilinos_AztecOO_Headers.hpp")
     if (WITH_GALERI):
         result.append("PyTrilinos_Galeri_Headers.hpp")
+    if (WITH_AMESOS):
+        result.append("PyTrilinos_Amesos_Headers.hpp")
 
     return result
 
