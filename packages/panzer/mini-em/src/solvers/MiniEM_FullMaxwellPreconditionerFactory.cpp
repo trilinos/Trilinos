@@ -139,11 +139,11 @@ Teko::LinearOp FullMaxwellPreconditionerFactory::buildPreconditionerOperator(Tek
    // Inverse of B mass matrix
    *Teko::getOutputStream() << "Building Q_B inverse operator" << std::endl;
    // Are we building a solver or a preconditioner?
-   if (useAsPreconditioner)
-     invQ_B = Teko::getInvDiagonalOp(Q_B,Teko::Diagonal);
-   else {
-     Teko::LinearOp invDiagQ_B = Teko::getInvDiagonalOp(Q_B,Teko::Diagonal);
-     // Teko::LinearOp invDiagQ_B = Teko::buildInverse(*invLib.getInverseFactory("Q_B Preconditioner"),Q_B);
+   if (useAsPreconditioner) {
+     invQ_B = Teko::buildInverse(*invLib.getInverseFactory("Q_B Preconditioner"),Q_B);
+   } else {
+     Teko::LinearOp invDiagQ_B = Teko::buildInverse(*invLib.getInverseFactory("Q_B Preconditioner"),Q_B);
+     describeMatrix("invDiagQ_B",*invDiagQ_B,debug);
      invQ_B = Teko::buildInverse(*invLib.getInverseFactory("Q_B Solve"),Q_B, invDiagQ_B);
    }
 
@@ -168,8 +168,8 @@ Teko::LinearOp FullMaxwellPreconditionerFactory::buildPreconditionerOperator(Tek
 
      Teko::LinearOp Gt = Teko::explicitTranspose(G);
      // Compute grad-div term
-     Teko::LinearOp idQ_rho = Teko::getInvDiagonalOp(Q_rho,Teko::AbsRowSum);
-     Teko::LinearOp GGt = Teko::explicitMultiply(G,idQ_rho,Gt);
+     Teko::LinearOp invDiagQ_rho = Teko::getInvDiagonalOp(Q_rho,Teko::AbsRowSum);
+     Teko::LinearOp GGt = Teko::explicitMultiply(G,invDiagQ_rho,Gt);
 
      // Rescale such that grad-div is large enough to fix curl-curl null-space while not dominating
      double scaling = Teko::infNorm(Q_E)/Teko::infNorm(GGt);
@@ -215,6 +215,16 @@ Teko::LinearOp FullMaxwellPreconditionerFactory::buildPreconditionerOperator(Tek
      // Set M1 = Q_E.
      // We do this here, since we cannot get it from the request handler.
      S_E_prec_pl.sublist("Preconditioner Types").sublist("MueLuRefMaxwell-Tpetra").set("M1",Q_E);
+
+     // Get inverse of lumped Q_rho
+     RCP<Thyra::VectorBase<double> > ones = Thyra::createMember(Q_rho->domain());
+     RCP<Thyra::VectorBase<double> > diagonal = Thyra::createMember(Q_rho->range());
+     Thyra::assign(ones.ptr(),1.0);
+     // compute lumped diagonal
+     Thyra::apply(*Q_rho,Thyra::NOTRANS,*ones,diagonal.ptr());
+     Thyra::reciprocal(*diagonal,diagonal.ptr());
+     RCP<const Thyra::DiagonalLinearOpBase<double> > invDiagQ_rho = rcp(new Thyra::DefaultDiagonalLinearOp<double>(diagonal));
+     S_E_prec_pl.sublist("Preconditioner Types").sublist("MueLuRefMaxwell-Tpetra").set("M0inv",invDiagQ_rho);
 
      Teko::InverseLibrary myInvLib = invLib;
      S_E_prec_pl.sublist("Preconditioner Types").sublist("MueLuRefMaxwell-Tpetra").set("Type","MueLuRefMaxwell-Tpetra");
@@ -301,28 +311,27 @@ void FullMaxwellPreconditionerFactory::initializeFromParameterList(const Teuchos
    // New inverse lib to add inverse factories to
    invLib = *getInverseLibrary();
 
-   if (!use_refmaxwell){
-     // Q_B solve
-     Teuchos::ParameterList Q_B_pl = pl.sublist("Q_B Solve");
-     invLib.addInverse("Q_B Solve",Q_B_pl);
+   // Q_B solve
+   if (pl.isParameter("Q_B Solve")) {
+     Teuchos::ParameterList cg_pl = pl.sublist("Q_B Solve");
+     invLib.addInverse("Q_B Solve",cg_pl);
+   }
 
+   // Q_B preconditioner
+   Teuchos::ParameterList Q_B_prec_pl = pl.sublist("Q_B Preconditioner");
+   invLib.addStratPrecond("Q_B Preconditioner",
+                          Q_B_prec_pl.get<std::string>("Prec Type"),
+                          Q_B_prec_pl.sublist("Prec Types"));
+
+   if (!use_refmaxwell){
      // T_E solve
      Teuchos::ParameterList T_E_pl = pl.sublist("T_E Solve");
      invLib.addInverse("T_E Solve",T_E_pl);
 
    } else { // RefMaxwell based solve
-
-     // Q_B solve
-     Teuchos::ParameterList cg_pl = pl.sublist("Q_B Solve");
-     invLib.addInverse("Q_B Solve",cg_pl);
-
      // S_E solve
      Teuchos::ParameterList ml_pl = pl.sublist("S_E Solve");
      invLib.addInverse("S_E Solve",ml_pl);
-
-     // Q_B preconditioner
-     Teuchos::ParameterList Q_B_prec_pl = pl.sublist("Q_B Preconditioner");
-     invLib.addStratPrecond("Q_B Preconditioner","Ifpack2",Q_B_prec_pl);
 
      // S_E preconditioner
      Teuchos::ParameterList S_E_prec_pl = pl.sublist("S_E Preconditioner");
@@ -340,18 +349,6 @@ void FullMaxwellPreconditionerFactory::initializeFromParameterList(const Teuchos
      // commented out, since the edge mass matrix isn't registered in the request handler
      // Teko::LinearOp Q_E = getRequestHandler()->request<Teko::LinearOp>(Teko::RequestMesg("Mass Matrix E_edge"));
      // S_E_prec_pl.sublist("Preconditioner Types").sublist("MueLuRefMaxwell-Tpetra-Tpetra").set("M1",Q_E);
-
-     // add inverse of lumped diagonal of Q_rho
-     Teko::LinearOp Q_rho = getRequestHandler()->request<Teko::LinearOp>(Teko::RequestMesg("Mass Matrix AUXILIARY_NODE"));
-     // Get inverse of lumped Q_rho
-     RCP<Thyra::VectorBase<double> > ones = Thyra::createMember(Q_rho->domain());
-     RCP<Thyra::VectorBase<double> > diagonal = Thyra::createMember(Q_rho->range());
-     Thyra::assign(ones.ptr(),1.0);
-     // compute lumped diagonal
-     Thyra::apply(*Q_rho,Thyra::NOTRANS,*ones,diagonal.ptr());
-     Thyra::reciprocal(*diagonal,diagonal.ptr());
-     RCP<const Thyra::DiagonalLinearOpBase<double> > invDiagQ_rho = rcp(new Thyra::DefaultDiagonalLinearOp<double>(diagonal));
-     S_E_prec_pl.sublist("Preconditioner Types").sublist("MueLuRefMaxwell-Tpetra").set("M0inv",invDiagQ_rho);
 
      invLib.addInverse("S_E Preconditioner",S_E_prec_pl);
    }
