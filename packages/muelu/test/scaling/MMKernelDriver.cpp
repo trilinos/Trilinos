@@ -303,6 +303,90 @@ void Multiply_MKL_SPMM(const Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,No
 
 #endif
 
+// =========================================================================
+// Kokkos Kernels Testing
+// =========================================================================
+template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+void Multiply_KokkosKernels(const Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> &A,  const Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> &B,  Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> &C, std::string algorithm_name, int team_work_size) {
+#include <MueLu_UseShortNames.hpp>
+  using Teuchos::RCP;
+  using Teuchos::rcp;
+  using Teuchos::TimeMonitor;
+
+  Xpetra::UnderlyingLib lib = A.getRowMap()->lib();
+  RCP<TimeMonitor> tm;
+
+
+  std::string prefix = std::string("MM KokkosKernels ")+algorithm_name + std::string(": ");
+
+  if (lib == Xpetra::UseTpetra) {
+#if defined(HAVE_MUELU_TPETRA)    
+    typedef Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> crs_matrix_type;
+    typedef typename crs_matrix_type::local_matrix_type    KCRS;
+    typedef typename KCRS::StaticCrsGraphType              graph_t;
+    typedef typename graph_t::row_map_type::non_const_type lno_view_t;
+    typedef typename graph_t::row_map_type::const_type     c_lno_view_t;
+    typedef typename graph_t::entries_type::non_const_type lno_nnz_view_t;
+    typedef typename graph_t::entries_type::const_type     c_lno_nnz_view_t;
+    typedef typename KCRS::values_type::non_const_type     scalar_view_t;
+    typedef typename KCRS::device_type device_t;
+ 
+    RCP<const crs_matrix_type> Au = Utilities::Op2TpetraCrs(rcp(&A,false));
+    RCP<const crs_matrix_type> Bu = Utilities::Op2TpetraCrs(rcp(&B,false));
+    RCP<const crs_matrix_type> Cu = Utilities::Op2TpetraCrs(rcp(&C,false));
+
+    const KCRS & Amat = Au->getLocalMatrix();
+    const KCRS & Bmat = Bu->getLocalMatrix();
+    KCRS Cmat = Cu->getLocalMatrix();
+    
+    c_lno_view_t Arowptr = Amat.graph.row_map, Browptr = Bmat.graph.row_map;
+    lno_view_t Crowptr("Crowptr",A.getNodeNumRows()+1);
+    c_lno_nnz_view_t Acolind = Amat.graph.entries, Bcolind = Bmat.graph.entries;
+    lno_nnz_view_t Ccolind = Cmat.graph.entries;
+    const scalar_view_t Avals = Amat.values, Bvals = Bmat.values;
+    scalar_view_t Cvals = Cmat.values;
+
+    // KokkosKernelsHandle
+    typedef KokkosKernels::Experimental::KokkosKernelsHandle<
+    typename lno_view_t::const_value_type,typename lno_nnz_view_t::const_value_type, typename scalar_view_t::const_value_type, 
+      typename device_t::execution_space, typename device_t::memory_space,typename device_t::memory_space > KernelHandle;
+    KokkosSparse::SPGEMMAlgorithm alg_enum = KokkosSparse::StringToSPGEMMAlgorithm(algorithm_name);
+    typename KernelHandle::nnz_lno_t AnumRows = Au->getNodeNumRows();
+    typename KernelHandle::nnz_lno_t BnumRows = Bu->getNodeNumRows();
+    typename KernelHandle::nnz_lno_t BnumCols = Bu->getNodeNumCols();
+
+    // **********************************
+    // Multiply
+    tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix + std::string("Multiply"))));
+    KernelHandle kh;
+    kh.create_spgemm_handle(alg_enum);
+    kh.set_team_work_size(team_work_size);
+
+    KokkosSparse::Experimental::spgemm_symbolic(&kh,AnumRows,BnumRows,BnumCols,Arowptr,Acolind,false,Browptr,Bcolind,false,Crowptr);
+
+    size_t c_nnz_size = kh.get_spgemm_handle()->get_c_nnz();
+    if (c_nnz_size){
+      Ccolind = lno_nnz_view_t (Kokkos::ViewAllocateWithoutInitializing("entriesC"), c_nnz_size);
+      Cvals = scalar_view_t (Kokkos::ViewAllocateWithoutInitializing("valuesC"), c_nnz_size);
+    }
+    KokkosSparse::Experimental::spgemm_numeric(&kh,AnumRows,BnumRows,BnumCols,Arowptr,Acolind,Avals,false,Browptr,Bcolind,Bvals,false,Crowptr,Ccolind,Cvals);
+    kh.destroy_spgemm_handle();
+    KCRS::execution_space::fence();
+    
+    tm = Teuchos::null;
+    Au->getComm()->barrier();
+
+    // **********************************
+    // Copy out the data for KokkosKernels
+    tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix + std::string("Copy Out"))));
+    Cmat.graph.row_map = Crowptr;
+    Cmat.graph.entries = Ccolind;
+    Cmat.values = Cvals;
+
+  }
+#endif
+}
+
 
 
 // =========================================================================
@@ -340,6 +424,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
 
     bool   printTimings = true;  clp.setOption("timings", "notimings",  &printTimings, "print timings to screen");
     int    nrepeat      = 100;   clp.setOption("nrepeat",               &nrepeat,      "repeat the experiment N times");
+    int kk_team_work_size=16;
 
     std::string matrixFileNameA = "A.mm"; clp.setOption("matrixfileA", &matrixFileNameA, "matrix market file containing matrix");
     std::string matrixFileNameB = "B.mm"; clp.setOption("matrixfileB", &matrixFileNameB, "matrix market file containing matrix");
@@ -352,6 +437,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
     }
 
     out << "========================================================\n" << xpetraParameters << matrixParameters;
+
 
     // =========================================================================
     // Problem construction
@@ -393,13 +479,37 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
         }
         comm->barrier();
 #endif
+       
+        // KK Algorithms (KK Memory)
+        C = Xpetra::MatrixFactory<SC,LO,GO,Node>::Build(A->getRowMap(),0);
+        {
+          TimeMonitor t(*TimeMonitor::getNewTimer("MM SPGEMM_KK_MEMORY: Total"));
+          Multiply_KokkosKernels(*A,*B,*C,std::string("SPGEMM_KK_MEMORY"),kk_team_work_size);
+        }
+        comm->barrier();
+
+        // KK Algorithms (KK Dense)
+        C = Xpetra::MatrixFactory<SC,LO,GO,Node>::Build(A->getRowMap(),0);
+        {
+          TimeMonitor t(*TimeMonitor::getNewTimer("MM SPGEMM_KK_DENSE: Total"));
+          Multiply_KokkosKernels(*A,*B,*C,std::string("SPGEMM_KK_DENSE"),kk_team_work_size);
+        }
+        comm->barrier();
+
+
+        // KK Algorithms (KK Default)
+        C = Xpetra::MatrixFactory<SC,LO,GO,Node>::Build(A->getRowMap(),0);
+        {
+          TimeMonitor t(*TimeMonitor::getNewTimer("MM SPGEMM_KK: Total"));
+          Multiply_KokkosKernels(*A,*B,*C,std::string("SPGEMM_KK"),kk_team_work_size);
+        }
+        comm->barrier();
+
 
         // LTG
 
-        
-        // KK Algorithms
 
-    }// endnrepeat
+    }// end repeat
 
 
     tm = Teuchos::null;
