@@ -452,6 +452,10 @@ void Multiply_LTG(const Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> &
     Bview.domainMap    = Bu->getDomainMap();
     Bview.importColMap = Teuchos::null;
 
+
+    // Because we're in serial...
+    Cnc->replaceColMap(Bu->getColMap());
+
     // Bcol2Ccol is trivial
     lo_view_t Bcol2Ccol(Kokkos::ViewAllocateWithoutInitializing("Bcol2Ccol"),Bview.colMap->getNodeNumElements()), Icol2Ccol;
     const LO colMapSize = static_cast<LO>(Bview.colMap->getNodeNumElements());
@@ -544,6 +548,8 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
 
     out << "========================================================\n" << xpetraParameters << matrixParameters;
 
+    // At the moment, this test only runs on one MPI rank
+    if(comm->getSize() != 1) exit(1);
 
     // =========================================================================
     // Problem construction
