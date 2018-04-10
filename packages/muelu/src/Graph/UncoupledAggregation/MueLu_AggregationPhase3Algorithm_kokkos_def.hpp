@@ -97,6 +97,13 @@ namespace MueLu {
     h_numLocalAggregatesView() = numLocalAggregates;
     Kokkos::deep_copy(numLocalAggregatesView, h_numLocalAggregatesView);
 
+    // Create an extra view to keep track of throw flags
+    Kokkos::View<bool, memory_space> phase3Flags("phase 3 flags");
+    typename Kokkos::View<bool, memory_space>::HostMirror h_phase3Flags =
+      Kokkos::create_mirror_view (phase3Flags);
+    h_phase3Flags() = false;
+    Kokkos::deep_copy(phase3Flags, h_phase3Flags);
+
     Kokkos::View<LO, memory_space> numNonAggregatedNodesView("numNonAggregatedNodes");
     typename Kokkos::View<LO, memory_space>::HostMirror h_numNonAggregatedNodesView =
       Kokkos::create_mirror_view (numNonAggregatedNodesView);
@@ -155,14 +162,10 @@ namespace MueLu {
                                  vertex2AggId(i, 0) = vertex2AggId(neighOfINode(j), 0);
                                } else if (error_on_isolated) {
                                  // Error on this isolated node, as the user has requested
-                                 std::ostringstream oss;
-                                 oss<<"MueLu::AggregationPhase3Algorithm::BuildAggregates: MueLu has detected a non-Dirichlet node that has no on-rank neighbors and is terminating (by user request). "<<std::endl;
-                                 oss<<"If this error is being generated at level 0, this is due to an initial partitioning problem in your matrix."<<std::endl;
-                                 oss<<"If this error is being generated at any other level, try turning on repartitioning, which may fix this problem."<<std::endl;
-                                 throw Exceptions::RuntimeError(oss.str());
+                                 phase3Flags() = true;
                                } else {
                                  // Create new aggregate (singleton)
-                                 this->GetOStream(Warnings1) << "Found singleton: " << i << std::endl;
+                                 // this->GetOStream(Warnings1) << "Found singleton: " << i << std::endl;
 
                                  // aggregates.SetIsRoot(i);
                                  vertex2AggId(i, 0) = numLocalAggregatesView();
@@ -179,6 +182,15 @@ namespace MueLu {
 
     Kokkos::deep_copy(h_numLocalAggregatesView, numLocalAggregatesView);
     Kokkos::deep_copy(h_numNonAggregatedNodesView, numNonAggregatedNodesView);
+
+    Kokkos::deep_copy(h_phase3Flags, phase3Flags);
+    if(h_phase3Flags() == true) {
+      std::ostringstream oss;
+      oss << "MueLu::AggregationPhase3Algorithm::BuildAggregates: MueLu has detected a non-Dirichlet node that has no on-rank neighbors and is terminating (by user request). "<<std::endl;
+      oss << "If this error is being generated at level 0, this is due to an initial partitioning problem in your matrix."<<std::endl;
+      oss << "If this error is being generated at any other level, try turning on repartitioning, which may fix this problem."<<std::endl;
+      throw Exceptions::RuntimeError(oss.str());
+    }
 
     numLocalAggregates    = h_numLocalAggregatesView();
     numNonAggregatedNodes = h_numNonAggregatedNodesView();
