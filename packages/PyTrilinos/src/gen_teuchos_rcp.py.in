@@ -150,6 +150,8 @@ def get_header_files():
         result.append("PyTrilinos_Komplex_Headers.hpp")
     if (WITH_ML):
         result.append("PyTrilinos_ML_Headers.hpp")
+    if (WITH_ANASAZI):
+        result.append("PyTrilinos_Anasazi_Headers.hpp")
 
     return result
 
@@ -252,7 +254,7 @@ def form_class_filename(parsed_class):
     else:
         result += (parsed_class["name"] + ext)
 
-    # Make exceptions
+    # Fix filenames for packages that use different rules
     if result == "Tpetra_Map.hpp":
         result = "Tpetra_Map_decl.hpp"
     if result == "Tpetra_Export.hpp":
@@ -267,6 +269,10 @@ def form_class_filename(parsed_class):
         result = "MLAPI_Operator_Box.h"
     if result == "ML_Epetra_MultiLevelPreconditioner.hpp":
         result = "ml_MultiLevelPreconditioner.h"
+    if result.startswith("Anasazi_"):
+        result = result[:7] + result[8:]
+    if result.startswith("AnasaziEpetra"):
+        result = "AnasaziEpetraAdapter.hpp"
 
     return result    
 
@@ -337,7 +343,11 @@ def reorder_classnames(classnames):
     lowest-level base classes must appear first. Based on the logic here, the
     highest-level classes should appear first in the base_classes list.
     """
-    base_classes = ["Ifpack_Preconditioner",
+    base_classes = ["Anasazi::OrthoManager<double, Epetra_MultiVector>",
+                    "Anasazi::Eigenproblem<double, Epetra_MultiVector, Epetra_Operator>",
+                    "Anasazi::SortManager<double>",
+                    "Anasazi::OutputManager<double>",
+                    "Ifpack_Preconditioner",
                     "Isorropia::Epetra::Operator",
                     "Isorropia::LevelScheduler",
                     "Isorropia::Orderer",
@@ -365,6 +375,33 @@ def reorder_classnames(classnames):
 
 ################################################################################
 
+def get_import_directives(teuchos_rcps):
+    result = []
+    for classname in teuchos_rcps:
+        filename = form_class_filename(parse_class(classname))
+        swig_directive = '%import "' + filename + '"'
+        if swig_directive not in result:
+            result.append(swig_directive)
+
+    if (WITH_ANASAZI):
+        # Find the first Anasazi import and insert AnasaziTypes.hpp before it
+        index = result.index('%import "AnasaziOutputManager.hpp"')
+        result.insert(index, '%import "AnasaziTypes.hpp"')
+        if (WITH_EPETRA):
+            # Move AnasaziEpetraAdapter.hpp to after last Anasazi import
+            result.remove('%import "AnasaziEpetraAdapter.hpp"')
+            index = result.index('%import "AnasaziStatusTestResNorm.hpp"')
+            result.insert(index+1, '%import "AnasaziEpetraAdapter.hpp"')
+        # Add %template directives needed as base classes
+        index = result.index('%import "AnasaziMultiVec.hpp"')
+        result.insert(index+1, "%template(MultiVecDouble) Anasazi::MultiVec<double>;")
+        index = result.index('%import "AnasaziOperator.hpp"')
+        result.insert(index+1, "%template(OperatorDouble) Anasazi::Operator<double>;")
+
+    return result
+
+################################################################################
+
 def main():
     """
     Generate the SWIG interface file by printing the SWIG directives to stdout
@@ -376,6 +413,7 @@ def main():
     ignores       = get_ignores()
     teuchos_rcps  = get_rcp_classes(swig_files)
     reorder_classnames(teuchos_rcps)
+    import_directives = get_import_directives(teuchos_rcps)
 
     ############################################################
     # Generate the SWIG interface file for Teuchos.RCP
@@ -453,9 +491,11 @@ def main():
     print('%include "Teuchos_DLLExportMacro.h"')
     if (WITH_EPETRA):
         print('%include "Epetra_DLLExportMacro.h"')
+        if (WITH_ANASAZI):
+            print('%include "Anasaziepetra_DLLExportMacro.h"')
     print("")
 
-    # Turn off warnings
+    # Turn off specific warnings
     print("// Turn off warnings")
     print("# pragma SWIG nowarn=302")
     print("# pragma SWIG nowarn=314")
@@ -476,13 +516,8 @@ def main():
 
     # %import the Trilinos header files
     print("// Import the Trilinos header files")
-    imported = []
-    for classname in teuchos_rcps:
-        filename = form_class_filename(parse_class(classname))
-        if filename not in imported:
-            imported.append(filename)
-            line = 'import "%s"' % filename
-            print("%" + line)
+    for swig_directive in import_directives:
+        print(swig_directive)
     print("")
 
     # Specify the python docstrings for the Teuchos.RCP functions

@@ -102,10 +102,8 @@ package:
 
 // Configuration include files
 #include "PyTrilinos_config.h"
-#include "Anasazi_config.h"
-#ifdef HAVE_EPETRA
-#include "Anasaziepetra_DLLExportMacro.h"
-#endif
+#include "AnasaziConfigDefs.hpp"
+
 #define NO_IMPORT_ARRAY
 #include "numpy_include.hpp"
 
@@ -121,35 +119,7 @@ package:
 #endif
 
 // Anasazi include files
-#include "AnasaziVersion.cpp"
-#include "AnasaziTypes.hpp"
-#include "AnasaziOutputManager.hpp"
-#include "AnasaziBasicOutputManager.hpp"
-#include "AnasaziBasicSort.hpp"
-#include "AnasaziMultiVecTraits.hpp"
-#include "AnasaziMultiVec.hpp"
-#include "AnasaziOperatorTraits.hpp"
-#include "AnasaziOperator.hpp"
-#include "AnasaziEigenproblem.hpp"
-#include "AnasaziBasicEigenproblem.hpp"
-#include "AnasaziStatusTest.hpp"
-#include "AnasaziStatusTestCombo.hpp"
-#include "AnasaziStatusTestMaxIters.hpp"
-#include "AnasaziStatusTestOutput.hpp"
-#include "AnasaziStatusTestResNorm.hpp"
-#include "AnasaziOrthoManager.hpp"
-#include "AnasaziMatOrthoManager.hpp"
-#include "AnasaziBasicOrthoManager.hpp"
-#include "AnasaziSVQBOrthoManager.hpp"
-#include "AnasaziEigensolverDecl.hpp"
-#include "AnasaziSolverManager.hpp"
-#include "AnasaziBlockDavidsonSolMgr.hpp"
-#include "AnasaziBlockKrylovSchurSolMgr.hpp"
-#include "AnasaziLOBPCGSolMgr.hpp"
-#ifdef HAVE_EPETRA
-#include "AnasaziEpetraAdapter.hpp"
-#endif
-
+#include "PyTrilinos_Anasazi_Headers.hpp"
 %}
 
 // Include configuration

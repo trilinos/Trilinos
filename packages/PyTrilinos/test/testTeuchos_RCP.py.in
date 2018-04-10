@@ -405,6 +405,52 @@ if (${Trilinos_ENABLE_ML}):
 
 ##########################################################################
 
+if (${Trilinos_ENABLE_Anasazi}):
+    Anasazi = fromPyTrilinosImport('Anasazi', options.testharness)
+
+    class TeuchosRCPAnasaziTestCase(unittest.TestCase):
+        "Test the Teuchos.RCP functions on Anasazi objects"
+
+        def setUp(self):
+            self.comm  = Epetra.PyComm()
+            nRows      = 10 * self.comm.NumProc()
+            matrix     = buildMatrix(self.comm, nRows)
+            ivec       = Epetra.MultiVector(matrix.RowMap(), 5)
+            self.bom   = Anasazi.BasicOutputManager()
+            self.bep   = Anasazi.BasicEigenproblem(matrix,ivec)
+
+        def testIsNull(self):
+            "Test Teuchos.RCP.is_null() for Anasazi objects"
+            self.assertEquals(Teuchos.RCP.is_null(self.bom), False)
+            self.assertEquals(Teuchos.RCP.is_null(self.bep), False)
+
+        def testIsValidPtr(self):
+            "Test Teuchos.RCP.is_valid_ptr() for Anasazi objects"
+            self.assertEquals(Teuchos.RCP.is_valid_ptr(self.bom), True)
+            self.assertEquals(Teuchos.RCP.is_valid_ptr(self.bep), True)
+
+        def testHasOwnership(self):
+            "Test Teuchos.RCP.has_ownership() for Anasazi objects"
+            self.assertEquals(Teuchos.RCP.has_ownership(self.bom), True)
+            self.assertEquals(Teuchos.RCP.has_ownership(self.bep), True)
+
+        def testStrongCount(self):
+            "Test Teuchos.RCP.strong_count() for Anasazi objects"
+            self.assertEquals(Teuchos.RCP.strong_count(self.bom), 1)
+            self.assertEquals(Teuchos.RCP.strong_count(self.bep), 1)
+
+        def testWeakCount(self):
+            "Test Teuchos.RCP.weak_count() for Anasazi objects"
+            self.assertEquals(Teuchos.RCP.weak_count(self.bom), 0)
+            self.assertEquals(Teuchos.RCP.weak_count(self.bep), 0)
+
+        def testTotalCount(self):
+            "Test Teuchos.RCP.total_count() for Anasazi objects"
+            self.assertEquals(Teuchos.RCP.total_count(self.bom), 1)
+            self.assertEquals(Teuchos.RCP.total_count(self.bep), 1)
+
+##########################################################################
+
 if __name__ == "__main__":
 
     # Create the test suite object
@@ -425,6 +471,8 @@ if __name__ == "__main__":
         suite.addTest(unittest.makeSuite(TeuchosRCPIFPACKTestCase))
     if (${Trilinos_ENABLE_ML}):
         suite.addTest(unittest.makeSuite(TeuchosRCPMLTestCase))
+    if (${Trilinos_ENABLE_Anasazi}):
+        suite.addTest(unittest.makeSuite(TeuchosRCPAnasaziTestCase))
 
     # Create a communicator
     comm    = Teuchos.DefaultComm.getComm()
