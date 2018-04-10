@@ -244,6 +244,8 @@ The following `<system_name>` sub-directories exist:
   needs to.
   
  * `toss3/`: Contains files to drive builds on `serrano` and `chama`.
+ 
+ * `rhel6`: Contains files to drive builds on rhel6 machines with the SEMS environment.
 
 ## How add a new system
 
