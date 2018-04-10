@@ -65,6 +65,17 @@
 #include "TrilinosCouplings_Pamgen_Utils.hpp"
 #include "TrilinosCouplings_IntrepidPoissonExampleHelpers.hpp"
 
+/*********************************************************/
+/*                     Typedefs                          */
+/*********************************************************/
+
+struct fecomp{
+  bool operator () ( topo_entity* x,  topo_entity*  y )const
+  {
+    if(x->sorted_local_node_ids < y->sorted_local_node_ids)return true;
+    return false;
+  }
+};
 namespace TrilinosCouplings {
 namespace TpetraIntrepidPoissonExample {
 
@@ -240,14 +251,33 @@ makeMatrixAndRightHandSide (Teuchos::RCP<sparse_matrix_type>& A,
   /**********************************************************************************/
 
   *out << "Getting cell topology" << endl;
-
   // Get cell topology for base hexahedron
   shards::CellTopology cellType (shards::getCellTopologyData<shards::Hexahedron<8> > ());
-
   // Get dimensions
   int numNodesPerElem = cellType.getNodeCount();
+  int numEdgesPerElem = cellType.getEdgeCount();
+  int numFacesPerElem = cellType.getSideCount();
+  int numNodesPerEdge = 2; // for any rational universe
+  int numNodesPerFace = 4; // hardwired for hexes
   int spaceDim = cellType.getDimension();
   int dim = 3;
+
+  
+  // Build reference element edge to node map
+  FieldContainer<int> refEdgeToNode(numEdgesPerElem,numNodesPerEdge);
+  for (int i=0; i<numEdgesPerElem; i++){
+    refEdgeToNode(i,0)=cellType.getNodeMap(1, i, 0);
+    refEdgeToNode(i,1)=cellType.getNodeMap(1, i, 1);
+  }
+
+  // Build reference element face to node map
+  FieldContainer<int> refFaceToNode(numFacesPerElem,numNodesPerFace);
+  for (int i=0; i<numFacesPerElem; i++){
+    refFaceToNode(i,0)=cellType.getNodeMap(2, i, 0);
+    refFaceToNode(i,1)=cellType.getNodeMap(2, i, 1);
+    refFaceToNode(i,2)=cellType.getNodeMap(2, i, 2);
+    refFaceToNode(i,3)=cellType.getNodeMap(2, i, 3);
+  }
 
   /**********************************************************************************/
   /******************************* GENERATE MESH ************************************/
@@ -262,6 +292,11 @@ makeMatrixAndRightHandSide (Teuchos::RCP<sparse_matrix_type>& A,
   long long *  node_cmap_ids        = NULL;
   long long ** comm_node_ids        = NULL;
   long long ** comm_node_proc_ids   = NULL;
+
+  std::set < topo_entity * , fecomp > edge_set;
+  std::set < topo_entity * , fecomp > face_set;
+  std::vector < topo_entity * > edge_vector;
+  std::vector < topo_entity * > face_vector;
 
   // Generate mesh with Pamgen
   long long maxInt = 9223372036854775807LL;
@@ -413,22 +448,6 @@ makeMatrixAndRightHandSide (Teuchos::RCP<sparse_matrix_type>& A,
     }
   }
 
-  // Compute max / min of sigma parameter
-  double local_sigma_max = numElems > 0 ? sigmaVal(0) : 0.0;
-  double local_sigma_min = numElems > 0 ? sigmaVal(0) : 0.0;
-  double local_sigma_sum = 0.0;
-  for(int i=0; i<numElems; i++) {
-    local_sigma_max = std::max(local_sigma_max,sigmaVal(i));
-    local_sigma_min = std::max(local_sigma_min,sigmaVal(i));
-    local_sigma_sum += sigmaVal(i);
-  }
-  double global_sigma_max=0.0, global_sigma_min=0.0, global_sigma_sum=0.0;
-  Teuchos::reduceAll(*comm,Teuchos::REDUCE_MIN,local_sigma_min,Teuchos::outArg(global_sigma_min));
-  Teuchos::reduceAll(*comm,Teuchos::REDUCE_MAX,local_sigma_max,Teuchos::outArg(global_sigma_max));
-  Teuchos::reduceAll(*comm,Teuchos::REDUCE_SUM,local_sigma_sum,Teuchos::outArg(global_sigma_sum));
-  problemStatistics.set("sigma: min",global_sigma_min);
-  problemStatistics.set("sigma: max",global_sigma_max);
-  problemStatistics.set("sigma: mean",global_sigma_sum / numElemsGlobal);
   
   
   // parallel info
@@ -568,6 +587,102 @@ makeMatrixAndRightHandSide (Teuchos::RCP<sparse_matrix_type>& A,
   }
   delete [] sideSetIds;
 
+
+
+  FieldContainer<int> elemToEdge(numElems,numEdgesPerElem);
+  FieldContainer<int> elemToFace(numElems,numFacesPerElem);
+
+  // Calculate edge and face ids
+  int elct = 0;
+  for(long long b = 0; b < numElemBlk; b++){
+    if(nodes_per_element[b] == 4){
+    }
+    else if (nodes_per_element[b] == 8){
+      //loop over all elements and push their edges onto a set if they are not there already
+      for(long long el = 0; el < elements[b]; el++){
+        std::set< topo_entity *, fecomp > ::iterator fit;
+        for (int i=0; i < numEdgesPerElem; i++){
+          topo_entity * teof = new topo_entity;
+          for(int j = 0; j < numNodesPerEdge;j++){
+            teof->add_node(elmt_node_linkage[b][el*numNodesPerElem + refEdgeToNode(i,j)],globalNodeIds.getRawPtr());
+          }
+          teof->sort();
+          fit = edge_set.find(teof);
+          if(fit == edge_set.end()){
+            teof->local_id = edge_vector.size();
+            edge_set.insert(teof);
+            elemToEdge(elct,i)= edge_vector.size();
+            edge_vector.push_back(teof);
+          }
+          else{
+            elemToEdge(elct,i) = (*fit)->local_id;
+            delete teof;
+          }
+        }
+        for (int i=0; i < numFacesPerElem; i++){
+          topo_entity * teof = new topo_entity;
+          for(int j = 0; j < numNodesPerFace;j++){
+            teof->add_node(elmt_node_linkage[b][el*numNodesPerElem + refFaceToNode(i,j)],globalNodeIds.getRawPtr());
+          }
+          teof->sort();
+          fit = face_set.find(teof);
+          if(fit == face_set.end()){
+            teof->local_id = face_vector.size();
+            face_set.insert(teof);
+            elemToFace(elct,i)= face_vector.size();
+            face_vector.push_back(teof);
+          }
+          else{
+            elemToFace(elct,i) = (*fit)->local_id;
+            delete teof;
+          }
+        }
+        elct ++;
+      }
+    }
+  }
+
+  // Edge to Node connectivity
+  FieldContainer<int> edgeToNode(edge_vector.size(), numNodesPerEdge);
+  for(unsigned ect = 0; ect != edge_vector.size(); ect++){
+    std::list<long long>::iterator elit;
+    int nct = 0;
+    for(elit  = edge_vector[ect]->local_node_ids.begin();
+        elit != edge_vector[ect]->local_node_ids.end();
+        elit ++){
+      edgeToNode(ect,nct) = *elit-1;
+      nct++;
+    }
+  }
+
+/**********************************************************************************/
+/********************************** STATISTICS ************************************/
+/**********************************************************************************/
+  // Statistics: Compute max / min of sigma parameter, mesh information
+  // Definitions of mesh statistics:
+  // 1) Max/min edge - ratio of max to min edge length
+
+  double local_sigma_max = numElems > 0 ? sigmaVal(0) : 0.0;
+  double local_sigma_min = numElems > 0 ? sigmaVal(0) : 0.0;
+  double local_sigma_sum = 0.0;
+  for(int i=0; i<numElems; i++) {
+    local_sigma_max = std::max(local_sigma_max,sigmaVal(i));
+    local_sigma_min = std::max(local_sigma_min,sigmaVal(i));
+    local_sigma_sum += sigmaVal(i);
+    for (int j=0; j<numNodesPerElem; j++) {
+
+    }
+    
+
+  }
+  double global_sigma_max=0.0, global_sigma_min=0.0, global_sigma_sum=0.0;
+  Teuchos::reduceAll(*comm,Teuchos::REDUCE_MIN,local_sigma_min,Teuchos::outArg(global_sigma_min));
+  Teuchos::reduceAll(*comm,Teuchos::REDUCE_MAX,local_sigma_max,Teuchos::outArg(global_sigma_max));
+  Teuchos::reduceAll(*comm,Teuchos::REDUCE_SUM,local_sigma_sum,Teuchos::outArg(global_sigma_sum));
+  problemStatistics.set("sigma: min",global_sigma_min);
+  problemStatistics.set("sigma: max",global_sigma_max);
+  problemStatistics.set("sigma: mean",global_sigma_sum / numElemsGlobal);
+  
 /**********************************************************************************/
 /********************************* GET CUBATURE ***********************************/
 /**********************************************************************************/
