@@ -95,12 +95,6 @@ example subdirectory of the PyTrilinos package:
 
 // Configuration include files
 #include "PyTrilinos_config.h"
-#ifdef HAVE_INTTYPES_H
-#undef HAVE_INTTYPES_H
-#endif
-#ifdef HAVE_STDINT_H
-#undef HAVE_STDINT_H
-#endif
 
 // Teuchos include files
 #include "PyTrilinos_Teuchos_Headers.hpp"
@@ -116,22 +110,11 @@ example subdirectory of the PyTrilinos package:
 
 // IFPACK include files
 #ifdef HAVE_IFPACK
-#include "Ifpack_IC.h"
-#include "Ifpack_ICT.h"
-#include "Ifpack_ILU.h"
-#include "Ifpack_ILUT.h"
-#include "Ifpack_PointRelaxation.h"
-#include "Ifpack_Amesos.h"
+#include "PyTrilinos_IFPACK_Headers.hpp"
 #endif
 
 // ML include files
-#undef HAVE_STDINT_H
-#undef HAVE_INTTYPES_H
-#undef HAVE_SYS_TIME_H
-#include "ml_MultiLevelPreconditioner.h"
-#include "MLAPI.h"
-#include "PyTrilinos_ML_Util.hpp"
-
+#include "PyTrilinos_ML_Headers.hpp"
 %}
 
 // Include PyTrilinos configuration

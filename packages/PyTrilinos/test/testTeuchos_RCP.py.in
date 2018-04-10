@@ -367,6 +367,44 @@ if (${Trilinos_ENABLE_Ifpack}):
 
 ##########################################################################
 
+if (${Trilinos_ENABLE_ML}):
+    ML = fromPyTrilinosImport('ML', options.testharness)
+
+    class TeuchosRCPMLTestCase(unittest.TestCase):
+        "Test the Teuchos.RCP functions on an ML object"
+
+        def setUp(self):
+            self.comm  = Epetra.PyComm()
+            nRows      = 10 * self.comm.NumProc()
+            matrix     = buildMatrix(self.comm, nRows)
+            self.prec  = ML.MultiLevelPreconditioner(matrix, False)
+
+        def testIsNull(self):
+            "Test Teuchos.RCP.is_null() for an ML object"
+            self.assertEquals(Teuchos.RCP.is_null(self.prec), False)
+
+        def testIsValidPtr(self):
+            "Test Teuchos.RCP.is_valid_ptr() for an ML object"
+            self.assertEquals(Teuchos.RCP.is_valid_ptr(self.prec), True)
+
+        def testHasOwnership(self):
+            "Test Teuchos.RCP.has_ownership() for an ML object"
+            self.assertEquals(Teuchos.RCP.has_ownership(self.prec), True)
+
+        def testStrongCount(self):
+            "Test Teuchos.RCP.strong_count() for an ML object"
+            self.assertEquals(Teuchos.RCP.strong_count(self.prec), 1)
+
+        def testWeakCount(self):
+            "Test Teuchos.RCP.weak_count() for an ML object"
+            self.assertEquals(Teuchos.RCP.weak_count(self.prec), 0)
+
+        def testTotalCount(self):
+            "Test Teuchos.RCP.total_count() for an ML object"
+            self.assertEquals(Teuchos.RCP.total_count(self.prec), 1)
+
+##########################################################################
+
 if __name__ == "__main__":
 
     # Create the test suite object
@@ -385,6 +423,8 @@ if __name__ == "__main__":
             suite.addTest(unittest.makeSuite(TeuchosRCPIsorropiaTestCase))
     if (${Trilinos_ENABLE_Ifpack}):
         suite.addTest(unittest.makeSuite(TeuchosRCPIFPACKTestCase))
+    if (${Trilinos_ENABLE_ML}):
+        suite.addTest(unittest.makeSuite(TeuchosRCPMLTestCase))
 
     # Create a communicator
     comm    = Teuchos.DefaultComm.getComm()

@@ -148,6 +148,8 @@ def get_header_files():
         result.append("PyTrilinos_IFPACK_Headers.hpp")
     if (WITH_KOMPLEX):
         result.append("PyTrilinos_Komplex_Headers.hpp")
+    if (WITH_ML):
+        result.append("PyTrilinos_ML_Headers.hpp")
 
     return result
 
@@ -259,8 +261,22 @@ def form_class_filename(parsed_class):
         result = "Tpetra_Import_decl.hpp"
     if result.startswith("Isorropia_Epetra_"):
         result = "Isorropia_Epetra" + result[17:]
+    if result == "MLAPI_DoubleVector.h":
+        result = "MLAPI_MultiVector.h"
+    if result == "MLAPI_ML_Operator_Box.h":
+        result = "MLAPI_Operator_Box.h"
+    if result == "ML_Epetra_MultiLevelPreconditioner.hpp":
+        result = "ml_MultiLevelPreconditioner.h"
 
     return result    
+
+################################################################################
+
+def get_ignores():
+    result = []
+    if (WITH_ML):
+        result.append("MLAPI::MultiVector")
+    return result
 
 ################################################################################
 
@@ -357,6 +373,7 @@ def main():
     swig_files    = get_input_files()
     header_files  = get_header_files()
     typedefs      = get_typedefs()
+    ignores       = get_ignores()
     teuchos_rcps  = get_rcp_classes(swig_files)
     reorder_classnames(teuchos_rcps)
 
@@ -446,6 +463,15 @@ def main():
     print("# pragma SWIG nowarn=325")
     print("# pragma SWIG nowarn=362")
     print("# pragma SWIG nowarn=389")
+    print("")
+
+    # %ignore classes that will get %imported but whose base classes do not get
+    # %imported
+    print("// %ignore classes that will get %imported but whose base classes do not")
+    print("// get %imported")
+    for i in ignores:
+        line = "ignore %s;" % i
+        print("%" + line)
     print("")
 
     # %import the Trilinos header files
