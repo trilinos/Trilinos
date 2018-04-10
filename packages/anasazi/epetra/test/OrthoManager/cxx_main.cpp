@@ -62,6 +62,7 @@
 #endif
 
 #include "ModeLaplace1DQ1.h"
+#include "MySDMHelpers.hpp"
 
 using namespace Teuchos;
 using namespace Anasazi;
@@ -246,8 +247,8 @@ int main(int argc, char *argv[])
       // it should require randomization, as 
       // P_{X1,X1} P_{Y2,Y2} (X1*C1 + Y2*C2) = P_{X1,X1} X1*C1 = 0
       SerialDenseMatrix<int,ST> C1(sizeX1,sizeS), C2(sizeX2,sizeS);
-      C1.random();
-      C2.random();
+      Anasazi::randomSDM(C1);
+      Anasazi::randomSDM(C2);
       MVT::MvTimesMatAddMv(ONE,*X1,C1,ZERO,*S);
       MVT::MvTimesMatAddMv(ONE,*X2,C2,ONE,*S);
       
@@ -274,12 +275,14 @@ int main(int argc, char *argv[])
       // rank-1
       RCP<MV> one = MVT::Clone(*S,1);
       MVT::MvRandom(*one);
+      SerialDenseMatrix<int,ST> scaleS(sizeS,1);
+      Anasazi::randomSDM( scaleS );
       // put multiple of column 0 in columns 0:sizeS-1
       for (int i=0; i<sizeS; i++) {
         std::vector<int> ind(1); 
         ind[0] = i;
         RCP<MV> Si = MVT::CloneViewNonConst(*S,ind);
-        MVT::MvAddMv(SCT::random(),*one,ZERO,*one,*Si);
+        MVT::MvAddMv(scaleS(i,0),*one,ZERO,*one,*Si);
       }
       
       MyOM->stream(Errors) << " normalize(): testing on rank-1 multivector " << endl;
@@ -313,8 +316,8 @@ int main(int argc, char *argv[])
       // and 
       // P_X2 P_X1 (X2*C2 + X1*C1) = P_X2 X2*C2 = 0
       SerialDenseMatrix<int,ST> C1(sizeX1,sizeS), C2(sizeX2,sizeS);
-      C1.random();
-      C2.random();
+      Anasazi::randomSDM(C1);
+      Anasazi::randomSDM(C2);
       MVT::MvTimesMatAddMv(ONE,*X1,C1,ZERO,*S);
       MVT::MvTimesMatAddMv(ONE,*X2,C2,ONE,*S);
       
@@ -341,12 +344,14 @@ int main(int argc, char *argv[])
       // rank-1
       RCP<MV> one = MVT::Clone(*S,1);
       MVT::MvRandom(*one);
+      SerialDenseMatrix<int,ST> scaleS(sizeS,1);
+      Anasazi::randomSDM( scaleS );
       // put multiple of column 0 in columns 0:sizeS-1
       for (int i=0; i<sizeS; i++) {
         std::vector<int> ind(1); 
         ind[0] = i;
         RCP<MV> Si = MVT::CloneViewNonConst(*S,ind);
-        MVT::MvAddMv(SCT::random(),*one,ZERO,*one,*Si);
+        MVT::MvAddMv(scaleS(i,0),*one,ZERO,*one,*Si);
       }
       
       MyOM->stream(Errors) << " projectAndNormalize(): testing on rank-1 multivector " << endl;
@@ -490,9 +495,9 @@ int testProjectAndNormalize(RCP<OrthoManager<ST,MV> > OM,
       // copies of S,MS
       Scopy = MVT::CloneCopy(*S);
       // randomize this data, it should be overwritten
-      B->random();
+      Anasazi::randomSDM(*B);
       for (unsigned int i=0; i<C.size(); i++) {
-        C[i]->random();
+        Anasazi::randomSDM(*C[i]);
       }
       // run test
       int ret = OM->projectAndNormalize(*Scopy,theX,C,B);
@@ -530,55 +535,6 @@ int testProjectAndNormalize(RCP<OrthoManager<ST,MV> > OM,
       if (C.size() > 1) {
         C_outs.back().push_back( rcp( new SerialDenseMatrix<int,ST>(*C[1]) ) );
       }
-
-      // do we run the reversed input?
-      /*if ( (t & 3) == 3 ) {
-        // copies of S,MS
-        Scopy = MVT::CloneCopy(*S);
-        // randomize this data, it should be overwritten
-        B->random();
-        for (unsigned int i=0; i<C.size(); i++) {
-          C[i]->random();
-        }
-        // flip the inputs
-        theX = tuple( theX[1], theX[0] );
-        // run test
-        ret = OM->projectAndNormalize(*Scopy,theX,C,B);
-        sout << "projectAndNormalize() returned rank " << ret << endl;
-        if (ret == 0) {
-          sout << "   Cannot continue." << endl;
-          numerr++;
-          break;
-        }
-        ret_out.push_back(ret);
-        // projectAndNormalize() is only required to return a 
-        // basis of rank "ret"
-        // this is what we will test:
-        //   the first "ret" columns in Scopy
-        //   the first "ret" rows in B
-        // save just the parts that we want
-        // we allocate S and MS for each test, so we can save these as views
-        // however, save copies of the C and B
-        if (ret < sizeS) {
-          vector<int> ind(ret);
-          for (int i=0; i<ret; i++) {
-            ind[i] = i;
-          }
-          S_outs.push_back( MVT::CloneView(*Scopy,ind) );
-          B_outs.push_back( rcp( new SerialDenseMatrix<int,ST>(Teuchos::Copy,*B,ret,sizeS) ) );
-        }
-        else {
-          S_outs.push_back( Scopy );
-          B_outs.push_back( rcp( new SerialDenseMatrix<int,ST>(*B) ) );
-        }
-        C_outs.push_back( Array<RCP<SerialDenseMatrix<int,ST> > >() );
-        // reverse the Cs to compensate for the reverse projectors
-        C_outs.back().push_back( rcp( new SerialDenseMatrix<int,ST>(*C[1]) ) );
-        C_outs.back().push_back( rcp( new SerialDenseMatrix<int,ST>(*C[0]) ) );
-        // flip the inputs back
-        theX = tuple( theX[1], theX[0] );
-      }
-      */
 
       // test all outputs for correctness
       for (unsigned int o=0; o<S_outs.size(); o++) {
@@ -700,7 +656,7 @@ int testNormalize(RCP<OrthoManager<ST,MV> > OM, RCP<const MV> S)
       // copies of S,MS
       Scopy = MVT::CloneCopy(*S);
       // randomize this data, it should be overwritten
-      B->random();
+      Anasazi::randomSDM(*B);
       // run test
       ret = OM->normalize(*Scopy,B);
       sout << "normalize() returned rank " << ret << endl;
@@ -874,7 +830,7 @@ int testProject(RCP<OrthoManager<ST,MV> > OM,
       Scopy = MVT::CloneCopy(*S);
       // randomize this data, it should be overwritten
       for (unsigned int i=0; i<C.size(); i++) {
-        C[i]->random();
+        Anasazi::randomSDM(*C[i]);
       }
       // run test
       OM->project(*Scopy,theX,C);

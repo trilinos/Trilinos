@@ -56,7 +56,6 @@
 typedef int idxtype;
 #ifdef HAVE_IFPACK_METIS
 extern "C" {
-  void METIS_EstimateMemory(int *, idxtype *, idxtype *, int *, int *, int *);
   void METIS_PartGraphKway(int *, idxtype *, idxtype *, idxtype *,
                            idxtype *, int *, int *, int *, int *, int *,
                            idxtype *);
@@ -80,7 +79,6 @@ int Ifpack_METISPartitioner::ComputePartitions()
 
   int ierr;
 #ifdef HAVE_IFPACK_METIS
-  int nbytes = 0;
   int edgecut;
 #endif
 
@@ -229,10 +227,7 @@ int Ifpack_METISPartitioner::ComputePartitions()
       int j = NumMyRows();
       if (NumLocalParts_ < 8) {
 
-        int i = 1; /* optype in the METIS manual */
         numflag = 0;
-        METIS_EstimateMemory(&j, &xadj[0], &adjncy[0],
-                             &numflag, &i, &nbytes );
 
         METIS_PartGraphRecursive(&j, &xadj[0], &adjncy[0],
                                  NULL, NULL,
