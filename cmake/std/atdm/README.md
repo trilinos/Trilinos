@@ -171,7 +171,8 @@ $ ./checkin-test-sems.sh <job-name-0> <job-name-1> ... \
 
 * <a href="#ridewhite">ride/white</a>
 * <a href="#shillerhansen">shiller/hansen</a>
-* <a href="#chama/serrano">chama/serrano</a>
+* <a href="#chamaserrano">chama/serrano</a>
+* <a href="#SEMS-RHEL6">SEMS rhel6 environment</a>
 
 
 ### ride/white
@@ -285,7 +286,27 @@ $ chmod +x job.sh
 
 $ srun -N 1 --time=600 --account=<YOUR_WCID> -J $JOB_NAME  -e output.error ./job.sh &
 ```
+### SEMS rhel6 environment
 
+Once logged on to a rhel6 machine with the sems NFS, one can
+directly configure, build, and run tests.  For example, to configure, build and run 
+the tests for `MueuLu` one would clone Trilinos on the `develop` branch and then do the following:
+
+
+```
+$ cd <some_build_dir>/
+
+$ source $TRILINOS_DIR/cmake/std/atdm/load-env.sh intel-opt-openmp
+
+$ cmake \
+  -DTrilinos_CONFIGURE_OPTIONS_FILE:STRING=cmake/std/atdm/ATDMDevEnv.cmake \
+  -DTrilinos_ENABLE_TESTS=ON -DTrilinos_ENABLE_MueLu=ON \
+  $TRILINOS_DIR
+
+$ make -j16
+
+$ ctest -j16 \
+```
 
 ## Directory structure and contents
 
@@ -361,5 +382,9 @@ they support are:
 
 * `shiller/`: Supports GNU, Intel, and CUDA builds on both the SRN machine
   `shiller` and the mirror SON machine `hansen`.
+  
+* `serrano/` and `chama/`: SNL HPC machines
+
+* RHEL6 systems with the SEMS NFS environment
 
 * ???
