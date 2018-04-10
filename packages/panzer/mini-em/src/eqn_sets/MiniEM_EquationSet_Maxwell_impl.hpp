@@ -120,18 +120,19 @@ buildAndRegisterEquationSetEvaluators(PHX::FieldManager<panzer::Traits>& fm,
       residual_operator_names.push_back(resid);
     }
     {
-      std::string resid="RESIDUAL_"+m_Efield_dof_name+"_CURLB_OP";
-      ParameterList p("Curl B"+m_Efield_dof_name);
-      p.set("Residual Name", resid);
-      p.set("Value Name", m_Bfield_dof_name);
-      p.set("Basis", basis);
-      p.set("IR", ir);
-      p.set("Multiplier", -1.0/mu);
-      RCP< PHX::Evaluator<panzer::Traits> > op =
-          rcp(new panzer::Integrator_CurlBasisDotVector<EvalT,panzer::Traits>(p));
-
+      using panzer::EvaluatorStyle;
+      using panzer::Integrator_CurlBasisDotVector;
+      using panzer::Traits;
+      using PHX::Evaluator;
+      using std::string;
+      string resName("RESIDUAL_" + m_Efield_dof_name),
+             valName(m_Bfield_dof_name);
+      double multiplier(-1.0 / mu);
+      RCP<Evaluator<Traits>> op = rcp(new
+        Integrator_CurlBasisDotVector<EvalT, Traits>(
+        EvaluatorStyle::CONTRIBUTES, resName, valName, *basis, *ir,
+        multiplier));
       this->template registerEvaluator<EvalT>(fm, op);
-      residual_operator_names.push_back(resid);
     }
     {
       std::string resid="RESIDUAL_"+m_Efield_dof_name+"_CURRENT_SOURCE";
