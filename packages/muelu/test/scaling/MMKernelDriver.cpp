@@ -570,6 +570,8 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
     out << "Matrix Read complete.\n========================================================" << std::endl;
     comm->barrier();
 
+    out << "Kokkos::Compat::KokkosOpenMPWrapperNode::execution_space::concurrency() = "<<Kokkos::Compat::KokkosOpenMPWrapperNode::execution_space::concurrency()<<std::endl;
+
     for (int i=0; i<nrepeat; i++) {
 
       // ViennaCL
@@ -627,8 +629,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
         comm->barrier();
 
     }// end repeat
-
-
+    
     tm = Teuchos::null;
     globalTimeMonitor = Teuchos::null;
 
