@@ -104,6 +104,37 @@ class TeuchosRCPTeuchosTestCase(unittest.TestCase):
 
 if (${Trilinos_ENABLE_Epetra}):
     Epetra = fromPyTrilinosImport('Epetra', options.testharness)
+
+    def buildGraph(comm, nRows):
+        map = Epetra.Map(nRows, 0, comm)
+        graph = Epetra.CrsGraph(Epetra.Copy, map, 3)
+        for gid in map.MyGlobalElements():
+            if gid == 0:
+                indices = [0, 1]
+            elif gid == nRows-1:
+                indices = [nRows-2, nRows-1]
+            else:
+                indices = [gid-1, gid, gid+1]
+            graph.InsertGlobalIndices(gid, indices)
+        graph.FillComplete()
+        return graph
+
+    def buildMatrix(comm, nRows):
+        map = Epetra.Map(nRows, 0, comm)
+        matrix = Epetra.CrsMatrix(Epetra.Copy, map, 3)
+        for gid in map.MyGlobalElements():
+            if gid == 0:
+                indices = [0, 1]
+                values  = [2.0, -1.0]
+            elif gid == nRows-1:
+                indices = [nRows-2, nRows-1]
+                values  = [-1.0, 2.0]
+            else:
+                indices = [gid-1, gid, gid+1]
+                values  = [-1.0 , 2.0, -1.0 ]
+            matrix.InsertGlobalValues(gid, values, indices)
+        matrix.FillComplete()
+        return matrix
     
     class TeuchosRCPEpetraTestCase(unittest.TestCase):
         "Test the Teuchos.RCP functions on Epetra objects"
@@ -243,20 +274,6 @@ if (${Trilinos_ENABLE_Isorropia}):
     if (${Trilinos_ENABLE_Epetra}):
         Isorropia = fromPyTrilinosImport('Isorropia', options.testharness)
 
-        def buildGraph(comm, nRows):
-            map = Epetra.Map(nRows, 0, comm)
-            graph = Epetra.CrsGraph(Epetra.Copy, map, 3)
-            for gid in map.MyGlobalElements():
-                if gid == 0:
-                    indices = [0, 1]
-                elif gid == nRows-1:
-                    indices = [nRows-2, nRows-1]
-                else:
-                    indices = [gid-1, gid, gid+1]
-                graph.InsertGlobalIndices(gid, indices)
-            graph.FillComplete()
-            return graph
-
         class TeuchosRCPIsorropiaTestCase(unittest.TestCase):
             "Test the Teuchos.RCP functions on Isorropia objects"
 
@@ -304,23 +321,6 @@ if (${Trilinos_ENABLE_Isorropia}):
 if (${Trilinos_ENABLE_Ifpack}):
     if (${Trilinos_ENABLE_Epetra}):
         IFPACK = fromPyTrilinosImport('IFPACK', options.testharness)
-
-        def buildMatrix(comm, nRows):
-            map = Epetra.Map(nRows, 0, comm)
-            matrix = Epetra.CrsMatrix(Epetra.Copy, map, 3)
-            for gid in map.MyGlobalElements():
-                if gid == 0:
-                    indices = [0, 1]
-                    values  = [2.0, -1.0]
-                elif gid == nRows-1:
-                    indices = [nRows-2, nRows-1]
-                    values  = [-1.0, 2.0]
-                else:
-                    indices = [gid-1, gid, gid+1]
-                    values  = [-1.0 , 2.0, -1.0 ]
-                matrix.InsertGlobalValues(gid, values, indices)
-            matrix.FillComplete()
-            return matrix
 
         class TeuchosRCPIFPACKTestCase(unittest.TestCase):
             "Test the Teuchos.RCP functions on IFPACK objects"
