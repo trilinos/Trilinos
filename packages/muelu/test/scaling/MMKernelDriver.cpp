@@ -411,7 +411,7 @@ void Multiply_LTG(const Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> &
   RCP<TimeMonitor> tm;
 
   if (lib == Xpetra::UseTpetra) {
-#if defined(HAVE_MUELU_TPETRA)  
+#if defined(HAVE_MUELU_TPETRA) && defined(HAVE_TPETRA_INST_OPENMP) 
     typedef Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> crs_matrix_type;
     typedef Tpetra::Import<LocalOrdinal,GlobalOrdinal,Node>          import_type;
     typedef typename crs_matrix_type::local_matrix_type    KCRS;
