@@ -28,6 +28,9 @@
 // ************************************************************************
 // @HEADER
 
+
+#include <limits>
+
 // TrilinosCouplings includes
 #include <TrilinosCouplings_config.h>
 
@@ -76,6 +79,15 @@ struct fecomp{
     return false;
   }
 };
+
+template<class FC>
+double distance2(const FC & coord, int n1, int n2) {
+  double dist = 0.0;
+  for(int i=0; i<coord.dimension(1); i++)
+    dist += (coord(n2,i) -coord(n1,i)) * (coord(n2,i) -coord(n1,i));
+  return sqrt(dist);
+}
+
 namespace TrilinosCouplings {
 namespace TpetraIntrepidPoissonExample {
 
@@ -520,43 +532,9 @@ makeMatrixAndRightHandSide (Teuchos::RCP<sparse_matrix_type>& A,
                         node_comm_proc_ids,
                         comm_node_ids,
                         myRank);
-  //
-  // Mesh cleanup
-  //
-  delete [] block_ids;
-  block_ids = NULL;
-  delete [] nodes_per_element;
-  nodes_per_element = NULL;
-  delete [] element_attributes;
-  element_attributes = NULL;
-  for (long long b = 0; b < numElemBlk; ++b) {
-    delete [] elmt_node_linkage[b];
-    delete [] element_types[b];
-  }
-  delete [] element_types;
-  element_types = NULL;
-  delete [] elmt_node_linkage;
-  elmt_node_linkage = NULL;
-  if (num_node_comm_maps > 0) {
-    delete [] node_comm_proc_ids;
-    node_comm_proc_ids = NULL;
-    delete [] node_cmap_node_cnts;
-    node_cmap_node_cnts = NULL;
-    delete [] node_cmap_ids;
-    node_cmap_ids = NULL;
-    for (long long i = 0; i < num_node_comm_maps; ++i) {
-      delete [] comm_node_ids[i];
-      delete [] comm_node_proc_ids[i];
-    }
-    delete [] comm_node_ids;
-    comm_node_ids = NULL;
-    delete [] comm_node_proc_ids;
-    comm_node_proc_ids = NULL;
-  }
-  delete [] elements;
-  elements = NULL;
 
-  // Container indicating whether a node is on the boundary (1-yes 0-no)
+
+ // Container indicating whether a node is on the boundary (1-yes 0-no)
   FieldContainer<int> nodeOnBoundary (numNodes);
 
   // Get boundary (side set) information
@@ -655,34 +633,100 @@ makeMatrixAndRightHandSide (Teuchos::RCP<sparse_matrix_type>& A,
     }
   }
 
+
+  //
+  // Mesh cleanup
+  //
+  delete [] block_ids;
+  block_ids = NULL;
+  delete [] nodes_per_element;
+  nodes_per_element = NULL;
+  delete [] element_attributes;
+  element_attributes = NULL;
+  for (long long b = 0; b < numElemBlk; ++b) {
+    delete [] elmt_node_linkage[b];
+    delete [] element_types[b];
+  }
+  delete [] element_types;
+  element_types = NULL;
+  delete [] elmt_node_linkage;
+  elmt_node_linkage = NULL;
+  if (num_node_comm_maps > 0) {
+    delete [] node_comm_proc_ids;
+    node_comm_proc_ids = NULL;
+    delete [] node_cmap_node_cnts;
+    node_cmap_node_cnts = NULL;
+    delete [] node_cmap_ids;
+    node_cmap_ids = NULL;
+    for (long long i = 0; i < num_node_comm_maps; ++i) {
+      delete [] comm_node_ids[i];
+      delete [] comm_node_proc_ids[i];
+    }
+    delete [] comm_node_ids;
+    comm_node_ids = NULL;
+    delete [] comm_node_proc_ids;
+    comm_node_proc_ids = NULL;
+  }
+  delete [] elements;
+  elements = NULL;
+
+ 
 /**********************************************************************************/
 /********************************** STATISTICS ************************************/
 /**********************************************************************************/
   // Statistics: Compute max / min of sigma parameter, mesh information
   // Definitions of mesh statistics:
-  // 1) Max/min edge - ratio of max to min edge length
+  int NUM_STATISTICS = 2;
+  std::vector<double> local_stat_max(NUM_STATISTICS);
+  std::vector<double> local_stat_min(NUM_STATISTICS);
+  std::vector<double> local_stat_sum(NUM_STATISTICS);
 
-  double local_sigma_max = numElems > 0 ? sigmaVal(0) : 0.0;
-  double local_sigma_min = numElems > 0 ? sigmaVal(0) : 0.0;
-  double local_sigma_sum = 0.0;
-  for(int i=0; i<numElems; i++) {
-    local_sigma_max = std::max(local_sigma_max,sigmaVal(i));
-    local_sigma_min = std::max(local_sigma_min,sigmaVal(i));
-    local_sigma_sum += sigmaVal(i);
-    for (int j=0; j<numNodesPerElem; j++) {
-
-    }
-    
-
+  // Intialize
+  for(int i=0; i<NUM_STATISTICS; i++) {
+    local_stat_max[i] = 0.0;
+    local_stat_min[i] = std::numeric_limits<double>::max();
+    local_stat_sum[i] = 0.0;
   }
-  double global_sigma_max=0.0, global_sigma_min=0.0, global_sigma_sum=0.0;
-  Teuchos::reduceAll(*comm,Teuchos::REDUCE_MIN,local_sigma_min,Teuchos::outArg(global_sigma_min));
-  Teuchos::reduceAll(*comm,Teuchos::REDUCE_MAX,local_sigma_max,Teuchos::outArg(global_sigma_max));
-  Teuchos::reduceAll(*comm,Teuchos::REDUCE_SUM,local_sigma_sum,Teuchos::outArg(global_sigma_sum));
-  problemStatistics.set("sigma: min",global_sigma_min);
-  problemStatistics.set("sigma: max",global_sigma_max);
-  problemStatistics.set("sigma: mean",global_sigma_sum / numElemsGlobal);
   
+  for(int i=0; i<numElems; i++) {
+    // 0 - Material property
+    local_stat_max[0] = std::max(local_stat_max[0],sigmaVal(i));
+    local_stat_min[0] = std::min(local_stat_min[0],sigmaVal(i));
+    local_stat_sum[0] += sigmaVal(i);
+
+    // 1- Max/min edge - ratio of max to min edge length
+    double edge_length_max = distance2(nodeCoord,edgeToNode(elemToEdge(i,0),0),edgeToNode(elemToEdge(i,0),1));
+    double edge_length_min = edge_length_max;
+    for (int j=0; j<numEdgesPerElem; j++) {
+      int edge = elemToEdge(i,j);
+      int node1 = edgeToNode(edge,0);
+      int node2 = edgeToNode(edge,1);
+      double dist = distance2(nodeCoord,node1,node2);
+      edge_length_max = std::max(edge_length_max,dist);
+      edge_length_min = std::min(edge_length_min,dist);
+    }
+    double maxmin_ratio = edge_length_max / edge_length_min;
+    local_stat_max[1] = std::max(local_stat_max[1],maxmin_ratio);
+    local_stat_min[1] = std::min(local_stat_min[1],maxmin_ratio);
+    local_stat_sum[1] += maxmin_ratio;
+   
+  }
+  std::vector<double> global_stat_max(NUM_STATISTICS),global_stat_min(NUM_STATISTICS), global_stat_sum(NUM_STATISTICS);
+  Teuchos::reduceAll(*comm,Teuchos::REDUCE_MIN,NUM_STATISTICS,local_stat_min.data(),global_stat_min.data());
+  Teuchos::reduceAll(*comm,Teuchos::REDUCE_MAX,NUM_STATISTICS,local_stat_max.data(),global_stat_max.data());
+  Teuchos::reduceAll(*comm,Teuchos::REDUCE_SUM,NUM_STATISTICS,local_stat_sum.data(),global_stat_sum.data());
+
+  // 0 - Material property
+  problemStatistics.set("sigma: min",global_stat_min[0]);
+  problemStatistics.set("sigma: max",global_stat_max[0]);
+  problemStatistics.set("sigma: mean",global_stat_sum[0] / numElemsGlobal);
+
+  // 1 - Max/min edge ratio
+  problemStatistics.set("element edge ratio: min",global_stat_min[1]);
+  problemStatistics.set("element edge ratio: max",global_stat_max[1]);
+  problemStatistics.set("element edge ratio: mean",global_stat_sum[1] / numElemsGlobal);
+  
+
 /**********************************************************************************/
 /********************************* GET CUBATURE ***********************************/
 /**********************************************************************************/
