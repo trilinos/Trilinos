@@ -432,6 +432,9 @@ void Multiply_LTG(const Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> &
     RCP<const crs_matrix_type> Cu = Utilities::Op2TpetraCrs(rcp(&C,false));
     RCP<crs_matrix_type> Cnc = Teuchos::rcp_const_cast<crs_matrix_type>(Cu);
 
+    out << "Kokkos::Compat::KokkosOpenMPWrapperNode::execution_space::concurrency() = "<<Kokkos::Compat::KokkosOpenMPWrapperNode::execution_space::concurrency()<<std::endl;
+
+
 
     // **********************************
     // Copy in the data for LTG
@@ -569,8 +572,6 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
 
     out << "Matrix Read complete.\n========================================================" << std::endl;
     comm->barrier();
-
-    out << "Kokkos::Compat::KokkosOpenMPWrapperNode::execution_space::concurrency() = "<<Kokkos::Compat::KokkosOpenMPWrapperNode::execution_space::concurrency()<<std::endl;
 
     for (int i=0; i<nrepeat; i++) {
 
