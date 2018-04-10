@@ -118,7 +118,6 @@ public:
     auto& un_state = to_state(u_new);
     auto& uo_state = to_state(u_old);
     auto& z_ctrl   = to_control(z);
- 
     tankState_.solve( c_state, un_state, uo_state, z_ctrl );
   }
 
@@ -130,10 +129,7 @@ public:
     jv.zero();
     auto& jv_state = to_state(jv);
     auto& vo_state = to_state(v_old);
-    if( has_applyJacobian_1_old_ ) 
-      tankState_.applyJacobian_1_old(jv_state,vo_state);
-    else
-      tankState_.value(jv_state, zero_state_, vo_state, zero_ctrl_ );
+    tankState_.applyJacobian_1_old(jv_state,vo_state);
   }
 
   void applyAdjointJacobian_1_old( Vector &ajv_old, const Vector &dualv,
@@ -153,10 +149,7 @@ public:
     jv.zero();
     auto& jv_state = to_state(jv);
     auto& vn_state = to_state(v_new);
-    if( has_applyJacobian_1_new_ )
-      tankState_.applyJacobian_1_new(jv_state,vn_state);
-    else 
-      tankState_.value(jv_state, vn_state, zero_state_, zero_ctrl_);
+    tankState_.applyJacobian_1_new(jv_state,vn_state);
   }
  
   void applyAdjointJacobian_1_new( Vector& ajv_new, const Vector &dualv,
@@ -194,15 +187,16 @@ public:
     jv.zero();
     auto& jv_state = to_state(jv);
     auto& v_ctrl   = to_control(v);
-    if( has_applyJacobian_2_ ) 
-      tankState_.applyJacobian_2( jv_state, v_ctrl );
-    else 
-      tankState_.value(jv_state, zero_state_, zero_state_, v_ctrl);
+    tankState_.applyJacobian_2( jv_state, v_ctrl );
 }
 
   void applyAdjointJacobian_2_time( Vector& ajv, const Vector &dualv,
                                     const Vector &u_old, const Vector& u_new,
                                     const Vector &z, Real &tol) override {
+    ajv.zero();
+    auto& ajv_ctrl = to_control(ajv);
+    auto& v_state  = to_state(dualv);
+    tankState_.applyAdjointJacobian_2( ajv_ctrl, v_state );
   }
 
 

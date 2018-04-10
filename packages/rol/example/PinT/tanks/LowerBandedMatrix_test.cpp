@@ -81,7 +81,7 @@ int main( int argc, char* argv[] ) {
     *outStream << "\n";
   };
 
-//  try {
+  try {
 
     size_type rows = 3;
     size_type cols = 3;
@@ -113,8 +113,9 @@ int main( int argc, char* argv[] ) {
     
     for( auto& e : x ) e = dist(gen);
     for( auto& e : y ) e = dist(gen);
- 
-   
+
+    //--------------------------------------------------------------------------
+    // Test of LowerBandedMatrix
 
     A.apply( Ax, x,  1.0, 0, 0 );
     A.applyTranspose( Aty, y, 1.0, 0, 0 );
@@ -132,7 +133,6 @@ int main( int argc, char* argv[] ) {
 
     RealT err_tr   = abs( dot(y,Ax)-dot(x,Aty) )/sqrt(ynorm*xnorm);
     RealT err_itr  = abs( dot(y,Aix)-dot(x,Aity) )/sqrt(ynorm*xnorm);
-
 
     *outStream << "\n\nTest of LowerBandedMatrix with alpha = " << alpha 
                << ", beta = " << beta << endl;
@@ -154,6 +154,7 @@ int main( int argc, char* argv[] ) {
     errorFlag += ( err_itr     > error_tol );
     errorFlag += ( err_tr      > error_tol );
 
+    //-------------------------------------------------------------------------
     // Test of SplitterMatrix
     
     SplitterMatrix<RealT> S(rows, cols);
@@ -171,6 +172,7 @@ int main( int argc, char* argv[] ) {
                            << "Transpose error | y'Sx-x'S'y |/sqrt(x'x y'x)" 
                            << " = " << err_tr << endl;
    
+    //-------------------------------------------------------------------------
     // Test of TankLevelMatrix
     size_type Nhalf = N/2;
     vector<RealT> p(N,1.0); 
@@ -183,14 +185,11 @@ int main( int argc, char* argv[] ) {
     T.applyTranspose( Aty, y, 1.0, 0, 0 );
     T.solve( u, Ax, 1.0, 0, 0 );
     T.solveTranspose( v, Aty, 1.0, 0, 0);
-//    T.solve( Aix, x, 1.0, 0, 0 );
-//    T.solveTranspose( Aity, y, 1.0, 0, 0 );
 
     err_sol    = l1_diff(x,u);
     err_sol_tr = l1_diff(y,v);
 
     err_tr   = abs( dot(y,Ax)-dot(x,Aty) )/sqrt(ynorm*xnorm);
-//    err_itr  = abs( dot(y,Aix)-dot(x,Aity) )/sqrt(ynorm*xnorm);
 
      *outStream << "\nTest of TankLevelMatrix with alpha = " << alpha 
                 << " and pass-through in element " << Nhalf << endl;
@@ -198,26 +197,22 @@ int main( int argc, char* argv[] ) {
      *outStream << setw(60) << left 
                             << "Transpose error       | y'Tx-x'T'y |/sqrt(x'x y'x)" 
                             << " = " << err_tr << endl;
-//    *outStream << setw(60) << left 
-//                           << "Transpose-solve error | y'inv(T)x-x'inv(T)'y |/sqrt(x'x y'x)" 
-//                           << " = " << err_itr << endl;
     *outStream << setw(60) << left << "l1-norm of solve error" 
                << " = " << err_sol << endl;
     *outStream << setw(60) << left << "l1-norm of transpose solve error" 
                << " = " << err_sol_tr << endl;
     
     errorFlag += ( err_sol    > error_tol );
-    errorFlag += ( err_itr    > error_tol );
-    errorFlag += ( err_sol_tr > error_tol );// FIXME
+    errorFlag += ( err_sol_tr > error_tol );
     errorFlag += ( err_tr     > error_tol ); 
  
 
-//  }
-//  catch (std::logic_error err) {
-//    *outStream << err.what() << "\n";
-//    errorFlag = -1000;
-//  }; // end try
-//
+  }
+  catch (std::logic_error err) {
+    *outStream << err.what() << "\n";
+    errorFlag = -1000;
+  }; // end try
+
   if (errorFlag != 0)
     std::cout << "End Result: TEST FAILED\n";
   else

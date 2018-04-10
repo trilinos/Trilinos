@@ -78,14 +78,8 @@ public:
   void applyAdjointJacobian_1_old( StateVector& ajv, const StateVector& v_old ) const;
   void applyAdjointJacobian_1_new( StateVector& ajv, const StateVector& v_new ) const;
   void applyInverseAdjointJacobian_1_new( StateVector& iajv, const StateVector& v_new ) const;
-
-
-
-  void applyJacobian_2( StateVector &jv, const ControlVector &v_new ) const;
-
-
-  const Real& p( size_type r, size_type c ) const { return p_.at(cols_*r+c); }
- // const Real& w( size_type r, size_type c ) const { return w_.at(cols_*r+c); }
+  void applyJacobian_2( StateVector& jv, const ControlVector& v ) const;
+  void applyAdjointJacobian_2( ControlVector& ajv, const StateVector& v ) const;
 
   void print_members( ostream& os ) const;
 
@@ -108,7 +102,9 @@ private:
   Real dt_;                    // Time step size
 
   size_type    Ntanks_;        // Total number of tanks 
-  vector<Real> p_;             // Passthrough coefficients
+
+  ControlVector p_;            // Passthrough coefficients
+  mutable StateVector scratch_;
 
   Real         kappa_;         // Cv*rho*g
   Real         beta_;          // dt/A
@@ -116,6 +112,9 @@ private:
   Real         alphaR_;        // kappa*theta
 
   shared_ptr<Matrix> L_, R_, S_;
+
+  //--------- Subvector addressing ---------------------------------------------
+  size_type  h_, Qout_, Qin_,  z_;
 
 }; // class TankState
 

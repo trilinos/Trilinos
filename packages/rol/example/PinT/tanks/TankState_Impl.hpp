@@ -66,13 +66,12 @@ TankState<Real>::TankState( Teuchos::ParameterList& pl ) :
   //----------------------------------------------------//
   dt_( T_/Nt_ ),
   Ntanks_(rows_*cols_),
-  p_(Ntanks_,1.0), 
+  p_(rows_,cols_), scratch_(rows_,cols_),
   kappa_( Cv_*rho_*g_ ), 
   beta_( dt_/A_ ),
-//  betaL_( (1-theta_)*dt_/A_ ),
-//  betaR_( theta_*dt_/A_ ),
   alphaL_( 0.5*kappa_*(1-theta_)*beta_ ),
-  alphaR_( 0.5*kappa_*theta_*beta_ ) {
+  alphaR_( 0.5*kappa_*theta_*beta_ ),
+  h_(0), Qout_(2*Ntanks_), Qin_(Ntanks_), z_(0) {
   // ------------- End Initializer List ----------------//
 
   auto ptrows = Teuchos::getArrayFromStringParameter<int>( pl, "Pass-Through Rows"    );
@@ -80,13 +79,15 @@ TankState<Real>::TankState( Teuchos::ParameterList& pl ) :
 
   vector<size_type> band_index{0, 1, cols_};
   vector<size_type> shift_index{1, cols_};
-  
+
+  p_.setScalar(1.0);
+
   for( size_type i=0; i<static_cast<size_type>(ptrows.size()); ++i ) {
-    p_.at( cols_*ptrows.at(i)+ptcols.at(i) ) = 0.0;
+    p_( ptrows.at(i), ptcols.at(i) ) = 0.0;
   }
 
-  L_ = make_shared<TankLevelMatrix<Real>>( rows_, cols_,  alphaL_, p_ );
-  R_ = make_shared<TankLevelMatrix<Real>>( rows_, cols_, -alphaR_, p_ );
+  L_ = make_shared<TankLevelMatrix<Real>>( rows_, cols_,  alphaL_, *(p_.getVector()) );
+  R_ = make_shared<TankLevelMatrix<Real>>( rows_, cols_, -alphaR_, *(p_.getVector()) );
   S_ = make_shared<SplitterMatrix<Real>>( rows_, cols_ );
 
 } // end Constructor
@@ -94,121 +95,105 @@ TankState<Real>::TankState( Teuchos::ParameterList& pl ) :
 template<typename Real>
 void TankState<Real>::solve( StateVector& c, StateVector& u_new, 
                              const StateVector& u_old, const ControlVector& z ) const {
-
+  
   for( size_type i=0; i<rows_; ++i ) {
     for( size_type j=0; j<cols_; ++j ) {
-      u_new.h(i,j) =  u_old.h(i,j) + p(i,j)*(beta_*z(i,j)-2.0*alphaR_*u_old.h(i,j));
+      u_new.h(i,j) =  u_old.h(i,j) + p_(i,j)*(beta_*z(i,j)-2.0*alphaR_*u_old.h(i,j));
 
-      if( i>0 ) u_new.h(i,j) += p(i,j)*(alphaL_*u_new.h(i-1,j) + alphaR_*u_old.h(i-1,j));
-      if( j>0 ) u_new.h(i,j) += p(i,j)*(alphaL_*u_new.h(i,j-1) + alphaR_*u_old.h(i,j-1));
-      u_new.h(i,j) /= (1.0+2.0*alphaL_*p(i,j));
+      if( i>0 ) u_new.h(i,j) += p_(i,j)*(alphaL_*u_new.h(i-1,j) + alphaR_*u_old.h(i-1,j));
+      if( j>0 ) u_new.h(i,j) += p_(i,j)*(alphaL_*u_new.h(i,j-1) + alphaR_*u_old.h(i,j-1));
 
+      u_new.h(i,j) /= (1.0+2.0*alphaL_*p_(i,j));
       u_new.Qout(i,j) = kappa_*u_new.h(i,j);   
       u_new.Qin(i,j)  = 1.0*z(i,j);
-      if( i>0 ) u_new.Qin(i,j) += 0.5*u_new.Qout(i-1,j);
-      if( j>0 ) u_new.Qin(i,j) += 0.5*u_new.Qout(i,j-1);
      }
   }
-//  S_->apply( u_new, u_new, 1.0, Ntanks_, 2*Ntanks_ );
+  S_->apply( u_new, u_new, 1.0, Ntanks_, 2*Ntanks_ );
 } 
 
 template<typename Real>
 void TankState<Real>::value( StateVector& c, const StateVector& u_old, 
                              const StateVector& u_new, const ControlVector& z ) const {
-  for(size_type i=0; i<rows_; ++i ) {
-    for( size_type j=0; j<cols_; ++j ) {
-      c.h(i,j)    = -beta_*p(i,j)*z(i,j);
-      c.Qout(i,j) = u_new.Qout(i,j) - kappa_*u_new.h(i,j);
-      c.Qin(i,j)  = u_new.Qin(i,j)  - z(i,j);
-    }
-  }
 
-  L_->apply( c, u_new,  1.0, 0, 0 ); 
-  R_->apply( c, u_old, -1.0, 0 ,0 );
-  S_->apply( c, u_new, -1.0, Ntanks_, 2*Ntanks_ );
+  c.axpy( -beta_, z, h_ );
+  c.hadamard( p_, h_ );
+  c.set( u_new, Qin_, Qin_ );
+  c.axpy( -1.0, z, Qin_ );
+  c.set( u_new, Qout_, Qout_ );
+  c.axpy( -kappa_, u_new, Qout_, h_ );
+
+  L_->apply( c, u_new,  1.0, h_, h_ ); 
+  R_->apply( c, u_old, -1.0, h_, h_ );
+  S_->apply( c, u_new, -1.0, Qin_, Qout_ );
+
 }
 
 
 
 template<typename Real>
 void TankState<Real>::applyJacobian_1_old( StateVector& jv, const StateVector& v_old ) const {
-  R_->apply( jv, v_old, -1.0, 0, 0);  
+  R_->apply( jv, v_old, -1.0, h_, h_);  
 }
 
 template<typename Real>
 void TankState<Real>::applyAdjointJacobian_1_old( StateVector& jv, const StateVector& v_old ) const {
-  R_->applyTranspose( jv, v_old, -1.0, 0, 0);  
+  R_->applyTranspose( jv, v_old, -1.0, h_, h_);  
 }
 
 template<typename Real>
 void TankState<Real>::applyJacobian_1_new( StateVector& jv, const StateVector& v_new ) const {
 
-  L_->apply( jv, v_new, 1.0, 0, 0 );  
- 
-  for(size_type i=0; i<rows_; ++i ) {                                  
-    for( size_type j=0; j<cols_; ++j ) {        
-      jv.Qout(i,j) = v_new.Qout(i,j) - kappa_*v_new.h(i,j);                                  
-      jv.Qin(i,j)  = v_new.Qin(i,j);                                   
-    }
-  }
+  L_->apply( jv, v_new, 1.0, h_, h_ );  
+  jv.set( v_new, Qout_, Qout_ );
+  jv.axpy( -kappa_, v_new, Qout_, h_ );
+  jv.set( v_new, Qin_, Qin_ );
+  S_->apply( jv, v_new, -1.0, Qin_, Qout_ );
+}
 
-  S_->apply( jv, v_new, -1.0, Ntanks_, 2*Ntanks_ );
+template<typename Real>
+void TankState<Real>::applyInverseJacobian_1_new( StateVector& ijv, const StateVector& v_new ) const {
+
+  L_->solve( ijv, v_new, 1.0, h_, h_ );  
+  ijv.set( v_new, Qout_, Qout_ );
+  ijv.axpy( kappa_, ijv, Qout_, h_ );
+  ijv.set( v_new, Qin_, Qin_ );
+  S_->apply( ijv, ijv, 1.0, Qin_, Qout_ );
 }
 
 template<typename Real>
 void TankState<Real>::applyAdjointJacobian_1_new( StateVector& jv, const StateVector& v_new ) const {
 
-  L_->applyTranspose( jv, v_new, 1.0, 0, 0 );  
- 
-  for(size_type i=0; i<rows_; ++i ) {                                  
-    for( size_type j=0; j<cols_; ++j ) {     
-      jv.h(i,j)    -= kappa_*v_new.Qout(i,j);   
-      jv.Qout(i,j)  = v_new.Qout(i,j);                                  
-      jv.Qin(i,j)   = v_new.Qin(i,j);                                   
-    }
-  }
-
-  S_->applyTranspose( jv, v_new, -1.0, 2*Ntanks_, Ntanks_ );
-}
-
-
-template<typename Real>
-void TankState<Real>::applyInverseJacobian_1_new( StateVector& ijv, const StateVector& v_new ) const {
-
-  L_->solve( ijv, v_new, 1.0, 0, 0 );  
-
-  for(size_type i=0; i<rows_; ++i ) {                                  
-    for( size_type j=0; j<cols_; ++j ) {                               
-      ijv.Qout(i,j) = v_new.Qout(i,j) + kappa_*ijv.h(i,j);
-      ijv.Qin(i,j)  = v_new.Qin(i,j);
-    }
-  }
-
-  S_->apply( ijv, ijv, 1.0, Ntanks_, 2*Ntanks_ );
+  L_->applyTranspose( jv, v_new, 1.0, h_, h_ );  
+  jv.axpy(-kappa_, v_new, h_, Qout_ );
+  jv.set( v_new, Qout_, Qout_ );
+  jv.set( v_new, Qin_, Qin_ );
+  S_->applyTranspose( jv, v_new, -1.0, Qout_, Qin_ );
 }
 
 template<typename Real>
 void TankState<Real>::applyInverseAdjointJacobian_1_new( StateVector& iajv, const StateVector& v_new ) const {
 
-  for(size_type i=0; i<rows_; ++i ) {                                  
-    for( size_type j=0; j<cols_; ++j ) {                               
-      iajv.Qin(i,j)  = v_new.Qin(i,j);
-      iajv.Qout(i,j) = v_new.Qout(i,j);
-      iajv.h(i,j)    = kappa_*iajv.Qout(i,j);
-    }
-  }
-
-  S_->applyTranspose( iajv, iajv, 1.0, 2*Ntanks_, Ntanks_ );
-  L_->solveTranspose( iajv, v_new, 1.0, 0, 0 );  
-
+  iajv.set( v_new, Qin_, Qin_ );
+  iajv.set( v_new, Qout_, Qout_ );
+  S_->applyTranspose( iajv, v_new, 1.0, Qout_, Qin_ );
+  scratch_.zero();
+  scratch_.set( v_new, h_, h_ );
+  scratch_.axpy( kappa_, iajv, h_, Qout_ );
+  L_->solveTranspose( iajv, scratch_, 1.0, h_, h_ );  
 }
 
 template<typename Real>
-void TankState<Real>::applyJacobian_2( StateVector& jv, const ControlVector &v_new ) const {
-  for(size_type i=0; i<rows_; ++i ) {
+void TankState<Real>::applyJacobian_2( StateVector& jv, const ControlVector &v ) const {
+  jv.axpy(-beta_,v, h_);
+  jv.hadamard( p_, h_ );
+  jv.axpy(-1.0, v, Qin_ );
+}
+
+template<typename Real>
+void TankState<Real>::applyAdjointJacobian_2( ControlVector& ajv, const StateVector &v ) const {
+  for( size_type i=0; i<rows_; ++i ) {
     for( size_type j=0; j<cols_; ++j ) {
-      jv.h(i,j)    = -beta_*p(i,j)*v_new(i,j);
-      jv.Qin(i,j)  = -v_new(i,j);
+      ajv(i,j) = -beta_*p_(i,j)*v.h(i,j)-v.Qin(i,j);
     }
   }
 }

@@ -87,11 +87,11 @@ int main( int argc, char* argv[] ) {
     outStream = makePtrFromRef(bhs);
 
   int errorFlag  = 0;
-  RealT tol = ROL::ROL_EPSILON<RealT>();
+//  RealT tol = ROL::ROL_EPSILON<RealT>();
 
   // *** Example body.
 
-//  try {   
+  try {   
 
     auto tank_parameters = makePtr<Teuchos::ParameterList>();
     std::string tank_xml("tank-parameters.xml");
@@ -102,11 +102,9 @@ int main( int argc, char* argv[] ) {
     auto height = pl.get("Height of Tank",              10.0  );
     auto Qin00  = pl.get("Corner Inflow",               100.0 );
     auto h_init = pl.get("Initial Fluid Level",         2.0   );
-    auto fdstep = pl.get("Finite Difference Step Size", 1.0   );
 
     auto nrows  = static_cast<size_type>( pl.get("Number of Rows",3) );
     auto ncols  = static_cast<size_type>( pl.get("Number of Columns",3) );
-
 
     auto z      = makePtr<ControlVector>( nrows, ncols, "Control (z)" );    
     auto vz     = z->clone( "Control direction (vz)"       );
@@ -142,50 +140,38 @@ int main( int argc, char* argv[] ) {
     auto Jvu_old  = u_new->clone( "Old state dir-deriv (Jvu_old)"   );
     auto Jvz      = u_new->clone( "Control dir-deriv (Jvz)"         );
 
+    auto Jvu      = PartitionedVector::create( { Jvu_old, Jvu_new } );
+    auto x = ROL::makePtr<ROL::Vector_SimOpt<RealT>>( u,  z  );
+    auto v = ROL::makePtr<ROL::Vector_SimOpt<RealT>>( vu, vz );
+
     (*z)(0,0) = Qin00;
 
     for( size_type i=0; i<nrows; ++i )
       for( size_type j=0; j<ncols; ++j )
         u_old->h(i,j) = h_init;
-    u_old->print(*outStream);
 
     auto u_new_bnd = makePtr<Bounds>( u_new_lo, u_new_up );
     RandomizeFeasibleVector( *u_new, *u_new_bnd );
-    RandomizeVector( *vu );
-    RandomizeVector( *vz ); 
     RandomizeVector( *c ) ;
     RandomizeVector( *w ) ;
     
-//    c->print( *outStream );
-//    u_new->print( *outStream );
-//
-//    con->solve( *c, *u_old, *u_new, *z, tol );
-//    con->value( *c, *u_old, *u_new, *z, tol );
-//    c->print( *outStream );
-//    u_new->print( *outStream );
-
-
     auto u_old_bnd = u_new_bnd; 
-  
     auto u_bnd = makePtr<Bounds>( u_lo, u_up ); 
 
-    auto x = ROL::makePtr<ROL::Vector_SimOpt<RealT>>( u, z );
+    RandomizeVector( *v );
 
     con->print_tankstate_parameters( *outStream );
-
     con->checkSolve(*u, *z, *c, true, *outStream ); 
-    con->checkApplyJacobian_1( *u, *z, *vu, *Jvz, true, *outStream );
-    con->checkApplyJacobian_2( *u, *z, *vz, *Jvz, true, *outStream );
-    con->checkAdjointConsistencyJacobian_1( *w, *vu, *u, *z, true, *outStream );
-//
+    con->checkApplyJacobian( *x, *v, *c, true, *outStream );
+    con->checkAdjointConsistencyJacobian( *w, *v, *x, true, *outStream );
     con->checkInverseJacobian_1_new( *c, *u_new, *u_old, *z, *vu_new, true, *outStream );
     con->checkInverseAdjointJacobian_1_new( *c, *u_new, *u_old, *z, *vu_new, true, *outStream );
-  
-//  }
-//  catch (std::logic_error err) {
-//    *outStream << err.what() << "\n";
-//    errorFlag = -1000;
-//  }; // end try
+
+  }
+  catch (std::logic_error err) {
+    *outStream << err.what() << "\n";
+    errorFlag = -1000;
+  }; // end try
 
   if (errorFlag != 0)
     std::cout << "End Result: TEST FAILED\n";

@@ -52,6 +52,8 @@ namespace details {
 
 using namespace std;
 
+template<typename> class TankControlVector;
+
 template<typename Real>
 class TankStateVector : public ROL::StdVector<Real> {
 
@@ -92,6 +94,15 @@ public:
   Real& Qout( size_type i, size_type j ) { return vec_->at(cols_*i+j+2*N_); }
   const Real& Qout( size_type i, size_type j ) const { return vec_->at(cols_*i+j+2*N_); }
 
+  using ROL::StdVector<Real>::axpy;
+  using ROL::StdVector<Real>::set;
+
+  void set( const TankStateVector& x, size_type begin, size_type xbegin );
+  void set( const TankControlVector<Real>& x, size_type begin );
+  void axpy( Real alpha, const TankStateVector& x, size_type begin, size_type xbegin );
+  void axpy( Real alpha, const TankControlVector<Real>& x, size_type begin );
+  void hadamard( const TankStateVector& x, size_type begin, size_type xbegin );
+  void hadamard( const TankControlVector<Real>& x, size_type begin );
 
   void print( ostream& os ) const {
     auto& u = *vec_;
@@ -145,13 +156,11 @@ class TankControlVector : public ROL::StdVector<Real> {
 
 private:
   ROL::Ptr<vector<Real>> vec_;
-  size_type rows_,cols_;
+  size_type rows_,cols_, N_;
   string name_;
  
 public:
   using ROL::StdVector<Real>::getVector;
-
-
 
   TankControlVector( const ROL::Ptr<vector<Real>>& vec, size_type rows, 
               size_type cols, const string& name="anonymous" ) : 
@@ -167,9 +176,23 @@ public:
   ROL::Ptr<TankControlVector> clone( const string& name ) const { 
     return ROL::makePtr<TankControlVector>( rows_, cols_, name ); 
   }
-
+  
+  Real& operator[]( size_type k ) { return vec_->at(k); }
+  const Real& operator[]( size_type k ) const { return vec_->at(k); }
   Real& operator()( size_type i, size_type j ) { return vec_->at(cols_*i+j); }
   const Real& operator()( size_type i, size_type j ) const { return vec_->at(cols_*i+j); }
+
+  using ROL::StdVector<Real>::axpy;
+  using ROL::StdVector<Real>::set;
+
+  void set( const TankStateVector<Real>& x, size_type xbegin );
+  void set( const TankControlVector& x );
+  void axpy( Real alpha, const TankStateVector<Real>& x, size_type xbegin );
+  void axpy( Real alpha, const TankControlVector& x );
+  void hadamard( const TankStateVector<Real>& x, size_type xbegin );
+  void hadamard( const TankControlVector& x );
+  
+
 
   void print( ostream& os ) const {
     auto& z = *vec_;
@@ -216,13 +239,14 @@ const ROL::Ptr<const TankControlVector<Real>>& to_control( const ROL::Ptr<const 
 //------------------------------------------------------------------------------
 
 
-
 } // namespace details
 
 using details::TankStateVector;
 using details::TankControlVector;
 using details::to_state;
 using details::to_control;
+
+#include "TankVector_Impl.hpp"
 
 #endif // TANKVECTOR_HPP
 
