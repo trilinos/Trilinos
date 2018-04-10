@@ -158,44 +158,6 @@ if (${Trilinos_ENABLE_Epetra}):
 
 ##########################################################################
 
-# if (${Trilinos_ENABLE_Triutils}):
-#     TriUtils = fromPyTrilinosImport('TriUtils', options.testharness)
-
-#     class TeuchosRCPTriUtilsTestCase(unittest.TestCase):
-#         "Test the Teuchos.RCP functions on a TriUtils object"
-
-#         def setUp(self):
-#             self.comm = Epetra.PyComm()
-#             self.gallery = TriUtils.CrsMatrixGallery("laplace_2d",
-#                                                      self.comm,
-#                                                      False)
-
-#         def testIsNull(self):
-#             "Test Teuchos.RCP.is_null() for an Epetra object"
-#             self.assertEquals(Teuchos.RCP.is_null(self.gallery), False)
-
-#         def testIsValidPtr(self):
-#             "Test Teuchos.RCP.is_valid_ptr() for an Epetra object"
-#             self.assertEquals(Teuchos.RCP.is_valid_ptr(self.gallery), True)
-
-#         def testHasOwnership(self):
-#             "Test Teuchos.RCP.has_ownership() for an Epetra object"
-#             self.assertEquals(Teuchos.RCP.has_ownership(self.gallery), True)
-
-#         def testStrongCount(self):
-#             "Test Teuchos.RCP.strong_count() for an Epetra object"
-#             self.assertEquals(Teuchos.RCP.strong_count(self.gallery), 1)
-
-#         def testWeakCount(self):
-#             "Test Teuchos.RCP.weak_count() for an Epetra object"
-#             self.assertEquals(Teuchos.RCP.weak_count(self.gallery), 0)
-
-#         def testTotalCount(self):
-#             "Test Teuchos.RCP.total_count() for an Epetra object"
-#             self.assertEquals(Teuchos.RCP.total_count(self.gallery), 1)
-
-##########################################################################
-
 if (${Trilinos_ENABLE_Tpetra}):
     Tpetra = fromPyTrilinosImport('Tpetra', options.testharness)
 
@@ -339,6 +301,72 @@ if (${Trilinos_ENABLE_Isorropia}):
 
 ##########################################################################
 
+if (${Trilinos_ENABLE_Ifpack}):
+    if (${Trilinos_ENABLE_Epetra}):
+        IFPACK = fromPyTrilinosImport('IFPACK', options.testharness)
+
+        def buildMatrix(comm, nRows):
+            map = Epetra.Map(nRows, 0, comm)
+            matrix = Epetra.CrsMatrix(Epetra.Copy, map, 3)
+            for gid in map.MyGlobalElements():
+                if gid == 0:
+                    indices = [0, 1]
+                    values  = [2.0, -1.0]
+                elif gid == nRows-1:
+                    indices = [nRows-2, nRows-1]
+                    values  = [-1.0, 2.0]
+                else:
+                    indices = [gid-1, gid, gid+1]
+                    values  = [-1.0 , 2.0, -1.0 ]
+                matrix.InsertGlobalValues(gid, values, indices)
+            matrix.FillComplete()
+            return matrix
+
+        class TeuchosRCPIFPACKTestCase(unittest.TestCase):
+            "Test the Teuchos.RCP functions on IFPACK objects"
+
+            def setUp(self):
+                self.p     = Teuchos.ParameterList({"fact: level-of-fill" : 1})
+                self.comm  = Epetra.PyComm()
+                self.nRows = 10 * self.comm.NumProc()
+                self.map   = Epetra.Map(self.nRows, 0, self.comm)
+                self.crsm  = buildMatrix(self.comm, self.nRows)
+                factory    = IFPACK.Factory()
+                self.ict   = factory.Create("ICT", self.crsm)
+                self.ilu   = factory.Create("ILU", self.crsm)
+
+            def testIsNull(self):
+                "Test Teuchos.RCP.is_null() for IFPACK objects"
+                self.assertEquals(Teuchos.RCP.is_null(self.ict), False)
+                self.assertEquals(Teuchos.RCP.is_null(self.ilu), False)
+
+            def testIsValidPtr(self):
+                "Test Teuchos.RCP.is_valid_ptr() for IFPACK objects"
+                self.assertEquals(Teuchos.RCP.is_valid_ptr(self.ict), True)
+                self.assertEquals(Teuchos.RCP.is_valid_ptr(self.ilu), True)
+
+            def testHasOwnership(self):
+                "Test Teuchos.RCP.has_ownership() for IFPACK objects"
+                self.assertEquals(Teuchos.RCP.has_ownership(self.ict), True)
+                self.assertEquals(Teuchos.RCP.has_ownership(self.ilu), True)
+
+            def testStrongCount(self):
+                "Test Teuchos.RCP.strong_count() for IFPACK objects"
+                self.assertEquals(Teuchos.RCP.strong_count(self.ict), 1)
+                self.assertEquals(Teuchos.RCP.strong_count(self.ilu), 1)
+
+            def testWeakCount(self):
+                "Test Teuchos.RCP.weak_count() for IFPACK objects"
+                self.assertEquals(Teuchos.RCP.weak_count(self.ict), 0)
+                self.assertEquals(Teuchos.RCP.weak_count(self.ilu), 0)
+
+            def testTotalCount(self):
+                "Test Teuchos.RCP.total_count() for IFPACK objects"
+                self.assertEquals(Teuchos.RCP.total_count(self.ict), 1)
+                self.assertEquals(Teuchos.RCP.total_count(self.ilu), 1)
+
+##########################################################################
+
 if __name__ == "__main__":
 
     # Create the test suite object
@@ -348,8 +376,6 @@ if __name__ == "__main__":
     suite.addTest(unittest.makeSuite(TeuchosRCPTeuchosTestCase))
     if (${Trilinos_ENABLE_Epetra}):
         suite.addTest(unittest.makeSuite(TeuchosRCPEpetraTestCase))
-    # if (${Trilinos_ENABLE_Triutils}):
-    #     suite.addTest(unittest.makeSuite(TeuchosRCPTriUtilsTestCase))
     if (${Trilinos_ENABLE_Tpetra}):
         suite.addTest(unittest.makeSuite(TeuchosRCPTpetraTestCase))
     if (${Trilinos_ENABLE_Domi}):
@@ -357,6 +383,8 @@ if __name__ == "__main__":
     if (${Trilinos_ENABLE_Isorropia}):
         if (${Trilinos_ENABLE_Epetra}):
             suite.addTest(unittest.makeSuite(TeuchosRCPIsorropiaTestCase))
+    if (${Trilinos_ENABLE_Ifpack}):
+        suite.addTest(unittest.makeSuite(TeuchosRCPIFPACKTestCase))
 
     # Create a communicator
     comm    = Teuchos.DefaultComm.getComm()

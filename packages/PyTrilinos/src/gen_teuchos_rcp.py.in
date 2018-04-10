@@ -144,6 +144,8 @@ def get_header_files():
         result.append("PyTrilinos_Galeri_Headers.hpp")
     if (WITH_AMESOS):
         result.append("PyTrilinos_Amesos_Headers.hpp")
+    if (WITH_IFPACK):
+        result.append("PyTrilinos_IFPACK_Headers.hpp")
 
     return result
 
@@ -317,7 +319,8 @@ def reorder_classnames(classnames):
     lowest-level base classes must appear first. Based on the logic here, the
     highest-level classes should appear first in the base_classes list.
     """
-    base_classes = ["Isorropia::Epetra::Operator",
+    base_classes = ["Ifpack_Preconditioner",
+                    "Isorropia::Epetra::Operator",
                     "Isorropia::LevelScheduler",
                     "Isorropia::Orderer",
                     "Isorropia::Redistributor",

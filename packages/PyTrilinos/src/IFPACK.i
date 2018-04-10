@@ -90,12 +90,6 @@ example subdirectory of the PyTrilinos package:
 
 // Configuration include files
 #include "PyTrilinos_config.h"
-#ifdef HAVE_INTTYPES_H
-#undef HAVE_INTTYPES_H
-#endif
-#ifdef HAVE_STDINT_H
-#undef HAVE_STDINT_H
-#endif
 
 // Epetra include files
 #ifdef HAVE_EPETRA
@@ -113,17 +107,7 @@ example subdirectory of the PyTrilinos package:
 #include "PyTrilinos_Epetra_Headers.hpp"
 
 // IFPACK include files
-#include "Ifpack.h"
-#include "Ifpack_Version.h"
-#include "Ifpack_Utils.h"
-#include "Ifpack_Preconditioner.h"
-#include "Ifpack_IC.h"
-#include "Ifpack_ICT.h"
-#include "Ifpack_ILU.h"
-#include "Ifpack_ILUT.h"
-#include "Ifpack_PointRelaxation.h"
-#include "Ifpack_Amesos.h"
-
+#include "PyTrilinos_IFPACK_Headers.hpp"
 %}
 
 // Include PyTrilinos configuration
