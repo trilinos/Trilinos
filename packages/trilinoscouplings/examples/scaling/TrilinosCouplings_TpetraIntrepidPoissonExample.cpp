@@ -672,11 +672,11 @@ makeMatrixAndRightHandSide (Teuchos::RCP<sparse_matrix_type>& A,
 
  
 /**********************************************************************************/
-/********************************** STATISTICS ************************************/
+/****************************** STATISTICS (Part I) *******************************/
 /**********************************************************************************/
   // Statistics: Compute max / min of sigma parameter, mesh information
   // Definitions of mesh statistics:
-  int NUM_STATISTICS = 2;
+  int NUM_STATISTICS = 3;
   std::vector<double> local_stat_max(NUM_STATISTICS);
   std::vector<double> local_stat_min(NUM_STATISTICS);
   std::vector<double> local_stat_sum(NUM_STATISTICS);
@@ -694,7 +694,7 @@ makeMatrixAndRightHandSide (Teuchos::RCP<sparse_matrix_type>& A,
     local_stat_min[0] = std::min(local_stat_min[0],sigmaVal(i));
     local_stat_sum[0] += sigmaVal(i);
 
-    // 1- Max/min edge - ratio of max to min edge length
+    // 1 - Max/min edge - ratio of max to min edge length
     double edge_length_max = distance2(nodeCoord,edgeToNode(elemToEdge(i,0),0),edgeToNode(elemToEdge(i,0),1));
     double edge_length_min = edge_length_max;
     for (int j=0; j<numEdgesPerElem; j++) {
@@ -709,23 +709,11 @@ makeMatrixAndRightHandSide (Teuchos::RCP<sparse_matrix_type>& A,
     local_stat_max[1] = std::max(local_stat_max[1],maxmin_ratio);
     local_stat_min[1] = std::min(local_stat_min[1],maxmin_ratio);
     local_stat_sum[1] += maxmin_ratio;
+
+    // 2 - det of cell Jacobian (later)
    
   }
-  std::vector<double> global_stat_max(NUM_STATISTICS),global_stat_min(NUM_STATISTICS), global_stat_sum(NUM_STATISTICS);
-  Teuchos::reduceAll(*comm,Teuchos::REDUCE_MIN,NUM_STATISTICS,local_stat_min.data(),global_stat_min.data());
-  Teuchos::reduceAll(*comm,Teuchos::REDUCE_MAX,NUM_STATISTICS,local_stat_max.data(),global_stat_max.data());
-  Teuchos::reduceAll(*comm,Teuchos::REDUCE_SUM,NUM_STATISTICS,local_stat_sum.data(),global_stat_sum.data());
-
-  // 0 - Material property
-  problemStatistics.set("sigma: min",global_stat_min[0]);
-  problemStatistics.set("sigma: max",global_stat_max[0]);
-  problemStatistics.set("sigma: mean",global_stat_sum[0] / numElemsGlobal);
-
-  // 1 - Max/min edge ratio
-  problemStatistics.set("element edge ratio: min",global_stat_min[1]);
-  problemStatistics.set("element edge ratio: max",global_stat_max[1]);
-  problemStatistics.set("element edge ratio: mean",global_stat_sum[1] / numElemsGlobal);
-  
+ 
 
 /**********************************************************************************/
 /********************************* GET CUBATURE ***********************************/
@@ -933,6 +921,7 @@ makeMatrixAndRightHandSide (Teuchos::RCP<sparse_matrix_type>& A,
   RCP<vector_type> rhsVector = rcp (new vector_type (overlappedMapG));
   rhsVector->putScalar (STS::zero ());
 
+
   /**********************************************************************************/
   /************************** DIRICHLET BC SETUP ************************************/
   /**********************************************************************************/
@@ -1004,6 +993,7 @@ makeMatrixAndRightHandSide (Teuchos::RCP<sparse_matrix_type>& A,
     *out << "Desired workset size:             " << desiredWorksetSize << endl
          << "Number of worksets (per process): " << numWorksets << endl;
   }
+
 
   for (int workset = 0; workset < numWorksets; ++workset) {
 
@@ -1144,8 +1134,26 @@ makeMatrixAndRightHandSide (Teuchos::RCP<sparse_matrix_type>& A,
                                     worksetSourceTerm,
                                     worksetHGBValuesWeighted,
                                     COMP_BLAS);
-
     } // Element discretization timer
+
+    /**********************************************************************************/
+    /***************************** STATISTICS (Part II) ******************************/
+    /**********************************************************************************/
+    for(int i=0; i<worksetSize; i++) {
+      // 0 - Material property
+      // 1 - Max/min edge - ratio of max to min edge length
+      // 2 - det of cell Jacobian (later)
+      double elementdetJ = 0.0, elementWeight=0.0;
+      for(int j=0; j<numCubPoints; j++) {
+        elementdetJ   += worksetJacobDet(i,j) * worksetCubWeights(i,j);
+        elementWeight += worksetCubWeights(i,j);
+      }
+      double detJ = elementdetJ / elementWeight;
+      local_stat_max[2] = std::max(local_stat_max[2],detJ);
+      local_stat_min[2] = std::min(local_stat_min[2],detJ);
+      local_stat_sum[2] += detJ;
+    }
+
 
     /**********************************************************************************/
     /*                         Assemble into Global Matrix                            */
@@ -1193,7 +1201,30 @@ makeMatrixAndRightHandSide (Teuchos::RCP<sparse_matrix_type>& A,
     } // *** stop timer ***
   }// *** workset loop ***
 
-  //////////////////////////////////////////////////////////////////////////////
+ 
+/**********************************************************************************/
+/***************************** STATISTICS (Part III) ******************************/
+/**********************************************************************************/
+ std::vector<double> global_stat_max(NUM_STATISTICS),global_stat_min(NUM_STATISTICS), global_stat_sum(NUM_STATISTICS);
+  Teuchos::reduceAll(*comm,Teuchos::REDUCE_MIN,NUM_STATISTICS,local_stat_min.data(),global_stat_min.data());
+  Teuchos::reduceAll(*comm,Teuchos::REDUCE_MAX,NUM_STATISTICS,local_stat_max.data(),global_stat_max.data());
+  Teuchos::reduceAll(*comm,Teuchos::REDUCE_SUM,NUM_STATISTICS,local_stat_sum.data(),global_stat_sum.data());
+
+  // 0 - Material property
+  problemStatistics.set("sigma: min",global_stat_min[0]);
+  problemStatistics.set("sigma: max",global_stat_max[0]);
+  problemStatistics.set("sigma: mean",global_stat_sum[0] / numElemsGlobal);
+
+  // 1 - Max/min edge ratio
+  problemStatistics.set("element edge ratio: min",global_stat_min[1]);
+  problemStatistics.set("element edge ratio: max",global_stat_max[1]);
+  problemStatistics.set("element edge ratio: mean",global_stat_sum[1] / numElemsGlobal);
+
+  // 2 - det of cell Jacobian (later)  
+  problemStatistics.set("element det jacobian: min",global_stat_min[2]);
+  problemStatistics.set("element det jacobian: max",global_stat_max[2]);
+  problemStatistics.set("element det jacobian: mean",global_stat_sum[2] / numElemsGlobal);
+ //////////////////////////////////////////////////////////////////////////////
   // Export sparse matrix and right-hand side from overlapping row Map
   // to owned (nonoverlapping) row Map.
   //////////////////////////////////////////////////////////////////////////////
