@@ -66,12 +66,6 @@ following class:
 %{
 // Configuration include files
 #include "PyTrilinos_config.h"
-#ifdef HAVE_INTTYPES_H
-#undef HAVE_INTTYPES_H
-#endif
-#ifdef HAVE_STDINT_H
-#undef HAVE_STDINT_H
-#endif
 
 // Epetra include files
 #ifdef HAVE_EPETRA
@@ -82,8 +76,7 @@ following class:
 #include "numpy_include.hpp"
 
 // Komplex include files
-#include "Komplex_Version.h"
-#include "Komplex_LinearProblem.h"
+#include "PyTrilinos_Komplex_Headers.hpp"
 
 #endif
 
@@ -102,11 +95,11 @@ using std::string;
 ///////////////////////////////////
 // Komplex configuration support //
 ///////////////////////////////////
-#undef PACKAGE_BUGREPORT
-#undef PACKAGE_NAME
-#undef PACKAGE_STRING
-#undef PACKAGE_TARNAME
-#undef PACKAGE_VERSION
+// #undef PACKAGE_BUGREPORT
+// #undef PACKAGE_NAME
+// #undef PACKAGE_STRING
+// #undef PACKAGE_TARNAME
+// #undef PACKAGE_VERSION
 %include "Komplex_config.h"
 %include "PyTrilinos_config.h"
 

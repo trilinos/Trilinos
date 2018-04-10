@@ -146,6 +146,8 @@ def get_header_files():
         result.append("PyTrilinos_Amesos_Headers.hpp")
     if (WITH_IFPACK):
         result.append("PyTrilinos_IFPACK_Headers.hpp")
+    if (WITH_KOMPLEX):
+        result.append("PyTrilinos_Komplex_Headers.hpp")
 
     return result
 
