@@ -260,7 +260,7 @@ buildAndRegisterEquationSetEvaluators(PHX::FieldManager<panzer::Traits>& fm,
     if (this->buildTransientSupport())
       residual_operator_names.push_back("RESIDUAL_"+m_prefix+"TEMPERATURE_TRANSIENT_OP");*/
 
-    this->buildAndRegisterResidualSummationEvalautor(fm,m_dof_name,residual_operator_names);
+    this->buildAndRegisterResidualSummationEvaluator(fm,m_dof_name,residual_operator_names);
   }
 
 }
