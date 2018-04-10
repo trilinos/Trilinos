@@ -140,10 +140,8 @@ namespace MueLu {
     {
       //We need to check for the "partitioner type" = "line"
       RCP<ParameterList> precList = this->RemoveFactoriesFromList(this->GetParameterList());
-      precList->print();
       if(precList->isParameter("partitioner: type") &&
          precList->get<std::string>("partitioner: type") == "line") {
-        std::cout << "Requesting coordinates" << std::endl;
         this->Input(currentLevel, "Coordinates");
       }
     }
@@ -498,7 +496,6 @@ namespace MueLu {
 
     if (!reusePreconditioner) {
       ParameterList& myparamList = const_cast<ParameterList&>(this->GetParameterList());
-      std::cout << "*** print preconditioner parameter list from setup ***" << std::endl;
       myparamList.print();
       if(myparamList.isParameter("partitioner: type") &&
          myparamList.get<std::string>("partitioner: type") == "line") {
@@ -507,8 +504,6 @@ namespace MueLu {
         Teuchos::RCP<Tpetra::MultiVector<double,LO,GO,NO> > coordinates = Teuchos::rcpFromRef(Xpetra::toTpetra<double,LO,GO,NO>(*xCoordinates));
         myparamList.set("partitioner: coordinates", coordinates);
       }
-
-      std::cout << "Calling: Ifpack2::Factory::create(...)" << std::endl;
 
       prec_ = Ifpack2::Factory::create(type_, tA, overlap_);
       SetPrecParameters();
