@@ -173,84 +173,13 @@ int main( int argc, char* argv[] ) {
 
     con->print_tankstate_parameters( *outStream );
 
-//    con->checkSolve(*u, *z, *c, true, *outStream ); 
-
-    auto du_new = u_new->clone("Change in new state (du_new)");
-    auto du_old = u_old->clone("Change in old state (du_old)");
-    auto dz     = z->clone("Change in control (dz)");
-
-    du_new->set(*u_new);   du_new->axpy(1.0, *vu_new);
-    du_old->set(*u_old);   du_old->axpy(1.0, *vu_old);
-    dz->set( *z );         dz->axpy(1.0, *vz);
- 
-    //=========================================================================
-    *outStream << std::string(80,'=') << std::endl;
-    *outStream << "\nTesting value (dc uses Matrix implementation)" << std::endl;
-
-    // Compare two approaches towards computing value
-    dc->zero(); Jerr->zero();
-    con->value( *c,  *u_old,  *u_new, *z, tol );
-    con->value_with_matrix( *dc, *u_old, *u_new, *z, tol );
-    Jerr->set(*c); Jerr->axpy(-1.0, *dc);
-    c->print(*outStream);
-    dc->print(*outStream);
-    Jerr->print(*outStream);
-    
-    
-    //=========================================================================
-
-    //=========================================================================
-    *outStream << std::string(80,'=') << std::endl;
-    *outStream << "\nTesting applyJacobian_1_old" << std::endl;
-    
-    c->zero(); dc->zero(); Jerr->zero();
-    con->value( *dc, *du_old, *u_new, *z, tol );
-    dc->axpy(-fdstep,*c); Jerr->set(*dc); Jerr->scale(1.0/fdstep); 
-    con->applyJacobian_1_old( *Jvu_old, *vu_old, *u_old, *u_new, *z, tol );
-    Jerr->axpy(-1.0,*Jvu_old);
-    dc->print( *outStream );
-    Jvu_old->print( *outStream ) ;
-    Jerr->print( *outStream );
-
-    //=========================================================================
-    *outStream << std::string(80,'=') << std::endl;
-    *outStream << "\nTesting applyJacobian_1_new" << std::endl;
-
-    dc->zero(); Jerr->zero();    
-    con->value( *dc, *u_old,  *du_new, *z, tol );
-    dc->axpy(-fdstep,*c); Jerr->set(*dc); Jerr->scale(1.0/fdstep);
-    con->applyJacobian_1_new( *Jvu_new, *vu_new, *u_old, *u_new, *z, tol );
-    Jerr->axpy(-1.0,*Jvu_new);
-    dc->print( *outStream );
-    Jvu_new->print( *outStream ) ;
-    Jerr->print( *outStream );
-
-    //=========================================================================
-    *outStream << std::string(80,'=') << std::endl;
-    *outStream << "\nTesting applyJacobian_2" << std::endl;
-
-    dc->zero(); Jerr->zero();    
-    con->value( *dc, *u_old,  *u_new, *dz, tol );
-    dc->axpy(-fdstep,*c); Jerr->set(*dc); Jerr->scale(1.0/fdstep);
-    con->applyJacobian_2( *Jvu_new, *vz, *u_old, *u_new, *z, tol );
-    Jerr->axpy(-1.0,*Jvz);
-    dc->print( *outStream );
-    Jvz->print( *outStream ) ;
-    Jerr->print( *outStream );
-
-    //=========================================================================
-
-
-//    con->checkApplyJacobian_1_new( *u_new, *u_old, *z, *vu_new, *c, true, *outStream );
-//    con->checkApplyJacobian_1( *u, *z, *vu, *Jvz, true, *outStream );
-//    con->checkApplyJacobian_2( *u, *z, *vz, *Jvz, true, *outStream );
-// 
-//    con->applyJacobian_1_new( *c, *vu_new, *u_old, *u_new, *z, tol );
+    con->checkSolve(*u, *z, *c, true, *outStream ); 
+    con->checkApplyJacobian_1( *u, *z, *vu, *Jvz, true, *outStream );
+    con->checkApplyJacobian_2( *u, *z, *vz, *Jvz, true, *outStream );
+    con->checkAdjointConsistencyJacobian_1( *w, *vu, *u, *z, true, *outStream );
 //
-//    con->checkAdjointConsistencyJacobian_1( *w, *vu, *u, *z, true, *outStream );
-//
-//    con->checkInverseJacobian_1_new( *c, *u_new, *u_old, *z, *vu_new, true, *outStream );
-//    con->checkInverseAdjointJacobian_1_new( *c, *u_new, *u_old, *z, *vu_new, true, *outStream );
+    con->checkInverseJacobian_1_new( *c, *u_new, *u_old, *z, *vu_new, true, *outStream );
+    con->checkInverseAdjointJacobian_1_new( *c, *u_new, *u_old, *z, *vu_new, true, *outStream );
   
 //  }
 //  catch (std::logic_error err) {

@@ -231,7 +231,7 @@ public:
     that have the special structure:
 
     \f[   a_{i,i} = 1 + 2\alpha p_{i}, \;
-          a_{i,i-1} = -\alpha p_i(1-\delta_{i,c}),\;
+          a_{i,i-1} = -\alpha p_i(1-\delta_{c\%i,0}),\;
           a_{i,i-c}  = -alpha p_i    \f]
 */
 
@@ -247,6 +247,8 @@ private:
 
   Real coeff( size_type i ) const { return (1.0-static_cast<Real>(i%c_==0)); }
 
+  Real diag( size_type i ) const { return 1.0+2.0*alpha_.at(i); }
+
 public:   
 
   TankLevelMatrix( size_type r, size_type c, Real alpha, const vector<Real>& p ) :
@@ -259,65 +261,46 @@ public:
   // x_begin, if the vectors are larger than A
   virtual void apply( vector<Real>& b, const vector<Real> &x, Real kappa=1.0, 
                       size_type bi0=0, size_type xi0=0 ) const {
-
-    b.at(bi0)   += kappa*x.at(xi0)*(1.0+2.0*alpha_.at(0));
-
-    for( size_type i=1; i<c_; ++i ) 
-      b.at(bi0+i) += kappa*( x.at(xi0+i)*(1.0+2.0*alpha_.at(i)) 
-                            - alpha_.at(i)*x.at(xi0+i-1));
-
-    for( size_type i=c_; i<n_; ++i ) 
-      b.at(bi0+i) += kappa*(x.at(xi0+i)*(1.0+2.0*alpha_.at(i)) - 
-                     alpha_.at(i)*(coeff(i)*x.at(xi0+i-1) + x.at(xi0+i-c_)));
+    for( size_type i=0; i<n_; ++i ) {
+      auto value = diag(i)*x.at(xi0+i);
+      if( i>=1 ) value -= alpha_.at(i)*coeff(i)*x.at(xi0+i-1);
+      if( i>=c_) value -= alpha_.at(i)*x.at(xi0+i-c_);
+      b.at(bi0+i) += kappa*value;
+    }
   } 
 
   virtual void solve( vector<Real>& x, const vector<Real>& b, Real kappa=1.0,
                       size_type xi0=0, size_type bi0=0 ) const {
-    x.at(xi0) += b.at(bi0)*kappa/(1.0+2.0*alpha_.at(0));
-    
-    for( size_type i=1; i<c_; ++i ) 
-      x.at(xi0+i) += ( b.at(bi0+i) + alpha_.at(i)*x.at(xi0+i-1) )*kappa /
-                     (1.0+2.0*alpha_.at(i));
-
-    for( size_type i=c_; i<n_; ++i ) 
-      x.at(xi0+i) += ( b.at(bi0+i) + alpha_.at(i)*(coeff(i)*x.at(xi0+i-1) 
-                       +x.at(xi0+i-c_)))*kappa/(1.0+2.0*alpha_.at(i));
+    for( size_type i=0; i<n_; ++i ) {
+      auto value = b.at(bi0+i);
+      if( i>=1 ) value  += alpha_.at(i)*coeff(i)*x.at(xi0+i-1);
+      if( i>=c_ ) value += alpha_.at(i)*x.at(xi0+i-c_);
+      x.at(xi0+i) += kappa*value/diag(i);
+    }
   }
 
   virtual void applyTranspose( vector<Real>&b, const vector<Real>& x, Real kappa=1.0,
                                size_type bi0=0, size_type xi0=0 ) const {
 
-    b.at(bi0+n_-1) += kappa*x.at(xi0+n_-1)*(1.0+2.0*alpha_.at(n_-1));
-    for( size_type j=1; j<c_; ++j ) { 
-      size_type i=n_-j-1;
-      b.at(bi0+i) += kappa*(x.at(xi0+i)*(1.0+2.0*alpha_.at(i+1)) - 
-                            alpha_.at(i+1)*x.at(xi0+i+1)); 
-    }
-
-    for( size_type j=c_; j<n_; ++j ) {
-      size_type i=n_-j-1;
-      b.at(bi0+i) += kappa*(x.at(xi0+i)*(1.0+2.0*alpha_.at(i)) - 
-                     alpha_.at(i+1)*coeff(i+1)*x.at(xi0+i+1) -
-                     alpha_.at(i+c_)*x.at(xi0+i+c_)); 
+    for( size_type j=0; j<n_; ++j ) {
+      size_type i = n_-j-1;
+      auto value = diag(i)*x.at(xi0+i);
+      if( i<n_-1  ) value -= alpha_.at(i+1)*x.at(xi0+i+1)*coeff(i+1);
+      if( i<n_-c_ ) value -= alpha_.at(i+c_)*x.at(xi0+i+c_);
+      b.at(bi0+i) += kappa*value;
     }
   }
 
   virtual void solveTranspose( vector<Real>& x, const vector<Real>& b, Real kappa=1.0,
                                size_type xi0=0, size_type bi0=0 ) const {
-
-    x.at(xi0+n_-1) += b.at(bi0+n_-1)*kappa/(1.0+2.0*alpha_.at(0));
-    for( size_type j=1; j<c_; ++j ) { 
-      size_type i=n_-j-1;
-      x.at(xi0+i) += ( b.at(bi0+i) + alpha_.at(i+1)*coeff(i)*x.at(xi0+i+1) )*kappa/
-      (1.0+2.0*alpha_.at(i));
+    for( size_type j=0; j<n_; ++j ) {
+      size_type i = n_-j-1;
+       auto value = b.at(bi0+i);
+       if( i<n_-1 )  value += alpha_.at(i+1)*coeff(i+1)*x.at(xi0+i+1);
+       if( i<n_-c_ ) value += alpha_.at(i+c_)*x.at(xi0+i+c_);
+       x.at(xi0+i) += kappa*value/diag(i);
+      }
     }
-    for( size_type j=c_; j<n_; ++j ) {
-      size_type i=n_-j-1;
-      x.at(xi0+i) += ( b.at(bi0+i) + alpha_.at(i+1)*coeff(i+1)*x.at(xi0+i+1) +
-                    alpha_.at(i+c_)*x.at(xi0+i+c_)  )*kappa/(1.0+2.0*alpha_.at(i));
-    }
-  }
-
 
 };
 

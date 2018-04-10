@@ -71,9 +71,7 @@ public:
 
   void value( StateVector& c, const StateVector& u_old, 
               const StateVector& u_new, const ControlVector& z ) const;
-  void value_with_matrix( StateVector& c, const StateVector& u_old, 
-                          const StateVector& u_new, const ControlVector& z ) const;
-
+ 
   void applyJacobian_1_old( StateVector& jv, const StateVector& v_old ) const;
   void applyJacobian_1_new( StateVector& jv, const StateVector& v_old ) const;
   void applyInverseJacobian_1_new( StateVector& ijv, const StateVector& v_new ) const;

@@ -109,17 +109,6 @@ public:
     tankState_.value( c_state, uo_state, un_state, z_ctrl ) ;
   }
 
-  void value_with_matrix( Vector& c, const Vector& u_old, const Vector& u_new, 
-              const Vector& z, Real& tol ) {
-
-    auto& c_state  = to_state(c); 
-    auto& uo_state = to_state(u_old);
-    auto& un_state = to_state(u_new);
-    auto& z_ctrl   = to_control(z);
-    c.zero();
-    tankState_.value_with_matrix( c_state, uo_state, un_state, z_ctrl ) ;
-  }
-
 
   void solve( Vector& c, const Vector& u_old, Vector& u_new, 
               const Vector& z, Real& tol ) override {
