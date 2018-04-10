@@ -225,6 +225,14 @@ IF (${PACKAGE_NAME}_ENABLE_Tpetra AND ${PACKAGE_NAME}_ENABLE_Ifpack2 AND ${PACKA
       COMM mpi # HAVE_MPI required
       )
 
+    TRIBITS_ADD_TEST(
+      Driver
+      NAME "DriverTpetraIfpack2LinePartitioner"
+      ARGS "--linAlgebra=Tpetra --xml=sa_with_Ifpack2_line_detection.xml"
+      NUM_MPI_PROCS 4
+      COMM mpi # HAVE_MPI required
+      )
+
   ENDIF()
 
 
