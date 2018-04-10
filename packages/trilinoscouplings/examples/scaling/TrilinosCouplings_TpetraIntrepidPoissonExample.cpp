@@ -1205,15 +1205,16 @@ makeMatrixAndRightHandSide (Teuchos::RCP<sparse_matrix_type>& A,
 /**********************************************************************************/
 /***************************** STATISTICS (Part III) ******************************/
 /**********************************************************************************/
- std::vector<double> global_stat_max(NUM_STATISTICS),global_stat_min(NUM_STATISTICS), global_stat_sum(NUM_STATISTICS);
+  std::vector<double> global_stat_max(NUM_STATISTICS),global_stat_min(NUM_STATISTICS), global_stat_sum(NUM_STATISTICS);
   Teuchos::reduceAll(*comm,Teuchos::REDUCE_MIN,NUM_STATISTICS,local_stat_min.data(),global_stat_min.data());
   Teuchos::reduceAll(*comm,Teuchos::REDUCE_MAX,NUM_STATISTICS,local_stat_max.data(),global_stat_max.data());
   Teuchos::reduceAll(*comm,Teuchos::REDUCE_SUM,NUM_STATISTICS,local_stat_sum.data(),global_stat_sum.data());
+  // NOTE: All output properties should be unitless if we want to compare across problems.
+  // NOTE: Should the mean be weighted by cell volume?  That is not currently done.
 
   // 0 - Material property
-  problemStatistics.set("sigma: min",global_stat_min[0]);
-  problemStatistics.set("sigma: max",global_stat_max[0]);
-  problemStatistics.set("sigma: mean",global_stat_sum[0] / numElemsGlobal);
+  problemStatistics.set("sigma: min/mean",global_stat_min[0]/global_stat_sum[0]*numElemsGlobal);
+  problemStatistics.set("sigma: max/mean",global_stat_max[0]/global_stat_sum[0]*numElemsGlobal);
 
   // 1 - Max/min edge ratio
   problemStatistics.set("element edge ratio: min",global_stat_min[1]);
@@ -1221,10 +1222,10 @@ makeMatrixAndRightHandSide (Teuchos::RCP<sparse_matrix_type>& A,
   problemStatistics.set("element edge ratio: mean",global_stat_sum[1] / numElemsGlobal);
 
   // 2 - det of cell Jacobian (later)  
-  problemStatistics.set("element det jacobian: min",global_stat_min[2]);
-  problemStatistics.set("element det jacobian: max",global_stat_max[2]);
-  problemStatistics.set("element det jacobian: mean",global_stat_sum[2] / numElemsGlobal);
- //////////////////////////////////////////////////////////////////////////////
+  problemStatistics.set("element det jacobian: min/mean",global_stat_min[2]/global_stat_sum[2]*numElemsGlobal);
+  problemStatistics.set("element det jacobian: max/mean",global_stat_max[2]/global_stat_sum[2]*numElemsGlobal);
+
+  //////////////////////////////////////////////////////////////////////////////
   // Export sparse matrix and right-hand side from overlapping row Map
   // to owned (nonoverlapping) row Map.
   //////////////////////////////////////////////////////////////////////////////
