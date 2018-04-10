@@ -433,7 +433,7 @@ void Multiply_LTG(const Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> &
     RCP<crs_matrix_type> Cnc = Teuchos::rcp_const_cast<crs_matrix_type>(Cu);
 
     if(!Au->getComm()->getRank())
-      std::out<< "Kokkos::Compat::KokkosOpenMPWrapperNode::execution_space::concurrency() = "<<Kokkos::Compat::KokkosOpenMPWrapperNode::execution_space::concurrency()<<std::endl;
+      std::cout<< "Kokkos::Compat::KokkosOpenMPWrapperNode::execution_space::concurrency() = "<<Kokkos::Compat::KokkosOpenMPWrapperNode::execution_space::concurrency()<<std::endl;
 
 
 
