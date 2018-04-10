@@ -331,6 +331,12 @@ namespace MueLu {
         MUELU_TEST_PARAM_2LIST(paramList, paramList, "aggregation: export visualization data", bool, true)) {
       useCoordinates_ = true;
 
+    } else if(paramList.isSublist("smoother: params")) {
+      const auto smooParamList = paramList.sublist("smoother: params");
+      if(smooParamList.isParameter("partitioner: type") &&
+         (smooParamList.get<std::string>("partitioner: type") == "line")) {
+        useCoordinates_ = true;
+      }
     } else {
       for (int levelID = 0; levelID < this->numDesiredLevel_; levelID++) {
         std::string levelStr = "level " + toString(levelID);
