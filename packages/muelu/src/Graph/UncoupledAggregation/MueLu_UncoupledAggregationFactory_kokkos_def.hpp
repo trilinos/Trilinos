@@ -245,39 +245,12 @@ namespace MueLu {
       //leave gc algorithm choice as the default
       kh.create_graph_coloring_handle();
 
-      //Create device views for graph rowptrs/colinds
-      rowptrs_view aRowptrs("A device rowptrs", numRows + 1);
-      colinds_view aColinds("A device colinds", graph->GetNodeNumEdges());
-      //Get the sparse local graph in CRS
-      {
-        host_rowptrs_view aHostRowptrs("A host rowptrs", numRows + 1);
-        host_colinds_view aHostColinds("A host colinds", graph->GetNodeNumEdges());
-        aHostRowptrs(0) = 0;
-        Kokkos::parallel_scan("Uncoupled Aggregation: Extract rowPtrs from graph", numRows,
-                              KOKKOS_LAMBDA(const LO row, LO& update, const bool final_pass) {
-                                if (final_pass) { aHostRowptrs(row) = update; }
-                                update += graph->getNeighborVertices(row).length;
-                                if (final_pass && row == numRows - 1) {
-                                  aHostRowptrs(row + 1) = update;
-                                }
-                              });
-        // Note LBV 03/20/2018: the loop below could benefit from a Kokkos::TeamPolicy and
-        // a second level of parallelization around the inner loop, much like what happens
-        // in the MatrixMatrix multiplication.
-        Kokkos::parallel_for("Uncoupled Aggregation: extract colInds from graph", numRows,
-                             KOKKOS_LAMBDA(const LO row) {
-                               auto entries = graph->getNeighborVertices(row);
-                               for(LO i = 0; i < entries.length; ++i) {
-                                 aHostColinds(aHostRowptrs(row) + i) = entries.colidx(i);
-                               }
-                             });
-        Kokkos::deep_copy(aRowptrs, aHostRowptrs);
-        Kokkos::deep_copy(aColinds, aHostColinds);
-      }
       //run d2 graph coloring
       //graph is symmetric so row map/entries and col map/entries are the same
       KokkosGraph::Experimental::d2_graph_color(&kh, numRows, numRows,
-                                                aRowptrs, aColinds, aRowptrs, aColinds);
+						graph->getRowPtrs(), graph->getEntries(),
+						graph->getRowPtrs(), graph->getEntries());
+                                                // aRowptrs, aColinds, aRowptrs, aColinds);
 
       // extract the colors
       auto coloringHandle = kh.get_graph_coloring_handle();
