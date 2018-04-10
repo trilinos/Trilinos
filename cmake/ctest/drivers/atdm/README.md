@@ -242,6 +242,8 @@ The following `<system_name>` sub-directories exist:
   described above but it put in this directory since it is targeted to support
   ATDM.  It also shows that a given system can have its own driver files if it
   needs to.
+  
+ * `toss3/`: Contains files to drive builds on `serrano` and `chama`.
 
 ## How add a new system
 
