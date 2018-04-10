@@ -171,6 +171,7 @@ $ ./checkin-test-sems.sh <job-name-0> <job-name-1> ... \
 
 * <a href="#ridewhite">ride/white</a>
 * <a href="#shillerhansen">shiller/hansen</a>
+* <a href="#chama/serrano">chama/serrano</a>
 
 
 ### ride/white
@@ -252,6 +253,37 @@ $ srun ./checkin-test-sems.sh intel-opt-openmp \
   --enable-all-packages=off --no-enable-fwd-packages \
   --enable-packages=MueLu \
   --local-do-all
+```
+
+### chama/serrano
+
+Once logged on to `chama`  or `serrano`, one can
+directly configure and build on the login node (being careful not to overload
+the node).  But to run the tests, one must run on the compute nodes using the
+`srun` command.  For example, to configure, build and run the tests for say
+`MueuLu` on `serrano` or `chama`, (after cloning Trilinos on the `develop` branch) one
+would do:
+
+
+```
+$ cd <some_build_dir>/
+
+$ source $TRILINOS_DIR/cmake/std/atdm/load-env.sh intel-opt-openmp
+
+$ cmake \
+  -DTrilinos_CONFIGURE_OPTIONS_FILE:STRING=cmake/std/atdm/ATDMDevEnv.cmake \
+  -DTrilinos_ENABLE_TESTS=ON -DTrilinos_ENABLE_MueLu=ON \
+  $TRILINOS_DIR
+
+$ make -j16
+
+$ cat > job.sh << "EOF"
+  #! /bin/bash \
+  ctest -j16 \
+  EOF
+$ chmod +x job.sh
+
+$ srun -N 1 --time=600 --account=<YOUR_WCID> -J $JOB_NAME  -e output.error ./job.sh &
 ```
 
 
