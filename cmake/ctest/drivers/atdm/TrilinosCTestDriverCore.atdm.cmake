@@ -60,13 +60,26 @@ MACRO(TRILINOS_SYSTEM_SPECIFIC_CTEST_DRIVER)
   # runs the build.
   SET(CTEST_SITE "$ENV{ATDM_CONFIG_KNOWN_HOSTNAME}")
 
+  # See if to enable all of the packages
+
+  MESSAGE("ENV ATDM_CONFIG_ENABLE_ALL_PACKAGE = $ENV{ATDM_CONFIG_ENABLE_ALL_PACKAGES}")
+
+  IF ($ENV{ATDM_CONFIG_ENABLE_ALL_PACKAGES})
+    SET(ATDM_ENABLE_ALL_PACKAGES TRUE)
+  ELSE()
+    SET(ATDM_ENABLE_ALL_PACKAGES FALSE)
+  ENDIF()
+
   # See if "panzer" is in the job name
   STRING(REGEX MATCH "panzer" ATDM_PANZER_IN_JOB_NAME
     "${CTEST_BUILD_NAME}" )
 
   SET(PANZER_DISABLE_EXAMPLES_ARGS)
 
-  IF (ATDM_PANZER_IN_JOB_NAME)
+  IF (ATDM_ENABLE_ALL_PACKAGES)
+    MESSAGE("Enabling all packages by default!")
+    SET(Trilinos_PACKAGES)
+  ELSEIF (ATDM_PANZER_IN_JOB_NAME)
     MESSAGE("Found 'panzer' in JOB_NAME, enabling only Panzer tests")
     SET(Trilinos_PACKAGES Panzer)
     SET(PANZER_DISABLE_EXAMPLES_ARGS
@@ -114,12 +127,18 @@ MACRO(TRILINOS_SYSTEM_SPECIFIC_CTEST_DRIVER)
     # broken.
   ENDIF()
   
-  # Disable the packages that are never used by the ATDM APP codes
-  INCLUDE("${THIS_FILE_LIST_DIR}/../../../std/atdm/ATDMDisables.cmake")
+  IF (NOT ATDM_ENABLE_ALL_PACKAGES)
+    # Disable the packages that are never used by the ATDM APP codes
+    INCLUDE("${THIS_FILE_LIST_DIR}/../../../std/atdm/ATDMDisables.cmake")
+    SET(ATDM_DISABLES_FILE_ARG ",cmake/std/atdm/ATDMDisables.cmake")
+  ELSE()
+    MESSAGE("NOT reading in ATDMDisables.cmake!")
+    SET(ATDM_DISABLES_FILE_ARG "")
+  ENDIF()
 
   # Point to the ATDM Trilinos configuration
   SET(EXTRA_SYSTEM_CONFIGURE_OPTIONS
-    "-DTrilinos_CONFIGURE_OPTIONS_FILE:STRING=cmake/std/atdm/ATDMDevEnv.cmake"
+    "-DTrilinos_CONFIGURE_OPTIONS_FILE:STRING=cmake/std/atdm/ATDMDevEnvSettings.cmake${ATDM_DISABLES_FILE_ARG}"
     "-DTrilinos_TRACE_ADD_TEST=ON"
     "-DTrilinos_ENABLE_CONFIGURE_TIMING=ON"
     ${PANZER_DISABLE_EXAMPLES_ARGS}
