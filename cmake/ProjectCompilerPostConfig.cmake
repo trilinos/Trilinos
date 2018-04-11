@@ -44,7 +44,7 @@ IF (${Trilinos_ENABLE_Kokkos})
         "${KOKKOS_SETTINGS} make -f ${KOKKOS_SRC_PATH}/cmake/Makefile.generate_cmake_settings CXX=${CMAKE_CXX_COMPILER} generate_build_settings")
   endif()
   include(${Kokkos_GEN_DIR}/kokkos_generated_settings.cmake)
-  install(FILES ${Kokkos_GEN_DIR}/kokkos_generated_settings.cmake DESTINATION lib/cmake/Kokkos)
+  install(FILES ${Kokkos_GEN_DIR}/kokkos_generated_settings.cmake DESTINATION ${${PROJECT_NAME}_INSTALL_LIB_DIR}/cmake/Kokkos)
 
   IF (NOT KOKKOS_ARCH STREQUAL "None")
 
