@@ -278,14 +278,12 @@ $ cmake \
 
 $ make -j16
 
-$ cat > job.sh << "EOF"
-  #! /bin/bash \
-  ctest -j16 \
-  EOF
-$ chmod +x job.sh
-
-$ srun -N 1 --time=600 --account=<YOUR_WCID> -J $JOB_NAME  -e output.error ./job.sh &
+$ srun -N 1 --time=600 --account=<YOUR_WCID> -J $JOB_NAME  -e output.error ctest -j16
 ```
+
+To get information on <YOUR_WCID> used above, there is a WC tool tab on computing.sandia.gov 
+
+
 ### SEMS rhel6 environment
 
 Once logged on to a rhel6 machine with the sems NFS, one can
