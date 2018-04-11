@@ -153,47 +153,74 @@ buildAndRegisterEquationSetEvaluators(PHX::FieldManager<panzer::Traits>& fm,
     this->buildAndRegisterResidualSummationEvaluator(fm,m_Efield_dof_name,residual_operator_names);
   }
   {
+    using panzer::BasisIRLayout;
+    using panzer::EvaluatorStyle;
+    using panzer::IntegrationRule;
+    using panzer::Integrator_BasisTimesScalar;
+    using panzer::Integrator_BasisTimesVector;
+    using panzer::Traits;
+    using PHX::Evaluator;
+    using std::string;
+    using std::vector;
+    using Teuchos::RCP;
     //Build the B Field equation
     //dB/dt = - \nabla \times E
-    Teuchos::RCP<panzer::IntegrationRule> ir = this->getIntRuleForDOF(m_Bfield_dof_name);
-    Teuchos::RCP<panzer::BasisIRLayout> basis = this->getBasisIRLayoutForDOF(m_Bfield_dof_name);
+    RCP<IntegrationRule> ir = this->getIntRuleForDOF(m_Bfield_dof_name);
+    RCP<BasisIRLayout> basis = this->getBasisIRLayoutForDOF(m_Bfield_dof_name);
 
-    std::vector<std::string> residual_operator_names;
+    vector<string> residual_operator_names;
     {
-      std::string resid="RESIDUAL_"+m_Bfield_dof_name+"_TIME_OP";
-      ParameterList p("Time Derivative"+m_Bfield_dof_name);
-      p.set("Residual Name", resid);
-      p.set("Value Name", "DXDT_"+m_Bfield_dof_name);
-      p.set("Basis", basis);
-      p.set("IR", ir);
-      p.set("Multiplier", 1.0);
-      RCP< PHX::Evaluator<panzer::Traits> > op;
-      if ( dimension == 3 )
-        op = rcp(new panzer::Integrator_BasisTimesVector<EvalT,panzer::Traits>(p));
+      string valName("DXDT_" + m_Bfield_dof_name);
+      double multiplier(1);
+      RCP<Evaluator<Traits>> op;
+      if (dimension == 3)
+      {
+        string resName("RESIDUAL_" + m_Bfield_dof_name + "_TIME_OP");
+        ParameterList p("Time Derivative" + m_Bfield_dof_name);
+        p.set("Residual Name", resName);
+        p.set("Value Name", valName);
+        p.set("Basis", basis);
+        p.set("IR", ir);
+        p.set("Multiplier", multiplier);
+        op = rcp(new Integrator_BasisTimesVector<EvalT, Traits>(p));
+        residual_operator_names.push_back(resName);
+      }
       else
-        op = rcp(new panzer::Integrator_BasisTimesScalar<EvalT,panzer::Traits>(p));
-
+      {
+        string resName("RESIDUAL_" + m_Bfield_dof_name);
+        op = rcp(new Integrator_BasisTimesScalar<EvalT, Traits>(
+          EvaluatorStyle::EVALUATES, resName, valName, *basis, *ir,
+          multiplier));
+      }
       this->template registerEvaluator<EvalT>(fm, op);
-      residual_operator_names.push_back(resid);
     }
     {
-      std::string resid="RESIDUAL_"+m_Bfield_dof_name+"_CURLE_OP";
-      ParameterList p("Curl B"+m_Bfield_dof_name);
-      p.set("Residual Name", resid);
-      p.set("Value Name", "CURL_"+m_Efield_dof_name);
-      p.set("Basis", basis);
-      p.set("IR", ir);
-      p.set("Multiplier", 1.0);
-      RCP< PHX::Evaluator<panzer::Traits> > op;
-      if ( dimension == 3 )
-        op = rcp(new panzer::Integrator_BasisTimesVector<EvalT,panzer::Traits>(p));
+      string valName("CURL_" + m_Efield_dof_name);
+      double multiplier(1);
+      RCP<Evaluator<Traits>> op;
+      if (dimension == 3)
+      {
+        string resName("RESIDUAL_" + m_Bfield_dof_name + "_CURLE_OP");
+        ParameterList p("Curl B" + m_Bfield_dof_name);
+        p.set("Residual Name", resName);
+        p.set("Value Name", "CURL_" + m_Efield_dof_name);
+        p.set("Basis", basis);
+        p.set("IR", ir);
+        p.set("Multiplier", multiplier);
+        op = rcp(new Integrator_BasisTimesVector<EvalT, Traits>(p));
+        residual_operator_names.push_back(resName);
+      }
       else
-        op = rcp(new panzer::Integrator_BasisTimesScalar<EvalT,panzer::Traits>(p));
-
+      {
+        string resName("RESIDUAL_" + m_Bfield_dof_name);
+        op = rcp(new Integrator_BasisTimesScalar<EvalT, Traits>(
+          EvaluatorStyle::CONTRIBUTES, resName, valName, *basis, *ir,
+          multiplier));
+      }
       this->template registerEvaluator<EvalT>(fm, op);
-      residual_operator_names.push_back(resid);
     }
-    this->buildAndRegisterResidualSummationEvaluator(fm,m_Bfield_dof_name,residual_operator_names);
+    if (dimension == 3)
+      this->buildAndRegisterResidualSummationEvaluator(fm, m_Bfield_dof_name, residual_operator_names);
   }
 
 

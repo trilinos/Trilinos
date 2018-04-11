@@ -40,8 +40,8 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef   __Panzer_Integrator_BasisTimesScalar_decl_hpp__
-#define   __Panzer_Integrator_BasisTimesScalar_decl_hpp__
+#ifndef   PANZER_INTEGRATOR_BASISTIMESSCALAR_HPP
+#define   PANZER_INTEGRATOR_BASISTIMESSCALAR_HPP
 
 ///////////////////////////////////////////////////////////////////////////////
 //
@@ -70,11 +70,11 @@ namespace panzer
    *
    *  Evaluates the integral
    *  \f[
-        Ma(x)b(x)\cdots\int s(x)\phi(x)\,dx,
-      \f]
+   *    Ma(x)b(x)\cdots\int s(x)\phi(x)\,dx,
+   *  \f]
    *  where \f$ M \f$ is some constant, \f$ a(x) \f$, \f$ b(x) \f$, etc., are
    *  some fields that depend on position, \f$ s \f$ is some scalar function,
-   *  and \f$ \phi \f$ is some basis.
+   *  and \f$ \phi \f$ is some scalar basis.
    */
   template<typename EvalT, typename Traits>
   class Integrator_BasisTimesScalar
@@ -89,11 +89,11 @@ namespace panzer
        *
        *  Creates an `Evaluator` to evaluate the integral
        *  \f[
-            Ma(x)b(x)\cdots\int s(x)\phi(x)\,dx,
-          \f]
+       *    Ma(x)b(x)\cdots\int s(x)\phi(x)\,dx,
+       *  \f]
        *  where \f$ M \f$ is some constant, \f$ a(x) \f$, \f$ b(x) \f$, etc.,
        *  are some fields that depend on position, \f$ s \f$ is some scalar
-       *  function, and \f$ \phi \f$ is some basis.
+       *  function, and \f$ \phi \f$ is some scalar basis.
        *
        *  \param[in] evalStyle  An `enum` declaring the behavior of this
        *                        `Evaluator`, which is to either:
@@ -103,8 +103,8 @@ namespace panzer
        *                        field, depending on `evalStyle`.
        *  \param[in] valName    The name of the scalar value being integrated
        *                        (\f$ s \f$).
-       *  \param[in] basis      The basis that you'd like to use (\f$ \phi
-                                \f$).
+       *  \param[in] basis      The scalar basis that you'd like to use (\f$
+       *                        \phi \f$).
        *  \param[in] ir         The integration rule that you'd like to use.
        *  \param[in] multiplier The scalar multiplier out in front of the
        *                        integral you're computing (\f$ M \f$).  If not
@@ -133,11 +133,11 @@ namespace panzer
        *
        *  Creates an `Evaluator` to evaluate the integral
        *  \f[
-            Ma(x)b(x)\cdots\int s(x)\phi(x)\,dx,
-          \f]
+       *    Ma(x)b(x)\cdots\int s(x)\phi(x)\,dx,
+       *  \f]
        *  where \f$ M \f$ is some constant, \f$ a(x) \f$, \f$ b(x) \f$, etc.,
        *  are some fields that depend on position, \f$ s \f$ is some scalar
-       *  function, and \f$ \phi \f$ is some basis.
+       *  function, and \f$ \phi \f$ is some scalar basis.
        *
        *  \note This constructor exists to preserve the older way of creating
        *        an `Evaluator` with a `ParameterList`; however, it is
@@ -161,8 +161,8 @@ namespace panzer
        *                 `Evaluator` is evaluating,
        *               - "Value Name" is the name of the scalar value being
        *                 integrated (\f$ s \f$),
-       *               - "Basis" is the basis that you'd like to use (\f$ \phi
-                         \f$),
+       *               - "Basis" is the scalar basis that you'd like to use
+       *                 (\f$ \phi \f$),
        *               - "IR" is the integration rule that you'd like to use,
        *               - "Multiplier" is the scalar multiplier out in front of
        *                 the integral you're computing (\f$ M \f$), and
@@ -217,7 +217,7 @@ namespace panzer
        *  Generally speaking, for a given cell in the `Workset`, this routine
        *  loops over quadrature points and bases to perform the integration,
        *  scaling the vector field to be integrated by the multiplier (\f$ M
-          \f$) and any field multipliers (\f$ a(x) \f$, \f$ b(x) \f$, etc.).
+       *  \f$) and any field multipliers (\f$ a(x) \f$, \f$ b(x) \f$, etc.).
        *
        *  \note Optimizations are made for the cases in which we have no field
        *        multipliers or only a single one.
@@ -276,7 +276,7 @@ namespace panzer
 
       /**
        *  \brief The scalar multiplier out in front of the integral (\f$ M
-                 \f$).
+       *         \f$).
        */
       double multiplier_;
 
@@ -319,4 +319,4 @@ namespace panzer
 
 } // end of namespace panzer
 
-#endif // __Panzer_Integrator_BasisTimesScalar_decl_hpp__
+#endif // PANZER_INTEGRATOR_BASISTIMESSCALAR_HPP
