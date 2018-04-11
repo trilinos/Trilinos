@@ -139,9 +139,9 @@ namespace MueLu {
              type_ == "BLOCKRELAXATION")
     {
       //We need to check for the "partitioner type" = "line"
-      RCP<ParameterList> precList = this->RemoveFactoriesFromList(this->GetParameterList());
-      if(precList->isParameter("partitioner: type") &&
-         precList->get<std::string>("partitioner: type") == "line") {
+      ParameterList precList = this->GetParameterList();
+      if(precList.isParameter("partitioner: type") &&
+         precList.get<std::string>("partitioner: type") == "line") {
         this->Input(currentLevel, "Coordinates");
       }
     }
