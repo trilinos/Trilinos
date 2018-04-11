@@ -1169,7 +1169,7 @@ void writeParameter(const std::string& paramName, const Teuchos::ParameterEntry&
     yaml << '[';
     if(entry.isType<Teuchos::Array<int> >())
     {
-      Teuchos::Array<int>& arr = Teuchos::getValue<Teuchos::Array<int> >(entry);
+      auto arr = Teuchos::getValue<Teuchos::Array<int> >(entry);
       for(int i = 0; i < arr.size(); i++)
       {
         yaml << arr[i];
@@ -1179,7 +1179,7 @@ void writeParameter(const std::string& paramName, const Teuchos::ParameterEntry&
     }
     else if(entry.isType<Teuchos::Array<double> >())
     {
-      Teuchos::Array<double>& arr = Teuchos::getValue<Teuchos::Array<double> >(entry);
+      auto arr = Teuchos::getValue<Teuchos::Array<double> >(entry);
       for(int i = 0; i < arr.size(); i++)
       {
         generalWriteDouble(arr[i], yaml);
@@ -1189,7 +1189,7 @@ void writeParameter(const std::string& paramName, const Teuchos::ParameterEntry&
     }
     else if(entry.isType<Teuchos::Array<std::string> >())
     {
-      Teuchos::Array<std::string>& arr = Teuchos::getValue<Teuchos::Array<std::string> >(entry);
+      auto arr = Teuchos::getValue<Teuchos::Array<std::string> >(entry);
       for(int i = 0; i < arr.size(); i++)
       {
         generalWriteString(arr[i], yaml);
@@ -1227,7 +1227,7 @@ void writeParameter(const std::string& paramName, const Teuchos::ParameterEntry&
   }
   else if(entry.isType<std::string>())
   {
-    std::string& str = Teuchos::getValue<std::string>(entry);
+    auto str = Teuchos::getValue<std::string>(entry);
     if(strchr(str.c_str(), '\n'))
     {
       yaml << "|";

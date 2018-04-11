@@ -123,9 +123,9 @@ namespace TeuchosTests
     double correctDoubles[5] = {2.718, 3.14159, 1.618, 1.23456789, 42.1337};
     RCP<Teuchos::ParameterList> params = Teuchos::getParametersFromYamlFile("Arrays.yaml");
     //Retrieve arrays from a specific sublist (tests the mixed nesting of sequence/map)
-    ParameterList& sublist = params->get<ParameterList>("smoother: params");
-    Teuchos::Array<int>& intArr = sublist.get<Teuchos::Array<int> >("intArray");
-    Teuchos::Array<double>& doubleArr = sublist.get<Teuchos::Array<double> >("doubleArray");
+    const ParameterList& sublist = params->sublist("smoother: params");
+    auto intArr = sublist.get<Teuchos::Array<int> >("intArray");
+    auto doubleArr = sublist.get<Teuchos::Array<double> >("doubleArray");
     TEST_EQUALITY(intArr.size(), 5);
     TEST_EQUALITY(doubleArr.size(), 5);
     for(int i = 0; i < 5; i++)
@@ -140,8 +140,8 @@ namespace TeuchosTests
     double correctDoubles[5] = {2, 3, 1.618, 1.23456789, 42.1337};
     RCP<ParameterList> plist = Teuchos::getParametersFromYamlFile("InconsistentArray.yaml");
     //verify that stringArray and doubleArray have the correct types and the correct values
-    const Teuchos::Array<std::string>& stringArr = plist->get<Teuchos::Array<std::string> >("stringArray");
-    const Teuchos::Array<double>& doubleArr = plist->get<Teuchos::Array<double> >("doubleArray");
+    auto stringArr = plist->get<Teuchos::Array<std::string> >("stringArray");
+    auto doubleArr = plist->get<Teuchos::Array<double> >("doubleArray");
     for(int i = 0; i < 5; i++)
     {
       if(stringArr[i] != correctStrings[i])
