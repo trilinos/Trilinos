@@ -67,7 +67,7 @@ python version of LOCA.StatusTest supports the following classes:
 #include "PyTrilinos_Teuchos_Headers.hpp"
 
 // LOCA include files
-#include "LOCA.H"
+#include "PyTrilinos_LOCA_Headers.hpp"
 
 // Local include files
 #define NO_IMPORT_ARRAY

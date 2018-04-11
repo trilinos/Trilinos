@@ -81,8 +81,6 @@ LOCA.Epetra.Interface supports the following classes:
 
 // PyTrilinos include files
 #include "PyTrilinos_PythonException.hpp"
-#include "PyTrilinos_Teuchos_Util.hpp"
-#include "PyTrilinos_Epetra_Util.hpp"
 
 // Teuchos include files
 #include "PyTrilinos_Teuchos_Headers.hpp"
@@ -90,14 +88,11 @@ LOCA.Epetra.Interface supports the following classes:
 // Epetra include files
 #include "PyTrilinos_Epetra_Headers.hpp"
 
-// NOX include
-#include "NOX_Epetra_Interface_Required.H"
+// NOX include files
+#include "PyTrilinos_NOX_Epetra_Headers.hpp"
 
 // LOCA::Epetra::Interface include files
-#include "LOCA_Epetra_Interface_Required.H"
-#include "LOCA_Epetra_Interface_MassMatrix.H"
-#include "LOCA_Epetra_Interface_TimeDependent.H"
-#include "LOCA_Epetra_Interface_TimeDependentMatrixFree.H"
+#include "PyTrilinos_LOCA_Epetra_Headers.hpp"
 %}
 
 // General ignore directives

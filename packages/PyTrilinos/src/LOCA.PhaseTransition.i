@@ -75,8 +75,7 @@ LOCA.PhaseTransition supports the following classes:
 #endif
 
 // LOCA include files
-#include "LOCA.H"
-#include "LOCA_Extended_MultiAbstractGroup.H"
+#include "PyTrilinos_LOCA_Headers.hpp"
 
 // Local include files
 #define NO_IMPORT_ARRAY

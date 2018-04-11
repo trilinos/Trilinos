@@ -66,7 +66,7 @@ The python version of LOCA.Parameter supports the following classes:
 #include "PyTrilinos_Teuchos_Headers.hpp"
 
 // LOCA include files
-#include "LOCA.H"
+#include "PyTrilinos_LOCA_Headers.hpp"
 
 // Local include files
 #define NO_IMPORT_ARRAY
@@ -89,8 +89,6 @@ The python version of LOCA.Parameter supports the following classes:
 
 // Teuchos::RCP support
 %teuchos_rcp(LOCA::Parameter::Library)
-%teuchos_rcp(LOCA::Parameter::LibraryT)
-//%teuchos_rcp(LOCA::Parameter::Vector)
 
 // Import base class declarations
 

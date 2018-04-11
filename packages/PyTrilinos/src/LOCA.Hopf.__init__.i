@@ -97,9 +97,8 @@ and classes:
 #endif
 
 // LOCA include files
-#include "LOCA.H"
-#include "LOCA_Hopf_ComplexMultiVector.H"
-#include "LOCA_Hopf_ComplexVector.H"
+#include "PyTrilinos_LOCA_Headers.hpp"
+#include "PyTrilinos_LOCA_Hopf_Headers.hpp"
 
 // Local include files
 #define NO_IMPORT_ARRAY

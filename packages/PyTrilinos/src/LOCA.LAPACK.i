@@ -62,8 +62,7 @@ LOCA.LAPACK supports the following classes:
 
 %{
 // LOCA include files
-#include "LOCA.H"
-#include "LOCA_LAPACK.H"
+#include "PyTrilinos_LOCA_Headers.hpp"
 %}
 
 // Ignore/renames

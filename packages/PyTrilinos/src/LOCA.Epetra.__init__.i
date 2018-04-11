@@ -82,18 +82,9 @@ the following classes:
 #include "NOX_Epetra_Group.H"
 
 // LOCA include files
-#include "LOCA.H"
-#include "LOCA_Hopf_MooreSpence_ExtendedMultiVector.H"
-#include "LOCA_Hopf_MooreSpence_ExtendedVector.H"
-#include "LOCA_Hopf_MooreSpence_SalingerBordering.H"
-#include "LOCA_Hopf_MooreSpence_ExtendedGroup.H"
-#include "LOCA_Hopf_MinimallyAugmented_ExtendedGroup.H"
-#include "LOCA_Hopf_MinimallyAugmented_Constraint.H"
-#undef HAVE_STDINT_H
-#undef HAVE_INTTYPES_H
-#undef HAVE_SYS_TIME_H
-#include "LOCA_Epetra.H"
-#include "LOCA_Epetra_Group.H"
+#include "PyTrilinos_LOCA_Headers.hpp"
+#include "PyTrilinos_LOCA_Hopf_Headers.hpp"
+#include "PyTrilinos_LOCA_Epetra_Headers.hpp"
 
 // Namespace flattening
 using Teuchos::RCP;

@@ -163,6 +163,11 @@ def get_header_files():
             result.append("PyTrilinos_NOX_Epetra_Headers.hpp")
         if (WITH_PETSC):
             result.append("PyTrilinos_NOX_PETSc_Headers.hpp")
+    if (WITH_LOCA):
+        result.append("PyTrilinos_LOCA_Headers.hpp")
+        result.append("PyTrilinos_LOCA_Hopf_Headers.hpp")
+        if (WITH_EPETRA):
+            result.append("PyTrilinos_LOCA_Epetra_Headers.hpp")
 
     return result
 
@@ -360,7 +365,33 @@ def reorder_classnames(classnames):
     lowest-level base classes must appear first. Based on the logic here, the
     highest-level classes should appear first in the base_classes list.
     """
-    base_classes = ["NOX::Epetra::Interface::Jacobian",
+    base_classes = ["LOCA::MultiContinuation::ConstraintInterfaceMVDX",
+                    "LOCA::MultiContinuation::ConstraintInterface",
+                    "LOCA::Hopf::MooreSpence::SolverStrategy",
+                    "LOCA::Epetra::Interface::Required",
+                    "LOCA::Epetra::Group",
+                    "LOCA::MultiContinuation::ConstrainedGroup",
+                    "LOCA::Abstract::TransposeSolveGroup",
+                    "LOCA::Abstract::Group",
+                    "LOCA::PhaseTransition::AbstractGroup",
+                    "LOCA::Hopf::MinimallyAugmented::FiniteDifferenceGroup",
+                    "LOCA::Hopf::MooreSpence::FiniteDifferenceGroup",
+                    "LOCA::Hopf::MinimallyAugmented::AbstractGroup",
+                    "LOCA::Hopf::MooreSpence::AbstractGroup",
+                    "LOCA::TimeDependent::AbstractGroup",
+                    "LOCA::TurningPoint::MinimallyAugmented::FiniteDifferenceGroup",
+                    "LOCA::TurningPoint::MooreSpence::FiniteDifferenceGroup",
+                    "LOCA::MultiContinuation::FiniteDifferenceGroup",
+                    "LOCA::Pitchfork::MinimallyAugmented::AbstractGroup",
+                    "LOCA::Pitchfork::MooreSpence::AbstractGroup",
+                    "LOCA::Homotopy::AbstractGroup",
+                    "LOCA::TurningPoint::MinimallyAugmented::AbstractGroup",
+                    "LOCA::TurningPoint::MooreSpence::AbstractGroup",
+                    "LOCA::MultiContinuation::AbstractGroup",
+                    "NOX::Epetra::Group",
+                    "NOX::Abstract::Group",
+                    "NOX::Epetra::Interface::Required",
+                    "NOX::Epetra::Interface::Jacobian",
                     "NOX::Epetra::Interface::Preconditioner",
                     "NOX::StatusTest::Generic",
                     "Anasazi::OrthoManager<double, Epetra_MultiVector>",

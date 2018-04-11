@@ -85,7 +85,7 @@ LOCA.TurningPoint.MooreSpence supports the following classes:
 #endif
 
 // LOCA include files
-#include "LOCA.H"
+#include "PyTrilinos_LOCA_Headers.hpp"
 
 // Local include files
 #define NO_IMPORT_ARRAY

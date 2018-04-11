@@ -107,9 +107,8 @@ version of LOCA.Hopf.MooreSpence supports the following classes:
 #endif
 
 // LOCA include files
-#include "LOCA.H"
-#include "LOCA_Hopf_MooreSpence_ExtendedGroup.H"
-#include "LOCA_Hopf_MooreSpence_SalingerBordering.H"
+#include "PyTrilinos_LOCA_Headers.hpp"
+#include "PyTrilinos_LOCA_Hopf_Headers.hpp"
 
 // Local include files
 #define NO_IMPORT_ARRAY

@@ -1,5 +1,3 @@
-// -*- c++ -*-
-
 // @HEADER
 // ***********************************************************************
 //
@@ -42,52 +40,17 @@
 // ***********************************************************************
 // @HEADER
 
-%define %loca_stepsize_docstring
-"
-PyTrilinos.LOCA.StepSize is the python interface to namespace StepSize
-of the Trilinos continuation algorithm package LOCA:
+#ifndef PYTRILINOS_LOCA_HOPF_HEADERS_
+#define PYTRILINOS_LOCA_HOPF_HEADERS_
 
-    http://trilinos.sandia.gov/packages/nox
+// LOCA::Hopf include files
+#include "LOCA_Hopf_ComplexMultiVector.H"
+#include "LOCA_Hopf_ComplexVector.H"
+#include "LOCA_Hopf_MooreSpence_ExtendedGroup.H"
+#include "LOCA_Hopf_MooreSpence_ExtendedMultiVector.H"
+#include "LOCA_Hopf_MooreSpence_ExtendedVector.H"
+#include "LOCA_Hopf_MooreSpence_SalingerBordering.H"
+#include "LOCA_Hopf_MinimallyAugmented_ExtendedGroup.H"
+#include "LOCA_Hopf_MinimallyAugmented_Constraint.H"
 
-The purpose of LOCA.StepSize is to provide a collection of step size
-control strategies.  The python version of LOCA.StepSize supports the
-following classes:
-
-    * Factory  - Factory for creating step size control strategy objects
-"
-%enddef
-
-%module(package   = "PyTrilinos.LOCA",
-        docstring = %loca_stepsize_docstring) StepSize
-
-%{
-// Teuchos include files
-#include "PyTrilinos_Teuchos_Headers.hpp"
-
-// LOCA include files
-#include "PyTrilinos_LOCA_Headers.hpp"
-
-// Local include files
-#define NO_IMPORT_ARRAY
-#include "numpy_include.hpp"
-%}
-
-// Standard exception handling
-%include "exception.i"
-
-// Include LOCA documentation
-%feature("autodoc", "1");
-%include "LOCA_dox.i"
-
-// Ignore/renames
-%ignore *::operator=;
-
-// Trilinos module imports
-%import "Teuchos.i"
-%import "LOCA.Parameter.i"
-
-// Teuchos::RCP support
-%teuchos_rcp(LOCA::StepSize::Factory)
-
-// LOCA::StepSize Factory class
-%include "LOCA_StepSize_Factory.H"
+#endif
