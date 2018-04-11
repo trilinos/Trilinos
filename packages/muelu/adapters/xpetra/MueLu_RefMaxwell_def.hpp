@@ -55,7 +55,10 @@
 
 #include "MueLu_RefMaxwell_decl.hpp"
 #include "MueLu_UncoupledAggregationFactory.hpp"
+#include "MueLu_CoalesceDropFactory.hpp"
+#include "MueLu_AmalgamationFactory.hpp"
 #include "MueLu_TentativePFactory.hpp"
+#include "MueLu_CoarseMapFactory.hpp"
 #include "MueLu_SaPFactory.hpp"
 #include "MueLu_RAPFactory.hpp"
 #include "MueLu_TransPFactory.hpp"
@@ -424,23 +427,43 @@ namespace MueLu {
       P_nodal = Xpetra::IO<SC, LO, GO, NO>::Read(P_filename, A_nodal_Matrix_->getDomainMap());
     } else {
       Level fineLevel, coarseLevel;
-      RCP<MueLu::FactoryManagerBase> factoryHandler = rcp(new FactoryManager());
-      fineLevel.SetFactoryManager(factoryHandler);
-      coarseLevel.SetFactoryManager(factoryHandler);
+      fineLevel.SetFactoryManager(Teuchos::null);  
+      coarseLevel.SetFactoryManager(Teuchos::null);
       coarseLevel.SetPreviousLevel(rcpFromRef(fineLevel));
       fineLevel.SetLevelID(0);
       coarseLevel.SetLevelID(1);
       fineLevel.Set("A",A_nodal_Matrix_);
+      fineLevel.Set("DofsPerNode",1);
       coarseLevel.setlib(A_nodal_Matrix_->getDomainMap()->lib());
       fineLevel.setlib(A_nodal_Matrix_->getDomainMap()->lib());
 
-      RCP<TentativePFactory> TentativePFact = rcp(new TentativePFactory());
-      RCP<UncoupledAggregationFactory> Aggfact = rcp(new UncoupledAggregationFactory());
-      TentativePFact->SetFactory("Aggregates", Aggfact);
+      LocalOrdinal NSdim = 1;
+      RCP<MultiVector> nullSpace = MultiVectorFactory::Build(A_nodal_Matrix_->getRowMap(),NSdim);
+      nullSpace->putScalar(1.0);
+      fineLevel.Set("Nullspace",nullSpace);
 
-      coarseLevel.Request("P",TentativePFact.get());
+      RCP<AmalgamationFactory> amalgFact = rcp(new AmalgamationFactory());
+      RCP<CoalesceDropFactory> dropFact = rcp(new CoalesceDropFactory());
+      dropFact->SetFactory("UnAmalgamationInfo", amalgFact);
+      double dropTol = parameterList_.get("aggregation: drop tol",0.0);
+      dropFact->SetParameter("aggregation: drop tol",Teuchos::ParameterEntry(dropTol));
+
+      RCP<UncoupledAggregationFactory> UncoupledAggFact = rcp(new UncoupledAggregationFactory());
+      UncoupledAggFact->SetFactory("Graph", dropFact);
+
+      RCP<CoarseMapFactory> coarseMapFact = rcp(new CoarseMapFactory());
+      coarseMapFact->SetFactory("Aggregates", UncoupledAggFact);
+
+      RCP<TentativePFactory> TentativePFact = rcp(new TentativePFactory());
+      TentativePFact->SetFactory("Aggregates", UncoupledAggFact);
+      TentativePFact->SetFactory("UnAmalgamationInfo", amalgFact);
+      TentativePFact->SetFactory("CoarseMap", coarseMapFact);
+
+      coarseLevel.Request("P",TentativePFact.get());         // request Ptent
+      coarseLevel.Request(*TentativePFact);
       TentativePFact->Build(fineLevel,coarseLevel);
-      P_nodal = coarseLevel.Get<RCP<Matrix> >("P",TentativePFact.get());
+
+      coarseLevel.Get("P",P_nodal,TentativePFact.get());
     }
     if (dump_matrices_)
       Xpetra::IO<SC, LO, GO, NO>::Write(std::string("P_nodal.mat"), *P_nodal);
