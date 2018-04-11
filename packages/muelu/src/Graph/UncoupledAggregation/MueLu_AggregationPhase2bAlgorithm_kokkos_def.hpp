@@ -93,19 +93,17 @@ namespace MueLu {
     const int defaultConnectWeight = 100;
     const int penaltyConnectWeight = 10;
 
+    // This actually corresponds to the maximum number of entries per row in the matrix.
     const size_t maxNumNeighbors = graph.getNodeMaxNumRowEntries();
     int scratch_size = ScratchViewType::shmem_size( maxNumNeighbors );
 
     Kokkos::View<int*, memory_space> connectWeightView("connectWeight", numRows);
     Kokkos::View<int*, memory_space> aggPenaltiesView ("aggPenalties",  numRows);
 
-    typename Kokkos::View<int*, memory_space>::HostMirror h_connectWeightView =
-      Kokkos::create_mirror_view (connectWeightView);
     Kokkos::parallel_for("Aggregation Phase 2b: Initialize connectWeightView", numRows,
                          KOKKOS_LAMBDA (const LO i) {
-                           h_connectWeightView(i) = defaultConnectWeight;
+                           connectWeightView(i) = defaultConnectWeight;
                          });
-    Kokkos::deep_copy(connectWeightView,    h_connectWeightView);
 
     // We do this cycle twice.
     // I don't know why, but ML does it too
@@ -113,7 +111,10 @@ namespace MueLu {
     // non-aggregated nodes with a node distance of two are added to existing aggregates.
     // Assuming that the aggregate size is 3 in each direction running the algorithm only twice
     // should be sufficient.
-    for (int k = 0; k < 2; k++) {
+    int maxIters = 2;
+    int maxNodesPerAggregate = params.get<int>("aggregation: max agg size");
+    if(maxNodesPerAggregate == std::numeric_limits<int>::max()) {maxIters = 1;}
+    for (int k = 0; k < maxIters; k++) {
       // total work = numberOfTeams * teamSize
       Kokkos::TeamPolicy<execution_space> outerPolicy(numRows, Kokkos::AUTO);
       typedef typename Kokkos::TeamPolicy<execution_space>::member_type  member_type;
@@ -174,20 +175,23 @@ namespace MueLu {
                                     }
                                   }
 
-                                  if (bestScore >= 0) {
-                                    aggStatView   (vertexIdx)    = AGGREGATED;
-                                    vertex2AggIdView(vertexIdx, 0) = bestAggId;
-                                    procWinnerView  (vertexIdx, 0) = myRank;
+				  // Do the actual aggregate update with a single thread!
+				  Kokkos::single( Kokkos::PerTeam( teamMember ), [&] () {
+				      if (bestScore >= 0) {
+					aggStatView   (vertexIdx)    = AGGREGATED;
+					vertex2AggIdView(vertexIdx, 0) = bestAggId;
+					procWinnerView  (vertexIdx, 0) = myRank;
 
-                                    lNumNonAggregatedNodes--;
+					lNumNonAggregatedNodes--;
 
-                                    // This does not protect bestAggId's aggPenalties from being
-                                    // fetched by another thread before this update happens, it just
-                                    // guarantees that the update is performed correctly...
-                                    Kokkos::atomic_add(&aggPenaltiesView(bestAggId), 1);
-                                    connectWeightView(vertexIdx) = bestConnect
-                                      - penaltyConnectWeight;
-                                  }
+					// This does not protect bestAggId's aggPenalties from being
+					// fetched by another thread before this update happens, it just
+					// guarantees that the update is performed correctly...
+					Kokkos::atomic_add(&aggPenaltiesView(bestAggId), 1);
+					connectWeightView(vertexIdx) = bestConnect
+					  - penaltyConnectWeight;
+				      }
+				    });
                                 }
                               }, tmpNumNonAggregatedNodes);
       numNonAggregatedNodes += tmpNumNonAggregatedNodes;

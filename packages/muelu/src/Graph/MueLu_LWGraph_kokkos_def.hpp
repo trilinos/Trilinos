@@ -56,30 +56,18 @@ namespace MueLu {
 
   namespace { // anonymous
 
-    template<class LocalOrdinal, class RowType>
-    class MaxNumRowEntriesFunctor {
-    public:
-      MaxNumRowEntriesFunctor(RowType rowPointers) : rowPointers_(rowPointers) { }
+    template <class rowMapView>
+    struct maxNnzPerRow {
+      typedef typename Kokkos::Experimental::Max<size_t, typename rowMapView::execution_space>::value_type valueType;
+      rowMapView rowPointers_;
+
+      maxNnzPerRow(rowMapView rowPointers) : rowPointers_(rowPointers) {};
 
       KOKKOS_INLINE_FUNCTION
-      void operator()(const LocalOrdinal i, size_t& maxLength) const {
-        size_t d = rowPointers_(i+1) - rowPointers_(i);
-
-        maxLength = (d > maxLength ? d : maxLength);
+      void operator() (const int i, valueType &update) const {
+	size_t d = rowPointers_(i+1) - rowPointers_(i);
+	update = (d > update ? d : update);
       }
-
-      KOKKOS_INLINE_FUNCTION
-      void join(volatile size_t& dest, const volatile size_t& src) {
-        dest = (dest > src ? dest : src);
-      }
-
-      KOKKOS_INLINE_FUNCTION
-      void init(size_t& initValue) {
-        initValue = 0;
-      }
-
-    private:
-      RowType rowPointers_;
     };
 
   }
@@ -95,8 +83,13 @@ namespace MueLu {
     minLocalIndex_ = domainMap_->getMinLocalIndex();
     maxLocalIndex_ = domainMap_->getMaxLocalIndex();
 
-    MaxNumRowEntriesFunctor<LO,typename local_graph_type::row_map_type> maxNumRowEntriesFunctor(graph_.row_map);
-    Kokkos::parallel_reduce("MueLu:LWGraph:LWGraph:maxnonzeros", range_type(0,graph_.numRows()), maxNumRowEntriesFunctor, maxNumRowEntries_);
+    typedef typename Kokkos::Experimental::Max<size_t, execution_space> maxReducerType;
+    maxReducerType myMaxReducer(maxNumRowEntries_);
+
+    typename local_graph_type::row_map_type rowPointers = graph_.row_map;
+    maxNnzPerRow<typename local_graph_type::row_map_type> myMaxNnzPerRow(rowPointers);
+    Kokkos::parallel_reduce("MueLu:LWGraph:LWGraph:maxnonzeros", range_type(0, graph_.numRows()),
+			    myMaxNnzPerRow, myMaxReducer);
   }
 
 }

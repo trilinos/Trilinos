@@ -145,7 +145,7 @@ namespace MueLu {
     bDefinitionPhase_ = false;  // definition phase is finished, now all aggregation algorithm information is fixed
 
     if (pL.get<int>("aggregation: max agg size") == -1)
-      pL.set("aggregation: max agg size", Teuchos::OrdinalTraits<int>::max());
+      pL.set("aggregation: max agg size", std::numeric_limits<int>::max());
       // pL.set("aggregation: max agg size",INT_MAX);
 
     // define aggregation algorithms
