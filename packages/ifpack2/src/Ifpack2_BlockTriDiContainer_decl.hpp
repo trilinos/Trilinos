@@ -364,7 +364,8 @@ namespace Ifpack2 {
     // distructed objects
     Teuchos::RCP<const typename impl_type::tpetra_block_crs_matrix_type> A_;
     Teuchos::RCP<const typename impl_type::tpetra_import_type> tpetra_importer_;
-    Teuchos::RCP<const async_import_type> async_importer_;
+    Teuchos::RCP<async_import_type> async_importer_;
+    bool overlap_communication_and_computation_;
 
     // copy of Y (mutable to penentrate const)
     mutable typename impl_type::tpetra_multivector_type Z_;
@@ -380,6 +381,7 @@ namespace Ifpack2 {
     void initInternal (const Teuchos::RCP<const row_matrix_type>& matrix,
                        const Teuchos::Array<Teuchos::Array<local_ordinal_type> >& partitions,
                        const Teuchos::RCP<const import_type> &importer,
+                       const bool overlapCommAndComp,
                        const bool useSeqMethod);
 
     void clearInternal();

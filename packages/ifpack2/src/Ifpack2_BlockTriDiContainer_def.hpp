@@ -78,6 +78,7 @@ namespace Ifpack2 {
   initInternal (const Teuchos::RCP<const row_matrix_type>& matrix,
                 const Teuchos::Array<Teuchos::Array<local_ordinal_type> >& partitions,
                 const Teuchos::RCP<const import_type>& importer,
+                const bool overlapCommAndComp,
                 const bool useSeqMethod) 
   {
     using impl_type = BlockTriDiContainerDetails::ImplType<MatrixType>;
@@ -101,6 +102,11 @@ namespace Ifpack2 {
       // given importer is not null, then use it
       tpetra_importer_ = importer;
     }
+
+    if (async_importer_ == Teuchos::null) 
+      overlap_communication_and_computation_ = false;
+    else 
+      overlap_communication_and_computation_ = overlapCommAndComp;
     
     Z_ = typename impl_type::tpetra_multivector_type();
 
@@ -142,7 +148,8 @@ namespace Ifpack2 {
     : Container<MatrixType>(matrix, partitions, importer, OverlapLevel, DampingFactor)
   {
     const bool useSeqMethod = false;
-    initInternal(matrix, partitions, importer, useSeqMethod);
+    const bool overlapCommAndComp = false;
+    initInternal(matrix, partitions, importer, overlapCommAndComp, useSeqMethod);
   }
 
   template <typename MatrixType, typename LocalScalarType>
@@ -153,7 +160,7 @@ namespace Ifpack2 {
     : Container<MatrixType>(matrix, partitions, Teuchos::null, 0,
                             Kokkos::ArithTraits<magnitude_type>::one())
   {
-    initInternal(matrix, partitions, Teuchos::null, useSeqMethod);
+    initInternal(matrix, partitions, Teuchos::null, overlapCommAndComp, useSeqMethod);
   }
 
   template <typename MatrixType, typename LocalScalarType>
@@ -223,9 +230,12 @@ namespace Ifpack2 {
   {
     const magnitude_type tol = Kokkos::ArithTraits<magnitude_type>::zero();
     const int check_tol_every = 1;
+
     BlockTriDiContainerDetails::applyInverseJacobi<MatrixType>
       (A_,
        tpetra_importer_, 
+       async_importer_, 
+       overlap_communication_and_computation_,
        X, Y, Z_,
        part_interface_, block_tridiags_, a_minus_d_,
        work_,
@@ -287,6 +297,8 @@ namespace Ifpack2 {
       r_val = BlockTriDiContainerDetails::applyInverseJacobi<MatrixType>
         (A_,
          tpetra_importer_, 
+         async_importer_,
+         overlap_communication_and_computation_,
          X, Y, Z_,
          part_interface_, block_tridiags_, a_minus_d_,
          work_,

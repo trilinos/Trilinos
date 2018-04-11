@@ -435,24 +435,6 @@ namespace Ifpack2 {
         }
       }
 
-      void createDataBuffer(const local_ordinal_type &num_vectors) {
-        const size_type extent_0 = lids.recv.extent(0)*blocksize;
-        const size_type extent_1 = num_vectors;
-        if (remote_multivector.extent(0) == extent_0 &&
-            remote_multivector.extent(1) == extent_1) {
-          // skip
-        } else {
-          remote_multivector = 
-            impl_scalar_type_2d_view_host(do_not_initialize_tag("remote multivector"), extent_0, extent_1);
-
-          const auto send_buffer_size = offset.send[offset.send.extent(0)-1]*blocksize*num_vectors;
-          buffer.send = impl_scalar_type_1d_view_host(do_not_initialize_tag("buffer send"), send_buffer_size);
-
-          const auto recv_buffer_size = offset.recv[offset.recv.extent(0)-1]*blocksize*num_vectors;
-          buffer.recv = impl_scalar_type_1d_view_host(do_not_initialize_tag("buffer recv"), recv_buffer_size);
-        }
-      }
-
       struct ToBuffer {};
       struct ToMultiVector {};
 
@@ -494,6 +476,24 @@ namespace Ifpack2 {
       }
 
     public:
+      void createDataBuffer(const local_ordinal_type &num_vectors) {
+        const size_type extent_0 = lids.recv.extent(0)*blocksize;
+        const size_type extent_1 = num_vectors;
+        if (remote_multivector.extent(0) == extent_0 &&
+            remote_multivector.extent(1) == extent_1) {
+          // skip
+        } else {
+          remote_multivector = 
+            impl_scalar_type_2d_view_host(do_not_initialize_tag("remote multivector"), extent_0, extent_1);
+
+          const auto send_buffer_size = offset.send[offset.send.extent(0)-1]*blocksize*num_vectors;
+          buffer.send = impl_scalar_type_1d_view_host(do_not_initialize_tag("buffer send"), send_buffer_size);
+
+          const auto recv_buffer_size = offset.recv[offset.recv.extent(0)-1]*blocksize*num_vectors;
+          buffer.recv = impl_scalar_type_1d_view_host(do_not_initialize_tag("buffer recv"), recv_buffer_size);
+        }
+      }
+
       AsyncableImport (const Teuchos::RCP<const tpetra_map_type>& src_map,
                        const Teuchos::RCP<const tpetra_map_type>& tgt_map, 
                        const local_ordinal_type blocksize_,
@@ -509,7 +509,6 @@ namespace Ifpack2 {
 
         createMpiRequests(import);
         createSendRecvIDs(import);
-        createDataBuffer(1); // Optimistically set up for 1-vector case.
       }
 
       void asyncSendRecv(const impl_scalar_type_2d_view_host &mv) {
@@ -520,7 +519,6 @@ namespace Ifpack2 {
         // constants and reallocate data buffers if necessary
         const local_ordinal_type num_vectors = mv.extent(1);
         const local_ordinal_type mv_blocksize = blocksize*num_vectors;
-        createDataBuffer(num_vectors);
 
         // send async
         for (local_ordinal_type i=0,iend=pids.send.extent(0);i<iend;++i) {
@@ -582,13 +580,15 @@ namespace Ifpack2 {
         asyncSendRecv(mv);
         syncRecv();
       }
+
+      impl_scalar_type_2d_view_host getRemoteMultiVectorLocalView() const { return remote_multivector; }
     };
 
     ///
     /// setup async importer
     ///
     template<typename MatrixType>
-    Teuchos::RCP<const AsyncableImport<MatrixType> > 
+    Teuchos::RCP<AsyncableImport<MatrixType> > 
     createBlockCrsAsyncImporter(const Teuchos::RCP<const typename ImplType<MatrixType>::tpetra_block_crs_matrix_type> &A) {
       using impl_type = ImplType<MatrixType>;
       using map_type = typename impl_type::tpetra_map_type;
@@ -1782,6 +1782,7 @@ namespace Ifpack2 {
       using device_type = typename impl_type::device_type;
       using local_ordinal_type = typename impl_type::local_ordinal_type;
       using size_type = typename impl_type::size_type;
+      using impl_scalar_type = typename impl_type::impl_scalar_type;
       using magnitude_type = typename impl_type::magnitude_type;
       /// views
       using local_ordinal_type_1d_view = typename impl_type::local_ordinal_type_1d_view;
@@ -1789,14 +1790,17 @@ namespace Ifpack2 {
       using tpetra_block_access_view_type = typename impl_type::tpetra_block_access_view_type; // block crs (layout right)
       using impl_scalar_type_1d_view = typename impl_type::impl_scalar_type_1d_view; 
       using impl_scalar_type_2d_view = typename impl_type::impl_scalar_type_2d_view; // block multivector (layout left)
+      using vector_type_3d_view = typename impl_type::vector_type_3d_view;
 
       /// team policy member type (used in cuda)
       //using member_type = typename Kokkos::TeamPolicy<device_type>::member_type;      
  
     private:
       ConstUnmanaged<impl_scalar_type_2d_view> b;
-      ConstUnmanaged<impl_scalar_type_2d_view> x;
+      ConstUnmanaged<impl_scalar_type_2d_view> x; // x_owned
+      ConstUnmanaged<impl_scalar_type_2d_view> x_remote;
       /* */Unmanaged<impl_scalar_type_2d_view> y;
+      /* */Unmanaged<vector_type_3d_view> y_packed;
 
       // AmD information
       ConstUnmanaged<size_type_1d_view> rowptr;
@@ -1808,14 +1812,27 @@ namespace Ifpack2 {
       ConstUnmanaged<local_ordinal_type_1d_view> A_colind;
       const local_ordinal_type blocksize, blocksize_square;
 
+      // part interface
+      ConstUnmanaged<local_ordinal_type_1d_view> part2packrowidx0;
+      ConstUnmanaged<local_ordinal_type_1d_view> part2rowidx0;
+      ConstUnmanaged<local_ordinal_type_1d_view> lclrow;     
+      ConstUnmanaged<local_ordinal_type_1d_view> dm2cm;
+      const bool is_dm2cm_active;
+
       // block access
       ConstUnmanaged<tpetra_block_access_view_type> A_null_block;
-      
+
+      // enum for max blocksize and vector length
+      enum : int { vector_length = impl_type::vector_length, 
+                   max_blocksize = 32 };
+
     public:
       template<typename LocalCrsGraphType>
       ComputeResidualVector(const AmD<MatrixType> &amd,
                             const LocalCrsGraphType &graph,
-                            const local_ordinal_type blocksize_) 
+                            const local_ordinal_type blocksize_,
+                            const PartInterface<MatrixType> &interf,
+                            const local_ordinal_type_1d_view &dm2cm_) 
         : rowptr(amd.rowptr),
           colindsub(amd.A_colindsub),
           tpetra_values(amd.tpetra_values),
@@ -1823,16 +1840,19 @@ namespace Ifpack2 {
           A_colind(graph.entries),
           blocksize(blocksize_), 
           blocksize_square(blocksize_*blocksize_),
+          part2packrowidx0(interf.part2packrowidx0),
+          part2rowidx0(interf.part2rowidx0),
+          lclrow(interf.lclrow),
+          dm2cm(dm2cm_),
+          is_dm2cm_active(dm2cm_.span() > 0),
           A_null_block(NULL, blocksize_, blocksize_) {}
       
-      ///
-      /// host serial 
-      ///
+      struct SeqTag {};
       KOKKOS_INLINE_FUNCTION 
       void 
-      operator() (const local_ordinal_type& i) const {
+      operator() (const SeqTag &, const local_ordinal_type& i) const {
         using namespace KokkosBatched::Experimental;
-
+        
         // constants
         const magnitude_type one(1);
         const Kokkos::pair<local_ordinal_type,local_ordinal_type> block_range(0, blocksize);
@@ -1861,8 +1881,143 @@ namespace Ifpack2 {
           }
         }
       }
+
+      struct AsyncTag {};
+      KOKKOS_INLINE_FUNCTION 
+      void 
+      operator() (const AsyncTag &, const local_ordinal_type& partidx) const {
+        using namespace KokkosBatched::Experimental;
+
+        // constants        
+        const local_ordinal_type pri0  = part2packrowidx0(partidx);
+        const local_ordinal_type ri0   = part2rowidx0(partidx);
+        const local_ordinal_type nrows = part2rowidx0(partidx+1) - ri0;
+
+        const magnitude_type one(1);
+        const Kokkos::pair<local_ordinal_type,local_ordinal_type> block_range(0, blocksize);
+        const local_ordinal_type num_vectors = y.extent(1);
+        const local_ordinal_type vi = partidx % vector_length;
+        const local_ordinal_type num_local_rows = lclrow.extent(0);
+
+        // temporary buffer for y flat
+        impl_scalar_type yy_buf[max_blocksize];
+
+        // subview pattern
+        auto bb = Kokkos::subview(b, block_range, 0);
+        auto xx = Kokkos::subview(x, block_range, 0);
+        auto xx_remote = Kokkos::subview(x_remote, block_range, 0);
+        auto yy = Kokkos::View<impl_scalar_type*>(&yy_buf[0], blocksize);
+        auto A_block = A_null_block; // A_block is assumed to be compact (a dimension is equal to stride)
+
+        for (local_ordinal_type i=0;i<nrows;++i) {
+          const local_ordinal_type ri = ri0 + i;
+          const local_ordinal_type lr = lclrow(ri);
+          const local_ordinal_type row = lr*blocksize;
+          for (local_ordinal_type col=0;col<num_vectors;++col) {
+            // y := b
+            bb.assign_data(&b(row, col));
+            SerialCopy<Trans::NoTranspose>::invoke(bb, yy);
+
+            // y -= Rx
+            const size_type A_k0 = A_rowptr[lr];
+            for (size_type k=rowptr[lr];k<rowptr[lr+1];++k) {
+              const size_type j = A_k0 + colindsub[k];
+              A_block.assign_data( &tpetra_values(j*blocksize_square) );
+
+              const local_ordinal_type A_colind_at_j = A_colind[j];
+              if (A_colind_at_j < num_local_rows) {
+                const auto loc = is_dm2cm_active ? dm2cm[A_colind_at_j] : A_colind_at_j;
+                xx.assign_data( &x(loc*blocksize, col) );
+                SerialGemv<Trans::NoTranspose,Algo::Gemv::Blocked>::invoke(-one, A_block, xx, one, yy);
+              } else {
+                const auto loc = A_colind_at_j - num_local_rows;
+                xx_remote.assign_data( &x_remote(loc*blocksize, col) );
+                SerialGemv<Trans::NoTranspose,Algo::Gemv::Blocked>::invoke(-one, A_block, xx_remote, one, yy);
+              }
+            }
+            // move yy to y_packed
+            for (local_ordinal_type k=0;k<blocksize;++k) 
+              y_packed(pri0+i, k, col)[vi] += yy[k];
+          }
+        }
+      }
+
+      template <int P> struct OverlapTag { enum : int { value = P }; };
       
-      // y = b - Rx;
+      template<int P>
+      KOKKOS_INLINE_FUNCTION 
+      void 
+      operator() (const OverlapTag<P> &, const local_ordinal_type& partidx) const {
+        using namespace KokkosBatched::Experimental;
+
+        // constants        
+        const local_ordinal_type pri0  = part2packrowidx0(partidx);
+        const local_ordinal_type ri0   = part2rowidx0(partidx);
+        const local_ordinal_type nrows = part2rowidx0(partidx+1) - ri0;
+
+        const magnitude_type one(1);
+        const Kokkos::pair<local_ordinal_type,local_ordinal_type> block_range(0, blocksize);
+        const local_ordinal_type num_vectors = y.extent(1);
+        const local_ordinal_type vi = partidx % vector_length;
+        const local_ordinal_type num_local_rows = lclrow.extent(0);
+
+        // temporary buffer for y flat
+        impl_scalar_type yy_buf[max_blocksize];
+
+        // subview pattern
+        auto bb = Kokkos::subview(b, block_range, 0);
+        auto xx = Kokkos::subview(x, block_range, 0);
+        auto xx_remote = Kokkos::subview(x_remote, block_range, 0);
+        auto yy = Kokkos::View<impl_scalar_type*>(&yy_buf[0], blocksize);
+        auto A_block = A_null_block; // A_block is assumed to be compact (a dimension is equal to stride)
+
+        for (local_ordinal_type i=0;i<nrows;++i) {
+          const local_ordinal_type ri = ri0 + i;
+          const local_ordinal_type lr = lclrow(ri);
+          const local_ordinal_type row = lr*blocksize;
+          for (local_ordinal_type col=0;col<num_vectors;++col) {
+
+
+            if (P == 0) { 
+              // y := b
+              bb.assign_data(&b(row, col));
+              SerialCopy<Trans::NoTranspose>::invoke(bb, yy);
+            } else {
+              // y (temporary) := 0
+              for (local_ordinal_type k=0;k<blocksize;++k) 
+                yy[k] = 0;
+            }
+            
+            // y -= Rx
+            const size_type A_k0 = A_rowptr[lr];
+            for (size_type k=rowptr[lr];k<rowptr[lr+1];++k) {
+              const size_type j = A_k0 + colindsub[k];
+              A_block.assign_data( &tpetra_values(j*blocksize_square) );
+              
+              const local_ordinal_type A_colind_at_j = A_colind[j];
+              if (P == 0) {
+                const auto loc = is_dm2cm_active ? dm2cm[A_colind_at_j] : A_colind_at_j;
+                xx.assign_data( &x(loc*blocksize, col) );
+                SerialGemv<Trans::NoTranspose,Algo::Gemv::Blocked>::invoke(-one, A_block, xx, one, yy);
+              } else {
+                const auto loc = A_colind_at_j - num_local_rows;
+                xx_remote.assign_data( &x_remote(loc*blocksize, col) );
+                SerialGemv<Trans::NoTranspose,Algo::Gemv::Blocked>::invoke(-one, A_block, xx_remote, one, yy);
+              }
+            }
+            // move yy to y_packed
+            if (P == 0) {
+              for (local_ordinal_type k=0;k<blocksize;++k) 
+                y_packed(pri0+i, k, col)[vi] = yy[k];
+            } else {
+              for (local_ordinal_type k=0;k<blocksize;++k) 
+                y_packed(pri0+i, k, col)[vi] += yy[k];
+            }
+          }
+        }
+      }
+      
+      // y = b - Rx; seq method
       template<typename MultiVectorLocalViewTypeY,
                typename MultiVectorLocalViewTypeB,
                typename MultiVectorLocalViewTypeX>
@@ -1870,9 +2025,44 @@ namespace Ifpack2 {
                const MultiVectorLocalViewTypeB &b_, 
                const MultiVectorLocalViewTypeX &x_) {
         y = y_; b = b_; x = x_; 
-        Kokkos::RangePolicy<typename device_type::execution_space> policy(0, rowptr.extent(0) - 1);
+        Kokkos::RangePolicy<typename device_type::execution_space,SeqTag> policy(0, rowptr.extent(0) - 1);
         Kokkos::parallel_for(policy, *this);
       }
+
+      // y = b - R (x , x_remote)
+      template<typename MultiVectorLocalViewTypeB,
+               typename MultiVectorLocalViewTypeX,
+               typename MultiVectorLocalViewTypeX_Remote>
+      void run(const vector_type_3d_view &y_packed_, 
+               const MultiVectorLocalViewTypeB &b_, 
+               const MultiVectorLocalViewTypeX &x_,
+               const MultiVectorLocalViewTypeX_Remote &x_remote_) {
+        y_packed = y_packed_; b = b_; x = x_; x_remote = x_remote_;
+        
+        Kokkos::RangePolicy<typename device_type::execution_space,AsyncTag> policy(0, part2rowidx0.extent(0) - 1);
+        Kokkos::parallel_for(policy, *this);
+      }
+
+      // y = b - R (y , y_remote)
+      template<typename MultiVectorLocalViewTypeB,
+               typename MultiVectorLocalViewTypeX,
+               typename MultiVectorLocalViewTypeX_Remote>
+      void run(const vector_type_3d_view &y_packed_, 
+               const MultiVectorLocalViewTypeB &b_, 
+               const MultiVectorLocalViewTypeX &x_,
+               const MultiVectorLocalViewTypeX_Remote &x_remote_,
+               const bool compute_owned) {
+        y_packed = y_packed_; b = b_; x = x_; x_remote = x_remote_;
+
+        if (compute_owned) { 
+          Kokkos::RangePolicy<typename device_type::execution_space,OverlapTag<0> > policy(0, part2rowidx0.extent(0) - 1);
+          Kokkos::parallel_for(policy, *this);
+        } else {
+          Kokkos::RangePolicy<typename device_type::execution_space,OverlapTag<1> > policy(0, part2rowidx0.extent(0) - 1);
+          Kokkos::parallel_for(policy, *this);
+        }
+      }
+
     }; 
 
     ///
@@ -1954,6 +2144,9 @@ namespace Ifpack2 {
       // be done at this iteration, it waits for the reduction triggered by
       // ireduce to complete, then checks the global norm against the tolerance.
       bool checkDone (const int& sweep, const magnitude_type& tol2, const bool force = false) {
+        // early return 
+        if (sweep <= 0) return false;
+
 #ifdef HAVE_IFPACK2_BLOCKTRIDICONTAINER_TIMERS
         TEUCHOS_FUNC_TIME_MONITOR("BlockTriDi::NormManager::checkDone");
 #endif
@@ -2025,9 +2218,11 @@ namespace Ifpack2 {
     ///
     template<typename MatrixType>
     int 
-    applyInverseJacobi(// tpetra importer
+    applyInverseJacobi(// importer
                        const Teuchos::RCP<const typename ImplType<MatrixType>::tpetra_block_crs_matrix_type> &A,
-                       const Teuchos::RCP<const typename ImplType<MatrixType>::tpetra_import_type> &importer,
+                       const Teuchos::RCP<const typename ImplType<MatrixType>::tpetra_import_type> &tpetra_importer,
+                       const Teuchos::RCP<AsyncableImport<MatrixType> > &async_importer,
+                       const bool overlap_communication_and_computation,
                        // tpetra interface
                        const typename ImplType<MatrixType>::tpetra_multivector_type &X,  // tpetra interface
                        /* */ typename ImplType<MatrixType>::tpetra_multivector_type &Y,  // tpetra interface
@@ -2053,29 +2248,49 @@ namespace Ifpack2 {
       using local_ordinal_type = typename impl_type::local_ordinal_type;
       using size_type = typename impl_type::size_type;
       using magnitude_type = typename impl_type::magnitude_type;
+      using local_ordinal_type_1d_view = typename impl_type::local_ordinal_type_1d_view;
       using vector_type_1d_view = typename impl_type::vector_type_1d_view;
       using vector_type_3d_view = typename impl_type::vector_type_3d_view;
       using tpetra_multivector_type = typename impl_type::tpetra_multivector_type;
 
-      // input check
-      TEUCHOS_TEST_FOR_EXCEPT_MSG(max_num_sweeps <= 0, "Maximum number of sweeps must be >= 1.");
+      // either tpetra importer or async importer must be active
+      TEUCHOS_TEST_FOR_EXCEPT_MSG(tpetra_importer.is_null() && async_importer.is_null(), 
+                                  "Both Tpetra importer and Async importer are null.");
+      TEUCHOS_TEST_FOR_EXCEPT_MSG(!tpetra_importer.is_null() && !async_importer.is_null(), 
+                                  "Neither Tpetra importer nor Async importer is null.");
+      // max number of sweeps should be positive number
+      TEUCHOS_TEST_FOR_EXCEPT_MSG(max_num_sweeps <= 0, 
+                                  "Maximum number of sweeps must be >= 1.");
 
       // const parameters
       const bool is_norm_manager_active = tol > Kokkos::ArithTraits<magnitude_type>::zero();
+      const bool is_seq_method_requested = async_importer.is_null();
       const magnitude_type tolerance = tol*tol;
       const local_ordinal_type blocksize = btdm.values.extent(1);
       const local_ordinal_type num_vectors = Y.getNumVectors();
       const local_ordinal_type num_blockrows = interf.part2packrowidx0_back;
 
+      TEUCHOS_TEST_FOR_EXCEPT_MSG(is_norm_manager_active && is_seq_method_requested,
+                                  "The seq method for applyInverseJacobi, " << 
+                                  "which in any case is for developer use only, " <<
+                                  "does not support norm-based termination.");
+
       // if workspace is needed more, resize it
       const size_type work_span_required = num_blockrows*num_vectors*blocksize;
       if (work.span() < work_span_required) 
         work = vector_type_1d_view("vector workspace 1d view", work_span_required);
+     
+      typename AsyncableImport<MatrixType>::impl_scalar_type_2d_view_host remote_multivector;
+      if (is_seq_method_requested) {
+        // construct copy of Y again if num vectors are different
+        if (Z.getNumVectors() != num_vectors) 
+          Z = tpetra_multivector_type(tpetra_importer->getTargetMap(), num_vectors, false);
+      } else {
+        // create comm data buffer and keep it here
+        async_importer->createDataBuffer(num_vectors);
+        remote_multivector = async_importer->getRemoteMultiVectorLocalView();
+      }        
 
-      // construct copy of Y again if num vectors are different
-      if (Z.getNumVectors() != num_vectors) 
-        Z = tpetra_multivector_type(importer->getTargetMap(), num_vectors, false);
-    
       // wrap the workspace with 3d view
       vector_type_3d_view pmv(work.data(), num_blockrows, blocksize, num_vectors);
       const auto XX = X.template getLocalView<typename device_type::memory_space>();
@@ -2086,14 +2301,15 @@ namespace Ifpack2 {
       SolveTridiags<MatrixType> solve_tridiags(interf, btdm, pmv);
 
       ComputeResidualVector<MatrixType> 
-        compute_residual_vector(amd, A->getCrsGraph().getLocalGraph(), blocksize);
+        compute_residual_vector(amd, A->getCrsGraph().getLocalGraph(), blocksize, interf, 
+                                is_seq_method_requested ? local_ordinal_type_1d_view() : async_importer->dm2cm);
       
       // norm manager workspace resize
       if (is_norm_manager_active) {
         norm_manager.resize(blocksize, num_vectors);
         norm_manager.setCheckFrequency(check_tol_every);
       }
-      
+
       // // iterate
       int sweep = 0;
       for (;sweep<max_num_sweeps;++sweep) {
@@ -2101,11 +2317,29 @@ namespace Ifpack2 {
           // pmv := x(lclrow)
           multivector_converter.to_packed_multivector(XX);
         } else {
-          // y := x - R y; in this notation, zz = yy, yy = xx - amd zz
-          Z.doImport(Y, *importer, Tpetra::REPLACE);
-          compute_residual_vector.run(YY, XX, ZZ);
-          // pmv := y(lclrow).
-          multivector_converter.to_packed_multivector(YY);
+          if (is_seq_method_requested) {
+            // y := x - R y
+            Z.doImport(Y, *tpetra_importer, Tpetra::REPLACE);
+            compute_residual_vector.run(YY, XX, ZZ);
+            // pmv := y(lclrow).
+            multivector_converter.to_packed_multivector(YY);
+          } else {
+            // fused y := x - R y and pmv := y(lclrow); 
+            if (overlap_communication_and_computation) {
+              async_importer->asyncSendRecv(YY);
+              compute_residual_vector.run(pmv, XX, YY, remote_multivector, true);
+              if (is_norm_manager_active && norm_manager.checkDone(sweep, tolerance)) {
+                async_importer->cancel();
+                break;
+              }
+              async_importer->syncRecv();
+              compute_residual_vector.run(pmv, XX, YY, remote_multivector, false);
+            } else {
+              async_importer->syncExchange(YY);
+              if (is_norm_manager_active && norm_manager.checkDone(sweep, tolerance)) break;
+              compute_residual_vector.run(pmv, XX, YY, remote_multivector);
+            }
+          }
         }
         
         // pmv := inv(D) pmv.
