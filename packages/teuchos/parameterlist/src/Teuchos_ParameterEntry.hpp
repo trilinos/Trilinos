@@ -151,7 +151,10 @@ public:
   */
   template<typename T>
   inline
-  T getValue(T *ptr) const;
+  typename std::enable_if<std::is_integral<T>::value, T>::type getValue(T* /*ptr*/) const;
+  template<typename T>
+  inline
+  typename std::enable_if<!std::is_integral<T>::value, T>::type getValue(T* /*ptr*/) const;
 
   template<typename T>
   inline
@@ -366,7 +369,18 @@ T& ParameterEntry::getReference() const
 
 template<typename T>
 inline
-T ParameterEntry::getValue(T * /*ptr*/) const
+typename std::enable_if<std::is_integral<T>::value, T>::type ParameterEntry::getValue(T* /*ptr*/) const
+{
+  isUsed_ = true;
+  if (val_.type() == typeid(long long int)) {
+    return Teuchos::as<T>(Teuchos::any_cast<long long int>(val_)); 
+  }
+  return Teuchos::any_cast<T>( val_ );
+}
+
+template<typename T>
+inline
+typename std::enable_if<!std::is_integral<T>::value, T>::type ParameterEntry::getValue(T* /*ptr*/) const
 {
   isUsed_ = true;
   return Teuchos::any_cast<T>( val_ );
