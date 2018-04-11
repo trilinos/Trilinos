@@ -70,16 +70,11 @@ namespace Galeri {
   namespace Xpetra {
 
 // Add other Galeri functions as needed
-#define MUELU_GALERI_INST(LO,GO,NO) \
+#define MUELU_ETI_GROUP(LO,GO,NO) \
   template Teuchos::RCP<::Xpetra::Map<LO, GO, NO>> CreateMap<LO,GO,NO>(::Xpetra::UnderlyingLib lib, const std::string & mapType, const Teuchos::RCP<const Teuchos::Comm<int> >& comm, Teuchos::ParameterList & list);
 
-#ifdef HAVE_MUELU_TPETRA
-  TPETRA_INSTANTIATE_LGN(MUELU_GALERI_INST)
-#else
-  // MueLu requires at least one of T/Epetra.  Getting to this point indicates Tpetra is
-  // not available and so Epetra must be.  Therefore, we must instantiate directly.
-  MUELU_GALERI_INST(int,int,EpetraNode)
-#endif
+#include <MueLu_ETI_3arg.hpp>
+
   } //Xpetra namespace
 } //Galeri namespace
 

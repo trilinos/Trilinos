@@ -265,8 +265,12 @@ This base directory:
 
 contains the following files:
 
-* **ATDMDevEnv.cmake**: Reads vars out of the env (loaded with `load-env.sh`)
-  to set compilers and other options for the Trilinos build.
+* **ATDMDevEnvSettings.cmake**: Reads vars out of the env (loaded with
+  `load-env.sh`) to set compilers and other options for the Trilinos build.
+  It also default enables all of the TPLs used in ATDM configurations of
+  Trilinos.  However, this file does **not** include `ATDMDisables.cmake`.
+  Therefore, this file can be used to set up builds of Trilinos that enable
+  arbitrary sets of packages.
 
 * **ATDMDisables.cmake**: Disables a bunch of Trilinos packages and
   subpackages not used by ATDM application customers.  This file gets included
@@ -274,6 +278,9 @@ contains the following files:
   configures of Trilinos).  But this file is also included in the outer `ctest
   -S` driver script code for ATDM builds of Trilinos which is needed for
   correct package-by-package testing of Trilinos.
+
+* **ATDMDevEnv.cmake**: Includes `ATDMDevEnvSettings.cmake` and
+  `ATDMDisables.cmake`.
 
 * **checkin-test-atdm.sh**: Uses the `Trilinos/checkin-test.py` script to
   drive builds and tests on the given platform.  (See comments in the top of

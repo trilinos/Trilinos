@@ -195,7 +195,7 @@ buildAndRegisterEquationSetEvaluators(
   {
     vector<string> residualOperatorNames{laplacianName, helmholtzName,
       sourceName};
-    this->buildAndRegisterResidualSummationEvalautor(fm, dofName_,
+    this->buildAndRegisterResidualSummationEvaluator(fm, dofName_,
       residualOperatorNames);
   }
 } // end of buildAndRegisterEquationSetEvaluators()

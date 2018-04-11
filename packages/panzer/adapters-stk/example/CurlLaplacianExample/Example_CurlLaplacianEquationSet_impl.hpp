@@ -224,7 +224,7 @@ buildAndRegisterEquationSetEvaluators(PHX::FieldManager<panzer::Traits>& fm,
     if (this->buildTransientSupport())
       sum_names.push_back("RESIDUAL_EFIELD_TRANSIENT_OP");
 
-    this->buildAndRegisterResidualSummationEvalautor(fm,"EFIELD",sum_names);
+    this->buildAndRegisterResidualSummationEvaluator(fm,"EFIELD",sum_names);
   }
 
 }

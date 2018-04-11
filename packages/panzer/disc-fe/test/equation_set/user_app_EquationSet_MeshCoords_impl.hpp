@@ -180,7 +180,7 @@ buildAndRegisterEquationSetEvaluators(PHX::FieldManager<panzer::Traits>& fm,
       residual_operator_names.push_back("RESIDUAL_"+dof_names[i]+"_TRANSIENT_OP");
       residual_operator_names.push_back("RESIDUAL_"+dof_names[i]+"_SOURCE_OP");
 
-      this->buildAndRegisterResidualSummationEvalautor(fm,dof_names[i],residual_operator_names);
+      this->buildAndRegisterResidualSummationEvaluator(fm,dof_names[i],residual_operator_names);
     }
   }
 }

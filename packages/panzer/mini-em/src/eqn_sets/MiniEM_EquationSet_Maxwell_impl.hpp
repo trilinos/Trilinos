@@ -149,7 +149,7 @@ buildAndRegisterEquationSetEvaluators(PHX::FieldManager<panzer::Traits>& fm,
       residual_operator_names.push_back(resid);
     }
 
-    this->buildAndRegisterResidualSummationEvalautor(fm,m_Efield_dof_name,residual_operator_names);
+    this->buildAndRegisterResidualSummationEvaluator(fm,m_Efield_dof_name,residual_operator_names);
   }
   {
     //Build the B Field equation
@@ -192,7 +192,7 @@ buildAndRegisterEquationSetEvaluators(PHX::FieldManager<panzer::Traits>& fm,
       this->template registerEvaluator<EvalT>(fm, op);
       residual_operator_names.push_back(resid);
     }
-    this->buildAndRegisterResidualSummationEvalautor(fm,m_Bfield_dof_name,residual_operator_names);
+    this->buildAndRegisterResidualSummationEvaluator(fm,m_Bfield_dof_name,residual_operator_names);
   }
 
 
