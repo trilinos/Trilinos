@@ -278,7 +278,7 @@ $ cmake \
 
 $ make -j16
 
-$ srun -N 1 --time=600 --account=<YOUR_WCID> -J $JOB_NAME  -e output.error ctest -j16
+$ srun -N 1 --time=600 --account=<YOUR_WCID> -J $JOB_NAME ctest -j16
 ```
 
 To get information on <YOUR_WCID> used above, there is a WC tool tab on computing.sandia.gov 
