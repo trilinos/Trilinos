@@ -867,8 +867,8 @@ void BelosLinearOpWithSolveFactory<Scalar>::initializeOpImpl(
       // Set the PL
       if(paramList_.get()) {
         Teuchos::ParameterList &solverTypesPL = paramList_->sublist(SolverTypes_name);
-        Teuchos::ParameterList &minresPL = solverTypesPL.sublist(TFQMR_name);
-        solverPL = Teuchos::rcp( &minresPL, false );
+        Teuchos::ParameterList &tfqmrPL = solverTypesPL.sublist(TFQMR_name);
+        solverPL = Teuchos::rcp( &tfqmrPL, false );
       }
       // Create the solver
       if (oldIterSolver != Teuchos::null) {
@@ -886,8 +886,8 @@ void BelosLinearOpWithSolveFactory<Scalar>::initializeOpImpl(
       // Set the PL
       if(paramList_.get()) {
         Teuchos::ParameterList &solverTypesPL = paramList_->sublist(SolverTypes_name);
-        Teuchos::ParameterList &minresPL = solverTypesPL.sublist(FixedPoint_name);
-        solverPL = Teuchos::rcp( &minresPL, false );
+        Teuchos::ParameterList &fixedPointPL = solverTypesPL.sublist(FixedPoint_name);
+        solverPL = Teuchos::rcp( &fixedPointPL, false );
       }
       // Create the solver
       if (oldIterSolver != Teuchos::null) {
