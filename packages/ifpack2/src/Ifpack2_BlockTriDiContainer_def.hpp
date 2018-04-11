@@ -77,7 +77,8 @@ namespace Ifpack2 {
   BlockTriDiContainer<MatrixType, LocalScalarType>::
   initInternal (const Teuchos::RCP<const row_matrix_type>& matrix,
                 const Teuchos::Array<Teuchos::Array<local_ordinal_type> >& partitions,
-                const Teuchos::RCP<const import_type>& importer) 
+                const Teuchos::RCP<const import_type>& importer,
+                const bool useSeqMethod) 
   {
     using impl_type = BlockTriDiContainerDetails::ImplType<MatrixType>;
     using block_crs_matrix_type = typename impl_type::tpetra_block_crs_matrix_type;
@@ -86,8 +87,21 @@ namespace Ifpack2 {
     TEUCHOS_TEST_FOR_EXCEPT_MSG
       (A_.is_null(), "BlockTriDiContainer currently supports Tpetra::BlockCrsMatrix only.");
 
-    tpetra_importer_ = (importer == Teuchos::null ? BlockTriDiContainerDetails::createBlockCrsTpetraImporter<MatrixType>(A_) : importer);
+    tpetra_importer_ = Teuchos::null;
+    async_importer_  = Teuchos::null;
 
+    if (importer == Teuchos::null) {
+      // first try to create async importer
+      if (useSeqMethod == false)
+        async_importer_ = BlockTriDiContainerDetails::createBlockCrsAsyncImporter<MatrixType>(A_);
+      // somehow async importer is not created, then create standard tpetra importer
+      if (async_importer_ == Teuchos::null) 
+        tpetra_importer_ = BlockTriDiContainerDetails::createBlockCrsTpetraImporter<MatrixType>(A_);
+    } else {
+      // given importer is not null, then use it
+      tpetra_importer_ = importer;
+    }
+    
     Z_ = typename impl_type::tpetra_multivector_type();
 
     part_interface_  = BlockTriDiContainerDetails::createPartInterface<MatrixType>(A_, partitions);
@@ -108,6 +122,7 @@ namespace Ifpack2 {
     
     A_ = Teuchos::null;
     tpetra_importer_ = Teuchos::null;
+    async_importer_  = Teuchos::null;
 
     Z_ = typename impl_type::tpetra_multivector_type();
 
@@ -126,7 +141,8 @@ namespace Ifpack2 {
                        int OverlapLevel, scalar_type DampingFactor)
     : Container<MatrixType>(matrix, partitions, importer, OverlapLevel, DampingFactor)
   {
-    initInternal(matrix, partitions, importer);
+    const bool useSeqMethod = false;
+    initInternal(matrix, partitions, importer, useSeqMethod);
   }
 
   template <typename MatrixType, typename LocalScalarType>
@@ -137,7 +153,7 @@ namespace Ifpack2 {
     : Container<MatrixType>(matrix, partitions, Teuchos::null, 0,
                             Kokkos::ArithTraits<magnitude_type>::one())
   {
-    initInternal(matrix, partitions, Teuchos::null);
+    initInternal(matrix, partitions, Teuchos::null, useSeqMethod);
   }
 
   template <typename MatrixType, typename LocalScalarType>

@@ -192,6 +192,11 @@ namespace Ifpack2 {
       typedef typename Kokkos::ArithTraits<impl_scalar_type>::mag_type magnitude_type;
 
       ///
+      /// default host execution space
+      ///
+      typedef Kokkos::DefaultHostExecutionSpace host_execution_space;
+      
+      ///
       /// tpetra types
       ///
       typedef typename node_type::device_type device_type;      
@@ -250,10 +255,10 @@ namespace Ifpack2 {
     ///
     template<typename MatrixType>
     typename Teuchos::RCP<const typename ImplType<MatrixType>::tpetra_import_type> 
-    createBlockCrsTpetraImporter
-    (const Teuchos::RCP<const typename ImplType<MatrixType>::tpetra_block_crs_matrix_type> &A) {
-      using map_type = typename ImplType<MatrixType>::tpetra_map_type;
-      using mv_type = typename ImplType<MatrixType>::tpetra_block_multivector_type;
+    createBlockCrsTpetraImporter(const Teuchos::RCP<const typename ImplType<MatrixType>::tpetra_block_crs_matrix_type> &A) {
+      using impl_type = ImplType<MatrixType>;
+      using map_type = typename impl_type::tpetra_map_type;
+      using mv_type = typename impl_type::tpetra_block_multivector_type;
       
       const auto g = A->getCrsGraph();  // tpetra crs graph object
       const auto blocksize = A->getBlockSize();
@@ -261,6 +266,385 @@ namespace Ifpack2 {
       const auto tgt = Teuchos::rcp(new map_type(mv_type::makePointMap(*g.getColMap()   , blocksize)));
 
       return Teuchos::rcp(new typename ImplType<MatrixType>::tpetra_import_type(src, tgt));
+    }
+
+    // Partial replacement for forward-mode MultiVector::doImport. 
+    // Permits overlapped communication and computation, but also supports sync'ed. 
+    // I'm finding that overlapped comm/comp can give quite poor performance on some
+    // platforms, so we can't just use it straightforwardly always.
+
+    // we first try to communicate everything explicitly without relying on
+    // gpu aware mpi, which means that data is moved to host explicitly and 
+    // communicate among mpi ranks. I am not fully convinced that gpu aware mpi 
+    // communication gains efficiency in sparse data
+    template<typename MatrixType>
+    struct AsyncableImport {
+    public:
+      using impl_type = ImplType<MatrixType>;
+
+    private:
+      ///
+      /// MPI wrapper
+      ///
+#if !defined(HAVE_MPI)
+      typedef int MPI_Request;
+      typedef int MPI_Comm;
+#endif
+      /// teuchos mpi type traits does not recorgnize kokkos::complex (impl_scalar_type)
+      /// use scalar_type for communication data type enum
+      using scalar_type = typename impl_type::scalar_type;
+
+      template <typename T>
+      static int isend(const MPI_Comm comm, const T* buf, int count, int dest, int tag, MPI_Request* ireq) {
+#ifdef HAVE_MPI
+        MPI_Request ureq;
+        const auto dt = Teuchos::Details::MpiTypeTraits<scalar_type>::getType();
+        int ret = MPI_Isend(const_cast<T*>(buf), count, dt, dest, tag, comm, ireq == NULL ? &ureq : ireq);
+        if (ireq == NULL) MPI_Request_free(&ureq);
+        return ret;
+#else
+        return 0;
+#endif
+      }
+
+      template <typename T>
+      static int irecv(const MPI_Comm comm, T* buf, int count, int src, int tag, MPI_Request* ireq) {
+#ifdef HAVE_MPI
+        MPI_Request ureq;
+        const auto dt = Teuchos::Details::MpiTypeTraits<scalar_type>::getType();
+        int ret = MPI_Irecv(buf, count, dt, src, tag, comm, ireq == NULL ? &ureq : ireq);
+        if (ireq == NULL) MPI_Request_free(&ureq);
+        return ret;
+#else
+        return 0;
+#endif
+      }
+
+      static int waitany(int count, MPI_Request* reqs, int* index) {
+#ifdef HAVE_MPI
+        return MPI_Waitany(count, reqs, index, MPI_STATUS_IGNORE);
+#else
+        return 0;
+#endif
+      }
+
+      static int waitall(int count, MPI_Request* reqs) {
+#ifdef HAVE_MPI
+        return MPI_Waitall(count, reqs, MPI_STATUS_IGNORE);
+#else
+        return 0;
+#endif
+      }
+      
+    public:
+      using tpetra_map_type = typename impl_type::tpetra_map_type;
+      using tpetra_import_type = typename impl_type::tpetra_import_type;
+
+      using local_ordinal_type = typename impl_type::local_ordinal_type;
+      using global_ordinal_type = typename impl_type::global_ordinal_type;
+      using size_type = typename impl_type::size_type;
+      using impl_scalar_type = typename impl_type::impl_scalar_type;
+
+      // here we use everything on host space (device memory should be moved into host for communication)
+      using host_execution_space = typename impl_type::host_execution_space;
+      using int_1d_view_host = Kokkos::View<int*,host_execution_space>;
+      using local_ordinal_type_1d_view_host = typename impl_type::local_ordinal_type_1d_view::HostMirror;
+      using size_type_1d_view_host = typename impl_type::size_type_1d_view::HostMirror;
+      using impl_scalar_type_1d_view_host = typename impl_type::impl_scalar_type_1d_view::HostMirror;
+      using impl_scalar_type_2d_view_host = typename impl_type::impl_scalar_type_2d_view::HostMirror;
+
+      // dm2cm permutation should happen on device
+      using local_ordinal_type_1d_view = typename impl_type::local_ordinal_type_1d_view;
+      using do_not_initialize_tag = Kokkos::ViewAllocateWithoutInitializing;
+
+      MPI_Comm comm;
+      impl_scalar_type_2d_view_host remote_multivector;
+      local_ordinal_type blocksize;
+      
+      template<typename T>
+      struct SendRecvPair {
+        T send, recv;
+      };
+
+      // (s)end and (r)eceive data:
+      SendRecvPair<int_1d_view_host> pids;                // mpi ranks
+      SendRecvPair<std::vector<MPI_Request> > reqs;       // MPI_Request is pointer, cannot use kokkos view
+      SendRecvPair<size_type_1d_view_host> offset;        // offsets to local id list and data buffer
+      SendRecvPair<local_ordinal_type_1d_view_host> lids; // local id list
+      SendRecvPair<impl_scalar_type_1d_view_host> buffer; // data buffer
+
+      local_ordinal_type_1d_view dm2cm; // permutation
+
+    private:
+
+      void createMpiRequests(const tpetra_import_type &import) {
+        Tpetra::Distributor &distributor = import.getDistributor();
+
+        // copy pids from distributor
+        const auto pids_from = distributor.getProcsFrom();
+        pids.recv = int_1d_view_host(do_not_initialize_tag("pids recv"), pids_from.size());
+        memcpy(pids.recv.data(), pids_from.getRawPtr(), sizeof(int)*pids.recv.extent(0));
+
+        const auto pids_to = distributor.getProcsTo();
+        pids.send = int_1d_view_host(do_not_initialize_tag("pids send"), pids_to.size());
+        memcpy(pids.send.data(), pids_to.getRawPtr(), sizeof(int)*pids.send.extent(0));
+        
+        // mpi requests 
+        reqs.recv.resize(pids.recv.extent(0));
+        reqs.send.resize(pids.send.extent(0));
+        
+        // construct offsets
+        const auto lengths_to = distributor.getLengthsTo();
+        offset.send = size_type_1d_view_host(do_not_initialize_tag("offset send"), lengths_to.size() + 1);
+        
+        const auto lengths_from = distributor.getLengthsFrom();
+        offset.recv = size_type_1d_view_host(do_not_initialize_tag("offset recv"), lengths_from.size() + 1);
+        
+        auto set_offset_values = [](const Teuchos::ArrayView<const size_t> &lens, 
+                                    const size_type_1d_view_host &offs) { 
+          const Kokkos::RangePolicy<host_execution_space> policy(0,lens.size());
+          Kokkos::parallel_scan
+          (policy,
+           KOKKOS_LAMBDA(const local_ordinal_type &i, size_type &update, const bool &final) {
+            if (final) 
+              offs(i) = update;
+            update += lens[i];
+          });
+        };
+        set_offset_values(lengths_to,   offset.send);
+        set_offset_values(lengths_from, offset.recv);
+      }
+
+      void createSendRecvIDs(const tpetra_import_type &import) {
+        // For each remote PID, the list of LIDs to receive.
+        const auto remote_lids = import.getRemoteLIDs();
+        lids.recv = local_ordinal_type_1d_view_host(do_not_initialize_tag("lids recv"), remote_lids.size());
+        memcpy(lids.recv.data(), remote_lids.getRawPtr(), sizeof(local_ordinal_type)*lids.recv.extent(0));
+
+        // For each export PID, the list of LIDs to send.
+        auto epids = import.getExportPIDs();
+        auto elids = import.getExportLIDs();
+        TEUCHOS_ASSERT(epids.size() == elids.size());
+        lids.send = local_ordinal_type_1d_view_host(do_not_initialize_tag("lids send"), elids.size());
+
+        // naive search (not sure if pids or epids are sorted)
+        for (local_ordinal_type cnt=0,i=0,iend=pids.send.extent(0);i<iend;++i) {
+          const auto pid_send_value = pids.send[i];
+          for (local_ordinal_type j=0,jend=epids.size();j<jend;++j)
+            if (epids[j] == pid_send_value) lids.send[cnt++] = elids[j];
+        }
+      }
+
+      void createDataBuffer(const local_ordinal_type &num_vectors) {
+        const size_type extent_0 = lids.recv.extent(0)*blocksize;
+        const size_type extent_1 = num_vectors;
+        if (remote_multivector.extent(0) == extent_0 &&
+            remote_multivector.extent(1) == extent_1) {
+          // skip
+        } else {
+          remote_multivector = 
+            impl_scalar_type_2d_view_host(do_not_initialize_tag("remote multivector"), extent_0, extent_1);
+
+          const auto send_buffer_size = offset.send[offset.send.extent(0)-1]*blocksize*num_vectors;
+          buffer.send = impl_scalar_type_1d_view_host(do_not_initialize_tag("buffer send"), send_buffer_size);
+
+          const auto recv_buffer_size = offset.recv[offset.recv.extent(0)-1]*blocksize*num_vectors;
+          buffer.recv = impl_scalar_type_1d_view_host(do_not_initialize_tag("buffer recv"), recv_buffer_size);
+        }
+      }
+
+      struct ToBuffer {};
+      struct ToMultiVector {};
+
+      template<typename PackTag>
+      static 
+      void copy(const local_ordinal_type_1d_view_host &lids_,
+                const impl_scalar_type_1d_view_host &buffer_,
+                const local_ordinal_type &ibeg_, 
+                const local_ordinal_type &iend_,
+                const impl_scalar_type_2d_view_host &multivector_,
+                const local_ordinal_type blocksize_) {
+        const local_ordinal_type num_vectors = multivector_.extent(1);
+        const size_type datasize = blocksize_*sizeof(impl_scalar_type);
+        if (num_vectors == 1) {
+          const Kokkos::RangePolicy<host_execution_space> policy(ibeg_, iend_);
+          Kokkos::parallel_for
+            (policy,
+             KOKKOS_LAMBDA(const local_ordinal_type &i) {
+              auto aptr = buffer_.data() + blocksize_*i;
+              auto bptr = multivector_.data() + blocksize_*lids_(i);
+              if (std::is_same<PackTag,ToBuffer>::value) memcpy(aptr, bptr, datasize);
+              else                                       memcpy(bptr, aptr, datasize);
+            });
+        } else { 
+          const local_ordinal_type diff = iend_ - ibeg_;
+          Kokkos::MDRangePolicy
+            <host_execution_space, Kokkos::Rank<2>, Kokkos::IndexType<local_ordinal_type> > 
+            policy( { ibeg_, 0 }, { iend_, num_vectors } );
+          Kokkos::parallel_for
+            (policy,
+             KOKKOS_LAMBDA(const local_ordinal_type &i,
+                           const local_ordinal_type &j) { 
+              auto aptr = buffer_.data() + blocksize_*(i + diff*j);
+              auto bptr = &multivector_(blocksize_*lids_(i), j);
+              if (std::is_same<PackTag,ToBuffer>::value) memcpy(aptr, bptr, datasize);
+              else                                       memcpy(bptr, aptr, datasize);
+            });
+        }
+      }
+
+    public:
+      AsyncableImport (const Teuchos::RCP<const tpetra_map_type>& src_map,
+                       const Teuchos::RCP<const tpetra_map_type>& tgt_map, 
+                       const local_ordinal_type blocksize_,
+                       const local_ordinal_type_1d_view dm2cm_) {
+        blocksize = blocksize_;
+        dm2cm = dm2cm_;
+
+        const auto mpi_comm = Teuchos::rcp_dynamic_cast<const Teuchos::MpiComm<int> >(tgt_map->getComm());
+        TEUCHOS_ASSERT(!mpi_comm.is_null());
+        comm = *mpi_comm->getRawMpiComm();
+
+        const tpetra_import_type import(src_map, tgt_map);
+
+        createMpiRequests(import);
+        createSendRecvIDs(import);
+        createDataBuffer(1); // Optimistically set up for 1-vector case.
+      }
+
+      void asyncSendRecv(const impl_scalar_type_2d_view_host &mv) {
+#ifdef HAVE_IFPACK2_BLOCKTRIDICONTAINER_TIMERS
+        TEUCHOS_FUNC_TIME_MONITOR("BlockTriDi::Async_Setup::async_setup");
+#endif
+#ifdef HAVE_MPI
+        // constants and reallocate data buffers if necessary
+        const local_ordinal_type num_vectors = mv.extent(1);
+        const local_ordinal_type mv_blocksize = blocksize*num_vectors;
+        createDataBuffer(num_vectors);
+
+        // send async
+        for (local_ordinal_type i=0,iend=pids.send.extent(0);i<iend;++i) {
+          copy<ToBuffer>(lids.send, buffer.send, offset.send(i), offset.send(i+1), 
+                             mv, blocksize);
+          isend(comm, 
+                buffer.send.data() + offset.send[i]*mv_blocksize,
+                (offset.send[i+1] - offset.send[i])*mv_blocksize,
+                pids.send[i], 
+                42,
+                &reqs.send[i]);
+        }
+
+        // receive async
+        for (local_ordinal_type i=0,iend=pids.recv.extent(0);i<iend;++i) {
+          irecv(comm, 
+                buffer.recv.data() + offset.recv[i]*mv_blocksize,
+                (offset.recv[i+1] - offset.recv[i])*mv_blocksize,
+                pids.recv[i],
+                42,
+                &reqs.recv[i]);
+        }
+
+        // I find that issuing an Iprobe seems to nudge some MPIs into action,
+        // which helps with overlapped comm/comp performance.
+        for (local_ordinal_type i=0,iend=pids.recv.extent(0);i<iend;++i) {
+          int flag;
+          MPI_Status stat;
+          MPI_Iprobe(pids.recv[i], 42, comm, &flag, &stat);
+        }
+#endif
+      }
+
+      void cancel () {
+#ifdef HAVE_MPI
+        for (local_ordinal_type i=0,iend=pids.recv.extent(0);i<iend;++i)
+          MPI_Cancel(&reqs.recv[i]);
+#endif
+      }
+
+      void syncRecv() {
+#ifdef HAVE_IFPACK2_BLOCKTRIDICONTAINER_TIMERS
+        TEUCHOS_FUNC_TIME_MONITOR("BlockTriDi::Async_Setup::sync_receive");
+#endif
+#ifdef HAVE_MPI
+        // receive async.
+        for (local_ordinal_type i=0,iend=pids.recv.extent(0);i<iend;++i) {
+          local_ordinal_type idx;
+          waitany(pids.recv.extent(0), reqs.recv.data(), &idx);
+          copy<ToMultiVector>(lids.recv, buffer.recv, offset.recv(idx), offset.recv(idx+1),
+                              remote_multivector, blocksize);
+        }
+        // wait on the sends to match all Isends with a cleanup operation.
+        waitall(reqs.send.size(), reqs.send.data());
+#endif
+      }
+
+      void syncExchange(const impl_scalar_type_2d_view_host &mv) {
+        asyncSendRecv(mv);
+        syncRecv();
+      }
+    };
+
+    ///
+    /// setup async importer
+    ///
+    template<typename MatrixType>
+    Teuchos::RCP<const AsyncableImport<MatrixType> > 
+    createBlockCrsAsyncImporter(const Teuchos::RCP<const typename ImplType<MatrixType>::tpetra_block_crs_matrix_type> &A) {
+      using impl_type = ImplType<MatrixType>;
+      using map_type = typename impl_type::tpetra_map_type;
+      using mv_type = typename impl_type::tpetra_block_multivector_type;
+      using local_ordinal_type = typename impl_type::local_ordinal_type;
+      using global_ordinal_type = typename impl_type::global_ordinal_type;
+      using local_ordinal_type_1d_view = typename impl_type::local_ordinal_type_1d_view;
+
+      const auto g = A->getCrsGraph();  // tpetra crs graph object
+      const auto blocksize = A->getBlockSize();
+      const auto domain_map = g.getDomainMap();
+      const auto column_map = g.getColMap();
+
+      std::vector<global_ordinal_type> gids;
+      bool separate_remotes = true, found_first = false, need_owned_permutation = false;      
+      for (size_t i=0;i<column_map->getNodeNumElements();++i) {
+        const global_ordinal_type gid = column_map->getGlobalElement(i);
+        if (!domain_map->isNodeGlobalElement(gid)) {
+          found_first = true;
+          gids.push_back(gid);
+        } else if (found_first) {
+          separate_remotes = false;
+          break;
+        }
+        if (!need_owned_permutation && 
+            domain_map->getLocalElement(gid) != static_cast<local_ordinal_type>(i)) {
+          // The owned part of the domain and column maps are different
+          // orderings. We *could* do a super efficient impl of this case in the
+          // num_sweeps > 1 case by adding complexity to PermuteAndRepack. But,
+          // really, if a caller cares about speed, they wouldn't make different
+          // local permutations like this. So we punt on the best impl and go for
+          // a pretty good one: the permutation is done in place in
+          // compute_b_minus_Rx for the pure-owned part of the MVP. The only cost
+          // is the presumably worse memory access pattern of the input vector.
+          need_owned_permutation = true;
+        }
+      }
+      
+      if (separate_remotes) {
+        const auto invalid = Teuchos::OrdinalTraits<global_ordinal_type>::invalid();
+        const auto parsimonious_col_map 
+          = Teuchos::rcp(new map_type(invalid, gids.data(), gids.size(), 0, domain_map->getComm()));
+        if (parsimonious_col_map->getGlobalNumElements() > 0) {
+          // make the importer only if needed.
+          local_ordinal_type_1d_view dm2cm;
+          if (need_owned_permutation) {
+            dm2cm = local_ordinal_type_1d_view("dm2cm", domain_map->getNodeNumElements());
+            const auto dm2cm_host = Kokkos::create_mirror_view(dm2cm);
+            for (size_t i=0;i<domain_map->getNodeNumElements();++i)
+              dm2cm_host(i) = domain_map->getLocalElement(column_map->getGlobalElement(i));          
+            Kokkos::deep_copy(dm2cm, dm2cm_host);
+          }
+          return Teuchos::rcp(new AsyncableImport<MatrixType>(domain_map, parsimonious_col_map, blocksize, dm2cm));
+        }
+      }
+      return Teuchos::null;
     }
 
     template<typename MatrixType>
