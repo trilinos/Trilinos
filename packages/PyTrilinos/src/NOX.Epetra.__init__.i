@@ -81,9 +81,6 @@ NOX.Epetra provides the following user-level classes:
 // Teuchos include files
 #include "PyTrilinos_Teuchos_Headers.hpp"
 
-// Teuchos include files
-#include "PyTrilinos_Teuchos_Headers.hpp"
-
 // Epetra include files
 #include "PyTrilinos_Epetra_Headers.hpp"
 
@@ -93,20 +90,8 @@ NOX.Epetra provides the following user-level classes:
 #endif
 
 // NOX include files
-#include "NOX_Abstract_Group.H"
-#include "NOX_Abstract_Vector.H"
-#include "NOX_Epetra_Group.H"
-#include "NOX_Epetra_Vector.H"
-#include "NOX_Epetra_FiniteDifference.H"
-#include "NOX_Epetra_FiniteDifferenceColoring.H"
-#include "NOX_Epetra_MatrixFree.H"
-#include "NOX_Epetra_Scaling.H"
-#include "NOX_Epetra_LinearSystem.H"
-#undef HAVE_STDINT_H
-#undef HAVE_INTTYPES_H
-#undef HAVE_SYS_TIME_H
-#include "NOX_Epetra_LinearSystem_AztecOO.H"
-#include "NOX_Epetra_ModelEvaluatorInterface.H"
+#include "PyTrilinos_NOX_Abstract_Headers.hpp"
+#include "PyTrilinos_NOX_Epetra_Headers.hpp"
 
 // NumPy include
 #define NO_IMPORT_ARRAY

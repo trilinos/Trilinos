@@ -74,7 +74,7 @@ NOX.PETSC provides the following user-level classes:
 #include "PyTrilinos_Teuchos_Headers.hpp"
 
 // NOX include files
-#include "NOX_Petsc.H"
+#include "PyTrilinos_NOX_PETSc_Headers.hpp"
 
 // Local include files
 #define NO_IMPORT_ARRAY

@@ -82,9 +82,7 @@ NOX.Epetra.Interface provides the following user-level classes:
 #include "PyTrilinos_Epetra_Util.hpp"
 
 // NOX::Epetra::Interface include files
-#include "NOX_Epetra_Interface_Required.H"
-#include "NOX_Epetra_Interface_Jacobian.H"
-#include "NOX_Epetra_Interface_Preconditioner.H"
+#include "PyTrilinos_NOX_Epetra_Headers.hpp"
 %}
 
 // General ignore directives

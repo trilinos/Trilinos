@@ -51,13 +51,13 @@
 
 // Epetra include files
 #ifdef HAVE_NOX_EPETRA
-#include "PyTrilinos_Epetra_Headers.h"
+#include "PyTrilinos_Epetra_Headers.hpp"
 #endif
 
 // NOX include files
-#include "NOX_Abstract_Vector.H"
+#include "PyTrilinos_NOX_Abstract_Headers.hpp"
 #ifdef HAVE_NOX_PETSC
-#include "NOX_Petsc_Vector.H"
+#include "PyTrilinos_NOX_PETSc_Headers.hpp"
 #endif
 %}
 

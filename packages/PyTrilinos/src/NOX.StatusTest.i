@@ -78,16 +78,9 @@ NOX.StatusTest provides the following user-level classes:
 #include "PyTrilinos_Teuchos_Headers.hpp"
 
 // NOX include files
-#include "NOX_StatusTest_Generic.H"
-#include "NOX_StatusTest_Combo.H"
-#include "NOX_StatusTest_NormF.H"
-#include "NOX_StatusTest_NormUpdate.H"
-#include "NOX_StatusTest_NormWRMS.H"
-#include "NOX_StatusTest_MaxIters.H"
-#include "NOX_StatusTest_Stagnation.H"
-#include "NOX_StatusTest_FiniteValue.H"
-#include "NOX_Abstract_Group.H"
-#include "NOX_Solver_Generic.H"
+#include "PyTrilinos_NOX_Abstract_Headers.hpp"
+#include "PyTrilinos_NOX_StatusTest_Headers.hpp"
+#include "PyTrilinos_NOX_Solver_Headers.hpp"
 
 // Local include files
 #define NO_IMPORT_ARRAY

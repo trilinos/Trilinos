@@ -82,11 +82,7 @@ NOX.Abstract provides the following user-level classes:
 #endif
 
 // NOX include files
-#include "NOX_Abstract_Group.H"
-#include "NOX_Abstract_PrePostOperator.H"
-#include "NOX_Abstract_MultiVector.H"
-#include "NOX_Abstract_Vector.H"
-#include "NOX_Solver_Generic.H"
+#include "PyTrilinos_NOX_Abstract_Headers.hpp"
 
 // Local include files
 #define NO_IMPORT_ARRAY

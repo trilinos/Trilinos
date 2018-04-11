@@ -76,27 +76,19 @@ in addition to the following factory function:
 %{
 // PyTrilinos include files
 #include "PyTrilinos_config.h"
-#include "PyTrilinos_LinearProblem.hpp"
 
 // Teuchos include files
 #include "PyTrilinos_Teuchos_Headers.hpp"
 
+// Epetra include files
+#ifdef HAVE_NOX_EPETRA
+#include "PyTrilinos_Epetra_Headers.hpp"
+#endif
+
 // NOX include files
-#include "NOX_StatusTest_Generic.H"
-#include "NOX_StatusTest_NormWRMS.H"
-#include "NOX_StatusTest_Stagnation.H"
-#include "NOX_StatusTest_MaxIters.H"
-#include "NOX_StatusTest_Combo.H"
-#include "NOX_StatusTest_FiniteValue.H"
-#include "NOX_StatusTest_NormF.H"
-#include "NOX_StatusTest_NormUpdate.H"
-#include "NOX_Abstract_Group.H"
-#include "NOX_Solver_Generic.H"
-#include "NOX_Solver_LineSearchBased.H"
-#include "NOX_Solver_TrustRegionBased.H"
-#include "NOX_Solver_InexactTrustRegionBased.H"
-#include "NOX_Solver_TensorBased.H"
-#include "NOX_Solver_Factory.H"
+#include "PyTrilinos_NOX_StatusTest_Headers.hpp"
+#include "PyTrilinos_NOX_Abstract_Headers.hpp"
+#include "PyTrilinos_NOX_Solver_Headers.hpp"
 
 // Local include files
 #define NO_IMPORT_ARRAY
@@ -105,11 +97,6 @@ in addition to the following factory function:
 
 // Configuration and optional include files
 %include "PyTrilinos_config.h"
-#ifdef HAVE_NOX_EPETRA
-%{
-#include "PyTrilinos_Epetra_Headers.hpp"
-%}
-#endif
 
 // Standard exception handling
 %include "exception.i"
@@ -126,9 +113,9 @@ in addition to the following factory function:
 %rename(StatusTest_None   ) NOX::StatusTest::None;
 
 // Trilinos imports
-%import  "Teuchos.i"
-%import  "NOX.Abstract.i"
-%import  "NOX.StatusTest.i"
+%import "Teuchos.i"
+%import "NOX.Abstract.i"
+%import "NOX.StatusTest.i"
 
 // General exception handling
 %feature("director:except")

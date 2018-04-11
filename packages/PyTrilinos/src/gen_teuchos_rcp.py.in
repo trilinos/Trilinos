@@ -35,7 +35,9 @@ WITH_ANASAZI   = cmake_bool("${PyTrilinos_ENABLE_Anasazi}"  )
 WITH_ML        = cmake_bool("${PyTrilinos_ENABLE_ML}"       )
 WITH_NOX       = cmake_bool("${PyTrilinos_ENABLE_NOX}"      )
 WITH_LOCA      = cmake_bool("${NOX_ENABLE_LOCA}"            )
+
 WITH_MPI       = cmake_bool("${TPL_ENABLE_MPI}"             )
+WITH_PETSC     = cmake_bool("${TPL_ENABLE_PETSC}"           )
 
 ################################################################################
 
@@ -152,6 +154,15 @@ def get_header_files():
         result.append("PyTrilinos_ML_Headers.hpp")
     if (WITH_ANASAZI):
         result.append("PyTrilinos_Anasazi_Headers.hpp")
+    if (WITH_NOX):
+        result.append("PyTrilinos_NOX_Headers.hpp")
+        result.append("PyTrilinos_NOX_Abstract_Headers.hpp")
+        result.append("PyTrilinos_NOX_Solver_Headers.hpp")
+        result.append("PyTrilinos_NOX_StatusTest_Headers.hpp")
+        if (WITH_EPETRA):
+            result.append("PyTrilinos_NOX_Epetra_Headers.hpp")
+        if (WITH_PETSC):
+            result.append("PyTrilinos_NOX_PETSc_Headers.hpp")
 
     return result
 
@@ -254,7 +265,7 @@ def form_class_filename(parsed_class):
     else:
         result += (parsed_class["name"] + ext)
 
-    # Fix filenames for packages that use different rules
+    # Fix filenames for packages that break the rules
     if result == "Tpetra_Map.hpp":
         result = "Tpetra_Map_decl.hpp"
     if result == "Tpetra_Export.hpp":
@@ -273,6 +284,8 @@ def form_class_filename(parsed_class):
         result = result[:7] + result[8:]
     if result.startswith("AnasaziEpetra"):
         result = "AnasaziEpetraAdapter.hpp"
+    if result == "NOX_Epetra_LinearSystemAztecOO.H":
+        result = "NOX_Epetra_LinearSystem_AztecOO.H"
 
     return result    
 
@@ -308,7 +321,11 @@ def get_rcp_classes(swig_filenames):
                     match = match.replace("< ","<")
                     match = match.replace(" >",">")
                     match = match.replace(">>","> >")
-                    result.add(match)
+                    if "Petsc" in match:
+                        if (WITH_PETSC):
+                            result.add(match)
+                    else:
+                        result.add(match)
     # Hack for Tpetra
     if "Tpetra.i" in swig_filenames:
         result.add("Tpetra::Map<PYTRILINOS_LOCAL_ORD, PYTRILINOS_GLOBAL_ORD, DefaultNodeType>")
@@ -343,7 +360,10 @@ def reorder_classnames(classnames):
     lowest-level base classes must appear first. Based on the logic here, the
     highest-level classes should appear first in the base_classes list.
     """
-    base_classes = ["Anasazi::OrthoManager<double, Epetra_MultiVector>",
+    base_classes = ["NOX::Epetra::Interface::Jacobian",
+                    "NOX::Epetra::Interface::Preconditioner",
+                    "NOX::StatusTest::Generic",
+                    "Anasazi::OrthoManager<double, Epetra_MultiVector>",
                     "Anasazi::Eigenproblem<double, Epetra_MultiVector, Epetra_Operator>",
                     "Anasazi::SortManager<double>",
                     "Anasazi::OutputManager<double>",

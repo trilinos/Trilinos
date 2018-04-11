@@ -56,7 +56,7 @@
 #include "PyTrilinos_Teuchos_Headers.hpp"
 
 // NOX include files
-#include "NOX_Version.H"
+#include "PyTrilinos_NOX_Headers.hpp"
 
 // Local include files
 #define NO_IMPORT_ARRAY

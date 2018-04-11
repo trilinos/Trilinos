@@ -451,6 +451,104 @@ if (${Trilinos_ENABLE_Anasazi}):
 
 ##########################################################################
 
+if (${Trilinos_ENABLE_NOX}):
+    NOX = fromPyTrilinosImport('NOX', options.testharness)
+
+    class TeuchosRCPNOXTestCase(unittest.TestCase):
+        "Test the Teuchos.RCP functions on NOX objects"
+
+        def setUp(self):
+            self.absResid  = NOX.StatusTest.NormF(1.0e-6)
+            self.relResid  = NOX.StatusTest.NormF(1.0e-6,NOX.StatusTest.NormF.Unscaled)
+            self.update    = NOX.StatusTest.NormUpdate(1.0e-5)
+            self.wrms      = NOX.StatusTest.NormWRMS(1.0e-2, 1.0e-8)
+            self.maxIters  = NOX.StatusTest.MaxIters(20)
+            self.stagnate  = NOX.StatusTest.Stagnation()
+            self.finiteVal = NOX.StatusTest.FiniteValue()
+            self.converged = NOX.StatusTest.Combo(NOX.StatusTest.Combo.AND)
+            self.converged.addStatusTest(self.absResid)
+            self.converged.addStatusTest(self.relResid)
+            self.converged.addStatusTest(self.wrms    )
+            self.converged.addStatusTest(self.update  )
+            self.combo = NOX.StatusTest.Combo(NOX.StatusTest.Combo.OR)
+            self.combo.addStatusTest(self.maxIters)
+            self.combo.addStatusTest(self.stagnate)
+            self.combo.addStatusTest(self.finiteVal)
+
+        def testIsNull(self):
+            "Test Teuchos.RCP.is_null() for Anasazi objects"
+            self.assertEquals(Teuchos.RCP.is_null(self.absResid ), False)
+            self.assertEquals(Teuchos.RCP.is_null(self.relResid ), False)
+            self.assertEquals(Teuchos.RCP.is_null(self.update   ), False)
+            self.assertEquals(Teuchos.RCP.is_null(self.wrms     ), False)
+            self.assertEquals(Teuchos.RCP.is_null(self.maxIters ), False)
+            self.assertEquals(Teuchos.RCP.is_null(self.stagnate ), False)
+            self.assertEquals(Teuchos.RCP.is_null(self.finiteVal), False)
+            self.assertEquals(Teuchos.RCP.is_null(self.converged), False)
+            self.assertEquals(Teuchos.RCP.is_null(self.combo    ), False)
+
+        def testIsValidPtr(self):
+            "Test Teuchos.RCP.is_valid_ptr() for Anasazi objects"
+            self.assertEquals(Teuchos.RCP.is_valid_ptr(self.absResid ), True)
+            self.assertEquals(Teuchos.RCP.is_valid_ptr(self.relResid ), True)
+            self.assertEquals(Teuchos.RCP.is_valid_ptr(self.update   ), True)
+            self.assertEquals(Teuchos.RCP.is_valid_ptr(self.wrms     ), True)
+            self.assertEquals(Teuchos.RCP.is_valid_ptr(self.maxIters ), True)
+            self.assertEquals(Teuchos.RCP.is_valid_ptr(self.stagnate ), True)
+            self.assertEquals(Teuchos.RCP.is_valid_ptr(self.finiteVal), True)
+            self.assertEquals(Teuchos.RCP.is_valid_ptr(self.converged), True)
+            self.assertEquals(Teuchos.RCP.is_valid_ptr(self.combo    ), True)
+
+        def testHasOwnership(self):
+            "Test Teuchos.RCP.has_ownership() for Anasazi objects"
+            self.assertEquals(Teuchos.RCP.has_ownership(self.absResid ), True)
+            self.assertEquals(Teuchos.RCP.has_ownership(self.relResid ), True)
+            self.assertEquals(Teuchos.RCP.has_ownership(self.update   ), True)
+            self.assertEquals(Teuchos.RCP.has_ownership(self.wrms     ), True)
+            self.assertEquals(Teuchos.RCP.has_ownership(self.maxIters ), True)
+            self.assertEquals(Teuchos.RCP.has_ownership(self.stagnate ), True)
+            self.assertEquals(Teuchos.RCP.has_ownership(self.finiteVal), True)
+            self.assertEquals(Teuchos.RCP.has_ownership(self.converged), True)
+            self.assertEquals(Teuchos.RCP.has_ownership(self.combo    ), True)
+
+        def testStrongCount(self):
+            "Test Teuchos.RCP.strong_count() for Anasazi objects"
+            self.assertEquals(Teuchos.RCP.strong_count(self.absResid ), 2)
+            self.assertEquals(Teuchos.RCP.strong_count(self.relResid ), 2)
+            self.assertEquals(Teuchos.RCP.strong_count(self.update   ), 2)
+            self.assertEquals(Teuchos.RCP.strong_count(self.wrms     ), 2)
+            self.assertEquals(Teuchos.RCP.strong_count(self.maxIters ), 2)
+            self.assertEquals(Teuchos.RCP.strong_count(self.stagnate ), 2)
+            self.assertEquals(Teuchos.RCP.strong_count(self.finiteVal), 2)
+            self.assertEquals(Teuchos.RCP.strong_count(self.converged), 1)
+            self.assertEquals(Teuchos.RCP.strong_count(self.combo    ), 1)
+
+        def testWeakCount(self):
+            "Test Teuchos.RCP.weak_count() for Anasazi objects"
+            self.assertEquals(Teuchos.RCP.weak_count(self.absResid ), 0)
+            self.assertEquals(Teuchos.RCP.weak_count(self.relResid ), 0)
+            self.assertEquals(Teuchos.RCP.weak_count(self.update   ), 0)
+            self.assertEquals(Teuchos.RCP.weak_count(self.wrms     ), 0)
+            self.assertEquals(Teuchos.RCP.weak_count(self.maxIters ), 0)
+            self.assertEquals(Teuchos.RCP.weak_count(self.stagnate ), 0)
+            self.assertEquals(Teuchos.RCP.weak_count(self.finiteVal), 0)
+            self.assertEquals(Teuchos.RCP.weak_count(self.converged), 0)
+            self.assertEquals(Teuchos.RCP.weak_count(self.combo    ), 0)
+
+        def testTotalCount(self):
+            "Test Teuchos.RCP.total_count() for Anasazi objects"
+            self.assertEquals(Teuchos.RCP.total_count(self.absResid ), 2)
+            self.assertEquals(Teuchos.RCP.total_count(self.relResid ), 2)
+            self.assertEquals(Teuchos.RCP.total_count(self.update   ), 2)
+            self.assertEquals(Teuchos.RCP.total_count(self.wrms     ), 2)
+            self.assertEquals(Teuchos.RCP.total_count(self.maxIters ), 2)
+            self.assertEquals(Teuchos.RCP.total_count(self.stagnate ), 2)
+            self.assertEquals(Teuchos.RCP.total_count(self.finiteVal), 2)
+            self.assertEquals(Teuchos.RCP.total_count(self.converged), 1)
+            self.assertEquals(Teuchos.RCP.total_count(self.combo    ), 1)
+
+##########################################################################
+
 if __name__ == "__main__":
 
     # Create the test suite object
@@ -473,6 +571,8 @@ if __name__ == "__main__":
         suite.addTest(unittest.makeSuite(TeuchosRCPMLTestCase))
     if (${Trilinos_ENABLE_Anasazi}):
         suite.addTest(unittest.makeSuite(TeuchosRCPAnasaziTestCase))
+    if (${Trilinos_ENABLE_NOX}):
+        suite.addTest(unittest.makeSuite(TeuchosRCPNOXTestCase))
 
     # Create a communicator
     comm    = Teuchos.DefaultComm.getComm()
