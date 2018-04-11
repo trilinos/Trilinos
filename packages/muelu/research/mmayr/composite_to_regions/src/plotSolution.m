@@ -16,11 +16,17 @@ switch (dim)
   case 1
     plot(sol);
   case 2
-    [X,Y] = meshgrid(1:7,1:7);
-    Z = zeros(7,7);
-    for j = 1:7 % rows of the mesh
-      for i = 1:7 % cols of the mesh
-        Z(j,i) = sol(7*(j-1) + i);
+    nx = sqrt(size(sol,1));
+    
+    if (nx^2 ~= size(sol,1))
+      error('Missmatch in dimensions.');
+    end
+    
+    [X,Y] = meshgrid(1:nx,1:nx);
+    Z = zeros(nx,nx);
+    for j = 1:nx % rows of the mesh
+      for i = 1:nx % cols of the mesh
+        Z(j,i) = sol(nx*(j-1) + i);
       end
     end
     surf(X,Y,Z);
