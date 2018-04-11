@@ -1226,9 +1226,6 @@ public:
 };
 
 
-#ifdef HAVE_TEUCHOS_LONG_LONG_INT
-
-
 template<>
 class EnhancedNumberTraits<long long int>{
 public:
@@ -1247,9 +1244,6 @@ public:
   static inline long long unsigned int defaultStep() { return 1; }
   static inline unsigned short defaultPrecision() { return 0; }
 };
-
-
-#endif // HAVE_TEUCHOS_LONG_LONG_INT
 
 
 #ifdef HAVE_TEUCHOSCORE_QUADMATH

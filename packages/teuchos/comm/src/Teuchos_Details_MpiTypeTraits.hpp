@@ -459,7 +459,6 @@ public:
   }
 };
 
-#ifdef HAVE_TEUCHOS_LONG_LONG_INT
 //! Specialization for T = long long.
 template<>
 class MpiTypeTraits<long long> {
@@ -508,7 +507,6 @@ public:
   }
 };
 #endif // MPI_VERSION >= 2
-#endif // HAVE_TEUCHOS_LONG_LONG_INT
 
 //! Specialization for T = long.
 template<>
