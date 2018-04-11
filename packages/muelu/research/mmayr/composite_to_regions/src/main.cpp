@@ -1420,9 +1420,33 @@ int main(int argc, char *argv[]) {
 
           // Two-dimensional problems
           {
-            lNodesPerDim[0] = 4;
-            lNodesPerDim[1] = 4;
-            lNodesPerDim[2] = 1;
+//            // caseFifteen
+//            {
+//              lNodesPerDim[0] = 4;
+//              lNodesPerDim[1] = 4;
+//              lNodesPerDim[2] = 1;
+//            }
+
+//            // caseSixteen
+//            {
+//              lNodesPerDim[0] = 7;
+//              lNodesPerDim[1] = 7;
+//              lNodesPerDim[2] = 1;
+//            }
+
+//            // caseSeventeen
+//            {
+//              lNodesPerDim[0] = 31;
+//              lNodesPerDim[1] = 31;
+//              lNodesPerDim[2] = 1;
+//            }
+
+            // caseEightteen / caseNineteen
+            {
+              lNodesPerDim[0] = 16;
+              lNodesPerDim[1] = 16;
+              lNodesPerDim[2] = 1;
+            }
           }
 
           regGrpHierarchy[j]->GetLevel(0)->Set("gNodesPerDim", gNodesPerDim);
@@ -1721,32 +1745,20 @@ int main(int argc, char *argv[]) {
             gidsToSort.push_back(summedDuplicateMatrix->ColMap().GID(inds[k]));
           }
 
-          // mayr.mt: hardcoded
-          switch (myRank)
-          {
-          case 0: { break; }
-          case 1: {
-            if (gidsToSort[0] == 55) {
-              gidsToSort.push_back(56);
-              gidsToSort.push_back(57);
-            }
-            break;
-          }
-          case 2: {
-            if (gidsToSort[0] == 56) {
-              gidsToSort.push_back(55);
-              gidsToSort.push_back(57);
-            }
-            break;
-          }
-          case 3: {
-            if (gidsToSort[0] == 57) {
-              gidsToSort.push_back(55);
-              gidsToSort.push_back(56);
-            }
-            break;
-          }
-          }
+          /* Note: At intersections of more than two regions, i.e. at interior
+           * vertices of the regional interface, the list of gidsToSort is not
+           * identical on all procs. In particular, only the proc owning the
+           * original GID of this vertex knows the full list of all duplicated
+           * GIDs. Those procs, that own a duplicated GID, only know about the
+           * two-member pair of their duplicate and the original GID, but not
+           * about the duplicated GIDs of all other procs.
+           *
+           * However, this does not matter since we are only looking for the
+           * mapping of each proc's duplicated GID to the original GID, which
+           * every proc knows about.
+           *
+           * Bottom line, this should be sufficient.
+           */
 
 //          sleep(1);
 //          std::cout << myRank << " | gidsToSort:" << std::endl << "  ";
@@ -1793,6 +1805,10 @@ int main(int argc, char *argv[]) {
 //          std::cout << std::endl;
 //        }
 //        std::cout << std::endl << std::endl << std::endl << std::endl;
+
+//        sleep(1);
+//        std::cout << "Prolongator" << std::endl;
+//        regProlong[1][0]->Print(std::cout);
 
         std::vector<std::vector<int> > myCoarseDuplicates; // pairs of duplicates with locally owned GID listed first on coarse level.
         myCoarseDuplicates.resize(myDuplicates.size());
@@ -1923,61 +1939,56 @@ int main(int argc, char *argv[]) {
          *
          */
         {
+//          sleep(1);
+//          std::cout << myRank << " | Printing regRowMaps[1][0] ..." << std::endl;
+//          Comm.Barrier();
+//          regRowMaps[1][0]->Print(std::cout);
+//          sleep(2);
+
           // create quasiRegional map
           {
-
             std::vector<int> myQuasiRegGIDs;
+
             for (int i = 0; i < regRowMaps[1][0]->NumMyElements(); ++i) {
-              int myGID = regRowMaps[1][0]->GID(i);
+              // grab current regional GID to be processed
+              int currGID = regRowMaps[1][0]->GID(i);
+              int quasiGID = currGID; // assign dummy value
 
-              // check if myGID is interface GID
-              bool isInterface = false;
-              for (std::size_t k = 0; k < myCoarseInterfaceDuplicates.size(); ++k) {
-                for (std::size_t kk = 0; kk < myCoarseInterfaceDuplicates[k].size(); ++kk) {
-                  if (myGID == myCoarseInterfaceDuplicates[k][kk])
-                    isInterface = true;
-                }
-              }
-
-              if (not isInterface) {
-                myQuasiRegGIDs.push_back(myGID);
-              }
-              else {
-                // find GIDs that identify an aggregate
-                std::vector<int> identifyingGIDs;
+              // find quasiRegional counterpart
+              {
+                // Is this an interface GID?
+                bool isInterface = false;
                 for (std::size_t k = 0; k < myCoarseInterfaceDuplicates.size(); ++k) {
-                  identifyingGIDs.push_back(myCoarseInterfaceDuplicates[k][0]);
+                  for (std::size_t kk = 0; kk < myCoarseInterfaceDuplicates[k].size(); ++kk) {
+                    if (currGID == myCoarseInterfaceDuplicates[k][kk])
+                      isInterface = true;
+                  }
                 }
-                std::sort(identifyingGIDs.begin(), identifyingGIDs.end());
-                identifyingGIDs.erase(std::unique(identifyingGIDs.begin(), identifyingGIDs.end()), identifyingGIDs.end());
 
-//                std::cout << "identifyingGIDs on proc " << myRank << ": ";
-//                for (auto gid : identifyingGIDs) {
-//                  std::cout << gid << ", ";
-//                }
-//                std::cout << std::endl;
+                if (isInterface) {
+                  for (std::size_t k = 0; k < myCoarseInterfaceDuplicates.size(); ++k) {
+                    bool found = false;
+                    for (std::size_t kk = 0; kk < myCoarseInterfaceDuplicates[k].size(); ++kk) {
+                      if (currGID == myCoarseInterfaceDuplicates[k][kk])
+                        found = true;
+                    }
 
-                // find quasiGID for each aggregate in identifyingGIDs
-                for (std::size_t k = 0; k < identifyingGIDs.size(); ++k) {
-                  int aggIdent = identifyingGIDs[k];
-                  int myQuasiGID = aggIdent;
-                  for (std::size_t kk = 0; kk < myCoarseInterfaceDuplicates.size(); ++kk) {
-                    if (myCoarseInterfaceDuplicates[kk][0] == aggIdent) {
-                      for (std::size_t kkk = 0; kkk < myCoarseInterfaceDuplicates[kk].size(); ++kkk) {
-                        myQuasiGID = std::min(myQuasiGID, Teuchos::as<int>(myCoarseInterfaceDuplicates[kk][kkk]));
-                      }
+                    if (found) {
+                      for (std::size_t kk = 0; kk < myCoarseInterfaceDuplicates[k].size(); ++kk)
+                        quasiGID = std::min(quasiGID, Teuchos::as<int>(myCoarseInterfaceDuplicates[k][kk]));
+
+//                      std::cout << myRank << " | Interface GID " << currGID << " is replaced by quasiGID " << quasiGID << std::endl;
+                      break;
                     }
                   }
-
-                  bool found = false;
-                  for (std::size_t kk = 0; kk < myQuasiRegGIDs.size(); ++kk) {
-                    if (myQuasiGID == myQuasiRegGIDs[kk])
-                      found = true;
-                  }
-                  if (not found)
-                    myQuasiRegGIDs.push_back(myQuasiGID);
+                }
+                else { // interior node --> take GID from regional map
+                  quasiGID = currGID;
                 }
               }
+
+              TEUCHOS_ASSERT(quasiGID>=0);
+              myQuasiRegGIDs.push_back(quasiGID);
             }
 
             quasiRegRowMaps[1][0] = rcp(new Epetra_Map(Teuchos::OrdinalTraits<int>::invalid(), myQuasiRegGIDs.size(), myQuasiRegGIDs.data(), 0, Comm));
@@ -1987,6 +1998,7 @@ int main(int argc, char *argv[]) {
 //            std::cout << myRank << " | Printing quasiRegRowMaps[1][0] ..." << std::endl;
 //            Comm.Barrier();
 //            quasiRegRowMaps[1][0]->Print(std::cout);
+
           }
 
           // create composite map
@@ -2709,32 +2721,25 @@ int main(int argc, char *argv[]) {
 //        }
       }
 
-      // 2D
       std::vector<int> dirichletGIDs;
-      dirichletGIDs.push_back(0);
-      dirichletGIDs.push_back(1);
-      dirichletGIDs.push_back(2);
-      dirichletGIDs.push_back(3);
-      dirichletGIDs.push_back(4);
-      dirichletGIDs.push_back(5);
-      dirichletGIDs.push_back(6);
-      dirichletGIDs.push_back(7);
-      dirichletGIDs.push_back(13);
-      dirichletGIDs.push_back(14);
-      dirichletGIDs.push_back(20);
-      dirichletGIDs.push_back(21);
-      dirichletGIDs.push_back(27);
-      dirichletGIDs.push_back(28);
-      dirichletGIDs.push_back(34);
-      dirichletGIDs.push_back(35);
-      dirichletGIDs.push_back(41);
-      dirichletGIDs.push_back(42);
-      dirichletGIDs.push_back(43);
-      dirichletGIDs.push_back(44);
-      dirichletGIDs.push_back(45);
-      dirichletGIDs.push_back(46);
-      dirichletGIDs.push_back(47);
-      dirichletGIDs.push_back(48);
+
+      // 2D
+      {
+        const int nx = 46; // global number of nodes in x-direction
+        for (int i = 0; i < nx; ++i)
+          dirichletGIDs.push_back(i);
+        for (int i = 0; i < nx; ++i) {
+          dirichletGIDs.push_back(i*nx);
+          dirichletGIDs.push_back((i+1)*nx - 1);
+        }
+        for (int i = 0; i < nx; ++i)
+          dirichletGIDs.push_back((nx*(nx-1) + i));
+      }
+
+//      for (auto gid : dirichletGIDs)
+//        std::cout << gid << ", ";
+//      std::cout << std::endl;
+
       {
         compB->PutScalar(1.0e-3);
         for (std::size_t i = 0; i < dirichletGIDs.size(); ++i)
@@ -2769,8 +2774,8 @@ int main(int argc, char *argv[]) {
       /////////////////////////////////////////////////////////////////////////
 
       // define max iteration counts
-      const int maxVCycle = 100;
-      const int maxFineIter = 10;
+      const int maxVCycle = 200;
+      const int maxFineIter = 20;
       const int maxCoarseIter = 100;
       const double omega = 0.67;
 
@@ -2809,9 +2814,11 @@ int main(int argc, char *argv[]) {
       sleep(1);
 
       regionalToComposite(regX, compX, maxRegPerProc, rowMapPerGrp, rowImportPerGrp, Zero, false);
-      std::cout << "compX after V-cycle" << std::endl;
-      compX->Print(std::cout);
-      sleep(2);
+
+//      std::cout << myRank << " | compX after V-cycle" << std::endl;
+//      sleep(myRank + 1);
+//      compX->Print(std::cout);
+//      sleep(2);
 
       // Write solution to file for printing
       std::string outFileName = "compX.mm";
