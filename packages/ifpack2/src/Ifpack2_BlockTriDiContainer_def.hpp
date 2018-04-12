@@ -90,23 +90,21 @@ namespace Ifpack2 {
 
     tpetra_importer_ = Teuchos::null;
     async_importer_  = Teuchos::null;
-
-    if (importer == Teuchos::null) {
-      // first try to create async importer
-      if (useSeqMethod == false)
-        async_importer_ = BlockTriDiContainerDetails::createBlockCrsAsyncImporter<MatrixType>(A_);
-      // somehow async importer is not created, then create standard tpetra importer
-      if (async_importer_ == Teuchos::null) 
+    
+    if (importer.is_null()) // there is no given importer, then create one
+      if (useSeqMethod) 
         tpetra_importer_ = BlockTriDiContainerDetails::createBlockCrsTpetraImporter<MatrixType>(A_);
-    } else {
-      // given importer is not null, then use it
-      tpetra_importer_ = importer;
-    }
-
-    if (async_importer_ == Teuchos::null) 
-      overlap_communication_and_computation_ = false;
+      else 
+        async_importer_ = BlockTriDiContainerDetails::createBlockCrsAsyncImporter<MatrixType>(A_);
     else 
-      overlap_communication_and_computation_ = overlapCommAndComp;
+      tpetra_importer_ = importer; // if there is a given importer, use it
+
+    // as a result, there are 
+    // 1) tpetra_importer is     null , async_importer is     null (no need for importer)
+    // 2) tpetra_importer is NOT null , async_importer is     null (sequential method is used)
+    // 3) tpetra_importer is     null , async_importer is NOT null (async method is used)
+
+    overlap_communication_and_computation_ = overlapCommAndComp;
     
     Z_ = typename impl_type::tpetra_multivector_type();
 

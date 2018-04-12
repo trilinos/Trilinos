@@ -1895,12 +1895,12 @@ namespace Ifpack2 {
 
         const magnitude_type one(1);
         const Kokkos::pair<local_ordinal_type,local_ordinal_type> block_range(0, blocksize);
-        const local_ordinal_type num_vectors = y.extent(1);
+        const local_ordinal_type num_vectors = y_packed.extent(2);
         const local_ordinal_type vi = partidx % vector_length;
         const local_ordinal_type num_local_rows = lclrow.extent(0);
 
         // temporary buffer for y flat
-        impl_scalar_type yy_buf[max_blocksize];
+        impl_scalar_type yy_buf[max_blocksize] = {};
 
         // subview pattern
         auto bb = Kokkos::subview(b, block_range, 0);
@@ -1913,6 +1913,7 @@ namespace Ifpack2 {
           const local_ordinal_type ri = ri0 + i;
           const local_ordinal_type lr = lclrow(ri);
           const local_ordinal_type row = lr*blocksize;
+
           for (local_ordinal_type col=0;col<num_vectors;++col) {
             // y := b
             bb.assign_data(&b(row, col));
@@ -1937,7 +1938,7 @@ namespace Ifpack2 {
             }
             // move yy to y_packed
             for (local_ordinal_type k=0;k<blocksize;++k) 
-              y_packed(pri0+i, k, col)[vi] += yy[k];
+              y_packed(pri0+i, k, col)[vi] = yy[k];
           }
         }
       }
@@ -1957,12 +1958,12 @@ namespace Ifpack2 {
 
         const magnitude_type one(1);
         const Kokkos::pair<local_ordinal_type,local_ordinal_type> block_range(0, blocksize);
-        const local_ordinal_type num_vectors = y.extent(1);
+        const local_ordinal_type num_vectors = y_packed.extent(2);
         const local_ordinal_type vi = partidx % vector_length;
         const local_ordinal_type num_local_rows = lclrow.extent(0);
 
         // temporary buffer for y flat
-        impl_scalar_type yy_buf[max_blocksize];
+        impl_scalar_type yy_buf[max_blocksize] = {};
 
         // subview pattern
         auto bb = Kokkos::subview(b, block_range, 0);
@@ -2038,7 +2039,6 @@ namespace Ifpack2 {
                const MultiVectorLocalViewTypeX &x_,
                const MultiVectorLocalViewTypeX_Remote &x_remote_) {
         y_packed = y_packed_; b = b_; x = x_; x_remote = x_remote_;
-        
         Kokkos::RangePolicy<typename device_type::execution_space,AsyncTag> policy(0, part2rowidx0.extent(0) - 1);
         Kokkos::parallel_for(policy, *this);
       }
@@ -2254,8 +2254,6 @@ namespace Ifpack2 {
       using tpetra_multivector_type = typename impl_type::tpetra_multivector_type;
 
       // either tpetra importer or async importer must be active
-      TEUCHOS_TEST_FOR_EXCEPT_MSG(tpetra_importer.is_null() && async_importer.is_null(), 
-                                  "Both Tpetra importer and Async importer are null.");
       TEUCHOS_TEST_FOR_EXCEPT_MSG(!tpetra_importer.is_null() && !async_importer.is_null(), 
                                   "Neither Tpetra importer nor Async importer is null.");
       // max number of sweeps should be positive number
@@ -2264,7 +2262,10 @@ namespace Ifpack2 {
 
       // const parameters
       const bool is_norm_manager_active = tol > Kokkos::ArithTraits<magnitude_type>::zero();
-      const bool is_seq_method_requested = async_importer.is_null();
+      const bool is_seq_method_requested = !tpetra_importer.is_null();
+      const bool is_async_importer_active = !async_importer.is_null();
+      printf("async importer is null %d, tpetra importer is null %d\n",
+             async_importer.is_null(), tpetra_importer.is_null());
       const magnitude_type tolerance = tol*tol;
       const local_ordinal_type blocksize = btdm.values.extent(1);
       const local_ordinal_type num_vectors = Y.getNumVectors();
@@ -2286,10 +2287,12 @@ namespace Ifpack2 {
         if (Z.getNumVectors() != num_vectors) 
           Z = tpetra_multivector_type(tpetra_importer->getTargetMap(), num_vectors, false);
       } else {
-        // create comm data buffer and keep it here
-        async_importer->createDataBuffer(num_vectors);
-        remote_multivector = async_importer->getRemoteMultiVectorLocalView();
-      }        
+        if (is_async_importer_active) {
+          // create comm data buffer and keep it here
+          async_importer->createDataBuffer(num_vectors);
+          remote_multivector = async_importer->getRemoteMultiVectorLocalView();
+        }
+      }
 
       // wrap the workspace with 3d view
       vector_type_3d_view pmv(work.data(), num_blockrows, blocksize, num_vectors);
@@ -2300,9 +2303,10 @@ namespace Ifpack2 {
       MultiVectorConverter<MatrixType> multivector_converter(interf, pmv);
       SolveTridiags<MatrixType> solve_tridiags(interf, btdm, pmv);
 
+      const local_ordinal_type_1d_view dummy_local_ordinal_type_1d_view;
       ComputeResidualVector<MatrixType> 
         compute_residual_vector(amd, A->getCrsGraph().getLocalGraph(), blocksize, interf, 
-                                is_seq_method_requested ? local_ordinal_type_1d_view() : async_importer->dm2cm);
+                                is_async_importer_active ? async_importer->dm2cm : dummy_local_ordinal_type_1d_view);
       
       // norm manager workspace resize
       if (is_norm_manager_active) {
@@ -2321,19 +2325,22 @@ namespace Ifpack2 {
             // y := x - R y
             Z.doImport(Y, *tpetra_importer, Tpetra::REPLACE);
             compute_residual_vector.run(YY, XX, ZZ);
+
             // pmv := y(lclrow).
             multivector_converter.to_packed_multivector(YY);
           } else {
             // fused y := x - R y and pmv := y(lclrow); 
-            if (overlap_communication_and_computation) {
-              async_importer->asyncSendRecv(YY);
+            if (overlap_communication_and_computation || !is_async_importer_active) {
+              if (is_async_importer_active) async_importer->asyncSendRecv(YY);
               compute_residual_vector.run(pmv, XX, YY, remote_multivector, true);
               if (is_norm_manager_active && norm_manager.checkDone(sweep, tolerance)) {
-                async_importer->cancel();
+                if (is_async_importer_active) async_importer->cancel();
                 break;
               }
-              async_importer->syncRecv();
-              compute_residual_vector.run(pmv, XX, YY, remote_multivector, false);
+              if (is_async_importer_active) {
+                async_importer->syncRecv();
+                compute_residual_vector.run(pmv, XX, YY, remote_multivector, false);
+              }
             } else {
               async_importer->syncExchange(YY);
               if (is_norm_manager_active && norm_manager.checkDone(sweep, tolerance)) break;
@@ -2363,13 +2370,6 @@ namespace Ifpack2 {
 
       //sqrt the norms for the caller's use.
       if (is_norm_manager_active) norm_manager.finalize();
-      
-      printf("sweep = %d, X extents %d, %d, Y extents %d %d\n", 
-             sweep, XX.extent(0), XX.extent(1), YY.extent(0), YY.extent(1));
-      
-      for (int j=0;j<XX.extent(1);++j) 
-        for (int i=0;i<XX.extent(0);++i) 
-          std::cout << " (i,j) = " << i << " " << j << " X = " << XX(i,j) << " Y = " << YY(i,j) << "\n";
       
       return sweep;
     }
