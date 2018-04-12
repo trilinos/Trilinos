@@ -64,8 +64,8 @@ namespace MueLu {
 
 #if defined(HAVE_MUELU_AMGX)
     std::string externalMG = "use external multigrid package";
-    if (hasParamList && paramList.isParameter(externalMG) && paramList.get<std::string>(externalMG) == "amgx"){
-      constCrsA = rcp_dynamic_cast<const crs_matrix_type>(inA);
+    if (inParamList.isParameter(externalMG) && inParamList.get<std::string>(externalMG) == "amgx"){
+      RCP<const crs_matrix_type> constCrsA = rcp_dynamic_cast<const crs_matrix_type>(inA);
       TEUCHOS_TEST_FOR_EXCEPTION(constCrsA == Teuchos::null, Exceptions::RuntimeError, "CreateTpetraPreconditioner: failed to dynamic cast to Tpetra::CrsMatrix, which is required to be able to use AmgX.");
       return rcp(new AMGXOperator<SC,LO,GO,NO>(inA,inParamList));
     }

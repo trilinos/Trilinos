@@ -342,7 +342,8 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
         if (useAMGX) {
 #if defined (HAVE_MUELU_AMGX) and defined (HAVE_MUELU_TPETRA)
 	  mueluList.remove("use external multigrid package");
-	  RCP<const Tpetra::CrsMatrix<SC,LO,GO,NO> > tA = Utilities::Op2TpetraCrs(A);
+	  RCP<const Tpetra::CrsMatrix<SC,LO,GO,NO> > cA = Utilities::Op2TpetraCrs(A);
+	  RCP<Tpetra::CrsMatrix<SC,LO,GO,NO> > tA = Teuchos::rcp_const_cast<Tpetra::CrsMatrix<SC,LO,GO,NO> >(cA);
           aH = Teuchos::rcp<MueLu::AMGXOperator<SC, LO, GO, NO> >(new MueLu::AMGXOperator<SC, LO, GO, NO>(tA,mueluList));
 #endif
         }
