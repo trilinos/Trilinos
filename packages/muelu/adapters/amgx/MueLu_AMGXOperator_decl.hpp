@@ -259,8 +259,8 @@ namespace MueLu {
 
         Tpetra::Distributor distributor = importer->getDistributor();
 
-        Array<int> sendRanks = distributor.getImagesTo();
-        Array<int> recvRanks = distributor.getImagesFrom();
+        Array<int> sendRanks = distributor.getProcsTo();
+        Array<int> recvRanks = distributor.getProcsFrom();
 
         std::sort(sendRanks.begin(), sendRanks.end());
         std::sort(recvRanks.begin(), recvRanks.end());
