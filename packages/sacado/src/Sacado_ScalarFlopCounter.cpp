@@ -145,7 +145,6 @@ Sacado::FlopCounterPack::FlopCounts::getSummaryType(Sacado::FlopCounterPack::Flo
   switch(ft) {
     case ASSIGN:
       return SUMMARY_ASSIGN;
-      break;
     case PLUS:
     case PLUS_ASSIGN:
     case UNARY_PLUS:
@@ -153,15 +152,12 @@ Sacado::FlopCounterPack::FlopCounts::getSummaryType(Sacado::FlopCounterPack::Flo
     case MINUS_ASSIGN:
     case UNARY_MINUS:
       return SUMMARY_PLUS_MINUS;
-      break;
     case MULTIPLY:
     case MULTIPLY_ASSIGN:
       return SUMMARY_MULTIPLY;
-      break;
     case DIVIDE:
     case DIVIDE_ASSIGN:
       return SUMMARY_DIVIDE;
-      break;
     case EXP:
     case LOG:
     case LOG10:
@@ -184,14 +180,12 @@ Sacado::FlopCounterPack::FlopCounts::getSummaryType(Sacado::FlopCounterPack::Flo
     case MAX:
     case MIN:
       return SUMMARY_NONLINEAR;
-      break;
     case GREATER_THAN:
     case GREATER_THAN_EQUAL:
     case LESS_THAN:
     case LESS_THAN_EQUAL:
     case EQUAL:
       return SUMMARY_COMPARISON;
-      break;
     default:
       assert(0);
   }
