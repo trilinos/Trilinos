@@ -670,7 +670,8 @@ int main_(Teuchos::CommandLineProcessor &clp,  Xpetra::UnderlyingLib &lib, int a
 
       if (useAMGX) {
 #if defined (HAVE_MUELU_AMGX) and defined (HAVE_MUELU_TPETRA)
-        aH = Teuchos::rcp_dynamic_cast<MueLu::AMGXOperator<SC, LO, GO, NO> >(tH);
+	RCP<Tpetra_CrsMatrix<SC,LO,GO,NO> > tA = Xpetra::toTpetra(A);
+	aH = Teuchos::rcp<new MueLu::AMGXOperator<SC, LO, GO, NO> >(tA);
 #endif
       } else {
         H = MueLu::CreateXpetraPreconditioner(A, mueluList, coordinates);
