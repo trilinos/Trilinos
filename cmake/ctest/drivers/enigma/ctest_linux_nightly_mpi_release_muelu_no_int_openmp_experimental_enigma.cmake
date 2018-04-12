@@ -55,7 +55,7 @@
 
 # JJH corresponds to do-configure-no_int
 
-INCLUDE("${CTEST_SCRIPT_DIRECTORY}/TrilinosCTestDriverCore.geminga.gcc.cmake")
+INCLUDE("${CTEST_SCRIPT_DIRECTORY}/TrilinosCTestDriverCore.enigma.gcc.cmake")
 
 #
 # Set the options specific to this build case
