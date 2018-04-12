@@ -26,7 +26,7 @@
 #include <MueLu_HierarchyUtils.hpp>
 
 
-#if defined(HAVE_MUELU_EXPERIMENTAL) and defined(HAVE_MUELU_AMGX)
+#if defined(HAVE_MUELU_AMGX)
 #include <MueLu_AMGXOperator.hpp>
 #include <amgx_c.h>
 #include "cuda_runtime.h"
@@ -62,7 +62,7 @@ namespace MueLu {
     typedef Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> crs_matrix_type;
     typedef Tpetra::Experimental::BlockCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> block_crs_matrix_type;
 
-#if defined(HAVE_MUELU_EXPERIMENTAL) and defined(HAVE_MUELU_AMGX)
+#if defined(HAVE_MUELU_AMGX)
     std::string externalMG = "use external multigrid package";
     if (hasParamList && paramList.isParameter(externalMG) && paramList.get<std::string>(externalMG) == "amgx"){
       constCrsA = rcp_dynamic_cast<const crs_matrix_type>(inA);
