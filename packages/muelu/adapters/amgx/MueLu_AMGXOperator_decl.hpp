@@ -46,7 +46,7 @@
 #ifndef MUELU_AMGXOPERATOR_DECL_HPP
 #define MUELU_AMGXOPERATOR_DECL_HPP
 
-#if defined (HAVE_MUELU_EXPERIMENTAL) and defined (HAVE_MUELU_AMGX)
+#if defined (HAVE_MUELU_AMGX)
 #include <Teuchos_ParameterList.hpp>
 
 #include <Tpetra_Operator.hpp>
@@ -513,5 +513,5 @@ namespace MueLu {
 
 } // namespace
 
-#endif //HAVE_MUELU_EXPERIMENTAL && HAVE_MUELU_EXPERIMENTAL
+#endif //HAVE_MUELU_AMGX
 #endif // MUELU_AMGXOPERATOR_DECL_HPP
