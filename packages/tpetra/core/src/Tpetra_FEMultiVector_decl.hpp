@@ -69,7 +69,7 @@ namespace Tpetra {
 
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
   // forward declaration of MultiVector (declared later in this file)
-  template<class S, class LO, class GO, class N, const bool classic> class FEMultiVector;
+  template<class S, class LO, class GO, class N> class FEMultiVector;
 #endif // DOXYGEN_SHOULD_SKIP_THIS
 
   // CMS: Removed all of the non-member stuff... should this be kept?
@@ -78,13 +78,10 @@ namespace Tpetra {
   template <class Scalar = ::Tpetra::Details::DefaultTypes::scalar_type,
             class LocalOrdinal = ::Tpetra::Details::DefaultTypes::local_ordinal_type,
             class GlobalOrdinal = ::Tpetra::Details::DefaultTypes::global_ordinal_type,
-            class Node = ::Tpetra::Details::DefaultTypes::node_type,
-            const bool classic = Node::classic>
+            class Node = ::Tpetra::Details::DefaultTypes::node_type>
   class FEMultiVector :
     public MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>
   {
-    static_assert (! classic, "The 'classic' version of Tpetra was deprecated long ago, and has been removed.");
-
   public:
     //! @name Typedefs to facilitate template metaprogramming.
     //@{
@@ -96,8 +93,8 @@ namespace Tpetra {
     // CMS - A map AND an imported need to be arguments because in serial, the importer will be null
     FEMultiVector(const Teuchos::RCP<const Map<LO,GO,NO> > & map,
                   const Teuchos::RCP<const Import<LO,GO,NO> >& importer,
-                   const size_t numVecs,
-                   const bool zeroOut = true);
+                  const size_t numVecs,
+                  const bool zeroOut = true);
 
      // CMS - I do not feel that the ArrayView constructors need to be implemented.
      // I am a more open to implementing variants of the dual_view constructors, but are those used?
@@ -110,37 +107,37 @@ namespace Tpetra {
 
      /// \brief Basic constuctor.
      FEMultiVector (const Teuchos::RCP<const map_type>& map,
-                  const size_t numVecs,
-                  const bool zeroOut = true);
+                    const size_t numVecs,
+                    const bool zeroOut = true);
 
      /// \brief Create multivector by copying two-dimensional array of local data.
      FEMultiVector (const Teuchos::RCP<const map_type>& map,
-                  const Teuchos::ArrayView<const Scalar>& A,
-                  const size_t LDA,
-                  const size_t NumVectors);
+                    const Teuchos::ArrayView<const Scalar>& A,
+                    const size_t LDA,
+                    const size_t NumVectors);
 
      /// \brief Create multivector by copying array of views of local data.
      FEMultiVector (const Teuchos::RCP<const map_type>& map,
-                  const Teuchos::ArrayView<const Teuchos::ArrayView<const Scalar> >&ArrayOfPtrs,
-                  const size_t NumVectors);
+                    const Teuchos::ArrayView<const Teuchos::ArrayView<const Scalar> >&ArrayOfPtrs,
+                    const size_t NumVectors);
 
      /// \brief Constructor, that takes a Kokkos::DualView of the
      FEMultiVector (const Teuchos::RCP<const map_type>& map,
-                  const dual_view_type& view);
+                    const dual_view_type& view);
 
      /// \brief Constructor, that takes a Kokkos::View of the
      ///   MultiVector's data (living in the Device's memory space),
      ///   and returns a MultiVector that views those data.
      FEMultiVector (const Teuchos::RCP<const map_type>& map,
-                  const typename dual_view_type::t_dev& d_view);
+                    const typename dual_view_type::t_dev& d_view);
 
      /// \brief Expert mode constructor, that takes a Kokkos::DualView
      ///   of the MultiVector's data and the "original"
      ///   Kokkos::DualView of the data, and returns a MultiVector that
      ///   views those data.
      FEMultiVector (const Teuchos::RCP<const map_type>& map,
-                  const dual_view_type& view,
-                  const dual_view_type& origView);
+                    const dual_view_type& view,
+                    const dual_view_type& origView);
 
     /// \brief Expert mode constructor for noncontiguous views.
     FEMultiVector (const Teuchos::RCP<const map_type>& map,
@@ -156,9 +153,13 @@ namespace Tpetra {
 
     /// \brief "Offset view" constructor; make a view of a contiguous
     ///   subset of rows on each process.
-    FEMultiVector (const MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>& X,
+    /// WCMCLEN - no equivalent C'tor in MultiVector -- was this deprecated?
+    /*
+    FEMultiVector (const MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& X,
                    const map_type& subMap,
                    const size_t offset = 0);
+    */
+
 
      /// \brief Return a deep copy of this MultiVector, with a
     ///   different Node type.
@@ -167,8 +168,8 @@ namespace Tpetra {
     clone (const Teuchos::RCP<Node2>& node2) const;
 
     //! Shallow copy: assign \c source to \c *this.
-    MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>&
-    operator= (const MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>& source);
+    MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>&
+    operator= (const MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& source);
 
     /// \brief Replace the underlying Map in place.
     // CMS -  We will need some analogue of this guy --- it normally gets used for communicator restriction, which is a use case that matters.
@@ -178,7 +179,7 @@ namespace Tpetra {
   public:
 
      //! Copy constructor (shallow copy!).
-     FEMultiVector (const FEMultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>& source);
+     FEMultiVector (const FEMultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& source);
 
      /// \brief Copy constructor, with option to do deep or shallow copy.
      ///
@@ -188,7 +189,7 @@ namespace Tpetra {
      /// does not mark this MultiVector as having copy semantics.
      /// However, copyOrView = Teuchos::Copy will make the resulting
      /// MultiVector a deep copy of the input MultiVector.
-     FEMultiVector (const FEMultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>& source,
+     FEMultiVector (const FEMultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& source,
                   const Teuchos::DataAccess copyOrView);
 
 
@@ -198,7 +199,7 @@ namespace Tpetra {
      ///
      /// \param X [in] Input MultiVector to view (in possibly nonconst fashion).
      /// \param j [in] The column of X to view.
-     FEMultiVector (const FEMultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>& X,
+     FEMultiVector (const FEMultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& X,
                   const size_t j);
 
    public:
@@ -605,8 +606,8 @@ namespace Tpetra {
     void reduce();
 
     //! Shallow copy: assign \c source to \c *this.
-    FEMultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>&
-    operator= (const FEMultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>& source);
+    FEMultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>&
+    operator= (const FEMultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& source);
 
     //@}
 
@@ -638,27 +639,27 @@ namespace Tpetra {
     //@{
 
     //! Return a MultiVector with copies of selected columns.
-    Teuchos::RCP<MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic> >
+    Teuchos::RCP<MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> >
     subCopy (const Teuchos::Range1D& colRng) const;
 
     //! Return a MultiVector with copies of selected columns.
-    Teuchos::RCP<MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic> >
+    Teuchos::RCP<MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> >
     subCopy (const Teuchos::ArrayView<const size_t>& cols) const;
 
     //! Return a const MultiVector with const views of selected columns.
-    Teuchos::RCP<const MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic> >
+    Teuchos::RCP<const MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> >
     subView (const Teuchos::Range1D& colRng) const;
 
     //! Return a const MultiVector with const views of selected columns.
-    Teuchos::RCP<const MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic> >
+    Teuchos::RCP<const MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> >
     subView (const Teuchos::ArrayView<const size_t>& cols) const;
 
     //! Return a MultiVector with views of selected columns.
-    Teuchos::RCP<MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic> >
+    Teuchos::RCP<MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> >
     subViewNonConst (const Teuchos::Range1D& colRng);
 
     //! Return a MultiVector with views of selected columns.
-    Teuchos::RCP<MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic> >
+    Teuchos::RCP<MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> >
     subViewNonConst (const Teuchos::ArrayView<const size_t>& cols);
 
     /// \brief Return a const view of a subset of rows.
@@ -723,7 +724,7 @@ namespace Tpetra {
     /// number of entries in \c subMap (in this case, zero) and the \c
     /// offset may equal the number of local entries in
     /// <tt>*this</tt>.
-    Teuchos::RCP<const MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic> >
+    Teuchos::RCP<const MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> >
     offsetView (const Teuchos::RCP<const map_type>& subMap,
                 const size_t offset) const;
 
@@ -744,16 +745,16 @@ namespace Tpetra {
     ///
     /// See the documentation of offsetView() for a code example and
     /// an explanation of edge cases.
-    Teuchos::RCP<MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic> >
+    Teuchos::RCP<MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> >
     offsetViewNonConst (const Teuchos::RCP<const map_type>& subMap,
                         const size_t offset);
 
     //! Return a Vector which is a const view of column j.
-    Teuchos::RCP<const Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic> >
+    Teuchos::RCP<const Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node> >
     getVector (const size_t j) const;
 
     //! Return a Vector which is a nonconst view of column j.
-    Teuchos::RCP<Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic> >
+    Teuchos::RCP<Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node> >
     getVectorNonConst (const size_t j);
 
     //! Const view of the local values in a particular vector of this multivector.
@@ -909,7 +910,7 @@ namespace Tpetra {
     ///
     /// \post <tt>dots[j] == (this->getVector[j])->dot (* (A.getVector[j]))</tt>
     void
-    dot (const MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>& A,
+    dot (const MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& A,
          const Teuchos::ArrayView<dot_type>& dots) const;
 
     /// \brief Compute the dot product of each corresponding pair of
@@ -925,13 +926,13 @@ namespace Tpetra {
     /// different types; the method still returns \c void, as above.
     template <typename T>
     typename std::enable_if< ! (std::is_same<dot_type, T>::value), void >::type
-    dot (const MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>& A,
+    dot (const MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& A,
          const Teuchos::ArrayView<T> &dots) const;
 
     //! Like the above dot() overload, but for std::vector output.
     template <typename T>
     typename std::enable_if< ! (std::is_same<dot_type, T>::value), void >::type
-    dot (const MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>& A,
+    dot (const MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& A,
          std::vector<T>& dots) const;
 
     /// \brief Compute the dot product of each corresponding pair of
@@ -952,14 +953,14 @@ namespace Tpetra {
     ///
     /// \post <tt>dots(j) == (this->getVector[j])->dot (* (A.getVector[j]))</tt>
     void
-    dot (const MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>& A,
+    dot (const MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& A,
          const Kokkos::View<dot_type*, Kokkos::HostSpace>& norms) const;
 
     template<class ViewType>
     void
     dot (typename std::enable_if<std::is_same<typename ViewType::value_type,dot_type>::value &&
                                  std::is_same<typename ViewType::memory_space,typename device_type::memory_space>::value,
-                                 const MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>>::type& A,
+                                 const MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>>::type& A,
          const ViewType& dots) const;
 
     /// \brief Compute the dot product of each corresponding pair of
@@ -976,14 +977,14 @@ namespace Tpetra {
     /// different types; the method still returns \c void, as above.
     template <typename T>
     typename std::enable_if< ! (std::is_same<dot_type, T>::value), void >::type
-    dot (const MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>& A,
+    dot (const MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& A,
          const Kokkos::View<T*, device_type>& dots) const;
 
     //! Put element-wise absolute values of input Multi-vector in target: A = abs(this)
-    void abs (const MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>& A);
+    void abs (const MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& A);
 
     //! Put element-wise reciprocal values of input Multi-vector in target, this(i,j) = 1/A(i,j).
-    void reciprocal (const MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>& A);
+    void reciprocal (const MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& A);
 
     /// \brief Scale in place: <tt>this = alpha*this</tt>.
     ///
@@ -1022,9 +1023,10 @@ namespace Tpetra {
     /// this method, the NaN entries will remain after this method
     /// finishes.  It is legal for the input A to alias this
     /// MultiVector.
+    // TODO: Should A be a MultiVector or FEMultiVector?  (WCMCLEN)
     void
     scale (const Scalar& alpha,
-           const MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>& A);
+           const MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& A);
 
     /// \brief Update: <tt>this = beta*this + alpha*A</tt>.
     ///
@@ -1032,9 +1034,10 @@ namespace Tpetra {
     /// zero, overwrite \c *this unconditionally, even if it contains
     /// NaN entries.  It is legal for the input A to alias this
     /// MultiVector.
+    // TODO: Should A be a MultiVector or FEMultiVector?  (WCMCLEN)
     void
     update (const Scalar& alpha,
-            const MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>& A,
+            const MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& A,
             const Scalar& beta);
 
     /// \brief Update: <tt>this = gamma*this + alpha*A + beta*B</tt>.
@@ -1043,11 +1046,12 @@ namespace Tpetra {
     /// gamma is zero, overwrite \c *this unconditionally, even if it
     /// contains NaN entries.  It is legal for the inputs A or B to
     /// alias this MultiVector.
+    // TODO: Should A and B be a MultiVector or FEMultiVector?  (WCMCLEN)
     void
     update (const Scalar& alpha,
-            const MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>& A,
+            const MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& A,
             const Scalar& beta,
-            const MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>& B,
+            const MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& B,
             const Scalar& gamma);
 
     /// \brief Compute the one-norm of each vector (column), storing
@@ -1249,7 +1253,7 @@ namespace Tpetra {
     /// The results of this method are undefined for scalar types that
     /// are not floating-point types (e.g., int).
     void TPETRA_DEPRECATED
-    normWeighted (const MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>& weights,
+    normWeighted (const MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& weights,
                   const Teuchos::ArrayView<mag_type>& norms) const;
 
     /// \brief Compute the weighted 2-norm (RMS Norm) of each column.
@@ -1271,7 +1275,7 @@ namespace Tpetra {
     template <typename T>
     typename std::enable_if< ! (std::is_same<mag_type,T>::value), void >::type
     TPETRA_DEPRECATED
-    normWeighted (const MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>& weights,
+    normWeighted (const MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& weights,
                   const Teuchos::ArrayView<T>& norms) const;
 
     /// \brief Compute mean (average) value of each column.
@@ -1293,8 +1297,8 @@ namespace Tpetra {
     multiply (Teuchos::ETransp transA,
               Teuchos::ETransp transB,
               const Scalar& alpha,
-              const MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>& A,
-              const MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>& B,
+              const MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& A,
+              const MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& B,
               const Scalar& beta);
 
     /// \brief Multiply a Vector A elementwise by a MultiVector B.
@@ -1319,8 +1323,8 @@ namespace Tpetra {
     /// applying a diagonal scaling.
     void
     elementWiseMultiply (Scalar scalarAB,
-                         const Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>& A,
-                         const MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>& B,
+                         const Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& A,
+                         const MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& B,
                          Scalar scalarThis);
     //@}
     //! @name Attribute access functions
@@ -1444,14 +1448,14 @@ namespace Tpetra {
     ///   assignment operator; it does not change anything in \c *this
     ///   other than the contents of storage.
     void
-    assign (const MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>& src);
+    assign (const MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& src);
 
   protected:
-    template <class DS, class DL, class DG, class DN, const bool dstClassic,
-              class SS, class SL, class SG, class SN, const bool srcClassic>
+    template <class DS, class DL, class DG, class DN,
+              class SS, class SL, class SG, class SN>
     friend void
-    deep_copy (FEMultiVector<DS, DL, DG, DN, dstClassic>& dst,
-               const FEMultiVector<SS, SL, SG, SN, srcClassic>& src);
+    deep_copy (FEMultiVector<DS, DL, DG, DN>& dst,
+               const FEMultiVector<SS, SL, SG, SN>& src);
 
     /// \brief Compute the norm of each vector (column), storing the
     ///   result in a device View.
@@ -1570,8 +1574,8 @@ namespace Teuchos {
 
   // Give Teuchos::TypeNameTraits<Tpetra::MultiVector<...> > a
   // human-readable definition.
-  template<class SC, class LO, class GO, class NT, const bool classic>
-  class TypeNameTraits<Tpetra::FEMultiVector<SC, LO, GO, NT, classic> > {
+  template<class SC, class LO, class GO, class NT>
+  class TypeNameTraits<Tpetra::FEMultiVector<SC, LO, GO, NT> > {
   public:
     static std::string name () {
       return std::string ("Tpetra::FEMultiVector<") +
@@ -1582,7 +1586,7 @@ namespace Teuchos {
     }
 
     static std::string
-    concreteName (const Tpetra::FEMultiVector<SC, LO, GO, NT, classic>&) {
+    concreteName (const Tpetra::FEMultiVector<SC, LO, GO, NT>&) {
       return name ();
     }
   };
