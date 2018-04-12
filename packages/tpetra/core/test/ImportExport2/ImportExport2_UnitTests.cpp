@@ -1662,7 +1662,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( FusedImportExport, doImport, LO, GO, Scalar )
     Export1 = rcp(new ExportType(Map1,Ag->getRowMap()));
     Bg = Tpetra::exportAndFillCompleteCrsGraph<Graph>(Ag,*Export1,Map1,Map1,rcp(&params,false));
     if (!graphs_are_same(Bg, B->getCrsGraph())) {
-      if (MyPID == 0) cerr << "FusedExport: CrsGraph test #1 FAILED." << endl;
+      if (MyPID == 0) cerr << "FusedExport: CrsGraph test #7 FAILED." << endl;
       total_err--;
     }
 
@@ -1730,7 +1730,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( FusedImportExport, doImport, LO, GO, Scalar )
     Export1 = rcp(new ExportType(Ag->getRowMap(),Map1));
     Bg = Tpetra::exportAndFillCompleteCrsGraph<Graph>(Ag,*Export1,Map1,Map1);
     if (!graphs_are_same(Bg, B->getCrsGraph())) {
-      if (MyPID == 0) cerr << "FusedExport: CrsGraph test #1 FAILED." << endl;
+      if (MyPID == 0) cerr << "FusedExport: CrsGraph test #8 FAILED." << endl;
       total_err--;
     }
 
