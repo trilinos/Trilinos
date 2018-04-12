@@ -94,13 +94,14 @@ if($ENV{CTEST_CONFIGURATION} MATCHES "default")
     TIMEOUT_MINUTES 330
     )
 
-  TRILINOS_DRIVER_ADD_DASHBOARD(
-    OPENMPI-1.10.1_RELEASE_NO-INT_NO-SERIAL_OPENMP_EXPERIMENTAL
-    ctest_linux_nightly_mpi_release_muelu_no_int_no_serial_openmp_geminga.cmake
-    CTEST_INSTALLER_TYPE release
-    RUN_SERIAL
-    TIMEOUT_MINUTES 330
-    )
+  #JHU 2018-Apr-12 migrated to enigma
+  #TRILINOS_DRIVER_ADD_DASHBOARD(
+  #  OPENMPI-1.10.1_RELEASE_NO-INT_NO-SERIAL_OPENMP_EXPERIMENTAL
+  #  ctest_linux_nightly_mpi_release_muelu_no_int_no_serial_openmp_geminga.cmake
+  #  CTEST_INSTALLER_TYPE release
+  #  RUN_SERIAL
+  #  TIMEOUT_MINUTES 330
+  #  )
 
   TRILINOS_DRIVER_ADD_DASHBOARD(
     OPENMPI-1.10.1_RELEASE_NO-INT_OPENMP_EXPERIMENTAL
