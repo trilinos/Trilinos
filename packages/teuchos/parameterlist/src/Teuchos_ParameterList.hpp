@@ -304,19 +304,19 @@ public:
     </ul>
   */
   template<typename T>
-  T& get(const std::string& name, T def_value);
+  T get(const std::string& name, T def_value);
 
   /*! \brief Specialization of get(), where the nominal value is a character string.
     Both char* and std::string are stored as strings and return std::string values.
   */
-  std::string& get(const std::string& name, char def_value[]);
+  std::string get(const std::string& name, char def_value[]);
   
   /*! \brief Specialization of get(), where the nominal value is a character string.
     Both char* and std::string are stored as strings and return std::string values.
   */
-  std::string& get(const std::string& name, const char def_value[]);
+  std::string get(const std::string& name, const char def_value[]);
 
-  /// \brief Get a nonconst reference to the parameter.
+  /// \brief Get a parameter value
   ///
   /// \param name [in] The name of the parameter.
   ///
@@ -342,60 +342,12 @@ public:
   /// must use the \c template keyword.  For example:
   /// \code
   /// template<class T>
-  /// T& getMyParameter (Teuchos::ParameterList& plist) {
+  /// T getMyParameter (Teuchos::ParameterList& plist) {
   ///   return plist.template get<T> ("My Parameter");
   /// }
   /// \endcode
   template<typename T>
-  T& get (const std::string& name);
-
-  /// \brief Get a const reference to the parameter.
-  ///
-  /// \param name [in] The name of the parameter.
-  ///
-  /// If the given parameter is not in the list at all, this method
-  /// throws Exceptions::InvalidParameter.  If the parameter is in the
-  /// list but does not have type T, this method throws
-  /// Exceptions::InvalidParameterType.  Both exceptions are
-  /// subclasses of Exceptions::InvalidParameter.
-  ///
-  /// When you call this method, you must specify the type T explicitly.
-  /// For example:
-  /// \code
-  /// Teuchos::ParameterList plist;
-  /// const int x = 42;
-  /// plist.set ("The Answer", x);
-  /// // ...
-  /// const int y = plist.get<int> ("The Answer");
-  /// \endcode
-  /// If the type T is itself a template parameter in your code, you
-  /// must use the \c template keyword.  For example:
-  /// \code
-  /// template<class T>
-  /// const T& getMyParameter (const Teuchos::ParameterList& plist) {
-  ///   return plist.template get<T> ("My Parameter");
-  /// }
-  /// \endcode
-  template<typename T>
-  const T& get (const std::string& name) const;  
-  
-  /*! \brief Retrieves the pointer for parameter \c name of type \c T from a
-    list.  A null pointer is returned if this parameter doesn't exist or is
-    the wrong type.  \note The syntax for calling this method is: <tt>
-    list.template getPtr<int>( "Iters" ) </tt>
-  */
-  template<typename T>
-  inline
-  T* getPtr(const std::string& name);
-  
-  /*! \brief Retrieves the pointer for parameter \c name of type \c T from a
-    constant list.  A null pointer is returned if this parameter doesn't exist
-    or is the wrong type.  \note The syntax for calling this method is: <tt>
-    list.template getPtr<int>( "Iters" ) </tt>
-  */
-  template<typename T>
-  inline
-  const T* getPtr(const std::string& name) const;  
+  T get (const std::string& name) const;
 
   // ToDo: Add getSafePtr() functions to return Ptr<T> instead of raw T*
   
@@ -898,7 +850,7 @@ ParameterList& ParameterList::setEntry(std::string const& name_in, ParameterEntr
 
 
 template<typename T>
-T& ParameterList::get(const std::string& name_in, T def_value)
+T ParameterList::get(const std::string& name_in, T def_value)
 {
   typedef StringIndexedOrderedValueObjectContainerBase SIOVOCB;
   Ordinal param_idx = params_.getObjOrdinalIndex(name_in); 
@@ -913,73 +865,23 @@ T& ParameterList::get(const std::string& name_in, T def_value)
 
 
 inline
-std::string& ParameterList::get(const std::string& name_in, char def_value[])
+std::string ParameterList::get(const std::string& name_in, char def_value[])
 { return get(name_in, std::string(def_value)); }
 
 
 inline
-std::string& ParameterList::get(const std::string& name_in, const char def_value[])
+std::string ParameterList::get(const std::string& name_in, const char def_value[])
 { return get(name_in, std::string(def_value)); }
 
 
 template<typename T>
-T& ParameterList::get(const std::string& name_in) 
-{
-  ParameterEntry *foundEntry = this->getEntryPtr(name_in);
-  validateEntryExists("get",name_in,foundEntry);
-  this->template validateEntryType<T>("get",name_in,*foundEntry);
-  return getValue<T>(*foundEntry);
-}
-
-  
-template<typename T>
-const T& ParameterList::get(const std::string& name_in) const
+T ParameterList::get(const std::string& name_in) const
 {
   const ParameterEntry *foundEntry = this->getEntryPtr(name_in);
   validateEntryExists("get",name_in,foundEntry);
   this->template validateEntryType<T>("get",name_in,*foundEntry);
   return getValue<T>(*foundEntry);
 }
-
-
-template<typename T>
-inline
-T* ParameterList::getPtr(const std::string& name_in) 
-{
-  typedef StringIndexedOrderedValueObjectContainerBase SIOVOCB;
-  const Ordinal param_idx = params_.getObjOrdinalIndex(name_in);
-  if (param_idx != SIOVOCB::getInvalidOrdinal()) {
-    const Ptr<ParameterEntry> param_ptr = params_.getNonconstObjPtr(param_idx);
-    if (param_ptr->isType<T>()) {
-      return &param_ptr->getValue<T>(0);
-    }
-    // Note: The above is inefficinet.  You have to do the dynamic_cast twice
-    // (once to see if it is the type and once to do the cast).  This could be
-    // made more efficinet by upgrading Teuchos::any to add a any_cast_ptr()
-    // function but I don't think anyone actually uses this function.
-    return 0;
-  }
-  return 0;
-}
-
-  
-template<typename T>
-inline
-const T* ParameterList::getPtr(const std::string& name_in) const
-{
-  typedef StringIndexedOrderedValueObjectContainerBase SIOVOCB;
-  const Ordinal param_idx = params_.getObjOrdinalIndex(name_in);
-  if (param_idx != SIOVOCB::getInvalidOrdinal()) {
-    const Ptr<const ParameterEntry> param_ptr = params_.getObjPtr(param_idx);
-    if (param_ptr->isType<T>()) {
-      return &param_ptr->getValue<T>(0);
-    }
-    // Note: The above is inefficinet, see above non-const getPtr() function.
-    return 0;
-  }
-  return 0;
-}
-
 
 inline
 ParameterEntry& ParameterList::getEntry(const std::string& name_in)
@@ -1150,13 +1052,13 @@ void ParameterList::validateEntryType(
 
   
 /*! \relates ParameterList
-  \brief A templated helper function for getting a parameter from a non-const list.
+  \brief A templated helper function for getting a parameter from a const list.
   This helper function prevents the need for giving a nominal value of the specific template type.
     
   \note The syntax for calling this function is:  <tt> getParameter<int>( list, "Iters" ) </tt>
 */
 template<typename T>
-T& getParameter( ParameterList& l, const std::string& name )
+T getParameter( const ParameterList& l, const std::string& name )
 {
   return l.template get<T>(name);
 }
@@ -1169,55 +1071,11 @@ T& getParameter( ParameterList& l, const std::string& name )
 */
 template<typename T>
 inline
-T& get( ParameterList& l, const std::string& name )
+T get( ParameterList& l, const std::string& name )
 {
   return getParameter<T>(l,name);
 }
 
-  
-/*! \relates ParameterList
-  \brief A templated helper function for getting a parameter from a const list.
-  This helper function prevents the need for giving a nominal value of the specific template type.
-    
-  \note The syntax for calling this function is:  <tt> getParameter<int>( list, "Iters" ) </tt>    
-*/
-template<typename T>
-const T& getParameter( const ParameterList& l, const std::string& name )
-{
-  return l.template get<T>(name);
-}
-
-  
-/*! \relates ParameterList
-  \brief A templated helper function for getting a pointer to a parameter from
-  a non-const list, if it exists.  This helper function prevents the need for
-  giving a nominal value of the specific template type.
-  \note The syntax for calling this function is:
-  <tt>getParameterPtr<int>(list,"Iters")</tt>
-*/
-template<typename T>
-inline
-T* getParameterPtr( ParameterList& l, const std::string& name )
-{
-  return l.template getPtr<T>(name);
-}
-
-  
-/*! \relates ParameterList
-  \brief A templated helper function for getting a pointer to a parameter from
-  a non-const list, if it exists.  This helper function prevents the need for
-  giving a nominal value of the specific template type.
-  \note The syntax for calling this function is:
-  <tt>getParameterPtr<int>(list,"Iters")</tt>
-*/
-template<typename T>
-inline
-const T* getParameterPtr( const ParameterList& l, const std::string& name )
-{
-  return l.template getPtr<T>(name);
-}
-
-  
 /*! \relates ParameterList
   \brief A templated helper function for determining the type of a parameter entry for a non-const list.  
   This helper function avoids the need for giving a nominal value of the specific template type.
@@ -1346,10 +1204,8 @@ Array<T> getArrayFromStringParameter(
     arrayStr = getParameter<std::string>(paramList,paramName);
   }
   else {
-    const std::string
-      *arrayStrPtr = getParameterPtr<std::string>(paramList,paramName);
-    if(arrayStrPtr) {
-      arrayStr = *arrayStrPtr;
+    if(paramList.isParameter(paramName)) {
+      arrayStr = getParameter<std::string>(paramList,paramName);
     }
     else {
       return Array<T>(); // Return an empty array

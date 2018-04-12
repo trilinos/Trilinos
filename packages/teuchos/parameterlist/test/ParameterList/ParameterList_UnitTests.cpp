@@ -359,8 +359,6 @@ TEUCHOS_UNIT_TEST( ParameterList, get_nonexisting_param )
   TEST_THROW(pl.getEntry("Does not exist 1"), Exceptions::InvalidParameterName);
   TEST_THROW(pl.get<int>("Does not exist 2"), Exceptions::InvalidParameterName);
   TEST_THROW(getConst(pl).get<int>("Does not exist 3"), Exceptions::InvalidParameterName);
-  TEST_EQUALITY(pl.getPtr<int>("Does not exist 4"), static_cast<int*>(0));
-  TEST_EQUALITY(getConst(pl).getPtr<int>("Does not exist 5"), static_cast<const int*>(0));
   ECHO(char raw_str[] = "dummy");
   TEST_EQUALITY_CONST(pl.get("Does not exist 6", raw_str), "dummy");
   ECHO(const char raw_c_str[] = "dummy");
@@ -384,22 +382,6 @@ TEUCHOS_UNIT_TEST( ParameterList, get_existing_incorrect_type )
   // ToDo: Assert the contents of the error message
 }
 
-
-TEUCHOS_UNIT_TEST( ParameterList, getPtr )
-{
-  ParameterList pl;
-  pl.set("my int", 4);
-  TEST_EQUALITY_CONST(pl.getPtr<int>("Does not Exist"), static_cast<int*>(0));
-  TEST_INEQUALITY_CONST(pl.getPtr<int>("my int"), static_cast<int*>(0));
-  TEST_EQUALITY_CONST(*pl.getPtr<int>("my int"), 4);
-  TEST_EQUALITY_CONST(pl.getPtr<double>("my int"), static_cast<double*>(0));
-  TEST_EQUALITY_CONST(getConst(pl).getPtr<int>("Does not Exist"), static_cast<const int*>(0));
-  TEST_INEQUALITY_CONST(getConst(pl).getPtr<int>("my int"), static_cast<int*>(0));
-  TEST_EQUALITY_CONST(*getConst(pl).getPtr<int>("my int"), 4);
-  TEST_EQUALITY_CONST(getConst(pl).getPtr<double>("my int"), static_cast<const double*>(0));
-}
-
-
 TEUCHOS_UNIT_TEST( ParameterList, getEntryRCP )
 {
   ParameterList pl;
@@ -412,7 +394,6 @@ TEUCHOS_UNIT_TEST( ParameterList, getEntryRCP )
   TEST_EQUALITY_CONST(getConst(pl).getEntryRCP("my int")->getValue<int>(0), 4);
 }
 
-
 // Test nonconstFind()
 
 // Test find()
@@ -421,11 +402,9 @@ TEUCHOS_UNIT_TEST( ParameterList, getEntryRCP )
 TEUCHOS_UNIT_TEST( ParameterList, get_default_then_change )
 {
   ParameterList pl;
-  ECHO(int &my_int = pl.get("my int", 3));
+  ECHO(int my_int = pl.get("my int", 3));
   TEST_EQUALITY_CONST(my_int, 3);
   TEST_EQUALITY_CONST(pl.get<int>("my int"), 3);
-  ECHO(my_int = 5);
-  TEST_EQUALITY_CONST(pl.get<int>("my int"), 5);
 }
 
 

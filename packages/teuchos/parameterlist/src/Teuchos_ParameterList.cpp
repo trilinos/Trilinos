@@ -427,7 +427,7 @@ void ParameterList::validateParameters(
     if( theEntry.isList() && depth > 0 ) {
       sublist_list.push_back(
         ListPlusValidList(
-          &getValue<ParameterList>(theEntry),&getValue<ParameterList>(*validEntry)
+          &(theEntry.getReference<ParameterList>()),&(validEntry->getReference<ParameterList>())
           )
         );
     }
@@ -522,8 +522,8 @@ void ParameterList::validateParametersAndSetDefaults(
       if( theEntry.isList() && depth > 0 ) {
         sublist_list.push_back(
           ListPlusValidList(
-            &getValue<ParameterList>(theEntry),
-            &getValue<ParameterList>(*validEntry)
+            &theEntry.getReference<ParameterList>(),
+            &validEntry->getReference<ParameterList>()
             )
           );
       }
@@ -587,7 +587,7 @@ void ParameterList::updateSubListNames(int depth)
     const std::string &entryName = this->name(itr);
     const ParameterEntry &theEntry = this->entry(itr);
     if(theEntry.isList()) {
-      ParameterList &sublistEntry = getValue<ParameterList>(theEntry);
+      ParameterList &sublistEntry = theEntry.getReference<ParameterList>();
       sublistEntry.setName(this_name+std::string("->")+entryName);
       if(depth > 0)
         sublistEntry.updateSubListNames(depth-1);

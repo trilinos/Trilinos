@@ -151,7 +151,14 @@ public:
   */
   template<typename T>
   inline
-  T& getValue(T *ptr) const;
+  typename std::enable_if<std::is_integral<T>::value, T>::type getValue(T* /*ptr*/) const;
+  template<typename T>
+  inline
+  typename std::enable_if<!std::is_integral<T>::value, T>::type getValue(T* /*ptr*/) const;
+
+  template<typename T>
+  inline
+  T& getReference() const;
 
   /*! \brief Direct access to the Teuchos::any data value underlying this
    *  object. The bool argument \c activeQry (default: true) indicates that the 
@@ -260,7 +267,7 @@ private:
     in the ParameterEntry class, since the user does not have to pass in a pointer of type \c T.
 */
 template<typename T>
-inline T& getValue( const ParameterEntry &entry )
+inline T getValue( const ParameterEntry &entry )
 {
   return entry.getValue(static_cast<T*>(0));
 }
@@ -271,7 +278,7 @@ inline T& getValue( const ParameterEntry &entry )
     in the ParameterEntry class, since the user does not have to pass in a pointer of type \c T.
 */
 template<typename T>
-inline T& getValue(RCP<const ParameterEntry> entry)
+inline T getValue(RCP<const ParameterEntry> entry)
 {
   return entry->getValue(static_cast<T*>(0));
 }
@@ -354,10 +361,29 @@ void ParameterEntry::setValue(
 
 template<typename T>
 inline
-T& ParameterEntry::getValue(T * /*ptr*/) const
+T& ParameterEntry::getReference() const
 {
   isUsed_ = true;
   return const_cast<T&>(Teuchos::any_cast<T>( val_ ));
+}
+
+template<typename T>
+inline
+typename std::enable_if<std::is_integral<T>::value, T>::type ParameterEntry::getValue(T* /*ptr*/) const
+{
+  isUsed_ = true;
+  if (val_.type() == typeid(long long int)) {
+    return Teuchos::as<T>(Teuchos::any_cast<long long int>(val_)); 
+  }
+  return Teuchos::any_cast<T>( val_ );
+}
+
+template<typename T>
+inline
+typename std::enable_if<!std::is_integral<T>::value, T>::type ParameterEntry::getValue(T* /*ptr*/) const
+{
+  isUsed_ = true;
+  return Teuchos::any_cast<T>( val_ );
 }
 
 inline
