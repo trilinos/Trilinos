@@ -110,11 +110,11 @@ template<class GraphType,class Scalar>
 int LinePartitioner<GraphType,Scalar>::Compute_Blocks_AutoLine(Teuchos::ArrayView<local_ordinal_type> blockIndices) const {
   typedef local_ordinal_type LO;
   const LO invalid  = Teuchos::OrdinalTraits<LO>::invalid();
-  const Scalar zero = Teuchos::ScalarTraits<Scalar>::zero();
+  const double zero = Teuchos::ScalarTraits<double>::zero();
   const MT mzero    = Teuchos::ScalarTraits<MT>::zero();
 
-  Teuchos::ArrayRCP<const Scalar>  xvalsRCP, yvalsRCP, zvalsRCP;
-  Teuchos::ArrayView<const Scalar> xvals, yvals, zvals;
+  Teuchos::ArrayRCP<const double>  xvalsRCP, yvalsRCP, zvalsRCP;
+  Teuchos::ArrayView<const double> xvals, yvals, zvals;
   xvalsRCP = coord_->getData(0); xvals = xvalsRCP();
   if(coord_->getNumVectors() > 1) { yvalsRCP = coord_->getData(1); yvals = yvalsRCP(); }
   if(coord_->getNumVectors() > 2) { zvalsRCP = coord_->getData(2); zvals = zvalsRCP(); }
@@ -139,18 +139,18 @@ int LinePartitioner<GraphType,Scalar>::Compute_Blocks_AutoLine(Teuchos::ArrayVie
 
     // Get neighbors and sort by distance
     this->Graph_->getLocalRowCopy(i,cols(),nz);
-    Scalar x0 = (!xvals.is_null()) ? xvals[i/NumEqns_] : zero;
-    Scalar y0 = (!yvals.is_null()) ? yvals[i/NumEqns_] : zero;
-    Scalar z0 = (!zvals.is_null()) ? zvals[i/NumEqns_] : zero;
+    double x0 = (!xvals.is_null()) ? xvals[i/NumEqns_] : zero;
+    double y0 = (!yvals.is_null()) ? yvals[i/NumEqns_] : zero;
+    double z0 = (!zvals.is_null()) ? zvals[i/NumEqns_] : zero;
 
     LO neighbor_len=0;
     for(size_t j=0; j<nz; j+=NumEqns_) {
       MT mydist = mzero;
       LO nn = cols[j] / NumEqns_;
       if(cols[j] >=(LO)N) continue; // Check for off-proc entries
-      if(!xvals.is_null()) mydist += square<Scalar>(x0 - xvals[nn]);
-      if(!yvals.is_null()) mydist += square<Scalar>(y0 - yvals[nn]);
-      if(!zvals.is_null()) mydist += square<Scalar>(z0 - zvals[nn]);
+      if(!xvals.is_null()) mydist += square<double>(x0 - xvals[nn]);
+      if(!yvals.is_null()) mydist += square<double>(y0 - yvals[nn]);
+      if(!zvals.is_null()) mydist += square<double>(z0 - zvals[nn]);
       dist[neighbor_len] = Teuchos::ScalarTraits<MT>::squareroot(mydist);
       indices[neighbor_len]=cols[j];
       neighbor_len++;
@@ -181,11 +181,11 @@ template<class GraphType,class Scalar>
 void LinePartitioner<GraphType,Scalar>::local_automatic_line_search(int NumEqns, Teuchos::ArrayView <local_ordinal_type> blockIndices, local_ordinal_type last, local_ordinal_type next,  local_ordinal_type LineID, MT tol,  Teuchos::Array<local_ordinal_type> itemp, Teuchos::Array<MT> dtemp) const {
   typedef local_ordinal_type LO;
   const LO invalid  = Teuchos::OrdinalTraits<LO>::invalid();
-  const Scalar zero = Teuchos::ScalarTraits<Scalar>::zero();
+  const double zero = Teuchos::ScalarTraits<double>::zero();
   const MT mzero    = Teuchos::ScalarTraits<MT>::zero();
 
-  Teuchos::ArrayRCP<const Scalar>  xvalsRCP, yvalsRCP, zvalsRCP;
-  Teuchos::ArrayView<const Scalar> xvals, yvals, zvals;
+  Teuchos::ArrayRCP<const double>  xvalsRCP, yvalsRCP, zvalsRCP;
+  Teuchos::ArrayView<const double> xvals, yvals, zvals;
   xvalsRCP = coord_->getData(0); xvals = xvalsRCP();
   if(coord_->getNumVectors() > 1) { yvalsRCP = coord_->getData(1); yvals = yvalsRCP(); }
   if(coord_->getNumVectors() > 2) { zvalsRCP = coord_->getData(2); zvals = zvalsRCP(); }
@@ -202,9 +202,9 @@ void LinePartitioner<GraphType,Scalar>::local_automatic_line_search(int NumEqns,
     LO neighbors_in_line=0;
 
     this->Graph_->getLocalRowCopy(next,cols(),nz);
-    Scalar x0 = (!xvals.is_null()) ? xvals[next/NumEqns_] : zero;
-    Scalar y0 = (!yvals.is_null()) ? yvals[next/NumEqns_] : zero;
-    Scalar z0 = (!zvals.is_null()) ? zvals[next/NumEqns_] : zero;
+    double x0 = (!xvals.is_null()) ? xvals[next/NumEqns_] : zero;
+    double y0 = (!yvals.is_null()) ? yvals[next/NumEqns_] : zero;
+    double z0 = (!zvals.is_null()) ? zvals[next/NumEqns_] : zero;
 
     // Calculate neighbor distances & sort
     LO neighbor_len=0;
@@ -213,9 +213,9 @@ void LinePartitioner<GraphType,Scalar>::local_automatic_line_search(int NumEqns,
       if(cols[i] >=(LO)N) continue; // Check for off-proc entries
       LO nn = cols[i] / NumEqns;
       if(blockIndices[nn]==LineID) neighbors_in_line++;
-      if(!xvals.is_null()) mydist += square<Scalar>(x0 - xvals[nn]);
-      if(!yvals.is_null()) mydist += square<Scalar>(y0 - yvals[nn]);
-      if(!zvals.is_null()) mydist += square<Scalar>(z0 - zvals[nn]);
+      if(!xvals.is_null()) mydist += square<double>(x0 - xvals[nn]);
+      if(!yvals.is_null()) mydist += square<double>(y0 - yvals[nn]);
+      if(!zvals.is_null()) mydist += square<double>(z0 - zvals[nn]);
       dist[neighbor_len] = Teuchos::ScalarTraits<MT>::squareroot(mydist);
       indices[neighbor_len]=cols[i];
       neighbor_len++;

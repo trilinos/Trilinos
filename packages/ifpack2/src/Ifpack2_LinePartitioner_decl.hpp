@@ -67,7 +67,7 @@ This implementation is derived from the related routine in ML.
 Supported parameters:
   <ul>
     <li> \c "partitioner: line detection threshold": if \f$||x_j - x_i||^2 < thresh * \max_k||x_k - x_i||^2\f$, then the points are close enough to line smooth <Scalar>
-    <li> \c "partitioner: coordinates"  : coordinates of local nodes  < Teuchos::MultiVector<Scalar> >
+    <li> \c "partitioner: coordinates"  : coordinates of local nodes  < Teuchos::MultiVector<double> >
     <li> \c "partitioner: PDE equations": number of equations per node <int>
   </ul>
 */
@@ -80,8 +80,8 @@ public:
   typedef typename GraphType::global_ordinal_type global_ordinal_type;
   typedef typename GraphType::node_type node_type;
   typedef Tpetra::RowGraph<local_ordinal_type, global_ordinal_type, node_type>  row_graph_type;
-  typedef Tpetra::MultiVector<Scalar,local_ordinal_type, global_ordinal_type, node_type>  multivector_type;
-  typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType MT;
+  typedef Tpetra::MultiVector<double,local_ordinal_type, global_ordinal_type, node_type>  multivector_type;
+  typedef typename Teuchos::ScalarTraits<double>::magnitudeType MT;
 
 
   //! Constructor.
