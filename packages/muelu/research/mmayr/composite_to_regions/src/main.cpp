@@ -1530,7 +1530,46 @@ int main(int argc, char *argv[]) {
       switch (coarseMapReconstruction) {
       case prolongator_based_importer:
       {
+        /* General strategy to create coarse level maps:
+         * =============================================
+         *
+         * We need three maps on the next coarser level:
+         * - regional map: just extract the RowMap() from the prolongator
+         * - quasiRegional map: needs to be formed manually
+         * - composite map: needs to be formed manually
+         *
+         * After extracting the RowMap() from the prolongator to be used as the
+         * coarse level's regional map, we need to identify pairs/sets of GIDs
+         * that represent the same (duplicated) DOF at a region interface in
+         * order to form the quasiRegional and composite map for the next
+         * coarser level.
+         *
+         * Identifying this pairs consists of several steps:
+         * 1. Identify GIDs that represent the same (duplicated) DOF at a region
+         *   interface on the current level
+         * 2. Identify GIDs that represent the same (duplicated) DOF at a region
+         *   interface on the next coarser level
+         *
+         * To form the quasiRegional map, we loop over the regional map and
+         * - copy each GID that's associated with an interior DOF away from a
+         *   region interface.
+         * - replace each GID that's associated with an interface DOF by its
+         *   quasiRegional counterpart.
+         *
+         * Note: We choose the quasiRegional (and composite) GID of an interface
+         * DOF to be the std::min of all GIDs that represent that same
+         * duplicated DOF.
+         *
+         * To form the composite map, we loop over the quasiRegional map and
+         * - every proc accepts every GID that it owns.
+         * - every proc ignores every GID that it doesn't own.
+         */
+
         int err = 0;
+
+        ////////////////////////////////////////////////////////////////////////
+        // IDENTIFY DUPLICATED GIDS ON FINE LEVEL
+        ////////////////////////////////////////////////////////////////////////
 
         RCP<Epetra_CrsMatrix> summedDuplicateMatrix = Teuchos::null;
 
@@ -1809,6 +1848,11 @@ int main(int argc, char *argv[]) {
 //        std::cout << "Prolongator" << std::endl;
 //        regProlong[1][0]->Print(std::cout);
 
+
+        ////////////////////////////////////////////////////////////////////////
+        // IDENTIFY DUPLICATED GIDS ON COARSE LEVEL
+        ////////////////////////////////////////////////////////////////////////
+
         std::vector<std::vector<int> > myCoarseDuplicates; // pairs of duplicates with locally owned GID listed first on coarse level.
         myCoarseDuplicates.resize(myDuplicates.size());
 
@@ -1934,9 +1978,9 @@ int main(int argc, char *argv[]) {
 
         }
 
-        /* Create coarse level maps
-         *
-         */
+        ////////////////////////////////////////////////////////////////////////
+        // CREATE COARSE LEVEL MAPS
+        ////////////////////////////////////////////////////////////////////////
         {
 //          sleep(1);
 //          std::cout << myRank << " | Printing regRowMaps[1][0] ..." << std::endl;
