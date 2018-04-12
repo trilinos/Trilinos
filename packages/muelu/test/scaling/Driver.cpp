@@ -91,6 +91,10 @@
 #include "cuda_profiler_api.h"
 #endif
 
+#ifdef HAVE_MUELU_AMGX
+#include <MueLu_AMGXOperator.hpp>
+#endif
+
 
 
 #include <MueLu_CreateXpetraPreconditioner.hpp>
@@ -337,8 +341,9 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
 
         if (useAMGX) {
 #if defined (HAVE_MUELU_AMGX) and defined (HAVE_MUELU_TPETRA)
-	  RCP<Tpetra_CrsMatrix<SC,LO,GO,NO> > tA = Xpetra::toTpetra(A);
-          aH = Teuchos::rcp<new MueLu::AMGXOperator<SC, LO, GO, NO> >(tA);
+	  mueluList.remove("use external multigrid package");
+	  RCP<const Tpetra::CrsMatrix<SC,LO,GO,NO> > tA = Utilities::Op2TpetraCrs(A);
+          aH = Teuchos::rcp<MueLu::AMGXOperator<SC, LO, GO, NO> >(new MueLu::AMGXOperator<SC, LO, GO, NO>(tA,mueluList));
 #endif
         }
         else if(useML) {

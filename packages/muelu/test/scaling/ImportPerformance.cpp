@@ -660,22 +660,11 @@ int main_(Teuchos::CommandLineProcessor &clp,  Xpetra::UnderlyingLib &lib, int a
       // =========================================================================
       comm->barrier();
       tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Driver: 2 - MueLu Setup")));
-      bool useAMGX = mueluList.isParameter("use external multigrid package") && (mueluList.get<std::string>("use external multigrid package") == "amgx");
 
       RCP<Hierarchy> H;
-#if defined (HAVE_MUELU_AMGX) and defined (HAVE_MUELU_TPETRA)
-      RCP<MueLu::AMGXOperator<SC,LO,GO,NO> > aH;
-#endif
       A->SetMaxEigenvalueEstimate(-one);
 
-      if (useAMGX) {
-#if defined (HAVE_MUELU_AMGX) and defined (HAVE_MUELU_TPETRA)
-	RCP<Tpetra_CrsMatrix<SC,LO,GO,NO> > tA = Xpetra::toTpetra(A);
-	aH = Teuchos::rcp<new MueLu::AMGXOperator<SC, LO, GO, NO> >(tA);
-#endif
-      } else {
-        H = MueLu::CreateXpetraPreconditioner(A, mueluList, coordinates);
-      }
+      H = MueLu::CreateXpetraPreconditioner(A, mueluList, coordinates);
       comm->barrier();
       tm = Teuchos::null;
 
