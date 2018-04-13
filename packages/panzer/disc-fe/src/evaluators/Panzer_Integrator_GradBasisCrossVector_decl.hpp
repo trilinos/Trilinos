@@ -53,7 +53,29 @@
 
 namespace panzer {
     
-PANZER_EVALUATOR_CLASS(Integrator_GradBasisCrossVector)
+template<typename EvalT, typename Traits>
+class Integrator_GradBasisCrossVector
+  :
+  public panzer::EvaluatorWithBaseImpl<Traits>,
+  public PHX::EvaluatorDerived<EvalT, Traits>
+{
+  public:
+
+    Integrator_GradBasisCrossVector(
+      const Teuchos::ParameterList& p);
+
+    void
+    postRegistrationSetup(
+      typename Traits::SetupData d,
+      PHX::FieldManager<Traits>& fm);
+
+    void
+    evaluateFields(
+      typename Traits::EvalData d);
+
+  private:
+
+    using ScalarT = typename EvalT::ScalarT;
   
   std::vector<PHX::MDField<ScalarT,Cell,BASIS> > _residuals;
     
@@ -84,7 +106,8 @@ PANZER_EVALUATOR_CLASS(Integrator_GradBasisCrossVector)
   // Temporary variable to store tmp = multipliers * vector
   Kokkos::DynRankView<ScalarT,PHX::Device> _tmp;
 
-PANZER_EVALUATOR_CLASS_END
+}; // end of class Integrator_GradBasisCrossVector
+
 
 }
 

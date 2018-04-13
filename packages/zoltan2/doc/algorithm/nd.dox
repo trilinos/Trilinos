@@ -1,0 +1,37 @@
+/*! \page ndPage Nested Dissection-based ordering
+
+\section nd_algorithm ND algorithm
+
+ND is a serial ordering algorithm for graphs or sparse matrices that runs on the local graph for the node.
+ND computes a nested dissection based ordering recursively by computing edge separators and then computing a
+vertex cover based on the resulting boundary graph (from a bipartite matching of that boundary graph).
+
+ND is currently an experimental method.  In order to use, add "-D Zoltan2_ENABLE_Experimental:BOOL=ON" to
+cmake options.
+
+\subsection nd_input Input
+
+ND expects a Zoltan2::GraphModel object. 
+
+\subsection rcm_parameters Parameters
+
+In order to enable ND:
+- order_method should be set to "nd"
+
+
+The following parameters are used by the ND algorithm:
+
+- \ref num_global_parts -- specifies the target number parts to use when computing the nested dissection ordering
+- \ref edge_separator_method (currently "rcb" or "phg") -- partitiong method to use when calculating edge separator 
+
+
+\subsection nd_solution Solution
+
+An ND solution is a permutation, currently given as a list of local ids.
+
+
+
+\subsection nd_source Source
+Zoltan2_AlgND.hpp is the source file for ND.
+
+*/

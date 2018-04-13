@@ -53,7 +53,10 @@
 namespace panzer {
 
 //**********************************************************************
-PHX_EVALUATOR_CTOR(Integrator_DivBasisTimesScalar,p) :
+template<typename EvalT, typename Traits>
+Integrator_DivBasisTimesScalar<EvalT, Traits>::
+Integrator_DivBasisTimesScalar(
+  const Teuchos::ParameterList& p) :
   residual( p.get<std::string>("Residual Name"), 
 	    p.get< Teuchos::RCP<panzer::BasisIRLayout> >("Basis")->functional),
   basis_name(p.get< Teuchos::RCP<panzer::BasisIRLayout> >("Basis")->name())
@@ -98,7 +101,12 @@ PHX_EVALUATOR_CTOR(Integrator_DivBasisTimesScalar,p) :
 }
 
 //**********************************************************************
-PHX_POST_REGISTRATION_SETUP(Integrator_DivBasisTimesScalar,sd,fm)
+template<typename EvalT, typename Traits>
+void
+Integrator_DivBasisTimesScalar<EvalT, Traits>::
+postRegistrationSetup(
+  typename Traits::SetupData sd,
+  PHX::FieldManager<Traits>& fm)
 {
   this->utils.setFieldData(residual,fm);
   this->utils.setFieldData(scalar,fm);
@@ -115,7 +123,11 @@ PHX_POST_REGISTRATION_SETUP(Integrator_DivBasisTimesScalar,sd,fm)
 }
 
 //**********************************************************************
-PHX_EVALUATE_FIELDS(Integrator_DivBasisTimesScalar,workset)
+template<typename EvalT, typename Traits>
+void
+Integrator_DivBasisTimesScalar<EvalT, Traits>::
+evaluateFields(
+  typename Traits::EvalData workset)
 { 
   // zero the reisdual
   residual.deep_copy(ScalarT(0.0));

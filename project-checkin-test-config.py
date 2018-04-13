@@ -12,6 +12,7 @@ configuration = {
     # developers.
     'defaults': {
         '--send-email-to-on-push': 'trilinos-checkin-tests@software.sandia.gov',
+        '--no-rebase' : '',
         },
 
     # CMake options for various build configurations. All entries in
@@ -34,7 +35,7 @@ configuration = {
         'default-builds': [
 
             ('MPI_RELEASE_DEBUG_SHARED_PT', [
-                '-DTrilinos_CONFIGURE_OPTIONS_FILE:STRING=cmake/std/MpiReleaseDebugSharedPtSettings.cmake,cmake/std/BasicCiTestingSettings.cmake',
+                '-DTrilinos_CONFIGURE_OPTIONS_FILE:STRING=cmake/std/MpiReleaseDebugSharedPtSettings.cmake,cmake/std/BasicCiTestingSettings.cmake,cmake/std/sems/SEMSDevEnv.cmake',
                 ]),
 
             ## Options for the SERIAL_RELEASE build.

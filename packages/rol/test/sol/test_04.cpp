@@ -112,7 +112,7 @@ int main(int argc, char* argv[]) {
     ROL::Ptr<ROL::BatchManager<RealT> > bman =
       ROL::makePtr<ROL::TeuchosBatchManager<RealT,int>>(commptr);
     ROL::Ptr<ROL::SampleGenerator<RealT> > sampler =
-      ROL::makePtr<ROL::SROMGenerator<RealT>>(*parlist,bman,distVec);
+      ROL::makePtr<ROL::SROMGenerator<RealT>>(*parlist,bman,distVec,*outStream);
     *outStream << std::endl << "Sample Time: "
                << (std::clock()-timer)/(RealT)CLOCKS_PER_SEC << " seconds"
                << std::endl;

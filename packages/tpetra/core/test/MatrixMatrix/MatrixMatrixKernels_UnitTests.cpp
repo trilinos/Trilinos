@@ -419,7 +419,7 @@ mult_test_results multiply_test_kernel(
   // Setup
   // As a note "SPGEMM_MKL" will *NOT* pass all of these tests
   //  std::vector<std::string> ALGORITHMS={"SPGEMM_MKL","SPGEMM_KK_MEMSPEED","SPGEMM_KK_SPEED","SPGEMM_KK_MEMORY"};
-  std::vector<std::string> ALGORITHMS={"SPGEMM_KK_MEMSPEED","SPGEMM_KK_SPEED","SPGEMM_KK_MEMORY"};
+  std::vector<std::string> ALGORITHMS={"SPGEMM_KK_MEMORY"};
 
   for(int alg = 0; alg < (int)ALGORITHMS.size(); alg++) {
     std::string myalg = ALGORITHMS[alg];

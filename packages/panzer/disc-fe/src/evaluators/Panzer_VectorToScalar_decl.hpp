@@ -51,7 +51,29 @@
 
 namespace panzer {
     
-PANZER_EVALUATOR_CLASS(VectorToScalar)
+template<typename EvalT, typename Traits>
+class VectorToScalar
+  :
+  public panzer::EvaluatorWithBaseImpl<Traits>,
+  public PHX::EvaluatorDerived<EvalT, Traits>
+{
+  public:
+
+    VectorToScalar(
+      const Teuchos::ParameterList& p);
+
+    void
+    postRegistrationSetup(
+      typename Traits::SetupData d,
+      PHX::FieldManager<Traits>& fm);
+
+    void
+    evaluateFields(
+      typename Traits::EvalData d);
+
+  private:
+
+    using ScalarT = typename EvalT::ScalarT;
   
   std::vector< PHX::MDField<ScalarT,Cell,Point> > scalar_fields;
   PHX::MDField<const ScalarT,Cell,Point,Dim> vector_field;
@@ -64,7 +86,8 @@ public:
   VectorToScalar(const PHX::FieldTag & input,
                  const std::vector<PHX::Tag<ScalarT>> & output);
 
-PANZER_EVALUATOR_CLASS_END
+}; // end of class VectorToScalar
+
 
 /** This is a function constructor for an evaluator
   * that builds scalars from a single vector field. The user specifies

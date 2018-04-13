@@ -45,11 +45,10 @@
 #define ROL_MOREAUYOSIDAPENALTYSTEP_H
 
 #include "ROL_MoreauYosidaPenalty.hpp"
-#include "ROL_Vector.hpp"
-#include "ROL_Objective.hpp"
-#include "ROL_BoundConstraint.hpp"
-#include "ROL_Constraint.hpp"
 #include "ROL_Types.hpp"
+#include "ROL_AugmentedLagrangianStep.hpp"
+#include "ROL_CompositeStep.hpp"
+#include "ROL_FletcherStep.hpp"
 #include "ROL_Algorithm.hpp"
 #include "Teuchos_ParameterList.hpp"
 
@@ -136,6 +135,9 @@ private:
   int subproblemIter_;
   bool hasEquality_;
 
+  EStep stepType_;
+  std::string stepname_;
+
   void updateState(const Vector<Real> &x, const Vector<Real> &l,
                    Objective<Real> &obj,
                    Constraint<Real> &con, BoundConstraint<Real> &bnd,
@@ -216,6 +218,9 @@ public:
     parlist_.sublist("Status Test").set("Constraint Tolerance", ctol);
     parlist_.sublist("Status Test").set("Step Tolerance",       stol);
     parlist_.sublist("Status Test").set("Iteration Limit",      maxit);
+    // Get step name from parameterlist
+    stepname_ = steplist.sublist("Subproblem").get("Step Type","Composite Step");
+    stepType_ = StringToEStep(stepname_);
   }
 
   /** \brief Initialize step with equality constraint.
@@ -276,12 +281,30 @@ public:
                 Objective<Real> &obj, Constraint<Real> &con, 
                 BoundConstraint<Real> &bnd, 
                 AlgorithmState<Real> &algo_state ) {
+    //MoreauYosidaPenalty<Real> &myPen
+    //  = dynamic_cast<MoreauYosidaPenalty<Real>&>(obj);
     Real one(1);
-    MoreauYosidaPenalty<Real> &myPen
-      = dynamic_cast<MoreauYosidaPenalty<Real>&>(obj);
-    algo_ = ROL::makePtr<Algorithm<Real>>("Composite Step",parlist_,false);
+    Ptr<Objective<Real>> penObj;
+    if (stepType_ == STEP_AUGMENTEDLAGRANGIAN) {
+      Ptr<Objective<Real>>  raw_obj = makePtrFromRef(obj);
+      Ptr<Constraint<Real>> raw_con = makePtrFromRef(con);
+      Ptr<StepState<Real>>  state   = Step<Real>::getState();
+      penObj = makePtr<AugmentedLagrangian<Real>>(raw_obj,raw_con,l,one,x,*(state->constraintVec()),parlist_);
+    }
+    else if (stepType_ == STEP_FLETCHER) {
+      Ptr<Objective<Real>>  raw_obj = makePtrFromRef(obj);
+      Ptr<Constraint<Real>> raw_con = makePtrFromRef(con);
+      Ptr<StepState<Real>>  state   = Step<Real>::getState();
+      penObj = makePtr<Fletcher<Real>>(raw_obj,raw_con,x,*(state->constraintVec()),parlist_);
+    }
+    else {
+      penObj = makePtrFromRef(obj);
+      stepname_ = "Composite Step";
+      stepType_ = STEP_COMPOSITESTEP;
+    }
+    algo_ = ROL::makePtr<Algorithm<Real>>(stepname_,parlist_,false);
     x_->set(x); l_->set(l);
-    algo_->run(*x_,*l_,myPen,con,print_);
+    algo_->run(*x_,*l_,*penObj,con,print_);
     s.set(*x_); s.axpy(-one,x);
     subproblemIter_ = (algo_->getState())->iter;
   }
@@ -311,6 +334,7 @@ public:
     MoreauYosidaPenalty<Real> &myPen
       = dynamic_cast<MoreauYosidaPenalty<Real>&>(obj);
     ROL::Ptr<StepState<Real> > state = Step<Real>::getState();
+    state->SPiter = subproblemIter_;
     state->descentVec->set(s);
     // Update iterate and Lagrange multiplier
     x.plus(s);

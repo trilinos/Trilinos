@@ -223,9 +223,11 @@ void ParameterListCallbackBlocked<LocalOrdinalT,GlobalOrdinalT,Node>::buildCoord
    case 3:
       zcoords_[field].resize(coordsVec_->getLocalLength()); 
       coordsVec_->getVector(2)->get1dCopy(Teuchos::arrayViewFromVector(zcoords_[field]));
+      [[gnu::fallthrough]];
    case 2:
       ycoords_[field].resize(coordsVec_->getLocalLength()); 
       coordsVec_->getVector(1)->get1dCopy(Teuchos::arrayViewFromVector(ycoords_[field]));
+      [[gnu::fallthrough]];
    case 1:
       xcoords_[field].resize(coordsVec_->getLocalLength()); 
       coordsVec_->getVector(0)->get1dCopy(Teuchos::arrayViewFromVector(xcoords_[field]));

@@ -3,4 +3,5 @@ ADD_SUBDIRECTORIES(
     TestLaplacian_Tpetra
     TestInterfaceSets
 #    TestImport_Tpetra
+#    TestRepeatedMap
 )

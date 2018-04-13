@@ -43,11 +43,6 @@ To use this script, just symlink this into any desired directory like:
    cd <some-base-dir>/
    ln -s $TRILNOS_DIR/cmake/std/atdm/checkin-test-atdm.sh .
 
-and then load an env to make sure that at least some env is loaded that is
-needed to provide git, python, cmake using, for example:
-
-  source $TRILNOS_DIR/cmake/std/atdm/load-env.sh gnu
-
 Then, for example, to locally test a few builds for just Kokkos use:
 
   ./checkin-test-atdm.sh \\
@@ -56,7 +51,7 @@ Then, for example, to locally test a few builds for just Kokkos use:
      --local-do-all
 
 This will only send email for the final check of all of the builds specified
-(currently you can't turn that final email off).
+(email can be turned off by passing in --send-email-to=).
 
 Note that this will auatomatically use the full number processors for building
 and running tests as specified in the <system_name>/environment.sh file.
@@ -66,7 +61,7 @@ system and not the login node or it will completely fill up the login node.
 To reproduce any build just do:
 
   cd <job-name-keys>/
-  soruce load-env.sh
+  source load-env.sh
   ./do-configure
   make -j16
   ctest -j16
@@ -99,6 +94,7 @@ done
 ATDM_CHT_FOUND_HELP=0
 ATDM_CHT_FOUND_PULL=0
 ATDM_CHT_FOUND_PUSH=0
+ATDM_CHT_SEND_EMAIL_TO_ARG=
 ATDM_CHT_ENABLE_PACKAGES_ARG=
 
 for ATDM_CHT_CURENT_ARG in "$@" ; do
@@ -114,8 +110,9 @@ for ATDM_CHT_CURENT_ARG in "$@" ; do
   elif [[ "$ATDM_CHT_CURENT_ARG" == "--push" ]] ; then
     #echo "Found --push"
     ATDM_CHT_FOUND_PUSH=1
+  elif [[ "$ATDM_CHT_CURENT_ARG" == "--send-email-to"* ]] ; then
+    ATDM_CHT_SEND_EMAIL_TO_ARG="$ATDM_CHT_CURENT_ARG"
   elif [[ "$ATDM_CHT_CURENT_ARG" == "--enable-packages"* ]] ; then
-    #echo "Found --enable-packages"
     ATDM_CHT_ENABLE_PACKAGES_ARG="$ATDM_CHT_CURENT_ARG"
   fi
 done
@@ -150,16 +147,41 @@ for ATDM_JOB_NAME_KEYS in $ATDM_JOB_NAME_KEYS_LIST ; do
   ATDM_NUM_BULDS=$((ATDM_NUM_BULDS+1))
 done
 
+#
+# B) Remove log files
+#
+
+if [ -f checkin-test.final.out ] ; then
+  rm checkin-test.final.out
+fi
+
+for ATDM_JOB_NAME_KEYS in $ATDM_JOB_NAME_KEYS_LIST ; do
+  if [ -f checkin-test.$ATDM_JOB_NAME_KEYS.out ] ; then
+    rm checkin-test.$ATDM_JOB_NAME_KEYS.out
+  fi
+done
 
 #
-# B) Do an initial pull
+# C) Do an initial pull
 #
 
 # ToDo: Implement
 
 #
-# C) Loop over individual builds and run them
+# D) Loop over individual builds and run them
 #
+
+echo
+echo "Load some env to get python, cmake, etc ..."
+echo
+source $STD_ATDM_DIR/load-env.sh gnu
+# NOTE: Above, it does not matter which env you load.  Any of them will
+# provide the right python, cmake, etc.  Here we just assume that the 'gnu'
+# compilers will be on every ATDM system.
+
+# TODO: If every env does not have 'gnu', then add a special keyword 'default'
+# for the load-env.sh script to allow some default env to be loaded on a
+# system.
 
 echo
 echo "Running configure, build, and/or testing for $ATDM_NUM_BULDS builds: $ATDM_JOB_NAME_KEYS_LIST"
@@ -173,7 +195,7 @@ for ATDM_JOB_NAME_KEYS in $ATDM_JOB_NAME_KEYS_LIST ; do
   echo "***"
   echo
   $STD_ATDM_DIR/utils/checkin-test-atdm-single.sh $ATDM_JOB_NAME_KEYS \
-    --default-builds= --allow-no-pull --send-email-to= "$@"
+    --default-builds= --allow-no-pull --send-email-to="" --ctest-timeout=600 "$@"
   if [[ "$?" == "0" ]] ; then
     echo "$ATDM_JOB_NAME_KEYS: PASSED!"
   else
@@ -183,7 +205,7 @@ for ATDM_JOB_NAME_KEYS in $ATDM_JOB_NAME_KEYS_LIST ; do
 done
 
 #
-# D) Collect the results from all the builds
+# E) Collect the results from all the builds
 #
 
 echo
@@ -195,13 +217,18 @@ echo
 $ATDM_TRILINOS_DIR/cmake/tribits/ci_support/checkin-test.py \
   --default-builds= --st-extra-builds=$ATDM_JOB_NAME_KEYS_COMMA_LIST \
   --allow-no-pull "$ATDM_CHT_ENABLE_PACKAGES_ARG" \
-  &> checkin-test.final.out
+  $ATDM_CHT_SEND_EMAIL_TO_ARG \
+  --log-file=checkin-test.final.out \
+  &> /dev/null
 
 ATDM_CHT_RETURN_CODE=$?
 
 # NOTE The return value will be 0 if everything passed!
 
-# Print final status
+#
+# F) Print final status
+#
+
 echo
 grep -A 1000 "Commit status email being sent" checkin-test.final.out \
   | grep -B 1000 "Commits for repo" \

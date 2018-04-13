@@ -9,6 +9,7 @@ packages/xSDKTrilinos
 TriBITS
 TriBITS/TriBITSDoc
 kokkos
+kokkos-kernels
 seacas
 DataTransferKit
 preCopyrightTrilinos

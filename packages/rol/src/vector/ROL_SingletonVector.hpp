@@ -105,7 +105,10 @@ public:
     return ROL::makePtr<SingletonVector>(0);
   }
   
-  ROL::Ptr<V> basis() const {
+  ROL::Ptr<V> basis(const int i) const {
+    TEUCHOS_TEST_FOR_EXCEPTION( i >= 1 || i < 0,
+                                std::invalid_argument,
+                                "Error: Basis index must be between 0 and vector dimension." );
     return ROL::makePtr<SingletonVector>(1);
   }
 
@@ -121,6 +124,10 @@ public:
 
   Real reduce( const Elementwise::ReductionOp<Real> &r ) const {
     return value_;
+  }
+
+  void setScalar( const Real &C ) {
+    value_ = C;
   }
 
   void print( std::ostream& os ) const {

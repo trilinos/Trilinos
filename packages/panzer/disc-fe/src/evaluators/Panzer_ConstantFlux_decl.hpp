@@ -52,13 +52,36 @@
 
 namespace panzer {
     
-PANZER_EVALUATOR_CLASS(ConstantFlux)
+template<typename EvalT, typename Traits>
+class ConstantFlux
+  :
+  public panzer::EvaluatorWithBaseImpl<Traits>,
+  public PHX::EvaluatorDerived<EvalT, Traits>
+{
+  public:
+
+    ConstantFlux(
+      const Teuchos::ParameterList& p);
+
+    void
+    postRegistrationSetup(
+      typename Traits::SetupData d,
+      PHX::FieldManager<Traits>& fm);
+
+    void
+    evaluateFields(
+      typename Traits::EvalData d);
+
+  private:
+
+    using ScalarT = typename EvalT::ScalarT;
   
   std::vector<ScalarT> values;
   
   PHX::MDField<ScalarT> flux;
 
-PANZER_EVALUATOR_CLASS_END
+}; // end of class ConstantFlux
+
 
 }
 

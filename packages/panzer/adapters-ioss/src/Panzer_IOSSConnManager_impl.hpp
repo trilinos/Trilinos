@@ -40,6 +40,8 @@
 // ***********************************************************************
 // @HEADER
 
+// This is a change for Eric.
+
 #include "Panzer_IOSSConnManager.hpp"
 
 #include <string>
@@ -649,19 +651,22 @@ void IOSSConnManager<GO>::buildOffsetsAndIdCounts(const panzer::FieldPattern & f
   };
 
   // compute ID counts for each sub cell type
-  switch(patternDim) {
+  switch (patternDim)
+  {
     case 3:
-	  faceIdCnt = fp.getSubcellIndices(2,0).size();
-	case 2:
-	  edgeIdCnt = fp.getSubcellIndices(1,0).size();
-	case 1:
-	  nodeIdCnt = fp.getSubcellIndices(0,0).size();
-	  cellIdCnt = fp.getSubcellIndices(patternDim,0).size();
-	  break;
-	 case 0:
-	 default:
-	   TEUCHOS_ASSERT(false);
-	 };
+      faceIdCnt = fp.getSubcellIndices(2,0).size();
+      [[gnu::fallthrough]];
+    case 2:
+      edgeIdCnt = fp.getSubcellIndices(1,0).size();
+      [[gnu::fallthrough]];
+    case 1:
+      nodeIdCnt = fp.getSubcellIndices(0,0).size();
+      cellIdCnt = fp.getSubcellIndices(patternDim,0).size();
+      break;
+    case 0:
+    default:
+      TEUCHOS_ASSERT(false);
+  }
 
   // compute offsets for each sub cell type
   nodeOffset = 0;

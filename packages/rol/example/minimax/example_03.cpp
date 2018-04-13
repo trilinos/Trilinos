@@ -82,14 +82,14 @@ int main(int argc, char *argv[]) {
   try {
     // Initialize objective function.
     int dim = 4;
-    ROL::Minimax3<RealT> obj;
+    ROL::ZOO::Minimax3<RealT> obj;
 
     // Initialize iteration vectors.
     ROL::Ptr<std::vector<RealT> > x_ptr = ROL::makePtr<std::vector<RealT>>(dim, 0.0);
     ROL::StdVector<RealT> x(x_ptr);
     ROL::Ptr<std::vector<RealT> > z_ptr = ROL::makePtr<std::vector<RealT>>(dim, 0.0);
     (*z_ptr)[0] = 0.0; (*z_ptr)[1] = 1.0; (*z_ptr)[2] = 2.0; (*z_ptr)[3] = -1.0;
-    ROL::StdVector<RealT> z(x_ptr);
+    ROL::StdVector<RealT> z(z_ptr);
 
     // Algorithmic input parameters.
     std::string filename = "input.xml";
@@ -108,7 +108,7 @@ int main(int argc, char *argv[]) {
     RealT error = diff->norm();
     *outStream << "\nAbsolute Error: " << error << "\n";
     *outStream <<   "Relative Error: " << error/z.norm() << "\n";
-    errorFlag = ((error > 1e2*std::sqrt(ROL::ROL_EPSILON<RealT>())) ? 1 : 0);
+    errorFlag = ((error > 1e4*std::sqrt(ROL::ROL_EPSILON<RealT>())) ? 1 : 0);
   }
   catch (std::logic_error err) {
     *outStream << err.what() << "\n";

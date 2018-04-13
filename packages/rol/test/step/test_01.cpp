@@ -47,10 +47,8 @@
 
 #define USE_HESSVEC 0
 
-#include "ROL_TestObjectives.hpp"
-#include "ROL_Algorithm.hpp"
-#include "ROL_LineSearchStep.hpp"
-#include "ROL_StatusTest.hpp"
+#include "ROL_GetTestProblems.hpp"
+#include "ROL_OptimizationSolver.hpp"
 #include "Teuchos_oblackholestream.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
 #include "Teuchos_XMLParameterListHelpers.hpp"
@@ -85,47 +83,52 @@ int main(int argc, char *argv[]) {
 #if USE_HESSVEC
     parlist->sublist("General").set("Inexact Hessian-Times-A-Vector",false);
 #endif
+    parlist->sublist("Step").set("Type","Line Search");
 
-    for ( ROL::ETestObjectives objFunc = ROL::TESTOBJECTIVES_ROSENBROCK; objFunc < ROL::TESTOBJECTIVES_LAST; objFunc++ ) {
-      *outStream << std::endl << std::endl << ROL::ETestObjectivesToString(objFunc) << std::endl << std::endl;
-
+    for ( ROL::ETestOptProblem objFunc = ROL::TESTOPTPROBLEM_ROSENBROCK; objFunc < ROL::TESTOPTPROBLEM_LAST; objFunc++ ) {
       // Set up optimization problem
       ROL::Ptr<ROL::Vector<RealT> > x0, z;
-      ROL::Ptr<ROL::Objective<RealT> > obj;
-      ROL::getTestObjectives<RealT>(obj,x0,z,objFunc);
-      ROL::Ptr<ROL::Vector<RealT> > x = x0->clone();
+      ROL::Ptr<ROL::OptimizationProblem<RealT> > problem;
+      ROL::GetTestProblem<RealT>(problem,x0,z,objFunc);
+      if (problem->getProblemType() == ROL::TYPE_U
+          && objFunc != ROL::TESTOPTPROBLEM_MINIMAX1
+          && objFunc != ROL::TESTOPTPROBLEM_MINIMAX2
+          && objFunc != ROL::TESTOPTPROBLEM_MINIMAX3) {
+        *outStream << std::endl << std::endl << ROL::ETestOptProblemToString(objFunc) << std::endl << std::endl;
 
-      // Get Dimension of Problem
-      int dim = x0->dimension(); 
-      parlist->sublist("General").sublist("Krylov").set("Iteration Limit", 2*dim);
+        ROL::Ptr<ROL::Vector<RealT> > x = x0->clone();
+        // Get Dimension of Problem
+        int dim = x0->dimension(); 
+        parlist->sublist("General").sublist("Krylov").set("Iteration Limit", 2*dim);
 
-      // Error Vector
-      ROL::Ptr<ROL::Vector<RealT> > e = x0->clone();
-      e->zero();
+        // Error Vector
+        ROL::Ptr<ROL::Vector<RealT> > e = x0->clone();
+        e->zero();
 
-      for ( ROL::EDescent desc = ROL::DESCENT_STEEPEST; desc < ROL::DESCENT_LAST; desc++ ) {
-        parlist->sublist("Step").sublist("Line Search").sublist("Descent Method").set("Type", ROL::EDescentToString(desc));
-        if ( desc == ROL::DESCENT_NEWTON && 
-             ((objFunc == ROL::TESTOBJECTIVES_LEASTSQUARES)   || 
-              (objFunc == ROL::TESTOBJECTIVES_POISSONCONTROL) ||
-              (objFunc == ROL::TESTOBJECTIVES_POISSONINVERSION)) ) {
-          parlist->sublist("Step").sublist("Line Search").sublist("Descent Method").set("Type", ROL::EDescentToString(ROL::DESCENT_NEWTONKRYLOV));
-        }
-        else {
-          *outStream << std::endl << std::endl << ROL::EDescentToString(desc) << std::endl << std::endl;
+        for ( ROL::EDescent desc = ROL::DESCENT_STEEPEST; desc < ROL::DESCENT_LAST; desc++ ) {
+          parlist->sublist("Step").sublist("Line Search").sublist("Descent Method").set("Type", ROL::EDescentToString(desc));
+          if ( desc == ROL::DESCENT_NEWTON && 
+               ((objFunc == ROL::TESTOPTPROBLEM_LEASTSQUARES)   || 
+                (objFunc == ROL::TESTOPTPROBLEM_POISSONCONTROL) ||
+                (objFunc == ROL::TESTOPTPROBLEM_POISSONINVERSION)) ) {
+            parlist->sublist("Step").sublist("Line Search").sublist("Descent Method").set("Type", ROL::EDescentToString(ROL::DESCENT_NEWTONKRYLOV));
+          }
+          else {
+            *outStream << std::endl << std::endl << ROL::EDescentToString(desc) << std::endl << std::endl;
       
-          // Define Algorithm
-          ROL::Algorithm<RealT> algo("Line Search",*parlist,false);
+            // Define Solver
+            ROL::OptimizationSolver<RealT> solver(*problem,*parlist);
 
-          // Run Algorithm
-          x->set(*x0);
-          algo.run(*x, *obj, true, *outStream);
+            // Run Solver
+            x->set(*x0);
+            solver.solve(*outStream);
 
-          // Compute Error
-          e->set(*x);
-          e->axpy(-1.0,*z);
-          *outStream << std::endl << "Norm of Error: " << e->norm() << std::endl;
-          //errorFlag += (int)(e.norm() < std::sqrt(ROL::ROL_EPSILON<RealT>())); 
+            // Compute Error
+            e->set(*x);
+            e->axpy(-1.0,*z);
+            *outStream << std::endl << "Norm of Error: " << e->norm() << std::endl;
+            //errorFlag += (int)(e.norm() < std::sqrt(ROL::ROL_EPSILON<RealT>())); 
+          }
         }
       }
     }

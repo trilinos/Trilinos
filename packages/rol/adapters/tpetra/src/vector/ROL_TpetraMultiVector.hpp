@@ -244,6 +244,10 @@ public:
     tpetra_vec_->putScalar(zero);
   }
 
+  void setScalar(const Real C) {
+    tpetra_vec_->putScalar(static_cast<double>(C));
+  }
+
   ROL::Ptr<const Tpetra::MultiVector<Real,LO,GO,Node> > getVector() const {
     return tpetra_vec_;
   }

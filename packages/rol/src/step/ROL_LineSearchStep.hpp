@@ -372,6 +372,9 @@ public:
     algo_state.nfval += step_state->nfval;
     algo_state.ngrad += step_state->ngrad;
     desc_->update(x,s,obj,bnd,algo_state);
+    step_state->flag = desc_->getStepState()->flag;
+    step_state->SPiter = desc_->getStepState()->SPiter;
+    step_state->SPflag = desc_->getStepState()->SPflag;
     if ( !computeObj_ ) {
       algo_state.value = fval_;
     }
@@ -410,7 +413,7 @@ public:
       This function prints the iteration status.
 
       @param[in]     algo_state    is the current state of the algorithm
-      @param[in]     printHeader   if ste to true will print the header at each iteration
+      @param[in]     printHeader   if set to true will print the header at each iteration
   */
   std::string print( AlgorithmState<Real> & algo_state, bool print_header = false ) const  {
     const ROL::Ptr<const StepState<Real> > step_state = Step<Real>::getStepState();

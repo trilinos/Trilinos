@@ -135,13 +135,14 @@ main (int argc, char *argv[])
     double tolFromCmdLine = -1.0; // -1 means "read from XML file"
     std::string solverName = "GMRES";
     ST materialTensorOffDiagonalValue = 0.0;
+    Teuchos::ParameterList problemStatistics;
 
     // Set default values of command-line arguments.
-    setCommandLineArgumentDefaults (nx, ny, nz, xmlInputParamsFile,
+    setCommandLineArgumentDefaults (nx, ny, nz, xmlInputParamsFile, 
                                     solverName, verbose, debug);
     // Parse and validate command-line arguments.
     Teuchos::CommandLineProcessor cmdp (false, true);
-    setUpCommandLineArguments (cmdp, nx, ny, nz, xmlInputParamsFile,
+    setUpCommandLineArguments (cmdp, nx, ny, nz, xmlInputParamsFile, 
                                solverName, tolFromCmdLine,
                                maxNumItersFromCmdLine,
                                verbose, debug);
@@ -263,9 +264,13 @@ main (int argc, char *argv[])
       RCP<vector_type> B, X_exact, X;
       {
         TEUCHOS_FUNC_TIME_MONITOR_DIFF("Total Assembly", total_assembly);
-        makeMatrixAndRightHandSide (A, B, X_exact, X, comm, node, meshInput,
+        makeMatrixAndRightHandSide (A, B, X_exact, X, comm, node, meshInput, inputList, problemStatistics,
                                     out, err, verbose, debug);
       }
+
+      // Print Problem Statistics
+      *out<<"*** Problem Statistics ***\n"<<problemStatistics<<std::endl;
+
 
       // Optionally dump the matrix and/or its row Map to files.
       {
@@ -363,6 +368,8 @@ main (int argc, char *argv[])
         solveWithBelos (converged, numItersPerformed, solverName, tol,
                         maxNumIters, num_steps, X, A, B, Teuchos::null, M);
       }
+
+      *out<<"Total Iterations: "<<numItersPerformed<<std::endl;
 
       // Compute ||X-X_exact||_2
       const MT norm_x = X_exact->norm2 ();

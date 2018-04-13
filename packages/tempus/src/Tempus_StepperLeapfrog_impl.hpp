@@ -10,7 +10,6 @@
 #define Tempus_StepperLeapfrog_impl_hpp
 
 #include "Teuchos_VerboseObjectParameterListHelpers.hpp"
-#include "Teuchos_TimeMonitor.hpp"
 #include "Thyra_VectorStdOps.hpp"
 
 
@@ -80,16 +79,21 @@ void StepperLeapfrog<Scalar>::setSolver(
 
 template<class Scalar>
 void StepperLeapfrog<Scalar>::setObserver(
-  Teuchos::RCP<StepperLeapfrogObserver<Scalar> > obs)
+  Teuchos::RCP<StepperObserver<Scalar> > obs)
 {
   if (obs == Teuchos::null) {
     // Create default observer, otherwise keep current observer.
-    if (stepperLFObserver_ == Teuchos::null) {
+    if (stepperObserver_ == Teuchos::null) {
       stepperLFObserver_ =
         Teuchos::rcp(new StepperLeapfrogObserver<Scalar>());
-    }
+      stepperObserver_ =
+        Teuchos::rcp_dynamic_cast<StepperObserver<Scalar> >(stepperLFObserver_);
+     }
   } else {
-    stepperLFObserver_ = obs;
+    stepperObserver_ = obs;
+    stepperLFObserver_ =
+      Teuchos::rcp_dynamic_cast<StepperLeapfrogObserver<Scalar> >
+        (stepperObserver_);
   }
 }
 
@@ -102,7 +106,7 @@ void StepperLeapfrog<Scalar>::takeStep(
   TEMPUS_FUNC_TIME_MONITOR("Tempus::StepperLeapfrog::takeStep()");
   {
     typedef Thyra::ModelEvaluatorBase MEB;
-    stepperLFObserver_->observeBeginTakeStep(solutionHistory, *this);
+    stepperObserver_->observeBeginTakeStep(solutionHistory, *this);
     RCP<SolutionState<Scalar> > currentState=solutionHistory->getCurrentState();
     RCP<SolutionState<Scalar> > workingState=solutionHistory->getWorkingState();
     const Scalar time = currentState->getTime();
@@ -126,20 +130,23 @@ void StepperLeapfrog<Scalar>::takeStep(
           inArgs_.set_x_dot_dot(Teuchos::null);
         outArgs_.set_f(currentState->getXDotDot());
 
-        stepperLFObserver_->observeBeforeExplicitInitialize(
+        if (!Teuchos::is_null(stepperLFObserver_))
+          stepperLFObserver_->observeBeforeExplicitInitialize(
           solutionHistory, *this);
         appModel_->evalModel(inArgs_,outArgs_);
         setIsXDotXDotInitialized(true);
       }
 
-      stepperLFObserver_->observeBeforeXDotUpdateInitialize(
+      if (!Teuchos::is_null(stepperLFObserver_))
+        stepperLFObserver_->observeBeforeXDotUpdateInitialize(
           solutionHistory, *this);
       // Half-step startup: xDot_{n+1/2} = xDot_n + 0.5*dt*xDotDot_n
       Thyra::V_VpStV(Teuchos::outArg(*(workingState->getXDot())),
         *(currentState->getXDot()),0.5*dt,*(currentState->getXDotDot()));
     }
 
-    stepperLFObserver_->observeBeforeXUpdate(solutionHistory, *this);
+    if (!Teuchos::is_null(stepperLFObserver_))
+      stepperLFObserver_->observeBeforeXUpdate(solutionHistory, *this);
     // x_{n+1} = x_n + dt*xDot_{n+1/2}
     Thyra::V_VpStV(Teuchos::outArg(*(workingState->getX())),
       *(currentState->getX()),dt,*(workingState->getXDot()));
@@ -157,10 +164,12 @@ void StepperLeapfrog<Scalar>::takeStep(
         inArgs_.set_x_dot_dot(Teuchos::null);
     outArgs_.set_f(workingState->getXDotDot());
 
-    stepperLFObserver_->observeBeforeExplicit(solutionHistory, *this);
+    if (!Teuchos::is_null(stepperLFObserver_))
+      stepperLFObserver_->observeBeforeExplicit(solutionHistory, *this);
     appModel_->evalModel(inArgs_,outArgs_);
 
-    stepperLFObserver_->observeBeforeXDotUpdate(solutionHistory, *this);
+    if (!Teuchos::is_null(stepperLFObserver_))
+      stepperLFObserver_->observeBeforeXDotUpdate(solutionHistory, *this);
     if (workingState->getOutput() == true) {
       // Half-step sync: xDot_{n+1} = xDot_{n+1/2} + 0.5*dt*xDotDot_{n+1}
       Thyra::V_VpStV(Teuchos::outArg(*(workingState->getXDot())),
@@ -175,7 +184,7 @@ void StepperLeapfrog<Scalar>::takeStep(
 
     workingState->getStepperState()->stepperStatus_ = Status::PASSED;
     workingState->setOrder(this->getOrder());
-    stepperLFObserver_->observeEndTakeStep(solutionHistory, *this);
+    stepperObserver_->observeEndTakeStep(solutionHistory, *this);
   }
   return;
 }

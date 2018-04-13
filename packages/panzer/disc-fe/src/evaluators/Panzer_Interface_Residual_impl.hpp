@@ -54,7 +54,10 @@
 namespace panzer {
 
 //**********************************************************************
-PHX_EVALUATOR_CTOR(InterfaceResidual,p)
+template<typename EvalT, typename Traits>
+InterfaceResidual<EvalT, Traits>::
+InterfaceResidual(
+  const Teuchos::ParameterList& p)
 {
   std::string residual_name = p.get<std::string>("Residual Name");
   std::string flux_name = p.get<std::string>("Flux Name");
@@ -85,7 +88,12 @@ PHX_EVALUATOR_CTOR(InterfaceResidual,p)
 }
 
 //**********************************************************************
-PHX_POST_REGISTRATION_SETUP(InterfaceResidual,sd,fm)
+template<typename EvalT, typename Traits>
+void
+InterfaceResidual<EvalT, Traits>::
+postRegistrationSetup(
+  typename Traits::SetupData sd,
+  PHX::FieldManager<Traits>& fm)
 {
   this->utils.setFieldData(residual,fm);
   this->utils.setFieldData(normal_dot_flux,fm);
@@ -102,7 +110,11 @@ PHX_POST_REGISTRATION_SETUP(InterfaceResidual,sd,fm)
 }
 
 //**********************************************************************
-PHX_EVALUATE_FIELDS(InterfaceResidual,workset)
+template<typename EvalT, typename Traits>
+void
+InterfaceResidual<EvalT, Traits>::
+evaluateFields(
+  typename Traits::EvalData workset)
 { 
   residual.deep_copy(ScalarT(0.0));
 

@@ -14,12 +14,16 @@
 #include "Teuchos_Describable.hpp"
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_StandardParameterEntryValidators.hpp"
+#include "Teuchos_TimeMonitor.hpp"
+
 // Thyra
 #include "Thyra_ModelEvaluator.hpp"
 #include "Thyra_NonlinearSolverBase.hpp"
+
 // Tempus
 #include "Tempus_config.hpp"
 #include "Tempus_SolutionHistory.hpp"
+#include "Tempus_StepperObserver.hpp"
 
 
 namespace Tempus {
@@ -70,8 +74,7 @@ public:
   /// \name Basic stepper methods
   //@{
     virtual void setModel(
-      const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel
-      ) = 0;
+      const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel) = 0;
     virtual void setNonConstModel(
       const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >& appModel) = 0;
     virtual Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > getModel() = 0;
@@ -85,7 +88,12 @@ public:
     virtual void setSolver(
         Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> > solver) = 0;
     /// Get solver
-    virtual Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> > getSolver() const = 0;
+    virtual Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> >
+      getSolver() const = 0;
+
+    /// Set Observer
+    virtual void setObserver(
+      Teuchos::RCP<StepperObserver<Scalar> > obs = Teuchos::null) = 0;
 
     /// Initialize during construction and after changing input parameters.
     virtual void initialize() = 0;
@@ -99,6 +107,8 @@ public:
     virtual Scalar getOrder() const = 0;
     virtual Scalar getOrderMin() const = 0;
     virtual Scalar getOrderMax() const = 0;
+    virtual Scalar getInitTimeStep(
+      const Teuchos::RCP<SolutionHistory<Scalar> >& solutionHistory) const = 0;
     virtual Teuchos::RCP<Teuchos::ParameterList> getDefaultParameters() const=0;
 
     virtual bool isExplicit() const = 0;
@@ -344,28 +354,6 @@ public:
 
       return solverPL;
     }
-  //@}
-
-  /// \name Error estimation methods
-  //@{
-
-  //@}
-
-  /// \name Observer methods
-  //@{
-
-  //@}
-
-  /// \name Adjoint methods
-  //@{
-  //virtual Scalar takeAdjointStep();
-  //@}
-
-  /// \name Solution history methods
-  //@{
-
-  /// Functionality like InterpolationBuffer for multi-step methods, BDF.
-
   //@}
 
 };

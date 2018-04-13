@@ -27,10 +27,16 @@ IF(${PROJECT_NAME}_ENABLE_Intrepid AND
     ADD_DIR_TO_NAME
   )
 
+  TRIBITS_ADD_EXECUTABLE(
+    example_03
+    SOURCES example_03.cpp
+    ADD_DIR_TO_NAME
+  )
+
   TRIBITS_COPY_FILES_TO_BINARY_DIR(
     PoissonBoltzmannDataCopy
     SOURCE_FILES
-      input.xml input_ex02.xml plotresults.m
+      input.xml input_ex02.xml input_ex03.xml plotresults.m
     SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}"
     DEST_DIR "${CMAKE_CURRENT_BINARY_DIR}"
   )

@@ -112,111 +112,20 @@ void StepperNewmarkImplicitAForm<Scalar>::setModel(
   *out_ << "DEBUG: " << __PRETTY_FUNCTION__ << "\n";
 #endif
   this->validSecondOrderODE_DAE(appModel);
-  if (wrapperModel_ != Teuchos::null) wrapperModel_ = Teuchos::null;
-  wrapperModel_ =
+  Teuchos::RCP<WrapperModelEvaluatorSecondOrder<Scalar> > wrapperModel =
     Teuchos::rcp(new WrapperModelEvaluatorSecondOrder<Scalar>(appModel,
-                                                      "Newmark Implicit a-Form"));
-  inArgs_  = wrapperModel_->getNominalValues();
-  outArgs_ = wrapperModel_->createOutArgs();
-}
-
-
-template<class Scalar>
-void StepperNewmarkImplicitAForm<Scalar>::setNonConstModel(
-  const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >& appModel)
-{
-#ifdef VERBOSE_DEBUG_OUTPUT
-  *out_ << "DEBUG: " << __PRETTY_FUNCTION__ << "\n";
-#endif
-  this->setModel(appModel);
-}
-
-
-/** \brief Set the solver to a pre-defined solver in the ParameterList.
- *  The solver is set to solverName sublist in the Stepper's ParameterList.
- *  The solverName sublist should already be defined in the Stepper's
- *  ParameterList.  Otherwise it will fail.
- */
-template<class Scalar>
-void StepperNewmarkImplicitAForm<Scalar>::setSolver(std::string solverName)
-{
-#ifdef VERBOSE_DEBUG_OUTPUT
-  *out_ << "DEBUG: " << __PRETTY_FUNCTION__ << "\n";
-#endif
-  using Teuchos::RCP;
-  using Teuchos::ParameterList;
-
-  RCP<ParameterList> solverPL = Teuchos::sublist(stepperPL_, solverName, true);
-  stepperPL_->set("Solver Name", solverName);
-  solver_ = rcp(new Thyra::NOXNonlinearSolver());
-  RCP<ParameterList> noxPL = Teuchos::sublist(solverPL, "NOX", true);
-  solver_->setParameterList(noxPL);
-}
-
-
-/** \brief Set the solver to the supplied Parameter sublist.
- *  This adds a new solver Parameter sublist to the Stepper's ParameterList.
- *  If the solver sublist is null, the solver is set to the solver name
- *  in the Stepper's ParameterList.
- */
-template<class Scalar>
-void StepperNewmarkImplicitAForm<Scalar>::setSolver(
-  Teuchos::RCP<Teuchos::ParameterList> solverPL)
-{
-#ifdef VERBOSE_DEBUG_OUTPUT
-  *out_ << "DEBUG: " << __PRETTY_FUNCTION__ << "\n";
-#endif
-  using Teuchos::RCP;
-  using Teuchos::ParameterList;
-
-  std::string solverName = stepperPL_->get<std::string>("Solver Name");
-  if (is_null(solverPL)) {
-    // Create default solver, otherwise keep current solver.
-    if (solver_ == Teuchos::null) {
-      solverPL = Teuchos::sublist(stepperPL_, solverName, true);
-      solver_ = rcp(new Thyra::NOXNonlinearSolver());
-      RCP<ParameterList> noxPL = Teuchos::sublist(solverPL, "NOX", true);
-      solver_->setParameterList(noxPL);
-    }
-  } else {
-    TEUCHOS_TEST_FOR_EXCEPTION( solverName == solverPL->name(),
-      std::logic_error,
-         "Error - Trying to add a solver that is already in ParameterList!\n"
-      << "  Stepper Type = "<< stepperPL_->get<std::string>("Stepper Type")
-      << "\n" << "  Solver Name  = "<<solverName<<"\n");
-    solverName = solverPL->name();
-    stepperPL_->set("Solver Name", solverName);
-    stepperPL_->set(solverName, *solverPL);      // Add sublist
-    solver_ = rcp(new Thyra::NOXNonlinearSolver());
-    RCP<ParameterList> noxPL = Teuchos::sublist(solverPL, "NOX", true);
-    solver_->setParameterList(noxPL);
-  }
-}
-
-
-/** \brief Set the solver.
- *  This sets the solver to supplied solver and adds solver's ParameterList
- *  to the Stepper ParameterList.
- */
-template<class Scalar>
-void StepperNewmarkImplicitAForm<Scalar>::setSolver(
-  Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> > solver)
-{
-  using Teuchos::RCP;
-  using Teuchos::ParameterList;
-
-  RCP<ParameterList> solverPL = solver->getNonconstParameterList();
-  std::string solverName = solverPL->name();
-  stepperPL_->set("Solver Name", solverName);
-  stepperPL_->set(solverName, *solverPL);      // Add sublist
-  solver_ = solver;
+                                              "Newmark Implicit a-Form"));
+  this->wrapperModel_ = wrapperModel;
+  inArgs_  = this->wrapperModel_->getNominalValues();
+  outArgs_ = this->wrapperModel_->createOutArgs();
 }
 
 
 template<class Scalar>
 void StepperNewmarkImplicitAForm<Scalar>::initialize()
 {
-  TEUCHOS_TEST_FOR_EXCEPTION( wrapperModel_ == Teuchos::null, std::logic_error,
+  TEUCHOS_TEST_FOR_EXCEPTION( this->wrapperModel_ == Teuchos::null,
+    std::logic_error,
     "Error - Need to set the model, setModel(), before calling "
     "StepperNewmarkImplicitAForm::initialize()\n");
 
@@ -240,6 +149,10 @@ void StepperNewmarkImplicitAForm<Scalar>::takeStep(
   {
     RCP<SolutionState<Scalar> > workingState=solutionHistory->getWorkingState();
     RCP<SolutionState<Scalar> > currentState=solutionHistory->getCurrentState();
+
+    Teuchos::RCP<WrapperModelEvaluatorSecondOrder<Scalar> > wrapperModel =
+      Teuchos::rcp_dynamic_cast<WrapperModelEvaluatorSecondOrder<Scalar> >(
+        this->wrapperModel_);
 
     //Get values of d, v and a from previous step
     RCP<const Thyra::VectorBase<Scalar> > d_old = currentState->getX();
@@ -275,9 +188,10 @@ void StepperNewmarkImplicitAForm<Scalar>::takeStep(
       Thyra::copy(*d_old, d_init.ptr());
       Thyra::copy(*v_old, v_init.ptr());
       Thyra::put_scalar(0.0, a_init.ptr());
-      wrapperModel_->initializeNewmark(a_init,v_init,d_init,0.0,time,beta_,gamma_);
+      wrapperModel->initializeNewmark(a_init,v_init,d_init,0.0,time,beta_,gamma_);
       const Thyra::SolveStatus<Scalar> sStatus =
-        this->solveNonLinear(wrapperModel_, *solver_, a_init);
+        this->solveImplicitODE(a_init);
+
       if (sStatus.solveStatus == Thyra::SOLVE_STATUS_CONVERGED )
         workingState->getStepperState()->stepperStatus_ = Status::PASSED;
       else
@@ -298,13 +212,10 @@ void StepperNewmarkImplicitAForm<Scalar>::takeStep(
     predictDisplacement(*d_pred, *d_old, *v_old, *a_old, dt);
     predictVelocity(*v_pred, *v_old, *a_old, dt);
 
-    //inject d_pred, v_pred, a and other relevant data into wrapperModel_
-    wrapperModel_->initializeNewmark(a_old,v_pred,d_pred,dt,t,beta_,gamma_);
+    //inject d_pred, v_pred, a and other relevant data into wrapperModel
+    wrapperModel->initializeNewmark(a_old,v_pred,d_pred,dt,t,beta_,gamma_);
 
-    //Solve for new acceleration
-    //IKT, 3/13/17: check how solveNonLinear works.
-    const Thyra::SolveStatus<Scalar> sStatus =
-      this->solveNonLinear(wrapperModel_, *solver_, a_old);
+    const Thyra::SolveStatus<Scalar> sStatus = this->solveImplicitODE(a_old);
 
     if (sStatus.solveStatus == Thyra::SOLVE_STATUS_CONVERGED )
       workingState->getStepperState()->stepperStatus_ = Status::PASSED;
@@ -362,7 +273,7 @@ void StepperNewmarkImplicitAForm<Scalar>::describe(
   *out_ << "DEBUG: " << __PRETTY_FUNCTION__ << "\n";
 #endif
   out << description() << "::describe:" << std::endl
-      << "wrapperModel_ = " << wrapperModel_->description() << std::endl;
+      << "wrapperModel = " << this->wrapperModel_->description() << std::endl;
 }
 
 
@@ -375,27 +286,28 @@ void StepperNewmarkImplicitAForm<Scalar>::setParameterList(
 #endif
   if (pList == Teuchos::null) {
     // Create default parameters if null, otherwise keep current parameters.
-    if (stepperPL_ == Teuchos::null) stepperPL_ = this->getDefaultParameters();
+    if (this->stepperPL_ == Teuchos::null) this->stepperPL_ = this->getDefaultParameters();
   } else {
-    stepperPL_ = pList;
+    this->stepperPL_ = pList;
   }
   // Can not validate because of optional Parameters.
   //stepperPL_->validateParametersAndSetDefaults(*this->getValidParameters());
   //Get beta and gamma from parameter list
   //IKT, FIXME: does parameter list get validated somewhere?  validateParameters above is commented out...
 
-  std::string stepperType = stepperPL_->get<std::string>("Stepper Type");
+  Teuchos::RCP<Teuchos::ParameterList> stepperPL = this->stepperPL_;
+  std::string stepperType = stepperPL->get<std::string>("Stepper Type");
   TEUCHOS_TEST_FOR_EXCEPTION( stepperType != "Newmark Implicit a-Form",
     std::logic_error,
        "Error - Stepper Type is not 'Newmark Implicit a-Form'!\n"
-       << "  Stepper Type = "<< stepperPL_->get<std::string>("Stepper Type")
+       << "  Stepper Type = "<< stepperPL->get<std::string>("Stepper Type")
        << "\n");
   beta_ = 0.25; //default value
   gamma_ = 0.5; //default value
     Teuchos::VerboseObjectBase::getDefaultOStream();
-  if (stepperPL_->isSublist("Newmark Parameters")) {
+  if (this->stepperPL_->isSublist("Newmark Parameters")) {
     Teuchos::ParameterList &newmarkPL =
-      stepperPL_->sublist("Newmark Parameters", true);
+      this->stepperPL_->sublist("Newmark Parameters", true);
     std::string scheme_name = newmarkPL.get("Scheme Name", "Not Specified");
     if (scheme_name == "Not Specified") {
       beta_ = newmarkPL.get("Beta", 0.25);
@@ -465,6 +377,7 @@ StepperNewmarkImplicitAForm<Scalar>::getValidParameters() const
   Teuchos::RCP<Teuchos::ParameterList> pl = Teuchos::parameterList();
   pl->setName("Default Stepper - " + this->description());
   pl->set("Stepper Type", this->description());
+  pl->set("Zero Initial Guess", false);
   pl->set("Solver Name", "",
           "Name of ParameterList containing the solver specifications.");
 
@@ -483,6 +396,7 @@ StepperNewmarkImplicitAForm<Scalar>::getDefaultParameters() const
   RCP<ParameterList> pl = Teuchos::parameterList();
   pl->setName("Default Stepper - " + this->description());
   pl->set<std::string>("Stepper Type", this->description());
+  pl->set<bool>       ("Zero Initial Guess", false);
   pl->set<std::string>("Solver Name", "Default Solver");
 
   RCP<ParameterList> solverPL = this->defaultSolverParameters();
@@ -499,7 +413,7 @@ StepperNewmarkImplicitAForm<Scalar>::getNonconstParameterList()
 #ifdef VERBOSE_DEBUG_OUTPUT
   *out_ << "DEBUG: " << __PRETTY_FUNCTION__ << "\n";
 #endif
-  return(stepperPL_);
+  return(this->stepperPL_);
 }
 
 
@@ -510,8 +424,8 @@ StepperNewmarkImplicitAForm<Scalar>::unsetParameterList()
 #ifdef VERBOSE_DEBUG_OUTPUT
   *out_ << "DEBUG: " << __PRETTY_FUNCTION__ << "\n";
 #endif
-  Teuchos::RCP<Teuchos::ParameterList> temp_plist = stepperPL_;
-  stepperPL_ = Teuchos::null;
+  Teuchos::RCP<Teuchos::ParameterList> temp_plist = this->stepperPL_;
+  this->stepperPL_ = Teuchos::null;
   return(temp_plist);
 }
 

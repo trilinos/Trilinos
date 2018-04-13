@@ -37,6 +37,9 @@
 #include "Sacado_Traits.hpp"
 #if defined(HAVE_SACADO_KOKKOSCORE)
 #include "Kokkos_Core.hpp"
+#if defined(KOKKOS_HAVE_CUDA)
+#include "Cuda/Kokkos_Cuda_Vectorization.hpp"
+#endif
 #if !defined(SACADO_DISABLE_CUDA_IN_KOKKOS)
 #include "Kokkos_MemoryPool.hpp"
 #endif
@@ -139,7 +142,7 @@ namespace Sacado {
 
 #endif
 
-#if !defined(SACADO_DISABLE_CUDA_IN_KOKKOS) && defined(__CUDACC__)
+#if !defined(SACADO_DISABLE_CUDA_IN_KOKKOS) && defined(KOKKOS_HAVE_CUDA) && defined(__CUDACC__)
 
   namespace Impl {
 
@@ -763,7 +766,7 @@ namespace Sacado {
     //! Copy array from \c src to \c dest of length \c sz
     KOKKOS_INLINE_FUNCTION
     static void copy(const T* src, T* dest, int sz) {
-      if (sz > 0)
+      if (sz > 0 && dest != NULL && src != NULL)
 #ifdef __CUDACC__
         for (int i=0; i<sz; ++i)
           dest[i] = src[i];
@@ -786,7 +789,7 @@ namespace Sacado {
     //! Zero out array \c dest of length \c sz
     KOKKOS_INLINE_FUNCTION
     static void zero(T* dest, int sz) {
-      if (sz > 0)
+      if (sz > 0 && dest != NULL)
 #ifdef __CUDACC__
         for (int i=0; i<sz; ++i)
           dest[i] = T(0.);

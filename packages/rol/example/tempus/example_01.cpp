@@ -97,11 +97,11 @@ int main(int argc, char *argv[]) {
 
     RCP<Tempus::IntegratorBasic<RealT> > integrator = Tempus::integratorBasic<RealT>(tempusParList, model);
 
-    bool integratorStatus = integrator->advanceTime();
+    integrator->advanceTime();
 
     // Test if at 'Final Time'
-    RealT time = integrator->getTime();
-    RealT timeFinal = tempusParList->sublist("Demo Integrator").sublist("Time Step Control").get<RealT>("Final Time");
+//    RealT time = integrator->getTime(); // Unused
+//    RealT timeFinal = tempusParList->sublist("Demo Integrator").sublist("Time Step Control").get<RealT>("Final Time"); // Unused
 
     // Output solution.
     std::ofstream ftmp("Tempus_ForwardEuler_SinCos.dat");

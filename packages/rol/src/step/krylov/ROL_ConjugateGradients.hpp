@@ -69,7 +69,7 @@ public:
   ConjugateGradients(Real absTol = 1.e-4, Real relTol = 1.e-2, unsigned maxit = 100, bool useInexact = false)
     : Krylov<Real>(absTol,relTol,maxit), isInitialized_(false), useInexact_(useInexact) {}
 
-  void run( Vector<Real> &x, LinearOperator<Real> &A, const Vector<Real> &b, LinearOperator<Real> &M,
+  Real run( Vector<Real> &x, LinearOperator<Real> &A, const Vector<Real> &b, LinearOperator<Real> &M,
             int &iter, int &flag ) {
     if ( !isInitialized_ ) {
       r_  = b.clone();
@@ -131,6 +131,7 @@ public:
     else {
       iter++;
     }
+    return rnorm;
   }
 };
 

@@ -513,6 +513,26 @@ class BackwardEuler_RKBT :
                 << "c = [ 1 ]'\n"
                 << "A = [ 1 ]\n"
                 << "b = [ 1 ]'" << std::endl;
+
+    this->setDescription(Description.str());
+    this->setParameterList(Teuchos::null);
+  }
+
+  virtual std::string description() const { return "RK Backward Euler"; }
+
+  void setParameterList(Teuchos::RCP<Teuchos::ParameterList> const& pList)
+  {
+    Teuchos::RCP<Teuchos::ParameterList> pl = Teuchos::parameterList();
+    if (pList == Teuchos::null) *pl = *(this->getValidParameters());
+    else pl = pList;
+    // Can not validate because optional parameters (e.g., Solver Name).
+    //pl->validateParametersAndSetDefaults(*this->getValidParameters());
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      pl->get<std::string>("Stepper Type") != this->description()
+      ,std::runtime_error,
+      "  Stepper Type != \""+this->description()+"\"\n"
+      "  Stepper Type = " + pl->get<std::string>("Stepper Type"));
+
     typedef Teuchos::ScalarTraits<Scalar> ST;
     Teuchos::SerialDenseMatrix<int,Scalar> A(1,1);
     A(0,0) = ST::one();
@@ -522,9 +542,23 @@ class BackwardEuler_RKBT :
     c(0) = ST::one();
     int order = 1;
 
-    this->initialize(A,b,c,order,Description.str());
+    this->initialize(A,b,c,order,this->getDescription());
+    this->setMyParamList(pl);
+    this->rkbtPL_ = pl;
   }
-  virtual std::string description() const { return "RK Backward Euler"; }
+
+  Teuchos::RCP<const Teuchos::ParameterList>
+  getValidParameters() const
+  {
+    Teuchos::RCP<Teuchos::ParameterList> pl = Teuchos::parameterList();
+    pl->setName("Default Stepper - " + this->description());
+    pl->set<std::string>("Description", this->getDescription());
+    pl->set<std::string>("Stepper Type", this->description());
+    pl->set<std::string>("Solver Name", "",
+      "Name of ParameterList containing the solver specifications.");
+
+    return pl;
+  }
 };
 
 
@@ -680,9 +714,9 @@ class Explicit4Stage4thOrder_RKBT :
  *                            & 2/9  & 1/3 & 4/9 & 0 \\
  *                            & 7/24 & 1/4 & 1/3 & 1/8 \end{array}
  *  \f]
- *  Reference:  P. Bogacki and L.F. Shampine. 
- *              A 3(2) pair of Runge–Kutta formulas. 
- *              Applied Mathematics Letters, 2(4):321 – 325, 1989.*
+ *  Reference:  P. Bogacki and L.F. Shampine.
+ *              A 3(2) pair of Runge–Kutta formulas.
+ *              Applied Mathematics Letters, 2(4):321 – 325, 1989.
  *
  */
 template<class Scalar>
@@ -2234,7 +2268,7 @@ class IRK1StageTheta_RKBT :
       "Name of ParameterList containing the solver specifications.");
     pl->set<double>("theta",theta_default_,
       "Valid values are 0 <= theta <= 1, where theta = 0 "
-      "implies Forward Euler, theta = 1/2 implies midpoint "
+      "implies Forward Euler, theta = 1/2 implies implicit midpoint "
       "method (default), and theta = 1 implies Backward Euler. "
       "For theta != 1/2, this method is first-order accurate, "
       "and with theta = 1/2, it is second-order accurate.  "
@@ -2251,11 +2285,11 @@ class IRK1StageTheta_RKBT :
 
 // ----------------------------------------------------------------------------
 template<class Scalar>
-class IRK2StageTheta_RKBT :
+class EDIRK2StageTheta_RKBT :
   virtual public RKButcherTableau<Scalar>
 {
   public:
-  IRK2StageTheta_RKBT()
+  EDIRK2StageTheta_RKBT()
   {
     std::ostringstream Description;
     Description << this->description() << "\n"
@@ -2330,7 +2364,7 @@ class IRK2StageTheta_RKBT :
     pl->set<double>("theta",theta_default_,
       "Valid values are 0 < theta <= 1, where theta = 0 "
       "implies Forward Euler, theta = 1/2 implies trapezoidal "
-      "method, and theta = 1 implies Backward Euler. "
+      "method (default), and theta = 1 implies Backward Euler. "
       "For theta != 1/2, this method is first-order accurate, "
       "and with theta = 1/2, it is second-order accurate.  "
       "This method is A-stable, but becomes L-stable with theta=1.");
@@ -2338,7 +2372,7 @@ class IRK2StageTheta_RKBT :
     return pl;
   }
 
-  virtual std::string description() const { return "IRK 2 Stage Theta Method"; }
+  virtual std::string description() const {return "EDIRK 2 Stage Theta Method";}
 
   private:
     Scalar theta_default_;

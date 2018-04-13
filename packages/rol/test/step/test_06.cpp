@@ -47,8 +47,8 @@
 
 #define USE_HESSVEC 0
 
-#include "ROL_TestObjectives.hpp"
-#include "ROL_Algorithm.hpp"
+#include "ROL_GetTestProblems.hpp"
+#include "ROL_OptimizationSolver.hpp"
 #include "Teuchos_oblackholestream.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
 #include "Teuchos_XMLParameterListHelpers.hpp"
@@ -83,13 +83,14 @@ int main(int argc, char *argv[]) {
 #if USE_HESSVEC
     parlist->sublist("General").set("Inexact Hessian-Times-A-Vector",false);
 #endif
+    parlist->sublist("Step").set("Type","Line Search");
 
-    *outStream << "\n\n" << ROL::ETestObjectivesToString(ROL::TESTOBJECTIVES_ROSENBROCK) << "\n\n";
+    *outStream << "\n\n" << ROL::ETestOptProblemToString(ROL::TESTOPTPROBLEM_ROSENBROCK) << "\n\n";
 
     // Set Up Optimization Problem
     ROL::Ptr<ROL::Vector<RealT> > x0, z;
-    ROL::Ptr<ROL::Objective<RealT> > obj;
-    ROL::getTestObjectives<RealT>(obj,x0,z,ROL::TESTOBJECTIVES_ROSENBROCK);
+    ROL::Ptr<ROL::OptimizationProblem<RealT> > problem;
+    ROL::GetTestProblem<RealT>(problem,x0,z,ROL::TESTOPTPROBLEM_ROSENBROCK);
     ROL::Ptr<ROL::Vector<RealT> > x = x0->clone();
 
     // Get Dimension of Problem
@@ -106,12 +107,12 @@ int main(int argc, char *argv[]) {
       for (ROL::ELineSearch ls = ROL::LINESEARCH_BACKTRACKING; ls < ROL::LINESEARCH_USERDEFINED; ls++) {
         // Define Step
         parlist->sublist("Step").sublist("Line Search").sublist("Line-Search Method").set("Type",ROL::ELineSearchToString(ls));
-        // Define Algorithm
-        ROL::Algorithm<RealT> algo("Line Search",*parlist,false);
+        // Define Solver
+        ROL::OptimizationSolver<RealT> solver(*problem,*parlist);
 
-        // Run Algorithm
+        // Run Solver
         x->set(*x0);
-        algo.run(*x, *obj, true, *outStream);
+        solver.solve(*outStream);
 
         // Compute Error
         e->set(*x);

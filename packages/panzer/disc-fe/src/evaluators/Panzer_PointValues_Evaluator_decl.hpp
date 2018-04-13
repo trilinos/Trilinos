@@ -52,7 +52,29 @@
 namespace panzer {
     
 //! Interpolates basis DOF values to IP DOF values
-PANZER_EVALUATOR_CLASS(PointValues_Evaluator)
+template<typename EvalT, typename Traits>
+class PointValues_Evaluator
+  :
+  public panzer::EvaluatorWithBaseImpl<Traits>,
+  public PHX::EvaluatorDerived<EvalT, Traits>
+{
+  public:
+
+    PointValues_Evaluator(
+      const Teuchos::ParameterList& p);
+
+    void
+    postRegistrationSetup(
+      typename Traits::SetupData d,
+      PHX::FieldManager<Traits>& fm);
+
+    void
+    evaluateFields(
+      typename Traits::EvalData d);
+
+  private:
+
+    using ScalarT = typename EvalT::ScalarT;
 
   // is anything other than ScalarT really needed here?
   PointValues2<ScalarT> pointValues;
@@ -81,7 +103,8 @@ public:
   PointValues_Evaluator(const Teuchos::RCP<const panzer::PointRule> & pointRule,
                         const Teuchos::RCP<const panzer::PureBasis> & pureBasis);
 
-PANZER_EVALUATOR_CLASS_END
+}; // end of class PointValues_Evaluator
+
 
 }
 

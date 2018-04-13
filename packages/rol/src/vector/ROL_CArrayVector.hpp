@@ -127,6 +127,12 @@ class CArrayVector : public Vector<Real> {
             return e; 
         }         
 
+        void setScalar( const Real C ) {
+           for(unsigned int i=0; i<dim_; ++i) {
+               (array_)[i] = C;
+           }
+        } 
+
 };    
 
 

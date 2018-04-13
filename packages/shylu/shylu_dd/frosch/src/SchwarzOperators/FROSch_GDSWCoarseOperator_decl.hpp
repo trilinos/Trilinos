@@ -42,7 +42,7 @@
 #ifndef _FROSCH_GDSWCOARSEOPERATOR_DECL_HPP
 #define _FROSCH_GDSWCOARSEOPERATOR_DECL_HPP
 
-#include <FROSch_CoarseOperator_def.hpp>
+#include <FROSch_HarmonicCoarseOperator_def.hpp>
 
 // TODO:
 // -> Typedef
@@ -53,7 +53,7 @@ namespace FROSch {
     class LO = typename Xpetra::Operator<SC>::local_ordinal_type,
     class GO = typename Xpetra::Operator<SC,LO>::global_ordinal_type,
     class NO = typename Xpetra::Operator<SC,LO,GO>::node_type>
-    class GDSWCoarseOperator : public CoarseOperator<SC,LO,GO,NO> {
+    class GDSWCoarseOperator : public HarmonicCoarseOperator<SC,LO,GO,NO> {
         
     public:
         
@@ -135,8 +135,6 @@ namespace FROSch {
                        GOVecPtr myGlobalDirichletBoundaryDofs,
                        SCVecPtr2D &localNodeList);
         
-        int compute();
-        
         void describe(Teuchos::FancyOStream &out,
                       const Teuchos::EVerbosityLevel verbLevel=Teuchos::Describable::verbLevel_default) const;
         
@@ -215,24 +213,10 @@ namespace FROSch {
         
         DDInterfacePtr DDInterface_;
         
-        SubdomainSolverPtr ExtensionSolver_;
-        
-        MultiVectorPtrVecPtr MVPhiGamma_;
-        
-        MapPtrVecPtr BlockCoarseMaps_;
-        
         UNVecPtr Dimensions_;
-        UNVecPtr DofsPerNode_;
         
         LOVecPtr2D IndicesGamma_;
         LOVecPtr2D IndicesI_;
-        
-        LOVecPtr2D IndicesGammaDofs_;
-        LOVecPtr2D IndicesIDofs_;
-        
-        MapPtrVecPtr2D DofsMaps_; // notwendig??
-        
-        UN NumberOfBlocks_;
         
     };
     

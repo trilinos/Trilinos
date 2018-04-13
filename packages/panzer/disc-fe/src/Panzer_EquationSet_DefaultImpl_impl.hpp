@@ -1061,7 +1061,7 @@ panzer::EquationSet_DefaultImpl<EvalT>::getBasisIRLayoutForDOF(const std::string
 // ***********************************************************************
 template <typename EvalT>
 void panzer::EquationSet_DefaultImpl<EvalT>::
-buildAndRegisterResidualSummationEvalautor(PHX::FieldManager<panzer::Traits>& fm,
+buildAndRegisterResidualSummationEvaluator(PHX::FieldManager<panzer::Traits>& fm,
                                            const std::string dof_name,
                                            const std::vector<std::string>& residual_contributions,
                                            const std::string residual_field_name) const
@@ -1094,7 +1094,7 @@ buildAndRegisterResidualSummationEvalautor(PHX::FieldManager<panzer::Traits>& fm
 // ***********************************************************************
 template <typename EvalT>
 void panzer::EquationSet_DefaultImpl<EvalT>::
-buildAndRegisterResidualSummationEvalautor(PHX::FieldManager<panzer::Traits>& fm,
+buildAndRegisterResidualSummationEvaluator(PHX::FieldManager<panzer::Traits>& fm,
                                            const std::string dof_name,
                                            const std::vector<std::string>& residual_contributions,
                                            const std::vector<double>& scale_contributions,
