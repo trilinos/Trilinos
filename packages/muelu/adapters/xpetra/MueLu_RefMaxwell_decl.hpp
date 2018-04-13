@@ -48,7 +48,11 @@
 
 #include "MueLu_ConfigDefs.hpp"
 #include "MueLu_BaseClass.hpp"
+#ifdef HAVE_MUELU_KOKKOS_REFACTOR
+#include "MueLu_Utilities_kokkos_fwd.hpp"
+#else
 #include "MueLu_Utilities_fwd.hpp"
+#endif
 #include "MueLu_TentativePFactory_fwd.hpp"
 #include "MueLu_SaPFactory_fwd.hpp"
 #include "MueLu_UncoupledAggregationFactory_fwd.hpp"
@@ -326,8 +330,13 @@ namespace MueLu {
     Teuchos::RCP<Matrix> SM_Matrix_, D0_Matrix_, M0inv_Matrix_, M1_Matrix_, Ms_Matrix_;
     Teuchos::RCP<Matrix> A_nodal_Matrix_, P11_, AH_, A22_;
     //! Vectors for BCs
+#ifdef HAVE_MUELU_KOKKOS_REFACTOR
+    Kokkos::View<const bool*, typename Node::device_type> BCrows_;
+    Kokkos::View<const bool*, typename Node::device_type> BCcols_;
+#else
     Teuchos::ArrayRCP<const bool> BCrows_;
     Teuchos::ArrayRCP<const bool> BCcols_;
+#endif
     //! Nullspace
     Teuchos::RCP<MultiVector> Nullspace_;
     Teuchos::RCP<Xpetra::MultiVector<double, LocalOrdinal, GlobalOrdinal, Node> > Coords_;

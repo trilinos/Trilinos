@@ -63,7 +63,11 @@
 #include "MueLu_RAPFactory.hpp"
 #include "MueLu_TransPFactory.hpp"
 #include "MueLu_SmootherFactory.hpp"
+#ifdef HAVE_MUELU_KOKKOS_REFACTOR
+#include "MueLu_Utilities_kokkos.hpp"
+#else
 #include "MueLu_Utilities.hpp"
+#endif
 #include "MueLu_Monitor.hpp"
 #include "MueLu_MLParameterListInterpreter.hpp"
 #include "MueLu_ParameterListInterpreter.hpp"
@@ -115,10 +119,15 @@ namespace MueLu {
 
     // clean rows associated with boundary conditions
     // Find rows with only 1 or 2 nonzero entries, record them in BCrows_.
-    // BCrows_[i] is true, when i is a boundary row
+    // BCrows_[i] is true, iff i is a boundary row
+    // BCcols_[i] is true, iff i is a boundary column
+#ifdef HAVE_MUELU_KOKKOS_REFACTOR
+    BCrows_ = Utilities_kokkos::DetectDirichletRows(*SM_Matrix_,Teuchos::ScalarTraits<magnitudeType>::eps(),/*count_twos_as_dirichlet=*/true);
+    BCcols_ = Utilities_kokkos::DetectDirichletCols(*D0_Matrix_,BCrows_);
+#else
     BCrows_ = Utilities::DetectDirichletRows(*SM_Matrix_,Teuchos::ScalarTraits<magnitudeType>::eps(),/*count_twos_as_dirichlet=*/true);
-    // BCcols_[i] is true, when i is a boundary column
     BCcols_ = Utilities::DetectDirichletCols(*D0_Matrix_,BCrows_);
+#endif
 
     // build nullspace if necessary
     if(Nullspace_ != Teuchos::null) {
@@ -134,7 +143,11 @@ namespace MueLu {
       Nullspace_ = MultiVectorFactory::Build(SM_Matrix_->getRowMap(),Coords_->getNumVectors());
 
       // Cast coordinates to Scalar so they can be multiplied against D0
+#ifdef HAVE_MUELU_KOKKOS_REFACTOR
+      RCP<MultiVector> CoordsSC = Utilities_kokkos::RealValuedToScalarMultiVector(Coords_);
+#else
       RCP<MultiVector> CoordsSC = Utilities::RealValuedToScalarMultiVector(Coords_);
+#endif
       D0_Matrix_->apply(*CoordsSC,*Nullspace_);
     }
     else {
@@ -142,7 +155,11 @@ namespace MueLu {
     }
 
     // Nuke the BC edges in nullspace
+#ifdef HAVE_MUELU_KOKKOS_REFACTOR
+    Utilities_kokkos::ZeroDirichletRows(Nullspace_,BCrows_);
+#else
     Utilities::ZeroDirichletRows(Nullspace_,BCrows_);
+#endif
 
     if (dump_matrices_)
       Xpetra::IO<SC, LO, GlobalOrdinal, Node>::Write(std::string("D0_clean.mat"), *D0_Matrix_);
@@ -151,12 +168,12 @@ namespace MueLu {
     if(P11_==Teuchos::null) {
       GetOStream(Runtime0) << "RefMaxwell::compute(): building A_nodal" << std::endl;
 
-      
+
       { // Form A_nodal = D0* M1 D0  (aka TMT_agg)
         RCP<Teuchos::TimeMonitor> tm = rcp(new Teuchos::TimeMonitor(*Teuchos::TimeMonitor::getNewTimer("MueLu RefMaxwell: Build A_nodal")));
-        
+
         Level fineLevel, coarseLevel;
-        fineLevel.SetFactoryManager(Teuchos::null);  
+        fineLevel.SetFactoryManager(Teuchos::null);
         coarseLevel.SetFactoryManager(Teuchos::null);
         coarseLevel.SetPreviousLevel(rcpFromRef(fineLevel));
         fineLevel.SetLevelID(0);
@@ -180,11 +197,11 @@ namespace MueLu {
           rapFact->SetFactory("R", transPFactory);
           transPFactory->Build(fineLevel,coarseLevel);
         }
-        
+
         coarseLevel.Request(*rapFact);
         coarseLevel.Request("A",rapFact.get());
         rapFact->Build(fineLevel,coarseLevel);
-        
+
         A_nodal_Matrix_ = coarseLevel.Get< RCP<Matrix> >("A", rapFact.get());
       }
 
@@ -227,8 +244,13 @@ namespace MueLu {
       D0_Matrix_->resumeFill();
       // Scalar replaceWith = Teuchos::ScalarTraits<SC>::eps();
       Scalar replaceWith = Teuchos::ScalarTraits<SC>::zero();
+#ifdef HAVE_MUELU_KOKKOS_REFACTOR
+      Utilities_kokkos::ZeroDirichletRows(D0_Matrix_,BCrows_,replaceWith);
+      Utilities_kokkos::ZeroDirichletCols(D0_Matrix_,BCcols_,replaceWith);
+#else
       Utilities::ZeroDirichletRows(D0_Matrix_,BCrows_,replaceWith);
       Utilities::ZeroDirichletCols(D0_Matrix_,BCcols_,replaceWith);
+#endif
       D0_Matrix_->fillComplete(D0_Matrix_->getDomainMap(),D0_Matrix_->getRangeMap());
     }
 
@@ -237,9 +259,9 @@ namespace MueLu {
 
       { // build fine grid operator for (2,2)-block, D0* SM D0  (aka TMT)
         RCP<Teuchos::TimeMonitor> tm = rcp(new Teuchos::TimeMonitor(*Teuchos::TimeMonitor::getNewTimer("MueLu RefMaxwell: Build A22")));
-        
+
         Level fineLevel, coarseLevel;
-        fineLevel.SetFactoryManager(Teuchos::null);  
+        fineLevel.SetFactoryManager(Teuchos::null);
         coarseLevel.SetFactoryManager(Teuchos::null);
         coarseLevel.SetPreviousLevel(rcpFromRef(fineLevel));
         fineLevel.SetLevelID(0);
@@ -263,14 +285,14 @@ namespace MueLu {
           coarseLevel.Request("R",transPFactory.get());
           transPFactory->Build(fineLevel,coarseLevel);
         }
-        
+
         coarseLevel.Request(*rapFact);
         coarseLevel.Request("A",rapFact.get());
         rapFact->Build(fineLevel,coarseLevel);
-        
+
         A22_ = coarseLevel.Get< RCP<Matrix> >("A", rapFact.get());
       }
-      
+
       RCP<Teuchos::TimeMonitor> tm = rcp(new Teuchos::TimeMonitor(*Teuchos::TimeMonitor::getNewTimer("MueLu RefMaxwell: Build (2,2) hierarchy")));
       RCP<HierarchyManager> Manager22;
       if (parameterList_.isParameter(syntaxStr) && parameterList_.get<std::string>(syntaxStr) == "ml") {
@@ -375,10 +397,12 @@ namespace MueLu {
       Xpetra::IO<SC, LO, GlobalOrdinal, Node>::Write(std::string("SM.mat"), *SM_Matrix_);
       Xpetra::IO<SC, LO, GlobalOrdinal, Node>::Write(std::string("M1.mat"), *M1_Matrix_);
       Xpetra::IO<SC, LO, GlobalOrdinal, Node>::Write(std::string("M0inv.mat"), *M0inv_Matrix_);
+#ifndef HAVE_MUELU_KOKKOS_REFACTOR
       std::ofstream outBCrows("BCrows.mat");
       std::copy(BCrows_.begin(), BCrows_.end(), std::ostream_iterator<LO>(outBCrows, "\n"));
       std::ofstream outBCcols("BCcols.mat");
       std::copy(BCcols_.begin(), BCcols_.end(), std::ostream_iterator<LO>(outBCcols, "\n"));
+#endif
       Xpetra::IO<SC, LO, GlobalOrdinal, Node>::Write(std::string("nullspace.mat"), *Nullspace_);
       if (Coords_ != Teuchos::null)
         Xpetra::IO<double, LO, GlobalOrdinal, Node>::Write(std::string("coords.mat"), *Coords_);
@@ -427,7 +451,7 @@ namespace MueLu {
       P_nodal = Xpetra::IO<SC, LO, GO, NO>::Read(P_filename, A_nodal_Matrix_->getDomainMap());
     } else {
       Level fineLevel, coarseLevel;
-      fineLevel.SetFactoryManager(Teuchos::null);  
+      fineLevel.SetFactoryManager(Teuchos::null);
       coarseLevel.SetFactoryManager(Teuchos::null);
       coarseLevel.SetPreviousLevel(rcpFromRef(fineLevel));
       fineLevel.SetLevelID(0);
@@ -532,13 +556,9 @@ namespace MueLu {
         for (size_t jj = Prowptr[l]; jj < Prowptr[l+1]; jj++) {
           LO j = Pcolind[jj];
           SC v = Pvals[jj];
-          // if (v == SC_ZERO)
-          //   continue;
           for (size_t k = 0; k < dim; k++) {
             LO jNew = dim*j+k;
             SC n = nullspace[k][i];
-            // if (n == SC_ZERO)
-            //   continue;
             // do we already have an entry for (i, jNew)?
             if (P11_status[jNew] == ST_INVALID || P11_status[jNew] < nnz_old) {
               P11_status[jNew] = nnz;
@@ -623,6 +643,7 @@ namespace MueLu {
       }
       // add matrices together
       RCP<Teuchos::FancyOStream> out = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
+      out->setOutputToRootOnly(0);
       Xpetra::MatrixMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>::TwoMatrixAdd(*Matrix1,false,(Scalar)1.0,*Matrix2,false,(Scalar)1.0,AH_,*out);
       AH_->fillComplete();
     }
