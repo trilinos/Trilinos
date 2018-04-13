@@ -45,10 +45,8 @@
 #include "Teuchos_XMLParameterListHelpers.hpp"
 
 #include "ROL_Bounds.hpp"
-#include "ROL_BoundConstraint_Partitioned.hpp"
-#include "ROL_PartitionedVector.hpp"
 #include "ROL_RandomVector.hpp"
-#include "ROL_Vector_SimOpt.hpp"
+#include "ROL_PinTVector.hpp"
 
 #include "TankConstraint.hpp"
 #include "TankVector.hpp"
@@ -67,9 +65,6 @@ int main( int argc, char* argv[] ) {
   using ROL::makePtr;
   using ROL::makePtrFromRef;
 
-//  using BoundConstraint             = ROL::BoundConstraint<RealT>;
-//  using BoundConstraint_Partitioned = ROL::BoundConstraint_Partitioned<RealT>;
-
   using Bounds                      = ROL::Bounds<RealT>;
   using PartitionedVector           = ROL::PartitionedVector<RealT>;
  
@@ -87,21 +82,25 @@ int main( int argc, char* argv[] ) {
     outStream = makePtrFromRef(bhs);
 
   int errorFlag  = 0;
-//  RealT tol = ROL::ROL_EPSILON<RealT>();
 
   // *** Example body.
 
   try {   
 
     auto tank_parameters = makePtr<Teuchos::ParameterList>();
+
     std::string tank_xml("tank-parameters.xml");
     Teuchos::updateParametersFromXmlFile(tank_xml, tank_parameters.ptr());
     auto& pl = *tank_parameters;
-    auto con = makePtr<TankConstraint<RealT>>(pl);
+
+    auto tankState = makePtr<TankState<RealT>>(pl);
+    auto con = makePtr<TankConstraint<RealT>>(tankState,pl);
 
     auto height = pl.get("Height of Tank",              10.0  );
     auto Qin00  = pl.get("Corner Inflow",               100.0 );
     auto h_init = pl.get("Initial Fluid Level",         2.0   );
+//    auto T      = pl.get("Total Time",                  20.0  );
+//    auto nt     = pl.get("Number of Time Steps",        100   );
 
     auto nrows  = static_cast<size_type>( pl.get("Number of Rows",3) );
     auto ncols  = static_cast<size_type>( pl.get("Number of Columns",3) );
@@ -109,7 +108,6 @@ int main( int argc, char* argv[] ) {
     auto z      = makePtr<ControlVector>( nrows, ncols, "Control (z)" );    
     auto vz     = z->clone( "Control direction (vz)"       );
     auto z_lo   = z->clone( "Control Lower Bound (z_lo)"   );
-
     z_lo->zero();
 
     auto z_bnd  = makePtr<Bounds>( *z_lo );
@@ -132,15 +130,7 @@ int main( int argc, char* argv[] ) {
     auto vu_old = u_old->clone( "Old state direction (vu_old)" );
     auto vu     = PartitionedVector::create( { vu_old, vu_new } );
 
-    auto c        = u_new->clone( "State residual (c)"              );
-    auto dc       = u_new->clone( "Change in residual (dc)"         );
-    auto Jerr     = u_new->clone( "Jacobian error (Jerr)"           );
-    auto w        = u_new->clone( "Constraint dual test vector (w)" );
-    auto Jvu_new  = u_new->clone( "New state dir-deriv (Jvu_new)"   );
-    auto Jvu_old  = u_new->clone( "Old state dir-deriv (Jvu_old)"   );
-    auto Jvz      = u_new->clone( "Control dir-deriv (Jvz)"         );
-
-    auto Jvu      = PartitionedVector::create( { Jvu_old, Jvu_new } );
+    auto c = u_new->clone( "State residual (c)"              );
     auto x = ROL::makePtr<ROL::Vector_SimOpt<RealT>>( u,  z  );
     auto v = ROL::makePtr<ROL::Vector_SimOpt<RealT>>( vu, vz );
 
@@ -153,19 +143,19 @@ int main( int argc, char* argv[] ) {
     auto u_new_bnd = makePtr<Bounds>( u_new_lo, u_new_up );
     RandomizeFeasibleVector( *u_new, *u_new_bnd );
     RandomizeVector( *c ) ;
-    RandomizeVector( *w ) ;
-    
+    RandomizeVector( *v );
+
     auto u_old_bnd = u_new_bnd; 
     auto u_bnd = makePtr<Bounds>( u_lo, u_up ); 
 
-    RandomizeVector( *v );
-
     con->print_tankstate_parameters( *outStream );
-    con->checkSolve(*u, *z, *c, true, *outStream ); 
     con->checkApplyJacobian( *x, *v, *c, true, *outStream );
-    con->checkAdjointConsistencyJacobian( *w, *v, *x, true, *outStream );
+    con->checkAdjointConsistencyJacobian( *c, *v, *x, true, *outStream );
     con->checkInverseJacobian_1_new( *c, *u_new, *u_old, *z, *vu_new, true, *outStream );
     con->checkInverseAdjointJacobian_1_new( *c, *u_new, *u_old, *z, *vu_new, true, *outStream );
+
+    RandomizeVector( *c ) ;
+    con->checkSolve(*u, *z, *c, true, *outStream ); 
 
   }
   catch (std::logic_error err) {

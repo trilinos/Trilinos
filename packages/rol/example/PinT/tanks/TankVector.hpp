@@ -192,8 +192,6 @@ public:
   void hadamard( const TankStateVector<Real>& x, size_type xbegin );
   void hadamard( const TankControlVector& x );
   
-
-
   void print( ostream& os ) const {
     auto& z = *vec_;
 
