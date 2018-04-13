@@ -109,6 +109,39 @@ public:
 
 }
 
+
+namespace {
+template <typename LocalOrdinal,typename GlobalOrdinal>
+class GreedyTieBreak : public Tpetra::Details::TieBreak<LocalOrdinal,GlobalOrdinal> {
+
+public:
+  GreedyTieBreak() { }
+
+  virtual bool mayHaveSideEffects() const {
+    return true;
+  }
+
+  virtual std::size_t selectedIndex(GlobalOrdinal GID,
+                                    const std::vector<std::pair<int,LocalOrdinal> > & pid_and_lid) const
+  {
+    // always choose index of pair with smallest pid
+    auto numLids = pid_and_lid.size();
+    decltype(numLids) idx = 0;
+    auto minpid = pid_and_lid[0].first;
+    decltype(minpid) minidx = 0;
+    for (idx = 0; idx < numLids; ++idx) {
+      if (pid_and_lid[idx].first < minpid) {
+        minpid = pid_and_lid[idx].first;
+        minidx = idx;
+      }
+    }
+    return minidx;
+  }
+};
+
+}
+
+
 using Teuchos::RCP;
 using Teuchos::rcp;
 using Teuchos::ArrayRCP;
@@ -677,7 +710,8 @@ DOFManager<LO,GO>::buildGlobalUnknowns_GUN(const Tpetra::MultiVector<GO,LO,GO,pa
   if(!useTieBreak_) {
     PANZER_DOFMGR_FUNC_TIME_MONITOR("panzer::DOFManager::buildGlobalUnknowns_GUN::line_04 createOneToOne");
 
-    non_overlap_map = Tpetra::createOneToOne<LO,GO,Node>(overlap_map);
+    GreedyTieBreak<LO,GO> greedy_tie_break;
+    non_overlap_map = Tpetra::createOneToOne<LO,GO,Node>(overlap_map, greedy_tie_break);
   }
   else {
     // use a hash tie break to get better load balancing from create one to one
