@@ -10,10 +10,35 @@ TRIBITS_COPY_FILES_TO_BINARY_DIR(ShyLU_DDFROSchTpetraCopyFiles
     EXEDEPS frosch_laplacian_tpetra
 )
 
-#AH 09/20/2017: Removed due to issue in Tpetra
-#TRIBITS_ADD_TEST(
-#    frosch_laplacian_tpetra
-#    NAME test_frosch_laplacian_tpetra
-#    COMM mpi
-#    NUM_MPI_PROCS 9
-#)
+#AH 04/05/2018: Adding Tests
+TRIBITS_ADD_TEST(
+    frosch_laplacian_tpetra
+    NAME test_frosch_laplacian_tpetra_2d_gdsw
+    ARGS "--DIM=2"
+    COMM mpi
+    NUM_MPI_PROCS 4
+)
+
+TRIBITS_ADD_TEST(
+    frosch_laplacian_tpetra
+    NAME test_frosch_laplacian_tpetra_3d_gdsw
+    ARGS "--DIM=3"
+    COMM mpi
+    NUM_MPI_PROCS 8
+)
+
+TRIBITS_ADD_TEST(
+    frosch_laplacian_tpetra
+    NAME test_frosch_laplacian_tpetra_2d_rgdsw
+    ARGS "--DIM=2 --RGDSW"
+    COMM mpi
+    NUM_MPI_PROCS 4
+)
+
+TRIBITS_ADD_TEST(
+    frosch_laplacian_tpetra
+    NAME test_frosch_laplacian_tpetra_3d_rgdsw
+    ARGS "--DIM=3 --RGDSW"
+    COMM mpi
+    NUM_MPI_PROCS 8
+)

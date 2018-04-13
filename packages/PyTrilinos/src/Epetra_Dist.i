@@ -43,7 +43,7 @@
 // @HEADER
 
 %{
-// Epetra includes
+// Epetra include files
 #include "Epetra_SrcDistObject.h"
 #include "Epetra_DistObject.h"
 #include "Epetra_MapColoring.h"

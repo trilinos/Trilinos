@@ -303,9 +303,11 @@ namespace {
              case 3:
                 vec = rcp(new Epetra_Vector(Copy,map,const_cast<double *>(&zcoords[0])));
                 EpetraExt::VectorToMatrixMarketFile("zcoords.mm",*vec);
+                [[gnu::fallthrough]];
              case 2:
                 vec = rcp(new Epetra_Vector(Copy,map,const_cast<double *>(&ycoords[0])));
                 EpetraExt::VectorToMatrixMarketFile("ycoords.mm",*vec);
+                [[gnu::fallthrough]];
              case 1:
                 vec = rcp(new Epetra_Vector(Copy,map,const_cast<double *>(&xcoords[0])));
                 EpetraExt::VectorToMatrixMarketFile("xcoords.mm",*vec);
@@ -417,9 +419,11 @@ namespace {
             case 3:
                vec = rcp(new Epetra_Vector(Copy,map,const_cast<double *>(&zcoords[0])));
                EpetraExt::VectorToMatrixMarketFile((fieldName+"_zcoords.mm").c_str(),*vec);
+               [[gnu::fallthrough]];
             case 2:
                vec = rcp(new Epetra_Vector(Copy,map,const_cast<double *>(&ycoords[0])));
                EpetraExt::VectorToMatrixMarketFile((fieldName+"_ycoords.mm").c_str(),*vec);
+               [[gnu::fallthrough]];
             case 1:
                vec = rcp(new Epetra_Vector(Copy,map,const_cast<double *>(&xcoords[0])));
                EpetraExt::VectorToMatrixMarketFile((fieldName+"_xcoords.mm").c_str(),*vec);

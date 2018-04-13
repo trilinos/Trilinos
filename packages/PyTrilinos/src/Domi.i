@@ -62,52 +62,26 @@ other Trilinos solver technologies.
         docstring = %domi_docstring) Domi
 
 %{
-// System includes
+// System include files
 #include <iostream>
 #include <sstream>
 #include <vector>
 
-// Configuration includes
-#include "PyTrilinos_config.h"
-#ifdef HAVE_SYS_TIME_H
-#undef HAVE_SYS_TIME_H
-#endif
-#ifdef HAVE_INTTYPES_H
-#undef HAVE_INTTYPES_H
-#endif
-#ifdef HAVE_STDINT_H
-#undef HAVE_STDINT_H
-#endif
-#include "Domi_ConfigDefs.hpp"
-#include "PyTrilinos_PythonException.hpp"
+// Teuchos include files
+#include "PyTrilinos_Teuchos_Headers.hpp"
 
-// Teuchos includes
-#include "Teuchos_CommHelpers.hpp"
-#include "PyTrilinos_Teuchos_Util.hpp"
-
-// Epetra includes
+// Epetra include files
 #ifdef HAVE_EPETRA
 #include "PyTrilinos_Epetra_Headers.hpp"
 #endif
 
+// Tpetra include files
 #ifdef HAVE_TPETRA
-#include "Tpetra_Map.hpp"
-#include "Tpetra_MultiVector.hpp"
-#include "Tpetra_Vector.hpp"
+#include "PyTrilinos_Tpetra_Headers.hpp"
 #endif
 
-// Domi includes
-#include "Domi_Utils.hpp"
-#include "Domi_Version.hpp"
-#include "Domi_getValidParameters.hpp"
-#include "Domi_Slice.hpp"
-#include "Domi_MDArrayView.hpp"
-#include "Domi_MDArray.hpp"
-#include "Domi_MDArrayRCP.hpp"
-#include "Domi_MDComm.hpp"
-#include "Domi_MDMap.hpp"
-#include "Domi_MDVector.hpp"
-#include "PyTrilinos_Domi_Util.hpp"
+// Domi include files
+#include "PyTrilinos_Domi_Headers.hpp"
 
 %}
 
@@ -133,7 +107,7 @@ other Trilinos solver technologies.
 // Include Domi documentation
 %include "Domi_dox.i"
 
-// SWIG library includes
+// SWIG library include files
 %include "stl.i"
 
 // Include the NumPy typemaps

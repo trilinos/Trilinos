@@ -29,9 +29,21 @@ elif [[ $THIS_HOSTNAME == "white"* ]] ; then
 elif [[ $THIS_HOSTNAME == "ride"* ]] ; then
   ATDM_HOSTNAME=ride
   ATDM_SYSTEM_NAME=ride
+elif [[ $THIS_HOSTNAME == "chama"* ]] ; then
+  ATDM_HOSTNAME=chama
+  ATDM_SYSTEM_NAME=toss3
+elif [[ $THIS_HOSTNAME == "serrano"* ]] ; then
+  ATDM_HOSTNAME=serrano
+  ATDM_SYSTEM_NAME=toss3
+elif [[ -f /projects/sems/modulefiles/utils/get-platform ]] ; then
+  ATDM_SYSTEM_NAME=`source /projects/sems/modulefiles/utils/get-platform`
+  if [[ $ATDM_SYSTEM_NAME == "rhel6-x86_64" ]] ; then
+    ATDM_HOSTNAME=$THIS_HOSTNAME
+    ATDM_SYSTEM_NAME=rhel6
+  fi
 fi
 
-# ToDo: Add more know hosts as you add them!
+# ToDo: Add more known hosts as you add them!
 
 if [[ $ATDM_SYSTEM_NAME == "" ]] ; then
   echo "Error, hostname = '$THIS_HOSTNAME' not recognized as a known ATDM system name!"

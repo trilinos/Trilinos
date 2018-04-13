@@ -58,7 +58,7 @@
 
 
 TRIBITS_TPL_FIND_INCLUDE_DIRS_AND_LIBRARIES( AmgX
-  REQUIRED_HEADERS amgx_config.h amgx_c.h amgx_capi.h
+  REQUIRED_HEADERS amgx_config.h amgx_c.h
   REQUIRED_LIBS_NAMES "amgxsh"
   )
 

@@ -180,8 +180,10 @@ void STKConnManager<GO>::buildOffsetsAndIdCounts(const panzer::FieldPattern & fp
    switch(patternDim) {
    case 3:
      faceIdCnt = fp.getSubcellIndices(2,0).size();
+     [[gnu::fallthrough]];
    case 2:
      edgeIdCnt = fp.getSubcellIndices(1,0).size();
+     [[gnu::fallthrough]];
    case 1:
      nodeIdCnt = fp.getSubcellIndices(0,0).size();
      cellIdCnt = fp.getSubcellIndices(patternDim,0).size();
