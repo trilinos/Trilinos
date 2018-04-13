@@ -81,7 +81,6 @@ public:
   typedef typename GraphType::node_type node_type;
   typedef Tpetra::RowGraph<local_ordinal_type, global_ordinal_type, node_type>  row_graph_type;
   typedef Tpetra::MultiVector<double,local_ordinal_type, global_ordinal_type, node_type>  multivector_type;
-  typedef typename Teuchos::ScalarTraits<double>::magnitudeType MT;
 
 
   //! Constructor.
@@ -99,14 +98,14 @@ public:
 private:
     // Useful functions
   int Compute_Blocks_AutoLine(Teuchos::ArrayView<local_ordinal_type> blockIndices) const;
-  void local_automatic_line_search(int NumEqns, Teuchos::ArrayView <local_ordinal_type> blockIndices, local_ordinal_type last, local_ordinal_type next, local_ordinal_type LineID, MT tol, Teuchos::Array<local_ordinal_type> itemp, Teuchos::Array<MT> dtemp) const;
+  void local_automatic_line_search(int NumEqns, Teuchos::ArrayView <local_ordinal_type> blockIndices, local_ordinal_type last, local_ordinal_type next, local_ordinal_type LineID, double tol, Teuchos::Array<local_ordinal_type> itemp, Teuchos::Array<double> dtemp) const;
 
 
 
   // User data
   int NumEqns_;
   Teuchos::RCP<multivector_type> coord_;
-  MT threshold_;
+  double threshold_;
 
 };
 
