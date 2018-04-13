@@ -388,10 +388,10 @@ namespace Ifpack2 {
         const auto pids_to = distributor.getProcsTo();
         pids.send = int_1d_view_host(do_not_initialize_tag("pids send"), pids_to.size());
         memcpy(pids.send.data(), pids_to.getRawPtr(), sizeof(int)*pids.send.extent(0));
-        
+
         // mpi requests 
-        reqs.recv.resize(pids.recv.extent(0));
-        reqs.send.resize(pids.send.extent(0));
+        reqs.recv.resize(pids.recv.extent(0)); //memset(reqs.recv.data(), 0, reqs.recv.size()*sizeof(MPI_Request));
+        reqs.send.resize(pids.send.extent(0)); //memset(reqs.send.data(), 0, reqs.send.size()*sizeof(MPI_Request));
         
         // construct offsets
         const auto lengths_to = distributor.getLengthsTo();
@@ -402,13 +402,15 @@ namespace Ifpack2 {
         
         auto set_offset_values = [](const Teuchos::ArrayView<const size_t> &lens, 
                                     const size_type_1d_view_host &offs) { 
-          const Kokkos::RangePolicy<host_execution_space> policy(0,lens.size());
+          // exclusive scan
+          const Kokkos::RangePolicy<host_execution_space> policy(0,offs.extent(0));
+          const local_ordinal_type lens_size = lens.size();
           Kokkos::parallel_scan
           (policy,
            KOKKOS_LAMBDA(const local_ordinal_type &i, size_type &update, const bool &final) {
             if (final) 
-              offs(i) = update;
-            update += lens[i];
+              offs(i) = update;            
+            update += (i < lens_size ? lens[i] : 0);
           });
         };
         set_offset_values(lengths_to,   offset.send);
@@ -432,6 +434,7 @@ namespace Ifpack2 {
           const auto pid_send_value = pids.send[i];
           for (local_ordinal_type j=0,jend=epids.size();j<jend;++j)
             if (epids[j] == pid_send_value) lids.send[cnt++] = elids[j];
+          TEUCHOS_ASSERT(static_cast<size_t>(cnt) == offset.send[i+1]);
         }
       }
 
@@ -448,6 +451,7 @@ namespace Ifpack2 {
                 const local_ordinal_type blocksize_) {
         const local_ordinal_type num_vectors = multivector_.extent(1);
         const size_type datasize = blocksize_*sizeof(impl_scalar_type);
+
         if (num_vectors == 1) {
           const Kokkos::RangePolicy<host_execution_space> policy(ibeg_, iend_);
           Kokkos::parallel_for
@@ -459,15 +463,15 @@ namespace Ifpack2 {
               else                                       memcpy(bptr, aptr, datasize);
             });
         } else { 
-          const local_ordinal_type diff = iend_ - ibeg_;
           Kokkos::MDRangePolicy
             <host_execution_space, Kokkos::Rank<2>, Kokkos::IndexType<local_ordinal_type> > 
             policy( { ibeg_, 0 }, { iend_, num_vectors } );
+          
           Kokkos::parallel_for
             (policy,
              KOKKOS_LAMBDA(const local_ordinal_type &i,
                            const local_ordinal_type &j) { 
-              auto aptr = buffer_.data() + blocksize_*(i + diff*j);
+              auto aptr = buffer_.data() + blocksize_*(num_vectors*i + j);
               auto bptr = &multivector_(blocksize_*lids_(i), j);
               if (std::is_same<PackTag,ToBuffer>::value) memcpy(aptr, bptr, datasize);
               else                                       memcpy(bptr, aptr, datasize);
@@ -523,7 +527,7 @@ namespace Ifpack2 {
         // send async
         for (local_ordinal_type i=0,iend=pids.send.extent(0);i<iend;++i) {
           copy<ToBuffer>(lids.send, buffer.send, offset.send(i), offset.send(i+1), 
-                             mv, blocksize);
+                         mv, blocksize);
           isend(comm, 
                 buffer.send.data() + offset.send[i]*mv_blocksize,
                 (offset.send[i+1] - offset.send[i])*mv_blocksize,
@@ -601,7 +605,7 @@ namespace Ifpack2 {
       const auto blocksize = A->getBlockSize();
       const auto domain_map = g.getDomainMap();
       const auto column_map = g.getColMap();
-
+      
       std::vector<global_ordinal_type> gids;
       bool separate_remotes = true, found_first = false, need_owned_permutation = false;      
       for (size_t i=0;i<column_map->getNodeNumElements();++i) {
@@ -991,7 +995,7 @@ namespace Ifpack2 {
                          const PartInterface<MatrixType> &interf,
                          BlockTridiags<MatrixType> &btdm,
                          AmD<MatrixType> &amd,
-                         const bool overlap_comm) {
+                         const bool overlap_communication_and_computation) {
 #ifdef HAVE_IFPACK2_BLOCKTRIDICONTAINER_TIMERS
       TEUCHOS_FUNC_TIME_MONITOR("BlockTriDi::SymbolicPhase");
 #endif
@@ -1105,7 +1109,7 @@ namespace Ifpack2 {
         size_type R_nnz_owned = sum_reducer_value.v[1];
         size_type R_nnz_remote = sum_reducer_value.v[2];
 
-        if (!overlap_comm) {
+        if (!overlap_communication_and_computation) {
           R_nnz_owned += R_nnz_remote;
           R_nnz_remote = 0;
         }
@@ -1178,12 +1182,12 @@ namespace Ifpack2 {
           const auto R_rowptr = Kokkos::create_mirror_view(amd.rowptr); 
           const auto R_A_colindsub = Kokkos::create_mirror_view(amd.A_colindsub);
           
-          amd.rowptr_remote = size_type_1d_view("amd.rowptr_remote", overlap_comm ? nrows + 1 : 0);
+          amd.rowptr_remote = size_type_1d_view("amd.rowptr_remote", overlap_communication_and_computation ? nrows + 1 : 0);
           amd.A_colindsub_remote = local_ordinal_type_1d_view(Kokkos::ViewAllocateWithoutInitializing("amd.A_colindsub_remote"), R_nnz_remote);
           
           const auto R_rowptr_remote = Kokkos::create_mirror_view(amd.rowptr_remote);
           const auto R_A_colindsub_remote = Kokkos::create_mirror_view(amd.A_colindsub_remote);
-          
+
           Kokkos::parallel_for
             (Kokkos::RangePolicy<host_execution_space>(0,nrows),
              KOKKOS_LAMBDA(const local_ordinal_type &lr) {
@@ -1196,18 +1200,20 @@ namespace Ifpack2 {
                 if (lc2r != Teuchos::OrdinalTraits<local_ordinal_type>::invalid()) {
                   const local_ordinal_type ri = lclrow2idx[lc2r];
                   const local_ordinal_type pi = rowidx2part(ri);
-                  if (pi == pi0 && ri + 1 >= ri0 && ri <= ri0 + 1)
+                  if (pi == pi0 && ri + 1 >= ri0 && ri <= ri0 + 1) {
                     continue;
+                  }
                 }
                 const local_ordinal_type row_entry = j - j0;
                 // exclusive scan will be performed later
-                if (!overlap_comm || lc < nrows) 
+                if (!overlap_communication_and_computation || lc < nrows) {
                   ++R_rowptr(lr);
-                else 
+                } else {
                   ++R_rowptr_remote(lr);
+                }
               }
             });
-          
+
           // exclusive scan
           typedef ArrayValueType<size_type,2> update_type;
           Kokkos::parallel_scan
@@ -1217,12 +1223,12 @@ namespace Ifpack2 {
                            const bool &final) {
               update_type val;
               val.v[0] = R_rowptr(lr);
-              if (overlap_comm)
+              if (overlap_communication_and_computation)
                 val.v[1] = R_rowptr_remote(lr);
               
               if (final) {
                 R_rowptr(lr) = update.v[0];
-                if (overlap_comm)
+                if (overlap_communication_and_computation)
                   R_rowptr_remote(lr) = update.v[1];
                 
                 if (lr < nrows) {
@@ -1230,7 +1236,7 @@ namespace Ifpack2 {
                   const local_ordinal_type pi0 = rowidx2part(ri0);
                   
                   size_type cnt_rowptr = R_rowptr(lr);
-                  size_type cnt_rowptr_remote = overlap_comm ? R_rowptr_remote(lr) : 0; // when not overlap_comm, this value is garbage
+                  size_type cnt_rowptr_remote = overlap_communication_and_computation ? R_rowptr_remote(lr) : 0; // when not overlap_communication_and_computation, this value is garbage
 
                   const size_type j0 = local_graph_rowptr(lr);
                   for (size_type j=j0;j<local_graph_rowptr(lr+1);++j) {
@@ -1243,7 +1249,7 @@ namespace Ifpack2 {
                         continue;
                     }
                     const local_ordinal_type row_entry = j - j0;
-                    if (!overlap_comm || lc < nrows) 
+                    if (!overlap_communication_and_computation || lc < nrows) 
                       R_A_colindsub(cnt_rowptr++) = row_entry;
                     else 
                       R_A_colindsub_remote(cnt_rowptr_remote++) = row_entry;
@@ -1256,7 +1262,7 @@ namespace Ifpack2 {
           TEUCHOS_ASSERT(R_rowptr(nrows) == R_nnz_owned);
           Kokkos::deep_copy(amd.rowptr, R_rowptr);
           Kokkos::deep_copy(amd.A_colindsub, R_A_colindsub);
-          if (overlap_comm) {
+          if (overlap_communication_and_computation) {
             TEUCHOS_ASSERT(R_rowptr_remote(nrows) == R_nnz_remote);
             Kokkos::deep_copy(amd.rowptr_remote, R_rowptr_remote);
             Kokkos::deep_copy(amd.A_colindsub_remote, R_A_colindsub_remote);
@@ -1803,8 +1809,8 @@ namespace Ifpack2 {
       /* */Unmanaged<vector_type_3d_view> y_packed;
 
       // AmD information
-      ConstUnmanaged<size_type_1d_view> rowptr;
-      ConstUnmanaged<local_ordinal_type_1d_view> colindsub;
+      ConstUnmanaged<size_type_1d_view> rowptr, rowptr_remote;
+      ConstUnmanaged<local_ordinal_type_1d_view> colindsub, colindsub_remote;
       ConstUnmanaged<impl_scalar_type_1d_view> tpetra_values;
 
       // block crs graph information
@@ -1833,8 +1839,8 @@ namespace Ifpack2 {
                             const local_ordinal_type blocksize_,
                             const PartInterface<MatrixType> &interf,
                             const local_ordinal_type_1d_view &dm2cm_) 
-        : rowptr(amd.rowptr),
-          colindsub(amd.A_colindsub),
+        : rowptr(amd.rowptr), rowptr_remote(amd.rowptr_remote),
+          colindsub(amd.A_colindsub), colindsub_remote(amd.A_colindsub_remote),
           tpetra_values(amd.tpetra_values),
           A_rowptr(graph.row_map),
           A_colind(graph.entries),
@@ -1971,14 +1977,14 @@ namespace Ifpack2 {
         auto xx_remote = Kokkos::subview(x_remote, block_range, 0);
         auto yy = Kokkos::View<impl_scalar_type*>(&yy_buf[0], blocksize);
         auto A_block = A_null_block; // A_block is assumed to be compact (a dimension is equal to stride)
+        auto colindsub_used = (P == 0 ? colindsub : colindsub_remote); 
+        auto rowptr_used = (P == 0 ? rowptr : rowptr_remote);
 
         for (local_ordinal_type i=0;i<nrows;++i) {
           const local_ordinal_type ri = ri0 + i;
           const local_ordinal_type lr = lclrow(ri);
           const local_ordinal_type row = lr*blocksize;
           for (local_ordinal_type col=0;col<num_vectors;++col) {
-
-
             if (P == 0) { 
               // y := b
               bb.assign_data(&b(row, col));
@@ -1991,10 +1997,9 @@ namespace Ifpack2 {
             
             // y -= Rx
             const size_type A_k0 = A_rowptr[lr];
-            for (size_type k=rowptr[lr];k<rowptr[lr+1];++k) {
-              const size_type j = A_k0 + colindsub[k];
+            for (size_type k=rowptr_used[lr];k<rowptr_used[lr+1];++k) {
+              const size_type j = A_k0 + colindsub_used[k];
               A_block.assign_data( &tpetra_values(j*blocksize_square) );
-              
               const local_ordinal_type A_colind_at_j = A_colind[j];
               if (P == 0) {
                 const auto loc = is_dm2cm_active ? dm2cm[A_colind_at_j] : A_colind_at_j;
@@ -2264,8 +2269,6 @@ namespace Ifpack2 {
       const bool is_norm_manager_active = tol > Kokkos::ArithTraits<magnitude_type>::zero();
       const bool is_seq_method_requested = !tpetra_importer.is_null();
       const bool is_async_importer_active = !async_importer.is_null();
-      printf("async importer is null %d, tpetra importer is null %d\n",
-             async_importer.is_null(), tpetra_importer.is_null());
       const magnitude_type tolerance = tol*tol;
       const local_ordinal_type blocksize = btdm.values.extent(1);
       const local_ordinal_type num_vectors = Y.getNumVectors();
@@ -2342,7 +2345,8 @@ namespace Ifpack2 {
                 compute_residual_vector.run(pmv, XX, YY, remote_multivector, false);
               }
             } else {
-              async_importer->syncExchange(YY);
+              if (is_async_importer_active)
+                async_importer->syncExchange(YY);
               if (is_norm_manager_active && norm_manager.checkDone(sweep, tolerance)) break;
               compute_residual_vector.run(pmv, XX, YY, remote_multivector);
             }

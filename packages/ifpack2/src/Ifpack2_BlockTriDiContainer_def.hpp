@@ -196,7 +196,7 @@ namespace Ifpack2 {
     {
       const bool overlap_comm = false;
       BlockTriDiContainerDetails::performSymbolicPhase<MatrixType>
-        (A_, part_interface_, block_tridiags_, a_minus_d_, overlap_comm);    
+        (A_, part_interface_, block_tridiags_, a_minus_d_, overlap_communication_and_computation_);    
     }
   }
 
