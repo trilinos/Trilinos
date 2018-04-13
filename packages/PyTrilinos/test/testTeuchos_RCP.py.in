@@ -558,8 +558,8 @@ if __name__ == "__main__":
     suite.addTest(unittest.makeSuite(TeuchosRCPTeuchosTestCase))
     if (${Trilinos_ENABLE_Epetra}):
         suite.addTest(unittest.makeSuite(TeuchosRCPEpetraTestCase))
-    if (${Trilinos_ENABLE_Tpetra}):
-        suite.addTest(unittest.makeSuite(TeuchosRCPTpetraTestCase))
+    # if (${Trilinos_ENABLE_Tpetra}):
+    #     suite.addTest(unittest.makeSuite(TeuchosRCPTpetraTestCase))
     if (${Trilinos_ENABLE_Domi}):
         suite.addTest(unittest.makeSuite(TeuchosRCPDomiTestCase))
     if (${Trilinos_ENABLE_Isorropia}):
