@@ -600,7 +600,7 @@ namespace MueLu {
       Teuchos::RCP<Xpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > myColsToZero = Xpetra::MultiVectorFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Build(colMap,1);
       myColsToZero->putScalar(zero);
       // Find all local column indices that are in Dirichlet rows, record in myColsToZero as 1.0
-      for(size_t i=0; i<dirichletRows.size(); i++) {
+      for(size_t i=0; i<(size_t) dirichletRows.size(); i++) {
         if (dirichletRows[i]) {
           Teuchos::ArrayView<const LocalOrdinal> indices;
           Teuchos::ArrayView<const Scalar> values;
@@ -780,7 +780,7 @@ namespace MueLu {
       Scalar one  =Teuchos::ScalarTraits<Scalar>::one();
       Scalar zero =Teuchos::ScalarTraits<Scalar>::zero();
 
-      for(size_t i=0; i<dirichletRows.size(); i++) {
+      for(size_t i=0; i<(size_t) dirichletRows.size(); i++) {
         if (dirichletRows[i]){
           GlobalOrdinal row_gid = Rmap->getGlobalElement(i);
 
@@ -820,7 +820,7 @@ namespace MueLu {
     static void ZeroDirichletRows(Teuchos::RCP<Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >& A,
                                   const Teuchos::ArrayRCP<const bool>& dirichletRows,
                                   Scalar replaceWith=Teuchos::ScalarTraits<Scalar>::zero()) {
-      for(size_t i=0; i<dirichletRows.size(); i++) {
+      for(size_t i=0; i<(size_t) dirichletRows.size(); i++) {
         if (dirichletRows[i]) {
           Teuchos::ArrayView<const LocalOrdinal> indices;
           Teuchos::ArrayView<const Scalar> values;
@@ -838,7 +838,7 @@ namespace MueLu {
     static void ZeroDirichletRows(Teuchos::RCP<Xpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> >& X,
                                   const Teuchos::ArrayRCP<const bool>& dirichletRows,
                                   Scalar replaceWith=Teuchos::ScalarTraits<Scalar>::zero()) {
-      for(size_t i=0; i<dirichletRows.size(); i++) {
+      for(size_t i=0; i<(size_t) dirichletRows.size(); i++) {
         if (dirichletRows[i]) {
           for(size_t j=0; j<X->getNumVectors(); j++)
             X->replaceLocalValue(i,j,replaceWith);
