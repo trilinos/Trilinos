@@ -94,13 +94,13 @@
 #ifdef HAVE_MUELU_AMGX
 #include <MueLu_AMGXOperator.hpp>
 #endif
-
-#include <MueLu_CreateXpetraPreconditioner.hpp>
-
 #ifdef HAVE_MUELU_TPETRA
 #include <MueLu_CreateTpetraPreconditioner.hpp>
 #include <Xpetra_TpetraOperator.hpp>
 #endif
+
+#include <MueLu_CreateXpetraPreconditioner.hpp>
+
 
 /*********************************************************************/
 // Support for ML interface
@@ -332,22 +332,21 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
       if(useML && lib != Xpetra::UseEpetra) throw std::runtime_error("Error: Cannot use ML on non-epetra matrices");
 
       RCP<Hierarchy> H;
+      RCP<Operator> AMGXprec;
 #if defined(HAVE_MUELU_ML) and defined(HAVE_MUELU_EPETRA)
       RCP<Operator> mlopX;
 #endif
       for (int i = 0; i <= numRebuilds; i++) {
         A->SetMaxEigenvalueEstimate(-Teuchos::ScalarTraits<SC>::one());
-
 	if(useAMGX) {
-#if defined(HAVE_MUELU_AMGX) and defined(HAVE_MUELU_TPETRA)
+#if defined(HAVE_MUELU_AMGX) and defined(HAVE_MUELU_TPETRA)	  
 	  Teuchos::ParameterList dummyList;
-	  Teuchos::RCP<Tpetra::CrsMatrix<SC,LO,GO,NO> >At = Utilities::Op2NonConstTpetraCrs(A);
-	  Teuchos::RCP<Tpetra::Operator<SC,LO,GO,NO> >Ao = Teuchos::rcp_dynamic_cast<Tpetra::Operator<SC,LO,GO,NO> >(At);
-	  Teuchos::RCP<MueLu::TpetraOperator<SC,LO,GO,NO> > to = MueLu::CreateTpetraPreconditioner(At, mueluList, dummyList);
-          H = Xpetra::TpetraOperator<SC,LO,GO,NO>(to);
+	  Teuchos::RCP<Tpetra::CrsMatrix<SC,LO,GO,NO> > Ac = Utilities::Op2NonConstTpetraCrs(A);
+	  Teuchos::RCP<Tpetra::Operator<SC,LO,GO,NO> > At = Teuchos::rcp_dynamic_cast<Tpetra::Operator<SC,LO,GO,NO> >(Ac);
+	  Teuchos::RCP<Tpetra::Operator<SC,LO,GO,NO> > Top = MueLu::CreateTpetraPreconditioner(At, mueluList, dummyList);
+	  AMGXprec = Teuchos::rcp(new Xpetra::TpetraOperator<SC,LO,GO,NO>(Top));
 #endif
-	    }
-	if(useML) {
+	} else if(useML) {
 #if defined(HAVE_MUELU_ML) and defined(HAVE_MUELU_EPETRA)
           mueluList.remove("use external multigrid package");
           ML_Wrapper<SC, LO, GO, NO>::Generate_ML_MultiLevelPreconditioner(A,mueluList,mlopX);
@@ -397,9 +396,14 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
         typedef Belos::OperatorT<MV> OP;
 
         // Define Operator and Preconditioner
-        Teuchos::RCP<OP> belosOp   = Teuchos::rcp(new Belos::XpetraOp<SC, LO, GO, NO>(A)); // Turns a Xpetra::Matrix object into a Belos operator
+        Teuchos::RCP<OP> belosOp   = Teuchos::rcp(new Belos::XpetraOp<SC, LO, GO, NO>(A)); // Turns a Xpetra::Matrix object into a Belos operato
         Teuchos::RCP<OP> belosPrec; // Turns a MueLu::Hierarchy object into a Belos operator
-	if(useML) {
+	if(useAMGX) {
+#if defined(HAVE_MUELU_AMGX) and defined(HAVE_MUELU_TPETRA)
+          belosPrec = Teuchos::rcp(new Belos::XpetraOp <SC, LO, GO, NO>(AMGXprec)); // Turns an Xpetra::Operator object into a Belos operator
+#endif
+        }
+	else if(useML) {
 #if defined(HAVE_MUELU_ML) and defined(HAVE_MUELU_EPETRA)
           belosPrec = Teuchos::rcp(new Belos::XpetraOp <SC, LO, GO, NO>(mlopX)); // Turns an Xpetra::Operator object into a Belos operator
 #endif
