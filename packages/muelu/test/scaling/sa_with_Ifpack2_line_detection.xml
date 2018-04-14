@@ -30,7 +30,6 @@
     <ParameterList name="smoother: params">
       <Parameter name="relaxation: type"                  type="string" value="Jacobi"/>
       <Parameter name="relaxation: sweeps"                type="int"    value="1"/>
-      <Parameter name="relaxation: damping factor"        type="double" value="0.8"/>
       <Parameter name="partitioner: type"                 type="string" value="line"/>
     </ParameterList>
 
