@@ -204,8 +204,8 @@ int main( int argc, char* argv[] ) {
     auto z_value = test_multi.value_z(*z);
     
     auto errx = std::abs(x_value-20.0);
-    auto erry = std::abs(y_value-20.0);
-    auto errz = std::abs(z_value-40.0);
+    auto erry = std::abs(y_value-40.0);
+    auto errz = std::abs(z_value-80.0);
 
     if( errx>errtol ) { vcm_pass = false; errorFlag++; }
     if( erry>errtol ) { vcm_pass = false; errorFlag++; }
@@ -215,8 +215,8 @@ int main( int argc, char* argv[] ) {
     else { 
       *outStream << "Error tolerance exceeded!" << std::endl; 
       *outStream << "x_value was " << x_value << ", should be 20." << std::endl;
-      *outStream << "y_value was " << y_value << ", should be 20." << std::endl;
-      *outStream << "z_value was " << z_value << ", should be 40." << std::endl;
+      *outStream << "y_value was " << y_value << ", should be 40." << std::endl;
+      *outStream << "z_value was " << z_value << ", should be 80." << std::endl;
     }
 
   }
