@@ -918,6 +918,9 @@ void updateParametersFromYamlFile(const std::string& yamlFileName,
   Teuchos::RCP<Teuchos::ParameterList> updated = YAMLParameterList::parseYamlFile(yamlFileName);
   //now update the original list (overwriting values with same key)
   paramList->setParameters(*updated);
+  if (paramList->name() == "ANONYMOUS") {
+    paramList->setName(updated->name());
+  }
 }
 
 void updateParametersFromYamlCString(const char* const data,
@@ -928,6 +931,9 @@ void updateParametersFromYamlCString(const char* const data,
   if(overwrite)
   {
     paramList->setParameters(*updated);
+    if (paramList->name() == "ANONYMOUS") {
+      paramList->setName(updated->name());
+    }
   }
   else
   {
@@ -944,6 +950,9 @@ void updateParametersFromYamlString(const std::string& yamlData,
   if(overwrite)
   {
     paramList->setParameters(*updated);
+    if (paramList->name() == "ANONYMOUS") {
+      paramList->setName(updated->name());
+    }
   }
   else
   {
@@ -1065,7 +1074,7 @@ void writeYamlStream(std::ostream& yaml, const Teuchos::ParameterList& pl)
     popFlags = true;
   }
   yaml << "%YAML 1.1\n---\n";
-  yaml << "ANONYMOUS:";         //original top-level list name is not stored by ParameterList
+  yaml << pl.name() << ':';
   if(pl.numParams() == 0)
   {
     yaml << " { }\n";

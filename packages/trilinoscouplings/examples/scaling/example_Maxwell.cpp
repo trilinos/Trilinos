@@ -523,11 +523,11 @@ int main(int argc, char *argv[]) {
     "   xmin = 0.0                \n"
     "   ymin = 0.0                \n"
     "   numz 1                    \n"
-    "     zblock 1 2.0 interval " + std::to_string(nz) + "\n" +
+    "     zblock 1 1.0 interval " + std::to_string(nz) + "\n" +
     "   numx 1                    \n"
-    "     xblock 1 2.0 interval " + std::to_string(nx) + "\n" +
+    "     xblock 1 1.0 interval " + std::to_string(nx) + "\n" +
     "   numy 1                    \n"
-    "     yblock 1 2.0 interval " + std::to_string(ny) + "\n" +
+    "     yblock 1 1.0 interval " + std::to_string(ny) + "\n" +
     "  end                        \n"
     "  set assign                 \n"
     "     sideset, ilo, 1         \n"
@@ -1829,9 +1829,9 @@ int main(int argc, char *argv[]) {
     // Edge signs
     EpetraExt::MultiVectorToMatrixMarketFile("edge_signs.dat",edgeSign,0,0,false);
 
-    EpetraExt::RowMatrixToMatlabFile("mag_k1_matrix.dat",StiffMatrixC);
-    EpetraExt::RowMatrixToMatlabFile("mag_m1_matrix.dat",MassMatrixC);
-    EpetraExt::RowMatrixToMatlabFile("mag_t_matrix.dat",DGrad);
+    EpetraExt::RowMatrixToMatrixMarketFile("mag_k1_matrix.mat",StiffMatrixC);
+    EpetraExt::RowMatrixToMatrixMarketFile("mag_m1_matrix.mat",MassMatrixC);
+    EpetraExt::RowMatrixToMatrixMarketFile("mag_t_matrix.mat",DGrad);
   }
   
 
@@ -1898,8 +1898,8 @@ int main(int argc, char *argv[]) {
                           << " sec \n"; Time.ResetStartTime();}
 
   if (dump) {
-    EpetraExt::RowMatrixToMatlabFile("mag_m0_matrix.dat",MassMatrixG);
-    EpetraExt::RowMatrixToMatlabFile("edge_matrix.dat",StiffMatrixC);
+    EpetraExt::RowMatrixToMatrixMarketFile("mag_m0_matrix.mat",MassMatrixG);
+    EpetraExt::RowMatrixToMatrixMarketFile("edge_matrix.mat",StiffMatrixC);
   }
 
   /**********************************************************************************/

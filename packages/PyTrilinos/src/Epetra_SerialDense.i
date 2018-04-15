@@ -44,7 +44,7 @@
 
 %{
 
-// Epetra includes
+// Epetra include files
 #include "Epetra_IntSerialDenseMatrix.h"
 #include "Epetra_IntSerialDenseVector.h"
 #include "Epetra_SerialDenseOperator.h"

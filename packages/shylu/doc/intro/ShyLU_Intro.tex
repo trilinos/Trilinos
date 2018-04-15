@@ -1,0 +1,306 @@
+%
+% $Id: SANDExampleArticleNotstrict.tex,v 1.26 2009/05/01 20:59:19 rolf Exp $
+%
+% This is an example LaTeX file which uses the SANDreport class file.
+% It shows how a SAND report should be formatted, what sections and
+% elements it should contain, and how to use the SANDreport class.
+% It uses the LaTeX article class, but not the strict option.
+% It uses jpeg logos and files to show how pdflatex can be used
+%
+% Get the latest version of the class file and more at
+%    http://www.cs.sandia.gov/~rolf/SANDreport
+%
+% This file and the SANDreport.cls file are based on information
+% contained in "Guide to Preparing {SAND} Reports", Sand98-0730, edited
+% by Tamara K. Locke, and the newer "Guide to Preparing SAND Reports and
+% Other Communication Products", SAND2002-2068P.
+% Please send corrections and suggestions for improvements to
+% Rolf Riesen, Org. 9223, MS 1110, rolf@cs.sandia.gov
+%
+%\documentclass[pdf,12pt,relax]{SANDreport}
+\documentclass[a4paper,11pt]{book}
+\usepackage[utf8x]{inputenc}
+
+\usepackage{graphicx}
+
+%% or use the epsfig package if you prefer to use the old commands
+%% \usepackage{epsfig}
+
+%% The amssymb package provides various useful mathematical symbols
+%% \usepackage{amssymb}
+%% The amsthm package provides extended theorem environments
+%% \usepackage{amsthm}
+
+%% The lineno packages adds line numbers. Start line numbering with
+%% \begin{linenumbers}, end it with \end{linenumbers}. Or switch it on
+%% for the whole article with \linenumbers after \end{frontmatter}.
+%% \usepackage{lineno}
+
+%% \usepackage{placeins}
+
+\usepackage{listings}
+\usepackage{subfigure}
+\usepackage{courier}
+\usepackage{fancyhdr}
+\usepackage{tikz}
+
+\usepackage{hyperref}
+\hypersetup{
+    colorlinks,
+    citecolor=black,
+    filecolor=black,
+    linkcolor=black,
+    urlcolor=black
+}
+\usepackage{url}
+
+\usepackage{color}
+
+% Macros for editing the document
+% ToDo macro
+\newcommand{\todo}[1]{{\color{blue}{#1}}}
+% AuthorComment macros
+\newcommand{\necomment}[1]{{\color{red}{#1}}}
+
+\definecolor{lightlightgray}{gray}{0.97}
+\definecolor{lightlightgreen}{rgb}{0.8,1,0.8}
+\definecolor{darkblue}{rgb}{0,0,0.8}
+\definecolor{darkgreen}{rgb}{0,0.5,0}
+\definecolor{LightSkyBlue}{rgb}{0.8,1,0.8}
+\definecolor{MidnightBlue}{rgb}{0.8,1,0.8}
+\definecolor{SandiaGray}{RGB}{130, 120, 111}\definecolor{SandiaBlue}{RGB}{0, 50, 90}
+\definecolor{SandiaLightBlue}{RGB}{0,150,180}
+\definecolor{SandiaLightLightBlue}{RGB}{0,200,220}
+\definecolor{SandiaRed}{RGB}{130, 36, 51}
+\lstset{language=C++,
+           %%frame=single,
+           basicstyle=\ttfamily\small,
+           %%basicstyle=\ttfamily,
+           %%basicstyle=\sffamily\normalsize,
+           keywordstyle=\color{darkblue},
+           %%backgroundcolor=\color{lightlightgray},
+           commentstyle=\color{darkgreen}
+           }
+
+\usepackage{kpfonts}
+\usepackage[explicit]{titlesec}
+\newcommand*\chapterlabel{}
+\titleformat{\chapter}
+  {\gdef\chapterlabel{}
+   \normalfont\sffamily\Huge\bfseries\scshape}
+  {\gdef\chapterlabel{\thechapter\ }}{0pt}
+  {\begin{tikzpicture}[remember picture,overlay]
+    \node[yshift=-2cm] at (current page.north west)
+      {\begin{tikzpicture}[remember picture, overlay]
+        \draw[fill=SandiaGray,color=SandiaGray] (0,0) rectangle
+          (\paperwidth,2cm);
+        \node[anchor=east,xshift=.9\paperwidth,rectangle,
+              rounded corners=20pt,inner sep=11pt,
+              fill=SandiaBlue,color=SandiaBlue]
+              {\color{white}\chapterlabel#1};
+       \end{tikzpicture}
+      };
+   \end{tikzpicture}
+  }
+\titlespacing*{\chapter}{0pt}{50pt}{-60pt}
+
+
+%\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[CE,CO]{\leftmark}
+%\fancyhead[CE]{\hspace{40cm}\thechapter. \chaptername}
+%\fancyhead[LO]{\hspace{12.68cm}\thechapter. \chaptername}
+\fancyfoot[RE,LO]{\leftmark}
+\fancyfoot[CE,CO]{\vspace{0.2cm}\color{white}\thepage}
+\renewcommand{\headrulewidth}{10pt}
+\renewcommand{\footrulewidth}{65pt}
+\fancyheadoffset{\textwidth}
+\fancyfootoffset{\textwidth}
+\headsep = 1.5cm
+\footskip = 40pt
+
+\makeatletter
+\def\headrule{{\color{SandiaGray}\if@fancyplain\let\headrulewidth\plainheadrulewidth\fi
+\hrule\@height\headrulewidth\@width\headwidth
+\vskip-\headrulewidth}}
+\makeatother
+
+\makeatletter
+\def\footrule{{\color{SandiaBlue}\if@fancyplain\let\footrulewidth\plainheadrulewidth\fi
+\hrule\@height\footrulewidth\@width\headwidth
+\vskip-\footrulewidth}}
+\makeatother
+\title{ShyLU: Introduction to Capabilities and API}
+
+%% use optional labels to link authors explicitly to addresses:
+%% \author[label1,label2]{<author name>}
+%% \address[label1]{<address>}
+%% \address[label2]{<address>}
+
+\author{Sivasankaran Rajamanickam, Nathan Ellingwood, Alexander Heinlein, Kyungjoo Kim}
+
+%\cortext[authorcor]{Corresponding author}
+%\address{Sandia National Laboratories, PO Box 5800 / MS 1318, Albuquerque NM, 87185}
+
+% ---------------------------------------------------------------------------- %
+% Set some things we need for SAND reports. These are mandatory
+%
+%\SANDnum{SAND2018-xxxx}
+%\SANDprintDate{April, 2018}
+%\SANDauthor{author-list
+% ---------------------------------------------------------------------------- %
+\addtolength{\oddsidemargin}{-.4in}
+\addtolength{\evensidemargin}{-.4in}
+\addtolength{\textwidth}{0.8in}
+
+\addtolength{\topmargin}{-.875in}
+\addtolength{\textheight}{1.in}
+
+
+\begin{document}
+
+% ------------------------------------------------------------------------ %
+% An Abstract is required for SAND reports
+%
+%\begin{abstract}
+%\end{abstract}
+%\clearpage
+% ------------------------------------------------------------------------ %
+%\section*{Acknowledgements}
+
+%Sandia National Laboratories is a multi-mission laboratory managed and operated by National Technology and Engineering Solutions of Sandia, LLC., a wholly owned subsidiary of Honeywell International, Inc., for the U.S. Department of Energy’s National Nuclear Security Administration under contract DE-NA-0003525. 
+
+%\cleardoublepage
+% ------------------------------------------------------------------------ %
+
+%\setcounter{tocdepth}{2}
+%\tableofcontents
+%\listoffigures
+%\listoftables
+
+%\SANDmain
+
+\pagestyle{fancy}
+\begin{titlepage}
+\vspace{5cm}
+\hspace{2cm}
+%\begin{minipage}[h]{0.8\textwidth}
+  {\begin{tikzpicture}[remember picture,overlay]
+    \node[yshift=-2.5cm] at (current page.north west)
+      {\begin{tikzpicture}[remember picture, overlay]
+          \draw[fill=SandiaLightLightBlue,color=SandiaLightLightBlue] (0,-8cm) rectangle (8cm,5.5cm);
+          \draw[fill=SandiaLightBlue,color=SandiaLightBlue] (0,-6cm) rectangle (6cm,3.5cm);
+          \draw[fill=SandiaBlue,color=SandiaBlue] (0,-4cm) rectangle (4cm,1.5cm);          
+          \draw[fill=SandiaLightBlue,color=SandiaLightBlue] (4cm,-4cm) circle [radius=4cm];
+          \draw[fill=SandiaLightLightBlue,color=SandiaLightLightBlue] (6cm,-6cm) circle [radius=6cm];
+          \draw[fill=white,color=white] (8cm,-8cm) circle [radius=8cm];
+          \draw[fill=SandiaGray,color=SandiaGray] (0,3.5cm) rectangle (\paperwidth,0.5cm);
+          \draw[fill=SandiaBlue,color=SandiaBlue] (0,0) rectangle (\paperwidth,2.0cm);
+%          \draw[fill=SandiaGray,color=SandiaGray] (0,3.5cm) rectangle (\paperwidth,0.5cm);
+       \end{tikzpicture}
+      };
+
+      \node[yshift=0cm] at (current page.south east)
+      {\begin{tikzpicture}[remember picture, overlay]
+          \draw[fill=SandiaLightLightBlue,color=SandiaLightLightBlue] (-8cm,11.5cm) rectangle (8cm,5.5cm);
+          \draw[fill=SandiaLightBlue,color=SandiaLightBlue] (-6cm,9.5cm) rectangle (6cm,3.5cm);
+          \draw[fill=SandiaBlue,color=SandiaBlue] (0,7.5cm) rectangle (-4cm,1.5cm);          
+          \draw[fill=SandiaLightBlue,color=SandiaLightBlue] (-4cm,7.5cm) circle [radius=4cm];
+          \draw[fill=SandiaLightLightBlue,color=SandiaLightLightBlue] (-6cm,9.3cm) circle [radius=6cm];
+          \draw[fill=white,color=white] (-8cm,11.5cm) circle [radius=8cm];
+        \draw[fill=SandiaBlue,color=SandiaBlue] (-\paperwidth,0.5cm) rectangle
+          (\paperwidth,3.5cm);
+        \draw[fill=SandiaGray,color=SandiaGray] (-\paperwidth,0) rectangle
+          (\paperwidth,0.5cm);
+       \end{tikzpicture}
+      };
+                              
+    \node[yshift=-.25\paperheight] at (current page.north west)
+      {\begin{tikzpicture}[remember picture, overlay]
+      
+          \node[anchor=east,xshift=.3\paperwidth,rectangle,
+              yshift=-.1\paperheight,
+              rounded corners=20pt,inner sep=11pt,
+              fill=SandiaBlue]
+              {\color{white} \Huge ShyLU};
+              
+        \node[anchor=east,xshift=.85\paperwidth,rectangle,
+              yshift=-.2\paperheight,
+              rounded corners=20pt,inner sep=11pt,
+              fill=SandiaBlue]
+              {\color{white} \Huge Introduction to Capabilities and API};
+      
+        \node[anchor=east,xshift=.85\paperwidth,color=white,rectangle,yshift=-.25\paperheight]
+              {\color{black}Version 1.0 April 2018};
+              
+        %\draw [line width=12, SandiaGray] (0.1\paperwidth,-0.15\paperwidth) -- (0.25\paperwidth, 0.0\paperwidth);        %\draw [line width=12, SandiaGray] (0.9\paperwidth,-0.15\paperwidth) -- (0.75\paperwidth, 0.0\paperwidth);        %\draw [line width=12, SandiaGray] (0.1\paperwidth,-0.27\paperwidth) -- (0.25\paperwidth,-0.42\paperwidth);        %\draw [line width=12, SandiaGray] (0.9\paperwidth,-0.27\paperwidth) -- (0.75\paperwidth,-0.42\paperwidth);
+
+        %\draw [line width=12, SandiaGray] (0.1\paperwidth,-0.27\paperwidth) -- (0.1\paperwidth,-0.15\paperwidth);        %\draw [line width=12, SandiaGray] (0.9\paperwidth,-0.27\paperwidth) -- (0.9\paperwidth,-0.15\paperwidth);
+      
+        %\draw [line width=12, SandiaGray] (0.35\paperwidth, 0.0\paperwidth) -- (0.65\paperwidth,-0.0\paperwidth);        %\draw [line width=12, SandiaGray] (0.35\paperwidth,-0.42\paperwidth) -- (0.65\paperwidth,-0.42\paperwidth);
+      
+      \end{tikzpicture}
+      };
+      
+      \node[xshift=0.25\paperwidth,rectangle, yshift=5cm] at (current page.south west)
+              {\includegraphics[height=0.4in]{figures/SNL_Stacked_Black_Blue.jpg}};
+      \node[xshift=0.1\paperwidth,rectangle, yshift=5cm] at (current page.south west)
+              {\includegraphics[height=0.6in]{figures/DOEbwlogo.pdf}};
+
+
+   \end{tikzpicture}
+   }
+
+
+%\end{minipage}
+
+
+\vfill
+\end{titlepage}
+
+%\chapter*{Acknowledgements}
+
+\noindent
+Sandia National Laboratories is a multi-mission laboratory managed and operated by National Technology and 
+Engineering Solutions of Sandia, LLC., a wholly owned subsidiary of Honeywell International, Inc., for the U.S. 
+Department of Energy’s National Nuclear Security Administration under contract DE-NA-0003525. 
+\newline
+\newline
+\noindent
+SAND201*-XXXXX
+
+\vspace{4cm}
+\noindent 
+Authors: \newline\newline
+Sivasankaran Rajamanickam (srajama@sandia.gov)\newline
+Nathan Ellingwood (ndellin@sandia.gov)\newline
+Kyungjoo Kim (kyukim@sandia.gov)\newline
+Alexander Heinlein\newline
+Andrew M. Bradley (ambradl.sandia.gov)\newline
+Clark R. Dohrmann
+
+\vspace{1cm}
+\noindent 
+Version: \newline\newline
+1.0 April 2018 \newline\newline
+
+%\noindent
+%This document constitutes the initial version of the ShyLU Introduction to Capabilities and API guide
+
+%\maketitle
+%\setcounter{tocdepth}{2}
+\tableofcontents
+
+\input{ShyLU_Intro_Introduction.tex}
+\input{ShyLU_Intro_Tacho.tex}
+\input{ShyLU_Intro_Basker.tex}
+\input{ShyLU_Intro_FastILU.tex}
+\input{ShyLU_Intro_HTS.tex}
+\input{ShyLU_Intro_FROSch.tex}
+\input{ShyLU_Intro_BDDC.tex}
+
+\clearpage
+\bibliographystyle{plain}
+\bibliography{ShyLU_Intro}
+%\include{SANDDistribution}
+\end{document}

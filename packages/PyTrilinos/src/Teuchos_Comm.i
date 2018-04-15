@@ -43,24 +43,12 @@
 // @HEADER
 
 %{
-// System includes
+// System include files
 #include <string>
 
-// Teuchos includes
-#include "Teuchos_VerbosityLevel.hpp"
-#include "Teuchos_FancyOStream.hpp"
-#include "Teuchos_LabeledObject.hpp"
-#include "Teuchos_Describable.hpp"
-#include "Teuchos_ReductionOp.hpp"
-#include "Teuchos_Comm.hpp"
-#include "Teuchos_DefaultSerialComm.hpp"
-#include "Teuchos_CommHelpers.hpp"
-#include "Teuchos_OpaqueWrapper.hpp"
+// Teuchos include files
+#include "PyTrilinos_Teuchos_Headers.hpp"
 using Teuchos::OpaqueWrapper;
-
-// PyTrilinos includes
-#include "PyTrilinos_config.h"
-#include "PyTrilinos_PythonException.hpp"
 %}
 
 // Convey the PyTrilinos configuration to SWIG

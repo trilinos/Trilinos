@@ -74,47 +74,29 @@ in addition to the following factory function:
 	docstring    = %nox_solver_docstring) Solver
 
 %{
-// PyTrilinos includes
+// PyTrilinos include files
 #include "PyTrilinos_config.h"
-#include "PyTrilinos_LinearProblem.hpp"
 
-// Teuchos includes
-#include "Teuchos_Comm.hpp"
-#include "Teuchos_DefaultSerialComm.hpp"
-#ifdef HAVE_MPI
-#include "Teuchos_DefaultMpiComm.hpp"
+// Teuchos include files
+#include "PyTrilinos_Teuchos_Headers.hpp"
+
+// Epetra include files
+#ifdef HAVE_NOX_EPETRA
+#include "PyTrilinos_Epetra_Headers.hpp"
 #endif
-#include "PyTrilinos_Teuchos_Util.hpp"
 
-// NOX includes
-#include "NOX_StatusTest_Generic.H"
-#include "NOX_StatusTest_NormWRMS.H"
-#include "NOX_StatusTest_Stagnation.H"
-#include "NOX_StatusTest_MaxIters.H"
-#include "NOX_StatusTest_Combo.H"
-#include "NOX_StatusTest_FiniteValue.H"
-#include "NOX_StatusTest_NormF.H"
-#include "NOX_StatusTest_NormUpdate.H"
-#include "NOX_Abstract_Group.H"
-#include "NOX_Solver_Generic.H"
-#include "NOX_Solver_LineSearchBased.H"
-#include "NOX_Solver_TrustRegionBased.H"
-#include "NOX_Solver_InexactTrustRegionBased.H"
-#include "NOX_Solver_TensorBased.H"
-#include "NOX_Solver_Factory.H"
+// NOX include files
+#include "PyTrilinos_NOX_StatusTest_Headers.hpp"
+#include "PyTrilinos_NOX_Abstract_Headers.hpp"
+#include "PyTrilinos_NOX_Solver_Headers.hpp"
 
-// Local includes
+// Local include files
 #define NO_IMPORT_ARRAY
 #include "numpy_include.hpp"
 %}
 
-// Configuration and optional includes
+// Configuration and optional include files
 %include "PyTrilinos_config.h"
-#ifdef HAVE_NOX_EPETRA
-%{
-#include "PyTrilinos_Epetra_Headers.hpp"
-%}
-#endif
 
 // Standard exception handling
 %include "exception.i"
@@ -131,9 +113,9 @@ in addition to the following factory function:
 %rename(StatusTest_None   ) NOX::StatusTest::None;
 
 // Trilinos imports
-%import  "Teuchos.i"
-%import  "NOX.Abstract.i"
-%import  "NOX.StatusTest.i"
+%import "Teuchos.i"
+%import "NOX.Abstract.i"
+%import "NOX.StatusTest.i"
 
 // General exception handling
 %feature("director:except")

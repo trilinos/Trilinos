@@ -62,29 +62,16 @@ The purpose of Isorropia.Epetra is to ....
 // Configuration
 #include "PyTrilinos_config.h"
 
-// Teuchos includes
-#include "Teuchos_RCP.hpp"
-#include "Teuchos_Comm.hpp"
-#include "Teuchos_DefaultComm.hpp"
-#include "Teuchos_DefaultSerialComm.hpp"
-#ifdef HAVE_MPI
-#include "Teuchos_DefaultMpiComm.hpp"
-#endif
+// Teuchos include files
+#include "PyTrilinos_Teuchos_Headers.hpp"
 
-// Epetra includes
+// Epetra include files
 #include "PyTrilinos_Epetra_Headers.hpp"
 
-// Isorropia includes
-#include "Isorropia_EpetraOperator.hpp"
-#include "Isorropia_EpetraColorer.hpp"
-#include "Isorropia_EpetraPartitioner.hpp"
-#include "Isorropia_EpetraPartitioner2D.hpp"
-#include "Isorropia_EpetraRedistributor.hpp"
-#include "Isorropia_EpetraCostDescriber.hpp"
-#include "Isorropia_EpetraOrderer.hpp"
-#include "Isorropia_EpetraLevelScheduler.hpp"
+// Isorropia include files
+#include "PyTrilinos_Isorropia_Headers.hpp"
 
-// Local includes
+// Local include files
 #define NO_IMPORT_ARRAY
 #define SWIG_FILE_WITH_INIT
 #include "numpy_include.hpp"
@@ -203,8 +190,6 @@ del sys, op
 //////////////////////////////////////////////
 // Isorropia::Epetra::Partitioner2D support //
 //////////////////////////////////////////////
-//%teuchos_rcp(Isorropia::Epetra::Partioner2D)
-//%include "Isorropia_EpetraPartitioner2D.hpp"
 
 //////////////////////////////////////////////
 // Isorropia::Epetra::Redistributor support //

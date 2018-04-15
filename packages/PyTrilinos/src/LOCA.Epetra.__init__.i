@@ -64,40 +64,27 @@ the following classes:
 	docstring    = %loca_epetra_docstring) __init__
 
 %{
-// System includes
+// System include files
 #include <vector>
 
-// Teuchos includes
-#include "Teuchos_Comm.hpp"
-#include "Teuchos_DefaultSerialComm.hpp"
-#ifdef HAVE_MPI
-#include "Teuchos_DefaultMpiComm.hpp"
-#endif
+// Teuchos include files
+#include "PyTrilinos_Teuchos_Headers.hpp"
 
-// PyTrilinos includes
+// PyTrilinos include files
 #include "PyTrilinos_Teuchos_Util.hpp"
 #include "PyTrilinos_Epetra_Util.hpp"
 
-// Epetra includes
+// Epetra include files
 #include "PyTrilinos_Epetra_Headers.hpp"
 
-// NOX includes
+// NOX include files
 #include "NOX.H"
 #include "NOX_Epetra_Group.H"
 
-// LOCA includes
-#include "LOCA.H"
-#include "LOCA_Hopf_MooreSpence_ExtendedMultiVector.H"
-#include "LOCA_Hopf_MooreSpence_ExtendedVector.H"
-#include "LOCA_Hopf_MooreSpence_SalingerBordering.H"
-#include "LOCA_Hopf_MooreSpence_ExtendedGroup.H"
-#include "LOCA_Hopf_MinimallyAugmented_ExtendedGroup.H"
-#include "LOCA_Hopf_MinimallyAugmented_Constraint.H"
-#undef HAVE_STDINT_H
-#undef HAVE_INTTYPES_H
-#undef HAVE_SYS_TIME_H
-#include "LOCA_Epetra.H"
-#include "LOCA_Epetra_Group.H"
+// LOCA include files
+#include "PyTrilinos_LOCA_Headers.hpp"
+#include "PyTrilinos_LOCA_Hopf_Headers.hpp"
+#include "PyTrilinos_LOCA_Epetra_Headers.hpp"
 
 // Namespace flattening
 using Teuchos::RCP;
@@ -114,7 +101,7 @@ from . import ___init__
 
 %ignore *::operator=;
 
-// SWIG library includes
+// SWIG library include files
 %include "stl.i"
 
 // Exception handling

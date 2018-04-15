@@ -183,7 +183,7 @@ namespace FROSch {
             tmpCoarseMatrix->fillComplete();
             k0 = tmpCoarseMatrix;
             CoarseSolveExporters_[j] = Xpetra::ExportFactory<LO,GO,NO>::Build(GatheringMaps_[j-1],GatheringMaps_[j]);
-            CrsMatrixPtr tmpCoarseMatrix = Xpetra::MatrixFactory<SC,LO,GO,NO>::Build(GatheringMaps_[j],k0->getGlobalMaxNumRowEntries());
+            tmpCoarseMatrix = Xpetra::MatrixFactory<SC,LO,GO,NO>::Build(GatheringMaps_[j],k0->getGlobalMaxNumRowEntries());
             
             tmpCoarseMatrix->doExport(*k0,*CoarseSolveExporters_[j],Xpetra::INSERT);
         }
@@ -194,7 +194,7 @@ namespace FROSch {
             CoarseMatrix_ = Xpetra::MatrixFactory<SC,LO,GO,NO>::Build(CoarseSolveMap_,k0->getGlobalMaxNumRowEntries());
             ConstGOVecView indices;
             ConstSCVecView values;
-            for (LO i=0; i<tmpCoarseMatrix->getNodeNumRows(); i++) {
+            for (UN i=0; i<tmpCoarseMatrix->getNodeNumRows(); i++) {
                 tmpCoarseMatrix->getGlobalRowView(CoarseSolveMap_->getGlobalElement(i),indices,values);
                 CoarseMatrix_->insertGlobalValues(CoarseSolveMap_->getGlobalElement(i),indices,values);
             }

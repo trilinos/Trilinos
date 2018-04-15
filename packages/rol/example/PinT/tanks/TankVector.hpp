@@ -93,14 +93,14 @@ public:
     auto& u = *vec_;
     os << endl << name_ << endl;
     os << setw(5) << "row" << setw(5) << "col" << setw(7) << "   |   " << 
-          setw(16) << "h"  << setw(16) << "Qin" << setw(16) << "Qout" << endl;
-    os << string(12,'-') + '+' + string(60,'-') << endl;
+          setw(10) << "h"  << setw(16) << "Qin" << setw(16) << "Qout" << endl;
+    os << string(13,'-') + '+' + string(60,'-') << endl;
 
     for( size_type i=0; i<rows_; ++i ) {
       for( size_type j=0; j<cols_; ++j ) {
         size_type k = cols_*i+j;
         os << setw(5)  << i << setw(5) << j << setw(7) << "   |   " << 
-              setw(16) << u[k] << setw(16) << u[k+N_] << setw(16) << u[k+2*N_] << endl;
+              setw(10) << u[k] << setw(16) << u[k+N_] << setw(16) << u[k+2*N_] << endl;
       }
     }
   }
@@ -138,14 +138,14 @@ public:
 
     os << endl << name_ << endl;
     os << setw(5) << "row" << setw(5) << "col" << setw(7) << "   |   " << 
-          setw(16) << "value"  << endl;
-    os << string(12,'-') + '+' + string(16,'-') << endl;
+          setw(10) << "value"  << endl;
+    os << string(13,'-') + '+' + string(16,'-') << endl;
 
     for( size_type i=0; i<rows_; ++i ) {
       for( size_type j=0; j<cols_; ++j ) {
         size_type k = cols_*i+j;
         os << setw(5)  << i << setw(5) << j << setw(7) << "   |   " << 
-              setw(16) << z[k] << endl;
+              setw(10) << z[k] << endl;
       }
     }
   }

@@ -159,20 +159,23 @@ MACRO(SWIG_GET_DEPENDENCIES name)
   # the dependencies, (2) pipe the results to sed to delete the first
   # line (which is the wrapper file name), and (3) pipe those results
   # to sed again to convert the continuation character to a semicolon.
-  EXECUTE_PROCESS(COMMAND ${SWIG_EXECUTABLE} -MM ${swig_special_flags}
-    -${SWIG_MODULE_${name}_SWIG_LANGUAGE_FLAG} ${swig_source_file_flags} ${CMAKE_SWIG_FLAGS}
-    ${swig_extra_flags} ${swig_include_dirs} ${swig_source_file_fullname}
-    COMMAND sed "1 d"
-    COMMAND sed "s/ \\\\/;/"
-    OUTPUT_VARIABLE swig_dependencies
-    )
-  # Loop over ${swig_dependencies} to generate a whitespace-stripped
-  # SWIG_MODULE_${name}_EXTRA_DEPS
-  SET(SWIG_MODULE_${name}_EXTRA_DEPS "")
-  FOREACH(it ${swig_dependencies})
-    STRING(STRIP ${it} dependency)
-    SET(SWIG_MODULE_${name}_EXTRA_DEPS ${SWIG_MODULE_${name}_EXTRA_DEPS} ${dependency})
-  ENDFOREACH(it)
+  GET_SOURCE_FILE_PROPERTY(swig_source_file_generated ${name} GENERATED)
+  IF(swig_source_file_generated)
+    EXECUTE_PROCESS(COMMAND ${SWIG_EXECUTABLE} -MM ${swig_special_flags}
+      -${SWIG_MODULE_${name}_SWIG_LANGUAGE_FLAG} ${swig_source_file_flags} ${CMAKE_SWIG_FLAGS}
+      ${swig_extra_flags} ${swig_include_dirs} ${swig_source_file_fullname}
+      COMMAND sed "1 d"
+      COMMAND sed "s/ \\\\/;/"
+      OUTPUT_VARIABLE swig_dependencies
+      )
+    # Loop over ${swig_dependencies} to generate a whitespace-stripped
+    # SWIG_MODULE_${name}_EXTRA_DEPS
+    SET(SWIG_MODULE_${name}_EXTRA_DEPS "")
+    FOREACH(it ${swig_dependencies})
+      STRING(STRIP ${it} dependency)
+      SET(SWIG_MODULE_${name}_EXTRA_DEPS ${SWIG_MODULE_${name}_EXTRA_DEPS} ${dependency})
+    ENDFOREACH(it)
+  ENDIF(swig_source_file_generated)
 ENDMACRO(SWIG_GET_DEPENDENCIES)
 
 #
@@ -181,7 +184,8 @@ ENDMACRO(SWIG_GET_DEPENDENCIES)
 MACRO(SWIG_ADD_SOURCE_TO_MODULE name outfiles infile outdir module)
   SET(swig_full_infile ${infile})
   GET_FILENAME_COMPONENT(swig_source_file_path "${infile}" PATH)
-  STRING(REGEX REPLACE "(.*)\\.i$" "\\1" swig_source_file_name_we ${infile})
+  GET_FILENAME_COMPONENT(swig_source_file_name "${infile}" NAME)
+  STRING(REGEX REPLACE "(.*)\\.i$" "\\1" swig_source_file_name_we ${swig_source_file_name})
   GET_SOURCE_FILE_PROPERTY(swig_source_file_generated ${infile} GENERATED)
   GET_SOURCE_FILE_PROPERTY(swig_source_file_cplusplus ${infile} CPLUSPLUS)
   GET_SOURCE_FILE_PROPERTY(swig_source_file_flags ${infile} SWIG_FLAGS)

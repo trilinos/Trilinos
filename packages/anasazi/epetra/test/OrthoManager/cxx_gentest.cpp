@@ -60,6 +60,7 @@
 #endif
 
 #include "ModeLaplace1DQ1.h"
+#include "MySDMHelpers.hpp"
 
 using namespace Teuchos;
 using namespace Anasazi;
@@ -264,7 +265,7 @@ int main(int argc, char *argv[])
       // Set X1=X1b*M1, so that <Y1,X1> is s.p.d.
       // Set M1 = R1'*R1, where R1 is random matrix
       SerialDenseMatrix<int,ST> R1(yTx1), M1(yTx1);
-      R1.random();
+      Anasazi::randomSDM(R1);
       M1.multiply(Teuchos::CONJ_TRANS,Teuchos::NO_TRANS,ONE,R1,R1,ZERO);
       M1.scale(ONE/M1.normFrobenius());
       MVT::MvTimesMatAddMv(ONE,*X1b,M1,ZERO,*X1);
@@ -324,7 +325,7 @@ int main(int argc, char *argv[])
       // Set X2=X2b*M2, so that <Y2,X2> is s.p.d.
       // Set M2 = R2'*R2, where R2 is random matrix
       SerialDenseMatrix<int,ST> R2(yTx2), M2(yTx2);
-      R2.random();
+      Anasazi::randomSDM(R2);
       M2.multiply(Teuchos::CONJ_TRANS,Teuchos::NO_TRANS,ONE,R2,R2,ZERO);
       M2.scale(ONE/M2.normFrobenius());
       MVT::MvTimesMatAddMv(ONE,*X2b,M2,ZERO,*X2);
@@ -372,8 +373,8 @@ int main(int argc, char *argv[])
       // and
       // P_{Y2,Y2} P_{X1,X1} (X1*C1 + Y2*C2) = P_{Y2,Y2} Y2*C2 = 0
       SerialDenseMatrix<int,ST> C1(sizeX1,sizeS), C2(sizeX2,sizeS);
-      C1.random();
-      C2.random();
+      Anasazi::randomSDM(C1);
+      Anasazi::randomSDM(C2);
       MVT::MvTimesMatAddMv(ONE,*X1,C1,ZERO,*S);
       MVT::MvTimesMatAddMv(ONE,*Y2,C2,ONE,*S);
 
@@ -394,8 +395,8 @@ int main(int argc, char *argv[])
       // and
       // P_{Y1,Y1} P_{X2,X2} (X2*C2 + Y1*C1) = P_{Y1,Y1} Y1*C1 = 0
       SerialDenseMatrix<int,ST> C1(sizeX1,sizeS), C2(sizeX2,sizeS);
-      C1.random();
-      C2.random();
+      Anasazi::randomSDM(C1);
+      Anasazi::randomSDM(C2);
       MVT::MvTimesMatAddMv(ONE,*X2,C2,ZERO,*S);
       MVT::MvTimesMatAddMv(ONE,*Y1,C1,ONE,*S);
 
@@ -425,8 +426,8 @@ int main(int argc, char *argv[])
       // and
       // P_{Y2,Y2} P_{X1,X1} (X1*C1 + Y2*C2) = P_{Y2,Y2} Y2*C2 = 0
       SerialDenseMatrix<int,ST> C1(sizeX1,sizeS), C2(sizeX2,sizeS);
-      C1.random();
-      C2.random();
+      Anasazi::randomSDM(C1);
+      Anasazi::randomSDM(C2);
       MVT::MvTimesMatAddMv(ONE,*X1,C1,ZERO,*S);
       MVT::MvTimesMatAddMv(ONE,*Y2,C2,ONE,*S);
 
@@ -447,8 +448,8 @@ int main(int argc, char *argv[])
       // and
       // P_{Y1,Y1} P_{X2,X2} (X2*C2 + Y1*C1) = P_{Y1,Y1} Y1*C1 = 0
       SerialDenseMatrix<int,ST> C1(sizeX1,sizeS), C2(sizeX2,sizeS);
-      C1.random();
-      C2.random();
+      Anasazi::randomSDM(C1);
+      Anasazi::randomSDM(C2);
       MVT::MvTimesMatAddMv(ONE,*X2,C2,ZERO,*S);
       MVT::MvTimesMatAddMv(ONE,*Y1,C1,ONE,*S);
 
@@ -478,12 +479,14 @@ int main(int argc, char *argv[])
       // rank-1
       RCP<MV> one = MVT::Clone(*S,1);
       MVT::MvRandom(*one);
+      SerialDenseMatrix<int,ST> scaleS(sizeS,1);
+      Anasazi::randomSDM(scaleS);
       // put multiple of column 0 in columns 0:sizeS-1
       for (int i=0; i<sizeS; i++) {
         std::vector<int> ind(1);
         ind[0] = i;
         RCP<MV> Si = MVT::CloneViewNonConst(*S,ind);
-        MVT::MvAddMv(SCT::random(),*one,ZERO,*one,*Si);
+        MVT::MvAddMv(scaleS(i,0),*one,ZERO,*one,*Si);
       }
 
       MyOM->stream(Errors) << " projectAndNormalizeGen(): testing on rank-1 multivector " << endl;
@@ -681,9 +684,9 @@ int testProjectAndNormalizeGen(RCP<GenOrthoManager<ST,MV,OP> > OM,
         MScopy = MVT::CloneCopy(*lclMS);
       }
       // randomize this data, it should be overwritten
-      B->random();
+      Anasazi::randomSDM(*B);
       for (unsigned int i=0; i<C.size(); i++) {
-        C[i]->random();
+        Anasazi::randomSDM(*C[i]);
       }
       // run test
       int ret = OM->projectAndNormalizeGen(
@@ -738,9 +741,9 @@ int testProjectAndNormalizeGen(RCP<GenOrthoManager<ST,MV,OP> > OM,
           MScopy = MVT::CloneCopy(*lclMS);
         }
         // randomize this data, it should be overwritten
-        B->random();
+        Anasazi::randomSDM(*B);
         for (unsigned int i=0; i<C.size(); i++) {
-          C[i]->random();
+          Anasazi::randomSDM(*C[i]);
         }
         // flip the inputs
         theX = tuple( theX[1], theX[0] );
@@ -1037,7 +1040,7 @@ int testProjectGen(RCP<GenOrthoManager<ST,MV,OP> > OM,
       }
       // randomize this data, it should be overwritten
       for (unsigned int i=0; i<C.size(); i++) {
-        C[i]->random();
+        Anasazi::randomSDM(*C[i]);
       }
       // run test
       OM->projectGen(*Scopy,theX,theY,localIsBiortho,C,MScopy,theMX,theMY);
@@ -1062,7 +1065,7 @@ int testProjectGen(RCP<GenOrthoManager<ST,MV,OP> > OM,
         }
         // randomize this data, it should be overwritten
         for (unsigned int i=0; i<C.size(); i++) {
-          C[i]->random();
+          Anasazi::randomSDM(*C[i]);
         }
         // flip the inputs
         theX = tuple( theX[1], theX[0] );

@@ -257,5 +257,21 @@ namespace TeuchosTests
       Teuchos::ParserFail);
   }
 
+  TEUCHOS_UNIT_TEST(YAML, keep_top_name)
+  {
+    Teuchos::ParameterList pl;
+    char const * const cstr =
+      "%YAML 1.1\n"
+      "---\n"
+      "Albany:\n"
+      "  some param: 5\n"
+      "...\n";
+    Teuchos::updateParametersFromYamlCString(cstr, Teuchos::ptr(&pl), true);
+    std::stringstream ss;
+    Teuchos::writeParameterListToYamlOStream(pl, ss);
+    auto s = ss.str();
+    TEST_EQUALITY(s, cstr);
+  }
+
 } //namespace TeuchosTests
 

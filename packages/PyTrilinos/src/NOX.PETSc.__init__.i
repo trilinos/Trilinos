@@ -70,18 +70,13 @@ NOX.PETSC provides the following user-level classes:
 // Configuration
 #include "PyTrilinos_config.h"
 
-// Teuchos includes
-#include "Teuchos_RCPDecl.hpp"
-#include "Teuchos_DefaultSerialComm.hpp"
-#ifdef HAVE_MPI
-#include "Teuchos_DefaultMpiComm.hpp"
-#endif
-#include "PyTrilinos_Teuchos_Util.hpp"
+// Teuchos include files
+#include "PyTrilinos_Teuchos_Headers.hpp"
 
-// NOX includes
-#include "NOX_Petsc.H"
+// NOX include files
+#include "PyTrilinos_NOX_PETSc_Headers.hpp"
 
-// Local includes
+// Local include files
 #define NO_IMPORT_ARRAY
 #include "numpy_include.hpp"
 
@@ -141,7 +136,7 @@ using namespace NOX::Petsc;
 %ignore *::operator<<;
 %ignore *::operator[];
 
-// SWIG library includes
+// SWIG library include files
 %include "stl.i"
 
 // Trilinos interface import

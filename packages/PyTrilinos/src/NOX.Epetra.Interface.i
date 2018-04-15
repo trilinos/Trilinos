@@ -68,31 +68,21 @@ NOX.Epetra.Interface provides the following user-level classes:
 	docstring    = %nox_epetra_interface_docstring) Interface
 
 %{
-// NumPy includes
+// NumPy include files
 #define NO_IMPORT_ARRAY
 #include "numpy_include.hpp"
 
-// PyTrilinos include
-#include "PyTrilinos_PythonException.hpp"
+// Teuchos include files
+#include "PyTrilinos_Teuchos_Headers.hpp"
 
-// Teuchos includes
-#include "Teuchos_Comm.hpp"
-#include "Teuchos_DefaultSerialComm.hpp"
-#ifdef HAVE_MPI
-#include "Teuchos_DefaultMpiComm.hpp"
-#endif
-#include "PyTrilinos_Teuchos_Util.hpp"
-
-// Epetra includes
+// Epetra include files
 #include "PyTrilinos_Epetra_Headers.hpp"
 
-// Local Epetra includes
+// Local Epetra include files
 #include "PyTrilinos_Epetra_Util.hpp"
 
-// NOX::Epetra::Interface includes
-#include "NOX_Epetra_Interface_Required.H"
-#include "NOX_Epetra_Interface_Jacobian.H"
-#include "NOX_Epetra_Interface_Preconditioner.H"
+// NOX::Epetra::Interface include files
+#include "PyTrilinos_NOX_Epetra_Headers.hpp"
 %}
 
 // General ignore directives
