@@ -64,6 +64,7 @@
 #include "Xpetra_Matrix_fwd.hpp"
 #include "Xpetra_MatrixFactory_fwd.hpp"
 #include "Xpetra_MultiVectorFactory_fwd.hpp"
+#include "Xpetra_VectorFactory_fwd.hpp"
 #include "Xpetra_CrsMatrixWrap_fwd.hpp"
 #include "Xpetra_BlockedCrsMatrix_fwd.hpp"
 #include "Xpetra_ExportFactory_fwd.hpp"
@@ -136,7 +137,7 @@ namespace MueLu {
                const Teuchos::RCP<Matrix> & M0inv_Matrix,
                const Teuchos::RCP<Matrix> & M1_Matrix,
                const Teuchos::RCP<MultiVector> & Nullspace,
-               const Teuchos::RCP<Xpetra::MultiVector<double, LocalOrdinal, GlobalOrdinal, Node> > & Coords,
+               const Teuchos::RCP<RealValuedMultiVector> & Coords,
                Teuchos::ParameterList& List,
                bool ComputePrec = true)
     {
@@ -162,7 +163,7 @@ namespace MueLu {
                const Teuchos::RCP<Matrix> & M0inv_Matrix,
                const Teuchos::RCP<Matrix> & M1_Matrix,
                const Teuchos::RCP<MultiVector> & Nullspace,
-               const Teuchos::RCP<Xpetra::MultiVector<double, LocalOrdinal, GlobalOrdinal, Node> > & Coords,
+               const Teuchos::RCP<RealValuedMultiVector> & Coords,
                Teuchos::ParameterList& List) : SM_Matrix_(Teuchos::null)
     {
       initialize(D0_Matrix,M0inv_Matrix,M1_Matrix,Nullspace,Coords,List);
@@ -182,7 +183,7 @@ namespace MueLu {
                const Teuchos::RCP<Matrix> & D0_Matrix,
                const Teuchos::RCP<Matrix> & M1_Matrix,
                const Teuchos::RCP<MultiVector>  & Nullspace,
-               const Teuchos::RCP<Xpetra::MultiVector<double, LocalOrdinal, GlobalOrdinal, Node> >  & Coords,
+               const Teuchos::RCP<RealValuedMultiVector>  & Coords,
                Teuchos::ParameterList& List,
                bool ComputePrec = true)
     {
@@ -206,7 +207,7 @@ namespace MueLu {
     RefMaxwell(const Teuchos::RCP<Matrix> & D0_Matrix,
                const Teuchos::RCP<Matrix> & M1_Matrix,
                const Teuchos::RCP<MultiVector>  & Nullspace,
-               const Teuchos::RCP<Xpetra::MultiVector<double, LocalOrdinal, GlobalOrdinal, Node> >  & Coords,
+               const Teuchos::RCP<RealValuedMultiVector>  & Coords,
                Teuchos::ParameterList& List) : SM_Matrix_(Teuchos::null)
     {
       initialize(D0_Matrix,Teuchos::null,M1_Matrix,Nullspace,Coords,List);
@@ -224,7 +225,7 @@ namespace MueLu {
     {
 
       RCP<MultiVector> Nullspace = List.get<RCP<MultiVector> >("Nullspace", Teuchos::null);
-      RCP<Xpetra::MultiVector<double, LocalOrdinal, GlobalOrdinal, Node> > Coords = List.get<RCP<Xpetra::MultiVector<double, LocalOrdinal, GlobalOrdinal, Node> > >("Coordinates", Teuchos::null);
+      RCP<RealValuedMultiVector> Coords = List.get<RCP<RealValuedMultiVector> >("Coordinates", Teuchos::null);
       RCP<Matrix> D0_Matrix = List.get<RCP<Matrix> >("D0");
       RCP<Matrix> M1_Matrix = List.get<RCP<Matrix> >("M1");
       RCP<Matrix> M0inv_Matrix = List.get<RCP<Matrix> >("M0inv", Teuchos::null);
@@ -314,7 +315,7 @@ namespace MueLu {
                     const Teuchos::RCP<Matrix> & M0inv_Matrix,
                     const Teuchos::RCP<Matrix> & M1_Matrix,
                     const Teuchos::RCP<MultiVector> & Nullspace,
-                    const Teuchos::RCP<Xpetra::MultiVector<double, LocalOrdinal, GlobalOrdinal, Node> > & Coords,
+                    const Teuchos::RCP<RealValuedMultiVector> & Coords,
                     Teuchos::ParameterList& List);
 
     //! Two hierarchies: one for the coarse (1,1)-block, another for the (2,2)-block
@@ -339,7 +340,8 @@ namespace MueLu {
 #endif
     //! Nullspace
     Teuchos::RCP<MultiVector> Nullspace_;
-    Teuchos::RCP<Xpetra::MultiVector<double, LocalOrdinal, GlobalOrdinal, Node> > Coords_;
+    //! Coordinates
+    Teuchos::RCP<RealValuedMultiVector> Coords_;
     //! Parameter lists
     Teuchos::ParameterList parameterList_, precList11_, precList22_, smootherList_;
     //! Some options

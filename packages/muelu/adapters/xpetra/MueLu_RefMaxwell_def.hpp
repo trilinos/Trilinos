@@ -594,7 +594,8 @@ namespace MueLu {
 
   template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void RefMaxwell<Scalar,LocalOrdinal,GlobalOrdinal,Node>::formCoarseMatrix() {
-
+    RCP<Teuchos::TimeMonitor> tm = rcp(new Teuchos::TimeMonitor(*Teuchos::TimeMonitor::getNewTimer("MueLu RefMaxwell: Build coarse (1,1) matrix")));
+    
     // coarse matrix for P11* (M1 + D1* M2 D1) P11
     Teuchos::RCP<Matrix> Matrix1 = MatrixFactory::Build(P11_->getDomainMap(),0);
     if (parameterList_.get<bool>("rap: triple product", false) == false) {
@@ -613,6 +614,7 @@ namespace MueLu {
       AH_=Matrix1;
     }
     else {
+      tm = rcp(new Teuchos::TimeMonitor(*Teuchos::TimeMonitor::getNewTimer("MueLu RefMaxwell: Build coarse addon matrix")));
       // catch a failure
       TEUCHOS_TEST_FOR_EXCEPTION(M0inv_Matrix_==Teuchos::null,std::invalid_argument,
                                  "MueLu::RefMaxwell::formCoarseMatrix(): Inverse of "
@@ -629,14 +631,25 @@ namespace MueLu {
 
       // construct Z* M0inv Z
       Teuchos::RCP<Matrix> Matrix2 = MatrixFactory::Build(Z->getDomainMap(),0);
-      if (parameterList_.get<bool>("rap: triple product", false) == false) {
+      if (M0inv_Matrix_->getGlobalMaxNumRowEntries()<=1) {
+        // We assume that if M0inv has at most one entry per row then
+        // these are all diagonal entries.
+#ifdef HAVE_MUELU_KOKKOS_REFACTOR
+        RCP<Matrix> ZT = Utilities_kokkos::Transpose(*Z);
+#else
+        RCP<Matrix> ZT = Utilities::Transpose(*Z);
+#endif
+        RCP<Vector> diag = VectorFactory::Build(M0inv_Matrix_->getRowMap());
+        M0inv_Matrix_->getLocalDiagCopy(*diag);
+        Z->leftScale(*diag);
+        Xpetra::MatrixMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Multiply(*ZT,false,*Z,false,*Matrix2,true,true);
+      } else if (parameterList_.get<bool>("rap: triple product", false) == false) {
         Teuchos::RCP<Matrix> C2 = MatrixFactory::Build(M0inv_Matrix_->getRowMap(),0);
         // construct C2 = M0inv Z
         Xpetra::MatrixMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Multiply(*M0inv_Matrix_,false,*Z,false,*C2,true,true);
         // construct Matrix2 = Z* M0inv Z = Z* C2
         Xpetra::MatrixMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Multiply(*Z,true,*C2,false,*Matrix2,true,true);
-      }
-      else {
+      } else {
         // construct Matrix2 = Z* M0inv Z
         Xpetra::TripleMatrixMultiply<Scalar,LocalOrdinal,GlobalOrdinal,Node>::
           MultiplyRAP(*Z, true, *M0inv_Matrix_, false, *Z, false, *Matrix2, true, true);
@@ -833,7 +846,7 @@ namespace MueLu {
              const Teuchos::RCP<Matrix> & M0inv_Matrix,
              const Teuchos::RCP<Matrix> & M1_Matrix,
              const Teuchos::RCP<MultiVector>  & Nullspace,
-             const Teuchos::RCP<Xpetra::MultiVector<double, LocalOrdinal, GlobalOrdinal, Node> >  & Coords,
+             const Teuchos::RCP<RealValuedMultiVector>  & Coords,
              Teuchos::ParameterList& List)
   {
     // some pre-conditions
