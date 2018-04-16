@@ -1305,7 +1305,6 @@ namespace MueLu {
     if (GetProcRankVerbose() != 0)
       return;
 #if defined(HAVE_MUELU_BOOST) && defined(HAVE_MUELU_BOOST_FOR_REAL) && defined(BOOST_VERSION) && (BOOST_VERSION >= 104400)
-    printf("CMS: We can has boost\n");
     BoostGraph      graph;
 
     BoostProperties dp;

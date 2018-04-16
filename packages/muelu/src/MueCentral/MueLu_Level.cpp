@@ -474,12 +474,11 @@ namespace MueLu {
           BoostVertex boost_vertex = boost::add_vertex(graph);
           boost::put("label", dp, boost_vertex, it1->first->description());
           vindices[it1->first] = vind++;
-        }	
+        }
 
         for (SubMap::const_iterator it2 = it1->second.begin(); it2 != it1->second.end(); it2++) {
           const VariableContainer::request_container& requests = it2->second->Requests();
           for (VariableContainer::request_container::const_iterator rit = requests.begin(); rit != requests.end(); rit++) {
-	    //	    printf("CMS: it1->first = %s rit->first = %s it2->first = %s\n",it1->first->description().c_str(),rit->first->description().c_str(),it2->first.c_str());
             if (vindices.find(rit->first) == vindices.end()) {
               // requested by factory which is unknown
               BoostVertex boost_vertex = boost::add_vertex(graph);
@@ -487,7 +486,6 @@ namespace MueLu {
               vindices[rit->first] = vind++;
             }
 
-	    //printf("CMS: Adding edge (%s,%s) = %s\n",rit->first->description().c_str(),it1->first->description().c_str(),it2->first.c_str());
 	    edges[std::pair<BoostVertex,BoostVertex>(vindices[rit->first], vindices[it1->first])] =  it2->first;
           }
         }
