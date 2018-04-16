@@ -178,9 +178,9 @@ namespace MueLu {
         // At this points we either have
         //     (predrop_ != null)
         // Therefore, it is sufficient to check only threshold
-	if (A->GetFixedBlockSize() == 1 && threshold == STS::zero() && A->hasCrsGraph()) {
+        if (A->GetFixedBlockSize() == 1 && threshold == STS::zero() && A->hasCrsGraph()) {
           // Case 1:  scalar problem, no dropping => just use matrix graph
-	  RCP<GraphBase> graph = rcp(new Graph(A->getCrsGraph(), "graph of A"));
+          RCP<GraphBase> graph = rcp(new Graph(A->getCrsGraph(), "graph of A"));
           // Detect and record rows that correspond to Dirichlet boundary conditions
           ArrayRCP<const bool > boundaryNodes;
           boundaryNodes = MueLu::Utilities<SC,LO,GO,NO>::DetectDirichletRows(*A, dirichletThreshold);
@@ -202,10 +202,10 @@ namespace MueLu {
           Set(currentLevel, "Graph", graph);
 
         } else if ( (A->GetFixedBlockSize() == 1 && threshold != STS::zero()) || 
-		    (A->GetFixedBlockSize() == 1 && threshold == STS::zero() && !A->hasCrsGraph())) {
+                    (A->GetFixedBlockSize() == 1 && threshold == STS::zero() && !A->hasCrsGraph())) {
           // Case 2:  scalar problem with dropping => record the column indices of undropped entries, but still use original
           //                                          graph's map information, e.g., whether index is local
-	  // OR a matrix without a CrsGraph
+          // OR a matrix without a CrsGraph
 
           // allocate space for the local graph
           ArrayRCP<LO> rows   (A->getNodeNumRows()+1);
@@ -218,7 +218,7 @@ namespace MueLu {
           LO realnnz = 0;
 
           rows[0] = 0;
-	  for (LO row = 0; row < Teuchos::as<LO>(A->getRowMap()->getNodeNumElements()); ++row) {
+          for (LO row = 0; row < Teuchos::as<LO>(A->getRowMap()->getNodeNumElements()); ++row) {
             size_t nnz = A->getNumEntriesInLocalRow(row);
             ArrayView<const LO> indices;
             ArrayView<const SC> vals;

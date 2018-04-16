@@ -119,11 +119,6 @@ namespace MueLu {
     RCP<MultiVector>      fineNullspace = Get< RCP<MultiVector> >     (fineLevel, "Nullspace");
     RCP<const Map>        coarseMap     = Get< RCP<const Map> >       (fineLevel, "CoarseMap");
 
-    // Sanity checking
-    if(A->getRowMap()->getNodeNumElements() != fineNullspace->getMap()->getNodeNumElements())
-      printf("[%d] A->getRowMap()->getNodeNumElements() = %d fineNullspace->getMap()->getNodeNumElements() %d\n",fineNullspace->getMap()->getComm()->getRank(),
-	     A->getRowMap()->getNodeNumElements(),fineNullspace->getMap()->getNodeNumElements());
-
     TEUCHOS_TEST_FOR_EXCEPTION(A->getRowMap()->getNodeNumElements() != fineNullspace->getMap()->getNodeNumElements(),
 			       Exceptions::RuntimeError,"MueLu::TentativePFactory::MakeTentative: Size mismatch between A and Nullspace");
 
@@ -135,7 +130,7 @@ namespace MueLu {
       BuildPcoupled  (A, aggregates, amalgInfo, fineNullspace, coarseMap, Ptentative, coarseNullspace);
 
 
-                                     
+
 
     // If available, use striding information of fine level matrix A for range
     // map and coarseMap as domain map; otherwise use plain range map of
@@ -469,9 +464,9 @@ namespace MueLu {
 
     // Managing labels & constants for ESFC
     RCP<ParameterList> FCparams;
-    if(pL.isSublist("matrixmatrix: kernel params")) 
+    if(pL.isSublist("matrixmatrix: kernel params"))
       FCparams=rcp(new ParameterList(pL.sublist("matrixmatrix: kernel params")));
-    else 
+    else
       FCparams= rcp(new ParameterList);
     // By default, we don't need global constants for TentativeP
     FCparams->set("compute global constants",FCparams->get("compute global constants",false));
