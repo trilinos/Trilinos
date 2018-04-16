@@ -151,6 +151,7 @@ public:
 
 
 
+
 } // namespace details
 
 using details::VectorClone;
