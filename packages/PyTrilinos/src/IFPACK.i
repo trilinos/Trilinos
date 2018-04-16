@@ -184,7 +184,8 @@ example subdirectory of the PyTrilinos package:
 // IFPACK_Version support //
 ////////////////////////////
 %include "Ifpack_Version.h"
-%pythoncode %{
+%pythoncode
+%{
 Version = Ifpack_Version
 __version__ = Version().split()[3]
 %}
