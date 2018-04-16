@@ -56,9 +56,9 @@
 #include "Panzer_HashUtils.hpp"
 #include "Panzer_GlobalEvaluationDataContainer.hpp"
 
-#include "Thyra_SpmdVectorBase.hpp"
 #include "Thyra_ProductVectorBase.hpp"
 #include "Thyra_BlockedLinearOpBase.hpp"
+#include "Thyra_TpetraVector.hpp"
 
 #include "Phalanx_DataLayout_MDALayout.hpp"
 
@@ -140,20 +140,38 @@ ScatterResidual_BlockedTpetra(const Teuchos::RCP<const BlockedDOFManager<LO,GO> 
 // **********************************************************************
 template <typename TRAITS,typename LO,typename GO,typename NodeT>
 void panzer::ScatterResidual_BlockedTpetra<panzer::Traits::Residual,TRAITS,LO,GO,NodeT>::
-postRegistrationSetup(typename TRAITS::SetupData /* d */, 
+postRegistrationSetup(typename TRAITS::SetupData d, 
 		      PHX::FieldManager<TRAITS>& fm)
 {
+  const Workset & workset_0 = (*d.worksets_)[0];
+  const std::string blockId = this->wda(workset_0).block_id;
+
   fieldIds_.resize(scatterFields_.size());
+  fieldOffsets_.resize(scatterFields_.size());
+  fieldGlobalIndexers_.resize(scatterFields_.size());
+  productVectorBlockIndex_.resize(scatterFields_.size());
+  int maxElementBlockGIDCount = -1;
+  for(std::size_t fd=0; fd < scatterFields_.size(); ++fd) {
+    const std::string fieldName = fieldMap_->find(scatterFields_[fd].fieldTag().name())->second;
+    const int globalFieldNum = globalIndexer_->getFieldNum(fieldName); // Field number in the aggregate BlockDOFManager
+    productVectorBlockIndex_[fd] = globalIndexer_->getFieldBlock(globalFieldNum);
+    fieldGlobalIndexers_[fd] = globalIndexer_->getFieldDOFManagers()[productVectorBlockIndex_[fd]];
+    fieldIds_[fd] = fieldGlobalIndexers_[fd]->getFieldNum(fieldName); // Field number in the sub-global-indexer
 
-  // load required field numbers for fast use
-  for(std::size_t fd=0;fd<scatterFields_.size();++fd) {
-    // get field ID from DOF manager
-    std::string fieldName = fieldMap_->find(scatterFields_[fd].fieldTag().name())->second;
-    fieldIds_[fd] = globalIndexer_->getFieldNum(fieldName);
+    const std::vector<int>& offsets = fieldGlobalIndexers_[fd]->getGIDFieldOffsets(blockId,fieldIds_[fd]);
+    fieldOffsets_[fd] = Kokkos::View<int*,PHX::Device>("ScatterResidual_BlockedTpetra(Residual):fieldOffsets",offsets.size());
+    for(std::size_t i=0; i < offsets.size(); ++i)
+      fieldOffsets_[fd](i) = offsets[i]; // Assumes UVM on CUDA
 
-    // fill field data object
-    this->utils.setFieldData(scatterFields_[fd],fm);
+    maxElementBlockGIDCount = std::max(fieldGlobalIndexers_[fd]->getElementBlockGIDCount(blockId),maxElementBlockGIDCount);
   }
+
+  // We will use one workset lid view for all fields, but has to be
+  // sized big enough to hold the largest elementBlockGIDCount in the
+  // ProductVector.
+  worksetLIDs_ = Kokkos::View<LO**,PHX::Device>("ScatterResidual_BlockedTpetra(Residual):worksetLIDs",
+                                                scatterFields_[0].dimension_0(),
+						maxElementBlockGIDCount);
 }
 
 // **********************************************************************
@@ -170,66 +188,33 @@ template <typename TRAITS,typename LO,typename GO,typename NodeT>
 void panzer::ScatterResidual_BlockedTpetra<panzer::Traits::Residual,TRAITS,LO,GO,NodeT>::
 evaluateFields(typename TRAITS::EvalData workset)
 { 
-   using Teuchos::RCP;
-   using Teuchos::ArrayRCP;
-   using Teuchos::ptrFromRef;
-   using Teuchos::rcp_dynamic_cast;
+  using Teuchos::RCP;
+  using Teuchos::rcp_dynamic_cast;
+  using Thyra::VectorBase;
+  using Thyra::ProductVectorBase;
+  
+  const auto& localCellIds = this->wda(workset).cell_local_ids_k;
+  const RCP<ProductVectorBase<double>> thyraBlockResidual = rcp_dynamic_cast<ProductVectorBase<double> >(blockedContainer_->get_f(),true);
 
-   using Thyra::VectorBase;
-   using Thyra::SpmdVectorBase;
-   using Thyra::ProductVectorBase;
+  // Loop over scattered fields
+  for (std::size_t fieldIndex = 0; fieldIndex < scatterFields_.size(); fieldIndex++) {
+    fieldGlobalIndexers_[fieldIndex]->getElementLIDs(localCellIds,worksetLIDs_); 
 
-   std::vector<std::pair<int,GO> > GIDs;
-   std::vector<LO> LIDs;
- 
-   // for convenience pull out some objects from workset
-   std::string blockId = this->wda(workset).block_id;
-   const std::vector<std::size_t> & localCellIds = this->wda(workset).cell_local_ids;
+    const auto& tpetraResidual = *((rcp_dynamic_cast<Thyra::TpetraVector<RealType,LO,GO,NodeT>>(thyraBlockResidual->getNonconstVectorBlock(productVectorBlockIndex_[fieldIndex]),true))->getTpetraVector());
+    const auto& kokkosResidual = tpetraResidual.template getLocalView<PHX::mem_space>();
 
-   RCP<const ContainerType> blockedContainer = blockedContainer_;
+    // Class data fields for lambda capture
+    const auto& fieldOffsets = fieldOffsets_[fieldIndex];
+    const auto& worksetLIDs = worksetLIDs_;
+    const auto& fieldValues = scatterFields_[fieldIndex];
 
-   RCP<ProductVectorBase<double> > r = rcp_dynamic_cast<ProductVectorBase<double> >(blockedContainer->get_f(),true);
-
-   // NOTE: A reordering of these loops will likely improve performance
-   //       The "getGIDFieldOffsets may be expensive.  However the
-   //       "getElementGIDs" can be cheaper. However the lookup for LIDs
-   //       may be more expensive!
-
-   // scatter operation for each cell in workset
-   for(std::size_t worksetCellIndex=0;worksetCellIndex<localCellIds.size();++worksetCellIndex) {
-      std::size_t cellLocalId = localCellIds[worksetCellIndex];
-
-      globalIndexer_->getElementGIDs(cellLocalId,GIDs,blockId); 
-
-      // caculate the local IDs for this element
-      LIDs.resize(GIDs.size());
-      for(std::size_t i=0;i<GIDs.size();i++) {
-         // used for doing local ID lookups
-         RCP<const MapType> r_map = blockedContainer->getMapForBlock(GIDs[i].first);
-
-         LIDs[i] = r_map->getLocalElement(GIDs[i].second);
+    Kokkos::parallel_for(Kokkos::RangePolicy<PHX::Device>(0,workset.num_cells), KOKKOS_LAMBDA (const int& cell) {       
+      for(int basis=0; basis < static_cast<int>(fieldOffsets.size()); ++basis) {
+	const int lid = worksetLIDs(cell,fieldOffsets(basis));
+	Kokkos::atomic_add(&kokkosResidual(lid,0), fieldValues(cell,basis));
       }
-
-      // loop over each field to be scattered
-      Teuchos::ArrayRCP<double> local_r;
-      for (std::size_t fieldIndex = 0; fieldIndex < scatterFields_.size(); fieldIndex++) {
-         int fieldNum = fieldIds_[fieldIndex];
-         int indexerId = globalIndexer_->getFieldBlock(fieldNum);
-
-         // grab local data for inputing
-         RCP<SpmdVectorBase<double> > block_r = rcp_dynamic_cast<SpmdVectorBase<double> >(r->getNonconstVectorBlock(indexerId));
-         block_r->getNonconstLocalData(ptrFromRef(local_r));
-
-         const std::vector<int> & elmtOffset = globalIndexer_->getGIDFieldOffsets(blockId,fieldNum);
-   
-         // loop over basis functions
-         for(std::size_t basis=0;basis<elmtOffset.size();basis++) {
-            int offset = elmtOffset[basis];
-            int lid = LIDs[offset];
-            local_r[lid] += (scatterFields_[fieldIndex])(worksetCellIndex,basis);
-         }
-      }
-   }
+    });
+  }
 }
 
 // **********************************************************************
