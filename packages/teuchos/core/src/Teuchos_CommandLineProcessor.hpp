@@ -233,7 +233,7 @@ public:
     ,const char    documentation[] = NULL
     ,const bool    required        = false
     );
-#ifdef HAVE_TEUCHOS_LONG_LONG_INT
+
   /** \brief Set a long long integer option.
    *
    * \param  option_name    [in] (null terminated std::string) The name of the option
@@ -250,7 +250,6 @@ public:
     ,const char    documentation[] = NULL
     ,const bool    required        = false
     );
-#endif
 
   /** \brief Set a floating-point option.
    *

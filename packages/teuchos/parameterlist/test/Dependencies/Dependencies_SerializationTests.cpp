@@ -60,10 +60,8 @@ typedef unsigned short int ushort;
 typedef unsigned int uint;
 typedef unsigned long int ulong;
 typedef std::string myString_t;
-#ifdef HAVE_TEUCHOS_LONG_LONG_INT
 typedef long long int llint;
 typedef unsigned long long int ullint;
-#endif
 
 #define BASIC_DEPENDENCY_TEST( \
   DEPENDENCY, DEPTYPE,  NUM_DEPENDEES, NUM_DEPENDENTS) \
@@ -418,9 +416,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( \
 NUMBER_VIS_TEST(int)
 NUMBER_VIS_TEST(double)
 NUMBER_VIS_TEST(float)
-#ifdef HAVE_TEUCHOS_LONG_LONG_INT
 NUMBER_VIS_TEST(llint)
-#endif
 
 TEUCHOS_UNIT_TEST(Teuchos_Dependencies, ConditionVisualDepSerialization){
   std::string dependee1 = "string param";
@@ -625,23 +621,14 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( \
 // a dependent type of strings. Right now an array of emptyr strings does not
 // seralize correctly
 // KLN 09.17/2010
-#ifdef HAVE_TEUCHOS_LONG_LONG_INT
 #define NUM_ARRAY_LENGTH_TEST_GROUP(DependeeType) \
   NUM_ARRAY_LENGTH_TEST(DependeeType, int) \
   NUM_ARRAY_LENGTH_TEST(DependeeType, float) \
   NUM_ARRAY_LENGTH_TEST(DependeeType, double) \
   NUM_ARRAY_LENGTH_TEST(DependeeType, llint)
-#else
-#define NUM_ARRAY_LENGTH_TEST_GROUP(DependeeType) \
-  NUM_ARRAY_LENGTH_TEST(DependeeType, int) \
-  NUM_ARRAY_LENGTH_TEST(DependeeType, double) \
-  NUM_ARRAY_LENGTH_TEST(DependeeType, float)
-#endif
 
 NUM_ARRAY_LENGTH_TEST_GROUP(int)
-#ifdef HAVE_TEUCHOS_LONG_LONG_INT
 NUM_ARRAY_LENGTH_TEST_GROUP(llint)
-#endif
 
 ArrayModifierTest(TwoDRowDependency, TwoDArray)
 
@@ -653,26 +640,17 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( \
   DependentType)
 
 // Need to fix array serialization so we can test this with
-// a dependent type of strings. Right now an array of emptyr strings does not
+// a dependent type of strings. Right now an array of empty strings does not
 // seralize correctly
 // KLN 09.17/2010
-#ifdef HAVE_TEUCHOS_LONG_LONG_INT
 #define TWODROW_TEST_GROUP(DependeeType) \
   TWODROW_TEST(DependeeType, int) \
   TWODROW_TEST(DependeeType, float) \
   TWODROW_TEST(DependeeType, double) \
   TWODROW_TEST(DependeeType, llint)
-#else
-#define TWODROW_TEST_GROUP(DependeeType) \
-  TWODROW_TEST(DependeeType, int) \
-  TWODROW_TEST(DependeeType, double) \
-  TWODROW_TEST(DependeeType, float)
-#endif
 
 TWODROW_TEST_GROUP(int)
-#ifdef HAVE_TEUCHOS_LONG_LONG_INT
 TWODROW_TEST_GROUP(llint)
-#endif
 
 ArrayModifierTest(TwoDColDependency, TwoDArray)
 
@@ -687,23 +665,14 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( \
 // a dependent type of strings. Right now an array of emptyr strings does not
 // seralize correctly
 // KLN 09.17/2010
-#ifdef HAVE_TEUCHOS_LONG_LONG_INT
 #define TWODCOL_TEST_GROUP(DependeeType) \
   TWODCOL_TEST(DependeeType, int) \
   TWODCOL_TEST(DependeeType, float) \
   TWODCOL_TEST(DependeeType, double) \
   TWODCOL_TEST(DependeeType, llint)
-#else
-#define TWODCOL_TEST_GROUP(DependeeType) \
-  TWODCOL_TEST(DependeeType, int) \
-  TWODCOL_TEST(DependeeType, double) \
-  TWODCOL_TEST(DependeeType, float)
-#endif
 
 TWODCOL_TEST_GROUP(int)
-#ifdef HAVE_TEUCHOS_LONG_LONG_INT
 TWODCOL_TEST_GROUP(llint)
-#endif
 
 TEUCHOS_UNIT_TEST(Teuchos_Dependencies, StringValidatorDepSerialization){
   std::string dependee1 = "string param";
@@ -1055,9 +1024,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( \
 RANGE_VALIDATOR_TEST(int)
 RANGE_VALIDATOR_TEST(double)
 RANGE_VALIDATOR_TEST(float)
-#ifdef HAVE_TEUCHOS_LONG_LONG_INT
 RANGE_VALIDATOR_TEST(llint)
-#endif
 
 /* General Testing*/
 TEUCHOS_UNIT_TEST(Teuchos_Dependencies, DependencySerializationExceptions){
