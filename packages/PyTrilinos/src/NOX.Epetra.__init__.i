@@ -65,10 +65,17 @@ NOX.Epetra provides the following user-level classes:
 "
 %enddef
 
+%define %nox_epetra_import_code
+"
+from . import ___init__
+"
+%enddef
+
 %module(package      = "PyTrilinos.NOX.Epetra",
 	directors    = "1",
 	autodoc      = "1",
 	implicitconv = "1",
+        moduleimport = %nox_epetra_import_code,
 	docstring    = %nox_epetra_docstring) __init__
 
 %{
@@ -139,9 +146,6 @@ parentDir = op.normpath(op.join(thisDir,".."))
 if not thisDir   in sys.path: sys.path.append(thisDir)
 if not parentDir in sys.path: sys.path.append(parentDir)
 del sys, op
-if "delete_Group" not in dir(___init__):
-    del ___init__
-    from . import ___init__
 %}
 
 // Include typemaps for Abstract base classes
