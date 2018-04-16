@@ -194,7 +194,6 @@ namespace Ifpack2 {
     IsComputed_ = false;
     TEUCHOS_ASSERT(!A_.is_null()); // when initInternal is called, A_ must be set
     {
-      const bool overlap_comm = false;
       BlockTriDiContainerDetails::performSymbolicPhase<MatrixType>
         (A_, part_interface_, block_tridiags_, a_minus_d_, overlap_communication_and_computation_);    
     }

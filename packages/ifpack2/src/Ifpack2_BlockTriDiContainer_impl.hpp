@@ -197,7 +197,7 @@ namespace Ifpack2 {
       typedef typename MatrixType::local_ordinal_type local_ordinal_type;
       typedef typename MatrixType::global_ordinal_type global_ordinal_type;
       typedef typename MatrixType::node_type node_type;
-
+      
       ///
       /// kokkos arithmetic traits of scalar_type
       ///
@@ -386,8 +386,28 @@ namespace Ifpack2 {
 
       local_ordinal_type_1d_view dm2cm; // permutation
 
-    private:
+      // for cuda
+    public:
+      void setOffsetValues(const Teuchos::ArrayView<const size_t> &lens, 
+                           const size_type_1d_view &offs) { 
+        // wrap lens to kokkos view and deep copy to device
+        Kokkos::View<size_t*,host_execution_space> lens_host(const_cast<size_t*>(lens.getRawPtr()), lens.size());
+        const auto lens_device = Kokkos::create_mirror_view(memory_space(), lens_host);
+        Kokkos::deep_copy(lens_device, lens_host);
+        
+        // exclusive scan
+        const Kokkos::RangePolicy<execution_space> policy(0,offs.extent(0));
+        const local_ordinal_type lens_size = lens_device.extent(0);
+        Kokkos::parallel_scan
+          (policy,
+           KOKKOS_LAMBDA(const local_ordinal_type &i, size_type &update, const bool &final) {
+            if (final) 
+              offs(i) = update;            
+            update += (i < lens_size ? lens_device[i] : 0);
+          });
+      }
 
+    private:
       void createMpiRequests(const tpetra_import_type &import) {
         Tpetra::Distributor &distributor = import.getDistributor();
 
@@ -411,26 +431,8 @@ namespace Ifpack2 {
         const auto lengths_from = distributor.getLengthsFrom();
         offset.recv = size_type_1d_view(do_not_initialize_tag("offset recv"), lengths_from.size() + 1);
 
-        auto set_offset_values = [](const Teuchos::ArrayView<const size_t> &lens, 
-                                    const size_type_1d_view &offs) { 
-          // wrap lens to kokkos view and deep copy to device
-          Kokkos::View<size_t*,host_execution_space> lens_host(const_cast<size_t*>(lens.getRawPtr()), lens.size());
-          const auto lens_device = Kokkos::create_mirror_view(memory_space(), lens_host);
-          Kokkos::deep_copy(lens_device, lens_host);
-
-          // exclusive scan
-          const Kokkos::RangePolicy<execution_space> policy(0,offs.extent(0));
-          const local_ordinal_type lens_size = lens_device.extent(0);
-          Kokkos::parallel_scan
-          (policy,
-           KOKKOS_LAMBDA(const local_ordinal_type &i, size_type &update, const bool &final) {
-            if (final) 
-              offs(i) = update;            
-            update += (i < lens_size ? lens_device[i] : 0);
-          });
-        };
-        set_offset_values(lengths_to,   offset.send);
-        set_offset_values(lengths_from, offset.recv);
+        setOffsetValues(lengths_to,   offset.send);
+        setOffsetValues(lengths_from, offset.recv);
       }
 
       void createSendRecvIDs(const tpetra_import_type &import) {
@@ -458,9 +460,12 @@ namespace Ifpack2 {
         Kokkos::deep_copy(lids.send, lids_send_host);
       }
 
+    public:
+      // for cuda, all tag types are public
       struct ToBuffer {};
       struct ToMultiVector {};
 
+      // for cuda, kernel launch should be public too.
       template<typename PackTag>
       static 
       void copy(const local_ordinal_type_1d_view &lids_,
@@ -501,7 +506,6 @@ namespace Ifpack2 {
         }
       }
 
-    public:
       void createDataBuffer(const local_ordinal_type &num_vectors) {
         const size_type extent_0 = lids.recv.extent(0)*blocksize;
         const size_type extent_1 = num_vectors;
@@ -1063,6 +1067,7 @@ namespace Ifpack2 {
                          BlockTridiags<MatrixType> &btdm,
                          AmD<MatrixType> &amd,
                          const bool overlap_communication_and_computation) {
+
 #ifdef HAVE_IFPACK2_BLOCKTRIDICONTAINER_TIMERS
       TEUCHOS_FUNC_TIME_MONITOR("BlockTriDi::SymbolicPhase");
 #endif
@@ -1106,13 +1111,17 @@ namespace Ifpack2 {
           (Kokkos::RangePolicy<host_execution_space>(0,nrows),
            KOKKOS_LAMBDA(const local_ordinal_type &lr) {
             const global_ordinal_type gid = rowmap->getGlobalElement(lr);
+#if !defined(__CUDA_ARCH__)
             TEUCHOS_ASSERT(gid != Teuchos::OrdinalTraits<global_ordinal_type>::invalid());
+#endif
             if (dommap->isNodeGlobalElement(gid)) {
               const local_ordinal_type lc = colmap->getLocalElement(gid);
+#if !defined(__CUDA_ARCH__)
 #if defined(BLOCKTRIDICONTAINER_DEBUG)              
               TEUCHOS_TEST_FOR_EXCEPT_MSG(lc == Teuchos::OrdinalTraits<local_ordinal_type>::invalid(), 
                                           get_msg_prefix(comm) << "GID " << gid
                                           << " gives an invalid local column.");
+#endif
 #endif
               col2row(lc) = lr;
             }
@@ -1272,7 +1281,6 @@ namespace Ifpack2 {
                     continue;
                   }
                 }
-                const local_ordinal_type row_entry = j - j0;
                 // exclusive scan will be performed later
                 if (!overlap_communication_and_computation || lc < nrows) {
                   ++R_rowptr(lr);
@@ -1350,6 +1358,7 @@ namespace Ifpack2 {
     class ExtractAndFactorizeTridiags {
     public:
       using impl_type = ImplType<MatrixType>;
+      // a functor cannot have both device_type and execution_space; specialization error in kokkos
       using execution_space = typename impl_type::execution_space;
       using memory_space = typename impl_type::memory_space;
 
@@ -1373,8 +1382,9 @@ namespace Ifpack2 {
     private:
       // part interface
       ConstUnmanaged<local_ordinal_type_1d_view> partptr, lclrow, packptr;
-      // block crs matrix
-      ConstUnmanaged<size_type_1d_view> A_rowptr;
+      // block crs matrix (it could be Kokkos::UVMSpace::size_type, which is int)
+      using a_rowptr_value_type = typename Kokkos::ViewTraits<local_ordinal_type*,typename impl_type::device_type>::size_type; 
+      ConstUnmanaged<Kokkos::View<a_rowptr_value_type*,typename impl_type::device_type> > A_rowptr;
       ConstUnmanaged<impl_scalar_type_1d_view> A_values;
       // block tridiags 
       ConstUnmanaged<size_type_1d_view> pack_td_ptr, flat_td_ptr;
@@ -1573,10 +1583,6 @@ namespace Ifpack2 {
       Unmanaged<vector_type_3d_view> packed_multivector;
       Unmanaged<impl_scalar_type_2d_view> scalar_multivector;
 
-      struct ToPackedMultiVectorTag       { enum : int { id = 0 }; };
-      struct ToScalarMultiVectorFirstTag  { enum : int { id = 1 }; };
-      struct ToScalarMultiVectorSecondTag { enum : int { id = 2 }; };
-
       template<typename TagType>
       KOKKOS_INLINE_FUNCTION
       void copy_multivectors(const local_ordinal_type &j, 
@@ -1589,7 +1595,7 @@ namespace Ifpack2 {
             for (local_ordinal_type i=0;i<blocksize;++i)
               packed_multivector(pri, i, col)[vi] = scalar_multivector(blocksize*lclrow(ri0+j)+i,col);
         } else if (TagType::id > 0) { //ToScalarMultiVector
-          const impl_scalar_type zero(0), df = damping_factor;
+          const impl_scalar_type df = damping_factor;
           for (local_ordinal_type col=0;col<num_vectors;++col) 
             for (local_ordinal_type i=0;i<blocksize;++i) {
               impl_scalar_type &y = scalar_multivector(blocksize*lclrow(ri0+j)+i,col);
@@ -1609,7 +1615,7 @@ namespace Ifpack2 {
                                        const local_ordinal_type &ri0,
                                        /* */ magnitude_type *norm) const {
         if (TagType::id > 0) { //ToScalarMultiVector
-          const impl_scalar_type zero(0), df = damping_factor;
+          const impl_scalar_type df = damping_factor;
           for (local_ordinal_type col=0;col<num_vectors;++col) {
             const local_ordinal_type offset = col*blocksize;
             for (local_ordinal_type i=0;i<blocksize;++i) {
@@ -1626,6 +1632,7 @@ namespace Ifpack2 {
       }
 
     public:
+
       // local reduction of norms with runtime array 
       // this value type and value_count is required for Kokkos
       typedef magnitude_type value_type[];
@@ -1684,6 +1691,10 @@ namespace Ifpack2 {
         }
       }
       
+      struct ToPackedMultiVectorTag       { enum : int { id = 0 }; };
+      struct ToScalarMultiVectorFirstTag  { enum : int { id = 1 }; };
+      struct ToScalarMultiVectorSecondTag { enum : int { id = 2 }; };
+
       template<typename TpetraLocalViewType>
       void to_packed_multivector(const TpetraLocalViewType &scalar_multivector_) {
 #ifdef HAVE_IFPACK2_BLOCKTRIDICONTAINER_TIMERS
@@ -1864,7 +1875,7 @@ namespace Ifpack2 {
       using impl_scalar_type_2d_view = typename impl_type::impl_scalar_type_2d_view; // block multivector (layout left)
       using vector_type_3d_view = typename impl_type::vector_type_3d_view;
 
-    private:
+    public:
       ConstUnmanaged<impl_scalar_type_2d_view> b;
       ConstUnmanaged<impl_scalar_type_2d_view> x; // x_owned
       ConstUnmanaged<impl_scalar_type_2d_view> x_remote;
@@ -1877,7 +1888,9 @@ namespace Ifpack2 {
       ConstUnmanaged<impl_scalar_type_1d_view> tpetra_values;
 
       // block crs graph information
-      ConstUnmanaged<size_type_1d_view> A_rowptr;
+      // for cuda (kokkos crs graph uses a different size_type from size_t)
+      using a_rowptr_value_type = typename Kokkos::ViewTraits<local_ordinal_type*,typename impl_type::device_type>::size_type; 
+      ConstUnmanaged<Kokkos::View<a_rowptr_value_type*,typename impl_type::device_type> > A_rowptr;
       ConstUnmanaged<local_ordinal_type_1d_view> A_colind;
       const local_ordinal_type blocksize, blocksize_square;
 
