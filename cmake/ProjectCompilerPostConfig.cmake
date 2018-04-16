@@ -23,7 +23,7 @@ IF (${Trilinos_ENABLE_Kokkos})
   endif()
   set(Kokkos_ENABLE_Profiling ${Kokkos_ENABLE_Profiling_DEFAULT}
     CACHE BOOL
-    "Enable bounds checking in Kokkos array classes.")
+    "Enable Kokkos profiling hooks.")
 
   # Basic initialization (Used in KOKKOS_SETTINGS)
   set(KOKKOS_SRC_PATH ${Kokkos_SOURCE_DIR})
