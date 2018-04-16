@@ -308,7 +308,7 @@ main (int argc, char *argv[])
               const std::string userName = "user data";
               Teuchos::ParameterList& userParamList = mueluParams.sublist(userName);
               Teuchos::Array<GO> gNodesPerDim(3, -1);
-              userParamList.set<Teuchos::Array<GO> >("Array<GO> gNodesPerDim", gNodesPerDim);
+              // userParamList.set<Teuchos::Array<GO> >("Array<GO> gNodesPerDim", gNodesPerDim);
               userParamList.set<Teuchos::Array<LO> >("Array<LO> lNodesPerDim", lNodesPerDim);
 	      M = MueLu::CreateTpetraPreconditioner<ST,LO,GO,Node>(A,mueluParams,mueluParams);
 	    } else {
