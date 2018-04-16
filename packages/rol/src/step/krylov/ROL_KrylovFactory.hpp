@@ -51,6 +51,7 @@
 
 #include "ROL_Krylov.hpp"
 #include "ROL_GMRES.hpp"
+#include "ROL_MINRES.hpp"
 #include "ROL_ConjugateGradients.hpp"
 #include "ROL_ConjugateResiduals.hpp"
 
@@ -73,6 +74,8 @@ namespace ROL {
         return ROL::makePtr<ConjugateResiduals<Real>>(absTol,relTol,maxit,inexact);
       case KRYLOV_CG: 
         return ROL::makePtr<ConjugateGradients<Real>>(absTol,relTol,maxit,inexact);
+      case KRYLOV_MINRES:
+        return ROL::makePtr<MINRES<Real>>(absTol,relTol,maxit,inexact);
       case KRYLOV_GMRES:
         return ROL::makePtr<GMRES<Real>>(parlist);
       default:        return ROL::nullPtr;

@@ -111,25 +111,24 @@ public:
 /** @ingroup la_group
     \class ROL::VectorCloneMap
     \brief Container for wrapping a collection of uniquely-named reusable cloned vectors,
-           which in are stored in a map with string-valued names for keys. 
+           which in are stored in a map. Uses string-valued ids for keys by default. 
 */
 
 
-template<typename Real>
+template<typename Real, typename KeyType=const char*>
 class VectorCloneMap {
 private:
-
-  map<const char*, VectorClone<Real>> clones_;
+  map<KeyType, VectorClone<Real>> clones_;
  
   template<typename First, typename...Rest>
   void Constructor_Impl( First first, Rest... rest ) {
-    clones_[static_cast<const char*>(first)] = VectorClone<Real>();
+    clones_[static_cast<KeyType>(first)] = VectorClone<Real>();
     Constructor_Impl( rest... );
   }
 
   template<typename First>
   void Constructor_Impl( First first ) {
-    clones_[static_cast<const char*>(first)] = VectorClone<Real>();
+    clones_[static_cast<KeyType>(first)] = VectorClone<Real>();
   }
 
 public:
@@ -140,16 +139,17 @@ public:
     Constructor_Impl( forward<Keys>(keys)... );
   }
 
-  Ptr<Vector<Real>> operator() ( const Vector<Real>& x, const char* name ) {
-    return clones_[name](x);
+  Ptr<Vector<Real>> operator() ( const Vector<Real>& x, KeyType key ) {
+    return clones_[key](x);
   }
 
-   Ptr<Vector<Real>> operator() ( const Ptr<const Vector<Real>>& x, const char* name ) {
-    return clones_[name](x);
+   Ptr<Vector<Real>> operator() ( const Ptr<const Vector<Real>>& x, KeyType key ) {
+    return clones_[key](x);
   }
- 
+}; // VectorCloneMap
 
-}; // VectorCloneSet
+
+
 
 } // namespace details
 
