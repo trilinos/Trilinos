@@ -60,10 +60,30 @@ NOX.PETSC provides the following user-level classes:
 "
 %enddef
 
+%define %nox_petsc_import_code
+"
+from .. import Abstract
+from .  import Interface
+from .  import ___init__
+"
+%enddef
+
+// Allow import from the parent directory
+// %pythoncode
+// %{
+// import sys, os.path as op
+// thisDir   = op.dirname(op.abspath(__file__))
+// parentDir = op.normpath(op.join(thisDir,".."))
+// if not thisDir   in sys.path: sys.path.append(thisDir  )
+// if not parentDir in sys.path: sys.path.append(parentDir)
+// del sys, op
+// %}
+
 %module(package      = "PyTrilinos.NOX.PETSc",
 	directors    = "1",
 	autodoc      = "1",
 	implicitconv = "1",
+        moduleimport = %nox_petsc_import_code,
 	docstring    = %nox_petsc_docstring) __init__
 
 %{
@@ -141,23 +161,6 @@ using namespace NOX::Petsc;
 
 // Trilinos interface import
 %import "Teuchos.i"
-
-%pythonbegin
-%{
-from .. import Abstract
-from .  import Interface
-%}
-
-// Allow import from the parent directory
-%pythoncode
-%{
-import sys, os.path as op
-thisDir   = op.dirname(op.abspath(__file__))
-parentDir = op.normpath(op.join(thisDir,".."))
-if not thisDir   in sys.path: sys.path.append(thisDir  )
-if not parentDir in sys.path: sys.path.append(parentDir)
-del sys, op
-%}
 
 // NOX base classes
 %teuchos_rcp(NOX::Abstract::Group)
