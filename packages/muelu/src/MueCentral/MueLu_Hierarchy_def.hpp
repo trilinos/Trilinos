@@ -75,19 +75,6 @@
 #include "Teuchos_TimeMonitor.hpp"
 
 
-// DEBUG
-template < typename Graph, typename VertexNameMap > void
-print_dependencies(std::ostream & out, const Graph & g,
-                   VertexNameMap name_map)
-{
-  typename boost::graph_traits < Graph >::edge_iterator ei, ei_end;
-  for (boost::tie(ei, ei_end) = boost::edges(g); ei != ei_end; ++ei)
-    out << boost::get(name_map, boost::source(*ei, g)) << " -$>$ "
-	<< boost::get(name_map, boost::target(*ei, g)) << std::endl;
-}
-// END DEBUG
-
-
 
 namespace MueLu {
 
@@ -1339,13 +1326,7 @@ namespace MueLu {
           boost::put("color", dp, boost_edge.first, std::string("blue"));
       }
     }
-    //    printf("[%d] CMS: ----------------------\n",rank);
 
-    //    boost::property_map <BoostGraph, boost::vertex_name_t >::type name_map = boost::get(boost::vertex_name, graph);
-    //    std::ofstream outg(dumpFile_.c_str() + std::to_string(call_id)+std::string("_")+std::to_string(rank) + std::string(".gph"));
-    //    print_dependencies(outg, graph, boost::get(boost::vertex_name, graph));
-    //    outg.close();
-    // add legend
 #if 0
     std::ostringstream legend;
     legend << "< <TABLE BORDER=\"0\" CELLBORDER=\"1\" CELLSPACING=\"0\" CELLPADDING=\"4\"> \
