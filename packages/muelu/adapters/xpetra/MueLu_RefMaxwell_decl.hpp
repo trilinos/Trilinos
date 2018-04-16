@@ -55,6 +55,7 @@
 #endif
 #include "MueLu_TentativePFactory_fwd.hpp"
 #include "MueLu_SaPFactory_fwd.hpp"
+#include "MueLu_CoordinatesTransferFactory_fwd.hpp"
 #include "MueLu_UncoupledAggregationFactory_fwd.hpp"
 #include "MueLu_SmootherFactory_fwd.hpp"
 #include "MueLu_TrilinosSmoother.hpp"
@@ -341,7 +342,7 @@ namespace MueLu {
     //! Nullspace
     Teuchos::RCP<MultiVector> Nullspace_;
     //! Coordinates
-    Teuchos::RCP<RealValuedMultiVector> Coords_;
+    Teuchos::RCP<RealValuedMultiVector> Coords_, CoordsH_;
     //! Parameter lists
     Teuchos::ParameterList parameterList_, precList11_, precList22_, smootherList_;
     //! Some options

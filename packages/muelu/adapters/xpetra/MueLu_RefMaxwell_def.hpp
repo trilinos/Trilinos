@@ -62,6 +62,7 @@
 #include "MueLu_SaPFactory.hpp"
 #include "MueLu_RAPFactory.hpp"
 #include "MueLu_TransPFactory.hpp"
+#include "MueLu_CoordinatesTransferFactory.hpp"
 #include "MueLu_SmootherFactory.hpp"
 #ifdef HAVE_MUELU_KOKKOS_REFACTOR
 #include "MueLu_Utilities_kokkos.hpp"
@@ -235,6 +236,8 @@ namespace MueLu {
       HierarchyH_=ManagerH->CreateHierarchy();
       HierarchyH_->setlib(Xpetra::UseTpetra);
       HierarchyH_->GetLevel(0)->Set("A", AH_);
+      if (CoordsH_!=Teuchos::null)
+        HierarchyH_->GetLevel(0)->Set("Coordinates", CoordsH_);
       ManagerH->SetupHierarchy(*HierarchyH_);
     }
 
@@ -304,6 +307,7 @@ namespace MueLu {
       Hierarchy22_=Manager22->CreateHierarchy();
       Hierarchy22_->setlib(Xpetra::UseTpetra);
       Hierarchy22_->GetLevel(0)->Set("A", A22_);
+      Hierarchy22_->GetLevel(0)->Set("Coordinates", Coords_);
       Manager22->SetupHierarchy(*Hierarchy22_);
     }
 
@@ -446,7 +450,7 @@ namespace MueLu {
     bool read_P_from_file = parameterList_.get("refmaxwell: read_P_from_file",false);
     if (read_P_from_file) {
       // This permits to read in an ML prolongator, so that we get the same hierarchy.
-      // (ML and MueLu typically produce difference aggregates.)
+      // (ML and MueLu typically produce different aggregates.)
       std::string P_filename = parameterList_.get("refmaxwell: P_filename",std::string("P.mat"));
       P_nodal = Xpetra::IO<SC, LO, GO, NO>::Read(P_filename, A_nodal_Matrix_->getDomainMap());
     } else {
@@ -457,6 +461,7 @@ namespace MueLu {
       fineLevel.SetLevelID(0);
       coarseLevel.SetLevelID(1);
       fineLevel.Set("A",A_nodal_Matrix_);
+      fineLevel.Set("Coordinates",Coords_);
       fineLevel.Set("DofsPerNode",1);
       coarseLevel.setlib(A_nodal_Matrix_->getDomainMap()->lib());
       fineLevel.setlib(A_nodal_Matrix_->getDomainMap()->lib());
@@ -483,11 +488,17 @@ namespace MueLu {
       TentativePFact->SetFactory("UnAmalgamationInfo", amalgFact);
       TentativePFact->SetFactory("CoarseMap", coarseMapFact);
 
-      coarseLevel.Request("P",TentativePFact.get());         // request Ptent
+      RCP<CoordinatesTransferFactory> Tfact = rcp(new CoordinatesTransferFactory());
+      Tfact->SetFactory("Aggregates", UncoupledAggFact);
+      Tfact->SetFactory("CoarseMap", coarseMapFact);
+
+      coarseLevel.Request("P",TentativePFact.get());
       coarseLevel.Request(*TentativePFact);
+      coarseLevel.Request("Coordinates",Tfact.get());
       TentativePFact->Build(fineLevel,coarseLevel);
 
       coarseLevel.Get("P",P_nodal,TentativePFact.get());
+      coarseLevel.Get("Coordinates",CoordsH_,Tfact.get());
     }
     if (dump_matrices_)
       Xpetra::IO<SC, LO, GO, NO>::Write(std::string("P_nodal.mat"), *P_nodal);
