@@ -160,6 +160,7 @@ TRIBITS_REPOSITORY_DEFINE_TPLS(
   Valgrind        "cmake/TPLs/"    EX
   QUO             "cmake/TPLs/"    EX
   ViennaCL        "cmake/TPLs/"    EX
+  Avatar          "cmake/TPLs/"    EX
   )
 
 # NOTES:
