@@ -432,7 +432,6 @@ namespace MueLu {
     // The nodal prolongator P maps aggregates to nodes.
 
     const SC SC_ZERO = Teuchos::ScalarTraits<SC>::zero();
-    const size_t ST_INVALID = Teuchos::OrdinalTraits<LO>::invalid();
     size_t dim = Nullspace_->getNumVectors();
     size_t numLocalRows = SM_Matrix_->getNodeNumRows();
 
@@ -531,7 +530,6 @@ namespace MueLu {
     ArrayRCP<SC>                P11vals_RCP;
 
     P_nodal_imported->getAllValues(Prowptr_RCP, Pcolind_RCP, Pvals_RCP);
-    // TODO: Is there an easier/cleaner way?
     rcp_dynamic_cast<CrsMatrixWrap>(D0_Matrix_)->getCrsMatrix()->getAllValues(D0rowptr_RCP, D0colind_RCP, D0vals_RCP);
 
     // For efficiency
@@ -539,67 +537,228 @@ namespace MueLu {
     // slower than Teuchos::ArrayView::operator[].
     ArrayView<const size_t>     Prowptr, D0rowptr;
     ArrayView<const LO>         Pcolind, D0colind;
-    ArrayView<const SC>         Pvals;
+    ArrayView<const SC>         Pvals, D0vals;
     Prowptr  = Prowptr_RCP();   Pcolind  = Pcolind_RCP();   Pvals = Pvals_RCP();
-    D0rowptr = D0rowptr_RCP();  D0colind = D0colind_RCP();
+    D0rowptr = D0rowptr_RCP();  D0colind = D0colind_RCP();  D0vals = D0vals_RCP();
 
-    LO maxP11col = dim * P_nodal_imported->getColMap()->getMaxLocalIndex();
-    Array<size_t> P11_status(dim*maxP11col, ST_INVALID);
-    // This is ad-hoc and should maybe be replaced with some better heuristics.
-    size_t nnz_alloc = dim*D0vals_RCP.size();
+    // Which algorithm should we use for the construction of the special prolongator?
+    // Option "mat-mat":
+    //   Multiply D0 * P_nodal, take graph, blow up the domain space and compute the entries.
+    // Option "gustavson":
+    //   Loop over D0, P and nullspace and allocate directly. (Gustavson-like)
+    //   More efficient, but only available for serial node.
+    std::string defaultAlgo = "gustavson";
+    std::string algo = parameterList_.get("refmaxwell: prolongator compute algorithm",defaultAlgo);
 
-    // Create the matrix object
-    RCP<Map> blockColMap    = Xpetra::MapFactory<LO,GO,NO>::Build(P_nodal_imported->getColMap(), dim);
-    RCP<Map> blockDomainMap = Xpetra::MapFactory<LO,GO,NO>::Build(P_nodal->getDomainMap(), dim);
-    P11_ = Teuchos::rcp(new CrsMatrixWrap(SM_Matrix_->getRowMap(), blockColMap, 0, Xpetra::StaticProfile));
-    RCP<CrsMatrix> P11Crs = rcp_dynamic_cast<CrsMatrixWrap>(P11_)->getCrsMatrix();
-    P11Crs->allocateAllValues(nnz_alloc, P11rowptr_RCP, P11colind_RCP, P11vals_RCP);
+    if (algo == "mat-mat") {
+      Teuchos::RCP<Matrix> D0_P_nodal = MatrixFactory::Build(SM_Matrix_->getRowMap(),0);
+      Xpetra::MatrixMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Multiply(*D0_Matrix_,false,*P_nodal,false,*D0_P_nodal,true,true);
 
-    ArrayView<size_t> P11rowptr = P11rowptr_RCP();
-    ArrayView<LO>     P11colind = P11colind_RCP();
-    ArrayView<SC>     P11vals   = P11vals_RCP();
+      // Get data out of D0*P.
+      ArrayRCP<const size_t>      D0Prowptr_RCP;
+      ArrayRCP<const LO>          D0Pcolind_RCP;
+      ArrayRCP<const SC>          D0Pvals_RCP;
+      rcp_dynamic_cast<CrsMatrixWrap>(D0_P_nodal)->getCrsMatrix()->getAllValues(D0Prowptr_RCP, D0Pcolind_RCP, D0Pvals_RCP);
 
-    size_t nnz = 0, nnz_old = 0;
-    for (size_t i = 0; i < numLocalRows; i++) {
-      P11rowptr[i] = nnz;
-      for (size_t ll = D0rowptr[i]; ll < D0rowptr[i+1]; ll++) {
-        LO l = D0colind[ll];
-        for (size_t jj = Prowptr[l]; jj < Prowptr[l+1]; jj++) {
-          LO j = Pcolind[jj];
-          SC v = Pvals[jj];
-          for (size_t k = 0; k < dim; k++) {
-            LO jNew = dim*j+k;
-            SC n = nullspace[k][i];
-            // do we already have an entry for (i, jNew)?
-            if (P11_status[jNew] == ST_INVALID || P11_status[jNew] < nnz_old) {
-              P11_status[jNew] = nnz;
-              P11colind[nnz] = jNew;
-              P11vals[nnz] = 0.5 * v * n;
-              // or should it be
-              // P11vals[nnz] = 0.5 * n;
-              nnz++;
-            } else {
-              P11vals[P11_status[jNew]] += 0.5 * v * n;
-              // or should it be
-              // P11vals[P11_status[jNew]] += 0.5 * n;
+      // For efficiency
+      // Refers to an issue where Teuchos::ArrayRCP::operator[] may be
+      // slower than Teuchos::ArrayView::operator[].
+      ArrayView<const size_t>     D0Prowptr;
+      ArrayView<const LO>         D0Pcolind;
+      D0Prowptr = D0Prowptr_RCP(); D0Pcolind = D0Pcolind_RCP();
+
+      // Create the matrix object
+      RCP<Map> blockColMap    = Xpetra::MapFactory<LO,GO,NO>::Build(P_nodal_imported->getColMap(), dim);
+      RCP<Map> blockDomainMap = Xpetra::MapFactory<LO,GO,NO>::Build(P_nodal->getDomainMap(), dim);
+      P11_ = Teuchos::rcp(new CrsMatrixWrap(SM_Matrix_->getRowMap(), blockColMap, 0, Xpetra::StaticProfile));
+      RCP<CrsMatrix> P11Crs = rcp_dynamic_cast<CrsMatrixWrap>(P11_)->getCrsMatrix();
+      P11Crs->allocateAllValues(dim*D0Pcolind.size(), P11rowptr_RCP, P11colind_RCP, P11vals_RCP);
+
+      ArrayView<size_t> P11rowptr = P11rowptr_RCP();
+      ArrayView<LO>     P11colind = P11colind_RCP();
+      ArrayView<SC>     P11vals   = P11vals_RCP();
+
+      // adjust rowpointer
+      for (size_t i = 0; i < numLocalRows+1; i++) {
+        P11rowptr[i] = dim*D0Prowptr[i];
+      }
+
+      // adjust column indices
+      size_t nnz = 0;
+      for (size_t jj = 0; jj < D0Pcolind.size(); jj++)
+        for (size_t k = 0; k < dim; k++) {
+          P11colind[nnz] = dim*D0Pcolind[jj]+k;
+          P11vals[nnz] = SC_ZERO;
+          nnz++;
+        }
+
+      // enter values
+      if (D0_Matrix_->getNodeMaxNumRowEntries()>2) {
+        // The matrix D0 has too many entries per row.
+        // Therefore we need to check whether its entries are actually non-zero.
+        // This is the case for the matrices built by MiniEM.
+        GetOStream(Warnings0) << "RefMaxwell::buildProlongator(): D0 matrix has more than 2 entries per row. Taking inefficient code path." << std::endl;
+
+        magnitudeType tol = Teuchos::ScalarTraits<magnitudeType>::eps();
+        for (size_t i = 0; i < numLocalRows; i++) {
+          for (size_t ll = D0rowptr[i]; ll < D0rowptr[i+1]; ll++) {
+            LO l = D0colind[ll];
+            SC p = D0vals[ll];
+            if (Teuchos::ScalarTraits<Scalar>::magnitude(p) < tol)
+              continue;
+            for (size_t jj = Prowptr[l]; jj < Prowptr[l+1]; jj++) {
+              LO j = Pcolind[jj];
+              SC v = Pvals[jj];
+              for (size_t k = 0; k < dim; k++) {
+                LO jNew = dim*j+k;
+                SC n = nullspace[k][i];
+                size_t m;
+                for (m = P11rowptr[i]; m < P11rowptr[i+1]; m++)
+                  if (P11colind[m] == jNew)
+                    break;
+#ifdef HAVE_MUELU_DEBUG
+                TEUCHOS_ASSERT_EQUALITY(P11colind[m],jNew);
+#endif
+                  P11vals[m] += 0.5 * v * n;
+              }
+            }
+          }
+        }
+      } else {
+        // enter values
+        for (size_t i = 0; i < numLocalRows; i++) {
+          for (size_t ll = D0rowptr[i]; ll < D0rowptr[i+1]; ll++) {
+            LO l = D0colind[ll];
+            for (size_t jj = Prowptr[l]; jj < Prowptr[l+1]; jj++) {
+              LO j = Pcolind[jj];
+              SC v = Pvals[jj];
+              for (size_t k = 0; k < dim; k++) {
+                LO jNew = dim*j+k;
+                SC n = nullspace[k][i];
+                size_t m;
+                for (m = P11rowptr[i]; m < P11rowptr[i+1]; m++)
+                  if (P11colind[m] == jNew)
+                    break;
+#ifdef HAVE_MUELU_DEBUG
+                TEUCHOS_ASSERT_EQUALITY(P11colind[m],jNew);
+#endif
+                  P11vals[m] += 0.5 * v * n;
+              }
             }
           }
         }
       }
-      nnz_old = nnz;
-    }
-    P11rowptr[numLocalRows] = nnz;
 
-    if (blockDomainMap->lib() == Xpetra::UseTpetra) {
-      // Downward resize
-      // - Cannot resize for Epetra, as it checks for same pointers
-      // - Need to resize for Tpetra, as it checks ().size() == P11rowptr[numLocalRows]
-      P11vals_RCP.resize(nnz);
-      P11colind_RCP.resize(nnz);
-    }
+      P11Crs->setAllValues(P11rowptr_RCP, P11colind_RCP, P11vals_RCP);
+      P11Crs->expertStaticFillComplete(blockDomainMap, SM_Matrix_->getRangeMap());
 
-    P11Crs->setAllValues(P11rowptr_RCP, P11colind_RCP, P11vals_RCP);
-    P11Crs->expertStaticFillComplete(blockDomainMap, SM_Matrix_->getRangeMap());
+    } else if (algo == "gustavson") {
+
+      LO maxP11col = dim * P_nodal_imported->getColMap()->getMaxLocalIndex();
+      const size_t ST_INVALID = Teuchos::OrdinalTraits<LO>::invalid();
+      Array<size_t> P11_status(dim*maxP11col, ST_INVALID);
+      // This is ad-hoc and should maybe be replaced with some better heuristics.
+      size_t nnz_alloc = dim*D0vals_RCP.size();
+
+      // Create the matrix object
+      RCP<Map> blockColMap    = Xpetra::MapFactory<LO,GO,NO>::Build(P_nodal_imported->getColMap(), dim);
+      RCP<Map> blockDomainMap = Xpetra::MapFactory<LO,GO,NO>::Build(P_nodal->getDomainMap(), dim);
+      P11_ = Teuchos::rcp(new CrsMatrixWrap(SM_Matrix_->getRowMap(), blockColMap, 0, Xpetra::StaticProfile));
+      RCP<CrsMatrix> P11Crs = rcp_dynamic_cast<CrsMatrixWrap>(P11_)->getCrsMatrix();
+      P11Crs->allocateAllValues(nnz_alloc, P11rowptr_RCP, P11colind_RCP, P11vals_RCP);
+
+      ArrayView<size_t> P11rowptr = P11rowptr_RCP();
+      ArrayView<LO>     P11colind = P11colind_RCP();
+      ArrayView<SC>     P11vals   = P11vals_RCP();
+
+      size_t nnz;
+      if (D0_Matrix_->getNodeMaxNumRowEntries()>2) {
+        // The matrix D0 has too many entries per row.
+        // Therefore we need to check whether its entries are actually non-zero.
+        // This is the case for the matrices built by MiniEM.
+        GetOStream(Warnings0) << "RefMaxwell::buildProlongator(): D0 matrix has more than 2 entries per row. Taking inefficient code path." << std::endl;
+
+        magnitudeType tol = Teuchos::ScalarTraits<magnitudeType>::eps();
+        nnz = 0;
+        size_t nnz_old = 0;
+        for (size_t i = 0; i < numLocalRows; i++) {
+          P11rowptr[i] = nnz;
+          for (size_t ll = D0rowptr[i]; ll < D0rowptr[i+1]; ll++) {
+            LO l = D0colind[ll];
+            SC p = D0vals[ll];
+            if (Teuchos::ScalarTraits<Scalar>::magnitude(p) < tol)
+              continue;
+            for (size_t jj = Prowptr[l]; jj < Prowptr[l+1]; jj++) {
+              LO j = Pcolind[jj];
+              SC v = Pvals[jj];
+              for (size_t k = 0; k < dim; k++) {
+                LO jNew = dim*j+k;
+                SC n = nullspace[k][i];
+                // do we already have an entry for (i, jNew)?
+                if (P11_status[jNew] == ST_INVALID || P11_status[jNew] < nnz_old) {
+                  P11_status[jNew] = nnz;
+                  P11colind[nnz] = jNew;
+                  P11vals[nnz] = 0.5 * v * n;
+                  // or should it be
+                  // P11vals[nnz] = 0.5 * n;
+                  nnz++;
+                } else {
+                  P11vals[P11_status[jNew]] += 0.5 * v * n;
+                  // or should it be
+                  // P11vals[P11_status[jNew]] += 0.5 * n;
+                }
+              }
+            }
+          }
+          nnz_old = nnz;
+        }
+        P11rowptr[numLocalRows] = nnz;
+      } else {
+        nnz = 0;
+        size_t nnz_old = 0;
+        for (size_t i = 0; i < numLocalRows; i++) {
+          P11rowptr[i] = nnz;
+          for (size_t ll = D0rowptr[i]; ll < D0rowptr[i+1]; ll++) {
+            LO l = D0colind[ll];
+            for (size_t jj = Prowptr[l]; jj < Prowptr[l+1]; jj++) {
+              LO j = Pcolind[jj];
+              SC v = Pvals[jj];
+              for (size_t k = 0; k < dim; k++) {
+                LO jNew = dim*j+k;
+                SC n = nullspace[k][i];
+                // do we already have an entry for (i, jNew)?
+                if (P11_status[jNew] == ST_INVALID || P11_status[jNew] < nnz_old) {
+                  P11_status[jNew] = nnz;
+                  P11colind[nnz] = jNew;
+                  P11vals[nnz] = 0.5 * v * n;
+                  // or should it be
+                  // P11vals[nnz] = 0.5 * n;
+                  nnz++;
+                } else {
+                  P11vals[P11_status[jNew]] += 0.5 * v * n;
+                  // or should it be
+                  // P11vals[P11_status[jNew]] += 0.5 * n;
+                }
+              }
+            }
+          }
+          nnz_old = nnz;
+        }
+        P11rowptr[numLocalRows] = nnz;
+      }
+
+      if (blockDomainMap->lib() == Xpetra::UseTpetra) {
+        // Downward resize
+        // - Cannot resize for Epetra, as it checks for same pointers
+        // - Need to resize for Tpetra, as it checks ().size() == P11rowptr[numLocalRows]
+        P11vals_RCP.resize(nnz);
+        P11colind_RCP.resize(nnz);
+      }
+
+      P11Crs->setAllValues(P11rowptr_RCP, P11colind_RCP, P11vals_RCP);
+      P11Crs->expertStaticFillComplete(blockDomainMap, SM_Matrix_->getRangeMap());
+    } else
+      TEUCHOS_TEST_FOR_EXCEPTION(false,std::runtime_error,algo << " is not a valid option for \"refmaxwell: prolongator compute algorithm\"");
 
   }
 
