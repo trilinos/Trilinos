@@ -43,21 +43,8 @@
 // ***********************************************************************
 //
 // @HEADER
-#ifndef MUELU_AMGXOPERATOR_FWD_HPP
-#define MUELU_AMGXOPERATOR_FWD_HPP
-
-#include "MueLu_ConfigDefs.hpp"
-#if defined(HAVE_MUELU_AMGX)
-
-namespace MueLu {
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  class AMGXOperator;
-}
-
-#ifndef MUELU_AMGXOPERATOR_SHORT
-#define MUELU_AMGXOPERATOR_SHORT
+#ifndef MUELU_AMGXOPERATOR_HPP
+#define MUELU_AMGXOPERATOR_HPP
+#include "MueLu_AMGXOperator_decl.hpp"
+#include "MueLu_AMGXOperator_def.hpp"
 #endif
-
-#endif
-
-#endif // MUELU_AMGXOPERATOR_FWD_HPP

@@ -77,34 +77,44 @@ buildAndRegisterEquationSetEvaluators(PHX::FieldManager<panzer::Traits>& fm,
 				      const panzer::FieldLibrary& /* field_library */,
 				      const Teuchos::ParameterList& /* user_data */) const
 {
+  using panzer::BasisIRLayout;
+  using panzer::EvaluatorStyle;
+  using panzer::IntegrationRule;
+  using panzer::Integrator_BasisTimesScalar;
+  using panzer::Integrator_BasisTimesVector;
+  using panzer::Traits;
+  using PHX::Evaluator;
+  using std::string;
   using Teuchos::ParameterList;
   using Teuchos::RCP;
   using Teuchos::rcp;
   
-  Teuchos::RCP<panzer::IntegrationRule> ir = this->getIntRuleForDOF(dof_name); 
-  Teuchos::RCP<panzer::BasisIRLayout> basis = this->getBasisIRLayoutForDOF(dof_name); 
-
+  RCP<IntegrationRule> ir = this->getIntRuleForDOF(dof_name); 
+  RCP<BasisIRLayout> basis = this->getBasisIRLayoutForDOF(dof_name); 
 
   // Mass Operator
   {
-    ParameterList p("Mass Matrix " + dof_name + " Residual");
-    p.set("Residual Name", "AUX_MASS_RESIDUAL_"+dof_name);
-    p.set("Value Name", dof_name);
-    p.set("Basis", basis);
-    p.set("IR", ir);
-    p.set("Multiplier", multiplier);
-    Teuchos::RCP<std::vector<std::string> > fms = Teuchos::rcp(new std::vector<std::string>);
-    p.set< Teuchos::RCP<const std::vector<std::string> > >("Field Multipliers",fms);
-    
-    if(basis->getBasis()->isScalarBasis()){  
-      RCP< PHX::Evaluator<panzer::Traits> > op = 
-        rcp(new panzer::Integrator_BasisTimesScalar<EvalT,panzer::Traits>(p));
+    if (basis->getBasis()->isScalarBasis())
+    {
+      string resName("AUX_MASS_RESIDUAL_" + dof_name), valName(dof_name);
+      RCP<Evaluator<Traits>> op = rcp(new
+        Integrator_BasisTimesScalar<EvalT, Traits>(EvaluatorStyle::EVALUATES,
+        resName, valName, *basis, *ir, multiplier));
       fm.template registerEvaluator<EvalT>(op);
-    } else if(basis->getBasis()->isVectorBasis()){ 
-      RCP< PHX::Evaluator<panzer::Traits> > op = 
-        rcp(new panzer::Integrator_BasisTimesVector<EvalT,panzer::Traits>(p));
+    }
+    else if (basis->getBasis()->isVectorBasis())
+    { 
+      ParameterList p("Mass Matrix " + dof_name + " Residual");
+      p.set("Residual Name", "AUX_MASS_RESIDUAL_"+dof_name);
+      p.set("Value Name", dof_name);
+      p.set("Basis", basis);
+      p.set("IR", ir);
+      p.set("Multiplier", multiplier);
+      RCP<Evaluator<Traits>> op = rcp(new
+        Integrator_BasisTimesVector<EvalT, Traits>(p));
       fm.template registerEvaluator<EvalT>(op);
-    } else
+    }
+    else
       TEUCHOS_ASSERT(false);
   }
 }

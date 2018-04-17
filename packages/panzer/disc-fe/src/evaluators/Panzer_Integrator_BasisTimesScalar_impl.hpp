@@ -40,8 +40,8 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef   __Panzer_Integrator_BasisTimesScalar_impl_hpp__
-#define   __Panzer_Integrator_BasisTimesScalar_impl_hpp__
+#ifndef   PANZER_INTEGRATOR_BASISTIMESSCALAR_IMPL_HPP
+#define   PANZER_INTEGRATOR_BASISTIMESSCALAR_IMPL_HPP
 
 ///////////////////////////////////////////////////////////////////////////////
 //
@@ -127,10 +127,10 @@ namespace panzer
     // Set the name of this object.
     string n("Integrator_BasisTimesScalar (");
     if (evalStyle_ == EvaluatorStyle::CONTRIBUTES)
-      n += "Cont";
+      n += "CONTRIBUTES";
     else // if (evalStyle_ == EvaluatorStyle::EVALUATES)
-      n += "Eval";
-    n += ", " + typeAsString<EvalT>() + "):  " + field_.fieldTag().name();
+      n += "EVALUATES";
+    n += "):  " + field_.fieldTag().name();
     this->setName(n);
   } // end of Main Constructor
 
@@ -320,4 +320,4 @@ namespace panzer
 
 } // end of namespace panzer
 
-#endif // __Panzer_Integrator_BasisTimesScalar_impl_hpp__
+#endif // PANZER_INTEGRATOR_BASISTIMESSCALAR_IMPL_HPP

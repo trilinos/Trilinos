@@ -54,15 +54,18 @@
 # @HEADER
 
 
-INCLUDE("${CTEST_SCRIPT_DIRECTORY}/TrilinosCTestDriverCore.dorksaber.gcc.cmake")
+INCLUDE("${CTEST_SCRIPT_DIRECTORY}/TrilinosCTestDriverCore.geminga.gcc-cuda.cmake")
 
 #
 # Set the options specific to this build case
 #
 
+# The variable BUILD_DIR_NAME is based COMM_TYPE, BUILD_TYPE, and BUILD_NAME_DETAILS.
+# Tribits creates the variable listed under "Build Name" by prepending the OS type and compiler
+# details to BUILD_DIR_NAME.
 SET(COMM_TYPE MPI)
-SET(BUILD_TYPE DEBUG)
-SET(BUILD_NAME_DETAILS KOKKOS-REFACTOR_OPENMP_EXPERIMENTAL)
+SET(BUILD_TYPE RELEASE)
+SET(BUILD_NAME_DETAILS AMGX_CUDA-$ENV{SEMS_CUDA_VERSION})
 
 SET(CTEST_PARALLEL_LEVEL 8)
 SET(CTEST_TEST_TYPE Experimental)
@@ -73,18 +76,29 @@ SET(Trilinos_PACKAGES MueLu Xpetra Amesos2)
 SET(EXTRA_CONFIGURE_OPTIONS
   ### ETI ###
   "-DTrilinos_ENABLE_EXPLICIT_INSTANTIATION:BOOL=ON"
-    "-DTeuchos_ENABLE_LONG_LONG_INT:BOOL=ON"
-    "-DTpetra_INST_INT_LONG_LONG:BOOL=ON"
-    "-DTpetra_INST_SERIAL:BOOL=ON"
-    "-DKokkos_ENABLE_Serial:BOOL=ON"
+    "-DTeuchos_ENABLE_LONG_LONG_INT:BOOL=OFF"
+    "-DTpetra_INST_INT_INT:BOOL=ON"
+    "-DTpetra_INST_INT_LONG:BOOL=ON"
+    "-DTpetra_INST_INT_LONG_LONG:BOOL=OFF"
+    "-DTpetra_INST_COMPLEX_DOUBLE:BOOL=OFF"
+    "-DTpetra_INST_COMPLEX_FLOAT:BOOL=OFF"
+    "-DTpetra_INST_SERIAL=ON"
+
+  ### Kokkos ###
+  "-DKOKKOS_ARCH=SNB;Kepler35"
 
   ### MISC ###
   "-DTrilinos_ENABLE_DEPENDENCY_UNIT_TESTS:BOOL=OFF"
   "-DTeuchos_GLOBALLY_REDUCE_UNITTEST_RESULTS:BOOL=ON"
 
   ### TPLS ###
-  "-DTrilinos_ENABLE_OpenMP:BOOL=ON"
-  "-DTPL_ENABLE_HWLOC:BOOL=OFF"
+  "-DTPL_ENABLE_SuperLU:BOOL=ON"
+      "-DSuperLU_INCLUDE_DIRS:PATH=$ENV{SEMS_SUPERLU_INCLUDE_PATH}"
+      "-DSuperLU_LIBRARY_DIRS:PATH=$ENV{SEMS_SUPERLU_LIBRARY_PATH}"
+  "-DTPL_ENABLE_AmgX=ON"
+    "-DAmgX_LIBRARY_DIRS=/usr/local/amgx/lib" 
+    "-DAmgX_INCLUDE_DIRS=/usr/local/amgx/include"
+
 
   ### PACKAGES CONFIGURATION ###
       "-DMueLu_ENABLE_Experimental:BOOL=ON"
