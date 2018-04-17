@@ -7,6 +7,9 @@
 # 4) Run: $SOURCEDIR/packages/muelu/test/interface/Output/rebase.sh
 # 5) Don't forget the heavy tests, which do not run during checkin. (See comments at the end.)
 
+echo "********************************************"
+echo "This is the rebase script for SCALAR=COMPLEX."
+echo "********************************************"
 
 RESULTSDIR=`pwd`
 SCRIPTDIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
@@ -39,6 +42,9 @@ for GOLDFILE in *.gold; do
     fi
 done
 
+echo "This is the rebase script for SCALAR=COMPLEX."
+echo "If you are trying to rebase a double build, use the script from test/interface/Output/"
+echo ""
 echo ""
 echo "Did you remember to rebase the \"heavy\" interface tests?"
 echo "To do so, run the following:"
