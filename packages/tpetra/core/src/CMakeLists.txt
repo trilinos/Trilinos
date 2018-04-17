@@ -304,6 +304,11 @@ IF (${PACKAGE_NAME}_ENABLE_EXPLICIT_INSTANTIATION)
   TPETRA_PROCESS_ALL_SLGN_TEMPLATES(VECTOR_OUTPUT_FILES "Tpetra_ETI_SC_LO_GO_NT.tmpl" "Vector" "VECTOR" "${MultiVector_ETI_SCALARS}" "${TpetraCore_ETI_LORDS}" "${TpetraCore_ETI_GORDS}" "${TpetraCore_ETI_NODES}" TRUE)
   LIST(APPEND SOURCES ${VECTOR_OUTPUT_FILES})
 
+  # Generate ETI .cpp files for Tpetra::FEMultiVector.
+  # Use the same set of Scalar types as with MultiVector.
+  TPETRA_PROCESS_ALL_SLGN_TEMPLATES(FEMULTIVECTOR_OUTPUT_FILES "Tpetra_ETI_SC_LO_GO_NT.tmpl" "FEMultiVector" "FEMULTIVECTOR" "${MultiVector_ETI_SCALARS}" "${TpetraCore_ETI_LORDS}" "${TpetraCore_ETI_GORDS}" "${TpetraCore_ETI_NODES}" TRUE)
+  LIST(APPEND SOURCES ${FEMULTIVECTOR_OUTPUT_FILES})
+
   # Zoltan2 wants Scalar = int for CrsMatrix (Bug 6298), and thus
   # indirectly for RowMatrix as well.
   SET (CrsMatrix_ETI_SCALARS ${MultiVector_ETI_SCALARS})

@@ -5357,6 +5357,7 @@ namespace Tpetra {
 
   // WCMCLEN: not in decl
   //          used in def (line 5390)
+#if 0
   template <class Scalar, class LO, class GO, class NT>
   Teuchos::RCP<FEMultiVector<Scalar, LO, GO, NT> >
   createFEMultiVector (const Teuchos::RCP<const Map<LO, GO, NT> >& map,
@@ -5378,6 +5379,7 @@ namespace Tpetra {
     cpy.assign (src);
     return cpy;
   }
+#endif
 
 } // namespace Tpetra
 
@@ -5387,9 +5389,10 @@ namespace Tpetra {
 // Must be expanded from within the Tpetra namespace!
 //
 
-#define TPETRA_MULTIVECTOR_INSTANT(SCALAR,LO,GO,NODE) \
-  template class FEMultiVector< SCALAR , LO , GO , NODE >; \
-  template FEMultiVector< SCALAR , LO , GO , NODE > createCopy( const FEMultiVector< SCALAR , LO , GO , NODE >& src); \
-  template Teuchos::RCP<FEMultiVector< SCALAR , LO , GO , NODE > > createFEMultiVector (const Teuchos::RCP<const Map<LO, GO, NODE> >& map, size_t numVectors);
+#define TPETRA_FEMULTIVECTOR_INSTANT(SCALAR,LO,GO,NODE) \
+  template class FEMultiVector< SCALAR , LO , GO , NODE >;
+
 
 #endif // TPETRA_FEMULTIVECTOR_DEF_HPP
+
+
