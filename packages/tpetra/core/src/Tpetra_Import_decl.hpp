@@ -207,7 +207,8 @@ namespace Tpetra {
     /// constructor.
     Import (const Teuchos::RCP<const map_type>& source,
             const Teuchos::RCP<const map_type>& target,
-            Teuchos::Array<int> & remotePIDs);
+            Teuchos::Array<int> & remotePIDs,
+	    const Teuchos::RCP<Teuchos::ParameterList>& plist = Teuchos::rcp(new Teuchos::ParameterList) );
 
     /// \brief Copy constructor.
     ///

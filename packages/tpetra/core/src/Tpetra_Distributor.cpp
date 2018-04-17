@@ -472,6 +472,7 @@ namespace Tpetra {
                 " to avoid message collisions.");
     plist->set ("Debug", debug, "Whether to print copious debugging output on "
                 "all processes.");
+    plist->set ("Timer Label","","Label for Time Monitor output");
     plist->set ("Enable MPI CUDA RDMA support", true, "Assume that MPI can "
                 "tell whether a pointer points to host memory or CUDA device "
                 "memory.  You don't need to specify this option any more; "

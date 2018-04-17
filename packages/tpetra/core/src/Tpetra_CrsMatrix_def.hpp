@@ -8863,13 +8863,18 @@ namespace Tpetra {
     /***************************************************/
     // Pre-build the importer using the existing PIDs
     Teuchos::ParameterList esfc_params;
-#ifdef HAVE_TPETRA_MMM_TIMINGS
-    MM = Teuchos::rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix + std::string("TAFC CreateImporter"))));
-#endif
-    RCP<import_type> MyImport;   
 
-    if( !( isMM && !MyImporter.is_null()) ) { 
-    MyImport = rcp (new import_type (MyDomainMap, MyColMap, RemotePids));
+    RCP<import_type> MyImport;   
+    isMM=false;
+    if(true) {
+//    if( !( isMM && !MyImporter.is_null()) ) { 
+#ifdef HAVE_TPETRA_MMM_TIMINGS
+	MM = Teuchos::rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix + std::string("TAFC CreateImporter"))));
+#endif
+	Teuchos::RCP<Teuchos::ParameterList> mypars = rcp(new Teuchos::ParameterList);
+	mypars->set("Timer Label","From_tAFC");
+
+	MyImport = rcp (new import_type (MyDomainMap, MyColMap, RemotePids, mypars));
     }
  
 #ifdef HAVE_TPETRA_MMM_TIMINGS
@@ -8880,16 +8885,18 @@ namespace Tpetra {
     if(!params.is_null())
       esfc_params.set("compute global constants",params->get("compute global constants",true));
 
+
+    if(false) {
+//    if( isMM && !MyImporter.is_null()) {
+
 #ifdef HAVE_TPETRA_MMM_TIMINGS
     MM = Teuchos::rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix + std::string("is MM Block"))));
 #endif
-
-    if( isMM && !MyImporter.is_null()) {
-      static bool first = true;
-      if(first) {
-        first = false;
-        std::cerr<<" isMM "<<std::endl;
-      }
+      // static bool first = true;
+      // if(first) {
+      //   first = false;
+      //   std::cerr<<" isMM "<<std::endl;
+      // }
 
       // The isMatrixMatrix_TransferAndFillComplete parameter is set to true. This means the unfiltered
       // reverseNeighborDiscovery is safe (by assertion?!?). 

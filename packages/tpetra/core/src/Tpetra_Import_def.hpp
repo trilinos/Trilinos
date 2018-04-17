@@ -148,6 +148,17 @@ namespace Tpetra {
       os << myRank << ": Import ctor" << endl;
       *out_ << os.str ();
     }
+
+#ifdef HAVE_TPETRA_MMM_TIMINGS
+    using Teuchos::TimeMonitor;
+    std::string label;
+    if(!plist.is_null()) 
+      label = plist->get("Timer Label",label);
+    std::string prefix = std::string("Tpetra ")+ label + std::string(":iport_ctor:preIData: ");
+    auto MM = rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix)));
+#endif
+
+
     ImportData_ = rcp (new data_type (source, target, out_, plist));
 
     Array<GlobalOrdinal> remoteGIDs;
@@ -159,6 +170,15 @@ namespace Tpetra {
          << "setupSamePermuteRemote done" << endl;
       *out_ << os.str ();
     }
+
+#ifdef HAVE_TPETRA_MMM_TIMINGS
+    using Teuchos::TimeMonitor;
+    if(!plist.is_null()) 
+      label = plist->get("Timer Label",label);
+    prefix = std::string("Tpetra ")+ label + std::string(":iport_ctor:preSetupExport: ");
+    MM = rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix)));
+#endif
+
     if (source->isDistributed ()) {
       setupExport (remoteGIDs,useRemotePIDs,remotePIDs);
     }
@@ -173,8 +193,6 @@ namespace Tpetra {
       out_->popTab ();
     }
 
-
-
   }
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -185,7 +203,14 @@ namespace Tpetra {
     debug_(tpetraImportDebugDefault)
   {
     Teuchos::Array<int> dummy;
+
+#ifdef HAVE_TPETRA_MMM_TIMINGS
+    Teuchos::RCP<Teuchos::ParameterList> mypars = rcp(new Teuchos::ParameterList);
+    mypars->set("Timer Label","Naive_tAFC");
+    init(source, target, false, dummy, mypars);
+#elif
     init(source, target, false, dummy, Teuchos::null);
+#endif
   }
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -229,10 +254,11 @@ namespace Tpetra {
   Import<LocalOrdinal,GlobalOrdinal,Node>::
   Import(const Teuchos::RCP<const map_type >& source,
           const Teuchos::RCP<const map_type >& target,
-          Teuchos::Array<int> & remotePIDs) :
+	 Teuchos::Array<int> & remotePIDs,
+	 const Teuchos::RCP<Teuchos::ParameterList>& plist) :
     debug_(tpetraImportDebugDefault)
   {
-    init(source, target, true, remotePIDs, Teuchos::null);
+    init(source, target, true, remotePIDs, plist);
   }
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -303,6 +329,16 @@ namespace Tpetra {
     const size_type numGids = std::min (numSrcGids, numTgtGids);
     const LO LINVALID = Teuchos::OrdinalTraits<LO>::invalid ();
 
+#ifdef HAVE_TPETRA_MMM_TIMINGS
+    using Teuchos::TimeMonitor;
+    std::string label;
+    if(!plist.is_null()) 
+      label = plist->get("Timer Label",label);
+    std::string prefix = std::string("Tpetra ")+ label + std::string(":iport_ctor:preIData: ");
+    auto MM = rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix)));
+#endif
+
+
     ImportData_ = rcp (new data_type (source, target, out_, plist));
 
     Array<GO>  tRemoteGIDs;
@@ -323,7 +359,15 @@ namespace Tpetra {
           tRemoteGIDs.size() == tRemoteLIDs.size()), 
         std::runtime_error,
         "Import::Import createExpert version: Size miss match on userRemotePIDs, remoteGIDs and remoteLIDs Array's to sort3. This will produce produce an error, aborting ");
-    
+
+#ifdef HAVE_TPETRA_MMM_TIMINGS
+    using Teuchos::TimeMonitor;
+    if(!plist.is_null()) 
+      label = plist->get("Timer Label",label);
+    prefix = std::string("Tpetra ")+ label + std::string(":iport_ctor:presort ");
+    auto MM2 = rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix)));
+#endif
+
     sort3 (tRemotePIDs.begin (),
            tRemotePIDs.end (),
            tRemoteGIDs.begin (),
@@ -370,6 +414,14 @@ namespace Tpetra {
     }
 
     ImportData_->isLocallyComplete_ = locallyComplete;
+
+#ifdef HAVE_TPETRA_MMM_TIMINGS
+    using Teuchos::TimeMonitor;
+    if(!plist.is_null()) 
+      label = plist->get("Timer Label",label);
+    prefix = std::string("Tpetra ")+ label + std::string(":iport_ctor:cFSAR ");
+    auto MM3 = rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix)));
+#endif
 
     ImportData_->distributor_.createFromSendsAndRecvs(ImportData_->exportPIDs_,tRemotePIDs);
   }
