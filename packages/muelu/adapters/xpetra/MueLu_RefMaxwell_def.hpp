@@ -66,6 +66,8 @@
 #include "MueLu_SmootherFactory.hpp"
 #ifdef HAVE_MUELU_KOKKOS_REFACTOR
 #include "MueLu_Utilities_kokkos.hpp"
+#include <Kokkos_Core.hpp>
+#include <KokkosSparse_CrsMatrix.hpp>
 #else
 #include "MueLu_Utilities.hpp"
 #endif
@@ -112,9 +114,6 @@ namespace MueLu {
 
   template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void RefMaxwell<Scalar,LocalOrdinal,GlobalOrdinal,Node>::compute() {
-
-    magnitudeType eps = Teuchos::ScalarTraits<magnitudeType>::eps();
-    SC zero = Teuchos::ScalarTraits<Scalar>::zero();
 
     RCP<Teuchos::TimeMonitor> tmCompute = rcp(new Teuchos::TimeMonitor(*Teuchos::TimeMonitor::getNewTimer("MueLu RefMaxwell: compute")));
 
@@ -435,14 +434,6 @@ namespace MueLu {
     size_t dim = Nullspace_->getNumVectors();
     size_t numLocalRows = SM_Matrix_->getNodeNumRows();
 
-    // get nullspace vectors
-    ArrayRCP<ArrayRCP<const SC> > nullspaceRCP(dim);
-    ArrayRCP<ArrayView<const SC> > nullspace(dim);
-    for(size_t i=0; i<dim; i++) {
-      nullspaceRCP[i] = Nullspace_->getData(i);
-      nullspace[i] = nullspaceRCP[i]();
-    }
-
     // build prolongator: algorithm 1 in the reference paper
     // First, build nodal unsmoothed prolongator using the matrix A_nodal
     RCP<Matrix> P_nodal;
@@ -520,6 +511,138 @@ namespace MueLu {
         Xpetra::IO<SC, LO, GO, NO>::Write(std::string("P_nodal_imported.mat"), *P_nodal_temp);
     } else
       P_nodal_imported = rcp_dynamic_cast<CrsMatrixWrap>(P_nodal)->getCrsMatrix();
+
+#ifdef HAVE_MUELU_KOKKOS_REFACTOR
+
+    using ATS        = Kokkos::ArithTraits<SC>;
+    using range_type = Kokkos::RangePolicy<LO, typename NO::execution_space>;
+
+    typedef typename Matrix::local_matrix_type KCRS;
+    typedef typename KCRS::device_type device_t;
+    typedef typename KCRS::StaticCrsGraphType graph_t;
+    typedef typename graph_t::row_map_type::non_const_type lno_view_t;
+    typedef typename graph_t::entries_type::non_const_type lno_nnz_view_t;
+    typedef typename KCRS::values_type::non_const_type scalar_view_t;
+
+    // Get data out of P_nodal_imported and D0.
+    auto localP = P_nodal_imported->getLocalMatrix();
+    auto localD0 = D0_Matrix_->getLocalMatrix();
+
+    // Which algorithm should we use for the construction of the special prolongator?
+    // Option "mat-mat":
+    //   Multiply D0 * P_nodal, take graph, blow up the domain space and compute the entries.
+    std::string defaultAlgo = "mat-mat";
+    std::string algo = parameterList_.get("refmaxwell: prolongator compute algorithm",defaultAlgo);
+
+    if (algo == "mat-mat") {
+      Teuchos::RCP<Matrix> D0_P_nodal = MatrixFactory::Build(SM_Matrix_->getRowMap(),0);
+      Xpetra::MatrixMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Multiply(*D0_Matrix_,false,*P_nodal,false,*D0_P_nodal,true,true);
+
+      // Get data out of D0*P.
+      auto localD0P = D0_P_nodal->getLocalMatrix();
+
+      // Create the matrix object
+      RCP<Map> blockColMap    = Xpetra::MapFactory<LO,GO,NO>::Build(P_nodal_imported->getColMap(), dim);
+      RCP<Map> blockDomainMap = Xpetra::MapFactory<LO,GO,NO>::Build(P_nodal->getDomainMap(), dim);
+
+      lno_view_t P11rowptr("P11_rowptr", numLocalRows+1);
+      lno_nnz_view_t P11colind("P11_colind",dim*localD0P.graph.entries.size());
+      scalar_view_t P11vals("P11_vals",dim*localD0P.graph.entries.size());
+
+      // adjust rowpointer
+      Kokkos::parallel_for("MueLu:RefMaxwell::buildProlongator_adjustRowptr", range_type(0,numLocalRows+1),
+                           KOKKOS_LAMBDA(const size_t i) {
+                             P11rowptr(i) = dim*localD0P.graph.row_map(i);
+                           });
+
+      // adjust column indices
+      Kokkos::parallel_for("MueLu:RefMaxwell::buildProlongator_adjustColind", range_type(0,localD0P.graph.entries.size()),
+                           KOKKOS_LAMBDA(const size_t jj) {
+                             for (size_t k = 0; k < dim; k++) {
+                               P11colind(dim*jj+k) = dim*localD0P.graph.entries(jj)+k;
+                               P11vals(dim*jj+k) = SC_ZERO;
+                             }
+                           });
+
+      auto localNullspace = Nullspace_->template getLocalView<device_t>();
+
+      // enter values
+      if (D0_Matrix_->getNodeMaxNumRowEntries()>2) {
+        // The matrix D0 has too many entries per row.
+        // Therefore we need to check whether its entries are actually non-zero.
+        // This is the case for the matrices built by MiniEM.
+        GetOStream(Warnings0) << "RefMaxwell::buildProlongator(): D0 matrix has more than 2 entries per row. Taking inefficient code path." << std::endl;
+
+        magnitudeType tol = Teuchos::ScalarTraits<magnitudeType>::eps();
+
+        Kokkos::parallel_for("MueLu:RefMaxwell::buildProlongator_enterValues_D0wZeros", range_type(0,numLocalRows),
+                           KOKKOS_LAMBDA(const size_t i) {
+                               for (size_t ll = localD0.graph.row_map(i); ll < localD0.graph.row_map(i+1); ll++) {
+                                 LO l = localD0.graph.entries(ll);
+                                 SC p = localD0.values(ll);
+                                 if (ATS::magnitude(p) < tol)
+                                   continue;
+                                 for (size_t jj = localP.graph.row_map(l); jj < localP.graph.row_map(l+1); jj++) {
+                                   LO j = localP.graph.entries(jj);
+                                   SC v = localP.values(jj);
+                                   for (size_t k = 0; k < dim; k++) {
+                                     LO jNew = dim*j+k;
+                                     SC n = localNullspace(i,k);
+                                     size_t m;
+                                     for (m = P11rowptr(i); m < P11rowptr(i+1); m++)
+                                       if (P11colind(m) == jNew)
+                                         break;
+#ifdef HAVE_MUELU_DEBUG
+                                     TEUCHOS_ASSERT_EQUALITY(P11colind(m),jNew);
+#endif
+                                     P11vals(m) += 0.5 * v * n;
+                                   }
+                                 }
+                               }
+                             });
+
+      } else {
+        Kokkos::parallel_for("MueLu:RefMaxwell::buildProlongator_enterValues", range_type(0,numLocalRows),
+                           KOKKOS_LAMBDA(const size_t i) {
+                               for (size_t ll = localD0.graph.row_map(i); ll < localD0.graph.row_map(i+1); ll++) {
+                                 LO l = localD0.graph.entries(ll);
+                                 for (size_t jj = localP.graph.row_map(l); jj < localP.graph.row_map(l+1); jj++) {
+                                   LO j = localP.graph.entries(jj);
+                                   SC v = localP.values(jj);
+                                   for (size_t k = 0; k < dim; k++) {
+                                     LO jNew = dim*j+k;
+                                     SC n = localNullspace(i,k);
+                                     size_t m;
+                                     for (m = P11rowptr(i); m < P11rowptr(i+1); m++)
+                                       if (P11colind(m) == jNew)
+                                         break;
+#ifdef HAVE_MUELU_DEBUG
+                                     TEUCHOS_ASSERT_EQUALITY(P11colind(m),jNew);
+#endif
+                                     P11vals(m) += 0.5 * v * n;
+                                   }
+                                 }
+                               }
+                             });
+      }
+
+      P11_ = Teuchos::rcp(new CrsMatrixWrap(SM_Matrix_->getRowMap(), blockColMap, 0, Xpetra::StaticProfile));
+      RCP<CrsMatrix> P11Crs = rcp_dynamic_cast<CrsMatrixWrap>(P11_)->getCrsMatrix();
+      P11Crs->setAllValues(P11rowptr, P11colind, P11vals);
+      P11Crs->expertStaticFillComplete(blockDomainMap, SM_Matrix_->getRangeMap());
+
+    } else
+      TEUCHOS_TEST_FOR_EXCEPTION(false,std::invalid_argument,algo << " is not a valid option for \"refmaxwell: prolongator compute algorithm\"");
+
+#else // ifdef(HAVE_MUELU_KOKKOS_REFACTOR)
+
+    // get nullspace vectors
+    ArrayRCP<ArrayRCP<const SC> > nullspaceRCP(dim);
+    ArrayRCP<ArrayView<const SC> > nullspace(dim);
+    for(size_t i=0; i<dim; i++) {
+      nullspaceRCP[i] = Nullspace_->getData(i);
+      nullspace[i] = nullspaceRCP[i]();
+    }
 
     // Get data out of P_nodal_imported and D0.
     ArrayRCP<const size_t>      Prowptr_RCP, D0rowptr_RCP;
@@ -758,8 +881,8 @@ namespace MueLu {
       P11Crs->setAllValues(P11rowptr_RCP, P11colind_RCP, P11vals_RCP);
       P11Crs->expertStaticFillComplete(blockDomainMap, SM_Matrix_->getRangeMap());
     } else
-      TEUCHOS_TEST_FOR_EXCEPTION(false,std::runtime_error,algo << " is not a valid option for \"refmaxwell: prolongator compute algorithm\"");
-
+      TEUCHOS_TEST_FOR_EXCEPTION(false,std::invalid_argument,algo << " is not a valid option for \"refmaxwell: prolongator compute algorithm\"");
+#endif // else ifdef(HAVE_MUELU_KOKKOS_REFACTOR)
   }
 
   template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
