@@ -808,10 +808,10 @@ unpackAndCombineIntoCrsArrays(
   }
 
   // SameIDs: Copy the data over
-  copyDataFromSameIDs(tgt_colind, tgt_pids, new_start_row,
+  copyDataFromSameIDs<LocalGraph,LocalMap>(tgt_colind, tgt_pids, new_start_row,
       tgt_rowptr, src_pids, local_graph, local_col_map, num_same_ids, my_pid);
 
-  copyDataFromPermuteIDs(tgt_colind, tgt_pids, new_start_row,
+  copyDataFromPermuteIDs<LocalGraph,LocalMap>(tgt_colind, tgt_pids, new_start_row,
       tgt_rowptr, src_pids, permute_to_lids, permute_from_lids,
       local_graph, local_col_map, my_pid);
 
@@ -1098,8 +1098,7 @@ unpackAndCombineWithOwningPIDsCount(
 ///   and allocate all arrays accordingly, before calling this
 ///   function.
 ///
-/// Note: The SourcePids vector (on input) should contain owning PIDs
-/// for each column in the (source) ColMap, as from
+/// Note: The SourcePids vector (on input) should contam
 /// Tpetra::Import_Util::getPids, with the "-1 for local" option being
 /// used.
 ///
