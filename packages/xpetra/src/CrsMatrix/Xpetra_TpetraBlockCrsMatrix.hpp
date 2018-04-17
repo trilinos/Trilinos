@@ -447,6 +447,13 @@ namespace Xpetra {
 #endif
       TEUCHOS_UNREACHABLE_RETURN(ret);
     }
+
+    void setAllValues (const typename local_matrix_type::row_map_type& ptr,
+                       const typename local_matrix_type::StaticCrsGraphType::entries_type::non_const_type& ind,
+                       const typename local_matrix_type::values_type& val)
+    {
+      throw std::runtime_error("Xpetra::TpetraBlockCrsMatrix does not support setAllValues due to missing Kokkos::CrsMatrix in Tpetra's experimental implementation");
+    }
 #endif
 #endif
    //@}
@@ -802,6 +809,13 @@ namespace Xpetra {
       local_matrix_type ret;
       return ret; // make compiler happy
     }
+
+    void setAllValues (const typename local_matrix_type::row_map_type& ptr,
+                       const typename local_matrix_type::StaticCrsGraphType::entries_type::non_const_type& ind,
+                       const typename local_matrix_type::values_type& val)
+    {
+      throw std::runtime_error("Xpetra::TpetraBlockCrsMatrix does not support setAllValues due to missing Kokkos::CrsMatrix in Tpetra's experimental implementation");
+    }
 #endif
 #endif
    //@}
@@ -1147,6 +1161,13 @@ namespace Xpetra {
       throw std::runtime_error("Xpetra::TpetraBlockCrsMatrix does not support getLocalMatrix due to missing Kokkos::CrsMatrix in Tpetra's experimental implementation");
       local_matrix_type ret;
       TEUCHOS_UNREACHABLE_RETURN(ret);
+    }
+
+    void setAllValues (const typename local_matrix_type::row_map_type& ptr,
+                       const typename local_matrix_type::StaticCrsGraphType::entries_type::non_const_type& ind,
+                       const typename local_matrix_type::values_type& val)
+    {
+      throw std::runtime_error("Xpetra::TpetraBlockCrsMatrix does not support setAllValues due to missing Kokkos::CrsMatrix in Tpetra's experimental implementation");
     }
 #endif
 #endif
