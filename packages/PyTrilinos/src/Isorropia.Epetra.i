@@ -80,7 +80,6 @@ from . import _IsorropiaEpetra
 
 // Local include files
 #define NO_IMPORT_ARRAY
-#define SWIG_FILE_WITH_INIT
 #include "numpy_include.hpp"
 %}
 
