@@ -42,7 +42,7 @@
 #ifndef TPETRA_FEMULTIVECTOR_DECL_HPP
 #define TPETRA_FEMULTIVECTOR_DECL_HPP
 
-/// \file Tpetra_MultiVector_decl.hpp
+/// \file Tpetra_FEMultiVector_decl.hpp
 /// \brief Declaration of the Tpetra::MultiVector class
 ///
 /// If you want to use Tpetra::MultiVector, include "Tpetra_MultiVector.hpp"
@@ -51,19 +51,19 @@
 /// (Tpetra_MultiVector_decl.hpp).
 ///
 
-#include "Tpetra_DistObject.hpp"
-#include "Tpetra_Map_decl.hpp"
-#include "Teuchos_MultiVector_decl.hpp"
-#include "Teuchos_Import_decl.hpp"
-#include "Kokkos_DualView.hpp"
-#include "Teuchos_BLAS_types.hpp"
-#include "Teuchos_DataAccess.hpp"
-#include "Teuchos_Range1D.hpp"
+//#include "Tpetra_DistObject.hpp"
+//#include "Tpetra_Map_decl.hpp"
+#include "Tpetra_MultiVector_decl.hpp"
+//#include "Teuchos_Import_decl.hpp"
+//#include "Kokkos_DualView.hpp"
+//#include "Teuchos_BLAS_types.hpp"
+//#include "Teuchos_DataAccess.hpp"
+//#include "Teuchos_Range1D.hpp"
 
-#include "Kokkos_ArithTraits.hpp"
-#include "Kokkos_InnerProductSpaceTraits.hpp"
-#include "Tpetra_KokkosRefactor_Details_MultiVectorLocalDeepCopy.hpp"
-#include <type_traits>
+//#include "Kokkos_ArithTraits.hpp"
+//#include "Kokkos_InnerProductSpaceTraits.hpp"
+//#include "Tpetra_KokkosRefactor_Details_MultiVectorLocalDeepCopy.hpp"
+//#include <type_traits>
 
 namespace Tpetra {
 
