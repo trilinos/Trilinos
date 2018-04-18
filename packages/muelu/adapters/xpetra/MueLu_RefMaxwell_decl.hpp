@@ -48,16 +48,22 @@
 
 #include "MueLu_ConfigDefs.hpp"
 #include "MueLu_BaseClass.hpp"
+#include "MueLu_ThresholdAFilterFactory_fwd.hpp"
 #ifdef HAVE_MUELU_KOKKOS_REFACTOR
+#include "MueLu_CoalesceDropFactory_kokkos_fwd.hpp"
+#include "MueLu_CoarseMapFactory_kokkos_fwd.hpp"
+#include "MueLu_CoordinatesTransferFactory_kokkos_fwd.hpp"
+#include "MueLu_TentativePFactory_kokkos_fwd.hpp"
 #include "MueLu_Utilities_kokkos_fwd.hpp"
+#include "MueLu_UncoupledAggregationFactory_kokkos_fwd.hpp"
 #else
+#include "MueLu_CoalesceDropFactory_fwd.hpp"
+#include "MueLu_CoarseMapFactory_fwd.hpp"
+#include "MueLu_CoordinatesTransferFactory_fwd.hpp"
+#include "MueLu_TentativePFactory_fwd.hpp"
+#include "MueLu_UncoupledAggregationFactory_fwd.hpp"
 #include "MueLu_Utilities_fwd.hpp"
 #endif
-#include "MueLu_ThresholdAFilterFactory_fwd.hpp"
-#include "MueLu_TentativePFactory_fwd.hpp"
-#include "MueLu_SaPFactory_fwd.hpp"
-#include "MueLu_CoordinatesTransferFactory_fwd.hpp"
-#include "MueLu_UncoupledAggregationFactory_fwd.hpp"
 #include "MueLu_SmootherFactory_fwd.hpp"
 #include "MueLu_TrilinosSmoother.hpp"
 #include "MueLu_Hierarchy.hpp"
@@ -68,7 +74,6 @@
 #include "Xpetra_MultiVectorFactory_fwd.hpp"
 #include "Xpetra_VectorFactory_fwd.hpp"
 #include "Xpetra_CrsMatrixWrap_fwd.hpp"
-#include "Xpetra_BlockedCrsMatrix_fwd.hpp"
 #include "Xpetra_ExportFactory_fwd.hpp"
 
 #ifdef HAVE_MUELU_IFPACK2

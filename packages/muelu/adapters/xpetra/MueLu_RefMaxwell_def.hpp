@@ -54,22 +54,27 @@
 #include "Xpetra_CrsMatrixUtils.hpp"
 
 #include "MueLu_RefMaxwell_decl.hpp"
-#include "MueLu_ThresholdAFilterFactory.hpp"
-#include "MueLu_UncoupledAggregationFactory.hpp"
-#include "MueLu_CoalesceDropFactory.hpp"
+
 #include "MueLu_AmalgamationFactory.hpp"
-#include "MueLu_TentativePFactory.hpp"
-#include "MueLu_CoarseMapFactory.hpp"
-#include "MueLu_SaPFactory.hpp"
 #include "MueLu_RAPFactory.hpp"
+#include "MueLu_ThresholdAFilterFactory.hpp"
 #include "MueLu_TransPFactory.hpp"
-#include "MueLu_CoordinatesTransferFactory.hpp"
 #include "MueLu_SmootherFactory.hpp"
 #ifdef HAVE_MUELU_KOKKOS_REFACTOR
+#include "MueLu_CoalesceDropFactory_kokkos.hpp"
+#include "MueLu_CoarseMapFactory_kokkos.hpp"
+#include "MueLu_CoordinatesTransferFactory_kokkos.hpp"
+#include "MueLu_UncoupledAggregationFactory_kokkos.hpp"
+#include "MueLu_TentativePFactory_kokkos.hpp"
 #include "MueLu_Utilities_kokkos.hpp"
 #include <Kokkos_Core.hpp>
 #include <KokkosSparse_CrsMatrix.hpp>
 #else
+#include "MueLu_CoalesceDropFactory.hpp"
+#include "MueLu_CoarseMapFactory.hpp"
+#include "MueLu_CoordinatesTransferFactory.hpp"
+#include "MueLu_UncoupledAggregationFactory.hpp"
+#include "MueLu_TentativePFactory.hpp"
 #include "MueLu_Utilities.hpp"
 #endif
 #include "MueLu_Monitor.hpp"
@@ -356,7 +361,7 @@ namespace MueLu {
         useHiptmairSmoothing_ = true;
 #else
         throw(Xpetra::Exceptions::RuntimeError("MueLu must be compiled with Ifpack2 for Hiptmair smoothing."));
-#endif  // HAVE_MUELU_IFPACK2
+#endif  // defined(HAVE_MUELU_IFPACK2) && defined(HAVE_TPETRA_INST_INT_INT)
       } else {
         Level level;
         RCP<MueLu::FactoryManagerBase> factoryHandler = rcp(new FactoryManager());
@@ -448,23 +453,31 @@ namespace MueLu {
       fineLevel.Set("Nullspace",nullSpace);
 
       RCP<AmalgamationFactory> amalgFact = rcp(new AmalgamationFactory());
+#ifdef HAVE_MUELU_KOKKOS_REFACTOR
+      RCP<CoalesceDropFactory_kokkos> dropFact = rcp(new CoalesceDropFactory_kokkos());
+      RCP<UncoupledAggregationFactory_kokkos> UncoupledAggFact = rcp(new UncoupledAggregationFactory_kokkos());
+      RCP<CoarseMapFactory_kokkos> coarseMapFact = rcp(new CoarseMapFactory_kokkos());
+      RCP<TentativePFactory_kokkos> TentativePFact = rcp(new TentativePFactory_kokkos());
+      RCP<CoordinatesTransferFactory_kokkos> Tfact = rcp(new CoordinatesTransferFactory_kokkos());
+#else
       RCP<CoalesceDropFactory> dropFact = rcp(new CoalesceDropFactory());
+      RCP<UncoupledAggregationFactory> UncoupledAggFact = rcp(new UncoupledAggregationFactory());
+      RCP<CoarseMapFactory> coarseMapFact = rcp(new CoarseMapFactory());
+      RCP<TentativePFactory> TentativePFact = rcp(new TentativePFactory());
+      RCP<CoordinatesTransferFactory> Tfact = rcp(new CoordinatesTransferFactory());
+#endif
       dropFact->SetFactory("UnAmalgamationInfo", amalgFact);
       double dropTol = parameterList_.get("aggregation: drop tol",0.0);
       dropFact->SetParameter("aggregation: drop tol",Teuchos::ParameterEntry(dropTol));
 
-      RCP<UncoupledAggregationFactory> UncoupledAggFact = rcp(new UncoupledAggregationFactory());
       UncoupledAggFact->SetFactory("Graph", dropFact);
 
-      RCP<CoarseMapFactory> coarseMapFact = rcp(new CoarseMapFactory());
       coarseMapFact->SetFactory("Aggregates", UncoupledAggFact);
 
-      RCP<TentativePFactory> TentativePFact = rcp(new TentativePFactory());
       TentativePFact->SetFactory("Aggregates", UncoupledAggFact);
       TentativePFact->SetFactory("UnAmalgamationInfo", amalgFact);
       TentativePFact->SetFactory("CoarseMap", coarseMapFact);
 
-      RCP<CoordinatesTransferFactory> Tfact = rcp(new CoordinatesTransferFactory());
       Tfact->SetFactory("Aggregates", UncoupledAggFact);
       Tfact->SetFactory("CoarseMap", coarseMapFact);
 
