@@ -63,6 +63,9 @@
 #include "Epetra_IntVector.h"
 #endif
 
+bool isMMdump = false;
+
+
 //==============================================================================
 // Epetra_Import constructor function for a Epetra_BlockMap object
 template<typename int_type>
@@ -288,13 +291,15 @@ void Epetra_Import::Construct_Expert( const Epetra_BlockMap &  targetMap, const 
   return;
 }
 
+
+
 //==============================================================================
 // Epetra_Import constructor function for a Epetra_BlockMap object
 template<typename int_type>
 void Epetra_Import::Construct( const Epetra_BlockMap &  targetMap, const Epetra_BlockMap & sourceMap, int NumRemotePIDs, const int * UserRemotePIDs)
 {
     static bool first = true;
-    if(first) {
+    if(first && ::isMMdump) {
 	std::cerr<<" SourceMap"<<std::endl;
 	sourceMap.Print(std::cerr);
 	std::cerr<<" TargetMap"<<std::endl;

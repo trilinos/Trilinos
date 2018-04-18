@@ -42,6 +42,9 @@
 #ifndef TPETRA_IMPORT_DEF_HPP
 #define TPETRA_IMPORT_DEF_HPP
 
+
+extern bool isMMdump ;
+
 #include <Tpetra_Import_decl.hpp>
 #include <Tpetra_Distributor.hpp>
 #include <Tpetra_Map.hpp>
@@ -211,7 +214,7 @@ namespace Tpetra {
   {
     Teuchos::Array<int> dummy;
     static int first = true;
-    if(first) {
+    if(first && :: isMMdump) {
 	first = false;
 	Teuchos::RCP<Teuchos::FancyOStream>  cerrptr = Teuchos::getFancyOStream (Teuchos::rcpFromRef (std::cerr)) ;
 	cerrptr->setTabIndentStr(std::string("T"));
