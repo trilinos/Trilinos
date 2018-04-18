@@ -202,21 +202,17 @@ namespace MueLu {
         RCP<RAPFactory> rapFact = rcp(new RAPFactory());
         Teuchos::ParameterList rapList = *(rapFact->GetValidParameterList());
         rapList.set("transpose: use implicit", parameterList_.get<bool>("transpose: use implicit", false));
-        rapList.set("rap: fix zero diagonals", parameterList_.get<bool>("rap: fix zero diagonals", true));
+        rapList.set("rap: fix zero diagonals", parameterList_.get<bool>("rap: fix zero diagonals", false));
         rapList.set("rap: triple product", parameterList_.get<bool>("rap: triple product", false));
         rapFact->SetParameterList(rapList);
 
         RCP<TransPFactory> transPFactory;
         if (!parameterList_.get<bool>("transpose: use implicit", false)) {
           transPFactory = rcp(new TransPFactory());
-          coarseLevel.Request("R",transPFactory.get());
           rapFact->SetFactory("R", transPFactory);
-          transPFactory->Build(fineLevel,coarseLevel);
         }
 
-        coarseLevel.Request(*rapFact);
-        coarseLevel.Request("A",rapFact.get());
-        rapFact->Build(fineLevel,coarseLevel);
+        coarseLevel.Request("A", rapFact.get());
 
         A_nodal_Matrix_ = coarseLevel.Get< RCP<Matrix> >("A", rapFact.get());
       }
@@ -292,7 +288,7 @@ namespace MueLu {
         RCP<RAPFactory> rapFact = rcp(new RAPFactory());
         Teuchos::ParameterList rapList = *(rapFact->GetValidParameterList());
         rapList.set("transpose: use implicit", parameterList_.get<bool>("transpose: use implicit", false));
-        rapList.set("rap: fix zero diagonals", parameterList_.get<bool>("rap: fix zero diagonals", true));
+        rapList.set("rap: fix zero diagonals", parameterList_.get<bool>("rap: fix zero diagonals", false));
         rapList.set("rap: triple product", parameterList_.get<bool>("rap: triple product", false));
         rapFact->SetParameterList(rapList);
 
@@ -300,14 +296,9 @@ namespace MueLu {
         if (!parameterList_.get<bool>("transpose: use implicit", false)) {
           transPFactory = rcp(new TransPFactory());
           rapFact->SetFactory("R", transPFactory);
-          coarseLevel.Request("R",transPFactory.get());
-          transPFactory->Build(fineLevel,coarseLevel);
         }
 
-        coarseLevel.Request(*rapFact);
-        coarseLevel.Request("A",rapFact.get());
-        rapFact->Build(fineLevel,coarseLevel);
-
+        coarseLevel.Request("A", rapFact.get());
         A22_ = coarseLevel.Get< RCP<Matrix> >("A", rapFact.get());
       }
 
@@ -447,6 +438,7 @@ namespace MueLu {
     // The nodal prolongator P maps aggregates to nodes.
 
     const SC SC_ZERO = Teuchos::ScalarTraits<SC>::zero();
+    const SC SC_ONE = Teuchos::ScalarTraits<SC>::one();
     size_t dim = Nullspace_->getNumVectors();
     size_t numLocalRows = SM_Matrix_->getNodeNumRows();
 
@@ -474,7 +466,7 @@ namespace MueLu {
 
       LocalOrdinal NSdim = 1;
       RCP<MultiVector> nullSpace = MultiVectorFactory::Build(A_nodal_Matrix_->getRowMap(),NSdim);
-      nullSpace->putScalar(1.0);
+      nullSpace->putScalar(SC_ONE);
       fineLevel.Set("Nullspace",nullSpace);
 
       RCP<AmalgamationFactory> amalgFact = rcp(new AmalgamationFactory());
@@ -499,9 +491,7 @@ namespace MueLu {
       Tfact->SetFactory("CoarseMap", coarseMapFact);
 
       coarseLevel.Request("P",TentativePFact.get());
-      coarseLevel.Request(*TentativePFact);
       coarseLevel.Request("Coordinates",Tfact.get());
-      TentativePFact->Build(fineLevel,coarseLevel);
 
       coarseLevel.Get("P",P_nodal,TentativePFact.get());
       coarseLevel.Get("Coordinates",CoordsH_,Tfact.get());
