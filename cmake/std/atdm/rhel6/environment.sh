@@ -14,6 +14,7 @@ export ATDM_CONFIG_BUILD_COUNT=32
 module purge
 module load sems-env
 module load sems-cmake/3.5.2
+module load sems-git/2.10.1
 
 #module load ninja/1.7.2
 
