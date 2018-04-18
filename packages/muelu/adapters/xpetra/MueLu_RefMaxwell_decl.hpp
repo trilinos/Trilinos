@@ -80,7 +80,7 @@
 namespace MueLu {
 
   /*!
-    @brief Preconditioner (wrapped as a Tpetra::Operator) for Maxwell's equations in curl-curl form.
+    @brief Preconditioner (wrapped as a Xpetra::Operator) for Maxwell's equations in curl-curl form.
 
     This uses a 2x2 block reformulation.
 
@@ -88,6 +88,17 @@ namespace MueLu {
     P. Bochev, J. Hu, C. Siefert, and R. Tuminaro. "An algebraic multigrid approach based on
     a compatible gauge reformulation of Maxwell's equations." SIAM Journal on Scientific
     Computing, 31(1), 557-583.
+
+    Parameter list options:
+    - <tt>refmaxwell: mode</tt> - a <tt>string</tt> specifying the order of solve of the block system.
+                                  Allowed values are: "additive" (default), "121", "212"
+    - <tt>refmaxwell: disable addon</tt> - <tt>bool</tt> specifing whether the addon should be built for stabilization.
+                                           Default: "true"
+    - <tt>refmaxwell: dump matrices</tt> - <tt>bool</tt> specifing whether the matrices should be dumped.
+                                           Default: "false"
+    - <tt>refmaxwell: prolongator compute algorithm</tt> - a <tt>string</tt> specifying the algorithm to build the prolongator.
+                                                           Allowed values are: "mat-mat" and "gustavson"
+    - <tt>refmaxwell: 11list</tt> and <tt>refmaxwell: 22list</tt> - parameter list for the multigrid hierarchies on 11 and 22 blocks
 
     @ingroup MueLuAdapters
   */
@@ -129,8 +140,8 @@ namespace MueLu {
      * \param[in] M0inv_Matrix Inverse of lumped nodal mass matrix (add on only)
      * \param[in] M1_Matrix Edge mass matrix for the
      * \param[in] Nullspace Null space (needed for periodic)
-     * \param[in] coords Nodal coordinates
-     * \param[in] precList Parameter list
+     * \param[in] Coords Nodal coordinates
+     * \param[in] List Parameter list
      * \param[in] ComputePrec If true, compute the preconditioner immediately
      */
     RefMaxwell(const Teuchos::RCP<Matrix> & SM_Matrix,
@@ -157,8 +168,8 @@ namespace MueLu {
      * \param[in] M0inv_Matrix Inverse of lumped nodal mass matrix (add on only)
      * \param[in] M1_Matrix Edge mass matrix for the
      * \param[in] Nullspace Null space (needed for periodic)
-     * \param[in] coords Nodal coordinates
-     * \param[in] precList Parameter list
+     * \param[in] Coords Nodal coordinates
+     * \param[in] List Parameter list
      */
     RefMaxwell(const Teuchos::RCP<Matrix> & D0_Matrix,
                const Teuchos::RCP<Matrix> & M0inv_Matrix,
@@ -176,8 +187,8 @@ namespace MueLu {
      * \param[in] D0_Matrix Discrete Gradient
      * \param[in] M1_Matrix Edge mass matrix for the
      * \param[in] Nullspace Null space (needed for periodic)
-     * \param[in] coords Nodal coordinates
-     * \param[in] precList Parameter list
+     * \param[in] Coords Nodal coordinates
+     * \param[in] List Parameter list
      * \param[in] ComputePrec If true, compute the preconditioner immediately
      */
     RefMaxwell(const Teuchos::RCP<Matrix> & SM_Matrix,
@@ -202,8 +213,8 @@ namespace MueLu {
      * \param[in] D0_Matrix Discrete Gradient
      * \param[in] M1_Matrix Edge mass matrix for the
      * \param[in] Nullspace Null space (needed for periodic)
-     * \param[in] coords Nodal coordinates
-     * \param[in] precList Parameter list
+     * \param[in] Coords Nodal coordinates
+     * \param[in] List Parameter list
      */
     RefMaxwell(const Teuchos::RCP<Matrix> & D0_Matrix,
                const Teuchos::RCP<Matrix> & M1_Matrix,
@@ -217,7 +228,7 @@ namespace MueLu {
     /** Constructor with parameter list
      *
      * \param[in] SM_Matrix Jacobian
-     * \param[in] precList Parameter list
+     * \param[in] List Parameter list
      * \param[in] ComputePrec If true, compute the preconditioner immediately
      */
     RefMaxwell(const Teuchos::RCP<Matrix> & SM_Matrix,
@@ -309,8 +320,8 @@ namespace MueLu {
      * \param[in] M0inv_Matrix Inverse of lumped nodal mass matrix (add on only)
      * \param[in] M1_Matrix Edge mass matrix
      * \param[in] Nullspace Null space (needed for periodic)
-     * \param[in] coords Nodal coordinates
-     * \param[in] precList Parameter list
+     * \param[in] Coords Nodal coordinates
+     * \param[in] List Parameter list
      */
     void initialize(const Teuchos::RCP<Matrix> & D0_Matrix,
                     const Teuchos::RCP<Matrix> & M0inv_Matrix,
@@ -326,8 +337,6 @@ namespace MueLu {
     Teuchos::RCP<Ifpack2::Preconditioner<Scalar,LocalOrdinal,GlobalOrdinal,Node> > hiptmairPreSmoother_, hiptmairPostSmoother_;
 #endif
     bool useHiptmairSmoothing_;
-    //! Top Level
-    Teuchos::RCP<Level> TopLevel_;
     //! Various matrices
     Teuchos::RCP<Matrix> SM_Matrix_, D0_Matrix_, M0inv_Matrix_, M1_Matrix_, Ms_Matrix_;
     Teuchos::RCP<Matrix> A_nodal_Matrix_, P11_, AH_, A22_;
