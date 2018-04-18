@@ -339,8 +339,8 @@ namespace MueLu {
 #endif
     bool useHiptmairSmoothing_;
     //! Various matrices
-    Teuchos::RCP<Matrix> SM_Matrix_, D0_Matrix_, M0inv_Matrix_, M1_Matrix_, Ms_Matrix_;
-    Teuchos::RCP<Matrix> A_nodal_Matrix_, P11_, AH_, A22_;
+    Teuchos::RCP<Matrix> SM_Matrix_, D0_Matrix_, D0_T_Matrix_, M0inv_Matrix_, M1_Matrix_, Ms_Matrix_;
+    Teuchos::RCP<Matrix> A_nodal_Matrix_, P11_, R11_, AH_, A22_;
     //! Vectors for BCs
 #ifdef HAVE_MUELU_KOKKOS_REFACTOR
     Kokkos::View<const bool*, typename Node::device_type> BCrows_;

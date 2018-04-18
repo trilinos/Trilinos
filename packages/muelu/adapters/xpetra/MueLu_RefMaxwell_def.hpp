@@ -222,6 +222,12 @@ namespace MueLu {
       RCP<Teuchos::TimeMonitor> tm = rcp(new Teuchos::TimeMonitor(*Teuchos::TimeMonitor::getNewTimer("MueLu RefMaxwell: Build special prolongator")));
       buildProlongator();
       tm = Teuchos::null;
+
+#ifdef HAVE_MUELU_KOKKOS_REFACTOR
+      R11_ = Utilities_kokkos::Transpose(*P11_);
+#else
+      R11_ = Utilities::Transpose(*P11_);
+#endif
     }
 
     // Use HierarchyManagers to build 11 & 22 Hierarchies
@@ -287,19 +293,19 @@ namespace MueLu {
 
         RCP<RAPFactory> rapFact = rcp(new RAPFactory());
         Teuchos::ParameterList rapList = *(rapFact->GetValidParameterList());
-        rapList.set("transpose: use implicit", parameterList_.get<bool>("transpose: use implicit", false));
+        rapList.set("transpose: use implicit", false);
         rapList.set("rap: fix zero diagonals", parameterList_.get<bool>("rap: fix zero diagonals", false));
         rapList.set("rap: triple product", parameterList_.get<bool>("rap: triple product", false));
         rapFact->SetParameterList(rapList);
 
         RCP<TransPFactory> transPFactory;
-        if (!parameterList_.get<bool>("transpose: use implicit", false)) {
-          transPFactory = rcp(new TransPFactory());
-          rapFact->SetFactory("R", transPFactory);
-        }
+        transPFactory = rcp(new TransPFactory());
+        rapFact->SetFactory("R", transPFactory);
 
+        coarseLevel.Request("R", transPFactory.get());
         coarseLevel.Request("A", rapFact.get());
         A22_ = coarseLevel.Get< RCP<Matrix> >("A", rapFact.get());
+        D0_T_Matrix_ = coarseLevel.Get< RCP<Matrix> >("R", transPFactory.get());
       }
 
       RCP<Teuchos::TimeMonitor> tm = rcp(new Teuchos::TimeMonitor(*Teuchos::TimeMonitor::getNewTimer("MueLu RefMaxwell: Build (2,2) hierarchy")));
@@ -902,7 +908,7 @@ namespace MueLu {
       // construct (M1 + D1* M2 D1) P11
       Xpetra::MatrixMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Multiply(*SM_Matrix_,false,*P11_,false,*C,true,true);
       // construct P11* (M1 + D1* M2 D1) P11
-      Xpetra::MatrixMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Multiply(*P11_,true,*C,false,*Matrix1,true,true);
+      Xpetra::MatrixMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Multiply(*R11_,false,*C,false,*Matrix1,true,true);
     } else {
       Xpetra::TripleMatrixMultiply<Scalar,LocalOrdinal,GlobalOrdinal,Node>::
         MultiplyRAP(*P11_, true, *SM_Matrix_, false, *P11_, false, *Matrix1, true, true);
@@ -982,8 +988,8 @@ namespace MueLu {
     Scalar one = Teuchos::ScalarTraits<Scalar>::one(), negone = -one, zero = Teuchos::ScalarTraits<Scalar>::zero();
     SM_Matrix_->apply(X, *residual_, Teuchos::NO_TRANS, one, zero);
     residual_->update(one, RHS, negone);
-    P11_->apply(*residual_,*P11res_,Teuchos::TRANS);
-    D0_Matrix_->apply(*residual_,*D0res_,Teuchos::TRANS);
+    R11_->apply(*residual_,*P11res_,Teuchos::NO_TRANS);
+    D0_T_Matrix_->apply(*residual_,*D0res_,Teuchos::NO_TRANS);
 
     // block diagonal preconditioner on 2x2 (V-cycle for diagonal blocks)
     HierarchyH_->Iterate(*P11res_, *P11x_, 1, true);
@@ -1004,7 +1010,7 @@ namespace MueLu {
     Scalar one = Teuchos::ScalarTraits<Scalar>::one(), negone = -one, zero = Teuchos::ScalarTraits<Scalar>::zero();
     SM_Matrix_->apply(X, *residual_, Teuchos::NO_TRANS, one, zero);
     residual_->update(one, RHS, negone);
-    P11_->apply(*residual_,*P11res_,Teuchos::TRANS);
+    R11_->apply(*residual_,*P11res_,Teuchos::NO_TRANS);
     HierarchyH_->Iterate(*P11res_, *P11x_, 1, true);
     P11_->apply(*P11x_,*residual_,Teuchos::NO_TRANS);
     X.update(one, *residual_, one);
@@ -1012,7 +1018,7 @@ namespace MueLu {
     // precondition (2,2)-block
     SM_Matrix_->apply(X, *residual_, Teuchos::NO_TRANS, one, zero);
     residual_->update(one, RHS, negone);
-    D0_Matrix_->apply(*residual_,*D0res_,Teuchos::TRANS);
+    D0_T_Matrix_->apply(*residual_,*D0res_,Teuchos::NO_TRANS);
     Hierarchy22_->Iterate(*D0res_,  *D0x_,  1, true);
     D0_Matrix_->apply(*D0x_,*residual_,Teuchos::NO_TRANS);
     X.update(one, *residual_, one);
@@ -1020,7 +1026,7 @@ namespace MueLu {
     // precondition (1,1)-block
     SM_Matrix_->apply(X, *residual_, Teuchos::NO_TRANS, one, zero);
     residual_->update(one, RHS, negone);
-    P11_->apply(*residual_,*P11res_,Teuchos::TRANS);
+    R11_->apply(*residual_,*P11res_,Teuchos::NO_TRANS);
     HierarchyH_->Iterate(*P11res_, *P11x_, 1, true);
     P11_->apply(*P11x_,*residual_,Teuchos::NO_TRANS);
     X.update(one, *residual_, one);
@@ -1035,7 +1041,7 @@ namespace MueLu {
     Scalar one = Teuchos::ScalarTraits<Scalar>::one(), negone = -one, zero = Teuchos::ScalarTraits<Scalar>::zero();
     SM_Matrix_->apply(X, *residual_, Teuchos::NO_TRANS, one, zero);
     residual_->update(one, RHS, negone);
-    D0_Matrix_->apply(*residual_,*D0res_,Teuchos::TRANS);
+    D0_T_Matrix_->apply(*residual_,*D0res_,Teuchos::NO_TRANS);
     Hierarchy22_->Iterate(*D0res_,  *D0x_,  1, true);
     D0_Matrix_->apply(*D0x_,*residual_,Teuchos::NO_TRANS);
     X.update(one, *residual_, one);
@@ -1043,7 +1049,7 @@ namespace MueLu {
     // precondition (1,1)-block
     SM_Matrix_->apply(X, *residual_, Teuchos::NO_TRANS, one, zero);
     residual_->update(one, RHS, negone);
-    P11_->apply(*residual_,*P11res_,Teuchos::TRANS);
+    R11_->apply(*residual_,*P11res_,Teuchos::NO_TRANS);
     HierarchyH_->Iterate(*P11res_, *P11x_, 1, true);
     P11_->apply(*P11x_,*residual_,Teuchos::NO_TRANS);
     X.update(one, *residual_, one);
@@ -1051,7 +1057,7 @@ namespace MueLu {
     // precondition (2,2)-block
     SM_Matrix_->apply(X, *residual_, Teuchos::NO_TRANS, one, zero);
     residual_->update(one, RHS, negone);
-    D0_Matrix_->apply(*residual_,*D0res_,Teuchos::TRANS);
+    D0_T_Matrix_->apply(*residual_,*D0res_,Teuchos::NO_TRANS);
     Hierarchy22_->Iterate(*D0res_,  *D0x_,  1, true);
     D0_Matrix_->apply(*D0x_,*residual_,Teuchos::NO_TRANS);
     X.update(one, *residual_, one);
@@ -1065,7 +1071,7 @@ namespace MueLu {
     Scalar one = Teuchos::ScalarTraits<Scalar>::one(), negone = -one, zero = Teuchos::ScalarTraits<Scalar>::zero();
     SM_Matrix_->apply(X, *residual_, Teuchos::NO_TRANS, one, zero);
     residual_->update(one, RHS, negone);
-    P11_->apply(*residual_,*P11res_,Teuchos::TRANS);
+    R11_->apply(*residual_,*P11res_,Teuchos::NO_TRANS);
 
     // block diagonal preconditioner on 2x2 (V-cycle for diagonal blocks)
     HierarchyH_->Iterate(*P11res_, *P11x_, 1, true);
