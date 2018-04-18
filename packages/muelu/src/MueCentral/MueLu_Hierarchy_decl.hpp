@@ -343,10 +343,6 @@ namespace MueLu {
     void AllocateLevelMultiVectors(int numvecs);
     void DeleteLevelMultiVectors();
 
-    const RCP<const FactoryManagerBase>& GetOpenLevelManager(const int levelID) const {
-      return levelManagers_[levelID];
-    }
-
   protected:
     const RCP<const FactoryManagerBase>& GetLevelManager(const int levelID) const {
       return levelManagers_[levelID];
