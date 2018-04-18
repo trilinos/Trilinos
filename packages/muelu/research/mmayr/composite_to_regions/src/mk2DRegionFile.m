@@ -239,6 +239,26 @@ elseif(strcmp(filename, 'caseNineteen') == true)  % caseNineteen
   pxProcChange         = [16 31 46];
   pyProcChange         = [16 31 46];
   
+elseif(strcmp(filename, 'caseTwenty') == true)  % caseTwenty
+
+%px:0   0   0   0   1   1   1
+%px:            1                
+%   |- rx=0     <-rx=1      |   py  py
+%   |           |           |
+%   0   1   2   3   4   5   6   0   0
+%   7   8   9  10  11  12  13  
+%  14  15  16  17  18  19  20   2   0   1
+%--21--22--23--24--25--26--27<   1
+%  28  29  30  31  32  33  34   1
+%  35  36  37  38  39  40  41
+%  42  43  44  45  46  47  48
+
+  whichCase = 'MultipleRegionsPerProc';
+  rxInterfaceLocations = [9 18];   
+  ryInterfaceLocations = [9 18];   
+  pxProcChange         = [10];
+  pyProcChange         = [10];
+
 end
 
 nrx = length(rxInterfaceLocations);
