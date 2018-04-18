@@ -47,8 +47,8 @@
     \brief Defines the IdentifierModel interface.
 */
 
-#ifndef _ZOLTAN2_IDENTIFIERMODEL_HPP_
-#define _ZOLTAN2_IDENTIFIERMODEL_HPP_
+#ifndef _ZOLTAN2_KOKKOSIDENTIFIERMODEL_HPP_
+#define _ZOLTAN2_KOKKOSIDENTIFIERMODEL_HPP_
 
 #include <Zoltan2_Adapter.hpp>
 #include <Zoltan2_Model.hpp>

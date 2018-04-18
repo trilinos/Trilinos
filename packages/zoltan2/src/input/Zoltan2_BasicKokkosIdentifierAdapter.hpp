@@ -113,25 +113,25 @@ public:
   // The Adapter interface.
   ////////////////////////////////////////////////////////////////
 
-  size_t getLocalNumIDs() const { return _ids.dimension(0); }
+  size_t getLocalNumIDs() const { return idsView_.dimension(0); }
 
-  void getIDsKokkosView(Kokkos::View<gno_t *> &ids) const override {ids = _ids;}
+  void getIDsKokkosView(Kokkos::View<gno_t *> &ids) const override {ids = idsView_;}
 
-  int getNumWeightsPerID() const { return _weights.dimension(1); }
+  int getNumWeightsPerID() const { return weightsView_.dimension(1); }
 
   void getWeightsKokkosView(Kokkos::View<scalar_t *> &wgt, int idx = 0) const {
-    if (idx < 0 || scalar_t(idx) >= _weights.extent(0)) {
+    if (idx < 0 || scalar_t(idx) >= weightsView_.extent(0)) {
       std::ostringstream emsg;
       emsg << __FILE__ << ":" << __LINE__
            << "  Invalid weight index " << idx << std::endl;
       throw std::runtime_error(emsg.str());
     }
-    wgt = Kokkos::subview(_weights, ALL, idx);
+    wgt = Kokkos::subview(weightsView_, ALL, idx);
   }
 
 private:
-  Kokkos::View<gno_t *> _ids;
-  Kokkos::View<scalar_t **, weight_layout_t> _weights;
+  Kokkos::View<gno_t *> idsView_;
+  Kokkos::View<scalar_t **, weight_layout_t> weightsView_;
 };
 
 ////////////////////////////////////////////////////////////////
@@ -142,7 +142,7 @@ template <typename User>
   BasicKokkosIdentifierAdapter<User>::BasicKokkosIdentifierAdapter(
     Kokkos::View<gno_t*> &ids,
     Kokkos::View<scalar_t**, weight_layout_t> &weights):
-      _ids(ids), _weights(weights) {
+      idsView_(ids), weightsView_(weights) {
 }
   
 } //namespace Zoltan2
