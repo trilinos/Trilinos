@@ -214,7 +214,7 @@ namespace Tpetra {
     if(first) {
 	first = false;
 	Teuchos::RCP<Teuchos::FancyOStream>  cerrptr = Teuchos::getFancyOStream (Teuchos::rcpFromRef (std::cerr)) ;
-	cerrptr->setTabIndentStr(std::string("S"));
+	cerrptr->setTabIndentStr(std::string("T"));
 	Teuchos::FancyOStream& fancyCERR = *cerrptr;
 	
 	fancyCERR<<std::flush;

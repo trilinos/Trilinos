@@ -295,8 +295,10 @@ void Epetra_Import::Construct( const Epetra_BlockMap &  targetMap, const Epetra_
 {
     static bool first = true;
     if(first) {
-	targetMap.Print(std::cerr);
+	std::cerr<<" SourceMap"<<std::endl;
 	sourceMap.Print(std::cerr);
+	std::cerr<<" TargetMap"<<std::endl;
+	targetMap.Print(std::cerr);
 	first = false;
     }
 
