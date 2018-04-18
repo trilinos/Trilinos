@@ -120,17 +120,22 @@ namespace MueLu {
   DeclareInput(Level& currentLevel) const {
     Input(currentLevel, "Graph");
 
-    // Request the global number of nodes per dimensions
-    if(currentLevel.GetLevelID() == 0) {
-      if(currentLevel.IsAvailable("gNodesPerDim", NoFactory::get())) {
-        currentLevel.DeclareInput("gNodesPerDim", NoFactory::get(), this);
+    ParameterList pL = GetParameterList();
+    std::string coupling = pL.get<std::string>("aggregation: coupling");
+    const bool coupled = (coupling == "coupled" ? true : false);
+    if(coupled) {
+      // Request the global number of nodes per dimensions
+      if(currentLevel.GetLevelID() == 0) {
+        if(currentLevel.IsAvailable("gNodesPerDim", NoFactory::get())) {
+          currentLevel.DeclareInput("gNodesPerDim", NoFactory::get(), this);
+        } else {
+          TEUCHOS_TEST_FOR_EXCEPTION(currentLevel.IsAvailable("gNodesPerDim", NoFactory::get()),
+                                     Exceptions::RuntimeError,
+                                     "gNodesPerDim was not provided by the user on level0!");
+        }
       } else {
-        TEUCHOS_TEST_FOR_EXCEPTION(currentLevel.IsAvailable("gNodesPerDim", NoFactory::get()),
-                                   Exceptions::RuntimeError,
-                                   "gNodesPerDim was not provided by the user on level0!");
+        Input(currentLevel, "gNodesPerDim");
       }
-    } else {
-      Input(currentLevel, "gNodesPerDim");
     }
 
     // Request the local number of nodes per dimensions
@@ -145,8 +150,6 @@ namespace MueLu {
     } else {
       Input(currentLevel, "lNodesPerDim");
     }
-
-    const ParameterList& pL = GetParameterList();
 
     // request special data necessary for OnePtAggregationAlgorithm
     std::string mapOnePtName = pL.get<std::string>("OnePt aggregate map name");
@@ -197,11 +200,15 @@ namespace MueLu {
     Array<LO> lFineNodesPerDir(3);
     if(currentLevel.GetLevelID() == 0) {
       // On level 0, data is provided by applications and has no associated factory.
-      gFineNodesPerDir = currentLevel.Get<Array<GO> >("gNodesPerDim", NoFactory::get());
+      if(coupled) {
+        gFineNodesPerDir = currentLevel.Get<Array<GO> >("gNodesPerDim", NoFactory::get());
+      }
       lFineNodesPerDir = currentLevel.Get<Array<LO> >("lNodesPerDim", NoFactory::get());
     } else {
       // On level > 0, data is provided directly by generating factories.
-      gFineNodesPerDir = Get<Array<GO> >(currentLevel, "gNodesPerDim");
+      if(coupled) {
+        gFineNodesPerDir = Get<Array<GO> >(currentLevel, "gNodesPerDim");
+      }
       lFineNodesPerDir = Get<Array<LO> >(currentLevel, "lNodesPerDim");
     }
 

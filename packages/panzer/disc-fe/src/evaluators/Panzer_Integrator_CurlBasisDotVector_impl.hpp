@@ -792,7 +792,6 @@ namespace panzer
     RCP<ParameterList> p = rcp(new ParameterList);
     p->set<string>("Residual Name", "?");
     p->set<string>("Value Name", "?");
-    p->set<string>("Test Field Name", "?");
     RCP<BasisIRLayout> basis;
     p->set("Basis", basis);
     RCP<IntegrationRule> ir;

@@ -322,6 +322,7 @@ namespace MueLu {
     //  - we use "distance laplacian" dropping on some level, or
     //  - we use repartitioning on some level
     //  - we use brick aggregation
+    //  - we use Ifpack2 line partitioner
     // This is not ideal, as we may have "repartition: enable" turned on by default
     // and not present in the list, but it is better than nothing.
     useCoordinates_ = false;
@@ -330,7 +331,12 @@ namespace MueLu {
         MUELU_TEST_PARAM_2LIST(paramList, paramList, "aggregation: type",        std::string, "brick") ||
         MUELU_TEST_PARAM_2LIST(paramList, paramList, "aggregation: export visualization data", bool, true)) {
       useCoordinates_ = true;
-
+    } else if(paramList.isSublist("smoother: params")) {
+      const auto smooParamList = paramList.sublist("smoother: params");
+      if(smooParamList.isParameter("partitioner: type") &&
+         (smooParamList.get<std::string>("partitioner: type") == "line")) {
+        useCoordinates_ = true;
+      }
     } else {
       for (int levelID = 0; levelID < this->numDesiredLevel_; levelID++) {
         std::string levelStr = "level " + toString(levelID);

@@ -48,7 +48,7 @@
 #define MUELU_AMGXOPERATOR_DEF_HPP
 
 
-#if defined (HAVE_MUELU_EXPERIMENTAL) and defined (HAVE_MUELU_AMGX)
+#if defined (HAVE_MUELU_AMGX)
 #include "MueLu_AMGXOperator_decl.hpp"
 
 namespace MueLu {
@@ -136,6 +136,6 @@ namespace MueLu {
   }
 
 } // namespace
-#endif //ifdef HAVE_MUELU_EXPERIMENTAL and defined(HAVE_MUELU_AMGX)
+#endif //if defined(HAVE_MUELU_AMGX)
 
 #endif //ifdef MUELU_AMGXOPERATOR_DEF_HPP

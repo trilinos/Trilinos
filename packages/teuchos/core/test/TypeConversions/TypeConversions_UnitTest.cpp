@@ -73,10 +73,8 @@ typedef unsigned short unsigned_short_type;
 typedef unsigned int unsigned_int_type;
 typedef unsigned long unsigned_long_type;
 
-#ifdef HAVE_TEUCHOS_LONG_LONG_INT
 typedef long long long_long_type;
 typedef unsigned long long unsigned_long_long_type;
-#endif // HAVE_TEUCHOS_LONG_LONG_INT
 
 
 template <class T>
@@ -638,18 +636,14 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( asSafe, realToSignedIntTypeOverflow, doubl
 TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( asSafe, realToSignedIntTypeOverflow, double, int )
 TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( asSafe, realToSignedIntTypeOverflow, double, long )
 
-#ifdef HAVE_TEUCHOS_LONG_LONG_INT
 TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( asSafe, realToSignedIntTypeOverflow, double, long_long_type )
-#endif // HAVE_TEUCHOS_LONG_LONG_INT
 
 TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( asSafe, realToSignedIntTypeOverflow, double, unsigned_short_type )
 TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( asSafe, realToUnsignedIntTypeOverflow, double, unsigned_int_type )
 // mfh 16,19 Nov 2012: See note above on formerly disabled tests.
 TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( asSafe, realToUnsignedIntTypeOverflow, double, unsigned_long_type )
 
-#ifdef HAVE_TEUCHOS_LONG_LONG_INT
 TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( asSafe, realToUnsignedIntTypeOverflow, double, unsigned_long_long_type )
-#endif // HAVE_TEUCHOS_LONG_LONG_INT
 
 //
 // Instantiations of templated tests for conversions from float to
@@ -660,9 +654,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( asSafe, realToSignedIntTypeOverflow, float
 TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( asSafe, realToSignedIntTypeOverflow, float, int )
 TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( asSafe, realToSignedIntTypeOverflow, float, long )
 
-#ifdef HAVE_TEUCHOS_LONG_LONG_INT
 TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( asSafe, realToSignedIntTypeOverflow, float, long_long_type )
-#endif // HAVE_TEUCHOS_LONG_LONG_INT
 
 TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( asSafe, realToSignedIntTypeOverflow, float, unsigned_short_type )
 // mfh 16,19 Nov 2012: See note above on formerly disabled tests.
@@ -670,9 +662,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( asSafe, realToUnsignedIntTypeOverflow, flo
 // mfh 16,19 Nov 2012: See note above on formerly disabled tests.
 TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( asSafe, realToUnsignedIntTypeOverflow, float, unsigned_long_type )
 
-#ifdef HAVE_TEUCHOS_LONG_LONG_INT
 TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( asSafe, realToUnsignedIntTypeOverflow, float, unsigned_long_long_type )
-#endif // HAVE_TEUCHOS_LONG_LONG_INT
 
 
 //
@@ -840,7 +830,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( as, positiveFirstIntToSecondInt, unsigned_
 TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( as, positiveFirstIntToSecondInt, long, unsigned_int_type )
 TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( as, positiveFirstIntToSecondInt, unsigned_long_type, unsigned_int_type )
 
-#ifdef HAVE_TEUCHOS_LONG_LONG_INT
 //
 // 3. "long long", "unsigned long long" tests
 //
@@ -882,7 +871,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( as, positiveFirstIntToSecondInt, long_long
 TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( as, positiveFirstIntToSecondInt, unsigned_long_long_type, unsigned_short_type )
 TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( as, positiveFirstIntToSecondInt, long_long_type, unsigned_short_type )
 TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( as, positiveFirstIntToSecondInt, unsigned_long_long_type, short )
-#endif // HAVE_TEUCHOS_LONG_LONG_INT
 
 //
 // Instantiations of templated tests for conversions from signed to
@@ -894,9 +882,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( asSafe, negativeSignedIntToUnsignedInt, sh
 TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( asSafe, negativeSignedIntToUnsignedInt, int, unsigned_int_type )
 TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( asSafe, negativeSignedIntToUnsignedInt, long, unsigned_long_type )
 
-#ifdef HAVE_TEUCHOS_LONG_LONG_INT
 TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( asSafe, negativeSignedIntToUnsignedInt, long_long_type, unsigned_long_long_type )
-#endif // HAVE_TEUCHOS_LONG_LONG_INT
 
 //
 // Instantiations of templated tests for conversions between two
@@ -914,7 +900,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( as, negativeSignedIntToSignedInt, long, sh
 TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( as, negativeSignedIntToSignedInt, long, int )
 TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( as, negativeSignedIntToSignedInt, long, long )
 
-#ifdef HAVE_TEUCHOS_LONG_LONG_INT
 TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( as, negativeSignedIntToSignedInt, short, long_long_type )
 TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( as, negativeSignedIntToSignedInt, int, long_long_type )
 TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( as, negativeSignedIntToSignedInt, long, long_long_type )
@@ -922,7 +907,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( as, negativeSignedIntToSignedInt, long_lon
 TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( as, negativeSignedIntToSignedInt, long_long_type, int )
 TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( as, negativeSignedIntToSignedInt, long_long_type, long )
 TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( as, negativeSignedIntToSignedInt, long_long_type, long_long_type )
-#endif // HAVE_TEUCHOS_LONG_LONG_INT
 
 //
 // Tests for conversions from std::string to built-in integer types.
@@ -1066,14 +1050,12 @@ UNIT_TEST_GROUP_ANY_INTEGER( unsigned_int_type )
 //UNIT_TEST_GROUP_ANY_INTEGER( unsigned long )
 UNIT_TEST_GROUP_ANY_INTEGER( unsigned_long_type )
 
-#ifdef HAVE_TEUCHOS_LONG_LONG_INT
 //UNIT_TEST_GROUP_ANY_INTEGER( long long )
 UNIT_TEST_GROUP_ANY_INTEGER( long_long_type )
 //UNIT_TEST_GROUP_SIGNED_INTEGER( long long )
 UNIT_TEST_GROUP_SIGNED_INTEGER( long_long_type )
 //UNIT_TEST_GROUP_ANY_INTEGER( unsigned long long )
 UNIT_TEST_GROUP_ANY_INTEGER( unsigned_long_long_type )
-#endif // HAVE_TEUCHOS_LONG_LONG_INT
 
 } // namespace (anonymous)
 

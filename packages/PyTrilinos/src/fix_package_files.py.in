@@ -1,0 +1,53 @@
+#! ${PYTHON_EXECUTABLE}
+# -*- python -*-
+
+import glob
+import os
+import sys
+
+# Check the command line arguments
+if len(sys.argv) >= 2:
+    package = sys.argv[1]
+else:
+    sys.exit("usage: %s package_name" % sys.argv[0])
+
+# Check for PyTrilinos package
+PyTrilinos = "PyTrilinos"
+if not os.path.isdir(PyTrilinos):
+    sys.exit("'%s' directory not found" % PyTrilinos)
+
+# Check for module
+module_name = os.path.join(PyTrilinos, package)
+if not os.path.isdir(module_name):
+    sys.exit("'%s' directory not found" % module_name)
+
+# Rename the generated python name
+python_old = os.path.join(module_name, package+".py")
+python_new = os.path.join(module_name, "__init__.py")
+if os.path.isfile(python_old):
+    os.rename(python_old, python_new)
+elif not os.path.isfile(python_new):
+    sys.exit("Neither '%s' nor '%s' exist" % (python_old, python_new))
+
+# Find the generated compiled extension module
+compiled_old = glob.glob(os.path.join(module_name, "___init__.*"   ))
+compiled_new = glob.glob(os.path.join(module_name, "_"+package+".*"))
+if len(compiled_old) > 1:
+    msg = "Multiple '___init__.*' files found:\n"
+    for c in compiled_old:
+        msg += (c + "\n")
+    sys.exit(msg)
+if len(compiled_old) == 0:
+    if len(compiled_new) == 0:
+        sys.exit("No compiled extension module for '%s' found" % package)
+    else:
+        sys.exit()
+
+# Rename the generated compiled extension module
+compiled_old = compiled_old[0]
+ext = os.path.splitext(compiled_old)[1]
+compiled_new = os.path.join(module_name, "_"+package+ext)
+try:
+    os.rename(compiled_old, compiled_new)
+except Exception as e:
+    sys.exit(str(e))

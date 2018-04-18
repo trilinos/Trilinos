@@ -61,3 +61,23 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   NUM_MPI_PROCS 2
   STANDARD_PASS_OUTPUT
   )
+
+# I want this test to _build_ in either MPI or non-MPI ("serial"),
+# but I only want it to _run_ in an MPI build with exactly 1 MPI
+# process.
+TRIBITS_ADD_EXECUTABLE(
+  CrsGraph_PackUnpack
+  SOURCES
+    CrsGraph_PackUnpack.cpp
+    ${TEUCHOS_STD_UNIT_TEST_MAIN}
+  COMM serial mpi
+)
+
+TRIBITS_ADD_TEST(
+  CrsGraph_PackUnpack
+  NAME CrsGraph_PackUnpack_MPI_1
+  ARGS ""
+  COMM mpi
+  NUM_MPI_PROCS 1
+  STANDARD_PASS_OUTPUT
+)
