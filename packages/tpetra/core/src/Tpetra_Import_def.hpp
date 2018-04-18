@@ -183,6 +183,13 @@ namespace Tpetra {
       setupExport (remoteGIDs,useRemotePIDs,remotePIDs);
     }
 
+#ifdef HAVE_TPETRA_MMM_TIMINGS
+    using Teuchos::TimeMonitor;
+    if(!plist.is_null()) 
+      label = plist->get("Timer Label",label);
+    prefix = std::string("Tpetra ")+ label + std::string(":iport_ctor:postSetupExport: ");
+    MM = rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix)));
+#endif
     if (debug_) {
       std::ostringstream os;
       const int myRank = source->getComm ()->getRank ();
@@ -203,6 +210,21 @@ namespace Tpetra {
     debug_(tpetraImportDebugDefault)
   {
     Teuchos::Array<int> dummy;
+    static int first = true;
+    if(first) {
+	first = false;
+	Teuchos::RCP<Teuchos::FancyOStream>  cerrptr = Teuchos::getFancyOStream (Teuchos::rcpFromRef (std::cerr)) ;
+	cerrptr->setTabIndentStr(std::string("S"));
+	Teuchos::FancyOStream& fancyCERR = *cerrptr;
+	
+	fancyCERR<<std::flush;
+	source->describe(fancyCERR,Teuchos::VERB_EXTREME);
+	fancyCERR<<std::flush;
+	cerrptr->setTabIndentStr(std::string("S"));
+	target->describe(fancyCERR,Teuchos::VERB_EXTREME);
+	fancyCERR<<std::flush;
+    }
+
 
 #ifdef HAVE_TPETRA_MMM_TIMINGS
     Teuchos::RCP<Teuchos::ParameterList> mypars = rcp(new Teuchos::ParameterList);
@@ -1103,7 +1125,8 @@ namespace Tpetra {
   void Import<LocalOrdinal,GlobalOrdinal,Node>::
   setupExport(Teuchos::Array<GlobalOrdinal>& remoteGIDs,
               bool useRemotePIDs,
-              Teuchos::Array<int>& userRemotePIDs)
+              Teuchos::Array<int>& userRemotePIDs,
+	      const Teuchos::RCP<Teuchos::ParameterList>& plist )
   {
     using Teuchos::arcp;
     using Teuchos::Array;
@@ -1206,6 +1229,16 @@ namespace Tpetra {
          "\"remote\" process ranks are -1.  Please report this bug to the "
          "Tpetra developers.");
 
+#ifdef HAVE_TPETRA_MMM_TIMINGS
+    using Teuchos::TimeMonitor;
+    std::string label;
+    if(!plist.is_null()) 
+      label = plist->get("Timer Label",label);
+    std::string prefix = std::string("Tpetra ")+ label + std::string(":iport_ctor:setupExport:1 ");
+    auto MM = rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix)));
+#endif
+
+
       // If all of them are invalid, we can delete the whole array.
       const size_type totalNumRemote = getNumRemoteIDs ();
       if (numInvalidRemote == totalNumRemote) {
@@ -1247,7 +1280,14 @@ namespace Tpetra {
       // Revalidate the view after clear or resize.
       remoteGIDsView = remoteGIDs ();
     }
-
+#ifdef HAVE_TPETRA_MMM_TIMINGS
+    using Teuchos::TimeMonitor;
+    std::string label;
+    if(!plist.is_null()) 
+      label = plist->get("Timer Label",label);
+    std::string prefix = std::string("Tpetra ")+ label + std::string(":iport_ctor:setupExport:2 ");
+    auto MM = rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix)));
+#endif
     // Sort remoteProcIDs in ascending order, and apply the resulting
     // permutation to remoteGIDs and remoteLIDs_.  This ensures that
     // remoteProcIDs[i], remoteGIDs[i], and remoteLIDs_[i] all refer
@@ -1264,6 +1304,16 @@ namespace Tpetra {
     // exportGIDs and exportProcIDs_ are output arrays which are
     // allocated by createFromRecvs().
     Array<GO> exportGIDs;
+
+#ifdef HAVE_TPETRA_MMM_TIMINGS
+    using Teuchos::TimeMonitor;
+
+    if(!plist.is_null()) 
+      label = plist->get("Timer Label",label);
+     prefix = std::string("Tpetra ")+ label + std::string(":iport_ctor:setupExport:3 ");
+    MM = rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix)));
+#endif
+
     ImportData_->distributor_.createFromRecvs (remoteGIDsView ().getConst (),
                                                remoteProcIDs, exportGIDs,
                                                ImportData_->exportPIDs_);
@@ -1279,6 +1329,17 @@ namespace Tpetra {
     // calling process how to index into the source vector to get the
     // elements which it needs to send.
     //
+
+#ifdef HAVE_TPETRA_MMM_TIMINGS
+    using Teuchos::TimeMonitor;
+
+    if(!plist.is_null()) 
+      label = plist->get("Timer Label",label);
+     prefix = std::string("Tpetra ")+ label + std::string(":iport_ctor:setupExport:4 ");
+    MM = rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix)));
+#endif
+
+
     // NOTE (mfh 03 Mar 2014) This is now a candidate for a
     // thread-parallel kernel, but only if using the new thread-safe
     // Map implementation.

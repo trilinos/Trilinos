@@ -293,6 +293,13 @@ void Epetra_Import::Construct_Expert( const Epetra_BlockMap &  targetMap, const 
 template<typename int_type>
 void Epetra_Import::Construct( const Epetra_BlockMap &  targetMap, const Epetra_BlockMap & sourceMap, int NumRemotePIDs, const int * UserRemotePIDs)
 {
+    static bool first = true;
+    if(first) {
+	targetMap.Print(std::cerr);
+	sourceMap.Print(std::cerr);
+	first = false;
+    }
+
   int i,ierr;
   // Build three ID lists:
   // NumSameIDs - Number of IDs in TargetMap and SourceMap that are identical, up to the first
