@@ -149,12 +149,7 @@ TRIBITS_ADD_OPTION_AND_DEFINE(
 # ${PACKAGE_NAME}_ENABLE_COMPLEX_DOUBLE.  See Trilinos GitHub #362.
 
 set(TEUCHOS_LONG_LONG_DESC
-  "This option is DEPRECATED. Teuchos will ignore this option.\
-   Teuchos requires C++11, and long long comes with C++11,\
-   so you will always get long long.\
-   If you want to change the set of\
-   global ordinal types that Tpetra enables,\
-   set a Tpetra option, not a Teuchos option.")
+  "This option is DEPRECATED. Teuchos will ignore this option. Teuchos requires C++11, and long long comes with C++11, so you will always get long long. If you want to change the set of global ordinal types that Tpetra enables, set a Tpetra option, not a Teuchos option.")
 TRIBITS_ADD_OPTION_AND_DEFINE(
   ${PACKAGE_NAME}_ENABLE_LONG_LONG_INT
   HAVE_TEUCHOS_LONG_LONG_INT
