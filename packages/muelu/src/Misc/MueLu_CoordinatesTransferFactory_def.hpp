@@ -69,10 +69,11 @@ namespace MueLu {
     validParamList->set<RCP<const FactoryBase> >("Aggregates",                   Teuchos::null, "Factory for coordinates generation");
     validParamList->set<RCP<const FactoryBase> >("CoarseMap",                    Teuchos::null, "Generating factory of the coarse map");
     validParamList->set<bool>                   ("structured aggregation",       false, "Flag specifying that the geometric data is transferred for StructuredAggregationFactory");
+    validParamList->set<bool>                   ("aggregation coupled",          false, "Flag specifying if the aggregation algorithm was used in coupled mode.");
     validParamList->set<bool>                   ("Geometric",                    false, "Flag specifying that the coordinates are transferred for GeneralGeometricPFactory");
     validParamList->set<RCP<const FactoryBase> >("coarseCoordinates",            Teuchos::null, "Factory for coarse coordinates generation");
-    validParamList->set<RCP<const FactoryBase> >("gCoarseNodesPerDim",            Teuchos::null, "Factory providing the global number of nodes per spatial dimensions of the mesh");
-    validParamList->set<RCP<const FactoryBase> >("lCoarseNodesPerDim",            Teuchos::null, "Factory providing the local number of nodes per spatial dimensions of the mesh");
+    validParamList->set<RCP<const FactoryBase> >("gCoarseNodesPerDim",           Teuchos::null, "Factory providing the global number of nodes per spatial dimensions of the mesh");
+    validParamList->set<RCP<const FactoryBase> >("lCoarseNodesPerDim",           Teuchos::null, "Factory providing the local number of nodes per spatial dimensions of the mesh");
     validParamList->set<int>                    ("write start",                  -1, "first level at which coordinates should be written to file");
     validParamList->set<int>                    ("write end",                    -1, "last level at which coordinates should be written to file");
 
@@ -85,7 +86,9 @@ namespace MueLu {
 
     const ParameterList& pL = GetParameterList();
     if(pL.get<bool>("structured aggregation") == true) {
-      Input(fineLevel, "gCoarseNodesPerDim");
+      if(pL.get<bool>("aggregation coupled") == true) {
+        Input(fineLevel, "gCoarseNodesPerDim");
+      }
       Input(fineLevel, "lCoarseNodesPerDim");
     } else if(pL.get<bool>("Geometric") == true) {
       Input(coarseLevel, "coarseCoordinates");
@@ -118,9 +121,11 @@ namespace MueLu {
 
     const ParameterList& pL = GetParameterList();
     if(pL.get<bool>("structured aggregation") == true) {
-      gCoarseNodesPerDir = Get<Array<GO> >(fineLevel, "gCoarseNodesPerDim");
+      if(pL.get<bool>("aggregation coupled") == true) {
+        gCoarseNodesPerDir = Get<Array<GO> >(fineLevel, "gCoarseNodesPerDim");
+        Set<Array<GO> >(coarseLevel, "gNodesPerDim", gCoarseNodesPerDir);
+      }
       lCoarseNodesPerDir = Get<Array<LO> >(fineLevel, "lCoarseNodesPerDim");
-      Set<Array<GO> >(coarseLevel, "gNodesPerDim", gCoarseNodesPerDir);
       Set<Array<LO> >(coarseLevel, "lNodesPerDim", lCoarseNodesPerDir);
     } else if(pL.get<bool>("Geometric") == true) {
       coarseCoords       = Get<RCP<xdMV> >(coarseLevel, "coarseCoordinates");
@@ -132,7 +137,6 @@ namespace MueLu {
       Set<RCP<xdMV> >(coarseLevel, "Coordinates", coarseCoords);
 
     } else {
-
       if (coarseLevel.IsAvailable("Coordinates", this)) {
         GetOStream(Runtime0) << "Reusing coordinates" << std::endl;
         return;
