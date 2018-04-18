@@ -53,6 +53,7 @@
 #else
 #include "MueLu_Utilities_fwd.hpp"
 #endif
+#include "MueLu_ThresholdAFilterFactory_fwd.hpp"
 #include "MueLu_TentativePFactory_fwd.hpp"
 #include "MueLu_SaPFactory_fwd.hpp"
 #include "MueLu_CoordinatesTransferFactory_fwd.hpp"

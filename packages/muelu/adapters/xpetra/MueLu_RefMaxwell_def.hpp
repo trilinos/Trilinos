@@ -54,6 +54,7 @@
 #include "Xpetra_CrsMatrixUtils.hpp"
 
 #include "MueLu_RefMaxwell_decl.hpp"
+#include "MueLu_ThresholdAFilterFactory.hpp"
 #include "MueLu_UncoupledAggregationFactory.hpp"
 #include "MueLu_CoalesceDropFactory.hpp"
 #include "MueLu_AmalgamationFactory.hpp"
@@ -116,6 +117,21 @@ namespace MueLu {
   void RefMaxwell<Scalar,LocalOrdinal,GlobalOrdinal,Node>::compute() {
 
     RCP<Teuchos::TimeMonitor> tmCompute = rcp(new Teuchos::TimeMonitor(*Teuchos::TimeMonitor::getNewTimer("MueLu RefMaxwell: compute")));
+
+    // Remove zero entries from D0 if necessary.
+    // In the construction of the prolongator we use the graph of the
+    // matrix, so zero entries mess it up.
+    if (D0_Matrix_->getNodeMaxNumRowEntries()>2) {
+      Level fineLevel;
+      fineLevel.SetFactoryManager(Teuchos::null);
+      fineLevel.SetLevelID(0);
+      fineLevel.Set("A",D0_Matrix_);
+      fineLevel.setlib(D0_Matrix_->getDomainMap()->lib());
+      RCP<ThresholdAFilterFactory> ThreshFact = rcp(new ThresholdAFilterFactory("A",1e-8,/*keepDiagonal=*/false));
+      fineLevel.Request("A",ThreshFact.get());
+      ThreshFact->Build(fineLevel);
+      D0_Matrix_ = fineLevel.Get< RCP<Matrix> >("A",ThreshFact.get());
+    }
 
     // clean rows associated with boundary conditions
     // Find rows with only 1 or 2 nonzero entries, record them in BCrows_.
