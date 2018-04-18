@@ -75,7 +75,6 @@
 #include "MueLu_Monitor.hpp"
 #include "MueLu_MLParameterListInterpreter.hpp"
 #include "MueLu_ParameterListInterpreter.hpp"
-#include "MueLu_HierarchyManager.hpp"
 #include "MueLu_VerbosityLevel.hpp"
 
 
@@ -230,10 +229,6 @@ namespace MueLu {
 #endif
     }
 
-    // Use HierarchyManagers to build 11 & 22 Hierarchies
-    typedef MueLu::HierarchyManager<SC,LO,GO,NO> HierarchyManager;
-    std::string syntaxStr = "parameterlist: syntax";
-
     {
       GetOStream(Runtime0) << "RefMaxwell::compute(): building MG for coarse (1,1)-block" << std::endl;
 
@@ -243,19 +238,7 @@ namespace MueLu {
       tm = Teuchos::null;
 
       tm = rcp(new Teuchos::TimeMonitor(*Teuchos::TimeMonitor::getNewTimer("MueLu RefMaxwell: Build coarse (1,1) hierarchy")));
-      RCP<HierarchyManager> ManagerH;
-      if (parameterList_.isParameter(syntaxStr) && parameterList_.get<std::string>(syntaxStr) == "ml") {
-        parameterList_.remove(syntaxStr);
-        ManagerH = rcp(new MueLu::MLParameterListInterpreter<SC,LO,GO,NO>(precList11_, AH_->getDomainMap()->getComm()));
-      } else {
-        ManagerH = rcp(new MueLu::ParameterListInterpreter<SC,LO,GO,NO>(precList11_,AH_->getDomainMap()->getComm()));
-      }
-      HierarchyH_=ManagerH->CreateHierarchy();
-      HierarchyH_->setlib(Xpetra::UseTpetra);
-      HierarchyH_->GetLevel(0)->Set("A", AH_);
-      if (CoordsH_!=Teuchos::null)
-        HierarchyH_->GetLevel(0)->Set("Coordinates", CoordsH_);
-      ManagerH->SetupHierarchy(*HierarchyH_);
+      HierarchyH_ = MueLu::CreateXpetraPreconditioner(AH_, precList11_, CoordsH_);
     }
 
     {
@@ -309,18 +292,7 @@ namespace MueLu {
       }
 
       RCP<Teuchos::TimeMonitor> tm = rcp(new Teuchos::TimeMonitor(*Teuchos::TimeMonitor::getNewTimer("MueLu RefMaxwell: Build (2,2) hierarchy")));
-      RCP<HierarchyManager> Manager22;
-      if (parameterList_.isParameter(syntaxStr) && parameterList_.get<std::string>(syntaxStr) == "ml") {
-        parameterList_.remove(syntaxStr);
-        Manager22 = rcp(new MueLu::MLParameterListInterpreter<SC,LO,GO,NO>(precList22_, A22_->getDomainMap()->getComm()));
-      } else {
-        Manager22 = rcp(new MueLu::ParameterListInterpreter<SC,LO,GO,NO>(precList22_,A22_->getDomainMap()->getComm()));
-      }
-      Hierarchy22_=Manager22->CreateHierarchy();
-      Hierarchy22_->setlib(Xpetra::UseTpetra);
-      Hierarchy22_->GetLevel(0)->Set("A", A22_);
-      Hierarchy22_->GetLevel(0)->Set("Coordinates", Coords_);
-      Manager22->SetupHierarchy(*Hierarchy22_);
+      Hierarchy22_ = MueLu::CreateXpetraPreconditioner(A22_, precList22_, Coords_);
     }
 
     {
