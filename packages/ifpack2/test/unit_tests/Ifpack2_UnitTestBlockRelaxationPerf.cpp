@@ -18,7 +18,7 @@
 #include "ml_MultiLevelPreconditioner.h"
 
 #include <Tpetra_DefaultPlatform.hpp>
-#include <Tpetra_CrsMatrix_def.hpp>
+#include <Tpetra_CrsMatrix.hpp>
 #include <Tpetra_MultiVector_def.hpp>
 #include <Tpetra_Vector_def.hpp>
 #include <Tpetra_RowMatrix_def.hpp>
