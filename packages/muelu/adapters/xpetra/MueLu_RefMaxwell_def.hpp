@@ -82,6 +82,12 @@
 #include "MueLu_ParameterListInterpreter.hpp"
 #include "MueLu_VerbosityLevel.hpp"
 
+#include <MueLu_CreateXpetraPreconditioner.hpp>
+
+#ifdef HAVE_MUELU_CUDA
+#include "cuda_profiler_api.h"
+#endif
+
 
 namespace MueLu {
 
@@ -119,6 +125,11 @@ namespace MueLu {
 
   template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void RefMaxwell<Scalar,LocalOrdinal,GlobalOrdinal,Node>::compute() {
+
+
+#ifdef HAVE_MUELU_CUDA
+    if (parameterList_.get<bool>("refmaxwell: cuda profile setup", false)) cudaProfilerStart();
+#endif
 
     RCP<Teuchos::TimeMonitor> tmCompute = rcp(new Teuchos::TimeMonitor(*Teuchos::TimeMonitor::getNewTimer("MueLu RefMaxwell: compute")));
 
@@ -384,6 +395,10 @@ namespace MueLu {
     D0res_  = MultiVectorFactory::Build(D0_Matrix_->getDomainMap(),1);
     D0x_    = MultiVectorFactory::Build(D0_Matrix_->getDomainMap(),1);
     residual_ = MultiVectorFactory::Build(SM_Matrix_->getDomainMap(),1);
+
+#ifdef HAVE_MUELU_CUDA
+    if (parameterList_.get<bool>("refmaxwell: cuda profile setup", false)) cudaProfilerStop();
+#endif
 
     if (dump_matrices_) {
       GetOStream(Runtime0) << "RefMaxwell::compute(): dumping data" << std::endl;
