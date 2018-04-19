@@ -52,6 +52,8 @@
 #include "Tsqr_ApplyType.hpp"
 #include "Tsqr_CombineDefault.hpp"
 
+#include "Kokkos_Core.hpp"
+#include "KokkosBlas2_gemv.hpp"
 
 namespace TSQR {
 
@@ -482,7 +484,31 @@ namespace TSQR {
         scalar_type y[],
         const Ordinal incy) const
   {
-    blas_type ().GEMV (trans, m, n, alpha, A, lda, x, incx, beta, y, incy);
+    using y_vec_type = Kokkos::View<scalar_type*, Kokkos::LayoutLeft, Kokkos::Serial>;
+    using x_vec_type = Kokkos::View<const scalar_type*, Kokkos::LayoutLeft, Kokkos::Serial>;
+    using mat_type = Kokkos::View<const scalar_type**, Kokkos::LayoutLeft, Kokkos::Serial>;
+    //blas_type ().GEMV (trans, m, n, alpha, A, lda, x, incx, beta, y, incy);
+
+    TEUCHOS_TEST_FOR_EXCEPTION
+      (trans != Teuchos::TRANS, std::logic_error,
+       "TSQR::CombineNative::GEMV: Only TRANS case implemented.");
+    TEUCHOS_TEST_FOR_EXCEPTION
+      (incx != 1 || incy != 1, std::logic_error,
+       "TSQR::CombineNative::GEMV: Only INCX=1 and INCY=1 cases implemented.");
+    const bool no_trans = (trans == Teuchos::NO_TRANS);
+    const char trans_char = no_trans ? 'N' : (trans == Teuchos::TRANS ? 'T' : 'H');
+
+    x_vec_type x_view (x, no_trans ? n : m);
+    y_vec_type y_view (y, no_trans ? m : n);
+
+    mat_type A_full (A, lda, n);
+    if (lda == m) {
+      KokkosBlas::gemv (&trans_char, alpha, A_full, x_view, beta, y_view);
+    }
+    else {
+      auto A_view = Kokkos::subview (A_full, std::pair<Ordinal, Ordinal> (0, m), Kokkos::ALL ());
+      KokkosBlas::gemv (&trans_char, alpha, A_view, x_view, beta, y_view);
+    }
   }
 
   template< class Ordinal, class Scalar >
