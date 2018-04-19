@@ -202,12 +202,11 @@ namespace TSQR {
          const Kokkos::View<scalar_type**, Kokkos::LayoutLeft, Kokkos::Serial>& A) const;
 
     void
-    GEMV (const Teuchos::ETransp trans,
+    GEMV (const char trans[],
           const Ordinal m,
           const Ordinal n,
           const scalar_type alpha,
-          const scalar_type A[],
-          const Ordinal lda,
+          const Kokkos::View<const scalar_type**, Kokkos::LayoutLeft, Kokkos::Serial>& A,
           const scalar_type x[],
           const Ordinal incx,
           const scalar_type beta,
@@ -481,12 +480,11 @@ namespace TSQR {
   template< class Ordinal, class Scalar >
   void
   CombineNative< Ordinal, Scalar, false >::
-  GEMV (const Teuchos::ETransp trans,
+  GEMV (const char trans[],
         const Ordinal m,
         const Ordinal n,
         const scalar_type alpha,
-        const scalar_type A[],
-        const Ordinal lda,
+        const Kokkos::View<const scalar_type**, Kokkos::LayoutLeft, Kokkos::Serial>& A,
         const scalar_type x[],
         const Ordinal incx,
         const scalar_type beta,
@@ -495,29 +493,16 @@ namespace TSQR {
   {
     using y_vec_type = Kokkos::View<scalar_type*, Kokkos::LayoutLeft, Kokkos::Serial>;
     using x_vec_type = Kokkos::View<const scalar_type*, Kokkos::LayoutLeft, Kokkos::Serial>;
-    using mat_type = Kokkos::View<const scalar_type**, Kokkos::LayoutLeft, Kokkos::Serial>;
     //blas_type ().GEMV (trans, m, n, alpha, A, lda, x, incx, beta, y, incy);
 
     TEUCHOS_TEST_FOR_EXCEPTION
-      (trans != Teuchos::TRANS, std::logic_error,
-       "TSQR::CombineNative::GEMV: Only TRANS case implemented.");
-    TEUCHOS_TEST_FOR_EXCEPTION
       (incx != 1 || incy != 1, std::logic_error,
        "TSQR::CombineNative::GEMV: Only INCX=1 and INCY=1 cases implemented.");
-    const bool no_trans = (trans == Teuchos::NO_TRANS);
-    const char trans_char = no_trans ? 'N' : (trans == Teuchos::TRANS ? 'T' : 'H');
-
+    const bool no_trans = (trans[0] == 'N' || trans[0] == 'n');
     x_vec_type x_view (x, no_trans ? n : m);
     y_vec_type y_view (y, no_trans ? m : n);
 
-    mat_type A_full (A, lda, n);
-    if (lda == m) {
-      KokkosBlas::gemv (&trans_char, alpha, A_full, x_view, beta, y_view);
-    }
-    else {
-      auto A_view = Kokkos::subview (A_full, std::pair<Ordinal, Ordinal> (0, m), Kokkos::ALL ());
-      KokkosBlas::gemv (&trans_char, alpha, A_view, x_view, beta, y_view);
-    }
+    KokkosBlas::gemv (trans, alpha, A, x_view, beta, y_view);
   }
 
   template< class Ordinal, class Scalar >
@@ -550,9 +535,7 @@ namespace TSQR {
                                      std::pair<Ordinal, Ordinal> (k+1, n));
 
       lapack.LARFG (m + 1, &R_kk, A_1k, 1, &tau[k]);
-      // FIXME (mfh 08 Oct 2014) Should this be TRANS or CONJ_TRANS?
-      // It was "T" before.
-      this->GEMV (Teuchos::TRANS, m, n-k-1, ONE, A_1kp1.data (), lda, A_1k, 1, ZERO, work, 1);
+      this->GEMV ("T", m, n-k-1, ONE, A_1kp1, A_1k, 1, ZERO, work, 1);
 
       for (Ordinal j = k+1; j < n; ++j) {
         Scalar& R_kj = R[ k + j*ldr ];
@@ -645,7 +628,6 @@ namespace TSQR {
     blas_type blas;
 
     const Ordinal n = R_top.dimension_0 ();
-    const Ordinal ldr_bot = R_bot.stride_1 ();
 
     for (Ordinal k = 0; k < n; ++k) {
       work[k] = ZERO;
@@ -664,9 +646,7 @@ namespace TSQR {
       // One-based indexing, Matlab version of the GEMV call below:
       // work(1:k) := R_bot(1:k,k+1:n)' * R_bot(1:k,k)
 
-      // FIXME (mfh 08 Oct 2014) Should this be TRANS or CONJ_TRANS?
-      // It was "T" before.
-      this->GEMV (Teuchos::TRANS, k+1, n-k-1, ONE, R_bot_1kp1.data (), ldr_bot,
+      this->GEMV ("T", k+1, n-k-1, ONE, R_bot_1kp1,
                   R_bot_1k, 1, ZERO, work, 1);
 
       for (Ordinal j = k+1; j < n; ++j) {
