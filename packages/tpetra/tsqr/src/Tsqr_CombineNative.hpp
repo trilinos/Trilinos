@@ -203,8 +203,6 @@ namespace TSQR {
 
     void
     GEMV (const char trans[],
-          const Ordinal m,
-          const Ordinal n,
           const scalar_type alpha,
           const Kokkos::View<const scalar_type**, Kokkos::LayoutLeft, Kokkos::Serial>& A,
           const scalar_type x[],
@@ -481,8 +479,6 @@ namespace TSQR {
   void
   CombineNative< Ordinal, Scalar, false >::
   GEMV (const char trans[],
-        const Ordinal m,
-        const Ordinal n,
         const scalar_type alpha,
         const Kokkos::View<const scalar_type**, Kokkos::LayoutLeft, Kokkos::Serial>& A,
         const scalar_type x[],
@@ -494,6 +490,9 @@ namespace TSQR {
     using y_vec_type = Kokkos::View<scalar_type*, Kokkos::LayoutLeft, Kokkos::Serial>;
     using x_vec_type = Kokkos::View<const scalar_type*, Kokkos::LayoutLeft, Kokkos::Serial>;
     //blas_type ().GEMV (trans, m, n, alpha, A, lda, x, incx, beta, y, incy);
+
+    const Ordinal m = A.dimension_0 ();
+    const Ordinal n = A.dimension_1 ();
 
     TEUCHOS_TEST_FOR_EXCEPTION
       (incx != 1 || incy != 1, std::logic_error,
@@ -535,7 +534,7 @@ namespace TSQR {
                                      std::pair<Ordinal, Ordinal> (k+1, n));
 
       lapack.LARFG (m + 1, &R_kk, A_1k, 1, &tau[k]);
-      this->GEMV ("T", m, n-k-1, ONE, A_1kp1, A_1k, 1, ZERO, work, 1);
+      this->GEMV ("T", ONE, A_1kp1, A_1k, 1, ZERO, work, 1);
 
       for (Ordinal j = k+1; j < n; ++j) {
         Scalar& R_kj = R[ k + j*ldr ];
@@ -646,8 +645,7 @@ namespace TSQR {
       // One-based indexing, Matlab version of the GEMV call below:
       // work(1:k) := R_bot(1:k,k+1:n)' * R_bot(1:k,k)
 
-      this->GEMV ("T", k+1, n-k-1, ONE, R_bot_1kp1,
-                  R_bot_1k, 1, ZERO, work, 1);
+      this->GEMV ("T", ONE, R_bot_1kp1, R_bot_1k, 1, ZERO, work, 1);
 
       for (Ordinal j = k+1; j < n; ++j) {
         scalar_type& R_top_kj = R_top(k, j);
