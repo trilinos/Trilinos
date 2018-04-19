@@ -177,8 +177,7 @@ namespace TSQR {
   };
 
 
-  /// "Forward declaration" for the real-arithmetic case.
-  ///
+  //! Specialization of CombineNative for the real-arithmetic case.
   template< class Ordinal, class Scalar >
   class CombineNative< Ordinal, Scalar, false >
   {
@@ -191,6 +190,30 @@ namespace TSQR {
     typedef Teuchos::BLAS<ordinal_type, scalar_type> blas_type;
     typedef Teuchos::LAPACK<ordinal_type, scalar_type> lapack_type;
     typedef CombineDefault<ordinal_type, scalar_type> combine_default_type;
+
+    void
+    GER (const Ordinal m,
+         const Ordinal n,
+         const magnitude_type alpha,
+         const scalar_type x[],
+         const Ordinal incx,
+         const scalar_type y[],
+         const Ordinal incy,
+         scalar_type A[],
+         const Ordinal lda) const;
+
+    void
+    GEMV (const Teuchos::ETransp trans,
+          const Ordinal m,
+          const Ordinal n,
+          const scalar_type alpha,
+          const scalar_type A[],
+          const Ordinal lda,
+          const scalar_type x[],
+          const Ordinal incx,
+          const scalar_type beta,
+          scalar_type y[],
+          const Ordinal incy) const;
 
   public:
     CombineNative () {}
@@ -400,6 +423,40 @@ namespace TSQR {
   template< class Ordinal, class Scalar >
   void
   CombineNative< Ordinal, Scalar, false >::
+  GER (const Ordinal m,
+       const Ordinal n,
+       const magnitude_type alpha,
+       const scalar_type x[],
+       const Ordinal incx,
+       const scalar_type y[],
+       const Ordinal incy,
+       scalar_type A[],
+       const Ordinal lda) const
+  {
+    blas_type ().GER (m, n, alpha, x, incx, y, incy, A, lda);
+  }
+
+  template< class Ordinal, class Scalar >
+  void
+  CombineNative< Ordinal, Scalar, false >::
+  GEMV (const Teuchos::ETransp trans,
+        const Ordinal m,
+        const Ordinal n,
+        const scalar_type alpha,
+        const scalar_type A[],
+        const Ordinal lda,
+        const scalar_type x[],
+        const Ordinal incx,
+        const scalar_type beta,
+        scalar_type y[],
+        const Ordinal incy) const
+  {
+    blas_type ().GEMV (trans, m, n, alpha, A, lda, x, incx, beta, y, incy);
+  }
+
+  template< class Ordinal, class Scalar >
+  void
+  CombineNative< Ordinal, Scalar, false >::
   factor_inner (const Ordinal m,
                 const Ordinal n,
                 Scalar R[],
@@ -425,7 +482,7 @@ namespace TSQR {
       lapack.LARFG (m + 1, &R_kk, A_1k, 1, &tau[k]);
       // FIXME (mfh 08 Oct 2014) Should this be TRANS or CONJ_TRANS?
       // It was "T" before.
-      blas.GEMV (Teuchos::TRANS, m, n-k-1, ONE, A_1kp1, lda, A_1k, 1, ZERO, work, 1);
+      this->GEMV (Teuchos::TRANS, m, n-k-1, ONE, A_1kp1, lda, A_1k, 1, ZERO, work, 1);
 
       for (Ordinal j = k+1; j < n; ++j) {
         Scalar& R_kj = R[ k + j*ldr ];
@@ -433,7 +490,7 @@ namespace TSQR {
         work[j-k-1] += R_kj;
         R_kj -= tau[k] * work[j-k-1];
       }
-      blas.GER (m, n-k-1, -tau[k], A_1k, 1, work, 1, A_1kp1, lda);
+      this->GER (m, n-k-1, -tau[k], A_1k, 1, work, 1, A_1kp1, lda);
     }
     Scalar& R_nn = R[ (n-1) + (n-1) * ldr ];
     Scalar* const A_1n = &A[ 0 + (n-1) * lda ];
@@ -466,18 +523,16 @@ namespace TSQR {
       work[i] = ZERO;
 
     Ordinal j_start, j_end, j_step;
-    if (applyType == ApplyType::NoTranspose)
-      {
-        j_start = ncols_Q - 1;
-        j_end = -1; // exclusive
-        j_step = -1;
-      }
-    else
-      {
-        j_start = 0;
-        j_end = ncols_Q; // exclusive
-        j_step = +1;
-      }
+    if (applyType == ApplyType::NoTranspose) {
+      j_start = ncols_Q - 1;
+      j_end = -1; // exclusive
+      j_step = -1;
+    }
+    else {
+      j_start = 0;
+      j_end = ncols_Q; // exclusive
+      j_step = +1;
+    }
     for (Ordinal j = j_start; j != j_end; j += j_step) {
       const Scalar* const A_1j = &A[ 0 + j*lda ];
 
@@ -494,7 +549,7 @@ namespace TSQR {
         C_top[ j + k*ldc_top ] -= tau[j] * work[k];
       }
 
-      blas.GER (m, ncols_C, -tau[j], A_1j, 1, work, 1, C_bot, ldc_bot);
+      this->GER (m, ncols_C, -tau[j], A_1j, 1, work, 1, C_bot, ldc_bot);
     }
   }
 
@@ -531,15 +586,15 @@ namespace TSQR {
 
       // FIXME (mfh 08 Oct 2014) Should this be TRANS or CONJ_TRANS?
       // It was "T" before.
-      blas.GEMV (Teuchos::TRANS, k+1, n-k-1, ONE, R_bot_1kp1, ldr_bot,
-                 R_bot_1k, 1, ZERO, work, 1);
+      this->GEMV (Teuchos::TRANS, k+1, n-k-1, ONE, R_bot_1kp1, ldr_bot,
+                  R_bot_1k, 1, ZERO, work, 1);
 
       for (Ordinal j = k+1; j < n; ++j) {
         Scalar& R_top_kj = R_top[ k + j*ldr_top ];
         work[j-k-1] += R_top_kj;
         R_top_kj -= tau[k] * work[j-k-1];
       }
-      blas.GER (k+1, n-k-1, -tau[k], R_bot_1k, 1, work, 1, R_bot_1kp1, ldr_bot);
+      this->GER (k+1, n-k-1, -tau[k], R_bot_1k, 1, work, 1, R_bot_1kp1, ldr_bot);
     }
     Scalar& R_top_nn = R_top[ (n-1) + (n-1)*ldr_top ];
     Scalar* const R_bot_1n = &R_bot[ 0 + (n-1)*ldr_bot ];
@@ -568,49 +623,48 @@ namespace TSQR {
     const Scalar ZERO(0);
     blas_type blas;
 
-    for (Ordinal i = 0; i < ncols_C; ++i)
+    for (Ordinal i = 0; i < ncols_C; ++i) {
       work[i] = ZERO;
+    }
 
     Ordinal j_start, j_end, j_step;
-    if (applyType == ApplyType::NoTranspose)
-      {
-        j_start = ncols_Q - 1;
-        j_end = -1; // exclusive
-        j_step = -1;
+    if (applyType == ApplyType::NoTranspose) {
+      j_start = ncols_Q - 1;
+      j_end = -1; // exclusive
+      j_step = -1;
+    }
+    else {
+      j_start = 0;
+      j_end = ncols_Q; // exclusive
+      j_step = +1;
+    }
+    for (Ordinal j_Q = j_start; j_Q != j_end; j_Q += j_step) {
+      // Using Householder reflector stored in column j_Q of R_bot
+      const Scalar* const R_bot_col = &R_bot[ 0 + j_Q*ldr_bot ];
+
+      // In 1-based indexing notation, with k in 1, 2, ..., ncols_C
+      // (inclusive): (Output is length ncols_C row vector)
+      //
+      // work(1:j) := R_bot(1:j,j)' * C_bot(1:j, 1:ncols_C) - C_top(j, 1:ncols_C)
+      for (Ordinal j_C = 0; j_C < ncols_C; ++j_C) {
+        // For each column j_C of [C_top; C_bot], update row j_Q
+        // of C_top and rows 1:j_Q of C_bot.  (Again, this is in
+        // 1-based indexing notation.
+
+        Scalar work_j_C = ZERO;
+        const Scalar* const C_bot_col = &C_bot[ 0 + j_C*ldc_bot ];
+
+        for (Ordinal k = 0; k <= j_Q; ++k)
+          work_j_C += R_bot_col[k] * C_bot_col[k];
+
+        work_j_C += C_top[ j_Q + j_C*ldc_top ];
+        work[j_C] = work_j_C;
       }
-    else
-      {
-        j_start = 0;
-        j_end = ncols_Q; // exclusive
-        j_step = +1;
+      for (Ordinal j_C = 0; j_C < ncols_C; ++j_C) {
+        C_top[ j_Q + j_C*ldc_top ] -= tau[j_Q] * work[j_C];
       }
-    for (Ordinal j_Q = j_start; j_Q != j_end; j_Q += j_step)
-      { // Using Householder reflector stored in column j_Q of R_bot
-        const Scalar* const R_bot_col = &R_bot[ 0 + j_Q*ldr_bot ];
-
-        // In 1-based indexing notation, with k in 1, 2, ..., ncols_C
-        // (inclusive): (Output is length ncols_C row vector)
-        //
-        // work(1:j) := R_bot(1:j,j)' * C_bot(1:j, 1:ncols_C) - C_top(j, 1:ncols_C)
-        for (Ordinal j_C = 0; j_C < ncols_C; ++j_C)
-          { // For each column j_C of [C_top; C_bot], update row j_Q
-            // of C_top and rows 1:j_Q of C_bot.  (Again, this is in
-            // 1-based indexing notation.
-
-            Scalar work_j_C = ZERO;
-            const Scalar* const C_bot_col = &C_bot[ 0 + j_C*ldc_bot ];
-
-            for (Ordinal k = 0; k <= j_Q; ++k)
-              work_j_C += R_bot_col[k] * C_bot_col[k];
-
-            work_j_C += C_top[ j_Q + j_C*ldc_top ];
-            work[j_C] = work_j_C;
-          }
-        for (Ordinal j_C = 0; j_C < ncols_C; ++j_C)
-          C_top[ j_Q + j_C*ldc_top ] -= tau[j_Q] * work[j_C];
-
-        blas.GER (j_Q+1, ncols_C, -tau[j_Q], R_bot_col, 1, work, 1, C_bot, ldc_bot);
-      }
+      this->GER (j_Q+1, ncols_C, -tau[j_Q], R_bot_col, 1, work, 1, C_bot, ldc_bot);
+    }
   }
 } // namespace TSQR
 
