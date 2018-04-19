@@ -114,6 +114,12 @@ ATDM_SET_CACHE(CMAKE_CXX_FLAGS "$ENV{EXTRA_CXX_FLAGS}" CACHE STRING)
 # E) Set up other misc options
 #
 
+# Currently, EMPIRE configures of Trilinos have this enabled by default.  But
+# really we should elevate every subpackage that ATDM uses to Primary Tested.
+# That is the right solution.
+ATDM_SET_ENABLE(Trilinos_ENABLE_SECONDARY_TESTED_CODE ON)
+
+# Other various options
 ATDM_SET_CACHE(CMAKE_SKIP_RULE_DEPENDENCY ON CACHE BOOL)
 ATDM_SET_CACHE(CMAKE_VERBOSE_MAKEFILE OFF CACHE BOOL)
 ATDM_SET_CACHE(MPI_EXEC ${ATDM_MPI_EXEC} CACHE FILEPATH)
