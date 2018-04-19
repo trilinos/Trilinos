@@ -433,7 +433,38 @@ namespace TSQR {
        scalar_type A[],
        const Ordinal lda) const
   {
-    blas_type ().GER (m, n, alpha, x, incx, y, incy, A, lda);
+    //blas_type ().GER (m, n, alpha, x, incx, y, incy, A, lda);
+    constexpr scalar_type ZERO {0.0};
+
+    Ordinal jy = (incy > 0) ? 1 : 1 - (n-1) * incy;
+
+    if (incx == 1) {
+      for (Ordinal j = 0; j < n; ++j) {
+        if (y[jy-1] != ZERO) {
+          const scalar_type temp = alpha * y[jy-1];
+          for (Ordinal i = 0; i < m; ++i) {
+            scalar_type& A_ij = A[i + j*lda];
+            A_ij = A_ij + x[i] * temp;
+          }
+        }
+        jy += incy;
+      }
+    }
+    else {
+      const Ordinal kx = (incx > 0) ? 1 : 1 - (m-1)*incx;
+      for (Ordinal j = 0; j < n; ++j) {
+        if (y[jy] != ZERO) {
+          const scalar_type temp = alpha * y[jy-1];
+          Ordinal ix = kx;
+          for (Ordinal i = 0; i < m; ++i) {
+            scalar_type& A_ij = A[i + j*lda];
+            A_ij = A_ij + x[ix-1] * temp;
+            ix += incx;
+          }
+        }
+        jy += incy;
+      }
+    }
   }
 
   template< class Ordinal, class Scalar >
