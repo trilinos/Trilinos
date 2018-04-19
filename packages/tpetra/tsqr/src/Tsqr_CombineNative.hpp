@@ -201,17 +201,6 @@ namespace TSQR {
          const Ordinal incx,
          const scalar_type y[],
          const Ordinal incy,
-         scalar_type A[],
-         const Ordinal lda) const;
-
-    void
-    GER (const Ordinal m,
-         const Ordinal n,
-         const magnitude_type alpha,
-         const scalar_type x[],
-         const Ordinal incx,
-         const scalar_type y[],
-         const Ordinal incy,
          const Kokkos::View<scalar_type**, Kokkos::LayoutLeft, Kokkos::Serial>& A) const;
 
     void
@@ -456,28 +445,6 @@ namespace TSQR {
        const Ordinal incx,
        const scalar_type y[],
        const Ordinal incy,
-       scalar_type A[],
-       const Ordinal lda) const
-  {
-    using mat_type = Kokkos::View<scalar_type**, Kokkos::LayoutLeft, Kokkos::Serial>;
-    mat_type A_view (A, lda, n);
-    if (lda == m) {
-      A_view = mat_type (A, m, n);
-    }
-    this->GER (m, n, alpha, x, incx, y, incy, A_view);
-  }
-
-
-  template< class Ordinal, class Scalar >
-  void
-  CombineNative< Ordinal, Scalar, false >::
-  GER (const Ordinal m,
-       const Ordinal n,
-       const magnitude_type alpha,
-       const scalar_type x[],
-       const Ordinal incx,
-       const scalar_type y[],
-       const Ordinal incy,
        const Kokkos::View<scalar_type**, Kokkos::LayoutLeft, Kokkos::Serial>& A) const
   {
     //blas_type ().GER (m, n, alpha, x, incx, y, incy, A, lda);
@@ -623,6 +590,14 @@ namespace TSQR {
     const Scalar ZERO(0);
     blas_type blas;
 
+    using Kokkos::ALL;
+    using Kokkos::subview;
+    using mat_type = Kokkos::View<scalar_type**, Kokkos::LayoutLeft, Kokkos::Serial>;
+    using range_type = std::pair<Ordinal, Ordinal>;
+
+    mat_type C_bot_full (C_bot, ldc_bot, ncols_C);
+    auto C_bot_view = subview (C_bot_full, range_type (0, m), ALL ());
+
     //Scalar* const y = work;
     for (Ordinal i = 0; i < ncols_C; ++i)
       work[i] = ZERO;
@@ -645,7 +620,7 @@ namespace TSQR {
       for (Ordinal i = 0; i < ncols_C; ++i) {
         work[i] = ZERO;
         for (Ordinal k = 0; k < m; ++k) {
-          work[i] += A_1j[k] * C_bot[ k + i*ldc_bot ];
+          work[i] += A_1j[k] * C_bot_view(k, i);
         }
 
         work[i] += C_top[ j + i*ldc_top ];
@@ -654,7 +629,7 @@ namespace TSQR {
         C_top[ j + k*ldc_top ] -= tau[j] * work[k];
       }
 
-      this->GER (m, ncols_C, -tau[j], A_1j, 1, work, 1, C_bot, ldc_bot);
+      this->GER (m, ncols_C, -tau[j], A_1j, 1, work, 1, C_bot_view);
     }
   }
 
