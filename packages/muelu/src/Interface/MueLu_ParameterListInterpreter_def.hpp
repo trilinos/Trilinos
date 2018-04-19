@@ -252,8 +252,12 @@ namespace MueLu {
     }
 
     // Check for Kokkos
+#ifndef HAVE_MUELU_KOKKOS_REFACTOR
+    useKokkos_ = false;
+#else
     MUELU_SET_VAR_2LIST(constParamList, constParamList, "use kokkos refactor", bool, useKokkos);
     useKokkos_ = useKokkos;
+#endif
 
     // Check for timer synchronization
     MUELU_SET_VAR_2LIST(constParamList, constParamList, "synchronize factory timers", bool, syncTimers);
