@@ -217,6 +217,12 @@ namespace TSQR {
           scalar_type y[],
           const Ordinal incy) const;
 
+    void
+    factor_pair (const Kokkos::View<scalar_type**, Kokkos::LayoutLeft, Kokkos::Serial>& R_top,
+                 const Kokkos::View<scalar_type**, Kokkos::LayoutLeft, Kokkos::Serial>& R_bot,
+                 scalar_type tau[],
+                 scalar_type work[]) const;
+
   public:
     CombineNative () {}
 
@@ -614,26 +620,26 @@ namespace TSQR {
   template< class Ordinal, class Scalar >
   void
   CombineNative< Ordinal, Scalar, false >::
-  factor_pair (const Ordinal n,
-               Scalar R_top[],
-               const Ordinal ldr_top,
-               Scalar R_bot[],
-               const Ordinal ldr_bot,
-               Scalar tau[],
-               Scalar work[]) const
+  factor_pair (const Kokkos::View<scalar_type**, Kokkos::LayoutLeft, Kokkos::Serial>& R_top,
+               const Kokkos::View<scalar_type**, Kokkos::LayoutLeft, Kokkos::Serial>& R_bot,
+               scalar_type tau[],
+               scalar_type work[]) const
   {
-    const Scalar ZERO(0), ONE(1);
+    const scalar_type ZERO(0), ONE(1);
     lapack_type lapack;
     blas_type blas;
+
+    const Ordinal n = R_top.dimension_0 ();
+    const Ordinal ldr_bot = R_bot.stride_1 ();
 
     for (Ordinal k = 0; k < n; ++k) {
       work[k] = ZERO;
     }
 
     for (Ordinal k = 0; k < n-1; ++k) {
-      Scalar& R_top_kk = R_top[ k + k * ldr_top ];
-      Scalar* const R_bot_1k = &R_bot[ 0 + k * ldr_bot ];
-      Scalar* const R_bot_1kp1 = &R_bot[ 0 + (k+1) * ldr_bot ];
+      scalar_type& R_top_kk = R_top(k, k);
+      scalar_type* const R_bot_1k = &R_bot(0, k);
+      scalar_type* const R_bot_1kp1 = &R_bot(0, k+1);
 
       // k+2: 1 element in R_top (R_top(k,k)), and k+1 elements in
       // R_bot (R_bot(1:k,k), in 1-based indexing notation).
@@ -647,18 +653,53 @@ namespace TSQR {
                   R_bot_1k, 1, ZERO, work, 1);
 
       for (Ordinal j = k+1; j < n; ++j) {
-        Scalar& R_top_kj = R_top[ k + j*ldr_top ];
+        scalar_type& R_top_kj = R_top(k, j);
         work[j-k-1] += R_top_kj;
         R_top_kj -= tau[k] * work[j-k-1];
       }
       this->GER (k+1, n-k-1, -tau[k], R_bot_1k, 1, work, 1, R_bot_1kp1, ldr_bot);
     }
-    Scalar& R_top_nn = R_top[ (n-1) + (n-1)*ldr_top ];
-    Scalar* const R_bot_1n = &R_bot[ 0 + (n-1)*ldr_bot ];
+    scalar_type& R_top_nn = R_top(n-1, n-1);
+    scalar_type* const R_bot_1n = &R_bot(0, n-1);
 
     // n+1: 1 element in R_top (n,n), and n elements in R_bot (the
     // whole last column).
     lapack.LARFG (n+1, &R_top_nn, R_bot_1n, 1, &tau[n-1]);
+  }
+
+
+  template< class Ordinal, class Scalar >
+  void
+  CombineNative< Ordinal, Scalar, false >::
+  factor_pair (const Ordinal n,
+               Scalar R_top[],
+               const Ordinal ldr_top,
+               Scalar R_bot[],
+               const Ordinal ldr_bot,
+               Scalar tau[],
+               Scalar work[]) const
+  {
+    Kokkos::View<scalar_type**, Kokkos::LayoutLeft, Kokkos::Serial> R_top_full (R_top, ldr_top, n);
+    Kokkos::View<scalar_type**, Kokkos::LayoutLeft, Kokkos::Serial> R_bot_full (R_bot, ldr_bot, n);
+    if (ldr_top == n) {
+      if (ldr_bot == n) {
+        this->factor_pair (R_top_full, R_bot_full, tau, work);
+      }
+      else {
+        auto R_bot_view = Kokkos::subview (R_bot_full, std::pair<Ordinal, Ordinal> (0, n), Kokkos::ALL ());
+        this->factor_pair (R_top_full, R_bot_view, tau, work);
+      }
+    }
+    else {
+      auto R_top_view = Kokkos::subview (R_top_full, std::pair<Ordinal, Ordinal> (0, n), Kokkos::ALL ());
+      if (ldr_bot == n) {
+        this->factor_pair (R_top_view, R_bot_full, tau, work);
+      }
+      else {
+        auto R_bot_view = Kokkos::subview (R_bot_full, std::pair<Ordinal, Ordinal> (0, n), Kokkos::ALL ());
+        this->factor_pair (R_top_view, R_bot_view, tau, work);
+      }
+    }
   }
 
 
