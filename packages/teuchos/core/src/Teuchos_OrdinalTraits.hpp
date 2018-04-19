@@ -164,7 +164,6 @@ struct OrdinalTraits<long unsigned int> {
   static inline std::string name()           {return("long unsigned int");}
 };
 
-#ifdef HAVE_TEUCHOS_LONG_LONG_INT
 template<>
 struct OrdinalTraits<long long int> {
   static const bool hasMachineParameters = false;
@@ -184,7 +183,6 @@ struct OrdinalTraits<unsigned long long int> {
   static inline unsigned long long int max()           {return(std::numeric_limits<unsigned long long int>::max()-1);}
   static inline std::string name()                     {return("unsigned long long int");}
 };
-#endif // HAVE_TEUCHOS_LONG_LONG_INT
 
 #ifdef HAVE_TEUCHOS___INT64
 
