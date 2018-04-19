@@ -5933,13 +5933,12 @@ extra repos
   configure will fail.
 
 3) If using git as the VC tool, then set the variable
-`${PROJECT_NAME}_GENERATE_REPO_VERSION_FILE`_ in the
+``${PROJECT_NAME}_GENERATE_REPO_VERSION_FILE_DEFAULT`` in the
 `<projectDir>/ProjectName.cmake`_ file
 
   For example::
 
-    SET(${PROJECT_NAME}_GENERATE_REPO_VERSION_FILE  TRUE
-      CACHE  BOOL  "Set in ProjectName.cmake")
+    SET(${PROJECT_NAME}_GENERATE_REPO_VERSION_FILE_DEFAULT  TRUE)
 
 4) If wanting a clone tool with git repos, set up a link to the
 `clone_extra_repos.py`_ script in the base ``<projectDir>/`` directory
@@ -7873,8 +7872,10 @@ a given TriBITS project are:
 * `${PROJECT_NAME}_ENABLE_EXPORT_MAKEFILES`_
 * `${PROJECT_NAME}_ENABLE_Fortran`_
 * `${PROJECT_NAME}_ENABLE_INSTALL_CMAKE_CONFIG_FILES`_
+* `${PROJECT_NAME}_ENABLE_SECONDARY_TESTED_CODE`_
 * `${PROJECT_NAME}_EXCLUDE_DISABLED_SUBPACKAGES_FROM_DISTRIBUTION`_
 * `${PROJECT_NAME}_GENERATE_EXPORT_FILE_DEPENDENCIES`_
+* `${PROJECT_NAME}_GENERATE_REPO_VERSION_FILE`_
 * `${PROJECT_NAME}_INSTALL_LIBRARIES_AND_HEADERS`_
 * `${PROJECT_NAME}_MUST_FIND_ALL_TPL_LIBS`_
 * `${PROJECT_NAME}_REQUIRES_PYTHON`_
@@ -8198,6 +8199,20 @@ These options are described below.
   ``<PackageName>Config.cmake`` files if it was only installing and providing
   executables (see `${PROJECT_NAME}_INSTALL_LIBRARIES_AND_HEADERS`_).
 
+.. _${PROJECT_NAME}_ENABLE_SECONDARY_TESTED_CODE:
+
+**${PROJECT_NAME}_ENABLE_SECONDARY_TESTED_CODE**
+
+  If ``${PROJECT_NAME}_ENABLE_SECONDARY_TESTED_CODE`` is ``ON``, then packages
+  and subpackages marked as ``ST`` in the `<repoDir>/PackagesList.cmake`_ file
+  will be implicitly enabled along with the ``PT`` packages.  Additional code
+  and tests may also be enabled using this option.  The TriBITS default is
+  ``OFF`` but this can be changed by setting::
+
+    SET(${PROJECT_NAME}_ENABLE_SECONDARY_TESTED_CODE_DEFAULT ON)
+
+  in the `<projectDir>/ProjectName.cmake`_ file.
+
 .. _${PROJECT_NAME}_EXCLUDE_DISABLED_SUBPACKAGES_FROM_DISTRIBUTION:
 
 **${PROJECT_NAME}_EXCLUDE_DISABLED_SUBPACKAGES_FROM_DISTRIBUTION**
@@ -8210,6 +8225,20 @@ These options are described below.
   TriBITS default is ``TRUE`` but this can be changed by setting::
 
     SET(${PROJECT_NAME}_EXCLUDE_DISABLED_SUBPACKAGES_FROM_DISTRIBUTION_DEFAULT FALSE)
+
+.. _${PROJECT_NAME}_GENERATE_REPO_VERSION_FILE:
+
+**${PROJECT_NAME}_GENERATE_REPO_VERSION_FILE**
+
+  If ``${PROJECT_NAME}_GENERATE_REPO_VERSION_FILE`` is ``ON``, then the file
+  ``<Project>RepoVersion.txt`` will get generated as a byproduct of
+  configuring with CMake.  See `Multi-Repository Support`_ and
+  `<Project>_GENERATE_REPO_VERSION_FILE`_.  The default is ``OFF`` but the
+  project can change that by setting::
+
+    SET(${PROJECT_NAME}_GENERATE_REPO_VERSION_FILE_DEFAULT ON)
+
+  in the `<projectDir>/ProjectName.cmake`_ file.
 
 .. _${PROJECT_NAME}_GENERATE_EXPORT_FILE_DEPENDENCIES:
 
@@ -8853,7 +8882,7 @@ Below is a snapshot of the output from ``install_devtools.py --help``.
 
 .. _<Project>_EXTRA_REPOSITORIES: TribitsBuildReference.html#project-extra-repositories
 
-.. _${PROJECT_NAME}_GENERATE_REPO_VERSION_FILE: TribitsBuildReference.html#generating-a-project-repo-version-file
+.. _<Project>_GENERATE_REPO_VERSION_FILE: TribitsBuildReference.html#generating-a-project-repo-version-file
 
 .. _Creating a tarball of the source tree: TribitsBuildReference.html#creating-a-tarball-of-the-source-tree
 
