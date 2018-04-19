@@ -205,6 +205,16 @@ namespace TSQR {
          const Ordinal lda) const;
 
     void
+    GER (const Ordinal m,
+         const Ordinal n,
+         const magnitude_type alpha,
+         const scalar_type x[],
+         const Ordinal incx,
+         const scalar_type y[],
+         const Ordinal incy,
+         const Kokkos::View<scalar_type**, Kokkos::LayoutLeft, Kokkos::Serial>& A) const;
+
+    void
     GEMV (const Teuchos::ETransp trans,
           const Ordinal m,
           const Ordinal n,
@@ -449,6 +459,27 @@ namespace TSQR {
        scalar_type A[],
        const Ordinal lda) const
   {
+    using mat_type = Kokkos::View<scalar_type**, Kokkos::LayoutLeft, Kokkos::Serial>;
+    mat_type A_view (A, lda, n);
+    if (lda == m) {
+      A_view = mat_type (A, m, n);
+    }
+    this->GER (m, n, alpha, x, incx, y, incy, A_view);
+  }
+
+
+  template< class Ordinal, class Scalar >
+  void
+  CombineNative< Ordinal, Scalar, false >::
+  GER (const Ordinal m,
+       const Ordinal n,
+       const magnitude_type alpha,
+       const scalar_type x[],
+       const Ordinal incx,
+       const scalar_type y[],
+       const Ordinal incy,
+       const Kokkos::View<scalar_type**, Kokkos::LayoutLeft, Kokkos::Serial>& A) const
+  {
     //blas_type ().GER (m, n, alpha, x, incx, y, incy, A, lda);
     constexpr scalar_type ZERO {0.0};
 
@@ -459,8 +490,7 @@ namespace TSQR {
         if (y[jy-1] != ZERO) {
           const scalar_type temp = alpha * y[jy-1];
           for (Ordinal i = 0; i < m; ++i) {
-            scalar_type& A_ij = A[i + j*lda];
-            A_ij = A_ij + x[i] * temp;
+            A(i,j) = A(i,j) + x[i] * temp;
           }
         }
         jy += incy;
@@ -473,8 +503,7 @@ namespace TSQR {
           const scalar_type temp = alpha * y[jy-1];
           Ordinal ix = kx;
           for (Ordinal i = 0; i < m; ++i) {
-            scalar_type& A_ij = A[i + j*lda];
-            A_ij = A_ij + x[ix-1] * temp;
+            A(i,j) = A(i,j) + x[ix-1] * temp;
             ix += incx;
           }
         }
@@ -482,6 +511,7 @@ namespace TSQR {
       }
     }
   }
+
 
   template< class Ordinal, class Scalar >
   void
@@ -539,7 +569,9 @@ namespace TSQR {
   {
     const Scalar ZERO(0), ONE(1);
     lapack_type lapack;
-    blas_type blas;
+    using mat_type = Kokkos::View<scalar_type**, Kokkos::LayoutLeft, Kokkos::Serial>;
+    mat_type A_full (A, lda, n);
+    mat_type A_view = Kokkos::subview (A_full, std::pair<Ordinal, Ordinal> (0, m), Kokkos::ALL ());
 
     for (Ordinal k = 0; k < n; ++k) {
       work[k] = ZERO;
@@ -548,12 +580,14 @@ namespace TSQR {
     for (Ordinal k = 0; k < n-1; ++k) {
       Scalar& R_kk = R[ k + k * ldr ];
       Scalar* const A_1k = &A[ 0 + k * lda ];
-      Scalar* const A_1kp1 = &A[ 0 + (k+1) * lda ];
+      //Scalar* const A_1kp1 = &A[ 0 + (k+1) * lda ];
+      auto A_1kp1 = Kokkos::subview (A_view, std::pair<Ordinal, Ordinal> (0, m),
+                                     std::pair<Ordinal, Ordinal> (k+1, n));
 
       lapack.LARFG (m + 1, &R_kk, A_1k, 1, &tau[k]);
       // FIXME (mfh 08 Oct 2014) Should this be TRANS or CONJ_TRANS?
       // It was "T" before.
-      this->GEMV (Teuchos::TRANS, m, n-k-1, ONE, A_1kp1, lda, A_1k, 1, ZERO, work, 1);
+      this->GEMV (Teuchos::TRANS, m, n-k-1, ONE, A_1kp1.data (), lda, A_1k, 1, ZERO, work, 1);
 
       for (Ordinal j = k+1; j < n; ++j) {
         Scalar& R_kj = R[ k + j*ldr ];
@@ -561,7 +595,7 @@ namespace TSQR {
         work[j-k-1] += R_kj;
         R_kj -= tau[k] * work[j-k-1];
       }
-      this->GER (m, n-k-1, -tau[k], A_1k, 1, work, 1, A_1kp1, lda);
+      this->GER (m, n-k-1, -tau[k], A_1k, 1, work, 1, A_1kp1);
     }
     Scalar& R_nn = R[ (n-1) + (n-1) * ldr ];
     Scalar* const A_1n = &A[ 0 + (n-1) * lda ];
@@ -647,7 +681,9 @@ namespace TSQR {
     for (Ordinal k = 0; k < n-1; ++k) {
       scalar_type& R_top_kk = R_top(k, k);
       scalar_type* const R_bot_1k = &R_bot(0, k);
-      scalar_type* const R_bot_1kp1 = &R_bot(0, k+1);
+      //scalar_type* const R_bot_1kp1 = &R_bot(0, k+1);
+      auto R_bot_1kp1 = Kokkos::subview (R_bot, std::pair<Ordinal, Ordinal> (0, k+1),
+                                         std::pair<Ordinal, Ordinal> (k+1, n));
 
       // k+2: 1 element in R_top (R_top(k,k)), and k+1 elements in
       // R_bot (R_bot(1:k,k), in 1-based indexing notation).
@@ -657,7 +693,7 @@ namespace TSQR {
 
       // FIXME (mfh 08 Oct 2014) Should this be TRANS or CONJ_TRANS?
       // It was "T" before.
-      this->GEMV (Teuchos::TRANS, k+1, n-k-1, ONE, R_bot_1kp1, ldr_bot,
+      this->GEMV (Teuchos::TRANS, k+1, n-k-1, ONE, R_bot_1kp1.data (), ldr_bot,
                   R_bot_1k, 1, ZERO, work, 1);
 
       for (Ordinal j = k+1; j < n; ++j) {
@@ -665,7 +701,7 @@ namespace TSQR {
         work[j-k-1] += R_top_kj;
         R_top_kj -= tau[k] * work[j-k-1];
       }
-      this->GER (k+1, n-k-1, -tau[k], R_bot_1k, 1, work, 1, R_bot_1kp1, ldr_bot);
+      this->GER (k+1, n-k-1, -tau[k], R_bot_1k, 1, work, 1, R_bot_1kp1);
     }
     scalar_type& R_top_nn = R_top(n-1, n-1);
     scalar_type* const R_bot_1n = &R_bot(0, n-1);
@@ -759,7 +795,6 @@ namespace TSQR {
 
     const Ordinal ncols_C = C_top.dimension_1 ();
     const Ordinal ncols_Q = R_bot.dimension_1 ();
-    const Ordinal ldc_bot = C_bot.stride_1 ();
 
     for (Ordinal i = 0; i < ncols_C; ++i) {
       work[i] = ZERO;
@@ -801,7 +836,7 @@ namespace TSQR {
       for (Ordinal j_C = 0; j_C < ncols_C; ++j_C) {
         C_top(j_Q, j_C) -= tau[j_Q] * work[j_C];
       }
-      this->GER (j_Q+1, ncols_C, -tau[j_Q], R_bot_col, 1, work, 1, C_bot.data (), ldc_bot);
+      this->GER (j_Q+1, ncols_C, -tau[j_Q], R_bot_col, 1, work, 1, C_bot);
     }
   }
 } // namespace TSQR
