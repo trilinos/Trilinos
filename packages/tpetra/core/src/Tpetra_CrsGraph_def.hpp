@@ -6624,15 +6624,17 @@ namespace Tpetra {
       destGraph->reallocImportsIfNeeded(rbufLen);
     }
 
-    // packAndPrepare* methods modify numExportPacketsPerLID_.
-    destGraph->numExportPacketsPerLID_.template modify<Kokkos::HostSpace>();
-    Teuchos::ArrayView<size_t> numExportPacketsPerLID =
-      getArrayViewFromDualView(destGraph->numExportPacketsPerLID_);
+    {
+      // packAndPrepare* methods modify numExportPacketsPerLID_.
+      destGraph->numExportPacketsPerLID_.template modify<Kokkos::HostSpace>();
+      Teuchos::ArrayView<size_t> numExportPacketsPerLID =
+        getArrayViewFromDualView(destGraph->numExportPacketsPerLID_);
 
-    // Pack & Prepare w/ owning PIDs
-    packCrsGraphWithOwningPIDs(*this, destGraph->exports_,
-                               numExportPacketsPerLID, ExportLIDs,
-                               SourcePids, constantNumPackets, Distor);
+      // Pack & Prepare w/ owning PIDs
+      packCrsGraphWithOwningPIDs(*this, destGraph->exports_,
+                                 numExportPacketsPerLID, ExportLIDs,
+                                 SourcePids, constantNumPackets, Distor);
+    }
 
     // Do the exchange of remote data.
 #ifdef HAVE_TPETRA_MMM_TIMINGS
