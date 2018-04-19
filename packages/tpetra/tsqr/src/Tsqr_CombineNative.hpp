@@ -223,6 +223,14 @@ namespace TSQR {
                  scalar_type tau[],
                  scalar_type work[]) const;
 
+    void
+    apply_pair (const ApplyType& applyType,
+                const Kokkos::View<const scalar_type**, Kokkos::LayoutLeft, Kokkos::Serial>& R_bot, // ncols_Q
+                const scalar_type tau[],
+                const Kokkos::View<scalar_type**, Kokkos::LayoutLeft, Kokkos::Serial>& C_top, // ncols_C
+                const Kokkos::View<scalar_type**, Kokkos::LayoutLeft, Kokkos::Serial>& C_bot,
+                scalar_type work[]) const;
+
   public:
     CombineNative () {}
 
@@ -295,14 +303,14 @@ namespace TSQR {
     apply_pair (const ApplyType& applyType,
                 const Ordinal ncols_C,
                 const Ordinal ncols_Q,
-                const Scalar R_bot[],
+                const scalar_type R_bot[],
                 const Ordinal ldr_bot,
-                const Scalar tau[],
-                Scalar C_top[],
+                const scalar_type tau[],
+                scalar_type C_top[],
                 const Ordinal ldc_top,
-                Scalar C_bot[],
+                scalar_type C_bot[],
                 const Ordinal ldc_bot,
-                Scalar work[]) const;
+                scalar_type work[]) const;
 
   private:
     mutable combine_default_type default_;
@@ -709,17 +717,49 @@ namespace TSQR {
   apply_pair (const ApplyType& applyType,
               const Ordinal ncols_C,
               const Ordinal ncols_Q,
-              const Scalar R_bot[],
+              const scalar_type R_bot[],
               const Ordinal ldr_bot,
-              const Scalar tau[],
-              Scalar C_top[],
+              const scalar_type tau[],
+              scalar_type C_top[],
               const Ordinal ldc_top,
-              Scalar C_bot[],
+              scalar_type C_bot[],
               const Ordinal ldc_bot,
-              Scalar work[]) const
+              scalar_type work[]) const
   {
-    const Scalar ZERO(0);
-    blas_type blas;
+    using const_mat_type = Kokkos::View<const scalar_type**, Kokkos::LayoutLeft, Kokkos::Serial>;
+    using nonconst_mat_type = Kokkos::View<scalar_type**, Kokkos::LayoutLeft, Kokkos::Serial>;
+
+    const_mat_type R_bot_full (R_bot, ldr_bot, ncols_Q);
+    nonconst_mat_type C_top_full (C_top, ldc_top, ncols_C);
+    nonconst_mat_type C_bot_full (C_bot, ldc_bot, ncols_C);
+
+    auto R_bot_view = Kokkos::subview (R_bot_full,
+                                       std::pair<Ordinal, Ordinal> (0, ncols_Q),
+                                       Kokkos::ALL ());
+    auto C_top_view = Kokkos::subview (C_top_full,
+                                       std::pair<Ordinal, Ordinal> (0, ncols_C),
+                                       Kokkos::ALL ());
+    auto C_bot_view = Kokkos::subview (C_bot_full,
+                                       std::pair<Ordinal, Ordinal> (0, ncols_C),
+                                       Kokkos::ALL ());
+    this->apply_pair (applyType, R_bot_view, tau, C_top_view, C_bot_view, work);
+  }
+
+  template< class Ordinal, class Scalar >
+  void
+  CombineNative< Ordinal, Scalar, false >::
+  apply_pair (const ApplyType& applyType,
+              const Kokkos::View<const scalar_type**, Kokkos::LayoutLeft, Kokkos::Serial>& R_bot, // ncols_Q
+              const scalar_type tau[],
+              const Kokkos::View<scalar_type**, Kokkos::LayoutLeft, Kokkos::Serial>& C_top, // ncols_C
+              const Kokkos::View<scalar_type**, Kokkos::LayoutLeft, Kokkos::Serial>& C_bot,
+              scalar_type work[]) const
+  {
+    constexpr scalar_type ZERO {0.0};
+
+    const Ordinal ncols_C = C_top.dimension_1 ();
+    const Ordinal ncols_Q = R_bot.dimension_1 ();
+    const Ordinal ldc_bot = C_bot.stride_1 ();
 
     for (Ordinal i = 0; i < ncols_C; ++i) {
       work[i] = ZERO;
@@ -738,7 +778,7 @@ namespace TSQR {
     }
     for (Ordinal j_Q = j_start; j_Q != j_end; j_Q += j_step) {
       // Using Householder reflector stored in column j_Q of R_bot
-      const Scalar* const R_bot_col = &R_bot[ 0 + j_Q*ldr_bot ];
+      const scalar_type* const R_bot_col = &R_bot(0, j_Q);
 
       // In 1-based indexing notation, with k in 1, 2, ..., ncols_C
       // (inclusive): (Output is length ncols_C row vector)
@@ -749,19 +789,19 @@ namespace TSQR {
         // of C_top and rows 1:j_Q of C_bot.  (Again, this is in
         // 1-based indexing notation.
 
-        Scalar work_j_C = ZERO;
-        const Scalar* const C_bot_col = &C_bot[ 0 + j_C*ldc_bot ];
+        scalar_type work_j_C = ZERO;
+        const scalar_type* const C_bot_col = &C_bot(0, j_C);
 
         for (Ordinal k = 0; k <= j_Q; ++k)
           work_j_C += R_bot_col[k] * C_bot_col[k];
 
-        work_j_C += C_top[ j_Q + j_C*ldc_top ];
+        work_j_C += C_top(j_Q, j_C);
         work[j_C] = work_j_C;
       }
       for (Ordinal j_C = 0; j_C < ncols_C; ++j_C) {
-        C_top[ j_Q + j_C*ldc_top ] -= tau[j_Q] * work[j_C];
+        C_top(j_Q, j_C) -= tau[j_Q] * work[j_C];
       }
-      this->GER (j_Q+1, ncols_C, -tau[j_Q], R_bot_col, 1, work, 1, C_bot, ldc_bot);
+      this->GER (j_Q+1, ncols_C, -tau[j_Q], R_bot_col, 1, work, 1, C_bot.data (), ldc_bot);
     }
   }
 } // namespace TSQR
