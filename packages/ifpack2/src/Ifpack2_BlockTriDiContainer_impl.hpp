@@ -1842,11 +1842,9 @@ namespace Ifpack2 {
             ri0 = part2rowidx0(partidx);
             nrows = part2rowidx0(partidx+1) - ri0;
             Kokkos::parallel_for(Kokkos::TeamThreadRange(member, nrows), [&](const local_ordinal_type &j) {
-                if (v < nrows) {
-                  const local_ordinal_type pri = pri0 + j;
-                  if (norm == NULL) copy_multivectors<TagType>(j, v, pri, nrows, ri0);
-                  else              copy_multivectors_with_norm<TagType>(j, v, pri, nrows, ri0, norm);
-                }
+                const local_ordinal_type pri = pri0 + j;
+                if (norm == NULL) copy_multivectors<TagType>(j, v, pri, nrows, ri0);
+                else              copy_multivectors_with_norm<TagType>(j, v, pri, nrows, ri0, norm);
               });
           });
       }
@@ -1862,7 +1860,7 @@ namespace Ifpack2 {
 #endif
         value_count = 0;
         scalar_multivector = scalar_multivector_;
-#if !defined(IFPACK2_BLOCKTRIDICONTAINER_USE_TEAMPOLICY)
+#if defined(IFPACK2_BLOCKTRIDICONTAINER_USE_TEAMPOLICY)
         const int vl = vector_length;
         const Kokkos::TeamPolicy
           <execution_space,ToPackedMultiVectorTag> policy(packptr.extent(0) - 1, Kokkos::AUTO(), vl);
@@ -1890,29 +1888,29 @@ namespace Ifpack2 {
         } else {
           value_count = 0;
         }
-
-#if !defined(IFPACK2_BLOCKTRIDICONTAINER_USE_TEAMPOLICY)
+        
+#if defined(IFPACK2_BLOCKTRIDICONTAINER_USE_TEAMPOLICY)
         const int vl = vector_length;
         if (is_vectors_zero) {
           const Kokkos::TeamPolicy
-            <ToScalarMultiVectorFirstTag,execution_space> policy(packptr.extent(0) - 1, Kokkos::AUTO(), vl);
+            <execution_space,ToScalarMultiVectorFirstTag> policy(packptr.extent(0) - 1, Kokkos::AUTO(), vl);
           if (norm == NULL)  Kokkos::parallel_for(policy, *this);
           else               Kokkos::parallel_reduce(policy, *this, norm);              
         } else {
           const Kokkos::TeamPolicy
-            <ToScalarMultiVectorSecondTag,execution_space> policy(packptr.extent(0) - 1, Kokkos::AUTO(), vl);
+            <execution_space,ToScalarMultiVectorSecondTag> policy(packptr.extent(0) - 1, Kokkos::AUTO(), vl);
           if (norm == NULL)  Kokkos::parallel_for(policy, *this);
           else               Kokkos::parallel_reduce(policy, *this, norm);              
         }
 #else
         if (is_vectors_zero) {
           const Kokkos::RangePolicy
-            <ToScalarMultiVectorFirstTag,execution_space> policy(0, packptr.extent(0) - 1);
+            <execution_space,ToScalarMultiVectorFirstTag> policy(0, packptr.extent(0) - 1);
           if (norm == NULL)  Kokkos::parallel_for(policy, *this);
           else               Kokkos::parallel_reduce(policy, *this, norm);              
         } else {
           const Kokkos::RangePolicy
-            <ToScalarMultiVectorSecondTag,execution_space> policy(0, packptr.extent(0) - 1);
+            <execution_space,ToScalarMultiVectorSecondTag> policy(0, packptr.extent(0) - 1);
           if (norm == NULL)  Kokkos::parallel_for(policy, *this);
           else               Kokkos::parallel_reduce(policy, *this, norm);              
         }
