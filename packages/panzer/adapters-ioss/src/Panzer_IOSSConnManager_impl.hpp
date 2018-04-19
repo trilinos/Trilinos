@@ -655,10 +655,10 @@ void IOSSConnManager<GO>::buildOffsetsAndIdCounts(const panzer::FieldPattern & f
   {
     case 3:
       faceIdCnt = fp.getSubcellIndices(2,0).size();
-      [[gnu::fallthrough]];
+      // Intentional fall-through.
     case 2:
       edgeIdCnt = fp.getSubcellIndices(1,0).size();
-      [[gnu::fallthrough]];
+      // Intentional fall-through.
     case 1:
       nodeIdCnt = fp.getSubcellIndices(0,0).size();
       cellIdCnt = fp.getSubcellIndices(patternDim,0).size();
