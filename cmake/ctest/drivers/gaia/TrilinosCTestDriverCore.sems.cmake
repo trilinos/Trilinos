@@ -53,77 +53,31 @@
 # ************************************************************************
 # @HEADER
 
-
+  
 INCLUDE("${CTEST_SCRIPT_DIRECTORY}/../../TrilinosCTestDriverCore.cmake")
 
 #
-# Platform/compiler specific options for geminga using gcc
+# Platform/compiler specific options for trilinos-test2 using gcc
 #
 
 MACRO(TRILINOS_SYSTEM_SPECIFIC_CTEST_DRIVER)
 
   # Base of Trilinos/cmake/ctest then BUILD_DIR_NAME
+  SET( CTEST_DASHBOARD_ROOT "${TRILINOS_CMAKE_DIR}/../../${BUILD_DIR_NAME}" )
 
-  IF(COMM_TYPE STREQUAL MPI)
-    string(TOUPPER $ENV{SEMS_MPI_NAME} UC_MPI_NAME)
-    SET(BUILD_DIR_NAME ${UC_MPI_NAME}-$ENV{SEMS_MPI_VERSION}_${BUILD_TYPE}_${BUILD_NAME_DETAILS})
-  ELSE()
-    SET(BUILD_DIR_NAME ${COMM_TYPE}-${BUILD_TYPE}_${BUILD_NAME_DETAILS})
-  ENDIF()
+  SET( CTEST_NOTES_FILES "${CTEST_SCRIPT_DIRECTORY}/${CTEST_SCRIPT_NAME}" )
+  
+  SET_DEFAULT( CTEST_BUILD_FLAGS "-j10 -i" )
 
-  SET(CTEST_DASHBOARD_ROOT  "${TRILINOS_CMAKE_DIR}/../../${BUILD_DIR_NAME}" )
-  SET(CTEST_NOTES_FILES     "${CTEST_SCRIPT_DIRECTORY}/${CTEST_SCRIPT_NAME}" )
-  SET(CTEST_BUILD_FLAGS     "-j35 -i" )
+  SET_DEFAULT( CTEST_PARALLEL_LEVEL "10" )
 
-  SET_DEFAULT(CTEST_PARALLEL_LEVEL                  "35" )
-  SET_DEFAULT(Trilinos_ENABLE_SECONDARY_TESTED_CODE ON)
-  SET_DEFAULT(Trilinos_EXCLUDE_PACKAGES             ${EXTRA_EXCLUDE_PACKAGES} TriKota Optika)
+  SET_DEFAULT( Trilinos_ENABLE_SECONDARY_TESTED_CODE OFF)
 
-  SET(EXTRA_SYSTEM_CONFIGURE_OPTIONS
-      "-DCMAKE_BUILD_TYPE:STRING=${BUILD_TYPE}"
+  SET( EXTRA_SYSTEM_CONFIGURE_OPTIONS )
+  # No options to set!  When the SEMS env is loaded correctly, the compilers,
+  # MPI, and the TPLs will be found automatically!
 
-      "-DTrilinos_ENABLE_COMPLEX:BOOL=OFF"
-      # Adding the following as a possible fix for github issue #2115.
-      "-DCMAKE_CXX_USE_RESPONSE_FILE_FOR_OBJECTS:BOOL=ON"
-
-      "-DBUILD_SHARED_LIBS:BOOL=ON"
-
-      ### COMPILERS AND FLAGS ###
-      "-DTrilinos_ENABLE_CXX11:BOOL=ON"
-      "-DTrilinos_CXX11_FLAGS:STRING='-std=c++11 -expt-extended-lambda'"
-      # JHU 2018-01-08 removed -DKOKKOS_CUDA_USE_LAMBDA=1-DKOKKOS_CUDA_USE_LAMBDA=1 because
-      # it's already defined in KokkosCore_config.h (build-generated file).
-      "-DCMAKE_CXX_FLAGS:STRING='-Wall -Wno-unknown-pragmas -Wno-unused-but-set-variable -Wno-inline -Wshadow'"
-      "-DTrilinos_ENABLE_Fortran:BOOL=OFF"
-
-      ### TPLS ###
-      "-DTPL_ENABLE_CUDA:BOOL=ON"
-      "-DTPL_ENABLE_CUSPARSE:BOOL=ON"
-      "-DTPL_ENABLE_HWLOC:BOOL=OFF"
-
-      ### PACKAGE CONFIGURATION ###
-          "-DKokkos_ENABLE_Cuda:BOOL=ON"
-          "-DKokkos_ENABLE_Cuda_UVM:BOOL=ON"
-          "-DKokkos_ENABLE_Cuda_Lambda:BOOL=ON"
-          "-DTrilinos_ENABLE_Epetra:BOOL=OFF"
-          "-DTrilinos_ENABLE_ShyLU_Node:BOOL=OFF"
-
-      ### MISC ###
-      "-DCMAKE_VERBOSE_MAKEFILE:BOOL=ON"
-  )
-
-  SET_DEFAULT(COMPILER_VERSION "$ENV{SEMS_COMPILER_NAME}-$ENV{SEMS_COMPILER_VERSION}")
-
-  # Ensure that MPI is on for all parallel builds that might be run.
-  IF(COMM_TYPE STREQUAL MPI)
-
-    SET(EXTRA_SYSTEM_CONFIGURE_OPTIONS
-        ${EXTRA_SYSTEM_CONFIGURE_OPTIONS}
-        "-DTPL_ENABLE_MPI:BOOL=ON"
-            "-DMPI_BASE_DIR:PATH=$ENV{SEMS_OPENMPI_ROOT}"
-       )
-
-  ENDIF()
+  SET_DEFAULT(COMPILER_VERSION "GCC-4.8.4")
 
   TRILINOS_CTEST_DRIVER()
 
