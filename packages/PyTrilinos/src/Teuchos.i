@@ -120,6 +120,7 @@ using std::string;
 // Pull the RCP module into the Teuchos package
 %pythoncode
 %{
+__all__ = ["RCP"]
 import RCP
 %}
 

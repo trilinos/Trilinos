@@ -1111,7 +1111,6 @@ isend (const ArrayRCP<const float>& sendBuffer,
 }
 
 
-#ifdef HAVE_TEUCHOS_LONG_LONG_INT
 // Specialization for Ordinal=int and Packet=long long.
 template<>
 void
@@ -1297,8 +1296,6 @@ isend (const ArrayRCP<const unsigned long long>& sendBuffer,
 {
   return isendImpl<unsigned long long> (sendBuffer, destRank, tag, comm);
 }
-
-#endif // HAVE_TEUCHOS_LONG_LONG_INT
 
 
 // Specialization for Ordinal=int and Packet=long.

@@ -685,8 +685,6 @@ public:
 // * Specializations for conversions from std::string to build-in integer types.
 //
 
-#ifdef HAVE_TEUCHOS_LONG_LONG_INT
-
 /// \brief Convert an \c std::string to a <tt>long long</tt>.
 ///
 /// We assume the string stores a base-10 integer, if it stores an integer at all.
@@ -757,8 +755,6 @@ public:
     return safeConvert (t);
   }
 };
-
-#endif // HAVE_TEUCHOS_LONG_LONG_INT
 
 
 /// \brief Convert an \c std::string to a \c long.
@@ -1353,8 +1349,6 @@ public:
   }
 };
 
-#ifdef HAVE_TEUCHOS_LONG_LONG_INT
-
 //! Convert from \c double to <tt>long long</tt>.
 template<>
 class ValueTypeConversionTraits<long long, double> {
@@ -1409,8 +1403,6 @@ public:
     return static_cast<unsigned long long> (t);
   }
 };
-
-#endif // HAVE_TEUCHOS_LONG_LONG_INT
 
 
 //! Convert from \c float to \c short.
@@ -1639,8 +1631,6 @@ public:
   }
 };
 
-#ifdef HAVE_TEUCHOS_LONG_LONG_INT
-
 //! Convert from \c float to <tt>long long</tt>.
 template<>
 class ValueTypeConversionTraits<long long, float> {
@@ -1683,8 +1673,6 @@ public:
     return static_cast<unsigned long long> (t);
   }
 };
-
-#endif // HAVE_TEUCHOS_LONG_LONG_INT
 
 //
 // * Specializations for conversions between a unsigned built-in
@@ -1853,8 +1841,6 @@ public:
 };
 
 
-#ifdef HAVE_TEUCHOS_LONG_LONG_INT
-
 //! Convert from <tt>unsigned long long<tt> to <tt>long long</tt>.
 template<>
 class ValueTypeConversionTraits<long long, unsigned long long> {
@@ -1881,8 +1867,6 @@ public:
     return SignedToUnsignedValueTypeConversionTraits<unsigned long long, long long>::safeConvert (t);
   }
 };
-
-#endif // HAVE_TEUCHOS_LONG_LONG_INT
 
 //
 // * Specializations for conversions between different built-in
@@ -2224,8 +2208,6 @@ public:
   }
 };
 
-#ifdef HAVE_TEUCHOS_LONG_LONG_INT
-
 //! Convert from <tt>long long</tt> to \c int.
 template<>
 class ValueTypeConversionTraits<int, long long> {
@@ -2366,14 +2348,10 @@ public:
   }
 };
 
-#endif // HAVE_TEUCHOS_LONG_LONG_INT
-
 //
 // * Conversions from built-in integer types to built-in real-valued
 //   floating-point types.
 //
-
-#ifdef HAVE_TEUCHOS_LONG_LONG_INT
 
 //! Convert from <tt>long long</tt> to \c float.
 template<>
@@ -2465,8 +2443,6 @@ public:
     return static_cast<float> (t);
   }
 };
-
-#endif // HAVE_TEUCHOS_LONG_LONG_INT
 
 //
 // * Other conversions
@@ -2572,8 +2548,6 @@ public:
   }
 };
 
-#ifdef HAVE_TEUCHOS_LONG_LONG_INT
-
 //! Convert long long to std::complex<RealType>, for any RealType.
 template<class RealType>
 class ValueTypeConversionTraits<std::complex<RealType>, long long> {
@@ -2602,7 +2576,6 @@ public:
   }
 };
 
-#endif // HAVE_TEUCHOS_LONG_LONG_INT
 #endif // HAVE_TEUCHOS_COMPLEX
 
 //

@@ -234,6 +234,14 @@ elseif($ENV{CTEST_CONFIGURATION} MATCHES "nvcc_wrapper")
       TIMEOUT_MINUTES 420
       )
 
+    TRILINOS_DRIVER_ADD_DASHBOARD(
+      RELEASE_AMGX_CUDA-8.0.44
+      ctest_linux_nightly_mpi_release_muelu_amgx_cuda_geminga.cmake
+      CTEST_INSTALLER_TYPE release
+      RUN_SERIAL
+      TIMEOUT_MINUTES 420
+      )
+
   endif()
 
 

@@ -57,10 +57,17 @@ the following classes:
 "
 %enddef
 
+%define %loca_epetra_import_code
+"
+from . import ___init__
+"
+%enddef
+
 %module(package      = "PyTrilinos.LOCA.Epetra",
 	directors    = "1",
 	autodoc      = "1",
 	implicitconv = "1",
+        moduleimport = %loca_epetra_import_code,
 	docstring    = %loca_epetra_docstring) __init__
 
 %{
@@ -93,11 +100,11 @@ using Teuchos::rcp;
 
 // ___init__ was pointing to Pitchfork/___init__.so (?!?), so I fix
 // that.
-%pythoncode
-%{
-del ___init__
-from . import ___init__
-%}
+// %pythoncode
+// %{
+// del ___init__
+// from . import ___init__
+// %}
 
 %ignore *::operator=;
 

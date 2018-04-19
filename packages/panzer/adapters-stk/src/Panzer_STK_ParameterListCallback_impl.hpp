@@ -159,11 +159,11 @@ void ParameterListCallback<LocalOrdinalT,GlobalOrdinalT,Node>::buildCoordinates(
    case 3:
       zcoords_.resize(resultVec->getLocalLength()); 
       resultVec->getVector(2)->get1dCopy(Teuchos::arrayViewFromVector(zcoords_));
-      [[gnu::fallthrough]];
+      // Intentional fall-through.
    case 2:
       ycoords_.resize(resultVec->getLocalLength()); 
       resultVec->getVector(1)->get1dCopy(Teuchos::arrayViewFromVector(ycoords_));
-      [[gnu::fallthrough]];
+      // Intentional fall-through.
    case 1:
       xcoords_.resize(resultVec->getLocalLength()); 
       resultVec->getVector(0)->get1dCopy(Teuchos::arrayViewFromVector(xcoords_));
