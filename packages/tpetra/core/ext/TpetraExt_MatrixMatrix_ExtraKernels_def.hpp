@@ -282,7 +282,8 @@ void mult_A_B_newmatrix_LowThreadGustavsonKernel(CrsMatrixStruct<Scalar, LocalOr
     MM = rcp(new TimeMonitor (*TimeMonitor::getNewTimer(prefix_mmm + std::string("MMM Newmatrix OpenMPSort"))));
 #endif    
     // Sort & set values
-    Import_Util::sortCrsEntries(row_mapC, entriesC, valuesC);
+    if (params.is_null() || params->get("sort entries",true))
+      Import_Util::sortCrsEntries(row_mapC, entriesC, valuesC);
     C.setAllValues(row_mapC,entriesC,valuesC);
 
 }
@@ -680,7 +681,8 @@ void jacobi_A_B_newmatrix_LowThreadGustavsonKernel(Scalar omega,
     MM = rcp(new TimeMonitor (*TimeMonitor::getNewTimer(prefix_mmm + std::string("Jacobi Newmatrix OpenMPSort"))));
 #endif    
     // Sort & set values
-    Import_Util::sortCrsEntries(row_mapC, entriesC, valuesC);
+    if (params.is_null() || params->get("sort entries",true))
+      Import_Util::sortCrsEntries(row_mapC, entriesC, valuesC);
     C.setAllValues(row_mapC,entriesC,valuesC);
 
 }
