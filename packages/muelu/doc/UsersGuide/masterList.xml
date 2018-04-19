@@ -99,7 +99,15 @@
       <description>Syntax of ParameterList to use.  This should either be "muelu" or "ml." </description>
       <visible>false</visible>
       <comment-ML>parameter not existing in ML</comment-ML>
-    </parameter>
+     </parameter>
+
+     <parameter>
+       <name>hierarchy label</name>
+       <type>string</type>
+       <default>""</default>
+       <description>Label for the hierarchy. Is applied to timer labels.</description>
+       <visible>true</visible>
+     </parameter>
 
   </general>
 
