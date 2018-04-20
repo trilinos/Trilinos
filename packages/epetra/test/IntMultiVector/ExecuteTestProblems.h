@@ -45,7 +45,6 @@
 #include "Epetra_Map.h"
 #include "Epetra_LocalMap.h"
 #include "Epetra_IntMultiVector.h"
-#include "BuildTestProblems.h"
 #include "../epetra_test_err.h"
 
 int IntMultiVectorTests(const Epetra_BlockMap & Map, int NumVectors, bool verbose);
