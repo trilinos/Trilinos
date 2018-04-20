@@ -44,6 +44,8 @@
 //
 // @HEADER
 #include <iostream>
+#include <algorithm>  // shuffle
+#include <vector>     // vector
 
 #include <Xpetra_MultiVectorFactory.hpp>
 #include <Xpetra_IO.hpp>
@@ -502,7 +504,6 @@ void Multiply_LTG(const Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> &
 
 }
 
-
 // =========================================================================
 // =========================================================================
 // =========================================================================
@@ -513,6 +514,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
   using Teuchos::RCP; // reference count pointers
   using Teuchos::rcp;
   using Teuchos::TimeMonitor;
+  using std::endl;
 
   bool success = false;
   bool verbose = true;
@@ -533,11 +535,33 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
     // Parameters initialization
     // =========================================================================
     GO nx = 50, ny = 50, nz = 50;
-    Galeri::Xpetra::Parameters<GO> matrixParameters(clp, nx, ny, nz, "Laplace3D"); // manage parameters of the test case
+    // Galeri::Xpetra::Parameters<GO> matrixParameters(clp, nx, ny, nz, "Laplace3D"); // manage parameters of the test case
     Xpetra::Parameters             xpetraParameters(clp);                          // manage parameters of Xpetra
 
     bool   printTimings = true;  clp.setOption("timings", "notimings",  &printTimings, "print timings to screen");
     int    nrepeat      = 100;   clp.setOption("nrepeat",               &nrepeat,      "repeat the experiment N times");
+    // the kernels
+    bool do_viennaCL = true;
+    bool do_mkl      = true;
+    bool do_kk_mem   = true;
+    bool do_kk_dense = true;
+    bool do_kk_default = true;
+    bool do_ltg        = true;
+
+    #ifndef HAVE_MUELU_VIENNACL
+      do_viennaCL = false;
+    #endif
+
+    #ifndef HAVE_MUELU_MKL
+      do_mkl = false;
+    #endif
+    clp.setOption("viennaCL",   "noviennaCL",   &do_viennaCL,   "Evaluate ViennaCL");
+    clp.setOption("mkl",        "nomkl",        &do_mkl,        "Evaluate MKL SpMM");
+    clp.setOption("kk_mem",     "nokk_mem",     &do_kk_mem,     "Evaluate KK Mem");
+    clp.setOption("kk_dense",   "nokk_dense",   &do_kk_dense,   "Evaluate KK Dense");
+    clp.setOption("kk_default", "nokk_default", &do_kk_default, "Evaluate KK Default");
+    clp.setOption("ltg",        "noltg",        &do_ltg,        "Evaluate LTG");
+
     int kk_team_work_size=16;
 
     std::string matrixFileNameA = "A.mm"; clp.setOption("matrixfileA", &matrixFileNameA, "matrix market file containing matrix");
@@ -550,7 +574,57 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
       case Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL:                               break;
     }
 
-    out << "========================================================\n" << xpetraParameters << matrixParameters;
+    #ifndef HAVE_MUELU_VIENNACL
+    if (do_viennaCL == true ) {
+      out << "ViennaCL was requested, but this kernel is not available. Disabling..." << endl;
+      do_viennaCL = false;
+    }
+    #endif
+
+    #ifndef HAVE_MUELU_MKL
+    if (do_mkl == true ) {
+      out << "MKL was requested, but this kernel is not available. Disabling..." << endl;
+      do_mkl = false;
+    }
+    #endif
+
+    // simple hack to randomize order of experiments
+    enum class Experiments { ViennaCL=0, MKL_SPMM, KK_MEM, KK_DENSE, KK_DEFAULT, LTG };
+    std::vector<Experiments> my_experiments;
+    // add the experiments we will run
+    #ifdef HAVE_MUELU_VIENNACL
+    if (do_viennaCL) my_experiments.push_back(Experiments::ViennaCL);   // ViennaCL
+    #endif
+
+    #ifdef HAVE_MUELU_MKL
+    if (do_mkl) my_experiments.push_back(Experiments::MKL_SPMM);   // MKL SPMM
+    #endif
+
+    // assume these are available
+    if (do_kk_mem)     my_experiments.push_back(Experiments::KK_MEM);     // KK Mem
+    if (do_kk_dense)   my_experiments.push_back(Experiments::KK_DENSE);   // KK Dense
+    if (do_kk_default) my_experiments.push_back(Experiments::KK_DEFAULT); // KK Default
+    if (do_ltg)        my_experiments.push_back(Experiments::LTG);        // LTG
+
+
+    out << "========================================================" << endl
+        << xpetraParameters
+        // << matrixParameters
+        << "========================================================" << endl
+        << "Template Types:" << endl
+        << "  Scalar:        " << Teuchos::demangleName(typeid(SC).name()) << endl
+        << "  LocalOrdinal:  " << Teuchos::demangleName(typeid(LO).name()) << endl
+        << "  GlobalOrdinal: " << Teuchos::demangleName(typeid(GO).name()) << endl
+        << "  Node:          " << Teuchos::demangleName(typeid(NO).name()) << endl
+        << "Sizes:" << endl
+        << "  Scalar:        " << sizeof(SC) << endl
+        << "  LocalOrdinal:  " << sizeof(LO) << endl
+        << "  GlobalOrdinal: " << sizeof(GO) << endl
+        << "========================================================" << endl
+        << "Matrix:        " << Teuchos::demangleName(typeid(Matrix).name()) << endl
+        << "Vector:        " << Teuchos::demangleName(typeid(Vector).name()) << endl
+        << "Hierarchy:     " << Teuchos::demangleName(typeid(Hierarchy).name()) << endl
+        << "========================================================" << endl;
 
     // At the moment, this test only runs on one MPI rank
     if(comm->getSize() != 1) exit(1);
@@ -558,7 +632,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
     // =========================================================================
     // Problem construction
     // =========================================================================
-    RCP<TimeMonitor> globalTimeMonitor = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("MatrixRead: S - Global Time"))), tm;
+    RCP<TimeMonitor> globalTimeMonitor = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("MatrixRead: S - Global Time")));
 
     comm->barrier();
 
@@ -567,74 +641,98 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
     RCP<Matrix> B = Xpetra::IO<SC,LO,GO,Node>::Read(std::string(matrixFileNameB), lib, comm);
     RCP<Matrix> C;
 
-
+    globalTimeMonitor = Teuchos::null;
     comm->barrier();
-    tm = Teuchos::null;
 
-    out << "Matrix Read complete.\n========================================================" << std::endl;
-    comm->barrier();
+    out << "Matrix Read complete." << endl
+        << "Matrix A:" << endl
+        << *A
+        << "========================================================" << endl
+        << "Matrix B:" << endl
+        << *B
+        << "========================================================" << endl;
+
+    // random source
+    std::random_device rd;
+    std::mt19937 random_source (rd());
+   
+    // no need for a barrier, because the randomization process uses a collective.
+    if ( my_experiments.empty() ) {
 
     for (int i=0; i<nrepeat; i++) {
 
-      // ViennaCL
-#ifdef HAVE_MUELU_VIENNACL
-        C = Xpetra::MatrixFactory<SC,LO,GO,Node>::Build(A->getRowMap(),0);
-        {
-          TimeMonitor t(*TimeMonitor::getNewTimer("MM ViennaCL: Total"));
-          Multiply_ViennaCL(*A,*B,*C);
-        }
-        comm->barrier();
-#endif
-      
+      // randomize the experiments
+      if (comm->getRank() == 0 ) {
+        std::shuffle(my_experiments.begin(), my_experiments.end(), random_source);
+      }
+      // Broadcast this ordering to the other processes
+      comm->broadcast(0,
+                      static_cast<int>(sizeof(Experiments::LTG)*my_experiments.size()),
+                      reinterpret_cast<char *>(my_experiments.data()));
+
+      // loop over the randomized experiments 
+      for (const auto& experiment_id : my_experiments) {
+        switch (experiment_id) {
+        // ViennaCL
+        case Experiments::ViennaCL:
+          #ifdef HAVE_MUELU_VIENNACL
+          C = Xpetra::MatrixFactory<SC,LO,GO,Node>::Build(A->getRowMap(),0);
+          {
+            TimeMonitor t(*TimeMonitor::getNewTimer("MM ViennaCL: Total"));
+            Multiply_ViennaCL(*A,*B,*C);
+          }
+          #endif
+          break;
         // MKL_SPMM
-#ifdef HAVE_MUELU_MKL
-        C = Xpetra::MatrixFactory<SC,LO,GO,Node>::Build(A->getRowMap(),0);
-        {
-          TimeMonitor t(*TimeMonitor::getNewTimer("MM MKL: Total"));
-          Multiply_MKL_SPMM(*A,*B,*C);
-        }
-        comm->barrier();
-#endif
-       
+        case Experiments::MKL_SPMM:
+          #ifdef HAVE_MUELU_MKL
+          C = Xpetra::MatrixFactory<SC,LO,GO,Node>::Build(A->getRowMap(),0);
+          {
+            TimeMonitor t(*TimeMonitor::getNewTimer("MM MKL: Total"));
+            Multiply_MKL_SPMM(*A,*B,*C);
+          }
+          #endif
+          break;
         // KK Algorithms (KK Memory)
-        C = Xpetra::MatrixFactory<SC,LO,GO,Node>::Build(A->getRowMap(),0);
-        {
-          TimeMonitor t(*TimeMonitor::getNewTimer("MM SPGEMM_KK_MEMORY: Total"));
-          Multiply_KokkosKernels(*A,*B,*C,std::string("SPGEMM_KK_MEMORY"),kk_team_work_size);
-        }
-        comm->barrier();
-
+        case Experiments::KK_MEM:
+          C = Xpetra::MatrixFactory<SC,LO,GO,Node>::Build(A->getRowMap(),0);
+          {
+            TimeMonitor t(*TimeMonitor::getNewTimer("MM SPGEMM_KK_MEMORY: Total"));
+            Multiply_KokkosKernels(*A,*B,*C,std::string("SPGEMM_KK_MEMORY"),kk_team_work_size);
+          }
+          break;
         // KK Algorithms (KK Dense)
-        C = Xpetra::MatrixFactory<SC,LO,GO,Node>::Build(A->getRowMap(),0);
-        {
-          TimeMonitor t(*TimeMonitor::getNewTimer("MM SPGEMM_KK_DENSE: Total"));
-          Multiply_KokkosKernels(*A,*B,*C,std::string("SPGEMM_KK_DENSE"),kk_team_work_size);
-        }
-        comm->barrier();
-
-
+        case Experiments::KK_DENSE:
+          C = Xpetra::MatrixFactory<SC,LO,GO,Node>::Build(A->getRowMap(),0);
+          {
+            TimeMonitor t(*TimeMonitor::getNewTimer("MM SPGEMM_KK_DENSE: Total"));
+            Multiply_KokkosKernels(*A,*B,*C,std::string("SPGEMM_KK_DENSE"),kk_team_work_size);
+          }
+          break;
         // KK Algorithms (KK Default)
-        C = Xpetra::MatrixFactory<SC,LO,GO,Node>::Build(A->getRowMap(),0);
-        {
-          TimeMonitor t(*TimeMonitor::getNewTimer("MM SPGEMM_KK: Total"));
-          Multiply_KokkosKernels(*A,*B,*C,std::string("SPGEMM_KK"),kk_team_work_size);
-        }
-        comm->barrier();
-
-
+        case Experiments::KK_DEFAULT:
+          C = Xpetra::MatrixFactory<SC,LO,GO,Node>::Build(A->getRowMap(),0);
+          {
+            TimeMonitor t(*TimeMonitor::getNewTimer("MM SPGEMM_KK: Total"));
+            Multiply_KokkosKernels(*A,*B,*C,std::string("SPGEMM_KK"),kk_team_work_size);
+          }
+          break;
         // LTG
-        C = Xpetra::MatrixFactory<SC,LO,GO,Node>::Build(A->getRowMap(),0);
-        {
-          TimeMonitor t(*TimeMonitor::getNewTimer("MM LTG: Total"));
-          Multiply_LTG(*A,*B,*C);
+        case Experiments::LTG:
+          C = Xpetra::MatrixFactory<SC,LO,GO,Node>::Build(A->getRowMap(),0);
+          {
+            TimeMonitor t(*TimeMonitor::getNewTimer("MM LTG: Total"));
+            Multiply_LTG(*A,*B,*C);
+          }
+          break;
+        default:
+          std::cerr << "Unknown experiment ID encountered: " << (int) experiment_id << std::endl;
         }
         comm->barrier();
-
-    }// end repeat
+      }// end random exp loop
+    } // end repeat
+    } // end ! my_experiments.empty()
     
-    tm = Teuchos::null;
-    globalTimeMonitor = Teuchos::null;
-
     if (printTimings) {
       TimeMonitor::summarize(A->getRowMap()->getComm().ptr(), std::cout, false, true, false, Teuchos::Union, "", true);
     }
