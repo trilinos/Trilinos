@@ -421,9 +421,7 @@ public:
 public:
   //
   enum EOptType { OPT_NONE, OPT_BOOL_TRUE, OPT_BOOL_FALSE, OPT_INT, OPT_LONG_INT, OPT_SIZE_T,
-#ifdef HAVE_TEUCHOS_LONG_LONG_INT
   OPT_LONG_LONG_INT,
-#endif
   OPT_DOUBLE, OPT_STRING, OPT_ENUM_INT };
 
   // RAB: 2003/10/10: Note: I had to move this out of the private section since
@@ -755,11 +753,9 @@ std::string CommandLineProcessor::opt_type_str( EOptType opt_type ) const
     case OPT_SIZE_T:
       str = "size_t";
       break;
-#ifdef HAVE_TEUCHOS_LONG_LONG_INT
     case OPT_LONG_LONG_INT:
       str = "long long int";
       break;
-#endif
     case OPT_DOUBLE:
       str = "double";
       break;
