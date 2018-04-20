@@ -14,7 +14,6 @@
 #include <Teuchos_XMLParameterListHelpers.hpp>
 #include <Xpetra_CrsMatrix.hpp>
 #include <Xpetra_MultiVector.hpp>
-#include <Xpetra_MultiVectorFactory.hpp>
 
 #include <MueLu.hpp>
 
@@ -50,7 +49,6 @@ namespace MueLu {
     typedef MueLu::Hierarchy<Scalar,LocalOrdinal,GlobalOrdinal,Node> Hierarchy;
     typedef MueLu::MLParameterListInterpreter<Scalar,LocalOrdinal,GlobalOrdinal,Node> MLParameterListInterpreter;
     typedef MueLu::ParameterListInterpreter<Scalar,LocalOrdinal,GlobalOrdinal,Node> ParameterListInterpreter;
-    typedef Xpetra::MultiVectorFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node> MultiVectorFactory;
 
     std::string timerName = "MueLu setup time";
     RCP<Teuchos::Time> tm = Teuchos::TimeMonitor::getNewTimer(timerName);
@@ -89,42 +87,12 @@ namespace MueLu {
     H->GetLevel(0)->Set("A", op);
 
     // Set coordinates if available
-    if (coords != Teuchos::null) {
+    if (coords != Teuchos::null)
       H->GetLevel(0)->Set("Coordinates", coords);
-    }
 
-    // Wrap nullspace if available, otherwise use constants
-    if (nullspace == Teuchos::null) {
-      int nPDE = MueLu::MasterList::getDefault<int>("number of equations");
-      if (paramList.isSublist("Matrix")) {
-        // Factory style parameter list
-        const Teuchos::ParameterList& operatorList = paramList.sublist("Matrix");
-        if (operatorList.isParameter("PDE equations"))
-          nPDE = operatorList.get<int>("PDE equations");
-
-      } else if (paramList.isParameter("number of equations")) {
-        // Easy style parameter list
-        nPDE = paramList.get<int>("number of equations");
-      }
-
-      nullspace = MultiVectorFactory::Build(op->getDomainMap(), nPDE);
-      if (nPDE == 1) {
-        nullspace->putScalar(Teuchos::ScalarTraits<Scalar>::one());
-
-      } else {
-        for (int i = 0; i < nPDE; i++) {
-          Teuchos::ArrayRCP<Scalar> nsData = nullspace->getDataNonConst(i);
-          for (int j = 0; j < nsData.size(); j++) {
-            GlobalOrdinal GID = op->getDomainMap()->getGlobalElement(j) - op->getDomainMap()->getIndexBase();
-
-            if ((GID-i) % nPDE == 0)
-              nsData[j] = Teuchos::ScalarTraits<Scalar>::one();
-          }
-        }
-      }
-    }
-    H->GetLevel(0)->Set("Nullspace", nullspace);
-
+    // Set nullspace if available
+    if (nullspace != Teuchos::null)
+      H->GetLevel(0)->Set("Nullspace", nullspace);
 
     mueLuFactory->SetupHierarchy(*H);
 

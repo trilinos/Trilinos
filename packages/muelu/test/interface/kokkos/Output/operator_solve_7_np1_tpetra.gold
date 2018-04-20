@@ -48,6 +48,9 @@ Level 1
    OnePt aggregate map name =    [default]
    OnePt aggregate map factory =    [default]
    
+   Nullspace factory (MueLu::NullspaceFactory_kokkos)
+   Fine level nullspace = Nullspace
+   
    Build (MueLu::CoarseMapFactory_kokkos)
    [empty list]
    
