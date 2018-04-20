@@ -23,7 +23,6 @@ The base directory:
 contains files that are used for driving builds on all machines.  These files
 define common behavior and reduces duplication to ease maintenance.
 
-
 This directory contains the file:
 
 ```
@@ -40,27 +39,26 @@ given in the files defined in the directory:
 
 That file reads `JOB_NAME` from the env and uses it to set the CDash build
 name.  (Therefore, the Jenkikns `JOB_NAME` is the same as the CDash build name
-for all of these Trilinos ATDM builds.)
+for all of these Trilinos ATDM builds.)  It also other CMake and CTest options
+that are pulled out of the env set by the
+`cmake/std/atdm/<system_name>/environment.sh` script.  (See `$ENV{<varName>}`
+to see what vars are pulled out of the env.)
 
-
-That directory contains a CTest -S driver script:
+This directory contains a CTest -S driver script:
 
 ```
   Trilinos/cmake/ctest/drivers/atdm/ctest-driver.cmake
 ```
 
-This files sets other CMake and CTest options that are pulled out of the env
-set by the `cmake/std/atdm/<system_name>/environment.sh` script.
-
-Given this file `atdm/ctest-driver.cmake`, then:
+which is called using:
 
 ```
   ctest -S <base-dir>/Trilinos/cmake/ctest/drivers/atdm/ctest-driver.cmake
 ```
 
-can be run using any way desired and it will clone a new Trilinos git repo (if
-not cloned already).  (But this file get directly run by the universal driver
-script `ctest-s-driver.sh` described above.)
+which can be run using any way desired and it will clone a new Trilinos git
+repo (if not cloned already).  (But this file get directly run by the
+universal driver script `ctest-s-driver.sh` described above.)
 
 This directory contains the file:
 

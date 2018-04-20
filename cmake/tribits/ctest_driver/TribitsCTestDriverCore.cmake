@@ -571,8 +571,6 @@ INCLUDE(${CMAKE_CURRENT_LIST_DIR}/TribitsCTestDriverCoreHelpers.cmake)
 #     ``CTEST_ENABLE_MODIFIED_PACKAGES_ONLY=TRUE`` is set in which case the
 #     default value is ``TRUE``.
 #
-#   .. _${PROJECT_NAME}_ENABLE_SECONDARY_TESTED_CODE:
-#
 #   ``${PROJECT_NAME}_ENABLE_SECONDARY_TESTED_CODE``
 #
 #     If set to ``TRUE``, then ST packages will get enabled in automated logic
@@ -1441,7 +1439,11 @@ FUNCTION(TRIBITS_CTEST_DRIVER)
   SET_DEFAULT_AND_FROM_ENV( CTEST_SUBMIT_RETRY_COUNT 5 ) # Default defined by ctest 
   SET_DEFAULT_AND_FROM_ENV( CTEST_SUBMIT_RETRY_DELAY 3 ) # Default defined by ctest?
 
-  SET_DEFAULT_AND_FROM_ENV( ${PROJECT_NAME}_ENABLE_SECONDARY_TESTED_CODE OFF )
+  IF ("${${PROJECT_NAME}_ENABLE_SECONDARY_TESTED_CODE_DEFAULT}" STREQUAL "")
+    SET(${PROJECT_NAME}_ENABLE_SECONDARY_TESTED_CODE_DEFAULT OFF)
+  ENDIF()
+  SET_DEFAULT_AND_FROM_ENV( ${PROJECT_NAME}_ENABLE_SECONDARY_TESTED_CODE
+    ${${PROJECT_NAME}_ENABLE_SECONDARY_TESTED_CODE_DEFAULT} )
 
   # List of additional packages that will be enabled over the current set of
   # all packages (that would be set by ${PROJECT_NAME}_ENABLE_ALL_PACKAGES).
