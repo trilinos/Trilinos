@@ -54,15 +54,10 @@
 #include "Tpetra_Util.hpp"
 #include "Tpetra_Distributor.hpp"
 #include "Tpetra_Details_reallocDualViewIfNeeded.hpp"
+#include "Tpetra_Vector.hpp"
 #include "Kokkos_DualView.hpp"
 #include <Teuchos_Array.hpp>
 #include <utility>
-
-// Tpetra::CrsMatrix uses the functions below in its implementation.
-// To avoid a circular include issue, only include the declarations
-// for CrsMatrix.  We will include the definition after the functions
-// here have been defined.
-#include "Tpetra_CrsMatrix_decl.hpp"
 
 namespace Tpetra {
 namespace Import_Util {
@@ -333,7 +328,7 @@ sortCrsEntries (const rowptr_array_type& CRS_rowptr,
 {
   // Generate dummy values array
   typedef typename colind_array_type::execution_space execution_space;
-  typedef typename CrsMatrix<>::impl_scalar_type scalar_type;
+  typedef Tpetra::Details::DefaultTypes::scalar_type scalar_type;
   typedef typename Kokkos::View<scalar_type*, execution_space> scalar_view_type;
   scalar_view_type CRS_vals;
   sortCrsEntries<rowptr_array_type, colind_array_type,
@@ -728,10 +723,5 @@ void getTwoTransferOwnershipVector(const ::Tpetra::Details::Transfer<LocalOrdina
 
 } // namespace Import_Util
 } // namespace Tpetra
-
-// We can include the definitions for Tpetra::CrsMatrix now that the above
-// functions have been defined.  For ETI, this isn't necessary, so we just
-// including the generated hpp
-#include "Tpetra_CrsMatrix.hpp"
 
 #endif // TPETRA_IMPORT_UTIL_HPP
