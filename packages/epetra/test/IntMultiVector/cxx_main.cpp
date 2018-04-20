@@ -51,7 +51,6 @@
 #else
 #include "Epetra_SerialComm.h"
 #endif
-#include "BuildTestProblems.h"
 #include "ExecuteTestProblems.h"
 #include "../epetra_test_err.h"
 #include "Epetra_Version.h"
