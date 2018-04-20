@@ -121,7 +121,7 @@ T* getRawPtr( const Ptr<T>& x ) {
 
 template<class T>
 inline
-T* getCount( const Ptr<T>& x ) {
+int getCount( const Ptr<T>& x ) {
   return x.strong_count();
 }
 
