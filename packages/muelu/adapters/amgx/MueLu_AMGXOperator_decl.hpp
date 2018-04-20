@@ -253,7 +253,7 @@ namespace MueLu {
 
       // Construct AMGX communication pattern
       if (numProcs > 1) {
-        RCP<const Tpetra::Import<LO,GO> > importer = inA->getCrsGraph()->getImporter();
+        RCP<const Tpetra::Import<LO,GO,NO> > importer = inA->getCrsGraph()->getImporter();
 
         TEUCHOS_TEST_FOR_EXCEPTION(importer.is_null(), MueLu::Exceptions::RuntimeError, "The matrix A has no Import object.");
 
@@ -344,7 +344,7 @@ namespace MueLu {
           send_maps[i] = &(sendDatas[i][0]);
 
         // Debugging
-        printMaps(comm, sendDatas, amgx2muelu, neighbors, *importer->getTargetMap(), "send_map_vector");
+        //        printMaps(comm, sendDatas, amgx2muelu, neighbors, *importer->getTargetMap(), "send_map_vector");
 
         // Construct recv arrays
         std::vector<std::vector<int> > recvDatas (num_neighbors);
@@ -362,7 +362,7 @@ namespace MueLu {
           recv_maps[i] = &(recvDatas[i][0]);
 
         // Debugging
-        printMaps(comm, recvDatas, amgx2muelu, neighbors, *importer->getTargetMap(), "recv_map_vector");
+        //        printMaps(comm, recvDatas, amgx2muelu, neighbors, *importer->getTargetMap(), "recv_map_vector");
 
         AMGX_SAFE_CALL(AMGX_matrix_comm_from_maps_one_ring(A_, 1, num_neighbors, neighbors, &send_sizes[0], &send_maps[0], &recv_sizes[0], &recv_maps[0]));
 
