@@ -155,7 +155,7 @@ int main( int argc, char* argv[] ) {
     bool passed_test_2 = false;
     *outStream << "Throw exception on mismatched dimension : ";
 
-    try { auto value2 = test_single_1.value(*y); }
+    try { test_single_1.value(*y); }
     catch( std::logic_error size_mismatch ) { passed_test_2 = true;  }
 
     if( passed_test_2 ) { *outStream << "Works!" << std::endl; }
@@ -169,7 +169,7 @@ int main( int argc, char* argv[] ) {
     bool passed_test_3 = false;
     *outStream << "Throw exception on mismatched type : ";
 
-    try { auto value2 = test_single_1.value(*y); }
+    try { test_single_1.value(*y); }
     catch( std::logic_error dim_mismatch ) { passed_test_3 = true;  }
 
     if( passed_test_3 ) { *outStream << "Works!" << std::endl; }
