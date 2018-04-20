@@ -47,6 +47,7 @@
 
 // Teuchos
 #include <Teuchos_StandardCatchMacros.hpp>
+#include <Teuchos_XMLParameterListHelpers.hpp>
 
 // Xpetra
 #include <Xpetra_Map.hpp>
