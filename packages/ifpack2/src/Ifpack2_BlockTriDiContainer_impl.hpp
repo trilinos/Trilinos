@@ -101,12 +101,12 @@ namespace Ifpack2 {
     template <typename ViewType>
     using ConstUnmanaged = Const<Unmanaged<ViewType> >;    
 
-// #if defined(HAVE_IFPACK2_CUDA) && defined (KOKKOS_ENABLE_CUDA)
-// #  define IFPACK2_BLOCKTRIDICONTAINER_USE_TEAMPOLICY 1
-// #else
-// #  undef  IFPACK2_BLOCKTRIDICONTAINER_USE_TEAMPOLICY
-// #endif
-#define IFPACK2_BLOCKTRIDICONTAINER_USE_TEAMPOLICY 1
+#if defined(HAVE_IFPACK2_CUDA) && defined (KOKKOS_ENABLE_CUDA)
+#  define IFPACK2_BLOCKTRIDICONTAINER_USE_TEAMPOLICY 1
+#else
+#  undef  IFPACK2_BLOCKTRIDICONTAINER_USE_TEAMPOLICY
+#endif
+
     ///
     /// utility functions
     ///
@@ -1511,6 +1511,7 @@ namespace Ifpack2 {
       void 
       factorize (const local_ordinal_type& packidx) const {
         using namespace KokkosBatched::Experimental;
+        using AlgoType = Algo::Level3::Blocked;
         
         // constant
         const auto one = Kokkos::ArithTraits<magnitude_type>::one();
@@ -1528,13 +1529,13 @@ namespace Ifpack2 {
         SerialLU<Algo::LU::Unblocked>::invoke(A, tiny);
         for (local_ordinal_type i=1;i<nrows;++i,i0+=3) {
           B.assign_data( &vector_values(i0+1,0,0) );
-          SerialTrsm<Side::Left,Uplo::Lower,Trans::NoTranspose,Diag::Unit,Algo::Trsm::Blocked>
+          SerialTrsm<Side::Left,Uplo::Lower,Trans::NoTranspose,Diag::Unit,AlgoType>
             ::invoke(one, A, B);
           C.assign_data( &vector_values(i0+2,0,0) );
-          SerialTrsm<Side::Right,Uplo::Upper,Trans::NoTranspose,Diag::NonUnit,Algo::Trsm::Blocked>
+          SerialTrsm<Side::Right,Uplo::Upper,Trans::NoTranspose,Diag::NonUnit,AlgoType>
             ::invoke(one, A, C);
           A.assign_data( &vector_values(i0+3,0,0) );
-          SerialGemm<Trans::NoTranspose,Trans::NoTranspose,Algo::Gemm::Blocked>
+          SerialGemm<Trans::NoTranspose,Trans::NoTranspose,AlgoType>
             ::invoke(-one, C, B, one, A);
           SerialLU<Algo::LU::Unblocked>::invoke(A, tiny);
         }
@@ -1583,7 +1584,8 @@ namespace Ifpack2 {
                  const local_ordinal_type &v,
                  const local_ordinal_type &packidx) const {
         using namespace KokkosBatched::Experimental;
-        
+        using AlgoType = Algo::Level3::Unblocked;
+
         // constant
         const auto one = Kokkos::ArithTraits<magnitude_type>::one();
         
@@ -1600,13 +1602,13 @@ namespace Ifpack2 {
         TeamLU<member_type,Algo::LU::Unblocked>::invoke(member, A, tiny);
         for (local_ordinal_type i=1;i<nrows;++i,i0+=3) {
           B.assign_data( &scalar_values(i0+1,0,0,v) );
-          TeamTrsm<member_type,Side::Left,Uplo::Lower,Trans::NoTranspose,Diag::Unit,Algo::Trsm::Blocked>
+          TeamTrsm<member_type,Side::Left,Uplo::Lower,Trans::NoTranspose,Diag::Unit,AlgoType>
             ::invoke(member, one, A, B);
           C.assign_data( &scalar_values(i0+2,0,0,v) );
-          TeamTrsm<member_type,Side::Right,Uplo::Upper,Trans::NoTranspose,Diag::NonUnit,Algo::Trsm::Blocked>
+          TeamTrsm<member_type,Side::Right,Uplo::Upper,Trans::NoTranspose,Diag::NonUnit,AlgoType>
             ::invoke(member, one, A, C);
           A.assign_data( &scalar_values(i0+3,0,0,v) );
-          TeamGemm<member_type,Trans::NoTranspose,Trans::NoTranspose,Algo::Gemm::Blocked>
+          TeamGemm<member_type,Trans::NoTranspose,Trans::NoTranspose,AlgoType>
             ::invoke(member, -one, C, B, one, A);
           TeamLU<member_type,Algo::LU::Unblocked>::invoke(member, A, tiny);
         }
@@ -1990,8 +1992,7 @@ namespace Ifpack2 {
       void 
       solve(const local_ordinal_type& packidx) const {
         using namespace KokkosBatched::Experimental;
-        //using AlgoType = Algo::Level2::Unblocked;
-        using AlgoType = Algo::Level2::Blocked;
+        using AlgoType = Algo::Level2::Unblocked;
         
         // constant
         const auto one = Kokkos::ArithTraits<magnitude_type>::one();
@@ -2052,8 +2053,7 @@ namespace Ifpack2 {
             const local_ordinal_type &v,
             const local_ordinal_type& packidx) const {
         using namespace KokkosBatched::Experimental;
-        //using AlgoType = Algo::Level2::Unblocked;
-        using AlgoType = Algo::Level2::Blocked;
+        using AlgoType = Algo::Level2::Unblocked;
 
         // constant
         const auto one = Kokkos::ArithTraits<magnitude_type>::one();
@@ -2117,13 +2117,14 @@ namespace Ifpack2 {
         const local_ordinal_type packidx = member.league_rank();
         const local_ordinal_type partidx_begin = packptr(packidx);
         const local_ordinal_type npacks = packptr(packidx+1) - partidx_begin;
-        Kokkos::parallel_for(Kokkos::ThreadVectorRange(member, npacks),[&](const int &v) {
+        const local_ordinal_type vl = vector_length;
+        Kokkos::parallel_for(Kokkos::ThreadVectorRange(member, vl /* npacks*/ ),[&](const int &v) {
             solve(member, v, packidx);
           });
       }      
 
       void run() {
-#if !defined(IFPACK2_BLOCKTRIDICONTAINER_USE_TEAMPOLICY)
+#if defined(IFPACK2_BLOCKTRIDICONTAINER_USE_TEAMPOLICY)
         const int vl = vector_length;
         Kokkos::TeamPolicy<execution_space> policy(packptr.extent(0) - 1, Kokkos::AUTO(), vl);
         Kokkos::parallel_for(policy, *this);
@@ -2133,7 +2134,6 @@ namespace Ifpack2 {
         Kokkos::parallel_for(policy, *this);
 #  endif
 #endif
-
       }
     }; 
 
@@ -2223,7 +2223,6 @@ namespace Ifpack2 {
       void 
       operator() (const SeqTag &, const local_ordinal_type& i) const {
         using namespace KokkosBatched::Experimental;
-        //using AlgoType = Algo::Level2::Unblocked;
         using AlgoType = Algo::Level2::Blocked;
 
         // constants
@@ -2312,7 +2311,6 @@ namespace Ifpack2 {
       void 
       operator() (const AsyncTag &, const local_ordinal_type& partidx) const {
         using namespace KokkosBatched::Experimental;
-        //using AlgoType = Algo::Level2::Unblocked;
         using AlgoType = Algo::Level2::Blocked;
 
         // constants        
@@ -2463,7 +2461,6 @@ namespace Ifpack2 {
       void 
       operator() (const OverlapTag<P> &, const local_ordinal_type& partidx) const {
         using namespace KokkosBatched::Experimental;
-        //using AlgoType = Algo::Level2::Unblocked;
         using AlgoType = Algo::Level2::Blocked;
 
         // constants        
