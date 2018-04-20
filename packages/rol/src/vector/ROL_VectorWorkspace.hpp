@@ -46,6 +46,7 @@
 #define ROL_VECTORWORKSPACE_HPP
 
 #include "ROL_Vector.hpp"
+#include <iostream>
 #include <map>
 #include <utility>
 
@@ -77,6 +78,9 @@
            function, the reference counts are decremented and the vectors 
            become available for use again. 
 
+           NOTE: Stored clones will have a reference count of 2 when there
+           are no external pointers to the same object.
+
            It should also be possible use a single VectorWorkspace in
            multiple levels of nested objects. 
 
@@ -97,7 +101,7 @@ template<typename Real>
 class VectorWorkspace {
 
   using V = ROL::Vector<Real>;
-  using size_type = typename vector<Real>::type;
+  using size_type = typename vector<Real>::size_type;
 
 private:
 
@@ -109,30 +113,32 @@ private:
     VectorKey( const V& x ) :
       hash_code(typeid(x).hash_code()), 
       dimension( x.dimension() ) {}
+
     VectorKey( const Ptr<V>& x ) : 
       VectorKey( *x ) {}
+
+    bool operator < ( const VectorKey& x ) const {
+      return ( hash_code < x.hash_code ) && ( dimension < x.dimension );
+    }
   }; // class VectorKey
 
-  template<typename Real> 
   struct VectorStack {
   
     friend class VectorWorkspace<Real>;
     vector<Ptr<V>> vectors_;
-   
-    void initialize( const V& x ) { vectors_.push_back( x.clone() ); }
-    void initialize( const Ptr<V>& x ) { vectors_.push_back( x->clone(); }
+    VectorStack( const V& x ) : vectors_( 1, x.clone() ) {}
 
     /** If no next element exists, clone it, increment the index, and
         return a the clone by pointer
     */
-    Ptr<V> clone( void ) {
-      for( auto e : *vectors_ ) { // Return first unreferenced vector
-        if( getCount(e) > 1 ) {   
+    Ptr<V> clone( const V& x ) {
+      for( auto e : vectors_ ) { // Return first unreferenced vector
+        if( getCount(e) <= 2 ) { // Storing pointers in vector increments count  
           return e;
         }
       }   
       // If no unreferenced vectors exist, add a new one
-      auto v = prototype_.clone();
+      auto v = x.clone();
       vectors_.push_back( v );
       return v;
     }
@@ -140,33 +146,57 @@ private:
     // For testing purposes
     vector<size_type> getRefCounts( void ) const {
       vector<size_type> counts;
-      for( auto e: *vectors_ ) counts.push_back( getCount(e) );
+      for( auto e: vectors_ ) counts.push_back( getCount(e) );
       return counts;
     }
 
   }; // VectorStack
 
-  map<VectorKey,VectorStack<Real>> workspace_;
+  map<VectorKey,Ptr<VectorStack>> workspace_;
     
 public:
 
   Ptr<V> clone( const V& x ) {  
-
     VectorKey key(x);
+  
     auto search = workspace_.find( key );
 
     if( search != workspace_.end() ) {
-      auto entry = workspace_[key];
-      return entry.clone();
+      auto entry  = workspace_[key];
+      return entry->clone(x);
     }
     else { // First instance of this kind of vector
-      auto entry = workspace_[key];
-      entry.initialize(x);
-      return entry.clone();
+      workspace_[key] = makePtr<VectorStack>(x);
+      auto entry  = workspace_[key];
+      return entry->clone(x);
     }
   }
  
-  Ptr<V> clone( const Ptr<V>& x ) { return clone(*x); }
+  Ptr<V> clone( const Ptr<const V>& x ) { return clone(*x); }
+
+  // Deep copy
+  Ptr<V> copy( const V& x ) { 
+    auto xc = clone(x);
+    xc->set(x);
+    return xc;
+  }
+
+  Ptr<V> copy( const Ptr<const V>& x ) { return copy(*x); }
+  
+  void status( ostream& os ) const {
+    os << "\n\n" << string(80,'-') << std::endl;
+    os << "VectorWorkspace contains the following VectorStack(hash_code,dim) entries:\n\n";
+    for( auto entry : workspace_ ) {
+      os << "  VectorStack(" << hex << entry.first.hash_code << ","
+                               << dec << entry.first.dimension << ")";
+      os << "\n  Reference Counts per element" << std::endl;
+      for( auto e : entry.second->vectors_ ) {
+        os << "        " << getCount( e ) << std::endl;
+      }
+    }
+    os << string(80,'-') << std::endl;
+  }
+
 
 }; // VectorWorkspace
 
