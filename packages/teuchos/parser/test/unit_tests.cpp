@@ -504,4 +504,13 @@ TEUCHOS_UNIT_TEST( Parser, mathexpr_reader ) {
   test_mathexpr_reader("x = 2; y = 5; x^2 + y^2");
 }
 
+TEUCHOS_UNIT_TEST( Parser, mathexpr_symbols ) {
+  auto vars = Teuchos::MathExpr::get_variables_used("sin(pi * x)");
+  std::set<std::string> expect_vars = {"pi", "x"};
+  TEUCHOS_ASSERT(vars == expect_vars);
+  auto symbols = Teuchos::MathExpr::get_symbols_used("sin(pi * x)");
+  std::set<std::string> expect_symbols = {"sin", "pi", "x"};
+  TEUCHOS_ASSERT(symbols == expect_symbols);
+}
+
 } // anonymous namespace
