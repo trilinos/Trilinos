@@ -53,6 +53,7 @@
 
 #include "Kokkos_Core.hpp"
 #include "KokkosBlas2_gemv.hpp"
+#include "Kokkos_ArithTraits.hpp"
 
 namespace TSQR {
 
@@ -204,6 +205,32 @@ namespace TSQR {
     {
       constexpr Ordinal incx {1};
       lapack_type ().LARFG (n, alpha, x.data (), incx, tau);
+    }
+
+    magnitude_type
+    LAPY2 (const scalar_type& x, const scalar_type& y) const
+    {
+      using KAT = Kokkos::ArithTraits<scalar_type>;
+      if (KAT::isNan (x)) {
+        return x;
+      }
+      else if (KAT::isNan (y)) {
+        return y;
+      }
+      else {
+        const magnitude_type xabs = KAT::abs (x);
+        const magnitude_type yabs = KAT::abs (y);
+        const scalar_type w = xabs >= yabs ? xabs : yabs; // max (xabs, yabs);
+        const scalar_type z = xabs <= yabs ? xabs : yabs; // min (xabs, yabs);
+
+        if (z == KAT::zero ()) {
+          return w;
+        }
+        else {
+          const scalar_type z_div_w = z / w;
+          return w * KAT::sqrt (KAT::one () + z_div_w * z_div_w);
+        }
+      }
     }
 
     void
