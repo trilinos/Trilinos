@@ -222,7 +222,7 @@ namespace TSQR {
     void
     apply_pair (const ApplyType& applyType,
                 const Kokkos::View<const scalar_type**, Kokkos::LayoutLeft, Kokkos::Serial>& R_bot, // ncols_Q
-                const scalar_type tau[],
+                const Kokkos::View<const scalar_type*, Kokkos::LayoutLeft, Kokkos::Serial>& tau_view,
                 const Kokkos::View<scalar_type**, Kokkos::LayoutLeft, Kokkos::Serial>& C_top, // ncols_C
                 const Kokkos::View<scalar_type**, Kokkos::LayoutLeft, Kokkos::Serial>& C_bot,
                 const Kokkos::View<scalar_type*, Kokkos::LayoutLeft, Kokkos::Serial>& work_view) const;
@@ -744,18 +744,21 @@ namespace TSQR {
       Kokkos::View<const scalar_type**, Kokkos::LayoutLeft, Kokkos::Serial>;
     using nonconst_mat_type =
       Kokkos::View<scalar_type**, Kokkos::LayoutLeft, Kokkos::Serial>;
+    using const_vec_type =
+      Kokkos::View<const scalar_type*, Kokkos::LayoutLeft, Kokkos::Serial>;
     using nonconst_vec_type =
       Kokkos::View<scalar_type*, Kokkos::LayoutLeft, Kokkos::Serial>;
 
     const_mat_type R_bot_full (R_bot, ldr_bot, ncols_Q);
     nonconst_mat_type C_top_full (C_top, ldc_top, ncols_C);
     nonconst_mat_type C_bot_full (C_bot, ldc_bot, ncols_C);
+    const_vec_type tau_view (tau, ncols_Q);
     nonconst_vec_type work_view (work, ncols_C);
 
     auto R_bot_view = subview (R_bot_full, range_type (0, ncols_Q), ALL ());
     auto C_top_view = subview (C_top_full, range_type (0, ncols_C), ALL ());
     auto C_bot_view = subview (C_bot_full, range_type (0, ncols_C), ALL ());
-    this->apply_pair (applyType, R_bot_view, tau, C_top_view, C_bot_view, work_view);
+    this->apply_pair (applyType, R_bot_view, tau_view, C_top_view, C_bot_view, work_view);
   }
 
   template< class Ordinal, class Scalar >
@@ -763,7 +766,7 @@ namespace TSQR {
   CombineNative< Ordinal, Scalar, false >::
   apply_pair (const ApplyType& applyType,
               const Kokkos::View<const scalar_type**, Kokkos::LayoutLeft, Kokkos::Serial>& R_bot, // ncols_Q
-              const scalar_type tau[],
+              const Kokkos::View<const scalar_type*, Kokkos::LayoutLeft, Kokkos::Serial>& tau_view,
               const Kokkos::View<scalar_type**, Kokkos::LayoutLeft, Kokkos::Serial>& C_top, // ncols_C
               const Kokkos::View<scalar_type**, Kokkos::LayoutLeft, Kokkos::Serial>& C_bot,
               const Kokkos::View<scalar_type*, Kokkos::LayoutLeft, Kokkos::Serial>& work_view) const
@@ -808,9 +811,9 @@ namespace TSQR {
         work_view(j_C) = work_j_C;
       }
       for (Ordinal j_C = 0; j_C < ncols_C; ++j_C) {
-        C_top(j_Q, j_C) -= tau[j_Q] * work_view(j_C);
+        C_top(j_Q, j_C) -= tau_view[j_Q] * work_view(j_C);
       }
-      this->GER (-tau[j_Q], R_bot_col, work_view, C_bot);
+      this->GER (-tau_view[j_Q], R_bot_col, work_view, C_bot);
     }
   }
 } // namespace TSQR
