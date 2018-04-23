@@ -525,7 +525,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
     // =========================================================================
     // Convenient definitions
     // =========================================================================
-    SC zero = Teuchos::ScalarTraits<SC>::zero(), one = Teuchos::ScalarTraits<SC>::one();
+    //    SC zero = Teuchos::ScalarTraits<SC>::zero(), one = Teuchos::ScalarTraits<SC>::one();
 
     // Instead of checking each time for rank, create a rank 0 stream
     RCP<Teuchos::FancyOStream> pOut = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
@@ -535,7 +535,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
     // =========================================================================
     // Parameters initialization
     // =========================================================================
-    GO nx = 50, ny = 50, nz = 50;
+    //    GO nx = 50, ny = 50, nz = 50;
     // Galeri::Xpetra::Parameters<GO> matrixParameters(clp, nx, ny, nz, "Laplace3D"); // manage parameters of the test case
     Xpetra::Parameters             xpetraParameters(clp);                          // manage parameters of Xpetra
 
