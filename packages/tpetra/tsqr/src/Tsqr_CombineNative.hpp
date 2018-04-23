@@ -234,8 +234,16 @@ namespace TSQR {
                 const Kokkos::View<scalar_type**, Kokkos::LayoutLeft, Kokkos::Serial>& C_bot,
                 const Kokkos::View<scalar_type*, Kokkos::LayoutLeft, Kokkos::Serial>& work_view) const;
 
+    void
+    apply_inner (const ApplyType& applyType,
+                 const Kokkos::View<const scalar_type**, Kokkos::LayoutLeft, Kokkos::Serial>& A,
+                 const Kokkos::View<const scalar_type*, Kokkos::LayoutLeft, Kokkos::Serial>& tau,
+                 const Kokkos::View<scalar_type**, Kokkos::LayoutLeft, Kokkos::Serial>& C_top,
+                 const Kokkos::View<scalar_type**, Kokkos::LayoutLeft, Kokkos::Serial>& C_bot,
+                 const Kokkos::View<scalar_type*, Kokkos::LayoutLeft, Kokkos::Serial>& work) const;
+
   public:
-    CombineNative () {}
+    CombineNative () = default;
 
     static bool QR_produces_R_factor_with_nonnegative_diagonal() {
       return /* lapack_type::QR_produces_R_factor_with_nonnegative_diagonal() */ false &&
@@ -564,6 +572,59 @@ namespace TSQR {
     this->factor_inner (R_view, A_view, tau_view, work_view);
   }
 
+  template< class Ordinal, class Scalar >
+  void
+  CombineNative< Ordinal, Scalar, false >::
+  apply_inner (const ApplyType& applyType,
+               const Kokkos::View<const scalar_type**, Kokkos::LayoutLeft, Kokkos::Serial>& A,
+               const Kokkos::View<const scalar_type*, Kokkos::LayoutLeft, Kokkos::Serial>& tau,
+               const Kokkos::View<scalar_type**, Kokkos::LayoutLeft, Kokkos::Serial>& C_top,
+               const Kokkos::View<scalar_type**, Kokkos::LayoutLeft, Kokkos::Serial>& C_bot,
+               const Kokkos::View<scalar_type*, Kokkos::LayoutLeft, Kokkos::Serial>& work) const
+  {
+    using Kokkos::ALL;
+    using Kokkos::subview;
+    using const_vec_type =
+      Kokkos::View<const scalar_type*, Kokkos::LayoutLeft, Kokkos::Serial>;
+    constexpr scalar_type ZERO {0.0};
+
+    const Ordinal m = A.dimension_0 ();
+    const Ordinal ncols_Q = A.dimension_1 ();
+    const Ordinal ncols_C = C_top.dimension_1 ();
+
+    for (Ordinal i = 0; i < ncols_C; ++i) {
+      work(i) = ZERO;
+    }
+
+    Ordinal j_start, j_end, j_step;
+    if (applyType == ApplyType::NoTranspose) {
+      j_start = ncols_Q - 1;
+      j_end = -1; // exclusive
+      j_step = -1;
+    }
+    else {
+      j_start = 0;
+      j_end = ncols_Q; // exclusive
+      j_step = +1;
+    }
+    for (Ordinal j = j_start; j != j_end; j += j_step) {
+      const_vec_type A_1j = subview (A, ALL (), j);
+
+      //blas.GEMV ("T", m, ncols_C, ONE, C_bot, ldc_bot, A_1j, 1, ZERO, &y[0], 1);
+      for (Ordinal i = 0; i < ncols_C; ++i) {
+        work(i) = ZERO;
+        for (Ordinal k = 0; k < m; ++k) {
+          work(i) += A_1j(k) * C_bot(k, i);
+        }
+        work(i) += C_top(j, i);
+      }
+      for (Ordinal k = 0; k < ncols_C; ++k) {
+        C_top(j, k) -= tau[j] * work(k);
+      }
+
+      this->GER (-tau[j], A_1j, work, C_bot);
+    }
+  }
 
   template< class Ordinal, class Scalar >
   void
@@ -592,7 +653,6 @@ namespace TSQR {
     using nonconst_vec_type =
       Kokkos::View<scalar_type*, Kokkos::LayoutLeft, Kokkos::Serial>;
     using range_type = std::pair<Ordinal, Ordinal>;
-    constexpr scalar_type ZERO {0.0};
 
     const_mat_type A_full (A, lda, ncols_Q);
     auto A_view = subview (A_full, range_type (0, m), ALL ());
@@ -600,40 +660,10 @@ namespace TSQR {
     auto C_top_view = subview (C_top_full, range_type (0, m), ALL ());
     nonconst_mat_type C_bot_full (C_bot, ldc_bot, ncols_C);
     auto C_bot_view = subview (C_bot_full, range_type (0, m), ALL ());
+    const_vec_type tau_view (tau, ncols_Q);
     nonconst_vec_type work_view (work, ncols_C);
 
-    for (Ordinal i = 0; i < ncols_C; ++i) {
-      work_view(i) = ZERO;
-    }
-
-    Ordinal j_start, j_end, j_step;
-    if (applyType == ApplyType::NoTranspose) {
-      j_start = ncols_Q - 1;
-      j_end = -1; // exclusive
-      j_step = -1;
-    }
-    else {
-      j_start = 0;
-      j_end = ncols_Q; // exclusive
-      j_step = +1;
-    }
-    for (Ordinal j = j_start; j != j_end; j += j_step) {
-      const_vec_type A_1j = subview (A_view, ALL (), j);
-
-      //blas.GEMV ("T", m, ncols_C, ONE, C_bot, ldc_bot, A_1j, 1, ZERO, &y[0], 1);
-      for (Ordinal i = 0; i < ncols_C; ++i) {
-        work_view(i) = ZERO;
-        for (Ordinal k = 0; k < m; ++k) {
-          work_view(i) += A_1j(k) * C_bot_view(k, i);
-        }
-        work_view(i) += C_top_view(j, i);
-      }
-      for (Ordinal k = 0; k < ncols_C; ++k) {
-        C_top_view(j, k) -= tau[j] * work_view(k);
-      }
-
-      this->GER (-tau[j], A_1j, work_view, C_bot_view);
-    }
+    this->apply_inner (applyType, A_view, tau_view, C_top_view, C_bot_view, work_view);
   }
 
 
