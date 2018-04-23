@@ -196,9 +196,7 @@ namespace TSQR {
     void
     GER (const magnitude_type alpha,
          const scalar_type x[],
-         const Ordinal incx,
          const scalar_type y[],
-         const Ordinal incy,
          const Kokkos::View<scalar_type**, Kokkos::LayoutLeft, Kokkos::Serial>& A) const;
 
     void
@@ -435,9 +433,7 @@ namespace TSQR {
   CombineNative< Ordinal, Scalar, false >::
   GER (const magnitude_type alpha,
        const scalar_type x[],
-       const Ordinal incx,
        const scalar_type y[],
-       const Ordinal incy,
        const Kokkos::View<scalar_type**, Kokkos::LayoutLeft, Kokkos::Serial>& A) const
   {
     //blas_type ().GER (m, n, alpha, x, incx, y, incy, A, lda);
@@ -445,32 +441,18 @@ namespace TSQR {
     const Ordinal m = A.dimension_0 ();
     const Ordinal n = A.dimension_1 ();
 
-    Ordinal jy = (incy > 0) ? 1 : 1 - (n-1) * incy;
+    constexpr Ordinal incy {1};
+    //Ordinal jy = (incy > 0) ? 1 : 1 - (n-1) * incy;
+    Ordinal jy = 1;
 
-    if (incx == 1) {
-      for (Ordinal j = 0; j < n; ++j) {
-        if (y[jy-1] != ZERO) {
-          const scalar_type temp = alpha * y[jy-1];
-          for (Ordinal i = 0; i < m; ++i) {
-            A(i,j) = A(i,j) + x[i] * temp;
-          }
+    for (Ordinal j = 0; j < n; ++j) {
+      if (y[jy-1] != ZERO) {
+        const scalar_type temp = alpha * y[jy-1];
+        for (Ordinal i = 0; i < m; ++i) {
+          A(i,j) = A(i,j) + x[i] * temp;
         }
-        jy += incy;
       }
-    }
-    else {
-      const Ordinal kx = (incx > 0) ? 1 : 1 - (m-1)*incx;
-      for (Ordinal j = 0; j < n; ++j) {
-        if (y[jy] != ZERO) {
-          const scalar_type temp = alpha * y[jy-1];
-          Ordinal ix = kx;
-          for (Ordinal i = 0; i < m; ++i) {
-            A(i,j) = A(i,j) + x[ix-1] * temp;
-            ix += incx;
-          }
-        }
-        jy += incy;
-      }
+      jy += incy;
     }
   }
 
@@ -542,7 +524,7 @@ namespace TSQR {
         work[j-k-1] += R_kj;
         R_kj -= tau[k] * work[j-k-1];
       }
-      this->GER (-tau[k], A_1k, 1, work, 1, A_1kp1);
+      this->GER (-tau[k], A_1k, work, A_1kp1);
     }
     Scalar& R_nn = R[ (n-1) + (n-1) * ldr ];
     Scalar* const A_1n = &A[ 0 + (n-1) * lda ];
@@ -609,7 +591,7 @@ namespace TSQR {
         C_top[ j + k*ldc_top ] -= tau[j] * work[k];
       }
 
-      this->GER (-tau[j], A_1j, 1, work, 1, C_bot_view);
+      this->GER (-tau[j], A_1j, work, C_bot_view);
     }
   }
 
@@ -652,7 +634,7 @@ namespace TSQR {
         work[j-k-1] += R_top_kj;
         R_top_kj -= tau[k] * work[j-k-1];
       }
-      this->GER (-tau[k], R_bot_1k, 1, work, 1, R_bot_1kp1);
+      this->GER (-tau[k], R_bot_1k, work, R_bot_1kp1);
     }
     scalar_type& R_top_nn = R_top(n-1, n-1);
     scalar_type* const R_bot_1n = &R_bot(0, n-1);
@@ -787,7 +769,7 @@ namespace TSQR {
       for (Ordinal j_C = 0; j_C < ncols_C; ++j_C) {
         C_top(j_Q, j_C) -= tau[j_Q] * work[j_C];
       }
-      this->GER (-tau[j_Q], R_bot_col, 1, work, 1, C_bot);
+      this->GER (-tau[j_Q], R_bot_col, work, C_bot);
     }
   }
 } // namespace TSQR
