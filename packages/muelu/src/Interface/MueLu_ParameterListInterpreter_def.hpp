@@ -252,8 +252,13 @@ namespace MueLu {
     }
 
     // Check for Kokkos
-#ifndef HAVE_MUELU_KOKKOS_REFACTOR
+#if !defined(HAVE_MUELU_KOKKOS_REFACTOR)
     useKokkos_ = false;
+#elif defined(HAVE_MUELU_KOKKOS_REFACTOR_USE_BY_DEFAULT)
+    ParameterList tempList("tempList");
+    tempList.set("use kokkos refactor",true);
+    MUELU_SET_VAR_2LIST(constParamList, tempList, "use kokkos refactor", bool, useKokkos);
+    useKokkos_ = useKokkos;
 #else
     MUELU_SET_VAR_2LIST(constParamList, constParamList, "use kokkos refactor", bool, useKokkos);
     useKokkos_ = useKokkos;
