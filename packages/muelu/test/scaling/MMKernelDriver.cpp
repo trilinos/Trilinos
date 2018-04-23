@@ -46,6 +46,7 @@
 #include <iostream>
 #include <algorithm>  // shuffle
 #include <vector>     // vector
+#include <random>
 
 #include <Xpetra_MultiVectorFactory.hpp>
 #include <Xpetra_IO.hpp>
