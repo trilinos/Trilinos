@@ -1228,6 +1228,16 @@ void writeParameter(const std::string& paramName, const Teuchos::ParameterEntry&
           yaml << ", ";
       }
     }
+    if(entry.isType<Teuchos::Array<long long> >())
+    {
+      Teuchos::Array<long long>& arr = Teuchos::getValue<Teuchos::Array<long long> >(entry);
+      for(int i = 0; i < arr.size(); i++)
+      {
+        yaml << arr[i];
+        if(i != arr.size() - 1)
+          yaml << ", ";
+      }
+    }
     else if(entry.isType<Teuchos::Array<double> >())
     {
       Teuchos::Array<double>& arr = Teuchos::getValue<Teuchos::Array<double> >(entry);
@@ -1257,6 +1267,11 @@ void writeParameter(const std::string& paramName, const Teuchos::ParameterEntry&
       writeYamlTwoDArray<int>(
           Teuchos::getValue<Teuchos::TwoDArray<int> >(entry), yaml);
     }
+    if(entry.isType<Teuchos::TwoDArray<long long> >())
+    {
+      writeYamlTwoDArray<long long>(
+          Teuchos::getValue<Teuchos::TwoDArray<long long> >(entry), yaml);
+    }
     else if(entry.isType<Teuchos::TwoDArray<double> >())
     {
       writeYamlTwoDArray<double>(
@@ -1271,6 +1286,10 @@ void writeParameter(const std::string& paramName, const Teuchos::ParameterEntry&
   else if(entry.isType<int>())
   {
     yaml << Teuchos::getValue<int>(entry);
+  }
+  else if(entry.isType<long long>())
+  {
+    yaml << Teuchos::getValue<long long>(entry);
   }
   else if(entry.isType<double>())
   {
