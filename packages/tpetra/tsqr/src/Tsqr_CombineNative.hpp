@@ -556,20 +556,29 @@ namespace TSQR {
                const Ordinal ldc_bot,
                Scalar work[]) const
   {
-    const Scalar ZERO(0);
-    blas_type blas;
-
     using Kokkos::ALL;
     using Kokkos::subview;
-    using mat_type = Kokkos::View<scalar_type**, Kokkos::LayoutLeft, Kokkos::Serial>;
+    using const_mat_type =
+      Kokkos::View<const scalar_type**, Kokkos::LayoutLeft, Kokkos::Serial>;
+    using nonconst_mat_type =
+      Kokkos::View<scalar_type**, Kokkos::LayoutLeft, Kokkos::Serial>;
+    using const_vec_type =
+      Kokkos::View<const scalar_type*, Kokkos::LayoutLeft, Kokkos::Serial>;
+    using nonconst_vec_type =
+      Kokkos::View<scalar_type*, Kokkos::LayoutLeft, Kokkos::Serial>;
     using range_type = std::pair<Ordinal, Ordinal>;
+    constexpr scalar_type ZERO {0.0};
 
-    mat_type C_bot_full (C_bot, ldc_bot, ncols_C);
+    const_mat_type A_full (A, lda, ncols_Q);
+    auto A_view = subview (A_full, range_type (0, m), ALL ());
+    nonconst_mat_type C_bot_full (C_bot, ldc_bot, ncols_C);
     auto C_bot_view = subview (C_bot_full, range_type (0, m), ALL ());
+    nonconst_vec_type work_view (work, ncols_C);
 
     //Scalar* const y = work;
-    for (Ordinal i = 0; i < ncols_C; ++i)
-      work[i] = ZERO;
+    for (Ordinal i = 0; i < ncols_C; ++i) {
+      work_view(i) = ZERO;
+    }
 
     Ordinal j_start, j_end, j_step;
     if (applyType == ApplyType::NoTranspose) {
@@ -583,22 +592,23 @@ namespace TSQR {
       j_step = +1;
     }
     for (Ordinal j = j_start; j != j_end; j += j_step) {
-      const Scalar* const A_1j = &A[ 0 + j*lda ];
+      //const Scalar* const A_1j = &A[ 0 + j*lda ];
+      const_vec_type A_1j = subview (A_view, ALL (), j);
 
       //blas.GEMV ("T", m, ncols_C, ONE, C_bot, ldc_bot, A_1j, 1, ZERO, &y[0], 1);
       for (Ordinal i = 0; i < ncols_C; ++i) {
-        work[i] = ZERO;
+        work_view(i) = ZERO;
         for (Ordinal k = 0; k < m; ++k) {
-          work[i] += A_1j[k] * C_bot_view(k, i);
+          work_view(i) += A_1j(k) * C_bot_view(k, i);
         }
 
-        work[i] += C_top[ j + i*ldc_top ];
+        work_view(i) += C_top[ j + i*ldc_top ];
       }
       for (Ordinal k = 0; k < ncols_C; ++k) {
-        C_top[ j + k*ldc_top ] -= tau[j] * work[k];
+        C_top[ j + k*ldc_top ] -= tau[j] * work_view(k);
       }
 
-      this->GER (-tau[j], A_1j, work, C_bot_view);
+      this->GER (-tau[j], A_1j.data (), work_view.data (), C_bot_view);
     }
   }
 
@@ -611,44 +621,48 @@ namespace TSQR {
                scalar_type tau[],
                scalar_type work[]) const
   {
-    const scalar_type ZERO(0), ONE(1);
+    using Kokkos::ALL;
+    using Kokkos::subview;
+    using nonconst_vec_type =
+      Kokkos::View<scalar_type*, Kokkos::LayoutLeft, Kokkos::Serial>;
+    using range_type = std::pair<Ordinal, Ordinal>;
+    constexpr scalar_type ZERO {0.0};
+    constexpr scalar_type ONE {1.0};
     lapack_type lapack;
-    blas_type blas;
 
     const Ordinal n = R_top.dimension_0 ();
 
+    nonconst_vec_type work_view (work, n);
     for (Ordinal k = 0; k < n; ++k) {
-      work[k] = ZERO;
+      work_view(k) = ZERO;
     }
 
     for (Ordinal k = 0; k < n-1; ++k) {
       scalar_type& R_top_kk = R_top(k, k);
-      scalar_type* const R_bot_1k = &R_bot(0, k);
-      //scalar_type* const R_bot_1kp1 = &R_bot(0, k+1);
-      auto R_bot_1kp1 = Kokkos::subview (R_bot, std::pair<Ordinal, Ordinal> (0, k+1),
-                                         std::pair<Ordinal, Ordinal> (k+1, n));
+      auto R_bot_1k = subview (R_bot, ALL (), k);
+      auto R_bot_1kp1 = subview (R_bot, range_type (0, k+1), range_type (k+1, n));
 
       // k+2: 1 element in R_top (R_top(k,k)), and k+1 elements in
       // R_bot (R_bot(1:k,k), in 1-based indexing notation).
-      lapack.LARFG (k+2, &R_top_kk, R_bot_1k, 1, &tau[k]);
+      lapack.LARFG (k+2, &R_top_kk, R_bot_1k.data (), 1, &tau[k]);
       // One-based indexing, Matlab version of the GEMV call below:
       // work(1:k) := R_bot(1:k,k+1:n)' * R_bot(1:k,k)
 
-      this->GEMV ("T", ONE, R_bot_1kp1, R_bot_1k, 1, ZERO, work, 1);
+      this->GEMV ("T", ONE, R_bot_1kp1, R_bot_1k.data (), 1, ZERO, work_view.data (), 1);
 
       for (Ordinal j = k+1; j < n; ++j) {
         scalar_type& R_top_kj = R_top(k, j);
-        work[j-k-1] += R_top_kj;
-        R_top_kj -= tau[k] * work[j-k-1];
+        work_view(j-k-1) += R_top_kj;
+        R_top_kj -= tau[k] * work_view(j-k-1);
       }
-      this->GER (-tau[k], R_bot_1k, work, R_bot_1kp1);
+      this->GER (-tau[k], R_bot_1k.data (), work_view.data (), R_bot_1kp1);
     }
     scalar_type& R_top_nn = R_top(n-1, n-1);
-    scalar_type* const R_bot_1n = &R_bot(0, n-1);
+    auto R_bot_1n = subview (R_bot, ALL (), n-1);
 
     // n+1: 1 element in R_top (n,n), and n elements in R_bot (the
     // whole last column).
-    lapack.LARFG (n+1, &R_top_nn, R_bot_1n, 1, &tau[n-1]);
+    lapack.LARFG (n+1, &R_top_nn, R_bot_1n.data (), 1, &tau[n-1]);
   }
 
 
