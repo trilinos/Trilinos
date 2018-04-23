@@ -287,7 +287,7 @@ int AnyNumberParameterEntryValidator::getInt(
   if( acceptedTypes_.allowInt() && anyValue.type() == typeid(int) )
     return any_cast<int>(anyValue);
   if( acceptedTypes_.allowLongLong() && anyValue.type() == typeid(long long) )
-    return as<int>(any_cast<int>(anyValue));
+    return as<int>(any_cast<long long>(anyValue));
   if( acceptedTypes_.allowDouble() && anyValue.type() == typeid(double) )
     return as<int>(any_cast<double>(anyValue));
   if( acceptedTypes_.allowString() && anyValue.type() == typeid(std::string) )

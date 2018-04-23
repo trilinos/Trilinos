@@ -186,7 +186,7 @@ public:
     size_t idx = 0;
     long long result = std::stoll(str, &idx); // can throw std::invalid_argument
     if(idx != str.length()) { // check for extra bad format characters
-      throw std::invalid_argument( "String: '" + str + "' had bad formatting for converting to an int." );
+      throw std::invalid_argument( "String: '" + str + "' had bad formatting for converting to a long long." );
     }
     return result;
   }
