@@ -63,31 +63,6 @@ module unload sems-openmpi/1.10.1
 module unload sems-gcc/5.3.0
 module unload sems-cmake/5.3.2
 # ===========================================================================
-export CTEST_CONFIGURATION="intel"
-module load sems-cmake/3.5.2
-module load sems-intel/17.0.1
-module load sems-openmpi/1.10.1
-module load sems-superlu/4.3/base
-
-# Remove colors (-fdiagnostics-color) from OMPI flags
-# It may result in non-XML characters on the Dashboard
-export OMPI_CFLAGS=`echo $OMPI_CFLAGS | sed 's/-fdiagnostics-color//'`
-export OMPI_CXXFLAGS=`echo $OMPI_CXXFLAGS | sed 's/-fdiagnostics-color//'`
-
-echo "Configuration = $CTEST_CONFIGURATION"
-env
-
-export OMP_NUM_THREADS=2
-
-# Machine independent cron_driver:
-SCRIPT_DIR=`cd "\`dirname \"$0\"\`";pwd`
-$SCRIPT_DIR/../cron_driver.py
-
-module unload sems-superlu/4.3/base
-module unload sems-openmpi/1.10.1
-module unload sems-intel/17.0.1
-module unload sems-cmake/5.3.2
-# ===========================================================================
 export CTEST_CONFIGURATION="clang"
 module load sems-cmake/3.5.2
 module load sems-clang/3.8.1
