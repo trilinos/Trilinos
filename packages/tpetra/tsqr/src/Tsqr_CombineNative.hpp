@@ -214,6 +214,12 @@ namespace TSQR {
                  scalar_type work[]) const;
 
     void
+    factor_inner (const Kokkos::View<scalar_type**, Kokkos::LayoutLeft, Kokkos::Serial>& R_view,
+                  const Kokkos::View<scalar_type**, Kokkos::LayoutLeft, Kokkos::Serial>& A_view,
+                  const Kokkos::View<scalar_type*, Kokkos::LayoutLeft, Kokkos::Serial>& tau_view,
+                  const Kokkos::View<scalar_type*, Kokkos::LayoutLeft, Kokkos::Serial>& work_view) const;
+
+    void
     apply_pair (const ApplyType& applyType,
                 const Kokkos::View<const scalar_type**, Kokkos::LayoutLeft, Kokkos::Serial>& R_bot, // ncols_Q
                 const scalar_type tau[],
@@ -483,6 +489,51 @@ namespace TSQR {
   template< class Ordinal, class Scalar >
   void
   CombineNative< Ordinal, Scalar, false >::
+  factor_inner (const Kokkos::View<scalar_type**, Kokkos::LayoutLeft, Kokkos::Serial>& R_view,
+                const Kokkos::View<scalar_type**, Kokkos::LayoutLeft, Kokkos::Serial>& A_view,
+                const Kokkos::View<scalar_type*, Kokkos::LayoutLeft, Kokkos::Serial>& tau_view,
+                const Kokkos::View<scalar_type*, Kokkos::LayoutLeft, Kokkos::Serial>& work_view) const
+  {
+    using Kokkos::ALL;
+    using Kokkos::subview;
+    using range_type = std::pair<Ordinal, Ordinal>;
+    constexpr scalar_type ZERO {0.0};
+    constexpr scalar_type ONE {1.0};
+    lapack_type lapack;
+
+    const Ordinal m = A_view.dimension_0 ();
+    const Ordinal n = A_view.dimension_1 ();
+
+    for (Ordinal k = 0; k < n; ++k) {
+      work_view(k) = ZERO;
+    }
+
+    for (Ordinal k = 0; k < n-1; ++k) {
+      Scalar& R_kk = R_view(k, k);
+      auto A_1k = subview (A_view, ALL (), k);
+      auto A_1kp1 = subview (A_view, range_type (0, m), range_type (k+1, n));
+
+      lapack.LARFG (m + 1, &R_kk, A_1k.data (), 1, &tau_view[k]);
+      this->GEMV ("T", ONE, A_1kp1, A_1k, ZERO, work_view);
+
+      for (Ordinal j = k+1; j < n; ++j) {
+        Scalar& R_kj = R_view(k, j);
+
+        work_view(j-k-1) += R_kj;
+        R_kj -= tau_view[k] * work_view(j-k-1);
+      }
+      this->GER (-tau_view[k], A_1k, work_view, A_1kp1);
+    }
+    Scalar& R_nn = R_view(n-1, n-1);
+    auto A_1n = subview (A_view, ALL (), n-1);
+
+    lapack.LARFG (m+1, &R_nn, A_1n.data (), 1, &tau_view[n-1]);
+  }
+
+
+  template< class Ordinal, class Scalar >
+  void
+  CombineNative< Ordinal, Scalar, false >::
   factor_inner (const Ordinal m,
                 const Ordinal n,
                 Scalar R[],
@@ -499,38 +550,15 @@ namespace TSQR {
     using nonconst_vec_type =
       Kokkos::View<scalar_type*, Kokkos::LayoutLeft, Kokkos::Serial>;
     using range_type = std::pair<Ordinal, Ordinal>;
-    constexpr scalar_type ZERO {0.0};
-    constexpr scalar_type ONE {1.0};
 
-    lapack_type lapack;
     mat_type A_full (A, lda, n);
     mat_type A_view = subview (A_full, range_type (0, m), ALL ());
+    mat_type R_full (R, ldr, n);
+    mat_type R_view = subview (R_full, range_type (0, n), ALL ());
+    nonconst_vec_type tau_view (tau, n);
     nonconst_vec_type work_view (work, n);
 
-    for (Ordinal k = 0; k < n; ++k) {
-      work_view(k) = ZERO;
-    }
-
-    for (Ordinal k = 0; k < n-1; ++k) {
-      Scalar& R_kk = R[ k + k * ldr ];
-      auto A_1k = subview (A_view, ALL (), k);
-      auto A_1kp1 = subview (A_view, range_type (0, m), range_type (k+1, n));
-
-      lapack.LARFG (m + 1, &R_kk, A_1k.data (), 1, &tau[k]);
-      this->GEMV ("T", ONE, A_1kp1, A_1k, ZERO, work_view);
-
-      for (Ordinal j = k+1; j < n; ++j) {
-        Scalar& R_kj = R[ k + j*ldr ];
-
-        work_view(j-k-1) += R_kj;
-        R_kj -= tau[k] * work_view(j-k-1);
-      }
-      this->GER (-tau[k], A_1k, work_view, A_1kp1);
-    }
-    Scalar& R_nn = R[ (n-1) + (n-1) * ldr ];
-    nonconst_vec_type A_1n = subview (A_view, ALL (), n-1);
-
-    lapack.LARFG (m+1, &R_nn, A_1n.data (), 1, &tau[n-1]);
+    this->factor_inner (R_view, A_view, tau_view, work_view);
   }
 
 
