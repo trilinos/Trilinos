@@ -204,10 +204,8 @@ namespace TSQR {
           const scalar_type alpha,
           const Kokkos::View<const scalar_type**, Kokkos::LayoutLeft, Kokkos::Serial>& A,
           const scalar_type x[],
-          const Ordinal incx,
           const scalar_type beta,
-          scalar_type y[],
-          const Ordinal incy) const;
+          scalar_type y[]) const;
 
     void
     factor_pair (const Kokkos::View<scalar_type**, Kokkos::LayoutLeft, Kokkos::Serial>& R_top,
@@ -464,10 +462,8 @@ namespace TSQR {
         const scalar_type alpha,
         const Kokkos::View<const scalar_type**, Kokkos::LayoutLeft, Kokkos::Serial>& A,
         const scalar_type x[],
-        const Ordinal incx,
         const scalar_type beta,
-        scalar_type y[],
-        const Ordinal incy) const
+        scalar_type y[]) const
   {
     using y_vec_type = Kokkos::View<scalar_type*, Kokkos::LayoutLeft, Kokkos::Serial>;
     using x_vec_type = Kokkos::View<const scalar_type*, Kokkos::LayoutLeft, Kokkos::Serial>;
@@ -476,9 +472,6 @@ namespace TSQR {
     const Ordinal m = A.dimension_0 ();
     const Ordinal n = A.dimension_1 ();
 
-    TEUCHOS_TEST_FOR_EXCEPTION
-      (incx != 1 || incy != 1, std::logic_error,
-       "TSQR::CombineNative::GEMV: Only INCX=1 and INCY=1 cases implemented.");
     const bool no_trans = (trans[0] == 'N' || trans[0] == 'n');
     x_vec_type x_view (x, no_trans ? n : m);
     y_vec_type y_view (y, no_trans ? m : n);
@@ -523,7 +516,7 @@ namespace TSQR {
       auto A_1kp1 = subview (A_view, range_type (0, m), range_type (k+1, n));
 
       lapack.LARFG (m + 1, &R_kk, A_1k.data (), 1, &tau[k]);
-      this->GEMV ("T", ONE, A_1kp1, A_1k.data (), 1, ZERO, work_view.data (), 1);
+      this->GEMV ("T", ONE, A_1kp1, A_1k.data (), ZERO, work_view.data ());
 
       for (Ordinal j = k+1; j < n; ++j) {
         Scalar& R_kj = R[ k + j*ldr ];
@@ -648,7 +641,7 @@ namespace TSQR {
       // One-based indexing, Matlab version of the GEMV call below:
       // work(1:k) := R_bot(1:k,k+1:n)' * R_bot(1:k,k)
 
-      this->GEMV ("T", ONE, R_bot_1kp1, R_bot_1k.data (), 1, ZERO, work_view.data (), 1);
+      this->GEMV ("T", ONE, R_bot_1kp1, R_bot_1k.data (), ZERO, work_view.data ());
 
       for (Ordinal j = k+1; j < n; ++j) {
         scalar_type& R_top_kj = R_top(k, j);
