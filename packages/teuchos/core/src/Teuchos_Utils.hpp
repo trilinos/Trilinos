@@ -88,6 +88,9 @@ namespace Teuchos
       /** \brief Write an int as a std::string. */
       static std::string toString(const int& x);
 
+      /** \brief Write a long long as a std::string. */
+      static std::string toString(const long long& x);
+
       /** \brief Write an unsigned int as a std::string. */
       static std::string toString(const unsigned int& x);
 
