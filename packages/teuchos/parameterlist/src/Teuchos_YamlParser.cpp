@@ -639,6 +639,9 @@ class Reader : public Teuchos::Reader {
     } else if (value_any.type() == typeid(int)) {
       int value = any_cast<int>(value_any);
       result.value = ParameterEntry(value);
+    } else if (value_any.type() == typeid(long long)) {
+      long long value = any_cast<long long>(value_any);
+      result.value = ParameterEntry(value);
     } else if (value_any.type() == typeid(double)) {
       double value = any_cast<double>(value_any);
       result.value = ParameterEntry(value);
@@ -648,6 +651,9 @@ class Reader : public Teuchos::Reader {
     } else if (value_any.type() == typeid(Array<int>)) {
       Array<int>& value = any_ref_cast<Array<int> >(value_any);
       result.value = ParameterEntry(value);
+    } else if (value_any.type() == typeid(Array<long long>)) {
+      Array<long long>& value = any_ref_cast<Array<long long> >(value_any);
+      result.value = ParameterEntry(value);
     } else if (value_any.type() == typeid(Array<double>)) {
       Array<double>& value = any_ref_cast<Array<double> >(value_any);
       result.value = ParameterEntry(value);
@@ -656,6 +662,9 @@ class Reader : public Teuchos::Reader {
       result.value = ParameterEntry(value);
     } else if (value_any.type() == typeid(TwoDArray<int>)) {
       TwoDArray<int>& value = any_ref_cast<TwoDArray<int> >(value_any);
+      result.value = ParameterEntry(value);
+    } else if (value_any.type() == typeid(TwoDArray<long long>)) {
+      TwoDArray<long long>& value = any_ref_cast<TwoDArray<long long> >(value_any);
       result.value = ParameterEntry(value);
     } else if (value_any.type() == typeid(TwoDArray<double>)) {
       TwoDArray<double>& value = any_ref_cast<TwoDArray<double> >(value_any);
