@@ -326,7 +326,7 @@ namespace MueLu {
               muelu2amgx_[i] = importOffset++;
 
         amgx2muelu.resize(muelu2amgx_.size());
-        for (int i = 0; i < muelu2amgx_.size(); i++)
+        for (int i = 0; i < (int)muelu2amgx_.size(); i++)
           amgx2muelu[muelu2amgx_[i]] = i;
 
         // Construct send arrays
