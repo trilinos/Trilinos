@@ -45,7 +45,6 @@
 #ifndef __TSQR_CombineNative_hpp
 #define __TSQR_CombineNative_hpp
 
-#include <Teuchos_BLAS.hpp>
 #include <Teuchos_LAPACK.hpp>
 #include <Teuchos_ScalarTraits.hpp>
 
@@ -81,7 +80,6 @@ namespace TSQR {
     typedef Ordinal ordinal_type;
 
   private:
-    typedef Teuchos::BLAS<ordinal_type, scalar_type> blas_type;
     typedef Teuchos::LAPACK<ordinal_type, scalar_type> lapack_type;
     typedef CombineDefault<ordinal_type, scalar_type> combine_default_type;
 
@@ -189,7 +187,6 @@ namespace TSQR {
     typedef Ordinal ordinal_type;
 
   private:
-    typedef Teuchos::BLAS<ordinal_type, scalar_type> blas_type;
     typedef Teuchos::LAPACK<ordinal_type, scalar_type> lapack_type;
     typedef CombineDefault<ordinal_type, scalar_type> combine_default_type;
 
@@ -334,7 +331,6 @@ namespace TSQR {
     typedef Ordinal ordinal_type;
 
   private:
-    typedef Teuchos::BLAS<ordinal_type, scalar_type> blas_type;
     typedef Teuchos::LAPACK<ordinal_type, scalar_type> lapack_type;
     typedef CombineDefault<ordinal_type, scalar_type> combine_default_type;
 
@@ -450,7 +446,6 @@ namespace TSQR {
        const Kokkos::View<const scalar_type*, Kokkos::LayoutLeft, Kokkos::Serial>& y,
        const Kokkos::View<scalar_type**, Kokkos::LayoutLeft, Kokkos::Serial>& A) const
   {
-    //blas_type ().GER (m, n, alpha, x, incx, y, incy, A, lda);
     constexpr scalar_type ZERO {0.0};
     const Ordinal m = A.dimension_0 ();
     const Ordinal n = A.dimension_1 ();
@@ -484,7 +479,6 @@ namespace TSQR {
     using y_vec_type = Kokkos::View<scalar_type*, Kokkos::LayoutLeft, Kokkos::Serial>;
     using x_vec_type = Kokkos::View<const scalar_type*, Kokkos::LayoutLeft, Kokkos::Serial>;
     using range_type = std::pair<Ordinal, Ordinal>;
-    //blas_type ().GEMV (trans, m, n, alpha, A, lda, x, incx, beta, y, incy);
 
     const Ordinal m = A.dimension_0 ();
     const Ordinal n = A.dimension_1 ();
