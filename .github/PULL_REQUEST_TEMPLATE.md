@@ -11,18 +11,10 @@ Note that anything between these delimiters is a comment that will not appear
 in the pull request description once created. Most areas in this message are
 commented out and can be easily added by removing the comment delimiters.
 
-Reviewers:  If you know someone who is knowledgeable about what you are
-changing, or perhaps someone who should be, and you would like them to review
-your changes before they are accepted, select them from the Reviewers drop-down
-on the right.
-
-Assignees:  If you know anyone who should likely handle bringing this pull
-request to completion, select them from the Assignees drop-down on the right.
-If you have write-access to Trilinos, this should likely be you.
-
-Labels:  Choose any applicable package names from the Labels drop-down on the
-right.  Additionally, choose a label to indicate the type of issue, for
-instance, bug, build, documentation, enhancement, etc.
+Please make sure to mark:
+* Reviewers
+* Assignees
+* Labels
 
 Replace <teamName> below with the appropriate Trilinos package/team name.
 -->
@@ -65,6 +57,7 @@ Not obligatory, but is there anything pertinent that we should see?
 <!---
 Go over all the following points, and put an `x` in all the boxes that apply.
 If you are unsure about any of these, please ask&mdash;we are here to help.
+-->
 
 ## Checklist
 
@@ -77,7 +70,6 @@ If you are unsure about any of these, please ask&mdash;we are here to help.
 - [ ] All new and existing tests passed.
 - [ ] No new compiler warnings were introduced.
 - [ ] These changes break backwards compatibility.
--->
 
 <!--- 
 ## Additional Information
