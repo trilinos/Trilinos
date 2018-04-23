@@ -498,33 +498,40 @@ namespace TSQR {
                 Scalar tau[],
                 Scalar work[]) const
   {
-    const Scalar ZERO(0), ONE(1);
+    using Kokkos::ALL;
+    using Kokkos::subview;
+    using mat_type =
+      Kokkos::View<scalar_type**, Kokkos::LayoutLeft, Kokkos::Serial>;
+    using nonconst_vec_type =
+      Kokkos::View<scalar_type*, Kokkos::LayoutLeft, Kokkos::Serial>;
+    using range_type = std::pair<Ordinal, Ordinal>;
+    constexpr scalar_type ZERO {0.0};
+    constexpr scalar_type ONE {1.0};
+
     lapack_type lapack;
-    using mat_type = Kokkos::View<scalar_type**, Kokkos::LayoutLeft, Kokkos::Serial>;
     mat_type A_full (A, lda, n);
-    mat_type A_view = Kokkos::subview (A_full, std::pair<Ordinal, Ordinal> (0, m), Kokkos::ALL ());
+    mat_type A_view = subview (A_full, range_type (0, m), ALL ());
+    nonconst_vec_type work_view (work, n);
 
     for (Ordinal k = 0; k < n; ++k) {
-      work[k] = ZERO;
+      work_view(k) = ZERO;
     }
 
     for (Ordinal k = 0; k < n-1; ++k) {
       Scalar& R_kk = R[ k + k * ldr ];
-      Scalar* const A_1k = &A[ 0 + k * lda ];
-      //Scalar* const A_1kp1 = &A[ 0 + (k+1) * lda ];
-      auto A_1kp1 = Kokkos::subview (A_view, std::pair<Ordinal, Ordinal> (0, m),
-                                     std::pair<Ordinal, Ordinal> (k+1, n));
+      auto A_1k = subview (A_view, ALL (), k);
+      auto A_1kp1 = subview (A_view, range_type (0, m), range_type (k+1, n));
 
-      lapack.LARFG (m + 1, &R_kk, A_1k, 1, &tau[k]);
-      this->GEMV ("T", ONE, A_1kp1, A_1k, 1, ZERO, work, 1);
+      lapack.LARFG (m + 1, &R_kk, A_1k.data (), 1, &tau[k]);
+      this->GEMV ("T", ONE, A_1kp1, A_1k.data (), 1, ZERO, work_view.data (), 1);
 
       for (Ordinal j = k+1; j < n; ++j) {
         Scalar& R_kj = R[ k + j*ldr ];
 
-        work[j-k-1] += R_kj;
-        R_kj -= tau[k] * work[j-k-1];
+        work_view(j-k-1) += R_kj;
+        R_kj -= tau[k] * work_view(j-k-1);
       }
-      this->GER (-tau[k], A_1k, work, A_1kp1);
+      this->GER (-tau[k], A_1k.data (), work_view.data (), A_1kp1);
     }
     Scalar& R_nn = R[ (n-1) + (n-1) * ldr ];
     Scalar* const A_1n = &A[ 0 + (n-1) * lda ];
@@ -724,13 +731,17 @@ namespace TSQR {
               const Kokkos::View<scalar_type**, Kokkos::LayoutLeft, Kokkos::Serial>& C_bot,
               scalar_type work[]) const
   {
+    using const_vec_type =
+      Kokkos::View<const scalar_type*, Kokkos::LayoutLeft, Kokkos::Serial>;
+    using nonconst_vec_type =
+      Kokkos::View<scalar_type*, Kokkos::LayoutLeft, Kokkos::Serial>;
     constexpr scalar_type ZERO {0.0};
-
     const Ordinal ncols_C = C_top.dimension_1 ();
     const Ordinal ncols_Q = R_bot.dimension_1 ();
 
+    nonconst_vec_type work_view (work, ncols_C);
     for (Ordinal i = 0; i < ncols_C; ++i) {
-      work[i] = ZERO;
+      work_view(i) = ZERO;
     }
 
     Ordinal j_start, j_end, j_step;
@@ -746,7 +757,7 @@ namespace TSQR {
     }
     for (Ordinal j_Q = j_start; j_Q != j_end; j_Q += j_step) {
       // Using Householder reflector stored in column j_Q of R_bot
-      const scalar_type* const R_bot_col = &R_bot(0, j_Q);
+      const_vec_type R_bot_col = Kokkos::subview (R_bot, Kokkos::ALL (), j_Q);
 
       // In 1-based indexing notation, with k in 1, 2, ..., ncols_C
       // (inclusive): (Output is length ncols_C row vector)
@@ -758,18 +769,18 @@ namespace TSQR {
         // 1-based indexing notation.
 
         scalar_type work_j_C = ZERO;
-        const scalar_type* const C_bot_col = &C_bot(0, j_C);
+        const_vec_type C_bot_col = Kokkos::subview (C_bot, Kokkos::ALL (), j_C);
 
         for (Ordinal k = 0; k <= j_Q; ++k)
-          work_j_C += R_bot_col[k] * C_bot_col[k];
+          work_j_C += R_bot_col(k) * C_bot_col(k);
 
         work_j_C += C_top(j_Q, j_C);
-        work[j_C] = work_j_C;
+        work_view(j_C) = work_j_C;
       }
       for (Ordinal j_C = 0; j_C < ncols_C; ++j_C) {
-        C_top(j_Q, j_C) -= tau[j_Q] * work[j_C];
+        C_top(j_Q, j_C) -= tau[j_Q] * work_view(j_C);
       }
-      this->GER (-tau[j_Q], R_bot_col, work, C_bot);
+      this->GER (-tau[j_Q], R_bot_col.data (), work_view.data (), C_bot);
     }
   }
 } // namespace TSQR
