@@ -200,6 +200,16 @@ namespace TSQR {
          const Kokkos::View<scalar_type**, Kokkos::LayoutLeft, Kokkos::Serial>& A) const;
 
     void
+    LARFG (const Ordinal n,
+           scalar_type* const alpha,
+           scalar_type x[],
+           const Ordinal incx,
+           scalar_type* const tau) const
+    {
+      lapack_type ().LARFG (n, alpha, x, incx, tau);
+    }
+
+    void
     GEMV (const char trans[],
           const scalar_type alpha,
           const Kokkos::View<const scalar_type**, Kokkos::LayoutLeft, Kokkos::Serial>& A,
@@ -499,7 +509,6 @@ namespace TSQR {
     using range_type = std::pair<Ordinal, Ordinal>;
     constexpr scalar_type ZERO {0.0};
     constexpr scalar_type ONE {1.0};
-    lapack_type lapack;
 
     const Ordinal m = A_view.dimension_0 ();
     const Ordinal n = A_view.dimension_1 ();
@@ -513,7 +522,7 @@ namespace TSQR {
       auto A_1k = subview (A_view, ALL (), k);
       auto A_1kp1 = subview (A_view, range_type (0, m), range_type (k+1, n));
 
-      lapack.LARFG (m + 1, &R_kk, A_1k.data (), 1, &tau_view[k]);
+      this->LARFG (m + 1, &R_kk, A_1k.data (), 1, &tau_view[k]);
       this->GEMV ("T", ONE, A_1kp1, A_1k, ZERO, work_view);
 
       for (Ordinal j = k+1; j < n; ++j) {
@@ -527,7 +536,7 @@ namespace TSQR {
     Scalar& R_nn = R_view(n-1, n-1);
     auto A_1n = subview (A_view, ALL (), n-1);
 
-    lapack.LARFG (m+1, &R_nn, A_1n.data (), 1, &tau_view[n-1]);
+    this->LARFG (m+1, &R_nn, A_1n.data (), 1, &tau_view[n-1]);
   }
 
 
@@ -647,7 +656,6 @@ namespace TSQR {
     using range_type = std::pair<Ordinal, Ordinal>;
     constexpr scalar_type ZERO {0.0};
     constexpr scalar_type ONE {1.0};
-    lapack_type lapack;
 
     const Ordinal n = R_top.dimension_0 ();
     for (Ordinal k = 0; k < n; ++k) {
@@ -661,7 +669,7 @@ namespace TSQR {
 
       // k+2: 1 element in R_top (R_top(k,k)), and k+1 elements in
       // R_bot (R_bot(1:k,k), in 1-based indexing notation).
-      lapack.LARFG (k+2, &R_top_kk, R_bot_1k.data (), 1, &tau_view[k]);
+      this->LARFG (k+2, &R_top_kk, R_bot_1k.data (), 1, &tau_view[k]);
       // One-based indexing, Matlab version of the GEMV call below:
       // work(1:k) := R_bot(1:k,k+1:n)' * R_bot(1:k,k)
 
@@ -679,7 +687,7 @@ namespace TSQR {
 
     // n+1: 1 element in R_top (n,n), and n elements in R_bot (the
     // whole last column).
-    lapack.LARFG (n+1, &R_top_nn, R_bot_1n.data (), 1, &tau_view[n-1]);
+    this->LARFG (n+1, &R_top_nn, R_bot_1n.data (), 1, &tau_view[n-1]);
   }
 
 
