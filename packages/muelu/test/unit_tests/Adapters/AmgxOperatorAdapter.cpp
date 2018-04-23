@@ -73,7 +73,6 @@ namespace MueLuTests {
 
 #include "MueLu_UseShortNames.hpp"
 
-  typedef MueLu::Utils<SC,LO,GO,NO> Utils;
   typedef MueLu::AMGXOperator<double,int,int,NO> AMGXOperator;
 
   TEUCHOS_UNIT_TEST(AMGXOperator, Apply)
@@ -91,12 +90,12 @@ namespace MueLuTests {
       if(comm->getSize() == 1) nx = 91;
       //matrix
       RCP<Matrix> Op = TestHelpers::TestFactory<double, int, int, NO>::Build2DPoisson(nx, -1, Xpetra::UseTpetra); 
-      RCP<Tpetra::CrsMatrix<double, int, int,NO> > tpA = MueLu::Utils<double, int, int ,NO>::Op2NonConstTpetraCrs(Op);
-      Teuchos::ParameterList params;
+      RCP<Tpetra::CrsMatrix<double, int, int,NO> > tpA = MueLu::Utilities<double, int, int ,NO>::Op2NonConstTpetraCrs(Op);
+      Teuchos::ParameterList params, dummyList;
       params.set("use external multigrid package", "amgx");
       Teuchos::ParameterList subList = params.sublist("amgx:params", false);
       params.sublist("amgx:params").set("json file", "test.json");
-      RCP<MueLu::TpetraOperator<double, int, int, NO> > tH = MueLu::CreateTpetraPreconditioner<double, int, int, NO>(tpA, params);
+      RCP<MueLu::TpetraOperator<double, int, int, NO> > tH = MueLu::CreateTpetraPreconditioner<double, int, int, NO>(tpA, params,dummyList);
       
       RCP<AMGXOperator> aH = Teuchos::rcp_dynamic_cast<AMGXOperator>(tH);
       TEST_EQUALITY(aH->sizeA()==nx*nx/comm->getSize(), true);
