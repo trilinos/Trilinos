@@ -210,7 +210,7 @@ namespace TSQR {
     void
     factor_pair (const Kokkos::View<scalar_type**, Kokkos::LayoutLeft, Kokkos::Serial>& R_top,
                  const Kokkos::View<scalar_type**, Kokkos::LayoutLeft, Kokkos::Serial>& R_bot,
-                 scalar_type tau[],
+                 const Kokkos::View<scalar_type*, Kokkos::LayoutLeft, Kokkos::Serial>& tau_view,
                  const Kokkos::View<scalar_type*, Kokkos::LayoutLeft, Kokkos::Serial>& work_view) const;
 
     void
@@ -639,7 +639,7 @@ namespace TSQR {
   CombineNative< Ordinal, Scalar, false >::
   factor_pair (const Kokkos::View<scalar_type**, Kokkos::LayoutLeft, Kokkos::Serial>& R_top,
                const Kokkos::View<scalar_type**, Kokkos::LayoutLeft, Kokkos::Serial>& R_bot,
-               scalar_type tau[],
+               const Kokkos::View<scalar_type*, Kokkos::LayoutLeft, Kokkos::Serial>& tau_view,
                const Kokkos::View<scalar_type*, Kokkos::LayoutLeft, Kokkos::Serial>& work_view) const
   {
     using Kokkos::ALL;
@@ -661,7 +661,7 @@ namespace TSQR {
 
       // k+2: 1 element in R_top (R_top(k,k)), and k+1 elements in
       // R_bot (R_bot(1:k,k), in 1-based indexing notation).
-      lapack.LARFG (k+2, &R_top_kk, R_bot_1k.data (), 1, &tau[k]);
+      lapack.LARFG (k+2, &R_top_kk, R_bot_1k.data (), 1, &tau_view[k]);
       // One-based indexing, Matlab version of the GEMV call below:
       // work(1:k) := R_bot(1:k,k+1:n)' * R_bot(1:k,k)
 
@@ -670,16 +670,16 @@ namespace TSQR {
       for (Ordinal j = k+1; j < n; ++j) {
         scalar_type& R_top_kj = R_top(k, j);
         work_view(j-k-1) += R_top_kj;
-        R_top_kj -= tau[k] * work_view(j-k-1);
+        R_top_kj -= tau_view[k] * work_view(j-k-1);
       }
-      this->GER (-tau[k], R_bot_1k, work_view, R_bot_1kp1);
+      this->GER (-tau_view[k], R_bot_1k, work_view, R_bot_1kp1);
     }
     scalar_type& R_top_nn = R_top(n-1, n-1);
     auto R_bot_1n = subview (R_bot, ALL (), n-1);
 
     // n+1: 1 element in R_top (n,n), and n elements in R_bot (the
     // whole last column).
-    lapack.LARFG (n+1, &R_top_nn, R_bot_1n.data (), 1, &tau[n-1]);
+    lapack.LARFG (n+1, &R_top_nn, R_bot_1n.data (), 1, &tau_view[n-1]);
   }
 
 
@@ -694,27 +694,32 @@ namespace TSQR {
                Scalar tau[],
                Scalar work[]) const
   {
+    using Kokkos::ALL;
+    using Kokkos::subview;
+    using range_type = std::pair<Ordinal, Ordinal>;
+
     Kokkos::View<scalar_type**, Kokkos::LayoutLeft, Kokkos::Serial> R_top_full (R_top, ldr_top, n);
     Kokkos::View<scalar_type**, Kokkos::LayoutLeft, Kokkos::Serial> R_bot_full (R_bot, ldr_bot, n);
+    Kokkos::View<scalar_type*, Kokkos::LayoutLeft, Kokkos::Serial> tau_view (tau, n);
     Kokkos::View<scalar_type*, Kokkos::LayoutLeft, Kokkos::Serial> work_view (work, n);
 
     if (ldr_top == n) {
       if (ldr_bot == n) {
-        this->factor_pair (R_top_full, R_bot_full, tau, work_view);
+        this->factor_pair (R_top_full, R_bot_full, tau_view, work_view);
       }
       else {
-        auto R_bot_view = Kokkos::subview (R_bot_full, std::pair<Ordinal, Ordinal> (0, n), Kokkos::ALL ());
-        this->factor_pair (R_top_full, R_bot_view, tau, work_view);
+        auto R_bot_view = subview (R_bot_full, range_type (0, n), ALL ());
+        this->factor_pair (R_top_full, R_bot_view, tau_view, work_view);
       }
     }
     else {
-      auto R_top_view = Kokkos::subview (R_top_full, std::pair<Ordinal, Ordinal> (0, n), Kokkos::ALL ());
+      auto R_top_view = subview (R_top_full, range_type (0, n), ALL ());
       if (ldr_bot == n) {
-        this->factor_pair (R_top_view, R_bot_full, tau, work_view);
+        this->factor_pair (R_top_view, R_bot_full, tau_view, work_view);
       }
       else {
-        auto R_bot_view = Kokkos::subview (R_bot_full, std::pair<Ordinal, Ordinal> (0, n), Kokkos::ALL ());
-        this->factor_pair (R_top_view, R_bot_view, tau, work_view);
+        auto R_bot_view = subview (R_bot_full, range_type (0, n), ALL ());
+        this->factor_pair (R_top_view, R_bot_view, tau_view, work_view);
       }
     }
   }
