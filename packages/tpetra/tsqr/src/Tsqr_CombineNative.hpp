@@ -195,8 +195,8 @@ namespace TSQR {
 
     void
     GER (const magnitude_type alpha,
-         const scalar_type x[],
-         const scalar_type y[],
+         const Kokkos::View<const scalar_type*, Kokkos::LayoutLeft, Kokkos::Serial>& x,
+         const Kokkos::View<const scalar_type*, Kokkos::LayoutLeft, Kokkos::Serial>& y,
          const Kokkos::View<scalar_type**, Kokkos::LayoutLeft, Kokkos::Serial>& A) const;
 
     void
@@ -432,8 +432,8 @@ namespace TSQR {
   void
   CombineNative< Ordinal, Scalar, false >::
   GER (const magnitude_type alpha,
-       const scalar_type x[],
-       const scalar_type y[],
+       const Kokkos::View<const scalar_type*, Kokkos::LayoutLeft, Kokkos::Serial>& x,
+       const Kokkos::View<const scalar_type*, Kokkos::LayoutLeft, Kokkos::Serial>& y,
        const Kokkos::View<scalar_type**, Kokkos::LayoutLeft, Kokkos::Serial>& A) const
   {
     //blas_type ().GER (m, n, alpha, x, incx, y, incy, A, lda);
@@ -531,7 +531,7 @@ namespace TSQR {
         work_view(j-k-1) += R_kj;
         R_kj -= tau[k] * work_view(j-k-1);
       }
-      this->GER (-tau[k], A_1k.data (), work_view.data (), A_1kp1);
+      this->GER (-tau[k], A_1k, work_view, A_1kp1);
     }
     Scalar& R_nn = R[ (n-1) + (n-1) * ldr ];
     Scalar* const A_1n = &A[ 0 + (n-1) * lda ];
@@ -608,7 +608,7 @@ namespace TSQR {
         C_top[ j + k*ldc_top ] -= tau[j] * work_view(k);
       }
 
-      this->GER (-tau[j], A_1j.data (), work_view.data (), C_bot_view);
+      this->GER (-tau[j], A_1j, work_view, C_bot_view);
     }
   }
 
@@ -655,7 +655,7 @@ namespace TSQR {
         work_view(j-k-1) += R_top_kj;
         R_top_kj -= tau[k] * work_view(j-k-1);
       }
-      this->GER (-tau[k], R_bot_1k.data (), work_view.data (), R_bot_1kp1);
+      this->GER (-tau[k], R_bot_1k, work_view, R_bot_1kp1);
     }
     scalar_type& R_top_nn = R_top(n-1, n-1);
     auto R_bot_1n = subview (R_bot, ALL (), n-1);
@@ -794,7 +794,7 @@ namespace TSQR {
       for (Ordinal j_C = 0; j_C < ncols_C; ++j_C) {
         C_top(j_Q, j_C) -= tau[j_Q] * work_view(j_C);
       }
-      this->GER (-tau[j_Q], R_bot_col.data (), work_view.data (), C_bot);
+      this->GER (-tau[j_Q], R_bot_col, work_view, C_bot);
     }
   }
 } // namespace TSQR
