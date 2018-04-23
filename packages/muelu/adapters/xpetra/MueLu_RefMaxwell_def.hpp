@@ -197,46 +197,40 @@ namespace MueLu {
 
     // build special prolongator for (1,1)-block
     if(P11_==Teuchos::null) {
-      GetOStream(Runtime0) << "RefMaxwell::compute(): building A_nodal" << std::endl;
+      // Form A_nodal = D0* M1 D0  (aka TMT_agg)
+      Level fineLevel, coarseLevel;
+      fineLevel.SetFactoryManager(Teuchos::null);
+      coarseLevel.SetFactoryManager(Teuchos::null);
+      coarseLevel.SetPreviousLevel(rcpFromRef(fineLevel));
+      fineLevel.SetLevelID(0);
+      coarseLevel.SetLevelID(1);
+      fineLevel.Set("A",M1_Matrix_);
+      coarseLevel.Set("P",D0_Matrix_);
+      coarseLevel.setlib(M1_Matrix_->getDomainMap()->lib());
+      fineLevel.setlib(M1_Matrix_->getDomainMap()->lib());
+      coarseLevel.setObjectLabel("RefMaxwell (1,1) A_nodal");
+      fineLevel.setObjectLabel("RefMaxwell (1,1) A_nodal");
 
+      RCP<RAPFactory> rapFact = rcp(new RAPFactory());
+      Teuchos::ParameterList rapList = *(rapFact->GetValidParameterList());
+      rapList.set("transpose: use implicit", parameterList_.get<bool>("transpose: use implicit", false));
+      rapList.set("rap: fix zero diagonals", parameterList_.get<bool>("rap: fix zero diagonals", false));
+      rapList.set("rap: triple product", parameterList_.get<bool>("rap: triple product", false));
+      rapFact->SetParameterList(rapList);
 
-      { // Form A_nodal = D0* M1 D0  (aka TMT_agg)
-        RCP<Teuchos::TimeMonitor> tm = rcp(new Teuchos::TimeMonitor(*Teuchos::TimeMonitor::getNewTimer("MueLu RefMaxwell: Build A_nodal")));
-
-        Level fineLevel, coarseLevel;
-        fineLevel.SetFactoryManager(Teuchos::null);
-        coarseLevel.SetFactoryManager(Teuchos::null);
-        coarseLevel.SetPreviousLevel(rcpFromRef(fineLevel));
-        fineLevel.SetLevelID(0);
-        coarseLevel.SetLevelID(1);
-        fineLevel.Set("A",M1_Matrix_);
-        coarseLevel.Set("P",D0_Matrix_);
-        coarseLevel.setlib(M1_Matrix_->getDomainMap()->lib());
-        fineLevel.setlib(M1_Matrix_->getDomainMap()->lib());
-
-        RCP<RAPFactory> rapFact = rcp(new RAPFactory());
-        Teuchos::ParameterList rapList = *(rapFact->GetValidParameterList());
-        rapList.set("transpose: use implicit", parameterList_.get<bool>("transpose: use implicit", false));
-        rapList.set("rap: fix zero diagonals", parameterList_.get<bool>("rap: fix zero diagonals", false));
-        rapList.set("rap: triple product", parameterList_.get<bool>("rap: triple product", false));
-        rapFact->SetParameterList(rapList);
-
-        RCP<TransPFactory> transPFactory;
-        if (!parameterList_.get<bool>("transpose: use implicit", false)) {
-          transPFactory = rcp(new TransPFactory());
-          rapFact->SetFactory("R", transPFactory);
-        }
-
-        coarseLevel.Request("A", rapFact.get());
-
-        A_nodal_Matrix_ = coarseLevel.Get< RCP<Matrix> >("A", rapFact.get());
+      RCP<TransPFactory> transPFactory;
+      if (!parameterList_.get<bool>("transpose: use implicit", false)) {
+        transPFactory = rcp(new TransPFactory());
+        rapFact->SetFactory("R", transPFactory);
       }
+
+      coarseLevel.Request("A", rapFact.get());
+
+      A_nodal_Matrix_ = coarseLevel.Get< RCP<Matrix> >("A", rapFact.get());
 
       // build special prolongator
       GetOStream(Runtime0) << "RefMaxwell::compute(): building special prolongator" << std::endl;
-      RCP<Teuchos::TimeMonitor> tm = rcp(new Teuchos::TimeMonitor(*Teuchos::TimeMonitor::getNewTimer("MueLu RefMaxwell: Build special prolongator")));
       buildProlongator();
-      tm = Teuchos::null;
 
 #ifdef HAVE_MUELU_KOKKOS_REFACTOR
       R11_ = Utilities_kokkos::Transpose(*P11_);
@@ -246,14 +240,19 @@ namespace MueLu {
     }
 
     {
-      GetOStream(Runtime0) << "RefMaxwell::compute(): building MG for coarse (1,1)-block" << std::endl;
-
       // build coarse grid operator for (1,1)-block
-      RCP<Teuchos::TimeMonitor> tm = rcp(new Teuchos::TimeMonitor(*Teuchos::TimeMonitor::getNewTimer("MueLu RefMaxwell: Build AH")));
       formCoarseMatrix();
-      tm = Teuchos::null;
 
-      tm = rcp(new Teuchos::TimeMonitor(*Teuchos::TimeMonitor::getNewTimer("MueLu RefMaxwell: Build coarse (1,1) hierarchy")));
+#ifdef HAVE_MUELU_KOKKOS_REFACTOR
+      // This should be taken out again as soon as
+      // CoalesceDropFactory_kokkos supports BlockSize > 1 and
+      // drop tol != 0.0
+      if (precList11_.isParameter("aggregation: drop tol") && precList11_.get<double>("aggregation: drop tol") != 0.0) {
+        GetOStream(Warnings0) << "RefMaxwell::compute(): Setting \"aggregation: drop tol\". to 0.0, since CoalesceDropFactory_kokkos does not "
+                              << "support BlockSize > 1 and drop tol != 0.0" << std::endl;
+        precList11_.set("aggregation: drop tol", 0.0);
+      }
+#endif
       HierarchyH_ = MueLu::CreateXpetraPreconditioner(AH_, precList11_, CoordsH_);
     }
 
@@ -289,6 +288,8 @@ namespace MueLu {
         coarseLevel.Set("P",D0_Matrix_);
         coarseLevel.setlib(SM_Matrix_->getDomainMap()->lib());
         fineLevel.setlib(SM_Matrix_->getDomainMap()->lib());
+        coarseLevel.setObjectLabel("RefMaxwell (2,2)");
+        fineLevel.setObjectLabel("RefMaxwell (2,2)");
 
         RCP<RAPFactory> rapFact = rcp(new RAPFactory());
         Teuchos::ParameterList rapList = *(rapFact->GetValidParameterList());
@@ -304,16 +305,14 @@ namespace MueLu {
         coarseLevel.Request("R", transPFactory.get());
         coarseLevel.Request("A", rapFact.get());
         A22_ = coarseLevel.Get< RCP<Matrix> >("A", rapFact.get());
+        A22_->setObjectLabel("RefMaxwell (2,2)");
         D0_T_Matrix_ = coarseLevel.Get< RCP<Matrix> >("R", transPFactory.get());
       }
 
-      RCP<Teuchos::TimeMonitor> tm = rcp(new Teuchos::TimeMonitor(*Teuchos::TimeMonitor::getNewTimer("MueLu RefMaxwell: Build (2,2) hierarchy")));
       Hierarchy22_ = MueLu::CreateXpetraPreconditioner(A22_, precList22_, Coords_);
     }
 
     {
-      GetOStream(Runtime0) << "RefMaxwell::compute(): building smoothers for fine (1,1)-block" << std::endl;
-      RCP<Teuchos::TimeMonitor> tm = rcp(new Teuchos::TimeMonitor(*Teuchos::TimeMonitor::getNewTimer("MueLu RefMaxwell: Build smoothers for fine (1,1) block")));
       std::string smootherType = parameterList_.get<std::string>("smoother: type", "CHEBYSHEV");
       if (smootherType == "hiptmair" &&
           SM_Matrix_->getDomainMap()->lib() == Xpetra::UseTpetra &&
@@ -378,6 +377,7 @@ namespace MueLu {
         RCP<MueLu::FactoryManagerBase> factoryHandler = rcp(new FactoryManager());
         level.SetFactoryManager(factoryHandler);
         level.SetLevelID(0);
+        level.setObjectLabel("RefMaxwell (1,1)");
         level.Set("A",SM_Matrix_);
         level.setlib(SM_Matrix_->getDomainMap()->lib());
         RCP<SmootherPrototype> smootherPrototype = rcp(new TrilinosSmoother(smootherType, smootherList_));
@@ -461,6 +461,8 @@ namespace MueLu {
       fineLevel.Set("DofsPerNode",1);
       coarseLevel.setlib(A_nodal_Matrix_->getDomainMap()->lib());
       fineLevel.setlib(A_nodal_Matrix_->getDomainMap()->lib());
+      coarseLevel.setObjectLabel("RefMaxwell (1,1)");
+      fineLevel.setObjectLabel("RefMaxwell (1,1)");
 
       LocalOrdinal NSdim = 1;
       RCP<MultiVector> nullSpace = MultiVectorFactory::Build(A_nodal_Matrix_->getRowMap(),NSdim);
@@ -967,10 +969,9 @@ namespace MueLu {
     }
 
     // set fixed block size for vector nodal matrix
-    // TODO: Which one is it?
-    // AH_->SetFixedBlockSize(1);
     size_t dim = Nullspace_->getNumVectors();
     AH_->SetFixedBlockSize(dim);
+    AH_->setObjectLabel("RefMaxwell (1,1)");
 
   }
 
