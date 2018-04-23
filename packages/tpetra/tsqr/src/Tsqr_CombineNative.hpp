@@ -528,9 +528,9 @@ namespace TSQR {
       this->GER (-tau[k], A_1k, work_view, A_1kp1);
     }
     Scalar& R_nn = R[ (n-1) + (n-1) * ldr ];
-    Scalar* const A_1n = &A[ 0 + (n-1) * lda ];
+    nonconst_vec_type A_1n = subview (A_view, ALL (), n-1);
 
-    lapack.LARFG (m+1, &R_nn, A_1n, 1, &tau[n-1]);
+    lapack.LARFG (m+1, &R_nn, A_1n.data (), 1, &tau[n-1]);
   }
 
 
