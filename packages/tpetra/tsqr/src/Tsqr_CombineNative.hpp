@@ -211,7 +211,7 @@ namespace TSQR {
     factor_pair (const Kokkos::View<scalar_type**, Kokkos::LayoutLeft, Kokkos::Serial>& R_top,
                  const Kokkos::View<scalar_type**, Kokkos::LayoutLeft, Kokkos::Serial>& R_bot,
                  scalar_type tau[],
-                 scalar_type work[]) const;
+                 const Kokkos::View<scalar_type*, Kokkos::LayoutLeft, Kokkos::Serial>& work_view) const;
 
     void
     factor_inner (const Kokkos::View<scalar_type**, Kokkos::LayoutLeft, Kokkos::Serial>& R_view,
@@ -640,20 +640,16 @@ namespace TSQR {
   factor_pair (const Kokkos::View<scalar_type**, Kokkos::LayoutLeft, Kokkos::Serial>& R_top,
                const Kokkos::View<scalar_type**, Kokkos::LayoutLeft, Kokkos::Serial>& R_bot,
                scalar_type tau[],
-               scalar_type work[]) const
+               const Kokkos::View<scalar_type*, Kokkos::LayoutLeft, Kokkos::Serial>& work_view) const
   {
     using Kokkos::ALL;
     using Kokkos::subview;
-    using nonconst_vec_type =
-      Kokkos::View<scalar_type*, Kokkos::LayoutLeft, Kokkos::Serial>;
     using range_type = std::pair<Ordinal, Ordinal>;
     constexpr scalar_type ZERO {0.0};
     constexpr scalar_type ONE {1.0};
     lapack_type lapack;
 
     const Ordinal n = R_top.dimension_0 ();
-
-    nonconst_vec_type work_view (work, n);
     for (Ordinal k = 0; k < n; ++k) {
       work_view(k) = ZERO;
     }
@@ -700,23 +696,25 @@ namespace TSQR {
   {
     Kokkos::View<scalar_type**, Kokkos::LayoutLeft, Kokkos::Serial> R_top_full (R_top, ldr_top, n);
     Kokkos::View<scalar_type**, Kokkos::LayoutLeft, Kokkos::Serial> R_bot_full (R_bot, ldr_bot, n);
+    Kokkos::View<scalar_type*, Kokkos::LayoutLeft, Kokkos::Serial> work_view (work, n);
+
     if (ldr_top == n) {
       if (ldr_bot == n) {
-        this->factor_pair (R_top_full, R_bot_full, tau, work);
+        this->factor_pair (R_top_full, R_bot_full, tau, work_view);
       }
       else {
         auto R_bot_view = Kokkos::subview (R_bot_full, std::pair<Ordinal, Ordinal> (0, n), Kokkos::ALL ());
-        this->factor_pair (R_top_full, R_bot_view, tau, work);
+        this->factor_pair (R_top_full, R_bot_view, tau, work_view);
       }
     }
     else {
       auto R_top_view = Kokkos::subview (R_top_full, std::pair<Ordinal, Ordinal> (0, n), Kokkos::ALL ());
       if (ldr_bot == n) {
-        this->factor_pair (R_top_view, R_bot_full, tau, work);
+        this->factor_pair (R_top_view, R_bot_full, tau, work_view);
       }
       else {
         auto R_bot_view = Kokkos::subview (R_bot_full, std::pair<Ordinal, Ordinal> (0, n), Kokkos::ALL ());
-        this->factor_pair (R_top_view, R_bot_view, tau, work);
+        this->factor_pair (R_top_view, R_bot_view, tau, work_view);
       }
     }
   }
