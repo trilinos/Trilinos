@@ -87,6 +87,15 @@ namespace Tpetra {
     //! @name Typedefs to facilitate template metaprogramming.
     //@{
 
+    //! This class' first template parameter; the Scalar type.
+    typedef Scalar scalar_type;
+    //! This class' second template parameter; the type of local indices.
+    typedef LocalOrdinal local_ordinal_type;
+    //! This class' third template parameter; the type of global indices.
+    typedef GlobalOrdinal global_ordinal_type;
+    //! This class' fourth template parameter; the Kokkos Node type.
+    typedef Node node_type;
+
     //! The dual_view_type picked up from MultiVector
     typedef typename MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::dual_view_type dual_view_type;
 
@@ -101,6 +110,12 @@ namespace Tpetra {
 
     //! Grab mag_type from superclass
     typedef typename MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::mag_type mag_type;
+
+    //! Grab device_type from superclass
+    typedef typename MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::device_type device_type;
+
+    //! Grab execution_space from superclass
+    typedef typename MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::execution_space execution_space;
 
     //@}
     //! @name Constructors and destructor
@@ -118,6 +133,11 @@ namespace Tpetra {
 
      // CMS - These are the constructors to MultiVector that I do not want to implement here
    private:
+
+     // WCMCLEN: @CMS: shouldn't this be MultiVector -- not sure how that affects the stuff in _def.hpp
+     //! The type of the base class of this class.
+     typedef DistObject<Scalar, LocalOrdinal, GlobalOrdinal, Node> base_type;
+
      //! Default constructor: makes a MultiVector with no rows or columns.
      FEMultiVector ();
 
@@ -299,6 +319,18 @@ namespace Tpetra {
     // We'd rely on "this" to keep the *target* view (aka the bigger one)
     Teuchos::RCP<MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> > sourceMultiVector_;
     FEWhichActive activeMultiVector_;
+
+    /// \brief Whether sumIntoLocalValue and sumIntoGlobalValue should
+    ///   use atomic updates by default.
+    ///
+    /// \warning This is an implementation detail.
+    static const bool useAtomicUpdatesByDefault =
+#ifdef KOKKOS_HAVE_SERIAL
+      ! std::is_same<execution_space, Kokkos::Serial>::value;
+#else
+      true;
+#endif // KOKKOS_HAVE_SERIAL
+
 
   public:
     /// \brief Replace value in host memory, using global row index.
@@ -949,8 +981,7 @@ namespace Tpetra {
     //! Like the above dot() overload, but for std::vector output.
     template <typename T>
     typename std::enable_if< ! (std::is_same<dot_type, T>::value), void >::type
-    dot (const MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& A,
-         std::vector<T>& dots) const;
+    dot (const MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& A, std::vector<T>& dots) const;
 
     /// \brief Compute the dot product of each corresponding pair of
     ///   vectors (columns) in A and B, storing the result in a device
@@ -973,13 +1004,17 @@ namespace Tpetra {
     dot (const MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& A,
          const Kokkos::View<dot_type*, Kokkos::HostSpace>& norms) const;
 
+#if 1  // WCMCLEN
     template<class ViewType>
     void
     dot (typename std::enable_if<std::is_same<typename ViewType::value_type,dot_type>::value &&
                                  std::is_same<typename ViewType::memory_space,typename device_type::memory_space>::value,
-                                 const MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>>::type& A,
+                                 const FEMultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>>::type& A,
          const ViewType& dots) const;
+#endif
 
+#if 0  // WCMCLEN
+// TODO: WCMCLEN - This wasn't compiling...
     /// \brief Compute the dot product of each corresponding pair of
     ///   vectors (columns) in A and B, storing the result in a device
     ///   view.
@@ -996,6 +1031,7 @@ namespace Tpetra {
     typename std::enable_if< ! (std::is_same<dot_type, T>::value), void >::type
     dot (const MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& A,
          const Kokkos::View<T*, device_type>& dots) const;
+#endif
 
     //! Put element-wise absolute values of input Multi-vector in target: A = abs(this)
     void abs (const MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& A);
@@ -1474,6 +1510,20 @@ namespace Tpetra {
     deep_copy (FEMultiVector<DS, DL, DG, DN>& dst,
                const FEMultiVector<SS, SL, SG, SN>& src);
 
+
+    // WCMCLEN: @CMS did you remove these originally?  They're used in _def, do we need them?
+    //          see MultiVector_decl for descriptions of what these do
+    mutable dual_view_type view_;
+    mutable dual_view_type origView_;
+    Teuchos::Array<size_t> whichVectors_;
+
+    //! Input argument for normImpl()
+    enum EWhichNorm {
+      NORM_ONE,  //<! Use the one-norm
+      NORM_TWO,  //<! Use the two-norm
+      NORM_INF   //<! Use the infinity-norm
+    };
+
     /// \brief Compute the norm of each vector (column), storing the
     ///   result in a device View.
     ///
@@ -1558,6 +1608,8 @@ namespace Tpetra {
 
     //! Whether this class implements the old or new interface of DistObject.
     virtual bool useNewInterface () { return true; }
+
+    typedef typename DistObject<Scalar, LocalOrdinal, GlobalOrdinal, Node>::buffer_device_type buffer_device_type;
 
     virtual void
     copyAndPermuteNew (const SrcDistObject& sourceObj,

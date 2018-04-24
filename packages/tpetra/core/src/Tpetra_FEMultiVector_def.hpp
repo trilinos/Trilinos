@@ -71,7 +71,7 @@
 #include "KokkosKernels_Utils.hpp"
 #include "Kokkos_Random.hpp"
 
-#if 0 // WCMCLEN
+#if 1 // WCMCLEN
 #ifdef HAVE_TPETRA_INST_FLOAT128
 namespace Kokkos {
   // FIXME (mfh 04 Sep 2015) Just a stub for now!
@@ -123,7 +123,9 @@ namespace Kokkos {
   };
 } // namespace Kokkos
 #endif // HAVE_TPETRA_INST_FLOAT128
+#endif
 
+#if 1
 namespace { // (anonymous)
 
   /// \brief Allocate and return a 2-D Kokkos::DualView for Tpetra::MultiVector.
@@ -1851,6 +1853,7 @@ namespace Tpetra {
 
 
   // WCMCLEN  KEEP
+#if 1     // WCMCLEN - didn't compile ??
   // TODO: Sync w/ decl on line 965(ish) in _decl.hpp, this version uses "dots" for 2nd parm, _decl.hpp uses "norms"
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void
@@ -1959,6 +1962,7 @@ namespace Tpetra {
       gblDotImpl (dotsOut, comm, this->isDistributed ());
     }
   }
+#endif
 
 
   namespace { // (anonymous)
@@ -2040,7 +2044,9 @@ namespace Tpetra {
 
 
   // WCMCLEN: OK
+#if 0
   // TODO: verify dot_type == typename T from decl file
+  // TODO: This didn't compile ...
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void
   FEMultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
@@ -2087,7 +2093,7 @@ namespace Tpetra {
       this->dot (A, Kokkos::View<dot_type*, Kokkos::HostSpace>(dots.getRawPtr (), numDots));
     }
   }
-
+#endif
 
   // WCMCLEN In decl
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
