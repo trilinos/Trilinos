@@ -156,7 +156,7 @@ namespace Xpetra {
        throw Exceptions::BadCast("Cast from Xpetra::Matrix to Xpetra::EpetraCrsMatrix or Xpetra::TpetraCrsMatrix failed");
    #endif
 
-       return Teuchos::null;  // make compiler happy
+       TEUCHOS_UNREACHABLE_RETURN(Teuchos::null); // make compiler happy
     }
   };
 
