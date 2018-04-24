@@ -110,7 +110,7 @@ main (int argc, char *argv[])
   typedef Teuchos::ScalarTraits<MT> STM;
   typedef TpetraIntrepidPoissonExample::sparse_matrix_type sparse_matrix_type;
   typedef TpetraIntrepidPoissonExample::vector_type vector_type;
-  typedef TpetraIntrepidPoissonExample::multi_vector_type multivector_type;
+  typedef TpetraIntrepidPoissonExample::multivector_type multivector_type;
   typedef TpetraIntrepidPoissonExample::operator_type operator_type;
 
   bool success = true;
