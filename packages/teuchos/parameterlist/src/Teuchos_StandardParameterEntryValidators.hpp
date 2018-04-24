@@ -715,7 +715,7 @@ public:
   //@{
 
   /** \brief Determines what type is the preferred type. */
-  enum EPreferredType { PREFER_INT, PREFER_DOUBLE, PREFER_STRING };
+  enum EPreferredType { PREFER_INT, PREFER_LONG_LONG, PREFER_DOUBLE, PREFER_STRING };
 
 
   /** \brief Determines the types that are accepted.  */
@@ -723,12 +723,17 @@ public:
   public:
     /** \brief Allow all types or not on construction. */
     AcceptedTypes( bool allowAllTypesByDefault = true )
-      :allowInt_(allowAllTypesByDefault),allowDouble_(allowAllTypesByDefault),
-       allowString_(allowAllTypesByDefault)
+      :allowInt_(allowAllTypesByDefault)
+      ,allowLongLong_(allowAllTypesByDefault)
+      ,allowDouble_(allowAllTypesByDefault)
+      ,allowString_(allowAllTypesByDefault)
       {}
     /** \brief Set allow an <tt>int</tt> value or not */
     AcceptedTypes& allowInt( bool _allowInt )
       { allowInt_ = _allowInt; return *this; }
+    /** \brief Set allow an <tt>long long</tt> value or not */
+    AcceptedTypes& allowLongLong( bool _allowLongLong )
+      { allowLongLong_ = _allowLongLong; return *this; }
     /** \brief Set allow a <tt>double</tt> value or not */
     AcceptedTypes& allowDouble( bool _allowDouble )
       { allowDouble_ = _allowDouble; return *this; }
@@ -737,12 +742,15 @@ public:
       { allowString_ = _allowString; return *this; }
     /** \brief Allow an <tt>int</tt> value? */
     bool allowInt() const { return allowInt_; }
+    /** \brief Allow an <tt>long long</tt> value? */
+    bool allowLongLong() const { return allowLongLong_; }
     /** \brief Allow an <tt>double</tt> value? */
     bool allowDouble() const { return allowDouble_; }
     /** \brief Allow an <tt>std::string</tt> value? */
     bool allowString() const { return allowString_; }
   private:
     bool  allowInt_;
+    bool  allowLongLong_;
     bool  allowDouble_;
     bool  allowString_;
   };
@@ -778,8 +786,7 @@ public:
   //@{
 
   /** \brief Get an integer value from a parameter entry.
-   * HAVE_TEUCHOSCORE_CXX11 will call std::stoi
-   * otherwise we use std::atoi
+   * will call std::stoi
    * Note that std::stoi throws on badly formatted strings but
    * some formats can be accepted, such as "1.1" becoming 1
    */
@@ -788,10 +795,18 @@ public:
     const std::string &sublistName = "", const bool activeQuery = true
     ) const;
 
-  /** \brief Get a double value from a parameter entry. */
+  /** \brief Get a long long value from a parameter entry.
+   * will call std::stoll
+   * Note that std::stoll throws on badly formatted strings but
+   * some formats can be accepted, such as "1.1" becoming 1
+   */
+  long long getLongLong(
+    const ParameterEntry &entry, const std::string &paramName = "",
+    const std::string &sublistName = "", const bool activeQuery = true
+    ) const;
 
   /** \brief Get a double value from a parameter entry.
-   * HAVE_TEUCHOSCORE_CXX11 will call std::stod
+   * will call std::stod
    */
   double getDouble(
     const ParameterEntry &entry, const std::string &paramName = "",
@@ -812,6 +827,14 @@ public:
     const int defaultValue
     ) const;
 
+  /** \brief Lookup parameter from a parameter list and return as a long long
+   * value.
+   */
+  long long getLongLong(
+    ParameterList &paramList, const std::string &paramName,
+    const long long defaultValue
+    ) const;
+
   /** \brief Lookup parameter from a parameter list and return as an double
    * value.
    */
@@ -828,13 +851,17 @@ public:
     const std::string &defaultValue
     ) const;
 
-  /** \brief Lookup whether or not Doubles are allowed.
-   */
-  bool isDoubleAllowed() const;
-
   /** \brief Lookup whether or not ints are allowed.
    */
   bool isIntAllowed() const;
+
+  /** \brief Lookup whether or not long longs are allowed.
+   */
+  bool isLongLongAllowed() const;
+
+  /** \brief Lookup whether or not doubles are allowed.
+   */
+  bool isDoubleAllowed() const;
 
   /** \brief Lookup whether or not strings are allowed.
    */
@@ -850,6 +877,8 @@ public:
     switch (enumValue) {
       case PREFER_INT:
         return getIntEnumString ();
+      case PREFER_LONG_LONG:
+        return getLongLongEnumString ();
       case PREFER_DOUBLE:
         return getDoubleEnumString ();
       case PREFER_STRING:
@@ -865,6 +894,9 @@ public:
   {
     if (enumString == getIntEnumString ()) {
       return PREFER_INT;
+    }
+    else if (enumString == getLongLongEnumString ()) {
+      return PREFER_LONG_LONG;
     }
     else if (enumString == getDoubleEnumString ()) {
       return PREFER_DOUBLE;
@@ -939,6 +971,12 @@ private:
     return intEnumString_;
   }
 
+  /* \brief Gets the string representing the "int" preferred type enum */
+  static const std::string& getLongLongEnumString(){
+    static const std::string longLongEnumString_ = TypeNameTraits<long long>::name();
+    return longLongEnumString_;
+  }
+
   /* \brief Gets the string representing the "double" preferred type enum */
   static const std::string& getDoubleEnumString(){
     static const std::string doubleEnumString_ = TypeNameTraits<double>::name();
@@ -998,6 +1036,19 @@ TEUCHOSPARAMETERLIST_LIB_DLL_EXPORT void setIntParameter(
   );
 
 
+/** \brief Set an integer parameter that allows for (nearly) any input
+ * parameter type that is convertible to an int.
+ *
+ * \relates ParameterList
+ */
+TEUCHOSPARAMETERLIST_LIB_DLL_EXPORT void setLongLongParameter(
+  std::string const& paramName,
+  long long const value, std::string const& docString,
+  ParameterList *paramList,
+  AnyNumberParameterEntryValidator::AcceptedTypes const& acceptedTypes
+  = AnyNumberParameterEntryValidator::AcceptedTypes()
+  );
+
 /** \brief Set an double parameter that allows for (nearly) any input
  * parameter type that is convertible to a double.
  *
@@ -1044,6 +1095,24 @@ TEUCHOSPARAMETERLIST_LIB_DLL_EXPORT int getIntParameter(
   ParameterList const& paramList, std::string const& paramName
   );
 
+
+/** \brief Get a long long parameter.
+ *
+ * If the underlying parameter type is already a long long, then all is good.
+ * However, if it is not, then a AnyNumberParameterEntryValidator object is
+ * looked for to extract the type correctly.  If no validator is attached to
+ * the entry, then a new AnyNumberParameterEntryValidator object will be
+ * created that that will allow the conversion from any supported type.
+ *
+ * The parameter must exist or an <tt>Exceptions::InvalidParameterName</tt>
+ * object will be thrown.  The parameters type must be acceptable, or an
+ * <tt>Exceptions::InvalidParameterType</tt> object will be thown.
+ *
+ * \relates ParameterList
+ */
+TEUCHOSPARAMETERLIST_LIB_DLL_EXPORT long long getLongLongParameter(
+  ParameterList const& paramList, std::string const& paramName
+  );
 
 /** \brief Get double integer parameter.
  *

@@ -21,9 +21,6 @@ configuration = {
         
         # Default options that are common to all builds.
         'common': [
-            # Shared libs safes a ton of disk space and catches more errors
-            # than static builds.
-            '-DBUILD_SHARED_LIBS=ON',
             # For graceful disables, we want to turn this on.
             '-DTrilinos_DISABLE_ENABLED_FORWARD_DEP_PACKAGES=ON',
             ],
@@ -35,19 +32,8 @@ configuration = {
         'default-builds': [
 
             ('MPI_RELEASE_DEBUG_SHARED_PT', [
-                '-DTrilinos_CONFIGURE_OPTIONS_FILE:STRING=cmake/std/MpiReleaseDebugSharedPtSettings.cmake,cmake/std/BasicCiTestingSettings.cmake,cmake/std/sems/SEMSDevEnv.cmake',
+                '-DTrilinos_CONFIGURE_OPTIONS_FILE:STRING=cmake/std/MpiReleaseDebugSharedPtSerial.cmake',
                 ]),
-
-            ## Options for the SERIAL_RELEASE build.
-            #('SERIAL_RELEASE_SHARED', [
-            #    '-DTPL_ENABLE_MPI:BOOL=OFF',
-            #    '-DCMAKE_BUILD_TYPE:STRING=RELEASE',
-            #    '-DTrilinos_ENABLE_DEBUG:BOOL=OFF',
-            #    '-DBUILD_SHARED_LIBS=ON',
-            #    '-DTrilinos_ENABLE_EXPLICIT_INSTANTIATION:BOOL=OFF',
-            #    ]),
-            # ToDo: Should we define serial builds to allow developers to run
-            # them if they want?
 
             ], # default-builds
 
