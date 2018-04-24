@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005 National Technology & Engineering Solutions
+ * Copyright (c) 2005-2017 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -58,8 +58,6 @@
 
 int ex_get_init_info(int exoid, int *num_proc, int *num_proc_in_f, char *ftype)
 {
-  const char *func_name = "ex_get_init_info";
-
   int    dimid, status;
   size_t ltempsv;
 
@@ -67,22 +65,24 @@ int ex_get_init_info(int exoid, int *num_proc, int *num_proc_in_f, char *ftype)
   /*-----------------------------Execution begins-----------------------------*/
 
   EX_FUNC_ENTER();
-  ex_check_valid_file_id(exoid);
+  ex_check_valid_file_id(exoid, __func__);
+
+  /* In case file isn't parallel, set the values here... */
+  *num_proc      = 1;
+  *num_proc_in_f = 1;
 
   /* Get the file type */
   if (ex_get_file_type(exoid, ftype) != EX_NOERR) {
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to get file type for file ID %d", exoid);
-    ex_err(func_name, errmsg, EX_LASTERR);
+    ex_err(__func__, errmsg, EX_LASTERR);
 
     EX_FUNC_LEAVE(EX_FATAL);
   }
 
   if ((status = nc_inq_dimid(exoid, DIM_NUM_PROCS, &dimid)) != NC_NOERR) {
-    snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to find dimension ID for \"%s\" in file ID %d",
-             DIM_NUM_PROCS, exoid);
-    ex_err(func_name, errmsg, status);
-
-    EX_FUNC_LEAVE(EX_FATAL);
+    /* This isn't a parallel file.  Just return now with no error, but with num_proc and
+     * num_proc_in_f set to 1 */
+    EX_FUNC_LEAVE(EX_NOERR);
   }
 
   /* Get the value of the number of processors */
@@ -90,7 +90,7 @@ int ex_get_init_info(int exoid, int *num_proc, int *num_proc_in_f, char *ftype)
     snprintf(errmsg, MAX_ERR_LENGTH,
              "ERROR: failed to find length of dimension \"%s\" in file ID %d", DIM_NUM_PROCS,
              exoid);
-    ex_err(func_name, errmsg, status);
+    ex_err(__func__, errmsg, status);
 
     EX_FUNC_LEAVE(EX_FATAL);
   }
@@ -100,7 +100,7 @@ int ex_get_init_info(int exoid, int *num_proc, int *num_proc_in_f, char *ftype)
   if ((status = nc_inq_dimid(exoid, DIM_NUM_PROCS_F, &dimid)) != NC_NOERR) {
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to find dimension ID for \"%s\" in file ID %d",
              DIM_NUM_PROCS_F, exoid);
-    ex_err(func_name, errmsg, status);
+    ex_err(__func__, errmsg, status);
 
     EX_FUNC_LEAVE(EX_FATAL);
   }
@@ -110,7 +110,7 @@ int ex_get_init_info(int exoid, int *num_proc, int *num_proc_in_f, char *ftype)
     snprintf(errmsg, MAX_ERR_LENGTH,
              "ERROR: failed to find length of dimension \"%s\" in file ID %d", DIM_NUM_PROCS_F,
              exoid);
-    ex_err(func_name, errmsg, status);
+    ex_err(__func__, errmsg, status);
 
     EX_FUNC_LEAVE(EX_FATAL);
   }

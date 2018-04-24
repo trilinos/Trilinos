@@ -1,4 +1,4 @@
-C Copyright(C) 2009 National Technology & Engineering Solutions
+C Copyright(C) 2009-2017 National Technology & Engineering Solutions
 C of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C NTESS, the U.S. Government retains certain rights in this software.
 C         
@@ -33,23 +33,7 @@ C OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 C=======================================================================
       SUBROUTINE LOGERR (ERRTYP, ERRMSG, IUN)
 C=======================================================================
-C$Id: logerr.f,v 1.2 2009/03/25 12:46:02 gdsjaar Exp $
-C$Log: logerr.f,v $
-CRevision 1.2  2009/03/25 12:46:02  gdsjaar
-CAdd copyright and license notice to all files.
-C
-CRevision 1.1.1.1  1990/08/14 16:15:27  gdsjaar
-CTesting
-C
-c Revision 1.1  90/08/14  16:15:25  gdsjaar
-c Initial revision
-c 
-c Revision 1.1  90/08/09  13:39:35  gdsjaar
-c Initial revision
-c 
-
 C   --*** LOGERR *** (ETCLIB) Print error message to output file
-C   --   Written by Amy Gilkey - revised 02/19/88
 C   --
 C   --Parameters:
 C   --   ERRTYP - IN - the type of error:
@@ -67,7 +51,7 @@ C   --   IUN - IN - the output unit number
    10    FORMAT (' FATAL ERROR - ', A)
       ELSE IF (ERRTYP .EQ. 'PROGRAM') THEN
          WRITE (IUN, *)
-         WRITE (IUN, 20) ERRMSG, ' - call code sponsor'
+         WRITE (IUN, 20) ERRMSG, ' - email code sponsor'
    20    FORMAT (' PROGRAM ERROR - ', A, A)
       ELSE IF (ERRTYP .EQ. 'ERROR') THEN
          WRITE (IUN, *)

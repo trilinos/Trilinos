@@ -1,0 +1,40 @@
+\chapter{Implementation of \exo{} with \code{NetCDF}}\label{app:efficiency}
+
+\section{Description}
+
+The \code{NetCDF} software is an I/O library, callable from C or
+Fortran, which stores and retrieves scientific data structures in
+self-describing, machine-independent files. \em{Self-describing} means
+that a file includes information defining the data it
+contains. \em{Machine-independent} means that a file is represented in
+a form that can be accessed by computers with different ways of
+storing integers, characters, and floating-point numbers. It is
+available via the web from \url{http://www.unidata.ucar.edu}.  The
+current version is 3.6.2 although version 4.0 is expected to be
+released soon.
+
+For the EXODUS implementation, the standard \code{NetCDF}
+distribution is used except that the following defined constants in
+the include file \file{netcdf.h} are modified to the values shown:
+
+\begin{lstlisting}
+#define NC_MAX_DIMS 65536
+#define NC_MAX_VARS 524288
+#define NC_MAX_VAR_DIMS 8
+\end{lstlisting}
+
+\section{Efficiency Issues}
+
+There are some efficiency concerns with using \code{NetCDF} as the low level
+data handler. The main one is that whenever a new object is
+introduced, the file is put into \em{define} mode, the new object is
+defined, and then the file is taken out of \em{define} mode. A result
+of going in and out of \em{define} mode is that all of the data that
+was output previous to the introduction of the new object is copied to
+a new file. Obviously, this copying of data to a new file is very
+inefficient. We have attempted to minimize the number of times the
+data file is put into \em{define} mode by accumulating objects within
+a single EXODUS API function. Thus using optional features such as
+the element variable truth table, concatenated node and side sets, and
+writing all property array names with \cfuncref{ex_put_prop_names} will
+increase efficiency significantly.

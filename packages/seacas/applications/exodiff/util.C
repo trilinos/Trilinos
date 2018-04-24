@@ -1,4 +1,4 @@
-// Copyright(C) 2008 National Technology & Engineering Solutions
+// Copyright(C) 2008-2017 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -33,6 +33,8 @@
 
 #include "util.h"
 #include <cstring> // for nullptr, memset
+#include <iostream>
+#include <unistd.h>
 
 char **get_name_array(int size, int length)
 {
@@ -54,4 +56,48 @@ void free_name_array(char **names, int size)
   }
   delete[] names;
   names = nullptr;
+}
+
+namespace {
+  bool term_out()
+  {
+    static bool is_term = isatty(fileno(stdout));
+    return is_term;
+  }
+
+  bool cerr_out()
+  {
+    static bool is_term = isatty(fileno(stderr));
+    return is_term;
+  }
+} // namespace
+
+void ERR_OUT(std::ostringstream &buf)
+{
+  if (cerr_out()) {
+    std::cerr << trmclr::red << buf.str() << trmclr::normal;
+  }
+  else {
+    std::cerr << buf.str();
+  }
+}
+
+void DIFF_OUT(std::ostringstream &buf, trmclr::Style color)
+{
+  if (term_out()) {
+    std::cout << color << buf.str() << '\n' << trmclr::normal;
+  }
+  else {
+    std::cout << buf.str() << '\n';
+  }
+}
+
+void DIFF_OUT(const char *buf, trmclr::Style color)
+{
+  if (term_out()) {
+    std::cout << color << buf << '\n' << trmclr::normal;
+  }
+  else {
+    std::cout << buf << '\n';
+  }
 }

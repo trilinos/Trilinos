@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2010 National Technology & Engineering Solutions
+// Copyright(C) 1999-2017 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -32,6 +32,7 @@
 
 #include <Ioss_CodeTypes.h>
 #include <Ioss_ParallelUtils.h>
+#include <Ioss_PropertyManager.h>
 #include <Ioss_Utils.h>
 #include <algorithm>
 #include <cassert>
@@ -39,9 +40,10 @@
 #include <cstdlib>
 #include <cstring>
 #include <string>
+#include <tokenize.h>
 #include <vector>
 
-#ifdef HAVE_MPI
+#ifdef SEACAS_HAVE_MPI
 #include <Ioss_SerializeIO.h>
 #include <cassert>
 #include <cstring>
@@ -49,10 +51,53 @@
 
 Ioss::ParallelUtils::ParallelUtils(MPI_Comm the_communicator) : communicator_(the_communicator) {}
 
+void Ioss::ParallelUtils::add_environment_properties(Ioss::PropertyManager &properties,
+                                                     bool                   do_print)
+{
+  std::string env_props;
+  if (get_environment("IOSS_PROPERTIES", env_props, parallel_size() > 1)) {
+    // env_props string should be of the form
+    // "PROP1=VALUE1:PROP2=VALUE2:..."
+    std::vector<std::string> prop_val = tokenize(env_props, ":");
+
+    for (auto &elem : prop_val) {
+      std::vector<std::string> property = tokenize(elem, "=");
+      if (property.size() != 2) {
+        std::ostringstream errmsg;
+        errmsg << "ERROR: Invalid property specification found in "
+                  "IOSS_PROPERTIES environment variable\n"
+               << "       Found '" << elem << "' which is not of the correct PROPERTY=VALUE form";
+        IOSS_ERROR(errmsg);
+      }
+      std::string prop      = Utils::uppercase(property[0]);
+      std::string value     = property[1];
+      std::string up_value  = Utils::uppercase(value);
+      bool        all_digit = value.find_first_not_of("0123456789") == std::string::npos;
+
+      if (do_print) {
+        std::cerr << "IOSS: Adding property '" << prop << "' with value '" << value << "'\n";
+      }
+      if (all_digit) {
+        int int_value = std::strtol(value.c_str(), nullptr, 10);
+        properties.add(Property(prop, int_value));
+      }
+      else if (up_value == "TRUE" || up_value == "YES") {
+        properties.add(Property(prop, 1));
+      }
+      else if (up_value == "FALSE" || up_value == "NO") {
+        properties.add(Property(prop, 0));
+      }
+      else {
+        properties.add(Property(prop, value));
+      }
+    }
+  }
+}
+
 bool Ioss::ParallelUtils::get_environment(const std::string &name, std::string &value,
                                           bool sync_parallel) const
 {
-#ifdef HAVE_MPI
+#ifdef SEACAS_HAVE_MPI
   char *            result_string = nullptr;
   std::vector<char> broadcast_string;
   ;
@@ -118,7 +163,7 @@ bool Ioss::ParallelUtils::get_environment(const std::string &name, bool sync_par
 {
 // Return true if 'name' defined, no matter what the value.
 // Return false if 'name' not defined.
-#ifdef HAVE_MPI
+#ifdef SEACAS_HAVE_MPI
   char *result_string = nullptr;
   int   string_length = 0;
 
@@ -158,7 +203,7 @@ std::string Ioss::ParallelUtils::decode_filename(const std::string &filename,
 int Ioss::ParallelUtils::parallel_size() const
 {
   int my_size = 1;
-#ifdef HAVE_MPI
+#ifdef SEACAS_HAVE_MPI
   if (communicator_ != MPI_COMM_NULL) {
     MPI_Comm_size(communicator_, &my_size);
   }
@@ -169,7 +214,7 @@ int Ioss::ParallelUtils::parallel_size() const
 int Ioss::ParallelUtils::parallel_rank() const
 {
   int my_rank = 0;
-#ifdef HAVE_MPI
+#ifdef SEACAS_HAVE_MPI
   if (communicator_ != MPI_COMM_NULL) {
     MPI_Comm_rank(communicator_, &my_rank);
   }
@@ -181,7 +226,7 @@ void Ioss::ParallelUtils::memory_stats(int64_t &min, int64_t &max, int64_t &avg)
 {
   int64_t my_memory = Ioss::Utils::get_memory_info();
   min = max = avg = my_memory;
-#ifdef HAVE_MPI
+#ifdef SEACAS_HAVE_MPI
   if (parallel_size() > 1) {
     min = global_minmax(my_memory, DO_MIN);
     max = global_minmax(my_memory, DO_MAX);
@@ -195,7 +240,7 @@ void Ioss::ParallelUtils::hwm_memory_stats(int64_t &min, int64_t &max, int64_t &
 {
   int64_t my_memory = Ioss::Utils::get_hwm_memory_info();
   min = max = avg = my_memory;
-#ifdef HAVE_MPI
+#ifdef SEACAS_HAVE_MPI
   if (parallel_size() > 1) {
     min = global_minmax(my_memory, DO_MIN);
     max = global_minmax(my_memory, DO_MAX);
@@ -205,9 +250,28 @@ void Ioss::ParallelUtils::hwm_memory_stats(int64_t &min, int64_t &max, int64_t &
 #endif
 }
 
+// Generate a "globally unique id" which is unique over all entities
+// of a specific type over all processors.
+// Used by some applications for uniquely identifying an entity.
+int64_t Ioss::ParallelUtils::generate_guid(size_t id, int rank) const
+{
+#ifdef SEACAS_HAVE_MPI
+  static size_t lpow2 = 0;
+  if (lpow2 == 0) {
+    lpow2 = Ioss::Utils::log_power_2(parallel_size());
+  }
+  if (rank == -1) {
+    rank = parallel_rank();
+  }
+  return (id << lpow2) + rank;
+#else
+  return id;
+#endif
+}
+
 void Ioss::ParallelUtils::attribute_reduction(const int length, char buffer[]) const
 {
-#ifdef HAVE_MPI
+#ifdef SEACAS_HAVE_MPI
   if (1 < parallel_size()) {
     static_assert(sizeof(char) == 1, "");
 
@@ -233,7 +297,7 @@ void Ioss::ParallelUtils::global_count(const IntVector &local_counts,
   // contains the total number of objects on all processors.
   // Assumes that ordering is the same on all processors
   global_counts.resize(local_counts.size());
-#ifdef HAVE_MPI
+#ifdef SEACAS_HAVE_MPI
   if (!local_counts.empty() && parallel_size() > 1) {
     if (Ioss::SerializeIO::isEnabled() && Ioss::SerializeIO::inBarrier()) {
       std::ostringstream errmsg;
@@ -266,7 +330,7 @@ void Ioss::ParallelUtils::global_count(const Int64Vector &local_counts,
   // contains the total number of objects on all processors.
   // Assumes that ordering is the same on all processors
   global_counts.resize(local_counts.size());
-#ifdef HAVE_MPI
+#ifdef SEACAS_HAVE_MPI
   if (!local_counts.empty() && parallel_size() > 1) {
     if (Ioss::SerializeIO::isEnabled() && Ioss::SerializeIO::inBarrier()) {
       std::ostringstream errmsg;
@@ -294,7 +358,7 @@ void Ioss::ParallelUtils::global_count(const Int64Vector &local_counts,
 template int Ioss::ParallelUtils::global_minmax(int, Ioss::ParallelUtils::MinMax which) const;
 template unsigned int Ioss::ParallelUtils::global_minmax(unsigned int,
                                                          Ioss::ParallelUtils::MinMax which) const;
-template int64_t Ioss::ParallelUtils::global_minmax(int64_t,
+template int64_t      Ioss::ParallelUtils::global_minmax(int64_t,
                                                     Ioss::ParallelUtils::MinMax which) const;
 template double Ioss::ParallelUtils::global_minmax(double, Ioss::ParallelUtils::MinMax which) const;
 
@@ -303,7 +367,7 @@ T Ioss::ParallelUtils::global_minmax(T local_minmax, Ioss::ParallelUtils::MinMax
 {
   T minmax = local_minmax;
 
-#ifdef HAVE_MPI
+#ifdef SEACAS_HAVE_MPI
   if (parallel_size() > 1) {
     if (Ioss::SerializeIO::isEnabled() && Ioss::SerializeIO::inBarrier()) {
       std::ostringstream errmsg;
@@ -337,11 +401,14 @@ T Ioss::ParallelUtils::global_minmax(T local_minmax, Ioss::ParallelUtils::MinMax
   return minmax;
 }
 
+template void Ioss::ParallelUtils::global_array_minmax(unsigned long *, unsigned long,
+                                                       MinMax) const;
+
 template <typename T>
 void Ioss::ParallelUtils::global_array_minmax(T *local_minmax, size_t count,
                                               Ioss::ParallelUtils::MinMax which) const
 {
-#ifdef HAVE_MPI
+#ifdef SEACAS_HAVE_MPI
   if (parallel_size() > 1 && count > 0) {
     if (Ioss::SerializeIO::isEnabled() && Ioss::SerializeIO::inBarrier()) {
       std::ostringstream errmsg;
@@ -380,6 +447,7 @@ void Ioss::ParallelUtils::global_array_minmax(T *local_minmax, size_t count,
 template void Ioss::ParallelUtils::global_array_minmax(std::vector<int> &, MinMax) const;
 template void Ioss::ParallelUtils::global_array_minmax(std::vector<int64_t> &, MinMax) const;
 template void Ioss::ParallelUtils::global_array_minmax(std::vector<double> &, MinMax) const;
+template void Ioss::ParallelUtils::global_array_minmax(std::vector<unsigned long> &, MinMax) const;
 
 template <typename T>
 void Ioss::ParallelUtils::global_array_minmax(std::vector<T> &local_minmax, MinMax which) const
@@ -399,7 +467,7 @@ template <typename T> void Ioss::ParallelUtils::gather(T my_value, std::vector<T
   if (parallel_rank() == 0) {
     result.resize(parallel_size());
   }
-#ifdef HAVE_MPI
+#ifdef SEACAS_HAVE_MPI
   if (parallel_size() > 1) {
     const int success = MPI_Gather((void *)&my_value, 1, mpi_type(T(1)), (void *)&result[0], 1,
                                    mpi_type(T(1)), 0, communicator_);
@@ -420,7 +488,7 @@ template <typename T> void Ioss::ParallelUtils::gather(T my_value, std::vector<T
 template <typename T> void Ioss::ParallelUtils::all_gather(T my_value, std::vector<T> &result) const
 {
   result.resize(parallel_size());
-#ifdef HAVE_MPI
+#ifdef SEACAS_HAVE_MPI
   if (parallel_size() > 1) {
     const int success = MPI_Allgather((void *)&my_value, 1, mpi_type(T(1)), (void *)&result[0], 1,
                                       mpi_type(T(1)), communicator_);
@@ -468,7 +536,7 @@ void Ioss::ParallelUtils::gather(std::vector<T> &my_values, std::vector<T> &resu
   if (parallel_rank() == 0) {
     result.resize(count * parallel_size());
   }
-#ifdef HAVE_MPI
+#ifdef SEACAS_HAVE_MPI
   if (parallel_size() > 1) {
     const int success = MPI_Gather((void *)TOPTR(my_values), count, mpi_type(T(1)),
                                    (void *)TOPTR(result), count, mpi_type(T(1)), 0, communicator_);

@@ -1,0 +1,166 @@
+\chapter{Syntax}\label{ch:syntax}
+
+\aprepro{} is in one of two states while it is processing an input file, 
+either echoing or parsing. In the \textit{echoing} state, \aprepro{}
+echoes every character that it reads to the output file. If it reads
+the character \cmd{\{}, it enters the \textit{parsing} state. In
+the parsing state, \aprepro{} reads characters from the input file
+and identifies the characters as tokens which can be \textit{function
+names}, \textit{variables}, \textit{numbers}, \textit{operators}, or
+\textit{delimiters}.  When \aprepro{} encounters the character
+\cmd{\}}, it tries to interpret the tokens as an algebraic, string,
+or conditional expression; if it is successful, it prints the value
+to the output file; if it cannot evaluate the expression, it prints
+the message:
+
+\cmd{Aprepro: ERROR: parse  error \{filename\},  line \{line\#\}}
+
+to the terminal\footnote{Error messages are printed to standard
+error. On UNIX systems they can be redirected to a file using your
+shells redirection syntax. See the man page for your shell for more
+information.} prints the value 0 to the output file.
+
+The rules that \aprepro{} uses when identifying functions, variables, numbers, 
+operators, delimiters, and expressions are described below:
+
+\begin{description}
+
+\item[Functions] Function names are sequences of letters and digits and underscores
+\cmd{(\_)} that begin with a letter. The function's arguments are
+enclosed in parentheses.
+
+For example, in the line \cmd{atan2(a,1.0)}, \afunc{atan2} is the
+function name, and \cmd{a} and \cmd{1.0 }are the arguments. See
+Chapter~\ref{ch:functions} for a list of the available functions and
+their arguments.
+
+\item[Variables] A variable is a name that references a numeric or string 
+value. A variable is defined by giving it a name and assigning it a value. For 
+example, the expression \cmd{a = 1.0} defines the variable \cmd{a} with 
+the numeric value \cmd{1.0}; the expression \cmd{b= \texttt{"}A string\texttt{"}} 
+defines the variable \cmd{b} with the value \cmd{A string}. 
+Variable names are sequences of letters, digits, colons (:), and underscores (\_) that begin 
+with either a letter or an underscore. Variable names cannot match any function 
+name and they are case-sensitive, that is, \cmd{abc\_de} and \cmd{AbC\_dE} 
+are two distinct variable names. A few variables are predefined, these are listed 
+in  Chapter~\ref{ch:predefined}.
+
+Any variable that is not defined is equal to 0. A warning message is
+output to the terminal if an undefined variable is used, or if a
+previously defined variable is redefined. If the variable
+name begins with an underscore, no warning is output when the variable
+is redefined.\footnote{Warnings can be turned off with the \cmd{-W} or
+\cmd{--warning} option.}.
+
+\item[Immutable Variables]\label{immutable} An immutable variable is a
+  variable whose value cannot be changed. An immutable variable name
+  is follows the same rules as a regular variable except that the name
+  cannot begin with an underscore.  Immutable variables are created
+  inside an \cmd{IMMUTABLE(ON)} block (See
+  Section~\ref{sec:immutable}) or when \aprepro{} is executed with the
+  \cmd{--immutable} or \cmd{-X} command line options (See
+  Chapter~\ref{ch:execution}). A value defined on the command line is
+  immutable ()(See Chapter~\ref{ch:execution}). If the value of an
+  immutable variable is attempted to be modified, an error message of
+  the form: \cmd[Aprepro: (IMMUTABLE) Variable 'variable' is immutable
+    and cannot be modified (file, line line\#)] will be output to the
+  standard error stream and the expression containing the assignment
+  to the immutable variable will return nothing.
+
+\item[Numbers] Numbers can be integers like \cmd{1234}, decimal numbers 
+like \cmd{1.234}, or in scientific notation like \cmd{1.234E-26}. All numbers 
+are stored internally as floating point numbers.
+
+\item[Strings] Strings are sequences of numbers, characters, and symbols 
+that are delimited by either single quotes ('\cmd{this is a
+string'}) or double quotes (\cmd{\texttt{"}this} \cmd{is another
+string\texttt{"}}). Strings that are delimited by one type of quote
+can include the other type of quote. For example, \cmd{'This is a
+valid \texttt{"}string\texttt{"}'}.  Strings delimited by single
+quotes can span multiple lines; strings delimited by double quotes
+must terminate on a single line or a parsing error message will be
+issued.
+
+\item[Operators] 
+Operators are any of the symbols defined in
+Chapter~\ref{ch:operators}. Examples are + (addition), -
+(subtraction), * (multiplication), / (division), = (assignment), and
+\textasciicircum{} (exponentiation)
+
+\item[Delimiters] The delimiters recognized by \aprepro{} are: the 
+comma (\cmd{,}) which separates arguments in function lists, the
+left curly brace (\cmd{\{}) which begins an expression, the right
+curly brace (\cmd{\}}) which ends an expression, the left parenthesis
+\cmd{(} which begins a function argument list, the right
+parenthesis \cmd{)} which ends a function argument list, the
+single quote (\cmd{'}) which delimits a multiline string, and the double
+quote (\cmd{\texttt{"}}) which delimits a single-line string. If a left
+or right curly brace is needed in the processes output without being
+interpreted by \aprepro{}, precede the curly brace with a backslash.
+For example, \verb+\+\cmd{\{ }\verb+\+\cmd{\}}.
+
+\item[Expressions] An expression consists of any combination of numeric 
+and string constants, variables, operators, and functions. Four types
+of expressions are recognized in \aprepro{}: algebraic, string,
+relational, and conditional.
+
+\item[Algebraic Expressions] Almost any valid FORTRAN or C algebraic expression 
+can be recognized and evaluated by \aprepro{}. An expression of the
+form
+\cmd{a=b+10/37.5} will evaluate the expression on the right-hand-side 
+of the equals sign, print the value to the output file, and assign the
+value to the variable \cmd{a}. An expression of the form
+\cmd{b+10/37.5} will evaluate the expression and print the value to
+the output file. If you want to assign a value to a variable without
+printing the result, the expression must be inside an
+\cmd{ECHO(ON\textbar{}OFF)} block (see~\pageref{echo}). Variables can
+also be set on the command line prior to reading any input files using
+the \cmd{var=val} syntax. An example of this usage is given in
+Section~\ref{example:varval}. Only a single expression is allowed
+within the \cmd{\{ \}} delimiters. For example,
+\cmd{\{x=sqrt(y\textasciicircum{}2 + sin(z))\}}, \cmd{\{x=y=z\}},
+and\cmd{\{x=y\} \{a=z\}} are valid expressions, but \cmd{\{x=y a=z\}}
+is invalid because it contains two expressions within a single set of
+delimiters.
+
+\item[String Expressions] \aprepro{} has limited string support. 
+The only supported operations are (1)~assigning a variable equal to a
+string (\cmd{a = \texttt{"}This is a string\texttt{"}}), (2)~functions
+that return a string (See Table~\ref{t:stringfunctions}), and (3)~concatenating two strings into another
+string (\cmd{a = \texttt{"}Hello\texttt{"} // \texttt{"}
+\texttt{"} // \texttt{"}World\texttt{"}}).
+
+\item[Relational Expressions:] Relational expressions are expressions that 
+return the result of comparing two expressions. A relational
+expression is either true (returns 1) or false (returns 0). A
+relational expression is simply two expressions of any kind separated
+by a relational operator (See Section~\ref{sec:relationaloperators}).
+
+\item[Conditional Expressions] \aprepro{} recognizes a conditional 
+expression of the form:
+\begin{apinp}
+relational\_expression ? true\_exp :  false\_exp
+\end{apinp}
+where \cmd{relational\_expression} can be any valid
+relational expression, and \cmd{true\_exp} and
+\cmd{false\_exp} are two algebraic expressions or string expressions. If the
+relational expression is true, then the result of
+\cmd{true\_exp} is returned, otherwise the result of
+\cmd{false\_exp} is returned. For example, if the
+following command were entered:
+\begin{apinp}
+a = (sind(20.0) > cosd(20.0) ? 1 : -1)
+\end{apinp}
+then, \cmd{a} would be assigned the value \cmd{-1} since the relational expression 
+to the left of the question mark is false. Both \textit{\cmd{true\_exp}} and 
+\textit{\cmd{false\_exp}} are always evaluated prior to evaluating the relational 
+expression. Therefore, you should not write an equation such as
+\begin{apinp}
+sind(20.0*a) > cosd(20.0*a) ? a=sind(20.0) : a=cosd(20.0)
+\end{apinp}
+since the value of \cmd{a} can change during the evaluation of the expression. 
+Instead, this equation should be written as:
+\begin{apinp}
+a = (sind(20.0*a) > cosd(20.0*a) ? sind(20.0) : cosd(20.0))
+\end{apinp}
+\end{description}

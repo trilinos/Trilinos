@@ -1,0 +1,507 @@
+% This file was converted to LaTeX by Writer2LaTeX ver. 0.4
+% see http://www.hj-gym.dk/~hj/writer2latex for more info
+\documentclass[11pt,twoside]{article}
+\usepackage{graphicx}
+\usepackage{array}
+\usepackage[ascii]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{longtable}
+\usepackage{amsmath,amssymb,amsfonts,textcomp}
+\usepackage{color}
+\usepackage{alltt}
+\usepackage{calc}
+\usepackage{hyperref}
+\hypersetup{colorlinks=true, linkcolor=blue, filecolor=blue, pagecolor=blue, urlcolor=blue}
+%\usepackage{showkeys}
+\usepackage{makeidx}
+
+% Pages styles (master pages)
+\addtocontents{toc}{\protect\renewcommand*\protect\addvspace[1]{}}\setlength\parindent{0in}
+\setlength{\parskip}{1ex plus 0.5ex minus 0.2ex}
+\setlength\textwidth{6.5in}
+\setlength\paperwidth{8.5in}\setlength\paperheight{11in}\setlength\voffset{-1in}\setlength\hoffset{-1in}\setlength\topmargin{0.5in}\setlength\headheight{12pt}\setlength\headsep{0.461in}\setlength\footskip{12pt+0.461in}\setlength\textheight{11in-0.5in-0.5in-0.461in-12pt-0.461in-12pt}\setlength\oddsidemargin{1in}\setlength\textwidth{8.5in-1in-1in}
+\renewcommand\thepage{\arabic{page}}
+\setlength{\skip\footins}{0.0398in}\renewcommand\footnoterule{\vspace*{-0.0071in}\noindent{\rule{0.25\columnwidth}{0.0071in}}\vspace*{0.0398in}}
+
+\renewcommand\thefootnote{\arabic{footnote}}
+
+\newcommand{\exo}
+   {\mbox{\sc Exodus}\null}
+\newcommand{\api}[1]
+   {\mbox{\sf #1\index{Exodus API Functions!#1}}\null}
+\newcommand{\ioapi}[1]
+   {\mbox{\sf #1\index{IOSS API Functions!#1}}\null}
+\newcommand{\field}[1]
+  {\mbox{\it "#1"\index{IOSS Fields!#1}}\null}
+\newcommand{\property}[1]
+  {\mbox{\it "#1"\index{IOSS Properties!#1}}\null}
+\newcommand{\cmd}[1]
+   {\mbox{\sf #1}\null}
+\newcommand{\ioss}[1]
+   {\mbox{\sf Ioss::#1\index{IOSS Classes!#1}}\null}
+\newcommand{\code}[1]
+   {\mbox{\bf\tt #1}\null}
+\newcommand{\file}[1]
+   {\mbox{\bf\em #1}\null}
+\newcommand{\param}[1]
+   {\mbox{\{\em #1\}}\null}
+\newenvironment{source}
+{\small\begin{quote}\begin{alltt}}
+{\end{alltt}\end{quote}\normalsize}
+
+\makeindex
+
+\begin{document}
+\title{Mapping \exo{} file data to the IOSS Model}
+\author{Gregory D. Sjaardema}
+\maketitle
+%\end{center}
+\tableofcontents
+\section{Introduction}
+
+The information contained in this document documents how the data in an \exo{} file are mapped
+into the standard IO subsystem (IOSS) model. 
+\begin{quote} {\em
+{\bf NOTE:} This document assumes that the reader has familiarity with both the
+\exo{} API and the use of the IOSS; it is not a tutorial on either \exo{} or IOSS usage.}
+\end{quote}
+
+
+An \exo{} file contains groupings of entity types such as nodes, edges, faces, and elements into either blocks or sets.  
+\begin{itemize}
+\item A "block" grouping consists of homogenous entities of the same entity type and each entity is in one and only one block. The block has a method for identifying the topology of the contained entities.
+\item A "set" grouping contains entities of the same entity type (node, edge, face, or element); however, the topologies of the entities (quad vs. triangle face) do not need to be the same. An entity can be in multiple entity sets, but it is not required to be in any.
+\end{itemize}
+The finite element model data (sets, blocks, fields, etc.) described in the \exo{} file is stored in an \ioss{Region} and its owned grouping entity classes. The table below shows the mapping between the \exo{} entity groups and the IOSS grouping entity classes. All of the IOSS classes are derived from the \ioss{GroupingEntity} class:
+
+\begin{tabular}{l|lllll} \hline
+      & node           & edge            & face            & element 		& ``side'' \\ \hline
+set   & \ioss{NodeSet}  & \ioss{EdgeSet}   & \ioss{FaceSet}   & \ioss{ElementSet}   & \ioss{SideSet} \\
+block & \ioss{NodeBlock} & \ioss{EdgeBlock} & \ioss{FaceBlock} & \ioss{ElementBlock} & \\ \hline
+\end{tabular} 
+
+An \exo{} ``side'' is an entity type defined by a pair consisting of an element and a local side of that element. The \exo{} data model does not have a concept of a homogenous grouping (block) of ``side'' entity types; however,the IOSS will group the ``sides'' in an \exo{} side set into homogenous subsets with a class of \ioss{SideBlock}. This is described in more detail in Section~\ref{side sets}
+
+Each entity group in the \exo{} file will result in the creation of the corresponding \ioss{GroupingEntity} class. All of these classes will be managed by a \ioss{Region} which corresponds to the mesh model described by the \exo{} file.  
+
+In addition to the above classes, the optional communication data that might exist in the \exo{} file is mapped to node and element\ioss{CommSet} object. If the \exo{} file contains one or more coordinate frames, then there will be a \ioss{CoordinateFrame} object for each coordinate frame.
+
+Only node blocks and sets, element blocks, side sets, communication sets, and coordinate frames are discussed below. The remaining types are supported by IOSS, but are not used as often.  Their functionality and capabilities are very similar to the types discussed below.
+
+\section{Nodes}\label{nodes}
+\subsubsection*{Node Grouping}
+A single nodeblock named "nodeblock\_1" will be created for the mesh. It contains information for every node that exists in the model. An additional grouping of nodes is possible via \exo{} node sets which map to \ioss{NodeSet}s which are described in Section~\ref{nodesets}.
+
+\subsubsection*{Node IDS}\label{node_ids}
+\begin{itemize}
+\item The global ids of the nodes are stored in the field \field{ids} which
+	is of type scalar. The data will be either 32-bit or 64-bit
+     	integers depending on the type stored in the \exo{} file.
+
+\item The global ids are read from the database as follows:
+\begin{itemize}
+	\item If there exists a node map with the name "original\_global\_id\_map" on the \exo{} file, then it is
+		   used to define the global ids.
+       \item Otherwise, the global ids are obtained from the
+	   values returned from the \api{ex\_get\_id\_map} \exo{} API function.
+\end{itemize}
+\item Relevant \exo{} API function(s): \api{ex\_get\_num\_map}, \api{ex\_get\_id\_map}.
+\end{itemize}	   
+
+\subsubsection*{Node Coordinates}
+\begin{itemize}
+  \item The nodal coordinates are accessed via the field \field{mesh\_model\_coordinates} which is a double field with "number of spatial dimensions" components. For a 3D model, the x,y,z coordinates of the first node are stored followed by the x,y,z coordinates of the next node. For a 2D model, only the x and y coordinates are stored; a 1D model has only the x coordinates. The order of the nodes matches the order specified in the \field{ids} field.
+ \item An individual component of the nodal coordinates can be accessed via the fields:
+     \begin{itemize}
+     \item \field{mesh\_model\_coordinates\_x} 
+     \item \field{mesh\_model\_coordinates\_y} (only exists for 2D or 3D models)
+     \item \field{mesh\_model\_coordinates\_z} (only exists for 3D models)
+     \end{itemize}
+\item Relevant \exo{} API function(s): \api{ex\_get\_coord}.
+\end{itemize}
+
+
+\subsubsection*{Node Attributes}
+\begin{itemize}
+  \item If the nodes have attributes, they are added as \ioss{Field}s with role \ioss{Field::ATTRIBUTE}\footnote{The "role" of an \ioss{Field} indicates how the field is used. Valid values for role are INTERNAL, MESH, ATTRIBUTE, COMMUNICATION, INFORMATION, REDUCTION, and TRANSIENT}.
+  \item There will always be a field named \field{attribute}. The number of components in the field will be equal to the number of nodal attributes. This field can be used to access the data for all attributes. 
+  \item In addition, if the \exo{} file contains attributes that are named, then there will be a field for
+        each attribute or "combined attribute"  (See Section~\ref{field_processing}). If the attribute names indicate that they are
+	the components of a "higher-order" type then the field will be of that type. 
+ \item \ioss{Field} has a member function \ioapi{get\_index()} which returns the
+     1-based index of this attribute field in the original \exo{} ordering of the attributes. This should not be used unless really
+     needed, but is provided since some \exo-based applications do not support named attributes and instead rely on the implicit ordering of the attributes in the \exo{} file. Note that both the \field{attribute} field containing all attributes and the first named attribute will have an index value of 1. Another method for accessing the attributes in "file order" is shown below.
+
+  \item The names of all fields with role "attribute" defined on the \ioss{NodeBlock} can be
+     retrieved with the call \ioapi{field\_describe(Ioss::Field::ATTRIBUTE, \&results\_fields)} where \code{results\_fields} is a container of type
+     \ioss{NameList} which is \code{std::vector<std::string>}
+	
+  \item If the \exo{} file contains named attributes, but the analysis
+     code does not want to use those names, the database property \property{IGNORE\_ATTRIBUTE\_NAMES} can be set prior to reading the \exo{} file. In that case, the attributes will generate \#attribute scalar fields named: \code{attribute\_1}, \code{attribute\_2}, ..., \code{attribute\_\#}
+\item Relevant \exo{} API function(s): \api{ex\_get\_attr}, \api{ex\_get\_attr\_param}, \api{ex\_get\_attr\_names}.
+\end{itemize}
+
+\subsubsection*{Node Fields}
+If there are any nodal transient fields on the mesh  database, then there will be an \ioss{Field} with role  \ioss{Field::TRANSIENT} defined for "each" field. If the naming of  the field indicates that the fields are components of a higher-order  field (See Section~\ref{field_processing}) then the \ioss{Field} will be of that type.   
+\begin{itemize}
+\item Relevant \exo{} API function(s): \api{ex\_get\_variable\_name}, \api{ex\_get\_variable\_names}, \api{ex\_get\_var}, \api{ex\_get\_variable\_param}, \api{ex\_get\_truth\_table}.
+\end{itemize}
+
+\section{Elements}\label{elements}
+\subsubsection*{Element Grouping (Element Blocks)}
+
+Each element block on the \exo{} file will be mapped into an \ioss{ElementBlock}. In addition to the normal \ioss{ElementBlock} properties, the following \exo-specific properties will also be defined. Note that although these are defined, relying on their values in an application code precludes the use of a non-\exo{} database type which may not provide a similar property.
+
+\begin{tabular}{ll} \hline
+Property & Description \\
+id & The integer element block id \\
+original\_block\_order & The 0-based order of the element block description in the \exo{} file. \\
+original\_topology\_type & The element type string specified for the element block. \\ \hline
+\end{tabular}
+
+\subsubsection*{Element Block Names}
+An element block can have multiple names.  There will be one
+  canonical name that is returned by the \ioss{ElementBlock::name()} function call;
+  additional names are referred to as aliases.
+\begin{itemize}
+  \item If the \exo{} file has a name for the element block, then that name
+    will be the canonical name of the \ioss{ElementBlock}.
+  \item If this name is not all lowercase, then an alias of the lowercased
+    name will be created.
+  \item An additional name is constructed by concatenating the string
+    "block\_" with the numerical block id. This will be the canonical
+    name if the file does not have explicit names for the blocks.
+\end{itemize}
+For example, if the element block with id '10' on the \exo{} file is named 'FireSet', The corresponding \ioss{ElementBlock} will have the canonical name 'FireSet.' That element block will also have the aliases 'fireset', and 'block\_10' defined.  If the element block with id '123' has no name, then it will have the canonical name 'block\_123' assigned to it.
+
+\begin{itemize}
+\item Relevant \exo{} API function(s): \api{ex\_get\_name}, \api{ex\_get\_names}.
+\end{itemize}
+\subsubsection*{Element IDS}
+  The global ids of all elements are stored in the field \field{ids} which
+     is of type scalar. The data will be either 32-bit or 64-bit
+     integers depending on the type stored in the \exo{} file.
+
+     The global ids are read from the database as follows:
+     \begin{itemize}
+        \item If there exists a element map with the name
+	   "original\_global\_id\_map" on the \exo{} file, then it is
+	   used to define the global ids
+        \item Otherwise, the global ids are obtained from the
+	   values returned from the \api{ex\_get\_id\_map} \exo{} API function.
+	\item Relevant \exo{} API function(s): \api{ex\_get\_num\_map}, \api{ex\_get\_id\_map}.
+     \end{itemize}
+
+\subsubsection*{Element Connectivity}
+\begin{itemize}
+  \item The connectivity of the elements in a block is returned via the field \field{connectivity}. It will return a field with \#nodes\_per\_element components. The nodal ids in the connectivity will be global ids.
+  \item The "raw" connectivity of the elements in a block is returned via     the field \field{connectivity\_raw}. Here "raw" is defined such that a     raw id N refers to the Nth node (1-based) in the list of ids     returned by the nodeblock \field{ids} field.  For example, if the     nodeblock ids field contains "10,20,30,40", then a raw id of '1'     refers to the same node as the node with global id "10". The     range of the "raw" ids is 1..\#entity\_on\_processor  \item Relevant \exo{} API functions: \api{ex\_get\_conn}
+\end{itemize}
+  
+\subsubsection*{Element Topology}
+  The \exo{} "element type" is mapped to an \ioss{ElementTopology}  class. The type is converted to lower case, multiple embedded spaces are collapsed to a single space, and then all spaces are replaced with an underscore. If the type name does not end with a number, then the "number of nodes per element" is appended to the end of the name.  For example, a 20-node hex element block with the type name "hex" would be converted to the name "hex20" before being mapped to an \ioss{ElementTopology}. The mapping is as follows:
+ \begin{longtable}{l|>{\raggedright\arraybackslash}p{4.0in}}\hline
+IOSS & \exo{} element type string. \\
+\hline\hline
+\endfirsthead
+bar2 &  rod\_2\_2d, rod\_2\_3d, bar, beam, beam-r, beam-r2, beam2, beam\_2, line, line2, rod, rod2, rod2d2, rod3d2, rod\_2\_2d, rod\_2\_3d, truss, truss2, shell2(2D) \\ \hline
+bar3 &  beam\_3, rod\_3\_2d, rod\_3\_3d, beam3, rod2d3, rod3, rod3d3, rod\_3\_2d, rod\_3\_3d, truss3, shell3(2D) \\ \hline
+hex20 &	hexahedron\_20, solid\_hex\_20\_3d, solid\_hex\_20\_3d \\ \hline
+hex27 &	hexahedron\_27, solid\_hex\_27\_3d, solid\_hex\_27\_3d \\ \hline
+hex8  & hexahedron\_8, solid\_hex\_8\_3d, hex, solid\_hex\_8\_3d \\ \hline
+pyramid13 & pyramid\_13, solid\_pyramid\_13\_3d, pyra13, solid\_pyramid\_13\_3d \\ \hline
+pyramid14 & pyramid\_14, solid\_pyramid\_14\_3d, pyra14, solid\_pyramid\_14\_3d \\ \hline
+pyramid5  & pyramid\_5, solid\_pyramid\_5\_3d, pyra5, pyramid, solid\_pyramid\_5\_3d \\ \hline
+quad4     & face\_quad\_4\_3d, quadrilateral\_4\_2d, quadrilateral\_4, solid\_quad\_4\_2d, quad, quadface4, quadrilateral\_4, quadrilateral\_4\_2d, solid\_quad\_4\_2d \\ \hline
+quad8     & face\_quad\_8\_3d, quadrilateral\_8\_2d, quadrilateral\_8, solid\_quad\_8\_2d, quadface8, quadrilateral\_8, quadrilateral\_8\_2d, solid\_quad\_8\_2d \\ \hline
+quad9     & face\_quad\_9\_3d, quadrilateral\_9\_2d, quadrilateral\_9, solid\_quad\_9\_2d, quadface9, quadrilateral\_9, quadrilateral\_9\_2d, solid\_quad\_9\_2d \\ \hline
+shell4    & shell\_quadrilateral\_4, shellquadrilateral\_4, shell\_quad\_4\_3d, shell, shell\_quad\_4\_3d, shellquadrilateral\_4 \\ \hline
+shell8    & shell\_quadrilateral\_8, shellquadrilateral\_8, shell\_quad\_8\_3d, shell\_quad\_8\_3d, shellquadrilateral\_8 \\ \hline
+shell9    & shell\_quadrilateral\_9, shellquadrilateral\_9, shell\_quad\_9\_3d, shell\_quad\_9\_3d, shellquadrilateral\_9 \\ \hline
+shellline2d2 & shell\_line\_2, shellline\_2, shell\_line\_2\_2d, shell\_line\_2\_2d, shellline\_2, shell2 \\ \hline
+shellline2d3 & shell\_line\_3, shellline\_3, shell\_line\_3\_2d, shell\_line\_3\_2d, shellline\_3, shell3 \\ \hline
+sphere    & particle, particle\_1\_2d, particle\_1\_3d, circle(2D), circle1(2D), particle\_1\_2d, particle\_1\_3d, particles, point, point1, sphere-mass, sphere, sphere1 \\ \hline
+tetra10   & solid\_tet\_10\_3d, tetrahedron\_10, tet10, tetrahedron\_10 \\ \hline
+tetra11   & solid\_tet\_11\_3d, tetrahedron\_11, tet11, tetrahedron\_11 \\ \hline
+tetra4    & solid\_tet\_4\_3d, tetrahedron\_4, tet4, tetra, tetrahedron\_4 \\ \hline
+tetra8    & solid\_tet\_8\_3d, tetrahedron\_8, tet8, tetrahedron\_8 \\ \hline
+tri3      & face\_tri\_3\_3d, solid\_tri\_3\_2d, triangle\_3\_2d, triangle\_3, solid\_tri\_3\_2d, tri, triangle(2D), triangle3(2D), triangle\_3, triangle\_3\_2d, triface3 \\ \hline
+tri4      & face\_tri\_4\_3d, solid\_tri\_4\_2d, triangle\_4\_2d, triangle\_4, solid\_tri\_4\_2d, triangle4(2D), triangle\_4, triangle\_4\_2d, triface4 \\ \hline
+tri6      & face\_tri\_6\_3d, solid\_tri\_6\_2d, triangle\_6\_2d, triangle\_6, solid\_tri\_6\_2d, triangle6(2D), triangle\_6, triangle\_6\_2d, triface6 \\ \hline
+trishell3 & shell\_triangle\_3, shelltriangle\_3, shell\_tri\_3\_3d, shell3(3D), shell\_tri\_3\_3d, shelltriangle\_3, trishell, triangle(3D), triangle3(3D) \\ \hline
+trishell4 & shell\_triangle\_4, shelltriangle\_4, shell\_tri\_4\_3d, shell\_tri\_4\_3d, shelltriangle\_4, triangle4(3D) \\ \hline
+trishell6 & shell6, shell\_triangle\_6, shelltriangle\_6, shell\_tri\_6\_3d, shell\_tri\_6\_3d, shell\_triangle\_6, shelltriangle\_6, triangle6(3D) \\ \hline
+unknown   & invalid\_topology \\ \hline
+wedge15   & solid\_wedge\_15\_3d, wedge\_15, wedge\_15 \\ \hline
+wedge18   & solid\_wedge\_18\_3d, wedge\_18, wedge\_18 \\ \hline
+wedge6    & solid\_wedge\_6\_3d, wedge\_6, wedge\_6, wedge, wedge\_6 \\ \hline
+super\#    & super, superelement \\
+\hline
+\end{longtable}
+A superelement type is basically a collection of 0 or more nodes that are treated in a special way by certain applications. In IOSS, a superelement type is mapped to a \ioss{ElementTopology} named "super\#" where "\#" is replaced by the number of nodes in the superelement's connectivity.  For example, a superelement with 42 nodes would be mapped to the \ioss{ElementTopology} "super42"
+
+\begin{itemize}
+\item Relevant \exo{} API function(s): \api{ex\_get\_block}, \api{ex\_get\_block\_param}, \api{ex\_get\_elem\_type}
+\end{itemize}
+
+\subsubsection*{Element Attributes}
+If the elements in an element block have attributes, the attributes are added
+as \ioss{Field}s with role \ioss{Field::ATTRIBUTE}.
+
+There will always be a field named \field{attribute}. The number of components in the field will be equal to the number of attributes on the element block. This field can be used to access the data for all attributes. In addition:
+
+\begin{itemize}
+\item If the attributes are named, then there will be a field for
+        each attribute or "combined attribute". If the attribute names indicate that they are
+	the components of a "higher-order" type (e.g. vector or tensor) then the field
+	will be of that type.  See Section~\ref{field_processing} for details on how the scalar \exo{} fields are combined into higher-order storage 
+	types. 
+\item If the attributes are not named, then the names will be
+        inferred via \exo{} and application conventions. The
+	conventions used by IOSS are:
+
+\begin{tabular}{llll}
+       Element Type & Index & Inferred Attribute Name \\ \hline\hline
+	circle or sphere & 1 & \field{radius} & scalar\\
+	                         & 2  & \field{volume} &scalar \\ \hline
+	sphere-mass    & 1  & \field{mass} & scalar \\
+	                         & 2-7 & \field{inertia} & symmetric tensor \\
+	                         & 8,9,10 &  \field{offset} & 3D vector \\ \hline
+       truss, bar, beam, rod  & 1 & \field{area} & scalar \\
+	  (2D)                          & 2,3  & \field{i},\field{j}  & scalar \\
+         (3D)                & 2,3,4 & \field{i1}, \field{i2}, \field{j}  & scalar \\
+                                & 5,6,7 & \field{reference\_axis} & 3D vector \\
+  	                         & 8,9,10 & \field{offset} & 3D vector \\ \hline
+       shell,trishell         & 1 & \field{thickness}  & scalar \\ 
+       shell,trishell         & 1..\#node & \field{nodal\_thickness} & REAL[\#node] \\\hline
+\end{tabular}
+\item For the shell and trishell element types, if there is only a single attribute, then it is interpreted as the \field{thickness}; if the attribute count matches the number of nodes in the element connectivity, then the attribute is interpreted as the \field{nodal\_thickness}.
+
+\item If the element block's attribute count is smaller than what is listed above, only the attributes provided will be assigned to a field. For 	  example, if a "circle" element block has only 1 attributed, only the \field{radius} field will be defined.
+\item Additional unrecognized attributes would be accessible via a field named \field{extra\_attribute\_\#} where the "\#" is replaced by the number of unrecognized attributes. This will be a single field with "\#" components and a storage type of "Real[\#]".
+\end{itemize}
+
+An \ioss{Field} has a member function \ioapi{get\_index()} which will return the 1-based index of this attribute field in the original \exo{}     ordering of the attributes. This should not be used unless really     needed. Note that both the \field{attribute} field containing all attributes and the first named attribute will have an index value of 1.
+
+The names of all fields with role "attribute" defined on an element block can be retrieved with the call field\_describe(\ioss{Field::ATTRIBUTE}, \&results\_fields) where \code{results\_fields} is a container of type\ioss{NameList} which is \code{std::vector<std::string>}	
+
+If the \exo{} file contains named attributes, but the analysis     code does not want to use those names, the database property     \property{IGNORE\_ATTRIBUTE\_NAMES} can be set prior to reading the \exo{}     file. In that case, the attributes will generate \#attribute scalar fields named:          "attribute\_1", "attribute\_2", ..., "attribute\_\#"
+
+\begin{itemize}          
+\item Relevant \exo{} API function(s): \api{ex\_get\_attr}, \api{ex\_get\_attr\_param}, \api{ex\_get\_attr\_names}.
+\end{itemize}
+
+\subsubsection*{Element Fields}
+ If there are any element transient fields on the mesh
+  database, then there will be an \ioss{Field} with role
+  \ioss{Field::TRANSIENT} defined for "each" field. If the naming of
+  the field indicates that the fields are components of a higher-order
+  field, then the \ioss{Field} will be of that type. See Section~\ref{field_processing} for additional details.
+ \begin{itemize}
+\item Relevant \exo{} API function(s): \api{ex\_get\_variable\_name}, \api{ex\_get\_variable\_names}, \api{ex\_get\_var}, \api{ex\_get\_variable\_param}, \api{ex\_get\_truth\_table}.
+\end{itemize}
+ 
+\section{Node Sets}\label{nodesets}
+Each node set on the \exo{} file will be mapped into an \ioss{NodeSet}. In addition to the normal \ioss{NodeSet} properties, the following \exo-specific properties will also be defined. Note that although these are defined, relying on their values in an application code precludes the use of a non-\exo{} database type which may not provide a similar property.
+
+\begin{tabular}{ll} \hline
+Property & Description \\
+id & The integer node set id \\ \hline
+\end{tabular}
+
+\subsubsection*{Node Set Names}
+
+A node set can have multiple names.  There will be one  canonical name that is returned by the name() function call;  additional names are referred to as aliases.
+\begin{itemize}
+  \item If the \exo{} file has a name for a node set, then that name
+    will be the canonical name of the \ioss{NodeSet}
+  \item If this name is not all lowercase, then an alias of the lowercased
+    name will be created.
+  \item An additional name is constructed by concatenating the string
+    "nodelist\_" with the numerical node set id. This will be the canonical
+    name if the file does not have explicit names for the node sets.
+ \item An additional name is constructed by concatenating the string
+    "nodeset\_" with the numerical sideset id. 
+  \item Relevant \exo{} API functions: \api{ex\_get\_name}, \api{ex\_get\_names}.
+\end{itemize}
+
+\subsubsection*{Distribution Factors}
+A \field{distribution\_factors} field will be defined for all \ioss{NodeSet}s whether or not they are defined on the \exo{} file. If they do not exist on the file, the values returned by the field will be equal to 1.0; otherwise, they will be the values stored on the file.
+
+\subsubsection*{Node Set Attributes}
+\begin{itemize}
+  \item If the nodes in the node set have attributes, the attributes are added as \ioss{Field}s with role \ioss{Field::ATTRIBUTE}.
+  \item There will always be a field named \field{attribute}. The number of components in the field will be equal to the number of node set attributes. This field can be used to access the data for all attributes. 
+  \item In addition, if the \exo{} file contains attributes that are named, then there will be a field for
+        each attribute or "combined attribute"  (See Section~\ref{field_processing}). If the attribute names indicate that they are
+	the components of a "higher-order" type then the field will be of that type. 
+ \item \ioss{Field} has a member function \ioapi{get\_index()} which returns the
+     1-based index of this attribute field in the original \exo{} ordering of the attributes. This should not be used unless really
+     needed, but is provided since some \exo-based applications do not support named attributes and instead rely on the implicit ordering of the attributes in the \exo{} file. Note that both the \field{attribute} field containing all attributes and the first named attribute will have an index value of 1. Another method for accessing the attributes in "file order" is shown below.
+  \item The names of all fields with role "attribute" defined on the \ioss{NodeSet} can be
+     retrieved with the call \ioapi{field\_describe(Ioss::Field::ATTRIBUTE, \&results\_fields)} where \code{results\_fields} is a container of type
+     \ioss{NameList} which is \code{std::vector<std::string>}
+	
+  \item If the \exo{} file contains named attributes, but the analysis
+     code does not want to use those names, the database property \property{IGNORE\_ATTRIBUTE\_NAMES} can be set prior to reading the \exo{} file. In that case, the attributes will generate \#attribute scalar fields named: \code{attribute\_1}, \code{attribute\_2}, ..., \code{attribute\_\#}
+\item Relevant \exo{} API function(s): \api{ex\_get\_attr}, \api{ex\_get\_attr\_param}, \api{ex\_get\_attr\_names}.
+\end{itemize}
+
+\subsubsection*{Node Set Fields}
+ If there are any node set transient fields on the mesh  database, then there will be an \ioss{Field} with role  \ioss{Field::TRANSIENT} defined for "each" field. If the naming of  the field indicates that the fields are components of a higher-order  field, then the \ioss{Field} will be of that type. See Section~\ref{field_processing} for additional details.   
+ \begin{itemize}
+\item Relevant \exo{} API function(s): \api{ex\_get\_variable\_name}, \api{ex\_get\_variable\_names}, \api{ex\_get\_var}, \api{ex\_get\_variable\_param}, \api{ex\_get\_truth\_table}.
+\end{itemize}
+
+\section{Sides}\label{sidesets}
+\subsubsection*{Side Grouping (Side Sets)}
+Each sideset  on the \exo{} file will be mapped into an \ioss{SideSet}. In addition to the normal \ioss{SideSet} properties, the following \exo-specific properties will also be defined. Note that although these are defined, relying on their values in an application code precludes the use of a non-\exo{} database type which may not provide a similar property.
+
+\begin{tabular}{ll} \hline
+Property & Description \\
+id & The integer side set id \\ \hline
+\end{tabular}
+
+\subsubsection*{Side Set Names}
+
+A side set can have multiple names.  There will be one  canonical name that is returned by the name() function call;  additional names are referred to as aliases.
+
+\begin{itemize}
+  \item If the \exo{} file has a name for the sideset, then that name
+    will be the canonical name of the \ioss{SideSet}
+  \item If this name is not all lowercase, then an alias of the lowercased
+    name will be created.
+  \item An additional name is constructed by concatenating the string
+    "surface\_" with the numerical sideset id. This will be the canonical
+    name if the file does not have explicit names for the sidesets.
+ \item An additional name is constructed by concatenating the string
+    "sideset\_" with the numerical sideset id. 
+  \item Relevant \exo{} API functions: \api{ex\_get\_name}, \api{ex\_get\_names}.
+\end{itemize}
+
+\subsubsection*{SideBlocks}
+
+The IOSS examines each of the element/local side pairs in the \exo{} side set side list and combines then into homogenous groups which are called \ioss{SideBlock}s.  A \ioss{SideSet} consists of 1 or more \ioss{SideBlock}. There are a few options on how the element/local\_side pairs in an \exo{} sideset are categorized into homogenous \ioss{SideBlock}'s. The categorization is controlled by calling the \ioapi{set\_surface\_split\_type()} function on the \ioss{DatabaseIO} pointer. The argument to this function is of type \ioss{SurfaceSplitType}. The valid values are their function are:
+
+\begin{description}
+	\item[SPLIT\_BY\_DONT\_SPLIT] create only a single sideblock containing all pairs.
+       \item[SPLIT\_BY\_TOPOLOGIES] all local element sides with the
+	     same topology and underlying element topology are put in the same side
+	     block. For example 'quad4' sides on 'hex8' elements.
+	\item[SPLIT\_BY\_ELEMENT\_BLOCK] all local element sides with the
+	     same topology and the elements are in the same element
+	     block are put in the same side block. For example 'quad4'
+	     sides on 'hex8' elements. For example all 'tri3' faces on
+	     elements in 'my\_tet\_block'.
+\end{description}
+The default setting is \ioapi{SPLIT\_BY\_TOPOLOGIES}.
+
+The names of the \ioss{SideBlock}s in a \ioss{SideSet} will be "surface\_"
+          + the base element topology or the base element block name + " \_" +
+	  side topology name + "\_" + sideset id. For example, a
+	\ioss{SideBlock} containing quad4 faces on hex8 elements in a
+	  \ioss{SideSet} with id 10 would be named
+	  "surface\_hex8\_quad4\_10". Note that the topology information
+	  in the name can be obtained from the \ioss{SideBlock} object itself instead of
+	  decoding the name, so don't try to decode the name to get
+	  the information. 
+
+\subsubsection*{Distribution Factors}
+A \field{distribution\_factors} field will be defined for all \ioss{SideBlock}s whether or not they are defined on the \exo{} file. If they do not exist on the file, the values returned by the field will be equal to 1.0; otherwise, they will be the values stored on the file. Note that since a \ioss{SideBlock} contains element sides of a homogenous topology, the number of distribution factors is easy to determine from the topology of the \ioss{SideBlock}.
+
+\subsubsection*{Side Set Attributes}
+\begin{itemize}
+  \item If the sides in the side set have attributes, the attributes are added as \ioss{Field}s with role \ioss{Field::ATTRIBUTE}.
+  \item There will always be a field named \field{attribute}. The number of components in the field will be equal to the number of node set attributes. This field can be used to access the data for all attributes. 
+  \item In addition, if the \exo{} file contains attributes that are named, then there will be a field for
+        each attribute or "combined attribute"  (See Section~\ref{field_processing}). If the attribute names indicate that they are
+	the components of a "higher-order" type then the field will be of that type. 
+ \item \ioss{Field} has a member function \ioapi{get\_index()} which returns the
+     1-based index of this attribute field in the original \exo{} ordering of the attributes. Note that both the \field{attribute} field containing all attributes and the first named attribute will have an index value of 1. This should not be used unless really
+     needed, but is provided since some \exo-based applications do not support named attributes and instead rely on the implicit ordering of the attributes in the \exo{} file. Another method for accessing the attributes in "file order" is shown below.
+  \item The names of all fields with role "attribute" defined on the \ioss{SideBlock} can be
+     retrieved with the call \ioapi{field\_describe(Ioss::Field::ATTRIBUTE, \&results\_fields)} where \code{results\_fields} is a container of type
+     \ioss{NameList} which is \code{std::vector<std::string>}
+	
+  \item If the \exo{} file contains named attributes, but the analysis
+     code does not want to use those names, the database property \property{IGNORE\_ATTRIBUTE\_NAMES} can be set prior to reading the \exo{} file. In that case, the attributes will generate \#attribute scalar fields named: \code{attribute\_1}, \code{attribute\_2}, ..., \code{attribute\_\#}
+\item Relevant \exo{} API function(s): \api{ex\_get\_attr}, \api{ex\_get\_attr\_param}, \api{ex\_get\_attr\_names}.
+\end{itemize}
+
+\subsubsection*{Side Set Fields}
+ If there are any side set transient fields on the mesh
+  database, then there will be an \ioss{Field} with role
+  \ioss{Field::TRANSIENT} defined for "each" field. If the naming of
+  the field indicates that the fields are components of a higher-order
+  field, then the \ioss{Field} will be of that type. For example,
+  \exo{} fields named d\_x, d\_y, d\_z would define an \ioss{Field} of
+  type VECTOR\_3D named "d".  See Section~\ref{field_processing} for additional details. The fields will be defined on the \ioss{SideBlock} and not on the \ioss{SideSet}.
+\begin{itemize}
+\item Relevant \exo{} API function(s): \api{ex\_get\_variable\_name}, \api{ex\_get\_variable\_names}, \api{ex\_get\_var}, \api{ex\_get\_variable\_param}, \api{ex\_get\_truth\_table}.
+\end{itemize}
+	
+\section{Parallel Communication Data}
+The \exo{} communication map information is mapped into \ioss{CommSet} objects.  In a parallel execution, there will be two \ioss{CommSet} objects; one for nodal communication data named "commset\_node" and one for element communication data named "commset\_side".  The groups managed by the \ioss{CommSet} are the list of nodes or element sides that are on the current processor and are also on another processor; these are often referred to as "shared node" or "shared sides".  The defined fields are \field{entity\_processor} and \field{entity\_processor\_raw}.  The field data consists of pairs of entity ids and the processor that this entity is shared with; for a "commset\_side" group, the "entity id" is an "element/1-based local face index" pair.  For the \field{entity\_processor}, the entity ids are global ids; for the \field{entity\_processor\_raw}, the entity ids are "raw" ids. Here "raw" is defined such that a raw id N refers to the Nth node (1-based) in the list of ids returned by the nodeblock \field{ids} field.  For example, if the nodeblock ids field contains "10,20,30,40", then a raw id of '1' refers to the same node as the node with global id "10". The range of the "raw" ids is 1..\#entity\_on\_processor.
+     
+\section{Coordinate Frames}
+\begin{itemize}
+ \item Each coordinate frame on the \exo{} file will create a
+    \ioss{CoordinateFrame} which is identified by its id.
+
+ \item A coordinate frame can be retrieved from the \ioss{Region} via the
+   \ioapi{get\_coordinate\_frame(id)} function.
+
+ \item All coordinate frames can be retrieved from the \ioss{Region} via
+   the \ioapi{get\_coordinate\_frames()} which returns a reference to a
+   \ioss{CoordinateFrameContainer}. 
+
+ \item A coordinate frame has the functions:
+\begin{itemize}
+\item \ioapi{id()} - returns the id;
+\item \ioapi{tag()} - returns the character tag. The tag will be 'r' for rectangular, 'c' for cylindrical, or 's' for spherical. However, the tag is not restricted to these values and whatever value was in the \exo{} file will be returned.
+\item \ioapi{coordinates()} -- returns all 9 values stored for a coordinate frame.
+\item \ioapi{origin()} -- returns the 3 points defining the origin of the coordinate frame.	
+\item \ioapi{axis\_3\_point()} -- returns the 3 values defining a point on axis 3.
+\item \ioapi{plane\_1\_3\_point()} -- returns the 3 values defining a point on the 1-3 coordinate plane 
+\end{itemize}
+\end{itemize}
+The coordinate frame definition is not checked for validity to ensure that it defines a valid three-dimension coordinate system.
+\begin{itemize}
+\item Relevant \exo{} API functions: \api{ex\_get\_coordinate\_frames}
+\end{itemize}	  
+
+\section{Quality Assurance and Information Records}
+The Quality Assurance (QA) records in an \exo{} file can be accessed as a C++ reference to a \code{std::vector<std::string>} via the \ioapi{get\_qa\_records()} member function on the \ioss{Region}.  The strings are interpreted in groups of four corresponding to the similar grouping in the \exo{} api.  The records are interleaved in the order: 
+\begin{enumerate}
+\item Code Name
+\item Code Version
+\item Execution Date
+\item Execution Time
+\end{enumerate}
+For each record.  If the application does not need to access the existing QA records, but just wants to add its own information to the QA records, there is a member function \ioapi{add\_qa\_record}. This function takes four \code{std::string} arguments in the same order as shown above. The date and time arguments are optional and if omitted, the current date and time will be used.  The strings will be truncated to a maximum of 32 characters each to meet the \exo{} requirement.
+
+In a similar matter, the \exo{} "Informational Records" can be accessed as a C++ reference to a \code{std::vector<std::string>} via the 
+\ioapi{get\_information\_records} member function on the \ioss{Region}. If the application only needs to add additional information records to those that already exist on the input mesh (for output to a results file, for example), it can use the \ioapi{add\_information\_record} to add a single information line, or the \ioapi{add\_information\_records} to add multiple information lines. Both functions are defined on the \ioss{Region} class; the first takes a \code{std::string} argument and the second takes a \code{std::vector<std::string>} argument.  The string(s) will be truncated to a maximum of 80 characters to meet the \exo{} requirement.
+\begin{itemize}
+\item Relevant \exo{} API function(s): \api{ex\_get\_qa}, \api{ex\_get\_info}, \api{ex\_put\_qa}, \api{ex\_put\_info}
+\end{itemize}
+
+
+\section{Attribute and Variable Mapping to \ioss{Field}}\label{field_processing}
+Each transient variable on the \exo{} file will be mapped to a field on the IOSS object corresponding to the \exo{} entity with that variable. The names of the \exo{} variables are examined and if the IOSS can combine the names into a "higher-order" type such as a vector, tensor, symmetric tensor, or other type, then it will create a field corresponding to that higher-order type.  The mapping is done by splitting the variable name into a "base name" and a "suffix" separated by the "field suffix separator" character.  The default field suffix separator is the underscore "\_", but it can be changed via the \ioss{DatabaseIO}::\ioapi{set\_field\_separator(new\_separator)} function.  Once the names are separated into base name and suffix, then all names with the same base name are examined to see if their corresponding suffices indicate components of a higher-order type. 
+
+For example, if the variable names are "d\_x", "d\_y",  "d\_z", and "v\_x", then the suffices of the three variables with the base name "d" would be examined.  These are "x", "y", and "z" which match the suffices in the \ioss{VariableType} class corresponding to a 3D Vector type.  In this instance, the IOSS would add a field "d" to the entity  and the field would be of type \ioss{Vector\_3D}.
+
+The \file{Ioss\_ConcreteVariableType.C} file lists the suffices that are examined and the IOSS variable type classes.
+
+An additional grouping of variables is done if the suffices form a sequence of integers (1,2,...). In this case, a \ioss{VariableType} named "Real[\#]" is created with "\#" equal to the maximum integer in the sequence.  If the count exceeds 10, then the suffices must all be of the same width, so for example a 12 component field would have suffices "01", "02", ..., "12".
+
+The mapping of scalar \exo{} fields into a higher-order type can be disabled by setting the field suffix separator to a space (" ").
+If the separator is set to the value 0 (not the character '0'), then the IOSS code finds a group of names that share the maximum length of base name and then treats the remainder of the name as the suffix and then does the same mapping as above.  For example, the fields "velocityx", "velocityy", "velocityz" would isolate the base name "velocity" with suffices "x", "y", "z" and create a field named "velocity" of type \ioss{Vector\_3D}.
+
+This mapping is done for both \exo{} transient variables and for \exo{} attributes.
+
+\addcontentsline{toc}{section}{Index}
+\begin{raggedright}
+\printindex
+\end{raggedright}\end{document}

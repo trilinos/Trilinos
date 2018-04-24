@@ -1,0 +1,324 @@
+\chapter{Units Conversion System}\label{ch:units}
+
+\section{Introduction}
+
+The units conversion system as implemented in \aprepro{} defines
+several variables that are abbreviations for unit quantities. For
+example, if the output format for the current unit system was inches,
+the variable \cmd{foot} would have the value \cmd{12}. Therefore, an
+expression such as \cmd{8*foot} would be equal to \cmd{96} which is the
+number of inches in 8 feet\footnote{This can also be written as 8\~{}foot since \~{} has been defined to be the same as $*$ (multiplication).}.
+
+Seven consistent units systems have been defined including four metric
+based systems: \cmd{si}, \cmd{cgs}, \cmd{cgs-ev}, and \cmd{shock}; and
+three english-based systems: \cmd{in-lbf-s}, \cmd{ft-lbf-s}, and
+\cmd{ft-lbm-s}. The output units for these unit systems are shown in
+Table 8 (metric) and Table 9 (english). A list of the defined units
+abbreviations is given in Table 10.
+
+In addition to the definition of the conversion factors, several
+string variables are also defined which describe the output format of
+the current units system.  For example, the string variable \cmd{dout}
+defines the output format for density units. For the \cmd{in-lbf-sec}
+units system, \cmd{dout} =
+\cmd{\texttt{"}lbf-sec\^{}2/in\^{}4}\texttt{"}
+which is the output format for densities in this system. The string
+variables can be used to document the \aprepro{} output. The
+string variable names are listed in the last column of Table 8 and Table 9.
+
+\begin{longtable}{l|lllll}
+\caption{Units Systems and Corresponding Output Format--Metric} \\
+\hline
+Quantity      &si&  cgs       & cgs-ev     & shock      & string \\
+\hline
+Length        & metre    & centimetre & centimetre & centimetre & lout \\
+Mass          & kilogram & gram       & gram       & gram       & mout \\
+Time          & second   & second     & second     & micro-sec  & tout \\
+Temperature   & kelvin   & kelvin     & eV         & kelvin     & Tout \\
+Velocity      & metre/sec& cm/sec     & cm/sec     & cm/usec    & vout \\
+Acceleration  & metre/sec$^2$ & cm/sec$^2$ & cm/sec$^2$ & cm/usec$^2$ & aout \\
+Force         & newton   & dyne       & dyne       & g-cm/usec$^2$ & fout \\
+Volume        & metre$^3$ &  cm$^3$ & cm$^3$ & cm$^3$ & Vout \\
+Density       & kg/m$^3$ &  g/cc & g/cc & g/cc & dout \\
+Energy        & joule    & erg & erg & g-cm$^2$/usec$^3$ & eout \\
+Power         & watt     & erg/sec & erg/sec & g-cm$^2$/usec$^4$ & Pout \\
+Pressure      & pascal   & dyne/cm$^2$ & dyne/cm$^2$ & Mbar & pout \\
+\hline
+\end{longtable}
+
+
+\begin{longtable}{l|llll}
+\caption{Units Systems and Corresponding Output Format--English} \\
+\hline
+Quantity & in-lbf-s & ft-lbf-s & ft-lbm-s & string \\
+\hline
+Length       & inch         & foot & foot & lout \\
+Mass         & lbf-sec$^2$/in & slug & pound-mass & mout \\
+Time         & second & second & second & tout \\
+Temperature  & rankine & rankine & rankine & Tout \\
+Velocity     & inch/sec & foot/sec & foot/sec & vout \\
+Acceleration & inch/sec$^2$ & foot/sec$^2$ & foot/sec$^2$ & aout \\
+Force        & pound-force & pound-force & poundal & fout \\
+Volume       & inch$^3$ & foot$^3$ & foot$^3$ & Vout \\
+Density      & lbf-sec$^2$/in$^4$ & slug/ft$^3$ & lbm/ft$^3$ & dout \\
+Energy       & inch-lbf & foot-lbf & ft-poundal & eout \\
+Power        & inch-lbf/sec & foot-lbf/sec & ft-poundal/sec & Pout\\
+Pressure     & lbf/in$^2$ & lbf/ft$^2$ & poundal/ft$^2$ & pout \\
+\hline
+\end{longtable}
+
+The units definitions are accessed through the \afunc{Units} function in \aprepro{}:
+\begin{apinp}
+\{Units("\var{unit\_system}")\}
+\end{apinp}
+where \var{unit\_system} is one of the strings listed in the first row
+of the previous two tables. 
+
+\section{Defined Units Variables}
+
+In the following table, the first column lists the variables
+that are defined in the \aprepro{} unit system and the second column
+is a short description of the unit. All units variables are defined in
+terms of the five SI Base Units metre (length), second (time),
+kilogram (mass), temperature (kelvin), and radian (angle)\footnote{The
+radian is actually a SI Supplementary Unit since it has not been
+decided whether it is a Base Unit or a Derived Unit. There are three
+other SI Base Units, the candela, ampere, and mole, but they are not
+yet used in the Aprepro units system.}. The bolded rows
+delineate the type of unit variable and the base quantities used to
+define it where $L$ is length, $T$ is time, $M$ is mass, and $t$ is
+temperature. For example density is defined in terms of $M/L^3$ which
+is mass/ length$^3$.
+
+\begin{longtable}{l|l}
+\caption{Defined Units Variables} \\
+\hline\hline
+\multicolumn{2}{c}{\bf Length \boldmath{[L]}} \\
+\hline
+m, meter, metre & \cmd{Metre (base unit)} \\
+cm, centimeter, centimetre & {Metre / 100} \\
+mm, millimeter, millimetre & {Metre / 1,000} \\
+um, micrometer, micrometre & {Metre / 1,000,000} \\
+km, kilometer, kilometre & {Metre * 1,000} \\
+in, inch & Inch   \\
+ft, foot & Foot  \\
+yd, yard & Yard   \\
+mi, mile & Mile   \\
+mil & Mil (inch/1000) \\
+\multicolumn{2}{c}{} \\
+\hline \multicolumn{2}{c}{\bf Time \boldmath{[T]}} \\
+\hline
+second, sec & \cmd{Second (base unit)} \\
+usec, microsecond & Second / 1,000,000 \\
+msec, millisecond & Second / 1,000 \\
+minute & Minute \\
+hr, hour & Hour   \\
+day & Day   \\
+yr, year & Year = 365.25 days \\
+decade & 10 Years \\
+century & 100 Years \\
+\multicolumn{2}{c}{} \\
+\hline 
+\multicolumn{2}{c}{\bf Velocity \boldmath{[L/T]}} \\
+\hline
+mph & Miles per hour \\
+kph & Kilometres per hour \\
+mps & Metre per second \\
+kps & Kilometre per second \\
+fps & Foot per second \\
+ips & Inch per second \\
+\multicolumn{2}{c}{} \\
+\hline 
+\multicolumn{2}{c}{\bf Acceleration \boldmath{[$L/T^2$]}} \\
+\hline
+ga & Gravitational acceleration \\
+\multicolumn{2}{c}{} \\
+\hline 
+\multicolumn{2}{c}{\bf Mass \boldmath{[$M$]}} \\
+\hline
+kg & \cmd{Kilogram (base unit)} \\
+g, gram & Gram \\
+lbm & Pound (mass) \\
+slug & Slug \\
+lbfs2pin & Lbf-sec$^2$/in \\
+\multicolumn{2}{c}{} \\
+\hline 
+\multicolumn{2}{c}{\bf Density \boldmath{[$M/L^3]$}} \\
+\hline
+gpcc & Gram / cm$^3$ \\
+kgpm3 & Kilogram / m$^3$ \\
+lbfs2pin4 & Lbf-sec$^2$ / in$^4$ \\
+lbmpin3 & Lbm / in \\
+lbmpft3 & Lbm / ft$^3$ \\
+slugpft3 & Slug / ft$^3$ \\
+\multicolumn{2}{c}{} \\
+\hline 
+\multicolumn{2}{c}{\bf Force \boldmath{[$ML/T^2$]}} \\
+\hline
+N, newton & Newton = 1 kg-m/sec$^2$ \\
+dyne & Dyne = newton/10,000 \\
+gf & Gram (force) \\
+kgf & Kilogram (force) \\
+lbf & Pound (force) \\
+kip & Kilopound (force) \\
+pdl, poundal & Poundal \\
+ounce & Ounce = lbf / 16 \\
+\multicolumn{2}{c}{} \\
+\hline 
+\multicolumn{2}{c}{\bf Energy \cmd{[$ML^2/T^2$]}} \\
+\hline
+J,   joule & Joule = 1 newton-metre \\
+ftlbf & Foot-lbf \\
+erg & Erg = 1e-7 joule \\
+calorie & International Table Calorie \\
+Btu & International Table Btu \\
+therm & EEC therm \\
+tonTNT & Energy in 1 ton TNT \\
+kwh & Kilowatt hour \\
+\multicolumn{2}{c}{} \\
+\hline 
+\multicolumn{2}{c}{\bf Power \boldmath{[$ML^2/T^3$]}} \\
+\hline
+W, watt & Watt = 1 joule / second \\
+Hp & Elec. Horsepower (746 W) \\
+\multicolumn{2}{c}{} \\
+\hline 
+\multicolumn{2}{c}{\bf Temperature \boldmath{[t]}} \\
+\hline
+degK, kelvin & \cmd{Kelvin (Base Unit)} \\
+degC & Degree Celsius \\
+degF & Degree Fahrenheit \\
+degR, rankine & Degree Rankine \\
+eV & Electron Volt \\
+\multicolumn{2}{c}{} \\
+\hline 
+\multicolumn{2}{c}{\bf Pressure \boldmath{[$M/L/T^2$]}} \\
+\hline
+Pa, pascal & Pascal = 1 newton / metre$^2$ \\
+MPa & Megapascal \\
+GPa & Gigapascal \\
+bar & Bar \\
+kbar & Kilobar \\
+Mbar & Megabar \\
+atm & Standard atmosphere \\
+torr & Torr = 1 mmHg \\
+mHg & Metre of mercury \\
+mmHg & Millimetre of mercury \\
+inHg & Inch of mercury \\
+inH2O & Inch of water \\
+ftH2O & Foot of water \\
+psi & Pound per square inch \\
+ksi & Kilo-pound per square inch \\
+psf & Pound per square foot \\
+\multicolumn{2}{c}{} \\
+\hline 
+\multicolumn{2}{c}{\bf Volume \boldmath{[L$^3$]}} \\
+\hline
+liter & Metre$^3$ / 1000 \\
+gal, gallon & Gallon (U.S.) \\
+\multicolumn{2}{c}{} \\
+\hline 
+\multicolumn{2}{c}{\bf Angular }  \\
+\hline
+rad & \cmd{Radian (base unit)} \\
+rev & Full circle = 360 degree \\
+deg, degree & Degree \\
+arcmin & Arc minute = 1/60 degree \\
+arcsec & Arc second = 1/360 degree \\
+grade & Grade = 0.9 degree \\
+\end{longtable}
+The conversion expressions were obtained from
+References~\cite{bib:isotopes}, \cite{bib:jaeger}, \cite{bib:lambe}, and~\cite{bib:simpson}.
+
+\section{Usage}
+
+The following example illustrates the basic usage of the \aprepro{} units conversion utility.
+
+\begin{apinp}
+\$ Aprepro Units Utility Example 
+\$ \{ECHO(OFF)\} \textit{\ldots{}Turn off echoing of the conversion factors}
+\$ \{Units(``shock'')\} \textit{\ldots{}Select the shock units system}
+\$  NOTE:  Dimensions  -  \{lout\},  \{mout\},  \{dout\},  \{pout\} 
+\textit{\ldots{}This will document what quantities are used in the file after it is run through Aprepro}
+\{len1  = 10.0 * inch\}  \textit{\ldots{}Define a length in an english unit (inches)}
+$ \{len2  = 12.0\textasciitilde{}inch\} \textit{\ldots{}\textasciitilde{} is a synonym for * (multiplication)}
+Material  1,  Elastic Plastic,  \{1890\textasciitilde{}kgpm3\}  \$  \{dout\}
+   Youngs Modulus = \{28.3e6\textasciitilde{}psi\} \$ {pout}
+   Yield  Stress  = \{30\textasciitilde{}ksi\}
+   Initial Veclocity = \{10\textasciitilde{}mph\} \$ {vout}
+   \textit{\ldots{}Define the density and material parameters in whatever units they are available}
+End
+Point 100 \{0.0\}  \{0.0\}
+Point 110 \{len1\} \{0.0\}
+Point 120 \{len1\} \{len2\}
+Point 130 \{0.0\}  \{len1\}
+\end{apinp}
+
+The output from this example input file is:
+
+\begin{apout}
+\$  Aprepro  Units  Utility  Example
+\$  NOTE:  Dimensions  -  cm,  gram,  g/cc,  Mbar  \textit{\ldots{}The documentation of what quantities this file uses}
+\$ 25.4 
+\$ 30.48
+
+Material 1, Elastic Plastic, 1.89 \$ g/cc 
+   Youngs Modulus = 1.951216314 \$ Mbar
+   Yield  Stress  =  0.002068427188  \textit{\ldots{}All material parameters are now in consistent units}
+   Initial Velocity = 0.00044704 \$ cm/usec
+End
+
+Point  100  0  0
+Point  110  25.4 0
+Point  120  25.4 30.48
+Point  130  0   25.4   \textit{\ldots{}Lengths have all been converted to centimetres}
+\end{apout}
+
+The same input file can be used to output in SI units simply by changing Units 
+command from \var{shock} to \var{si}. The output in SI units is:
+
+\begin{apout}
+\$ Aprepro Units Utility Example
+\$  NOTE:  Dimensions  -  meter,  kilogram,  kg/m^3,  Pa  
+\textit{\ldots{}Quantities are now output in standard SI units}
+\$ 0.254
+\$ 0.3048
+
+Material  1,  Elastic  Plastic,  1890  \$  kg/m^3
+   Youngs  Modulus =  1.951216314e+11 \$ Pa
+   Yield  Stress   =  206842718.8 
+   Initial Velocity = 4.4704 \$ meter/sec
+End
+
+Point  100 0  0
+Point  110 0.254  0
+Point  120 0.254  0.3048
+Point  130 0   0.254  \textit{\ldots{}Lengths have all been converted to metres}
+\end{apout}
+
+\section{Additional Comments}
+
+A few additional comments and warnings on the use of the units system are detailed 
+below.
+
+Omitting the \{ECHO(OFF)\} line prior to the \{Units(``unit\_system'')\} 
+function will print out the contents of the units header and conversion files. 
+Each line in the output will be preceded by the current comment character which 
+is \$ by default.
+
+The comment character can be changed by invoking \aprepro{} with the 
+\cmd{-c} option. For example \cmd{aprepro -c\# input\_file output\_file} 
+will change the comment character at the beginning of the lines to \#. 
+
+The temperature conversions are only valid for relative temperatures, for 
+example, 100\textasciitilde{}degC is equal to 180\textasciitilde{}degF, not 212\textasciitilde{}degF. 
+
+Since several variables are defined in the units system, it is
+possible to redefine one of the variable names in your input file. If
+the \aprepro{} warning messages are turned off, you will not be
+notified of the variable redefinition and erroneous results may
+occur. Therefore, you should not turn off \aprepro{} warning
+messages while using the units system, and you should investigate all
+redefined variable messages to ensure that you are getting the results
+you expect. 
+

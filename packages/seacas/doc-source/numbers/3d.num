@@ -1,0 +1,35 @@
+
+
+
+     NUMBERS, Revised:  9/09/87
+
+     Run on 05/17/88 at 08:25:43
+     Compiled on a VAX 8600 under VMS 4.3
+
+     Genesis: UB:[GDSJAAR.EXECUTE.NUMBERS]3D.NIN;2
+
+     Title:    M140 CASK - MODEL 5B - 15 DEC 87 - 28,000# Cargo Weight
+
+     Number of Nodes:      2048
+     Number of Elements:   1192
+     Three-Dimensional Mesh, 8-Point Quadrature
+
+     Material    Density        Volume          Mass        Label
+         4      1.000E+00      3.357E+04      3.357E+04                     
+         5      1.000E+00      1.811E+05      1.811E+05                     
+         6      1.000E+00      6.074E+04      6.074E+04                     
+                              ----------     ----------
+                  Total:       2.754E+05      2.754E+05
+
+     MASS PROPERTIES--- (Inertias at centroid)
+      Xc = -3.558E-06   Yc =  8.436E+01   Zc = -1.478E+01
+     Ixx =  5.046E+08  Iyy =  1.068E+08  Izz =  5.647E+08
+     Ixy = -7.142E+00  Ixz = -4.669E-01  Iyz =  9.241E+05
+
+     Mat  Minimum   Elem   Maximum   Elem   Average   Num    Minimum   Elem
+     Num   Volume   Num     Volume   Num     Volume   Elem   T Factor  Num
+      4   2.54E+01   485   1.24E+02   122   6.17E+01   544   1.07E+00   485
+      5   3.16E+02   819   5.39E+02   664   4.19E+02   432   2.71E+00   701
+      6   2.13E+02  1002   3.73E+02  1165   2.81E+02   216   2.39E+00  1099
+
+        1.210 Seconds of CPU time used.  1.0E-03 Seconds per element.

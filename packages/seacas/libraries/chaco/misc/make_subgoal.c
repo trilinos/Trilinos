@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005 National Technology & Engineering Solutions
+ * Copyright (c) 2005-2017 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -44,7 +44,7 @@ void make_subgoal(double *goal,         /* goals for sets */
                   int     mesh_dims[3], /* shape of mesh */
                   int     set,          /* which set am I in? */
                   double  sub_vwgt_sum  /* sum of subgraph vertex weights */
-                  )
+)
 {
   double tweight;        /* total weight among all subgoals */
   double ratio;          /* scaling factor */

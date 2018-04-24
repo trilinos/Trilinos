@@ -1,0 +1,58 @@
+%This turns on the SAND report covers
+\newif\ifdraft\draftfalse
+\newif\ifsand\sandtrue
+
+\SANDnum{SAND92-2291}
+\SANDauthor{Gregory D. Sjaardema}
+\SANDprintDate{\today}
+\newcommand{\theTitle}{APREPRO: An Algebraic Preprocessor for Parameterizing Finite Element Analyses}
+\title{\theTitle}
+\ifsand
+\pdfbookmark[1]{Cover}{cover}
+\doCover
+\newpage
+\else
+\SANDmarks{cover}
+\setcounter{page}{3}
+\fi
+
+\pdfbookmark[1]{Title}{title}
+
+%\begin{titlepage}
+\begin{center}
+\SANDnumVar\\
+\SANDreleaseTypeVar\\
+\ifdraft
+Draft Date: \SANDprintDateVar\\
+\else
+Printed \SANDprintDateVar\\
+\fi
+
+\vspace{0.75in}
+\CoverFont{m}{24}{28pt}
+\theTitle\\
+\vspace{0.75in}
+\CoverFont{m}{12}{14pt}
+\SANDauthorVar\\
+Simulation Modeling Sciences Department\\
+Sandia National Laboratories\\
+Albuquerque, NM 87185-0380\\
+\vspace*{.5in}
+\textbf{Abstract}
+\end{center}
+\vspace{-.4cm}\par
+
+\aprepro{} is an algebraic preprocessor that reads a file containing both 
+general\textit{ }text and algebraic, string, or conditional expressions. It interprets 
+the expressions and outputs them to the output file along with the general text. 
+The syntax used in \aprepro{} is such that all expressions between the delimiters 
+\textbf{\{} and \textbf{\}} are evaluated and all other text is simply echoed to 
+the output file. \aprepro{} contains several mathematical functions,
+string functions, and flow control constructs. In addition, functions
+are included that implement a units conversion system. \aprepro{} was
+written primarily to simplify the preparation of parameterized input
+files for finite element analyses at Sandia National Laboratories;
+however, it can process any text file that does not use the characters
+\textbf{\{ \}}.\newpage
+
+%\end{titlepage}

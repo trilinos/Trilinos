@@ -1,4 +1,4 @@
-C    Copyright(C) 2008 National Technology & Engineering Solutions of
+C    Copyright(C) 2008-2017 National Technology & Engineering Solutions of
 C    Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C    NTESS, the U.S. Government retains certain rights in this software.
 C    
@@ -78,7 +78,7 @@ C   --Check number of nodes in nodal point sets
   110 CONTINUE
 
       IF (NNPS .NE. LNPSNL) THEN
-         CALL PRTERR ('CMDSPEC', 'Maximum node index' // 
+         CALL PRTERR ('WARNING', 'Maximum node index' // 
      &      ' in all nodal point sets does not match total')
       END IF
 
@@ -86,11 +86,11 @@ C   --Check all nodes in node point sets are within node range
 
       CALL CHKRNG (LTNNPS, LNPSNL, NUMNP, NZERO, NERR)
       IF (NERR .GT. 0) THEN
-        CALL PRTERR ('CMDSPEC',
+        CALL PRTERR ('FATAL',
      &    'Nodal point set node ids are out of range')
       END IF
       IF (NZERO .GT. 0) THEN
-        CALL PRTERR ('CMDSPEC',
+        CALL PRTERR ('FATAL',
      &    'Nodal point set node ids are zero')
       END IF
       

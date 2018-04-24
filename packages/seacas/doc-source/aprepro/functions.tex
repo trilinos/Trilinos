@@ -1,0 +1,491 @@
+\chapter{Functions}\label{ch:functions}
+
+Several mathematical and string functions are implemented in
+\aprepro{}.  To cause a function to be used, you enter the name
+of the function followed by a list of zero or more arguments in
+parentheses. For example
+\begin{apinp}
+\{sqrt(min(a,b*3))\}
+\end{apinp}
+uses the two functions \cmd{sqrt()} and \cmd{min()}. The arguments \cmd{a} 
+and \cmd{b*3} are passed to \cmd{min()}. The result is then passed as an 
+argument to \cmd{sqrt()}. The functions in \aprepro{} are listed below 
+along with the number of arguments and a short description of their effect.
+
+\section{Mathematical Functions}
+
+The following mathematical functions are available in \aprepro{}.
+
+\begin{longtable}{lp{4.0in}}
+\caption{Mathematical Functions}\label{t:functions}\\
+Syntax              & Description \\
+\hline
+\endhead
+abs(x)              &  Absolute value of $x$. $|x|$.\\
+acos(x)             &  Inverse cosine of $x$, returns radians.\\
+acosd(x)            &  Inverse cosine of $x$, returns degrees.\\
+acosh(x)            &  Inverse hyperbolic cosine of $x$.\\
+asin(x)             &  Inverse sine of $x$, returns degrees.\\
+asin(x)             &  Inverse sine of $x$, returns radians.\\
+asinh(x)            &  Inverse hyperbolic sine of $x$.\\
+atan(x)             &  Inverse tangent of $x$, returns radians.\\
+atan2(x,y)          &  Inverse tangent of $y/x$, returns radians.\\
+atan2d(x,y)         &  Inverse tangent of $y/x$, returns degrees.\\
+atand(x)            &  Inverse tangent of $x$, returns degrees.\\
+atanh(x)            &  Inverse hyperbolic tangent of $x$.\\
+ceil(x)             &  Smallest integer not less than $x$.\\
+cos(x)              &  Cosine of $x$, with $x$ in radians\\
+cosd(x)             &  Cosine of $x$, with $x$ in degrees\\
+cosh(x)             &  Hyperbolic cosine of $x$.\\
+d2r(x)              &  Degrees to radians.\\
+dim(x,y)            &  $x - \min(x,y)$\\
+dist(x1,y1, x2,y2)  &  $\sqrt{(x_1-x_2)^2 + (y_1-y_2)^2}$ \\
+exp(x)              &  Exponential  $e^x$ \\
+find\_word(word,svar,del)&  Find 1-based index of \var{word} in \var{svar}. Words are separated by one or more of the characters in the string variable del. Returns 0 if \var{word} is not found.\\
+floor(x)            &  Largest integer not greater than $x$.\\
+fmod(x,y)           &  Floating-point remainder of $x/y$.\\
+hypot(x,y)          &  $\sqrt{x^2+y^2}$.\\
+int(x), [x]         &  Integer part of $x$ truncated toward 0.\\
+julday(mm, dd, yy)  &  Julian day corresponding to mm/dd/yy. \\
+juldayhms(mm, dd, yy, hh, mm, ss)&  Julian day corresponding to mm/dd/yy at hh:mm:ss \\
+lgamma(x)           &  $\log(\Gamma(x))$.\\
+ln(x)               &  Natural (base e) logarithm of $x$.\\
+log(x)              &  Natural (base e) logarithm of $x$.\\
+log10(x)            &  Base 10 logarithm of $x$. \\
+log1p(x)            &  $log(1+x)$ Accurate even for very small values of $x$\\
+max(x,y)            &  Maximum of $x$ and $y$. \\
+min(x,y)            &  Minimum of $x$ and $y$. \\
+nint(x)             &  Rounds $x$ to nearest integer. $<0.5$ down; $>=0.5$ up.\\
+polarX(r,a)         &  $r * \cos(a)$, $a$ is in degrees \\
+polarY(r,a)         &  $r * \sin(a)$, $a$ is in degrees \\
+r2d(x)              &  Radians to degrees. \\
+rand(xl,xh)         &  Random value between $xl$ and $xh$; uniformly distributed. \\
+rand\_lognormal(m,s)&  Random value with lognormal distribution with mean $m$ and stddev $s$.\\
+rand\_normal(m,s)   &  Random value normally distributed with mean $m$ and stddev $s$.\\
+rand\_weibull(a, b) &  Random value with weibull distribution with $\alpha=a$ and $\beta=b$. \\
+sign(x,y)           &  $x * \text{sgn}(y)$\\
+sin(x)              &  Sine of $x$, with $x$ in radians. \\
+sind(x)             &  Sine of $x$, with $x$ in degrees. \\
+sinh(x)             &  Hyperbolic sine of $x$ \\
+sqrt(x)             &  Square root of $x$. $\sqrt{x}$\\
+srand(seed)         &  Seed the random number generator with the given integer value. At the beginning of \aprepro{} execution, \cmd{srand()}
+                       is called with the current time as the seed. \\
+strtod(svar)        &  Returns a double-precision floating-point number equal to the value represented by the character string pointed to by \var{svar}.\\
+tan(x)              &  Tangent of $x$, with $x$ in radians. \\
+tand(x)             &  Tangent of $x$, with $x$ in radians. \\
+tanh(x)             &  Hyperbolic tangent of $x$. \\
+Vangle(x1,y1,x2,y2) &  Angle (radians) between vector $x_1\hat{i}+y_1\hat{j}$ and $x_2\hat{i}+y_2\hat{j}$.\\
+Vangled(x1,y1,x2,y2)&  Angle (degrees) between vector $x_1\hat{i}+y_1\hat{j}$ and $x_2\hat{i}+y_2\hat{j}$.\\
+word\_count(svar,del)&  Number of words in \var{svar}. Words are separated by one or more of the characters in the string variable del.\\
+\hline
+\end{longtable}
+
+\begin{longtable}{lp{4.0in}}
+\caption{String Functions}\label{t:stringfunctions}\\
+Syntax              & Description \\
+\hline
+\endhead
+DUMP()              &  Output a list of all defined variables and their value. \\
+DUMP\_FUNC()        &  Output a list of all double and string functions recognized by \aprepro{}. \\
+DUMP\_PREVAR()      &  Output a list of all predefined variables and their value. \\
+IO(x)               &  Convert x to an integer and then to a string. Can be used to output integer values if your output format (\cmd{\_FORMAT}) is set to something that doesn't output integers correctly.  \\
+Units(svar)         &  See Chapter~\ref{ch:units}. \var{svar} is one of the defined units systems: 'si', 'cgs', 'cgs-ev', 'shock', 'swap', 'ft-lbf-s', 'ft-lbm-s', 'in-lbf-s' \\
+error(svar)         &  Outputs the string \var{svar} to stderr and then terminates the code with an error exit status. \\
+execute(svar)       &  \var{svar} is parsed and executed as if it were a line read from the input file. \\
+exodus\_info(filename, prefix) & Open the \exo{} file and return a
+string which is the concatenation of all \exo{} info lines that begin
+with ``prefix''. The prefix is stripped from the line. \\
+exodus\_info(filename, begin, end) & Open the \exo{} file and return a
+string which is the concatenation of all \exo{} info lines following
+the line that matches ``begin'' up to the line that matches ``end''. \\
+exodus\_meta(filename) & Open the \exo{} file and create several variables based on the metadata in the \exo{} file. \\
+extract(s, b, e)    &  Return substring \var{[b,e)}. \var{b} is included; \var{e} is not. If \var{b} not found, return empty; If \var{e} not found, return rest of string. If \var{b} empty, start at beginning; if \var{e} empty, return rest of string. \\
+file\_to\_string(fn)&  Opens the file specified by \var{fn} and returns the contents as a multi-line string. \\
+get\_date()         &  Returns a string representing the current date in the form YYYY/MM/DD. \\
+get\_iso\_date()    &  Returns a string representing the current date in the form YYYYMMDD. \\
+get\_time()         &  Returns a string representing the current time in the form HH:MM:SS. \\
+get\_word(n,svar,del&  Returns a string containing the \var{n}th word of \var{svar}. The words are separated by one or more of the characters in the string variable \var{del}  \\
+getenv(svar)        &  Returns a string containing the value of the environment variable \var{svar}. If the environment variable is not defined, an empty string is returned.  \\
+help()              &  Tell how to get help on variables, functions, \ldots \\
+include\_path(path) &  Specify an optional path to be prepended to a filename when opening a file. Can also be specified via the \cmd{-I} command line option when executing aprepro. \\
+output(filename)    &  Creates the file specified by filename and
+sends all subsequent output from aprepro to that file. Calling \cmd{output(\"stdout\")} will close the current output file and return output to the terminal (standard output).\\
+output\_append(fn)  &  If file with name \var{fn} exists, append output to it; otherwise create the file and send all subsequent output from aprepro to that file. \\
+rescan(svar)        &  The difference between \cmd{execute(sv1)} and \cmd{rescan(sv2)} is that \var{sv1} must be a valid expression, but \var{sv2} can contain zero or more expressions.  \\
+to\_lower(svar)     &  Translates all uppercase characters in \var{svar} to lowercase. It modifies \var{svar} and returns the resulting string.   \\
+tolower(svar)       &  Translates all uppercase characters in \var{svar} to lowercase. It modifies \var{svar} and returns the resulting string.   \\
+to\_string(x)       &  Returns a string representation of the numerical variable \var{x}. The variable \var{x} is unchanged.  \\
+tostring(x)         &  Returns a string representation of the numerical variable \var{x}. The variable \var{x} is unchanged.  \\
+to\_upper(svar)     &  Translates all lowercase character in \var{svar} to uppercase. It modifies \var{svar} and returns the resulting string.  \\
+toupper(svar)       &  Translates all lowercase character in \var{svar} to uppercase. It modifies \var{svar} and returns the resulting string.  \\
+\hline
+\end{longtable}
+
+The following example shows the use of some of the string functions. The input:
+\begin{apinp}
+\{t1 = "ATAN2"\} 
+\{t2 = "(0, -1)"\} 
+\{t3 = tolower(t1//t2)\} 
+\{execute(t3)\} 
+\end{apinp}
+produces the output:
+\begin{apout}
+ATAN2 
+(0, -1)
+atan2(0, -1)   \textit{The variable t3 is equal to the string atan2(0,-1)} 
+3.141592654    \textit{The result is the same as executing \{atan2(0, -1)\}}
+\end{apout}
+
+This is admittedly a very contrived example; however, it does
+illustrate the workings of several of the functions. In the example,
+an expression is constructed by concatenating two strings together and
+converting the resulting string to lowercase.  This string is then
+executed and simply prints the result of evaluating the expression.
+
+The following example uses the \cmd{rescan} function to illustrate a basic
+macro capability in \aprepro{}. The example calculates the coordinates
+of eleven points (Point1 \ldots{} Point11) equally spaced about the
+circumference of a 180 degree arc of radius 10.
+
+\begin{apinp}
+\{ECHO(OFF)\}\
+\{num = 0\} 
+\{rad = 10\} 
+\{nintv = 10\} 
+\{nloop = nintv + 1\} 
+\{line = 'Define \{"Point"//tostring(++num)\}, \{polarX(rad, (num-1) * 
+  180/nintv)\} \{polarY(rad, (num-1)*180/nintv)\}'\}
+\{ECHO(ON)\} 
+\{loop(nloop)\}
+\{rescan(line)\} 
+\{endloop\}
+\end{apinp}
+
+Output:
+
+\begin{apout}
+Define  Point1,  10    0
+Define  Point2,  9.510565163    3.090169944
+Define  Point3,  8.090169944    5.877852523
+Define  Point4,  5.877852523    8.090169944
+Define  Point5,  3.090169944    9.510565163
+Define  Point6,  6.123233765e-16    10
+Define  Point7,  -3.090169944    9.510565163
+Define  Point8,  -5.877852523    8.090169944
+Define  Point9,  -8.090169944    5.877852523
+Define  Point10,  -9.510565163    3.090169944
+Define  Point11,  -10    1.224646753e-15
+\end{apout}
+
+Note the use of the \cmd{ECHO(OFF\textbar{}ON)} block to 
+suppress output during the initialization phase, and the loop construct
+to automatically repeat the rescan line. The variable \cmd{num} is converted 
+to a string after it is incremented and then concatenated to build the name of 
+the point. In the definition of the variable \cmd{line}, single quotes are first 
+used since this is a multi-line string; double quotes are then used to embed another 
+string within the first string. To modify this example to calculate the coordinates 
+of 101 points rather than eleven, the only change necessary would be to set \cmd{\{nintv=100\}}.
+
+\section{Additional Functions }
+
+\subsection{[{\em var}] or [{\em expression}]} Surrounding a variable or expression
+by square brackets will return the integer value of that variable or
+expression truncated toward zero. For example \cmd{[sqrt(2)]} will return the value
+\cmd{1}.
+
+\subsection{File Inclusion} \aprepro{} can read input from multiple 
+files using the \cmd{include()} and \cmd{cinclude()} functions. If a line 
+of the form: 
+
+\cmd{\{include(\texttt{"}\textit{filename}\texttt{"})\}}\\
+\cmd{\{include(string\_variable)\}}
+
+is read, \aprepro{} will open and begin reading from the file
+\file{filename}.  A string variable can be used as the
+argument instead of a literal string value.  When the end of the file
+is reached, it will be closed and \aprepro{} will continue
+reading from the previous file. The difference between
+\cmd{include()} and \cmd{cinclude()} is that if
+\file{filename} does not exist, \cmd{include()} will
+terminate \aprepro{} with a fatal error, but \cmd{cinclude()} will just
+write a warning message and continue with the current file. The
+\cmd{cinclude()} function can be thought of as a {\em conditional
+include}, that is, include the file if it exists. Multiple include
+files are allowed and an included file can also include additional
+files. This option can be used to set variables globally in several
+files. For example, if two or more input files share common points or
+dimensions, those dimensions can be set in one file that is included
+in the other files.
+
+If \cmd{ECHO(OFF)} is in effect during in an included file, \cmd{ECHO(ON)} 
+will automatically be executed at the end of the included file.
+
+\subsection{Conditionals} Portions of an input file can be conditionally processed 
+through the use of the \cmd{if(expression)}, \cmd{elseif(expression)}, \cmd{else}, and \cmd{endif} 
+construct.\footnote{The \cmd{Ifdef(expression)} and \cmd{Ifndef(expression)} construct is deprecated. Please use \cmd{if(expression)} and \cmd{if(!expression)} instead.}
+The syntax is: 
+
+\begin{apinp}
+\{if(expression)\}
+\ldots Lines processed if 'expression' is true or non-zero.
+\{elseif(expression2)\}
+\ldots Lines processed if 'expression' is false and 'expression2' is true.
+\{else\}
+\ldots Lines processed if both 'expression' and 'expression2' are false.
+\{endif\}
+\end{apinp}
+
+The \cmd{elseif()} and \cmd{else} are optional.  Note that if \var{expression} is a simple \var{variable}, then its value will be zero or false if it is undefined; a zero value evaluates to false and a non-zero value is true. The \cmd{if} construct can be nested multiple levels.
+A warning message will be printed if improper nesting is detected. The \cmd{if(expression)}, 
+\cmd{elseif(expression)}, \cmd{else}, and \cmd{endif} are the 
+only text parsed on a line. Text that follows these on the same line is
+ignored.  For example:
+
+\begin{apinp}
+\{if(a > 10 && b < 10)\} This will be ignored no matter what
+\ldots Lines processed if \var{a} > 10 and \var{b} < 10.
+\{endif\}
+\end{apinp}
+
+\subsection{Switch Statements}
+The \cmd{switch} statement is a control construct which allows the value of a variable or expression to change the control flow via a multi-way branch.
+The construct is begun with a \cmd{switch(expression)} statement followed by one or more \cmd{case(expression)} statements and an optional \cmd{default} statement. The construct is ended with an \cmd{endswitch} statement.  The expression in the \cmd{switch(expression)} statement is evaluated and compared to each \cmd{case(expression)} statement in order.  If the values of the two expressions are equal, then the code following that \cmd{case(expression)} is evaluated up to the next \cmd{case()} or \cmd{default} statement. If the expressions in more than one \cmd{case()} match the initial \cmd{switch()} expression, only the first one will be activated.  If none of the \cmd{case()} expressions match the \cmd{switch()} expression, then the code following the \cmd{default} command will be evaluated. An example of the syntax is:
+
+\begin{apinp}
+\{a = 10*PI\}
+\{switch(10*PI + sin(0))\}
+\ldots This is ignored since it is after the switch, but before any \cmd{case()} statements
+\{case(1)\}
+\ldots This is not executed since \var{1} is not equal to \var{10*PI+sin(0)}
+\{case(a)\}
+\ldots This is executed since \var{a} matches the value of \var{10*PI+sin(0)}
+\{case(10*PI+sin(0))\}
+\ldots This is not executed since a previous case was executed.
+\{default\}
+\ldots This is not executed since a previous case was executed.
+\{endswitch\}
+\ldots This is executed since the switch construct
+ is finished.
+\end{apinp}
+
+Switch constructs cannot be nested, but a \cmd{switch()} can be used inside an \cmd{if()} construct and an \cmd{if()} can be used inside a \cmd{case()} construct. 
+The \cmd{switch(expression)}, \cmd{case(expression)}, \cmd{default}, and \cmd{endswitch} are the only text parsed on a line. Text that follows these on the same line is
+ignored.
+
+\subsection{Loops} Repeated processing of a group of lines can be controlled 
+with the \cmd{loop(control)}, and \cmd{endloop} commands. The syntax is:
+\begin{apinp}
+\{loop(variable)\}
+\ldots Process these lines \var{variable} times
+\{endloop\}
+\end{apinp}
+
+Loops can be nested. A numerical variable or constant must be specified as the 
+loop control specifier. You cannot use an algebraic expression such as
+
+\cmd{\{loop(3+5)\}}.
+
+The \cmd{endloop} command must be on a line by itself with no other text except optional whitespace (spaces or tabs).
+
+\subsection{ECHO}\label{echo} The printing of lines to the output file can be controlled 
+through the use of the \cmd{ECHO(OFF)} and \cmd{ECHO(ON)} 
+commands. The syntax is:
+
+\begin{apinp}
+\{ECHO(OFF)\}
+\ldots These lines will be processed, but not printed to output
+\{ECHO(ON)\}
+\ldots These lines will be both processed and printed to output.
+\end{apinp}
+
+\cmd{ECHO} will automatically be turned on at the end of an included file. The 
+commands \cmd{ECHO} and \cmd{NOECHO} are synonyms for \cmd{ECHO(ON)} and \cmd{ECHO(OFF)}.
+
+\subsection{VERBATIM} The printing of all lines to the output file without processing 
+can be controlled through the use of the \cmd{VERBATIM(ON)} and \cmd{VERBATIM(OFF)} 
+commands. The syntax is:
+
+\begin{apinp}
+\{VERBATIM(ON)\}
+\ldots These lines will be printed to output, but not processed
+\{VERBATIM(OFF)\}
+\ldots These lines will be printed to output and processed
+\end{apinp}
+NOTE:  there  is  a  major  difference  between  the  \cmd{ECHO/NOECHO} commands, 
+the \cmd{Ifdef/Endif }commands, and the \cmd{VERBATIM(ON\textbar{}OFF)} commands:
+
+\begin{itemize}
+\item \cmd{ECHO(ON\textbar{}OFF)} Lines processed, but not printed if \cmd{ECHO(OFF)}
+\item \cmd{Ifdef/Endif} Lines not processed or printed if in \cmd{Ifndef} block
+\item \cmd{VERBATIM(ON\textbar{}OFF)} Lines not processed, but are printed.
+\end{itemize}
+
+\subsection{IMMUTABLE}\label{immutable_block} Variables can either be
+created as mutable or immutable.  By default, all variables created
+during a run of aprepro are mutable unless the \cmd{--immutable} or
+\cmd{-X} command line option is used to execute \aprepro{}.  An
+\cmd{IMMUTABLE} block can also be used to change \aprepro{} such that
+all variables are created as immutable.  The syntax is:
+\begin{apinp}
+\{IMMUTABLE(ON)\}
+\ldots All variables created will be immutable
+\{IMMUTABLE(OFF)\}
+\ldots The mutable/immutable state changes back to the default which
+is typically mutable unless \aprepro{} executed with the
+\cmd{--immutable} or \cmd{-X} options.
+\end{apinp}
+Note that any variables created as immutable are still immutable
+following the \cmd{IMMUTABLE(OFF)} command.
+
+\subsection{Output File Specification} The \cmd{output} function can be used 
+to change the file to which \aprepro{} is outputting the processed
+data.  The syntax is: \cmd{\{output("\file{filename}")\}}, where
+\file{filename} is the name of the new output file. A string variable
+can be used as the function argument. The previous output file is
+closed. An error message is written and the code terminates if the
+file cannot be opened. If \cmd{output("\file{stdout}")} is specified,
+then the current output file is closed and output is again written to
+the standard output which is where output is written by default.
+
+\subsection{\exo{} Metadata Extraction} \aprepro{} can parse the
+metadata from a binary \exo{}~\cite{exodus} file and create several
+variables which can then be used for calculations or decisions.  The
+function syntax is \cmd{exodus\_meta(filename)}. The
+argument to the function is a string containing the filename of the
+Exodus file.  If the file does not exist in the current directory,
+\aprepro{} will prepend the path specified by the \cmd{--include} or
+\cmd{-I} command line option.
+
+The following scalar variables will be defined:
+
+\begin{longtable}{lp{4.0in}}
+\caption{\exo{} Scalar Variables}\\
+Variable              & Description \\
+\hline
+\endhead
+ex\_dimension        & Spatial dimension \\
+ex\_node\_count      & Number of nodes \\
+ex\_element\_count   & Number of elements \\
+ex\_block\_count     & Number of element blocks \\
+ex\_sideset\_count   & Number of sidesets \\
+ex\_nodeset\_count   & Number of nodesets \\
+ex\_timestep\_count  & Number of timesteps \\
+ex\_version          & Version of the \exo{} database \\
+\hline 
+\end{longtable}
+
+The following string variables will be defined if the model contains
+one or more of the specific entity type.  The strings will be a
+comma-separated concatenation of the names of the entity.  The
+\cmd{get\_word} function can be used to extract a specific sub-string.
+
+\begin{longtable}{lp{4.0in}}
+\caption{\exo{} String Variables}\\
+Variable              & Description \\
+\hline
+\endhead
+ex\_title            & The title of the database \\
+ex\_block\_names     & Element Block names.  Will be ``block\_'' +
+block id if no names on the database. \\
+ex\_block\_topology  & The topology of the element blocks.  Converted
+to all lowercase. \\
+ex\_sideset\_names   & Sideset names.  Will be ``sideset\_'' + sideset
+id if no names on the database. \\
+ex\_nodeset\_names   & Nodeset names.  Will be ``nodeset\_'' + nodeset
+id if no names on the database. \\
+\hline 
+\end{longtable}
+
+The following array variables will be defined if the model contains
+one or more of the specific entity type.  
+
+\begin{longtable}{lccp{4.0in}}
+\caption{\exo{} Array Variables}\\
+Variable              & Rows  & Columns & Description \\
+\hline
+\endhead
+ex\_block\_ids	      & ex\_block\_count & 1 & Element Block Ids. \\
+ex\_block\_info	      & ex\_block\_count & 4 & Element Block info:
+id, number of elements in block, number of nodes per element, number
+of attributes. \\
+ex\_sideset\_ids      & ex\_sideset\_count & 1 & Sideset Ids. \\
+ex\_sideset\_info     & ex\_sideset\_count & 3 & Sideset info: id,
+number of faces in sideset, number of distribution factors. \\
+ex\_nodeset\_ids      & ex\_nodeset\_count & 1 & Nodeset Ids. \\
+ex\_nodeset\_info     & ex\_nodeset\_count & 3 & Nodeset info: id,
+number of nodes in nodeset, number of distribution factors. \\
+ex\_timestep\_times   & ex\_timestep\_count & 1 & Timestep times. \\
+\hline 
+\end{longtable}
+
+The following shows an example of the variables which are defined:
+
+\begin{apinp}
+  {exodus\_meta("filename.e")}
+  {DUMP()}
+  Element Block IDs:
+  {print\_array(transpose(ex\_block\_ids))}
+  
+  Element Block Info: (id, num, nnpe, nattrib)
+  {print\_array(ex\_block\_info)}
+\end{apinp}
+
+\begin{apout}
+$   Variable    = Value
+$  {ex\_block\_count	= 8}
+$  {ex\_nodeset\_ids	 (array) rows = 6, cols = 1}
+$  {ex\_block\_names	= "block\_8,block\_7,block\_6,block\_5,block\_4,block\_3,block\_2,block\_1"}
+$  {ex\_block\_topology	= "hex,hex,hex,hex,hex,hex,hex,hex"}
+$  {ex\_nodeset\_info	 (array) rows = 6, cols = 3}
+$  {ex\_sideset\_count	= 0}
+$  {ex\_dimension	= 3}
+$  {ex\_element\_count	= 64}
+$  {ex\_nodeset\_names	= "nodeset\_10,nodeset\_100,nodeset\_20,nodeset\_200,nodeset\_30,nodeset\_300"}
+$  {ex\_nodeset\_count	= 6}
+$  {ex\_block\_ids	 (array) rows = 8, cols = 1}
+$  {ex\_block\_info	 (array) rows = 8, cols = 4}
+$  {ex\_timestep\_times	 (array) rows = 11, cols = 1}
+$  {ex\_version	= 2.029999971}
+$  {ex\_timestep\_count	= 11}
+$  {ex\_title  	= "Sierra output: dummy title"}
+$  {ex\_node\_count	= 125}
+
+Element Block IDs:
+	8	7	6	5	4	3	2	1
+
+Element Block Info: (id, num, nnpe, nattrib)
+	8	8	8	0
+	7	8	8	0
+	6	8	8	0
+	5	8	8	0
+	4	8	8	0
+	3	8	8	0
+	2	8	8	0
+	1	8	8	0
+\end{apout}
+
+\subsection{\exo{} Info Records Extraction} \aprepro{} can extract all
+or a portion of the ``information records'' from a binary \exo{} file
+and return the results as a string variable. 
+
+There are two forms of the function.  The first function has the
+syntax:  \cmd{exodus\_info(filename, prefix)}.  This will read
+the information records from the \exo{} database specified by the
+string variable \var{filename} and search for lines
+that begin with the specified \var{prefix}.  If a line is found, the
+\var{prefix} will be stripped from the line and the remaining
+characters on the line will be concatenated onto the return string
+followed by a newline character.
+
+The second function has the syntax: \cmd{exodus\_info(filename, begin, end)}.
+This will read the information records from the \exo{} database
+specified by the string variable \var{filename} and search for a line
+that matches the string variable \var{begin}.  It will then append all
+subsequent information lines onto the return string until a line that
+matches the string variable \var{end} or it reaches the end of the
+information records.  If there is another line matching \var{begin},
+it will resume appending lines to the return string.
+
+The returned string can then be operated on as a normal \aprepro{}
+variable.
+

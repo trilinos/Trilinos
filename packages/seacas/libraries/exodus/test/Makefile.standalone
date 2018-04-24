@@ -1,0 +1,175 @@
+# Copyright (c) 2005-2017 National Technology & Engineering Solutions
+# of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
+# NTESS, the U.S. Government retains certain rights in this software.
+# 
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions are
+# met:
+# 
+#     * Redistributions of source code must retain the above copyright
+#       notice, this list of conditions and the following disclaimer.
+# 
+#     * Redistributions in binary form must reproduce the above
+#       copyright notice, this list of conditions and the following
+#       disclaimer in the documentation and/or other materials provided
+#       with the distribution.  
+# 
+#     * Neither the name of Sandia Corporation nor the names of its
+#       contributors may be used to endorse or promote products derived
+#       from this software without specific prior written permission.
+# 
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+# "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+# LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+# A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+# OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+# SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+# LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+# DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+# THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+# (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+# OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+# 
+
+EXOIITEST = -L.. -lexodus
+LOCALEXO = ../libexodus.a
+LIBS = $(LOCALEXO) $(NETCDF_LIB) -lm
+
+PROGS = testwt testwtd testrd testrd1 testrdd testwt1 testwt2 testwtm \
+	testwt_ss testwt_nossnsdf testrd_ss testrdwt testcp testcpd testcp_nl  \
+	testwt_clb testwt_nc testrd_nc testwt-zeroe testwt-zeron \
+	testwt-one-attrib create_mesh rd_wt_mesh \
+	testwt-partial testwt-nsided testrd-nsided testwt-nfaced \
+	testrd-nfaced testwt-long-name testrd-long-name \
+	MakeTestData test_nemesis 
+
+all:: check
+
+MakeTestData: MakeTestData.o  $(LOCALEXO)
+	$(CC) -o $@ $(CFLAGS) MakeTestData.o   $(LIBS) $(LDFLAGS) 
+
+testwt:     testwt.o     $(LOCALEXO)
+	$(CC) -o $@ $(CFLAGS)     testwt.o   $(LIBS) $(LDFLAGS) 
+
+testwt_clb: testwt_clb.o $(LOCALEXO)
+	$(CC) -o $@ $(CFLAGS) testwt_clb.o   $(LIBS) $(LDFLAGS) 
+
+testwtd:    testwtd.o    $(LOCALEXO)
+	$(CC) -o $@ $(CFLAGS)    testwtd.o   $(LIBS) $(LDFLAGS) 
+
+testrd:     testrd.o     $(LOCALEXO)
+	$(CC) -o $@ $(CFLAGS)     testrd.o   $(LIBS) $(LDFLAGS) 
+
+testrd1:    testrd1.o    $(LOCALEXO)
+	$(CC) -o $@ $(CFLAGS)    testrd1.o   $(LIBS) $(LDFLAGS) 
+
+testrdd:    testrdd.o    $(LOCALEXO)
+	$(CC) -o $@ $(CFLAGS)    testrdd.o   $(LIBS) $(LDFLAGS) 
+
+testwt1:    testwt1.o    $(LOCALEXO)
+	$(CC) -o $@ $(CFLAGS)    testwt1.o   $(LIBS) $(LDFLAGS) 
+
+testwt2:    testwt2.o    $(LOCALEXO)
+	$(CC) -o $@ $(CFLAGS)    testwt2.o   $(LIBS) $(LDFLAGS) 
+
+testwtm:    testwtm.o    $(LOCALEXO)
+	$(CC) -o $@ $(CFLAGS)    testwtm.o   $(LIBS) $(LDFLAGS) 
+
+testwt_ss:  testwt_ss.o  $(LOCALEXO)
+	$(CC) -o $@ $(CFLAGS)  testwt_ss.o   $(LIBS) $(LDFLAGS) 
+
+testwt_nossnsdf:  testwt_nossnsdf.o  $(LOCALEXO)
+	$(CC) -o $@ $(CFLAGS)  testwt_nossnsdf.o   $(LIBS) $(LDFLAGS) 
+
+testrd_ss:  testrd_ss.o  $(LOCALEXO)
+	$(CC) -o $@ $(CFLAGS)  testrd_ss.o   $(LIBS) $(LDFLAGS) 
+
+testrdwt:   testrdwt.o   $(LOCALEXO)
+	$(CC) -o $@ $(CFLAGS)   testrdwt.o   $(LIBS) $(LDFLAGS) 
+
+testcp:     testcp.o     $(LOCALEXO)
+	$(CC) -o $@ $(CFLAGS)     testcp.o   $(LIBS) $(LDFLAGS) 
+
+testcpd:    testcpd.o    $(LOCALEXO)
+	$(CC) -o $@ $(CFLAGS)    testcpd.o   $(LIBS) $(LDFLAGS) 
+
+testcp_nl : testcp_nl.o  $(LOCALEXO)
+	$(CC) -o $@ $(CFLAGS) testcp_nl.o   $(LIBS) $(LDFLAGS) 
+
+testwt_nc:  testwt_nc.o  $(LOCALEXO)
+	$(CC) -o $@ $(CFLAGS)  testwt_nc.o   $(LIBS) $(LDFLAGS) 
+
+testrd_nc:  testrd_nc.o  $(LOCALEXO)
+	$(CC) -o $@ $(CFLAGS)  testrd_nc.o   $(LIBS) $(LDFLAGS) 
+
+testwt-long-name: testwt-long-name.o $(LOCALEXO)
+	$(CC) -o $@ $(CFLAGS) testwt-long-name.o   $(LIBS) $(LDFLAGS) 
+
+testrd-long-name: testrd-long-name.o $(LOCALEXO)
+	$(CC) -o $@ $(CFLAGS) testrd-long-name.o   $(LIBS) $(LDFLAGS) 
+
+testwt-zeroe:  testwt-zeroe.o  $(LOCALEXO)
+	$(CC) -o $@ $(CFLAGS)  testwt-zeroe.o   $(LIBS) $(LDFLAGS) 
+
+testwt-zeron:  testwt-zeron.o  $(LOCALEXO)
+	$(CC) -o $@ $(CFLAGS)  testwt-zeron.o   $(LIBS) $(LDFLAGS) 
+
+testwt-one-attrib:  testwt-one-attrib.o  $(LOCALEXO)
+	$(CC) -o $@ $(CFLAGS)  testwt-one-attrib.o   $(LIBS) $(LDFLAGS) 
+
+testwt-partial:  testwt-partial.o  $(LOCALEXO)
+	$(CC) -o $@ $(CFLAGS)  testwt-partial.o   $(LIBS) $(LDFLAGS) 
+
+testwt-nsided:  testwt-nsided.o  $(LOCALEXO)
+	$(CC) -o $@ $(CFLAGS)  testwt-nsided.o   $(LIBS) $(LDFLAGS) 
+
+testrd-nsided:  testrd-nsided.o  $(LOCALEXO)
+	$(CC) -o $@ $(CFLAGS)  testrd-nsided.o   $(LIBS) $(LDFLAGS) 
+
+testwt-nfaced:  testwt-nfaced.o  $(LOCALEXO)
+	$(CC) -o $@ $(CFLAGS)  testwt-nfaced.o   $(LIBS) $(LDFLAGS) 
+
+testrd-nfaced:  testrd-nfaced.o  $(LOCALEXO)
+	$(CC) -o $@ $(CFLAGS)  testrd-nfaced.o   $(LIBS) $(LDFLAGS) 
+
+create_mesh:  create_mesh.o  $(LOCALEXO)
+	$(CC) -o $@ $(CFLAGS)  create_mesh.o   $(LIBS) $(LDFLAGS) 
+
+rd_wt_mesh:   rd_wt_mesh.o  $(LOCALEXO)
+	$(CC) -o $@ $(CFLAGS)   rd_wt_mesh.o   $(LIBS) $(LDFLAGS) 
+
+CreateEdgeFace:  CreateEdgeFace.o  $(LOCALEXO)
+	$(CC) -o $@ $(CFLAGS)  CreateEdgeFace.o   $(LIBS) $(LDFLAGS) 
+
+ReadEdgeFace:    ReadEdgeFace.o    $(LOCALEXO)
+	$(CC) -o $@ $(CFLAGS)    ReadEdgeFace.o   $(LIBS) $(LDFLAGS) 
+
+test_nemesis:    test_nemesis.o    $(LOCALEXO)
+	$(CC) -o $@ $(CFLAGS)    test_nemesis.o   $(LIBS) $(LDFLAGS) 
+
+
+test:  check
+check: $(PROGS)
+	csh ./testall.standalone ${NCDUMP}
+
+clean::
+	rm -f  *.res $(PROGS)
+
+clean::
+	rm -f  *.exo
+
+clean::
+	rm -f  test.output
+
+clean::
+	rm -f  *.CKP *.ln *.BAK *.bak *.o *.M *.mod core errs ,* *~ *.a .emacs_* tags TAGS make.log MakeOut   "#"*
+
+# ----------------------------------------------------------------------
+
+.SUFFIXES: .c
+.c.o:
+	$(CC) -c $(CFLAGS) $*.c
+
+# ----------------------------------------------------------------------
+# dependencies generated by makedepend or sfmakedepend
+

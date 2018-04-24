@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005 National Technology & Engineering Solutions
+ * Copyright (c) 2005-2017 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -55,7 +55,7 @@ void warnings(double *          workn,    /* work vector (1..n) */
               double *          u,        /* Lanczos vector; here used as workspace */
               double            Anorm,    /* Gershgorin bound on eigenvalue */
               FILE *            out_file  /* output file */
-              )
+)
 {
   extern int    DEBUG_EVECS;              /* print debugging output? */
   extern int    WARNING_EVECS;            /* print warning messages? */

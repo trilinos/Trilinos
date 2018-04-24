@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005 National Technology & Engineering Solutions
+ * Copyright (c) 2005-2017 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -40,7 +40,7 @@ find_edge_cube(int                  node,     /* processor node */
                int                  dim,      /* direction of edge from node */
                struct refine_edata *edata,    /* data structure for edge preferences */
                int                  nsets_tot /* total number of processors */
-               )
+)
 {
   struct refine_edata *eguy;  /* returned pointer to edge info */
   int                  index; /* computed index into edata */
