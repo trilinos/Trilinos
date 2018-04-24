@@ -51,6 +51,7 @@
 #include "ROL_VectorWorkspace.hpp"
 #include "ROL_Stream.hpp"
 
+#include <iomanip>
 
 using RealT = double;
 using size_type = typename std::vector<RealT>::size_type;
@@ -78,8 +79,6 @@ public:
     return result;
   } // w and z should go out of scope - decrement ref counts
 
-  
-
   void status( std::ostream& os ) const { workspace_.status(os); }
 };
 
@@ -101,7 +100,7 @@ int main( int argc, char* argv[] ) {
   auto outStream = makeStreamPtr( std::cout, argc > 1 );
   
   int errorFlag  = 0;
-  RealT errtol = ROL_THRESHOLD<RealT>();
+  RealT errtol = std::sqrt(ROL_EPSILON<RealT>());
 
   try {
 
@@ -124,6 +123,10 @@ int main( int argc, char* argv[] ) {
 
     auto x_dot_y = x->dot(*y);
     errorFlag += ( std::abs( x_dot_y - result ) > errtol );
+
+    *outStream << std::setprecision(16) <<  x_dot_y << std::endl;
+    *outStream << std::setprecision(16) <<  result  << std::endl;
+ 
 
     polar.dot(*xx,*yy);
 
