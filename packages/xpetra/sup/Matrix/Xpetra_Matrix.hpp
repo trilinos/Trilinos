@@ -358,16 +358,6 @@ namespace Xpetra {
     /*! Returns OrdinalTraits<size_t>::invalid() if the specified local row is not valid for this matrix. */
     virtual size_t getNumEntriesInLocalRow(LocalOrdinal localRow) const =0;
 
-    //! \brief Returns the number of global diagonal entries, based on global row/column index comparisons.
-    /** Undefined if isFillActive().
-     */
-    virtual global_size_t getGlobalNumDiags() const =0;
-
-    //! \brief Returns the number of local diagonal entries, based on global row/column index comparisons.
-    /** Undefined if isFillActive().
-     */
-    virtual size_t getNodeNumDiags() const =0;
-
     //! \brief Returns the maximum number of entries across all rows/columns on all nodes.
     /** Undefined if isFillActive().
      */
