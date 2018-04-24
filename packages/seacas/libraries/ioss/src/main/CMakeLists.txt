@@ -73,15 +73,17 @@ TRIBITS_ADD_EXECUTABLE(
   )
 
 if (TPL_ENABLE_MPI)
+  IF (TPL_Netcdf_PARALLEL)
   set(DECOMP_ARG "--rcb")
   set(JOIN_ARG   "--compose=mpiio")
   set(PJOIN_ARG   "--compose=pnetcdf")
+  endif()
 endif()
 
 TRIBITS_ADD_ADVANCED_TEST(exodus32_to_exodus32
    TEST_0 EXEC io_shell ARGS ${DECOMP_ARG} ${JOIN_ARG} ${CMAKE_CURRENT_SOURCE_DIR}/test/8-block.g 8-block32.g
      NOEXEPREFIX NOEXESUFFIX
-     NUM_MPI_PROCS 1-4
+     NUM_MPI_PROCS 1
    TEST_1 CMND ../../../../applications/exodiff/exodiff ARGS -pedantic ${CMAKE_CURRENT_SOURCE_DIR}/test/8-block.g 8-block32.g
   COMM mpi serial
   )
@@ -89,7 +91,7 @@ TRIBITS_ADD_ADVANCED_TEST(exodus32_to_exodus32
 TRIBITS_ADD_ADVANCED_TEST(exodus32_to_exodus64
    TEST_0 EXEC io_shell ARGS -64 ${DECOMP_ARG} ${JOIN_ARG} ${CMAKE_CURRENT_SOURCE_DIR}/test/8-block.g 8-block64.g
      NOEXEPREFIX NOEXESUFFIX
-     NUM_MPI_PROCS 1-4
+     NUM_MPI_PROCS 1
    TEST_1 CMND ../../../../applications/exodiff/exodiff ARGS -pedantic ${CMAKE_CURRENT_SOURCE_DIR}/test/8-block.g 8-block64.g
   COMM mpi serial
   )
@@ -97,7 +99,7 @@ TRIBITS_ADD_ADVANCED_TEST(exodus32_to_exodus64
 TRIBITS_ADD_ADVANCED_TEST(exodus32_to_exodus32_pnetcdf
    TEST_0 EXEC io_shell ARGS ${DECOMP_ARG} ${PJOIN_ARG} ${CMAKE_CURRENT_SOURCE_DIR}/test/8-block.g 8-block64p.g
      NOEXEPREFIX NOEXESUFFIX
-     NUM_MPI_PROCS 1-4
+     NUM_MPI_PROCS 1
    TEST_1 CMND ../../../../applications/exodiff/exodiff ARGS -pedantic ${CMAKE_CURRENT_SOURCE_DIR}/test/8-block.g 8-block64p.g
   COMM mpi serial
   )
@@ -148,8 +150,10 @@ install_executable(skinner)
 IF (TPL_ENABLE_CGNS)
 
 if (TPL_ENABLE_MPI)
+  IF (TPL_Netcdf_PARALLEL)
   set(DECOMP_ARG "--rcb")
   set(JOIN_ARG   "--compose=mpiio")
+  endif()
 endif()
 
 if ( CGNS_CGNSLIST_BINARY )
