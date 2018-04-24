@@ -342,7 +342,7 @@ namespace Iogn {
       const Ioss::Field &id_fld = eb->get_fieldref("ids");
       std::vector<char>  ids(id_fld.get_size());
       get_field_internal(eb, id_fld, ids.data(), id_fld.get_size());
-      fill_transient_data(eb, field, data, ids.data(), num_to_get, currentTime + id);
+      fill_transient_data(eb, field, data, ids.data(), num_to_get, currentTime);
     }
     else if (role == Ioss::Field::REDUCTION) {
       num_to_get = Ioss::Utils::field_warning(eb, field, "input reduction");
@@ -436,7 +436,7 @@ namespace Iogn {
       const Ioss::Field &id_fld = ef_blk->get_fieldref("ids");
       std::vector<char>  ids(id_fld.get_size());
       get_field_internal(ef_blk, id_fld, ids.data(), id_fld.get_size());
-      fill_transient_data(ef_blk, field, data, ids.data(), num_to_get, currentTime + id);
+      fill_transient_data(ef_blk, field, data, ids.data(), num_to_get, currentTime);
     }
     return num_to_get;
   }
@@ -485,7 +485,7 @@ namespace Iogn {
       const Ioss::Field &id_fld = ns->get_fieldref("ids");
       std::vector<char>  ids(id_fld.get_size());
       get_field_internal(ns, id_fld, ids.data(), id_fld.get_size());
-      fill_transient_data(ns, field, data, ids.data(), num_to_get, currentTime + id);
+      fill_transient_data(ns, field, data, ids.data(), num_to_get, currentTime);
     }
     return num_to_get;
   }
