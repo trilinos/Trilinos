@@ -47,14 +47,15 @@
  *  \brief An example of partitioning global ids with Block.
  */
 
-#include <Kokkos_core.hpp>
+#include <Kokkos_Core.hpp>
 #include <Teuchos_GlobalMPISession.hpp>
 #include <Teuchos_DefaultComm.hpp>
-#include <Zoltan2_BasicIdentifierAdapter.hpp>
+#include <Zoltan2_BasicKokkosIdentifierAdapter.hpp>
 #include <Zoltan2_PartitioningProblem.hpp>
 #include <Zoltan2_PartitioningSolution.hpp>
 
 using Teuchos::Comm;
+using Teuchos::DefaultComm;
 using Teuchos::RCP;
 
 /*! \example kokkosBlock.cpp
@@ -67,8 +68,7 @@ int main(int argc, char *argv[]) {
   Teuchos::GlobalMPISession mpiSession(&argc, &argv);
   Kokkos::initialize(argc, argv);
 
-  RCP<const Comm<int> > comm = DefaultComm<int>::getComm(); // Keep RCP?
-// Need if MPI else int rank = 0, nprocs = 1; ??
+  RCP<const Comm<int> > comm = DefaultComm<int>::getComm();
   int rank = comm->getRank();
   int nprocs = comm->getSize();
 
@@ -106,18 +106,20 @@ int main(int argc, char *argv[]) {
   // Create a Zoltan2 input adapter with no weights
 
   typedef Zoltan2::BasicUserTypes<scalar_t, localId_t, globalId_t> myTypes;
-  typedef Zoltan2::BasiciKokkosIdentifierAdapter<myTypes> inputAdapter_t;
-  typedef typename Zoltan2::BasicKokkosIdentifierAdapter<userTypes_t>::weight_layout_t Layout;
+  typedef Zoltan2::BasicKokkosIdentifierAdapter<myTypes> inputAdapter_t;
+  typedef typename Zoltan2::BasicKokkosIdentifierAdapter<myTypes>::weight_layout_t Layout;
 
-  Kokkos::View<scalar_t **, Layout> weights("weights", localCount, noWeights);
+  const int nWeights = 1;
+  Kokkos::View<scalar_t **, Layout> weights("weights", localCount, nWeights);
+  for (int index = 0; index < localCount; index++) {
+    weights(index, 0) = 1; // All weighted equally
+  }
 
-  inputAdapter_t ia(localCount, globalIds, weights);
+  inputAdapter_t ia(globalIds, weights);
 
-  ////////
-  /////////////////////////////////////////////////////////////////
+  /////////////////////////////////////////////////////////////////////////
   // Create parameters for a Block problem
 
-// 4/12/18 - What is this doing?
   Teuchos::ParameterList params("test params");
   params.set("debug_level", "basic_status");
   params.set("debug_procs", "0");
@@ -133,28 +135,36 @@ int main(int argc, char *argv[]) {
   Zoltan2::PartitioningProblem<inputAdapter_t> *problem = 
       new Zoltan2::PartitioningProblem<inputAdapter_t>(&ia, &params);
 
+  std::cout << "Position: 1" << std::endl;
   ///////////////////////////////////////////////////////////////////////
   // Solve the problem - do the partitioning
 
   problem->solve();
 
+  std::cout << "Position: 2" << std::endl;
   ///////////////////////////////////////////////////////////////////////
   // Check and print the solution.
   // Count number of IDs assigned to each part; compare to targetCount
 
-  Kokkos::View<zgno_t *> ids;
-  ia.getIDsView(ids); // Will need to be changed to Kokkos after testing passes
+  Kokkos::View<globalId_t *> ids;
+  ia.getIDsKokkosView(ids); // Will need to be changed to Kokkos after testing passes
+  std::cout << "Position: 3" << std::endl;
 
-  Kokkos::View<int> partCounts("partCounts", nprocs); // Default values?
+  Kokkos::View<int> partCounts("partCounts", nprocs, 0); // Default values? Try this, if not, parallel loop!
+  std::cout << "Position: 4" << std::endl;
+  std::cout << "partCounts[0-1]: " << partCounts(0) << partCounts(1) << std::endl;
+  std::cout << "Position: 5" << std::endl;
+
   Kokkos::View<int> globalPartCounts("globalPartCounts", nprocs); // Default values?
 
   for (size_t i = 0; i < ia.getLocalNumIDs(); i++) {
     int pp = problem->getSolution().getPartListView()[i];
     std::cout << rank << " LID " << i << " GID " << ids(i)
               << " PART " << pp << std::endl;
-    partCounts(pp)++; // Ensure this works with Kokkos::View
+    partCounts(pp)++;
   }
 
+// Will get rid of ifdef after Teuchos is used
 #ifdef HAVE_ZOLTAN2_MPI
   MPI_Allreduce(&(partCounts(0)), &(globalPartCounts(0)), nprocs,
                 MPI_INT, MPI_SUM, MPI_COMM_WORLD); // use reduceAll from Teuchos.
