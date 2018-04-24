@@ -337,8 +337,6 @@ template <typename TRAITS,typename LO,typename GO,typename NodeT>
 void panzer::ScatterResidual_BlockedTpetra<panzer::Traits::Jacobian,TRAITS,LO,GO,NodeT>::
 evaluateFields(typename TRAITS::EvalData workset)
 { 
-  std::cout << "ROGER Starting Jacobian Assembly, workset_size = " << workset.num_cells << ", ptr=" << &workset << ", id = " << workset.getIdentifier() << std::endl;
-  
   using Teuchos::RCP;
   using Teuchos::ArrayRCP;
   using Teuchos::ptrFromRef;
@@ -366,8 +364,9 @@ evaluateFields(typename TRAITS::EvalData workset)
   // on host and then deep_copy to device. The sub-blocks are
   // unmanaged since they are allocated and ref counted separately on
   // host.
-  using LocalCrsMatrixType = Kokkos::View<KokkosSparse::CrsMatrix<double,LO,PHX::Device,Kokkos::MemoryTraits<Kokkos::Unmanaged>>**,PHX::Device>;
-  typename Kokkos::View<KokkosSparse::CrsMatrix<double,LO,PHX::Device,Kokkos::MemoryTraits<Kokkos::Unmanaged>>**,PHX::Device>::HostMirror 
+  using LocalMatrixType = KokkosSparse::CrsMatrix<double,LO,PHX::Device,Kokkos::MemoryTraits<Kokkos::Unmanaged>>;
+  //using LocalMatrixType = KokkosSparse::CrsMatrix<double,LO,PHX::Device>;
+  typename Kokkos::View<LocalMatrixType**,PHX::Device>::HostMirror 
     hostJacTpetraBlocks("panzer::ScatterResidual_BlockTpetra<Jacobian>::hostJacTpetraBlocks", numFieldBlocks,numFieldBlocks);
 
   Kokkos::View<int**,PHX::Device> blockExistsInJac =   Kokkos::View<int**,PHX::Device>("blockExistsInJac_",numFieldBlocks,numFieldBlocks);
@@ -377,8 +376,37 @@ evaluateFields(typename TRAITS::EvalData workset)
     for (int col=0; col < numFieldBlocks; ++col) {
       const auto thyraTpetraOperator = rcp_dynamic_cast<Thyra::TpetraLinearOp<double,LO,GO,NodeT>>(Jac->getNonconstBlock(row,col),false);
       if (nonnull(thyraTpetraOperator)) {
-        const auto crsMatrix = rcp_dynamic_cast<Tpetra::CrsMatrix<double,LO,GO,NodeT>>(thyraTpetraOperator->getTpetraOperator(),true);
-        new (&hostJacTpetraBlocks(row,col)) KokkosSparse::CrsMatrix<double,LO,PHX::Device,Kokkos::MemoryTraits<Kokkos::Unmanaged>> (crsMatrix->getLocalMatrix());
+
+        // HACK to enforce views in the CrsGraph to be
+        // Unmanaged. Passing in the MemoryTrait<Unmanaged> doesn't
+        // work as the CrsGraph in the CrsMatrix ignores the
+        // MemoryTrait. Need to use the runtime constructor by passing
+        // in points to ensure Unmanaged.  See:
+        // https://github.com/kokkos/kokkos/issues/1581
+
+        // These two lines are the original code we can revert to when #1581 is fixed.
+        // const auto crsMatrix = rcp_dynamic_cast<Tpetra::CrsMatrix<double,LO,GO,NodeT>>(thyraTpetraOperator->getTpetraOperator(),true);
+        // new (&hostJacTpetraBlocks(row,col)) KokkosSparse::CrsMatrix<double,LO,PHX::Device,Kokkos::MemoryTraits<Kokkos::Unmanaged>> (crsMatrix->getLocalMatrix());
+
+        // Instead do this
+        {
+          // Grab the local managed matrix and graph
+          const auto tpetraCrsMatrix = rcp_dynamic_cast<Tpetra::CrsMatrix<double,LO,GO,NodeT>>(thyraTpetraOperator->getTpetraOperator(),true);
+          const auto managedMatrix = tpetraCrsMatrix->getLocalMatrix();
+          const auto managedGraph = managedMatrix.graph;
+          
+          // Create runtime unmanaged versions
+          using StaticCrsGraphType = typename LocalMatrixType::StaticCrsGraphType;
+          StaticCrsGraphType unmanagedGraph;
+          unmanagedGraph.entries = typename StaticCrsGraphType::entries_type(managedGraph.entries.data(),managedGraph.entries.extent(0));
+          unmanagedGraph.row_map = typename StaticCrsGraphType::row_map_type(managedGraph.row_map.data(),managedGraph.row_map.extent(0));
+          unmanagedGraph.row_block_offsets = typename StaticCrsGraphType::row_block_type(managedGraph.row_block_offsets.data(),managedGraph.row_block_offsets.extent(0));
+
+          typename LocalMatrixType::values_type unmanagedValues(managedMatrix.values.data(),managedMatrix.values.extent(0));
+          LocalMatrixType unmanagedMatrix(managedMatrix.values.label(), managedMatrix.numCols(), unmanagedValues, unmanagedGraph);
+          new (&hostJacTpetraBlocks(row,col)) LocalMatrixType(unmanagedMatrix);
+        }
+        
         hostBlockExistsInJac(row,col) = 1;
       }
       else {
@@ -386,7 +414,7 @@ evaluateFields(typename TRAITS::EvalData workset)
       }
     }
   }
-  typename Kokkos::View<KokkosSparse::CrsMatrix<double,LO,PHX::Device,Kokkos::MemoryTraits<Kokkos::Unmanaged>>**,PHX::Device> 
+  typename Kokkos::View<LocalMatrixType**,PHX::Device> 
     jacTpetraBlocks("panzer::ScatterResidual_BlockedTpetra<Jacobian>::jacTpetraBlocks",numFieldBlocks,numFieldBlocks); 
   Kokkos::deep_copy(jacTpetraBlocks,hostJacTpetraBlocks);
   Kokkos::deep_copy(blockExistsInJac,hostBlockExistsInJac);
@@ -435,7 +463,7 @@ evaluateFields(typename TRAITS::EvalData workset)
 
         for (int blockColIndex=0; blockColIndex < numFieldBlocks; ++blockColIndex) {
           if (blockExistsInJac(blockRowIndex,blockColIndex)) {
-            std::cout << "ROGER filling matrix!!! fieldIndex=" << fieldIndex << ", rowLID=" << rowLID << ", jacTpetraBlocks(" << blockRowIndex << "," << blockColIndex << ")=" << jacTpetraBlocks(blockRowIndex,blockColIndex).values.size() << std::endl;
+            // std::cout << "ROGER filling matrix!!! fieldIndex=" << fieldIndex << ", rowLID=" << rowLID << ", jacTpetraBlocks(" << blockRowIndex << "," << blockColIndex << ")=" << jacTpetraBlocks(blockRowIndex,blockColIndex).values.size() << std::endl;
             const int start = blockOffsets_(blockColIndex);
             const int stop = blockOffsets_(blockColIndex+1);
             const int sensSize = stop-start;
