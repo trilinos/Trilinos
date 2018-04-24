@@ -100,8 +100,6 @@ if [ "$sems_cmake_and_version_load" == "" ] || [ "$sems_cmake_and_version_load" 
 fi
 #echo "sems_cmake_and_version_load = $sems_cmake_and_version_load"
 
-TRILINOS_SEMS_DEV_ENV_TO_LOAD="$sems_compiler_and_version_load $sems_mpi_and_version_load $sems_cmake_and_version_load"
-
 #
 # B) Purge the current set of modules
 #
@@ -121,7 +119,9 @@ module load $sems_git_and_version_default
 # until this is fixed, the workaround is below.
 # Please see https://github.com/trilinos/Trilinos/issues/2142
 # for updates regarding the right solution.
-if [[ $sems_compiler_and_version_load == "sems-intel/"* ]]; then
+if [[ $sems_compiler_and_version_load == "sems-intel/17.0.1" ]]; then
+  module load sems-gcc/4.9.3
+elif [[ $sems_compiler_and_version_load == "sems-intel/"* ]]; then
   module load sems-gcc/4.8.4
 fi
 
