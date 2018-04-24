@@ -82,17 +82,33 @@ namespace Tpetra {
   class FEMultiVector :
     public MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>
   {
+
   public:
     //! @name Typedefs to facilitate template metaprogramming.
     //@{
+
+    //! The dual_view_type picked up from MultiVector
+    typedef typename MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::dual_view_type dual_view_type;
+
+    //! The type of the Map specialization used by this class.
+    typedef typename MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::map_type map_type;
+
+    //! Grab impl_scalar_type from superclass
+    typedef typename MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::impl_scalar_type impl_scalar_type;
+
+    //! Grab dot_type from superclass
+    typedef typename MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::dot_type dot_type;
+
+    //! Grab mag_type from superclass
+    typedef typename MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::mag_type mag_type;
 
     //@}
     //! @name Constructors and destructor
     //@{
     /// \brief Basic constuctor.
     // CMS - A map AND an imported need to be arguments because in serial, the importer will be null
-    FEMultiVector(const Teuchos::RCP<const Map<LO,GO,NO> > & map,
-                  const Teuchos::RCP<const Import<LO,GO,NO> >& importer,
+    FEMultiVector(const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > & map,
+                  const Teuchos::RCP<const Import<LocalOrdinal,GlobalOrdinal,Node> >& importer,
                   const size_t numVecs,
                   const bool zeroOut = true);
 
@@ -227,10 +243,11 @@ namespace Tpetra {
 
     // CMS - FEMultiVector Specific Routines
 
-    enum FEWhichActive {
+    enum FEWhichActive
+    {
       FE_ACTIVE_TARGET,
       FE_ACTIVE_SOURCE
-    }
+    };
 
 
     //! All routines now return results the Vector corresponding to the Importer's 'source' map
@@ -246,11 +263,11 @@ namespace Tpetra {
     void isTargetMultiVectorActive() const;
 
     //! Returns the source MultiVector
-    RCP<MultiVector> getSourceMultiVector();
+    Teuchos::RCP<MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> > getSourceMultiVector();
     //! Returns the target MultiVector
-    RCP<MultiVector> getTargetMultiVector();
+    Teuchos::RCP<MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> > getTargetMultiVector();
     //! Returns the "active" target multivector
-    MultiVector & getActiveMultiVector();
+    MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> & getActiveMultiVector();
 
     //! Migrate data from the source to the target map
     void doSourceToTarget();
@@ -280,7 +297,7 @@ namespace Tpetra {
   protected:
     // CMS - The actual data that we'd store
     // We'd rely on "this" to keep the *target* view (aka the bigger one)
-    RCP<MultiVector> sourceMultiVector_;
+    Teuchos::RCP<MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> > sourceMultiVector_;
     FEWhichActive activeMultiVector_;
 
   public:
