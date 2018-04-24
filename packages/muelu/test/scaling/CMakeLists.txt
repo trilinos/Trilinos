@@ -308,7 +308,7 @@ IF (${PACKAGE_NAME}_ENABLE_Experimental AND ${PACKAGE_NAME}_ENABLE_Tpetra)
     TRIBITS_ADD_EXECUTABLE(
       MMKernelDriver
       SOURCES MMKernelDriver.cpp
-      COMM mpi
+      COMM serial mpi
       )
   
 
