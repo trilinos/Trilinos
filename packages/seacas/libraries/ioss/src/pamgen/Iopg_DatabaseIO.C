@@ -296,36 +296,31 @@ namespace Iopg {
     nodeBlockCount = 1;
 
     if (nodeCount == 0) {
-      std::string decoded_filename = util().decode_filename(get_filename(), isParallel);
-      IOSS_WARNING << "No nodes were found in the model, file '" << decoded_filename << "'";
+      IOSS_WARNING << "No nodes were found in the model, file '" << decoded_filename() << "'";
     }
     else if (nodeCount < 0) {
       // NOTE: Code will not continue past this call...
-      std::string        decoded_filename = util().decode_filename(get_filename(), isParallel);
       std::ostringstream errmsg;
       errmsg << "Negative node count was found in the model\n"
-             << "       File: '" << decoded_filename << "'.\n";
+             << "       File: '" << decoded_filename() << "'.\n";
       IOSS_ERROR(errmsg);
     }
 
     if (elementCount == 0) {
-      std::string decoded_filename = util().decode_filename(get_filename(), isParallel);
-      IOSS_WARNING << "No elements were found in the model, file: '" << decoded_filename << "'";
+      IOSS_WARNING << "No elements were found in the model, file: '" << decoded_filename() << "'";
     }
 
     if (elementCount < 0) {
       // NOTE: Code will not continue past this call...
-      std::string        decoded_filename = util().decode_filename(get_filename(), isParallel);
       std::ostringstream errmsg;
-      errmsg << "Negative element count was found in the model, file: '" << decoded_filename << "'";
+      errmsg << "Negative element count was found in the model, file: '" << decoded_filename() << "'";
       IOSS_ERROR(errmsg);
     }
 
     if (elementCount > 0 && elementBlockCount <= 0) {
       // NOTE: Code will not continue past this call...
-      std::string        decoded_filename = util().decode_filename(get_filename(), isParallel);
       std::ostringstream errmsg;
-      errmsg << "No element blocks were found in the model, file: '" << decoded_filename << "'";
+      errmsg << "No element blocks were found in the model, file: '" << decoded_filename() << "'";
       IOSS_ERROR(errmsg);
     }
 
