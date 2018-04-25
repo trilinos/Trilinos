@@ -127,11 +127,6 @@ namespace Tpetra {
                   const size_t numVecs,
                   const bool zeroOut = true);
 
-     // CMS - I do not feel that the ArrayView constructors need to be implemented.
-     // I am a more open to implementing variants of the dual_view constructors, but are those used?
-
-
-     // CMS - These are the constructors to MultiVector that I do not want to implement here
    private:
 
     //! The type of the base class of this class.
@@ -179,10 +174,6 @@ namespace Tpetra {
       FE_ACTIVE_SOURCE
     };
 
-    //! Migrate data from the target to the source map
-    // Since this is non-unique -> unique, we need a combine mode.
-    // CMS - Should there be a default?
-    void doTargetToSource(const CombineMode CM);
 
     // ! Calls endFill()
     void globalAssemble() {endFill();}
@@ -191,14 +182,22 @@ namespace Tpetra {
     //CMS - Should add a sanity check to make sure I start in Target mode (if we're not in serial)
     void endFill()
     {
-      doTargetToSource(Tpetra::ADD);
-      activateSourceMultiVector();
+      if(activeMultiVector_ == FE_ACTIVE_TARGET) {
+        doTargetToSource(Tpetra::ADD);
+        switchActiveMultiVector();
+      }
+      else
+        throw std::runtime_error("FEMultiVector: Source MultiVector already active.  Cannot endFill()");
     }
     //! Activates the target map mode
     // CMS
     void beginFill()
     {
-      activateTargetMultiVector();
+      if(activeMultiVector_ == FE_ACTIVE_SOURCE) {
+        switchActiveMultiVector();
+      }
+      else
+        throw std::runtime_error("FEMultiVector: Target MultiVector already active.  Cannot beginFill()");
     }
 
 
@@ -211,15 +210,16 @@ namespace Tpetra {
     /// Use \c const sparingly!
     mutable dual_view_type view_;
 
-    void activateSourceMultiVector() { /* WCM @ CMS - TODO: FILL IN STUB FUNCTION */ }
-    void activateTargetMultiVector() { /* WCM @ CMS - TODO: FILL IN STUB FUNCTION */ }
+    //! Migrate data from the target to the source map
+    // Since this is non-unique -> unique, we need a combine mode.
+    void doTargetToSource(const CombineMode CM=Tpetra::ADD);
 
 
+    // Switches which Multivector isa ctive
+    void switchActiveMultiVector();
 
-
-    // CMS - The actual data that we'd store
-    // We'd rely on "this" to keep the *target* view (aka the bigger one)
-    Teuchos::RCP<MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> > sourceMultiVector_;
+    // This is whichever multivector isn't currently active
+    Teuchos::RCP<MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> > inactiveMultiVector_;
     FEWhichActive activeMultiVector_;
 
     //@}

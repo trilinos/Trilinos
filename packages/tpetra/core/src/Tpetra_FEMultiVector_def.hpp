@@ -398,7 +398,13 @@ void FEMultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::doTargetToSource(
   throw std::runtime_error("stub");
 }
 
-   
+template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+void FEMultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::switchActiveMultiVector() {
+  throw std::runtime_error("stub");
+}
+
+
+
 } // namespace Tpetra
 
 //
