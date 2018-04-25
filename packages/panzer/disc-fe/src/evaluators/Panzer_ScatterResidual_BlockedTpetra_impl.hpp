@@ -424,7 +424,7 @@ evaluateFields(typename TRAITS::EvalData workset)
   // entire set of field offsets for derivative indexing no matter
   // which block row you are scattering. The residual only needs the
   // lids for the sub-block that it is scattering to. The subviews
-  // below are to offset the LID blocks corretly.
+  // below are to offset the LID blocks correctly.
   const auto& globalIndexers = globalIndexer_->getFieldDOFManagers();
   for (size_t block=0; block < globalIndexers.size(); ++block) {
     const auto subviewOfBlockLIDs = Kokkos::subview(worksetLIDs_,Kokkos::ALL(), std::make_pair(blockOffsets_(block),blockOffsets_(block+1)));
@@ -447,6 +447,7 @@ evaluateFields(typename TRAITS::EvalData workset)
     const Kokkos::View<const int*,PHX::Device> fieldOffsets = fieldOffsets_[fieldIndex];
     const Kokkos::View<const LO**,PHX::Device> worksetLIDs = worksetLIDs_;
     const PHX::View<const ScalarT**> fieldValues = scatterFields_[fieldIndex].get_static_view();        
+    const Kokkos::View<const LO*,PHX::Device> blockOffsets = blockOffsets_;
 
     Kokkos::parallel_for(Kokkos::RangePolicy<PHX::Device>(0,workset.num_cells), KOKKOS_LAMBDA (const int& cell) {       
         
@@ -464,8 +465,8 @@ evaluateFields(typename TRAITS::EvalData workset)
         for (int blockColIndex=0; blockColIndex < numFieldBlocks; ++blockColIndex) {
           if (blockExistsInJac(blockRowIndex,blockColIndex)) {
             // std::cout << "ROGER filling matrix!!! fieldIndex=" << fieldIndex << ", rowLID=" << rowLID << ", jacTpetraBlocks(" << blockRowIndex << "," << blockColIndex << ")=" << jacTpetraBlocks(blockRowIndex,blockColIndex).values.size() << std::endl;
-            const int start = blockOffsets_(blockColIndex);
-            const int stop = blockOffsets_(blockColIndex+1);
+            const int start = blockOffsets(blockColIndex);
+            const int stop = blockOffsets(blockColIndex+1);
             const int sensSize = stop-start;
             // Views may be padded. Use contiguous arrays here
             for (int i=0; i < sensSize; ++i) {
