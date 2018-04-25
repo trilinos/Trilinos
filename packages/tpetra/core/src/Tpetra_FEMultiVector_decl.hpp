@@ -72,8 +72,6 @@ namespace Tpetra {
   template<class S, class LO, class GO, class N> class FEMultiVector;
 #endif // DOXYGEN_SHOULD_SKIP_THIS
 
-  // CMS: Removed all of the non-member stuff... should this be kept?
-
 
   template <class Scalar = ::Tpetra::Details::DefaultTypes::scalar_type,
             class LocalOrdinal = ::Tpetra::Details::DefaultTypes::local_ordinal_type,
@@ -121,7 +119,8 @@ namespace Tpetra {
     //! @name Constructors and destructor
     //@{
     /// \brief Basic constuctor.
-    // CMS - A map AND an imported need to be arguments because in serial, the importer will be null
+    // NOTE: A map AND an imported need to be arguments because in serial, the importer will be null
+    // This will default to impoter->getTargetMap() being the active MultiVector
     FEMultiVector(const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > & map,
                   const Teuchos::RCP<const Import<LocalOrdinal,GlobalOrdinal,Node> >& importer,
                   const size_t numVecs,
