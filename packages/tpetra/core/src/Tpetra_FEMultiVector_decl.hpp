@@ -139,8 +139,7 @@ namespace Tpetra {
    /// WCM - Make the default c'tor private
    FEMultiVector() { }
 
-    /// \brief Replace the underlying Map in place.
-    // CMS -  We will need some analogue of this guy --- it normally gets used for communicator restriction, which is a use case that matters.
+    /// \brief Replace the underlying Map in place.  Tgus dies 
     void replaceMap (const Teuchos::RCP<const map_type>& map);
 
 
