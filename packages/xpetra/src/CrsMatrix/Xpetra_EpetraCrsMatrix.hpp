@@ -179,8 +179,6 @@ public:
   global_size_t getGlobalNumEntries() const { return 0; }
   size_t getNodeNumEntries() const { return 0; }
   size_t getNumEntriesInLocalRow(LocalOrdinal localRow) const { return 0; }
-  global_size_t getGlobalNumDiags() const { return 0; }
-  size_t getNodeNumDiags() const { return 0; }
   size_t getGlobalMaxNumRowEntries() const { return 0; }
   size_t getNodeMaxNumRowEntries() const { return 0; }
   bool isLocallyIndexed() const { return false; }
@@ -755,12 +753,6 @@ public:
   //! Returns the current number of entries on this node in the specified local row.
   size_t getNumEntriesInLocalRow(LocalOrdinal localRow) const { XPETRA_MONITOR("EpetraCrsMatrixT::getNumEntriesInLocalRow"); return mtx_->NumMyEntries(localRow); }
 
-  //! Returns the number of global diagonal entries, based on global row/column index comparisons.
-  global_size_t getGlobalNumDiags() const { XPETRA_MONITOR("EpetraCrsMatrixT::getGlobalNumDiags"); return mtx_->NumGlobalDiagonals64(); }
-
-  //! Returns the number of local diagonal entries, based on global row/column index comparisons.
-  size_t getNodeNumDiags() const { XPETRA_MONITOR("EpetraCrsMatrixT::getNodeNumDiags"); return mtx_->NumMyDiagonals(); }
-
   //! Returns the maximum number of entries across all rows/columns on all nodes.
   size_t getGlobalMaxNumRowEntries() const { XPETRA_MONITOR("EpetraCrsMatrixT::getGlobalMaxNumRowEntries"); return mtx_->GlobalMaxNumEntries(); }
 
@@ -954,7 +946,6 @@ public:
       if (myImageID == 0) out << this->description() << std::endl;
       // O(1) globals, minus what was already printed by description()
       if (isFillComplete() && myImageID == 0) {
-        out << "Global number of diagonals = " << getGlobalNumDiags() << std::endl;
         out << "Global max number of entries = " << getGlobalMaxNumRowEntries() << std::endl;
       }
       // constituent objects
@@ -1015,9 +1006,6 @@ public:
             // End of TMP
 
             out << "Node number of entries = " << getNodeNumEntries() << std::endl;
-            if (isFillComplete()) {
-              out << "Node number of diagonals = " << getNodeNumDiags() << std::endl;
-            }
             out << "Node max number of entries = " << getNodeMaxNumRowEntries() << std::endl;
           }
           comm->barrier();
@@ -1732,12 +1720,6 @@ public:
   //! Returns the current number of entries on this node in the specified local row.
   size_t getNumEntriesInLocalRow(LocalOrdinal localRow) const { XPETRA_MONITOR("EpetraCrsMatrixT::getNumEntriesInLocalRow"); return mtx_->NumMyEntries(localRow); }
 
-  //! Returns the number of global diagonal entries, based on global row/column index comparisons.
-  global_size_t getGlobalNumDiags() const { XPETRA_MONITOR("EpetraCrsMatrixT::getGlobalNumDiags"); return mtx_->NumGlobalDiagonals64(); }
-
-  //! Returns the number of local diagonal entries, based on global row/column index comparisons.
-  size_t getNodeNumDiags() const { XPETRA_MONITOR("EpetraCrsMatrixT::getNodeNumDiags"); return mtx_->NumMyDiagonals(); }
-
   //! Returns the maximum number of entries across all rows/columns on all nodes.
   size_t getGlobalMaxNumRowEntries() const { XPETRA_MONITOR("EpetraCrsMatrixT::getGlobalMaxNumRowEntries"); return mtx_->GlobalMaxNumEntries(); }
 
@@ -1931,7 +1913,6 @@ public:
       if (myImageID == 0) out << this->description() << std::endl;
       // O(1) globals, minus what was already printed by description()
       if (isFillComplete() && myImageID == 0) {
-        out << "Global number of diagonals = " << getGlobalNumDiags() << std::endl;
         out << "Global max number of entries = " << getGlobalMaxNumRowEntries() << std::endl;
       }
       // constituent objects
@@ -1992,9 +1973,6 @@ public:
             // End of TMP
 
             out << "Node number of entries = " << getNodeNumEntries() << std::endl;
-            if (isFillComplete()) {
-              out << "Node number of diagonals = " << getNodeNumDiags() << std::endl;
-            }
             out << "Node max number of entries = " << getNodeMaxNumRowEntries() << std::endl;
           }
           comm->barrier();
