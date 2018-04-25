@@ -1,7 +1,7 @@
 #ifndef IOSS__TRMCLR_H__
 #define IOSS__TRMCLR_H__
 
-// Copyright(C) 1999-2010 National Technology & Engineering Solutions
+// Copyright(C) 1999-2017 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -180,6 +180,6 @@ namespace Ioss {
       return os;
     }
 
-  } // end trmclr namespace
-} // end Ioss namespace
+  } // namespace trmclr
+} // namespace Ioss
 #endif // end __TRMCLR_H__

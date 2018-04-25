@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005 National Technology & Engineering Solutions
+ * Copyright (c) 2005-2017 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -51,7 +51,7 @@ int improve_internal(struct vtx_data **graph,       /* graph data structure */
                      int               using_ewgts, /* are edge weights being used? */
                      int               vwgt_max,    /* largest vertex weight */
                      int *             total_vwgt   /* total vertex weight in each set */
-                     )
+)
 {
   struct bidint *move_list;          /* list of vertices changing sets */
   struct bidint *ptr, *ptr2;         /* loop through bidints */

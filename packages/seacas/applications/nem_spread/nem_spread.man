@@ -25,12 +25,12 @@ distribution. If you didn't obtain this file you can contact one of
 the authors whose name and email is given at the bottom.
 
 .SH AUTHORS
-Gary L. Hennigan, Sandia National Labs, Dept. 9221
+Gary L. Hennigan, Sandia-2017 National Labs, Dept. 9221
 .br
 email: glhenni@cs.sandia.gov
 .PP
 .br
 .br
-Matt M. St. John, Sandia National Labs, Dept. 9221
+Matt M. St. John, Sandia-2017 National Labs, Dept. 9221
 .br
 email: mmstjoh@cs.sandia.gov

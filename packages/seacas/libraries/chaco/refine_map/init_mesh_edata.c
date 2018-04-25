@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005 National Technology & Engineering Solutions
+ * Copyright (c) 2005-2017 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -38,7 +38,7 @@
 /* Initialize the mapping of sets to endpoints of wires in the mesh. */
 void init_mesh_edata(struct refine_edata *edata,       /* desire data for all edges */
                      int                  mesh_dims[3] /* dimensions of mesh */
-                     )
+)
 {
   int wire;    /* loops through wires */
   int i, j, k; /* loop counters */

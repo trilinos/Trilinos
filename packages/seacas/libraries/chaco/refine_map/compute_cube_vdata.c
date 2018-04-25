@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005 National Technology & Engineering Solutions
+ * Copyright (c) 2005-2017 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -41,7 +41,7 @@ void compute_cube_vdata(struct refine_vdata *vdata,      /* preference data for 
                         int                  vtx,        /* current vertex */
                         int                  mask,    /* bit set in current hypercube dimension */
                         int *                vtx2node /* maps graph vtxs to mesh nodes */
-                        )
+)
 {
   float same;        /* my preference to stay where I am */
   float change;      /* my preference to change this bit */

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2009 National Technology & Engineering Solutions
+ * Copyright (C) 2009-2017 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -343,7 +343,7 @@ unsigned *inchar, *buffer;
   if (*n > cdrcom_.KCPW) {
     return;
   }
-  temp = *inchar << (i = cdrcom_.KWRDSZ - (*n * cdrcom_.KBYTEL));
+  temp    = *inchar << (i = cdrcom_.KWRDSZ - (*n * cdrcom_.KBYTEL));
   mask    = ~(~0 << cdrcom_.KBYTEL) << i;
   *buffer = ((mask & temp) | (~mask & *buffer));
 }
@@ -401,13 +401,13 @@ unsigned *next, ibuf[];
 
     /* word overflow - break into parts */
 
-    temp = *next >> (i = *iwidth + *ibitlc - cdrcom_.KWRDSZ);
+    temp      = *next >> (i = *iwidth + *ibitlc - cdrcom_.KWRDSZ);
     mask      = ~0 << (cdrcom_.KWRDSZ - *ibitlc);
     ibuf[idx] = ((~mask & temp) | (mask & ibuf[idx]));
     *ibitlc   = i;
     (*iword)++;
     idx++;
-    temp = *next << (i = cdrcom_.KWRDSZ - *ibitlc);
+    temp      = *next << (i = cdrcom_.KWRDSZ - *ibitlc);
     mask      = ~0 << i;
     ibuf[idx] = ((mask & temp) | (~mask & ibuf[idx]));
   }
@@ -415,7 +415,7 @@ unsigned *next, ibuf[];
 
     /* it fits all in one word */
 
-    temp = *next << (i = cdrcom_.KWRDSZ - *ibitlc - *iwidth);
+    temp      = *next << (i = cdrcom_.KWRDSZ - *ibitlc - *iwidth);
     mask      = ~(~0 << *iwidth) << i;
     ibuf[idx] = ((mask & temp) | (~mask & ibuf[idx]));
     *ibitlc += *iwidth;
@@ -508,7 +508,7 @@ unsigned ibuf[], *next;
     *(p_temp + 1) = *(p_temp + 2);
     *(p_temp + 2) = ctemp;
 #endif
-    temp = temp << (i = *iwidth + *ibitlc - cdrcom_.KWRDSZ);
+    temp    = temp << (i = *iwidth + *ibitlc - cdrcom_.KWRDSZ);
     mask    = ~(~0 << (cdrcom_.KWRDSZ - *ibitlc)) << i;
     *next   = (mask & temp);
     *ibitlc = i;

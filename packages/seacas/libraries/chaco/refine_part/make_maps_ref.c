@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005 National Technology & Engineering Solutions
+ * Copyright (c) 2005-2017 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -48,7 +48,7 @@ void make_maps_ref(struct vtx_data **graph,         /* graph data structure */
                    int *psub_nvtxs,                 /* number of vtxs in subgraph */
                    int *pvwgt_max,                  /* returned largest vwgt */
                    int *pvwgt_sum1, int *pvwgt_sum2 /* returned set sizes */
-                   )
+)
 {
   struct bilist *ptr;                  /* loops through set lists */
   int            vwgt_max;             /* largest vertex weight in subgraph */

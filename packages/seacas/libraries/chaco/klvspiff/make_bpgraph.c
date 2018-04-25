@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005 National Technology & Engineering Solutions
+ * Copyright (c) 2005-2017 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -51,7 +51,7 @@ void make_bpgraph(struct vtx_data **graph,      /* list of graph info for each v
                   int *             pnleft,     /* number of nodes in left half */
                   int *             pnright,    /* number of nodes in right half */
                   int               using_vwgts /* are vertices weighted? */
-                  )
+)
 {
   int *loc2glob = NULL; /* maps bp number to full graph */
   int *pointers = NULL; /* start/stop of adjacency lists */
@@ -128,7 +128,7 @@ void make_bpgraph(struct vtx_data **graph,      /* list of graph info for each v
       for (j = 1; j < graph[vtx]->nedges; j++) {
         neighbor = graph[vtx]->edges[j];
         if (sets[neighbor] == set_match) {
-          if (graph[neighbor]->edges[0] == -1) { /* First occurence. */
+          if (graph[neighbor]->edges[0] == -1) { /* First occurrence. */
             loc2glob[k] = neighbor;
             vwgts[k]    = graph[neighbor]->vwgt;
             /* Use edges[0] as a seen flag and as a glob2loc value. */

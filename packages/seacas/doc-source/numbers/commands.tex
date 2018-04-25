@@ -1,0 +1,480 @@
+\chapter{Command Input} \label{c:commands}
+
+Each command in \numbers\ is described below.  The commands are divided
+into four categories: (1)~operational commands, (2)~parameter-setting
+commands, (3)~database display commands, and (4)~miscellaneous commands.
+Operational commands are the commands that actually perform the utility
+functions of \numbers, such as calculating the mass properties, or
+verifying the correct definition of contact surfaces.  The
+parameter-setting commands are used to initialize or modify the
+parameters required by the operational commands such as the material
+density which is required to calculate the mass properties. The database
+display commands echo information contained on the database to the
+terminal.  Miscellaneous commands are simply commands that do not fit
+into any of the previous categories. 
+
+\input{cominput}
+
+\newpage
+\section{Operational Commands}\label{sec:oper}
+
+\cmddef{\cmdverb{MASS} 
+      \param{nquad} \default{1 or previous value},
+      \optparam{density}
+\cmdnext \cmdverb{PROPERTIES} 
+      \param{nquad} \default{1 or previous value},
+      \optparam{density}
+} {
+\cmd{mass} or \cmd{properties} calculates several mass properties of the
+body.  The calculated properties are the volume and mass of each element
+block; the mass or area moments of inertia; the location of the center
+of gravity; the minimum, maximum, and average element volume for each
+element block; and the number of elements in each element block.   
+
+The parameter \param{nquad} selects the number of quadrature (numerical
+integration) points used to calculate the mass properties. It must be 1
+or 4 for a two-dimensional mesh, and 1 or 8 for a three-dimensional
+mesh.  If it is not entered, it will be set to the last entered value,
+or to 1 if it has never been set.  If all of the material densities are
+equal, they can be set by entering a positive value for the optional
+parameter \param{density}. If the densities are not equal, they must be
+input through the \cmd{density} command. 
+
+If the \cmd{exodus} switch is \cmd{ON}\footnote{See command
+\cmd{EXODUS}}, the mass properties will be calculated for the deformed
+geometry of the body at each selected time step; if \cmd{exodus} is
+\cmd{OFF}\footnotemark[1], values will be calculated for the undeformed
+geometry. Section~\ref{sec:mass} describes the algorithms used in this
+calculation, and the resulting output. 
+} 
+
+\cmddef{\cmdverb{LOCATE} \cmd{\{NODES$|$ELEMENTS\}} 
+      \param{locate\_option}
+} {
+\cmd{LOCATE} is used to locate \cmd{NODES} or \cmd{ELEMENTS} that are
+within a specified distance from a user-defined point, line, or plane.
+The available options are defined below.  The algorithms used are
+described in Section~\ref{sec:locate}.  If \cmd{ELEMENTS} is specified,
+distance is measured to the element centroid.  In the descriptions of
+the \param{locate\_options} below, the $z$ coordinates are omitted for
+two-dimensional bodies.  \cmd{LOCATE} calculates distances only for the
+undeformed geometry irregardless of the setting of the \cmd{EXODUS}
+switch. 
+
+\cmdoption{\cmd{LOCATE \{NODES$|$ELEMENTS\} POINT} 
+   \param{$x_0$, $y_0$, $z_0$}, 
+   \optparam{distance},
+   \param{toler}
+} {
+outputs all \cmd{nodes} or \cmd{elements} located a
+distance of \param{distance}$\pm$\param{toler} from the
+point \param{$x_0$, $y_0$, $z_0$}.  If no nodes or elements are
+located in the specified range, the minimum calculated distance
+is printed.  The output includes the node or element number, the
+coordinates of the node or the element center, the distance to the
+point, and the angles $\theta$ and $\phi$\footnote{$\phi$ is defined for
+three-dimensional bodies only} for each node or element in the specified
+range.  The angles are defined in
+Section~\ref{sec:plocate}. 
+}
+
+\cmdoption{\cmd{LOCATE \{NODES$|$ELEMENTS\} LINE} 
+   \param{$x_0$, $y_0$, $z_0$}, 
+   \param{$x_1$, $y_1$, $z_1$}, 
+   \optparam{distance},
+   \param{toler}, \\
+   \optparam{\cmd{BOUNDED$|$UNBOUNDED}} \default{\cmd{UNBOUNDED}}
+} {
+outputs all \cmd{nodes} or \cmd{elements} located a distance of
+\param{distance}$\pm$\param{toler} from the line defined by the two
+points \param{$x_0$, $y_0$, $z_0$}, and \param{$x_1$, $y_1$, $z_1$}. If
+\cmd{bounded} is specified, the node or element center must lie between
+the two end points.  If no nodes or element centers are located in the
+specified range, the minimum calculated distance is printed.  The output
+includes the node or element number, the coordinates of the node or the
+element center, and the normal and parametric distances from the node or
+element center to the line for each node or element in the specified
+range.  The distances are defined in Section~\ref{sec:llocate}. 
+}
+
+\cmdoption{\cmd{LOCATE \{NODES$|$ELEMENTS\} PLANE} 
+   \param{$x_0$, $y_0$, $z_0$},
+   \param{$i$, $j$, $k$},
+   \optparam{distance}, 
+   \param{toler}
+} {
+outputs all \cmd{nodes} or \cmd{elements} located a 
+distance of \param{distance}$\pm$\param{toler} from the plane that
+passes through the point \param{$x_0$, $y_0$, $z_0$} and has a normal
+defined by the vector \param{$i$, $j$, $k$}. This command is only
+defined for three-dimensional bodies.  If no nodes or elements are
+located in the specified range, the minimum calculated distance is
+printed.  The output includes the node or element number, the
+coordinates of the node or the element center, and the normal and
+radial distances to the plane for each node or element in the specified
+range.  The distances are defined in
+Section~\ref{sec:slocate}.
+}
+}
+
+\cmddef{\cmdverb{CAVITY} 
+   \param{sset$_{1}$}, \param{sset$_{2}$}, \ldots, \param{sset$_n$},
+   \optparam{\cmd{CENTER}},
+   \optparam{xcen}, 
+   \optparam{ycen}, 
+   \optparam{zcen}
+\cmdnext \cmdverb{CAVITY} 
+   \param{sset$_{1}$}, \param{sset$_{2}$}, \ldots, \param{sset$_n$},
+   \optparam{\cmd{CENTROID}}
+} {
+\cmd{CAVITY} calculates the volume of a cavity defined by the element
+sidesets \param{sset$_{1}$} to \param{sset$_n$}.  If the literal string
+\cmd{CENTER} is entered, the following values are taken as the
+center point in determining the cavity volume. The cavity volume
+algorithm, the effect of the center point, the resulting output, and the
+rules for defining a valid cavity are described in
+Section~\ref{sec:cavity}. 
+
+If the literal string \cmd{CENTROID} is entered, the code will
+calculate the centroid of the cavity and use that as the center point
+for determining the cavity volume. Note that this should only be used
+for a fully enclosed cavity.
+
+If the \cmd{EXODUS} switch is \cmd{ON}\footnote{See command
+\cmd{EXODUS}}, the cavity volume, the total change in volume, the volume
+change over the last time step, and the rate of volume change are
+calculated for each of the selected time steps, else only the undeformed
+cavity volume is calculated. 
+}
+
+\cmddef{\cmdverb{LIMITS} \optparam{\cmd{ALLTIMES}}
+} {
+\cmd{limits} determines the minimum, maximum, and range of the 
+X, Y, and Z coordinates for each of the selected material blocks.
+If \cmd{ALLTIMES} is specified, the limits are determined for each of
+the selected time steps.  Note that the \cmd{exodus} switch status does
+not affect this command.
+}
+
+\cmddef{\cmdverb{OVERLAP }
+      \param{flag$_m$}, \param{flag$_s$}
+} {
+\cmd{overlap} is used to verify contact surfaces or slidelines.  The
+command determines whether any of the nodes on the surface defined by
+the sideset \param{flag$_s$} penetrate the element faces on the surface
+defined by the sideset \param{flag$_m$}.  If a node on the
+\param{flag$_s$} surface penetrates the \param{flag$_m$} surface, the
+node and element numbers are output along with the connectivity array
+for the penetrated element. The algorithm and assumptions used in this
+calculation are described in Section~\ref{sec:overlap}.  \cmd{overlap}
+checks only the undeformed geometry irregardless of the setting of the
+\cmd{EXODUS} switch. 
+}
+
+\cmddef{\cmdverb{TIMESTEP}
+      \param{wave\_speed} \default{1.0},
+      \optparam{damping\_fraction} \default{0.06}
+} {
+\cmd{TIMESTEP} estimates the critical time step which will be used in an
+explicit transient dynamics finite element program. If all of the
+materials have the same dilitational wavespeed, it is entered as
+\param{wave\_speed}; else, command \cmd{WAVESPEED} is used to enter the
+different wavespeeds for each material.  The optional parameter
+\param{damping\_fraction} is the fraction of critical damping in the
+highest element. 
+
+The output from this command lists the dilitational wavespeed, the
+minimum stable time step, the element number, and the number of
+timesteps per millisecond of analysis time for each material block.
+Section~\ref{sec:timestep} explains each of these values and the method
+used to estimate the timestep. 
+} 
+
+\cmddef{\cmdverb{GAP} 
+      \param{flag$_m$}, 
+      \param{flag$_s$}, 
+      \param{d$_{\max}$}, 
+      \optparam{\cmd{DISTANCE$|$NORMAL}}
+} {
+\cmd{gap} calculates the distance between nodes on the surfaces defined
+by the sideset flags \param{flag$_m$} and \param{flag$_s$}.  For each
+node on the sideset \param{flag$_m$}, the program searches for a
+matching node on the sideset \param{flag$_s$}.  A matching node is the
+closest node measured according to the method specified by
+\param{\cmd{DISTANCE$|$NORMAL}}.  If \cmd{DISTANCE} is specified, the
+distance is simply the actual distance between the two nodes; if
+\cmd{normal} is specified, the distance is the tangential distance from
+the node on the \param{flag$_s$} surface to a line passing through the
+node on the \param{flag$_m$} surface and normal to the surface.  The
+normal vector is the average of the face normals of the elements
+connected to the node.  If the distance to the closest \param{flag$_s$}
+node is greater than \param{d$_{\max}$}, then the \param{flag$_m$} node
+has no match and is not shown in the output. 
+
+For each  \param{flag$_m$} node with a match, the output shows the
+matching  \param{flag$_s$} node, the direction cosines of the surface
+normal, and the normal and tangential distance from the
+\param{flag$_m$} node to the  \param{flag$_s$} node.
+
+If the \cmd{EXODUS} switch is \cmd{ON}, the above information is output
+for each time step.  The node matching process and the determination of
+the surface normal are only performed on the undeformed geometry;
+therefore, the same nodes are monitored during deformation and the
+distances output for subsequent time steps are measured relative to the
+undeformed normal. 
+
+This command is normally used to calculate the change in distance
+between two surfaces, for example, the closure of a drift in a
+geomechanics problem.  Note that unless \param{d$_{\max}$} is specified,
+a match will be found for every node on the \param{flag$_m$} surface.
+The output from this command can be very large; it is recommended that
+\cmd{echo} be turned \cmd{off} prior to executing a \cmd{GAP} command.
+The algorithm and assumptions used for this command are described in
+Section~\ref{sec:gap}.
+}
+
+\section{Parameter-Setting Commands}\label{sec:param}
+
+\cmddef{\cmdverb{AXISYMMETRIC} 
+} {
+\cmd{AXISYMMETRIC} informs \numbers\ that the two-dimensional body
+described in the \EXO\ database is axisymmetric.  All of the relevant
+operational commands will calculate values based on an axisymmetric
+geometry.  This is the default for two-dimensional bodies.
+}
+
+\cmddef{\cmdverb{PLANAR} or \cmdverb{PLANE}
+} {
+\cmd{PLANAR} informs \numbers\ that the two-dimensional body described
+in the \EXO\ database is planar or plane strain. All of the relevant
+operational commands will calculate values based on a planar geometry. 
+}
+
+\cmddef{\cmdverb{DENSITY }
+} {
+\cmd{DENSITY} prompts the user for the mass density of each of the
+element blocks.  The density is used in the mass properties calculation.
+If densities are not entered prior to entering a \cmd{MASS} or
+\cmd{PROPERTIES} command, the \cmd{density} command will be executed
+automatically.  An optional 16-character label can be entered following
+the density.  The label will be used to identify the material blocks in
+the mass properties output. The label cannot contain any blanks. 
+}
+\filbreak
+\cmddef{\cmdverb{WAVESPEED} 
+} { 
+\cmd{WAVESPEED} prompts the user for the dilitational wavespeed of each
+of the element blocks.  The wavespeed is used in the critical time step
+estimation calculation.  If wavespeeds are not entered prior to entering
+a \cmd{TIMESTEP} command, the \cmd{WAVESPEED} command will be executed
+automatically.  An optional 16-character label can be entered following
+the dilitational wavespeed. The label will be used to identify the
+material blocks in the time step estimation output. The label cannot
+contain any blanks. 
+} 
+\filbreak
+\cmddef{\cmdverb{SORT}
+   \param{sort\_field}
+   \optparam{sort\_order}
+} {
+\cmd{SORT} is used with the \cmd{LOCATE} command to specify which
+quantity in the locate output is sorted (\param{sort\_field}) and in
+which order (\param{sort\_order}).  The valid entries for
+\param{sort\_field} are shown in the following table.
+
+\begingroup\small
+\tabcolsep=3pt
+\begin{center}
+\begin{tabular}{|l|c|  *{8}{l}|  }\hline
+\rm Option  &2D/3D &\multicolumn{8}{|c|}{\rm Valid \param{sort\_fields}}\\
+\hline\hline
+POINT  & 2D &  X  &  Y  &     &   & DISTANCE &            & THETA &     \\
+POINT  & 3D &  X  &  Y  &  Z  &   & DISTANCE &            & THETA & PHI \\
+LINE   & 2D &  X  &  Y  &     & T & DISTANCE & PARAMETRIC &       &     \\
+LINE   & 3D &  X  &  Y  &  Z  & T & DISTANCE & PARAMETRIC &       &     \\
+PLANE  & 3D &  X  &  Y  &  Z  &   & DISTANCE &            & RADIUS&     \\
+\hline
+\end{tabular}
+\end{center}
+\endgroup
+
+The \param{sort\_order} can be \cmd{UP}, \cmd{ASCENDING}, or
+\cmd{INCREASING} for a sort in increasing order; or \cmd{DOWN},
+\cmd{DESCENDING}, or \cmd{DECREASING} for a sort in decreasing order.
+\cmd{INCREASING} is the default.  The fields are defined in
+Section~\ref{sortfields}
+}
+\filbreak
+\cmddef{\cmdverb{SELECT}
+   \param{option} 
+} {
+\cmd{SELECT} selects the materials or material blocks for the
+operational commands. 
+
+\cmdoption{\cmd{SELECT BLOCKS} 
+   \optparam{\cmd{ALL},}
+   \param{block\_id$_{1}$}, \param{block\_id$_{2}$}, \ldots\
+      \\ \default{all element blocks}
+} {
+selects the element blocks. The \param{block\_id} is the element block
+identifier displayed by the \cmd{LIST BLOCKS} command. The relevant
+operational commands will only calculate values for the selected element
+blocks.
+} 
+
+\cmdoption{\cmd{SELECT MATERIALS} 
+   \optparam{\cmd{ALL},}
+   \param{material\_id$_{1}$}, \param{material\_id$_{2}$}, \ldots\
+      \\ \default{all materials}
+} {
+selects the element blocks with the material number corresponding to
+\param{material\_id}.  The relevant operational commands will only
+calculate values for the selected materials.
+}
+}
+\filbreak
+\cmddef{\cmdverb{EXODUS} 
+      \optparam{\cmd{ON$|$OFF}} \\
+      \default{\cmd{ON} if timesteps present, else \cmd{OFF}}
+} {
+\cmd{EXODUS} sets the \cmd{EXODUS} switch to \cmd{ON} which indicates
+that the operational commands should calculate values for each of the
+selected time steps, or \cmd{OFF} which indicates that the operational
+commands should only calculate values for the basic undeformed geometry. 
+
+This command is used with the time selection commands defined below.
+There is a subtle difference between calculations performed with the
+\cmd{EXODUS} switch set to \cmd{off} and the calculations performed at
+the first time step since the first time step may have nonzero
+displacements that will cause the calculations to be performed on a
+deformed geometry.
+}
+
+\cmddef{\cmdverb{TMIN}
+   \param{tmin} \default{minimum database time}
+} {
+\cmd{TMIN} sets the minimum selected time \param{tmin} to the specified
+parameter value. 
+}
+\filbreak
+\cmddef{\cmdverb{TMAX}
+   \param{tmax} \default{maximum database time}
+} {
+\cmd{TMAX} sets the maximum selected time \param{tmax} to the specified
+parameter value. 
+}
+\filbreak
+\cmddef{\cmdverb{DELTIME}
+   \param{$\Delta t$} \default{0.0}
+} {
+\cmd{DELTIME} sets the selected time interval \param{$\Delta t$} to the
+specified parameter value.
+}
+\filbreak
+\cmddef{\cmdverb{TIMES}
+   \param{tmin} \cmd{TO} \param{tmax} \cmd{BY} \param{$\Delta t$}
+} {
+\cmd{TIMES} sets \param{tmin}, \param{tmax}, and 
+\param{$\Delta t$} with a single command.
+}
+\filbreak
+\section{Database Display Commands}
+\label{cmd:display}
+
+\cmddef{\cmdverb{LIST}
+   \param{option} 
+} {
+\cmd{LIST} displays the database information specified by \param{option}
+on the user's terminal. The ``selected'' items are specified with the
+\cmd{SELECT} command.
+
+\cmdoption{\cmd{LIST \{VARS$|$VARIABLES\}}
+} {
+displays a summary of the database. The summary includes the database
+title; the number of nodes, elements, and element blocks; the number of
+node sets and side sets; and the number of each type of
+variable.
+}
+
+\cmdoption{\cmd{LIST \{BLOCKS$|$MATERIALS\}}
+} {
+displays a summary of the element blocks. The summary includes
+the block identifier, the number of elements in the block, the element
+number of the first and last element in the block, and the block status,
+either selected or not selected.
+}
+
+\cmdoption{\cmd{LIST \{NSETS$|$NODESETS\}}
+} {
+displays a summary of the node sets. The summary
+includes the set identifier and the number of nodes in the set.
+}
+
+\cmdoption{\cmd{LIST \{SSETS$|$SIDESETS\}}
+} {
+displays a summary of the side sets. The summary
+includes the set identifier, the number of elements in the set, and the
+number of nodes in the set.
+}
+
+\cmdoption{\cmd{LIST STEPS}
+} {
+displays the number of time steps and the minimum and maximum time step
+times.
+}
+
+\cmdoption{\cmd{LIST TIMES}
+} {
+displays the step numbers and times for all time steps on the database.
+}
+}
+
+\filbreak
+\cmddef{\cmdverb{HELP}
+   \param{command} \default{no parameter}
+} {
+\cmd{HELP} displays information about the program command given as the
+parameter. If no parameter is given, all the command verbs are
+displayed. \cmd{HELP} is system-dependent and may not be available on
+all systems.
+}
+\filbreak
+\section{Miscellaneous Commands}\label{sec:misc}
+
+\cmddef{\cmdverb{ECHO}
+      \optparam{\cmd{ON$|$OFF}} \default{\cmd{ON}}
+} {
+\cmd{ECHO} controls the output of results to the terminal.  If \cmd{ON},
+the results are output to the screen. If \cmd{OFF}, \cmd{PRINT} is
+automatically set to \cmd{ON} and results are output to the output file
+only.  Error messages and information from a \cmd{LIST} command are
+always output to the terminal. 
+}
+
+\filbreak
+\cmddef{\cmdverb{PRINT}
+      \optparam{\cmd{ON$|$OFF}} \default{\cmd{ON}}
+} {
+\cmd{PRINT} controls the output of results to the output file.  If
+\cmd{ON}, the results are printed to the output file. If \cmd{OFF},
+\cmd{ECHO} is automatically set to \cmd{ON} and results are output to
+the terminal only.
+}
+
+\filbreak
+\cmddef{\cmdverb{COMMENT }   
+      \optparam{\cmd{PAGE},}
+      \param{ncom}\default{1}
+} {
+\cmd{COMMENT} prompts the user for \param{ncom} comment lines which
+are written to the output file.  If the optional parameter \cmd{PAGE} is
+present, a page eject will be written to the output file prior to
+writing the comment line(s). 
+}
+
+\filbreak
+\cmddef{\cmdverb{EXIT    } 
+} {
+\cmd{EXIT} exits the program and closes all files.
+}
+

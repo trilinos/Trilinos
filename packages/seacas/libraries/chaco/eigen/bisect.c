@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005 National Technology & Engineering Solutions
+ * Copyright (c) 2005-2017 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -50,7 +50,7 @@ int bisect(double *alpha,        /* vector of Lanczos scalars */
            double  tol,          /* tolerance on bracket width */
            double *ritz_sav,     /* space to copy ritzvals for debugging */
            int     max_steps     /* maximum number of bisection steps allowed */
-           )
+)
 {
   extern int    DEBUG_EVECS;  /* debug flag for eigen computation */
   extern double DOUBLE_MAX;   /* largest double value */

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005 National Technology & Engineering Solutions
+ * Copyright (c) 2005-2017 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -45,7 +45,7 @@ void opt3d(struct vtx_data **graph,   /* data structure containing vertex weight
            double *          vwsqrt,  /* square root of vertex weights */
            double *ptheta, double *pphi, double *pgamma, /* return optimal angles */
            int using_vwgts                               /* are vertex weights being used? */
-           )
+)
 
 /* Compute rotation angle to minimize distance to discrete points. */
 {

@@ -1,0 +1,12 @@
+      WAVESPEED
+      2.273e+05  OUTER_SHELL         
+      1.071e+05  MASS_OUTER_SHELL    
+      2.003e+04  FOAM                
+      2.273e+05  INNER_SHELL         
+      1.142e+05  MASS_INNER_SHELL    
+      2.731e+04  CARGO_FOAM          
+      2.273e+05  PUNCH               
+      2.273e+05  THIN_SHEET          
+      1.525e+05  CARGO_MASS          
+      TIMESTEP 
+      EXIT

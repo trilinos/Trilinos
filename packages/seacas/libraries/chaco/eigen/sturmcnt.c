@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005 National Technology & Engineering Solutions
+ * Copyright (c) 2005-2017 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -47,7 +47,7 @@ int sturmcnt(double *alpha, /* vector of Lanczos scalars */
              int     j,     /* index of Lanczos step we're on */
              double  mu,    /* argument to the sequence generating polynomial */
              double *p      /* work vector for sturm sequence */
-             )
+)
 {
   extern double DOUBLE_MAX; /* maximum double precision number to be used */
   int           i;          /* loop index */

@@ -1,0 +1,51 @@
+\cmdsum{\cmd{TMIN}
+   \param{tmin}
+} {
+sets the minimum selected time to \param{tmin}.
+}
+
+\cmdsum{\cmd{TMAX}
+   \param{tmax}
+} {
+sets the maximum selected time to \param{tmax}.
+}
+
+\cmdsum{\cmd{NINTV}
+   \param{nintv}
+} {
+sets the number of selected time intervals to \param{nintv} (delta
+offset).
+}
+
+\cmdsum{\cmd{ZINTV}
+   \param{nintv}
+} {
+sets the number of selected time intervals to \param{nintv} (zero
+offset).
+}
+
+\cmdsum{\cmd{DELTIME}
+   \param{delt}
+} {
+sets the selected time interval to \param{delt}.
+}
+
+\cmdsum{\cmd{ALLTIMES}
+} {
+selects all time steps between \param{tmin} and \param{tmax}.
+}
+
+\ifx\PROGRAM\ALGEBRA \newpage \fi %%%
+\cmdsum{\cmd{TIMES}
+   [\cmd{ADD},]
+   \param{t$_{1}$}, \param{t$_{2}$}, \ldots\
+} {
+selects times \param{t$_{1}$}, \param{t$_{2}$}, etc.
+}
+
+\cmdsum{\cmd{STEPS}
+   [\cmd{ADD},]
+   \param{n$_{1}$}, \param{n$_{2}$}, \ldots\
+} {
+selects time steps \param{n$_{1}$}, \param{n$_{2}$}, etc.
+}

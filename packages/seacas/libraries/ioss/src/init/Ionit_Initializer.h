@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2010 National Technology & Engineering Solutions
+// Copyright(C) 1999-2017 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -40,9 +40,7 @@ namespace Ioss {
     /** \brief Initialization of the Ioss library.
      *
      *  An object of this type must be created before using any other
-     *  functions or methods in the Ioss library. If any input or output
-     *  database type is xdmf, then a separate xdmf initializer object
-     *  must additionally be created.
+     *  functions or methods in the Ioss library.
      */
     class Initializer
     {
@@ -53,6 +51,6 @@ namespace Ioss {
       // Copy constructor
       // Assignment operator
     };
-  }
-}
+  } // namespace Init
+} // namespace Ioss
 #endif

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005 National Technology & Engineering Solutions
+ * Copyright (c) 2005-2017 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -45,7 +45,7 @@ void simple_part(struct vtx_data **graph,       /* data structure for graph */
                  int               nsets,       /* number of sets at each division */
                  int               simple_type, /* type of decomposition */
                  double *          goal         /* desired set sizes */
-                 )
+)
 {
   extern int DEBUG_TRACE;   /* trace the execution of the code */
   double     cutoff;        /* ending weight for a partition */
