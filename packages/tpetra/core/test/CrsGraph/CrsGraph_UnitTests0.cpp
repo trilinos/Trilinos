@@ -43,6 +43,7 @@
 
 #include <Tpetra_ConfigDefs.hpp>
 #include <Tpetra_CrsGraph.hpp>
+#include "Tpetra_Details_getNumDiags.hpp"
 #include <Tpetra_TestingUtilities.hpp>
 #include <type_traits> // std::is_same
 
@@ -505,8 +506,8 @@ namespace {
       TEST_EQUALITY( test_row->getIndexBase(), 0 );
       TEST_EQUALITY( test_row->isUpperTriangular(), true );
       TEST_EQUALITY( test_row->isLowerTriangular(), true );
-      TEST_EQUALITY( test_row->getGlobalNumDiags(), (size_t)numProcs-1 );
-      TEST_EQUALITY( test_row->getNodeNumDiags(), numLocal );
+      TEST_EQUALITY( Tpetra::Details::getGlobalNumDiags (*test_row), static_cast<GO> (numProcs-1) );
+      TEST_EQUALITY( Tpetra::Details::getLocalNumDiags (*test_row), static_cast<LO> (numLocal) );
       TEST_EQUALITY( test_row->getGlobalNumEntries(), (size_t)numProcs-1 );
       TEST_EQUALITY( test_row->getNodeNumEntries(), numLocal );
       TEST_EQUALITY( test_row->getGlobalMaxNumRowEntries(), 1 );
@@ -537,8 +538,8 @@ namespace {
       TEST_EQUALITY( zero->getIndexBase(), 0 );
       TEST_EQUALITY( zero->isUpperTriangular(), true );
       TEST_EQUALITY( zero->isLowerTriangular(), true );
-      TEST_EQUALITY( zero->getGlobalNumDiags(), 0 );
-      TEST_EQUALITY( zero->getNodeNumDiags(), 0 );
+      TEST_EQUALITY( Tpetra::Details::getGlobalNumDiags (*zero), 0 );
+      TEST_EQUALITY( Tpetra::Details::getLocalNumDiags (*zero), 0 );
       TEST_EQUALITY( zero->getGlobalNumEntries(), 0 );
       TEST_EQUALITY( zero->getNodeNumEntries(), 0 );
       TEST_EQUALITY( zero->getGlobalMaxNumRowEntries(), 0 );
@@ -568,8 +569,8 @@ namespace {
       TEST_EQUALITY( zero->getIndexBase(), 0 );
       TEST_EQUALITY( zero->isUpperTriangular(), true );
       TEST_EQUALITY( zero->isLowerTriangular(), true );
-      TEST_EQUALITY( zero->getGlobalNumDiags(), 0 );
-      TEST_EQUALITY( zero->getNodeNumDiags(), 0 );
+      TEST_EQUALITY( Tpetra::Details::getGlobalNumDiags (*zero), 0 );
+      TEST_EQUALITY( Tpetra::Details::getLocalNumDiags (*zero), 0 );
       TEST_EQUALITY( zero->getGlobalNumEntries(), 0 );
       TEST_EQUALITY( zero->getNodeNumEntries(), 0 );
       TEST_EQUALITY( zero->getGlobalMaxNumRowEntries(), 0 );
@@ -616,8 +617,8 @@ namespace {
     TEST_EQUALITY( zero->getIndexBase(), 0 );
     TEST_EQUALITY( zero->isUpperTriangular(), true );
     TEST_EQUALITY( zero->isLowerTriangular(), true );
-    TEST_EQUALITY( zero->getGlobalNumDiags(), 0 );
-    TEST_EQUALITY( zero->getNodeNumDiags(), 0 );
+    TEST_EQUALITY( Tpetra::Details::getGlobalNumDiags (*zero), 0 );
+    TEST_EQUALITY( Tpetra::Details::getLocalNumDiags (*zero), 0 );
     TEST_EQUALITY( zero->getGlobalNumEntries(), 0 );
     TEST_EQUALITY( zero->getNodeNumEntries(), 0 );
     TEST_EQUALITY( zero->getGlobalMaxNumRowEntries(), 0 );
@@ -676,8 +677,8 @@ namespace {
         // also, the row map and column map should be equivalent
         TEST_EQUALITY( ddgraph.getGlobalNumCols(), static_cast<GST> (3*numProcs) );
         TEST_EQUALITY( ddgraph.getGlobalNumRows(), ddgraph.getGlobalNumCols() );
-        TEST_EQUALITY( ddgraph.getGlobalNumDiags(), static_cast<GST> (numProcs) );
-        TEST_EQUALITY_CONST( ddgraph.getNodeNumDiags(), 1 );
+        TEST_EQUALITY( Tpetra::Details::getGlobalNumDiags (ddgraph), static_cast<GO> (numProcs) );
+        TEST_EQUALITY_CONST( Tpetra::Details::getLocalNumDiags (ddgraph), 1 );
         STD_TESTS(ddgraph);
       }
     }
@@ -769,8 +770,8 @@ namespace {
         }
         // also, the row map and column map should be equivalent
         TEST_EQUALITY_CONST( diaggraph.getRowMap()->isSameAs(*diaggraph.getColMap()), true );
-        TEST_EQUALITY( diaggraph.getGlobalNumDiags(), static_cast<GST> (numProcs) );
-        TEST_EQUALITY_CONST( diaggraph.getNodeNumDiags(), 1 );
+        TEST_EQUALITY( Tpetra::Details::getGlobalNumDiags (diaggraph), static_cast<GO> (numProcs) );
+        TEST_EQUALITY_CONST( Tpetra::Details::getLocalNumDiags (diaggraph), static_cast<LO> (1) );
         TEST_EQUALITY_CONST( diaggraph.isUpperTriangular(), true );
         TEST_EQUALITY_CONST( diaggraph.isLowerTriangular(), true );
         STD_TESTS(diaggraph);
@@ -848,8 +849,8 @@ namespace {
         }
         TEST_EQUALITY_CONST( ngraph.getRowMap ()->isSameAs (* (ngraph.getColMap ())),
                              (numProcs == 1 ? true : false) );
-        TEST_EQUALITY( ngraph.getGlobalNumDiags (), static_cast<GST> (numProcs) );
-        TEST_EQUALITY( ngraph.getNodeNumDiags(), 1 );
+        TEST_EQUALITY( Tpetra::Details::getGlobalNumDiags (ngraph), static_cast<GO> (numProcs) );
+        TEST_EQUALITY( Tpetra::Details::getLocalNumDiags (ngraph), 1 );
 
         out << "Concluding with standard graph tests" << endl;
         STD_TESTS(ngraph);
