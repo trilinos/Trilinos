@@ -34,6 +34,8 @@ predictVelocity(Thyra::VectorBase<Scalar>& vPred,
 #endif
   //vPred = v + dt*(1.0-gamma_)*a
   Thyra::V_StVpStV(Teuchos::ptrFromRef(vPred), 1.0, v, dt*(1.0-gamma_), a);
+  //vPred = (1-alpha_f)*vPred + alpha_f*v
+  Thyra::V_StVpStV(Teuchos::ptrFromRef(vPred), 1.0-alpha_, vPred, alpha_, v);
 }
 
 template<class Scalar>
@@ -54,48 +56,9 @@ predictDisplacement(Thyra::VectorBase<Scalar>& dPred,
   Thyra::V_StVpStV(Teuchos::ptrFromRef(dPred), dt, v, aConst, a);
   //dPred += d;
   Thyra::Vp_V(Teuchos::ptrFromRef(dPred), d, 1.0);
+  //dPred = (1-alpha_)*dPred + alpha_*d
+  Thyra::V_StVpStV(Teuchos::ptrFromRef(dPred), 1.0-alpha_, dPred, alpha_, d);
 }
-
-
-template<class Scalar>
-void StepperHHTAlpha<Scalar>::
-predictVelocity_alpha_f(Thyra::VectorBase<Scalar>& vPred,
-                        const Thyra::VectorBase<Scalar>& v) const
-{
-#ifdef VERBOSE_DEBUG_OUTPUT
-  *out_ << "DEBUG: " << __PRETTY_FUNCTION__ << "\n";
-#endif
-  //vPred = (1-alpha_f)*vPred + alpha_f*v
-  Thyra::V_StVpStV(Teuchos::ptrFromRef(vPred), 1.0-alpha_f_, vPred, alpha_f_, v);
-}
-
-
-template<class Scalar>
-void StepperHHTAlpha<Scalar>::
-predictDisplacement_alpha_f(Thyra::VectorBase<Scalar>& dPred,
-                            const Thyra::VectorBase<Scalar>& d) const
-{
-#ifdef VERBOSE_DEBUG_OUTPUT
-  *out_ << "DEBUG: " << __PRETTY_FUNCTION__ << "\n";
-#endif
-  //dPred = (1-alpha_f)*dPred + alpha_f*d
-  Thyra::V_StVpStV(Teuchos::ptrFromRef(dPred), 1.0-alpha_f_, dPred, alpha_f_, d);
-}
-
-template<class Scalar>
-void StepperHHTAlpha<Scalar>::
-correctAcceleration(Thyra::VectorBase<Scalar>& a_n_plus1,
-                    const Thyra::VectorBase<Scalar>& a_n) const
-{
-#ifdef VERBOSE_DEBUG_OUTPUT
-  *out_ << "DEBUG: " << __PRETTY_FUNCTION__ << "\n";
-#endif
-  Scalar c = 1.0/(1.0-alpha_m_);
-  //a_n_plus1 = 1.0/(1.0-alpha_m_)*a_n_plus1 - alpha_m/(1.0-alpha_m)*a_n = (1-alpha_f)*vPred + alpha_f*v
-  Thyra::V_StVpStV(Teuchos::ptrFromRef(a_n_plus1), c, a_n_plus1, -c*alpha_m_, a_n);
-}
-
-
 
 template<class Scalar>
 void StepperHHTAlpha<Scalar>::
@@ -249,18 +212,11 @@ void StepperHHTAlpha<Scalar>::takeStep(
     predictDisplacement(*d_pred, *d_old, *v_old, *a_old, dt);
     predictVelocity(*v_pred, *v_old, *a_old, dt);
 
-    //compute second displacement and velocity predictors (those that are functions of alpha_f)
-    predictDisplacement_alpha_f(*d_pred, *d_old);
-    predictVelocity_alpha_f(*v_pred, *v_old);
-
     //inject d_pred, v_pred, a and other relevant data into wrapperModel
     wrapperModel->initializeNewmark(a_old,v_pred,d_pred,dt,t,beta_,gamma_);
 
     //Solve for new acceleration
     const Thyra::SolveStatus<Scalar> sStatus = this->solveImplicitODE(a_new);
-
-    //correct acceleration (function of alpha_m)
-    correctAcceleration(*a_new, *a_old);
 
     //correct velocity and displacement
     correctVelocity(*v_new, *v_pred, *a_new, dt);
@@ -345,29 +301,28 @@ void StepperHHTAlpha<Scalar>::setParameterList(
     std::logic_error,
        "\nError - Stepper Type is not 'HHT-Alpha'!\n" << "Stepper Type = "
        << stepperPL->get<std::string>("Stepper Type") << "\n");
-  alpha_m_ = 0.0; //default value.  Hard-coded for Newmark-Beta for now.
-  alpha_f_ = 0.0;
+  alpha_ = 0.0; //default value. 
   Teuchos::RCP<Teuchos::FancyOStream> out =
     Teuchos::VerboseObjectBase::getDefaultOStream();
   if (this->stepperPL_->isSublist("HHT-Alpha Parameters")) {
     Teuchos::ParameterList &HHTalphaPL =
       this->stepperPL_->sublist("HHT-Alpha Parameters", true);
     std::string scheme_name = HHTalphaPL.get("Scheme Name", "Not Specified");
-    alpha_m_ = HHTalphaPL.get("Alpha", 0.0);
-    TEUCHOS_TEST_FOR_EXCEPTION( (alpha_m_ >1.0/3.0) || (alpha_m_ < 0.0),
+    alpha_ = HHTalphaPL.get("Alpha", 0.0);
+    TEUCHOS_TEST_FOR_EXCEPTION( (alpha_ >1.0/3.0) || (alpha_ < 0.0),
       std::logic_error,
          "\nError in 'HHT-Alpha' stepper: invalid value of Alpha = "
-         << alpha_m_ << ".  Please select Alpha >= 0.0 and < 0.33333 \n");
+         << alpha_ << ".  Please select Alpha >= 0.0 and < 0.33333 \n");
     *out << "\n \nScheme Name = HHT-Alpha.  Setting Alpha = "
-           << alpha_m_  
+           << alpha_  
            << "\n from HHT-Alpha Parameters in input file.\n\n";
   }
   else {
     *out << "\n  \nNo HHT-Alpha Parameters sublist found in input file; "
          << "using default values of Alpha=0.0.\n\n";
   }
-  beta_ = 0.25*(1.0+alpha_m_)*(1.0+alpha_m_); 
-  gamma_ = 0.5 + alpha_m_;
+  beta_ = 0.25*(1.0+alpha_)*(1.0+alpha_); 
+  gamma_ = 0.5 + alpha_;
 }
 
 
