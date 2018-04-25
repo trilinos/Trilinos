@@ -288,109 +288,12 @@ FEMultiVector(const Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> > 
   }
 #endif
 
-  // WCMCLEN NUKE
 
 
-
-
-  // WCMCLEN In decl
-  // @CMS: Keeping this, right?
-  // TODO: Param names different in decl and def.
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  void
-  FEMultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
-  replaceMap (const Teuchos::RCP<const map_type>& newMap)
-  {
-    using Teuchos::ArrayRCP;
-    using Teuchos::Comm;
-    using Teuchos::RCP;
-
-    // mfh 28 Mar 2013: This method doesn't forget whichVectors_, so
-    // it might work if the MV is a column view of another MV.
-    // However, things might go wrong when restoring the original
-    // Map, so we don't allow this case for now.
-    TEUCHOS_TEST_FOR_EXCEPTION(
-      ! this->isConstantStride (), std::logic_error,
-      "Tpetra::FEMultiVector::replaceMap: This method does not currently work "
-      "if the FEMultiVector is a column view of another FEMultiVector (that is, if "
-      "isConstantStride() == false).");
-
-    // Case 1: current Map and new Map are both nonnull on this process.
-    // Case 2: current Map is nonnull, new Map is null.
-    // Case 3: current Map is null, new Map is nonnull.
-    // Case 4: both Maps are null: forbidden.
-    //
-    // Case 1 means that we don't have to do anything on this process,
-    // other than assign the new Map.  (We always have to do that.)
-    // It's an error for the user to supply a Map that requires
-    // resizing in this case.
-    //
-    // Case 2 means that the calling process is in the current Map's
-    // communicator, but will be excluded from the new Map's
-    // communicator.  We don't have to do anything on the calling
-    // process; just leave whatever data it may have alone.
-    //
-    // Case 3 means that the calling process is excluded from the
-    // current Map's communicator, but will be included in the new
-    // Map's communicator.  This means we need to (re)allocate the
-    // local DualView if it does not have the right number of rows.
-    // If the new number of rows is nonzero, we'll fill the newly
-    // allocated local data with zeros, as befits a projection
-    // operation.
-    //
-    // The typical use case for Case 3 is that the FEMultiVector was
-    // first created with the Map with more processes, then that Map
-    // was replaced with a Map with fewer processes, and finally the
-    // original Map was restored on this call to replaceMap.
-
-#ifdef HAVE_TEUCHOS_DEBUG
-    // mfh 28 Mar 2013: We can't check for compatibility across the
-    // whole communicator, unless we know that the current and new
-    // Maps are nonnull on _all_ participating processes.
-    // TEUCHOS_TEST_FOR_EXCEPTION(
-    //   origNumProcs == newNumProcs && ! this->getMap ()->isCompatible (*map),
-    //   std::invalid_argument, "Tpetra::FEMultiVector::project: "
-    //   "If the input Map's communicator is compatible (has the same number of "
-    //   "processes as) the current Map's communicator, then the two Maps must be "
-    //   "compatible.  The replaceMap() method is not for data redistribution; "
-    //   "use Import or Export for that purpose.");
-
-    // TODO (mfh 28 Mar 2013) Add compatibility checks for projections
-    // of the Map, in case the process counts don't match.
-#endif // HAVE_TEUCHOS_DEBUG
-
-    if (this->getMap ().is_null ()) { // current Map is null
-      // If this->getMap() is null, that means that this FEMultiVector
-      // has already had replaceMap happen to it.  In that case, just
-      // reallocate the DualView with the right size.
-
-      TEUCHOS_TEST_FOR_EXCEPTION(
-        newMap.is_null (), std::invalid_argument,
-        "Tpetra::FEMultiVector::replaceMap: both current and new Maps are null.  "
-        "This probably means that the input Map is incorrect.");
-
-      // Case 3: current Map is null, new Map is nonnull.
-      // Reallocate the DualView with the right dimensions.
-      const size_t newNumRows = newMap->getNodeNumElements ();
-      const size_t origNumRows = view_.dimension_0 ();
-      const size_t numCols = this->getNumVectors ();
-
-      if (origNumRows != newNumRows || view_.dimension_1 () != numCols) {
-        view_ = allocDualView<Scalar, LocalOrdinal, GlobalOrdinal, Node> (newNumRows, numCols);
-      }
-    }
-    else if (newMap.is_null ()) { // Case 2: current Map is nonnull, new Map is null
-      // I am an excluded process.  Reinitialize my data so that I
-      // have 0 rows.  Keep the number of columns as before.
-      const size_t newNumRows = static_cast<size_t> (0);
-      const size_t numCols = this->getNumVectors ();
-      view_ = allocDualView<Scalar, LocalOrdinal, GlobalOrdinal, Node> (newNumRows, numCols);
-    }
-
-    this->map_ = newMap;
-  }  // replaceMap ()
-
-
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+void FEMultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::replaceMap (const Teuchos::RCP<const map_type>& newMap) {
+  throw std::runtime_error("Tpetra::FEMultiVecotr::replaceMap() is not implemented");
+}  // replaceMap ()
 
 
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
