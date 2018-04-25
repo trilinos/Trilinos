@@ -65,7 +65,7 @@ namespace {
   // UNIT TESTS
   //
 
-  TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( FEMultiVector, doImport, LO, GO, Scalar )
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( FEMultiVector, doImport, LO, GO, Scalar, NO )
   {
     using Teuchos::VERB_EXTREME;
     using Teuchos::VERB_NONE;
@@ -73,10 +73,15 @@ namespace {
     using Teuchos::rcp;
     using Teuchos::Array;
     using Teuchos::Comm;
+    using Teuchos::OSTab;
+    using Teuchos::outArg;
+    using Teuchos::REDUCE_MAX;
+    using Teuchos::reduceAll;
     typedef Tpetra::global_size_t GST;
 
     const GST INVALID = Teuchos::OrdinalTraits<GST>::invalid ();
     const RCP<const Comm<int> > comm = Tpetra::getDefaultComm();
+    const int myRank = comm->getRank();
     //    const int numProcs = comm->getSize();
 
 
@@ -85,7 +90,7 @@ namespace {
     Teuchos::EVerbosityLevel verbLevel = VERB_EXTREME;
     const bool doPrint = includesVerbLevel (verbLevel, VERB_EXTREME, true);
     if (doPrint) {
-      out << "FEMultiVector unit test" << endl;
+      out << "FEMultiVector unit test" << std::endl;
     }
     OSTab tab1 (out); // Add one tab level
 
@@ -97,17 +102,14 @@ namespace {
       const int num_local_elements = 3;
 
       // create Map
-      RCP<const Map<LO, GO> > map =
-        createContigMap<LO, GO> (INVALID, num_local_elements, comm);
+      RCP<const Tpetra::Map<LO, GO, NO> > map =
+        rcp( new Tpetra::Map<LO,GO,NO>(INVALID, num_local_elements, comm));
 
       // create CrsGraph object
-      RCP<CrsGraph<LO, GO> > graph =
-        rcp (new CrsGraph<LO, GO> (map, 3, DynamicProfile));
+      RCP<Tpetra::CrsGraph<LO, GO, NO> > graph =
+             rcp (new Tpetra::CrsGraph<LO, GO, NO> (map, 3, Tpetra::DynamicProfile));
 
       // Create a simple tridiagonal source graph.
-      if (doPrint) {
-        out << "Filling source CrsGraph" << endl;
-      }
       Array<GO> entry(1);
       LO row = 0;
       for (size_t i = 0; i < map->getNodeNumElements (); ++i, ++row) {
@@ -120,30 +122,33 @@ namespace {
         }
         if (globalrow != map->getMaxGlobalIndex()) {
           entry[0] = globalrow+1;
-          graph->insertGlobalIndices (globalrow+!, entry());
+          graph->insertGlobalIndices (globalrow+1, entry());
         }       
       }
       graph->fillComplete();
 
 
       Scalar ZERO = Teuchos::ScalarTraits<Scalar>::zero();
-      RCP<const Map<LO,GO> > domainMap = graph->getDomainMap();
-      RCP<const Import<LO,GO> > importer = graph->getImporter();
-      MultiVector<Scalar,LO,GO> Vdomain(domainMap,1), Vcolumn(graph->getColMap(),1);
-      FEMultiVector<Scalar,LO,GO> Vfe(domainMap,importer,1);
+      RCP<const Tpetra::Map<LO,GO,NO> > domainMap = graph->getDomainMap();
+      RCP<const Tpetra::Import<LO,GO,NO> > importer = graph->getImporter();
+      Tpetra::MultiVector<Scalar,LO,GO,NO> Vdomain(domainMap,1), Vcolumn(graph->getColMap(),1);
+      Tpetra::FEMultiVector<Scalar,LO,GO,NO> Vfe(domainMap,importer,1);
 
       // 1) Test domain -> column
       size_t Ndomain = domainMap->getNodeNumElements();
-
       for(size_t i=0; i<Ndomain; i++)
-        Vdomain->getDataNonConst()[i] = domainMap->getGlobalElement(i);
-      Vcolumn->PutScalar(zero);
-      Vcolumn->doImport(*Vdomain,i*mporter,Tpetra::ADD);
+        Vdomain.getDataNonConst(0)[i] = domainMap->getGlobalElement(i);
+      Vcolumn.putScalar(ZERO);
+      Vcolumn.doImport(Vdomain,*importer,Tpetra::ADD);
 
+      Vfe.putScalar(ZERO);
+      //      for(size_t i=0; i<Ndomain; i++)
+        //Vdomain->getDataNonConst(0)[i] = domainMap->getGlobalElement(i);
+      
 
 
     } catch (std::exception& e) {
-      err << "Proc " << myRank << ": " << e.what () << endl;
+      err << "Proc " << myRank << ": " << e.what () << std::endl;
       lclErr = 1;
     }
 
@@ -163,13 +168,11 @@ namespace {
 // ===============================================================================
 
 
-#define UNIT_TEST_GROUP_SC_LO_GO( SC, LO, GO )                   \
-  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( FEMultiVector, doImport, LO, GO, SC )
+#define UNIT_TEST_GROUP( SC, LO, GO, NO  )                         \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( FEMultiVector, doImport, LO, GO, SC, NO )
 
   TPETRA_ETI_MANGLING_TYPEDEFS()
 
-  // Test CrsMatrix for all Scalar, LO, GO template parameter
-  // combinations, and the default Node type.
-  TPETRA_INSTANTIATE_SLG_NO_ORDINAL_SCALAR( UNIT_TEST_GROUP_SC_LO_GO )
+  TPETRA_INSTANTIATE_SLGN( UNIT_TEST_GROUP )
 
 }
