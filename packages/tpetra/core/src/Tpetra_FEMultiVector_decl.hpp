@@ -45,25 +45,13 @@
 /// \file Tpetra_FEMultiVector_decl.hpp
 /// \brief Declaration of the Tpetra::MultiVector class
 ///
-/// If you want to use Tpetra::MultiVector, include "Tpetra_MultiVector.hpp"
+/// If you want to use Tpetra::FEMultiVector, include "Tpetra_FEMultiVector.hpp"
 /// (a file which CMake generates and installs for you).  If you only want
-/// the declaration of Tpetra::MultiVector, include this file
-/// (Tpetra_MultiVector_decl.hpp).
+/// the declaration of Tpetra::FEMultiVector, include this file
+/// (Tpetra_FEMultiVector_decl.hpp).
 ///
 
-//#include "Tpetra_DistObject.hpp"
-//#include "Tpetra_Map_decl.hpp"
 #include "Tpetra_MultiVector_decl.hpp"
-//#include "Teuchos_Import_decl.hpp"
-//#include "Kokkos_DualView.hpp"
-//#include "Teuchos_BLAS_types.hpp"
-//#include "Teuchos_DataAccess.hpp"
-//#include "Teuchos_Range1D.hpp"
-
-//#include "Kokkos_ArithTraits.hpp"
-//#include "Kokkos_InnerProductSpaceTraits.hpp"
-//#include "Tpetra_KokkosRefactor_Details_MultiVectorLocalDeepCopy.hpp"
-//#include <type_traits>
 
 namespace Tpetra {
 
@@ -80,7 +68,8 @@ namespace Tpetra {
   class FEMultiVector :
     public MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>
   {
-
+  private:
+    friend class MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
   public:
     //! @name Typedefs to facilitate template metaprogramming.
     //@{
