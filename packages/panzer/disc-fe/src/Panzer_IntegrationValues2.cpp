@@ -1022,7 +1022,6 @@ evaluateValues(const PHX::MDField<Scalar,Cell,NODE,Dim>& in_node_coordinates,
 
     // Apply the permutation to the cubature arrays.
     MDFieldArrayFactory af(prefix, alloc_arrays);
-    const size_type num_ip = dyn_cub_points.dimension(0);
     {
       const size_type num_cells = ip_coordinates.dimension(0), num_ip = ip_coordinates.dimension(1),
           num_dim = ip_coordinates.dimension(2);

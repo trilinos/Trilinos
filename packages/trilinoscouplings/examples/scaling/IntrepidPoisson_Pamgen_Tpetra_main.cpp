@@ -135,7 +135,7 @@ main (int argc, char *argv[])
     double tolFromCmdLine = -1.0; // -1 means "read from XML file"
     std::string solverName = "GMRES";
     ST materialTensorOffDiagonalValue = 0.0;
-
+    Teuchos::ParameterList problemStatistics;
 
     // Set default values of command-line arguments.
     setCommandLineArgumentDefaults (nx, ny, nz, xmlInputParamsFile, 
@@ -264,9 +264,13 @@ main (int argc, char *argv[])
       RCP<vector_type> B, X_exact, X;
       {
         TEUCHOS_FUNC_TIME_MONITOR_DIFF("Total Assembly", total_assembly);
-        makeMatrixAndRightHandSide (A, B, X_exact, X, comm, node, meshInput, inputList,
+        makeMatrixAndRightHandSide (A, B, X_exact, X, comm, node, meshInput, inputList, problemStatistics,
                                     out, err, verbose, debug);
       }
+
+      // Print Problem Statistics
+      *out<<"*** Problem Statistics ***\n"<<problemStatistics<<std::endl;
+
 
       // Optionally dump the matrix and/or its row Map to files.
       {

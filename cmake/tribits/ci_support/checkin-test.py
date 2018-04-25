@@ -1419,8 +1419,8 @@ def main(cmndLineArgs):
       cmndLineSplit = cmndLineArg.split("=")
       if cmndLineSplit[0].strip() == "--log-file":
         logFileName = cmndLineSplit[1].strip()
-    logFile = open(logFileName, "w", buffering=1) # 1 == line buffering
-    # NOTE: Above, we need to set biffering=1 to make sure that each line that
+    logFile = open(logFileName, "w", buffering=0) # 0 == no buffering
+    # NOTE: Above, we need to set biffering=0 to make sure that each line that
     # gets written is written out the file.  The is critical so that the user
     # can to a `tail -f <log-file>` to see what is going one.
   else:

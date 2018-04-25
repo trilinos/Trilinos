@@ -1,0 +1,24 @@
+{
+    "config_version": 2,
+    "solver": {
+        "solver"                    : "AMG",
+        "cycle"                     : "V",
+        "algorithm"                 : "AGGREGATION",
+        "selector"                  : "SIZE_4",
+        "max_iters"                 : 1,
+        "min_coarse_rows"               : 500,
+        "smoother" : {
+            "solver"                : "BLOCK_JACOBI",
+            "relaxation_factor"     : 0.9,
+            "monitor_residual"      : 1,
+            "scope"                 : "jacobi"
+        },
+        "presweeps"                 : 1,
+        "postsweeps"                : 1,
+        "print_grid_stats"          : 1,
+        "monitor_residual"          : 1,
+        "scope"                     : "amg",
+        "print_config"              : 1
+    }
+
+}

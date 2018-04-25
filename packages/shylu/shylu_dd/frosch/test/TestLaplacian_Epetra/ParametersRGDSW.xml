@@ -48,7 +48,7 @@
         <ParameterList name="OneLevelOperator">
             <ParameterList name="Solver">
                 <Parameter name="SolverType"                                type="string"   value="Amesos"/>
-                <Parameter name="Solver"                                    type="string"   value="Mumps"/>
+                <Parameter name="Solver"                                    type="string"   value="Klu"/>
                 <ParameterList name="Amesos">
                     <Parameter name="MatrixProperty"                        type="string"   value="general"/>
                     <Parameter name="DroppingTolerance"                     type="double"   value="1.0e-14"/>
@@ -80,7 +80,7 @@
             
             <ParameterList name="ExtensionSolver">
                 <Parameter name="SolverType"                                type="string"   value="Amesos"/>
-                <Parameter name="Solver"                                    type="string"   value="Mumps"/>
+                <Parameter name="Solver"                                    type="string"   value="Klu"/>
                 <ParameterList name="Amesos">
                     <Parameter name="MatrixProperty"                        type="string"   value="general"/>
                     <Parameter name="DroppingTolerance"                     type="double"   value="1.0e-14"/>
@@ -117,7 +117,7 @@
             
             <ParameterList name="CoarseSolver">
                 <Parameter name="SolverType"                                type="string"   value="Amesos"/>
-                <Parameter name="Solver"                                    type="string"   value="Mumps"/>
+                <Parameter name="Solver"                                    type="string"   value="Klu"/>
                 <ParameterList name="Amesos">
                     <Parameter name="MatrixProperty"                        type="string"   value="general"/>
                     <Parameter name="DroppingTolerance"                     type="double"   value="1.0e-14"/>

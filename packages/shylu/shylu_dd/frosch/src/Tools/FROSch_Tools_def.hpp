@@ -62,7 +62,7 @@ namespace FROSch {
         myIndices->doImport(*globalIndices,*importer2,Xpetra::ADD);
         
         Teuchos::Array<GO> uniqueVector;
-        for (LO i=0; i<myIndices->getLocalLength(); i++) {
+        for (unsigned i=0; i<myIndices->getLocalLength(); i++) {
             if (myIndices->getData(0)[i] == map->getComm()->getRank()+1) {
                 uniqueVector.push_back(map->getGlobalElement(i));
             }
@@ -104,7 +104,7 @@ namespace FROSch {
         Teuchos::RCP<Xpetra::Matrix<SC,LO,GO,NO> > commMat = Xpetra::MatrixFactory<SC,LO,GO,NO>::Build(overlappingMap,10);
         Teuchos::RCP<Xpetra::Matrix<SC,LO,GO,NO> > commMatTmp = Xpetra::MatrixFactory<SC,LO,GO,NO>::Build(uniqueMap,10);
         
-        for (LO i=0; i<overlappingMap->getNodeNumElements(); i++) {
+        for (unsigned i=0; i<overlappingMap->getNodeNumElements(); i++) {
             GO globalRow = overlappingMap->getGlobalElement(i);
             if (uniqueMap->getLocalElement(globalRow)<0) {
                 Teuchos::ArrayView<const GO> indices;
@@ -124,7 +124,7 @@ namespace FROSch {
         commMatTmp->doExport(*commMat,*gather,Xpetra::INSERT);
         
         Teuchos::RCP<Xpetra::Matrix<SC,LO,GO,NO> > commMatTmp2 = Xpetra::MatrixFactory<SC,LO,GO,NO>::Build(uniqueMap,10);
-        for (LO i=0; i<uniqueMap->getNodeNumElements(); i++) {
+        for (unsigned i=0; i<uniqueMap->getNodeNumElements(); i++) {
             GO globalRow = uniqueMap->getGlobalElement(i);
             Teuchos::ArrayView<const GO> indices;
             Teuchos::ArrayView<const SC> values;
@@ -150,11 +150,11 @@ namespace FROSch {
         
         Teuchos::ArrayView<const GO> myGlobalElements = uniqueMap->getNodeElementList();
         Teuchos::Array<GO> repeatedIndices(uniqueMap->getNodeNumElements());
-        for (LO i=0; i<uniqueMap->getNodeNumElements(); i++) {
+        for (unsigned i=0; i<uniqueMap->getNodeNumElements(); i++) {
             repeatedIndices.at(i) = myGlobalElements[i];
         }
         
-        for (LO i=0; i<overlappingMap->getNodeNumElements(); i++) {
+        for (unsigned i=0; i<overlappingMap->getNodeNumElements(); i++) {
             GO globalRow = overlappingMap->getGlobalElement(i);
             Teuchos::ArrayView<const GO> indices;
             Teuchos::ArrayView<const SC> values;
@@ -194,7 +194,7 @@ namespace FROSch {
         Teuchos::RCP<Xpetra::Matrix<SC,LO,GO,NO> > commMatTmp = Xpetra::MatrixFactory<SC,LO,GO,NO>::Build(uniqueMap,10);
         Teuchos::RCP<Xpetra::Export<LO,GO,NO> > commExporter = Xpetra::ExportFactory<LO,GO,NO>::Build(overlappingMap,uniqueMap);
         
-        for (LO i=0; i<overlappingMap->getNodeNumElements(); i++) {
+        for (unsigned i=0; i<overlappingMap->getNodeNumElements(); i++) {
             GO globalRow = overlappingMap->getGlobalElement(i);
             if (uniqueMap->getLocalElement(globalRow)<0) {
                 Teuchos::ArrayView<const GO> indices;
@@ -214,7 +214,7 @@ namespace FROSch {
         commMatTmp->doExport(*commMat,*commExporter,Xpetra::INSERT);
         
         Teuchos::RCP<Xpetra::Matrix<SC,LO,GO,NO> > commMatTmp2 = Xpetra::MatrixFactory<SC,LO,GO,NO>::Build(uniqueMap,10);
-        for (LO i=0; i<uniqueMap->getNodeNumElements(); i++) {
+        for (unsigned i=0; i<uniqueMap->getNodeNumElements(); i++) {
             GO globalRow = uniqueMap->getGlobalElement(i);
             Teuchos::ArrayView<const GO> indices;
             Teuchos::ArrayView<const SC> values;
@@ -236,11 +236,11 @@ namespace FROSch {
         
         Teuchos::ArrayView<const GO> myGlobalElements = uniqueMap->getNodeElementList();
         Teuchos::Array<GO> repeatedIndices(uniqueMap->getNodeNumElements());
-        for (LO i=0; i<uniqueMap->getNodeNumElements(); i++) {
+        for (unsigned i=0; i<uniqueMap->getNodeNumElements(); i++) {
             repeatedIndices.at(i) = myGlobalElements[i];
         }
         
-        for (LO i=0; i<overlappingMap->getNodeNumElements(); i++) {
+        for (unsigned i=0; i<overlappingMap->getNodeNumElements(); i++) {
             GO globalRow = overlappingMap->getGlobalElement(i);
             Teuchos::ArrayView<const GO> indices;
             Teuchos::ArrayView<const SC> values;
@@ -269,7 +269,7 @@ namespace FROSch {
         overlappingMatrix->doImport(*tmpMatrix,*scatter,Xpetra::ADD);
         
         Teuchos::Array<GO> indicesOverlappingSubdomain(0);
-        for (LO i=0; i<overlappingMap->getNodeNumElements(); i++) {
+        for (unsigned i=0; i<overlappingMap->getNodeNumElements(); i++) {
             Teuchos::ArrayView<const GO> indices;
             Teuchos::ArrayView<const SC> values;
             overlappingMatrix->getGlobalRowView(overlappingMap->getGlobalElement(i),indices,values);
@@ -312,10 +312,18 @@ namespace FROSch {
                 assembledMapTmp[i] = globalstart + mapVector[j]->getGlobalElement(i-localstart);
                 i++;
             }
+            //std::cout << mapVector[j]->getMaxAllGlobalIndex() << std::endl;
+            /*
             globalstart += mapVector[j]->getMaxAllGlobalIndex();
+            
             if (mapVector[0]->lib()==Xpetra::UseEpetra || mapVector[j]->getGlobalNumElements()>0) {
                 globalstart += 1;
             }
+             */
+            
+            globalstart += std::max(mapVector[j]->getMaxAllGlobalIndex(),-1)+1; // AH 04/05/2018: mapVector[j]->getMaxAllGlobalIndex() can result in -2147483648 if the map is empty on the process => introducing max(,)
+            
+            //if (mapVector[j]->getComm()->getRank() == 0) std::cout << std::endl << globalstart << std::endl;
         }
         return Xpetra::MapFactory<LO,GO,NO>::Build(mapVector[0]->lib(),-1,assembledMapTmp(),0,mapVector[0]->getComm());
     }
@@ -373,7 +381,7 @@ namespace FROSch {
         LO tmp = 0;
         LO nnz;
         GO row;
-        for (LO i=0; i<repeatedMatrix->getNodeNumRows(); i++) {
+        for (unsigned i=0; i<repeatedMatrix->getNodeNumRows(); i++) {
             row = repeatedMap->getGlobalElement(i);
             Teuchos::ArrayView<const GO> indices;
             Teuchos::ArrayView<const SC> values;

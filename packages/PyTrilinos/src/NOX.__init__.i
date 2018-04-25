@@ -41,39 +41,8 @@
 //
 // ***********************************************************************
 // @HEADER
-
-%module(package   = "PyTrilinos.NOX",
-	autodoc   = "1") __init__
-
-%{
-// System includes
-#include <sstream>
-
-// PyTrilinos configuration
-#include "PyTrilinos_config.h"
-
-// Teuchos include
-#include "Teuchos_Comm.hpp"
-#include "Teuchos_DefaultSerialComm.hpp"
-#ifdef HAVE_MPI
-#include "Teuchos_DefaultMpiComm.hpp"
-#endif
-#include "PyTrilinos_Teuchos_Util.hpp"
-
-// NOX includes
-#include "NOX_Version.H"
-
-// Local includes
-#define NO_IMPORT_ARRAY
-#include "numpy_include.hpp"
-%}
-
-// Ensure that python modules can be found from the current
-// directory. Use of %pythonbegin requires us to put the module
-// docstring here.
-%pythonbegin
-{
-"""
+%define %nox_docstring
+"
 PyTrilinos.NOX is the python interface to the Trilinos nonlinear
 solver package NOX:
 
@@ -97,12 +66,37 @@ For an example of usage of all of NOX, please consult the following
 script in the example subdirectory of the PyTrilinos package:
 
     * exNOX_1Dfem.py
-"""
+"
+%enddef
 
-import os
-import sys
-sys.path.insert(0, os.path.split(__file__)[0])
-}
+%define %nox_import_code
+"
+from . import ___init__
+"
+%enddef
+
+%module(package      = "PyTrilinos.NOX",
+	autodoc      = "1",
+        moduleimport = %nox_import_code,
+        docstring    = %nox_docstring) __init__
+
+%{
+// System include files
+#include <sstream>
+
+// PyTrilinos configuration
+#include "PyTrilinos_config.h"
+
+// Teuchos include files
+#include "PyTrilinos_Teuchos_Headers.hpp"
+
+// NOX include files
+#include "PyTrilinos_NOX_Headers.hpp"
+
+// Local include files
+#define NO_IMPORT_ARRAY
+#include "numpy_include.hpp"
+%}
 
 // General ignore directives
 %ignore operator<<;
@@ -114,7 +108,7 @@ sys.path.insert(0, os.path.split(__file__)[0])
 // Include NOX documentation
 %include "NOX_dox.i"
 
-// SWIG library includes
+// SWIG library include files
 %include "stl.i"
 
 // Trilinos interface import
@@ -166,8 +160,6 @@ from . import StatusTest
 # Epetra namespace
 __all__.append('Epetra')
 from . import Epetra
-sys.modules["PyTrilinos.NOX.Epetra.___init__"] = sys.modules["___init__"]
-del sys.modules["___init__"]
 %}
 #endif
 

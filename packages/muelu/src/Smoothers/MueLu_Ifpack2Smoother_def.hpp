@@ -66,6 +66,7 @@
 #include <Xpetra_CrsMatrixWrap.hpp>
 #include <Xpetra_Matrix.hpp>
 #include <Xpetra_MultiVectorFactory.hpp>
+#include <Xpetra_TpetraMultiVector.hpp>
 
 #include "MueLu_Ifpack2Smoother_decl.hpp"
 #include "MueLu_Level.hpp"
@@ -133,6 +134,17 @@ namespace MueLu {
       this->Input(currentLevel, "CoarseNumZLayers");            // necessary for fallback criterion
       this->Input(currentLevel, "LineDetection_VertLineIds");   // necessary to feed block smoother
     }
+    else if (type_ == "BLOCK RELAXATION" ||
+             type_ == "BLOCK_RELAXATION" ||
+             type_ == "BLOCKRELAXATION")
+    {
+      //We need to check for the "partitioner type" = "line"
+      ParameterList precList = this->GetParameterList();
+      if(precList.isParameter("partitioner: type") &&
+         precList.get<std::string>("partitioner: type") == "line") {
+        this->Input(currentLevel, "Coordinates");
+      }
+    }
     else if (type_ == "TOPOLOGICAL")
     {
       // for the topological smoother, we require an element to node map:
@@ -162,6 +174,11 @@ namespace MueLu {
              type_ == "LINESMOOTHING_BLOCK RELAXATION"       ||
              type_ == "LINESMOOTHING_BLOCKRELAXATION")
       SetupLineSmoothing(currentLevel);
+
+    else if (type_ == "BLOCK_RELAXATION" ||
+             type_ == "BLOCK RELAXATION" ||
+             type_ == "BLOCKRELAXATION")
+      SetupBlockRelaxation(currentLevel);
 
     else if (type_ == "CHEBYSHEV")
       SetupChebyshev(currentLevel);
@@ -444,6 +461,55 @@ namespace MueLu {
     prec_ = Ifpack2::Factory::create(type_, tA, overlap_);
     SetPrecParameters();
     prec_->initialize();
+    prec_->compute();
+  }
+
+  template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node>
+  void Ifpack2Smoother<Scalar, LocalOrdinal, GlobalOrdinal, Node>::SetupBlockRelaxation(Level& currentLevel) {
+    typedef Tpetra::RowMatrix<SC,LO,GO,NO> tRowMatrix;
+
+    RCP<BlockedCrsMatrix> bA = rcp_dynamic_cast<BlockedCrsMatrix>(A_);
+    if (!bA.is_null())
+      A_ = bA->Merge();
+
+    RCP<const tRowMatrix> tA = Utilities::Op2NonConstTpetraRow(A_);
+
+    bool reusePreconditioner = false;
+    if (this->IsSetup() == true) {
+      // Reuse the constructed preconditioner
+      this->GetOStream(Runtime1) << "MueLu::Ifpack2Smoother::SetupGeneric(): Setup() has already been called, assuming reuse" << std::endl;
+
+      RCP<Ifpack2::Details::CanChangeMatrix<tRowMatrix> > prec = rcp_dynamic_cast<Ifpack2::Details::CanChangeMatrix<tRowMatrix> >(prec_);
+      if (!prec.is_null()) {
+#ifdef IFPACK2_HAS_PROPER_REUSE
+        prec->resetMatrix(tA);
+        reusePreconditioner = true;
+#else
+        this->GetOStream(Errors) << "Ifpack2 does not have proper reuse yet." << std::endl;
+#endif
+
+      } else {
+        this->GetOStream(Warnings0) << "MueLu::Ifpack2Smoother::SetupSchwarz(): reuse of this type is not available (failed cast to CanChangeMatrix), "
+            "reverting to full construction" << std::endl;
+      }
+    }
+
+    if (!reusePreconditioner) {
+      ParameterList& myparamList = const_cast<ParameterList&>(this->GetParameterList());
+      myparamList.print();
+      if(myparamList.isParameter("partitioner: type") &&
+         myparamList.get<std::string>("partitioner: type") == "line") {
+        Teuchos::RCP<Xpetra::MultiVector<double,LO,GO,NO> > xCoordinates =
+          Factory::Get<Teuchos::RCP<Xpetra::MultiVector<double,LO,GO,NO> > >(currentLevel, "Coordinates");
+        Teuchos::RCP<Tpetra::MultiVector<double,LO,GO,NO> > coordinates = Teuchos::rcpFromRef(Xpetra::toTpetra<double,LO,GO,NO>(*xCoordinates));
+        myparamList.set("partitioner: coordinates", coordinates);
+      }
+
+      prec_ = Ifpack2::Factory::create(type_, tA, overlap_);
+      SetPrecParameters();
+      prec_->initialize();
+    }
+
     prec_->compute();
   }
 

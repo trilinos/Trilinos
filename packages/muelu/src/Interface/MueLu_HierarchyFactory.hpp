@@ -79,6 +79,9 @@ namespace MueLu {
     // Build() function in MueLu returns initialized objects.
     virtual RCP<Hierarchy> CreateHierarchy() const = 0;
 
+    //! Create a labeled empty Hierarchy object
+    virtual RCP<Hierarchy> CreateHierarchy(const std::string& label) const = 0;
+
     //! Setup Hierarchy object
     virtual void SetupHierarchy(Hierarchy & H) const = 0;
 

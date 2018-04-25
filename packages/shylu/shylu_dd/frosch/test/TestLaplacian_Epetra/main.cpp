@@ -130,12 +130,9 @@ int main(int argc, char *argv[])
             parameterList = getParametersFromXmlFile("ParametersRGDSW.xml");
         }
         if (Comm->MyPID()==0) {
-            cout << "\
-            --------------------------------------------------------------------------------\n\
-            PARAMETERS:" << endl;
+            cout << "--------------------------------------------------------------------------------\nPARAMETERS:" << endl;
             parameterList->print(cout);
-            cout << "\
-            --------------------------------------------------------------------------------\n\n";
+            cout << "--------------------------------------------------------------------------------\n\n";
         }
         
         if (Comm->MyPID()==0) cout << "ASSEMBLY...";
@@ -168,14 +165,16 @@ int main(int argc, char *argv[])
         RCP<SchwarzPreconditioner<SC,LO,GO,NO> > Preconditioner;
         if (!Reduced) {
             RCP<GDSWPreconditioner<SC,LO,GO,NO> > TmpPrec(new GDSWPreconditioner<SC,LO,GO,NO>(xMat,sublist(parameterList,"GDSWPreconditioner")));
+            if (Comm->MyPID()==0) cout << "INITIALIZE...";
+            TmpPrec->initialize(Dimension,1);
             Preconditioner = TmpPrec;
         } else {
             RCP<RGDSWPreconditioner<SC,LO,GO,NO> > TmpPrec(new RGDSWPreconditioner<SC,LO,GO,NO>(xMat,sublist(parameterList,"RGDSWPreconditioner")));
+            if (Comm->MyPID()==0) cout << "INITIALIZE...";
+            TmpPrec->initialize(Dimension,1);
             Preconditioner = TmpPrec;
         }
         
-        if (Comm->MyPID()==0) cout << "INITIALIZE...";
-        Preconditioner->initialize();
         if (Comm->MyPID()==0) cout << "COMPUTE...";
         Preconditioner->compute();
         if (Comm->MyPID()==0) cout << "done" << endl << "SOLVING EQUATION SYSTEM...";

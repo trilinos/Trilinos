@@ -113,7 +113,7 @@ ParameterList createValidMainPL()
   // that accepts an 'int', a 'double' or a 'std::string' value!
   typedef Teuchos::AnyNumberParameterEntryValidator::AcceptedTypes AcceptedTypes;
   Teuchos::RCP<Teuchos::AnyNumberParameterEntryValidator>
-    linesearchMaxItersValiator = rcp(
+    linesearchMaxItersValidator = rcp(
       new Teuchos::AnyNumberParameterEntryValidator(
         Teuchos::AnyNumberParameterEntryValidator::PREFER_INT, // Not used here!
         AcceptedTypes(false).allowInt(true).allowDouble(true).allowString(true)
@@ -122,12 +122,11 @@ ParameterList createValidMainPL()
   PL_Main_valid.sublist("Line Search").sublist("Polynomial").set(
     "Max Iters",3
     ,"The maximum number of inner linear search iterations allowed."
-    ,linesearchMaxItersValiator
+    ,linesearchMaxItersValidator
     );
 
   // Create a validator for the parameter "Direction"->"Newton"->"Linear Solver"->"Tol"
   // that accepts a 'double' or a 'std::string' value!
-  typedef Teuchos::AnyNumberParameterEntryValidator::AcceptedTypes AcceptedTypes;
   Teuchos::RCP<Teuchos::AnyNumberParameterEntryValidator>
     linSolveTolValidator = rcp(
       new Teuchos::AnyNumberParameterEntryValidator(
@@ -140,6 +139,22 @@ ParameterList createValidMainPL()
       "Tol", double(1e-5)
       ,"Select the linear solve tolerance"
     ,linSolveTolValidator
+    );
+
+  // Create a validator for the parameter "Elements"
+  // that accepts an 'int', a 'long long' or a 'std::string' value!
+  Teuchos::RCP<Teuchos::AnyNumberParameterEntryValidator>
+    elementsValidator = rcp(
+      new Teuchos::AnyNumberParameterEntryValidator(
+        Teuchos::AnyNumberParameterEntryValidator::PREFER_LONG_LONG, // Not used here!
+        AcceptedTypes(false).allowInt(true).allowLongLong(true).allowString(true)
+        )
+      );
+  typedef long long LL;
+  PL_Main_valid.set(
+      "Elements", LL(72057594037927936ll) // 2^56
+      ,"Number of finite elements to generate"
+    ,elementsValidator
     );
 
   return PL_Main_valid;

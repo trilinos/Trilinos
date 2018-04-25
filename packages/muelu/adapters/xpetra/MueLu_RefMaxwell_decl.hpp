@@ -273,6 +273,9 @@ namespace MueLu {
     //! apply 2-1-2 algorithm for 2x2 solve
     void applyInverse212(const MultiVector& RHS, MultiVector& X) const;
 
+    //! apply solve to 1-1 block only
+    void applyInverse11only(const MultiVector& RHS, MultiVector& X) const;
+
     //! Returns in Y the result of a Xpetra::Operator applied to a Xpetra::MultiVector X.
     //! \param[in]  X - MultiVector of dimension NumVectors to multiply with matrix.
     //! \param[out] Y - MultiVector of dimension NumVectors containing result.
@@ -293,16 +296,6 @@ namespace MueLu {
     }
 
   private:
-
-    void findDirichletCols(Teuchos::RCP<Matrix> A,
-                           std::vector<LocalOrdinal>& dirichletRows,
-                           std::vector<LocalOrdinal>& dirichletCols);
-
-    // Builds diagonal matrix DiagMatrix with one on diagonal for zero rows of A
-    // Assigns A = DiagMatrix + A.
-    // We apply this to A_nodal.
-    void Remove_Zeroed_Rows(Teuchos::RCP<Matrix>& A, magnitudeType tol=1.0e-14);
-
 
     /** Initialize with matrices except the Jacobian (don't compute the preconditioner)
      *
@@ -333,7 +326,8 @@ namespace MueLu {
     Teuchos::RCP<Matrix> SM_Matrix_, D0_Matrix_, M0inv_Matrix_, M1_Matrix_, Ms_Matrix_;
     Teuchos::RCP<Matrix> A_nodal_Matrix_, P11_, AH_, A22_;
     //! Vectors for BCs
-    std::vector<LocalOrdinal> BCrows_, BCcols_;
+    Teuchos::ArrayRCP<const bool> BCrows_;
+    Teuchos::ArrayRCP<const bool> BCcols_;
     //! Nullspace
     Teuchos::RCP<MultiVector> Nullspace_;
     Teuchos::RCP<Xpetra::MultiVector<double, LocalOrdinal, GlobalOrdinal, Node> > Coords_;
