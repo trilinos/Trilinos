@@ -45,6 +45,8 @@
 #include <Tpetra_TestingUtilities.hpp>
 #include <Tpetra_MultiVector.hpp>
 #include <Tpetra_CrsMatrix.hpp>
+#include "Tpetra_Details_getNumDiags.hpp"
+
 // mfh 08 Mar 2013: This include isn't being used here, so I'm
 // commenting it out to speed up compilation time.
 //#include <Tpetra_CrsMatrixMultiplyOp.hpp>
@@ -400,8 +402,8 @@ inline void tupleToArray(Array<T> &arr, const tuple &tup)
     TEST_EQUALITY(tri->getGlobalNumRows()      , static_cast<size_t>(2*numImages));
     TEST_EQUALITY(tri->getNodeNumRows()          , 2);
     TEST_EQUALITY(tri->getNodeNumCols()          , (myImageID > 0 && myImageID < numImages-1) ? 4 : 3);
-    TEST_EQUALITY(tri->getGlobalNumDiags() , static_cast<size_t>(2*numImages));
-    TEST_EQUALITY(tri->getNodeNumDiags()     , 2);
+    TEST_EQUALITY( Tpetra::Details::getGlobalNumDiags (*tri), static_cast<GO> (2*numImages));
+    TEST_EQUALITY( Tpetra::Details::getLocalNumDiags (*tri), static_cast<LO> (2) );
     TEST_EQUALITY(tri->getGlobalMaxNumRowEntries(), 3);
     TEST_EQUALITY(tri->getNodeMaxNumRowEntries()    , 3);
     TEST_EQUALITY(tri->getIndexBase()          , 0);
@@ -546,8 +548,8 @@ inline void tupleToArray(Array<T> &arr, const tuple &tup)
     TEST_EQUALITY(A.getGlobalNumRows()       , static_cast<size_t>(numImages));
     TEST_EQUALITY_CONST(A.getNodeNumRows()     , ONE);
     TEST_EQUALITY(A.getNodeNumCols()           , myNNZ);
-    TEST_EQUALITY(A.getGlobalNumDiags()  , static_cast<size_t>(numImages));
-    TEST_EQUALITY_CONST(A.getNodeNumDiags(), ONE);
+    TEST_EQUALITY( Tpetra::Details::getGlobalNumDiags (A), static_cast<GO> (numImages));
+    TEST_EQUALITY_CONST( Tpetra::Details::getLocalNumDiags (A), static_cast<LO> (ONE) );
     TEST_EQUALITY(A.getGlobalMaxNumRowEntries() , 3);
     TEST_EQUALITY(A.getNodeMaxNumRowEntries()     , myNNZ);
     TEST_EQUALITY_CONST(A.getIndexBase()     , 0);
