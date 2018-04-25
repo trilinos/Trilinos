@@ -130,8 +130,7 @@ namespace Tpetra {
    private:
 
     //! The type of the base class of this class.
-    // TODO: @CMS - this is copied over from MultiVector, it might be wrong...
-    typedef DistObject<Scalar, LocalOrdinal, GlobalOrdinal, Node> base_type;
+    typedef MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> base_type;
 
 
    /// \brief Default c'tor
@@ -211,6 +210,7 @@ namespace Tpetra {
 
     //! Migrate data from the target to the source map
     // Since this is non-unique -> unique, we need a combine mode.
+    // NOTE: Target MultiVector must be active
     void doTargetToSource(const CombineMode CM=Tpetra::ADD);
 
 
@@ -220,6 +220,9 @@ namespace Tpetra {
     // This is whichever multivector isn't currently active
     Teuchos::RCP<MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> > inactiveMultiVector_;
     FEWhichActive activeMultiVector_;
+
+    // Importer
+    Teuchos::RCP<const Import<LocalOrdinal,GlobalOrdinal,Node> > importer_;
 
     //@}
   }; // class FEMultiVector

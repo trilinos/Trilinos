@@ -265,8 +265,11 @@ FEMultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
 FEMultiVector(const Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> > & map,
               const Teuchos::RCP<const Import<LocalOrdinal, GlobalOrdinal, Node> >& importer,
               const size_t numVecs,
-              const bool zeroOut)
+              const bool zeroOut):base_type(map,numVecs,zeroOut),importer_(importer)
               {
+                if(!importer.is_null() && !importer->getSourceMap()->isSameAs(*map)) {
+                  throw std::runtime_error("FEMultiVector: 'map' must match 'importer->getSourceMap()' if impoter is provided");
+                }
                 // TODO: @CMS this should probably do something..
               }
 
@@ -298,7 +301,9 @@ void FEMultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::replaceMap (const
 
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void FEMultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::doTargetToSource(const CombineMode CM) {
-  throw std::runtime_error("stub");
+  if(!importer_.is_null() && activeMultiVector_ == FE_ACTIVE_TARGET) {
+    this->doImport(*inactiveMultiVector_,*importer_,CM);
+  }
 }
 
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
