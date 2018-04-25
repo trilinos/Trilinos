@@ -123,7 +123,8 @@ namespace Kokkos {
 } // namespace Kokkos
 #endif // HAVE_TPETRA_INST_FLOAT128
 
-namespace { // (anonymous)
+namespace Tpetra {
+  namespace MultiVectorUtils {
 
   /// \brief Allocate and return a 2-D Kokkos::DualView for Tpetra::MultiVector.
   ///
@@ -296,10 +297,8 @@ namespace { // (anonymous)
       return subview (X, rowRng, colRng);
     }
   }
-} // namespace (anonymous)
+}// namespace (MultiVectorUtils)
 
-
-namespace Tpetra {
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   bool
@@ -324,7 +323,7 @@ namespace Tpetra {
     ::Tpetra::Details::ProfilingRegion region ("Tpetra::MV ctor (map,numVecs,zeroOut)");
 
     const size_t lclNumRows = this->getLocalLength ();
-    view_ = allocDualView<Scalar, LocalOrdinal, GlobalOrdinal, Node> (lclNumRows, numVecs, zeroOut);
+    view_ = MultiVectorUtils::allocDualView<Scalar, LocalOrdinal, GlobalOrdinal, Node> (lclNumRows, numVecs, zeroOut);
     origView_ = view_;
   }
 
@@ -528,8 +527,8 @@ namespace Tpetra {
       // offsetView works correctly.
       const std::pair<size_t, size_t> colRng (whichVectors[0],
                                               whichVectors[0] + 1);
-      view_ = takeSubview (view_, ALL (), colRng);
-      origView_ = takeSubview (origView_, ALL (), colRng);
+      view_ = MultiVectorUtils::takeSubview (view_, ALL (), colRng);
+      origView_ = MultiVectorUtils::takeSubview (origView_, ALL (), colRng);
       // whichVectors_.size() == 0 means "constant stride."
       whichVectors_.clear ();
     }
@@ -601,8 +600,8 @@ namespace Tpetra {
       // offsetView works correctly.
       const std::pair<size_t, size_t> colRng (whichVectors[0],
                                               whichVectors[0] + 1);
-      view_ = takeSubview (view_, ALL (), colRng);
-      origView_ = takeSubview (origView_, ALL (), colRng);
+      view_ = MultiVectorUtils::takeSubview (view_, ALL (), colRng);
+      origView_ = MultiVectorUtils::takeSubview (origView_, ALL (), colRng);
       // whichVectors_.size() == 0 means "constant stride."
       whichVectors_.clear ();
     }
@@ -639,7 +638,7 @@ namespace Tpetra {
          "map->getNodeNumElements () = " << minNumEntries << ".");
     }
 
-    this->view_ = allocDualView<Scalar, LO, GO, Node> (lclNumRows, numVecs);
+    this->view_ = MultiVectorUtils::allocDualView<Scalar, LO, GO, Node> (lclNumRows, numVecs);
     this->template modify<device_type> ();
     auto X_out = this->template getLocalView<device_type> ();
     origView_ = view_;
@@ -709,7 +708,7 @@ namespace Tpetra {
         << ".");
     }
 
-    view_ = allocDualView<Scalar, LO, GO, Node> (lclNumRows, numVecs);
+    view_ = MultiVectorUtils::allocDualView<Scalar, LO, GO, Node> (lclNumRows, numVecs);
     this->template modify<device_type> ();
     auto X_out = this->getLocalView<device_type> ();
 
@@ -2773,7 +2772,7 @@ namespace Tpetra {
       const size_t numCols = this->getNumVectors ();
 
       if (origNumRows != newNumRows || view_.dimension_1 () != numCols) {
-        view_ = allocDualView<Scalar, LocalOrdinal, GlobalOrdinal, Node> (newNumRows, numCols);
+        view_ = MultiVectorUtils::allocDualView<Scalar, LocalOrdinal, GlobalOrdinal, Node> (newNumRows, numCols);
       }
     }
     else if (newMap.is_null ()) { // Case 2: current Map is nonnull, new Map is null
@@ -2781,7 +2780,7 @@ namespace Tpetra {
       // have 0 rows.  Keep the number of columns as before.
       const size_t newNumRows = static_cast<size_t> (0);
       const size_t numCols = this->getNumVectors ();
-      view_ = allocDualView<Scalar, LocalOrdinal, GlobalOrdinal, Node> (newNumRows, numCols);
+      view_ = MultiVectorUtils::allocDualView<Scalar, LocalOrdinal, GlobalOrdinal, Node> (newNumRows, numCols);
     }
 
     this->map_ = newMap;
@@ -3534,12 +3533,12 @@ namespace Tpetra {
     // desired (degenerate) dimensions.
     if (newOrigView.dimension_0 () == 0 &&
         newOrigView.dimension_1 () != X.origView_.dimension_1 ()) {
-      newOrigView = allocDualView<Scalar, LO, GO, Node> (size_t (0),
+      newOrigView = MultiVectorUtils::allocDualView<Scalar, LO, GO, Node> (size_t (0),
                                                          X.getNumVectors ());
     }
     if (newView.dimension_0 () == 0 &&
         newView.dimension_1 () != X.view_.dimension_1 ()) {
-      newView = allocDualView<Scalar, LO, GO, Node> (size_t (0),
+      newView = MultiVectorUtils::allocDualView<Scalar, LO, GO, Node> (size_t (0),
                                                      X.getNumVectors ());
     }
 
@@ -3709,7 +3708,7 @@ namespace Tpetra {
     const std::pair<size_t, size_t> rows (0, lclNumRows);
     if (colRng.size () == 0) {
       const std::pair<size_t, size_t> cols (0, 0); // empty range
-      dual_view_type X_sub = takeSubview (this->view_, ALL (), cols);
+      dual_view_type X_sub = MultiVectorUtils::takeSubview (this->view_, ALL (), cols);
       X_ret = rcp (new MV (this->getMap (), X_sub, origView_));
     }
     else {
@@ -3717,7 +3716,7 @@ namespace Tpetra {
       if (isConstantStride ()) {
         const std::pair<size_t, size_t> cols (colRng.lbound (),
                                               colRng.ubound () + 1);
-        dual_view_type X_sub = takeSubview (this->view_, ALL (), cols);
+        dual_view_type X_sub = MultiVectorUtils::takeSubview (this->view_, ALL (), cols);
         X_ret = rcp (new MV (this->getMap (), X_sub, origView_));
       }
       else {
@@ -3726,7 +3725,7 @@ namespace Tpetra {
           // constant stride, even though this MultiVector does not.
           const std::pair<size_t, size_t> col (whichVectors_[0] + colRng.lbound (),
                                                whichVectors_[0] + colRng.ubound () + 1);
-          dual_view_type X_sub = takeSubview (view_, ALL (), col);
+          dual_view_type X_sub = MultiVectorUtils::takeSubview (view_, ALL (), col);
           X_ret = rcp (new MV (this->getMap (), X_sub, origView_));
         }
         else {
@@ -3813,7 +3812,7 @@ namespace Tpetra {
     const size_t jj = X.isConstantStride () ?
       static_cast<size_t> (j) :
       static_cast<size_t> (X.whichVectors_[j]);
-    this->view_ = takeSubview (X.view_, Kokkos::ALL (), range_type (jj, jj+1));
+    this->view_ = MultiVectorUtils::takeSubview (X.view_, Kokkos::ALL (), range_type (jj, jj+1));
     this->origView_ = X.origView_;
 
     // mfh 31 Jul 2017: It would be unwise to execute concurrent
