@@ -103,20 +103,47 @@ evalModelImpl(const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs,
       appModel_->evalModel(appInArgs,appOutArgs); 
       break; 
     }
+	
+	case HHT_ALPHA_AFORM: { 
+      //Specific for the Newmark Implicit a-Form stepper.  May want to redesign this for a generic 
+      //second order scheme to not have an if statement here... 
+      //IKT, 3/14/17: this is effectively the same as the Piro::NewmarkDecorator::evalModel function.  
+      //the solution variable in NOX is the acceleration, a_{n+1} 
+      appInArgs.set_x_dot_dot(inArgs.get_x()); 
+      RCP<Thyra::VectorBase<Scalar> > velocity = Thyra::createMember(inArgs.get_x()->space());
+      //compute the velocity, v_{n+1}(a_{n+1}) = velocity_{pred} + \gamma dt a_{n+1}
+      Thyra::V_StVpStV(Teuchos::ptrFromRef(*velocity), 1.0, *v_pred_, delta_t_*gamma_, *inArgs.get_x());
+      appInArgs.set_x_dot(velocity); 
+      RCP<Thyra::VectorBase<Scalar> > displacement = Thyra::createMember(inArgs.get_x()->space());
+      //compute the displacement, d_{n+1}(a_{n+1}) = displacement_{pred} + \beta dt^2 a_{n+1}
+      Thyra::V_StVpStV(Teuchos::ptrFromRef(*displacement), 1.0, *d_pred_, beta_*delta_t_*delta_t_, *inArgs.get_x()); 
+      appInArgs.set_x(displacement); 
+      appInArgs.set_W_x_dot_dot_coeff(1.0);                 // da/da
+      appInArgs.set_alpha(gamma_*delta_t_);                 // dv/da
+      appInArgs.set_beta(beta_*delta_t_*delta_t_);          // dd/da
+  
+      appInArgs.set_t(t_);
+      for (int i=0; i<appModel_->Np(); ++i) {
+        if (inArgs.get_p(i) != Teuchos::null)
+          appInArgs.set_p(i, inArgs.get_p(i));
+      }
+
+      //Setup output condition 
+      //Create and populate outArgs 
+      appOutArgs.set_f(outArgs.get_f());
+      appOutArgs.set_W_op(outArgs.get_W_op());
+
+      // build residual and jacobian
+      appModel_->evalModel(appInArgs,appOutArgs); 
+      break; 
+    }
 
     case NEWMARK_IMPLICIT_DFORM: {
       // Setup initial condition
       // Create and populate inArgs
-      MEB::InArgs<Scalar> appInArgs = appModel_->createInArgs();
-
-      RCP<Thyra::VectorBase<Scalar> const>
-      d = inArgs.get_x();
-
-      RCP<Thyra::VectorBase<Scalar>>
-      v = Thyra::createMember(inArgs.get_x()->space());
-
-      RCP<Thyra::VectorBase<Scalar>>
-      a = Thyra::createMember(inArgs.get_x()->space());
+      RCP<Thyra::VectorBase<Scalar> const> d = inArgs.get_x();
+      RCP<Thyra::VectorBase<Scalar>> v = Thyra::createMember(inArgs.get_x()->space());
+      RCP<Thyra::VectorBase<Scalar>> a = Thyra::createMember(inArgs.get_x()->space());
 
 #ifdef DEBUG_OUTPUT
       Teuchos::Range1D range;

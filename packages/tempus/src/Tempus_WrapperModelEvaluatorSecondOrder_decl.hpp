@@ -45,15 +45,18 @@ public:
     *out_ << "DEBUG: " << __PRETTY_FUNCTION__ << "\n";
     *out_ << "    schemeName = " << schemeName << "\n";
 #endif
-    if (schemeName == "Newmark Implicit a-Form" || schemeName == "HHT-Alpha") {
+    if (schemeName == "Newmark Implicit a-Form" ) {
       schemeType_ = NEWMARK_IMPLICIT_AFORM;
     }
     else if (schemeName == "Newmark Implicit d-Form") {
       schemeType_ = NEWMARK_IMPLICIT_DFORM;
     }
+	else if (schemeName == "HHT-Alpha") {
+      schemeType_ = HHT_ALPHA_AFORM;
+    }
     else {
        TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
-       "Error: WrapperModelEvaluatorSecondOrder called with unsopported schemeName = " << schemeName
+       "Error: WrapperModelEvaluatorSecondOrder called with unsupported schemeName = " << schemeName
        <<"!  Supported schemeNames are: 'Newmark Implicit a-Form' and 'HHT-Alpha'.\n");
     }
   }
@@ -187,7 +190,12 @@ public:
               const Thyra::ModelEvaluatorBase::OutArgs<Scalar> &outArgs) const;
   //@}
 
-    enum SCHEME_TYPE {NEWMARK_IMPLICIT_AFORM, NEWMARK_IMPLICIT_DFORM};
+    enum SCHEME_TYPE {
+		NEWMARK_IMPLICIT_AFORM, 
+		NEWMARK_IMPLICIT_DFORM,
+		HHT_ALPHA_AFORM,
+		GENERALIZED_ALAPHA_AFORM
+	};
 
 private:
 
@@ -201,9 +209,14 @@ private:
   Scalar gamma_;
   Scalar beta_;
   Scalar delta_t_;
+  Scalar alpha_m_;
+  Scalar alpha_f_;
   Teuchos::RCP<const Vector> a_;
   Teuchos::RCP<Vector> d_pred_;
   Teuchos::RCP<Vector> v_pred_;
+  Teuchos::RCP<Vector> d_old_;
+  Teuchos::RCP<Vector> v_old_;
+  Teuchos::RCP<Vector> a_old_;
   Teuchos::RCP<Teuchos::FancyOStream> out_;
   SCHEME_TYPE schemeType_;
 
