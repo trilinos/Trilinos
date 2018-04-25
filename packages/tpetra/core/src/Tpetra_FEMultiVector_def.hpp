@@ -57,13 +57,24 @@ FEMultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
 FEMultiVector(const Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> > & map,
               const Teuchos::RCP<const Import<LocalOrdinal, GlobalOrdinal, Node> >& importer,
               const size_t numVecs,
-              const bool zeroOut):base_type(map,numVecs,zeroOut),importer_(importer) {
+              const bool zeroOut):
+  base_type(importer.is_null()? map:importer->getTargetMap(),numVecs,zeroOut),
+  activeMultiVector_(FE_ACTIVE_TARGET),
+  importer_(importer) {
+  // Sanity check the importer
   if(!importer.is_null() && !importer->getSourceMap()->isSameAs(*map)) {
     throw std::runtime_error("FEMultiVector: 'map' must match 'importer->getSourceMap()' if impoter is provided");
   }
-  // TODO: @CMS this should probably do something..
-  const size_t lclNumRows = this->getLocalLength ();
-  view_ = MultiVectorUtils::allocDualView<Scalar, LocalOrdinal, GlobalOrdinal, Node> (lclNumRows, numVecs, zeroOut);
+
+  if(!importer.is_null()) {
+    // 1) Check maps to see if we can reuse memory (aka do numSames == NumLocal in domain map && numPermutes==0)
+
+    //   a) If so, we then build the inactiveMultiVector_ (as the source) using a restricted DualView
+
+    //   b) If not call a new constructor
+
+  }
+
 }
 
 
@@ -89,8 +100,7 @@ FEMultiVector(const Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> > 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void FEMultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::replaceMap (const Teuchos::RCP<const map_type>& newMap) {
   throw std::runtime_error("Tpetra::FEMultiVector::replaceMap() is not implemented");
-}  // replaceMap ()
-
+}
 
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void FEMultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::doTargetToSource(const CombineMode CM) {

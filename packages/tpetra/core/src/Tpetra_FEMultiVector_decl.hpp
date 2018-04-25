@@ -176,8 +176,7 @@ namespace Tpetra {
     // ! Calls endFill()
     void globalAssemble() {endFill();}
 
-    //! Calls doTargetToSource() and then activateSourceMultiVector()
-    //CMS - Should add a sanity check to make sure I start in Target mode (if we're not in serial)
+    //! Calls doTargetToSource() and then activates the source map mode
     void endFill()
     {
       if(activeMultiVector_ == FE_ACTIVE_TARGET) {
@@ -187,8 +186,8 @@ namespace Tpetra {
       else
         throw std::runtime_error("FEMultiVector: Source MultiVector already active.  Cannot endFill()");
     }
+
     //! Activates the target map mode
-    // CMS
     void beginFill()
     {
       if(activeMultiVector_ == FE_ACTIVE_SOURCE) {
@@ -200,19 +199,10 @@ namespace Tpetra {
 
 
   protected:
-    /// \brief The Kokkos::DualView containing the MultiVector's data.
-    ///
-    /// This has to be declared \c mutable, so that get1dView() can
-    /// retain its current \c const marking, even though it has always
-    /// implied a device->host synchronization.  Lesson to the reader:
-    /// Use \c const sparingly!
-    mutable dual_view_type view_;
-
     //! Migrate data from the target to the source map
     // Since this is non-unique -> unique, we need a combine mode.
-    // NOTE: Target MultiVector must be active
+    // Precondition: Target MultiVector must be active
     void doTargetToSource(const CombineMode CM=Tpetra::ADD);
-
 
     // Switches which Multivector isa ctive
     void switchActiveMultiVector();
