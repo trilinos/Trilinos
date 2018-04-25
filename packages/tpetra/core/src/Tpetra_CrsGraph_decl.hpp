@@ -936,15 +936,22 @@ namespace Tpetra {
     ///   <tt>Tpetra::Details::OrdinalTraits<size_t>::invalid()</tt>.
     size_t getNumAllocatedEntriesInLocalRow(LocalOrdinal localRow) const;
 
-    //! \brief Returns the number of global diagonal entries, based on global row/column index comparisons.
-    /** Undefined if isFillActive().
-     */
-    global_size_t getGlobalNumDiags() const;
+    /// \brief Number of diagonal entries over all processes in the
+    ///   graph's communicator.
+    ///
+    /// \pre <tt>! this->isFillActive()</tt>
+    ///
+    /// \warning This method is DEPRECATED.  DO NOT CALL IT.  It may
+    ///   go away at any time.
+    global_size_t TPETRA_DEPRECATED getGlobalNumDiags() const;
 
-    //! \brief Returns the number of local diagonal entries, based on global row/column index comparisons.
-    /** Undefined if isFillActive().
-     */
-    size_t getNodeNumDiags() const;
+    /// \brief Number of diagonal entries on the calling process.
+    ///
+    /// \pre <tt>! this->isFillActive()</tt>
+    ///
+    /// \warning This method is DEPRECATED.  DO NOT CALL IT.  It may
+    ///   go away at any time.
+    size_t TPETRA_DEPRECATED getNodeNumDiags() const;
 
     /// \brief Maximum number of entries in all rows over all processes.
     ///
