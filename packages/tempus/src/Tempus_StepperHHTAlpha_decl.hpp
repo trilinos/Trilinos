@@ -103,7 +103,8 @@ public:
                              const Scalar dt) const;
 
     void correctDisplacement(Thyra::VectorBase<Scalar>& d,
-                               const Thyra::VectorBase<Scalar>& dPred,
+                               const Thyra::VectorBase<Scalar>& v,
+							   const Thyra::VectorBase<Scalar>& a_old,
                                const Thyra::VectorBase<Scalar>& a,
                                const Scalar dt) const;
 

@@ -63,29 +63,39 @@ predictDisplacement(Thyra::VectorBase<Scalar>& dPred,
 template<class Scalar>
 void StepperHHTAlpha<Scalar>::
 correctVelocity(Thyra::VectorBase<Scalar>& v,
-                const Thyra::VectorBase<Scalar>& vPred,
                 const Thyra::VectorBase<Scalar>& a,
+                const Thyra::VectorBase<Scalar>& a_old,
                 const Scalar dt) const
 {
 #ifdef VERBOSE_DEBUG_OUTPUT
   *out_ << "DEBUG: " << __PRETTY_FUNCTION__ << "\n";
 #endif
-  //v = vPred + dt*gamma_*a
-  Thyra::V_StVpStV(Teuchos::ptrFromRef(v), 1.0, vPred, dt*gamma_, a);
+  //v = v_old + dt*(1.0-gamma_)*a_old + dt*gamma_*a
+  Thyra::Vp_StV(Teuchos::ptrFromRef(v), dt*(1.0-gamma_), a_old);
+  Thyra::Vp_StV(Teuchos::ptrFromRef(v), dt*gamma_, a);
+ // Thyra::V_StVpStV(Teuchos::ptrFromRef(v), 1.0, v, dt*(1.0-gamma_), a_old);
+ // Thyra::V_StVpStV(Teuchos::ptrFromRef(v), 1.0, v, dt*gamma_, a);
 }
 
 template<class Scalar>
 void StepperHHTAlpha<Scalar>::
 correctDisplacement(Thyra::VectorBase<Scalar>& d,
-                    const Thyra::VectorBase<Scalar>& dPred,
-                    const Thyra::VectorBase<Scalar>& a,
+                    const Thyra::VectorBase<Scalar>& v,
+                    const Thyra::VectorBase<Scalar>& a_old,
+					const Thyra::VectorBase<Scalar>& a,
                     const Scalar dt) const
 {
 #ifdef VERBOSE_DEBUG_OUTPUT
   *out_ << "DEBUG: " << __PRETTY_FUNCTION__ << "\n";
 #endif
   //d = dPred + beta_*dt*dt*a
-  Thyra::V_StVpStV(Teuchos::ptrFromRef(d), 1.0, dPred, beta_*dt*dt, a);
+  //Thyra::V_StVpStV(Teuchos::ptrFromRef(d), 1.0, dPred, beta_*dt*dt, a);
+  //d = d_old + dt*v + dt*dt*( (0.5-beta_)*a_old + beta_*a )
+  Thyra::Vp_StV(Teuchos::ptrFromRef(d), dt, v);
+  Scalar c = dt*dt*(0.5-beta_);
+  Thyra::Vp_StV(Teuchos::ptrFromRef(d), c, a_old);
+  c = dt*dt*beta_;
+  Thyra::Vp_StV(Teuchos::ptrFromRef(d), c, a);
 }
 
 
@@ -157,8 +167,8 @@ void StepperHHTAlpha<Scalar>::takeStep(
         this->wrapperModel_);
 
     //Get values of d, v and a from previous step
-    RCP<const Thyra::VectorBase<Scalar> > d_old = currentState->getX();
-    RCP<const Thyra::VectorBase<Scalar> > v_old = currentState->getXDot();
+    RCP<Thyra::VectorBase<Scalar> > d_old = currentState->getX();
+    RCP<Thyra::VectorBase<Scalar> > v_old = currentState->getXDot();
     RCP<Thyra::VectorBase<Scalar> > a_old = currentState->getXDotDot();
 
 #ifdef DEBUG_OUTPUT
@@ -189,7 +199,7 @@ void StepperHHTAlpha<Scalar>::takeStep(
       Thyra::copy(*d_old, d_init.ptr());
       Thyra::copy(*v_old, v_init.ptr());
       Thyra::put_scalar(0.0, a_init.ptr());
-      wrapperModel->initializeNewmark(a_init,v_init,d_init,0.0,time,beta_,gamma_);
+      wrapperModel->initializeNewmark(a_init,v_init,d_init,0.0,time,beta_,gamma_,alpha_,0.0,d_old, v_old);
       const Thyra::SolveStatus<Scalar> sStatus=this->solveImplicitODE(a_init);
 
       if (sStatus.solveStatus == Thyra::SOLVE_STATUS_CONVERGED )
@@ -213,14 +223,14 @@ void StepperHHTAlpha<Scalar>::takeStep(
     predictVelocity(*v_pred, *v_old, *a_old, dt);
 
     //inject d_pred, v_pred, a and other relevant data into wrapperModel
-    wrapperModel->initializeNewmark(a_old,v_pred,d_pred,dt,t,beta_,gamma_);
+    wrapperModel->initializeNewmark(a_old,v_pred,d_pred,dt,t,beta_,gamma_,alpha_,0.0,d_old, v_old);
 
     //Solve for new acceleration
     const Thyra::SolveStatus<Scalar> sStatus = this->solveImplicitODE(a_new);
 
     //correct velocity and displacement
-    correctVelocity(*v_new, *v_pred, *a_new, dt);
-    correctDisplacement(*d_new, *d_pred, *a_new, dt);
+    correctDisplacement(*d_new, *v_old, *a_old, *a_new, dt);
+    correctVelocity(*v_new, *a_old, *a_new, dt);
 
     if (sStatus.solveStatus == Thyra::SOLVE_STATUS_CONVERGED )
       workingState->getStepperState()->stepperStatus_ = Status::PASSED;

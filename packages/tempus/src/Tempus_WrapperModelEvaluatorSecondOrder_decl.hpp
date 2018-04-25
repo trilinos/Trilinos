@@ -81,15 +81,19 @@ public:
   }
 
   /// Set values needed in evalModelImpl
-  void initializeNewmark(Teuchos::RCP<const Vector> a, Teuchos::RCP<Vector> v_pred,
+  void initializeNewmark(Teuchos::RCP<Vector> a, Teuchos::RCP<Vector> v_pred,
                          Teuchos::RCP<Vector> d_pred, Scalar delta_t,
-                         Scalar t, Scalar beta, Scalar gamma)
+                         Scalar t, Scalar beta, Scalar gamma, Scalar alpham=0.0, 
+						 Scalar alphaf=0.0, Teuchos::RCP<Vector> dold=Teuchos::null,
+						 Teuchos::RCP<Vector> vold=Teuchos::null, Teuchos::RCP<Vector> aold=Teuchos::null)
   {
 #ifdef VERBOSE_DEBUG_OUTPUT
     *out_ << "DEBUG: " << __PRETTY_FUNCTION__ << "\n";
 #endif
     a_ = a; v_pred_ = v_pred; d_pred_ = d_pred;
     delta_t_ = delta_t; t_ = t; beta_ = beta; gamma_ = gamma;
+    alpha_f_ = alphaf; alpha_m_ = alpham;
+	d_old_ = dold;  v_old_=vold;  a_old_=aold;
   }
 
   /// \name Overridden from Thyra::StateFuncModelEvaluatorBase
