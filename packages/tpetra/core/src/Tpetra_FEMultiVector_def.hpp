@@ -62,57 +62,43 @@ FEMultiVector(const Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> > 
   activeMultiVector_(FE_ACTIVE_TARGET),
   importer_(importer) {
   // Sanity check the importer
-  if(!importer.is_null() && !importer->getSourceMap()->isSameAs(*map)) {
+  if(!importer_.is_null() && !importer_->getSourceMap()->isSameAs(*map)) {
     throw std::runtime_error("FEMultiVector: 'map' must match 'importer->getSourceMap()' if impoter is provided");
   }
 
-  if(!importer.is_null()) {
-    // 1) Check maps to see if we can reuse memory (aka do numSames == NumLocal in domain map && numPermutes==0)
-
-    //   a) If so, we then build the inactiveMultiVector_ (as the source) using a restricted DualView
-
-    //   b) If not call a new constructor
+  if(!importer_.is_null()) {
+    // Check maps to see if we can reuse memory (aka do numSames == domainMap->getNodeNumElements()) 
+    if(importer_->getNumSameIDs() == importer->getSourceMap()->getNodeNumElements()) {
+      //   1) If so, we then build the inactiveMultiVector_ (w/ source map) using a restricted DualView      
+      throw std::runtime_error("stub");
+    }
+    else {
+      //   2) If not call a new constructor for the inactive guy (w/ source map)
+      inactiveMultiVector_ = Teuchos::rcp(new base_type(importer_->getSourceMap(),numVecs,zeroOut));
+    }
 
   }
+}// end constructor
 
-}
-
-
-
-#if 0  // WCMCLEN - use something like this for the c'tor ^^^
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  FEMultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
-  FEMultiVector (const Teuchos::RCP<const map_type>& map,
-                 const size_t numVecs,
-                 const bool zeroOut) : /* default is true */
-    base_type (map)
-  {
-    ::Tpetra::Details::ProfilingRegion region ("Tpetra::MV ctor (map,numVecs,zeroOut)");
-    view_ = allocDualView<Scalar, LocalOrdinal, GlobalOrdinal, Node> (lclNumRows, numVecs, zeroOut);
-    const size_t lclNumRows = this->getLocalLength ();
-
-    origView_ = view_;
-  }
-#endif
 
 
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void FEMultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::replaceMap (const Teuchos::RCP<const map_type>& newMap) {
   throw std::runtime_error("Tpetra::FEMultiVector::replaceMap() is not implemented");
-}
+}// end replaceMap
 
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void FEMultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::doTargetToSource(const CombineMode CM) {
   if(!importer_.is_null() && activeMultiVector_ == FE_ACTIVE_TARGET) {
     this->doImport(*inactiveMultiVector_,*importer_,CM);
   }
-}
+}//end doTargetToSource
 
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void FEMultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::switchActiveMultiVector() {
   throw std::runtime_error("stub");
-}
+}//end switchActiveMultiVector
 
 
 
