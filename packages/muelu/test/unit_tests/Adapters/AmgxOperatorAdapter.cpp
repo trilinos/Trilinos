@@ -91,9 +91,12 @@ namespace MueLuTests {
 
       RCP<const Teuchos::Comm<int> > comm = TestHelpers::Parameters::getDefaultComm();
       int nx;
-      //different problem sizes chosen based upon number of MPI ranks
-      if(comm->getSize() == 4) nx = 200;
-      if(comm->getSize() == 1) nx = 91;
+      //disable amgx test in parallel
+      if(comm->getSize() > 1) 
+	return;
+      else
+	nx = 91;
+
       //matrix
       RCP<Matrix> Op = TestHelpers::TestFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build2DPoisson(nx, -1, Xpetra::UseTpetra); 
       RCP<Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > tpA = MueLu::Utilities<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Op2NonConstTpetraCrs(Op);
