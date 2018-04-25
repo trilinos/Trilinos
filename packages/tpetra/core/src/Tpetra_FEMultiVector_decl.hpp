@@ -164,7 +164,7 @@ namespace Tpetra {
     clone (const Teuchos::RCP<Node2>& node2) const;
 
     //! Destructor (virtual for memory safety of derived classes).
-    virtual ~FEMultiVector ();
+    virtual ~FEMultiVector () {}
 
     //@}
     //! @name Post-construction modification routines
