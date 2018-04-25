@@ -97,7 +97,25 @@ void FEMultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::doTargetToSource(
 
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void FEMultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::switchActiveMultiVector() {
-  throw std::runtime_error("stub");
+  if(activeMultiVector_ == FE_ACTIVE_TARGET) activeMultiVector_ = FE_ACTIVE_SOURCE;
+  else activeMultiVector_ = FE_ACTIVE_TARGET;
+
+  if(importer_.is_null()) return;
+
+  // Cache views
+  Teuchos::RCP<const map_type> temp_map = this->getMap();
+  dual_view_type  temp1, temp2;
+  Teuchos::Array<size_t> temp3; // FIXME: This is a deep copy (see note in MultiVector)
+  temp1 = this->inactiveMultiVector_->view_;
+  temp2 = inactiveMultiVector_->origView_;
+  temp3 = inactiveMultiVector_->whichVectors_;
+
+  // Swap active-> inactive
+
+  // Swap inactive -> active
+  
+
+
 }//end switchActiveMultiVector
 
 
