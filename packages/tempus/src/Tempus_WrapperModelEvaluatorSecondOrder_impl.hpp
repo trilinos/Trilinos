@@ -105,22 +105,29 @@ evalModelImpl(const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs,
     }
 	
 	case HHT_ALPHA_AFORM: { 
-      //Specific for the Newmark Implicit a-Form stepper.  May want to redesign this for a generic 
-      //second order scheme to not have an if statement here... 
-      //IKT, 3/14/17: this is effectively the same as the Piro::NewmarkDecorator::evalModel function.  
-      //the solution variable in NOX is the acceleration, a_{n+1} 
+      //Specific for the HHT Alpha stepper.  May want to redesign this for a generic 
+      //second order scheme to not have an if statement here...  
       appInArgs.set_x_dot_dot(inArgs.get_x()); 
+	  
+	  RCP<Thyra::VectorBase<Scalar> > displacement = Thyra::createMember(inArgs.get_x()->space());
+      //compute the displacement: d_{n+1} = d_n + dt*v_n + dt*dt*( (0.5-\beta)*a_n + \beta*a_{n+1} )
+      Thyra::V_StVpStV(Teuchos::ptrFromRef(*displacement), 1.0, *d_old_, delta_t_, *v_old_); 
+      Scalar c = delta_t_*delta_t_*(0.5-beta_);
+      Thyra::Vp_StV(Teuchos::ptrFromRef(*displacement), c, *a_);
+      c = delta_t_*delta_t_*beta_;
+      Thyra::Vp_StV(Teuchos::ptrFromRef(*displacement), c, *inArgs.get_x());
+      appInArgs.set_x(displacement);
+	  
       RCP<Thyra::VectorBase<Scalar> > velocity = Thyra::createMember(inArgs.get_x()->space());
-      //compute the velocity, v_{n+1}(a_{n+1}) = velocity_{pred} + \gamma dt a_{n+1}
-      Thyra::V_StVpStV(Teuchos::ptrFromRef(*velocity), 1.0, *v_pred_, delta_t_*gamma_, *inArgs.get_x());
+      //compute the velocity, v_{n+1} = v_n + dt*(1.0-\gamma)*a_n + dt*\gamma*a_{n+1}
+      c = (1.0-gamma_)*delta_t_;
+      Thyra::V_StVpStV(Teuchos::ptrFromRef(*velocity), 1.0, *v_old_, c, *a_);
+	  Thyra::Vp_StV(Teuchos::ptrFromRef(*velocity), delta_t_*gamma_, *inArgs.get_x());
       appInArgs.set_x_dot(velocity); 
-      RCP<Thyra::VectorBase<Scalar> > displacement = Thyra::createMember(inArgs.get_x()->space());
-      //compute the displacement, d_{n+1}(a_{n+1}) = displacement_{pred} + \beta dt^2 a_{n+1}
-      Thyra::V_StVpStV(Teuchos::ptrFromRef(*displacement), 1.0, *d_pred_, beta_*delta_t_*delta_t_, *inArgs.get_x()); 
-      appInArgs.set_x(displacement); 
+       
       appInArgs.set_W_x_dot_dot_coeff(1.0);                 // da/da
-      appInArgs.set_alpha(gamma_*delta_t_);                 // dv/da
-      appInArgs.set_beta(beta_*delta_t_*delta_t_);          // dd/da
+      appInArgs.set_alpha((1.0-alpha_f_)*gamma_*delta_t_);                 // dv/da
+      appInArgs.set_beta((1.0-alpha_f_)*beta_*delta_t_*delta_t_);          // dd/da
   
       appInArgs.set_t(t_);
       for (int i=0; i<appModel_->Np(); ++i) {
@@ -171,7 +178,7 @@ evalModelImpl(const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs,
 #endif
 
       Scalar const
-      c = 1.0 / beta_ / delta_t_ / delta_t_;
+      c = 1.0 / (beta_ * delta_t_ * delta_t_);
 
       // compute acceleration
       // a_{n+1} = (d_{n+1} - d_pred) / dt / dt / beta

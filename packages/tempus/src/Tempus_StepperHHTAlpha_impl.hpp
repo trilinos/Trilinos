@@ -187,8 +187,6 @@ void StepperHHTAlpha<Scalar>::takeStep(
     //Get time and dt
     const Scalar time = currentState->getTime();
     const Scalar dt   = workingState->getTimeStep();
-    //Update time
-    Scalar t = time+dt;
 
     //Compute initial acceleration, a_old, using initial displacement (d_old) and initial
     //velocity (v_old) if in 1st time step
@@ -221,6 +219,8 @@ void StepperHHTAlpha<Scalar>::takeStep(
     //compute displacement and velocity predictors
     predictDisplacement(*d_pred, *d_old, *v_old, *a_old, dt);
     predictVelocity(*v_pred, *v_old, *a_old, dt);
+	//Update time. PA: It is supposed that wrapperModel would fetch external loads at this time point
+    Scalar t = time+(1.0-alpha_)*dt;
 
     //inject d_pred, v_pred, a and other relevant data into wrapperModel
     wrapperModel->initializeNewmark(a_old,v_pred,d_pred,dt,t,beta_,gamma_,alpha_,0.0,d_old, v_old);
@@ -231,6 +231,7 @@ void StepperHHTAlpha<Scalar>::takeStep(
     //correct velocity and displacement
     correctDisplacement(*d_new, *v_old, *a_old, *a_new, dt);
     correctVelocity(*v_new, *a_old, *a_new, dt);
+	t += alpha_*dt;
 
     if (sStatus.solveStatus == Thyra::SOLVE_STATUS_CONVERGED )
       workingState->getStepperState()->stepperStatus_ = Status::PASSED;

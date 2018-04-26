@@ -83,8 +83,8 @@ public:
   /// Set values needed in evalModelImpl
   void initializeNewmark(Teuchos::RCP<Vector> a, Teuchos::RCP<Vector> v_pred,
                          Teuchos::RCP<Vector> d_pred, Scalar delta_t,
-                         Scalar t, Scalar beta, Scalar gamma, Scalar alpham=0.0, 
-						 Scalar alphaf=0.0, Teuchos::RCP<Vector> dold=Teuchos::null,
+                         Scalar t, Scalar beta, Scalar gamma, Scalar alphaf=0.0, 
+						 Scalar alpham=0.0, Teuchos::RCP<Vector> dold=Teuchos::null,
 						 Teuchos::RCP<Vector> vold=Teuchos::null, Teuchos::RCP<Vector> aold=Teuchos::null)
   {
 #ifdef VERBOSE_DEBUG_OUTPUT
