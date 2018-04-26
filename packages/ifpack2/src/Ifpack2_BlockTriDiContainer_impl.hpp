@@ -104,7 +104,7 @@ namespace Ifpack2 {
     ///
     /// cuda specialization
     ///
-    template<typename T> struct is_cuda        { enum : bool { value = false }; };
+    template<typename T> struct is_cuda        { enum : bool { value = true }; };
 #if defined (KOKKOS_ENABLE_CUDA)
     template<> struct is_cuda<Kokkos::Cuda>    { enum : bool { value = true  }; };
 #endif
@@ -910,23 +910,21 @@ namespace Ifpack2 {
       using size_type_1d_view = typename impl_type::size_type_1d_view;
 
       enum : int { vector_length = impl_type::vector_length };
-
+      
       BlockTridiags<MatrixType> btdm;
 
-#if 1 
       const local_ordinal_type ntridiags = interf.partptr.extent(0) - 1;
       
       { // construct the flat index pointers into the tridiag values array.
         btdm.flat_td_ptr = size_type_1d_view(do_not_initialize_tag("btdm.flat_td_ptr"), ntridiags + 1);
         const Kokkos::RangePolicy<execution_space> policy(0,ntridiags + 1);
         Kokkos::parallel_scan
-          (policy,
-           KOKKOS_LAMBDA(const local_ordinal_type &i, size_type &update, const bool &final) {
+          (policy, KOKKOS_LAMBDA(const local_ordinal_type &i, size_type &update, const bool &final) {
             if (final) 
               btdm.flat_td_ptr(i) = update;       
             if (i < ntridiags) {
               const local_ordinal_type nrows = interf.partptr(i+1) - interf.partptr(i);
-              update += (3*nrows-2);
+              update += btdm.NumBlocks(nrows);
             } 
           });
       }
@@ -939,60 +937,27 @@ namespace Ifpack2 {
         btdm.pack_td_ptr = size_type_1d_view(do_not_initialize_tag("btdm.pack_td_ptr"), ntridiags + 1);
         const Kokkos::RangePolicy<execution_space> policy(0,npacks);
         Kokkos::parallel_scan
-          (policy,
-           KOKKOS_LAMBDA(const local_ordinal_type &i, size_type &update, const bool &final) {
+          (policy, KOKKOS_LAMBDA(const local_ordinal_type &i, size_type &update, const bool &final) {
             const local_ordinal_type parti      = interf.packptr(i);
             const local_ordinal_type parti_next = interf.packptr(i+1);
             if (final) {
               size_type nblks = update;
               for (local_ordinal_type pti=parti;pti<parti_next;++pti)
                 btdm.pack_td_ptr(pti) = nblks;
-              nblks += BlockTridiags<MatrixType>::NumBlocks(interf.partptr(parti+1) - interf.partptr(parti));
-              if (i == npacks-1) btdm.pack_td_ptr(ntridiags) = nblks;
+              const local_ordinal_type nrows = interf.partptr(parti+1) - interf.partptr(parti);
+              // last one
+              if (i == npacks-1) 
+                btdm.pack_td_ptr(ntridiags) = nblks + btdm.NumBlocks(nrows);
             }
-            update += BlockTridiags<MatrixType>::NumBlocks(interf.partptr(parti+1) - interf.partptr(parti));
+            {
+              const local_ordinal_type nrows = interf.partptr(parti+1) - interf.partptr(parti);
+              update += btdm.NumBlocks(nrows);
+            }
           });        
       }
-#else // Serial version 
-      const auto partptr = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), interf.partptr);
-      const local_ordinal_type ntridiags = interf.partptr.extent(0) - 1;
-      
-      { // construct the flat index pointers into the tridiag values array.
-        btdm.flat_td_ptr = size_type_1d_view("btdm.flat_td_ptr", ntridiags + 1);
-        const auto flat_td_ptr = Kokkos::create_mirror_view(btdm.flat_td_ptr);
-        flat_td_ptr(0) = 0;
-        for (local_ordinal_type ti = 1; ti <= ntridiags; ++ti) {
-          const local_ordinal_type nrows = partptr(ti) - partptr(ti-1);
-          flat_td_ptr(ti) = flat_td_ptr(ti-1) + (3*nrows - 2);
-        }
-#if defined(BLOCKTRIDICONTAINER_DEBUG)        
-        {
-          const size_type nnz = 3*partptr(partptr.size() - 1) - 2*ntridiags;
-          TEUCHOS_ASSERT(flat_td_ptr(ntridiags) == nnz);
-        }
-#endif
-        Kokkos::deep_copy(btdm.flat_td_ptr, flat_td_ptr);
-      }
-      
-      // And the packed index pointers.
-      if (vector_length == 1) {
-        btdm.pack_td_ptr = btdm.flat_td_ptr;
-      } else {
-        const auto packptr = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), interf.packptr);
-        const local_ordinal_type npacks = packptr.extent(0) - 1;
-        btdm.pack_td_ptr = size_type_1d_view("btdm.pack_td_ptr", ntridiags + 1);
-        const auto pack_td_ptr = Kokkos::create_mirror_view(btdm.pack_td_ptr);
-        size_type nblks = 0;
-        for (local_ordinal_type pki = 0; pki < npacks; ++pki) {
-          const local_ordinal_type parti = packptr(pki);
-          for (local_ordinal_type pti = parti; pti < packptr(pki+1); ++pti)
-            pack_td_ptr(pti) = nblks;
-          nblks += BlockTridiags<MatrixType>::NumBlocks(partptr(parti+1) - partptr(parti));
-        }
-        pack_td_ptr(ntridiags) = nblks;
-        Kokkos::deep_copy(btdm.pack_td_ptr, pack_td_ptr);
-      }
-#endif
+
+      // values and A_colindsub are created in the symbolic phase
+
       return btdm;
     }
 
@@ -1013,25 +978,38 @@ namespace Ifpack2 {
       using execution_space = typename impl_type::execution_space;
       using local_ordinal_type = typename impl_type::local_ordinal_type;
       using size_type = typename impl_type::size_type;
+      using impl_scalar_type = typename impl_type::impl_scalar_type;
+
+      using size_type_1d_view = typename impl_type::size_type_1d_view;
+      using impl_scalar_type_4d_view = typename impl_type::impl_scalar_type_4d_view;
+      using vector_type_3d_view = typename impl_type::vector_type_3d_view;
+
+      enum : int { vector_length = impl_type::vector_length };
       
+      const ConstUnmanaged<size_type_1d_view> pack_td_ptr(btdm.pack_td_ptr);
       const local_ordinal_type blocksize = btdm.values.extent(1);
 
       if (is_cuda<execution_space>::value) {
         using team_policy_type = Kokkos::TeamPolicy<execution_space>;
-        const int vl = impl_type::vector_length; // must use int instead of enum to find out a matching kokkos constructor 
+        const int vl = vector_length; // must use int instead of enum to find out a matching kokkos constructor 
+        const impl_scalar_type_4d_view values((impl_scalar_type*)btdm.values.data(), 
+                                              btdm.values.extent(0), 
+                                              btdm.values.extent(1),
+                                              btdm.values.extent(2),
+                                              vl);
         const team_policy_type policy(packptr.extent(0)-1, Kokkos::AUTO(), vl); // Kyungjoo: no problem here
         Kokkos::parallel_for
           (policy, KOKKOS_LAMBDA(const typename team_policy_type::member_type &member) {          
             const local_ordinal_type k      = member.league_rank();
-            const local_ordinal_type ibeg   = btdm.pack_td_ptr(packptr(k));
-            const local_ordinal_type iend   = btdm.pack_td_ptr(packptr(k+1));
+            const local_ordinal_type ibeg   = pack_td_ptr(packptr(k));
+            const local_ordinal_type iend   = pack_td_ptr(packptr(k+1));
             const local_ordinal_type diff   = iend - ibeg;
             const local_ordinal_type icount = diff/3 + (diff%3 > 0);
-            Kokkos::parallel_for(Kokkos::TeamThreadRange(member,icount),[&](const local_ordinal_type &ii) {
-                const local_ordinal_type i = ibeg + ii*3;
-                Kokkos::parallel_for(Kokkos::ThreadVectorRange(member, vl),[&](const int &v) {
+            Kokkos::parallel_for(Kokkos::ThreadVectorRange(member, vl),[&](const int &v) {
+                Kokkos::parallel_for(Kokkos::TeamThreadRange(member,icount),[&](const local_ordinal_type &ii) {
+                    const local_ordinal_type i = ibeg + ii*3;
                     for (local_ordinal_type j=0;j<blocksize;++j) 
-                      btdm.values(i,j,j)[v] = 1;
+                      values(i,j,j,v) = 1;
                   });
               });
           });
@@ -1040,12 +1018,13 @@ namespace Ifpack2 {
 #if defined(__CUDA_ARCH__)
         TEUCHOS_TEST_FOR_EXCEPT_MSG(true, "Error: CUDA should not see this code"); 
 #else
+        const Unmanaged<vector_type_3d_view> values = btdm.values;
         const Kokkos::RangePolicy<execution_space> policy(0, packptr.extent(0) - 1);
         Kokkos::parallel_for
           (policy, KOKKOS_LAMBDA(const local_ordinal_type k) {
-            for (size_type i=btdm.pack_td_ptr(packptr(k)),iend=btdm.pack_td_ptr(packptr(k+1));i<iend;i += 3)
+            for (size_type i=pack_td_ptr(packptr(k)),iend=pack_td_ptr(packptr(k+1));i<iend;i+=3)
               for (local_ordinal_type j=0;j<blocksize;++j)
-                btdm.values(i,j,j) = 1;
+                values(i,j,j) = 1;
           });
 #endif
       }
@@ -1114,11 +1093,11 @@ namespace Ifpack2 {
       const auto blocksize = A->getBlockSize();      
 
       // mirroring to host
-      const auto partptr = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), interf.partptr);
-      const auto lclrow = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), interf.lclrow);
-      const auto rowidx2part = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), interf.rowidx2part);
+      const auto partptr = Kokkos::create_mirror_view_and_copy     (Kokkos::HostSpace(), interf.partptr);
+      const auto lclrow = Kokkos::create_mirror_view_and_copy      (Kokkos::HostSpace(), interf.lclrow);
+      const auto rowidx2part = Kokkos::create_mirror_view_and_copy (Kokkos::HostSpace(), interf.rowidx2part);
       const auto part2rowidx0 = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), interf.part2rowidx0);
-      const auto packptr = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), interf.packptr);
+      const auto packptr = Kokkos::create_mirror_view_and_copy     (Kokkos::HostSpace(), interf.packptr);
 
       const local_ordinal_type nrows = partptr(partptr.extent(0) - 1);
 
@@ -1238,8 +1217,7 @@ namespace Ifpack2 {
                 const local_ordinal_type part_ri0 = part2rowidx0(pi0);
                 local_ordinal_type offset = 0;
                 for (local_ordinal_type ri0=partptr(pi0);ri0<partptr(pi0+1);++ri0) {
-                  const local_ordinal_type td_row_os 
-                    = BlockTridiags<MatrixType>::RowToIndex(ri0 - part_ri0) + offset;
+                  const local_ordinal_type td_row_os = btdm.RowToIndex(ri0 - part_ri0) + offset;
                   offset = 1;
                   const local_ordinal_type lr0 = lclrow(ri0);
                   const size_type j0 = local_graph_rowptr(lr0);
@@ -1266,17 +1244,9 @@ namespace Ifpack2 {
           // Allocate values.
           { 
             const local_ordinal_type npacks = packptr.extent(0) - 1;
-            local_ordinal_type nblks = 0; // Number of tridiag blocks, accounting for packing.
-            {
-              const Kokkos::RangePolicy<host_execution_space> policy(0, npacks);
-              Kokkos::parallel_reduce
-                (policy, KOKKOS_LAMBDA(const local_ordinal_type pai, local_ordinal_type &update) {
-                  const local_ordinal_type pti = packptr(pai);
-                  const local_ordinal_type inrows = partptr(pti+1) - partptr(pti);
-                  update += BlockTridiags<MatrixType>::RowToIndex(inrows);
-                }, nblks);
-            }
-            btdm.values = vector_type_3d_view("btdm.values", nblks, blocksize, blocksize);
+            const auto pack_td_ptr_last = Kokkos::subview(btdm.pack_td_ptr, nparts);
+            const auto num_packed_blocks = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), pack_td_ptr_last);
+            btdm.values = vector_type_3d_view("btdm.values", num_packed_blocks(), blocksize, blocksize);
             if (vector_length > 1) setTridiagsToIdentity(btdm, interf.packptr);
           }
         }
@@ -1623,7 +1593,8 @@ namespace Ifpack2 {
       operator() (const member_type &member) const {
         const local_ordinal_type packidx = member.league_rank();
         const local_ordinal_type partidx_begin = packptr(packidx);
-        const local_ordinal_type npacks = packptr(packidx+1) - partidx_begin;
+        const local_ordinal_type partidx_end   = packptr(packidx+1);
+        const local_ordinal_type npacks = partidx_end - partidx_begin;
 
         Kokkos::parallel_for
           (Kokkos::ThreadVectorRange(member, npacks),
