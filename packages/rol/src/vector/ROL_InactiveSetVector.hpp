@@ -44,16 +44,18 @@
 #ifndef ROL_INACTIVE_SET_VECTOR_HPP
 #define ROL_INACTIVE_SET_VECTOR_HPP
 
-#include "ROL_Vector.hpp"
-#include "ROL_VectorWorkspace.hpp"
+#include "ROL_ScaledVector.hpp"
 #include "ROL_BoundConstraint.hpp"
 
-
 /** @ingroup la_group
-    \class ROL::InActiveVector
+    \class ROL::InactiveSet_PrimalVector
     \brief Defines the a Vector which has a diagonally scaled dot 
            product that neglects active set elements
+           Used to simplify Semi-smooth Newton method implementation
 
+    \class ROL::InactiveSet_DualVector
+    \brief Defines the a Vector which has a diagonally scaled dot 
+           product that neglects active set elements
            Used to simplify Semi-smooth Newton method implementation
 */
 
@@ -64,7 +66,7 @@ template<typename Real> class InactiveSet_DualVector;
 
 
 template<typename Real>
-class InactiveSet_PrimalVector : public Vector<Real> {
+class InactiveSet_PrimalVector : public PrimalScaledVector<Real> {
 
   using V      = Vector<Real>;
   using Primal = InactiveSet_PrimalVector<Real>;
@@ -73,165 +75,122 @@ class InactiveSet_PrimalVector : public Vector<Real> {
 
 private:
 
-  Ptr<V>          vec_;
-  Ptr<V>          scaling_vec_;
-  Ptr<Bnd>        bnd_;
+  mutable Ptr<V>  x_;            // Current optimization iterate
+  Ptr<Bnd>        bnd_;          
   
-  VectorWorkspace<Real> workspace_;  
-
-  Elementwise::Multiply<Real> mult_;
-
 public: 
 
   InactiveSet_PrimalVector( const Ptr<V>& vec,
                             const Ptr<V>& scaling_vec, 
+                            const Ptr<V>& x,
                             const Ptr<Bnd>& bnd ) :
-    vec_(vec), scaling_vec_(scaling_vec), bnd_(bnd) {}
+    PrimalScaledVector<Real>(vec,scaling_vec_), x_(x), bnd_(bnd) {}
 
   virtual ~InactiveSet_PrimalVector() {}
-
-  void plus( const V& x ) override { vec_->plus(x); }
-  void scale( const Real alpha ) override { vec_->scale(alpha); }
-  
 
 
   Real dot( const V& x ) const override {
 
-    auto y = workspace_.copy(x);
+    auto& w = this->getWorkspace();  
+    auto y  = w.copy(x);
 
-    y->applyBinary( mult_, *scaling_ );
-    bnd_->pruneActive( *y, *vec_ );
+    this->multiply_scaling( *y );
 
-    return y->dot(*vec_);    
+    // Set elements of y corresponsing the the active set of X to zero
+    bnd_->pruneActive( *y, *x_ );
+
+    return y->dot( *this->getVector() );    
   } 
 
-  Real norm() const override { return std::sqrt(this->dot(*this)); }
-
   Ptr<V> clone() const override {
-    return makePtr<Primal>( vec_->clone(), scaling_vec_, bnd_ );
-  }
-
-  void axpy( const Real alpha, const Vector& x ) override { 
-    vec_->axpy( alpha, x );
+    return makePtr<Primal>( this->getVector()->clone(), 
+                            this->getScalingVector(),
+                            x_, bnd_ );
   }
 
   Ptr<V> basis( const int i ) const override { 
-    return makePtr<Primal>( vec_->basis(i), scaling_vec_, bnd_ ); 
+    return makePtr<Primal>( this->getVector()->basis(i),
+                            this->getScalingVector(),
+                            x_, bnd_ ); 
   }
-
-  int dimension() const override { return vec_->dimension(); }
- 
-  void set( const V& x ) override { vec_->set(x); }
 
   void const V& dual() const override {
-    auto dual_vec = workspace_.copy( *vec_ );  
-    dual_vec->applyBinary( mult_, *scaling_vec_ );
-    return makePtr<Dual>( dual_vec, scaling_vec_, bnd_ );
+    auto& w = this->getWorkspace();
+    auto dual_vec = w.copy( this->getVector() );  
+    this->multiply_scaling( dual_vec );
+    return makePtr<Dual>( dual_vec, this->getScalingVector(), x_, bnd_ );
   } 
 
-  void applyUnary( const Elementwise::UnaryFunction<Real>& f ) override {
-    vec_->applyUnary( f );  
+  void setIterateVector( const Ptr<V>& x ) const { x_->set(x); }
+  const Ptr<V>& getIterateVector() { return x_; }
+  const Ptr<const V>& getIterateVector() const { return x_; }
+
+
+}; // class InactiveSet_PrimalVector 
+
+
+template<typename Real>
+class InactiveSet_DualVector : public DualScaledVector<Real> {
+
+  using V      = Vector<Real>;
+  using Primal = InactiveSet_PrimalVector<Real>;
+  using Dual   = InactiveSet_DualVector<Real>;
+  using Bnd    = BoundConstraint<Real>;
+
+private:
+
+  mutable Ptr<V>  x_;            // Current optimization iterate
+  Ptr<Bnd>        bnd_;          
+  
+public: 
+
+  InactiveSet_DualVector( const Ptr<V>& vec,
+                          const Ptr<V>& scaling_vec, 
+                          const Ptr<V>& x,
+                          const Ptr<Bnd>& bnd ) :
+    PrimalScaledVector<Real>(vec,scaling_vec_), x_(x), bnd_(bnd) {}
+
+  virtual ~InactiveSet_PrimalVector() {}
+
+  Real dot( const V& x ) const override {
+
+    auto& w = this->getWorkspace();  
+    auto y  = w.copy(x);
+    this->divide_scaling( *y, this->getScalingVector() );
+
+    // Set elements of y corresponsing the the active set of X to zero
+    bnd_->pruneActive( *y, *x_ );
+
+    return y->dot( *this->getVector() );    
+  } 
+
+  Ptr<V> clone() const override {
+    return makePtr<Primal>( this->getVector()->clone(), 
+                            this->getScalingVector(),
+                            x_, bnd_ );
   }
 
-  void applyBinary( const Elementwise::UnaryFunction<Real>& f, const V& x ) override {
-    vec_->applyBinary( f, x );
+  Ptr<V> basis( const int i ) const override { 
+    return makePtr<Primal>( this->getVector()->basis(i),
+                            this->getScalingVector(),
+                            x_, bnd_ ); 
   }
 
-  Real reduce( const Elementwise::ReductionOp<Real>& r ) const override {
-    return vec_->reduce( r );
-  }
+  void const V& dual() const override {
+    auto& w = this->getWorkspace();
+    auto dual_vec = w.copy( this->getVector() );  
+    this->multiply( dual_vec );
+    return *( makePtr<Dual>( dual_vec, this->getScalingVector(), x_, bnd_ ) );
+  } 
 
-  void setScalar( const Real& c ) override { vec_->set(c); }
-
-  void print( std::ostream& os ) const override { vec_->print(os); }
+  void setIterateVector( const Ptr<V>& x ) const { x_->set(x); }
+  const Ptr<V>& getIterateVector() { return x_; }
+  const Ptr<const V>& getIterateVector() const { return x_; }
 
 }; // class InactiveSet_PrimalVector 
 
 
 
-
-
-template<typename Real>
-class InactiveSet_DualVector : public Vector<Real> {
-
-  using V      = Vector<Real>;
-  using Primal = InactiveSet_PrimalVector<Real>;
-  using Dual   = InactiveSet_DualVector<Real>;
-  using Bnd    = BoundConstraint<Real>;
-
-private:
-
-  Ptr<V>          vec_;
-  Ptr<V>          scaling_vec_;
-  Ptr<Bnd>        bnd_;
-  
-  VectorWorkspace<Real> workspace_;  
-
-  Elementwise::Divide<Real>   div_;
-
-public: 
-
-  InactiveSet_DualVector( const Ptr<V>& vec,
-                          const Ptr<V>& scaling_vec, 
-                          const Ptr<Bnd>& bnd ) :
-    vec_(vec), scaling_vec_(scaling_vec), bnd_(bnd) {}
-
-  virtual ~InactiveSet_PrimalVector() {}
-
-  void plus( const V& x ) override { vec_->plus(x); }
-  void scale( const Real alpha ) override { vec_->scale(alpha); }
-  
-  Real dot( const V& x ) const override {
-
-    auto y = workspace_.copy(x);
-
-    y->applyBinary( div_, *scaling_ );
-    bnd_->pruneActive( *y, *vec_ );
-
-    return y->dot(*vec_);    
-  } 
-
-  Real norm() const override { return std::sqrt(this->dot(*this)); }
-
-  Ptr<V> clone() const override {
-    return makePtr<Primal>( vec_->clone(), scaling_vec_, bnd_ );
-  }
-
-  void axpy( const Real alpha, const Vector& x ) override { 
-    vec_->axpy( alpha, x );
-  }
-
-  Ptr<V> basis( const int i ) const override { 
-    return makePtr<Primal>( vec_->basis(i), scaling_vec_, bnd_ ); 
-  }
-
-  int dimension() const override { return vec_->dimension(); }
- 
-  void set( const V& x ) override { vec_->set(x); }
-
-  void const V& dual() const override {
-    auto primal_vec = workspace_.copy( *vec_ );  
-    primal_vec->applyBinary( div_, *scaling_vec_ );
-    return makePtr<Primal>( primal_vec, scaling_vec_, bnd_ );
-  } 
-
-  void applyUnary( const Elementwise::UnaryFunction<Real>& f ) override {
-    vec_->applyUnary( f );  
-  }
-
-  void applyBinary( const Elementwise::UnaryFunction<Real>& f, const V& x ) override {
-    vec_->applyBinary( f, x );
-  }
-
-  Real reduce( const Elementwise::ReductionOp<Real>& r ) const override {
-    return vec_->reduce( r );
-  }
-
-  void setScalar( const Real& c ) override { vec_->set(c); }
-
-  void print( std::ostream& os ) const override { vec_->print(os); }
-
-}; // class InactiveSet_DualVector 
 
 
 } // namespace ROL
