@@ -84,8 +84,7 @@ public:
   void initializeNewmark(Teuchos::RCP<Vector> a, Teuchos::RCP<Vector> v_pred,
                          Teuchos::RCP<Vector> d_pred, Scalar delta_t,
                          Scalar t, Scalar beta, Scalar gamma, Scalar alphaf=0.0, 
-						 Scalar alpham=0.0, Teuchos::RCP<Vector> dold=Teuchos::null,
-						 Teuchos::RCP<Vector> vold=Teuchos::null, Teuchos::RCP<Vector> aold=Teuchos::null)
+						 Scalar alpham=0.0)
   {
 #ifdef VERBOSE_DEBUG_OUTPUT
     *out_ << "DEBUG: " << __PRETTY_FUNCTION__ << "\n";
@@ -93,7 +92,6 @@ public:
     a_ = a; v_pred_ = v_pred; d_pred_ = d_pred;
     delta_t_ = delta_t; t_ = t; beta_ = beta; gamma_ = gamma;
     alpha_f_ = alphaf; alpha_m_ = alpham;
-	d_old_ = dold;  v_old_=vold;  a_old_=aold;
   }
 
   /// \name Overridden from Thyra::StateFuncModelEvaluatorBase
@@ -218,9 +216,6 @@ private:
   Teuchos::RCP<const Vector> a_;
   Teuchos::RCP<Vector> d_pred_;
   Teuchos::RCP<Vector> v_pred_;
-  Teuchos::RCP<Vector> d_old_;
-  Teuchos::RCP<Vector> v_old_;
-  Teuchos::RCP<Vector> a_old_;
   Teuchos::RCP<Teuchos::FancyOStream> out_;
   SCHEME_TYPE schemeType_;
 

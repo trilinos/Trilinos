@@ -197,7 +197,7 @@ void StepperHHTAlpha<Scalar>::takeStep(
       Thyra::copy(*d_old, d_init.ptr());
       Thyra::copy(*v_old, v_init.ptr());
       Thyra::put_scalar(0.0, a_init.ptr());
-      wrapperModel->initializeNewmark(a_init,v_init,d_init,0.0,time,beta_,gamma_,alpha_,0.0,d_old, v_old);
+      wrapperModel->initializeNewmark(a_init,v_init,d_init,0.0,time,beta_,gamma_,alpha_);
       const Thyra::SolveStatus<Scalar> sStatus=this->solveImplicitODE(a_init);
 
       if (sStatus.solveStatus == Thyra::SOLVE_STATUS_CONVERGED )
@@ -223,7 +223,7 @@ void StepperHHTAlpha<Scalar>::takeStep(
     Scalar t = time+ (1.0-alpha_)*dt;
 
     //inject d_pred, v_pred, a and other relevant data into wrapperModel
-    wrapperModel->initializeNewmark(a_old,v_pred,d_pred,dt,t,beta_,gamma_,alpha_,0.0,d_old, v_old);
+    wrapperModel->initializeNewmark(a_old,v_pred,d_pred,dt,t,beta_,gamma_,alpha_);
 
     //Solve for new acceleration
     const Thyra::SolveStatus<Scalar> sStatus = this->solveImplicitODE(a_new);
