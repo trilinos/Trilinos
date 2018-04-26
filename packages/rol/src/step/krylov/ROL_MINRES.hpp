@@ -125,7 +125,7 @@ public:
     auto w_curr = clones_( x, "w_curr" );  w_curr->zero();
     auto w_next = clones_( x, "w_next" );  w_next->zero();
 
-    Real c_prev, s_prev, c_curr, s_curr, c_next, s_next;
+    Real c_prev{0}, s_prev{0}, c_curr{0}, s_curr{0}, c_next{0}, s_next{0};
 
     resnorm_ = v_curr->norm();    
     Real rtol = min(Krylov<Real>::getAbsoluteTolerance(),Krylov<Real>::getRelativeTolerance()*resnorm_);
