@@ -101,7 +101,7 @@ int main( int argc, char* argv[] ) {
   auto outStream = makeStreamPtr( std::cout, argc > 1 );
   
   int errorFlag  = 0;
-  RealT errtol = ROL_THRESHOLD<RealT>();
+  RealT errtol = std::sqrt(ROL_EPSILON<RealT>());
 
   try {
 
