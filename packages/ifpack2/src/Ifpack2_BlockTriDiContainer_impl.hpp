@@ -104,7 +104,7 @@ namespace Ifpack2 {
     ///
     /// cuda specialization
     ///
-    template<typename T> struct is_cuda        { enum : bool { value = true }; };
+    template<typename T> struct is_cuda        { enum : bool { value = false }; };
 #if defined (KOKKOS_ENABLE_CUDA)
     template<> struct is_cuda<Kokkos::Cuda>    { enum : bool { value = true  }; };
 #endif
@@ -941,7 +941,7 @@ namespace Ifpack2 {
             const local_ordinal_type parti      = interf.packptr(i);
             const local_ordinal_type parti_next = interf.packptr(i+1);
             if (final) {
-              size_type nblks = update;
+              const size_type nblks = update;
               for (local_ordinal_type pti=parti;pti<parti_next;++pti)
                 btdm.pack_td_ptr(pti) = nblks;
               const local_ordinal_type nrows = interf.partptr(parti+1) - interf.partptr(parti);
@@ -1520,29 +1520,28 @@ namespace Ifpack2 {
         const local_ordinal_type nrows = partptr(partidx+1) - ri0;
         const local_ordinal_type v = partidx % vector_length;
 
-        for (local_ordinal_type tr=0,j=0;tr<nrows;++tr) {
-          for (local_ordinal_type e=0;e<3;++e) {
+        for (local_ordinal_type tr=0,j=0;tr<nrows;++tr) {          
+          local_ordinal_type lbeg = (tr == 0         ? 1 : 0);
+          local_ordinal_type lend = (tr == nrows - 1 ? 2 : 3);
+          for (local_ordinal_type l=lbeg;l<lend;++l,++j) { // l == 1, diagonal
             const size_type Aj = A_rowptr(lclrow(ri0 + tr)) + A_colindsub(kfs + j);
             const impl_scalar_type* block = &A_values(Aj*blocksize_square);
             const size_type pi = kps + j;
-            ++j;
+
             Kokkos::parallel_for
               (Kokkos::TeamThreadRange(member,blocksize_square), [&](const local_ordinal_type &ij) {
                 const local_ordinal_type ii = ij/blocksize;
                 const local_ordinal_type jj = ij%blocksize;
                 scalar_values(pi, ii, jj, v) = block[ii*blocksize + jj];
               });
-
-            if (nrows == 1) return;
-            if (e == 1 && (tr == 0 || tr+1 == nrows)) break;
           }
         }
       }
 
       KOKKOS_INLINE_FUNCTION 
       void 
-      factorize (const member_type &member, 
-                 const local_ordinal_type &partidx) const {
+      factorize(const member_type &member, 
+                const local_ordinal_type &partidx) const {
         using namespace KokkosBatched::Experimental;
         using AlgoType = Algo::Level3::Unblocked;
 
@@ -1597,8 +1596,7 @@ namespace Ifpack2 {
         const local_ordinal_type npacks = partidx_end - partidx_begin;
 
         Kokkos::parallel_for
-          (Kokkos::ThreadVectorRange(member, npacks),
-           [&](const local_ordinal_type &v) {
+          (Kokkos::ThreadVectorRange(member, npacks), [&](const local_ordinal_type &v) {
             extract(member, partidx_begin + v);
             factorize(member, partidx_begin + v);
           });
@@ -2011,8 +2009,7 @@ namespace Ifpack2 {
       KOKKOS_INLINE_FUNCTION 
       void 
       solve(const member_type &member, 
-            const local_ordinal_type &v,
-            const local_ordinal_type& packidx) const {
+            const local_ordinal_type& partidx) const {
         using namespace KokkosBatched::Experimental;
         using AlgoType = Algo::Level2::Unblocked;
 
@@ -2027,11 +2024,11 @@ namespace Ifpack2 {
         auto X2 = X1;
 
         // index counting
-        const local_ordinal_type partidx = packptr(packidx);
         size_type i0 = pack_td_ptr(partidx);
+        const local_ordinal_type nrows = partptr(partidx+1) - partptr(partidx);
+        const local_ordinal_type v = partidx % vector_length;
+        
         local_ordinal_type r0 = part2packrowidx0(partidx);
-        const local_ordinal_type nrows = part2packrowidx0(packptr(packidx+1)) - r0;
-
         for (local_ordinal_type col=0;col<num_vectors;++col) {
           // solve Lx = x
           A.assign_data( &D_scalar_values(i0,0,0,v) );
@@ -2077,17 +2074,20 @@ namespace Ifpack2 {
       operator() (const member_type &member) const {
         const local_ordinal_type packidx = member.league_rank();
         const local_ordinal_type partidx_begin = packptr(packidx);
-        const local_ordinal_type npacks = packptr(packidx+1) - partidx_begin;
-        const local_ordinal_type vl = vector_length;
-        Kokkos::parallel_for(Kokkos::ThreadVectorRange(member, vl /* npacks*/ ),[&](const int &v) {
-            solve(member, v, packidx);
+        const local_ordinal_type partidx_end   = packptr(packidx+1);
+        const local_ordinal_type npacks = partidx_end - partidx_begin;
+
+        Kokkos::parallel_for
+          (Kokkos::ThreadVectorRange(member, npacks),[&](const int &v) {
+            solve(member, partidx_begin + v);
           });
       }      
 
       void run() {
         if (is_cuda<execution_space>::value) {
-          const int vl = vector_length;
-          const Kokkos::TeamPolicy<execution_space> policy(packptr.extent(0) - 1, Kokkos::AUTO(), vl);
+          //const int vl = vector_length;
+          //const Kokkos::TeamPolicy<execution_space> policy(packptr.extent(0) - 1, Kokkos::AUTO(), vl);
+          const Kokkos::TeamPolicy<execution_space> policy(packptr.extent(0) - 1, Kokkos::AUTO());
           Kokkos::parallel_for(policy, *this);
         } else {
 #if defined(__CUDA_ARCH__)        
@@ -2223,7 +2223,6 @@ namespace Ifpack2 {
         
         // constants
         const local_ordinal_type i = member.league_rank();
-        //const magnitude_type one(1);
         const Kokkos::pair<local_ordinal_type,local_ordinal_type> block_range(0, blocksize);
         const local_ordinal_type num_vectors = y.extent(1);
 
