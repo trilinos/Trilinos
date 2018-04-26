@@ -46,7 +46,7 @@
 #define ROL_OBJECTIVE_TIMESIMOPT_HPP
 
 #include "ROL_Objective_SimOpt.hpp"
-#include "ROL_VectorClone.hpp"
+#include "ROL_VectorWorkspace.hpp"
 
 /** @ingroup func_group
     \class ROL::Objective_TimeSimOpt
@@ -64,6 +64,10 @@
 
  Comments: It may be worthwhile to provide an implementation of OptimizationProblem for TimeSimOpt
            which recognizes this common use case and avoids unnecessary objective calls. 
+
+ NOTE:     As written, this interface is step agnostic, which needs to be changed
+           if a final-time cost is desire or if the time-distributed cost is to
+           be weighted non-uniformly
            
     ---
 */
@@ -76,7 +80,6 @@ template<typename Real>
 class Objective_TimeSimOpt : public Objective_SimOpt<Real> {
 private:
 
-
   // Get the end point of the time intervals vector
   template<int I>
   Vector<Real> & getVector(Vector<Real> & x) const  { 
@@ -88,7 +91,11 @@ private:
     return *(static_cast<const PartitionedVector<Real>&>(x).get(I));
   }
 
-  VectorCloneMap<Real> clones_;
+  mutable VectorWorkspace<Real> workspace_;
+
+protected:
+
+  VectorWorkspace<Real>& getVectorWorkspace() const { return workspace_; }
 
 public:
 
@@ -186,7 +193,7 @@ public:
 
     gradient_1_old( g, u_old, u_new, z, tol );
 
-    auto g_new = clones_(g,"g");
+    auto g_new = workspace_.clone(g);
     
     gradient_1_new( *g_new, u_old, u_new, z, tol );
 

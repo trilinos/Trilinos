@@ -45,6 +45,7 @@
 #define ROL_CONSTRAINT_TIMESIMOPT_H
 
 #include "ROL_Constraint_SimOpt.hpp"
+#include "ROL_VectorWorkspace.hpp"
 
 /** @ingroup func_group
     \class ROL::Constraint_TimeSimOpt
@@ -124,6 +125,12 @@ private:
     const PartitionedVector<Real> & xpv = dynamic_cast<const PartitionedVector<Real>&>(x);
     return *xpv.get(0);
   }
+
+  mutable VectorWorkspace<Real> workspace_;
+
+protected:
+
+  VectorWorkspace<Real>& getVectorWorkspace() const { return workspace_; }
 
 public:
   Constraint_TimeSimOpt()
@@ -311,7 +318,7 @@ public:
                            z,
                            tol);
 
-    ROL::Ptr<Vector<Real> > jv_new = jv.clone();
+    ROL::Ptr<Vector<Real> > jv_new = workspace_.clone(jv);
 
     // evaluate derivative against "new" time variable
     applyJacobian_1_new(*jv_new,v_new,
@@ -505,12 +512,12 @@ public:
                           std::ostream & outStream = std::cout) override {
     // Solve constraint for u. 
     Real tol = ROL_EPSILON<Real>();
-    ROL::Ptr<ROL::Vector<Real> > r = c.clone();
-    ROL::Ptr<ROL::Vector<Real> > s = u.clone();
+    ROL::Ptr<ROL::Vector<Real> > r = workspace_.clone(c);
+    ROL::Ptr<ROL::Vector<Real> > s = workspace_.clone(u);
     s->set(u);
     solve(*r,*s,z,tol);
     // Evaluate constraint residual at (u,z).
-    ROL::Ptr<ROL::Vector<Real> > cs = c.clone();
+    ROL::Ptr<ROL::Vector<Real> > cs = workspace_.clone(c);
     update(*s,z);
     value(*cs,*s,z,tol);
     // Output norm of residual.
@@ -536,13 +543,13 @@ public:
                                            const bool printToStream = true,
                                            std::ostream & outStream = std::cout) {
      Real tol = ROL_EPSILON<Real>();
-     auto Jv   = c.clone();
+     auto Jv   = workspace_.clone(c);
      update( u_new, u_old, z );
      applyJacobian_1_new( *Jv, v_new, u_old, u_new, z, tol );
-     auto iJJv = u_new.clone();
+     auto iJJv = workspace_.clone(u_new);
      update( u_new, u_old, z );
      applyInverseJacobian_1_new( *iJJv, *Jv, u_old, u_new, z, tol );
-     auto diff = v_new.clone();
+     auto diff = workspace_.clone(v_new);
      diff->set(v_new);
      diff->axpy(-1.0,*iJJv);
      Real dnorm = diff->norm();
@@ -567,13 +574,13 @@ public:
                                                   const bool printToStream = true,
                                                   std::ostream & outStream = std::cout) {
      Real tol = ROL_EPSILON<Real>();
-     auto Jv   = c.clone();
+     auto Jv   = workspace_.clone(c);
      update( u_new, u_old, z );
      applyAdjointJacobian_1_new( *Jv, v_new, u_old, u_new, z, tol );
-     auto iJJv = u_new.clone();
+     auto iJJv = workspace_.clone(u_new);
      update( u_new, u_old, z );
      applyInverseAdjointJacobian_1_new( *iJJv, *Jv, u_old, u_new, z, tol );
-     auto diff = v_new.clone();
+     auto diff = workspace_.clone(v_new);
      diff->set(v_new);
      diff->axpy(-1.0,*iJJv);
      Real dnorm = diff->norm();
@@ -637,19 +644,19 @@ public:
     oldFormatState.copyfmt(outStream);
  
     // Compute constraint value at x.
-    ROL::Ptr<Vector<Real> > c = jv.clone();
+    ROL::Ptr<Vector<Real> > c = workspace_.clone(jv);
     this->update(u_new, u_old, z);
     this->value(*c, u_new, u_old, z, tol);
  
     // Compute (Jacobian at x) times (vector v).
-    ROL::Ptr<Vector<Real> > Jv = jv.clone();
+    ROL::Ptr<Vector<Real> > Jv = workspace_.clone(jv);
     this->applyJacobian_1_new(*Jv, v, u_new, u_old, z, tol);
     Real normJv = Jv->norm();
  
     // Temporary vectors.
-    ROL::Ptr<Vector<Real> > cdif = jv.clone();
-    ROL::Ptr<Vector<Real> > cnew = jv.clone();
-    ROL::Ptr<Vector<Real> > u_2 = u_new.clone();
+    ROL::Ptr<Vector<Real> > cdif = workspace_.clone(jv);
+    ROL::Ptr<Vector<Real> > cnew = workspace_.clone(jv);
+    ROL::Ptr<Vector<Real> > u_2  = workspace_.clone(u_new);
  
     for (int i=0; i<numSteps; i++) {
  

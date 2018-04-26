@@ -80,40 +80,33 @@ class Constraint_SerialSimOpt : public Constraint_SimOpt<Real> {
 
   using V      = Vector<Real>;
   using PV     = PartitionedVector<Real>;
-  using TimeSO = Constraint_TimeSimOpt<Real>;
+  using Con = Constraint_TimeSimOpt<Real>;
  
   using size_type = typename PV<Real>::size_type;
 
 private:
 
-  const Ptr<TimeSO> con_;       // Constraint for single time step
-  const Ptr<V>      ui_;        // Initial condition
+  const Ptr<Con> con_;          // Constraint for single time step
+  const Ptr<V>   ui_;           // Initial condition
   Ptr<V> u0_;                   // Zero sim vector on time step
   Pre<V> z0_;                   // Zero opt vector on time step
  
-  Real dt_; // May want to allow non-uniform time steps in the future
-
   VectorWorkspace<Real> workspace_; // Memory management
 
 protected:
 
-  const Ptr<V> partition( V& x ) const { 
-    return static_cast<PV&>(x); 
-  }
+  PV& partition( V& x ) const { return static_cast<PV&>(x); }
 
-  const Ptr<const V> partition( const V& x ) const { 
-    return static_cast<const PV&>(x);
-  }
+  const V& partition( const V& x ) const { return static_cast<const PV&>(x); }
 
 
 public:
 
-  Constraint_SerialSimOpt( const Ptr<TimeSO>& con, const V& ui, const V& zi, const Real dt ) :
-    Constraint_SimOpt<Real>(), con_(time_con), 
+  Constraint_SerialSimOpt( const Ptr<Con>& con, const V& ui, const V& zi ) :
+    Constraint_SimOpt<Real>(), con_(con), 
     ui_( workspace_.copy( ui ) ),
     u0_( workspace_.clone( ui ) ),
-    z0_( workspace_.clone( ui ) ),
-    dt_(dt) {
+    z0_( workspace_.clone( ui ) ) {
     u0_->zero(); z0_->zero();
   }
 
