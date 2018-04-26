@@ -1,5 +1,7 @@
 # Mapping of exodus entities onto NetCDF
 
+If you are using NetCDF-4.5.1 or later, then you can ignore the information in this file.
+
 The distributed version of netcdf sets the following limits
 on dimensions and variables:
  * `#define NC_MAX_DIMS	1024`

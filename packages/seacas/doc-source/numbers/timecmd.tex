@@ -1,0 +1,89 @@
+\cmddef{\cmdverb{TMIN}
+   \param{tmin} \default{minimum database time}
+} {
+\cmd{TMIN} sets the minimum selected time \param{tmin} to the specified
+parameter value. If the user-selected-times mode is in effect, the mode
+is changed to the all-available-times mode.
+
+In interval-times mode, if \param{nintv} is selected (by a \cmd{NINTV}
+or \cmd{ZINTV} command), \param{delt} is calculated. If \param{delt} is
+selected (by a \cmd{DELTIME} command), \param{nintv} is calculated.
+}
+
+\cmddef{\cmdverb{TMAX}
+   \param{tmax} \default{maximum database time}
+} {
+\cmd{TMAX} sets the maximum selected time \param{tmax} to the specified
+parameter value. If the user-selected-times mode is in effect, the mode
+is changed to the all-available-times mode.
+
+In interval-times mode, if \param{nintv} is selected (by a \cmd{NINTV}
+or \cmd{ZINTV} command), \param{delt} is calculated. If \param{delt} is
+selected (by a \cmd{DELTIME} command), \param{nintv} is calculated.
+}
+
+\cmddef{\cmdverb{NINTV}
+   \param{nintv} \default{10 or the number of database time steps $-$ 1,
+      whichever is smaller}
+} {
+\cmd{NINTV} sets the number of selected time intervals \param{nintv} to
+the specified parameter value and changes the mode to the interval-times
+mode with a delta offset. The selected time interval \param{delt} is
+calculated.
+}
+
+\cmddef{\cmdverb{ZINTV}
+   \param{nintv} \default{10 or the number of database time steps,
+      whichever is smaller}
+} {
+\cmd{ZINTV} sets the number of selected time intervals \param{nintv} to
+the specified parameter value and changes the mode to the interval-times
+mode with a zero offset. The selected time interval \param{delt} is
+calculated.
+}
+
+\cmddef{\cmdverb{DELTIME}
+   \param{delt}
+      \default{$(tmax-tmin) / (nintv-1)$, where \param{nintv} is 10
+      or the number of database time steps, whichever is smaller}
+} {
+\cmd{DELTIME} sets the selected time interval \param{delt} to the
+specified parameter value and changes the mode to the interval-times
+mode with a zero offset. The number of selected time intervals
+\param{nintv} is calculated.
+}
+
+\cmddef{\cmdverb{ALLTIMES}
+} {
+\cmd{ALLTIMES} changes the mode to the all-available-times mode.
+}
+
+\newpage
+\cmddef{\cmdverb{TIMES}
+   [\cmd{ADD},]
+   \param{t$_{1}$}, \param{t$_{2}$}, \ldots\
+      \default{no times selected}
+} {
+\cmd{TIMES} changes the mode to the user-selected-times mode and selects
+times \param{t$_{1}$}, \param{t$_{2}$}, etc. The closest time step from the
+database is selected for each specified time.
+
+Normally, a \cmd{TIMES} command selects only the listed time steps. If
+\cmd{ADD} is the first parameter, the listed steps are added to the
+current selected times. Any other time step selection command clears all
+\cmd{TIMES} selected times.
+
+Up to the maximum number of time steps in the database may be specified.
+Times are selected in the order encountered on the database, regardless
+of the order the times are specified in the command. Duplicate
+references to a time step are ignored.
+}
+
+\cmddef{\cmdverb{STEPS}
+   [\cmd{ADD},]
+   \param{n$_{1}$}, \param{n$_{2}$}, \ldots\
+      \default{no steps selected}
+} {
+The \cmd{STEPS} command is equivalent to the \cmd{TIMES} command except
+that it selects time steps by the step number, not by the step time.
+}

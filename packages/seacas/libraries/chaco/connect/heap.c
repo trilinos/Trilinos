@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005 National Technology & Engineering Solutions
+ * Copyright (c) 2005-2017 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -50,7 +50,7 @@ void heapify(struct heap *heap,  /* array of vals/tag to make into heap */
              int          index, /* root of subtree to heapify */
              int          nvals, /* number of values in array */
              int *        map    /* maps from tag values to heap indices */
-             )
+)
 {
   double swap_val; /* temporary storage for swapping values */
   double swap_tag; /* temporary storage for swapping values */
@@ -94,7 +94,7 @@ void heapify(struct heap *heap,  /* array of vals/tag to make into heap */
 void heap_build(struct heap *heap,  /* array of vals/tag to make into heap */
                 int          nvals, /* number of values in array */
                 int *        map    /* maps from tag values to heap indices */
-                )
+)
 {
   int i; /* loop counter */
 
@@ -113,7 +113,7 @@ double heap_extract_max(struct heap *heap,  /* array of vals/tag in a heap */
                         int          nvals, /* number of values in array */
                         int *        ptag,  /* tag associated with return value */
                         int *        map    /* maps from tag values to heap indices */
-                        )
+)
 {
   double maxval; /* return value */
 
@@ -145,7 +145,7 @@ void heap_update_val(struct heap *heap,   /* array of vals/tag in a heap */
                      int          index,  /* index of value to update */
                      double       newval, /* new value to insert */
                      int *        map     /* maps from tag values to heap indices */
-                     )
+)
 {
   int tag; /* tag value associated with updated val */
   int dad; /* parent of a tree node */

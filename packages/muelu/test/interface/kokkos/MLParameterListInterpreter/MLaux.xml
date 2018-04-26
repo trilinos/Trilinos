@@ -1,0 +1,8 @@
+<ParameterList name="MultiLevelPreconditioner">
+  <Parameter name="ML output"                   type="int"      value="8"/>
+  <Parameter name="max levels"                  type="int"      value="2"/>
+  <Parameter name="coarse: max size"            type="int"      value="100"/>
+  <Parameter name="repartition: enable"         type="int"      value="1"/>
+  <Parameter name="aggregation: aux: enable"    type="bool"     value="true"/>
+  <Parameter name="aggregation: aux: threshold" type="double"   value="1e-2"/>
+</ParameterList>

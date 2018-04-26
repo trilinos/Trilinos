@@ -127,6 +127,10 @@ namespace MueLu {
       return rcp(new Hierarchy());
     }
 
+    virtual RCP<Hierarchy> CreateHierarchy(const std::string& label) const {
+      return rcp(new Hierarchy(label));
+    }
+
     //! Setup Hierarchy object
     virtual void SetupHierarchy(Hierarchy& H) const {
       TEUCHOS_TEST_FOR_EXCEPTION(!H.GetLevel(0)->IsAvailable("A"), Exceptions::RuntimeError, "No fine level operator");

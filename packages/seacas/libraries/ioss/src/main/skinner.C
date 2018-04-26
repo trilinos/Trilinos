@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2010 National Technology & Engineering Solutions
+// Copyright(C) 1999-2017 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -67,14 +67,14 @@
 
 namespace {
   template <typename INT> void skinner(Skinner::Interface &interface, INT /*dummy*/);
-  std::string codename;
-  std::string version = "0.6";
+  std::string                  codename;
+  std::string                  version = "0.6";
 } // namespace
 
 int main(int argc, char *argv[])
 {
   int my_rank = 0;
-#ifdef HAVE_MPI
+#ifdef SEACAS_HAVE_MPI
   MPI_Init(&argc, &argv);
   MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
 #endif
@@ -111,7 +111,7 @@ int main(int argc, char *argv[])
   if (my_rank == 0) {
     OUTPUT << "\n" << codename << " execution successful.\n";
   }
-#ifdef HAVE_MPI
+#ifdef SEACAS_HAVE_MPI
   MPI_Finalize();
 #endif
   return EXIT_SUCCESS;
@@ -154,12 +154,12 @@ namespace {
     Ioss::Region region(dbi, "region_1");
 
     Ioss::FaceGenerator face_generator(region);
-#ifdef HAVE_MPI
+#ifdef SEACAS_HAVE_MPI
     MPI_Barrier(MPI_COMM_WORLD);
 #endif
     auto start = std::chrono::steady_clock::now();
     face_generator.generate_faces((INT)0);
-#ifdef HAVE_MPI
+#ifdef SEACAS_HAVE_MPI
     MPI_Barrier(MPI_COMM_WORLD);
 #endif
     auto duration = std::chrono::steady_clock::now() - start;
@@ -188,7 +188,7 @@ namespace {
       }
     }
 
-#ifdef HAVE_MPI
+#ifdef SEACAS_HAVE_MPI
     Ioss::Int64Vector counts(3), global(3);
     counts[0] = interior;
     counts[1] = boundary;

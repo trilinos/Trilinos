@@ -1,0 +1,121 @@
+%
+% STANDARD SETUP FOR MANUALS 
+%
+%%% set up so item does not have so much space between items and top
+\setlength{\parindent}{0pt}
+\setlength{\topsep}{0pt} \setlength{\parsep}{10pt}
+%%% \setlength{\itemsep}{\smallskipamount} \begin{itemize} ...
+%
+%%% \myindent is a nice amount to indent
+\newlength{\myindent}
+\setlength{\myindent}{30pt}
+\newlength{\myhalfind}
+\setlength{\myhalfind}{15pt}
+%
+%%% \cenlinesbegin and end start a block of centered text (each line to left)
+\newcommand{\cenlinesbegin}
+   { \begin{center} \begin{tabular}{l} }
+\newcommand{\cenlinesend}
+   { \end{tabular} \end{center} }
+%
+%%% these commands are used for all-capital-letter words (\caps), 
+%%% typed literals (\cmd), parameters (\param), bold font (\bold)
+\newcommand{\caps}[1]
+   {\uppercase{#1}\null}
+\newcommand{\cmd}[1]
+   {\mbox{\sf\uppercase{#1}}\null}
+\newcommand{\lcmd}[1]
+   {\mbox{\sf#1}\null}
+\newcommand{\param}[1]
+   {{\em #1}\null}
+\newcommand{\optparam}[1]
+   {[{\em #1\/}]\null}
+\newcommand{\bold}[1]
+   {{\bf #1}\null}
+\newcommand{\eref}[1]{{(\ref #1)\null}}
+%
+%%% \negmedskip produces a medium negative space
+\newcommand{\negmedskip}
+   {\vspace{-\medskipamount}}
+%
+%%% \doublehline[#columns] produces a double horizontal line in tabular
+\newcommand{\doublehline}[1]
+   {\hline\multicolumn{#1}{c}{\vspace{-.17in}}\\ \hline}
+%
+%%% \SNL produces the text "Sandia National Laboratories"
+%%% \SNLA adds "Albuquerque, NM"
+\def\SNL{Sandia National Laboratories}
+\def\SNLA{Sandia National Laboratories, Albuquerque, NM}
+%%%
+%%% \nth produces text like 1st with the "st" raised
+\newcommand{\nth}[2]
+   {{#1}\raisebox{.6ex}{#2}}
+%
+%%% \cmdverb is used to produce the command verb
+\newfont{\bldsf}{cmssbx10 scaled \magstep1} % bold sans serif
+\newcommand{\cmdverb}[1]{\mbox{\bldsf #1}\null}
+%
+%%% \default produces the command parameter default in braces;
+%%% \nodefault is used for a command parameter with no default
+\newcommand{\default}[1]{$<${#1}$>$}
+\newcommand{\nodefault}[0]{$<$no default$>$}
+%
+%%% \topicbegin and end indents a block of text
+\newcommand{\topicbegin}{
+   \par\addtolength{\leftskip}{\myindent}
+   \addtolength{\leftmargin}{\myindent}
+   \addtolength{\leftmargini}{\myindent}
+   }
+\newcommand{\topicend}{
+   \par\addtolength{\leftskip}{-\myindent}
+   \addtolength{\leftmargin}{-\myindent}
+   \addtolength{\leftmargini}{-\myindent}
+   }
+%
+%%% \cmddef produces the command descriptions 
+\newcommand{\cmddef}[2]{
+   \par \hangindent=\myhalfind \hangafter=1 {#1} 
+   \par \topicbegin {#2} \topicend
+   }
+%
+%%% \cmdnext precedes a second command definition line
+\newcommand{\cmdnext}{
+   \par\hangindent=\myhalfind \hangafter=1
+   }
+% \newcommand{\cmdnext}{
+%   \par \hangindent=\myhalfind \hangafter=1 \vspace{-\bigskipamount}
+%   }
+%
+%%% \cmdoption produces a heading and an indented block of text
+\newcommand{\cmdoption}[2]{
+   \par \hangindent=\myhalfind \hangafter=1 {#1} 
+   \topicbegin {#2} \topicend
+   }
+%
+%%% \cmdsum produces a command summary line
+\newcommand{\cmdsum}[2]{
+   \par {#1}
+   \par 
+   \topicbegin {#2} \topicend
+   }
+%
+%%% \errfmt produces a centered error message
+\newcommand{\errfmt}[1]{
+   \begin{center}{#1}\end{center}
+   }
+%
+%%% \notetome produces a message to me
+\newcommand{\notetome}[1]{
+%%%   \begin{center} {\bf *** {#1} ***} \end{center}
+   \typeout{*** #1 ***}
+   }
+%
+%%% The following are symbols set up for the names of the manuals.
+%%% These symbols are used to check for equality.
+\newcommand{\ABAEXO}{ABAEXO}
+\newcommand{\ALGEBRA}{ALGEBRA}
+\newcommand{\BLOT}{BLOT}
+\newcommand{\GENTD}{GENTD}
+\newcommand{\GJOIN}{GJOIN}
+\newcommand{\GROPE}{GROPE}
+\newcommand{\NUMBERS}{NUMBERS}

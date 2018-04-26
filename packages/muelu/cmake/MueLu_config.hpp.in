@@ -25,6 +25,8 @@
 
 #cmakedefine HAVE_MUELU_KOKKOS_REFACTOR
 
+#cmakedefine HAVE_MUELU_KOKKOS_REFACTOR_USE_BY_DEFAULT
+
 /* Optional Dependencies */
 
 #cmakedefine HAVE_MUELU_AMESOS

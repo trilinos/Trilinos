@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2010 National Technology & Engineering Solutions
+// Copyright(C) 1999-2017 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -59,26 +59,19 @@ namespace {
   }
 } // namespace
 
-/** \brief Create an explicit, empty property having no name, INVALID type, and UNKNOWN_VAR_TYPE
- * storage.
+/** \brief Create an explicit, empty property having no name, INVALID type
  */
-Ioss::Property::Property()
-    : name_(""), type_(INVALID), storage_(UNKNOWN_VAR_TYPE), isImplicit_(false)
-{
-  data_.pval = nullptr;
-}
+Ioss::Property::Property() : name_(""), type_(INVALID), isImplicit_(false) { data_.pval = nullptr; }
 
 /** \brief Create a property with a specified type.
  *
  *  \param[in] name The property name.
  *  \param[in] type The property type.
- *  \param[in] storage The property storage type.
  *  \param[in] data The property value.
  *  \param[in] is_it_implicit True if the property is calculated, rather than stored directly
  */
-Ioss::Property::Property(std::string name, const BasicType type, const VariableType storage,
-                         void *data, bool is_it_implicit)
-    : name_(std::move(name)), type_(type), storage_(storage), isImplicit_(is_it_implicit)
+Ioss::Property::Property(std::string name, const BasicType type, void *data, bool is_it_implicit)
+    : name_(std::move(name)), type_(type), isImplicit_(is_it_implicit)
 {
   data_.pval = data;
 }
@@ -90,7 +83,7 @@ Ioss::Property::Property(std::string name, const BasicType type, const VariableT
  *  \param[in] is_it_implicit True if the property is calculated, rather than stored directly
  */
 Ioss::Property::Property(std::string name, int value, bool is_it_implicit)
-    : name_(std::move(name)), type_(INTEGER), storage_(SCALAR), isImplicit_(is_it_implicit)
+    : name_(std::move(name)), type_(INTEGER), isImplicit_(is_it_implicit)
 {
   data_.ival = value;
 }
@@ -102,7 +95,7 @@ Ioss::Property::Property(std::string name, int value, bool is_it_implicit)
  *  \param[in] is_it_implicit True if the property is calculated, rather than stored directly
  */
 Ioss::Property::Property(std::string name, int64_t value, bool is_it_implicit)
-    : name_(std::move(name)), type_(INTEGER), storage_(SCALAR), isImplicit_(is_it_implicit)
+    : name_(std::move(name)), type_(INTEGER), isImplicit_(is_it_implicit)
 {
   data_.ival = value;
 }
@@ -114,7 +107,7 @@ Ioss::Property::Property(std::string name, int64_t value, bool is_it_implicit)
  *  \param[in] is_it_implicit True if the property is calculated, rather than stored directly
  */
 Ioss::Property::Property(std::string name, double value, bool is_it_implicit)
-    : name_(std::move(name)), type_(REAL), storage_(SCALAR), isImplicit_(is_it_implicit)
+    : name_(std::move(name)), type_(REAL), isImplicit_(is_it_implicit)
 {
   data_.rval = value;
 }
@@ -126,7 +119,7 @@ Ioss::Property::Property(std::string name, double value, bool is_it_implicit)
  *  \param[in] is_it_implicit True if the property is calculated, rather than stored directly
  */
 Ioss::Property::Property(std::string name, const std::string &value, bool is_it_implicit)
-    : name_(std::move(name)), type_(STRING), storage_(SCALAR), isImplicit_(is_it_implicit)
+    : name_(std::move(name)), type_(STRING), isImplicit_(is_it_implicit)
 {
   data_.sval = new std::string(value);
 }
@@ -138,7 +131,7 @@ Ioss::Property::Property(std::string name, const std::string &value, bool is_it_
  *  \param[in] is_it_implicit True if the property is calculated, rather than stored directly
  */
 Ioss::Property::Property(std::string name, void *value, bool is_it_implicit)
-    : name_(std::move(name)), type_(POINTER), storage_(SCALAR), isImplicit_(is_it_implicit)
+    : name_(std::move(name)), type_(POINTER), isImplicit_(is_it_implicit)
 {
   data_.pval = value;
 }
@@ -150,7 +143,7 @@ Ioss::Property::Property(std::string name, void *value, bool is_it_implicit)
  *  \param[in] type The property type.
  */
 Ioss::Property::Property(const Ioss::GroupingEntity *ge, std::string name, const BasicType type)
-    : name_(std::move(name)), type_(type), storage_(SCALAR), isImplicit_(true)
+    : name_(std::move(name)), type_(type), isImplicit_(true)
 {
   data_.ge = ge;
 }
@@ -163,7 +156,6 @@ Ioss::Property::Property(const Ioss::Property &from)
 {
   name_       = from.name_;
   type_       = from.type_;
-  storage_    = from.storage_;
   isImplicit_ = from.isImplicit_;
   if (!isImplicit_ && type_ == STRING) {
     data_.sval = new std::string(*(from.data_.sval));

@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2010 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2017 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -60,10 +60,10 @@ namespace Iopx {
     DecompositionDataBase(MPI_Comm comm) : comm_(comm), m_processor(0), m_processorCount(0) {}
 
     virtual ~DecompositionDataBase() {}
-    virtual int  int_size() const             = 0;
-    virtual void decompose_model(int filePtr) = 0;
-    virtual size_t ioss_node_count() const    = 0;
-    virtual size_t ioss_elem_count() const    = 0;
+    virtual int    int_size() const             = 0;
+    virtual void   decompose_model(int filePtr) = 0;
+    virtual size_t ioss_node_count() const      = 0;
+    virtual size_t ioss_elem_count() const      = 0;
 
     virtual int    spatial_dimension() const = 0;
     virtual size_t global_node_count() const = 0;
@@ -108,11 +108,11 @@ namespace Iopx {
     virtual size_t get_commset_node_size() const = 0;
 
     virtual int get_node_coordinates(int filePtr, double *ioss_data,
-                                     const Ioss::Field &field) const = 0;
+                                     const Ioss::Field &field) const         = 0;
     virtual int get_one_attr(int exoid, ex_entity_type obj_type, ex_entity_id obj_id,
-                             int attrib_index, double *attrib) const = 0;
+                             int attrib_index, double *attrib) const         = 0;
     virtual int get_attr(int exoid, ex_entity_type obj_type, ex_entity_id obj_id, size_t attr_count,
-                         double *attrib) const = 0;
+                         double *attrib) const                               = 0;
     virtual int get_var(int filePtr, int step, ex_entity_type type, int var_index, ex_entity_id id,
                         int64_t num_entity, std::vector<double> &data) const = 0;
   };
@@ -161,8 +161,8 @@ namespace Iopx {
       m_decomposition.communicate_node_data(file_data, ioss_data, comp_count);
     }
 
-    void get_block_connectivity(int filePtr, INT *data, int64_t id, size_t blk_seq,
-                                size_t nnpe) const;
+    void   get_block_connectivity(int filePtr, INT *data, int64_t id, size_t blk_seq,
+                                  size_t nnpe) const;
     size_t get_commset_node_size() const { return m_decomposition.m_nodeCommMap.size() / 2; }
 
     int get_attr(int filePtr, ex_entity_type obj_type, ex_entity_id id, size_t attr_count,
@@ -277,8 +277,9 @@ namespace Iopx {
     int get_node_coordinates(int filePtr, double *ioss_data, const Ioss::Field &field) const;
 
     void get_local_node_list() { m_decomposition.get_local_node_list(); }
+
   public:
     Ioss::Decomposition<INT> m_decomposition;
   };
-}
+} // namespace Iopx
 #endif

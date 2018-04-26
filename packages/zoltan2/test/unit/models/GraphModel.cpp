@@ -128,6 +128,63 @@ void printGraph(zlno_t nrows, const zgno_t *v,
 }
 
 /////////////////////////////////////////////////////////////////////////////
+
+template <typename MatrixOrGraph>
+void computeNumDiags(
+    RCP<const MatrixOrGraph> &M,
+    size_t &numLocalDiags,
+    size_t &numGlobalDiags
+)
+{
+  // See specializations below
+}
+
+template <>
+void computeNumDiags<tcrsGraph_t>(
+    RCP<const tcrsGraph_t> &M,
+    size_t &numLocalDiags,
+    size_t &numGlobalDiags
+)
+{
+  typedef typename tcrsGraph_t::global_ordinal_type gno_t;
+
+  size_t maxnnz = M->getNodeMaxNumRowEntries();
+  Teuchos::Array<gno_t> colGids(maxnnz);
+
+  numLocalDiags = 0;
+  numGlobalDiags = 0;
+
+  int nLocalRows = M->getNodeNumRows();
+  for (int i = 0; i < nLocalRows; i++) {
+
+    gno_t rowGid = M->getRowMap()->getGlobalElement(i);
+    size_t nnz;
+    M->getGlobalRowCopy(rowGid, colGids(), nnz);
+
+    for (size_t j = 0; j < nnz; j++) {
+      if (rowGid == colGids[j]) {
+        numLocalDiags++;
+        break;
+      }
+    }
+  }
+  Teuchos::reduceAll<int, size_t>(*(M->getComm()), Teuchos::REDUCE_SUM, 1,
+                                  &numLocalDiags, &numGlobalDiags);
+}
+
+template <>
+void computeNumDiags<tcrsMatrix_t>(
+    RCP<const tcrsMatrix_t> &M,
+    size_t &numLocalDiags,
+    size_t &numGlobalDiags
+)
+{
+  RCP<const tcrsGraph_t> graph = M->getCrsGraph();
+  computeNumDiags<tcrsGraph_t>(graph, numLocalDiags, numGlobalDiags);
+}
+
+
+/////////////////////////////////////////////////////////////////////////////
 template <typename BaseAdapter, typename Adapter, typename MatrixOrGraph>
 void testAdapter(
     RCP<const MatrixOrGraph> &M,
@@ -217,8 +274,11 @@ void testAdapter(
     tmi.setCoordinateInput(via);
   }
 
-  int numLocalDiags = M->getNodeNumDiags();
-  int numGlobalDiags = M->getGlobalNumDiags();
+  size_t numLocalDiags = 0;
+  size_t numGlobalDiags = 0;
+  if (removeSelfEdges) {
+    computeNumDiags<MatrixOrGraph>(M, numLocalDiags, numGlobalDiags);
+  }
 
   const RCP<const tmap_t> rowMap = M->getRowMap();
   const RCP<const tmap_t> colMap = M->getColMap();
@@ -228,7 +288,7 @@ void testAdapter(
   int *numNbors = new int [nLocalRows];
   int *numLocalNbors = new int [nLocalRows];
   bool *haveDiag = new bool [nLocalRows];
-  zgno_t totalLocalNbors = 0;
+  size_t totalLocalNbors = 0;
 
   for (zlno_t i=0; i < nLocalRows; i++){
     numLocalNbors[i] = 0;
@@ -281,7 +341,7 @@ void testAdapter(
     if (model->getLocalNumVertices() != size_t(nLocalRows)) fail = 1;
     TEST_FAIL_AND_EXIT(*comm, !fail, "getGlobalNumVertices", 1)
 
-    size_t num = (removeSelfEdges ? (totalLocalNbors - numLocalDiags)
+    size_t num = (removeSelfEdges ? totalLocalNbors - numLocalDiags
                                   : totalLocalNbors);
     if (model->getLocalNumEdges() != num) fail = 1;
     TEST_FAIL_AND_EXIT(*comm, !fail, "getLocalNumEdges", 1)
@@ -293,7 +353,7 @@ void testAdapter(
     if (model->getGlobalNumVertices() != size_t(nGlobalRows)) fail = 1;
     TEST_FAIL_AND_EXIT(*comm, !fail, "getGlobalNumVertices", 1)
 
-    size_t num = (removeSelfEdges ? (nLocalNZ-numLocalDiags) : nLocalNZ);
+    size_t num = (removeSelfEdges ? nLocalNZ-numLocalDiags : nLocalNZ);
     if (model->getLocalNumEdges() != num) fail = 1;
     TEST_FAIL_AND_EXIT(*comm, !fail, "getLocalNumEdges", 1)
 
@@ -508,8 +568,8 @@ void testAdapter(
     TEST_FAIL_AND_EXIT(*comm, numLocalNeighbors==num,
                        "getLocalEdgeList sum size", 1)
 
-    fail = ((removeSelfEdges ? size_t(totalLocalNbors-numLocalDiags)
-                             : size_t(totalLocalNbors))
+    fail = ((removeSelfEdges ? totalLocalNbors-numLocalDiags
+                             : totalLocalNbors)
             != numLocalNeighbors);
     TEST_FAIL_AND_EXIT(*comm, !fail, "getLocalEdgeList total size", 1)
 

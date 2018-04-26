@@ -1,0 +1,230 @@
+\chapter{Aprepro Library Interface}
+
+The previous chapters have described the standalone version of
+\aprepro{}.  The functionality provided in the standalone version can
+also be provided to other programs through the \aprepro{} library
+C++ interface. The \aprepro{} library provides a \cmd{SEAMS::Aprepro}
+class which has three methods for parsing the input:
+\begin{enumerate}
+\item Read from stdin, echo data to stdout. At end of input, the
+parsed output is available in the \cmd{Aprepro::parsing\_results()}
+stream. 
+\item Read and parse a file. The entire file will be parsed with no
+output.  After the file is parsed, the parsed output is available in
+the \cmd{Aprepro::parsing\_results()} stream.
+\item Read and parse a string containing the \aprepro{} input. The
+results from parsing the string are returned in the \cmd{Aprepro::parsing\_results()}
+stream. Note that when using this method, you cannot use loops, if
+blocks, verbatim, and echo.
+\end{enumerate}
+
+\section{Adding basic \aprepro{} parsing to your application}
+The \aprepro{} capability is provided as a set of C++ classes. The
+main \cmd{SEAMS::Aprepro} class defined in the \file{aprepro.h} 
+include file is the main interface used by external programs.
+
+The basic method for using the \cmd{SEAMS::Aprepro} class is:
+\begin{itemize}
+\item create a \cmd{SEAMS::Aprepro} object
+\item parse the data
+\item retrieve the parsed data.
+\end{itemize}
+An example of this is shown below:
+\lstset{language=C++, basicstyle=\small, numbers=left, stepnumber=1,
+numbersep=5pt, numberstyle=\tiny, morekeywords={[2]aprepro},keywordstyle={[2]\color{blue}}}
+\begin{lstlisting}
+#include <aprepro.h>
+int main(int argc, char *argv[])
+{
+  SEAMS::Aprepro aprepro;
+  bool result = aprepro.parse_stream(infile, argv[argc-1]);
+  if (result) {
+     std::cout << "PARSING RESULTS: " << aprepro.parsing_results().str();
+  }
+}
+\end{lstlisting}
+
+\section{Additional \aprepro{} parsing capabilities}
+In addition to the basic parsing shown above, additional capabilities
+are available including predefining variables, adding additional
+functions, and modifying the aprepro options.
+
+\subsection{Adding new variables}
+The \cmd{add\_variable()} member function is used to define new
+variables that will be available during the aprepro parsing. The
+function signatures are:
+\begin{source}
+    void add\_variable(const std::string &name, const std::string &value, bool is\_immutable=false);
+    void add\_variable(const std::string &name, double value, bool is\_immutable=false);
+\end{source}
+Where \cmd{name} is the name of the variable to be defined,
+\cmd{value} is the value of the variable (either a double or a
+string).  To create the variable as immutable, pass \var{true} as the
+third option.  
+
+\subsection{Adding new functions}
+Additional functions can be made available during parsing as shown in
+the example below. 
+\begin{source}
+  // This function is used below in the example showing how an
+  // application can add its own functions to an aprepro instance.
+  double succ(double i) \{
+    return ++i;
+  \}
+  // EXAMPLE: Add a function to aprepro...
+  SEAMS::symrec *ptr = aprepro.putsym("succ", SEAMS::Aprepro::FUNCTION, 0);
+  ptr->value.fnctptr\_d = succ;
+  ptr->info = "Return the successor to d";
+  ptr->syntax = "succ(d)";
+\end{source}
+Following this, the user can use the \cmd{succ(d)} command in the same
+way as any of the other \aprepro{} functions.  This can be used to
+provide functions that access data internal to your program. The
+function will also appear in the \cmd{DUMP\_FUNC()} function list.
+
+\subsection{Modifying \aprepro{} Execution Settings}
+The standalone \aprepro{} can be executed with several command line
+options which change the behavior of \aprepro{} as defined in
+Chapter~\ref{ch:execution}. Similar behavior modifications are
+available in the \aprepro{} library via the \cmd{set\_option()}
+command. The syntax is:
+\begin{source}
+    void set\_option(const std::string &option);
+\end{source}
+Where \cmd{option} is one of:
+\begin{longtable}{lp{5.0in}}
+\cmd{--debug} &  Dump all variables, debug loops/if/endif \\
+\cmd{--version} &  Print version number to stderr.\\
+\cmd{--nowarning} &  Do not print warning messages.\\
+\cmd{--copyright} &  Print copyright message to stderr.\\
+\cmd{--message} &  Print INFO messages.\\
+\cmd{--immutable} &  All variables are immutable.\\
+\cmd{--trace} &  Trace program execution. Primarily for aprepro developer.\\
+\cmd{--interactive} &  Interactive use; do not buffer output.\\
+\cmd{--exit\_on} &  End with Exit or EXIT or exit or Quit or QUIT or
+quit encountered in parsing stream.\\
+\cmd{--include=}\var{file\_or\_path} &  If a path is
+specified, then optionally prepend it to all included filenames; if a
+file is specified, the process the contents of the file before
+processing input files.\\
+\cmd{--help} &  Output the following text:\\
+\end{longtable}
+\begin{apout}
+APREPRO PREPROCESSOR OPTIONS:
+        --debug or -d: Dump all variables, debug loops/if/endif
+      --version or -v: Print version number to stderr          
+    --immutable or -X: All variables are immutable--cannot be modified
+  --interactive or -i: Interactive use, no buffering           
+  --include=P or -I=P: Include file or include path            
+                     : If P is path, then optionally prepended to all include filenames
+                     : If P is file, then processed before processing input file
+      --exit\_on or -e: End when 'Exit|EXIT|exit' entered       
+         --help or -h: Print this list                         
+      --message or -M: Print INFO messages                     
+    --nowarning or -W: Do not print WARN messages              
+    --copyright or -C: Print copyright message                 
+
+   Units Systems: si, cgs, cgs-ev, shock, swap, ft-lbf-s, ft-lbm-s, in-lbf-s
+   Enter {DUMP\_FUNC()} for list of functions recognized by aprepro
+   Enter {DUMP\_PREVAR()} for list of predefined variables in aprepro
+
+   ->->-> Send email to gdsjaar@sandia.gov for aprepro support.
+\end{apout}
+
+For additional functions that are rarely used, see the
+\file{aprepro.h} include file.
+
+\section{Aprepro Library Test/Example Program}
+A test program is provided with the \aprepro{} library which provides
+examples of the three parsing methods, defining variables, and
+defining functions.  This is defined in the \file{apr\_test.cc} file in
+the \aprepro{} library distribution. The contents of this file are
+shown below:
+
+
+
+\lstset{language=C++, basicstyle=\small, numbers=left, stepnumber=1,
+numbersep=5pt, numberstyle=\tiny, morekeywords={[2]aprepro},keywordstyle={[2]\color{blue}}}
+\begin{lstlisting}
+#include <iostream>
+#include <fstream>
+
+#include "aprepro.h"
+
+// This function is used below in the example showing how an
+// application can add its own functions to an aprepro instance.
+double succ(double i) {
+  return ++i;
+}
+
+int main(int argc, char *argv[])
+{
+  bool readfile = false;
+
+  SEAMS::Aprepro aprepro;
+  
+  // EXAMPLE: Add a function to aprepro...
+  SEAMS::symrec *ptr = aprepro.putsym("succ", SEAMS::Aprepro::FUNCTION, 0);
+  ptr->value.fnctptr_d = succ;
+  ptr->info = "Return the successor to d";
+  ptr->syntax = "succ(d)";
+  
+  // EXAMPLE: Add a couple variables...
+  aprepro.add_variable("Greg", "Is the author of this code", true);  // Make it immutable
+  aprepro.add_variable("BirthYear", 1958);
+  
+  for(int ai = 1; ai < argc; ++ai) {
+    std::string arg = argv[ai];
+    if (arg == "-i") {
+      // Read from cin and echo each line to cout All results will
+      // also be stored in Aprepro::parsing_results() stream if needed
+      // at end of file.
+      aprepro.ap_options.interactive = true;
+      bool result = aprepro.parse_stream(std::cin, "standard input");
+      if (result) {
+	std::cout << "PARSING RESULTS: " << aprepro.parsing_results().str();
+      }
+    }
+    else if (arg[0] == '-') {
+      aprepro.set_option(argv[ai]);
+    } 
+    else {
+      // Read and parse a file.  The entire file will be parsed and
+      // then the output can be obtained in an std::ostringstream via
+      // Aprepro::parsing_results()
+      std::fstream infile(argv[ai]);
+      if (!infile.good()) {
+	std::cerr << "APREPRO: Could not open file: " << argv[ai] << '\n';
+	return 0;
+      }
+
+      bool result = aprepro.parse_stream(infile, argv[ai]);
+      if (result) {
+	std::cout << "PARSING RESULTS: " << aprepro.parsing_results().str();
+      }
+
+      readfile = true;
+    }
+  }
+
+  if (readfile) return 0;
+    
+  // Read and parse a string's worth of data at a time.
+  // Cannot use looping/ifs/... with this method.
+  std::string line;
+  while( std::cout << "\nexpession: " &&
+	 std::getline(std::cin, line) &&
+	 !line.empty() ) {
+    if (line[0] != '{') 
+      line = "{" + line + "}\n";
+    else
+      line += "\n";
+    
+    bool result = aprepro.parse_string(line, "input");
+    if (result) {
+      std::cout << "         : " << aprepro.parsing_results().str();
+      aprepro.clear_results();
+    }
+  }
+}
+\end{lstlisting}

@@ -1,0 +1,88 @@
+\chapter{Error, Warning, and Informational Messages}\label{ch:errors}
+
+Several error, warning, and informational messages will be printed by
+\aprepro{} if certain conditions are encountered during the parsing of an
+input file. The messages are of the form:
+
+\begin{apinp}
+Aprepro:  Type:  Message  (file,  line  line\#)
+\end{apinp}
+
+Where \cmd{Type} is \cmd{ERROR} for an error message, \cmd{WARN} for a
+warning message, or \cmd{INFO} for an informational message; \cmd{Message}
+is an explanation of the problem, \cmd{file} is the filename being processed
+at the time of the message, and \cmd{line\#} is the number of the line
+within that file. Error messages are always output, Warning messages
+are output by default and can be turned off by using the \cmd{-W} or
+\cmd{--warning} command option, and Informational messages are turned off by
+default and can be turned on by using the \cmd{-M} or \cmd{--message} command
+option. (See Chapter~ref{ch:execution}.)
+
+\section{Error Messages}
+
+\begin{description}
+\item[Aprepro:  ERROR:  parse  error  (file,  line  line\#)]    
+An unrecognized or ill-formed expression has been entered. Parsing of
+the file continues following this expression.
+
+\item[Aprepro: ERROR: Can't open 'file': No such file or directory] The file specified 
+in the include command cannot be found or does not exist. Aprepro will terminate 
+processing following this error message.
+
+\item[Aprepro: ERROR: Can't open 'file': Permission denied] The file specified in the 
+include or output command could not be opened due to insufficient permission. 
+Aprepro will terminate processing following this error message.
+
+\item[Aprepro: ERROR: Improperly Nested ifdef/ifndef statements (file, line line\#)] 
+An invalid ifdef/ifndef block has been detected. Typically this is caused by an 
+extra endif or else statement.
+
+\item[Aprepro:  ERROR:    Zero  divisor  (file,  line  line\#)]    An expression tried
+to divide by zero. The expression is given the value of the dividend and parsing continues.
+
+\item[Aprepro: ERROR: Invalid units system type. Valid types are: 'si', 'cgs', 'cgs-ev', 'shock', 'swap', 'ft-lbf-s', 'ft-lbm-s', 'in-lbf-s'] 
+The units system specified in the command could not be found. This
+is most likely due to a misspelling of the units system name.
+
+\item[Aprepro: ERROR: function (file, line line\#) DOMAIN error: Argument out of domain]
+The arithmetic function function has been passed an invalid
+argument. For example, the above error would be printed for each of
+the expressions:
+\begin{apinp}
+\{sqrt(-1.0)\}  \{log(0.0)\}  \{asin(1.1)\}
+\end{apinp}
+
+since the arguments are out of the valid domain for the function. The
+value returned by the function following an error is
+system-dependent. See the function's man page on your system for more
+information.
+
+
+\end{description}
+
+\section{Warning Messages}
+
+\begin{description}
+\item[Aprepro:  WARN:  Undefined  variable  'variable'  (file,  line  line\#)]
+A variable is used in an expression before it has been defined. The variable is 
+set equal to zero or the null string (\texttt{"}\texttt{"}) and parsing continues.
+
+\item[Aprepro:  WARN:  Variable  'variable'  redefined  (file,  line  line\#)]
+A previously defined variable is being set equal to a new value.
+
+\item[Aprepro: (IMMUTABLE) Variable 'variable' is immutable and cannot be modified (file, line line\#)]
+The value of a variable that was created as an immutable variable was
+modified. No value will be returned by the expression. See page~\pageref{immutable} and
+page~\ref{immutable_block} for a description of immutable variables.
+\end{description}
+
+
+\section{Informational Messages}
+
+\begin{description}
+\item[Aprepro: INFO: Included File: 'filename' (file, line line\#)] The file filename 
+is being included at line line\# of file file. This message will also be printed 
+during the execution of a loop block since temporary files are used to implement 
+the looping function, and during the execution of the units conversion and material 
+database access routines.
+\end{description}

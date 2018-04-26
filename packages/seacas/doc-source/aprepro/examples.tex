@@ -1,0 +1,634 @@
+\chapter{Examples}\label{ch:examples}
+
+\section{Mesh Generation Input File}
+
+The first example shown in this section is the point definition portion of an input 
+file for a mesh generation code. First, the locations of the arc center points 
+1, 2, and 5 are specified. Then, the radius of each arc is defined ( \cmd{\{Rad1\}}, 
+\cmd{\{Rad2\}}, and \cmd{\{Rad5\}}). Note that the lines are started with a dollar sign, which 
+is a comment character to the mesh generation code. Following this, the locations 
+of points 10, 20, 30, 40, and 50 are defined in algebraic terms. Then, the points 
+for the inner wall are defined simply by subtracting the wall thickness from the 
+radius values.
+\begin{apinp}
+Title          
+Example for Aprepro     
+\$  Center  Points        
+Point  1  \{x1  =  6.31952E+01\}  \{y1  =  7.57774E+01\}
+Point  2  \{x2  =  0.00000E+00\}  \{y2  =  -3.55000E+01\}
+Point  5  \{x5  =  0.00000E+00\}  \{y5  =  3.62966E+01\}
+\$  Wth  =  \{Wth  =  3.0\}      
+\ldots Wall thickness
+\$  Rad5  =  \{Rad5  =  207.00\}
+\$  Rad2  =  \{Rad2  =  203.2236\}
+\$  Rad1  =  \{Rad1  =  Rad2  -  dist(x1,y1;  x2,y2)\}
+\$  Angle  between  Points  2  and  1:  \{Th12  =  atan2d((y1-y2),(x1-x2))\}
+Point  10  0.00    \{y5  -  Rad5\}
+Point  20  \{x20  =  x1+Rad1\}    \{y5-sqrt(Rad5\^{}2-x20\^{}2)\}
+Point  30  \{x20\}    \{y1\}  
+Point  40  \{x1+Rad1*cosd(Th12)\}  \{y1+Rad1*sind(Th12)\}
+Point  50  0.00    \{y2  +  Rad2\}
+\$  Inner Wall (3  mm  thick) 
+\$  \{Rad5  -=  Wth\}        
+\$  \{Rad2  -=  Wth\}        
+\$  \{Rad1  -=  Wth\}        
+\ldots Rad1, Rad2, and Rad5 are reduced by the wall thickness
+Point  110  0.00    \{y5  -  Rad5\}
+Point  120  \{x20  =  x1+Rad1\}    \{y5-sqrt(Rad5\^{}2-x20\^{}2)\}
+Point  130  \{x20\}    \{y1\}  
+Point  140  \{x1+Rad1*cosd(Th12)\}  \{y1+Rad1*sind(Th12)\}
+Point  150  0.00    \{y2  +  Rad2\}
+\end{apinp}
+The output obtained from processing the above input file by \aprepro{} is shown below.
+\begin{apout}
+Title          
+Example for  Aprepro
+\$  Center  Points
+Point  1  63.1952  75.7774    
+Point  2  0  -35.5    
+Point  5  0  36.2966    
+\$  Rad5  =  207
+\$  Rad2  =  203.2236
+\$  Rad1  =  75.2537088
+\$  Angle between  Points  2  and  1:  60.40745947
+Point  10  0.00  -170.7034
+Point  20  138.4489088  -117.5893956
+Point  30  138.4489088  75.7774
+Point  40  100.3576382  141.214957
+Point  50  0.00  167.7236
+\$  Inner Wall  (3  mm  thick)
+\$  204      
+\$  200.2236   
+\$  72.2537088
+Point  110  0.00  -167.7034
+Point  120  135.4489088  -116.2471416
+Point  130  135.4489088  75.7774
+Point  140  98.87615226  138.6062794
+Point  150  0.00  164.7236
+\end{apout}
+
+\section{Macro Examples}
+
+Aprepro can also be used as a simple macro definition program. For example, a mesh 
+input file may have many lines with the same number of intervals. If those lines 
+are defined using a variable name for the number of intervals, then preprocessing 
+the file with Aprepro will set all of the intervals to the same value, and simply 
+changing one value will change them all. The following input file fragment illustrates 
+this
+\begin{apinp}
+\$ \{intA = 11\} \{intB = int(intA / 2)\} line 10 str 10 20 0 \{intA\}
+
+line 20 str 20 30 0 \{intB\}
+line 30 str 30 40 0 \{intA\}
+line 40 str 40 10 0 \{intB\}
+\end{apinp}
+Which when processed looks like:
+\begin{apout}
+\$  11  5
+
+line 10 str 10 20 0 11
+line 20 str 20 30 0 5 
+line 30 str 30 40 0 11
+line 40 str 40 10 0 5
+\end{apout}
+
+\section{Command Line Variable Assignment}\label{example:varval}
+
+This example illustrates the use of assigning variables on the command line. While 
+generating a complicated 2D or 3D mesh, it is often necessary to reposition the 
+mesh using GREPOS. If the following file called shift.grp is created:
+\begin{apinp}
+Offset  X  \{xshift\}  Y  \{yshift\}
+Exit
+\end{apinp}
+then, the mesh can be repositioned simply by typing:
+\begin{apinp}
+Aprepro  xshift=100.0  yshift=-200.0  shift.grp  temp.grp
+Grepos  input.mesh  output.mesh  temp.grp
+\end{apinp}
+
+\section{Loop Example}
+
+This example illustrates the use of the loop construct to print a table of sines 
+and cosines from 0 to 90 degrees in 5 degree increments.
+
+Input:
+\begin{apinp}
+\$  Test  looping  -  print  sin,  cos  from  0  to  90  by  5
+\{angle  =  -5\}      
+\{Loop(19)\}      
+\{angle  +=  5\}  \{sind(angle)\}  \{cosd(angle)\}
+\{EndLoop\}
+\end{apinp}
+Output:        
+\begin{apout}
+\$  Test  looping  -  print  sin,  cos  from  0  to 90  by  5
+-5        
+ 0  0    1  
+ 5  0.08715574275 0.9961946981
+10  0.1736481777  0.984807753  
+15  0.2588190451  0.9659258263
+20  0.3420201433  0.9396926208
+25  0.4226182617  0.906307787  
+30  0.5    0.8660254038
+35  0.5735764364  0.8191520443
+40  0.6427876097  0.7660444431
+45  0.7071067812  0.7071067812
+50  0.7660444431  0.6427876097
+55  0.8191520443  0.5735764364
+60  0.8660254038  0.5  
+65  0.906307787  0.4226182617
+70  0.9396926208  0.3420201433
+75  0.9659258263  0.2588190451
+80  0.984807753  0.1736481777
+85  0.9961946981  0.08715574275
+90  1    6.123233765e-17
+\end{apout}
+
+\section{If Example}
+This example illustrates the if conditional construct.
+
+\begin{apinp}
+\{diff = sqrt(3)*sqrt(3) - 3\}
+$ Test if - else lines
+\{if(sqrt(3)*sqrt(3) - 3 == diff)\}
+ complex if works
+\{else\}
+ complex if does not work
+\{endif\}
+
+\{if (sqrt(4) == 2)\}
+ \{if (sqrt(9) == 3)\}
+  \{if (sqrt(16) == 4)\}
+    square roots work
+  \{else\}
+    sqrt(16) does not work
+  \{endif\}
+ \{else\}
+   sqrt(9) does not work
+ \{endif\}
+\{else\}
+  sqrt(4) does not work
+\{endif\}
+
+\{v1 = 1\} \{v2 = 2\}
+\{if (v1 == v2)\}
+  Bad if
+  \{if (v1 != v2)\}
+   should not see (1)
+  \{else\}
+   should not see (2)
+  \{endif\}
+   should not see (3)
+\{else\}
+  \{if (v1 != v2)\}
+   good nested if
+  \{else\}
+   bad nested if
+  \{endif\}
+  good
+  make sure it is still good
+\{endif\}
+\end{apinp}
+
+The output of this is:
+\begin{apout}
+-4.440892099e-16
+\$ Test if - else lines
+ complex if works
+
+       square roots work
+
+1 2
+     good nested if
+  good
+  make sure it is still good
+\end{apout}
+
+\section{Aprepro Exodus Example}
+
+The input below illustrates the use of the \cmd{exodus\_meta} and \cmd{exodus\_info} functions.
+\begin{apinp}
+\{exodus_meta("exodus.g")\}
+
+        Title = \{ex_title\}
+    Dimension = \{ex_dimension\}
+   Node Count = \{ex_node_count\}
+Element Count = \{ex_element_count\}
+
+Element Block Info:
+        Count = \{ex_block_count\}
+        Names = \{ex_block_names\}
+     Topology = \{ex_block_topology\}
+          Ids = \{print_array(transpose(ex_block_ids))\}
+\{print_array(ex_block_info)\}
+
+Nodeset Info:
+        Count = \{ex_nodeset_count\}
+        Names = \{ex_nodeset_names\}
+          Ids = \{print_array(transpose(ex_nodeset_ids))\}
+\{print_array(ex_nodeset_info)\}
+
+Sideset Info:
+        Count = \{ex_sideset_count\}
+        Names = \{ex_sideset_names\}
+          Ids = \{print_array(transpose(ex_sideset_ids))\}
+\{print_array(ex_sideset_info)\}
+
+Timestep Info:
+        Count = \{ex_timestep_count\}
+        Times = \{print_array(transpose(ex_timestep_times))\}
+
+NOTE: Array index are 0-based by default; get_word is 1-based... \{i_=0\}
+\{loop(ex_block_count)\}
+Element block \{ex_block_ids[i_]\} named '\{get_word(++i_,ex_block_names,",")\}' has topology '\{get_word(i_,ex_block_topology,",")\}'
+\{endloop\}
+
+Extract Information Records using begin \ldots end 
+\{info1 = exodus_info("exodus.g", "start extract", "end extract")\}
+Rescan String:
+\{rescan(info1)\}
+
+Extract Information Records using prefix and then rescan:
+\{info2 = exodus_info("exodus.g", "PRE: ")\}
+\{rescan(info2)\}
+\end{apinp}
+
+When processed by \aprepro{}, the following output will be produced:
+\begin{apout}
+        Title = GeneratedMesh: 2x3x4+shell:xYz+nodeset:XyZ+sideset:xyzXYZ+times:7+variables:glob
+    Dimension = 3
+   Node Count = 60
+Element Count = 50
+
+Element Block Info:
+        Count = 4
+        Names = inner_core,Shell-MinX,Shell-MaxY,Shell-MinZ
+     Topology = hex8,shell4,shell4,shell4
+          Ids = 	1	2	3	4
+	1	24	8	0
+	2	12	4	1
+	3	8	4	1
+	4	6	4	1
+
+Nodeset Info:
+        Count = 3
+        Names = nodelist_1,nodelist_2,nodelist_3
+          Ids = 	1	2	3
+	1	20	20
+	2	15	15
+	3	12	12
+
+Sideset Info:
+        Count = 6
+        Names = surface_1,surface_2,surface_3,surface_4,surface_5,surface_6
+          Ids = 	1	2	3	4	5	6
+	1	12	48
+	2	8	32
+	3	6	24
+	4	12	48
+	5	8	32
+	6	6	24
+
+Timestep Info:
+        Count = 7
+        Times = 	0	1	2	3	4	5	6
+
+NOTE: Array index are 0-based by default; get_word is 1-based... 0
+Element block 1 named 'inner_core' has topology 'hex8'
+Element block 2 named 'Shell-MinX' has topology 'shell4'
+Element block 3 named 'Shell-MaxY' has topology 'shell4'
+Element block 4 named 'Shell-MinZ' has topology 'shell4'
+
+Extract Information Records using begin \ldots end 
+{loop(6)}
+{a_++^2}
+{endloop}
+
+Rescan String:
+0
+1
+4
+9
+16
+25
+
+Extract Information Records using prefix and then rescan:
+{ECHO(OFF)}
+{Units("si")}
+{ECHO(ON)}
+1 foot = {1~foot} {lout}
+12 inch = {12~inch} {lout}
+1728 in^3 = {1728~in^3} {Vout}
+{10~foot * 14~in}
+60 mph = {60~mph} {vout}
+88 fps = {88~fps} {vout}
+
+1 foot = 0.3048 meter
+12 inch = 0.3048 meter
+1728 in^3 = 0.02831684659 meter^3
+1.0838688
+60 mph = 26.8224 meter/sec
+88 fps = 26.8224 meter/sec
+\end{apout}
+
+\section{Aprepro Test File Example}
+The input below is from one of the aprepro test files.  It illustrates
+looping, assignments, trigonometric functions, ifdefs, string
+processing, and many other \aprepro{} constructs.
+\begin{apinp}
+$ Test program for Aprepro
+$
+Test number reprsentations
+\{1\}	\{10e-1\}	\{10.e-1\}	\{.1e+1\}	\{.1e1\}
+\{1\}	\{10E-1\}	\{10.E-1\}	\{.1E+1\}	\{.1E1\}
+	
+Test assign statements:
+\{_a = 5\}	\{b=_a\}	$ Should print 5 5
+\{_a +=b\}	\{_a\} 	$ Should print 10 10
+\{_a -=b\}	\{_a\}	$ Should print 5 5
+\{_a *=b\}	\{_a\}	$ Should print 25 25
+\{_a /=b\}	\{_a\}	$ Should print 5 5
+\{_a ^=b\}	\{_a\}	$ Should print 3125 3125
+\{_a = b\}	\{_a**=b\}	\{_a\}	$ Should print 5 3125 3125
+
+Test trigonometric functions (radians)
+\{pi = d2r(180)\} \{atan2(0,-1)\} \{4*atan(1.0)\} $ Three values of pi
+\{_a = sin(pi/4)\}	\{pi-4*asin(_a)\}	$ sin(pi/4)
+\{_b = cos(pi/4)\}	\{pi-4*acos(_b)\}	$ cos(pi/4)
+\{_c = tan(pi/4)\}	\{pi-4*atan(_c)\}	$ tan(pi/4)
+
+Test trigonometric functions (degrees)
+\{r2d(pi)\}	\{pid = atan2d(0,-1)\}	\{4 * atand(1.0)\}
+\{ad = sind(180/4)\}	\{180-4*asind(ad)\}	$ sin(180/4)
+\{bd = cosd(180/4)\}	\{180-4*acosd(bd)\}	$ cos(180/4)
+\{cd = tand(180/4)\}	\{180-4*atand(cd)\}	$ tan(180/4)
+
+Test max, min, sign, dim, abs
+\{pmin = min(0.5, 1.0)\}	\{nmin = min(-0.5, -1.0)\} $ Should be 0.5, -1
+\{pmax = max(0.5, 1.0)\}	\{nmax = max(-0.5, -1.0)\} $ Should be 1.0, -0.5
+\{zero = 0\} \{sign(0.5, zero) + sign(0.5, -zero)\}	$ Should be 0 1
+\{nonzero = 1\} \{sign(0.5, nonzero) + sign(0.5, -nonzero)\} $ Should be 1 0
+\{dim(5.5, 4.5)\}	\{dim(4.5, 5.5)\}	$ Should be 1 0
+
+$ Test ifdef lines
+\{ifyes = 1\} \{ifno = 0\}
+	\{Ifdef(ifyes)\}
+This line should be echoed. (a)
+ \{Endif\}
+This line should be echoed. (b)
+     \{Ifdef(ifno)\}
+This line should not be echoed
+ 	 \{Endif\}
+This line should be echoed. (c)
+  \{Ifdef(ifundefined)\}
+This line should not be echoed
+        \{Endif\}
+This line should be echoed. (d)
+
+$ Test if - else lines
+             \{Ifdef(ifyes)\}
+This line should be echoed. (1)
+			\{Else\}
+This line should not be echoed (2)
+	\{Endif\}
+		\{Ifdef(ifno)\}
+This line should not be echoed. (3)
+ \{Else\}
+This line should be echoed (4)
+   \{Endif\}
+
+$ Test if - else lines
+ \{Ifndef(ifyes)\}
+This line should not be echoed. (5)
+  \{Else\}
+This line should be echoed (6)
+   \{Endif\}
+    \{Ifndef(ifno)\}
+This line should be echoed. (7)
+ \{Else\}
+This line should not be echoed (8)
+  \{Endif\}
+$ Lines a, b, c, d, 1, 4, 6, 7 should be echoed
+$ Check line counting -- should be on line 74: \{Parse Error\}
+\{ifdef(ifyes)\} \{This should be an error\}
+\{endif\}
+
+$ Test int and [] (shortcut for int)
+\{int(5.01)\}	\{int(-5.01)\}
+\{[5.01]\}	\{[-5.01]\}
+
+$ Test looping - print sin, cos from 0 to 90 by 5
+\{_angle = -5\}
+\{Loop(19)\}
+\{_angle += 5\}	\{_sa=sind(_angle)\}	\{_ca=cosd(_angle)\} \{hypot(_sa, _ca)\} 
+\{EndLoop\}
+
+$$$$ Test formatting and string concatenation
+\{_i = 0\} \{_SAVE = _FORMAT\}
+\{loop(20)\}
+\{IO(++_i)\} Using the format \{_FORMAT = "%." // tostring(_i) // "g"\},	PI = \{PI\}
+\{endloop\}
+Reset format to default: \{_FORMAT = _SAVE\}
+
+$$$$ Test string rescanning and executing
+\{ECHO(OFF)\}
+\{Test = '	This is line 1: \{a = atan2(0,-1)\}
+        This is line 2: \{sin(a/4)\}
+	This is line 3: \{cos(a/4)\}'\}
+\{Test2 = 'This has an embedded string: \{T = "This is a string"\}'\}
+\{ECHO(ON)\}
+Original String:
+\{Test\}
+Rescanned String:
+\{rescan(Test)\} 
+Original String:
+\{Test2\}
+Print Value of variable T = \{T\}
+Rescanned String:
+\{rescan(Test2)\} 
+Print Value of variable T = \{T\}
+
+Original String: \{t1 = "atan2(0,-1)"\}
+Executed String: \{execute(t1)\}
+
+string = \{_string = " one two, three"\}
+delimiter "\{_delm = " ,"\}"
+word count = \{word_count(_string,_delm)\}
+second word = "\{get_word(2,_string,_delm)\}"
+
+string = \{_string = " (one two, three * four - five"\}
+delimiter "\{_delm = " ,(*-"\}"
+word count = \{word_count(_string,_delm)\}
+second word = "\{get_word(2,_string,_delm)\}"
+
+
+string = \{_string = " one two, three"\}
+delimiter "\{_delm = " ,"\}"
+word count = \{ iwords = word_count(_string,_delm)\}
+
+\{_n = 0\}
+	\{loop(iwords)\}
+word \{++_n\} = "\{get_word(_n,_string,_delm)\}"
+   \{endloop\}
+
+$ Check parsing of escaped braces...
+\verb+\+\{ int a = b + \{PI/2\} \verb+\+\}
+\verb+\+\{ \verb+\+\}
+\end{apinp}
+When processec by \aprepro{}, there will be two warning messages and
+one error message:
+\begin{apout}
+Aprepro: WARN: Undefined variable 'Parse' (test.inp_app, line 74)
+Aprepro: ERROR:  syntax error (test.inp_app, line 74)
+Aprepro: WARN: Undefined variable 'T' (test.inp_app, line 106)
+\end{apout}
+The processed output from this example is:
+\begin{apout}
+$ Aprepro (Revision: 2.28) Mon Jan 21 10:58:23 2013
+$ Test program for Aprepro
+$
+Test number reprsentations
+1	1	1	1	1
+1	1	1	1	1
+	
+Test assign statements:
+5	5	$ Should print 5 5
+10	10 	$ Should print 10 10
+5	5	$ Should print 5 5
+25	25	$ Should print 25 25
+5	5	$ Should print 5 5
+3125	3125	$ Should print 3125 3125
+5	3125	3125	$ Should print 5 3125 3125
+
+Test trigonometric functions (radians)
+3.141592654 3.141592654 3.141592654 $ Three values of pi
+0.7071067812	4.440892099e-16	$ sin(pi/4)
+0.7071067812	0	$ cos(pi/4)
+1	0	$ tan(pi/4)
+
+Test trigonometric functions (degrees)
+180	180	180
+0.7071067812	2.842170943e-14	$ sin(180/4)
+0.7071067812	0	$ cos(180/4)
+1	0	$ tan(180/4)
+
+Test max, min, sign, dim, abs
+0.5	-1 $ Should be 0.5, -1
+1	-0.5 $ Should be 1.0, -0.5
+0 1	$ Should be 0 1
+1 0 $ Should be 1 0
+1	0	$ Should be 1 0
+
+$ Test ifdef lines
+1 0
+This line should be echoed. (a)
+This line should be echoed. (b)
+This line should be echoed. (c)
+This line should be echoed. (d)
+
+$ Test if - else lines
+This line should be echoed. (1)
+This line should be echoed (4)
+
+$ Test if - else lines
+This line should be echoed (6)
+This line should be echoed. (7)
+$ Lines a, b, c, d, 1, 4, 6, 7 should be echoed
+$ Check line counting -- should be on line 74: 
+
+$ Test int and [] (shortcut for int)
+5	-5
+5	-5
+
+$ Test looping - print sin, cos from 0 to 90 by 5
+-5
+0	0	1 1 
+5	0.08715574275	0.9961946981 1 
+10	0.1736481777	0.984807753 1 
+15	0.2588190451	0.9659258263 1 
+20	0.3420201433	0.9396926208 1 
+25	0.4226182617	0.906307787 1 
+30	0.5	0.8660254038 1 
+35	0.5735764364	0.8191520443 1 
+40	0.6427876097	0.7660444431 1 
+45	0.7071067812	0.7071067812 1 
+50	0.7660444431	0.6427876097 1 
+55	0.8191520443	0.5735764364 1 
+60	0.8660254038	0.5 1 
+65	0.906307787	0.4226182617 1 
+70	0.9396926208	0.3420201433 1 
+75	0.9659258263	0.2588190451 1 
+80	0.984807753	0.1736481777 1 
+85	0.9961946981	0.08715574275 1 
+90	1	6.123233996e-17 1 
+
+$$$$ Test formatting and string concatenation
+0 %.10g
+1 Using the format %.1g,	PI = 3
+2 Using the format %.2g,	PI = 3.1
+3 Using the format %.3g,	PI = 3.14
+4 Using the format %.4g,	PI = 3.142
+5 Using the format %.5g,	PI = 3.1416
+6 Using the format %.6g,	PI = 3.14159
+7 Using the format %.7g,	PI = 3.141593
+8 Using the format %.8g,	PI = 3.1415927
+9 Using the format %.9g,	PI = 3.14159265
+10 Using the format %.10g,	PI = 3.141592654
+11 Using the format %.11g,	PI = 3.1415926536
+12 Using the format %.12g,	PI = 3.14159265359
+13 Using the format %.13g,	PI = 3.14159265359
+14 Using the format %.14g,	PI = 3.1415926535898
+15 Using the format %.15g,	PI = 3.14159265358979
+16 Using the format %.16g,	PI = 3.141592653589793
+17 Using the format %.17g,	PI = 3.1415926535897931
+18 Using the format %.18g,	PI = 3.14159265358979312
+19 Using the format %.19g,	PI = 3.141592653589793116
+20 Using the format %.20g,	PI = 3.141592653589793116
+Reset format to default: %.10g
+
+$$$$ Test string rescanning and executing
+
+Original String:
+	This is line 1: {a = atan2(0,-1)}
+        This is line 2: {sin(a/4)}
+	This is line 3: {cos(a/4)}
+Rescanned String:
+	This is line 1: 3.141592654
+        This is line 2: 0.7071067812
+	This is line 3: 0.7071067812 
+Original String:
+This has an embedded string: {T = "This is a string"}
+Print Value of variable T = 0
+Rescanned String:
+This has an embedded string: This is a string 
+Print Value of variable T = This is a string
+
+Original String: atan2(0,-1)
+Executed String: 3.141592654
+
+string =  one two, three
+delimiter " ,"
+word count = 3
+second word = "two"
+
+string =  (one two, three * four - five
+delimiter " ,(*-"
+word count = 5
+second word = "two"
+
+
+string =  one two, three
+delimiter " ,"
+word count = 3
+
+0
+word 1 = "one"
+word 2 = "two"
+word 3 = "three"
+
+$ Check parsing of escaped braces...
+\{ int a = b + 1.570796327 \}
+\{ \}
+
+\end{apout}

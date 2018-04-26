@@ -7,13 +7,7 @@
 # <Project>_CONFIGURE_OPTIONS_FILE.
 IF ("${PROJECT_NAME}" STREQUAL "")
   SET(PROJECT_NAME Trilinos)
-  FUNCTION(ASSERT_DEFINED VARS)
-    FOREACH(VAR ${VARS})
-      IF(NOT DEFINED ${VAR})
-        MESSAGE(SEND_ERROR "Error, the variable ${VAR} is not defined!")
-      ENDIF()
-    ENDFOREACH()
-  ENDFUNCTION()
+  INCLUDE("${CMAKE_CURRENT_LIST_DIR}/../../tribits/core/utils/AssertDefined.cmake")
 ENDIF()
 
 #

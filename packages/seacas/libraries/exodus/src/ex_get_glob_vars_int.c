@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005 National Technology & Engineering Solutions
+ * Copyright (c) 2005-2017 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -33,22 +33,22 @@
  *
  */
 /*****************************************************************************
-*
-* exggv - ex_get_glob_vars
-*
-* entry conditions -
-*   input parameters:
-*       int     exoid                   exodus file id
-*       int     time_step               time step number
-*       int     num_glob_vars           number of global vars in file
-*
-* exit conditions -
-*       float*  glob_var_vals           array of global variable values
-*
-* revision history -
-*
-*
-*****************************************************************************/
+ *
+ * exggv - ex_get_glob_vars
+ *
+ * entry conditions -
+ *   input parameters:
+ *       int     exoid                   exodus file id
+ *       int     time_step               time step number
+ *       int     num_glob_vars           number of global vars in file
+ *
+ * exit conditions -
+ *       float*  glob_var_vals           array of global variable values
+ *
+ * revision history -
+ *
+ *
+ *****************************************************************************/
 
 #include "exodusII.h"     // for ex_err, etc
 #include "exodusII_int.h" // for ex_comp_ws, EX_FATAL, etc
@@ -68,13 +68,13 @@ int ex_get_glob_vars_int(int exoid, int time_step, int num_glob_vars, void *glob
   char   errmsg[MAX_ERR_LENGTH];
 
   EX_FUNC_ENTER();
-  ex_check_valid_file_id(exoid);
+  ex_check_valid_file_id(exoid, __func__);
 
   /* inquire previously defined variable */
   if ((status = nc_inq_varid(exoid, VAR_GLO_VAR, &varid)) != NC_NOERR) {
     snprintf(errmsg, MAX_ERR_LENGTH, "Warning: failed to locate global variables in file id %d",
              exoid);
-    ex_err("ex_get_glob_vars", errmsg, status);
+    ex_err(__func__, errmsg, status);
     EX_FUNC_LEAVE(EX_WARN);
   }
 
@@ -82,10 +82,11 @@ int ex_get_glob_vars_int(int exoid, int time_step, int num_glob_vars, void *glob
   {
     int num_time_steps = ex_inquire_int(exoid, EX_INQ_TIME);
     if (time_step <= 0 || time_step > num_time_steps) {
-      snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: time_step is out-of-range. Value = %d, valid "
-                                       "range is 1 to %d in file id %d",
+      snprintf(errmsg, MAX_ERR_LENGTH,
+               "ERROR: time_step is out-of-range. Value = %d, valid "
+               "range is 1 to %d in file id %d",
                time_step, num_time_steps, exoid);
-      ex_err("ex_get_glob_vars", errmsg, EX_BADPARAM);
+      ex_err(__func__, errmsg, EX_BADPARAM);
       EX_FUNC_LEAVE(EX_FATAL);
     }
   }
@@ -107,7 +108,7 @@ int ex_get_glob_vars_int(int exoid, int time_step, int num_glob_vars, void *glob
   if (status != NC_NOERR) {
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to get global variable values from file id %d",
              exoid);
-    ex_err("ex_get_glob_vars", errmsg, status);
+    ex_err(__func__, errmsg, status);
     EX_FUNC_LEAVE(EX_FATAL);
   }
   EX_FUNC_LEAVE(EX_NOERR);

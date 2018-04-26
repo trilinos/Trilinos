@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005 National Technology & Engineering Solutions
+ * Copyright (c) 2005-2017 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -35,7 +35,7 @@
 
 #include "structs.h"
 
-int msolve_(int nvtxs, double *x, double *y)
+int msolve(int nvtxs, double *x, double *y)
 {
   int i;
 

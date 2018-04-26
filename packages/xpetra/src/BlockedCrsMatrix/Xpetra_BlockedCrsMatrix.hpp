@@ -626,28 +626,6 @@ namespace Xpetra {
       throw Xpetra::Exceptions::RuntimeError("getNumEntriesInLocalRow not supported by BlockedCrsMatrix");
     }
 
-    //! \brief Returns the number of global diagonal entries, based on global row/column index comparisons.
-    /** Undefined if isFillActive().
-    */
-    global_size_t getGlobalNumDiags() const {
-      XPETRA_MONITOR("XpetraBlockedCrsMatrix::getGlobalNumDiags");
-      if (Rows() == 1 && Cols () == 1) {
-        return getMatrix(0,0)->getGlobalNumDiags();
-      }
-      throw Xpetra::Exceptions::RuntimeError("getGlobalNumDiags() not supported by BlockedCrsMatrix");
-    }
-
-    //! \brief Returns the number of local diagonal entries, based on global row/column index comparisons.
-    /** Undefined if isFillActive().
-    */
-    size_t getNodeNumDiags() const {
-      XPETRA_MONITOR("XpetraBlockedCrsMatrix::getNodeNumDiags");
-      if (Rows() == 1 && Cols () == 1) {
-        return getMatrix(0,0)->getNodeNumDiags();
-      }
-      throw Xpetra::Exceptions::RuntimeError("getNodeNumDiags() not supported by BlockedCrsMatrix");
-    }
-
     //! \brief Returns the maximum number of entries across all rows/columns on all nodes.
     /** Undefined if isFillActive().
     */

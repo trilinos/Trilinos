@@ -1,0 +1,666 @@
+\chapter{Exodiff}\label{ch:exodiff}
+\section{Introduction}
+
+\exodiff{} compares the results data from two \exo{} databases.  The
+databases should represent the same model, that is, the \exo{} meta
+data should be identical as should be the genesis portion of the bulk
+data. The only differences should be in the values of the transient
+bulk data.  \exodiff{}'s main purpose is to detect and report these
+differences. \exodiff{} will compare global, nodal, element, nodeset,
+and sideset transient variables at each selected timestep; it will
+also compare element attribute variables on each element block
+containing attributes.
+
+If a third file is specified on the command line, it will be created
+with the same meta data and non-transient bulk data as the first file,
+and each variable in the third file will be the differences of the
+corresponding variables in the first two files.
+
+A command file can be specified and used to control exactly what
+variables are to be compared/differenced and to what tolerance.
+
+By default, element block names and variable names are compared ignoring case.
+
+\subsection{Difference Terminology}
+\exodiff{} supports several options for determining whether two values
+differ.  These are called {\em difference types} and include the
+following:
+
+\begin{tabular}{ll}
+relative difference  & $|val1 - val2|/\max(|val1|, |val2|)$. \\
+absolute difference  & $|val1 - val2|$ \\
+combined difference  & $|val1 - val2| / \max(tol, tol * \max(|val1|, |val2|))$ \\
+eigen\_relative difference  & $||val1| - |val2||/\max{(|val1|,|val2|)}$. \\
+eigen\_absolute difference  & $||val1| - |val2||$\\
+eigen\_combined difference  & $||val1| - |val2|| / \max(tol, tol * \max(|val1|, |val2|))$\\
+\end{tabular}
+
+Where $tol$ is a user-specified tolerance. The difference types
+prefixed by {\em eigen\_} are intended to be used when the variable
+being differenced describes the shape of an eigenvector and the
+eigenvector shape is considered equal if the values on one database
+are equal in magnitude, but possibly of a different sign\footnote{Note
+that the difference type as implemented does not fully check whether
+the eigenvectors represented by the data are truly the same shape with
+a potential difference of sign since it works on an item-by-item basis and
+does not check whether all items in the first database are multiplied
+by the same 1.0 or -1.0 to match the items in the second database.
+However, the implementation can be improved in the future without
+breaking any existing scripts or command files.}.
+
+Values are considered equal if $|val1| <= floor \&\& |val2| <= floor$;
+where $floor$ is a user-specified value. Otherwise the difference is
+computed using one of the above formulas and compared to a tolerance.
+If the difference is greater than the tolerance, then the databases
+are different.  At the end of execution, a summary of the differences
+found is output.
+
+By default:
+\begin{itemize}
+\item All results variables and attributes are compared using a {\em relative difference} of $10^{-6}$
+(about 6 significant digits) and a {\em floor} of~0.0.
+\item Nodal locations are compared using {\em absolute difference} with
+a tolerance of $10^{-6}$ and a {\em floor} of~0.0.
+\item Time step values are compared using {\em relative difference} tolerance of $10^{-6}$ and a floor of $10^{-15}$.
+\end{itemize}
+
+\section{Invoking \exodiff}
+\exodiff{} can be invoked using the following command lines:
+To do normal comparison of two files using default tolerances
+producing text output summarizing the differences, enter:
+\begin{syntax}
+     exodiff [{options}] [-f <cmd\_file>] file1.e file2.e
+\end{syntax}
+Where \file{cmd\_file} is an optional file containing options and
+tolerance values; its syntax is described below.
+
+If you want \exodiff{} to output an \exo{} file created containing the differences of the two
+files, the command line is similar, but also contains the name of the
+file where the differences should be written\footnote{Note that all
+variables on the third file are the difference of the values on the
+first two files including the displacement variables.  If you
+visualize the file containing the differences, the visualization program may show a strange
+deformed shape since the displacement variables are no longer true displacements.}:
+\begin{syntax}
+     exodiff [{options}] [-f <cmd\_file>] file1.e file2.e diff_file.e
+\end{syntax}
+
+The third invocation option reads a single file and outputs a summary
+of the variable data contained in the file.  The summary data are the
+minimum and maximum values for each variable and the time step and
+entity id where the minimums and maximums occurred.  This file can be
+used for preparing a command input file for use in the previous two
+invocations.  The \param{no\_coord\_sep} option if present will
+inhibit the calculation and output of the minimum distance between any
+two nodes in the file which can take a long time for large models and
+is often unneeded data.
+\begin{syntax}
+     exodiff -summary [no\_coord\_sep] file.e (create variable summary)  
+\end{syntax}
+
+The remaining invocation lines will output a short usage summary, a
+much longer usage summary, and the last just output the version
+information.
+
+\begin{syntax}
+     exodiff [-h] [-help]             (short usage summary) 
+     exodiff [-H]                     (longer usage summary)
+     exodiff [-v] [-version]          (version info)       
+\end{syntax}
+
+The basic behavior can be modified using several optional parameters
+specified on the command line.  These are documented below:
+
+\subsection{Optional Parameters}
+
+\renewcommand\arraystretch{1.5}
+\begin{longtable}{lp{4.0in}}
+-t \tt<real value> & Overrides the default tolerance of $10^{-6}$ for
+	all variables.\\
+-F \tt<real value> & Overrides the default floor tolerance of 0.0 for
+	all variables.\\
+-absolute & Use absolute differences as default tolerance type \\
+-relative & Use relative differences as default tolerance type \\
+-combined & Use combined differences as default tolerance type \\
+-eigen\_absolute & Use eigen\_absolute differences as default tolerance type (absolute value of values) \\
+-eigen\_relative & Use eigen\_relative differences as default tolerance type (absolute value of values) \\
+-eigen\_combined & Use eigen\_combined differences as default tolerance type (absolute value of values) \\
+
+-T \tt<offset> & Match timestep 'x+offset' in first file with timestep
+	'x' in second file. \\
+
+-TA   & Automatically determine the timestep offset such that both databases end at the same step. \\
+-TM   & Automatically determine the timestep offset to find the closest match in file1 to the first step on file2.\\
+-q    & Quiet.  Only errors will be sent to stdout. Comparison mode
+	will echo: {\tt exodiff: Files are the same.} or {\tt exodiff: Files are different.}\\
+
+-show\_all\_diffs & Show all differences for all variables, not
+	just the maximum.  Default behavior is that there will be a maximum of
+	one difference output per variable per timestep.  If this option is
+	specified, then any pair of values that exceed the tolerance will be
+	output.  Use of this option Can result in lots of output on large files 
+        with lots of differences.\\
+
+-m & Invoke a matching algorithm to create a mapping between the
+	nodes and elements of the two files based on geometric proximity.  
+	The topology must still be the same (within tolerance), but can be ordered differently. 
+	A match must be found for all nodes and elements or \exodiff{}
+	will output an error message and stop.\\
+
+-p & Invoke a matching algorithm similar to the -m option.  However 
+	this option ignores unmatched nodes and elements.  This allows 
+	comparison of files that only partially overlap. \\
+
+-match\_ids & Invoke a matching algorithm which matches nodes and elements using the node and element
+        global id maps in the two files. This is the default
+        mode of operation.\\
+
+-match\_file\_order & Invoke a matching algorithm using the node and element
+        position order in the two files. \\
+
+-show\_unmatched & If the -p option is given, this prints out the 
+        elements that did not match. \\
+
+-dumpmap & If the -m or -p switch is given, this prints out the resulting
+        map between the nodes and elements in the two files. \\
+
+-nsmap & Create a map between the nodeset nodes in the two files
+        if they include the same nodes, but are in different
+        order. This is enabled by default.\\
+
+-ssmap & Create a map between the sideset faces in the two files
+        if they include the same sides, but are in different order.
+        This is enabled by default.\\
+
+-no\_nsmap & Compare nodeset nodes based on file order only. \\
+-no\_ssmap & Compare sideset faces based on file order only. \\
+
+-s & Short block type compare.  Forces element block type strings to
+        be compared only up to the shortest string length.  For example,
+        ``HEX'' and ``HEX8'' will be considered the same. This is enabled by default. \\
+
+-no\_short & Do not do the short block type compare.  Forces element block
+        type strings to fully match. For example, ``HEX'' and ``HEX8''
+        will be considered different. \\
+
+ -ignore\_case & Ignore case.  Variable names are compared case
+	in-sensitive.  For example, ``Stress'' and ``STRESS'' will be
+	considered as the same variable. This is enabled by default. \\
+
+-case\_sensitive & Variable names are compared case sensitive. For
+	example, ``Stress'' and ``STRESS'' will be considered as two different
+	variables. \\
+
+-ignore\_maps& Output node and element difference summaries using file local implicit
+        ids instead of global ids. Note that the matching of
+	nodes and elements will use the mapping option
+	specified above; this option only affects the output of the node or
+	element id where the difference occurred. \\
+
+-ignore\_nans& Don't check data for NaNs.  By default, \exodiff{} will
+	output a warning message if any variable's value is NaN (Not a number). \\
+
+-ignore\_dups& If two elements/nodes are in the same location in match or partial
+	match case, return first match instead of
+	aborting. This is used in the -m and -p matching options.  Normally,
+	\exodiff{} will output an error message if a node in one file can be
+	matched to two or more nodes in the second file.\\
+
+-ignore\_attributes& Don't compare element attribute values. \\
+
+-nosymm & Turn off symmetric variable name checking.  By default, a warning
+	will be produced if a variable that is not to be excluded\footnote{See
+	the command file description in Section~\ref{ed:command_file} for
+	details on excluding variables} is contained in the second file given
+	on the command line but not the first.  This ``symmetric'' check can be
+	turned off with this option and the extra variables in the second file
+	will be ignored.\\
+
+-allow\_name\_mismatch  & Allow a variable name that is in the first database to
+	be absent from the second database.  The default behavior is to
+	output an error if all variables in the first file cannot be matched
+	to variables in the second file.\\
+
+-x {\tt <list>} & Exclude time steps.  Does not calculate any
+	variable differences for the time steps
+	given in the list of integers.  The format is comma
+	separated and ranged integers (with no spaces), such as ``1,5-9,28''.
+	The first time step is the number one. \\
+
+-steps {\tt <b:e:i>}& Specify subset of steps to consider. Syntax is begin:end:increment,
+	Enter -1:: for just the last step. If only begin is set, then
+	end=begin and only that step will be considered \\
+
+-norms& Calculate the $L_2$ norm of variable differences and output if
+	the norm is greater than 0.0. The output will also contain the
+	$L_2$ norm of each variable.  This can be used to give an idea of
+	the relative magnitudes of the differences compared to the magnitudes
+	of the variables.  This is for informational purposes only at
+	this time; it does not affect the determination of whether the
+	databases compare the same or different.\\
+
+-stat & Return an exit status of 2 if the files are different.  Normally,
+        the exit status is zero unless an error occurs. \\
+
+-maxnames {\tt <int>}& There is a compiled limit of 1000 exodus
+	variable names. This option allows the maximum number to be
+	set to a larger value if either of the input databases contains more
+	than 1000 variables. \\
+
+-use\_old\_floor& When \exodiff{} was first released, it used an
+	incorrect definition of the floor tolerance in which the differences
+	were ignored if the difference itself was less than the floor
+	value. This was fixed several years ago to the new definition which is
+	to ignore the differences if $|a| < floor \&\& |b| < floor$. This
+	option was provided so that users could use the old definition
+	if desired.  It should not be used. \\
+
+-summary & Produce a summary in \exodiff{} input format.  This will
+	create an output file with max/min statistics on the data in the
+	format of an \exodiff{} input file.  The algorithm to determine
+	the minimum separation between any two nodes can be disabled with
+	the ``no\_coord\_sep'' switch. \\
+
+-copyright & Output the copyright and license information. \\
+
+-f {\tt <cmd file>} & Use the given file to specify the variables to 
+	be considered and the tolerances to be used for
+	each variable type or each individual variable. See
+	Section~\ref{ed:command_file} for details of the syntax in this file.\\
+
+-H file & Show the syntax help for the command input file.  This is
+	also documented in Section~\ref{ed:command_file}.\\
+\end{longtable}
+
+\subsection{\exodiff{} Command File Syntax}\label{ed:command_file}
+
+If an \exodiff{} invocation uses the \param{-f <cmd\_file>} option,
+then \exodiff{} will read commands from the specified file in addition
+to parsing the options given on the command line.  The command line
+will be parsed first and then the commands in the input file.  The
+primary use of the input file is to give more control over the
+difference types and tolerances to be used for individual variables.
+
+The basic syntax of the file is:
+\begin{itemize}
+
+\item each command is given on a separate line.
+
+\item Anything following the \param{\#} character on a line
+will be treated as a comment and ignored. 
+
+\item Within a ``variables'' block, lines must be indented and must begin with a ``tab'' character.
+\end{itemize}
+
+The valid command lines are shown in all uppercase in the following
+list. The list also describes the behavior that the command line will
+specify.
+\begin{itemize}
+\item The variable names are case insensitive (unless the
+	\param{-case\_sensitive} option is specified or there is a
+	\param{CASE SENSITIVE} line in the command file).
+
+\item All keyword comparisons are case insensitive. Abbreviations can be used.
+
+\item All variable comparisons use the default of relative $10^{-6}$ for
+	variables and absolute $10^{-6}$ for coordinates.  This is
+	overridden with the \param{DEFAULT TOLERANCE} line.  The
+	\param{DEFAULT TOLERANCE} values are overridden by the values
+	given on the \param{VARIABLES} line and apply only to those
+	variables.  Each variable can override all values by following
+	its name with a value.
+
+\item A variable name must start with a tab character.  If there is at least
+	one variable name of a specified type (element, nodal, global,
+	...) is listed, then only the listed variable(s) of that type will be differenced.
+	The variable name can be followed by an optional difference
+	type and tolerance, and an optional \param{floor} and floor
+	tolerance. The NOT symbol \param{!} means do not include this
+	variable.  Mixing non-! and ! is not allowed without the
+	\param{(all)} specifier.  For example
+\begin{verbatim}
+                NODAL VARIABLES (all) absolute 1.E-8
+                <tab> DISPLX
+                <tab> !VELX
+                <tab> VELY relative 1.E-6 floor 1.e-10
+\end{verbatim}
+           In this case, all variables are considered that are not prepended
+           with a ``!'' symbol.
+
+\item If a variable type (e.g. \param{NODAL VARIABLES}) is not specified, no
+	variables of that type will be considered.  Allowed variable
+	types are: \param{GLOBAL VARIABLES}, \param{NODAL VARIABLES},
+	\param{ELEMENT VARIABLES}, \param{NODESET VARIABLES}, and
+	\param{SIDESET VARIABLES}. 
+
+\item The command line option to set the maximum number of \exo{} 
+	names can be set with \param{MAX NAMES <int>}.  Note:  this option must
+	appear before the variable blocks are read!
+
+\item The time step exclusion option can be used in the input file with
+           the syntax \param{EXCLUDE TIMES <list>}, where \param{<list>} has the same
+           format as in the command line options.
+
+\item  The matching algorithm, \param{-m}, can be turned on from the input file
+           with the \param{APPLY MATCHING} keyword on a separate line.
+
+\item  The nodeset matching algorithm, \param{-nsmap}, can be turned on from the
+           input file with the \param{NODESET MATCH} keyword on a separate line.
+\item  The sideset matching algorithm, \param{-ssmap}, can be turned on from the
+           input file with the \param{SIDESET MATCH} keyword on a separate line.
+\item  The short block type compare option, \param{-s}, can be turned on with the
+	\param{SHORT BLOCKS} keyword.
+\item  The no short compare option, \param{-no\_short}, can be turned on with the
+           \param{NO SHORT BLOCKS} keyword.
+\item  The case\_sensitive option, \param{-case\_sensitive}, can be turned on with the
+           \param{CASE SENSITIVE} keyword.
+\item  The ignore case option, \param{-i}, can be turned on with the
+           \param{IGNORE CASE} keyword. (default behavior)
+\item  The ignore maps option, \param{-ignore\_maps}, can be turned on with the
+           \param{IGNORE MAPS} keyword.
+\item  The ignore nans option, \param{-ignore\_nans}, can be turned on with the
+           \param{IGNORE NANS} keyword.
+\item  The ignore dups option, \param{-ignore\_dups}, can be turned on with the
+           \param{IGNORE DUPLICATES} keyword.
+\item  The time step offset option, \param{-T}, can be turned on with the 
+           \param{STEP OFFSET} keyword.
+\item  The automatic time step offset option, \param{-TA}, can be turned
+           on with the \param{STEP OFFSET AUTOMATIC} keyword.
+\item  The automatic time step offset option, \param{-TM}, can be turned
+           on with the \param{STEP OFFSET MATCH} keyword.
+\item  The calculation of the L2 norm of differences \param{-norms}, can be turned
+           on with the \param{CALCULATE NORMS} keyword.
+\item  The exit status return option, \param{-stat}, can be turned on with the 
+           \param{RETURN STATUS} keyword.
+\end{itemize}
+\section{Examples}
+The output below shows an example run of \exodiff{}.  The command
+invocation used was:
+\begin{syntax}
+exodiff -f P_exodiff.cmd P_gold_results.e bar-P.e
+\end{syntax}
+
+The \file{P\_exodiff.cmd} command file contains the following:
+\begin{verbatim}
+COORDINATES absolute 1.e-6
+
+TIME STEPS relative 1.e-6 floor 0.0 
+
+GLOBAL VARIABLES relative 1.e-6 floor 1.e-16
+	internal_energy  
+	kinetic_energy   
+	momentum_x       
+
+NODAL VARIABLES relative 1.e-4 floor 1.e-16
+	displacement_x    
+	acceleration_x    
+	force_internal_x  
+	mass              
+	velocity_x        
+
+ELEMENT VARIABLES relative 1.e-6 floor 1.e-16
+	eqps              
+	stress_xx          absolute 1000 
+	stress_yy          absolute 1000 
+	stress_zz          absolute 1000 
+	temperature        absolute 1    
+	yield_stress       absolute 1000 
+\end{verbatim}
+
+The first section of the output shows the code version and contact
+information and when the output was generated; followed by some
+summary statistics of the two files including the file paths and the
+counts of nodes, elements, etc.  If options are read from a command
+file, the path to that file is listed.
+
+\begin{verbatim}
+   *****************************************************************
+     EXODIFF  EXODIFF  EXODIFF  EXODIFF  EXODIFF  EXODIFF  EXODIFF  
+                                                                    
+                        Version 2.43 (2011-04-07)
+              Authors:  Richard Drake, rrdrake@sandia.gov           
+                        Greg Sjaardema, gdsjaar@sandia.gov          
+                        2011/04/28   21:11:00 MDT
+                                                                    
+     EXODIFF  EXODIFF  EXODIFF  EXODIFF  EXODIFF  EXODIFF  EXODIFF  
+   *****************************************************************
+
+Reading first file ... 
+Reading second file ... 
+  FILE 1: /home/exodiff/axial_pulse_par_ns/P_gold_results.e
+   Title: Default Database Title
+          Dim = 3, Blocks = 1, Nodes = 816, Elements = 450, Nodesets = 6, Sidesets = 0
+          Vars: Global = 7, Nodal = 13, Element = 16, Nodeset = 0, Sideset = 0, Times = 23
+
+  FILE 2: /home/exodiff/axial_pulse_par_ns/bar-P.e
+   Title: Default Database Title
+          Dim = 3, Blocks = 1, Nodes = 816, Elements = 450, Nodesets = 6, Sidesets = 0
+          Vars: Global = 7, Nodal = 13, Element = 16, Nodeset = 0, Sideset = 0, Times = 23
+
+  COMMAND FILE: /home/exodiff/axial_pulse_par_ns/P_exodiff.cmd
+\end{verbatim}
+
+\sectionline
+The next output section summarizes what variables will be compared and
+the difference types, tolerances, and floor values that will be used.
+Note that the command file is specifying that only a subset of the
+variables on the files will be differenced since the output above
+shows 7 global variables, 13 nodal variables, and 16 element variables,
+but the list below only shows 3 global, 5 nodal, and 6 element variables.
+
+\begin{verbatim}
+Coordinates will be compared .. tol:    1e-06 (absolute), floor:        0
+Time step values will be compared .. tol:    1e-06 (relative), floor:        0
+Global variables to be compared:
+	internal_energy                  tol:    1e-06 (relative), floor:    1e-16
+	kinetic_energy                           1e-06 (relative),           1e-16
+	momentum_x                               1e-06 (relative),           1e-16
+Nodal variables to be compared:
+	displacement_x                   tol:    1e-06 (relative), floor:    1e-16
+	acceleration_x                           1e-06 (relative),           1e-16
+	force_internal_x                         1e-06 (relative),           1e-16
+	mass                                     1e-06 (relative),           1e-16
+	velocity_x                               1e-06 (relative),           1e-16
+Element variables to be compared:
+	eqps                             tol:    1e-06 (relative), floor:    1e-16
+	stress_xx                                1e-06 (relative),           1e-16
+	stress_yy                                1e-06 (relative),           1e-16
+	stress_zz                                1e-06 (relative),           1e-16
+	temperature                              1e-06 (relative),           1e-16
+	yield_stress                             1e-06 (relative),           1e-16
+No Element Attribute variables on either file.
+No Nodeset variables on either file.
+No Sideset variables on either file.
+
+  ==============================================================
+  NOTE: All node and element ids are reported as global ids.
+\end{verbatim}
+
+\sectionline
+The next output section shows the results of the differencing.  For
+the first several timesteps, no differences were found. 
+
+\begin{verbatim} 
+  --------- Time step 1, 0.0000000e+00 ~ 0.0000000e+00, rel diff:  0.00000e+00 ---------
+Global variables:
+Nodal variables:
+Element variables:
+  --------- Time step 2, 2.2708229e-08 ~ 2.2708229e-08, rel diff:  0.00000e+00 ---------
+Global variables:
+Nodal variables:
+Element variables:
+  --------- Time step 3, 8.1607527e-08 ~ 8.1607527e-08, rel diff:  0.00000e+00 ---------
+Global variables:
+Nodal variables:
+Element variables:
+  --------- Time step 4, 2.3437714e-07 ~ 2.3437714e-07, rel diff:  0.00000e+00 ---------
+Global variables:
+Nodal variables:
+Element variables:
+
+... deleted some output ...
+
+  --------- Time step 11, 7.7253933e-06 ~ 7.7253933e-06, rel diff:  0.00000e+00 ---------
+Global variables:
+Nodal variables:
+Element variables:
+  --------- Time step 12, 8.9485520e-06 ~ 8.9485520e-06, rel diff:  0.00000e+00 ---------
+Global variables:
+Nodal variables:
+Element variables:
+\end{verbatim}
+
+\sectionline
+At this time step, differences are detected and output.  The output
+format is:
+
+\begin{verbatim}
+  variable name  diff type   val file 1       val file 2     difference  (which entity)
+   stress_xx     rel diff: -1.1444528e+04 ~ -1.1444553e+04 = 2.15241e-06 (block 1, elmt 66)
+\end{verbatim}	
+
+Note that only the maximum difference found for each variable at each
+time step is output.  There may be many more differences detected.
+
+\begin{verbatim}
+  --------- Time step 13, 1.0171704e-05 ~ 1.0171704e-05, rel diff:  1.66547e-16 ---------
+Global variables:
+Nodal variables:
+   acceleration_x    rel diff:  1.1719403e+04 ~  1.1719426e+04 = 1.98010e-06 (node 68)
+   force_internal_x  rel diff: -5.8141261e+02 ~ -5.8141376e+02 = 1.98010e-06 (node 68)
+Element variables:
+   stress_xx     rel diff: -1.1444528e+04 ~ -1.1444553e+04 = 2.15241e-06 (block 1, elmt 66)
+   stress_yy     rel diff: -4.9048081e+03 ~ -4.9048309e+03 = 4.63816e-06 (block 1, elmt 266)
+   stress_zz     rel diff: -4.9048129e+03 ~ -4.9048357e+03 = 4.64075e-06 (block 1, elmt 266)
+  --------- Time step 14, 1.1394849e-05 ~ 1.1394849e-05, rel diff:  1.48669e-16 ---------
+Global variables:
+Nodal variables:
+   displacement_x    rel diff:  1.0981488e-11 ~  1.0980936e-11 = 5.02741e-05 (node 740)
+   acceleration_x    rel diff:  2.0947516e+02 ~  2.0950905e+02 = 1.61776e-04 (node 639)
+   force_internal_x  rel diff: -5.1961477e+00 ~ -5.1969885e+00 = 1.61776e-04 (node 639)
+   velocity_x        rel diff:  5.9451636e-05 ~  5.9447122e-05 = 7.59215e-05 (node 740)
+Element variables:
+   stress_xx     rel diff: -1.9233572e+02 ~ -1.9236707e+02 = 1.62922e-04 (block 1, elmt 326)
+   stress_yy     rel diff: -8.2409892e+01 ~ -8.2442564e+01 = 3.96299e-04 (block 1, elmt 326)
+   stress_zz     rel diff: -8.2408238e+01 ~ -8.2440733e+01 = 3.94165e-04 (block 1, elmt 326)
+  --------- Time step 15, 1.2617989e-05 ~ 1.2617989e-05, rel diff:  1.34258e-16 ---------
+Global variables:
+Nodal variables:
+   displacement_x    rel diff:  1.4026865e-13 ~  1.4075811e-13 = 3.47725e-03 (node 648)
+   acceleration_x    rel diff:  2.7998765e+00 ~  2.8278524e+00 = 9.89300e-03 (node 700)
+   force_internal_x  rel diff: -1.3890498e-01 ~ -1.4029290e-01 = 9.89300e-03 (node 700)
+   velocity_x        rel diff:  7.8395852e-07 ~  7.8796013e-07 = 5.07844e-03 (node 648)
+Element variables:
+   stress_xx     rel diff: -2.4472564e+00 ~ -2.4778807e+00 = 1.23591e-02 (block 1, elmt 386)
+   stress_yy     rel diff: -1.0366468e+00 ~ -1.0631157e+00 = 2.48974e-02 (block 1, elmt 386)
+   stress_zz     rel diff: -1.0455424e+00 ~ -1.0720140e+00 = 2.46934e-02 (block 1, elmt 386)
+
+... deleted some output ...
+
+  --------- Time step 22, 2.1179859e-05 ~ 2.1179859e-05, rel diff:  7.99848e-16 ---------
+Global variables:
+Nodal variables:
+Element variables:
+  --------- Time step 23, 2.2036041e-05 ~ 2.2036041e-05, rel diff:  7.68771e-16 ---------
+Global variables:
+Nodal variables:
+Element variables:
+\end{verbatim}
+
+\sectionline
+The final section is the status output indicating that differences
+were detected.  This string will not change in future versions and can
+be searched for to determine whether the files are the same or
+different.  The \exodiff{} exit status can also be used for this if
+the \param{-status} option is set.
+
+\begin{verbatim}
+exodiff: Files are different
+\end{verbatim}
+\sectionline
+The next example shows the summary output produced by the command
+line:
+\begin{syntax}
+exodiff -summary bar-P.e
+\end{syntax}
+\begin{verbatim}
+#  *****************************************************************
+#    EXODIFF  EXODIFF  EXODIFF  EXODIFF  EXODIFF  EXODIFF  EXODIFF  
+#                                                                   
+#                       Version 2.43 (2011-04-07)
+#             Authors:  Richard Drake, rrdrake@sandia.gov           
+#                       Greg Sjaardema, gdsjaar@sandia.gov          
+#                       2011/06/03   11:23:07 MDT
+#                                                                   
+#    EXODIFF  EXODIFF  EXODIFF  EXODIFF  EXODIFF  EXODIFF  EXODIFF  
+#  *****************************************************************
+
+#  FILE 1: /scratch/user/bar-P.e
+#   Title: An Exodiff Summary Example
+#          Dim = 3, Blocks = 1, Nodes = 204, Elements = 50, Nodesets = 5, Sidesets = 0
+#          Vars: Global = 7, Nodal = 10, Element = 16, Nodeset = 0, Sideset = 0, Times = 206
+
+
+# ==============================================================
+#  NOTE: All node and element ids are reported as global ids.
+
+# NOTES:  - The min/max values are reporting the min/max in absolute value.
+#         - Time values (t) are 1-offset time step numbers.
+#         - Element block numbers are the block ids.
+#         - Node(n) and element(e) numbers are 1-offset.
+
+COORDINATES absolute 1.e-6    # min separation = 0.1
+
+TIME STEPS relative 1.e-6 floor 0.0     # min:               0 @ t1 max:   2.2088109e-05 @ t206
+
+GLOBAL VARIABLES relative 1.e-6 floor 0.0
+	external_energy  # min:               0 @ t1	max:               0 @ t1
+	internal_energy  # min:               0 @ t1	max:        22205882 @ t206
+	kinetic_energy   # min:               0 @ t1	max:        20210551 @ t206
+	momentum_x       # min:               0 @ t1	max:       42651.567 @ t206
+	momentum_y       # min:               0 @ t1	max:               0 @ t1
+	momentum_z       # min:               0 @ t1	max:               0 @ t1
+	timestep         # min:               0 @ t1	max:   1.3153439e-07 @ t51
+
+NODAL VARIABLES relative 1.e-6 floor 0.0
+	acceleration_x    # min:               0 @ t1,n1	max:   3.7989521e+08 @ t190,n1
+	acceleration_y    # min:               0 @ t1,n1	max:               0 @ t1,n1
+	acceleration_z    # min:               0 @ t1,n1	max:               0 @ t1,n1
+	force_internal_x  # min:               0 @ t1,n1	max:        82739542 @ t190,n5
+	force_internal_y  # min:               0 @ t1,n1	max:   1.3526743e+08 @ t206,n201
+	force_internal_z  # min:               0 @ t1,n1	max:   1.3526743e+08 @ t206,n201
+	mass              # min:        0.111625 @ t1,n1	max:         0.22325 @ t1,n21
+	velocity_x        # min:               0 @ t1,n1	max:       994.29394 @ t206,n201
+	velocity_y        # min:               0 @ t1,n1	max:               0 @ t1,n1
+	velocity_z        # min:               0 @ t1,n1	max:               0 @ t1,n1
+
+ELEMENT VARIABLES relative 1.e-6 floor 0.0
+	eqps                    # min:               0 @ t1,b2,e1	max:   0.00083689614 @ t206,b2,e50
+	rate_of_deformation_xx  # min:               0 @ t1,b2,e1	max:       539.94599 @ t116,b2,e50
+	rate_of_deformation_yy  # min:               0 @ t1,b2,e1	max:   4.0126165e-32 @ t200,b2,e46
+	rate_of_deformation_zz  # min:               0 @ t1,b2,e1	max:   1.1275579e-32 @ t185,b2,e49
+	rate_of_deformation_xy  # min:               0 @ t1,b2,e1	max:   1.1868359e-13 @ t186,b2,e42
+	rate_of_deformation_yz  # min:               0 @ t1,b2,e1	max:   1.1093839e-32 @ t185,b2,e49
+	rate_of_deformation_zx  # min:               0 @ t1,b2,e1	max:   4.7474497e-14 @ t203,b2,e39
+	sound_speed             # min:          394000 @ t1,b2,e1	max:       395751.09 @ t206,b2,e50
+	stress_xx               # min:               0 @ t1,b2,e1	max:    3.980196e+09 @ t206,b2,e50
+	stress_yy               # min:               0 @ t1,b2,e1	max:   2.7099141e+09 @ t206,b2,e50
+	stress_zz               # min:               0 @ t1,b2,e1	max:   2.7099141e+09 @ t206,b2,e50
+	stress_xy               # min:               0 @ t1,b2,e1	max:   2.7908475e-07 @ t205,b2,e46
+	stress_yz               # min:               0 @ t1,b2,e1	max:   3.7940314e-26 @ t190,b2,e49
+	stress_zx               # min:               0 @ t1,b2,e1	max:   1.5648498e-07 @ t188,b2,e49
+	temperature             # min:             298 @ t78,b2,e8	max:       299.37791 @ t206,b2,e50
+	yield_stress            # min:   7.5751705e+08 @ t142,b2,e34	max:   1.3389387e+09 @ t148,b2,e50
+
+# No NODESET VARIABLES
+
+# No SIDESET VARIABLES
+\end{verbatim}
+\sectionline
+The output starts with a database summary similar to the previous
+example.  It then gives a summary of the minimum and maximum values of
+each variable and the timestep and node or element where that minimum
+or maximum occurs.  
+
+The format of the summary is such that it can be used as a basis for
+creating an \exodiff{} command input file.

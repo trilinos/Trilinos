@@ -1,0 +1,55 @@
+\chapter{Predefined Variables}\label{ch:predefined}
+
+A few commonly used variables are predefined in
+\aprepro{}\footnote{The units system described in
+Chapter~\ref{ch:units} also predefines several variables when it is
+activated}. These are listed below. The default output format
+\cmd{\_FORMAT} is specified as a C language format string, see your C
+language documentation for more information. The default output format
+(\cmd{\_FORMAT}) and comment (\cmd{\_C\_}) variables are defined with
+a leading underscore in their name so they can be redefined without
+generating an error message.
+
+\begin{longtable}{lll}
+\caption{Predefined Variables}\\
+Name & Value & Description \\
+\hline
+ PI      & 3.14159265358979323846 & $\pi$ \\
+ PI\_2   & 1.57079632679489661923 & $\pi/2$ \\
+ TAU     & 6.28318530717958623200 & $2\pi$ \\
+ SQRT2   & 1.41421356237309504880 & $\sqrt{2}$ \\
+ DEG     & 57.2957795130823208768 & $180/\pi$ degrees per radian \\
+ RAD     & 0.01745329251994329576 & $\pi/180$ radians per degree \\
+ E       & 2.71828182845904523536 & base of natural logarithm \\
+ GAMMA   & 0.57721566490153286060 & $\gamma$, euler-mascheroni constant \\
+ PHI     & 1.61803398874989484820 & golden ratio $(\sqrt{5}+1)/2$ \\
+ VERSION & Varies, string value   & current version of \aprepro \\
+ \_FORMAT& \texttt{"}\%.10g\texttt{"} & default output format \\
+  \_C\_  &  \texttt{"}\$\texttt{"} &  default comment character \\
+\end{longtable}
+
+Note that the output format is used to output both integers and floating point 
+numbers. Therefore, it should use the \%g format descriptor which will use either 
+the decimal (\%d), exponential (\%e), or float (\%f) format, whichever is shorter, 
+with insignificant zeros suppressed. The table below illustrates the effect of 
+different format specifications on the output of the variable \textbf{PI} and the 
+value 1.0 . See the documentation of your C compiler for more information. For 
+most cases, the default value is sufficient.
+
+\begin{longtable}{lll}
+\caption{Effect of various output format specifications}\\
+Format & PI Output & 1.0 Output \\
+\hline
+\%.10g &  3.141592654      & 1  \\
+\%.10e &  3.1415926536e+00 & 1.0000000000e+00  \\
+\%.10f &  3.1415926536     & 1.0000000000  \\
+\%.10d &  1413754136       & 0000000000  \\
+\end{longtable}
+
+The comment character should be set to the character that the program
+which will read the processed file uses as a comment character. The
+default value of \texttt{"}\$\texttt{"} is the comment character used
+by the SEACAS codes at Sandia National Laboratories.  The \textbf{-c}
+command line option (described in Chapter~\ref{ch:execution}) changes
+the value of the comment variable to match the character specified on
+the command line.

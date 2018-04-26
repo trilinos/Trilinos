@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005 National Technology & Engineering Solutions
+ * Copyright (c) 2005-2017 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -41,7 +41,7 @@
 void add2bilist(                      /* add val to unsorted list */
                 struct bilist * lptr, /* element to add */
                 struct bilist **list  /* list added to */
-                )
+)
 {
   lptr->next = *list;
   if (*list != NULL) {
@@ -53,7 +53,7 @@ void add2bilist(                      /* add val to unsorted list */
 
 void removebilist(struct bilist * lptr, /* ptr to element to remove */
                   struct bilist **list  /* head of list to remove it from */
-                  )
+)
 
 /* Remove an element from a bidirectional list. */
 {
@@ -71,7 +71,7 @@ void removebilist(struct bilist * lptr, /* ptr to element to remove */
 void movebilist(struct bilist * lptr,    /* ptr to element to move */
                 struct bilist **oldlist, /* head of list to remove it from */
                 struct bilist **newlist  /* head of list to add it to */
-                )
+)
 
 /* Move an element from a old bidirectional list to new one. */
 {

@@ -1,0 +1,203 @@
+\chapter{Command Summary} \label{a:cmdsum}
+
+\section{Operational Commands
+(page~\protect\pageref{sec:oper})}\label{sec:opsum} 
+
+\cmdsum{\cmd{MASS} 
+      \param{nquad},
+      \optparam{density}\\
+\cmd{PROPERTIES} 
+      \param{nquad} 
+      \optparam{density}
+} {
+calculates several mass properties of the body. 
+} 
+
+\cmdsum{\cmd{LOCATE} \cmd{\{NODES$|$ELEMENTS\}} 
+      \param{locate\_option}
+} {
+locates \cmd{NODES} or \cmd{ELEMENTS} that are a specified distance from
+a user-defined point, line, or plane. 
+
+\begingroup\small
+\tabcolsep=3pt
+\begin{tabular}{*{3}{l}  *{6}{l}  *{2}{l} }
+LOCATE & NODES$|$ELEMENTS & POINT & $x_0$ & $y_0$ & $z_0$ 
+                                  &       &       &       &distance &toler \\
+LOCATE & NODES$|$ELEMENTS & LINE  & $x_0$ & $y_0$ & $z_0$ &
+                                    $x_1$ & $y_1$ & $z_1$ &distance &toler \\
+LOCATE & NODES$|$ELEMENTS & PLANE & $x_0$ & $y_0$ & $z_0$ &
+                                     $i$  &  $j$  &  $k$  &distance &toler \\
+\end{tabular}
+\endgroup
+}
+
+\cmdsum{\cmd{CAVITY  } 
+   \param{sset$_{1}$}, \param{sset$_{2}$}, \ldots, \param{sset$_n$},
+   \optparam{\cmd{CENTER}}, \optparam{xcen}, \optparam{ycen},
+   \optparam{zcen}
+} {
+calculates the volume of a cavity defined by the element
+sidesets \param{sset$_{1}$} to \param{sset$_n$}.  
+}
+
+\cmdsum{\cmd{LIMITS} \optparam{\cmd{ALLTIMES}}
+} {
+determines the minimum, maximum, and range of the 
+X, Y, and Z coordinates for each of the selected material blocks.
+}
+
+\cmdsum{\cmd{OVERLAP }
+      \param{flag$_m$}, \param{flag$_s$}
+} {
+determines whether any of the nodes on the surface defined by
+the sideset \param{flag$_s$} penetrate the element faces on the surface
+defined by the sideset \param{flag$_m$}.  
+}
+
+\cmdsum{\cmd{TIMESTEP}
+      \param{wave\_speed} 
+      \optparam{damping\_fraction} 
+} {
+estimates the maximum stable time step for an explicit transient
+dynamics finite element program. 
+}
+
+\cmdsum{\cmd{GAP} 
+      \param{flag$_m$}, 
+      \param{flag$_s$}, 
+      \param{d$_{\max}$}, 
+      \optparam{\cmd{DISTANCE$|$NORMAL}}
+} {
+calculates the distance between nodes on the surfaces defined
+by the sideset flags \param{flag$_m$} and \param{flag$_s$}.  
+}
+
+\newpage
+\section{Parameter Setting Commands (page~\protect\pageref{sec:param})}
+
+\cmdsum{\cmd{AXISYMMETRIC} 
+} {
+the two-dimensional body is axisymmetric.  
+}
+
+\cmdsum{\cmd{PLANAR} or \cmd{PLANE}
+} {
+the two-dimensional body described is planar or plane strain. 
+}
+
+\cmdsum{\cmd{EXODUS} 
+      \optparam{\cmd{ON$|$OFF}} 
+} {
+indicates that the operational commands should calculate values based on
+the undeformed geometry (\cmd{off}), or for every time step (\cmd{on}). 
+}
+
+\cmdsum{\cmd{DENSITY }
+} {
+prompts the user for the density of each of the element blocks 
+}
+
+\cmdsum{\cmd{SORT}
+   \param{sort\_field}
+   \optparam{sort\_order}
+} {
+orders the output of a \cmd{LOCATE} command according to
+\param{sort\_field} and \param{sort\_order}. 
+}
+
+\cmdsum{\cmd{SELECT}
+   \param{option} 
+} {
+selects the materials or material blocks for the operational commands. 
+}
+
+\cmdsum{\cmd{SELECT BLOCKS} 
+   \optparam{\cmd{ALL},}
+   \param{block\_id$_{1}$}, \param{block\_id$_{2}$}, \ldots\
+} {
+selects the element blocks. 
+} 
+
+\cmdsum{\cmd{SELECT MATERIALS} 
+   \optparam{\cmd{ALL},}
+   \param{material\_id$_{1}$}, \param{material\_id$_{2}$}, \ldots\
+} {
+selects the element blocks with the material number corresponding to
+\param{material\_id}.  
+}
+
+\cmdsum{\cmd{TMIN}
+   \param{tmin}
+} {
+sets the minimum selected time to \param{tmin}.
+}
+
+\cmdsum{\cmd{TMAX}
+   \param{tmax}
+} {
+sets the maximum selected time to \param{tmax}.
+}
+
+\cmdsum{\cmd{DELTIME}
+   \param{delt}
+} {
+sets the selected time interval to \param{delt}.
+}
+
+\cmdsum{\cmd{TIMES}
+   \param{tmin} \cmd{TO} \param{tmax} \cmd{BY} \param{delt}
+} {
+sets \param{tmin}, \param{tmax}, and \param{delt} with a single command. 
+}
+
+\section{Database Display Commands (page~\protect\pageref{cmd:display})}
+
+\cmdsum{\cmd{LIST}
+   \param{option} 
+} {
+displays the database information specified by \param{option}.
+
+\cenlinesbegin
+\cmd{LIST \{VARS$|$VARIABLES\}}\\
+\cmd{LIST \{BLOCKS$|$MATERIALS\}}\\
+\cmd{LIST \{NSETS$|$NODESETS\}}\\
+\cmd{LIST \{SSETS$|$SIDESETS\}}\\
+\cmd{LIST STEPS}\\
+\cmd{LIST TIMES}\\
+\cenlinesend
+}
+
+\cmdsum{\cmd{HELP}
+   \param{command}
+} {
+displays information about a program command.
+}
+
+\section{Miscellaneous Commands (page~\protect\pageref{sec:misc})}
+
+\cmdsum{\cmd{ECHO}
+      \optparam{\cmd{ON$|$OFF}}
+} {
+controls the output of results to the terminal.  
+}
+
+\cmdsum{\cmd{PRINT}
+      \optparam{\cmd{ON$|$OFF}} 
+} {
+controls the output of results to the output file.  
+}
+
+\cmdsum{\cmd{COMMENT }   
+      \optparam{\cmd{PAGE},}
+      \param{ncom}
+} {
+prompts the user for \param{ncom} comment lines which are written to
+the output file. 
+}
+
+\cmdsum{\cmd{EXIT    } 
+} {
+exits the program and closes all files.
+}
+

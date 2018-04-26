@@ -1,0 +1,93 @@
+
+
+        Title = GeneratedMesh: 2x3x4+shell:xYz+nodeset:XyZ+sideset:xyzXYZ+times:7+variables:glob
+    Dimension = 3
+   Node Count = 60
+Element Count = 50
+
+Element Block Info:
+        Count = 4
+        Names = inner_core,Shell-MinX,Shell-MaxY,Shell-MinZ
+     Topology = hex8,shell4,shell4,shell4
+          Ids = 	1	2	3	4
+	1	24	8	0
+	2	12	4	1
+	3	8	4	1
+	4	6	4	1
+
+Nodeset Info:
+        Count = 3
+        Names = nodelist_1,nodelist_2,nodelist_3
+          Ids = 	1	2	3
+	1	20	20
+	2	15	15
+	3	12	12
+
+Sideset Info:
+        Count = 6
+        Names = surface_1,surface_2,surface_3,surface_4,surface_5,surface_6
+          Ids = 	1	2	3	4	5	6
+	1	12	48
+	2	8	32
+	3	6	24
+	4	12	48
+	5	8	32
+	6	6	24
+
+Timestep Info:
+        Count = 7
+        Times = 	0	1	2	3	4	5	6
+
+NOTE: Array index are 0-based by default; get_word is 1-based...
+Element block 1 named 'inner_core' has topology 'hex8'
+Element block 2 named 'Shell-MinX' has topology 'shell4'
+Element block 3 named 'Shell-MaxY' has topology 'shell4'
+Element block 4 named 'Shell-MinZ' has topology 'shell4'
+
+{loop(10)}
+{_a++^2}
+{endloop}
+
+0
+1
+4
+9
+16
+25
+36
+49
+64
+81
+
+
+{ECHO(OFF)}
+{Units("si")}
+{ECHO(ON)}
+1 foot = {1~foot} {lout}
+12 inch = {12~inch} {lout}
+1728 in^3 = {1728~in^3} {Vout}
+{10~foot * 14~in}
+60 mph = {60~mph} {vout}
+88 fps = {88~fps} {vout}
+
+
+1 foot = 0.3048 meter
+12 inch = 0.3048 meter
+1728 in^3 = 0.02831684659 meter^3
+1.0838688
+60 mph = 26.8224 meter/sec
+88 fps = 26.8224 meter/sec
+
+
+0
+inner_core
+1
+Shell-MinX
+2
+Shell-MaxY
+3
+Shell-MinZ
+4
+
+Check for name not in list:
+0

@@ -175,7 +175,8 @@ IF (${PACKAGE_NAME}_ENABLE_Galeri)
 
 ENDIF()
 
-
+# Remove input xml files and results.
+# This is so we don't run any old files when we reconfigure with a different instantiation.
 FILE(REMOVE_RECURSE ${CMAKE_CURRENT_BINARY_DIR}/EasyParameterListInterpreter)
 FILE(REMOVE_RECURSE ${CMAKE_CURRENT_BINARY_DIR}/EasyParameterListInterpreter-heavy)
 FILE(REMOVE_RECURSE ${CMAKE_CURRENT_BINARY_DIR}/FactoryParameterListInterpreter)
@@ -183,14 +184,42 @@ FILE(REMOVE_RECURSE ${CMAKE_CURRENT_BINARY_DIR}/FactoryParameterListInterpreter-
 FILE(REMOVE_RECURSE ${CMAKE_CURRENT_BINARY_DIR}/MLParameterListInterpreter)
 FILE(REMOVE_RECURSE ${CMAKE_CURRENT_BINARY_DIR}/MLParameterListInterpreter2)
 FILE(REMOVE_RECURSE ${CMAKE_CURRENT_BINARY_DIR}/Output)
-IF (NOT ${PACKAGE_NAME}_INST_COMPLEX_INT_INT AND NOT ${PACKAGE_NAME}_INST_COMPLEX_INT_LONG_LONG)
-  ADD_SUBDIRECTORY(EasyParameterListInterpreter)
-  ADD_SUBDIRECTORY(EasyParameterListInterpreter-heavy)
-  ADD_SUBDIRECTORY(FactoryParameterListInterpreter)
-  ADD_SUBDIRECTORY(FactoryParameterListInterpreter-heavy)
-  ADD_SUBDIRECTORY(MLParameterListInterpreter)
-  ADD_SUBDIRECTORY(MLParameterListInterpreter2)
-  ADD_SUBDIRECTORY(Output)
+
+# Select appropriate set of input and gold files, add make target for rebase.
+IF (${PACKAGE_NAME}_INST_COMPLEX_INT_INT OR ${PACKAGE_NAME}_INST_COMPLEX_INT_LONG_LONG)
+  IF (${PACKAGE_NAME}_ENABLE_Kokkos_Refactor AND ${PACKAGE_NAME}_ENABLE_Kokkos_Refactor_Use_By_Default)
+    ADD_SUBDIRECTORY(kokkos-complex)
+
+    ADD_CUSTOM_TARGET(
+      rebase
+      WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/Output
+      COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/kokkos-complex/Output/rebase.sh
+      )
+  ELSE()
+    ADD_SUBDIRECTORY(complex)
+
+    ADD_CUSTOM_TARGET(
+      rebase
+      WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/Output
+      COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/complex/Output/rebase.sh
+      )
+  ENDIF()
 ELSE()
-  ADD_SUBDIRECTORY(complex)
+  IF (${PACKAGE_NAME}_ENABLE_Kokkos_Refactor AND ${PACKAGE_NAME}_ENABLE_Kokkos_Refactor_Use_By_Default)
+    ADD_SUBDIRECTORY(kokkos)
+
+    ADD_CUSTOM_TARGET(
+      rebase
+      WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/Output
+      COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/kokkos/Output/rebase.sh
+      )
+  ELSE()
+    ADD_SUBDIRECTORY(default)
+
+    ADD_CUSTOM_TARGET(
+      rebase
+      WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/Output
+      COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/default/Output/rebase.sh
+      )
+  ENDIF()
 ENDIF()

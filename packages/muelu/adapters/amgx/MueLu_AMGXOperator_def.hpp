@@ -74,7 +74,7 @@ namespace MueLu {
     ArrayRCP<double>       mueluYdata, amgxYdata;
 
     try {
-      for (int i = 0; i < Y.getNumVectors(); i++) {
+      for (int i = 0; i < (int)Y.getNumVectors(); i++) {
         {
           vectorTimer1_->start();
 

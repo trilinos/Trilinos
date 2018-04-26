@@ -1,0 +1,44 @@
+\chapter{Introduction}
+
+\aprepro{} is an algebraic preprocessor that reads a file containing both 
+general text and algebraic expressions. It echoes the general text to the output 
+file, along with the results of the algebraic expressions. The syntax used in \aprepro{}
+is such that all expressions between the delimiters \textbf{\{} and \textbf{\}} 
+are evaluated and all other text is simply echoed to the output file. For example, 
+if the following lines are input to \aprepro{}:
+
+\begin{apinp}
+$ Rad  = \{Rad  =  12.0\}
+Point 1 \{x1 = Rad * sind(30.)\} \{y1 = Rad * cosd(30.)\}
+Point 2 \{x1 + 10.0\}            \{y1\}
+\end{apinp}
+
+The output would look like:
+
+\begin{apout}
+$ Rad = 12
+Point  1 6   10.39230485
+Point  2 16  10.39230485
+\end{apout}
+
+In this example, the algebraic expressions are specified by surrounding them with 
+\textbf{\{} and \textbf{\}}, and the functions \afunc{sind()} and \afunc{cosd()} 
+calculate the sine and cosine of an angle given in degrees.
+
+\aprepro{} has been used extensively for several years to prepare parameterized 
+files for finite element analyses using the Sandia National Laboratories 
+SEACAS system~\cite{bib:seacas}. The units conversion capability has greatly increased the 
+usability of \aprepro{}. \aprepro{} can also be used for non-finite element 
+applications such as a powerful calculator and a general text processor for any 
+file that does not use the delimiters \textbf{\{} and \textbf{\}}.
+
+The remainder of this document is organized as follows:
+
+\begin{itemize}
+\item Chapter~\ref{ch:execution} documents the command line options for \aprepro{} and the text input, editing, and recall capabilities.
+\item Chapter~\ref{ch:syntax} documents the syntax recognized by \textit{Aprepro}, 
+\item Chapters \ref{ch:operators}, \ref{ch:predefined}, and~\ref{ch:functions} describe the operators, predefined variables, and functions, 
+\item Chapter~\ref{ch:units} describes the units conversion system, 
+\item Chapter~\ref{ch:errors} describes the error messages output from \aprepro{}, and 
+\item Chapter~\ref{ch:examples} presents some examples of \aprepro{} usage.
+\end{itemize}

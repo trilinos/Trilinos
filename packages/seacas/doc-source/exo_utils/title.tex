@@ -1,0 +1,67 @@
+%This turns on the SAND report covers
+\newif\ifdraft\draftfalse
+\newif\ifsand\sandtrue
+
+\SANDnum{SAND2011-5715}
+\SANDauthor{Gregory D. Sjaardema}
+\SANDprintDate{\today}
+\newcommand{\theTitle}{A Collection of Exodus Utilities:\\Exodiff, EPU, EJoin, and Conjoin}
+\title{\theTitle}
+\ifsand
+\pdfbookmark[1]{Cover}{cover}
+\doCover
+\newpage
+\else
+\SANDmarks{cover}
+\setcounter{page}{3}
+\fi
+
+\pdfbookmark[1]{Title}{title}
+
+%\begin{titlepage}
+\begin{center}
+\SANDnumVar\\
+\SANDreleaseTypeVar\\
+\ifdraft
+Draft Date: \SANDprintDateVar\\
+\else
+Printed \SANDprintDateVar\\
+\fi
+
+\vspace{0.75in}
+\CoverFont{m}{24}{28pt}
+\theTitle\\
+\vspace{0.75in}
+\CoverFont{m}{12}{14pt}
+\SANDauthorVar\\
+Simulation Modeling Sciences Department\\
+Sandia National Laboratories\\
+Albuquerque, NM 87185-0380\\
+\vspace*{.5in}
+\textbf{Abstract}
+\end{center}
+\vspace{-.4cm}\par
+
+The applications \exodiff{}, \epu{}, \ejoin{}, and \conjoin{} are
+members of the Sandia Engineering Analysis Code Access System
+(SEACAS~\cite{bib:seacas}) which is used by analysts at Sandia
+National Laboratories.  The applications all read and/or write finite
+element databases stored in the \exo{}~\cite{bib:exodus} format.
+
+Each application is targeted at a few specific areas of functionality:
+
+\begin{description}
+\item[\exodiff] compares the results data from two \exo{} files with
+user-specified relative or absolute tolerances.
+
+\item[\epu] combines multiple \exo{} databases produced by a parallel
+application into a single \exo{} database.
+
+\item[\ejoin] joins two or more \exo{} databases into a single
+\exo{} database. The input databases must have disjoint meta and bulk data.
+
+\item[\conjoin] joins two or more \exo{} databases into a single
+database. The input databases should represent the same model geometry
+with results data written sequentially.
+\end{description}
+%\end{titlepage}

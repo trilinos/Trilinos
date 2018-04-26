@@ -1,0 +1,5278 @@
+\chapter{Application Programming Interface (API)}
+
+
+\exo{} files can be written and read by application codes 
+written in C, C++, or Fortran via calls to functions in the application 
+programming interface (API). Functions within the API are categorized 
+as data file utilities, model description functions, or results 
+data functions. 
+
+In general, the following pattern is followed for writing 
+data objects to a file:
+
+\begin{enumerate}
+\item create the file with \cfuncref{ex_create};
+\item write out global parameters to the file using \cfuncref{ex_put_init};
+\item write out specific data object parameters; for example, 
+put out element block parameters with \cfuncref{ex_put_elem_block};
+\item write out the data object; for example, put out the connectivity 
+for an element block with \cfuncref{ex_put_elem_conn};
+\item close the file with \cfuncref{ex_close}.
+\end{enumerate}
+
+Steps 3 and 4 are repeated within this pattern for each data object
+(i.e., nodal coordinates, element blocks, node sets, side sets,
+results variables, etc.). For some data object types, steps 3 and 4
+are combined in a single call. For instance, \cfuncref{ex_put_qa}
+writes out the parameters (number of QA records) as well as the data
+object itself (the QA records). During the database writing process,
+there are a few order dependencies (e.g., an element block must be
+written before element variables for that element block are written)
+which are documented in the description of each library function.
+
+
+The invocation of the \exo{} API functions for reading 
+data is order independent, providing random read access. The 
+following steps are typically used for reading data:
+
+\begin{enumerate}
+
+\item open the file with \cfuncref{ex_open};
+
+\item read the global parameters for dimensioning purposes with
+\cfuncref{ex_get_init};
+
+\item read specific data object parameters; for example, read 
+node set parameters with \cfuncref{ex_get_node_set_param};
+
+\item read the data object; for example, read the node set node 
+list with \cfuncref{ex_get_node_set};
+
+\item close the file with \cfuncref{ex_close}.
+\end{enumerate}
+
+Again, steps 3 and 4 are repeated for each object. For some object
+parameters, step 3 may be accomplished with a call to \cfuncref{ex_inquire}
+ to inquire the size of certain objects.
+
+
+In developing applications using the \exo{} API, the following
+points may prove beneficial:
+
+\begin{itemize}
+
+ \item All functions that write objects to the database begin with
+ \cfuncref{ex_put_}; functions that read objects from
+ the database begin with \cfuncref{ex_get_}.
+
+ \item Function arguments are classified as readable \R{}, writable
+ \W{}, or both \RW{}. Readable arguments are not modified by the API
+ routines; writable arguments are modified; read-write arguments may
+ be either depending on the value of the argument.
+
+ \item All application codes which use the \exo{} API must include
+ the file `exodusII.h' for C. This file defines constants that are
+ used (1) as arguments to the API routines, (2) to set global
+ parameters such as maximum string length and database version, and
+ (3) as error condition or function return values.
+
+ \item Throughout this section, sample code segments have been
+ included to aid the application developer in using the API
+ routines. These segments are not complete and there has been no
+ attempt to include all calling sequence dependencies within
+ them.
+
+ \item Because 2-dimensional arrays cannot be statically dimensioned,
+ either dynamic dimensioning or user indexing is required. Most of the
+ sample code segments utilize user indexing within 1-dimensional
+ arrays even though the variables are logically 2-dimensional.
+
+ \item There are many \code{NetCDF} utilities that prove useful. ncdump,
+ which converts a binary \code{NetCDF} file to a readable ASCII version of
+ the file, is the most notable.
+
+ \item Because \code{NetCDF} buffers I/O, it is important to flush
+ all buffers with \cfuncref{ex_update} when debugging an
+ application that produces an \exo{} file.
+\end{itemize}
+
+\section{Data File Utilities}\label{sec:utilities}
+
+This section describes data file utility functions for creating /
+opening a file, initializing a file with global parameters, reading /
+writing information text, inquiring on parameters stored in the data
+file, and error reporting.
+
+\subsection{Create \exo{} File}
+
+The function \cfuncref{ex_create} creates a new
+\exo{} file and returns an ID that can subsequently be used to
+refer to the file.
+
+All floating point values in an \exo{} file are stored as either
+4-byte (``float'') or 8-byte (``double'') numbers; no mixing
+of 4- and 8-byte numbers in a single file is allowed. An application
+code can compute either 4- or 8-byte values and can designate that the
+values be stored in the \exo{} file as either 4- or 8-byte numbers;
+conversion between the 4- and 8-byte values is performed automatically
+by the API routines. Thus, there are four possible combinations of
+compute word size and storage (or I/O) word size.
+
+In case of an error, \cfuncref{ex_create} returns a negative
+number. Possible causes of errors include:
+
+\begin{itemize}
+
+ \item Passing a file name that includes a directory that does not
+ exist.
+
+ \item Specifying a file name of a file that exists and also
+ specifying a no clobber option.
+
+ \item Attempting to create a file in a directory without permission
+ to create files there.
+
+ \item Passing an invalid file clobber mode.
+\end{itemize}
+
+\funcdef{ex_create}{char~*path, int~mode, int~*comp_ws, int~*io_ws}
+
+\begin{parameters}
+\item[{char* path \R{}}]
+The file name of the new \exo{} file. This can be given as either an
+absolute path name (from the root of the file system) or a relative
+path name (from the current directory).
+
+
+\item[{int mode \R{}}]
+Mode. Use one of the following predefined constants:
+
+\begin{description}
+\item[\param{EX_NOCLOBBER}] 
+To create the new file only if the given file name does not refer to a
+file that already exists.
+
+\item[\param{EX_CLOBBER}] 
+To create the new file, regardless of whether a file with the same
+name already exists. If a file with the same name does exist, its
+contents will be erased.
+
+\item[\param{EX_LARGE_MODEL}] 
+To create a model that can store individual datasets larger than
+2~gigabytes. This modifies the internal storage used by exodusII and
+also puts the underlying \code{NetCDF} file into the ``64-bit offset''
+mode. See Appendix~\ref{app:largemodel} for more details on this
+mode.\footnote{A ``large model'' file will also be created if the
+environment variable
+\code{EXODUS_LARGE_MODEL}\index{Environment
+Variable!EXODUS_LARGE_MODEL}\index{EXODUS_LARGE_MODEL} is defined
+in the users environment. A message will be printed to standard output
+if this environment variable is found.}
+
+\item[\param{EX_NORMAL_MODEL}] 
+Create a standard model.
+
+\item[\param{EX_NETCDF4}] 
+To create a model using the \code{HDF5}-based \code{NetCDF-4}
+output. (Future capability)\footnote{\code{NetCDF-4} is currently in
+beta mode; however, it will be used for ExodusII when available, so
+this mode is being defined here for future completeness. An
+\code{HDF5}-based \code{NetCDF-4} file will also be created if the
+environment variable \code{EXODUS_NETCDF4}\index{Environment
+Variable!EXODUS_NETCDF4}\index{EXODUS_NETCDF4} is defined in the
+users environment. A message will be printed to standard output if
+this environment variable is found.}
+
+\item[\param{EX_NOSHARE}] 
+Do not open the underlying \code{NetCDF} file in ``share'' mode. See the
+\code{NetCDF} documentation for more details.
+
+\item[\param{EX_SHARE}] 
+Do open the underlying \code{NetCDF} file in ``share'' mode. See the \code{NetCDF}
+documentation for more details.
+\end{description}
+
+\item[{int* comp_ws \RW{}}] 
+{The word size in bytes (0, 4 or 8) of the floating point variables
+used in the application program. If 0 (zero) is passed, the default
+sizeof(float) will be used and returned in this variable. WARNING: all
+\exo{} functions requiring floats must be passed floats declared with
+this passed in or returned compute word size (4 or 8).}
+
+\item[{int* io_ws \R{}}] {The word size in bytes (4 or 8) of the 
+floating point data as they are to be stored in the \exo{} file.}
+\end{parameters}
+
+The following code segment creates an \exo{} file called \file{test.exo}:
+
+\begin{lstlisting}
+#include "exodusII.h"
+int CPU_word_size, IO_word_size, exoid;
+CPU_word_size = sizeof(float); /* use float or double */
+IO_word_size = 8; /* store variables as doubles */
+
+/* create \exo{} file */
+exoid = ex_create ("test.exo"      /* filename path */
+		    EX_CLOBBER,     /* create mode */
+		    &CPU_word_size, /* CPU float word size in bytes */
+	            &IO_word_size); /* I/O float word size in bytes */
+\end{lstlisting}
+
+
+\subsection{Open \exo{} File}
+
+The function \cfuncref{ex_open} opens an existing \exo{} file and
+returns an ID that can subsequently be used to refer to the file, the
+word size of the floating point values stored in the file, and the
+version of the \exo{} database (returned as a ``float'', regardless of
+the compute or I/O word size). Multiple files may be ``open''
+simultaneously.
+
+
+In case of an error, \cfuncref{ex_open} returns a negative
+number. Possible causes of errors include:
+
+\begin{itemize}
+\item The specified file does not exist.
+
+ \item The mode specified is something other than the predefined 
+constant \param{EX_READ} or \param{EX_WRITE}.
+
+
+ \item Database version is earlier than 2.0.
+\end{itemize}
+
+
+\funcdef{ex_open}{char~*path, int~mode, int~*comp_ws, int~*io_ws, float~*version}
+
+\begin{parameters}
+\item[{char* path \R{}}]
+The file name of the \exo{} file. This can be given as either an
+absolute path name (from the root of the file system) or a relative
+path name (from the current directory).
+
+\item[{int mode \R{}}]
+Access mode. Use one of the following predefined constants:
+
+\begin{description}
+ \item [EX_READ] To open the file just for reading.
+
+ \item [EX_WRITE] To open the file for writing and reading.
+\end{description}
+
+\item[{int* comp_ws \RW{}}]
+The word size in bytes (0, 4 or 8) of the floating point variables
+used in the application program. If 0 (zero) is passed, the default
+size of floating point values for the machine will be used and
+returned in this variable. WARNING: all \exo{} functions requiring
+reals must be passed reals declared with this passed in or returned
+compute word size (4 or 8).
+
+
+\item[{int* io_ws \RW{}}]
+The word size in bytes (0, 4 or 8) of the floating 
+point data as they are stored in the \exo{} file. If the word 
+size does not match the word size of data stored in the file, 
+a fatal error is returned. If this argument is 0, the word size 
+of the floating point data already stored in the file is returned.
+
+\item[{float* version \W{}}]
+Returned \exo{} database version number. The current version is
+\version{}
+\end{parameters}
+
+The following opens an \exo{} file named \file{test.exo} for read
+only, using default settings for compute and I/O word sizes:
+
+\begin{lstlisting}
+#include "exodusII.h"
+int CPU_word_size,IO_word_size, exoid;
+float version;
+
+CPU_word_size = sizeof(float);   /* float or double */
+IO_word_size = 0;                /* use what is stored in file */
+
+/* open \exo{} files */
+exoid = ex_open ("test.exo",     /* filename path */
+	         EX_READ,        /* access mode = READ */
+		 &CPU_word_size, /* CPU word size */
+		 &IO_word_size,  /* IO word size */
+	         &version);      /* ExodusII library version */
+\end{lstlisting}
+
+
+\subsection{Close \exo{} File}
+
+The function \cfuncref{ex_close} updates and
+then closes an open \exo{} file.
+
+In case of an error, \cfuncref{ex_close} returns a negative number; a
+warning will return a positive number. Possible causes of errors
+include:
+\begin{itemize}
+ \item data file not properly opened with call to \cfuncref{ex_create} or
+ \cfuncref{ex_open}
+\end{itemize}
+
+
+\funcdef{ex_close}{int~exoid}
+
+\begin{parameters}
+\item[{int exoid \R{}}]
+\exo{} file ID returned from a previous call to \cfuncref{ex_create} 
+or \cfuncref{ex_open}.
+\end{parameters}
+
+The following code segment closes an open \exo{} file:
+
+\begin{lstlisting}
+int error,exoid;
+error = ex_close (exoid);
+\end{lstlisting}
+
+
+
+\subsection{Write Initialization Parameters}
+
+The function \cfuncref{ex_put_init} writes the
+initialization parameters to the \exo{}
+file. This function must be called once (and only once) before
+writing any data to the file.
+
+
+In case of an error, \cfuncref{ex_put_init} returns a negative number;
+a warning will return a positive number.  Possible causes of errors
+include:
+
+\begin{itemize}
+ \item data file not properly opened with call to \cfuncref{ex_create} or
+ \cfuncref{ex_open}
+
+ \item data file opened for read only.
+
+ \item this routine has been called previously.
+\end{itemize}
+
+
+\funcdef{ex_put_init}{int~exoid, char~*title, int~num_dim, int~num_nodes, 
+int~num_elem, int~num_elem_blk, int~num_node_sets, int~num_side_sets}
+
+\begin{parameters}
+\item[int exoid \R{}]
+\exo{} file ID returned from a previous call to \cfuncref{ex_create} 
+or \cfuncref{ex_open}.
+
+\item[{char* titletitle \R{}}]
+Database title. Maximum length is \param{MAX_LINE_LENGTH}.
+
+\item[{int num_dim \R{}}]
+The dimensionality of the database. This is the number of coordinates
+per node.
+
+\item[{int num_nodes \R{}}] 
+The number of nodal points.
+
+\item[{int num_elem \R{}}]
+The number of elements.
+
+\item[{int num_elem_blk \R{}}]
+The number of element blocks.
+
+\item[{int num_node_sets \R{}}]
+The number of node sets.
+
+\item[{int num_side_sets \R{}}]
+The number of side sets.
+\end{parameters}
+
+The following code segment will initialize an open \exo{} file with
+the specified parameters:
+
+\begin{lstlisting}
+int num_dim, num_nods, num_el, num_el_blk, num_ns, num_ss, error, exoid;
+
+/* initialize file with parameters */
+num_dim = 3; num_nods = 46; num_el = 5; num_el_blk = 5;
+num_ns = 2; num_ss = 5;
+
+error = ex_put_init (exoid, "This is the title", num_dim, 
+                     num_nods, num_el,num_el_blk, num_ns, num_ss);
+\end{lstlisting}
+
+
+\subsection{Read Initialization Parameters}
+
+The function \cfuncref{ex_get_init} reads the
+initializationinitialization parameters from an opened
+\exo{} file.
+
+In case of an error, \cfuncref{ex_get_init} returns a negative number;
+a warning will return a positive number. Possible causes of errors
+include:
+
+\begin{itemize}
+ \item data file not properly opened with call to \cfuncref{ex_create} 
+or \cfuncref{ex_open}.
+\end{itemize}
+
+\funcdef{ex_get_init}{int~exoid, char~*title, int~num_dim, int~num_nodes, 
+int~num_elem, int~num_elem_blk, int~num_node_sets, int~num_side_sets}
+
+\begin{parameters}
+\item[{int exoid \R{}}]
+\exo{} file ID returned from a previous call to \cfuncref{ex_create} 
+or \cfuncref{ex_open}.
+
+\item[{char* titletitle \W{}}]
+Returned database title. String length may be up to
+\param{MAX_LINE_LENGTH} bytes.
+
+\item[{int* num_dim \W{}}]
+Returned dimensionality of the database. This is the number of
+coordinates per node.
+
+\item[{int* num_nodes \W{}}]
+Returned number of nodal points.
+
+\item[{int* num_elem \W{}}]
+Returned number of elements.
+
+\item[{int* num_elem_blk \W{}}]
+Returned number of element blocks.
+
+\item[{int* num_node_sets \W{}}]
+Returned number of node sets.
+
+\item[{int* num_side_sets \W{}}]
+Returned number of side sets.
+\end{parameters}
+
+The following code segment will read the initialization parameters
+from the open \exo{} file:
+
+\begin{lstlisting}
+#include "exodusII.h"
+int num_dim, num_nodes, num_elem, num_elem_blk,
+    num_node_sets, num_side_sets, error, exoid;
+
+char title[MAX_LINE_LENGTH+1];
+
+/* read database parameters */
+error = ex_get_init (exoid, title, &num_dim, &num_nodes, 
+                     &num_elem, &num_elem_blk, &num_node_sets, &num_side_sets);
+\end{lstlisting}
+
+
+\subsection{Write Quality Assurance (QA) Records}
+
+
+The function \cfuncref{ex_put_qa} writes the QA records to the
+database. Each QA record contains four \param{MAX_STR_LENGTH}-byte
+character strings. The character strings are:
+
+\begin{itemize}
+\item the analysis code name
+\item the analysis code QA descriptor
+\item the analysis date
+\item the analysis time
+\end{itemize}
+
+In case of an error, \cfuncref{ex_put_qa} returns a negative number; a
+warning will return a positive number. Possible causes of errors
+include:
+
+\begin{itemize}
+ \item data file not properly opened with call to \cfuncref{ex_create} or
+ \cfuncref{ex_open}
+
+ \item data file opened for read only.
+
+ \item QA records already exist in file.
+\end{itemize}
+
+
+\funcdef{ex_put_qa}{int~exoid, int~num_qa_records, char~*qa_record[][4]}
+
+\begin{parameters}
+\item[{int exoid \R{}}]
+\exo{} file ID returned from a previous call to \cfuncref{ex_create} or
+\cfuncref{ex_open}.
+
+\item[{int num_qa_records \R{}}]
+The number of QA records.
+
+\item[{char* qa_record \R{}}]
+Array containing the QA records.
+\end{parameters}
+
+The following code segment will write out two QA records:
+
+\begin{lstlisting}
+#include "exodusII.h"
+int num_qa_rec, error, exoid;
+char *qa_record[2][4];
+
+/* write QA records */
+num_qa_rec = 2;
+
+qa_record[0][0] = "TESTWT1";
+qa_record[0][1] = "testwt1";
+qa_record[0][2] = "07/07/93";
+qa_record[0][3] = "15:41:33";
+qa_record[1][0] = "FASTQ";
+qa_record[1][1] = "fastq";
+qa_record[1][2] = "07/07/93";
+qa_record[1][3] = "16:41:33";
+
+error = ex_put_qa (exoid, num_qa_rec, qa_record);
+\end{lstlisting}
+
+
+
+
+\subsection{Read Quality Assurance (QA) Records}
+
+The function \cfuncref{ex_get_qa} reads the QA records from the
+database. Each QA record contains four \param{MAX_STR_LENGTH}-byte
+character strings. The character strings are:
+
+\begin{itemize}
+\item the analysis code name
+\item the analysis code QA descriptor
+\item the analysis date
+\item the analysis time
+\end{itemize}
+
+Memory must be allocated for the QA records before this call is
+made. The number of QA records can be determined by invoking
+\cfuncref{ex_inquire}.
+
+In case of an error, \cfuncref{ex_get_qa} returns a negative number; a
+warning will return a positive number.  Possible causes of errors
+include:
+
+\begin{itemize}
+ \item data file not properly opened with call to \cfuncref{ex_create} or
+ \cfuncref{ex_open}
+
+ \item a warning value is returned if no QA records were stored.
+\end{itemize}
+
+\funcdef{ex_get_qa}{int~exoid, char~*qa_record[][4]}
+
+\begin{parameters}
+\item[{int exoid \R{}}]
+\exo{} file ID returned from a previous call to \cfuncref{ex_create} 
+or \cfuncref{ex_open}.
+
+\item[{char* qa_record \W{}}]
+Returned array containing the QA records.
+\end{parameters}
+
+
+The following will determine the number of QA records and 
+read them from the open \exo{} file:
+
+\begin{lstlisting}
+#include "exodusII.h"
+int num_qa_rec, error, exoid
+char *qa_record[MAX_QA_REC][4];
+
+/* read QA records */
+num_qa_rec = ex_inquire_int(exoid, EX_INQ_QA);
+
+for (i=0; i\texttt{<}num_qa_rec; i++) {
+    for (j=0; j\texttt{<}4; j++)
+    qa_record[i][j] = (char *) calloc ((MAX_STR_LENGTH+1), sizeof(char));
+}
+error = ex_get_qa (exoid, qa_record);
+\end{lstlisting}
+
+
+\subsection{Write Information Records}
+
+The function \cfuncref{ex_put_info} writes information records to the
+database. The records are MAX_LINE_LENGTH-character strings.
+
+In case of an error, \cfuncref{ex_put_info} returns a negative number;
+a warning will return a positive number. Possible causes of errors
+include:
+
+\begin{itemize}
+
+ \item data file not properly opened with call to \cfuncref{ex_create}
+ or \cfuncref{ex_open}
+
+ \item data file opened for read only.
+
+ \item information records already exist in file.
+\end{itemize}
+
+\funcdef{ex_put_info}{int~exoid, int~num_info, char~**info}
+
+
+\begin{parameters}
+\item[{int exoid \R{}}]
+\exo{} file ID returned from a previous call to \cfuncref{ex_create} or
+\cfuncref{ex_open}.
+
+
+\item[{int num_info \R{}}]
+The number of information records.
+
+
+\item[{char** info \R{}}]
+Array containing the information records.
+\end{parameters}
+
+The following code will write out three information records 
+to an open \exo{} file:
+
+\begin{lstlisting}
+#include "exodusII.h"
+int error, exoid, num_info;
+char *info[3];
+
+/* write information records */
+num_info = 3;
+
+info[0] = "This is the first information record.";
+info[1] = "This is the second information record.";
+info[2] = "This is the third information record.";
+
+error = ex_put_info(exoid, num_info, info);
+\end{lstlisting}
+
+\subsection{Read Information Records}
+
+The function \cfuncref{ex_get_info} reads information records from the
+database. The records are \param{MAX_LINE_LENGTH}-character
+strings. Memory must be allocated for the information records before
+this call is made. The number of records can be determined by invoking
+\cfuncref{ex_inquire} or \cfuncref{ex_inquire_int}.
+
+
+In case of an error, \cfuncref{ex_get_info} returns a negative number;
+a warning will return a positive number. Possible causes of errors
+include:
+
+
+\begin{itemize}
+ \item data file not properly opened with call to \cfuncref{ex_create} or
+ \cfuncref{ex_open}
+
+ \item a warning value is returned if no information records were
+ stored.
+\end{itemize}
+
+
+
+\funcdef{ex_get_info}{int~exoid, char`**info}
+
+
+\begin{parameters}
+\item[{int exoid \R{}}]
+\exo{} file ID returned from a previous call to \cfuncref{ex_create} 
+or \cfuncref{ex_open}.
+
+\item[char** info \W{}]
+Returned array containing the information records.
+\end{parameters}
+
+The following code segment will determine the number of information 
+records and read them from an open \exo{} file:
+
+
+\begin{lstlisting}
+#include "exodusII.h"
+int error, exoid, num_info;
+char *info[MAXINFO];
+
+/* read information records */
+num_info = ex_inquire_int (exoid,EX_INQ_INFO);
+for (i=0; i < num_info; i++) {
+   info[i] = (char *) calloc ((MAX_LINE_LENGTH+1), sizeof(char));
+}
+error = ex_get_info (exoid, info);
+\end{lstlisting}
+
+
+
+\subsection{Inquire \exo{} Parameters}\label{s:inquire}
+
+
+The function \cfuncref{ex_inquire} is used to inquire values of certain
+data entities in an \exo{} file. Memory must be allocated for the
+returned values before this function is invoked.query database
+
+
+In case of an error, \cfuncref{ex_inquire} returns a negative 
+number; a warning will return a positive number.
+Possible causes of errors include:
+
+\begin{itemize}
+ \item data file not properly opened with call to \cfuncref{ex_create} or
+ \cfuncref{ex_open}.
+ \item requested information not stored in the file.
+ \item invalid request flag.
+\end{itemize}
+
+
+\funcdef{ex_inquire}{int~exoid, ex_inquiry~req_info, int~*ret_int, float~*ret_float, char~*ret_char}
+
+\begin{parameters}
+\item[{int exoid \R{}}]
+\exo{} file ID returned from a previous call to \cfuncref{ex_create} 
+or \cfuncref{ex_open}.
+
+\item[{ex_inquiry req_info \R{}}]
+A flag which designates what information is requested. It must be one
+of the following constants (predefined in the file
+\file{exodusII.h}):
+
+\begin{longtable}{@{}lp{4.4in}}
+ \param{EX_INQ_API_VERS}& The \exo{} API version number is returned
+ in \cmd{ret_float} and an ``undotted'' version number is returned in
+ \cmd{ret_int}. The API version number reflects the release of the
+ function library (i.e., function names, argument list, etc.). The
+ current API version is {\version} or {\versionud}\footnote{The API
+ and DB version numbers are synchronized and will always
+ match. Initially, it was thought that maintaining the two versions
+ separately would be a benefit, but that was more confusing than
+ helpful, so the numbers were made the same awhile ago}.\\
+
+ \param{EX_INQ_DB_VERS}& The \exo{} database version number is
+ returned in \cmd{ret_float} and an ``undotted'' version number is
+ returned in \cmd{ret_int}. The database version number reflects the
+ version of the library that was used to write the file pointed to by
+ \cmd{exoid}. The current database version is {\version} or
+ {\versionud}.\\
+
+ \param{EX_INQ_LIB_VERS}& The \exo{} library version number is
+ returned in \cmd{ret_float} and an ``undotted'' version number is
+ returned in \cmd{ret_int}. The API library version number reflects
+ the version number of the \exo{} library linked with this
+ application. The current library version is {\version} or
+ {\versionud}\\
+
+ \param{EX_INQ_TITLE}& The title stored in the database is returned
+ in \cmd{ret_char}.\\
+
+ \param{EX_INQ_DIM}& The dimensionality, or number of coordinates
+ per node (1, 2 or 3), of the database is returned in
+ \cmd{ret_int}.\\
+
+ \param{EX_INQ_NODES}& The number of nodes is returned in
+ \cmd{ret_int}.\\
+
+ \param{EX_INQ_ELEM}& The number of elements is returned in
+ \cmd{ret_int}.\\
+
+ \param{EX_INQ_ELEM_BLK}& The number of element blocks is returned
+ in \cmd{ret_int}.\\
+
+ \param{EX_INQ_NODE_SETS}& The number of node sets is returned in
+ \cmd{ret_int}.\\
+
+ \param{EX_INQ_NS_NODE_LEN}& The length of the concatenated node
+ sets node list is returned in \cmd{ret_int}.\\
+
+ \param{EX_INQ_NS_DF_LEN}& The length of the concatenated node
+ sets distribution list is returned in \cmd{ret_int}.\\
+
+ \param{EX_INQ_SIDE_SETS}& The number of side sets is returned in
+ \cmd{ret_int}.\\
+
+ \param{EX_INQ_SS_ELEM_LEN}& The length of the concatenated side
+ sets element list is returned in \cmd{ret_int}.\\
+
+ \param{EX_INQ_SS_DF_LEN}& The length of the concatenated side
+ sets distribution factor list is returned in \cmd{ret_int}.\\
+
+ \param{EX_INQ_SS_NODE_LEN}& The aggregate length of all of the
+ side sets node lists is returned in \cmd{ret_int}.\\
+
+ \param{EX_INQ_EB_PROP}& The number of integer properties stored
+ for each element block is returned in \cmd{ret_int}; this number
+ includes the property named ``ID''.\\
+
+ \param{EX_INQ_NS_PROP}& The number of integer properties stored
+ for each node set is returned in \cmd{ret_int}; this number includes
+ the property named ``ID''.\\
+
+ \param{EX_INQ_SS_PROP}& The number of integer properties stored
+ for each side set is returned in \cmd{ret_int}; this number includes
+ the property named ``ID''.\\
+
+ \param{EX_INQ_QA}& The number of QA records is returned in
+ \cmd{ret_int}.\\
+
+ \param{EX_INQ_INFO}& The number of information records is returned
+ in \cmd{ret_int}.\\
+
+ \param{EX_INQ_TIME}& The number of time steps stored in the
+ database is returned in \cmd{ret_int}.\\
+
+ \param{EX_INQ_EDGE_BLK} & The number of edge blocks is returned in
+ \cmd{ret_int}.\\
+
+ \param{EX_INQ_EDGE_MAP} & The number of edge maps is returned in
+ \cmd{ret_int}.\\
+
+ \param{EX_INQ_EDGE_PROP} & The number of properties stored per
+ edge blockis returned in \cmd{ret_int}. \\
+
+ \param{EX_INQ_EDGE_SETS} & The number of edge sets is returned in
+ \cmd{ret_int}.\\
+
+ \param{EX_INQ_EDGE} & The number of edges is returned in
+ \cmd{ret_int}.\\
+
+ \param{EX_INQ_FACE} & The number of faces is returned in
+ \cmd{ret_int}.\\
+
+ \param{EX_INQ_EB_PROP} & The number of element block properties is
+ returned in \cmd{ret_int}.\\
+
+ \param{EX_INQ_ELEM_MAP} & The number of element maps is returned
+ in \cmd{ret_int}.\\
+
+ \param{EX_INQ_ELEM_SETS} & The number of element sets is returned
+ in \cmd{ret_int}.\\
+
+ \param{EX_INQ_ELS_DF_LEN} & The length of the concatenated
+ element set distribution factor list is returned in \cmd{ret_int}.\\
+
+ \param{EX_INQ_ELS_LEN} & The length of the concatenated element
+ set element list is returned in \cmd{ret_int}.\\
+
+ \param{EX_INQ_ELS_PROP} & The number of properties stored per elem
+ set is returned in \cmd{ret_int}.\\
+
+ \param{EX_INQ_EM_PROP} & The number of element map properties is
+ returned in \cmd{ret_int}.\\
+
+ \param{EX_INQ_ES_DF_LEN} & The length of the concatenated edge
+ set distribution factor list is returned in \cmd{ret_int}.\\
+
+ \param{EX_INQ_ES_LEN} & The length of the concatenated edge set
+ edge list is returned in \cmd{ret_int}.\\
+
+ \param{EX_INQ_ES_PROP} & The number of properties stored per edge
+ set is returned in \cmd{ret_int}.\\
+
+ \param{EX_INQ_FACE_BLK} & The number of face blocks is returned in
+ \cmd{ret_int}.\\
+
+ \param{EX_INQ_FACE_MAP} & The number of face maps is returned in
+ \cmd{ret_int}.\\
+
+ \param{EX_INQ_FACE_PROP} & The number of properties stored per
+ face block is returned in \cmd{ret_int}.\\
+
+ \param{EX_INQ_FACE_SETS} & The number of face sets is returned in
+ \cmd{ret_int}.\\
+
+ \param{EX_INQ_FS_DF_LEN} & The length of the concatenated face
+ set distribution factor list is returned in \cmd{ret_int}.\\
+
+ \param{EX_INQ_FS_LEN} & The length of the concatenated face set
+ face list is returned in \cmd{ret_int}.\\
+
+ \param{EX_INQ_FS_PROP} & The number of properties stored per face
+ set is returned in \cmd{ret_int}.\\
+
+ \param{EX_INQ_NM_PROP} & The number of node map properties is
+ returned in \cmd{ret_int}.\\
+
+ \param{EX_INQ_NODE_MAP} & The number of node maps is returned in
+ \cmd{ret_int}.\\
+\end{longtable}
+
+\item[{int* ret_int \W{}}]
+Returned integer, if an integer value is requested according 
+to \cmd{req_info}); otherwise, supply a dummy argument.
+
+\item[float* ret_float \W{}]
+Returned float, if a float value is requested (according 
+to \cmd{req_info}); otherwise, supply a dummy argument\footnote{NOTE:
+This argument is always a float even if the database IO and/or CPU word
+size is a double.}.
+
+\item[{char* ret_char \W{}}]
+Returned character string, if a character value is requested according
+to \cmd{req_info}); otherwise, supply a dummy argument.
+\end{parameters}
+
+As an example, the following will return the number of element 
+block properties stored in the \exo{} file:
+
+\begin{lstlisting}
+#include "exodusII.h"
+int error, exoid, num_props;
+float fdum;
+char *cdum;
+
+/* determine the number of element block properties */
+error = ex_inquire (exoid, EX_INQ_EB_PROP, &num_props, 
+                    &fdum, cdum);
+\end{lstlisting}
+
+
+\subsection{Inquire \exo{} Integer Parameters}
+
+
+The function \cfuncref{ex_inquire_int} is used to query or inquire
+values of certain integer data entities in an \exo{} file. It is a
+short-cut to the \cfuncref{ex_inquire} function defined in the previous
+section.  If there is no error, the queried value will be returned as
+a positive number. In case of an error, \cfuncref{ex_inquire} returns a
+negative number.
+
+\begin{itemize}
+ \item data file not properly opened with call to \cfuncref{ex_create} or
+ \cfuncref{ex_open}.
+ \item requested information not stored in the file.
+ \item invalid request flag.
+\end{itemize}
+
+
+\funcdef{ex_inquire_int}{int~exoid, ex_inquiry~req_info}
+
+\begin{parameters}
+\item[{int exoid \R{}}]
+\exo{} file ID returned from a previous call to \cfuncref{ex_create} 
+or \cfuncref{ex_open}.
+
+\item[{ex_inquiry req_info \R{}}]
+A flag which designates what information is requested. It must be one
+of the following constants (predefined in the file
+\file{exodusII.h}):
+
+\begin{longtable}{@{}lp{4.4in}}
+ \param{EX_INQ_API_VERS}& The ``undotted'' \exo{} API version
+ number is returned. The API version number reflects the release of
+ the function library (i.e., function names, argument list, etc.). The
+ current ``undotted'' API version is {\versionud}.\\
+
+ \param{EX_INQ_LIB_VERS}& The ``undotted'' \exo{} API library
+ version number is returned. The API library version number reflects
+ the format of the data as it is stored in the \code{NetCDF}
+ database. The current API version is {\versionud}\\
+
+ \param{EX_INQ_DB_VERS}& The ``undotted'' \exo{} database version
+ number is returned. The database version number reflects the version
+ of the library that was used to write the file pointed to by
+ \cmd{exoid}. The current database version is {\versionud}.\\
+
+ \param{EX_INQ_DIM}& The dimensionality, or number of coordinates
+ per node (1, 2 or 3), of the database is returned.\\
+
+ \param{EX_INQ_NODES}& The number of nodes is returned.\\
+
+ \param{EX_INQ_ELEM}& The number of elements is returned.\\
+
+ \param{EX_INQ_ELEM_BLK}& The number of element blocks is
+ returned.\\
+
+ \param{EX_INQ_NODE_SETS}& The number of node sets is returned.\\
+
+ \param{EX_INQ_NS_NODE_LEN}& The length of the concatenated node
+ sets node list is returned.\\
+
+ \param{EX_INQ_NS_DF_LEN}& The length of the concatenated node
+ sets distribution list is returned.\\
+
+ \param{EX_INQ_SIDE_SETS}& The number of side sets is returned.\\
+
+ \param{EX_INQ_SS_ELEM_LEN}& The length of the concatenated side
+ sets element list is returned.\\
+
+ \param{EX_INQ_SS_DF_LEN}& The length of the concatenated side
+ sets distribution factor list is returned.\\
+
+ \param{EX_INQ_SS_NODE_LEN}& The aggregate length of all of the
+ side sets node lists is returned.\\
+
+ \param{EX_INQ_EB_PROP}& The number of integer properties stored
+ for each element block is returned; this number includes the property
+ named ``ID''.\\
+
+ \param{EX_INQ_NS_PROP}& The number of integer properties stored
+ for each node set is returned; this number includes the property
+ named ``ID''.\\
+
+ \param{EX_INQ_SS_PROP}& The number of integer properties stored
+ for each side set is returned; this number includes the property
+ named ``ID''.\\
+
+ \param{EX_INQ_QA}& The number of QA records is returned.\\
+
+ \param{EX_INQ_INFO}& The number of information records is returned.\\
+
+ \param{EX_INQ_TIME}& The number of time steps stored in the
+ database is returned.\\
+
+ \param{EX_INQ_EDGE_BLK} & The number of edge blocks is returned.\\
+
+ \param{EX_INQ_EDGE_MAP} & The number of edge maps is returned.\\
+
+ \param{EX_INQ_EDGE_PROP} & The number of properties stored per
+ edge block is returned. \\
+
+ \param{EX_INQ_EDGE_SETS} & The number of edge sets is returned.\\
+
+ \param{EX_INQ_EDGE} & The number of edges is returned.\\
+
+ \param{EX_INQ_FACE} & The number of faces is returned.\\
+
+ \param{EX_INQ_EB_PROP} & The number of element block properties is
+ returned.\\
+
+ \param{EX_INQ_ELEM_MAP} & The number of element maps is returned.\\
+
+ \param{EX_INQ_ELEM_SETS} & The number of element sets is returned.\\
+
+ \param{EX_INQ_ELS_DF_LEN} & The length of the concatenated
+ element set distribution factor list is returned.\\
+
+ \param{EX_INQ_ELS_LEN} & The length of the concatenated element
+ set element list is returned.\\
+
+ \param{EX_INQ_ELS_PROP} & The number of properties stored per elem
+ set is returned.\\
+
+ \param{EX_INQ_EM_PROP} & The number of element map properties is
+ returned.\\
+
+ \param{EX_INQ_ES_DF_LEN} & The length of the concatenated edge
+ set distribution factor list is returned.\\
+
+ \param{EX_INQ_ES_LEN} & The length of the concatenated edge set
+ edge list is returned.\\
+
+ \param{EX_INQ_ES_PROP} & The number of properties stored per edge
+ set is returned.\\
+
+ \param{EX_INQ_FACE_BLK} & The number of face blocks is returned.\\
+
+ \param{EX_INQ_FACE_MAP} & The number of face maps is returned.\\
+
+ \param{EX_INQ_FACE_PROP} & The number of properties stored per
+ face block is returned.\\
+
+ \param{EX_INQ_FACE_SETS} & The number of face sets is returned.\\
+
+ \param{EX_INQ_FS_DF_LEN} & The length of the concatenated face
+ set distribution factor list is returned.\\
+
+ \param{EX_INQ_FS_LEN} & The length of the concatenated face set
+ face list is returned.\\
+
+ \param{EX_INQ_FS_PROP} & The number of properties stored per face
+ set is returned.\\
+
+ \param{EX_INQ_NM_PROP} & The number of node map properties is
+ returned.\\
+
+ \param{EX_INQ_NODE_MAP} & The number of node maps is returned.\\
+\end{longtable}
+\end{parameters}
+
+As an example, the following will return the number of nodes,
+elements, and element blocks stored in the \exo{} file:
+
+\begin{lstlisting}
+#include "exodusII.h"
+int exoid;
+int num_nodes = ex_inquire_int(exoid, EX_INQ_NODES);
+int num_elems = ex_inquire_int(exoid, EX_INQ_ELEM);
+int num_block = ex_inquire_int(exoid, EX_INQ_ELEM_BLK);
+\end{lstlisting}
+
+
+\subsection{Error Reporting}
+
+
+The function \cfuncref{ex_err} logs an error to \cmd{stderr}. It is intended
+to provide explanatory messages for error codes returned from other
+\exo{} routines.This function
+
+The passed in error codes and corresponding messages are listed in
+Appendix C. The programmer may supplement the error message printed
+for standard errors by providing an error message. If the error code
+is provided with no error message, the predefined message will be
+used. The error code \param{EX_MSG} is available to log application
+specific messages.
+
+
+
+\funcdefv{ex_err}{char~*module_name, char~*message, int~err_num}
+
+\begin{parameters}
+\item[{char* module_name \R{}}]
+{This is a string containing the name of the calling function.}
+
+\item[{char* message \R{}}]
+This is a string containing a message explaining the error 
+or problem. If \param{EX_VERBOSE} (see \cfuncref{ex_opts}) is true, 
+this message will be printed to \cmd{stderr}. Otherwise, 
+nothing will be printed.
+
+\item[{int err_num \R{}}]
+This is an integer code identifying the error. \exo{} C functions
+place an error code value in \cmd{exerrval}, an external int. Negative
+values are considered fatal errors while positive values are
+warnings. There is a set of predefined values defined in
+\file{exodusII.h}. The predefined constant \param{EX_PRTLASTMSG} will
+cause the last error message to be output, regardless of the setting
+of the error reporting level (see \cfuncref{ex_opts}).
+\end{parameters}
+
+The following is an example of the use of this function:
+\begin{lstlisting}
+#include "exodusII.h"
+int exoid, CPU_word_size, IO_word_size, errval;
+float version;
+char errmsg[MAX_ERR_LENGTH];
+
+CPU_word_size = sizeof(float); 
+IO_word_size = 0;
+
+/* open \exo{} file */
+if (exoid = ex_open ("test.exo", EX_READ, &CPU_word_size, 
+                     &IO_word_size, &version)) {
+   errval = 999;
+   sprintf(errmsg,"Error: cannot open file test.exo");
+   ex_err("prog_name", errmsg, errval);
+}
+\end{lstlisting}
+
+
+\subsection{Set Error Reporting Level}
+
+The function \cfuncref{ex_opts} is used to set message reporting
+options.
+
+In case of an error, \cfuncref{ex_opts} returns a negative number; a
+warning will return a positive number.
+
+\funcdef{ex_opts}{ex_options~option_val}
+
+\begin{parameters}
+\item[{int option_val \R{}}]
+Integer option value. Current options are:
+
+\begin{description}
+\item[\param{EX_ABORT}] Causes fatal errors to force program 
+exit. (Default is false.)
+
+\item[\param{EX_DEBUG}] Causes certain messages to print 
+for debug use. (Default is false.)
+
+\item[\param{EX_VERBOSE}] Causes all error messages to 
+print when true, otherwise no error messages will print. (Default 
+is false.)
+\end{description}
+\end{parameters}
+
+
+NOTE: Values may be OR'ed together to provide any combination 
+of these capabilities.
+
+For example, the following will cause all messages to print 
+and will cause the program to exit upon receipt of fatal error:
+
+\begin{lstlisting}
+#include "exodusII.h"
+ex_opts(EX_ABORT|EX_VERBOSE);
+\end{lstlisting}
+
+\section{Model Description}
+
+The routines in this section read and write information which 
+describe an \exo{} finite element model. This includes nodal 
+coordinates, element order map, element connectivity arrays, 
+element attributes, node sets, side sets, and object properties.
+
+\subsection{Write Nodal Coordinates}
+
+The function \cfuncref{ex_put_coord} writes the nodal coordinates of
+the nodes in the model. The function \cfuncref{ex_put_init} must be
+invoked before this call is made.
+
+Because the coordinates are floating point values, the application
+code must declare the arrays passed to be the appropriate type
+(``float'' or ``double'') to match the compute word size passed
+in \cfuncref{ex_create} or \cfuncref{ex_open}.
+
+In case of an error, \cfuncref{ex_put_coord} returns a negative 
+number; a warning will return a positive number. 
+Possible causes of errors include:
+
+\begin{itemize}
+ \item data file not properly opened with call to \cfuncref{ex_create}
+ or \cfuncref{ex_open}
+
+ \item data file opened for read only.
+
+ \item data file not initialized properly with call to
+ \cfuncref{ex_put_init}.
+\end{itemize}
+
+
+
+\funcdef{ex_put_coord}{int~exoid, void~*x_coor, void~*y_coor, void~*z_coor}
+
+\begin{parameters}
+\item[{int exoid \R{}}]
+\exo{} file ID returned from a previous call to \cfuncref{ex_create} 
+or \cfuncref{ex_open}.
+
+\item[{void* x_coor \R{}}]
+The X-coordinates of the nodes. If this is \code{NULL}, the
+X-coordinates will not be written.
+
+\item[{void* y_coor \R{}}]
+The Y-coordinates of the nodes. These are stored only if \cmd{num_dim} 
+\texttt{>} 1; otherwise, pass in dummy address. If this is \code{NULL}, the
+Y-coordinates will not be written.
+
+\item[{void* z_coor \R{}}]
+The Z-coordinates of the nodes. These are stored only if \cmd{num_dim} 
+\texttt{>} 2; otherwise, pass in dummy address. If this is \code{NULL}, the
+Z-coordinates will not be written.
+\end{parameters}
+
+The following will write the nodal coordinates to an open 
+\exo{} file:
+
+\begin{lstlisting}
+int error, exoid;
+
+/* if file opened with compute word size of sizeof(float) */
+float x[8], y[8], z[8];
+
+/* write nodal coordinates values to database */
+x[0] = 0.0; y[0] = 0.0; z[0] = 0.0;
+x[1] = 0.0; y[1] = 0.0; z[1] = 1.0;
+x[2] = 1.0; y[2] = 0.0; z[2] = 1.0;
+x[3] = 1.0; y[3] = 0.0; z[3] = 0.0;
+x[4] = 0.0; y[4] = 1.0; z[4] = 0.0;
+x[5] = 0.0; y[5] = 1.0; z[5] = 1.0;
+x[6] = 1.0; y[6] = 1.0; z[6] = 1.0;
+x[7] = 1.0; y[7] = 1.0; z[7] = 0.0;
+
+error = ex_put_coord(exoid, x, y, z);
+
+/* Do the same as the previous call in three separate calls */
+error = ex_put_coord(exoid, x,    NULL, NULL);
+error = ex_put_coord(exoid, NULL, y,    NULL);
+error = ex_put_coord(exoid, NULL, NULL, z);
+\end{lstlisting}
+
+
+\subsection{Read Nodal Coordinates}
+
+
+
+
+The function \cfuncref{ex_get_coord} reads the nodal coordinates of the
+nodes. Memory must be allocated for the coordinate arrays (\cmd{x_coor},
+\cmd{y_coor}, and \cmd{z_coor}) before this call is made. The length of each
+of these arrays is the number of nodes in the mesh.
+
+Because the coordinates are floating point values, the application
+code must declare the arrays passed to be the appropriate type
+(``float'' or ``double'') to match the compute word size passed in
+\cfuncref{ex_create} or \cfuncref{ex_open}.
+
+
+In case of an error, \cfuncref{ex_get_coord} returns a negative number;
+a warning will return a positive number. Possible causes of errors
+include:
+
+\begin{itemize}
+ \item data file not properly opened with call to \cfuncref{ex_create}
+ or \cfuncref{ex_open}
+
+ \item a warning value is returned if nodal coordinates were not
+ stored.
+\end{itemize}
+
+\funcdef{ex_get_coord}{int~exoid, void~*x_coor, void~*y_coor, void~*z_coor}
+
+\begin{parameters}
+\item[{int exoid \R{}}]
+\exo{} file ID returned from a previous call to \cfuncref{ex_create} 
+or \cfuncref{ex_open}.
+
+\item[{void* x_coor \W{}}]
+Returned X coordinates of the nodes. If this is \code{NULL}, the
+X-coordinates will not be read.
+
+\item[{void* y_coor \W{}}]
+Returned Y coordinates of the nodes. These are returned only if
+{num_dim} \texttt{>} 1; otherwise, pass in a dummy address. If this
+is \code{NULL}, the Y-coordinates will not be read.
+
+\item[{void* z_coor \W{}}]
+Returned Z coordinates of the nodes. These are returned only if
+{num_dim} \texttt{>} 2; otherwise, pass in a dummy address. If this
+is \code{NULL}, the Z-coordinates will not be read.
+\end{parameters}
+
+The following code segment will read the nodal coordinates 
+from an open \exo{} file:
+
+\begin{lstlisting}
+int error, exoid;
+
+float *x, *y, *z;
+
+/* read nodal coordinates values from database */
+x = (float *)calloc(num_nodes, sizeof(float));
+y = (float *)calloc(num_nodes, sizeof(float));
+if (num_dim >= 3)
+   z = (float *)calloc(num_nodes, sizeof(float));
+else
+   z = 0;
+
+error = ex_get_coord(exoid, x, y, z);
+
+/* Do the same as the previous call in three separate calls */
+error = ex_get_coord(exoid, x,    NULL, NULL);
+error = ex_get_coord(exoid, NULL, y,    NULL);
+if (num_dim >= 3)
+   error = ex_get_coord(exoid, NULL, NULL, z);
+\end{lstlisting}
+
+
+\subsection{Write Coordinate Names}
+
+\begin{itemize}
+ \item data file not properly opened with call to \cfuncref{ex_create}
+ or \cfuncref{ex_open}
+
+ \item data file opened for read only.
+
+ \item data file not initialized properly with call to
+ \cfuncref{ex_put_init}.
+\end{itemize}
+
+\funcdef{ex_put_coord_names}{int~exoid, char~**coord_names}
+
+\begin{parameters}
+\item[{int exoid \R{}}]
+\exo{} file ID returned from a previous call to \cfuncref{ex_create} 
+or \cfuncref{ex_open}.
+
+\item[{char** coord_names \R{}}]
+Array containing \cmd{num_dim} names of length \param{MAX_STR_LENGTH} 
+of the nodal coordinate arrays.
+\end{parameters}
+
+The following coding will write the coordinate names to an 
+open \exo{} file:
+
+\begin{lstlisting}
+int error, exoid;
+
+char *coord_names[3];
+coord_names[0] = "xcoor";
+coord_names[1] = "ycoor";
+coord_names[2] = "zcoor";
+
+error = ex_put_coord_names (exoid, coord_names);
+\end{lstlisting}
+
+\subsection{Read Coordinate Names}
+
+The function \cfuncref{ex_get_coord_names} reads the names
+(\param{MAX_STR_LENGTH}-characters in length) of the coordinate arrays
+from the database. Memory must be allocated for the character strings
+before this function is invoked.
+
+
+In case of an error, \cfuncref{ex_get_coord_names} returns 
+a negative number; a warning will return a positive number. 
+Possible causes of errors include:
+
+
+\begin{itemize}
+ \item data file not properly opened with call to \cfuncref{ex_create}
+ or \cfuncref{ex_open}
+
+ \item a warning value is returned if coordinate names were not
+ stored.
+\end{itemize}
+
+\funcdef{ex_get_coord_names}{int~exoid, char~**coord_names}
+
+\begin{parameters}
+\item[{int exoid \R{}}]
+\exo{} file ID returned from a previous call to \cfuncref{ex_create} or
+\cfuncref{ex_open}.
+
+\item[{char** coord_names \W{}}]
+Returned pointer to a vector containing \cmd{num_dim} names of the nodal
+coordinate arrays.
+\end{parameters}
+
+The following code segment will read the coordinate names from an open
+\exo{} file:
+
+\begin{lstlisting}
+int error, exoid;
+char *coord_names[3];
+
+for (i=0; i < num_dim; i++) {
+   coord_names[i] = (char *)calloc((MAX_STR_LENGTH+1), sizeof(char));
+}
+
+error = ex_get_coord_names (exoid, coord_names);
+\end{lstlisting}
+
+
+\subsection{Write Node Number Map}
+
+The function \cfuncref{ex_put_node_num_map} writes out the optional
+node number map to the database. See Section~\ref{s:nnm} for a
+description of the node number map. The function \cfuncref{ex_put_init}
+must be invoked before this call is made.
+
+In case of an error, \cfuncref{ex_put_node_num_map} returns a
+negative number; a warning will return a positive number. Possible
+causes of errors include:
+
+\begin{itemize}
+ \item data file not properly opened with call to \cfuncref{ex_create}
+ or \cfuncref{ex_open}
+
+ \item data file opened for read only.
+
+ \item data file not initialized properly with call to \cfuncref{ex_put_init}.
+
+ \item a node number map already exists in the file.
+\end{itemize}
+
+
+\funcdef{ex_put_node_num_map}{int~exoid, int~*node_map}
+
+\begin{parameters}
+\item[{int exoid \R{}}]
+\exo{} file ID returned from a previous call to \cfuncref{ex_create} 
+or \cfuncref{ex_open}.
+
+\item[{int* node_map \R{}}]
+The node number map.
+\end{parameters}
+
+The following code generates a default node number map and outputs it
+to an open \exo{} file. This is a trivial case and included just for
+illustration. Since this map is optional, it should be written out
+only if it contains something other than the default map.
+
+\begin{lstlisting}
+int error, exoid;
+int *node_map = (int *)calloc(num_nodes, sizeof(int));
+
+for (i=1; i <= num_nodes; i++)
+   node_map[i-1] = i;
+
+error = ex_put_node_num_map(exoid, node_map);
+\end{lstlisting}
+
+\subsection{Read Node Number Map}
+
+The function \cfuncref{ex_get_node_num_map} reads the optional node
+number mapnode number map from the database. See Section~\ref{s:nnm} for a
+description of the node number map. If a node number map is
+not stored in the data file, a default array (1,2,3,. .. \cmd{num_nodes})
+is returned. Memory must be allocated for the node number map array
+({num_nodes} in length) before this call is made.
+
+In case of an error, \cfuncref{ex_get_node_num_map} returns a
+negative number; a warning will return a positive number. Possible
+causes of errors include:
+
+\begin{itemize}
+ \item data file not properly opened with call to \cfuncref{ex_create}
+ or \cfuncref{ex_open}
+
+ \item if a node number map is not stored, a default map 
+and a warning value are returned.
+\end{itemize}
+
+
+\funcdef{ex_get_node_num_map}{int~exoid, int~*node_map}
+
+\begin{parameters}
+\item[{int exoid \R{}}]
+\exo{} file ID returned from a previous call to \cfuncref{ex_create} or
+\cfuncref{ex_open}.
+
+\item[{int* node_map \W{}}]
+Returned node number map.
+\end{parameters}
+
+The following code will read a node number map from an open 
+\exo{} file:
+
+\begin{lstlisting}
+int *node_map, error, exoid;
+
+/* read node number map */
+node_map = (int *)calloc(num_nodes, sizeof(int));
+error = ex_get_node_num_map(exoid, node_map);
+\end{lstlisting}
+
+\subsection{Write Element Number Map}
+
+The function \cfuncref{ex_put_elem_num_map} writes out the optional
+element number map to the database. See Section~\ref{s:enm} for a
+description of the element number map. The function
+\cfuncref{ex_put_init} must be invoked before this call is made.
+
+In case of an error, \cfuncref{ex_put_elem_num_map} returns a
+negative number; a warning will return a positive number. Possible
+causes of errors include:
+
+\begin{itemize}
+
+ \item data file not properly opened with call to \cfuncref{ex_create}
+ or \cfuncref{ex_open}
+
+ \item data file opened for read only.
+
+ \item data file not initialized properly with call to
+ \cfuncref{ex_put_init}.
+
+ \item an element number map already exists in the file.
+\end{itemize}
+
+
+
+\funcdef{ex_put_elem_num_map}{int~exoid, int~*elem_map}
+
+\begin{parameters}
+\item[{int exoid \R{}}]
+\exo{} file ID returned from a previous call to \cfuncref{ex_create} or
+\cfuncref{ex_open}.
+
+\item[{int* elem_map \R{}}]
+The element number map.
+\end{parameters}
+
+
+The following code generates a default element number map and outputs
+it to an open \exo{} file. This is a trivial case and included just
+for illustration. Since this map is optional, it should be written out
+only if it contains something other than the default map.
+
+\begin{lstlisting}
+int error, exoid;
+int *elem_map = (int *)calloc(num_elem, sizeof(int));
+
+for (i=1; i <= num_elem; i++)
+   elem_map[i-1] = i;
+
+error = ex_put_elem_num_map(exoid, elem_map);
+\end{lstlisting}
+
+\subsection{Read Element Number Map}
+
+The function \cfuncref{ex_get_elem_num_map} reads the optional
+element number map from the database. See Section~\ref{s:enm} for a
+description of the element number map. If an element number map is not
+stored in the data file, a default array (1,2,3,. .. \cmd{num_elem}) is
+returned. Memory must be allocated for the element number map array
+({num_elem} in length) before this call is made.
+
+In case of an error, \cfuncref{ex_get_elem_num_map} returns a
+negative number; a warning will return a positive number.  Possible
+causes of errors include:
+
+\begin{itemize}
+ \item data file not properly opened with call to \cfuncref{ex_create}
+ or \cfuncref{ex_open}
+
+ \item if an element number map is not stored, a default map and a
+ warning value are returned.
+\end{itemize}
+
+
+
+\funcdef{ex_get_elem_num_map}{int~exoid, int~*elem_map}
+
+\begin{parameters}
+\item[{int exoid \R{}}]
+\exo{} file ID returned from a previous call to \cfuncref{ex_create} or
+\cfuncref{ex_open}.
+
+\item[{int* elem_map \W{}}]
+Returned element number map.
+\end{parameters}
+
+The following code will read an element number map from an 
+open \exo{} file:
+\begin{lstlisting}
+int *elem_map, error, exoid;
+
+/* read element number map */
+elem_map = (int *) calloc(num_elem, sizeof(int));
+error = ex_get_elem_num_map (exoid, elem_map);
+\end{lstlisting}
+
+\subsection{Write Element Order Map}
+
+The function \cfuncref{ex_put_map} writes out the optional element
+order map to the database. See Section~\ref{s:eom} for a description
+of the element order map. The function \cfuncref{ex_put_init} must be
+invoked before this call is made.
+
+In case of an error, \cfuncref{ex_put_map} returns a negative 
+number; a warning will return a positive number. 
+Possible causes of errors include:
+
+\begin{itemize}
+ \item data file not properly opened with call to \cfuncref{ex_create}
+ or \cfuncref{ex_open}
+
+ \item data file opened for read only.
+
+ \item data file not initialized properly with call to
+ \cfuncref{ex_put_init}.
+
+ \item an element map already exists in the file.
+\end{itemize}
+
+
+\funcdef{ex_put_map}{int~exoid, int~*elem_map}
+
+\begin{parameters}
+\item[{int exoid \R{}}]
+\exo{} file ID returned from a previous call to \cfuncref{ex_create} 
+or \cfuncref{ex_open}.
+
+\item[{int* elem_map \R{}}]
+The element order map.
+\end{parameters}
+
+The following code generates a default element order map and outputs
+it to an open \exo{} file. This is a trivial case and included just
+for illustration. Since this map is optional, it should be written out
+only if it contains something other than the default map.
+
+\begin{lstlisting}
+int error, exoid;
+int *elem_map = (int *)calloc(num_elem, sizeof(int));
+for (i=0; i < num_elem; i++) {
+   elem_map[i] = i+1;
+}
+error = ex_put_map(exoid, elem_map);
+\end{lstlisting}
+
+\subsection{Read Element Order Map}
+
+The function \cfuncref{ex_get_map} reads the element order mapelement
+order map from the database. See Section~\ref{s:eom} for a description
+of the element order map. If an element order map is not stored in the
+data file, a default array (1,2,3,. .. \cmd{num_elem}) is
+returned. Memory must be allocated for the element map array
+({num_elem} in length) before this call is made.
+
+In case of an error, \cfuncref{ex_get_map} returns a negative number; a
+warning will return a positive number. Possible causes of errors
+include:
+\begin{itemize}
+ \item data file not properly opened with call to \cfuncref{ex_create}
+ or \cfuncref{ex_open}
+
+ \item if an element order map is not stored, a default map and a
+ warning value are returned.
+\end{itemize}
+
+\funcdef{ex_get_map}{int~exoid, int~*elem_map}
+
+\begin{parameters}
+\item[{int exoid \R{}}]
+\exo{} file ID returned from a previous call to \cfuncref{ex_create} or
+\cfuncref{ex_open}.
+
+\item[{int* elem_map \W{}}]
+Returned element order map.
+\end{parameters}
+
+The following code will read an element order map from an 
+open \exo{} file:
+
+\begin{lstlisting}
+int *elem_map, error, exoid;
+
+/* read element order map */
+elem_map = (int *)calloc(num_elem, sizeof(int));
+
+error = ex_get_map(exoid, elem_map);
+\end{lstlisting}
+
+\subsection{Write Element Block Parameters}\label{s:pebparam}
+
+The function \cfuncref{ex_put_elem_block} writes the parameters used
+to describe an element block.
+
+In case of an error, \cfuncref{ex_put_elem_block} returns a negative
+number; a warning will return a positive number. Possible causes of
+errors include:
+
+\begin{itemize}
+ \item data file not properly opened with call to \cfuncref{ex_create}
+ or \cfuncref{ex_open}
+
+ \item data file opened for read only.
+
+ \item data file not initialized properly with call to
+ \cfuncref{ex_put_init}.
+
+ \item an element block with the same ID has already been specified.
+
+ \item the number of element blocks specified in the call to
+ \cfuncref{ex_put_init} has been exceeded.
+\end{itemize}
+
+\funcdef{ex_put_elem_block}{int~exoid, int~elem_blk_id, 
+char~*elem_type, int~num_elem_this_blk, int~num_nodes_per_elem, int~num_attr}
+
+\begin{parameters}
+\item[{int exoid \R{}}]
+\exo{} file ID returned from a previous call to \cfuncref{ex_create} 
+or \cfuncref{ex_open}.
+
+\item[{int elem_blk_id \R{}}]
+The element block ID.
+
+\item[{char* elem_type \R{}}]
+The type of elements in the element block. The maximum length of this
+string is \param{MAX_STR_LENGTH}.
+
+\item[{int num_elem_this_blk \R{}}]
+The number of elements in the element block.
+
+\item[{int num_nodes_per_elem \R{}}]
+The number of nodes per element in the element block.
+
+\item[{int num_attr \R{}}]
+The number of attributes per element in the element block.
+\end{parameters}
+
+For example, the following code segment will initialize an 
+element block with an ID of 10, write out the connectivity array, 
+and write out the element attributes array:
+\begin{lstlisting}
+int id, error, exoid, num_elem_in_blk, num_nodes_per_elem,
+    *connect, num_attr;
+
+float *attrib;
+
+/* write element block parameters */
+id = 10;
+num_elem_in_blk = 2;
+num_nodes_per_elem = 4;   /* elements are 4-node shells */
+num_attr = 1;             /* one attribute per element */
+
+error = ex_put_elem_block(exoid, id, "SHEL", num_elem_in_blk, 
+                          num_nodes_per_elem, num_attr);
+
+/* write element connectivity */
+connect = (int *)calloc(num_elem_in_blk*num_nodes_per_elem, sizeof(int));
+
+/* fill connect with node numbers; nodes for first element*/
+connect[0] = 1; connect[1] = 2; connect[2] = 3; connect[3] = 4;
+
+/* nodes for second element */
+connect[4] = 5; connect[5] = 6; connect[6] = 7; connect[7] = 8;
+
+error = ex_put_elem_conn (exoid, id, connect);
+
+/* write element block attributes */
+attrib = (float *) calloc (num_attr*num_elem_in_blk, sizeof(float));
+
+for (i=0, cnt=0; i < num_elem_in_blk; i++) {
+   for (j=0; j < num_attr; j++, cnt++) {
+      attrib[cnt] = 1.0;
+   }
+}
+
+error = ex_put_elem_attr (exoid, id, attrib);
+\end{lstlisting}
+
+\subsection{Read Element Block Parameters}\label{s:gebparam}
+
+The function \cfuncref{ex_get_elem_block} reads the parameters used to
+describe an element block. IDs of all element blocks stored can be
+determined by calling \cfuncref{ex_get_elem_blk_ids}.
+
+In case of an error, \cfuncref{ex_get_elem_block} returns a negative
+number; a warning will return a positive number. Possible causes of
+errors include:
+
+
+\begin{itemize}
+ \item data file not properly opened with call to \cfuncref{ex_create} 
+or \cfuncref{ex_open}
+
+ \item element block with specified ID is not stored in 
+the data file.
+\end{itemize}
+
+\funcdef{ex_get_elem_block}{int~exoid, int~elem_blk_id, 
+char~*elem_type, int~*num_elem_this_blk,
+int~*num_nodes_per_elem, int~*num_attr}
+
+\begin{parameters}
+\item[{int exoid \R{}}]
+\exo{} file ID returned from a previous call to \cfuncref{ex_create} or
+\cfuncref{ex_open}.
+
+\item[{int elem_blk_id \R{}}]
+The element block ID.
+
+\item[{char* elem_type \W{}}]
+Returned element typetype of elements in the element block. 
+The maximum length of this string is \param{MAX_STR_LENGTH}.
+
+\item[{int* num_elem_this_blk \W{}}]
+Returned number of elements in the element block.
+
+\item[{int* num_nodes_per_elem \W{}}]
+Returned number of nodes per element in the element block.
+
+\item[{int* num_attr \W{}}]
+Returned number of attributes per element in the element block.
+\end{parameters}
+
+
+As an example, the following code segment will read the parameters for
+the element block with an ID of 10 and read the connectivity and
+element attributes arrays from an open \exo{} file:
+\begin{lstlisting}
+#include "exodusII.h"
+int id, error, exoid, num_el_in_blk, num_nod_per_el, num_attr, 
+    *connect;
+float *attrib;
+char elem_type[MAX_STR_LENGTH+1];
+
+/* read element block parameters */
+id = 10;
+
+error = ex_get_elem_block(exoid, id, elem_type, &num_el_in_blk, 
+                          &num_nod_per_elem, &num_attr);
+
+/* read element connectivity */
+connect = (int *) calloc(num_nod_per_el*num_el_in_blk, 
+                         sizeof(int));
+
+error = ex_get_elem_conn(exoid, id, connect);
+
+/* read element block attributes */
+attrib = (float *) calloc (num_attr * num_el_in_blk, sizeof(float));
+error = ex_get_elem_attr (exoid, id, attrib);
+\end{lstlisting}
+
+\subsection{Read Element Blocks IDs}
+
+The function \cfuncref{ex_get_elem_blk_ids} reads the IDs of all of
+the element blocks. Memory must be allocated for the returned array of
+({num_elem_blk}) IDs before this function is invoked. The required
+size(\cmd{num_elem_blk}) can be determined via a call to
+\cfuncref{ex_inquire} or \cfuncref{ex_inquire_int}.
+
+
+In case of an error, \cfuncref{ex_get_elem_blk_ids} returns 
+a negative number; a warning will return a positive number. 
+Possible causes of errors include:
+
+\begin{itemize}
+ \item data file not properly opened with call to \cfuncref{ex_create}
+ or \cfuncref{ex_open}
+\end{itemize}
+
+\funcdef{ex_get_elem_blk_ids}{int~exoid, int~*elem_blk_ids}
+
+\begin{parameters}
+\item[{int exoid \R{}}]
+\exo{} file ID returned from a previous call to \cfuncref{ex_create} 
+or \cfuncref{ex_open}.
+
+\item[{int* elem_blk_ids \W{}}]
+Returned array of the element blocks IDs. The order of the IDs in this
+array reflects the sequence that the element blocks were introduced
+into the file.
+\end{parameters}
+
+The following code segment reads all the element block IDs:
+
+\begin{lstlisting}
+int error, exoid, *idelbs, num_elem_blk;
+idelbs = (int *) calloc(num_elem_blk, sizeof(int));
+
+error = ex_get_elem_blk_ids (exoid, idelbs);
+\end{lstlisting}
+
+\subsection{Write Element Block Connectivity}
+
+The function \cfuncref{ex_put_elem_conn} writes the connectivity array
+for an element block. The function \cfuncref{ex_put_elem_block} must
+be invoked before this call is made.
+
+
+In case of an error, \cfuncref{ex_put_elem_conn} returns a 
+negative number; a warning will return a positive number.
+Possible causes of errors include:
+
+\begin{itemize}
+ \item data file opened for read only.
+
+ \item data file not initialized properly with call to \cfuncref{ex_put_init}.
+
+ \item \cfuncref{ex_put_elem_block} was not called previously.
+\end{itemize}
+
+\funcdef{ex_put_elem_conn}{int~exoid, int~elem_blk_id, int~*connect}
+
+\begin{parameters}
+\item[{int exoid \R{}}]
+\exo{} file ID returned from a previous call to \cfuncref{ex_create} 
+or \cfuncref{ex_open}.
+
+\item[{int elem_blk_id \R{}}]
+The element block ID.
+
+\item[{int connect[num_elem_this_blk,num_nodes_per_elem] \R{}}]
+The connectivity array; a list of nodes (internal node IDs; 
+See Section~\ref{s:nnm}) that define each element in the element
+block. The node index cycles faster than the element index.
+\end{parameters}
+
+Refer to the code example in Section~\ref{s:ebparam} for an example of
+writing the connectivity array for an element block.
+
+
+\subsection{Read Element Block Connectivity}
+
+The function \cfuncref{ex_get_elem_conn} reads the connectivity array
+for an element block. Memory must be allocated for the connectivity
+array(\cmd{num_elem_this_blk} $\times$ \cmd{num_nodes_per_elem} in length)
+before this routine is called.
+
+In case of an error, \cfuncref{ex_get_elem_conn} returns a 
+negative number; a warning will return a positive number. 
+Possible causes of errors include:
+\begin{itemize}
+ \item an element block with the specified ID is not stored in the
+ file.
+\end{itemize}
+
+\funcdef{ex_get_elem_conn}{int~exoid, int~elem_blk_id, int~*connect}
+
+\begin{parameters}
+\item[{int exoid \R{}}]
+\exo{} file ID returned from a previous call to \cfuncref{ex_create} 
+or \cfuncref{ex_open}.
+
+\item[{int elem_blk_id \R{}}]
+The element block ID.
+
+\item[{int connect[num_elem_this_blk,num_nodes_per_elem] \W{}}]
+Returned connectivity array; a list of nodes (internal node 
+IDs; See Section~\ref{s:nnm}) that define each element. The 
+node index cycles faster than the element index.
+\end{parameters}
+
+Refer to the code example in Section~\ref{s:gebparam} for an example
+of reading the connectivity for an element block.
+
+
+\subsection{Write Element Block Attributes}
+
+The function \cfuncref{ex_put_elem_attr} writes the attributes for an
+element block. Each element in the element block must have the same
+number of attributes, so there are(\cmd{num_attr} $\times$
+{num_elem_this_blk}) attributes for each element block. The
+function \cfuncref{ex_put_elem_block} must be invoked before this call
+is made.
+
+Because the attributes are floating point values, the application code
+must declare the array passed to be the appropriate type (``float'' or
+``double'') to match the compute word size passed in
+\cfuncref{ex_create} or \cfuncref{ex_open}.
+
+In case of an error, \cfuncref{ex_put_elem_attr} returns a negative
+number; a warning will return a positive number. Possible causes of
+errors include:
+
+\begin{itemize}
+
+ \item data file not properly opened with call to \cfuncref{ex_create} 
+or \cfuncref{ex_open}
+
+ \item data file opened for read only.
+
+ \item data file not initialized properly with call to
+ \cfuncref{ex_put_init}.
+
+ \item \cfuncref{ex_put_elem_block} was not called previously for
+ specified element block ID.
+
+ \item \cfuncref{ex_put_elem_block} was called with 0 attributes
+ specified.
+\end{itemize}
+
+\funcdef{ex_put_elem_attr}{int~exoid, int~elem_blk_id, void~*attrib}
+
+\begin{parameters}
+\item[{int exoid \R{}}]
+\exo{} file ID returned from a previous call to \cfuncref{ex_create} 
+or \cfuncref{ex_open}.
+
+\item[{int elem_blk_id \R{}}]
+The element block ID.
+
+\item[{void attrib}{[} {num_elem_this_blk,num_attr}{]} {\R{}}]
+The list of attributes for the element block. The \cmd{num_attr}
+index cycles faster.
+\end{parameters}
+
+Refer to the code example in Section~\ref{s:pebparam} for an example
+of writing the attributes array for an element block.
+
+
+\subsection{Read Element Block Attributes}
+
+The function \cfuncref{ex_get_elem_attr} reads the attributes for an
+element block. Memory must be allocated for(\cmd{num_attr} $\times$
+\cmd{num_elem_this_blk}) attributes before this routine is called.
+
+Because the attributes are floating point values, the application code
+must declare the array passed to be the appropriate type (``float'' or
+``double'') to match the compute word size passed in
+\cfuncref{ex_create} or \cfuncref{ex_open}.
+
+In case of an error, \cfuncref{ex_get_elem_attr} returns a 
+negative number; a warning will return a positive number. 
+Possible causes of errors include:
+
+\begin{itemize}
+ \item data file not properly opened with call to \cfuncref{ex_create}
+ or \cfuncref{ex_open}
+
+ \item invalid element block ID.
+
+ \item a warning value is returned if no attributes are stored in the
+ file.
+\end{itemize}
+
+
+\funcdef{ex_get_elem_attr}{int~exoid, int~elem_blk_id, void~*attrib}
+
+\begin{parameters}
+\item[{int exoid \R{}}]
+\exo{} file ID returned from a previous call to \cfuncref{ex_create} 
+or \cfuncref{ex_open}.
+
+\item[{int elem_blk_id \R{}}]
+The element block ID.
+
+\item[{void attrib}{[} {num_elem_this_blk,num_attr}{]} {\W{}}]
+Returned list of(\cmd{num_attr} $\times$ {num_elem_this_blk}) attributes for
+the element block, with the \cmd{num_attr} index cycling faster.
+\end{parameters}
+
+Refer to the code example in Section~\ref{s:gebparam} for an example
+of reading the element attributes for an element block.
+
+\subsection{Write Node Set Parameters}
+
+The function \cfuncref{ex_put_node_set_param} writes the node set ID,
+the number of nodes which describe a single node set, and the number
+of node set distribution factors for the node set.
+
+In case of an error, \cfuncref{ex_put_node_set_param} returns a
+negative number; a warning will return a positive number.  Possible
+causes of errors include:
+
+\begin{itemize}
+ \item data file not properly opened with call to \cfuncref{ex_create}
+ or \cfuncref{ex_open}
+
+ \item data file opened for read only.
+
+ \item data file not initialized properly with call to
+ \cfuncref{ex_put_init}.
+
+ \item the number of node sets specified in the call to
+ \cfuncref{ex_put_init} was zero or has been exceeded.
+
+ \item a node set with the same ID has already been stored.
+
+ \item the specified number of distribution factors is not zero and is
+ not equal to the number of nodes.
+\end{itemize}
+
+
+\funcdef{ex_put_node_set_param}{int~exoid, int~node_set_id, int~num_nodes_in_set, int~num_dist_in_set}
+
+\begin{parameters}
+\item[{int exoid \R{}}]
+\exo{} file ID returned from a previous call to \cfuncref{ex_create} or
+\cfuncref{ex_open}.
+
+\item[{int node_set_id \R{}}]
+The node set ID.
+
+\item[{int num_nodes_in_set \R{}}]
+The number of nodes in the node set.
+
+\item[{int num_dist_in_set \R{}}]
+The number of distribution factors in the node set. This should be
+either 0 (zero) for no factors, or should equal \cmd{num_nodes_in_set}.
+\end{parameters}
+
+The following code segment will write out a node set to an open \exo{}
+file:
+
+\begin{lstlisting}
+int id, num_nodes_in_set, num_dist_in_set, error, exoid, 
+    *node_list;
+
+float *dist_fact;
+
+/* write node set parameters */
+id = 20; num_nodes_in_set = 5; num_dist_in_set = 5;
+error = ex_put_node_set_param(exoid, id, num_nodes_in_set, 
+                              num_dist_in_set);
+
+/* write node set node list */
+node_list = (int *) calloc (num_nodes_in_set, sizeof(int));
+node_list[0] = 100; node_list[1] = 101; node_list[2] = 102;
+node_list[3] = 103; node_list[4] = 104;
+
+error = ex_put_node_set(exoid, id, node_list);
+
+/* write node set distribution factors */
+dist_fact = (float *) calloc (num_dist_in_set, sizeof(float));
+dist_fact[0] = 1.0; dist_fact[1] = 2.0; dist_fact[2] = 3.0;
+dist_fact[3] = 4.0; dist_fact[4] = 5.0;
+
+error = ex_put_node_set_dist_fact(exoid, id, dist_fact);
+\end{lstlisting}
+
+\subsection{Read Node Set Parameters}
+
+The function \cfuncref{ex_get_node_set_param} reads the number of
+nodes which describe a single node set and the number of distribution
+factors for the node set.
+
+In case of an error, \cfuncref{ex_get_node_set_param} returns a
+negative number; a warning will return a positive number. Possible
+causes of errors include:
+
+\begin{itemize}
+ \item data file not properly opened with call to \cfuncref{ex_create}
+ or \cfuncref{ex_open}
+
+ \item a warning value is returned if no node sets are stored 
+in the file.
+
+ \item incorrect node set ID.
+\end{itemize}
+
+\funcdef{ex_get_node_set_param}{int~exoid, int~node_set_id, int~*num_nodes_in_set, int~*num_dist_in_set}
+
+\begin{parameters}
+\item[{int exoid \R{}}]
+\exo{} file ID returned from a previous call to \cfuncref{ex_create} 
+or \cfuncref{ex_open}.
+
+\item[{int node_set_id \R{}}]
+The node set ID.
+
+\item[{int* num_nodes_in_set \W{}}]
+Returned number of nodes in the node set.
+
+\item[{int* num_dist_in_set \W{}}]
+Returned number of distribution factors in the node set.
+\end{parameters}
+
+The following code segment will read a node set from an open 
+\exo{} file:
+\begin{lstlisting}
+int error, exoid, id, num_nodes_in_set, num_df_in_set, *node_list;
+
+float *dist_fact;
+
+/* read node set parameters */
+id = 100;
+
+error = ex_get_node_set_param(exoid, id, &num_nodes_in_set, 
+                              &num_df_in_set);
+
+/* read node set node list */
+node_list = (int *) calloc(num_nodes_in_set, sizeof(int));
+error = ex_get_node_set(exoid, id, node_list);
+
+/* read node set distribution factors */
+if (num_df_in_set > 0) {
+   dist_fact = (float *) calloc(num_nodes_in_set, sizeof(float));
+   error = ex_get_node_set_dist_fact(exoid, id, dist_fact); 
+}
+\end{lstlisting}
+
+\subsection{Write Node Set}
+
+The function \cfuncref{ex_put_node_set} writes the node list for a
+single node set. The function \cfuncref{ex_put_node_set_param} must
+be called before this routine is invoked.
+
+In case of an error, \cfuncref{ex_put_node_set} returns a negative 
+number; a warning will return a positive number. 
+Possible causes of errors include:
+
+\begin{itemize}
+ \item data file not properly opened with call to \cfuncref{ex_create} 
+or \cfuncref{ex_open}
+
+ \item data file opened for read only.
+
+ \item data file not initialized properly with call to \cfuncref{ex_put_init}.
+
+ \item \cfuncref{ex_put_node_set_param} not called previously.
+\end{itemize}
+
+\funcdef{ex_put_node_set}{int~exoid, int~node_set_id, int~*node_set_node_list}
+
+\begin{parameters}
+\item[{int exoid \R{}}]
+\exo{} file ID returned from a previous call to \cfuncref{ex_create} 
+or \cfuncref{ex_open}.
+
+\item[{int node_set_id \R{}}]
+The node set ID.
+
+\item[{int* node_set_node_list \R{}}]
+Array containing the node list for the node set. Internal node IDs are
+used in this list (See Section~\ref{s:nnm}).
+\end{parameters}
+
+Refer to the description of \cfuncref{ex_put_node_set_param} for a
+sample code segment to write out a node set.
+
+
+
+\subsection{Write Node Set Distribution Factors}
+
+The function \cfuncref{ex_put_node_set_dist_fact} writes node set
+distribution factors for a single node set. The function
+\cfuncref{ex_put_node_set_param} must be called before this routine
+is invoked.
+
+
+Because the distribution factors are floating point values, the
+application code must declare the array passed to be the appropriate
+type (``float'' or ``double'') to match the compute word size passed
+in \cfuncref{ex_create} or \cfuncref{ex_open}.
+
+
+In case of an error, \cfuncref{ex_put_node_set_dist_fact} returns a
+negative number; a warning will return a positive number.  Possible
+causes of errors include:
+
+\begin{itemize}
+ \item data file not properly opened with call to \cfuncref{ex_create}
+ or \cfuncref{ex_open}
+
+ \item data file opened for read only.
+
+ \item data file not initialized properly with call to \cfuncref{ex_put_init}.
+
+ \item \cfuncref{ex_put_node_set_param} not called previously.
+
+ \item a call to \cfuncref{ex_put_node_set_param} specified zero
+ distribution factors.
+\end{itemize}
+
+\funcdef{ex_put_node_set_dist_fact}{int~exoid, int~node_set_id, void~8node_set_dist_fact}
+
+\begin{parameters}
+\item[{int exoid \R{}}]
+\exo{} file ID returned from a previous call to \cfuncref{ex_create} or
+\cfuncref{ex_open}.
+
+\item[{int node_set_id \R{}}]
+The node set ID.
+
+\item[{void* node_set_dist_fact \R{}}]
+Array containing the distribution factors in the node set.
+\end{parameters}
+
+Refer to the description of \cfuncref{ex_put_node_set_param} for a
+sample code segment to write out the distribution factors for a node
+set.
+
+
+\subsection{Read Node Set Distribution Factors}
+
+The function \cfuncref{ex_get_node_set_dist_fact} returns the node
+set distribution factors for a single node set. Memory must be
+allocated for the list of distribution factors(\cmd{num_dist_in_set}
+in length) before this function is invoked.
+
+
+Because the distribution factors are floating point values, the
+application code must declare the array passed to be the appropriate
+type (``float'' or ``double'') to match the compute word size passed
+in \cfuncref{ex_create} or \cfuncref{ex_open}.
+
+
+In case of an error, \cfuncref{ex_get_node_set_dist_fact} returns a
+negative number; a warning will return a positive number. Possible
+causes of errors include:
+
+\begin{itemize}
+ \item a warning value is returned if no distribution factors 
+were stored.
+\end{itemize}
+
+\funcdef{ex_get_node_set_dist_fact}{int~exoid, int~node_set_id, void~8node_set_dist_fact}
+
+\begin{parameters}
+\item[{int exoid \R{}}]
+\exo{} file ID returned from a previous call to \cfuncref{ex_create} 
+or \cfuncref{ex_open}.
+
+\item[{int node_set_id \R{}}]
+The node set ID.
+
+\item[{void* node_set_dist_fact \W{}}]
+Returned array containing the distribution factors in the node set.
+\end{parameters}
+
+Refer to the description of \cfuncref{ex_get_node_set_param} for a
+sample code segment to read a node set's distribution factors.
+
+
+\subsection{Read Node Sets IDs }
+
+The function \cfuncref{ex_get_node_set_ids} reads the IDs of all of
+the node sets. Memory must be allocated for the returned array of
+({num_node_sets}) IDs before this function is invoked.
+
+In case of an error, \cfuncref{ex_get_node_set_ids} returns 
+a negative number; a warning will return a positive number.
+Possible causes of errors include:
+
+\begin{itemize}
+
+ \item data file not properly opened with call to \cfuncref{ex_create} 
+or \cfuncref{ex_open}
+
+ \item a warning value is returned if no node sets are stored 
+in the file.
+\end{itemize}
+
+\funcdef{ex_get_node_set_ids}{int~exoid, int~*node_set_ids}
+
+\begin{parameters}
+\item[{int exoid \R{}}]
+\exo{} file ID returned from a previous call to \cfuncref{ex_create} 
+or \cfuncref{ex_open}.
+
+\item[{int}{* node_set_ids \W{}}]
+Returned array of the node sets IDs. The order of the IDs in this array
+reflects the sequence the node sets were introduced into the file.
+\end{parameters}
+
+As an example, the following code will read all of the node set IDs
+from an open data file:
+
+\begin{lstlisting}
+int *ids, num_node_sets, error, exoid;
+
+/* read node sets IDs */
+ids = (int *) calloc(num_node_sets, sizeof(int));
+
+error = ex_get_node_set_ids (exoid, ids);
+\end{lstlisting}
+
+\subsection{Write Concatenated Node Sets}
+
+The function \cfuncref{ex_put_concat_node_sets} writes the node set
+ID's, node sets node count array, node sets distribution factor count
+array, node sets node list pointers array, node sets distribution
+factor pointer, node set node list, and node set distribution factors
+for all of the node sets. ``Concatenated node sets'' refers to the
+arrays required to define all of the node sets (ID array, counts
+arrays, pointers arrays, node list array, and distribution factors
+array) as described in Section 3.10 on page 11. Writing concatenated
+node sets is more efficient than writing individual node sets. See
+Appendix~\ref{app:efficiency} for a discussion of efficiency issues.
+
+
+Because the distribution factors are floating point values, the
+application code must declare the array passed to be the appropriate
+type (``float'' or ``double'') to match the compute word size passed
+in \cfuncref{ex_create} or \cfuncref{ex_open}.
+
+
+In case of an error, \cfuncref{ex_put_concat_node_sets} returns 
+a negative number; a warning will return a positive number. 
+Possible causes of errors include:
+
+\begin{itemize}
+ \item data file not properly opened with call to \cfuncref{ex_create} 
+or \cfuncref{ex_open}
+
+ \item data file opened for read only.
+
+ \item data file not initialized properly with call to \cfuncref{ex_put_init}.
+
+ \item the number of node sets specified in a call to
+ \cfuncref{ex_put_init} was zero or has been exceeded.
+
+ \item a node set with the same ID has already been stored.
+
+ \item the number of distribution factors specified for one of the
+ node sets is not zero and is not equal to the number of nodes in the
+ same node set.
+\end{itemize}
+
+
+\funcdef{ex_put_concat_node_sets}{int~exoid, int~*node_set_ids, 
+int~*num_nodes_per_set, 
+int~*num_dist_per_set, 
+int~*node_sets_node_index, 
+int~*node_sets_dist_index, 
+int~*node_sets_node_list, 
+void~*node_sets_dist_fact}
+
+\begin{parameters}
+\item[{int exoid \R{}}]
+\exo{} file ID returned from a previous call to \cfuncref{ex_create} 
+or \cfuncref{ex_open}.
+
+\item[{int* node_set_ids \R{}}]
+Array containing the node set ID for each set.
+
+\item[{int* num_nodes_per_set \R{}}]
+Array containing the number of nodes for each set.
+
+\item[{int* num_dist_per_set \R{}}]
+Array containing the number of distribution factors for each set.
+
+\item[{int* node_sets_node_index \R{}}]
+Array containing the indices into the \cmd{node_set_node_list} which
+are the locations of the first node for each set. These indices are
+0-based.
+
+\item[{int* node_sets_dist_index \R{}}]
+Array containing the indices into the \cmd{node_set_dist_list} which
+are the locations of the first distribution factor for each set. These
+indices are 0-based.
+
+\item[{int* node_sets_node_list \R{}}]
+Array containing the nodes for all sets. Internal node IDs are used in
+this list (See Section~\ref{s:nnm}).
+
+\item[{void* node_sets_dist_fact \R{}}]
+Array containing the distribution factors for all sets.
+\end{parameters}
+
+For example, the following code will write out two node sets 
+in a concatenated format:
+
+\begin{lstlisting}
+int ids[2], num_nodes_per_set[2], node_ind[2], node_list[8],
+    num_df_per_set[2], df_ind[2], error, exoid;
+
+float dist_fact[8];
+
+ids[0] = 20; ids[1] = 21;
+num_nodes_per_set[0] = 5; num_nodes_per_set[1] = 3;
+
+node_ind[0] = 0; node_ind[1] = 5;
+
+node_list[0] = 100; node_list[1] = 101; node_list[2] = 102;
+node_list[3] = 103; node_list[4] = 104;
+node_list[5] = 200; node_list[6] = 201; node_list[7] = 202;
+
+num_df_per_set[0] = 5; num_df_per_set[1] = 3;
+
+df_ind[0] = 0; df_ind[1] = 5;
+
+dist_fact[0] = 1.0; dist_fact[1] = 2.0; dist_fact[2] = 3.0;
+dist_fact[3] = 4.0; dist_fact[4] = 5.0;
+dist_fact[5] = 1.1; dist_fact[6] = 2.1; 
+dist_fact[7] = 3.1;
+
+error = ex_put_concat_node_sets (exoid, ids, num_nodes_per_set, 
+                                 num_df_per_set, node_ind, df_ind, 
+                                 node_list, dist_fact);
+\end{lstlisting}
+
+\subsection{Read Concatenated Node Sets}
+
+The function \cfuncref{ex_get_concat_node_sets} reads the node set
+ID's, node set node count array, node set distribution factors count
+array, node set node pointers array, node set distribution factors
+pointer array, node set node list, and node set distribution factors
+for all of the node sets. ``Concatenated node sets'' refers to the
+arrays required to define all of the node sets (ID array, counts
+arrays, pointers arrays, node list array, and distribution factors
+array) as described in Section 3.10 on page 11.
+
+Because the distribution factors are floating point values, the
+application code must declare the array passed to be the appropriate
+type (``float'' or ``double'') to match the compute word size passed
+in \cfuncref{ex_create} or \cfuncref{ex_open}.
+
+The length of each of the returned arrays can be determined by
+invoking \cfuncref{ex_inquire} or \cfuncref{ex_inquire_int}.
+
+In case of an error, \cfuncref{ex_get_concat_node_sets} returns a
+negative number; a warning will return a positive number. Possible
+causes of errors include:
+\begin{itemize}
+
+ \item data file not properly opened with call to \cfuncref{ex_create}
+ or \cfuncref{ex_open}
+
+ \item a warning value is returned if no node sets are stored in the
+ file.
+\end{itemize}
+
+\funcdef{ex_get_concat_node_sets}
+{int~exoid, 
+int~*node_set_ids,
+int~*num_nodes_per_set, 
+int~*num_dist_per_set, 
+int~*node_sets_node_index,
+int~*node_sets_dist_index, 
+int~*node_sets_node_list,
+void~*node_sets_dist_fact}
+
+\begin{parameters}
+\item[{int exoid \R{}}]
+\exo{} file ID returned from a previous call to \cfuncref{ex_create} 
+or \cfuncref{ex_open}.
+
+\item[{int* node_set_ids \W{}}]
+Returned array containing the node set ID for each set.
+
+\item[{int* num_nodes_per_set \W{}}]
+Returned array containing the number of nodes for each set.
+
+\item[{int* num_dist_per_set \W{}}]
+Returned array containing the number of distribution factors for each
+set.
+
+\item[{int* node_sets_node index \W{}}]
+Returned array containing the indices into the \cmd{node_set_node_list}
+which are the locations of the first node for each set. These indices
+are 0-based.
+
+\item[{int* node_sets_dist_index \W{}}]
+Returned array containing the indices into the \cmd{node_set_dist_fact}
+which are the locations of the first distribution factor for each
+set. These indices are 0-based.
+
+\item[{int* node_sets_node_list \W{}}]
+Returned array containing the nodes for all sets. Internal node IDs
+are used in this list (see Section~\ref{s:nnm}).
+
+\item[{void* node_sets_dist_fact \W{}}]
+Returned array containing the distribution factors for all sets.
+\end{parameters}
+
+As an example, the following code segment will read concatenated 
+node sets:
+
+\begin{lstlisting}
+#include "exodusII.h"
+
+int error, exoid, num_node_sets, list_len, *ids, 
+    *num_nodes_per_set, *num_df_per_set, *node_ind, 
+    *df_ind, *node_list;
+
+float *dist_fact
+
+/* read concatenated node sets */
+num_node_sets = ex_inquire_int(exoid, EX_INQ_NODE_SETS);
+
+ids               = (int *) calloc(num_node_sets, sizeof(int));
+num_nodes_per_set = (int *) calloc(num_node_sets, sizeof(int));
+num_df_per_set    = (int *) calloc(num_node_sets, sizeof(int));
+node_ind          = (int *) calloc(num_node_sets, sizeof(int));
+df_ind            = (int *) calloc(num_node_sets, sizeof(int));
+
+list_len = ex_inquire_int(exoid, EX_INQ_NS_NODE_LEN);
+node_list = (int *) calloc(list_len, sizeof(int));
+
+list_len = ex_inquire_int(exoid, EX_INQ_NS_DF_LEN);
+dist_fact = (float *) calloc(list_len, sizeof(float));
+
+error = ex_get_concat_node_sets (exoid, ids, num_nodes_per_set, 
+                                 num_df_per_set, node_ind, df_ind, 
+                                 node_list, dist_fact);
+\end{lstlisting}
+
+
+\subsection{Write Side Set Parameters}
+
+The function \cfuncref{ex_put_side_set_param} writes the side set set
+ID and the number of sides (faces on 3D element types; edges on 2D
+element types) which describe a single side set, and the number of
+side set distribution factors on the side set. Because each side of a
+side set is completely defined by an element and a local side number,
+the number of sides is equal to the number of elements in a side set.
+
+In case of an error, \cfuncref{ex_put_side_set_param} returns a
+negative number; a warning will return a positive number. Possible
+causes of errors include:
+
+\begin{itemize}
+ \item data file not properly opened with call to \cfuncref{ex_create}
+ or \cfuncref{ex_open}
+
+ \item data file opened for read only.
+
+ \item data file not initialized properly with call to
+ \cfuncref{ex_put_init}.
+
+ \item the number of side sets specified in the call to
+ \cfuncref{ex_put_init} was zero or has been exceeded.
+
+ \item a side set with the same ID has already been stored.
+\end{itemize}
+
+
+\funcdef{ex_put_side_set_param}
+{int~exoid, 
+int~side_set_id, 
+int~num_side_in_set, 
+int~num_dist_fact_in_set}
+
+\begin{parameters}
+\item[{int} {exoid \R{}}]
+\exo{} file ID returned from a previous call to \cfuncref{ex_create} 
+or \cfuncref{ex_open}.
+
+\item[{int side_set_id} {\R{}}]
+The side set ID.
+
+\item[{int num_side_in_set} {\R{}}]
+The number of sides (faces or edges) in the side set.
+
+\item[{int num_dist_fact_in_set} {\R{}}]
+The number of distribution factors on the side set.
+\end{parameters}
+
+The following code segment will write a side set to an open 
+\exo{} file:
+
+\begin{lstlisting}
+int error, exoid, id, num_sides, num_df, 
+    elem_list[2], side_list[2];
+
+float dist_fact[4];
+
+/* write side set parameters */
+id = 30;
+
+num_sides = 2;
+num_df    = 4;
+
+error = ex_put_side_set_param (exoid, id, num_sides, num_df);
+
+/* write side set element and side lists */
+elem_list[0] = 1; elem_list[1] = 2;
+side_list[0] = 1; side_list[1] = 1;
+
+error = ex_put_side_set (exoid, id, elem_list, side_list);
+
+/* write side set distribution factors */
+dist_fact[0] = 30.0; dist_fact[1] = 30.1;
+dist_fact[2] = 30.2; dist_fact[3] = 30.3;
+
+error = ex_put_side_set_dist_fact (exoid, id, dist_fact);
+\end{lstlisting}
+
+
+
+\subsection{Read Side Set Parameters}
+
+The function \cfuncref{ex_get_side_set_param} reads the number of
+sides (faces on 3D element types; edges on 2D element types) which
+describe a single side set, and the number of side set distribution
+factors on the side set.
+
+In case of an error, \cfuncref{ex_get_side_set_param} returns a
+negative number; a warning will return a positive number. Possible
+causes of errors include:
+
+\begin{itemize}
+ \item data file not properly opened with call to \cfuncref{ex_create}
+ or \cfuncref{ex_open}
+
+ \item a warning value is returned if no side sets are stored 
+in the file.
+
+ \item incorrect side set ID.
+\end{itemize}
+
+\funcdef{ex_get_side_set_param}
+{int~exoid, 
+int~side_set_id, 
+int~*num_side_in_set, 
+int~*num_dist_fact_in_set}
+
+\begin{parameters}
+\item[{int exoid} {\R{}}]
+\exo{} file ID returned from a previous call to \cfuncref{ex_create} 
+or \cfuncref{ex_open}.
+
+\item[{int side_set_id \R{}}]
+The side set ID.
+
+\item[{int* num_side_in_set \W{}}]
+Returned number of sides (faces or edges) in the side set.
+
+\item[{int* num_dist_fact_in_set \W{}}]
+Returned number of distribution factors on the side set.
+\end{parameters}
+
+The following coding will read all of the side sets from 
+an open \exo{} file:
+
+\begin{lstlisting}
+int num_side_sets, error, exoid, num_sides_in_set, num_df_in_set, 
+    num_elem_in_set, *ids, *elem_list, *side_list, *ctr_list, 
+    *node_list;
+
+float *dist_fact;
+
+num_side_sets = ex_inquire_int(exoid, EX_INQ_SIDE_SETS);
+ids = (int *) calloc(num_side_sets, sizeof(int));
+error = ex_get_side_set_ids (exoid, ids);
+
+for (i=0; i < num_side_sets; i++) {
+   error = ex_get_side_set_param (exoid, ids[i], tab &num_sides_in_set, 
+                                  tab &num_df_in_set);
+
+   num_elem_in_set = num_sides_in_set;
+   elem_list = (int *) calloc(num_elem_in_set, sizeof(int));
+   side_list = (int *) calloc(num_sides_in_set, sizeof(int));
+   error = ex_get_side_set (exoid, ids[i], elem_list, side_list);
+
+   if (num_df_in_set > 0) {
+      /* get side set node list to correlate to dist factors */
+      ctr_list  = (int *) calloc(num_elem_in_set, sizeof(int));
+      node_list = (int *) calloc(num_df_in_set, sizeof(int));
+      dist_fact = (float *) calloc(num_df_in_set, sizeof(float));
+      error = ex_get_side_set_node_list (exoid, ids[i], ctr_list, 
+                                         node_list);
+
+      error = ex_get_side_set_dist_fact (exoid, ids[i], tab dist_fact);
+   }
+}
+\end{lstlisting}
+
+
+\subsection{Write Side Set}
+
+The function \cfuncref{ex_put_side_set} writes the side set element
+list and side set side (face on 3D element types; edge on 2D element
+types) list for a single side set. The routine
+\cfuncref{ex_put_side_set_param} must be called before this function
+is invoked.
+
+In case of an error, \cfuncref{ex_put_side_set} returns a negative
+number; a warning will return a positive number.  Possible causes of
+errors include:
+
+\begin{itemize}
+ \item data file not properly opened with call to \cfuncref{ex_create} 
+or \cfuncref{ex_open}
+
+ \item data file opened for read only.
+
+ \item data file not initialized properly with call to \cfuncref{ex_put_init}.
+
+ \item \cfuncref{ex_put_side_set_param} not called previously.
+\end{itemize}
+
+\funcdef{ex_put_side_set}
+{int~exoid, 
+int~side_set_id, 
+int~*side_set_elem_list, 
+int~*side_set_side_list}
+
+\begin{parameters}
+\item[int exoid \R{}]
+\exo{} file ID returned from a previous call to \cfuncref{ex_create} 
+or \cfuncref{ex_open}.
+
+\item[{int side_set_id \R{}}]
+The side set ID.
+
+\item[int* side_set_elem_list \R{}]
+Array containing the elements in the side set. Internal element 
+IDs are used in this list (see  Section~\ref{s:nnm}).
+
+\item[int* side_set_side_list \R{}]
+Array containing the sides (faces or edges) in the side set.
+\end{parameters}
+
+For an example of a code segment to write a side set, refer 
+to the description for \cfuncref{ex_put_side_set_param}.
+
+\subsection{Read Side Set}
+
+The function \cfuncref{ex_get_side_set} reads the side set element
+list and side set side (face for 3D element types; edge for 2D
+element types) list for a single side set. Memory must be allocated
+for the element list and side list (both are {num_side_in_set} in
+length) before this function is invoked.
+
+
+In case of an error, \cfuncref{ex_get_side_set} returns a negative 
+number; a warning will return a positive number. 
+Possible causes of errors include:
+
+\begin{itemize}
+ \item data file not properly opened with call to \cfuncref{ex_create}
+ or \cfuncref{ex_open}
+
+ \item a warning value is returned if no side sets are stored 
+in the file.
+
+ \item incorrect side set ID.
+\end{itemize}
+
+\funcdef{ex_get_side_set}
+{int~exoid, 
+int~side_set_id, 
+int~*side_set_elem_list, 
+int~*side_set_side_list}
+
+\begin{parameters}
+\item[{int exoid \R{}}]
+\exo{} file ID returned from a previous call to \cfuncref{ex_create} 
+or \cfuncref{ex_open}.
+
+\item[{int side_set_id \R{}}]
+The side set ID.
+
+\item[{int* side_set_elem_list \W{}}]
+Returned array containing the elements in the side set. Internal 
+element IDs are used in this list (see  Section~\ref{s:nnm}).
+
+\item[{int* side_set_side_list \W{}}]
+Returned array containing the sides (faces or edges) in the 
+side set.
+\end{parameters}
+
+For an example of code to read a side set from an \exo{} 
+II file, refer to the description for \cfuncref{ex_get_side_set_param}.
+
+
+
+
+\subsection{Write Side Set Distribution Factors}
+
+The function \cfuncref{ex_put_side_set_dist_fact} writes side set
+distribution factors for a single side set. The routine
+\cfuncref{ex_put_side_set_param} must be called before this function
+is invoked.
+
+
+Because the distribution factors are floating point values, the
+application code must declare the array passed to be the appropriate
+type (``float'' or ``double'') to match the compute word size passed
+in \cfuncref{ex_create} or \cfuncref{ex_open}.
+
+In case of an error, \cfuncref{ex_put_side_set_dist_fact} returns 
+a negative number; a warning will return a positive number. 
+Possible causes of errors include:
+
+\begin{itemize}
+ \item data file not properly opened with call to \cfuncref{ex_create}
+ or \cfuncref{ex_open}
+
+ \item data file opened for read only.
+
+ \item data file not initialized properly with call to
+ \cfuncref{ex_put_init}.
+
+ \item \cfuncref{ex_put_side_set_param} not called previously.
+
+ \item a call to \cfuncref{ex_put_side_set_param} specified zero
+ distribution factors.
+\end{itemize}
+
+
+\funcdef{ex_put_side_set_dist_fact}
+{int~exoid, 
+int~side_set_id, 
+void~*side_set_dist_fact}
+
+\begin{parameters}
+\item[{int exoid \R{}}]
+\exo{} file ID returned from a previous call to \cfuncref{ex_create} 
+or \cfuncref{ex_open}.
+
+\item[{int side_set_id \R{}}]
+The side set ID.
+
+\item[{void* side_set_dist_fact \R{}}]
+Array containing the distribution factors in the side set.
+\end{parameters}
+
+For an example of a code segment to write side set distribution
+factors, refer to the description for
+\cfuncref{ex_put_side_set_param}.
+
+
+
+
+\subsection{Read Side Set Distribution Factors}
+
+The function \cfuncref{ex_get_side_set_dist_fact} returns the side
+set distribution factors for a single side set. Memory must be
+allocated for the list of distribution factors
+({num_dist_fact_in_set} in length) before this function is
+invoked.
+
+Because the distribution factors are floating point values, the
+application code must declare the array passed to be the appropriate
+type (``float'' or ``double'') to match the compute word size passed
+in \cfuncref{ex_create} or \cfuncref{ex_open}.
+
+In case of an error, \cfuncref{ex_get_side_set_dist_fact} returns a
+negative number; a warning will return a positive number. Possible
+causes of errors include:
+
+\begin{itemize}
+ \item a warning value is returned if no distribution factors 
+were stored.
+\end{itemize}
+
+\funcdef{ex_get_side_set_dist_fact}
+{int~exoid, 
+int~side_set_id, 
+void~*side_set_dist_fact}
+
+\begin{parameters}
+\item[{int exoid \R{}}]
+\exo{} file ID returned from a previous call to \cfuncref{ex_create} 
+or \cfuncref{ex_open}.
+
+\item[{int side_set_id \R{}}]
+The side set ID.
+
+\item[{void* side_set_dist_fact \W{}}]
+Returned array containing the distribution factors in the 
+side set.
+\end{parameters}
+
+For an example of code to read side set distribution factors from an
+\exo{} file, refer to the description for
+\cfuncref{ex_get_side_set_param}.
+
+
+
+
+\subsection{Read Side Sets IDs }
+
+The function \cfuncref{ex_get_side_set_ids} reads the IDs of all of
+the side sets. Memory must be allocated for the returned array of
+({num_side_sets}) IDs before this function is invoked.
+
+In case of an error, \cfuncref{ex_get_side_set_ids} returns a
+negative number; a warning will return a positive number. Possible
+causes of errors include:
+
+\begin{itemize}
+ \item data file not properly opened with call to \cfuncref{ex_create}
+ or \cfuncref{ex_open}
+
+ \item a warning value is returned if no side sets are stored 
+in the file.
+\end{itemize}
+
+
+
+\funcdef{ex_get_side_set_ids}
+{int~exoid, 
+int~*side_set_ids}
+
+\begin{parameters}
+\item[{int exoid \R{}}]
+\exo{} file ID returned from a previous call to \cfuncref{ex_create} or
+\cfuncref{ex_open}.
+
+\item[{int* side_set_ids \W{}}]
+Returned array of the side set IDs. The order of the IDs in this array
+reflects the sequence the side sets were introduced into the file.
+\end{parameters}
+
+For an example of code to read side set IDs from an \exo{} II file,
+refer to the description for \cfuncref{ex_get_side_set_param}.
+
+\subsection{Read Side Set Node List}
+
+The function \cfuncref{ex_get_side_set_node_list} returns a node
+count array and a list of nodes on a single side set. With the 2.0 and
+later versions of the database, this node list isn't stored directly
+but can be derived from the element number in the side set element
+list, local side number in the side set side list, and the element
+connectivity array. The application program must allocate memory for
+the node count array and node list.
+
+There is a one-to-one mapping (i.e., same order -- as shown in
+Table{\nobreakspace}2, ``Side Set Node Ordering,'' on
+page{\nobreakspace}16 -- and same number) between the nodes in the
+side set node list and the side set distribution factors. Thus, if
+distribution factors are stored for the side set of interest, the
+required size for the node list is the number of distribution factors
+returned by \cfuncref{ex_get_side_set_param}. If distribution factors
+are not stored for the side set, the application program must allocate
+a maximum size anticipated for the node list. This would be the
+product of the number of elements in the side set and the maximum
+number of nodes per side for all types of elements in the model, since
+side sets can span across different element types.
+
+The length of the node count array is the length of the side set
+element list. For each entry in the side set element list, there is an
+entry in the side set side list, designating a local side number. The
+corresponding entry in the node count array is the number of nodes
+which define the particular side. In conjunction with the side set
+node list, this node count array gives an unambiguous nodal
+description of the side set.
+
+In case of an error, \cfuncref{ex_get_side_set_node_list} returns a
+negative number; a warning will return a positive number.  Possible
+causes of errors include:
+
+\begin{itemize}
+ \item data file not properly opened with call to \cfuncref{ex_create}
+ or \cfuncref{ex_open}
+
+ \item a warning value is returned if no side sets are stored in the
+ file.
+
+ \item incorrect side set ID.
+\end{itemize}
+
+
+\funcdef{ex_get_side_set_node_list}
+{int~exoid, 
+int~side_set_id, 
+int~*side_set_node_cnt_list, 
+int~*side_set_node_list}
+
+\begin{parameters}
+\item[{int exoid \R{}}]
+\exo{} file ID returned from a previous call to \cfuncref{ex_create} 
+or \cfuncref{ex_open}.
+
+\item[{int side_set_id \R{}}]
+The side set ID.
+
+\item[{int* side_set_node_cnt_list \W{}}]
+Returned array containing the number of nodes for each side (face in
+3D, edge in 2D) in the side set.
+
+\item[{int* side_set_node_list \W{}}]
+Returned array containing a list of nodes on the side set. Internal
+node IDs are used in this list (see Section 3.5~\ref{s:nnm}).
+\end{parameters}
+
+For an example of code to read a side set node list from an \exo{}
+file, refer to the description for \cfuncref{ex_get_side_set_param}.
+
+
+
+
+\subsection{Write Concatenated Side Sets}
+
+The function \cfuncref{ex_put_concat_side_sets} writes the side set
+IDs, side set element count array, side set distribution factor count
+array, side set element pointers array, side set distribution factors
+pointers array, side set element list, side set side list, and side
+set distribution factors. ``Concatenated side sets'' refers to the
+arrays needed to define all of the side sets (ID array, side counts
+array, node counts array, element pointer array, node pointer array,
+element list, node list, and distribution factors array) as described
+in Section 3.12 on page 15. Writing concatenated side sets is more
+efficient than writing individual side sets. See
+Appendix~\ref{app:efficiency} for a discussion of efficiency issues.
+
+Because the distribution factors are floating point values, the
+application code must declare the array passed to be the appropriate
+type (``float'' or ``double'') to match the compute word size passed
+in \cfuncref{ex_create} or \cfuncref{ex_open}.
+
+In case of an error, \cfuncref{ex_put_concat_side_sets} returns a
+negative number; a warning will return a positive number.  Possible
+causes of errors include:
+
+\begin{itemize}
+ \item data file not properly opened with call to \cfuncref{ex_create}
+ or \cfuncref{ex_open}
+
+ \item data file opened for read only.
+
+ \item data file not initialized properly with call to
+ \cfuncref{ex_put_init}.
+
+ \item the number of side sets specified in a call to
+ \cfuncref{ex_put_init} was zero or has been exceeded.
+
+ \item a side set with the same ID has already been stored.
+\end{itemize}
+
+\funcdef{ex_put_concat_side_sets}
+{int~exoid, 
+int~*side_sets_ids,
+int~*num_side_per_set, 
+int~*num_dist_per_set, 
+int~*side_sets_elem_index,
+int~*side_sets_dist_index, 
+int~*side_sets_elem_list,
+int~*side_sets_side_list, 
+void~*side_sets_dist_fact}
+
+\begin{parameters}
+\item[{int exoid \R{}}]
+\exo{} file ID returned from a previous call to \cfuncref{ex_create} or
+\cfuncref{ex_open}.
+
+\item[{int* side_sets_ids \R{}}]
+Array containing the side set ID for each set.
+
+\item[{int* num_side_per_set \R{}}]
+Array containing the number of sides for each set.
+
+\item[{int* num_dist_per_set \R{}}]
+Array containing the number of distribution factors for each set.
+
+\item[{int* side_sets_elem_index \R{}}]
+Array containing the indices into the \cmd{side_sets_elem_list} which
+are the locations of the first element for each set. These indices are
+0-based.
+
+\item[{int* side_sets_dist_index \R{}}]
+Array containing the indices into the \cmd{side_sets_dist_fact} which
+are the locations of the first distribution factor for each set. These
+indices are 0-based.
+
+\item[{int* side_sets_elem_list \R{}}]
+Array containing the elements for all side sets. Internal element IDs
+are used in this list (see Section~\ref{s:enm}).
+
+\item[{int* side_sets_side_list \R{}}]
+Array containing the sides for all side sets.
+
+\item[{void* side_sets_dist_fact \R{}}]
+Array containing the distribution factors for all side sets.
+\end{parameters}
+
+The following coding will write out two side sets in a concatenated 
+format:
+\begin{lstlisting}
+int error, exoid, ids[2], num_side_per_set[2], elem_ind[2],
+    num_df_per_set[2], df_ind[2], elem_list[4], side_list[4];
+
+float dist_fact[8];
+
+/* write concatenated side sets */
+ids[0] = 30;
+ids[1] = 31;
+
+num_side_per_set[0] = 2;
+num_side_per_set[1] = 2;
+
+elem_ind[0] = 0;
+elem_ind[1] = 2;
+
+num_df_per_set[0] = 4;
+num_df_per_set[1] = 4;
+
+df_ind[0] = 0;
+df_ind[1] = 4;
+
+/* side set #1 */
+elem_list[0] = 2; elem_list[1] = 2;
+side_list[0] = 2; side_list[1] = 1;
+
+dist_fact[0] = 30.0; dist_fact[1] = 30.1;
+dist_fact[2] = 30.2; dist_fact[3] = 30.3;
+
+/* side set #2 */
+elem_list[2] = 1; elem_list[3] = 2;
+side_list[2] = 4; side_list[3] = 3;
+
+dist_fact[4] = 31.0; dist_fact[5] = 31.1;
+dist_fact[6] = 31.2; dist_fact[7] = 31.3;
+
+error = ex_put_concat_side_sets (exoid, ids, num_side_per_set,
+                                 num_df_per_set, elem_ind, df_ind, 
+                                 elem_list, side_list, dist_fact);
+\end{lstlisting}
+
+
+\subsection{Read Concatenated Side Sets}
+
+The function \cfuncref{ex_get_concat_side_sets} reads the side set
+IDs, side set element count array, side set distribution factors count
+array, side set element pointers array, side set distribution factors
+pointers array, side set element list, side set side list, and side
+set distribution factors. ``Concatenated side sets'' refers to the
+arrays needed to define all of the side sets (ID array, side counts
+array, node counts array, element pointer array, node pointer array,
+element list, node list, and distribution factors array) as described
+in Section 3.12 on page 15.
+
+
+Because the distribution factors are floating point values, the
+application code must declare the array passed to be the appropriate
+type (``float'' or ``double'') to match the compute word size passed
+in \cfuncref{ex_create} or \cfuncref{ex_open}.
+
+
+The length of each of the returned arrays can be determined by
+invoking \cfuncref{ex_inquire} or \cfuncref{ex_inquire_int}.
+
+
+In case of an error, \cfuncref{ex_get_concat_side_sets} returns a
+negative number; a warning will return a positive number. Possible
+causes of errors include:
+\begin{itemize}
+ \item data file not properly opened with call to \cfuncref{ex_create}
+ or \cfuncref{ex_open}
+
+ \item a warning value is returned if no side sets are stored in the
+ file.
+\end{itemize}
+
+\funcdef{ex_get_concat_side_sets}
+{int~exoid, 
+int~*side_set_ids,
+int~*num_side_per_set, 
+int~*num_dist_per_set, 
+int~*side_sets_elem_index,
+int~*side_sets_dist_index, 
+int~*side_sets_elem_list,
+int~*side_sets_side_list, 
+void~*side_sets_dist_fact}
+
+\begin{parameters}
+\item[{int exoid \R{}}]
+\exo{} file ID returned from a previous call to \cfuncref{ex_create} 
+or \cfuncref{ex_open}.
+
+\item[{int* side_set_ids \W{}}]
+Returned array containing the side set ID for each set.
+
+\item[{int* num_side_per_set \W{}}]
+Returned array containing the number of sides for each set.
+
+\item[{int* num_dist_per_set \W{}}]
+Returned array containing the number of distribution factors 
+for each set.
+
+\item[{int* side_sets_elem_index \W{}}]
+Returned array containing the indices into the
+{side_sets_elem_list} which are the locations of the first element
+for each set. These indices are 0-based.
+
+\item[{int* side_sets_dist_index \W{}}]
+Returned array containing the indices into the \cmd{side_sets_dist_fact} 
+array which are the locations of the first distribution factor 
+for each set. These indices are 0-based.
+
+\item[{int* side_sets_elem_list \W{}}]
+Returned array containing the elements for all side sets. 
+Internal element IDs are used in this list (see  Section~\ref{s:enm}).
+
+\item[{int* side_sets_side_list \W{}}]
+Returned array containing the sides for all side sets.
+
+\item[{void* side_sets_dist_fact \W{}}]
+Returned array containing the distribution factors for all 
+side sets.
+\end{parameters}
+
+The following code segment will return in concatenated format 
+all the side sets stored in an \exo{} file:
+
+\begin{lstlisting}
+#include "exodusII.h"
+
+int error, exoid, num_ss, elem_list_len, df_list_len, 
+    *ids, *side_list, *num_side_per_set, *num_df_per_set, 
+    *elem_ind, *df_ind, *elem_list;
+
+float *dist_fact;
+
+num_ss = ex_inquire_int(exoid, EX_INQ_SIDE_SETS);
+
+if (num_ss > 0) {
+   elem_list_len = ex_inquire_int(exoid, EX_INQ_SS_ELEM_LEN);
+   df_list_len   = ex_inquire_int(exoid, EX_INQ_SS_DF_LEN);
+
+   /* read concatenated side sets */
+   ids = (int *) calloc(num_ss, sizeof(int));
+   num_side_per_set = (int *) calloc(num_ss, sizeof(int));
+   num_df_per_set   = (int *) calloc(num_ss, sizeof(int));
+   elem_ind         = (int *) calloc(num_ss, sizeof(int));
+   df_ind           = (int *) calloc(num_ss, sizeof(int));
+   elem_list        = (int *) calloc(elem_list_len, sizeof(int));
+   side_list        = (int *) calloc(elem_list_len, sizeof(int));
+   dist_fact        = (float *) calloc(df_list_len, sizeof(float));
+
+   error = ex_get_concat_side_sets (exoid, ids, num_side_per_set, 
+                                    num_df_per_set, elem_ind, df_ind, 
+                                    elem_list, side_list,dist_fact);
+}
+\end{lstlisting}
+
+\subsection{Convert Side Set Nodes to Sides}
+
+The function \cfuncref{ex_cvt_nodes_to_sides} is used to convert a
+side set node list to a side set side list. This routine is provided
+for application programs that utilize side sets defined by nodes (as
+was done previous to release 2.0) rather than local faces or
+edges. The application program must allocate memory for the returned
+array of sides. The length of this array is the same as the length of
+the concatenated side sets element list, which can be determined with
+a call to \cfuncref{ex_inquire} or
+\cfuncref{ex_inquire_int}.
+
+In case of an error, \cfuncref{ex_cvt_nodes_to_sides} returns a
+negative number; a warning will return a positive number. Possible
+causes of errors include:
+
+\begin{itemize}
+ \item a warning value is returned if no side sets are stored in the
+ file.
+
+ \item because the faces of a wedge require a different number of
+ nodes to describe them (quadrilateral vs. triangular faces), the
+ function will abort with a fatal return code if a wedge is
+ encountered in the side set element list.
+\end{itemize}
+
+\funcdef{ex_cvt_nodes_to_sides}
+{int~exoid, 
+int~*num_side_per_set,
+int~*num_nodes_per_set, 
+int~*side_sets_elem_index,
+int~*side_sets_node_index, 
+int~*side_sets_elem_list,
+int~*side_sets_node_list, 
+int~*side_sets_side_list}
+
+\begin{parameters}
+\item[{int exoid \R{}}]
+\exo{} file ID returned from a previous call to \cfuncref{ex_create} 
+or \cfuncref{ex_open}.
+
+\item[{int* num_side_per_set \R{}}]
+Array containing the number of sides for each set. The number 
+of sides is equal to the number of elements for each set.
+
+\item[{int* num_nodes_per_set \R{}}]
+Array containing the number of nodes for each set.
+
+\item[{int* side_sets_elem_index \R{}}]
+Array containing indices into the \cmd{side_sets_elem_list} which are
+the locations of the first element for each set. These indices are
+0-based.
+
+\item[{int* side_sets_node_index \R{}}]
+Array containing indices into the \cmd{side_sets_node_list} 
+which are the locations of the first node for each set. These 
+indices are 0-based.
+
+\item[{int* side_sets_elem_list \R{}}]
+Array containing the elements for all side sets. Internal element IDs
+are used in this list (see Section~\ref{s:enm}).
+
+\item[{int* side_sets_node_list \R{}}]
+Array containing the nodes for all side sets. Internal node 
+IDs are used in this list (see  Section~\ref{s:nnm}).
+
+\item[{int* side_sets_side_list \W{}}]
+Returned array containing the sides for all side sets.
+\end{parameters}
+
+The following code segment will convert side sets described 
+by nodes to side sets described by local side numbers:
+
+\begin{lstlisting}
+int error, exoid, ids[2], num_side_per_set[2],
+    num_nodes_per_set[2], elem_ind[2], node_ind[2], 
+    elem_list[4], node_list[8], el_lst_len, *side_list;
+
+ids[0] = 30             ; ids[1]  = 31;
+num_side_per_set[0]  = 2; num_side_per_set[1] = 2;
+num_nodes_per_set[0] = 4; num_nodes_per_set[1] = 4;
+
+elem_ind[0] = 0; elem_ind[1] = 2;
+node_ind[0] = 0; node_ind[1] = 4;
+
+/* side set #1 */
+elem_list[0] = 2; elem_list[1] = 2;
+node_list[0] = 8; node_list[1] = 5; 
+node_list[2] = 6; node_list[3] = 7;
+
+/* side set #2 */
+elem_list[2] = 1; elem_list[3] = 2;
+node_list[4] = 2; node_list[5] = 3; 
+node_list[6] = 7; node_list[7] = 8;
+
+el_lst_len = ex_inquire_int(exoid, EX_INQ_SS_ELEM_LEN);
+
+/* side set element list is same length as side list */
+side_list = (int *) calloc (el_lst_len, sizeof(int));
+
+ex_cvt_nodes_to_sides(exoid, num_side_per_set, num_nodes_per_set,
+                      elem_ind, node_ind, elem_list, 
+                      node_list, side_list);
+\end{lstlisting}
+
+
+
+\subsection{Write Property Arrays Names}
+
+The function \cfuncref{ex_put_prop_names} writes object property names
+and allocates space for object property arrays used to assign integer
+properties to element blocks, node sets, or side sets. The property
+arrays are initialized to zero (0). Although this function is
+optional, since \cfuncref{ex_put_prop} will allocate space within the
+data file if it hasn't been previously allocated, it is more efficient
+to use \cfuncref{ex_put_prop_names} if there is more than one property
+to store. See Appendix~\ref{app:efficiency} for a discussion of
+efficiency issues.
+
+In case of an error, \cfuncref{ex_put_prop_names} returns a negative
+number; a warning will return a positive number.  Possible causes of
+errors include:
+
+\begin{itemize}
+ \item data file not properly opened with call to \cfuncref{ex_create}
+ or \cfuncref{ex_open}
+
+ \item data file opened for read only.
+
+ \item data file not initialized properly with call to
+ \cfuncref{ex_put_init}.
+
+ \item invalid object type specified.
+
+ \item no object of the specified type is stored in the file.
+\end{itemize}
+
+\funcdef{ex_put_prop_names}
+{int~exoid, 
+ex_entity_type~obj_type, 
+int~num_props, 
+char~**prop_names}
+
+\begin{parameters}
+\item[{int exoid \R{}}]
+\exo{} file ID returned from a previous call to \cfuncref{ex_create} 
+or \cfuncref{ex_open}.
+
+\item[{ex_entity_type obj_typ \R{}}]
+Type of object; use one of the following options:\\ 
+
+\begin{tabular}{ll}
+\param{EX_NODE_SET}  &  Node Set entity type \\
+\param{EX_EDGE_BLOCK}&  Edge Block entity type \\
+\param{EX_EDGE_SET}  &  Edge Set entity type \\
+\param{EX_FACE_BLOCK}&  Face Block entity type \\
+\param{EX_FACE_SET}  &  Face Set entity type \\
+\param{EX_ELEM_BLOCK}&  Element Block entity type \\
+\param{EX_ELEM_SET}  &  Element Set entity type \\
+\param{EX_SIDE_SET}  &  Side Set entity type \\
+\param{EX_ELEM_MAP}  &  Element Map entity type \\
+\param{EX_NODE_MAP}  &  Node Map entity type \\
+\param{EX_EDGE_MAP}  &  Edge Map entity type \\
+\param{EX_FACE_MAP}  &  Face Map entity type \\
+\end{tabular}
+
+\item[{int num_props \R{}}]
+The number of integer properties to be assigned to all of the objects
+of the type specified (element blocks, node sets, or side sets).
+
+\item[{char** prop_names \R{}}]
+Array containing \cmd{num_props} names (of maximum length 
+of \param{MAX_STR_LENGTH}) of properties to be stored.
+\end{parameters}
+
+
+For instance, suppose a user wanted to assign the 1st, 3rd, and 5th
+element blocks (those element blocks stored 1st, 3rd, and 5th,
+regardless of their ID) to a group (property) called ``TOP'', and the
+2nd, 3rd, and 4th element blocks to a group called ``LSIDE''. This
+could be accomplished with the following code:
+
+\begin{lstlisting}
+#include "exodusII.h";
+
+char* prop_names[2];
+int top_part[]   = {1,0,1,0,1};
+int lside_part[] = {0,1,1,1,0};
+
+int id[] = {10, 20, 30, 40, 50};
+
+prop_names[0] = ``TOP'';
+prop_names[1] = ``LSIDE'';
+
+/* This call to ex_put_prop_names is optional, but more efficient */
+ex_put_prop_names (exoid, EX_ELEM_BLOCK, 2, prop_names);
+
+/* The property values can be output individually thus */
+for (i=0; i < 5; i++) {
+   ex_put_prop (exoid, EX_ELEM_BLOCK, id[i], prop_names[0], 
+                top_part[i]);
+
+   ex_put_prop (exoid, EX_ELEM_BLOCK, id[i], prop_names[1], 
+                lside_part[i]);
+}
+
+/* Alternatively, the values can be output as an array thus*/
+ex_put_prop_array (exoid, EX_ELEM_BLOCK, prop_names[0], 
+                   top_part);
+
+ex_put_prop_array (exoid, EX_ELEM_BLOCK, prop_names[1], 
+                   lside_part);
+
+\end{lstlisting}
+
+
+\subsection{Read Property Arrays Names}
+
+The function \cfuncref{ex_get_prop_names} returns names of integer
+properties stored for an element block, node set, or side set. The
+number of properties (needed to allocate space for the property names)
+can be obtained via a call to \cfuncref{ex_inquire} or
+\cfuncref{ex_inquire_int}.
+
+In case of an error, \cfuncref{ex_get_prop_names} returns a negative
+number; a warning will return a positive number.  Possible causes of
+errors include:
+
+\begin{itemize}
+ \item data file not properly opened with call to \cfuncref{ex_create}
+ or \cfuncref{ex_open}
+
+ \item invalid object type specified.
+\end{itemize}
+
+\funcdef{ex_get_prop_names}
+{int~exoid, 
+ex_entity_type~obj_type, 
+char~**prop_names}
+
+\begin{parameters}
+\item[{int exoid \R{}}]
+\exo{} file ID returned from a previous call to \cfuncref{ex_create} or
+\cfuncref{ex_open}.
+
+\item[{ex_entity_type obj_type \R{}}]
+Type of object; use one of the following options:\\
+
+\begin{tabular}{ll}
+\param{EX_NODE_SET}  &  Node Set entity type \\
+\param{EX_EDGE_BLOCK}&  Edge Block entity type \\
+\param{EX_EDGE_SET}  &  Edge Set entity type \\
+\param{EX_FACE_BLOCK}&  Face Block entity type \\
+\param{EX_FACE_SET}  &  Face Set entity type \\
+\param{EX_ELEM_BLOCK}&  Element Block entity type \\
+\param{EX_ELEM_SET}  &  Element Set entity type \\
+\param{EX_SIDE_SET}  &  Side Set entity type \\
+\param{EX_ELEM_MAP}  &  Element Map entity type \\
+\param{EX_NODE_MAP}  &  Node Map entity type \\
+\param{EX_EDGE_MAP}  &  Edge Map entity type \\
+\param{EX_FACE_MAP}  &  Face Map entity type \\
+\end{tabular}
+
+\item[{char** prop_names \W{}}]
+eturned array containing \cmd{num_props} (obtained from call to
+\cfuncref{ex_inquire} or \cfuncref{ex_inquire_int}) names (of maximum
+length \param{MAX_STR_LENGTH}) of properties to be stored. ``ID'', a
+reserved property name, will be the first name in the array.
+\end{parameters}
+
+As an example, the following code segment reads in properties 
+assigned to node sets:
+
+\begin{lstlisting}
+#include "exodusII.h";
+int error, exoid, num_props, *prop_values;
+char *prop_names[MAX_PROPS];
+
+/* read node set properties */
+num_props = ex_inquire_int(exoid, EX_INQ_NS_PROP);
+
+for (i=0; i < num_props; i++) {
+   prop_names[i] = (char *) malloc ((MAX_STR_LENGTH+1), sizeof(char));
+   prop_values = (int *) malloc (num_node_sets, sizeof(int));
+}
+
+error = ex_get_prop_names(exoid,EX_NODE_SET,prop_names);
+
+for (i=0; i < num_props; i++) {
+   error = ex_get_prop_array(exoid, EX_NODE_SET, prop_names[i],
+                             prop_values);
+}
+\end{lstlisting}
+
+
+\subsection{Write Object Property}
+
+The function \cfuncref{ex_put_prop} stores an integer object property
+value to a single element block, node set, or side set. Although it is
+not necessary to invoke \cfuncref{ex_put_prop_names}, since
+\cfuncref{ex_put_prop} will allocate space within the data file if it
+hasn't been previously allocated, it is more efficient to use
+\cfuncref{ex_put_prop_names} if there is more than one property to
+store. See Appendix~\ref{app:efficiency} for a discussion of
+efficiency issues.
+
+
+It should be noted that the interpretation of the values 
+of the integers stored as properties is left to the application 
+code. In general, a zero (0) means the object does not have the 
+specified property (or is not in the specified group); a nonzero 
+value means the object does have the specified property. When 
+space is allocated for the properties using \cfuncref{ex_put_prop_names} 
+or \cfuncref{ex_put_prop}, the properties are initialized to 
+zero (0).
+
+
+Because the ID of an element block, node set, or side set 
+is just another property (named ``ID''), this routine can be used 
+to change the value of an ID. This feature must be used with 
+caution, though, because changing the ID of an object to the 
+ID of another object of the same type (element block, node set, 
+or side set) would cause two objects to have the same ID, and 
+thus only the first would be accessible. Therefore, \cfuncref{ex_put_prop} 
+issues a warning if a user attempts to give two objects the 
+same ID.
+
+
+In case of an error, \cfuncref{ex_put_prop} returns a negative 
+number; a warning will return a positive number. 
+Possible causes of errors include:
+
+\begin{itemize}
+ \item data file not properly opened with call to \cfuncref{ex_create}
+ or \cfuncref{ex_open}
+
+ \item data file opened for read only.
+
+ \item data file not initialized properly with call to
+ \cfuncref{ex_put_init}.
+
+ \item invalid object type specified.
+
+ \item a warning is issued if a user attempts to change the ID of an
+ object to the ID of an existing object of the same type.
+\end{itemize}
+
+\funcdef{ex_put_prop}
+{int~exoid, 
+ex_entity_type~obj_type, 
+int~obj_id, 
+char~*prop_name, 
+int~value}
+
+\begin{parameters}
+\item[{int exoid \R{}}]
+\exo{} file ID returned from a previous call to \cfuncref{ex_create} or
+\cfuncref{ex_open}.
+
+\item[{ex_entity_type obj_type \R{}}]
+Type of object; use one of the following options:\\
+
+\begin{tabular}{ll}
+\param{EX_NODE_SET}  &  Node Set entity type \\
+\param{EX_EDGE_BLOCK}&  Edge Block entity type \\
+\param{EX_EDGE_SET}  &  Edge Set entity type \\
+\param{EX_FACE_BLOCK}&  Face Block entity type \\
+\param{EX_FACE_SET}  &  Face Set entity type \\
+\param{EX_ELEM_BLOCK}&  Element Block entity type \\
+\param{EX_ELEM_SET}  &  Element Set entity type \\
+\param{EX_SIDE_SET}  &  Side Set entity type \\
+\param{EX_ELEM_MAP}  &  Element Map entity type \\
+\param{EX_NODE_MAP}  &  Node Map entity type \\
+\param{EX_EDGE_MAP}  &  Edge Map entity type \\
+\param{EX_FACE_MAP}  &  Face Map entity type \\
+\end{tabular}
+
+\item[{int obj_id \R{}}]
+The element block, node set, or side set ID.
+
+\item[{char* prop_name \R{}}]
+The name of the property for which the value will be stored. 
+Maximum length of this string is \param{MAX_STR_LENGTH}.
+
+\item[{int value \R{}}]
+he value of the property.
+\end{parameters}
+For an example of code to write out an object property, refer 
+to the description for \cfuncref{ex_put_prop_names}.
+
+\subsection{Read Object Property}
+
+The function \cfuncref{ex_get_prop} reads an integer object property
+value stored for a single element block, node set, or side set.
+
+In case of an error, \cfuncref{ex_get_prop} returns a negative number;
+a warning will return a positive number.  Possible causes of errors
+include:
+
+\begin{itemize}
+ \item data file not properly opened with call to \cfuncref{ex_create}
+ or \cfuncref{ex_open}
+
+ \item invalid object type specified.
+
+ \item a warning value is returned if a property with the specified
+ name is not found.
+\end{itemize}
+
+\funcdef{ex_get_prop}
+{int~exoid, 
+ex_entity_type~obj_type, 
+int~obj_id, 
+char~*prop_name, 
+int~value}
+
+\begin{parameters}
+\item[{int exoid \R{}}]
+\exo{} file ID returned from a previous call to \cfuncref{ex_create} or
+\cfuncref{ex_open}.
+
+\item[{ex_entity_type obj_type \R{}}]
+Type of object; use one of the following options:\\
+
+\begin{tabular}{ll}
+\param{EX_NODE_SET}  &  Node Set entity type \\
+\param{EX_EDGE_BLOCK}&  Edge Block entity type \\
+\param{EX_EDGE_SET}  &  Edge Set entity type \\
+\param{EX_FACE_BLOCK}&  Face Block entity type \\
+\param{EX_FACE_SET}  &  Face Set entity type \\
+\param{EX_ELEM_BLOCK}&  Element Block entity type \\
+\param{EX_ELEM_SET}  &  Element Set entity type \\
+\param{EX_SIDE_SET}  &  Side Set entity type \\
+\param{EX_ELEM_MAP}  &  Element Map entity type \\
+\param{EX_NODE_MAP}  &  Node Map entity type \\
+\param{EX_EDGE_MAP}  &  Edge Map entity type \\
+\param{EX_FACE_MAP}  &  Face Map entity type \\
+\end{tabular}
+
+\item[{int obj_id \R{}}]
+The element block, node set, or side set ID.
+
+\item[{char* prop_name \R{}}]
+The name of the property (maximum length is \param{MAX_STR_LENGTH}) for
+which the value is desired.
+
+\item[{int* value \W{}}]
+Returned value of the property.
+\end{parameters}
+
+For an example of code to read an object property, refer to the
+description for \cfuncref{ex_get_prop_names}.
+
+
+\subsection{Write Object Property Array}
+
+The function \cfuncref{ex_put_prop_array} stores an array of
+({num_elem_blk}, \cmd{num_node_sets}, or \cmd{num_side_sets}) integer
+property values for all element blocks, node sets, or side sets. The
+order of the values in the array must correspond to the order in which
+the element blocks, node sets, or side sets were introduced into the
+file. For instance, if the parameters for element block with ID 20
+were written to a file (via \cfuncref{ex_put_elem_block}), and then
+parameters for element block with ID 10, followed by the parameters
+for element block with ID 30, the first, second, and third elements in
+the property array would correspond to element block 20, element block
+10, and element block 30, respectively.
+
+One should note that this same functionality (writing properties to
+multiple objects) can be accomplished with multiple calls to
+\cfuncref{ex_put_prop}.
+
+Although it is not necessary to invoke \cfuncref{ex_put_prop_names},
+since \cfuncref{ex_put_prop_array} will allocate space within the data
+file if it hasn't been previously allocated, it is more efficient to
+use \cfuncref{ex_put_prop_names} if there is more than one property to
+store. See Appendix~\ref{app:efficiency} for a discussion of
+efficiency issues.
+
+In case of an error, \cfuncref{ex_put_prop_array} returns a negative
+number; a warning will return a positive number. Possible causes of
+errors include:
+
+\begin{itemize}
+
+ \item data file not properly opened with call to \cfuncref{ex_create}
+ or \cfuncref{ex_open}
+
+ \item data file opened for read only.
+
+ \item data file not initialized properly with call to
+ \cfuncref{ex_put_init}.
+
+ \item invalid object type specified.
+\end{itemize}
+
+
+
+\funcdef{ex_put_prop_array}
+{int~exoid, 
+ex_entity_type~obj_type, 
+char~*prop_name, 
+int~*values}
+
+\begin{parameters}
+\item[{int exoid \R{}}]
+\exo{} file ID returned from a previous call to \cfuncref{ex_create} or
+\cfuncref{ex_open}.
+
+\item[{ex_entity_type obj_type \R{}}]
+Type of object; use one of the following options:\\
+
+\begin{tabular}{ll}
+\param{EX_NODE_SET}  &  Node Set entity type \\
+\param{EX_EDGE_BLOCK}&  Edge Block entity type \\
+\param{EX_EDGE_SET}  &  Edge Set entity type \\
+\param{EX_FACE_BLOCK}&  Face Block entity type \\
+\param{EX_FACE_SET}  &  Face Set entity type \\
+\param{EX_ELEM_BLOCK}&  Element Block entity type \\
+\param{EX_ELEM_SET}  &  Element Set entity type \\
+\param{EX_SIDE_SET}  &  Side Set entity type \\
+\param{EX_ELEM_MAP}  &  Element Map entity type \\
+\param{EX_NODE_MAP}  &  Node Map entity type \\
+\param{EX_EDGE_MAP}  &  Edge Map entity type \\
+\param{EX_FACE_MAP}  &  Face Map entity type \\
+\end{tabular}
+
+\item[{char* prop_name \R{}}]
+The name of the property for which the values will be stored. Maximum
+length of this string is \param{MAX_STR_LENGTH}.
+
+\item[{int* values \R{}}]
+An array of property values.
+\end{parameters}
+
+For an example of code to write an array of object properties, refer
+to the description for \cfuncref{ex_put_prop_names}.
+
+
+
+
+\subsection{Read Object Property Array}
+
+The function \cfuncref{ex_get_prop_array} reads an array of integer
+property values for all element blocks, node sets, or side sets. The
+order of the values in the array correspond to the order in which the
+element blocks, node sets, or side sets were introduced into the
+file. Before this function is invoked, memory must be allocated for
+the returned array of(\cmd{num_elem_blk}, \cmd{num_node_sets}, or
+{num_side_sets}) integer values.
+
+
+This function can be used in place of
+\cfuncref{ex_get_elem_blk_ids}, 
+\cfuncref{ex_get_node_set_ids}, and 
+\cfuncref{ex_get_side_set_ids}
+to get element block, node set, and side set IDs, respectively, by
+requesting the property name ``ID.'' One should also note that this
+same function can be accomplished with multiple calls to
+\cfuncref{ex_get_prop}.
+
+In case of an error, \cfuncref{ex_get_prop_array} returns a negative
+number; a warning will return a positive number.  Possible causes of
+errors include:
+
+
+\begin{itemize}
+ \item data file not properly opened with call to \cfuncref{ex_create}
+ or \cfuncref{ex_open}
+
+ \item invalid object type specified.
+
+ \item a warning value is returned if a property with the specified
+ name is not found.
+\end{itemize}
+
+
+\funcdef{ex_get_prop_array}
+{int~exoid, 
+ex_entity_type~obj_type, 
+char~*prop_name, 
+int~*values}
+
+\begin{parameters}
+\item[{int exoid \R{}}]
+\exo{} file ID returned from a previous call to \cfuncref{ex_create} 
+or \cfuncref{ex_open}.
+
+\item[{ex_entity_type obj_type \R{}}]
+Type of object; use one of the following options:\\
+
+\begin{tabular}{ll}
+\param{EX_NODE_SET}  &  Node Set entity type \\
+\param{EX_EDGE_BLOCK}&  Edge Block entity type \\
+\param{EX_EDGE_SET}  &  Edge Set entity type \\
+\param{EX_FACE_BLOCK}&  Face Block entity type \\
+\param{EX_FACE_SET}  &  Face Set entity type \\
+\param{EX_ELEM_BLOCK}&  Element Block entity type \\
+\param{EX_ELEM_SET}  &  Element Set entity type \\
+\param{EX_SIDE_SET}  &  Side Set entity type \\
+\param{EX_ELEM_MAP}  &  Element Map entity type \\
+\param{EX_NODE_MAP}  &  Node Map entity type \\
+\param{EX_EDGE_MAP}  &  Edge Map entity type \\
+\param{EX_FACE_MAP}  &  Face Map entity type \\
+\end{tabular}
+
+\item[{char* prop_name \R{}}]
+The name of the property (maximum length of \param{MAX_STR_LENGTH})
+for which the values are desired.
+
+\item[{int* values \W{}}]
+Returned array of property values.
+\end{parameters}
+
+For an example of code to read an array of object properties, refer to
+the description for \cfuncref{ex_get_prop_names}.
+
+\section{Results Data}
+
+This section describes functions which read and write analysis results
+data and related entities. These include results variables (global,
+elemental, and nodal), element variable truth table, and simulation
+times.
+
+\subsection{Write Results Variables Parameters}
+
+The function \cfuncref{ex_put_variable_param} writes the number of global,
+nodal, or element variables that will be written to the database.
+
+In case of an error, \cfuncref{ex_put_variable_param} returns a negative
+number; a warning will return a positive number. Possible causes of
+errors include:
+
+\begin{itemize}
+ \item data file not properly opened with call to \cfuncref{ex_create}
+ or \cfuncref{ex_open}
+
+ \item data file opened for read only.
+
+ \item invalid variable type specified.
+
+ \item data file not initialized properly with call to \cfuncref{ex_put_init}.
+
+ \item this routine has already been called with the same variable
+ type; redefining the number of variables is not allowed.
+
+ \item a warning value is returned if the number of variables 
+is specified as zero.
+\end{itemize}
+
+\funcdef{ex_put_variable_param}{
+int~exoid, 
+ex_entity_type~var_type, 
+int~num_vars}
+
+\begin{parameters}
+\item[{int exoid \R{}}]
+\exo{} file ID returned from a previous call to \cfuncref{ex_create} or
+\cfuncref{ex_open}.
+
+\item[{ex_entity_type var_type \R{}}]
+Variable indicating the type of variable which is described. Use one
+of the following options:\\
+
+\begin{tabular}{ll}
+\param{EX_GLOBAL}     &  Global entity type \\
+\param{EX_NODAL}      &  Nodal entity type  \\
+\param{EX_NODE_SET}  &  Node Set entity type \\
+\param{EX_EDGE_BLOCK}&  Edge Block entity type \\
+\param{EX_EDGE_SET}  &  Edge Set entity type \\
+\param{EX_FACE_BLOCK}&  Face Block entity type \\
+\param{EX_FACE_SET}  &  Face Set entity type \\
+\param{EX_ELEM_BLOCK}&  Element Block entity type \\
+\param{EX_ELEM_SET}  &  Element Set entity type \\
+\param{EX_SIDE_SET}  &  Side Set entity type \\
+\end{tabular}
+
+\item[{int num_vars \R{}}]
+The number of \cmd{var_type} variables that will be written to the
+database.
+\end{parameters}
+
+For example, the following code segment initializes the data file to
+store global variables:
+
+\begin{lstlisting}
+int num_glo_vars, error, exoid;
+
+/* write results variables parameters */
+num_glo_vars = 3;
+
+error = ex_put_variable_param (exoid, EX_GLOBAL, num_glo_vars);
+\end{lstlisting}
+
+\subsection{Read Results Variables Parameters}
+
+The function \cfuncref{ex_get_variable_param} reads the number of global,
+nodal, or element variables stored in the database.
+
+In case of an error, \cfuncref{ex_get_variable_param} returns a
+negative number; a warning will return a positive number. Possible
+causes of errors include:
+
+\begin{itemize}
+ \item data file not properly opened with call to \cfuncref{ex_create}
+ or \cfuncref{ex_open}
+
+ \item invalid variable type specified.
+\end{itemize}
+
+
+\funcdef{ex_get_variable_param}
+{int~exoid, 
+ex_entity_typevar_type, 
+int~*num_vars}
+
+\begin{parameters}
+\item[{int exoid \R{}}]
+\exo{} file ID returned from a previous call to \cfuncref{ex_create} or
+\cfuncref{ex_open}.
+
+\item[{ex_entity_type var_type \R{}}]
+Variable indicating the type of variable which is described. Use one
+of the following options:\\
+
+\begin{tabular}{ll}
+\param{EX_GLOBAL}     &  Global entity type \\
+\param{EX_NODAL}      &  Nodal entity type  \\
+\param{EX_NODE_SET}  &  Node Set entity type \\
+\param{EX_EDGE_BLOCK}&  Edge Block entity type \\
+\param{EX_EDGE_SET}  &  Edge Set entity type \\
+\param{EX_FACE_BLOCK}&  Face Block entity type \\
+\param{EX_FACE_SET}  &  Face Set entity type \\
+\param{EX_ELEM_BLOCK}&  Element Block entity type \\
+\param{EX_ELEM_SET}  &  Element Set entity type \\
+\param{EX_SIDE_SET}  &  Side Set entity type \\
+\end{tabular}
+
+
+\item[{int* num_vars \W{}}]
+Returned number of \cmd{var_type} variables that are stored in the
+database.
+\end{parameters}
+As an example, the following coding will determine the number of
+global variables stored in the data file:
+
+\begin{lstlisting}
+int num_glo_vars, error, exoid;
+
+/* read global variables parameters */
+error = ex_get_variable_param(exoid, EX_GLOBAL, &num_glo_vars);
+\end{lstlisting}
+
+\subsection{Write Results Variables Names}
+
+The function \cfuncref{ex_put_variable_names} writes the names of the
+results variables to the database. The names are
+\param{MAX_STR_LENGTH}-characters in length. The function
+\cfuncref{ex_put_variable_param} must be called before this function is
+invoked.
+
+In case of an error, \cfuncref{ex_put_variable_names} returns a negative
+number; a warning will return a positive number.  Possible causes of
+errors include:
+
+\begin{itemize}
+ \item data file not properly opened with call to \cfuncref{ex_create}
+ or \cfuncref{ex_open}
+
+ \item data file not initialized properly with call to \cfuncref{ex_put_init}.
+
+ \item invalid variable type specified.
+
+ \item \cfuncref{ex_put_variable_param} was not called previously or was
+ called with zero variables of the specified type.
+
+ \item \cfuncref{ex_put_variable_names} has been called previously for the
+ specified variable type.
+\end{itemize}
+
+\funcdef{ex_put_variable_names}
+{int~exoid, 
+ex_entity_type~var_type, 
+int~num_vars, 
+char~**var_names[]}
+
+\begin{parameters}
+\item[{int exoid \R{}}]
+\exo{} file ID returned from a previous call to \cfuncref{ex_create} 
+or \cfuncref{ex_open}. 
+
+\item[{ex_entity_type var_type \R{}}]
+Variable indicating the type of variable which is described. 
+Use one of the following options:\\
+
+\begin{tabular}{ll}
+\param{EX_GLOBAL}     &  Global entity type \\
+\param{EX_NODAL}      &  Nodal entity type  \\
+\param{EX_NODE_SET}  &  Node Set entity type \\
+\param{EX_EDGE_BLOCK}&  Edge Block entity type \\
+\param{EX_EDGE_SET}  &  Edge Set entity type \\
+\param{EX_FACE_BLOCK}&  Face Block entity type \\
+\param{EX_FACE_SET}  &  Face Set entity type \\
+\param{EX_ELEM_BLOCK}&  Element Block entity type \\
+\param{EX_ELEM_SET}  &  Element Set entity type \\
+\param{EX_SIDE_SET}  &  Side Set entity type \\
+\end{tabular}
+
+\item[{int num_vars \R{}}]
+The number of \cmd{var_type} variables that will be written 
+to the database.
+
+\item[{char** var_names \R{}}]
+Array of pointers to \cmd{num_vars} variable names.
+\end{parameters}
+
+The following coding will write out the names associated with the
+nodal variables:
+\begin{lstlisting}
+int num_nod_vars, error, exoid;
+char *var_names[2];
+
+/* write results variables parameters and names */
+num_nod_vars = 2;
+
+var_names[0] = "disx";
+var_names[1] = "disy";
+
+error = ex_put_variable_param (exoid, EX_NODAL, num_nod_vars);
+error = ex_put_variable_names (exoid, EX_NODAL, num_nod_vars, var_names);
+\end{lstlisting}
+
+\subsection{Read Results Variable Names}
+
+The function \cfuncref{ex_get_variable_names} reads the names of the
+results variables from the database. Memory must be allocated for the
+name array before this function is invoked. The names are
+\param{MAX_STR_LENGTH}-characters in length.
+
+In case of an error, \cfuncref{ex_get_variable_names} returns a
+negative number; a warning will return a positive number.  Possible
+causes of errors include:
+\begin{itemize}
+ \item data file not properly opened with call to \cfuncref{ex_create}
+ or \cfuncref{ex_open}
+
+ \item invalid variable type specified.
+
+ \item a warning value is returned if no variables of the specified
+ type are stored in the file.
+\end{itemize}
+
+\funcdef{ex_get_variable_names}
+{int~exoid, 
+ex_entity_type~var_type, 
+int~num_vars, 
+char~*var_names[]}
+
+\begin{parameters}
+\item[{int exoid \R{}}]
+\exo{} file ID returned from a previous call to \cfuncref{ex_create} 
+or \cfuncref{ex_open}. 
+
+\item[{ex_entity_type var_type \R{}}]
+Variable indicating the type of variable which is described. Use one
+of the following options:\\
+
+\begin{tabular}{ll}
+\param{EX_GLOBAL}     &  Global entity type \\
+\param{EX_NODAL}      &  Nodal entity type  \\
+\param{EX_NODE_SET}  &  Node Set entity type \\
+\param{EX_EDGE_BLOCK}&  Edge Block entity type \\
+\param{EX_EDGE_SET}  &  Edge Set entity type \\
+\param{EX_FACE_BLOCK}&  Face Block entity type \\
+\param{EX_FACE_SET}  &  Face Set entity type \\
+\param{EX_ELEM_BLOCK}&  Element Block entity type \\
+\param{EX_ELEM_SET}  &  Element Set entity type \\
+\param{EX_SIDE_SET}  &  Side Set entity type \\
+\end{tabular}
+
+\item[{int num_vars \R{}}]
+The number of \cmd{var_type} variables that will be read 
+from the database.
+
+\item[{char** var_names \W{}}]
+Returned array of pointers to \cmd{num_vars} variable names.
+\end{parameters}
+
+
+As an example, the following code segment will read the names of the
+nodal variables stored in the data file:
+
+\begin{lstlisting}
+#include "exodusII.h"
+int error, exoid, num_nod_vars;
+char *var_names[10];
+
+/* read nodal variables parameters and names */
+error = ex_get_variable_param(exoid, EX_NODAL, &num_nod_vars);
+for (i=0; i < num_nod_vars; i++) {
+   var_names[i] = (char *) calloc ((MAX_STR_LENGTH+1), sizeof(char));
+}
+error = ex_get_variable_names(exoid, EX_NODAL, num_nod_vars, var_names);
+\end{lstlisting}
+
+\subsection{Write Time Value for a Time Step}
+
+The function \cfuncref{ex_put_time} writes the time value for a
+specified time step.
+
+Because time values are floating point values, the application code
+must declare the array passed to be the appropriate type (``float'' or
+``double'') to match the compute word size passed in
+\cfuncref{ex_create} or \cfuncref{ex_open}.
+
+
+In case of an error, \cfuncref{ex_put_time} returns a negative number;
+a warning will return a positive number. Possible causes of errors
+include:
+
+\begin{itemize}
+ \item data file not properly opened with call to \cfuncref{ex_create}
+ or \cfuncref{ex_open}
+
+ \item data file opened for read only.
+\end{itemize}
+
+
+\funcdef{ex_put_time}
+{int~exoid, 
+int~time_step, 
+void~*time_value}
+
+\begin{parameters}
+\item[{int exoid \R{}}]
+\exo{} file ID returned from a previous call to \cfuncref{ex_create} or
+\cfuncref{ex_open}.
+
+\item[{int time_step \R{}}]
+The time step number. This is essentially a counter that is
+incremented only when results variables are output to the data
+file. The first time step is 1.
+
+\item[{void* time_value \R{}}]
+The time at the specified time step.
+\end{parameters}
+
+The following code segment will write out the simulation time value at
+simulation time step n:
+
+\begin{lstlisting}
+int error, exoid, n;
+float time_value;
+
+/* write time value */
+error = ex_put_time (exoid, n, &time_value);
+\end{lstlisting}
+
+
+\subsection{Read Time Value for a Time Step}
+
+The function \cfuncref{ex_get_time} reads the time value for a
+specified time step.
+
+Because time values are floating point values, the application code
+must declare the array passed to be the appropriate type (``float'' or
+``double'') to match the compute word size passed in
+\cfuncref{ex_create} or \cfuncref{ex_open}.
+
+In case of an error, \cfuncref{ex_get_time} returns a negative number;
+a warning will return a positive number. Possible causes of errors
+include:
+
+\begin{itemize}
+ \item data file not properly opened with call to \cfuncref{ex_create}
+ or \cfuncref{ex_open}
+
+ \item no time steps have been stored in the file.
+\end{itemize}
+
+\funcdef{ex_get_time}
+{int~exoid, 
+int~time_step, 
+void~*time_value}
+
+\begin{parameters}
+\item[{int exoid \R{}}]
+\exo{} file ID returned from a previous call to \cfuncref{ex_create} 
+or \cfuncref{ex_open}. 
+
+\item[{int time_step \R{}}]
+The time step number. This is essentially an index (in the time
+dimension) into the global, nodal, and element variables arrays stored
+in the database. The first time step is 1.
+
+\item[{void* time_value \W{}}]
+Returned time at the specified time step.
+\end{parameters}
+
+As an example, the following coding will read the time value stored in
+the data file for time step n:
+
+\begin{lstlisting}
+int n, error, exoid;
+float time_value;
+
+/* read time value at time step 3 */
+n = 3;
+error = ex_get_time (exoid, n, &time_value);
+\end{lstlisting}
+
+\subsection{Read All Time Values}
+
+The function \cfuncref{ex_get_all_times} reads the time values for all
+time steps. Memory must be allocated for the time values array before
+this function is invoked. The storage requirements (equal to the
+number of time steps) can be determined by using the
+\cfuncref{ex_inquire} or \cfuncref{ex_inquire_int} routines.
+
+Because time values are floating point values, the application code
+must declare the array passed to be the appropriate type (``float'' or
+``double'') to match the compute word size passed in
+\cfuncref{ex_create} or \cfuncref{ex_open}.
+
+In case of an error, \cfuncref{ex_get_all_times} returns a negative
+number; a warning will return a positive number. Possible causes of
+errors include:
+
+\begin{itemize}
+
+ \item data file not properly opened with call to \cfuncref{ex_create}
+ or \cfuncref{ex_open}
+
+ \item no time steps have been stored in the file.
+\end{itemize}
+
+
+\funcdef{ex_get_all_times}{
+int~exoid, 
+void~*time_values}
+
+\begin{parameters}
+\item[{int exoid \R{}}]
+\exo{} file ID returned from a previous call to \cfuncref{ex_create} or
+\cfuncref{ex_open}.
+
+\item[{void* time_values \W{}}]
+Returned array of times. These are the time values at all time steps.
+\end{parameters}
+
+The following code segment will read the time values for all time
+steps stored in the data file:
+
+\begin{lstlisting}
+#include "exodusII.h"
+int error, exoid, num_time_steps;
+float *time_values;
+
+/* determine how many time steps are stored */
+num_time_steps = ex_inquire_int(exoid, EX_INQ_TIME);
+
+/* read time values at all time steps */
+time_values = (float *) calloc(num_time_steps, sizeof(float));
+
+error = ex_get_all_times(exoid, time_values);
+\end{lstlisting}
+
+\subsection{Write Element Variable Truth Table}
+
+The function \cfuncref{ex_put_elem_var_tab} writes the \exo{} element
+variable truth table to the database. The element variable truth table
+indicates whether a particular element result is written for the
+elements in a particular element block. A 0 (zero) entry indicates
+that no results will be output for that element variable for that
+element block. A non-zero entry indicates that the appropriate results
+will be output.
+
+Although writing the element variable truth table is optional, it is
+encouraged because it creates at one time all the necessary
+\code{NetCDF} variables in which to hold the \exo{} element variable
+values. This results in significant time savings. See
+Appendix~\ref{app:efficiency} for a discussion of efficiency issues.
+
+The function \cfuncref{ex_put_variable_param} must be called before
+this routine in order to define the number of element variables.
+
+In case of an error, \cfuncref{ex_put_elem_var_tab} returns a
+negative number; a warning will return a positive number. Possible
+causes of errors include:
+
+\begin{itemize}
+ \item data file not properly opened with call to \cfuncref{ex_create}
+ or \cfuncref{ex_open}
+
+ \item data file opened for read only.
+
+ \item data file not initialized properly with call to
+ \cfuncref{ex_put_init}.
+
+ \item the specified number of element blocks is different than the
+ number specified in a call to \cfuncref{ex_put_init}.
+
+ \item \cfuncref{ex_put_elem_block} not called previously to specify
+ element block parameters.
+
+ \item \cfuncref{ex_put_variable_param} not called previously to specify
+ the number of element variables or was called but with a different
+ number of element variables.
+
+ \item \cfuncref{ex_put_elem_var} previously called.
+\end{itemize}
+
+
+\funcdef{ex_put_elem_var_tab}
+{int~exoid, 
+int~num_elem_blk, 
+int~num_elem_var,
+int~**elem_var_tab}
+
+\begin{parameters}
+\item[{int exoid \R{}}]
+\exo{} file ID returned from a previous call to \cfuncref{ex_create} 
+or \cfuncref{ex_open}.
+
+\item[{int num_elem_blk \R{}}]
+The number of element blocks.
+
+\item[{int num_elem_var \R{}}]
+The number of element variables.
+
+\item[{int elem_var_tab[num_elem_blk,num_elem_var] \R{}}]
+A 2-dimensional array (with the \cmd{num_elem_var} index 
+cycling faster) containing the element variable truth table.
+
+\end{parameters}
+The following coding will create, populate, and write an 
+element variable truth table to an opened \exo{} file (NOTE: 
+all element variables are valid for all element blocks in this 
+example.):
+
+\begin{lstlisting}
+int *truth_tab, num_elem_blk, num_ele_vars, error, exoid;
+
+/* write element variable truth table */
+truth_tab = (int *)calloc((num_elem_blk*num_ele_vars), sizeof(int));
+
+for (i=0, k=0; i < num_elem_blk; i++) {
+   for (j=0; j < num_ele_vars; j++) {
+      truth_tab[k++] = 1;
+   }
+}
+error = ex_put_elem_var_tab(exoid, num_elem_blk, num_ele_vars, 
+                            truth_tab);
+\end{lstlisting}
+
+\subsection{Read Element Variable Truth Table}
+
+The function \cfuncref{ex_get_elem_var_tab} reads the \exo{} element
+variable truth table from the database. For a description of the truth
+table, see the usage of the function
+\cfuncref{ex_put_elem_var_tab}. Memory must be allocated for
+the truth table(\cmd{num_elem_blk} $\times$ \cmd{num_elem_var} in length)
+before this function is invoked. If the truth table is not stored in
+the file, it will be created based on information in the file and then
+returned.
+
+In case of an error, \cfuncref{ex_get_elem_var_tab} returns a
+negative number; a warning will return a positive number.  Possible
+causes of errors include:
+
+\begin{itemize}
+ \item data file not properly opened with call to \cfuncref{ex_create}
+ or \cfuncref{ex_open}
+
+ \item data file not initialized properly with call to
+ \cfuncref{ex_put_init}.
+
+ \item the specified number of element blocks is different than the
+ number specified in a call to \cfuncref{ex_put_init}.
+
+ \item there are no element variables stored in the file or the
+ specified number of element variables doesn't match the number
+ specified in a call to \cfuncref{ex_put_variable_param}.
+\end{itemize}
+
+
+\funcdef{ex_get_elem_var_tab}
+{int~exoid, 
+int~num_elem_blk, 
+int~num_elem_var,
+int~*elem_var_tab}
+
+\begin{parameters}
+\item[{int exoid \R{}}]
+exo{} file ID returned from a previous call to \cfuncref{ex_create} or
+\cfuncref{ex_open}.
+
+\item[{int num_elem_blk \R{}}]
+The number of element blocks.
+
+\item[{int num_elem_var \R{}}]
+The number of element variables.
+
+\item[{int elem_var_tab[num_elem_blk,num_elem_var}{]} {\W{}}]
+Returned 2-dimensional array (with the \cmd{num_elem_var} index cycling
+faster) containing the element variable truth table.
+\end{parameters}
+
+As an example, the following coding will read the element 
+variable truth table from an opened \exo{} file:
+
+\begin{lstlisting}
+int *truth_tab, num_elem_blk, num_ele_vars, error, exoid;
+
+truth_tab = (int *) calloc ((num_elem_blk*num_ele_vars), 
+                            sizeof(int));
+
+error = ex_get_elem_var_tab (exoid, num_elem_blk, num_ele_vars, 
+                             truth_tab);
+\end{lstlisting}
+
+\subsection{Write Element Variable Values at a Time Step}
+
+The function \cfuncref{ex_put_elem_var} writes the values of a single
+element variable for one element block at one time step. It is
+recommended, but not required, to write the element variable truth
+table (with \cfuncref{ex_put_elem_var_tab} before this function is
+invoked for better efficiency. See Appendix~\ref{app:efficiency} for a
+discussion of efficiency issues.
+
+Because element variables are floating point values, the application
+code must declare the array passed to be the appropriate type
+(``float'' or ``double'') to match the compute word size passed in
+\cfuncref{ex_create} or \cfuncref{ex_open}.
+
+
+In case of an error, \cfuncref{ex_put_elem_var} returns a negative
+number; a warning will return a positive number.  Possible causes of
+errors include:
+
+\begin{itemize}
+ \item data file not properly opened with call to \cfuncref{ex_create}
+ or \cfuncref{ex_open}
+
+ \item data file opened for read only.
+
+ \item data file not initialized properly with call to
+ \cfuncref{ex_put_init}.
+
+ \item invalid element block ID.
+
+ \item \cfuncref{ex_put_elem_block} not called previously to specify
+ parameters for this element block.
+
+ \item \cfuncref{ex_put_variable_param} not called previously specifying
+ the number of element variables.
+
+ \item an element variable truth table was stored in the file but
+ contains a zero (indicating no valid element variable) for the
+ specified element block and element variable.
+\end{itemize}
+
+
+
+\funcdef{ex_put_elem_var}
+{int~exoid, 
+int~time_step, 
+int~elem_var_index,
+int~elem_blk_id, 
+int~num_elem_this_blk, 
+void~*elem_var_vals}
+
+\begin{parameters}
+\item[{int exoid \R{}}]
+\exo{} file ID returned from a previous call to \cfuncref{ex_create} or
+\cfuncref{ex_open}.
+
+\item[{int time_step \R{}}]
+The time step number, as described under \cfuncref{ex_put_time}. 
+This is essentially a counter that is incremented only when results 
+variables are output. The first time step is 1.
+
+\item[{int elem_var_index \R{}}]
+The index of the element variable. The first variable has 
+an index of 1.
+
+\item[{int elem_blk_id \R{}}]
+The element block ID.
+
+\item[{int num_elem_this_blk \R{}}]
+The number of elements in the given element block.
+
+\item[{void* elem_var_vals \R{}}]
+Array of \cmd{num_elem_this_blk} values of the \cmd{elem_var_index}\th{} 
+element variable for the element block with ID of \cmd{elem_blk_id} 
+at the \cmd{time_step}\th{} time step.
+\end{parameters}
+
+The following coding will write out all of the element variables for a
+single time step {n} to an open \exo{} file:
+
+\begin{lstlisting}
+int num_ele_vars, num_elem_blk, *num_elem_in_block,error, 
+    exoid, n, *ebids;
+
+/* write element variables */
+for (k=1; k <= num_ele_vars; k++) {
+   for (j=0; j < num_elem_blk; j++) {
+      float *elem_var_vals = (float *)
+         calloc(num_elem_in_block[j], sizeof(float));
+
+         for (m=0; m < num_elem_in_block[j]; m++) {
+            /* simulation code fills this in */
+            elem_var_vals[m] = 10.0; 
+         }
+
+      error = ex_put_elem_var (exoid, n, k, ebids[j],
+                               num_elem_in_block[j], elem_var_vals);
+      free (elem_var_vals);
+   }
+}
+\end{lstlisting}
+
+\subsection{Read Element Variable Values at a Time Step}
+
+The function \cfuncref{ex_get_elem_var} reads the values of a single
+element variable for one element block at one time step. Memory must
+be allocated for the element variable values array before this
+function is invoked.
+
+Because element variables are floating point values, the application
+code must declare the array passed to be the appropriate type
+(``float'' or ``double'') to match the compute word size passed in
+\cfuncref{ex_create} or \cfuncref{ex_open}.
+
+
+In case of an error, \cfuncref{ex_get_elem_var} returns a negative
+number; a warning will return a positive number. Possible causes of
+errors include:
+
+\begin{itemize}
+ \item data file not properly opened with call to \cfuncref{ex_create}
+ or \cfuncref{ex_open}
+
+ \item variable does not exist for the desired element block.
+
+ \item invalid element block.
+\end{itemize}
+
+\funcdef{ex_get_elem_var}
+{int~exoid, 
+int~time_step, 
+int~elem_var_index,
+int~elem_blk_id, 
+int~num_elem_this_blk, 
+void~*elem_var_vals}
+
+\begin{parameters}
+\item[{int exoid \R{}}]
+\exo{} file ID returned from a previous call to \cfuncref{ex_create} or
+\cfuncref{ex_open}.
+
+\item[{int time_step \R{}}]
+The time step number, as described under \cfuncref{ex_put_time}, at
+which the element variable values are desired. This is essentially an
+index (in the time dimension) into the element variable values array
+stored in the database. The first time step is 1.
+
+\item[{int elem_var_index \R{}}]
+The index of the desired element variable. The first variable 
+has an index of 1.
+
+\item[{int elem_blk_id \R{}}]
+The desired element block ID.
+
+\item[{int num_elem_this_blk \R{}}]
+The number of elements in this element block.
+\end{parameters}
+
+{void* elem_var_vals \W{}}
+
+
+Returned array of \cmd{num_elem_this_blk} values of the \cmd{elem_var_index}\th{} 
+element variable for the element block with ID of \cmd{elem_blk_id} 
+at the \cmd{time_step}\th{} time step.
+
+
+As an example, the following code segment will read the
+\cmd{var_index}\th{} element variable at one time step stored in an
+\exo{} file:
+
+\begin{lstlisting}
+int num_elem_blk, error, exoid, *num_elem_in_block,  step, var_ind;
+
+int *ids = (int *) calloc(num_elem_blk, sizeof(int));
+error = ex_get_elem_blk_ids (exoid, ids);
+
+step = 1; /* read at the first time step */
+for (i=0; i < num_elem_blk; i++) {
+   float *var_vals = (float *) calloc (num_elem_in_block[i], sizeof(float));
+   error = ex_get_elem_var (exoid, step, var_ind, ids[i], 
+                            num_elem_in_block[i], var_vals);
+   free (var_values); 
+}
+\end{lstlisting}
+
+
+\subsection{Read Element Variable Values through Time}
+
+The function \cfuncref{ex_get_elem_var_time} reads the values of an
+element variable for a single element through a specified number of
+time steps. Memory must be allocated for the element variable values
+array before this function is invoked.
+
+Because element variables are floating point values, the application
+code must declare the array passed to be the appropriate type
+(``float'' or ``double'') to match the compute word size passed in
+\cfuncref{ex_create} or \cfuncref{ex_open}.
+
+In case of an error, \cfuncref{ex_get_elem_var_time} returns a
+negative number; a warning will return a positive number. Possible
+causes of errors include:
+
+\begin{itemize}
+ \item data file not properly opened with call to \cfuncref{ex_create}
+ or \cfuncref{ex_open}
+
+ \item data file not initialized properly with call to \cfuncref{ex_put_init}.
+
+ \item \cfuncref{ex_put_elem_block} not called previously to specify
+ parameters for all element blocks.
+
+ \item variable does not exist for the desired element or results
+ haven't been written.
+\end{itemize}
+
+
+\funcdef{ex_get_elem_var_time}
+{int~exoid, 
+int~elem_var_index, 
+int~elem_number, 
+int~beg_time_step, 
+int~end_time_step, 
+void~*elem_var_vals}
+
+\begin{parameters}
+\item[{int exoid \R{}}]
+\exo{} file ID returned from a previous call to \cfuncref{ex_create} 
+or \cfuncref{ex_open}.
+
+\item[{int elem_var_index \R{}}]
+The index of the desired element variable. The first variable has an
+index of 1.
+
+\item[{int elem_number \R{}}]
+The internal ID (see Section~\ref{s:enm}) of the desired
+element. The first element is 1.
+
+\item[{int beg_time_step \R{}}]
+The beginning time step for which an element variable value is
+desired. This is not a time value but rather a time step number, as
+described under \cfuncref{ex_put_time}. The first time step is 1.
+
+\item[{int end_time_step \R{}}]
+The last time step for which an element variable value is desired. If
+negative, the last time step in the database will be used. The first
+time step is 1.
+
+\item[{void* elem_var_vals \W{}}]
+Returned array of(\cmd{end_time_step} {-} \cmd{beg_time_step} + 
+1) values of the \cmd{elem_number}\th{} element for the \cmd{elem_var_index}\th{} 
+element variable.
+\end{parameters}
+
+For example, the following coding will read the values of the
+\cmd{var_index}\th{} element variable for element number 2 from the first
+time step to the last time step:
+
+\begin{lstlisting}
+/* determine how many time steps are stored */
+int num_time_steps = ex_inquire_int(exoid, EX_INQ_TIME);
+
+/* read an element variable through time */
+float *var_values = (float *) calloc (num_time_steps, sizeof(float));
+int var_index = 2;
+
+int elem_num = 2;
+
+int beg_time =  1;
+int end_time = -1;
+
+int error = ex_get_elem_var_time (exoid, var_index, elem_num, 
+                              beg_time, end_time, var_values);
+\end{lstlisting}
+
+\subsection{Write Global Variables Values at a Time Step}
+
+The function \cfuncref{ex_put_glob_vars} writes the values of all the
+global variables for a single time step. The function
+\cfuncref{ex_put_variable_param} must be invoked before this call is made.
+
+Because global variables are floating point values, the application
+code must declare the array passed to be the appropriate type
+(``float'' or ``double'') to match the compute word size passed in
+\cfuncref{ex_create} or \cfuncref{ex_open}.
+
+In case of an error, \cfuncref{ex_put_glob_vars} returns a negative
+number; a warning will return a positive number. Possible causes of
+errors include:
+
+\begin{itemize}
+ \item data file not properly opened with call to \cfuncref{ex_create}
+ or \cfuncref{ex_open}
+
+ \item data file opened for read only.
+
+ \item \cfuncref{ex_put_variable_param} not called previously specifying
+ the number of global variables.
+\end{itemize}
+
+\funcdef{ex_put_glob_vars}
+{int~exoid, 
+int~time_step, 
+int~num_glob_vars,
+void~*glob_var_vals}
+
+\begin{parameters}
+\item[{int exoid \R{}}]
+\exo{} file ID returned from a previous call to \cfuncref{ex_create} 
+or \cfuncref{ex_open}.
+
+\item[{int time_step \R{}}]
+The time step number, as described under \cfuncref{ex_put_time}. 
+This is essentially a counter that is incremented when results 
+variables are output. The first time step is 1.
+
+\item[{int num_glob_vars \R{}}]
+The number of global variables to be written to the database.
+
+\item[{void* glob_var_vals \R{}}]
+Array of \cmd{num_glob_vars} global variable values for 
+the \cmd{time_step}\th{} time step.
+\end{parameters}
+
+As an example, the following coding will write the values of all the
+global variables at one time step to an open \exo{} II file:
+
+\begin{lstlisting}
+int num_glo_vars, error, exoid, time_step;
+
+float *glob_var_vals
+
+/* write global variables */
+for (j=0; j < num_glo_vars; j++) {
+   /* application code fills this array */
+   glob_var_vals[j] = 10.0;
+}
+error = ex_put_glob_vars (exoid, time_step, num_glo_vars, 
+                          glob_var_vals);
+\end{lstlisting}
+
+\subsection{Read Global Variables Values at a Time Step}
+
+The function \cfuncref{ex_get_glob_vars} reads the values of all the
+global variables for a single time step. Memory must be allocated for
+the global variables values array before this function is invoked.
+
+Because global variables are floating point values, the application
+code must declare the array passed to be the appropriate type
+(``float'' or ``double'') to match the compute word size passed in
+\cfuncref{ex_create} or \cfuncref{ex_open}.
+
+In case of an error, \cfuncref{ex_get_glob_vars} returns a negative
+number; a warning will return a positive number. Possible causes of
+errors include:
+
+\begin{itemize}
+ \item data file not properly opened with call to \cfuncref{ex_create}
+ or \cfuncref{ex_open}
+
+ \item no global variables stored in the file.
+
+ \item a warning value is returned if no global variables are stored
+ in the file.
+\end{itemize}
+
+
+\funcdef{ex_get_glob_vars}
+{int~exoid, 
+int~time_step, 
+int~num_glob_vars,
+void~*glob_var_vals}
+
+\begin{parameters}
+\item[{int exoid \R{}}]
+\exo{} file ID returned from a previous call to \cfuncref{ex_create} 
+or \cfuncref{ex_open}.
+
+\item[{int time_step \R{}}]
+The time step, as described under \cfuncref{ex_put_time}, at 
+which the global variable values are desired. This is essentially 
+an index (in the time dimension) into the global variable values 
+array stored in the database. The first time step is 1.
+
+\item[{int num_glob_vars \R{}}]
+The number of global variables stored in the database.
+
+\item[{void* glob_var_vals \W{}}]
+Returned array of \cmd{num_glob_vars} global variable values 
+for the \cmd{time_step}\th{} time step.
+\end{parameters}
+
+The following is an example code segment that reads all the global
+variables at one time step:
+
+\begin{lstlisting} 
+int num_glo_vars, time_step;
+
+int error = ex_get_variable_param (idexo, EX_GLOBAL, &num_glo_vars);
+float *var_values = (float *) calloc (num_glo_vars, sizeof(float));
+error = ex_get_glob_vars (idexo, time_step, num_glo_vars, 
+                          var_values);
+\end{lstlisting}
+
+
+
+\subsection{Read Global Variable Values through Time}
+
+The function \cfuncref{ex_get_glob_var_time} reads the values of a
+single global variable through a specified number of time
+steps. Memory must be allocated for the global variable values array
+before this function is invoked.
+
+Because global variables are floating point values, the application
+code must declare the array passed to be the appropriate type
+(``float'' or ``double'') to match the compute word size passed in
+\cfuncref{ex_create} or \cfuncref{ex_open}.
+
+In case of an error, \cfuncref{ex_get_glob_var_time} returns a
+negative number; a warning will return a positive number. Possible
+causes of errors include:
+
+\begin{itemize}
+ \item data file not properly opened with call to \cfuncref{ex_create} 
+or \cfuncref{ex_open}
+
+ \item specified global variable does not exist.
+
+ \item a warning value is returned if no global variables 
+are stored in the file.
+\end{itemize}
+
+
+\funcdef{ex_get_glob_var_time}
+{int~exoid, 
+int~glob_var_index, 
+int~beg_time_step,
+int~end_time_step, 
+void~*glob_var_vals}
+
+\begin{parameters}
+\item[{int exoid \R{}}]
+\exo{} file ID returned from a previous call to \cfuncref{ex_create} 
+or \cfuncref{ex_open}.
+
+\item[{int glob_var_index \R{}}]
+The index of the desired global variable. The first variable 
+has an index of 1.
+
+\item[{int beg_time_step \R{}}]
+The beginning time step for which a global variable value is
+desired. This is not a time value but rather a time step number, as
+described under \cfuncref{ex_put_time}. The first time step is 1.
+
+\item[{int end_time_step \R{}}]
+The last time step for which a global variable value is desired. If
+negative, the last time step in the database will be used. The first
+time step is 1.
+
+\item[{void* glob_var_vals \W{}}]
+Returned array of (end_time_step - beg_time_step + 
+1) values for the \cmd{glob_var_index}$^{th}$ global variable.
+\end{parameters}
+
+The following is an example of using this function:
+
+\begin{lstlisting}
+#include "exodusII.h"
+int error, exoid, num_time_steps, var_index;
+int beg_time, end_time;
+
+float *var_values;
+
+/* determine how many time steps are stored */
+num_time_steps = ex_inquire_int(exoid, EX_INQ_TIME);
+
+/* read the first global variable for all time steps */
+var_index = 1;
+beg_time = 1;
+end_time = -1;
+
+var_values = (float *) calloc (num_time_steps, sizeof(float));
+
+error = ex_get_glob_var_time(exoid, var_index, beg_time, 
+                             end_time, var_values);
+\end{lstlisting}
+
+\subsection{Write Nodal Variable Values at a Time Step}
+
+The function \cfuncref{ex_put_nodal_var} writes the values of a single
+nodal variable for a single time step. The function
+\cfuncref{ex_put_variable_param} must be invoked before this call is made.
+
+Because nodal variables are floating point values, the application
+code must declare the array passed to be the appropriate type
+(``float'' or ``double'') to match the compute word size passed in
+\cfuncref{ex_create} or \cfuncref{ex_open}.
+
+In case of an error, \cfuncref{ex_put_nodal_var} returns a negative
+number; a warning will return a positive number. Possible causes of
+errors include:
+
+\begin{itemize}
+ \item data file not properly opened with call to \cfuncref{ex_create}
+ or \cfuncref{ex_open}
+
+ \item data file opened for read only.
+
+ \item data file not initialized properly with call to
+ \cfuncref{ex_put_init}.
+
+ \item \cfuncref{ex_put_variable_param} not called previously specifying
+ the number of nodal variables.
+\end{itemize}
+
+\funcdef{ex_put_nodal_var}
+{int~exoid, 
+int~time_step, 
+int~nodal_var_index,
+int~num_nodes, 
+void~*nodal_var_vals}
+
+\begin{parameters}
+\item[{int exoid \R{}}]
+\exo{} file ID returned from a previous call to \cfuncref{ex_create} or
+\cfuncref{ex_open}.
+
+\item[{int time_step \R{}}]
+The time step number, as described under \cfuncref{ex_put_time}. This
+is essentially a counter that is incremented when results variables
+are output. The first time step is 1.
+
+\item[{int nodal_var_index \R{}}]
+The index of the nodal variable. The first variable has an index of 1.
+
+\item[{int num_nodes \R{}}]
+ The number of nodal points.
+
+\item[{void* nodal_var_vals \R{}}]
+Array of \cmd{num_nodes} values of the \cmd{nodal_var_index}\th{} nodal
+variable for the \cmd{time_step}\th{} time step.
+\end{parameters}
+
+As an example, the following code segment writes all the nodal
+variables for a single time step:
+
+\begin{lstlisting}
+int num_nod_vars, num_nodes, error, exoid, time_step;
+
+/* write nodal variables */
+float *nodal_var_vals = (float *) calloc(num_nodes, sizeof(float));
+for (k=1; k <= num_nod_vars; k++) {
+   for (j=0; j < num_nodes; j++) {
+      /* application code fills in this array */
+      nodal_var_vals[j] = 10.0;
+   }
+   error = ex_put_nodal_var(exoid, time_step, k, num_nodes,
+                            nodal_var_vals);
+}
+\end{lstlisting}
+
+\subsection{Read Nodal Variable Values at a Time Step}
+
+The function \cfuncref{ex_get_nodal_var} reads the values of a single
+nodal variable for a single time step. Memory must be allocated for
+the nodal variable values array before this function is invoked.
+
+
+Because nodal variables are floating point values, the application
+code must declare the array passed to be the appropriate type
+(``float'' or ``double'') to match the compute word size passed in
+\cfuncref{ex_create} or \cfuncref{ex_open}.
+
+In case of an error, \cfuncref{ex_get_nodal_var} returns a negative
+number; a warning will return a positive number. Possible causes of
+errors include:
+\begin{itemize}
+ \item data file not properly opened with call to \cfuncref{ex_create}
+ or \cfuncref{ex_open}
+
+ \item specified nodal variable does not exist.
+
+ \item a warning value is returned if no nodal variables are stored in
+ the file.
+\end{itemize}
+
+\funcdef{ex_get_nodal_var}
+{int~exoid, 
+int~time_step, 
+int~nodal_var_index,
+int~num_nodes, 
+void~*nodal_var_vals}
+
+\begin{parameters}
+\item[{int exoid \R{}}]
+\exo{} file ID returned from a previous call to \cfuncref{ex_create} 
+or \cfuncref{ex_open}.
+
+\item[{int time_step \R{}}]
+The time step, as described under \cfuncref{ex_put_time}, at which the
+nodal variable values are desired. This is essentially an index (in
+the time dimension) into the nodal variable values array stored in the
+database. The first time step is 1.
+
+\item[{int nodal_var_index \R{}}]
+The index of the desired nodal variable. The first variable 
+has an index of 1.
+
+\item[{int num_nodes \R{}}]
+The number of nodal points.
+
+\item[{void* nodal_var_vals \W{}}]
+Returned array of \cmd{num_nodes} values of the \cmd{nodal_var_index}\th{}
+nodal variable for the \cmd{time_step}\th{} time step.
+\end{parameters}
+
+For example, the following demonstrates how this function would be
+used:
+
+\begin{lstlisting}
+/* read the second nodal variable at the first time step */
+int time_step = 1;
+int var_index = 2;
+
+float *var_values = (float *) calloc (num_nodes, sizeof(float));
+error = ex_get_nodal_var(exoid, time_step, var_index, num_nodes,
+                         var_values);
+\end{lstlisting}
+
+
+\subsection{Read Nodal Variable Values through Time}
+
+The function \cfuncref{ex_get_nodal_var_time} reads the values of a
+nodal variable for a single node through a specified number of time
+steps. Memory must be allocated for the nodal variable values array
+before this function is invoked.
+
+Because nodal variables are floating point values, the application
+code must declare the array passed to be the appropriate type
+(``float'' or ``double'') to match the compute word size passed
+in \cfuncref{ex_create} or \cfuncref{ex_open}.
+
+In case of an error, \cfuncref{ex_get_nodal_var_time} returns a
+negative number; a warning will return a positive number. Possible
+causes of errors include:
+
+\begin{itemize}
+ \item specified nodal variable does not exist.
+
+ \item a warning value is returned if no nodal variables are stored in
+ the file.
+\end{itemize}
+
+\funcdef{ex_get_nodal_var_time}
+{int~exoid, 
+int~nodal_var_index, 
+int~node_number,
+int~beg_time_step, 
+int~end_time_step, 
+void~*nodal_var_vals}
+
+\begin{parameters}
+\item[{int exoid \R{}}]
+\exo{} file ID returned from a previous call to \cfuncref{ex_create} or
+\cfuncref{ex_open}.
+
+\item[{int nodal_var_index \R{}}]
+The index of the desired nodal variable. The first variable has an
+index of 1.
+
+\item[{int node_number \R{}}]
+The internal ID (see  Section~\ref{s:nnm}) of the desired 
+node. The first node is 1.
+
+\item[{int beg_time_step \R{}}]
+The beginning time step for which a nodal variable value 
+is desired. This is not a time value but rather a time step number, 
+as described under \cfuncref{ex_put_time}. The first time step 
+is 1.
+
+\item[{int end_time_step \R{}}]
+The last time step for which a nodal variable value is desired. If
+negative, the last time step in the database will be used. The first
+time step is 1.
+
+\item[{void* nodal_var_vals \W{}}]
+Returned array of(\cmd{end_time_step} {-} \cmd{beg_time_step} +1) values
+of the \cmd{node_number}\th{} node for the \cmd{nodal_var_index}\th{} nodal
+variable.
+\end{parameters}
+
+For example, the following code segment will read the values 
+of the first nodal variable for node number one for all time 
+steps stored in the data file:
+\begin{lstlisting}
+#include "exodusII.h"
+int node_num, beg_time, end_time, error, exoid;
+
+/* determine how many time steps are stored */
+int num_time_steps = ex_inquire_int(exoid, EX_INQ_TIME);
+
+/* read a nodal variable through time */
+float *var_values = (float *) calloc (num_time_steps, sizeof(float));
+
+int var_index = 1; node_num = 1; beg_time = 1; end_time = -1;
+error = ex_get_nodal_var_time(exoid, var_index, node_num, beg_time,
+                              end_time, var_values);
+
+\end{lstlisting}
