@@ -275,6 +275,10 @@ namespace Xpetra {
 
     /// \brief Access the underlying local KokkosSparse::CrsMatrix object
     virtual local_matrix_type getLocalMatrix () const = 0;
+
+    virtual void setAllValues (const typename local_matrix_type::row_map_type& ptr,
+                               const typename local_graph_type::entries_type::non_const_type& ind,
+                               const typename local_matrix_type::values_type& val)=0;
 #else
 #ifdef __GNUC__
 #warning "Xpetra Kokkos interface for CrsMatrix is enabled (HAVE_XPETRA_KOKKOS_REFACTOR) but Tpetra is disabled. The Kokkos interface needs Tpetra to be enabled, too."

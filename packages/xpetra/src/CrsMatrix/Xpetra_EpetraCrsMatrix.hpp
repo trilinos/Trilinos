@@ -229,6 +229,14 @@ public:
     TEUCHOS_TEST_FOR_EXCEPTION(true, Xpetra::Exceptions::RuntimeError,
       "Xpetra::EpetraCrsMatrix only available for GO=int or GO=long long with EpetraNode (Serial or OpenMP depending on configuration)");
   }
+
+  void setAllValues (const typename local_matrix_type::row_map_type& ptr,
+                     const typename local_matrix_type::StaticCrsGraphType::entries_type::non_const_type& ind,
+                     const typename local_matrix_type::values_type& val)
+  {
+    TEUCHOS_TEST_FOR_EXCEPTION(true, Xpetra::Exceptions::RuntimeError,
+                               "Xpetra::EpetraCrsMatrix only available for GO=int or GO=long long with EpetraNode (Serial or OpenMP depending on configuration)");
+  }
 #else
 #ifdef __GNUC__
 #warning "Xpetra Kokkos interface for CrsMatrix is enabled (HAVE_XPETRA_KOKKOS_REFACTOR) but Tpetra is disabled. The Kokkos interface needs Tpetra to be enabled, too."
@@ -1184,6 +1192,15 @@ public:
 
     return localMatrix_;
   }
+
+  void setAllValues (const typename local_matrix_type::row_map_type& ptr,
+                     const typename local_matrix_type::StaticCrsGraphType::entries_type::non_const_type& ind,
+                     const typename local_matrix_type::values_type& val)
+  {
+    TEUCHOS_TEST_FOR_EXCEPTION(true, Xpetra::Exceptions::RuntimeError,
+                               "Xpetra::EpetraCrsMatrix::setAllValues is not implemented");
+  }
+
 private:
   mutable local_matrix_type localMatrix_;
   mutable bool              isInitializedLocalMatrix_ = false; // It's OK to use C++11 when Tpetra is enabled
@@ -2151,6 +2168,15 @@ public:
 
     return localMatrix_;
   }
+
+  void setAllValues (const typename local_matrix_type::row_map_type& ptr,
+                     const typename local_matrix_type::StaticCrsGraphType::entries_type::non_const_type& ind,
+                     const typename local_matrix_type::values_type& val)
+  {
+    TEUCHOS_TEST_FOR_EXCEPTION(true, Xpetra::Exceptions::RuntimeError,
+                               "Xpetra::EpetraCrsMatrix::setAllValues is not implemented");
+  }
+
 private:
   mutable local_matrix_type localMatrix_;
   mutable bool              isInitializedLocalMatrix_ = false;
