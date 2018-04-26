@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005 National Technology & Engineering Solutions
+ * Copyright (c) 2005-2017 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -51,7 +51,7 @@ void klvspiff(struct vtx_data **graph,     /* list of graph info for each vertex
               int               max_dev,   /* largest deviation from balance allowed */
               int **            bndy_list, /* list of vertices on boundary (0 ends) */
               double *          weights    /* vertex weights in each set */
-              )
+)
 {
   extern FILE *   Output_File; /* output file or null */
   extern int      DEBUG_TRACE; /* debug flag for Kernighan-Lin */
@@ -144,7 +144,7 @@ static void free_klv(
     struct bilist * rlistspace, /* space for all bidirectional elements */
     int *           ldvals,     /* change in penalty for each possible move */
     int *           rdvals      /* change in penalty for each possible move */
-    )
+)
 {
   sfree(rlistspace);
   sfree(llistspace);

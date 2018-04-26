@@ -1,4 +1,4 @@
-C    Copyright(C) 2008 National Technology & Engineering Solutions of
+C    Copyright(C) 2008-2017 National Technology & Engineering Solutions of
 C    Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C    NTESS, the U.S. Government retains certain rights in this software.
 C    
@@ -52,38 +52,13 @@ C   --   o A listing of the input database information and any errors
 C   --     found on the standard output device.
 C   --   o A print file of requested information on unit 20.
 
-* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
-*                    ISSUED BY SANDIA LABORATORIES,                   *
-*                      A PRIME CONTRACTOR TO THE                      *
-*                  UNITED STATES DEPARTMENT OF ENERGY                 *
-* * * * * * * * * * * * * *   N O T I C E   * * * * * * * * * * * * * *
-* This program was prepared as an account of work sponsored by the    *
-* United States Government.  Neither the United States nor the United *
-* States Department of Energy nor any of their employees, nor any of  *
-* their contractors, subcontractors, or their employees, makes any    *
-* warranty, express or implied, or assumes any legal liability or     *
-* responsibility for the accuracy, completeness or usefulness of any  *
-* information, apparatus, product or process disclosed, or represents *
-* that its use would not infringe privately owned rights.             *
-* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
-
 C   --Developed at Sandia National Laboratories.
-C   --
-C   --Current author and code sponsor: Amy Gilkey
-C   --
-C   --Revision History:
-C   --   01/88  Changed to SELECT/LIST/PRINT structure
-C   --   10/87  Added EXODUS database (Amy Gilkey)
-C   --   04/86  Created (Amy Gilkey)
 C   --
 C   --Source is in FORTRAN 77
 C   --
 C   --External software used:
 C   --   SUPES package (dynamic memory, free-field reader, FORTRAN extensions)
 C   --
-C   --Runs on VAX VMS !#VAX
-C#CTSSC   --Runs on CRAY CTSS
-
 C   --Documentation:
 C   --   "User's Manual for GROPE"
 
@@ -111,6 +86,7 @@ C      --EXODUS - true iff EXODUS file versus GENESIS file
       LOGICAL MAPND, MAPEL
 
       LOGICAL ISEOF
+      LOGICAL CHECK
       CHARACTER*1 cdum
 
       include 'gr_qainfo.blk'
@@ -162,7 +138,8 @@ C ... By default, ultimately map both nodes and elements
 C     HOWEVER, in the transition time do not map either unless requested...
       mapel = .false.
       mapnd = .false.
-
+      check = .false.
+      
       if (narg .gt. 1) then
         do i=1, narg-1, 2
           CALL get_argument(i+0,option, lo)
@@ -187,6 +164,9 @@ C     HOWEVER, in the transition time do not map either unless requested...
               mapnd = .true.
               mapel = .true.
             end if
+          else if (option(:lo) .eq. '-check' .or.
+     *      option(:lo) .eq. '--check') then
+            check = .TRUE.
           end if
         end do
       end if
@@ -442,7 +422,7 @@ C   --Process commands
      &     C(KVNAMO+NAMLEN*(IXEV-1)), C(KVNAMO+NAMLEN*(IXNS-1)),
      $     C(KVNAMO+NAMLEN*(IXSS-1)), A(KCORD),
      *     IA(KMAPEL), IA(KDBMAPEL), IA(KMAPNO), IA(KDBMAPNO),
-     *     mapnd, mapel,
+     *     mapnd, mapel, check,
      &     A(KIDELB), A(KNELB), A(KLENE), A(KNLNK), A(KNATR),
      &     A(KLINK), A(KATRIB),
      &     A(KIDNS), A(KNNNS), A(KNDNPS), A(KIXNNS), A(KIXDNS),

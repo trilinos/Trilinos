@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2010 National Technology & Engineering Solutions
+// Copyright(C) 1999-2017 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -33,6 +33,8 @@
 #ifndef IOSS_Iogn_DashSurfaceMesh_h
 #define IOSS_Iogn_DashSurfaceMesh_h
 
+#include <Ioss_Hex8.h>
+#include <Ioss_Shell4.h>
 #include <cstddef>                        // for size_t
 #include <cstdint>                        // for int64_t
 #include <exception>                      // for exception
@@ -57,8 +59,8 @@ namespace Iogn {
   inline std::string getTopologyName(Topology topology)
   {
     switch (topology) {
-    case Shell4: return std::string("shell4");
-    case Hex8: return std::string("hex8");
+    case Shell4: return std::string(Ioss::Shell4::name);
+    case Hex8: return std::string(Ioss::Hex8::name);
     }
     throw std::exception();
   }
@@ -76,7 +78,7 @@ namespace Iogn {
     const std::vector<int> globalIdsOfLocalElements;
     const std::vector<int> globalIdsOfLocalNodes;
 
-    std::vector<SharedNode> *sharedNodes;
+    std::vector<SharedNode> sharedNodes;
 
     // A sideset' is basically an exodus sideset.  A
     // sideset has a list of elements and a corresponding local
@@ -86,6 +88,7 @@ namespace Iogn {
     std::vector<std::vector<int>>         sidesetConnectivity;
     std::vector<std::vector<std::string>> sidesetTouchingBlocks;
 
+    ExodusData() : globalNumberOfNodes(0) {}
     ExodusData(const std::vector<double>           coords,
                const std::vector<std::vector<int>> elemBlockConnectivity,
                const std::vector<int>              globalNumOfElemsInBlock,
@@ -100,8 +103,7 @@ namespace Iogn {
           globalNumberOfElementsInBlock(globalNumOfElemsInBlock),
           localNumberOfElementsInBlock(localNumOfElemsInBlock), blockTopologicalData(blockTopoData),
           globalNumberOfNodes(globalNumNodes), globalIdsOfLocalElements(globalIdsOfLocalElems),
-          globalIdsOfLocalNodes(globalIdsLocalNodes), sharedNodes(nullptr),
-          sidesetConnectivity(std::move(sidesetConn)),
+          globalIdsOfLocalNodes(globalIdsLocalNodes), sidesetConnectivity(std::move(sidesetConn)),
           sidesetTouchingBlocks(std::move(sidesetBlocks))
     {
     }
@@ -109,9 +111,9 @@ namespace Iogn {
 
   struct DashSurfaceData
   {
-    const std::vector<double> &coordinates;
-    const std::vector<int> &   surfaceAConnectivity;
-    const std::vector<int> &   surfaceBConnectivity;
+    const std::vector<double> coordinates;
+    const std::vector<int>    surfaceAConnectivity;
+    const std::vector<int>    surfaceBConnectivity;
 
     int globalNumberOfNodes{};
     int globalNumberOfElements{};
@@ -122,12 +124,12 @@ namespace Iogn {
     std::vector<int> globalIdsOfLocalElements;
     std::vector<int> globalIdsOfLocalNodes;
 
-    std::vector<SharedNode> *sharedNodes;
+    std::vector<SharedNode> sharedNodes;
 
     DashSurfaceData(const std::vector<double> &coords, const std::vector<int> &connectivity1,
                     const std::vector<int> &connectivity2)
         : coordinates(coords), surfaceAConnectivity(connectivity1),
-          surfaceBConnectivity(connectivity2), sharedNodes(nullptr)
+          surfaceBConnectivity(connectivity2)
     {
       this->setSerialDefaults();
     }
@@ -206,7 +208,7 @@ namespace Iogn {
     void element_map(std::vector<int> &map) const override;
 
   private:
-    DashSurfaceData &mDashSurfaceData;
+    DashSurfaceData mDashSurfaceData;
   };
 
   class ExodusMesh : public GeneratedMesh

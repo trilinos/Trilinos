@@ -1,0 +1,192 @@
+\chapter{Introduction}
+
+The applications \exodiff{}, \epu{}, \ejoin{}, and \conjoin{} are
+documented in this report.  These applications are members of the
+Sandia Engineering Analysis Code Access System (SEACAS~\cite{bib:seacas})
+which is used by analysts at Sandia National Laboratories.  The
+applications all read and/or write finite element databases stored in
+the \exo{}~\cite{bib:exodus} format.
+
+Each application is targeted at a few specific areas of functionality:
+
+\begin{description}
+\item[\exodiff] compares the results data from two \exo{} files with 
+user-specified relative or absolute tolerances. Output is either (1)~a
+summary of the differences, or (2)~a new \exo{} database where each
+variable is the difference of the variables in the input files.
+Typical uses are for verifying the results written by an application
+code in regression testing or for comparing the results of multiple
+analyses in a parameter study. \exodiff{} is described in
+Chapter~\ref{ch:exodiff}\footnote{Richard Drake, \SNLA, was
+responsible for the initial design and creation of \exodiff}.
+
+\item[\epu] combines multiple \exo{} databases produced by a parallel
+application into a single \exo{} database.  \epu{} provides several
+options for controlling the output database contents.  Typical uses
+are for combining two or more processor-specific \exo{} databases into
+a single \exo{} database.
+\epu{} is described in Chapter~\ref{ch:epu}. 
+
+\item[\ejoin] joins two or more \exo{} databases into a single
+\exo{} database. The input databases must have disjoint meta and bulk data.
+That is, 
+\begin{itemize}
+\item element blocks are not combined in the output model.  Each
+element block in each input file will produce an element block in the
+output file. Similarly for nodesets and sidesets.
+\item Each node in each input file will produce a node in the output
+file unless one of the node matching options
+(\param{-match\_node\_ids} or \param{-match\_node\_coordinates}) is specified.
+\item Each element in each input file will produce an element in the
+output file. 
+\end{itemize}
+If any of the input databases have timesteps, then the timestep values
+and counts must match on all databases with timesteps.
+\ejoin{} is described in Chapter~\ref{ch:ejoin}. 
+
+\item[\conjoin] joins two or more \exo{} databases into a single
+database. The input databases should represent the same model meta
+data and similar bulk data with results data written sequentially. The
+output database will contain the model geometry and all of the
+non-temporally-overlapping results data. For example, if the first
+database contains time data from 0 to 5 seconds, and the second
+database contains time data from 4 to 10 seconds; the output database
+will contain time data from 0 to 10 seconds.  Typical uses are to join
+databases written from restarted analyses into a single database.
+\conjoin{} is described in Chapter~\ref{ch:conjoin}. 
+\end{description}
+
+Three of the applications above are used to join multiple \exo{}
+databases into a single \exo{} database, so it can be confusing to
+decide which code should be used.
+\begin{itemize}
+\item If the multiple \exo{} databases were created as the output from a
+parallel analysis code with each compute processor writing its portion
+of the model, then \epu{} would be used to join the databases.
+
+\item If the multiple \exo{} databases each contain a distinct portion of the
+analysis model, then \ejoin{} would be used to join the databases.
+
+\item If the multiple \exo{} databases each contain basically the same
+analysis model at different times throughout the analysis event, then
+\conjoin{} would be used to join the databases.
+
+\end{itemize}
+
+\section{\exo{} Concepts}
+The \exo{} database documentation can be accessed at
+\url{http://jal.sandia.gov/SEACAS/Documentation/exodusII-new.pdf} or \url{http://sourceforge.net/projects/exodusii/files/Documentation/Documentation/exodusII-4.pdf}. It
+contains a full detailed description of \exo{}. This section presents
+an overview of the concepts and structure of an \exo{} database to give some
+details which will be referred to in subsequent chapters. An \exo{}
+database contains groupings of nodes and elements.  The groupings or
+entities include element blocks, nodesets, and sidesets.
+
+\subsection{Meta Data and Bulk Data}
+The data or information in an \exo{} database can be grouped into two
+major types: meta data and bulk data.  The meta data is the data that
+gives an overview of the model and geometry that the \exo{} database
+contains. It is data like:
+\begin{itemize}
+\item element block, nodeset, sideset counts, ids, and names;
+\item the topology of the elements in an element block;
+\item the names of the transient variables and which entities the
+	variables are defined on.  
+\item shape and position of the entities, i.e., the model ``topology''.
+\end{itemize}
+
+The bulk data is the ``problem size'' data such as the ids and
+coordinates for each node; the ids, connectivity, and attributes for
+each element; the list of nodes in a nodeset and the list of elements
+and element faces in a sideset; the values of the transient data on
+each node and element.
+
+The meta data is a higher-level view of the model and the bulk data is
+one realization of that model.  Note that several different databases
+can have the same or similar meta data; but they could have vastly
+different bulk data.  As a trivial example, the meta data for a model
+could be:
+\begin{itemize}
+\item a single element block named ``cube'' with an id of 1.
+\item element block ``cube'' contains ``hex8'' elements.
+\item element block ``cube'' is centered on the origin and is 10
+inches per side with faces aligned with X, Y, and Z planes.
+\item a nodeset named ``PosX'' with id 1 on the positive X face.
+\end{itemize}
+
+One instance of bulk data for this meta data is an element block with
+1,000,000 hexes with global ids ranging from 2 to 2,000,000 by 2.
+Another instance of bulk data for the same meta data could have the
+same element block with 8 hex elements with global ids
+10,20,30,40,50,60,70,80.
+
+Another example of multiple bulk data instances for a single meta data
+is decomposing an \exo{} database for a parallel run on 4 processors.
+Each decomposed database would have the same meta data, but the bulk
+data would be different on each decomposed database.
+
+\subsection{Database Sections}
+An \exo{} database is often thought of as containing multiple
+``sections''.  These include the ``mesh'' section which includes the
+bulk data describing the geometries; the element connectivities; and
+collections of nodes and/or (element, element-local-face) pairs which
+can be used for boundary conditions.  Basically, all of the
+non-transient portions of the bulk data.  Historically, this has been
+called the ``genesis'' section of the \exo{} database.  The other
+section includes the ``results'' portion of the bulk data which is the
+global, nodal, element, nodeset, and sideset variables; and the
+timestep time values. The ``results'' portion is also called the
+``transient'' section and is usually applied to transient data with
+each time step associated with a unique output state of the analysis
+code. The results portion is not required to be time-related data and
+can store information about any serialized data. For example, the
+calculated modal frequencies and mode shapes of the model could be
+stored in the ``transient'' section.
+
+The \exo{} database documentation includes much more detail, but the
+above terminology should be helpful for some of the utility
+descriptions that follow in subsequent chapters.
+
+\section{Licensing}
+Each of the utilities described in this section is open-source
+licensed under the ``New BSD License'' or ``Modified BSD License''.
+The terms of the license are:
+
+\begin{quote}
+Copyright(C) 20XX\footnote{The year is different for each of \epu{},
+\exodiff, \ejoin, and \conjoin.} National Technology & Engineering Solutions
+of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
+NTESS, the U.S. Government retains certain rights in this software.
+
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions are
+met:
+
+\begin{itemize}
+\item Redistributions of source code must retain the above copyright
+      notice, this list of conditions and the following disclaimer.
+
+\item Redistributions in binary form must reproduce the above
+      copyright notice, this list of conditions and the following
+      disclaimer in the documentation and/or other materials provided
+      with the distribution.
+
+\item Neither the name of NTESS nor the names of its
+      contributors may be used to endorse or promote products derived
+      from this software without specific prior written permission.
+\end{itemize}
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+"AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+\end{quote}
+
+The software is available at \url{https://github.com/gsjaardema/seacas}.

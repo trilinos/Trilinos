@@ -1,0 +1,42 @@
+
+
+
+     NUMBERS, Revised:  9/09/87
+
+     Run on 05/17/88 at 08:29:00
+     Compiled on a VAX 8600 under VMS 4.3
+
+     Genesis: UB:[GDSJAAR.EXECUTE.NUMBERS]2D.EXO;2
+
+     Title:   M140 CASK -- 2D -- FINAL DIMENSIONS::
+
+     Number of Nodes:      1372
+     Number of Elements:   1150
+     Two-Dimensional Mesh, Axisymmetric, 4-Point Quadrature
+
+     Material    Density        Volume          Mass        Label
+         1      1.000E+00      7.358E+05      7.358E+05                     
+         2      1.000E+00      1.251E+05      1.251E+05                     
+         3      1.000E+00      7.345E+04      7.345E+04                     
+         4      1.000E+00      3.634E+05      3.634E+05                     
+         5      1.000E+00      6.506E+04      6.506E+04                     
+         6      1.000E+00      1.229E+05      1.229E+05                     
+                              ----------     ----------
+                  Total:       1.486E+06      1.486E+06
+
+     MASS PROPERTIES--- (Inertias at centroid)
+      Xc =  0.000E+00   Yc =  9.692E+01   Zc =  0.000E+00
+     Ixx =  5.244E+09  Iyy =  2.117E+09  Izz =  5.244E+09
+
+
+
+     Mat  Minimum   Elem   Maximum   Elem   Average   Num    Minimum   Elem
+     Num    Area    Num      Area    Num      Area    Elem   T Factor  Num
+      1   9.22E-01   320   1.68E+01    90   6.72E+00   439   6.69E-01   312
+      2   8.08E-01   696   2.53E+00   693   1.54E+00   311   5.48E-01   440
+      3   2.54E+00   863   7.19E+00   767   4.47E+00   128   1.10E+00   863
+      4   2.10E+01   978   2.10E+01   972   2.10E+01   112   2.24E+00   929
+      5   2.66E+00  1024   7.61E+00  1033   6.37E+00    48   7.55E-01  1023
+      6   2.12E+01  1139   2.12E+01  1098   2.12E+01   112   2.28E+00  1066
+
+        0.580 Seconds of CPU time used.  5.0E-04 Seconds per element.

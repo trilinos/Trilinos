@@ -1,0 +1,397 @@
+\chapter{EPU}\label{ch:epu}
+\section{Introduction}
+One of the typical processes for performing parallel analyses with
+\exo{} databases is to decompose the finite element model into
+multiple pieces such that each processor can read and write its own
+portion of the finite element model and results data.  For example, if
+a parallel analysis is to be run on the mesh file \file{mesh.g} using
+8 processors, then \file{mesh.g} will be decomposed into 8 pieces or submeshes:
+\file{mesh.g.8.0}, \file{mesh.g.8.1}, $\ldots$,
+\file{mesh.g.8.7}. Each submesh will contain a subset of the nodes and
+elements of the entire mesh and some communication data indicating
+which nodes and elements are on the boundary of this submesh and the
+submesh of one or more other processors. 
+
+The analysis code is then executed in parallel and each processor
+reads its portion of the mesh from its respective submesh; when it
+outputs results and/or restart data, it creates a new file containing
+its portion of the submesh and the results that are calculated on that
+submesh.  An ``N'' processor run will create ``N'' separate files for
+each results and/or restart ``dataset'' that it creates.
+
+The analyst may want to visualize or postprocess the data in the
+submeshes as a single mesh, so each submesh needs to be joined
+together to create a single ``global'' file containing all of the
+data.\footnote{Note that some visualizers can handle the separate,
+per-processor files, so joining is not required in all cases.}
+
+This joining together of parallel submeshes is the purpose of \epu{}.
+It will read the data from each submesh and map it into the correct
+location in the ``global'' file; discarding duplicate data as
+required.
+
+The name \epu{} is an acronym for {\em \exo{} Parallel Unification}
+Program.  The ``alternate'' meaning of \epu{} is {\em E Pluribus Unum} which means
+``Out of Many One'' which is described in more detail at
+\url{http://www.greatseal.com/mottoes/unum.html}. 
+
+\section{Invoking \epu}
+\epu{} is typically invoked using a command line similar to:
+\begin{syntax}
+epu [options] basename
+epu [options] -auto full_filename
+\end{syntax}
+Where \param{basename} is the ``base'' portion of the filename.  For
+example, if one of the files to be joined is \file{results.e.8.3},
+then the basename would be specified as \file{results}.  
+
+\subsubsection{File Naming Convention}
+The naming of the per-processor files must follow the convention that
+the last two dot-separated suffixes of the filename represent the
+total processor count and the zero-based processor rank of the
+processor that created the file, respectively.  Also, the last suffix
+(rank) must be zero-filled such that the width of the field is the
+same as the width required to represent the processor count.  For
+example, if the files were written for a 1000 processor run, the files
+would be \file{basename.e.1000.0000} through
+\file{basename.e.1000.0999}. 
+
+\subsubsection{Defaults and Requirements}
+The default behavior is that \epu{} will join all per-processor files
+into the output file; all transient variables (global, nodal, element,
+nodeset, and sideset) will be transferred for all timesteps.  It is
+assumed that all per-processor files represent a portion of the same
+overall finite element model and that they all have the same \exo{}
+meta data including variable names.  In addition, each file must have
+the same timesteps.
+
+Several options are available to modify the default execution of
+\epu{}. These are documented below.
+
+\subsection{Options}
+
+\subsubsection{Basic invocation options}
+The majority of the time, the filename-related options to \epu{} can
+be determined automatically by passing the \param{-auto} option and
+instead of the basename, the full filename of one of the
+files is specified. For example, given files of the form:
+\file{/scratch/user/results.e.16.00},
+\file{/scratch/user/results.e.16.01}, $\ldots$,
+\file{/scratch/user/results.e.16.15}; \epu{} could be invoked
+as:
+\begin{syntax}
+	epu -auto /scratch/user/results.e.16.00
+\end{syntax}
+and the output file would be written to \file{results.e} in the
+current directory. 
+
+\subsubsection{Disk-related filename options}
+If this simple invocation does not work for some reason, then the
+following options can be used for full control over the reading and writing of the
+files. \epu{} will read and write files of the form:
+\begin{syntax}
+        Reads:  root\#o/sub/basename.suf.\#p.0 to
+                root(\#o+\#p)%\#r/sub/basename.isuf.\#p.\#{p-1}
+        Writes: current\_directory/basename.osuf
+\end{syntax}
+Where:
+\begin{description}
+\item[current\_directory] By default, this is the directory from which
+\epu{} is being run.  It can be set via the \param{-current\_directory
+<val>} option.
+
+\item[basename] The base portion of the filename before the suffices
+and after the root/sub portion (if any).
+\item[isuf] The suffix of the input files not including the
+processor-specific data. For example, given the file
+\file{results.e.8.0}, the suffix would be \param{e}.
+\item[osuf] The suffix that should be used for the output file.
+\item[\#p] The number of processors the files were decomposed for.
+\item[root] The ``non-raid'' portion of the complete pathname (see
+below).  If not on a raid system, this can be omitted.
+\item[sub]  The portion of the pathname following the raid data (see
+below). If not on a raid system, this can be omitted.
+\item[\#o] The ``raid offset'' 
+\item[\#r] The ``raid count'' which is the number of raid disks. 
+\end{description}
+
+The raid options are not used very often, but can be very useful if
+your compute system uses a filesystem that requires it.  On some
+compute systems, a parallel job needs to spread its data across
+multiple filesystems in order to load balance the IO requests.  The
+filesystem mount points will typically look something like:
+/scratch0, /scratch1, /scratch2, /scratch3.  Within these filesystems,
+the directory hierarchy will typically match.  So, for example, assume
+that a 16 processor job is run on a filesystem like this and the
+files to be joined are named:
+
+\renewcommand\arraystretch{1.0}
+\begin{tabular}{ll}
+/scratch0/user/results.e.16.00 & /scratch1/user/results.e.16.01 \\
+/scratch2/user/results.e.16.02 & /scratch3/user/results.e.16.03 \\
+/scratch0/user/results.e.16.04 & /scratch1/user/results.e.16.05 \\
+/scratch2/user/results.e.16.06 & /scratch3/user/results.e.16.07 \\
+/scratch0/user/results.e.16.08 & /scratch1/user/results.e.16.09 \\
+/scratch2/user/results.e.16.10 & /scratch3/user/results.e.16.11 \\
+/scratch0/user/results.e.16.12 & /scratch1/user/results.e.16.13 \\
+/scratch2/user/results.e.16.14 & /scratch3/user/results.e.16.15 \\
+\end{tabular}
+
+If the user is in some other directory and wants the output file
+written to /scratch0/user/results.epu, the command to do this
+would be:
+\begin{syntax}
+	epu -extension e -output\_extension epu -raid_count 4
+		-processor_count 16 -Root\_directory /scratch
+		-Subdirectory user -current\_directory
+		/scratch0/user  results
+\end{syntax}
+If for some reason, the processor 0 file had been written to the
+\file{/scratch2} filesystem and then subsequent files followed the
+cycle, then the additional option \param{-offset 2} specifying the
+``raid offset'' would be added.
+
+The options that control this are:
+\renewcommand\arraystretch{1.5}
+\begin{longtable}{lp{4.0in}}
+\param{-auto} 		& Automatically set Root, Proc, Ext from the
+	name of one of the files being joined.  The filename is used in place
+	of ``basename''. \\
+\param{-extension <val>}& \exo{} database extension for the input
+files   \\
+\param{-output\_extension <val>} & \exo{} database extension for the output file  \\
+\param{-offset <val>} 	& Raid Offset  \\
+\param{-raid\_count <val>} & Number of raids  \\
+\param{-processor\_count <val>} & Number of processors  \\
+\param{-current\_directory <val>} & Current directory  \\
+\param{-Root\_directory <val>} & Root directory  \\
+\param{-Subdirectory <val>} & Subdirectory containing input exodusII files  \\
+\end{longtable}
+Note that the majority of the time, this complicated option setting is
+not required and everything can be set automatically via the
+\param{-auto} option.
+
+\subsubsection{Additional Options}
+
+\begin{longtable}{lp{4.0in}}
+\param{-help} 		& Print the version and a summary of all options and exit.  \\
+\param{-version} 	& Print version and exit.  \\
+\param{-map} 		& Map element ids to original order if possible [default].  \\
+\param{-nomap} 		& Do not map element ids to original order.  \\
+\param{-debug <val>} 	& Debug level (values are added together). \par
+	\begin{tabular}{l@{ = }l}
+		                  1 & Timing information.\\
+        		          2 & Check consistent nodal field values between processors.\\
+		                  4 & Verbose Element block information.\\
+		                  8 & Check consistent nodal coordinates between processors.\\
+        		         16 & Verbose Sideset information.\\
+        		         32 & Verbose Nodeset information.\\
+        		         64 & Put exodus library into verbose mode.\\
+        		        128 & Check consistent global field values between processors.  \\
+
+	\end{tabular}\\
+\param{-width <val>} & Width of output screen, default = 80.  \\
+\param{-add\_processor\_id} & Add 'processor\_id' element variable to
+the output file. The value of the variable is the processor on which
+that element existed.  \\
+\param{-append} & Append to an existing database instead of overwriting an existing database. 
+	Timestep transfer will start after last timestep on the
+	existing database.  \\
+
+\param{-steps <val>} & Specify a subset of timesteps to transfer to output file.\par
+	Format is begin:end:step. For example, -steps 1:10:2
+	would result in steps 1,3,5,7,9 being transferred to the output
+	databaes. Enter LAST to just transfer last step, for example, ``-steps LAST''  \\
+\param{-Part\_count <val>} & How many pieces (files) of the model
+	should be joined. This option is typically used with either
+	the \param{-start\_part} or the \param{-subcycle} options in
+	the case where the user wants to only join a subset of the
+	individual per-processor files.\\
+
+\param{-start\_part <val>} & Start with processor {n} file
+(0-based). Used with the \param{-Part\_count} option   \\
+
+\param{-subcycle [val]} & Subcycle. Create 'val' subparts if 'val' is specified.
+                Otherwise, create multiple parts each of size 'Part\_count'.
+                The subparts can then be joined by a subsequent run of \epu{}.
+	This option is usually used for one of two cases:
+	\begin{enumerate}
+	\item The maximum number of simultaneously open files on the filesystem
+		or system is less than the processor
+		count\footnote{\epu{} will output a message to standard output if this
+		happens.}.  In that case, unless this option is used, \epu{} will have to 
+		open and close each file for each time it is accessed
+		which can take a long time.
+	\item The user wants to use a parallel visualization program that can
+		handle a model split into multiple parts, but wants
+		fewer parts than were used in the parallel analysis run.
+	\end{enumerate}
+	If the parameters result in the creation of ``n'' parts, then
+	the output files written will be \file{basename.osuf.n.0}
+	through \file{basename.osuf.n.n-1}.\\
+
+\param{-gvar <val>} & Comma-separated list of global variables to be
+joined or ALL or NONE.  The default behavior is that all global
+variables will be written to the output file.\\
+\param{-evar <val>} & Comma-separated list of element variables to be joined or ALL or NONE.
+                Variables can be limited to certain blocks by appending a
+                colon followed by the block id.  For example,
+		\param{-evar sigxx:10:20} would result in the variable
+		\param{sigxx} would be written for element blocks with
+		id 10 and 20. The default behavior is that all element
+		variables will be written to the output file.  \\
+\param{-nvar <val>} & Comma-separated list of nodal variables to be
+		joined or ALL or NONE. The default behavior is that all nodal 
+		variables will be written to the output file. \\
+\param{-nsetvar <val>} & Comma-separated list of nodeset variables to
+		be joined or ALL or NONE.  The default behavior is that all nodeset 
+		variables will be written to the output file.\\
+\param{-ssetvar <val>} & Comma-separated list of sideset variables to
+		be joined or ALL or NONE.  The default behavior is that all sideset 
+		variables will be written to the output file.\\
+\param{-omit\_nodesets} & Don't transfer nodesets to output file.  \\
+\param{-omit\_sidesets} & Don't transfer sidesets to output file.  \\
+\param{-copyright} & Show copyright and license data.  \\
+\end{longtable}
+
+When \epu{} is invoked, it will parse the user-specified options from
+the command line and it will also see if the environment variable
+\param{EPU\_OPTIONS} exists.  If the variable exists, then it will be
+parsed first followed by the parsing of the options on the command line.
+
+\section{Example}
+The output below shows the results of running the following command:
+\begin{syntax}
+	epu -auto epu_example.rsout.8.0
+\end{syntax}
+
+The first section of the output shows the code version followed by some
+information showing how the \param{-auto} option decoded the filename
+and automatically set some of the filename-related options.  It then
+shows which files will be used in the joining process.
+
+\begin{verbatim}
+epu --  E Pluribus Unum
+	(Out of Many One -- see http://www.greatseal.com/mottoes/unum.html)
+	ExodusII Parallel Unification Program
+	(Version: 3.30) Modified: 2011/01/12
+
+The following options were determined automatically:
+	 basename = 'epu_example'
+	-processor_count 8
+	-extension rsout
+	-Root_directory 
+
+Input(0): './epu_example.rsout.8.0'
+...
+Input(7): './epu_example.rsout.8.7'
+\end{verbatim}
+
+\sectionline
+The next section shows the progress of reading the meta data
+information from each file and creating the output file and populating
+the mesh portion of the bulk data.
+
+\begin{verbatim}
+**** READ LOCAL (GLOBAL) INFO ****
+Node map is contiguous.
+Finished reading/writing Global Info
+
+
+**** GET BLOCK INFORMATION (INCL. ELEMENT ATTRIBUTES) ****
+Global block count = 3
+
+Getting element block info.
+Element id map is contiguous.
+
+**** GET SIDE SETS *****
+
+**** GET NODE SETS *****
+
+**** BEGIN WRITING OUTPUT FILE *****
+Output:   './epu_example.rsout'
+Writing global node number map...
+Writing out master global elements information...
+
+Reading and Writing element connectivity & attributes
+
+
+
+**** GET COORDINATE INFO ****
+Wrote coordinate names...
+Wrote coordinate information...
+
+\end{verbatim}
+
+\sectionline
+At this point, the non-transient portion of the output file is
+complete and all that remains is defining the results data and
+transferring it to the output file.  The timing information in the
+timestep transfer gives an estimate of how long the transfer is
+expected to take; its accuracy can vary depending on the machine load
+and the file system load.  
+
+At the end, a summary of the output mesh is given.
+
+\begin{verbatim}
+**** GET VARIABLE INFORMATION AND NAMES ****
+Found 11 global variables.
+	cumulative_topology_modification  current_eigenvalue                
+	delta_t                           hourglass_energy                  
+	last_rebalance_comm_load          last_rebalance_step
+	stepcount                         strain_external_energy            
+	timestep_lanczos_last             timestep_nodal                    
+	updated_step_count                
+
+Found 14 nodal variables.
+	displacement_x                    displacement_y                    
+	displacement_z                    3by3_block_diag_pc_xx             
+	acceleration_x                    acceleration_y
+	acceleration_z                    force_constraint_x
+	force_constraint_y                force_constraint_z
+	temperature                       velocity_x                        
+	velocity_y                        velocity_z                        
+
+Found 11 element variables.
+	dilmod                       element_mass                 
+	stress_xx                    stress_yy                    
+	stress_zz                    stress_xy                    
+	stress_yz                    stress_zx                    
+	temperature                  timestep                     
+	volume                       
+
+
+**** GET TRANSIENT NODAL, GLOBAL, AND ELEMENT DATA VALUES ****
+
+Number of time steps on input databases = 93
+
+	Transferring step 1 to step 93 by 1
+Wrote step  1, time 1.0000e-05		[  1.1%, Elapsed=1.1s, ETA=1.7m]
+Wrote step  2, time 1.0000e-02		[  2.2%, Elapsed=2.2s, ETA=1.7m]
+Wrote step  3, time 2.0000e-02		[  3.2%, Elapsed=3.3s, ETA=1.7m]
+
+... deleted ...
+
+Wrote step 90, time 8.9000e-01		[ 96.8%, Elapsed=3.5m, ETA=7.1s]
+Wrote step 91, time 9.0000e-01		[ 97.8%, Elapsed=3.6m, ETA=4.7s]
+Wrote step 92, time 9.1000e-01		[ 98.9%, Elapsed=3.6m, ETA=2.4s]
+Wrote step 93, time 9.2000e-01		[100.0%, Elapsed=3.7m, ETA=0.0s]
+******* END *******
+IO Word size is 8 bytes.
+ Title: EPU Example File
+
+ Number of coordinates per node       =        3
+ Number of nodes                      =    35946
+ Number of elements                   =    28913
+ Number of element blocks             =        3
+
+ Number of nodal point sets           =        3
+ Number of element side sets          =        3
+\end{verbatim}
+\section{Related Codes}
+\epu{} replaces the functionality of the
+\code{nem\_join}~\cite{bib:nem_join} code.  \epu{} provides a superset of
+the \code{nem\_join} functionality and is also much faster in almost
+all cases.  \epu{} also supports nodeset and sideset variables and the
+naming of element blocks, nodesets, and sidesets which are not
+supported by \code{nem\_join}.

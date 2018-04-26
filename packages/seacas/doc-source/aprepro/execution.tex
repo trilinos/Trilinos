@@ -1,0 +1,105 @@
+\chapter{Execution}\label{ch:execution}
+
+\section{Aprepro Execution and Program Options}
+\aprepro{} is executed with the command:
+\begin{apinp}
+aprepro [--parameters] [-dsviehMWCq] [-I path] [-c char] [var=val] filein fileout
+\end{apinp}
+
+The effects of the parameters are:
+\begin{longtable}{lp{5.0in}}
+--debug (-d) &  Dump all variables, debug loops/if/endif \\
+--dumpvars (-D) & Dump all variables at end of run \\
+--version (-v) &  Print version number to stderr           \\
+--comment char (-c char) &  Change comment character to 'char'       \\
+--immutable (-X) &  All variables are immutable--cannot be modified \\
+--interactive (-i) &  Interactive use, no buffering of output.       \\
+--include path (-I path) &  Include file or include path. Any variables defined in the include file will be immutable.\\
+--one\_based\_index (-1) & Array indexing is one-based (default = zero-based) \\
+--exit\_on (-e) &  If this is enabled, \aprepro{} will exit when any of the strings 
+EXIT, Exit, exit, QUIT, Quit, or quit are entered. Otherwise, \aprepro{} will exit at end of 
+file. \\
+--message (-M) &  Print INFO messages. (See Chapter~\ref{ch:errors} for a list of INFO messages.) \\
+--nowarning (-W) &  Do not print warning messages. (See Chapter~\ref{ch:errors} for a list of warning messages.) \\
+--copyright (-c) &  Print copyright message                  \\
+--quiet (-q) &  Do not anything extra to stdout          \\
+--help (-h) &  Print this list                          \\
+
+var=val &  Assign value \var{val} to variable \var{var}. This lets you dynamically set
+the value of a variable and change it between runs without editing the
+input file.  Multiple \textit{var=val} pairs can be specified on the
+command line.  A variable that is defined on the command line will be
+an immutable variable whose value cannot be changed\footnote{Unless
+the variable name begins with an underscore.}.  If \var{var} is a string variable, then
+\var{val} needs to be surrounded by escaped double quotes. For example \cmd{name=\textbackslash{}"My\textbackslash Name\textbackslash{}"} will define the string variable \var{name}.\footnote{Note that any spaces in the string variables value must be escaped also.}\\
+
+input\_file &  specifies  the  file  that  contains  the \aprepro{} input. If this parameter is
+omitted, \aprepro{} will run interactively. \\
+
+output\_file &  specifies   the   file \aprepro{} will write the processed data to. If this
+parameter is omitted, \aprepro{} will write the data to the terminal.   (stdout) \\
+\end{longtable}
+
+The \cmd{-} followed by a single letter shown in the parameter descriptions above are optional short-options
+that can be specified instead of the long options. For example, the following 
+two lines are equivalent:
+
+\begin{apinp}
+aprepro --debug --nowarning --statistics --comment \# 
+aprepro -dWsc\#
+\end{apinp}
+Note that the short options can be concatenated.
+
+\section{Interactive Input}
+
+If no input file is specified when \aprepro{} is executed, then all
+input will be read from standard input; or in other words, typed in by
+the user.  In this mode, there are a few command-line editing and
+recall capabilities provided.
+
+The command-line editing provides Emacs style key bindings and
+history functionality.  The key bindings are shown in the following
+table. The syntax \cmd{\^{}X} indicates that the user should press and
+hold the ``control'' key and then press the \cmd{X} key. The syntax
+\cmd{M-X} indicates pressing the ``meta'' key followed by the \cmd{X}
+key. The meta key is sometimes escape, or sometimes ``alt'', or some
+other key depending on the users keymap.
+
+\begin{longtable}{lp{4.0in}}
+\caption{Key Bindings used in the interactive input to \aprepro{}} \\
+\hline
+Key & Function \\
+\hline
+\endhead
+\^{}A/\^{}E & Move cursor to beginning/end of the line. \\
+\^{}F/\^{}B & Move cursor forward/backward one character. \\
+\^{}D       & Delete the character under the cursor. \\
+\^{}H       & Delete the character to the left of the cursor. \\
+\^{}K       & Kill from the cursor to the end of line. \\
+\^{}L       & Redraw current line. \\
+\^{}O       & Toggle overwrite/insert mode. Initially in insert mode. Text 
+              added in overwrite mode (including yanks) overwrite 
+              existing text, while insert mode does not overwrite. \\
+\^{}P/\^{}N & Move to previous/next item on history list. \\
+\^{}R/\^{}S & Perform incremental reverse/forward search for string on 
+              the history list.  Typing normal characters adds to the current 
+              search string and searches for a match. Typing \^{}R/\^{}S marks 
+              the start of a new search, and moves on to the next match. 
+              Typing \^{}H deletes the last character from the search 
+              string, and searches from the starting location of the last search. 
+              Therefore, repeated \^{}H's appear to unwind to the match nearest 
+              the point at which the last \^{}R or \^{}S was typed.  If \^{}H is 
+              repeated until the search string is empty the search location 
+              begins from the start of the history list.  Typing ESC or 
+              any other editing character accepts the current match and 
+              loads it into the buffer, terminating the search.  \\
+\^{}T       & Toggle the characters under and to the left of the cursor.  \\
+\^{}U       & Kill from beginning to the end of the line. \\
+\^{}Y       & Yank previously killed text back at current location.  Note that 
+              this will overwrite or insert, depending on the current mode. \\
+M-F/M-B     & Move cursor forward/backward one word. \\
+\^{}SPC     & Set mark. \\
+\^{}W       & Kill from mark to point. \\
+\^{}X       & Exchange mark and point. \\
+RETURN      & returns current buffer to the program.
+\end{longtable}

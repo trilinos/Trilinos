@@ -1,0 +1,309 @@
+TITLE
+ 2D MESH - CMT W/ APPROXIMATE FLANGES - 8/1/88 - PUNCH
+$
+$ ARC CENTER POINTS
+$
+POINT    1   0.0    24.2
+POINT    2   0.0    12.7
+POINT    3  43.375 -56.0818
+POINT    4  31.50  -47.0
+$
+$ OUTER SHELL - 3/8" THICK
+$
+$ --- OUTER WALL
+POINT    100    0.0        -71.925
+POINT    120    45.7746    -60.3264
+POINT    124    47.6384    -59.0671
+POINT    130    50.5000    -57.1499
+POINT    134    50.5000    -55.0819
+POINT    140    50.5000    -54.0819
+POINT    150    50.5000    -52.8319
+POINT    160    48.2500    -50.5819
+POINT    170    48.2500    -25.0000
+POINT    180    48.2500      0.00
+$
+LINE     100   CIRC  100   120   1   200   1.004
+LINE     120   STR   120   124   0     6
+LINE     124   STR   124   130   0    18
+LINE     130   STR   130   134   0    10
+LINE     134   STR   134   140   0     8
+LINE     140   STR   140   150   0     8
+LINE     150   STR   150   160   0    14
+LINE     160   STR   160   170   0    20
+LINE     170   STR   170   180   0    20
+$
+$ --- INNER WALL
+POINT    200   0.0         -71.5500
+POINT    220   45.59       -60.0000
+POINT    224   47.0612     -58.6630
+POINT    230   47.875      -56.0819
+POINT    234   47.875      -55.0819
+POINT    240   47.875      -54.5819
+POINT    242   47.875      -54.0819
+POINT    260   47.875      -50.5819
+POINT    235   49.1875     -55.0819
+POINT    237   49.1875     -54.5819
+POINT    243   49.1875     -54.0819
+POINT    270   47.8750     -25.0000
+POINT    280   47.8750       0.00
+$
+LINE     200   CIRC  200   220   1   200  1.004
+LINE     220   CIRC  220   224   3     6
+LINE     224   CIRC  224   230   3    14
+LINE     230   STR   230   234   0    10
+LINE     232   STR   235   237   0     4
+LINE     234   STR   237   243   0     4
+LINE     240   STR   240   242   0     4
+LINE     242   STR   242   260   0    20
+LINE     250   STR   250   260   0    12
+LINE     260   STR   260   270   0    20
+LINE     270   STR   270   280   0    20
+$
+$ --- INNER TO OUTER
+LINE     201   STR   100   200   0     4
+LINE     221   STR   120   220   0     4
+LINE     223   STR   124   224   0     4
+LINE     231   STR   130   230   0    12
+LINE     233   STR   234   235   0     6
+LINE     235   STR   235   134   0     6
+LINE     241   STR   240   237   0     6
+LINE     243   STR   243   140   0     6
+LINE     245   STR   242   243   0     6
+LINE     261   STR   160   260   0     2
+LINE     271   STR   170   270   0     2
+LINE     281   STR   180   280   0     2
+$
+$ --- REGIONS - MATERIAL 1
+REGION   20    1     -100  -221  -200  -201
+REGION   26    1     -120  -223  -220  -221
+REGION   21    1     -124  -231  -224  -223
+REGION   22    1     -130  -235  -233  -230  -231
+REGION   23    1     -134  -243  -234  -232  -235
+REGION   24    1     -234  -245  -240  -241
+REGION   25    1     -140  -150  -261  -242  -245  -243
+REGION   27    1     -160  -271  -260  -261
+REGION   28   11     -170  -281  -270  -271
+SCHEME   25 TS
+SCHEME   21 TS
+$
+$ --- SLIDE LINES
+$
+ELEMBC   200 = 200, 220, 224, 230, 233, 232, 241, 240, 242, 250, 260, 270
+ELEMBC   100 = 100, 120, 124, 130, 134, 140, 150, 160, 170
+NODEBC     1 = 201
+$
+$ INNER SHELL - 1/4" THICK
+$
+$ --- OUTER WALL
+POINT    500    0.0        -59.5500
+POINT    520    33.7167    -51.2011
+POINT    524    36.0230    -49.7260
+POINT    530    38.6250    -48.0627
+POINT    534    38.6250    -46.0000
+POINT    540    38.6250    -45.0000
+POINT    550    38.6250    -43.7500
+POINT    560    36.2500    -41.3750
+POINT    570    36.2500    -25.0000
+POINT    580    36.2500      0.0
+$
+LINE     500   CIRC  500   520   2   200  1.004
+LINE     520   STR   520   524   0     6
+LINE     524   STR   524   530   0    14
+LINE     530   STR   530   534   0    10
+LINE     534   STR   534   540   0     8
+LINE     540   STR   540   550   0     8
+LINE     550   STR   550   560   0    14
+LINE     560   STR   560   570   0    20
+LINE     570   STR   570   580   0    20
+$
+$ --- INNER WALL
+POINT    600   0.0         -59.30000
+POINT    620   33.60       -50.9792
+POINT    624   35.3536     -49.3226
+POINT    630   36.00       -47.0000
+POINT    634   36.00       -46.0000
+POINT    640   36.00       -45.5000
+POINT    642   36.00       -45.0000
+POINT    660   36.00       -41.3750
+POINT    635   37.3125     -46.0000
+POINT    637   37.3125     -45.5000
+POINT    643   37.3125     -45.0000
+POINT    670   36.00       -25.00
+POINT    680   36.00         0.0
+$
+LINE     600   CIRC  600   620   2   200   1.004
+LINE     620   CIRC  620   624   4     6
+LINE     624   CIRC  624   630   4    14
+LINE     630   STR   630   634   0    10
+LINE     632   STR   635   637   0     4
+LINE     634   STR   637   643   0     4
+LINE     640   STR   640   642   0     4
+LINE     642   STR   642   660   0    20
+LINE     650   STR   650   660   0    12
+LINE     660   STR   660   670   0    20
+LINE     670   STR   670   680   0    20
+$
+$ --- INNER TO OUTER
+LINE     601   STR   500   600   0     4
+LINE     621   STR   520   620   0     4
+LINE     623   STR   524   624   0     4
+LINE     631   STR   530   630   0    12
+LINE     633   STR   634   635   0     6
+LINE     635   STR   635   534   0     6
+LINE     641   STR   640   637   0     6
+LINE     643   STR   643   540   0     6
+LINE     645   STR   642   643   0     6
+LINE     661   STR   560   660   0     2
+LINE     671   STR   570   670   0     2
+LINE     681   STR   580   680   0     2
+$
+$ --- REGIONS - MATERIAL 2
+REGION   60    2     -500  -621  -600  -601
+REGION   66    2     -520  -623  -620  -621
+REGION   61    2     -524  -631  -624  -623
+REGION   62    2     -530  -635  -633  -630  -631
+REGION   63    2     -534  -643  -634  -632  -635
+REGION   64    2     -634  -645  -640  -641
+REGION   65    2     -540  -550  -661  -642  -645  -643
+REGION   67    2     -560  -671  -660  -661
+REGION   68   22     -570  -681  -670  -671
+SCHEME   65 TS
+SCHEME   61 TS
+$
+$ --- SLIDE LINES
+$
+ELEMBC   600 = 600, 620, 624, 630, 633, 632, 641, 640, 642, 650, 660, 670
+ELEMBC   500 = 500, 520, 524, 530, 534, 540, 550, 560, 570
+NODEBC     1 = 601
+$
+$ --- OUTER EDGE
+POINT    300   0.0         -71.5000
+POINT    320   45.5661     -59.9559
+POINT    324   47.0212     -58.6343
+POINT    330   47.875      -56.0819
+POINT    340   47.875      -48.0627
+POINT    360   47.875      -41.3750
+POINT    370   47.875      -35.0000
+$
+LINE     300   CIRC  300   320   1    75   1.0075
+LINE     320   CIRC  320   324   3     3
+LINE     324   CIRC  324   330   3     5
+LINE     330   STR   330   340   0    11
+LINE     340   STR   340   360   0     7
+LINE     360   STR   360   370   0     6
+$ --- INNER EDGE
+POINT    400    0.0        -59.6000
+POINT    420    33.7397    -51.2447
+POINT    424    36.0230    -49.7260        
+POINT    430    38.6250    -48.0627
+POINT    450    38.6250    -43.7500
+POINT    460    36.2500    -41.3750
+POINT    470    36.2500    -35.0000
+$
+LINE     400   CIRC  400   420   2    75  1.0075
+LINE     420   STR   420   424   0     6
+LINE     424   STR   424   430   0     8
+LINE     430   STR   430   450   0     8
+LINE     450   STR   450   460   0     4
+LINE     460   STR   460   470   0     6
+$
+$ --- INNER TO OUTER
+LINE     401   STR   300   400   0    18
+LINE     421   STR   320   420   0    18
+LINE     431   STR   340   430   0    18
+LINE     461   STR   370   470   0    18
+$
+REGION   31 3  -300 -320 -324 -330 -340 -360 -461 -460 -450 -430 * 
+               -424 -420 -400 -401
+$
+$ --- SLIDELINES
+$
+ELEMBC   300 = 300, 320, 324, 330, 340, 360
+ELEMBC   400 = 400, 420, 424, 430, 450, 460
+NODEBC     1 = 401
+
+$ --- OUTER EDGE OF CARGO FOAM
+POINT    700   0.0         -59.3000 
+POINT    720   33.5770     -50.9356
+POINT    730   35.9484     -47.120
+$
+LINE     700   CIRC  700   720   2    75
+LINE     720   CIRC  720   730   4    12
+$
+$ --- TOP EDGE OF CARGO FOAM
+POINT    800   0.0          -47.120
+POINT    810   31.50        -47.120
+LINE     800   STR   800  810   0 75
+LINE     810   STR   810  730   0 12
+$ --- INNER TO OUTER
+LINE     801   STR   700  800   0 12
+LINE     803   STR   810  720   0 12
+$ --- CARGO FOAM - MATERIAL 7
+REGION  70   7 -700 -803 -800 -801
+REGION  71   7 -803 -720 -810
+SCHEME  71 = TS
+$
+$ --- SHEET ON TOP OF CARGO FOAM
+$
+POINT   900    0.0   -47.0
+POINT   910    31.50 -47.0
+POINT   920    36.00 -47.0
+LINE    900    STR 900 910 0 75
+LINE    910    STR 910 920 0 12
+LINE    901    STR 900 800 0 2
+LINE    903    STR 920 730 0 2
+REGION   90   9  -900 -910 -903 -810 -800 -901
+*
+* CARGO 
+*
+POINT  960  0.00000000E+01  -47.0
+POINT  961  30.0            -47.0
+POINT  962  30.0            -37.0
+POINT  963   0.0            -37.0
+*
+LINE   960   STR    960 961   0  30
+LINE   962   STR    961 962   0   5
+LINE   964   STR    962 963   0  30
+LINE   966   STR    963 960   0   5
+*
+REGION 100  10  -960 -962 -964 -966
+$
+$ --- SLIDELINES
+$
+ELEMBC  700 = 700, 720
+ELEMBC  900 = 900, 910
+ELEMBC 1000 = 960
+NODEBC    1 = 801, 901, 966
+*
+* PUNCH
+*
+POINT     994    0.00000E+00   -7.19300E+01
+POINT     993    3.00000E+00   -7.19300E+01
+POINT     992    3.00000E+00   -8.19300E+01
+POINT     991    0.00000E+00   -8.19300E+01
+POINT     996    3.00000       -72.18
+POINT     997    2.75          -72.18
+POINT     998    2.75          -71.93
+POINT     999    0.0           -72.18
+POINT     990    2.75          -81.93
+*
+LINE    990   STR   990   992     0     2 
+LINE    991   STR   990   991     0    16  1.06
+LINE    992   STR   996   992     0    32  1.06
+LINE    993   STR   998   994     0    16  1.06
+LINE    994   STR   999   991     0    32  1.06
+LINE    995   CIRC  996   998   997     2
+LINE    996   STR   997   996     0     2
+LINE    997   STR   997   998     0     2
+LINE    998   STR   997   999     0    16  1.06
+LINE    999   STR   999   994     0     2
+REGION   82    8   -991    -990    -992    -996    -998    -994
+REGION   83    8   -996    -995    -997
+SCHEME   83 = TS
+REGION   84    8   -998    -997    -993    -999
+ELEMBC  999 = 993   992   995
+*
+LINEBC    1 = 999 994
+LINEBC   11 = 991 990
+Exit
+EXIT

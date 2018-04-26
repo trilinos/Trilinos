@@ -1,0 +1,48 @@
+<ParameterList name="MueLu">
+  <Parameter        name="verbosity"                            type="string"   value="high"/>
+
+  <Parameter        name="number of equations"                  type="int"      value="1"/>
+
+  <Parameter        name="coarse: max size"                     type="int"      value="1000"/>
+
+  <Parameter        name="sa: use filtered matrix"              type="bool"     value="true"/>
+  <Parameter        name="filtered matrix: use lumping"         type="bool"     value="true"/>
+
+  <Parameter        name="smoother: type"                       type="string"   value="CHEBYSHEV"/>
+  <ParameterList    name="smoother: params">
+    <Parameter      name="chebyshev: degree"                    type="int"      value="2"/>
+    <Parameter      name="chebyshev: ratio eigenvalue"          type="double"   value="20"/> <!-- 7 in 2D, 20 in 3D -->
+    <Parameter      name="chebyshev: min eigenvalue"            type="double"   value="1.0"/>
+    <Parameter      name="chebyshev: zero starting solution"    type="bool"     value="true"/>
+    <Parameter      name="chebyshev: eigenvalue max iterations" type="int"      value="10"/>
+  </ParameterList>
+
+  <!--
+  <Parameter        name="smoother: type"                       type="string"   value="ILUT"/>
+  <ParameterList    name="smoother: params">
+    <Parameter      name="schwarz: overlap level"               type="int"      value="2"/>
+    <Parameter      name="schwarz: combine mode"                type="string"   value="Insert"/>
+    <Parameter      name="schwarz: use reordering"              type="bool"     value="true"/>
+    <ParameterList  name="schwarz: reordering list">
+      <Parameter    name="order_method"                         type="string"   value="rcm"/>
+    </ParameterList>
+    <Parameter      name="fact: ilut level-of-fill"             type="double"   value="2.0"/>
+    <Parameter      name="fact: drop tolerance"                 type="double"   value="0.0"/>
+  </ParameterList>
+  -->
+
+  <Parameter        name="aggregation: drop scheme"             type="string"   value="distance laplacian"/>
+  <Parameter        name="aggregation: drop tol"                type="double"   value="0.02"/>
+
+  <Parameter        name="repartition: enable"                  type="bool"     value="true"/>
+  <Parameter        name="repartition: min rows per proc"       type="int"      value="2000"/>
+  <Parameter        name="repartition: max imbalance"           type="double"   value="1.327"/>
+  <Parameter        name="repartition: start level"             type="int"      value="1"/>
+  <Parameter        name="repartition: remap parts"             type="bool"     value="true"/>
+  <Parameter        name="repartition: partitioner"             type="string"   value="zoltan2"/>
+  <ParameterList    name="repartition: params">
+    <Parameter      name="algorithm"                            type="string"   value="multijagged"/>
+    <!-- <Parameter      name="algorithm"                            type="string"   value="rcb"/> -->
+  </ParameterList>
+
+</ParameterList>

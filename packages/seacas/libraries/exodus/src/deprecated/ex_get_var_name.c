@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005 National Technology & Engineering Solutions
+ * Copyright (c) 2005-2017 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -33,22 +33,22 @@
  *
  */
 /*****************************************************************************
-*
-* exgvnm - ex_get_var_name
-*
-* entry conditions -
-*   input parameters:
-*       int     exoid                   exodus file id
-*       char*   var_type                variable type: G,N, or E
-*       int     var_num                 variable index to read 1..num_var
-*
-* exit conditions -
-*       char*   var_name                ptr to variable name
-*
-* revision history -
-*
-*
-*****************************************************************************/
+ *
+ * exgvnm - ex_get_var_name
+ *
+ * entry conditions -
+ *   input parameters:
+ *       int     exoid                   exodus file id
+ *       char*   var_type                variable type: G,N, or E
+ *       int     var_num                 variable index to read 1..num_var
+ *
+ * exit conditions -
+ *       char*   var_name                ptr to variable name
+ *
+ * revision history -
+ *
+ *
+ *****************************************************************************/
 
 #include "exodusII.h" // for ex_get_variable_name, etc
 

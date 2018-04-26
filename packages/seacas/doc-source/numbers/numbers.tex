@@ -1,0 +1,47 @@
+\documentclass{report}
+\usepackage{sandcover}
+\usepackage{bookmark}
+\usepackage{xfrac}
+\usepackage{verbatim}
+\usepackage{parskip}
+\hypersetup{colorlinks=true, linkcolor=blue, filecolor=blue, urlcolor=blue}
+%\input{macro}
+\input{setup}
+\def\numbers{{\sf Numbers}}
+\def\NUM{{\sf Numbers}}
+\def\PROGRAM{NUMBERS}
+\def\NUMBERS{NUMBERS}
+\newcommand{\exo}
+   {\mbox{\sf \sc Exodus}\null}
+\newcommand{\EXO}
+   {\mbox{\sf \sc Exodus}\null}
+\newcommand{\gen}
+   {\mbox{\sf \sc Genesis}\null}
+   \newcommand{\code}[1]
+   {\mbox{\bf\tt #1}\null}
+\newcommand{\file}[1]
+   {\mbox{\bf\em #1}\null}
+
+\def\SNLA{Sandia National Laboratories, Albuquerque, NM}
+\newif\ifdraft\draftfalse
+\newif\ifsand\sandtrue
+
+\newfont{\titsf}{cmssbx10 scaled \magstep3} % bold sans serif
+%\includeonly{commands,cmdsum}
+\begin{document}
+\include{title}
+\tableofcontents
+\clearpage
+\listoftables
+\listoffigures
+\clearpage
+\include{intro}
+\include{numerics}
+\include{commands}
+\include{examples}
+\include{conclude}
+\include{bib}
+\appendix
+\include{cmdsum}
+\include{exec}
+\end{document}

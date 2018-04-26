@@ -1,0 +1,204 @@
+\chapter{Large Model Modifications}\label{app:largemodel}
+
+The changes are to support the storage of larger models. There are two
+pieces of this. The first is the setting of the type of netcdf file
+that will be created; either one with 32-bit offsets or one with
+64-bit offsets. This can be specified in a couple ways:
+\begin{enumerate}
+\item Pass the \param{EX_LARGE_MODEL} flag in the mode argument to \cfuncref{ex_create}.
+\item Set the environment variable \code{EXODUS_LARGE_MODEL}\index{Environment
+Variable!EXODUS_LARGE_MODEL}\index{EXODUS_LARGE_MODEL}.
+\end{enumerate}
+
+If either of these are set, then the library will pass the
+\param{NC_64BIT_OFFSET} flag to the netcdf library. See the netcdf library
+documentation for more details.
+
+The other change is to reduce the size of some of the datasets in an
+exodusII library. Even with the netcdf changes, the maximum dataset
+size is still 2GB. To reduce the size of the datasets, the nodal
+coordinates and the nodal variables have been split to store by
+component.
+\begin{itemize}
+\item The old behavior stored all x, y, and z coordinates in a single
+dataset; in the new behavior, each component is stored separately --
+there is a coordx, coordy, and coordz dataset.
+
+\item The nodal variables used to be stored in a single blob of dimension
+(\#times, \#nodes, \#variables). This has now been split into
+\#variable datasets of size (\#times, \#nodes).
+\end{itemize}
+These two changes increase the maximum model sizes
+significantly. Prior to the change, the maximum number of nodes that
+could be stored in the coordinate dataset was about 90 Million nodes;
+the new storage permits 270 Million nodes in double precision. The old
+model was more restrictive if there were multiple nodal variables, but
+the new storage should not depend on the number of nodal variables.
+
+These changes were made such that the new library would create
+old-style files by default and would read either old or new style
+files.
+
+An additional attribute is now written to the file. It is called
+"file_size" or \param{ATT_FILESIZE}. If it is 0 or not present, then
+the old format is assumed; if it is 1, then the new format is assumed.
+
+There is also a new internal function called
+\cfuncref{ex_large_model}(int exoid) which will return 1 if new
+version; 0 if old version.
+
+If the function is passed a negative exoid, then it will check the
+\code{EXODUS_LARGE_MODEL}\index{Environment
+Variable!EXODUS_LARGE_MODEL}\index{EXODUS_LARGE_MODEL} environment
+variable and return 1 if it is defined. It also currently prints a
+warning message saying that the large model size was selected via the
+environment variable.
+
+If you are using the exodusII api, then the only change to the client
+application is the passing of the \param{EX_LARGE_MODEL} flag to
+\cfuncref{ex_create} or the setting of the
+\code{EXODUS_LARGE_MODEL}\index{Environment
+Variable!EXODUS_LARGE_MODEL}\index{EXODUS_LARGE_MODEL} environment
+variable. If your client application is reading the database, no
+changes are needed.
+
+\section{Internal Changes to support larger models}
+If your client application bypasses some or all of the exodusII API
+and makes direct netcdf calls, you will need to modify the calls. The
+changes that were made are shown below along with the name of the
+exodusII API function in which the changes were made.
+
+\subsection{\cfuncref{ex_create}}
+\begin{itemize}
+\item Check whether the \param{EX_LARGE_MODEL} mode was set. If so, then the
+mode passed to nccreate must have the \param{NC_64BIT_OFFSET} bit set. For
+example, \code{"mode |= NC_64BIT_OFFSET;"}
+
+\item Write the exodus file size
+\param{ATT_FILESIZE} attribute (1=large, 0=normal):
+\end{itemize}
+\begin{lstlisting}
+    filesiz = (nclong)(((cmode & EX_LARGE_MODEL) != 0) || 
+                        (ex_large_model(-1) == 1));
+     if (ncattput (exoid, NC_GLOBAL, ATT_FILESIZE, NC_LONG, 1,
+                  &filesiz) == -1) ... handle errors...
+\end{lstlisting}
+
+\subsection{\cfuncref{ex_put_init}}
+If writing a "large model" capable database, then the coordinates are
+defined as components instead of an array. The variables are
+\code{VAR_COORD_X}, \code{VAR_COORD_Y} (if 2D or 3D),
+\code{VAR_COORD_Z} (if 3D). If not, define the \code{VAR_COORD}
+variable as is currently done.
+
+\begin{lstlisting}
+if (ex_large_model(exoid) == 1) {
+  /* node coordinate arrays -- separate storage... */
+  dim[0] = numnoddim;
+  if ((status = nc_def_var (exoid, VAR_COORD_X, nc_flt_code(exoid), 1, 
+       dim, &temp)) != NC_NOERR)
+    { ... handle error }
+  if (num_dim > 1) {
+    if ((status = nc_def_var (exoid, VAR_COORD_Y, nc_flt_code(exoid), 1, 
+       dim, &temp)) != NC_NOERR)
+      { ... handle error }
+  }
+  if (num_dim > 2) {
+    if ((status = nc_def_var (exoid, VAR_COORD_Z, nc_flt_code(exoid), 1, 
+       dim, &temp)) != NC_NOERR)
+      { ... handle error }
+  }
+} else {
+  /* node coordinate arrays: -- all stored together (old method) */
+  .... define the old way...
+}
+\end{lstlisting}
+
+\subsection{\cfuncref{ex_put_coord}}
+If writing a "large model" capable database, then the coordinates are
+written a component at a time, otherwise write the old way as a single
+blob.
+\begin{lstlisting}
+if (ex_large_model(exoid) == 0) {
+  ... write coordinates old way...
+} else {
+  if ((status = nc_inq_varid(exoid, VAR_COORD_X, &coordidx)) != NC_NOERR) {
+    { ... handle error }
+  if (num_dim > 1) {
+    if ((status = nc_inq_varid(exoid, VAR_COORD_Y, &coordidy)) != NC_NOERR) {
+      { ... handle error }
+    } else {
+      coordidy = 0;
+    }
+  }
+
+  if (num_dim > 2) {
+    if ((status = nc_inq_varid(exoid, VAR_COORD_Z, &coordidz)) != NC_NOERR) {
+      { ... handle error }
+    } else {
+      coordidz = 0;
+    }
+  }
+
+  /* write out the coordinates */
+  if (x_coor != NULL && coordidx != 0) {
+     if (ex_comp_ws(exoid) == 4) {
+	status = nc_put_var_float(exoid, coordidx, x_coor);
+     } else {
+	status = nc_put_var_double(exoid, coordidx, x_coor);
+     }
+  }
+  if (y_coor != NULL && coordidy != 0) {
+     if (ex_comp_ws(exoid) == 4) {
+	status = nc_put_var_float(exoid, coordidy, y_coor);
+     } else {
+	status = nc_put_var_double(exoid, coordidy, y_coor);
+     }
+  }
+  if (z_coor != NULL && coordidz != 0) {
+     if (ex_comp_ws(exoid) == 4) {
+	status = nc_put_var_float(exoid, coordidz, z_coor);
+     } else {
+	status = nc_put_var_double(exoid, coordidz, z_coor);
+     }
+  }
+ }
+}
+\end{lstlisting}
+
+\subsection{\cfuncref{ex_put_nodal_var}}
+If the large model method, write the nodal variable data to the
+correct variable; if the old method, determine the location within the
+blob
+
+\begin{lstlisting}
+if (ex_large_model(exoid) == 0) {
+  /* write values of the nodal variable */
+  if ((status = nc_inq_varid(exoid, VAR_NOD_VAR, &varid)) != NC_NOERR) {
+    ... handle error...
+  }
+  start[0] = --time_step;
+  start[1] = --nodal_var_index;
+  start[2] = 0;
+  count[0] = 1;
+  count[1] = 1;
+  count[2] = num_nodes;
+} else {
+  /* nodal variables stored separately, find variable for this variable index */
+  if ((status = nc_inq_varid(exoid, VAR_NOD_VAR_NEW(nodal_var_index), 
+      &varid)) != NC_NOERR) {
+    ... handle error ...
+  }
+  start[0] = --time_step;
+  start[1] = 0;
+  count[0] = 1;
+  count[1] = num_nodes;
+}
+if (ex_comp_ws(exoid) == 4) {
+  status = nc_put_vara_float(exoid, varid, start, count, nodal_var_vals);
+} else {
+  status = nc_put_vara_double(exoid, varid, start, count, nodal_var_vals);
+}
+    ...handle error ...
+\end{lstlisting}
+There are similar modifications to the reading of nodal variables.

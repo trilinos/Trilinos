@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005 National Technology & Engineering Solutions
+ * Copyright (c) 2005-2017 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -33,28 +33,28 @@
  *
  */
 /*****************************************************************************
-*
-* testwt - test write an ExodusII database file
-*
-* author - Sandia National Laboratories
-*          Larry A. Schoof - Original
-*          Vic Yarberry    - Added headers and error logging
-*               7/7/93          Modified for use with Exodus 2.00
-*
-*
-* environment - UNIX
-*
-* entry conditions -
-*
-* exit conditions -
-*
-* revision history -
-*
-*  This is a test program for the C binding of the EXODUS II
-*  database write routines.
-*
-*
-*****************************************************************************/
+ *
+ * testwt - test write an ExodusII database file
+ *
+ * author - Sandia-2017 National Laboratories
+ *          Larry A. Schoof - Original
+ *          Vic Yarberry    - Added headers and error logging
+ *               7/7/93          Modified for use with Exodus 2.00
+ *
+ *
+ * environment - UNIX
+ *
+ * entry conditions -
+ *
+ * exit conditions -
+ *
+ * revision history -
+ *
+ *  This is a test program for the C binding of the EXODUS II
+ *  database write routines.
+ *
+ *
+ *****************************************************************************/
 
 #include <math.h>
 #include <stdio.h>
@@ -62,19 +62,21 @@
 
 #include "exodusII.h"
 
-#define EXCHECK(FUNC)                                                                              \
+#define EXCHECK(funcall)                                                                           \
   do {                                                                                             \
-    if ((FUNC) < 0) {                                                                              \
-      fprintf(stderr, "Error code %d returned after calling " #FUNC "\n");                         \
-      exit(1);                                                                                     \
+    if ((error = (funcall)) != NC_NOERR) {                                                         \
+      fprintf(stderr, "ERROR Calling " #funcall ", error = %d\n", error);                          \
+      ex_close(exoid);                                                                             \
+      exit(-1);                                                                                    \
     }                                                                                              \
     else {                                                                                         \
-      fprintf(stderr, "Called " #FUNC " successfully\n");                                          \
+      fprintf(stderr, "Called " #funcall " successfully\n");                                       \
     }                                                                                              \
   } while (0)
 
 int main(int argc, char **argv)
 {
+  int  error;
   int  exoid, num_dim, num_nodes, num_elem, num_elem_blk;
   int  num_elem_in_block[10], num_nodes_per_elem[10];
   int  num_nodes_in_nset[10];
@@ -173,11 +175,11 @@ int main(int argc, char **argv)
   ebids[2] = 30;
 
   EXCHECK(ex_put_block(exoid, EX_ELEM_BLOCK, ebids[0], "line", num_elem_in_block[0],
-                       num_nodes_per_elem[0], 1));
+                       num_nodes_per_elem[0], 0, 0, 1));
   EXCHECK(ex_put_block(exoid, EX_ELEM_BLOCK, ebids[1], "line", num_elem_in_block[1],
-                       num_nodes_per_elem[1], 1));
+                       num_nodes_per_elem[1], 0, 0, 1));
   EXCHECK(ex_put_block(exoid, EX_ELEM_BLOCK, ebids[2], "point", num_elem_in_block[2],
-                       num_nodes_per_elem[2], 0));
+                       num_nodes_per_elem[2], 0, 0, 0));
 
   /* Write element block names */
   EXCHECK(ex_put_names(exoid, EX_ELEM_BLOCK, block_names));
@@ -236,7 +238,7 @@ int main(int argc, char **argv)
   dist_fact[3] = 4.0;
   dist_fact[4] = 5.0;
 
-  EXCHECK(ex_put_set(exoid, EX_NODE_SET, nsids[0], node_list));
+  EXCHECK(ex_put_set(exoid, EX_NODE_SET, nsids[0], node_list, NULL));
   EXCHECK(ex_put_set_dist_fact(exoid, EX_NODE_SET, nsids[0], dist_fact));
 
   EXCHECK(ex_put_set_param(exoid, EX_NODE_SET, nsids[1], 3, 3));
@@ -249,7 +251,7 @@ int main(int argc, char **argv)
   dist_fact[1] = 2.0;
   dist_fact[2] = 3.0;
 
-  EXCHECK(ex_put_set(exoid, EX_NODE_SET, nsids[1], node_list));
+  EXCHECK(ex_put_set(exoid, EX_NODE_SET, nsids[1], node_list, NULL));
   EXCHECK(ex_put_set_dist_fact(exoid, EX_NODE_SET, nsids[1], dist_fact));
 
   /* Write node set names */

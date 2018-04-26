@@ -1,0 +1,121 @@
+\chapter{Operators}\label{ch:operators}
+
+The operators recognized by \aprepro{} are listed below. The letters \textbf{a} 
+and \textbf{b} can represent variables, numbers, functions, or expressions unless 
+otherwise noted. The tables below also list the precedence and associativity of 
+the operators. {\em Precedence} defines the order in which operations should be performed. 
+For example, in the expression:
+\begin{apinp}
+\{3 * 4 + 6 / 2\}
+\end{apinp}
+the multiplications and divisions are performed first, followed by the addition 
+because multiplication and division have higher precedence (10) than addition (9). The precedence 
+is listed from 1 to 14 with 1 being the lowest precedence and 14 being the highest.
+
+{\em Associativity} defines which side of the expressions should be
+simplified first.  For example the expression: \cmd{3 + 4 + 5} would
+be evaluated as \cmd{(3 + 4) + 5} since addition is left associative;
+in the expression \textbf{a = b / c}, the \cmd{b/c} would be evaluated
+first followed by the assignment of that result to \cmd{a} since
+equality is right associative
+
+\section{Arithmetic Operators}
+
+Arithmetic operators combine two or more algebraic expressions into a
+single algebraic expression. These have obvious meanings except for
+the pre- and post- increment and decrement operators. The
+pre-increment and pre-decrement operators first increment or decrement
+the value of the variable and then return the value. For example, if
+\cmd{a = 1}, then \cmd{b=++a} will set both \cmd{b} and \cmd{a} equal to \cmd{2}. The post-increment and
+post-decrement operators first return the value of the
+variable and then increment or decrement the variable. For example, if
+\cmd{a = 1}, then \cmd{b=a++} will set
+\cmd{b} equal to \cmd{1} and \cmd{a} equal to \cmd{2}. The
+modulus operator \cmd{\%} calculates the integer remainder. That is
+both expressions are truncated an integer value and then the remainder
+calculated. See the \cmd{fmod} function in Table~\ref{t:functions} for
+the calculation of the floating point remainder. The tilde character
+\cmd{\textasciitilde{}} is used as a synonym for multiplication to
+improve the aesthetics of the unit conversion system (see
+Chapter~\ref{ch:units}). It is more natural for some users to type
+\cmd{12\textasciitilde{}metre} than \cmd{12*metre}.
+
+
+\begin{longtable}{llcc}
+\caption{Arithmetic Operators}\\
+Syntax   & Description    & Precedence & Associativity\\
+\hline
+\cmd{a+b}      & Addition       &  9 & left \\
+\cmd{a-b}      & Subtraction    &  9 & left \\
+\cmd{a*b}, \cmd{a}\verb+~+\cmd{b} & Multiplication & 10 & left \\
+\cmd{a/b}      & Division       & 10 & left \\
+\cmd{a\^{}b}, \cmd{a**b} & Exponentiation & 12 & right \\
+\cmd{a\%b}      & Modulus, (remainder) & 10 & left \\
+\cmd{++a}, \cmd{a++} & Pre- and Post-increment a & 13 & left\\
+\cmd{\texttt{--}a}, \cmd{a\texttt{--}} & Pre- and Post-decrement a & 13 & left\\
+\end{longtable}
+
+
+\section{Assignment Operators}
+
+Assignment operators combine a variable and an algebraic expression into a single 
+algebraic expression, and also set the variable equal to the algebraic expression. 
+Only variables can be specified on the left-hand-side of the equal sign.
+
+\begin{longtable}{llcc}
+\caption{Assignment Operators}\\
+Syntax & Description & Precedence & Associativity \\
+\hline
+\cmd{a=b}   & The value of $a$ is set equal to $b$ & 1 & right\\
+\cmd{a+=b}  & The value of $a$ is set equal to $a + b$ & 2 & right\\
+\cmd{a-=b}  & The value of $a$ is set equal to $a - b$ & 2 & right\\
+\cmd{a*=b}  & The value of $a$ is set equal to $a * b$ & 3 & right\\
+\cmd{a/=b}  & The value of $a$ is set equal to $a / b$ & 3 & right\\
+\cmd{a}\^{}\cmd{=b}, a\cmd{**=b}& The value of $a$ is set equal to  $a^b$ & 4 & right\\
+\end{longtable}
+
+\section{Relational Operators}\label{sec:relationaloperators}
+
+Relational operators combine two algebraic expressions into a single relational 
+expression. Relational expressions and operators can only be used before the question 
+mark (\cmd{?}) in a conditional expression.
+
+\begin{longtable}{llcc}
+\caption{Relational Operators}\\
+Syntax & Description & Precedence & Associativity \\
+\hline
+\cmd{a \texttt{<} b} & true if $a$ is less than $b$ & 8 & left\\
+\cmd{a \texttt{>} b} & true if $a$ is greater than $b$ & 8 & left\\
+\cmd{a \texttt{<}= b} & true if $a$ is less than or equal to $b$ & 8 & left\\
+\cmd{a \texttt{>}= b} & true if $a$ is greater than or equal to $b$ & 8 & left\\
+\cmd{a ==  b} & true if $a$ is equal to $b$ & 8 & left\\
+\cmd{a !=  b} & true if $a$ is not equal to $b$ & 8 & left\\
+\end{longtable}
+
+\section{Boolean Operators}
+
+Boolean operators combine one or more relational expressions into a single relational 
+expression. If \cmd{la} and \cmd{lb} are two relational expressions, then:
+
+\begin{longtable}{llcc}
+\caption{Boolean Operators}\\
+Syntax & Description & Precedence & Associativity \\
+\hline
+\cmd{la \textbar{}\textbar{} lb} & true if either $la$ or $lb$ are true. & 6 & left\\
+\cmd{la \&\&  lb} & true if both $la$ and $lb$ are true. & 7 & left\\
+\cmd{!la} & true if $la$ is false. & 11 & left\\
+\end{longtable}
+The evaluation of the expression is not short-circuited if the truth
+value can be determined early; both sides of the expression are
+evaluated and then the truth of the expression is returned.
+
+\section{String Operators}
+
+The only supported string operator at this time is string concatenation which is 
+denoted by \cmd{//}. For example,
+\begin{apinp}
+\{a = "Hello"\} \{b = "World"\}
+\{c = a // " " //  b\}
+\end{apinp}
+sets \cmd{c} equal to \cmd{\texttt{"}Hello  World\texttt{"}.}  Concatenation 
+has precedence 14 and left associativity.

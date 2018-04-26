@@ -1,4 +1,4 @@
-// Copyright(C) 2008 National Technology & Engineering Solutions
+// Copyright(C) 2008-2017 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -35,7 +35,7 @@
 #define STRINGX_H
 
 #include "terminal_color.h" // for operator<<, normal, red
-#include "util.h"           // for TOPTR, free_name_array, etc
+#include "util.h"           // for free_name_array, etc
 
 //! Compare a string against another "master" string, where the string, str,
 //! can be abbreiviated to as little as min_length characters.  Returns true

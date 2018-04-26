@@ -1,0 +1,31 @@
+\chapter{Summary and Conclusions}\label{c:conclude}
+
+The \numbers\ program is a shell program which reads and stores data
+from a finite element model described in the \exo\ database
+format~\cite{EXODUS}. Within this shell program are several utility
+routines which calculate information about the finite element model.
+The utilities currently implemented in \numbers\ allow the analyst to
+determine: 
+\begin{itemize}
+\item the volume and coordinate limits of each of the materials in the model;
+\item the mass properties of the model; 
+\item the minimum, maximum, and average element volumes for each material; 
+\item the volume and change in volume of a cavity; 
+\item the nodes or elements that are within a specified distance from a
+user-defined point, line, or plane 
+\item an estimate of the explicit central-difference timestep for each 
+material; 
+\item the validity of contact surfaces or slidelines, that is, whether
+two surfaces overlap at any point; and
+\item the distance between two surfaces.
+\end{itemize}
+
+Since it is relatively easy to add a new utility to \numbers, its
+capabilities should increase in the future.  Utilities that may be added
+in the future include the calculation of element distortion parameters
+which would be useful for validating automatically generated finite
+element discretizations, determination of the surface area of side sets,
+and additional verification of contact surfaces. Although \numbers\ does
+not currently read any of the variables, except for the displacements,
+from an \exo\ file, the code is structured such that this capability
+could be easily added if needed.  

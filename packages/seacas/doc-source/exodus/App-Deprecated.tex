@@ -1,0 +1,201 @@
+\chapter{Deprecated Functions}
+ \begin{parameters}
+\raggedright
+\item[\dfunc{ex_get_concat_node_sets}]  Use \cfuncreftwo{ex_get_concat_sets}{(exoid, EX_NODE_SET, set_specs)}
+
+
+\item[\dfunc{ex_get_concat_side_sets}]  Use \cfuncreftwo{ex_get_concat_sets}{(exoid, EX_SIDE_SET, set_specs)}
+
+
+\item[\dfunc{ex_get_elem_attr}]  Use \cfuncreftwo{ex_get_attr}{(exoid, EX_ELEM_BLOCK, elem_blk_id, attrib)}
+
+
+\item[\dfunc{ex_get_elem_attr_names}]  Use \cfuncreftwo{ex_get_attr_names}{(exoid, EX_ELEM_BLOCK, elem_blk_id, names)}  
+
+
+\item[\dfunc{ex_get_elem_blk_ids}]  Use \cfuncreftwo{ex_get_ids}{(exoid, EX_ELEM_BLOCK, ids)}  
+
+
+\item[\dfunc{ex_get_elem_block}]  Use \cfuncreftwo{ex_get_block}{(exoid, EX_ELEM_BLOCK, elem_blk_id, elem_type, num_elem_this_blk, num_nodes_per_elem, num_attr)}  
+
+
+\item[\dfunc{ex_get_elem_conn}]  Use \cfuncreftwo{ex_get_conn}{(exoid, EX_ELEM_BLOCK, elem_blk_id, connect, 0, 0)}  
+
+
+\item[\dfunc{ex_get_elem_map}]  Use \cfuncreftwo{ex_get_num_map}{(exoid, EX_ELEM_MAP, map_id, elem_map)}  
+
+
+\item[\dfunc{ex_get_elem_var}]  Use \cfuncreftwo{ex_get_var}{(exoid, time_step, EX_ELEM_BLOCK, elem_var_index, elem_blk_id, num_elem_this_blk, elem_var_vals)}  
+
+\item[\dfunc{ex_get_elem_var_tab}]  Use \cfuncreftwo{ex_get_truth_table}{(exoid, EX_ELEM_BLOCK, num_elem_blk, num_elem_var, elem_var_tab)} 
+
+
+\item[\dfunc{ex_get_elem_var_time}]  Use \cfuncreftwo{ex_get_var_time}{(exoid, EX_ELEM_BLOCK, elem_var_index, elem_number, beg_time_step, end_time_step, elem_var_vals)} 
+
+
+\item[\dfunc{ex_get_elem_varid}]  Use \cfuncreftwo{ex_get_varid}{(exoid, EX_ELEM_BLOCK, varid)} 
+
+
+\item[\dfunc{ex_get_map}]  Use \cfuncreftwo{ex_get_num_map}{} 
+
+
+\item[\dfunc{ex_get_node_map}]  Use \cfuncreftwo{ex_get_num_map}{(exoid, EX_NODE_MAP, map_id, node_map)}
+
+
+
+\item[\dfunc{ex_get_node_set}]  Use \cfuncreftwo{ex_get_set}{(exoid, EX_NODE_SET, node_set_id, node_set_node_list, NULL)} 
+
+
+
+\item[\dfunc{ex_get_node_set_dist_fact}]  Use \cfuncreftwo{ex_get_set_dist_fact}{(exoid, EX_NODE_SET, node_set_id, node_set_dist_fact)} 
+
+
+
+\item[\dfunc{ex_get_node_set_ids}]  Use \cfuncreftwo{ex_get_ids}{(exoid, EX_NODE_SET, ids)} 
+
+\item[\dfunc{ex_get_node_set_param}]  Use \cfuncreftwo{ex_get_set_param}{(exoid, EX_NODE_SET, node_set_id, num_nodes_in_set, num_df_in_set)} 
+
+
+\item[\dfunc{ex_get_nset_var}]  Use \cfuncreftwo{ex_get_var}{(exoid, time_step, EX_NODE_SET, nset_var_index, nset_id, num_node_this_nset, nset_var_vals)}  
+
+
+
+\item[\dfunc{ex_get_nset_var_tab}]  Use \cfuncreftwo{ex_get_truth_table}{(exoid, EX_NODE_SET, num_nodesets, num_nset_var, nset_var_tab)} 
+
+
+
+\item[\dfunc{ex_get_nset_varid}]  Use \cfuncreftwo{ex_get_varid}{(exoid, EX_NODE_SET, varid)} 
+
+
+\item[\dfunc{ex_get_one_elem_attr}]  Use \cfuncreftwo{ex_get_one_attr}{(exoid, EX_ELEM_BLOCK, elem_blk_id, attrib_index, attrib)} 
+
+
+\item[\dfunc{ex_get_side_set}]  Use \cfuncreftwo{ex_get_set}{(exoid, EX_SIDE_SET, side_set_id, side_set_elem_list, side_set_side_list)} 
+
+
+\item[\dfunc{ex_get_side_set_dist_fact}]  Use \cfuncreftwo{ex_get_set_dist_fact}{(exoid, EX_SIDE_SET, side_set_id, side_set_dist_fact)} 
+
+
+\item[\dfunc{ex_get_side_set_ids}]  Use \cfuncreftwo{ex_get_ids}{(exoid, EX_SIDE_SET, ids)} 
+
+
+\item[\dfunc{ex_get_side_set_param}]  Use \cfuncreftwo{ex_get_set_param}{(exoid, EX_SIDE_SET, side_set_id, num_side_in_set, num_dist_fact_in_set)} 
+
+
+\item[\dfunc{ex_get_sset_var}]  Use \cfuncreftwo{ex_get_var}{(exoid, time_step, EX_SIDE_SET, sset_var_index, sset_id, num_side_this_sset, sset_var_vals)}  
+
+
+\item[\dfunc{ex_get_sset_var_tab}]  Use \cfuncreftwo{ex_get_truth_table}{(exoid, EX_SIDE_SET, num_sidesets, num_sset_var, sset_var_tab)} 
+
+
+\item[\dfunc{ex_get_sset_varid}]  Use \cfuncreftwo{ex_get_varid}{(exoid, EX_SIDE_SET, varid)} 
+
+
+\item[\dfunc{ex_get_var_name}]use \cfuncreftwo{ex_get_variable_name}{(exoid, obj_type, var_num, *var_name)} 
+
+
+\item[\dfunc{ex_get_var_names}]  Use \cfuncreftwo{ex_get_variable_names}{(exoid, obj_type, num_vars, var_names)} 
+
+
+\item[\dfunc{ex_get_var_param}]  Use \cfuncreftwo{ex_get_variable_param}{(exoid, obj_type, *num_vars)} 
+
+
+\item[\dfunc{ex_get_var_tab}]  Use \cfuncreftwo{ex_get_truth_table}{(exoid, obj_type, num_blk, num_var, var_tab)} 
+
+
+\item[\dfunc{ex_put_concat_node_sets}]  Use \cfuncreftwo{ex_put_concat_sets}{(exoid, EX_NODE_SET, \&set_specs)} 
+
+
+\item[\dfunc{ex_put_concat_side_sets}]  Use \cfuncreftwo{ex_put_concat_sets}{(exoid, EX_SIDE_SET, set_specs)} 
+
+
+\item[\dfunc{ex_put_concat_var_param}]  Use \cfuncreftwo{ex_put_all_var_param}{(exoid, num_g, num_n, num_e, elem_var_tab, 0, 0, 0, 0)} 
+
+
+\item[\dfunc{ex_put_elem_attr}]  Use \cfuncreftwo{ex_put_attr}{(exoid, EX_ELEM_BLOCK, elem_blk_id, attrib)} 
+
+
+\item[\dfunc{ex_put_elem_attr_names}]  Use \cfuncreftwo{ex_put_attr_names}{(exoid, EX_ELEM_BLOCK, elem_blk_id, names)} 
+
+
+\item[\dfunc{ex_put_elem_block}]  Use \cfuncreftwo{ex_put_block}{(exoid, EX_ELEM_BLOCK, elem_blk_id, elem_type, num_elem_this_blk, num_nodes_per_elem, 0, 0, num_attr_per_elem)} 
+
+
+\item[\dfunc{ex_put_elem_conn}]  Use \cfuncreftwo{ex_put_conn}{(exoid, EX_ELEM_BLOCK, elem_blk_id, connect, 0, 0)} 
+
+
+\item[\dfunc{ex_put_elem_map}]  Use \cfuncreftwo{ex_put_num_map}{(exoid, EX_ELEM_MAP, map_id, elem_map)} 
+
+
+\item[\dfunc{ex_put_elem_num_map}]  Use \cfuncreftwo{ex_put_id_map}{(exoid, EX_ELEM_MAP, elem_map)} 
+
+
+\item[\dfunc{ex_put_elem_var}]  Use \cfuncreftwo{ex_put_var}{(exoid, time_step, EX_ELEM_BLOCK, elem_var_index, elem_blk_id, num_elem_this_blk, elem_var_vals)}
+
+
+
+
+\item[\dfunc{ex_put_elem_var_tab}]  Use \cfuncreftwo{ex_put_truth_table}{(exoid, EX_ELEM_BLOCK, num_elem_blk, num_elem_var, elem_var_tab)} 
+
+
+\item[\dfunc{ex_put_glob_vars}]  Use \cfuncreftwo{ex_put_var}{(exoid, time_step, EX_GLOBAL, 1, 0, num_glob_vars, glob_var_vals)} 
+
+
+\item[\dfunc{ex_put_map}]  Use \cfuncreftwo{ex_put_num_map}{}  
+
+
+\item[\dfunc{ex_put_node_map}]  Use \cfuncreftwo{ex_put_num_map}{(exoid, EX_NODE_MAP, map_id, node_map)} 
+
+
+\item[\dfunc{ex_put_node_num_map}]  Use \cfuncreftwo{ex_put_id_map}{(exoid, EX_NODE_MAP, node_map)} 
+
+
+\item[\dfunc{ex_put_node_set}]  Use \cfuncreftwo{ex_put_set}{(exoid, EX_NODE_SET, node_set_id, node_set_node_list, NULL)} 
+
+
+\item[\dfunc{ex_put_node_set_dist_fact}]  Use \cfuncreftwo{ex_put_set_dist_fact}{(exoid, EX_NODE_SET, node_set_id, node_set_dist_fact)} 
+
+
+\item[\dfunc{ex_put_node_set_param}]  Use \cfuncreftwo{ex_put_set_param}{(exoid, EX_NODE_SET, node_set_id, num_nodes_in_set, num_dist_in_set)} 
+
+
+\item[\dfunc{ex_put_nset_var}]  Use \cfuncreftwo{ex_put_var}{(exoid, time_step, EX_NODE_SET, nset_var_index, nset_id, num_nodes_this_nset, nset_var_vals)}
+
+
+
+
+\item[\dfunc{ex_put_nset_var_tab}]  Use \cfuncreftwo{ex_put_truth_table}{(exoid, EX_NODE_SET, num_nset, num_nset_var, nset_var_tab)} 
+
+
+\item[\dfunc{ex_put_one_elem_attr}]  Use \cfuncreftwo{ex_put_one_attr}{(exoid, EX_ELEM_BLOCK, elem_blk_id, attrib_index, attrib)}
+
+
+
+
+\item[\dfunc{ex_put_side_set}]  Use \cfuncreftwo{ex_put_set}{(exoid, EX_SIDE_SET, side_set_id, side_set_elem_list, side_set_side_list)} 
+
+
+\item[\dfunc{ex_put_side_set_dist_fact}]  Use \cfuncreftwo{ex_put_set_dist_fact}{(exoid, EX_SIDE_SET, side_set_id, side_set_dist_fact)} 
+
+
+\item[\dfunc{ex_put_side_set_param}]  Use \cfuncreftwo{ex_put_set_param}{(exoid, EX_SIDE_SET, side_set_id, num_side_in_set, num_dist_fact_in_set)} 
+
+
+\item[\dfunc{ex_put_sset_var}]  Use \cfuncreftwo{ex_put_var}{(exoid, time_step, EX_SIDE_SET, sset_var_index, sset_id, num_faces_this_sset, sset_var_vals)}
+
+
+\item[\dfunc{ex_put_sset_var_tab}]  Use \cfuncreftwo{ex_put_truth_table}{(exoid, EX_SIDE_SET, num_sset, num_sset_var, sset_var_tab)}
+
+
+\item[\dfunc{ex_put_var_name}]use \cfuncreftwo{ex_put_variable_name}{(exoid, obj_type, var_num, *var_name)} 
+
+
+\item[\dfunc{ex_put_var_names}]  Use \cfuncreftwo{ex_put_variable_names}{(exoid, obj_type, num_vars, var_names)}
+
+
+\item[\dfunc{ex_put_var_param}]  Use \cfuncreftwo{ex_put_variable_param}{(exoid, obj_type, num_vars)}
+
+
+\item[\dfunc{ex_put_var_tab}]  Use \cfuncreftwo{ex_put_truth_table}{(exoid, obj_type, num_blk, num_var, var_tab)} 
+ \end{parameters}
+

@@ -1,0 +1,165 @@
+\documentclass{report}
+\usepackage[usenames]{color}
+\usepackage[english]{babel}
+\usepackage[nohyphen]{underscore}
+\usepackage[hyper]{listings}
+\usepackage{setspace}
+\usepackage{subcaption}
+\usepackage{graphicx}
+\usepackage{alltt}
+\usepackage{calc}
+\usepackage{makeidx}
+\usepackage{amsmath,amssymb,amsfonts,textcomp}
+\usepackage{hyperref}
+\usepackage{showkeys}
+\usepackage{longtable}
+\hypersetup{colorlinks=true, linkcolor=blue, filecolor=blue, urlcolor=blue}
+% Text styles
+\newcommand\textstyleInternetlink[1]{\textcolor{blue}{#1}}
+\newcommand\textstyleFootnoteSymbol[1]{\textsuperscript{#1}}
+% Outline numbering
+\setcounter{secnumdepth}{0}
+\newcommand{\superscript}[1]{\ensuremath{^{\textrm{#1}}}}
+\newcommand{\subscript}[1]{\ensuremath{_{\textrm{#1}}}}
+% Welcome to the 21\superscript{st} century.
+\renewcommand{\th}[0]{\superscript{th}}
+\newcommand{\st}[0]{\superscript{st}}
+\newcommand{\nd}[0]{\superscript{nd}}
+\newcommand{\rd}[0]{\superscript{rd}}
+% Carl took 1\st place. Elly, Tom and Ann came in 2\nd, 3\rd and 4\th.
+
+% Turn off making it permissible to break a word at an underscore.
+% This is so the funcdef and funcdefv format correctly...
+\makeatletter
+\renewcommand{\BreakableUnderscore}{\leavevmode\nobreak
+ \string_\nobreak}
+\makeatother
+
+\newcommand{\texifylineno}[1]{{\footnotesize\hspace{-4em}\makebox[4em][r]{#1\hspace{1.5ex}}}}
+
+\newcommand\dash{\raise2.1pt\hbox{\rule{5pt}{0.3pt}}\hspace{1pt}}
+\newcommand{\gap}{\hspace{12pt}}
+\newcommand{\param}[1]
+   {\mbox{\tt #1\index{#1}}\null}
+\newcommand{\cfunc}[1]
+   {\lstinline[basicstyle=\normalsize]\!#1\!}
+\newcommand{\cfuncref}[1]
+   {\hyperlink{#1}{\lstinline[basicstyle=\normalsize]\!#1\!}}
+\newcommand{\cfuncreftwo}[2]
+   {\hyperlink{#1}{\lstinline[basicstyle=\normalsize]\!#1#2\!} [See Section~\ref{#1}]}
+\newcommand{\dfunc}[1]
+   {\lstinline[basicstyle=\normalsize]\!#1\!\index{#1!Deprecated}\index{Deprecated Functions!#1}}
+\newcommand{\cmd}[1]
+   {\mbox{\tt #1}\null}
+\newcommand{\code}[1]
+   {\mbox{\bf\tt #1}\null}
+\newcommand{\file}[1]
+   {\mbox{\bf\em #1}\null}
+
+\newcommand{\funcdef}[2]
+ {\label{#1}\color{BrickRed}\begin{tabular}{@{}l@{}p{0.5in}}\large\bf\tt int \hypertarget{#1}{#1}\enspace(&\large\bf\tt #2)\\\index{#1!Definition}\end{tabular}\color{black}}
+\newcommand{\funcdefv}[2]
+ {\label{#1}\color{BrickRed}\begin{tabular}{@{}l@{}p{0.5in}}\large\bf\tt void #1\enspace(&\large\bf\tt #2)\\\index{#1!Definition}\end{tabular}\color{black}}
+%
+% Set left margin and counter
+\setlength{\oddsidemargin}{0.25in}
+\setlength{\evensidemargin}{0.25in}
+\setcounter{secnumdepth}{10}
+\setcounter{tocdepth}{3}
+\setlength{\textwidth}{6in}
+\setlength{\topmargin}{-0.25in}
+\setlength{\textheight}{8.5in}
+\parskip 0.2cm
+\parindent 0.0cm
+
+\newcommand{\tab}{\hspace{5mm}}
+
+\newcommand{\api}
+   {\mbox{\em API Functions:\hspace{0.1in}}\null}
+
+\newcommand{\exo}
+   {\mbox{\sf EXODUS}\null}
+\newcommand{\version}{4.72}
+\newcommand{\versionud}{472}
+
+\newcommand{\R}
+   {\mbox{\sf[in]}\null}
+\newcommand{\W}
+   {\mbox{\sf[out]}\null}
+\newcommand{\RW}
+   {\mbox{\sf[inout]}\null}
+
+\newcommand{\entrylabel}[1]{
+   {\parbox[b]{\labelwidth-4pt}{\makebox[0pt][l]{\color{BrickRed}\tt\textbf{#1}}\vspace{1.0\baselineskip}}}}
+
+\newenvironment{parameters}
+{\begin{list}{}
+  {
+    \settowidth{\labelwidth}{80pt}
+    \setlength{\leftmargin}{\labelwidth}
+    \setlength{\parsep}{-10pt}
+    \setlength{\itemsep}{24pt}  % Between items
+    \renewcommand{\makelabel}{\entrylabel}
+  }
+}
+{\end{list}}
+\input{exodus-lang.tex}
+
+\newcommand\indexkeywords[1]{\index{{#1}}}
+\newcommand\indexsymbols[1]{\index{{#1}}}
+\definecolor{ForestGreen}{RGB}{34, 139, 34}
+\definecolor{LightBlue}{RGB}{0,0,128}
+\definecolor{BrickRed}{RGB}{200,26,26}
+\definecolor{ListingBG}{RGB}{240,255,240}
+\definecolor{RuleGreen}{RGB}{0,200,0}
+\definecolor{NumberGrey}{RGB}{128,128,128}
+\lstset{language=exodus,
+backgroundcolor=\color{ListingBG},
+basicstyle=\small\ttfamily,
+keywordstyle=[0]\color{BrickRed}\textbf,
+keywordstyle=[1]\color{BrickRed},
+commentstyle=\color{LightBlue},
+stringstyle=\color{ForestGreen},
+numbers=left,numberstyle=\tiny\color{NumberGrey},
+frame=leftline,framerule=3pt,rulecolor=\color{RuleGreen},
+indexstyle=[1]\indexkeywords,
+indexstyle=[2]\indexsymbols,
+index=[1][keywords],
+index=[2][keywords2]
+}
+
+
+\makeindex
+\begin{document}
+\include{00-Title}
+\pagestyle{plain}
+\cleardoublepage\tableofcontents
+\newpage
+\begin{center}
+\vspace*{3in}
+Intentionally Left Blank
+\end{center}
+\pagestyle{headings}
+\include{01-Introduction}
+\include{02-Changes}
+\include{02-Development}
+\include{03-DataObjects}
+\include{04-API}
+\include{00-References}
+\appendix*
+\include{App-NetCDF}
+\include{App-Deprecated}
+%\include{App-LargeModel}
+\include{App-Example}
+
+\include{index}
+
+\refstepcounter{chapter}
+\addcontentsline{toc}{chapter}{Index}
+
+\begin{raggedright}
+\begin{footnotesize}
+\printindex
+\end{footnotesize}
+\end{raggedright}
+\end{document}

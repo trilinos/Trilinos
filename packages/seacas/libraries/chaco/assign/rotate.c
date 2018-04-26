@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005 National Technology & Engineering Solutions
+ * Copyright (c) 2005-2017 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -38,7 +38,7 @@
 void rotate2d(double **yvecs,   /* ptr to list of y-vectors (rotated) */
               int      nmyvtxs, /* length of yvecs */
               double   theta    /* angle to rotate by */
-              )
+)
 {
   double temp1; /* hold values for a while */
   double c, s;  /* cosine and sine of theta */
@@ -57,7 +57,7 @@ void rotate2d(double **yvecs,   /* ptr to list of y-vectors (rotated) */
 void rotate3d(double **yvecs,                         /* ptr to list of y-vectors (to be rotated) */
               int      nmyvtxs,                       /* length of yvecs */
               double theta, double phi, double gamma2 /* rotational parameters */
-              )
+)
 {
   double temp1, temp2;   /* hold values for a while */
   double ctheta, stheta; /* cosine and sine of theta */

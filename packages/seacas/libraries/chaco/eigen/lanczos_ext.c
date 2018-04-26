@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005 National Technology & Engineering Solutions
+ * Copyright (c) 2005-2017 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -57,7 +57,7 @@ int lanczos_ext(struct vtx_data **A,       /* sparse matrix in row linked list f
                 double *          gvec,    /* the rhs n-vector in the extended eigen problem */
                 double            sigma    /* specifies the norm constraint on extended
                                               eigenvector */
-                )
+)
 {
   extern FILE *     Output_File;         /* output file or null */
   extern int        LANCZOS_SO_INTERVAL; /* interval between orthogonalizations */

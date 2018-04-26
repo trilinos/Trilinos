@@ -1,0 +1,123 @@
+\documentclass{report}
+\usepackage{listings}
+\usepackage{sandcover}
+\usepackage{setspace}
+\usepackage{graphicx}
+\usepackage{subfig}
+\usepackage{alltt}
+\usepackage{calc}
+\usepackage{makeidx}
+\usepackage{amsmath,amssymb,amsfonts,textcomp}
+\usepackage{hyperref}
+%\usepackage{showkeys}
+\usepackage{longtable}
+\usepackage{bookmark}
+\hypersetup{colorlinks=true, linkcolor=blue, filecolor=blue, urlcolor=blue}
+% Text styles
+\newcommand\textstyleInternetlink[1]{\textcolor{blue}{#1}}
+\newcommand\textstyleFootnoteSymbol[1]{\textsuperscript{#1}}
+% Outline numbering
+\setcounter{secnumdepth}{0}
+\newcommand{\superscript}[1]{\ensuremath{^{\textrm{#1}}}}
+\newcommand{\subscript}[1]{\ensuremath{_{\textrm{#1}}}}
+% Welcome to the 21\superscript{st} century.
+\renewcommand{\th}[0]{\superscript{th}}
+\newcommand{\st}[0]{\superscript{st}}
+\newcommand{\nd}[0]{\superscript{nd}}
+\newcommand{\rd}[0]{\superscript{rd}}
+% Carl took 1\st place. Elly, Tom and Ann came in 2\nd, 3\rd and 4\th.
+
+\newcommand{\texifylineno}[1]{{\footnotesize\hspace{-4em}\makebox[4em][r]{#1\hspace{1.5ex}}}}
+
+\newcommand{\sectionline}{%
+  \nointerlineskip \vspace{\baselineskip}%
+  \hspace{\fill}\rule{\linewidth}{.7pt}\hspace{\fill}%
+	\par\nointerlineskip
+}
+\def\SNLA{Sandia National Laboratories, Albuquerque, NM}
+\makeatletter
+\renewcommand{\@makechapterhead}[1]{%
+  {\parindent \z@ \raggedright \normalfont
+    \ifnum \c@secnumdepth >\m@ne
+        \huge\bf\thechapter\  % Chapter number
+    \fi
+    \huge\bf #1\par                         % chapter title
+    \nobreak
+    \vskip 15\p@
+  }}
+\makeatother
+
+\newcommand\dash{\raise2.1pt\hbox{\rule{5pt}{0.3pt}}\hspace{1pt}}
+\newcommand{\gap}{\hspace{12pt}}
+\newcommand{\param}[1]
+   {\mbox{\tt #1\index{#1}\index{Functions!#1}}\null}
+\newcommand{\afunc}[1]
+   {\mbox{\tt #1\index{Functions!#1}}\null}
+\newcommand{\cmd}[1]
+   {\mbox{\tt #1}\null}
+\newcommand{\code}[1]
+   {\mbox{\bf\tt #1}\null}
+\newcommand{\file}[1]
+   {\mbox{\bf\em #1}\null}
+\newcommand{\var}[1]
+   {\mbox{\em #1}\null}
+
+\newcommand{\paramdef}[2]
+ {\color{red}\begin{tabular}{@{}l@{}p{6.0in}}\bf\tt #1\enspace\enspace &\tt #2\\\index{#1!Parameter}\index{Parameter!#1}\end{tabular}\color{black}}
+
+\newcommand{\funcdef}[2]
+ {\color{red}\begin{tabular}{@{}l@{}p{0.5in}}\Large\bf\tt int #1\enspace(&\Large\bf\tt #2)\\\index{#1!Definition}\index{Functions!#1!Definition}\end{tabular}\color{black}}
+\newcommand{\funcdefv}[2]
+ {\color{red}\begin{tabular}{@{}l@{}p{3.7in}}\Large\bf\tt void #1\enspace(&\Large\bf\tt #2)\\\index{#1!Definition}\index{Functions!#1!Definition}\end{tabular}\color{black}}
+%
+% Set left margin and counter
+\setlength{\oddsidemargin}{0.25in}
+\setlength{\evensidemargin}{0.25in}
+\setcounter{secnumdepth}{10}
+\setcounter{tocdepth}{3}
+\setlength{\textwidth}{6in}
+\setlength{\topmargin}{-0.25in}
+\setlength{\textheight}{8.5in}
+\parskip 0.2cm
+\parindent 0.0cm
+
+\newenvironment{apinp}
+{\small\begin{quote}\begin{alltt}\color{blue}}
+{\end{alltt}\end{quote}\normalsize}
+
+\newenvironment{apout}
+{\small\begin{quote}\color{red}\begin{alltt}}
+{\end{alltt}\end{quote}\normalsize}
+
+\newcommand{\tab}{\hspace{5mm}}
+\newenvironment{source}
+{\small\begin{quote}\begin{alltt}}
+{\end{alltt}\end{quote}\normalsize}
+
+\newcommand{\exo}
+   {\mbox{\sf \sc Exodus}\null}
+
+\newcommand{\aprepro}
+   {\mbox{\sf \sc Aprepro}\null}
+
+\begin{document}
+\include{title}
+\pagestyle{plain}
+\setcounter{page}{4}
+\mbox{}
+\cleardoublepage\tableofcontents
+\cleardoublepage\listoftables
+\cleardoublepage
+\include{introduction}
+\include{execution}
+\include{syntax}
+\include{operators}
+\include{predefined_variables}
+\include{functions}
+\include{units}
+\include{errors}
+\include{examples}
+\include{library}
+\include{references}
+\include{endmatter}
+\end{document}

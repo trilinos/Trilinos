@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 2010 National Technology & Engineering Solutions
+ * Copyright(C) 2010-2017 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -36,6 +36,7 @@
 #define Sierra_SystemInterface_h
 
 #include "GetLongOpt.h" // for GetLongOption
+#include <climits>      // for INT_MAX
 #include <iosfwd>       // for ostream
 #include <string>       // for string
 #include <utility>      // for pair
@@ -47,7 +48,7 @@ namespace Excn {
   class SystemInterface
   {
   public:
-    SystemInterface();
+    SystemInterface(int rank = 0);
     ~SystemInterface();
 
     bool parse_options(int argc, char **argv);
@@ -66,11 +67,14 @@ namespace Excn {
     int subcycle() const { return subcycle_; }
     int cycle() const { return cycle_; }
 
+    void subcycle_join(bool tf) { subcycleJoin_ = tf; }
     void subcycle(int cycles) { subcycle_ = cycles; }
     void processor_count(int count) { processorCount_ = count; }
     void step_min(int my_step_min) { stepMin_ = my_step_min; }
     void step_max(int my_step_max) { stepMax_ = my_step_max; }
     void step_interval(int interval) { stepInterval_ = interval; }
+    void set_output_filename(const std::string &filename) const { outputFilename_ = filename; }
+    std::string output_filename() const { return outputFilename_; }
 
     std::string cwd() const { return cwd_; }
     std::string basename() const { return basename_; }
@@ -80,18 +84,26 @@ namespace Excn {
     std::string root_dir() const { return rootDirectory_; }
     std::string sub_dir() const { return subDirectory_; }
 
-    bool           add_processor_id_field() const { return addProcessorId_; }
-    bool           sum_shared_nodes() const { return sumSharedNodes_; }
-    bool           use_netcdf4() const { return useNetcdf4_; }
-    bool           append() const { return append_; }
-    bool           map_element_ids() const { return mapIds_; }
-    bool           omit_nodesets() const { return omitNodesets_; }
-    bool           omit_sidesets() const { return omitSidesets_; }
-    bool           int64() const { return intIs64Bit_; }
-    void           set_int64() const { intIs64Bit_ = true; }
-    int            compress_data() const { return compressData_; }
-    bool           subcycle_join() const { return subcycleJoin_; }
-    bool           output_shared_nodes() const { return outputSharedNodes_; }
+    bool add_processor_id_field() const { return addProcessorId_; }
+    bool sum_shared_nodes() const { return sumSharedNodes_; }
+    bool use_netcdf4() const { return useNetcdf4_; }
+    void set_use_netcdf4() const { useNetcdf4_ = true; }
+    bool append() const { return append_; }
+    bool map_element_ids() const { return mapIds_; }
+    bool omit_nodesets() const { return omitNodesets_; }
+    bool omit_sidesets() const { return omitSidesets_; }
+    bool int64() const { return intIs64Bit_; }
+    void set_int64() const { intIs64Bit_ = true; }
+    int  compress_data() const { return compressData_; }
+    bool subcycle_join() const { return subcycleJoin_; }
+    bool output_shared_nodes() const { return outputSharedNodes_; }
+    bool is_auto() const { return auto_; }
+    bool keep_temporary() const { return keepTemporary_; }
+    int  max_open_files() const
+    {
+      return maxOpenFiles_;
+    } // Used to test auto-subcyling without thousands of files...
+
     StringIdVector global_var_names() const { return globalVarNames_; }
     StringIdVector node_var_names() const { return nodeVarNames_; }
     StringIdVector elem_var_names() const { return elemVarNames_; }
@@ -101,7 +113,7 @@ namespace Excn {
     //! Dumps representation of data in this class to cerr
     void dump(std::ostream &str) const;
 
-    static void show_version();
+    static void show_version(int rank = 0);
 
   private:
     void enroll_options();
@@ -121,36 +133,44 @@ namespace Excn {
 
     GetLongOption options_; //!< Options parsing
 
-    std::string inExtension_;
-    std::string outExtension_;
-    std::string cwd_;
-    std::string rootDirectory_;
-    std::string subDirectory_;
-    std::string basename_;
+    std::string inExtension_{};
+    std::string outExtension_{};
+    std::string cwd_{};
+    std::string rootDirectory_{};
+    std::string subDirectory_{};
+    std::string basename_{};
 
-    int          raidOffset_;
-    int          raidCount_;
-    int          processorCount_;
-    int          startPart_;
-    int          partCount_;
-    int          debugLevel_;
-    int          screenWidth_;
-    int          stepMin_;
-    int          stepMax_;
-    int          stepInterval_;
-    int          subcycle_;
-    int          cycle_;
-    int          compressData_;
-    bool         sumSharedNodes_;
-    bool         addProcessorId_;
-    bool         mapIds_;
-    bool         omitNodesets_;
-    bool         omitSidesets_;
-    bool         useNetcdf4_;
-    bool         append_;
-    mutable bool intIs64Bit_;
-    bool         subcycleJoin_;
-    bool         outputSharedNodes_;
+    // Used for a storage area only.  Needed for subcyle and auto-join option
+    // Not directly settable through the user-interface (maybe should be?)
+    mutable std::string outputFilename_{};
+
+    int          myRank_{0};
+    int          raidOffset_{};
+    int          raidCount_{};
+    int          processorCount_{1};
+    int          startPart_{};
+    int          partCount_{-1};
+    int          debugLevel_{};
+    int          screenWidth_{};
+    int          stepMin_{1};
+    int          stepMax_{INT_MAX};
+    int          stepInterval_{1};
+    int          subcycle_{-1};
+    int          cycle_{-1};
+    int          compressData_{0};
+    int          maxOpenFiles_{0};
+    bool         sumSharedNodes_{false};
+    bool         addProcessorId_{false};
+    bool         mapIds_{true};
+    bool         omitNodesets_{false};
+    bool         omitSidesets_{false};
+    mutable bool useNetcdf4_{false};
+    bool         append_{false};
+    mutable bool intIs64Bit_{false};
+    bool         subcycleJoin_{false};
+    bool         outputSharedNodes_{false};
+    bool         auto_{false};
+    bool         keepTemporary_{false};
 
     StringIdVector globalVarNames_;
     StringIdVector nodeVarNames_;
