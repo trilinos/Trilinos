@@ -45,7 +45,7 @@ public:
     *out_ << "DEBUG: " << __PRETTY_FUNCTION__ << "\n";
     *out_ << "    schemeName = " << schemeName << "\n";
 #endif
-    if (schemeName == "Newmark Implicit a-Form" ) {
+    if (schemeName == "Newmark Implicit a-Form" || schemeName == "Generalized-Alpha" ) {
       schemeType_ = NEWMARK_IMPLICIT_AFORM;
     }
     else if (schemeName == "Newmark Implicit d-Form") {
@@ -195,8 +195,7 @@ public:
     enum SCHEME_TYPE {
 		NEWMARK_IMPLICIT_AFORM, 
 		NEWMARK_IMPLICIT_DFORM,
-		HHT_ALPHA_AFORM,
-		GENERALIZED_ALAPHA_AFORM
+		HHT_ALPHA_AFORM
 	};
 
 private:
