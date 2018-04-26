@@ -335,6 +335,12 @@ setParameters (const Teuchos::ParameterList& pl)
 
   if (pl.isParameter("trisolver: reverse U"))
     reverseStorage_ = pl.get<bool>("trisolver: reverse U");
+
+  TEUCHOS_TEST_FOR_EXCEPTION
+    (reverseStorage_ && trisolverType == Details::TrisolverType::HTS,
+     std::logic_error, "Ifpack2::LocalSparseTriangularSolver::setParameters: "
+     "You are not allowed to enable both HTS and the \"trisolver: reverse U\" "
+     "options.  See GitHub issue #2647.");
 }
 
 template<class MatrixType>
@@ -342,6 +348,10 @@ void
 LocalSparseTriangularSolver<MatrixType>::
 initialize ()
 {
+  using crs_matrix_type = Tpetra::CrsMatrix<scalar_type, local_ordinal_type,
+    global_ordinal_type, node_type>;
+  using local_matrix_type = typename crs_matrix_type::local_matrix_type;
+
   const char prefix[] = "Ifpack2::LocalSparseTriangularSolver::initialize: ";
   if (! out_.is_null ()) {
     *out_ << ">>> DEBUG " << prefix << std::endl;
@@ -352,13 +362,10 @@ initialize ()
      "setMatrix() with a nonnull input matrix before you may call "
      "initialize() or compute().");
   if (A_crs_.is_null ()) {
-    typedef typename Tpetra::CrsMatrix<scalar_type, local_ordinal_type,
-      global_ordinal_type, node_type> crs_matrix_type;
-    Teuchos::RCP<const crs_matrix_type> A_crs =
-      Teuchos::rcp_dynamic_cast<const crs_matrix_type> (A_);
+    auto A_crs = Teuchos::rcp_dynamic_cast<const crs_matrix_type> (A_);
     TEUCHOS_TEST_FOR_EXCEPTION
-      (A_crs.is_null (), std::invalid_argument, prefix <<
-       "The input matrix A is not a Tpetra::CrsMatrix.");
+      (A_crs.get () == nullptr, std::invalid_argument,
+       prefix << "The input matrix A is not a Tpetra::CrsMatrix.");
     A_crs_ = A_crs;
   }
   auto G = A_crs_->getGraph ();
@@ -375,8 +382,6 @@ initialize ()
 
   if (reverseStorage_ && A_crs_->isUpperTriangular() && htsImpl_.is_null()) {
     // Reverse the storage for an upper triangular matrix
-    using local_matrix_type = typename crs_matrix_type::local_matrix_type;
-
     auto Alocal = A_crs_->getLocalMatrix();
     auto ptr    = Alocal.graph.row_map;
     auto ind    = Alocal.graph.entries;
