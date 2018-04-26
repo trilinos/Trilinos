@@ -39,7 +39,7 @@
 
       <Parameter name="Stepper Type"   type="string" value="HHT-Alpha"/>
       <ParameterList name="HHT-Alpha Parameters">
-        <Parameter name="Scheme Name"    type="string" value="Newmark Beta Average Acceleration"/>
+        <Parameter name="Alpha"    type="double" value="0.01"/>
       </ParameterList>
       <Parameter name="Solver Name"    type="string" value="Default Solver"/>
       <Parameter name="Zero Initial Guess" type="bool" value="0"/>

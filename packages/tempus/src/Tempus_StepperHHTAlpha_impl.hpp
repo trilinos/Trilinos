@@ -34,7 +34,7 @@ predictVelocity(Thyra::VectorBase<Scalar>& vPred,
 #endif
   //vPred = v + dt*(1.0-gamma_)*a
   Thyra::V_StVpStV(Teuchos::ptrFromRef(vPred), 1.0, v, dt*(1.0-gamma_), a);
-  //vPred = (1-alpha_f)*vPred + alpha_f*v
+  //vPred = (1-alpha_)*vPred + alpha_*v
   Thyra::V_StVpStV(Teuchos::ptrFromRef(vPred), 1.0-alpha_, vPred, alpha_, v);
 }
 
@@ -52,7 +52,7 @@ predictDisplacement(Thyra::VectorBase<Scalar>& dPred,
   Teuchos::RCP<const Thyra::VectorBase<Scalar> > tmp =
     Thyra::createMember<Scalar>(dPred.space());
   //dPred = dt*v + dt*dt/2.0*(1.0-2.0*beta_)*a
-  Scalar aConst = dt*dt/2.0*(1.0-2.0*beta_);
+  Scalar aConst = dt*dt*(0.5-beta_);
   Thyra::V_StVpStV(Teuchos::ptrFromRef(dPred), dt, v, aConst, a);
   //dPred += d;
   Thyra::Vp_V(Teuchos::ptrFromRef(dPred), d, 1.0);
@@ -63,14 +63,14 @@ predictDisplacement(Thyra::VectorBase<Scalar>& dPred,
 template<class Scalar>
 void StepperHHTAlpha<Scalar>::
 correctVelocity(Thyra::VectorBase<Scalar>& v,
-                const Thyra::VectorBase<Scalar>& a,
                 const Thyra::VectorBase<Scalar>& a_old,
+                const Thyra::VectorBase<Scalar>& a,
                 const Scalar dt) const
 {
 #ifdef VERBOSE_DEBUG_OUTPUT
   *out_ << "DEBUG: " << __PRETTY_FUNCTION__ << "\n";
 #endif
-  //v = v_old + dt*(1.0-gamma_)*a_old + dt*gamma_*a
+  //v_{n+1} = v_n + dt*(1.0-\gamma)*a_n + dt*\gamma*a_{n+1}
   Thyra::Vp_StV(Teuchos::ptrFromRef(v), dt*(1.0-gamma_), a_old);
   Thyra::Vp_StV(Teuchos::ptrFromRef(v), dt*gamma_, a);
  // Thyra::V_StVpStV(Teuchos::ptrFromRef(v), 1.0, v, dt*(1.0-gamma_), a_old);
@@ -220,7 +220,7 @@ void StepperHHTAlpha<Scalar>::takeStep(
     predictDisplacement(*d_pred, *d_old, *v_old, *a_old, dt);
     predictVelocity(*v_pred, *v_old, *a_old, dt);
 	//Update time. PA: It is supposed that wrapperModel would fetch external loads at this time point
-    Scalar t = time+(1.0-alpha_)*dt;
+    Scalar t = time+ (1.0-alpha_)*dt;
 
     //inject d_pred, v_pred, a and other relevant data into wrapperModel
     wrapperModel->initializeNewmark(a_old,v_pred,d_pred,dt,t,beta_,gamma_,alpha_,0.0,d_old, v_old);

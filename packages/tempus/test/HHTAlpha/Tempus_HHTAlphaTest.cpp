@@ -48,7 +48,8 @@ using Tempus::SolutionState;
 //IKT, 3/22/17: comment out any of the following
 //if you wish not to build/run all the test cases.
 #define TEST_BALL_PARABOLIC
-#define TEST_SIN_COS
+//#define TEST_SIN_COS
+#define TEST_SIN_COS_SECOND_ORDER
 
 
 #ifdef TEST_BALL_PARABOLIC
@@ -215,7 +216,7 @@ TEUCHOS_UNIT_TEST(HHTAlpha, ConstructingFromDefaults)
 }
 
 
-#ifdef TEST_SIN_COS
+#ifdef TEST_SIN_COS_SECOND_ORDER
 // ************************************************************
 TEUCHOS_UNIT_TEST(HHTAlpha, SinCos_SecondOrder)
 {
@@ -280,26 +281,24 @@ TEUCHOS_UNIT_TEST(HHTAlpha, SinCos_SecondOrder)
       RCP<const SolutionHistory<double> > solutionHistory =
         integrator->getSolutionHistory();
       RCP<const Thyra::VectorBase<double> > x_exact_plot;
+	  RCP<const Thyra::VectorBase<double> > v_exact_plot;
+	  RCP<const Thyra::VectorBase<double> > a_exact_plot;
       for (int i=0; i<solutionHistory->getNumStates(); i++) {
         RCP<const SolutionState<double> > solutionState = (*solutionHistory)[i];
         double time = solutionState->getTime();
         RCP<const Thyra::VectorBase<double> > x_plot = solutionState->getX();
-        RCP<const Thyra::VectorBase<double> > x_dot_plot = solutionState->getXDot();
         x_exact_plot = model->getExactSolution(time).get_x();
-        //kinetic energy = 0.5*m*xdot*xdot
-        double ke = Thyra::dot(*x_dot_plot, *x_dot_plot);
-        ke *= 0.5*m;
-        //potential energy = 0.5*k*x*x
-        double pe = Thyra::dot(*x_plot, *x_plot);
-        pe *= 0.5*k;
-        double te = ke + pe;
-        //Output to file the following:
-        //[time, x computed, x exact, xdot computed, ke, pe, te]
+		RCP<const Thyra::VectorBase<double> > v_plot = solutionState->getXDot();
+        v_exact_plot = model->getExactSolution(time).get_x_dot();
+		RCP<const Thyra::VectorBase<double> > a_plot = solutionState->getXDotDot();
+        a_exact_plot = model->getExactSolution(time).get_x_dot_dot();
         ftmp << time << "   "
              << get_ele(*(x_plot), 0) << "   "
              << get_ele(*(x_exact_plot), 0) << "   "
-             << get_ele(*(x_dot_plot), 0) << "   "
-             << ke << "   " << pe << "   " << te << std::endl;
+             << get_ele(*(v_plot), 0) << "   "
+             << get_ele(*(v_exact_plot), 0) << "   "
+             << get_ele(*(a_plot), 0) << "   "
+             << get_ele(*(a_exact_plot), 0) << std::endl;
       }
       ftmp.close();
     }
@@ -331,7 +330,9 @@ TEUCHOS_UNIT_TEST(HHTAlpha, SinCos_SecondOrder)
   }
   ftmp.close();
 }
+#endif
 
+#ifdef TEST_SIN_COS
 // ************************************************************
 TEUCHOS_UNIT_TEST(HHTAlpha, SinCos_FirstOrder)
 {
