@@ -73,10 +73,10 @@ class TankConstraint : public ROL::Constraint_TimeSimOpt<Real> {
 private:
   ROL::Ptr<TankState<Real>> tankState_;
 
-  StateVector&   to_state  ( Vector& x ) { return dynamic_cast<StateVector&>(x); }
-  ControlVector& to_control( Vector& x ) { return dynamic_cast<ControlVector&>(x); }
-  const StateVector&   to_state  ( const Vector& x ) const { return dynamic_cast<const StateVector&>(x);   }
-  const ControlVector& to_control( const Vector& x ) const { return dynamic_cast<const ControlVector&>(x); }
+  StateVector&   to_state  ( Vector& x ) { return static_cast<StateVector&>(x); }
+  ControlVector& to_control( Vector& x ) { return static_cast<ControlVector&>(x); }
+  const StateVector&   to_state  ( const Vector& x ) const { return static_cast<const StateVector&>(x);   }
+  const ControlVector& to_control( const Vector& x ) const { return static_cast<const ControlVector&>(x); }
 
   size_type rows_, cols_;
 
