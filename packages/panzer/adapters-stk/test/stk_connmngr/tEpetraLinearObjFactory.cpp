@@ -132,8 +132,6 @@ TEUCHOS_UNIT_TEST(tEpetraLinearObjFactory, buildTest_quad)
    Teuchos::RCP<Epetra_CrsGraph> graph = laFactory.getGraph(0,0);
    Teuchos::RCP<Epetra_CrsGraph> gGraph = laFactory.getGhostedGraph(0,0);
 
-   gGraph->Print(out);
-
    std::vector<int> owned,ownedAndGhosted;
    dofManager->getOwnedIndices(owned);
    dofManager->getOwnedAndGhostedIndices(ownedAndGhosted);
