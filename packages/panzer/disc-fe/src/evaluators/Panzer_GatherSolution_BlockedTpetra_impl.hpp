@@ -499,7 +499,7 @@ postRegistrationSetup(typename TRAITS::SetupData d,
   const auto& blockGlobalIndexers = globalIndexer_->getFieldDOFManagers();
   const int numBlocks = static_cast<int>(globalIndexer_->getFieldDOFManagers().size());
   blockOffsets_ = Kokkos::View<LO*,PHX::Device>("GatherSolution_BlockedTpetra(Jacobian):blockOffsets_",
-                                                numBlocks+1); // Number of fields, plus a sentinel
+                                                numBlocks+1); // Number of blocks, plus a sentinel
   const auto hostBlockOffsets = Kokkos::create_mirror_view(blockOffsets_);
   for (int blk=0;blk<numBlocks;++blk) {
     int blockOffset = globalIndexer_->getBlockGIDOffset(blockId,blk);
@@ -582,8 +582,6 @@ evaluateFields(typename TRAITS::EvalData workset)
     });
 
   }
-            // (gatherFields_[fieldIndex])(worksetCellIndex,basis) = ScalarT(GIDs.size(), local_x[lid]);
-            // (gatherFields_[fieldIndex])(worksetCellIndex,basis).fastAccessDx(offset) = seed_value;
 }
 
 // **********************************************************************

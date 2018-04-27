@@ -165,6 +165,7 @@ private:
 
   //! Local indices for unknowns
   Kokkos::View<LO**,PHX::Device> worksetLIDs_;
+
   //! Offset into the cell lids for each field
   std::vector<Kokkos::View<int*,PHX::Device>> fieldOffsets_;
 

@@ -163,10 +163,13 @@ postRegistrationSetup(typename TRAITS::SetupData d,
 
     const std::vector<int>& offsets = fieldGlobalIndexers_[fd]->getGIDFieldOffsets(blockId,fieldIds_[fd]);
     fieldOffsets_[fd] = Kokkos::View<int*,PHX::Device>("ScatterResidual_BlockedTpetra(Residual):fieldOffsets",offsets.size());
-    for(std::size_t i=0; i < offsets.size(); ++i)
-      fieldOffsets_[fd](i) = offsets[i]; // Assumes UVM on CUDA
+    auto hostOffsets = Kokkos::create_mirror_view(fieldOffsets_[fd]);
+    for (std::size_t i=0; i < offsets.size(); ++i)
+      hostOffsets(i) = offsets[i];
+    Kokkos::deep_copy(fieldOffsets_[fd], hostOffsets);
 
     maxElementBlockGIDCount = std::max(fieldGlobalIndexers_[fd]->getElementBlockGIDCount(blockId),maxElementBlockGIDCount);
+    PHX::Device::fence();
   }
 
   // We will use one workset lid view for all fields, but has to be
@@ -200,8 +203,13 @@ evaluateFields(typename TRAITS::EvalData workset)
   const RCP<ProductVectorBase<double>> thyraBlockResidual = rcp_dynamic_cast<ProductVectorBase<double> >(blockedContainer_->get_f(),true);
 
   // Loop over scattered fields
+  int currentWorksetLIDSubBlock = -1;
   for (std::size_t fieldIndex = 0; fieldIndex < scatterFields_.size(); fieldIndex++) {
-    fieldGlobalIndexers_[fieldIndex]->getElementLIDs(localCellIds,worksetLIDs_); 
+    // workset LIDs only change for different sub blocks
+    if (productVectorBlockIndex_[fieldIndex] != currentWorksetLIDSubBlock) {
+      fieldGlobalIndexers_[fieldIndex]->getElementLIDs(localCellIds,worksetLIDs_);
+      currentWorksetLIDSubBlock = productVectorBlockIndex_[fieldIndex];
+    }
 
     const auto& tpetraResidual = *((rcp_dynamic_cast<Thyra::TpetraVector<RealType,LO,GO,NodeT>>(thyraBlockResidual->getNonconstVectorBlock(productVectorBlockIndex_[fieldIndex]),true))->getTpetraVector());
     const auto& kokkosResidual = tpetraResidual.template getLocalView<PHX::mem_space>();
@@ -288,6 +296,7 @@ postRegistrationSetup(typename TRAITS::SetupData d,
     for (std::size_t i=0; i < offsets.size(); ++i)
       hostOffsets(i) = offsets[i];
     Kokkos::deep_copy(fieldOffsets_[fd], hostOffsets);
+    PHX::Device::fence();
   }
 
   // This is sized differently than the Residual implementation since
@@ -313,6 +322,21 @@ postRegistrationSetup(typename TRAITS::SetupData d,
   }
   blockOffsets_(numBlocks) = blockOffsets_(numBlocks-1) + blockGlobalIndexers[blockGlobalIndexers.size()-1]->getElementBlockGIDCount(blockId);
   Kokkos::deep_copy(blockOffsets_,hostBlockOffsets);
+
+  // Make sure the that hard coded derivative dimension in the
+  // evaluate call is large enough to hold all derivatives for each
+  // sub block load
+  for (int blk=0;blk<numBlocks;blk++) {
+    const int blockDerivativeSize = hostBlockOffsets(blk+1) - hostBlockOffsets(blk);
+    TEUCHOS_TEST_FOR_EXCEPTION(blockDerivativeSize > 256, std::runtime_error,
+                               "ERROR: the derivative dimension for sub block "
+                               << blk << "with a value of " << blockDerivativeSize
+                               << "is larger than the size allocated for cLIDs and vals "
+                               << "in the evaluate call! You must manually increase the "
+                               << "size and recompile!");
+  }
+
+  PHX::Device::fence();
 }
 
 // **********************************************************************
@@ -338,19 +362,10 @@ void panzer::ScatterResidual_BlockedTpetra<panzer::Traits::Jacobian,TRAITS,LO,GO
 evaluateFields(typename TRAITS::EvalData workset)
 { 
   using Teuchos::RCP;
-  using Teuchos::ArrayRCP;
-  using Teuchos::ptrFromRef;
   using Teuchos::rcp_dynamic_cast;
-  
   using Thyra::VectorBase;
-  using Thyra::SpmdVectorBase;
   using Thyra::ProductVectorBase;
   using Thyra::BlockedLinearOpBase;
-
-
-  std::vector<std::pair<int,GO> > GIDs;
-  std::vector<LO> LIDs;
-  std::vector<double> jacRow;
 
   const auto& localCellIds = this->wda(workset).cell_local_ids_k;
   
@@ -365,7 +380,6 @@ evaluateFields(typename TRAITS::EvalData workset)
   // unmanaged since they are allocated and ref counted separately on
   // host.
   using LocalMatrixType = KokkosSparse::CrsMatrix<double,LO,PHX::Device,Kokkos::MemoryTraits<Kokkos::Unmanaged>>;
-  //using LocalMatrixType = KokkosSparse::CrsMatrix<double,LO,PHX::Device>;
   typename Kokkos::View<LocalMatrixType**,PHX::Device>::HostMirror 
     hostJacTpetraBlocks("panzer::ScatterResidual_BlockTpetra<Jacobian>::hostJacTpetraBlocks", numFieldBlocks,numFieldBlocks);
 
@@ -431,8 +445,6 @@ evaluateFields(typename TRAITS::EvalData workset)
     globalIndexers[block]->getElementLIDs(localCellIds,subviewOfBlockLIDs);
   }
 
-  //const std::string blockId = this->wda(workset).block_id;
-
   // Loop over scattered fields
   for (std::size_t fieldIndex = 0; fieldIndex < scatterFields_.size(); fieldIndex++) {
 
@@ -449,8 +461,7 @@ evaluateFields(typename TRAITS::EvalData workset)
     const PHX::View<const ScalarT**> fieldValues = scatterFields_[fieldIndex].get_static_view();        
     const Kokkos::View<const LO*,PHX::Device> blockOffsets = blockOffsets_;
 
-    Kokkos::parallel_for(Kokkos::RangePolicy<PHX::Device>(0,workset.num_cells), KOKKOS_LAMBDA (const int& cell) {       
-        
+    Kokkos::parallel_for(Kokkos::RangePolicy<PHX::Device>(0,workset.num_cells), KOKKOS_LAMBDA (const int& cell) {
       LO cLIDs[256];
       typename Sacado::ScalarType<ScalarT>::type vals[256];
 
@@ -464,7 +475,6 @@ evaluateFields(typename TRAITS::EvalData workset)
 
         for (int blockColIndex=0; blockColIndex < numFieldBlocks; ++blockColIndex) {
           if (blockExistsInJac(blockRowIndex,blockColIndex)) {
-            // std::cout << "ROGER filling matrix!!! fieldIndex=" << fieldIndex << ", rowLID=" << rowLID << ", jacTpetraBlocks(" << blockRowIndex << "," << blockColIndex << ")=" << jacTpetraBlocks(blockRowIndex,blockColIndex).values.size() << std::endl;
             const int start = blockOffsets(blockColIndex);
             const int stop = blockOffsets(blockColIndex+1);
             const int sensSize = stop-start;
@@ -489,7 +499,6 @@ evaluateFields(typename TRAITS::EvalData workset)
       }
     }
   }
-
 
 }
 

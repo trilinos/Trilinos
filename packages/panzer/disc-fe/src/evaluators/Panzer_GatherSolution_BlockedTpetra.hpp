@@ -147,8 +147,8 @@ private:
   typedef Tpetra::Import<LO,GO,NodeT> ImportType;
   typedef Tpetra::Export<LO,GO,NodeT> ExportType;
 
-  // maps the local (field,element,basis) triplet to a global ID
-  // for scattering
+  //! Maps the local (field,element,basis) triplet to a global ID for
+  // scattering
   Teuchos::RCP<const BlockedDOFManager<LO,GO> > globalIndexer_;
 
   //! Field IDs in the local product vector block (not global field id)
