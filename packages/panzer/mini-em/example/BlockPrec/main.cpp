@@ -218,6 +218,7 @@ int main(int argc,char * argv[])
       *out << "mu:      " << mu << std::endl;
       *out << "c:       " << c << std::endl;
       *out << "min_dx:  " << min_dx << std::endl;
+      *out << "cfl:     " << cfl << std::endl;
       *out << "dt:      " << dt << std::endl << std::endl;
 
       // data container for auxiliary linear operators used in preconditioning (mass matrix and gradient)
