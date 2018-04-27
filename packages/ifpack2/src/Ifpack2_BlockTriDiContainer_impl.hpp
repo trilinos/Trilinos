@@ -244,7 +244,9 @@ namespace Ifpack2 {
       template<typename T> using SIMD = KokkosBatched::Experimental::SIMD<T>;
       template<typename T, typename M> using DefaultVectorLength = KokkosBatched::Experimental::DefaultVectorLength<T,M>;
 
-      enum : int { vector_length = DefaultVectorLength<impl_scalar_type,memory_space>::value };
+      // Kyungjoo: hansen enum does not work (don't know why)
+      // enum : int { vector_length = DefaultVectorLength<impl_scalar_type,memory_space>::value };
+      static constexpr int vector_length = DefaultVectorLength<impl_scalar_type,memory_space>::value;
       typedef Vector<SIMD<impl_scalar_type>,vector_length> vector_type;
 
       ///
@@ -730,10 +732,11 @@ namespace Ifpack2 {
     PartInterface<MatrixType> 
     createPartInterface(const Teuchos::RCP<const typename ImplType<MatrixType>::tpetra_block_crs_matrix_type> &A,
                         const Teuchos::Array<Teuchos::Array<typename ImplType<MatrixType>::local_ordinal_type> > &partitions) {
-      using local_ordinal_type = typename ImplType<MatrixType>::local_ordinal_type;
-      using local_ordinal_type_1d_view = typename ImplType<MatrixType>::local_ordinal_type_1d_view;
+      using impl_type = ImplType<MatrixType>;
+      using local_ordinal_type = typename impl_type::local_ordinal_type;
+      using local_ordinal_type_1d_view = typename impl_type::local_ordinal_type_1d_view;
 
-      enum : int { vector_length = ImplType<MatrixType>::vector_length };
+      constexpr int vector_length = impl_type::vector_length;
 
       const auto comm = A->getRowMap()->getComm();
       
@@ -909,8 +912,8 @@ namespace Ifpack2 {
       using size_type = typename impl_type::size_type;
       using size_type_1d_view = typename impl_type::size_type_1d_view;
 
-      enum : int { vector_length = impl_type::vector_length };
-      
+      constexpr int vector_length = impl_type::vector_length;
+
       BlockTridiags<MatrixType> btdm;
 
       const local_ordinal_type ntridiags = interf.partptr.extent(0) - 1;
@@ -984,20 +987,19 @@ namespace Ifpack2 {
       using impl_scalar_type_4d_view = typename impl_type::impl_scalar_type_4d_view;
       using vector_type_3d_view = typename impl_type::vector_type_3d_view;
 
-      enum : int { vector_length = impl_type::vector_length };
-      
+      constexpr int vector_length = impl_type::vector_length;
+
       const ConstUnmanaged<size_type_1d_view> pack_td_ptr(btdm.pack_td_ptr);
       const local_ordinal_type blocksize = btdm.values.extent(1);
-
+      
       if (is_cuda<execution_space>::value) {
         using team_policy_type = Kokkos::TeamPolicy<execution_space>;
-        const int vl = vector_length; // must use int instead of enum to find out a matching kokkos constructor 
         const impl_scalar_type_4d_view values((impl_scalar_type*)btdm.values.data(), 
                                               btdm.values.extent(0), 
                                               btdm.values.extent(1),
                                               btdm.values.extent(2),
-                                              vl);
-        const team_policy_type policy(packptr.extent(0)-1, Kokkos::AUTO(), vl); // Kyungjoo: no problem here
+                                              vector_length);
+        const team_policy_type policy(packptr.extent(0)-1, Kokkos::AUTO(), vector_length); // Kyungjoo: no problem here
         Kokkos::parallel_for
           (policy, KOKKOS_LAMBDA(const typename team_policy_type::member_type &member) {          
             const local_ordinal_type k      = member.league_rank();
@@ -1005,7 +1007,7 @@ namespace Ifpack2 {
             const local_ordinal_type iend   = pack_td_ptr(packptr(k+1));
             const local_ordinal_type diff   = iend - ibeg;
             const local_ordinal_type icount = diff/3 + (diff%3 > 0);
-            Kokkos::parallel_for(Kokkos::ThreadVectorRange(member, vl),[&](const int &v) {
+            Kokkos::parallel_for(Kokkos::ThreadVectorRange(member, vector_length),[&](const int &v) {
                 Kokkos::parallel_for(Kokkos::TeamThreadRange(member,icount),[&](const local_ordinal_type &ii) {
                     const local_ordinal_type i = ibeg + ii*3;
                     for (local_ordinal_type j=0;j<blocksize;++j) 
@@ -1086,7 +1088,7 @@ namespace Ifpack2 {
       using vector_type_3d_view = typename impl_type::vector_type_3d_view;
       using block_crs_matrix_type = typename impl_type::tpetra_block_crs_matrix_type;
 
-      enum : int { vector_length = impl_type::vector_length };
+      constexpr int vector_length = impl_type::vector_length;
 
       const auto comm = A->getRowMap()->getComm();
       const auto& g = A->getCrsGraph();
@@ -1377,8 +1379,8 @@ namespace Ifpack2 {
       using impl_scalar_type_1d_view = typename impl_type::impl_scalar_type_1d_view; 
       /// vectorization 
       using vector_type_3d_view = typename impl_type::vector_type_3d_view;
-      enum : int { vector_length = impl_type::vector_length };
       using impl_scalar_type_4d_view = typename impl_type::impl_scalar_type_4d_view;
+      static constexpr int vector_length = impl_type::vector_length;
 
       /// team policy member type (used in cuda)
       using member_type = typename Kokkos::TeamPolicy<execution_space>::member_type;      
@@ -1604,10 +1606,7 @@ namespace Ifpack2 {
 
       void run() {
         if (is_cuda<execution_space>::value) {
-          // Kyungjoo: this creates a silent error 
-          // const int vl = vector_length;          
-          // const Kokkos::TeamPolicy<execution_space> policy(packptr.extent(0) - 1, Kokkos::AUTO(), vl);
-          const Kokkos::TeamPolicy<execution_space> policy(packptr.extent(0) - 1, Kokkos::AUTO());
+          const Kokkos::TeamPolicy<execution_space> policy(packptr.extent(0) - 1, Kokkos::AUTO(), vector_length);
           Kokkos::parallel_for(policy, *this);
         } else {
 #if defined(__CUDA_ARCH__)        
@@ -1652,8 +1651,7 @@ namespace Ifpack2 {
       using local_ordinal_type_1d_view = typename impl_type::local_ordinal_type_1d_view;
       using vector_type_3d_view = typename impl_type::vector_type_3d_view;
       using impl_scalar_type_2d_view = typename impl_type::impl_scalar_type_2d_view;
-
-      enum : int { vector_length = impl_type::vector_length };
+      static constexpr int vector_length = impl_type::vector_length;
 
       using member_type = typename Kokkos::TeamPolicy<execution_space>::member_type;
       
@@ -1815,8 +1813,7 @@ namespace Ifpack2 {
         value_count = 0;
         scalar_multivector = scalar_multivector_;
         if (is_cuda<execution_space>::value) {
-          const int vl = vector_length;
-          const Kokkos::TeamPolicy<execution_space,ToPackedMultiVectorTag> policy(packptr.extent(0) - 1, Kokkos::AUTO(), vl);
+          const Kokkos::TeamPolicy<execution_space,ToPackedMultiVectorTag> policy(packptr.extent(0) - 1, Kokkos::AUTO(), vector_length);
           Kokkos::parallel_for(policy, *this);
         } else {
 #if defined(__CUDA_ARCH__)
@@ -1847,15 +1844,14 @@ namespace Ifpack2 {
         }
         
         if (is_cuda<execution_space>::value) {
-          const int vl = vector_length;
           if (is_vectors_zero) {
             const Kokkos::TeamPolicy
-              <execution_space,ToScalarMultiVectorFirstTag> policy(packptr.extent(0) - 1, Kokkos::AUTO(), vl);
+              <execution_space,ToScalarMultiVectorFirstTag> policy(packptr.extent(0) - 1, Kokkos::AUTO(), vector_length);
             if (norm == NULL)  Kokkos::parallel_for(policy, *this);
             else               Kokkos::parallel_reduce(policy, *this, norm);              
           } else {
             const Kokkos::TeamPolicy
-              <execution_space,ToScalarMultiVectorSecondTag> policy(packptr.extent(0) - 1, Kokkos::AUTO(), vl);
+              <execution_space,ToScalarMultiVectorSecondTag> policy(packptr.extent(0) - 1, Kokkos::AUTO(), vector_length);
             if (norm == NULL)  Kokkos::parallel_for(policy, *this);
             else               Kokkos::parallel_reduce(policy, *this, norm);              
           }
@@ -1897,8 +1893,8 @@ namespace Ifpack2 {
       using size_type_1d_view = typename impl_type::size_type_1d_view; 
       /// vectorization 
       using vector_type_3d_view = typename impl_type::vector_type_3d_view;
-      enum : int { vector_length = impl_type::vector_length };
       using impl_scalar_type_4d_view = typename impl_type::impl_scalar_type_4d_view;
+      static constexpr int vector_length = impl_type::vector_length;
 
       /// team policy member type (used in cuda)
       using member_type = typename Kokkos::TeamPolicy<execution_space>::member_type;      
@@ -2085,9 +2081,7 @@ namespace Ifpack2 {
 
       void run() {
         if (is_cuda<execution_space>::value) {
-          //const int vl = vector_length;
-          //const Kokkos::TeamPolicy<execution_space> policy(packptr.extent(0) - 1, Kokkos::AUTO(), vl);
-          const Kokkos::TeamPolicy<execution_space> policy(packptr.extent(0) - 1, Kokkos::AUTO());
+          const Kokkos::TeamPolicy<execution_space> policy(packptr.extent(0) - 1, Kokkos::AUTO(), vector_length);
           Kokkos::parallel_for(policy, *this);
         } else {
 #if defined(__CUDA_ARCH__)        
@@ -2122,13 +2116,13 @@ namespace Ifpack2 {
       using impl_scalar_type_2d_view = typename impl_type::impl_scalar_type_2d_view; // block multivector (layout left)
       using vector_type_3d_view = typename impl_type::vector_type_3d_view;
       using impl_scalar_type_4d_view = typename impl_type::impl_scalar_type_4d_view;
+      static constexpr int vector_length = impl_type::vector_length;
 
       /// team policy member type (used in cuda)
       using member_type = typename Kokkos::TeamPolicy<execution_space>::member_type;      
 
       // enum for max blocksize and vector length
-      enum : int { vector_length = impl_type::vector_length, 
-                   max_blocksize = 32 };
+      enum : int { max_blocksize = 32 };
 
     public:
       ConstUnmanaged<impl_scalar_type_2d_view> b;
