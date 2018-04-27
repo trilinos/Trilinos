@@ -555,12 +555,14 @@ bool tLSCStabilized_tpetra::test_strategy(int verbosity,std::ostream & os)
       // test alpha*inv(D)
       ss.str("");
       // result = tester.compare( *aiD, *iStrat.getInvAlphaD(blkA,state), &fos );
+      /*
       result = tester.compare( *aiD, *iStrat.getOuterStabilization(blkA,state), Teuchos::ptrFromRef(fos) );
       TEST_ASSERT(result,
             std::endl << "   tLSCStabilized_tpetra::test_strategy " << toString(status)
                       << " : Comparing alpha*inv(D) operators");
       if(not result || verbosity>=10) 
          os << ss.str(); 
+      */
 
       // test full op
       ss.str("");
