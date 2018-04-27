@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2017 National Technology & Engineering Solutions
+// Copyright(C) 1999-2010 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -176,19 +176,15 @@ namespace Iopx {
 
     if (m_decomposition.needs_centroids()) {
       // Get my coordinate data using direct exodus calls
-      size_t size = decomp_node_count();
-      if (size == 0) {
-        size = 1; // Workaround for ambiguity in ex_get_partial_coord
-      }
-
-      std::vector<double> x(size);
+      std::vector<double> x(decomp_node_count());
+      ;
       std::vector<double> y;
       std::vector<double> z;
       if (m_decomposition.m_spatialDimension > 1) {
-        y.resize(size);
+        y.resize(decomp_node_count());
       }
       if (m_decomposition.m_spatialDimension > 2) {
-        z.resize(size);
+        z.resize(decomp_node_count());
       }
 
       m_decomposition.show_progress("\tex_get_partial_coord");
@@ -256,6 +252,7 @@ namespace Iopx {
 
     std::vector<ex_block> ebs(block_count);
     std::vector<INT>      ids(block_count);
+    assert(sizeof(INT) == Ioex::exodus_byte_size_api(filePtr));
     ex_get_ids(filePtr, EX_ELEM_BLOCK, TOPTR(ids));
 
     size_t sum    = 0; // Size of adjacency vector.
@@ -292,23 +289,6 @@ namespace Iopx {
       el_blocks[b].globalCount    = ebs[b].num_entry;
       el_blocks[b].nodesPerEntity = ebs[b].num_nodes_per_entry;
       el_blocks[b].attributeCount = ebs[b].num_attribute;
-    }
-
-    // Check that the number of elements matches the m_fileBlockIndex[b+1] entry.
-    // Reading a corrupt mesh in which there are elements not in an element block
-    // can cause hard to track down problems...
-    if (decomposition.m_globalElementCount != decomposition.m_fileBlockIndex[block_count]) {
-      if (m_processor == 0) {
-        std::ostringstream errmsg;
-        errmsg << "ERROR: The sum of the element counts in each element block gives a total of "
-               << decomposition.m_fileBlockIndex[block_count]
-               << " elements.\n       This does not match the total element count of "
-               << decomposition.m_globalElementCount
-               << " which indicates a corrupt mesh description.\n"
-               << "       Contact gdsjaar@sandia.gov for more details.\n";
-        std::cerr << errmsg.str();
-      }
-      exit(EXIT_FAILURE);
     }
 
     // Make sure 'sum' can fit in INT...
@@ -412,6 +392,8 @@ namespace Iopx {
     int root = 0; // Root processor that reads all nodeset bulk data (nodelists)
 
     node_sets.resize(set_count);
+
+    assert(sizeof(INT) == Ioex::exodus_byte_size_api(filePtr));
 
     std::vector<std::vector<INT>> set_nodelists(set_count);
     std::vector<ex_set>           sets(set_count);
@@ -554,6 +536,8 @@ namespace Iopx {
     // Issues:
     // 0. See 'get_nodeset_data' for most issues.
 
+    assert(sizeof(INT) == Ioex::exodus_byte_size_api(filePtr));
+
     int root = 0; // Root processor that reads all sideset bulk data (nodelists)
 
     side_sets.resize(set_count);
@@ -689,7 +673,7 @@ namespace Iopx {
                 break;
               }
             }
-            Ioss::Utils::clear(df);
+            std::vector<double>().swap(df);
             if (df_valcon[3 * i + 1] == 1.0) { // df are constant.
               df_valcon[3 * i + 2] = 0.0;
             }
@@ -783,8 +767,8 @@ namespace Iopx {
     int ierr = 0;
     if (field.get_name() == "mesh_model_coordinates_x") {
       m_decomposition.show_progress("\tex_get_partial_coord X");
-      ierr = ex_get_partial_coord_component(filePtr, decomp_node_offset() + 1, decomp_node_count(),
-                                            1, TOPTR(tmp));
+      ierr = ex_get_partial_coord(filePtr, decomp_node_offset() + 1, decomp_node_count(),
+                                  TOPTR(tmp), nullptr, nullptr);
       if (ierr >= 0) {
         communicate_node_data(TOPTR(tmp), ioss_data, 1);
       }
@@ -792,8 +776,8 @@ namespace Iopx {
 
     else if (field.get_name() == "mesh_model_coordinates_y") {
       m_decomposition.show_progress("\tex_get_partial_coord Y");
-      ierr = ex_get_partial_coord_component(filePtr, decomp_node_offset() + 1, decomp_node_count(),
-                                            2, TOPTR(tmp));
+      ierr = ex_get_partial_coord(filePtr, decomp_node_offset() + 1, decomp_node_count(), nullptr,
+                                  TOPTR(tmp), nullptr);
       if (ierr >= 0) {
         communicate_node_data(TOPTR(tmp), ioss_data, 1);
       }
@@ -801,8 +785,8 @@ namespace Iopx {
 
     else if (field.get_name() == "mesh_model_coordinates_z") {
       m_decomposition.show_progress("\tex_get_partial_coord Z");
-      ierr = ex_get_partial_coord_component(filePtr, decomp_node_offset() + 1, decomp_node_count(),
-                                            3, TOPTR(tmp));
+      ierr = ex_get_partial_coord(filePtr, decomp_node_offset() + 1, decomp_node_count(), nullptr,
+                                  nullptr, TOPTR(tmp));
       if (ierr >= 0) {
         communicate_node_data(TOPTR(tmp), ioss_data, 1);
       }
@@ -829,9 +813,12 @@ namespace Iopx {
       // function does 3 reads internally.
 
       for (int d = 0; d < m_decomposition.m_spatialDimension; d++) {
+        double *coord[3];
+        coord[0] = coord[1] = coord[2] = nullptr;
+        coord[d]                       = TOPTR(tmp);
         m_decomposition.show_progress("\tex_get_partial_coord XYZ");
-        ierr = ex_get_partial_coord_component(filePtr, decomp_node_offset() + 1,
-                                              decomp_node_count(), d + 1, tmp.data());
+        ierr = ex_get_partial_coord(filePtr, decomp_node_offset() + 1, decomp_node_count(),
+                                    coord[0], coord[1], coord[2]);
         if (ierr < 0) {
           return ierr;
         }
@@ -865,6 +852,7 @@ namespace Iopx {
     size_t count  = get_block_element_count(blk_seq);
     size_t offset = get_block_element_offset(blk_seq);
 
+    assert(sizeof(INT) == Ioex::exodus_byte_size_api(filePtr));
     std::vector<INT> file_conn(count * nnpe);
     m_decomposition.show_progress("\tex_get_partial_conn");
     ex_get_partial_conn(filePtr, EX_ELEM_BLOCK, id, offset + 1, count, TOPTR(file_conn), nullptr,
@@ -1109,8 +1097,8 @@ namespace Iopx {
   {
     m_decomposition.show_progress(__func__);
     // Determine number of file decomp elements are in this block;
-    size_t bbeg  = std::max(m_decomposition.m_fileBlockIndex[blk_seq], decomp_elem_offset());
-    size_t bend  = std::min(m_decomposition.m_fileBlockIndex[blk_seq + 1],
+    size_t bbeg = std::max(m_decomposition.m_fileBlockIndex[blk_seq], decomp_elem_offset());
+    size_t bend = std::min(m_decomposition.m_fileBlockIndex[blk_seq + 1],
                            decomp_elem_offset() + decomp_elem_count());
     size_t count = 0;
     if (bend > bbeg) {
@@ -1535,7 +1523,8 @@ namespace Iopx {
       // communicate with a comp count of set.distributionFactorValsPerEntity.
       std::vector<T> file_data;
       if (m_processor == set.root_) {
-        file_data.resize(set.distributionFactorValsPerEntity * set.fileCount);
+        assert(set.distributionFactorValsPerEntity * set.fileCount == set.distributionFactorCount);
+        file_data.resize(set.distributionFactorCount);
 
         ex_set set_param[1];
         set_param[0].id                       = id;

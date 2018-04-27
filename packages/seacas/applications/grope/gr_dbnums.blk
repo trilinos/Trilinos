@@ -1,4 +1,4 @@
-C    Copyright(C) 2008-2017 National Technology & Engineering Solutions of
+C    Copyright(C) 2008 National Technology & Engineering Solutions of
 C    Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C    NTESS, the U.S. Government retains certain rights in this software.
 C    
@@ -34,31 +34,6 @@ C
      &   NUMNPS, LNPSNL, LNPSDF, NUMESS, LESSEL, LESSNL, LESSDF,
      &   NQAREC, NINFO, NVARGL, NVARNP, NVAREL, NVARNS, NVARSS,
      &   NSTEPS, NAMLEN
-
-      integer ndim
-      integer numnp
-      integer numel
-      integer nelblk
-
-      integer numnps
-      integer lnpsnl
-      integer lnpsdf
-      integer numess
-      integer lessel
-      integer lessnl
-      integer lessdf
-
-      integer nqarec
-      integer ninfo
-      integer nvargl
-      integer nvarnp
-      integer nvarel
-      integer nvarns
-      integer nvarss
-
-      integer nsteps
-      integer namlen
-
 C      --NUMNP  - the number of nodes
 C      --NDIM   - the number of coordinates per node
 C      --NUMEL  - the number of elements
