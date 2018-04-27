@@ -172,7 +172,7 @@ $ ./checkin-test-sems.sh <job-name-0> <job-name-1> ... \
 * <a href="#ridewhite">ride/white</a>
 * <a href="#shillerhansen">shiller/hansen</a>
 * <a href="#chamaserrano">chama/serrano</a>
-* <a href="#SEMS-RHEL6">SEMS rhel6 environment</a>
+* <a href="#sems-rhel6-environment">SEMS rhel6 environment</a>
 
 
 ### ride/white
@@ -390,6 +390,4 @@ they support are:
   
 * `serrano/` and `chama/`: SNL HPC machines
 
-* RHEL6 systems with the SEMS NFS environment
-
-* ???
+* `rhel6/`: RHEL6 systems with the SEMS NFS environment
