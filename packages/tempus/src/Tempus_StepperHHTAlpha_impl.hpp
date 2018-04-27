@@ -24,63 +24,33 @@ template<class Scalar> class StepperFactory;
 
 template<class Scalar>
 void StepperHHTAlpha<Scalar>::
-predictVelocity(Thyra::VectorBase<Scalar>& vPred,
-                const Thyra::VectorBase<Scalar>& v,
-                const Thyra::VectorBase<Scalar>& a,
-                const Scalar dt) const
+prediction(Thyra::VectorBase<Scalar>& dPred,
+		   Thyra::VectorBase<Scalar>& vPred,
+		   const Thyra::VectorBase<Scalar>& d,
+           const Thyra::VectorBase<Scalar>& v,
+           const Thyra::VectorBase<Scalar>& a,
+           const Scalar dt) const
 {
 #ifdef VERBOSE_DEBUG_OUTPUT
   *out_ << "DEBUG: " << __PRETTY_FUNCTION__ << "\n";
 #endif
-  //vPred = v + dt*(1.0-gamma_)*a
+  //dPred = d_n + dt*v_n + dt*dt/2.0*(1.0-2.0*\beta)*a_n
+  Scalar aConst = dt*dt*(0.5-beta_);
+  Thyra::V_StVpStV(Teuchos::ptrFromRef(dPred), dt, v, aConst, a);
+  Thyra::Vp_V(Teuchos::ptrFromRef(dPred), d, 1.0);
+  //dPred = (1-\alpha)*dPred + \alpha*d_n
+  Thyra::V_StVpStV(Teuchos::ptrFromRef(dPred), 1.0-alpha_, dPred, alpha_, d);
+  
+  //vPred = v_n + dt*(1.0-\gamma)*a_n
   Thyra::V_StVpStV(Teuchos::ptrFromRef(vPred), 1.0, v, dt*(1.0-gamma_), a);
-  //vPred = (1-alpha_)*vPred + alpha_*v
+  //vPred = (1-\alpha)*vPred + \alpha*v_n
   Thyra::V_StVpStV(Teuchos::ptrFromRef(vPred), 1.0-alpha_, vPred, alpha_, v);
 }
 
 template<class Scalar>
 void StepperHHTAlpha<Scalar>::
-predictDisplacement(Thyra::VectorBase<Scalar>& dPred,
-                    const Thyra::VectorBase<Scalar>& d,
-                    const Thyra::VectorBase<Scalar>& v,
-                    const Thyra::VectorBase<Scalar>& a,
-                    const Scalar dt) const
-{
-#ifdef VERBOSE_DEBUG_OUTPUT
-  *out_ << "DEBUG: " << __PRETTY_FUNCTION__ << "\n";
-#endif
-  Teuchos::RCP<const Thyra::VectorBase<Scalar> > tmp =
-    Thyra::createMember<Scalar>(dPred.space());
-  //dPred = dt*v + dt*dt/2.0*(1.0-2.0*beta_)*a
-  Scalar aConst = dt*dt*(0.5-beta_);
-  Thyra::V_StVpStV(Teuchos::ptrFromRef(dPred), dt, v, aConst, a);
-  //dPred += d;
-  Thyra::Vp_V(Teuchos::ptrFromRef(dPred), d, 1.0);
-  //dPred = (1-alpha_)*dPred + alpha_*d
-  Thyra::V_StVpStV(Teuchos::ptrFromRef(dPred), 1.0-alpha_, dPred, alpha_, d);
-}
-
-template<class Scalar>
-void StepperHHTAlpha<Scalar>::
-correctVelocity(Thyra::VectorBase<Scalar>& v,
-                const Thyra::VectorBase<Scalar>& a_old,
-                const Thyra::VectorBase<Scalar>& a,
-                const Scalar dt) const
-{
-#ifdef VERBOSE_DEBUG_OUTPUT
-  *out_ << "DEBUG: " << __PRETTY_FUNCTION__ << "\n";
-#endif
-  //v_{n+1} = v_n + dt*(1.0-\gamma)*a_n + dt*\gamma*a_{n+1}
-  Thyra::Vp_StV(Teuchos::ptrFromRef(v), dt*(1.0-gamma_), a_old);
-  Thyra::Vp_StV(Teuchos::ptrFromRef(v), dt*gamma_, a);
- // Thyra::V_StVpStV(Teuchos::ptrFromRef(v), 1.0, v, dt*(1.0-gamma_), a_old);
- // Thyra::V_StVpStV(Teuchos::ptrFromRef(v), 1.0, v, dt*gamma_, a);
-}
-
-template<class Scalar>
-void StepperHHTAlpha<Scalar>::
-correctDisplacement(Thyra::VectorBase<Scalar>& d,
-                    const Thyra::VectorBase<Scalar>& v,
+correction(Thyra::VectorBase<Scalar>& d,
+                    Thyra::VectorBase<Scalar>& v,
                     const Thyra::VectorBase<Scalar>& a_old,
 					const Thyra::VectorBase<Scalar>& a,
                     const Scalar dt) const
@@ -88,14 +58,16 @@ correctDisplacement(Thyra::VectorBase<Scalar>& d,
 #ifdef VERBOSE_DEBUG_OUTPUT
   *out_ << "DEBUG: " << __PRETTY_FUNCTION__ << "\n";
 #endif
-  //d = dPred + beta_*dt*dt*a
-  //Thyra::V_StVpStV(Teuchos::ptrFromRef(d), 1.0, dPred, beta_*dt*dt, a);
-  //d = d_old + dt*v + dt*dt*( (0.5-beta_)*a_old + beta_*a )
+  //d_{n+1} = d_n + dt*v_n + dt*dt*( (0.5-\beta)*a_n + \beta*a_{n+1} )
   Thyra::Vp_StV(Teuchos::ptrFromRef(d), dt, v);
   Scalar c = dt*dt*(0.5-beta_);
   Thyra::Vp_StV(Teuchos::ptrFromRef(d), c, a_old);
   c = dt*dt*beta_;
   Thyra::Vp_StV(Teuchos::ptrFromRef(d), c, a);
+  
+  //v_{n+1} = v_n + dt*(1.0-\gamma)*a_n + dt*\gamma*a_{n+1}
+  Thyra::Vp_StV(Teuchos::ptrFromRef(v), dt*(1.0-gamma_), a_old);
+  Thyra::Vp_StV(Teuchos::ptrFromRef(v), dt*gamma_, a);
 }
 
 
@@ -127,8 +99,7 @@ void StepperHHTAlpha<Scalar>::setModel(
 #endif
   this->validSecondOrderODE_DAE(appModel);
   Teuchos::RCP<WrapperModelEvaluatorSecondOrder<Scalar> > wrapperModel =
-    Teuchos::rcp(new WrapperModelEvaluatorSecondOrder<Scalar>(appModel,
-                                                      "HHT-Alpha"));
+    Teuchos::rcp(new WrapperModelEvaluatorSecondOrder<Scalar>(appModel,"HHT-Alpha"));
   this->wrapperModel_ = wrapperModel;
 }
 
@@ -217,8 +188,7 @@ void StepperHHTAlpha<Scalar>::takeStep(
     RCP<Thyra::VectorBase<Scalar> > v_pred =Thyra::createMember(v_old->space());
 
     //compute displacement and velocity predictors
-    predictDisplacement(*d_pred, *d_old, *v_old, *a_old, dt);
-    predictVelocity(*v_pred, *v_old, *a_old, dt);
+    prediction(*d_pred, *v_pred, *d_old, *v_old, *a_old, dt);
 	//Update time. PA: It is supposed that wrapperModel would fetch external loads at this time point
     Scalar t = time+ (1.0-alpha_)*dt;
 
@@ -229,9 +199,7 @@ void StepperHHTAlpha<Scalar>::takeStep(
     const Thyra::SolveStatus<Scalar> sStatus = this->solveImplicitODE(a_new);
 
     //correct velocity and displacement
-    correctDisplacement(*d_new, *v_old, *a_old, *a_new, dt);
-    correctVelocity(*v_new, *a_old, *a_new, dt);
-	t += alpha_*dt;
+    correction(*d_new, *v_new, *a_old, *a_new, dt);
 
     if (sStatus.solveStatus == Thyra::SOLVE_STATUS_CONVERGED )
       workingState->getStepperState()->stepperStatus_ = Status::PASSED;
@@ -323,7 +291,7 @@ void StepperHHTAlpha<Scalar>::setParameterList(
     TEUCHOS_TEST_FOR_EXCEPTION( (alpha_ >1.0/3.0) || (alpha_ < 0.0),
       std::logic_error,
          "\nError in 'HHT-Alpha' stepper: invalid value of Alpha = "
-         << alpha_ << ".  Please select Alpha >= 0.0 and < 0.33333 \n");
+         << alpha_ << ".  Please select Alpha >= 0.0 and < 1/3 \n");
     *out << "\n \nScheme Name = HHT-Alpha.  Setting Alpha = "
            << alpha_  
            << "\n from HHT-Alpha Parameters in input file.\n\n";

@@ -48,8 +48,8 @@ using Tempus::SolutionState;
 //IKT, 3/22/17: comment out any of the following
 //if you wish not to build/run all the test cases.
 #define TEST_BALL_PARABOLIC
-#define TEST_SIN_COS
-
+//#define TEST_SIN_COS
+#define TEST_SIN_COS_SECOND_ORDER
 
 #ifdef TEST_BALL_PARABOLIC
 // ************************************************************
@@ -215,7 +215,7 @@ TEUCHOS_UNIT_TEST(HHTAlpha, ConstructingFromDefaults)
 }
 
 
-#ifdef TEST_SIN_COS
+#ifdef TEST_SIN_COS_SECOND_ORDER
 // ************************************************************
 TEUCHOS_UNIT_TEST(HHTAlpha, SinCos_SecondOrder)
 {
@@ -331,7 +331,9 @@ TEUCHOS_UNIT_TEST(HHTAlpha, SinCos_SecondOrder)
   }
   ftmp.close();
 }
+#endif
 
+#ifdef TEST_SIN_COS
 // ************************************************************
 TEUCHOS_UNIT_TEST(HHTAlpha, SinCos_FirstOrder)
 {

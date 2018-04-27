@@ -24,8 +24,8 @@ namespace Tempus {
  *
  * There are one parameters in the scheme: \f$\alpha\f$, which must be in the range
  *  \f$[0,1/3]\f$. When \f$\alpha= 0\f$, the scheme reduces to the Newmark Beta
- * scheme with no numerical damping.  \f$\alpha= 1/3\f$ gives max numerical
- * damping.
+ * scheme with no numerical damping.  Increasing \alpha decreases the response at
+ * frequency above 1/(2*dt).
  */
  
 template<class Scalar>
@@ -83,32 +83,25 @@ public:
                           const Teuchos::EVerbosityLevel verbLevel) const;
   //@}
 
-    void predictVelocity(Thyra::VectorBase<Scalar>& vPred,
-                             const Thyra::VectorBase<Scalar>& v,
-                             const Thyra::VectorBase<Scalar>& a,
-                             const Scalar dt) const;
-
-    void predictDisplacement(Thyra::VectorBase<Scalar>& dPred,
-                               const Thyra::VectorBase<Scalar>& d,
-                               const Thyra::VectorBase<Scalar>& v,
-                               const Thyra::VectorBase<Scalar>& a,
-                               const Scalar dt) const;
-
-    void correctVelocity(Thyra::VectorBase<Scalar>& v,
-                             const Thyra::VectorBase<Scalar>& vPred,
-                             const Thyra::VectorBase<Scalar>& a,
-                             const Scalar dt) const;
-
-    void correctDisplacement(Thyra::VectorBase<Scalar>& d,
-                               const Thyra::VectorBase<Scalar>& v,
-							   const Thyra::VectorBase<Scalar>& a_old,
-                               const Thyra::VectorBase<Scalar>& a,
-                               const Scalar dt) const;
-
 private:
 
   /// Default Constructor -- not allowed
   StepperHHTAlpha();
+
+  /// Predication calculation
+  void prediction(Thyra::VectorBase<Scalar>& dPred,
+	              Thyra::VectorBase<Scalar>& vPred,
+				  const Thyra::VectorBase<Scalar>& d,
+                  const Thyra::VectorBase<Scalar>& v,
+                  const Thyra::VectorBase<Scalar>& a,
+                  const Scalar dt) const;
+
+  /// Correction calculation				  
+  void correction(Thyra::VectorBase<Scalar>& d,
+                  Thyra::VectorBase<Scalar>& v,
+				  const Thyra::VectorBase<Scalar>& a_old,
+                  const Thyra::VectorBase<Scalar>& a,
+                  const Scalar dt) const;
 
 private:
 
