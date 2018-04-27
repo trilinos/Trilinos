@@ -204,12 +204,10 @@ TEUCHOS_UNIT_TEST(tFilteredUGI,filtering)
      = buildFieldPattern<Intrepid2::Basis_HGRAD_QUAD_C1_FEM<PHX::exec_space,double,double> >();
 
    dofManager->addField("T",patternC1); // add it to all three blocks
-/*
    dofManager->addField("block_0","Ux",patternC1);
    dofManager->addField("block_0","Uy",patternC1);
    dofManager->addField("block_0","P",patternC1);
    dofManager->addField("block_2","rho",patternC1);
-*/
 
    dofManager->buildGlobalUnknowns();
 
