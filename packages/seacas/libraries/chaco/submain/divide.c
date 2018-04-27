@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005-2017 National Technology & Engineering Solutions
+ * Copyright (c) 2005 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -60,7 +60,7 @@ void divide(struct vtx_data **graph,         /* graph data structure */
             int (*hop_mtx)[MAXSETS],         /* between-set hop costs for KL */
             int nsets,                       /* number of sets to partition into */
             int striping                     /* partition by striping into pieces? */
-)
+            )
 {
   extern int           DEBUG_TRACE;        /* trace main execution path? */
   extern int           DEBUG_CONNECTED;    /* debug flag for connected components */

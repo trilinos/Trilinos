@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2017 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2010 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -360,11 +360,11 @@ namespace Ioex {
         : id(the_id), entityCount(count), type(the_type)
     {
     }
-    bool      operator==(const CommunicationMap & /*other*/) const;
-    bool      operator!=(const CommunicationMap &other) const { return !(*this == other); }
-    entity_id id;
-    int64_t   entityCount;
-    char      type; // 'n' for node, 'e' for element
+    bool operator==(const CommunicationMap & /*other*/) const;
+    bool operator!=(const CommunicationMap &other) const { return !(*this == other); }
+    entity_id                               id;
+    int64_t                                 entityCount;
+    char                                    type; // 'n' for node, 'e' for element
   };
 
   struct CommunicationMetaData
@@ -490,9 +490,9 @@ namespace Ioex {
     int                 exodusFilePtr;
     int                 nodeMapVarID[3];
     int                 elementMapVarID[2];
-    int                 commIndexVar{0};
-    int                 elemCommIndexVar{0};
-    int                 maximumNameLength{32};
+    int                 commIndexVar;
+    int                 elemCommIndexVar;
+    int                 maximumNameLength;
     Ioss::ParallelUtils parallelUtil;
   };
 } // namespace Ioex

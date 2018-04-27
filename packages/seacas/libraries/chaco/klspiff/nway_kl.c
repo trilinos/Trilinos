@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005-2017 National Technology & Engineering Solutions
+ * Copyright (c) 2005 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -66,7 +66,7 @@ int nway_kl(struct vtx_data **graph,       /* data structure for graph */
             int     using_ewgts,           /* are edge weights being used? */
             int **  bndy_list,             /* list of vertices on boundary (0 ends) */
             double *startweight            /* sum of vweights in each set (in and out) */
-)
+            )
 
 /* Suaris and Kedem algorithm for quadrisection, generalized to an */
 /* arbitrary number of sets, with intra-set cost function specified by hops. */

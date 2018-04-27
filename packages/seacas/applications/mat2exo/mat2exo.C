@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 2012-2017 National Technology & Engineering Solutions
+ * Copyright(C) 2012 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -67,22 +67,25 @@
 #include <exodusII.h>      // for ex_put_variable_param, etc
 #include <iostream>        // for operator<<, basic_ostream, etc
 #include <numeric>         // for accumulate
-#include <smart_assert.h>
-#include <string> // for char_traits, string
-#include <vector> // for vector
+#include <string>          // for char_traits, string
+#include <vector>          // for vector
 
 #if MATIO_VERSION < 151
 #error "MatIO Version 1.5.1 or greater is required"
 #endif
 
 /**********************************************************************/
+#if __cplusplus > 199711L
+#define TOPTR(x) x.data()
+#else
+#define TOPTR(x) (x.empty() ? nullptr : &x[0])
+#endif
+
 mat_t *mat_file = nullptr; /* file for binary .mat input */
 
 /**********************************************************************/
 static const char *qainfo[] = {
-    "mat2exo",
-    "2018/04/20",
-    "4.03",
+    "mat2exo", "2017/07/18", "4.01",
 };
 
 /**********************************************************************/
@@ -94,11 +97,11 @@ void get_put_vars(int exo_file, ex_entity_type type, const std::vector<int> &ids
                   const char *mname);
 
 std::vector<std::string> matGetStr(const char *name);
-int  matGetDbl(const char *name, size_t n1, size_t n2, std::vector<double> &data);
-int  matGetInt(const char *name, size_t n1, size_t n2, std::vector<int> &data);
-int  matGetInt(const char *name);
-int  matArrNRow(const char *name);
-int  matArrNCol(const char *name);
+int matGetDbl(const char *name, size_t n1, size_t n2, std::vector<double> &data);
+int matGetInt(const char *name, size_t n1, size_t n2, std::vector<int> &data);
+int matGetInt(const char *name);
+int matArrNRow(const char *name);
+int matArrNCol(const char *name);
 void del_arg(int *argc, char *argv[], int j);
 
 /**********************************************************************/
@@ -193,7 +196,7 @@ int main(int argc, char *argv[])
     if (num_axes > 2) {
       matGetDbl("z0", num_nodes, 1, z);
     }
-    ex_put_coord(exo_file, x.data(), y.data(), z.data());
+    ex_put_coord(exo_file, TOPTR(x), TOPTR(y), TOPTR(z));
   }
 
   /* side sets */
@@ -219,12 +222,12 @@ int main(int argc, char *argv[])
 
       sprintf(name, "ssside%02d", i + 1);
       matGetInt(name, num_sideset_sides[i], 1, side_list);
-      ex_put_set(exo_file, EX_SIDE_SET, ids[i], elem_list.data(), side_list.data());
+      ex_put_set(exo_file, EX_SIDE_SET, ids[i], TOPTR(elem_list), TOPTR(side_list));
 
+      sprintf(name, "ssfac%02d", i + 1);
+      matGetDbl(name, nssdfac[i], 1, dist_fact);
       if (nssdfac[i] > 0) {
-        sprintf(name, "ssfac%02d", i + 1);
-        matGetDbl(name, nssdfac[i], 1, dist_fact);
-        ex_put_set_dist_fact(exo_file, EX_SIDE_SET, ids[i], dist_fact.data());
+        ex_put_set_dist_fact(exo_file, EX_SIDE_SET, ids[i], TOPTR(dist_fact));
       }
     }
 
@@ -250,12 +253,12 @@ int main(int argc, char *argv[])
 
       sprintf(name, "nsnod%02d", i + 1);
       matGetInt(name, num_nodeset_nodes[i], 1, node_list);
-      ex_put_set(exo_file, EX_NODE_SET, ids[i], node_list.data(), nullptr);
+      ex_put_set(exo_file, EX_NODE_SET, ids[i], TOPTR(node_list), nullptr);
 
+      sprintf(name, "nsfac%02d", i + 1);
+      matGetDbl(name, ndfac[i], 1, dist_fact);
       if (ndfac[i] > 0) {
-        sprintf(name, "nsfac%02d", i + 1);
-        matGetDbl(name, ndfac[i], 1, dist_fact);
-        ex_put_set_dist_fact(exo_file, EX_NODE_SET, ids[i], dist_fact.data());
+        ex_put_set_dist_fact(exo_file, EX_NODE_SET, ids[i], TOPTR(dist_fact));
       }
     }
 
@@ -270,7 +273,7 @@ int main(int argc, char *argv[])
 
     /* get elem block types */
     auto block_names = matGetStr("blknames");
-    SMART_ASSERT(block_names.size() == (size_t)num_blocks);
+    assert(block_names.size() == (size_t)num_blocks);
     std::vector<int> connect;
     for (int i = 0; i < num_blocks; i++) {
       char name[32];
@@ -284,7 +287,7 @@ int main(int argc, char *argv[])
       int num_attr_per_elem = matGetInt(name);
       ex_put_block(exo_file, EX_ELEM_BLOCK, ids[i], block_names[i].c_str(), num_elem_in_block[i],
                    num_node_per_elem, 0, 0, num_attr_per_elem);
-      ex_put_conn(exo_file, EX_ELEM_BLOCK, ids[i], connect.data(), nullptr, nullptr);
+      ex_put_conn(exo_file, EX_ELEM_BLOCK, ids[i], TOPTR(connect), nullptr, nullptr);
 
       if (num_attr_per_elem > 0) {
         get_put_attr_names(exo_file, i + 1, ids[i], num_attr_per_elem);
@@ -373,14 +376,14 @@ int main(int argc, char *argv[])
   {
     std::vector<int> ids;
     if (matGetInt("node_num_map", num_nodes, 1, ids) == 0) {
-      ex_put_id_map(exo_file, EX_NODE_MAP, ids.data());
+      ex_put_id_map(exo_file, EX_NODE_MAP, TOPTR(ids));
     }
   }
 
   {
     std::vector<int> ids;
     if (matGetInt("elem_num_map", num_elements, 1, ids) == 0) {
-      ex_put_id_map(exo_file, EX_ELEM_MAP, ids.data());
+      ex_put_id_map(exo_file, EX_ELEM_MAP, TOPTR(ids));
     }
   }
 
@@ -405,17 +408,7 @@ std::vector<std::string> matGetStr(const char *name)
     printf("Error: Multiline string copy attempted\n");
   }
 
-  size_t bytes = matvar->nbytes;
-  if (matvar->data_size == 2 && matvar->data_type == MAT_T_UINT16) {
-    // Data stored as 16bit, but we want 8bit (This is due to some UTF
-    // strangeness in matio)
-    char *data = reinterpret_cast<char *>(matvar->data);
-    for (size_t i = 0, j = 0; i < matvar->nbytes; i += 2, j++) {
-      data[j] = data[i];
-    }
-    bytes /= 2;
-  }
-  std::string mat_names(reinterpret_cast<char *>(matvar->data), bytes);
+  std::string mat_names(reinterpret_cast<char *>(matvar->data), matvar->nbytes);
   auto        names = SLIB::tokenize(mat_names, "\n", true);
   Mat_VarFree(matvar);
 
@@ -430,8 +423,8 @@ int matGetDbl(const char *name, size_t n1, size_t n2, std::vector<double> &data)
     return -1;
   }
 
-  SMART_ASSERT(matvar->dims[0] == n1);
-  SMART_ASSERT(matvar->dims[1] == n2);
+  assert(matvar->dims[0] == n1);
+  assert(matvar->dims[1] == n2);
 
   data.resize(n1 * n2);
   memcpy(data.data(), static_cast<int *>(matvar->data), n1 * n2 * sizeof(double));
@@ -448,8 +441,8 @@ int matGetInt(const char *name, size_t n1, size_t n2, std::vector<int> &data)
     return -1;
   }
 
-  SMART_ASSERT(matvar->dims[0] == n1);
-  SMART_ASSERT(matvar->dims[1] == n2);
+  assert(matvar->dims[0] == n1);
+  assert(matvar->dims[1] == n2);
 
   data.resize(n1 * n2);
   memcpy(data.data(), static_cast<int *>(matvar->data), n1 * n2 * sizeof(int));
@@ -466,8 +459,8 @@ int matGetInt(const char *name)
     return -1;
   }
 
-  SMART_ASSERT(matvar->dims[0] == 1);
-  SMART_ASSERT(matvar->dims[1] == 1);
+  assert(matvar->dims[0] == 1);
+  assert(matvar->dims[1] == 1);
 
   int data = static_cast<int *>(matvar->data)[0];
 
@@ -515,7 +508,7 @@ void del_arg(int *argc, char *argv[], int j)
 void get_put_names(int exo_file, ex_entity_type entity, int num_vars, const std::string &name)
 {
   auto names = matGetStr(name.c_str());
-  SMART_ASSERT(names.size() == (size_t)num_vars);
+  assert(names.size() == (size_t)num_vars);
   const char **str2 = reinterpret_cast<const char **>(calloc(num_vars, sizeof(char *)));
   for (int i = 0; i < num_vars; i++) {
     str2[i] = names[i].c_str();
@@ -527,7 +520,7 @@ void get_put_names(int exo_file, ex_entity_type entity, int num_vars, const std:
 void get_put_user_names(int exo_file, ex_entity_type entity, int num_entity, const char *mname)
 {
   auto names = matGetStr(mname);
-  SMART_ASSERT(names.size() == (size_t)num_entity)(names.size())(num_entity);
+  assert(names.size() == (size_t)num_entity);
   const char **str2 = reinterpret_cast<const char **>(calloc(num_entity, sizeof(char *)));
   for (int i = 0; i < num_entity; i++) {
     str2[i] = names[i].c_str();
@@ -542,7 +535,7 @@ void get_put_attr_names(int exo_file, int seq, int id, int num_attr)
   sprintf(str, "blk%02d_attrnames", seq);
 
   auto names = matGetStr(str);
-  SMART_ASSERT(names.size() == (size_t)num_attr);
+  assert(names.size() == (size_t)num_attr);
   const char **str2 = reinterpret_cast<const char **>(calloc(num_attr, sizeof(char *)));
   for (int i = 0; i < num_attr; i++) {
     str2[i] = names[i].c_str();

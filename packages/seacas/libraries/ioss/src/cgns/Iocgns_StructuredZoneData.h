@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2017 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2010 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -44,48 +44,54 @@ namespace Iocgns {
   class StructuredZoneData
   {
   public:
-    StructuredZoneData() { m_adam = this; }
-
-    StructuredZoneData(std::string name, int zone, int ni, int nj, int nk)
-        : m_name(std::move(name)), m_ordinal{{ni, nj, nk}}, m_zone(zone)
+    StructuredZoneData()
+        : m_ordinal{{0, 0, 0}}, m_offset{{0, 0, 0}}, m_preferentialOrdinal(-1), m_zone(0),
+          m_adam(nullptr), m_parent(nullptr), m_proc(-1), m_splitOrdinal(0), m_child1(nullptr),
+          m_child2(nullptr), m_sibling(nullptr)
     {
-      m_adam = this;
     }
 
-    std::string m_name{};
-    Ioss::IJK_t m_ordinal{{0, 0, 0}};
+    StructuredZoneData(std::string name, int zone, int ni, int nj, int nk)
+        : m_name(std::move(name)), m_ordinal{{ni, nj, nk}}, m_offset{{0, 0, 0}},
+          m_preferentialOrdinal(-1), m_zone(zone), m_adam(nullptr), m_parent(nullptr), m_proc(-1),
+          m_splitOrdinal(0), m_child1(nullptr), m_child2(nullptr), m_sibling(nullptr)
+    {
+    }
+
+    std::string m_name;
+    Ioss::IJK_t m_ordinal;
 
     // Offset of this block relative to its
     // adam block. ijk_adam = ijk_me + m_offset[ijk];
-    Ioss::IJK_t m_offset{{0, 0, 0}};
+    Ioss::IJK_t m_offset;
 
     // If value is 0, 1, or 2, then do not split along that ordinal
-    int m_lineOrdinal{-1};
+    int m_preferentialOrdinal;
 
-    int m_zone{0};
+    int m_zone;
 
     // The zone in the undecomposed model that this zone is a
     // descendant of.  If not decomposed, then m_zone == m_adam;
-    StructuredZoneData *m_adam{nullptr};
+    StructuredZoneData *m_adam;
 
     // If this zone was the result of splitting another zone, then
     // what is the zone number of that zone.  Zones are kept in a
     // vector and the zone number is its position in that vector+1
     // to make it 1-based and match numbering on file.
-    StructuredZoneData *m_parent{nullptr};
+    StructuredZoneData *m_parent;
 
-    int m_proc{-1}; // The processor this block might be run on...
+    int m_proc; // The processor this block might be run on...
 
     // Which ordinal of the parent was split to generate this zone and its sibling.
-    int m_splitOrdinal{0};
+    int m_splitOrdinal;
 
     // The two zones that were split off from this zone.
     // Might be reasonable to do a 3-way or n-way split, but for now
     // just do a 2-way.
-    StructuredZoneData *m_child1{nullptr};
-    StructuredZoneData *m_child2{nullptr};
+    StructuredZoneData *m_child1;
+    StructuredZoneData *m_child2;
 
-    StructuredZoneData *m_sibling{nullptr};
+    StructuredZoneData *m_sibling;
 
     std::vector<Ioss::ZoneConnectivity> m_zoneConnectivity;
 
@@ -101,8 +107,7 @@ namespace Iocgns {
     // block is proportional to the number of cells.
     size_t work() const { return m_ordinal[0] * m_ordinal[1] * m_ordinal[2]; }
 
-    std::pair<StructuredZoneData *, StructuredZoneData *> split(int zone_id, double avg_work,
-                                                                double balance, int rank);
+    std::pair<StructuredZoneData *, StructuredZoneData *> split(int zone_id, double ratio = 0.5);
     void resolve_zgc_split_donor(std::vector<Iocgns::StructuredZoneData *> &zones);
     void update_zgc_processor(std::vector<Iocgns::StructuredZoneData *> &zones);
   };

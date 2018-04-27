@@ -1,4 +1,4 @@
-// Copyright(C) 2008-2017 National Technology & Engineering Solutions
+// Copyright(C) 2008 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -41,7 +41,6 @@
 #include "exo_block.h"
 #include "iqsort.h"
 #include "smart_assert.h"
-#include "util.h"
 
 namespace {
   double find_range(const double *x, size_t num_nodes);
@@ -306,31 +305,31 @@ void Compute_Maps(INT *&node_map, INT *&elmt_map, ExoII_Read<INT> &file1, ExoII_
             }
           }
           if (!found) {
-            std::ostringstream out;
-            out << "\nexodiff: ERROR: Cannot find a match for node at position " << ln1 + 1
-                << " in first element.\n"
-                << "\tFile 1: Element " << (i + 1) << " in Block " << file1.Block_Id(b)
-                << " nodes:\n";
+            std::cerr << trmclr::red
+                      << "\nexodiff: ERROR: Cannot find a match for node at position " << ln1 + 1
+                      << " in first element.\n"
+                      << "\tFile 1: Element " << (i + 1) << " in Block " << file1.Block_Id(b)
+                      << " nodes:\n";
             for (size_t l1 = 0; l1 < num_nodes_per_elmt; ++l1) {
               double x_val = x1_f[conn1[l1] - 1];
               double y_val = dim > 1 ? y1_f[conn1[l1] - 1] : 0.0;
               double z_val = dim > 2 ? z1_f[conn1[l1] - 1] : 0.0;
-              out << "\t(" << l1 + 1 << ")\t" << conn1[l1] << "\t" << std::setprecision(9) << x_val
-                  << "\t" << y_val << "\t" << z_val << "\n";
+              std::cerr << "\t(" << l1 + 1 << ")\t" << conn1[l1] << "\t" << std::setprecision(9)
+                        << x_val << "\t" << y_val << "\t" << z_val << "\n";
             }
-            out << "\tFile 2: Element " << (l2 + 1) << " in Block " << file1.Block_Id(b)
-                << " nodes:\n";
+            std::cerr << "\tFile 2: Element " << (l2 + 1) << " in Block " << file1.Block_Id(b)
+                      << " nodes:\n";
             for (size_t l3 = 0; l3 < num_nodes_per_elmt; ++l3) {
               double x_val = x2_f[conn2[l3] - 1];
               double y_val = dim > 1 ? y2_f[conn2[l3] - 1] : 0.0;
               double z_val = dim > 2 ? z2_f[conn2[l3] - 1] : 0.0;
-              out << "\t(" << l3 + 1 << ")\t" << conn2[l3] << "\t" << std::setprecision(9) << x_val
-                  << "\t" << y_val << "\t" << z_val << "\n";
+              std::cerr << "\t(" << l3 + 1 << ")\t" << conn2[l3] << "\t" << std::setprecision(9)
+                        << x_val << "\t" << y_val << "\t" << z_val << "\n";
             }
-            out << "Coordinates compared using tolerance: " << interface.coord_tol.value << " ("
-                << interface.coord_tol.typestr() << "), floor: " << interface.coord_tol.floor
-                << "\n";
-            ERR_OUT(out);
+            std::cerr << "Coordinates compared using tolerance: " << interface.coord_tol.value
+                      << " (" << interface.coord_tol.typestr()
+                      << "), floor: " << interface.coord_tol.floor << "\n"
+                      << trmclr::normal;
             exit(1);
           }
         } // End of local node loop on file1's element.
@@ -384,7 +383,7 @@ void Compute_Partial_Maps(INT *&node_map, INT *&elmt_map, ExoII_Read<INT> &file1
   size_t num_nodes1 = file1.Num_Nodes();
   size_t num_elmts1 = file1.Num_Elmts();
 
-  size_t num_nodes2 = file2.Num_Nodes();
+  // size_t num_nodes2 = file2.Num_Nodes();
   size_t num_elmts2 = file2.Num_Elmts();
   int    dim        = file1.Dimension();
   SMART_ASSERT(dim == file2.Dimension());
@@ -602,31 +601,31 @@ void Compute_Partial_Maps(INT *&node_map, INT *&elmt_map, ExoII_Read<INT> &file1
             }
           }
           if (!found) {
-            std::ostringstream out;
-            out << "\nexodiff: ERROR: Cannot find a match for node at position " << ln1 + 1
-                << " in first element.\n"
-                << "\tFile 1: Element " << (i + 1) << " in Block " << file1.Block_Id(b)
-                << " nodes:\n";
+            std::cerr << trmclr::red
+                      << "\nexodiff: ERROR: Cannot find a match for node at position " << ln1 + 1
+                      << " in first element.\n"
+                      << "\tFile 1: Element " << (i + 1) << " in Block " << file1.Block_Id(b)
+                      << " nodes:\n";
             for (size_t l1 = 0; l1 < num_nodes_per_elmt; ++l1) {
               double x_val = x1_f[conn1[l1] - 1];
               double y_val = dim > 1 ? y1_f[conn1[l1] - 1] : 0.0;
               double z_val = dim > 2 ? z1_f[conn1[l1] - 1] : 0.0;
-              out << "\t(" << l1 + 1 << ")\t" << conn1[l1] << "\t" << std::setprecision(9) << x_val
-                  << "\t" << y_val << "\t" << z_val << "\n";
+              std::cerr << "\t(" << l1 + 1 << ")\t" << conn1[l1] << "\t" << std::setprecision(9)
+                        << x_val << "\t" << y_val << "\t" << z_val << "\n";
             }
-            out << "\tFile 2: Element " << (l2 + 1) << " in Block " << file1.Block_Id(b)
-                << " nodes:\n";
+            std::cerr << "\tFile 2: Element " << (l2 + 1) << " in Block " << file1.Block_Id(b)
+                      << " nodes:\n";
             for (size_t l3 = 0; l3 < num_nodes_per_elmt; ++l3) {
               double x_val = x2_f[conn2[l3] - 1];
               double y_val = dim > 1 ? y2_f[conn2[l3] - 1] : 0.0;
               double z_val = dim > 2 ? z2_f[conn2[l3] - 1] : 0.0;
-              out << "\t(" << l3 + 1 << ")\t" << conn2[l3] << "\t" << std::setprecision(9) << x_val
-                  << "\t" << y_val << "\t" << z_val << "\n";
+              std::cerr << "\t(" << l3 + 1 << ")\t" << conn2[l3] << "\t" << std::setprecision(9)
+                        << x_val << "\t" << y_val << "\t" << z_val << "\n";
             }
-            out << "Coordinates compared using tolerance: " << interface.coord_tol.value << " ("
-                << interface.coord_tol.typestr() << "), floor: " << interface.coord_tol.floor
-                << "\n";
-            ERR_OUT(out);
+            std::cerr << "Coordinates compared using tolerance: " << interface.coord_tol.value
+                      << " (" << interface.coord_tol.typestr()
+                      << "), floor: " << interface.coord_tol.floor << "\n"
+                      << trmclr::normal;
             exit(1);
           }
         } // End of local node loop on file1's element.
@@ -642,7 +641,7 @@ void Compute_Partial_Maps(INT *&node_map, INT *&elmt_map, ExoII_Read<INT> &file1
     std::cout << "\nPartial Map selected -- " << unmatched << " elements unmatched\n";
   }
   else {
-    if (num_elmts1 == num_elmts2 && num_nodes1 == num_nodes2) {
+    if (num_elmts1 == num_elmts2) {
       std::cout
           << "exodiff: INFO .. Partial Map was specfied, but not needed.  All elements matched.\n";
     }
@@ -1199,22 +1198,20 @@ bool Compare_Maps(ExoII_Read<INT> &file1, ExoII_Read<INT> &file2, const INT *nod
   size_t warn_count = 0;
 
   if (node_map != nullptr) {
-    if (!interface.dump_mapping) {
-      // There is a map between file1 and file2, but all nodes are
-      // used in both files.
-      for (size_t i = 0; i < num_nodes1; i++) {
-        if (node_id_map1[i] != node_id_map2[node_map[i]]) {
-          if (!(node_id_map2[node_map[i]] == 0 &&
-                partial_flag)) { // Don't output diff if non-matched and partial
-            std::cerr << "exodiff: WARNING .. The local node " << i + 1 << " with global id "
-                      << node_id_map1[i] << " in file1 has the global id "
-                      << node_id_map2[node_map[i]] << " in file2.\n";
-            diff = true;
-            warn_count++;
-            if (warn_count > 100) {
-              std::cerr << "exodiff: WARNING .. Too many warnings, skipping remainder...\n";
-              break;
-            }
+    // There is a map between file1 and file2, but all nodes are
+    // used in both files.
+    for (size_t i = 0; i < num_nodes1; i++) {
+      if (node_id_map1[i] != node_id_map2[node_map[i]]) {
+        if (!(node_id_map2[node_map[i]] == 0 &&
+              partial_flag)) { // Don't output diff if non-matched and partial
+          std::cerr << "exodiff: WARNING .. The local node " << i + 1 << " with global id "
+                    << node_id_map1[i] << " in file1 has the global id "
+                    << node_id_map2[node_map[i]] << " in file2.\n";
+          diff = true;
+          warn_count++;
+          if (warn_count > 100) {
+            std::cerr << "exodiff: WARNING .. Too many warnings, skipping remainder...\n";
+            break;
           }
         }
       }
@@ -1242,22 +1239,20 @@ bool Compare_Maps(ExoII_Read<INT> &file1, ExoII_Read<INT> &file2, const INT *nod
 
   warn_count = 0;
   if (elmt_map != nullptr) {
-    if (!interface.dump_mapping) {
-      // There is a map between file1 and file2, but all elements are
-      // used in both files.
-      for (size_t i = 0; i < num_elmts1; i++) {
-        if (elem_id_map1[i] != elem_id_map2[elmt_map[i]]) {
-          if (!(elem_id_map2[elmt_map[i]] == 0 &&
-                partial_flag)) { // Don't output diff if non-matched and partial
-            std::cerr << "exodiff: WARNING .. The local element " << i + 1 << " with global id "
-                      << elem_id_map1[i] << " in file1 has the global id "
-                      << elem_id_map2[elmt_map[i]] << " in file2.\n";
-            diff = true;
-            warn_count++;
-            if (warn_count > 100) {
-              std::cerr << "exodiff: WARNING .. Too many warnings, skipping remainder...\n";
-              break;
-            }
+    // There is a map between file1 and file2, but all elements are
+    // used in both files.
+    for (size_t i = 0; i < num_elmts1; i++) {
+      if (elem_id_map1[i] != elem_id_map2[elmt_map[i]]) {
+        if (!(elem_id_map2[elmt_map[i]] == 0 &&
+              partial_flag)) { // Don't output diff if non-matched and partial
+          std::cerr << "exodiff: WARNING .. The local element " << i + 1 << " with global id "
+                    << elem_id_map1[i] << " in file1 has the global id "
+                    << elem_id_map2[elmt_map[i]] << " in file2.\n";
+          diff = true;
+          warn_count++;
+          if (warn_count > 100) {
+            std::cerr << "exodiff: WARNING .. Too many warnings, skipping remainder...\n";
+            break;
           }
         }
       }
@@ -1296,13 +1291,13 @@ template void Compute_Maps(int *&node_map, int *&elmt_map, ExoII_Read<int> &file
 template bool Compare_Maps(ExoII_Read<int> &file1, ExoII_Read<int> &file2, const int *node_map,
                            const int *elmt_map, bool partial_flag);
 
-template void   Compute_Partial_Maps(int *&node_map, int *&elmt_map, ExoII_Read<int> &file1,
-                                     ExoII_Read<int> &file2);
-template void   Compute_FileId_Maps(int *&node_map, int *&elmt_map, ExoII_Read<int> &file1,
-                                    ExoII_Read<int> &file2);
-template void   Dump_Maps(const int *node_map, const int *elmt_map, ExoII_Read<int> &file1);
-template bool   Check_Maps(const int *node_map, const int *elmt_map, const ExoII_Read<int> &file1,
-                           const ExoII_Read<int> &file2);
+template void Compute_Partial_Maps(int *&node_map, int *&elmt_map, ExoII_Read<int> &file1,
+                                   ExoII_Read<int> &file2);
+template void Compute_FileId_Maps(int *&node_map, int *&elmt_map, ExoII_Read<int> &file1,
+                                  ExoII_Read<int> &file2);
+template void Dump_Maps(const int *node_map, const int *elmt_map, ExoII_Read<int> &file1);
+template bool Check_Maps(const int *node_map, const int *elmt_map, const ExoII_Read<int> &file1,
+                         const ExoII_Read<int> &file2);
 template double Find_Min_Coord_Sep(ExoII_Read<int> &file);
 
 template void Compute_Maps(int64_t *&node_map, int64_t *&elmt_map, ExoII_Read<int64_t> &file1,
@@ -1310,12 +1305,12 @@ template void Compute_Maps(int64_t *&node_map, int64_t *&elmt_map, ExoII_Read<in
 template bool Compare_Maps(ExoII_Read<int64_t> &file1, ExoII_Read<int64_t> &file2,
                            const int64_t *node_map, const int64_t *elmt_map, bool partial_flag);
 
-template void   Compute_Partial_Maps(int64_t *&node_map, int64_t *&elmt_map,
-                                     ExoII_Read<int64_t> &file1, ExoII_Read<int64_t> &file2);
-template void   Compute_FileId_Maps(int64_t *&node_map, int64_t *&elmt_map,
-                                    ExoII_Read<int64_t> &file1, ExoII_Read<int64_t> &file2);
-template void   Dump_Maps(const int64_t *node_map, const int64_t *elmt_map,
-                          ExoII_Read<int64_t> &file1);
-template bool   Check_Maps(const int64_t *node_map, const int64_t *elmt_map,
-                           const ExoII_Read<int64_t> &file1, const ExoII_Read<int64_t> &file2);
+template void Compute_Partial_Maps(int64_t *&node_map, int64_t *&elmt_map,
+                                   ExoII_Read<int64_t> &file1, ExoII_Read<int64_t> &file2);
+template void Compute_FileId_Maps(int64_t *&node_map, int64_t *&elmt_map,
+                                  ExoII_Read<int64_t> &file1, ExoII_Read<int64_t> &file2);
+template void Dump_Maps(const int64_t *node_map, const int64_t *elmt_map,
+                        ExoII_Read<int64_t> &file1);
+template bool Check_Maps(const int64_t *node_map, const int64_t *elmt_map,
+                         const ExoII_Read<int64_t> &file1, const ExoII_Read<int64_t> &file2);
 template double Find_Min_Coord_Sep(ExoII_Read<int64_t> &file);
