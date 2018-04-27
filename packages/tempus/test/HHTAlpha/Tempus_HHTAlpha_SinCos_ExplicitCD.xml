@@ -1,4 +1,4 @@
-<ParameterList name="Newmark_HarmonicOscillator">
+<ParameterList name="HHTAlpha_HarmonicOscillator">
   <ParameterList name="HarmonicOscillatorModel">
     <Parameter name="Damping coeff c" type="double" value="0.0"/>
     <Parameter name="Forcing coeff f" type="double" value="0.0"/>

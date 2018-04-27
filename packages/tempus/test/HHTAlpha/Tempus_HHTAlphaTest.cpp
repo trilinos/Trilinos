@@ -45,13 +45,16 @@ using Tempus::IntegratorBasic;
 using Tempus::SolutionHistory;
 using Tempus::SolutionState;
 
-//IKT, 3/22/17: comment out any of the following
-//if you wish not to build/run all the test cases.
+// Comment out any of the following tests to exclude from build/run.
 #define TEST_BALL_PARABOLIC
-#define TEST_SIN_COS
+#define TEST_CONSTRUCTING_FROM_DEFAULTS
+#define TEST_SINCOS_SECONDORDER
+#define TEST_SINCOS_FIRSTORDER
+#define TEST_SINCOS_CD
 
 
 #ifdef TEST_BALL_PARABOLIC
+// ************************************************************
 // ************************************************************
 TEUCHOS_UNIT_TEST(HHTAlpha, BallParabolic)
 {
@@ -59,7 +62,7 @@ TEUCHOS_UNIT_TEST(HHTAlpha, BallParabolic)
   double tolerance = 1.0e-14;
   // Read params from .xml file
   RCP<ParameterList> pList =
-    getParametersFromXmlFile("Tempus_Newmark_BallParabolic.xml");
+    getParametersFromXmlFile("Tempus_HHTAlpha_BallParabolic.xml");
 
   // Setup the HarmonicOscillatorModel
   RCP<ParameterList> hom_pl = sublist(pList, "HarmonicOscillatorModel", true);
@@ -88,7 +91,7 @@ TEUCHOS_UNIT_TEST(HHTAlpha, BallParabolic)
     model->getExactSolution(time).get_x();
 
   // Plot sample solution and exact solution
-  std::ofstream ftmp("Tempus_Newmark_BallParabolic.dat");
+  std::ofstream ftmp("Tempus_HHTAlpha_BallParabolic.dat");
   ftmp.precision(16);
   RCP<const SolutionHistory<double> > solutionHistory =
     integrator->getSolutionHistory();
@@ -115,8 +118,10 @@ TEUCHOS_UNIT_TEST(HHTAlpha, BallParabolic)
     "\n Test failed!  Max error = " << err << " > tolerance = " << tolerance << "\n!");
 
 }
-#endif
+#endif // TEST_BALL_PARABOLIC
 
+
+#ifdef TEST_CONSTRUCTING_FROM_DEFAULTS
 // ************************************************************
 // ************************************************************
 TEUCHOS_UNIT_TEST(HHTAlpha, ConstructingFromDefaults)
@@ -125,7 +130,7 @@ TEUCHOS_UNIT_TEST(HHTAlpha, ConstructingFromDefaults)
 
   // Read params from .xml file
   RCP<ParameterList> pList =
-    getParametersFromXmlFile("Tempus_Newmark_SinCos_SecondOrder.xml");
+    getParametersFromXmlFile("Tempus_HHTAlpha_SinCos_SecondOrder.xml");
   RCP<ParameterList> pl = sublist(pList, "Tempus", true);
 
   // Setup the HarmonicOscillatorModel
@@ -147,6 +152,7 @@ TEUCHOS_UNIT_TEST(HHTAlpha, ConstructingFromDefaults)
   timeStepControl->setInitTime (tscPL.get<double>("Initial Time"));
   timeStepControl->setFinalTime(tscPL.get<double>("Final Time"));
   timeStepControl->setInitTimeStep(dt);
+  timeStepControl->initialize();
 
   // Setup initial condition SolutionState --------------------
   using Teuchos::rcp_const_cast;
@@ -213,20 +219,25 @@ TEUCHOS_UNIT_TEST(HHTAlpha, ConstructingFromDefaults)
   std::cout << "  =========================" << std::endl;
   TEST_FLOATING_EQUALITY(get_ele(*(x), 0), 0.144918, 1.0e-4 );
 }
+#endif // TEST_CONSTRUCTING_FROM_DEFAULTS
 
 
-#ifdef TEST_SIN_COS
+#ifdef TEST_SINCOS_SECONDORDER
 // ************************************************************
 TEUCHOS_UNIT_TEST(HHTAlpha, SinCos_SecondOrder)
 {
+  RCP<Tempus::IntegratorBasic<double> > integrator;
+  std::vector<RCP<Thyra::VectorBase<double>>> solutions;
+  std::vector<RCP<Thyra::VectorBase<double>>> solutionsDot;
   std::vector<double> StepSize;
-  std::vector<double> ErrorNorm;
+  std::vector<double> xErrorNorm;
+  std::vector<double> xDotErrorNorm;
   const int nTimeStepSizes = 8;
-  double order = 0.0;
+  double time = 0.0;
 
   // Read params from .xml file
   RCP<ParameterList> pList =
-    getParametersFromXmlFile("Tempus_Newmark_SinCos_SecondOrder.xml");
+    getParametersFromXmlFile("Tempus_HHTAlpha_SinCos_SecondOrder.xml");
 
   // Setup the HarmonicOscillatorModel
   RCP<ParameterList> hom_pl = sublist(pList, "HarmonicOscillatorModel", true);
@@ -254,16 +265,14 @@ TEUCHOS_UNIT_TEST(HHTAlpha, SinCos_SecondOrder)
               << nTimeStepSizes-1 << "), dt = " << dt << "\n";
     pl->sublist("Default Integrator")
        .sublist("Time Step Control").set("Initial Time Step", dt);
-    RCP<Tempus::IntegratorBasic<double> > integrator =
-      Tempus::integratorBasic<double>(pl, model);
-    order = integrator->getStepper()->getOrder();
+    integrator = Tempus::integratorBasic<double>(pl, model);
 
     // Integrate to timeMax
     bool integratorStatus = integrator->advanceTime();
     TEST_ASSERT(integratorStatus)
 
     // Test if at 'Final Time'
-    double time = integrator->getTime();
+    time = integrator->getTime();
     double timeFinal =pl->sublist("Default Integrator")
        .sublist("Time Step Control").get<double>("Final Time");
     TEST_FLOATING_EQUALITY(time, timeFinal, 1.0e-14);
@@ -275,7 +284,26 @@ TEUCHOS_UNIT_TEST(HHTAlpha, SinCos_SecondOrder)
 
     // Plot sample solution and exact solution at most-refined resolution
     if (n == nTimeStepSizes-1) {
-      std::ofstream ftmp("Tempus_Newmark_SinCos_SecondOrder.dat");
+      RCP<const SolutionHistory<double> > solutionHistory =
+        integrator->getSolutionHistory();
+      writeSolution("Tempus_HHTAlpha_SinCos_SecondOrder.dat", solutionHistory);
+
+      RCP<Tempus::SolutionHistory<double> > solnHistExact =
+        Teuchos::rcp(new Tempus::SolutionHistory<double>());
+      for (int i=0; i<solutionHistory->getNumStates(); i++) {
+        double time = (*solutionHistory)[i]->getTime();
+        RCP<Tempus::SolutionState<double> > state =
+          Teuchos::rcp(new Tempus::SolutionState<double>(
+            model->getExactSolution(time).get_x(),
+            model->getExactSolution(time).get_x_dot()));
+        state->setTime((*solutionHistory)[i]->getTime());
+        solnHistExact->addState(state);
+      }
+      writeSolution("Tempus_HHTAlpha_SinCos_SecondOrder-Ref.dat", solnHistExact);
+
+      // Problem specific output
+      {
+      std::ofstream ftmp("Tempus_HHTAlpha_SinCos_SecondOrder-Energy.dat");
       ftmp.precision(16);
       RCP<const SolutionHistory<double> > solutionHistory =
         integrator->getSolutionHistory();
@@ -302,47 +330,64 @@ TEUCHOS_UNIT_TEST(HHTAlpha, SinCos_SecondOrder)
              << ke << "   " << pe << "   " << te << std::endl;
       }
       ftmp.close();
+      }
     }
 
-    // Calculate the error
-    RCP<Thyra::VectorBase<double> > xdiff = x->clone_v();
-    Thyra::V_StVpStV(xdiff.ptr(), 1.0, *x_exact, -1.0, *(x));
+    // Store off the final solution and step size
     StepSize.push_back(dt);
-    const double L2norm = Thyra::norm_2(*xdiff);
-    ErrorNorm.push_back(L2norm);
+    auto solution = Thyra::createMember(model->get_x_space());
+    Thyra::copy(*(integrator->getX()),solution.ptr());
+    solutions.push_back(solution);
+    auto solutionDot = Thyra::createMember(model->get_x_space());
+    Thyra::copy(*(integrator->getXdot()),solutionDot.ptr());
+    solutionsDot.push_back(solutionDot);
+    if (n == nTimeStepSizes-1) {  // Add exact solution last in vector.
+      StepSize.push_back(0.0);
+      auto solution = Thyra::createMember(model->get_x_space());
+      Thyra::copy(*(model->getExactSolution(time).get_x()),solution.ptr());
+      solutions.push_back(solution);
+      auto solutionDot = Thyra::createMember(model->get_x_space());
+      Thyra::copy(*(model->getExactSolution(time).get_x_dot()),
+                  solutionDot.ptr());
+      solutionsDot.push_back(solutionDot);
+    }
   }
 
   // Check the order and intercept
-  double slope = computeLinearRegressionLogLog<double>(StepSize, ErrorNorm);
-  std::cout << "  Stepper = HHT-Alpha" << std::endl;
-  std::cout << "  =========================" << std::endl;
-  std::cout << "  Expected order: " << order << std::endl;
-  std::cout << "  Observed order: " << slope << std::endl;
-  std::cout << "  =========================" << std::endl;
-  TEST_FLOATING_EQUALITY( slope, order, 0.02 );
-  //TEST_FLOATING_EQUALITY( ErrorNorm[0], 0.0486418, 1.0e-4 );
+  double xSlope = 0.0;
+  double xDotSlope = 0.0;
+  RCP<Tempus::Stepper<double> > stepper = integrator->getStepper();
+  double order = stepper->getOrder();
+  writeOrderError("Tempus_HHTAlpha_SinCos_SecondOrder-Error.dat",
+                  stepper, StepSize,
+                  solutions,    xErrorNorm,    xSlope,
+                  solutionsDot, xDotErrorNorm, xDotSlope);
 
-  std::ofstream ftmp("Tempus_Newmark-Error_SinCos_SecondOrder.dat");
-  ftmp.precision(16);
-  double error0 = 0.8*ErrorNorm[0];
-  for (int n=0; n<nTimeStepSizes; n++) {
-    ftmp << StepSize[n]  << "   " << ErrorNorm[n] << "   "
-         << error0*(pow(StepSize[n]/StepSize[0],order)) << std::endl;
-  }
-  ftmp.close();
+  TEST_FLOATING_EQUALITY( xSlope,                order, 0.02   );
+  TEST_FLOATING_EQUALITY( xErrorNorm[0],    0.00644755, 1.0e-4 );
+  TEST_FLOATING_EQUALITY( xDotSlope,             order, 0.01   );
+  TEST_FLOATING_EQUALITY( xDotErrorNorm[0],   0.104392, 1.0e-4 );
 }
+#endif // TEST_SINCOS_SECONDORDER
 
+
+#ifdef TEST_SINCOS_FIRSTORDER
+// ************************************************************
 // ************************************************************
 TEUCHOS_UNIT_TEST(HHTAlpha, SinCos_FirstOrder)
 {
+  RCP<Tempus::IntegratorBasic<double> > integrator;
+  std::vector<RCP<Thyra::VectorBase<double>>> solutions;
+  std::vector<RCP<Thyra::VectorBase<double>>> solutionsDot;
   std::vector<double> StepSize;
-  std::vector<double> ErrorNorm;
+  std::vector<double> xErrorNorm;
+  std::vector<double> xDotErrorNorm;
   const int nTimeStepSizes = 8;
-  double order = 0.0;
+  double time = 0.0;
 
   // Read params from .xml file
   RCP<ParameterList> pList =
-    getParametersFromXmlFile("Tempus_Newmark_SinCos_FirstOrder.xml");
+    getParametersFromXmlFile("Tempus_HHTAlpha_SinCos_FirstOrder.xml");
 
   // Setup the HarmonicOscillatorModel
   RCP<ParameterList> hom_pl = sublist(pList, "HarmonicOscillatorModel", true);
@@ -370,16 +415,14 @@ TEUCHOS_UNIT_TEST(HHTAlpha, SinCos_FirstOrder)
               << nTimeStepSizes-1 << "), dt = " << dt << "\n";
     pl->sublist("Default Integrator")
        .sublist("Time Step Control").set("Initial Time Step", dt);
-    RCP<Tempus::IntegratorBasic<double> > integrator =
-      Tempus::integratorBasic<double>(pl, model);
-    order = integrator->getStepper()->getOrder();
+    integrator = Tempus::integratorBasic<double>(pl, model);
 
     // Integrate to timeMax
     bool integratorStatus = integrator->advanceTime();
     TEST_ASSERT(integratorStatus)
 
     // Test if at 'Final Time'
-    double time = integrator->getTime();
+    time = integrator->getTime();
     double timeFinal =pl->sublist("Default Integrator")
        .sublist("Time Step Control").get<double>("Final Time");
     TEST_FLOATING_EQUALITY(time, timeFinal, 1.0e-14);
@@ -391,7 +434,26 @@ TEUCHOS_UNIT_TEST(HHTAlpha, SinCos_FirstOrder)
 
     // Plot sample solution and exact solution at most-refined resolution
     if (n == nTimeStepSizes-1) {
-      std::ofstream ftmp("Tempus_Newmark_SinCos_FirstOrder.dat");
+      RCP<const SolutionHistory<double> > solutionHistory =
+        integrator->getSolutionHistory();
+      writeSolution("Tempus_HHTAlpha_SinCos_FirstOrder.dat", solutionHistory);
+
+      RCP<Tempus::SolutionHistory<double> > solnHistExact =
+        Teuchos::rcp(new Tempus::SolutionHistory<double>());
+      for (int i=0; i<solutionHistory->getNumStates(); i++) {
+        double time = (*solutionHistory)[i]->getTime();
+        RCP<Tempus::SolutionState<double> > state =
+          Teuchos::rcp(new Tempus::SolutionState<double>(
+            model->getExactSolution(time).get_x(),
+            model->getExactSolution(time).get_x_dot()));
+        state->setTime((*solutionHistory)[i]->getTime());
+        solnHistExact->addState(state);
+      }
+      writeSolution("Tempus_HHTAlpha_SinCos_FirstOrder-Ref.dat", solnHistExact);
+
+      // Problem specific output
+      {
+      std::ofstream ftmp("Tempus_HHTAlpha_SinCos_FirstOrder-Energy.dat");
       ftmp.precision(16);
       RCP<const SolutionHistory<double> > solutionHistory =
         integrator->getSolutionHistory();
@@ -418,47 +480,65 @@ TEUCHOS_UNIT_TEST(HHTAlpha, SinCos_FirstOrder)
              << ke << "   " << pe << "   " << te << std::endl;
       }
       ftmp.close();
+      }
     }
 
-    // Calculate the error
-    RCP<Thyra::VectorBase<double> > xdiff = x->clone_v();
-    Thyra::V_StVpStV(xdiff.ptr(), 1.0, *x_exact, -1.0, *(x));
+    // Store off the final solution and step size
     StepSize.push_back(dt);
-    const double L2norm = Thyra::norm_2(*xdiff);
-    ErrorNorm.push_back(L2norm);
+    auto solution = Thyra::createMember(model->get_x_space());
+    Thyra::copy(*(integrator->getX()),solution.ptr());
+    solutions.push_back(solution);
+    auto solutionDot = Thyra::createMember(model->get_x_space());
+    Thyra::copy(*(integrator->getXdot()),solutionDot.ptr());
+    solutionsDot.push_back(solutionDot);
+    if (n == nTimeStepSizes-1) {  // Add exact solution last in vector.
+      StepSize.push_back(0.0);
+      auto solution = Thyra::createMember(model->get_x_space());
+      Thyra::copy(*(model->getExactSolution(time).get_x()),solution.ptr());
+      solutions.push_back(solution);
+      auto solutionDot = Thyra::createMember(model->get_x_space());
+      Thyra::copy(*(model->getExactSolution(time).get_x_dot()),
+                  solutionDot.ptr());
+      solutionsDot.push_back(solutionDot);
+    }
   }
 
   // Check the order and intercept
-  double slope = computeLinearRegressionLogLog<double>(StepSize, ErrorNorm);
-  std::cout << "  Stepper = HHT-Alpha" << std::endl;
-  std::cout << "  =========================" << std::endl;
-  std::cout << "  Expected order: " << order << std::endl;
-  std::cout << "  Observed order: " << slope << std::endl;
-  std::cout << "  =========================" << std::endl;
-  TEST_FLOATING_EQUALITY( slope, order, 0.02 );
-  //TEST_FLOATING_EQUALITY( ErrorNorm[0], 0.0486418, 1.0e-4 );
+  double xSlope = 0.0;
+  double xDotSlope = 0.0;
+  RCP<Tempus::Stepper<double> > stepper = integrator->getStepper();
+  double order = stepper->getOrder();
+  writeOrderError("Tempus_HHTAlpha_SinCos_FirstOrder-Error.dat",
+                  stepper, StepSize,
+                  solutions,    xErrorNorm,    xSlope,
+                  solutionsDot, xDotErrorNorm, xDotSlope);
 
-  std::ofstream ftmp("Tempus_Newmark-Error_SinCos_FirstOrder.dat");
-  ftmp.precision(16);
-  double error0 = 0.8*ErrorNorm[0];
-  for (int n=0; n<nTimeStepSizes; n++) {
-    ftmp << StepSize[n]  << "   " << ErrorNorm[n] << "   "
-         << error0*(pow(StepSize[n]/StepSize[0],order)) << std::endl;
-  }
-  ftmp.close();
+  TEST_FLOATING_EQUALITY( xSlope,              order, 0.02   );
+  TEST_FLOATING_EQUALITY( xErrorNorm[0],    0.048932, 1.0e-4 );
+  TEST_FLOATING_EQUALITY( xDotSlope,         1.18873, 0.01   );
+  TEST_FLOATING_EQUALITY( xDotErrorNorm[0], 0.393504, 1.0e-4 );
+
 }
+#endif // TEST_SINCOS_FIRSTORDER
 
+
+#ifdef TEST_SINCOS_CD
 // ************************************************************
-TEUCHOS_UNIT_TEST(NewmarkExplicit, SinCos_CD)
+// ************************************************************
+TEUCHOS_UNIT_TEST(HHTAlpha, SinCos_CD)
 {
+  RCP<Tempus::IntegratorBasic<double> > integrator;
+  std::vector<RCP<Thyra::VectorBase<double>>> solutions;
+  std::vector<RCP<Thyra::VectorBase<double>>> solutionsDot;
   std::vector<double> StepSize;
-  std::vector<double> ErrorNorm;
+  std::vector<double> xErrorNorm;
+  std::vector<double> xDotErrorNorm;
   const int nTimeStepSizes = 8;
-  double order = 0.0;
+  double time = 0.0;
 
   // Read params from .xml file
   RCP<ParameterList> pList =
-    getParametersFromXmlFile("Tempus_Newmark_SinCos_ExplicitCD.xml");
+    getParametersFromXmlFile("Tempus_HHTAlpha_SinCos_ExplicitCD.xml");
 
   // Setup the HarmonicOscillatorModel
   RCP<ParameterList> hom_pl = sublist(pList, "HarmonicOscillatorModel", true);
@@ -486,16 +566,14 @@ TEUCHOS_UNIT_TEST(NewmarkExplicit, SinCos_CD)
               << nTimeStepSizes-1 << "), dt = " << dt << "\n";
     pl->sublist("Default Integrator")
        .sublist("Time Step Control").set("Initial Time Step", dt);
-    RCP<Tempus::IntegratorBasic<double> > integrator =
-      Tempus::integratorBasic<double>(pl, model);
-    order = integrator->getStepper()->getOrder();
+    integrator = Tempus::integratorBasic<double>(pl, model);
 
     // Integrate to timeMax
     bool integratorStatus = integrator->advanceTime();
     TEST_ASSERT(integratorStatus)
 
     // Test if at 'Final Time'
-    double time = integrator->getTime();
+    time = integrator->getTime();
     double timeFinal =pl->sublist("Default Integrator")
        .sublist("Time Step Control").get<double>("Final Time");
     TEST_FLOATING_EQUALITY(time, timeFinal, 1.0e-14);
@@ -507,7 +585,26 @@ TEUCHOS_UNIT_TEST(NewmarkExplicit, SinCos_CD)
 
     // Plot sample solution and exact solution at most-refined resolution
     if (n == nTimeStepSizes-1) {
-      std::ofstream ftmp("Tempus_Newmark_SinCos_ExplicitCD.dat");
+      RCP<const SolutionHistory<double> > solutionHistory =
+        integrator->getSolutionHistory();
+      writeSolution("Tempus_HHTAlpha_SinCos_ExplicitCD.dat", solutionHistory);
+
+      RCP<Tempus::SolutionHistory<double> > solnHistExact =
+        Teuchos::rcp(new Tempus::SolutionHistory<double>());
+      for (int i=0; i<solutionHistory->getNumStates(); i++) {
+        double time = (*solutionHistory)[i]->getTime();
+        RCP<Tempus::SolutionState<double> > state =
+          Teuchos::rcp(new Tempus::SolutionState<double>(
+            model->getExactSolution(time).get_x(),
+            model->getExactSolution(time).get_x_dot()));
+        state->setTime((*solutionHistory)[i]->getTime());
+        solnHistExact->addState(state);
+      }
+      writeSolution("Tempus_HHTAlpha_SinCos_ExplicitCD-Ref.dat", solnHistExact);
+
+      // Problem specific output
+      {
+      std::ofstream ftmp("Tempus_HHTAlpha_SinCos_ExplicitCD-Energy.dat");
       ftmp.precision(16);
       RCP<const SolutionHistory<double> > solutionHistory =
         integrator->getSolutionHistory();
@@ -534,36 +631,44 @@ TEUCHOS_UNIT_TEST(NewmarkExplicit, SinCos_CD)
              << ke << "   " << pe << "   " << te << std::endl;
       }
       ftmp.close();
+      }
     }
 
-    // Calculate the error
-    RCP<Thyra::VectorBase<double> > xdiff = x->clone_v();
-    Thyra::V_StVpStV(xdiff.ptr(), 1.0, *x_exact, -1.0, *(x));
+    // Store off the final solution and step size
     StepSize.push_back(dt);
-    const double L2norm = Thyra::norm_2(*xdiff);
-    ErrorNorm.push_back(L2norm);
+    auto solution = Thyra::createMember(model->get_x_space());
+    Thyra::copy(*(integrator->getX()),solution.ptr());
+    solutions.push_back(solution);
+    auto solutionDot = Thyra::createMember(model->get_x_space());
+    Thyra::copy(*(integrator->getXdot()),solutionDot.ptr());
+    solutionsDot.push_back(solutionDot);
+    if (n == nTimeStepSizes-1) {  // Add exact solution last in vector.
+      StepSize.push_back(0.0);
+      auto solution = Thyra::createMember(model->get_x_space());
+      Thyra::copy(*(model->getExactSolution(time).get_x()),solution.ptr());
+      solutions.push_back(solution);
+      auto solutionDot = Thyra::createMember(model->get_x_space());
+      Thyra::copy(*(model->getExactSolution(time).get_x_dot()),
+                  solutionDot.ptr());
+      solutionsDot.push_back(solutionDot);
+    }
   }
 
   // Check the order and intercept
-  double slope = computeLinearRegressionLogLog<double>(StepSize, ErrorNorm);
-  std::cout << "  Stepper = HHT-Alpha" << std::endl;
-  std::cout << "  =========================" << std::endl;
-  std::cout << "  Expected order: " << order << std::endl;
-  std::cout << "  Observed order: " << slope << std::endl;
-  std::cout << "  =========================" << std::endl;
-  TEST_FLOATING_EQUALITY( slope, order, 0.02 );
-  //TEST_FLOATING_EQUALITY( ErrorNorm[0], 0.0486418, 1.0e-4 );
+  double xSlope = 0.0;
+  double xDotSlope = 0.0;
+  RCP<Tempus::Stepper<double> > stepper = integrator->getStepper();
+  double order = stepper->getOrder();
+  writeOrderError("Tempus_HHTAlpha_SinCos_ExplicitCD-Error.dat",
+                  stepper, StepSize,
+                  solutions,    xErrorNorm,    xSlope,
+                  solutionsDot, xDotErrorNorm, xDotSlope);
 
-  std::ofstream ftmp("Tempus_Newmark-Error_SinCos_ExplicitCD.dat");
-  ftmp.precision(16);
-  double error0 = 0.8*ErrorNorm[0];
-  for (int n=0; n<nTimeStepSizes; n++) {
-    ftmp << StepSize[n]  << "   " << ErrorNorm[n] << "   "
-         << error0*(pow(StepSize[n]/StepSize[0],order)) << std::endl;
-  }
-  ftmp.close();
+  TEST_FLOATING_EQUALITY( xSlope,                order, 0.02   );
+  TEST_FLOATING_EQUALITY( xErrorNorm[0],    0.00451069, 1.0e-4 );
+  TEST_FLOATING_EQUALITY( xDotSlope,             order, 0.01   );
+  TEST_FLOATING_EQUALITY( xDotErrorNorm[0],  0.0551522, 1.0e-4 );
 }
-#endif
+#endif // TEST_SINCOS_CD
+
 }
-
-
