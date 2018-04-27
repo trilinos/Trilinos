@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2009 National Technology & Engineering Solutions
+ * Copyright (C) 2009-2017 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -341,7 +341,7 @@
 #endif
 /* cgipst.h - header file to define device dependent stuff for driver
  *   Postscript B/W (pst)
- * Sandia National Laboratories, Div 2634
+ * Sandia-2017 National Laboratories, Div 2634
  * Tue Dec 19 10:36:45 MST 1989 - last date modified
  */
 
@@ -456,18 +456,18 @@ static void xcqcte(anything **params, anything **surf_list);
 static void xcili(anything **params, anything **surf_list);
 static void xcrqlc(anything **params, anything **surf_list);
 /* utility routines */
-static void init_state(surf_statelist *surf_state);
-static void set_dev_descrip(void);
-static void reset_vdi(surf_statelist *surf_state);
-static void set_mapping(surf_statelist *surf_state);
-static void set_clipping(surf_statelist *cur_state);
-static void set_foreground_color(surf_statelist *surf_state, int *colors);
-static void set_background_color(surf_statelist *surf_state, int *colors);
-static void report_error(surf_statelist *surf_state, int e_class, int e_num, int f_id);
-static void gettoken(int *index_p, int *numrecs_p, char *data_p, int max_chars, char *outtoken_p);
-static int poly_clip(point *cmin, point *cmax, float *vx, float *vy, int vlen, float *xout,
-                     float *yout, int *lenout);
-static int inside_bnd(point *v, point *bmin, point *bmax, int bound_num);
+static void  init_state(surf_statelist *surf_state);
+static void  set_dev_descrip(void);
+static void  reset_vdi(surf_statelist *surf_state);
+static void  set_mapping(surf_statelist *surf_state);
+static void  set_clipping(surf_statelist *cur_state);
+static void  set_foreground_color(surf_statelist *surf_state, int *colors);
+static void  set_background_color(surf_statelist *surf_state, int *colors);
+static void  report_error(surf_statelist *surf_state, int e_class, int e_num, int f_id);
+static void  gettoken(int *index_p, int *numrecs_p, char *data_p, int max_chars, char *outtoken_p);
+static int   poly_clip(point *cmin, point *cmax, float *vx, float *vy, int vlen, float *xout,
+                       float *yout, int *lenout);
+static int   inside_bnd(point *v, point *bmin, point *bmax, int bound_num);
 static point intersect_bnd(point *p1, point *p2, point *bmin, point *bmax, int bound_num);
 /* cdr routines */
 /* -- not used with interactive devices */
@@ -1287,34 +1287,34 @@ static void xclf(anything **params, anything **surf_list)
   for (i = 0; i < *(int *)params[1]; i++) {
 
     switch (*(short *)params[0]) {
-    case ACTIVATE_FN: ((int *)params[5])[i]   = CSYES; break;
+    case ACTIVATE_FN: ((int *)params[5])[i] = CSYES; break;
     case DEACTIVATE_FN: ((int *)params[5])[i] = CSYES; break;
-    case CI_FN: ((int *)params[5])[i]         = CSYES; break;
-    case CT_FN: ((int *)params[5])[i]         = CSYES; break;
-    case CXDFAC_FN: ((int *)params[5])[i]     = CSYES; break;
-    case CPDS_FN: ((int *)params[5])[i]       = CSYES; break;
-    case CENDPG_FN: ((int *)params[5])[i]     = CSYES; break;
-    case CBC_FN: ((int *)params[5])[i]        = CSYES; break;
-    case CVDCX_FN: ((int *)params[5])[i]      = CSYES; break;
-    case CV_FN: ((int *)params[5])[i]         = CSYES; break;
-    case CCL_FN: ((int *)params[5])[i]        = CSYES; break;
-    case CDSCL_FN: ((int *)params[5])[i]      = CSYES; break;
-    case CDQERR_FN: ((int *)params[5])[i]     = CSYES; break;
-    case CERHCT_FN: ((int *)params[5])[i]     = CSYES; break;
-    case CCIXP_FN: ((int *)params[5])[i]      = CSNO; break;
-    case CESC_FN: ((int *)params[5])[i]       = CSYES; break;
-    case CQID_FN: ((int *)params[5])[i]       = CSYES; break;
-    case CQD_FN: ((int *)params[5])[i]        = CSYES; break;
-    case CLF_FN: ((int *)params[5])[i]        = CSYES; break;
-    case CLPR_FN: ((int *)params[5])[i]       = CSYES; break;
-    case CQSP_FN: ((int *)params[5])[i]       = CSYES; break;
-    case CLESC_FN: ((int *)params[5])[i]      = CSYES; break;
-    case CQP_FN: ((int *)params[5])[i]        = CSYES; break;
-    case CQCL_FN: ((int *)params[5])[i]       = CSYES; break;
-    case CPL_FN: ((int *)params[5])[i]        = CSYES; break;
-    case CDJPL_FN: ((int *)params[5])[i]      = CSYES; break;
-    case CPM_FN: ((int *)params[5])[i]        = CSYES; break;
-    case CTX_FN: ((int *)params[5])[i]        = CSYES; break;
+    case CI_FN: ((int *)params[5])[i] = CSYES; break;
+    case CT_FN: ((int *)params[5])[i] = CSYES; break;
+    case CXDFAC_FN: ((int *)params[5])[i] = CSYES; break;
+    case CPDS_FN: ((int *)params[5])[i] = CSYES; break;
+    case CENDPG_FN: ((int *)params[5])[i] = CSYES; break;
+    case CBC_FN: ((int *)params[5])[i] = CSYES; break;
+    case CVDCX_FN: ((int *)params[5])[i] = CSYES; break;
+    case CV_FN: ((int *)params[5])[i] = CSYES; break;
+    case CCL_FN: ((int *)params[5])[i] = CSYES; break;
+    case CDSCL_FN: ((int *)params[5])[i] = CSYES; break;
+    case CDQERR_FN: ((int *)params[5])[i] = CSYES; break;
+    case CERHCT_FN: ((int *)params[5])[i] = CSYES; break;
+    case CCIXP_FN: ((int *)params[5])[i] = CSNO; break;
+    case CESC_FN: ((int *)params[5])[i] = CSYES; break;
+    case CQID_FN: ((int *)params[5])[i] = CSYES; break;
+    case CQD_FN: ((int *)params[5])[i] = CSYES; break;
+    case CLF_FN: ((int *)params[5])[i] = CSYES; break;
+    case CLPR_FN: ((int *)params[5])[i] = CSYES; break;
+    case CQSP_FN: ((int *)params[5])[i] = CSYES; break;
+    case CLESC_FN: ((int *)params[5])[i] = CSYES; break;
+    case CQP_FN: ((int *)params[5])[i] = CSYES; break;
+    case CQCL_FN: ((int *)params[5])[i] = CSYES; break;
+    case CPL_FN: ((int *)params[5])[i] = CSYES; break;
+    case CDJPL_FN: ((int *)params[5])[i] = CSYES; break;
+    case CPM_FN: ((int *)params[5])[i] = CSYES; break;
+    case CTX_FN: ((int *)params[5])[i] = CSYES; break;
     case CPG_FN:
       if (poly_support == -1.) {
         vdiqdc(&qdc_index, &poly_support);
@@ -1326,41 +1326,41 @@ static void xclf(anything **params, anything **surf_list)
         ((int *)params[5])[i] = CSYES;
       }
       break;
-    case CCA_FN: ((int *)params[5])[i]   = CSYES; break;
-    case CPXA_FN: ((int *)params[5])[i]  = CSYES; break;
-    case CLNT_FN: ((int *)params[5])[i]  = CSYES; break;
-    case CLNW_FN: ((int *)params[5])[i]  = CSYES; break;
-    case CLNC_FN: ((int *)params[5])[i]  = CSYES; break;
-    case CMKT_FN: ((int *)params[5])[i]  = CSYES; break;
-    case CMKS_FN: ((int *)params[5])[i]  = CSNO; break;
-    case CMKC_FN: ((int *)params[5])[i]  = CSYES; break;
-    case CTXP_FN: ((int *)params[5])[i]  = CSNO; break;
-    case CTXC_FN: ((int *)params[5])[i]  = CSNO; break;
-    case CCHH_FN: ((int *)params[5])[i]  = CSYES; break;
-    case CCHO_FN: ((int *)params[5])[i]  = CSNO; break;
-    case CIS_FN: ((int *)params[5])[i]   = CSYES; break;
-    case CFLC_FN: ((int *)params[5])[i]  = CSYES; break;
-    case CCSM_FN: ((int *)params[5])[i]  = CSYES; break;
-    case CCT_FN: ((int *)params[5])[i]   = CSYES; break;
+    case CCA_FN: ((int *)params[5])[i] = CSYES; break;
+    case CPXA_FN: ((int *)params[5])[i] = CSYES; break;
+    case CLNT_FN: ((int *)params[5])[i] = CSYES; break;
+    case CLNW_FN: ((int *)params[5])[i] = CSYES; break;
+    case CLNC_FN: ((int *)params[5])[i] = CSYES; break;
+    case CMKT_FN: ((int *)params[5])[i] = CSYES; break;
+    case CMKS_FN: ((int *)params[5])[i] = CSNO; break;
+    case CMKC_FN: ((int *)params[5])[i] = CSYES; break;
+    case CTXP_FN: ((int *)params[5])[i] = CSNO; break;
+    case CTXC_FN: ((int *)params[5])[i] = CSNO; break;
+    case CCHH_FN: ((int *)params[5])[i] = CSYES; break;
+    case CCHO_FN: ((int *)params[5])[i] = CSNO; break;
+    case CIS_FN: ((int *)params[5])[i] = CSYES; break;
+    case CFLC_FN: ((int *)params[5])[i] = CSYES; break;
+    case CCSM_FN: ((int *)params[5])[i] = CSYES; break;
+    case CCT_FN: ((int *)params[5])[i] = CSYES; break;
     case CGTXX_FN: ((int *)params[5])[i] = CSYES; break;
     case CQPRL_FN: ((int *)params[5])[i] = CSYES; break;
-    case CQLN_FN: ((int *)params[5])[i]  = CSYES; break;
+    case CQLN_FN: ((int *)params[5])[i] = CSYES; break;
     case CQLNT_FN: ((int *)params[5])[i] = CSYES; break;
     case CQSLW_FN: ((int *)params[5])[i] = CSNO; break;
-    case CQMK_FN: ((int *)params[5])[i]  = CSNO; break;
+    case CQMK_FN: ((int *)params[5])[i] = CSNO; break;
     case CQMKT_FN: ((int *)params[5])[i] = CSYES; break;
     case CQSMS_FN: ((int *)params[5])[i] = CSNO; break;
     case CQCHH_FN: ((int *)params[5])[i] = CSYES; break;
-    case CQFL_FN: ((int *)params[5])[i]  = CSYES; break;
-    case CQC_FN: ((int *)params[5])[i]   = CSYES; break;
+    case CQFL_FN: ((int *)params[5])[i] = CSYES; break;
+    case CQC_FN: ((int *)params[5])[i] = CSYES; break;
     case CQLNA_FN: ((int *)params[5])[i] = CSYES; break;
     case CQMKA_FN: ((int *)params[5])[i] = CSNO; break;
     case CQTXA_FN: ((int *)params[5])[i] = CSYES; break;
     case CQFLA_FN: ((int *)params[5])[i] = CSNO; break;
     case CQCTE_FN: ((int *)params[5])[i] = CSYES; break;
-    case CILI_FN: ((int *)params[5])[i]  = CSYES; break;
+    case CILI_FN: ((int *)params[5])[i] = CSYES; break;
     case CRQLC_FN: ((int *)params[5])[i] = CSYES; break;
-    default: ((int *)params[5])[i]       = CSNO; break;
+    default: ((int *)params[5])[i] = CSNO; break;
     } /* end switch */
   }
 

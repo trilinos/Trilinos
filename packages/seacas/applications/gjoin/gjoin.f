@@ -1,4 +1,4 @@
-C Copyright (c) 2008 National Technology & Engineering Solutions
+C Copyright (c) 2008-2017 National Technology & Engineering Solutions
 C of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C NTESS, the U.S. Government retains certain rights in this software.
 C 
@@ -53,7 +53,7 @@ C   --Output:
 C   --   o Prompts on the standard output device.
 C   --   o The output database (name requested)
 C
-C   --Developed at Sandia National Laboratories.
+C   --Developed at Sandia-2017 National Laboratories.
 C   --
 C   --Current author and code sponsor: Greg Sjaardema
 C   --

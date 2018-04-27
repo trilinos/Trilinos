@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005 National Technology & Engineering Solutions
+ * Copyright (c) 2005-2017 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -36,7 +36,7 @@
 void orthogvec(double *vec1,     /* vector to be orthogonalized */
                int beg, int end, /* start and stop range for vector */
                double *vec2      /* vector to be orthogonalized against */
-               )
+)
 {
   double alpha;
   double dot();
@@ -49,7 +49,7 @@ void orthogvec(double *vec1,     /* vector to be orthogonalized */
 void orthogvec_float(float *vec1,      /* vector to be orthogonalized */
                      int beg, int end, /* start and stop range for vector */
                      float *vec2       /* vector to be orthogonalized against */
-                     )
+)
 {
   float  alpha;
   double dot_float();

@@ -1,4 +1,4 @@
-// Copyright(C) 2009 National Technology & Engineering Solutions
+// Copyright(C) 2009-2017 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -161,7 +161,7 @@ namespace smart_assert {
       // ignore All asserts
       return;
     typedef std::pair<std::string, int> file_and_line;
-    static std::set<file_and_line> ignorer;
+    static std::set<file_and_line>      ignorer;
     if (ignorer.find(file_and_line(context.get_context_file(), context.get_context_line())) !=
         ignorer.end())
       // this is Ignored Forever

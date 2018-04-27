@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005 National Technology & Engineering Solutions
+ * Copyright (c) 2005-2017 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -63,7 +63,7 @@ void eigensolve(struct vtx_data **graph,        /* graph data structure */
                 int               ndims,        /* number of eigenvectors (2^d sets) */
                 int               mediantype,   /* which partitioning strategy to use */
                 double            eigtol        /* tolerance on eigenvectors */
-                )
+)
 {
   extern int    DEBUG_TRACE;              /* trace the execution of the code */
   extern int    DEBUG_EVECS;              /* debug flag for eigenvector generation */

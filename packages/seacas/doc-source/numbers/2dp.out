@@ -1,0 +1,516 @@
+1 
+  
+               PPPPPP   RRRRRR    OOOOO   N    NN  TTTTTT    OOOOO
+               PP   PP  RR   RR  OO   OO  NN   NN    TT     OO   OO 
+               PP   PP  RR   RR  OO   OO  NNN  NN    TT     OO   OO 
+               PPPPPP   RRRRRR   OO   OO  NN N NN    TT     OO   OO 
+               PP       RRRRR    OO   OO  NN  NNN    TT     OO   OO 
+               PP       RR  RR   OO   OO  NN   NN    TT     OO   OO 
+               PP       RR   RR   OOOOO   NN    N    TT      OOOOO
+  
+  
+                                   2222   DDDDDD
+                                  2    2  DD   DD 
+                                      2   DD   DD 
+                                     2    DD   DD 
+                                    2     DD   DD 
+                                   2      DD   DD 
+                                  222222  DDDDDD
+  
+  
+  
+  
+  
+                                   VERSION 3.4
+  
+  
+                                  PROGRAMMED BY:
+                       LEE M. TAYLOR AND DENNIS P. FLANAGAN 
+                            APPLIED MECHANICS DIVISION
+                           SANDIA NATIONAL LABORATORIES 
+                           ALBUQUERQUE, NEW MEXICO 87185
+  
+  
+  
+  
+                           RUN ON 08/05/88 AT 08:45:50
+                         RUN ON A XMP-416  UNDER CFTLIB14 
+1                                   INPUT STREAM IMAGES 
+  LINE ------------------------------------------------------------------------ 
+    1: TITLE
+    2:  CMT - 10 FOOT R/S DROP - 70 PSI LDF, I = 1-4, O = 3-8  (8/1/88) 
+    3: AXISYMMETRIC 
+    4: TERMINATION TIME 50.0E-3 
+    5: PLOT TIME         1.0E-3 
+    6: OUTPUT TIME       5.0E-4 
+    7: WRITE RESTART, 5.E-3 
+    8: PLOT NODAL     DISPLACEMENT, REACTION, VELOCITY
+    9: PLOT ELEMENT   STRESS, STRAIN, PRESSURE, VONMISES, ENERGY, DENSITY 
+   10: PLOT STATE     EQPS
+   11: $
+   12: $     #   MATERIAL 
+   13: $     1   OUTER SHELL
+   14: $     2   INNER SHELL
+   15: $     3   ENERGY ABSORBING FOAM
+   16: $     7   CARGO FOAM 
+   17: $     9   THIN SHEET ON TOP OF CARGO FOAM
+   18: $    10   CARGO
+   19: $    11   OUTER SHELL - TOP - EXTRA MASS 
+   20: $    22   INNER SHELL - TOP - EXTRA MASS 
+   21: $     8   PUNCH
+   22: $
+   23: INITIAL VELOCITY MATERIAL  1 0, -175.8 
+   24: INITIAL VELOCITY MATERIAL 11 0, -175.8 
+   25: INITIAL VELOCITY MATERIAL  2 0, -175.8 
+   26: INITIAL VELOCITY MATERIAL 22 0, -175.8 
+   27: INITIAL VELOCITY MATERIAL  3 0, -175.8 
+   28: INITIAL VELOCITY MATERIAL 10 0, -175.8 
+   29: INITIAL VELOCITY MATERIAL  7 0, -175.8 
+   30: INITIAL VELOCITY MATERIAL  9 0, -175.8 
+   31:
+   32: NO DISPLACEMENT X 1
+   33: NO DISPLACEMENT Y 11 
+   34: NO DISPLACEMENT X 11 
+   35:
+   36: CONTACT SURFACE 999 100
+   37: CONTACT SURFACE 200 300    0.0  .25
+   38: CONTACT SURFACE 400 500    0.0  .75
+   39: CONTACT SURFACE 600 700    0.0  .25
+   40: CONTACT SURFACE 900 1000   0.0  0.0
+   41:
+   42: CONTACT SURFACE 999 100   $ PUNCH
+   43:
+   44: MATERIAL, 1, ELASTIC PLASTIC, 7.324E-4   $ ST 304 -- ROOM TEMPERATURE
+   45: YOUNGS MODULUS, 28.1E6 
+   46: POISSONS RATIO,  0.3 
+   47: YIELD STRESS,   34.0E3 
+   48: HARDENING MODULUS  3.12E5
+   49: BETA, 0.0
+   50: END
+   51:
+   52: MATERIAL, 2, ELASTIC PLASTIC, 7.324E-4   $ ST 304 -- ROOM TEMPERATURE
+   53: YOUNGS MODULUS, 28.1E6 
+   54: POISSONS RATIO,  0.3 
+   55: YIELD STRESS,   34.0E3 
+   56: HARDENING MODULUS  3.12E5
+   57: BETA, 0.0
+   58: END
+   59:
+   60: MATERIAL, 11, ELASTIC PLASTIC, 3.297E-3   $ ST 304 -- ROOM TEMPERATURE 
+   61: YOUNGS MODULUS, 28.1E6 
+   62: POISSONS RATIO,  0.3 
+   63: YIELD STRESS,   34.0E3 
+   64: HARDENING MODULUS  3.12E5
+   65: BETA, 0.0
+   66: END
+   67:
+   68: MATERIAL, 22, ELASTIC PLASTIC, 2.901E-3   $ ST 304 -- ROOM TEMPERATURE 
+   69: YOUNGS MODULUS, 28.1E6 
+   70: POISSONS RATIO,  0.3 
+   71: YIELD STRESS,   34.0E3 
+   72: HARDENING MODULUS  3.12E5
+   73: BETA, 0.0
+   74: END
+   75:
+   76: MATERIAL, 3, LOW DEN FOAM,  7.5E-6 $ LOW DEN FOAM - (FOAM 9504)
+   77: YOUNGS MODULUS, 3010.
+   78: A                 49.2 
+   79: B                 60.8 
+   80: C                 -0.517 
+   81: P0                 0.0 
+   82: NAIR               0.0 
+   83: PHI                0.090 
+   84: END
+   85:
+   86: MATERIAL, 7, LOW DEN FOAM, 1.603E-5    $ CARGO FOAM -- 400 PSI 
+   87: YOUNGS MODULUS, 11.96E3
+   88: A               215
+   89: B               183
+   90: C              -3.74 
+   91: P0              0.0
+   92: NAIR            0.0
+   93: PHI             0.1915 
+   94: END
+   95:
+   96: MATERIAL, 8, ELASTIC PLASTIC, 7.324E-4   $ ST 304 -- ROOM TEMPERATURE
+   97: YOUNGS MODULUS, 28.1E6                   $ PUNCH - NOT STRAIN DEPENDENT
+   98: POISSONS RATIO,  0.3 
+   99: YIELD STRESS,   40.0E3 
+  100: HARDENING MODULUS  3.12E5
+  101: BETA, 0.0
+  102: END
+  103:
+  104: MATERIAL, 9, ELASTIC PLASTIC, 7.324E-4   $ SHEET BETWEEN CARGO/FOAM
+  105: YOUNGS MODULUS, 28.1E6 
+  106: POISSONS RATIO,  0.3 
+  107: YIELD STRESS,   34.0E3 
+  108: HARDENING MODULUS  3.12E5
+  109: BETA, 0.0
+  110: END
+  111:
+  112: MATERIAL, 10, ELASTIC PLASTIC, 7.781E-4  $ CARGO - FALSE DENSITY 
+  113: YOUNGS MODULUS, 18.1E6 
+  114: POISSONS RATIO,  0.0 
+  115: YIELD STRESS    10.0E3 
+  116: HARDENING MODULUS 3.12E4 
+  117: BETA, 0.0
+  118: END
+1 
+                         P R O B L E M  T I T L E 
+  
+           CMT - 10 FOOT R/S DROP - 70 PSI LDF, I = 1-4, O = 3-8  (8/1/88)
+  
+  
+  
+  
+                      P R O B L E M  D E F I N I T I O N
+  
+              NUMBER OF ELEMENTS ......................       6825
+              NUMBER OF NODES .........................       7755
+              NUMBER OF MATERIALS .....................          9
+              NUMBER OF FUNCTIONS .....................          0
+              NUMBER OF CONTACT SURFACES ..............          6
+              NUMBER OF RIGID SURFACES ................          0
+              NUMBER OF MATERIAL POINTS MONITORED .....          0
+              ANALYSIS TYPE ........................... AXISYMMETRIC
+              TERMINATION TIME ........................  5.000e-02
+              PRINT OUTPUT AT INTERVALS OF ............  5.000e-04
+              WRITE PLOT FILE AT INTERVALS OF .........  1.000e-03
+              START WRITING PLOT FILE AT TIME .........  0.000e+00
+              STOP WRITING PLOT FILE AT TIME ..........  1.000e-01
+              WRITE RESTART FILE AT INTERVALS OF ......  5.000e-03
+              SCALE FACTOR APPLIED TO TIME STEP .......  1.000e+00
+              STRAIN SOFTENING SCALE FACTOR ...........  1.000e+00
+              HOURGLASS STIFFNESS FACTOR ..............  1.000e-02
+              HOURGLASS VISCOSITY FACTOR ..............  3.000e-02
+              LINEAR BULK VISCOSITY CONSTANT ..........  6.000e-02
+              QUADRATIC BULK VISCOSITY CONSTANT .......  1.200e+00
+  
+  
+  
+  
+                    M A T E R I A L  D E F I N I T I O N S
+  
+  
+              MATERIAL TYPE ........................ELASTIC PLASTIC 
+              MATERIAL ID ..........................          1 
+              DENSITY ..............................  7.324e-04 
+              MATERIAL PROPERTIES:
+                     YOUNGS MODULUS        =    2.810e+07 
+                     POISSONS RATIO        =    3.000e-01 
+                     YIELD STRESS          =    3.400e+04 
+                     HARDENING MODULUS     =    3.120e+05 
+                     BETA                  =    0.000e+00 
+              CALCULATED INITIAL VALUES FOR:
+                INITIAL DILITATIONAL MODULUS .......  3.783e+07 
+                INITIAL DILITATIONAL WAVE SPEED ....  2.273e+05 
+  
+  
+              MATERIAL TYPE ........................ELASTIC PLASTIC 
+              MATERIAL ID ..........................         11 
+              DENSITY ..............................  3.297e-03 
+              MATERIAL PROPERTIES:
+                     YOUNGS MODULUS        =    2.810e+07 
+                     POISSONS RATIO        =    3.000e-01 
+                     YIELD STRESS          =    3.400e+04 
+                     HARDENING MODULUS     =    3.120e+05 
+                     BETA                  =    0.000e+00 
+              CALCULATED INITIAL VALUES FOR:
+                INITIAL DILITATIONAL MODULUS .......  3.783e+07 
+                INITIAL DILITATIONAL WAVE SPEED ....  1.071e+05 
+  
+  
+              MATERIAL TYPE ........................LOW DEN FOAM
+              MATERIAL ID ..........................          3 
+              DENSITY ..............................  7.500e-06 
+              MATERIAL PROPERTIES:
+                     YOUNGS MODULUS        =    3.010e+03 
+                     A                     =    4.920e+01 
+                     B                     =    6.080e+01 
+                     C                     =   -5.170e-01 
+                     NAIR                  =    0.000e+00 
+                     P0                    =    0.000e+00 
+                     PHI                   =    9.000e-02 
+              CALCULATED INITIAL VALUES FOR:
+                INITIAL DILITATIONAL MODULUS .......  3.010e+03 
+                INITIAL DILITATIONAL WAVE SPEED ....  2.003e+04 
+  
+  
+              MATERIAL TYPE ........................ELASTIC PLASTIC 
+              MATERIAL ID ..........................          2 
+              DENSITY ..............................  7.324e-04 
+              MATERIAL PROPERTIES:
+                     YOUNGS MODULUS        =    2.810e+07 
+                     POISSONS RATIO        =    3.000e-01 
+                     YIELD STRESS          =    3.400e+04 
+                     HARDENING MODULUS     =    3.120e+05 
+                     BETA                  =    0.000e+00 
+              CALCULATED INITIAL VALUES FOR:
+                INITIAL DILITATIONAL MODULUS .......  3.783e+07 
+                INITIAL DILITATIONAL WAVE SPEED ....  2.273e+05 
+  
+  
+              MATERIAL TYPE ........................ELASTIC PLASTIC 
+              MATERIAL ID ..........................         22 
+              DENSITY ..............................  2.901e-03 
+              MATERIAL PROPERTIES:
+                     YOUNGS MODULUS        =    2.810e+07 
+                     POISSONS RATIO        =    3.000e-01 
+                     YIELD STRESS          =    3.400e+04 
+                     HARDENING MODULUS     =    3.120e+05 
+                     BETA                  =    0.000e+00 
+              CALCULATED INITIAL VALUES FOR:
+                INITIAL DILITATIONAL MODULUS .......  3.783e+07 
+                INITIAL DILITATIONAL WAVE SPEED ....  1.142e+05 
+  
+  
+              MATERIAL TYPE ........................LOW DEN FOAM
+              MATERIAL ID ..........................          7 
+              DENSITY ..............................  1.603e-05 
+              MATERIAL PROPERTIES:
+                     YOUNGS MODULUS        =    1.196e+04 
+                     A                     =    2.150e+02 
+                     B                     =    1.830e+02 
+                     C                     =   -3.740e+00 
+                     NAIR                  =    0.000e+00 
+                     P0                    =    0.000e+00 
+                     PHI                   =    1.915e-01 
+              CALCULATED INITIAL VALUES FOR:
+                INITIAL DILITATIONAL MODULUS .......  1.196e+04 
+                INITIAL DILITATIONAL WAVE SPEED ....  2.731e+04 
+  
+  
+              MATERIAL TYPE ........................ELASTIC PLASTIC 
+              MATERIAL ID ..........................          8 
+              DENSITY ..............................  7.324e-04 
+              MATERIAL PROPERTIES:
+                     YOUNGS MODULUS        =    2.810e+07 
+                     POISSONS RATIO        =    3.000e-01 
+                     YIELD STRESS          =    4.000e+04 
+                     HARDENING MODULUS     =    3.120e+05 
+                     BETA                  =    0.000e+00 
+              CALCULATED INITIAL VALUES FOR:
+                INITIAL DILITATIONAL MODULUS .......  3.783e+07 
+                INITIAL DILITATIONAL WAVE SPEED ....  2.273e+05 
+  
+  
+              MATERIAL TYPE ........................ELASTIC PLASTIC 
+              MATERIAL ID ..........................          9 
+              DENSITY ..............................  7.324e-04 
+              MATERIAL PROPERTIES:
+                     YOUNGS MODULUS        =    2.810e+07 
+                     POISSONS RATIO        =    3.000e-01 
+                     YIELD STRESS          =    3.400e+04 
+                     HARDENING MODULUS     =    3.120e+05 
+                     BETA                  =    0.000e+00 
+              CALCULATED INITIAL VALUES FOR:
+                INITIAL DILITATIONAL MODULUS .......  3.783e+07 
+                INITIAL DILITATIONAL WAVE SPEED ....  2.273e+05 
+  
+  
+              MATERIAL TYPE ........................ELASTIC PLASTIC 
+              MATERIAL ID ..........................         10 
+              DENSITY ..............................  7.781e-04 
+              MATERIAL PROPERTIES:
+                     YOUNGS MODULUS        =    1.810e+07 
+                     POISSONS RATIO        =    0.000e+00 
+                     YIELD STRESS          =    1.000e+04 
+                     HARDENING MODULUS     =    3.120e+04 
+                     BETA                  =    0.000e+00 
+              CALCULATED INITIAL VALUES FOR:
+                INITIAL DILITATIONAL MODULUS .......  1.810e+07 
+                INITIAL DILITATIONAL WAVE SPEED ....  1.525e+05 
+  
+  
+  
+  
+  
+     N O  D I S P L A C E M E N T  B O U N D A R Y  C O N D I T I O N S 
+  
+                    NODE SET FLAG     DIRECTION 
+                         1                X 
+                        11                Y 
+                        11                X 
+  
+  
+  
+  
+  
+          I N I T I A L  V E L O C I T Y  B Y  M A T E R I A L S
+  
+              MAT. NO.  X INITIAL VELOCITY  Y INITIAL VELOCITY
+                 1          0.000e+00           -1.758e+02
+                11          0.000e+00           -1.758e+02
+                 2          0.000e+00           -1.758e+02
+                22          0.000e+00           -1.758e+02
+                 3          0.000e+00           -1.758e+02
+                10          0.000e+00           -1.758e+02
+                 7          0.000e+00           -1.758e+02
+                 9          0.000e+00           -1.758e+02
+  
+  
+  
+                          C O N T A C  S U R F A C E S
+  
+ SURFACE PAIR             1           2           3           4           5 
+ SIDE SET 1 ID          999         200         400         600         900 
+ SIDE SET 2 ID          100         300         500         700        1000 
+ PARTITION            0.500       0.250       0.750       0.250       0.000 
+ FRICTION:
+   STATIC             0.000       0.000       0.000       0.000       0.000 
+   HIGH SPEED         0.000       0.000       0.000       0.000       0.000 
+   DECAY              0.000       0.000       0.000       0.000       0.000 
+  
+ SURFACE PAIR             6 
+ SIDE SET 1 ID          999 
+ SIDE SET 2 ID          100 
+ PARTITION            0.500 
+ FRICTION:
+   STATIC             0.000 
+   HIGH SPEED         0.000 
+   DECAY              0.000 
+  
+  
+  
+  
+  
+                     E N D  O F  D A T A  I N P U T  P H A S E
+                           5.990e-01 CPU SECONDS USED 
+                               51800 WORDS ALLOCATED
+  
+  
+  
+  
+  
+                    T O T A L  M A S S  O F  E A C H  M A T E R I A L 
+  
+                             MATERIAL ID           MASS 
+                                  1             8.128e+00 
+                                 11             9.334e+00 
+                                  3             9.902e-01 
+                                  2             4.420e+00 
+                                 22             4.115e+00 
+                                  7             4.806e-01 
+                                  8             2.068e-01 
+                                  9             3.573e-01 
+                                 10             2.200e+01 
+                         ( ALL MASSES ARE FOR TWO PI RADIANS )
+  
+  
+  
+  
+  
+           E N D  O F  D A T A  I N I T I A L I Z A T I O N  P H A S E
+                           2.493e-01 CPU SECONDS USED 
+                              321302 WORDS ALLOCATED
+  
+  
+  
+  
+              V A R I A B L E S  O N  P L O T T I N G  D A T A  B A S E 
+  
+                        NODAL        ELEMENT      GLOBAL
+                        -----        -------      ------
+                        DISPLX       SIGXX        TM STEP 
+                        DISPLY       SIGYY        KE
+                        VELX         SIGZZ        XMOM
+                        VELY         TAUXY        YMOM
+                        RX           ENERGY 
+                        RY           EPSXX
+                                     EPSYY
+                                     EPSZZ
+                                     EPSXY
+                                     DENSITY
+                                     PRESSURE 
+                                     VONMISES 
+                                     EQPS 
+1     PRONTO2D, VERSION PRONTO2D ,RUN ON 08/05/88 ,AT 08:45:50
+      CMT - 10 FOOT R/S DROP - 70 PSI LDF, I = 1-4, O = 3-8  (8/1/88) 
+  
+     TIME STEP     CURRENT       KINETIC      CPU TIME PER    TIME DILATATION 
+       NUMBER       TIME          ENERGY     ELEMENT CYCLE        FACTOR
+            0      0.000e+00    7.700e+05      0.000e+00         0.000e+00
+         2199      4.999e-04    7.695e+05      1.297e-05         3.893e+05
+         4399      1.000e-03    7.686e+05      1.279e-05         3.839e+05
+         6598      1.500e-03    7.670e+05      1.306e-05         3.920e+05
+         8798      2.000e-03    7.651e+05      1.298e-05         3.897e+05
+        10997      2.500e-03    7.631e+05      1.303e-05         3.912e+05
+        13197      3.000e-03    7.610e+05      1.302e-05         3.908e+05
+        15396      3.500e-03    7.588e+05      1.299e-05         3.901e+05
+        17595      4.000e-03    7.565e+05      1.304e-05         3.915e+05
+        19795      4.500e-03    7.541e+05      1.301e-05         3.907e+05
+  RESTART FILE WRITTEN AT TIME  5.000e-03 
+        21994      5.000e-03    7.516e+05      1.307e-05         3.924e+05
+        24194      5.500e-03    7.489e+05      1.308e-05         3.926e+05
+        26393      6.000e-03    7.460e+05      1.300e-05         3.904e+05
+        28592      6.500e-03    7.429e+05      1.310e-05         3.933e+05
+        30792      7.000e-03    7.396e+05      1.306e-05         3.921e+05
+        32991      7.500e-03    7.362e+05      1.303e-05         3.912e+05
+        35190      8.000e-03    7.326e+05      1.300e-05         3.902e+05
+        37390      8.500e-03    7.287e+05      1.302e-05         3.910e+05
+        39589      9.000e-03    7.245e+05      1.306e-05         3.920e+05
+        41789      9.500e-03    7.203e+05      1.306e-05         3.920e+05
+  RESTART FILE WRITTEN AT TIME  1.000e-02 
+        43988      1.000e-02    7.158e+05      1.306e-05         3.922e+05
+        46187      1.050e-02    7.111e+05      1.305e-05         3.918e+05
+        48387      1.100e-02    7.061e+05      1.304e-05         3.916e+05
+        50586      1.150e-02    7.010e+05      1.319e-05         3.959e+05
+        52785      1.200e-02    6.957e+05      1.326e-05         3.981e+05
+        54985      1.250e-02    6.902e+05      1.323e-05         3.973e+05
+        57184      1.300e-02    6.845e+05      1.326e-05         3.981e+05
+        59383      1.350e-02    6.787e+05      1.327e-05         3.984e+05
+        61583      1.400e-02    6.728e+05      1.325e-05         3.978e+05
+        63782      1.450e-02    6.666e+05      1.330e-05         3.994e+05
+  RESTART FILE WRITTEN AT TIME  1.500e-02 
+        65981      1.500e-02    6.603e+05      1.327e-05         3.985e+05
+        68181      1.550e-02    6.539e+05      1.332e-05         3.999e+05
+        70380      1.600e-02    6.473e+05      1.316e-05         3.951e+05
+        72579      1.650e-02    6.405e+05      1.321e-05         3.966e+05
+        74779      1.700e-02    6.336e+05      1.324e-05         3.974e+05
+        76978      1.750e-02    6.266e+05      1.331e-05         3.995e+05
+        79177      1.800e-02    6.194e+05      1.337e-05         4.013e+05
+        81376      1.850e-02    6.120e+05      1.329e-05         3.989e+05
+        83576      1.900e-02    6.046e+05      1.315e-05         3.949e+05
+        85775      1.950e-02    5.970e+05      1.316e-05         3.952e+05
+  RESTART FILE WRITTEN AT TIME  2.000e-02 
+        87974      2.000e-02    5.894e+05      1.334e-05         4.004e+05
+        90173      2.050e-02    5.816e+05      1.339e-05         4.021e+05
+        92373      2.100e-02    5.737e+05      1.322e-05         3.970e+05
+        94572      2.150e-02    5.657e+05      1.311e-05         3.937e+05
+        96771      2.200e-02    5.577e+05      1.314e-05         3.945e+05
+        98971      2.250e-02    5.497e+05      1.324e-05         3.974e+05
+       101170      2.300e-02    5.415e+05      1.317e-05         3.955e+05
+       103369      2.350e-02    5.332e+05      1.325e-05         3.978e+05
+       105568      2.400e-02    5.249e+05      1.319e-05         3.960e+05
+       107768      2.450e-02    5.165e+05      1.314e-05         3.945e+05
+  RESTART FILE WRITTEN AT TIME  2.500e-02 
+       109967      2.500e-02    5.080e+05      1.310e-05         3.934e+05
+       112166      2.550e-02    4.995e+05      1.314e-05         3.945e+05
+       114365      2.600e-02    4.909e+05      1.318e-05         3.955e+05
+       116565      2.650e-02    4.822e+05      1.315e-05         3.947e+05
+       118764      2.700e-02    4.734e+05      1.321e-05         3.964e+05
+       120963      2.750e-02    4.647e+05      1.315e-05         3.947e+05
+       123163      2.800e-02    4.560e+05      1.310e-05         3.932e+05
+       125362      2.850e-02    4.472e+05      1.313e-05         3.942e+05
+       127561      2.900e-02    4.384e+05      1.322e-05         3.967e+05
+       129761      2.950e-02    4.295e+05      1.316e-05         3.951e+05
+  RESTART FILE WRITTEN AT TIME  3.000e-02 
+       131960      3.000e-02    4.207e+05      1.331e-05         3.995e+05
+       134159      3.050e-02    4.119e+05      1.318e-05         3.958e+05
+       136359      3.100e-02    4.030e+05      1.316e-05         3.953e+05
+  
+  
+          ***** ERROR: ELEMENT NUMBER  1490 HAS NON-POSITIVE AREA ***** 
+                       CURRENT ELEMENT CENTER COORDINATES =  2.75     -71.6 
+                       CURRENT TIME INCREMENT AND TIME    =*****       3.101e-02
+  
+  
+  
+  
+  
+                33 TIME STEPS WERE WRITTEN TO THE PLOTTING DATA BASE
+  
+  
+                      E N D  O F  S O L U T I O N  P H A S E
+                           1.224e+04 CPU SECONDS USED 
+                              391388 WORDS ALLOCATED

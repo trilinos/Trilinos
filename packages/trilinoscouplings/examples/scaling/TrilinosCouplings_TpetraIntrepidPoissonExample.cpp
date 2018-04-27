@@ -180,6 +180,7 @@ makeMatrixAndRightHandSide (Teuchos::RCP<sparse_matrix_type>& A,
                             Teuchos::RCP<multivector_type>& B,
                             Teuchos::RCP<multivector_type>& X_exact,
                             Teuchos::RCP<multivector_type>& X,
+                            Teuchos::RCP<multivector_type> & coords,
                             const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
                             const Teuchos::RCP<Node>& node,
                             const std::string& meshInput,
@@ -194,7 +195,7 @@ makeMatrixAndRightHandSide (Teuchos::RCP<sparse_matrix_type>& A,
   using Teuchos::rcp_implicit_cast;
 
   RCP<vector_type> b, x_exact, x;
-  makeMatrixAndRightHandSide (A, b, x_exact, x, comm, node, meshInput, inputList, problemStatistics,
+  makeMatrixAndRightHandSide (A, b, x_exact, x, coords, comm, node, meshInput, inputList, problemStatistics,
                               out, err, verbose, debug);
 
   B = rcp_implicit_cast<multivector_type> (b);
@@ -207,6 +208,7 @@ makeMatrixAndRightHandSide (Teuchos::RCP<sparse_matrix_type>& A,
                             Teuchos::RCP<vector_type>& B,
                             Teuchos::RCP<vector_type>& X_exact,
                             Teuchos::RCP<vector_type>& X,
+                            Teuchos::RCP<multivector_type> & coords,
                             const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
                             const Teuchos::RCP<Node>& node,
                             const std::string& meshInput,
@@ -400,9 +402,6 @@ makeMatrixAndRightHandSide (Teuchos::RCP<sparse_matrix_type>& A,
     nodeCoord(i,1)=nodeCoordy[i];
     nodeCoord(i,2)=nodeCoordz[i];
   }
-  delete [] nodeCoordx;
-  delete [] nodeCoordy;
-  delete [] nodeCoordz;
 
   // Get the "time" value for the RTC
   double time = 0.0;
@@ -804,6 +803,22 @@ makeMatrixAndRightHandSide (Teuchos::RCP<sparse_matrix_type>& A,
 
     // Build Tpetra Export from overlapped to owned Map.
     exporter = rcp (new export_type (overlappedMapG, globalMapG));
+  }
+
+  /**********************************************************************************/
+  /****************************** STASH COORDINATES *********************************/
+  /**********************************************************************************/
+
+  coords = rcp(new multivector_type(globalMapG,dim));
+  for(int j=0; j<dim; j++) {
+    auto cdata = coords->getDataNonConst(j);
+    int lid=0;
+    for(int i=0; i<numNodes; i++) {
+      if (nodeIsOwned[i]) {
+        cdata[lid] = nodeCoord(i,j);
+        lid++;
+      }
+    }
   }
 
   /**********************************************************************************/

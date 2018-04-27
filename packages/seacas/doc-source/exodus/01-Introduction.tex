@@ -1,0 +1,74 @@
+ \chapter{Introduction}
+
+\exo{} is the successor of the widely used finite element 
+(FE) data file format EXODUS [1] (henceforth referred to as EXODUS I)
+developed by Mills-Curran and Flanagan. It continues the concept of a
+common database for multiple application codes (mesh generators,
+analysis codes, visualization software, etc.) rather than
+code-specific utilities, affording flexibility and robustness for both
+the application code developer and application code user. By using the
+\exo{} data model, a user inherits the flexibility of using a large
+array of application codes (including vendor-supplied codes) which
+access this common data file directly or via translators.
+
+The uses of the \exo{} data model include the following:
+
+\begin{itemize}
+ \item problem definition -- mesh generation, specification 
+of locations of boundary conditions and load application, specification 
+of material types.
+\item simulation -- model input and results output.
+\item visualization -- model verification, results postprocessing, 
+data interrogation, and analysis tracking.
+\end{itemize}
+
+\section{License and Availability}
+The \exo{} library is licensed under the BSD open source license.
+
+\begin{quote}
+Copyright~\copyright{} 2005 National Technology & Engineering Solutions
+of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
+NTESS, the U.S. Government retains certain rights in this software.
+
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions are
+met:
+
+\begin{itemize}
+\item Redistributions of source code must retain the above copyright
+      notice, this list of conditions and the following disclaimer.
+
+\item Redistributions in binary form must reproduce the above
+      copyright notice, this list of conditions and the following
+      disclaimer in the documentation and/or other materials provided
+      with the distribution.
+
+\item Neither the name of NTESS nor the names of its
+      contributors may be used to endorse or promote products derived
+      from this software without specific prior written permission.
+\end{itemize}
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+"AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+\end{quote}
+
+The \exo{} library source code is available on GitHub
+\url{https://github.com/gsjaardema/seacas.git}
+
+For bug reports, documentation errors, and enhancement suggestions,
+contact:
+\begin{itemize}
+   \item Gregory D. Sjaardema
+   \item PHONE: (505) 844-2701
+   \item EMAIL: \url{mailto:gdsjaar@sandia.gov}
+   \item EMAIL: \url{mailto:gsjaardema@gmail.com}
+\end{itemize}

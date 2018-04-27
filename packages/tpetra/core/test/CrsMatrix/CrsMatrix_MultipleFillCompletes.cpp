@@ -48,6 +48,7 @@
 #include <Tpetra_TestingUtilities.hpp>
 #include <Tpetra_MultiVector.hpp>
 #include <Tpetra_CrsMatrix.hpp>
+#include "Tpetra_Details_getNumDiags.hpp"
 
 namespace {
 
@@ -158,8 +159,8 @@ namespace {
       if (myRank == 0) {
         cerr << "  Test that the matrix is 3*I" << endl;
       }
-      TEST_EQUALITY( matrix.getGlobalNumDiags(), numLocal*numImages );
-      TEST_EQUALITY( matrix.getNodeNumDiags(), numLocal );
+      TEST_EQUALITY( Tpetra::Details::getGlobalNumDiags (matrix), static_cast<GO> (numLocal*numImages) );
+      TEST_EQUALITY( Tpetra::Details::getLocalNumDiags (matrix), static_cast<LO> (numLocal) );
       TEST_EQUALITY( matrix.getGlobalNumEntries(), numLocal*numImages );
       TEST_EQUALITY( matrix.getNodeNumEntries(), numLocal );
       for (LO r = 0; r < static_cast<LO> (numLocal); ++r) {

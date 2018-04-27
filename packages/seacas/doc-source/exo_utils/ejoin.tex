@@ -1,0 +1,216 @@
+\chapter{EJoin}\label{ch:ejoin}
+\section{Introduction}
+\ejoin{} is used to join two or more \exo{} databases into a single
+\exo{} database. The input databases must have disjoint meta and bulk data.
+That is, 
+\begin{itemize}
+\item element blocks are not combined in the output model.  Each
+element block in each input file will produce an element block in the
+output file. Similarly for nodesets and sidesets.
+\item Each node in each input file will produce a node in the output
+file unless one of the node matching options
+(\param{-match\_node\_ids} or \param{-match\_node\_coordinates}) is specified.
+\item Each element in each input file will produce an element in the
+output file. Elements are never combined even if all of the nodes on
+two elements are combined, the output file would have two elements
+with identical connectivity which is usually not desired.
+\end{itemize}
+If any of the input databases have timesteps, then the timestep values
+and counts must match on all databases with timesteps.
+
+\section{Invoking \ejoin}
+
+The minimal command line for executing \ejoin{} is:
+\begin{syntax}
+     ejoin \{list of files to join\}
+\end{syntax}
+This would create an output mesh named \file{ejoin-out.e} containing
+the entities and data from the files listed on the command line. 
+
+Several options are available to modify the default behavior of
+\ejoin{}. In the description of the options, there is the concept of a
+``part'' which is simply the mesh from an input file. The parts are
+numbered sequentially starting at 1.
+
+\subsection{Options}
+\renewcommand\arraystretch{1.5}
+\begin{longtable}{lp{4.0in}}
+\param{-help}  &  Print this summary and exit  \\
+\param{-version}  &  Print version and exit  \\
+\param{-output <val>} & Name of the output file to create. The
+                        default output filename is \file{ejoin-out.e}.  If the specified
+			file already exists, it will be overwritten.  \\
+
+\param{-omit\_blocks <val>}  &  Omit the specified part/block pairs. The specification is
+	        \param{p\#:block\_id1:block\_id2,p\#:block\_id1}. For
+	        example, to omit block ids 1,3,4 from part 1; block
+	        ids 2,3,4 from part 2; and block 8 from part5, specify
+	        \param{-omit\_blocks p1:1:3:4,p2:2:3:4,p5:8}. \\
+
+\param{-omit\_nodesets [val]}  &  If no value, then don't transfer any
+		nodesets to the output file.  If just
+		\param{p\#,p\#,...} specified, then omit nodesets on
+		the specified parts. If
+		\param{p\#:id1:id2,p\#:id2,id4...}  then omit the
+		nodesets with the specified id in the specified
+		parts. \\
+
+\param{-omit\_sidesets [val]}  &  If no value, then don't transfer any
+		sidesets to the output file.  If just
+		\param{p\#,p\#,...} specified, then omit sidesets on specified
+		parts If \param{p\#:id1:id2,p\#:id2,id4...} then omit the sidesets
+		with the specified id in the specified parts.  \\
+
+\param{-convert\_nodal\_to\_nodesets <val>}  &  For each part listed (or \param{ALL}),
+                create a nodeset containing the nodes of that part
+                and output the nodal fields from that part as nodeset fields instead of nodal fields.
+                Format is comma-separated list of parts (1-based), or \param{ALL}  \\
+
+\param{-match\_node\_ids}  &  Combine nodes if their global ids match.
+		This option can not be specified if
+		\param{-match\_node\_coordinates} is specified.\\
+
+\param{-match\_node\_coordinates}  &  Combine nodes if they are within tolerance distance of each other.  
+		The \param{-tolerance <val>} option is used to set the matching tolerance.
+		This option can not be specified if \param{-match\_node\_ids} is specified.\\
+
+\param{-tolerance <val>}  &  Maximum distance between two nodes to be
+		considered colocated. The default tolerance is
+		calculated as 0.001 times the sum of the X, Y, and Z extents of the
+		bounding box containing the overlapping regions of the bounding boxes of the two meshes
+		being compared. This option is only meaningful
+		if \param{-match\_node\_coordinates} is specified. \\
+
+\param{-offset <val>}  &  Comma-separated x,y,z offset for the nodal
+		coordinates of all parts except for part
+		1\footnote{This option is planned to be changed in the
+		future to allow specifying a different offset for each
+		part including part 1. It is unknown at this time when
+		this will be implemented or what the syntax will be.}.
+		\\
+
+\param{-steps <val>}  &  Specify subset of timesteps to transfer to output file.
+                Format is \param{beg:end:step}. For example, the input
+                \param{-steps 1:10:2} would result in steps 1, 3, 5,
+                7, and 9 being transferred to the output file. To only
+                transfer last step, use \param{-steps LAST} \\
+
+\param{-gvar <val>} & Comma-separated list of global variables to be
+		joined or \param{ALL} or \param{NONE}.  The default behavior is that all global
+		variables will be written to the output file.\\
+\param{-evar <val>} & Comma-separated list of element variables to be joined or \param{ALL} or \param{NONE}.
+                Variables can be limited to certain blocks by appending a
+                colon followed by the block id.  For example,
+		\param{-evar sigxx:10:20} would result in the variable
+		\param{sigxx} would be written for element blocks with
+		id 10 and 20. The default behavior is that all element
+		variables will be written to the output file.  \\
+\param{-nvar <val>} & Comma-separated list of nodal variables to be
+		joined or \param{ALL} or \param{NONE}. The default behavior is that all nodal 
+		variables will be written to the output file. \\
+\param{-nsetvar <val>} & Comma-separated list of nodeset variables to
+		be joined or \param{ALL} or \param{NONE}.  
+                Variables can be limited to certain sets by appending a
+                colon followed by the nodeset id.  E.g. -nsetvar temperature:10:20.
+		The default behavior is that all nodeset 
+		variables will be written to the output file.\\
+\param{-ssetvar <val>} & Comma-separated list of sideset variables to
+		be joined or \param{ALL} or \param{NONE}.  
+                Variables can be limited to certain sets by appending a
+                colon followed by the nodeset id.  E.g. -ssetvar sigxx:10:20.
+		The default behavior is that all sideset 
+		variables will be written to the output file.\\
+
+\param{-disable\_field\_recognition}  &  Do not try to combine scalar fields 
+		into higher-order fields such as vectors or tensors
+		based on the field suffix.  \\
+
+\param{-copyright}  &  Show copyright and license data.  \\
+\end{longtable}
+
+When \ejoin{} is invoked, it will parse the user-specified options from
+the command line and it will also see if the environment variable
+\param{EJOIN\_OPTIONS} exists.  If the variable exists, then it will be
+parsed first followed by the parsing of the options on the command line.
+
+
+
+\section{Examples}
+The output below shows the results of a sample run of ejoin.  In this
+example, there are three springs (drive, gate, and shutter) which have
+been prestressed in three separate analyses.  The results data for
+these analyses are in the \file{*.rs} files. The analyst wants
+to join these prestress outputs back into the original mesh and
+then perform another analysis using the prestressed springs. The spring
+element blocks have ids 1, 2, and 3.  Each of the individual spring
+prestress runs have 3 element blocks -- a spring and two spring
+attachment points.  To create the final model, the following steps
+need to be done:
+\begin{itemize}
+\item Remove the spring element blocks from the original mesh database
+(\file{assembly.g})
+\item Remove the spring attachment points from each prestressed spring
+model.
+\begin{itemize}
+\item Blocks 14 and 21 in the drive spring (part 2), 
+\item Blocks 17 and 31 in the gate spring (part 3), and
+\item Blocks 72 and 61 in the shutter spring (part 4).
+\end{itemize}
+\item Join the remaining blocks into a single model including the
+results data from only the last timestep of the spring models.
+\end{itemize}
+
+These steps are accomplished using the following syntax:
+\begin{syntax}
+ejoin -omit_blocks p1:1:2:3,p2:14:21,p3:17:31,p4:72:61 -steps LAST
+      -output assembly_final.g assembly.g drive.rs gate.rs shutter.rs
+\end{syntax}
+
+The output from executing this command is:
+\begin{verbatim}
+EJoin
+        (A code for merging Exodus II databases; with or without results data.)
+        (Version: 1.2.7) Modified: 2011/02/09
+*** 50503 Nodes were merged/omitted.
+
+Wrote step    1/1, time 3.6000e-02
+
+ Database: assembly_final.g
+
+ Number of coordinates per node       =        3
+ Number of nodes                      =   274723
+ Number of elements                   =   220160
+ Number of element blocks             =       25
+ Number of nodal point sets           =       27
+ Number of element side sets          =        4
+
+ Number of global variables           =      128
+ Number of variables at each node     =       42
+ Number of variables at each element  =       34
+ Number of variables at each nodeset  =        0
+ Number of variables at each sideset  =        0
+
+ Number of time steps on the database =        1
+******* END *******
+\end{verbatim}
+
+\section{Related Codes}
+\ejoin{} provides some, but not all, of the functionality of the
+\code{gjoin}~\cite{bib:gjoin} code. The main differences are:
+\begin{itemize}
+\item \code{gjoin} does not handle transient results data on the input
+databases.
+\item \code{gjoin} can combine element blocks from multiple input
+databases into a single element block. Similarly for nodesets and
+sidesets. 
+\item \code{gjoin} can independently rotate, scale, and offset each 
+input database; \ejoin{} can currently only offset the second and
+subsequent parts by the same value; however, it is planned to add
+additional part transformation (offset, scale, rotation) options to
+\ejoin{} in the future.
+
+\item \code{gjoin} tends to use memory inefficiently which can limit
+the size of database that it can generate; \ejoin{} should use memory
+more efficiently and allow the generation of much larger models.
+\end{itemize}
+

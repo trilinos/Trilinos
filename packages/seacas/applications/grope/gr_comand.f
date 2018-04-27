@@ -1,4 +1,4 @@
-C    Copyright(C) 2008 National Technology & Engineering Solutions of
+C    Copyright(C) 2008-2017 National Technology & Engineering Solutions of
 C    Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C    NTESS, the U.S. Government retains certain rights in this software.
 C    
@@ -36,7 +36,7 @@ C=======================================================================
      $     NAMIGV, NAMINV, NAMIEV, NAMINS, NAMISS,
      &     NAMOGV, NAMONV, NAMOEV, NAMONS, NAMOSS,
      &     CORD, MAPEL, DBMAPEL, MAPND, DBMAPND, DOMAPN, DOMAPE,
-     &     IDELB, NUMELB, LENE, NUMLNK, NUMATR, LINK, ATRIB,
+     &     do_check, IDELB, NUMELB, LENE, NUMLNK, NUMATR, LINK, ATRIB,
      &     IDNPS, NNNPS, NDNPS, IXNNPS, IXDNPS, LTNNPS, FACNPS, NSNAME,
      &     IDESS, NEESS, NNESS, IXEESS, IXNESS, LTEESS, LTSESS, FACESS,
      $     SSNAME, ISEVOK, ISNSVOK, ISSSVOK, TIMES,
@@ -125,7 +125,7 @@ C   --   Uses NOUT, NCRT, NPRT, ANYPRT of /OUTFIL/
 
       DIMENSION A(*)
       INTEGER IA(*)
-      LOGICAL EXODUS, FFMATC
+      LOGICAL EXODUS, FFMATC, DO_CHECK
       LOGICAL DOMAPN, DOMAPE, MAPTMP, DOBLK, DOELE
       CHARACTER*(*) DBNAME
       CHARACTER*(MXSTLN) QAREC(4,*)
@@ -298,6 +298,14 @@ C   --Read first time step variables
 
 C   --Read command line
 
+      if (do_check) then
+        call check(a, ia, exodus, idelb, ebtype, numelb, isevok, numlnk,
+     *    numatr, link, atrib, atname, mapnd, dbmapnd, mapel, dbmapel,
+     *    idnps, nnnps, ixnnps,
+     *    ltnnps, facnps, idess, neess, nness, ixeess, ixness, lteess,
+     *    ltsess, facess, vargl, varnp, varel)
+        return
+      endif
       WRITE (*, *)
       CALL FREFLD (0, 0, 'GROPE> ', MAXFLD,
      &  IOSTAT, NUMFLD, INTYP, CFIELD, IFIELD, RFIELD)
@@ -448,7 +456,7 @@ C *** GENESIS Print Commands ***
      *      FFMATC (IFLD, INTYP, CFIELD, 'SIDESET', 7)) THEN
             CALL RIXID (DUMLIN, IFLD, INTYP, CFIELD, IFIELD,
      &        'side set ID',
-     &        NUMESS, IDESS, LISESS(0), LISESS(1), *210)
+     &        NUMESS, IDESS, LISESS(0), LISESS(1), *270)
             if (lisess(0) .gt. 0) then
               call selset(IA(KLEL), IA(KLEL+1),
      *          numess, lisess, lessel,
@@ -457,9 +465,8 @@ C *** GENESIS Print Commands ***
           else
             CALL RMIXINT (DUMLIN, IFLD, INTYP, CFIELD, IFIELD,
      &        'element number', NUMEL, IA(KLEL), IA(KLEL+1), MAPEL,
-     *        *210)
+     *        *270)
           end if
- 210      CONTINUE
 
           CALL DBSBEL (NELBLK, NUMEL, LENE, A(KLEL), NLISEL, LISEL)
 
@@ -933,46 +940,11 @@ C     didn't, need to rewrite frefld to return mixed case.
         
       ELSE IF (VERB .EQ. 'CHECK') THEN
 
-        L = MAX (NUMEL, NUMNPS, LNPSNL, NUMESS, LESSEL, LESSNL, NUMNP)
-        CALL MDRSRV ('ICHECK', KICHECK, L)
-        CALL MDRSRV ('ISCR',   KISCR, LESSEL)
-        CALL MDRSRV ('RCHECK', KRCHECK, NUMNP)
-        CALL MDSTAT (NERR, MEM)
-        IF (NERR .GT. 0) GOTO 240
-
-        CALL CKMAP (NUMEL, MAPEL, IA(KICHECK), 'Element')
-        CALL CKMAP (NUMNP, MAPND, IA(KICHECK), 'Node')
-        CALL CKELB (NELBLK, NUMEL, NUMNP, EBTYPE, 
-     &    IDELB, NUMELB, NUMLNK, NUMATR, LINK, ATRIB, ATNAME, 
-     &       IA(KICHECK), MAPND)
-        CALL CKNPS (NUMNPS, LNPSNL, NUMNP,
-     &    IDNPS, NNNPS, IXNNPS, LTNNPS, FACNPS, A(KICHECK))
-        CALL CKESS (NUMESS, LESSEL, LESSNL, NUMEL, NUMNP,
-     &    IDESS, NEESS, NNESS, IXEESS, IXNESS,
-     &    LTEESS, LTSESS, FACESS,
-     *    A(KISCR), A(KICHECK), A(KRCHECK), NDIM,
-     *    MAPEL, MAPND)
-
- 240    CONTINUE
-        CALL MDDEL ('ICHECK')
-        CALL MDDEL ('RCHECK')
-
-        IF (EXODUS) THEN
-          DO 250 N = 1, NSTEPS
-            NSTEP = N
-            CALL TOSTEP (NSTEP, NUMELB, IDELB, ISEVOK,
-     &        TIME, VARGL, VARNP, VAREL)
-            IF (N .NE. NSTEP) GOTO 260
- 250      CONTINUE
- 260      CONTINUE
-
-          NSTEP = 1
-          CALL TOSTEP (NSTEP, NUMELB, IDELB, ISEVOK,
-     &      TIME, VARGL, VARNP, VAREL)
-        END IF
-
-        WRITE (*, *)
-        WRITE (*, 10000) 'Database check is completed'
+        call check(a, ia, exodus, idelb, ebtype, numelb, isevok, numlnk,
+     *    numatr, link, atrib, atname, mapnd, dbmapnd, mapel, dbmapel,
+     *    idnps, nnnps, ixnnps,
+     *    ltnnps, facnps, idess, neess, nness, ixeess, ixness, lteess,
+     *    ltsess, facess, vargl, varnp, varel)
 
       ELSE IF (VERB .EQ. 'MINMAX') THEN
 

@@ -115,10 +115,16 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
   std::vector<std::string> dirList;
   if (runHeavyTests) {
     dirList.push_back("EasyParameterListInterpreter-heavy/");
+#if !(defined(HAVE_MUELU_KOKKOS_REFACTOR) && defined(HAVE_MUELU_KOKKOS_REFACTOR_USE_BY_DEFAULT))
+    // commented since extended xml interface does not support kokkos factories
     dirList.push_back("FactoryParameterListInterpreter-heavy/");
+#endif
   } else {
     dirList.push_back("EasyParameterListInterpreter/");
+#if !(defined(HAVE_MUELU_KOKKOS_REFACTOR) && defined(HAVE_MUELU_KOKKOS_REFACTOR_USE_BY_DEFAULT))
+    // commented since extended xml interface does not support kokkos factories
     dirList.push_back("FactoryParameterListInterpreter/");
+#endif
   }
 #if defined(HAVE_MPI) && defined(HAVE_MUELU_ISORROPIA) && defined(HAVE_AMESOS2_KLU2)
   // The ML interpreter have internal ifdef, which means that the resulting

@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2010 National Technology & Engineering Solutions
+// Copyright(C) 1999-2017 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -100,6 +100,8 @@ namespace Iohb {
     // together. If "return_value & Ioss::EntityType" is set, then the
     // database supports that type (e.g. return_value & Ioss::FACESET)
     unsigned entity_field_support() const override;
+
+    int int_byte_size_db() const override { return int_byte_size_api(); }
 
   private:
     int64_t node_global_to_local__(int64_t /* global */, bool /* must_exist */) const override

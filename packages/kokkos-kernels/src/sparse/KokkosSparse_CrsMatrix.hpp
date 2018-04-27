@@ -113,6 +113,7 @@ inline int RowsPerThread<Kokkos::Cuda>(const int NNZPerRow) {
 struct DeviceConfig {
   struct Dim3 {
     size_t x, y, z;
+    KOKKOS_INLINE_FUNCTION
     Dim3(const size_t x_, const size_t y_ = 1, const size_t z_ = 1) :
       x(x_), y(y_), z(z_) {}
   };
@@ -121,6 +122,7 @@ struct DeviceConfig {
   size_t num_blocks;
   size_t num_threads_per_block;
 
+  KOKKOS_INLINE_FUNCTION
   DeviceConfig(const size_t num_blocks_ = 0,
                const size_t threads_per_block_x_ = 0,
                const size_t threads_per_block_y_ = 0,
@@ -454,6 +456,7 @@ public:
   /// FIXME (mfh 09 Aug 2013) numCols and nnz should be properties of
   /// the graph, not the matrix.  Then CrsMatrix needs methods to get
   /// these from the graph.
+  KOKKOS_INLINE_FUNCTION
   CrsMatrix () :
     numCols_ (0)
   {}
@@ -464,6 +467,7 @@ public:
            class DType,
            class MTType,
            typename IType>
+  KOKKOS_INLINE_FUNCTION
   CrsMatrix (const CrsMatrix<SType,OType,DType,MTType,IType> & B) :
     graph (B.graph.entries, B.graph.row_map),
     values (B.values),

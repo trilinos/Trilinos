@@ -6131,11 +6131,8 @@ namespace Tpetra {
           out << "Number of allocated entries: "
               << staticGraph_->getNodeAllocationSize () << endl;
         }
-        out << "Number of entries: " << getNodeNumEntries () << endl;
-        if (isFillComplete ()) {
-          out << "Number of diagonal entries: " << getNodeNumDiags () << endl;
-        }
-        out << "Max number of entries per row: " << getNodeMaxNumRowEntries ()
+        out << "Number of entries: " << getNodeNumEntries () << endl
+            << "Max number of entries per row: " << getNodeMaxNumRowEntries ()
             << endl;
       }
       // Give output time to complete by executing some barriers.

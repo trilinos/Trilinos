@@ -1,0 +1,425 @@
+\documentstyle[12pt,sequence]{sreport}
+\input{my$tex:macro.tex}
+\def\NUM{{\sf Numbers}}
+\def\EXO{{\sf Exodus}}
+\makeatletter
+\def\listoffigures{\@restonecolfalse\if@twocolumn\@restonecoltrue\onecolumn
+  \fi\filbreak\bigskip\leftline{\large\bf Figures}\markboth
+   {FIGURES}{FIGURES}\addcontentsline{toc}{chapter}{Figures}
+  \@starttoc{lof}
+\if@restonecol\twocolumn\fi}
+%
+\def\listoftables{\@restonecolfalse\if@twocolumn\@restonecoltrue\onecolumn
+  \fi\filbreak\bigskip\leftline{\large\bf Tables}\markboth
+   {TABLES}{TABLES}\addcontentsline{toc}{chapter}{Tables}\@starttoc{lot}
+\if@restonecol\twocolumn\fi}
+\def\l@figure{\@dottedtocline{0}{0.0em}{1.5em}}
+%
+\def\chapter{
+   \global\@topnum\z@            % Prevents figures from going at top of page.
+   \secdef\@chapter\@schapter
+}
+\begin{document}
+\sand88-0737
+\UC-32
+\title{NUMBERS: A Mass Properties Calculation Program for Two- and
+Three-Dimensional\\Finite Element Models} 
+\author{Gregory D. Sjaardema}
+\division{Applied Mechanics Division I}
+\abstract{abstract}
+\makesandtitle
+\tableofcontents
+\listoffigures
+\clearpage
+%
+% Chapter 1: Introduction
+%
+\chapter{Introduction}
+ 
+During the structural analysis of a body, it is often necessary or
+helpful to know several properties or statistics of the finite element
+description.  The \NUM\ code was written to provide an efficient
+method for calculating these properties. Properties calculated
+include: (1)~the volume and mass of each element block, (2)~the mass
+(or area) moments of inertia, (3)~the location of the center of
+gravity, (4)~the minimum, maximum, and average element volume (area
+for two-dimensional bodies) for each element block, and (5)~the number
+of elements in each element block. 
+
+%to verify
+%accurate representation of the actual body and to determine the
+%density of pseudo materials used to approximate the mass of
+%non-structural components. 
+%of the body which can be used to determine the eccentric impact
+%response (slapdown) of a deformable body~\cite{slapdown}. 
+%which is sometimes required to
+%determine the orientation of a body subjected to impact events.
+%which can be used to
+%estimate the explicit integration time step and therefore, the
+%computer time required for the analysis, 
+
+The initial impetus for development of this code was the structural
+analysis of a nuclear waste shipping container subjected to several
+hypothetical 30-foot drops onto a rigid surface at various
+orientations.  However, the calculated properties are useful for many
+different types of analyses. 
+
+The remainder of this report is organized as follows.  The numerical
+formulation is described in the next chapter.  The following chapter
+describes how the properties calculated by \NUM\ were used in the
+analyses of a nuclear waste transportation container.  A procedure for
+estimating the stable time step size is described in Chapter~4.
+Chapter~5 describes the execution of the code, followed by the
+Conclusions and Summary in Chapter~6. 
+
+
+% 
+% Numerical Formulation 
+%
+
+\chapter{Numerical Formulation} A brief summary of the equations used
+to calculate the mass properties is given in this chapter. The method
+used to integrate these equations is not detailed since the numerical
+algorithms can be found in most textbooks on finite element
+methodology.  The moments of inertia are originally calculated about
+the origin of the coordinate system and then transferred to the
+centroid using the parallel-axis theorem. 
+
+The volume and the moments of inertia about the origin of the
+coordinate system are given by the following integrals: 
+\begin{eqnarray}
+ V      &=& \int_V dV                             \\
+ I_x    &=& \int_V \rho\left(y^2 + z^2\right)\,dV \\
+ I_y    &=& \int_V \rho\left(x^2 + z^2\right)\,dV \\
+ I_z    &=& \int_V \rho\left(x^2 + y^2\right)\,dV \\
+ I_{xy} &=& \int_V \rho xy\,dV                    \\
+ I_{xz} &=& \int_V \rho xz\,dV                    \\
+ I_{yz} &=& \int_V \rho yz\,dV                    
+\end{eqnarray}
+
+where $V$ is the volume, $\rho$ is the density, $I$ is the mass moment
+of inertia, and the subscripts $x$, $y$, and $z$ denote the axes about
+which the moment is measured.  The double subscripts indicate products
+of inertia.  Note that the product of inertia with respect to any two
+orthogonal axes is zero if either of the axes is an axis of symmetry. 
+
+\paragraph{Two-dimensional Axisymmetric Body}
+For a two-dimensional axisymmetric body, the integrals are written in
+cylindrical coordinates using the radius $r$ and the angle $\theta$,
+where $x = r\cos\theta$ and $z = r\sin\theta$.  The $y$-axis is
+assumed to be the axis of revolution.  The infinitesimal volume $dV$
+is equal to $r\,dA\,d\theta$ where $dA$ is an infinitesimal area
+equal to $dr\,dy$. Equations (1) through~(4) are rewritten as: 
+\begin{eqnarray}
+V   &=& \int_{-\pi}^\pi\int_A r\,dA\,d\theta   \\
+I_x = I_z &=&\int_{-\pi}^\pi\int_A 
+              \rho\left(y^2 + r^2\sin^2\theta\right)r\,dA\,d\theta\\ 
+I_y &=& \int_{-\pi}^\pi\int_A \rho r^3\,dA\,d\theta 
+\end{eqnarray}
+Performing the outer integration from $-\pi$ to $\pi$ gives:
+\begin{eqnarray}
+V   &=& 2\pi\int_A r\,dA   \\
+I_y &=& \int_A 2\pi\rho r^3\,dA   \\
+I_x = I_z &=& \int_A 2\pi\rho r y^2\,dA + \int_A \pi\rho r^3\,dA\\
+    &=& \int_A 2\pi\rho r y^2\,dA + {I_y\over2}  
+\end{eqnarray}
+The products of inertia $I_{xy}$, $I_{xz}$, and $I_{yz}$ are zero since
+all three axes are symmetry axes.  
+
+\paragraph{Two-dimensional Planar Body}
+For a two-dimensional planar body, area moments of inertia are
+calculated; the depth in the $z$-direction is ignored. The integrals
+simplify as follows: 
+\begin{eqnarray}
+ I_x    &=& \int_A \rho y^2\,dA                   \\
+ I_y    &=& \int_A \rho x^2\,dA                   \\
+ I_z    &=& \int_A \rho\left(x^2 + y^2\right)\,dA = I_x + I_y \\
+ I_{xy} &=& \int_A \rho xy\,dA                    
+\end{eqnarray}
+The products of inertia $I_{xz}$ and $I_{yz}$ are both zero.
+
+\paragraph*{Evaluation of Integrals} The integrals are evaluated using
+the isoparametric element formulation and Gaussian Quadrature.
+Details of this process can be found in most books on finite element
+methodology.  In \NUM, two options are available for integration of
+the equations.  The two-dimensional equations can be integrated with
+either 1- or 4-point quadrature, and the three-dimensional equations
+with either 1- or 8-point quadrature.  The mass moments of inertia for
+bodies with non-rectangular elements are calculated more accurately
+with the higher-order integration; volumes and areas are integrated
+exactly with either integration option.  The second-order quadrature
+rule is also useful for calculating the section properties of a
+non-standard shape.  For this purpose, the discretization of the body
+is only refined enough to capture the essential details of the shape
+since a structural analysis will not be performed. 
+
+\paragraph{Calculation of Centroid Location} The location of the
+centroid is calculated using the first mass moments about each of the
+three coordinate axes.  The mass moments are summed in each of the
+three coordinate directions over the range of the elements.  The
+centroid location is then given by the quotient of the mass moment
+sums divided by the total mass of the body.  For a two-dimensional
+axisymmetric body, $X_c$ and $Z_c$ (the $X$ and $Z$ coordinates of the
+centroid) are zero; for a two-dimensional planar body,
+$Z_c$ is zero.  
+
+\chapter{Example Usage of \NUM\ Properties}
+
+Example uses of the properties calculated by \NUM\ in the analyses of
+a nuclear waste shipping container are presented in this chapter.
+During the development of the finite element models required for these
+analyses, several properties were required to verify correctness of
+the model, determine impact orientations, calculate pseudo densities,
+and other uses. There was no method available for efficiently
+calculating these properties; therefore, the \NUM\ code was written
+specifically to calculate the needed properties.  The descriptions
+below are not a complete list of the uses of the \NUM\ code; different
+analyses would use the properties differently. 
+
+\paragraph*{Mass and Volume Calculation} Several finite element
+models, both two-dimensional and three-dimensional, were required in
+the shipping container structural analyses.  The mass and volume of
+each of the materials in each of the models were calculated to ensure
+that the body was being represented correctly. 
+
+\paragraph*{Calculation of Pseudo Density} The cargo in the container
+was approximated by a pseudo material since the actual configuration
+of the cargo was too complicated to model.  The structural properties
+of the material were unimportant; however, the cargo was required to
+have the correct mass.  \NUM\ was used to calculate the total volume
+of the pseudo cargo material; the cargo mass was then divided by the
+calculated volume to determine the density of the pseudo material. 
+
+\paragraph*{Centroid Location and Mass Moments of Inertia} The
+location of the centroid of the container was  used to
+determine the orientation of the container with respect to the rigid
+surface for the stable top and bottom corner drops.  In a stable
+corner drop, the body is oriented such that a vector from the centroid
+to the impact point is normal to the rigid surface, and the
+initial velocity of the body is directed along this vector.  
+
+The mass moments of inertia and the mass were used to calculate the
+longitudinal radius of gyration.  The longitudinal radius of gyration
+has been shown to be an important factor in the behavior of a body
+during an eccentric impact~\cite{slapdown}. In an eccentric impact, a
+normal to the impact surface at the impact point does not pass through
+the center of mass of the body.  This impact orientation, in which
+there is an initial impact at one end of the body followed by a
+secondary impact at the opposite end of the body, is commonly called
+{\em slapdown}.  For certain geometries, the secondary impact velocity
+is greater than the initial impact velocity. 
+
+\paragraph*{Maximum and Minimum Elemental Quantities} The maximum,
+minimum and average element volumes for each material were used for
+information and validation of the finite element discretization.  The
+minimum time factor was used to determine the approximate computer
+time required for an analysis using the procedure described in
+Chapter~\ref{s:time}. 
+
+All of these quantities were calculated using \NUM. It gives a concise
+summary of the important model statistics that could not be easily
+determined by other methods.  The above list is only a sample of the
+possible uses of the properties calculated by \NUM; other uses include
+calculating section properties for non-standard cross-sections and
+providing properties for rigid-body dynamics problems. 
+
+\chapter{Estimation of Time Step Size and Required Computer
+Time}\label{s:time}
+
+\NUM\ calculates a quantity called the `minimum time factor' for each
+material block.  This value and the material's physical properties can
+be used to estimate the maximum stable time step for a transient
+dynamics finite element analysis using explicit integration. Explicit
+integration is used in most large-deformation, nonlinear, transient
+dynamics finite element codes~\cite{pronto,dyna}. The analysis time
+divided by the time step size is equal to the number of integration
+steps required in the analysis. Multiplying this quantity by the
+number of elements and the CPU time required per element integration
+step gives a good estimate of the total computer time required for an
+analysis.  The procedure described in this chapter has not yet been
+fully investigated.  Modification of the calculated time step may be
+necessary to improve the accuracy of the predictions; however, the
+procedure provides an accurate initial estimate.
+
+The stable time step size for the central difference operator commonly
+used in transient dynamic analysis codes is given by~\cite{cook} 
+\begin{equation} 
+\Delta t \leq {2\over \omega_{\max}} \left(\sqrt{1+\epsilon^2}-\epsilon\right)
+\end{equation}
+where $\omega_{\max}$ is the maximum frequency of the mesh, and
+$\epsilon$
+is the fraction of critical damping in the highest element mode.
+Flanagan and Belytschko~\cite{flanagan} have derived simple formulas
+for bounding the maximum eigenvalues for the uniform strain eight-node
+hexahedron and the four-node quadrilateral which can be used to
+provide conservative estimates of the maximum frequency.  The maximum
+frequency estimate for a rectangular quadrilateral element is 
+\begin{equation}
+\hat\omega_{\max}^2 = {4(\lambda + 2\mu)\over\rho}\left({1\over s_1^2} +
+   {1\over s_2^2}\right)
+\end{equation}
+where $s_1$ and $s_2$ are the lengths of the sides of the rectangle, 
+$\lambda$ and $\mu$ are Lame's constants, $\rho$ is the density, and 
+$\hat\omega_{\max}$ is the predicted value for the maximum frequency. 
+Similarly, for a rectangular parallelepiped hexahedron, 
+\begin{equation}
+\hat\omega_{\max}^2 = {4(\lambda + 2\mu)\over\rho}\left({1\over s_1^2} +
+   {1\over s_2^2}+{1\over s_3^2}\right)
+\end{equation}
+
+Substituting the maximum frequency equation into the stable time step
+equation and neglecting damping gives the following estimate for the
+stable time step size: 
+\begin{equation}
+\Delta\hat t\le \sqrt{\frac{\rho}{\lambda+2\mu}}
+      \left(\sum_{i=1}^{n_D}\frac{1}{s_i^2}\right)^{-1/2}
+\end{equation}
+where $\Delta\hat t$ is the estimate of the stable time step, and
+$n_D$ is the number of dimensions.  The first quantity on the
+right-hand-side of the inequality is the inverse of the dilitational
+wave speed.  \NUM\ calculates the minimum value of 
+\begin{equation}
+      \left(\sum_{i=1}^{n_D}\frac{1}{s_i^2}\right)^{-1/2}
+\end{equation}
+for each material block.  This quantity is called the `Minimum T
+Factor' in the \NUM\ output.  
+
+The computer time required to perform the analysis can be approximated
+using the estimated time step size.  Most explicit transient dynamics
+codes output the average CPU time required to perform the calculations
+for one element for one time step. Although this quantity varies for
+different constitutive models and the number of contact surfaces
+(slidelines), the average value is usually relatively constant and
+well known.  The CPU time per millisecond of analysis time can be
+estimated using the formula 
+\begin{equation}
+{CPU\over ms} = \left(1\times10^{-3} \over \Delta\hat t\right) 
+                ({\sf Speed})({\sf NUMEL})
+\end{equation}
+where {\sf NUMEL} is the number of elements and {\sf Speed} is the CPU
+time per element per timestep.  Since there are often other charges
+associated with a computer analysis ({\it e.g.} memory or I/O
+charges), this quantity will usually have to be modified; however,
+after a few analyses, a rule of thumb can be developed which will
+enable the analyst to very closely estimate {\it a priori} the
+computer time required to perform an analysis.  An accurate estimate
+of computer time is usually required for efficient batch job submittal
+since there are often a limited number of highly-used job classes.
+The capability to closely estimate the correct timelimit can reduce
+the analyst's time spent waiting for a job to finish or the time
+required to restart a job that was originally submitted with
+insufficient time. 
+
+\chapter{Execution of the \NUM\ Program} The \NUM\ program is written
+in standard FORTRAN; all system dependent coding is handled by the
+SUPES library package~\cite{supes}.  The code is currently available
+on the Engineering Sciences VAXCluster and both of the Cray computers
+at Sandia National Laboratories.  The code reads the body definition
+from a file written in the \EXO~\cite{EXODUS} format. The user is
+prompted for the order of quadrature to be used to evaluate the
+integrals and, for two-dimensional bodies, the type of mesh---either
+axisymmetric (default) or planar.  The code then prompts for the
+density of each material or element block. An optional material label
+can be entered after the density. This label will be echoed to the
+output to identify each material block. 
+
+The output of the code consists of a summary of the time the code was
+run, the machine it was run on, the \EXO\ filename, and the title read
+from the file. The number of nodes, elements, dimension (two- or
+three-dimensional), and quadrature order are printed next. The output
+then lists the density, volume, mass, and optional material label for
+each of the material blocks, followed by the centroid location and the
+mass or area moments of inertia.  The final section lists the minimum,
+maximum, and average element volume or area for each material block;
+and the corresponding minimum time factor. Figures 1 and~2 show
+example input files for a two-dimensional axisymmetric and planar
+model, respectively; Figure~3 is the input for a three-dimensional
+model.  The corresponding output files are shown in Figures 4
+through~6. 
+
+%
+% conclusions and summary
+%
+
+\chapter{Summary and Conclusions} The code \NUM\ was written to
+provide an efficient method for calculating several important
+properties of a finite element model that cannot be easily determined
+by other methods.  The code calculates the mass and volume of each
+material in the model; the centroid location and mass moments of
+inertia of the total body; the minimum, maximum, and average element
+volume for each material; and the minimum time step factor. Some of
+the obvious uses of this code include: model validation, density
+calculation of pseudo materials required for proper mass
+representation, section property calculation, determination of impact
+orientations with respect to the center of gravity, estimation of
+eccentric impact response, estimation of the computer time
+required for an analysis, and determination of the element with the
+minimum time step size.
+
+Other features that may be useful and could be added in the future
+include the calculation of element distortion parameters which would
+be useful for validating automatically generated finite element
+discretizations, and the calculation of the mass properties of the
+deformed body using the displacements calculated during the analysis.
+This last option could be used to calculate the deformed volume of
+materials with nonlinear volumetric behavior such as the consolidation
+of crushed salt and the crushup of foam used as an energy absorber. 
+\clearpage
+\begin{figure}
+\verbatiminput{2di}
+\caption{Two-Dimensional Axisymmetric Input Example}
+\end{figure}
+\begin{figure}
+\verbatiminput{2dip}
+\caption{Two-Dimensional Planar Input Example}
+\end{figure}
+\begin{figure}
+\verbatiminput{3di}
+\caption{Three-Dimensional Input Example}
+\end{figure}
+\begin{figure}
+\verbatiminput{2d}
+\caption{Two-Dimensional Axisymmetric Output Example}
+\end{figure}
+\begin{figure}
+\verbatiminput{2dp}
+\caption{Two-Dimensional Planar Output Example}
+\end{figure}
+\begin{figure}
+\verbatiminput{3d}
+\caption{Three-Dimensional Output Example}
+\end{figure}
+\begin{thebibliography}{99}
+
+\bibitem{EXODUS} Mills-Curran, W. C., Gilkey, A. P., and Flanagan, D.
+P., {\em EXODUS: A Finite Element File Format for Pre- and
+Post-Processing}, SAND87-2997, \SANDIA, in preparation. 
+
+\bibitem{slapdown} Sjaardema, G. D., and Wellman, G. W., {\em
+Numerical and Analytical Methods for Approximating the Eccentric
+Impact Response (Slapdown) of Deformable Bodies}, SAND88-0616,
+\SANDIA, in print. 
+
+\bibitem{pronto} Taylor, L. M., and Flanagan, D. P., {\em PRONTO 2D, A
+Two-Dimensional Transient Solid Dynamics Program}, SAND86--0594,
+\SANDIA, March 1987.
+
+\bibitem{dyna} Hallquist, J. O., {\it User's Manual for DYNA3D and
+DYNAP: Nonlinear Dynamic Analysis of Solids in Three Dimensions},
+UCID--19156, Lawrence Livermore National Laboratory, University of
+California, Livermore, California, July 1981. 
+
+\bibitem{cook} Cook, R. D., {\em Concepts and Applications of Finite
+Element Analysis}, Second Edition, John Wiley and Sons, 1981.
+
+\bibitem{flanagan} Flanagan, D. P., and Belystchko, T., {\em
+Eigenvalues and Stable Time Steps for the Uniform Strain Hexahedron
+and Quadrilateral}, Journal of Applied Mechanics, 84-APM-5,
+Transactions of the ASME, 1984.
+
+\bibitem{supes} Flanagan, D. P., Mills-Curran, W. C., and Taylor, L.
+M., {\em SUPES--A Software Utilities Package for the Engineering
+Sciences}, SAND86-0911, \SANDIA, 1986.
+
+\end{thebibliography}
+\end{document}

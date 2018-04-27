@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005 National Technology & Engineering Solutions
+ * Copyright (c) 2005-2017 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -42,7 +42,7 @@ find_edge_mesh(int                  vertex,    /* vertex in comm_graph */
                struct refine_edata *edata,     /* data structure for edge preferences */
                int *                mesh_dims, /* dimensions of mesh */
                int *                vtx2node   /* maps comm_graph vtxs to processors */
-               )
+)
 {
   struct refine_edata *eguy;      /* returned pointer to edge info */
   int                  dir;       /* higher or lower direction? */

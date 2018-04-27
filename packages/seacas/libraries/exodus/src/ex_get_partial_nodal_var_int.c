@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005 National Technology & Engineering Solutions
+ * Copyright (c) 2005-2017 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -33,27 +33,27 @@
  *
  */
 /*****************************************************************************
-*
-* exgnnv - ex_get_partial_nodal_var
-*
-* environment - UNIX
-*
-* entry conditions -
-*   input parameters:
-*	int	exoid			exodus file id
-*	int	time_step		whole time step number
-*	int	nodeal_var_index	index of desired nodal variable
-*       int     start_node		starting location for read
-*	int	num_nodes		number of nodal points
-*
-* exit conditions -
-*	float*	var_vals		array of nodal variable values
-*
-* revision history -
-*
-*  $Id: ne_gnnv.c,v 1.16 2008/01/25 15:47:35 gdsjaar Exp $
-*
-*****************************************************************************/
+ *
+ * exgnnv - ex_get_partial_nodal_var
+ *
+ * environment - UNIX
+ *
+ * entry conditions -
+ *   input parameters:
+ *	int	exoid			exodus file id
+ *	int	time_step		whole time step number
+ *	int	nodeal_var_index	index of desired nodal variable
+ *       int     start_node		starting location for read
+ *	int	num_nodes		number of nodal points
+ *
+ * exit conditions -
+ *	float*	var_vals		array of nodal variable values
+ *
+ * revision history -
+ *
+ *  $Id: ne_gnnv.c,v 1.16 2008/01/25 15:47:35 gdsjaar Exp $
+ *
+ *****************************************************************************/
 
 #include "netcdf.h"       // for nc_inq_varid, NC_NOERR, etc
 #include <exodusII.h>     // for ex_err, etc
@@ -78,16 +78,17 @@ int ex_get_partial_nodal_var_int(int exoid, int time_step, int nodal_var_index, 
   char   errmsg[MAX_ERR_LENGTH];
 
   EX_FUNC_ENTER();
-  ex_check_valid_file_id(exoid);
+  ex_check_valid_file_id(exoid, __func__);
 
   /* Verify that time_step is within bounds */
   {
     int num_time_steps = ex_inquire_int(exoid, EX_INQ_TIME);
     if (time_step <= 0 || time_step > num_time_steps) {
-      snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: time_step is out-of-range. Value = %d, valid "
-                                       "range is 1 to %d in file id %d",
+      snprintf(errmsg, MAX_ERR_LENGTH,
+               "ERROR: time_step is out-of-range. Value = %d, valid "
+               "range is 1 to %d in file id %d",
                time_step, num_time_steps, exoid);
-      ex_err("ex_get_partial_nodal_var", errmsg, EX_BADPARAM);
+      ex_err(__func__, errmsg, EX_BADPARAM);
       EX_FUNC_LEAVE(EX_FATAL);
     }
   }
@@ -97,7 +98,7 @@ int ex_get_partial_nodal_var_int(int exoid, int time_step, int nodal_var_index, 
     if ((status = nc_inq_varid(exoid, VAR_NOD_VAR, &varid)) != NC_NOERR) {
       snprintf(errmsg, MAX_ERR_LENGTH, "Warning: could not find nodal variables in file id %d",
                exoid);
-      ex_err("ex_get_partial_nodal_var", errmsg, status);
+      ex_err(__func__, errmsg, status);
       EX_FUNC_LEAVE(EX_WARN);
     }
 
@@ -115,7 +116,7 @@ int ex_get_partial_nodal_var_int(int exoid, int time_step, int nodal_var_index, 
     if ((status = nc_inq_varid(exoid, VAR_NOD_VAR_NEW(nodal_var_index), &varid)) != NC_NOERR) {
       snprintf(errmsg, MAX_ERR_LENGTH, "Warning: could not find nodal variable %d in file id %d",
                nodal_var_index, exoid);
-      ex_err("ex_get_partial_nodal_var", errmsg, status);
+      ex_err(__func__, errmsg, status);
       EX_FUNC_LEAVE(EX_WARN);
     }
 
@@ -124,6 +125,9 @@ int ex_get_partial_nodal_var_int(int exoid, int time_step, int nodal_var_index, 
 
     count[0] = 1;
     count[1] = num_nodes;
+    if (count[1] == 0) {
+      start[1] = 0;
+    }
   }
 
   if (ex_comp_ws(exoid) == 4) {
@@ -135,7 +139,7 @@ int ex_get_partial_nodal_var_int(int exoid, int time_step, int nodal_var_index, 
 
   if (status != NC_NOERR) {
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to get nodal variables in file id %d", exoid);
-    ex_err("ex_get_partial_nodal_var", errmsg, status);
+    ex_err(__func__, errmsg, status);
     EX_FUNC_LEAVE(EX_FATAL);
   }
   EX_FUNC_LEAVE(EX_NOERR);

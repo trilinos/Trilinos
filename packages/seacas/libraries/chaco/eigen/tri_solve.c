@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005 National Technology & Engineering Solutions
+ * Copyright (c) 2005-2017 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -54,7 +54,7 @@ void tri_solve(double *alpha,  /* vector of Lanczos scalars */
                double  b,      /* scalar multiple of e1 specifying the rhs */
                double *d,      /* work vec. for diagonal of Cholesky factor */
                double *e       /* work vec. for off diagonal of Cholesky factor */
-               )
+)
 {
   extern int DEBUG_EVECS; /* debug flag for eigen computation */
   int        i;           /* loop index */

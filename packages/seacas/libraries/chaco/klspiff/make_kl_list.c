@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005 National Technology & Engineering Solutions
+ * Copyright (c) 2005-2017 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -45,7 +45,7 @@ int make_kl_list(struct vtx_data **graph,     /* data structure for graph */
                  int *             bspace,    /* list of active vertices for bucketsort */
                  int **            dvals,     /* d-values for each transition */
                  int               maxdval    /* maximum d-value for a vertex */
-                 )
+)
 {
   struct bilist **list;        /* bucket to erase element from */
   struct bilist * vptr;        /* loops through movelist */

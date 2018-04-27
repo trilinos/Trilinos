@@ -1,0 +1,30 @@
+Time step selection is performed in one of the following modes:
+\setlength{\itemsep}{\bigskipamount} \begin{itemize}
+\item
+\ifx\PROGRAM\BLOT
+\bold{Interval-Times Mode}
+\else
+Interval-Times Mode
+\fi
+selects time steps at uniform intervals between a minimum and a maximum
+time. If this mode has a delta offset, the first selected time is not
+the minimum time, but the minimum time plus the interval. If this mode
+has a zero offset, the first selected time is the minimum time.
+\item
+\ifx\PROGRAM\BLOT
+\bold{All-Available-Times Mode}
+\else
+All-Available-Times Mode
+\fi
+selects all time steps between a minimum and a maximum time.
+\item
+\ifx\PROGRAM\BLOT
+\bold{User-Selected-Times Mode}
+\else
+User-Selected-Times Mode
+\fi
+selects time steps which are explicitly specified by the user.
+\end{itemize}
+
+The nearest time step from the database is chosen for each selected
+time.

@@ -1,0 +1,52 @@
+\chapter{Development of \exo{}}
+
+
+The evolution of the \exo() data model has been steered by 
+FE application code developers who desire the advantages of a 
+common data format. The \exo{} model has been designed to 
+overcome deficiencies in the EXODUS I file format and meet the 
+following functional requirements as specified by these developers:
+
+\begin{itemize}
+ \item random read/write access.
+
+ \item application programming interface (API) -- provide 
+routines callable from FORTRAN, C, and C++ application codes.
+
+ \item extensible -- allow new data objects to be added 
+without modifying the application programs that use the file 
+format.
+
+ \item {machine independent -- data should be independent 
+of the machine which generated it.}
+
+ \item {real time access during analysis -- allow access 
+to the data in a file while the file is being created.}
+\end{itemize}
+
+
+To address these requirements, the public domain database library
+netCDF [3] was selected to handle the low-level data storage. The
+\exo{} library functions provide the mapping between FE data objects
+and netCDF dimensions, attributes, and variables. (These mappings are
+documented in Appendix A.) Thus, the code developer interacts with the
+data model using the vocabulary of an FE analyst (element
+connectivity, nodal coordinates, etc.) and is relieved of the details
+of the data access mechanism. To provide machine independency, the
+netCDF library stores data in eXternal Data Representation (XDR) [4]
+format.
+
+
+Because an \exo{} file is a netCDF file, an application program can
+access data via the \exo{} API or via netCDF API function calls
+directly. Although the latter two methods require more in-depth
+understanding of netCDF, this capability is a powerful
+feature that allows the development of auxiliary libraries of special
+purpose functions not offered in the standard \exo() library. For
+example, if an application required access to the coordinates of a
+single node (the standard library function returns the coordinates for
+all of the nodes in the model), a simple function could be written
+that calls netCDF routines directly to read the data of interest.
+
+
+

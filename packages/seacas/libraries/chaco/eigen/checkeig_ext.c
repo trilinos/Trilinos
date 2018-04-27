@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005 National Technology & Engineering Solutions
+ * Copyright (c) 2005-2017 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -44,7 +44,7 @@ double checkeig_ext(double *err, double *work, /* work vector of length n */
                     double *gvec, double eigtol,
                     int warnings /* don't want to see warning messages in one of the
                                     contexts this is called */
-                    )
+)
 {
   extern FILE *Output_File;   /* output file or null */
   extern int   DEBUG_EVECS;   /* print debugging output? */
