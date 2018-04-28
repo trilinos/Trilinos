@@ -17,6 +17,7 @@
 #include "Tempus_StepperNewmarkImplicitDForm.hpp"
 #include "Tempus_StepperNewmarkExplicitAForm.hpp"
 #include "Tempus_StepperHHTAlpha.hpp"
+#include "Tempus_StepperGeneralizedAlpha.hpp"
 #include "Tempus_StepperExplicitRK.hpp"
 #include "Tempus_StepperDIRK.hpp"
 #include "Tempus_StepperIMEX_RK.hpp"
@@ -97,6 +98,8 @@ private:
       return rcp(new StepperNewmarkExplicitAForm<Scalar>(model, stepperPL));
     else if (stepperType == "HHT-Alpha")
       return rcp(new StepperHHTAlpha<Scalar>(model, stepperPL));
+    else if (stepperType == "Generalized-Alpha")
+      return rcp(new StepperGeneralizedAlpha<Scalar>(model, stepperPL));
     else if (
       stepperType == "RK Forward Euler" ||
       stepperType == "RK Explicit 4 Stage" ||

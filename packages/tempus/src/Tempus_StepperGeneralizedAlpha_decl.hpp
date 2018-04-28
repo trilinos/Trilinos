@@ -15,9 +15,9 @@
 namespace Tempus {
 
 
-/** \brief HHT-Alpha time stepper.
+/** \brief Generalized-Alpha time stepper.
  *
- * Here, we implement the HHT-Alpha scheme in predictor/corrector form;
+ * Here, we implement the Generalized-Alpha scheme in predictor/corrector form;
  * see equations (10) and (13)-(19) in: G.M. Hulbert, J. Chung,
  * "Explicit time integration algorithms for structural dynamics with
  * optimal numerical dissipation", Comput. Methods Appl. Mech. Engrg.
@@ -95,40 +95,25 @@ public:
                           const Teuchos::EVerbosityLevel verbLevel) const;
   //@}
 
-    void predictVelocity(Thyra::VectorBase<Scalar>& vPred,
-                             const Thyra::VectorBase<Scalar>& v,
-                             const Thyra::VectorBase<Scalar>& a,
-                             const Scalar dt) const;
-
-    void predictDisplacement(Thyra::VectorBase<Scalar>& dPred,
-                               const Thyra::VectorBase<Scalar>& d,
-                               const Thyra::VectorBase<Scalar>& v,
-                               const Thyra::VectorBase<Scalar>& a,
-                               const Scalar dt) const;
-
-    void predictVelocity_alpha_f(Thyra::VectorBase<Scalar>& vPred,
-                                 const Thyra::VectorBase<Scalar>& v) const;
-
-    void predictDisplacement_alpha_f(Thyra::VectorBase<Scalar>& dPred,
-                                     const Thyra::VectorBase<Scalar>& d) const;
-
-    void correctAcceleration(Thyra::VectorBase<Scalar>& a_n_plus1,
-                              const Thyra::VectorBase<Scalar>& a_n) const;
-
-    void correctVelocity(Thyra::VectorBase<Scalar>& v,
-                             const Thyra::VectorBase<Scalar>& vPred,
-                             const Thyra::VectorBase<Scalar>& a,
-                             const Scalar dt) const;
-
-    void correctDisplacement(Thyra::VectorBase<Scalar>& d,
-                               const Thyra::VectorBase<Scalar>& dPred,
-                               const Thyra::VectorBase<Scalar>& a,
-                               const Scalar dt) const;
-
 private:
 
   /// Default Constructor -- not allowed
   StepperGeneralizedAlpha();
+  
+  /// Predication calculation
+  void prediction(Thyra::VectorBase<Scalar>& dPred,
+	              Thyra::VectorBase<Scalar>& vPred,
+				  const Thyra::VectorBase<Scalar>& d,
+                  const Thyra::VectorBase<Scalar>& v,
+                  const Thyra::VectorBase<Scalar>& a,
+                  const Scalar dt) const;
+
+  /// Correction calculation				  
+  void correction(Thyra::VectorBase<Scalar>& d,
+                  Thyra::VectorBase<Scalar>& v,
+				  const Thyra::VectorBase<Scalar>& a_old,
+                  const Thyra::VectorBase<Scalar>& a,
+                  const Scalar dt) const;
 
 private:
 

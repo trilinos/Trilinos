@@ -45,7 +45,7 @@ public:
     *out_ << "DEBUG: " << __PRETTY_FUNCTION__ << "\n";
     *out_ << "    schemeName = " << schemeName << "\n";
 #endif
-    if (schemeName == "Newmark Implicit a-Form" || schemeName == "Generalized-Alpha" ) {
+    if (schemeName == "Newmark Implicit a-Form") {
       schemeType_ = NEWMARK_IMPLICIT_AFORM;
     }
     else if (schemeName == "Newmark Implicit d-Form") {
@@ -53,6 +53,9 @@ public:
     }
 	else if (schemeName == "HHT-Alpha") {
       schemeType_ = HHT_ALPHA_AFORM;
+    }
+	else if (schemeName == "Generalized-Alpha") {
+      schemeType_ = GENERALIZED_ALPHA_AFORM;
     }
     else {
        TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
@@ -195,7 +198,8 @@ public:
     enum SCHEME_TYPE {
 		NEWMARK_IMPLICIT_AFORM, 
 		NEWMARK_IMPLICIT_DFORM,
-		HHT_ALPHA_AFORM
+		HHT_ALPHA_AFORM,
+		GENERALIZED_ALPHA_AFORM
 	};
 
 private:

@@ -13,7 +13,7 @@
 #include "Tempus_StepperGeneralizedAlpha_impl.hpp"
 
 namespace Tempus {
-  TEMPUS_INSTANTIATE_TEMPLATE_CLASS(StepperHHTAlpha)
+  TEMPUS_INSTANTIATE_TEMPLATE_CLASS(StepperGeneralizedAlpha)
 }
 
 #endif
