@@ -246,7 +246,7 @@ namespace Ifpack2 {
 
       // Kyungjoo: hansen enum does not work (don't know why)
       // enum : int { vector_length = DefaultVectorLength<impl_scalar_type,memory_space>::value };
-      static constexpr int vector_length = DefaultVectorLength<impl_scalar_type,memory_space>::value;
+      static constexpr int vector_length = is_cuda<execution_space>::value ? 1 : DefaultVectorLength<impl_scalar_type,memory_space>::value;
       typedef Vector<SIMD<impl_scalar_type>,vector_length> vector_type;
 
       ///
@@ -999,7 +999,7 @@ namespace Ifpack2 {
                                               btdm.values.extent(1),
                                               btdm.values.extent(2),
                                               vector_length);
-        const team_policy_type policy(packptr.extent(0)-1, Kokkos::AUTO(), vector_length); // Kyungjoo: no problem here
+        const team_policy_type policy(packptr.extent(0)-1, Kokkos::AUTO(), vector_length); 
         Kokkos::parallel_for
           (policy, KOKKOS_LAMBDA(const typename team_policy_type::member_type &member) {          
             const local_ordinal_type k      = member.league_rank();
@@ -2020,38 +2020,47 @@ namespace Ifpack2 {
         auto X2 = X1;
 
         // index counting
-        size_type i0 = pack_td_ptr(partidx);
+	const local_ordinal_type i0_const = pack_td_ptr(partidx);
+	const local_ordinal_type r0_const = part2packrowidx0(partidx);
         const local_ordinal_type nrows = partptr(partidx+1) - partptr(partidx);
         const local_ordinal_type v = partidx % vector_length;
         
-        local_ordinal_type r0 = part2packrowidx0(partidx);
         for (local_ordinal_type col=0;col<num_vectors;++col) {
+	  local_ordinal_type i0 = i0_const, r0 = r0_const;
+
           // solve Lx = x
           A.assign_data( &D_scalar_values(i0,0,0,v) );
           X1.assign_data( &X_scalar_values(r0,0,col,v) );
+	  member.team_barrier();
           TeamTrsv<member_type,Uplo::Lower,Trans::NoTranspose,Diag::Unit,AlgoType>
             ::invoke(member, one, A, X1);
+	  member.team_barrier();
           for (local_ordinal_type i=1;i<nrows;++i,i0+=3) {
             B.assign_data( &D_scalar_values(i0+2,0,0,v) );
             X2.assign_data( &X_scalar_values(++r0,0,col,v) );
+	    member.team_barrier();
             TeamGemv<member_type,Trans::NoTranspose,AlgoType>
               ::invoke(member, -one, B, X1, one, X2);
             A.assign_data( &D_scalar_values(i0+3,0,0,v) );
+	    member.team_barrier();
             TeamTrsv<member_type,Uplo::Lower,Trans::NoTranspose,Diag::Unit,AlgoType>
               ::invoke(member, one, A, X2);
             X1.assign_data( X2.data() );
           }
           
           // solve Ux = x
+	  member.team_barrier();
           TeamTrsv<member_type,Uplo::Upper,Trans::NoTranspose,Diag::NonUnit,AlgoType>
             ::invoke(member, one, A, X1);
           for (local_ordinal_type i=nrows;i>1;--i) {
             i0 -= 3;
             B.assign_data( &D_scalar_values(i0+1,0,0,v) );
             X2.assign_data( &X_scalar_values(--r0,0,col,v) );          
+	    member.team_barrier();
             TeamGemv<member_type,Trans::NoTranspose,AlgoType>
               ::invoke(member, -one, B, X1, one, X2); 
             A.assign_data( &D_scalar_values(i0,0,0,v) );          
+	    member.team_barrier();
             TeamTrsv<member_type,Uplo::Upper,Trans::NoTranspose,Diag::NonUnit,AlgoType>
               ::invoke(member, one, A, X2);
             X1.assign_data( X2.data() );
@@ -2068,15 +2077,15 @@ namespace Ifpack2 {
       KOKKOS_INLINE_FUNCTION 
       void 
       operator() (const member_type &member) const {
-        const local_ordinal_type packidx = member.league_rank();
-        const local_ordinal_type partidx_begin = packptr(packidx);
-        const local_ordinal_type partidx_end   = packptr(packidx+1);
-        const local_ordinal_type npacks = partidx_end - partidx_begin;
-
-        Kokkos::parallel_for
-          (Kokkos::ThreadVectorRange(member, npacks),[&](const int &v) {
-            solve(member, partidx_begin + v);
-          });
+	const local_ordinal_type packidx = member.league_rank();
+	const local_ordinal_type partidx_begin = packptr(packidx);
+	const local_ordinal_type partidx_end   = packptr(packidx+1);
+	const local_ordinal_type npacks = partidx_end - partidx_begin;
+	
+	Kokkos::parallel_for
+	  (Kokkos::ThreadVectorRange(member, npacks),[&](const int &v) {
+	    solve(member, partidx_begin + v);
+	  });
       }      
 
       void run() {
