@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005-2017 National Technology & Engineering Solutions
+ * Copyright (c) 2005 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -133,7 +133,7 @@ void lanczos_SO(struct vtx_data **A,            /* sparse matrix in row linked l
                 int               mediantype,   /* which partitioning strategy to use */
                 double *          goal,         /* desired set sizes */
                 int               vwgt_max      /* largest vertex weight */
-)
+                )
 {
   extern FILE *     Output_File;              /* output file or null */
   extern int        LANCZOS_SO_INTERVAL;      /* interval between orthogonalizations */

@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2017 National Technology & Engineering Solutions
+// Copyright(C) 1999-2010 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -31,8 +31,6 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include <Ioss_EntityType.h> // for EntityType, etc
-#include <Ioss_Hex8.h>
-#include <Ioss_Shell4.h>
 #include <algorithm>
 #include <cassert> // for assert
 #include <cmath>   // for atan2, cos, sin
@@ -610,9 +608,9 @@ namespace Iogn {
     }
 
     if (block_number == 1) {
-      return std::make_pair(std::string(Ioss::Hex8::name), 8);
+      return std::make_pair(std::string("hex8"), 8);
     }
-    return std::make_pair(std::string(Ioss::Shell4::name), 4);
+    return std::make_pair(std::string("shell4"), 4);
   }
 
   void GeneratedMesh::node_map(Ioss::Int64Vector &map) const
@@ -653,14 +651,17 @@ namespace Iogn {
     }
   }
 
-  void GeneratedMesh::build_node_map(Ioss::Int64Vector &map, std::vector<int> &proc, int64_t slab,
-                                     size_t slabOffset, size_t adjacentProc, size_t index)
+  int64_t GeneratedMesh::build_node_map(Ioss::Int64Vector &map, std::vector<int> &proc,
+                                        int64_t slab, size_t slabOffset, size_t adjacentProc,
+                                        int64_t startIndex)
   {
+    int64_t index  = startIndex;
     int64_t offset = (myStartZ + slabOffset) * (numX + 1) * (numY + 1);
     for (int64_t i = 0; i < slab; i++) {
       map[index]    = offset + i + 1;
       proc[index++] = static_cast<int>(adjacentProc);
     }
+    return index;
   }
 
   void GeneratedMesh::node_communication_map(Ioss::Int64Vector &map, std::vector<int> &proc)
@@ -676,13 +677,12 @@ namespace Iogn {
     map.resize(count);
     proc.resize(count);
 
-    size_t offset = 0;
+    int64_t j = 0;
     if (!isFirstProc) {
-      build_node_map(map, proc, slab, 0, myProcessor - 1, offset);
-      offset += slab;
+      j = build_node_map(map, proc, slab, 0, myProcessor - 1, j);
     }
     if (!isLastProc) {
-      build_node_map(map, proc, slab, myNumZ, myProcessor + 1, offset);
+      j = build_node_map(map, proc, slab, myNumZ, myProcessor + 1, j);
     }
   }
 

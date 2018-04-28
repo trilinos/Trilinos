@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005-2017 National Technology & Engineering Solutions
+ * Copyright (c) 2005 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -46,7 +46,7 @@ void checkbp(struct vtx_data **graph, /* graph data structure for vertex weights
              double *          dists, /* distances that separate sets */
              int               nvtxs, /* number of vertices */
              int               ndims  /* number of dimensions for division */
-)
+             )
 {
   int    signs[MAXDIMS];     /* signs for coordinates of target points */
   int    sizes[MAXSETS];     /* size of each set */

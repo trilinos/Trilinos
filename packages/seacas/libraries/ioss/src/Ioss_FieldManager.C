@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2017 National Technology & Engineering Solutions
+// Copyright(C) 1999-2010 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -47,10 +47,9 @@
  */
 void Ioss::FieldManager::add(const Ioss::Field &new_field)
 {
-  const std::string key = Ioss::Utils::lowercase(new_field.get_name());
-  if (!exists(key)) {
+  if (!exists(new_field.get_name())) {
     IOSS_FUNC_ENTER(m_);
-    fields.insert(FieldValuePair(key, new_field));
+    fields.insert(FieldValuePair(new_field.get_name(), new_field));
   }
 }
 
@@ -63,8 +62,7 @@ void Ioss::FieldManager::add(const Ioss::Field &new_field)
 bool Ioss::FieldManager::exists(const std::string &field_name) const
 {
   IOSS_FUNC_ENTER(m_);
-  const std::string key = Ioss::Utils::lowercase(field_name);
-  return (fields.find(key) != fields.end());
+  return (fields.find(field_name) != fields.end());
 }
 
 /** \brief Get a field from the field manager.
@@ -76,8 +74,7 @@ bool Ioss::FieldManager::exists(const std::string &field_name) const
 Ioss::Field Ioss::FieldManager::get(const std::string &field_name) const
 {
   IOSS_FUNC_ENTER(m_);
-  const std::string key  = Ioss::Utils::lowercase(field_name);
-  auto              iter = fields.find(key);
+  auto iter = fields.find(field_name);
   assert(iter != fields.end());
   return (*iter).second;
 }
@@ -91,8 +88,7 @@ Ioss::Field Ioss::FieldManager::get(const std::string &field_name) const
 const Ioss::Field &Ioss::FieldManager::getref(const std::string &field_name) const
 {
   IOSS_FUNC_ENTER(m_);
-  const std::string key  = Ioss::Utils::lowercase(field_name);
-  auto              iter = fields.find(key);
+  auto iter = fields.find(field_name);
   assert(iter != fields.end());
   return (*iter).second;
 }
@@ -107,8 +103,7 @@ void Ioss::FieldManager::erase(const std::string &field_name)
 {
   assert(exists(field_name));
   IOSS_FUNC_ENTER(m_);
-  const std::string key  = Ioss::Utils::lowercase(field_name);
-  auto              iter = fields.find(key);
+  auto iter = fields.find(field_name);
   if (iter != fields.end()) {
     fields.erase(iter);
   }
@@ -123,13 +118,11 @@ void Ioss::FieldManager::erase(const std::string &field_name)
 int Ioss::FieldManager::describe(NameList *names) const
 {
   IOSS_FUNC_ENTER(m_);
-  int the_count = 0;
-  for (auto I = fields.cbegin(); I != fields.cend(); ++I) {
-    names->push_back((*I).second.get_name());
+  int                          the_count = 0;
+  FieldMapType::const_iterator I;
+  for (I = fields.begin(); I != fields.end(); ++I) {
+    names->push_back((*I).first);
     the_count++;
-  }
-  if (the_count > 0) {
-    std::sort(names->begin(), names->end());
   }
   return the_count;
 }
@@ -144,15 +137,13 @@ int Ioss::FieldManager::describe(NameList *names) const
 int Ioss::FieldManager::describe(Ioss::Field::RoleType role, NameList *names) const
 {
   IOSS_FUNC_ENTER(m_);
-  int the_count = 0;
-  for (auto I = fields.cbegin(); I != fields.cend(); ++I) {
+  int                          the_count = 0;
+  FieldMapType::const_iterator I;
+  for (I = fields.begin(); I != fields.end(); ++I) {
     if ((*I).second.get_role() == role) {
-      names->push_back((*I).second.get_name());
+      names->push_back((*I).first);
       the_count++;
     }
-  }
-  if (the_count > 0) {
-    std::sort(names->begin(), names->end());
   }
   return the_count;
 }

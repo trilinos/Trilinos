@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2017 National Technology & Engineering Solutions
+// Copyright(C) 1999-2010 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -60,11 +60,11 @@ namespace Ioss {
     FileInfo();
 
     //! Create object referring to file with name \a filename
-    //! \param my_filename name of file
+    //! \param filename name of file
     explicit FileInfo(std::string my_filename);
 
     //! Create object referring to file with name \a filename
-    //! \param my_filename name of file
+    //! \param filename name of file
     explicit FileInfo(const char *my_filename);
 
     //! Copy constructor
@@ -72,14 +72,14 @@ namespace Ioss {
 
     //! Constructor
     //! \param dirpath Directory Path
-    //! \param my_filename base filename
+    //! \param filename base filename
     FileInfo(const std::string &dirpath, const std::string &my_filename);
 
     ~FileInfo();
 
     //! returns the number of processors that this file exists.
     //! 0: Exists nowhere
-    //! \#proc: Exists everywhere
+    //! #proc: Exists everywhere
     //! else: exists on some proc, but not all.
     //! In the last case, a list of processors where it is missing is returned in 'where' on
     //! processor 0.

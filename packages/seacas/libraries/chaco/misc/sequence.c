@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005-2017 National Technology & Engineering Solutions
+ * Copyright (c) 2005 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -47,7 +47,7 @@ void sequence(struct vtx_data **graph,       /* graph data structure */
               int               rqi_flag,    /* use multilevel eigensolver? */
               int               vmax,        /* if so, how many vtxs to coarsen down to? */
               double            eigtol       /* tolerance on eigenvectors */
-)
+              )
 {
   extern char       SEQ_FILENAME[];           /* name of sequence file */
   extern int        RQI_CONVERGENCE_MODE;     /* residual or partition mode? */
