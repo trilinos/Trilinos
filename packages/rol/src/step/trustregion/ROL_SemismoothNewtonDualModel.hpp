@@ -80,39 +80,81 @@ class SemismoothNewtonDualModel : public TrustRegionModel<Real> {
   
 private:
 
- 
-  Ptr<Bnd>    bnd_;
-  Ptr<Sec>    secant_;
-  Ptr<V>      p_, g_;
-  Ptr<V>      ones_;
-  Ptr<VPrim>  s_;    
+  class ProjectedObjective : public Objective<Real> {
+  private:
+    Obj&   objPrimal_;
+    Bnd&   bnd_;
+    Ptr<V> primalVec_;
+
+  public:
+    ProjectedObjective( Obj& objPrimal, Bnd& bnd, const Ptr<V>& primalVec ) : 
+      objPrimal_(objPrimal), bnd_(bnd), primalVec_( primalVec ) {}
+
+      Real value( const V& p, Real& tol ) override {
+        primalVec_->set(p);
+        bnd_.project(*primalVec_);
+        return objPrimal_->value(*primalVec_, tol);
+      }
+  
+      void gradient( V& g, const V& p, Real& tol ) override {
+        primalVec_->set(p);
+        bnd_.project(*primalVec_);
+        objPrimal_->gradient(g,*primalVec_, tol);
+      }
+
+      void hessVec( V& hv, const V& v, const V& p, Real& tol ) override {
+        primalVec_->set(p);
+        bnd_.project(*primalVec_);
+        objPrimal_->hessVec(hv,v,*primalVec_, tol);
+      }
+
+  }; // ProjectedObjective 
+
+  ProjectedObjective   projObj_;
+  Bnd                  bnd_;
+  Sec                  secant_;
+  Ptr<V>               p_, g_, x_;
+  Ptr<V>               ones_;
+  Ptr<VPrim>           s_;    
+  Real                 alpha_;
 
   VectorWorkspace<Real> workspace_;
 
+
 public:
 
-  SemismoothNewtonDualModel( Obj& obj, Bnd& bnd, const V& x, const V& g ) :
-    TrustRegionModel( obj, x, g, false ), bnd_( makePtrFromRef(bnd) ), 
-    p_( x.clone() ), g_( x.dual().clone() ), ones_( x.clone() )  
-    s_( x.clone(), ones_, p_, bnd_ ), {
+  SemismoothNewtonDualModel( Obj& obj, Bnd& bnd, const V& p, const V& g, const Real alpha ) :
+    TrustRegionModel( obj, p, g, false ), bnd_( bnd ), 
+    p_( p.clone() ), g_( p.dual().clone() ), x_( p.clone() ), ones_( p.clone() ),
+    s_( p.clone(), ones_, p_, bnd_ ), projObj_( obj, bnd, p_ ), alpha_(alpha) {
 
-    p_->zero();
     ones_->setScalar( Real(1.0) );
   }
     
+
   Real value( const V& s, Real& tol ) {
 
-    s_->setVector( s );
+    auto hs = workspace_.clone(*g_);
 
-    auto hs = workspace_.clone( p_->dual() );
-
-    hessVec( *hs, *s_, *p_, tol );
-
-    hs->scale( Real(0.5) );   
-
-    hs->plus( *(this->getGradient() ) );
-                             
+    gradient(*g_,s,tol);
+    hessVec(*hs,s,s,tol);
+    hs->scale( 0.5 );
+    hs->plus(*g_);
+    s_->set(s);
+    return s_->dot(*hs);                            
   } 
+
+  void gradient( V& g, const V& s, Real& tol ) {
+    projObj_->gradient(g,*p_,tol);
+    g.axpy(alpha_,*p_);   
+  }
+  
+  void hessVec( V& hv, const V& v, const V& s, Real& tol ) {
+    auto vprune_ = workspace_.copy(v);
+    bnd_->pruneActive( *vprune_, *p_ );
+    projObj_->hessVec( hv, *vprune_, *p_, tol );
+    hv.axpy(alpha_,v);
+  }
 
   void update( const V& p, bool flag = true, int iter = -1 ) {
     p_->set(p);
