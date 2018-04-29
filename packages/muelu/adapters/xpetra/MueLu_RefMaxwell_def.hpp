@@ -400,6 +400,8 @@ namespace MueLu {
     if (parameterList_.get<bool>("refmaxwell: cuda profile setup", false)) cudaProfilerStop();
 #endif
 
+    describe(GetOStream(Runtime0));
+
     if (dump_matrices_) {
       GetOStream(Runtime0) << "RefMaxwell::compute(): dumping data" << std::endl;
       Xpetra::IO<SC, LO, GlobalOrdinal, Node>::Write(std::string("SM.mat"), *SM_Matrix_);
@@ -1173,6 +1175,37 @@ namespace MueLu {
     M1_Matrix_ = M1_Matrix;
     Coords_ = Coords;
     Nullspace_ = Nullspace;
+  }
+
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  void RefMaxwell<Scalar,LocalOrdinal,GlobalOrdinal,Node>::
+  describe(Teuchos::FancyOStream& out, const Teuchos::EVerbosityLevel verbLevel) const {
+    out << "\n--------------------------------------------------------------------------------\n" <<
+      "---                            RefMaxwell Summary                           ---\n"
+      "--------------------------------------------------------------------------------" << std::endl;
+    out << std::endl;
+
+    GlobalOrdinal numRows;
+    GlobalOrdinal nnz;
+
+    numRows = SM_Matrix_->getGlobalNumRows();
+    nnz = SM_Matrix_->getGlobalNumEntries();
+
+    Xpetra::global_size_t tt = numRows;
+    int rowspacer = 3; while (tt != 0) { tt /= 10; rowspacer++; }
+    tt = nnz;
+    int nnzspacer = 2; while (tt != 0) { tt /= 10; nnzspacer++; }
+
+    out  << "block " << std::setw(rowspacer) << " rows " << std::setw(nnzspacer) << " nnz " << " nnz/row" << std::endl;
+    out << "(1, 1)" << std::setw(rowspacer) << numRows << std::setw(nnzspacer) << nnz << std::setw(9) << as<double>(nnz) / numRows << std::endl;
+
+    numRows = A22_->getGlobalNumRows();
+    nnz = A22_->getGlobalNumEntries();
+
+    out << "(2, 2)" << std::setw(rowspacer) << numRows << std::setw(nnzspacer) << nnz << std::setw(9) << as<double>(nnz) / numRows << std::endl;
+
+    out << std::endl;
+
   }
 
 } // namespace
