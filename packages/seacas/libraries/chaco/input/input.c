@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005-2017 National Technology & Engineering Solutions
+ * Copyright (c) 2005 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -51,7 +51,7 @@ void input_queries(FILE **fin,           /* input file */
                    int *  rqi_flag,      /* should I use multilevel eigensolver? */
                    int *  vmax,          /* if so, how far should I coarsen? */
                    int *  ndims          /* number of divisions at each stage */
-)
+                   )
 {
   extern int SEQUENCE;      /* sequence instead of partition graph? */
   extern int ARCHITECTURE;  /* 0=> hypercube, d=> d-dimensional mesh */

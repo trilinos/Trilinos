@@ -52,7 +52,7 @@ namespace {
     double val = strtod(str_val.c_str(), &endptr);
 
     if (errno == ERANGE) {
-      ERROR(" Overflow or underflow occurred when trying"
+      ERROR(" Overflow or underflow occured when trying"
             << " to parse command line tolerance.  Aborting...\n");
       exit(1);
     }
@@ -70,7 +70,7 @@ namespace {
     if (fname.empty()) {
       return 0;
     }
-    std::ifstream file_check(fname, std::ios::in);
+    std::ifstream file_check(fname.c_str(), std::ios::in);
     if (file_check.fail()) {
       return 0;
     }
@@ -253,7 +253,31 @@ namespace {
   }
 } // namespace
 
-SystemInterface::SystemInterface() { enroll_options(); }
+SystemInterface::SystemInterface()
+    : quiet_flag(false), show_all_diffs(false), output_type(ABSOLUTE), map_flag(USE_FILE_IDS),
+      nsmap_flag(true), ssmap_flag(true), short_block_check(true), nocase_var_names(true),
+      summary_flag(false), ignore_maps(false), ignore_nans(false), ignore_dups(false),
+      ignore_attributes(false), ignore_sideset_df(false), ints_64_bits(false), coord_sep(false),
+      exit_status_switch(true), dump_mapping(false), show_unmatched(false),
+      noSymmetricNameCheck(false), allowNameMismatch(false), doL1Norm(false), doL2Norm(false),
+      pedantic(false), interpolating(false), by_name(false), coord_tol(ABSOLUTE, 1.0e-6, 0.0),
+      time_tol(RELATIVE, 1.0e-6, 1.0e-15), final_time_tol(RELATIVE, 0.0, 0.0), time_step_offset(0),
+      time_step_start(1), time_step_stop(-1), time_step_increment(1),
+      max_number_of_names(DEFAULT_MAX_NUMBER_OF_NAMES), default_tol(RELATIVE, 1.0e-6, 0.0),
+      glob_var_do_all_flag(false), node_var_do_all_flag(false), elmt_var_do_all_flag(false),
+      elmt_att_do_all_flag(false), ns_var_do_all_flag(false), ss_var_do_all_flag(false),
+      command_file("")
+{
+  glob_var_default = default_tol;
+  node_var_default = default_tol;
+  elmt_var_default = default_tol;
+  elmt_att_default = default_tol;
+  ns_var_default   = default_tol;
+  ss_var_default   = default_tol;
+  ss_df_tol        = default_tol;
+
+  enroll_options();
+}
 
 SystemInterface::~SystemInterface() = default;
 
@@ -455,7 +479,7 @@ void SystemInterface::enroll_options()
                   "\t\tThis option allows the maximum number to be changed.",
                   "1000");
   options_.enroll("use_old_floor", GetLongOption::NoValue,
-                  "use the older definition of the floor tolerance.\n"
+                  "use the older defintion of the floor tolerance.\n"
                   "\t\tOLD: ignore if |a-b| < floor.\n"
                   "\t\tNEW: ignore if |a| < floor && |b| < floor.",
                   nullptr);
@@ -532,8 +556,8 @@ bool SystemInterface::parse_options(int argc, char **argv)
   }
 
   if (options_.retrieve("copyright") != nullptr) {
-    std::cout << "\n"
-              << "Copyright(C) 2008-2017 National Technology & Engineering Solutions\n"
+    std::cerr << "\n"
+              << "Copyright(C) 2008 National Technology & Engineering Solutions\n"
               << "of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with\n"
               << "NTESS, the U.S. Government retains certain rights in this software.\n"
               << "\n"
@@ -580,16 +604,14 @@ bool SystemInterface::parse_options(int argc, char **argv)
       }
       else {
         // Check for additional unknown arguments...
-        std::ostringstream out;
-        out << "\nexodiff: ERROR: Too many file arguments specified."
-            << "\n         Probably caused by options following filenames which is no longer "
-               "allowed."
-            << "\n         Unknown options are: ";
+        std::cerr << trmclr::red << "\nexodiff: ERROR: Too many file arguments specified."
+                  << "\n         Probably caused by options following filenames which is no longer "
+                     "allowed."
+                  << "\n         Unknown options are: ";
         while (option_index < argc) {
-          out << "'" << argv[option_index++] << "' ";
+          std::cerr << "'" << argv[option_index++] << "' ";
         }
-        out << "\n\n";
-        ERR_OUT(out);
+        std::cerr << "\n\n" << trmclr::normal;
         return false;
       }
     }
@@ -924,7 +946,7 @@ void SystemInterface::Parse_Command_File()
 {
   int default_tol_specified = 0;
 
-  std::ifstream cmd_file(command_file, std::ios::in);
+  std::ifstream cmd_file(command_file.c_str(), std::ios::in);
   SMART_ASSERT(cmd_file.good());
 
   char        line[256];
@@ -1598,10 +1620,9 @@ namespace {
         if (idx >= max_names) {
           ERROR("Number of names in tabbed list is larger "
                 "than current limit of "
-                << max_names
-                << ".  To increase, use \"-maxnames <int>\" on the "
-                   "command line or \"MAX NAMES <int>\" in the command "
-                   "file.  Aborting...\n");
+                << max_names << ".  To increase, use \"-maxnames <int>\" on the "
+                                "command line or \"MAX NAMES <int>\" in the command "
+                                "file.  Aborting...\n");
           exit(1);
         }
 

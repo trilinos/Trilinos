@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 2010-2017 National Technology & Engineering Solutions
+ * Copyright(C) 2010 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -38,15 +38,14 @@
 #include "SL_tokenize.h" // for tokenize
 #include <algorithm>     // for sort, transform
 #include <cctype>        // for tolower
+#include <climits>       // for INT_MAX
 #include <cstddef>       // for size_t
 #include <cstdlib>       // for strtol, abs, exit, strtoul, etc
 #include <cstring>       // for strchr, strlen
 #include <iostream>      // for operator<<, basic_ostream, etc
-#include <sstream>
-#include <stdexcept>
-#include <string>  // for string, char_traits, etc
-#include <utility> // for pair, make_pair
-#include <vector>  // for vector
+#include <string>        // for string, char_traits, etc
+#include <utility>       // for pair, make_pair
+#include <vector>        // for vector
 
 namespace {
   int case_strcmp(const std::string &s1, const std::string &s2)
@@ -65,7 +64,17 @@ namespace {
   void parse_variable_names(const char *tokens, Excn::StringIdVector *variable_list);
 } // namespace
 
-Excn::SystemInterface::SystemInterface(int rank) : myRank_(rank) { enroll_options(); }
+Excn::SystemInterface::SystemInterface()
+    : inExtension_(""), outExtension_(""), cwd_(""), rootDirectory_(), subDirectory_(""),
+      basename_(""), raidOffset_(0), raidCount_(0), processorCount_(1), startPart_(0),
+      partCount_(-1), debugLevel_(0), screenWidth_(0), stepMin_(1), stepMax_(INT_MAX),
+      stepInterval_(1), subcycle_(-1), cycle_(-1), compressData_(0), sumSharedNodes_(false),
+      addProcessorId_(false), mapIds_(true), omitNodesets_(false), omitSidesets_(false),
+      useNetcdf4_(false), append_(false), intIs64Bit_(false), subcycleJoin_(false),
+      outputSharedNodes_(false)
+{
+  enroll_options();
+}
 
 Excn::SystemInterface::~SystemInterface() = default;
 
@@ -111,10 +120,9 @@ void Excn::SystemInterface::enroll_options()
   options_.enroll("add_processor_id", GetLongOption::NoValue,
                   "Add 'processor_id' element variable to the output file", nullptr);
 
-  options_.enroll("netcdf4", GetLongOption::NoValue,
-                  "Create output database using the HDF5-based "
-                  "netcdf which allows for up to 2.1 GB "
-                  "nodes/elements",
+  options_.enroll("netcdf4", GetLongOption::NoValue, "Create output database using the HDF5-based "
+                                                     "netcdf which allows for up to 2.1 GB "
+                                                     "nodes/elements",
                   nullptr);
 
   options_.enroll("large_model", GetLongOption::NoValue,
@@ -164,12 +172,6 @@ void Excn::SystemInterface::enroll_options()
                   "\t\trun epu one more time and join the subcycle files into a single file.",
                   nullptr);
 
-  options_.enroll("keep_temporary", GetLongOption::NoValue,
-                  "If -join_subcycles is specified, then after joining the subcycle files, they "
-                  "are automatically\n"
-                  "\t\tdeleted unless -keep_temporary is specified.",
-                  nullptr);
-
   options_.enroll("sum_shared_nodes", GetLongOption::NoValue,
                   "The nodal results data on all shared nodes (nodes on processor boundaries)\n"
                   "\t\twill be the sum of the individual nodal results data on each shared node.\n"
@@ -205,10 +207,6 @@ void Excn::SystemInterface::enroll_options()
   options_.enroll("output_shared_nodes", GetLongOption::NoValue,
                   "Output list of shared nodes and the processors they are shared with.", nullptr);
 
-  options_.enroll("max_open_files", GetLongOption::MandatoryValue,
-                  "For testing auto subcycle only.  Sets file limit that triggers auto subcycling.",
-                  "0");
-
   options_.enroll("debug", GetLongOption::MandatoryValue,
                   "debug level (values are or'd)\n"
                   "\t\t  1 = timing information.\n"
@@ -229,34 +227,30 @@ bool Excn::SystemInterface::parse_options(int argc, char **argv)
   // Get options from environment variable also...
   char *options = getenv("EPU_OPTIONS");
   if (options != nullptr) {
-    if (myRank_ == 0) {
-      std::cout
-          << "\nThe following options were specified via the EPU_OPTIONS environment variable:\n"
-          << "\t" << options << "\n\n";
-    }
+    std::cout
+        << "\nThe following options were specified via the EPU_OPTIONS environment variable:\n"
+        << "\t" << options << "\n\n";
     options_.parse(options, options_.basename(*argv));
   }
 
   int option_index = options_.parse(argc, argv);
   if (option_index < 1) {
-    throw std::runtime_error("ERROR: (EPU) No arguments specified.");
+    return false;
   }
 
   if (options_.retrieve("help") != nullptr) {
-    if (myRank_ == 0) {
-      options_.usage();
-      std::cout << "\n\tCan also set options via EPU_OPTIONS environment variable.\n\n"
-                << "\tWrites: current_directory/basename.suf\n"
-                << "\tReads:  root#o/sub/basename.suf.#p.0 to\n"
-                << "\t\troot(#o+#p)%#r/sub/basename.suf.#p.#p\n";
-      std::cout << "\n\t->->-> Send email to gdsjaar@sandia.gov for epu support.<-<-<-\n";
-    }
-    return false;
+    options_.usage();
+    std::cout << "\n\tCan also set options via EPU_OPTIONS environment variable.\n\n"
+              << "\tWrites: current_directory/basename.suf\n"
+              << "\tReads:  root#o/sub/basename.suf.#p.0 to\n"
+              << "\t\troot(#o+#p)%#r/sub/basename.suf.#p.#p\n";
+    std::cout << "\n\t->->-> Send email to gdsjaar@sandia.gov for epu support.<-<-<-\n";
+    exit(EXIT_SUCCESS);
   }
 
   if (options_.retrieve("version") != nullptr) {
     // Version is printed up front, just exit...
-    return false;
+    exit(0);
   }
 
   {
@@ -305,13 +299,6 @@ bool Excn::SystemInterface::parse_options(int argc, char **argv)
     const char *temp = options_.retrieve("start_part");
     if (temp != nullptr) {
       startPart_ = strtol(temp, nullptr, 10);
-    }
-  }
-
-  {
-    const char *temp = options_.retrieve("max_open_files");
-    if (temp != nullptr) {
-      maxOpenFiles_ = strtol(temp, nullptr, 10);
     }
   }
 
@@ -439,10 +426,6 @@ bool Excn::SystemInterface::parse_options(int argc, char **argv)
     subcycleJoin_ = true;
   }
 
-  if (options_.retrieve("keep_temporary") != nullptr) {
-    keepTemporary_ = true;
-  }
-
   if (options_.retrieve("map") != nullptr) {
     mapIds_ = true;
   }
@@ -470,42 +453,40 @@ bool Excn::SystemInterface::parse_options(int argc, char **argv)
   }
 
   if (options_.retrieve("copyright") != nullptr) {
-    if (myRank_ == 0) {
-      std::cout << "\n"
-                << "Copyright(C) 2010-2017 National Technology & Engineering Solutions of Sandia, "
-                   "LLC (NTESS).\n"
-                << "Under the terms of Contract DE-NA0003525 with NTESS, the U.S. Government\n"
-                << "retains certain rights in this software\n."
-                << "\n"
-                << "Redistribution and use in source and binary forms, with or without\n"
-                << "modification, are permitted provided that the following conditions are\n"
-                << "met:\n"
-                << "\n"
-                << "    * Redistributions of source code must retain the above copyright\n"
-                << "      notice, this list of conditions and the following disclaimer.\n"
-                << "\n"
-                << "    * Redistributions in binary form must reproduce the above\n"
-                << "      copyright notice, this list of conditions and the following\n"
-                << "      disclaimer in the documentation and/or other materials provided\n"
-                << "      with the distribution.\n"
-                << "\n"
-                << "    * Neither the name of NTESS nor the names of its\n"
-                << "      contributors may be used to endorse or promote products derived\n"
-                << "      from this software without specific prior written permission.\n"
-                << "\n"
-                << "THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS\n"
-                << "'AS IS' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT\n"
-                << "LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR\n"
-                << "A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT\n"
-                << "OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,\n"
-                << "SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT\n"
-                << "LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,\n"
-                << "DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY\n"
-                << "THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT\n"
-                << "(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE\n"
-                << "OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.\n\n";
-    }
-    return false;
+    std::cout
+        << "\n"
+        << "Copyright(C) 2010 National Technology & Engineering Solutions of Sandia, LLC (NTESS).\n"
+        << "Under the terms of Contract DE-NA0003525 with NTESS, the U.S. Government\n"
+        << "retains certain rights in this software\n."
+        << "\n"
+        << "Redistribution and use in source and binary forms, with or without\n"
+        << "modification, are permitted provided that the following conditions are\n"
+        << "met:\n"
+        << "\n"
+        << "    * Redistributions of source code must retain the above copyright\n"
+        << "      notice, this list of conditions and the following disclaimer.\n"
+        << "\n"
+        << "    * Redistributions in binary form must reproduce the above\n"
+        << "      copyright notice, this list of conditions and the following\n"
+        << "      disclaimer in the documentation and/or other materials provided\n"
+        << "      with the distribution.\n"
+        << "\n"
+        << "    * Neither the name of NTESS nor the names of its\n"
+        << "      contributors may be used to endorse or promote products derived\n"
+        << "      from this software without specific prior written permission.\n"
+        << "\n"
+        << "THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS\n"
+        << "'AS IS' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT\n"
+        << "LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR\n"
+        << "A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT\n"
+        << "OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,\n"
+        << "SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT\n"
+        << "LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,\n"
+        << "DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY\n"
+        << "THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT\n"
+        << "(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE\n"
+        << "OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.\n\n";
+    exit(EXIT_SUCCESS);
   }
 
   // Parse remaining options as directory paths.
@@ -518,17 +499,17 @@ bool Excn::SystemInterface::parse_options(int argc, char **argv)
       // in the form: "/directory/sub/basename.ext.#proc.34"
       bool success = decompose_filename(basename_);
       if (!success) {
-        std::ostringstream errmsg;
-        errmsg << "\nERROR: (EPU) If the '-auto' option is specified, the basename must specify an "
-                  "existing filename.\n"
-               << "       The entered basename does not contain an extension or processor count.\n";
-        throw std::runtime_error(errmsg.str());
+        std::cerr
+            << "\nERROR: (EPU) If the '-auto' option is specified, the basename must specify an "
+               "existing filename.\n"
+            << "       The entered basename does not contain an extension or processor count.\n";
+        return false;
       }
-      auto_ = true;
     }
   }
   else {
-    throw std::runtime_error("\nERROR: (EPU) basename not specified\n");
+    std::cerr << "\nERROR: (EPU) basename not specified\n\n";
+    return false;
   }
   return true;
 }
@@ -544,14 +525,12 @@ std::string Excn::SystemInterface::output_suffix() const
   return outExtension_;
 }
 
-void Excn::SystemInterface::show_version(int rank)
+void Excn::SystemInterface::show_version()
 {
-  if (rank == 0) {
-    std::cout << qainfo[0] << "\n"
-              << "\t(Out of Many One -- see http://www.greatseal.com/mottoes/unum.html)\n"
-              << "\tExodusII Parallel Unification Program\n"
-              << "\t(Version: " << qainfo[2] << ") Modified: " << qainfo[1] << '\n';
-  }
+  std::cout << qainfo[0] << "\n"
+            << "\t(Out of Many One -- see http://www.greatseal.com/mottoes/unum.html)\n"
+            << "\tExodusII Parallel Unification Program\n"
+            << "\t(Version: " << qainfo[2] << ") Modified: " << qainfo[1] << '\n';
 }
 
 void Excn::SystemInterface::parse_step_option(const char *tokens)
@@ -671,13 +650,12 @@ bool Excn::SystemInterface::decompose_filename(const std::string &cs)
     basename_ = s;
   }
 
-  if (myRank_ == 0) {
-    std::cout << "\nThe following options were determined automatically:\n"
-              << "\t basename = '" << basename_ << "'\n"
-              << "\t-processor_count " << processorCount_ << "\n"
-              << "\t-extension " << inExtension_ << "\n"
-              << "\t-Root_directory " << rootDirectory_ << "\n\n";
-  }
+  std::cout << "\nThe following options were determined automatically:\n"
+            << "\t basename = '" << basename_ << "'\n"
+            << "\t-processor_count " << processorCount_ << "\n"
+            << "\t-extension " << inExtension_ << "\n"
+            << "\t-Root_directory " << rootDirectory_ << "\n\n";
+
   return true;
 }
 

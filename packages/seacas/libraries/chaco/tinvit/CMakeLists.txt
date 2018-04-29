@@ -1,2 +1,2 @@
 add_sources(chaco
-	tinvit.c)
+	epslon.c pythag.c tinvit.c)

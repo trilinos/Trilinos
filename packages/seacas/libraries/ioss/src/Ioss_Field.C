@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2017 National Technology & Engineering Solutions
+// Copyright(C) 1999-2010 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -274,13 +274,13 @@ namespace {
     // Calculate size of the low-level data type
     size_t basic_size = 0;
     switch (type) {
-    case Ioss::Field::REAL: basic_size = sizeof(double); break;
-    case Ioss::Field::INTEGER: basic_size = sizeof(int); break;
-    case Ioss::Field::INT64: basic_size = sizeof(int64_t); break;
-    case Ioss::Field::COMPLEX: basic_size = sizeof(Complex); break;
-    case Ioss::Field::STRING: basic_size = sizeof(std::string *); break;
+    case Ioss::Field::REAL: basic_size      = sizeof(double); break;
+    case Ioss::Field::INTEGER: basic_size   = sizeof(int); break;
+    case Ioss::Field::INT64: basic_size     = sizeof(int64_t); break;
+    case Ioss::Field::COMPLEX: basic_size   = sizeof(Complex); break;
+    case Ioss::Field::STRING: basic_size    = sizeof(std::string *); break;
     case Ioss::Field::CHARACTER: basic_size = sizeof(char); break;
-    case Ioss::Field::INVALID: basic_size = 0; break;
+    case Ioss::Field::INVALID: basic_size   = 0; break;
     }
     // Calculate size of the storage type
     size_t storage_size = storage->component_count();

@@ -1,5 +1,5 @@
 /*
-* Copyright(c) 2005-2017 National Technology &Engineering Solutions
+* Copyright(c) 2005 National Technology &Engineering Solutions
 * of Sandia, LLC(NTESS).Under the terms of Contract DE - NA0003525 with
 * NTESS, the U.S.Government retains certain rights in this software.
 *
@@ -203,4 +203,7 @@ int main(int argc, char *argv[])
   }
 
   ex_close(exoid);
+
+  /* Last thing that main() should do */
+  pthread_exit(NULL);
 }

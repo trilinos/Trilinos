@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005-2017 National Technology & Engineering Solutions
+ * Copyright (c) 2005 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -67,14 +67,15 @@ int ex_get_init_global(int exoid, void_int *num_nodes_g, void_int *num_elems_g,
                        void_int *num_elem_blks_g, void_int *num_node_sets_g,
                        void_int *num_side_sets_g)
 {
-  int    dimid, status;
-  size_t nng, neg, nebg, nnsg, nssg;
+  const char *func_name = "ex_get_init_global";
+  int         dimid, status;
+  size_t      nng, neg, nebg, nnsg, nssg;
 
   char errmsg[MAX_ERR_LENGTH];
   /*-----------------------------Execution begins-----------------------------*/
 
   EX_FUNC_ENTER();
-  ex_check_valid_file_id(exoid, __func__);
+  ex_check_valid_file_id(exoid);
 
   /* Check the file version information */
   if ((dimid = ne_check_file_version(exoid)) != EX_NOERR) {
@@ -85,7 +86,7 @@ int ex_get_init_global(int exoid, void_int *num_nodes_g, void_int *num_elems_g,
   if ((status = nc_inq_dimid(exoid, DIM_NUM_NODES_GLOBAL, &dimid)) != NC_NOERR) {
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to find dimension ID for \"%s\" in file ID %d",
              DIM_NUM_NODES_GLOBAL, exoid);
-    ex_err(__func__, errmsg, status);
+    ex_err(func_name, errmsg, status);
 
     EX_FUNC_LEAVE(EX_FATAL);
   }
@@ -95,7 +96,7 @@ int ex_get_init_global(int exoid, void_int *num_nodes_g, void_int *num_elems_g,
     snprintf(errmsg, MAX_ERR_LENGTH,
              "ERROR: failed to find length of dimension \"%s\" in file ID %d", DIM_NUM_NODES_GLOBAL,
              exoid);
-    ex_err(__func__, errmsg, status);
+    ex_err(func_name, errmsg, status);
 
     EX_FUNC_LEAVE(EX_FATAL);
   }
@@ -104,7 +105,7 @@ int ex_get_init_global(int exoid, void_int *num_nodes_g, void_int *num_elems_g,
   if ((status = nc_inq_dimid(exoid, DIM_NUM_ELEMS_GLOBAL, &dimid)) != NC_NOERR) {
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to find dimension ID for \"%s\" in file ID %d",
              DIM_NUM_ELEMS_GLOBAL, exoid);
-    ex_err(__func__, errmsg, status);
+    ex_err(func_name, errmsg, status);
 
     EX_FUNC_LEAVE(EX_FATAL);
   }
@@ -114,7 +115,7 @@ int ex_get_init_global(int exoid, void_int *num_nodes_g, void_int *num_elems_g,
     snprintf(errmsg, MAX_ERR_LENGTH,
              "ERROR: failed to find length of dimension \"%s\" in file ID %d", DIM_NUM_ELEMS_GLOBAL,
              exoid);
-    ex_err(__func__, errmsg, status);
+    ex_err(func_name, errmsg, status);
 
     EX_FUNC_LEAVE(EX_FATAL);
   }
@@ -123,7 +124,7 @@ int ex_get_init_global(int exoid, void_int *num_nodes_g, void_int *num_elems_g,
   if ((status = nc_inq_dimid(exoid, DIM_NUM_ELBLK_GLOBAL, &dimid)) != NC_NOERR) {
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to find dimension ID for \"%s\" in file ID %d",
              DIM_NUM_ELBLK_GLOBAL, exoid);
-    ex_err(__func__, errmsg, status);
+    ex_err(func_name, errmsg, status);
 
     EX_FUNC_LEAVE(EX_FATAL);
   }
@@ -133,7 +134,7 @@ int ex_get_init_global(int exoid, void_int *num_nodes_g, void_int *num_elems_g,
     snprintf(errmsg, MAX_ERR_LENGTH,
              "ERROR: failed to find length of dimension \"%s\" in file ID %d", DIM_NUM_ELBLK_GLOBAL,
              exoid);
-    ex_err(__func__, errmsg, status);
+    ex_err(func_name, errmsg, status);
 
     EX_FUNC_LEAVE(EX_FATAL);
   }
@@ -148,7 +149,7 @@ int ex_get_init_global(int exoid, void_int *num_nodes_g, void_int *num_elems_g,
       snprintf(errmsg, MAX_ERR_LENGTH,
                "ERROR: failed to find length of dimension \"%s\" in file ID %d", DIM_NUM_NS_GLOBAL,
                exoid);
-      ex_err(__func__, errmsg, status);
+      ex_err(func_name, errmsg, status);
 
       EX_FUNC_LEAVE(EX_FATAL);
     }
@@ -164,7 +165,7 @@ int ex_get_init_global(int exoid, void_int *num_nodes_g, void_int *num_elems_g,
       snprintf(errmsg, MAX_ERR_LENGTH,
                "ERROR: failed to find length of dimension \"%s\" in file ID %d", DIM_NUM_SS_GLOBAL,
                exoid);
-      ex_err(__func__, errmsg, status);
+      ex_err(func_name, errmsg, status);
 
       EX_FUNC_LEAVE(EX_FATAL);
     }

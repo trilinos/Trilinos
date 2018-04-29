@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2017 National Technology & Engineering Solutions
+// Copyright(C) 1999-2010 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -118,6 +118,10 @@ namespace Ioex {
     bool ok__(bool write_message = false, std::string *error_message = nullptr,
               int *bad_count = nullptr) const override = 0;
 
+    // Eliminate as much memory as possible, but still retain meta data information
+    // Typically, eliminate the maps...
+    void release_memory__() override;
+
     bool open_group__(const std::string &group_name) override;
     bool create_subgroup__(const std::string &group_name) override;
 
@@ -139,70 +143,68 @@ namespace Ioex {
       }
     }
 
-    size_t handle_block_ids(const Ioss::EntityBlock *eb, ex_entity_type map_type,
-                            Ioss::Map &entity_map, void *ids, size_t num_to_get, size_t offset,
-                            size_t count) const;
+    void get_block_adjacencies__(const Ioss::ElementBlock *eb,
+                                 std::vector<std::string> &block_adjacency) const override;
 
     void compute_block_membership__(Ioss::SideBlock *         efblock,
                                     std::vector<std::string> &block_membership) const override;
 
-    int  int_byte_size_db() const override;
     void set_int_byte_size_api(Ioss::DataSize size) const override;
 
   protected:
     int64_t get_field_internal(const Ioss::Region *reg, const Ioss::Field &field, void *data,
-                               size_t data_size) const override             = 0;
+                               size_t data_size) const override = 0;
     int64_t get_field_internal(const Ioss::NodeBlock *nb, const Ioss::Field &field, void *data,
-                               size_t data_size) const override             = 0;
+                               size_t data_size) const override = 0;
     int64_t get_field_internal(const Ioss::EdgeBlock *nb, const Ioss::Field &field, void *data,
-                               size_t data_size) const override             = 0;
+                               size_t data_size) const override = 0;
     int64_t get_field_internal(const Ioss::FaceBlock *nb, const Ioss::Field &field, void *data,
-                               size_t data_size) const override             = 0;
+                               size_t data_size) const override = 0;
     int64_t get_field_internal(const Ioss::ElementBlock *eb, const Ioss::Field &field, void *data,
-                               size_t data_size) const override             = 0;
+                               size_t data_size) const override = 0;
     int64_t get_field_internal(const Ioss::StructuredBlock *sb, const Ioss::Field &field,
                                void *data, size_t data_size) const override = 0;
     int64_t get_field_internal(const Ioss::SideBlock *fb, const Ioss::Field &field, void *data,
-                               size_t data_size) const override             = 0;
+                               size_t data_size) const override = 0;
     int64_t get_field_internal(const Ioss::NodeSet *ns, const Ioss::Field &field, void *data,
-                               size_t data_size) const override             = 0;
+                               size_t data_size) const override = 0;
     int64_t get_field_internal(const Ioss::EdgeSet *ns, const Ioss::Field &field, void *data,
-                               size_t data_size) const override             = 0;
+                               size_t data_size) const override = 0;
     int64_t get_field_internal(const Ioss::FaceSet *ns, const Ioss::Field &field, void *data,
-                               size_t data_size) const override             = 0;
+                               size_t data_size) const override = 0;
     int64_t get_field_internal(const Ioss::ElementSet *ns, const Ioss::Field &field, void *data,
-                               size_t data_size) const override             = 0;
+                               size_t data_size) const override = 0;
     int64_t get_field_internal(const Ioss::SideSet *fs, const Ioss::Field &field, void *data,
-                               size_t data_size) const override             = 0;
+                               size_t data_size) const override = 0;
     int64_t get_field_internal(const Ioss::CommSet *cs, const Ioss::Field &field, void *data,
-                               size_t data_size) const override             = 0;
+                               size_t data_size) const override = 0;
 
     int64_t put_field_internal(const Ioss::Region *reg, const Ioss::Field &field, void *data,
-                               size_t data_size) const override             = 0;
+                               size_t data_size) const override = 0;
     int64_t put_field_internal(const Ioss::NodeBlock *nb, const Ioss::Field &field, void *data,
-                               size_t data_size) const override             = 0;
+                               size_t data_size) const override = 0;
     int64_t put_field_internal(const Ioss::EdgeBlock *nb, const Ioss::Field &field, void *data,
-                               size_t data_size) const override             = 0;
+                               size_t data_size) const override = 0;
     int64_t put_field_internal(const Ioss::FaceBlock *nb, const Ioss::Field &field, void *data,
-                               size_t data_size) const override             = 0;
+                               size_t data_size) const override = 0;
     int64_t put_field_internal(const Ioss::ElementBlock *eb, const Ioss::Field &field, void *data,
-                               size_t data_size) const override             = 0;
+                               size_t data_size) const override = 0;
     int64_t put_field_internal(const Ioss::StructuredBlock *sb, const Ioss::Field &field,
                                void *data, size_t data_size) const override = 0;
     int64_t put_field_internal(const Ioss::SideBlock *fb, const Ioss::Field &field, void *data,
-                               size_t data_size) const override             = 0;
+                               size_t data_size) const override = 0;
     int64_t put_field_internal(const Ioss::NodeSet *ns, const Ioss::Field &field, void *data,
-                               size_t data_size) const override             = 0;
+                               size_t data_size) const override = 0;
     int64_t put_field_internal(const Ioss::EdgeSet *ns, const Ioss::Field &field, void *data,
-                               size_t data_size) const override             = 0;
+                               size_t data_size) const override = 0;
     int64_t put_field_internal(const Ioss::FaceSet *ns, const Ioss::Field &field, void *data,
-                               size_t data_size) const override             = 0;
+                               size_t data_size) const override = 0;
     int64_t put_field_internal(const Ioss::ElementSet *ns, const Ioss::Field &field, void *data,
-                               size_t data_size) const override             = 0;
+                               size_t data_size) const override = 0;
     int64_t put_field_internal(const Ioss::SideSet *fs, const Ioss::Field &field, void *data,
-                               size_t data_size) const override             = 0;
+                               size_t data_size) const override = 0;
     int64_t put_field_internal(const Ioss::CommSet *cs, const Ioss::Field &field, void *data,
-                               size_t data_size) const override             = 0;
+                               size_t data_size) const override = 0;
 
     virtual void write_meta_data() = 0;
     void         write_results_metadata();
@@ -222,6 +224,8 @@ namespace Ioex {
     void put_qa();
     void put_info();
 
+    virtual void compute_block_adjacencies() const = 0;
+
     template <typename T>
     void internal_write_results_metadata(ex_entity_type type, std::vector<T *> entities,
                                          int &glob_index);
@@ -229,8 +233,8 @@ namespace Ioex {
     void generate_sideset_truth_table();
 
     void output_results_names(ex_entity_type type, VariableNameMap &variables) const;
-    int  gather_names(ex_entity_type type, VariableNameMap &variables,
-                      const Ioss::GroupingEntity *ge, int index, bool reduction);
+    int gather_names(ex_entity_type type, VariableNameMap &variables,
+                     const Ioss::GroupingEntity *ge, int index, bool reduction);
 
     void get_nodeblocks();
 
@@ -275,8 +279,10 @@ namespace Ioex {
     mutable int maximumNameLength;
     int         spatialDimension;
 
+    int64_t nodeCount;
     int64_t edgeCount;
     int64_t faceCount;
+    int64_t elementCount;
 
     mutable std::map<ex_entity_type, int> m_groupCount;
 
@@ -287,6 +293,21 @@ namespace Ioex {
     Ioss::Int64Vector elemCmapElemCnts;
     int64_t           commsetNodeCount;
     int64_t           commsetElemCount;
+
+    // Bulk Data
+
+    // MAPS -- Used to convert from local exodusII ids/names to Sierra
+    // database global ids/names
+
+    //---Node Map -- Maps internal (1..NUMNP) ids to global ids used on the
+    //               sierra side.   global = nodeMap[local]
+    // nodeMap[0] contains: -1 if sequential, 0 if ordering unknown, 1
+    // if nonsequential
+
+    mutable Ioss::Map nodeMap;
+    mutable Ioss::Map edgeMap;
+    mutable Ioss::Map faceMap;
+    mutable Ioss::Map elemMap;
 
     // --- Nodal/Element/Attribute Variable Names -- Maps from sierra
     // field names to index of nodal/element/attribute variable in
@@ -301,7 +322,8 @@ namespace Ioex {
 
     mutable ValueContainer globalValues;
 
-    mutable std::vector<unsigned char> nodeConnectivityStatus;
+    mutable std::vector<std::vector<bool>> blockAdjacency;
+    mutable std::vector<unsigned char>     nodeConnectivityStatus;
 
     // For a database with omitted blocks, this map contains the indices of the
     // active nodes for each nodeset.  If the nodeset is not reduced in size,

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005-2017 National Technology & Engineering Solutions
+ * Copyright (c) 2005 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -60,7 +60,7 @@ void klspiff(struct vtx_data **graph, /* list of graph info for each vertex */
              int     using_ewgts,     /* are edge weights being used? */
              int **  bndy_list,       /* list of vertices on boundary (0 ends) */
              double *weights          /* vertex weights in each set */
-)
+             )
 {
   extern FILE *     Output_File;     /* output file or null */
   extern double     CUT_TO_HOP_COST; /* relative importance of cuts/hops */
@@ -170,7 +170,7 @@ static void free_kl(
     struct bilist **  listspace, /* space for all bidirectional elements */
     int **            dvals,     /* change in penalty for each possible move */
     int **            tops       /* starting dval for each type of move */
-)
+    )
 {
 
   sfree(dvals);

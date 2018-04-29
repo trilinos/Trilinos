@@ -165,5 +165,5 @@ namespace trmclr {
     return os;
   }
 
-} // namespace trmclr
+} // end trmclr namespace
 #endif // end __TRMCLR_H__

@@ -1,4 +1,4 @@
-// Copyright(C) 2009-2010-2017 National Technology & Engineering Solutions
+// Copyright(C) 2009-2010 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -45,7 +45,11 @@ namespace Excn {
 
   template <typename INT> struct Mesh
   {
-    Mesh() = default;
+    Mesh()
+        : dimensionality(0), nodeCount(0), elementCount(0), blockCount(0), nodesetCount(0),
+          sidesetCount(0), timestepCount(0), isActive(true)
+    {
+    }
 
     size_t count(ObjectType type) const
     {
@@ -66,20 +70,25 @@ namespace Excn {
 
     std::string title;
 
-    size_t dimensionality{0};
-    size_t nodeCount{0};
-    size_t elementCount{0};
-    size_t blockCount{0};
-    size_t nodesetCount{0};
-    size_t sidesetCount{0};
-    size_t timestepCount{0};
+    size_t dimensionality;
+    size_t nodeCount;
+    size_t elementCount;
+    size_t blockCount;
+    size_t nodesetCount;
+    size_t sidesetCount;
+    size_t timestepCount;
 
-    bool isActive{true};
+    bool isActive;
   };
 
   struct Block
   {
-    Block() { std::strcpy(elType, ""); }
+    Block()
+        : name_(""), id(0), elementCount(0), nodesPerElement(0), attributeCount(0), offset_(0),
+          position_(0)
+    {
+      std::strcpy(elType, "");
+    }
 
     Block(const Block &other)
         : name_(other.name_), id(other.id), elementCount(other.elementCount),
@@ -96,12 +105,12 @@ namespace Excn {
     IntVector                truthTable;
     std::vector<std::string> attributeNames;
     std::string              name_;
-    int64_t                  id{0};
-    size_t                   elementCount{0};
-    size_t                   nodesPerElement{0};
-    size_t                   attributeCount{0};
-    size_t                   offset_{0};
-    size_t                   position_{0};
+    int64_t                  id;
+    size_t                   elementCount;
+    size_t                   nodesPerElement;
+    size_t                   attributeCount;
+    size_t                   offset_;
+    size_t                   position_;
     char                     elType[MAX_STR_LENGTH + 1]{};
 
     Block &operator=(const Block &other)
@@ -121,14 +130,14 @@ namespace Excn {
 
   template <typename INT> struct NodeSet
   {
-    NodeSet() = default;
+    NodeSet() : id(0), nodeCount(0), dfCount(0), offset_(0), position_(0), name_("") {}
 
     IntVector   truthTable;
-    int64_t     id{0};
-    size_t      nodeCount{0};
-    size_t      dfCount{0};
-    size_t      offset_{0};
-    size_t      position_{0};
+    int64_t     id;
+    size_t      nodeCount;
+    size_t      dfCount;
+    size_t      offset_;
+    size_t      position_;
     std::string name_;
 
     std::vector<INT> nodeSetNodes;
@@ -156,14 +165,14 @@ namespace Excn {
   typedef std::pair<int, int> Side;
   template <typename INT> struct SideSet
   {
-    SideSet() = default;
+    SideSet() : id(0), sideCount(0), dfCount(0), offset_(0), position_(0), name_("") {}
 
     IntVector   truthTable;
-    int64_t     id{0};
-    size_t      sideCount{0};
-    size_t      dfCount{0};
-    size_t      offset_{0};
-    size_t      position_{0};
+    int64_t     id;
+    size_t      sideCount;
+    size_t      dfCount;
+    size_t      offset_;
+    size_t      position_;
     std::string name_;
 
     std::vector<INT> elems;
@@ -185,33 +194,39 @@ namespace Excn {
 
   struct CommunicationMap
   {
-    CommunicationMap() = default;
+    CommunicationMap() : id(0), entityCount(0), type('U') {}
     CommunicationMap(size_t the_id, size_t count, char the_type)
         : id(the_id), entityCount(count), type(the_type)
     {
     }
-    int64_t id{0};
-    size_t  entityCount{0};
-    char    type{'U'}; // 'n' for node, 'e' for element
+    int64_t id;
+    size_t  entityCount;
+    char    type; // 'n' for node, 'e' for element
   };
 
   struct CommunicationMetaData
   {
-    CommunicationMetaData()                              = default;
-    CommunicationMetaData(const CommunicationMetaData &) = delete;
+    CommunicationMetaData()
+        : processorId(0), processorCount(0), globalNodes(0), globalElements(0), nodesInternal(0),
+          nodesBorder(0), nodesExternal(0), elementsInternal(0), elementsBorder(0)
+    {
+    }
 
     std::vector<CommunicationMap> nodeMap;
     std::vector<CommunicationMap> elementMap;
 
-    size_t processorId{0};
-    size_t processorCount{0};
-    size_t globalNodes{0};
-    size_t globalElements{0};
-    size_t nodesInternal{0};
-    size_t nodesBorder{0};
-    size_t nodesExternal{0};
-    size_t elementsInternal{0};
-    size_t elementsBorder{0};
+    size_t processorId;
+    size_t processorCount;
+    size_t globalNodes;
+    size_t globalElements;
+    size_t nodesInternal;
+    size_t nodesBorder;
+    size_t nodesExternal;
+    size_t elementsInternal;
+    size_t elementsBorder;
+
+  private:
+    CommunicationMetaData(const CommunicationMetaData &);
   };
 } // namespace Excn
 #endif /* SEACAS_ExodusEntity_H */

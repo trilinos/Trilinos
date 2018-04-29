@@ -5,6 +5,7 @@
 #include <SL_tokenize.h> // for tokenize
 #include <algorithm>     // for sort, find, transform
 #include <cctype>        // for tolower
+#include <climits>       // for INT_MAX
 #include <cstddef>       // for size_t
 #include <cstdlib>       // for exit, strtod, strtoul, abs, etc
 #include <cstring>       // for strchr, strlen
@@ -37,6 +38,9 @@ namespace {
 } // namespace
 
 SystemInterface::SystemInterface()
+    : outputName_(), debugLevel_(0), stepMin_(1), stepMax_(INT_MAX), stepInterval_(1),
+      omitNodesets_(false), omitSidesets_(false), matchNodeIds_(false), matchNodeXYZ_(false),
+      matchElemIds_(false), disableFieldRecognition_(false), ints64bit_(false), tolerance_(0.0)
 {
   offset_.x = 0.0;
   offset_.y = 0.0;
@@ -56,16 +60,6 @@ void SystemInterface::enroll_options()
 
   options_.enroll("output", GetLongOption::MandatoryValue, "Name of output file to create",
                   "ejoin-out.e");
-
-  options_.enroll(
-      "extract_blocks", GetLongOption::MandatoryValue,
-      "Use only the specified part/block pairs. The specification is\n"
-      "\t\tp#:block_id1:block_id2,p#:block_id1. For example, to\n"
-      "\t\tExtract block ids 1,3,4 from part 1; blocks 2 3 4 from part 2;\n"
-      "\t\tand block 8 from part5, specify\n"
-      "\t\t\t '-extract_blocks p1:1:3:4,p2:2:3:4,p5:8'\n"
-      "\t\tIf an extract is specified, then only that id(s) will be used for that part.",
-      nullptr);
 
   options_.enroll("omit_blocks", GetLongOption::MandatoryValue,
                   "Omit the specified part/block pairs. The specification is\n"
@@ -158,25 +152,8 @@ void SystemInterface::enroll_options()
       "\t\tIf 'all' specified, then transfer all information records",
       nullptr, "NONE");
 
-  options_.enroll("ignore_element_ids", GetLongOption::NoValue,
-                  "Ignore the element id maps on the input database and just use a 1..#elements id "
-                  "map on output.\n"
-                  "\t\tMuch faster for large models if do not need specific element global ids",
-                  nullptr);
-
-  options_.enroll("netcdf4", GetLongOption::NoValue,
-                  "Create output database using the HDF5-based "
-                  "netcdf which allows for up to 2.1 GB "
-                  "nodes and elements",
-                  nullptr);
-
   options_.enroll("64-bit", GetLongOption::NoValue,
                   "True if forcing the use of 64-bit integers for the output file", nullptr);
-
-  options_.enroll(
-      "compress", GetLongOption::MandatoryValue,
-      "Specify the hdf5 (netcdf4) compression level [0..9] to be used on the output file.",
-      nullptr);
 
   options_.enroll("disable_field_recognition", GetLongOption::NoValue,
                   "Do not try to combine scalar fields into higher-order fields such as\n"
@@ -207,7 +184,7 @@ bool SystemInterface::parse_options(int argc, char **argv)
 
   if (options_.retrieve("copyright") != nullptr) {
     std::cerr << "\n"
-              << "Copyright(C) 2010-2017 National Technology & Engineering Solutions\n"
+              << "Copyright(C) 2010 National Technology & Engineering Solutions\n"
               << "of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with\n"
               << "NTESS, the U.S. Government retains certain rights in this software.\n"
               << "\n"
@@ -257,7 +234,6 @@ bool SystemInterface::parse_options(int argc, char **argv)
 
   size_t part_count = inputFiles_.size();
   blockOmissions_.resize(part_count);
-  blockInclusions_.resize(part_count);
   nsetOmissions_.resize(part_count);
   ssetOmissions_.resize(part_count);
 
@@ -272,16 +248,12 @@ bool SystemInterface::parse_options(int argc, char **argv)
 
   {
     const char *temp = options_.retrieve("output");
-    if (temp != nullptr) {
-      outputName_ = temp;
-    }
+    outputName_      = temp;
   }
 
   {
     const char *temp = options_.retrieve("offset");
-    if (temp != nullptr) {
-      parse_offset(temp, &offset_);
-    }
+    parse_offset(temp, &offset_);
   }
 
   {
@@ -316,16 +288,7 @@ bool SystemInterface::parse_options(int argc, char **argv)
 
   {
     const char *temp = options_.retrieve("omit_blocks");
-    if (temp != nullptr) {
-      parse_omissions(temp, &blockOmissions_, "block", true);
-    }
-  }
-
-  {
-    const char *temp = options_.retrieve("extract_blocks");
-    if (temp != nullptr) {
-      parse_omissions(temp, &blockInclusions_, "block", true);
-    }
+    parse_omissions(temp, &blockOmissions_, "block", true);
   }
 
   {
@@ -360,37 +323,27 @@ bool SystemInterface::parse_options(int argc, char **argv)
 
   {
     const char *temp = options_.retrieve("gvar");
-    if (temp != nullptr) {
-      parse_variable_names(temp, &globalVarNames_);
-    }
+    parse_variable_names(temp, &globalVarNames_);
   }
 
   {
     const char *temp = options_.retrieve("nvar");
-    if (temp != nullptr) {
-      parse_variable_names(temp, &nodeVarNames_);
-    }
+    parse_variable_names(temp, &nodeVarNames_);
   }
 
   {
     const char *temp = options_.retrieve("evar");
-    if (temp != nullptr) {
-      parse_variable_names(temp, &elemVarNames_);
-    }
+    parse_variable_names(temp, &elemVarNames_);
   }
 
   {
     const char *temp = options_.retrieve("nsetvar");
-    if (temp != nullptr) {
-      parse_variable_names(temp, &nsetVarNames_);
-    }
+    parse_variable_names(temp, &nsetVarNames_);
   }
 
   {
     const char *temp = options_.retrieve("ssetvar");
-    if (temp != nullptr) {
-      parse_variable_names(temp, &ssetVarNames_);
-    }
+    parse_variable_names(temp, &ssetVarNames_);
   }
 
   if (options_.retrieve("disable_field_recognition") != nullptr) {
@@ -400,23 +353,8 @@ bool SystemInterface::parse_options(int argc, char **argv)
     disableFieldRecognition_ = false;
   }
 
-  if (options_.retrieve("netcdf4") != nullptr) {
-    useNetcdf4_ = true;
-  }
-
-  if (options_.retrieve("ignore_element_ids") != nullptr) {
-    ignoreElementIds_ = true;
-  }
-
   if (options_.retrieve("64-bit") != nullptr) {
     ints64bit_ = true;
-  }
-
-  {
-    const char *temp = options_.retrieve("compress");
-    if (temp != nullptr) {
-      compressionLevel_ = std::strtol(temp, nullptr, 10);
-    }
   }
 
   if (options_.retrieve("match_node_ids") != nullptr) {
@@ -463,8 +401,8 @@ bool SystemInterface::convert_nodes_to_nodesets(int part_number) const
     return true;
   }
   else {
-    return std::find(nodesetConvertParts_.cbegin(), nodesetConvertParts_.cend(), part_number) !=
-           nodesetConvertParts_.cend();
+    return std::find(nodesetConvertParts_.begin(), nodesetConvertParts_.end(), part_number) !=
+           nodesetConvertParts_.end();
   }
 }
 
