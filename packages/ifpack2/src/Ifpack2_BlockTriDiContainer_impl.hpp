@@ -2744,6 +2744,9 @@ namespace Ifpack2 {
       NormManager(const NormManager &b) = default;
       NormManager(const Teuchos::RCP<const Teuchos::Comm<int> >& comm) {
         sweep_step_ = 1;
+        blocksize_ = 0;
+        num_vectors_ = 0;
+
         collective_ = comm->getSize() > 1;
         if (collective_) {
 #ifdef HAVE_MPI
