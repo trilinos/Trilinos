@@ -120,16 +120,6 @@ namespace Tpetra {
     //! The type of the base class of this class.
     typedef MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> base_type;
 
-
-   /// \brief Default c'tor
-   ///
-   /// WCM - Make the default c'tor private
-   FEMultiVector() { }
-
-    /// \brief Replace the underlying Map in place.  Tgus dies 
-    void replaceMap (const Teuchos::RCP<const map_type>& map);
-
-
    public:
     /// \brief Return a deep copy of this MultiVector, with a
     ///   different Node type.
@@ -151,16 +141,6 @@ namespace Tpetra {
     //! @name Post-construction modification routines
     //@{
 
-  public:
-
-    // CMS - FEMultiVector Specific Routines
-    enum FEWhichActive
-    {
-      FE_ACTIVE_TARGET,
-      FE_ACTIVE_SOURCE
-    };
-
-
     // ! Calls endFill()
     void globalAssemble() {endFill();}
 
@@ -178,22 +158,41 @@ namespace Tpetra {
     //! Activates the target map mode
     void beginFill()
     {
+      // Note: This does not throw an error since the on construction, the FEMV is in target mode.  Ergo, calling beginFill(),
+      // like one should expect to do in a rational universe, should not cause an error.
       if(activeMultiVector_ == FE_ACTIVE_SOURCE) {
         switchActiveMultiVector();
       }
-      else
-        throw std::runtime_error("FEMultiVector: Target MultiVector already active.  Cannot beginFill()");
     }
 
+  private:
+    /// \brief Default c'tor (private so it does not get used)
+    ///
+    FEMultiVector() { }
 
   protected:
+    //@{
+    //! @name Internal routines and data structures
+
+    /// \brief Replace the underlying Map in place.  NOTE: FEMultiVector does not allow this and will throw
+    void replaceMap (const Teuchos::RCP<const map_type>& map);
+
+
+
+    // Enum for activity
+    enum FEWhichActive
+    {
+      FE_ACTIVE_TARGET,
+      FE_ACTIVE_SOURCE
+    };
+
+    // Switches which Multivector is active (without migrating data)
+    void switchActiveMultiVector();
+
     //! Migrate data from the target to the source map
     // Since this is non-unique -> unique, we need a combine mode.
     // Precondition: Target MultiVector must be active
     void doTargetToSource(const CombineMode CM=Tpetra::ADD);
-
-    // Switches which Multivector isa ctive
-    void switchActiveMultiVector();
 
     // This is whichever multivector isn't currently active
     MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> * inactiveMultiVector_;
