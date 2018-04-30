@@ -71,7 +71,7 @@ FEMultiVector(const Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> > 
     // Check maps to see if we can reuse memory (aka do numSames == domainMap->getNodeNumElements()) 
     if(importer_->getNumSameIDs() == importer->getSourceMap()->getNodeNumElements()) {
       //   1) If so, we then build the inactiveMultiVector_ (w/ source map) using a restricted DualView      
-      throw std::runtime_error("stub");
+      inactiveMultiVector_ = new base_type(importer_->getSourceMap(),Kokkos::subview(this->view_,Kokkos::pair<size_t,size_t>(0,map->getNodeNumElements()),Kokkos::ALL));
     }
     else {
       //   2) If not call a new constructor for the inactive guy (w/ source map)
