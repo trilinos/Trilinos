@@ -133,6 +133,8 @@ namespace MueLu {
 
     RCP<Teuchos::TimeMonitor> tmCompute = rcp(new Teuchos::TimeMonitor(*Teuchos::TimeMonitor::getNewTimer("MueLu RefMaxwell: compute")));
 
+    bool defaultFilter = false;
+
     // Remove zero entries from D0 if necessary.
     // In the construction of the prolongator we use the graph of the
     // matrix, so zero entries mess it up.
@@ -142,10 +144,48 @@ namespace MueLu {
       fineLevel.SetLevelID(0);
       fineLevel.Set("A",D0_Matrix_);
       fineLevel.setlib(D0_Matrix_->getDomainMap()->lib());
-      RCP<ThresholdAFilterFactory> ThreshFact = rcp(new ThresholdAFilterFactory("A",1e-8,/*keepDiagonal=*/false));
+      // We expect D0 to have entries +-1, so any threshold value will do.
+      RCP<ThresholdAFilterFactory> ThreshFact = rcp(new ThresholdAFilterFactory("A",1.0e-8,/*keepDiagonal=*/false));
       fineLevel.Request("A",ThreshFact.get());
       ThreshFact->Build(fineLevel);
       D0_Matrix_ = fineLevel.Get< RCP<Matrix> >("A",ThreshFact.get());
+
+      // If D0 has too many zeros, maybe SM and M1 do as well.
+      defaultFilter = true;
+    }
+
+    if (parameterList_.get<bool>("refmaxwell: filter SM", defaultFilter)) {
+      RCP<Vector> diag = VectorFactory::Build(SM_Matrix_->getRowMap());
+      // find a reasonable absolute value threshold
+      SM_Matrix_->getLocalDiagCopy(*diag);
+      magnitudeType threshold = 1.0e-8 * diag->normInf();
+
+      Level fineLevel;
+      fineLevel.SetFactoryManager(Teuchos::null);
+      fineLevel.SetLevelID(0);
+      fineLevel.Set("A",SM_Matrix_);
+      fineLevel.setlib(SM_Matrix_->getDomainMap()->lib());
+      RCP<ThresholdAFilterFactory> ThreshFact = rcp(new ThresholdAFilterFactory("A",threshold,/*keepDiagonal=*/true));
+      fineLevel.Request("A",ThreshFact.get());
+      ThreshFact->Build(fineLevel);
+      SM_Matrix_ = fineLevel.Get< RCP<Matrix> >("A",ThreshFact.get());
+    }
+
+    if (parameterList_.get<bool>("refmaxwell: filter M1", defaultFilter)) {
+      RCP<Vector> diag = VectorFactory::Build(M1_Matrix_->getRowMap());
+      // find a reasonable absolute value threshold
+      M1_Matrix_->getLocalDiagCopy(*diag);
+      magnitudeType threshold = 1.0e-8 * diag->normInf();
+
+      Level fineLevel;
+      fineLevel.SetFactoryManager(Teuchos::null);
+      fineLevel.SetLevelID(0);
+      fineLevel.Set("A",M1_Matrix_);
+      fineLevel.setlib(M1_Matrix_->getDomainMap()->lib());
+      RCP<ThresholdAFilterFactory> ThreshFact = rcp(new ThresholdAFilterFactory("A",threshold,/*keepDiagonal=*/true));
+      fineLevel.Request("A",ThreshFact.get());
+      ThreshFact->Build(fineLevel);
+      M1_Matrix_ = fineLevel.Get< RCP<Matrix> >("A",ThreshFact.get());
     }
 
     // clean rows associated with boundary conditions
