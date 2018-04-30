@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005-2017 National Technology & Engineering Solutions
+ * Copyright (c) 2005 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -60,7 +60,7 @@ void bucketsorts(struct vtx_data **graph,       /* graph data structure */
                  int  list_length,              /* number of values in bspace to work with */
                  int  npass,                    /* which pass through KL is this? */
                  int  using_ewgts               /* are edge weights being used? */
-)
+                 )
 {
   extern int      KL_RANDOM;       /* use randomness in KL? */
   extern int      KL_UNDO_LIST;    /* only sort vertices who have moved. */

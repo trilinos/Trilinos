@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2017 National Technology & Engineering Solutions
+// Copyright(C) 1999-2010 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -102,8 +102,6 @@ namespace Iogn {
     // database supports that type (e.g. return_value & Ioss::FACESET)
     unsigned entity_field_support() const override;
 
-    int int_byte_size_db() const override { return int_byte_size_api(); }
-
     const GeneratedMesh *get_generated_mesh() const { return m_generatedMesh; }
 
     void setGeneratedMesh(Iogn::GeneratedMesh *generatedMesh) { m_generatedMesh = generatedMesh; }
@@ -111,6 +109,20 @@ namespace Iogn {
     const std::vector<std::string> &get_sideset_names() const { return m_sideset_names; }
 
   private:
+    int64_t node_global_to_local__(int64_t global, bool must_exist) const override
+    {
+      return nodeMap.global_to_local(global, must_exist);
+    }
+
+    int64_t element_global_to_local__(int64_t global) const override
+    {
+      return elemMap.global_to_local(global);
+    }
+
+    // Eliminate as much memory as possible, but still retain meta data information
+    // Typically, eliminate the maps...
+    void release_memory__() override;
+
     void read_meta_data__() override;
 
     bool begin__(Ioss::State state) override;
@@ -191,17 +203,28 @@ namespace Iogn {
 
     void add_transient_fields(Ioss::GroupingEntity *entity);
 
-    GeneratedMesh *          m_generatedMesh{nullptr};
+    GeneratedMesh *          m_generatedMesh;
     std::vector<std::string> m_sideset_names;
 
-    double currentTime{0.0};
-    int    spatialDimension{3};
+    int     spatialDimension;
+    int64_t nodeCount;
+    int64_t elementCount;
 
-    int elementBlockCount{0};
-    int nodesetCount{0};
-    int sidesetCount{0};
+    int elementBlockCount;
+    int nodesetCount;
+    int sidesetCount;
 
-    bool m_useVariableDf{true};
+    // MAPS -- Used to convert from local exodusII ids/names to Sierra
+    // database global ids/names
+
+    //---Node Map -- Maps internal (1..NUMNP) ids to global ids used on the
+    //               sierra side.   global = nodeMap[local]
+    // nodeMap[0] contains: -1 if sequential, 0 if ordering unknown, 1
+    // if nonsequential
+    mutable Ioss::Map nodeMap;
+    mutable Ioss::Map elemMap;
+
+    bool m_useVariableDf;
   };
 } // namespace Iogn
 #endif // IOSS_Iogn_DatabaseIO_h

@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2017 National Technology & Engineering Solutions
+// Copyright(C) 1999-2010 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -361,11 +361,11 @@ namespace Iogn {
      */
     virtual std::pair<std::string, int> topology_type(int64_t block_number) const;
 
-    void            build_node_map(Ioss::Int64Vector &map, std::vector<int> &proc, int64_t slab,
-                                   size_t slabOffset, size_t adjacentProc, size_t index);
+    int64_t build_node_map(Ioss::Int64Vector &map, std::vector<int> &proc, int64_t slab,
+                           size_t slabOffset, size_t adjacentProc, int64_t startIndex);
     virtual int64_t communication_node_count_proc() const;
-    virtual void    node_communication_map(MapVector &map, std::vector<int> &proc);
-    virtual void    owning_processor(int *owner, int64_t num_node);
+    virtual void node_communication_map(MapVector &map, std::vector<int> &proc);
+    virtual void owning_processor(int *owner, int64_t num_node);
 
     /**
      * Fill the passed in 'map' argument with the node map
@@ -410,9 +410,9 @@ namespace Iogn {
      * size required to contain the nodal connectivity for the
      * specified block; all information in 'connect' will be overwritten.
      */
-    void         connectivity(int64_t block_number, Ioss::Int64Vector &connect) const;
-    void         connectivity(int64_t block_number, Ioss::IntVector &connect) const;
-    void         connectivity(int64_t block_number, int64_t *connect) const;
+    void connectivity(int64_t block_number, Ioss::Int64Vector &connect) const;
+    void connectivity(int64_t block_number, Ioss::IntVector &connect) const;
+    void connectivity(int64_t block_number, int64_t *connect) const;
     virtual void connectivity(int64_t block_number, int *connect) const;
 
     /**
@@ -490,14 +490,14 @@ namespace Iogn {
     std::vector<ShellLocation> shellBlocks;
     std::vector<ShellLocation> nodesets;
     std::vector<ShellLocation> sidesets;
-    double                     rotmat[3][3];
+    double                     rotmat[3][3]{};
     size_t                     numX, numY, numZ;
     size_t                     myNumZ, myStartZ;
 
     size_t processorCount;
     size_t myProcessor;
 
-    size_t                             timestepCount;
+    size_t timestepCount;
     std::map<Ioss::EntityType, size_t> variableCount;
 
     double offX, offY, offZ; /** Offsets in X, Y, and Z directions */

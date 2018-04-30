@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005-2017 National Technology & Engineering Solutions
+ * Copyright (c) 2005 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -69,7 +69,7 @@ void coarsen_kl(
     int **  pbndy_list,             /* pointer to returned boundary list */
     double *weights,                /* weights of vertices in each set */
     int     give_up                 /* has coarsening bogged down? */
-)
+    )
 {
   extern FILE *        Output_File;            /* output file or null */
   extern int           DEBUG_TRACE;            /* trace the execution of the code */

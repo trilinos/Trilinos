@@ -16,6 +16,7 @@ build locally as described below.
 * <a href="#quick-start">Quick-start</a>
 * <a href="#checkin-test-atdmsh">checkin-test-atdm.sh</a>
 * <a href="#specific-instructions-for-each-system">Specific instructions for each system</a>
+* <a href="#troubleshooting-configuration-problems">Troubleshooting configuration problems</a>
 * <a href="#directory-structure-and-contents">Directory structure and contents</a>
 * <a href="#specific-systems-supported">Specific systems supported</a>
 
@@ -172,7 +173,7 @@ $ ./checkin-test-sems.sh <job-name-0> <job-name-1> ... \
 * <a href="#ridewhite">ride/white</a>
 * <a href="#shillerhansen">shiller/hansen</a>
 * <a href="#chamaserrano">chama/serrano</a>
-* <a href="#SEMS-RHEL6">SEMS rhel6 environment</a>
+* <a href="#sems-rhel6-environment">SEMS rhel6 environment</a>
 
 
 ### ride/white
@@ -306,6 +307,30 @@ $ make -j16
 $ ctest -j16 \
 ```
 
+## Troubleshooting configuration problems
+
+There are situations were a particular developer on a particular system will
+not be able to cleanly reproduce a Trilinos configuration as described above.
+Some of the issues that can cause that are described here.
+
+The first set of problems that might occur are that the version of `git` that
+is loaded by sourcing `Trilinos/cmake/std/atdm/load-env.sh` for a given system
+may conflict with the developer's global `~/.gitconfig` file on that system.
+It may be that an older or newer version of git is loaded by the script
+(i.e. `<atdm-loaded-git>`) than the git version that the developer has been
+using on the system (i.e. `<developer-git>`) and therefore some of the
+settings in the developer's `~/.gitconfig` file may not be compatible with the
+different version of git.  One approach to address this is run `module list`
+to see the version of git that is loaded by this script and then to swap out
+that version of git for the developer's regular version of git using `module
+swap <atdm-loaded-git> <developer-git>`.  Or, the developer can just call
+`export PATH=<path-to-developers--git>/bin:$PATH` after sourcing
+`Trilinos/cmake/std/atdm/load-env.sh` to select the developer's regular
+version of git.  The git commands that are used by TriBITS, Trilinos, and the
+ATDM Trilinos configuration and testing scripts should work with just about
+any version of git 2.0+.  Another approach would be for the user to
+(temporarily) edit their `~/.gitconfig` file to address the problems.
+
 ## Directory structure and contents
 
 This base directory:
@@ -390,6 +415,4 @@ they support are:
   
 * `serrano/` and `chama/`: SNL HPC machines
 
-* RHEL6 systems with the SEMS NFS environment
-
-* ???
+* `rhel6/`: RHEL6 systems with the SEMS NFS environment

@@ -11,10 +11,6 @@ SET(APREPRO_VERSION_PATCH "0")
 SET(APREPRO_VERSION "${APREPRO_VERSION_MAJOR}.${APREPRO_VERSION_MINOR}")
 SET(APREPRO_VERSION_FULL "${APREPRO_VERSION}.${APREPRO_VERSION_PATCH}")
 
-IF (${CMAKE_PROJECT_NAME}_ENABLE_SEACASExodus)
-  ADD_DEFINITIONS(-DEXODUS_SUPPORT)
-ENDIF()
-
 INCLUDE_DIRECTORIES(
   ${CMAKE_CURRENT_SOURCE_DIR}
 )
@@ -43,7 +39,6 @@ SET(SOURCES
  apr_scanner.cc  
  apr_getline_int.c
  ${BISON_LIB_SOURCE}
- apr_exodus.cc
  apr_array.cc
 )
 
@@ -56,7 +51,7 @@ if(GENERATE_FLEX_FILES)
 
   add_custom_command(OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/apr_scanner.cc
                      COMMAND ${FLEX_EXE}
-                     ARGS -o apr_scanner.cc --noline
+                     ARGS -o apr_scanner.cc
 		        ${CMAKE_CURRENT_SOURCE_DIR}/aprepro.ll
                      MAIN_DEPENDENCY aprepro.ll
                      WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}

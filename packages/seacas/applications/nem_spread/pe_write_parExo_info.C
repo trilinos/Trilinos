@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2009-2017 National Technology & Engineering Solutions of
+ * Copyright (C) 2009 National Technology & Engineering Solutions of
  * Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -49,6 +49,12 @@
 #include <vector>           // for vector
 template <typename INT> struct ELEM_COMM_MAP;
 template <typename INT> struct NODE_COMM_MAP;
+
+#if __cplusplus > 199711L
+#define TOPTR(x) x.data()
+#else
+#define TOPTR(x) (x.empty() ? nullptr : &x[0])
+#endif
 
 namespace {
   template <typename INT>
@@ -129,9 +135,8 @@ void NemSpread<T, INT>::write_parExo_data(int mesh_exoid, int max_name_length, i
 
   if (ex_put_init_global(mesh_exoid, globals.Num_Node, globals.Num_Elem, globals.Num_Elem_Blk,
                          globals.Num_Node_Set, globals.Num_Side_Set) < 0) {
-    fprintf(stderr,
-            "[%s]: ERROR, Unable to put global initial "
-            "information in parallel mesh file!\n",
+    fprintf(stderr, "[%s]: ERROR, Unable to put global initial "
+                    "information in parallel mesh file!\n",
             yo);
     exit(1);
   }
@@ -321,8 +326,8 @@ void NemSpread<T, INT>::write_parExo_data(int mesh_exoid, int max_name_length, i
   bytes_out += 4 * sizeof(INT);
   tt1 = second();
 
-  if (ex_put_cmap_params(mesh_exoid, n_comm_ids.data(), n_comm_ncnts.data(), e_comm_ids.data(),
-                         e_comm_ecnts.data(), proc_for) < 0) {
+  if (ex_put_cmap_params(mesh_exoid, TOPTR(n_comm_ids), TOPTR(n_comm_ncnts), TOPTR(e_comm_ids),
+                         TOPTR(e_comm_ecnts), proc_for) < 0) {
     fprintf(stderr, "[%s]: ERROR, unable to output comm map params!\n", yo);
     ex_close(mesh_exoid);
     exit(1);
@@ -420,7 +425,7 @@ void NemSpread<T, INT>::write_parExo_data(int mesh_exoid, int max_name_length, i
     bytes_out += 3 * globals.Num_Node_Set * sizeof(INT);
     tt1 = second();
 
-    if (ex_put_ns_param_global(mesh_exoid, Node_Set_Ids, Num_Nodes_In_NS, glob_ns_df_cnts.data()) <
+    if (ex_put_ns_param_global(mesh_exoid, Node_Set_Ids, Num_Nodes_In_NS, TOPTR(glob_ns_df_cnts)) <
         0) {
       fprintf(stderr, "[%s]: ERROR, unable to output global node-set params\n", yo);
       ex_close(mesh_exoid);
@@ -439,7 +444,7 @@ void NemSpread<T, INT>::write_parExo_data(int mesh_exoid, int max_name_length, i
     bytes_out += 3 * globals.Num_Side_Set * sizeof(INT);
     tt1 = second();
 
-    if (ex_put_ss_param_global(mesh_exoid, Side_Set_Ids, Num_Elems_In_SS, glob_ss_df_cnts.data()) <
+    if (ex_put_ss_param_global(mesh_exoid, Side_Set_Ids, Num_Elems_In_SS, TOPTR(glob_ss_df_cnts)) <
         0) {
       fprintf(stderr, "[%s]: ERROR, unable to output global side-set params\n", yo);
       ex_close(mesh_exoid);
@@ -822,9 +827,9 @@ void NemSpread<T, INT>::write_parExo_data(int mesh_exoid, int max_name_length, i
      * Allocate memory for the elemental map. Currently this map is assigned
      * as a linear array since it is not really used.
      */
-    INT *iElem_Map = (INT *)array_alloc(
-        __FILE__, __LINE__, 1, globals.Num_Internal_Elems[iproc] + globals.Num_Border_Elems[iproc],
-        sizeof(INT));
+    INT *iElem_Map = (INT *)array_alloc(__FILE__, __LINE__, 1, globals.Num_Internal_Elems[iproc] +
+                                                                   globals.Num_Border_Elems[iproc],
+                                        sizeof(INT));
     for (INT i1 = 0; i1 < globals.Num_Internal_Elems[iproc] + globals.Num_Border_Elems[iproc];
          i1++) {
       iElem_Map[i1] = globals.GElems[iproc][i1] + 1;
@@ -1055,14 +1060,14 @@ void NemSpread<T, INT>::write_parExo_data(int mesh_exoid, int max_name_length, i
     }
 
     ex_set_specs set_specs{};
-    set_specs.sets_ids            = conc_ids.data();
-    set_specs.num_entries_per_set = conc_nodes.data();
-    set_specs.num_dist_per_set    = conc_df.data();
-    set_specs.sets_entry_index    = conc_nind.data();
-    set_specs.sets_dist_index     = conc_dind.data();
-    set_specs.sets_entry_list     = conc_nlist.data();
+    set_specs.sets_ids            = TOPTR(conc_ids);
+    set_specs.num_entries_per_set = TOPTR(conc_nodes);
+    set_specs.num_dist_per_set    = TOPTR(conc_df);
+    set_specs.sets_entry_index    = TOPTR(conc_nind);
+    set_specs.sets_dist_index     = TOPTR(conc_dind);
+    set_specs.sets_entry_list     = TOPTR(conc_nlist);
     set_specs.sets_extra_list     = nullptr;
-    set_specs.sets_dist_fact      = conc_sdf.data();
+    set_specs.sets_dist_fact      = TOPTR(conc_sdf);
     ex_put_concat_sets(mesh_exoid, EX_NODE_SET, &set_specs);
   }
   total_out_time += second() - tt1;
@@ -1165,14 +1170,14 @@ void NemSpread<T, INT>::write_parExo_data(int mesh_exoid, int max_name_length, i
     }
 
     ex_set_specs set_specs{};
-    set_specs.sets_ids            = conc_ids.data();
-    set_specs.num_entries_per_set = conc_sides.data();
-    set_specs.num_dist_per_set    = conc_dist.data();
-    set_specs.sets_entry_index    = conc_eind.data();
-    set_specs.sets_dist_index     = conc_dind.data();
-    set_specs.sets_entry_list     = conc_elist.data();
-    set_specs.sets_extra_list     = conc_slist.data();
-    set_specs.sets_dist_fact      = conc_sdflist.data();
+    set_specs.sets_ids            = TOPTR(conc_ids);
+    set_specs.num_entries_per_set = TOPTR(conc_sides);
+    set_specs.num_dist_per_set    = TOPTR(conc_dist);
+    set_specs.sets_entry_index    = TOPTR(conc_eind);
+    set_specs.sets_dist_index     = TOPTR(conc_dind);
+    set_specs.sets_entry_list     = TOPTR(conc_elist);
+    set_specs.sets_extra_list     = TOPTR(conc_slist);
+    set_specs.sets_dist_fact      = TOPTR(conc_sdflist);
     ex_put_concat_sets(mesh_exoid, EX_SIDE_SET, &set_specs);
   }
   PIO_Time_Array[19] += (second() - tt1);
@@ -1203,9 +1208,9 @@ void NemSpread<T, INT>::write_parExo_data(int mesh_exoid, int max_name_length, i
     bytes_out +=
         write_var_param(mesh_exoid, max_name_length, Restart_Info.NVar_Glob, Restart_Info.GV_Name,
                         Restart_Info.NVar_Node, Restart_Info.NV_Name, Restart_Info.NVar_Elem,
-                        Restart_Info.EV_Name, Restart_Info.GElem_TT.data(), Restart_Info.NVar_Nset,
-                        Restart_Info.NSV_Name, Restart_Info.GNset_TT.data(), Restart_Info.NVar_Sset,
-                        Restart_Info.SSV_Name, Restart_Info.GSset_TT.data());
+                        Restart_Info.EV_Name, TOPTR(Restart_Info.GElem_TT), Restart_Info.NVar_Nset,
+                        Restart_Info.NSV_Name, TOPTR(Restart_Info.GNset_TT), Restart_Info.NVar_Sset,
+                        Restart_Info.SSV_Name, TOPTR(Restart_Info.GSset_TT));
 
     PIO_Time_Array[21] = (second() - tt1);
     total_out_time += PIO_Time_Array[21];

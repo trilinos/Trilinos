@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005-2017 National Technology & Engineering Solutions
+ * Copyright (c) 2005 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -58,17 +58,19 @@
 
 int ex_put_eb_info_global(int exoid, void_int *el_blk_ids, void_int *el_blk_cnts)
 {
+  const char *func_name = "ex_put_eb_info_global";
+
   int  varid, status;
   char errmsg[MAX_ERR_LENGTH];
 
   EX_FUNC_ENTER();
-  ex_check_valid_file_id(exoid, __func__);
+  ex_check_valid_file_id(exoid);
 
   /* Find the variable ID for the element block IDs */
   if ((status = nc_inq_varid(exoid, VAR_ELBLK_IDS_GLOBAL, &varid)) != NC_NOERR) {
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to find variable ID for \"%s\" in file ID %d",
              VAR_ELBLK_IDS_GLOBAL, exoid);
-    ex_err(__func__, errmsg, status);
+    ex_err(func_name, errmsg, status);
 
     EX_FUNC_LEAVE(EX_FATAL);
   }
@@ -83,7 +85,7 @@ int ex_put_eb_info_global(int exoid, void_int *el_blk_ids, void_int *el_blk_cnts
   if (status != NC_NOERR) {
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to output variable \"%s\" in file ID %d",
              VAR_ELBLK_IDS_GLOBAL, exoid);
-    ex_err(__func__, errmsg, status);
+    ex_err(func_name, errmsg, status);
 
     EX_FUNC_LEAVE(EX_FATAL);
   }
@@ -92,7 +94,7 @@ int ex_put_eb_info_global(int exoid, void_int *el_blk_ids, void_int *el_blk_cnts
   if ((status = nc_inq_varid(exoid, VAR_ELBLK_CNT_GLOBAL, &varid)) != NC_NOERR) {
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to find variable ID for \"%s\" in file ID %d",
              VAR_ELBLK_CNT_GLOBAL, exoid);
-    ex_err(__func__, errmsg, status);
+    ex_err(func_name, errmsg, status);
 
     EX_FUNC_LEAVE(EX_FATAL);
   }
@@ -107,7 +109,7 @@ int ex_put_eb_info_global(int exoid, void_int *el_blk_ids, void_int *el_blk_cnts
   if (status != NC_NOERR) {
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to output variable \"%s\" in file ID %d",
              VAR_ELBLK_CNT_GLOBAL, exoid);
-    ex_err(__func__, errmsg, status);
+    ex_err(func_name, errmsg, status);
 
     EX_FUNC_LEAVE(EX_FATAL);
   }

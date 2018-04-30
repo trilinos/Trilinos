@@ -1,4 +1,4 @@
-C Copyright (C) 2009-2017 National Technology & Engineering Solutions
+C Copyright (C) 2009 National Technology & Engineering Solutions
 C of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C NTESS, the U.S. Government retains certain rights in this software.
 C 
@@ -1270,10 +1270,8 @@ C
       INTEGER*4 RGB(3), inten, irange, irang2, isplus
       integer*4 iv1, iv2, iv3, iv4, ib, ig, ir
       integer*4 ijump, zero
-      integer*4 imaxval
 
       zero = 0
-      imaxval = maxval
 C
 C          copy the inputs to locals
 C
@@ -1306,13 +1304,13 @@ c
 c          f is the distance (0.-.999) along an edge between two major hues
 c
       F = HUE - IJUMP
-      INTEN = LIT*FLOAT(2*IMAXVAL+1)
+      INTEN = LIT*FLOAT(2*MAXVAL+1)
 c
 c          irange is the range a color may take on (i.e. maxval adjusted for
 c                 intensity
 c          irang2 is irange adjusted for saturation
 c
-      IRANGE = IMAXVAL - ABS(INTEN-IMAXVAL)
+      IRANGE = MAXVAL - ABS(INTEN-MAXVAL)
 C ... This is done for the 8-byte systems so we can pass native int to mod intrinsic
       IRANGT = IRANGE
       IRANG2 = 2*(INT((IRANGT/2+1)*SAT)) + MOD(IRANGT,2)
@@ -1320,8 +1318,8 @@ c
 c          isplus is an additive to account for saturation
 c
       ISPLUS = (IRANGE-IRANG2)/2
-      IV1 = MIN(INTEN,IMAXVAL) - ISPLUS
-      IV2 = MAX(zero,INTEN-IMAXVAL) + ISPLUS
+      IV1 = MIN(INTEN,MAXVAL) - ISPLUS
+      IV2 = MAX(zero,INTEN-MAXVAL) + ISPLUS
       IV3 = F*IRANG2 + .5 + IV2
       IV4 = (1.-F)*IRANG2 + .5 + IV2
       GOTO (610,620,630,640,650,660),IJUMP+1
