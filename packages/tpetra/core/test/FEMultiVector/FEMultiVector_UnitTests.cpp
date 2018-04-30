@@ -82,7 +82,8 @@ namespace {
     const GST INVALID = Teuchos::OrdinalTraits<GST>::invalid ();
     const RCP<const Comm<int> > comm = Tpetra::getDefaultComm();
     const int myRank = comm->getRank();
-    //    const int numProcs = comm->getSize();
+    const int numProcs = comm->getSize();
+    if(numProcs==1) return;
 
 
     // Prepare for verbose output, if applicable.
@@ -103,7 +104,7 @@ namespace {
 
       // create Map
       RCP<const Tpetra::Map<LO, GO, NO> > map =
-        rcp( new Tpetra::Map<LO,GO,NO>(INVALID, num_local_elements, comm));
+        rcp( new Tpetra::Map<LO,GO,NO>(INVALID, num_local_elements, 0, comm));
 
       // create CrsGraph object
       RCP<Tpetra::CrsGraph<LO, GO, NO> > graph =
@@ -111,18 +112,17 @@ namespace {
 
       // Create a simple tridiagonal source graph.
       Array<GO> entry(1);
-      LO row = 0;
-      for (size_t i = 0; i < map->getNodeNumElements (); ++i, ++row) {
-        const GO globalrow = map->getGlobalElement (row);
+      for (size_t i = 0; i < map->getNodeNumElements (); i++) {
+        const GO globalrow = map->getGlobalElement (i);
         entry[0] = globalrow;
         graph->insertGlobalIndices (globalrow, entry());
-        if (globalrow != map->getMinGlobalIndex()) {
+        if (myRank!=0) {
           entry[0] = globalrow-1;
           graph->insertGlobalIndices (globalrow, entry());
         }
-        if (globalrow != map->getMaxGlobalIndex()) {
+        if (myRank!=numProcs-1) {
           entry[0] = globalrow+1;
-          graph->insertGlobalIndices (globalrow+1, entry());
+          graph->insertGlobalIndices (globalrow, entry());
         }       
       }
       graph->fillComplete();
@@ -133,6 +133,7 @@ namespace {
       RCP<const Tpetra::Import<LO,GO,NO> > importer = graph->getImporter();
       Tpetra::MultiVector<Scalar,LO,GO,NO> Vdomain(domainMap,1), Vcolumn(graph->getColMap(),1);
       Tpetra::FEMultiVector<Scalar,LO,GO,NO> Vfe(domainMap,importer,1);
+      if(importer.is_null()) throw std::runtime_error("No valid importer");
 
       // 1) Test domain -> column
       size_t Ndomain = domainMap->getNodeNumElements();
