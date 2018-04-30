@@ -137,20 +137,25 @@ evalModelImpl(const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs,
     }
 	
 	case GENERALIZED_ALPHA_AFORM: { 
-      //Specific for the HHT Alpha stepper.  May want to redesign this for a generic 
+      //Specific for the Generalized-Alpha stepper.  May want to redesign this for a generic 
       //second order scheme to not have an if statement here...  
-      appInArgs.set_x_dot_dot(inArgs.get_x()); 
+      RCP<Thyra::VectorBase<Scalar> > acc = Thyra::createMember(inArgs.get_x()->space());
+      //compute the acceleration, a_{n+1} = (1-\alpha_m) * a_{n+1} + \alpha_m * a_n
+      Thyra::V_StVpStV(Teuchos::ptrFromRef(*acc), alpha_m_, *a_, (1.0-alpha_m_), *inArgs.get_x());
+      appInArgs.set_x_dot_dot(acc); 
+	  
       RCP<Thyra::VectorBase<Scalar> > velocity = Thyra::createMember(inArgs.get_x()->space());
-      //compute the velocity, v_{n+1}(a_{n+1}) = velocity_{pred} + \gamma dt a_{n+1}
-      Thyra::V_StVpStV(Teuchos::ptrFromRef(*velocity), 1.0, *v_pred_, (1.0+alpha_f_)*delta_t_*gamma_, *inArgs.get_x());
+      //compute the velocity, v_{n+1}(a_{n+1}) = velocity_{pred} + (1-\alpha_f)*\gamma * dt * a_{n+1}
+      Thyra::V_StVpStV(Teuchos::ptrFromRef(*velocity), 1.0, *v_pred_, (1.0-alpha_f_)*delta_t_*gamma_, *inArgs.get_x());
       appInArgs.set_x_dot(velocity); 
       RCP<Thyra::VectorBase<Scalar> > displacement = Thyra::createMember(inArgs.get_x()->space());
-      //compute the displacement, d_{n+1}(a_{n+1}) = displacement_{pred} + \beta dt^2 a_{n+1}
-      Thyra::V_StVpStV(Teuchos::ptrFromRef(*displacement), 1.0, *d_pred_, (1.0+alpha_f_)*beta_*delta_t_*delta_t_, *inArgs.get_x()); 
+      //compute the displacement, d_{n+1}(a_{n+1}) = displacement_{pred} + (1-\alpha_f)*\beta *dt^2 *a_{n+1}
+      Thyra::V_StVpStV(Teuchos::ptrFromRef(*displacement), 1.0, *d_pred_, (1.0-alpha_f_)*beta_*delta_t_*delta_t_, *inArgs.get_x()); 
       appInArgs.set_x(displacement); 
+	  
       appInArgs.set_W_x_dot_dot_coeff(1.0-alpha_m_);                    // da/da
-      appInArgs.set_alpha((1.0-alpha_f_)*gamma_*delta_t_);                 // dv/da
-      appInArgs.set_beta((1.0-alpha_f_)*beta_*delta_t_*delta_t_);          // dd/da
+      appInArgs.set_alpha((1.0-alpha_f_)*gamma_*delta_t_);              // dv/da
+      appInArgs.set_beta((1.0-alpha_f_)*beta_*delta_t_*delta_t_);       // dd/da
   
       appInArgs.set_t(t_);
       for (int i=0; i<appModel_->Np(); ++i) {

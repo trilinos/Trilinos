@@ -34,26 +34,21 @@ prediction(Thyra::VectorBase<Scalar>& dPred,
 #ifdef VERBOSE_DEBUG_OUTPUT
   *out_ << "DEBUG: " << __PRETTY_FUNCTION__ << "\n";
 #endif
-  //dPred = d_n + dt*v_n + dt*dt/2.0*(1.0-2.0*\beta)*a_n
-  Scalar aConst = dt*dt*(0.5-beta_);
-  Thyra::V_StVpStV(Teuchos::ptrFromRef(dPred), dt, v, aConst, a);
-  Thyra::Vp_V(Teuchos::ptrFromRef(dPred), d, 1.0);
-  //dPred = (1-\alpha)*dPred + \alpha*d_n
-  Thyra::V_StVpStV(Teuchos::ptrFromRef(dPred), 1.0-alpha_f_, dPred, alpha_f_, d);
+  //dPred = (1-\alpha_f)*(d_n + dt*v_n + dt*dt/2.0*(1.0-2.0*\beta)*a_n)+ \alpha_f*d_n
+  Thyra::V_StVpStV(Teuchos::ptrFromRef(dPred), 1.0, d, dt*(1.0-alpha_f_), v);
+  Thyra::Vp_StV(Teuchos::ptrFromRef(dPred), dt*dt*(1.0-alpha_f_)*(0.5-beta_), a);
   
-  //vPred = v_n + dt*(1.0-\gamma)*a_n
-  Thyra::V_StVpStV(Teuchos::ptrFromRef(vPred), 1.0, v, dt*(1.0-gamma_), a);
-  //vPred = (1-\alpha)*vPred + \alpha*v_n
-  Thyra::V_StVpStV(Teuchos::ptrFromRef(vPred), 1.0-alpha_f_, vPred, alpha_f_, v);
+  //vPred = (1-\alpha_f)* (v_n + dt*(1.0-\gamma)*a_n) + \alpha* v_n
+  Thyra::V_StVpStV(Teuchos::ptrFromRef(vPred), 1.0, v, dt*(1.0-gamma_)*(1.0-alpha_f_), a);
 }
 
 template<class Scalar>
 void StepperGeneralizedAlpha<Scalar>::
 correction(Thyra::VectorBase<Scalar>& d,
-                    Thyra::VectorBase<Scalar>& v,
-                    const Thyra::VectorBase<Scalar>& a_old,
-					const Thyra::VectorBase<Scalar>& a,
-                    const Scalar dt) const
+           Thyra::VectorBase<Scalar>& v,
+           const Thyra::VectorBase<Scalar>& a_old,
+		   const Thyra::VectorBase<Scalar>& a,
+           const Scalar dt) const
 {
 #ifdef VERBOSE_DEBUG_OUTPUT
   *out_ << "DEBUG: " << __PRETTY_FUNCTION__ << "\n";
@@ -196,7 +191,7 @@ void StepperGeneralizedAlpha<Scalar>::takeStep(
     Scalar t = time+ (1.0-alpha_f_)*dt;
 
     //inject d_pred, v_pred, a and other relevant data into wrapperModel
-    wrapperModel->initializeNewmark(a_old,v_pred,d_pred,dt,t,beta_,gamma_);
+    wrapperModel->initializeNewmark(a_old,v_pred,d_pred,dt,t,beta_,gamma_,alpha_f_, alpha_m_);
 
     //Solve for new acceleration
     const Thyra::SolveStatus<Scalar> sStatus = this->solveImplicitODE(a_new);
@@ -306,6 +301,9 @@ void StepperGeneralizedAlpha<Scalar>::setParameterList(
     *out << "\n  \nNo Generalized-Alpha Parameters sublist found in input file; "
          << "using default values of Alpha_f=0 and Alpha_m=0 .\n\n";
   }
+ // Scalar rho=0.99;
+ // alpha_f_=rho/(1.0+rho);
+ // alpha_m_=(2.0*rho-1.0)/(1.0+rho);
   gamma_ = 0.5 + alpha_f_ - alpha_m_;
   beta_ = 0.25*(0.5+gamma_)*(0.5+gamma_); 
 }

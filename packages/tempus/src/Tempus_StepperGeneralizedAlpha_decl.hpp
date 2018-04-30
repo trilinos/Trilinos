@@ -64,10 +64,7 @@ public:
 
     /// Get a default (initial) StepperState
     virtual Teuchos::RCP<Tempus::StepperState<Scalar> > getDefaultStepperState();
-    virtual Scalar getOrder() const {
-      if (gamma_ == 0.5) return 2.0;
-      else return 1.0;
-    }
+    virtual Scalar getOrder() const { return 2.0; }
     virtual Scalar getOrderMin() const {return 1.0;}
     virtual Scalar getOrderMax() const {return 2.0;}
 
