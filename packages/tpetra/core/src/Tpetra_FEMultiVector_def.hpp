@@ -59,6 +59,7 @@ FEMultiVector(const Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> > 
               const size_t numVecs,
               const bool zeroOut):
   base_type(importer.is_null()? map:importer->getTargetMap(),numVecs,zeroOut),
+  inactiveMultiVector_(0),
   activeMultiVector_(FE_ACTIVE_TARGET),
   importer_(importer) {
   // Sanity check the importer
@@ -74,7 +75,7 @@ FEMultiVector(const Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> > 
     }
     else {
       //   2) If not call a new constructor for the inactive guy (w/ source map)
-      inactiveMultiVector_ = Teuchos::rcp(new base_type(importer_->getSourceMap(),numVecs,zeroOut));
+      inactiveMultiVector_ = new base_type(importer_->getSourceMap(),numVecs,zeroOut);
     }
 
   }
@@ -106,7 +107,7 @@ void FEMultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::switchActiveMulti
   Teuchos::RCP<const map_type> temp_map = this->getMap();
   dual_view_type  temp1, temp2;
   Teuchos::Array<size_t> temp3; // FIXME: This is a deep copy (see note in MultiVector)
-  temp1 = this->inactiveMultiVector_->view_;
+  temp1 = inactiveMultiVector_->view_;
   temp2 = inactiveMultiVector_->origView_;
   temp3 = inactiveMultiVector_->whichVectors_;
 
