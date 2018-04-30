@@ -46,6 +46,7 @@
 #include "Tpetra_CrsMatrix.hpp"
 #include "Tpetra_DefaultPlatform.hpp"
 #include "Teuchos_StandardParameterEntryValidators.hpp"
+#include "Ifpack2_Details_determineLocalTriangularStructure.hpp"
 
 #ifdef HAVE_IFPACK2_SHYLU_NODEHTS
 # include "shylu_hts.hpp"
@@ -296,6 +297,8 @@ void LocalSparseTriangularSolver<MatrixType>::initializeState ()
   initializeTime_ = 0.0;
   computeTime_ = 0.0;
   applyTime_ = 0.0;
+  uplo_ = "N";
+  diag_ = "D";
 }
 
 template<class MatrixType>
@@ -453,6 +456,29 @@ initialize ()
     isInternallyChanged_ = true;
   }
 
+  auto lclMatrix = A_crs_->getLocalMatrix ();
+  auto lclRowMap = A_crs_->getRowMap ()->getLocalMap ();
+  auto lclColMap = A_crs_->getColMap ()->getLocalMap ();
+  using Ifpack2::Details::determineLocalTriangularStructure;
+  // mfh 30 Apr 2018: See GitHub Issue #2658 for why this is false.
+  constexpr bool ignoreMapsForTriangularStructure = true;
+  auto result =
+    determineLocalTriangularStructure (lclMatrix.graph, lclRowMap, lclColMap,
+                                       ignoreMapsForTriangularStructure);
+  using LO = local_ordinal_type;
+  const LO lclNumRows = lclRowMap.getNodeNumElements ();
+  const LO lclNumCols = lclColMap.getNodeNumElements ();
+  // NOTE (mfh 30 Apr 2018) Original test for implicit unit diagonal was
+  //
+  // (A_crs_->getNodeNumDiags () < A_crs_->getNodeNumRows ()) ? "U" : "N";
+  //
+  // I don't agree with this test -- it's not an implicitly stored
+  // unit diagonal if there are SOME entries -- but I'm leaving it for
+  // backwards compatibility.
+  this->diag_ = (result.diagCount < lclNumRows) ? "U" : "D";
+  this->uplo_ = result.couldBeLowerTriangular ? "L" :
+    (result.couldBeUpperTriangular ? "U" : "N");
+
   isInitialized_ = true;
   ++numInitialize_;
 }
@@ -518,12 +544,10 @@ apply (const Tpetra::MultiVector<scalar_type, local_ordinal_type,
     else {
       Teuchos::RCP<const crs_matrix_type> A_crs =
           Teuchos::rcp_dynamic_cast<const crs_matrix_type> (A_);
-      const std::string uplo = A_crs->isUpperTriangular () ? "U" :
-        (A_crs->isLowerTriangular () ? "L" : "N");
+      const std::string uplo = this->uplo_;
       const std::string trans = (mode == Teuchos::CONJ_TRANS) ? "C" :
         (mode == Teuchos::TRANS ? "T" : "N");
-      const std::string diag =
-        (A_crs_->getNodeNumDiags () < A_crs_->getNodeNumRows ()) ? "U" : "N";
+      const std::string diag = this->diag_;
       *out_ << "uplo=\"" << uplo
             << "\", trans=\"" << trans
             << "\", diag=\"" << diag << "\"" << std::endl;
