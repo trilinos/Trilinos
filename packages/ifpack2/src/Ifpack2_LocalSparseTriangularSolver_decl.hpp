@@ -378,7 +378,7 @@ private:
   ///   otherwise.
   std::string uplo_;
   /// \brief "U" if the matrix is known to have an implicitly stored
-  ///   unit diagonal, else "D".
+  ///   unit diagonal, else "N".
   std::string diag_;
 
   /// \brief The purely local part of apply().
@@ -405,6 +405,12 @@ private:
               const Teuchos::ETransp mode,
               const scalar_type& alpha,
               const scalar_type& beta) const;
+
+  //! Replacement for Tpetra::CrsMatrix::localSolve.
+  void
+  localTriangularSolve (const MV& Y,
+                        MV& X,
+                        const Teuchos::ETransp mode) const;
 
   void initializeState();
 };
