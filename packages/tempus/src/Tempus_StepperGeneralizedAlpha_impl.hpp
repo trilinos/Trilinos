@@ -285,25 +285,38 @@ void StepperGeneralizedAlpha<Scalar>::setParameterList(
     Teuchos::ParameterList &HHTalphaPL =
       this->stepperPL_->sublist("Generalized-Alpha Parameters", true);
     std::string scheme_name = HHTalphaPL.get("Scheme Name", "Not Specified");
-    alpha_f_ = HHTalphaPL.get("Alpha_f", 0.0);
-	alpha_m_ = HHTalphaPL.get("Alpha_m", 0.0);
-    TEUCHOS_TEST_FOR_EXCEPTION( (alpha_f_ <0.0) || (alpha_m_ < 0.0) || 
-	  (alpha_f_ >1.0) || (alpha_m_ >1.0) || alpha_f_<alpha_m_,
-      std::logic_error,
-         "\nError in 'Generalized-Alpha' stepper: invalid value of Alpha_f = "
-         << alpha_f_ << "; Alpha_m = " << alpha_m_ 
-		 << ".  Please select 0<=Alpha_f<=1, 0<=Alpha_m<=1 and Alpha_f>=Alpha_m \n");
-    *out << "\n \nScheme Name = Generalized-Alpha.  Setting Alpha_f = "
+	Scalar* rhoinf = HHTalphaPL.getPtr<Scalar>("Rho");
+	if( rhoinf ) {
+		Scalar rho = *rhoinf;
+		TEUCHOS_TEST_FOR_EXCEPTION( rho <0.0 || rho >1.0,
+		  std::logic_error,
+         "\nError in 'Generalized-Alpha' stepper: invalid value of Rho = "
+         << rho 
+		 << ".  Please select 0<=rho<=1 \n");
+		alpha_m_ = (2.0*rho-1.0)/(1.0+rho);
+		alpha_f_ = rho/(1.0+rho);
+		*out << "\n \nScheme Name = Generalized-Alpha.  Setting Rho =" 
+		   << rho << "; Alpha_f = "
            << alpha_f_ << "; Alpha_m= " << alpha_m_ 
            << "\n from Generalized-Alpha Parameters in input file.\n\n";
+	} else {
+		alpha_f_ = HHTalphaPL.get("Alpha_f", 0.0);
+		alpha_m_ = HHTalphaPL.get("Alpha_m", 0.0);
+		TEUCHOS_TEST_FOR_EXCEPTION( (alpha_f_ <0.0) || (alpha_m_ < 0.0) || 
+		(alpha_f_ >1.0) || (alpha_m_ >1.0) || alpha_f_<alpha_m_,
+		   std::logic_error,
+           "\nError in 'Generalized-Alpha' stepper: invalid value of Alpha_f = "
+           << alpha_f_ << "; Alpha_m = " << alpha_m_ 
+		   << ".  Please select 0<=Alpha_f<=1, 0<=Alpha_m<=1 and Alpha_f>=Alpha_m \n");
+		*out << "\n \nScheme Name = Generalized-Alpha.  Setting Alpha_f = "
+           << alpha_f_ << "; Alpha_m= " << alpha_m_ 
+           << "\n from Generalized-Alpha Parameters in input file.\n\n";
+	}
   }
   else {
     *out << "\n  \nNo Generalized-Alpha Parameters sublist found in input file; "
          << "using default values of Alpha_f=0 and Alpha_m=0 .\n\n";
   }
- // Scalar rho=0.99;
- // alpha_f_=rho/(1.0+rho);
- // alpha_m_=(2.0*rho-1.0)/(1.0+rho);
   gamma_ = 0.5 + alpha_f_ - alpha_m_;
   beta_ = 0.25*(0.5+gamma_)*(0.5+gamma_); 
 }
