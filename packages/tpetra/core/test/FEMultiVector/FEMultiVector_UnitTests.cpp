@@ -62,6 +62,19 @@
 
 namespace {
 
+  template<class T1, class T2>
+  void vector_check(size_t N, T1 & v1, T2 & v2) {
+    int myRank = v1.getMap()->getComm()->getRank();
+    for(size_t i=0; i<N; i++)
+      if(v1.getDataNonConst(0)[i] != v2.getDataNonConst(0)[i]) {
+        std::stringstream oss;
+        oss<<"["<<myRank<<"] Error: Mismatch on unknown "<<i<<" "<<v1.getDataNonConst(0)[i]<<" != "<<v2.getDataNonConst(0)[i]<<std::endl;
+        throw std::runtime_error(oss.str());
+      }
+  }
+
+
+
   // UNIT TESTS
   //
 
@@ -129,24 +142,40 @@ namespace {
 
 
       Scalar ZERO = Teuchos::ScalarTraits<Scalar>::zero();
+      Scalar ONE = Teuchos::ScalarTraits<Scalar>::one();
       RCP<const Tpetra::Map<LO,GO,NO> > domainMap = graph->getDomainMap();
+      RCP<const Tpetra::Map<LO,GO,NO> > columnMap = graph->getColMap();
       RCP<const Tpetra::Import<LO,GO,NO> > importer = graph->getImporter();
-      Tpetra::MultiVector<Scalar,LO,GO,NO> Vdomain(domainMap,1), Vcolumn(graph->getColMap(),1);
+      Tpetra::MultiVector<Scalar,LO,GO,NO> Vdomain(domainMap,1), Vcolumn(columnMap,1);
       Tpetra::FEMultiVector<Scalar,LO,GO,NO> Vfe(domainMap,importer,1);
+      size_t Ndomain = domainMap->getNodeNumElements();
+      size_t Ncolumn = domainMap->getNodeNumElements();
+
       if(importer.is_null()) throw std::runtime_error("No valid importer");
 
-      // 1) Test domain -> column
-      size_t Ndomain = domainMap->getNodeNumElements();
-      for(size_t i=0; i<Ndomain; i++)
-        Vdomain.getDataNonConst(0)[i] = domainMap->getGlobalElement(i);
+      // 1) Test column -> domain (no off-proc addition)
       Vcolumn.putScalar(ZERO);
-      Vcolumn.doImport(Vdomain,*importer,Tpetra::ADD);
+      for(size_t i=0; i<Ndomain; i++)
+        Vcolumn.getDataNonConst(0)[i] = domainMap->getGlobalElement(i);
+      Vdomain.doExport(Vcolumn,*importer,Tpetra::ADD);
+
+      Vfe.beginFill();
+      Vfe.putScalar(ZERO);
+      for(size_t i=0; i<Ndomain; i++)
+        Vfe.getDataNonConst(0)[i] = domainMap->getGlobalElement(i);
+      Vfe.endFill();
+      vector_check(Ndomain,Vfe,Vdomain);
+
+      // 2) Test column -> domain (with off-proc addition)
+      Vdomain.putScalar(ZERO);
+      Vcolumn.putScalar(ONE);
+      Vdomain.doExport(Vcolumn,*importer,Tpetra::ADD);
 
       Vfe.putScalar(ZERO);
-      //      for(size_t i=0; i<Ndomain; i++)
-        //Vdomain->getDataNonConst(0)[i] = domainMap->getGlobalElement(i);
-      
-
+      Vfe.beginFill();
+      Vfe.putScalar(ONE);
+      Vfe.endFill();
+      vector_check(Ncolumn,Vfe,Vdomain);
 
     } catch (std::exception& e) {
       err << "Proc " << myRank << ": " << e.what () << std::endl;
