@@ -349,6 +349,15 @@ private:
 
   bool isInitialized_;
   bool isComputed_;
+  /// \brief True if and only if this class' internal storage
+  ///   representation of the matrix is not the same as A_.
+  ///
+  /// If true, then one of two things has happened:
+  ///
+  /// <ol>
+  /// <li> A_crs_ is actually a copy, with permuted / reversed storage. </li>
+  /// <li> htsImpl_->initialize(*A_crs_) has been called. </li>
+  /// </ol>
   bool isInternallyChanged_;
   bool reverseStorage_;
 
@@ -363,6 +372,14 @@ private:
   //! Optional HTS implementation.
   class HtsImpl;
   Teuchos::RCP<HtsImpl> htsImpl_;
+
+  /// \brief "L" if the matrix is locally lower triangular, "U" if the
+  ///   matrix is locally upper triangular, or "N" if unknown or
+  ///   otherwise.
+  std::string uplo_;
+  /// \brief "U" if the matrix is known to have an implicitly stored
+  ///   unit diagonal, else "D".
+  std::string diag_;
 
   /// \brief The purely local part of apply().
   ///
