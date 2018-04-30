@@ -145,7 +145,7 @@ namespace Tpetra {
     clone (const Teuchos::RCP<Node2>& node2) const;
 
     //! Destructor (virtual for memory safety of derived classes).
-    virtual ~FEMultiVector () {}
+    virtual ~FEMultiVector () {delete inactiveMultiVector_;}
 
     //@}
     //! @name Post-construction modification routines
@@ -196,7 +196,7 @@ namespace Tpetra {
     void switchActiveMultiVector();
 
     // This is whichever multivector isn't currently active
-    Teuchos::RCP<MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> > inactiveMultiVector_;
+    MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> * inactiveMultiVector_;
     FEWhichActive activeMultiVector_;
 
     // Importer
