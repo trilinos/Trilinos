@@ -1193,6 +1193,11 @@ using enable_if_t = typename std::enable_if<B,T>::type;
  * \brief ROL's risk measure implementations.
 */ 
 
+/** @defgroup dynamic_group Dynamic functions
+ *  @ingroup interface_group
+ *  \brief ROL's interfaces for time-dependent constraints and objectives
+ */
+
 /** @defgroup examples_group Examples
  *  \brief ROL's examples
  *  <ul>
