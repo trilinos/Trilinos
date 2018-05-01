@@ -675,6 +675,14 @@ public:
     ahwv.zero();
   }
 
+  virtual void applyPreconditioner(Vector<Real> &pv,
+                                   const Vector<Real> &v,
+                                   const Vector<Real> &x,
+                                   const Vector<Real> &g,
+                                   Real &tol) {
+    pv.set(v.dual());
+  }
+
 }; // class Constraint_SimOpt
 
 } // namespace ROL
