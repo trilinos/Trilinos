@@ -1,4 +1,4 @@
-// @HEADER 
+// @HEADER
 // ***********************************************************************
 //
 //          Tpetra: Templated Linear Algebra Services Package
@@ -65,6 +65,7 @@
 #include "Tpetra_Import_Util2.hpp"
 #include "Tpetra_Details_packCrsGraph.hpp"
 #include "Tpetra_Details_unpackCrsGraphAndCombine.hpp"
+#include "Tpetra_Details_determineLocalTriangularStructure.hpp"
 #include <algorithm>
 #include <limits>
 #include <sstream>
@@ -4760,62 +4761,26 @@ namespace Tpetra {
   CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::
   computeLocalTriangularProperties ()
   {
-    using Teuchos::arcp;
-    using Teuchos::ArrayRCP;
-    using Teuchos::ParameterList;
-    using Teuchos::parameterList;
-    using Teuchos::rcp;
-    typedef GlobalOrdinal GO;
-    typedef LocalOrdinal LO;
-
-    typename local_graph_type::row_map_type d_ptrs = lclGraph_.row_map;
-    typename local_graph_type::entries_type d_inds = lclGraph_.entries;
-
-    const char tfecfFuncName[] = "computeLocalTriangularProperties()";
+    using ::Tpetra::Details::determineLocalTriangularStructure;
 
     // Reset local properties
-    upperTriangular_ = true;
-    lowerTriangular_ = true;
-    nodeMaxNumRowEntries_ = 0;
-    nodeNumDiags_         = 0;
+    this->lowerTriangular_ = true;
+    this->upperTriangular_ = true;
+    this->nodeMaxNumRowEntries_ = 0;
+    this->nodeNumDiags_         = 0;
 
-    // Compute triangular properties
-    const size_t numLocalRows = getNodeNumRows ();
-    for (size_t localRow = 0; localRow < numLocalRows; ++localRow) {
-      const GO globalRow = rowMap_->getGlobalElement (localRow);
-      const LO rlcid = colMap_->getLocalElement (globalRow);
-
-      // It's entirely possible that the local matrix has no entries
-      // in the column corresponding to the current row.  In that
-      // case, the column Map may not necessarily contain that GID.
-      // This is why we check whether rlcid is "invalid" (which means
-      // that globalRow is not a GID in the column Map).
-      if (rlcid != Teuchos::OrdinalTraits<LO>::invalid ()) {
-        TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-          rlcid + 1 >= static_cast<LO> (d_ptrs.dimension_0 ()),
-          std::runtime_error, ": The given row Map and/or column Map is/are "
-          "not compatible with the provided local graph.");
-        if (d_ptrs(rlcid) != d_ptrs(rlcid + 1)) {
-          const size_t smallestCol =
-            static_cast<size_t> (d_inds(d_ptrs(rlcid)));
-          const size_t largestCol =
-            static_cast<size_t> (d_inds(d_ptrs(rlcid + 1)-1));
-          if (smallestCol < localRow) {
-            upperTriangular_ = false;
-          }
-          if (localRow < largestCol) {
-            lowerTriangular_ = false;
-          }
-          for (size_t i = d_ptrs(rlcid); i < d_ptrs(rlcid + 1); ++i) {
-            if (d_inds(i) == rlcid) {
-              ++nodeNumDiags_;
-            }
-          }
-        }
-        nodeMaxNumRowEntries_ =
-          std::max (static_cast<size_t> (d_ptrs(rlcid + 1) - d_ptrs(rlcid)),
-                    nodeMaxNumRowEntries_);
-      }
+    if (this->rowMap_.get () != nullptr && this->colMap_.get() != nullptr) {
+      auto lclRowMap = this->rowMap_->getLocalMap ();
+      auto lclColMap = this->colMap_->getLocalMap ();
+      // mfh 01 May 2018: See GitHub Issue #2658.
+      constexpr bool ignoreMapsForTriStruct = true;
+      auto result =
+        determineLocalTriangularStructure (this->lclGraph_, lclRowMap,
+                                           lclColMap, ignoreMapsForTriStruct);
+      this->lowerTriangular_ = result.couldBeLowerTriangular;
+      this->upperTriangular_ = result.couldBeUpperTriangular;
+      this->nodeMaxNumRowEntries_ = result.maxNumRowEnt;
+      this->nodeNumDiags_         = result.diagCount;
     }
   }
 
