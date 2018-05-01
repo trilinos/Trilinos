@@ -60,6 +60,7 @@
 #include <string>
 #include <sstream>
 #include <limits>
+#include <type_traits>
 #include <Teuchos_ScalarTraits.hpp>
 #include <Teuchos_TestForException.hpp>
 #include <ROL_Ptr.hpp>
@@ -554,6 +555,7 @@ namespace ROL {
     KRYLOV_CG = 0,
     KRYLOV_CR,
     KRYLOV_GMRES,
+    KRYLOV_MINRES,
     KRYLOV_USERDEFINED,
     KRYLOV_LAST
   };
@@ -564,6 +566,7 @@ namespace ROL {
       case KRYLOV_CG:          retString = "Conjugate Gradients"; break;
       case KRYLOV_CR:          retString = "Conjugate Residuals"; break;
       case KRYLOV_GMRES:       retString = "GMRES";               break;
+      case KRYLOV_MINRES:      retString = "MINRES";              break;
       case KRYLOV_USERDEFINED: retString = "User Defined";        break;
       case KRYLOV_LAST:        retString = "Last Type (Dummy)";   break;
       default:                 retString = "INVALID EKrylov";
@@ -983,6 +986,21 @@ public:
 }; // class NotImplemented
  
 
+#if __cplusplus >= 201402L // using C++14
+
+using std::enable_if_t;
+
+#else // No C++14
+
+template<bool B, class T=void>
+using enable_if_t = typename std::enable_if<B,T>::type;
+
+#endif
+
+
+
+
+
 } // namespace Exception
 
 
@@ -1174,6 +1192,11 @@ public:
  *  @ingroup stochastic_group
  * \brief ROL's risk measure implementations.
 */ 
+
+/** @defgroup dynamic_group Dynamic functions
+ *  @ingroup interface_group
+ *  \brief ROL's interfaces for time-dependent constraints and objectives
+ */
 
 /** @defgroup examples_group Examples
  *  \brief ROL's examples

@@ -41,92 +41,61 @@
 // ************************************************************************
 // @HEADER
 
+
 #pragma once
+#ifndef ROL_DYNAMICCONSTRAINTCHECKDEF_HPP
+#define ROL_DYNAMICCONSTRAINTCHECKDEF_HPP
 
-#include <memory>
-#include <type_traits>
-#include <cstddef>
-#include <utility>
-
-
-/* \file  ROL_Ptr.hpp
- * \brief Wraps the C++11 std::shared_ptr
- *        ROL will be build with this implementation if CMake is
- *        configured with ROL_ENABLE_STD_SHARED_PTR:BOOL=ON
- *        Default behavior is OFF and Teuchos::RCP will be used
- */
 
 namespace ROL {
 
-template<class T> using Ptr = std::shared_ptr<T>;
+namespace details {
 
-std::nullptr_t nullPtr = nullptr;
+using namespace std;
+using namespace std::placeholders; // defines _1, _2, ...
 
-template<class T, class... Args>
-inline
-Ptr<T> makePtr( Args&&... args ) {
-  return std::make_shared<T>(args...);
+template<typename Real>
+DynamicConstraintCheck<Real>::DynamicConstraintCheck( DynamicConstraint<Real>& con,
+                                                      Teuchos::ParameterList& pl,
+                                                      ostream& os=cout ) :
+  con_(con), os_(os) {
+  auto& fdlist = pl.sublist("Finite Difference Check"); 
+  order_ = fdlist.get("Order", 1);
+  numSteps_ = fdlist.get("Number of Steps", 
 }
 
-template<class T>
-inline
-Ptr<T> makePtrFromRef( T& obj ) {
-  return std::shared_ptr<T>(&obj,[](void*){});
+template<typename Real>
+DynamicConstraintCheck<Real>::DynamicConstraintCheck( DynamicConstraint<Real>& con,
+                                                     const int numSteps = ROL_NUM_CHECKDERIVSTEPS, 
+                                                     const int order = 1,
+                                                     ostream& os=cout ) : 
+  con_(con), numSteps_(numSteps), order_(order), os_(os) {
+  steps_.resize(numSteps_);
 }
 
-template<class T>
-inline
-Ptr<const T> makePtrFromRef( const T& obj ) {
-  return std::shared_ptr<const T>(&obj,[](const void*){});
+
+
+template<typename Real>
+DynamicConstraintCheck<Real>::value( V& c, const V& uo, const V& un, 
+                                     const V& z, const TS& ts ) const override {
+  con_.value(c,uo,un,z,ts);
+}
+ 
+template<typename Real>
+DynamicConstraintCheck<Real>::applyJacobian_uo( V& jv, const V& vo, const V& uo, 
+                                                const V& un, const V& z, 
+                                                const TS& ts ) const override {
+
+  auto f_val = bind( &DC::value, _2, _1, un, z, ts );
+  auto f_der = bind( &DC::applyJacobian_uo, _3, _2, _1, un, z, ts );
+   
 }
 
-template< class T, class U > 
-inline
-Ptr<T> staticPtrCast( const Ptr<U>& r ) noexcept {
-  return std::static_pointer_cast<T>(r);
-}
 
-template< class T, class U > 
-inline
-Ptr<T> constPtrCast( const Ptr<U>& r ) noexcept {
-  return std::const_pointer_cast<T>(r);
-}
-
-template< class T, class U > 
-inline
-Ptr<T> dynamicPtrCast( const Ptr<U>& r ) noexcept {
-  return std::dynamic_pointer_cast<T>(r);
-}
-
-template<class T>
-inline
-const T* getRawPtr( const Ptr<const T>& x ) {
-  return x.get();
-}
-
-template<class T>
-inline
-T* getRawPtr( const Ptr<T>& x ) {
-  return x.get();
-}
-
-template<class T>
-inline 
-int getCount( const Ptr<T>& x ) {
-  return x.use_count();
-}
-
-template<class T>
-inline
-bool is_nullPtr( const Ptr<T>& x ) {
-  return x == nullPtr;
-}
-
-template<class T>
-struct IsSharedPtr : public std::false_type {};
-
-template<class T>
-struct IsSharedPtr<std::shared_ptr<T>> : public std::true_type {};
+} // namespace details
 
 } // namespace ROL
+
+
+#endif // ROL_DYNAMICCONSTRAINTCHECKDEF_HPP
 

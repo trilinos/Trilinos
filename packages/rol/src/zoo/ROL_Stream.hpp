@@ -42,91 +42,55 @@
 // @HEADER
 
 #pragma once
+#ifndef ROL_STREAM_HPP
+#define ROL_STREAM_HPP
 
-#include <memory>
+#include <ostream>
+#include <streambuf>
 #include <type_traits>
-#include <cstddef>
-#include <utility>
 
-
-/* \file  ROL_Ptr.hpp
- * \brief Wraps the C++11 std::shared_ptr
- *        ROL will be build with this implementation if CMake is
- *        configured with ROL_ENABLE_STD_SHARED_PTR:BOOL=ON
- *        Default behavior is OFF and Teuchos::RCP will be used
- */
+/** \file  ROL_Stream.hpp
+    \brief Defines a no-output stream class ROL::NullStream and a function
+           makeStreamPtr which either wraps a reference to a stream object
+           or returns a pointer to a NullStream depending on the value of
+           the argument noSuppressOutput
+           
+*/
 
 namespace ROL {
 
-template<class T> using Ptr = std::shared_ptr<T>;
+namespace details {
 
-std::nullptr_t nullPtr = nullptr;
+using namespace std;
 
-template<class T, class... Args>
+class NullBuffer : virtual public streambuf {
+public:
+  int overflow( int c ) override { return c; }
+}; // NullBuffer
+
+class NullStream : virtual public ostream {
+private:
+  NullBuffer buffer; 
+public:
+  NullStream( ) : ostream(&buffer) {}
+}; // NullStream
+
 inline
-Ptr<T> makePtr( Args&&... args ) {
-  return std::make_shared<T>(args...);
+Ptr<ostream> makeStreamPtr( ostream& os, bool noSuppressOutput=true ) {
+  Ptr<ostream> osPtr;
+  if( noSuppressOutput ) osPtr = makePtrFromRef( os );
+  else {
+    osPtr = makePtr<NullStream>();
+  }
+  return osPtr;
 }
 
-template<class T>
-inline
-Ptr<T> makePtrFromRef( T& obj ) {
-  return std::shared_ptr<T>(&obj,[](void*){});
-}
+} // namespace details
 
-template<class T>
-inline
-Ptr<const T> makePtrFromRef( const T& obj ) {
-  return std::shared_ptr<const T>(&obj,[](const void*){});
-}
-
-template< class T, class U > 
-inline
-Ptr<T> staticPtrCast( const Ptr<U>& r ) noexcept {
-  return std::static_pointer_cast<T>(r);
-}
-
-template< class T, class U > 
-inline
-Ptr<T> constPtrCast( const Ptr<U>& r ) noexcept {
-  return std::const_pointer_cast<T>(r);
-}
-
-template< class T, class U > 
-inline
-Ptr<T> dynamicPtrCast( const Ptr<U>& r ) noexcept {
-  return std::dynamic_pointer_cast<T>(r);
-}
-
-template<class T>
-inline
-const T* getRawPtr( const Ptr<const T>& x ) {
-  return x.get();
-}
-
-template<class T>
-inline
-T* getRawPtr( const Ptr<T>& x ) {
-  return x.get();
-}
-
-template<class T>
-inline 
-int getCount( const Ptr<T>& x ) {
-  return x.use_count();
-}
-
-template<class T>
-inline
-bool is_nullPtr( const Ptr<T>& x ) {
-  return x == nullPtr;
-}
-
-template<class T>
-struct IsSharedPtr : public std::false_type {};
-
-template<class T>
-struct IsSharedPtr<std::shared_ptr<T>> : public std::true_type {};
+using details::NullStream;
+using details::makeStreamPtr;
 
 } // namespace ROL
 
+
+#endif 
