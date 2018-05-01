@@ -1808,10 +1808,18 @@ namespace Tpetra {
     void computeGlobalConstants();
   protected:
 
-    /// \brief Forces computation of local constants if they have not been computed yet.
-    // This is implied by the computation of global constants, and this is only used a
-    // as an alterantive if the global constants are not computed
+    /// \brief Compute local constants, if they have not yet been computed.
     ///
+    /// Local constants include:
+    /// <ul>
+    /// <li> lowerTriangular_ </li>
+    /// <li> upperTriangular_ </li>
+    /// <li> nodeNumDiags_ </li>
+    /// <li> nodeMaxNumRowEntries_ </li>
+    /// </ul>
+    ///
+    /// computeGlobalConstants calls this method, if global constants
+    /// have not yet been computed.
     void computeLocalConstants();
 
     /// \brief Forces computation of local triangular properties if they have
