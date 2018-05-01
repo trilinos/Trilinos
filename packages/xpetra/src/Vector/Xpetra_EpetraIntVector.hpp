@@ -384,8 +384,7 @@ const Epetra_IntVector & toEpetra(const Vector<int, int, GlobalOrdinal, Node> &)
       //! Sets all vector entries to zero.
       explicit EpetraIntVectorT(const Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> > &map, bool zeroOut=true)
       {
-        XPETRA_RCP_DYNAMIC_CAST(const EpetraMapT<GlobalOrdinal XPETRA_COMMA Node>, map, eMap, "Xpetra::EpetraCrsMatrixT constructors only accept Xpetra::EpetraMapT as input arguments.");
-        vec_ = rcp(new Epetra_IntVector(eMap->getEpetra_BlockMap(), zeroOut));
+        vec_ = rcp(new Epetra_IntVector(toEpetra<GlobalOrdinal,Node>(map), zeroOut));
       }
 
       //! Destructor.
@@ -429,10 +428,10 @@ const Epetra_IntVector & toEpetra(const Vector<int, int, GlobalOrdinal, Node> &)
       void sumIntoGlobalValue(GlobalOrdinal globalRow, const Scalar &value) { XPETRA_MONITOR("EpetraIntVectorT::sumIntoGlobalValue"); TEUCHOS_TEST_FOR_EXCEPTION(1, Xpetra::Exceptions::NotImplemented, "TODO"); }
 
       //! Replace current value at the specified location with specified values.
-      void replaceLocalValue(LocalOrdinal myRow, const Scalar &value) { XPETRA_MONITOR("EpetraIntVectorT::replaceLocalValue"); TEUCHOS_TEST_FOR_EXCEPTION(1, Xpetra::Exceptions::NotImplemented, "TODO"); }
+      void replaceLocalValue(LocalOrdinal myRow, const Scalar &value) { XPETRA_MONITOR("EpetraIntVectorT::replaceLocalValue");(*vec_)[myRow] = value; }
 
       //! Adds specified value to existing value at the specified location.
-      void sumIntoLocalValue(LocalOrdinal myRow, const Scalar &value) { XPETRA_MONITOR("EpetraIntVectorT::sumIntoLocalValue"); TEUCHOS_TEST_FOR_EXCEPTION(1, Xpetra::Exceptions::NotImplemented, "TODO"); }
+      void sumIntoLocalValue(LocalOrdinal myRow, const Scalar &value) { XPETRA_MONITOR("EpetraIntVectorT::sumIntoLocalValue"); (*vec_)[myRow] += value;}
 
       //! Initialize all values in a multi-vector with specified value.
       void putScalar(const int &value) {  vec_->PutValue(value); }
@@ -824,8 +823,7 @@ const Epetra_IntVector & toEpetra(const Vector<int, int, GlobalOrdinal, Node> &)
       //! Sets all vector entries to zero.
       explicit EpetraIntVectorT(const Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> > &map, bool zeroOut=true)
       {
-        XPETRA_RCP_DYNAMIC_CAST(const EpetraMapT<GlobalOrdinal XPETRA_COMMA Node>, map, eMap, "Xpetra::EpetraCrsMatrixT constructors only accept Xpetra::EpetraMapT as input arguments.");
-        vec_ = rcp(new Epetra_IntVector(eMap->getEpetra_BlockMap(), zeroOut));
+        vec_ = rcp(new Epetra_IntVector(toEpetra<GlobalOrdinal,Node>(map), zeroOut));
       }
 
       //! Destructor.
@@ -868,10 +866,10 @@ const Epetra_IntVector & toEpetra(const Vector<int, int, GlobalOrdinal, Node> &)
       void sumIntoGlobalValue(GlobalOrdinal globalRow, const Scalar &value) { XPETRA_MONITOR("EpetraIntVectorT::sumIntoGlobalValue"); TEUCHOS_TEST_FOR_EXCEPTION(1, Xpetra::Exceptions::NotImplemented, "TODO"); }
 
       //! Replace current value at the specified location with specified values.
-      void replaceLocalValue(LocalOrdinal myRow, const Scalar &value) { XPETRA_MONITOR("EpetraIntVectorT::replaceLocalValue"); TEUCHOS_TEST_FOR_EXCEPTION(1, Xpetra::Exceptions::NotImplemented, "TODO"); }
+      void replaceLocalValue(LocalOrdinal myRow, const Scalar &value) { XPETRA_MONITOR("EpetraIntVectorT::replaceLocalValue");(*vec_)[myRow] = value;}
 
       //! Adds specified value to existing value at the specified location.
-      void sumIntoLocalValue(LocalOrdinal myRow, const Scalar &value) { XPETRA_MONITOR("EpetraIntVectorT::sumIntoLocalValue"); TEUCHOS_TEST_FOR_EXCEPTION(1, Xpetra::Exceptions::NotImplemented, "TODO"); }
+      void sumIntoLocalValue(LocalOrdinal myRow, const Scalar &value) { XPETRA_MONITOR("EpetraIntVectorT::sumIntoLocalValue"); (*vec_)[myRow] += value;}
 
       //! Initialize all values in a multi-vector with specified value.
       void putScalar(const int &value) {  vec_->PutValue(value); }

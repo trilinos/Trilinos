@@ -5,6 +5,7 @@ AMGXOperator - #if defined(HAVE_MUELU_AMGX)
 AlgebraicPermutationStrategy
 BlackBoxPFactory
 BlockedCoarseMapFactory
+BlockedCoordinatesTransferFactory
 BlockedDirectSolver
 BlockedGaussSeidelSmoother
 BlockedPFactory
@@ -69,6 +70,7 @@ RebalanceBlockRestrictionFactory
 RebalanceTransferFactory
 ReorderBlockAFactory
 RepartitionFactory - #ifdef HAVE_MPI
+RepartitionBlockDiagonalFactory - #ifdef HAVE_MPI
 RepartitionHeuristicFactory - #ifdef HAVE_MPI
 RigidBodyModeFactory
 SaPFactory
