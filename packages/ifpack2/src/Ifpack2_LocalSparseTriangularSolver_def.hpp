@@ -46,7 +46,7 @@
 #include "Tpetra_CrsMatrix.hpp"
 #include "Tpetra_DefaultPlatform.hpp"
 #include "Teuchos_StandardParameterEntryValidators.hpp"
-#include "Ifpack2_Details_determineLocalTriangularStructure.hpp"
+#include "Tpetra_Details_determineLocalTriangularStructure.hpp"
 
 #ifdef HAVE_IFPACK2_SHYLU_NODEHTS
 # include "shylu_hts.hpp"
@@ -459,7 +459,7 @@ initialize ()
   auto lclMatrix = A_crs_->getLocalMatrix ();
   auto lclRowMap = A_crs_->getRowMap ()->getLocalMap ();
   auto lclColMap = A_crs_->getColMap ()->getLocalMap ();
-  using Ifpack2::Details::determineLocalTriangularStructure;
+  using Tpetra::Details::determineLocalTriangularStructure;
   // mfh 30 Apr 2018: See GitHub Issue #2658 for why this is false.
   constexpr bool ignoreMapsForTriangularStructure = true;
   auto result =
