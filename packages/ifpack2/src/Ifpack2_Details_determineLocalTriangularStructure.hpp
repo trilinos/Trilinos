@@ -10,6 +10,7 @@ namespace Details {
 template<class LO>
 struct LocalTriangularStructureResult {
   LO diagCount;
+  LO maxNumRowEnt;
   bool couldBeLowerTriangular;
   bool couldBeUpperTriangular;
 };
@@ -57,6 +58,7 @@ namespace Impl {
     KOKKOS_INLINE_FUNCTION void init (result_type& dst) const
     {
       dst.diagCount = 0;
+      dst.maxNumRowEnt = 0;
       dst.couldBeLowerTriangular = true; // well, we don't know yet, do we?
       dst.couldBeUpperTriangular = true; // ditto
     }
@@ -66,6 +68,8 @@ namespace Impl {
           const volatile result_type& src) const
     {
       dst.diagCount += src.diagCount;
+      dst.maxNumRowEnt = (src.maxNumRowEnt > dst.maxNumRowEnt) ?
+        src.maxNumRowEnt : dst.maxNumRowEnt;
       dst.couldBeLowerTriangular &= src.couldBeLowerTriangular;
       dst.couldBeUpperTriangular &= src.couldBeUpperTriangular;
     }
@@ -82,6 +86,8 @@ namespace Impl {
       auto G_row = G_.rowConst (lclRow);
       const LO numEnt = G_row.length;
       if (numEnt != 0) {
+        result.maxNumRowEnt = (numEnt > result.maxNumRowEnt) ?
+          numEnt : result.maxNumRowEnt;
         // Use global row and column indices to find the diagonal
         // entry.  Caller promises that local row index is in the row
         // Map on the calling process.
@@ -181,7 +187,7 @@ determineLocalTriangularStructure (const LocalGraphType& G,
   using functor_type =
     Impl::DetermineLocalTriangularStructure<LocalGraphType, LocalMapType>;
 
-  LocalTriangularStructureResult<LO> result {0, true, true};
+  LocalTriangularStructureResult<LO> result {0, 0, true, true};
   Kokkos::parallel_reduce ("Ifpack2::Details::determineLocalTriangularStructure",
                            range_type (0, G.numRows ()),
                            functor_type (G, rowMap, colMap,

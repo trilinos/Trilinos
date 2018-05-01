@@ -293,6 +293,7 @@ testGraph (bool& success,
     determineLocalTriangularStructure (graph, lclRowMap, lclColMap,
                                        ignoreMapsForTriangularStructure);
   TEST_EQUALITY( result.diagCount, expectedResult.diagCount );
+  TEST_EQUALITY( result.maxNumRowEnt, expectedResult.maxNumRowEnt );
   TEST_EQUALITY( result.couldBeLowerTriangular, expectedResult.couldBeLowerTriangular );
   TEST_EQUALITY( result.couldBeUpperTriangular, expectedResult.couldBeUpperTriangular );
 }
@@ -341,7 +342,10 @@ TEUCHOS_UNIT_TEST(DetermineLocalTriangularStructure, Test0)
 
       auto graph = makeDiagonalGraph<LO, GO, DT> (lclNumRows, lclRowMap, lclColMap);
       for (bool ignoreMapsForTriangularStructure : {false, true}) {
-        const result_type expectedResult {lclNumRows, true, true};
+        const LO expectedLclNumDiag = lclNumRows;
+        const LO expectedMaxNumRowEnt = (lclNumRows < LO (1)) ? lclNumRows : LO (1);
+        const result_type expectedResult {expectedLclNumDiag,
+            expectedMaxNumRowEnt, true, true};
         testGraph<LO, GO, DT> (success, out, graph, lclRowMap, lclColMap,
                                ignoreMapsForTriangularStructure,
                                expectedResult);
@@ -350,6 +354,7 @@ TEUCHOS_UNIT_TEST(DetermineLocalTriangularStructure, Test0)
 
     // triangular graphs
     for (bool lowerTriangular : {false, true}) {
+      const bool upperTriangular = ! lowerTriangular;
       for (bool explicitDiagonal: {false, true}) {
         out << (lowerTriangular ? "Lower" : "Upper") << " triangular graph, "
             << "with " << (explicitDiagonal ? "explicit" : "implicit unit")
@@ -360,8 +365,16 @@ TEUCHOS_UNIT_TEST(DetermineLocalTriangularStructure, Test0)
                                                       lowerTriangular, explicitDiagonal);
         for (bool ignoreMapsForTriangularStructure : {false, true}) {
           const LO expectedLclNumDiag = explicitDiagonal ? lclNumRows : LO (0);
+          const LO expectedMaxNumRowEnt = [&] () {
+              if (lclNumRows < LO (1)) {
+                return LO (0);
+              }
+              else {
+                return explicitDiagonal ? LO (2) : LO (1);
+              }
+            } ();
           const result_type expectedResult {expectedLclNumDiag,
-              lowerTriangular, ! lowerTriangular};
+              expectedMaxNumRowEnt, lowerTriangular, upperTriangular};
           testGraph<LO, GO, DT> (success, out, graph, lclRowMap, lclColMap,
                                  ignoreMapsForTriangularStructure,
                                  expectedResult);
@@ -375,7 +388,10 @@ TEUCHOS_UNIT_TEST(DetermineLocalTriangularStructure, Test0)
 
       auto graph = makeTridiagonalGraph<LO, GO, DT> (lclNumRows, lclRowMap, lclColMap);
       for (bool ignoreMapsForTriangularStructure : {false, true}) {
-        const result_type expectedResult {lclNumRows, false, false};
+        const LO expectedLclNumDiag = lclNumRows;
+        const LO expectedMaxNumRowEnt = (lclNumRows < LO (3)) ? lclNumRows : LO (3);
+        const result_type expectedResult {expectedLclNumDiag,
+            expectedMaxNumRowEnt, false, false};
         testGraph<LO, GO, DT> (success, out, graph, lclRowMap, lclColMap,
                                ignoreMapsForTriangularStructure,
                                expectedResult);
@@ -411,11 +427,13 @@ TEUCHOS_UNIT_TEST(DetermineLocalTriangularStructure, Test0)
       auto graph = makeDiagonalGraph<LO, GO, DT> (lclNumRows, lclRowMap, lclColMap);
       for (bool ignoreMapsForTriangularStructure : {false, true}) {
         const LO expectedLclNumDiag = lclNumRows;
+        const LO expectedMaxNumRowEnt = (lclNumRows < LO (1)) ? lclNumRows : LO (1);
         // Graph is correctly diagonal with respect to global indices.
         // If ignoring global indices, it's neither upper nor lower
         // triangular.
         const bool looksDiag = ! ignoreMapsForTriangularStructure;
-        const result_type expectedResult {expectedLclNumDiag, looksDiag, looksDiag};
+        const result_type expectedResult {expectedLclNumDiag,
+            expectedMaxNumRowEnt, looksDiag, looksDiag};
         testGraph<LO, GO, DT> (success, out, graph, lclRowMap, lclColMap,
                                ignoreMapsForTriangularStructure,
                                expectedResult);
@@ -424,6 +442,7 @@ TEUCHOS_UNIT_TEST(DetermineLocalTriangularStructure, Test0)
 
     // triangular graphs
     for (bool lowerTriangular : {false, true}) {
+      const bool upperTriangular = ! lowerTriangular;
       for (bool explicitDiagonal: {false, true}) {
         out << (lowerTriangular ? "Lower" : "Upper") << " triangular graph, "
             << "with " << (explicitDiagonal ? "explicit" : "implicit unit")
@@ -434,14 +453,22 @@ TEUCHOS_UNIT_TEST(DetermineLocalTriangularStructure, Test0)
                                                       lowerTriangular, explicitDiagonal);
         for (bool ignoreMapsForTriangularStructure : {false, true}) {
           const LO expectedLclNumDiag = explicitDiagonal ? lclNumRows : LO (0);
+          const LO expectedMaxNumRowEnt = [&] () {
+              if (lclNumRows < LO (1)) {
+                return LO (0);
+              }
+              else {
+                return explicitDiagonal ? LO (2) : LO (1);
+              }
+            } ();
           // If ignoring global indices, it's neither upper nor lower
           // triangular.
-          const bool expectLowerTriangular =
+          const bool expectLowerTri =
             ignoreMapsForTriangularStructure ? false : lowerTriangular;
-          const bool expectUpperTriangular =
-            ignoreMapsForTriangularStructure ? false : (! lowerTriangular);
+          const bool expectUpperTri =
+            ignoreMapsForTriangularStructure ? false : upperTriangular;
           const result_type expectedResult {expectedLclNumDiag,
-              expectLowerTriangular, expectUpperTriangular};
+              expectedMaxNumRowEnt, expectLowerTri, expectUpperTri};
           testGraph<LO, GO, DT> (success, out, graph, lclRowMap, lclColMap,
                                  ignoreMapsForTriangularStructure,
                                  expectedResult);
@@ -456,7 +483,9 @@ TEUCHOS_UNIT_TEST(DetermineLocalTriangularStructure, Test0)
       auto graph = makeTridiagonalGraph<LO, GO, DT> (lclNumRows, lclRowMap, lclColMap);
       for (bool ignoreMapsForTriangularStructure : {false, true}) {
         const LO expectedLclNumDiag = lclNumRows;
-        const result_type expectedResult {expectedLclNumDiag, false, false};
+        const LO expectedMaxNumRowEnt = (lclNumRows < LO (3)) ? lclNumRows : LO (3);
+        const result_type expectedResult {expectedLclNumDiag,
+            expectedMaxNumRowEnt, false, false};
         testGraph<LO, GO, DT> (success, out, graph, lclRowMap, lclColMap,
                                ignoreMapsForTriangularStructure,
                                expectedResult);
