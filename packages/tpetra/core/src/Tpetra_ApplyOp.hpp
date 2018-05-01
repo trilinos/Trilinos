@@ -74,7 +74,7 @@ namespace Tpetra {
     /// \tparam OperatorType The type of the underlying Operator,
     ///   whose first template parameter OperatorType::scalar_type may
     ///   differ from this Operator's Scalar type.
-    template <class Scalar, class OperatorType>
+    template <class Scalar, class OperatorType = ::Tpetra::Operator<> >
     class ApplyOp :
       public Tpetra::Operator<Scalar,
                               typename OperatorType::local_ordinal_type,
