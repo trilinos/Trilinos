@@ -125,10 +125,8 @@ TEUCHOS_STATIC_SETUP()
     TEUCHOS_ADD_NUMBERCONDITION_CONVERTER(double);
     TEUCHOS_ADD_NUMBERCONDITION_CONVERTER(float);
 
-    #ifdef HAVE_TEUCHOS_LONG_LONG_INT
     TEUCHOS_ADD_NUMBERCONDITION_CONVERTER(long long int);
     TEUCHOS_ADD_NUMBERCONDITION_CONVERTER(unsigned long long int);
-    #endif // HAVE_TEUCHOS_LONG_LONG_INT
 
     Teuchos::ConditionXMLConverterDB::addConverter(
       Teuchos::DummyObjectGetter<Teuchos::StringCondition>::

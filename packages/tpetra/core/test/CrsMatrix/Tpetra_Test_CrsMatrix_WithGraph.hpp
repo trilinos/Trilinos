@@ -47,6 +47,7 @@
 #include "Tpetra_TestingUtilities.hpp"
 #include "Tpetra_CrsMatrix.hpp"
 #include "Tpetra_Vector.hpp"
+#include "Tpetra_Details_getNumDiags.hpp"
 
 // TODO: add test where some nodes have zero rows
 // TODO: add test where non-"zero" graph is used to build matrix; if no values are added to matrix, the operator effect should be zero. This tests that matrix values are initialized properly.
@@ -293,8 +294,8 @@ inline void tupleToArray(Array<T> &arr, const tuple &tup)
       out << "Call fillComplete on the CrsMatrix" << endl;
       matrix.fillComplete();
 
-      TEST_EQUALITY( matrix.getNodeNumDiags(), numLocal );
-      TEST_EQUALITY( matrix.getGlobalNumDiags(), numImages*numLocal );
+      TEST_EQUALITY( Tpetra::Details::getLocalNumDiags (matrix), static_cast<LO> (numLocal) );
+      TEST_EQUALITY( Tpetra::Details::getGlobalNumDiags (matrix), static_cast<GO> (numImages*numLocal) );
       TEST_EQUALITY( matrix.getGlobalNumEntries(), 3*numImages*numLocal - 2 );
 
       out << "Check the diagonal entries of the CrsMatrix, using getLocalDiagCopy" << endl;
@@ -739,8 +740,8 @@ inline void tupleToArray(Array<T> &arr, const tuple &tup)
     out << "Call fillComplete on the CrsMatrix" << endl;
     matrix.fillComplete();
 
-    TEST_EQUALITY( matrix.getNodeNumDiags(), numLocal );
-    TEST_EQUALITY( matrix.getGlobalNumDiags(), numImages*numLocal );
+    TEST_EQUALITY( Tpetra::Details::getLocalNumDiags (matrix), static_cast<LO> (numLocal) );
+    TEST_EQUALITY( Tpetra::Details::getGlobalNumDiags (matrix), static_cast<GO> (numImages*numLocal) );
     TEST_EQUALITY( matrix.getGlobalNumEntries(), 3*numImages*numLocal - 2 );
 
     // Make sure that all processes finished and were successful.

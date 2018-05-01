@@ -16,6 +16,7 @@ build locally as described below.
 * <a href="#quick-start">Quick-start</a>
 * <a href="#checkin-test-atdmsh">checkin-test-atdm.sh</a>
 * <a href="#specific-instructions-for-each-system">Specific instructions for each system</a>
+* <a href="#troubleshooting-configuration-problems">Troubleshooting configuration problems</a>
 * <a href="#directory-structure-and-contents">Directory structure and contents</a>
 * <a href="#specific-systems-supported">Specific systems supported</a>
 
@@ -171,6 +172,8 @@ $ ./checkin-test-sems.sh <job-name-0> <job-name-1> ... \
 
 * <a href="#ridewhite">ride/white</a>
 * <a href="#shillerhansen">shiller/hansen</a>
+* <a href="#chamaserrano">chama/serrano</a>
+* <a href="#sems-rhel6-environment">SEMS rhel6 environment</a>
 
 
 ### ride/white
@@ -195,7 +198,7 @@ $ cmake \
 
 $ make NP=16
 
-$ bsub -x -I -q rhel7F -n 16 ctest -j16
+$ bsub -x -Is -q rhel7F -n 16 ctest -j16
 ```
 
 The ATDM configuration of Trilinos is set up to run on the Firestone nodes
@@ -254,6 +257,79 @@ $ srun ./checkin-test-sems.sh intel-opt-openmp \
   --local-do-all
 ```
 
+### chama/serrano
+
+Once logged on to `chama`  or `serrano`, one can
+directly configure and build on the login node (being careful not to overload
+the node).  But to run the tests, one must run on the compute nodes using the
+`srun` command.  For example, to configure, build and run the tests for say
+`MueuLu` on `serrano` or `chama`, (after cloning Trilinos on the `develop` branch) one
+would do:
+
+
+```
+$ cd <some_build_dir>/
+
+$ source $TRILINOS_DIR/cmake/std/atdm/load-env.sh intel-opt-openmp
+
+$ cmake \
+  -DTrilinos_CONFIGURE_OPTIONS_FILE:STRING=cmake/std/atdm/ATDMDevEnv.cmake \
+  -DTrilinos_ENABLE_TESTS=ON -DTrilinos_ENABLE_MueLu=ON \
+  $TRILINOS_DIR
+
+$ make -j16
+
+$ srun -N 1 --time=600 --account=<YOUR_WCID> -J $JOB_NAME ctest -j16
+```
+
+To get information on <YOUR_WCID> used above, there is a WC tool tab on computing.sandia.gov 
+
+
+### SEMS rhel6 environment
+
+Once logged on to a rhel6 machine with the sems NFS, one can
+directly configure, build, and run tests.  For example, to configure, build and run 
+the tests for `MueuLu` one would clone Trilinos on the `develop` branch and then do the following:
+
+
+```
+$ cd <some_build_dir>/
+
+$ source $TRILINOS_DIR/cmake/std/atdm/load-env.sh intel-opt-openmp
+
+$ cmake \
+  -DTrilinos_CONFIGURE_OPTIONS_FILE:STRING=cmake/std/atdm/ATDMDevEnv.cmake \
+  -DTrilinos_ENABLE_TESTS=ON -DTrilinos_ENABLE_MueLu=ON \
+  $TRILINOS_DIR
+
+$ make -j16
+
+$ ctest -j16 \
+```
+
+## Troubleshooting configuration problems
+
+There are situations were a particular developer on a particular system will
+not be able to cleanly reproduce a Trilinos configuration as described above.
+Some of the issues that can cause that are described here.
+
+The first set of problems that might occur are that the version of `git` that
+is loaded by sourcing `Trilinos/cmake/std/atdm/load-env.sh` for a given system
+may conflict with the developer's global `~/.gitconfig` file on that system.
+It may be that an older or newer version of git is loaded by the script
+(i.e. `<atdm-loaded-git>`) than the git version that the developer has been
+using on the system (i.e. `<developer-git>`) and therefore some of the
+settings in the developer's `~/.gitconfig` file may not be compatible with the
+different version of git.  One approach to address this is run `module list`
+to see the version of git that is loaded by this script and then to swap out
+that version of git for the developer's regular version of git using `module
+swap <atdm-loaded-git> <developer-git>`.  Or, the developer can just call
+`export PATH=<path-to-developers--git>/bin:$PATH` after sourcing
+`Trilinos/cmake/std/atdm/load-env.sh` to select the developer's regular
+version of git.  The git commands that are used by TriBITS, Trilinos, and the
+ATDM Trilinos configuration and testing scripts should work with just about
+any version of git 2.0+.  Another approach would be for the user to
+(temporarily) edit their `~/.gitconfig` file to address the problems.
 
 ## Directory structure and contents
 
@@ -265,8 +341,12 @@ This base directory:
 
 contains the following files:
 
-* **ATDMDevEnv.cmake**: Reads vars out of the env (loaded with `load-env.sh`)
-  to set compilers and other options for the Trilinos build.
+* **ATDMDevEnvSettings.cmake**: Reads vars out of the env (loaded with
+  `load-env.sh`) to set compilers and other options for the Trilinos build.
+  It also default enables all of the TPLs used in ATDM configurations of
+  Trilinos.  However, this file does **not** include `ATDMDisables.cmake`.
+  Therefore, this file can be used to set up builds of Trilinos that enable
+  arbitrary sets of packages.
 
 * **ATDMDisables.cmake**: Disables a bunch of Trilinos packages and
   subpackages not used by ATDM application customers.  This file gets included
@@ -274,6 +354,9 @@ contains the following files:
   configures of Trilinos).  But this file is also included in the outer `ctest
   -S` driver script code for ATDM builds of Trilinos which is needed for
   correct package-by-package testing of Trilinos.
+
+* **ATDMDevEnv.cmake**: Includes `ATDMDevEnvSettings.cmake` and
+  `ATDMDisables.cmake`.
 
 * **checkin-test-atdm.sh**: Uses the `Trilinos/checkin-test.py` script to
   drive builds and tests on the given platform.  (See comments in the top of
@@ -329,5 +412,7 @@ they support are:
 
 * `shiller/`: Supports GNU, Intel, and CUDA builds on both the SRN machine
   `shiller` and the mirror SON machine `hansen`.
+  
+* `serrano/` and `chama/`: SNL HPC machines
 
-* ???
+* `rhel6/`: RHEL6 systems with the SEMS NFS environment

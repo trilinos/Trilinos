@@ -43,17 +43,8 @@
 // @HEADER
 
 %{
-// Teuchos includes
-#include "Teuchos_XMLObjectImplem.hpp"
-#include "Teuchos_XMLObject.hpp"
-#include "Teuchos_XMLParameterListReader.hpp"
-#include "Teuchos_XMLParameterListWriter.hpp"
-#include "Teuchos_XMLInputSource.hpp"
-#include "Teuchos_FileInputSource.hpp"
-#include "Teuchos_StringInputSource.hpp"
-
-// PyTrilinos includes
-#include "PyTrilinos_PythonException.hpp"
+// Teuchos include files
+#include "PyTrilinos_Teuchos_Headers.hpp"
 %}
 
 // Teuchos imports

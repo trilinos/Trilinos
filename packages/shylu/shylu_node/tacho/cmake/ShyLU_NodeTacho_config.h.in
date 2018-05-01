@@ -1,6 +1,9 @@
 #ifndef SHYLU_NODETACHO_CONFIG_H
 #define SHYLU_NODETACHO_CONFIG_H
 
+/* Define if kokkos tasking is enabled */
+#cmakedefine TACHO_HAVE_KOKKOS_TASK
+
 /* Define if want to build with size_type (int)  enabled */
 #cmakedefine TACHO_USE_INT_INT
 

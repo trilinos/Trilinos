@@ -194,6 +194,11 @@ IF(${PACKAGE_NAME}_ENABLE_EXPLICIT_INSTANTIATION)
       Thyra::MueLuPreconditionerFactory
       Thyra::XpetraLinearOp
     )
+  ENDIF()	
+  IF (${PACKAGE_NAME}_ENABLE_AmgX)
+    APPEND_GLOBAL_SET(MUELUADAPTERS_ETI_CLASSES
+      MueLu::AMGXOperator
+    )    
   ENDIF()
 
   # Set the list of classes in MueLu adapters that are templated on <LO, GO, Node> for

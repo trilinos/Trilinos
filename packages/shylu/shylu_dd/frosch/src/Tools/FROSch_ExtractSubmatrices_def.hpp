@@ -58,7 +58,7 @@ namespace FROSch {
         Teuchos::RCP<Xpetra::Map<LO,GO,NO> > localSubdomainMap = Xpetra::MapFactory<LO,GO,NO>::Build(map->lib(),map->getNodeNumElements(),0,SerialComm);
         Teuchos::RCP<Xpetra::Matrix<SC,LO,GO,NO> > localSubdomainMatrix = Xpetra::MatrixFactory<SC,LO,GO,NO>::Build(localSubdomainMap,globalMatrix->getNodeMaxNumRowEntries());
         
-        for (LO i=0; i<localSubdomainMap->getNodeNumElements(); i++) {
+        for (unsigned i=0; i<localSubdomainMap->getNodeNumElements(); i++) {
             Teuchos::ArrayView<const GO> indices;
             Teuchos::ArrayView<const SC> values;
             subdomainMatrix->getGlobalRowView(map->getGlobalElement(i),indices,values);
@@ -94,7 +94,7 @@ namespace FROSch {
         Teuchos::RCP<Xpetra::Map<LO,GO,NO> > localSubdomainMap = Xpetra::MapFactory<LO,GO,NO>::Build(map->lib(),map->getNodeNumElements(),0,SerialComm);
         Teuchos::RCP<Xpetra::Matrix<SC,LO,GO,NO> > localSubdomainMatrix = Xpetra::MatrixFactory<SC,LO,GO,NO>::Build(localSubdomainMap,globalMatrix->getNodeMaxNumRowEntries());
         
-        for (LO i=0; i<localSubdomainMap->getNodeNumElements(); i++) {
+        for (unsigned i=0; i<localSubdomainMap->getNodeNumElements(); i++) {
             Teuchos::ArrayView<const GO> indices;
             Teuchos::ArrayView<const SC> values;
             subdomainMatrix->getGlobalRowView(map->getGlobalElement(i),indices,values);
@@ -127,7 +127,7 @@ namespace FROSch {
         subdomainMatrix->doImport(*globalMatrix,*scatter,Xpetra::ADD);
         
         localSubdomainMatrix->resumeFill();
-        for (LO i=0; i<map->getNodeNumElements(); i++) {
+        for (unsigned i=0; i<map->getNodeNumElements(); i++) {
             Teuchos::ArrayView<const GO> indices;
             Teuchos::ArrayView<const SC> values;
             subdomainMatrix->getGlobalRowView(map->getGlobalElement(i),indices,values);
@@ -163,7 +163,7 @@ namespace FROSch {
         Teuchos::RCP<Xpetra::Map<LO,GO,NO> > mapILocal = Xpetra::MapFactory<LO,GO,NO>::Build(k->getRowMap()->lib(),-1,indI.size(),0,k->getRowMap()->getComm());
         
         Teuchos::Array<GO> indJ;
-        for (GO i=0; i<k->getNodeNumRows(); i++) {
+        for (unsigned i=0; i<k->getNodeNumRows(); i++) {
             if (mapI->getLocalElement(i)<0) {
                 indJ.push_back(i);
             }
@@ -177,7 +177,7 @@ namespace FROSch {
         kJI = Xpetra::MatrixFactory<SC,LO,GO,NO>::Build(mapJLocal,std::min((LO) k->getGlobalMaxNumRowEntries(),(LO) indI.size()));
         kJJ = Xpetra::MatrixFactory<SC,LO,GO,NO>::Build(mapJLocal,std::min((LO) k->getGlobalMaxNumRowEntries(),(LO) indJ.size()));
         
-        for (LO i=0; i<k->getNodeNumRows(); i++) {
+        for (unsigned i=0; i<k->getNodeNumRows(); i++) {
             Teuchos::ArrayView<const LO> indices;
             Teuchos::ArrayView<const SC> values;
             

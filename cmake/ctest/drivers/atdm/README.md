@@ -23,7 +23,6 @@ The base directory:
 contains files that are used for driving builds on all machines.  These files
 define common behavior and reduces duplication to ease maintenance.
 
-
 This directory contains the file:
 
 ```
@@ -40,27 +39,26 @@ given in the files defined in the directory:
 
 That file reads `JOB_NAME` from the env and uses it to set the CDash build
 name.  (Therefore, the Jenkikns `JOB_NAME` is the same as the CDash build name
-for all of these Trilinos ATDM builds.)
+for all of these Trilinos ATDM builds.)  It also other CMake and CTest options
+that are pulled out of the env set by the
+`cmake/std/atdm/<system_name>/environment.sh` script.  (See `$ENV{<varName>}`
+to see what vars are pulled out of the env.)
 
-
-That directory contains a CTest -S driver script:
+This directory contains a CTest -S driver script:
 
 ```
   Trilinos/cmake/ctest/drivers/atdm/ctest-driver.cmake
 ```
 
-This files sets other CMake and CTest options that are pulled out of the env
-set by the `cmake/std/atdm/<system_name>/environment.sh` script.
-
-Given this file `atdm/ctest-driver.cmake`, then:
+which is called using:
 
 ```
   ctest -S <base-dir>/Trilinos/cmake/ctest/drivers/atdm/ctest-driver.cmake
 ```
 
-can be run using any way desired and it will clone a new Trilinos git repo (if
-not cloned already).  (But this file get directly run by the universal driver
-script `ctest-s-driver.sh` described above.)
+which can be run using any way desired and it will clone a new Trilinos git
+repo (if not cloned already).  (But this file get directly run by the
+universal driver script `ctest-s-driver.sh` described above.)
 
 This directory contains the file:
 
@@ -229,19 +227,25 @@ there is no tractability for changes in these settings!
 
 ## Specific <system_name> directories
 
-The following `<system_name>` sub-directories exist:
+The following `<system_name>` sub-directories exist (in alphabetical order):
+ 
+* `rhel6/`: Contains files to drive builds on rhel6 machines with the SEMS
+  environment.
 
 * `ride/`: Contains the files to drive builds on the SRN test bed machine
   `ride` which also can be run on the SON machine `white`.
-
-* `shiller/`: Contains the files to drive builds on the SRN test bed machine
-  `shiller` which also can be run on the SON machine `hansen`.
 
 * `sems_gcc-7.2.0/`: Contains driver scripts for a on-off GCC 7.2.0 build
   based on the SEMS system.  This build really does not fit into the system
   described above but it put in this directory since it is targeted to support
   ATDM.  It also shows that a given system can have its own driver files if it
   needs to.
+
+* `shiller/`: Contains the files to drive builds on the SRN test bed machine
+  `shiller` which also can be run on the SON machine `hansen`.
+  
+* `toss3/`: Contains files to drive builds on the SRN HPC machines `serrano`
+  and `chama`.
 
 ## How add a new system
 

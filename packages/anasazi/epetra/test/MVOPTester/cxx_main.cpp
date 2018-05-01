@@ -76,7 +76,7 @@ int main(int argc, char *argv[])
   bool success = false;
   bool verbose = false;
   try {
-    int i, epetra_ierr;
+    int i;
     bool ierr, gerr = true;
 
     // number of global elements
@@ -139,16 +139,13 @@ int main(int argc, char *argv[])
         Indices[1] = MyGlobalElements[i]+1;
         NumEntries = 2;
       }
-      epetra_ierr = A->InsertGlobalValues(MyGlobalElements[i],NumEntries,&Values[0],&Indices[0]);
-      assert(epetra_ierr==0);
+      A->InsertGlobalValues(MyGlobalElements[i],NumEntries,&Values[0],&Indices[0]);
       // Put in the diagonal entry
-      epetra_ierr = A->InsertGlobalValues(MyGlobalElements[i],1,&two,&MyGlobalElements[i]);
-      assert(epetra_ierr==0);
+      A->InsertGlobalValues(MyGlobalElements[i],1,&two,&MyGlobalElements[i]);
     }
 
     // Finish building the epetra matrix A
-    epetra_ierr = A->FillComplete();
-    assert(epetra_ierr==0);
+    A->FillComplete();
 
     // Create an Anasazi::EpetraSymOp from this Epetra_CrsMatrix
     Teuchos::RCP<Anasazi::EpetraSymOp> op = Teuchos::rcp(new Anasazi::EpetraSymOp(A));

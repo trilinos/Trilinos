@@ -125,7 +125,7 @@ protected:
   ///
   /// Keep a message to inform what went wrong above.
   char const *
-  failure_message{nullptr};
+  failure_message{nullptr};  
 };
 
 ///
@@ -238,6 +238,12 @@ public:
   Index
   num_iter{0};
 
+  Index
+  num_stagnation_iter{0};
+
+  Index
+  max_stagnation_iter{0};
+
   T
   initial_norm{1.0};
 
@@ -249,6 +255,12 @@ public:
 
   T
   abs_tol{1.0e-12};
+
+  T
+  acc_tol{1.0e-12};  
+
+  T
+  stagnation_tol{1.0};
 
   T
   abs_error{1.0};
@@ -269,6 +281,9 @@ public:
   failed{false};
 
   bool
+  warning{false};
+  
+  bool
   converged{false};
 
   bool
@@ -278,10 +293,16 @@ public:
   bounded{true};
 
   bool
+  non_stagnant{true};
+
+  bool
   enforce_monotonicity{false};
 
   bool
   enforce_boundedness{false};
+
+  bool
+  enforce_non_stagnation{false};
 
   Vector<T, N>
   initial_guess;
@@ -303,6 +324,9 @@ public:
 
   char const *
   failure_message{"No failure detected"};
+
+  char const *
+  warning_message{"No warning detected"};  
 };
 
 ///

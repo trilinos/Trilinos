@@ -175,12 +175,6 @@ namespace Xpetra {
     //! Returns the current number of allocated entries on this node in the specified local row.
     virtual size_t getNumAllocatedEntriesInLocalRow(LocalOrdinal localRow) const = 0;
 
-    //! Returns the number of global diagonal entries, based on global row/column index comparisons.
-    virtual global_size_t getGlobalNumDiags() const = 0;
-
-    //! Returns the number of local diagonal entries, based on global row/column index comparisons.
-    virtual size_t getNodeNumDiags() const = 0;
-
     //! Maximum number of entries in all rows over all processes.
     virtual size_t getGlobalMaxNumRowEntries() const = 0;
 
@@ -189,12 +183,6 @@ namespace Xpetra {
 
     //! Whether the graph has a column Map.
     virtual bool hasColMap() const = 0;
-
-    //! Whether the graph is locally lower triangular.
-    virtual bool isLowerTriangular() const = 0;
-
-    //! Whether the graph is locally upper triangular.
-    virtual bool isUpperTriangular() const = 0;
 
     //! Whether column indices are stored using local indices on the calling process.
     virtual bool isLocallyIndexed() const = 0;

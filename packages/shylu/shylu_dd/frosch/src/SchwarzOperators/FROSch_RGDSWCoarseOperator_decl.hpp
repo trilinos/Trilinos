@@ -53,7 +53,7 @@ namespace FROSch {
     class RGDSWCoarseOperator : public GDSWCoarseOperator<SC,LO,GO,NO> {
         
         public:
-        
+
         typedef typename SchwarzOperator<SC,LO,GO,NO>::CommPtr CommPtr;
         
         typedef typename SchwarzOperator<SC,LO,GO,NO>::MapPtr MapPtr;

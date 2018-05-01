@@ -117,7 +117,7 @@ int create_random_triangles(
 
   short *assignments = NULL;
 
-  char filename[256];
+  char filename[FILENAME_MAX+9];
   FILE *fpg = NULL, *fpc = NULL;  /* Files to echo random input */
 
 /***************************** BEGIN EXECUTION ******************************/
@@ -314,7 +314,7 @@ int create_random_input(
 
   short *assignments = NULL;
 
-  char filename[256];
+  char filename[FILENAME_MAX+9];
   FILE *fpg = NULL, *fpc = NULL;  /* Files to echo random input */
 
 /***************************** BEGIN EXECUTION ******************************/

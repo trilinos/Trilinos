@@ -576,11 +576,8 @@ typedef unsigned long ulong;
 FULL_NUMBER_TYPE_TEST(int)
 NONINTEGRAL_NUMBER_TYPE_TEST(double)
 NONINTEGRAL_NUMBER_TYPE_TEST(float)
-#ifdef HAVE_TEUCHOS_LONG_LONG_INT
 typedef long long int llint;
 FULL_NUMBER_TYPE_TEST(llint)
-#endif
-
 
 } // namespace Teuchos
 

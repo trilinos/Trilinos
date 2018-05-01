@@ -87,6 +87,14 @@ namespace MueLu {
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Hierarchy(const std::string& label)
+    : Hierarchy()
+  {
+    setObjectLabel(label);
+    Levels_[0]->setObjectLabel(label);
+  }
+
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Hierarchy(const RCP<Matrix>& A)
     : maxCoarseSize_(GetDefaultMaxCoarseSize()), implicitTranspose_(GetDefaultImplicitTranspose()),
       doPRrebalance_(GetDefaultPRrebalance()), isPreconditioner_(true), Cycle_(GetDefaultCycle()),
@@ -99,6 +107,14 @@ namespace MueLu {
     AddLevel(Finest);
 
     Finest->Set("A", A);
+  }
+
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Hierarchy(const RCP<Matrix>& A, const std::string& label)
+    : Hierarchy(A)
+  {
+    setObjectLabel(label);
+    Levels_[0]->setObjectLabel(label);
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -115,6 +131,7 @@ namespace MueLu {
     level->setlib(lib_);
 
     level->SetPreviousLevel( (levelID == 0) ? Teuchos::null : Levels_[LastLevelID() - 1] );
+    level->setObjectLabel(this->getObjectLabel());
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -230,8 +247,16 @@ namespace MueLu {
                                                                    const RCP<const FactoryManagerBase> nextLevelManager) {
     // Use PrintMonitor/TimerMonitor instead of just a FactoryMonitor to print "Level 0" instead of Hierarchy(0)
     // Print is done after the requests for next coarse level
-    TimeMonitor m1(*this, this->ShortClassName() + ": " + "Setup (total)");
-    TimeMonitor m2(*this, this->ShortClassName() + ": " + "Setup" + " (total, level=" + Teuchos::toString(coarseLevelID) + ")");
+
+    TEUCHOS_TEST_FOR_EXCEPTION(LastLevelID() < coarseLevelID, Exceptions::RuntimeError,
+                               "MueLu::Hierarchy:Setup(): level " << coarseLevelID << " (specified by coarseLevelID argument) "
+                               "must be built before calling this function.");
+
+    Level& level = *Levels_[coarseLevelID];
+
+    std::string label        = FormattingHelper::getColonLabel(level.getObjectLabel());
+    TimeMonitor m1(*this, label + this->ShortClassName() + ": " + "Setup (total)");
+    TimeMonitor m2(*this, label + this->ShortClassName() + ": " + "Setup" + " (total, level=" + Teuchos::toString(coarseLevelID) + ")");
 
     // TODO: pass coarseLevelManager by reference
     TEUCHOS_TEST_FOR_EXCEPTION(coarseLevelManager == Teuchos::null, Exceptions::RuntimeError,
@@ -239,12 +264,6 @@ namespace MueLu {
 
     typedef MueLu::TopRAPFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>      TopRAPFactory;
     typedef MueLu::TopSmootherFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node> TopSmootherFactory;
-
-    TEUCHOS_TEST_FOR_EXCEPTION(LastLevelID() < coarseLevelID, Exceptions::RuntimeError,
-                               "MueLu::Hierarchy:Setup(): level " << coarseLevelID << " (specified by coarseLevelID argument) "
-                               "must be built before calling this function.");
-
-    Level& level = *Levels_[coarseLevelID];
 
     if (levelManagers_.size() < coarseLevelID+1)
       levelManagers_.resize(coarseLevelID+1);
@@ -807,14 +826,18 @@ namespace MueLu {
     // manually before/after a recursive call to Iterate. A side artifact to
     // this approach is that the counts for intermediate level timers are twice
     // the counts for the finest and coarsest levels.
-    std::string prefix       = this->ShortClassName() + ": ";
+
+    RCP<Level>    Fine = Levels_[startLevel];
+
+    std::string label        = FormattingHelper::getColonLabel(Fine->getObjectLabel());
+    std::string prefix       = label + this->ShortClassName() + ": ";
     std::string levelSuffix  = " (level=" + toString(startLevel) + ")";
     std::string levelSuffix1 = " (level=" + toString(startLevel+1) + ")";
 
     RCP<Monitor>     iterateTime;
     RCP<TimeMonitor> iterateTime1;
     if (startLevel == 0)
-      iterateTime  = rcp(new Monitor(*this, "Solve", (nIts == 1) ? None : Runtime0, Timings0));
+      iterateTime  = rcp(new Monitor(*this, "Solve", label, (nIts == 1) ? None : Runtime0, Timings0));
     else
       iterateTime1 = rcp(new TimeMonitor(*this, prefix + "Solve (total, level=" + toString(startLevel) + ")", Timings0));
 
@@ -823,7 +846,6 @@ namespace MueLu {
 
     bool zeroGuess = InitialGuessIsZero;
 
-    RCP<Level>    Fine = Levels_[startLevel];
     RCP<Operator> A    = Fine->Get< RCP<Operator> >("A");
     using namespace Teuchos;
     RCP<Time> CompCoarse  = Teuchos::TimeMonitor::getNewCounter(prefix + "Coarse: Computational Time");

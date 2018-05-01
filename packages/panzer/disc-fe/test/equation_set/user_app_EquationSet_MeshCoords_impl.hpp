@@ -123,6 +123,14 @@ buildAndRegisterEquationSetEvaluators(PHX::FieldManager<panzer::Traits>& fm,
 				      const panzer::FieldLibrary& /* fl */,
 				      const Teuchos::ParameterList& /* user_data */) const
 {
+  using panzer::BasisIRLayout;
+  using panzer::EvaluatorStyle;
+  using panzer::IntegrationRule;
+  using panzer::Integrator_BasisTimesScalar;
+  using panzer::Traits;
+  using PHX::Evaluator;
+  using std::string;
+  using std::vector;
   using Teuchos::ParameterList;
   using Teuchos::RCP;
   using Teuchos::rcp;
@@ -130,58 +138,40 @@ buildAndRegisterEquationSetEvaluators(PHX::FieldManager<panzer::Traits>& fm,
   // MeshCoords Equation
   // ********************
 
-  std::string coord_names[3] = {"X","Y","Z"};
-  std::string dof_names[3] = {"COORDX","COORDY","COORDZ"};
+  string coord_names[3] = {"X","Y","Z"};
+  string dof_names[3] = {"COORDX","COORDY","COORDZ"};
 
-  Teuchos::RCP<panzer::IntegrationRule> ir = this->getIntRuleForDOF(dof_names[0]); 
-  Teuchos::RCP<panzer::BasisIRLayout> basis = this->getBasisIRLayoutForDOF(dof_names[0]); 
+  RCP<IntegrationRule> ir = this->getIntRuleForDOF(dof_names[0]); 
+  RCP<BasisIRLayout> basis = this->getBasisIRLayoutForDOF(dof_names[0]); 
 
   // Transient Operator
-  if (this->buildTransientSupport()) {
-    for(int i=0;i<dimension_;i++) {
-      ParameterList p("Transient Residual");
-      p.set("Residual Name", "RESIDUAL_"+dof_names[i]+"_TRANSIENT_OP");
-      p.set("Value Name", "DXDT_"+dof_names[i]);
-      p.set("Basis", basis);
-      p.set("IR", ir);
-      p.set("Multiplier", 1.0);
-  
-      RCP< PHX::Evaluator<panzer::Traits> > op = 
-        rcp(new panzer::Integrator_BasisTimesScalar<EvalT,panzer::Traits>(p));
-      
+  if (this->buildTransientSupport())
+  {
+    for (int i(0); i < dimension_; ++i)
+    {
+      string resName("RESIDUAL_" + dof_names[i]),
+             valName("DXDT_" + dof_names[i]);
+      double multiplier(1);
+      RCP<Evaluator<Traits>> op = rcp(new
+        Integrator_BasisTimesScalar<EvalT, Traits>(EvaluatorStyle::CONTRIBUTES,
+        resName, valName, *basis, *ir, multiplier));
       this->template registerEvaluator<EvalT>(fm, op);
     }
   }
-  else {
+  else
+  {
     TEUCHOS_ASSERT(false); // what does this even mean?
   }
 
-  for(int i=0;i<dimension_;i++) {
-    ParameterList p("Momentum Source Residual");
-    p.set("Residual Name", "RESIDUAL_"+dof_names[i]+"_SOURCE_OP");
-    p.set("Value Name", "NODE_VELOCITY_"+coord_names[i]);
-    p.set("Basis", basis);
-    p.set("IR", ir);
-    p.set("Multiplier", -1.0);
-
-    RCP< PHX::Evaluator<panzer::Traits> > op =
-      rcp(new panzer::Integrator_BasisTimesScalar<EvalT,panzer::Traits>(p));
-
-    this->template registerEvaluator<EvalT>(fm, op);
-  }
-
-  // Use a sum operator to form the overall residual for the equation
-  // - this way we avoid loading each operator separately into the
-  // global residual and Jacobian
+  for (int i(0); i < dimension_; ++i)
   {
-    for(int i=0;i<dimension_;i++) {
-      std::vector<std::string> residual_operator_names;
-
-      residual_operator_names.push_back("RESIDUAL_"+dof_names[i]+"_TRANSIENT_OP");
-      residual_operator_names.push_back("RESIDUAL_"+dof_names[i]+"_SOURCE_OP");
-
-      this->buildAndRegisterResidualSummationEvalautor(fm,dof_names[i],residual_operator_names);
-    }
+    string resName("RESIDUAL_" + dof_names[i]),
+           valName("NODE_VELOCITY_" + coord_names[i]);
+    double multiplier(-1);
+    RCP<Evaluator<Traits>> op = rcp(new
+      Integrator_BasisTimesScalar<EvalT, Traits>(EvaluatorStyle::EVALUATES,
+      resName, valName, *basis, *ir, multiplier));
+    this->template registerEvaluator<EvalT>(fm, op);
   }
 }
 

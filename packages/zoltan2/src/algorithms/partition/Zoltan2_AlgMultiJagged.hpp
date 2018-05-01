@@ -6947,6 +6947,7 @@ void Zoltan2_AlgMJ<Adapter>::partition(
     }
 
     // Reorder results so that they match the order of the input
+
 #if defined(__cplusplus) && __cplusplus >= 201103L
     std::unordered_map<mj_gno_t, mj_lno_t> localGidToLid;
     localGidToLid.reserve(result_num_local_coords);
@@ -7000,8 +7001,7 @@ void Zoltan2_AlgMJ<Adapter>::partition(
         distributor.doPostsAndWaits<mj_gno_t>(sent_gnos, 1, received_gnos());
       }
       {
-
-        ArrayView<mj_part_t> sent_partnos(partId.getRawPtr(), result_num_local_coords);
+        ArrayView<mj_part_t> sent_partnos(partId());
         distributor.doPostsAndWaits<mj_part_t>(sent_partnos, 1, received_partids());
       }
       partId = arcp(new mj_part_t[this->num_local_coords],

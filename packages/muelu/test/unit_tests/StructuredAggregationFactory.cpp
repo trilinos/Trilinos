@@ -788,7 +788,7 @@ namespace MueLuTests {
                                                                  meshLayout);
 
     // Since we are doing uncoupled aggregation we fill meshData with -1
-    for(size_t idx = 0; idx < meshData.size(); ++idx) {
+    for(size_t idx = 0; idx < (size_t) meshData.size(); ++idx) {
       meshData[idx] = -1;
     }
 
@@ -898,7 +898,7 @@ namespace MueLuTests {
                                                                  meshLayout);
 
     // Since we are doing uncoupled aggregation we fill meshData with -1
-    for(size_t idx = 0; idx < meshData.size(); ++idx) {
+    for(size_t idx = 0; idx < (size_t) meshData.size(); ++idx) {
       meshData[idx] = -1;
     }
 
@@ -1008,7 +1008,7 @@ namespace MueLuTests {
                                                                  meshLayout);
 
     // Since we are doing uncoupled aggregation we fill meshData with -1
-    for(size_t idx = 0; idx < meshData.size(); ++idx) {
+    for(size_t idx = 0; idx < (size_t) meshData.size(); ++idx) {
       meshData[idx] = -1;
     }
 
@@ -1114,7 +1114,7 @@ namespace MueLuTests {
                                                                  meshLayout);
 
     // Since we are doing uncoupled aggregation we fill meshData with -1
-    for(size_t idx = 0; idx < meshData.size(); ++idx) {
+    for(size_t idx = 0; idx < (size_t) meshData.size(); ++idx) {
       meshData[idx] = -1;
     }
 

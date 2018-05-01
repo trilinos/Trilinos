@@ -122,26 +122,6 @@ RCP<Eigenproblem<Scalar, MultiVector<Scalar>, Operator<Scalar> > > buildProblem(
   }
   // distribute matrix data to other nodes
   A->fillComplete();
-  // A->print(cout);
-
-  // simple symmetry test
-  // if (mptestmypid == 0) cout << endl;
-  // for (int t=0; t<10; ++t) {
-  //   Vector<Scalar> x(A->getRangeMap()), y(x), Axy(x);
-  //   x.random();
-  //   y.random();
-  //   Scalar d;
-  //   d = x.norm2(); x.scale(SCT::one()/d);
-  //   d = y.norm2(); y.scale(SCT::one()/d);
-  //   // check that x'*A*y == y'*A*x
-  //   A->apply(x,Axy);
-  //   d = y.dot(Axy);
-  //   if (mptestmypid == 0) cout << "y'*A*x: " << d << "    ";
-  //   A->apply(y,Axy);
-  //   d = x.dot(Axy);
-  //   if (mptestmypid == 0) cout << "x'*A*y: " << d << endl;
-  // }
-  // if (mptestmypid == 0) cout << endl;
 
   // Create initial MV
   RCP<MV> X0;

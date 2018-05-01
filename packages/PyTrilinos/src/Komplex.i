@@ -64,16 +64,10 @@ following class:
 	docstring = %komplex_docstring) Komplex
 
 %{
-// Configuration includes
+// Configuration include files
 #include "PyTrilinos_config.h"
-#ifdef HAVE_INTTYPES_H
-#undef HAVE_INTTYPES_H
-#endif
-#ifdef HAVE_STDINT_H
-#undef HAVE_STDINT_H
-#endif
 
-// Epetra includes
+// Epetra include files
 #ifdef HAVE_EPETRA
 #include "PyTrilinos_Epetra_Headers.hpp"
 
@@ -81,9 +75,8 @@ following class:
 #define NO_IMPORT_ARRAY
 #include "numpy_include.hpp"
 
-// Komplex includes
-#include "Komplex_Version.h"
-#include "Komplex_LinearProblem.h"
+// Komplex include files
+#include "PyTrilinos_Komplex_Headers.hpp"
 
 #endif
 
@@ -95,24 +88,24 @@ following class:
 // Include Komplex documentation
 %include "Komplex_dox.i"
 
-// SWIG library includes
+// SWIG library include files
 using std::string;
 %include "stl.i"
 
 ///////////////////////////////////
 // Komplex configuration support //
 ///////////////////////////////////
-#undef PACKAGE_BUGREPORT
-#undef PACKAGE_NAME
-#undef PACKAGE_STRING
-#undef PACKAGE_TARNAME
-#undef PACKAGE_VERSION
+// #undef PACKAGE_BUGREPORT
+// #undef PACKAGE_NAME
+// #undef PACKAGE_STRING
+// #undef PACKAGE_TARNAME
+// #undef PACKAGE_VERSION
 %include "Komplex_config.h"
 %include "PyTrilinos_config.h"
 
 // Teuchos::RCP<> support
 #ifdef TEUCHOS
-%include "Teuchos_RCP.i"
+%include "Teuchos_RCP_typemaps.i"
 #endif
 
 // External Trilinos modules

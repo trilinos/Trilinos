@@ -57,6 +57,7 @@ ADD_CUSTOM_TARGET(PyTrilinos_Test_testutil ALL
 PyTrilinos_MAKE_TEST(testTeuchos              )
 PyTrilinos_MAKE_TEST(testTeuchos_Comm         )
 PyTrilinos_MAKE_TEST(testTeuchos_ParameterList)
+PyTrilinos_MAKE_TEST(testTeuchos_RCP          )
 PyTrilinos_MAKE_TEST(testTeuchos_ScalarTraits )
 
 IF(PyTrilinos_ENABLE_Epetra)

@@ -80,35 +80,25 @@ ParameterList will accept a python dictionary.
 "
 %enddef
 
+%define %teuchos_import_code
+"
+from . import _Teuchos
+"
+%enddef
+
 %module(package      = "PyTrilinos",
 	directors    = "1",
 	autodoc      = "1",
 	implicitconv = "1",
+        moduleimport = %teuchos_import_code,
 	docstring    = %teuchos_docstring) Teuchos
 
-// Includes
+// Include Files
 %{
-// Configuration includes
-#include "PyTrilinos_config.h"
-#ifdef HAVE_INTTYPES_H
-#undef HAVE_INTTYPES_H
-#endif
-#ifdef HAVE_STDINT_H
-#undef HAVE_STDINT_H
-#endif
-#include "Teuchos_ConfigDefs.hpp"
-#include "Teuchos_DLLExportMacro.h"
-#include "Teuchos_iostream_helpers.hpp"
+// Teuchos include files
+#include "PyTrilinos_Teuchos_Headers.hpp"
 
-// Teuchos includes
-#include "Teuchos_Version.hpp"
-#include "Teuchos_NullIteratorTraits.hpp"
-#include "Teuchos_RCPDecl.hpp"
-#include "Teuchos_ParameterListExceptions.hpp"
-#include "Teuchos_Time.hpp"
-#include "Teuchos_DataAccess.hpp"
-
-// Local includes
+// Local include files
 #define NO_IMPORT_ARRAY
 #include "numpy_include.hpp"
 
@@ -126,6 +116,13 @@ using Teuchos::RCP;
 
 // Namespace flattening
 using std::string;
+
+// Pull the RCP module into the Teuchos package
+%pythoncode
+%{
+__all__ = ["RCP"]
+import RCP
+%}
 
 // Standard exception handling
 %include "exception.i"
@@ -192,7 +189,7 @@ using std::string;
 // stored internally as a Teuchos::RCP<> as well.  This is
 // accomplished by %include-ing Teuchos_RCP.i and calling the provided
 // macro %teuchos_rcp() on the class.
-%include "Teuchos_RCP.i"
+%include "Teuchos_RCP_typemaps.i"
 %include "Teuchos_RCP_DAP.i"
 %teuchos_rcp(std::basic_ostream)
 %teuchos_rcp(std::ostream)
@@ -203,7 +200,7 @@ using std::string;
 %import "Teuchos_TypeNameTraits.hpp"
 %import "Teuchos_NullIteratorTraits.hpp"
 
-// Teuchos includes
+// Teuchos include files
 %include "Teuchos_Traits.i"
 %include "Teuchos_Comm.i"
 %include "Teuchos_ParameterList.i"
