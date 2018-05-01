@@ -219,17 +219,6 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   STANDARD_PASS_OUTPUT
   )
 
-TRIBITS_ADD_EXECUTABLE_AND_TEST(
-  DetermineLocalTriangularStructure
-  SOURCES 
-    Ifpack2_UnitTestDetermineLocalTriangularStructure.cpp
-    ${TEUCHOS_STD_UNIT_TEST_MAIN}
-  ARGS ""
-  COMM serial mpi
-  NUM_MPI_PROCS 1-4
-  STANDARD_PASS_OUTPUT
-  )
-
 ASSERT_DEFINED (${PACKAGE_NAME}_ENABLE_Experimental_KokkosKernels_Features)
 IF (${PACKAGE_NAME}_ENABLE_Experimental_KokkosKernels_Features)
   SET(SGSMT_MATRIX_FILE sherman1.mtx)

@@ -1,12 +1,12 @@
 /*
-//@HEADER
+// @HEADER
 // ***********************************************************************
 //
-//       Ifpack2: Templated Object-Oriented Algebraic Preconditioner Package
-//                 Copyright (2009) Sandia Corporation
+//          Tpetra: Templated Linear Algebra Services Package
+//                 Copyright (2008) Sandia Corporation
 //
-// Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
-// license for use of this work by or on behalf of the U.S. Government.
+// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
+// the U.S. Government retains certain rights in this software.
 //
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
@@ -37,17 +37,17 @@
 //
 // Questions? Contact Michael A. Heroux (maherou@sandia.gov)
 //
-// ***********************************************************************
-//@HEADER
+// ************************************************************************
+// @HEADER
 */
 
-/// \file Ifpack2_UnitTestDetermineLocalTriangularStructure.cpp
-/// \brief Unit test for Ifpack2::Details::determineLocalTriangularStructure
+/// \file DetermineLocalTriangularStructure.cpp
+/// \brief Unit test for Tpetra::Details::determineLocalTriangularStructure
 
 #include "Teuchos_UnitTestHarness.hpp"
 #include "Tpetra_Core.hpp"
 #include "Tpetra_Map.hpp"
-#include "Ifpack2_Details_determineLocalTriangularStructure.hpp"
+#include "Tpetra_Details_determineLocalTriangularStructure.hpp"
 #include "KokkosSparse_CrsMatrix.hpp"
 #include <type_traits>
 
@@ -284,10 +284,10 @@ testGraph (bool& success,
            const LocalMap<LO, GO, DT>& lclRowMap,
            const LocalMap<LO, GO, DT>& lclColMap,
            const bool ignoreMapsForTriangularStructure,
-           const Ifpack2::Details::LocalTriangularStructureResult<LO>& expectedResult)
+           const Tpetra::Details::LocalTriangularStructureResult<LO>& expectedResult)
 {
-  using Ifpack2::Details::determineLocalTriangularStructure;
-  using result_type = Ifpack2::Details::LocalTriangularStructureResult<LO>;
+  using Tpetra::Details::determineLocalTriangularStructure;
+  using result_type = Tpetra::Details::LocalTriangularStructureResult<LO>;
 
   const result_type result =
     determineLocalTriangularStructure (graph, lclRowMap, lclColMap,
@@ -300,7 +300,7 @@ testGraph (bool& success,
 
 TEUCHOS_UNIT_TEST(DetermineLocalTriangularStructure, Test0)
 {
-  using Ifpack2::Details::determineLocalTriangularStructure;
+  using Tpetra::Details::determineLocalTriangularStructure;
   using Teuchos::RCP;
   using Teuchos::rcp;
   using std::endl;
@@ -311,9 +311,9 @@ TEUCHOS_UNIT_TEST(DetermineLocalTriangularStructure, Test0)
   using map_type = Tpetra::Map<LO, GO>;
   //using local_map_type = LocalMap<LO, GO, DT>;
   //using local_crs_graph_type = LocalCrsGraph<LO, DT>;
-  using result_type = Ifpack2::Details::LocalTriangularStructureResult<LO>;
+  using result_type = Tpetra::Details::LocalTriangularStructureResult<LO>;
 
-  out << "Test Ifpack2::Details::determineLocalTriangularStructure" << endl;
+  out << "Test Tpetra::Details::determineLocalTriangularStructure" << endl;
   Teuchos::OSTab tab1 (out);
   auto comm = Tpetra::getDefaultComm ();
 

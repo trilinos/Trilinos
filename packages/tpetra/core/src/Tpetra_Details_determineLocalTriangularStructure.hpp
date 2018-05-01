@@ -1,25 +1,84 @@
-#ifndef IFPACK2_DETAILS_DETERMINELOCALTRIANGULARSTRUCTURE_HPP
-#define IFPACK2_DETAILS_DETERMINELOCALTRIANGULARSTRUCTURE_HPP
+/*
+// @HEADER
+// ***********************************************************************
+//
+//          Tpetra: Templated Linear Algebra Services Package
+//                 Copyright (2008) Sandia Corporation
+//
+// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
+// the U.S. Government retains certain rights in this software.
+//
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are
+// met:
+//
+// 1. Redistributions of source code must retain the above copyright
+// notice, this list of conditions and the following disclaimer.
+//
+// 2. Redistributions in binary form must reproduce the above copyright
+// notice, this list of conditions and the following disclaimer in the
+// documentation and/or other materials provided with the distribution.
+//
+// 3. Neither the name of the Corporation nor the names of the
+// contributors may be used to endorse or promote products derived from
+// this software without specific prior written permission.
+//
+// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
+// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
+// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+//
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+//
+// ************************************************************************
+// @HEADER
+*/
+
+#ifndef TPETRA_DETAILS_DETERMINELOCALTRIANGULARSTRUCTURE_HPP
+#define TPETRA_DETAILS_DETERMINELOCALTRIANGULARSTRUCTURE_HPP
+
+/// \file Tpetra_Details_determineLocalTriangularStructure.hpp
+/// \brief Declaration and definition of
+///   Tpetra::Details::determineLocalTriangularStructure.
+///
+/// \warning This file, and its contents, are an implementation detail
+///   of Tpetra.  They may change or disappear at any time.
 
 #include "Kokkos_Core.hpp"
 #include "Tpetra_Details_OrdinalTraits.hpp"
 
-namespace Ifpack2 {
+namespace Tpetra {
 namespace Details {
 
+/// \brief Return value of determineLocalTriangularStructure.
+///
+/// \tparam LO Same as Tpetra classes' \c LocalOrdinal template parameter.
 template<class LO>
 struct LocalTriangularStructureResult {
+  //! (Local) number of populated diagonal entries.
   LO diagCount;
+  //! Maximum number of entries over all local rows.
   LO maxNumRowEnt;
+  //! Whether the graph is locally structurally lower triangular.
   bool couldBeLowerTriangular;
+  //! Whether the graph is locally structurally upper triangular.
   bool couldBeUpperTriangular;
 };
 
 namespace Impl {
-
   /// \brief Implementation of
-  ///   Ifpack2::Details::determineLocalTriangularStructure (which see
+  ///   Tpetra::Details::determineLocalTriangularStructure (which see
   ///   below).
+  ///
+  /// \warning This is an implementation detail of an implementation
+  ///   detail.  It may change or disappear at any time.
   ///
   /// Kokkos::parallel_reduce functor for counting the local
   /// number of diagonal entries in a sparse graph, and determining
@@ -164,6 +223,9 @@ namespace Impl {
 ///   sparse graph, and determine whether the local part of the graph
 ///   is structurally lower or upper triangular (or neither).
 ///
+/// \warning This is an implementation detail of Tpetra.  It may
+///   change or disappear at any time.
+///
 /// \tparam LocalGraphType Kokkos::StaticCrsGraph specialization
 /// \tparam LocalMapType Result of Tpetra::Map::getLocalGraph()
 ///
@@ -188,7 +250,7 @@ determineLocalTriangularStructure (const LocalGraphType& G,
     Impl::DetermineLocalTriangularStructure<LocalGraphType, LocalMapType>;
 
   LocalTriangularStructureResult<LO> result {0, 0, true, true};
-  Kokkos::parallel_reduce ("Ifpack2::Details::determineLocalTriangularStructure",
+  Kokkos::parallel_reduce ("Tpetra::Details::determineLocalTriangularStructure",
                            range_type (0, G.numRows ()),
                            functor_type (G, rowMap, colMap,
                                          ignoreMapsForTriangularStructure),
@@ -197,6 +259,6 @@ determineLocalTriangularStructure (const LocalGraphType& G,
 }
 
 } // namespace Details
-} // namespace Ifpack2
+} // namespace Tpetra
 
-#endif // IFPACK2_DETAILS_DETERMINELOCALTRIANGULARSTRUCTURE_HPP
+#endif // TPETRA_DETAILS_DETERMINELOCALTRIANGULARSTRUCTURE_HPP
