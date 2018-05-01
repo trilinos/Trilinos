@@ -803,8 +803,7 @@ namespace Xpetra {
       //! Sets all vector entries to zero.
       explicit EpetraIntVectorT(const Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> > &map, bool zeroOut=true)
       {
-        XPETRA_RCP_DYNAMIC_CAST(const EpetraMapT<GlobalOrdinal XPETRA_COMMA Node>, map, eMap, "Xpetra::EpetraCrsMatrixT constructors only accept Xpetra::EpetraMapT as input arguments.");
-        vec_ = rcp(new Epetra_IntVector(eMap->getEpetra_BlockMap(), zeroOut));
+        vec_ = rcp(new Epetra_IntVector(toEpetra<GlobalOrdinal,Node>(map), zeroOut));
       }
 
       //! Destructor.
