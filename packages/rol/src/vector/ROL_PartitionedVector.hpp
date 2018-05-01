@@ -43,6 +43,8 @@
 
 #include "ROL_Vector.hpp"
 
+#include <initializer_list>
+
 #ifndef ROL_PARTITIONED_VECTOR_H
 #define ROL_PARTITIONED_VECTOR_H
 
@@ -243,6 +245,13 @@ public:
 
   size_type numVectors() const {
     return vecs_.size();
+  }
+
+public:
+
+  static Vp create( std::initializer_list<Vp> vs ) {
+    std::vector<Vp> subvecs{vs};
+    return ROL::makePtr<PartitionedVector>( subvecs ); 
   }
 
 };

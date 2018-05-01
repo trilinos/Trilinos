@@ -41,92 +41,65 @@
 // ************************************************************************
 // @HEADER
 
+
 #pragma once
-
-#include <memory>
-#include <type_traits>
-#include <cstddef>
-#include <utility>
+#ifndef ROL_DYNAMICFUNCTION_HPP
+#define ROL_DYNAMICFUNCTION_HPP
 
 
-/* \file  ROL_Ptr.hpp
- * \brief Wraps the C++11 std::shared_ptr
- *        ROL will be build with this implementation if CMake is
- *        configured with ROL_ENABLE_STD_SHARED_PTR:BOOL=ON
- *        Default behavior is OFF and Teuchos::RCP will be used
- */
+#include "ROL_PartitionedVector.hpp"
+#include "ROL_VectorWorkspace.hpp"
 
+/** @ingroup dynamic_group
+    \class ROL::DynamicFunction
+    \brief Provides update interface, casting and vector management to
+           DynamicConstraint and DynamicObjective.
+
+*/
 namespace ROL {
+template<typename Real> 
+class DynamicFunction {
+public:
 
-template<class T> using Ptr = std::shared_ptr<T>;
+  using V  = Vector<Real>;
+  using PV = PartitionedVector<Real>;
 
-std::nullptr_t nullPtr = nullptr;
+  virtual ~DynamicFunction() {}
 
-template<class T, class... Args>
-inline
-Ptr<T> makePtr( Args&&... args ) {
-  return std::make_shared<T>(args...);
-}
+  // Update old state
+  virtual void update_uo( const V& x ) {}
 
-template<class T>
-inline
-Ptr<T> makePtrFromRef( T& obj ) {
-  return std::shared_ptr<T>(&obj,[](void*){});
-}
+  // Update new state
+  virtual void update_un( const V& x ) {}
 
-template<class T>
-inline
-Ptr<const T> makePtrFromRef( const T& obj ) {
-  return std::shared_ptr<const T>(&obj,[](const void*){});
-}
+  // Update control
+  virtual void update_z( const V& x ) {}
+  
+protected:
 
-template< class T, class U > 
-inline
-Ptr<T> staticPtrCast( const Ptr<U>& r ) noexcept {
-  return std::static_pointer_cast<T>(r);
-}
+  VectorWorkspace<Real>& getVectorWorkspace() const;
 
-template< class T, class U > 
-inline
-Ptr<T> constPtrCast( const Ptr<U>& r ) noexcept {
-  return std::const_pointer_cast<T>(r);
-}
+  PV& partition( V& x ) const;
+  const PV& partition( const V& x ) const;
 
-template< class T, class U > 
-inline
-Ptr<T> dynamicPtrCast( const Ptr<U>& r ) noexcept {
-  return std::dynamic_pointer_cast<T>(r);
-}
+  V& getNew( V& x ) const;
+  const V& getNew( const V& x ) const;
 
-template<class T>
-inline
-const T* getRawPtr( const Ptr<const T>& x ) {
-  return x.get();
-}
+  V& getOld( V& x ) const;
+  const V& getOld( const V& x ) const;  
 
-template<class T>
-inline
-T* getRawPtr( const Ptr<T>& x ) {
-  return x.get();
-}
+private:
 
-template<class T>
-inline 
-int getCount( const Ptr<T>& x ) {
-  return x.use_count();
-}
+  mutable VectorWorkspace<Real> workspace_;
 
-template<class T>
-inline
-bool is_nullPtr( const Ptr<T>& x ) {
-  return x == nullPtr;
-}
+};
 
-template<class T>
-struct IsSharedPtr : public std::false_type {};
-
-template<class T>
-struct IsSharedPtr<std::shared_ptr<T>> : public std::true_type {};
 
 } // namespace ROL
+
+
+
+#include "ROL_DynamicFunctionDef.hpp"
+
+#endif // ROL_DYNAMICFUNCTION_HPP
 

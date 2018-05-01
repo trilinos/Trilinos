@@ -41,92 +41,62 @@
 // ************************************************************************
 // @HEADER
 
+
 #pragma once
+#ifndef ROL_DYNAMICCONSTRAINTCHECK_HPP
+#define ROL_DYNAMICCONSTRAINTCHECK_HPP
 
-#include <memory>
-#include <type_traits>
-#include <cstddef>
-#include <utility>
+#include <functional>
 
-
-/* \file  ROL_Ptr.hpp
- * \brief Wraps the C++11 std::shared_ptr
- *        ROL will be build with this implementation if CMake is
- *        configured with ROL_ENABLE_STD_SHARED_PTR:BOOL=ON
- *        Default behavior is OFF and Teuchos::RCP will be used
- */
+#include "ROL_DynamicConstraint.hpp"
 
 namespace ROL {
 
-template<class T> using Ptr = std::shared_ptr<T>;
+namespace details {
 
-std::nullptr_t nullPtr = nullptr;
+using namespace std;
+using Finite_Difference_Arrays::shifts;
+using Finite_Difference_Arrays::weights;
 
-template<class T, class... Args>
-inline
-Ptr<T> makePtr( Args&&... args ) {
-  return std::make_shared<T>(args...);
-}
+template<typename Real>
+class DynamicConstraintCheck : public DynamicConstraint<Real> {
+public:
 
-template<class T>
-inline
-Ptr<T> makePtrFromRef( T& obj ) {
-  return std::shared_ptr<T>(&obj,[](void*){});
-}
+  using V  = Vector<Real>;  
+  using DC = DynamicConstraint<Real>;
+ 
 
-template<class T>
-inline
-Ptr<const T> makePtrFromRef( const T& obj ) {
-  return std::shared_ptr<const T>(&obj,[](const void*){});
-}
+  // Provide vectors from which to create random direction vectors
+  // (No bound constraint)
+  DynamicConstraintCheck( DynamicConstraint<Real>& con,
+                          Teuchos::ParameterList& pl, 
+                          ostream& os );
 
-template< class T, class U > 
-inline
-Ptr<T> staticPtrCast( const Ptr<U>& r ) noexcept {
-  return std::static_pointer_cast<T>(r);
-}
+  DynamicConstraintCheck( DynamicConstraint<Real>& con,
+                          const int numSteps, const int order,
+                          ostream& os );
+ 
 
-template< class T, class U > 
-inline
-Ptr<T> constPtrCast( const Ptr<U>& r ) noexcept {
-  return std::const_pointer_cast<T>(r);
-}
+  virtual ~DyanamicConstraintCheck() {}
 
-template< class T, class U > 
-inline
-Ptr<T> dynamicPtrCast( const Ptr<U>& r ) noexcept {
-  return std::dynamic_pointer_cast<T>(r);
-}
+private:
 
-template<class T>
-inline
-const T* getRawPtr( const Ptr<const T>& x ) {
-  return x.get();
-}
+  DC<Real>&    con_;
+  ostream&     os_;   
 
-template<class T>
-inline
-T* getRawPtr( const Ptr<T>& x ) {
-  return x.get();
-}
+  int          order_;
+  int          numSteps_;
+  vector<Real> steps_;
+};
 
-template<class T>
-inline 
-int getCount( const Ptr<T>& x ) {
-  return x.use_count();
-}
+} // namespace details
 
-template<class T>
-inline
-bool is_nullPtr( const Ptr<T>& x ) {
-  return x == nullPtr;
-}
-
-template<class T>
-struct IsSharedPtr : public std::false_type {};
-
-template<class T>
-struct IsSharedPtr<std::shared_ptr<T>> : public std::true_type {};
+using details::DynamicConstraintCheck;
 
 } // namespace ROL
+
+#include "ROL_DynamicConstraintCheckDef.hpp"
+
+#endif // ROL_DYNAMICCONSTRAINTCHECK_HPP
+
 

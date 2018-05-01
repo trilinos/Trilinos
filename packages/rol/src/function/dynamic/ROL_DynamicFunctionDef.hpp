@@ -41,92 +41,56 @@
 // ************************************************************************
 // @HEADER
 
+
 #pragma once
+#ifndef ROL_DYNAMICFUNCTIONDEF_HPP
+#define ROL_DYNAMICFUNCTIONDEF_HPP
 
-#include <memory>
-#include <type_traits>
-#include <cstddef>
-#include <utility>
-
-
-/* \file  ROL_Ptr.hpp
- * \brief Wraps the C++11 std::shared_ptr
- *        ROL will be build with this implementation if CMake is
- *        configured with ROL_ENABLE_STD_SHARED_PTR:BOOL=ON
- *        Default behavior is OFF and Teuchos::RCP will be used
- */
 
 namespace ROL {
 
-template<class T> using Ptr = std::shared_ptr<T>;
+template<typename Real>
+VectorWorkspace<Real>&
+DynamicFunction<Real>::getVectorWorkspace() const { return workspace_; }
 
-std::nullptr_t nullPtr = nullptr;
-
-template<class T, class... Args>
-inline
-Ptr<T> makePtr( Args&&... args ) {
-  return std::make_shared<T>(args...);
+template<typename Real>
+PartitionedVector<Real>& 
+DynamicFunction<Real>::partition( Vector<Real>& x ) const { 
+  return static_cast<PartitionedVector<Real>&>(x);
 }
 
-template<class T>
-inline
-Ptr<T> makePtrFromRef( T& obj ) {
-  return std::shared_ptr<T>(&obj,[](void*){});
+template<typename Real>
+const PartitionedVector<Real>& 
+DynamicFunction<Real>::partition( const Vector<Real>& x ) const { 
+  return static_cast<const PartitionedVector<Real>&>(x);
 }
 
-template<class T>
-inline
-Ptr<const T> makePtrFromRef( const T& obj ) {
-  return std::shared_ptr<const T>(&obj,[](const void*){});
+template<typename Real>
+Vector<Real>& 
+DynamicFunction<Real>::getNew( Vector<Real>& x ) const { 
+  return *(partition(x).get(1));
 }
 
-template< class T, class U > 
-inline
-Ptr<T> staticPtrCast( const Ptr<U>& r ) noexcept {
-  return std::static_pointer_cast<T>(r);
+template<typename Real>
+const PartitionedVector<Real>& 
+DynamicFunction<Real>::getNew( const Vector<Real>& x ) const { 
+  return *(partition(x).get(1));
 }
 
-template< class T, class U > 
-inline
-Ptr<T> constPtrCast( const Ptr<U>& r ) noexcept {
-  return std::const_pointer_cast<T>(r);
+template<typename Real>
+Vector<Real>& 
+DynamicFunction<Real>::getOld( Vector<Real>& x ) const { 
+  return *(partition(x).get(0));
 }
 
-template< class T, class U > 
-inline
-Ptr<T> dynamicPtrCast( const Ptr<U>& r ) noexcept {
-  return std::dynamic_pointer_cast<T>(r);
+template<typename Real>
+const PartitionedVector<Real>& 
+DynamicFunction<Real>::getOld( const Vector<Real>& x ) const { 
+  return *(partition(x).get(0));
 }
-
-template<class T>
-inline
-const T* getRawPtr( const Ptr<const T>& x ) {
-  return x.get();
-}
-
-template<class T>
-inline
-T* getRawPtr( const Ptr<T>& x ) {
-  return x.get();
-}
-
-template<class T>
-inline 
-int getCount( const Ptr<T>& x ) {
-  return x.use_count();
-}
-
-template<class T>
-inline
-bool is_nullPtr( const Ptr<T>& x ) {
-  return x == nullPtr;
-}
-
-template<class T>
-struct IsSharedPtr : public std::false_type {};
-
-template<class T>
-struct IsSharedPtr<std::shared_ptr<T>> : public std::true_type {};
 
 } // namespace ROL
+
+
+#endif // ROL_DYNAMICFUNCTIONDEF_HPP
 

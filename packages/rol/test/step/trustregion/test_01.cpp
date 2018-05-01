@@ -41,92 +41,64 @@
 // ************************************************************************
 // @HEADER
 
-#pragma once
+/*! \file  test_01.cpp
+    \brief Test ConicModel
+*/
 
-#include <memory>
-#include <type_traits>
-#include <cstddef>
-#include <utility>
+#include "ROL_OptimizationSolver.hpp"
+#include "Teuchos_GlobalMPISession.hpp"
+#include "Teuchos_XMLParameterListHelpers.hpp"
+#include "ROL_Stream.hpp"
+#include "ROL_RandomVector.hpp"
+#include "ROL_Rosenbrock.hpp"
+#include "ROL_ConicApproximationModel.hpp"
+
+#include <iostream>
 
 
-/* \file  ROL_Ptr.hpp
- * \brief Wraps the C++11 std::shared_ptr
- *        ROL will be build with this implementation if CMake is
- *        configured with ROL_ENABLE_STD_SHARED_PTR:BOOL=ON
- *        Default behavior is OFF and Teuchos::RCP will be used
- */
+int main(int argc, char *argv[]) {
 
-namespace ROL {
+  using RealT = double;
+  using namespace ROL;
 
-template<class T> using Ptr = std::shared_ptr<T>;
+  Teuchos::GlobalMPISession mpiSession(&argc, &argv);
 
-std::nullptr_t nullPtr = nullptr;
+  // This little trick lets us print to std::cout only if a (dummy) command-line argument is provided.
+  auto outStream = makeStreamPtr( std::cout, argc > 1 );
 
-template<class T, class... Args>
-inline
-Ptr<T> makePtr( Args&&... args ) {
-  return std::make_shared<T>(args...);
+  int errorFlag  = 0;
+
+  // *** Test body.
+
+  try {
+
+    ZOO::getRosenbrock<RealT> rosenbrock;
+
+    auto x   = rosenbrock.getInitialGuess();
+    auto a   = x->clone();
+    auto s   = x->clone();
+    auto d   = x->clone();
+    auto obj = rosenbrock.getObjective();
+
+    RandomizeVector( *s );
+    RandomizeVector( *a );
+    RandomizeVector( *d );
+
+    ConicApproximationModel<RealT> conic( obj, x, s, a );
+    conic.checkGradient( *x, *d, true, *outStream );
+
+  }
+  catch (std::logic_error err) {
+    *outStream << err.what() << std::endl;
+    errorFlag = -1000;
+  }; // end try
+
+  if (errorFlag != 0)
+    std::cout << "End Result: TEST FAILED" << std::endl;
+  else
+    std::cout << "End Result: TEST PASSED" << std::endl;
+
+  return 0;
+
 }
-
-template<class T>
-inline
-Ptr<T> makePtrFromRef( T& obj ) {
-  return std::shared_ptr<T>(&obj,[](void*){});
-}
-
-template<class T>
-inline
-Ptr<const T> makePtrFromRef( const T& obj ) {
-  return std::shared_ptr<const T>(&obj,[](const void*){});
-}
-
-template< class T, class U > 
-inline
-Ptr<T> staticPtrCast( const Ptr<U>& r ) noexcept {
-  return std::static_pointer_cast<T>(r);
-}
-
-template< class T, class U > 
-inline
-Ptr<T> constPtrCast( const Ptr<U>& r ) noexcept {
-  return std::const_pointer_cast<T>(r);
-}
-
-template< class T, class U > 
-inline
-Ptr<T> dynamicPtrCast( const Ptr<U>& r ) noexcept {
-  return std::dynamic_pointer_cast<T>(r);
-}
-
-template<class T>
-inline
-const T* getRawPtr( const Ptr<const T>& x ) {
-  return x.get();
-}
-
-template<class T>
-inline
-T* getRawPtr( const Ptr<T>& x ) {
-  return x.get();
-}
-
-template<class T>
-inline 
-int getCount( const Ptr<T>& x ) {
-  return x.use_count();
-}
-
-template<class T>
-inline
-bool is_nullPtr( const Ptr<T>& x ) {
-  return x == nullPtr;
-}
-
-template<class T>
-struct IsSharedPtr : public std::false_type {};
-
-template<class T>
-struct IsSharedPtr<std::shared_ptr<T>> : public std::true_type {};
-
-} // namespace ROL
 
