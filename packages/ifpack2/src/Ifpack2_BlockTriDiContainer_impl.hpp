@@ -105,7 +105,7 @@ namespace Ifpack2 {
     /// cuda specialization
     ///
     template<typename T> struct is_cuda        { enum : bool { value = false }; };
-#if defined (KOKKOS_ENABLE_CUDA)
+#if defined(KOKKOS_ENABLE_CUDA)
     template<> struct is_cuda<Kokkos::Cuda>    { enum : bool { value = true  }; };
 #endif
 
@@ -477,6 +477,7 @@ namespace Ifpack2 {
         const local_ordinal_type num_vectors = multivector_.extent(1);
         if (num_vectors == 1) {
 	  if (is_cuda<execution_space>::value) {
+#if defined(KOKKOS_ENABLE_CUDA)
 	    using team_policy_type = Kokkos::TeamPolicy<execution_space>;
 	    // vector length should be 1 here
 	    const team_policy_type policy(iend_ - ibeg_, blocksize_, 1); 
@@ -496,6 +497,7 @@ namespace Ifpack2 {
 		      bptr[k] = aptr[k];
 		    });
 	      });
+#endif
 	  } else {
 	    const Kokkos::RangePolicy<execution_space> policy(ibeg_, iend_);
 	    Kokkos::parallel_for
@@ -1014,6 +1016,7 @@ namespace Ifpack2 {
       const local_ordinal_type blocksize = btdm.values.extent(1);
       
       if (is_cuda<execution_space>::value) {
+#if defined(KOKKOS_ENABLE_CUDA)
         using team_policy_type = Kokkos::TeamPolicy<execution_space>;
         const impl_scalar_type_4d_view values((impl_scalar_type*)btdm.values.data(), 
                                               btdm.values.extent(0), 
@@ -1040,6 +1043,7 @@ namespace Ifpack2 {
                   });
               });
           });
+#endif
       } else {
         // exclude from cuda to remove warning to compile host code on device
 #if defined(__CUDA_ARCH__)
@@ -1640,9 +1644,11 @@ namespace Ifpack2 {
 
       void run() {
         if (is_cuda<execution_space>::value) {
+#if defined(KOKKOS_ENABLE_CUDA)
 	  const local_ordinal_type vl = vector_length;
           const Kokkos::TeamPolicy<execution_space> policy(packptr.extent(0) - 1, Kokkos::AUTO(), vl);
           Kokkos::parallel_for(policy, *this);
+#endif
         } else {
 #if defined(__CUDA_ARCH__)        
           TEUCHOS_TEST_FOR_EXCEPT_MSG(true, "Error: CUDA should not see this code"); 
@@ -1846,9 +1852,11 @@ namespace Ifpack2 {
         value_count = 0;
         scalar_multivector = scalar_multivector_;
         if (is_cuda<execution_space>::value) {
+#if defined(KOKKOS_ENABLE_CUDA)
 	  const local_ordinal_type vl = vector_length;
           const Kokkos::TeamPolicy<execution_space,ToPackedMultiVectorTag> policy(packptr.extent(0) - 1, Kokkos::AUTO(), vl);
           Kokkos::parallel_for(policy, *this);
+#endif
         } else {
 #if defined(__CUDA_ARCH__)
           TEUCHOS_TEST_FOR_EXCEPT_MSG(true, "Error: CUDA should not see this code"); 
@@ -1878,6 +1886,7 @@ namespace Ifpack2 {
         }
         
         if (is_cuda<execution_space>::value) {
+#if defined(KOKKOS_ENABLE_CUDA)
 	  const local_ordinal_type vl = vector_length;
           if (is_vectors_zero) {
             const Kokkos::TeamPolicy
@@ -1890,6 +1899,7 @@ namespace Ifpack2 {
             if (norm == NULL)  Kokkos::parallel_for(policy, *this);
             else               Kokkos::parallel_reduce(policy, *this, norm);              
           }
+#endif
         } else {
 #if defined(__CUDA_ARCH__)        
           TEUCHOS_TEST_FOR_EXCEPT_MSG(true, "Error: CUDA should not see this code"); 
@@ -1973,27 +1983,114 @@ namespace Ifpack2 {
                         X_vector_values.extent(1), 
                         X_vector_values.extent(2), 
                         vector_length),
-	vector_length_value(vector_length) 
+	vector_length_value(vector_length)
       {}
 
     public:
+
       ///
       /// host serial (vector intrinsic) vectorization
       ///
       KOKKOS_INLINE_FUNCTION 
       void 
-      solve(const local_ordinal_type& packidx) const {
+      solveSingleVector(const local_ordinal_type& packidx) const {
         using namespace KokkosBatched::Experimental;
         using AlgoType = Algo::Level2::Unblocked;
         
+        // base pointers
+        auto A = D_vector_values.data();
+        auto X = X_vector_values.data();
+
         // constant
         const auto one = Kokkos::ArithTraits<magnitude_type>::one();
-        const local_ordinal_type num_vectors = X_vector_values.extent(2);
+        const local_ordinal_type blocksize = D_vector_values.extent(1);
+        const local_ordinal_type astep = D_vector_values.stride_0();
+        const local_ordinal_type as0 = D_vector_values.stride_1();
+        const local_ordinal_type as1 = D_vector_values.stride_2();
+        const local_ordinal_type xstep = X_vector_values.stride_0();
+        const local_ordinal_type xs0 = X_vector_values.stride_1();
+
+        // index counting
+        const local_ordinal_type partidx = packptr(packidx);
+        const size_type i0 = pack_td_ptr(partidx);
+        const local_ordinal_type r0 = part2packrowidx0(partidx);
+        const local_ordinal_type nrows = part2packrowidx0(packptr(packidx+1)) - r0;
+
+        // move to starting point
+        A += i0*astep; 
+        X += r0*xstep;
+
+        // solve Lx = x
+        KOKKOSBATCHED_SERIAL_TRSV_LOWER_NO_TRANSPOSE_INTERNAL_INVOKE
+          (AlgoType,Diag::Unit,
+           blocksize,blocksize,
+           one, 
+           A, as0, as1,
+           X, xs0);
+
+        for (local_ordinal_type tr=1;tr<nrows;++tr) {
+          KOKKOSBATCHED_SERIAL_GEMV_NO_TRANSPOSE_INTERNAL_INVOKE
+            (AlgoType,
+             blocksize, blocksize,
+             -one,
+             A+2*astep, as0, as1,
+             X, xs0,
+             one,
+             X+1*xstep, xs0);
+
+          KOKKOSBATCHED_SERIAL_TRSV_LOWER_NO_TRANSPOSE_INTERNAL_INVOKE
+            (AlgoType,Diag::Unit,
+             blocksize,blocksize,
+             one, 
+             A+3*astep, as0, as1,
+             X+1*xstep, xs0);
+
+          A += 3*astep;
+          X += 1*xstep;
+        }
+        
+        // solve Ux = x
+        KOKKOSBATCHED_SERIAL_TRSV_UPPER_NO_TRANSPOSE_INTERNAL_INVOKE
+          (AlgoType,Diag::NonUnit,
+           blocksize, blocksize,
+           one, 
+           A, as0, as1,
+           X, xs0);
+
+        for (local_ordinal_type tr=nrows;tr>1;--tr) {
+          A -= 3*astep;
+          KOKKOSBATCHED_SERIAL_GEMV_NO_TRANSPOSE_INTERNAL_INVOKE
+            (AlgoType,
+             blocksize, blocksize,
+             -one,
+             A+1*astep, as0, as1,
+             X, xs0,
+             one,
+             X-1*xstep, xs0);
+
+          KOKKOSBATCHED_SERIAL_TRSV_UPPER_NO_TRANSPOSE_INTERNAL_INVOKE
+            (AlgoType,Diag::NonUnit,
+             blocksize, blocksize,
+             one, 
+             A, as0, as1,
+             X-1*xstep,xs0);
+
+          X -= 1*xstep;
+        }
+      }
+
+      KOKKOS_INLINE_FUNCTION 
+      void 
+      solveMultiVector(const local_ordinal_type& packidx) const {
+        using namespace KokkosBatched::Experimental;
+        using AlgoType = Algo::Level3::Blocked;
+        
+        // constant
+        const auto one = Kokkos::ArithTraits<magnitude_type>::one();
 
         // subview pattern
         auto A = Kokkos::subview(D_vector_values, 0, Kokkos::ALL(), Kokkos::ALL());
-        auto B = A;
-        auto X1 = Kokkos::subview(X_vector_values, 0, Kokkos::ALL(), 0);
+        auto X1 = Kokkos::subview(X_vector_values, 0, Kokkos::ALL(), Kokkos::ALL());
         auto X2 = X1;
 
         // index counting
@@ -2002,37 +2099,35 @@ namespace Ifpack2 {
         local_ordinal_type r0 = part2packrowidx0(partidx);
         const local_ordinal_type nrows = part2packrowidx0(packptr(packidx+1)) - r0;
 
-        for (local_ordinal_type col=0;col<num_vectors;++col) {
-          // solve Lx = x
-          A.assign_data( &D_vector_values(i0,0,0) );
-          X1.assign_data( &X_vector_values(r0,0,col) );
-          SerialTrsv<Uplo::Lower,Trans::NoTranspose,Diag::Unit,AlgoType>
-            ::invoke(one, A, X1);
-          for (local_ordinal_type i=1;i<nrows;++i,i0+=3) {
-            B.assign_data( &D_vector_values(i0+2,0,0) );
-            X2.assign_data( &X_vector_values(++r0,0,col) );
-            SerialGemv<Trans::NoTranspose,AlgoType>
-              ::invoke(-one, B, X1, one, X2);
-            A.assign_data( &D_vector_values(i0+3,0,0) );
-            SerialTrsv<Uplo::Lower,Trans::NoTranspose,Diag::Unit,AlgoType>
-              ::invoke(one, A, X2);
-            X1.assign_data( X2.data() );
-          }
-          
-          // solve Ux = x
-          SerialTrsv<Uplo::Upper,Trans::NoTranspose,Diag::NonUnit,AlgoType>
-            ::invoke(one, A, X1);
-          for (local_ordinal_type i=nrows;i>1;--i) {
-            i0 -= 3;
-            B.assign_data( &D_vector_values(i0+1,0,0) );
-            X2.assign_data( &X_vector_values(--r0,0,col) );          
-            SerialGemv<Trans::NoTranspose,AlgoType>
-              ::invoke(-one, B, X1, one, X2); 
-            A.assign_data( &D_vector_values(i0,0,0) );          
-            SerialTrsv<Uplo::Upper,Trans::NoTranspose,Diag::NonUnit,AlgoType>
-              ::invoke(one, A, X2);
-            X1.assign_data( X2.data() );
-          }
+        // solve Lx = x
+        A.assign_data( &D_vector_values(i0,0,0) );
+        X1.assign_data( &X_vector_values(r0,0,0) );
+        SerialTrsm<Side::Left,Uplo::Lower,Trans::NoTranspose,Diag::Unit,AlgoType>
+          ::invoke(one, A, X1);
+        for (local_ordinal_type i=1;i<nrows;++i,i0+=3) {
+          A.assign_data( &D_vector_values(i0+2,0,0) );
+          X2.assign_data( &X_vector_values(++r0,0,0) );
+          SerialGemm<Trans::NoTranspose,Trans::NoTranspose,AlgoType>
+            ::invoke(-one, A, X1, one, X2);
+          A.assign_data( &D_vector_values(i0+3,0,0) );
+          SerialTrsm<Side::Left,Uplo::Lower,Trans::NoTranspose,Diag::Unit,AlgoType>          
+            ::invoke(one, A, X2);
+          X1.assign_data( X2.data() );
+        }
+        
+        // solve Ux = x
+        SerialTrsm<Side::Left,Uplo::Upper,Trans::NoTranspose,Diag::NonUnit,AlgoType>          
+          ::invoke(one, A, X1);
+        for (local_ordinal_type i=nrows;i>1;--i) {
+          i0 -= 3;
+          A.assign_data( &D_vector_values(i0+1,0,0) );
+          X2.assign_data( &X_vector_values(--r0,0,0) );          
+          SerialGemm<Trans::NoTranspose,Trans::NoTranspose,AlgoType>
+            ::invoke(-one, A, X1, one, X2); 
+          A.assign_data( &D_vector_values(i0,0,0) );          
+          SerialTrsm<Side::Left,Uplo::Upper,Trans::NoTranspose,Diag::NonUnit,AlgoType>          
+            ::invoke(one, A, X2);
+          X1.assign_data( X2.data() );
         }
       }
 
@@ -2095,10 +2190,18 @@ namespace Ifpack2 {
         }
       }
 
+      struct SingleVectorTag {};
+      struct MultiVectorTag {};
+      
       KOKKOS_INLINE_FUNCTION 
       void 
-      operator() (const local_ordinal_type& packidx) const {
-        solve(packidx);
+      operator() (const SingleVectorTag &, const local_ordinal_type& packidx) const {
+        solveSingleVector(packidx);
+      }      
+      KOKKOS_INLINE_FUNCTION 
+      void 
+      operator() (const MultiVectorTag &, const local_ordinal_type& packidx) const {
+        solveMultiVector(packidx);
       }      
 
       KOKKOS_INLINE_FUNCTION 
@@ -2121,15 +2224,24 @@ namespace Ifpack2 {
         TEUCHOS_FUNC_TIME_MONITOR("BlockTriDi::SolveTridiags::Run");
 #endif   
         if (is_cuda<execution_space>::value) {
+#if defined(KOKKOS_ENABLE_CUDA)
 	  const local_ordinal_type vl = vector_length;
           const Kokkos::TeamPolicy<execution_space> policy(packptr.extent(0) - 1, Kokkos::AUTO(), vl);
           Kokkos::parallel_for(policy, *this);
+#endif
         } else {
 #if defined(__CUDA_ARCH__)        
           TEUCHOS_TEST_FOR_EXCEPT_MSG(true, "Error: CUDA should not see this code"); 
 #else
-          const Kokkos::RangePolicy<execution_space> policy(0, packptr.extent(0) - 1);
-          Kokkos::parallel_for(policy, *this);
+          const local_ordinal_type num_vectors = X_vector_values.extent(2);
+          if (num_vectors == 1) {
+            const Kokkos::RangePolicy<execution_space,SingleVectorTag> policy(0, packptr.extent(0) - 1);
+            Kokkos::parallel_for(policy, *this);
+            
+          } else {
+            const Kokkos::RangePolicy<execution_space,MultiVectorTag> policy(0, packptr.extent(0) - 1);
+            Kokkos::parallel_for(policy, *this);
+          }
 #endif
         }
       }
@@ -2216,38 +2328,51 @@ namespace Ifpack2 {
           is_dm2cm_active(dm2cm_.span() > 0),
           A_null_block(NULL, blocksize_, blocksize_) {}
 
+      inline
+      void serialBlocksizeSpecificGemv(const magnitude_type &alpha, 
+                                       const impl_scalar_type * const AA, 
+                                       const impl_scalar_type * const xx,
+                                       const magnitude_type &beta,
+                                       /* */ impl_scalar_type * yy) const {
+        using namespace KokkosBatched::Experimental;
+        using AlgoType = Algo::Level2::Unblocked;
+
+        switch (blocksize) {
+        case  3: { KOKKOSBATCHED_SERIAL_GEMV_NO_TRANSPOSE_INTERNAL_INVOKE(AlgoType,        3,        3,alpha,AA,        3,1,xx, 1,beta,yy, 1); break; }
+        case  5: { KOKKOSBATCHED_SERIAL_GEMV_NO_TRANSPOSE_INTERNAL_INVOKE(AlgoType,        5,        5,alpha,AA,        5,1,xx, 1,beta,yy, 1); break; }
+        case  7: { KOKKOSBATCHED_SERIAL_GEMV_NO_TRANSPOSE_INTERNAL_INVOKE(AlgoType,        7,        7,alpha,AA,        7,1,xx, 1,beta,yy, 1); break; }
+        case  9: { KOKKOSBATCHED_SERIAL_GEMV_NO_TRANSPOSE_INTERNAL_INVOKE(AlgoType,        9,        9,alpha,AA,        9,1,xx, 1,beta,yy, 1); break; }
+        case 10: { KOKKOSBATCHED_SERIAL_GEMV_NO_TRANSPOSE_INTERNAL_INVOKE(AlgoType,       10,       10,alpha,AA,       10,1,xx, 1,beta,yy, 1); break; }
+        case 11: { KOKKOSBATCHED_SERIAL_GEMV_NO_TRANSPOSE_INTERNAL_INVOKE(AlgoType,       11,       11,alpha,AA,       11,1,xx, 1,beta,yy, 1); break; }
+        case 16: { KOKKOSBATCHED_SERIAL_GEMV_NO_TRANSPOSE_INTERNAL_INVOKE(AlgoType,       16,       16,alpha,AA,       16,1,xx, 1,beta,yy, 1); break; }
+        case 17: { KOKKOSBATCHED_SERIAL_GEMV_NO_TRANSPOSE_INTERNAL_INVOKE(AlgoType,       17,       17,alpha,AA,       17,1,xx, 1,beta,yy, 1); break; }
+        case 18: { KOKKOSBATCHED_SERIAL_GEMV_NO_TRANSPOSE_INTERNAL_INVOKE(AlgoType,       18,       18,alpha,AA,       18,1,xx, 1,beta,yy, 1); break; }
+        default: { KOKKOSBATCHED_SERIAL_GEMV_NO_TRANSPOSE_INTERNAL_INVOKE(AlgoType,blocksize,blocksize,alpha,AA,blocksize,1,xx, 1,beta,yy, 1); break; }
+        }
+      }
+
       struct SeqTag {};
-      KOKKOS_INLINE_FUNCTION 
+      inline
       void 
       operator() (const SeqTag &, const local_ordinal_type& i) const {
-        using namespace KokkosBatched::Experimental;
-        using AlgoType = Algo::Level2::Blocked;
-
         // constants
         const magnitude_type one(1);
         const Kokkos::pair<local_ordinal_type,local_ordinal_type> block_range(0, blocksize);
         const local_ordinal_type num_vectors = y.extent(1);
-
-        // subview pattern
-        auto bb = Kokkos::subview(b, block_range, 0);
-        auto xx = bb;
-        auto yy = Kokkos::subview(y, block_range, 0);
-        auto A_block = A_null_block; // A_block is assumed to be compact (a dimension is equal to stride)
-        
         const local_ordinal_type row = i*blocksize;
         for (local_ordinal_type col=0;col<num_vectors;++col) {
           // y := b
-          yy.assign_data(&y(row, col));
-          bb.assign_data(&b(row, col));
-          SerialCopy<Trans::NoTranspose>::invoke(bb, yy);
+          impl_scalar_type *yy = &y(row, col);
+          const impl_scalar_type * const bb = &b(row, col);
+          memcpy(yy, bb, sizeof(impl_scalar_type)*blocksize);         
         
           // y -= Rx
           const size_type A_k0 = A_rowptr[i];
           for (size_type k=rowptr[i];k<rowptr[i+1];++k) {
             const size_type j = A_k0 + colindsub[k];
-            A_block.assign_data( &tpetra_values(j*blocksize_square) );
-            xx.assign_data( &x(A_colind[j]*blocksize, col) );
-            SerialGemv<Trans::NoTranspose,AlgoType>::invoke(-one, A_block, xx, one, yy);  
+            const impl_scalar_type * const AA = &tpetra_values(j*blocksize_square);
+            const impl_scalar_type * const xx = &x(A_colind[j]*blocksize, col);
+            serialBlocksizeSpecificGemv(-one,AA,xx,one,yy);
           }
         }
       }
@@ -2307,55 +2432,41 @@ namespace Ifpack2 {
       KOKKOS_INLINE_FUNCTION 
       void 
       operator() (const AsyncTag &, const local_ordinal_type& partidx) const {
-        using namespace KokkosBatched::Experimental;
-        using AlgoType = Algo::Level2::Blocked;
-
         // constants        
         const local_ordinal_type pri0  = part2packrowidx0(partidx);
         const local_ordinal_type ri0   = part2rowidx0(partidx);
         const local_ordinal_type nrows = part2rowidx0(partidx+1) - ri0;
 
         const magnitude_type one(1);
-        const Kokkos::pair<local_ordinal_type,local_ordinal_type> block_range(0, blocksize);
         const local_ordinal_type num_vectors = y_packed.extent(2);
         const local_ordinal_type v = partidx % vector_length;
         const local_ordinal_type num_local_rows = lclrow.extent(0);
 
         // temporary buffer for y flat
-        impl_scalar_type yy_buf[max_blocksize] = {};
-
-        // subview pattern
-        auto bb = Kokkos::subview(b, block_range, 0);
-        auto xx = Kokkos::subview(x, block_range, 0);
-        auto xx_remote = Kokkos::subview(x_remote, block_range, 0);
-        auto yy = Kokkos::View<impl_scalar_type*>(&yy_buf[0], blocksize);
-        auto A_block = A_null_block; // A_block is assumed to be compact (a dimension is equal to stride)
+        impl_scalar_type yy[max_blocksize] = {};
 
         for (local_ordinal_type i=0;i<nrows;++i) {
           const local_ordinal_type ri = ri0 + i;
           const local_ordinal_type lr = lclrow(ri);
           const local_ordinal_type row = lr*blocksize;
-
           for (local_ordinal_type col=0;col<num_vectors;++col) {
             // y := b
-            bb.assign_data(&b(row, col));
-            SerialCopy<Trans::NoTranspose>::invoke(bb, yy);
+            memcpy(yy, &b(row, col), sizeof(impl_scalar_type)*blocksize);
 
             // y -= Rx
             const size_type A_k0 = A_rowptr[lr];
             for (size_type k=rowptr[lr];k<rowptr[lr+1];++k) {
               const size_type j = A_k0 + colindsub[k];
-              A_block.assign_data( &tpetra_values(j*blocksize_square) );
-
+              const impl_scalar_type *AA = &tpetra_values(j*blocksize_square);
               const local_ordinal_type A_colind_at_j = A_colind[j];
               if (A_colind_at_j < num_local_rows) {
                 const auto loc = is_dm2cm_active ? dm2cm[A_colind_at_j] : A_colind_at_j;
-                xx.assign_data( &x(loc*blocksize, col) );
-                SerialGemv<Trans::NoTranspose,AlgoType>::invoke(-one, A_block, xx, one, yy);
+                const impl_scalar_type *xx = &x(loc*blocksize, col);
+                serialBlocksizeSpecificGemv(-one,AA,xx,one,yy);
               } else {
                 const auto loc = A_colind_at_j - num_local_rows;
-                xx_remote.assign_data( &x_remote(loc*blocksize, col) );
-                SerialGemv<Trans::NoTranspose,AlgoType>::invoke(-one, A_block, xx_remote, one, yy);
+                const impl_scalar_type *xx_remote = &x_remote(loc*blocksize, col);
+                serialBlocksizeSpecificGemv(-one,AA,xx_remote,one,yy);
               }
             }
             // move yy to y_packed
@@ -2452,34 +2563,24 @@ namespace Ifpack2 {
       }
 
       template <int P> struct OverlapTag { enum : int { value = P }; };
-      
+
       template<int P>
       KOKKOS_INLINE_FUNCTION 
       void 
       operator() (const OverlapTag<P> &, const local_ordinal_type& partidx) const {
-        using namespace KokkosBatched::Experimental;
-        using AlgoType = Algo::Level2::Blocked;
-
         // constants        
         const local_ordinal_type pri0  = part2packrowidx0(partidx);
         const local_ordinal_type ri0   = part2rowidx0(partidx);
         const local_ordinal_type nrows = part2rowidx0(partidx+1) - ri0;
 
         const magnitude_type one(1);
-        const Kokkos::pair<local_ordinal_type,local_ordinal_type> block_range(0, blocksize);
         const local_ordinal_type num_vectors = y_packed.extent(2);
         const local_ordinal_type v = partidx % vector_length;
         const local_ordinal_type num_local_rows = lclrow.extent(0);
 
         // temporary buffer for y flat
-        impl_scalar_type yy_buf[max_blocksize] = {};
+        impl_scalar_type yy[max_blocksize] = {};
 
-        // subview pattern
-        auto bb = Kokkos::subview(b, block_range, 0);
-        auto xx = Kokkos::subview(x, block_range, 0);
-        auto xx_remote = Kokkos::subview(x_remote, block_range, 0);
-        auto yy = Kokkos::View<impl_scalar_type*>(&yy_buf[0], blocksize);
-        auto A_block = A_null_block; // A_block is assumed to be compact (a dimension is equal to stride)
         auto colindsub_used = (P == 0 ? colindsub : colindsub_remote); 
         auto rowptr_used = (P == 0 ? rowptr : rowptr_remote);
 
@@ -2490,28 +2591,26 @@ namespace Ifpack2 {
           for (local_ordinal_type col=0;col<num_vectors;++col) {
             if (P == 0) { 
               // y := b
-              bb.assign_data(&b(row, col));
-              SerialCopy<Trans::NoTranspose>::invoke(bb, yy);
+              memcpy(yy, &b(row, col), sizeof(impl_scalar_type)*blocksize);
             } else {
               // y (temporary) := 0
-              for (local_ordinal_type k=0;k<blocksize;++k) 
-                yy[k] = 0;
+              memset(yy, 0, sizeof(impl_scalar_type)*blocksize);
             }
             
             // y -= Rx
             const size_type A_k0 = A_rowptr[lr];
             for (size_type k=rowptr_used[lr];k<rowptr_used[lr+1];++k) {
               const size_type j = A_k0 + colindsub_used[k];
-              A_block.assign_data( &tpetra_values(j*blocksize_square) );
+              const impl_scalar_type *AA = &tpetra_values(j*blocksize_square);
               const local_ordinal_type A_colind_at_j = A_colind[j];
               if (P == 0) {
                 const auto loc = is_dm2cm_active ? dm2cm[A_colind_at_j] : A_colind_at_j;
-                xx.assign_data( &x(loc*blocksize, col) );
-                SerialGemv<Trans::NoTranspose,AlgoType>::invoke(-one, A_block, xx, one, yy);
+                const impl_scalar_type* xx = &x(loc*blocksize, col);
+                serialBlocksizeSpecificGemv(-one,AA,xx,one,yy);
               } else {
                 const auto loc = A_colind_at_j - num_local_rows;
-                xx_remote.assign_data( &x_remote(loc*blocksize, col) );
-                SerialGemv<Trans::NoTranspose,AlgoType>::invoke(-one, A_block, xx_remote, one, yy);
+                const impl_scalar_type* xx_remote = &x_remote(loc*blocksize, col);
+                serialBlocksizeSpecificGemv(-one,AA,xx_remote,one,yy);                
               }
             }
             // move yy to y_packed
@@ -2626,8 +2725,10 @@ namespace Ifpack2 {
 #endif
         y = y_; b = b_; x = x_; 
         if (is_cuda<execution_space>::value) {
+#if defined(KOKKOS_ENABLE_CUDA)
           const Kokkos::TeamPolicy<execution_space,SeqTag> policy(rowptr.extent(0) - 1, Kokkos::AUTO());
           Kokkos::parallel_for(policy, *this);
+#endif
         } else {
 #if defined(__CUDA_ARCH__)        
           TEUCHOS_TEST_FOR_EXCEPT_MSG(true, "Error: CUDA should not see this code"); 
@@ -2651,18 +2752,22 @@ namespace Ifpack2 {
 #endif
         b = b_; x = x_; x_remote = x_remote_;
         if (is_cuda<execution_space>::value) {
+#if defined(KOKKOS_ENABLE_CUDA)
           y_packed_scalar = impl_scalar_type_4d_view((impl_scalar_type*)y_packed_.data(),
                                                      y_packed_.extent(0),
                                                      y_packed_.extent(1),
                                                      y_packed_.extent(2),
                                                      vector_length);
+#endif
         } else {
           y_packed = y_packed_;
         }
 
         if (is_cuda<execution_space>::value) {
+#if defined(KOKKOS_ENABLE_CUDA)
           const Kokkos::TeamPolicy<execution_space,AsyncTag> policy(part2rowidx0.extent(0) - 1, Kokkos::AUTO());
           Kokkos::parallel_for(policy, *this);
+#endif
         } else {          
 #if defined(__CUDA_ARCH__)        
           TEUCHOS_TEST_FOR_EXCEPT_MSG(true, "Error: CUDA should not see this code"); 
@@ -2687,16 +2792,19 @@ namespace Ifpack2 {
 #endif
         b = b_; x = x_; x_remote = x_remote_;
         if (is_cuda<execution_space>::value) {
+#if defined(KOKKOS_ENABLE_CUDA)
           y_packed_scalar = impl_scalar_type_4d_view((impl_scalar_type*)y_packed_.data(),
                                                      y_packed_.extent(0),
                                                      y_packed_.extent(1),
                                                      y_packed_.extent(2),
                                                      vector_length);
+#endif
         } else {
           y_packed = y_packed_; 
         }
 
         if (is_cuda<execution_space>::value) {
+#if defined(KOKKOS_ENABLE_CUDA)
 	  const local_ordinal_type vl = blocksize > vector_length ? vector_length : (blocksize/2 + (blocksize%vector_length > 0)*2);;
           if (compute_owned) {
             const Kokkos::TeamPolicy<execution_space,OverlapTag<0> > policy(part2rowidx0.extent(0) - 1, Kokkos::AUTO(), vl);
@@ -2705,6 +2813,7 @@ namespace Ifpack2 {
             const Kokkos::TeamPolicy<execution_space,OverlapTag<1> > policy(part2rowidx0.extent(0) - 1, Kokkos::AUTO(), vl);
             Kokkos::parallel_for(policy, *this);
           }
+#endif
         } else {
 #if defined(__CUDA_ARCH__)        
           TEUCHOS_TEST_FOR_EXCEPT_MSG(true, "Error: CUDA should not see this code"); 
