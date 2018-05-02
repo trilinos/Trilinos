@@ -112,8 +112,8 @@ public:
     return result;
   }
 
-  void setScalar(const Real C) {
-    for( Ordinal i=0; i<vec_->length(); ++i ) override {
+  void setScalar(const Real C) override {
+    for( Ordinal i=0; i<vec_->length(); ++i ) {
       (*vec_)(i) = C;
     }    
   }
