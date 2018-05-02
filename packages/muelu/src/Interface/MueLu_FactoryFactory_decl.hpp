@@ -303,7 +303,9 @@ namespace MueLu {
       if (factoryName == "RebalanceBlockRestrictionFactory")return BuildBlockedFactory<RebalanceBlockRestrictionFactory>(paramList, factoryMapIn, factoryManagersIn);
       if (factoryName == "RebalanceBlockAcFactory")         return BuildBlockedFactory<RebalanceBlockAcFactory>(paramList, factoryMapIn, factoryManagersIn);
       if (factoryName == "RebalanceBlockInterpolationFactory") return BuildBlockedFactory<RebalanceBlockInterpolationFactory>(paramList, factoryMapIn, factoryManagersIn);
+#ifdef HAVE_MPI
       if (factoryName == "RepartitionBlockDiagonalFactory")    return Build2<RepartitionBlockDiagonalFactory>    (paramList, factoryMapIn, factoryManagersIn);
+#endif
 #ifdef HAVE_MUELU_TEKO
       if (factoryName == "TekoSmoother")                    return BuildTekoSmoother(paramList, factoryMapIn, factoryManagersIn);
 #endif
