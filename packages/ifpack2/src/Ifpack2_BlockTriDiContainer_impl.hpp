@@ -196,7 +196,7 @@ namespace Ifpack2 {
         return result_view_type(value);
       }
     };
-
+    
     /// 
     /// implementation typedefs
     ///
@@ -398,7 +398,8 @@ namespace Ifpack2 {
         const Kokkos::RangePolicy<execution_space> policy(0,offs.extent(0));
         const local_ordinal_type lens_size = lens_device.extent(0);
         Kokkos::parallel_scan
-          (policy, KOKKOS_LAMBDA(const local_ordinal_type &i, size_type &update, const bool &final) {
+          ("AsyncableImport::RangePolicy::setOffsetValues", 
+           policy, KOKKOS_LAMBDA(const local_ordinal_type &i, size_type &update, const bool &final) {
             if (final) 
               offs(i) = update;            
             update += (i < lens_size ? lens_device[i] : 0);
@@ -482,7 +483,8 @@ namespace Ifpack2 {
 	    // vector length should be 1 here
 	    const team_policy_type policy(iend_ - ibeg_, blocksize_, 1); 
 	    Kokkos::parallel_for
-	      (policy, KOKKOS_LAMBDA(const typename team_policy_type::member_type &member) {          
+	      ("AsyncableImport::TeamPolicy::copy", 
+               policy, KOKKOS_LAMBDA(const typename team_policy_type::member_type &member) {          
 		const local_ordinal_type i = member.league_rank() + ibeg_;
 		auto aptr = buffer_.data() + blocksize_*i;
 		auto bptr = multivector_.data() + blocksize_*lids_(i);
@@ -501,7 +503,8 @@ namespace Ifpack2 {
 	  } else {
 	    const Kokkos::RangePolicy<execution_space> policy(ibeg_, iend_);
 	    Kokkos::parallel_for
-	      (policy, KOKKOS_LAMBDA(const local_ordinal_type &i) {
+	      ("AsyncableImport::RangePolicy::copy", 
+               policy, KOKKOS_LAMBDA(const local_ordinal_type &i) {
 		auto aptr = buffer_.data() + blocksize_*i;
 		auto bptr = multivector_.data() + blocksize_*lids_(i);
 		if (std::is_same<PackTag,ToBuffer>::value) 
@@ -516,7 +519,8 @@ namespace Ifpack2 {
             policy( { ibeg_, 0 }, { iend_, num_vectors } );
           
           Kokkos::parallel_for
-            (policy, KOKKOS_LAMBDA(const local_ordinal_type &i,
+            ("AsyncableImport::MDRangePolicy::copy", 
+             policy, KOKKOS_LAMBDA(const local_ordinal_type &i,
 				   const local_ordinal_type &j) { 
               auto aptr = buffer_.data() + blocksize_*(num_vectors*i + j);
               auto bptr = &multivector_(blocksize_*lids_(i), j);
@@ -945,7 +949,8 @@ namespace Ifpack2 {
         btdm.flat_td_ptr = size_type_1d_view(do_not_initialize_tag("btdm.flat_td_ptr"), ntridiags + 1);
         const Kokkos::RangePolicy<execution_space> policy(0,ntridiags + 1);
         Kokkos::parallel_scan
-          (policy, KOKKOS_LAMBDA(const local_ordinal_type &i, size_type &update, const bool &final) {
+          ("createBlockTridiags::RangePolicy::flat_td_ptr", 
+           policy, KOKKOS_LAMBDA(const local_ordinal_type &i, size_type &update, const bool &final) {
             if (final) 
               btdm.flat_td_ptr(i) = update;       
             if (i < ntridiags) {
@@ -963,7 +968,8 @@ namespace Ifpack2 {
         btdm.pack_td_ptr = size_type_1d_view(do_not_initialize_tag("btdm.pack_td_ptr"), ntridiags + 1);
         const Kokkos::RangePolicy<execution_space> policy(0,npacks);
         Kokkos::parallel_scan
-          (policy, KOKKOS_LAMBDA(const local_ordinal_type &i, size_type &update, const bool &final) {
+          ("createBlockTridiags::RangePolicy::pack_td_ptr", 
+           policy, KOKKOS_LAMBDA(const local_ordinal_type &i, size_type &update, const bool &final) {
             const local_ordinal_type parti      = interf.packptr(i);
             const local_ordinal_type parti_next = interf.packptr(i+1);
             if (final) {
@@ -1029,7 +1035,8 @@ namespace Ifpack2 {
 	const local_ordinal_type vector_length_value = vector_length;
         const team_policy_type policy(packptr.extent(0)-1, Kokkos::AUTO(), vector_length); 
         Kokkos::parallel_for
-          (policy, KOKKOS_LAMBDA(const typename team_policy_type::member_type &member) {          
+          ("setTridiagsToIdentity::TeamPolicy", 
+           policy, KOKKOS_LAMBDA(const typename team_policy_type::member_type &member) {          
             const local_ordinal_type k = member.league_rank();
             const local_ordinal_type ibeg = pack_td_ptr(packptr(k));
             const local_ordinal_type iend = pack_td_ptr(packptr(k+1));
@@ -1052,7 +1059,8 @@ namespace Ifpack2 {
         const Unmanaged<vector_type_3d_view> values = btdm.values;
         const Kokkos::RangePolicy<execution_space> policy(0, packptr.extent(0) - 1);
         Kokkos::parallel_for
-          (policy, KOKKOS_LAMBDA(const local_ordinal_type k) {
+          ("setTridiagsToIdentity::RangePolicy", 
+           policy, KOKKOS_LAMBDA(const local_ordinal_type k) {
             for (size_type i=pack_td_ptr(packptr(k)),iend=pack_td_ptr(packptr(k+1));i<iend;i+=3)
               for (local_ordinal_type j=0;j<blocksize;++j)
                 values(i,j,j) = 1;
@@ -1143,7 +1151,8 @@ namespace Ifpack2 {
         
         const Kokkos::RangePolicy<host_execution_space> policy(0,nrows);
         Kokkos::parallel_for
-          (policy, KOKKOS_LAMBDA(const local_ordinal_type &lr) {
+          ("performSymbolicPhase::RangePolicy::col2row",
+           policy, KOKKOS_LAMBDA(const local_ordinal_type &lr) {
             const global_ordinal_type gid = rowmap->getGlobalElement(lr);
 #if !defined(__CUDA_ARCH__)
             TEUCHOS_ASSERT(gid != Teuchos::OrdinalTraits<global_ordinal_type>::invalid());
@@ -1175,7 +1184,8 @@ namespace Ifpack2 {
         {
           const Kokkos::RangePolicy<host_execution_space> policy(0,nrows);
           Kokkos::parallel_for
-            (policy, KOKKOS_LAMBDA(const local_ordinal_type &i) {
+            ("performSymbolicPhase::RangePolicy::lclrow2idx",
+             policy, KOKKOS_LAMBDA(const local_ordinal_type &i) {
               lclrow2idx[lclrow(i)] = i;
             });
         }
@@ -1186,7 +1196,9 @@ namespace Ifpack2 {
         {
           const Kokkos::RangePolicy<host_execution_space> policy(0,nrows);
           Kokkos::parallel_reduce
-            (policy, KOKKOS_LAMBDA(const local_ordinal_type &lr, typename sum_reducer_type::value_type &update) {
+            // profiling interface does not work
+            (//"performSymbolicPhase::RangePolicy::count_nnz", 
+             policy, KOKKOS_LAMBDA(const local_ordinal_type &lr, typename sum_reducer_type::value_type &update) {
               // LID -> index.
               const local_ordinal_type ri0 = lclrow2idx[lr];
               const local_ordinal_type pi0 = rowidx2part(ri0);
@@ -1244,7 +1256,8 @@ namespace Ifpack2 {
           {
             const Kokkos::RangePolicy<host_execution_space> policy(0, nparts);
             Kokkos::parallel_for
-              (policy, KOKKOS_LAMBDA(const local_ordinal_type &pi0) {
+              ("performSymbolicPhase::RangePolicy<host_execution_space>::D_graph",
+               policy, KOKKOS_LAMBDA(const local_ordinal_type &pi0) {
                 const local_ordinal_type part_ri0 = part2rowidx0(pi0);
                 local_ordinal_type offset = 0;
                 for (local_ordinal_type ri0=partptr(pi0);ri0<partptr(pi0+1);++ri0) {
@@ -1299,7 +1312,8 @@ namespace Ifpack2 {
           {
             const Kokkos::RangePolicy<host_execution_space> policy(0,nrows);
             Kokkos::parallel_for
-              (policy, KOKKOS_LAMBDA(const local_ordinal_type &lr) {
+              ("performSymbolicPhase::RangePolicy<host_execution_space>::R_graph_count",
+               policy, KOKKOS_LAMBDA(const local_ordinal_type &lr) {
                 const local_ordinal_type ri0 = lclrow2idx[lr];
                 const local_ordinal_type pi0 = rowidx2part(ri0);
                 const size_type j0 = local_graph_rowptr(lr);
@@ -1328,7 +1342,8 @@ namespace Ifpack2 {
           {
             Kokkos::RangePolicy<host_execution_space> policy(0,nrows+1);
             Kokkos::parallel_scan
-              (policy, KOKKOS_LAMBDA(const local_ordinal_type &lr, 
+              ("performSymbolicPhase::RangePolicy<host_execution_space>::R_graph_fill",
+               policy, KOKKOS_LAMBDA(const local_ordinal_type &lr, 
                                      update_type &update, 
                                      const bool &final) {
                 update_type val;
@@ -1647,14 +1662,14 @@ namespace Ifpack2 {
 #if defined(KOKKOS_ENABLE_CUDA)
 	  const local_ordinal_type vl = vector_length;
           const Kokkos::TeamPolicy<execution_space> policy(packptr.extent(0) - 1, Kokkos::AUTO(), vl);
-          Kokkos::parallel_for(policy, *this);
+          Kokkos::parallel_for("ExtractAndFactorize::TeamPolicy::run", policy, *this);
 #endif
         } else {
 #if defined(__CUDA_ARCH__)        
           TEUCHOS_TEST_FOR_EXCEPT_MSG(true, "Error: CUDA should not see this code"); 
 #else          
           const Kokkos::RangePolicy<execution_space> policy(0, packptr.extent(0) - 1);
-          Kokkos::parallel_for(policy, *this);
+          Kokkos::parallel_for("ExtractAndFactorize::RangePolicy::run", policy, *this);
 #endif
         }
       }
@@ -1855,14 +1870,18 @@ namespace Ifpack2 {
 #if defined(KOKKOS_ENABLE_CUDA)
 	  const local_ordinal_type vl = vector_length;
           const Kokkos::TeamPolicy<execution_space,ToPackedMultiVectorTag> policy(packptr.extent(0) - 1, Kokkos::AUTO(), vl);
-          Kokkos::parallel_for(policy, *this);
+          Kokkos::parallel_for
+            ("MultiVectorConverter::TeamPolicy::to_packed_multivector",
+             policy, *this);
 #endif
         } else {
 #if defined(__CUDA_ARCH__)
           TEUCHOS_TEST_FOR_EXCEPT_MSG(true, "Error: CUDA should not see this code"); 
 #else
           const Kokkos::RangePolicy<execution_space,ToPackedMultiVectorTag> policy(0, packptr.extent(0) - 1);
-          Kokkos::parallel_for(policy, *this);
+          Kokkos::parallel_for
+            ("MultiVectorConverter::RangePolicy::to_packed_multivector",
+             policy, *this);
 #endif
         }
       }
@@ -1889,16 +1908,25 @@ namespace Ifpack2 {
 #if defined(KOKKOS_ENABLE_CUDA)
           // dynamic reduce does not support for vl > 1 
 	  const local_ordinal_type vl = norm == NULL ? vector_length : 1;
+
           if (is_vectors_zero) {
             const Kokkos::TeamPolicy
               <execution_space,ToScalarMultiVectorFirstTag> policy(packptr.extent(0) - 1, Kokkos::AUTO(), vl);
-            if (norm == NULL)  Kokkos::parallel_for(policy, *this);
-            else               Kokkos::parallel_reduce(policy, *this, norm);              
+            if (norm == NULL)  
+              Kokkos::parallel_for
+                ("MultiVectorConverter::TeamPolicy::to_scalar_multivector::fist", policy, *this);
+            else               
+              Kokkos::parallel_reduce
+                ("MultiVectorConverter::TeamPolicy::to_scalar_multivector::fist_w_norm", policy, *this, norm);
           } else {
             const Kokkos::TeamPolicy
               <execution_space,ToScalarMultiVectorSecondTag> policy(packptr.extent(0) - 1, Kokkos::AUTO(), vl);
-            if (norm == NULL)  Kokkos::parallel_for(policy, *this);
-            else               Kokkos::parallel_reduce(policy, *this, norm);              
+            if (norm == NULL)  
+              Kokkos::parallel_for
+                ("MultiVectorConverter::TeamPolicy::to_scalar_multivector::second", policy, *this);
+            else               
+              Kokkos::parallel_reduce
+                ("MultiVectorConverter::TeamPolicy::to_scalar_multivector::second_w_norm", policy, *this, norm);              
           }
 #endif
         } else {
@@ -1908,13 +1936,21 @@ namespace Ifpack2 {
           if (is_vectors_zero) {
             const Kokkos::RangePolicy
               <execution_space,ToScalarMultiVectorFirstTag> policy(0, packptr.extent(0) - 1);
-            if (norm == NULL)  Kokkos::parallel_for(policy, *this);
-            else               Kokkos::parallel_reduce(policy, *this, norm);              
+            if (norm == NULL)  
+              Kokkos::parallel_for
+                ("MultiVectorConverter::RangePolicy::to_scalar_multivector::fist", policy, *this);
+            else               
+              Kokkos::parallel_reduce
+                ("MultiVectorConverter::RangePolicy::to_scalar_multivector::fist_w_norm", policy, *this, norm);              
           } else {
             const Kokkos::RangePolicy
               <execution_space,ToScalarMultiVectorSecondTag> policy(0, packptr.extent(0) - 1);
-            if (norm == NULL)  Kokkos::parallel_for(policy, *this);
-            else               Kokkos::parallel_reduce(policy, *this, norm);              
+            if (norm == NULL)  
+              Kokkos::parallel_for
+                ("MultiVectorConverter::RangePolicy::to_scalar_multivector::second", policy, *this);
+            else               
+              Kokkos::parallel_reduce
+                ("MultiVectorConverter::RangePolicy::to_scalar_multivector::second_w_norm", policy, *this, norm);              
           }
 #endif
         }
@@ -2123,7 +2159,7 @@ namespace Ifpack2 {
         X1.assign_data( &X_vector_values(r,0,0) );
         SerialTrsm<Side::Left,Uplo::Lower,Trans::NoTranspose,Diag::Unit,AlgoType>
           ::invoke(one, A, X1);
-        for (local_ordinal_type i=1;i<nrows;++i,i+=3) {
+        for (local_ordinal_type tr=1;tr<nrows;++tr,i+=3) {
           A.assign_data( &D_vector_values(i+2,0,0) );
           X2.assign_data( &X_vector_values(++r,0,0) );
           SerialGemm<Trans::NoTranspose,Trans::NoTranspose,AlgoType>
@@ -2137,7 +2173,7 @@ namespace Ifpack2 {
         // solve Ux = x
         SerialTrsm<Side::Left,Uplo::Upper,Trans::NoTranspose,Diag::NonUnit,AlgoType>          
           ::invoke(one, A, X1);
-        for (local_ordinal_type i=nrows;i>1;--i) {
+        for (local_ordinal_type tr=nrows;tr>1;--tr) {
           i -= 3;
           A.assign_data( &D_vector_values(i+1,0,0) );
           X2.assign_data( &X_vector_values(--r,0,0) );          
@@ -2377,10 +2413,12 @@ namespace Ifpack2 {
 	  const local_ordinal_type vl = vector_length;
           if (num_vectors == 1) {
             const Kokkos::TeamPolicy<execution_space,SingleVectorTag> policy(packptr.extent(0) - 1, Kokkos::AUTO(), vl);
-            Kokkos::parallel_for(policy, *this);
+            Kokkos::parallel_for
+              ("SolveTridiags::TeamPolicy::run<SingleVector>", policy, *this);
           } else {
             const Kokkos::TeamPolicy<execution_space,MultiVectorTag> policy(packptr.extent(0) - 1, Kokkos::AUTO(), vl);
-            Kokkos::parallel_for(policy, *this);
+            Kokkos::parallel_for
+              ("SolveTridiags::TeamPolicy::run<MultiVector>", policy, *this);
           }
 #endif
         } else {
@@ -2390,11 +2428,13 @@ namespace Ifpack2 {
           const local_ordinal_type num_vectors = X_vector_values.extent(2);
           if (num_vectors == 1) {
             const Kokkos::RangePolicy<execution_space,SingleVectorTag> policy(0, packptr.extent(0) - 1);
-            Kokkos::parallel_for(policy, *this);
+            Kokkos::parallel_for
+              ("SolveTridiags::RangePolicy::run<SingleVector>", policy, *this);
             
           } else {
             const Kokkos::RangePolicy<execution_space,MultiVectorTag> policy(0, packptr.extent(0) - 1);
-            Kokkos::parallel_for(policy, *this);
+            Kokkos::parallel_for
+              ("SolveTridiags::RangePolicy::run<MultiVector>", policy, *this);
           }
 #endif
         }
@@ -2842,14 +2882,16 @@ namespace Ifpack2 {
         if (is_cuda<execution_space>::value) {
 #if defined(KOKKOS_ENABLE_CUDA)
           const Kokkos::TeamPolicy<execution_space,SeqTag> policy(rowptr.extent(0) - 1, Kokkos::AUTO());
-          Kokkos::parallel_for(policy, *this);
+          Kokkos::parallel_for
+            ("ComputeResidual::TeamPolicy::run<SeqTag>", policy, *this);
 #endif
         } else {
 #if defined(__CUDA_ARCH__)        
           TEUCHOS_TEST_FOR_EXCEPT_MSG(true, "Error: CUDA should not see this code"); 
 #else          
           const Kokkos::RangePolicy<execution_space,SeqTag> policy(0, rowptr.extent(0) - 1);
-          Kokkos::parallel_for(policy, *this);
+          Kokkos::parallel_for
+            ("ComputeResidual::RangePolicy::run<SeqTag>", policy, *this);
 #endif
         }
       }
@@ -2881,14 +2923,16 @@ namespace Ifpack2 {
         if (is_cuda<execution_space>::value) {
 #if defined(KOKKOS_ENABLE_CUDA)
           const Kokkos::TeamPolicy<execution_space,AsyncTag> policy(part2rowidx0.extent(0) - 1, Kokkos::AUTO());
-          Kokkos::parallel_for(policy, *this);
+          Kokkos::parallel_for
+            ("ComputeResidual::TeamPolicy::run<AsyncTag>", policy, *this);
 #endif
         } else {          
 #if defined(__CUDA_ARCH__)        
           TEUCHOS_TEST_FOR_EXCEPT_MSG(true, "Error: CUDA should not see this code"); 
 #else          
           const Kokkos::RangePolicy<execution_space,AsyncTag> policy(0, part2rowidx0.extent(0) - 1);
-          Kokkos::parallel_for(policy, *this);
+          Kokkos::parallel_for
+            ("ComputeResidual::RangePolicy::run<AsyncTag>", policy, *this);
 #endif
         }
       }
@@ -2926,10 +2970,12 @@ namespace Ifpack2 {
 	  const local_ordinal_type vl = vl_power_of_two > vector_length ? vector_length : vl_power_of_two;
           if (compute_owned) {
             const Kokkos::TeamPolicy<execution_space,OverlapTag<0> > policy(part2rowidx0.extent(0) - 1, Kokkos::AUTO(), vl);
-            Kokkos::parallel_for(policy, *this);
+            Kokkos::parallel_for
+              ("ComputeResidual::TeamPolicy::run<OverlapTag<0> >", policy, *this);
           } else {
             const Kokkos::TeamPolicy<execution_space,OverlapTag<1> > policy(part2rowidx0.extent(0) - 1, Kokkos::AUTO(), vl);
-            Kokkos::parallel_for(policy, *this);
+            Kokkos::parallel_for
+              ("ComputeResidual::TeamPolicy::run<OverlapTag<1> >", policy, *this);
           }
 #endif
         } else {
@@ -2938,10 +2984,12 @@ namespace Ifpack2 {
 #else          
           if (compute_owned) {
             const Kokkos::RangePolicy<execution_space,OverlapTag<0> > policy(0, part2rowidx0.extent(0) - 1);
-            Kokkos::parallel_for(policy, *this);
+            Kokkos::parallel_for
+              ("ComputeResidual::RangePolicy::run<OverlapTag<0> >", policy, *this);
           } else {
             const Kokkos::RangePolicy<execution_space,OverlapTag<1> > policy(0, part2rowidx0.extent(0) - 1);
-            Kokkos::parallel_for(policy, *this);
+            Kokkos::parallel_for
+              ("ComputeResidual::RangePolicy::run<OverlapTag<1> >", policy, *this);
           }
 #endif
         }
