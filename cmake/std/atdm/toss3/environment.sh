@@ -16,7 +16,8 @@ export ATDM_CONFIG_USE_NINJA=OFF
 module purge
 . /projects/sems/modulefiles/utils/sems-modules-init.sh
 module load sems-env
-module load cmake/3.5
+module load atdm-env
+module load atdm-cmake/3.10.1
 
 
 if [ "$ATDM_CONFIG_NODE_TYPE" == "OPENMP" ] ; then
