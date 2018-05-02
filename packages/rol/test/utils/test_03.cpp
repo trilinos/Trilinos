@@ -50,20 +50,17 @@
 #include "ROL_SimpleEqConstrained.hpp"
 #include "ROL_StdVector.hpp"
 #include "ROL_RandomVector.hpp"
-
-#include <functional>
-
-
+#include "ROL_FunctionBindings.hpp"
 
 
 int main(int argc, char *argv[]) {
 
   using namespace ROL;
   using RealT = double;
-  using V = Vector<RealT>;
   using std::vector;
   using std::bind;
-  using std::reference_wrapper;
+  using std::mem_fn;
+  using std::cref;
   using namespace std::placeholders;
 
   Teuchos::GlobalMPISession mpiSession(&argc, &argv);
@@ -78,8 +75,6 @@ int main(int argc, char *argv[]) {
 
   int errorFlag = 0;
 
-  RealT tol = std::sqrt(ROL_EPSILON<RealT>());
-
   try {
 
     // Retrieve objective, constraint, iteration vector, solution vector.
@@ -90,49 +85,37 @@ int main(int argc, char *argv[]) {
     auto& obj = *obj_ptr;
     auto& con = *con_ptr;
 
-    auto x_ptr = SEC.getInitialGuess();
-    auto l_ptr = SEC.getEqualityMultiplier();
-    auto d_ptr = x_ptr->clone();
-    auto v_ptr = x_ptr->clone();
-    auto g_ptr = x_ptr->dual().clone();
-    auto c_ptr = l_ptr->dual().clone();
+    auto x = SEC.getInitialGuess();
+    auto l = SEC.getEqualityMultiplier();
+    auto d = x->clone();
+    auto v = x->clone();
+    auto g = x->dual().clone();
+    auto c = l->dual().clone();
 
-    RandomizeVector( *d_ptr );
-    RandomizeVector( *v_ptr );
-    RandomizeVector( *l_ptr );
+    RandomizeVector( *d );
+    RandomizeVector( *v );
+    RandomizeVector( *l );
 
-    reference_wrapper<V> x_ref(*x_ptr);
-    reference_wrapper<V> d_ref(*d_ptr);
-    reference_wrapper<V> v_ref(*v_ptr);
-    reference_wrapper<V> l_ref(*l_ptr);
-    reference_wrapper<V> g_ref(*g_ptr);
-    reference_wrapper<V> c_ref(*c_ptr);
-  
-    auto obj_up   = bind( &Objective<RealT>::update, &obj, _1, true, 0 );
-    auto obj_val  = bind( &Objective<RealT>::value, &obj, _1, tol );
-    auto obj_grad = bind( &Objective<RealT>::gradient, &obj, _1, _2, tol );
-    auto obj_hess = bind( &Objective<RealT>::hessVec, &obj, _1, _2, _3, tol );
+    auto obj_check = make_check(obj);
+    auto obj_up   = obj_check.update(); 
+    auto obj_val  = obj_check.value();    
+    auto obj_grad = obj_check.gradient(); 
+    auto obj_hess = obj_check.hessVec();  
 
-    auto con_up   = bind( &Constraint<RealT>::update, &con, _1, true, 0 );
-    auto con_val  = bind( &Constraint<RealT>::value, &con, _1, _2, tol );
-    auto con_jac  = bind( &Constraint<RealT>::applyJacobian, &con, _1, _2, _3, tol );
-    
-    // Extra work is needed here because applyAdjointJacobian is overloaded 
-    auto con_ajac = bind( static_cast<void (Constraint<RealT>::*)
-                          ( V&, const V&, const V&, RealT& )>
-                          (&Constraint<RealT>::applyAdjointJacobian), 
-                          &con, _1, l_ref, _2, tol );
-
-    auto con_hess  = bind( &Constraint<RealT>::applyAdjointHessian, &con, _1, l_ref, _2, _3, tol );
-
+    auto con_check = make_check(con);
+    auto con_up    = con_check.update();
+    auto con_val   = con_check.value();
+    auto con_jac   = con_check.applyJacobian();
+    auto con_ajac  = con_check.applyAdjointJacobian( cref(*l) );
+    auto con_hess  = con_check.applyAdjointHessian( cref(*l) );
 
     FiniteDifference<RealT> fd( 1, 13, 20, 11, true, *os );
  
-    fd.scalar_check( obj_val,  obj_grad, obj_up, g_ref, v_ref, x_ref, "grad'*dir" );
-    fd.vector_check( obj_grad, obj_hess, obj_up, g_ref, v_ref, x_ref, "norm(Hess*vec)" );
+    fd.scalar_check( obj_val,  obj_grad, obj_up, *g, *v, *x, "grad'*dir" );
+    fd.vector_check( obj_grad, obj_hess, obj_up, *g, *v, *x, "norm(Hess*vec)" );
  
-    fd.vector_check( con_val,  con_jac,  con_up, c_ref, v_ref, x_ref, "norm(Jac*vec)" ); 
-    fd.vector_check( con_ajac, con_hess, con_up, d_ref, v_ref, x_ref, "norm(adj(H)(u,v))" ); 
+    fd.vector_check( con_val,  con_jac,  con_up, *c, *v, *x, "norm(Jac*vec)" ); 
+    fd.vector_check( con_ajac, con_hess, con_up, *d, *v, *x, "norm(adj(H)(u,v))" ); 
 
   }
   catch (std::logic_error err) {
