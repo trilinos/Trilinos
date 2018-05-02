@@ -43,14 +43,71 @@
 
 
 #pragma once
-#ifndef ROL_FUNCTIONBINDING_HPP
-#define ROL_FUNCTIONBINDING_HPP
+#ifndef ROL_CONSTRAINT_CHECKINTERFACE_HPP
+#define ROL_CONSTRAINT_CHECKINTERFACE_HPP
 
 #include <functional>
+#include "ROL_Constraint.hpp"
 
-#include "ROL_Objective_CheckInterface.hpp"
-#include "ROL_Constraint_CheckInterface.hpp"
+namespace ROL {
+namespace details {
 
 
-#endif // ROL_FUNCTIONBINDING_HPP
+using namespace std;
+using namespace std::placeholders;
+
+template<typename Real>
+class Constraint_CheckInterface {
+private:
+  Constraint<Real>& con_;
+  Real tol_;
+
+public:
+  using V = Vector<Real>;
+
+  Constraint_CheckInterface( Constraint<Real>& con ) : 
+    con_(con), tol_(sqrt(ROL_EPSILON<Real>())) {}
+   
+  f_update_t<Real> update() {
+    return bind( &Constraint<Real>::update, &con_, _1, true, 0 );
+  }
+
+  f_vector_t<Real> value() {
+    return bind( &Constraint<Real>::value, &con_, _1, _2, tol_);
+  }
+
+  f_dderiv_t<Real> applyJacobian() {
+    return bind( &Constraint<Real>::applyJacobian, &con_, _1, _2, _3, tol_);
+  }
+
+  // Provide a vector in the dual constraint space
+  f_vector_t<Real> applyAdjointJacobian( const V& l ) {
+    return bind( static_cast<void (Constraint<Real>::*)
+                              ( V&, const V&, const V&, Real& )>
+               (&Constraint<Real>::applyAdjointJacobian), 
+                &con_, _1, cref(l), _2, tol_);
+  }
+
+  f_dderiv_t<Real> applyAdjointHessian( const V& l ) {
+    return bind( &Constraint<Real>::applyAdjointHessian, &con_, _1, cref(l), _2, _3, tol_);
+  }
+
+
+}; // Constraint_CheckInterface
+
+} // namespace details 
+
+using details::Constraint_CheckInterface;
+
+template<typename Real>
+Constraint_CheckInterface<Real> make_check( Constraint<Real>& con ) {
+  return Constraint_CheckInterface<Real>(con);
+}
+
+
+
+} // namespace ROL
+
+
+#endif // ROL_CONSTRAINT_CHECKINTERFACE_HPP
 

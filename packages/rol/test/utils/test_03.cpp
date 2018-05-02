@@ -97,10 +97,10 @@ int main(int argc, char *argv[]) {
     RandomizeVector( *l );
 
     auto obj_check = make_check(obj);
-    auto obj_up   = obj_check.update(); 
-    auto obj_val  = obj_check.value();    
-    auto obj_grad = obj_check.gradient(); 
-    auto obj_hess = obj_check.hessVec();  
+    auto obj_up    = obj_check.update(); 
+    auto obj_val   = obj_check.value();    
+    auto obj_grad  = obj_check.gradient(); 
+    auto obj_hess  = obj_check.hessVec();  
 
     auto con_check = make_check(con);
     auto con_up    = con_check.update();

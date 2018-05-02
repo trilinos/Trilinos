@@ -43,14 +43,18 @@
 
 
 #pragma once
-#ifndef ROL_FUNCTIONBINDING_HPP
-#define ROL_FUNCTIONBINDING_HPP
+#ifndef ROL_OBJECTIVE_CHECKINTERFACEDEF_HPP
+#define ROL_OBJECTIVE_CHECKINTERFACEDEF_HPP
 
-#include <functional>
+#include "ROL_FiniteDifference.hpp"
 
-#include "ROL_Objective_CheckInterface.hpp"
-#include "ROL_Constraint_CheckInterface.hpp"
+namespace ROL {
+namespace details {
 
 
-#endif // ROL_FUNCTIONBINDING_HPP
+} // namespace details
+} // namespace ROL
+
+
+#endif // ROL_OBJECTIVE_CHECKINTERFACEDEF_HPP
 

@@ -80,6 +80,17 @@ public:
 
   virtual ~DynamicObjective() {}
 
+  virtual void update( const V& uo, const V& un, const V& z ) {
+    update_uo( uo );
+    update_un( un );
+    update_z( z );
+  }
+
+  virtual void update_uo( const V& uo ) { }
+  virtual void update_un( const V& un ) { }
+  virtual void update_z( const V& z ) { }
+
+
   virtual Real value( const V& uo, const V& un, 
                       const V& z, const TS& timeStamp ) const = 0;
 

@@ -43,14 +43,58 @@
 
 
 #pragma once
-#ifndef ROL_FUNCTIONBINDING_HPP
-#define ROL_FUNCTIONBINDING_HPP
+#ifndef ROL_OBJECTIVE_CHECKINTERFACE_HPP
+#define ROL_OBJECTIVE_CHECKINTERFACE_HPP
 
+#include "ROL_Objective.hpp"
 #include <functional>
 
-#include "ROL_Objective_CheckInterface.hpp"
-#include "ROL_Constraint_CheckInterface.hpp"
+namespace ROL {
+namespace details {
+
+using namespace std;
+using namespace std::placeholders;
+
+template<typename Real>
+class Objective_CheckInterface {
+private:
+  using V = Vector<Real>;
+  Objective<Real>& obj_;
+  Real tol_;
+
+public:
+
+  Objective_CheckInterface( Objective<Real>& obj ) : 
+    obj_(obj), tol_(sqrt(ROL_EPSILON<Real>())) {}
+   
+  f_update_t<Real> update() {
+    return bind( &Objective<Real>::update, &obj_, _1, true, 0 );
+  }
+
+  f_scalar_t<Real> value() {
+    return bind( &Objective<Real>::value, &obj_, _1, tol_);
+  }
+
+  f_vector_t<Real> gradient() {
+    return bind( &Objective<Real>::gradient, &obj_, _1, _2, tol_);
+  }
+
+  f_dderiv_t<Real> hessVec() {
+    return bind( &Objective<Real>::hessVec, &obj_, _1, _2, _3, tol_);
+  }
+
+}; // Objective_CheckInterface
+
+} // namespace details
+
+using details::Objective_CheckInterface;
+template<typename Real>
+Objective_CheckInterface<Real> make_check( Objective<Real>& obj ) {
+  return Objective_CheckInterface<Real>(obj);
+}
+
+} // namespace ROL
 
 
-#endif // ROL_FUNCTIONBINDING_HPP
+#endif // ROL_OBJECTIVE_CHECKINTERFACE_HPP
 

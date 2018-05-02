@@ -43,60 +43,66 @@
 
 
 #pragma once
-#ifndef ROL_DYNAMICCONSTRAINTCHECK_HPP
-#define ROL_DYNAMICCONSTRAINTCHECK_HPP
+#ifndef ROL_OBJECTIVE_SIMOPT_CHECKINTERFACEDEF_HPP
+#define ROL_OBJECTIVE_SIMOPT_CHECKINTERFACEDEF_HPP
 
+
+#include "ROL_Objective.hpp"
 #include <functional>
 
-#include "ROL_DynamicConstraint.hpp"
-
 namespace ROL {
-
 namespace details {
 
 using namespace std;
-using Finite_Difference_Arrays::shifts;
-using Finite_Difference_Arrays::weights;
+using namespace std::placeholders;
 
 template<typename Real>
-class DynamicConstraintCheck : public DynamicConstraint<Real> {
+class Objective_SimOpt_CheckInterface {
+private:
+  using V = Vector<Real>;
+  Objective_SimOpt<Real>& obj_;
+  Real tol_;
+
 public:
 
-  using V  = Vector<Real>;  
-  using DC = DynamicConstraint<Real>;
- 
+  Objective_SimOpt_CheckInterface( Objective<Real>& obj ) : 
+    obj_(obj), tol_(sqrt(ROL_EPSILON<Real>())) {}
+   
+  // Takes a Vector_SimOpt
+  f_update_t<Real> update() {
+    return bind( &Objective_SimOpt<Real>::update, &obj_, _1, true, 0 );
+  }
 
-  // Provide vectors from which to create random direction vectors
-  // (No bound constraint)
-  DynamicConstraintCheck( DynamicConstraint<Real>& con,
-                          Teuchos::ParameterList& pl, 
-                          ostream& os );
+  // Takes a Vector_SimOpt
+  f_scalar_t<Real> value() {
+    return bind( &Objective_SimOpt<Real>::value, &obj_, _1, tol_);
+  }
 
-  DynamicConstraintCheck( DynamicConstraint<Real>& con,
-                          const int numSteps, const int order,
-                          ostream& os );
- 
+  f_vector_t<Real> gradient_1( const V& z ) {
+    return bind( &Objective_SimOpt<Real>::gradient_1, &obj_, _1, _2, cref(z), tol_);
+  }
 
-  virtual ~DyanamicConstraintCheck() {}
+  f_vector_t<Real> gradient_2( const V& u ) {
+    return bind( &Objective_SimOpt<Real>::gradient_2, &obj_, _1, cref(u), _2, tol_);
+  }
 
-private:
+  f_dderiv_t<Real> hessVec_11( const  ) {
+    return bind( &Objective_SimOpt<Real>::hessVec, &obj_, _1, _2, _3, tol_);
+  }
 
-  DC<Real>&    con_;
-  ostream&     os_;   
-
-  int          order_;
-  int          numSteps_;
-  vector<Real> steps_;
-};
+}; // Objective_CheckInterface
 
 } // namespace details
 
-using details::DynamicConstraintCheck;
+using details::Objective_SimOpt_CheckInterface;
+template<typename Real>
+Objective_SimOpt_CheckInterface<Real> make_check( Objective_SimOpt<Real>& obj ) {
+  return Objective_SimOpt_CheckInterface<Real>(obj);
+}
 
 } // namespace ROL
 
-#include "ROL_DynamicConstraintCheckDef.hpp"
 
-#endif // ROL_DYNAMICCONSTRAINTCHECK_HPP
 
+#endif // ROL_OBJECTIVE_SIMOPT_CHECKINTERFACEDEF_HPP
 
