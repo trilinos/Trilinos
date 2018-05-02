@@ -6,7 +6,7 @@
 #
 ################################################################################
 
-echo "Using chama compiler stack $ATDM_CONFIG_COMPILER to build $ATDM_CONFIG_BUILD_TYPE code with Kokkos node type $ATDM_CONFIG_NODE_TYPE"
+echo "Using toss3 compiler stack $ATDM_CONFIG_COMPILER to build $ATDM_CONFIG_BUILD_TYPE code with Kokkos node type $ATDM_CONFIG_NODE_TYPE"
 
 # there does not appear to be a ninja module ontoss3 so turn off ninja
 export ATDM_CONFIG_USE_MAKEFILES=ON
