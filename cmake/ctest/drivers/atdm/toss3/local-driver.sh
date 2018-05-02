@@ -1,7 +1,8 @@
 #!/bin/bash -l
 
 if [ "${SRUN_CTEST_TIME_LIMIT_MINUTES}" == "" ] ; then
-  SRUN_CTEST_TIME_LIMIT_MINUTES=180  # Default limit is 3 hours
+  SRUN_CTEST_TIME_LIMIT_MINUTES=90
+  # This is just running tests, not the entire build!
 fi
 
 set -x
