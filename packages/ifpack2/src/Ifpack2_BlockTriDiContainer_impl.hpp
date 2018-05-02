@@ -1991,9 +1991,9 @@ namespace Ifpack2 {
       ///
       /// host serial (vector intrinsic) vectorization
       ///
-      KOKKOS_INLINE_FUNCTION 
+      inline
       void 
-      solveSingleVector(const local_ordinal_type& packidx) const {
+      solveSingleVector(const local_ordinal_type &blocksize, const local_ordinal_type& packidx) const {
         using namespace KokkosBatched::Experimental;
         using AlgoType = Algo::Level2::Unblocked;
         
@@ -2003,12 +2003,12 @@ namespace Ifpack2 {
 
         // constant
         const auto one = Kokkos::ArithTraits<magnitude_type>::one();
-        const local_ordinal_type blocksize = D_vector_values.extent(1);
+        // const local_ordinal_type blocksize = D_vector_values.extent(1);
         const local_ordinal_type astep = D_vector_values.stride_0();
-        const local_ordinal_type as0 = D_vector_values.stride_1();
-        const local_ordinal_type as1 = D_vector_values.stride_2();
+        const local_ordinal_type as0 = blocksize; //D_vector_values.stride_1();
+        const local_ordinal_type as1 = 1; //D_vector_values.stride_2();
         const local_ordinal_type xstep = X_vector_values.stride_0();
-        const local_ordinal_type xs0 = X_vector_values.stride_1();
+        const local_ordinal_type xs0 = 1; //X_vector_values.stride_1();
 
         // index counting
         const local_ordinal_type partidx = packptr(packidx);
@@ -2079,6 +2079,24 @@ namespace Ifpack2 {
         }
       }
 
+      inline
+      void 
+      serialBlocksizeSpecificSolveSingleVector(const local_ordinal_type& packidx) const {
+        const local_ordinal_type blocksize = D_vector_values.extent(1);      
+        switch (blocksize) {
+        case  3: { solveSingleVector(        3, packidx); break; }
+        case  5: { solveSingleVector(        5, packidx); break; }
+        case  7: { solveSingleVector(        7, packidx); break; }
+        case  9: { solveSingleVector(        9, packidx); break; }
+        case 10: { solveSingleVector(       10, packidx); break; }
+        case 11: { solveSingleVector(       11, packidx); break; }
+        case 16: { solveSingleVector(       16, packidx); break; }
+        case 17: { solveSingleVector(       17, packidx); break; }
+        case 18: { solveSingleVector(       18, packidx); break; }
+        default: { solveSingleVector(blocksize, packidx); break; }
+        }
+      }
+          
       KOKKOS_INLINE_FUNCTION 
       void 
       solveMultiVector(const local_ordinal_type& packidx) const {
@@ -2196,7 +2214,7 @@ namespace Ifpack2 {
       KOKKOS_INLINE_FUNCTION 
       void 
       operator() (const SingleVectorTag &, const local_ordinal_type& packidx) const {
-        solveSingleVector(packidx);
+        serialBlocksizeSpecificSolveSingleVector(packidx);
       }      
       KOKKOS_INLINE_FUNCTION 
       void 
@@ -2429,7 +2447,7 @@ namespace Ifpack2 {
       }
 
       struct AsyncTag {};
-      KOKKOS_INLINE_FUNCTION 
+      inline
       void 
       operator() (const AsyncTag &, const local_ordinal_type& partidx) const {
         // constants        
@@ -2565,7 +2583,7 @@ namespace Ifpack2 {
       template <int P> struct OverlapTag { enum : int { value = P }; };
 
       template<int P>
-      KOKKOS_INLINE_FUNCTION 
+      inline
       void 
       operator() (const OverlapTag<P> &, const local_ordinal_type& partidx) const {
         // constants        
