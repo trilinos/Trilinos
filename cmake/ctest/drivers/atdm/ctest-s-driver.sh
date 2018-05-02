@@ -15,6 +15,7 @@ source ${WORKSPACE}/Trilinos/cmake/ctest/drivers/atdm/utils/create-src-and-build
 source $WORKSPACE/Trilinos/cmake/std/atdm/load-env.sh $JOB_NAME
 echo
 module list
+set | grep ATDM_CONFIG_
 
 export Trilinos_REPOSITORY_LOCATION=https://github.com/trilinos/Trilinos.git
 
