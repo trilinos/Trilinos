@@ -194,8 +194,8 @@ FiniteDifference<Real>::vector_check( f_vector_t<Real> f_ref,
   Teuchos::oblackholestream oldFormatState;
   oldFormatState.copyfmt(os_);  
 
-//  auto r = workspace_.clone(result);
-  auto r = result.clone();
+  
+  auto r = workspace_.clone(result);
 
   // Evaluate reference vector at input
   f_update(input);
@@ -209,12 +209,9 @@ FiniteDifference<Real>::vector_check( f_vector_t<Real> f_ref,
 
   Real norm_rdir = rdir->norm();  
 
-  auto rdif = result.clone();
-  auto rnew = result.clone();
-  auto x    = input.clone();
-//  auto rdif = workspace_.clone(r);
-//  auto rnew = workspace_.clone(r);
-//  auto x    = workspace_.clone(input);
+  auto rdif = workspace_.clone(r);
+  auto rnew = workspace_.clone(r);
+  auto x    = workspace_.clone(input);
   
   for (int i=0; i<numSteps_; i++) {
 
