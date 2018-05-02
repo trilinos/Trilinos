@@ -77,7 +77,7 @@ public:
   TeuchosVector( Ordinal length, bool zeroOut=true ) : 
     vec_( Teuchos::rcp( new SerialDenseVector(length,zeroOut) ) ) {} 
 
-  Real dot( const Vector<Real>& x ) override { 
+  Real dot( const Vector<Real>& x ) const override { 
     return dynamic_cast<const TeuchosVector&>(x).getVector()->dot(*vec_);
   }
 
