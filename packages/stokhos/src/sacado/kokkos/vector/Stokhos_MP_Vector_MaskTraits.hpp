@@ -42,8 +42,7 @@
 #ifndef STOKHOS_MP_VECTOR_MASKTRAITS_HPP
 #define STOKHOS_MP_VECTOR_MASKTRAITS_HPP
 
-#include "Sacado.hpp"
-#include "Stokhos_Tpetra_Utilities_MP_Vector.hpp"
+#include "Stokhos_Sacado_Kokkos_MP_Vector.hpp"
 #include <iostream>
 
 template <typename T>
@@ -77,9 +76,8 @@ template<typename scalar> class Mask
         }
 
         Mask(bool a){
-            size = 1;
-            data = new bool[size]();
-            data[0]=a;
+            for(auto i=0; i<size; ++i)
+                data[i]=a;
         }
 
         int getSize() const {return size;}
