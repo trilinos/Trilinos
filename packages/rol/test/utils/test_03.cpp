@@ -82,9 +82,6 @@ int main(int argc, char *argv[]) {
 
   try {
 
-    int dim = 5;
-    int nc = 3;
-        
     // Retrieve objective, constraint, iteration vector, solution vector.
     ZOO::getSimpleEqConstrained <RealT> SEC;
 
@@ -119,18 +116,23 @@ int main(int argc, char *argv[]) {
     auto con_up   = bind( &Constraint<RealT>::update, &con, _1, true, 0 );
     auto con_val  = bind( &Constraint<RealT>::value, &con, _1, _2, tol );
     auto con_jac  = bind( &Constraint<RealT>::applyJacobian, &con, _1, _2, _3, tol );
-
+    
     // Extra work is needed here because applyAdjointJacobian is overloaded 
-//    auto con_ajac = bind( &Constraint<RealT>::applyAdjointJacobian, &con, _1, l_ref, _2, tol );
-//    auto con_hess = bind( &Constraint<RealT>::applyAdjointHessian, &con, _1, l_ref, _2, _3, tol );
- 
+    auto con_ajac = bind( static_cast<void (Constraint<RealT>::*)
+                          ( V&, const V&, const V&, RealT& )>
+                          (&Constraint<RealT>::applyAdjointJacobian), 
+                          &con, _1, l_ref, _2, tol );
+
+    auto con_hess  = bind( &Constraint<RealT>::applyAdjointHessian, &con, _1, l_ref, _2, _3, tol );
+
+
     FiniteDifference<RealT> fd( 1, 13, 20, 11, true, *os );
  
     fd.scalar_check( obj_val,  obj_grad, obj_up, g_ref, v_ref, x_ref, "grad'*dir" );
     fd.vector_check( obj_grad, obj_hess, obj_up, g_ref, v_ref, x_ref, "norm(Hess*vec)" );
  
     fd.vector_check( con_val,  con_jac,  con_up, c_ref, v_ref, x_ref, "norm(Jac*vec)" ); 
-//    fd.vector_check( con_ajac, con_hess, con_up, d_ref, v_ref, x_ref, "norm(adj(H)(u,v))" ); 
+    fd.vector_check( con_ajac, con_hess, con_up, d_ref, v_ref, x_ref, "norm(adj(H)(u,v))" ); 
 
   }
   catch (std::logic_error err) {

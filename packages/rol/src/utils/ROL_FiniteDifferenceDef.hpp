@@ -96,10 +96,11 @@ FiniteDifference<Real>::FiniteDifference( const int order,
 } 
  
 template<typename Real>
+
 vector<vector<Real>>
-FiniteDifference<Real>::scalar_check( fd_scalar_t<Real> f_ref,
-                                      fd_vector_t<Real> f_test,
-                                      fd_update_t<Real> f_update,
+FiniteDifference<Real>::scalar_check( f_scalar_t<Real> f_ref,
+                                      f_vector_t<Real> f_test,
+                                      f_update_t<Real> f_update,
                                       const Vector<Real>& result,
                                       const Vector<Real>& direction,
                                       const Vector<Real>& input,
@@ -177,9 +178,9 @@ FiniteDifference<Real>::scalar_check( fd_scalar_t<Real> f_ref,
 
 template<typename Real>
 vector<vector<Real>>
-FiniteDifference<Real>::vector_check( fd_vector_t<Real> f_ref,
-                                      fd_dderiv_t<Real> f_test,
-                                      fd_update_t<Real> f_update,
+FiniteDifference<Real>::vector_check( f_vector_t<Real> f_ref,
+                                      f_dderiv_t<Real> f_test,
+                                      f_update_t<Real> f_update,
                                       const Vector<Real>& result,
                                       const Vector<Real>& direction,
                                       const Vector<Real>& input,

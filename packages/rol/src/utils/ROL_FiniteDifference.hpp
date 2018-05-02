@@ -102,20 +102,30 @@
 
 namespace ROL {
 
+
+
 namespace details {
 
 using namespace std;
+
+template<typename Real>
+using f_update_t = function<void( const Vector<Real>& )>;
+
+template<typename Real>
+using f_scalar_t = function<Real( const Vector<Real>& )>;
+
+template<typename Real>
+using f_vector_t = function<void( Vector<Real>&, const Vector<Real>& )>;
+
+template<typename Real>
+using f_dderiv_t = function<void( Vector<Real>&, const Vector<Real>&, const Vector<Real>& )>;
+
 
 template<typename Real>
 class FiniteDifference {
 public:
  
   using V = ROL::Vector<Real>;
-
-  using update_type = function<void( const V& )>;
-  using scalar_type = function<Real( const V& )>;
-  using vector_type = function<void( V&, const V& )>;
-  using dderiv_type = function<void( V&, const V&, const V& )>;
 
   FiniteDifference( Teuchos::ParameterList& pl,
                     ostream& os = cout );
@@ -129,17 +139,17 @@ public:
 
   virtual ~FiniteDifference(){}
 
-  virtual vector<vector<Real>> scalar_check( scalar_type f_ref, 
-                                             vector_type f_test, 
-                                             update_type f_update,
+  virtual vector<vector<Real>> scalar_check( f_scalar_t<Real> f_ref, 
+                                             f_vector_t<Real> f_test, 
+                                             f_update_t<Real> f_update,
                                              const V& result, 
                                              const V& input,
                                              const V& direction,
                                              const string& label ) const;
                                         
-  virtual vector<vector<Real>> vector_check( vector_type f_ref, 
-                                             dderiv_type f_test, 
-                                             update_type f_update,
+  virtual vector<vector<Real>> vector_check( f_vector_t<Real> f_ref, 
+                                             f_dderiv_t<Real> f_test, 
+                                             f_update_t<Real> f_update,
                                              const V& result, 
                                              const V& input,
                                              const V& direction,
@@ -162,18 +172,10 @@ private:
 } // namespace details
 
 using details::FiniteDifference;
-
-template<typename Real>
-using fd_update_t = typename FiniteDifference<Real>::update_type;
-
-template<typename Real>
-using fd_scalar_t = typename FiniteDifference<Real>::scalar_type;
-
-template<typename Real>
-using fd_vector_t = typename FiniteDifference<Real>::vector_type;
-
-template<typename Real>
-using fd_dderiv_t = typename FiniteDifference<Real>::dderiv_type;
+using details::f_scalar_t;
+using details::f_vector_t;
+using details::f_dderiv_t;
+using details::f_update_t;
 
 
 } // namespace ROL
