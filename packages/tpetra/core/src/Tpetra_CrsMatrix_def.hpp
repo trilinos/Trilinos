@@ -6023,7 +6023,6 @@ namespace Tpetra {
             << "Global dimensions: [" << getGlobalNumRows () << ", "
             << getGlobalNumCols () << "]" << endl
             << "Global number of entries: " << getGlobalNumEntries () << endl
-            << "Global number of diagonal entries: " << getGlobalNumDiags ()
             << endl << "Global max number of entries in a row: "
             << getGlobalMaxNumRowEntries () << endl;
       }
