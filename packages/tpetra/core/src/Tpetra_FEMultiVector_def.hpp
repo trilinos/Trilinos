@@ -64,7 +64,7 @@ FEMultiVector(const Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> > 
   importer_(importer) {
   // Sanity check the importer
   if(!importer_.is_null() && !importer_->getSourceMap()->isSameAs(*map)) {
-    throw std::runtime_error("FEMultiVector: 'map' must match 'importer->getSourceMap()' if impoter is provided");
+    throw std::runtime_error("FEMultiVector: 'map' must match 'importer->getSourceMap()' if importer is provided");
   }
 
   if(!importer_.is_null()) {
