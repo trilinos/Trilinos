@@ -511,6 +511,9 @@ namespace Xpetra {
 
     // JG: Added:
 
+    //! Supports the getCrsGraph() call
+    virtual bool hasCrsGraph() const =0;
+    
     //! Returns the CrsGraph associated with this matrix.
     virtual RCP<const CrsGraph> getCrsGraph() const =0;
 
