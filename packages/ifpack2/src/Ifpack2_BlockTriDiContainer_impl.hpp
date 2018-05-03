@@ -2671,61 +2671,53 @@ namespace Ifpack2 {
         }
       }
 
-      struct AsyncHostTag {};
-      struct AsyncCudaTag {};
+      struct AsyncTag {};
       
       inline
       void 
-      operator() (const AsyncHostTag &, const member_type &member) const {
-        const local_ordinal_type partidx = member.league_rank();
-        impl_scalar_type *yy = (impl_scalar_type*)member.team_shmem().get_shmem(blocksize);
-
+      operator() (const AsyncTag &, const local_ordinal_type &rowidx) const {
         // constants        
-        const local_ordinal_type pri0  = part2packrowidx0(partidx);
-        const local_ordinal_type ri0   = part2rowidx0(partidx);
-        const local_ordinal_type nrows = part2rowidx0(partidx+1) - ri0;
+        const local_ordinal_type partidx = rowidx2part(rowidx);
+        const local_ordinal_type pri = part2packrowidx0(partidx) + (rowidx - partptr(partidx));
+        const local_ordinal_type v = partidx % vector_length;
 
         const local_ordinal_type num_vectors = y_packed.extent(2);
-        const local_ordinal_type v = partidx % vector_length;
         const local_ordinal_type num_local_rows = lclrow.extent(0);
 
         // temporary buffer for y flat
-        //impl_scalar_type yy[max_blocksize] = {};
+        impl_scalar_type yy[max_blocksize] = {};
 
-        for (local_ordinal_type i=0;i<nrows;++i) {
-          const local_ordinal_type ri = ri0 + i;
-          const local_ordinal_type lr = lclrow(ri);
-          const local_ordinal_type row = lr*blocksize;
-          for (local_ordinal_type col=0;col<num_vectors;++col) {
-            // y := b
-            memcpy(yy, &b(row, col), sizeof(impl_scalar_type)*blocksize);
-
-            // y -= Rx
-            const size_type A_k0 = A_rowptr[lr];
-            for (size_type k=rowptr[lr];k<rowptr[lr+1];++k) {
-              const size_type j = A_k0 + colindsub[k];
-              const impl_scalar_type *AA = &tpetra_values(j*blocksize_square);
-              const local_ordinal_type A_colind_at_j = A_colind[j];
-              if (A_colind_at_j < num_local_rows) {
-                const auto loc = is_dm2cm_active ? dm2cm[A_colind_at_j] : A_colind_at_j;
-                const impl_scalar_type *xx = &x(loc*blocksize, col);
-                serialBlocksizeSpecificGemv(AA,xx,yy);
-              } else {
-                const auto loc = A_colind_at_j - num_local_rows;
-                const impl_scalar_type *xx_remote = &x_remote(loc*blocksize, col);
-                serialBlocksizeSpecificGemv(AA,xx_remote,yy);
-              }
+        const local_ordinal_type lr = lclrow(rowidx);
+        const local_ordinal_type row = lr*blocksize;
+        for (local_ordinal_type col=0;col<num_vectors;++col) {
+          // y := b
+          memcpy(yy, &b(row, col), sizeof(impl_scalar_type)*blocksize);
+          
+          // y -= Rx
+          const size_type A_k0 = A_rowptr[lr];
+          for (size_type k=rowptr[lr];k<rowptr[lr+1];++k) {
+            const size_type j = A_k0 + colindsub[k];
+            const impl_scalar_type * const AA = &tpetra_values(j*blocksize_square);
+            const local_ordinal_type A_colind_at_j = A_colind[j];
+            if (A_colind_at_j < num_local_rows) {
+              const auto loc = is_dm2cm_active ? dm2cm[A_colind_at_j] : A_colind_at_j;
+              const impl_scalar_type * const xx = &x(loc*blocksize, col);
+              serialBlocksizeSpecificGemv(AA,xx,yy);
+            } else {
+              const auto loc = A_colind_at_j - num_local_rows;
+              const impl_scalar_type * const xx_remote = &x_remote(loc*blocksize, col);
+              serialBlocksizeSpecificGemv(AA,xx_remote,yy);                
             }
-            // move yy to y_packed
-            for (local_ordinal_type k=0;k<blocksize;++k) 
-              y_packed(pri0+i, k, col)[v] = yy[k];
           }
+          // move yy to y_packed
+          for (local_ordinal_type k=0;k<blocksize;++k) 
+            y_packed(pri, k, col)[v] = yy[k];
         }
       }
 
       KOKKOS_INLINE_FUNCTION 
       void 
-      operator() (const AsyncCudaTag &, const member_type &member) const {
+      operator() (const AsyncTag &, const member_type &member) const {
         using namespace KokkosBatched::Experimental;
 
         // constants        
@@ -2957,7 +2949,7 @@ namespace Ifpack2 {
 
         if (is_cuda<execution_space>::value) {
 #if defined(KOKKOS_ENABLE_CUDA)
-          const Kokkos::TeamPolicy<execution_space,AsyncCudaTag> policy(part2rowidx0.extent(0) - 1, Kokkos::AUTO());
+          const Kokkos::TeamPolicy<execution_space,AsyncTag> policy(part2rowidx0.extent(0) - 1, Kokkos::AUTO());
           Kokkos::parallel_for
             ("ComputeResidual::TeamPolicy::run<AsyncTag>", policy, *this);
 #endif
@@ -2965,10 +2957,10 @@ namespace Ifpack2 {
 #if defined(__CUDA_ARCH__)        
           TEUCHOS_TEST_FOR_EXCEPT_MSG(true, "Error: CUDA should not see this code"); 
 #else          
-          const Kokkos::TeamPolicy<execution_space,AsyncHostTag> policy(part2rowidx0.extent(0) - 1, 1);
+          const Kokkos::RangePolicy<execution_space,AsyncTag> policy(0, rowidx2part.extent(0));
           Kokkos::parallel_for
-            ("ComputeResidual::RangePolicy::run<AsyncTag>", 
-             policy.set_scratch_size(0, Kokkos::PerTeam(sizeof(impl_scalar_type)*blocksize)), *this);
+            ("ComputeResidual::TeamPolicy::run<AsyncTag>", 
+             policy, *this);
 #endif
         }
       }
