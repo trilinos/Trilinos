@@ -537,8 +537,9 @@ namespace Tpetra {
     myGraph_ = graph;
     staticGraph_ = graph;
 
-    if (params.get () == nullptr ||
-        params->get ("compute global constants", true)) {
+    const bool callComputeGlobalConstants = params.get () == nullptr ||
+      params->get ("compute global constants", true);
+    if (callComputeGlobalConstants) {
       this->computeGlobalConstants ();
     }
 
@@ -594,8 +595,9 @@ namespace Tpetra {
     myGraph_ = graph;
     staticGraph_ = graph;
 
-    if (params.get () == nullptr ||
-        params->get ("compute global constants", true)) {
+    const bool callComputeGlobalConstants = params.get () == nullptr ||
+      params->get ("compute global constants", true);
+    if (callComputeGlobalConstants) {
       this->computeGlobalConstants ();
     }
 
@@ -4645,6 +4647,10 @@ namespace Tpetra {
          "constructor as const.  You can fix this by passing in the graph's "
          "domain Map and range Map to the matrix's fillComplete call.");
 #endif // HAVE_TPETRA_DEBUG
+
+      // The matrix does _not_ own the graph, and the graph's
+      // structure is already fixed, so just fill the local matrix.
+      this->fillLocalMatrix (params);
     }
     else {
       // Set the graph's domain and range Maps.  This will clear the
@@ -4680,36 +4686,30 @@ namespace Tpetra {
       // already.  If we made a column Map above, reuse information
       // from that process to avoid communiation in the Import setup.
       this->myGraph_->makeImportExport (remotePIDs, mustBuildColMap);
-      if (params.get () == nullptr ||
-          params->get ("compute global constants", true)) {
-        this->myGraph_->computeGlobalConstants ();
+
+      // The matrix _does_ own the graph, so fill the local graph at
+      // the same time as the local matrix.
+      this->fillLocalGraphAndMatrix (params);
+
+      const bool callGraphComputeGlobalConstants = params.get () == nullptr ||
+        params->get ("compute global constants", true);
+      const bool computeLocalTriangularConstants = params.get () == nullptr ||
+        params->get ("compute local triangular constants", true);
+      if (callGraphComputeGlobalConstants) {
+        this->myGraph_->computeGlobalConstants (computeLocalTriangularConstants);
       }
       else {
-        this->myGraph_->computeLocalConstants ();
+        this->myGraph_->computeLocalConstants (computeLocalTriangularConstants);
       }
       this->myGraph_->fillComplete_ = true;
       this->myGraph_->checkInternalState ();
     }
-    if (params.get () == nullptr ||
-        params->get ("compute global constants", true)) {
+
+    const bool callComputeGlobalConstants = params.get () == nullptr ||
+      params->get ("compute global constants", true);
+    if (callComputeGlobalConstants) {
       this->computeGlobalConstants ();
     }
-    // fill local objects; will fill and finalize local graph if appropriate
-    if (this->myGraph_.is_null ()) {
-      // The matrix does _not_ own the graph, and the graph's
-      // structure is already fixed, so just fill the local matrix.
-      this->fillLocalMatrix (params);
-    }
-    else {
-      // The matrix _does_ own the graph, so fill the local graph at
-      // the same time as the local matrix.
-      this->fillLocalGraphAndMatrix (params);
-    }
-
-    // Once we've initialized the sparse kernels, we're done with the
-    // local objects.  We may now release them and their memory, since
-    // they will persist in the local sparse ops if necessary.  We
-    // keep the local graph if the parameters tell us to do so.
 
     // FIXME (mfh 28 Aug 2014) "Preserve Local Graph" bool parameter no longer used.
 
@@ -4747,8 +4747,9 @@ namespace Tpetra {
     // We will presume globalAssemble is not needed, so we do the ESFC on the graph
     myGraph_->expertStaticFillComplete (domainMap, rangeMap, importer, exporter,params);
 
-    if (params.get () == nullptr ||
-        params->get ("compute global constants", true)) {
+    const bool callComputeGlobalConstants = params.get () == nullptr ||
+      params->get ("compute global constants", true);
+    if (callComputeGlobalConstants) {
 #ifdef HAVE_TPETRA_MMM_TIMINGS
       MM = Teuchos::rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix + std::string("ESFC-M-cGC"))));
 #endif
