@@ -113,7 +113,6 @@ namespace {
   using Teuchos::Array;
   using Teuchos::ArrayView;
   using Teuchos::Comm;
-  using Teuchos::SerialDenseMatrix;
   using Teuchos::Range1D;
   using Teuchos::Tuple;
   using Teuchos::as;
@@ -310,14 +309,15 @@ namespace {
     RCP<const Tpetra::Import<LO,GO,Node> > importer;
     // FEMV Type 1: Importer w/ shared memory
     if(femv_type == 1)
-      importer = rcp(new Tpetra::Import<LO,GO,Node>(sharedMap,fullMap));
+      importer = rcp(new Tpetra::Import<LO,GO,Node>(fullMap,sharedMap));
     // FEMV Type 2: Importer w/ non-shared memory
     else if(femv_type == 2)
-      importer = rcp(new Tpetra::Import<LO,GO,Node>(nonsharedMap,fullMap));
+      importer = rcp(new Tpetra::Import<LO,GO,Node>(fullMap,nonsharedMap));
     // FEMV Type 3: No importer
     
 
-    RCP<FEMV> A = rcp(new FEMV(fullMap,importer,numVectors,false));
+    RCP<FEMV> A = rcp(new FEMV(fullMap,importer,numVectors));
+    A->beginFill(); A->endFill();
     {
       // config source multivector
       RCP<MV> A1 = A->offsetViewNonConst(map1, 0);
