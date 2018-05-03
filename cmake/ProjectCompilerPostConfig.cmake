@@ -71,19 +71,25 @@ IF (${Trilinos_ENABLE_Kokkos})
     # cannot be passed to the link line, so we sneak these into the lesser-used
     # add_compile_options() function, which only affects the compile line and not the link line
     foreach(opt ${KOKKOS_CXX_FLAGS})
-      if (opt MATCHES "--cuda-gpu-arch")
-        # Furthermore, add_compile_options normally affects all languages, so
-        # we need a generator expression to prevent CUDA flags being passed to C or Fortran
-        add_compile_options($<$<COMPILE_LANGUAGE:CXX>:${opt}>)
+      if (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+        if (opt MATCHES "--cuda-gpu-arch")
+          # Furthermore, add_compile_options normally affects all languages, so
+          # we need a generator expression to prevent CUDA flags being passed to C or Fortran
+          add_compile_options($<$<COMPILE_LANGUAGE:CXX>:${opt}>)
+        else()
+          set(KOKKOS_CXX_FLAGS_str "${KOKKOS_CXX_FLAGS_str} ${opt}")
+        endif()
       else()
         set(KOKKOS_CXX_FLAGS_str "${KOKKOS_CXX_FLAGS_str} ${opt}")
       endif()
     endforeach()
-    # Since "-x cuda" shows up as two arguments, its easier to filter out here:
-    if (KOKKOS_CXX_FLAGS_str MATCHES "-x cuda")
-      string(REPLACE "-x cuda" "" KOKKOS_CXX_FLAGS_str "${KOKKOS_CXX_FLAGS_str}")
-      add_compile_options($<$<COMPILE_LANGUAGE:CXX>:-x>)
-      add_compile_options($<$<COMPILE_LANGUAGE:CXX>:cuda>)
+    if (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+      # Since "-x cuda" shows up as two arguments, its easier to filter out here:
+      if (KOKKOS_CXX_FLAGS_str MATCHES "-x cuda")
+        string(REPLACE "-x cuda" "" KOKKOS_CXX_FLAGS_str "${KOKKOS_CXX_FLAGS_str}")
+        add_compile_options($<$<COMPILE_LANGUAGE:CXX>:-x>)
+        add_compile_options($<$<COMPILE_LANGUAGE:CXX>:cuda>)
+      endif()
     endif()
 
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${KOKKOS_CXX_FLAGS_str}")
