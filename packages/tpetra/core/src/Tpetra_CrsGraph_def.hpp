@@ -181,6 +181,11 @@ namespace Tpetra {
             const Teuchos::RCP<Teuchos::ParameterList>& params) :
     dist_object_type (rowMap)
     , rowMap_ (rowMap)
+    , nodeNumDiags_ (Teuchos::OrdinalTraits<size_t>::invalid ())
+    , nodeMaxNumRowEntries_ (Teuchos::OrdinalTraits<size_t>::invalid ())
+    , globalNumEntries_ (Teuchos::OrdinalTraits<global_size_t>::invalid ())
+    , globalNumDiags_ (Teuchos::OrdinalTraits<global_size_t>::invalid ())
+    , globalMaxNumRowEntries_ (Teuchos::OrdinalTraits<global_size_t>::invalid ())
     , pftype_ (pftype)
     , numAllocForAllRows_ (maxNumEntriesPerRow)
     , storageStatus_ (pftype == StaticProfile ?
@@ -190,6 +195,8 @@ namespace Tpetra {
     , indicesAreLocal_ (false)
     , indicesAreGlobal_ (false)
     , fillComplete_ (false)
+    , lowerTriangular_ (false)
+    , upperTriangular_ (false)
     , indicesAreSorted_ (true)
     , noRedundancies_ (true)
     , haveLocalConstants_ (false)
@@ -218,6 +225,11 @@ namespace Tpetra {
     dist_object_type (rowMap)
     , rowMap_ (rowMap)
     , colMap_ (colMap)
+    , nodeNumDiags_ (Teuchos::OrdinalTraits<size_t>::invalid ())
+    , nodeMaxNumRowEntries_ (Teuchos::OrdinalTraits<size_t>::invalid ())
+    , globalNumEntries_ (Teuchos::OrdinalTraits<global_size_t>::invalid ())
+    , globalNumDiags_ (Teuchos::OrdinalTraits<global_size_t>::invalid ())
+    , globalMaxNumRowEntries_ (Teuchos::OrdinalTraits<global_size_t>::invalid ())
     , pftype_ (pftype)
     , numAllocForAllRows_ (maxNumEntriesPerRow)
     , storageStatus_ (pftype == StaticProfile ?
@@ -227,6 +239,8 @@ namespace Tpetra {
     , indicesAreLocal_ (false)
     , indicesAreGlobal_ (false)
     , fillComplete_ (false)
+    , lowerTriangular_ (false)
+    , upperTriangular_ (false)
     , indicesAreSorted_ (true)
     , noRedundancies_ (true)
     , haveLocalConstants_ (false)
@@ -253,6 +267,11 @@ namespace Tpetra {
             const Teuchos::RCP<Teuchos::ParameterList>& params) :
     dist_object_type (rowMap)
     , rowMap_ (rowMap)
+    , nodeNumDiags_ (Teuchos::OrdinalTraits<size_t>::invalid ())
+    , nodeMaxNumRowEntries_ (Teuchos::OrdinalTraits<size_t>::invalid ())
+    , globalNumEntries_ (Teuchos::OrdinalTraits<global_size_t>::invalid ())
+    , globalNumDiags_ (Teuchos::OrdinalTraits<global_size_t>::invalid ())
+    , globalMaxNumRowEntries_ (Teuchos::OrdinalTraits<global_size_t>::invalid ())
     , pftype_ (pftype)
     , numAllocForAllRows_ (0)
     , storageStatus_ (pftype == StaticProfile ?
@@ -262,6 +281,8 @@ namespace Tpetra {
     , indicesAreLocal_ (false)
     , indicesAreGlobal_ (false)
     , fillComplete_ (false)
+    , lowerTriangular_ (false)
+    , upperTriangular_ (false)
     , indicesAreSorted_ (true)
     , noRedundancies_ (true)
     , haveLocalConstants_ (false)
@@ -318,6 +339,11 @@ namespace Tpetra {
             const Teuchos::RCP<Teuchos::ParameterList>& params) :
     dist_object_type (rowMap)
     , rowMap_ (rowMap)
+    , nodeNumDiags_ (Teuchos::OrdinalTraits<size_t>::invalid ())
+    , nodeMaxNumRowEntries_ (Teuchos::OrdinalTraits<size_t>::invalid ())
+    , globalNumEntries_ (Teuchos::OrdinalTraits<global_size_t>::invalid ())
+    , globalNumDiags_ (Teuchos::OrdinalTraits<global_size_t>::invalid ())
+    , globalMaxNumRowEntries_ (Teuchos::OrdinalTraits<global_size_t>::invalid ())
     , pftype_ (pftype)
     , k_numAllocPerRow_ (numEntPerRow.h_view)
     , numAllocForAllRows_ (0)
@@ -328,6 +354,8 @@ namespace Tpetra {
     , indicesAreLocal_ (false)
     , indicesAreGlobal_ (false)
     , fillComplete_ (false)
+    , lowerTriangular_ (false)
+    , upperTriangular_ (false)
     , indicesAreSorted_ (true)
     , noRedundancies_ (true)
     , haveLocalConstants_ (false)
@@ -372,6 +400,11 @@ namespace Tpetra {
     dist_object_type (rowMap)
     , rowMap_ (rowMap)
     , colMap_ (colMap)
+    , nodeNumDiags_ (Teuchos::OrdinalTraits<size_t>::invalid ())
+    , nodeMaxNumRowEntries_ (Teuchos::OrdinalTraits<size_t>::invalid ())
+    , globalNumEntries_ (Teuchos::OrdinalTraits<global_size_t>::invalid ())
+    , globalNumDiags_ (Teuchos::OrdinalTraits<global_size_t>::invalid ())
+    , globalMaxNumRowEntries_ (Teuchos::OrdinalTraits<global_size_t>::invalid ())
     , pftype_ (pftype)
     , k_numAllocPerRow_ (numEntPerRow.h_view)
     , numAllocForAllRows_ (0)
@@ -382,6 +415,8 @@ namespace Tpetra {
     , indicesAreLocal_ (false)
     , indicesAreGlobal_ (false)
     , fillComplete_ (false)
+    , lowerTriangular_ (false)
+    , upperTriangular_ (false)
     , indicesAreSorted_ (true)
     , noRedundancies_ (true)
     , haveLocalConstants_ (false)
@@ -426,6 +461,11 @@ namespace Tpetra {
     dist_object_type (rowMap)
     , rowMap_ (rowMap)
     , colMap_ (colMap)
+    , nodeNumDiags_ (Teuchos::OrdinalTraits<size_t>::invalid ())
+    , nodeMaxNumRowEntries_ (Teuchos::OrdinalTraits<size_t>::invalid ())
+    , globalNumEntries_ (Teuchos::OrdinalTraits<global_size_t>::invalid ())
+    , globalNumDiags_ (Teuchos::OrdinalTraits<global_size_t>::invalid ())
+    , globalMaxNumRowEntries_ (Teuchos::OrdinalTraits<global_size_t>::invalid ())
     , pftype_ (pftype)
     , numAllocForAllRows_ (0)
     , storageStatus_ (pftype == StaticProfile ?
@@ -435,6 +475,8 @@ namespace Tpetra {
     , indicesAreLocal_ (false)
     , indicesAreGlobal_ (false)
     , fillComplete_ (false)
+    , lowerTriangular_ (false)
+    , upperTriangular_ (false)
     , indicesAreSorted_ (true)
     , noRedundancies_ (true)
     , haveLocalConstants_ (false)
@@ -495,6 +537,8 @@ namespace Tpetra {
     dist_object_type (rowMap)
     , rowMap_(rowMap)
     , colMap_(colMap)
+    , nodeNumDiags_ (Teuchos::OrdinalTraits<size_t>::invalid ())
+    , nodeMaxNumRowEntries_ (Teuchos::OrdinalTraits<size_t>::invalid ())
     , globalNumEntries_ (Teuchos::OrdinalTraits<global_size_t>::invalid ())
     , globalNumDiags_ (Teuchos::OrdinalTraits<global_size_t>::invalid ())
     , globalMaxNumRowEntries_ (Teuchos::OrdinalTraits<global_size_t>::invalid ())
@@ -505,6 +549,8 @@ namespace Tpetra {
     , indicesAreLocal_(true)
     , indicesAreGlobal_(false)
     , fillComplete_(false)
+    , lowerTriangular_ (false)
+    , upperTriangular_ (false)
     , indicesAreSorted_(true)
     , noRedundancies_(true)
     , haveLocalConstants_ (false)
@@ -527,6 +573,8 @@ namespace Tpetra {
     dist_object_type (rowMap)
     , rowMap_ (rowMap)
     , colMap_ (colMap)
+    , nodeNumDiags_ (Teuchos::OrdinalTraits<size_t>::invalid ())
+    , nodeMaxNumRowEntries_ (Teuchos::OrdinalTraits<size_t>::invalid ())
     , globalNumEntries_ (Teuchos::OrdinalTraits<global_size_t>::invalid ())
     , globalNumDiags_ (Teuchos::OrdinalTraits<global_size_t>::invalid ())
     , globalMaxNumRowEntries_ (Teuchos::OrdinalTraits<global_size_t>::invalid ())
@@ -537,6 +585,8 @@ namespace Tpetra {
     , indicesAreLocal_ (true)
     , indicesAreGlobal_ (false)
     , fillComplete_ (false)
+    , lowerTriangular_ (false)
+    , upperTriangular_ (false)
     , indicesAreSorted_ (true)
     , noRedundancies_ (true)
     , haveLocalConstants_ (false)
@@ -555,9 +605,13 @@ namespace Tpetra {
             const Teuchos::RCP<const map_type>& colMap,
             const local_graph_type& k_local_graph_,
             const Teuchos::RCP<Teuchos::ParameterList>& params)
-    : CrsGraph(k_local_graph_, rowMap, colMap, Teuchos::null, Teuchos::null, params)
-  {
-  }
+    : CrsGraph (k_local_graph_,
+                rowMap,
+                colMap,
+                Teuchos::null,
+                Teuchos::null,
+                params)
+  {}
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::
@@ -571,6 +625,8 @@ namespace Tpetra {
     , rowMap_ (rowMap)
     , colMap_ (colMap)
     , lclGraph_ (k_local_graph_)
+    , nodeNumDiags_ (Teuchos::OrdinalTraits<size_t>::invalid ())
+    , nodeMaxNumRowEntries_ (Teuchos::OrdinalTraits<size_t>::invalid ())
     , globalNumEntries_ (Teuchos::OrdinalTraits<global_size_t>::invalid ())
     , globalNumDiags_ (Teuchos::OrdinalTraits<global_size_t>::invalid ())
     , globalMaxNumRowEntries_ (Teuchos::OrdinalTraits<global_size_t>::invalid ())
@@ -581,11 +637,13 @@ namespace Tpetra {
     , indicesAreLocal_ (true)
     , indicesAreGlobal_ (false)
     , fillComplete_ (false)
+    , lowerTriangular_ (false)
+    , upperTriangular_ (false)
     , indicesAreSorted_ (true)
     , noRedundancies_ (true)
     , haveLocalConstants_ (false)
     , haveGlobalConstants_ (false)
-    , sortGhostsAssociatedWithEachProcessor_(true)
+    , sortGhostsAssociatedWithEachProcessor_ (true)
   {
     staticAssertions();
     const char tfecfFuncName[] = "CrsGraph(Kokkos::LocalStaticCrsGraph,Map,Map,Map,Map)";
@@ -634,7 +692,6 @@ namespace Tpetra {
   CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::
   ~CrsGraph ()
   {}
-
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   Teuchos::RCP<const Teuchos::ParameterList>
