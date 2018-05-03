@@ -622,12 +622,11 @@ namespace Tpetra {
     k_lclInds1D_ = lclGraph_.entries;
     k_rowPtrs_ = lclGraph_.row_map;
 
-    computeLocalTriangularProperties ();
+    this->computeLocalTriangularProperties ();
+    this->haveLocalConstants_ = true;
+    this->computeGlobalConstants ();
+    this->fillComplete_ = true;
 
-    haveLocalConstants_ = true;
-    computeGlobalConstants ();
-
-    fillComplete_ = true;
     checkInternalState ();
   }
 
@@ -3779,7 +3778,14 @@ namespace Tpetra {
     // already.  If we made a column Map above, reuse information from
     // that process to avoid communiation in the Import setup.
     this->makeImportExport (remotePIDs, mustBuildColMap);
-    this->computeGlobalConstants ();
+
+    if (params.get () == nullptr ||
+        params->get ("compute global constants", true)) {
+      this->computeGlobalConstants ();
+    }
+    else {
+      this->computeLocalConstants ();
+    }
     this->fillLocalGraph (params);
     this->fillComplete_ = true;
 
@@ -3895,17 +3901,19 @@ namespace Tpetra {
     Teuchos::Array<int> remotePIDs (0); // unused output argument
     this->makeImportExport (remotePIDs, false);
 
-    // Compute the constants
+    if (params.is_null () ||
+        params->get("compute global constants", true)) {
 #ifdef HAVE_TPETRA_MMM_TIMINGS
-    if(params.is_null() || params->get("compute global constants",true))
       MM = Teuchos::rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix + std::string("ESFC-G-cGC (const)"))));
-    else
+#endif // HAVE_TPETRA_MMM_TIMINGS
+      this->computeGlobalConstants ();
+    }
+    else {
+#ifdef HAVE_TPETRA_MMM_TIMINGS
       MM = Teuchos::rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix + std::string("ESFC-G-cGC (noconst)"))));
-#endif
-    if(params.is_null() || params->get("compute global constants",true))
-      computeGlobalConstants ();
-    else
-      computeLocalConstants ();
+#endif // HAVE_TPETRA_MMM_TIMINGS
+      this->computeLocalConstants ();
+    }
 
     // Since we have a StaticProfile, fillLocalGraph will do the right thing...
 #ifdef HAVE_TPETRA_MMM_TIMINGS

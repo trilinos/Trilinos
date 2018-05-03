@@ -536,7 +536,11 @@ namespace Tpetra {
     // the matrix, implying shared ownership.
     myGraph_ = graph;
     staticGraph_ = graph;
-    computeGlobalConstants ();
+
+    if (params.get () == nullptr ||
+        params->get ("compute global constants", true)) {
+      this->computeGlobalConstants ();
+    }
 
     // Sanity checks at the end.
 #ifdef HAVE_TPETRA_DEBUG
@@ -589,7 +593,11 @@ namespace Tpetra {
     // the matrix, implying shared ownership.
     myGraph_ = graph;
     staticGraph_ = graph;
-    computeGlobalConstants ();
+
+    if (params.get () == nullptr ||
+        params->get ("compute global constants", true)) {
+      this->computeGlobalConstants ();
+    }
 
     // Sanity checks at the end.
 #ifdef HAVE_TPETRA_DEBUG
@@ -4672,11 +4680,20 @@ namespace Tpetra {
       // already.  If we made a column Map above, reuse information
       // from that process to avoid communiation in the Import setup.
       this->myGraph_->makeImportExport (remotePIDs, mustBuildColMap);
-      this->myGraph_->computeGlobalConstants ();
+      if (params.get () == nullptr ||
+          params->get ("compute global constants", true)) {
+        this->myGraph_->computeGlobalConstants ();
+      }
+      else {
+        this->myGraph_->computeLocalConstants ();
+      }
       this->myGraph_->fillComplete_ = true;
       this->myGraph_->checkInternalState ();
     }
-    this->computeGlobalConstants ();
+    if (params.get () == nullptr ||
+        params->get ("compute global constants", true)) {
+      this->computeGlobalConstants ();
+    }
     // fill local objects; will fill and finalize local graph if appropriate
     if (this->myGraph_.is_null ()) {
       // The matrix does _not_ own the graph, and the graph's
@@ -4730,11 +4747,13 @@ namespace Tpetra {
     // We will presume globalAssemble is not needed, so we do the ESFC on the graph
     myGraph_->expertStaticFillComplete (domainMap, rangeMap, importer, exporter,params);
 
+    if (params.get () == nullptr ||
+        params->get ("compute global constants", true)) {
 #ifdef HAVE_TPETRA_MMM_TIMINGS
-    MM = Teuchos::rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix + std::string("ESFC-M-cGC"))));
+      MM = Teuchos::rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix + std::string("ESFC-M-cGC"))));
 #endif
-    if(params.is_null() || params->get("compute global constants",true))
-      computeGlobalConstants ();
+      this->computeGlobalConstants ();
+    }
 
 #ifdef HAVE_TPETRA_MMM_TIMINGS
     MM = Teuchos::rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix + std::string("ESFC-M-fLGAM"))));
