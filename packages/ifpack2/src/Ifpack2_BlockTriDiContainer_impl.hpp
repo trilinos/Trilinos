@@ -908,6 +908,8 @@ namespace Ifpack2 {
       // tridiag's pack, and i % vector_length gives the position in the pack.
       vector_type_3d_view values;
 
+      bool is_diagonal_only;
+
       BlockTridiags() = default;
       BlockTridiags(const BlockTridiags &b) = default;
 
@@ -958,6 +960,10 @@ namespace Ifpack2 {
               update += btdm.NumBlocks(nrows);
             } 
           });
+        
+        const auto nblocks = Kokkos::create_mirror_view_and_copy
+          (Kokkos::HostSpace(), Kokkos::subview(btdm.flat_td_ptr, ntridiags));
+        btdm.is_diagonal_only = (nblocks() == ntridiags);
       }
       
       // And the packed index pointers.
@@ -2520,6 +2526,28 @@ namespace Ifpack2 {
           is_dm2cm_active(dm2cm_.span() > 0)
       {}
 
+
+      inline
+      void 
+      serialGemv(const local_ordinal_type &blocksize,
+                 const impl_scalar_type * __restrict__ const A, 
+                 const impl_scalar_type * __restrict__ const x,
+                 /* */ impl_scalar_type * __restrict__ y) const {
+        for (local_ordinal_type k0=0;k0<blocksize;++k0) {
+          impl_scalar_type val = 0;
+          const impl_scalar_type * __restrict__ const R = A + k0*blocksize;
+#if defined(KOKKOS_ENABLE_PRAGMA_IVDEP)
+#   pragma ivdep
+#endif
+#if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
+#   pragma unroll
+#endif
+          for (local_ordinal_type k1=0;k1<blocksize;++k1) 
+            val += R[k1]*x[k1];
+          y[k0] -= val;
+        }
+      }
+
       inline
       void serialBlocksizeSpecificGemv(const local_ordinal_type &blocksize,
                                        const impl_scalar_type * const AA, 
@@ -2530,16 +2558,16 @@ namespace Ifpack2 {
 
         const magnitude_type one(1);
         switch (blocksize) {
-        case  3: { KOKKOSBATCHED_SERIAL_GEMV_NO_TRANSPOSE_INTERNAL_INVOKE(AlgoType,        3,        3,-one,AA,        3,1,xx, 1,one,yy, 1); break; }
-        case  5: { KOKKOSBATCHED_SERIAL_GEMV_NO_TRANSPOSE_INTERNAL_INVOKE(AlgoType,        5,        5,-one,AA,        5,1,xx, 1,one,yy, 1); break; }
-        case  7: { KOKKOSBATCHED_SERIAL_GEMV_NO_TRANSPOSE_INTERNAL_INVOKE(AlgoType,        7,        7,-one,AA,        7,1,xx, 1,one,yy, 1); break; }
-        case  9: { KOKKOSBATCHED_SERIAL_GEMV_NO_TRANSPOSE_INTERNAL_INVOKE(AlgoType,        9,        9,-one,AA,        9,1,xx, 1,one,yy, 1); break; }
-        case 10: { KOKKOSBATCHED_SERIAL_GEMV_NO_TRANSPOSE_INTERNAL_INVOKE(AlgoType,       10,       10,-one,AA,       10,1,xx, 1,one,yy, 1); break; }
-        case 11: { KOKKOSBATCHED_SERIAL_GEMV_NO_TRANSPOSE_INTERNAL_INVOKE(AlgoType,       11,       11,-one,AA,       11,1,xx, 1,one,yy, 1); break; }
-        case 16: { KOKKOSBATCHED_SERIAL_GEMV_NO_TRANSPOSE_INTERNAL_INVOKE(AlgoType,       16,       16,-one,AA,       16,1,xx, 1,one,yy, 1); break; }
-        case 17: { KOKKOSBATCHED_SERIAL_GEMV_NO_TRANSPOSE_INTERNAL_INVOKE(AlgoType,       17,       17,-one,AA,       17,1,xx, 1,one,yy, 1); break; }
-        case 18: { KOKKOSBATCHED_SERIAL_GEMV_NO_TRANSPOSE_INTERNAL_INVOKE(AlgoType,       18,       18,-one,AA,       18,1,xx, 1,one,yy, 1); break; }
-        default: { KOKKOSBATCHED_SERIAL_GEMV_NO_TRANSPOSE_INTERNAL_INVOKE(AlgoType,blocksize,blocksize,-one,AA,blocksize,1,xx, 1,one,yy, 1); break; }
+        case  3: { serialGemv(        3, AA, xx, yy); break; }
+        case  5: { serialGemv(        5, AA, xx, yy); break; }
+        case  7: { serialGemv(        7, AA, xx, yy); break; }
+        case  9: { serialGemv(        9, AA, xx, yy); break; }
+        case 10: { serialGemv(       10, AA, xx, yy); break; }
+        case 11: { serialGemv(       11, AA, xx, yy); break; }
+        case 16: { serialGemv(       16, AA, xx, yy); break; }
+        case 17: { serialGemv(       17, AA, xx, yy); break; }
+        case 18: { serialGemv(       18, AA, xx, yy); break; }
+        default: { serialGemv(blocksize, AA, xx, yy); break; }
         }
       }
 
@@ -2630,7 +2658,7 @@ namespace Ifpack2 {
           yy.assign_data(&y(row, col));
           bb.assign_data(&b(row, col));
 	  if (member.team_rank() == 0) 
-            vectorCopy(member, bb, yy);
+            vectorCopy(member, blocksize, bb, yy);
           member.team_barrier();
 
           // y -= Rx
@@ -2639,7 +2667,7 @@ namespace Ifpack2 {
             const size_type j = A_k0 + colindsub[k];
             A_block.assign_data( &tpetra_values(j*blocksize_square) );
             xx.assign_data( &x(A_colind[j]*blocksize, col) );
-            teamGemv(member, A_block, xx, yy);
+            teamGemv(member, blocksize, A_block, xx, yy);
           }
         }
       }
@@ -2733,7 +2761,7 @@ namespace Ifpack2 {
             bb.assign_data(&b(row, col));
             yy.assign_data(&y_packed_scalar(pri0+i, 0, col, v));
 	    if (member.team_rank() == 0) 
-              vectorCopy(member, bb, yy);
+              vectorCopy(member, blocksize, bb, yy);
             member.team_barrier();
 
             // y -= Rx
@@ -2746,11 +2774,11 @@ namespace Ifpack2 {
               if (A_colind_at_j < num_local_rows) {
                 const auto loc = is_dm2cm_active ? dm2cm[A_colind_at_j] : A_colind_at_j;
                 xx.assign_data( &x(loc*blocksize, col) );
-                teamGemv(member, A_block, xx, yy);
+                teamGemv(member, blocksize, A_block, xx, yy);
               } else {
                 const auto loc = A_colind_at_j - num_local_rows;
                 xx_remote.assign_data( &x_remote(loc*blocksize, col) );
-                teamGemv(member, A_block, xx_remote, yy);
+                teamGemv(member, blocksize, A_block, xx_remote, yy);
               }
             }
           }
@@ -2863,7 +2891,7 @@ namespace Ifpack2 {
               // y := b
               bb.assign_data(&b(row, col));
 	      if (member.team_rank() == 0) 
-                vectorCopy(member, bb, yy);
+                vectorCopy(member, blocksize, bb, yy);
               member.team_barrier();
             }
             
@@ -2876,11 +2904,11 @@ namespace Ifpack2 {
               if (P == 0) {
                 const auto loc = is_dm2cm_active ? dm2cm[A_colind_at_j] : A_colind_at_j;
                 xx.assign_data( &x(loc*blocksize, col) );
-                teamGemv(member, A_block, xx, yy);
+                teamGemv(member, blocksize, A_block, xx, yy);
               } else {
                 const auto loc = A_colind_at_j - num_local_rows;
                 xx_remote.assign_data( &x_remote(loc*blocksize, col) );
-                teamGemv(member, A_block, xx_remote, yy);
+                teamGemv(member, blocksize, A_block, xx_remote, yy);
               }
             }
           }
@@ -2983,6 +3011,7 @@ namespace Ifpack2 {
 
         if (is_cuda<execution_space>::value) {
 #if defined(KOKKOS_ENABLE_CUDA)
+          const local_ordinal_type blocksize = blocksize_given;
           local_ordinal_type vl_power_of_two = 1;
           for (;vl_power_of_two<=blocksize;vl_power_of_two*=2);
           vl_power_of_two *= (vl_power_of_two < blocksize ? 2 : 1);
