@@ -93,7 +93,7 @@ int main(int argc, char *argv[]) {
       ROL::Ptr<ROL::OptimizationProblem<RealT> > problem;
       ROL::GetTestProblem<RealT>(problem,x0,z,prob);
 
-      if (problem->getProblemType() == ROL::TYPE_E || problem->getProblemType() == ROL::TYPE_EB) {
+      if ((problem->getProblemType() == ROL::TYPE_E || problem->getProblemType() == ROL::TYPE_EB) && prob != ROL::TESTOPTPROBLEM_CANTILEVERBEAM) {
         *outStream << std::endl << std::endl << ROL:: ETestOptProblemToString(prob)  << std::endl << std::endl;
 
         // Get Dimension of Problem
@@ -114,6 +114,7 @@ int main(int argc, char *argv[]) {
         RealT err(0);
         for (int i = 0; i < static_cast<int>(z.size()); ++i) {
           e->set(*x0);
+std::cout << "\n\n  e dim =" << e->dimension() << "  z[i] dim =" << z[i]->dimension() << "\n\n";
           e->axpy(-1.0,*z[i]);
           if (i == 0) {
             err = e->norm();
