@@ -88,11 +88,6 @@ void registerSolverFactory() {
 } // namespace Details
 } // namespace Belos
 
-// Disable pre-main registration until further discussion.
-// The static parameters in BiCGStabSolMgr, for example, may have out of order
-// initialization in which case, simply calling new BiCGStabSolMgr will crash.
-// This behavior will be indeterminate.
-/*
 namespace { // (anonymous)
   class Register_Belos_Details_Epetra_SolverFactory {
   public:
@@ -107,4 +102,3 @@ namespace { // (anonymous)
     register_belos_details_epetra_solverFactory;
 
 } // namespace (anonymous)
-*/

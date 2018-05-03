@@ -258,7 +258,14 @@ public:
       std::invalid_argument, "Belos::SolverFactoryParent::registerSolver "
       "was given a null solver to register.");
 
-    solverManagers_[solverName] = instance;
+    get_solverManagers()[solverName] = instance;
+  }
+
+  /// \brief is solver registered for Inverted Injection (DII).
+  static bool
+  isSolverRegistered (const std::string & solverName)
+  {
+    return (get_solverManagers().find(solverName) != get_solverManagers().end());
   }
 
   //! @name Implementation of Teuchos::Describable interface
@@ -282,22 +289,25 @@ private:
   //! The list of solver factories given to addFactory.
   static std::vector<Teuchos::RCP<custom_solver_factory_type> > factories_;
 
-  static std::map<const std::string,
-    Teuchos::RCP<typename SolverFactoryParent<Scalar, MV, OP>::solver_base_type> > solverManagers_;
+  static std::map<const std::string, Teuchos::RCP<typename
+    SolverFactoryParent<Scalar, MV, OP>::solver_base_type> > &
+    get_solverManagers() {
+      static std::map<const std::string, Teuchos::RCP<typename
+        SolverFactoryParent<Scalar, MV, OP>::solver_base_type> > solverManagers;
+      return solverManagers;
+    }
 };
 
 template<class Scalar, class MV, class OP>
 std::vector<Teuchos::RCP<typename SolverFactoryParent<Scalar, MV, OP>::custom_solver_factory_type> >
 SolverFactoryParent<Scalar, MV, OP>::factories_;
 
-template<class Scalar, class MV, class OP>
-std::map<const std::string, Teuchos::RCP<typename SolverFactoryParent<Scalar, MV, OP>::solver_base_type> >
-SolverFactoryParent<Scalar, MV, OP>::solverManagers_;
-
 template<class SolverClass, class Scalar, class MV, class OP>
 void registerSolverSubclassForTypes (const std::string & solverName) {
-  Teuchos::RCP<SolverClass> solver (new SolverClass);
-  SolverFactoryParent<Scalar, MV, OP>::registerSolver (solverName, solver);
+  if(!SolverFactoryParent<Scalar, MV, OP>::isSolverRegistered(solverName)) {
+    Teuchos::RCP<SolverClass> solver (new SolverClass);
+    SolverFactoryParent<Scalar, MV, OP>::registerSolver (solverName, solver);
+  }
 }
 
 } // namespace Impl
@@ -549,10 +559,10 @@ getSolver (const std::string& solverName,
 
   typename std::map<const std::string, Teuchos::RCP<
     typename SolverFactoryParent<Scalar, MV, OP>::solver_base_type> >::iterator
-    it = solverManagers_.find (standardized_name);
+    it = get_solverManagers().find (standardized_name);
 
   TEUCHOS_TEST_FOR_EXCEPTION(
-    it == solverManagers_.end(),
+    it == get_solverManagers().end(),
     std::invalid_argument, "Belos solver manager " << solverNameUC <<
     " with standardized name " << standardized_name << " has not been"
     " registered.");
@@ -753,7 +763,7 @@ isSupported (const std::string& solverName) const
     Details::getCanonicalNameFromAlias (solverNameUC);
   const std::string candidateCanonicalName = aliasResult.first;
   const bool validCanonicalName =
-    (solverManagers_.find(candidateCanonicalName) != solverManagers_.end());
+    (get_solverManagers().find(candidateCanonicalName) != get_solverManagers().end());
   return validCanonicalName;
 }
 
