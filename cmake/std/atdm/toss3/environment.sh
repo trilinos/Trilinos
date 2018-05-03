@@ -47,7 +47,10 @@ if [ "$ATDM_CONFIG_COMPILER" == "INTEL" ]; then
     export ATDM_CONFIG_LAPACK_LIB="-mkl"
     export ATDM_CONFIG_BLAS_LIB="-mkl"
 else
-    echo "No valid compiler found"
+    echo
+    echo "***"
+    echo "*** ERROR: COMPILER=$ATDM_CONFIG_COMPILER is not supported on this system!"
+    echo "***"
     return
 fi
 
