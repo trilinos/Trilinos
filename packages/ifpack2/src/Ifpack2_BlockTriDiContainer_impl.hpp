@@ -420,8 +420,8 @@ namespace Ifpack2 {
         memcpy(pids.send.data(), pids_to.getRawPtr(), sizeof(int)*pids.send.extent(0));
 
         // mpi requests 
-        reqs.recv.resize(pids.recv.extent(0)); //memset(reqs.recv.data(), 0, reqs.recv.size()*sizeof(MPI_Request));
-        reqs.send.resize(pids.send.extent(0)); //memset(reqs.send.data(), 0, reqs.send.size()*sizeof(MPI_Request));
+        reqs.recv.resize(pids.recv.extent(0)); memset(reqs.recv.data(), 0, reqs.recv.size()*sizeof(MPI_Request));
+        reqs.send.resize(pids.send.extent(0)); memset(reqs.send.data(), 0, reqs.send.size()*sizeof(MPI_Request));
         
         // construct offsets
         const auto lengths_to = distributor.getLengthsTo();
@@ -501,17 +501,21 @@ namespace Ifpack2 {
 	      });
 #endif
 	  } else {
-	    const Kokkos::RangePolicy<execution_space> policy(ibeg_, iend_);
-	    Kokkos::parallel_for
-	      ("AsyncableImport::RangePolicy::copy", 
+#if defined(__CUDA_ARCH__)
+            TEUCHOS_TEST_FOR_EXCEPT_MSG(true, "Error: CUDA should not see this code"); 
+#else
+            const Kokkos::RangePolicy<execution_space> policy(ibeg_, iend_); 
+            Kokkos::parallel_for
+              ("AsyncableImport::RangePolicy::copy",
                policy, KOKKOS_LAMBDA(const local_ordinal_type &i) {
-		auto aptr = buffer_.data() + blocksize_*i;
-		auto bptr = multivector_.data() + blocksize_*lids_(i);
-		if (std::is_same<PackTag,ToBuffer>::value) 
-		  for (local_ordinal_type k=0;k<blocksize_;++k) aptr[k] = bptr[k];
-		else
-		  for (local_ordinal_type k=0;k<blocksize_;++k) bptr[k] = aptr[k];
-	      });
+                auto aptr = buffer_.data() + blocksize_*i;
+                auto bptr = multivector_.data() + blocksize_*lids_(i);
+                if (std::is_same<PackTag,ToBuffer>::value)
+                  memcpy(aptr, bptr, sizeof(impl_scalar_type)*blocksize_);
+                else
+                  memcpy(bptr, aptr, sizeof(impl_scalar_type)*blocksize_);
+              });
+#endif
 	  }
         } else { 
           Kokkos::MDRangePolicy
@@ -622,7 +626,7 @@ namespace Ifpack2 {
 #ifdef HAVE_MPI
         // receive async.
         for (local_ordinal_type i=0,iend=pids.recv.extent(0);i<iend;++i) {
-          local_ordinal_type idx;
+          local_ordinal_type idx = i;
           waitany(pids.recv.extent(0), reqs.recv.data(), &idx);
           copy<ToMultiVector>(lids.recv, buffer.recv, offset.recv(idx), offset.recv(idx+1),
                               remote_multivector, blocksize);
@@ -2486,27 +2490,27 @@ namespace Ifpack2 {
       /* */Unmanaged<impl_scalar_type_4d_view> y_packed_scalar;
 
       // AmD information
-      ConstUnmanaged<size_type_1d_view> rowptr, rowptr_remote;
-      ConstUnmanaged<local_ordinal_type_1d_view> colindsub, colindsub_remote;
-      ConstUnmanaged<impl_scalar_type_1d_view> tpetra_values;
+      const ConstUnmanaged<size_type_1d_view> rowptr, rowptr_remote;
+      const ConstUnmanaged<local_ordinal_type_1d_view> colindsub, colindsub_remote;
+      const ConstUnmanaged<impl_scalar_type_1d_view> tpetra_values;
 
       // block crs graph information
       // for cuda (kokkos crs graph uses a different size_type from size_t)
       using a_rowptr_value_type = typename Kokkos::ViewTraits<local_ordinal_type*,typename impl_type::device_type>::size_type; 
-      ConstUnmanaged<Kokkos::View<a_rowptr_value_type*,typename impl_type::device_type> > A_rowptr;
-      ConstUnmanaged<local_ordinal_type_1d_view> A_colind;
+      const ConstUnmanaged<Kokkos::View<a_rowptr_value_type*,typename impl_type::device_type> > A_rowptr;
+      const ConstUnmanaged<local_ordinal_type_1d_view> A_colind;
 
       // blocksize
       const local_ordinal_type blocksize;
       const local_ordinal_type blocksize_square;
 
       // part interface
-      ConstUnmanaged<local_ordinal_type_1d_view> part2packrowidx0;
-      ConstUnmanaged<local_ordinal_type_1d_view> part2rowidx0;
-      ConstUnmanaged<local_ordinal_type_1d_view> rowidx2part;
-      ConstUnmanaged<local_ordinal_type_1d_view> partptr;
-      ConstUnmanaged<local_ordinal_type_1d_view> lclrow;     
-      ConstUnmanaged<local_ordinal_type_1d_view> dm2cm;
+      const ConstUnmanaged<local_ordinal_type_1d_view> part2packrowidx0;
+      const ConstUnmanaged<local_ordinal_type_1d_view> part2rowidx0;
+      const ConstUnmanaged<local_ordinal_type_1d_view> rowidx2part;
+      const ConstUnmanaged<local_ordinal_type_1d_view> partptr;
+      const ConstUnmanaged<local_ordinal_type_1d_view> lclrow;     
+      const ConstUnmanaged<local_ordinal_type_1d_view> dm2cm;
       const bool is_dm2cm_active;
 
     public:
@@ -2535,21 +2539,20 @@ namespace Ifpack2 {
 
       inline
       void 
-      serialGemv(const local_ordinal_type &blocksize,
-                 const impl_scalar_type * __restrict__ const A, 
-                 const impl_scalar_type * __restrict__ const x,
+      serialGemv(const local_ordinal_type &blocksize_requested,
+                 const impl_scalar_type * const __restrict__ const A, 
+                 const impl_scalar_type * const __restrict__ const x,
                  /* */ impl_scalar_type * __restrict__ y) const {
-        for (local_ordinal_type k0=0;k0<blocksize;++k0) {
-          impl_scalar_type val = 0;
-          const impl_scalar_type * __restrict__ const R = A + k0*blocksize;
+        for (local_ordinal_type k0=0;k0<blocksize_requested;++k0) {
+          impl_scalar_type val = 0;          
 #if defined(KOKKOS_ENABLE_PRAGMA_IVDEP)
 #   pragma ivdep
 #endif
 #if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
 #   pragma unroll
 #endif
-          for (local_ordinal_type k1=0;k1<blocksize;++k1) 
-            val += R[k1]*x[k1];
+          for (local_ordinal_type k1=0;k1<blocksize_requested;++k1) 
+            val += A[k0*blocksize_requested+k1]*x[k1];
           y[k0] -= val;
         }
       }
@@ -2558,10 +2561,6 @@ namespace Ifpack2 {
       void serialBlocksizeSpecificGemv(const impl_scalar_type * const AA, 
                                        const impl_scalar_type * const xx,
                                        /* */ impl_scalar_type * yy) const {
-        using namespace KokkosBatched::Experimental;
-        using AlgoType = Algo::Level2::Unblocked;
-
-        const magnitude_type one(1);
         switch (blocksize) {
         case  3: { serialGemv(        3, AA, xx, yy); break; }
         case  5: { serialGemv(        5, AA, xx, yy); break; }
@@ -2672,23 +2671,26 @@ namespace Ifpack2 {
         }
       }
 
-      struct AsyncTag {};
-
+      struct AsyncHostTag {};
+      struct AsyncCudaTag {};
+      
       inline
       void 
-      operator() (const AsyncTag &, const local_ordinal_type& partidx) const {
+      operator() (const AsyncHostTag &, const member_type &member) const {
+        const local_ordinal_type partidx = member.league_rank();
+        impl_scalar_type *yy = (impl_scalar_type*)member.team_shmem().get_shmem(blocksize);
+
         // constants        
         const local_ordinal_type pri0  = part2packrowidx0(partidx);
         const local_ordinal_type ri0   = part2rowidx0(partidx);
         const local_ordinal_type nrows = part2rowidx0(partidx+1) - ri0;
 
-        const magnitude_type one(1);
         const local_ordinal_type num_vectors = y_packed.extent(2);
         const local_ordinal_type v = partidx % vector_length;
         const local_ordinal_type num_local_rows = lclrow.extent(0);
 
         // temporary buffer for y flat
-        impl_scalar_type yy[max_blocksize] = {};
+        //impl_scalar_type yy[max_blocksize] = {};
 
         for (local_ordinal_type i=0;i<nrows;++i) {
           const local_ordinal_type ri = ri0 + i;
@@ -2723,7 +2725,7 @@ namespace Ifpack2 {
 
       KOKKOS_INLINE_FUNCTION 
       void 
-      operator() (const AsyncTag &, const member_type &member) const {
+      operator() (const AsyncCudaTag &, const member_type &member) const {
         using namespace KokkosBatched::Experimental;
 
         // constants        
@@ -2790,9 +2792,9 @@ namespace Ifpack2 {
         // constants        
         const local_ordinal_type partidx = rowidx2part(rowidx);
         const local_ordinal_type pri = part2packrowidx0(partidx) + (rowidx - partptr(partidx));
+        const local_ordinal_type v = partidx % vector_length;
 
         const local_ordinal_type num_vectors = y_packed.extent(2);
-        const local_ordinal_type v = partidx % vector_length;
         const local_ordinal_type num_local_rows = lclrow.extent(0);
 
         // temporary buffer for y flat
@@ -2807,24 +2809,25 @@ namespace Ifpack2 {
           if (P == 0) { 
             // y := b
             memcpy(yy, &b(row, col), sizeof(impl_scalar_type)*blocksize);
-          } else {
-            // y (temporary) := 0
-            memset(yy, 0, sizeof(impl_scalar_type)*blocksize);
-          }
+          } 
+          //else {
+          // y (temporary) := 0
+          // memset(yy, 0, sizeof(impl_scalar_type)*blocksize); // do I need this ? 
+          //}
           
           // y -= Rx
           const size_type A_k0 = A_rowptr[lr];
           for (size_type k=rowptr_used[lr];k<rowptr_used[lr+1];++k) {
             const size_type j = A_k0 + colindsub_used[k];
-            const impl_scalar_type *AA = &tpetra_values(j*blocksize_square);
+            const impl_scalar_type * const AA = &tpetra_values(j*blocksize_square);
             const local_ordinal_type A_colind_at_j = A_colind[j];
             if (P == 0) {
               const auto loc = is_dm2cm_active ? dm2cm[A_colind_at_j] : A_colind_at_j;
-              const impl_scalar_type* xx = &x(loc*blocksize, col);
+              const impl_scalar_type * const xx = &x(loc*blocksize, col);
               serialBlocksizeSpecificGemv(AA,xx,yy);
             } else {
               const auto loc = A_colind_at_j - num_local_rows;
-              const impl_scalar_type* xx_remote = &x_remote(loc*blocksize, col);
+              const impl_scalar_type * const xx_remote = &x_remote(loc*blocksize, col);
               serialBlocksizeSpecificGemv(AA,xx_remote,yy);                
             }
           }
@@ -2864,7 +2867,7 @@ namespace Ifpack2 {
         auto yy = Kokkos::subview(y_packed_scalar, 0, block_range, 0, 0);
         auto A_block = ConstUnmanaged<tpetra_block_access_view_type>(NULL, blocksize, blocksize);
         auto colindsub_used = (P == 0 ? colindsub : colindsub_remote); 
-        auto rowptr_used = (P == 0 ? rowptr : rowptr_remote);
+        autontain garbage values by default, but th rowptr_used = (P == 0 ? rowptr : rowptr_remote);
 
         for (local_ordinal_type i=0;i<nrows;++i) {
           const local_ordinal_type ri = ri0 + i;
@@ -2954,7 +2957,7 @@ namespace Ifpack2 {
 
         if (is_cuda<execution_space>::value) {
 #if defined(KOKKOS_ENABLE_CUDA)
-          const Kokkos::TeamPolicy<execution_space,AsyncTag> policy(part2rowidx0.extent(0) - 1, Kokkos::AUTO());
+          const Kokkos::TeamPolicy<execution_space,AsyncCudaTag> policy(part2rowidx0.extent(0) - 1, Kokkos::AUTO());
           Kokkos::parallel_for
             ("ComputeResidual::TeamPolicy::run<AsyncTag>", policy, *this);
 #endif
@@ -2962,9 +2965,10 @@ namespace Ifpack2 {
 #if defined(__CUDA_ARCH__)        
           TEUCHOS_TEST_FOR_EXCEPT_MSG(true, "Error: CUDA should not see this code"); 
 #else          
-          const Kokkos::RangePolicy<execution_space,AsyncTag> policy(0, part2rowidx0.extent(0) - 1);
+          const Kokkos::TeamPolicy<execution_space,AsyncHostTag> policy(part2rowidx0.extent(0) - 1, 1);
           Kokkos::parallel_for
-            ("ComputeResidual::RangePolicy::run<AsyncTag>", policy, *this);
+            ("ComputeResidual::RangePolicy::run<AsyncTag>", 
+             policy.set_scratch_size(0, Kokkos::PerTeam(sizeof(impl_scalar_type)*blocksize)), *this);
 #endif
         }
       }
