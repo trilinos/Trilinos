@@ -201,7 +201,7 @@ public:
     std_vec_->assign(dim,C);
   }
 
-  void print( std::ostream &outStream ) const {
+  virtual void print( std::ostream &outStream ) const {
     uint dim = std_vec_->size();
     for(uint i=0; i<dim; ++i) {
       outStream << (*std_vec_)[i] << " ";
