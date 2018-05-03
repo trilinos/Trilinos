@@ -46,9 +46,32 @@
 #include <Tpetra_MultiVector.hpp>
 #include <Tpetra_CrsMatrix.hpp>
 #include <Tpetra_CrsMatrixSolveOp.hpp>
-#include "Tpetra_Details_getNumDiags.hpp"
+#include "Tpetra_Details_determineLocalTriangularStructure.hpp"
+#include "Teuchos_CommHelpers.hpp"
 
 namespace {
+
+  template<class LO, class GO, class NT>
+  Tpetra::Details::LocalTriangularStructureResult<LO>
+  getLocalTriangularStructure (const Tpetra::RowGraph<LO, GO, NT>& G)
+  {
+    using Tpetra::Details::determineLocalTriangularStructure;
+    using crs_graph_type = Tpetra::CrsGraph<LO, GO, NT>;
+
+    const crs_graph_type& G_crs = dynamic_cast<const crs_graph_type&> (G);
+
+    auto G_lcl = G_crs.getLocalGraph ();
+    auto lclRowMap = G.getRowMap ()->getLocalMap ();
+    auto lclColMap = G.getColMap ()->getLocalMap ();
+    return determineLocalTriangularStructure (G_lcl, lclRowMap, lclColMap, true);
+  }
+
+  template<class SC, class LO, class GO, class NT>
+  Tpetra::Details::LocalTriangularStructureResult<LO>
+  getLocalTriangularStructure (const Tpetra::CrsMatrix<SC, LO, GO, NT>& A)
+  {
+    return getLocalTriangularStructure (* (A.getGraph ()));
+  }
 
   using Tpetra::TestingUtilities::getNode;
   using Tpetra::TestingUtilities::getDefaultComm;
@@ -118,6 +141,10 @@ namespace {
   using Tpetra::GloballyDistributed;
   using Tpetra::INSERT;
 
+  using Teuchos::REDUCE_SUM;
+  using Teuchos::reduceAll;
+  using Teuchos::outArg;
+
   TEUCHOS_STATIC_SETUP()
   {
     Teuchos::CommandLineProcessor &clp = Teuchos::UnitTestRepository::getCLP();
@@ -171,9 +198,14 @@ namespace {
         fillparams->set("Prepare Transpose Solve", true);
         fillparams->set("Prepare Conjugate Transpose Solve", true);
         ZeroMat->fillComplete(params);
-        TEST_EQUALITY_CONST(ZeroMat->isUpperTriangular(), true);
-        TEST_EQUALITY_CONST(ZeroMat->isLowerTriangular(), true);
-        TEST_EQUALITY_CONST( Tpetra::Details::getGlobalNumDiags (*ZeroMat), static_cast<GO> (0) );
+
+        auto lclTri = getLocalTriangularStructure (*ZeroMat);
+        TEST_ASSERT( lclTri.couldBeLowerTriangular );
+        TEST_ASSERT( lclTri.couldBeUpperTriangular );
+        GO gblDiagCount = 0;
+        reduceAll<int, GO> (*comm, REDUCE_SUM, static_cast<GO> (lclTri.diagCount), outArg (gblDiagCount));
+        TEST_EQUALITY( gblDiagCount, static_cast<GO> (0) );
+
         ZeroIOp = createCrsMatrixSolveOp<Scalar>(ZeroMat.getConst());
       }
       X = B;
@@ -387,9 +419,15 @@ namespace {
             }
           }
           AMat->fillComplete(params);
-          TEST_EQUALITY(AMat->isUpperTriangular(), uplo == UPPER_TRI);
-          TEST_EQUALITY(AMat->isLowerTriangular(), uplo == LOWER_TRI);
-          TEST_EQUALITY( Tpetra::Details::getGlobalNumDiags (*AMat) == 0, diag == UNIT_DIAG);
+
+          auto lclTri = getLocalTriangularStructure (*AMat);
+          TEST_EQUALITY( lclTri.couldBeLowerTriangular, uplo == LOWER_TRI );
+          TEST_EQUALITY( lclTri.couldBeUpperTriangular, uplo == UPPER_TRI );
+
+          GO gblDiagCount = 0;
+          reduceAll<int, GO> (*comm, REDUCE_SUM, static_cast<GO> (lclTri.diagCount), outArg (gblDiagCount));
+          TEST_EQUALITY( gblDiagCount == static_cast<GO> (0), diag == UNIT_DIAG );
+
           // AIOp.apply (X,B,trans) solves op(A) X=B for X locally,
           // using a triangular solve.  op(A) is just A if
           // trans==NO_TRANS, else A^H (Hermitian transpose) if
