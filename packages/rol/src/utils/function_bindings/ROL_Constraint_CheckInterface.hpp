@@ -81,6 +81,14 @@ public:
   }
 
   // Provide a vector in the dual constraint space
+  f_vector_t<Real> applyAdjointJacobian( ) {
+    return bind( static_cast<void (Constraint<Real>::*)
+                              ( V&, const V&, const V&, Real& )>
+               (&Constraint<Real>::applyAdjointJacobian), 
+                &con_, _1, _2, _3, tol_);
+  }
+
+  // Provide a vector in the dual constraint space
   f_vector_t<Real> applyAdjointJacobian( const V& l ) {
     return bind( static_cast<void (Constraint<Real>::*)
                               ( V&, const V&, const V&, Real& )>

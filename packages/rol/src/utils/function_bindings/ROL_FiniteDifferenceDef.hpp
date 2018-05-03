@@ -2,7 +2,7 @@
 // ************************************************************************
 //
 //               Rapid Optimization Library (ROL) Package
-//                 Copyright (2014) Sandia Corporation
+//                 Copyright (width_14) Sandia Corporation
 //
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
@@ -59,7 +59,7 @@ using ::ROL::Finite_Difference_Arrays::weights;
 template<typename Real>
 FiniteDifference<Real>::FiniteDifference( Teuchos::ParameterList& pl,
                                           ostream& os ) :
-  order_(1), numSteps_(ROL_NUM_CHECKDERIV_STEPS), width_(20), precision_(11),
+  order_(1), numSteps_(ROL_NUM_CHECKDERIV_STEPS), width_(width_), precision_(11),
   printToStream_(true), steps_(numSteps_), os_(cout) {
 
   auto &fdlist = pl.sublist("Finite Difference Check");
@@ -245,29 +245,183 @@ FiniteDifference<Real>::vector_check( f_vector_t<Real> f_ref,
    if (printToStream_) {
       if (i==0) {
         os_ << right
-             << setw(width_) << "Step size"
-             << setw(width_) << label
-             << setw(width_) << "FD approx"
-             << setw(width_) << "abs error"
-             << "\n"
-             << setw(width_) << "---------"
-             << setw(width_) << "---------"
-             << setw(width_) << "---------"
-             << setw(width_) << "---------"
-             << "\n";
+            << setw(width_) << "Step size"
+            << setw(width_) << label
+            << setw(width_) << "FD approx"
+            << setw(width_) << "abs error"
+            << "\n"
+            << setw(width_) << "---------"
+            << setw(width_) << "---------"
+            << setw(width_) << "---------"
+            << setw(width_) << "---------"
+            << "\n";
       }
+
       os_ << scientific << setprecision(precision_) << right
-           << setw(width_) << dCheck[i][0]
-           << setw(width_) << dCheck[i][1]
-           << setw(width_) << dCheck[i][2]
-           << setw(width_) << dCheck[i][3]
-           << "\n";
+          << setw(width_) << dCheck[i][0]
+          << setw(width_) << dCheck[i][1]
+          << setw(width_) << dCheck[i][2]
+          << setw(width_) << dCheck[i][3]
+          << "\n";
     }
   }
   // Reset format state of outStream.
   os_.copyfmt(oldFormatState);
   return dCheck;
 }
+
+template<typename Real>
+vector<Real>
+FiniteDifference<Real>::symmetry_check( f_dderiv_t<Real> A, 
+                                        f_update_t<Real> A_update,
+                                        const Vector<Real>& u, 
+                                        const Vector<Real>& v, 
+                                        const Vector<Real>& x,
+                                        const string& name, 
+                                        const string& symbol ) const {
+
+  auto Au = workspace_.clone(u.dual());
+  auto Av = workspace_.clone(v.dual());
+
+  A_update(x);
+  A( *Au, u, x );
+  A( *Av, v, x );
+
+  Real vAu = v.dot(Au->dual());
+  Real uAv = u.dot(Av->dual());
+
+  vector<Real> symCheck(3,0);
+  symCheck[0] = vAu;
+  symCheck[1] = uAv;
+  symCheck[2] = abs(vAu-uAv);
+
+  Teuchos::oblackholestream oldFormatState;
+  oldFormatState.copyfmt(os_);  
+
+if (printToStream_) {
+    os_ << "\nTest symmetry of " << name << "\n";
+    os_ << right
+        << setw(width_) << "<v, " << symbol << "(x)u>"
+        << setw(width_) << "<u, " << symbol << "(x)v>"
+        << setw(width_) << "abs error"
+        << "\n";
+    os_ << scientific << setprecision(precision_) << right
+        << setw(width_) << symCheck[0]
+        << setw(width_) << symCheck[1]
+        << setw(width_) << symCheck[2]
+        << "\n";
+  }
+
+  os_.copyfmt(oldFormatState);               
+  return symCheck;
+}
+
+template<typename Real>
+vector<Real>
+FiniteDifference<Real>::adjoint_consistency_check( f_dderiv_t<Real> A, 
+                                                   f_dderiv_t<Real> A_adj,
+                                                   f_update_t<Real> A_update,
+                                                   const Vector<Real>& u, 
+                                                   const Vector<Real>& v, 
+                                                   const Vector<Real>& x,
+                                                   const string& name,
+                                                   const string& symbol ) const {
+
+  auto Au = workspace_.clone(u.dual());
+  auto Av = workspace_.clone(v.dual());
+
+  A_update(x);
+  A( *Au, u, x );
+  A_adj( *Av, v, x );
+
+  Real vAu = v.dot(Au->dual());
+  Real uAv = u.dot(Av->dual());
+ 
+  vector<Real> adjCheck(3,0);
+  adjCheck[0] = vAu;
+  adjCheck[1] = uAv;
+  adjCheck[2] = abs(vAu-uAv);
+
+  if (printToStream_) {
+      os_ << "\nTest consistency of " << name << " and its adjoint\n";
+      os_ << right
+          << setw(width_) << "<v, "  << symbol << "(x)u>"
+          << setw(width_) << "<adj(" << symbol << "(x))v,u>"
+          << setw(width_) << "abs error"
+          << "\n";
+      os_ << scientific << setprecision(precision_) << right
+          << setw(width_) << adjCheck[0]
+          << setw(width_) << adjCheck[1]
+          << setw(width_) << adjCheck[2]
+          << "\n";
+    }
+
+  Teuchos::oblackholestream oldFormatState;
+  oldFormatState.copyfmt(os_);  
+
+
+  return adjCheck;
+}
+
+template<typename Real>
+vector<Real>
+FiniteDifference<Real>::inverse_check( f_dderiv_t<Real> A, 
+                                       f_dderiv_t<Real> A_inv,
+                                       f_update_t<Real> A_update,
+                                       const Vector<Real>& v, 
+                                       const Vector<Real>& x,
+                                       const string& name, 
+                                       const string& symbol ) const {
+
+  auto Av   = workspace_.clone(v.dual());
+  auto AiAv = workspace_.clone(v);
+
+  A_update(x);
+  A( *Av, v, x );
+  A_inv( *AiAv, *Av, x );
+
+  Real v_norm    = v.norm();
+  Real Av_norm   = Av->norm();
+  Real AiAv_norm = AiAv->norm();
+
+  AiAv->axpy(-1.0,v);
+
+  Real err = AiAv->norm(); 
+
+  vector<Real> invCheck(4,0);
+  invCheck[0] = v_norm;
+  invCheck[1] = Av_norm;
+  invCheck[2] = AiAv_norm;
+  invCheck[3] = err;
+
+  Teuchos::oblackholestream oldFormatState;
+  oldFormatState.copyfmt(os_);  
+
+if (printToStream_) {
+    os_ << "\nTest inverse identity of " << name << "\n";
+    os_ << right
+        << setw(width_) << "||v||"
+        << setw(width_) << "||" << symbol << "v||"
+        << setw(width_) << "||inv(" << symbol << ")" << symbol << "v||"
+        << setw(width_) << "||v-inv(" << symbol << ")" << symbol << "v||"
+        << "\n";
+    os_ << scientific << setprecision(precision_) << right
+        << setw(width_) << invCheck[0]
+        << setw(width_) << invCheck[1]
+        << setw(width_) << invCheck[2]
+        << setw(width_) << invCheck[3]
+        << "\n";
+  }
+
+  os_.copyfmt(oldFormatState);               
+  return invCheck;
+}
+
+
+
+
+
+
 
 } // namespace details
 

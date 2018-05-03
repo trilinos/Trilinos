@@ -154,6 +154,33 @@ public:
                                              const V& input,
                                              const V& direction,
                                              const string& label ) const;
+
+  virtual vector<Real> symmetry_check( f_dderiv_t<Real> A, 
+                                       f_update_t<Real> A_update,
+                                       const V& u, 
+                                       const V& v, 
+                                       const V& x,
+                                       const string& name="Linear Operator",
+                                       const string& symbol="A" ) const;
+
+  virtual vector<Real> adjoint_consistency_check( f_dderiv_t<Real> A,
+                                                  f_dderiv_t<Real> A_adj,
+                                                  f_update_t<Real> A_update,
+                                                  const V& u,  
+                                                  const V& v,
+                                                  const V& x, 
+                                                  const string& name="Linear Operator",
+                                                  const string& symbol="A" ) const;
+
+  virtual vector<Real> inverse_check( f_dderiv_t<Real> A,
+                                      f_dderiv_t<Real> A_inv,
+                                      f_update_t<Real> A_update,
+                                      const V& v,
+                                      const V& x, 
+                                      const string& name="Linear Operator",
+                                      const string& symbol="A" ) const;
+
+
 private:
 
   int          order_;         // Finite difference order (1,2,3, or 4)
