@@ -67,9 +67,9 @@ private:
   Ptr<Vector<Real>> Cmat_;                      // diag(g) * dv/dx
   Ptr<Vector<Real>> lx_, ux_;                   // Temporary vectors for bound computation
 
+  Real TRradius_;                               // Trust-region radius
   const Real stepBackMax_, stepBackScale_;      // Primal transform parameters
   const bool singleReflect_;                    // Use single reflection
-  Real TRradius_;                               // Trust-region radius
   Real sCs_, pred_;                             // Actual/predicted reduction
 
   Elementwise::Multiply<Real> mult_;            // Elementwise multiply

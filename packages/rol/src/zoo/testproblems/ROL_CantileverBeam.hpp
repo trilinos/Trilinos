@@ -106,7 +106,7 @@ private:
 
 public:
   Constraint_CantileverBeam(const int nseg = 5)
-    : nseg_(nseg), len_(500), suml_(0), P_(50e3), E_(200e5), Sigma_max_(14e3), tip_max_(2.5) {
+    : nseg_(nseg), len_(500), P_(50e3), E_(200e5), Sigma_max_(14e3), tip_max_(2.5), suml_(0) {
     const Real half(0.5);
     l_.clear();
     l_.resize(nseg_, len_/static_cast<Real>(nseg_));
@@ -147,7 +147,8 @@ public:
 
   void applyJacobian( std::vector<Real> &jv, const std::vector<Real> &v, 
                       const std::vector<Real> &x, Real &tol ) {
-    const Real one(1), two(2), three(3), six(6), twelve(12), twenty(20);
+    const Real two(2), three(3), six(6), twelve(12), twenty(20);
+    // const Real one(1); // Unused
     Real Inertia(0), dyN(0), sumW(0), sumH(0);
     for (int i = 0; i < nseg_; ++i) {
       // stress constraint
@@ -167,7 +168,8 @@ public:
 
   void applyAdjointJacobian( std::vector<Real> &ajv, const std::vector<Real> &v, 
                              const std::vector<Real> &x, Real &tol ) {
-    const Real one(1), two(2), three(3), six(6), twelve(12), twenty(20);
+    const Real two(2), three(3), six(6), twelve(12), twenty(20);
+//    const Real one(1);  // Unused
     Real Inertia(0), dyN(0);
     for (int i = 0; i < nseg_; ++i) {
       // stress constraint

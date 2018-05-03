@@ -328,7 +328,8 @@ private:
                const Vector<Real> &x, const Vector<Real> &g,
                const Real del, TrustRegionModel<Real> &model,
                Vector<Real> &pwa1, Vector<Real> &pwa2, Vector<Real> &dwa) {
-    const Real zero(0), half(0.5), one(1), mu0(0.01), interpf(0.1), extrapf(10);
+    const Real half(0.5), one(1), mu0(0.01), interpf(0.1), extrapf(10);
+    // const Real zero(0); // Unused
     Real tol = std::sqrt(ROL_EPSILON<Real>());
     bool interp = false;
     Real q(0), gs(0), bpmin(0), bpmax(0), snorm(0);
