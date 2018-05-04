@@ -452,21 +452,21 @@ Systems," SIAM Journal on Scientific Computing, 28(5), pp. 1651-1674,
     Teuchos::RCP<Teuchos::ParameterList> params_;
 
     // Default solver values.
-    static const MagnitudeType convTol_default_;
-    static const MagnitudeType orthoKappa_default_;
-    static const int maxRestarts_default_;
-    static const int maxIters_default_;
-    static const int numBlocks_default_;
-    static const int blockSize_default_;
-    static const int recycledBlocks_default_;
-    static const int verbosity_default_;
-    static const int outputStyle_default_;
-    static const int outputFreq_default_;
-    static const std::string impResScale_default_;
-    static const std::string expResScale_default_;
-    static const std::string label_default_;
-    static const std::string orthoType_default_;
-    static const Teuchos::RCP<std::ostream> outputStream_default_;
+    static constexpr MagnitudeType convTol_default_ = 1e-8;
+    static constexpr MagnitudeType orthoKappa_default_ = 0.0;
+    static constexpr int maxRestarts_default_ = 100;
+    static constexpr int maxIters_default_ = 1000;
+    static constexpr int numBlocks_default_ = 50;
+    static constexpr int blockSize_default_ = 1;
+    static constexpr int recycledBlocks_default_ = 5;
+    static constexpr int verbosity_default_ = Belos::Errors;
+    static constexpr int outputStyle_default_ = Belos::General;
+    static constexpr int outputFreq_default_ = -1;
+    static constexpr const char * impResScale_default_ = "Norm of Preconditioned Initial Residual";
+    static constexpr const char * expResScale_default_ = "Norm of Initial Residual";
+    static constexpr const char * label_default_ = "Belos";
+    static constexpr const char * orthoType_default_ = "DGKS";
+    static constexpr std::ostream * outputStream_default_ = &std::cout;
 
     // Current solver values.
     MagnitudeType convTol_, orthoKappa_, achievedTol_;
@@ -520,56 +520,6 @@ Systems," SIAM Journal on Scientific Computing, 28(5), pp. 1651-1674,
   };
 
 
-// Default solver values.
-template<class ScalarType, class MV, class OP>
-const typename GCRODRSolMgr<ScalarType,MV,OP,true>::MagnitudeType
-GCRODRSolMgr<ScalarType,MV,OP,true>::convTol_default_ = 1e-8;
-
-template<class ScalarType, class MV, class OP>
-const typename GCRODRSolMgr<ScalarType,MV,OP,true>::MagnitudeType
-GCRODRSolMgr<ScalarType,MV,OP,true>::orthoKappa_default_ = 0.0;
-
-template<class ScalarType, class MV, class OP>
-const int GCRODRSolMgr<ScalarType,MV,OP,true>::maxRestarts_default_ = 100;
-
-template<class ScalarType, class MV, class OP>
-const int GCRODRSolMgr<ScalarType,MV,OP,true>::maxIters_default_ = 5000;
-
-template<class ScalarType, class MV, class OP>
-const int GCRODRSolMgr<ScalarType,MV,OP,true>::numBlocks_default_ = 50;
-
-template<class ScalarType, class MV, class OP>
-const int GCRODRSolMgr<ScalarType,MV,OP,true>::blockSize_default_ = 1;
-
-template<class ScalarType, class MV, class OP>
-const int GCRODRSolMgr<ScalarType,MV,OP,true>::recycledBlocks_default_ = 5;
-
-template<class ScalarType, class MV, class OP>
-const int GCRODRSolMgr<ScalarType,MV,OP,true>::verbosity_default_ = Belos::Errors;
-
-template<class ScalarType, class MV, class OP>
-const int GCRODRSolMgr<ScalarType,MV,OP,true>::outputStyle_default_ = Belos::General;
-
-template<class ScalarType, class MV, class OP>
-const int GCRODRSolMgr<ScalarType,MV,OP,true>::outputFreq_default_ = -1;
-
-template<class ScalarType, class MV, class OP>
-const std::string GCRODRSolMgr<ScalarType,MV,OP,true>::impResScale_default_ = "Norm of Preconditioned Initial Residual";
-
-template<class ScalarType, class MV, class OP>
-const std::string GCRODRSolMgr<ScalarType,MV,OP,true>::expResScale_default_ = "Norm of Initial Residual";
-
-template<class ScalarType, class MV, class OP>
-const std::string GCRODRSolMgr<ScalarType,MV,OP,true>::label_default_ = "Belos";
-
-template<class ScalarType, class MV, class OP>
-const std::string GCRODRSolMgr<ScalarType,MV,OP,true>::orthoType_default_ = "DGKS";
-
-template<class ScalarType, class MV, class OP>
-const Teuchos::RCP<std::ostream>
-GCRODRSolMgr<ScalarType,MV,OP,true>::outputStream_default_ = Teuchos::rcpFromRef (std::cout);
-
-
 // Empty Constructor
 template<class ScalarType, class MV, class OP>
 GCRODRSolMgr<ScalarType,MV,OP,true>::GCRODRSolMgr():
@@ -612,7 +562,7 @@ GCRODRSolMgr(const Teuchos::RCP<LinearProblem<ScalarType,MV,OP> >& problem,
 // Common instructions executed in all constructors
 template<class ScalarType, class MV, class OP>
 void GCRODRSolMgr<ScalarType,MV,OP,true>::init () {
-  outputStream_ = outputStream_default_;
+  outputStream_ = Teuchos::rcp(outputStream_default_,false);
   convTol_ = convTol_default_;
   orthoKappa_ = orthoKappa_default_;
   maxRestarts_ = maxRestarts_default_;
@@ -1155,46 +1105,46 @@ GCRODRSolMgr<ScalarType,MV,OP,true>::getValidParameters() const
     RCP<ParameterList> pl = parameterList ();
 
     // Set all the valid parameters and their default values.
-    pl->set("Convergence Tolerance", convTol_default_,
+    pl->set("Convergence Tolerance", static_cast<MagnitudeType>(convTol_default_),
       "The relative residual tolerance that needs to be achieved by the\n"
       "iterative solver in order for the linear system to be declared converged.");
-    pl->set("Maximum Restarts", maxRestarts_default_,
+    pl->set("Maximum Restarts", static_cast<int>(maxRestarts_default_),
       "The maximum number of cycles allowed for each\n"
       "set of RHS solved.");
-    pl->set("Maximum Iterations", maxIters_default_,
+    pl->set("Maximum Iterations", static_cast<int>(maxIters_default_),
       "The maximum number of iterations allowed for each\n"
       "set of RHS solved.");
     // mfh 25 Oct 2010: "Block Size" must be 1 because GCRODR is
     // currently not a block method: i.e., it does not work on
     // multiple right-hand sides at once.
-    pl->set("Block Size", blockSize_default_,
+    pl->set("Block Size", static_cast<int>(blockSize_default_),
       "Block Size Parameter -- currently must be 1 for GCRODR");
-    pl->set("Num Blocks", numBlocks_default_,
+    pl->set("Num Blocks", static_cast<int>(numBlocks_default_),
       "The maximum number of vectors allowed in the Krylov subspace\n"
       "for each set of RHS solved.");
-    pl->set("Num Recycled Blocks", recycledBlocks_default_,
+    pl->set("Num Recycled Blocks", static_cast<int>(recycledBlocks_default_),
       "The maximum number of vectors in the recycled subspace." );
-    pl->set("Verbosity", verbosity_default_,
+    pl->set("Verbosity", static_cast<int>(verbosity_default_),
       "What type(s) of solver information should be outputted\n"
       "to the output stream.");
-    pl->set("Output Style", outputStyle_default_,
+    pl->set("Output Style", static_cast<int>(outputStyle_default_),
       "What style is used for the solver information outputted\n"
       "to the output stream.");
-    pl->set("Output Frequency", outputFreq_default_,
+    pl->set("Output Frequency", static_cast<int>(outputFreq_default_),
       "How often convergence information should be outputted\n"
       "to the output stream.");
-    pl->set("Output Stream", outputStream_default_,
+    pl->set("Output Stream", Teuchos::rcp(outputStream_default_,false),
       "A reference-counted pointer to the output stream where all\n"
       "solver output is sent.");
-    pl->set("Implicit Residual Scaling", impResScale_default_,
+    pl->set("Implicit Residual Scaling", static_cast<const char *>(impResScale_default_),
       "The type of scaling used in the implicit residual convergence test.");
-    pl->set("Explicit Residual Scaling", expResScale_default_,
+    pl->set("Explicit Residual Scaling", static_cast<const char *>(expResScale_default_),
       "The type of scaling used in the explicit residual convergence test.");
-    pl->set("Timer Label", label_default_,
+    pl->set("Timer Label", static_cast<const char *>(label_default_),
       "The string to use as a prefix for the timer labels.");
     {
       OrthoManagerFactory<ScalarType, MV, OP> factory;
-      pl->set("Orthogonalization", orthoType_default_,
+      pl->set("Orthogonalization", static_cast<const char *>(orthoType_default_),
               "The type of orthogonalization to use.  Valid options: " +
               factory.validNamesString());
       RCP<const ParameterList> orthoParams =
@@ -1202,7 +1152,7 @@ GCRODRSolMgr<ScalarType,MV,OP,true>::getValidParameters() const
       pl->set ("Orthogonalization Parameters", *orthoParams,
                "Parameters specific to the type of orthogonalization used.");
     }
-    pl->set("Orthogonalization Constant", orthoKappa_default_,
+    pl->set("Orthogonalization Constant",static_cast<MagnitudeType>(orthoKappa_default_),
             "When using DGKS orthogonalization: the \"depTol\" constant, used "
             "to determine whether another step of classical Gram-Schmidt is "
             "necessary.  Otherwise ignored.");

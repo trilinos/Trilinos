@@ -964,7 +964,22 @@ MACRO(TRIBITS_CTEST_PACKAGE_BY_PACKAGE)
     # B) Configure the package and its dependent packages
     #
 
-    IF (NOT CTEST_DEPENDENCY_HANDLING_UNIT_TESTING)
+    SET(PBP_CONFIGURE_PASSED TRUE)
+
+    IF (CTEST_DEPENDENCY_HANDLING_UNIT_TESTING)
+
+      MESSAGE("${TRIBITS_PACKAGE}: Skipping configure due"
+	" to running in unit testing mode!")
+
+    ELSE()
+
+      #
+      # We always have to configure if we are going to do anything for the
+      # package.  We just want submit configure results to CDash if we are not
+      # asked to configure!
+      #
+
+      SET(PBP_CONFIGURE_PASSED FALSE)
 
       CTEST_CONFIGURE(
         BUILD "${CTEST_BINARY_DIRECTORY}"
@@ -980,16 +995,15 @@ MACRO(TRIBITS_CTEST_PACKAGE_BY_PACKAGE)
 
       # If the configure failed, add the package to the list
       # of failed packages
-      IF (NOT "${CONFIGURE_RETURN_VAL}" EQUAL "0")
-        MESSAGE("${TRIBITS_PACKAGE} FAILED to configure")
-        LIST(APPEND ${PROJECT_NAME}_FAILED_LIB_BUILD_PACKAGES ${TRIBITS_PACKAGE})
-        LIST(APPEND ${PROJECT_NAME}_FAILED_PACKAGES ${TRIBITS_PACKAGE})
-      ELSE()
-        MESSAGE("${TRIBITS_PACKAGE}: Configure passed!")
+      IF ("${CONFIGURE_RETURN_VAL}" EQUAL "0")
+        MESSAGE("\n${TRIBITS_PACKAGE}: Configure passed!\n")
+        SET(PBP_CONFIGURE_PASSED TRUE)
         # load target properties and test keywords
         CTEST_READ_CUSTOM_FILES(BUILD "${CTEST_BINARY_DIRECTORY}")
         # Overridde from this file!
         INCLUDE("${TRIBITS_PROJECT_ROOT}/CTestConfig.cmake")
+      ELSE()
+        MESSAGE("\n${TRIBITS_PACKAGE} FAILED to configure!\n")
       ENDIF()
 
       IF (EXISTS ${CMAKE_CACHE_CLEAN_FILE})
@@ -1005,8 +1019,11 @@ MACRO(TRIBITS_CTEST_PACKAGE_BY_PACKAGE)
 
       PRINT_VAR(CTEST_NOTES_FILES)
 
-      # Submit configure results and the notes to the dashboard
-      IF (CTEST_DO_SUBMIT)
+
+      IF (NOT CTEST_DO_CONFIGURE AND CTEST_DO_SUBMIT)
+        MESSAGE("${TRIBITS_PACKAGE}: Skipping submitting configure"
+	  " and notes due to CTEST_DO_CONFIGURE='${CTEST_DO_CONFIGURE}'!")
+      ELSEIF (CTEST_DO_SUBMIT)
         MESSAGE("\nSubmitting configure and notes ...")
         TRIBITS_CTEST_SUBMIT( PARTS configure notes )
       ENDIF()
@@ -1014,19 +1031,41 @@ MACRO(TRIBITS_CTEST_PACKAGE_BY_PACKAGE)
     ENDIF()
 
     #
-    # C) If configure passed then try the build.  Otherwise, move on to
-    # to the next package.
+    # C) Build the library and then ALL
     #
 
-    IF ("${CONFIGURE_RETURN_VAL}" EQUAL "0" AND
-      NOT CTEST_DEPENDENCY_HANDLING_UNIT_TESTING AND
-      NOT CTEST_CONFIGURATION_UNIT_TESTING
+    SET(PBP_BUILD_PASSED TRUE)
+    SET(PBP_BUILD_LIBS_PASSED TRUE)
+
+    PRINT_VAR(PBP_CONFIGURE_PASSED)
+
+    IF ( NOT PBP_CONFIGURE_PASSED AND CTEST_DO_BUILD )
+
+      MESSAGE("\n${TRIBITS_PACKAGE}: Skipping build due"
+	" to configure failing!")
+
+      SET(PBP_BUILD_PASSED FALSE)
+      SET(PBP_BUILD_LIBS_PASSED FALSE)
+
+    ELSEIF (NOT CTEST_DO_BUILD)
+
+      MESSAGE("\n${TRIBITS_PACKAGE}: Skipping build due"
+	" to CTEST_DO_BUILD='${CTEST_DO_BUILD}'!")
+
+    ELSEIF (CTEST_DEPENDENCY_HANDLING_UNIT_TESTING OR
+      CTEST_CONFIGURATION_UNIT_TESTING
       )
+
+      MESSAGE("\n${TRIBITS_PACKAGE}: Skipping build due"
+	" to running in unit testing mode!")
+
+    ELSE()
 
       # Start by trying to build just the libraries for the current package
 
       SET( CTEST_BUILD_TARGET ${TRIBITS_PACKAGE}_libs )
       MESSAGE("\nBuilding target: '${CTEST_BUILD_TARGET}' ...\n")
+      SET(PBP_BUILD_LIBS_PASSED FALSE)
       CTEST_BUILD(
         BUILD "${CTEST_BINARY_DIRECTORY}"
         RETURN_VALUE  BUILD_LIBS_RETURN_VAL
@@ -1038,10 +1077,12 @@ MACRO(TRIBITS_CTEST_PACKAGE_BY_PACKAGE)
 
       # Determine if the build failed or not.
 
-      SET(BUILD_LIBS_SUCCESS FALSE)
       IF ("${BUILD_LIBS_NUM_ERRORS}" EQUAL "0")
-        MESSAGE("${TRIBITS_PACKAGE}: Libs build passed!")
-        SET(BUILD_LIBS_SUCCESS TRUE)
+        MESSAGE("\n${TRIBITS_PACKAGE}: Libs build passed!")
+        SET(PBP_BUILD_LIBS_PASSED TRUE)
+      ELSE()
+        MESSAGE("\nFAILED library build for package '${TRIBITS_PACKAGE}'!")
+        SET(PBP_BUILD_PASSED FALSE)
       ENDIF()
       # Above: Since make -i is used BUILD_LIBS_RETURN_VAL might be 0, but
       # if there are errors the build should fail, so both
@@ -1049,7 +1090,6 @@ MACRO(TRIBITS_CTEST_PACKAGE_BY_PACKAGE)
       # good build and for the all target to be built.
 
       # Submit the library build results to the dashboard
-
       IF (CTEST_DO_SUBMIT)
         TRIBITS_CTEST_SUBMIT( PARTS build )
       ENDIF()
@@ -1057,9 +1097,7 @@ MACRO(TRIBITS_CTEST_PACKAGE_BY_PACKAGE)
       # If the build of the libraries passed, then go on the build
       # the tests/examples and run them.
 
-      IF (BUILD_LIBS_SUCCESS)
-
-        SET(BUILD_OR_TEST_FAILED FALSE)
+      IF (PBP_BUILD_LIBS_PASSED)
 
         # Build the ALL target, but append the results to the last build.xml
         SET(CTEST_BUILD_TARGET)
@@ -1075,7 +1113,7 @@ MACRO(TRIBITS_CTEST_PACKAGE_BY_PACKAGE)
 
         IF (NOT "${BUILD_ALL_NUM_ERRORS}" EQUAL "0")
           MESSAGE("${TRIBITS_PACKAGE}: All build FAILED!")
-          SET(BUILD_OR_TEST_FAILED TRUE)
+          SET(PBP_BUILD_PASSED FALSE)
         ELSE()
           MESSAGE("${TRIBITS_PACKAGE}: All build passed!")
         ENDIF()
@@ -1085,75 +1123,134 @@ MACRO(TRIBITS_CTEST_PACKAGE_BY_PACKAGE)
           TRIBITS_CTEST_SUBMIT( PARTS build )
         ENDIF()
 
-        IF (CTEST_DO_TEST)
+      ENDIF()
 
-	  TRIBITS_REMOVE_LAST_TEST_FAILED_LOG_FILE()
-          # Run the tests that match the ${TRIBITS_PACKAGE} name
-          MESSAGE("\nRunning test for package '${TRIBITS_PACKAGE}'"
-            " (parallel level ${CTEST_PARALLEL_LEVEL}) ...\n")
-          CTEST_TEST(
-            BUILD "${CTEST_BINARY_DIRECTORY}"
-            PARALLEL_LEVEL "${CTEST_PARALLEL_LEVEL}"
-            INCLUDE_LABEL "^${TRIBITS_PACKAGE}$"
-            #NUMBER_FAILED  TEST_NUM_FAILED
-            )
-          # See if a 'LastTestsFailed*.log' file exists to determine if there
-          # are failed tests
-          TRIBITS_FIND_LAST_TEST_FAILED_LOG_FILE()
-          IF (FAILED_TEST_LOG_FILE)
-	    MESSAGE("${TRIBITS_PACKAGE}: File '${FAILED_TEST_LOG_FILE}'"
-              " exists so there were failed tests!")
-            SET(BUILD_OR_TEST_FAILED TRUE)
-          ENDIF()
-          # 2009/12/05: ToDo: We need to add an argument to CTEST_TEST(...)
-          # called something like 'NUMBER_FAILED numFailedTests' to allow us
-          # to detect when the tests have filed.
-          #IF (TEST_NUM_FAILED GREATER 0)
-          #  SET(BUILD_OR_TEST_FAILED TRUE)
-          #ENDIF()
-          IF (CTEST_DO_SUBMIT)
-            TRIBITS_CTEST_SUBMIT( PARTS Test )
-          ENDIF()
-        ENDIF()
+    ENDIF()
 
-        IF (CTEST_DO_COVERAGE_TESTING)
-          MESSAGE("\nRunning coverage for package '${TRIBITS_PACKAGE}' ...\n")
-          CTEST_COVERAGE(
-            BUILD "${CTEST_BINARY_DIRECTORY}"
-            LABELS ${TRIBITS_PACKAGE} ${TRIBITS_PACKAGE}Libs ${TRIBITS_PACKAGE}Exes
-            )
-          IF (CTEST_DO_SUBMIT)
-            TRIBITS_CTEST_SUBMIT( PARTS Coverage )
-          ENDIF()
-        ENDIF()
+    #
+    # D) Run the tests
+    #
 
-        IF (CTEST_DO_MEMORY_TESTING)
-          MESSAGE("\nRunning memory testing for package '${TRIBITS_PACKAGE}' ...\n")
-          PRINT_VAR(CTEST_MEMORYCHECK_COMMAND)
-          PRINT_VAR(CTEST_MEMORYCHECK_COMMAND_OPTIONS)
-          PRINT_VAR(CTEST_MEMORYCHECK_SUPPRESSIONS_FILE)
-          CTEST_MEMCHECK(
-            BUILD "${CTEST_BINARY_DIRECTORY}"
-            PARALLEL_LEVEL "${CTEST_PARALLEL_LEVEL}"
-            INCLUDE_LABEL "^${TRIBITS_PACKAGE}$")
-          IF (CTEST_DO_SUBMIT)
-            TRIBITS_CTEST_SUBMIT( PARTS MemCheck )
-          ENDIF()
-        ENDIF()
+    SET(PBP_TESTS_PASSED TRUE)
 
-        IF (BUILD_OR_TEST_FAILED)
-          LIST(APPEND ${PROJECT_NAME}_FAILED_PACKAGES ${TRIBITS_PACKAGE})
-        ENDIF()
+    IF (NOT PBP_BUILD_LIBS_PASSED AND CTEST_DO_TEST)
 
+      MESSAGE("\n${TRIBITS_PACKAGE}: Skipping tests since libray build failed!\n")
+
+      SET(PBP_TESTS_PASSED FALSE)
+
+    ELSEIF (NOT CTEST_DO_TEST)
+
+      MESSAGE("\n${TRIBITS_PACKAGE}: Skipping running tests due"
+        " to CTEST_DO_TEST='${CTEST_DO_TEST}'!")
+
+    ELSE()
+      
+      #
+      # D.1) Run the regular tests
+      #
+
+      SET(PBP_TESTS_PASSED FALSE)
+
+      # Run the tests that match the ${TRIBITS_PACKAGE} name
+      MESSAGE("\nRunning test for package '${TRIBITS_PACKAGE}'"
+        " (parallel level ${CTEST_PARALLEL_LEVEL}) ...\n")
+      TRIBITS_REMOVE_LAST_TEST_FAILED_LOG_FILE()
+      CTEST_TEST(
+        BUILD "${CTEST_BINARY_DIRECTORY}"
+        PARALLEL_LEVEL "${CTEST_PARALLEL_LEVEL}"
+        INCLUDE_LABEL "^${TRIBITS_PACKAGE}$"
+          )
+      # See if a 'LastTestsFailed*.log' file exists to determine if there are
+      # failed tests
+      TRIBITS_FIND_LAST_TEST_FAILED_LOG_FILE()
+      IF (FAILED_TEST_LOG_FILE)
+        MESSAGE("\n${TRIBITS_PACKAGE}: File '${FAILED_TEST_LOG_FILE}'"
+          " exists so there were failed tests!")
       ELSE()
+        MESSAGE("\n${TRIBITS_PACKAGE}: File '${FAILED_TEST_LOG_FILE}'"
+	  " does NOT exist so all tests passed!")
+        SET(PBP_TESTS_PASSED TRUE)
+      ENDIF()
+      # 2009/12/05: ToDo: We need to add an argument to CTEST_TEST(...)
+      # called something like 'NUMBER_FAILED numFailedTests' to allow us to
+      # detect when the tests have filed.
+      IF (CTEST_DO_SUBMIT)
+        TRIBITS_CTEST_SUBMIT( PARTS Test )
+      ENDIF()
 
-        MESSAGE("FAILED library build for package '${TRIBITS_PACKAGE}'")
-        LIST(APPEND ${PROJECT_NAME}_FAILED_LIB_BUILD_PACKAGES ${TRIBITS_PACKAGE})
-        LIST(APPEND ${PROJECT_NAME}_FAILED_PACKAGES ${TRIBITS_PACKAGE})
+      #
+      # D.2) Collect coverage results
+      #
+
+      IF (CTEST_DO_COVERAGE_TESTING)
+
+        MESSAGE("\nRunning coverage for package '${TRIBITS_PACKAGE}' ...\n")
+
+        CTEST_COVERAGE(
+          BUILD "${CTEST_BINARY_DIRECTORY}"
+          LABELS ${TRIBITS_PACKAGE} ${TRIBITS_PACKAGE}Libs ${TRIBITS_PACKAGE}Exes
+          )
+
+        IF (CTEST_DO_SUBMIT)
+          TRIBITS_CTEST_SUBMIT( PARTS Coverage )
+        ENDIF()
 
       ENDIF()
 
     ENDIF()
+
+    #
+    # E) Run memory testing
+    #
+
+    IF (NOT PBP_BUILD_LIBS_PASSED AND CTEST_DO_MEMORY_TESTING)
+
+      MESSAGE("\n${TRIBITS_PACKAGE}: Skipping running memory checking"
+	 "tests since libray build failed!\n")
+
+    ELSEIF (NOT CTEST_DO_MEMORY_TESTING)
+
+      MESSAGE("\n${TRIBITS_PACKAGE}: Skipping running memory checking tests due"
+        " to CTEST_DO_MEMORY_TESTING='${CTEST_DO_MEMORY_TESTING}'!")
+
+    ELSE()
+
+      MESSAGE("\nRunning memory testing for package '${TRIBITS_PACKAGE}' ...\n")
+
+      PRINT_VAR(CTEST_MEMORYCHECK_COMMAND)
+      PRINT_VAR(CTEST_MEMORYCHECK_COMMAND_OPTIONS)
+      PRINT_VAR(CTEST_MEMORYCHECK_SUPPRESSIONS_FILE)
+
+      CTEST_MEMCHECK(
+        BUILD "${CTEST_BINARY_DIRECTORY}"
+        PARALLEL_LEVEL "${CTEST_PARALLEL_LEVEL}"
+        INCLUDE_LABEL "^${TRIBITS_PACKAGE}$"
+	)
+      # ToDo: Determine if memory testing passed or not and affect overall
+      # pass/fail!
+
+      IF (CTEST_DO_SUBMIT)
+        TRIBITS_CTEST_SUBMIT( PARTS MemCheck )
+      ENDIF()
+
+    ENDIF()
+
+    #
+    # F) Record if this package failed the build or any tests
+    #
+
+    IF (NOT PBP_CONFIGURE_PASSED OR NOT PBP_BUILD_LIBS_PASSED)
+      LIST(APPEND ${PROJECT_NAME}_FAILED_LIB_BUILD_PACKAGES ${TRIBITS_PACKAGE})
+    ENDIF()
+
+    IF (NOT PBP_BUILD_PASSED OR NOT PBP_TESTS_PASSED)
+      LIST(APPEND ${PROJECT_NAME}_FAILED_PACKAGES ${TRIBITS_PACKAGE})
+    ENDIF()
+
+    #
+    # G) Do submit of update
+    #
 
     IF (CTEST_DO_SUBMIT)
       MESSAGE("\nSubmit the update file that will trigger the notification email ...\n")
@@ -1164,13 +1261,14 @@ MACRO(TRIBITS_CTEST_PACKAGE_BY_PACKAGE)
 
   ENDFOREACH(TRIBITS_PACKAGE)
 
-  IF(${PROJECT_NAME}_FAILED_LIB_BUILD_PACKAGES)
+  IF (${PROJECT_NAME}_FAILED_LIB_BUILD_PACKAGES)
     MESSAGE(
       "\nFinal set packages that failed to configure or have the libraries build:"
       " '${${PROJECT_NAME}_FAILED_LIB_BUILD_PACKAGES}'")
   ENDIF()
 
-  MESSAGE("\nDone with the incremental building and testing of ${PROJECT_NAME} packages!\n")
+  MESSAGE("\nDone with the incremental building and testing of"
+    " ${PROJECT_NAME} packages!\n")
 
 ENDMACRO()
 
@@ -1203,10 +1301,6 @@ MACRO(TRIBITS_CTEST_ALL_AT_ONCE)
 
   # Create CONFIGURE_OPTIONS
   TRIBITS_FWD_CMAKE_CONFIG_ARGS_0()
-  IF (${PROJECT_NAME}_CTEST_USE_NEW_AAO_FEATURES)
-    LIST(APPEND CONFIGURE_OPTIONS
-      "-D${PROJECT_NAME}_CTEST_USE_NEW_AAO_FEATURES:BOOL=TRUE" )
-  ENDIF()
   IF (${PROJECT_NAME}_ENABLE_ALL_PACKAGES)
     LIST(APPEND CONFIGURE_OPTIONS
       "-D${PROJECT_NAME}_ENABLE_ALL_PACKAGES=ON"
@@ -1227,7 +1321,13 @@ MACRO(TRIBITS_CTEST_ALL_AT_ONCE)
   # B) Configure the package and its dependent packages
   #
 
-  IF (CTEST_DEPENDENCY_HANDLING_UNIT_TESTING)
+  IF (NOT CTEST_DO_CONFIGURE)
+
+    MESSAGE("\nSkipping configure due to CTEST_DO_CONFIGURE='${CTEST_DO_CONFIGURE}'!\n")
+    SET(AAO_CONFIGURE_PASSED TRUE)
+    # Just assume configure passeed for the purpose of running the build.
+
+  ELSEIF (CTEST_DEPENDENCY_HANDLING_UNIT_TESTING)
 
     MESSAGE("Skipping actual ctest_configure() because"
       " CTEST_DEPENDENCY_HANDLING_UNIT_TESTING='${CTEST_DEPENDENCY_HANDLING_UNIT_TESTING}'!"
@@ -1285,7 +1385,11 @@ MACRO(TRIBITS_CTEST_ALL_AT_ONCE)
   # C) Do the build
   #
 
-  IF (CTEST_DEPENDENCY_HANDLING_UNIT_TESTING AND AAO_CONFIGURE_PASSED)
+  IF (NOT CTEST_DO_BUILD)
+
+    MESSAGE("\nSkipping build due to CTEST_DO_BUILD='${CTEST_DO_BUILD}'!\n")
+
+  ELSEIF (CTEST_DEPENDENCY_HANDLING_UNIT_TESTING AND AAO_CONFIGURE_PASSED)
 
     MESSAGE("Skipping build because"
       " CTEST_DEPENDENCY_HANDLING_UNIT_TESTING='${CTEST_DEPENDENCY_HANDLING_UNIT_TESTING}'!"
@@ -1369,7 +1473,6 @@ MACRO(TRIBITS_CTEST_ALL_AT_ONCE)
     TRIBITS_FIND_LAST_TEST_FAILED_LOG_FILE()
     IF (FAILED_TEST_LOG_FILE)
       MESSAGE("File '${FAILED_TEST_LOG_FILE}' exists so there were non-passing tests!")
-      SET(BUILD_OR_TEST_FAILED TRUE)
     ELSE()
       MESSAGE("File '${FAILED_TEST_LOG_FILE}' does NOT exist so all tests passed!")
     ENDIF()
