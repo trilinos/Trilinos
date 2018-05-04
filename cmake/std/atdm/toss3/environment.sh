@@ -6,7 +6,7 @@
 #
 ################################################################################
 
-echo "Using chama compiler stack $ATDM_CONFIG_COMPILER to build $ATDM_CONFIG_BUILD_TYPE code with Kokkos node type $ATDM_CONFIG_NODE_TYPE"
+echo "Using toss3 compiler stack $ATDM_CONFIG_COMPILER to build $ATDM_CONFIG_BUILD_TYPE code with Kokkos node type $ATDM_CONFIG_NODE_TYPE"
 
 # there does not appear to be a ninja module ontoss3 so turn off ninja
 export ATDM_CONFIG_USE_MAKEFILES=ON
@@ -16,7 +16,8 @@ export ATDM_CONFIG_USE_NINJA=OFF
 module purge
 . /projects/sems/modulefiles/utils/sems-modules-init.sh
 module load sems-env
-module load cmake/3.5
+module load atdm-env
+module load atdm-cmake/3.10.1
 
 
 if [ "$ATDM_CONFIG_NODE_TYPE" == "OPENMP" ] ; then

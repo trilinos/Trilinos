@@ -3,12 +3,12 @@
 set +x
 
 echo
-echo "Start: ctest-s-driver.sh"
+echo "Start: ctest-s-driver-config-build.sh"
 echo
 echo "  ==> `date`"
 echo
 
-echo "Loading env and running ctest -S comamnd to configure, build, and test ..."
+echo "Loading env and running ctest -S comamnd to update, configure and build ..."
 
 source ${WORKSPACE}/Trilinos/cmake/ctest/drivers/atdm/utils/create-src-and-build-dir.sh
 
@@ -19,17 +19,18 @@ set | grep ATDM_CONFIG_
 
 export Trilinos_REPOSITORY_LOCATION=https://github.com/trilinos/Trilinos.git
 
-echo
-echo "Running: ctest -V -S $WORKSPACE/Trilinos/cmake/ctest/drivers/atdm/ctest-driver.cmake ..."
+CTEST_S_CMND=env CTEST_DO_TEST=OFF ctest -V -S $WORKSPACE/Trilinos/cmake/ctest/drivers/atdm/ctest-driver.cmake
 
-ctest -V -S \
-  $WORKSPACE/Trilinos/cmake/ctest/drivers/atdm/ctest-driver.cmake
+echo
+echo "Running: ${CTEST_S_CMND} ..."
+
+$CTEST_S_CMND
 ATDM_TCD_CTEST_S_RETURN_CODE=$?
 
 echo
 echo "The 'ctest -S ctest-drivers.cmake' command returned code '$ATDM_TCD_CTEST_S_RETURN_CODE'"
 echo
-echo "End: ctest-s-driver.sh"
+echo "End: ctest-s-driver-config-build.sh"
 echo
 echo "  ==> `date`"
 echo

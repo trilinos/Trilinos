@@ -3125,25 +3125,36 @@ Dashboard submissions
 =====================
 
 All TriBITS projects have built-in support for submitting configure, build,
-and test results to CDash using the custom ``dashbaord`` target.
+and test results to CDash using the custom ``dashbaord`` target.  This uses
+the `TRIBITS_CTEST_DRIVER()`_ function internally set up to work correctly
+from an existing binary directory with a valid initial configure.  The few of
+the advantages of using the custom TriBITS-enabled ``dashboard`` target over
+just using the standard ``ctest -D Experimental`` command are:
 
-First, configure as normal but add cache vars for the the build and test
-parallel levels with::
+* The configure, build, and test results are borken down nicely
+  package-by-package on CDash.
+
+* Additional notes files will be uploaded to the build on CDash.
+
+For more details, see `TRIBITS_CTEST_DRIVER()`_.
+
+To use the ``dashboard`` target, first, configure as normal but add cache vars
+for the the build and test parallel levels with::
 
   -DCTEST_BUILD_FLAGS=-j4 -DCTEST_PARALLEL_LEVEL=4
 
-(or with some other ``-j<N>``).  Then, invoke the build, test and submit
-with::
+(or with some other values ``-j<N>``).  Then, invoke the (re)configure, build,
+test and submit with::
 
   $ make dashboard
 
-This invokes the advanced TriBITS CTest scripts to do an experimental build
-for all of the packages that you have explicitly enabled.  (The packages that
-are implicitly enabled due to package dependencies are not directly
-processed.)
+This invokes the `TRIBITS_CTEST_DRIVER()`_ function to do an experimental
+build for all of the packages that you have enabled tests.  (The packages that
+are implicitly enabled due to package dependencies are not directly processed
+and no rows on CDash will be show up for those packages.)
 
-NOTE: This generates a lot of output, so it is tyically better to pipe this to
-a file with::
+NOTE: This generates a lot of output, so it is typically better to pipe this
+to a file with::
 
   $ make dashboard &> make.dashboard.out
 
@@ -3153,37 +3164,36 @@ and then watch that file in another terminal with::
 
 There are a number of options that you can set in the cache and/or in the
 environment to control what this script does.  For the full set of options,
-see `TRIBITS_CTEST_DRIVER()`_.  More detains can be found by examining the
-file::
-
-  core/ctest_driver/TribitsCTestDriverCore.cmake
-
-under the TriBITS version being used.  To see the full list of options, and
-their default values, one can run with::
+see `TRIBITS_CTEST_DRIVER()`_.  To see the full list of options, and their
+default values, one can run with::
 
   $ env CTEST_DO_SUBMIT=FALSE CTEST_DEPENDENCY_HANDLING_UNIT_TESTING=TRUE \
     make dashboard
 
 This will print the options with their default values and then do a sort of
-mock running of the CTest driver script and point out what is is doing.
+mock running of the CTest driver script and point out what it will do with the
+given setup.
 
-For an example of variables one might want to tweak, to run an experimental
-build and in the process change the build, use::
+One option one might what to set is the build name with::
 
   $ env CTEST_BUILD_NAME=MyBuild make dashboard
 
 After this finishes running, look for the build 'MyBuild' (or whatever build
 name you used above) in the <Project> CDash dashboard (the CDash URL is
-printed at the end of STDOUT).
+printed at the end of STDOUT).  It is useful to set ``CTEST_BUILD_NAME`` to
+some unique name to make it easier to find your results in the CDash
+dashboard.  If one does not set ``CTEST_BUILD_NAME``, the name of the binary
+directory is used instead by default (which may not be very descriptive if it
+called ``BUILD`` or something like that).
 
-It is useful to set ``CTEST_BUILD_NAME`` to some unique name to make it easier
-to find your results in the CDash dashboard.
+If there is already a vaild configure and build and one does not want to
+submit configure and build results to CDash, then one can run with::
 
-Note that the ``dashboard`` target is not directly related to the built-in
-CMake ``Experimental*`` targets that run standard dashboards with CTest
-without the custom TriBItS CTest driver.  The CTest driver run with the
-``dashboard`` target is more appropriate for the TriBITS-based project
-<Project> and provides more control over what gets tested and submitted.
+  $ env CTEST_BUILD_NAME=<build-name> CTEST_DO_CONFIGURE=OFF CTEST_DO_BUILD=OFF \
+    make dashboard
+
+wich will only run the enabled tests and submit results to the CDash build
+``<build-name>``.
 
 The configure, builds, and submits are either done package-by-package or
 all-at-once as controlled by the varaible ``<Project>_CTEST_DO_ALL_AT_ONCE``.
@@ -3196,17 +3206,21 @@ or when running the ``dashboard`` target with::
   $ env <Project>_CTEST_DO_ALL_AT_ONCE=TRUE make dashbaord.
 
 Using the ``dashboard`` target, one can also run coverage and memory testing
-and submit to CDash as described below.
+and submit to CDash as described below.  But to take full advantage of the
+all-at-once mode and to have results displayed on CDash broken down
+package-by-package, one must be using CMake/CTest 3.10 or newer and be
+submitting to a newer CDash version (from about mid 2018 and newer).
 
-Once you configure with ``-D<Project>_ENABLE_COVERAGE_TESTING=ON``, the
-environment variable ``CTEST_DO_COVERAGE_TESTING=TRUE`` is automatically set
-by the target ``dashboard`` so you don't have to set this yourself.  Then when
-you run the ``dashboard`` target, it will automatically submit converage
-results to CDash as well.
+For submitting line coverage results, once you configure with
+``-D<Project>_ENABLE_COVERAGE_TESTING=ON``, the environment variable
+``CTEST_DO_COVERAGE_TESTING=TRUE`` is automatically set by the target
+``dashboard`` so you don't have to set this yourself.  Then when you run the
+``dashboard`` target, it will automatically submit converage results to CDash
+as well.
 
-Doing a memory check with Valgrind requires that you set
-``CTEST_DO_MEMORY_TESTING=TRUE`` with the 'env' command when running the
-``dashboard`` target as::
+Doing memory checking running the enabled tests with Valgrind requires that
+you set ``CTEST_DO_MEMORY_TESTING=TRUE`` with the 'env' command when running
+the ``dashboard`` target as::
 
   $ env CTEST_DO_MEMORY_TESTING=TRUE make dashboard
 
@@ -3266,4 +3280,8 @@ packages before it does the package-by-package configure/build/test/submit
 which enables each package one at a time.  After the package-by-package
 configure/build/test/submit cycles are complete, then the project is
 reconfigured with the original set of package enables and returned to the
-original configure state.
+original configure state.  Even with the all-at-once mode, if one kills the
+``make dashboard`` command before the reconfigure completes, one may be left
+with an invalid configuration of the project.  In these cases, one may need to
+configure from scratch to get back to the original state before calling ``make
+dashboard``.

@@ -8029,6 +8029,13 @@ These options are described below.
   `<projectDir>/CMakeLists.txt`_ file because the latter is not directly
   processed in CTest -S driver scripts using ``TRIBITS_CTEST_DRIVER()``.)
 
+  In general, a project should change the default to ``TRUE`` when the minimum
+  CMake version being used with the project is CMake 3.10+ and when using a
+  newer CDash installation that can accomidate the results coming from ctest
+  -S and display them package-by-package very nicely.  Otherwise, most
+  projects are better off with package-by-package mode since it results in
+  nicer display on CDash.
+
 .. _${PROJECT_NAME}_DISABLE_ENABLED_FORWARD_DEP_PACKAGES:
 
 **${PROJECT_NAME}_DISABLE_ENABLED_FORWARD_DEP_PACKAGES**
