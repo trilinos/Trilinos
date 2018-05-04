@@ -724,17 +724,17 @@ namespace MueLuTests {
   TEST_EQUALITY(bOp->getGlobalNumEntries(), 2392);
 
   // coordinates
-  RCP<MultiVector> coord = MultiVectorFactory::Build(bOp->getFullRangeMap(),1);
+  RCP<Xpetra::MultiVector<double,LO,GO,NO> > coord = Xpetra::MultiVectorFactory<double,LO,GO,NO>::Build(bOp->getFullRangeMap(),1);
   int PID = comm->getRank();
-  Teuchos::ArrayRCP<Scalar> data = coord->getDataNonConst(0);
-  for(size_t i=0; i<(size_t)data.size(); i++)
-    data[i] = PID + (double)i / data.size();
+  Teuchos::ArrayRCP<double> coordData = coord->getDataNonConst(0);
+  for(size_t i = 0; i < (size_t) coordData.size(); ++i)
+    coordData[i] = PID + (double)i / coordData.size();
 
   // nullspace
   RCP<MultiVector> nullspace = MultiVectorFactory::Build(bOp->getFullRangeMap(),1);
-  data = nullspace->getDataNonConst(0);
-  for(size_t i=0; i<(size_t)data.size(); i++)
-    data[i] = 1.0;
+  Teuchos::ArrayRCP<SC> nspData = nullspace->getDataNonConst(0);
+  for(size_t i=0; i<(size_t)nspData.size(); i++)
+    nspData[i] = 1.0;
 
   // Grab sub-blocks for the Tobias-style goodies
   RCP<MultiVector> nullspace1 = mapExtractor->ExtractVector(nullspace,0);
