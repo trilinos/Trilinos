@@ -480,8 +480,9 @@ namespace {
   // the above cases should throw exceptions.  This was not originally
   // true for the case where X2 has zero local rows.  Thanks to
   // Deaglan Halligan for pointing this out (on 23 Oct 2013).
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( FEMultiVector, OffsetViewZeroLength, LO , GO , Scalar , Node )
-  {
+  template<class Scalar, class LO, class GO, class Node>
+  bool test_offsetviewzerolength(Teuchos::FancyOStream &out, int femv_type) {
+    bool success = true;
     typedef Tpetra::global_size_t GST;
     typedef Tpetra::FEMultiVector<Scalar,LO,GO,Node> FEMV;
     typedef Tpetra::MultiVector<Scalar,LO,GO,Node> MV;
@@ -501,8 +502,28 @@ namespace {
     // columns (vectors) other than 1, just to exercise the most
     // general case.
     const size_t numVecs = 3;
+
+    Array<GO> sharedList(numLocalEntries-1), nonsharedList(numLocalEntries-1);
+    for(size_t i = 0; i<(size_t)sharedList.size(); i++) {
+      sharedList[i]    = map->getGlobalElement(i);
+      nonsharedList[i] = map->getGlobalElement(i+1);
+    }
+    RCP<const Map<LO,GO,Node> > sharedMap    = rcp(new Map<LO,GO,Node>(INVALID,sharedList(),0,comm));
+    RCP<const Map<LO,GO,Node> > nonsharedMap = rcp(new Map<LO,GO,Node>(INVALID,nonsharedList(),0,comm));
+    
     RCP<const Tpetra::Import<LO,GO,Node> > importer;
-    RCP<FEMV> X  = rcp(new FEMV(map, importer,numVecs));
+    // FEMV Type 1: Importer w/ shared memory
+    if(femv_type == 1)
+      importer = rcp(new Tpetra::Import<LO,GO,Node>(map,sharedMap));
+    // FEMV Type 2: Importer w/ non-shared memory
+    else if(femv_type == 2)
+      importer = rcp(new Tpetra::Import<LO,GO,Node>(map,nonsharedMap));
+    // FEMV Type 3: No importer
+    
+    // Use the FEMV in source mode
+    RCP<FEMV> X = rcp(new FEMV(map,importer,numVecs));
+    X->beginFill(); X->endFill();
+    
 
     // Make sure that X has the right (local) dimensions.
     TEST_EQUALITY( X->getLocalLength (), numLocalEntries );
@@ -727,7 +748,27 @@ namespace {
         throw;
       }
     }
+    return success;
   }
+
+// ===============================================================================
+ ////
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( FEMultiVector, OffsetViewZeroLength_Type1, LO , GO , Scalar , Node )
+  {
+    if(getDefaultComm()->getSize() ==1) return;
+    success = test_offsetviewzerolength<Scalar,LO,GO,Node>(out,1);
+  }
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( FEMultiVector, OffsetViewZeroLength_Type2, LO , GO , Scalar , Node )
+  {
+    if(getDefaultComm()->getSize() ==1) return;
+    success = test_offsetviewzerolength<Scalar,LO,GO,Node>(out,2);
+  }
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( FEMultiVector, OffsetViewZeroLength_Type3, LO , GO , Scalar , Node )
+  {
+    success = test_offsetviewzerolength<Scalar,LO,GO,Node>(out,3);
+  }
+
+
 
 
 // ===============================================================================
@@ -737,13 +778,12 @@ namespace {
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( FEMultiVector, doImport, LO, GO, SC, NO ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( FEMultiVector, OffsetView_Type1, LO, GO, SC, NO ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( FEMultiVector, OffsetView_Type2, LO, GO, SC, NO ) \
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( FEMultiVector, OffsetView_Type3, LO, GO, SC, NO )
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( FEMultiVector, OffsetView_Type3, LO, GO, SC, NO ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( FEMultiVector, OffsetViewZeroLength_Type1, LO, GO, SC, NO ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( FEMultiVector, OffsetViewZeroLength_Type2, LO, GO, SC, NO ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( FEMultiVector, OffsetViewZeroLength_Type3, LO, GO, SC, NO )
 
  
-
-
-
-  //  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( FEMultiVector, OffsetViewZeroLength, LO, GO, SC, NO ) 
 
   TPETRA_ETI_MANGLING_TYPEDEFS()
 
