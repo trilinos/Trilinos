@@ -315,9 +315,10 @@ namespace {
       importer = rcp(new Tpetra::Import<LO,GO,Node>(fullMap,nonsharedMap));
     // FEMV Type 3: No importer
     
-
-    RCP<FEMV> A = rcp(new FEMV(fullMap,importer,numVectors));
+    // Use the FEMV in source mode
+    RCP<FEMV> A = rcp(new FEMV(fullMap,importer,numVectors,false));
     A->beginFill(); A->endFill();
+    
     {
       // config source multivector
       RCP<MV> A1 = A->offsetViewNonConst(map1, 0);
@@ -441,14 +442,20 @@ namespace {
     }
     return success;
   }
+
+
+
+
 // ===============================================================================
  ////
   TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( FEMultiVector, OffsetView_Type1, LO , GO , Scalar , Node )
   {
+    if(getDefaultComm()->getSize() ==1) return;
     success = test_offsetview<Scalar,LO,GO,Node>(out,1);
   }
   TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( FEMultiVector, OffsetView_Type2, LO , GO , Scalar , Node )
   {
+    if(getDefaultComm()->getSize() ==1) return;
     success = test_offsetview<Scalar,LO,GO,Node>(out,2);
   }
   TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( FEMultiVector, OffsetView_Type3, LO , GO , Scalar , Node )
@@ -730,11 +737,17 @@ namespace {
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( FEMultiVector, doImport, LO, GO, SC, NO ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( FEMultiVector, OffsetView_Type1, LO, GO, SC, NO ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( FEMultiVector, OffsetView_Type2, LO, GO, SC, NO ) \
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( FEMultiVector, OffsetView_Type3, LO, GO, SC, NO ) \
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( FEMultiVector, OffsetViewZeroLength, LO, GO, SC, NO ) 
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( FEMultiVector, OffsetView_Type3, LO, GO, SC, NO )
+
+ 
+
+
+
+  //  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( FEMultiVector, OffsetViewZeroLength, LO, GO, SC, NO ) 
 
   TPETRA_ETI_MANGLING_TYPEDEFS()
 
-  TPETRA_INSTANTIATE_SLGN( UNIT_TEST_GROUP )
 
+
+  TPETRA_INSTANTIATE_TESTMV( UNIT_TEST_GROUP )
 }
