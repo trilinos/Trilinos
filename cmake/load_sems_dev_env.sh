@@ -135,6 +135,5 @@ module load $sems_parmetis_and_version_default
 module load $sems_scotch_and_version_default
 module load $sems_superlu_and_version_default
 
-if [ "${TRILINOS_SEMS_DEV_ENV_VERBOSE}" == "1" ] ; then
-  module list
-fi
+export OMP_NUM_THREADS=2
+# This was the agreement for the OpenMP builds as per #2317
