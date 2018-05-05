@@ -90,7 +90,13 @@ void ReferenceQuad4(scalar_2d_array_t & elementMatrix) {
   }
 }
 
-
+// RHS vector for the reference quad.
+// This can be thought of as a unit source being equally distributed to the
+// 4 nodes of the quad.
+void ReferenceQuad4RHS(Teuchos::Array<Scalar>& rhs) {
+  rhs.resize(4);
+  std::fill(rhs.begin(), rhs.end(), static_cast<Scalar>(.25));
+}
 
 //
 // This function prints out the quad4 array in a nice way.
