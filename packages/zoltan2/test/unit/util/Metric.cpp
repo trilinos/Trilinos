@@ -111,135 +111,203 @@ int main(int argc, char *argv[])
   // metrics but could be developed further
   runTestSuite<graph_idInput_t>(comm);
 
+  comm->barrier();
   if (rank==0)
     cout << "PASS" << endl;
 }
 
+// to validate the results, we call evaluate_adapter_results which is
+// templated so it can, for example, check graph metrics only for the graph
+// adapter. Currently both basic and graph adapter setup imbalance metrics so
+// we also do a check on that with a universal call to
+// evaluate_imbalance_results. Currently this needs no specialization.
+// If we add more adapters later this could be flexible to accomodate that.
 template<class idInput_t>
-int evaluate_result(RCP<const Comm<int> > comm,
-  RCP<Zoltan2::EvaluatePartition<idInput_t>> metric,
-  int numLocalObjs, int numGlobalParts) {
+void evaluate_imbalance_results(RCP<const Comm<int> > comm,
+  RCP<Zoltan2::EvaluatePartition<idInput_t>> metricObject, int numLocalObj,
+  int nWeights, int original_numLocalParts, bool givePartSizes) {
+  int fail = 0;
+  int rank = comm->getRank();
+
+  zscalar_t object_count_imbalance;
+  try{
+    object_count_imbalance = metricObject->getObjectCountImbalance();
+    if(rank == 0) {
+      cout << "Object imbalance: " << object_count_imbalance << endl;
+    }
+  }
+  catch (std::exception &e){
+    fail=1;
+  }
+  TEST_FAIL_AND_EXIT(*comm, fail==0, "getObjectCountImbalance", 1);
+
+  // now verify the imbalance
+  // I didn't want to 'redo' all the calculations for imbalance here but just
+  // want some simple measure it's not busted. The way things are currently
+  // set up we can predict this value simply as 1.0 unless;
+  //   numLocalParts > 1 - then it will be 2 due to the empties
+  //   givePartSizes true - then it will be 2 due to how the ratios are setup
+  // So this is not general - it's just meant to create a fail situation
+  // if the imbalanace metrics were completely broken.
+  // Note for weight imbalances below that would be more complicated to
+  // replicate here so I'll just check for exceptions but not the specific
+  // numbers. To implement that we'd pretty much need to duplicate all the logic
+  // which seems inappropriate here.
+  zscalar_t expected_imbalance = 1.0;
+  bool testEmptyParts = (original_numLocalParts < 1);
+  if(original_numLocalParts > 1 ||
+    (givePartSizes && !testEmptyParts)) {
+    expected_imbalance = 2.0; // not general - but true for these current tests
+  }
+  if(rank == 0) {
+    cout << "Expected object imbalance: " << expected_imbalance << endl;
+  }
+
+  TEST_FAIL_AND_EXIT(*comm, object_count_imbalance == expected_imbalance,
+    "Object count imbalance was not calculated correctly.", 1);
+
+  if (nWeights > 0){
+    try{
+      for (int i=0; i < nWeights; i++){
+        zscalar_t imb = metricObject->getWeightImbalance(i);
+        if(rank == 0){
+          cout << "Weight " << i << " imbalance: " << imb << endl;
+        }
+      }
+    }
+    catch (std::exception &e){
+      fail=10;
+    }
+    if (!fail && nWeights > 1){
+      try{
+        zscalar_t imb = metricObject->getNormedImbalance();
+        if(rank == 0){
+          cout << "Normed weight imbalance: " << imb << endl;
+        }
+      }
+      catch (std::exception &e){
+        fail=11;
+      }
+    }
+  }
+  TEST_FAIL_AND_EXIT(*comm, fail==0, "get imbalances", 1);
+}
+
+template<class idInput_t>
+void evaluate_adapter_results(RCP<const Comm<int> > comm,
+  RCP<Zoltan2::EvaluatePartition<idInput_t>> metricObject, int numLocalObj,
+  int nWeights, int original_numLocalParts, bool givePartSizes) {
     throw std::logic_error("evaluate_result not implemented.");
 }
 
 template<>
-int evaluate_result<graph_idInput_t>(RCP<const Comm<int> > comm,
-  RCP<Zoltan2::EvaluatePartition<graph_idInput_t>> metric,
-  int numLocalObjs, int numGlobalParts) {
-
+void evaluate_adapter_results<graph_idInput_t>(RCP<const Comm<int> > comm,
+  RCP<Zoltan2::EvaluatePartition<graph_idInput_t>> metricObject, int numLocalObj,
+  int nWeights, int original_numLocalParts, bool givePartSizes) {
   int fail = 0;
+  int rank = comm->getRank();
 
-  // first just confirm we can read getTotalEdgeCut()
-  if(comm->getRank() == 0) { // getTotalEdgeCut() is global, just check rank 0
-    int total_edge_cut;
-    try{
-      // TODO: the unweighted getTotalEdgeCut is an integer
-      // maybe the API should be changed for this and other similar cases
-      total_edge_cut = static_cast<int>(metric->getTotalEdgeCut());
+  int total_edge_cut;
+  try{
+    // TODO: the unweighted getTotalEdgeCut is an integer
+    // maybe the API should be changed for this and other similar cases
+    total_edge_cut = static_cast<int>(metricObject->getTotalEdgeCut());
+    if(rank == 0){
       cout << "Total Edge Cut: " << total_edge_cut << endl;
     }
-    catch (std::exception &e){
-      fail=1;
-    }
+  }
+  catch (std::exception &e){
+    fail=1;
+  }
+  TEST_FAIL_AND_EXIT(*comm, fail==0, "getTotalEdgeCut", 1);
 
-    int max_edge_cut;
-    try{
-      max_edge_cut = static_cast<int>(metric->getMaxEdgeCut());
+  int max_edge_cut;
+  try{
+    max_edge_cut = static_cast<int>(metricObject->getMaxEdgeCut());
+    if(rank == 0){
       cout << "Max Edge Cut: " << max_edge_cut << endl;
     }
-    catch (std::exception &e){
-      fail=1;
-    }
+  }
+  catch (std::exception &e){
+    fail=1;
+  }
+  TEST_FAIL_AND_EXIT(*comm, fail==0, "getMaxEdgeCut", 1);
 
-    int total_messages;
-    try{
-      total_messages = static_cast<int>(metric->getTotalMessages());
+  int total_messages;
+  try{
+    total_messages = static_cast<int>(metricObject->getTotalMessages());
+    if(rank == 0){
       cout << "Total Messages: " << total_messages << endl;
     }
-    catch (std::exception &e){
-      fail=1;
-    }
+  }
+  catch (std::exception &e){
+    fail=1;
+  }
+  TEST_FAIL_AND_EXIT(*comm, fail==0, "getTotalMessages", 1);
 
-    int max_messages;
-    try{
-      max_messages = static_cast<int>(metric->getMaxMessages());
+  int max_messages;
+  try{
+    max_messages = static_cast<int>(metricObject->getMaxMessages());
+    if(rank == 0){
       cout << "Max Messages: " << max_messages << endl;
     }
-    catch (std::exception &e){
-      fail=1;
-    }
-
-    // Now let's check our numbers
-    // Here we do a calculation of what getTotalEdgeCut should return based on
-    // how we set things up in create_adapter.
-    // Currently the algorithm simply has every object create two links, one
-    // to the first global id and one to the last.
-    // Two of the procs will contain one of those global ids so they only have
-    // edge cuts equal to numLocalObjs to send to the other.
-    // So that is the (2 * numLocalObjs) term.
-    // All other procs will contain neither of those global ids so they have
-    // to send their objects to two procs.
-    // So that is the ((num_procs-2) * numLocalObjs * 2 term.
-    int num_procs = comm->getSize();
-    // also handle edge case of num_procs less than 2 - no edge cuts then
-    int expected_total_edge_cuts = (num_procs == 1) ? 0 :
-      (2 * numLocalObjs) + ((num_procs-2) * numLocalObjs * 2);
-
-    // now we validate
-    if(total_edge_cut != expected_total_edge_cuts) {
-      printf("We expected total edge cuts to be %d but got %d. ",
-        expected_total_edge_cuts, total_edge_cut);
-      fail = 1;
-    }
-
-    // we can also calculate max edge cuts
-    // if num_procs 1, then it's 0
-    // if num_procs 2, then it's numLocalObjs
-    // otherwise it's 2 * numLocalObjs because at least one proc is sending
-    // to two other procs
-    int expected_max_edge_cuts = (num_procs == 1) ? 0 :
-      (num_procs == 2) ? numLocalObjs : numLocalObjs * 2;
-
-    // now we validate
-    if(max_edge_cut != expected_max_edge_cuts) {
-      printf("We expected max edge cuts to be %d but got %d. ",
-        expected_total_edge_cuts, total_edge_cut);
-      fail = 1;
-    }
-
-    // now check total messages - in present form we can simply divide but in
-    // future things could be generalized
-    int expected_total_messages = expected_total_edge_cuts / numLocalObjs;
-    // now we validate
-    if(total_messages != expected_total_messages) {
-      printf("We expected total messages to be %d but got %d. ",
-        expected_total_messages, total_messages);
-      fail = 1;
-    }
-
-    // now check max messages - in present form we can simply divide but in
-    // future things could be more generalized
-    int expected_max_messages = expected_max_edge_cuts / numLocalObjs;
-    // now we validate
-    if(max_messages != expected_max_messages) {
-      printf("We expected max messages to be %d but got %d. ",
-        expected_max_messages, max_messages);
-      fail = 1;
-    }
   }
+  catch (std::exception &e){
+    fail=1;
+  }
+  TEST_FAIL_AND_EXIT(*comm, fail==0, "getMaxMessages", 1);
 
-  return fail;
+  // Now let's check our numbers.
+  // Here we do a calculation of what getTotalEdgeCut should return based on
+  // how we set things up in create_adapter.
+  // Currently the algorithm simply has every object create two links, one
+  // to the first global id and one to the last.
+  // Two of the procs will contain one of those global ids so they only have
+  // edge cuts equal to numLocalObjs to send to the other.
+  // So that is the (2 * numLocalObjs) term.
+  // All other procs will contain neither of those global ids so they have
+  // to send their objects to two procs.
+  // So that is the ((num_procs-2) * numLocalObjs * 2 term.
+  int num_procs = comm->getSize();
+  int expected_total_edge_cuts = (num_procs == 1) ? 0 :
+    (2 * numLocalObj) + ((num_procs-2) * numLocalObj * 2);
+  TEST_FAIL_AND_EXIT(*comm, total_edge_cut == expected_total_edge_cuts,
+    "getTotalEdgeCut is not the expected ", 1);
+
+  // we can also calculate max edge cuts
+  // if num_procs 1, then it's 0
+  // if num_procs 2, then it's numLocalObjs
+  // otherwise it's 2 * numLocalObjs because at least one proc is sending
+  // to two other procs
+  int expected_max_edge_cuts = (num_procs == 1) ? 0 :
+    (num_procs == 2) ? numLocalObj : numLocalObj * 2;
+  TEST_FAIL_AND_EXIT(*comm, max_edge_cut == expected_max_edge_cuts,
+      "getMaxEdgeCut is not the expected value", 1);
+
+  // now check total messages - in present form we can simply divide but in
+  // future things could be generalized
+  int expected_total_messages = expected_total_edge_cuts / numLocalObj;
+  TEST_FAIL_AND_EXIT(*comm, total_messages == expected_total_messages,
+      "getTotalMessages is not the expected value", 1);
+
+  // now check max messages - in present form we can simply divide but in
+  // future things could be more generalized
+  int expected_max_messages = expected_max_edge_cuts / numLocalObj;
+  TEST_FAIL_AND_EXIT(*comm, max_messages == expected_max_messages,
+      "getMaxMessages is not the expected value", 1);
+
+  evaluate_imbalance_results(comm, metricObject,
+    numLocalObj, nWeights, original_numLocalParts, givePartSizes);
 }
 
+// for basic_idInput_t we just call the common evaluate_imbalance_results
+// no other specialized data to consider
 template<>
-int evaluate_result<basic_idInput_t>(RCP<const Comm<int> > comm,
-  RCP<Zoltan2::EvaluatePartition<basic_idInput_t>> metric,
-  int numLocalObjs, int numGlobalParts) {
-
-  // TODO - I set evaluate_result up to implement some validation of the
-  // graph metrics utility methods. However we could extend this to imbalance
-  // metrics. Just want to review the setup before going to far.
-  return 0;
+void evaluate_adapter_results<basic_idInput_t>(RCP<const Comm<int> > comm,
+  RCP<Zoltan2::EvaluatePartition<basic_idInput_t>> metricObject, int numLocalObj,
+  int nWeights, int original_numLocalParts, bool givePartSizes) {
+  evaluate_imbalance_results(comm, metricObject,
+    numLocalObj, nWeights, original_numLocalParts, givePartSizes);
 }
 
 template<class idInput_t>
@@ -267,10 +335,10 @@ graph_idInput_t * create_adapter<graph_idInput_t>(RCP<const Comm<int> > comm,
   size_t maxRowLen = 1;
   Teuchos::RCP<matrix_t> matrix = rcp(new matrix_t(map, maxRowLen));
 
-  // TODO: Need to decide what a good test graph is
+  // I picked this graph as a simple test case.
   // Something we can easily calculate the final result for as we'd like to
   // validate this but not end up rewriting the algorithm we are testing.
-  // For starters I simply have each graph element create two links to the
+  // I have each graph element create two links to the
   // first global index and last. That means two procs will have edge cuts
   // equal to their numLocalObj while the rest will have 2 * numLocalObj
   //
@@ -320,6 +388,9 @@ void doTest(RCP<const Comm<int> > comm, int numLocalObj,
   typedef typename idInput_t::part_t part_t;
 
   int rank = comm->getRank();
+
+  int original_numLocalParts = numLocalParts; // save for log and error checking
+
   int nprocs = comm->getSize();
   int fail=0;
   srand(rank+1);
@@ -339,16 +410,16 @@ void doTest(RCP<const Comm<int> > comm, int numLocalObj,
     numGlobalParts = nprocs * numLocalParts;
   }
 
-  if (rank == 0){
-    cout << endl;
-    cout << "Test: number of weights " << nWeights;
-    cout << ", desired number of parts " << numGlobalParts;
-    if (givePartSizes)
-      cout << ", with differing part sizes." << endl;
-    else
-      cout << ", with uniform part sizes." << endl;
-    cout << "Number of procs " << nprocs;
-    cout << ", each with " << numLocalObj << " objects, part = rank." << endl;
+  if(rank == 0) {
+    cout << endl
+      << "Test: number of weights " << nWeights
+      << ", desired number of parts " << numGlobalParts
+      << ", calculated num local parts " << numLocalParts
+      << ", original num local parts " << original_numLocalParts
+      << (givePartSizes ? ", with differing part sizes." :
+        ", with uniform part sizes.")
+      << ", Number of procs " << nprocs
+      << ", each with " << numLocalObj << " objects, part = rank." << endl;
   }
 
   // An environment.  This is usually created by the problem.
@@ -389,7 +460,6 @@ void doTest(RCP<const Comm<int> > comm, int numLocalObj,
       for (int i=0; i < numLocalParts; i++)
         psizes[i] = sizeFactor;
       sizes[dim] = arcp(psizes, 0, numLocalParts, true);
-      
       ids[dim] = partNums;
     }
   }
@@ -462,64 +532,21 @@ void doTest(RCP<const Comm<int> > comm, int numLocalObj,
   catch (std::exception &e){
     fail=1;
   }
-
   TEST_FAIL_AND_EXIT(*comm, fail==0, "compute metrics", 1);
-
-
-  if (rank==0){
-    ;
-    try{
-      zscalar_t imb = metricObject->getObjectCountImbalance();
-      cout << "Object imbalance: " << imb << endl;
-    }
-    catch (std::exception &e){
-      fail=1;
-    }
-  }
-
-  TEST_FAIL_AND_EXIT(*comm, fail==0, "getObjectCountImbalance", 1);
-
-  if (rank==0 && nWeights > 0){
-    try{
-      for (int i=0; i < nWeights; i++){
-    	zscalar_t imb = metricObject->getWeightImbalance(i);
-        cout << "Weight " << i << " imbalance: " << imb << endl;
-      }
-    }
-    catch (std::exception &e){
-      fail=10;
-    }
-    if (!fail && nWeights > 1){
-      try{
-    	zscalar_t imb = metricObject->getNormedImbalance();
-        cout << "Normed weight imbalance: " << imb << endl;
-      }
-      catch (std::exception &e){
-        fail=11;
-      }
-    }
-  }
-
-  TEST_FAIL_AND_EXIT(*comm, fail==0, "get imbalances", 1);
   
-  if (rank==0){
-    try{
+  try{
+    if(rank == 0){
       metricObject->printMetrics(cout);
     }
-    catch (std::exception &e){
-      fail=1;
-    }
   }
-
+  catch (std::exception &e){
+    fail=1;
+  }
   TEST_FAIL_AND_EXIT(*comm, fail==0, "print metrics", 1);
 
-  // Now evaluate the result for precision of the results
-  // TODO: I'd like to discuss these ideas further before continuing
-  // To prototype this, I'll just validate the graph adapter getMaxEdgeCut()
-  // method.
-  fail = evaluate_result<idInput_t>(comm, metricObject,
-    numLocalObj, numGlobalParts);
-  TEST_FAIL_AND_EXIT(*comm, fail==0, "evaluate_result", 1);
+  // will call TEST_FAIL_AND_EXIT at each internal step
+  evaluate_adapter_results<idInput_t>(comm, metricObject,
+    numLocalObj, nWeights, original_numLocalParts, givePartSizes);
 
   delete ia;
 }
