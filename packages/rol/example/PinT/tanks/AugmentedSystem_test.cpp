@@ -69,6 +69,7 @@ int main( int argc, char* argv[] )
 
   Teuchos::GlobalMPISession mpiSession(&argc, &argv);  
   int myrank = Teuchos::GlobalMPISession::getRank();
+  int numProcs = Teuchos::GlobalMPISession::getNProc();
 
   int iprint     = argc - 1;
   ROL::Ptr<std::ostream> outStream;
@@ -95,6 +96,9 @@ int main( int argc, char* argv[] )
     auto ncols    = static_cast<size_type>( pl.get("Number of Columns",3) );
     auto numSteps = static_cast<size_type>( pl.get("Number of Time Steps",100) );
 
+    if(myrank==0)
+      *outStream << "Rows = " << nrows << ", Cols = " << ncols << ", Time steps = " << numSteps << std::endl;
+
     auto u    = makePtr<StateVector>( nrows, ncols, "New state (u)" );
     auto z    = makePtr<ControlVector>( nrows, ncols, "Control (z)" );    
 
@@ -104,18 +108,8 @@ int main( int argc, char* argv[] )
     auto state   = ROL::buildPinTVector<RealT>(communicators,numSteps,{-1,0}, u);
     auto control = ROL::buildPinTVector<RealT>(communicators,numSteps,   {0}, z);
 
-
     // build the parallel in time constraint from the user constraint
     Ptr<ROL::Constraint_PinTSimOpt<RealT>> pint_con = makePtr<ROL::Constraint_PinTSimOpt<RealT>>(con);
-
-    auto x   = makePtr<ROL::Vector_SimOpt<RealT>>(state,control);
-    auto v_1 = x->clone();
-    auto v_2 = state->clone();
-    auto r_1 = v_1->clone();
-    auto r_2 = v_2->clone();
-
-    ROL::RandomizeVector<RealT>(*r_1);
-    ROL::RandomizeVector<RealT>(*r_2);
 
     // check the pint constraint
     {
@@ -130,7 +124,16 @@ int main( int argc, char* argv[] )
       pint_con->checkApplyJacobian_1(*state,*control,*v_u,*jv,true,*outStream);
     }
 
-    int numSolves = 5;
+    auto x   = makePtr<ROL::Vector_SimOpt<RealT>>(state,control);
+    auto v_1 = x->clone();
+    auto v_2 = state->clone();
+    auto r_1 = v_1->clone();
+    auto r_2 = v_2->clone();
+/*
+    ROL::RandomizeVector<RealT>(*r_1);
+    ROL::RandomizeVector<RealT>(*r_2);
+
+    int numSolves = 1;
     double tol = 1e-12;
     std::clock_t timer_total = 0;
     for(int i=0;i<numSolves;i++) {
@@ -152,6 +155,97 @@ int main( int argc, char* argv[] )
  
     if(myrank==0)
       *outStream << numSolves << " Solves in " << (timer_total)/(RealT) CLOCKS_PER_SEC << " seconds." << std::endl;
+*/
+
+    for(int chkProc=0;chkProc<numProcs;++chkProc) {
+      using ROL::PinTVector;
+
+      auto v  = state->clone();
+      auto fv  = state->clone();
+      auto afv  = state->clone();
+      auto jv = state->clone();
+      auto ajv = state->clone();
+
+      ROL::RandomizeVector<RealT>(*v);
+
+      double tol = 1e-12;
+
+      // zero all contribution off the processor being checked
+      if(myrank!=chkProc)
+        v->scale(0.0);
+
+      // make sure we are globally consistent
+      state->boundaryExchange();
+      control->boundaryExchange();
+      dynamic_cast<PinTVector<RealT>&>(*v).boundaryExchange();
+
+      // compute jacobian action
+      pint_con->applyJacobian_1(*jv,
+                                *v,
+                                *state,
+                                *control,tol);
+
+      // compute jacobian action
+      pint_con->applyAdjointJacobian_1(*ajv,
+                                       *v,
+                                       *state,
+                                       *control,tol);
+
+      // zero all contribution off the processor being checked
+      if(myrank!=chkProc) {
+        jv->zero();
+        ajv->zero();
+      }
+
+      pint_con->invertTimeStepJacobian(dynamic_cast<PinTVector<RealT>&>(*fv),
+                                       dynamic_cast<const PinTVector<RealT>&>(*jv),
+                                       dynamic_cast<const PinTVector<RealT>&>(*state),
+                                       dynamic_cast<const PinTVector<RealT>&>(*control),
+                                       tol);
+
+      pint_con->invertAdjointTimeStepJacobian(dynamic_cast<PinTVector<RealT>&>(*afv),
+                                       dynamic_cast<const PinTVector<RealT>&>(*ajv),
+                                       dynamic_cast<const PinTVector<RealT>&>(*state),
+                                       dynamic_cast<const PinTVector<RealT>&>(*control),
+                                       tol);
+
+      fv->axpy(-1.0,*v);
+      afv->axpy(-1.0,*v);
+
+      RealT fv_norm  = fv->norm();
+      RealT afv_norm = afv->norm();
+      RealT v_norm   = v->norm();
+
+      if(myrank==0) {
+        *outStream << "Testing vector norm = " << v_norm << std::endl;
+      }
+
+      // check norms
+      if(fv_norm/v_norm > 1e-13) {
+        errorFlag = 1000;
+        if(myrank==0)
+          *outStream << "Forward block Jacobi inversion FAILED with proc " << chkProc 
+                     << " (relative error = " << fv_norm / v_norm  << ")" << std::endl;
+      }
+      else {
+        if(myrank==0)
+          *outStream << "Forward block Jacobi inversion PASSED with proc " << chkProc 
+                     << " (relative error = " << fv_norm / v_norm  << ")" << std::endl;
+      }
+
+      // check norms (adjoint)
+      if(afv_norm/v_norm > 1e-13) {
+        errorFlag = 1000;
+        if(myrank==0)
+          *outStream << "Adjoint block Jacobi inversion FAILED with proc " << chkProc 
+                     << " (relative error = " << afv_norm / v_norm  << ")" << std::endl;
+      }
+      else {
+        if(myrank==0)
+          *outStream << "Adjoint block Jacobi inversion PASSED with proc " << chkProc 
+                     << " (relative error = " << afv_norm / v_norm  << ")" << std::endl;
+      }
+    }
   }
   catch (std::logic_error err) {
     *outStream << err.what() << "\n";
