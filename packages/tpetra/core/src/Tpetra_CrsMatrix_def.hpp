@@ -8865,9 +8865,7 @@ namespace Tpetra {
     Teuchos::ParameterList esfc_params;
 
     RCP<import_type> MyImport;   
-    isMM=false;
-    if(true) {
-//    if( !( isMM && !MyImporter.is_null()) ) { 
+    if( !( isMM && !MyImporter.is_null()) ) { 
 #ifdef HAVE_TPETRA_MMM_TIMINGS
 	MM = Teuchos::rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix + std::string("TAFC CreateImporter"))));
 #endif
@@ -8892,14 +8890,7 @@ namespace Tpetra {
 #ifdef HAVE_TPETRA_MMM_TIMINGS
     MM = Teuchos::rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix + std::string("is MM Block"))));
 #endif
-      // static bool first = true;
-      // if(first) {
-      //   first = false;
-      //   std::cerr<<" isMM "<<std::endl;
-      // }
 
-      // The isMatrixMatrix_TransferAndFillComplete parameter is set to true. This means the unfiltered
-      // reverseNeighborDiscovery is safe (by assertion?!?). 
       // Combine all type1/2/3 lists, [filter them], then call the expert import constructor. 
       Teuchos::Array<size_t> ReverseSendSizes;
       Teuchos::Array<std::pair<int, GlobalOrdinal> > ReverseSendBuffer;

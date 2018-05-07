@@ -217,13 +217,13 @@ namespace Tpetra {
     if(first && :: isMMdump) {
 	first = false;
 	Teuchos::RCP<Teuchos::FancyOStream>  cerrptr = Teuchos::getFancyOStream (Teuchos::rcpFromRef (std::cerr)) ;
-	cerrptr->setTabIndentStr(std::string("T"));
+	cerrptr->setTabIndentStr(std::string("S"));
 	Teuchos::FancyOStream& fancyCERR = *cerrptr;
 	
 	fancyCERR<<std::flush;
 	source->describe(fancyCERR,Teuchos::VERB_EXTREME);
 	fancyCERR<<std::flush;
-	cerrptr->setTabIndentStr(std::string("S"));
+	cerrptr->setTabIndentStr(std::string("T"));
 	target->describe(fancyCERR,Teuchos::VERB_EXTREME);
 	fancyCERR<<std::flush;
     }
