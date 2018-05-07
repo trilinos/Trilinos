@@ -112,6 +112,11 @@ namespace MueLu {
     validParamList->set< std::string >           ("OnePt aggregate map factory",      "", "Generating factory of (DOF) map for single node aggregates.");
     //validParamList->set< RCP<const FactoryBase> >("OnePt aggregate map factory",    NoFactory::getRCP(), "Generating factory of (DOF) map for single node aggregates.");
 
+    // InterfaceAggregation parameters
+    validParamList->set< bool >                  ("aggregation: use interface aggregation", "false", "Flag to trigger aggregation along an interface using specified aggregate seeds.");
+    validParamList->set< std::string >           ("Interface aggregate map name",                "", "Name of input map for interface aggregates. (default='')");
+    validParamList->set< std::string >           ("Interface aggregate map factory",             "", "Generating factory of (DOF) map for interface aggregates.");
+
     return validParamList;
   }
 

@@ -43,49 +43,21 @@
 // ***********************************************************************
 //
 // @HEADER
-#ifndef MUELU_TYPES_HPP
-#define MUELU_TYPES_HPP
+#ifndef MUELU_INTERFACEAGGREGATIONALGORITHM_FWD_HPP
+#define MUELU_INTERFACEAGGREGATIONALGORITHM_FWD_HPP
 
-#include "MueLu_ConfigDefs.hpp"
+
+
 
 namespace MueLu {
-  enum CycleType {
-    VCYCLE,
-    WCYCLE
-  };
-
-  enum PreOrPost {
-    PRE  = 0x1,
-    POST = 0x2,
-    BOTH = 0x3
-  };
-
-  // In the algorithm, aggStat[] = READY/NOTSEL/SELECTED indicates whether a node has been aggregated
-  enum NodeState {
-    READY      = 1, // indicates that a node is available to be
-                    // selected as a root node of an aggregate
-
-    NOTSEL     = 2, // indicates that a node has been rejected as a root node.
-                    // This could perhaps be because if this node had been
-                    // selected a small aggregate would have resulted
-                    // This is Phase 1 specific
-
-    AGGREGATED = 3, // indicates that a node has been assigned
-                    // to an aggregate
-
-    ONEPT      = 4, // indicates that a node shall be preserved over
-                    // all multigrid levels as 1 point aggregate
-
-    IGNORED    = 5, // indicates that the node is removed from consideration,
-                    // and is not aggregated
-
-    BOUNDARY   = 6, // node is a Dirichlet node
-                    // During aggregation, it is transformed either to AGGREGATED
-                    // or to IGNORED
-    INTERFACE  = 7  // node is chosen as root node on an interface where coordinated
-                    // coarsening across the interface is required.
-  };
-
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  class InterfaceAggregationAlgorithm;
 }
 
-#endif //ifndef MUELU_TYPES_HPP
+#ifndef MUELU_INTERFACEAGGREGATIONALGORITHM_SHORT
+#define MUELU_INTERFACEAGGREGATIONALGORITHM_SHORT
+#endif
+
+
+
+#endif // MUELU_INTERFACEAGGREGATIONALGORITHM_FWD_HPP
