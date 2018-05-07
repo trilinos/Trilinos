@@ -15,6 +15,7 @@ GlobalLexicographicIndexManager
 Graph
 GraphBase
 IndexManager
+InterfaceAggregationAlgorithm
 IsolatedNodeAggregationAlgorithm
 IsolatedNodeAggregationAlgorithm_kokkos - #if defined(HAVE_MUELU_KOKKOS_REFACTOR)
 IsorropiaInterface - #if defined(HAVE_MUELU_ISORROPIA) && defined(HAVE_MPI)

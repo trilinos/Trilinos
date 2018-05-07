@@ -53,6 +53,9 @@ typedef MueLu::GraphBase<LocalOrdinal,GlobalOrdinal,Node> GraphBase;
 #ifdef MUELU_INDEXMANAGER_SHORT
 typedef MueLu::IndexManager<LocalOrdinal,GlobalOrdinal,Node> IndexManager;
 #endif
+#ifdef MUELU_INTERFACEAGGREGATIONALGORITHM_SHORT
+typedef MueLu::InterfaceAggregationAlgorithm<LocalOrdinal,GlobalOrdinal,Node> InterfaceAggregationAlgorithm;
+#endif
 #ifdef MUELU_ISOLATEDNODEAGGREGATIONALGORITHM_SHORT
 typedef MueLu::IsolatedNodeAggregationAlgorithm<LocalOrdinal,GlobalOrdinal,Node> IsolatedNodeAggregationAlgorithm;
 #endif

@@ -43,49 +43,74 @@
 // ***********************************************************************
 //
 // @HEADER
-#ifndef MUELU_TYPES_HPP
-#define MUELU_TYPES_HPP
+/*
+ * MueLu_InterfaceAggregationAlgorithm_decl.hpp
+ *
+ *  Created on: Sep 18, 2012
+ *      Author: Tobias Wiesner
+ */
+
+#ifndef MUELU_INTERFACEAGGREGATIONALGORITHM_DECL_HPP_
+#define MUELU_INTERFACEAGGREGATIONALGORITHM_DECL_HPP_
 
 #include "MueLu_ConfigDefs.hpp"
+#include "MueLu_AggregationAlgorithmBase.hpp"
+#include "MueLu_InterfaceAggregationAlgorithm_fwd.hpp"
+
+#include "MueLu_FactoryBase_fwd.hpp"
+#include "MueLu_Aggregates_fwd.hpp"
+//#include "MueLu_Graph_fwd.hpp"
+#include "MueLu_GraphBase.hpp"
 
 namespace MueLu {
-  enum CycleType {
-    VCYCLE,
-    WCYCLE
-  };
+  /*!
+    @class InterfaceAggregationAlgorithm class.
+    @brief Algorithm for coarsening a graph with uncoupled aggregation.
+    creates aggregates along an interface using specified root nodes.
 
-  enum PreOrPost {
-    PRE  = 0x1,
-    POST = 0x2,
-    BOTH = 0x3
-  };
+    @ingroup Aggregation
 
-  // In the algorithm, aggStat[] = READY/NOTSEL/SELECTED indicates whether a node has been aggregated
-  enum NodeState {
-    READY      = 1, // indicates that a node is available to be
-                    // selected as a root node of an aggregate
+    ### Idea ###
+    The user can mark some nodes as INTERFACE to build aggregates across an interface.
+    This can be very useful for certain applications. We build aggregates for nodes with
+    the state INTERFACE. Then, the state is changed to AGGREGATED.
+    The InterfaceAggregationAlgorithm should run before the Phase1AggregationAlgorithm.
 
-    NOTSEL     = 2, // indicates that a node has been rejected as a root node.
-                    // This could perhaps be because if this node had been
-                    // selected a small aggregate would have resulted
-                    // This is Phase 1 specific
+  */
 
-    AGGREGATED = 3, // indicates that a node has been assigned
-                    // to an aggregate
+  template <class LocalOrdinal = int,
+            class GlobalOrdinal = LocalOrdinal,
+            class Node = KokkosClassic::DefaultNode::DefaultNodeType>
+  class InterfaceAggregationAlgorithm :
+    public MueLu::AggregationAlgorithmBase<LocalOrdinal,GlobalOrdinal,Node> {
+#undef MUELU_INTERFACEAGGREGATIONALGORITHM_SHORT
+#include "MueLu_UseShortNamesOrdinal.hpp"
 
-    ONEPT      = 4, // indicates that a node shall be preserved over
-                    // all multigrid levels as 1 point aggregate
+  public:
+    //! @name Constructors/Destructors.
+    //@{
 
-    IGNORED    = 5, // indicates that the node is removed from consideration,
-                    // and is not aggregated
+    //! Constructor.
+    InterfaceAggregationAlgorithm(RCP<const FactoryBase> const &graphFact = Teuchos::null);
 
-    BOUNDARY   = 6, // node is a Dirichlet node
-                    // During aggregation, it is transformed either to AGGREGATED
-                    // or to IGNORED
-    INTERFACE  = 7  // node is chosen as root node on an interface where coordinated
-                    // coarsening across the interface is required.
-  };
+    //! Destructor.
+    virtual ~InterfaceAggregationAlgorithm() { }
 
-}
+    //@}
 
-#endif //ifndef MUELU_TYPES_HPP
+
+    //! @name Aggregation methods.
+    //@{
+
+    /*! @brief Local aggregation. */
+
+    void BuildAggregates(Teuchos::ParameterList const & params, GraphBase const & graph, Aggregates & aggregates, std::vector<unsigned>& aggStat, LO& numNonAggregatedNodes) const;
+    //@}
+
+
+  }; //class InterfaceAggregationAlgorithm
+
+} //namespace MueLu
+
+#define MUELU_INTERFACEAGGREGATIONALGORITHM_SHORT
+#endif /* MUELU_INTERFACEAGGREGATIONALGORITHM_DECL_HPP_ */
