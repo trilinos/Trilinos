@@ -54,7 +54,7 @@
 #define ROL_BELOS_KRYLOV_HPP
 
 #include "BelosSolverFactory.hpp"   
-#include "Belos_Details_registerCustomSolverFactory.hpp"
+#include "Belos_Details_registerGenericSolverFactory.hpp"
 #include "BelosSolverManager.hpp"   
 
 #include "ROL_Krylov.hpp"
@@ -104,7 +104,7 @@ namespace ROL {
                 solverParams->set("Num Blocks",numVectors);
 
                 // Using LinearOperator OP so auto registration won't be available.
-                Belos::Details::registerCustomSolverFactory<ST, MV, OP>();
+                Belos::Details::registerGenericSolverFactory<ST, MV, OP>();
 
                 solver_ = factory_.create(solverName,solverParams);                 
             }

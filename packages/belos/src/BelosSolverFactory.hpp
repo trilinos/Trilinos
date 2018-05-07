@@ -491,8 +491,8 @@ SolverFactoryParent<Scalar, MV, OP>::
 registerSolverFactoryForLib () {
   // no managers will be preeegistered ...
   // for special MV and OP types the templated method
-  // Belos::Details::registerCustomSolverFactory<ST, MV, OP> lives in
-  // Belos_Details_registerCustomSolverFactory.hpp. 
+  // Belos::Details::registerGenericSolverFactory<ST, MV, OP> lives in
+  // Belos_Details_registerGenericSolverFactory.hpp.
 }
 
 

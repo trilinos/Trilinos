@@ -39,10 +39,10 @@
 // ************************************************************************
 //@HEADER
 
-#ifndef BELOS_DETAILS_REGISTERCUSTOMSOLVERFACTORY_HPP
-#define BELOS_DETAILS_REGISTERCUSTOMSOLVERFACTORY_HPP
+#ifndef BELOS_DETAILS_REGISTERGENERICSOLVERFACTORY_HPP
+#define BELOS_DETAILS_REGISTERGENERICSOLVERFACTORY_HPP
 
-/// \file Belos_Details_registerCustomSolverFactory
+/// \file Belos_Details_registerGenericSolverFactory
 /// \brief Implement Injection and Inversion (DII) for Belos
 
 #include "BelosSolverFactory.hpp"
@@ -66,7 +66,7 @@ namespace Details {
 
 // For manual registration if a class has special defined MV, OP
 template<class ST, class MV, class OP>
-void registerCustomSolverFactory() {
+void registerGenericSolverFactory() {
   Impl::registerSolverSubclassForTypes<BiCGStabSolMgr<ST,MV,OP>, ST, MV, OP> ("BICGSTAB");
   Impl::registerSolverSubclassForTypes<BlockCGSolMgr<ST,MV,OP>, ST, MV, OP> ("BLOCK CG");
   Impl::registerSolverSubclassForTypes<BlockGmresSolMgr<ST,MV,OP>, ST, MV, OP> ("BLOCK GMRES");
@@ -85,4 +85,4 @@ void registerCustomSolverFactory() {
 } // namespace Details
 } // namespace Belos
 
-#endif // BELOS_DETAILS_REGISTERCUSTOMSOLVERFACTORY_HPP
+#endif // BELOS_DETAILS_REGISTERGENERICSOLVERFACTORY_HPP

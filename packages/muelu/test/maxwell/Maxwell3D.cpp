@@ -73,7 +73,7 @@
 #include <BelosTpetraAdapter.hpp>
 #include <BelosXpetraAdapter.hpp>     // => This header defines Belos::XpetraOp
 //#include <BelosMueLuAdapter.hpp>      // => This header defines Belos::MueLuOp
-#include <Belos_Details_registerCustomSolverFactory.hpp>
+#include <Belos_Details_registerGenericSolverFactory.hpp>
 #endif
 
 // Stratimikos
@@ -250,7 +250,7 @@ int MainWrappers<Scalar,LocalOrdinal,GlobalOrdinal,Node>::main_(Teuchos::Command
       RCP< Belos::SolverFactory<SC, MV,OP> > factory = rcp( new  Belos::SolverFactory<SC,MV,OP>() );
 
       // Using Belos::OperatorT, not Belos::Operator so auto registration won't
-      Belos::Details::registerCustomSolverFactory<SC, MV, OP>();
+      Belos::Details::registerGenericSolverFactory<SC, MV, OP>();
 
       RCP<Teuchos::ParameterList> belosParams
         = rcp( new Teuchos::ParameterList() );
@@ -464,7 +464,7 @@ int MainWrappers<double,LocalOrdinal,GlobalOrdinal,Node>::main_(Teuchos::Command
       RCP< Belos::SolverFactory<SC, MV,OP> > factory = rcp( new  Belos::SolverFactory<SC,MV,OP>() );
 
       // Using Belos::OperatorT, not Belos::Operator so auto registration won't
-      Belos::Details::registerCustomSolverFactory<SC, MV, OP>();
+      Belos::Details::registerGenericSolverFactory<SC, MV, OP>();
 
       RCP<Teuchos::ParameterList> belosParams
         = rcp( new Teuchos::ParameterList() );
