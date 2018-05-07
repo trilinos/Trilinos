@@ -127,7 +127,7 @@ public:
     : StochasticObjective(obj,rvf,sampler,sampler,sampler,storage,comp,index) {}
 
   StochasticObjective( const Ptr<Objective<Real>> &obj,
-               Teuchos::ParameterList             &parlist,
+               ROL::ParameterList             &parlist,
                const Ptr<SampleGenerator<Real>>   &vsampler,
                const Ptr<SampleGenerator<Real>>   &gsampler,
                const Ptr<SampleGenerator<Real>>   &hsampler,
@@ -152,14 +152,14 @@ public:
   }
 
   StochasticObjective( const Ptr<Objective<Real>> &obj,
-               Teuchos::ParameterList             &parlist,
+               ROL::ParameterList             &parlist,
                const Ptr<SampleGenerator<Real>>   &vsampler,
                const Ptr<SampleGenerator<Real>>   &gsampler,
                const int comp = 0, const int index = 0 )
     : StochasticObjective(obj,parlist,vsampler,gsampler,gsampler,comp,index) {}
 
   StochasticObjective( const Ptr<Objective<Real>> &obj,
-               Teuchos::ParameterList             &parlist,
+               ROL::ParameterList             &parlist,
                const Ptr<SampleGenerator<Real>>   &sampler, 
                const int comp = 0, const int index = 0 )
     : StochasticObjective(obj,parlist,sampler,sampler,sampler,comp,index) {}

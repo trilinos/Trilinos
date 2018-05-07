@@ -125,7 +125,7 @@ public:
 
       @param[in]     parlist    is a parameter list containing algorithmic specifications
   */
-  NewtonKrylovStep( Teuchos::ParameterList &parlist, const bool computeObj = true )
+  NewtonKrylovStep( ROL::ParameterList &parlist, const bool computeObj = true )
     : Step<Real>(), secant_(ROL::nullPtr), krylov_(ROL::nullPtr),
       gp_(ROL::nullPtr), iterKrylov_(0), flagKrylov_(0),
       verbosity_(0), computeObj_(computeObj), useSecantPrecond_(false) {
@@ -155,7 +155,7 @@ public:
       @param[in]     krylov     is a user-defined Krylov object
       @param[in]     secant     is a user-defined secant object
   */
-  NewtonKrylovStep(Teuchos::ParameterList &parlist,
+  NewtonKrylovStep(ROL::ParameterList &parlist,
              const ROL::Ptr<Krylov<Real> > &krylov,
              const ROL::Ptr<Secant<Real> > &secant,
              const bool computeObj = true)

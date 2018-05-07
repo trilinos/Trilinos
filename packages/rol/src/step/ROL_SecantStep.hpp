@@ -83,7 +83,7 @@ public:
       @param[in]     parlist    is a parameter list containing algorithmic specifications
       @param[in]     secant     is a user-defined secant object
   */
-  SecantStep( Teuchos::ParameterList &parlist,
+  SecantStep( ROL::ParameterList &parlist,
               const ROL::Ptr<Secant<Real> > &secant = ROL::nullPtr,
               const bool computeObj = true )
     : Step<Real>(), secant_(secant), esec_(SECANT_USERDEFINED),

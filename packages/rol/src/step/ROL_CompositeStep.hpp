@@ -147,7 +147,7 @@ public:
 
   virtual ~CompositeStep() {}
 
-  CompositeStep( Teuchos::ParameterList & parlist ) : Step<Real>() {
+  CompositeStep( ROL::ParameterList & parlist ) : Step<Real>() {
     //ROL::Ptr<StepState<Real> > step_state = Step<Real>::getState();
     flagCG_ = 0;
     flagAC_ = 0;

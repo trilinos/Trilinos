@@ -180,7 +180,7 @@ private:
       supplied ParameterList.
       @param[in]  parlist   is the user-supplied ParameterList.
   */
-  void parseParameterList(Teuchos::ParameterList &parlist) {
+  void parseParameterList(ROL::ParameterList &parlist) {
     ROL::Ptr<StepState<Real> > step_state = Step<Real>::getState();
     // Trust-Region Parameters
     ROL::ParameterList &slist = parlist.sublist("Step");
@@ -342,7 +342,7 @@ public:
       @param[in]     secant     is a user-defined secant object
       @param[in]     parlist    is a parameter list containing algorithmic specifications
   */
-  TrustRegionStep( ROL::Ptr<Secant<Real> > &secant, Teuchos::ParameterList &parlist ) 
+  TrustRegionStep( ROL::Ptr<Secant<Real> > &secant, ROL::ParameterList &parlist ) 
     : Step<Real>(),
       xnew_(ROL::nullPtr), xold_(ROL::nullPtr), gp_(ROL::nullPtr),
       trustRegion_(ROL::nullPtr), model_(ROL::nullPtr),
@@ -363,7 +363,7 @@ public:
     useSecantPrecond_ = glist.sublist("Secant").get("Use as Preconditioner", false);
     useSecantHessVec_ = glist.sublist("Secant").get("Use as Hessian",        false);
     if ( secant_ == ROL::nullPtr ) {
-      Teuchos::ParameterList Slist;
+      ROL::ParameterList Slist;
       Slist.sublist("General").sublist("Secant").set("Type","Limited-Memory BFGS");
       Slist.sublist("General").sublist("Secant").set("Maximum Storage",10);
       secant_ = SecantFactory<Real>(Slist);

@@ -66,7 +66,7 @@ private:
   ROL::Ptr<Step<Real> >             step_;  
   ROL::Ptr<Algorithm<Real> >        algo_;
   ROL::Ptr<BoundConstraint<Real> >  bnd_;
-  Teuchos::ParameterList            parlist_;
+  ROL::ParameterList            parlist_;
 
   // Storage
   ROL::Ptr<Vector<Real> > x_;

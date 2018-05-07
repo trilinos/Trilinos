@@ -78,7 +78,7 @@ public:
 
       @param[in]     parlist    is a parameter list containing algorithmic specifications
   */
-  ProjectedNewtonStep( Teuchos::ParameterList &parlist, const bool computeObj = true )
+  ProjectedNewtonStep( ROL::ParameterList &parlist, const bool computeObj = true )
     : Step<Real>(), gp_(ROL::nullPtr), d_(ROL::nullPtr),
       verbosity_(0), computeObj_(computeObj), useProjectedGrad_(false) {
     // Parse ParameterList

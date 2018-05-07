@@ -52,7 +52,7 @@ namespace ROL {
 
 /* ROL Parameters */
 
-inline ROL::Ptr<const Teuchos::ParameterList> getValidROLParameters() {
+inline ROL::Ptr<const ROL::ParameterList> getValidROLParameters() {
   
   typedef ROL::ParameterList PL;
 
@@ -287,7 +287,7 @@ inline ROL::Ptr<const Teuchos::ParameterList> getValidROLParameters() {
 
 /* SOL Parameters */
 
-inline ROL::Ptr<const Teuchos::ParameterList> getValidSOLParameters() {
+inline ROL::Ptr<const ROL::ParameterList> getValidSOLParameters() {
   
   typedef ROL::ParameterList PL;
 

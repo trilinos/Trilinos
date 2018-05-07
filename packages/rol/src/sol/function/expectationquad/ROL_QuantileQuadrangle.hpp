@@ -106,9 +106,9 @@ private:
   Real alpha_;
   Real beta_;
 
-  void parseParameterList(Teuchos::ParameterList &parlist) {
+  void parseParameterList(ROL::ParameterList &parlist) {
     std::string type = parlist.sublist("SOL").get("Stochastic Component Type","Risk Averse");
-    Teuchos::ParameterList list;
+    ROL::ParameterList list;
     if (type == "Risk Averse") {
       list = parlist.sublist("SOL").sublist("Risk Measure").sublist("CVaR");
     }
@@ -187,7 +187,7 @@ public:
       \li "Smoothing Parameter" (must be positive)
       \li A sublist for plus function information.
   */
-  QuantileQuadrangle(Teuchos::ParameterList &parlist) : ExpectationQuad<Real>() {
+  QuantileQuadrangle(ROL::ParameterList &parlist) : ExpectationQuad<Real>() {
     parseParameterList(parlist);
     // Check inputs
     checkInputs();

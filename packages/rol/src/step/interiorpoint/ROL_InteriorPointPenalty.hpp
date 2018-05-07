@@ -146,7 +146,7 @@ public:
 
   InteriorPointPenalty( const ROL::Ptr<Objective<Real> > &obj,
                         const ROL::Ptr<BoundConstraint<Real> > &con, 
-                        Teuchos::ParameterList &parlist ) :
+                        ROL::ParameterList &parlist ) :
     obj_(obj), bnd_(con), lo_( con->getLowerBound() ), up_( con->getUpperBound() ) {
 
     Real one(1);

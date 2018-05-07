@@ -47,7 +47,7 @@
 #include "Teuchos_XMLParameterListCoreHelpers.hpp"
 
 namespace ROL {
-using ParameterList = Teuchos::ParameterList;
+using ParameterList = ROL::ParameterList;
 
 inline
 void readParametersFromXml( const std::string &filename,

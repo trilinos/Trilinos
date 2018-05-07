@@ -88,7 +88,7 @@ private:
 
 public:
   
-  GMRES( Teuchos::ParameterList &parlist ) : Krylov<Real>(parlist), isInitialized_(false) {
+  GMRES( ROL::ParameterList &parlist ) : Krylov<Real>(parlist), isInitialized_(false) {
 
     
     

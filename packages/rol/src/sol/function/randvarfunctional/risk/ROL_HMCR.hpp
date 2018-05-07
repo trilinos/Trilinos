@@ -153,11 +153,11 @@ public:
       \li "Order" (unsigned integer)
       \li A sublist for plus function information.
   */
-  HMCR( Teuchos::ParameterList &parlist )
+  HMCR( ROL::ParameterList &parlist )
     : RandVarFunctional<Real>(),
       pnorm_(0), coeff0_(0), coeff1_(0), coeff2_(0),
       HMCR_firstReset_(true) {
-    Teuchos::ParameterList &list
+    ROL::ParameterList &list
       = parlist.sublist("SOL").sublist("Risk Measure").sublist("HMCR");
     // Check HMCR inputs
     prob_  = list.get<Real>("Confidence Level");

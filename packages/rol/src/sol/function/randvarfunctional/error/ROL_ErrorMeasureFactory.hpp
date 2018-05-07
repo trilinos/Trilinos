@@ -142,7 +142,7 @@ namespace ROL {
   }
 
   template<class Real>
-  inline Ptr<RandVarFunctional<Real> > ErrorMeasureFactory(Teuchos::ParameterList &parlist) {
+  inline Ptr<RandVarFunctional<Real> > ErrorMeasureFactory(ROL::ParameterList &parlist) {
     std::string risk = parlist.sublist("SOL").sublist("Error Measure").get("Name","Least Squares");
     EErrorMeasure ed = StringToEErrorMeasure(risk);
     switch(ed) {

@@ -57,7 +57,7 @@
 
 namespace ROL {
 template<class Real>
-  inline ROL::Ptr<TrustRegion<Real> > TrustRegionFactory(Teuchos::ParameterList &parlist) {
+  inline ROL::Ptr<TrustRegion<Real> > TrustRegionFactory(ROL::ParameterList &parlist) {
     ETrustRegion etr = StringToETrustRegion(
       parlist.sublist("Step").sublist("Trust Region").get("Subproblem Solver","Dogleg"));
     switch(etr) {

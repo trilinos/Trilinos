@@ -114,7 +114,7 @@ private:
   }
 
 public:
-  UserInputGenerator(Teuchos::ParameterList &parlist,
+  UserInputGenerator(ROL::ParameterList &parlist,
                const ROL::Ptr<BatchManager<Real> > &bman)
     : SampleGenerator<Real>(bman) {
     ROL::ParameterList &list

@@ -268,7 +268,7 @@ public:
     if (solverType_==1 || (solverType_==3 && cnorm > ctol)) {
       ROL::Ptr<Constraint_SimOpt<Real> > con = ROL::makePtrFromRef(*this);
       ROL::Ptr<Objective<Real> > obj = ROL::makePtr<NonlinearLeastSquaresObjective_SimOpt<Real>>(con,u,z,c,true);
-      Teuchos::ParameterList parlist;
+      ROL::ParameterList parlist;
       parlist.sublist("Status Test").set("Gradient Tolerance",ctol);
       parlist.sublist("Status Test").set("Step Tolerance",stol_);
       parlist.sublist("Status Test").set("Iteration Limit",maxit_);
@@ -285,7 +285,7 @@ public:
         = ROL::makePtr<Constraint_State<Real>>(con,zVec);
       ROL::Ptr<Objective<Real> > objU
         = ROL::makePtr<Objective_FSsolver<Real>>();
-      Teuchos::ParameterList parlist;
+      ROL::ParameterList parlist;
       parlist.sublist("Status Test").set("Constraint Tolerance",ctol);
       parlist.sublist("Status Test").set("Step Tolerance",stol_);
       parlist.sublist("Status Test").set("Iteration Limit",maxit_);

@@ -133,14 +133,14 @@ private:
 
 public:
 
-  SROMGenerator(Teuchos::ParameterList               &parlist,
+  SROMGenerator(ROL::ParameterList               &parlist,
           const Ptr<BatchManager<Real>>              &bman,
           const std::vector<Ptr<Distribution<Real>>> &dist,
                 std::ostream                         &outStream = std::cout)
     : SampleGenerator<Real>(bman), parlist_(parlist), dist_(dist),
       dimension_(dist.size()) {
     // Get SROM sublist
-    Teuchos::ParameterList &list = parlist.sublist("SOL").sublist("Sample Generator").sublist("SROM");
+    ROL::ParameterList &list = parlist.sublist("SOL").sublist("Sample Generator").sublist("SROM");
     numSamples_    = list.get("Number of Samples",50);
     adaptive_      = list.get("Adaptive Sampling",false);
     numNewSamples_ = list.get("Number of New Samples Per Adaptation",0);
@@ -163,7 +163,7 @@ public:
     Ptr<BoundConstraint<Real>> bnd = makePtr<Bounds<Real>>(x_lo,x_hi);
     Ptr<Constraint<Real>>      con = makePtr<ScalarLinearConstraint<Real>>(x_eq,1.0);
     if (presolve) { // Optimize over atom locations only
-      Teuchos::ParameterList pslist(list);
+      ROL::ParameterList pslist(list);
       pslist.sublist("Step").set("Type","Trust Region");
       Ptr<Objective<Real>> obj = initialize_objective(dist,bman,false,true,pslist);
       OptimizationProblem<Real> optProblem(obj,x,bnd);
@@ -271,7 +271,7 @@ private:
   Ptr<Objective<Real>>  initialize_objective(const std::vector<Ptr<Distribution<Real>>> &dist,
                                              const Ptr<BatchManager<Real>>              &bman,
                                              const bool optProb, const bool optAtom,
-                                             Teuchos::ParameterList                     &list) const {
+                                             ROL::ParameterList                     &list) const {
     std::vector<Ptr<Objective<Real>>> obj_vec;
     // Build CDF objective function
     Real scale = list.get("CDF Smoothing Parameter",1.e-2);

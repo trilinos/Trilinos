@@ -155,9 +155,9 @@ public:
       \li "Number of Quadrature Points"
       \li A sublist for plus function information.
   */
-  ChebyshevSpectral( Teuchos::ParameterList &parlist )
+  ChebyshevSpectral( ROL::ParameterList &parlist )
     : SpectralRisk<Real>() {
-    Teuchos::ParameterList &list
+    ROL::ParameterList &list
       = parlist.sublist("SOL").sublist("Risk Measure").sublist("Chebyshev Spectral Risk");
     // Grab confidence level and quadrature order
     lower_ = list.get("Lower Bound",0.0);

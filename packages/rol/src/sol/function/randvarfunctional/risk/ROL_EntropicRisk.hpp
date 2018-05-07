@@ -105,9 +105,9 @@ public:
       and withing the "Entropic Risk" sublist should have
       \li "Rate" (greater than 0).
   */
-  EntropicRisk(Teuchos::ParameterList &parlist)
+  EntropicRisk(ROL::ParameterList &parlist)
     : RandVarFunctional<Real>() {
-    Teuchos::ParameterList &list
+    ROL::ParameterList &list
       = parlist.sublist("SOL").sublist("Risk Measure").sublist("Entropic Risk");
     coeff_ = list.get<Real>("Rate");
     checkInputs();

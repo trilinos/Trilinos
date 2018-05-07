@@ -265,7 +265,7 @@ public:
   using Step<Real>::compute;
   using Step<Real>::update;
 
-  PrimalDualInteriorPointStep( Teuchos::ParameterList &parlist, 
+  PrimalDualInteriorPointStep( ROL::ParameterList &parlist, 
                                const ROL::Ptr<Krylov<Real> > &krylov = ROL::nullPtr,
                                const ROL::Ptr<LinearOperator<Real> > &precond = ROL::nullPtr ) : 
     Step<Real>(), krylov_(krylov), precond_(precond), iterKrylov_(0), flagKrylov_(0) {

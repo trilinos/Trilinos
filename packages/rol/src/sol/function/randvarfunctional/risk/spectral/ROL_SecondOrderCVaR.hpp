@@ -123,9 +123,9 @@ private:
 
 public:
 
-  SecondOrderCVaR( Teuchos::ParameterList &parlist )
+  SecondOrderCVaR( ROL::ParameterList &parlist )
     : SpectralRisk<Real>() {
-    Teuchos::ParameterList &list
+    ROL::ParameterList &list
       = parlist.sublist("SOL").sublist("Risk Measure").sublist("Second Order CVaR");
     // Grab confidence level and quadrature order
     alpha_ = list.get<Real>("Confidence Level");

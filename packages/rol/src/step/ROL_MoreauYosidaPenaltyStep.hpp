@@ -197,7 +197,7 @@ public:
 
   ~MoreauYosidaPenaltyStep() {}
 
-  MoreauYosidaPenaltyStep(Teuchos::ParameterList &parlist)
+  MoreauYosidaPenaltyStep(ROL::ParameterList &parlist)
     : Step<Real>(), algo_(ROL::nullPtr),
       x_(ROL::nullPtr), g_(ROL::nullPtr), l_(ROL::nullPtr),
       tau_(10), print_(false), parlist_(parlist), subproblemIter_(0),

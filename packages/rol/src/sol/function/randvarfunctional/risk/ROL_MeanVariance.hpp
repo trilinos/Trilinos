@@ -183,9 +183,9 @@ public:
       \li "Deviation Type" (eighter "Upper" or "Absolute")
       \li A sublist for positive function information.
   */
-  MeanVariance( Teuchos::ParameterList &parlist )
+  MeanVariance( ROL::ParameterList &parlist )
     : RandVarFunctional<Real>() {
-    Teuchos::ParameterList &list
+    ROL::ParameterList &list
       = parlist.sublist("SOL").sublist("Risk Measure").sublist("Mean Plus Variance");
     // Get data from parameter list
     Teuchos::Array<Real> order

@@ -50,7 +50,7 @@
 namespace ROL {
 
 template<class Real>
-inline void RiskMeasureInfo(Teuchos::ParameterList &parlist, std::string &name,
+inline void RiskMeasureInfo(ROL::ParameterList &parlist, std::string &name,
                             int &nStatistic, std::vector<Real> &lower,
                             std::vector<Real> &upper, bool &isBoundActivated,
                             const bool printToStream = false,
@@ -89,7 +89,7 @@ inline void RiskMeasureInfo(Teuchos::ParameterList &parlist, std::string &name,
     upper.resize(nStatistic,ROL_INF<Real>());
   }
   else if ( name == "Mixed CVaR" ) {
-    Teuchos::ParameterList &list
+    ROL::ParameterList &list
       = parlist.sublist("SOL").sublist("Risk Measure").sublist("Mixed CVaR");
     Teuchos::Array<Real> prob
       = Teuchos::getArrayFromStringParameter<Real>(list,"Probability Array");
@@ -100,7 +100,7 @@ inline void RiskMeasureInfo(Teuchos::ParameterList &parlist, std::string &name,
   else if ( name == "Second Order CVaR"       ||
             name == "Chebyshev Spectral Risk" ||
             name == "Spectral Risk" ) {
-    Teuchos::ParameterList &list
+    ROL::ParameterList &list
       = parlist.sublist("SOL").sublist("Risk Measure").sublist(name);
     nStatistic = list.get("Number of Quadrature Points",5);
     lower.resize(nStatistic,ROL_NINF<Real>());
@@ -114,7 +114,7 @@ inline void RiskMeasureInfo(Teuchos::ParameterList &parlist, std::string &name,
     nStatistic = 0;
   }
   else if ( name == "Convex Combination Risk Measure" ) {
-    Teuchos::ParameterList &list
+    ROL::ParameterList &list
       = parlist.sublist("SOL").sublist("Risk Measure").sublist("Convex Combination Risk Measure");
     // Get convex combination parameters
     Teuchos::Array<Real> lambda
@@ -125,7 +125,7 @@ inline void RiskMeasureInfo(Teuchos::ParameterList &parlist, std::string &name,
       std::ostringstream convert;
       convert << i;
       std::string si = convert.str();
-      Teuchos::ParameterList &ilist = list.sublist(si);
+      ROL::ParameterList &ilist = list.sublist(si);
       std::string namei = ilist.get<std::string>("Name");
       riskString.push_back(namei);
     }
@@ -160,7 +160,7 @@ inline void RiskMeasureInfo(Teuchos::ParameterList &parlist, std::string &name,
         upper.push_back(ROL_INF<Real>()); upper.push_back(ROL_INF<Real>());
       }
       else if ( riskString[i] == "Mixed CVaR" ) {
-        Teuchos::ParameterList &MQlist = list.sublist("Mixed CVaR");
+        ROL::ParameterList &MQlist = list.sublist("Mixed CVaR");
         Teuchos::Array<Real> prob
           = Teuchos::getArrayFromStringParameter<Real>(MQlist,"Probability Array");
         nStatistic += prob.size();
@@ -172,7 +172,7 @@ inline void RiskMeasureInfo(Teuchos::ParameterList &parlist, std::string &name,
       else if ( riskString[i] == "Second Order CVaR"       ||
                 riskString[i] == "Chebyshev Spectral Risk" ||
                 riskString[i] == "Spectral Risk" ) {
-        Teuchos::ParameterList &SQlist = list.sublist(riskString[i]);
+        ROL::ParameterList &SQlist = list.sublist(riskString[i]);
         int nSQQstat = SQlist.get("Number of Quadrature Points",5);
         nStatistic += nSQQstat;
         for (int j = 0; j < nSQQstat; ++j) {

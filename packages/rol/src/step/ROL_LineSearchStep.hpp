@@ -203,7 +203,7 @@ public:
       @param[in]     krylov     is a user-defined Krylov object
       @param[in]     nlcg       is a user-defined Nonlinear CG object
   */
-  LineSearchStep( Teuchos::ParameterList &parlist,
+  LineSearchStep( ROL::ParameterList &parlist,
                   const ROL::Ptr<LineSearch<Real> > &lineSearch = ROL::nullPtr,
                   const ROL::Ptr<Secant<Real> > &secant = ROL::nullPtr,
                   const ROL::Ptr<Krylov<Real> > &krylov = ROL::nullPtr,

@@ -197,9 +197,9 @@ public:
       \li "Deviation Type" (eighter "Upper" or "Absolute")
       \li A sublist for positive function information.
   */
-  MeanDeviationFromTarget( Teuchos::ParameterList &parlist )
+  MeanDeviationFromTarget( ROL::ParameterList &parlist )
     : RandVarFunctional<Real>(), firstResetMDT_(true) {
-    Teuchos::ParameterList &list
+    ROL::ParameterList &list
       = parlist.sublist("SOL").sublist("Risk Measure").sublist("Mean Plus Deviation From Target");
     // Get data from parameter list
     Teuchos::Array<Real> target

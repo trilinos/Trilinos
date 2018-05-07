@@ -131,9 +131,9 @@ public:
       within the "F-Divergence" sublist should have the following parameters
       \li "Threshold" (greater than 0)
   */
-  FDivergence(Teuchos::ParameterList &parlist) : RandVarFunctional<Real>(),
+  FDivergence(ROL::ParameterList &parlist) : RandVarFunctional<Real>(),
     valLam_(0),valLam2_(0), valMu_(0), valMu2_(0) {
-    Teuchos::ParameterList &list
+    ROL::ParameterList &list
       = parlist.sublist("SOL").sublist("Risk Measure").sublist("F-Divergence");
     thresh_ = list.get<Real>("Threshold");
     checkInputs();

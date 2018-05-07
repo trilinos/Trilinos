@@ -134,9 +134,9 @@ private:
 
 public:
 
-  MixedCVaR( Teuchos::ParameterList &parlist )
+  MixedCVaR( ROL::ParameterList &parlist )
     : RandVarFunctional<Real>() {
-    Teuchos::ParameterList &list
+    ROL::ParameterList &list
       = parlist.sublist("SOL").sublist("Risk Measure").sublist("Mixed CVaR");
     // Grab probability and coefficient arrays
     prob_  = Teuchos::getArrayFromStringParameter<Real>(list,"Probability Array");

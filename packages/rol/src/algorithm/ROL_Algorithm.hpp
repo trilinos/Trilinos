@@ -114,7 +114,7 @@ public:
              bool printHeader = false) {
 
 // Uncomment to test for parameter inconsistencies
-//    ROL::Ptr<const Teuchos::ParameterList> validParlist = getValidROLParameters();
+//    ROL::Ptr<const ROL::ParameterList> validParlist = getValidROLParameters();
 //    parlist.validateParametersAndSetDefaults(*validParlist);
 
     EStep els = StringToEStep(stepname);

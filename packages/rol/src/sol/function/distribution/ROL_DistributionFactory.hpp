@@ -164,7 +164,7 @@ namespace ROL {
   }
 
   template<class Real>
-  inline ROL::Ptr<Distribution<Real> > DistributionFactory(Teuchos::ParameterList &parlist) {
+  inline ROL::Ptr<Distribution<Real> > DistributionFactory(ROL::ParameterList &parlist) {
     std::string dist;
     ROL::ParameterList sollist;
     if ( parlist.isSublist("SOL") ) {

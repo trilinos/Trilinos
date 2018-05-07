@@ -50,7 +50,7 @@
 namespace ROL {
 
 template<class Real>
-inline void RegretMeasureInfo(Teuchos::ParameterList &parlist, std::string &name,
+inline void RegretMeasureInfo(ROL::ParameterList &parlist, std::string &name,
                             int &nStatistic, std::vector<Real> &lower,
                             std::vector<Real> &upper, bool &isBoundActivated,
                             const bool printToStream = false,

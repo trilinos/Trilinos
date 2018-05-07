@@ -92,9 +92,9 @@ private:
 
 public:
 
-  QuantileRadius( Teuchos::ParameterList &parlist )
+  QuantileRadius( ROL::ParameterList &parlist )
     : RandVarFunctional<Real>() {
-    Teuchos::ParameterList &list
+    ROL::ParameterList &list
       = parlist.sublist("SOL").sublist("Risk Measure").sublist("Quantile Radius");
     // Grab probability and coefficient arrays
     prob_  = list.get<Real>("Confidence Level");

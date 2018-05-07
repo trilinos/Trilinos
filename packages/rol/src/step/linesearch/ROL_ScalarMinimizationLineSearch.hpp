@@ -172,7 +172,7 @@ private:
 
 public:
   // Constructor
-  ScalarMinimizationLineSearch( Teuchos::ParameterList &parlist, 
+  ScalarMinimizationLineSearch( ROL::ParameterList &parlist, 
     const ROL::Ptr<ScalarMinimization<Real> > &sm = ROL::nullPtr,
     const ROL::Ptr<Bracketing<Real> > &br = ROL::nullPtr,
     const ROL::Ptr<ScalarFunction<Real> > &sf  = ROL::nullPtr )
