@@ -117,6 +117,19 @@ int main( int argc, char* argv[] )
     ROL::RandomizeVector<RealT>(*r_1);
     ROL::RandomizeVector<RealT>(*r_2);
 
+    // check the pint constraint
+    {
+      auto c   = state->clone();
+      auto jv  = c->clone();
+      auto v_u = state->clone();
+      ROL::RandomizeVector<RealT>(*state);
+      ROL::RandomizeVector<RealT>(*control);
+      ROL::RandomizeVector<RealT>(*v_u);
+
+      pint_con->checkSolve(*state,*control,*c,true,*outStream);
+      pint_con->checkApplyJacobian_1(*state,*control,*v_u,*jv,true,*outStream);
+    }
+
     int numSolves = 5;
     double tol = 1e-12;
     std::clock_t timer_total = 0;
