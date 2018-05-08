@@ -187,10 +187,8 @@ public:
     ROL::ParameterList &list
       = parlist.sublist("SOL").sublist("Risk Measure").sublist("Mean Plus Variance");
     // Get data from parameter list
-    std::vector<Real> order
-      = ROL::getArrayFromStringParameter<double>(list,"Orders");
-    std::vector<Real> coeff
-      = ROL::getArrayFromStringParameter<double>(list,"Coefficients");
+    order_ = ROL::getArrayFromStringParameter<double>(list,"Orders");
+    coeff_ = ROL::getArrayFromStringParameter<double>(list,"Coefficients");
     // Build (approximate) positive function
     std::string type = list.get<std::string>("Deviation Type");
     if ( type == "Upper" ) {
@@ -205,7 +203,7 @@ public:
     }
     // Check inputs
     checkInputs();
-    NumMoments_ = order.size();
+    NumMoments_ = order_.size();
   }
 
   void setStorage(const Ptr<SampledScalar<Real>> &value_storage,
