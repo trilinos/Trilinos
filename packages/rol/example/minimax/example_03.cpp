@@ -87,13 +87,15 @@ int main(int argc, char *argv[]) {
     // Initialize iteration vectors.
     ROL::Ptr<std::vector<RealT> > x_ptr = ROL::makePtr<std::vector<RealT>>(dim, 0.0);
     ROL::StdVector<RealT> x(x_ptr);
+
     ROL::Ptr<std::vector<RealT> > z_ptr = ROL::makePtr<std::vector<RealT>>(dim, 0.0);
     (*z_ptr)[0] = 0.0; (*z_ptr)[1] = 1.0; (*z_ptr)[2] = 2.0; (*z_ptr)[3] = -1.0;
+
     ROL::StdVector<RealT> z(z_ptr);
 
     // Algorithmic input parameters.
     std::string filename = "input.xml";
-    auto parlist ROL::getParametersFromXmlFile( filename );
+    auto parlist = ROL::getParametersFromXmlFile( filename );
 
     std::string stepname = "Bundle";
     ROL::Algorithm<RealT> algo(stepname,*parlist);

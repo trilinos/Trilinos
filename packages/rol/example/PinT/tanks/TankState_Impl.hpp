@@ -74,8 +74,8 @@ TankState<Real>::TankState( ROL::ParameterList& pl ) :
   h_(0), Qout_(2*Ntanks_), Qin_(Ntanks_), z_(0) {
   // ------------- End Initializer List ----------------//
 
-  auto ptrows = Teuchos::getArrayFromStringParameter<int>( pl, "Pass-Through Rows"    );
-  auto ptcols = Teuchos::getArrayFromStringParameter<int>( pl, "Pass-Through Columns" );
+  auto ptrows = ROL::getArrayFromStringParameter<int>( pl, "Pass-Through Rows"    );
+  auto ptcols = ROL::getArrayFromStringParameter<int>( pl, "Pass-Through Columns" );
 
   vector<size_type> band_index{0, 1, cols_};
   vector<size_type> shift_index{1, cols_};
