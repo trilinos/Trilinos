@@ -44,7 +44,6 @@
 #include "Rocket.hpp"
 #include "ROL_OptimizationSolver.hpp"
 #include "ROL_Reduced_Objective_SimOpt.hpp"
-#include "Teuchos_XMLParameterListHelpers.hpp"
 #include <iostream>
 #include <fstream>
 #include <iomanip>
@@ -54,8 +53,8 @@ int main( int argc, char* argv[] ) {
    
   using vector = std::vector<double>;
 
-  auto parlist = Teuchos::rcp( new Teuchos::ParameterList() );
-  Teuchos::updateParametersFromXmlFile("Rocket.xml",parlist.ptr()); 
+  auto parlist = ROL::getParametersFromXmlFile( "Rocket.xml" ); 
+  
 
   int     N  = parlist->get("Time Steps" ,      100   );  
   double  T  = parlist->get("Final Time",       20.0  );    

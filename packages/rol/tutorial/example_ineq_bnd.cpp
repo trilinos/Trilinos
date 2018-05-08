@@ -147,7 +147,7 @@ int main(int argc, char *argv[]) {
 
   try {
  
-    Teuchos::ParameterList parlist;
+    ROL::ParameterList parlist;
     parlist.sublist("Step").set("Type","Augmented Lagrangian");
     
 
