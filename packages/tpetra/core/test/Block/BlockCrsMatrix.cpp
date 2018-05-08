@@ -1670,7 +1670,6 @@ namespace {
         out << "A reports a local error on some process!" << endl;
         gathervPrint (out, A->errorMessages (), *comm);
       }
-      return;
     }
 
     reduceAll<int, int> (*comm, REDUCE_MIN, lclSuccess, outArg (gblSuccess));
