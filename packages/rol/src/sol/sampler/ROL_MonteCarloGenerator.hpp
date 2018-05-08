@@ -69,7 +69,7 @@ private:
 
   Real ierf(Real input) const {
     std::vector<Real> coeff;
-    Real pi = Teuchos::ScalarTraits<Real>::pi(), zero(0), one(1), two(2), tol(1e-4);
+    Real pi = ROL::ScalarTraits<Real>::pi(), zero(0), one(1), two(2), tol(1e-4);
     Real c(1);
     Real tmp = c * (std::sqrt(pi)/two * input);
     Real val = tmp;

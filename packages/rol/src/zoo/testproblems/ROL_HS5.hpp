@@ -159,7 +159,7 @@ public:
     int n = 2;
     // Get Solution
     ROL::Ptr<std::vector<Real> > xp = ROL::makePtr<std::vector<Real>>(n,0.0);
-    (*xp)[0] = -Teuchos::ScalarTraits<Real>::pi()/3.0 + 1.0/2.0; (*xp)[1] = -Teuchos::ScalarTraits<Real>::pi()/3.0 - 1.0/2.0;
+    (*xp)[0] = -ROL::ScalarTraits<Real>::pi()/3.0 + 1.0/2.0; (*xp)[1] = -ROL::ScalarTraits<Real>::pi()/3.0 - 1.0/2.0;
     return ROL::makePtr<StdVector<Real>>(xp);
   }
 
