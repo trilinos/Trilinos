@@ -94,8 +94,8 @@ int main(int argc, char *argv[]) {
 
     // Algorithmic input parameters.
     std::string filename = "input.xml";
-    auto parlist = ROL::makePtr<ROL::ParameterList>()
-    Teuchos::updateParametersFromXmlFile( filename, parlist.ptr() );
+    auto parlist = ROL::getParametersFromXmlFile( filename );
+
     std::string stepname = "Bundle";
     ROL::Algorithm<RealT> algo(stepname,*parlist);
 

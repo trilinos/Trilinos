@@ -150,8 +150,7 @@ int main(int argc, char *argv[]) {
 
     // Primal dual active set.
     std::string filename = "input.xml";
-    auto parlist = ROL::makePtr<Teuchos::ParameterList>()
-    Teuchos::updateParametersFromXmlFile( filename, parlist.ptr() );
+    auto parlist = ROL::getParametersFromXmlFile( filename, parlist.ptr() );
 
     // Krylov parameters.
     parlist->sublist("General").sublist("Krylov").set("Absolute Tolerance",1.e-4);
@@ -170,7 +169,7 @@ int main(int argc, char *argv[]) {
     parlist->sublist("Status Test").set("Iteration Limit",100);
 
     // Define algorithm.
-    ROL::Ptr<ROL::Algorithm<RealT> > algo = ROL::makePtr<ROL::Algorithm<RealT>>("Primal Dual Active Set",*parlist,false);
+    auto algo = ROL::makePtr<ROL::Algorithm<RealT>>("Primal Dual Active Set",*parlist,false);
 
     // Iteration vector.
     ROL::Ptr<vector> x_ptr = ROL::makePtr<vector>(dim, 0.0);

@@ -1,9 +1,9 @@
 # Always built.
 ADD_SUBDIRECTORY(rosenbrock)
-ADD_SUBDIRECTORY(burgers-control)
 ADD_SUBDIRECTORY(poisson-control)
 ADD_SUBDIRECTORY(poisson-inversion)
-ADD_SUBDIRECTORY(parabolic-control)
+
+
 ADD_SUBDIRECTORY(simple-eq-constr)
 ADD_SUBDIRECTORY(diode-circuit)
 ADD_SUBDIRECTORY(diode-circuit-simopt)
@@ -26,10 +26,10 @@ ADD_SUBDIRECTORY(tensor-opt)
 
 
 IF( NOT ${${PACKAGE_NAME}_ENABLE_STD_SHARED_PTR} )
+ADD_SUBDIRECTORY(burgers-control)
+ADD_SUBDIRECTORY(parabolic-control)
 ADD_SUBDIRECTORY(PDE-OPT)
 ENDIF( NOT ${${PACKAGE_NAME}_ENABLE_STD_SHARED_PTR} )
-
-
 
 ADD_SUBDIRECTORY(PinT)
 

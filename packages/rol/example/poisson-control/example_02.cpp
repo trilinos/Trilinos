@@ -10,10 +10,11 @@
 #include "ROL_RiskNeutralObjective.hpp"
 #include "ROL_Vector_SimOpt.hpp"
 #include "ROL_Bounds.hpp"
+#include "ROL_ParameterList.hpp"
+
 // Teuchos includes
 #include "Teuchos_Time.hpp"
 #include "Teuchos_oblackholestream.hpp"
-#include "Teuchos_XMLParameterListHelpers.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
 #include "Teuchos_Comm.hpp"
 #include "Teuchos_DefaultComm.hpp"
@@ -22,8 +23,8 @@
 int main( int argc, char *argv[] ) {  
 
   Teuchos::GlobalMPISession mpiSession(&argc, &argv);
-  ROL::Ptr<const Teuchos::Comm<int> > comm =
-    Teuchos::DefaultComm<int>::getComm();
+
+  auto comm = ROL::toPtr( Teuchos::DefaultComm<int>::getComm() );
 
   // This little trick lets us print to std::cout only if a (dummy) command-line argument is provided.
   int iprint     = argc - 1;
@@ -45,7 +46,7 @@ int main( int argc, char *argv[] ) {
     /***************************************************************************/
     // Get finite element parameter list
     std::string filename = "example_02.xml";
-    auto parlist ROL::getParametersFromXmlFile( filename );
+    auto parlist = ROL::getParametersFromXmlFile( filename );
 
     if ( parlist->get("Display Option",0) && (comm->getRank() > 0) ) {
       parlist->set("Display Option",0);

@@ -89,9 +89,8 @@ int main(int argc, char *argv[]) {
 
     int dim = 10; // Set problem dimension. 
 
-    ROL::Ptr<ParameterList> parlist = ROL::makePtr<ParameterList>();
     std::string paramfile = "parameters.xml";
-    updateParametersFromXmlFile(paramfile,parlist.ptr());
+    auto parlist = ROL::getParametersFromXmlFile( paramfile );
 
    // Define algorithm.
     ROL::Algorithm<RealT> algo("Trust-Region",*parlist);
