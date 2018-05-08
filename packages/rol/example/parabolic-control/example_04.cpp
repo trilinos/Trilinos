@@ -813,8 +813,8 @@ int main(int argc, char *argv[]) {
 
     // Primal dual active set.
     std::string filename = "input.xml";
-    auto parlist = ROL::makePtr<ROL::ParameterList>()
-    Teuchos::updateParametersFromXmlFile( filename, parlist.ptr() );
+    auto parlist = ROL::getParametersFromXmlFile( filename );
+
     // Krylov parameters.
     parlist->sublist("General").sublist("Krylov").set("Absolute Tolerance",1.e-8);
     parlist->sublist("General").sublist("Krylov").set("Relative Tolerance",1.e-4);
