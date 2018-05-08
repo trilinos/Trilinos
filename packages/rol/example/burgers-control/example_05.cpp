@@ -78,8 +78,7 @@ int main(int argc, char* argv[]) {
     /**********************************************************************************************/
     // Get ROL parameterlist
     std::string filename = "input.xml";
-    auto parlist = ROL::makePtr<ROL::ParameterList>()
-    Teuchos::updateParametersFromXmlFile( filename, parlist.ptr() );
+    auto parlist = ROL::getParametersFromXmlFile( filename );
     // Build ROL algorithm
     parlist->sublist("Status Test").set("Gradient Tolerance",1.e-7);
     parlist->sublist("Status Test").set("Step Tolerance",1.e-14);

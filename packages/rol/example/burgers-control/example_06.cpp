@@ -52,11 +52,11 @@
 //#include "ROL_HMCRObjective.hpp"
 #include "ROL_RiskVector.hpp"
 #include "ROL_StochasticObjective.hpp"
+#include "ROL_ParameterList.hpp"
 
 #include "ROL_MonteCarloGenerator.hpp"
 
 #include "Teuchos_oblackholestream.hpp"
-#include "Teuchos_XMLParameterListHelpers.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
 #include "Teuchos_Comm.hpp"
 #include "Teuchos_DefaultComm.hpp"
@@ -152,7 +152,7 @@ int main(int argc, char *argv[]) {
     RealT zvar = 0.0*random<RealT>(comm);
     RealT gvar = random<RealT>(comm);
     RealT yvar = random<RealT>(comm);
-    ROL::Ptr<ROL::ParameterList> hmcrlist = ROL::makePtr<ROL::ParameterList>()
+    ROL::Ptr<ROL::ParameterList> hmcrlist = ROL::makePtr<ROL::ParameterList>();
     hmcrlist->sublist("SOL").sublist("Risk Measure").set("Name","HMCR");
     ROL::RiskVector<RealT> z(hmcrlist,zp,zvar), g(hmcrlist,gzp,gvar), y(hmcrlist,yzp,yvar);
     // INITIALIZE STATE VECTORS
@@ -237,9 +237,7 @@ int main(int argc, char *argv[]) {
     /*************************************************************************/
     // READ IN XML INPUT
     std::string filename = "input.xml";
-    ROL::Ptr<ROL::ParameterList> parlist
-      = ROL::makePtr<ROL::ParameterList>()
-    Teuchos::updateParametersFromXmlFile( filename, parlist.ptr() );
+    auto parlist = ROL::getParametersFromXmlFile( filename );
     // DEFINE ALGORITHM
     ROL::Algorithm<RealT> algo("Trust Region",*parlist,false);
     // RUN OPTIMIZATION
