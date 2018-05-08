@@ -66,6 +66,9 @@ namespace panzer {
 template <typename LocalOrdinalT,typename GlobalOrdinalT>
 class BlockedDOFManager; //forward declaration
 
+template <typename LocalOrdinalT,typename GlobalOrdinalT>
+class UniqueGlobalIndexer; //forward declaration
+
 /** \brief Pushes residual values into the residual vector for a 
            Newton-based solve
 
@@ -152,7 +155,17 @@ private:
   // for scattering
   Teuchos::RCP<const panzer::BlockedDOFManager<LO,GO> > globalIndexer_;
 
-  std::vector<int> fieldIds_; // field IDs needing mapping
+  //! Vector of global indexers, one for each scattered field
+  //! respectively. This is the global indexer for the Thyra
+  //! ProductVector sub-block.
+  std::vector<Teuchos::RCP<const panzer::UniqueGlobalIndexer<LO,GO>>> fieldGlobalIndexers_;
+
+  //! Field IDs in the local product vector block (not global field id)
+  std::vector<int> fieldIds_;
+
+  //! Returns the index into the Thyra ProductVector sub-block. Size
+  //! of number of fields to scatter.
+  std::vector<int> productVectorBlockIndex_;
 
   // This maps the scattered field names to the DOF manager field
   // For instance a Navier-Stokes map might look like
@@ -160,7 +173,16 @@ private:
   //    fieldMap_["RESIDUAL_Pressure"] --> "Pressure"
   Teuchos::RCP<const std::map<std::string,std::string> > fieldMap_;
 
-  std::size_t num_nodes;
+  //! Local indices for unknowns
+  Kokkos::View<LO**,PHX::Device> worksetLIDs_;
+
+  //! Offset into the cell lids for each field
+  std::vector<Kokkos::View<int*,PHX::Device>> fieldOffsets_;
+
+  //! The local basis index corresponding to the fieldOffset_. Used to
+  //! index into the basis index of MDFields. This is only required
+  //! for tangent/normal BCs.
+  std::vector<Kokkos::View<int*,PHX::Device>> basisIndexForMDFieldOffsets_;
 
   std::size_t side_subcell_dim_;
   std::size_t local_side_id_;

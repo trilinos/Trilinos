@@ -143,8 +143,8 @@ ScatterDirichletResidual_BlockedTpetra(const Teuchos::RCP<const BlockedDOFManage
   }
 
   checkApplyBC_ = p.isParameter("Check Apply BC") ? p.get<bool>("Check Apply BC") : false;
+  applyBC_.resize(names.size()); // must size even if not used for lambda capture
   if (checkApplyBC_) {
-    applyBC_.resize(names.size());
     for (std::size_t eq = 0; eq < names.size(); ++eq) {
       applyBC_[eq] = PHX::MDField<const bool,Cell,NODE>(std::string("APPLY_BC_")+fieldMap_->find(names[eq])->second,dl);
       this->addDependentField(applyBC_[eq]);
@@ -163,25 +163,67 @@ ScatterDirichletResidual_BlockedTpetra(const Teuchos::RCP<const BlockedDOFManage
 // **********************************************************************
 template <typename TRAITS,typename LO,typename GO,typename NodeT>
 void panzer::ScatterDirichletResidual_BlockedTpetra<panzer::Traits::Residual, TRAITS,LO,GO,NodeT>::
-postRegistrationSetup(typename TRAITS::SetupData /* d */, 
+postRegistrationSetup(typename TRAITS::SetupData d, 
                       PHX::FieldManager<TRAITS>& fm)
 {
+  const Workset & workset_0 = (*d.worksets_)[0];
+  const std::string blockId = this->wda(workset_0).block_id;
+
   fieldIds_.resize(scatterFields_.size());
-  // load required field numbers for fast use
+  fieldOffsets_.resize(scatterFields_.size());
+  basisIndexForMDFieldOffsets_.resize(scatterFields_.size());
+  fieldGlobalIndexers_.resize(scatterFields_.size());
+  productVectorBlockIndex_.resize(scatterFields_.size());
+  int maxElementBlockGIDCount = -1;
   for(std::size_t fd=0;fd<scatterFields_.size();++fd) {
     // get field ID from DOF manager
     std::string fieldName = fieldMap_->find(scatterFields_[fd].fieldTag().name())->second;
-    fieldIds_[fd] = globalIndexer_->getFieldNum(fieldName);
 
-    // fill field data object
-    this->utils.setFieldData(scatterFields_[fd],fm);
+    const int globalFieldNum = globalIndexer_->getFieldNum(fieldName); // Field number in the aggregate BlockDOFManager
+    productVectorBlockIndex_[fd] = globalIndexer_->getFieldBlock(globalFieldNum);
+    fieldGlobalIndexers_[fd] = globalIndexer_->getFieldDOFManagers()[productVectorBlockIndex_[fd]];
+    fieldIds_[fd] = fieldGlobalIndexers_[fd]->getFieldNum(fieldName); // Field number in the sub-global-indexer
 
-    if (checkApplyBC_)
-      this->utils.setFieldData(applyBC_[fd],fm);
+    // Offsets and basisIndex depend on whether scattering IC or Dirichlet BC
+    if (!scatterIC_) {
+      const auto& offsetPair = fieldGlobalIndexers_[fd]->getGIDFieldOffsets_closure(blockId,fieldIds_[fd],side_subcell_dim_,local_side_id_);
+      {
+        const auto& offsets =  offsetPair.first;
+        fieldOffsets_[fd] = Kokkos::View<int*,PHX::Device>("ScatterDirichletResidual_BlockedTpetra(Residual):fieldOffsets",offsets.size());
+        auto hostOffsets = Kokkos::create_mirror_view(fieldOffsets_[fd]);
+        for (std::size_t i=0; i < offsets.size(); ++i)
+          hostOffsets(i) = offsets[i];
+        Kokkos::deep_copy(fieldOffsets_[fd], hostOffsets);
+      }
+      {
+        const auto& basisIndex =  offsetPair.second;
+        basisIndexForMDFieldOffsets_[fd] = Kokkos::View<int*,PHX::Device>("ScatterDirichletResidual_BlockedTpetra(Residual):basisIndexForMDFieldOffsets",basisIndex.size());
+        auto hostBasisIndex = Kokkos::create_mirror_view(basisIndexForMDFieldOffsets_[fd]);
+        for (std::size_t i=0; i < basisIndex.size(); ++i)
+          hostBasisIndex(i) = basisIndex[i];
+        Kokkos::deep_copy(basisIndexForMDFieldOffsets_[fd], hostBasisIndex);      
+      }
+    }
+    else {
+      // For ICs, only need offsets, not basisIndex
+      const std::vector<int>& offsets = fieldGlobalIndexers_[fd]->getGIDFieldOffsets(blockId,fieldIds_[fd]);
+      fieldOffsets_[fd] = Kokkos::View<int*,PHX::Device>("ScatterDirichletResidual_BlockedTpetra(Residual):fieldOffsets",offsets.size());
+      auto hostOffsets = Kokkos::create_mirror_view(fieldOffsets_[fd]);
+      for (std::size_t i=0; i < offsets.size(); ++i)
+        hostOffsets(i) = offsets[i];
+      Kokkos::deep_copy(fieldOffsets_[fd], hostOffsets);
+    }
+
+    maxElementBlockGIDCount = std::max(fieldGlobalIndexers_[fd]->getElementBlockGIDCount(blockId),maxElementBlockGIDCount);
+    PHX::Device::fence();
   }
 
-  // get the number of nodes (Should be renamed basis)
-  num_nodes = scatterFields_[0].dimension(1);
+  // We will use one workset lid view for all fields, but has to be
+  // sized big enough to hold the largest elementBlockGIDCount in the
+  // ProductVector.
+  worksetLIDs_ = Kokkos::View<LO**,PHX::Device>("ScatterResidual_BlockedTpetra(Residual):worksetLIDs",
+                                                scatterFields_[0].dimension_0(),
+                                                maxElementBlockGIDCount);
 }
 
 // **********************************************************************
@@ -207,107 +249,75 @@ void panzer::ScatterDirichletResidual_BlockedTpetra<panzer::Traits::Residual, TR
 evaluateFields(typename TRAITS::EvalData workset)
 { 
    using Teuchos::RCP;
-   using Teuchos::ArrayRCP;
-   using Teuchos::ptrFromRef;
    using Teuchos::rcp_dynamic_cast;
-
    using Thyra::VectorBase;
-   using Thyra::SpmdVectorBase;
    using Thyra::ProductVectorBase;
-
-   Teuchos::FancyOStream out(Teuchos::rcpFromRef(std::cout));
-   out.setShowProcRank(true);   
-   out.setOutputToRootOnly(-1);   
-
-   std::vector<std::pair<int,GO> > GIDs;
-   std::vector<LO> LIDs;
  
-   // for convenience pull out some objects from workset
-   std::string blockId = this->wda(workset).block_id;
-   const std::vector<std::size_t> & localCellIds = this->wda(workset).cell_local_ids;
+   const auto& localCellIds = this->wda(workset).cell_local_ids_k;
 
-   RCP<ProductVectorBase<double> > r = (!scatterIC_) ? 
+   RCP<ProductVectorBase<double> > thyraScatterTarget = (!scatterIC_) ? 
      rcp_dynamic_cast<ProductVectorBase<double> >(blockedContainer_->get_f(),true) :
      rcp_dynamic_cast<ProductVectorBase<double> >(blockedContainer_->get_x(),true);
 
-   // NOTE: A reordering of these loops will likely improve performance
-   //       The "getGIDFieldOffsets may be expensive.  However the
-   //       "getElementGIDs" can be cheaper. However the lookup for LIDs
-   //       may be more expensive!
+   // Loop over scattered fields
+   int currentWorksetLIDSubBlock = -1;
+   for (std::size_t fieldIndex = 0; fieldIndex < scatterFields_.size(); fieldIndex++) {
+     // workset LIDs only change for different sub blocks
+     if (productVectorBlockIndex_[fieldIndex] != currentWorksetLIDSubBlock) {
+       fieldGlobalIndexers_[fieldIndex]->getElementLIDs(localCellIds,worksetLIDs_);
+       currentWorksetLIDSubBlock = productVectorBlockIndex_[fieldIndex];
+     }
 
-   // scatter operation for each cell in workset
-   for(std::size_t worksetCellIndex=0;worksetCellIndex<localCellIds.size();++worksetCellIndex) {
-      std::size_t cellLocalId = localCellIds[worksetCellIndex];
+     // Get Scatter target block
+     const auto& tpetraScatterTarget = *((rcp_dynamic_cast<Thyra::TpetraVector<RealType,LO,GO,NodeT>>(thyraScatterTarget->getNonconstVectorBlock(productVectorBlockIndex_[fieldIndex]),true))->getTpetraVector());
+     const auto& kokkosScatterTarget = tpetraScatterTarget.template getLocalView<PHX::mem_space>();
 
-      globalIndexer_->getElementGIDs(cellLocalId,GIDs); 
+     // Get dirichlet counter block
+     const auto& tpetraDirichletCounter = *((rcp_dynamic_cast<Thyra::TpetraVector<RealType,LO,GO,NodeT>>(dirichletCounter_->getNonconstVectorBlock(productVectorBlockIndex_[fieldIndex]),true))->getTpetraVector());
+     const auto& kokkosDirichletCounter = tpetraDirichletCounter.template getLocalView<PHX::mem_space>();
 
-      // caculate the local IDs for this element
-      LIDs.resize(GIDs.size());
-      for(std::size_t i=0;i<GIDs.size();i++) {
-         // used for doing local ID lookups
-         RCP<const MapType> r_map = blockedContainer_->getMapForBlock(GIDs[i].first);
+     // Class data fields for lambda capture
+     const auto& fieldOffsets = fieldOffsets_[fieldIndex];
+     const auto& basisIndices = basisIndexForMDFieldOffsets_[fieldIndex];
+     const auto& worksetLIDs = worksetLIDs_;
+     const auto& fieldValues = scatterFields_[fieldIndex];
+     const auto& applyBC = applyBC_[fieldIndex].get_static_view();
+     const bool checkApplyBC = checkApplyBC_;
 
-         LIDs[i] = r_map->getLocalElement(GIDs[i].second);
-      }
+     if (!scatterIC_) {
 
-      // loop over each field to be scattered
-      Teuchos::ArrayRCP<double> local_r;
-      Teuchos::ArrayRCP<double> local_dc;
-      for(std::size_t fieldIndex = 0; fieldIndex < scatterFields_.size(); fieldIndex++) {
-         int fieldNum = fieldIds_[fieldIndex];
-         int indexerId = globalIndexer_->getFieldBlock(fieldNum);
+       Kokkos::parallel_for(Kokkos::RangePolicy<PHX::Device>(0,workset.num_cells), KOKKOS_LAMBDA (const int& cell) {       
+         for (int basis=0; basis < static_cast<int>(fieldOffsets.size()); ++basis) {
+           const int lid = worksetLIDs(cell,fieldOffsets(basis));           
+           if (lid < 0) // not on this processor!
+             continue;
+           const int basisIndex = basisIndices(basis);
 
-         RCP<SpmdVectorBase<double> > dc = rcp_dynamic_cast<SpmdVectorBase<double> >(dirichletCounter_->getNonconstVectorBlock(indexerId));
-         dc->getNonconstLocalData(ptrFromRef(local_dc));
-
-         // grab local data for inputing
-         RCP<SpmdVectorBase<double> > block_r = rcp_dynamic_cast<SpmdVectorBase<double> >(r->getNonconstVectorBlock(indexerId));
-         block_r->getNonconstLocalData(ptrFromRef(local_r));
-
-         if (!scatterIC_) {
-           // this call "should" get the right ordering according to the Intrepid2 basis
-           const std::pair<std::vector<int>,std::vector<int> > & indicePair 
-             = globalIndexer_->getGIDFieldOffsets_closure(blockId,fieldNum, side_subcell_dim_, local_side_id_);
-           const std::vector<int> & elmtOffset = indicePair.first;
-           const std::vector<int> & basisIdMap = indicePair.second;
-
-           // loop over basis functions
-           for(std::size_t basis=0;basis<elmtOffset.size();basis++) {
-             int offset = elmtOffset[basis];
-             int lid = LIDs[offset];
-             if(lid<0) // not on this processor!
+           // Possible warp divergence for hierarchic
+           if (checkApplyBC)
+             if (!applyBC(cell,basisIndex))
                continue;
 
-             int basisId = basisIdMap[basis];
-
-             if (checkApplyBC_)
-               if (!applyBC_[fieldIndex](worksetCellIndex,basisId))
-                 continue;
-
-             local_r[lid] = (scatterFields_[fieldIndex])(worksetCellIndex,basisId);
-
-             // record that you set a dirichlet condition
-             local_dc[lid] = 1.0;
-           }
-         } else {
-           // this call "should" get the right ordering according to the Intrepid2 basis
-           const std::vector<int> & elmtOffset = globalIndexer_->getGIDFieldOffsets(blockId,fieldNum);
-
-           // loop over basis functions
-           for(std::size_t basis=0;basis<elmtOffset.size();basis++) {
-             int offset = elmtOffset[basis];
-             int lid = LIDs[offset];
-             if(lid<0) // not on this processor!
-               continue;
-
-            local_r[lid] = (scatterFields_[fieldIndex])(worksetCellIndex,basis);
-
-            // record that you set a dirichlet condition
-            local_dc[lid] = 1.0;
-           }
+           kokkosScatterTarget(lid,0) = fieldValues(cell,basisIndex);           
+           kokkosDirichletCounter(lid,0) = 1.0;           
          }
-      }
+       });
+
+     } else {
+
+       Kokkos::parallel_for(Kokkos::RangePolicy<PHX::Device>(0,workset.num_cells), KOKKOS_LAMBDA (const int& cell) {       
+         for (int basis=0; basis < static_cast<int>(fieldOffsets.size()); ++basis) {
+           const int lid = worksetLIDs(cell,fieldOffsets(basis));           
+           if (lid < 0) // not on this processor!
+             continue;
+           kokkosScatterTarget(lid,0) = fieldValues(cell,basis);           
+           kokkosDirichletCounter(lid,0) = 1.0;           
+         }
+       });
+
+     }
    }
+
 }
 
 // **********************************************************************
