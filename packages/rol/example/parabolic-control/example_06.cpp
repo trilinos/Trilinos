@@ -1055,8 +1055,7 @@ int main(int argc, char *argv[]) {
 
     // Projected Newton.
     std::string filename = "input.xml";
-    auto parlist = ROL::makePtr<ROL::ParameterList>()
-    Teuchos::updateParametersFromXmlFile( filename, parlist.ptr() );
+    auto parlist = ROL::getParametersFromXmlFile( filename );
 
     // Status test parameters.
     parlist->sublist("Status Test").set("Gradient Tolerance",1.e-12);
