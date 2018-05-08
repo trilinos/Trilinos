@@ -105,9 +105,11 @@ namespace MueLu {
     RCP<Matrix> A = Get< RCP<Matrix> >(fineLevel,   "A");
     RCP<Matrix> P = Get< RCP<Matrix> >(coarseLevel, "P");
 
+
     RCP<BlockedCrsMatrix> bA = rcp_dynamic_cast<BlockedCrsMatrix>(A);
     RCP<BlockedCrsMatrix> bP = rcp_dynamic_cast<BlockedCrsMatrix>(P);
     TEUCHOS_TEST_FOR_EXCEPTION(bA.is_null() || bP.is_null(), Exceptions::BadCast, "Matrices A and P must be of type BlockedCrsMatrix.");
+
 
     RCP<BlockedCrsMatrix> bAP;
     RCP<BlockedCrsMatrix> bAc;

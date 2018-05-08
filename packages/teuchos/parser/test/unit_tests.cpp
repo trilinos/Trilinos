@@ -480,6 +480,19 @@ TEUCHOS_UNIT_TEST( Parser, yaml_plasma ) {
   reader.read_file(result, "plasma_oscillation_rtc.xml.yaml");
 }
 
+TEUCHOS_UNIT_TEST( Parser, yaml_whitespace_after_string ) {
+  ReaderTablesPtr tables = YAML::ask_reader_tables();
+  Reader reader(tables);
+  Teuchos::any result;
+  reader.read_string(result,
+      "%YAML 1.1\n"
+      "---\n"
+      "hydro app:\n"
+      "  heat capacity ratio: '5.0 / 3.0' # a.k.a gamma\n"
+      "...\n",
+      "whitespace after string");
+}
+
 TEUCHOS_UNIT_TEST( Parser, mathexpr_language ) {
   LanguagePtr lang = MathExpr::ask_language();
   GrammarPtr grammar = make_grammar(*lang);
@@ -502,6 +515,15 @@ TEUCHOS_UNIT_TEST( Parser, mathexpr_reader ) {
   test_mathexpr_reader("---16");
   test_mathexpr_reader("((1 < 2) && (2 < 1)) ? 42 : 9");
   test_mathexpr_reader("x = 2; y = 5; x^2 + y^2");
+}
+
+TEUCHOS_UNIT_TEST( Parser, mathexpr_symbols ) {
+  auto vars = Teuchos::MathExpr::get_variables_used("sin(pi * x)");
+  std::set<std::string> expect_vars = {"pi", "x"};
+  TEUCHOS_ASSERT(vars == expect_vars);
+  auto symbols = Teuchos::MathExpr::get_symbols_used("sin(pi * x)");
+  std::set<std::string> expect_symbols = {"sin", "pi", "x"};
+  TEUCHOS_ASSERT(symbols == expect_symbols);
 }
 
 } // anonymous namespace

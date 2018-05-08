@@ -217,14 +217,14 @@ buildAndRegisterEvaluators(PHX::FieldManager<panzer::Traits>& fm,
         this->template registerEvaluator<EvalT>(fm, op);
       }
       {
-        ParameterList p("Weak Dirichlet Match And Cancel Neumann Residual");
-        p.set("Residual Name", residual_name);
-        p.set("Value Name", sum_contributions_name);
-        p.set("Basis", basis);
-        p.set("IR", ir);
-        p.set("Multiplier", 1.0);
-        const RCP< PHX::Evaluator<panzer::Traits> >
-          op = rcp(new panzer::Integrator_BasisTimesScalar<EvalT,panzer::Traits>(p));
+        using panzer::EvaluatorStyle;
+        using panzer::Integrator_BasisTimesScalar;
+        using panzer::Traits;
+        using PHX::Evaluator;
+        double multiplier(1);
+        const RCP<Evaluator<Traits>> op = rcp(new
+          Integrator_BasisTimesScalar<EvalT, Traits>(EvaluatorStyle::EVALUATES,
+          residual_name, sum_contributions_name, *basis, *ir, multiplier));
         this->template registerEvaluator<EvalT>(fm, op);
       }
     }

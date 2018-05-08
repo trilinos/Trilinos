@@ -89,6 +89,7 @@ class Distributor;
 //
 namespace Details {
 
+namespace PackCrsMatrixImpl {
 /// \brief Compute the number of packets and offsets for the pack procedure
 ///
 /// \tparam OutputOffsetsViewType the type of the output offsets view
@@ -755,20 +756,20 @@ do_pack (const LocalMatrix& local_matrix,
 ///   (i.e., a possibly different number of entries per row).
 template<typename ST, typename LO, typename GO, typename NT, typename BufferDeviceType>
 void
-packCrsMatrixImpl (const CrsMatrix<ST, LO, GO, NT>& sourceMatrix,
-                   Kokkos::DualView<char*, BufferDeviceType>& exports,
-                   const Kokkos::View<size_t*, BufferDeviceType>& num_packets_per_lid,
-                   const Kokkos::View<const LO*, typename NT::device_type>& export_lids,
-                   const Kokkos::View<const int*, typename NT::device_type>& export_pids,
-                   size_t& constant_num_packets,
-                   const bool pack_pids,
-                   Distributor& /* dist */)
+packCrsMatrix (const CrsMatrix<ST, LO, GO, NT>& sourceMatrix,
+               Kokkos::DualView<char*, BufferDeviceType>& exports,
+               const Kokkos::View<size_t*, BufferDeviceType>& num_packets_per_lid,
+               const Kokkos::View<const LO*, typename NT::device_type>& export_lids,
+               const Kokkos::View<const int*, typename NT::device_type>& export_pids,
+               size_t& constant_num_packets,
+               const bool pack_pids,
+               Distributor& /* dist */)
 {
   using Kokkos::View;
   typedef BufferDeviceType DT;
   typedef typename DT::execution_space execution_space;
   typedef Kokkos::DualView<char*, BufferDeviceType> exports_view_type;
-  const char prefix[] = "Tpetra::Details::packCrsMatrixImpl: ";
+  const char prefix[] = "Tpetra::Details::PackCrsMatrixImpl::packCrsMatrix: ";
   constexpr bool debug = false;
 
   auto local_matrix = sourceMatrix.getLocalMatrix ();
@@ -894,6 +895,8 @@ packCrsMatrixImpl (const CrsMatrix<ST, LO, GO, NT>& sourceMatrix,
   // If we got this far, we succeeded.
 }
 
+} // namespace PackCrsMatrixImpl
+
 template<typename ST, typename LO, typename GO, typename NT>
 void
 packCrsMatrix (const CrsMatrix<ST, LO, GO, NT>& sourceMatrix,
@@ -948,15 +951,12 @@ packCrsMatrix (const CrsMatrix<ST, LO, GO, NT>& sourceMatrix,
 
   Kokkos::DualView<char*, buffer_device_type> exports_dv ("exports", 0);
   constexpr bool pack_pids = false;
-  packCrsMatrixImpl<ST, LO, GO, NT, buffer_device_type> (sourceMatrix,
-                                                         exports_dv,
-                                                         num_packets_per_lid_d,
-                                                         export_lids_d,
-                                                         export_pids_d,
-                                                         constantNumPackets,
-                                                         pack_pids, distor);
-  // The counts are an output of packCrsMatrixImpl, so we have to copy
-  // them back to host.
+  PackCrsMatrixImpl::packCrsMatrix<ST, LO, GO, NT, buffer_device_type> (
+      sourceMatrix, exports_dv, num_packets_per_lid_d, export_lids_d,
+      export_pids_d, constantNumPackets, pack_pids, distor);
+
+  // The counts are an output of PackCrsMatrixImpl::packCrsMatrix, so we have to
+  // copy them back to host.
   Kokkos::View<size_t*, host_dev_type> num_packets_per_lid_h
     (numPacketsPerLID.getRawPtr (),
      numPacketsPerLID.size ());
@@ -965,8 +965,8 @@ packCrsMatrix (const CrsMatrix<ST, LO, GO, NT>& sourceMatrix,
   // FIXME (mfh 23 Aug 2017) If we're forced to use a DualView for
   // exports_dv above, then we have two host copies for exports_h.
 
-  // The exports are an output of packCrsMatrixImpl, so we have to
-  // copy them back to host.
+  // The exports are an output of PackCrsMatrixImpl::packCrsMatrix, so we have
+  // to copy them back to host.
   if (static_cast<size_t> (exports.size ()) !=
       static_cast<size_t> (exports_dv.dimension_0 ())) {
     exports.resize (exports_dv.dimension_0 ());
@@ -1021,13 +1021,9 @@ packCrsMatrixNew (const CrsMatrix<ST, LO, GO, NT>& sourceMatrix,
   exportLIDs_nc.template sync<typename device_type::memory_space> ();
   auto exportLIDs_d = exportLIDs.template view<typename device_type::memory_space> ();
 
-  packCrsMatrixImpl<ST, LO, GO, NT, buffer_device_type> (sourceMatrix,
-                                                         exports,
-                                                         numPacketsPerLID_d,
-                                                         exportLIDs_d,
-                                                         exportPIDs_d,
-                                                         constantNumPackets,
-                                                         pack_pids, distor);
+  PackCrsMatrixImpl::packCrsMatrix<ST,LO,GO,NT,buffer_device_type> (
+      sourceMatrix, exports, numPacketsPerLID_d, exportLIDs_d,
+      exportPIDs_d, constantNumPackets, pack_pids, distor);
 }
 
 template<typename ST, typename LO, typename GO, typename NT>
@@ -1072,12 +1068,12 @@ packCrsMatrixWithOwningPIDs (const CrsMatrix<ST, LO, GO, NT>& sourceMatrix,
                                             sourcePIDs.size (), true,
                                             "export_pids");
   constexpr bool pack_pids = true;
-  packCrsMatrixImpl (sourceMatrix, exports_dv,
-                     num_packets_per_lid_d, export_lids_d,
-                     export_pids_d, constantNumPackets, pack_pids, distor);
+  PackCrsMatrixImpl::packCrsMatrix(
+      sourceMatrix, exports_dv, num_packets_per_lid_d, export_lids_d,
+      export_pids_d, constantNumPackets, pack_pids, distor);
 
-  // The counts are an output of packCrsMatrixImpl, so we
-  // have to copy them back to host.
+  // The counts are an output of PackCrsMatrixImpl::packCrsMatrix, so we have to
+  // copy them back to host.
   Kokkos::View<size_t*, host_dev_type> num_packets_per_lid_h
     (numPacketsPerLID.getRawPtr (), numPacketsPerLID.size ());
   Kokkos::deep_copy (num_packets_per_lid_h, num_packets_per_lid_d);

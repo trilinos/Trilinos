@@ -46,7 +46,7 @@
 #ifndef MUELU_AMGXOPERATOR_DECL_HPP
 #define MUELU_AMGXOPERATOR_DECL_HPP
 
-#if defined (HAVE_MUELU_EXPERIMENTAL) and defined (HAVE_MUELU_AMGX)
+#if defined (HAVE_MUELU_AMGX)
 #include <Teuchos_ParameterList.hpp>
 
 #include <Tpetra_Operator.hpp>
@@ -253,14 +253,14 @@ namespace MueLu {
 
       // Construct AMGX communication pattern
       if (numProcs > 1) {
-        RCP<const Tpetra::Import<LO,GO> > importer = inA->getCrsGraph()->getImporter();
+        RCP<const Tpetra::Import<LO,GO,NO> > importer = inA->getCrsGraph()->getImporter();
 
         TEUCHOS_TEST_FOR_EXCEPTION(importer.is_null(), MueLu::Exceptions::RuntimeError, "The matrix A has no Import object.");
 
         Tpetra::Distributor distributor = importer->getDistributor();
 
-        Array<int> sendRanks = distributor.getImagesTo();
-        Array<int> recvRanks = distributor.getImagesFrom();
+        Array<int> sendRanks = distributor.getProcsTo();
+        Array<int> recvRanks = distributor.getProcsFrom();
 
         std::sort(sendRanks.begin(), sendRanks.end());
         std::sort(recvRanks.begin(), recvRanks.end());
@@ -326,7 +326,7 @@ namespace MueLu {
               muelu2amgx_[i] = importOffset++;
 
         amgx2muelu.resize(muelu2amgx_.size());
-        for (int i = 0; i < muelu2amgx_.size(); i++)
+        for (int i = 0; i < (int)muelu2amgx_.size(); i++)
           amgx2muelu[muelu2amgx_[i]] = i;
 
         // Construct send arrays
@@ -344,7 +344,7 @@ namespace MueLu {
           send_maps[i] = &(sendDatas[i][0]);
 
         // Debugging
-        printMaps(comm, sendDatas, amgx2muelu, neighbors, *importer->getTargetMap(), "send_map_vector");
+        //        printMaps(comm, sendDatas, amgx2muelu, neighbors, *importer->getTargetMap(), "send_map_vector");
 
         // Construct recv arrays
         std::vector<std::vector<int> > recvDatas (num_neighbors);
@@ -362,7 +362,7 @@ namespace MueLu {
           recv_maps[i] = &(recvDatas[i][0]);
 
         // Debugging
-        printMaps(comm, recvDatas, amgx2muelu, neighbors, *importer->getTargetMap(), "recv_map_vector");
+        //        printMaps(comm, recvDatas, amgx2muelu, neighbors, *importer->getTargetMap(), "recv_map_vector");
 
         AMGX_SAFE_CALL(AMGX_matrix_comm_from_maps_one_ring(A_, 1, num_neighbors, neighbors, &send_sizes[0], &send_maps[0], &recv_sizes[0], &recv_maps[0]));
 
@@ -513,5 +513,5 @@ namespace MueLu {
 
 } // namespace
 
-#endif //HAVE_MUELU_EXPERIMENTAL && HAVE_MUELU_EXPERIMENTAL
+#endif //HAVE_MUELU_AMGX
 #endif // MUELU_AMGXOPERATOR_DECL_HPP

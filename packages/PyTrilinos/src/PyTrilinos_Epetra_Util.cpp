@@ -146,10 +146,6 @@ convertPythonToEpetraIntVector(PyObject * pyobj,
   static swig_type_info * swig_DMDV_ptr =
     SWIG_TypeQuery("Teuchos::RCP< Domi::MDVector<int,Domi::DefaultNode::DefaultNodeType> >*");
   //
-  // Get the default communicator
-  const Teuchos::RCP< const Teuchos::Comm<int> > comm =
-    Teuchos::DefaultComm<int>::getComm();
-  //
   // Result objects
   void *argp = 0;
   PyObject * distarray = 0;
@@ -168,6 +164,18 @@ convertPythonToEpetraIntVector(PyObject * pyobj,
       reinterpret_cast< Teuchos::RCP< Epetra_IntVector > * >(argp);
     return result;
   }
+
+  //
+  // Get the default communicator. N.B.: it is important that this
+  // getComm() method be called after the code just above. If the
+  // python script is shutting down and destroying objects, this
+  // function could get called by the python destructor for an
+  // Epetra.IntVector object. In this case, the default Teuchos
+  // communicator might already be destroyed. If that is the case,
+  // though, then the code just above will do the conversion and
+  // return before getting here.
+  const Teuchos::RCP< const Teuchos::Comm<int> > comm =
+    Teuchos::DefaultComm<int>::getComm();
 
 #ifdef HAVE_DOMI
   //
@@ -284,10 +292,6 @@ convertPythonToEpetraMultiVector(PyObject * pyobj,
   static swig_type_info * swig_DMDV_ptr =
     SWIG_TypeQuery("Teuchos::RCP< Domi::MDVector<double,Domi::DefaultNode::DefaultNodeType> >*");
   //
-  // Get the default communicator
-  const Teuchos::RCP< const Teuchos::Comm<int> > comm =
-    Teuchos::DefaultComm<int>::getComm();
-  //
   // Result objects
   void *argp = 0;
   PyObject * distarray = 0;
@@ -306,6 +310,18 @@ convertPythonToEpetraMultiVector(PyObject * pyobj,
       reinterpret_cast< Teuchos::RCP< Epetra_MultiVector > * >(argp);
     return result;
   }
+
+  //
+  // Get the default communicator. N.B.: it is important that this
+  // getComm() method be called after the code just above. If the
+  // python script is shutting down and destroying objects, this
+  // function could get called by the python destructor for an
+  // Epetra.MultiVector object. In this case, the default Teuchos
+  // communicator might already be destroyed. If that is the case,
+  // though, then the code just above will do the conversion and
+  // return before getting here.
+  const Teuchos::RCP< const Teuchos::Comm<int> > comm =
+    Teuchos::DefaultComm<int>::getComm();
 
 #ifdef HAVE_DOMI
   //
@@ -435,10 +451,6 @@ convertPythonToEpetraVector(PyObject * pyobj,
   static swig_type_info * swig_DMDV_ptr =
     SWIG_TypeQuery("Teuchos::RCP< Domi::MDVector<double,Domi::DefaultNode::DefaultNodeType> >*");
   //
-  // Get the default communicator
-  const Teuchos::RCP< const Teuchos::Comm<int> > comm =
-    Teuchos::DefaultComm<int>::getComm();
-  //
   // Result objects
   void *argp = 0;
   PyObject * distarray = 0;
@@ -457,6 +469,18 @@ convertPythonToEpetraVector(PyObject * pyobj,
       reinterpret_cast< Teuchos::RCP< Epetra_Vector > * >(argp);
     return result;
   }
+
+  //
+  // Get the default communicator. N.B.: it is important that this
+  // getComm() method be called after the code just above. If the
+  // python script is shutting down and destroying objects, this
+  // function could get called by the python destructor for an
+  // Epetra.Vector object. In this case, the default Teuchos
+  // communicator might already be destroyed. If that is the case,
+  // though, then the code just above will do the conversion and
+  // return before getting here.
+  const Teuchos::RCP< const Teuchos::Comm<int> > comm =
+    Teuchos::DefaultComm<int>::getComm();
 
 #ifdef HAVE_DOMI
   //

@@ -82,6 +82,8 @@ namespace MueLu {
 #undef SET_VALID_ENTRY
 
     validParamList->set<RCP<const FactoryBase> >("A", Teuchos::null, "Generating factory of the matrix A for rebalancing");
+    validParamList->set<RCP<const FactoryBase> >("Importer", Teuchos::null, "Generating factory of the matrix Importer for rebalancing");
+    validParamList->set<RCP<const FactoryBase> >("SubImporters", Teuchos::null, "Generating factory of the matrix sub-Importers for rebalancing");
 
     return validParamList;
   }
@@ -102,6 +104,12 @@ namespace MueLu {
 
       coarseLevel.DeclareInput("Importer",(*it)->GetFactory("Importer").get(), this);
     }
+
+    // Use the non-manager path if the maps / importers are generated in one place
+    if(FactManager_.size() == 0) {
+      Input(coarseLevel,"SubImporters");
+    }
+
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -155,6 +163,10 @@ namespace MueLu {
       importers[idx] = rebalanceImporter;
       idx++;
     }
+    if(FactManager_.size() == 0) {
+      importers = Get<std::vector<RCP<const Import> > >(coarseLevel,"SubImporters");
+    }
+
 
     // restrict communicator?
     bool bRestrictComm = false;

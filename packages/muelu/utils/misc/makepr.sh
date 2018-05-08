@@ -34,13 +34,13 @@ REMOTE=$USER-$SHA
 # Push this branch to remote with a new name
 git push origin $CBRANCH:$REMOTE
 
-TITLE_STRING="Auto-PR for SHA $SHA"
+MESSAGE_STRING="Auto-PR for SHA $SHA"
 
 # Generate a new pull request
-MESSAGE="$*"
+TITLE_STRING="$*"
 token=$(cat $tokenfile)
 h="'Authorization: token $token'"
-CMD=$(echo curl -i -H $h -d \'{\"title\": \"$TITLE_STRING\" , \"head\": \"$REMOTE\" ,\"base\": \"$mainBranch\", \"body\": \"$MESSAGE\"}\' https://api.github.com/repos/$fork/$repo/pulls)
+CMD=$(echo curl -i -H $h -d \'{\"title\": \"$TITLE_STRING\" , \"head\": \"$REMOTE\" ,\"base\": \"$mainBranch\", \"body\": \"$MESSAGE_STRING\"}\' https://api.github.com/repos/$fork/$repo/pulls)
 eval $CMD >$TMPFILE 2> $TMPFILE
 
 # Get the PR number

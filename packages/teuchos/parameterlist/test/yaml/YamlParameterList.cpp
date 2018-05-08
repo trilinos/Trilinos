@@ -257,5 +257,33 @@ namespace TeuchosTests
       Teuchos::ParserFail);
   }
 
+  TEUCHOS_UNIT_TEST(YAML, keep_top_name)
+  {
+    Teuchos::ParameterList pl;
+    char const * const cstr =
+      "%YAML 1.1\n"
+      "---\n"
+      "Albany:\n"
+      "  some param: 5\n"
+      "...\n";
+    Teuchos::updateParametersFromYamlCString(cstr, Teuchos::ptr(&pl), true);
+    std::stringstream ss;
+    ss << std::showpoint;
+    Teuchos::writeParameterListToYamlOStream(pl, ss);
+    auto s = ss.str();
+    TEST_EQUALITY(s, cstr);
+  }
+
+  TEUCHOS_UNIT_TEST(YAML, long_long_param)
+  {
+    auto pl = Teuchos::getParametersFromYamlString(
+      "List:\n"
+      " small number: 54\n"
+      " big number: 72057594037927936\n");
+    TEST_EQUALITY(pl->isType<int>("small number"), true);
+    TEST_EQUALITY(pl->isType<long long>("big number"), true);
+    TEST_EQUALITY(pl->get<long long>("big number"), 72057594037927936ll);
+  }
+
 } //namespace TeuchosTests
 

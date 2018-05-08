@@ -119,12 +119,10 @@ testReduceSum (bool& success, std::ostream& out,
     rawMpiType = MPI_LONG;
   } else if (typeid (packet_type) == typeid (unsigned long)) {
     rawMpiType = MPI_UNSIGNED_LONG;
-#ifdef HAVE_TEUCHOS_LONG_LONG_INT
   } else if (typeid (packet_type) == typeid (long long)) {
     rawMpiType = MPI_LONG_LONG;
   } else if (typeid (packet_type) == typeid (unsigned long long)) {
     rawMpiType = MPI_UNSIGNED_LONG_LONG;
-#endif // HAVE_TEUCHOS_LONG_LONG_INT
   } else if (typeid (packet_type) == typeid (float)) {
     rawMpiType = MPI_FLOAT;
   } else if (typeid (packet_type) == typeid (double)) {

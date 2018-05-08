@@ -333,10 +333,37 @@ namespace MueLu {
     // Step 3: Construct importer
     RCP<Map>          newRowMap      = MapFactory   ::Build(lib, rowMap->getGlobalNumElements(), myGIDs(), indexBase, origComm);
     RCP<const Import> rowMapImporter;
+
+    RCP<const BlockedMap> blockedRowMap = Teuchos::rcp_dynamic_cast<const BlockedMap>(rowMap);
+
     {
       SubFactoryMonitor m1(*this, "Import construction", currentLevel);
-      rowMapImporter = ImportFactory::Build(rowMap, newRowMap);
+      // Generate a nonblocked rowmap if we need one
+      if(blockedRowMap.is_null())
+	rowMapImporter = ImportFactory::Build(rowMap, newRowMap);
+      else {
+	rowMapImporter = ImportFactory::Build(blockedRowMap->getMap(), newRowMap);
+      }
     }
+
+    // If we're running BlockedCrs we should chop up the newRowMap into a newBlockedRowMap here (and do likewise for importers)
+    if(!blockedRowMap.is_null()) {
+      SubFactoryMonitor m1(*this, "Blocking newRowMap and Importer", currentLevel);
+      RCP<const BlockedMap> blockedTargetMap = MueLu::UtilitiesBase<Scalar,LocalOrdinal,GlobalOrdinal,Node>::GeneratedBlockedTargetMap(*blockedRowMap,*rowMapImporter);
+
+      // NOTE: This code qualifies as "correct but not particularly performant"  If this needs to be sped up, we can probably read data from the existing importer to 
+      // build sub-importers rather than generating new ones ex nihilo
+      size_t numBlocks = blockedRowMap->getNumMaps();
+      std::vector<RCP<const Import> > subImports(numBlocks);
+
+      for(size_t i=0; i<numBlocks; i++) {
+	RCP<const Map> source = blockedRowMap->getMap(i);
+	RCP<const Map> target = blockedTargetMap->getMap(i);
+	subImports[i] = ImportFactory::Build(source,target);
+      }
+      Set(currentLevel,"SubImporters",subImports);	
+    }
+
 
     Set(currentLevel, "Importer", rowMapImporter);
 

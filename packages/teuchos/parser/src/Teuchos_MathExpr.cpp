@@ -123,6 +123,15 @@ std::set<std::string> get_variables_used(std::string const& expr) {
   return reader.variable_names;
 }
 
+std::set<std::string> get_symbols_used(std::string const& expr) {
+  SymbolSetReader reader;
+  any result;
+  reader.read_string(result, expr, "get_symbols_used");
+  auto set = std::move(reader.variable_names);
+  set.insert(reader.function_names.begin(), reader.function_names.end());
+  return set;
+}
+
 }  // end namespace MathExpr
 
 }  // end namespace Teuchos

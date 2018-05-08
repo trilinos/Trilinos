@@ -25,6 +25,8 @@
 
 #cmakedefine HAVE_MUELU_KOKKOS_REFACTOR
 
+#cmakedefine HAVE_MUELU_KOKKOS_REFACTOR_USE_BY_DEFAULT
+
 /* Optional Dependencies */
 
 #cmakedefine HAVE_MUELU_AMESOS
@@ -85,6 +87,8 @@
 #cmakedefine HAVE_MUELU_VIENNACL
 
 #cmakedefine HAVE_MUELU_MKL
+
+#cmakedefine HAVE_MUELU_AVATAR
 
 /* Flags for active Tpetra nodes if Tpetra is enabled */
 #cmakedefine HAVE_MUELU_SERIAL

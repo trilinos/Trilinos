@@ -64,19 +64,13 @@ LOCA.SaveEigenData supports the following classes:
         docstring = %loca_saveeigendata_docstring) SaveEigenData
 
 %{
-// Teuchos includes
-#include "Teuchos_Comm.hpp"
-#include "Teuchos_DefaultSerialComm.hpp"
-#ifdef HAVE_MPI
-#include "Teuchos_DefaultMpiComm.hpp"
-#endif
-#include "PyTrilinos_Teuchos_Util.hpp"
+// Teuchos include files
+#include "PyTrilinos_Teuchos_Headers.hpp"
 
-// LOCA includes
-#include "LOCA.H"
-#include "LOCA_SaveEigenData_DefaultStrategy.H"
+// LOCA include files
+#include "PyTrilinos_LOCA_Headers.hpp"
 
-// Local includes
+// Local include files
 #define NO_IMPORT_ARRAY
 #include "numpy_include.hpp"
 

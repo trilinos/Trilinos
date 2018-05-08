@@ -64,6 +64,10 @@ TRIBITS_ADD_TEST(
    FAIL_REGULAR_EXPRESSION "Teko tests failed"
    )
 
+IF (${PACKAGE_NAME}_DISABLE_LSCSTABALIZED_TPETRA_ALPAH_INV_D)
+  SET(testdriver_TARGET_DEFINES -DTEKO_DISABLE_LSCSTABALIZED_TPETRA_ALPAH_INV_D)
+ENDIF()
+
 TRIBITS_ADD_EXECUTABLE(
   testdriver_tpetra
   SOURCES
@@ -72,6 +76,7 @@ TRIBITS_ADD_EXECUTABLE(
       ./Test_Utils.cpp
       ./Test_Utils.hpp
       ./testdriver_tpetra.cpp
+  TARGET_DEFINES ${testdriver_TARGET_DEFINES}
   COMM mpi serial
   )
 

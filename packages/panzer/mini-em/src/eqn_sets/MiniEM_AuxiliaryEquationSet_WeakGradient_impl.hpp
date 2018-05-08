@@ -13,7 +13,6 @@
 #include "Panzer_BasisIRLayout.hpp"
 
 // include evaluators here
-#include "Panzer_Integrator_BasisTimesScalar.hpp"
 #include "Panzer_Integrator_BasisTimesVector.hpp"
 #include "Panzer_Integrator_GradBasisDotVector.hpp"
 #include "Panzer_ScalarToVector.hpp"

@@ -988,7 +988,6 @@ namespace {
     TEST_EQUALITY(A->getGlobalNumRows (), Acopy->getGlobalNumRows ());
     TEST_EQUALITY(A->getGlobalNumCols (), Acopy->getGlobalNumCols ());
     TEST_EQUALITY(A->getGlobalNumEntries (), Acopy->getGlobalNumEntries ());
-    TEST_EQUALITY(A->getGlobalNumDiags (), Acopy->getGlobalNumDiags ());
     TEST_EQUALITY(A->getGlobalMaxNumRowEntries (), Acopy->getGlobalMaxNumRowEntries ());
 
     // FIXME (mfh 24 Apr 2014) Need to test separately on each MPI
@@ -996,7 +995,6 @@ namespace {
     TEST_EQUALITY(A->getNodeNumRows (), Acopy->getNodeNumRows ());
     TEST_EQUALITY(A->getNodeNumCols (), Acopy->getNodeNumCols ());
     TEST_EQUALITY(A->getNodeNumEntries (), Acopy->getNodeNumEntries ());
-    TEST_EQUALITY(A->getNodeNumDiags (), Acopy->getNodeNumDiags ());
     TEST_EQUALITY(A->getNodeMaxNumRowEntries (), Acopy->getNodeMaxNumRowEntries ());
 
     // Acopy and A should be identically the same.  We can verify this

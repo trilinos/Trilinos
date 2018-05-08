@@ -26,7 +26,7 @@
 #include <MueLu_HierarchyUtils.hpp>
 
 
-#if defined(HAVE_MUELU_EXPERIMENTAL) and defined(HAVE_MUELU_AMGX)
+#if defined(HAVE_MUELU_AMGX)
 #include <MueLu_AMGXOperator.hpp>
 #include <amgx_c.h>
 #include "cuda_runtime.h"
@@ -62,12 +62,12 @@ namespace MueLu {
     typedef Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> crs_matrix_type;
     typedef Tpetra::Experimental::BlockCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> block_crs_matrix_type;
 
-#if defined(HAVE_MUELU_EXPERIMENTAL) and defined(HAVE_MUELU_AMGX)
+#if defined(HAVE_MUELU_AMGX)
     std::string externalMG = "use external multigrid package";
-    if (hasParamList && paramList.isParameter(externalMG) && paramList.get<std::string>(externalMG) == "amgx"){
-      constCrsA = rcp_dynamic_cast<const crs_matrix_type>(inA);
+    if (inParamList.isParameter(externalMG) && inParamList.get<std::string>(externalMG) == "amgx"){      
+      const RCP<crs_matrix_type> constCrsA = rcp_dynamic_cast<crs_matrix_type>(inA);
       TEUCHOS_TEST_FOR_EXCEPTION(constCrsA == Teuchos::null, Exceptions::RuntimeError, "CreateTpetraPreconditioner: failed to dynamic cast to Tpetra::CrsMatrix, which is required to be able to use AmgX.");
-      return rcp(new AMGXOperator<SC,LO,GO,NO>(inA,inParamList));
+      return rcp(new AMGXOperator<SC,LO,GO,NO>(constCrsA,inParamList));
     }
 #endif
 

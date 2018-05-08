@@ -48,6 +48,38 @@ TRILINOS_DRIVER_ADD_DASHBOARD(
   TIMEOUT_MINUTES 330
   )
 
+TRILINOS_DRIVER_ADD_DASHBOARD(
+  OPENMPI-1.10.1_RELEASE_NO-SERIAL_OPENMP_COMPLEX_EXPERIMENTAL
+  ctest_linux_mpi_release_no_serial_openmp_complex_experimental_enigma.cmake
+  CTEST_INSTALLER_TYPE release
+  RUN_SERIAL
+  TIMEOUT_MINUTES 330
+  )
+
+TRILINOS_DRIVER_ADD_DASHBOARD(
+  OPENMPI-1.10.1_RELEASE_NO-EPETRA_NO-INT_OPENMP_COMPLEX_EXPERIMENTAL
+  ctest_linux_mpi_release_openmp_no_epetra_no_int_complex_experimental_enigma.cmake
+  CTEST_INSTALLER_TYPE release
+  RUN_SERIAL
+  TIMEOUT_MINUTES 330
+  )
+
+TRILINOS_DRIVER_ADD_DASHBOARD(
+  OPENMPI-1.10.1_RELEASE_NO-INT_NO-SERIAL_OPENMP_EXPERIMENTAL
+  ctest_linux_mpi_release_muelu_no_int_no_serial_openmp_experimental_enigma.cmake
+  CTEST_INSTALLER_TYPE release
+  RUN_SERIAL
+  TIMEOUT_MINUTES 330
+  )
+
+TRILINOS_DRIVER_ADD_DASHBOARD(
+  OPENMPI-1.10.1_RELEASE_NO-INT_OPENMP_EXPERIMENTAL
+  ctest_linux_nightly_mpi_release_muelu_no_int_openmp_experimental_enigma.cmake
+  CTEST_INSTALLER_TYPE release
+  RUN_SERIAL
+  TIMEOUT_MINUTES 330
+  )
+
 
 #TRILINOS_DRIVER_ADD_DASHBOARD(
 #  SERIAL_RELEASE_MueLu_Experimental

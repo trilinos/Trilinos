@@ -312,10 +312,18 @@ namespace FROSch {
                 assembledMapTmp[i] = globalstart + mapVector[j]->getGlobalElement(i-localstart);
                 i++;
             }
+            //std::cout << mapVector[j]->getMaxAllGlobalIndex() << std::endl;
+            /*
             globalstart += mapVector[j]->getMaxAllGlobalIndex();
+            
             if (mapVector[0]->lib()==Xpetra::UseEpetra || mapVector[j]->getGlobalNumElements()>0) {
                 globalstart += 1;
             }
+             */
+            
+            globalstart += std::max(mapVector[j]->getMaxAllGlobalIndex(),-1)+1; // AH 04/05/2018: mapVector[j]->getMaxAllGlobalIndex() can result in -2147483648 if the map is empty on the process => introducing max(,)
+            
+            //if (mapVector[j]->getComm()->getRank() == 0) std::cout << std::endl << globalstart << std::endl;
         }
         return Xpetra::MapFactory<LO,GO,NO>::Build(mapVector[0]->lib(),-1,assembledMapTmp(),0,mapVector[0]->getComm());
     }

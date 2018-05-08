@@ -43,7 +43,7 @@
 // @HEADER
 
 %{
-// Epetra includes
+// Epetra include files
 #include "Epetra_BlockMap.h"
 #include "Epetra_Map.h"
 #include "Epetra_LocalMap.h"

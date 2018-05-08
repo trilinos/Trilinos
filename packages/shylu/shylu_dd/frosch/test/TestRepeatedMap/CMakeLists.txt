@@ -7,14 +7,14 @@ TRIBITS_ADD_TEST(
 	os_repeatedmap
 	NAME test_os_repeatedmap_2D
 	ARGS "--DIM=2 --M=4"
-	COMM serial mpi
-	NUM_MPI_PROCS 9
+	COMM mpi
+	NUM_MPI_PROCS 4
 )
 
 TRIBITS_ADD_TEST(
     os_repeatedmap
     NAME test_os_repeatedmap_3D
     ARGS "--DIM=3 --M=4"
-    COMM serial mpi
+    COMM mpi
     NUM_MPI_PROCS 9
 )
