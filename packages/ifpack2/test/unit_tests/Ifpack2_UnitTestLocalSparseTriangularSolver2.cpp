@@ -2,7 +2,6 @@
 #include "Ifpack2_LocalSparseTriangularSolver.hpp"
 #include "Tpetra_Core.hpp"
 #include "Tpetra_CrsMatrix.hpp"
-#include "Tpetra_CrsMatrixSolveOp.hpp"
 #include "Tpetra_MultiVector.hpp"
 #include "Tpetra_Details_determineLocalTriangularStructure.hpp"
 #include "Teuchos_CommHelpers.hpp"
@@ -76,7 +75,8 @@ namespace {
   TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( CrsMatrix, EmptyTriSolve, Scalar, LO, GO, Node )
   {
     using crs_matrix_type = Tpetra::CrsMatrix<Scalar, LO, GO, Node>;
-    using OP = Tpetra::Operator<Scalar,LO,GO,Node>;
+    using row_matrix_type = Tpetra::RowMatrix<Scalar, LO, GO, Node>;
+    using solver_type = Ifpack2::LocalSparseTriangularSolver<row_matrix_type>;
     using STS = Teuchos::ScalarTraits<Scalar>;
     using MV = Tpetra::MultiVector<Scalar,LO,GO,Node>;
     using mag_type = typename STS::magnitudeType;
@@ -102,7 +102,7 @@ namespace {
     X.randomize();
     for (size_t tnum=0; tnum < 2; ++tnum) {
       ETransp trans     = ((tnum & 1) == 1 ? CONJ_TRANS        : NO_TRANS);
-      RCP<OP> ZeroIOp;
+      RCP<solver_type> ZeroIOp;
       {
         RCP<crs_matrix_type> ZeroMat;
         // must explicitly provide the column map for implicit diagonals
@@ -123,7 +123,9 @@ namespace {
                             outArg (gblDiagCount));
         TEST_EQUALITY( gblDiagCount, static_cast<GO> (0) );
 
-        ZeroIOp = Tpetra::createCrsMatrixSolveOp<Scalar> (ZeroMat.getConst ());
+        ZeroIOp = rcp<solver_type> (new solver_type (ZeroMat.getConst ()));
+        ZeroIOp->initialize ();
+        ZeroIOp->compute ();
       }
       X = B;
       Xhat.randomize();
@@ -159,8 +161,9 @@ namespace {
     }
     else {
       using crs_matrix_type = Tpetra::CrsMatrix<Scalar,LO,GO,Node>;
+      using row_matrix_type = Tpetra::RowMatrix<Scalar,LO,GO,Node>;
+      using solver_type = Ifpack2::LocalSparseTriangularSolver<row_matrix_type>;
       using map_type = Tpetra::Map<LO, GO, Node>;
-      using OP = Tpetra::Operator<Scalar,LO,GO,Node>;
       using STS = Teuchos::ScalarTraits<Scalar>;
       using MV = Tpetra::MultiVector<Scalar,LO,GO,Node>;
       using mag_type = typename STS::magnitudeType;
@@ -278,7 +281,7 @@ namespace {
         fillparams->set ("Prepare Transpose Solve", true);
         fillparams->set ("Prepare Conjugate Transpose Solve", true);
 
-        RCP<OP> AIOp;
+        RCP<solver_type> AIOp;
         RCP<crs_matrix_type> AMat;
         {
           if (diag == UNIT_DIAG) {
@@ -350,7 +353,10 @@ namespace {
           // using a triangular solve.  op(A) is just A if
           // trans==NO_TRANS, else A^H (Hermitian transpose) if
           // trans==CONJ_TRANS.
-          AIOp = Tpetra::createCrsMatrixSolveOp<Scalar> (AMat.getConst ());
+
+          AIOp = rcp<solver_type> (new solver_type (AMat.getConst ()));
+          AIOp->initialize ();
+          AIOp->compute ();
         }
         B.randomize ();
         AIOp->apply (X, B, trans);
