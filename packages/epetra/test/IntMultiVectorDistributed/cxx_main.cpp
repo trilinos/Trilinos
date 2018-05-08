@@ -44,6 +44,8 @@
 #include "Epetra_ConfigDefs.h"
 #include "Epetra_IntMultiVector.h"
 #include "Epetra_BlockMap.h"
+#include "Epetra_CombineMode.h"
+#include "Epetra_Import.h"
 #ifdef EPETRA_MPI
 #include "Epetra_MpiComm.h"
 #include <mpi.h>
@@ -55,10 +57,8 @@
 
 int main(int argc, char *argv[]) {
   int ierr = 0;
-  int i;
-  int forierr = 0;
-  int* Indices;
-  bool debug = true;
+  int global_ierr = 0;
+  int numErr = 0;
 
 #ifdef EPETRA_MPI
 
@@ -95,13 +95,11 @@ int main(int argc, char *argv[]) {
 
   if(verbose) cout << "Processor " << MyPID << " of " << NumProc << " is alive." << endl;
 
-  bool verbose1 = verbose;
-
   // Redefine verbose to only print on PE 0
   if(verbose && rank != 0)
 		verbose = false;
 
-  int NumMyEquations = 5;
+  int NumMyEquations = 6;
   int NumGlobalEquations = NumMyEquations*NumProc+EPETRA_MIN(NumProc,3);
   if(MyPID < 3)
     NumMyEquations++;
@@ -115,17 +113,66 @@ int main(int argc, char *argv[]) {
   Map.MyGlobalElements(MyGlobalElements);
 
   // Construct the IntMultiVector
-  Epetra_IntMultiVector& myIMV = *new Epetra_IntMultiVector(Map, 3);
+  const int numVecs = 3;
+  Epetra_IntMultiVector& myIMV = *new Epetra_IntMultiVector(Map, numVecs);
 
-  std::cout << "Global number of entries in multivector: " << myIMV.GlobalLength()
-            << ", number of local entries: " << myIMV.MyLength()
-            << " and number of vectors: " << myIMV.NumVectors() << std::endl;
+  // Extract a view to populate the IntMultiVector
+  int myLDA;
+  int* myVals;
+  ierr = myIMV.ExtractView(&myVals, &myLDA);
+  Comm.MaxAll(&ierr, &global_ierr, 1);
+  EPETRA_TEST_ERR(global_ierr, numErr);
+  for(int i = 0; i < myIMV.MyLength(); ++i) {
+    for(int j = 0; j < numVecs; ++j) {
+      myVals[j*myLDA + i] = numVecs*i + j;
+    }
+  }
 
-  // // Extract a view to populate the IntMultiVector
-  // int* myLDA;
-  // int** myVals;
-  // *myVals = new int[NumMyEquations*3];
-  // ierr = myIMV.ExtractView(myVals, myLDA);
+  // Test: replace local values
+  myIMV.ReplaceMyValue(3, 2, 42);
+  ierr = (myIMV[2][3] == 42 ? 0 : 1);
+  Comm.MaxAll(&ierr, &global_ierr, 1);
+  EPETRA_TEST_ERR(global_ierr, numErr);
+
+  // Test: sum into local values
+  myIMV.SumIntoMyValue(3, 1, 42);
+  ierr = (myIMV[1][3] == 3*numVecs + 1 + 42 ? 0 : 1);
+  Comm.MaxAll(&ierr, &global_ierr, 1);
+  EPETRA_TEST_ERR(global_ierr, numErr);
+
+  // Test: replace and sum global values on rank 2
+  if(MyPID == 2) {
+    myIMV.ReplaceGlobalValue(Map.GID(3), 2, 48);
+    ierr = (myIMV[2][3] == 48 ? 0 : 1);
+    EPETRA_TEST_ERR(ierr, numErr);
+    myIMV.SumIntoGlobalValue(Map.GID(3), 1, 48);
+    ierr = (myIMV[1][3] == 3*numVecs + 1 + 42 + 48 ? 0 : 1);
+    EPETRA_TEST_ERR(ierr, numErr);
+  }
+
+  // Construct a Map that puts all the elements on proc 0
+  Epetra_BlockMap& Map0 = *new Epetra_BlockMap(NumGlobalEquations,
+                                               (MyPID == 0 ? NumGlobalEquations : 0),
+                                               1,
+                                               0,
+                                               Comm);
+  Epetra_IntMultiVector& myIMV0 = *new Epetra_IntMultiVector(Map0, numVecs);
+
+  Epetra_Import& myImporter = *new Epetra_Import(Map0, Map);
+  ierr = myIMV0.Import(myIMV, myImporter, Epetra_CombineMode::Insert);
+  Comm.MaxAll(&ierr, &global_ierr, 1);
+  EPETRA_TEST_ERR(global_ierr, numErr);
+
+  if(MyPID == 0) {
+    ierr = (myIMV0[1][ 3] == 3*numVecs + 1 + 42      ? 0 : 1);
+    EPETRA_TEST_ERR(ierr, numErr);
+    ierr = (myIMV0[1][10] == 3*numVecs + 1 + 42      ? 0 : 1);
+    EPETRA_TEST_ERR(ierr, numErr);
+    ierr = (myIMV0[1][17] == 3*numVecs + 1 + 42 + 48 ? 0 : 1);
+    EPETRA_TEST_ERR(ierr, numErr);
+    ierr = (myIMV0[1][24] == 3*numVecs + 1 + 42      ? 0 : 1);
+    EPETRA_TEST_ERR(ierr, numErr);
+  }
 
 
 #ifdef EPETRA_MPI

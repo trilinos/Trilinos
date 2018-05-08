@@ -74,7 +74,7 @@ Epetra_IntMultiVector::Epetra_IntMultiVector(const Epetra_BlockMap& map, int num
 
     AllocateForCopy();
 
-    for (int i = 0; i< NumVectors_; i++) Pointers_[i] = Values_+i*Stride_;
+    for (int i = 0; i < NumVectors_; i++) Pointers_[i] = Values_+i*Stride_;
 
   if(zeroOut) PutScalar(0); // Fill all vectors with zero.
 }
@@ -198,7 +198,7 @@ Epetra_IntMultiVector::Epetra_IntMultiVector(Epetra_DataAccess CV, const Epetra_
 
 //==========================================================================
 
-// This interface copies or makes view of a range of vectors from an existing MultiVector
+// This interface copies or makes view of a range of vectors from an existing IntMultiVector
 
 Epetra_IntMultiVector::Epetra_IntMultiVector(Epetra_DataAccess CV, const Epetra_IntMultiVector& Source,
                int StartIndex, int numVectors)
@@ -339,7 +339,7 @@ int Epetra_IntMultiVector::DoView(void)
 
   Values_ = Pointers_[0];
 
-  if (NumVectors_==1) {
+  if (NumVectors_ == 1) {
     Stride_ = Map_.NumMyPoints();
     ConstantStride_ = true;
     return(0);
@@ -1329,7 +1329,7 @@ Epetra_IntVector *& Epetra_IntMultiVector::operator () (int index)  {
 
   UpdateIntVectors();
 
-  // Create a new Epetra_Vector that is a view of ith vector, if not already present
+  // Create a new Epetra_IntVector that is a view of ith vector, if not already present
   if (IntVectors_[index]==0)
     IntVectors_[index] = new Epetra_IntVector(View, Map(), Pointers_[index]);
   return(IntVectors_[index]);
@@ -1384,41 +1384,42 @@ void Epetra_IntMultiVector::Assign(const Epetra_IntMultiVector& A) {
     return;
   }
 
-  //=========================================================================
-  int  Epetra_IntMultiVector::Reduce() {
+//=========================================================================
+int  Epetra_IntMultiVector::Reduce() {
 
-    // Global reduction on each entry of a Replicated Local MultiVector
-    const int myLength = MyLength_;
-    int * source = 0;
-    if (myLength>0) source = new int[myLength*NumVectors_];
-    int * target = 0;
-    bool packed = (ConstantStride_ && (Stride_==myLength));
-    if (packed) {
-       for (int i=0; i<myLength*NumVectors_; i++) source[i] = Values_[i];
-       target = Values_;
-    }
-    else {
-       int * tmp1 = source;
-       for (int i = 0; i < NumVectors_; i++) {
-         int * tmp2 = Pointers_[i];
-         for (int j=0; j< myLength; j++) *tmp1++ = *tmp2++;
-       }
-       if (myLength>0) target = new int[myLength*NumVectors_];
-    }
-
-    Comm_->SumAll(source, target, myLength*NumVectors_);
-    if (myLength>0) delete [] source;
-    if (!packed) {
-       int * tmp2 = target;
-       for (int i = 0; i < NumVectors_; i++) {
-         int * tmp1 = Pointers_[i];
-         for (int j=0; j< myLength; j++) *tmp1++ = *tmp2++;
-       }
-       if (myLength>0) delete [] target;
-    }
-    // UpdateFlops(0);  No serial Flops in this function
-    return(0);
+  // Global reduction on each entry of a Replicated Local MultiVector
+  const int myLength = MyLength_;
+  int * source = 0;
+  if (myLength>0) source = new int[myLength*NumVectors_];
+  int * target = 0;
+  bool packed = (ConstantStride_ && (Stride_==myLength));
+  if (packed) {
+    for (int i=0; i<myLength*NumVectors_; i++) source[i] = Values_[i];
+    target = Values_;
   }
+  else {
+    int * tmp1 = source;
+    for (int i = 0; i < NumVectors_; i++) {
+      int * tmp2 = Pointers_[i];
+      for (int j=0; j< myLength; j++) *tmp1++ = *tmp2++;
+    }
+    if (myLength>0) target = new int[myLength*NumVectors_];
+  }
+
+  Comm_->SumAll(source, target, myLength*NumVectors_);
+  if (myLength>0) delete [] source;
+  if (!packed) {
+    int * tmp2 = target;
+    for (int i = 0; i < NumVectors_; i++) {
+      int * tmp1 = Pointers_[i];
+      for (int j=0; j< myLength; j++) *tmp1++ = *tmp2++;
+    }
+    if (myLength>0) delete [] target;
+  }
+  // UpdateFlops(0);  No serial Flops in this function
+  return(0);
+}
+
 //=======================================================================
 int Epetra_IntMultiVector::ResetView(int ** ArrayOfPointers) {
 
@@ -1430,7 +1431,8 @@ int Epetra_IntMultiVector::ResetView(int ** ArrayOfPointers) {
   DoView();
 
   return(0);
-  }
+}
+
 //=======================================================================
 void Epetra_IntMultiVector::Print(std::ostream& os) const {
   int MyPID = Map().Comm().MyPID();

@@ -162,11 +162,6 @@ class Epetra_IntVector;
   <li> Minimum, Maximum and Average Values.
   </ul>
 
-  In addition, a matrix-matrix multiply function supports a variety of operations on any viable
-  combination of global distributed and local replicated multi-vectors using calls to DGEMM, a
-  high performance kernel for matrix operations.  In the near future we will add support for calls
-  to other selected BLAS and LAPACK functions.
-
   <b> Counting Floating Point Operations </b>
 
   Each Epetra_IntMultiVector object keep track of the number
