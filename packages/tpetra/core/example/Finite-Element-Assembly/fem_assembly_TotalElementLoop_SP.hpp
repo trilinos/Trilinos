@@ -229,9 +229,11 @@ int executeTotalElementLoopSP(const comm_ptr_t& comm, const struct CmdLineOpts& 
   RCP<TimeMonitor> timerElementLoopMatrix = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("3) ElementLoop  (Matrix)")));
 
   RCP<matrix_t> crs_matrix = rcp(new matrix_t(crs_graph));
+  RCP<multivector_t> rhs = rcp(new multivector_t(crs_graph->getRowMap(), 1));
 
   scalar_2d_array_t element_matrix;
   Kokkos::resize(element_matrix, 4, 4);
+  Teuchos::Array<Scalar> element_rhs(4);
 
   Teuchos::Array<global_ordinal_t> column_global_ids(4);     // global column ids list
   Teuchos::Array<Scalar> column_scalar_values(4);         // scalar values for each column
@@ -241,6 +243,7 @@ int executeTotalElementLoopSP(const comm_ptr_t& comm, const struct CmdLineOpts& 
   {
     // Get the stiffness matrix for this element
     ReferenceQuad4(element_matrix);
+    ReferenceQuad4RHS(element_rhs);
 
     // Fill the global column ids array for this element
     for(size_t element_node_idx=0; element_node_idx<owned_element_to_node_ids.extent(1); element_node_idx++)
@@ -262,6 +265,7 @@ int executeTotalElementLoopSP(const comm_ptr_t& comm, const struct CmdLineOpts& 
           column_scalar_values[col_idx] = element_matrix(element_node_idx, col_idx);
         }
         crs_matrix->sumIntoGlobalValues(global_row_id, column_global_ids, column_scalar_values);
+        rhs->sumIntoGlobalValue(global_row_id, 0, element_rhs[element_node_idx]);
       }
     }
   }
@@ -272,6 +276,7 @@ int executeTotalElementLoopSP(const comm_ptr_t& comm, const struct CmdLineOpts& 
   for(size_t element_gidx=0; element_gidx<mesh.getNumGhostElements(); element_gidx++)
   {
     ReferenceQuad4(element_matrix);
+    ReferenceQuad4RHS(element_rhs);
 
     for(size_t element_node_idx=0; element_node_idx<ghost_element_to_node_ids.extent(1); element_node_idx++)
     {
@@ -288,6 +293,7 @@ int executeTotalElementLoopSP(const comm_ptr_t& comm, const struct CmdLineOpts& 
           column_scalar_values[col_idx] = element_matrix(element_node_idx, col_idx);
         }
         crs_matrix->sumIntoGlobalValues(global_row_id, column_global_ids, column_scalar_values);
+        rhs->sumIntoGlobalValue(global_row_id, 0, element_rhs[element_node_idx]);
       }
     }
   }

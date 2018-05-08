@@ -357,17 +357,17 @@ namespace Belos {
     Teuchos::RCP<Teuchos::ParameterList> params_;
 
     // Default solver values.
-    static const MagnitudeType convtol_default_;
-    static const int maxIters_default_;
-    static const int blockSize_default_;
-    static const int numBlocks_default_;
-    static const int recycleBlocks_default_;
-    static const bool showMaxResNormOnly_default_;
-    static const int verbosity_default_;
-    static const int outputStyle_default_;
-    static const int outputFreq_default_;
-    static const std::string label_default_;
-    static const Teuchos::RCP<std::ostream> outputStream_default_;
+    static constexpr MagnitudeType convTol_default_ = 1e-8;
+    static constexpr int maxIters_default_ = 1000;
+    static constexpr int blockSize_default_ = 1;
+    static constexpr int numBlocks_default_ = 25;
+    static constexpr int recycleBlocks_default_ = 3;
+    static constexpr bool showMaxResNormOnly_default_ = false;
+    static constexpr int verbosity_default_ = Belos::Errors;
+    static constexpr int outputStyle_default_ = Belos::General;
+    static constexpr int outputFreq_default_ = -1;
+    static constexpr const char * label_default_ = "Belos";
+    static constexpr std::ostream * outputStream_default_ = &std::cout;
 
     //
     // Current solver values.
@@ -464,41 +464,6 @@ namespace Belos {
   };
 
 
-// Default solver values.
-template<class ScalarType, class MV, class OP>
-const typename RCGSolMgr<ScalarType,MV,OP,true>::MagnitudeType
-RCGSolMgr<ScalarType,MV,OP,true>::convtol_default_ = 1e-8;
-
-template<class ScalarType, class MV, class OP>
-const int RCGSolMgr<ScalarType,MV,OP,true>::maxIters_default_ = 1000;
-
-template<class ScalarType, class MV, class OP>
-const int RCGSolMgr<ScalarType,MV,OP,true>::numBlocks_default_ = 25;
-
-template<class ScalarType, class MV, class OP>
-const int RCGSolMgr<ScalarType,MV,OP,true>::blockSize_default_ = 1;
-
-template<class ScalarType, class MV, class OP>
-const int RCGSolMgr<ScalarType,MV,OP,true>::recycleBlocks_default_ = 3;
-
-template<class ScalarType, class MV, class OP>
-const bool RCGSolMgr<ScalarType,MV,OP,true>::showMaxResNormOnly_default_ = false;
-
-template<class ScalarType, class MV, class OP>
-const int RCGSolMgr<ScalarType,MV,OP,true>::verbosity_default_ = Belos::Errors;
-
-template<class ScalarType, class MV, class OP>
-const int RCGSolMgr<ScalarType,MV,OP,true>::outputStyle_default_ = Belos::General;
-
-template<class ScalarType, class MV, class OP>
-const int RCGSolMgr<ScalarType,MV,OP,true>::outputFreq_default_ = -1;
-
-template<class ScalarType, class MV, class OP>
-const std::string RCGSolMgr<ScalarType,MV,OP,true>::label_default_ = "Belos";
-
-template<class ScalarType, class MV, class OP>
-const Teuchos::RCP<std::ostream> RCGSolMgr<ScalarType,MV,OP,true>::outputStream_default_ = Teuchos::rcp(&std::cout,false);
-
 // Empty Constructor
 template<class ScalarType, class MV, class OP>
 RCGSolMgr<ScalarType,MV,OP,true>::RCGSolMgr():
@@ -530,8 +495,8 @@ RCGSolMgr<ScalarType,MV,OP,true>::RCGSolMgr(
 template<class ScalarType, class MV, class OP>
 void RCGSolMgr<ScalarType,MV,OP,true>::init()
 {
-  outputStream_ = outputStream_default_;
-  convtol_ = convtol_default_;
+  outputStream_ = Teuchos::rcp(outputStream_default_,false);
+  convtol_ = convTol_default_;
   maxIters_ = maxIters_default_;
   numBlocks_ = numBlocks_default_;
   recycleBlocks_ = recycleBlocks_default_;
@@ -697,7 +662,7 @@ void RCGSolMgr<ScalarType,MV,OP,true>::setParameters( const Teuchos::RCP<Teuchos
 
   // Check for convergence tolerance
   if (params->isParameter("Convergence Tolerance")) {
-    convtol_ = params->get("Convergence Tolerance",convtol_default_);
+    convtol_ = params->get("Convergence Tolerance",convTol_default_);
 
     // Update parameter in our list and residual tests.
     params_->set("Convergence Tolerance", convtol_);
@@ -761,34 +726,34 @@ RCGSolMgr<ScalarType,MV,OP,true>::getValidParameters() const
   // Set all the valid parameters and their default values.
   if(is_null(validPL)) {
     Teuchos::RCP<Teuchos::ParameterList> pl = Teuchos::parameterList();
-    pl->set("Convergence Tolerance", convtol_default_,
+    pl->set("Convergence Tolerance", static_cast<MagnitudeType>(convTol_default_),
       "The relative residual tolerance that needs to be achieved by the\n"
       "iterative solver in order for the linear system to be declared converged.");
-    pl->set("Maximum Iterations", maxIters_default_,
+    pl->set("Maximum Iterations", static_cast<int>(maxIters_default_),
       "The maximum number of block iterations allowed for each\n"
       "set of RHS solved.");
-    pl->set("Block Size", blockSize_default_,
+    pl->set("Block Size", static_cast<int>(blockSize_default_),
       "Block Size Parameter -- currently must be 1 for RCG");
-    pl->set("Num Blocks", numBlocks_default_,
+    pl->set("Num Blocks", static_cast<int>(numBlocks_default_),
       "The length of a cycle (and this max number of search vectors kept)\n");
-    pl->set("Num Recycled Blocks", recycleBlocks_default_,
+    pl->set("Num Recycled Blocks", static_cast<int>(recycleBlocks_default_),
       "The number of vectors in the recycle subspace.");
-    pl->set("Verbosity", verbosity_default_,
+    pl->set("Verbosity", static_cast<int>(verbosity_default_),
       "What type(s) of solver information should be outputted\n"
       "to the output stream.");
-    pl->set("Output Style", outputStyle_default_,
+    pl->set("Output Style", static_cast<int>(outputStyle_default_),
       "What style is used for the solver information outputted\n"
       "to the output stream.");
-    pl->set("Output Frequency", outputFreq_default_,
+    pl->set("Output Frequency", static_cast<int>(outputFreq_default_),
       "How often convergence information should be outputted\n"
       "to the output stream.");
-    pl->set("Output Stream", outputStream_default_,
+    pl->set("Output Stream", Teuchos::rcp(outputStream_default_,false),
       "A reference-counted pointer to the output stream where all\n"
       "solver output is sent.");
-    pl->set("Show Maximum Residual Norm Only", showMaxResNormOnly_default_,
+    pl->set("Show Maximum Residual Norm Only", static_cast<bool>(showMaxResNormOnly_default_),
       "When convergence information is printed, only show the maximum\n"
       "relative residual norm when the block size is greater than one.");
-    pl->set("Timer Label", label_default_,
+    pl->set("Timer Label", static_cast<const char *>(label_default_),
       "The string to use as a prefix for the timer labels.");
     validPL = pl;
   }
