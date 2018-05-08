@@ -95,10 +95,8 @@ public:
     const Array< RCP<const LinearOpWithSolveFactoryBase<Scalar> > > &lowsf
     );
 
-  /** \brief . */
   Array< RCP<LinearOpWithSolveFactoryBase<Scalar> > > getUnderlyingLOWSF();
 
-  /** \brief . */
   Array< RCP<const LinearOpWithSolveFactoryBase<Scalar> > > getUnderlyingLOWSF() const;
 
   //@}
@@ -106,7 +104,6 @@ public:
   /** \name Overridden from Teuchos::Describable. */
   //@{
 
-  /** \brief . */
   std::string description() const;
 
   //@}
@@ -114,15 +111,10 @@ public:
   /** @name Overridden from ParameterListAcceptor (simple forwarding functions) */
   //@{
 
-  /** \brief . */
   void setParameterList(RCP<ParameterList> const& paramList);
-  /** \brief . */
   RCP<ParameterList> getNonconstParameterList();
-  /** \brief . */
   RCP<ParameterList> unsetParameterList();
-  /** \brief . */
   RCP<const ParameterList> getParameterList() const;
-  /** \brief . */
   RCP<const ParameterList> getValidParameters() const;
 
   //@}
@@ -149,28 +141,23 @@ public:
     std::string *precFactoryName
     );
 
-  /** \brief . */
   virtual bool isCompatible(
     const LinearOpSourceBase<Scalar> &fwdOpSrc
     ) const;
 
-  /** \brief . */
   virtual RCP<LinearOpWithSolveBase<Scalar> > createOp() const;
 
-  /** \brief . */
   virtual void initializeOp(
     const RCP<const LinearOpSourceBase<Scalar> > &fwdOpSrc,
     LinearOpWithSolveBase<Scalar> *Op,
     const ESupportSolveUse supportSolveUse
     ) const;
 
-  /** \brief . */
   virtual void initializeAndReuseOp(
     const RCP<const LinearOpSourceBase<Scalar> > &fwdOpSrc,
     LinearOpWithSolveBase<Scalar> *Op
     ) const;
 
-  /** \brief . */
   virtual void uninitializeOp(
     LinearOpWithSolveBase<Scalar> *Op,
     RCP<const LinearOpSourceBase<Scalar> > *fwdOpSrc,
@@ -179,12 +166,10 @@ public:
     ESupportSolveUse *supportSolveUse
     ) const;
 
-  /** \brief . */
   virtual bool supportsPreconditionerInputType(
     const EPreconditionerInputType precOpType
     ) const;
 
-  /** \brief . */
   virtual void initializePreconditionedOp(
     const RCP<const LinearOpSourceBase<Scalar> > &fwdOpSrc,
     const RCP<const PreconditionerBase<Scalar> > &prec,
@@ -192,7 +177,6 @@ public:
     const ESupportSolveUse supportSolveUse
     ) const;
 
-  /** \brief . */
   virtual void initializeApproxPreconditionedOp(
     const RCP<const LinearOpSourceBase<Scalar> > &fwdOpSrc,
     const RCP<const LinearOpSourceBase<Scalar> > &approxFwdOpSrc,
@@ -207,7 +191,6 @@ protected:
   /** \brief Overridden from Teuchos::VerboseObjectBase */
   //@{
 
-  /** \brief . */
   void informUpdatedVerbosityState() const;
 
   //@}
@@ -226,7 +209,7 @@ private:
 
 /** \brief Nonmember constructor.
  *
- * \releates BlockedTriangularLinearOpWithSolveFactory
+ * \relates BlockedTriangularLinearOpWithSolveFactory
  */
 template<class Scalar>
 RCP<BlockedTriangularLinearOpWithSolveFactory<Scalar> >
@@ -242,7 +225,7 @@ blockedTriangularLinearOpWithSolveFactory(
 
 /** \brief Nonmember constructor.
  *
- * \releates BlockedTriangularLinearOpWithSolveFactory
+ * \relates BlockedTriangularLinearOpWithSolveFactory
  */
 template<class Scalar>
 RCP<BlockedTriangularLinearOpWithSolveFactory<Scalar> >
