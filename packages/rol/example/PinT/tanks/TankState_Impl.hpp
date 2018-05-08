@@ -50,7 +50,7 @@ namespace details {
 using namespace std;
 
 template<typename Real>
-TankState<Real>::TankState( Teuchos::ParameterList& pl ) :
+TankState<Real>::TankState( ROL::ParameterList& pl ) :
   // ----------- Begin Initializer List ----------------//
   rows_   ( pl.get( "Number of Rows",        3      ) ),
   cols_   ( pl.get( "Number of Columns",     3      ) ),

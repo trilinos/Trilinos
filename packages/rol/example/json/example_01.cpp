@@ -92,12 +92,12 @@ int main(int argc, char *argv[]) {
 
     int dim = 10;
 
-    Teuchos::ParameterList parlist;
+    ROL::ParameterList parlist;
 
     std::string jsonFileName("parameters.json");
     parlist.setName("Imported from " + jsonFileName);
     
-    // Load json parameters into a Teuchos::ParameterList  
+    // Load json parameters into a ROL::ParameterList  
     ROL::JSON_Parameters(jsonFileName,parlist);
     std::string stepname = "Trust Region"; // can we obtain this from parlist?  or jsonFile?
 

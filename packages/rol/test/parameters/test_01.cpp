@@ -44,17 +44,15 @@
 #include <iostream>
 #include "ROL_Types.hpp"
 #include "ROL_ParameterListConverters.hpp"
-#include "Teuchos_XMLParameterListHelpers.hpp"
 
 int main(int argc, char *argv[]) {
 
   using namespace Teuchos;
 
-  ROL::Ptr<ParameterList> inlist = ROL::makePtr<ParameterList>();
   std::string infile  = "parameters.xml";
   std::string outfile = "tiered_parameters.xml";
 
-  ROL::updateParametersFromXmlFile(infile, *inlist);
+  auto inlist = ROL::getParametersFromXmlFile(infile);
 
   ROL::ParameterList outlist;
 

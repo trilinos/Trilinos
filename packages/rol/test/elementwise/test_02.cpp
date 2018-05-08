@@ -102,7 +102,7 @@ int main(int argc, char *argv[]) {
   Teuchos::GlobalMPISession mpiSession(&argc, &argv,0);
   typedef Tpetra::DefaultPlatform::DefaultPlatformType Platform;
   Platform &platform = Tpetra::DefaultPlatform::getDefaultPlatform();
-  ROL::Ptr<const Teuchos::Comm<int> > comm = platform.getComm();
+  ROL::Ptr<const Teuchos::Comm<int> > comm = ROL::toPtr(platform.getComm());
 
   int iprint = argc - 1;
   Teuchos::oblackholestream bhs; // outputs nothing

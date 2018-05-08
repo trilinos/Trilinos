@@ -108,7 +108,7 @@ int main(int argc, char *argv[]) {
     ROL::Ptr<ROL::EqualityConstraint<RealT> > eqcon_hs32 = ROL::makePtr<EqualityConstraint_HS32<RealT>>();
     ROL::Ptr<ROL::InequalityConstraint<RealT> > incon_hs32 = ROL::makePtr<InequalityConstraint_HS32<RealT>>();
     
-    Teuchos::RCP<Teuchos::ParameterList> parlist = Teuchos::rcp( new Teuchos::ParameterList() );
+    
     std::string stepname = "Interior Point";
 
     RealT mu = 0.1;            // Initial penalty parameter

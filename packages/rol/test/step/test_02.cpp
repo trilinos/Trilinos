@@ -51,7 +51,7 @@
 #include "ROL_OptimizationSolver.hpp"
 #include "Teuchos_oblackholestream.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
-#include "Teuchos_XMLParameterListHelpers.hpp"
+
 
 #include <iostream>
 
@@ -77,8 +77,8 @@ int main(int argc, char *argv[]) {
   try {
 
     std::string filename = "input.xml";
-    Teuchos::RCP<Teuchos::ParameterList> parlist = Teuchos::rcp( new Teuchos::ParameterList() );
-    Teuchos::updateParametersFromXmlFile( filename, parlist.ptr() );
+    
+    auto parlist = ROL::getParametersFromXmlFile( filename );
     parlist->sublist("Step").set("Type","Trust Region");
 
     // Loop Through Test Objectives

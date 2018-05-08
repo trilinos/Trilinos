@@ -69,7 +69,7 @@ int main(int argc, char *argv[]) {
   try {
     // Read in parameterlist
     std::string filename = "input.xml";
-    Teuchos::RCP<Teuchos::ParameterList> parlist = Teuchos::rcp( new Teuchos::ParameterList() );
+    auto parlist = ROL::makePtr<ROL::ParameterList>()
     Teuchos::updateParametersFromXmlFile( filename, parlist.ptr() );
 
     // Physical parameters

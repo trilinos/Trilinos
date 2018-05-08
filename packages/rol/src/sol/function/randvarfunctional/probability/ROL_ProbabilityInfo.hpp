@@ -44,7 +44,7 @@
 #ifndef ROL_PROBABILITYINFO_HPP
 #define ROL_PROBABILITYINFO_HPP
 
-#include "Teuchos_ParameterList.hpp"
+#include "ROL_ParameterList.hpp"
 #include "ROL_Types.hpp"
 
 namespace ROL {

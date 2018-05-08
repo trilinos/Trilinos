@@ -134,7 +134,7 @@ int main(int argc, char *argv[]) {
     constr->solveAugmentedSystem(v1, v2, d, vc, xtest, augtol);
     
     // Define algorithm.
-    Teuchos::ParameterList parlist;
+    ROL::ParameterList parlist;
     std::string stepname = "Composite Step";
     parlist.sublist("Step").sublist(stepname).sublist("Optimality System Solver").set("Nominal Relative Tolerance",1.e-4);
     parlist.sublist("Step").sublist(stepname).sublist("Optimality System Solver").set("Fix Tolerance",true);

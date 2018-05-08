@@ -1069,7 +1069,7 @@ int main(int argc, char *argv[]) {
     int   maxit     = 100;   // Maximum number of iterations (e.g., 500).
     // Read optimization input parameter list.
     std::string filename = "input.xml";
-    Teuchos::RCP<Teuchos::ParameterList> parlist = Teuchos::rcp( new Teuchos::ParameterList() );
+    auto parlist = ROL::makePtr<ROL::ParameterList>()
     Teuchos::updateParametersFromXmlFile( filename, parlist.ptr() );
     // Initialize ROL::Ptrs.
     ROL::Ptr<ROL::Objective_SimOpt<RealT> >         pobj;   // Full objective.

@@ -51,7 +51,7 @@
 #include "ROL_Algorithm.hpp"
 
 
-#include "Teuchos_XMLParameterListHelpers.hpp"
+
 #include "Teuchos_oblackholestream.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
 
@@ -88,7 +88,6 @@ int main(int argc, char *argv[]) {
     // Dimension of the optimization vector
     int dim = 10;
 
-    ROL::Ptr<ParameterList> parlist = ROL::makePtr<ParameterList>();
     std::string paramfile = "parameters.xml";
     auto parlist = ROL::getParametersFromXmlFile(paramfile);
 

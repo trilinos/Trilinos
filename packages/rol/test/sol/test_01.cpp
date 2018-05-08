@@ -42,7 +42,7 @@
 // @HEADER
 
 #include "ROL_ParameterList.hpp"
-#include "Teuchos_XMLParameterListHelpers.hpp"
+
 #include "Teuchos_oblackholestream.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
 
@@ -103,7 +103,7 @@ public:
   }
 };
 
-void setUpAndSolve(Teuchos::ParameterList &list,
+void setUpAndSolve(ROL::ParameterList &list,
                    ROL::Ptr<ROL::Objective<RealT> > &pObj,
                    ROL::Ptr<ROL::SampleGenerator<RealT> > &sampler,
                    ROL::Ptr<ROL::Vector<RealT> > &x,
@@ -156,9 +156,9 @@ int main(int argc, char* argv[]) {
     /**********************************************************************************************/
     // Get ROL parameterlist
     std::string filename = "input_01.xml";
-    Teuchos::RCP<Teuchos::ParameterList> parlist = Teuchos::rcp( new Teuchos::ParameterList() );
-    Teuchos::updateParametersFromXmlFile( filename, parlist.ptr() );
-    Teuchos::ParameterList list = *parlist;
+    
+    auto parlist = ROL::getParametersFromXmlFile( filename );
+    ROL::ParameterList list = *parlist;
     /**********************************************************************************************/
     /************************* CONSTRUCT SOL COMPONENTS *******************************************/
     /**********************************************************************************************/

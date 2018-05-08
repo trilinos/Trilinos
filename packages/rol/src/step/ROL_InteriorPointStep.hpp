@@ -66,7 +66,7 @@ private:
   ROL::Ptr<Step<Real> >             step_;  
   ROL::Ptr<Algorithm<Real> >        algo_;
   ROL::Ptr<BoundConstraint<Real> >  bnd_;
-  ROL::ParameterList            parlist_;
+  ROL::ParameterList                parlist_;
 
   // Storage
   ROL::Ptr<Vector<Real> > x_;
@@ -255,13 +255,13 @@ public:
       Ptr<Objective<Real>>  raw_obj = makePtrFromRef(obj);
       Ptr<Constraint<Real>> raw_con = makePtrFromRef(con);
       Ptr<StepState<Real>>  state   = Step<Real>::getState();
-      penObj = makePtr<AugmentedLagrangian<Real>>(raw_obj,raw_con,l,one,x,*(state->constraintVec()),parlist_);
+      penObj = makePtr<AugmentedLagrangian<Real>>(raw_obj,raw_con,l,one,x,*(state->constraintVec),parlist_);
     }
     else if (stepType_ == STEP_FLETCHER) {
       Ptr<Objective<Real>>  raw_obj = makePtrFromRef(obj);
       Ptr<Constraint<Real>> raw_con = makePtrFromRef(con);
       Ptr<StepState<Real>>  state   = Step<Real>::getState();
-      penObj = makePtr<Fletcher<Real>>(raw_obj,raw_con,x,*(state->constraintVec()),parlist_);
+      penObj = makePtr<Fletcher<Real>>(raw_obj,raw_con,x,*(state->constraintVec),parlist_);
     }
     else {
       penObj = makePtrFromRef(obj);

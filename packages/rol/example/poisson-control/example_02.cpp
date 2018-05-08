@@ -45,15 +45,14 @@ int main( int argc, char *argv[] ) {
     /***************************************************************************/
     // Get finite element parameter list
     std::string filename = "example_02.xml";
-    Teuchos::RCP<Teuchos::ParameterList> parlist = Teuchos::rcp( new Teuchos::ParameterList() );
-    Teuchos::updateParametersFromXmlFile( filename, Teuchos::Ptr<Teuchos::ParameterList>(&*parlist) );
+    auto parlist ROL::getParametersFromXmlFile( filename );
+
     if ( parlist->get("Display Option",0) && (comm->getRank() > 0) ) {
       parlist->set("Display Option",0);
     }
     // Get ROL parameter list
     filename = "input.xml";
-    Teuchos::RCP<Teuchos::ParameterList> ROL_parlist = Teuchos::rcp( new Teuchos::ParameterList() );
-    Teuchos::updateParametersFromXmlFile( filename, Teuchos::Ptr<Teuchos::ParameterList>(&*ROL_parlist) );
+    auto ROL_parlist = ROL::getParametersFromXmlFile( filename );
   
     /***************************************************************************/
     /***************** INITIALIZE SAMPLERS *************************************/

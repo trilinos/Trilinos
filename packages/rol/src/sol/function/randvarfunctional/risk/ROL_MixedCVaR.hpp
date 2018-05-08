@@ -48,7 +48,7 @@
 #include "ROL_PlusFunction.hpp"
 
 #include "Teuchos_Array.hpp"
-#include "Teuchos_ParameterList.hpp"
+#include "ROL_ParameterList.hpp"
 
 /** @ingroup risk_group
     \class ROL::MixedCVaR
@@ -89,8 +89,8 @@ template<class Real>
 class MixedCVaR : public RandVarFunctional<Real> {
 private:
   ROL::Ptr<PlusFunction<Real> > plusFunction_;
-  Teuchos::Array<Real> prob_;
-  Teuchos::Array<Real> coeff_;
+  std::vector<Real> prob_;
+  std::vector<Real> coeff_;
   std::vector<Real> vec_;
   int size_;
 
@@ -139,8 +139,8 @@ public:
     ROL::ParameterList &list
       = parlist.sublist("SOL").sublist("Risk Measure").sublist("Mixed CVaR");
     // Grab probability and coefficient arrays
-    prob_  = Teuchos::getArrayFromStringParameter<Real>(list,"Probability Array");
-    coeff_ = Teuchos::getArrayFromStringParameter<Real>(list,"Coefficient Array");
+    prob_  = ROL::getArrayFromStringParameter<Real>(list,"Probability Array");
+    coeff_ = ROL::getArrayFromStringParameter<Real>(list,"Coefficient Array");
     plusFunction_ = ROL::makePtr<PlusFunction<Real>>(list);
     // Check inputs
     checkInputs();

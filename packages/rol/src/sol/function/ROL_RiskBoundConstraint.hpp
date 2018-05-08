@@ -100,7 +100,7 @@ private:
     }
   }
 
-  bool buildObjStatBnd(Teuchos::RCP<ROL::ParameterList> &parlist) {
+  bool buildObjStatBnd(ROL::Ptr<ROL::ParameterList> &parlist) {
     // Objective statistic bound
     if (parlist != ROL::nullPtr) {
       setBoundInfo(*parlist,nStatObj_,lowerObj_,upperObj_,augmentedObj_,activatedObj_);
@@ -124,7 +124,7 @@ private:
     return activatedObj_;
   }
 
-  bool buildConStatBnd(std::vector<Teuchos::RCP<ROL::ParameterList> > &parlist) {
+  bool buildConStatBnd(std::vector<ROL::Ptr<ROL::ParameterList> > &parlist) {
     // Constraint statistic bound
     int size = parlist.size();
     nStatCon_.clear(); nStatCon_.resize(size,0);
@@ -185,7 +185,7 @@ public:
   }
 
   // Constraint risk only
-  RiskBoundConstraint(std::vector<Teuchos::RCP<ROL::ParameterList> > &parlist,
+  RiskBoundConstraint(std::vector<ROL::Ptr<ROL::ParameterList> > &parlist,
                 const ROL::Ptr<BoundConstraint<Real> >               &bc = ROL::nullPtr)
    : BoundConstraint<Real>(), bc_(bc), statObj_bc_(ROL::nullPtr),
      augmentedObj_(false), activatedObj_(false),
@@ -202,8 +202,8 @@ public:
   }
 
   // Objective and constraint risk
-  RiskBoundConstraint(Teuchos::RCP<ROL::ParameterList>               &parlistObj,
-                      std::vector<Teuchos::RCP<ROL::ParameterList> > &parlistCon,
+  RiskBoundConstraint(ROL::Ptr<ROL::ParameterList>               &parlistObj,
+                      std::vector<ROL::Ptr<ROL::ParameterList> > &parlistCon,
                 const ROL::Ptr<BoundConstraint<Real> >               &bc = ROL::nullPtr)
    : BoundConstraint<Real>(), bc_(bc), statObj_bc_(ROL::nullPtr),
      augmentedObj_(false), activatedObj_(false),

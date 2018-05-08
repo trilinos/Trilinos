@@ -96,7 +96,7 @@ int main(int argc, char **argv)
         int dim = 10; // Set problem dimension. 
 
         // Load optimizer parameters form XML file
-        Teuchos::RCP<Teuchos::ParameterList> parlist = Teuchos::rcp( new Teuchos::ParameterList() );
+        auto parlist = ROL::makePtr<ROL::ParameterList>()
         std::string paramfile = "parameters.xml";
         Teuchos::updateParametersFromXmlFile(paramfile,parlist.ptr());
 

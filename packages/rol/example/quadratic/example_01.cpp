@@ -152,8 +152,8 @@ int main(int argc, char *argv[]) {
     ROL::Ptr<ROL::Objective<RealT> > obj = ROL::makePtr<ROL::QuadraticObjective<RealT>>(op,g);
 
    // Define algorithm
-    Teuchos::RCP<Teuchos::ParameterList> parlist
-      = Teuchos::rcp( new Teuchos::ParameterList() );
+    ROL::Ptr<ROL::ParameterList> parlist
+      = ROL::makePtr<ROL::ParameterList>()
     std::string paramfile = "input.xml";
     Teuchos::updateParametersFromXmlFile(paramfile,parlist.ptr());
     ROL::Algorithm<RealT> algo("Trust-Region",*parlist);

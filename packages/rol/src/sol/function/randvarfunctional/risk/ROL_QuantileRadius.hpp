@@ -48,7 +48,7 @@
 #include "ROL_PlusFunction.hpp"
 
 #include "Teuchos_Array.hpp"
-#include "Teuchos_ParameterList.hpp"
+#include "ROL_ParameterList.hpp"
 
 namespace ROL {
 

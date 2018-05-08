@@ -265,7 +265,7 @@ int main(int argc, char *argv[]) {
     int dim = 100; // Set problem dimension. Must be even.
 
     // Define algorithm.
-    Teuchos::ParameterList parlist;
+    ROL::ParameterList parlist;
     std::string stepname = "Trust Region";
     parlist.sublist("Step").sublist(stepname).set("Subproblem Solver", "Truncated CG");
     parlist.sublist("General").sublist("Krylov").set("Iteration Limit",10);

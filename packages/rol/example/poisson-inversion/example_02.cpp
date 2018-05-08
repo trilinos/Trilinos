@@ -509,7 +509,7 @@ int main(int argc, char *argv[]) {
 
     ROL::Bounds<RealT> icon(lo,up);
 
-    Teuchos::ParameterList parlist;
+    ROL::ParameterList parlist;
 
     // Krylov parameters.
     parlist.sublist("General").sublist("Krylov").set("Absolute Tolerance",1.e-8);

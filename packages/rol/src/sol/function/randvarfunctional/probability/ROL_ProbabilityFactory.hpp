@@ -44,7 +44,7 @@
 #ifndef ROL_PROBABILITYFACTORY_HPP
 #define ROL_PROBABILITYFACTORY_HPP
 
-#include "Teuchos_ParameterList.hpp"
+#include "ROL_ParameterList.hpp"
 
 #include "ROL_Types.hpp"
 #include "ROL_BPOE.hpp"

@@ -99,8 +99,8 @@ private:
   std::vector<ROL::Ptr<SampleGenerator<Real> > > ixsampler_;
   std::vector<ROL::Ptr<BatchManager<Real> > >    icbman_;
 
-  Teuchos::RCP<ROL::ParameterList>               parlistObj_;
-  std::vector<Teuchos::RCP<ROL::ParameterList> > parlistCon_;
+  ROL::Ptr<ROL::ParameterList>               parlistObj_;
+  std::vector<ROL::Ptr<ROL::ParameterList> > parlistCon_;
 
   ROL::Ptr<Objective<Real> >       obj_;
   ROL::Ptr<Vector<Real> >          sol_;

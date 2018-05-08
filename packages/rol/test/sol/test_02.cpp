@@ -1,6 +1,6 @@
 
 #include "ROL_ParameterList.hpp"
-#include "Teuchos_XMLParameterListHelpers.hpp"
+
 #include "Teuchos_oblackholestream.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
 #include "ROL_Ptr.hpp"
@@ -28,9 +28,9 @@ int main(int argc, char* argv[]) {
 
     // Get ROL parameterlist
     std::string filename = "input_02.xml";
-    Teuchos::RCP<Teuchos::ParameterList> parlist = Teuchos::rcp( new Teuchos::ParameterList() );
-    Teuchos::updateParametersFromXmlFile( filename, parlist.ptr() );   
-  
+
+    auto parlist = ROL::getParametersFromXmlFile( filename ); 
+ 
     for (ROL::EDistribution ed = ROL::DISTRIBUTION_ARCSINE; ed != ROL::DISTRIBUTION_LAST; ed++) {
       *outStream << ROL::EDistributionToString(ed) << std::endl << std::endl;
       parlist->sublist("SOL").sublist("Distribution").set("Name",ROL::EDistributionToString(ed));

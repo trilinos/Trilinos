@@ -42,7 +42,7 @@
 // @HEADER
 
 #pragma once
-#include "ROL_SharedPointer.hpp"
+#include "ROL_Ptr.hpp"
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_XMLParameterListCoreHelpers.hpp"
 
@@ -70,9 +70,9 @@ void readParametersFromXml( const std::string &filename,
 
 
 inline
-ROL::SharedPointer<ParameterList> getParametersFromXmlFile( const std::string& filename )
+ROL::Ptr<ParameterList> getParametersFromXmlFile( const std::string& filename )
   {
-    auto parlist = ROL::makeShared<ParameterList>();
+    auto parlist = ROL::makePtr<ParameterList>();
     Teuchos::Ptr<ParameterList> p{&*parlist};
     Teuchos::updateParametersFromXmlFile( filename, p );
     return parlist;

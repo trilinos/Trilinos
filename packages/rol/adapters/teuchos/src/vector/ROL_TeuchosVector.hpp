@@ -118,22 +118,22 @@ public:
     }    
   }
 
-  Ptr<Vector<Real>> clone() const { 
-    return makePtr<TeuchosVector>( vec_->length() );
+  Teuchos::RCP<Vector<Real>> clone() const { 
+    return Teuchos::rcp( vec_->length() );
   }
 
-  Ptr<Vector<Real>> basis( int i ) const override {
+  Teuchos::RCP<Vector<Real>> basis( int i ) const override {
     //auto b = Teuchos::rcp( new SerialDenseVector(vec_->length(),true) );
     auto b = Teuchos::rcp( new TeuchosVector(vec_->length(),true) );
     (*b)[static_cast<Ordinal>(i)] = Real{1.0};
     return b;
   }
 
-  Ptr<SerialDenseVector> getVector() {
+  Teuchos::RCP<SerialDenseVector> getVector() {
     return vec_;
   }
   
-  Ptr<const SerialDenseVector> getVector() const { 
+  Teuchos::RCP<const SerialDenseVector> getVector() const { 
     return vec_;
   }
   

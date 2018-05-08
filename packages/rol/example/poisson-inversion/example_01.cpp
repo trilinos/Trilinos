@@ -85,7 +85,7 @@ int main(int argc, char *argv[]) {
     ROL::ZOO::Objective_PoissonInversion<RealT> obj(dim, 1e-6);
 
     // Define algorithm.
-    Teuchos::ParameterList parlist;
+    ROL::ParameterList parlist;
     std::string stepname = "Trust Region";
     parlist.sublist("Step").sublist(stepname).set("Subproblem Solver", "Truncated CG");
     parlist.sublist("General").sublist("Krylov").set("Iteration Limit",50);

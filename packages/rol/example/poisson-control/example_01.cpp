@@ -48,12 +48,14 @@
 
 #define USE_HESSVEC 1
 
+#include "ROL_Bounds.hpp"
 #include "ROL_PoissonControl.hpp"
 #include "ROL_Algorithm.hpp"
 #include "ROL_PrimalDualActiveSetStep.hpp"
 #include "ROL_TrustRegionStep.hpp"
 #include "ROL_StatusTest.hpp"
 #include "ROL_Types.hpp"
+
 #include "Teuchos_oblackholestream.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
 #include "Teuchos_XMLParameterListHelpers.hpp"
@@ -61,7 +63,6 @@
 #include <iostream>
 #include <algorithm>
 
-#include "ROL_Bounds.hpp"
 
 
 template <class Real>
@@ -149,7 +150,7 @@ int main(int argc, char *argv[]) {
 
     // Primal dual active set.
     std::string filename = "input.xml";
-    Teuchos::RCP<Teuchos::ParameterList> parlist = Teuchos::rcp( new Teuchos::ParameterList() );
+    auto parlist = ROL::makePtr<Teuchos::ParameterList>()
     Teuchos::updateParametersFromXmlFile( filename, parlist.ptr() );
 
     // Krylov parameters.

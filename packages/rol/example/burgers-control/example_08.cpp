@@ -77,7 +77,7 @@ int main(int argc, char *argv[]) {
 
   Teuchos::GlobalMPISession mpiSession(&argc, &argv);
   ROL::Ptr<const Teuchos::Comm<int> > comm
-    = Teuchos::DefaultComm<int>::getComm();
+    = ROL::toPtr(Teuchos::DefaultComm<int>::getComm());
 
   // This little trick lets us print to std::cout only if a (dummy) command-line argument is provided.
   int iprint = argc - 1;
@@ -209,7 +209,7 @@ int main(int argc, char *argv[]) {
     /*************************************************************************/
     /************* INITIALIZE OPTIMIZATION PROBLEM ***************************/
     /*************************************************************************/
-    Teuchos::ParameterList SOLlist;
+    ROL::ParameterList SOLlist;
     SOLlist.sublist("SOL").set("Stochastic Component Type","Risk Averse");
     SOLlist.sublist("SOL").set("Store Sampled Value and Gradient",storage);
     SOLlist.sublist("SOL").sublist("Risk Measure").set("Name","KL Divergence");
@@ -249,8 +249,8 @@ int main(int argc, char *argv[]) {
     /*************************************************************************/
     // READ IN XML INPUT
     std::string filename = "input.xml";
-    Teuchos::RCP<Teuchos::ParameterList> parlist
-      = Teuchos::rcp( new Teuchos::ParameterList() );
+    ROL::Ptr<ROL::ParameterList> parlist
+      = ROL::makePtr<ROL::ParameterList>()
     Teuchos::updateParametersFromXmlFile( filename, parlist.ptr() );
     // RUN OPTIMIZATION
     ROL::Algorithm<RealT> algo("Trust Region",*parlist,false);

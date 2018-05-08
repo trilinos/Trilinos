@@ -87,7 +87,7 @@ int main( int argc, char* argv[] ) {
 
   try {   
 
-    auto tank_parameters = makePtr<Teuchos::ParameterList>();
+    auto tank_parameters = makePtr<ROL::ParameterList>();
 
     std::string tank_xml("tank-parameters.xml");
     Teuchos::updateParametersFromXmlFile(tank_xml, tank_parameters.ptr());

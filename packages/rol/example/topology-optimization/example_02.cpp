@@ -929,7 +929,7 @@ int main(int argc, char *argv[]) {
     ROL::Ptr<FEM<RealT> > pFEM = ROL::makePtr<FEM<RealT>>(nx,ny,P,prob);
     // Read optimization input parameter list.
     std::string filename = "input_ex02.xml";
-    Teuchos::RCP<Teuchos::ParameterList> parlist = Teuchos::rcp( new Teuchos::ParameterList() );
+    auto parlist = ROL::makePtr<ROL::ParameterList>()
     Teuchos::updateParametersFromXmlFile( filename, parlist.ptr() );
     // Initialize ROL::Ptrs.
     ROL::Ptr<ROL::Objective_SimOpt<RealT>>         pobj;   // Full objective.

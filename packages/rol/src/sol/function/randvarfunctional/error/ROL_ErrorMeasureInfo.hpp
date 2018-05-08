@@ -44,7 +44,7 @@
 #ifndef ROL_ERRORMEASUREINFO_HPP
 #define ROL_ERRORMEASUREINFO_HPP
 
-#include "Teuchos_ParameterList.hpp"
+#include "ROL_ParameterList.hpp"
 #include "ROL_Types.hpp"
 
 namespace ROL {

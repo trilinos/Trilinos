@@ -164,7 +164,7 @@ int main(int argc, char **argv)
     constr->solveAugmentedSystem(v1, v2, d, vc, xtest, augtol);
     
     // Define algorithm.
-    Teuchos::RCP<Teuchos::ParameterList> parlist = Teuchos::rcp( new Teuchos::ParameterList() );
+    auto parlist = ROL::makePtr<ROL::ParameterList>()
     std::string paramfile = "parameters.xml";
     Teuchos::updateParametersFromXmlFile(paramfile,parlist.ptr());
     ROL::Algorithm<RealT> algo("Composite Step", *parlist);

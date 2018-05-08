@@ -43,7 +43,7 @@
 
 #pragma once
 
-#include "ROL_SharedPointer.hpp"
+#include "ROL_Ptr.hpp"
 #include <boost/algorithm/string.hpp>
 #include <boost/lexical_cast.hpp>
 #include <boost/property_tree/ptree.hpp>
@@ -337,11 +337,11 @@ public:
     return result;
   }
 
-  inline ROL::SharedPointer<ParameterList> getParametersFromXmlFile( const std::string& filename )
+  inline ROL::Ptr<ParameterList> getParametersFromXmlFile( const std::string& filename )
   {
     pt::ptree tr;
     boost::property_tree::read_xml(filename, tr);
-    auto list = ROL::makeShared<ParameterList>(tr);
+    auto list = ROL::makePtr<ParameterList>(tr);
     list->root() = list->tree().begin();
     return list;
   }

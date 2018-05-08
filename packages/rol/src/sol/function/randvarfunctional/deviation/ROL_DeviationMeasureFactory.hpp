@@ -44,7 +44,7 @@
 #ifndef ROL_DEVIATIONMEASUREFACTORY_HPP
 #define ROL_DEVIATIONMEASUREFACTORY_HPP
 
-#include "Teuchos_ParameterList.hpp"
+#include "ROL_ParameterList.hpp"
 
 #include "ROL_Types.hpp"
 

@@ -103,10 +103,10 @@ int main(int argc, char **argv) {
     int errorFlag = 0;
  
 
-    Teuchos::ParameterList parlist;
-    Teuchos::ParameterList gplist;
+    ROL::ParameterList parlist;
+    ROL::ParameterList gplist;
     std::string paramfile = "parameters.xml";
-    Teuchos::updateParametersFromXmlFile(paramfile,Teuchos::Ptr<Teuchos::ParameterList>(&gplist));
+    Teuchos::updateParametersFromXmlFile(paramfile,Teuchos::Ptr<ROL::ParameterList>(&gplist));
        
     int    nx         = gplist.get("Interior Grid Points",100);
     RealT gnl         = gplist.get("Nonlinearity Coefficient g",50.0);

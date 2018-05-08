@@ -59,7 +59,7 @@ int main(int argc, char* argv[]) {
 
   Teuchos::GlobalMPISession mpiSession(&argc, &argv);
   ROL::Ptr<const Teuchos::Comm<int> > comm
-    = Teuchos::DefaultComm<int>::getComm();
+    = ROL::toPtr(Teuchos::DefaultComm<int>::getComm());
 
   // This little trick lets us print to std::cout only if a (dummy) command-line argument is provided.
   int iprint = argc - 1;
@@ -78,7 +78,7 @@ int main(int argc, char* argv[]) {
     /**********************************************************************************************/
     // Get ROL parameterlist
     std::string filename = "input.xml";
-    Teuchos::RCP<Teuchos::ParameterList> parlist = Teuchos::rcp( new Teuchos::ParameterList() );
+    auto parlist = ROL::makePtr<ROL::ParameterList>()
     Teuchos::updateParametersFromXmlFile( filename, parlist.ptr() );
     // Build ROL algorithm
     parlist->sublist("Status Test").set("Gradient Tolerance",1.e-7);
@@ -155,7 +155,7 @@ int main(int argc, char* argv[]) {
     for (int i = 0; i < 3; ++i) {
       *outStream << "\nSOLVE SMOOTHED CONDITIONAL VALUE AT RISK WITH TRUST REGION\n";
       // Build CVaR risk measure
-      Teuchos::ParameterList list;
+      ROL::ParameterList list;
       list.sublist("SOL").set("Stochastic Component Type",ra);
       list.sublist("SOL").set("Store Sampled Value and Gradient",storage);
       list.sublist("SOL").sublist("Risk Measure").set("Name",rm);
@@ -188,7 +188,7 @@ int main(int argc, char* argv[]) {
     /************************* NONSMOOTH PROBLEM **************************************************/
     /**********************************************************************************************/
     *outStream << "\nSOLVE NONSMOOTH CVAR PROBLEM WITH BUNDLE TRUST REGION\n";
-    Teuchos::ParameterList list;
+    ROL::ParameterList list;
     list.sublist("SOL").set("Stochastic Component Type",ra);
     list.sublist("SOL").set("Store Sampled Value and Gradient",storage);
     list.sublist("SOL").sublist("Risk Measure").set("Name",rm);

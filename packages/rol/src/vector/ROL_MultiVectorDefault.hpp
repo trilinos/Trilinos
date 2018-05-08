@@ -58,10 +58,10 @@ template<class Real>
 class MultiVectorDefault : public MultiVector<Real> {
 
     typedef Vector<Real>              V;       // Single vector 
-    typedef ROL::Ptr<V>           PV;      // Pointer to a vector
+    typedef ROL::Ptr<V>               PV;      // Pointer to a vector
     typedef Teuchos::ArrayRCP<PV>     APV;     // Array of pointers to vectors
     typedef MultiVector<Real>         MV;      // Instance of this class
-    typedef ROL::Ptr<MV>          PMV;     // Pointer to an instance of this class 
+    typedef ROL::Ptr<MV>              PMV;     // Pointer to an instance of this class 
 
     private:
         APV mvec_;             // Array of pointers to vectors 

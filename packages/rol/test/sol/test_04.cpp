@@ -42,7 +42,6 @@
 // @HEADER
 
 #include "ROL_ParameterList.hpp"
-#include "Teuchos_XMLParameterListHelpers.hpp"
 #include "Teuchos_oblackholestream.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
 #include "Teuchos_Comm.hpp"
@@ -61,8 +60,7 @@ int main(int argc, char* argv[]) {
 
   Teuchos::GlobalMPISession mpiSession(&argc, &argv);
   ROL::Ptr<const Teuchos::Comm<int> > commptr =
-    Teuchos::DefaultComm<int>::getComm();
-  ROL::SharedPointer<const Teuchos::Comm<int>> commptr = ROL::makeSharedFromRef(*teuchos_commptr);
+    ROL::toPtr(Teuchos::DefaultComm<int>::getComm());
 
   // This little trick lets us print to std::cout only if a (dummy) command-line argument is provided.
   int iprint     = argc - 1;
@@ -87,7 +85,7 @@ int main(int argc, char* argv[]) {
     // Initialize distribution
     ROL::Ptr<ROL::Distribution<RealT> > dist;
     std::vector<ROL::Ptr<ROL::Distribution<RealT> > > distVec(dimension);
-    Teuchos::ParameterList Dlist;
+    ROL::ParameterList Dlist;
     Dlist.sublist("SOL").sublist("Distribution").set("Name","Beta");
     RealT alpha = 1., beta = 4.;
     // Fill moment vector and initial guess
@@ -102,8 +100,8 @@ int main(int argc, char* argv[]) {
 
     // Get ROL parameterlist
     std::string filename = "input_04.xml";
-    Teuchos::RCP<Teuchos::ParameterList> parlist = Teuchos::rcp( new Teuchos::ParameterList() );
-    Teuchos::updateParametersFromXmlFile( filename, parlist.ptr() );
+    
+    auto parlist = ROL::getParametersFromXmlFile( filename );
 
     ROL::ParameterList &list = parlist->sublist("SOL").sublist("Sample Generator").sublist("SROM");
     std::vector<int> moments = ROL::getArrayFromStringParameter<int>(list,"Moments");

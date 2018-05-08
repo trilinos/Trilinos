@@ -128,9 +128,8 @@ public:
     ROL::ParameterList &list
       = parlist.sublist("SOL").sublist("Risk Measure").sublist("Convex Combination Risk Measure");
     // Get convex combination parameters
-    Teuchos::Array<Real> lambda
-      = Teuchos::getArrayFromStringParameter<Real>(list,"Convex Combination Parameters");
-    lambda_ = lambda.toVector();
+    lambda_ = ROL::getArrayFromStringParameter<Real>(list,"Convex Combination Parameters");
+
     size_ = lambda_.size();
     // Build risk measures
     statVec_.clear();

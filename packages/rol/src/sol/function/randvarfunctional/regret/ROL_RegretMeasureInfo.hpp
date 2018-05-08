@@ -44,7 +44,7 @@
 #ifndef ROL_REGRETINFO_HPP
 #define ROL_REGRETINFO_HPP
 
-#include "Teuchos_ParameterList.hpp"
+#include "ROL_ParameterList.hpp"
 #include "ROL_Types.hpp"
 
 namespace ROL {

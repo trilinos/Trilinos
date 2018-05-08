@@ -45,11 +45,11 @@
 #define ROL_MEANDEVIATION_HPP
 
 #include "ROL_RandVarFunctional.hpp"
+#include "ROL_ParameterList.hpp"
 #include "ROL_PositiveFunction.hpp"
 #include "ROL_PlusFunction.hpp"
 #include "ROL_AbsoluteValue.hpp"
 
-#include "Teuchos_ParameterList.hpp"
 #include "Teuchos_Array.hpp"
 
 /** @ingroup risk_group
@@ -238,13 +238,12 @@ public:
     : RandVarFunctional<Real>() {
     ROL::ParameterList &list
       = parlist.sublist("SOL").sublist("Risk Measure").sublist("Mean Plus Deviation");
+
     // Get data from parameter list
-    Teuchos::Array<Real> order
-      = Teuchos::getArrayFromStringParameter<double>(list,"Orders");
-    order_ = order.toVector();
-    Teuchos::Array<Real> coeff
-      = Teuchos::getArrayFromStringParameter<double>(list,"Coefficients");
-    coeff_ = coeff.toVector();
+    order_ = ROL::getArrayFromStringParameter<double>(list,"Orders");
+ 
+    coeff_  = ROL::getArrayFromStringParameter<double>(list,"Coefficients");
+
     // Build (approximate) positive function
     std::string type = list.get<std::string>("Deviation Type");
     if ( type == "Upper" ) {

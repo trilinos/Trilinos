@@ -47,7 +47,7 @@
 #include "ROL_Distribution.hpp"
 #include "ROL_Gaussian.hpp"
 #include "ROL_Ptr.hpp"
-#include "Teuchos_ParameterList.hpp"
+#include "ROL_ParameterList.hpp"
 
 namespace ROL {
 

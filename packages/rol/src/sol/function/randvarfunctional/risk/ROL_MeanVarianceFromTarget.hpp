@@ -49,8 +49,7 @@
 #include "ROL_PlusFunction.hpp"
 #include "ROL_AbsoluteValue.hpp"
 
-#include "Teuchos_ParameterList.hpp"
-#include "Teuchos_Array.hpp"
+#include "ROL_ParameterList.hpp"
 
 /** @ingroup risk_group
     \class ROL::MeanVarianceFromTarget
@@ -180,15 +179,10 @@ public:
     ROL::ParameterList &list
       = parlist.sublist("SOL").sublist("Risk Measure").sublist("Mean Plus Variance From Target");
     // Get data from parameter list
-    Teuchos::Array<Real> target
-      = Teuchos::getArrayFromStringParameter<double>(list,"Targets");
-    target_ = target.toVector();
-    Teuchos::Array<Real> order
-      = Teuchos::getArrayFromStringParameter<double>(list,"Orders");
-    order_ = order.toVector();
-    Teuchos::Array<Real> coeff
-      = Teuchos::getArrayFromStringParameter<double>(list,"Coefficients");
-    coeff_ = coeff.toVector();
+    target_ = ROL::getArrayFromStringParameter<double>(list,"Targets");
+    order_  = ROL::getArrayFromStringParameter<double>(list,"Orders");
+    coeff_  = ROL::getArrayFromStringParameter<double>(list,"Coefficients");
+
     // Build (approximate) positive function
     std::string type = list.get<std::string>("Deviation Type");
     if ( type == "Upper" ) {
@@ -203,7 +197,7 @@ public:
     }
     // Check inputs
     checkInputs();
-    NumMoments_ = order.size();
+    NumMoments_ = order_.size();
   }
   
   void updateValue(Objective<Real>         &obj,

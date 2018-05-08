@@ -42,7 +42,7 @@
 // @HEADER
 
 #include "ROL_ParameterList.hpp"
-#include "Teuchos_XMLParameterListHelpers.hpp"
+
 #include "Teuchos_oblackholestream.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
 #include "Teuchos_Comm.hpp"
@@ -106,7 +106,7 @@ public:
   }
 };
 
-void setUpAndSolve(Teuchos::ParameterList &list,
+void setUpAndSolve(ROL::ParameterList &list,
                    ROL::Ptr<ROL::Objective<RealT> > &pObj,
                    ROL::Ptr<ROL::SampleGenerator<RealT> > &sampler,
                    ROL::Ptr<ROL::Vector<RealT> > &x,
@@ -155,8 +155,7 @@ int main(int argc, char* argv[]) {
 
   Teuchos::GlobalMPISession mpiSession(&argc, &argv);
   ROL::Ptr<const Teuchos::Comm<int> > commptr =
-    Teuchos::DefaultComm<int>::getComm();
-  ROL::SharedPointer<const Teuchos::Comm<int>> commptr = ROL::makeSharedFromRef(*teuchos_commptr);
+    ROL::toPtr(Teuchos::DefaultComm<int>::getComm());
 
   // This little trick lets us print to std::cout only if a (dummy) command-line argument is provided.
   int iprint     = argc - 1;
@@ -175,9 +174,9 @@ int main(int argc, char* argv[]) {
     /**********************************************************************************************/
     // Get ROL parameterlist
     std::string filename = "input_07.xml";
-    Teuchos::RCP<Teuchos::ParameterList> parlist = Teuchos::rcp( new Teuchos::ParameterList() );
-    Teuchos::updateParametersFromXmlFile( filename, parlist.ptr() );
-    Teuchos::ParameterList list = *parlist;
+    
+    auto parlist = ROL::getParametersFromXmlFile( filename );
+    ROL::ParameterList list = *parlist;
     // Build ROL algorithm
     ROL::Ptr<ROL::Algorithm<RealT> > algo;
     /**********************************************************************************************/

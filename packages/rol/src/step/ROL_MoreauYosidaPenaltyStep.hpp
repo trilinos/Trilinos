@@ -289,13 +289,13 @@ public:
       Ptr<Objective<Real>>  raw_obj = makePtrFromRef(obj);
       Ptr<Constraint<Real>> raw_con = makePtrFromRef(con);
       Ptr<StepState<Real>>  state   = Step<Real>::getState();
-      penObj = makePtr<AugmentedLagrangian<Real>>(raw_obj,raw_con,l,one,x,*(state->constraintVec()),parlist_);
+      penObj = makePtr<AugmentedLagrangian<Real>>(raw_obj,raw_con,l,one,x,*(state->constraintVec),parlist_);
     }
     else if (stepType_ == STEP_FLETCHER) {
       Ptr<Objective<Real>>  raw_obj = makePtrFromRef(obj);
       Ptr<Constraint<Real>> raw_con = makePtrFromRef(con);
       Ptr<StepState<Real>>  state   = Step<Real>::getState();
-      penObj = makePtr<Fletcher<Real>>(raw_obj,raw_con,x,*(state->constraintVec()),parlist_);
+      penObj = makePtr<Fletcher<Real>>(raw_obj,raw_con,x,*(state->constraintVec),parlist_);
     }
     else {
       penObj = makePtrFromRef(obj);
