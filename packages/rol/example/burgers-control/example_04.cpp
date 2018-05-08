@@ -49,10 +49,10 @@
 #include "ROL_Algorithm.hpp"
 #include "ROL_BoundConstraint_SimOpt.hpp"
 #include "ROL_Vector_SimOpt.hpp"
+#include "ROL_ParameterList.hpp"
 
 #include "Teuchos_oblackholestream.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
-#include "Teuchos_XMLParameterListHelpers.hpp"
 
 #include <iostream>
 #include <algorithm>
@@ -186,9 +186,8 @@ int main(int argc, char *argv[]) {
     ROL::Vector_SimOpt<RealT> y(yup,yzp);
     // READ IN XML INPUT
     std::string filename = "input.xml";
-    ROL::Ptr<ROL::ParameterList> parlist
-      = ROL::makePtr<ROL::ParameterList>()
-    Teuchos::updateParametersFromXmlFile( filename, parlist.ptr() );
+    auto parlist = ROL::getParametersFromXmlFile( filename );
+    
     /*************************************************************************/
     /************* CHECK DERIVATIVES AND CONSISTENCY *************************/
     /*************************************************************************/
