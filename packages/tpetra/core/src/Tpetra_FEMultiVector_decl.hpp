@@ -165,6 +165,17 @@ namespace Tpetra {
       }
     }
 
+
+    //! Migrate data from the target to the source map
+    // Since this is non-unique -> unique, we need a combine mode.
+    // Precondition: Target MultiVector must be active
+    void doTargetToSource(const CombineMode CM=Tpetra::ADD);
+
+
+    //! Migrate data from the source to the target map
+    // Precondition: Source MultiVector must be active
+    void doSourceToTarget(const CombineMode CM=Tpetra::ADD);
+
   private:
     /// \brief Default c'tor (private so it does not get used)
     ///
@@ -189,10 +200,6 @@ namespace Tpetra {
     // Switches which Multivector is active (without migrating data)
     void switchActiveMultiVector();
 
-    //! Migrate data from the target to the source map
-    // Since this is non-unique -> unique, we need a combine mode.
-    // Precondition: Target MultiVector must be active
-    void doTargetToSource(const CombineMode CM=Tpetra::ADD);
 
     // This is whichever multivector isn't currently active
     MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> * inactiveMultiVector_;
