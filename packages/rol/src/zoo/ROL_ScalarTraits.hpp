@@ -66,52 +66,52 @@ struct ScalarTraits {
 
   using magnitudeType = typename ScalarTraits_Magnitude<Real>::type;
 
-  static constexpr zero() noexcept { return static_cast<Real>(0.0); }
-  static constexpr half() noexcept { return static_cast<Real>(0.5); }
-  static constexpr one()  noexcept { return static_cast<Real>(1.0); }
-  static constexpr two()  noexcept { return static_cast<Real>(2.0); }
+  static constexpr Real zero() noexcept { return static_cast<Real>(0.0); }
+  static constexpr Real half() noexcept { return static_cast<Real>(0.5); }
+  static constexpr Real one()  noexcept { return static_cast<Real>(1.0); }
+  static constexpr Real two()  noexcept { return static_cast<Real>(2.0); }
 
-  static constexpr eps()  noexcept { 
+  static constexpr Real eps()  noexcept { 
     return std::numeric_limits<Real>::epsilon(); 
   }
 
-  static constexpr rmin()  noexcept {
+  static constexpr Real rmin()  noexcept {
     return std::numeric_limits<Real>::min(); 
   }
 
-  static constexpr rmax()  noexcept {
+  static constexpr Real rmax()  noexcept {
     return std::numeric_limits<Real>::max(); 
   }
 
-  static constexpr two_pi() noexcept {
+  static constexpr Real two_pi() noexcept {
     return static_cast<Real>( 6.283185307179586476925286766559005768L );
   }
 
-  static constexpr pi() noexcept {
+  static constexpr Real pi() noexcept {
     return static_cast<Real>( 3.141592653589793238462643383279502884L );
   }
 
-   static constexpr half_pi() noexcept {
+   static constexpr Real half_pi() noexcept {
      return static_cast<Real>( 1.570796326794896619231321691639751442L );
    }
  
-  static constexpr quarter_pi() noexcept {
+  static constexpr Real quarter_pi() noexcept {
     return static_cast<Real>( 7.85398163397448309615660845819875721e-1L );
   }
 
-  static constexpr sqrt_two_pi() noexcept {
+  static constexpr Real sqrt_two_pi() noexcept {
     return static_cast<Real>( 2.506628274631000502415765284811045252L );
   }
 
-  static constexpr sqrt_pi() noexcept {
+  static constexpr Real sqrt_pi() noexcept {
     return static_cast<Real>( 1.772453850905516027298167483341145182L );
   }
 
-  static constexpr sqrt_half_pi() noexcept {
+  static constexpr Real sqrt_half_pi() noexcept {
     return static_cast<Real>( 1.253314137315500251207882642405522626L );
   }
 
-  static constexpr sqrt_two() noexcept {
+  static constexpr Real sqrt_two() noexcept {
     return static_cast<Real>( 1.414213562373095048801688724209698078L );
   }
 
