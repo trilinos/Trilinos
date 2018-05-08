@@ -50,10 +50,6 @@ echo
 
 source /etc/bashrc
 source $TRILINOS_DIR/cmake/std/${CTEST_BUILD_CONFIGURATION_NAME}_env.sh
-if [ -e /home/vera_env/common_tools/cmake-3.11.1/bin ] ; then
-  export PATH=/home/vera_env/common_tools/cmake-3.11.1/bin:$PATH
-fi
-# ToDo: Replace above cmake with path to SEMS-provied CMake.
 
 module list
 echo
