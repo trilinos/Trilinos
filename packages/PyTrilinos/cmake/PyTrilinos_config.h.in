@@ -53,14 +53,17 @@
 /* Define if Domi is enabled */
 #cmakedefine HAVE_DOMI
 
+/* Define if EpetraExt ModelEvaluator is flagged to be built */
+#cmakedefine EpetraExt_BUILD_MODEL_EVALUATOR
+
 /* Define if Epetra namespace is enabled within NOX */
-#cmakedefine HAVE_NOX_EPETRA
+#cmakedefine NOX_ENABLE_ABSTRACT_IMPLEMENTATION_EPETRA
 
 /* Define if EpetraExt capabilities are enabled within NOX::Epetra */
 #cmakedefine HAVE_NOX_EPETRAEXT
 
 /* Define if Petsc namespace is enabled within NOX */
-#cmakedefine HAVE_NOX_PETSC
+#cmakedefine NOX_ENABLE_ABSTRACT_IMPLEMENTATION_PETSC
 
 /* Define ML options */
 #define MLAPI_LC

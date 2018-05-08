@@ -630,6 +630,7 @@ EpetraExt::Multiply;
   }
 %}
 
+#ifdef EpetraExt_BUILD_MODEL_EVALUATOR
 ///////////////////////////////////////////
 // EpetraExt ModelEvaluator support code //
 ///////////////////////////////////////////
@@ -1053,6 +1054,8 @@ public:
 //   dictionaries
 // * Add documentation to Epetra_ModelEvaluator.h (based upon Thyra
 //   ModelEvaluator documentation)
+
+#endif
 
 // Turn off the exception handling
 %exception;

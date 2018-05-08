@@ -19,25 +19,28 @@ def cmake_bool(value):
 ################################################################################
 
 # Get the PyTrilinos configuration
-WITH_EPETRA    = cmake_bool("${PyTrilinos_ENABLE_Epetra}"   )
-WITH_TRIUTILS  = cmake_bool("${PyTrilinos_ENABLE_Triutils}" )
-WITH_TPETRA    = cmake_bool("${PyTrilinos_ENABLE_Tpetra}"   )
-WITH_DOMI      = cmake_bool("${PyTrilinos_ENABLE_Domi}"     )
-WITH_EPETRAEXT = cmake_bool("${PyTrilinos_ENABLE_EpetraExt}")
-WITH_ISORROPIA = cmake_bool("${PyTrilinos_ENABLE_Isorropia}")
-WITH_PLIRIS    = cmake_bool("${PyTrilinos_ENABLE_Pliris}"   )
-WITH_AZTECOO   = cmake_bool("${PyTrilinos_ENABLE_AztecOO}"  )
-WITH_GALERI    = cmake_bool("${PyTrilinos_ENABLE_Galeri}"   )
-WITH_AMESOS    = cmake_bool("${PyTrilinos_ENABLE_Amesos}"   )
-WITH_IFPACK    = cmake_bool("${PyTrilinos_ENABLE_Ifpack}"   )
-WITH_KOMPLEX   = cmake_bool("${PyTrilinos_ENABLE_Komplex}"  )
-WITH_ANASAZI   = cmake_bool("${PyTrilinos_ENABLE_Anasazi}"  )
-WITH_ML        = cmake_bool("${PyTrilinos_ENABLE_ML}"       )
-WITH_NOX       = cmake_bool("${PyTrilinos_ENABLE_NOX}"      )
-WITH_LOCA      = cmake_bool("${NOX_ENABLE_LOCA}"            )
+WITH_EPETRA       = cmake_bool("${PyTrilinos_ENABLE_Epetra}"                 )
+WITH_TRIUTILS     = cmake_bool("${PyTrilinos_ENABLE_Triutils}"               )
+WITH_TPETRA       = cmake_bool("${PyTrilinos_ENABLE_Tpetra}"                 )
+WITH_DOMI         = cmake_bool("${PyTrilinos_ENABLE_Domi}"                   )
+WITH_EPETRAEXT    = cmake_bool("${PyTrilinos_ENABLE_EpetraExt}"              )
+WITH_EPETRAEXT_ME = cmake_bool("${EpetraExt_BUILD_MODEL_EVALUATOR}"          )
+WITH_ISORROPIA    = cmake_bool("${PyTrilinos_ENABLE_Isorropia}"              )
+WITH_PLIRIS       = cmake_bool("${PyTrilinos_ENABLE_Pliris}"                 )
+WITH_AZTECOO      = cmake_bool("${PyTrilinos_ENABLE_AztecOO}"                )
+WITH_GALERI       = cmake_bool("${PyTrilinos_ENABLE_Galeri}"                 )
+WITH_AMESOS       = cmake_bool("${PyTrilinos_ENABLE_Amesos}"                 )
+WITH_IFPACK       = cmake_bool("${PyTrilinos_ENABLE_Ifpack}"                 )
+WITH_KOMPLEX      = cmake_bool("${PyTrilinos_ENABLE_Komplex}"                )
+WITH_ANASAZI      = cmake_bool("${PyTrilinos_ENABLE_Anasazi}"                )
+WITH_ML           = cmake_bool("${PyTrilinos_ENABLE_ML}"                     )
+WITH_NOX          = cmake_bool("${PyTrilinos_ENABLE_NOX}"                    )
+WITH_NOX_EPETRA   = cmake_bool("${NOX_ENABLE_ABSTRACT_IMPLEMENTATION_EPETRA}")
+WITH_NOX_PETSC    = cmake_bool("${NOX_ENABLE_ABSTRACT_IMPLEMENTATION_PETSC}" )
+WITH_LOCA         = cmake_bool("${NOX_ENABLE_LOCA}"                          )
 
-WITH_MPI       = cmake_bool("${TPL_ENABLE_MPI}"             )
-WITH_PETSC     = cmake_bool("${TPL_ENABLE_PETSC}"           )
+WITH_MPI          = cmake_bool("${TPL_ENABLE_MPI}"                           )
+WITH_PETSC        = cmake_bool("${TPL_ENABLE_PETSC}"                         )
 
 # Find the MPI base directory
 MPI_BASE_DIR   = "${MPI_BASE_DIR}"
@@ -106,7 +109,7 @@ def get_input_files():
         swig_files = glob.glob("NOX*.i")
         for file in swig_files:
             if "Epetra" in file:
-                if (WITH_EPETRA):
+                if (WITH_NOX_EPETRA):
                     result.append(file)
             else:
                 result.append(file)
@@ -114,7 +117,7 @@ def get_input_files():
         swig_files = glob.glob("LOCA*.i")
         for file in swig_files:
             if "Epetra" in file:
-                if (WITH_EPETRA):
+                if (WITH_NOX_EPETRA):
                     result.append(file)
             else:
                 result.append(file)
@@ -167,9 +170,9 @@ def get_header_files():
         result.append("PyTrilinos_NOX_Abstract_Headers.hpp")
         result.append("PyTrilinos_NOX_Solver_Headers.hpp")
         result.append("PyTrilinos_NOX_StatusTest_Headers.hpp")
-        if (WITH_EPETRA):
+        if (WITH_NOX_EPETRA):
             result.append("PyTrilinos_NOX_Epetra_Headers.hpp")
-        if (WITH_PETSC):
+        if (WITH_NOX_PETSC):
             result.append("PyTrilinos_NOX_PETSc_Headers.hpp")
     if (WITH_LOCA):
         result.append("PyTrilinos_LOCA_Headers.hpp")
@@ -307,7 +310,9 @@ def get_rcp_classes(swig_filenames):
     using a Teuchos::RCP in PyTrilinos. The input argument, swig_filenames, is a
     list of SWIG interface files to search.
     """
-    match_excludes = ("##", "CLASS", "%shared_ptr", "ostream", "std::vector")
+    match_excludes = ["##", "CLASS", "%shared_ptr", "ostream", "std::vector"]
+    if not WITH_EPETRAEXT_ME:
+        match_excludes.append("EpetraExt::ModelEvaluator")
     regexes = [re.compile(r"%teuchos_rcp\((.+)\)"       , re.MULTILINE),
                re.compile(r"%teuchos_rcp_dap\(.+,(.+)\)", re.MULTILINE)]
     result = set()
