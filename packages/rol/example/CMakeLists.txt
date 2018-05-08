@@ -22,16 +22,17 @@ ADD_SUBDIRECTORY(complex)
 ADD_SUBDIRECTORY(binary-design)
 ADD_SUBDIRECTORY(paraboloid-circle)
 ADD_SUBDIRECTORY(putting)
-ADD_SUBDIRECTORY(tensor-opt)
+ADD_SUBDIRECTORY(PinT)
 
 
+# Examples which require use of Teuchos::RCP
 IF( NOT ${${PACKAGE_NAME}_ENABLE_STD_SHARED_PTR} )
 ADD_SUBDIRECTORY(burgers-control)
 ADD_SUBDIRECTORY(parabolic-control)
+ADD_SUBDIRECTORY(tensor-opt)
 ADD_SUBDIRECTORY(PDE-OPT)
 ENDIF( NOT ${${PACKAGE_NAME}_ENABLE_STD_SHARED_PTR} )
 
-ADD_SUBDIRECTORY(PinT)
 
 # Conditionally built examples.
 IF(${PROJECT_NAME}_ENABLE_Tempus)

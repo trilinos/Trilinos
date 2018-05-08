@@ -69,8 +69,7 @@ int main(int argc, char *argv[]) {
   try {
     // Read in parameterlist
     std::string filename = "input.xml";
-    auto parlist = ROL::makePtr<ROL::ParameterList>()
-    Teuchos::updateParametersFromXmlFile( filename, parlist.ptr() );
+    auto parlist = ROL::getParametersFromXmlFile( filename );
 
     // Physical parameters
     RealT g  = 9.834;   // Acceleration due to gravity (m/s^2)
