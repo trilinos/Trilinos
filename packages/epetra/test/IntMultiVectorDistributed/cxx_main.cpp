@@ -106,15 +106,15 @@ int main(int argc, char *argv[]) {
 
   // Construct a Map that puts approximately the same Number of equations on each processor
 
-  Epetra_BlockMap& Map = *new Epetra_BlockMap(NumGlobalEquations, NumMyEquations, 1, 0, Comm);
+  Epetra_BlockMap Map(NumGlobalEquations, NumMyEquations, 1, 0, Comm);
 
   // Get update list and number of local equations from newly created Map
-  int* MyGlobalElements = new int[Map.NumMyElements()];
-  Map.MyGlobalElements(MyGlobalElements);
+  std::vector<int> MyGlobalElements(Map.NumMyElements());
+  Map.MyGlobalElements(MyGlobalElements.data());
 
   // Construct the IntMultiVector
   const int numVecs = 3;
-  Epetra_IntMultiVector& myIMV = *new Epetra_IntMultiVector(Map, numVecs);
+  Epetra_IntMultiVector myIMV(Map, numVecs);
 
   // Extract a view to populate the IntMultiVector
   int myLDA;
@@ -149,16 +149,14 @@ int main(int argc, char *argv[]) {
     ierr = (myIMV[1][3] == 3*numVecs + 1 + 42 + 48 ? 0 : 1);
     EPETRA_TEST_ERR(ierr, numErr);
   }
+  Comm.MaxAll(&ierr, &global_ierr, 1);
+  EPETRA_TEST_ERR(global_ierr, numErr);
 
   // Construct a Map that puts all the elements on proc 0
-  Epetra_BlockMap& Map0 = *new Epetra_BlockMap(NumGlobalEquations,
-                                               (MyPID == 0 ? NumGlobalEquations : 0),
-                                               1,
-                                               0,
-                                               Comm);
-  Epetra_IntMultiVector& myIMV0 = *new Epetra_IntMultiVector(Map0, numVecs);
+  Epetra_BlockMap Map0(NumGlobalEquations, (MyPID == 0 ? NumGlobalEquations : 0), 1, 0, Comm);
+  Epetra_IntMultiVector myIMV0(Map0, numVecs);
 
-  Epetra_Import& myImporter = *new Epetra_Import(Map0, Map);
+  Epetra_Import myImporter(Map0, Map);
   ierr = myIMV0.Import(myIMV, myImporter, Epetra_CombineMode::Insert);
   Comm.MaxAll(&ierr, &global_ierr, 1);
   EPETRA_TEST_ERR(global_ierr, numErr);
