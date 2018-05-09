@@ -262,9 +262,6 @@ private:
   //    fieldMap_["RESIDUAL_Pressure"] --> "Pressure"
   Teuchos::RCP<const std::map<std::string,std::string> > fieldMap_;
 
-  std::size_t num_nodes;
-  std::size_t num_eq;
-
   std::size_t side_subcell_dim_;
   std::size_t local_side_id_;
 
@@ -291,6 +288,9 @@ private:
 
   // Allows runtime disabling of dirichlet BCs on node-by-node basis
   std::vector< PHX::MDField<const bool,Cell,NODE> > applyBC_;
+
+  //! Used to allocate temporary space on device
+  static constexpr int maxDerivativeArraySize_ = 256;
 
   ScatterDirichletResidual_BlockedTpetra();
 };
