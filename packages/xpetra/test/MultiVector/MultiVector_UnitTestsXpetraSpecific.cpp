@@ -170,19 +170,19 @@ namespace {
     // get a view of the multivector data on the host memory
     typename dual_view_type::t_host_um hostView = mv->getHostLocalView ();
 
-    TEST_EQUALITY(hostView.dimension_0(), numLocal);
-    TEST_EQUALITY(hostView.dimension_1(), 3);
+    TEST_EQUALITY(hostView.extent(0), numLocal);
+    TEST_EQUALITY(hostView.extent(1), 3);
     TEST_EQUALITY(hostView.size(), numLocal * 3);
     for(size_t k=0; k < 3; k++) {
-      for(size_t i = 0; i < hostView.dimension_0(); i++) {
+      for(size_t i = 0; i < hostView.extent(0); i++) {
         TEST_EQUALITY(Teuchos::as<Scalar>(hostView(i,k)), Teuchos::as<Scalar>(i*(k+1) + comm->getRank()));
       }
     }
 
     // overwrite data in hostView
-    for(size_t r = 0; r < hostView.dimension_0(); r++) {
-      for(size_t c = 0; c < hostView.dimension_1(); c++) {
-        hostView(r,c) = comm->getRank() + c*hostView.dimension_1() + r + 42.0;
+    for(size_t r = 0; r < hostView.extent(0); r++) {
+      for(size_t c = 0; c < hostView.extent(1); c++) {
+        hostView(r,c) = comm->getRank() + c*hostView.extent(1) + r + 42.0;
       }
     }
 
@@ -191,7 +191,7 @@ namespace {
     for(size_t k=0; k < 3; k++) {
       Teuchos::ArrayRCP<const Scalar> vData = mv->getData(k);
       for(size_t i=0; i< numLocal; i++) {
-        TEST_EQUALITY(Teuchos::as<Scalar>(vData[i]), Teuchos::as<Scalar>(comm->getRank() + k*hostView.dimension_1() + i + 42.0));
+        TEST_EQUALITY(Teuchos::as<Scalar>(vData[i]), Teuchos::as<Scalar>(comm->getRank() + k*hostView.extent(1) + i + 42.0));
       }
     }
 
@@ -204,8 +204,8 @@ namespace {
     }
 
     // check updated data in view
-    for(size_t r = 0; r < hostView.dimension_0(); r++) {
-      for(size_t c = 0; c < hostView.dimension_1(); c++) {
+    for(size_t r = 0; r < hostView.extent(0); r++) {
+      for(size_t c = 0; c < hostView.extent(1); c++) {
         TEST_EQUALITY(Teuchos::as<Scalar>(hostView(r,c)), Teuchos::as<Scalar>(c * numLocal + r));
       }
     }
