@@ -145,7 +145,7 @@ getValidParameters () const
   validParams->set("Amesos2",dummyList);
   validParams->sublist("Amesos2").disableRecursiveValidation();
   validParams->set("Amesos2 solver name", "KLU2");
-  
+
   Teuchos::ArrayRCP<int> tmp;
   validParams->set("partitioner: map", tmp);
 
@@ -156,7 +156,7 @@ getValidParameters () const
                                    typename MatrixType::global_ordinal_type,
                                    typename MatrixType::node_type> > dummy;
   validParams->set("partitioner: coordinates",dummy);
-  
+
   return validParams;
 }
 
@@ -415,9 +415,9 @@ size_t BlockRelaxation<MatrixType,ContainerType>::getNodeSmootherComplexity() co
   // Relaxation methods cost roughly one apply + one block-diagonal inverse per iteration
   // NOTE: This approximates all blocks as dense, which may overstate the cost if you have a sparse (or banded) container.
   size_t block_nnz = 0;
-  for (local_ordinal_type i = 0; i < NumLocalBlocks_; ++i) 
+  for (local_ordinal_type i = 0; i < NumLocalBlocks_; ++i)
     block_nnz += Partitioner_->numRowsInPart(i) *Partitioner_->numRowsInPart(i);
-    
+
   return block_nnz + A_->getNodeNumEntries();
 }
 
@@ -470,7 +470,7 @@ apply (const Tpetra::MultiVector<typename MatrixType::scalar_type,
   {
     auto X_lcl_host = X.template getLocalView<Kokkos::HostSpace> ();
     auto Y_lcl_host = Y.template getLocalView<Kokkos::HostSpace> ();
-    if (X_lcl_host.ptr_on_device () == Y_lcl_host.ptr_on_device ()) {
+    if (X_lcl_host.data () == Y_lcl_host.data ()) {
       X_copy = rcp (new MV (X, Teuchos::Copy));
     } else {
       X_copy = rcpFromRef (X);
@@ -612,7 +612,7 @@ initialize ()
     TEUCHOS_TEST_FOR_EXCEPTION
       (hasBlockCrsMatrix_, std::runtime_error,
        "Ifpack2::BlockRelaxation::initialize: "
-       "We do not support overlapped Jacobi yet for Tpetra::BlockCrsMatrix.  Sorry!");      
+       "We do not support overlapped Jacobi yet for Tpetra::BlockCrsMatrix.  Sorry!");
 
     // weight of each vertex
     W_ = rcp (new vector_type (A_->getRowMap ()));

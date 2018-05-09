@@ -285,11 +285,11 @@ void testCompareToLocalSolve (bool& success, Teuchos::FancyOStream& out,
 
         local_matrix_type A_lcl = A->getLocalMatrix ();
 
-        typename local_matrix_type::row_map_type::non_const_type ptr ("A_copy.ptr", A_lcl.graph.row_map.dimension_0 ());
+        typename local_matrix_type::row_map_type::non_const_type ptr ("A_copy.ptr", A_lcl.graph.row_map.extent (0));
         Kokkos::deep_copy (ptr, A_lcl.graph.row_map);
-        typename local_graph_type::entries_type::non_const_type ind ("A_copy.ind", A_lcl.graph.entries.dimension_0 ());
+        typename local_graph_type::entries_type::non_const_type ind ("A_copy.ind", A_lcl.graph.entries.extent (0));
         Kokkos::deep_copy (ind, A_lcl.graph.entries);
-        typename local_matrix_type::values_type::non_const_type val ("A_copy.val", A_lcl.values.dimension_0 ());
+        typename local_matrix_type::values_type::non_const_type val ("A_copy.val", A_lcl.values.extent (0));
         Kokkos::deep_copy (val, A_lcl.values);
 
         TEST_NOTHROW( A_copy = rcp (new crs_matrix_type (rowMap, A->getColMap (), ptr, ind, val)) );
@@ -454,7 +454,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(LocalSparseTriangularSolver, CompareHTSToLocal
 #ifdef HAVE_IFPACK2_SHYLU_NODEHTS
   testCompareToLocalSolve<Scalar, LocalOrdinal, GlobalOrdinal> (success, out, TrisolverDetails::HTS);
 #else
-  
+
 #endif
 }
 

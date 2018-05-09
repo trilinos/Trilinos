@@ -463,7 +463,7 @@ apply (const Tpetra::MultiVector<scalar_type, local_ordinal_type, global_ordinal
     {
       auto X_lcl_host = X.template getLocalView<Kokkos::HostSpace> ();
       auto Y_lcl_host = Y.template getLocalView<Kokkos::HostSpace> ();
-      if (X_lcl_host.ptr_on_device () == Y_lcl_host.ptr_on_device ()) {
+      if (X_lcl_host.data () == Y_lcl_host.data ()) {
         X_temp = rcp (new MV (X, Teuchos::Copy));
       } else {
         X_temp = rcpFromRef (X);
