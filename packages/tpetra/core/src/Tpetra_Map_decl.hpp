@@ -1540,7 +1540,7 @@ namespace Tpetra {
         // the case that the memory spaces differ, so it doesn't hurt
         // to make a deep copy here.
         Kokkos::View<GO*, Kokkos::LayoutLeft, out_device_type>
-          lgMapOut ("lgMap", mapIn.lgMap_.dimension_0 ());
+          lgMapOut ("lgMap", mapIn.lgMap_.extent (0));
         Kokkos::deep_copy (lgMapOut, mapIn.lgMap_);
         mapOut.lgMap_ = lgMapOut; // cast to const
 

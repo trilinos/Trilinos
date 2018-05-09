@@ -94,7 +94,7 @@ reallocDualViewIfNeeded (Kokkos::DualView<ValueType*, DeviceType>& dv,
   using Tpetra::Details::ProfilingRegion;
   ProfilingRegion region ("Tpetra::Details::reallocDualViewIfNeeded");
 
-  const size_t curSize = static_cast<size_t> (dv.dimension_0 ());
+  const size_t curSize = static_cast<size_t> (dv.extent (0));
   if (curSize == newSize) {
     return false; // did not reallocate
   }

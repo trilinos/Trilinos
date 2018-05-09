@@ -210,7 +210,7 @@ namespace { // (anonymous)
       typedef typename OutputViewType::execution_space execution_space;
       typedef typename OutputViewType::size_type index_type;
       typedef Kokkos::RangePolicy<execution_space, index_type> range_type;
-      Kokkos::parallel_for (range_type (0, dst.dimension_0 ()),
+      Kokkos::parallel_for (range_type (0, dst.extent (0)),
                             functor_type (dst, src));
     }
   };
@@ -259,7 +259,7 @@ namespace { // (anonymous)
         typename OutputViewType::device_type> output_space_copy_type;
       output_space_copy_type
         outputSpaceCopy (ViewAllocateWithoutInitializing ("outputSpace"),
-                         src.dimension_0 ());
+                         src.extent (0));
       Kokkos::deep_copy (outputSpaceCopy, src);
 
       // The output View's execution space can access
@@ -269,7 +269,7 @@ namespace { // (anonymous)
       typedef typename OutputViewType::execution_space execution_space;
       typedef typename OutputViewType::size_type index_type;
       typedef Kokkos::RangePolicy<execution_space, index_type> range_type;
-      Kokkos::parallel_for (range_type (0, dst.dimension_0 ()),
+      Kokkos::parallel_for (range_type (0, dst.extent (0)),
                             functor_type (dst, outputSpaceCopy));
     }
   };
@@ -300,11 +300,11 @@ copyConvert (const OutputViewType& dst,
                  "OutputViewType (the type of dst) must be a rank-1 Kokkos::View.");
   static_assert (static_cast<int> (InputViewType::rank) == 1,
                  "InputViewType (the type of src) must be a rank-1 Kokkos::View.");
-  if (dst.dimension_0 () != src.dimension_0 ()) {
+  if (dst.extent (0) != src.extent (0)) {
     std::ostringstream os;
     os << "Tpetra::Details::copyConvert: "
-       << "dst.dimension_0() = " << dst.dimension_0 ()
-       << " != src.dimension_0() = " << src.dimension_0 ()
+       << "dst.extent(0) = " << dst.extent (0)
+       << " != src.extent(0) = " << src.extent (0)
        << ".";
     throw std::invalid_argument (os.str ());
   }

@@ -884,8 +884,8 @@ namespace Tpetra {
 
       auto x_host = x.template view<Kokkos::HostSpace> ();
       typedef typename DualViewType::t_dev::value_type value_type;
-      return Teuchos::ArrayView<value_type> (x_host.ptr_on_device (),
-                                             x_host.dimension_0 ());
+      return Teuchos::ArrayView<value_type> (x_host.data (),
+                                             x_host.extent (0));
     }
 
     /// \brief Get a 1-D Kokkos::DualView which is a deep copy of the
@@ -942,7 +942,7 @@ namespace Tpetra {
       const auto dev = dv.modified_host ();
 
       std::ostringstream os;
-      os << name << ": {size: " << dv.dimension_0 ()
+      os << name << ": {size: " << dv.extent (0)
          << ", sync: {host: " << host << ", dev: " << dev << "}";
       return os.str ();
     }

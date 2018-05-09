@@ -199,24 +199,24 @@ gemv (const char trans,
 
   const char prefix[] = "Tpetra::Details::Blas::gemv: ";
   if (trans == 'n' || trans == 'N') {
-    if (A.dimension_1 () != x.dimension_0 () ||
-        A.dimension_0 () != y.dimension_0 ()) {
+    if (A.extent (1) != x.extent (0) ||
+        A.extent (0) != y.extent (0)) {
       std::ostringstream os;
       os << prefix << "Dimensions don't match.  A is "
-         << A.dimension_0 () << " x " << A.dimension_1 ()
-         << ", x is " << x.dimension_0 ()
-         << ", y is " << y.dimension_0 () << std::endl;
+         << A.extent (0) << " x " << A.extent (1)
+         << ", x is " << x.extent (0)
+         << ", y is " << y.extent (0) << std::endl;
       throw std::invalid_argument (os.str ());
     }
   }
   else {
-    if (A.dimension_0 () != x.dimension_0 () ||
-        A.dimension_1 () != y.dimension_0 ()) {
+    if (A.extent (0) != x.extent (0) ||
+        A.extent (1) != y.extent (0)) {
       std::ostringstream os;
       os << prefix << "Dimensions don't match.  A^T is "
-         << A.dimension_1 () << " x " << A.dimension_0 ()
-         << ", x is " << x.dimension_0 ()
-         << ", y is " << y.dimension_0 () << std::endl;
+         << A.extent (1) << " x " << A.extent (0)
+         << ", x is " << x.extent (0)
+         << ", y is " << y.extent (0) << std::endl;
       throw std::invalid_argument (os.str ());
     }
   }
