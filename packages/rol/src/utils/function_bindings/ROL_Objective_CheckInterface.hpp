@@ -47,7 +47,7 @@
 #define ROL_OBJECTIVE_CHECKINTERFACE_HPP
 
 #include "ROL_Objective.hpp"
-#include <functional>
+#include "ROL_FunctionBindings.hpp"
 
 namespace ROL {
 namespace details {
