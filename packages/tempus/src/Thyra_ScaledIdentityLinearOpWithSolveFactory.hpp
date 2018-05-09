@@ -47,15 +47,10 @@ public:
   /** @name Overridden from ParameterListAcceptor */
   //@{
 
-  /** \brief . */
   void setParameterList(RCP<ParameterList> const& paramList) {}
-  /** \brief . */
   RCP<ParameterList> getNonconstParameterList() { return Teuchos::parameterList(); }
-  /** \brief . */
   RCP<ParameterList> unsetParameterList() { return Teuchos::parameterList(); }
-  /** \brief . */
   RCP<const ParameterList> getParameterList() const { return Teuchos::parameterList(); }
-  /** \brief . */
   RCP<const ParameterList> getValidParameters() const { return Teuchos::parameterList(); }
 
   //@}
@@ -82,7 +77,6 @@ public:
     std::string *precFactoryName
     ) {}
 
-  /** \brief . */
   virtual bool isCompatible(
     const LinearOpSourceBase<Scalar> &fwdOpSrc
     ) const
@@ -91,18 +85,15 @@ public:
       Teuchos::rcp_dynamic_cast<const ScaledIdentityLinearOpWithSolve<Scalar> >(fwdOpSrc.getOp()));
   }
 
-  /** \brief . */
   virtual RCP<LinearOpWithSolveBase<Scalar> > createOp() const
   { return scaledIdentity(space_, s_); }
 
-  /** \brief . */
   virtual void initializeOp(
     const RCP<const LinearOpSourceBase<Scalar> > &fwdOpSrc,
     LinearOpWithSolveBase<Scalar> *Op,
     const ESupportSolveUse supportSolveUse
     ) const;
 
-  /** \brief . */
   virtual void initializeAndReuseOp(
     const RCP<const LinearOpSourceBase<Scalar> > &fwdOpSrc,
     LinearOpWithSolveBase<Scalar> *Op
@@ -111,7 +102,6 @@ public:
       initializeOp(fwdOpSrc, Op, SUPPORT_SOLVE_UNSPECIFIED);
     }
 
-  /** \brief . */
   virtual void uninitializeOp(
     LinearOpWithSolveBase<Scalar> *Op,
     RCP<const LinearOpSourceBase<Scalar> > *fwdOpSrc,
@@ -120,12 +110,10 @@ public:
     ESupportSolveUse *supportSolveUse
     ) const;
 
-  /** \brief . */
   virtual bool supportsPreconditionerInputType(
     const EPreconditionerInputType precOpType
     ) const { return false; }
 
-  /** \brief . */
   virtual void initializePreconditionedOp(
     const RCP<const LinearOpSourceBase<Scalar> > &fwdOpSrc,
     const RCP<const PreconditionerBase<Scalar> > &prec,
@@ -133,7 +121,6 @@ public:
     const ESupportSolveUse supportSolveUse
     ) const {}
 
-  /** \brief . */
   virtual void initializeApproxPreconditionedOp(
     const RCP<const LinearOpSourceBase<Scalar> > &fwdOpSrc,
     const RCP<const LinearOpSourceBase<Scalar> > &approxFwdOpSrc,
@@ -148,7 +135,6 @@ protected:
   /** \brief Overridden from Teuchos::VerboseObjectBase */
   //@{
 
-  /** \brief . */
   void informUpdatedVerbosityState() const {}
 
   //@}
@@ -162,7 +148,7 @@ private:
 
 /** \brief Nonmember constructor.
  *
- * \releates ScaledIdentityLinearOpWithSolveFactory
+ * \relates ScaledIdentityLinearOpWithSolveFactory
  */
 template<class Scalar>
 RCP<ScaledIdentityLinearOpWithSolveFactory<Scalar> >

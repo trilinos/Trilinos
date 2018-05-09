@@ -28,7 +28,7 @@ namespace Tempus {
  * to a product vector formed by its columns.  This is the form of the adjoint
  * equations suitable for computing pseudotransientsensitivities of a response
  * function g(x(T),p) or adjoint sensitivities for a time-integrated response
- * function \int_0^T g(x(t),p).
+ * function int_0^T g(x(t),p).
  *
  * To compute adjoint sensitivities, the equations f(x_dot,x,p) = 0 are
  * integrated forward in time to some final time T, with the adjoint equations
