@@ -238,6 +238,11 @@ public:
     return default_value;
   }
 
+  void print()
+  {
+      print(tree_);
+  }
+
   static void print(pt::ptree& r, std::string indent="")
   {
     for (auto q : r)
