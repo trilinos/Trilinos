@@ -1,87 +1,54 @@
-/*
-// @HEADER
-// ***********************************************************************
-//
-//          Tpetra: Templated Linear Algebra Services Package
-//                 Copyright (2008) Sandia Corporation
-//
-// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-// the U.S. Government retains certain rights in this software.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
-//
-// 1. Redistributions of source code must retain the above copyright
-// notice, this list of conditions and the following disclaimer.
-//
-// 2. Redistributions in binary form must reproduce the above copyright
-// notice, this list of conditions and the following disclaimer in the
-// documentation and/or other materials provided with the distribution.
-//
-// 3. Neither the name of the Corporation nor the names of the
-// contributors may be used to endorse or promote products derived from
-// this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
-// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
-// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
-// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
-//
-// ************************************************************************
-// @HEADER
-*/
-
-#include <Tpetra_ConfigDefs.hpp>
-#include <Tpetra_TestingUtilities.hpp>
-#include <Tpetra_MultiVector.hpp>
-#include <Tpetra_CrsMatrix.hpp>
-#include <Tpetra_CrsMatrixSolveOp.hpp>
-#include "Tpetra_Details_getNumDiags.hpp"
+#include "Teuchos_UnitTestHarness.hpp"
+#include "Ifpack2_LocalSparseTriangularSolver.hpp"
+#include "Tpetra_Core.hpp"
+#include "Tpetra_CrsMatrix.hpp"
+#include "Tpetra_MultiVector.hpp"
+#include "Tpetra_Details_determineLocalTriangularStructure.hpp"
+#include "Teuchos_CommHelpers.hpp"
+#include <type_traits>
 
 namespace {
 
-  using Tpetra::TestingUtilities::getNode;
-  using Tpetra::TestingUtilities::getDefaultComm;
+  template<class LO, class GO, class NT>
+  Tpetra::Details::LocalTriangularStructureResult<LO>
+  getLocalTriangularStructure (const Tpetra::RowGraph<LO, GO, NT>& G)
+  {
+    using Tpetra::Details::determineLocalTriangularStructure;
+    using crs_graph_type = Tpetra::CrsGraph<LO, GO, NT>;
 
-  using std::endl;
-  using std::string;
+    const crs_graph_type& G_crs = dynamic_cast<const crs_graph_type&> (G);
 
-  using Teuchos::as;
-  using Teuchos::FancyOStream;
-  using Teuchos::RCP;
-  using Teuchos::ArrayRCP;
-  using Teuchos::rcp;
-  using Teuchos::arcp;
-  using Teuchos::outArg;
-  using Teuchos::arcpClone;
-  using Teuchos::arrayView;
-  using Teuchos::broadcast;
-  using Teuchos::OrdinalTraits;
-  using Teuchos::ScalarTraits;
-  using Teuchos::Comm;
+    auto G_lcl = G_crs.getLocalGraph ();
+    auto lclRowMap = G.getRowMap ()->getLocalMap ();
+    auto lclColMap = G.getColMap ()->getLocalMap ();
+    return determineLocalTriangularStructure (G_lcl, lclRowMap, lclColMap, true);
+  }
+
+  template<class SC, class LO, class GO, class NT>
+  Tpetra::Details::LocalTriangularStructureResult<LO>
+  getLocalTriangularStructure (const Tpetra::CrsMatrix<SC, LO, GO, NT>& A)
+  {
+    return getLocalTriangularStructure (* (A.getGraph ()));
+  }
+
   using Teuchos::Array;
   using Teuchos::ArrayView;
+  using Teuchos::as;
+  using Teuchos::Comm;
+  using Teuchos::outArg;
+  using Teuchos::ParameterList;
+  using Teuchos::parameterList;
+  using Teuchos::RCP;
+  using Teuchos::rcp;
+  using Teuchos::REDUCE_SUM;
+  using Teuchos::reduceAll;
   using Teuchos::tuple;
-  using Teuchos::null;
-  using Teuchos::VERB_NONE;
-  using Teuchos::VERB_LOW;
-  using Teuchos::VERB_MEDIUM;
-  using Teuchos::VERB_HIGH;
-  using Teuchos::VERB_EXTREME;
+
   using Teuchos::ETransp;
+  using Teuchos::CONJ_TRANS;
   using Teuchos::NO_TRANS;
   using Teuchos::TRANS;
-  using Teuchos::CONJ_TRANS;
+
   using Teuchos::EDiag;
   using Teuchos::UNIT_DIAG;
   using Teuchos::NON_UNIT_DIAG;
@@ -89,43 +56,15 @@ namespace {
   using Teuchos::LOWER_TRI;
   using Teuchos::UNDEF_TRI;
   using Teuchos::UPPER_TRI;
-  using Teuchos::ParameterList;
-  using Teuchos::parameterList;
 
-  using Tpetra::Map;
-  using Tpetra::MultiVector;
-  using Tpetra::Vector;
-  using Tpetra::Operator;
-  using Tpetra::CrsMatrix;
-  using Tpetra::CrsGraph;
-  using Tpetra::RowMatrix;
-  using Tpetra::Import;
-  using Tpetra::global_size_t;
-  using Tpetra::createNonContigMapWithNode;
-  using Tpetra::createUniformContigMapWithNode;
-  using Tpetra::createContigMapWithNode;
-  using Tpetra::createLocalMapWithNode;
-  using Tpetra::createCrsMatrixSolveOp;
-  using Tpetra::createVector;
-  using Tpetra::createCrsMatrix;
-  using Tpetra::DefaultPlatform;
-  using Tpetra::ProfileType;
-  using Tpetra::StaticProfile;
-  using Tpetra::DynamicProfile;
-  using Tpetra::OptimizeOption;
-  using Tpetra::DoOptimizeStorage;
-  using Tpetra::DoNotOptimizeStorage;
-  using Tpetra::GloballyDistributed;
-  using Tpetra::INSERT;
+  using std::endl;
+
+  using GST = Tpetra::global_size_t;
 
   TEUCHOS_STATIC_SETUP()
   {
     Teuchos::CommandLineProcessor &clp = Teuchos::UnitTestRepository::getCLP();
     clp.addOutputSetupOptions(true);
-    clp.setOption(
-        "test-mpi", "test-serial", &Tpetra::TestingUtilities::testMpi,
-        "Test MPI (if available) or force test of serial.  In a serial build,"
-        " this option is ignored and a serial comm is always used." );
   }
 
   //
@@ -133,21 +72,24 @@ namespace {
   //
 
   ////
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( CrsMatrix, EmptyTriSolve, LO, GO, Scalar, Node )
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( CrsMatrix, EmptyTriSolve, Scalar, LO, GO, Node )
   {
-    RCP<Node> node = getNode<Node>();
-    typedef CrsMatrix<Scalar,LO,GO,Node> MAT;
-    typedef Operator<Scalar,LO,GO,Node>  OP;
-    typedef ScalarTraits<Scalar> ST;
-    typedef MultiVector<Scalar,LO,GO,Node> MV;
-    typedef typename ST::magnitudeType Mag;
-    typedef ScalarTraits<Mag> MT;
+    using crs_matrix_type = Tpetra::CrsMatrix<Scalar, LO, GO, Node>;
+    using row_matrix_type = Tpetra::RowMatrix<Scalar, LO, GO, Node>;
+    using solver_type = Ifpack2::LocalSparseTriangularSolver<row_matrix_type>;
+    using STS = Teuchos::ScalarTraits<Scalar>;
+    using MV = Tpetra::MultiVector<Scalar,LO,GO,Node>;
+    using mag_type = typename STS::magnitudeType;
+    using STM = Teuchos::ScalarTraits<mag_type>;
+    using map_type = Tpetra::Map<LO, GO, Node>;
+
     const size_t numLocal = 13, numVecs = 7;
-    const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid();
+    const GST INVALID = Teuchos::OrdinalTraits<GST>::invalid ();
     // get a comm
-    RCP<const Comm<int> > comm = getDefaultComm();
+    RCP<const Comm<int> > comm = Tpetra::getDefaultComm();
     // create a Map
-    RCP<const Map<LO,GO,Node> > map = createContigMapWithNode<LO,GO>(INVALID,numLocal,comm,node);
+    RCP<const map_type> map =
+      Tpetra::createContigMapWithNode<LO, GO, Node> (INVALID, numLocal, comm);
 
     /* Create a triangular matrix with no entries, for testing implicit diagonals.
       We test with Transpose and Non-Transpose application solve (these should be equivalent for the identity matrix)
@@ -160,72 +102,81 @@ namespace {
     X.randomize();
     for (size_t tnum=0; tnum < 2; ++tnum) {
       ETransp trans     = ((tnum & 1) == 1 ? CONJ_TRANS        : NO_TRANS);
-      RCP<OP> ZeroIOp;
+      RCP<solver_type> ZeroIOp;
       {
-        RCP<MAT> ZeroMat;
+        RCP<crs_matrix_type> ZeroMat;
         // must explicitly provide the column map for implicit diagonals
-        ZeroMat = rcp(new MAT(map,map,0));
+        ZeroMat = rcp(new crs_matrix_type(map,map,0));
         RCP<ParameterList> params = parameterList();
         RCP<ParameterList> fillparams = sublist(params,"Local Sparse Ops");
         fillparams->set("Prepare Solve", true);
         fillparams->set("Prepare Transpose Solve", true);
         fillparams->set("Prepare Conjugate Transpose Solve", true);
         ZeroMat->fillComplete(params);
-        TEST_EQUALITY_CONST(ZeroMat->isUpperTriangular(), true);
-        TEST_EQUALITY_CONST(ZeroMat->isLowerTriangular(), true);
-        TEST_EQUALITY_CONST( Tpetra::Details::getGlobalNumDiags (*ZeroMat), static_cast<GO> (0) );
-        ZeroIOp = createCrsMatrixSolveOp<Scalar>(ZeroMat.getConst());
+
+        auto lclTri = getLocalTriangularStructure (*ZeroMat);
+        TEST_ASSERT( lclTri.couldBeLowerTriangular );
+        TEST_ASSERT( lclTri.couldBeUpperTriangular );
+        GO gblDiagCount = 0;
+        reduceAll<int, GO> (*comm, REDUCE_SUM,
+                            static_cast<GO> (lclTri.diagCount),
+                            outArg (gblDiagCount));
+        TEST_EQUALITY( gblDiagCount, static_cast<GO> (0) );
+
+        ZeroIOp = rcp<solver_type> (new solver_type (ZeroMat.getConst ()));
+        ZeroIOp->initialize ();
+        ZeroIOp->compute ();
       }
       X = B;
       Xhat.randomize();
       ZeroIOp->apply(B,Xhat,trans);
       //
-      Xhat.update(-ST::one(),X,ST::one());
-      Array<Mag> errnrms(numVecs), normsB(numVecs), zeros(numVecs, MT::zero());
+      Xhat.update(-STS::one(),X,STS::one());
+      Array<mag_type> errnrms(numVecs), normsB(numVecs), zeros(numVecs, STM::zero());
       Xhat.norm1(errnrms());
       B.norm1(normsB());
-      Mag maxBnrm = *std::max_element( normsB.begin(), normsB.end() );
-      if (ST::isOrdinal) {
+      mag_type maxBnrm = *std::max_element( normsB.begin(), normsB.end() );
+      if (std::is_integral<Scalar>::value) {
         TEST_COMPARE_ARRAYS(errnrms, zeros);
-      } else {
+      }
+      else {
         TEST_COMPARE_FLOATING_ARRAYS( errnrms, zeros, maxBnrm );
       }
     }
   }
 
   ////
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( CrsMatrix, TriSolve, LO, GO, Scalar, Node )
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( CrsMatrix, TriSolve, Scalar, LO, GO, Node )
   {
-    using std::endl;
-
     out << "Testing Tpetra::CrsMatrix triangular solve with nonempty matrices"
         << endl;
     Teuchos::OSTab tab0 (out);
 
     // mfh 26 Feb 2014: Organizing the if-else in this way avoids a
     // build warning for "dynamic initialization in unreachable code."
-    if (Teuchos::ScalarTraits<Scalar>::isOrdinal) {
+    if (std::is_integral<Scalar>::value) {
       out << "Skipping testing for the integral type Scalar="
           << Teuchos::TypeNameTraits<Scalar>::name () << "." << endl;
       return;
     }
     else {
-      typedef CrsMatrix<Scalar,LO,GO,Node> MAT;
-      typedef Operator<Scalar,LO,GO,Node>  OP;
-      typedef ScalarTraits<Scalar> ST;
-      typedef MultiVector<Scalar,LO,GO,Node> MV;
-      typedef typename ST::magnitudeType Mag;
-      typedef ScalarTraits<Mag> MT;
+      using crs_matrix_type = Tpetra::CrsMatrix<Scalar,LO,GO,Node>;
+      using row_matrix_type = Tpetra::RowMatrix<Scalar,LO,GO,Node>;
+      using solver_type = Ifpack2::LocalSparseTriangularSolver<row_matrix_type>;
+      using map_type = Tpetra::Map<LO, GO, Node>;
+      using STS = Teuchos::ScalarTraits<Scalar>;
+      using MV = Tpetra::MultiVector<Scalar,LO,GO,Node>;
+      using mag_type = typename STS::magnitudeType;
+      using STM = Teuchos::ScalarTraits<mag_type>;
 
-      RCP<Node> node = getNode<Node> ();
       const size_t numLocal = 13, numVecs = 7;
-      const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid ();
-      RCP<const Comm<int> > comm = getDefaultComm ();
+      const GST INVALID = Teuchos::OrdinalTraits<GST>::invalid ();
+      RCP<const Comm<int> > comm = Tpetra::getDefaultComm ();
       // Create a row Map for the matrix.
       // This will be the same as the domain and range Maps.
-      RCP<const Map<LO,GO,Node> > map =
-        createContigMapWithNode<LO, GO, Node> (INVALID, numLocal, comm, node);
-      Scalar SONE = ST::one ();
+      RCP<const map_type> map =
+        Tpetra::createContigMapWithNode<LO, GO, Node> (INVALID, numLocal, comm);
+      Scalar SONE = STS::one ();
 
       /* Create one of the following locally triangular matries:
 
@@ -257,12 +208,12 @@ namespace {
       X.randomize();
 
       // Sanity check for X.
-      Array<Mag> normsX (numVecs);
+      Array<mag_type> normsX (numVecs);
       {
         X.norm1 (normsX ());
         Array<size_t> badColumns;
         for (size_t j = 0; j < numVecs; ++j) {
-          if (ST::isnaninf (normsX[j])) {
+          if (STS::isnaninf (normsX[j])) {
             badColumns.push_back (j);
           }
         }
@@ -330,16 +281,16 @@ namespace {
         fillparams->set ("Prepare Transpose Solve", true);
         fillparams->set ("Prepare Conjugate Transpose Solve", true);
 
-        RCP<OP> AIOp;
-        RCP<MAT> AMat;
+        RCP<solver_type> AIOp;
+        RCP<crs_matrix_type> AMat;
         {
           if (diag == UNIT_DIAG) {
             // must explicitly specify the column map
-            AMat = rcp(new MAT(map,map,2));
+            AMat = rcp(new crs_matrix_type(map,map,2));
           }
           else {
             // can let the matrix compute a column map
-            AMat = rcp(new MAT(map,2));
+            AMat = rcp(new crs_matrix_type(map,2));
           }
           // fill the matrix
           if (uplo == UPPER_TRI) {
@@ -387,28 +338,39 @@ namespace {
             }
           }
           AMat->fillComplete(params);
-          TEST_EQUALITY(AMat->isUpperTriangular(), uplo == UPPER_TRI);
-          TEST_EQUALITY(AMat->isLowerTriangular(), uplo == LOWER_TRI);
-          TEST_EQUALITY( Tpetra::Details::getGlobalNumDiags (*AMat) == 0, diag == UNIT_DIAG);
+
+          auto lclTri = getLocalTriangularStructure (*AMat);
+          TEST_EQUALITY( lclTri.couldBeLowerTriangular, uplo == LOWER_TRI );
+          TEST_EQUALITY( lclTri.couldBeUpperTriangular, uplo == UPPER_TRI );
+
+          GO gblDiagCount = 0;
+          reduceAll<int, GO> (*comm, REDUCE_SUM,
+                              static_cast<GO> (lclTri.diagCount),
+                              outArg (gblDiagCount));
+          TEST_EQUALITY( gblDiagCount == static_cast<GO> (0), diag == UNIT_DIAG );
+
           // AIOp.apply (X,B,trans) solves op(A) X=B for X locally,
           // using a triangular solve.  op(A) is just A if
           // trans==NO_TRANS, else A^H (Hermitian transpose) if
           // trans==CONJ_TRANS.
-          AIOp = createCrsMatrixSolveOp<Scalar> (AMat.getConst ());
+
+          AIOp = rcp<solver_type> (new solver_type (AMat.getConst ()));
+          AIOp->initialize ();
+          AIOp->compute ();
         }
         B.randomize ();
         AIOp->apply (X, B, trans);
         if (diag == UNIT_DIAG) {
           // we want (I+A)*X -> B
           // A*X -> B needs to be augmented with X
-          B.update (ST::one (), X, ST::one());
+          B.update (STS::one (), X, STS::one());
         }
-        Array<Mag> normsB (numVecs);
+        Array<mag_type> normsB (numVecs);
         B.norm1 (normsB ());
         {
           Array<size_t> badColumns;
           for (size_t j = 0; j < numVecs; ++j) {
-            if (ST::isnaninf (normsB[j])) {
+            if (STS::isnaninf (normsB[j])) {
               badColumns.push_back (j);
             }
           }
@@ -433,12 +395,12 @@ namespace {
 
         Xhat.randomize ();
         AIOp->apply (B, Xhat, trans);
-        Xhat.update (-ST::one (), X, ST::one ());
-        Array<Mag> errnrms (numVecs), zeros (numVecs, MT::zero ());
+        Xhat.update (-STS::one (), X, STS::one ());
+        Array<mag_type> errnrms (numVecs), zeros (numVecs, STM::zero ());
         Xhat.norm1 (errnrms ());
         B.norm1 (normsB ());
-        Mag maxBnrm = *std::max_element (normsB.begin (), normsB.end ());
-        if (ST::isOrdinal) {
+        mag_type maxBnrm = *std::max_element (normsB.begin (), normsB.end ());
+        if (std::is_integral<Scalar>::value) {
           TEST_COMPARE_ARRAYS( errnrms, zeros );
         } else {
           TEST_COMPARE_FLOATING_ARRAYS( errnrms, zeros, maxBnrm );
@@ -452,12 +414,14 @@ namespace {
 //
 
 #define UNIT_TEST_GROUP( SCALAR, LO, GO, NODE ) \
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( CrsMatrix, EmptyTriSolve, LO, GO, SCALAR, NODE ) \
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( CrsMatrix, TriSolve, LO, GO, SCALAR, NODE )
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( CrsMatrix, EmptyTriSolve, SCALAR, LO, GO, NODE ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( CrsMatrix, TriSolve, SCALAR, LO, GO, NODE )
 
-  TPETRA_ETI_MANGLING_TYPEDEFS()
+#include "Ifpack2_ETIHelperMacros.h"
 
-  TPETRA_INSTANTIATE_SLGN( UNIT_TEST_GROUP )
+  IFPACK2_ETI_MANGLING_TYPEDEFS()
+
+  IFPACK2_INSTANTIATE_SLGN( UNIT_TEST_GROUP )
 
 }
 

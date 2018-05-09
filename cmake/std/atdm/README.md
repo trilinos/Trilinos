@@ -259,12 +259,11 @@ $ srun ./checkin-test-sems.sh intel-opt-openmp \
 
 ### chama/serrano
 
-Once logged on to `chama`  or `serrano`, one can
-directly configure and build on the login node (being careful not to overload
-the node).  But to run the tests, one must run on the compute nodes using the
-`srun` command.  For example, to configure, build and run the tests for say
-`MueuLu` on `serrano` or `chama`, (after cloning Trilinos on the `develop` branch) one
-would do:
+Once logged on to `chama` or `serrano`, one can directly configure and build
+on the login node (being careful not to overload the node).  But to run the
+tests, one must run on the compute nodes using the `srun` command.  For
+example, to configure, build and run the tests for say `MueuLu` on `serrano`
+or `chama`, (after cloning Trilinos on the `develop` branch) one would do:
 
 
 ```
@@ -279,11 +278,26 @@ $ cmake \
 
 $ make -j16
 
-$ srun -N 1 --time=600 --account=<YOUR_WCID> -J $JOB_NAME ctest -j16
+$ salloc -N1 --time=0:20:00 --account=<YOUR_WCID> ctest -j16
 ```
 
-To get information on <YOUR_WCID> used above, there is a WC tool tab on computing.sandia.gov 
+To get information on <YOUR_WCID> used above, there is a WC tool tab on
+computing.sandia.gov
 
+To use the checkin-test-atdm.sh script, you must split running the tests from
+the configure and build as with:
+
+```
+$ cd <some_build_dir>/
+$ ln -s $TRILINOS_DIR/cmake/std/atdm/checkin-test-sems.sh .
+$ ./checkin-test-sems.sh intel-opt-openmp \
+  --enable-all-packages=off --no-enable-fwd-packages --enable-packages=MueLu \
+  --allow-no-pull --configure --build
+$ salloc -N1 --time=0:20:00 --account=<YOUR_WCID> \
+  ./checkin-test-sems.sh intel-opt-openmp \
+  --enable-all-packages=off --no-enable-fwd-packages --enable-packages=MueLu \
+  --test
+```
 
 ### SEMS rhel6 environment
 

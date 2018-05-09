@@ -1,7 +1,7 @@
 #!/bin/bash -l
 
-if [ "${SRUN_CTEST_TIME_LIMIT_MINUTES}" == "" ] ; then
-  SRUN_CTEST_TIME_LIMIT_MINUTES=90
+if [ "${SALLOC_CTEST_TIME_LIMIT_MINUTES}" == "" ] ; then
+  SALLOC_CTEST_TIME_LIMIT_MINUTES=1:30:00
   # This is just running tests, not the entire build!
 fi
 
@@ -11,5 +11,5 @@ source $WORKSPACE/Trilinos/cmake/ctest/drivers/atdm/ctest-s-driver-config-build.
 
 set -x
 
-/usr/bin/srun -N 1 --time=${SRUN_CTEST_TIME_LIMIT_MINUTES} --account=fy150090 -J $JOB_NAME \
+salloc -N1 --time=${SALLOC_CTEST_TIME_LIMIT_MINUTES} --account=fy150090 -J $JOB_NAME \
   $WORKSPACE/Trilinos/cmake/ctest/drivers/atdm/ctest-s-driver-test.sh

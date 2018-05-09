@@ -90,17 +90,18 @@ int main(int argc, char *argv[]) {
   try {
 
     // Set up optimization problem
-    ROL::Ptr<V> x, sol;
+    ROL::Ptr<V> x;
+    std::vector<ROL::Ptr<V> > sol;
     ROL::Ptr<Opt> optProb;
     ROL::ZOO::getSimpleEqConstrained<RealT> SEC;
     SEC.get( optProb, x, sol );
-    ROL::Ptr<V> error = sol->clone();
+    ROL::Ptr<V> error = x->clone();
 
     // Solve optimization problem
     ROL::OptimizationSolver<RealT> optSolver(*optProb, *parlist);
     optSolver.solve(*outStream);
 
-    error->set(*sol);
+    error->set(*sol[0]);
     error->axpy(static_cast<RealT>(-1), *x);
     RealT solnErr = error->norm();
 

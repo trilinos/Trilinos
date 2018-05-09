@@ -1489,7 +1489,6 @@ namespace {
 
     RCP<const Comm<int> > comm = getDefaultComm ();
     const int myRank = comm->getRank ();
-    const int numProcs = comm->getSize ();
     const GST INVALID = Teuchos::OrdinalTraits<GST>::invalid ();
 
     out << "Create nonoverlapping mesh row Map" << endl;
@@ -1545,6 +1544,16 @@ namespace {
     }
     overlapGraph.fillComplete (meshDomainMapPtr, meshRangeMapPtr);
 
+    {
+      const LO lclNumRowsOverlap = static_cast<LO> (overlapMeshRowMapPtr->getNodeNumElements ());
+      for (LO lclRow = 0; lclRow < lclNumRowsOverlap; ++lclRow) {
+        const LO numEnt = static_cast<LO> (overlapGraph.getNumEntriesInLocalRow (lclRow));
+        TEST_EQUALITY( numEnt, static_cast<LO> (2) );
+      }
+      const LO maxNumRowEnt = static_cast<LO> (overlapGraph.getNodeMaxNumRowEntries ());
+      TEST_EQUALITY( maxNumRowEnt, static_cast<LO> (2) );
+    }
+
     reduceAll<int, int> (*comm, REDUCE_MIN, lclSuccess, outArg (gblSuccess));
     if (gblSuccess != 1) {
       out << "*** FAILED to create or fill-complete graph with overlapping mesh row Map! ***" << endl;
@@ -1565,12 +1574,26 @@ namespace {
 
       out << "Call fillComplete on nonoverlap graph" << endl;
       graph->fillComplete (meshDomainMapPtr, meshRangeMapPtr);
-    } catch (std::exception&) {
+    }
+    catch (std::exception&) {
       lclSuccess = 0;
     }
+
+    // Export can only add entries to each row, not remove them.
+    {
+      const LO lclNumRowsNonoverlap =
+        static_cast<LO> (meshRowMapPtr->getNodeNumElements ());
+      for (LO lclRow = 0; lclRow < lclNumRowsNonoverlap; ++lclRow) {
+        const LO numEnt = static_cast<LO> (graph->getNumEntriesInLocalRow (lclRow));
+        TEST_ASSERT( numEnt >= static_cast<LO> (2) );
+      }
+      const LO maxNumRowEnt = static_cast<LO> (graph->getNodeMaxNumRowEntries ());
+      TEST_ASSERT( maxNumRowEnt >= static_cast<LO> (2) );
+    }
+
     reduceAll<int, int> (*comm, REDUCE_MIN, lclSuccess, outArg (gblSuccess));
     if (gblSuccess != 1) {
-      out << "*** FAILED to get past fillComplete on nonoverlap graph! ***" << endl;
+      out << "*** CrsGraph Export or fillComplete failed! ***" << endl;
       return;
     }
 
@@ -1580,9 +1603,11 @@ namespace {
     try {
       out << "Create matrix with overlapping mesh row Map" << endl;
       A_overlap = rcp (new BCM (overlapGraph, blockSize));
+
       out << "Create matrix with nonoverlapping mesh row Map" << endl;
       A = rcp (new BCM (*graph, blockSize));
-    } catch (std::exception&) {
+    }
+    catch (std::exception&) {
       lclSuccess = 0;
     }
     reduceAll<int, int> (*comm, REDUCE_MIN, lclSuccess, outArg (gblSuccess));
@@ -1595,7 +1620,8 @@ namespace {
     try {
       const Scalar three = STS::one () + STS::one () + STS::one ();
       A_overlap->setAllToScalar (three);
-    } catch (std::exception&) {
+    }
+    catch (std::exception&) {
       lclSuccess = 0;
     }
     reduceAll<int, int> (*comm, REDUCE_MIN, lclSuccess, outArg (gblSuccess));
@@ -1604,8 +1630,8 @@ namespace {
       return;
     }
 
-    out << "The matrix A_overlap, after construction:" << endl;
-    A_overlap->describe (out, Teuchos::VERB_EXTREME);
+    // out << "The matrix A_overlap, after construction:" << endl;
+    // A_overlap->describe (out, Teuchos::VERB_EXTREME);
 
     // Fill all entries of the second matrix with -2.
     try {
@@ -1620,13 +1646,14 @@ namespace {
       return;
     }
 
-    out << "The matrix A, after construction:" << endl;
-    A->describe (out, Teuchos::VERB_EXTREME);
+    // out << "The matrix A, after construction:" << endl;
+    // A->describe (out, Teuchos::VERB_EXTREME);
 
     out << "Export A_overlap into A" << endl;
     try {
       A->doExport (*A_overlap, *theExport, Tpetra::REPLACE);
-    } catch (std::exception& e) {
+    }
+    catch (std::exception& e) {
       lclSuccess = 0;
       std::ostringstream os;
       os << "Proc " << myRank << ": A->doExport(...) threw an exception: "
@@ -1634,37 +1661,26 @@ namespace {
       std::cerr << os.str ();
     }
 
-    if (A->localError ()) {
-      lclSuccess = 0;
-      for (int p = 0; p < numProcs; ++p) {
-        if (myRank == p && A->localError ()) {
-          std::ostringstream os;
-          os << "Proc " << myRank << ": A reports local error: "
-             << A->errorMessages () << endl;
-          std::cerr << os.str ();
-        }
-        comm->barrier ();
-        comm->barrier ();
-        comm->barrier ();
+    {
+      const int lclErr = A->localError () ? 1 : 0;
+      int gblErr = 0;
+      reduceAll<int, int> (*comm, Teuchos::REDUCE_MAX, lclErr, outArg (gblErr));
+      TEST_EQUALITY( gblErr, 0 );
+      if (gblErr != 0) {
+        out << "A reports a local error on some process!" << endl;
+        gathervPrint (out, A->errorMessages (), *comm);
       }
     }
 
     reduceAll<int, int> (*comm, REDUCE_MIN, lclSuccess, outArg (gblSuccess));
     if (gblSuccess != 1) {
-      out << "*** Export FAILED!" << endl;
-      for (int p = 0; p < numProcs; ++p) {
-        if (p == myRank) {
-          std::ostringstream os;
-          os << "Process " << myRank << ": error messages from A_overlap: "
-             << A_overlap->errorMessages () << endl
-             << "Process " << myRank << ": error messages from A: "
-             << A->errorMessages () << endl;
-          std::cerr << os.str ();
-        }
-        comm->barrier (); // give time for output to complete
-        comm->barrier ();
-        comm->barrier ();
-      }
+      using ::Tpetra::Details::gathervPrint;
+
+      out << "*** Export FAILED!" << endl
+          << "Error messages from A_overlap:" << endl;
+      gathervPrint (out, A_overlap->errorMessages (), *comm);
+      out << "Error messages from A:" << endl;
+      gathervPrint (out, A->errorMessages (), *comm);
     }
     else { // doExport claims that it succeeded
       out << "Export claims that it succeeded" << endl;

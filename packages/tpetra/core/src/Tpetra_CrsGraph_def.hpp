@@ -1,4 +1,4 @@
-// @HEADER 
+// @HEADER
 // ***********************************************************************
 //
 //          Tpetra: Templated Linear Algebra Services Package
@@ -65,6 +65,7 @@
 #include "Tpetra_Import_Util2.hpp"
 #include "Tpetra_Details_packCrsGraph.hpp"
 #include "Tpetra_Details_unpackCrsGraphAndCombine.hpp"
+#include "Tpetra_Details_determineLocalTriangularStructure.hpp"
 #include <algorithm>
 #include <limits>
 #include <sstream>
@@ -170,6 +171,54 @@ namespace Tpetra {
       return impl_type::run (lclColInds, gblColInds, ptr, lclColMap, numRowEnt);
     }
 
+    template<class ViewType, class LO>
+    class MaxDifference {
+    public:
+      MaxDifference (const ViewType& ptr) : ptr_ (ptr) {}
+
+      KOKKOS_INLINE_FUNCTION void init (LO& dst) const {
+        dst = 0;
+      }
+
+      KOKKOS_INLINE_FUNCTION void
+      join (volatile LO& dst, const volatile LO& src) const
+      {
+        dst = (src > dst) ? src : dst;
+      }
+
+      KOKKOS_INLINE_FUNCTION void
+      operator () (const LO lclRow, LO& maxNumEnt) const
+      {
+        const LO numEnt = static_cast<LO> (ptr_(lclRow+1) - ptr_(lclRow));
+        maxNumEnt = (numEnt > maxNumEnt) ? numEnt : maxNumEnt;
+      }
+    private:
+      typename ViewType::const_type ptr_;
+    };
+
+    template<class ViewType, class LO>
+    typename ViewType::non_const_value_type
+    maxDifference (const char kernelLabel[],
+                   const ViewType& ptr,
+                   const LO lclNumRows)
+    {
+      if (lclNumRows == 0) {
+        // mfh 07 May 2018: Weirdly, I need this special case,
+        // otherwise I get the wrong answer.
+        return static_cast<LO> (0);
+      }
+      else {
+        using execution_space = typename ViewType::execution_space;
+        using range_type = Kokkos::RangePolicy<execution_space, LO>;
+        LO theMaxNumEnt {0};
+        Kokkos::parallel_reduce (kernelLabel,
+                                 range_type (0, lclNumRows),
+                                 MaxDifference<ViewType, LO> (ptr),
+                                 theMaxNumEnt);
+        return theMaxNumEnt;
+      }
+    }
+
   } // namespace Details
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -180,6 +229,11 @@ namespace Tpetra {
             const Teuchos::RCP<Teuchos::ParameterList>& params) :
     dist_object_type (rowMap)
     , rowMap_ (rowMap)
+    , nodeNumDiags_ (Teuchos::OrdinalTraits<size_t>::invalid ())
+    , nodeMaxNumRowEntries_ (Teuchos::OrdinalTraits<size_t>::invalid ())
+    , globalNumEntries_ (Teuchos::OrdinalTraits<global_size_t>::invalid ())
+    , globalNumDiags_ (Teuchos::OrdinalTraits<global_size_t>::invalid ())
+    , globalMaxNumRowEntries_ (Teuchos::OrdinalTraits<global_size_t>::invalid ())
     , pftype_ (pftype)
     , numAllocForAllRows_ (maxNumEntriesPerRow)
     , storageStatus_ (pftype == StaticProfile ?
@@ -189,6 +243,8 @@ namespace Tpetra {
     , indicesAreLocal_ (false)
     , indicesAreGlobal_ (false)
     , fillComplete_ (false)
+    , lowerTriangular_ (false)
+    , upperTriangular_ (false)
     , indicesAreSorted_ (true)
     , noRedundancies_ (true)
     , haveLocalConstants_ (false)
@@ -217,6 +273,11 @@ namespace Tpetra {
     dist_object_type (rowMap)
     , rowMap_ (rowMap)
     , colMap_ (colMap)
+    , nodeNumDiags_ (Teuchos::OrdinalTraits<size_t>::invalid ())
+    , nodeMaxNumRowEntries_ (Teuchos::OrdinalTraits<size_t>::invalid ())
+    , globalNumEntries_ (Teuchos::OrdinalTraits<global_size_t>::invalid ())
+    , globalNumDiags_ (Teuchos::OrdinalTraits<global_size_t>::invalid ())
+    , globalMaxNumRowEntries_ (Teuchos::OrdinalTraits<global_size_t>::invalid ())
     , pftype_ (pftype)
     , numAllocForAllRows_ (maxNumEntriesPerRow)
     , storageStatus_ (pftype == StaticProfile ?
@@ -226,6 +287,8 @@ namespace Tpetra {
     , indicesAreLocal_ (false)
     , indicesAreGlobal_ (false)
     , fillComplete_ (false)
+    , lowerTriangular_ (false)
+    , upperTriangular_ (false)
     , indicesAreSorted_ (true)
     , noRedundancies_ (true)
     , haveLocalConstants_ (false)
@@ -252,6 +315,11 @@ namespace Tpetra {
             const Teuchos::RCP<Teuchos::ParameterList>& params) :
     dist_object_type (rowMap)
     , rowMap_ (rowMap)
+    , nodeNumDiags_ (Teuchos::OrdinalTraits<size_t>::invalid ())
+    , nodeMaxNumRowEntries_ (Teuchos::OrdinalTraits<size_t>::invalid ())
+    , globalNumEntries_ (Teuchos::OrdinalTraits<global_size_t>::invalid ())
+    , globalNumDiags_ (Teuchos::OrdinalTraits<global_size_t>::invalid ())
+    , globalMaxNumRowEntries_ (Teuchos::OrdinalTraits<global_size_t>::invalid ())
     , pftype_ (pftype)
     , numAllocForAllRows_ (0)
     , storageStatus_ (pftype == StaticProfile ?
@@ -261,6 +329,8 @@ namespace Tpetra {
     , indicesAreLocal_ (false)
     , indicesAreGlobal_ (false)
     , fillComplete_ (false)
+    , lowerTriangular_ (false)
+    , upperTriangular_ (false)
     , indicesAreSorted_ (true)
     , noRedundancies_ (true)
     , haveLocalConstants_ (false)
@@ -317,6 +387,11 @@ namespace Tpetra {
             const Teuchos::RCP<Teuchos::ParameterList>& params) :
     dist_object_type (rowMap)
     , rowMap_ (rowMap)
+    , nodeNumDiags_ (Teuchos::OrdinalTraits<size_t>::invalid ())
+    , nodeMaxNumRowEntries_ (Teuchos::OrdinalTraits<size_t>::invalid ())
+    , globalNumEntries_ (Teuchos::OrdinalTraits<global_size_t>::invalid ())
+    , globalNumDiags_ (Teuchos::OrdinalTraits<global_size_t>::invalid ())
+    , globalMaxNumRowEntries_ (Teuchos::OrdinalTraits<global_size_t>::invalid ())
     , pftype_ (pftype)
     , k_numAllocPerRow_ (numEntPerRow.h_view)
     , numAllocForAllRows_ (0)
@@ -327,6 +402,8 @@ namespace Tpetra {
     , indicesAreLocal_ (false)
     , indicesAreGlobal_ (false)
     , fillComplete_ (false)
+    , lowerTriangular_ (false)
+    , upperTriangular_ (false)
     , indicesAreSorted_ (true)
     , noRedundancies_ (true)
     , haveLocalConstants_ (false)
@@ -371,6 +448,11 @@ namespace Tpetra {
     dist_object_type (rowMap)
     , rowMap_ (rowMap)
     , colMap_ (colMap)
+    , nodeNumDiags_ (Teuchos::OrdinalTraits<size_t>::invalid ())
+    , nodeMaxNumRowEntries_ (Teuchos::OrdinalTraits<size_t>::invalid ())
+    , globalNumEntries_ (Teuchos::OrdinalTraits<global_size_t>::invalid ())
+    , globalNumDiags_ (Teuchos::OrdinalTraits<global_size_t>::invalid ())
+    , globalMaxNumRowEntries_ (Teuchos::OrdinalTraits<global_size_t>::invalid ())
     , pftype_ (pftype)
     , k_numAllocPerRow_ (numEntPerRow.h_view)
     , numAllocForAllRows_ (0)
@@ -381,6 +463,8 @@ namespace Tpetra {
     , indicesAreLocal_ (false)
     , indicesAreGlobal_ (false)
     , fillComplete_ (false)
+    , lowerTriangular_ (false)
+    , upperTriangular_ (false)
     , indicesAreSorted_ (true)
     , noRedundancies_ (true)
     , haveLocalConstants_ (false)
@@ -425,6 +509,11 @@ namespace Tpetra {
     dist_object_type (rowMap)
     , rowMap_ (rowMap)
     , colMap_ (colMap)
+    , nodeNumDiags_ (Teuchos::OrdinalTraits<size_t>::invalid ())
+    , nodeMaxNumRowEntries_ (Teuchos::OrdinalTraits<size_t>::invalid ())
+    , globalNumEntries_ (Teuchos::OrdinalTraits<global_size_t>::invalid ())
+    , globalNumDiags_ (Teuchos::OrdinalTraits<global_size_t>::invalid ())
+    , globalMaxNumRowEntries_ (Teuchos::OrdinalTraits<global_size_t>::invalid ())
     , pftype_ (pftype)
     , numAllocForAllRows_ (0)
     , storageStatus_ (pftype == StaticProfile ?
@@ -434,6 +523,8 @@ namespace Tpetra {
     , indicesAreLocal_ (false)
     , indicesAreGlobal_ (false)
     , fillComplete_ (false)
+    , lowerTriangular_ (false)
+    , upperTriangular_ (false)
     , indicesAreSorted_ (true)
     , noRedundancies_ (true)
     , haveLocalConstants_ (false)
@@ -494,6 +585,8 @@ namespace Tpetra {
     dist_object_type (rowMap)
     , rowMap_(rowMap)
     , colMap_(colMap)
+    , nodeNumDiags_ (Teuchos::OrdinalTraits<size_t>::invalid ())
+    , nodeMaxNumRowEntries_ (Teuchos::OrdinalTraits<size_t>::invalid ())
     , globalNumEntries_ (Teuchos::OrdinalTraits<global_size_t>::invalid ())
     , globalNumDiags_ (Teuchos::OrdinalTraits<global_size_t>::invalid ())
     , globalMaxNumRowEntries_ (Teuchos::OrdinalTraits<global_size_t>::invalid ())
@@ -504,6 +597,8 @@ namespace Tpetra {
     , indicesAreLocal_(true)
     , indicesAreGlobal_(false)
     , fillComplete_(false)
+    , lowerTriangular_ (false)
+    , upperTriangular_ (false)
     , indicesAreSorted_(true)
     , noRedundancies_(true)
     , haveLocalConstants_ (false)
@@ -526,6 +621,8 @@ namespace Tpetra {
     dist_object_type (rowMap)
     , rowMap_ (rowMap)
     , colMap_ (colMap)
+    , nodeNumDiags_ (Teuchos::OrdinalTraits<size_t>::invalid ())
+    , nodeMaxNumRowEntries_ (Teuchos::OrdinalTraits<size_t>::invalid ())
     , globalNumEntries_ (Teuchos::OrdinalTraits<global_size_t>::invalid ())
     , globalNumDiags_ (Teuchos::OrdinalTraits<global_size_t>::invalid ())
     , globalMaxNumRowEntries_ (Teuchos::OrdinalTraits<global_size_t>::invalid ())
@@ -536,6 +633,8 @@ namespace Tpetra {
     , indicesAreLocal_ (true)
     , indicesAreGlobal_ (false)
     , fillComplete_ (false)
+    , lowerTriangular_ (false)
+    , upperTriangular_ (false)
     , indicesAreSorted_ (true)
     , noRedundancies_ (true)
     , haveLocalConstants_ (false)
@@ -554,9 +653,13 @@ namespace Tpetra {
             const Teuchos::RCP<const map_type>& colMap,
             const local_graph_type& k_local_graph_,
             const Teuchos::RCP<Teuchos::ParameterList>& params)
-    : CrsGraph(k_local_graph_, rowMap, colMap, Teuchos::null, Teuchos::null, params)
-  {
-  }
+    : CrsGraph (k_local_graph_,
+                rowMap,
+                colMap,
+                Teuchos::null,
+                Teuchos::null,
+                params)
+  {}
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::
@@ -570,6 +673,8 @@ namespace Tpetra {
     , rowMap_ (rowMap)
     , colMap_ (colMap)
     , lclGraph_ (k_local_graph_)
+    , nodeNumDiags_ (Teuchos::OrdinalTraits<size_t>::invalid ())
+    , nodeMaxNumRowEntries_ (Teuchos::OrdinalTraits<size_t>::invalid ())
     , globalNumEntries_ (Teuchos::OrdinalTraits<global_size_t>::invalid ())
     , globalNumDiags_ (Teuchos::OrdinalTraits<global_size_t>::invalid ())
     , globalMaxNumRowEntries_ (Teuchos::OrdinalTraits<global_size_t>::invalid ())
@@ -580,11 +685,13 @@ namespace Tpetra {
     , indicesAreLocal_ (true)
     , indicesAreGlobal_ (false)
     , fillComplete_ (false)
+    , lowerTriangular_ (false)
+    , upperTriangular_ (false)
     , indicesAreSorted_ (true)
     , noRedundancies_ (true)
     , haveLocalConstants_ (false)
     , haveGlobalConstants_ (false)
-    , sortGhostsAssociatedWithEachProcessor_(true)
+    , sortGhostsAssociatedWithEachProcessor_ (true)
   {
     staticAssertions();
     const char tfecfFuncName[] = "CrsGraph(Kokkos::LocalStaticCrsGraph,Map,Map,Map,Map)";
@@ -621,20 +728,22 @@ namespace Tpetra {
     k_lclInds1D_ = lclGraph_.entries;
     k_rowPtrs_ = lclGraph_.row_map;
 
-    computeLocalTriangularProperties ();
+    const bool callComputeGlobalConstants = params.get () == nullptr ||
+      params->get ("compute global constants", true);
+    const bool computeLocalTriangularConstants = params.get () == nullptr ||
+      params->get ("compute local triangular constants", true);
 
-    haveLocalConstants_ = true;
-    computeGlobalConstants ();
-
-    fillComplete_ = true;
-    checkInternalState ();
+    if (callComputeGlobalConstants) {
+      this->computeGlobalConstants (computeLocalTriangularConstants);
+    }
+    this->fillComplete_ = true;
+    this->checkInternalState ();
   }
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::
   ~CrsGraph ()
   {}
-
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   Teuchos::RCP<const Teuchos::ParameterList>
@@ -2415,21 +2524,18 @@ namespace Tpetra {
       TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
         (! this->haveGlobalConstants_ &&
          (this->globalNumEntries_ != GSTI ||
-          this->globalNumDiags_ != GSTI ||
           this->globalMaxNumRowEntries_ != GSTI),
          std::logic_error, "Graph claims not to have global constants, but "
          "some of the global constants are not marked as invalid." << suffix);
       TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
         (this->haveGlobalConstants_ &&
          (this->globalNumEntries_ == GSTI ||
-          this->globalNumDiags_ == GSTI ||
           this->globalMaxNumRowEntries_ == GSTI),
          std::logic_error, "Graph claims to have global constants, but "
          "some of them are marked as invalid." << suffix);
       TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
         (this->haveGlobalConstants_ &&
          (this->globalNumEntries_ < this->getNodeNumEntries () ||
-          this->globalNumDiags_ < this->nodeNumDiags_ ||
           this->globalMaxNumRowEntries_ < this->nodeMaxNumRowEntries_),
          std::logic_error, "Graph claims to have global constants, and "
          "all of the values of the global constants are valid, but "
@@ -3778,10 +3884,21 @@ namespace Tpetra {
     // already.  If we made a column Map above, reuse information from
     // that process to avoid communiation in the Import setup.
     this->makeImportExport (remotePIDs, mustBuildColMap);
-    this->computeGlobalConstants ();
-    this->fillLocalGraph (params);
-    this->fillComplete_ = true;
 
+    // Create the Kokkos::StaticCrsGraph, if it doesn't already exist.
+    this->fillLocalGraph (params);
+
+    const bool callComputeGlobalConstants = params.get () == nullptr ||
+      params->get ("compute global constants", true);
+    const bool computeLocalTriangularConstants = params.get () == nullptr ||
+      params->get ("compute local triangular constants", true);
+    if (callComputeGlobalConstants) {
+      this->computeGlobalConstants (computeLocalTriangularConstants);
+    }
+    else {
+      this->computeLocalConstants (computeLocalTriangularConstants);
+    }
+    this->fillComplete_ = true;
     this->checkInternalState ();
   }
 
@@ -3890,27 +4007,33 @@ namespace Tpetra {
 #ifdef HAVE_TPETRA_MMM_TIMINGS
     MM = Teuchos::rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix + std::string("ESFC-G-mIXmake"))));
 #endif
-
     Teuchos::Array<int> remotePIDs (0); // unused output argument
     this->makeImportExport (remotePIDs, false);
-
-    // Compute the constants
-#ifdef HAVE_TPETRA_MMM_TIMINGS
-    if(params.is_null() || params->get("compute global constants",true))
-      MM = Teuchos::rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix + std::string("ESFC-G-cGC (const)"))));
-    else
-      MM = Teuchos::rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix + std::string("ESFC-G-cGC (noconst)"))));
-#endif
-    if(params.is_null() || params->get("compute global constants",true))
-      computeGlobalConstants ();
-    else
-      computeLocalConstants ();
 
     // Since we have a StaticProfile, fillLocalGraph will do the right thing...
 #ifdef HAVE_TPETRA_MMM_TIMINGS
     MM = Teuchos::rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix + std::string("ESFC-G-fLG"))));
 #endif
-    fillLocalGraph (params);
+    this->fillLocalGraph (params);
+
+    const bool callComputeGlobalConstants = params.get () == nullptr ||
+      params->get ("compute global constants", true);
+    const bool computeLocalTriangularConstants = params.get () == nullptr ||
+      params->get ("compute local triangular constants", true);
+
+    if (callComputeGlobalConstants) {
+#ifdef HAVE_TPETRA_MMM_TIMINGS
+      MM = Teuchos::rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix + std::string("ESFC-G-cGC (const)"))));
+#endif // HAVE_TPETRA_MMM_TIMINGS
+      this->computeGlobalConstants (computeLocalTriangularConstants);
+    }
+    else {
+#ifdef HAVE_TPETRA_MMM_TIMINGS
+      MM = Teuchos::rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix + std::string("ESFC-G-cGC (noconst)"))));
+#endif // HAVE_TPETRA_MMM_TIMINGS
+      this->computeLocalConstants (computeLocalTriangularConstants);
+    }
+
     fillComplete_ = true;
 
 #ifdef HAVE_TPETRA_MMM_TIMINGS
@@ -4609,34 +4732,23 @@ namespace Tpetra {
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   void
   CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::
-  computeGlobalConstants ()
+  computeGlobalConstants (const bool computeLocalTriangularConstants)
   {
     using ::Tpetra::Details::ProfilingRegion;
     using Teuchos::ArrayView;
     using Teuchos::outArg;
     using Teuchos::reduceAll;
     typedef global_size_t GST;
+
     ProfilingRegion regionCGC ("Tpetra::CrsGraph::computeGlobalConstants");
 
-    // Short circuit
-    if(haveGlobalConstants_) return;
-
-#ifdef HAVE_TPETRA_DEBUG
-    TEUCHOS_TEST_FOR_EXCEPTION(! hasColMap(), std::logic_error, "Tpetra::"
-      "CrsGraph::computeGlobalConstants: At this point, the graph should have "
-      "a column Map, but it does not.  Please report this bug to the Tpetra "
-      "developers.");
-#endif // HAVE_TPETRA_DEBUG
-
-    if (! haveLocalConstants_) {
-      computeLocalConstants();
-      haveLocalConstants_ = true;
-    } // if my process doesn't have local constants
+    this->computeLocalConstants (computeLocalTriangularConstants);
 
     // Compute global constants from local constants.  Processes that
     // already have local constants still participate in the
     // all-reduces, using their previously computed values.
-    if (haveGlobalConstants_ == false) {
+    if (! this->haveGlobalConstants_) {
+      const Teuchos::Comm<int>& comm = * (this->getComm ());
       // Promote all the nodeNum* and nodeMaxNum* quantities from
       // size_t to global_size_t, when doing the all-reduces for
       // globalNum* / globalMaxNum* results.
@@ -4651,15 +4763,32 @@ namespace Tpetra {
       // starting the second one.
       GST lcl[2], gbl[2];
       lcl[0] = static_cast<GST> (this->getNodeNumEntries ());
-      lcl[1] = static_cast<GST> (nodeNumDiags_);
-      reduceAll<int,GST> (*getComm (), Teuchos::REDUCE_SUM,
-                          2, lcl, gbl);
-      globalNumEntries_ = gbl[0];
-      globalNumDiags_   = gbl[1];
-      reduceAll<int,GST> (*getComm (), Teuchos::REDUCE_MAX,
-                          static_cast<GST> (nodeMaxNumRowEntries_),
-                          outArg (globalMaxNumRowEntries_));
-      haveGlobalConstants_ = true;
+
+      // mfh 03 May 2018: nodeNumDiags_ is invalid if
+      // computeLocalTriangularConstants is false, but there's no
+      // practical network latency difference between an all-reduce of
+      // length 1 and an all-reduce of length 2, so it's not worth
+      // distinguishing between the two.  However, we do want to avoid
+      // integer overflow, so we'll just set the input local sum to
+      // zero in that case.
+      lcl[1] = computeLocalTriangularConstants ?
+        static_cast<GST> (this->nodeNumDiags_) :
+        static_cast<GST> (0);
+
+      reduceAll<int,GST> (comm, Teuchos::REDUCE_SUM, 2, lcl, gbl);
+      this->globalNumEntries_ = gbl[0];
+
+      // mfh 03 May 2018: If not computing local triangular
+      // properties, users want this to be invalid, not just zero.
+      // This will help with debugging.
+      this->globalNumDiags_ = computeLocalTriangularConstants ?
+        gbl[1] :
+        Teuchos::OrdinalTraits<GST>::invalid ();
+
+      const GST lclMaxNumRowEnt = static_cast<GST> (this->nodeMaxNumRowEntries_);
+      reduceAll<int, GST> (comm, Teuchos::REDUCE_MAX, lclMaxNumRowEnt,
+                           outArg (this->globalMaxNumRowEntries_));
+      this->haveGlobalConstants_ = true;
     }
   }
 
@@ -4667,156 +4796,67 @@ namespace Tpetra {
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   void
   CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::
-  computeLocalConstants ()
+  computeLocalConstants (const bool computeLocalTriangularConstants)
   {
+    using ::Tpetra::Details::determineLocalTriangularStructure;
     using ::Tpetra::Details::ProfilingRegion;
-    using Teuchos::ArrayView;
-    using Teuchos::outArg;
-    using Teuchos::reduceAll;
-    typedef LocalOrdinal LO;
-    typedef GlobalOrdinal GO;
+
     ProfilingRegion regionCLC ("Tpetra::CrsGraph::computeLocalConstants");
-
-    // Short circuit
-    if(haveGlobalConstants_) return;
-
-#ifdef HAVE_TPETRA_DEBUG
-    TEUCHOS_TEST_FOR_EXCEPTION(! hasColMap(), std::logic_error, "Tpetra::"
-      "CrsGraph::computeLocalConstants: At this point, the graph should have "
-      "a column Map, but it does not.  Please report this bug to the Tpetra "
-      "developers.");
-#endif // HAVE_TPETRA_DEBUG
-
-    // If necessary, (re)compute the local constants: nodeNumDiags_,
-    // lowerTriangular_, upperTriangular_, and nodeMaxNumRowEntries_.
-    if (! haveLocalConstants_) {
-      // Reset local properties
-      upperTriangular_ = true;
-      lowerTriangular_ = true;
-      nodeMaxNumRowEntries_ = 0;
-      nodeNumDiags_         = 0;
-
-      // At this point, we know that we have both a row Map and a column Map.
-      const map_type& rowMap = *rowMap_;
-      const map_type& colMap = *colMap_;
-
-      // Go through all the entries of the graph.  Count the number of
-      // diagonal elements we encounter, and figure out whether the
-      // graph is lower or upper triangular.  Diagonal elements are
-      // determined using global indices, with respect to the whole
-      // graph.  However, lower or upper triangularity is a local
-      // property, and is determined using local indices.
-      //
-      // At this point, indices have already been sorted in each row.
-      // That makes finding out whether the graph is lower / upper
-      // triangular easier.
-      if (this->indicesAreAllocated ()) {
-        const LO numLocalRows = static_cast<LO> (this->getNodeNumRows ());
-        for (LO localRow = 0; localRow < numLocalRows; ++localRow) {
-          const GO globalRow = rowMap.getGlobalElement (localRow);
-          // Find the local (column) index for the diagonal entry.
-          // This process might not necessarily own _any_ entries in
-          // the current row.  If it doesn't, skip this row.  It won't
-          // affect any of the attributes (nodeNumDiagons_,
-          // upperTriangular_, lowerTriangular_, or
-          // nodeMaxNumRowEntries_) which this loop sets.
-          const LO rlcid = colMap.getLocalElement (globalRow);
-            // This process owns one or more entries in the current row.
-            const RowInfo rowInfo = this->getRowInfo (localRow);
-            ArrayView<const LO> rview = this->getLocalView (rowInfo);
-            typename ArrayView<const LO>::iterator beg, end, cur;
-            beg = rview.begin();
-            end = beg + rowInfo.numEntries;
-            if (beg != end) {
-              for (cur = beg; cur != end; ++cur) {
-                // is this the diagonal?
-                if (rlcid == *cur) ++nodeNumDiags_;
-              }
-              // Local column indices are sorted in each row.  That means
-              // the smallest column index in this row (on this process)
-              // is *beg, and the largest column index in this row (on
-              // this process) is *(end - 1).  We know that end - 1 is
-              // valid because beg != end.
-              const size_t smallestCol = static_cast<size_t> (*beg);
-              const size_t largestCol = static_cast<size_t> (*(end - 1));
-
-              if (smallestCol < static_cast<size_t> (localRow)) {
-                upperTriangular_ = false;
-              }
-              if (static_cast<size_t> (localRow) < largestCol) {
-                lowerTriangular_ = false;
-              }
-            }
-            // Update the max number of entries over all rows.
-            nodeMaxNumRowEntries_ = std::max (nodeMaxNumRowEntries_, rowInfo.numEntries);
-        }
-      }
-      haveLocalConstants_ = true;
-    } // if my process doesn't have local constants
-  }
-
-  template <class LocalOrdinal, class GlobalOrdinal, class Node>
-  void
-  CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::
-  computeLocalTriangularProperties ()
-  {
-    using Teuchos::arcp;
-    using Teuchos::ArrayRCP;
-    using Teuchos::ParameterList;
-    using Teuchos::parameterList;
-    using Teuchos::rcp;
-    typedef GlobalOrdinal GO;
-    typedef LocalOrdinal LO;
-
-    typename local_graph_type::row_map_type d_ptrs = lclGraph_.row_map;
-    typename local_graph_type::entries_type d_inds = lclGraph_.entries;
-
-    const char tfecfFuncName[] = "computeLocalTriangularProperties()";
+    if (this->haveLocalConstants_) {
+      return;
+    }
 
     // Reset local properties
-    upperTriangular_ = true;
-    lowerTriangular_ = true;
-    nodeMaxNumRowEntries_ = 0;
-    nodeNumDiags_         = 0;
+    this->lowerTriangular_ = false;
+    this->upperTriangular_ = false;
+    this->nodeMaxNumRowEntries_ = Teuchos::OrdinalTraits<size_t>::invalid ();
+    this->nodeNumDiags_ = Teuchos::OrdinalTraits<size_t>::invalid ();
 
-    // Compute triangular properties
-    const size_t numLocalRows = getNodeNumRows ();
-    for (size_t localRow = 0; localRow < numLocalRows; ++localRow) {
-      const GO globalRow = rowMap_->getGlobalElement (localRow);
-      const LO rlcid = colMap_->getLocalElement (globalRow);
+    if (computeLocalTriangularConstants) {
+      const bool hasRowAndColumnMaps =
+        this->rowMap_.get () != nullptr && this->colMap_.get () != nullptr;
+      if (hasRowAndColumnMaps) {
+        auto lclRowMap = this->rowMap_->getLocalMap ();
+        auto lclColMap = this->colMap_->getLocalMap ();
 
-      // It's entirely possible that the local matrix has no entries
-      // in the column corresponding to the current row.  In that
-      // case, the column Map may not necessarily contain that GID.
-      // This is why we check whether rlcid is "invalid" (which means
-      // that globalRow is not a GID in the column Map).
-      if (rlcid != Teuchos::OrdinalTraits<LO>::invalid ()) {
-        TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-          rlcid + 1 >= static_cast<LO> (d_ptrs.dimension_0 ()),
-          std::runtime_error, ": The given row Map and/or column Map is/are "
-          "not compatible with the provided local graph.");
-        if (d_ptrs(rlcid) != d_ptrs(rlcid + 1)) {
-          const size_t smallestCol =
-            static_cast<size_t> (d_inds(d_ptrs(rlcid)));
-          const size_t largestCol =
-            static_cast<size_t> (d_inds(d_ptrs(rlcid + 1)-1));
-          if (smallestCol < localRow) {
-            upperTriangular_ = false;
-          }
-          if (localRow < largestCol) {
-            lowerTriangular_ = false;
-          }
-          for (size_t i = d_ptrs(rlcid); i < d_ptrs(rlcid + 1); ++i) {
-            if (d_inds(i) == rlcid) {
-              ++nodeNumDiags_;
-            }
-          }
-        }
-        nodeMaxNumRowEntries_ =
-          std::max (static_cast<size_t> (d_ptrs(rlcid + 1) - d_ptrs(rlcid)),
-                    nodeMaxNumRowEntries_);
+        // Make sure that the GPU can see any updates made on host.
+        // This code only reads the local graph, so we don't need a
+        // fence afterwards.
+        execution_space::fence ();
+
+        // mfh 01 May 2018: See GitHub Issue #2658.
+        constexpr bool ignoreMapsForTriStruct = true;
+        auto result =
+          determineLocalTriangularStructure (this->lclGraph_, lclRowMap,
+                                             lclColMap, ignoreMapsForTriStruct);
+        this->lowerTriangular_ = result.couldBeLowerTriangular;
+        this->upperTriangular_ = result.couldBeUpperTriangular;
+        this->nodeMaxNumRowEntries_ = result.maxNumRowEnt;
+        this->nodeNumDiags_ = result.diagCount;
+      }
+      else {
+        this->nodeMaxNumRowEntries_ = 0;
+        this->nodeNumDiags_ = 0;
       }
     }
+    else {
+      using LO = local_ordinal_type;
+      // Make sure that the GPU can see any updates made on host.
+      // This code only reads the local graph, so we don't need a
+      // fence afterwards.
+      execution_space::fence ();
+
+      auto ptr = this->lclGraph_.row_map;
+      const LO lclNumRows = ptr.extent(0) == 0 ?
+        static_cast<LO> (0) :
+        (static_cast<LO> (ptr.extent(0)) - static_cast<LO> (1));
+
+      const LO lclMaxNumRowEnt =
+        Details::maxDifference ("Tpetra::CrsGraph: nodeMaxNumRowEntries",
+                                ptr, lclNumRows);
+      this->nodeMaxNumRowEntries_ = static_cast<size_t> (lclMaxNumRowEnt);
+    }
+    this->haveLocalConstants_ = true;
   }
 
 
