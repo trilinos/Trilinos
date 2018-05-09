@@ -1181,7 +1181,7 @@ namespace Tpetra {
     /// \pre The graph must have a column Map.
     /// \pre All diagonal entries of the graph must be populated on
     ///   this process.  Results are undefined otherwise.
-    /// \pre <tt>offsets.dimension_0() >= this->getNodeNumRows()</tt>
+    /// \pre <tt>offsets.extent(0) >= this->getNodeNumRows()</tt>
     ///
     /// \param offsets [out] Output array of offsets.  This method
     ///   does NOT allocate the array; the caller must allocate.  Must

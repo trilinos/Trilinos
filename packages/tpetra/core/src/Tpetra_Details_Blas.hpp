@@ -99,7 +99,7 @@ getStride2DView (const ViewType& A)
                  "IndexType must be a built-in integer type.");
   IndexType stride[8];
   A.stride (stride);
-  return (A.dimension_1 () > 1) ? stride[1] : A.dimension_0 ();
+  return (A.extent (1) > 1) ? stride[1] : A.extent (0);
 }
 
 namespace Impl {

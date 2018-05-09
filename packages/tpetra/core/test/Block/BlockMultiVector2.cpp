@@ -164,7 +164,7 @@ namespace {
     int info = 0;
     {
       lapack.GETRF (blockSize, blockSize, teuchosBlock.values (),
-                    teuchosBlock.stride (), ipiv.ptr_on_device (),
+                    teuchosBlock.stride (), ipiv.data (),
                     &info);
       TEST_EQUALITY_CONST( info, 0 );
       if (info != 0) {
@@ -174,7 +174,7 @@ namespace {
       }
       IST workQuery = zero;
       lapack.GETRI (blockSize, teuchosBlock.values (),
-                    teuchosBlock.stride (), ipiv.ptr_on_device (),
+                    teuchosBlock.stride (), ipiv.data (),
                     reinterpret_cast<Scalar*> (&workQuery), -1, &info);
       TEST_EQUALITY_CONST( info, 0 );
       if (info != 0) {
@@ -183,12 +183,12 @@ namespace {
         return;
       }
       const int lwork = static_cast<int> (KAT::real (workQuery));
-      if (work.dimension_0 () < static_cast<size_t> (lwork)) {
+      if (work.extent (0) < static_cast<size_t> (lwork)) {
         work = decltype (work) ("work", lwork);
       }
       lapack.GETRI (blockSize, teuchosBlock.values (),
-                    teuchosBlock.stride (), ipiv.ptr_on_device (),
-                    reinterpret_cast<Scalar*> (work.ptr_on_device ()),
+                    teuchosBlock.stride (), ipiv.data (),
+                    reinterpret_cast<Scalar*> (work.data ()),
                     lwork, &info);
       TEST_EQUALITY_CONST( info, 0 );
       if (info != 0) {
@@ -246,9 +246,9 @@ namespace {
     blas.GEMV (Teuchos::NO_TRANS, blockSize, blockSize,
                static_cast<Scalar> (1.0),
                teuchosBlock.values (), teuchosBlock.stride (),
-               reinterpret_cast<Scalar*> (prototypeX.ptr_on_device ()), 1,
+               reinterpret_cast<Scalar*> (prototypeX.data ()), 1,
                static_cast<Scalar> (0.0),
-               reinterpret_cast<Scalar*> (prototypeY.ptr_on_device ()), 1);
+               reinterpret_cast<Scalar*> (prototypeY.data ()), 1);
 
     myOut << "Constructing block diagonal (as 3-D Kokkos::View)" << endl;
 

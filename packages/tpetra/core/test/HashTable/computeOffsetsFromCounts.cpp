@@ -73,7 +73,7 @@ namespace TpetraTest {
     typedef SumOfCounts<OffsetType, CountType, DeviceType> functor_type;
 
     OffsetType total = 0;
-    range_type range (0, counts.dimension_0 ());
+    range_type range (0, counts.extent (0));
     Kokkos::parallel_reduce (range, functor_type (counts), total);
     return total;
   }
@@ -211,7 +211,7 @@ namespace { // (anonymous)
       Teuchos::OSTab tab2 (out);
       using Kokkos::subview;
       typedef Kokkos::pair<size_t, size_t> range_type;
-      auto counts_in = subview (offsets, range_type (0, counts.dimension_0 ()));
+      auto counts_in = subview (offsets, range_type (0, counts.extent (0)));
       Kokkos::deep_copy (counts_in, counts);
 
       OffsetType computedTotal = 0;
