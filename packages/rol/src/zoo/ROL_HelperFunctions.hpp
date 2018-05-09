@@ -68,14 +68,14 @@ namespace ROL {
     Teuchos::SerialDenseMatrix<int, Real> H(dim, dim);
 
     ROL::Ptr<Vector<Real> > e = x.clone();
-    ROL::Ptr<Vector<Real> > h = x.clone();
+    ROL::Ptr<Vector<Real> > h = x.dual().clone();
 
     for (int i=0; i<dim; i++) {
       e = x.basis(i);
       obj.hessVec(*h, *e, x, tol);
       for (int j=0; j<dim; j++) {
         e = x.basis(j);
-        H(j,i) = e->dot(*h);
+        H(j,i) = e->dot(h->dual());
       }
     }
 

@@ -73,6 +73,13 @@
 
 #include <memory>
 
+// need to interface this into cmake variable (or only use this flag when it is necessary)
+//#define BLOCKTRIDICONTAINER_ENABLE_PROFILE
+#undef  BLOCKTRIDICONTAINER_ENABLE_PROFILE
+#if defined(KOKKOS_ENABLE_CUDA) && defined(BLOCKTRIDICONTAINER_ENABLE_PROFILE)
+#include "cuda_profiler_api.h"
+#endif
+
 namespace Ifpack2 {
 
   namespace BlockTriDiContainerDetails {
@@ -246,7 +253,7 @@ namespace Ifpack2 {
 
       // Kyungjoo: hansen enum does not work (don't know why)
       // enum : int { vector_length = DefaultVectorLength<impl_scalar_type,memory_space>::value };
-      static constexpr int vector_length = DefaultVectorLength<impl_scalar_type,memory_space>::value;
+      static constexpr int vector_length = 8; //DefaultVectorLength<impl_scalar_type,memory_space>::value;
       typedef Vector<SIMD<impl_scalar_type>,vector_length> vector_type;
 
       ///
@@ -534,6 +541,7 @@ namespace Ifpack2 {
                 for (local_ordinal_type k=0;k<blocksize_;++k) bptr[k] = aptr[k];
             });
         }
+        Kokkos::fence();
       }
 
       void createDataBuffer(const local_ordinal_type &num_vectors) {
@@ -1667,6 +1675,10 @@ namespace Ifpack2 {
       }
 
       void run() {
+#if defined(KOKKOS_ENABLE_CUDA) && defined(BLOCKTRIDICONTAINER_ENABLE_PROFILE)
+        cudaProfilerStart();
+#endif
+
         if (is_cuda<execution_space>::value) {
 #if defined(KOKKOS_ENABLE_CUDA)
 	  const local_ordinal_type vl = vector_length;
@@ -1681,6 +1693,9 @@ namespace Ifpack2 {
           Kokkos::parallel_for("ExtractAndFactorize::RangePolicy::run", policy, *this);
 #endif
         }
+#if defined(KOKKOS_ENABLE_CUDA) && defined(BLOCKTRIDICONTAINER_ENABLE_PROFILE)
+        cudaProfilerStop();
+#endif
       }
     }; 
     
@@ -2389,6 +2404,10 @@ namespace Ifpack2 {
       }      
 
       void run() {
+#if defined(KOKKOS_ENABLE_CUDA) && defined(BLOCKTRIDICONTAINER_ENABLE_PROFILE)
+        cudaProfilerStart();
+#endif
+
 #ifdef HAVE_IFPACK2_BLOCKTRIDICONTAINER_TIMERS
         TEUCHOS_FUNC_TIME_MONITOR("BlockTriDi::SolveTridiags::Run");
 #endif   
@@ -2455,6 +2474,10 @@ namespace Ifpack2 {
 #undef BLOCKTRIDICONTAINER_DETAILS_SOLVETRIDIAGS
 #endif
         }
+
+#if defined(KOKKOS_ENABLE_CUDA) && defined(BLOCKTRIDICONTAINER_ENABLE_PROFILE)
+        cudaProfilerStop();
+#endif
       }
     }; 
     
@@ -2897,6 +2920,10 @@ namespace Ifpack2 {
       void run(const MultiVectorLocalViewTypeY &y_, 
                const MultiVectorLocalViewTypeB &b_, 
                const MultiVectorLocalViewTypeX &x_) {
+#if defined(KOKKOS_ENABLE_CUDA) && defined(BLOCKTRIDICONTAINER_ENABLE_PROFILE)
+        cudaProfilerStart();
+#endif
+
 #ifdef HAVE_IFPACK2_BLOCKTRIDICONTAINER_TIMERS
 	TEUCHOS_FUNC_TIME_MONITOR("BlockTriDi::ComputeResidual::Run<SeqTag>");
 #endif
@@ -2916,6 +2943,10 @@ namespace Ifpack2 {
             ("ComputeResidual::RangePolicy::run<SeqTag>", policy, *this);
 #endif
         }
+
+#if defined(KOKKOS_ENABLE_CUDA) && defined(BLOCKTRIDICONTAINER_ENABLE_PROFILE)
+        cudaProfilerStop();
+#endif
       }
 
       // y = b - R (x , x_remote)
@@ -2926,6 +2957,10 @@ namespace Ifpack2 {
                const MultiVectorLocalViewTypeB &b_, 
                const MultiVectorLocalViewTypeX &x_,
                const MultiVectorLocalViewTypeX_Remote &x_remote_) {
+#if defined(KOKKOS_ENABLE_CUDA) && defined(BLOCKTRIDICONTAINER_ENABLE_PROFILE)
+        cudaProfilerStart();
+#endif
+
 #ifdef HAVE_IFPACK2_BLOCKTRIDICONTAINER_TIMERS
 	TEUCHOS_FUNC_TIME_MONITOR("BlockTriDi::ComputeResidual::Run<AsyncTag>");
 #endif
@@ -2991,6 +3026,9 @@ namespace Ifpack2 {
 #undef BLOCKTRIDICONTAINER_DETAILS_COMPUTERESIDUAL
 #endif
         }
+#if defined(KOKKOS_ENABLE_CUDA) && defined(BLOCKTRIDICONTAINER_ENABLE_PROFILE)
+        cudaProfilerStop();
+#endif
       }
       
       // y = b - R (y , y_remote)
@@ -3002,6 +3040,10 @@ namespace Ifpack2 {
                const MultiVectorLocalViewTypeX &x_,
                const MultiVectorLocalViewTypeX_Remote &x_remote_,
                const bool compute_owned) {
+#if defined(KOKKOS_ENABLE_CUDA) && defined(BLOCKTRIDICONTAINER_ENABLE_PROFILE)
+        cudaProfilerStart();
+#endif
+
 #ifdef HAVE_IFPACK2_BLOCKTRIDICONTAINER_TIMERS
 	TEUCHOS_FUNC_TIME_MONITOR("BlockTriDi::ComputeResidual::Run<OverlapTag>");
 #endif
@@ -3078,6 +3120,9 @@ namespace Ifpack2 {
 #undef BLOCKTRIDICONTAINER_DETAILS_COMPUTERESIDUAL
 #endif
         }
+#if defined(KOKKOS_ENABLE_CUDA) && defined(BLOCKTRIDICONTAINER_ENABLE_PROFILE)
+        cudaProfilerStop();
+#endif
       }
     }; 
 
