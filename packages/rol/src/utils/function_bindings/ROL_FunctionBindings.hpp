@@ -54,7 +54,7 @@ namespace ROL {
 namespace details {
 
 using namespace std;
-using namespace std::placeholders;
+namespace ph = std::placeholders;
 
 template<typename Real>
 using f_update_t = function<void( const Vector<Real>& )>;
@@ -70,12 +70,12 @@ using f_dderiv_t = function<void( Vector<Real>&, const Vector<Real>&, const Vect
 
 template<typename Real>
 f_vector_t<Real> fix_direction( f_dderiv_t<Real>& f, const Vector<Real>& v ) {
-  return bind( f, _1, cref(v), _2 );
+  return bind( f, ph::_1, cref(v), ph::_2 );
 }
 
 template<typename Real>
 f_vector_t<Real> fix_position( f_dderiv_t<Real>& f, const Vector<Real>& x ) {
-  return bind( f, _1, _2, cref(x) );
+  return bind( f, ph::_1, ph::_2, cref(x) );
 }
 
 
