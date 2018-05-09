@@ -78,15 +78,15 @@ public:
     return bind( &Objective_SimOpt<Real>::value, &obj_, ph::_1, tol_);
   }
 
-  f_vector_t<Real> gradientph::_1( const V& z ) {
-    return bind( &Objective_SimOpt<Real>::gradientph::_1, &obj_, ph::_1, ph::_2, cref(z), tol_);
+  f_vector_t<Real> gradient_1( const V& z ) {
+    return bind( &Objective_SimOpt<Real>::gradient_1, &obj_, ph::_1, ph::_2, cref(z), tol_);
   }
 
-  f_vector_t<Real> gradientph::_2( const V& u ) {
-    return bind( &Objective_SimOpt<Real>::gradientph::_2, &obj_, ph::_1, cref(u), ph::_2, tol_);
+  f_vector_t<Real> gradient_2( const V& u ) {
+    return bind( &Objective_SimOpt<Real>::gradient_2, &obj_, ph::_1, cref(u), ph::_2, tol_);
   }
 
-  f_dderiv_t<Real> hessVecph::_11( const  ) {
+  f_dderiv_t<Real> hessVec_11( const  ) {
     return bind( &Objective_SimOpt<Real>::hessVec, &obj_, ph::_1, ph::_2, ph::_3, tol_);
   }
 
