@@ -444,17 +444,13 @@ postRegistrationSetup(typename TRAITS::SetupData d,
   // sub block load
   for (int blk=0;blk<numBlocks;blk++) {
     const int blockDerivativeSize = hostBlockOffsets(blk+1) - hostBlockOffsets(blk);
-    TEUCHOS_TEST_FOR_EXCEPTION(blockDerivativeSize > 256, std::runtime_error,
+    TEUCHOS_TEST_FOR_EXCEPTION(blockDerivativeSize > maxDerivativeArraySize_, std::runtime_error,
                                "ERROR: the derivative dimension for sub block "
                                << blk << "with a value of " << blockDerivativeSize
                                << "is larger than the size allocated for cLIDs and vals "
                                << "in the evaluate call! You must manually increase the "
                                << "size and recompile!");
   }
-
-  // get the number of nodes (Should be renamed basis)
-  // num_nodes = scatterFields_[0].dimension(1);
-  // num_eq = scatterFields_.size();
 
   PHX::Device::fence();
 }
@@ -589,8 +585,8 @@ evaluateFields(typename TRAITS::EvalData workset)
     const bool checkApplyBC = checkApplyBC_;
 
     Kokkos::parallel_for(Kokkos::RangePolicy<PHX::Device>(0,workset.num_cells), KOKKOS_LAMBDA (const int& cell) {
-      LO cLIDs[256];
-      typename Sacado::ScalarType<ScalarT>::type vals[256];
+      LO cLIDs[maxDerivativeArraySize_];
+      typename Sacado::ScalarType<ScalarT>::type vals[maxDerivativeArraySize_];
 
       for(int basis=0; basis < static_cast<int>(fieldOffsets.size()); ++basis) {
         const int rowLID = worksetLIDs(cell,fieldOffsets(basis));
