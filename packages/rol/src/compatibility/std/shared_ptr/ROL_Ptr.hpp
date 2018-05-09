@@ -62,7 +62,7 @@ namespace ROL {
 
 template<class T> using Ptr = std::shared_ptr<T>;
 
-std::nullptr_t nullPtr = nullptr;
+static std::nullptr_t nullPtr = nullptr;
 
 template<class T, class... Args>
 inline
