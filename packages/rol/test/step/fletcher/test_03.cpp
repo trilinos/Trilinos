@@ -88,11 +88,12 @@ int main(int argc, char *argv[]) {
 
     for ( ROL::ETestOptProblem prob = ROL::TESTOPTPROBLEM_ROSENBROCK; prob < ROL::TESTOPTPROBLEM_LAST; prob++ ) { 
       // Get Objective Function
-      ROL::Ptr<ROL::Vector<RealT> > x0, z;
+      ROL::Ptr<ROL::Vector<RealT> > x0;
+      std::vector<ROL::Ptr<ROL::Vector<RealT> > > z;
       ROL::Ptr<ROL::OptimizationProblem<RealT> > problem;
       ROL::GetTestProblem<RealT>(problem,x0,z,prob);
 
-      if (problem->getProblemType() == ROL::TYPE_E || problem->getProblemType() == ROL::TYPE_EB) {
+      if ((problem->getProblemType() == ROL::TYPE_E || problem->getProblemType() == ROL::TYPE_EB) && prob != ROL::TESTOPTPROBLEM_CANTILEVERBEAM) {
         *outStream << std::endl << std::endl << ROL:: ETestOptProblemToString(prob)  << std::endl << std::endl;
 
         // Get Dimension of Problem
@@ -110,13 +111,23 @@ int main(int argc, char *argv[]) {
         solver.solve(*outStream);
 
         // Compute Error
-        e->set(*x0);
-        e->axpy(-1.0,*z);
-        *outStream << std::endl << "Norm of Error: " << e->norm() << std::endl;
+        RealT err(0);
+        for (int i = 0; i < static_cast<int>(z.size()); ++i) {
+          e->set(*x0);
+std::cout << "\n\n  e dim =" << e->dimension() << "  z[i] dim =" << z[i]->dimension() << "\n\n";
+          e->axpy(-1.0,*z[i]);
+          if (i == 0) {
+            err = e->norm();
+          }
+          else {
+            err = std::min(err,e->norm());
+          }
+        }
+        *outStream << std::endl << "Norm of Error: " << err << std::endl;
 
         // Update error flag
         ROL::Ptr<const ROL::AlgorithmState<RealT> > state = solver.getAlgorithmState();
-        errorFlag += ((e->norm() < std::max(1.e-6*z->norm(),1.e-8) || (state->gnorm < 1.e-6)) ? 0 : 1);
+        errorFlag += ((err < std::max(1.e-6*z[0]->norm(),1.e-8) || (state->gnorm < 1.e-6)) ? 0 : 1);
       }
     }
   }

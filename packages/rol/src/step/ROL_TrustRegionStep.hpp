@@ -130,13 +130,13 @@ class TrustRegionStep : public Step<Real> {
 private:
 
   // ADDITIONAL VECTOR STORAGE
-  ROL::Ptr<Vector<Real> > xnew_; ///< Container for updated iteration vector.
-  ROL::Ptr<Vector<Real> > xold_; ///< Container for previous iteration vector.
-  ROL::Ptr<Vector<Real> > gp_;   ///< Container for previous gradient vector.
+  Ptr<Vector<Real>> xnew_; ///< Container for updated iteration vector.
+  Ptr<Vector<Real>> xold_; ///< Container for previous iteration vector.
+  Ptr<Vector<Real>> gp_;   ///< Container for previous gradient vector.
 
   // TRUST REGION INFORMATION
-  ROL::Ptr<TrustRegion<Real> >      trustRegion_; ///< Container for trust-region solver object.
-  ROL::Ptr<TrustRegionModel<Real> > model_;       ///< Container for trust-region model.
+  Ptr<TrustRegion<Real>>                trustRegion_; ///< Container for trust-region solver object.
+  Ptr<TrustRegionModel<Real>>           model_;       ///< Container for trust-region model.
   ETrustRegion                          etr_;         ///< Trust-region subproblem solver type.
   ETrustRegionModel                     TRmodel_;     ///< Trust-region subproblem model type.
   Real                                  delMax_;      ///< Maximum trust-region radius.
@@ -146,7 +146,7 @@ private:
   bool                                  bndActive_;   ///< Flag whether bound is activated.
 
   // SECANT INFORMATION
-  ROL::Ptr<Secant<Real> > secant_;           ///< Container for secant approximation.
+  Ptr<Secant<Real>> secant_;                     ///< Container for secant approximation.
   ESecant                     esec_;             ///< Secant type.
   bool                        useSecantHessVec_; ///< Flag whether to use a secant Hessian.
   bool                        useSecantPrecond_; ///< Flag whether to use a secant preconditioner. 
@@ -181,7 +181,7 @@ private:
       @param[in]  parlist   is the user-supplied ParameterList.
   */
   void parseParameterList(Teuchos::ParameterList &parlist) {
-    ROL::Ptr<StepState<Real> > step_state = Step<Real>::getState();
+    Ptr<StepState<Real>> step_state = Step<Real>::getState();
     // Trust-Region Parameters
     Teuchos::ParameterList &slist = parlist.sublist("Step");
     Teuchos::ParameterList &list  = slist.sublist("Trust Region");
@@ -232,7 +232,7 @@ private:
   */
   void updateGradient( Vector<Real> &x, Objective<Real> &obj, BoundConstraint<Real> &bnd, 
                        AlgorithmState<Real> &algo_state ) {
-    ROL::Ptr<StepState<Real> > state = Step<Real>::getState();
+    Ptr<StepState<Real>> state = Step<Real>::getState();
     if ( useInexact_[1] ) {
       const Real one(1);
       //const Real oem2(1.e-2), oe4(1.e4);
@@ -311,12 +311,12 @@ public:
   */
   TrustRegionStep( Teuchos::ParameterList & parlist )
     : Step<Real>(),
-      xnew_(ROL::nullPtr), xold_(ROL::nullPtr), gp_(ROL::nullPtr),
-      trustRegion_(ROL::nullPtr), model_(ROL::nullPtr),
+      xnew_(nullPtr), xold_(nullPtr), gp_(nullPtr),
+      trustRegion_(nullPtr), model_(nullPtr),
       etr_(TRUSTREGION_DOGLEG), TRmodel_(TRUSTREGION_MODEL_KELLEYSACHS),
       delMax_(1e8), TRflag_(TRUSTREGION_FLAG_SUCCESS),
       SPflag_(0), SPiter_(0), bndActive_(false),
-      secant_(ROL::nullPtr), esec_(SECANT_LBFGS),
+      secant_(nullPtr), esec_(SECANT_LBFGS),
       useSecantHessVec_(false), useSecantPrecond_(false),
       scaleEps_(1), useProjectedGrad_(false),
       alpha_init_(1), max_fval_(20), mu_(0.9999), beta_(0.01),
@@ -342,14 +342,14 @@ public:
       @param[in]     secant     is a user-defined secant object
       @param[in]     parlist    is a parameter list containing algorithmic specifications
   */
-  TrustRegionStep( ROL::Ptr<Secant<Real> > &secant, Teuchos::ParameterList &parlist ) 
+  TrustRegionStep( Ptr<Secant<Real>> &secant, Teuchos::ParameterList &parlist ) 
     : Step<Real>(),
-      xnew_(ROL::nullPtr), xold_(ROL::nullPtr), gp_(ROL::nullPtr),
-      trustRegion_(ROL::nullPtr), model_(ROL::nullPtr),
+      xnew_(nullPtr), xold_(nullPtr), gp_(nullPtr),
+      trustRegion_(nullPtr), model_(nullPtr),
       etr_(TRUSTREGION_DOGLEG), TRmodel_(TRUSTREGION_MODEL_KELLEYSACHS),
       delMax_(1e8), TRflag_(TRUSTREGION_FLAG_SUCCESS),
       SPflag_(0), SPiter_(0), bndActive_(false),
-      secant_(ROL::nullPtr), esec_(SECANT_LBFGS),
+      secant_(nullPtr), esec_(SECANT_LBFGS),
       useSecantHessVec_(false), useSecantPrecond_(false),
       scaleEps_(1), useProjectedGrad_(false),
       alpha_init_(1), max_fval_(20), mu_(0.9999), beta_(0.01),
@@ -362,7 +362,7 @@ public:
     Teuchos::ParameterList &glist = parlist.sublist("General");
     useSecantPrecond_ = glist.sublist("Secant").get("Use as Preconditioner", false);
     useSecantHessVec_ = glist.sublist("Secant").get("Use as Hessian",        false);
-    if ( secant_ == ROL::nullPtr ) {
+    if ( secant_ == nullPtr ) {
       Teuchos::ParameterList Slist;
       Slist.sublist("General").sublist("Secant").set("Type","Limited-Memory BFGS");
       Slist.sublist("General").sublist("Secant").set("Maximum Storage",10);
@@ -381,8 +381,11 @@ public:
   void initialize( Vector<Real> &x, const Vector<Real> &s, const Vector<Real> &g, 
                    Objective<Real> &obj, BoundConstraint<Real> &bnd, 
                    AlgorithmState<Real> &algo_state ) {
+    if (!isValidTrustRegionSubproblem(etr_,TRmodel_,bnd.isActivated())) {
+      throw Exception::NotImplemented(">>> ROL::TrustRegionStep : Invalid Trust Region Solver and Model pair!");
+    }
     Real p1(0.1), oe10(1.e10), zero(0), one(1), half(0.5), three(3), two(2), six(6);
-    ROL::Ptr<StepState<Real> > step_state = Step<Real>::getState();
+    Ptr<StepState<Real>> step_state = Step<Real>::getState();
     bndActive_ = bnd.isActivated();
 
     trustRegion_->initialize(x,s,g);
@@ -417,8 +420,8 @@ public:
     if ( !useSecantHessVec_ &&
         (etr_ == TRUSTREGION_DOGLEG || etr_ == TRUSTREGION_DOUBLEDOGLEG) ) {
       try {
-        ROL::Ptr<Vector<Real> > v  = g.clone();
-        ROL::Ptr<Vector<Real> > hv = x.clone();
+        Ptr<Vector<Real>> v  = g.clone();
+        Ptr<Vector<Real>> hv = x.clone();
         obj.invHessVec(*hv,*v,x,htol);
       }
       catch (std::exception &e) {
@@ -428,7 +431,7 @@ public:
 
     // Evaluate Objective Function at Cauchy Point
     if ( step_state->searchSize <= zero ) {
-      ROL::Ptr<Vector<Real> > Bg = g.clone();
+      Ptr<Vector<Real>> Bg = g.clone();
       if ( useSecantHessVec_ ) {
         secant_->applyB(*Bg,(step_state->gradientVec)->dual());
       }
@@ -441,10 +444,10 @@ public:
         alpha = algo_state.gnorm*algo_state.gnorm/gBg;
       }
       // Evaluate the objective function at the Cauchy point
-      ROL::Ptr<Vector<Real> > cp = s.clone();
+      Ptr<Vector<Real>> cp = s.clone();
       cp->set((step_state->gradientVec)->dual()); 
       cp->scale(-alpha);
-      ROL::Ptr<Vector<Real> > xcp = x.clone();
+      Ptr<Vector<Real>> xcp = x.clone();
       xcp->set(x);
       xcp->plus(*cp);
       if ( bnd.isActivated() ) {
@@ -481,6 +484,52 @@ public:
         }
       }
     }
+    // Build trust-region model
+    if (bnd.isActivated()) { 
+      if ( TRmodel_ == TRUSTREGION_MODEL_KELLEYSACHS ) {
+        model_ = makePtr<KelleySachsModel<Real>>(obj,
+                                                 bnd,
+                                                 x,
+                                                 *(step_state->gradientVec),
+                                                 secant_,
+                                                 useSecantPrecond_,
+                                                 useSecantHessVec_);
+      }
+      else if ( TRmodel_ == TRUSTREGION_MODEL_COLEMANLI ) {
+        model_ = makePtr<ColemanLiModel<Real>>(obj,
+                                               bnd,
+                                               x,
+                                               *(step_state->gradientVec),
+                                               stepBackMax_,
+                                               stepBackScale_,
+                                               singleReflect_,
+                                               secant_,
+                                               useSecantPrecond_,
+                                               useSecantHessVec_);
+      } 
+      else if ( TRmodel_ == TRUSTREGION_MODEL_LINMORE ) {
+        model_ = makePtr<LinMoreModel<Real>>(obj,
+                                             bnd,
+                                             x,
+                                             *(step_state->gradientVec),
+                                             secant_,
+                                             useSecantPrecond_,
+                                             useSecantHessVec_);
+      }
+      else {
+        TEUCHOS_TEST_FOR_EXCEPTION( true, std::invalid_argument,
+          ">>> ERROR (TrustRegionStep): Invalid trust-region model!");
+      }
+    }
+    else {
+      model_ = makePtr<TrustRegionModel<Real>>(obj,
+                                               bnd,
+                                               x,
+                                               *(step_state->gradientVec),
+                                               secant_,
+                                               useSecantPrecond_,
+                                               useSecantHessVec_);
+    }
   }
 
   /** \brief Compute step.
@@ -493,50 +542,23 @@ public:
       @param[in]       bnd        are the bound constraints
       @param[in]       algo_state contains the current state of the algorithm
   */
-  void compute( Vector<Real> &s, const Vector<Real> &x, Objective<Real> &obj, BoundConstraint<Real> &bnd, 
+  void compute( Vector<Real> &s, const Vector<Real> &x,
+                Objective<Real> &obj, BoundConstraint<Real> &bnd, 
                 AlgorithmState<Real> &algo_state ) {
     // Get step state
-    ROL::Ptr<StepState<Real> > step_state = Step<Real>::getState();
+    Ptr<StepState<Real>> step_state = Step<Real>::getState();
     // Build trust-region model
-    if (bnd.isActivated()) { 
+    model_->update(obj,bnd,x,*step_state->gradientVec,secant_);
+    if (bnd.isActivated()) {
       if ( TRmodel_ == TRUSTREGION_MODEL_KELLEYSACHS ) {
 //      Real eps = scaleEps_*algo_state.gnorm;
         Real eps = scaleEps_ * std::min(std::pow(algo_state.gnorm,static_cast<Real>(0.75)),
-                                        static_cast<Real>(0.01));
-        model_ = ROL::makePtr<ROL::KelleySachsModel<Real>>(obj,
-                                                              bnd,
-                                                              x,
-                                                              *(step_state->gradientVec),
-                                                              eps,
-                                                              secant_,
-                                                              useSecantPrecond_,
-                                                              useSecantHessVec_);
+                                        static_cast<Real>(0.001));
+        dynamicPtrCast<KelleySachsModel<Real>>(model_)->setEpsilon(eps);
       }
       else if ( TRmodel_ == TRUSTREGION_MODEL_COLEMANLI ) {
-        model_ = ROL::makePtr<ROL::ColemanLiModel<Real>>(obj,
-                                                            bnd,
-                                                            x,
-                                                            *(step_state->gradientVec),
-                                                            secant_,
-                                                            useSecantPrecond_,
-                                                            useSecantHessVec_,
-                                                            step_state->searchSize,
-                                                            stepBackMax_,
-                                                            stepBackScale_,
-                                                            singleReflect_);
+        dynamicPtrCast<ColemanLiModel<Real>>(model_)->setRadius(step_state->searchSize);
       }
-      else {
-        TEUCHOS_TEST_FOR_EXCEPTION( true, std::invalid_argument,
-          ">>> ERROR (ROL::TrustRegionStep): Invalid trust-region model!");
-      }
-    }
-    else {
-      model_ = ROL::makePtr<ROL::TrustRegionModel<Real>>(obj,
-                                                            x,
-                                                            *(step_state->gradientVec),
-                                                            secant_,
-                                                            useSecantPrecond_,
-                                                            useSecantHessVec_);
     }
     // Minimize trust-region model over trust-region constraint
     SPflag_ = 0; SPiter_ = 0;
@@ -557,10 +579,10 @@ public:
   void update( Vector<Real>          &x,
                const Vector<Real>    &s,
                Objective<Real>       &obj,
-               BoundConstraint<Real> &bnd, 
+               BoundConstraint<Real> &bnd,
                AlgorithmState<Real>  &algo_state ) {
     // Get step state
-    ROL::Ptr<StepState<Real> > state = Step<Real>::getState();
+    Ptr<StepState<Real>> state = Step<Real>::getState();
     // Store previous step for constraint computations
     if ( bnd.isActivated() ) {
       xold_->set(x);
@@ -702,7 +724,7 @@ public:
     hist << std::setw(10) << std::left << "#fval";
     hist << std::setw(10) << std::left << "#grad";
     hist << std::setw(10) << std::left << "tr_flag";
-    if ( etr_ == TRUSTREGION_TRUNCATEDCG ) {
+    if ( etr_ == TRUSTREGION_TRUNCATEDCG || etr_ == TRUSTREGION_LINMORE ) {
       hist << std::setw(10) << std::left << "iterCG";
       hist << std::setw(10) << std::left << "flagCG";
     }
@@ -745,7 +767,7 @@ public:
       @param[in]     printHeader   if ste to true will print the header at each iteration
   */
   std::string print( AlgorithmState<Real> & algo_state, bool print_header = false ) const  {
-    const ROL::Ptr<const StepState<Real> >& step_state = Step<Real>::getStepState();
+    const Ptr<const StepState<Real>>& step_state = Step<Real>::getStepState();
 
     std::stringstream hist;
     hist << std::scientific << std::setprecision(6);
@@ -774,7 +796,7 @@ public:
       hist << std::setw(10) << std::left << algo_state.nfval;              
       hist << std::setw(10) << std::left << algo_state.ngrad;              
       hist << std::setw(10) << std::left << TRflag_;              
-      if ( etr_ == TRUSTREGION_TRUNCATEDCG ) {
+      if ( etr_ == TRUSTREGION_TRUNCATEDCG || etr_ == TRUSTREGION_LINMORE ) {
         hist << std::setw(10) << std::left << SPiter_;
         hist << std::setw(10) << std::left << SPflag_;
       }
