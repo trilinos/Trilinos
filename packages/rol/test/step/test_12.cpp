@@ -68,7 +68,8 @@ int main(int argc, char *argv[]) {
     outStream = ROL::makePtrFromRef(bhs);
 
   int errorFlag  = 0;
-  ROL::Ptr<ROL::Vector<RealT> > x0, x;
+  ROL::Ptr<ROL::Vector<RealT> > x0;
+  std::vector<ROL::Ptr<ROL::Vector<RealT> > > x;
   ROL::Ptr<ROL::OptimizationProblem<RealT> > problem;
   ROL::GetTestProblem<RealT>(problem,x0,x,ROL::TESTOPTPROBLEM_HS1);
   ROL::Ptr<ROL::Objective<RealT> > obj = problem->getObjective();
@@ -80,14 +81,14 @@ int main(int argc, char *argv[]) {
   int thrown = 0;
   try {
     try {
-      step.compute(*x0,*x,*obj,*bnd,algo_state);
+      step.compute(*x0,*x[0],*obj,*bnd,algo_state);
     }
     catch (ROL::Exception::NotImplemented exc) {
       *outStream << exc.what() << std::endl;
       thrown++;
     };
     try {
-      step.update(*x0,*x,*obj,*bnd,algo_state);
+      step.update(*x0,*x[0],*obj,*bnd,algo_state);
     }
     catch (ROL::Exception::NotImplemented exc) {
       *outStream << exc.what() << std::endl;

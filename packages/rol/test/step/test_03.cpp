@@ -87,14 +87,14 @@ int main(int argc, char *argv[]) {
 
     for ( ROL::ETestOptProblem prob = ROL::TESTOPTPROBLEM_ROSENBROCK; prob < ROL::TESTOPTPROBLEM_LAST; prob++ ) { 
       // Get Objective Function
-      ROL::Ptr<ROL::Vector<RealT> > x0, z;
+      ROL::Ptr<ROL::Vector<RealT> > x0;
+      std::vector<ROL::Ptr<ROL::Vector<RealT> > > z;
       ROL::Ptr<ROL::OptimizationProblem<RealT> > problem;
       ROL::GetTestProblem<RealT>(problem,x0,z,prob);
 
       if (problem->getProblemType() == ROL::TYPE_B) {
         *outStream << "\n\n" << ROL:: ETestOptProblemToString(prob)  << "\n\n";
 
-        ROL::Ptr<ROL::Vector<RealT> > x = x0->clone();
         // Get Dimension of Problem
         int dim = x0->dimension(); 
         parlist->sublist("General").sublist("Krylov").set("Iteration Limit", 2*dim);
@@ -115,13 +115,21 @@ int main(int argc, char *argv[]) {
         ROL::OptimizationSolver<RealT> solver(*problem,*parlist);
 
         // Run Solver
-        x->set(*x0);
         solver.solve(*outStream);
 
         // Compute Error
-        e->set(*x);
-        e->axpy(-1.0,*z);
-        *outStream << std::endl << "Norm of Error: " << e->norm() << std::endl;
+        RealT err(0);
+        for (int i = 0; i < static_cast<int>(z.size()); ++i) {
+          e->set(*x0);
+          e->axpy(-1.0,*z[i]);
+          if (i == 0) {
+            err = e->norm();
+          }
+          else {
+            err = std::min(err,e->norm());
+          }
+        }
+        *outStream << std::endl << "Norm of Error: " << err << std::endl;
       }
     }
   }

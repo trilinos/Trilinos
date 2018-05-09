@@ -30,7 +30,6 @@ public:
   /** \brief Construct to uninitialized. */
   MultiVectorPreconditioner() {}
 
-  /** \brief . */
   void nonconstInitialize(
     const RCP<PreconditionerBase<Scalar> > &prec,
     const RCP<const DefaultMultiVectorProductVectorSpace<Scalar> > &multiVecRange,
@@ -42,7 +41,6 @@ public:
     multiVecDomain_ = multiVecDomain;
   }
 
-  /** \brief . */
   void initialize(
     const RCP<const PreconditionerBase<Scalar> > &prec,
     const RCP<const DefaultMultiVectorProductVectorSpace<Scalar> > &multiVecRange,
@@ -53,15 +51,12 @@ public:
     multiVecDomain_ = multiVecDomain;
   }
 
-  /** \brief . */
   RCP<PreconditionerBase<Scalar> >
   getNonconstPreconditioner() { return prec_.getNonconstObj(); }
 
-  /** \brief . */
   RCP<const PreconditionerBase<Scalar> >
   getPreconditioner() const { return prec_.getConstObj(); }
 
-  /** \brief . */
   void uninitialize() {
     prec_.uninitialize();
     multiVecRange_ = Teuchos::null;
@@ -73,54 +68,45 @@ public:
   /** @name Overridden from PreconditionerBase */
   //@{
 
-  /** \brief . */
   bool isLeftPrecOpConst() const
   { return prec_.getConstObj()->isLeftPrecOpConst(); }
 
-  /** \brief . */
   Teuchos::RCP<LinearOpBase<Scalar> > getNonconstLeftPrecOp()
   { return nonconstMultiVectorLinearOp(
       prec_.getNonconstObj()->getNonconstLeftPrecOp(),
       multiVecRange_,
       multiVecDomain_); }
 
-  /** \brief . */
   Teuchos::RCP<const LinearOpBase<Scalar> > getLeftPrecOp() const
   { return multiVectorLinearOp(
       prec_.getConstObj()->getLeftPrecOp(),
       multiVecRange_,
       multiVecDomain_); }
 
-  /** \brief . */
   bool isRightPrecOpConst() const
   { return prec_.getConstObj()->isRightPrecOpConst(); }
 
-  /** \brief . */
   Teuchos::RCP<LinearOpBase<Scalar> > getNonconstRightPrecOp()
   { return nonconstMultiVectorLinearOp(
       prec_.getNonconstObj()->getNonconstRightPrecOp(),
       multiVecRange_,
       multiVecDomain_); }
 
-  /** \brief . */
   Teuchos::RCP<const LinearOpBase<Scalar> > getRightPrecOp() const
   { return multiVectorLinearOp(
       prec_.getConstObj()->getRightPrecOp(),
       multiVecRange_,
       multiVecDomain_); }
 
-  /** \brief . */
   bool isUnspecifiedPrecOpConst() const
   { return prec_.getConstObj()->isUnspecifiedPrecOpConst(); }
 
-  /** \brief . */
   Teuchos::RCP<LinearOpBase<Scalar> > getNonconstUnspecifiedPrecOp()
   { return nonconstMultiVectorLinearOp(
       prec_.getNonconstObj()->getNonconstUnspecifiedPrecOp(),
       multiVecRange_,
       multiVecDomain_); }
 
-  /** \brief . */
   Teuchos::RCP<const LinearOpBase<Scalar> > getUnspecifiedPrecOp() const
   { return multiVectorLinearOp(
       prec_.getNonconstObj()->getUnspecifiedPrecOp(),
