@@ -65,10 +65,10 @@ struct AdvectionKernel {
     wbs(bs),
     residual_m_i(residual),
     coeff(c),
-    ncells(flux_m_i.dimension_0()),
-    num_basis(wgb.dimension_1()),
-    num_points(wgb.dimension_2()),
-    num_dim((wgb.dimension_3()))
+    ncells(flux_m_i.extent(0)),
+    num_basis(wgb.extent(1)),
+    num_points(wgb.extent(2)),
+    num_dim((wgb.extent(3)))
   {
   }
 
@@ -148,10 +148,10 @@ struct AdvectionKernel {
     wbs(bs),
     residual_m_i(residual),
     coeff(c),
-    ncells(flux_m_i.dimension_0()),
-    num_basis(wgb.dimension_1()),
-    num_points(wgb.dimension_2()),
-    num_dim((wgb.dimension_3()))
+    ncells(flux_m_i.extent(0)),
+    num_basis(wgb.extent(1)),
+    num_points(wgb.extent(2)),
+    num_dim((wgb.extent(3)))
   {
   }
 
@@ -230,10 +230,10 @@ struct AdvectionKernel {
     wbs(bs),
     residual_m_i(residual),
     coeff(c),
-    ncells(flux_m_i.dimension_0()),
-    num_basis(wgb.dimension_1()),
-    num_points(wgb.dimension_2()),
-    num_dim((wgb.dimension_3()))
+    ncells(flux_m_i.extent(0)),
+    num_basis(wgb.extent(1)),
+    num_points(wgb.extent(2)),
+    num_dim((wgb.extent(3)))
   {
   }
 
@@ -652,9 +652,9 @@ struct DrekarTest {
 
     typedef typename View1::value_type value_type;
 
-    const size_t n0 = v_gold_h.dimension_0();
-    const size_t n1 = v_gold_h.dimension_1();
-    const size_t n2 = v_gold_h.dimension_2();
+    const size_t n0 = v_gold_h.extent(0);
+    const size_t n1 = v_gold_h.extent(1);
+    const size_t n2 = v_gold_h.extent(2);
 
     bool success = true;
     for ( size_t i0 = 0 ; i0 < n0 ; ++i0 ) {
@@ -688,9 +688,9 @@ struct DrekarTest {
 
     typedef typename View1::value_type value_type;
 
-    const size_t n0 = v_gold_h.dimension_0();
-    const size_t n1 = v_gold_h.dimension_1();
-    const size_t n2 = v_gold_h.dimension_2();
+    const size_t n0 = v_gold_h.extent(0);
+    const size_t n1 = v_gold_h.extent(1);
+    const size_t n2 = v_gold_h.extent(2);
 
     bool success = true;
     for ( size_t i0 = 0 ; i0 < n0 ; ++i0 ) {
