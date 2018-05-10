@@ -488,7 +488,7 @@ compute_maximum_num_entries (
   NumEntriesFunctor<LO, DT, BDT> functor (num_packets_per_lid, offsets,
                                           imports);
   const LO numRowsToUnpack =
-    static_cast<LO> (num_packets_per_lid.dimension_0 ());
+    static_cast<LO> (num_packets_per_lid.extent (0));
   size_t max_num_ent = 0;
   Kokkos::parallel_reduce ("Max num entries in CRS",
                            range_policy (0, numRowsToUnpack),
@@ -516,7 +516,7 @@ compute_total_num_entries (
   NumEntriesFunctor<LO, DT, BDT> functor (num_packets_per_lid, offsets,
                                           imports);
   const LO numRowsToUnpack =
-    static_cast<LO> (num_packets_per_lid.dimension_0 ());
+    static_cast<LO> (num_packets_per_lid.extent (0));
   Kokkos::parallel_reduce ("Total num entries in CRS to unpack",
                            range_policy (0, numRowsToUnpack),
                            functor, tot_num_ent);
@@ -552,7 +552,7 @@ unpackAndCombineIntoCrsMatrix(
   const char prefix[] =
     "Tpetra::Details::UnpackAndCombineCrsMatrixImpl::unpackAndCombineIntoCrsMatrix: ";
 
-  const size_t num_import_lids = static_cast<size_t>(import_lids.dimension_0());
+  const size_t num_import_lids = static_cast<size_t>(import_lids.extent(0));
   if (num_import_lids == 0) {
     // Nothing to unpack
     return;
@@ -580,11 +580,11 @@ unpackAndCombineIntoCrsMatrix(
 
     // Check that sizes of input objects are consistent.
     bool bad_num_import_lids =
-      num_import_lids != static_cast<size_t>(num_packets_per_lid.dimension_0());
+      num_import_lids != static_cast<size_t>(num_packets_per_lid.extent(0));
     TEUCHOS_TEST_FOR_EXCEPTION(bad_num_import_lids,
         std::invalid_argument,
         prefix << "importLIDs.size() (" << num_import_lids << ") != "
-        "numPacketsPerLID.size() (" << num_packets_per_lid.dimension_0() << ").");
+        "numPacketsPerLID.size() (" << num_packets_per_lid.extent(0) << ").");
   } // end QA error checking
 
   // Get the offsets
@@ -649,7 +649,7 @@ unpackAndCombineWithOwningPIDsCount(
   }
 
   // Count entries copied directly from the source matrix with permuting.
-  num_items = static_cast<LO>(permute_from_lids.dimension_0());
+  num_items = static_cast<LO>(permute_from_lids.extent(0));
   if (num_items) {
     size_t kcnt = 0;
     parallel_reduce(range_policy(0, num_items),
@@ -663,7 +663,7 @@ unpackAndCombineWithOwningPIDsCount(
 
   {
     // Count entries received from other MPI processes.
-    const size_type np = num_packets_per_lid.dimension_0();
+    const size_type np = num_packets_per_lid.extent(0);
     Kokkos::View<size_t*, device_type> offsets("offsets", np+1);
     computeOffsetsFromCounts(offsets, num_packets_per_lid);
     count +=
@@ -709,7 +709,7 @@ setupRowPointersForRemotes(
   typedef Kokkos::RangePolicy<XS, Kokkos::IndexType<size_type> > range_policy;
 
   const size_t InvalidNum = OrdinalTraits<size_t>::invalid();
-  const size_type N = num_packets_per_lid.dimension_0();
+  const size_type N = num_packets_per_lid.extent(0);
 
   int errors = 0;
   parallel_reduce ("Setup row pointers for remotes",
@@ -738,7 +738,7 @@ makeCrsRowPtrFromLengths(
   typedef typename DT::execution_space XS;
   typedef typename Kokkos::View<size_t*,DT>::size_type size_type;
   typedef Kokkos::RangePolicy<XS, Kokkos::IndexType<size_type> > range_policy;
-  const size_type N = new_start_row.dimension_0();
+  const size_type N = new_start_row.extent(0);
   parallel_scan(range_policy(0, N),
     KOKKOS_LAMBDA(const size_t& i, size_t& update, const bool& final) {
       auto cur_val = tgt_rowptr(i);
@@ -818,7 +818,7 @@ copyDataFromPermuteIDs(
   typedef typename PackTraits<LO,DT>::input_array_type::size_type size_type;
   typedef Kokkos::RangePolicy<XS, Kokkos::IndexType<size_type> > range_policy;
 
-  const size_type num_permute_to_lids = permute_to_lids.dimension_0();
+  const size_type num_permute_to_lids = permute_to_lids.extent(0);
 
   parallel_for(range_policy(0, num_permute_to_lids),
     KOKKOS_LAMBDA(const size_t i) {
@@ -984,7 +984,7 @@ unpackAndCombineIntoCrsArrays(
   );
 
   // Permute IDs: Still local, but reordered
-  const size_type num_permute_to_lids = permute_to_lids.dimension_0();
+  const size_type num_permute_to_lids = permute_to_lids.extent(0);
   parallel_for(range_policy(0, num_permute_to_lids),
     KOKKOS_LAMBDA(const size_t i) {
       const LO tgt_lid = permute_to_lids(i);
@@ -995,7 +995,7 @@ unpackAndCombineIntoCrsArrays(
   );
 
   // Get the offsets from the number of packets per LID
-  const size_type num_import_lids = import_lids.dimension_0();
+  const size_type num_import_lids = import_lids.extent(0);
   View<size_t*, DT> offsets("offsets", num_import_lids+1);
   computeOffsetsFromCounts(offsets, num_packets_per_lid);
 
@@ -1003,11 +1003,11 @@ unpackAndCombineIntoCrsArrays(
   {
     auto nth_offset_h = getEntryOnHost(offsets, num_import_lids);
     const bool condition =
-      nth_offset_h != static_cast<size_t>(imports.dimension_0 ());
+      nth_offset_h != static_cast<size_t>(imports.extent (0));
     TEUCHOS_TEST_FOR_EXCEPTION
       (condition, std::logic_error, prefix
        << "The final offset in bytes " << nth_offset_h
-       << " != imports.size() = " << imports.dimension_0()
+       << " != imports.size() = " << imports.extent(0)
        << ".  Please report this bug to the Tpetra developers.");
   }
 #endif // HAVE_TPETRA_DEBUG
@@ -1042,7 +1042,7 @@ unpackAndCombineIntoCrsArrays(
       tgt_rowptr, src_pids, permute_to_lids, permute_from_lids,
       local_matrix, local_col_map, my_pid);
 
-  if (imports.dimension_0() <= 0) {
+  if (imports.extent(0) <= 0) {
     return;
   }
 
@@ -1476,7 +1476,7 @@ unpackAndCombineIntoCrsArrays (
     // values should be packed (though this does assume that in our packing
     // scheme, rows with zero entries take zero bytes).
     size_t num_bytes_per_value_l = 0;
-    if (local_matrix.values.dimension_0() > 0) {
+    if (local_matrix.values.extent(0) > 0) {
       const ST& val = local_matrix.values(0);
       num_bytes_per_value_l = PackTraits<ST,DT>::packValueCount(val);
     } else {

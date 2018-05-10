@@ -167,7 +167,7 @@ namespace {
       for (LO k = 0; k < static_cast<LO> (lclColInds.size ()); ++k) {
         const LO lclColInd = lclColInds[k];
         const LO err =
-          A->replaceLocalValues (lclRow, &lclColInd, curBlk.ptr_on_device (), 1);
+          A->replaceLocalValues (lclRow, &lclColInd, curBlk.data (), 1);
         TEUCHOS_TEST_FOR_EXCEPTION(err != 1, std::logic_error, "Bug");
       }
     }
@@ -182,10 +182,10 @@ namespace {
 
     Teuchos::Array<LO> saveremoteLIDs = G->getImporter()->getRemoteLIDs();
     Teuchos::Array<LO> remoteLIDs = G->getImporter()->getRemoteLIDs();
-    
+
     Teuchos::Array<GO> remoteGIDs(remoteLIDs.size());
     Teuchos::Array<int> userRemotePIDs(remoteLIDs.size());
-    for(size_t i=0; i< (size_t)remoteLIDs.size(); i++) 
+    for(size_t i=0; i< (size_t)remoteLIDs.size(); i++)
       remoteGIDs[i] = target->getGlobalElement(G->getImporter()->getRemoteLIDs()[i]);
     Tpetra::Import_Util::getRemotePIDs(*G->getImporter(),userRemotePIDs);
 
@@ -194,14 +194,14 @@ namespace {
 
 
     Tpetra::Import<LO,GO,NT> newimport(source,
-				       target,
-				       userRemotePIDs,
-				       remoteGIDs,
-				       exportLIDs,
-				       userExportPIDs ,
-				       false,
-				       Teuchos::null,
-				       Teuchos::null ); // plist == null
+                                       target,
+                                       userRemotePIDs,
+                                       remoteGIDs,
+                                       exportLIDs,
+                                       userExportPIDs ,
+                                       false,
+                                       Teuchos::null,
+                                       Teuchos::null ); // plist == null
 
     Teuchos::RCP<const map_type> newsource = newimport.getSourceMap ();
     Teuchos::RCP<const map_type> newtarget = newimport.getTargetMap ();

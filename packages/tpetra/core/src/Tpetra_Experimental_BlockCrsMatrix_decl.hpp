@@ -629,7 +629,7 @@ public:
   ///   has a column Map).
   /// \pre All diagonal entries of the matrix's graph must be
   ///   populated on this process.  Results are undefined otherwise.
-  /// \post <tt>offsets.dimension_0() == getNodeNumRows()</tt>
+  /// \post <tt>offsets.extent(0) == getNodeNumRows()</tt>
   ///
   /// This method creates an array of offsets of the local diagonal
   /// entries in the matrix.  This array is suitable for use in the

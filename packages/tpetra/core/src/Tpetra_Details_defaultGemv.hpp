@@ -99,12 +99,12 @@ gemv (const char trans,
   // // Get the dimensions
   // IndexType m, n;
   // if (trans == 'N' || trans == 'n') {
-  //   m = static_cast<IndexType> (A.dimension_0 ());
-  //   n = static_cast<IndexType> (A.dimension_1 ());
+  //   m = static_cast<IndexType> (A.extent (0));
+  //   n = static_cast<IndexType> (A.extent (1));
   // }
   // else {
-  //   m = static_cast<IndexType> (A.dimension_1 ());
-  //   n = static_cast<IndexType> (A.dimension_0 ());
+  //   m = static_cast<IndexType> (A.extent (1));
+  //   n = static_cast<IndexType> (A.extent (0));
   // }
 
   // quick return if possible
@@ -119,17 +119,17 @@ gemv (const char trans,
         Kokkos::deep_copy (y, ArithTraits<y_value_type>::zero ());
       }
       else { // alpha == 1, beta != 0
-        for (IndexType i = 0; i < static_cast<IndexType> (y.dimension_0 ()); ++i) {
+        for (IndexType i = 0; i < static_cast<IndexType> (y.extent (0)); ++i) {
           y(i) = beta * y(i);
         }
       }
     }
     else { // alpha != 0
-      for (IndexType i = 0; i < static_cast<IndexType> (y.dimension_0 ()); ++i) {
+      for (IndexType i = 0; i < static_cast<IndexType> (y.extent (0)); ++i) {
         y_value_type y_i = (beta == ZERO) ?
           ArithTraits<y_value_type>::zero () :
           static_cast<y_value_type> (beta * y(i));
-        for (IndexType j = 0; j < static_cast<IndexType> (x.dimension_0 ()); ++j) {
+        for (IndexType j = 0; j < static_cast<IndexType> (x.extent (0)); ++j) {
           y_i += alpha * A(i,j) * x(j);
         }
         y(i) = y_i;
@@ -144,17 +144,17 @@ gemv (const char trans,
         Kokkos::deep_copy (y, ArithTraits<y_value_type>::zero ());
       }
       else { // alpha == 1, beta != 0
-        for (IndexType j = 0; j < static_cast<IndexType> (y.dimension_0 ()); ++j) {
+        for (IndexType j = 0; j < static_cast<IndexType> (y.extent (0)); ++j) {
           y(j) = beta * y(j);
         }
       }
     }
     else { // alpha != 0
-      for (IndexType j = 0; j < static_cast<IndexType> (y.dimension_0 ()); ++j) {
+      for (IndexType j = 0; j < static_cast<IndexType> (y.extent (0)); ++j) {
         y_value_type y_j = (beta == ZERO) ?
           ArithTraits<y_value_type>::zero () :
           static_cast<y_value_type> (beta * y(j));
-        for (IndexType i = 0; i < static_cast<IndexType> (x.dimension_0 ()); ++i) {
+        for (IndexType i = 0; i < static_cast<IndexType> (x.extent (0)); ++i) {
           const auto A_ij = conj ? Kokkos::ArithTraits<A_value_type>::conj (A(i,j)) : A(i,j);
           y_j += alpha * A_ij * x(i);
         }

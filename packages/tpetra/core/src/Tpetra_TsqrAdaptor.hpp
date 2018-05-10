@@ -229,12 +229,12 @@ namespace Tpetra {
       auto A_view = A.template getLocalView<Kokkos::HostSpace> ();
       auto Q_view = Q.template getLocalView<Kokkos::HostSpace> ();
       scalar_type* const A_ptr =
-        reinterpret_cast<scalar_type*> (A_view.ptr_on_device ());
+        reinterpret_cast<scalar_type*> (A_view.data ());
       scalar_type* const Q_ptr =
-        reinterpret_cast<scalar_type*> (Q_view.ptr_on_device ());
+        reinterpret_cast<scalar_type*> (Q_view.data ());
       const bool contiguousCacheBlocks = false;
-      tsqr_->factorExplicitRaw (A_view.dimension_0 (),
-                                A_view.dimension_1 (),
+      tsqr_->factorExplicitRaw (A_view.extent (0),
+                                A_view.extent (1),
                                 A_ptr, A.getStride (),
                                 Q_ptr, Q.getStride (),
                                 R.values (), R.stride (),
@@ -289,10 +289,10 @@ namespace Tpetra {
       Q.template modify<Kokkos::HostSpace> ();
       auto Q_view = Q.template getLocalView<Kokkos::HostSpace> ();
       scalar_type* const Q_ptr =
-        reinterpret_cast<scalar_type*> (Q_view.ptr_on_device ());
+        reinterpret_cast<scalar_type*> (Q_view.data ());
       const bool contiguousCacheBlocks = false;
-      return tsqr_->revealRankRaw (Q_view.dimension_0 (),
-                                   Q_view.dimension_1 (),
+      return tsqr_->revealRankRaw (Q_view.extent (0),
+                                   Q_view.extent (1),
                                    Q_ptr, Q.getStride (),
                                    R.values (), R.stride (),
                                    tol, contiguousCacheBlocks);

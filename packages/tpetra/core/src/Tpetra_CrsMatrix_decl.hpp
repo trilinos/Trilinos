@@ -950,7 +950,7 @@ namespace Tpetra {
     /// \param inputVals [in] Kokkos::View of the values to use for
     ///   replacing the entries.
     ///
-    /// For all k in 0, ..., <tt>inputInds.dimension_0()-1</tt>,
+    /// For all k in 0, ..., <tt>inputInds.extent(0)-1</tt>,
     /// replace the value at entry <tt>(globalRow, inputInds(k))</tt>
     /// of the matrix with <tt>inputVals(k)</tt>.  That entry must
     /// exist in the matrix already.
@@ -965,16 +965,16 @@ namespace Tpetra {
     ///
     /// If the returned value N satisfies
     ///
-    /// <tt>0 <= N < inputInds.dimension_0()</tt>,
+    /// <tt>0 <= N < inputInds.extent(0)</tt>,
     ///
-    /// then <tt>inputInds.dimension_0() - N</tt> of the entries of
+    /// then <tt>inputInds.extent(0) - N</tt> of the entries of
     /// <tt>cols</tt> are not valid global column indices.  If the
     /// returned value is
     /// <tt>Teuchos::OrdinalTraits<LocalOrdinal>::invalid()</tt>, then
     /// at least one of the following is true:
     /// <ul>
     /// <li> <tt>! isFillActive ()</tt> </li>
-    /// <li> <tt> inputInds.dimension_0 () != inputVals.dimension_0 ()</tt> </li>
+    /// <li> <tt> inputInds.extent (0) != inputVals.extent (0)</tt> </li>
     /// </ul>
     template<class GlobalIndicesViewType,
              class ImplScalarViewType>
@@ -1012,8 +1012,8 @@ namespace Tpetra {
                      "Second template parameter ImplScalarViewType must "
                      "contain values of type impl_scalar_type.");
       typedef LocalOrdinal LO;
-      const LO numInputEnt = inputInds.dimension_0 ();
-      if (static_cast<LO> (inputVals.dimension_0 ()) != numInputEnt) {
+      const LO numInputEnt = inputInds.extent (0);
+      if (static_cast<LO> (inputVals.extent (0)) != numInputEnt) {
         return Teuchos::OrdinalTraits<LO>::invalid ();
       }
       const Scalar* const inVals =
@@ -1094,9 +1094,9 @@ namespace Tpetra {
     ///
     /// If the returned value N satisfies
     ///
-    /// <tt>0 <= N < cols.dimension_0()</tt>,
+    /// <tt>0 <= N < cols.extent(0)</tt>,
     ///
-    /// then <tt>cols.dimension_0() - N</tt> of the entries of
+    /// then <tt>cols.extent(0) - N</tt> of the entries of
     /// <tt>cols</tt> are not valid local column indices.  If the
     /// returned value is
     /// <tt>Teuchos::OrdinalTraits<LocalOrdinal>::invalid()</tt>,
@@ -1104,7 +1104,7 @@ namespace Tpetra {
     ///   <ul>
     ///   <li> <tt>! isFillActive ()</tt> </li>
     ///   <li> <tt>! hasColMap ()</tt> </li>
-    ///   <li> <tt> cols.dimension_0 () != vals.dimension_0 ()</tt> </li>
+    ///   <li> <tt> cols.extent (0) != vals.extent (0)</tt> </li>
     ///   </ul>
     template<class LocalIndicesViewType,
              class ImplScalarViewType>
@@ -1143,8 +1143,8 @@ namespace Tpetra {
                      "contain values of type impl_scalar_type.");
 
       typedef LocalOrdinal LO;
-      const LO numInputEnt = inputInds.dimension_0 ();
-      if (numInputEnt != inputVals.dimension_0 ()) {
+      const LO numInputEnt = inputInds.extent (0);
+      if (numInputEnt != inputVals.extent (0)) {
         return Teuchos::OrdinalTraits<LO>::invalid ();
       }
       const Scalar* const inVals =
@@ -1396,8 +1396,8 @@ namespace Tpetra {
                      "Second template parameter ImplScalarViewType must "
                      "contain values of type impl_scalar_type.");
       typedef LocalOrdinal LO;
-      const LO numInputEnt = inputInds.dimension_0 ();
-      if (static_cast<LO> (inputVals.dimension_0 ()) != numInputEnt) {
+      const LO numInputEnt = inputInds.extent (0);
+      if (static_cast<LO> (inputVals.extent (0)) != numInputEnt) {
         return Teuchos::OrdinalTraits<LO>::invalid ();
       }
       return this->sumIntoLocalValues (localRow,
@@ -1702,8 +1702,8 @@ namespace Tpetra {
                      "Second template parameter ImplScalarViewType must "
                      "contain values of type impl_scalar_type.");
       typedef LocalOrdinal LO;
-      const LO numInputEnt = inputInds.dimension_0 ();
-      if (static_cast<LO> (inputVals.dimension_0 ()) != numInputEnt) {
+      const LO numInputEnt = inputInds.extent (0);
+      if (static_cast<LO> (inputVals.extent (0)) != numInputEnt) {
         return Teuchos::OrdinalTraits<LO>::invalid ();
       }
       return this->transformLocalValues (lclRow,
@@ -1768,8 +1768,8 @@ namespace Tpetra {
                            const bool atomic = useAtomicUpdatesByDefault) const
     {
       typedef LocalOrdinal LO;
-      const LO numInputEnt = inputInds.dimension_0 ();
-      if (static_cast<LO> (inputVals.dimension_0 ()) != numInputEnt) {
+      const LO numInputEnt = inputInds.extent (0);
+      if (static_cast<LO> (inputVals.extent (0)) != numInputEnt) {
         return Teuchos::OrdinalTraits<LO>::invalid ();
       }
       return this->transformGlobalValues (gblRow,
@@ -2848,8 +2848,8 @@ namespace Tpetra {
       // If the two pointers are NULL, then they don't alias one
       // another, even though they are equal.
       TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-        X_lcl.ptr_on_device () == Y_lcl.ptr_on_device () &&
-        X_lcl.ptr_on_device () != NULL,
+        X_lcl.data () == Y_lcl.data () &&
+        X_lcl.data () != NULL,
         std::runtime_error, "X and Y may not alias one another.");
 #endif // HAVE_TPETRA_DEBUG
 
@@ -2991,9 +2991,9 @@ namespace Tpetra {
       typename local_matrix_type::row_map_type ptr = lclGraph.row_map;
       typename local_matrix_type::index_type ind = lclGraph.entries;
       typename local_matrix_type::values_type val = lclMatrix.values;
-      const offset_type* const ptrRaw = ptr.ptr_on_device ();
-      const LO* const indRaw = ind.ptr_on_device ();
-      const impl_scalar_type* const valRaw = val.ptr_on_device ();
+      const offset_type* const ptrRaw = ptr.data ();
+      const LO* const indRaw = ind.data ();
+      const impl_scalar_type* const valRaw = val.data ();
 
       const std::string dir ((direction == Forward) ? "F" : "B");
       // NOTE (mfh 28 Aug 2017) This assumes UVM.  We can't get around
@@ -3004,9 +3004,9 @@ namespace Tpetra {
       KokkosSparse::Impl::Sequential::gaussSeidel (static_cast<LO> (lclNumRows),
                                                    static_cast<LO> (numVecs),
                                                    ptrRaw, indRaw, valRaw,
-                                                   B_lcl.ptr_on_device (), B_stride[1],
-                                                   X_lcl.ptr_on_device (), X_stride[1],
-                                                   D_lcl.ptr_on_device (),
+                                                   B_lcl.data (), B_stride[1],
+                                                   X_lcl.data (), X_stride[1],
+                                                   D_lcl.data (),
                                                    static_cast<impl_scalar_type> (dampingFactor),
                                                    dir.c_str ());
       const_cast<DMV&> (B).template sync<dev_mem_space> ();
@@ -3100,9 +3100,9 @@ namespace Tpetra {
       typename local_matrix_type::index_type ind = lclGraph.entries;
       typename local_matrix_type::row_map_type ptr = lclGraph.row_map;
       typename local_matrix_type::values_type val = lclMatrix.values;
-      const offset_type* const ptrRaw = ptr.ptr_on_device ();
-      const LO* const indRaw = ind.ptr_on_device ();
-      const impl_scalar_type* const valRaw = val.ptr_on_device ();
+      const offset_type* const ptrRaw = ptr.data ();
+      const LO* const indRaw = ind.data ();
+      const impl_scalar_type* const valRaw = val.data ();
 
       const std::string dir = (direction == Forward) ? "F" : "B";
       // NOTE (mfh 28 Aug 2017) This assumes UVM.  We can't get around
@@ -3112,11 +3112,11 @@ namespace Tpetra {
       KokkosSparse::Impl::Sequential::reorderedGaussSeidel (static_cast<LO> (lclNumRows),
                                                             static_cast<LO> (numVecs),
                                                             ptrRaw, indRaw, valRaw,
-                                                            B_lcl.ptr_on_device (),
+                                                            B_lcl.data (),
                                                             B_stride[1],
-                                                            X_lcl.ptr_on_device (),
+                                                            X_lcl.data (),
                                                             X_stride[1],
-                                                            D_lcl.ptr_on_device (),
+                                                            D_lcl.data (),
                                                             rowIndices.getRawPtr (),
                                                             static_cast<LO> (lclNumRows),
                                                             static_cast<impl_scalar_type> (dampingFactor),
