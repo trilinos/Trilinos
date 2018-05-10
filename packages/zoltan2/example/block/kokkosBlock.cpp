@@ -112,7 +112,7 @@ int main(int argc, char *argv[]) {
   const int nWeights = 1;
   Kokkos::View<scalar_t **, Layout> weights("weights", localCount, nWeights);
   for (int index = 0; index < localCount; index++) {
-    weights(index, 0) = 1; // All weighted equally
+    weights(index, 0) = 1; // Error check relies on uniform weights
   }
 
   inputAdapter_t ia(globalIds, weights);
@@ -135,27 +135,21 @@ int main(int argc, char *argv[]) {
   Zoltan2::PartitioningProblem<inputAdapter_t> *problem = 
       new Zoltan2::PartitioningProblem<inputAdapter_t>(&ia, &params);
 
-  std::cout << "Position: 1" << std::endl;
   ///////////////////////////////////////////////////////////////////////
   // Solve the problem - do the partitioning
 
   problem->solve();
 
-  std::cout << "Position: 2" << std::endl;
   ///////////////////////////////////////////////////////////////////////
   // Check and print the solution.
   // Count number of IDs assigned to each part; compare to targetCount
 
   Kokkos::View<globalId_t *> ids;
-  ia.getIDsKokkosView(ids); // Will need to be changed to Kokkos after testing passes
-  std::cout << "Position: 3" << std::endl;
+  ia.getIDsKokkosView(ids);
 
-  Kokkos::View<int*> partCounts("partCounts", nprocs, 0); // Default values? Try this, if not, parallel loop!
-  std::cout << "Position: 4" << std::endl;
-  std::cout << "partCounts[0-1]: " << partCounts(0) << std::endl;
-  std::cout << "Position: 5" << std::endl;
+  Kokkos::View<int*> partCounts("partCounts", nprocs, 0);
 
-  Kokkos::View<int*> globalPartCounts("globalPartCounts", nprocs); // Default values?
+  Kokkos::View<int*> globalPartCounts("globalPartCounts", nprocs);
 
   for (size_t i = 0; i < ia.getLocalNumIDs(); i++) {
     int pp = problem->getSolution().getPartListView()[i];
@@ -164,13 +158,8 @@ int main(int argc, char *argv[]) {
     partCounts(pp)++;
   }
 
-// Will get rid of ifdef after Teuchos is used
-#ifdef HAVE_ZOLTAN2_MPI
-  MPI_Allreduce(&(partCounts(0)), &(globalPartCounts(0)), nprocs,
-                MPI_INT, MPI_SUM, MPI_COMM_WORLD); // use reduceAll from Teuchos.
-#else
-  for (int i = 0; i < nprocs; i++) globalPartCounts(i) = partCounts(i);
-#endif
+  Teuchos::reduceAll<int, int>(*comm, Teuchos::REDUCE_SUM, nprocs, 
+      &partCounts(0), &globalPartCounts(0));
 
   if (rank == 0) {
     int ierr = 0;

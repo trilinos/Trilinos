@@ -117,7 +117,7 @@ public:
 
   void getIDsKokkosView(Kokkos::View<gno_t *> &ids) const override {ids = idsView_;}
 
-  int getNumWeightsPerID() const { return 0; }//return weightsView_.dimension(1); } // HACK
+  int getNumWeightsPerID() const { return weightsView_.dimension(1); }
 
   void getWeightsKokkosView(Kokkos::View<scalar_t *> &wgt, int idx = 0) const {
     if (idx < 0 || scalar_t(idx) >= weightsView_.extent(0)) {

@@ -125,7 +125,6 @@ public:
     Kokkos::View<gno_t *> kokkosIds;
     getIDsKokkosView(kokkosIds);
     ids = kokkosIds.data();
-    std::cout << "Position: 1-2 ids: " << ids[0] << ids[1] << ids[2] << std::endl;
   }
 
   /*! \brief Provide a pointer to this process' identifiers.
@@ -148,7 +147,10 @@ public:
   // */ 
   virtual void getWeightsView(const scalar_t *&wgt, int &stride,
                               int idx = 0) const {
-    Z2_THROW_NOT_IMPLEMENTED
+    Kokkos::View<scalar_t *> tempWeightsView;
+    getWeightsKokkosView(tempWeightsView, idx);
+    wgt = tempWeightsView.data();
+    stride = 1;
   }
 
   ///*! \brief Provide pointer to a weight View.
