@@ -104,7 +104,7 @@ void Multiply_ViennaCL(const Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,No
   // NOTE: ViennaCL matrices use "unsigned int" for rowptr and colind and are templated on scalar type (yay); which means (for us) POD only.
 
   if (lib == Xpetra::UseTpetra) {
-#if defined(HAVE_MUELU_TPETRA)    
+#if defined(HAVE_MUELU_TPETRA)
     typedef Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> crs_matrix_type;
     typedef typename crs_matrix_type::local_matrix_type    KCRS;
     typedef typename KCRS::StaticCrsGraphType              graph_t;
@@ -122,7 +122,7 @@ void Multiply_ViennaCL(const Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,No
     const KCRS & Amat = Au->getLocalMatrix();
     const KCRS & Bmat = Bu->getLocalMatrix();
     KCRS Cmat = Cu->getLocalMatrix();
-    
+
     c_lno_view_t Arowptr = Amat.graph.row_map, Browptr = Bmat.graph.row_map;
     lno_view_t Crowptr("Crowptr",C.getNodeNumRows()+1);
     c_lno_nnz_view_t Acolind = Amat.graph.entries, Bcolind = Bmat.graph.entries;
@@ -131,7 +131,7 @@ void Multiply_ViennaCL(const Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,No
     scalar_view_t Cvals = Cmat.values;
 
     // **********************************
-    // Copy in the data for ViennaCL    
+    // Copy in the data for ViennaCL
     tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("MM ViennaCL: CopyIn")));
 
     vcl_size_t_type ArowptrVCL("Arowptr",Arowptr.extent(0));
@@ -145,9 +145,9 @@ void Multiply_ViennaCL(const Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,No
     copy_view(Acolind,AcolindVCL);
     copy_view(Bcolind,BcolindVCL);
 
-    viennacl::compressed_matrix<Scalar> AVCL, BVCL; 
-    AVCL.set(ArowptrVCL.ptr_on_device(), AcolindVCL.ptr_on_device(), Avals.ptr_on_device(),Au->getNodeNumRows(),Au->getNodeNumCols(),Au->getNodeNumEntries());
-    BVCL.set(BrowptrVCL.ptr_on_device(), BcolindVCL.ptr_on_device(), Bvals.ptr_on_device(),Bu->getNodeNumRows(),Bu->getNodeNumCols(),Bu->getNodeNumEntries());
+    viennacl::compressed_matrix<Scalar> AVCL, BVCL;
+    AVCL.set(ArowptrVCL.data(), AcolindVCL.data(), Avals.data(),Au->getNodeNumRows(),Au->getNodeNumCols(),Au->getNodeNumEntries());
+    BVCL.set(BrowptrVCL.data(), BcolindVCL.data(), Bvals.data(),Bu->getNodeNumRows(),Bu->getNodeNumCols(),Bu->getNodeNumEntries());
 
     tm = Teuchos::null;
     Au->getComm()->barrier();
@@ -157,10 +157,10 @@ void Multiply_ViennaCL(const Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,No
     tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("MM ViennaCL: Multiply")));
     viennacl::compressed_matrix<Scalar> CVCL = viennacl::linalg::prod(AVCL, BVCL);
     KCRS::execution_space::fence();
-      
+
 
     // **********************************
-    // Copy out the data for ViennaCL    
+    // Copy out the data for ViennaCL
     tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("MM ViennaCL: Copy Out")));
     size_t cnnz = (size_t)CVCL.nnz();
     Kokkos::resize(Ccolind,cnnz);
@@ -169,7 +169,7 @@ void Multiply_ViennaCL(const Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,No
     const unsigned int * CrowptrVCL = viennacl::cuda_arg<unsigned int>(CVCL.handle1());
     const unsigned int * CcolindVCL = viennacl::cuda_arg<unsigned int>(CVCL.handle2());
     const Scalar * CvalsVCL       = viennacl::cuda_arg<Scalar>(CVCL.handle());
-#else 
+#else
     const unsigned int * CrowptrVCL = viennacl::linalg::host_based::detail::extract_raw_pointer<unsigned int>(CVCL.handle1());
     const unsigned int * CcolindVCL = viennacl::linalg::host_based::detail::extract_raw_pointer<unsigned int>(CVCL.handle2());
     const Scalar * CvalsVCL   = viennacl::linalg::host_based::detail::extract_raw_pointer<Scalar>(CVCL.handle());
@@ -178,7 +178,7 @@ void Multiply_ViennaCL(const Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,No
     copy_view_n(Crowptr.extent(0),CrowptrVCL,Crowptr);
     copy_view_n(cnnz,CcolindVCL,Ccolind);
     copy_view_n(cnnz,CvalsVCL,Cvals);
-     
+
     Cmat.graph.row_map = Crowptr;
     Cmat.graph.entries = Ccolind;
     Cmat.values = Cvals;
@@ -211,7 +211,7 @@ void Multiply_MKL_SPMM(const Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,No
 
   Xpetra::UnderlyingLib lib = A.getRowMap()->lib();
   RCP<TimeMonitor> tm;
-#if defined(HAVE_MUELU_TPETRA)    
+#if defined(HAVE_MUELU_TPETRA)
     typedef Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> crs_matrix_type;
     typedef typename crs_matrix_type::local_matrix_type    KCRS;
     typedef typename KCRS::StaticCrsGraphType              graph_t;
@@ -264,7 +264,7 @@ void Multiply_MKL_SPMM(const Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,No
     }
     else
       throw std::runtime_error("MKL Type Mismatch");
-    
+
 
     tm = Teuchos::null;
     Au->getComm()->barrier();
@@ -274,14 +274,14 @@ void Multiply_MKL_SPMM(const Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,No
     tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("MM MKL: Multiply")));
     mkl_sparse_spmm(SPARSE_OPERATION_NON_TRANSPOSE, AMKL, BMKL, &CMKL);
     KCRS::execution_space::fence();
-      
+
     // **********************************
     // Copy out the data for MKL
     tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("MM MKL: Copy Out")));
     sparse_index_base_t c_indexing;
     MKL_INT c_rows, c_cols, *rows_start, *rows_end, *columns;
     double * values;
-    mkl_sparse_d_export_csr(CMKL,&c_indexing, &c_rows, &c_cols, &rows_start, &rows_end, &columns, &values);                          
+    mkl_sparse_d_export_csr(CMKL,&c_indexing, &c_rows, &c_cols, &rows_start, &rows_end, &columns, &values);
     size_t cnnz = rows_end[c_rows-1];
     Kokkos::resize(Ccolind,cnnz);
     Kokkos::resize(Cvals,cnnz);
@@ -289,7 +289,7 @@ void Multiply_MKL_SPMM(const Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,No
     copy_view_n(c_rows,rows_start,Crowptr); Crowptr(c_rows) = rows_end[c_rows-1];
     copy_view_n(cnnz,columns,Ccolind);
     copy_view_n(cnnz,values,Cvals);
-     
+
     Cmat.graph.row_map = Crowptr;
     Cmat.graph.entries = Ccolind;
     Cmat.values = Cvals;
@@ -325,7 +325,7 @@ void Multiply_KokkosKernels(const Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdin
   std::string prefix = std::string("MM KokkosKernels ")+algorithm_name + std::string(": ");
 
   if (lib == Xpetra::UseTpetra) {
-#if defined(HAVE_MUELU_TPETRA)    
+#if defined(HAVE_MUELU_TPETRA)
     typedef Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> crs_matrix_type;
     typedef typename crs_matrix_type::local_matrix_type    KCRS;
     typedef typename KCRS::StaticCrsGraphType              graph_t;
@@ -335,7 +335,7 @@ void Multiply_KokkosKernels(const Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdin
     typedef typename graph_t::entries_type::const_type     c_lno_nnz_view_t;
     typedef typename KCRS::values_type::non_const_type     scalar_view_t;
     typedef typename KCRS::device_type device_t;
- 
+
     RCP<const crs_matrix_type> Au = Utilities::Op2TpetraCrs(rcp(&A,false));
     RCP<const crs_matrix_type> Bu = Utilities::Op2TpetraCrs(rcp(&B,false));
     RCP<const crs_matrix_type> Cu = Utilities::Op2TpetraCrs(rcp(&C,false));
@@ -343,7 +343,7 @@ void Multiply_KokkosKernels(const Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdin
     const KCRS & Amat = Au->getLocalMatrix();
     const KCRS & Bmat = Bu->getLocalMatrix();
     KCRS Cmat = Cu->getLocalMatrix();
-    
+
     c_lno_view_t Arowptr = Amat.graph.row_map, Browptr = Bmat.graph.row_map;
     lno_view_t Crowptr("Crowptr",A.getNodeNumRows()+1);
     c_lno_nnz_view_t Acolind = Amat.graph.entries, Bcolind = Bmat.graph.entries;
@@ -353,7 +353,7 @@ void Multiply_KokkosKernels(const Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdin
 
     // KokkosKernelsHandle
     typedef KokkosKernels::Experimental::KokkosKernelsHandle<
-    typename lno_view_t::const_value_type,typename lno_nnz_view_t::const_value_type, typename scalar_view_t::const_value_type, 
+    typename lno_view_t::const_value_type,typename lno_nnz_view_t::const_value_type, typename scalar_view_t::const_value_type,
       typename device_t::execution_space, typename device_t::memory_space,typename device_t::memory_space > KernelHandle;
     KokkosSparse::SPGEMMAlgorithm alg_enum = KokkosSparse::StringToSPGEMMAlgorithm(algorithm_name);
     typename KernelHandle::nnz_lno_t AnumRows = Au->getNodeNumRows();
@@ -377,7 +377,7 @@ void Multiply_KokkosKernels(const Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdin
     KokkosSparse::Experimental::spgemm_numeric(&kh,AnumRows,BnumRows,BnumCols,Arowptr,Acolind,Avals,false,Browptr,Bcolind,Bvals,false,Crowptr,Ccolind,Cvals);
     kh.destroy_spgemm_handle();
     KCRS::execution_space::fence();
-    
+
     tm = Teuchos::null;
     Au->getComm()->barrier();
 
@@ -414,7 +414,7 @@ void Multiply_LTG(const Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> &
   RCP<TimeMonitor> tm;
 
   if (lib == Xpetra::UseTpetra) {
-#if defined(HAVE_MUELU_TPETRA) && defined(HAVE_TPETRA_INST_OPENMP) 
+#if defined(HAVE_MUELU_TPETRA) && defined(HAVE_TPETRA_INST_OPENMP)
     typedef Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> crs_matrix_type;
     typedef Tpetra::Import<LocalOrdinal,GlobalOrdinal,Node>          import_type;
     typedef typename crs_matrix_type::local_matrix_type    KCRS;
@@ -423,7 +423,7 @@ void Multiply_LTG(const Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> &
     typedef typename graph_t::row_map_type::non_const_type lno_view_t;
     typedef typename graph_t::entries_type::non_const_type lno_nnz_view_t;
     typedef typename KCRS::values_type::non_const_type scalar_view_t;
-    typedef Kokkos::View<LO*, typename lno_view_t::array_layout, typename lno_view_t::device_type> lo_view_t; 
+    typedef Kokkos::View<LO*, typename lno_view_t::array_layout, typename lno_view_t::device_type> lo_view_t;
     typedef Tpetra::Map<LO,GO,NO>                                     map_type;
     typedef typename map_type::local_map_type                         local_map_type;
     typedef typename Node::execution_space execution_space;
@@ -443,7 +443,7 @@ void Multiply_LTG(const Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> &
     // **********************************
     // Copy in the data for LTG
     tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("MM LTG: CopyIn")));
-    
+
     Tpetra::CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node> Aview, Bview;
     Aview.origMatrix   = Au;
     Aview.origRowMap   = Au->getRowMap();
@@ -471,7 +471,7 @@ void Multiply_LTG(const Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> &
                          KOKKOS_LAMBDA(const LO i) {
                            Bcol2Ccol(i) = i;
                          });
-               
+
     // Acol2Brow
     local_map_type Acolmap_local = Aview.colMap->getLocalMap();
     local_map_type Browmap_local = Bview.origMatrix->getRowMap()->getLocalMap();
@@ -486,7 +486,7 @@ void Multiply_LTG(const Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> &
       } else {
         // This shouldn't happen here
       }
-    }); 
+    });
     tm = Teuchos::null;
     Au->getComm()->barrier();
 
@@ -495,7 +495,7 @@ void Multiply_LTG(const Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> &
     Teuchos::RCP<Teuchos::ParameterList> params;
     tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("MM LTG: Multiply")));
     Tpetra::MatrixMatrix::ExtraKernels::mult_A_B_newmatrix_LowThreadGustavsonKernel(Aview,Bview,targetMapToOrigRow,targetMapToImportRow,Bcol2Ccol,Icol2Ccol,*Cnc,Cimport,std::string("LTG Test"),params);
-    
+
     tm = Teuchos::null;
     Au->getComm()->barrier();
 
@@ -656,7 +656,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
     // random source
     std::random_device rd;
     std::mt19937 random_source (rd());
-   
+
     // no need for a barrier, because the randomization process uses a collective.
     if ( my_experiments.empty() ) {
 
@@ -671,7 +671,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
                       static_cast<int>(sizeof(Experiments::LTG)*my_experiments.size()),
                       reinterpret_cast<char *>(my_experiments.data()));
 
-      // loop over the randomized experiments 
+      // loop over the randomized experiments
       for (const auto& experiment_id : my_experiments) {
         switch (experiment_id) {
         // ViennaCL
@@ -733,7 +733,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
       }// end random exp loop
     } // end repeat
     } // end ! my_experiments.empty()
-    
+
     if (printTimings) {
       TimeMonitor::summarize(A->getRowMap()->getComm().ptr(), std::cout, false, true, false, Teuchos::Union, "", true);
     }

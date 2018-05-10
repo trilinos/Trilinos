@@ -108,10 +108,10 @@ gemm (const char transA,
   const CoefficientType ONE = STS::one ();
 
   // Get the dimensions
-  const IndexType m = C.dimension_0 ();
-  const IndexType n = C.dimension_1 ();
+  const IndexType m = C.extent (0);
+  const IndexType n = C.extent (1);
   const IndexType k = (transA == 'N' || transA == 'n') ?
-    A.dimension_1 () : A.dimension_0 ();
+    A.extent (1) : A.extent (0);
 
   const bool conjA = transA == 'C' || transA == 'c';
   const bool conjB = transB == 'C' || transB == 'c';

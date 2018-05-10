@@ -76,11 +76,10 @@ int main(int argc, char *argv[]) {
 
   try {
     // Get Objective Function
-    ROL::Ptr<ROL::Vector<RealT> > x0, z;
+    ROL::Ptr<ROL::Vector<RealT> > x0;
+    std::vector<ROL::Ptr<ROL::Vector<RealT> > > z;
     ROL::Ptr<ROL::OptimizationProblem<RealT> > problem;
     ROL::GetTestProblem<RealT>(problem,x0,z,ROL::TESTOPTPROBLEM_HS38);
-    ROL::Ptr<ROL::Vector<RealT> > x = x0->clone();;
-    x->set(*x0);
     // Parse input
     std::string filename = "input.xml";
     Teuchos::RCP<Teuchos::ParameterList> parlist = Teuchos::rcp( new Teuchos::ParameterList() );
@@ -116,8 +115,19 @@ int main(int argc, char *argv[]) {
     algo.run(optProb, true, *outStream);
 
     // Compute Error
-    z->axpy(-1.0,*x);
-    *outStream << std::endl << "Norm of Error: " << z->norm() << std::endl;
+    ROL::Ptr<ROL::Vector<RealT> > e = x0->clone();
+    RealT err(0);
+    for (int i = 0; i < static_cast<int>(z.size()); ++i) {
+      e->set(*x0);
+      e->axpy(-1.0,*z[i]);
+      if (i == 0) {
+        err = e->norm();
+      }
+      else {
+        err = std::min(err,e->norm());
+      }
+    }
+    *outStream << std::endl << "Norm of Error: " << err << std::endl;
   }
   catch (std::logic_error err) {
     *outStream << err.what() << std::endl;

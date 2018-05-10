@@ -191,10 +191,10 @@ namespace Tpetra {
             out << "Process " << myRank << ":" << endl;
             Teuchos::OSTab tab2 (out);
             out << "Export buffer size (in packets): "
-                << exports_.dimension_0 ()
+                << exports_.extent (0)
                 << endl
                 << "Import buffer size (in packets): "
-                << imports_.dimension_0 ()
+                << imports_.extent (0)
                 << endl;
           }
           if (! comm.is_null ()) {
@@ -594,7 +594,7 @@ namespace Tpetra {
       const int myRank = this->getMap ()->getComm ()->getRank ();
       std::ostringstream os;
       os << "(Proc " << myRank << ") Reallocate (if needed) imports_ from "
-         << imports_.dimension_0 () << " to " << newSize << std::endl;
+         << imports_.extent (0) << " to " << newSize << std::endl;
       std::cerr << os.str ();
     }
     using Details::reallocDualViewIfNeeded;
@@ -829,8 +829,8 @@ namespace Tpetra {
         const size_t rbufLen = remoteLIDs.size() * constantNumPackets;
         if (debug) {
           std::ostringstream os;
-          os << "*** doTransferOld: Const # packets: imports_.dimension_0() = "
-             << imports_.dimension_0 () << ", rbufLen = " << rbufLen
+          os << "*** doTransferOld: Const # packets: imports_.extent(0) = "
+             << imports_.extent (0) << ", rbufLen = " << rbufLen
              << std::endl;
           std::cerr << os.str ();
         }
@@ -1042,7 +1042,7 @@ namespace Tpetra {
       typedef typename DT::execution_space DES;
       typedef Kokkos::RangePolicy<DES, IndexType> range_type;
 
-      const IndexType numOut = numImportPacketsPerLID.dimension_0 ();
+      const IndexType numOut = numImportPacketsPerLID.extent (0);
       size_t totalImportPackets = 0;
       parallel_reduce ("Count import packets",
                        range_type (0, numOut),
@@ -1152,7 +1152,7 @@ namespace Tpetra {
     // that if CM == INSERT || CM == REPLACE, the target object could
     // be write only.  We don't optimize for that here.
 
-    if (numSameIDs + permuteToLIDs.dimension_0 () != 0) {
+    if (numSameIDs + permuteToLIDs.extent (0) != 0) {
       // There is at least one GID to copy or permute.
       if (verbose) {
         std::ostringstream os;
@@ -1208,8 +1208,8 @@ namespace Tpetra {
         }
         // This only reallocates if necessary, that is, if the sizes
         // don't match.
-        this->reallocArraysForNumPacketsPerLid (exportLIDs.dimension_0 (),
-                                                remoteLIDs.dimension_0 ());
+        this->reallocArraysForNumPacketsPerLid (exportLIDs.extent (0),
+                                                remoteLIDs.extent (0));
       }
 
       if (verbose) {
@@ -1267,7 +1267,7 @@ namespace Tpetra {
         // already know (from the number of "remote" (incoming)
         // elements) how many incoming elements we expect, so we can
         // resize the buffer accordingly.
-        const size_t rbufLen = remoteLIDs.dimension_0 () * constantNumPackets;
+        const size_t rbufLen = remoteLIDs.extent (0) * constantNumPackets;
         reallocImportsIfNeeded (rbufLen, verbose);
       }
 
@@ -1534,8 +1534,8 @@ namespace Tpetra {
             if (verbose) {
               std::ostringstream os;
               os << *prefix << "7.1. Const # packets per LID: "
-                 << "exports_.dimension_0()=" << exports_.dimension_0 ()
-                 << ", imports_.dimension_0() = " << imports_.dimension_0 ()
+                 << "exports_.extent(0)=" << exports_.extent (0)
+                 << ", imports_.extent(0) = " << imports_.extent (0)
                  << endl;
               std::cerr << os.str ();
             }

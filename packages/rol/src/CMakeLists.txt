@@ -179,8 +179,10 @@ APPEND_GLOB(HEADERS ${DIR}/*.hpp)
 #
 
 SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_SOURCE_DIR}/utils)
-INCLUDE_DIRECTORIES(${DIR})
-APPEND_GLOB(HEADERS ${DIR}/*.hpp)
+INCLUDE_DIRECTORIES(${DIR}
+                    ${DIR}/function_bindings)
+APPEND_GLOB(HEADERS ${DIR}/*.hpp
+                    ${DIR}/function_bindings/*.hpp)
 
 #
 # zoo headers

@@ -221,7 +221,11 @@ namespace Xpetra {
 
 
     //! Force the computation of global constants if we don't have them
-    void computeGlobalConstants() {graph_->computeGlobalConstants();}
+    void computeGlobalConstants() {
+      // mfh 07 May 2018: See GitHub Issue #2565.
+      constexpr bool computeLocalTriangularConstants = true;
+      graph_->computeGlobalConstants(computeLocalTriangularConstants);
+    }
 
     //@}
 

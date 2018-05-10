@@ -1181,7 +1181,7 @@ namespace Tpetra {
     /// \pre The graph must have a column Map.
     /// \pre All diagonal entries of the graph must be populated on
     ///   this process.  Results are undefined otherwise.
-    /// \pre <tt>offsets.dimension_0() >= this->getNodeNumRows()</tt>
+    /// \pre <tt>offsets.extent(0) >= this->getNodeNumRows()</tt>
     ///
     /// \param offsets [out] Output array of offsets.  This method
     ///   does NOT allocate the array; the caller must allocate.  Must
@@ -1796,31 +1796,77 @@ namespace Tpetra {
 
     void staticAssertions() const;
     void clearGlobalConstants();
+
   public:
     //! Returns true if globalConstants have been computed; false otherwise
     bool haveGlobalConstants() const { return haveGlobalConstants_;}
 
-    /// \brief Forces computation of global constants if they have not been computed yet
+    /// \brief Compute global constants, if they have not yet been computed.
     ///
-    /// \warning THIS IS AN EXPERT MODE FUNCTION.  THIS IS AN
-    ///   IMPLEMENTATION DETAIL.  DO NOT CALL THIS FUNCTION!!!
+    /// \warning This is an implementation detail of Tpetra.  It may
+    ///   change or disappear at any time.  It is public only because
+    ///   MueLu setup needs it to be public.
     ///
-    void computeGlobalConstants();
+    /// Global constants include:
+    /// <ul>
+    /// <li> globalNumEntries_ </li>
+    /// <li> globalNumDiags_ </li>
+    /// <li> globalMaxNumRowEntries_ </li>
+    /// </ul>
+    ///
+    /// Always compute the following:
+    /// <ul>
+    /// <li> globalNumEntries_ </li>
+    /// <li> globalMaxNumRowEntries_ </li>
+    /// </ul>
+    ///
+    /// Only compute the following if the input argument
+    /// computeLocalTriangularConstants is true:
+    /// <ul>
+    /// <li> globalNumDiags_ </li>
+    /// </ul>
+    /// The bool input argument comes from an input ParameterList bool
+    /// parameter "compute local triangular constants", named
+    /// analogously to the existing bool parameter "compute global
+    /// constants".
+    void computeGlobalConstants (const bool computeLocalTriangularConstants);
+
   protected:
-
-    /// \brief Forces computation of local constants if they have not been computed yet.
-    // This is implied by the computation of global constants, and this is only used a
-    // as an alterantive if the global constants are not computed
+    /// \brief Compute local constants, if they have not yet been computed.
     ///
-    void computeLocalConstants();
-
-    /// \brief Forces computation of local triangular properties if they have
-    /// not been computed yet.
+    /// \warning You MUST call fillLocalGraph (or
+    ///   CrsMatrix::fillLocalGraphAndMatrix) before calling this
+    ///   method!  This method depends on the Kokkos::StaticCrsGraph
+    ///   (local_graph_type) object being ready.
     ///
-    /// \warning This method is only for expert users.
-    /// \warning We make no promises about backwards compatibility
-    ///   for this method. It may disappear or change at any time.
-    void computeLocalTriangularProperties();
+    /// Local constants include:
+    /// <ul>
+    /// <li> lowerTriangular_ </li>
+    /// <li> upperTriangular_ </li>
+    /// <li> nodeNumDiags_ </li>
+    /// <li> nodeMaxNumRowEntries_ </li>
+    /// </ul>
+    ///
+    /// Always compute the following:
+    /// <ul>
+    /// <li> nodeMaxNumRowEntries_ </li>
+    /// </ul>
+    ///
+    /// Only compute the following if the input argument
+    /// computeLocalTriangularConstants is true:
+    /// <ul>
+    /// <li> lowerTriangular_ </li>
+    /// <li> upperTriangular_ </li>
+    /// <li> nodeNumDiags_ </li>
+    /// </ul>
+    /// The bool input argument comes from an input ParameterList bool
+    /// parameter "compute local triangular constants", named
+    /// analogously to the existing bool parameter "compute global
+    /// constants".
+    ///
+    /// computeGlobalConstants calls this method, if global constants
+    /// have not yet been computed.
+    void computeLocalConstants (const bool computeLocalTriangularConstants);
 
     /// \brief Get information about the locally owned row with local
     ///   index myRow.

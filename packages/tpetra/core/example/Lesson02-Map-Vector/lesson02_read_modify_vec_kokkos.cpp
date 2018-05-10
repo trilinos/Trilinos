@@ -162,7 +162,7 @@ exampleRoutine (const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
     // View, so we take a subview.
     auto x_1d = Kokkos::subview (x_2d, Kokkos::ALL (), 0);
 
-    // x_data.dimension_0 () may be longer than the number of local
+    // x_data.extent (0) may be longer than the number of local
     // rows in the Vector, so be sure to ask the Vector for its
     // dimensions, rather than the ArrayRCP.
     const size_t localLength = x.getLocalLength ();
@@ -210,7 +210,7 @@ exampleRoutine (const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
     x.modify<Kokkos::HostSpace> ();
 
     // Use local indices to access the entries of x_data.
-    // x_data.dimension_0 () may be longer than the number of local
+    // x_data.extent (0) may be longer than the number of local
     // rows in the Vector, so be sure to ask the Vector for its
     // dimensions.
     const size_t localLength = x.getLocalLength ();

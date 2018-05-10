@@ -118,7 +118,7 @@ public:
                             const counts_view_type& counts) :
     offsets_ (offsets),
     counts_ (counts),
-    size_ (counts.dimension_0 ())
+    size_ (counts.extent (0))
   {}
 
   //! Set the initial value of the reduction result.
@@ -177,7 +177,7 @@ private:
 ///   may use a shorter type to improve performance.
 ///
 /// The type of each entry of the \c ptr array must be able to store
-/// <tt>ptr.dimension_0 () * count</tt>.  This functor makes no
+/// <tt>ptr.extent (0) * count</tt>.  This functor makes no
 /// attempt to check for overflow in this sum.
 template<class OffsetsViewType,
          class CountType,
@@ -212,9 +212,9 @@ public:
                                    const count_type count) :
     offsets_ (offsets),
     count_ (count),
-    size_ (offsets_.dimension_0 () == 0 ?
+    size_ (offsets_.extent (0) == 0 ?
            static_cast<size_type> (0) :
-           static_cast<size_type> (offsets_.dimension_0 () - 1))
+           static_cast<size_type> (offsets_.extent (0) - 1))
   {}
 
   //! Set the initial value of the reduction result.
@@ -314,8 +314,8 @@ computeOffsetsFromCounts (const OffsetsViewType& ptr,
     TEUCHOS_TEST_FOR_EXCEPTION
       (numCounts >= numOffsets, std::invalid_argument,
        "Tpetra::Details::computeOffsetsFromCounts: "
-       "counts.dimension_0() = " << numCounts
-       << " >= ptr.dimension_0() = " << numOffsets << ".");
+       "counts.extent(0) = " << numCounts
+       << " >= ptr.extent(0) = " << numOffsets << ".");
 
     Kokkos::RangePolicy<execution_space, SizeType> range (0, numCounts+1);
     try {
@@ -406,7 +406,7 @@ computeOffsetsFromCounts (const OffsetsViewType& ptr,
 ///   may use a shorter type to improve performance.
 ///
 /// The type of each entry of the \c ptr array must be able to store
-/// <tt>ptr.dimension_0 () * count</tt>.  This functor makes no
+/// <tt>ptr.extent (0) * count</tt>.  This functor makes no
 /// attempt to check for overflow in this sum.
 template<class OffsetsViewType,
          class CountType,
