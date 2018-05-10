@@ -122,7 +122,10 @@ public:
         this process.
    */
   virtual void getIDsView(const gno_t *&ids) const {
-    Z2_THROW_NOT_IMPLEMENTED
+    Kokkos::View<gno_t *> kokkosIds;
+    getIDsKokkosView(kokkosIds);
+    ids = kokkosIds.data();
+    std::cout << "Position: 1-2 ids: " << ids[0] << ids[1] << ids[2] << std::endl;
   }
 
   /*! \brief Provide a pointer to this process' identifiers.

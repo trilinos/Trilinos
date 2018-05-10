@@ -150,12 +150,12 @@ int main(int argc, char *argv[]) {
   ia.getIDsKokkosView(ids); // Will need to be changed to Kokkos after testing passes
   std::cout << "Position: 3" << std::endl;
 
-  Kokkos::View<int> partCounts("partCounts", nprocs, 0); // Default values? Try this, if not, parallel loop!
+  Kokkos::View<int*> partCounts("partCounts", nprocs, 0); // Default values? Try this, if not, parallel loop!
   std::cout << "Position: 4" << std::endl;
-  std::cout << "partCounts[0-1]: " << partCounts(0) << partCounts(1) << std::endl;
+  std::cout << "partCounts[0-1]: " << partCounts(0) << std::endl;
   std::cout << "Position: 5" << std::endl;
 
-  Kokkos::View<int> globalPartCounts("globalPartCounts", nprocs); // Default values?
+  Kokkos::View<int*> globalPartCounts("globalPartCounts", nprocs); // Default values?
 
   for (size_t i = 0; i < ia.getLocalNumIDs(); i++) {
     int pp = problem->getSolution().getPartListView()[i];
