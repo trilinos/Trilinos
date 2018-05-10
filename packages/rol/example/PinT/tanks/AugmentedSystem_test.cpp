@@ -129,7 +129,6 @@ int main( int argc, char* argv[] )
     auto v_2 = state->clone();
     auto r_1 = v_1->clone();
     auto r_2 = v_2->clone();
-/*
     ROL::RandomizeVector<RealT>(*r_1);
     ROL::RandomizeVector<RealT>(*r_2);
 
@@ -149,13 +148,14 @@ int main( int argc, char* argv[] )
       auto res = pint_con->solveAugmentedSystem(*v_1,*v_2,*b1,*b2,*x,tol);
       timer_total += std::clock()-timer_start;
 
-      if(myrank==0)
-        *outStream << i+1 << ". res ("<< res.size() <<") = " << res[res.size()-3] << std::endl;
+      if(myrank==0) {
+        for(size_t k=0;k<res.size();k++)
+          *outStream << "  " << k << ". " << res[k] << " (rel = " << res[k]/res[0] << ")" << std::endl;
+      }
     }
  
     if(myrank==0)
       *outStream << numSolves << " Solves in " << (timer_total)/(RealT) CLOCKS_PER_SEC << " seconds." << std::endl;
-*/
 
     for(int chkProc=0;chkProc<numProcs;++chkProc) {
       using ROL::PinTVector;
