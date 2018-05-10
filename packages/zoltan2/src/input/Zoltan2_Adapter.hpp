@@ -38,7 +38,6 @@
 // Questions? Contact Karen Devine      (kddevin@sandia.gov)
 //                    Erik Boman        (egboman@sandia.gov)
 //                    Siva Rajamanickam (srajama@sandia.gov)
-//                    Andy Wantuch      (acwantu@sandia.gov)
 //
 // ***********************************************************************
 //

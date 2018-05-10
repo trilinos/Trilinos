@@ -36,7 +36,6 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 // Questions? Contact Karen Devine      (kddevin@sandia.gov)
-//                    Andy Wantuch      (acwantu@sandia.gov)
 //                    Erik Boman        (egboman@sandia.gov)
 //                    Siva Rajamanickam (srajama@sandia.gov)
 //

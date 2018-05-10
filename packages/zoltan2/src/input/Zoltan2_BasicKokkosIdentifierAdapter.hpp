@@ -38,7 +38,6 @@
 // Questions? Contact Karen Devine      (kddevin@sandia.gov)
 //                    Erik Boman        (egboman@sandia.gov)
 //                    Siva Rajamanickam (srajama@sandia.gov)
-//                    Andy Wantuch      (acwantu@sandia.gov)
 //
 // ***********************************************************************
 //
@@ -115,7 +114,7 @@ public:
 
   size_t getLocalNumIDs() const { return idsView_.dimension(0); }
 
-  void getIDsKokkosView(Kokkos::View<gno_t *> &ids) const override {ids = idsView_;}
+  void getIDsKokkosView(Kokkos::View<gno_t *> &ids) const {ids = idsView_;}
 
   int getNumWeightsPerID() const { return weightsView_.dimension(1); }
 
