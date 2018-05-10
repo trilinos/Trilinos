@@ -281,7 +281,7 @@ struct MV_Reciprocal_Functor<
   XMV X_;
 
   MV_Reciprocal_Functor (const RMV& R, const XMV& X) :
-    numCols (X.dimension_1 ()), R_ (R), X_ (X)
+    numCols (X.extent(1)), R_ (R), X_ (X)
   {
   }
 
@@ -312,7 +312,7 @@ struct MV_ReciprocalSelf_Functor<
   RMV R_;
 
   MV_ReciprocalSelf_Functor (const RMV& R) :
-    numCols (R.dimension_1 ()), R_ (R)
+    numCols (R.extent(1)), R_ (R)
   {
   }
 
@@ -454,7 +454,7 @@ struct MV_MultFunctor<
                   typename AV::const_value_type& ab,
                   const AV& A,
                   const BMV& B) :
-    m_n (C.dimension_1 ()),
+    m_n (C.extent(1)),
     m_pce (dimension_scalar(C)),
     m_c (c.coeff(0)), m_C (C), m_ab (ab.coeff(0)), m_A (A), m_B (B)
   {
