@@ -1188,7 +1188,7 @@ namespace {
 
     // check that the local_matrix_type taken the second time is the same
     local_matrix_type view3 = A->getLocalMatrix();
-    TEST_EQUALITY(view2.graph.row_map.ptr_on_device(), view3.graph.row_map.ptr_on_device());
+    TEST_EQUALITY(view2.graph.row_map.data(), view3.graph.row_map.data());
 
     for (LO r = 0; r < view2.numRows(); ++r) {
       // extract data from current row r

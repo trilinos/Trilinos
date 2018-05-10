@@ -6,7 +6,7 @@
 #
 ################################################################################
 
-echo "Using chama compiler stack $ATDM_CONFIG_COMPILER to build $ATDM_CONFIG_BUILD_TYPE code with Kokkos node type $ATDM_CONFIG_NODE_TYPE"
+echo "Using toss3 compiler stack $ATDM_CONFIG_COMPILER to build $ATDM_CONFIG_BUILD_TYPE code with Kokkos node type $ATDM_CONFIG_NODE_TYPE"
 
 # there does not appear to be a ninja module ontoss3 so turn off ninja
 export ATDM_CONFIG_USE_MAKEFILES=ON
@@ -16,7 +16,8 @@ export ATDM_CONFIG_USE_NINJA=OFF
 module purge
 . /projects/sems/modulefiles/utils/sems-modules-init.sh
 module load sems-env
-module load cmake/3.5
+module load atdm-env
+module load atdm-cmake/3.10.1
 
 
 if [ "$ATDM_CONFIG_NODE_TYPE" == "OPENMP" ] ; then
@@ -47,7 +48,10 @@ if [ "$ATDM_CONFIG_COMPILER" == "INTEL" ]; then
     export ATDM_CONFIG_LAPACK_LIB="-mkl"
     export ATDM_CONFIG_BLAS_LIB="-mkl"
 else
-    echo "No valid compiler found"
+    echo
+    echo "***"
+    echo "*** ERROR: COMPILER=$ATDM_CONFIG_COMPILER is not supported on this system!"
+    echo "***"
     return
 fi
 
@@ -63,7 +67,7 @@ export MPICC=`which mpicc`
 export MPICXX=`which mpicxx`
 export MPIF90=`which mpif90`
 
-export ATDM_CONFIG_MPI_POST_FLAG="-map-by;socket:PE=16;--oversubscribe"
+export ATDM_CONFIG_MPI_POST_FLAG="--bind-to;core;--npernode;36"
 
 # Set the default compilers
 export CC=mpicc

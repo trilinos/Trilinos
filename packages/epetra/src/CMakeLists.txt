@@ -80,6 +80,7 @@ SET(HEADERS ${HEADERS}
   Epetra_HashTable.h
   Epetra_Import.h
   Epetra_Import_Util.h
+  Epetra_IntMultiVector.h
   Epetra_IntSerialDenseMatrix.h
   Epetra_IntSerialDenseVector.h
   Epetra_IntVector.h
@@ -150,6 +151,7 @@ SET(SOURCES ${SOURCES}
   Epetra_Fortran_wrappers.cpp
   Epetra_Import.cpp
   Epetra_Import_Util.cpp
+  Epetra_IntMultiVector.cpp
   Epetra_IntSerialDenseMatrix.cpp
   Epetra_IntSerialDenseVector.cpp
   Epetra_IntVector.cpp

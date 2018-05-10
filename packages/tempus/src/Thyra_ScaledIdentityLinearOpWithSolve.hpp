@@ -30,7 +30,6 @@ public:
   /** \brief Construct to uninitialized. */
   ScaledIdentityLinearOpWithSolve() {}
 
-  /** \brief . */
   void initialize(const RCP<const VectorSpaceBase<Scalar> >& space,
                   const Scalar& s)
   {
@@ -39,7 +38,6 @@ public:
     s_ = s;
   }
 
-  /** \brief . */
   void uninitialize()
   {
     space_ = Teuchos::null;
@@ -54,13 +52,10 @@ public:
   /** @name Overridden from LinearOpBase */
   //@{
 
-  /** \brief . */
   RCP< const VectorSpaceBase<Scalar> > range() const { return space_; }
 
-  /** \brief . */
   RCP< const VectorSpaceBase<Scalar> > domain() const { return space_; }
 
-  /** \brief . */
   RCP<const LinearOpBase<Scalar> > clone() const
   {
     RCP<ScaledIdentityLinearOpWithSolve<Scalar> > op =
@@ -74,10 +69,8 @@ protected:
 
   /** @name Overridden from LinearOpBase */
   //@{
-  /** \brief . */
   bool opSupportedImpl(EOpTransp M_trans) const { return true; }
 
-  /** \brief . */
   void applyImpl(const EOpTransp M_trans,
                  const MultiVectorBase<Scalar>& X,
                  const Ptr<MultiVectorBase<Scalar> >& Y,
@@ -95,22 +88,18 @@ protected:
 
   /** @name Overridden from LinearOpWithSolveBase */
   //@{
-  /** \brief . */
   bool solveSupportsImpl(EOpTransp M_trans) const { return true; }
 
-  /** \brief . */
   bool solveSupportsNewImpl(
     EOpTransp M_trans,
     const Ptr< const SolveCriteria< Scalar > > solveCriteria) const
   { return true; }
 
-  /** \brief . */
   bool solveSupportsSolveMeasureTypeImpl(
     EOpTransp M_trans,
      const SolveMeasureType &solveMeasureType) const
   { return true; }
 
-  /** \brief . */
   SolveStatus< Scalar > solveImpl(
     const EOpTransp M_trans,
     const MultiVectorBase<Scalar>& B,

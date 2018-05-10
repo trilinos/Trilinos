@@ -179,6 +179,17 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   STANDARD_PASS_OUTPUT
   )
 
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  LocalSparseTriangularSolver2
+  SOURCES 
+    Ifpack2_UnitTestLocalSparseTriangularSolver2.cpp
+    ${TEUCHOS_STD_UNIT_TEST_MAIN}
+  ARGS ""
+  COMM serial mpi
+  NUM_MPI_PROCS 1-4
+  STANDARD_PASS_OUTPUT
+  )
+
 # This test only needs to run on 1 process.  We should already have
 # separate tests for the different Container types.  (If we don't,
 # that's a bug!)

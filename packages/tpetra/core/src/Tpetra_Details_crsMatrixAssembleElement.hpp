@@ -323,8 +323,8 @@ crsMatrixReplaceValues_sortedSortedLinear (const SparseMatrixType& A,
 /// \param lids [in/out] Local row and column indices of A to modify.
 ///   This function may sort this array, and output the permutation
 ///   that makes it sorted to \c sortPerm.  \c lids must have the same
-///   number of entries as <tt>rhs.dimension_0()</tt>,
-///   <tt>lhs.dimension_0()</tt>, and <tt>lhs.dimension_1()</tt>.
+///   number of entries as <tt>rhs.extent(0)</tt>,
+///   <tt>lhs.extent(0)</tt>, and <tt>lhs.extent(1)</tt>.
 /// \param sortPerm [out] Permutation that makes \c lids (on input)
 ///   sorted.  It must have the same number of writeable entries as
 ///   \c lids (see above).
@@ -391,7 +391,7 @@ crsMatrixAssembleElement_sortedLinear (const SparseMatrixType& A,
   static_assert (std::is_integral<LO>::value, "SparseMatrixType::ordinal_type "
                  "must be a built-in integer type.");
 
-  const LO eltDim = rhs.dimension_0 ();
+  const LO eltDim = rhs.extent (0);
 
   // Generate sort permutation
   for (LO i = 0; i < eltDim; ++i) {

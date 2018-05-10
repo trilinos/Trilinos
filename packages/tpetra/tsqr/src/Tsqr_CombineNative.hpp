@@ -491,8 +491,8 @@ namespace TSQR {
        const Kokkos::View<scalar_type**, Kokkos::LayoutLeft, device_type>& A) const
   {
     constexpr scalar_type ZERO {0.0};
-    const Ordinal m = A.dimension_0 ();
-    const Ordinal n = A.dimension_1 ();
+    const Ordinal m = A.extent (0);
+    const Ordinal n = A.extent (1);
 
     constexpr Ordinal incy {1};
     //Ordinal jy = (incy > 0) ? 1 : 1 - (n-1) * incy;
@@ -524,8 +524,8 @@ namespace TSQR {
     using x_vec_type = Kokkos::View<const scalar_type*, Kokkos::LayoutLeft, device_type>;
     using range_type = std::pair<Ordinal, Ordinal>;
 
-    const Ordinal m = A.dimension_0 ();
-    const Ordinal n = A.dimension_1 ();
+    const Ordinal m = A.extent (0);
+    const Ordinal n = A.extent (1);
 
     const bool no_trans = (trans[0] == 'N' || trans[0] == 'n');
     x_vec_type x_view = Kokkos::subview (x, range_type (0, no_trans ? n : m));
@@ -548,8 +548,8 @@ namespace TSQR {
     constexpr scalar_type ZERO {0.0};
     constexpr scalar_type ONE {1.0};
 
-    const Ordinal m = A_view.dimension_0 ();
-    const Ordinal n = A_view.dimension_1 ();
+    const Ordinal m = A_view.extent (0);
+    const Ordinal n = A_view.extent (1);
 
     for (Ordinal k = 0; k < n; ++k) {
       work_view(k) = ZERO;
@@ -624,9 +624,9 @@ namespace TSQR {
       Kokkos::View<const scalar_type*, Kokkos::LayoutLeft, device_type>;
     constexpr scalar_type ZERO {0.0};
 
-    const Ordinal m = A.dimension_0 ();
-    const Ordinal ncols_Q = A.dimension_1 ();
-    const Ordinal ncols_C = C_top.dimension_1 ();
+    const Ordinal m = A.extent (0);
+    const Ordinal ncols_Q = A.extent (1);
+    const Ordinal ncols_C = C_top.extent (1);
 
     for (Ordinal i = 0; i < ncols_C; ++i) {
       work(i) = ZERO;
@@ -717,7 +717,7 @@ namespace TSQR {
     constexpr scalar_type ZERO {0.0};
     constexpr scalar_type ONE {1.0};
 
-    const Ordinal n = R_top.dimension_0 ();
+    const Ordinal n = R_top.extent (0);
     for (Ordinal k = 0; k < n; ++k) {
       work_view(k) = ZERO;
     }
@@ -845,8 +845,8 @@ namespace TSQR {
     using const_vec_type =
       Kokkos::View<const scalar_type*, Kokkos::LayoutLeft, device_type>;
     constexpr scalar_type ZERO {0.0};
-    const Ordinal ncols_C = C_top.dimension_1 ();
-    const Ordinal ncols_Q = R_bot.dimension_1 ();
+    const Ordinal ncols_C = C_top.extent (1);
+    const Ordinal ncols_Q = R_bot.extent (1);
 
     Ordinal j_start, j_end, j_step;
     if (applyType == ApplyType::NoTranspose) {

@@ -359,7 +359,7 @@ namespace Tpetra {
   /// expect.  The memory might not even be accessible from the host
   /// CPU.  Instead, we give access through a Kokkos::View, which
   /// behaves like a 2-D array.  You can ask the Kokkos::View for a
-  /// raw pointer by calling its <tt>ptr_on_device()</tt> method, but
+  /// raw pointer by calling its <tt>data()</tt> method, but
   /// then you are responsible for understanding its layout in memory.
   ///
   /// \section Kokkos_KR_MV_dist Parallel distribution of data
@@ -1561,7 +1561,7 @@ namespace Tpetra {
     /// \param dots [out] Device View with getNumVectors() entries.
     ///
     /// \pre <tt>this->getNumVectors () == A.getNumVectors ()</tt>
-    /// \pre <tt>dots.dimension_0 () == A.getNumVectors ()</tt>
+    /// \pre <tt>dots.extent (0) == A.getNumVectors ()</tt>
     ///
     /// \post <tt>dots(j) == (this->getVector[j])->dot (* (A.getVector[j]))</tt>
     void
@@ -1596,7 +1596,7 @@ namespace Tpetra {
     dot (const MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& A,
          const Kokkos::View<T*, device_type>& dots) const
     {
-      const size_t numDots = dots.dimension_0 ();
+      const size_t numDots = dots.extent (0);
       Kokkos::View<dot_type*, device_type> dts ("MV::dot tmp", numDots);
       // Call overload that takes a Kokkos::View<dot_type*, device_type>.
       this->dot (A, dts);
@@ -1686,7 +1686,7 @@ namespace Tpetra {
     ///
     /// \param norms [out] Device View with getNumVectors() entries.
     ///
-    /// \pre <tt>norms.dimension_0 () == this->getNumVectors ()</tt>
+    /// \pre <tt>norms.extent (0) == this->getNumVectors ()</tt>
     /// \post <tt>norms(j) == (this->getVector[j])->norm1 (* (A.getVector[j]))</tt>
     ///
     /// The one-norm of a vector is the sum of the magnitudes of the
@@ -1728,7 +1728,7 @@ namespace Tpetra {
     typename std::enable_if< ! (std::is_same<mag_type, T>::value), void >::type
     norm1 (const Kokkos::View<T*, device_type>& norms) const
     {
-      const size_t numNorms = norms.dimension_0 ();
+      const size_t numNorms = norms.extent (0);
       Kokkos::View<mag_type*, device_type> tmpNorms ("MV::norm1 tmp", numNorms);
       // Call overload that takes a Kokkos::View<mag_type*, device_type>.
       this->norm1 (tmpNorms);
@@ -1778,7 +1778,7 @@ namespace Tpetra {
     ///
     /// \param norms [out] Device View with getNumVectors() entries.
     ///
-    /// \pre <tt>norms.dimension_0 () == this->getNumVectors ()</tt>
+    /// \pre <tt>norms.extent (0) == this->getNumVectors ()</tt>
     /// \post <tt>norms(j) == (this->getVector[j])->dot (* (A.getVector[j]))</tt>
     ///
     /// The two-norm of a vector is the standard Euclidean norm, the
@@ -1819,7 +1819,7 @@ namespace Tpetra {
     typename std::enable_if< ! (std::is_same<mag_type, T>::value), void >::type
     norm2 (const Kokkos::View<T*, device_type>& norms) const
     {
-      const size_t numNorms = norms.dimension_0 ();
+      const size_t numNorms = norms.extent (0);
       Kokkos::View<mag_type*, device_type> theNorms ("MV::norm2 tmp", numNorms);
       // Call overload that takes a Kokkos::View<mag_type*, device_type>.
       this->norm2 (theNorms);
@@ -1904,7 +1904,7 @@ namespace Tpetra {
     typename std::enable_if< ! (std::is_same<mag_type, T>::value), void >::type
     normInf (const Kokkos::View<T*, device_type>& norms) const
     {
-      const size_t numNorms = norms.dimension_0 ();
+      const size_t numNorms = norms.extent (0);
       Kokkos::View<mag_type*, device_type> theNorms ("MV::normInf tmp", numNorms);
       // Call overload that takes a Kokkos::View<mag_type*, device_type>.
       this->normInf (theNorms);

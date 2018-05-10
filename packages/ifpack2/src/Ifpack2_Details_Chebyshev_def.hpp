@@ -119,7 +119,7 @@ struct LocalReciprocalThreshold {
            const typename XV::non_const_value_type& minVal)
   {
     typedef typename XV::execution_space execution_space;
-    Kokkos::RangePolicy<execution_space, SizeType> policy (0, X.dimension_0 ());
+    Kokkos::RangePolicy<execution_space, SizeType> policy (0, X.extent (0));
     V_ReciprocalThresholdSelfFunctor<XV, SizeType> op (X, minVal);
     Kokkos::parallel_for (policy, op);
   }
@@ -821,7 +821,7 @@ Chebyshev<ScalarType, MV>::compute ()
       if (! A_crsMat.is_null () && A_crsMat->isStaticGraph ()) {
         // It's a CrsMatrix with a const graph; cache diagonal offsets.
         const size_t lclNumRows = A_crsMat->getNodeNumRows ();
-        if (diagOffsets_.dimension_0 () < lclNumRows) {
+        if (diagOffsets_.extent (0) < lclNumRows) {
           diagOffsets_ = offsets_type (); // clear first to save memory
           diagOffsets_ = offsets_type ("offsets", lclNumRows);
         }
@@ -839,7 +839,7 @@ Chebyshev<ScalarType, MV>::compute ()
         // if we haven't already.
         if (! savedDiagOffsets_) {
           const size_t lclNumRows = A_crsMat->getNodeNumRows ();
-          if (diagOffsets_.dimension_0 () < lclNumRows) {
+          if (diagOffsets_.extent (0) < lclNumRows) {
             diagOffsets_ = offsets_type (); // clear first to save memory
             diagOffsets_ = offsets_type ("offsets", lclNumRows);
           }

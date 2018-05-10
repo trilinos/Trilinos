@@ -68,16 +68,6 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   )
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
-  CrsMatrix_TriSolve
-  SOURCES
-    CrsMatrix_TriSolve
-    ${TEUCHOS_STD_UNIT_TEST_MAIN}
-  ARGS ""
-  COMM serial mpi
-  STANDARD_PASS_OUTPUT
-  )
-
-TRIBITS_ADD_EXECUTABLE_AND_TEST(
   CrsMatrix_LeftRightScale
   SOURCES
     CrsMatrix_LeftRightScale
