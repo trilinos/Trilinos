@@ -319,7 +319,7 @@ V_ElementWiseMultiply(
   typedef View< typename BVector::data_type, typename BVector::array_layout, typename BVector::execution_space, typename BVector::memory_traits > BView;
 
   V_ElementWiseMultiplyFunctor<CView,AView,BView> op(c,C,ab,A,B) ;
-  Kokkos::parallel_for( C.dimension_0() , op );
+  Kokkos::parallel_for( C.extent(0) , op );
   return C;
 }
 
@@ -366,8 +366,8 @@ MV_ElementWiseMultiply(
   typedef View< typename AVector::data_type, typename AVector::array_layout, typename AVector::execution_space, typename AVector::memory_traits > AView;
   typedef View< typename BVector::data_type, typename BVector::array_layout, typename BVector::execution_space, typename BVector::memory_traits > BView;
 
-  MV_ElementWiseMultiplyFunctor<CView,AView,BView> op(c,C,ab,A,B,C.dimension_1()) ;
-  Kokkos::parallel_for( C.dimension_0() , op );
+  MV_ElementWiseMultiplyFunctor<CView,AView,BView> op(c,C,ab,A,B,C.extent(1)) ;
+  Kokkos::parallel_for( C.extent(0) , op );
   return C;
 }
 

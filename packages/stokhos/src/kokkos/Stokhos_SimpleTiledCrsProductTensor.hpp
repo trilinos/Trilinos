@@ -222,7 +222,7 @@ public:
 
   /** \brief  Number of sparse entries. */
   KOKKOS_INLINE_FUNCTION
-  size_type entry_count() const { return m_coord.dimension_0(); }
+  size_type entry_count() const { return m_coord.extent(0); }
 
   /** \brief Number i-tiles */
   KOKKOS_INLINE_FUNCTION
