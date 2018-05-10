@@ -2,13 +2,14 @@
 """analysis.py
 
 Usage:
-  analysis.py -i INPUT... [-o OUTPUT] [-a MODE] [-d] [-s STYLE] [-t TOP]
+  analysis.py -i INPUT... [-o OUTPUT] [-a MODE] [-d] [-s STYLE] [-t TOP] [-f FILTER]
   analysis.py (-h | --help)
 
 Options:
   -h --help                     Show this screen.
   -i FILE --input-files=FILE    Input file
   -o FILE --output-file=FILE    Output file
+  -f FILTER --filter=FILTER     Timer filter [default: ]
   -a MODE --analysis=MODE       Mode [default: setup_timers]
   -d --display                  Display mode
   -s STYLE --style=STYLE        Plot style [default: stack]
@@ -58,7 +59,7 @@ def construct_dataframe(yaml_data):
     return pd.DataFrame(data, index=timers,
         columns=['minT', 'minC', 'meanT', 'meanC', 'maxT', 'maxC', 'meanCT', 'meanCC'])
 
-def setup_timers(input_files, display, top, ax = None):
+def setup_timers(input_files, display, top, ax = None, custom_filter = None):
     """Show all setup level specific timers ordered by size"""
     ## Choose top timers from the first file
     with open(input_files[0]) as data_file:
@@ -69,8 +70,12 @@ def setup_timers(input_files, display, top, ax = None):
     timers = timer_data.index
 
     # Timer string corresponding to filtered timers
-    timers_fs = [x for x in timers    if re.search('.*\(level=', x) != None]    # search level specific
-    timers_fs = [x for x in timers_fs if re.search('Solve', x)      == None]    # ignore Solve timers
+    if custom_filter != "":
+        timers_fs = [x for x in timers    if re.search(custom_filter, x) != None]
+    else:
+        timers_fs = [x for x in timers    if re.search('.*\(level=', x) != None]    # search level specific
+        timers_fs = [x for x in timers_fs if re.search('Solve', x)      == None]    # ignore Solve timers
+
     if top > len(timers_fs):
       print("Warning: there are only ", len(timers_fs), " timers to plot.")
     top = min(top, len(timers_fs))
@@ -461,6 +466,7 @@ if __name__ == '__main__':
     input_files = options['--input-files']
     output_file = options['--output-file']
     analysis    = options['--analysis']
+    filter      = options['--filter']
     display     = options['--display']
     style       = options['--style']
     top         = int(options['--top'])
@@ -513,7 +519,7 @@ if __name__ == '__main__':
         # If there are two files, it compares the timers, using top timers from
         # the first file
         assert(len(input_files) <= 2)
-        setup_timers(input_files, display=display, ax=ax, top=top)
+        setup_timers(input_files, display=display, ax=ax, top=top, custom_filter=filter)
     else:
         # Most analysis studies work with a single file
         # Might as well open it here
