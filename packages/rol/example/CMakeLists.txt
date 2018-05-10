@@ -10,7 +10,6 @@ ADD_SUBDIRECTORY(diode-circuit-simopt)
 ADD_SUBDIRECTORY(topology-optimization)
 ADD_SUBDIRECTORY(dual-spaces)
 ADD_SUBDIRECTORY(zakharov)
-ADD_SUBDIRECTORY(sacado)
 ADD_SUBDIRECTORY(gross-pitaevskii)
 ADD_SUBDIRECTORY(json)
 ADD_SUBDIRECTORY(intrepid)
@@ -25,16 +24,24 @@ ADD_SUBDIRECTORY(putting)
 ADD_SUBDIRECTORY(PinT)
 
 
+IF(${PACKAGE_NAME}_ENABLE_Sacado)
+ADD_SUBDIRECTORY(sacado)
+ENDIF()
+
+
 # Examples which require use of Teuchos::RCP
 IF( NOT ${${PACKAGE_NAME}_ENABLE_STD_SHARED_PTR} )
+
 ADD_SUBDIRECTORY(burgers-control)
 ADD_SUBDIRECTORY(parabolic-control)
 ADD_SUBDIRECTORY(tensor-opt)
 ADD_SUBDIRECTORY(PDE-OPT)
-ENDIF( NOT ${${PACKAGE_NAME}_ENABLE_STD_SHARED_PTR} )
 
-
-# Conditionally built examples.
 IF(${PROJECT_NAME}_ENABLE_Tempus)
   ADD_SUBDIRECTORY(tempus)
 ENDIF()
+
+ENDIF( NOT ${${PACKAGE_NAME}_ENABLE_STD_SHARED_PTR} )
+
+
+

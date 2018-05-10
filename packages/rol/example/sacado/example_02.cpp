@@ -61,10 +61,10 @@
 #include "ROL_CompositeStep.hpp"
 #include "ROL_ConstraintStatusTest.hpp"
 #include "ROL_Constraint.hpp"
+#include "ROL_ParameterList.hpp"
 
 #include "Teuchos_oblackholestream.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
-#include "Teuchos_XMLParameterListHelpers.hpp"
 
 #include "example_02.hpp"
 
@@ -164,9 +164,8 @@ int main(int argc, char **argv)
     constr->solveAugmentedSystem(v1, v2, d, vc, xtest, augtol);
     
     // Define algorithm.
-    auto parlist = ROL::makePtr<ROL::ParameterList>()
     std::string paramfile = "parameters.xml";
-    Teuchos::updateParametersFromXmlFile(paramfile,parlist.ptr());
+    auto parlist = ROL::getParametersFromXmlFile(paramfile);
     ROL::Algorithm<RealT> algo("Composite Step", *parlist);
 
     // Run algorithm.
