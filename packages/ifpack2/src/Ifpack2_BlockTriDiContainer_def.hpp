@@ -105,7 +105,7 @@ namespace Ifpack2 {
     // 3) tpetra_importer is     null , async_importer is NOT null (async method is used)
 
     // temporary disabling 
-    overlap_communication_and_computation_ = false; //overlapCommAndComp;
+    overlap_communication_and_computation_ = overlapCommAndComp;
     
     Z_ = typename impl_type::tpetra_multivector_type();
 

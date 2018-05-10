@@ -270,7 +270,7 @@ static LO run_teuchos_tests (const Input& in, Teuchos::FancyOStream& out, bool& 
       }
       for (const bool jacobi : {false, true})
         for (const bool seq_method : {false, true})
-          for (const bool overlap_comm : {false /*, true*/}) { // temporary disabling overlap comm version
+          for (const bool overlap_comm : {false, true}) { // temporary disabling overlap comm version
             if (seq_method && overlap_comm) continue;
             for (const bool nonuniform_lines : {false, true}) {
               if (jacobi && nonuniform_lines) continue;

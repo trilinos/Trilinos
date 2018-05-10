@@ -253,7 +253,7 @@ namespace Ifpack2 {
 
       // Kyungjoo: hansen enum does not work (don't know why)
       // enum : int { vector_length = DefaultVectorLength<impl_scalar_type,memory_space>::value };
-      static constexpr int vector_length = 8; //DefaultVectorLength<impl_scalar_type,memory_space>::value;
+      static constexpr int vector_length = DefaultVectorLength<impl_scalar_type,memory_space>::value;
       typedef Vector<SIMD<impl_scalar_type>,vector_length> vector_type;
 
       ///
@@ -483,34 +483,40 @@ namespace Ifpack2 {
                 const impl_scalar_type_2d_view &multivector_,
                 const local_ordinal_type blocksize_) {
         const local_ordinal_type num_vectors = multivector_.extent(1);
-        if (num_vectors == 1) {
-	  if (is_cuda<execution_space>::value) {
+        const local_ordinal_type mv_blocksize = blocksize_*num_vectors;
+        const local_ordinal_type idiff = iend_ - ibeg_;
+        const auto abase = buffer_.data() + mv_blocksize*ibeg_;
+        
+        if (is_cuda<execution_space>::value) {
 #if defined(KOKKOS_ENABLE_CUDA)
-	    using team_policy_type = Kokkos::TeamPolicy<execution_space>;
-	    // vector length should be 1 here
-	    const team_policy_type policy(iend_ - ibeg_, blocksize_, 1); 
-	    Kokkos::parallel_for
-	      ("AsyncableImport::TeamPolicy::copy", 
-               policy, KOKKOS_LAMBDA(const typename team_policy_type::member_type &member) {          
-		const local_ordinal_type i = member.league_rank() + ibeg_;
-		auto aptr = buffer_.data() + blocksize_*i;
-		auto bptr = multivector_.data() + blocksize_*lids_(i);
-		if (std::is_same<PackTag,ToBuffer>::value) 
-		  Kokkos::parallel_for
-		    (Kokkos::TeamThreadRange(member,blocksize_),[&](const local_ordinal_type &k) {
-		      aptr[k] = bptr[k];
-		    });
-		else
-		  Kokkos::parallel_for
-		    (Kokkos::TeamThreadRange(member,blocksize_),[&](const local_ordinal_type &k) {
-		      bptr[k] = aptr[k];
-		    });
-	      });
+          using team_policy_type = Kokkos::TeamPolicy<execution_space>;
+          const team_policy_type policy(idiff, num_vectors == 1 ? 1 : 2);
+          Kokkos::parallel_for
+            ("AsyncableImport::TeamPolicy::copy", 
+             policy, KOKKOS_LAMBDA(const typename team_policy_type::member_type &member) {          
+              const local_ordinal_type i = member.league_rank();
+              Kokkos::parallel_for
+                (Kokkos::TeamThreadRange(member,num_vectors),[&](const local_ordinal_type &j) {
+                  auto aptr = abase + blocksize_*(i + idiff*j);
+                  auto bptr = &multivector_(blocksize_*lids_(i + ibeg_), j);
+                  if (std::is_same<PackTag,ToBuffer>::value) 
+                    Kokkos::parallel_for
+                      (Kokkos::ThreadVectorRange(member,blocksize_),[&](const local_ordinal_type &k) {
+                        aptr[k] = bptr[k];
+                      });
+                  else
+                    Kokkos::parallel_for
+                      (Kokkos::ThreadVectorRange(member,blocksize_),[&](const local_ordinal_type &k) {
+                        bptr[k] = aptr[k];
+                      });
+                });
+            });
 #endif
-	  } else {
+        } else {
 #if defined(__CUDA_ARCH__)
-            TEUCHOS_TEST_FOR_EXCEPT_MSG(true, "Error: CUDA should not see this code"); 
+          TEUCHOS_TEST_FOR_EXCEPT_MSG(true, "Error: CUDA should not see this code"); 
 #else
+          if (num_vectors == 1) {
             const Kokkos::RangePolicy<execution_space> policy(ibeg_, iend_); 
             Kokkos::parallel_for
               ("AsyncableImport::RangePolicy::copy",
@@ -522,25 +528,26 @@ namespace Ifpack2 {
                 else
                   memcpy(bptr, aptr, sizeof(impl_scalar_type)*blocksize_);
               });
+
+	  } else {
+            Kokkos::MDRangePolicy
+              <execution_space, Kokkos::Rank<2>, Kokkos::IndexType<local_ordinal_type> > 
+              policy( { 0, 0 }, { idiff, num_vectors } );
+            
+            Kokkos::parallel_for
+              ("AsyncableImport::MDRangePolicy::copy", 
+               policy, KOKKOS_LAMBDA(const local_ordinal_type &i,
+                                     const local_ordinal_type &j) { 
+                auto aptr = abase + blocksize_*(i + idiff*j);
+                auto bptr = &multivector_(blocksize_*lids_(i + ibeg_), j);
+                if (std::is_same<PackTag,ToBuffer>::value) 
+                  for (local_ordinal_type k=0;k<blocksize_;++k) aptr[k] = bptr[k];
+                else
+                  for (local_ordinal_type k=0;k<blocksize_;++k) bptr[k] = aptr[k];
+              });
+          }
 #endif
-	  }
-        } else { 
-          Kokkos::MDRangePolicy
-            <execution_space, Kokkos::Rank<2>, Kokkos::IndexType<local_ordinal_type> > 
-            policy( { ibeg_, 0 }, { iend_, num_vectors } );
-          
-          Kokkos::parallel_for
-            ("AsyncableImport::MDRangePolicy::copy", 
-             policy, KOKKOS_LAMBDA(const local_ordinal_type &i,
-				   const local_ordinal_type &j) { 
-              auto aptr = buffer_.data() + blocksize_*(num_vectors*i + j);
-              auto bptr = &multivector_(blocksize_*lids_(i), j);
-              if (std::is_same<PackTag,ToBuffer>::value) 
-                for (local_ordinal_type k=0;k<blocksize_;++k) aptr[k] = bptr[k];
-              else
-                for (local_ordinal_type k=0;k<blocksize_;++k) bptr[k] = aptr[k];
-            });
-        }
+        } 
         Kokkos::fence();
       }
 
@@ -2586,7 +2593,6 @@ namespace Ifpack2 {
         }
       }
 
-
       template<typename bbViewType, typename yyViewType>
       KOKKOS_INLINE_FUNCTION       
       void 
@@ -2822,11 +2828,10 @@ namespace Ifpack2 {
           if (P == 0) { 
             // y := b
             memcpy(yy, &b(row, col), sizeof(impl_scalar_type)*blocksize);
-          } 
-          //else {
-          // y (temporary) := 0
-          // memset(yy, 0, sizeof(impl_scalar_type)*blocksize); // do I need this ? 
-          //}
+          } else {
+            // y (temporary) := 0
+            memset(yy, 0, sizeof(impl_scalar_type)*blocksize); 
+          }
           
           // y -= Rx
           const size_type A_k0 = A_rowptr[lr];
@@ -2890,8 +2895,8 @@ namespace Ifpack2 {
             bb.assign_data(&b(row, col));
             if (member.team_rank() == 0) 
               vectorCopy(member, blocksize, bb, yy);
-            member.team_barrier();
-          }
+            member.team_barrier();            
+          } 
           
           // y -= Rx
           const size_type A_k0 = A_rowptr[lr];
