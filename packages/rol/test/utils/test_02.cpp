@@ -100,7 +100,7 @@ int main(int argc, char *argv[] ) {
 
     ZOO::Objective_Zakharov<RealT> obj(k);
 
-    Teuchos::ParameterList parlist;
+    ROL::ParameterList parlist;
 
     parlist.sublist("Scalar Minimization").set("Type","Bisection");
     parlist.sublist("Scalar Minimization").sublist("Bisection").set("Tolerance",1.e-10);

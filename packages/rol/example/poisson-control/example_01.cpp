@@ -48,12 +48,14 @@
 
 #define USE_HESSVEC 1
 
+#include "ROL_Bounds.hpp"
 #include "ROL_PoissonControl.hpp"
 #include "ROL_Algorithm.hpp"
 #include "ROL_PrimalDualActiveSetStep.hpp"
 #include "ROL_TrustRegionStep.hpp"
 #include "ROL_StatusTest.hpp"
 #include "ROL_Types.hpp"
+
 #include "Teuchos_oblackholestream.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
 #include "Teuchos_XMLParameterListHelpers.hpp"
@@ -61,7 +63,6 @@
 #include <iostream>
 #include <algorithm>
 
-#include "ROL_Bounds.hpp"
 
 
 template <class Real>
@@ -149,8 +150,7 @@ int main(int argc, char *argv[]) {
 
     // Primal dual active set.
     std::string filename = "input.xml";
-    Teuchos::RCP<Teuchos::ParameterList> parlist = Teuchos::rcp( new Teuchos::ParameterList() );
-    Teuchos::updateParametersFromXmlFile( filename, parlist.ptr() );
+    auto parlist = ROL::getParametersFromXmlFile( filename );
 
     // Krylov parameters.
     parlist->sublist("General").sublist("Krylov").set("Absolute Tolerance",1.e-4);
@@ -169,7 +169,7 @@ int main(int argc, char *argv[]) {
     parlist->sublist("Status Test").set("Iteration Limit",100);
 
     // Define algorithm.
-    ROL::Ptr<ROL::Algorithm<RealT> > algo = ROL::makePtr<ROL::Algorithm<RealT>>("Primal Dual Active Set",*parlist,false);
+    auto algo = ROL::makePtr<ROL::Algorithm<RealT>>("Primal Dual Active Set",*parlist,false);
 
     // Iteration vector.
     ROL::Ptr<vector> x_ptr = ROL::makePtr<vector>(dim, 0.0);

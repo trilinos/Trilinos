@@ -94,7 +94,7 @@ public:
       ---
   */
   OptimizationSolver( OptimizationProblem<Real> &opt,
-                      Teuchos::ParameterList &parlist ) {
+                      ROL::ParameterList &parlist ) {
 
     // Get optimization problem type: U, E, B, EB
     problemType_ = opt.getProblemType();

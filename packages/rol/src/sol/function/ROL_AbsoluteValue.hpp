@@ -69,7 +69,7 @@ public:
     if ( eav != ABSOLUTEVALUE_TRUE && std::abs(param) < ROL_EPSILON<Real>() ) { param_ = 1.e2; }
   }
 
-  AbsoluteValue(Teuchos::ParameterList &parlist) {
+  AbsoluteValue(ROL::ParameterList &parlist) {
     Real param = parlist.get("Smoothing Parameter",1.);
     param_ = 1./((param > 0.) ? param : 1.);
     std::string type = parlist.get("Absolute Value Approximation","true");

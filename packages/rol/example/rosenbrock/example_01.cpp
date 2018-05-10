@@ -82,7 +82,7 @@ int main(int argc, char *argv[]) {
     int dim = 100; // Set problem dimension. Must be even.
 
     // Set parameters.
-    Teuchos::ParameterList parlist;
+    ROL::ParameterList parlist;
     parlist.sublist("Step").sublist("Line Search").sublist("Descent Method").set("Type", "Newton-Krylov");
     parlist.sublist("Status Test").set("Gradient Tolerance",1.e-12);
     parlist.sublist("Status Test").set("Step Tolerance",1.e-14);

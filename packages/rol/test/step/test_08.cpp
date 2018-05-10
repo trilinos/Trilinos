@@ -91,7 +91,7 @@ int main(int argc, char *argv[]) {
     ROL::Ptr<ROL::Objective<RealT> >             obj_hs29 = ROL::makePtr<Objective_HS29<RealT>>();
     ROL::Ptr<ROL::InequalityConstraint<RealT> >  incon_hs29 = ROL::makePtr<InequalityConstraint_HS29<RealT>>();
 
-    Teuchos::RCP<Teuchos::ParameterList> parlist = Teuchos::rcp( new Teuchos::ParameterList() );
+    
     std::string stepname = "Interior Point"; 
 
     RealT mu = 0.1;            // Initial penalty parameter

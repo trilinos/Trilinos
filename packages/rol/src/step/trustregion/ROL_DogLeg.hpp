@@ -68,7 +68,7 @@ private:
 public:
 
   // Constructor
-  DogLeg( Teuchos::ParameterList &parlist ) : TrustRegion<Real>(parlist), pRed_(0) {
+  DogLeg( ROL::ParameterList &parlist ) : TrustRegion<Real>(parlist), pRed_(0) {
     cpt_ = ROL::makePtr<CauchyPoint<Real>>(parlist);
   }
 

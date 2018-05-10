@@ -1,16 +1,15 @@
 # Always built.
 ADD_SUBDIRECTORY(rosenbrock)
-ADD_SUBDIRECTORY(burgers-control)
 ADD_SUBDIRECTORY(poisson-control)
 ADD_SUBDIRECTORY(poisson-inversion)
-ADD_SUBDIRECTORY(parabolic-control)
+
+
 ADD_SUBDIRECTORY(simple-eq-constr)
 ADD_SUBDIRECTORY(diode-circuit)
 ADD_SUBDIRECTORY(diode-circuit-simopt)
 ADD_SUBDIRECTORY(topology-optimization)
 ADD_SUBDIRECTORY(dual-spaces)
 ADD_SUBDIRECTORY(zakharov)
-ADD_SUBDIRECTORY(sacado)
 ADD_SUBDIRECTORY(gross-pitaevskii)
 ADD_SUBDIRECTORY(json)
 ADD_SUBDIRECTORY(intrepid)
@@ -22,11 +21,27 @@ ADD_SUBDIRECTORY(complex)
 ADD_SUBDIRECTORY(binary-design)
 ADD_SUBDIRECTORY(paraboloid-circle)
 ADD_SUBDIRECTORY(putting)
-ADD_SUBDIRECTORY(tensor-opt)
-ADD_SUBDIRECTORY(PDE-OPT)
 ADD_SUBDIRECTORY(PinT)
 
-# Conditionally built examples.
+
+IF(${PACKAGE_NAME}_ENABLE_Sacado)
+ADD_SUBDIRECTORY(sacado)
+ENDIF()
+
+
+# Examples which require use of Teuchos::RCP
+IF( NOT ${${PACKAGE_NAME}_ENABLE_STD_SHARED_PTR} )
+
+ADD_SUBDIRECTORY(burgers-control)
+ADD_SUBDIRECTORY(parabolic-control)
+ADD_SUBDIRECTORY(tensor-opt)
+ADD_SUBDIRECTORY(PDE-OPT)
+
 IF(${PROJECT_NAME}_ENABLE_Tempus)
   ADD_SUBDIRECTORY(tempus)
 ENDIF()
+
+ENDIF( NOT ${${PACKAGE_NAME}_ENABLE_STD_SHARED_PTR} )
+
+
+

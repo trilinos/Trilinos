@@ -88,7 +88,7 @@ private:
 
 public:
   
-  GMRES( Teuchos::ParameterList &parlist ) : Krylov<Real>(parlist), isInitialized_(false) {
+  GMRES( ROL::ParameterList &parlist ) : Krylov<Real>(parlist), isInitialized_(false) {
 
     
     
@@ -96,8 +96,8 @@ public:
 
     Real zero(0);
 
-    Teuchos::ParameterList &gList = parlist.sublist("General");
-    Teuchos::ParameterList &kList = gList.sublist("Krylov");
+    ROL::ParameterList &gList = parlist.sublist("General");
+    ROL::ParameterList &kList = gList.sublist("Krylov");
     
     useInexact_      = gList.get("Inexact Hessian-Times-A-Vector",false);
     useInitialGuess_ = kList.get("Use Initial Guess",false);

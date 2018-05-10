@@ -101,7 +101,7 @@ namespace { // (anonymous)
     int
     revealRank (ROL::MultiVector<Scalar>& /* Q */,
                 Teuchos::SerialDenseMatrix<int, Scalar>& /* R */,
-                const typename Teuchos::ScalarTraits<Scalar>::magnitudeType& /* tol */)
+                const typename ROL::ScalarTraits<Scalar>::magnitudeType& /* tol */)
     {
       return 0;
     }
@@ -120,7 +120,7 @@ namespace Belos {
 
         typedef Teuchos::SerialDenseMatrix<int,Scalar> Matrix;
 
-        typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType magnitudeType;
+        typedef typename ROL::ScalarTraits<Scalar>::magnitudeType magnitudeType;
 
         public:
 
@@ -334,7 +334,7 @@ namespace Belos {
 
 
             static void MvInit(MV& mv,
-                               const Scalar alpha = Teuchos::ScalarTraits<Scalar>::zero()) {
+                               const Scalar alpha = ROL::ScalarTraits<Scalar>::zero()) {
                 TEUCHOS_TEST_FOR_EXCEPTION(alpha != 0,std::invalid_argument,
                     "Belos::MultiVecTraits<Scalar,ROL::MultiVector<Scalar> >::MvInit()\n");
                 mv.zero();

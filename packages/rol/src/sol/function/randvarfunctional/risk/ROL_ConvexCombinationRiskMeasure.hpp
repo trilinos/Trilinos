@@ -123,14 +123,13 @@ public:
       \li "Convex Combination Parameters" (greater than 0 and sum to 1)
       \li Sublists labeled 1 to n with risk measure definitions.
   */
-  ConvexCombinationRiskMeasure(Teuchos::ParameterList &parlist)
+  ConvexCombinationRiskMeasure(ROL::ParameterList &parlist)
     : RandVarFunctional<Real>(), size_(0) {
-    Teuchos::ParameterList &list
+    ROL::ParameterList &list
       = parlist.sublist("SOL").sublist("Risk Measure").sublist("Convex Combination Risk Measure");
     // Get convex combination parameters
-    Teuchos::Array<Real> lambda
-      = Teuchos::getArrayFromStringParameter<Real>(list,"Convex Combination Parameters");
-    lambda_ = lambda.toVector();
+    lambda_ = ROL::getArrayFromStringParameter<Real>(list,"Convex Combination Parameters");
+
     size_ = lambda_.size();
     // Build risk measures
     statVec_.clear();
@@ -139,9 +138,9 @@ public:
       std::ostringstream convert;
       convert << i;
       std::string si = convert.str();
-      Teuchos::ParameterList &ilist = list.sublist(si);
+      ROL::ParameterList &ilist = list.sublist(si);
       std::string name = ilist.get<std::string>("Name");
-      Teuchos::ParameterList riskList;
+      ROL::ParameterList riskList;
       riskList.sublist("SOL").sublist("Risk Measure").set("Name",name);
       riskList.sublist("SOL").sublist("Risk Measure").sublist(name) = ilist;
       risk_[i] = RiskMeasureFactory<Real>(riskList);

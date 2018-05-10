@@ -89,7 +89,7 @@ private:
 
 public:
 
-  TankConstraintSerial( Teuchos::PararameterList& pl, const Vector<Real>& u ) :
+  TankConstraintSerial( ROL::ParameterList& pl, const Vector<Real>& u ) :
     ROL::Constraint_SimOpt<Real>(),
     state_( makePtr<TankState<Real>>( pl ) ),
     con_( state_, pl ), ui_( ROL::nullPtr ), u0_( ROL::nullPtr ), z0_( ROL::nullPtr ), 

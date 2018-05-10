@@ -41,8 +41,8 @@
 // ************************************************************************
 // @HEADER
 
-#include "Teuchos_ParameterList.hpp"
-#include "Teuchos_XMLParameterListHelpers.hpp"
+#include "ROL_ParameterList.hpp"
+
 #include "Teuchos_oblackholestream.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
 
@@ -58,7 +58,7 @@
 
 typedef double RealT;
 
-template<class Real> 
+template<class Real>
 class ParametrizedObjectiveEx8 : public ROL::Objective<Real> {
 public:
   Real value( const ROL::Vector<Real> &x, Real &tol ) {
@@ -68,7 +68,7 @@ public:
     std::vector<Real> p = this->getParameter();
     unsigned size = ex->size();
     for ( unsigned i = 0; i < size; i++ ) {
-      quad += (*ex)[i]*(*ex)[i]; 
+      quad += (*ex)[i]*(*ex)[i];
       lin  += (*ex)[i]*p[i+1];
     }
     return std::exp(p[0])*quad + lin + p[size+1];
@@ -96,12 +96,12 @@ public:
     std::vector<Real> p = this->getParameter();
     unsigned size = ex->size();
     for ( unsigned i = 0; i < size; i++ ) {
-      (*ehv)[i] = 2.0*std::exp(p[0])*(*ev)[i]; 
-    } 
+      (*ehv)[i] = 2.0*std::exp(p[0])*(*ev)[i];
+    }
   }
 };
 
-RealT setUpAndSolve(Teuchos::ParameterList &list,
+RealT setUpAndSolve(ROL::ParameterList &list,
                     ROL::Ptr<ROL::Objective<RealT> > &pObj,
                     ROL::Ptr<ROL::SampleGenerator<RealT> > &sampler,
                     ROL::Ptr<ROL::Vector<RealT> > &x,
@@ -157,9 +157,9 @@ int main(int argc, char* argv[]) {
     /**********************************************************************************************/
     // Get ROL parameterlist
     std::string filename = "input_09.xml";
-    Teuchos::RCP<Teuchos::ParameterList> parlist = Teuchos::rcp( new Teuchos::ParameterList() );
-    Teuchos::updateParametersFromXmlFile( filename, parlist.ptr() );
-    Teuchos::ParameterList list = *parlist;
+    
+    auto parlist = ROL::getParametersFromXmlFile( filename );
+    ROL::ParameterList list = *parlist;
     /**********************************************************************************************/
     /************************* CONSTRUCT SOL COMPONENTS *******************************************/
     /**********************************************************************************************/
@@ -171,7 +171,7 @@ int main(int argc, char* argv[]) {
     ROL::Ptr<ROL::Vector<RealT> > d = ROL::makePtr<ROL::StdVector<RealT>>(d_ptr);
     setRandomVector(*d_ptr);
     // Build samplers
-    int nSamp = 1000;  
+    int nSamp = 1000;
     unsigned sdim = dim + 2;
     std::vector<RealT> tmp(2,0.); tmp[0] = -1.; tmp[1] = 1.;
     std::vector<std::vector<RealT> > bounds(sdim,tmp);
@@ -200,7 +200,7 @@ int main(int argc, char* argv[]) {
     int nQuadLo = 0, nQuadUp = 21, order = 0;
     std::vector<RealT> norm(nQuadUp-nQuadLo), obj(nQuadUp-nQuadLo);
     *outStream << "\nSPECTRAL RISK MEASURE\n";
-    list.sublist("SOL").set("Stochastic Component Type","Risk Averse"); 
+    list.sublist("SOL").set("Stochastic Component Type","Risk Averse");
     list.sublist("SOL").sublist("Risk Measure").set("Name","Spectral Risk");
     std::vector<ROL::Ptr<std::vector<RealT> > > hist(nQuadUp-nQuadLo,ROL::nullPtr);
     std::vector<ROL::Ptr<ROL::StdVector<RealT> > > hvec(nQuadUp-nQuadLo,ROL::nullPtr);

@@ -268,7 +268,7 @@ public:
     if (solverType_==1 || (solverType_==3 && cnorm > ctol)) {
       ROL::Ptr<Constraint_SimOpt<Real> > con = ROL::makePtrFromRef(*this);
       ROL::Ptr<Objective<Real> > obj = ROL::makePtr<NonlinearLeastSquaresObjective_SimOpt<Real>>(con,u,z,c,true);
-      Teuchos::ParameterList parlist;
+      ROL::ParameterList parlist;
       parlist.sublist("Status Test").set("Gradient Tolerance",ctol);
       parlist.sublist("Status Test").set("Step Tolerance",stol_);
       parlist.sublist("Status Test").set("Iteration Limit",maxit_);
@@ -285,7 +285,7 @@ public:
         = ROL::makePtr<Constraint_State<Real>>(con,zVec);
       ROL::Ptr<Objective<Real> > objU
         = ROL::makePtr<Objective_FSsolver<Real>>();
-      Teuchos::ParameterList parlist;
+      ROL::ParameterList parlist;
       parlist.sublist("Status Test").set("Constraint Tolerance",ctol);
       parlist.sublist("Status Test").set("Step Tolerance",stol_);
       parlist.sublist("Status Test").set("Iteration Limit",maxit_);
@@ -302,7 +302,7 @@ public:
 
   /** \brief Set solve parameters.
 
-             @param[in]       parlist   Teuchos::ParameterList containing solve parameters
+             @param[in]       parlist   ROL::ParameterList containing solve parameters
 
              For the default implementation, parlist has two sublist ("SimOpt"
              and "Solve") and the "Solve" sublist has six input parameters.
@@ -320,8 +320,8 @@ public:
 
              ---
   */
-  virtual void setSolveParameters(Teuchos::ParameterList &parlist) {
-    Teuchos::ParameterList & list = parlist.sublist("SimOpt").sublist("Solve");
+  virtual void setSolveParameters(ROL::ParameterList &parlist) {
+    ROL::ParameterList & list = parlist.sublist("SimOpt").sublist("Solve");
     atol_       = list.get("Absolute Residual Tolerance",   DEFAULT_atol_);
     rtol_       = list.get("Relative Residual Tolerance",   DEFAULT_rtol_);
     maxit_      = list.get("Iteration Limit",               DEFAULT_maxit_);

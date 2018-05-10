@@ -49,8 +49,7 @@
 #include "ROL_PlusFunction.hpp"
 #include "ROL_AbsoluteValue.hpp"
 
-#include "Teuchos_ParameterList.hpp"
-#include "Teuchos_Array.hpp"
+#include "ROL_ParameterList.hpp"
 
 /** @ingroup risk_group
     \class ROL::MeanVariance
@@ -183,17 +182,13 @@ public:
       \li "Deviation Type" (eighter "Upper" or "Absolute")
       \li A sublist for positive function information.
   */
-  MeanVariance( Teuchos::ParameterList &parlist )
+  MeanVariance( ROL::ParameterList &parlist )
     : RandVarFunctional<Real>() {
-    Teuchos::ParameterList &list
+    ROL::ParameterList &list
       = parlist.sublist("SOL").sublist("Risk Measure").sublist("Mean Plus Variance");
     // Get data from parameter list
-    Teuchos::Array<Real> order
-      = Teuchos::getArrayFromStringParameter<double>(list,"Orders");
-    order_ = order.toVector();
-    Teuchos::Array<Real> coeff
-      = Teuchos::getArrayFromStringParameter<double>(list,"Coefficients");
-    coeff_ = coeff.toVector();
+    order_ = ROL::getArrayFromStringParameter<double>(list,"Orders");
+    coeff_ = ROL::getArrayFromStringParameter<double>(list,"Coefficients");
     // Build (approximate) positive function
     std::string type = list.get<std::string>("Deviation Type");
     if ( type == "Upper" ) {
@@ -208,7 +203,7 @@ public:
     }
     // Check inputs
     checkInputs();
-    NumMoments_ = order.size();
+    NumMoments_ = order_.size();
   }
 
   void setStorage(const Ptr<SampledScalar<Real>> &value_storage,

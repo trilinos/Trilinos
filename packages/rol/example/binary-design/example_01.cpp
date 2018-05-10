@@ -232,10 +232,9 @@ int main(int argc, char *argv[]) {
     ROL::Ptr<ROL::Constraint<RealT> > con = ROL::makePtr<BinaryDesignConstraint<RealT>>(dim, vol);
 
    // Define algorithm
-    Teuchos::RCP<Teuchos::ParameterList> parlist
-      = Teuchos::rcp( new Teuchos::ParameterList() );
     std::string paramfile = "input.xml";
-    Teuchos::updateParametersFromXmlFile(paramfile,parlist.ptr());
+    auto parlist = ROL::getParametersFromXmlFile(paramfile);
+
     ROL::Algorithm<RealT> algo("Composite Step",*parlist);
 
     // Test objective

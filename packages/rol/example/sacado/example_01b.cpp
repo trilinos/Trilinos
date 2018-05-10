@@ -54,10 +54,10 @@
 #include "ROL_Algorithm.hpp"
 #include "ROL_LineSearchStep.hpp"
 #include "ROL_StatusTest.hpp"
+#include "ROL_ParameterList.hpp"
 
 #include "Teuchos_oblackholestream.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
-#include "Teuchos_XMLParameterListHelpers.hpp"
 
 #include "example_01b.hpp"
 
@@ -89,9 +89,8 @@ int main(int argc, char **argv)
         int dim = 10; // Set problem dimension. 
 
         // Load optimizer parameters form XML file
-        Teuchos::RCP<Teuchos::ParameterList> parlist = Teuchos::rcp( new Teuchos::ParameterList() );
         std::string paramfile = "parameters.xml";
-        Teuchos::updateParametersFromXmlFile(paramfile,parlist.ptr());
+        auto parlist = ROL::getParametersFromXmlFile(paramfile);
 
         // Define algorithm.
         Algorithm<RealT> algo("Line Search",*parlist);

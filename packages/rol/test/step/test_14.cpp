@@ -49,7 +49,7 @@
 #include "ROL_OptimizationSolver.hpp"
 #include "Teuchos_oblackholestream.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
-#include "Teuchos_XMLParameterListHelpers.hpp"
+
 
 #include <iostream>
 
@@ -74,8 +74,8 @@ int main(int argc, char *argv[]) {
 
   try {
     std::string filename = "input.xml";
-    Teuchos::RCP<Teuchos::ParameterList> parlist = Teuchos::rcp( new Teuchos::ParameterList() );
-    Teuchos::updateParametersFromXmlFile( filename, parlist.ptr() );
+    
+    auto parlist = ROL::getParametersFromXmlFile( filename );
 
     // Setup optimization problem
     ROL::Ptr<ROL::Vector<RealT> > x0;
@@ -85,7 +85,7 @@ int main(int argc, char *argv[]) {
     ROL::GetTestProblem<RealT>(optProblem,x0,z,ROL::TESTOPTPROBLEM_HS1);
 
     // Get Dimension of Problem
-    int dim = x0->dimension(); 
+    int dim = x0->dimension();
     parlist->sublist("General").sublist("Krylov").set("Iteration Limit", 2*dim);
 
     // Check Derivatives
@@ -131,4 +131,3 @@ int main(int argc, char *argv[]) {
   return 0;
 
 }
-

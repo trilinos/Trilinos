@@ -52,7 +52,7 @@
 
 #include "Teuchos_oblackholestream.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
-#include "Teuchos_ParameterList.hpp"
+#include "ROL_ParameterList.hpp"
 
 
 typedef double RealT; 
@@ -142,9 +142,9 @@ int main(int argc, char *argv[]) {
     // Create bound constraint
     ROL::Bounds<RealT>  bc(lo,up);
 
-    Teuchos::ParameterList logList;
-    Teuchos::ParameterList quadList;
-    Teuchos::ParameterList dwellList;
+    ROL::ParameterList logList;
+    ROL::ParameterList quadList;
+    ROL::ParameterList dwellList;
 
     logList.sublist("Barrier Function").set("Type","Logarithmic");
     quadList.sublist("Barrier Function").set("Type","Quadratic");

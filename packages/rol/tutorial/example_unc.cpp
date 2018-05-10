@@ -106,7 +106,7 @@ int main(int argc, char *argv[]) {
   int errorFlag   = 0;
 
   try {
-    Teuchos::ParameterList parlist;
+    ROL::ParameterList parlist;
     parlist.sublist("General").sublist("Secant").set("Use as Hessian",false);
     parlist.sublist("Step").set("Type","Trust Region");
     parlist.sublist("Step").sublist("Trust Region").set("Subproblem Solver","Truncated CG");

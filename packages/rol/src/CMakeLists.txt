@@ -19,7 +19,6 @@ SET(HEADERS "")
 SET(SOURCES "")
 
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR})
-
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
 
 #
@@ -44,14 +43,12 @@ APPEND_GLOB(HEADERS ${DIR}/*.hpp)
 
 SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_SOURCE_DIR}/compatibility)
 
-# Set an implementation of smart pointers
-IF(${PACKAGE_NAME}_ENABLE_STD_SHARED_PTR)
-  INCLUDE_DIRECTORIES(${DIR}/std/shared_ptr)
-  APPEND_GLOB(HEADERS ${DIR}/std/shared_ptr/ROL_Ptr.hpp)
-ELSE()
-  INCLUDE_DIRECTORIES(${DIR}/teuchos/rcp)
-  APPEND_GLOB(HEADERS ${DIR}/teuchos/rcp/ROL_Ptr.hpp)
-ENDIF()
+INCLUDE_DIRECTORY_IF(     ${DIR}/std/shared_ptr HEADERS ${PACKAGE_NAME}_ENABLE_STD_SHARED_PTR )
+INCLUDE_DIRECTORY_IF_OFF( ${DIR}/teuchos/rcp    HEADERS ${PACKAGE_NAME}_ENABLE_STD_SHARED_PTR )
+
+INCLUDE_DIRECTORY_IF(     ${DIR}/boost/property_tree   HEADERS ${PACKAGE_NAME}_ENABLE_BOOST_PROPERTY_TREE )
+INCLUDE_DIRECTORY_IF_OFF( ${DIR}/teuchos/parameterlist HEADERS ${PACKAGE_NAME}_ENABLE_BOOST_PROPERTY_TREE ) 
+
 
 #
 # function headers
@@ -93,7 +90,7 @@ INCLUDE_DIRECTORIES(${DIR}
                     ${DIR}/fletcher
                    )
 APPEND_GLOB(HEADERS ${DIR}/*.hpp
-                    ${DIR}/linesearch/*.hpp 
+                    ${DIR}/linesearch/*.hpp
                     ${DIR}/trustregion/*.hpp
                     ${DIR}/secant/*.hpp
                     ${DIR}/krylov/*.hpp
@@ -145,7 +142,7 @@ INCLUDE_DIRECTORIES(${DIR}/function
                     ${DIR}/sampler
                     ${DIR}/sampler/SROM
                    )
-APPEND_GLOB(HEADERS ${DIR}/function/*.hpp 
+APPEND_GLOB(HEADERS ${DIR}/function/*.hpp
                     ${DIR}/function/distribution/*.hpp
                     ${DIR}/function/riskmeasure/*.hpp
                     ${DIR}/function/expectationquad/*.hpp
@@ -209,7 +206,7 @@ ENDIF()
 
 #
 # C) Define the targets for package's library(s)
-# 
+#
 
   TRIBITS_ADD_LIBRARY(
     rol

@@ -111,9 +111,9 @@ private:
   Real omp_;
   Real ub_;
 
-  void parseParameterList(Teuchos::ParameterList &parlist) {
+  void parseParameterList(ROL::ParameterList &parlist) {
     std::string type = parlist.sublist("SOL").get("Stochastic Component Type","Risk Averse");
-    Teuchos::ParameterList list;
+    ROL::ParameterList list;
     if (type == "Risk Averse") {
       list = parlist.sublist("SOL").sublist("Risk Measure").sublist("Moreau-Yosida CVaR");
     }
@@ -165,7 +165,7 @@ public:
       \li "Confidence Level" (between 0 and 1)
       \li "Smoothing Parameter" (must be positive)
   */
-  MoreauYosidaCVaR(Teuchos::ParameterList &parlist)
+  MoreauYosidaCVaR(ROL::ParameterList &parlist)
     : ExpectationQuad<Real>() {
     parseParameterList(parlist);
     checkInputs();

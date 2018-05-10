@@ -45,7 +45,7 @@
 #define ROL_RAISEDCOSINE_HPP
 
 #include "ROL_Distribution.hpp"
-#include "Teuchos_ParameterList.hpp"
+#include "ROL_ParameterList.hpp"
 
 namespace ROL {
 
@@ -63,7 +63,7 @@ public:
   RaisedCosine(const Real mean = 0.5, const Real var = 0.5)
     : mean_(mean), var_(((var>0.) ? var : 0.5)) {}
 
-  RaisedCosine(Teuchos::ParameterList &parlist) {
+  RaisedCosine(ROL::ParameterList &parlist) {
     mean_ = parlist.sublist("SOL").sublist("Distribution").sublist("Raised Cosine").get("Mean",0.5);
     var_  = parlist.sublist("SOL").sublist("Distribution").sublist("Raised Cosine").get("Scale",0.5);
     var_  = (var_ > 0.) ? var_ : 0.5;
@@ -72,20 +72,20 @@ public:
   Real evaluatePDF(const Real input) const {
     Real a = mean_-var_, b = mean_+var_;
     return ((input >= a && input <= b) ?
-             (1.+std::cos(Teuchos::ScalarTraits<Real>::pi()*(input-mean_)/var_))/(2.0*var_) : 0.);
+             (1.+std::cos(ROL::ScalarTraits<Real>::pi()*(input-mean_)/var_))/(2.0*var_) : 0.);
   }
 
   Real evaluateCDF(const Real input) const {
     Real a = mean_-var_, b = mean_+var_;
     return ((input < a) ? 0. : ((input > b) ? 1. : 
-            0.5*(1.+(input-mean_)/var_+std::sin(Teuchos::ScalarTraits<Real>::pi()*(input-mean_)/var_)/Teuchos::ScalarTraits<Real>::pi())));
+            0.5*(1.+(input-mean_)/var_+std::sin(ROL::ScalarTraits<Real>::pi()*(input-mean_)/var_)/ROL::ScalarTraits<Real>::pi())));
   }
   Real integrateCDF(const Real input) const {
     Real a = mean_-var_, b = mean_+var_;
     Real v = input-mean_;
     return ((input < a) ? 0. : ((input > b) ? input - var_ : 
-            0.5*(v+0.5*v*v/var_-var_*((std::cos(Teuchos::ScalarTraits<Real>::pi()*v/var_)+1.) /
-                                      (Teuchos::ScalarTraits<Real>::pi()*Teuchos::ScalarTraits<Real>::pi())-0.5))));
+            0.5*(v+0.5*v*v/var_-var_*((std::cos(ROL::ScalarTraits<Real>::pi()*v/var_)+1.) /
+                                      (ROL::ScalarTraits<Real>::pi()*ROL::ScalarTraits<Real>::pi())-0.5))));
   }
   Real invertCDF(const Real input) const {
     Real a = mean_-var_, b = mean_+var_, c  = 0.;
@@ -109,7 +109,7 @@ public:
   Real moment(const size_t m) const {
     Real a = mean_-var_, b = mean_+var_;
     Real am = std::pow(a,m+1), bm = std::pow(b,m+1);
-    Real omega = Teuchos::ScalarTraits<Real>::pi()/var_, phi = -Teuchos::ScalarTraits<Real>::pi()*mean_/var_;
+    Real omega = ROL::ScalarTraits<Real>::pi()/var_, phi = -ROL::ScalarTraits<Real>::pi()*mean_/var_;
     Real val_cos = 0., val_sin = 0.;
     for (size_t k = 0; k < (m-1)/2; k++) {
       val_cos += ((k%2==0) ? 1. : -1.)*factorial(m)/(factorial(m-2*k-1)*std::pow(omega,2+2*k))

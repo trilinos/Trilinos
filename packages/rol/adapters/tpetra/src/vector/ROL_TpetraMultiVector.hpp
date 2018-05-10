@@ -265,7 +265,7 @@ public:
       = ROL::makePtr<Tpetra::MultiVector<Real,LO,GO,Node>>(map_,n);
     if ( (map_ != ROL::nullPtr) && map_->isNodeGlobalElement(static_cast<GO>(i))) {
       for (size_t j = 0; j < n; ++j) {
-        e->replaceGlobalValue (i, j, Teuchos::ScalarTraits<Real>::one());
+        e->replaceGlobalValue (i, j, ROL::ScalarTraits<Real>::one());
       }
     }
     return ROL::makePtr<TpetraMultiVector>(e);

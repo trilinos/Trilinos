@@ -125,7 +125,7 @@ int main(int argc, char *argv[]) {
  
 //  typedef std::vector<RealT>                             vector;
 
-  typedef Teuchos::ParameterList                           PL;
+  typedef ROL::ParameterList                           PL;
 
   typedef ROL::Vector<RealT>                               V;
   typedef ROL::PartitionedVector<RealT>                    PV;

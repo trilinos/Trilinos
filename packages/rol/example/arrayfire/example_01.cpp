@@ -91,7 +91,7 @@ int main(int argc, char *argv[]) {
       filename = "input-float.xml";
     }
     *outStream << std::endl << "Using input file: " << filename << std::endl << std::endl;
-    Teuchos::RCP<Teuchos::ParameterList> parlist = Teuchos::rcp( new Teuchos::ParameterList() );
+    auto parlist = ROL::makePtr<ROL::ParameterList>()
     Teuchos::updateParametersFromXmlFile( filename, parlist.ptr() );
 
     // Define algorithm.

@@ -304,7 +304,7 @@ int main(int argc, char *argv[]) {
     RealT gtol     = 1e-16;          // gradient tolerance
     RealT stol     = 1e-18;          // step tolerance
     int   max_iter = 100;            // maximum number of optimization iterations
-    Teuchos::ParameterList parlist;  // list of algorithmic parameters
+    ROL::ParameterList parlist;  // list of algorithmic parameters
       parlist.sublist("Step").sublist("Line Search").sublist("Descent Method").set("Type", "Quasi-Newton Method");
       parlist.sublist("General").sublist("Secant").set("Type", "Limited-Memory BFGS");
       // Trust-region step parameters.

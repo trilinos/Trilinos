@@ -59,7 +59,7 @@ int main(int argc, char *argv[]) {
 
   Teuchos::GlobalMPISession mpiSession(&argc, &argv,0);
   ROL::Ptr<const Teuchos::Comm<int> > comm
-    = Teuchos::DefaultComm<int>::getComm();
+    = ROL::toPtr(Teuchos::DefaultComm<int>::getComm());
 
   int iprint = argc - 1;
   Teuchos::oblackholestream bhs; // outputs nothing
@@ -212,7 +212,7 @@ int main(int argc, char *argv[]) {
     if ( std::abs(pdnorm - pnorm/sqrt2) > std::sqrt(errtol) ) {
       errorFlag++;
     }
-    
+
     // Create SROM vectors
     ROL::SROMVector<RealT> xp(pp,ap);
     RealT xpnorm = xp.norm();

@@ -87,7 +87,7 @@ public:
       within the "F-Divergence" sublist should have the following parameters
       \li "Threshold" (greater than 0)
   */
-  Chi2Divergence(Teuchos::ParameterList &parlist) : FDivergence<Real>(parlist) {}
+  Chi2Divergence(ROL::ParameterList &parlist) : FDivergence<Real>(parlist) {}
 
   Real Fprimal(Real x, int deriv = 0) {
     Real zero(0), one(1), half(0.5), val(0);

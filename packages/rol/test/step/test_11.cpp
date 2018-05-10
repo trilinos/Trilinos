@@ -88,7 +88,7 @@ int main(int argc, char *argv[]) {
     ROL::Ptr<INEQ> incon = HS24.getInequalityConstraint();
     ROL::Ptr<BC>   inbnd = HS24.getSlackBoundConstraint();
    
-    Teuchos::RCP<Teuchos::ParameterList> parlist = Teuchos::rcp( new Teuchos::ParameterList() );
+    
 
     std::string stepname = "Interior Point";
 

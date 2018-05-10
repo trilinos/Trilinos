@@ -72,7 +72,7 @@ int main(int argc, char *argv[]) {
 
   try {
 
-    Teuchos::ParameterList parlist;
+    ROL::ParameterList parlist;
     parlist.sublist("Scalar Minimization").set("Type","Brent's");
     parlist.sublist("Scalar Minimization").sublist("Brent's").set("Tolerance",1.e-10);
     parlist.sublist("Scalar Minimization").sublist("Brent's").set("Iteration Limit",1000);

@@ -38,7 +38,7 @@
 #include "ROL_Objective.hpp"
 #include "ROL_BoundConstraint.hpp"
 
-#include "Teuchos_ParameterList.hpp"
+#include "ROL_ParameterList.hpp"
 
 namespace ROL {
 
@@ -119,7 +119,7 @@ private:
 public:
  
   ObjectiveFromBoundConstraint( const BoundConstraint<Real> &bc,
-                                Teuchos::ParameterList &parlist ) :
+                                ROL::ParameterList &parlist ) :
     lo_( bc.getLowerBound() ),
     up_( bc.getUpperBound() ) {
 

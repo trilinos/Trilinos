@@ -56,7 +56,7 @@ namespace ph = std::placeholders; // defines ph::_1, ph::_2, ...
 
 template<typename Real>
 DynamicConstraintCheck<Real>::DynamicConstraintCheck( DynamicConstraint<Real>& con,
-                                                      Teuchos::ParameterList& pl,
+                                                      ROL::ParameterList& pl,
                                                       ostream& os=cout ) :
   con_(con), os_(os) {
   auto& fdlist = pl.sublist("Finite Difference Check"); 

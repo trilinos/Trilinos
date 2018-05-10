@@ -122,7 +122,7 @@ private:
 public:
 
   // Constructor
-  LinMore( Teuchos::ParameterList &parlist ) : TrustRegion<Real>(parlist), alpha_(1) {
+  LinMore( ROL::ParameterList &parlist ) : TrustRegion<Real>(parlist), alpha_(1) {
     // Unravel Parameter List
     Real em4(1e-4), em2(1e-2);
     maxit_   = parlist.sublist("General").sublist("Krylov").get("Iteration Limit",20);

@@ -74,8 +74,7 @@ int main(int argc, char *argv[]) {
 
   try {
     std::string filename = "input.xml";
-    Teuchos::RCP<Teuchos::ParameterList> parlist = Teuchos::rcp( new Teuchos::ParameterList() );
-    Teuchos::updateParametersFromXmlFile( filename, parlist.ptr() );
+    auto parlist = ROL::getParametersFromXmlFile( filename );
 
     // Setup optimization problem
     ROL::Ptr<ROL::Vector<RealT>> x0;

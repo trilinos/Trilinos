@@ -47,7 +47,7 @@
 #include "ROL_Distribution.hpp"
 #include "ROL_Gaussian.hpp"
 #include "ROL_Ptr.hpp"
-#include "Teuchos_ParameterList.hpp"
+#include "ROL_ParameterList.hpp"
 
 namespace ROL {
 
@@ -80,9 +80,9 @@ public:
     Z_     = gauss_->evaluateCDF(beta_)-gauss_->evaluateCDF(alpha_);
   }
 
-  TruncatedGaussian(Teuchos::ParameterList &parlist) {
+  TruncatedGaussian(ROL::ParameterList &parlist) {
     const Real zero(0), one(1);
-    Teuchos::ParameterList TGlist
+    ROL::ParameterList TGlist
       = parlist.sublist("SOL").sublist("Distribution").sublist("Truncated Gaussian");
     a_ = TGlist.get("Lower Bound",-one);
     b_ = TGlist.get("Upper Bound", one);

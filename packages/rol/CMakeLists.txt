@@ -1,6 +1,13 @@
-
 INCLUDE(TribitsPackageMacros)
 INCLUDE(TribitsAddOptionAndDefine)
+
+# Build Options
+SET( CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
+INCLUDE(BuildOptions)
+ENABLE_BY_DEFAULT( ${PACKAGE_NAME}_ENABLE_TEUCHOS )
+DISABLE_BY_DEFAULT( ${PACKAGE_NAME}_ENABLE_STD_SHARED_PTR )
+DISABLE_BY_DEFAULT( ${PACKAGE_NAME}_ENABLE_BOOST_PROPERTY_TREE )
+
 
 #
 # A) Define the package
@@ -24,8 +31,6 @@ TRIBITS_ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_TIMERS
   OFF
   )
 
-MESSAGE("-- " "Configuring ROL with " ${PACKAGE_NAME}_ENABLE_TIMERS=${${PACKAGE_NAME}_ENABLE_TIMERS})
-
 
 #
 # C) Add the libraries, tests, and examples
@@ -33,7 +38,8 @@ MESSAGE("-- " "Configuring ROL with " ${PACKAGE_NAME}_ENABLE_TIMERS=${${PACKAGE_
 
 ADD_SUBDIRECTORY(src)
 
-# No reason for this to be conditional since ROL depends on Teuchos
+IF( NOT ${${PACKAGE_NAME}_ENABLE_STD_SHARED_PTR} )
+
 ADD_SUBDIRECTORY(adapters/teuchos)
 
 IF (ROL_ENABLE_Epetra)
@@ -60,10 +66,6 @@ IF (ROL_ENABLE_ArrayFireCPU)
   ADD_SUBDIRECTORY(adapters/arrayfire)
 ENDIF()
 
-IF (ROL_ENABLE_Eigen)
-  ADD_SUBDIRECTORY(adapters/eigen)
-ENDIF()
-
 IF (ROL_ENABLE_TriKota)
   ADD_SUBDIRECTORY(adapters/trikota)
 ENDIF()
@@ -75,6 +77,13 @@ ENDIF()
 IF (ROL_ENABLE_PEBBL)
   ADD_SUBDIRECTORY(adapters/pebbl)
 ENDIF()
+
+ENDIF( NOT ${${PACKAGE_NAME}_ENABLE_STD_SHARED_PTR} )
+
+IF (ROL_ENABLE_Eigen)
+  ADD_SUBDIRECTORY(adapters/eigen)
+ENDIF()
+
 
 TRIBITS_ADD_TEST_DIRECTORIES(test)
 TRIBITS_ADD_EXAMPLE_DIRECTORIES(example)

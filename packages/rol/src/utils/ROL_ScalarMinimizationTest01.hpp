@@ -81,7 +81,7 @@ private:
   };
 
 public:
-  ScalarMinimizationTest01(Teuchos::ParameterList &parlist)
+  ScalarMinimizationTest01(ROL::ParameterList &parlist)
     : ScalarMinimizationTest<Real>(parlist) {
     fvector_.clear(); fvector_.resize(19,0);
     xvector_.clear(); xvector_.resize(19,0);
