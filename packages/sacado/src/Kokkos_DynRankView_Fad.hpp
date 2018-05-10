@@ -907,7 +907,7 @@ void deep_copy
 //         dst.span_is_contiguous() && //will always fail - stride set to 0s
 //         src.span_is_contiguous() &&
          dst.span() == src.span() &&
-         dst.extent(0) == src.dimension_0() &&
+         dst.extent(0) == src.extent(0) &&
          dst.extent(1) == src.extent(1) &&
          dst.extent(2) == src.extent(2) &&
          dst.extent(3) == src.extent(3) &&
