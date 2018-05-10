@@ -47,9 +47,12 @@
 #include "Teuchos_StandardParameterEntryValidators.hpp"
 #include "Teuchos_ScalarTraits.hpp"
 
+#ifdef HAVE_TEUCHOS_ADD_TIME_MONITOR_TO_STACKED_TIMER
+#include "Teuchos_StackedTimer.hpp"
+#endif
+
 #include <functional>
 #include <iomanip>
-
 
 namespace Teuchos {
   /**
@@ -247,14 +250,36 @@ namespace Teuchos {
   // that timer, total number of calls to that timer).
   typedef std::map<std::string, std::pair<double, int> > timer_map_t;
 
+  
+#ifdef HAVE_TEUCHOS_ADD_TIME_MONITOR_TO_STACKED_TIMER
+  // static initialization
+  Teuchos::RCP<Teuchos::StackedTimer> TimeMonitor::stackedTimer_ = Teuchos::null;
+#endif
+  
   TimeMonitor::TimeMonitor (Time& timer, bool reset)
     : PerformanceMonitorBase<Time>(timer, reset)
   {
-    if (!isRecursiveCall()) counter().start(reset);
+    if (!isRecursiveCall()) {
+      counter().start(reset);
+#ifdef HAVE_TEUCHOS_ADD_TIME_MONITOR_TO_STACKED_TIMER
+#ifdef TEUCHOS_DEBUG
+      TEUCHOS_ASSERT(nonnull(stackedTimer_));
+#endif
+      stackedTimer_->start(counter().name());
+#endif
+    }
   }
 
   TimeMonitor::~TimeMonitor() {
-    if (!isRecursiveCall()) counter().stop();
+    if (!isRecursiveCall()) {
+      counter().stop();
+#ifdef HAVE_TEUCHOS_ADD_TIME_MONITOR_TO_STACKED_TIMER
+#ifdef TEUCHOS_DEBUG
+      TEUCHOS_ASSERT(nonnull(stackedTimer_));
+#endif
+      stackedTimer_->stop(counter().name());
+#endif
+    }
   }
 
   void
@@ -1370,7 +1395,7 @@ namespace Teuchos {
   bool TimeMonitor::alwaysWriteLocal_ = false;
   bool TimeMonitor::writeGlobalStats_ = true;
   bool TimeMonitor::writeZeroTimers_ = true;
-
+  
   void
   TimeMonitor::setReportFormatParameter (ParameterList& plist)
   {
@@ -1441,6 +1466,14 @@ namespace Teuchos {
                                                  strings (), docs (), values (),
                                                  &plist);
   }
+
+#ifdef HAVE_TEUCHOS_ADD_TIME_MONITOR_TO_STACKED_TIMER
+  void
+  TimeMonitor::setStackedTimer(const Teuchos::RCP<Teuchos::StackedTimer>& t)
+  {
+    stackedTimer_ = t;
+  }
+#endif
 
   RCP<const ParameterList>
   TimeMonitor::getValidReportParameters ()
