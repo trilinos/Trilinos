@@ -47,6 +47,7 @@
 /// \author Mark Hoemmen
 ///
 #include "Tpetra_Map.hpp"
+#include <numeric>
 
 // Macro that marks a function as "possibly unused," in order to
 // suppress build warnings.

@@ -12,6 +12,7 @@
 #include "Teuchos_ParameterList.hpp"
 #include "Tempus_StepperForwardEuler.hpp"
 #include "Tempus_StepperBackwardEuler.hpp"
+#include "Tempus_StepperBDF2.hpp"
 #include "Tempus_StepperNewmarkImplicitAForm.hpp"
 #include "Tempus_StepperNewmarkImplicitDForm.hpp"
 #include "Tempus_StepperNewmarkExplicitAForm.hpp"
@@ -21,6 +22,8 @@
 #include "Tempus_StepperIMEX_RK.hpp"
 #include "Tempus_StepperIMEX_RK_Partition.hpp"
 #include "Tempus_StepperLeapfrog.hpp"
+#include "Tempus_StepperOperatorSplit.hpp"
+#include "Tempus_StepperTrapezoidal.hpp"
 
 
 namespace Tempus {
@@ -44,7 +47,7 @@ public:
   /// Create default stepper from stepper type (e.g., "Forward Euler").
   Teuchos::RCP<Stepper<Scalar> > createStepper(
     const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& model,
-    std::string stepperType = "")
+    std::string stepperType = "Forward Euler")
   {
     if (stepperType == "") stepperType = "Forward Euler";
     return this->createStepper(model, stepperType, Teuchos::null);
@@ -55,8 +58,19 @@ public:
     const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& model,
     Teuchos::RCP<Teuchos::ParameterList> stepperPL)
   {
-    std::string stepperType = stepperPL->get<std::string>("Stepper Type");
+    std::string stepperType = "Forward Euler";
+    if (stepperPL != Teuchos::null)
+      stepperType = stepperPL->get<std::string>("Stepper Type","Forward Euler");
     return this->createStepper(model, stepperType, stepperPL);
+  }
+
+  /// Create stepper from ParameterList with its details.
+  Teuchos::RCP<Stepper<Scalar> > createStepper(
+    std::vector<Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > > models,
+    Teuchos::RCP<Teuchos::ParameterList> stepperPL)
+  {
+    std::string stepperType = stepperPL->get<std::string>("Stepper Type");
+    return this->createStepper(models, stepperType, stepperPL);
   }
 
 private:
@@ -71,6 +85,10 @@ private:
       return rcp(new StepperForwardEuler<Scalar>(model, stepperPL));
     else if (stepperType == "Backward Euler")
       return rcp(new StepperBackwardEuler<Scalar>(model, stepperPL));
+    else if (stepperType == "Trapezoidal Method")
+      return rcp(new StepperTrapezoidal<Scalar>(model, stepperPL));
+    else if (stepperType == "BDF2")
+      return rcp(new StepperBDF2<Scalar>(model, stepperPL));
     else if (stepperType == "Newmark Implicit a-Form")
       return rcp(new StepperNewmarkImplicitAForm<Scalar>(model, stepperPL));
     else if (stepperType == "Newmark Implicit d-Form")
@@ -90,26 +108,27 @@ private:
       stepperType == "RK Explicit 3 Stage 3rd order by Heun" ||
       stepperType == "RK Explicit 2 Stage 2nd order by Runge" ||
       stepperType == "RK Explicit Trapezoidal" ||
+      stepperType == "Bogacki-Shampine 3(2) Pair" ||
       stepperType == "General ERK" )
       return rcp(new StepperExplicitRK<Scalar>(model, stepperType, stepperPL));
     else if (
+      stepperType == "RK Backward Euler" ||
+      stepperType == "IRK 1 Stage Theta Method" ||
       stepperType == "SDIRK 1 Stage 1st order" ||
       stepperType == "SDIRK 2 Stage 2nd order" ||
       stepperType == "SDIRK 2 Stage 3rd order" ||
+      stepperType == "EDIRK 2 Stage 3rd order" ||
+      stepperType == "EDIRK 2 Stage Theta Method" ||
       stepperType == "SDIRK 3 Stage 4th order" ||
       stepperType == "SDIRK 5 Stage 4th order" ||
       stepperType == "SDIRK 5 Stage 5th order" ||
-      stepperType == "EDIRK 2 Stage 3rd order" ||
       stepperType == "General DIRK"
       )
       return rcp(new StepperDIRK<Scalar>(model, stepperType, stepperPL));
     else if (
-      stepperType == "RK Backward Euler" ||
       stepperType == "RK Implicit 3 Stage 6th Order Kuntzmann & Butcher" ||
       stepperType == "RK Implicit 4 Stage 8th Order Kuntzmann & Butcher" ||
       stepperType == "RK Implicit 2 Stage 4th Order Hammer & Hollingsworth" ||
-      stepperType == "IRK 1 Stage Theta Method" ||
-      stepperType == "IRK 2 Stage Theta Method" ||
       stepperType == "RK Implicit 1 Stage 2nd order Gauss" ||
       stepperType == "RK Implicit 2 Stage 4th order Gauss" ||
       stepperType == "RK Implicit 3 Stage 6th order Gauss" ||
@@ -146,6 +165,19 @@ private:
                         model, stepperType, stepperPL));
     else if (stepperType == "Leapfrog")
       return rcp(new StepperLeapfrog<Scalar>(model, stepperPL));
+    else {
+      TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
+        "Unknown 'Stepper Type' = " << stepperType);
+    }
+  }
+
+  Teuchos::RCP<Stepper<Scalar> > createStepper(
+    std::vector<Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > > models,
+    std::string stepperType,
+    Teuchos::RCP<Teuchos::ParameterList> stepperPL)
+  {
+    if (stepperType == "Operator Split")
+      return rcp(new StepperOperatorSplit<Scalar>(models, stepperPL));
     else {
       TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
         "Unknown 'Stepper Type' = " << stepperType);

@@ -16,6 +16,8 @@ TRIBITS_PACKAGE_DECL(ShyLU_Node)
 
 TRIBITS_PROCESS_SUBPACKAGES()
 
+TRIBITS_PACKAGE_DEF()
+
 #
 # D) Do standard postprocessing
 #

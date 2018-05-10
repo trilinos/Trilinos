@@ -65,7 +65,7 @@
 #include "Teuchos_MatrixMarket_assignScalar.hpp"
 #include "Teuchos_MatrixMarket_Banner.hpp"
 #include "Teuchos_MatrixMarket_CoordDataReader.hpp"
-#include "Teuchos_MatrixMarket_SetScientific.hpp"
+#include "Teuchos_SetScientific.hpp"
 
 #include <algorithm>
 #include <fstream>
@@ -73,6 +73,7 @@
 #include <iterator>
 #include <vector>
 #include <stdexcept>
+#include <numeric>
 
 namespace Tpetra {
   /// \namespace MatrixMarket
@@ -6009,7 +6010,7 @@ namespace Tpetra {
         // scientific notation.  It will politely put the output
         // stream back to its state on input, when this scope
         // terminates.
-        Teuchos::MatrixMarket::details::SetScientific<ST> sci (out);
+        Teuchos::SetScientific<ST> sci (out);
 
         // Get the matrix's communicator.
         RCP<const Comm<int> > comm = pMatrix->getComm ();
@@ -7039,7 +7040,7 @@ namespace Tpetra {
         // scientific notation.  It will politely put the output
         // stream back to its state on input, when this scope
         // terminates.
-        Teuchos::MatrixMarket::details::SetScientific<scalar_type> sci (out);
+        Teuchos::SetScientific<scalar_type> sci (out);
 
         const size_t myNumRows = X.getLocalLength ();
         const size_t numCols = X.getNumVectors ();

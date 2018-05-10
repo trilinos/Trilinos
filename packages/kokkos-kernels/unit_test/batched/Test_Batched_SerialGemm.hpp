@@ -53,7 +53,7 @@ namespace Test {
     
     inline
     void run() {
-      Kokkos::RangePolicy<DeviceType,ParamTagType> policy(0, _c.dimension_0());
+      Kokkos::RangePolicy<DeviceType,ParamTagType> policy(0, _c.extent(0));
       Kokkos::parallel_for(policy, *this);            
     }
   };
@@ -80,6 +80,8 @@ namespace Test {
     Kokkos::fill_random(b0, random, value_type(1.0));
     Kokkos::fill_random(c0, random, value_type(1.0));
 
+    Kokkos::fence();
+
     Kokkos::deep_copy(a1, a0);
     Kokkos::deep_copy(b1, b0);
     Kokkos::deep_copy(c1, c0);
@@ -89,6 +91,8 @@ namespace Test {
       ParamTagType,Algo::Gemm::Unblocked>(alpha, a0, b0, beta, c0).run();
     Functor_TestBatchedSerialGemm<DeviceType,ViewType,ScalarType,
       ParamTagType,AlgoTagType>(alpha, a1, b1, beta, c1).run();
+
+    Kokkos::fence();
 
     /// for comparison send it to host
     typename ViewType::HostMirror c0_host = Kokkos::create_mirror_view(c0);
@@ -123,7 +127,7 @@ int test_batched_gemm() {
     typedef Kokkos::View<ValueType***,Kokkos::LayoutLeft,DeviceType> ViewType;
     Test::impl_test_batched_gemm<DeviceType,ViewType,ScalarType,ParamTagType,AlgoTagType>(     0, 10);
     for (int i=0;i<10;++i) {                                                                                        
-      printf("Testing: LayoutLeft,  Blksize %d\n", i);
+      //printf("Testing: LayoutLeft,  Blksize %d\n", i);
       Test::impl_test_batched_gemm<DeviceType,ViewType,ScalarType,ParamTagType,AlgoTagType>(1024,  i);
     }
   }
@@ -133,7 +137,7 @@ int test_batched_gemm() {
     typedef Kokkos::View<ValueType***,Kokkos::LayoutRight,DeviceType> ViewType;
     Test::impl_test_batched_gemm<DeviceType,ViewType,ScalarType,ParamTagType,AlgoTagType>(     0, 10);
     for (int i=0;i<10;++i) {                                                                                        
-      printf("Testing: LayoutRight, Blksize %d\n", i);
+      //printf("Testing: LayoutRight, Blksize %d\n", i);
       Test::impl_test_batched_gemm<DeviceType,ViewType,ScalarType,ParamTagType,AlgoTagType>(1024,  i);
     }
   }

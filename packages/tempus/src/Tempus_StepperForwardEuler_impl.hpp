@@ -10,7 +10,6 @@
 #define Tempus_StepperForwardEuler_impl_hpp
 
 #include "Teuchos_VerboseObjectParameterListHelpers.hpp"
-#include "Teuchos_TimeMonitor.hpp"
 #include "Thyra_VectorStdOps.hpp"
 
 
@@ -80,16 +79,21 @@ void StepperForwardEuler<Scalar>::setSolver(
 
 template<class Scalar>
 void StepperForwardEuler<Scalar>::setObserver(
-  Teuchos::RCP<StepperForwardEulerObserver<Scalar> > obs)
+  Teuchos::RCP<StepperObserver<Scalar> > obs)
 {
   if (obs == Teuchos::null) {
     // Create default observer, otherwise keep current observer.
-    if (stepperFEObserver_ == Teuchos::null) {
+    if (stepperObserver_ == Teuchos::null) {
       stepperFEObserver_ =
         Teuchos::rcp(new StepperForwardEulerObserver<Scalar>());
+      stepperObserver_ =
+        Teuchos::rcp_dynamic_cast<StepperObserver<Scalar> >(stepperFEObserver_);
     }
   } else {
-    stepperFEObserver_ = obs;
+    stepperObserver_ = obs;
+    stepperFEObserver_ =
+      Teuchos::rcp_dynamic_cast<StepperForwardEulerObserver<Scalar> >
+        (stepperObserver_);
   }
 }
 
@@ -101,7 +105,7 @@ void StepperForwardEuler<Scalar>::takeStep(
 
   TEMPUS_FUNC_TIME_MONITOR("Tempus::StepperForwardEuler::takeStep()");
   {
-    stepperFEObserver_->observeBeginTakeStep(solutionHistory, *this);
+    stepperObserver_->observeBeginTakeStep(solutionHistory, *this);
     RCP<SolutionState<Scalar> > currentState=solutionHistory->getCurrentState();
 
     typedef Thyra::ModelEvaluatorBase MEB;
@@ -114,9 +118,12 @@ void StepperForwardEuler<Scalar>::takeStep(
     // of a state function corresponding to the explicit ODE formulation
     // x_dot = f(x, t)
     if (inArgs_.supports(MEB::IN_ARG_x_dot)) inArgs_.set_x_dot(Teuchos::null);
-    outArgs_.set_f(currentState->getXDot());
+    RCP<Thyra::VectorBase<Scalar> > xDot = currentState->getXDot();
+    if (xDot == Teuchos::null) xDot = getXDotTemp(currentState->getX());
+    outArgs_.set_f(xDot);
 
-    stepperFEObserver_->observeBeforeExplicit(solutionHistory, *this);
+    if (!Teuchos::is_null(stepperFEObserver_))
+      stepperFEObserver_->observeBeforeExplicit(solutionHistory, *this);
 
     appModel_->evalModel(inArgs_,outArgs_);
 
@@ -124,13 +131,29 @@ void StepperForwardEuler<Scalar>::takeStep(
     RCP<SolutionState<Scalar> > workingState=solutionHistory->getWorkingState();
     const Scalar dt = workingState->getTimeStep();
     Thyra::V_VpStV(Teuchos::outArg(*(workingState->getX())),
-      *(currentState->getX()),dt,*(currentState->getXDot()));
+      *(currentState->getX()),dt,*(xDot));
 
+    if (workingState->getXDot() != Teuchos::null)
+      assign((workingState->getXDot()).ptr(),
+        Teuchos::ScalarTraits<Scalar>::zero());
     workingState->getStepperState()->stepperStatus_ = Status::PASSED;
     workingState->setOrder(this->getOrder());
-    stepperFEObserver_->observeEndTakeStep(solutionHistory, *this);
+    stepperObserver_->observeEndTakeStep(solutionHistory, *this);
   }
   return;
+}
+
+
+template<class Scalar>
+Teuchos::RCP<Thyra::VectorBase<Scalar> >
+StepperForwardEuler<Scalar>::
+getXDotTemp(Teuchos::RCP<Thyra::VectorBase<Scalar> > x)
+{
+  if (xDotTemp_ == Teuchos::null) {
+    xDotTemp_ = x->clone_v();
+    Thyra::assign(xDotTemp_.ptr(), Scalar(0.0));
+  }
+  return xDotTemp_;
 }
 
 
@@ -172,8 +195,12 @@ template <class Scalar>
 void StepperForwardEuler<Scalar>::setParameterList(
   const Teuchos::RCP<Teuchos::ParameterList> & pList)
 {
-  if (pList == Teuchos::null) stepperPL_ = this->getDefaultParameters();
-  else stepperPL_ = pList;
+  if (pList == Teuchos::null) {
+    // Create default parameters if null, otherwise keep current parameters.
+    if (stepperPL_ == Teuchos::null) stepperPL_ = this->getDefaultParameters();
+  } else {
+    stepperPL_ = pList;
+  }
   stepperPL_->validateParametersAndSetDefaults(*this->getValidParameters());
 
   std::string stepperType = stepperPL_->get<std::string>("Stepper Type");

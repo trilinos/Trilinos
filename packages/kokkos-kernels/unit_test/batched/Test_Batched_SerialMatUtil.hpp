@@ -50,7 +50,7 @@ namespace Test {
     void operator()(const NaiveTag &, const int k) const {
       //MD Note: changing because of the error with -werror
       auto A = Kokkos::subview(_a, k, Kokkos::ALL(), Kokkos::ALL());
-      const int m = A.dimension_0(), n = A.dimension_1();
+      const int m = A.extent(0), n = A.extent(1);
       switch (TestID) {
       case BatchedSet: {
         for (int i=0;i<m;++i) 
@@ -69,7 +69,7 @@ namespace Test {
 
     inline
     int run() {
-      Kokkos::RangePolicy<DeviceType,AlgoTagType> policy(0, _a.dimension_0());
+      Kokkos::RangePolicy<DeviceType,AlgoTagType> policy(0, _a.extent(0));
       Kokkos::parallel_for(policy, *this);
       return 0; 
       //MD 08/2017 NOTE: compilation was failing with werror.
@@ -94,11 +94,16 @@ namespace Test {
 
     Kokkos::Random_XorShift64_Pool<typename DeviceType::execution_space> random(13718);
     Kokkos::fill_random(a, random, value_type(1.0));
+
+    Kokkos::fence();
+
     Kokkos::deep_copy(b, a);
 
     /// test body
     Functor_TestBatchedSerialMatUtil<DeviceType,ViewType,ScalarType,NaiveTag,       TestID>(alpha, a).run();
     Functor_TestBatchedSerialMatUtil<DeviceType,ViewType,ScalarType,KokkosKernelTag,TestID>(alpha, b).run();
+
+    Kokkos::fence();
 
     /// for comparison send it to host
     typename ViewType::HostMirror a_host = Kokkos::create_mirror_view(a);

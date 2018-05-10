@@ -189,11 +189,19 @@ namespace Tpetra {
     ///   the number of entries.
     virtual size_t getNumEntriesInLocalRow(LocalOrdinal localRow) const = 0;
 
-    //! The number of global diagonal entries, based on global row/column index comparisons.
-    virtual global_size_t getGlobalNumDiags() const = 0;
+    /// \brief Number of diagonal entries in the matrix's graph, over
+    ///   all processes in the matrix's communicator.
+    ///
+    /// \warning This method is DEPRECATED.  DO NOT CALL IT.  It may
+    ///   go away at any time.
+    virtual global_size_t TPETRA_DEPRECATED getGlobalNumDiags() const = 0;
 
-    //! The number of local diagonal entries, based on global row/column index comparisons.
-    virtual size_t getNodeNumDiags() const = 0;
+    /// \brief Number of diagonal entries in the matrix's graph, on
+    ///   the calling process.
+    ///
+    /// \warning This method is DEPRECATED.  DO NOT CALL IT.  It may
+    ///   go away at any time.
+    virtual size_t TPETRA_DEPRECATED getNodeNumDiags() const = 0;
 
     //! The maximum number of entries across all rows/columns on all nodes.
     virtual size_t getGlobalMaxNumRowEntries() const = 0;
@@ -395,7 +403,7 @@ namespace Tpetra {
     /// same diagonal element.  You may combine these overlapping
     /// diagonal elements by doing an Export from the row Map Vector
     /// to a range Map Vector.
-    virtual void getLocalDiagCopy (Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node, Node::classic> &diag) const = 0;
+    virtual void getLocalDiagCopy (Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node> &diag) const = 0;
 
     //@}
     //! \name Mathematical methods
@@ -406,14 +414,14 @@ namespace Tpetra {
      *
      * On return, for all entries i,j in the matrix, \f$A(i,j) = x(i)*A(i,j)\f$.
      */
-    virtual void leftScale (const Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node, Node::classic>& x) = 0;
+    virtual void leftScale (const Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& x) = 0;
 
     /**
      * \brief Scale the RowMatrix on the right with the given Vector x.
      *
      * On return, for all entries i,j in the matrix, \f$A(i,j) = x(j)*A(i,j)\f$.
      */
-    virtual void rightScale (const Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node, Node::classic>& x) = 0;
+    virtual void rightScale (const Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& x) = 0;
 
     /// \brief The Frobenius norm of the matrix.
     ///

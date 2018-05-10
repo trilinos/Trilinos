@@ -202,7 +202,7 @@ getDiagCopyWithoutOffsets (const DiagType& D,
   diag_type D_out = D;
   CrsMatrixGetDiagCopyFunctor<diag_type, LocalMapType, CrsMatrixType>
     functor (D_out, rowMap, colMap, A);
-  const LO numRows = static_cast<LO> (D.dimension_0 ());
+  const LO numRows = static_cast<LO> (D.extent (0));
   LO errCount = 0;
   Kokkos::parallel_reduce (policy_type (0, numRows), functor, errCount);
   return errCount;

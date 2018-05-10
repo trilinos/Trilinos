@@ -220,5 +220,70 @@ namespace TeuchosTests
       "#   Stride Time: 5.0e-12\n");
   }
 
+  TEUCHOS_UNIT_TEST(YAML, Issue2090)
+  {
+    auto params = Teuchos::getParametersFromYamlString(
+      "Parameter List:\n"
+      "  Boundary Conditions:\n"
+      "    Bottom:\n"
+      "      Dirichlet:\n"
+      "        Sideset: bottom\n"
+      "        Field:   ES_POTENTIAL\n"
+      "        Value: |\n"
+      "          double r_sq = xin*xin+yin*yin;\n"
+      "          double factor = 0.5*1.e8*1.60217662e-19/(2*3.14159265358979323846*8.854187817e-12);\n"
+      "          ES_POTENTIAL= factor*log(r_sq) +3*xin-3*yin;\n"
+      "  # end Boundary Conditions\n");
+    TEST_EQUALITY(
+        Teuchos::getParameter<std::string>(
+           params->sublist("Boundary Conditions", true)
+           .sublist("Bottom", true)
+           .sublist("Dirichlet", true)
+          ,"Value"),
+      "double r_sq = xin*xin+yin*yin;\n"
+      "double factor = 0.5*1.e8*1.60217662e-19/(2*3.14159265358979323846*8.854187817e-12);\n"
+      "ES_POTENTIAL= factor*log(r_sq) +3*xin-3*yin;\n");
+  }
+
+  TEUCHOS_UNIT_TEST(YAML, Issue2306)
+  {
+    // ensure that duplicate names throw an exception
+    TEST_THROW(Teuchos::getParametersFromYamlString(
+      "Foo:\n"
+      "  Bar:\n"
+      "    Value: 1\n"
+      "  Bar:\n"
+      "    Value: 2\n"),
+      Teuchos::ParserFail);
+  }
+
+  TEUCHOS_UNIT_TEST(YAML, keep_top_name)
+  {
+    Teuchos::ParameterList pl;
+    char const * const cstr =
+      "%YAML 1.1\n"
+      "---\n"
+      "Albany:\n"
+      "  some param: 5\n"
+      "...\n";
+    Teuchos::updateParametersFromYamlCString(cstr, Teuchos::ptr(&pl), true);
+    std::stringstream ss;
+    ss << std::showpoint;
+    Teuchos::writeParameterListToYamlOStream(pl, ss);
+    auto s = ss.str();
+    TEST_EQUALITY(s, cstr);
+  }
+
+  TEUCHOS_UNIT_TEST(YAML, long_long_param)
+  {
+    auto pl = Teuchos::getParametersFromYamlString(
+      "List:\n"
+      " small number: 54\n"
+      " big number: 72057594037927936\n");
+    TEST_EQUALITY(pl->isType<int>("small number"), true);
+    TEST_EQUALITY(pl->isType<long long>("big number"), true);
+    TEST_EQUALITY(pl->get<long long>("big number"), 72057594037927936ll);
+  }
+
 } //namespace TeuchosTests
 

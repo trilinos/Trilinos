@@ -124,7 +124,8 @@ public:
        const double length_y,
        const double length_z);
 
-  const int getNumNodes() const; 
+  int getNumElements() const;
+  int getNumNodes() const; 
   const Kokkos::View<int**,PHX::Device>& getGlobalIndices() const;
   const Kokkos::View<double***,PHX::Device>& getCoordinates() const;
   const Kokkos::View<double***,PHX::Device>& getQPCoordinates() const;

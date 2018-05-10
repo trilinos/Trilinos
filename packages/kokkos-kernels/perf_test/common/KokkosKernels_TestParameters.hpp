@@ -67,6 +67,7 @@ struct Parameters{
   int use_threads;
   int use_openmp;
   int use_cuda;
+  int use_serial;
   int a_mem_space, b_mem_space, c_mem_space, work_mem_space;
 
 
@@ -83,12 +84,15 @@ struct Parameters{
   // 1 - first count then instantiate
   // 2- more options.
   int cache_flush;
+  double first_level_hash_cut_off;
+  double compression_cut_off;
+  size_t MaxColDenseAcc;
   // 0 - no flush
   // 1 - soft flush
   // 2 - hard flush with rand.
   Parameters(){
 
-    algorithm = 19;
+    algorithm = 0;
     accumulator = 0;
     repeat = 6;
     chunk_size = -1;
@@ -109,6 +113,7 @@ struct Parameters{
     use_threads = 0;
     use_openmp = 0;
     use_cuda = 0;
+    use_serial = 0;
     a_mem_space = b_mem_space = c_mem_space = work_mem_space = 1;
     a_mtx_bin_file = b_mtx_bin_file = c_mtx_bin_file = NULL;
     compression2step = true;
@@ -121,6 +126,10 @@ struct Parameters{
     apply_compression = true;
     sort_option = -1;
     cache_flush = 1;
+
+    first_level_hash_cut_off = 0.50;
+    compression_cut_off = 0.85;
+    MaxColDenseAcc = 250000;
   }
 };
 }

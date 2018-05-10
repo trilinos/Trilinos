@@ -1,0 +1,19 @@
+## /projects/cubit/claro.Lin64.15.3/bin/clarox
+## Cubit Version 15.3
+## Cubit Build 410037
+## Revised 2017-08-28 12:10:34 -0600 (Mon, 28 Aug 2017)
+## Running 08/31/2017 02:05:59 PM
+## Command Options:
+brick x 2 y 1 z 1
+sideset 1 add surface 1
+sideset 2 add surface 2
+sideset 3 add surface 3
+sideset 4 add surface 4
+sideset 5 add surface 5
+sideset 6 add surface 6
+volume 1 size 0.0625
+volume 1 size 0.0625
+mesh volume 1
+set exodus netcdf4 off
+set large exodus file on
+export mesh "/scratch/dpkouri/ROL-Trilinos/packages/rol/example/PDE-OPT/topo-opt/elasticity/brick2.e" overwrite

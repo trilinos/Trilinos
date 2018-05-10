@@ -372,6 +372,11 @@ class RILUK:
     return applyTime_;
   }
 
+  //! Get a rough estimate of cost per iteration
+  size_t getNodeSmootherComplexity() const;  
+
+
+
   //! \name Implementation of Ifpack2::Details::CanChangeMatrix
   //@{
 

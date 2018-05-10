@@ -115,6 +115,8 @@ if [ "$TRIBITS_DEV_GUIDE_SKIP_OTHER_EXTRACTION" == "" ] ; then
   generate_gitdist_dist_help_topic dist-repo-status
   generate_gitdist_dist_help_topic repo-versions
   generate_gitdist_dist_help_topic aliases
+  generate_gitdist_dist_help_topic default-branch
+  generate_gitdist_dist_help_topic move-to-base-dir
   generate_gitdist_dist_help_topic usage-tips
   generate_gitdist_dist_help_topic script-dependencies
   generate_gitdist_dist_help_topic all

@@ -43,18 +43,8 @@
 // @HEADER
 
 %{
-// Python 3 compatibility
-#include "Python3Compat.hpp"
-
-// Teuchos includes
-#include "Teuchos_any.hpp"
-#include "Teuchos_ParameterEntry.hpp"
-#include "Teuchos_ParameterList.hpp"
-#include "Teuchos_ParameterListAcceptor.hpp"
-#include "Teuchos_FILEstream.hpp"
-
-// Teuchos python interface includes
-#include "PyTrilinos_Teuchos_Util.hpp"
+// Teuchos include files
+#include "PyTrilinos_Teuchos_Headers.hpp"
 %}
 
 // The python implementation of Teuchos::ParameterList is augmented to

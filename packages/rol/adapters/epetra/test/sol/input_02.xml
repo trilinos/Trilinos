@@ -5,14 +5,15 @@
     <ParameterList name="Sample Generator">
       <!-- =========== OPTIMIZATION-BASED SAMPLING SUBLIST =========== -->
       <ParameterList name="SROM">
-        <Parameter name="Number of Samples"       type="int"    value="15"                /> 
-        <Parameter name="Moments"                 type="string" value="{ 1, 2, 3, 4, 5 }" />
-        <Parameter name="CDF Smoothing Parameter" type="double" value="1.e-2"             />
-        <Parameter name="Coefficients"            type="string" value="{ 1, 1 }"          />
-        <Parameter name="Output to Screen"        type="bool"   value="true"              />
+        <Parameter name="Number of Samples"           type="int"    value="15"                /> 
+        <Parameter name="Moments"                     type="string" value="{ 1, 2, 3, 4, 5 }" />
+        <Parameter name="CDF Smoothing Parameter"     type="double" value="1.e-2"             />
+        <Parameter name="Coefficients"                type="string" value="{ 1, 1 }"          />
+        <Parameter name="Presolve for Atom Locations" type="bool"   value="false"             />
         <!-- ===========  STEP FOR SUBPROBLEM SOLVE  =========== -->
         <ParameterList name="Step">
           <Parameter name="Type" type="string" value="Augmented Lagrangian" />
+
           <!-- ===========  INTERIOR POINT  =========== -->
           <ParameterList name="Interior Point">
             <Parameter name="Initial Barrier Penalty"          type="double" value="0.1"   />
@@ -31,6 +32,7 @@
               <Parameter name="Relative Tolerance" type="double" value="1.e-2" />
             </ParameterList>
           </ParameterList>
+
           <!-- ===========  TRUST REGION  =========== -->
           <ParameterList name="Trust Region">
             <Parameter name="Subproblem Solver"                    type="string" value="Truncated CG" />
@@ -60,7 +62,34 @@
               </ParameterList>
             </ParameterList>
           </ParameterList>
+
+          <!-- ===========  AUGMENTED LAGRANGIAN  =========== -->
+          <ParameterList name="Augmented Lagrangian">
+            <Parameter name="Level of Hessian Approximation"          type="int"    value="0"            />
+            <!-- ===========  PROBLEM SCALING =========== -->
+            <Parameter name="Use Default Problem Scaling"             type="bool"   value="false"        />
+            <Parameter name="Objective Scaling"                       type="double" value="1.e0"         />
+            <Parameter name="Constraint Scaling"                      type="double" value="1.e0"         />
+            <!-- ===========  PENALTY PARAMETER UPDATE  =========== -->
+            <Parameter name="Use Default Initial Penalty Parameter"   type="bool"   value="true"         />
+            <Parameter name="Initial Penalty Parameter"               type="double" value="1.e0"         />
+            <Parameter name="Penalty Parameter Growth Factor"         type="double" value="1.e1"         />
+            <Parameter name="Minimum Penalty Parameter Reciprocal"    type="double" value="0.1"          />
+            <!-- ===========  OPTIMALITY TOLERANCE UPDATE  =========== -->
+            <Parameter name="Initial Optimality Tolerance"            type="double" value="1.0"          />
+            <Parameter name="Optimality Tolerance Update Exponent"    type="double" value="1.0"          />
+            <Parameter name="Optimality Tolerance Decrease Exponent"  type="double" value="1.0"          />
+            <!-- ===========  FEASIBILITY TOLERANCE UPDATE  =========== -->
+            <Parameter name="Initial Feasibility Tolerance"           type="double" value="1.0"          />
+            <Parameter name="Feasibility Tolerance Update Exponent"   type="double" value="0.1"          />
+            <Parameter name="Feasibility Tolerance Decrease Exponent" type="double" value="0.9"          />
+            <!-- ===========  SUBPROBLEM SOLVER  =========== -->
+            <Parameter name="Print Intermediate Optimization History" type="bool"   value="false"        />
+            <Parameter name="Subproblem Step Type"                    type="string" value="Trust Region" />
+            <Parameter name="Subproblem Iteration Limit"              type="int"    value="1000"         />
+          </ParameterList>
         </ParameterList>
+
         <!-- ===========  STATUS TEST  =========== -->
         <ParameterList name="Status Test">
           <Parameter name="Gradient Tolerance"   type="double" value="1.e-12" />

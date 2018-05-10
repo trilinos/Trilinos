@@ -45,6 +45,7 @@
 #include "Panzer_BasisValues2.hpp"
 
 #include "Panzer_CommonArrayFactories.hpp"
+#include "Kokkos_ViewFactory.hpp"
 
 #include "Intrepid2_Utils.hpp"
 #include "Intrepid2_FunctionSpaceTools.hpp"

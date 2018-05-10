@@ -1,5 +1,5 @@
-void split_comm_world(Teuchos::RCP<Teuchos::Comm<int> > & Comm_linalg,
-                      Teuchos::RCP<Teuchos::Comm<int> > & Comm_sample,
+void split_comm_world(ROL::Ptr<Teuchos::Comm<int> > & Comm_linalg,
+                      ROL::Ptr<Teuchos::Comm<int> > & Comm_sample,
                       int M) {
   int rank, Ngroups, size;
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
@@ -15,7 +15,7 @@ void split_comm_world(Teuchos::RCP<Teuchos::Comm<int> > & Comm_linalg,
   int comSize; // Number of processes in linear algebra communicator.
   MPI_Comm_rank(linalg_comm,&comRank);     // Get process rank.
   MPI_Comm_size(linalg_comm,&comSize);     // Get communicator size.
-  Comm_linalg = Teuchos::rcp( new Teuchos::MpiComm<int>(linalg_comm) ); // Wrap as Teuchos::MpiComm.
+  Comm_linalg = ROL::makePtr<Teuchos::MpiComm<int>>(linalg_comm); // Wrap as Teuchos::MpiComm.
 
   // Determine group ranks for sampling.
   Teuchos::Array<int> granks(Ngroups);
@@ -34,6 +34,6 @@ void split_comm_world(Teuchos::RCP<Teuchos::Comm<int> > & Comm_linalg,
   int comSize1; // Number of processes in sample communicator.
   MPI_Comm_rank(sample_comm,&comRank1);    // Get process rank.
   MPI_Comm_size(sample_comm,&comSize1);    // Get communicator size.
-  Comm_sample = Teuchos::rcp( new Teuchos::MpiComm<int>(sample_comm) ); // Wrap as Teuchos::MpiComm.
+  Comm_sample = ROL::makePtr<Teuchos::MpiComm<int>>(sample_comm); // Wrap as Teuchos::MpiComm.
 }
 

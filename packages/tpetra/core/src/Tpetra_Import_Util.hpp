@@ -78,12 +78,22 @@ namespace Tpetra {
              Teuchos::Array<int>& pids,
              bool use_minus_one_for_local);
 
+    //! Like getPidGidPairs, but just gets the PIDs, ordered by the column Map.
+    // Like the above, but without the resize
+    template <typename LocalOrdinal, typename GlobalOrdinal, typename Node>
+    void
+    getPids (const Tpetra::Import<LocalOrdinal,GlobalOrdinal,Node>& Importer,
+             Teuchos::ArrayView<int>& pids,
+             bool use_minus_one_for_local);
+
+
     /// \brief Get a list of remote PIDs from an importer in the order
     ///   corresponding to the remote LIDs.
     template <typename LocalOrdinal, typename GlobalOrdinal, typename Node>
     void
     getRemotePIDs (const Tpetra::Import<LocalOrdinal,GlobalOrdinal,Node>& Importer,
                    Teuchos::Array<int>& RemotePIDs);
+
   } // namespace Import_Util
 } // namespace Tpetra
 
@@ -141,12 +151,26 @@ getPids (const Tpetra::Import<LocalOrdinal,GlobalOrdinal,Node>& Importer,
          Teuchos::Array<int>& pids,
          bool use_minus_one_for_local)
 {
+  // Resize the outgoing data structure
+  pids.resize(Importer.getTargetMap()->getNodeNumElements());
+  Teuchos::ArrayView<int> v_pids = pids();
+  getPids(Importer,v_pids,use_minus_one_for_local);
+}
+
+
+template <typename LocalOrdinal, typename GlobalOrdinal, typename Node>
+void
+getPids (const Tpetra::Import<LocalOrdinal,GlobalOrdinal,Node>& Importer,
+         Teuchos::ArrayView<int>& pids,
+         bool use_minus_one_for_local)
+{
   const Tpetra::Distributor & D=Importer.getDistributor();
 
   LocalOrdinal ii;
   size_t  i,j,k;
   int mypid = Importer.getTargetMap()->getComm()->getRank();
   size_t N  = Importer.getTargetMap()->getNodeNumElements();
+  if(N!=(size_t)pids.size()) throw std::runtime_error("Tpetra::Import_Util::getPids(): Incorrect size for output array");
 
   // Get the importer's data
   Teuchos::ArrayView<const LocalOrdinal> RemoteLIDs  = Importer.getRemoteLIDs();
@@ -155,9 +179,6 @@ getPids (const Tpetra::Import<LocalOrdinal,GlobalOrdinal,Node>& Importer,
   size_t NumReceives                           = D.getNumReceives();
   Teuchos::ArrayView<const int> ProcsFrom      = D.getProcsFrom();
   Teuchos::ArrayView<const size_t> LengthsFrom = D.getLengthsFrom();
-
-  // Resize the outgoing data structure
-  pids.resize(N);
 
   // Start by claiming that I own all the data
   LocalOrdinal lzero = Teuchos::ScalarTraits<LocalOrdinal>::zero();
@@ -208,7 +229,6 @@ getRemotePIDs (const Tpetra::Import<LocalOrdinal,GlobalOrdinal,Node>& Importer,
   }
 }
 
-
  
 /* Check some of the validity of an Import object
    WARNING: This is a debugging routine only. */
@@ -252,8 +272,31 @@ checkImportValidity (const Tpetra::Import<LocalOrdinal,GlobalOrdinal,Node>& Impo
 
   // Generate remoteGIDs
   Teuchos::Array<GlobalOrdinal> remoteGIDs(remoteLIDs.size());
-  for(size_t i=0; i<(size_t)remoteLIDs.size(); i++)
+  for(size_t i=0; i<(size_t)remoteLIDs.size(); i++) {
     remoteGIDs[i] = target->getGlobalElement(remoteLIDs[i]);
+    if(remoteGIDs[i]<0) {
+      os<<MyPID<<"ERROR3: source->getGlobalElement(remoteLIDs[l]) is invalid GID="<<remoteGIDs[i]<<" LID= "<<remoteLIDs[i]<<std::endl;
+      is_valid=false;
+    }
+}
+  // Generate exportGIDs
+  Teuchos::Array<GlobalOrdinal> exportGIDs(exportLIDs.size(),-1);
+  for(size_t i=0; i<(size_t)exportLIDs.size(); i++) {
+    exportGIDs[i] = source->getGlobalElement(exportLIDs[i]);
+    exportGIDs[i]=source->getGlobalElement(exportLIDs[i]);
+    if(exportGIDs[i]<0) {
+      os<<MyPID<<"ERROR3: source->getGlobalElement(exportLIDs[l]) is invalid GID="<<exportGIDs[i]<<" LID= "<<exportLIDs[i]<<std::endl;
+      is_valid=false;
+    }
+  }
+  
+ // Zeroth order test: Remote *** GID *** and Export **GID**'s should be disjoint.  
+  for( auto &&rgid : remoteGIDs) {
+    if(std::find(exportGIDs.begin(),exportGIDs.end(),rgid) != exportGIDs.end()) {
+        is_valid = false;
+        os<<MyPID<<"ERROR0: Overlap between remoteGIDs and exportGIDs "<<rgid<<std::endl;
+      }
+  }
 
   int TempPID , OwningPID;
   for(GlobalOrdinal i=minSourceGID; i<maxSourceGID; i++) {
@@ -369,17 +412,8 @@ checkImportValidity (const Tpetra::Import<LocalOrdinal,GlobalOrdinal,Node>& Impo
 
   Teuchos::Array<int> proc_num_exports_recv(NumProcs,0);
 
-  Teuchos::Array<GlobalOrdinal> exportGIDs(exportLIDs.size(),-1);
   Teuchos::Array<int> remoteGIDcount(remoteGIDs.size(),0);
 
-  for(size_t l=0;l<(size_t)exportLIDs.size();++l) {
-    exportGIDs[l]=source->getGlobalElement(exportLIDs[l]);
-    if(exportGIDs[l]<0) {
-      os<<MyPID<<"ERROR3: source->getGlobalElement(exportLIDs[l]) is invalid GID="<<exportGIDs[l]<<" LID= "<<exportLIDs[l]<<std::endl;
-      is_valid=false;
-    }
-  }
-  
   int allexpsiz=0;
   Teuchos::reduceAll<int,int>(*comm,Teuchos::REDUCE_MAX,exportGIDs.size(),  Teuchos::outArg(allexpsiz));
   

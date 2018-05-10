@@ -91,13 +91,13 @@ public:
   // Tridiagonal multiplication
   void apply( V &Hv, const V &v, Real &tol ) const {
 
-    using Teuchos::RCP;  using Teuchos::dyn_cast;
+      
  
-    SV &Hvs = dyn_cast<SV>(Hv);
-    RCP<vector> Hvp = Hvs.getVector();
+    SV &Hvs = dynamic_cast<SV&>(Hv);
+    ROL::Ptr<vector> Hvp = Hvs.getVector();
  
-    const SV &vs = dyn_cast<const SV>(v);
-    RCP<const vector> vp = vs.getVector();
+    const SV &vs = dynamic_cast<const SV&>(v);
+    ROL::Ptr<const vector> vp = vs.getVector();
 
     uint n = vp->size();
 
@@ -114,13 +114,13 @@ public:
   // Tridiagonal solve - compare against GMRES
   void applyInverse( V &Hv, const V &v, Real &tol ) const {
 
-    using Teuchos::RCP;  using Teuchos::dyn_cast;
+      
  
-    SV &Hvs = dyn_cast<SV>(Hv);
-    RCP<vector> Hvp = Hvs.getVector();
+    SV &Hvs = dynamic_cast<SV&>(Hv);
+    ROL::Ptr<vector> Hvp = Hvs.getVector();
  
-    const SV &vs = dyn_cast<const SV>(v);
-    RCP<const vector> vp = vs.getVector();
+    const SV &vs = dynamic_cast<const SV&>(v);
+    ROL::Ptr<const vector> vp = vs.getVector();
 
     uint n = vp->size();
 
@@ -153,8 +153,8 @@ typedef double RealT;
 
 int main(int argc, char *argv[]) {
 
-  using Teuchos::RCP;
-  using Teuchos::rcp; 
+  
+   
 
   typedef std::vector<RealT>            vector;
   typedef ROL::StdVector<RealT>         SV; 
@@ -164,12 +164,12 @@ int main(int argc, char *argv[]) {
   Teuchos::GlobalMPISession mpiSession(&argc, &argv);
 
   int iprint     = argc - 1;
-  RCP<std::ostream> outStream;
+  ROL::Ptr<std::ostream> outStream;
   Teuchos::oblackholestream bhs; // outputs nothing
   if (iprint > 0)
-    outStream = rcp(&std::cout, false);
+    outStream = ROL::makePtrFromRef(std::cout);
   else
-    outStream = rcp(&bhs, false);
+    outStream = ROL::makePtrFromRef(bhs);
 
   int errorFlag = 0;
 
@@ -187,10 +187,10 @@ int main(int argc, char *argv[]) {
 
     uint dim = 10;
 
-    RCP<vector> xp = rcp( new vector(dim,0.0) );
-    RCP<vector> yp = rcp( new vector(dim,0.0) );
-    RCP<vector> zp = rcp( new vector(dim,0.0) );
-    RCP<vector> bp = rcp( new vector(dim,0.0) );
+    ROL::Ptr<vector> xp = ROL::makePtr<vector>(dim,0.0);
+    ROL::Ptr<vector> yp = ROL::makePtr<vector>(dim,0.0);
+    ROL::Ptr<vector> zp = ROL::makePtr<vector>(dim,0.0);
+    ROL::Ptr<vector> bp = ROL::makePtr<vector>(dim,0.0);
 
     SV x(xp); // Exact solution
     SV y(yp); // Solution using direct solve
@@ -216,7 +216,7 @@ int main(int argc, char *argv[]) {
 
     T.applyInverse(y,b,tol);
 
-    RCP<ROL::Krylov<RealT> > krylov = ROL::KrylovFactory<RealT>( parlist );
+    ROL::Ptr<ROL::Krylov<RealT> > krylov = ROL::KrylovFactory<RealT>( parlist );
 
     int iter;
     int flag;

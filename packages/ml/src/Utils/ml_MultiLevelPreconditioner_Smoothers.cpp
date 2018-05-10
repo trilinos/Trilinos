@@ -1575,7 +1575,7 @@ myaztecParams = m_smootherAztecParams;
 
 #if defined(GCC_VERSION) && GCC_VERSION >= 460
 #pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-pedantic"
+#pragma GCC diagnostic ignored "-Wpedantic"
 #endif
         if ( (*MySubSmType == "MLS") || (*MySubSmType == "Chebyshev"))
         {

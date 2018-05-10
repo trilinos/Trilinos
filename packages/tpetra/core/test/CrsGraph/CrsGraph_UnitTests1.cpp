@@ -272,18 +272,28 @@ namespace { // (anonymous)
     // test filtering
     if (numProcs > 1) {
       // we only need two procs to demonstrate this bug. ignore the others.
-      Array<GO> mygids;
+      Array<GO> mygids, domaingids;
       if (myRank == 0) {
         mygids.push_back(0);
         mygids.push_back(1);
         mygids.push_back(2);
+
+        domaingids.push_back(0);
+        domaingids.push_back(1);
       }
       else if (myRank == 1) {
         mygids.push_back(2);
         mygids.push_back(3);
+
+        domaingids.push_back(2);
+        domaingids.push_back(3);
       }
       RCP<const map_type> rmap =
         rcp (new map_type (INVALID, mygids (), 0, comm));
+
+      RCP<const map_type> dmap =
+        rcp (new map_type (INVALID, domaingids (), 0, comm));
+
 
       RCP<GRAPH> G = rcp(new GRAPH(rmap,2) );
 
@@ -298,7 +308,7 @@ namespace { // (anonymous)
       }
 
       try {
-        G->fillComplete();
+        G->fillComplete(dmap,rmap);
       }
       catch (std::exception& e) {
         std::cerr << "G->fillComplete() raised an exception! "

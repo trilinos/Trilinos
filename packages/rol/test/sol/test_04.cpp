@@ -60,17 +60,17 @@ typedef double RealT;
 int main(int argc, char* argv[]) {
 
   Teuchos::GlobalMPISession mpiSession(&argc, &argv);
-  Teuchos::RCP<const Teuchos::Comm<int> > commptr =
+  ROL::Ptr<const Teuchos::Comm<int> > commptr =
     Teuchos::DefaultComm<int>::getComm();
 
   // This little trick lets us print to std::cout only if a (dummy) command-line argument is provided.
   int iprint     = argc - 1;
-  Teuchos::RCP<std::ostream> outStream;
+  ROL::Ptr<std::ostream> outStream;
   Teuchos::oblackholestream bhs; // outputs nothing
   if (iprint > 0 && commptr->getRank() == 0)
-    outStream = Teuchos::rcp(&std::cout, false);
+    outStream = ROL::makePtrFromRef(std::cout);
   else
-    outStream = Teuchos::rcp(&bhs, false);
+    outStream = ROL::makePtrFromRef(bhs);
 
   int errorFlag  = 0;
 
@@ -84,8 +84,8 @@ int main(int argc, char* argv[]) {
     size_t dimension = 1;
 
     // Initialize distribution
-    Teuchos::RCP<ROL::Distribution<RealT> > dist;
-    std::vector<Teuchos::RCP<ROL::Distribution<RealT> > > distVec(dimension);
+    ROL::Ptr<ROL::Distribution<RealT> > dist;
+    std::vector<ROL::Ptr<ROL::Distribution<RealT> > > distVec(dimension);
     Teuchos::ParameterList Dlist;
     Dlist.sublist("SOL").sublist("Distribution").set("Name","Beta");
     RealT alpha = 1., beta = 4.;
@@ -109,10 +109,10 @@ int main(int argc, char* argv[]) {
     size_t numMoments = static_cast<size_t>(moments.size());
 
     std::clock_t timer = std::clock();
-    Teuchos::RCP<ROL::BatchManager<RealT> > bman =
-      Teuchos::rcp(new ROL::TeuchosBatchManager<RealT,int>(commptr));
-    Teuchos::RCP<ROL::SampleGenerator<RealT> > sampler =
-      Teuchos::rcp(new ROL::SROMGenerator<RealT>(*parlist,bman,distVec));
+    ROL::Ptr<ROL::BatchManager<RealT> > bman =
+      ROL::makePtr<ROL::TeuchosBatchManager<RealT,int>>(commptr);
+    ROL::Ptr<ROL::SampleGenerator<RealT> > sampler =
+      ROL::makePtr<ROL::SROMGenerator<RealT>>(*parlist,bman,distVec,*outStream);
     *outStream << std::endl << "Sample Time: "
                << (std::clock()-timer)/(RealT)CLOCKS_PER_SEC << " seconds"
                << std::endl;

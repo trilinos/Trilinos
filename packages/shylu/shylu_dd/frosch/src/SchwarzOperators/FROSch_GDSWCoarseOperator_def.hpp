@@ -49,19 +49,11 @@ namespace FROSch {
     template <class SC,class LO,class GO,class NO>
     GDSWCoarseOperator<SC,LO,GO,NO>::GDSWCoarseOperator(CrsMatrixPtr k,
                                                         ParameterListPtr parameterList) :
-    CoarseOperator<SC,LO,GO,NO> (k,parameterList),
+    HarmonicCoarseOperator<SC,LO,GO,NO> (k,parameterList),
     DDInterface_ (),
-    ExtensionSolver_ (),
-    MVPhiGamma_ (0),
-    BlockCoarseMaps_ (0),
     Dimensions_ (0),
-    DofsPerNode_ (0),
     IndicesGamma_ (0),
-    IndicesI_ (0),
-    IndicesGammaDofs_ (0),
-    IndicesIDofs_ (0),
-    DofsMaps_ (0),
-    NumberOfBlocks_ (0)
+    IndicesI_ (0)
     {
         
     }
@@ -136,19 +128,6 @@ namespace FROSch {
         buildCoarseSpace(dimension,dofsPerNode,repeatedNodesMap,repeatedDofMaps,myGlobalDirichletBoundaryDofs,localNodeList);
         this->IsInitialized_ = true;
         this->IsComputed_ = false;
-        return 0;
-    }
-    
-    template <class SC,class LO,class GO,class NO>
-    int GDSWCoarseOperator<SC,LO,GO,NO>::compute()
-    {
-        // This is not optimal yet... Some work could be moved to Initialize
-        if (this->Verbose_) {
-            cerr << "WARNING: Some of the operations could be moved from initialize() to Compute().\n";
-        }
-        this->computeBasis();
-        this->setUpCoarseOperator(); 
-        this->IsComputed_ = true;
         return 0;
     }
     
@@ -240,16 +219,16 @@ namespace FROSch {
         // Das könnte man noch ändern
         IndicesGamma_.resize(IndicesGamma_.size()+1);
         IndicesI_.resize(IndicesI_.size()+1);
-        IndicesGammaDofs_.resize(IndicesGammaDofs_.size()+1);
-        IndicesIDofs_.resize(IndicesIDofs_.size()+1);
-        BlockCoarseMaps_.resize(BlockCoarseMaps_.size()+1);
-        MVPhiGamma_.resize(MVPhiGamma_.size()+1);
-        DofsMaps_.resize(DofsMaps_.size()+1);
-        DofsPerNode_.resize(DofsPerNode_.size()+1);
+        this->IndicesGammaDofs_.resize(this->IndicesGammaDofs_.size()+1);
+        this->IndicesIDofs_.resize(this->IndicesIDofs_.size()+1);
+        this->BlockCoarseMaps_.resize(this->BlockCoarseMaps_.size()+1);
+        this->MVPhiGamma_.resize(this->MVPhiGamma_.size()+1);
+        this->DofsMaps_.resize(this->DofsMaps_.size()+1);
+        this->DofsPerNode_.resize(this->DofsPerNode_.size()+1);
         
-        NumberOfBlocks_++;
+        this->NumberOfBlocks_++;
         
-        resetCoarseSpaceBlock(NumberOfBlocks_-1,dimension,dofsPerNode,nodesMap,dofsMaps,myGlobalDirichletBoundaryDofs,localNodeList);
+        resetCoarseSpaceBlock(this->NumberOfBlocks_-1,dimension,dofsPerNode,nodesMap,dofsMaps,myGlobalDirichletBoundaryDofs,localNodeList);
         
         return 0;
     }
@@ -264,7 +243,7 @@ namespace FROSch {
                                                                SCVecPtr2D &localNodeList)
     {
         FROSCH_ASSERT(dofsMaps.size()==dofsPerNode,"dofsMaps.size()!=dofsPerNode");
-        FROSCH_ASSERT(blockId<NumberOfBlocks_,"Block does not exist yet and can therefore not be reset.");
+        FROSCH_ASSERT(blockId<this->NumberOfBlocks_,"Block does not exist yet and can therefore not be reset.");
         
         // Process the parameter list
         std::stringstream blockIdStringstream;
@@ -303,8 +282,8 @@ namespace FROSch {
             coarseSpaceFunctions[8] = false;
         }
         
-        DofsMaps_[blockId] = dofsMaps;
-        DofsPerNode_[blockId] = dofsPerNode;
+        this->DofsMaps_[blockId] = dofsMaps;
+        this->DofsPerNode_[blockId] = dofsPerNode;
         
         Teuchos::Array<GO> globalDirichletBoundaryDofs(myGlobalDirichletBoundaryDofs()); // Here, we do a copy. Maybe, this is not necessary
         sortunique(globalDirichletBoundaryDofs);
@@ -324,14 +303,14 @@ namespace FROSch {
         interface = DDInterface_->getInterface();
         interior = DDInterface_->getInterior();
         
-        IndicesGammaDofs_[blockId] = LOVecPtr(dofsPerNode*interface->getEntity(0)->getNumNodes());
-        IndicesIDofs_[blockId] = LOVecPtr(dofsPerNode*interior->getEntity(0)->getNumNodes());
+        this->IndicesGammaDofs_[blockId] = LOVecPtr(dofsPerNode*interface->getEntity(0)->getNumNodes());
+        this->IndicesIDofs_[blockId] = LOVecPtr(dofsPerNode*interior->getEntity(0)->getNumNodes());
         for (UN k=0; k<dofsPerNode; k++) {
             for (UN i=0; i<interface->getEntity(0)->getNumNodes(); i++) {
-                IndicesGammaDofs_[blockId][dofsPerNode*i+k] = interface->getEntity(0)->getLocalDofID(i,k);
+                this->IndicesGammaDofs_[blockId][dofsPerNode*i+k] = interface->getEntity(0)->getLocalDofID(i,k);
             }
             for (UN i=0; i<interior->getEntity(0)->getNumNodes(); i++) {
-                IndicesIDofs_[blockId][dofsPerNode*i+k] = interior->getEntity(0)->getLocalDofID(i,k);
+                this->IndicesIDofs_[blockId][dofsPerNode*i+k] = interior->getEntity(0)->getLocalDofID(i,k);
             }
         }
         
@@ -468,6 +447,12 @@ namespace FROSch {
                 numEntitiesGlobal[4] = -1;
             }
             
+            for (UN i=0; i<numEntitiesGlobal.size(); i++) {
+                if (numEntitiesGlobal[i]<0) {
+                    numEntitiesGlobal[i] = 0;
+                }
+            }
+            
             if (this->Verbose_) {
                 
                 std::cout << "\n\
@@ -493,7 +478,7 @@ namespace FROSch {
             }
 
             LOVecPtr2D partMappings;
-            BlockCoarseMaps_[blockId] = AssembleMaps(mapVector,partMappings);
+            this->BlockCoarseMaps_[blockId] = AssembleMaps(mapVector,partMappings);
 
             ////////////////////
             // Build PhiGamma //
@@ -510,17 +495,17 @@ namespace FROSch {
         // Das könnte man noch ändern
         IndicesGamma_->resize(IndicesGamma_.size()+1);
         IndicesI_->resize(IndicesI_.size()+1);
-        IndicesGammaDofs_->resize(IndicesGammaDofs_.size()+1);
-        IndicesIDofs_->resize(IndicesIDofs_.size()+1);
-        BlockCoarseMaps_->resize(BlockCoarseMaps_.size()+1);
-        MVPhiGamma_->resize(MVPhiGamma_.size()+1);
-        DofsMaps_->resize(DofsMaps_.size()+1);
-        DofsPerNode_->resize(DofsPerNode_.size()+1);
+        this->IndicesGammaDofs_->resize(this->IndicesGammaDofs_.size()+1);
+        this->IndicesIDofs_->resize(this->IndicesIDofs_.size()+1);
+        this->BlockCoarseMaps_->resize(this->BlockCoarseMaps_.size()+1);
+        this->MVPhiGamma_->resize(this->MVPhiGamma_.size()+1);
+        this->DofsMaps_->resize(this->DofsMaps_.size()+1);
+        this->DofsPerNode_->resize(this->DofsPerNode_.size()+1);
         
-        NumberOfBlocks_++;
+        this->NumberOfBlocks_++;
         
         /////
-        int blockId = NumberOfBlocks_-1;
+        int blockId = this->NumberOfBlocks_-1;
         
         // Process the parameter list
         std::stringstream blockIdStringstream;
@@ -531,118 +516,37 @@ namespace FROSch {
         bool useForCoarseSpace = coarseSpaceList->get("Use For Coarse Space",true);
         
         IndicesGamma_[blockId] = LOVecPtr(0);
-        IndicesGammaDofs_[blockId] = LOVecPtr(0);
+        this->IndicesGammaDofs_[blockId] = LOVecPtr(0);
         
         if (useForCoarseSpace) {
             //Epetra_SerialComm serialComm;
             MapPtr serialGammaMap = Xpetra::MapFactory<LO,GO,NO>::Build(dofsMap->lib(),dofsMap->getNodeNumElements(),0,this->SerialComm_);
-            MVPhiGamma_[blockId] = Xpetra::MultiVectorFactory<LO,GO,NO>::Build(serialGammaMap,dofsMap->getNodeNumElements());
+            this->MVPhiGamma_[blockId] = Xpetra::MultiVectorFactory<LO,GO,NO>::Build(serialGammaMap,dofsMap->getNodeNumElements());
         }
         
         for (int i=0; i<dofsMap->getNodeNumElements(); i++) {
             IndicesGamma_[blockId]->push_back(i);
-            IndicesGammaDofs_[blockId]->push_back(i);
+            this->IndicesGammaDofs_[blockId]->push_back(i);
             
             if (useForCoarseSpace) {
-                MVPhiGamma_[blockId]->replaceLocalValue(i,i,1.0);
+                this->MVPhiGamma_[blockId]->replaceLocalValue(i,i,1.0);
             }
         }
         
         IndicesI_[blockId] = LOVecPtr(0);
-        IndicesIDofs_[blockId] = LOVecPtr(0);
+        this->IndicesIDofs_[blockId] = LOVecPtr(0);
         
         if (useForCoarseSpace) {
-            BlockCoarseMaps_[blockId] = Xpetra::MapFactory<LO,GO,NO>::Build(dofsMap->lib(),-1,IndicesGamma_[blockId](),0,this->MpiComm_);
+            this->BlockCoarseMaps_[blockId] = Xpetra::MapFactory<LO,GO,NO>::Build(dofsMap->lib(),-1,IndicesGamma_[blockId](),0,this->MpiComm_);
         }
         
-        DofsMaps_[blockId] = MapPtrVecPtr(0);
-        DofsMaps_[blockId].push_back(dofsMap);
+        this->DofsMaps_[blockId] = MapPtrVecPtr(0);
+        this->DofsMaps_[blockId].push_back(dofsMap);
         
-        DofsPerNode_[blockId] = 1;
+        this->DofsPerNode_[blockId] = 1;
         
         
         return 0;
-    }
-    
-    template <class SC,class LO,class GO,class NO>
-    int GDSWCoarseOperator<SC,LO,GO,NO>::computeBasis()
-    {
-        // Build repeatedMap for the local saddle point problem // Todo:: Eigentlich gehört das in Initialize
-        MapPtr repeatedMap = assembleRepeatedMap();
-        
-        // Build local saddle point problem
-        CrsMatrixPtr repeatedMatrix = FROSch::ExtractLocalSubdomainMatrix(this->K_,repeatedMap);
-        
-        // Extract submatrices
-        GOVec indicesGammaDofsAll(0);
-        GOVec indicesIDofsAll(0);
-        LO tmp = 0;
-        
-        for (UN i=0; i<NumberOfBlocks_; i++) {
-            for (UN j=0; j<IndicesGammaDofs_[i].size(); j++) {
-                indicesGammaDofsAll.push_back(tmp+IndicesGammaDofs_[i][j]);
-            }
-            for (UN j=0; j<IndicesIDofs_[i].size(); j++) {
-                indicesIDofsAll.push_back(tmp+IndicesIDofs_[i][j]);
-            }
-            tmp += IndicesGammaDofs_[i].size()+IndicesIDofs_[i].size(); // Ist das mit tmp korrekt?
-        }
-        
-        CrsMatrixPtr kII;
-        CrsMatrixPtr kIGamma;
-        CrsMatrixPtr kGammaI;
-        CrsMatrixPtr kGammaGamma;
-        
-        FROSch::BuildSubmatrices(repeatedMatrix,indicesIDofsAll(),kII,kIGamma,kGammaI,kGammaGamma);
-        //if (this->Verbose_) std::cout << kII->NumMyRows() << " " << kGammaI->NumMyRows();
-        //if (this->Verbose_) std::cout << *kII << *kIGamma << *kGammaI << *kGammaGamma;
-        //FROSCH_ASSERT(0!=0,"STOP!");
-        
-        // Assemble coarse map
-        MapPtr coarseMap = assembleCoarseMap(); // Todo:: Eigentlich gehört das in Initialize
-        
-        // Build the saddle point harmonic extensions
-        computeAndFillPhi(repeatedMatrix,repeatedMap,coarseMap,indicesGammaDofsAll(),indicesIDofsAll(),kII,kIGamma);
-        
-        return 0;
-    }
-    
-    template <class SC,class LO,class GO,class NO>
-    typename GDSWCoarseOperator<SC,LO,GO,NO>::MapPtr GDSWCoarseOperator<SC,LO,GO,NO>::assembleRepeatedMap()
-    {
-        FROSCH_ASSERT(DofsMaps_.size()==NumberOfBlocks_,"DofsMaps_.size()!=NumberOfBlocks_");
-        FROSCH_ASSERT(DofsPerNode_.size()==NumberOfBlocks_,"DofsPerNode_.size()!=NumberOfBlocks_");
-        
-        GOVec mapVector(0);
-        for (UN i=0; i<NumberOfBlocks_; i++) {
-            FROSCH_ASSERT(DofsMaps_[i].size()==DofsPerNode_[i],"DofsMaps_[i].size()!=DofsPerNode_[i]");
-            UN numMyElements = DofsMaps_[i][0]->getNodeNumElements();
-            for (UN j=1; j<DofsPerNode_[i]; j++) {
-                FROSCH_ASSERT(DofsMaps_[i][j]->getNodeNumElements()==(int) numMyElements,"DofsMaps_[i][j]->getNodeNumElements()==numMyElements");
-            }
-            for (UN j=0; j<numMyElements; j++) {
-                for (UN k=0; k<DofsPerNode_[i]; k++) {
-                    mapVector.push_back(DofsMaps_[i][k]->getGlobalElement(j));
-                }
-            }
-        }
-        return Xpetra::MapFactory<LO,GO,NO>::Build(DofsMaps_[0][0]->lib(),-1,mapVector(),0,this->MpiComm_);
-    }
-    
-    template <class SC,class LO,class GO,class NO>
-    typename GDSWCoarseOperator<SC,LO,GO,NO>::MapPtr GDSWCoarseOperator<SC,LO,GO,NO>::assembleCoarseMap()
-    {
-        GOVec mapVector(0);
-        GO tmp = 0;
-        for (UN i=0; i<NumberOfBlocks_; i++) {
-            if (!BlockCoarseMaps_[i].is_null()) {
-                for (int j=0; j<BlockCoarseMaps_[i]->getNodeNumElements(); j++) {
-                    mapVector.push_back(BlockCoarseMaps_[i]->getGlobalElement(j)+tmp);
-                }
-                tmp += BlockCoarseMaps_[i]->getMaxAllGlobalIndex()+1;
-            }
-        }
-        return Xpetra::MapFactory<LO,GO,NO>::Build(DofsMaps_[0][0]->lib(),-1,mapVector(),0,this->MpiComm_);
     }
     
     template <class SC,class LO,class GO,class NO>
@@ -664,8 +568,8 @@ namespace FROSch {
         }
         
         //Epetra_SerialComm serialComm;
-        MapPtr serialGammaMap = Xpetra::MapFactory<LO,GO,NO>::Build(BlockCoarseMaps_[blockId]->lib(),IndicesGammaDofs_[blockId].size(),0,this->SerialComm_);
-        MVPhiGamma_[blockId] = Xpetra::MultiVectorFactory<SC,LO,GO,NO>::Build(serialGammaMap,BlockCoarseMaps_[blockId]->getNodeNumElements());
+        MapPtr serialGammaMap = Xpetra::MapFactory<LO,GO,NO>::Build(this->BlockCoarseMaps_[blockId]->lib(),this->IndicesGammaDofs_[blockId].size(),0,this->SerialComm_);
+        this->MVPhiGamma_[blockId] = Xpetra::MultiVectorFactory<SC,LO,GO,NO>::Build(serialGammaMap,this->BlockCoarseMaps_[blockId]->getNodeNumElements());
         
         LO ii=0;
         SC x,y,z,rx,ry,rz;
@@ -676,7 +580,7 @@ namespace FROSch {
         if (coarseSpaceFunctions[0]) {
             for (UN k=0; k<dofsPerNode; k++) {
                 for (UN i=0; i<vertices->getNumEntities(); i++) {
-                    MVPhiGamma_[blockId]->replaceLocalValue(vertices->getEntity(i)->getGammaDofID(0,k),partMappings[ii][i],1.0);
+                    this->MVPhiGamma_[blockId]->replaceLocalValue(vertices->getEntity(i)->getGammaDofID(0,k),partMappings[ii][i],1.0);
                 }
                 ii++;
             }
@@ -688,7 +592,7 @@ namespace FROSch {
             for (UN k=0; k<dofsPerNode; k++) {
                 for (UN i=0; i<shortEdges->getNumEntities(); i++) {
                     for (UN j=0; j<shortEdges->getEntity(i)->getNumNodes(); j++) {
-                        MVPhiGamma_[blockId]->replaceLocalValue(shortEdges->getEntity(i)->getGammaDofID(j,k),partMappings[ii][i],1.0);
+                        this->MVPhiGamma_[blockId]->replaceLocalValue(shortEdges->getEntity(i)->getGammaDofID(j,k),partMappings[ii][i],1.0);
                     }
                 }
                 ii++;
@@ -707,8 +611,8 @@ namespace FROSch {
                         y = localNodeList[shortEdges->getEntity(i)->getLocalNodeID(j)][1];
                         rx = -y;
                         ry = x;
-                        MVPhiGamma_[blockId]->replaceLocalValue(shortEdges->getEntity(i)->getGammaDofID(j,0),partMappings[ii][i],rx);
-                        MVPhiGamma_[blockId]->replaceLocalValue(shortEdges->getEntity(i)->getGammaDofID(j,1),partMappings[ii][i],ry);
+                        this->MVPhiGamma_[blockId]->replaceLocalValue(shortEdges->getEntity(i)->getGammaDofID(j,0),partMappings[ii][i],rx);
+                        this->MVPhiGamma_[blockId]->replaceLocalValue(shortEdges->getEntity(i)->getGammaDofID(j,1),partMappings[ii][i],ry);
                     }
                 }
                 ii++;
@@ -730,9 +634,9 @@ namespace FROSch {
                             rx = y;
                             ry = -x;
                             rz = 0;
-                            MVPhiGamma_[blockId]->replaceLocalValue(shortEdges->getEntity(i)->getGammaDofID(j,0),partMappings[ii+tmp][i],rx);
-                            MVPhiGamma_[blockId]->replaceLocalValue(shortEdges->getEntity(i)->getGammaDofID(j,1),partMappings[ii+tmp][i],ry);
-                            MVPhiGamma_[blockId]->replaceLocalValue(shortEdges->getEntity(i)->getGammaDofID(j,2),partMappings[ii+tmp][i],rz);
+                            this->MVPhiGamma_[blockId]->replaceLocalValue(shortEdges->getEntity(i)->getGammaDofID(j,0),partMappings[ii+tmp][i],rx);
+                            this->MVPhiGamma_[blockId]->replaceLocalValue(shortEdges->getEntity(i)->getGammaDofID(j,1),partMappings[ii+tmp][i],ry);
+                            this->MVPhiGamma_[blockId]->replaceLocalValue(shortEdges->getEntity(i)->getGammaDofID(j,2),partMappings[ii+tmp][i],rz);
                             tmp++;
                         }
                         
@@ -741,9 +645,9 @@ namespace FROSch {
                             rx = -z;
                             ry = 0;
                             rz = x;
-                            MVPhiGamma_[blockId]->replaceLocalValue(shortEdges->getEntity(i)->getGammaDofID(j,0),partMappings[ii+tmp][i],rx);
-                            MVPhiGamma_[blockId]->replaceLocalValue(shortEdges->getEntity(i)->getGammaDofID(j,1),partMappings[ii+tmp][i],ry);
-                            MVPhiGamma_[blockId]->replaceLocalValue(shortEdges->getEntity(i)->getGammaDofID(j,2),partMappings[ii+tmp][i],rz);
+                            this->MVPhiGamma_[blockId]->replaceLocalValue(shortEdges->getEntity(i)->getGammaDofID(j,0),partMappings[ii+tmp][i],rx);
+                            this->MVPhiGamma_[blockId]->replaceLocalValue(shortEdges->getEntity(i)->getGammaDofID(j,1),partMappings[ii+tmp][i],ry);
+                            this->MVPhiGamma_[blockId]->replaceLocalValue(shortEdges->getEntity(i)->getGammaDofID(j,2),partMappings[ii+tmp][i],rz);
                             tmp++;
                         }
                         
@@ -752,9 +656,9 @@ namespace FROSch {
                             rx = 0;
                             ry = z;
                             rz = -y;
-                            MVPhiGamma_[blockId]->replaceLocalValue(shortEdges->getEntity(i)->getGammaDofID(j,0),partMappings[ii+tmp][i],rx);
-                            MVPhiGamma_[blockId]->replaceLocalValue(shortEdges->getEntity(i)->getGammaDofID(j,1),partMappings[ii+tmp][i],ry);
-                            MVPhiGamma_[blockId]->replaceLocalValue(shortEdges->getEntity(i)->getGammaDofID(j,2),partMappings[ii+tmp][i],rz);
+                            this->MVPhiGamma_[blockId]->replaceLocalValue(shortEdges->getEntity(i)->getGammaDofID(j,0),partMappings[ii+tmp][i],rx);
+                            this->MVPhiGamma_[blockId]->replaceLocalValue(shortEdges->getEntity(i)->getGammaDofID(j,1),partMappings[ii+tmp][i],ry);
+                            this->MVPhiGamma_[blockId]->replaceLocalValue(shortEdges->getEntity(i)->getGammaDofID(j,2),partMappings[ii+tmp][i],rz);
                         }
                     }
                 }
@@ -770,7 +674,7 @@ namespace FROSch {
             for (UN k=0; k<dofsPerNode; k++) {
                 for (UN i=0; i<straightEdges->getNumEntities(); i++) {
                     for (UN j=0; j<straightEdges->getEntity(i)->getNumNodes(); j++) {
-                        MVPhiGamma_[blockId]->replaceLocalValue(straightEdges->getEntity(i)->getGammaDofID(j,k),partMappings[ii][i],1.0);
+                        this->MVPhiGamma_[blockId]->replaceLocalValue(straightEdges->getEntity(i)->getGammaDofID(j,k),partMappings[ii][i],1.0);
                     }
                 }
                 ii++;
@@ -789,8 +693,8 @@ namespace FROSch {
                         y = localNodeList[straightEdges->getEntity(i)->getLocalNodeID(j)][1];
                         rx = -y;
                         ry = x;
-                        MVPhiGamma_[blockId]->replaceLocalValue(straightEdges->getEntity(i)->getGammaDofID(j,0),partMappings[ii][i],rx);
-                        MVPhiGamma_[blockId]->replaceLocalValue(straightEdges->getEntity(i)->getGammaDofID(j,1),partMappings[ii][i],ry);
+                        this->MVPhiGamma_[blockId]->replaceLocalValue(straightEdges->getEntity(i)->getGammaDofID(j,0),partMappings[ii][i],rx);
+                        this->MVPhiGamma_[blockId]->replaceLocalValue(straightEdges->getEntity(i)->getGammaDofID(j,1),partMappings[ii][i],ry);
                     }
                 }
                 ii++;
@@ -812,9 +716,9 @@ namespace FROSch {
                             rx = y;
                             ry = -x;
                             rz = 0;
-                            MVPhiGamma_[blockId]->replaceLocalValue(straightEdges->getEntity(i)->getGammaDofID(j,0),partMappings[ii+tmp][i],rx);
-                            MVPhiGamma_[blockId]->replaceLocalValue(straightEdges->getEntity(i)->getGammaDofID(j,1),partMappings[ii+tmp][i],ry);
-                            MVPhiGamma_[blockId]->replaceLocalValue(straightEdges->getEntity(i)->getGammaDofID(j,2),partMappings[ii+tmp][i],rz);
+                            this->MVPhiGamma_[blockId]->replaceLocalValue(straightEdges->getEntity(i)->getGammaDofID(j,0),partMappings[ii+tmp][i],rx);
+                            this->MVPhiGamma_[blockId]->replaceLocalValue(straightEdges->getEntity(i)->getGammaDofID(j,1),partMappings[ii+tmp][i],ry);
+                            this->MVPhiGamma_[blockId]->replaceLocalValue(straightEdges->getEntity(i)->getGammaDofID(j,2),partMappings[ii+tmp][i],rz);
                             tmp++;
                         }
                         
@@ -823,9 +727,9 @@ namespace FROSch {
                             rx = -z;
                             ry = 0;
                             rz = x;
-                            MVPhiGamma_[blockId]->replaceLocalValue(straightEdges->getEntity(i)->getGammaDofID(j,0),partMappings[ii+tmp][i],rx);
-                            MVPhiGamma_[blockId]->replaceLocalValue(straightEdges->getEntity(i)->getGammaDofID(j,1),partMappings[ii+tmp][i],ry);
-                            MVPhiGamma_[blockId]->replaceLocalValue(straightEdges->getEntity(i)->getGammaDofID(j,2),partMappings[ii+tmp][i],rz);
+                            this->MVPhiGamma_[blockId]->replaceLocalValue(straightEdges->getEntity(i)->getGammaDofID(j,0),partMappings[ii+tmp][i],rx);
+                            this->MVPhiGamma_[blockId]->replaceLocalValue(straightEdges->getEntity(i)->getGammaDofID(j,1),partMappings[ii+tmp][i],ry);
+                            this->MVPhiGamma_[blockId]->replaceLocalValue(straightEdges->getEntity(i)->getGammaDofID(j,2),partMappings[ii+tmp][i],rz);
                             tmp++;
                         }
                         
@@ -834,9 +738,9 @@ namespace FROSch {
                             rx = 0;
                             ry = z;
                             rz = -y;
-                            MVPhiGamma_[blockId]->replaceLocalValue(straightEdges->getEntity(i)->getGammaDofID(j,0),partMappings[ii+tmp][i],rx);
-                            MVPhiGamma_[blockId]->replaceLocalValue(straightEdges->getEntity(i)->getGammaDofID(j,1),partMappings[ii+tmp][i],ry);
-                            MVPhiGamma_[blockId]->replaceLocalValue(straightEdges->getEntity(i)->getGammaDofID(j,2),partMappings[ii+tmp][i],rz);
+                            this->MVPhiGamma_[blockId]->replaceLocalValue(straightEdges->getEntity(i)->getGammaDofID(j,0),partMappings[ii+tmp][i],rx);
+                            this->MVPhiGamma_[blockId]->replaceLocalValue(straightEdges->getEntity(i)->getGammaDofID(j,1),partMappings[ii+tmp][i],ry);
+                            this->MVPhiGamma_[blockId]->replaceLocalValue(straightEdges->getEntity(i)->getGammaDofID(j,2),partMappings[ii+tmp][i],rz);
                         }
                     }
                 }
@@ -852,7 +756,7 @@ namespace FROSch {
             for (UN k=0; k<dofsPerNode; k++) {
                 for (UN i=0; i<edges->getNumEntities(); i++) {
                     for (UN j=0; j<edges->getEntity(i)->getNumNodes(); j++) {
-                        MVPhiGamma_[blockId]->replaceLocalValue(edges->getEntity(i)->getGammaDofID(j,k),partMappings[ii][i],1.0);
+                        this->MVPhiGamma_[blockId]->replaceLocalValue(edges->getEntity(i)->getGammaDofID(j,k),partMappings[ii][i],1.0);
                     }
                 }
                 ii++;
@@ -871,8 +775,8 @@ namespace FROSch {
                         y = localNodeList[edges->getEntity(i)->getLocalNodeID(j)][1];
                         rx = -y;
                         ry = x;
-                        MVPhiGamma_[blockId]->replaceLocalValue(edges->getEntity(i)->getGammaDofID(j,0),partMappings[ii][i],rx);
-                        MVPhiGamma_[blockId]->replaceLocalValue(edges->getEntity(i)->getGammaDofID(j,1),partMappings[ii][i],ry);
+                        this->MVPhiGamma_[blockId]->replaceLocalValue(edges->getEntity(i)->getGammaDofID(j,0),partMappings[ii][i],rx);
+                        this->MVPhiGamma_[blockId]->replaceLocalValue(edges->getEntity(i)->getGammaDofID(j,1),partMappings[ii][i],ry);
                     }
                 }
                 ii++;
@@ -887,25 +791,25 @@ namespace FROSch {
                         rx = y;
                         ry = -x;
                         rz = 0;
-                        MVPhiGamma_[blockId]->replaceLocalValue(edges->getEntity(i)->getGammaDofID(j,0),partMappings[ii][i],rx);
-                        MVPhiGamma_[blockId]->replaceLocalValue(edges->getEntity(i)->getGammaDofID(j,1),partMappings[ii][i],ry);
-                        MVPhiGamma_[blockId]->replaceLocalValue(edges->getEntity(i)->getGammaDofID(j,2),partMappings[ii][i],rz);
+                        this->MVPhiGamma_[blockId]->replaceLocalValue(edges->getEntity(i)->getGammaDofID(j,0),partMappings[ii][i],rx);
+                        this->MVPhiGamma_[blockId]->replaceLocalValue(edges->getEntity(i)->getGammaDofID(j,1),partMappings[ii][i],ry);
+                        this->MVPhiGamma_[blockId]->replaceLocalValue(edges->getEntity(i)->getGammaDofID(j,2),partMappings[ii][i],rz);
                         
                         // Rotation 2
                         rx = -z;
                         ry = 0;
                         rz = x;
-                        MVPhiGamma_[blockId]->replaceLocalValue(edges->getEntity(i)->getGammaDofID(j,0),partMappings[ii+1][i],rx);
-                        MVPhiGamma_[blockId]->replaceLocalValue(edges->getEntity(i)->getGammaDofID(j,1),partMappings[ii+1][i],ry);
-                        MVPhiGamma_[blockId]->replaceLocalValue(edges->getEntity(i)->getGammaDofID(j,2),partMappings[ii+1][i],rz);
+                        this->MVPhiGamma_[blockId]->replaceLocalValue(edges->getEntity(i)->getGammaDofID(j,0),partMappings[ii+1][i],rx);
+                        this->MVPhiGamma_[blockId]->replaceLocalValue(edges->getEntity(i)->getGammaDofID(j,1),partMappings[ii+1][i],ry);
+                        this->MVPhiGamma_[blockId]->replaceLocalValue(edges->getEntity(i)->getGammaDofID(j,2),partMappings[ii+1][i],rz);
                         
                         // Rotation 3
                         rx = 0;
                         ry = z;
                         rz = -y;
-                        MVPhiGamma_[blockId]->replaceLocalValue(edges->getEntity(i)->getGammaDofID(j,0),partMappings[ii+2][i],rx);
-                        MVPhiGamma_[blockId]->replaceLocalValue(edges->getEntity(i)->getGammaDofID(j,1),partMappings[ii+2][i],ry);
-                        MVPhiGamma_[blockId]->replaceLocalValue(edges->getEntity(i)->getGammaDofID(j,2),partMappings[ii+2][i],rz);
+                        this->MVPhiGamma_[blockId]->replaceLocalValue(edges->getEntity(i)->getGammaDofID(j,0),partMappings[ii+2][i],rx);
+                        this->MVPhiGamma_[blockId]->replaceLocalValue(edges->getEntity(i)->getGammaDofID(j,1),partMappings[ii+2][i],ry);
+                        this->MVPhiGamma_[blockId]->replaceLocalValue(edges->getEntity(i)->getGammaDofID(j,2),partMappings[ii+2][i],rz);
                     }
                 }
                 ii+=3;
@@ -920,7 +824,7 @@ namespace FROSch {
             for (UN k=0; k<dofsPerNode; k++) {
                 for (UN i=0; i<faces->getNumEntities(); i++) {
                     for (UN j=0; j<faces->getEntity(i)->getNumNodes(); j++) {
-                        MVPhiGamma_[blockId]->replaceLocalValue(faces->getEntity(i)->getGammaDofID(j,k),partMappings[ii][i],1.0);
+                        this->MVPhiGamma_[blockId]->replaceLocalValue(faces->getEntity(i)->getGammaDofID(j,k),partMappings[ii][i],1.0);
                     }
                 }
                 ii++;
@@ -941,131 +845,30 @@ namespace FROSch {
                     rx = y;
                     ry = -x;
                     rz = 0;
-                    MVPhiGamma_[blockId]->replaceLocalValue(faces->getEntity(i)->getGammaDofID(j,0),partMappings[ii][i],rx);
-                    MVPhiGamma_[blockId]->replaceLocalValue(faces->getEntity(i)->getGammaDofID(j,1),partMappings[ii][i],ry);
-                    MVPhiGamma_[blockId]->replaceLocalValue(faces->getEntity(i)->getGammaDofID(j,2),partMappings[ii][i],rz);
+                    this->MVPhiGamma_[blockId]->replaceLocalValue(faces->getEntity(i)->getGammaDofID(j,0),partMappings[ii][i],rx);
+                    this->MVPhiGamma_[blockId]->replaceLocalValue(faces->getEntity(i)->getGammaDofID(j,1),partMappings[ii][i],ry);
+                    this->MVPhiGamma_[blockId]->replaceLocalValue(faces->getEntity(i)->getGammaDofID(j,2),partMappings[ii][i],rz);
                     
                     // Rotation 2
                     rx = -z;
                     ry = 0;
                     rz = x;
-                    MVPhiGamma_[blockId]->replaceLocalValue(faces->getEntity(i)->getGammaDofID(j,0),partMappings[ii+1][i],rx);
-                    MVPhiGamma_[blockId]->replaceLocalValue(faces->getEntity(i)->getGammaDofID(j,1),partMappings[ii+1][i],ry);
-                    MVPhiGamma_[blockId]->replaceLocalValue(faces->getEntity(i)->getGammaDofID(j,2),partMappings[ii+1][i],rz);
+                    this->MVPhiGamma_[blockId]->replaceLocalValue(faces->getEntity(i)->getGammaDofID(j,0),partMappings[ii+1][i],rx);
+                    this->MVPhiGamma_[blockId]->replaceLocalValue(faces->getEntity(i)->getGammaDofID(j,1),partMappings[ii+1][i],ry);
+                    this->MVPhiGamma_[blockId]->replaceLocalValue(faces->getEntity(i)->getGammaDofID(j,2),partMappings[ii+1][i],rz);
                     
                     // Rotation 3
                     rx = 0;
                     ry = z;
                     rz = -y;
-                    MVPhiGamma_[blockId]->replaceLocalValue(faces->getEntity(i)->getGammaDofID(j,0),partMappings[ii+2][i],rx);
-                    MVPhiGamma_[blockId]->replaceLocalValue(faces->getEntity(i)->getGammaDofID(j,1),partMappings[ii+2][i],ry);
-                    MVPhiGamma_[blockId]->replaceLocalValue(faces->getEntity(i)->getGammaDofID(j,2),partMappings[ii+2][i],rz);
+                    this->MVPhiGamma_[blockId]->replaceLocalValue(faces->getEntity(i)->getGammaDofID(j,0),partMappings[ii+2][i],rx);
+                    this->MVPhiGamma_[blockId]->replaceLocalValue(faces->getEntity(i)->getGammaDofID(j,1),partMappings[ii+2][i],ry);
+                    this->MVPhiGamma_[blockId]->replaceLocalValue(faces->getEntity(i)->getGammaDofID(j,2),partMappings[ii+2][i],rz);
                 }
             }
             ii++;
         }
-        //cout << *MVPhiGamma_[blockId];
-        return 0;
-    }
-    
-    
-    template <class SC,class LO,class GO,class NO>
-    int GDSWCoarseOperator<SC,LO,GO,NO>::computeAndFillPhi(CrsMatrixPtr &repeatedMatrix,
-                                                           MapPtr &repeatedMap,
-                                                           MapPtr &coarseMap,
-                                                           GOVecView indicesGammaDofsAll,
-                                                           GOVecView indicesIDofsAll,
-                                                           CrsMatrixPtr kII,
-                                                           CrsMatrixPtr kIGamma)
-    {
-        this->Phi_ = Xpetra::MatrixFactory<SC,LO,GO,NO>::Build(this->K_->getRangeMap(),coarseMap,coarseMap->getNodeNumElements()); // Nonzeroes abhängig von dim/dofs!!!
-        MultiVectorPtr mVtmp = Xpetra::MultiVectorFactory<SC,LO,GO,NO>::Build(kII->getRowMap(),coarseMap->getNodeNumElements());
-        MultiVectorPtr mVPhiI = Xpetra::MultiVectorFactory<SC,LO,GO,NO>::Build(kII->getRowMap(),coarseMap->getNodeNumElements());
-
-        //Build mVPhiGamma
-        MultiVectorPtr mVPhiGamma = Xpetra::MultiVectorFactory<SC,LO,GO,NO>::Build(kIGamma->getDomainMap(),coarseMap->getNodeNumElements());
-        LO jj=0;
-        LO kk=0;
-        for (UN i=0; i<NumberOfBlocks_; i++) {
-            LO j = 0;
-            LO k = 0;
-            //if (this->Verbose_) std::cout << MVPhiGamma_[i]->MyLength() << std::endl;
-            if (!MVPhiGamma_[i].is_null()) {
-                for (j=0; j<MVPhiGamma_[i]->getNumVectors(); j++) {
-                    for (k=0; k<MVPhiGamma_[i]->getLocalLength(); k++) {
-                        //if (this->Verbose_) std::cout << j << " " << k << " " <<  (*(*MVPhiGamma_[i])(j))[k] << std::endl;
-                        mVPhiGamma->replaceLocalValue(k+kk,j+jj,MVPhiGamma_[i]->getData(j)[k]);
-                    }
-                }
-            } else { // Das ist für den Fall, dass keine Basisfunktionen für einen Block gebaut werden sollen
-                //mVPhiGamma->replaceLocalValue(k+kk,j+jj,1.0);
-                k=IndicesGammaDofs_[i].size();
-            }
-            jj += j;
-            kk += k;
-        }
-        
-        LO iD;
-        SC valueTmp;
-        LOVec indices;
-        SCVec values;
-        // IST DAS LANGSAM??????? TESTEN!!!!!
-        for (LO i=0; i<mVPhiGamma->getLocalLength(); i++) {
-            indices.resize(0);
-            values.resize(0);
-            for (LO j=0; j<mVPhiGamma->getNumVectors(); j++) {
-                valueTmp=mVPhiGamma->getData(j)[i];
-                if (fabs(valueTmp) > 1.0e-8) {
-                    indices.push_back(j);
-                    values.push_back(valueTmp);
-                }
-            }
-            
-            // CHECK, IF OK?!?!?
-            iD = this->K_->getRowMap()->getLocalElement(repeatedMap->getGlobalElement(indicesGammaDofsAll[i]));
-            //cout << ProcessorMapRepeatedDofs->GID(IndicesGamma[0][i]) << " " << ID << std::endl;
-            
-            //ID = IndicesGamma[0][i];
-            if (iD!=-1) {
-                this->Phi_->insertLocalValues(iD,indices(),values());
-            }
-            
-        }
-        
-        // Hier Multiplikation kIGamma*PhiGamma
-        kIGamma->apply(*mVPhiGamma,*mVtmp);
-        
-        mVtmp->scale(-1.0);
-        
-        // Jetzt der solver für kII
-        ExtensionSolver_.reset(new SubdomainSolver<SC,LO,GO,NO>(kII,sublist(this->ParameterList_,"ExtensionSolver")));
-        // DAS MÜSSEN WIR NOCH ÄNDERN -> initialize, compute, apply...
-        ExtensionSolver_->initialize();
-        ExtensionSolver_->compute();
-        ExtensionSolver_->apply(*mVtmp,*mVPhiI);
-        
-        // Now we have to insert the values to the global matrix Phi
-        // IST DAS LANGSAM??????? TESTEN!!!!!
-        for (LO i=0; i<mVPhiI->getLocalLength(); i++) {
-            indices.resize(0);
-            values.resize(0);
-            for (LO j=0; j<mVPhiI->getNumVectors(); j++) {
-                valueTmp=mVPhiI->getData(j)[i]; //if (this->Verbose_) std::cout << i << " " << this->K_->getRowMap()->getLocalElement(repeatedMap->getGlobalElement(indicesIDofsAll[i])) << " " << j << " " << valueTmp << std::endl;
-                if (fabs(valueTmp) > 1.0e-8) {
-                    indices.push_back(j);
-                    values.push_back(valueTmp);
-                }
-            }
-            
-            // CHECK, IF OK?!?!?
-            iD = this->K_->getRowMap()->getLocalElement(repeatedMap->getGlobalElement(indicesIDofsAll[i]));
-            //ID = IndicesI[0][i];
-            if (iD!=-1) {
-                this->Phi_->insertLocalValues(iD,indices(),values());
-            }
-        }
-        this->Phi_->fillComplete(coarseMap,this->Phi_->getRowMap());
-        
+        //cout << *this->MVPhiGamma_[blockId];
         return 0;
     }
     

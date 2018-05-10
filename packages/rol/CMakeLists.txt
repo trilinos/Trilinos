@@ -72,15 +72,13 @@ IF (ROL_ENABLE_Boost AND ROL_ENABLE_MiniTensor)
   ADD_SUBDIRECTORY(adapters/minitensor)
 ENDIF()
 
-IF (ROL_ENABLE_Experimental)
-  ADD_SUBDIRECTORY(experimental)
+IF (ROL_ENABLE_PEBBL)
+  ADD_SUBDIRECTORY(adapters/pebbl)
 ENDIF()
 
 TRIBITS_ADD_TEST_DIRECTORIES(test)
 TRIBITS_ADD_EXAMPLE_DIRECTORIES(example)
 TRIBITS_ADD_EXAMPLE_DIRECTORIES(tutorial)
-
-TRIBITS_PROCESS_SUBPACKAGES()
 
 #
 # Exclude files for source package.

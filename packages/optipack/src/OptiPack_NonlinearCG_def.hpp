@@ -172,7 +172,7 @@ NonlinearCG<Scalar>::get_g_mag() const
 template<typename Scalar>
 void NonlinearCG<Scalar>::setParameterList(RCP<ParameterList> const& paramList)
 {
-  typedef ScalarTraits<Scalar> ST;
+  //typedef ScalarTraits<Scalar> ST; // unused
   typedef ScalarTraits<ScalarMag> SMT;
   namespace NCGU = NonlinearCGUtils;
   using Teuchos::getParameter;

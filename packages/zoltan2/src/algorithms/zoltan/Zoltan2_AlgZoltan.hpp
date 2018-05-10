@@ -140,21 +140,21 @@ private:
   void setCallbacksGraph(
     const RCP<const GraphAdapter<user_t,userCoord_t> > &adp)
   {
-    // std::cout << "NotReadyForGraphYet" << std::endl;
+    // std::cout << "NotReadyForGraphCallbacksYet" << std::endl;
     // TODO
   }
 
   void setCallbacksGraph(
     const RCP<const MatrixAdapter<user_t,userCoord_t> > &adp)
   {
-    // std::cout << "NotReadyForGraphYet" << std::endl;
+    // std::cout << "NotReadyForGraphCallbacksYet" << std::endl;
     // TODO
   }
 
   void setCallbacksGraph(
     const RCP<const MeshAdapter<user_t> > &adp)
   {
-    // std::cout << "NotReadyForGraphYet" << std::endl;
+    // std::cout << "NotReadyForGraphCallbacksYet" << std::endl;
     // TODO
   }
 
@@ -173,6 +173,28 @@ private:
     //                             (void *) &(*adapter));
     // zz->Set_HG_Edge_Wts_Fn(zoltanHGSizeEdgeWts_withMatrixAdapter<Adapter>,
     //                             (void *) &(*adapter));
+  }
+
+  void setCallbacksHypergraph(
+    const RCP<const GraphAdapter<user_t,userCoord_t> > &adp)
+  {
+    zz->Set_HG_Size_CS_Fn(zoltanHGSizeCS_withGraphAdapter<Adapter>,
+                          (void *) &(*adp));
+    zz->Set_HG_CS_Fn(zoltanHGCS_withGraphAdapter<Adapter>,
+                     (void *) &(*adp));
+
+    if (adp->getNumWeightsPerEdge() != 0) {
+      if (adp->getNumWeightsPerEdge() > 1) {
+        std::cout << "Zoltan2 warning:  getNumWeightsPerEdge() returned "
+                  << adp->getNumWeightsPerEdge() << " but PHG supports only "
+                  << " one weight per edge; only first weight will be used."
+                  << std::endl;
+      }
+      zz->Set_HG_Size_Edge_Wts_Fn(zoltanHGSizeEdgeWts_withGraphAdapter<Adapter>,
+                                  (void *) &(*adapter));
+      zz->Set_HG_Edge_Wts_Fn(zoltanHGEdgeWts_withGraphAdapter<Adapter>,
+                             (void *) &(*adapter));
+    }
   }
 
   void setCallbacksHypergraph(const RCP<const MeshAdapter<user_t> > &adp)
@@ -535,6 +557,7 @@ public:
     zz = rcp(new Zoltan(mpicomm)); 
     setCallbacksIDs();
     setCallbacksGraph(adapter);
+    setCallbacksHypergraph(adapter);
     if (adapter->coordinatesAvailable()) {
       setCallbacksGeom(adapter->getCoordinateInput());
     }

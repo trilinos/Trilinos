@@ -49,6 +49,32 @@ namespace Details {
 /// environment variable.  This will have the additional advantage of
 /// avoiding errors due to only building and testing in debug or
 /// release mode, but not both.
+///
+/// The behavior of Tpetra can be modified at runtime through two environment
+/// variables:
+///
+/// TPETRA_DEBUG: flags Tpetra to turn on debug checking.
+/// TPETRA_VERBOSE: flags Tpetra to turn on debug _output_.
+///
+/// These are two different things.  For example, TPETRA_DEBUG may do extra MPI
+/// communication in order to ensure correct error state propagation, but
+/// TPETRA_DEBUG should never print copious debug output if no errors occurred.
+/// The idea is that if users get a mysterious error or hang, they can rerun
+/// with TPETRA_DEBUG set.  TPETRA_VERBOSE is for Tpetra developers to use for
+/// debugging Tpetra.
+///
+/// The environment variables are understood to be "on" or "off" and recognized
+/// if specified in one of two ways.  The first is to specify the variable
+/// unconditionally ON or OFF.  e.g., TPETRA_VERBOSE=ON or TPETRA_VERBOSE=OFF.
+/// The default value of TPETRA_VERBOSE is always OFF.  The default value for
+/// TPETRA_DEBUG is ON if Tpetra is configured with Tpetra_ENABLE_DEBUG,
+/// otherwise it is OFF
+///
+/// The second is to specify the variable on a per class/object basis, e.g.,
+/// TPETRA_VERBOSE=CrsGraph,CrsMatrix,Distributor means that verbose output
+/// will be enabled for CrsGraph, CrsMatrix, and Distributor classes.  For this
+/// second method, the default values of both TPETRA_VERBOSE and TPETRA_DEBUG
+/// is OFF.
 class Behavior {
 public:
   /// \brief Whether Tpetra is in debug mode.
@@ -59,12 +85,26 @@ public:
   /// debug output.
   static bool debug ();
 
+  /// \brief Whether the given Tpetra object is in debug mode.
+  ///
+  /// \param name [in] Name of the Tpetra object.  Typically, the object would
+  ///        be a class name, e.g., "CrsGraph" or method, e.g.,
+  ///        "CrsGraph::insertLocalIndices".
+  static bool debug (const char name[]);
+
   /// \brief Whether Tpetra is in verbose mode.
   ///
   /// "Verbose mode" means that Tpetra prints copious debug output to
   /// std::cerr on every MPI process.  This is a LOT of output!  You
   /// really don't want to do this when running on many MPI processes.
   static bool verbose ();
+
+  /// \brief Whether the given Tpetra object is in verbose mode.
+  ///
+  /// \param name [in] Name of the Tpetra object.  Typically, the object would
+  ///        be a class name, e.g., "CrsGraph" or method, e.g.,
+  ///        "CrsGraph::insertLocalIndices".
+  static bool verbose (const char name[]);
 
   /// \brief Whether to assume that MPI is CUDA aware.
   ///

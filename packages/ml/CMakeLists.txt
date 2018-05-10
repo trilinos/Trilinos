@@ -16,6 +16,18 @@ TRIBITS_PACKAGE(ML  DISABLE_CIRCULAR_REF_DETECTION_FAILURE)
 # B) Set up package-specific options
 #
 
+IF(${PACKAGE_NAME}_ENABLE_SuperLU)
+  IF(${PROJECT_NAME}_ENABLE_SuperLU5_API)
+   
+   MESSAGE(FATAL_ERROR "\n  ML CONFIGURATION ERROR:  SuperLU_5.0 detected -
+      only SuperLU version < 5.0 currently supported for this package.\n
+      Please either use a supported version of SuperLU or disable SuperLU for
+      this package with the following configuration option: 
+      ML_ENABLE_SuperLU:BOOL=OFF")
+
+  ENDIF()
+ENDIF()
+
 IF (${PACKAGE_NAME}_ENABLE_Zoltan AND NOT ${PACKAGE_NAME}_ENABLE_MPI)
   MESSAGE(STATUS "  WARNING:  Setting ${PACKAGE_NAME}_ENABLE_Zoltan=OFF since ${PACKAGE_NAME}_ENABLE_MPI=OFF!")
   DUAL_SCOPE_SET(${PACKAGE_NAME}_ENABLE_Zoltan OFF)

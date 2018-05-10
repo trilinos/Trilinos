@@ -1,0 +1,142 @@
+Generate New Ids
+   1) we have a table 
+           GID   reg1   reg2   reg3   reg4   reg5  reg6  -1     -1
+           GID   reg1   reg2   reg3   reg4    -1    -1   -1     -1
+           GID   reg1   reg2   reg3   reg4   reg5  reg6  reg7  reg8
+           GID   reg1   reg2   reg3   reg4   reg5  reg6  reg7  reg8
+
+   2) each proc can go through its owned portion of the table and fill 
+      an array offset such that 
+           offset[0] = 0 
+           offset[1] = [#of regions (non -1s) for GID( 0 )] - 1 + offset[0]
+           offset[2] = [#of regions (non -1s) for GID( 1 )] - 1 + offset[1]
+           offset[k] = [#of regions (non -1s) for GID(k-1)] - 1 + offset[k-1]
+        up to k=nRows-1 
+          nMyNewGids = [#of regions (non -1s) for GID(nRows-1)] - 1 + offset[nRows-1]
+
+
+   3) So offset[k] gives the number of new GIDs that were already created (due
+      to shared nodes) for original GIDs(0:k-1) and nMyNewGids is the 
+      total number of newGids that this proc will create.
+
+   4) maxNewGidsPerProc = max(nMyNewGids);
+
+   5) each proc communicates offset so that everyone has this information
+      
+   6) each proc computes new gids. Let curRegion (= gidReg[k] where 
+      k=0:maxRegPerProc-1) denote the current region that this processor is 
+      working on. Suppose we are working on my jth gid (where the jth entry
+      could correspond to an owned or ghost variable).
+
+           a) for each gid (owned and ghost) sort the regAssign table and
+              determine the position where curRegion resides on the line
+              in the table.
+           b) if position == 0 (curRegion is lowest numbered region on this
+              table line), ==> newGID = oldGID.
+           c) if position > 0, 
+                  newGID = maxNewGidsPerProc*procId + offset[
+
+
+For each original GID that appears in
+      either its owned or ghost list (colmap), each processor decides if
+      the region that it is working on (depending on the round or group)
+      corresponds to the lowest numbered region for that line of the table
+      If yes, then 
+
+           if this proc owns the region than it keeps the original GID
+
+
+   1) each proc is responsible for the gids that it owns in its composite map. It also has a region list for 
+      one of these gids. 
+
+the general idea
+
+
+counts how many new ids it needs to create. 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+1) each proc gets header info from matlab
+
+     whichCase = NoCross  Cross   maxRegions per GID
+===> So  matlab must spit this out
+
+2) matlab make composite produces a Table like the following
+
+===> So  mkCompositeMap should be changed to include this information
+
+GID   reg1   reg2   reg3   reg4   reg5  reg6  reg7  reg8
+GID   reg1   reg2   reg3   reg4   reg5  reg6  reg7  reg8
+GID   reg1   reg2   reg3   reg4   reg5  reg6  reg7  reg8
+GID   reg1   reg2   reg3   reg4   reg5  reg6  reg7  reg8
+
+-1's are put in if a point doesn't belong in many regions. There is one
+line for each GID that I own.
+
+3) matlab makes a second version (to avoid Trilinos) that produces
+a table that also includes GIDs in my ghost region.
+
+===> So  a new function should be make commRegionAssignments 
+
+4) C code reads '2)' to build composite map and build a multivector
+   that contains the region table for points that I own.
+
+5) The Trilinos/C code does an import so that each proc owns the whole
+   table including for ghost rows. The nonTrilinos version just builds
+   this by reading the second file produced by matlab in step 3.
+
+6) build row maps
+    a) case 1: regions cross procs but no proc owns more than one region
+         - build a vector corresponding to compositeColMap map of all -1's
+         - fill this vector with a +1 for all compositeRowMap entries
+         - look at all remaining -1's and change them to +1 if they
+           correspond to a point in multiple regions including my region
+           (as this must be the edge of my region and so it should be 
+            included in the row map). If the point is not in multiple
+            regions, then it is not the region edge and another proc
+            will have it in its column map
+
+    b) case 2: regions do not cross procs but a proc owns more than one region
+         - compute the maximum # of regions that any proc has
+         - set numRounds = maxNumRegPerProc
+         - for i=1:numRounds
+              curRegion = lowestRegOwnedByProc
+              rowMap(round) = anyone in my compositeColMap that belongs to curRegion
+           end
+7) build regionishColMap
+
+    a) case 1: regions cross procs but no proc owns more than one region
+         - colMap = anyone in compositeColMap that belongs to curRegion
+    b) case 2: regions do not cross procs but a proc owns more than one region
+         - colMap = rowMap
+
+
+
+
+
+
+C code also reads in the composite matrix using the composite map
+
+if NoCross, compute MaxRegions per proc
+break things up into rounds
+
+build row maps by grabbing everyone who has an entry in the current region
+and I own the guy in the composite map?
+
+build col maps by grabbing everyone who has an entry in the current region
+

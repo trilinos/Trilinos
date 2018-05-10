@@ -2,7 +2,16 @@
 # Add test-only library for gtest to be reused by all the subpackages
 #
 
+IF(NOT KOKKOS_HAS_TRILINOS)
+  IF(KOKKOS_SEPARATE_LIBS)
+    set(TEST_LINK_TARGETS kokkoscore)
+  ELSE()
+    set(TEST_LINK_TARGETS kokkos)
+  ENDIF()
+ENDIF()
+
 SET(GTEST_SOURCE_DIR ${${PARENT_PACKAGE_NAME}_SOURCE_DIR}/tpls/gtest)
+SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DGTEST_HAS_PTHREAD=0")
 
 INCLUDE_DIRECTORIES(${GTEST_SOURCE_DIR})
 TRIBITS_ADD_LIBRARY(
@@ -63,7 +72,7 @@ IF(Kokkos_ENABLE_Serial)
     COMM serial mpi
     NUM_MPI_PROCS 1
     FAIL_REGULAR_EXPRESSION "  FAILED  "
-    TESTONLYLIBS kokkos_gtest
+    TESTONLYLIBS kokkos_gtest ${TEST_LINK_TARGETS}
   )
 ENDIF()
 
@@ -111,7 +120,7 @@ IF(Kokkos_ENABLE_Pthread)
     COMM serial mpi
     NUM_MPI_PROCS 1
     FAIL_REGULAR_EXPRESSION "  FAILED  "
-    TESTONLYLIBS kokkos_gtest
+    TESTONLYLIBS kokkos_gtest ${TEST_LINK_TARGETS}
   )
 ENDIF()
 
@@ -160,7 +169,17 @@ IF(Kokkos_ENABLE_OpenMP)
     COMM serial mpi
     NUM_MPI_PROCS 1
     FAIL_REGULAR_EXPRESSION "  FAILED  "
-    TESTONLYLIBS kokkos_gtest
+    TESTONLYLIBS kokkos_gtest ${TEST_LINK_TARGETS}
+  )
+  TRIBITS_ADD_EXECUTABLE_AND_TEST(
+    UnitTest_OpenMPInterOp
+    SOURCES
+      UnitTestMain.cpp
+      openmp/TestOpenMP_InterOp.cpp
+    COMM serial mpi
+    NUM_MPI_PROCS 1
+    FAIL_REGULAR_EXPRESSION "  FAILED  "
+    TESTONLYLIBS kokkos_gtest ${TEST_LINK_TARGETS}
   )
 ENDIF()
 
@@ -194,7 +213,7 @@ IF(Kokkos_ENABLE_Qthreads)
     COMM serial mpi
     NUM_MPI_PROCS 1
     FAIL_REGULAR_EXPRESSION "  FAILED  "
-    TESTONLYLIBS kokkos_gtest
+    TESTONLYLIBS kokkos_gtest ${TEST_LINK_TARGETS}
   )
 ENDIF()
 
@@ -251,10 +270,21 @@ IF(Kokkos_ENABLE_Cuda)
       cuda/TestCuda_ViewOfClass.cpp
       cuda/TestCuda_Crs.cpp
       cuda/TestCuda_WorkGraph.cpp
+      cuda/TestCuda_UniqueToken.cpp
     COMM serial mpi
     NUM_MPI_PROCS 1
     FAIL_REGULAR_EXPRESSION "  FAILED  "
-    TESTONLYLIBS kokkos_gtest
+    TESTONLYLIBS kokkos_gtest ${TEST_LINK_TARGETS}
+  )
+  TRIBITS_ADD_EXECUTABLE_AND_TEST(
+    UnitTest_CudaInterOp
+    SOURCES
+      UnitTestMain.cpp
+      cuda/TestCuda_InterOp.cpp
+    COMM serial mpi
+    NUM_MPI_PROCS 1
+    FAIL_REGULAR_EXPRESSION "  FAILED  "
+    TESTONLYLIBS kokkos_gtest ${TEST_LINK_TARGETS}
   )
 ENDIF()
 
@@ -271,7 +301,36 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   COMM serial mpi
   NUM_MPI_PROCS 1
   FAIL_REGULAR_EXPRESSION "  FAILED  "
-    TESTONLYLIBS kokkos_gtest
+    TESTONLYLIBS kokkos_gtest ${TEST_LINK_TARGETS}
+)
+
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  UnitTest_PushFinalizeHook
+  SOURCES
+    UnitTest_PushFinalizeHook.cpp
+  COMM serial mpi
+  NUM_MPI_PROCS 1
+  FAIL_REGULAR_EXPRESSION "FAILED"
+    TESTONLYLIBS kokkos_gtest ${TEST_LINK_TARGETS}
+)
+
+# This test is special, because it passes exactly when it prints the
+# message "PASSED: I am the custom std::terminate handler.", AND calls
+# std::terminate.  This means that we can't use
+# TRIBITS_ADD_EXECUTABLE_AND_TEST.  See GitHub issue #2147.
+
+TRIBITS_ADD_EXECUTABLE( push_finalize_hook_terminate
+  SOURCES UnitTest_PushFinalizeHook_terminate.cpp
+  TESTONLYLIBS kokkos_gtest ${TEST_LINK_TARGETS}
+)
+
+TRIBITS_ADD_ADVANCED_TEST( UnitTest_PushFinalizeHook_terminate
+  TEST_0
+    EXEC push_finalize_hook_terminate
+    NUM_MPI_PROCS 1
+    PASS_REGULAR_EXPRESSION
+      "PASSED: I am the custom std::terminate handler."
+    ALWAYS_FAIL_ON_ZERO_RETURN
 )
 
 foreach(INITTESTS_NUM RANGE 1 16)
@@ -281,7 +340,7 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   COMM serial mpi
   NUM_MPI_PROCS 1
   FAIL_REGULAR_EXPRESSION "  FAILED  "
-    TESTONLYLIBS kokkos_gtest
+    TESTONLYLIBS kokkos_gtest ${TEST_LINK_TARGETS}
 )
 endforeach(INITTESTS_NUM)
 
@@ -291,5 +350,5 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   COMM serial mpi
   NUM_MPI_PROCS 1
   FAIL_REGULAR_EXPRESSION "  FAILED  "
-    TESTONLYLIBS kokkos_gtest
+    TESTONLYLIBS kokkos_gtest ${TEST_LINK_TARGETS}
 )

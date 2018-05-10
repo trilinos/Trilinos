@@ -46,9 +46,13 @@
 #include "Teuchos_Array.hpp"
 #include "Teuchos_RCP.hpp"
 
+#include <fstream>
+#include <iostream>
+
 using Teuchos::Array;
 using Teuchos::RCP;
 using Teuchos::rcp;
+
 
 int main(int argc, char **argv)
 {

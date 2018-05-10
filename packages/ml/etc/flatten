@@ -10,7 +10,7 @@
 #       uses `depends.ml'. This file assumes that the source code is
 #       in a directory 'Obj'. If there is no such directory, things don't
 #       work. Thus, the first time this utility should be run without
-#       specifying a directory. Subsequent invokations can then be used
+#       specifying a directory. Subsequent invocations can then be used
 #       to create additional Obj directories.
 #
 DEST=Obj_$1
@@ -28,7 +28,7 @@ do
    for j in ../src/$i/*.*[ch]
    do
      FILE=`echo $j | sed "s,.*/,,"`
-     ln -s $j $FILE 
+     ln -s $j $FILE
    done
 
    CURRDIR="../src/$i/*.cpp"
@@ -39,7 +39,7 @@ do
      if test `expr ${SRC}` != 'xxxx'
      then
         FILE=`echo $j | sed "s,.*/,,"`
-        ln -s $j $FILE 
+        ln -s $j $FILE
      fi
    done
 done

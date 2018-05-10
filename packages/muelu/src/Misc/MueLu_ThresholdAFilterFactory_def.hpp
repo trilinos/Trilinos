@@ -57,8 +57,8 @@
 namespace MueLu {
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  ThresholdAFilterFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::ThresholdAFilterFactory(const std::string& ename, const Scalar threshold)
-    : varName_(ename), threshold_(threshold)
+  ThresholdAFilterFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::ThresholdAFilterFactory(const std::string& ename, const Scalar threshold, const bool keepDiagonal)
+    : varName_(ename), threshold_(threshold), keepDiagonal_(keepDiagonal)
   { }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -97,13 +97,22 @@ namespace MueLu {
         Teuchos::ArrayRCP<GlobalOrdinal> indout(indices.size(),Teuchos::ScalarTraits<GlobalOrdinal>::zero());
         Teuchos::ArrayRCP<Scalar> valout(indices.size(),Teuchos::ScalarTraits<Scalar>::zero());
         size_t nNonzeros = 0;
-        for(size_t i=0; i<(size_t)indices.size(); i++) {
-          if(Teuchos::ScalarTraits<Scalar>::magnitude(vals[i]) > Teuchos::ScalarTraits<Scalar>::magnitude(threshold_) || indices[i]==(LocalOrdinal)row) {
-            indout[nNonzeros] = Ain->getColMap()->getGlobalElement(indices[i]); // LID -> GID (column)
-            valout[nNonzeros] = vals[i];
-            nNonzeros++;
+        if (keepDiagonal_)
+          for(size_t i=0; i<(size_t)indices.size(); i++) {
+            if(Teuchos::ScalarTraits<Scalar>::magnitude(vals[i]) > Teuchos::ScalarTraits<Scalar>::magnitude(threshold_) || indices[i]==(LocalOrdinal)row) {
+              indout[nNonzeros] = Ain->getColMap()->getGlobalElement(indices[i]); // LID -> GID (column)
+              valout[nNonzeros] = vals[i];
+              nNonzeros++;
+            }
           }
-        }
+        else
+          for(size_t i=0; i<(size_t)indices.size(); i++) {
+            if(Teuchos::ScalarTraits<Scalar>::magnitude(vals[i]) > Teuchos::ScalarTraits<Scalar>::magnitude(threshold_)) {
+              indout[nNonzeros] = Ain->getColMap()->getGlobalElement(indices[i]); // LID -> GID (column)
+              valout[nNonzeros] = vals[i];
+              nNonzeros++;
+            }
+          }
 
         indout.resize(nNonzeros);
         valout.resize(nNonzeros);

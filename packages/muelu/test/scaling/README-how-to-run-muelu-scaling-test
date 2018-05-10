@@ -1,0 +1,27 @@
+The MueLu scaling test "MueLu_Driver.exe" accepts a variety of command line options.
+The most useful are:
+
+  --help                                   prints all options and their default values
+
+  --matrixType               string        matrix type to generate: Laplace1D, Laplace2D, Laplace3D, Elasticity2D, Elasticity3D
+                                           (default: --matrixType="Laplace2D")
+  --matrix                   string        MatrixMarket file containing matrix
+                                           (default: --matrix="")
+  --rhs                      string        MatrixMarket file containing right hand side
+                                           (default: --rhs="")
+  --nx                       long long int mesh points in x-direction.
+                                           (default: --nx=100)
+  --node                     string        node type (serial | openmp | cuda)
+                                           (default: --node="")
+  --ny                       long long int mesh points in y-direction.
+                                           (default: --ny=100)
+  --nz                       long long int mesh points in z-direction.
+                                           (default: --nz=100)
+  --its                      int           maximum number of solver iterations
+                                           (default: --its=200)
+  --solver                   string        Krylov solver type: (none | cg | gmres | standalone)
+                                           (default: --solver="cg")
+  --xml                      string        read MueLu parameters from a file
+                                           (default: --xml="scaling.xml")
+  --timings                  bool          print timings to screen
+  --notimings                              (default: --timings)

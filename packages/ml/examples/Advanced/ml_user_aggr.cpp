@@ -48,7 +48,7 @@ using namespace Galeri;
 
 char*UserLabel()
 {
-  return("Linear");
+   return((char*)"Linear");
 }
 
 // ================================ //

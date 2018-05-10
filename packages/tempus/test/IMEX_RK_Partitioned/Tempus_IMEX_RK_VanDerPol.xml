@@ -1,5 +1,6 @@
 <ParameterList name="IMEX_RK_VanDerPol">
   <ParameterList name="VanDerPolModel">
+    <Parameter name="Accept model parameters"    type="bool" value="true"/>
     <Parameter name="Provide nominal values"     type="bool" value="true"/>
     <Parameter name="Coeff epsilon" type="double" value="0.1"/>
     <Parameter name="IC x0"   type="double" value="2.0"/>
@@ -31,19 +32,30 @@
         <Parameter name="Maximum Order"          type="int"    value="0"/>
         <Parameter name="Maximum Absolute Error" type="double" value="1.0e-8"/>
         <Parameter name="Maximum Relative Error" type="double" value="1.0e-8"/>
-        <Parameter name="Integrator Step Type"  type="string" value="Variable"/>
         <Parameter name="Output Time List"       type="string" value=""/>
         <Parameter name="Output Index List"      type="string" value=""/>
         <Parameter name="Output Time Interval"   type="double" value="1.0"/>
         <Parameter name="Output Index Interval"  type="int"    value="100000"/>
         <Parameter name="Maximum Number of Stepper Failures" type="int" value="10"/>
         <Parameter name="Maximum Number of Consecutive Stepper Failures" type="int" value="5"/>
+        <Parameter name="Integrator Step Type"  type="string" value="Variable"/>
+        <ParameterList name="Time Step Control Strategy">
+            <Parameter name="Time Step Control Strategy List"  type="string" value="basic_vs"/>
+            <ParameterList name="basic_vs">
+                <Parameter name="Name" type="string" value="Basic VS"/>
+                <Parameter name="Reduction Factor" type="double" value="0.5"/>
+                <Parameter name="Amplification Factor" type="double" value="1.75"/>
+                <Parameter name="Minimum Value Monitoring Function" type="double" value="1.0e-6"/>
+                <Parameter name="Maximum Value Monitoring Function" type="double" value="5.0e0"/>
+            </ParameterList>
+        </ParameterList>
       </ParameterList>
     </ParameterList>
 
     <ParameterList name="Default Stepper">
 
       <Parameter name="Stepper Type"   type="string" value="fill-in"/>
+      <Parameter name="Zero Initial Guess" type="bool" value="0"/>
       <Parameter name="Solver Name"    type="string" value="Default Solver"/>
 
       <ParameterList name="Default Solver">
@@ -132,6 +144,7 @@
       </ParameterList>
 
   <Parameter name="Solver Name"    type="string" value="Default Solver"/>
+  <Parameter name="Zero Initial Guess" type="bool" value="0"/>
   <ParameterList name="Default Solver">
       <ParameterList name="NOX">
           <ParameterList name="Direction">

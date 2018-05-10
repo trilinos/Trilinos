@@ -49,7 +49,12 @@
 #include <Tpetra_BlockMultiVector.hpp>
 
 #include <Kokkos_ArithTraits.hpp>
+#include <KokkosBatched_Util.hpp>
 #include <KokkosBatched_Vector.hpp>
+#if defined(__KOKKOSBATCHED_PROMOTION__)
+#include <KokkosBatched_AddRadial_Decl.hpp>
+#include <KokkosBatched_AddRadial_Impl.hpp>
+#endif // __KOKKOSBATCHED_PROMOTION__
 #include <KokkosBatched_Gemm_Decl.hpp>
 #include <KokkosBatched_Gemm_Serial_Impl.hpp>
 #include <KokkosBatched_Gemv_Decl.hpp>
@@ -63,7 +68,10 @@
 
 #include "Ifpack2_BlockTriDiContainer_decl.hpp"
 
+#include <memory>
+
 //todo Move to KokkosKernels.
+#if !defined(__KOKKOSBATCHED_PROMOTION__)
 namespace KokkosBatched {
 namespace Details {
 namespace Todo {
@@ -103,7 +111,7 @@ inline static __m256d add_radial_impl (const __m256d& a, const double r) {
 
 #if defined(__AVX__) || defined(__AVX2__)
 template<typename SpT, typename ScalarType>
-inline 
+inline
 static Vector<VectorTag<AVX<double,SpT>,4> >
 add_radial (Vector<VectorTag<AVX<double,SpT>,4> > const& a, const ScalarType& r) {
   return add_radial_impl(a, r);
@@ -112,7 +120,7 @@ add_radial (Vector<VectorTag<AVX<double,SpT>,4> > const& a, const ScalarType& r)
 
 #if defined(__AVX512F__)
 template<typename SpT, typename ScalarType>
-inline 
+inline
 static Vector<VectorTag<AVX<double,SpT>,8> >
 add_radial (Vector<VectorTag<AVX<double,SpT>,8> > const& a, const ScalarType& r) {
   // AVX512F doesn't support _mm512_{and,or,andnot}_pd, so do two 256-bit
@@ -152,9 +160,9 @@ Serial_LU_Internal_Unblocked_invoke(
     value_type
       *__restrict__ a21  = A+(p+1)*as0+(p  )*as1,
       *__restrict__ A22  = A+(p+1)*as0+(p+1)*as1;
-        
+
     for (int i=0;i<iend;++i) {
-      // a21[i*as0] *= inv_alpha11; 
+      // a21[i*as0] *= inv_alpha11;
       a21[i*as0] /= alpha11;
       for (int j=0;j<jend;++j)
         A22[i*as0+j*as1] -= a21[i*as0] * a12t[j*as1];
@@ -167,10 +175,13 @@ Serial_LU_Internal_Unblocked_invoke(
 } // namespace Details
 } // namespace KokkosBatched
 
-namespace Ifpack2 {
+#endif // __KOKKOSBATCHED_PROMOTION__
 
+namespace Ifpack2 {
+#if !defined(__KOKKOSBATCHED_PROMOTION__)
 namespace Details {
 namespace Todo {
+
 template <typename Object, typename Vector>
 int test_add_radial_impl (Object& o, Vector& v, const int len) {
   using KokkosBatched::Details::Todo::add_radial;
@@ -214,13 +225,19 @@ inline int test_add_radial () {
 }
 }
 }
+#endif // __KOKKOSBATCHED_PROMOTION__
 
 namespace Details {
 namespace Batched {
+#if defined(__KOKKOSBATCHED_PROMOTION__)
+using KokkosBatched::Experimental::Vector;
+using KokkosBatched::Experimental::SIMD;
+using KokkosBatched::Experimental::DefaultVectorLength;
+#else // __KOKKOSBATCHED_PROMOTION__
 using KokkosBatched::Experimental::Vector;
 using KokkosBatched::Experimental::VectorTag;
 using KokkosBatched::Experimental::AVX;
-
+#endif // __KOKKOSBATCHED_PROMOTION__
 template <typename ExeSpace>
 struct DeviceType {
    typedef Kokkos::Device<typename ExeSpace::execution_space,
@@ -259,6 +276,41 @@ struct ScalarType {
   typedef VectorType type;
 };
 
+#if defined(__KOKKOSBATCHED_PROMOTION__)
+#if defined(KOKKOS_ENABLE_SERIAL)
+template <>
+struct DefaultVectorizationMethod<Kokkos::Serial, double> {
+  typedef SIMD<double> type;
+};
+#endif
+#if defined(KOKKOS_ENABLE_OPENMP)
+template <>
+struct DefaultVectorizationMethod<Kokkos::OpenMP, double> {
+  typedef SIMD<double> type;
+};
+#endif
+#if defined(KOKKOS_ENABLE_CUDA)
+template <>
+struct DefaultVectorizationMethod<Kokkos::Cuda, double> {
+  typedef BatchedNonVector<Kokkos::Cuda, double> type;
+};
+#endif
+template <>
+struct VectorizationTraits<SIMD<double> > {
+  typedef double value_type;
+  typedef Kokkos::DefaultHostExecutionSpace exec_space;
+  enum : int { vector_length = DefaultVectorLength<double,typename exec_space::memory_space>::value };
+  typedef Vector<SIMD<double>, vector_length> vector_type;
+};
+template <>
+struct VectorLength<VectorizationTraits<SIMD<double> >::vector_type> {
+  enum : int { value = VectorizationTraits<SIMD<double> >::vector_length };
+};
+template <>
+struct ScalarType<VectorizationTraits<SIMD<double> >::vector_type> {
+  typedef VectorizationTraits<SIMD<double> >::vector_type::value_type type;
+};
+#else //__KOKKOSBATCHED_PROMOTION__
 #if defined(__AVX512F__) || defined(__AVX2__) || defined(__AVX__)
 template <typename ExeSpace>
 struct DefaultVectorizationMethod<ExeSpace, double> {
@@ -294,6 +346,8 @@ struct ScalarType<VectorizationTraits<AVX<double> >::vector_type> {
   typedef VectorizationTraits<AVX<double> >::vector_type::value_type type;
 };
 #endif
+#endif //__KOKKOSBATCHED_PROMOTION__
+
 
 template <typename Int1, typename Int2, typename View, typename... Indices>
 KOKKOS_INLINE_FUNCTION
@@ -699,7 +753,7 @@ public:
     TEUCHOS_TEST_FOR_EXCEPT_MSG(bs > bufsz, "bufsz is too small; contact the developer.");
     Kokkos::parallel_for(Kokkos::RangePolicy<typename MvView::execution_space>(0, nparts), *this);
   }
-  
+
   KOKKOS_INLINE_FUNCTION void operator() (const Int& partidx) const {
     Scalar ybuf[bufsz];
     const Int pri0 = part2packrowidx0(partidx);
@@ -1008,12 +1062,12 @@ public: // Intended to be private, but public for Cuda.
   class SetTridiagsToI {
     Tridiags btdm;
     LOList packptr;
-    
+
   public:
     SetTridiagsToI (const Tridiags& btdm_, const LOList& packptr_)
       : btdm(btdm_), packptr(packptr_)
     {}
-    
+
     KOKKOS_INLINE_FUNCTION void operator() (const LO& k) const {
       const Size is = btdm.pack_td_ptr(packptr(k)), ie = btdm.pack_td_ptr(packptr(k+1));
       const LO bs = btdm.values.extent(1);
@@ -1079,9 +1133,9 @@ public: // Intended to be private, but public for Cuda.
                const Teuchos::RCP<const map_type>& tgt_map, const LO bsz) {
       bsz_ = bsz;
       comm_ = tgt_map->getComm();
-      
+
       const import_type import(src_map, tgt_map);
-      
+
       { // Send and recv buffers by PID.
         Tpetra::Distributor& d = import.getDistributor();
         init(d.getLengthsTo(), sos_);
@@ -1247,7 +1301,7 @@ public: // Intended to be private, but public for Cuda.
 
   public:
     AsyncableImport (const Teuchos::RCP<const map_type>& src_map,
-                     const Teuchos::RCP<const map_type>& tgt_map, const LO block_size) {     
+                     const Teuchos::RCP<const map_type>& tgt_map, const LO block_size) {
       init(src_map, tgt_map, block_size);
     }
 
@@ -1318,7 +1372,7 @@ public: // Intended to be private, but public for Cuda.
     }
 
     const Teuchos::RCP<const Teuchos::Comm<int> >& get_comm () const { return comm_; }
-    
+
     const MvView& get_mv_remote () const { return X_remote_; }
   };
 
@@ -1332,10 +1386,10 @@ public: // Intended to be private, but public for Cuda.
     MPI_Request mpi_request_;
     MPI_Comm comm_;
 #endif
-    
+
   public:
     typedef std::shared_ptr<NormManager> Ptr;
-    
+
     NormManager (const Teuchos::RCP<const Teuchos::Comm<int> >& comm) {
       sweep_step_ = 1;
       n0_ = 0;
@@ -1472,7 +1526,7 @@ public: // Intended to be private, but public for Cuda.
     ConstUnmanaged<LOList> part2rowidx0, part2packrowidx0, lclrow, packptr;
     bool y_is_zero;
     magnitude_type* norm2sqr;
-    
+
     void init (const mv_type& mv_, const typename Tridiags::PackedMultiVector& pmv_,
                const Enum& side_, const impl_scalar_type& damping_factor_, const LOList& part2rowidx0_,
                const LOList& part2packrowidx0_, const LOList& lclrow_, const LOList& packptr_,
@@ -1511,7 +1565,7 @@ public: // Intended to be private, but public for Cuda.
     // For || reduce.
     typedef magnitude_type value_type[];
     int value_count;
-    
+
     // Packed multivector <- Tpetra::MultiVector.
     PermuteAndRepack (const mv_type& mv_, typename Tridiags::PackedMultiVector& pmv_,
                       const LOList& part2rowidx0_, const LOList& part2packrowidx0_,
@@ -1697,13 +1751,23 @@ public: // Intended to be private, but public for Cuda.
 
     template <typename AViewType>
     KOKKOS_INLINE_FUNCTION void LU (const AViewType& A) const {
+#if defined(__KOKKOSBATCHED_PROMOTION__)
+      {
+        namespace kbe = KokkosBatched::Experimental;
+        if (add_to_diag) {
+          kbe::SerialAddRadial::invoke(diag_safety, A);
+        }
+        kbe::SerialLU<kbe::Algo::LU::Blocked>::invoke(A);
+      }
+#else // __KOKKOSBATCHED_PROMOTION__
       if (add_to_diag)
         KokkosBatched::Details::Todo::Serial_LU_Internal_Unblocked_invoke(
-          A.dimension_0(), A.dimension_1(), A.data(), A.stride_0(), A.stride_1(), diag_safety);
+          A.extent(0), A.extent(1), A.data(), A.stride_0(), A.stride_1(), diag_safety);
       else {
         namespace kbe = KokkosBatched::Experimental;
         kbe::SerialLU<kbe::Algo::LU::Blocked>::invoke(A);
       }
+#endif // __KOKKOSBATCHED_PROMOTION__
     }
 
     KOKKOS_INLINE_FUNCTION void factorize (const LO& packidx) const {
@@ -1748,7 +1812,7 @@ public: // Intended to be private, but public for Cuda.
         i0 += 3;
       }
     }
-    
+
   public:
     ExtractAndFactorizeTridiags (const Tridiags& btdm_, const LOList& partptr_, const LOList& lclrow_,
                                  const LOList& packptr_, const CrsGraphRowMap& A_rowptr_,
@@ -1800,7 +1864,7 @@ public: // Intended to be private, but public for Cuda.
       kbe::SerialTrsv<UploType, kbe::Trans::NoTranspose, DiagType, kbe::Algo::Trsv::Unblocked>
         ::invoke(a, A, X);
     }
-    
+
     template <typename Tag, typename UploType, typename DiagType,
               typename Scalar, typename MatA, typename MatX>
     KOKKOS_FORCEINLINE_FUNCTION static void
@@ -1925,7 +1989,7 @@ public: // Intended to be private, but public for Cuda.
       namespace kbe = KokkosBatched::Experimental;
       kbe::SerialTrsvInternalLower<kbe::Algo::Trsv::Unblocked>::invoke(
         true,
-        values.dimension_1(),
+        values.extent(1),
         a,
         values.data() + i0*bs2, values.stride_1(), values.stride_2(),
         X.data() + r0*xsz, X.stride_1());
@@ -1938,7 +2002,7 @@ public: // Intended to be private, but public for Cuda.
       namespace kbe = KokkosBatched::Experimental;
       kbe::SerialTrsmInternalLeftLower<kbe::Algo::Trsm::Blocked>::invoke(
         true,
-        values.dimension_1(), X.dimension_2(),
+        values.extent(1), X.extent(2),
         a,
         values.data() + i0*bs2, values.stride_1(), values.stride_2(),
         X.data() + r0*xsz, X.stride_1(), X.stride_2());
@@ -1951,7 +2015,7 @@ public: // Intended to be private, but public for Cuda.
       namespace kbe = KokkosBatched::Experimental;
       kbe::SerialTrsvInternalUpper<kbe::Algo::Trsv::Unblocked>::invoke(
         false,
-        values.dimension_1(),
+        values.extent(1),
         a,
         values.data() + i0*bs2, values.stride_1(), values.stride_2(),
         X.data() + r0*xsz, X.stride_1());
@@ -1964,7 +2028,7 @@ public: // Intended to be private, but public for Cuda.
       namespace kbe = KokkosBatched::Experimental;
       kbe::SerialTrsmInternalLeftUpper<kbe::Algo::Trsm::Blocked>::invoke(
         false,
-        values.dimension_1(), X.dimension_2(),
+        values.extent(1), X.extent(2),
         a,
         values.data() + i0*bs2, values.stride_1(), values.stride_2(),
         X.data() + r0*xsz, X.stride_1(), X.stride_2());
@@ -1978,7 +2042,7 @@ public: // Intended to be private, but public for Cuda.
            typename std::enable_if<std::is_same<Tag, VecTag>::value>::type* = 0) const {
       namespace kbe = KokkosBatched::Experimental;
       kbe::SerialGemvInternal<kbe::Algo::Gemv::Unblocked>::invoke(
-        values.dimension_1(), values.dimension_2(),
+        values.extent(1), values.extent(2),
         a,
         values.data() + a0*bs2, values.stride_1(), values.stride_2(),
         X.data() + b0*xsz, X.stride_1(),
@@ -1992,7 +2056,7 @@ public: // Intended to be private, but public for Cuda.
            typename std::enable_if<std::is_same<Tag, MatTag>::value>::type* = 0) const {
       namespace kbe = KokkosBatched::Experimental;
       kbe::SerialGemmInternal<kbe::Algo::Gemm::Blocked>::invoke(
-        X.dimension_1(), X.dimension_2(), values.dimension_2(),
+        X.extent(1), X.extent(2), values.extent(2),
         a,
         values.data() + a0*bs2, values.stride_1(), values.stride_2(),
         X.data() + b0*xsz, X.stride_1(), X.stride_2(),
@@ -2005,8 +2069,8 @@ public: // Intended to be private, but public for Cuda.
            const typename Tridiags::PackedMultiVector& X_)
       : pack_td_ptr(btdm.pack_td_ptr), values(btdm.values),
         packptr(packptr_), part2packrowidx0(part2packrowidx0_),
-        X(X_), bs2(values.dimension_1()*values.dimension_1()),
-        xsz(values.dimension_1()*X.dimension_2())
+        X(X_), bs2(values.extent(1)*values.extent(1)),
+        xsz(values.extent(1)*X.extent(2))
     {}
 
     template <typename Tag>
@@ -2051,7 +2115,7 @@ public: // Intended to be private, but public for Cuda.
         run<MatTag>();
     }
   };
-  
+
 private:
 
   template <typename T> static KOKKOS_INLINE_FUNCTION constexpr T square (const T& x) { return x*x; }
@@ -2441,7 +2505,7 @@ public:
 
     std::vector<LO> col2row;
     find_col2row(col2row);
-    
+
     col_contiguous_ = col2row[0] == 0;
     if (col_contiguous_) {
       for (LO lr = 1; lr < nrows; ++lr)
@@ -2685,7 +2749,7 @@ public:
           compute_b_minus_Rx(X, *Y_remote_, Y);
           // pmv := y(lclrow).
           PermuteAndRepack(Y, pmv_, part2rowidx0_, part2packrowidx0_, lclrow_, packptr_).run();
-          
+
         } else {
 
           // Fused y := x - R y and pmv := y(lclrow).
@@ -2709,17 +2773,17 @@ public:
             compute_b_minus_Rx(X, Y.template getLocalView<tpetra_device_type>(),
                                async_import_->get_mv_remote(), pmv_);
           }
-          
+
         }
       }
 
       // pmv := inv(D) pmv.
       Solve<layout_type, void>(btdm_, packptr_, part2packrowidx0_, pmv_).run();
-      
+
       // y(lclrow) = (b - a) y(lclrow) + a pmv, with b = 1 always.
       PermuteAndRepack(pmv_, Y, damping_factor, part2rowidx0_, part2packrowidx0_, lclrow_, packptr_,
                        y_is_zero, do_norm ? norm_mgr_->get_buffer() : nullptr).run();
-      
+
       if (do_norm) {
         if (sweep + 1 == max_num_sweeps) {
           norm_mgr_->ireduce(sweep, true);

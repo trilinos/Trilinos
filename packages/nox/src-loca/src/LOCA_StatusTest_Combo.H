@@ -51,7 +51,7 @@
 #ifndef LOCA_STATUSTEST_COMBO_H
 #define LOCA_STATUSTEST_COMBO_H
 
-
+#include <vector>
 #include "LOCA_StatusTest_Abstract.H" // base class
 
 #include "Teuchos_RCP.hpp"

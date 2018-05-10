@@ -162,7 +162,7 @@ long double nCDF(long double z) {
   long double q6     = 1.755667163182642;
   long double q7     = 0.08838834764831844;
   long double rootpi = std::sqrt(M_PI);
-  long double zabs   = fabs(z);
+  long double zabs   = std::abs(z);
 
   if (12.0 < zabs) {
     p = 0.0;
@@ -286,7 +286,7 @@ int main(int argc, char *argv[]) {
 
   long double analyticInt = compExactInt();
   long double abstol      = std::sqrt(INTREPID_TOL);
-  long double absdiff     = fabs(analyticInt-sol[0]);
+  long double absdiff     = std::abs(analyticInt-sol[0]);
   try { 
     *outStream << "Adaptive Sparse Grid exited with global error " 
 	       << std::scientific << std::setprecision(16) << eta << "\n"

@@ -1,0 +1,40 @@
+<ParameterList name="MueLu">
+
+  <Parameter name="refmaxwell: mode" type="string" value="additive"/>
+  <Parameter name="refmaxwell: disable addon" type="bool" value="false"/>
+  <Parameter name="refmaxwell: dump matrices" type="bool" value="false"/>
+
+  <Parameter name="aggregation: type" type="string" value="uncoupled"/>
+  <Parameter name="aggregation: drop tol" type="double" value="0.01"/>
+  <Parameter name="smoother: type" type="string" value="RELAXATION"/>
+  <ParameterList name="smoother: params">
+    <Parameter name="relaxation: type" type="string" value="Symmetric Gauss-Seidel"/>
+    <Parameter name="relaxation: sweeps" type="int" value="2"/>
+  </ParameterList>
+
+  <ParameterList name="refmaxwell: 11list">
+    <Parameter name="number of equations" type="int" value="3"/>
+    <Parameter name="aggregation: type" type="string" value="uncoupled"/>
+    <Parameter name="aggregation: drop tol" type="double" value="0.01"/>
+    <Parameter name="coarse: max size" type="int" value="128"/>
+    <Parameter name="coarse: type" type="string" value="Klu"/>
+    <Parameter name="smoother: type" type="string" value="RELAXATION"/>
+    <ParameterList name="smoother: params">
+      <Parameter name="relaxation: type" type="string" value="Symmetric Gauss-Seidel"/>
+      <Parameter name="relaxation: sweeps" type="int" value="2"/>
+    </ParameterList>
+  </ParameterList>
+
+  <ParameterList name="refmaxwell: 22list">
+    <Parameter name="aggregation: type" type="string" value="uncoupled"/>
+    <Parameter name="aggregation: drop tol" type="double" value="0.01"/>
+    <Parameter name="coarse: max size" type="int" value="128"/>
+    <Parameter name="coarse: type" type="string" value="Klu"/>
+    <Parameter name="smoother: type" type="string" value="RELAXATION"/>
+    <ParameterList name="smoother: params">
+      <Parameter name="relaxation: type" type="string" value="Symmetric Gauss-Seidel"/>
+      <Parameter name="relaxation: sweeps" type="int" value="2"/>
+    </ParameterList>
+  </ParameterList>
+
+</ParameterList>

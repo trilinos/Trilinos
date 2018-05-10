@@ -53,16 +53,12 @@
 #include "Tpetra_Distributor.hpp"
 #include "Tpetra_Details_reallocDualViewIfNeeded.hpp"
 #include "Tpetra_Details_Behavior.hpp"
-#ifdef KOKKOS_HAVE_CUDA
-// mfh 03 Aug 2017: See #1088 and #1571.
-#  include "Tpetra_Details_Environment.hpp"
-#endif // KOKKOS_HAVE_CUDA
-
+#include <memory>
 
 namespace Tpetra {
 
-  template <class Packet, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
-  DistObject<Packet, LocalOrdinal, GlobalOrdinal, Node, classic>::
+  template <class Packet, class LocalOrdinal, class GlobalOrdinal, class Node>
+  DistObject<Packet, LocalOrdinal, GlobalOrdinal, Node>::
   DistObject (const Teuchos::RCP<const map_type>& map) :
     map_ (map)
   {
@@ -113,20 +109,20 @@ namespace Tpetra {
 #endif // HAVE_TPETRA_TRANSFER_TIMERS
   }
 
-  template <class Packet, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
-  DistObject<Packet, LocalOrdinal, GlobalOrdinal, Node, classic>::
-  DistObject (const DistObject<Packet, LocalOrdinal, GlobalOrdinal, Node, classic>& rhs) :
+  template <class Packet, class LocalOrdinal, class GlobalOrdinal, class Node>
+  DistObject<Packet, LocalOrdinal, GlobalOrdinal, Node>::
+  DistObject (const DistObject<Packet, LocalOrdinal, GlobalOrdinal, Node>& rhs) :
     map_ (rhs.map_)
   {}
 
-  template <class Packet, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
-  DistObject<Packet, LocalOrdinal, GlobalOrdinal, Node, classic>::
+  template <class Packet, class LocalOrdinal, class GlobalOrdinal, class Node>
+  DistObject<Packet, LocalOrdinal, GlobalOrdinal, Node>::
   ~DistObject ()
   {}
 
-  template <class Packet, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
+  template <class Packet, class LocalOrdinal, class GlobalOrdinal, class Node>
   std::string
-  DistObject<Packet, LocalOrdinal, GlobalOrdinal, Node, classic>::
+  DistObject<Packet, LocalOrdinal, GlobalOrdinal, Node>::
   description () const
   {
     using Teuchos::TypeNameTraits;
@@ -144,9 +140,9 @@ namespace Tpetra {
     return os.str ();
   }
 
-  template <class Packet, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
+  template <class Packet, class LocalOrdinal, class GlobalOrdinal, class Node>
   void
-  DistObject<Packet, LocalOrdinal, GlobalOrdinal, Node, classic>::
+  DistObject<Packet, LocalOrdinal, GlobalOrdinal, Node>::
   describe (Teuchos::FancyOStream &out,
             const Teuchos::EVerbosityLevel verbLevel) const
   {
@@ -195,10 +191,10 @@ namespace Tpetra {
             out << "Process " << myRank << ":" << endl;
             Teuchos::OSTab tab2 (out);
             out << "Export buffer size (in packets): "
-                << exports_.dimension_0 ()
+                << exports_.extent (0)
                 << endl
                 << "Import buffer size (in packets): "
-                << imports_.dimension_0 ()
+                << imports_.extent (0)
                 << endl;
           }
           if (! comm.is_null ()) {
@@ -211,9 +207,9 @@ namespace Tpetra {
     } // if vl != VERB_NONE
   }
 
-  template <class Packet, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
+  template <class Packet, class LocalOrdinal, class GlobalOrdinal, class Node>
   void
-  DistObject<Packet, LocalOrdinal, GlobalOrdinal, Node, classic>::
+  DistObject<Packet, LocalOrdinal, GlobalOrdinal, Node>::
   removeEmptyProcessesInPlace (const Teuchos::RCP<const map_type>& newMap)
   {
     TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
@@ -249,9 +245,9 @@ namespace Tpetra {
   }
   */
 
-  template <class Packet, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
+  template <class Packet, class LocalOrdinal, class GlobalOrdinal, class Node>
   void
-  DistObject<Packet, LocalOrdinal, GlobalOrdinal, Node, classic>::
+  DistObject<Packet, LocalOrdinal, GlobalOrdinal, Node>::
   doImport (const SrcDistObject& source,
             const Import<LocalOrdinal, GlobalOrdinal, Node>& importer,
             CombineMode CM)
@@ -291,9 +287,9 @@ namespace Tpetra {
     }
   }
 
-  template <class Packet, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
+  template <class Packet, class LocalOrdinal, class GlobalOrdinal, class Node>
   void
-  DistObject<Packet, LocalOrdinal, GlobalOrdinal, Node, classic>::
+  DistObject<Packet, LocalOrdinal, GlobalOrdinal, Node>::
   doExport (const SrcDistObject& source,
             const Export<LocalOrdinal, GlobalOrdinal, Node>& exporter,
             CombineMode CM)
@@ -333,9 +329,9 @@ namespace Tpetra {
     }
   }
 
-  template <class Packet, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
+  template <class Packet, class LocalOrdinal, class GlobalOrdinal, class Node>
   void
-  DistObject<Packet, LocalOrdinal, GlobalOrdinal, Node, classic>::
+  DistObject<Packet, LocalOrdinal, GlobalOrdinal, Node>::
   doImport (const SrcDistObject& source,
             const Export<LocalOrdinal, GlobalOrdinal, Node>& exporter,
             CombineMode CM)
@@ -375,9 +371,9 @@ namespace Tpetra {
     }
   }
 
-  template <class Packet, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
+  template <class Packet, class LocalOrdinal, class GlobalOrdinal, class Node>
   void
-  DistObject<Packet, LocalOrdinal, GlobalOrdinal, Node, classic>::
+  DistObject<Packet, LocalOrdinal, GlobalOrdinal, Node>::
   doExport (const SrcDistObject& source,
             const Import<LocalOrdinal, GlobalOrdinal, Node> & importer,
             CombineMode CM)
@@ -417,23 +413,23 @@ namespace Tpetra {
     }
   }
 
-  template <class Packet, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
+  template <class Packet, class LocalOrdinal, class GlobalOrdinal, class Node>
   bool
-  DistObject<Packet, LocalOrdinal, GlobalOrdinal, Node, classic>::
+  DistObject<Packet, LocalOrdinal, GlobalOrdinal, Node>::
   isDistributed () const {
     return map_->isDistributed ();
   }
 
-  template <class Packet, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
+  template <class Packet, class LocalOrdinal, class GlobalOrdinal, class Node>
   size_t
-  DistObject<Packet, LocalOrdinal, GlobalOrdinal, Node, classic>::
+  DistObject<Packet, LocalOrdinal, GlobalOrdinal, Node>::
   constantNumberOfPackets () const {
     return 0; // default implementation; subclasses may override
   }
 
-  template <class Packet, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
+  template <class Packet, class LocalOrdinal, class GlobalOrdinal, class Node>
   void
-  DistObject<Packet, LocalOrdinal, GlobalOrdinal, Node, classic>::
+  DistObject<Packet, LocalOrdinal, GlobalOrdinal, Node>::
   doTransfer (const SrcDistObject& src,
               const Details::Transfer<local_ordinal_type, global_ordinal_type, node_type>& transfer,
               const char modeString[],
@@ -589,16 +585,16 @@ namespace Tpetra {
     }
   }
 
-  template <class Packet, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
+  template <class Packet, class LocalOrdinal, class GlobalOrdinal, class Node>
   bool
-  DistObject<Packet, LocalOrdinal, GlobalOrdinal, Node, classic>::
+  DistObject<Packet, LocalOrdinal, GlobalOrdinal, Node>::
   reallocImportsIfNeeded (const size_t newSize, const bool verbose)
   {
     if (verbose) {
       const int myRank = this->getMap ()->getComm ()->getRank ();
       std::ostringstream os;
       os << "(Proc " << myRank << ") Reallocate (if needed) imports_ from "
-         << imports_.dimension_0 () << " to " << newSize << std::endl;
+         << imports_.extent (0) << " to " << newSize << std::endl;
       std::cerr << os.str ();
     }
     using Details::reallocDualViewIfNeeded;
@@ -614,9 +610,9 @@ namespace Tpetra {
     return reallocated;
   }
 
-  template <class Packet, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
+  template <class Packet, class LocalOrdinal, class GlobalOrdinal, class Node>
   bool
-  DistObject<Packet, LocalOrdinal, GlobalOrdinal, Node, classic>::
+  DistObject<Packet, LocalOrdinal, GlobalOrdinal, Node>::
   reallocArraysForNumPacketsPerLid (const size_t numExportLIDs,
                                     const size_t numImportLIDs)
   {
@@ -680,9 +676,9 @@ namespace Tpetra {
     return firstReallocated || secondReallocated;
   }
 
-  template <class Packet, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
+  template <class Packet, class LocalOrdinal, class GlobalOrdinal, class Node>
   void
-  DistObject<Packet, LocalOrdinal, GlobalOrdinal, Node, classic>::
+  DistObject<Packet, LocalOrdinal, GlobalOrdinal, Node>::
   doTransferOld (const SrcDistObject& src,
               CombineMode CM,
               size_t numSameIDs,
@@ -833,8 +829,8 @@ namespace Tpetra {
         const size_t rbufLen = remoteLIDs.size() * constantNumPackets;
         if (debug) {
           std::ostringstream os;
-          os << "*** doTransferOld: Const # packets: imports_.dimension_0() = "
-             << imports_.dimension_0 () << ", rbufLen = " << rbufLen
+          os << "*** doTransferOld: Const # packets: imports_.extent(0) = "
+             << imports_.extent (0) << ", rbufLen = " << rbufLen
              << std::endl;
           std::cerr << os.str ();
         }
@@ -1046,7 +1042,7 @@ namespace Tpetra {
       typedef typename DT::execution_space DES;
       typedef Kokkos::RangePolicy<DES, IndexType> range_type;
 
-      const IndexType numOut = numImportPacketsPerLID.dimension_0 ();
+      const IndexType numOut = numImportPacketsPerLID.extent (0);
       size_t totalImportPackets = 0;
       parallel_reduce ("Count import packets",
                        range_type (0, numOut),
@@ -1056,9 +1052,9 @@ namespace Tpetra {
     }
   } // namespace (anonymous)
 
-  template <class Packet, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
+  template <class Packet, class LocalOrdinal, class GlobalOrdinal, class Node>
   void
-  DistObject<Packet, LocalOrdinal, GlobalOrdinal, Node, classic>::
+  DistObject<Packet, LocalOrdinal, GlobalOrdinal, Node>::
   doTransferNew (const SrcDistObject& src,
                  const CombineMode CM,
                  const size_t numSameIDs,
@@ -1156,7 +1152,7 @@ namespace Tpetra {
     // that if CM == INSERT || CM == REPLACE, the target object could
     // be write only.  We don't optimize for that here.
 
-    if (numSameIDs + permuteToLIDs.dimension_0 () != 0) {
+    if (numSameIDs + permuteToLIDs.extent (0) != 0) {
       // There is at least one GID to copy or permute.
       if (verbose) {
         std::ostringstream os;
@@ -1212,8 +1208,8 @@ namespace Tpetra {
         }
         // This only reallocates if necessary, that is, if the sizes
         // don't match.
-        this->reallocArraysForNumPacketsPerLid (exportLIDs.dimension_0 (),
-                                                remoteLIDs.dimension_0 ());
+        this->reallocArraysForNumPacketsPerLid (exportLIDs.extent (0),
+                                                remoteLIDs.extent (0));
       }
 
       if (verbose) {
@@ -1271,7 +1267,7 @@ namespace Tpetra {
         // already know (from the number of "remote" (incoming)
         // elements) how many incoming elements we expect, so we can
         // resize the buffer accordingly.
-        const size_t rbufLen = remoteLIDs.dimension_0 () * constantNumPackets;
+        const size_t rbufLen = remoteLIDs.extent (0) * constantNumPackets;
         reallocImportsIfNeeded (rbufLen, verbose);
       }
 
@@ -1538,8 +1534,8 @@ namespace Tpetra {
             if (verbose) {
               std::ostringstream os;
               os << *prefix << "7.1. Const # packets per LID: "
-                 << "exports_.dimension_0()=" << exports_.dimension_0 ()
-                 << ", imports_.dimension_0() = " << imports_.dimension_0 ()
+                 << "exports_.extent(0)=" << exports_.extent (0)
+                 << ", imports_.extent(0) = " << imports_.extent (0)
                  << endl;
               std::cerr << os.str ();
             }
@@ -1606,9 +1602,9 @@ namespace Tpetra {
     }
   }
 
-  template <class Packet, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
+  template <class Packet, class LocalOrdinal, class GlobalOrdinal, class Node>
   void
-  DistObject<Packet, LocalOrdinal, GlobalOrdinal, Node, classic>::
+  DistObject<Packet, LocalOrdinal, GlobalOrdinal, Node>::
   print (std::ostream &os) const
   {
     using Teuchos::FancyOStream;
@@ -1621,21 +1617,21 @@ namespace Tpetra {
     this->describe (*out, Teuchos::VERB_DEFAULT);
   }
 
-  template <class Packet, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
+  template <class Packet, class LocalOrdinal, class GlobalOrdinal, class Node>
   void
-  DistObject<Packet, LocalOrdinal, GlobalOrdinal, Node, classic>::
+  DistObject<Packet, LocalOrdinal, GlobalOrdinal, Node>::
   createViews () const
   {}
 
-  template <class Packet, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
+  template <class Packet, class LocalOrdinal, class GlobalOrdinal, class Node>
   void
-  DistObject<Packet, LocalOrdinal, GlobalOrdinal, Node, classic>::
+  DistObject<Packet, LocalOrdinal, GlobalOrdinal, Node>::
   createViewsNonConst (KokkosClassic::ReadWriteOption /*rwo*/)
   {}
 
-  template <class Packet, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
+  template <class Packet, class LocalOrdinal, class GlobalOrdinal, class Node>
   void
-  DistObject<Packet, LocalOrdinal, GlobalOrdinal, Node, classic>::
+  DistObject<Packet, LocalOrdinal, GlobalOrdinal, Node>::
   releaseViews () const
   {}
 

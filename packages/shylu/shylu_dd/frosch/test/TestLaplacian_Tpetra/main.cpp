@@ -134,12 +134,9 @@ int main(int argc, char *argv[])
             parameterList = getParametersFromXmlFile("ParametersRGDSW.xml");
         }
         if (Comm->MyPID()==0) {
-            cout << "\
-            --------------------------------------------------------------------------------\n\
-            PARAMETERS:" << endl;
+            cout << "--------------------------------------------------------------------------------\nPARAMETERS:" << endl;
             parameterList->print(cout);
-            cout << "\
-            --------------------------------------------------------------------------------\n\n";
+            cout << "--------------------------------------------------------------------------------\n\n";
         }
         
         if (Comm->MyPID()==0) cout << "ASSEMBLY...";
@@ -162,7 +159,7 @@ int main(int argc, char *argv[])
             UniqueMapEpetra.reset(Galeri::CreateMap("Cartesian3D", *Comm, GalerList));
             KEpetra.reset(Galeri::CreateCrsMatrix("Laplace3D", UniqueMapEpetra.get(), GalerList));
         }
-
+        
         ArrayView<GO> uniqueMapArrayView(UniqueMapEpetra->MyGlobalElements(),UniqueMapEpetra->NumMyElements());
         RCP<Map<LO,GO,NO> > UniqueMap = MapFactory<LO,GO,NO>::Build(UseTpetra,-1,uniqueMapArrayView,0,TeuchosComm);
         RCP<Matrix<SC,LO,GO,NO> > K = MatrixFactory<SC,LO,GO,NO>::Build(UniqueMap,KEpetra->MaxNumEntries());
@@ -185,14 +182,16 @@ int main(int argc, char *argv[])
         RCP<SchwarzPreconditioner<SC,LO,GO,NO> > Preconditioner;
         if (!Reduced) {
             RCP<GDSWPreconditioner<SC,LO,GO,NO> > TmpPrec(new GDSWPreconditioner<SC,LO,GO,NO>(K,sublist(parameterList,"GDSWPreconditioner")));
+            if (Comm->MyPID()==0) cout << "INITIALIZE...";
+            TmpPrec->initialize(Dimension,1);
             Preconditioner = TmpPrec;
         } else {
             RCP<RGDSWPreconditioner<SC,LO,GO,NO> > TmpPrec(new RGDSWPreconditioner<SC,LO,GO,NO>(K,sublist(parameterList,"RGDSWPreconditioner")));
+            if (Comm->MyPID()==0) cout << "INITIALIZE...";
+            TmpPrec->initialize(Dimension,1);
             Preconditioner = TmpPrec;
         }
         
-        if (Comm->MyPID()==0) cout << "INITIALIZE...";
-        Preconditioner->initialize();
         if (Comm->MyPID()==0) cout << "COMPUTE...";
         Preconditioner->compute();
         if (Comm->MyPID()==0) cout << "done" << endl << "SOLVING EQUATION SYSTEM...";

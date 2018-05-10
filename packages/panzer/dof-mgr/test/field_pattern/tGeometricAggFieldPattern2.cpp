@@ -79,7 +79,8 @@ TEUCHOS_UNIT_TEST(tGeometricFieldPattern, test2d)
    out << note << std::endl;
 
    // basis to build patterns from
-   const int order = 6;
+   const int maxOrder = Intrepid2::Parameters::MaxOrder; 
+   const int order = std::min(6, maxOrder);
    RCP<Intrepid2::Basis<PHX::Device,double,double> > basis = rcp(new Intrepid2::Basis_HGRAD_QUAD_Cn_FEM<PHX::Device,double,double>(order));
    RCP<const FieldPattern> pattern = rcp(new Intrepid2FieldPattern(basis));
 

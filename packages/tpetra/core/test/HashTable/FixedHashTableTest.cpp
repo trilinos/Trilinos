@@ -164,13 +164,13 @@ namespace { // (anonymous)
               const bool testValues = true)
     {
       using std::endl;
-      const size_type numKeys = keys.dimension_0 ();
+      const size_type numKeys = keys.extent (0);
 
       out << "Test " << numKeys << " key" << (numKeys != 1 ? "s" : "") << ":  ";
       TEUCHOS_TEST_FOR_EXCEPTION
-        (numKeys != vals.dimension_0 (), std::logic_error,
-         "keys and vals are not the same length!  keys.dimension_0() = "
-         << numKeys << " != vals.dimension_0() = " << vals.dimension_0 ()
+        (numKeys != vals.extent (0), std::logic_error,
+         "keys and vals are not the same length!  keys.extent(0) = "
+         << numKeys << " != vals.extent(0) = " << vals.extent (0)
          << ".");
 
       const bool testReverse = table.hasKeys ();
@@ -256,7 +256,7 @@ namespace { // (anonymous)
     // Pick something other than 0, just to make sure that it works.
     const ValueType startingValue = 1;
 
-    Teuchos::ArrayView<const KeyType> keys_av (keys_h.ptr_on_device (), numKeys);
+    Teuchos::ArrayView<const KeyType> keys_av (keys_h.data (), numKeys);
     out << "Create table" << endl;
 
     const bool keepKeys = true;
@@ -341,7 +341,7 @@ namespace { // (anonymous)
     }
     Kokkos::deep_copy (vals, vals_h);
 
-    Teuchos::ArrayView<const KeyType> keys_av (keys_h.ptr_on_device (), numKeys);
+    Teuchos::ArrayView<const KeyType> keys_av (keys_h.data (), numKeys);
     out << " Create table" << endl;
 
     const bool keepKeys = true;
@@ -486,7 +486,7 @@ namespace { // (anonymous)
     }
     Kokkos::deep_copy (vals, vals_h);
 
-    Teuchos::ArrayView<const KeyType> keys_av (keys_h.ptr_on_device (), numKeys);
+    Teuchos::ArrayView<const KeyType> keys_av (keys_h.data (), numKeys);
     out << " Create table" << endl;
 
     const bool keepKeys = true;
@@ -631,8 +631,8 @@ namespace { // (anonymous)
     vals_h(0) = static_cast<ValueType> (400);
     Kokkos::deep_copy (vals, vals_h);
 
-    Teuchos::ArrayView<const KeyType> keys_av (keys_h.ptr_on_device (), numKeys);
-    Teuchos::ArrayView<const ValueType> vals_av (vals_h.ptr_on_device (), numKeys);
+    Teuchos::ArrayView<const KeyType> keys_av (keys_h.data (), numKeys);
+    Teuchos::ArrayView<const ValueType> vals_av (vals_h.data (), numKeys);
     out << " Create table" << endl;
 
     Teuchos::RCP<table_type> table;
@@ -709,7 +709,7 @@ namespace { // (anonymous)
     }
     Kokkos::deep_copy (vals, vals_h);
 
-    Teuchos::ArrayView<const KeyType> keys_av (keys_h.ptr_on_device (), numKeys);
+    Teuchos::ArrayView<const KeyType> keys_av (keys_h.data (), numKeys);
     out << " Create table" << endl;
 
     const bool keepKeys = true;
@@ -831,9 +831,9 @@ namespace { // (anonymous)
       TEST_EQUALITY( inTable.maxVal (), outTable->maxVal () );
       TEST_EQUALITY( inTable.numPairs (), outTable->numPairs () );
 
-      Kokkos::View<KeyType*, Kokkos::LayoutLeft, OutDeviceType> keys_out ("keys", keys.dimension_0 ());
+      Kokkos::View<KeyType*, Kokkos::LayoutLeft, OutDeviceType> keys_out ("keys", keys.extent (0));
       Kokkos::deep_copy (keys_out, keys);
-      Kokkos::View<ValueType*, Kokkos::LayoutLeft, OutDeviceType> vals_out ("vals", vals.dimension_0 ());
+      Kokkos::View<ValueType*, Kokkos::LayoutLeft, OutDeviceType> vals_out ("vals", vals.extent (0));
       Kokkos::deep_copy (vals_out, vals);
 
       success = TestFixedHashTable<KeyType, ValueType, OutDeviceType>::testKeys (out, *outTable, keys_out, vals_out, testValues);
@@ -888,7 +888,7 @@ namespace { // (anonymous)
     }
     Kokkos::deep_copy (vals, vals_h);
 
-    Teuchos::ArrayView<const KeyType> keys_av (keys_h.ptr_on_device (), numKeys);
+    Teuchos::ArrayView<const KeyType> keys_av (keys_h.data (), numKeys);
     out << " Create table" << endl;
 
     const bool keepKeys = true;
@@ -1031,7 +1031,7 @@ namespace { // (anonymous)
     }
     Kokkos::deep_copy (vals, vals_h);
 
-    Teuchos::ArrayView<const KeyType> keys_av (keys_h.ptr_on_device (), numKeys);
+    Teuchos::ArrayView<const KeyType> keys_av (keys_h.data (), numKeys);
     out << " Create table" << endl;
 
     const bool keepKeys = true;

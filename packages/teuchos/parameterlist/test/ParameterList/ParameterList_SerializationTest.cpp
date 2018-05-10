@@ -88,10 +88,8 @@ TEUCHOS_UNIT_TEST(Teuchos_ParameterList, parameterEntryXMLConverters)
   ADD_TYPE_AND_ARRAY_TYPE_PARAMETER(unsigned short int, 5);
   ADD_TYPE_AND_ARRAY_TYPE_PARAMETER(long int, 6);
   ADD_TYPE_AND_ARRAY_TYPE_PARAMETER(unsigned long int, 7);
-  #ifdef HAVE_TEUCHOS_LONG_LONG_INT
   ADD_TYPE_AND_ARRAY_TYPE_PARAMETER(long long int, 8);
   ADD_TYPE_AND_ARRAY_TYPE_PARAMETER(unsigned long long int, 9);
-  #endif //HAVE_TEUCHOS_LONG_LONG_INT
   ADD_TYPE_AND_ARRAY_TYPE_PARAMETER(double, 10.0);
   ADD_TYPE_AND_ARRAY_TYPE_PARAMETER(float, 11.0);
 

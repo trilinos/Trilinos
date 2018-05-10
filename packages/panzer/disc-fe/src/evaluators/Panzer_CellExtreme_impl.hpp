@@ -53,7 +53,10 @@
 namespace panzer {
 
 //**********************************************************************
-PHX_EVALUATOR_CTOR(CellExtreme,p) : quad_index(-1)
+template<typename EvalT, typename Traits>
+CellExtreme<EvalT, Traits>::
+CellExtreme(
+  const Teuchos::ParameterList& p) : quad_index(-1)
 {
   Teuchos::RCP<Teuchos::ParameterList> valid_params = this->getValidParameters();
   p.validateParameters(*valid_params);
@@ -98,7 +101,12 @@ PHX_EVALUATOR_CTOR(CellExtreme,p) : quad_index(-1)
 }
 
 //**********************************************************************
-PHX_POST_REGISTRATION_SETUP(CellExtreme,sd,fm)
+template<typename EvalT, typename Traits>
+void
+CellExtreme<EvalT, Traits>::
+postRegistrationSetup(
+  typename Traits::SetupData sd,
+  PHX::FieldManager<Traits>& fm)
 {
   this->utils.setFieldData(extreme,fm);
   this->utils.setFieldData(scalar,fm);
@@ -113,7 +121,11 @@ PHX_POST_REGISTRATION_SETUP(CellExtreme,sd,fm)
 }
 
 //**********************************************************************
-PHX_EVALUATE_FIELDS(CellExtreme,workset)
+template<typename EvalT, typename Traits>
+void
+CellExtreme<EvalT, Traits>::
+evaluateFields(
+  typename Traits::EvalData workset)
 { 
   for (index_t cell = 0; cell < workset.num_cells; ++cell) {
     

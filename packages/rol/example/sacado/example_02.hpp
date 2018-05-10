@@ -61,8 +61,8 @@ template <class Real>
 template <class ScalarT>
 ScalarT Example_Objective<Real>::value(const Vector<ScalarT>& x, Real &tol) {
 
-    Teuchos::RCP<const std::vector<ScalarT> > xp =
-        (Teuchos::dyn_cast<const StdVector<ScalarT> >(x)).getVector();
+    ROL::Ptr<const std::vector<ScalarT> > xp =
+        (dynamic_cast<const StdVector<ScalarT>&>(x)).getVector();
 
     ScalarT x1 = (*xp)[0];
     ScalarT x2 = (*xp)[1];
@@ -97,11 +97,11 @@ void Example_Constraint<Real>::value(Vector<ScalarT> &c, const Vector<ScalarT> &
 
     typedef std::vector<ScalarT> vector;
     typedef StdVector<ScalarT>   SV;
-    using Teuchos::RCP;  using Teuchos::dyn_cast;
+      
     
 
-    RCP<vector> cp =  dyn_cast<SV>(c).getVector();
-    RCP<const vector> xp = dyn_cast<const SV>(x).getVector();
+    ROL::Ptr<vector> cp =  dynamic_cast<SV&>(c).getVector();
+    ROL::Ptr<const vector> xp = dynamic_cast<const SV&>(x).getVector();
 
     ScalarT x1 = (*xp)[0];
     ScalarT x2 = (*xp)[1];

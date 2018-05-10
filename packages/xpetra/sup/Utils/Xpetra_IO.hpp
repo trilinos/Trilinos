@@ -48,6 +48,7 @@
 #ifndef PACKAGES_XPETRA_SUP_UTILS_XPETRA_IO_HPP_
 #define PACKAGES_XPETRA_SUP_UTILS_XPETRA_IO_HPP_
 
+#include <fstream>
 #include "Xpetra_ConfigDefs.hpp"
 
 #ifdef HAVE_XPETRA_EPETRA
@@ -121,6 +122,28 @@ namespace Xpetra {
 
     return tmpC3;
   }
+
+
+  template<class SC,class LO,class GO,class NO>
+  RCP<Xpetra::MultiVector<SC,LO,GO,NO> >
+  Convert_Epetra_MultiVector_ToXpetra_MultiVector (RCP<Epetra_MultiVector> &epX) {
+    TEUCHOS_TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError,
+      "Convert_Epetra_MultiVector_ToXpetra_MultiVector cannot be used with Scalar != double, LocalOrdinal != int, GlobalOrdinal != int");
+    TEUCHOS_UNREACHABLE_RETURN(Teuchos::null);
+  }
+
+  // specialization for the case of ScalarType=double and LocalOrdinal=GlobalOrdinal=int
+  template<>
+  inline RCP<Xpetra::MultiVector<double,int,int,Xpetra::EpetraNode> > Convert_Epetra_MultiVector_ToXpetra_MultiVector<double,int,int,Xpetra::EpetraNode> (RCP<Epetra_MultiVector> &epX) {
+    typedef double             SC;
+    typedef int                LO;
+    typedef int                GO;
+    typedef Xpetra::EpetraNode NO;
+
+    RCP<Xpetra::MultiVector<SC,LO,GO,NO >> tmp = Xpetra::toXpetra<GO,NO>(epX);
+    return tmp;
+  }
+
 #endif
 
   /*!
@@ -1113,7 +1136,8 @@ namespace Xpetra {
 #if defined(HAVE_XPETRA_EPETRA) && defined(HAVE_XPETRA_EPETRAEXT)
         Epetra_MultiVector * MV;
         EpetraExt::MatrixMarketFileToMultiVector(fileName.c_str(), toEpetra(map), MV);
-        return Xpetra::toXpetra<int,Node>(rcp(MV));
+        RCP<Epetra_MultiVector> MVrcp = rcp(MV);
+        return Convert_Epetra_MultiVector_ToXpetra_MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>(MVrcp);
 #else
         throw Exceptions::RuntimeError("Xpetra has not been compiled with Epetra and EpetraExt support.");
 #endif

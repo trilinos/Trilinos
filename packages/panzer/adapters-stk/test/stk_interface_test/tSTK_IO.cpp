@@ -227,6 +227,9 @@ TEUCHOS_UNIT_TEST(tSTK_IO, transient_fields)
    out << "write to exodus: 4.5" << std::endl;
    mesh->writeToExodus(4.5);
    TEST_EQUALITY(mesh->getCurrentStateTime(),4.5); 
+   // Data can be buffered in writeToExodus() call. Flush to file by closing.
+   mesh = Teuchos::null;
+
 
    STK_ExodusReaderFactory factory("transient.exo",2);
    RCP<STK_Interface> mesh_read = factory.buildMesh(MPI_COMM_WORLD);

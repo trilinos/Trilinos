@@ -49,7 +49,7 @@
 #include <algorithm>    // std::shuffle
 #include <vector>
 
-#include "KokkosGraph_GraphColor.hpp"
+#include "KokkosGraph_graph_color.hpp"
 #include "KokkosKernels_IOUtils.hpp"
 #include "KokkosKernels_MyCRSMatrix.hpp"
 #include "KokkosKernels_TestParameters.hpp"
@@ -61,38 +61,41 @@ void print_options(){
 }
 int parse_inputs (KokkosKernels::Experiment::Parameters &params, int argc, char **argv){
   for ( int i = 1 ; i < argc ; ++i ) {
-    if ( 0 == strcasecmp( argv[i] , "threads" ) ) {
+    if ( 0 == strcasecmp( argv[i] , "--threads" ) ) {
       params.use_threads = atoi( argv[++i] );
     }
-    else if ( 0 == strcasecmp( argv[i] , "openmp" ) ) {
+    else if ( 0 == strcasecmp( argv[i] , "--serial" ) ) {
+      params.use_serial = atoi( argv[++i] );
+    }
+    else if ( 0 == strcasecmp( argv[i] , "--openmp" ) ) {
       params.use_openmp = atoi( argv[++i] );
     }
-    else if ( 0 == strcasecmp( argv[i] , "cuda" ) ) {
+    else if ( 0 == strcasecmp( argv[i] , "--cuda" ) ) {
       params.use_cuda = 1;
     }
-    else if ( 0 == strcasecmp( argv[i] , "repeat" ) ) {
+    else if ( 0 == strcasecmp( argv[i] , "--repeat" ) ) {
       params.repeat = atoi( argv[++i] );
     }
 
-    else if ( 0 == strcasecmp( argv[i] , "chunksize" ) ) {
+    else if ( 0 == strcasecmp( argv[i] , "--chunksize" ) ) {
       params.chunk_size = atoi( argv[++i] ) ;
     }
-    else if ( 0 == strcasecmp( argv[i] , "teamsize" ) ) {
+    else if ( 0 == strcasecmp( argv[i] , "--teamsize" ) ) {
       params.team_size = atoi( argv[++i] ) ;
     }
-    else if ( 0 == strcasecmp( argv[i] , "vectorsize" ) ) {
+    else if ( 0 == strcasecmp( argv[i] , "--vectorsize" ) ) {
       params.vector_size  = atoi( argv[++i] ) ;
     }
-    else if ( 0 == strcasecmp( argv[i] , "amtx" ) ) {
+    else if ( 0 == strcasecmp( argv[i] , "--amtx" ) ) {
       params.a_mtx_bin_file = argv[++i];
     }
-    else if ( 0 == strcasecmp( argv[i] , "dynamic" ) ) {
+    else if ( 0 == strcasecmp( argv[i] , "--dynamic" ) ) {
       params.use_dynamic_scheduling = 1;
     }
-    else if ( 0 == strcasecmp( argv[i] , "verbose" ) ) {
+    else if ( 0 == strcasecmp( argv[i] , "--verbose" ) ) {
       params.verbose = 1;
     }
-    else if ( 0 == strcasecmp( argv[i] , "algorithm" ) ) {
+    else if ( 0 == strcasecmp( argv[i] , "--algorithm" ) ) {
       ++i;
       if ( 0 == strcasecmp( argv[i] , "COLORING_DEFAULT" ) ) {
         params.algorithm = 1;
@@ -155,8 +158,13 @@ void run_experiment(
   typedef typename crsGraph_t3::row_map_type::non_const_type lno_view_t;
   typedef typename crsGraph_t3::entries_type::non_const_type lno_nnz_view_t;
 
+
+
+  typedef typename lno_view_t::non_const_value_type size_type;
+  typedef typename lno_nnz_view_t::non_const_value_type lno_t;
+
   typedef KokkosKernels::Experimental::KokkosKernelsHandle
-      <lno_view_t,lno_nnz_view_t, lno_nnz_view_t,
+      <size_type,lno_t, lno_t,
       ExecSpace, TempMemSpace,PersistentMemSpace > KernelHandle;
 
   KernelHandle kh;
@@ -448,7 +456,7 @@ int main (int argc, char ** argv){
   }
 #endif
 
-#if defined( KOKKOS_HAVE_CUDA )
+#if defined( KOKKOS_ENABLE_CUDA )
   if (params.use_cuda) {
     Kokkos::HostSpace::execution_space::initialize();
     Kokkos::Cuda::initialize( Kokkos::Cuda::SelectDevice( 0 ) );
@@ -471,6 +479,26 @@ int main (int argc, char ** argv){
     Kokkos::HostSpace::execution_space::finalize();
   }
 
+#endif
+
+#if defined( KOKKOS_HAVE_SERIAL )
+  if (params.use_serial) {
+    Kokkos::Serial::initialize( params.use_openmp );
+    Kokkos::Serial::print_configuration(std::cout);
+#ifdef KOKKOSKERNELS_MULTI_MEM
+    KokkosKernels::Experiment::run_multi_mem_experiment
+    <size_type, idx, Kokkos::Serial, Kokkos::Serial::memory_space, Kokkos::HostSpace>(
+        params
+        );
+#else
+
+    KokkosKernels::Experiment::run_multi_mem_experiment
+    <size_type, idx, Kokkos::Serial, Kokkos::Serial::memory_space, Kokkos::Serial::memory_space>(
+        params
+        );
+#endif
+    Kokkos::Serial::finalize();
+  }
 #endif
 
 

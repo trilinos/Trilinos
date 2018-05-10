@@ -33,6 +33,23 @@ then
   CXX11_FLAGS_STRING="--expt-extended-lambda -std=c++11"
 fi
 
+if [ ${CUDA} == "ON" ]
+then
+  ENABLE_SHYLU="OFF"
+else
+  if [ ${OPENMP} == "ON" ]
+  then
+    ENABLE_SHYLU="ON"
+  else
+    if [ ${PTHREAD} == "ON" ]
+    then
+      ENABLE_SHYLU="OFF"
+    else
+      ENABLE_SHYLU="ON"
+    fi
+  fi
+fi
+  
 if [ ${PTHREAD} == "ON" ]
 then
   EXTRA_ARGS="$EXTRA_ARGS -DPhalanx_KOKKOS_DEVICE_TYPE="THREAD""
@@ -61,7 +78,8 @@ cmake \
 -D Kokkos_ENABLE_Cuda_UVM:BOOL=ON \
 -D Teuchos_ENABLE_COMPLEX=${COMPLEX} \
 \
--D CMAKE_CXX_FLAGS="${JENKINS_ARCH_CXX_FLAG} -g" \
+-D CMAKE_CXX_FLAGS="-g" \
+-D KOKKOS_ARCH="${JENKINS_ARCH}" \
 -D CMAKE_C_FLAGS="${JENKINS_ARCH_C_FLAG} -g" \
 -D CMAKE_Fortran_FLAGS="${JENKINS_ARCH_C_FLAG} -g" \
 -D CMAKE_EXE_LINKER_FLAGS="${JENKINS_ARCH_C_FLAG}" \
@@ -121,6 +139,9 @@ cmake \
 -D Trilinos_ENABLE_Amesos2=ON \
   -D Amesos2_ENABLE_TESTS:BOOL=${TESTS} \
   -D Amesos2_ENABLE_EXAMPLES:BOOL=${EXAMPLES} \
+-D Trilinos_ENABLE_ShyLU_NodeTacho=${ENABLE_SHYLU} \
+  -D ShyLU_NodeTacho_ENABLE_TESTS:BOOL=${TESTS} \
+  -D ShyLU_NodeTacho_ENABLE_EXAMPLES:BOOL=${EXAMPLES} \
 -D Trilinos_ENABLE_Anasazi=ON \
   -D Anasazi_ENABLE_TESTS:BOOL=${TESTS} \
 -D Trilinos_ENABLE_AztecOO=ON \
@@ -155,6 +176,7 @@ cmake \
   -D MueLu_ENABLE_EXAMPLES:BOOL=${EXAMPLES} \
   -D MueLu_ENABLE_Experimental:BOOL=ON \
   -D MueLu_ENABLE_Kokkos_Refactor:BOOL=ON \
+  -D MueLu_ENABLE_Epetra:BOOL=OFF \
 -D Trilinos_ENABLE_NOX=ON \
   -D NOX_ENABLE_TESTS:BOOL=${TESTS} \
 -D Trilinos_ENABLE_Panzer=ON \

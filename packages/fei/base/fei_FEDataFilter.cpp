@@ -2117,8 +2117,6 @@ int FEDataFilter::getNodalFieldSolution(int fieldID,
     ERReturn(-1);
   }
 
-  NodeCommMgr& nodeCommMgr = problemStructure_->getNodeCommMgr();
-
   //Traverse the node list, checking if nodes have the specified field.
   //If so, put the answers in the results list.
 
@@ -2155,12 +2153,6 @@ int FEDataFilter::getNodalFieldSolution(int fieldID,
     //If this node doesn't have the specified field, then skip to the
     //next loop iteration.
     if (!hasField) continue;
-
-    std::vector<GlobalID>& shNodeIDs = nodeCommMgr.getSharedNodeIDs();
-    int shIndex = fei::binarySearch(nodeID, &shNodeIDs[0], shNodeIDs.size());
-    if (shIndex > -1) {
-      if (!(problemStructure_->isInLocalElement(nodeNumber))) continue;
-    }
 
     int dof_id = problemStructure_->getFieldDofMap().get_dof_id(fieldID, 0);
 

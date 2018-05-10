@@ -76,7 +76,7 @@ public:
 template<class Real> 
 class Problem_006 : public ROL::NonlinearProgram<Real> {
 
-  template<typename T> using RCP = Teuchos::RCP<T>;
+  
 
   typedef ROL::NonlinearProgram<Real>   NP;
   typedef ROL::Vector<Real>             V;
@@ -92,16 +92,15 @@ public:
   int dimension_x()  { return 2; }
   int dimension_ce() { return 1; }
 
-  const RCP<OBJ> getObjective() { 
-    return Teuchos::rcp( new ROL::Sacado_StdObjective<Real,HS_006::Obj> );
+  const ROL::Ptr<OBJ> getObjective() { 
+    return ROL::makePtr<ROL::Sacado_StdObjective<Real,HS_006::Obj>>();
   }
 
-  const RCP<CON> getEqualityConstraint() {
-    return Teuchos::rcp( 
-      new ROL::Sacado_StdConstraint<Real,HS_006::EqCon> );
+  const ROL::Ptr<CON> getEqualityConstraint() {
+    return ROL::makePtr<ROL::Sacado_StdConstraint<Real,HS_006::EqCon>>();
   }
 
-  const RCP<const V> getInitialGuess() {
+  const ROL::Ptr<const V> getInitialGuess() {
     Real x[] = {-1.2,1.0};
     return NP::createOptVector(x);
   };
@@ -116,7 +115,7 @@ public:
     return Real(0);
   }
 
-  RCP<const V> getSolutionSet() {
+  ROL::Ptr<const V> getSolutionSet() {
     Real x[] = {1.0,1.0};
     return ROL::CreatePartitionedVector(NP::createOptVector(x));
   }

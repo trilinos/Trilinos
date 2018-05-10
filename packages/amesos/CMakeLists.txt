@@ -41,6 +41,18 @@ IF(${PACKAGE_NAME}_ENABLE_MUMPS AND ${PACKAGE_NAME}_ENABLE_MPI AND NOT ${PACKAGE
 ENDIF()
 
 
+# if using SuperLU_5.0, must use the proper API
+IF(${PACKAGE_NAME}_ENABLE_SuperLU)
+  IF(NOT ${PROJECT_NAME}_ENABLE_SuperLU5_API)
+
+   SET(HAVE_AMESOS_SUPERLU5_API OFF)
+
+  ELSE()
+
+   SET(HAVE_AMESOS_SUPERLU5_API ON)
+
+  ENDIF()
+ENDIF()
 
 ## Most of the options below are bogus.  The handling of TPLs is done
 ## through the dependencies file.  This needs to be cleaned up. I'm

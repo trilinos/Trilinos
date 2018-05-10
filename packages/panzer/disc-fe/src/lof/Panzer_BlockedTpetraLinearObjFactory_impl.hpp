@@ -523,6 +523,30 @@ getThyraRangeSpace() const
 }
 
 template <typename Traits,typename ScalarT,typename LocalOrdinalT,typename GlobalOrdinalT,typename NodeT>
+Teuchos::RCP<const Thyra::VectorSpaceBase<ScalarT> > 
+BlockedTpetraLinearObjFactory<Traits,ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT>::
+getThyraDomainSpace(int blk) const
+{
+   if(domainSpace_==Teuchos::null) {
+     getThyraDomainSpace();
+   }
+
+   return domainSpace_->getBlock(blk);
+}
+
+template <typename Traits,typename ScalarT,typename LocalOrdinalT,typename GlobalOrdinalT,typename NodeT>
+Teuchos::RCP<const Thyra::VectorSpaceBase<ScalarT> > 
+BlockedTpetraLinearObjFactory<Traits,ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT>::
+getThyraRangeSpace(int blk) const
+{
+   if(rangeSpace_==Teuchos::null) {
+     getThyraRangeSpace();
+   }
+
+   return rangeSpace_->getBlock(blk);
+}
+
+template <typename Traits,typename ScalarT,typename LocalOrdinalT,typename GlobalOrdinalT,typename NodeT>
 Teuchos::RCP<Thyra::VectorBase<ScalarT> > 
 BlockedTpetraLinearObjFactory<Traits,ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT>::
 getThyraDomainVector() const
@@ -1038,6 +1062,42 @@ getGhostedTpetraMatrix(int i,int j) const
    mat->fillComplete(map_j,map_i);
 
    return mat;
+}
+
+template <typename Traits,typename ScalarT,typename LocalOrdinalT,typename GlobalOrdinalT,typename NodeT>
+Teuchos::RCP<Tpetra::Vector<ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT> > 
+BlockedTpetraLinearObjFactory<Traits,ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT>::
+getTpetraDomainVector(int i) const
+{
+   Teuchos::RCP<const MapType> tMap = getMap(i); 
+   return Teuchos::rcp(new VectorType(tMap));
+}
+
+template <typename Traits,typename ScalarT,typename LocalOrdinalT,typename GlobalOrdinalT,typename NodeT>
+Teuchos::RCP<Tpetra::Vector<ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT> > 
+BlockedTpetraLinearObjFactory<Traits,ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT>::
+getGhostedTpetraDomainVector(int i) const
+{
+   Teuchos::RCP<const MapType> tMap = getGhostedMap(i); 
+   return Teuchos::rcp(new VectorType(tMap));
+}
+
+template <typename Traits,typename ScalarT,typename LocalOrdinalT,typename GlobalOrdinalT,typename NodeT>
+Teuchos::RCP<Tpetra::Vector<ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT> > 
+BlockedTpetraLinearObjFactory<Traits,ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT>::
+getTpetraRangeVector(int i) const
+{
+   Teuchos::RCP<const MapType> tMap = getMap(i); 
+   return Teuchos::rcp(new VectorType(tMap));
+}
+
+template <typename Traits,typename ScalarT,typename LocalOrdinalT,typename GlobalOrdinalT,typename NodeT>
+Teuchos::RCP<Tpetra::Vector<ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT> > 
+BlockedTpetraLinearObjFactory<Traits,ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT>::
+getGhostedTpetraRangeVector(int i) const
+{
+   Teuchos::RCP<const MapType> tMap = getGhostedMap(i); 
+   return Teuchos::rcp(new VectorType(tMap));
 }
 
 template <typename Traits,typename ScalarT,typename LocalOrdinalT,typename GlobalOrdinalT,typename NodeT>

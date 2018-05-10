@@ -629,7 +629,7 @@ public:
   ///   has a column Map).
   /// \pre All diagonal entries of the matrix's graph must be
   ///   populated on this process.  Results are undefined otherwise.
-  /// \post <tt>offsets.dimension_0() == getNodeNumRows()</tt>
+  /// \post <tt>offsets.extent(0) == getNodeNumRows()</tt>
   ///
   /// This method creates an array of offsets of the local diagonal
   /// entries in the matrix.  This array is suitable for use in the
@@ -1093,11 +1093,23 @@ public:
   ///   the number of entries.
   virtual size_t getNumEntriesInGlobalRow (GO globalRow) const;
 
-  //! The number of global diagonal entries, based on global row/column index comparisons.
-  virtual global_size_t getGlobalNumDiags() const;
+  /// \brief Number of diagonal entries in the matrix's graph, over
+  ///   all processes in the matrix's communicator.
+  ///
+  /// \pre <tt>! this->isFillActive()</tt>
+  ///
+  /// \warning This method is DEPRECATED.  DO NOT CALL IT.  It may
+  ///   go away at any time.
+  virtual global_size_t TPETRA_DEPRECATED getGlobalNumDiags() const;
 
-  //! The number of local diagonal entries, based on global row/column index comparisons.
-  virtual size_t getNodeNumDiags() const;
+  /// \brief Number of diagonal entries in the matrix's graph, on the
+  ///   calling process.
+  ///
+  /// \pre <tt>! this->isFillActive()</tt>
+  ///
+  /// \warning This method is DEPRECATED.  DO NOT CALL IT.  It may
+  ///   go away at any time.
+  virtual size_t TPETRA_DEPRECATED getNodeNumDiags() const;
 
   //! The maximum number of entries across all rows/columns on all nodes.
   virtual size_t getGlobalMaxNumRowEntries() const;

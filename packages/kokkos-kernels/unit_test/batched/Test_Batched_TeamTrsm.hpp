@@ -59,7 +59,7 @@ namespace Test {
 
     inline
     void run() {
-      const int league_size = _b.dimension_0();
+      const int league_size = _b.extent(0);
       Kokkos::TeamPolicy<DeviceType,ParamTagType> policy(league_size, Kokkos::AUTO);
       Kokkos::parallel_for(policy, *this);
     }
@@ -88,6 +88,8 @@ namespace Test {
     Kokkos::fill_random(a0, random, value_type(1.0));
     Kokkos::fill_random(b0, random, value_type(1.0));
 
+    Kokkos::fence();
+
     Kokkos::deep_copy(a1, a0);
     Kokkos::deep_copy(b1, b0);
 
@@ -95,6 +97,8 @@ namespace Test {
       ParamTagType,Algo::Trsm::Unblocked>(alpha, a0, b0).run();
     Functor_TestBatchedTeamTrsm<DeviceType,ViewType,ScalarType,
       ParamTagType,AlgoTagType>(alpha, a1, b1).run();
+
+    Kokkos::fence();
 
     /// for comparison send it to host
     typename ViewType::HostMirror b0_host = Kokkos::create_mirror_view(b0);
@@ -130,7 +134,7 @@ int test_batched_trsm() {
     typedef Kokkos::View<ValueType***,Kokkos::LayoutLeft,DeviceType> ViewType;
     Test::impl_test_batched_trsm<DeviceType,ViewType,ScalarType,ParamTagType,AlgoTagType>(     0, 10, 4);
     for (int i=0;i<10;++i) {
-      printf("Testing: LayoutLeft,  Blksize %d\n", i);  
+      //printf("Testing: LayoutLeft,  Blksize %d\n", i);  
       Test::impl_test_batched_trsm<DeviceType,ViewType,ScalarType,ParamTagType,AlgoTagType>(1024,  i, 4);
       Test::impl_test_batched_trsm<DeviceType,ViewType,ScalarType,ParamTagType,AlgoTagType>(1024,  i, 1);
     }
@@ -141,7 +145,7 @@ int test_batched_trsm() {
     typedef Kokkos::View<ValueType***,Kokkos::LayoutRight,DeviceType> ViewType;
     Test::impl_test_batched_trsm<DeviceType,ViewType,ScalarType,ParamTagType,AlgoTagType>(     0, 10, 4);
     for (int i=0;i<10;++i) {
-      printf("Testing: LayoutRight, Blksize %d\n", i);  
+      //printf("Testing: LayoutRight, Blksize %d\n", i);  
       Test::impl_test_batched_trsm<DeviceType,ViewType,ScalarType,ParamTagType,AlgoTagType>(1024,  i, 4);
       Test::impl_test_batched_trsm<DeviceType,ViewType,ScalarType,ParamTagType,AlgoTagType>(1024,  i, 1);
     }

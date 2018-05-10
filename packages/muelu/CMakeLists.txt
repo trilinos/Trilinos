@@ -9,9 +9,6 @@ TRIBITS_PACKAGE(MueLu ENABLE_SHADOWING_WARNINGS)
 #
 # B) Set up package-specific options
 #
-IF ((CMAKE_CXX_COMPILER_ID MATCHES "GNU") AND (CMAKE_CXX_COMPILER_VERSION VERSION_GREATER "4.7"))
-  SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-unused-local-typedefs")
-ENDIF()
 
 IF (NOT ${PACKAGE_NAME}_ENABLE_Epetra AND NOT ${PACKAGE_NAME}_ENABLE_Tpetra)
   MESSAGE(FATAL_ERROR "Neither Epetra nor Tpetra are enabled.  MueLu requires at least one of them to be enabled.")
@@ -40,6 +37,10 @@ ASSERT_DEFINED(TPL_ENABLE_CUDA)
 IF (NOT ${PROJECT_NAME}_ENABLE_CXX11 AND NOT TPL_ENABLE_CUDA)
   MESSAGE(FATAL_ERROR "MueLu requires that C++11 support in Trilinos be enabled.  This should happen automatically if your compiler is C++11 compliant.")
 ENDIF ()
+
+IF ((CMAKE_CXX_COMPILER_ID MATCHES "GNU") AND (CMAKE_CXX_COMPILER_VERSION VERSION_GREATER "4.7") AND NOT TPL_ENABLE_CUDA)
+  SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-unused-local-typedefs")
+ENDIF()
 
 # The following Tribits macro sets MueLu_ENABLE_EXPLICIT_INSTANTIATION
 # to be true if ${PROJECT_NAME}_ENABLE_EXPLICIT_INSTANTIATION is true.
@@ -139,13 +140,6 @@ IF (${PACKAGE_NAME}_ENABLE_SPLIT_ETI_CPP_FILES)
   MESSAGE(STATUS "Split MueLu ETI files: this may slow down the compilation process.")
 ENDIF()
 
-# Enable broken tests
-TRIBITS_ADD_OPTION_AND_DEFINE(
-  ${PACKAGE_NAME}_ENABLE_BROKEN_TESTS
-  HAVE_${PACKAGE_NAME_UC}_BROKEN_TESTS
-  "Enable broken code."
-  NO)
-
 # Memory testing
 IF (${PACKAGE_NAME}_ENABLE_MEMORY_TESTING)
   SET(MUELU_VALGRIND_TESTING YES)
@@ -182,6 +176,15 @@ TRIBITS_ADD_OPTION_AND_DEFINE(
   ${PACKAGE_NAME}_ENABLE_Kokkos_Refactor
   HAVE_${PACKAGE_NAME_UC}_KOKKOS_REFACTOR
   "Enable MueLu code refactored to use Kokkos."
+  NO)
+
+# Define option to use code that is refactored to use Kokkos by
+# default. This is useful for running all non-unit tests with Kokkos
+# without having to set "use kokkos refactor" in all parameter lists.
+TRIBITS_ADD_OPTION_AND_DEFINE(
+  ${PACKAGE_NAME}_ENABLE_Kokkos_Refactor_Use_By_Default
+  HAVE_${PACKAGE_NAME_UC}_KOKKOS_REFACTOR_USE_BY_DEFAULT
+  "Use MueLu code refactored to use Kokkos by default."
   NO)
 
 
@@ -251,6 +254,15 @@ IF(${PACKAGE_NAME}_ENABLE_EXPLICIT_INSTANTIATION)
   ELSE()
     GLOBAL_SET(${PACKAGE_NAME}_INST_COMPLEX_INT_INT OFF)
     GLOBAL_SET(HAVE_${PACKAGE_NAME_UC}_INST_COMPLEX_INT_INT OFF)
+  ENDIF()
+
+  # <complex, int, long long int>
+  IF(Tpetra_INST_COMPLEX_DOUBLE AND Tpetra_INST_INT_LONG_LONG)
+    GLOBAL_SET(${PACKAGE_NAME}_INST_COMPLEX_INT_LONG_LONG ON)
+    GLOBAL_SET(HAVE_${PACKAGE_NAME_UC}_INST_COMPLEX_INT_LONG_LONG ON)
+  ELSE()
+    GLOBAL_SET(${PACKAGE_NAME}_INST_COMPLEX_INT_LONG_LONG OFF)
+    GLOBAL_SET(HAVE_${PACKAGE_NAME_UC}_INST_COMPLEX_INT_LONG_LONG OFF)
   ENDIF()
 
   # <float, int, int>

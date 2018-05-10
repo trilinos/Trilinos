@@ -298,7 +298,7 @@ namespace MueLuTests {
 " <ParameterList name=\"Hierarchy\">"
 "   <Parameter name=\"max levels\"                            type=\"int\"      value=\"10\"/>"
 "   <Parameter name=\"coarse: max size\"                      type=\"int\"      value=\"1000\"/>"
-"   <Parameter name=\"verbosity\"                             type=\"string\"   value=\"High\"/>"
+"   <Parameter name=\"verbosity\"                             type=\"string\"   value=\"None\"/>"
 "   <ParameterList name=\"All\">"
 "     <Parameter name=\"startLevel\"                          type=\"int\"      value=\"0\"/>"
 "     <Parameter name=\"Smoother\"                            type=\"string\"   value=\"mySmoo\"/>"
@@ -312,6 +312,7 @@ namespace MueLuTests {
 
     // Get the actual parameter list
     RCP<Teuchos::ParameterList> Params = Teuchos::getParametersFromXmlString(myInputString);
+    Params->set("verbosity","none");
 
     Teuchos::ParameterList & pLevel0 = Params->sublist("level 0");
     pLevel0.set("K",A);
@@ -379,6 +380,7 @@ namespace MueLuTests {
     Params->set("rap: algorithm","shift");
     Params->set("rap: shift",1.0);
     Params->set("coarse: max size",1000);
+    Params->set("verbosity","none");
 
     Teuchos::ParameterList & pLevel0 = Params->sublist("level 0");
     pLevel0.set("K",A);

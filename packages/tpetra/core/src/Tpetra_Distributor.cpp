@@ -42,6 +42,7 @@
 #include "Tpetra_Details_gathervPrint.hpp"
 #include "Teuchos_StandardParameterEntryValidators.hpp"
 #include "Teuchos_VerboseObjectParameterListHelpers.hpp"
+#include <numeric>
 
 namespace Tpetra {
   namespace Details {
@@ -144,6 +145,7 @@ namespace Tpetra {
                      const Teuchos::RCP<Teuchos::FancyOStream>& out,
                      const Teuchos::RCP<Teuchos::ParameterList>& plist)
   {
+    const bool verbose = Tpetra::Details::Behavior::verbose("Distributor");
     this->out_ = out.is_null () ?
       Teuchos::getFancyOStream (Teuchos::rcpFromRef (std::cerr)) : out;
     if (! plist.is_null ()) {
@@ -154,11 +156,13 @@ namespace Tpetra {
     makeTimers ();
 #endif // TPETRA_DISTRIBUTOR_TIMERS
 
-    if (debug_) {
+    if (verbose || debug_) {
       TEUCHOS_TEST_FOR_EXCEPTION
-        (out_.is_null (), std::logic_error, "Tpetra::Distributor::init: debug_ "
-         "is true but out_ (pointer to the output stream) is NULL.  Please "
-         "report this bug to the Tpetra developers.");
+        (out_.is_null (), std::logic_error, "Tpetra::Distributor::init: "
+         "verbose and/or debug_ are true but out_ (pointer to the output "
+         "stream) is NULL.  Please report this bug to the Tpetra developers.");
+    }
+    if (verbose) {
       Teuchos::OSTab tab (out_);
       std::ostringstream os;
       os << comm_->getRank ()
@@ -288,12 +292,15 @@ namespace Tpetra {
     makeTimers ();
 #endif // TPETRA_DISTRIBUTOR_TIMERS
 
-    if (debug_) {
+    const bool verbose = Tpetra::Details::Behavior::verbose("Distributor");
+    if (verbose || debug_) {
       TEUCHOS_TEST_FOR_EXCEPTION
-        (out_.is_null (), std::logic_error, "Tpetra::Distributor::init: debug_ "
-         "is true but out_ (pointer to the output stream) is NULL.  Please "
-         "report this bug to the Tpetra developers.");
+        (out_.is_null (), std::logic_error, "Tpetra::Distributor::init: "
+         "verbose and/or debug_ are true but out_ (pointer to the output "
+         "stream) is NULL.  Please report this bug to the Tpetra developers.");
       Teuchos::OSTab tab (out_);
+    }
+    if (verbose) {
       std::ostringstream os;
       os << comm_->getRank ()
          << ": Distributor copy ctor done" << std::endl;
@@ -613,8 +620,9 @@ namespace Tpetra {
 #endif // TPETRA_DISTRIBUTOR_TIMERS
 
     const int myRank = comm_->getRank ();
+    const bool verbose = Tpetra::Details::Behavior::verbose("Distributor");
 
-    if (debug_) {
+    if (verbose) {
       std::ostringstream os;
       os << myRank << ": doWaits: # reqs = "
          << requests_.size () << endl;
@@ -655,7 +663,7 @@ namespace Tpetra {
     }
 #endif // HAVE_TEUCHOS_DEBUG
 
-    if (debug_) {
+    if (verbose) {
       std::ostringstream os;
       os << myRank << ": doWaits done" << endl;
       *out_ << os.str ();
@@ -848,8 +856,9 @@ namespace Tpetra {
     // MPI tag for nonblocking receives and blocking sends in this method.
     const int pathTag = 2;
     const int tag = this->getTag (pathTag);
+    const bool verbose = Tpetra::Details::Behavior::verbose("Distributor");
 
-    if (debug_) {
+    if (verbose) {
       std::ostringstream os;
       os << myRank << ": computeReceives: "
         "{selfMessage_: " << (selfMessage_ ? "true" : "false")
@@ -883,7 +892,7 @@ namespace Tpetra {
         *comm_);
 #endif // HAVE_TEUCHOS_DEBUG
 
-      if (debug_) {
+      if (verbose) {
         std::ostringstream os;
         os << myRank << ": computeReceives: Calling reduce and scatter" << endl;
         *out_ << os.str ();
@@ -993,7 +1002,7 @@ namespace Tpetra {
     const int anySourceProc = -1;
 #endif
 
-    if (debug_) {
+    if (verbose) {
       std::ostringstream os;
       os << myRank << ": computeReceives: Posting "
          << actualNumReceives << " irecvs" << endl;
@@ -1009,7 +1018,7 @@ namespace Tpetra {
       lengthsFromBuffers[i].resize (1);
       lengthsFromBuffers[i][0] = as<size_t> (0);
       requests[i] = ireceive<int, size_t> (lengthsFromBuffers[i], anySourceProc, tag, *comm_);
-      if (debug_) {
+      if (verbose) {
         std::ostringstream os;
         os << myRank << ": computeReceives: "
           "Posted any-proc irecv w/ specified tag " << tag << endl;
@@ -1017,7 +1026,7 @@ namespace Tpetra {
       }
     }
 
-    if (debug_) {
+    if (verbose) {
       std::ostringstream os;
       os << myRank << ": computeReceives: "
         "posting " << numSends_ << " sends" << endl;
@@ -1038,7 +1047,7 @@ namespace Tpetra {
         // lengthsTo_[i] blocks of packets.
         const size_t* const lengthsTo_i = &lengthsTo_[i];
         send<int, size_t> (lengthsTo_i, 1, as<int> (procsTo_[i]), tag, *comm_);
-        if (debug_) {
+        if (verbose) {
           std::ostringstream os;
           os << myRank << ": computeReceives: "
             "Posted send to Proc " << procsTo_[i] << " w/ specified tag "
@@ -1058,7 +1067,7 @@ namespace Tpetra {
       }
     }
 
-    if (debug_) {
+    if (verbose) {
       std::ostringstream os;
       os << myRank << ": computeReceives: waitAll on "
          << requests.size () << " requests" << endl;
@@ -1100,7 +1109,7 @@ namespace Tpetra {
       --numReceives_;
     }
 
-    if (debug_) {
+    if (verbose) {
       std::ostringstream os;
       os << myRank << ": computeReceives: done" << endl;
       *out_ << os.str ();
@@ -1119,7 +1128,8 @@ namespace Tpetra {
     const size_t numExports = exportProcIDs.size();
     const int myProcID = comm_->getRank();
     const int numProcs = comm_->getSize();
-    if (debug_) {
+    const bool verbose = Tpetra::Details::Behavior::verbose("Distributor");
+    if (verbose) {
       std::ostringstream os;
       os << myProcID << ": createFromSends" << endl;
       *out_ << os.str ();
@@ -1423,7 +1433,7 @@ namespace Tpetra {
     // Invert map to see what msgs are received and what length
     computeReceives();
 
-    if (debug_) {
+    if (verbose) {
       std::ostringstream os;
       os << myProcID << ": createFromSends: done" << endl;
       *out_ << os.str ();

@@ -54,9 +54,11 @@
 #include "Phalanx_MDField.hpp"
 #include "Phalanx_FieldManager.hpp"
 
+#include "CommandLineParser.hpp"
 #include "Mesh.hpp"
 #include "WorksetBuilder.hpp"
 #include "LinearObjectFactory.hpp"
+#include "PrintValues.hpp"
 #include "Dimension.hpp"
 #include "MyTraits.hpp"
 #include "Constant.hpp"
@@ -92,21 +94,20 @@ int main(int argc, char *argv[])
     Kokkos::initialize(argc,argv);
     PHX::exec_space::print_configuration(std::cout);
 
-    bool print_debug = false;
-
     // *********************************************************
     // * Build the Finite Element data structures
     // *********************************************************
     
     // Create the mesh
-    const int nx = 4;
-    const int ny = 2;
-    const int nz = 2;
-    const double lx = 1.0;
-    const double ly = 1.0;
-    const double lz = 1.0;
-    const int num_equations = 2;
-    const int workset_size = 3;
+    phx_example::CommandLineParser p(argc,argv);
+    const int nx = p.nx();
+    const int ny = p.ny();
+    const int nz = p.nz();
+    const double lx = p.lx();
+    const double ly = p.ly();
+    const double lz = p.lz();
+    const int num_equations = p.numEquations();
+    const int workset_size = p.worksetSize();
     RCP<phx_example::Mesh> mesh = rcp(new phx_example::Mesh(nx, ny, nz, lx, ly, lz));
     std::vector<Workset> worksets;
     {
@@ -117,6 +118,17 @@ int main(int argc, char *argv[])
     phx_example::LinearObjectFactory lof(mesh->getNumNodes(),
                                          num_equations,
                                          mesh->getGlobalIndices());
+
+    // Print statistics
+    {
+      std::cout << "Number of Elements = " << mesh->getNumElements() << std::endl;
+      std::cout << "Number of Nodes = " << mesh->getNumNodes() << std::endl;
+      std::cout << "Number of equations = " << num_equations << std::endl;
+      std::cout << "Number of DOFs = " << lof.getNumDOFs() << std::endl;
+      std::cout << "Matrix Size = " << lof.getMatrixSize() << std::endl;
+      std::cout << "Workset Size = " << workset_size << std::endl;
+      std::cout << "Number of Worksets = " << worksets.size() << std::endl;
+    }
         
     RCP<PHX::DataLayout> qp_layout = rcp(new MDALayout<CELL,QP>("qp",workset_size,8));
     RCP<PHX::DataLayout> grad_qp_layout = rcp(new MDALayout<CELL,QP,DIM>("grad_qp",workset_size,8,3));
@@ -251,62 +263,44 @@ int main(int argc, char *argv[])
     fm.postRegistrationSetup(nullptr);
     fm.writeGraphvizFile("example_fem",".dot",true,true);
 
-    Kokkos::deep_copy(x,1.0);
+    // Set the team and vector size on the workset for Host DAG
+    for (auto& w : worksets) {
+      w.team_size_ = p.teamSize();
+      w.vector_size_ = p.vectorSize();
+    }
+
+    // Kokkos::deep_copy(x,1.0);
+    Kokkos::parallel_for(x.extent(0),KOKKOS_LAMBDA (const int& i) {x(i)=static_cast<double>(i);});
     Kokkos::deep_copy(f,0.0);
-    PHX::exec_space::fence();
     RCP<Time> residual_eval_time = TimeMonitor::getNewTimer("Residual Evaluation Time");
-    {
+    PHX::exec_space::fence();
+    if (p.doResidual()) {
       TimeMonitor tm_r(*residual_eval_time);
       for (const auto& workset : worksets)
         fm.evaluateFields<Residual>(workset);
-    }
-    PHX::exec_space::fence();
-
-    if (print_debug) {
-      auto host_f = Kokkos::create_mirror_view(f);
-      Kokkos::deep_copy(host_f,f);
       PHX::exec_space::fence();
-      
-      for (int i=0; i < static_cast<int>(host_f.extent(0)); ++i)
-        std::cout << "f(" << i << ") = " << host_f(i) << std::endl;
     }
+
+    if (p.printResidual())
+      phx_example::printResidual(f,"FEA: <Residual>",p.printToFile(),"FEA.Residual.txt");
     
     // Jacobian does both f and J
     Kokkos::deep_copy(f,0.0);
     Kokkos::deep_copy(J.values,0.0);
-    PHX::exec_space::fence();
     RCP<Time> jacobian_eval_time = TimeMonitor::getNewTimer("Jacobian Evaluation Time");
-    {
+    PHX::exec_space::fence();
+    if (p.doJacobian()) {
       TimeMonitor tm_r(*jacobian_eval_time);
       for (const auto& workset : worksets)
         fm.evaluateFields<Jacobian>(workset);
-    }
-    PHX::exec_space::fence();
-
-    // debugging
-    if (print_debug) {
-      auto host_f = Kokkos::create_mirror_view(f);
-      auto host_J_vals = Kokkos::create_mirror_view(J.values);
-      auto host_graph = Kokkos::create_mirror(J.graph); // deep_copies automagically
-      Kokkos::deep_copy(host_f,f);
-      Kokkos::deep_copy(host_J_vals,J.values);
       PHX::exec_space::fence();
-      
-      for (int i=0; i < static_cast<int>(host_f.extent(0)); ++i)
-        std::cout << "f(" << i << ") = " << host_f(i) << std::endl;
-
-      size_t val_index = 0;
-      for (size_t row=0; row < host_graph.numRows(); ++row) {
-        for (int j=0; j < host_graph.rowConst(row).length; ++j) {
-          std::cout << "J(" << row << "," << host_graph.rowConst(row).colidx(j) << ") = "
-                    << host_J_vals(val_index) << endl;
-          ++val_index;
-        }
-      }
     }
 
+    if (p.printJacobian())
+      phx_example::printResidualAndJacobian(f,J,"FEA: <Jacobian>",p.printToFile(),"FEA.Jacobian.txt");
+    
     // Graph analysis
-    if (true) {
+    if (p.doGraphAnalysis()) {
       double scalability = 0.0;
       double parallelizability = 1.0;
       fm.analyzeGraph<MyTraits::Residual>(scalability,parallelizability);

@@ -52,16 +52,16 @@ namespace ROL {
 template<class Real, class Ordinal>
 class SingletonTeuchosBatchManager : public TeuchosBatchManager<Real,Ordinal> {
 public:
-  SingletonTeuchosBatchManager(const Teuchos::RCP<const Teuchos::Comm<Ordinal> > &comm)
+  SingletonTeuchosBatchManager(const ROL::Ptr<const Teuchos::Comm<Ordinal> > &comm)
     : TeuchosBatchManager<Real,Ordinal>(comm) {}
 
   using TeuchosBatchManager<Real,Ordinal>::sumAll;
 
   void sumAll(Vector<Real> &input, Vector<Real> &output) {
-    Real inval = Teuchos::dyn_cast<SingletonVector<Real> >(input).getValue();
+    Real inval = dynamic_cast<SingletonVector<Real>&>(input).getValue();
     Real outval(0);
     TeuchosBatchManager<Real,Ordinal>::sumAll(&inval,&outval,1);
-    Teuchos::dyn_cast<SingletonVector<Real> >(output).setValue(outval);
+    dynamic_cast<SingletonVector<Real>&>(output).setValue(outval);
   }
 };
 

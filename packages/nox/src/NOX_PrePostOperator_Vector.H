@@ -79,6 +79,10 @@ public:
 
   void runPostSolve(const NOX::Solver::Generic& solver);
 
+  void runPreLineSearch(const NOX::Solver::Generic& solver);
+
+  void runPostLineSearch(const NOX::Solver::Generic& solver);
+
  //! Add PrePostOperator to end of vector.
   void pushBack(const Teuchos::RCP<NOX::Abstract::PrePostOperator>& ppop);
 

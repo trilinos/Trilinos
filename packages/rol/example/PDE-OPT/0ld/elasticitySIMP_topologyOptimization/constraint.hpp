@@ -55,13 +55,13 @@ template<class Real>
 class EqualityConstraint_PDEOPT_ElasticitySIMP : public ROL::Constraint_SimOpt<Real> {
 private:
 
-  const Teuchos::RCP<ElasticitySIMPOperators<Real> > data_;
-  const Teuchos::RCP<DensityFilter<Real> > filter_;
+  const ROL::Ptr<ElasticitySIMPOperators<Real> > data_;
+  const ROL::Ptr<DensityFilter<Real> > filter_;
 
 public:
 
-  EqualityConstraint_PDEOPT_ElasticitySIMP(const Teuchos::RCP<ElasticitySIMPOperators<Real> > &data,
-                                           const Teuchos::RCP<DensityFilter<Real> > &filter,
+  EqualityConstraint_PDEOPT_ElasticitySIMP(const ROL::Ptr<ElasticitySIMPOperators<Real> > &data,
+                                           const ROL::Ptr<DensityFilter<Real> > &filter,
                                            const Teuchos::RCP<Teuchos::ParameterList> &parlist)
     : data_(data), filter_(filter) {}
 
@@ -71,12 +71,12 @@ public:
        const ROL::Vector<Real> &u,
        const ROL::Vector<Real> &z,
              Real &tol) {
-    Teuchos::RCP<Tpetra::MultiVector<> > cp
-      = (Teuchos::dyn_cast<ROL::TpetraMultiVector<Real> >(c)).getVector();
-    Teuchos::RCP<const Tpetra::MultiVector<> > up
-      = (Teuchos::dyn_cast<const ROL::TpetraMultiVector<Real> >(u)).getVector();
-    Teuchos::RCP<const Tpetra::MultiVector<> > zp
-      = (Teuchos::dyn_cast<const ROL::TpetraMultiVector<Real> >(z)).getVector();
+    ROL::Ptr<Tpetra::MultiVector<> > cp
+      = (dynamic_cast<ROL::TpetraMultiVector<Real>&>(c)).getVector();
+    ROL::Ptr<const Tpetra::MultiVector<> > up
+      = (dynamic_cast<const ROL::TpetraMultiVector<Real>&>(u)).getVector();
+    ROL::Ptr<const Tpetra::MultiVector<> > zp
+      = (dynamic_cast<const ROL::TpetraMultiVector<Real>&>(z)).getVector();
     
     data_->ApplyJacobian1ToVec(cp, up);
     Real one(1);
@@ -87,10 +87,10 @@ public:
              ROL::Vector<Real> &u,
        const ROL::Vector<Real> &z,
              Real &tol) {
-    Teuchos::RCP<Tpetra::MultiVector<> > up
-      = (Teuchos::dyn_cast<ROL::TpetraMultiVector<Real> >(u)).getVector();
-    Teuchos::RCP<const Tpetra::MultiVector<> > zp
-      = (Teuchos::dyn_cast<const ROL::TpetraMultiVector<Real> >(z)).getVector();
+    ROL::Ptr<Tpetra::MultiVector<> > up
+      = (dynamic_cast<ROL::TpetraMultiVector<Real>&>(u)).getVector();
+    ROL::Ptr<const Tpetra::MultiVector<> > zp
+      = (dynamic_cast<const ROL::TpetraMultiVector<Real>&>(z)).getVector();
     // Solve PDE    
     data_->ApplyInverseJacobian1ToVec(up, data_->getVecF(), false);
     // Compute residual
@@ -102,12 +102,12 @@ public:
                  const ROL::Vector<Real> &u,
                  const ROL::Vector<Real> &z,
                        Real &tol) {
-    Teuchos::RCP<Tpetra::MultiVector<> > jvp
-      = (Teuchos::dyn_cast<ROL::TpetraMultiVector<Real> >(jv)).getVector();
-    Teuchos::RCP<const Tpetra::MultiVector<> > vp
-      = (Teuchos::dyn_cast<const ROL::TpetraMultiVector<Real> >(v)).getVector();
-    Teuchos::RCP<const Tpetra::MultiVector<> > zp
-      = (Teuchos::dyn_cast<const ROL::TpetraMultiVector<Real> >(z)).getVector();
+    ROL::Ptr<Tpetra::MultiVector<> > jvp
+      = (dynamic_cast<ROL::TpetraMultiVector<Real>&>(jv)).getVector();
+    ROL::Ptr<const Tpetra::MultiVector<> > vp
+      = (dynamic_cast<const ROL::TpetraMultiVector<Real>&>(v)).getVector();
+    ROL::Ptr<const Tpetra::MultiVector<> > zp
+      = (dynamic_cast<const ROL::TpetraMultiVector<Real>&>(z)).getVector();
     
     data_->ApplyJacobian1ToVec(jvp, vp);
   }
@@ -118,17 +118,17 @@ public:
                  const ROL::Vector<Real> &u,
                  const ROL::Vector<Real> &z,
                        Real &tol) {
-    Teuchos::RCP<Tpetra::MultiVector<> > jvp
-      = (Teuchos::dyn_cast<ROL::TpetraMultiVector<Real> >(jv)).getVector();
-    Teuchos::RCP<const Tpetra::MultiVector<> > vp
-      = (Teuchos::dyn_cast<const ROL::TpetraMultiVector<Real> >(v)).getVector();
-    Teuchos::RCP<const Tpetra::MultiVector<> > up
-      = (Teuchos::dyn_cast<const ROL::TpetraMultiVector<Real> >(u)).getVector();
-    Teuchos::RCP<const Tpetra::MultiVector<> > zp
-      = (Teuchos::dyn_cast<const ROL::TpetraMultiVector<Real> >(z)).getVector();
+    ROL::Ptr<Tpetra::MultiVector<> > jvp
+      = (dynamic_cast<ROL::TpetraMultiVector<Real>&>(jv)).getVector();
+    ROL::Ptr<const Tpetra::MultiVector<> > vp
+      = (dynamic_cast<const ROL::TpetraMultiVector<Real>&>(v)).getVector();
+    ROL::Ptr<const Tpetra::MultiVector<> > up
+      = (dynamic_cast<const ROL::TpetraMultiVector<Real>&>(u)).getVector();
+    ROL::Ptr<const Tpetra::MultiVector<> > zp
+      = (dynamic_cast<const ROL::TpetraMultiVector<Real>&>(z)).getVector();
 
-    Teuchos::RCP<Tpetra::MultiVector<> > Fvp
-      = Teuchos::rcp(new Tpetra::MultiVector<>(vp->getMap(), 1));
+    ROL::Ptr<Tpetra::MultiVector<> > Fvp
+      = ROL::makePtr<Tpetra::MultiVector<>>(vp->getMap(), 1);
     filter_->apply(Fvp, vp);
     data_->ApplyJacobian2ToVec (jvp, up, Fvp);
   }
@@ -139,12 +139,12 @@ public:
                         const ROL::Vector<Real> &u,
                         const ROL::Vector<Real> &z,
                               Real &tol) {
-    Teuchos::RCP<Tpetra::MultiVector<> > ajvp
-      = (Teuchos::dyn_cast<ROL::TpetraMultiVector<Real> >(ajv)).getVector();
-    Teuchos::RCP<const Tpetra::MultiVector<> > vp
-      = (Teuchos::dyn_cast<const ROL::TpetraMultiVector<Real> >(v)).getVector();
-    Teuchos::RCP<const Tpetra::MultiVector<> > zp
-      = (Teuchos::dyn_cast<const ROL::TpetraMultiVector<Real> >(z)).getVector();
+    ROL::Ptr<Tpetra::MultiVector<> > ajvp
+      = (dynamic_cast<ROL::TpetraMultiVector<Real>&>(ajv)).getVector();
+    ROL::Ptr<const Tpetra::MultiVector<> > vp
+      = (dynamic_cast<const ROL::TpetraMultiVector<Real>&>(v)).getVector();
+    ROL::Ptr<const Tpetra::MultiVector<> > zp
+      = (dynamic_cast<const ROL::TpetraMultiVector<Real>&>(z)).getVector();
     
     data_->ApplyJacobian1ToVec(ajvp, vp);
   }
@@ -155,17 +155,17 @@ public:
                         const ROL::Vector<Real> &u,
                         const ROL::Vector<Real> &z,
                               Real &tol) {
-    Teuchos::RCP<Tpetra::MultiVector<> > ajvp
-      = (Teuchos::dyn_cast<ROL::TpetraMultiVector<Real> >(ajv)).getVector();
-    Teuchos::RCP<const Tpetra::MultiVector<> > vp
-      = (Teuchos::dyn_cast<const ROL::TpetraMultiVector<Real> >(v)).getVector();
-    Teuchos::RCP<const Tpetra::MultiVector<> > up
-      = (Teuchos::dyn_cast<const ROL::TpetraMultiVector<Real> >(u)).getVector();
-    Teuchos::RCP<const Tpetra::MultiVector<> > zp
-      = (Teuchos::dyn_cast<const ROL::TpetraMultiVector<Real> >(z)).getVector();
+    ROL::Ptr<Tpetra::MultiVector<> > ajvp
+      = (dynamic_cast<ROL::TpetraMultiVector<Real>&>(ajv)).getVector();
+    ROL::Ptr<const Tpetra::MultiVector<> > vp
+      = (dynamic_cast<const ROL::TpetraMultiVector<Real>&>(v)).getVector();
+    ROL::Ptr<const Tpetra::MultiVector<> > up
+      = (dynamic_cast<const ROL::TpetraMultiVector<Real>&>(u)).getVector();
+    ROL::Ptr<const Tpetra::MultiVector<> > zp
+      = (dynamic_cast<const ROL::TpetraMultiVector<Real>&>(z)).getVector();
 
-    Teuchos::RCP<Tpetra::MultiVector<> > tmp
-      = Teuchos::rcp(new Tpetra::MultiVector<>(ajvp->getMap(), 1));
+    ROL::Ptr<Tpetra::MultiVector<> > tmp
+      = ROL::makePtr<Tpetra::MultiVector<>>(ajvp->getMap(), 1);
     data_->ApplyAdjointJacobian2ToVec (tmp, up, vp);
     filter_->apply(ajvp, tmp);
   }
@@ -207,22 +207,22 @@ public:
                         const ROL::Vector<Real> &u,
                         const ROL::Vector<Real> &z,
                               Real &tol) {
-    Teuchos::RCP<Tpetra::MultiVector<> > ahwvp
-      = (Teuchos::dyn_cast<ROL::TpetraMultiVector<Real> >(ahwv)).getVector();
-    Teuchos::RCP<const Tpetra::MultiVector<> > wp
-      = (Teuchos::dyn_cast<const ROL::TpetraMultiVector<Real> >(w)).getVector();
-    Teuchos::RCP<const Tpetra::MultiVector<> > vp
-      = (Teuchos::dyn_cast<const ROL::TpetraMultiVector<Real> >(v)).getVector();
-    Teuchos::RCP<const Tpetra::MultiVector<> > up
-      = (Teuchos::dyn_cast<const ROL::TpetraMultiVector<Real> >(u)).getVector();
-    Teuchos::RCP<const Tpetra::MultiVector<> > zp
-      = (Teuchos::dyn_cast<const ROL::TpetraMultiVector<Real> >(z)).getVector();
+    ROL::Ptr<Tpetra::MultiVector<> > ahwvp
+      = (dynamic_cast<ROL::TpetraMultiVector<Real>&>(ahwv)).getVector();
+    ROL::Ptr<const Tpetra::MultiVector<> > wp
+      = (dynamic_cast<const ROL::TpetraMultiVector<Real>&>(w)).getVector();
+    ROL::Ptr<const Tpetra::MultiVector<> > vp
+      = (dynamic_cast<const ROL::TpetraMultiVector<Real>&>(v)).getVector();
+    ROL::Ptr<const Tpetra::MultiVector<> > up
+      = (dynamic_cast<const ROL::TpetraMultiVector<Real>&>(u)).getVector();
+    ROL::Ptr<const Tpetra::MultiVector<> > zp
+      = (dynamic_cast<const ROL::TpetraMultiVector<Real>&>(z)).getVector();
     
-    Teuchos::RCP<Tpetra::MultiVector<> > Fvp
-      = Teuchos::rcp(new Tpetra::MultiVector<>(vp->getMap(), 1));
+    ROL::Ptr<Tpetra::MultiVector<> > Fvp
+      = ROL::makePtr<Tpetra::MultiVector<>>(vp->getMap(), 1);
     filter_->apply(Fvp, vp);
-    Teuchos::RCP<Tpetra::MultiVector<> > tmp
-      = Teuchos::rcp(new Tpetra::MultiVector<>(ahwvp->getMap(), 1));
+    ROL::Ptr<Tpetra::MultiVector<> > tmp
+      = ROL::makePtr<Tpetra::MultiVector<>>(ahwvp->getMap(), 1);
     data_->ApplyAdjointHessian22ToVec (tmp, up, Fvp, wp);
     filter_->apply(ahwvp, tmp);
   }
@@ -233,12 +233,12 @@ public:
                         const ROL::Vector<Real> &u,
                         const ROL::Vector<Real> &z,
                               Real &tol) {
-    Teuchos::RCP<Tpetra::MultiVector<> > ijvp
-      = (Teuchos::dyn_cast<ROL::TpetraMultiVector<Real> >(ijv)).getVector();
-    Teuchos::RCP<const Tpetra::MultiVector<> > vp
-      = (Teuchos::dyn_cast<const ROL::TpetraMultiVector<Real> >(v)).getVector();
-    Teuchos::RCP<const Tpetra::MultiVector<> > zp
-      = (Teuchos::dyn_cast<const ROL::TpetraMultiVector<Real> >(z)).getVector();
+    ROL::Ptr<Tpetra::MultiVector<> > ijvp
+      = (dynamic_cast<ROL::TpetraMultiVector<Real>&>(ijv)).getVector();
+    ROL::Ptr<const Tpetra::MultiVector<> > vp
+      = (dynamic_cast<const ROL::TpetraMultiVector<Real>&>(v)).getVector();
+    ROL::Ptr<const Tpetra::MultiVector<> > zp
+      = (dynamic_cast<const ROL::TpetraMultiVector<Real>&>(z)).getVector();
     
     data_->ApplyInverseJacobian1ToVec (ijvp, vp, false);
   }
@@ -249,21 +249,21 @@ public:
                                const ROL::Vector<Real> &u,
                                const ROL::Vector<Real> &z,
                                      Real &tol) {
-    Teuchos::RCP<Tpetra::MultiVector<> > iajvp
-      = (Teuchos::dyn_cast<ROL::TpetraMultiVector<Real> >(iajv)).getVector();
-    Teuchos::RCP<const Tpetra::MultiVector<> > vp
-      = (Teuchos::dyn_cast<const ROL::TpetraMultiVector<Real> >(v)).getVector();
-    Teuchos::RCP<const Tpetra::MultiVector<> > zp
-      = (Teuchos::dyn_cast<const ROL::TpetraMultiVector<Real> >(z)).getVector();
+    ROL::Ptr<Tpetra::MultiVector<> > iajvp
+      = (dynamic_cast<ROL::TpetraMultiVector<Real>&>(iajv)).getVector();
+    ROL::Ptr<const Tpetra::MultiVector<> > vp
+      = (dynamic_cast<const ROL::TpetraMultiVector<Real>&>(v)).getVector();
+    ROL::Ptr<const Tpetra::MultiVector<> > zp
+      = (dynamic_cast<const ROL::TpetraMultiVector<Real>&>(z)).getVector();
     
     data_->ApplyInverseJacobian1ToVec (iajvp, vp, true);
   }
 
   void update_2(const ROL::Vector<Real> &z, bool flag = true, int iter = -1) {
-    Teuchos::RCP<const Tpetra::MultiVector<> > zp
-      = (Teuchos::dyn_cast<const ROL::TpetraMultiVector<Real> >(z)).getVector();
-    Teuchos::RCP<Tpetra::MultiVector<> > Fzp
-      = Teuchos::rcp(new Tpetra::MultiVector<>(zp->getMap(), 1));
+    ROL::Ptr<const Tpetra::MultiVector<> > zp
+      = (dynamic_cast<const ROL::TpetraMultiVector<Real>&>(z)).getVector();
+    ROL::Ptr<Tpetra::MultiVector<> > Fzp
+      = ROL::makePtr<Tpetra::MultiVector<>>(zp->getMap(), 1);
     filter_->apply(Fzp, zp);
     data_->updateMaterialDensity(Fzp);
     data_->constructSolverWithNewMaterial();

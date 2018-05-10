@@ -231,11 +231,20 @@ class StepperIMEX_RK : virtual public Tempus::StepperImplicit<Scalar>
 {
 public:
 
-  /// Constructor
+  /// Constructor to use default Stepper parameters.
+  StepperIMEX_RK(
+    const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel,
+    std::string stepperType = "IMEX RK SSP2");
+
+  /// Constructor to specialize Stepper parameters.
+  StepperIMEX_RK(
+    const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel,
+    Teuchos::RCP<Teuchos::ParameterList> pList);
+
+  /// Constructor for StepperFactory.
   StepperIMEX_RK(
     const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& models,
-    std::string stepperType,
-    Teuchos::RCP<Teuchos::ParameterList> pList = Teuchos::null);
+    std::string stepperType, Teuchos::RCP<Teuchos::ParameterList> pList);
 
   /// \name Basic stepper methods
   //@{
@@ -262,11 +271,8 @@ public:
     virtual void setModel(
       const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel);
 
-    virtual void setNonConstModel(
-      const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >& appModel);
-
     virtual Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > getModel()
-     { return wrapperModelPairIMEX_; }
+     { return this->wrapperModel_; }
 
     virtual void setModelPair(
       const Teuchos::RCP<WrapperModelEvaluatorPairIMEX_Basic<Scalar> >& mePair);
@@ -275,16 +281,8 @@ public:
       const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& explicitModel,
       const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& implicitModel);
 
-    /// Set solver via ParameterList solver name.
-    virtual void setSolver(std::string solverName);
-    /// Set solver via solver ParameterList.
-    virtual void setSolver(
-      Teuchos::RCP<Teuchos::ParameterList> solverPL=Teuchos::null);
-    /// Set solver.
-    virtual void setSolver(
-      Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> > solver);
     virtual void setObserver(
-      Teuchos::RCP<StepperIMEX_RKObserver<Scalar> > obs = Teuchos::null);
+      Teuchos::RCP<StepperObserver<Scalar> > obs = Teuchos::null);
 
     /// Initialize during construction and after changing input parameters.
     virtual void initialize();
@@ -297,6 +295,13 @@ public:
     virtual Scalar getOrder()const { return order_; }
     virtual Scalar getOrderMin()const { return order_; }
     virtual Scalar getOrderMax()const { return order_; }
+
+    virtual bool isExplicit()         const {return true;}
+    virtual bool isImplicit()         const {return true;}
+    virtual bool isExplicitImplicit() const
+      {return isExplicit() and isImplicit();}
+    virtual bool isOneStepMethod()   const {return true;}
+    virtual bool isMultiStepMethod() const {return !isOneStepMethod();}
   //@}
 
   /// \name ParameterList methods
@@ -333,9 +338,6 @@ private:
 protected:
 
   std::string                                            description_;
-  Teuchos::RCP<Teuchos::ParameterList>                   stepperPL_;
-  Teuchos::RCP<WrapperModelEvaluatorPairIMEX<Scalar> >   wrapperModelPairIMEX_;
-  Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> >      solver_;
 
   Teuchos::RCP<const RKButcherTableau<Scalar> >          explicitTableau_;
   Teuchos::RCP<const RKButcherTableau<Scalar> >          implicitTableau_;
@@ -348,6 +350,7 @@ protected:
 
   Teuchos::RCP<Thyra::VectorBase<Scalar> >               xTilde_;
 
+  Teuchos::RCP<StepperObserver<Scalar> >         stepperObserver_;
   Teuchos::RCP<StepperIMEX_RKObserver<Scalar> >  stepperIMEX_RKObserver_;
 };
 

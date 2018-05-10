@@ -96,6 +96,8 @@ private:
   const RCP<const Environment> mEnv;
   const RCP<const Comm<int> > mProblemComm;
 
+  std::string mPartitionMethod;
+
   const RCP<GraphModel<typename Adapter::base_adapter_t> > mGraphModel;
   const RCP<CoordinateModel<typename Adapter::base_adapter_t> > mIds;
 
@@ -137,15 +139,12 @@ public:
 	const RCP<CoordinateModel<typename Adapter::base_adapter_t> > &cModel_,
 	const RCP<const typename Adapter::base_adapter_t> baseInputAdapter_
        )
-    :mEnv(env_), mProblemComm(problemComm_), mGraphModel(gModel_), 
+    :mEnv(env_), mProblemComm(problemComm_), mPartitionMethod("rcb"),
+     mGraphModel(gModel_), 
      mIds(cModel_), mBaseInputAdapter(baseInputAdapter_)
   {
 #ifndef INCLUDE_ZOLTAN2_EXPERIMENTAL
     Z2_THROW_EXPERIMENTAL("Zoltan2 AlgND is strictly experimental software ")
-#endif
-
-#ifndef INCLUDE_ZOLTAN2_EXPERIMENTAL_WOLF
-    Z2_THROW_EXPERIMENTAL_WOLF("Zoltan2 algND is strictly experimental software ")
 #endif
 
     if(mProblemComm->getSize()!=1)
@@ -153,11 +152,34 @@ public:
       Z2_THROW_SERIAL("Zoltan2 AlgND is strictly serial!");
     }
 
+
+    const Teuchos::ParameterList &pl = mEnv->getParameters();
+    const Teuchos::ParameterEntry *pe;
+
+
+    pe = pl.getEntryPtr("edge_separator_method");
+    
+    if (pe)
+    {
+      mPartitionMethod = pe->getValue<std::string>(&mPartitionMethod);
+    }
+
   }
 
   // Ordering method
   int localOrder(const RCP<LocalOrderingSolution<lno_t> > &solution_);
   int globalOrder(const RCP<GlobalOrderingSolution<gno_t> > &solution_);
+
+  /*! \brief Set up validators specific to this algorithm                                                                                                                                                   
+   */
+  static void getValidParameters(ParameterList & pl)
+  {
+
+    RCP<Teuchos::StringValidator> es_method_Validator =
+      Teuchos::rcp( new Teuchos::StringValidator(Teuchos::tuple<std::string>( "rcb", "phg")));
+
+    pl.set("edge_separator_method", "rcb", "ND ordering - Edge separator method", es_method_Validator);
+  }
 
 };
 ////////////////////////////////////////////////////////////////////////////////
@@ -193,7 +215,7 @@ int AlgND<Adapter>::localOrder(const RCP<LocalOrderingSolution<lno_t> > &solutio
     /////////////////////////////////////////////////////////////////
     Teuchos::ParameterList partParams;
 
-    part_t numParts = mEnv->getParameters().get<part_t>("num_global_parts");
+    part_t numParts = mEnv->getParameters().template get<part_t>("num_global_parts");
 
     partParams.set("num_global_parts", numParts);
 
@@ -203,7 +225,7 @@ int AlgND<Adapter>::localOrder(const RCP<LocalOrderingSolution<lno_t> > &solutio
 
     // Set Zoltan parameter lists
     Teuchos::ParameterList &zparams = partParams.sublist("zoltan_parameters",false);
-    zparams.set("LB_METHOD", "rcb");
+    zparams.set("LB_METHOD", mPartitionMethod);
     /////////////////////////////////////////////////////////////////
 
     /////////////////////////////////////////////////////////////////
@@ -451,23 +473,26 @@ int AlgND<Adapter>::localOrder(const RCP<LocalOrderingSolution<lno_t> > &solutio
     //////////////////////////////////////////////////////////////////////
     // Output separators
     //////////////////////////////////////////////////////////////////////
-    // std::cout << "Separators: " << std::endl;
-    // for(part_t level=0;level<sepVertsByLevel.size();level++)
-    // {
-    //   sepVertsByLevel[level].resize(sepsInLev[level]);
+    std::cout << "Separators: " << std::endl;
 
-    //   for(part_t levIndx=0;levIndx<sepVertsByLevel[level].size();levIndx++)
-    //   {
-    // 	std::cout << "  Separator " << level << " " << levIndx << ": ";
+    part_t nLevels = sepVertsByLevel.size();
+    for(part_t level=0;level<nLevels;level++)
+    {
+      //sepVertsByLevel[level].resize(sepsInLev[level]);
+      part_t nSepsOnLev = sepVertsByLevel[level].size();
 
-    // 	typename std::set<lno_t>::const_iterator iterS;
-    // 	for (iterS=sepVertsByLevel[level][levIndx].begin();iterS!=sepVertsByLevel[level][levIndx].end();++iterS)
-    // 	{
-    // 	  std::cout << *iterS << " ";
-    // 	}
-    // 	std::cout << std::endl;
-    //   }
-    // }
+      for(part_t levIndx=0;levIndx<nSepsOnLev;levIndx++)
+      {
+    	std::cout << "  Separator " << level << " " << levIndx << ": ";
+
+    	typename std::set<lno_t>::const_iterator iterS;
+    	for (iterS=sepVertsByLevel[level][levIndx].begin();iterS!=sepVertsByLevel[level][levIndx].end();++iterS)
+    	{
+    	  std::cout << *iterS << " ";
+    	}
+    	std::cout << std::endl;
+      }
+    }
     //////////////////////////////////////////////////////////////////////
 
 
@@ -514,17 +539,28 @@ void AlgND<Adapter>::getBoundLayer(part_t levelIndx, const std::vector<part_t> &
   typedef typename Adapter::scalar_t scalar_t;   // scalars
   typedef StridedData<lno_t, scalar_t> input_t;
 
-  size_t numVerts = mGraphModel->getLocalNumVertices();
+  lno_t numVerts = mGraphModel->getLocalNumVertices();
 
   //Teuchos ArrayView
-  ArrayView< const lno_t > eIDs;
+  // Original --  ArrayView< const lno_t > eIDs;
+  ArrayView< const gno_t > eIDs;
   ArrayView< const offset_t > vOffsets;
   ArrayView< input_t > wgts;
 
+  // MMW:
   // For some reason getLocalEdgeList seems to be returning empty eIDs
-  //size_t numEdges = ( (GraphModel<typename Adapter::base_adapter_t>)  *mGraphModel).getLocalEdgeList(eIDs, vOffsets, wgts);
-  //size_t numEdges = ( (GraphModel<typename Adapter::base_adapter_t>)  *mGraphModel).getEdgeList(eIDs, vOffsets, wgts);
-  ( (GraphModel<typename Adapter::base_adapter_t>)  *mGraphModel).getEdgeList(eIDs, vOffsets, wgts);
+  // getEdgeList expects eIDs to be an array of gno_t
+  // I wanted eIDs to be lno_t since this ordering is computed on a single node and
+  // it seems unnecessary to use the potentially larger gno_t.
+  // The problem might be that the partitioning is being calculated on the gno_t.
+  // Perhaps a solution would be set gno_t = lno_t in the partitioning.
+  // For now, I'll leave this since the edgelist is unlikely to be prohibitively big
+
+
+  mGraphModel->getEdgeList(eIDs, vOffsets, wgts);
+
+  // original
+  //  ( (GraphModel<typename Adapter::base_adapter_t>)  *mGraphModel).getEdgeList(eIDs, vOffsets, wgts);
 
 
   std::map<lno_t,std::set<lno_t> > bigraphEs;
@@ -715,7 +751,7 @@ buildPartTree(part_t level, std::vector<part_t> &levIndx,
   {
 
 
-    if(levIndx.size() < level+1)
+    if((part_t)levIndx.size() < level+1)
     {
       levIndx.push_back(0);
     }

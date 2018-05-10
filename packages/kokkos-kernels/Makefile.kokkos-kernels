@@ -189,6 +189,7 @@ KOKKOSKERNELS_INTERNAL_INST_MEMSPACE_HOSTSPACE=$(strip $(shell echo $(KOKKOSKERN
 KOKKOSKERNELS_INTERNAL_INST_MEMSPACE_HBWSPACE=$(strip $(shell echo $(KOKKOSKERNELS_SPACES) | grep "HBWSpace" | wc -l))
 KOKKOSKERNELS_INTERNAL_INST_MEMSPACE_CUDASPACE=$(strip $(shell echo $(KOKKOSKERNELS_SPACES) | grep "CudaSpace" | wc -l))
 KOKKOSKERNELS_INTERNAL_INST_MEMSPACE_CUDAUVMSPACE=$(strip $(shell echo $(KOKKOSKERNELS_SPACES) | grep "CudaUVMSpace" | wc -l))
+KOKKOSKERNELS_INTERNAL_INST_MEMSPACE_CUDAHOSTPINNEDSPACE=$(strip $(shell echo $(KOKKOSKERNELS_SPACES) | grep "CudaHostPinnedSpace" | wc -l))
 
 tmp := $(shell echo "" >> KokkosKernels_config.tmp)
 tmp := $(shell echo "/* ---------------------------------------------" >> KokkosKernels_config.tmp)
@@ -207,6 +208,10 @@ endif
 ifeq ($(KOKKOSKERNELS_INTERNAL_INST_MEMSPACE_CUDAUVMSPACE), 1)
   tmp := $(shell echo "\#define KOKKOSKERNELS_INST_MEMSPACE_CUDAUVMSPACE" >> KokkosKernels_config.tmp )
 endif
+ifeq ($(KOKKOSKERNELS_INTERNAL_INST_MEMSPACE_CUDAHOSTPINNEDSPACE), 1)
+  tmp := $(shell echo "\#define KOKKOSKERNELS_INST_MEMSPACE_CUDAHOSTPINNEDSPACE" >> KokkosKernels_config.tmp )
+endif
+
 ifeq ($(KOKKOSKERNELS_INTERNAL_INST_EXECSPACE_CUDA), 1)
   ifeq ($(KOKKOSKERNELS_INTERNAL_INST_MEMSPACE_CUDASPACE), 0)
     ifeq ($(KOKKOSKERNELS_INTERNAL_INST_MEMSPACE_CUDAUVMSPACE), 0)
@@ -256,7 +261,7 @@ ifeq (${KOKKOSKERNELS_INTERNAL_ENABLE_CUBLAS}, 1)
   tmp := $(shell echo "\#define KOKKOSKERNELS_ENABLE_TPL_CUBLAS" >> KokkosKernels_config.tmp )
 endif
 
-  tmp := $(shell echo "\#if defined(KOKKOSKERNELS_ENABLE_TPL_MKL)" >> KokkosKernels_config.tmp )
+  tmp := $(shell echo "\#if defined(KOKKOSKERNELS_ENABLE_TPL_MKL) || defined(KOKKOSKERNELS_ENABLE_TPL_CUBLAS)" >> KokkosKernels_config.tmp )
   tmp := $(shell echo "\#if !defined(KOKKOSKERNELS_ENABLE_TPL_BLAS)" >> KokkosKernels_config.tmp )  
   tmp := $(shell echo "\#define KOKKOSKERNELS_ENABLE_TPL_BLAS" >> KokkosKernels_config.tmp )
   tmp := $(shell echo "\#endif" >> KokkosKernels_config.tmp )
@@ -384,8 +389,10 @@ endif
 KOKKOSKERNELS_INTERNAL_HEADERS = $(wildcard ${KOKKOSKERNELS_PATH}/src/impl/*.hpp)
 KOKKOSKERNELS_INTERNAL_HEADERS += $(wildcard ${KOKKOSKERNELS_PATH}/src/impl/generated_specializations_hpp/*/*eti_spec*.hpp)
 
+ifdef KOKKOSKERNELS_INTERNAL_SRC_SPARSE
 vpath %.cpp $(sort $(dir $(KOKKOSKERNELS_INTERNAL_SRC_SPARSE)))
 vpath %.cpp $(sort $(dir $(KOKKOSKERNELS_INTERNAL_SRC_BLAS)))
+endif
 
 DEPFLAGS = -M
 

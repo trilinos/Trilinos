@@ -81,8 +81,17 @@ setupSubLocalMeshInfo(const panzer::LocalMeshInfoBase<LO,GO> & parent_info,
   // Note: This function works with inter-face connectivity. NOT node connectivity.
 
   const int num_owned_cells = owned_parent_cells.size();
+  TEUCHOS_TEST_FOR_EXCEPT_MSG(num_owned_cells == 0, "panzer::partitioning_utilities::setupSubLocalMeshInfo : Input parent subcells must exist (owned_parent_cells)");
+
   const int num_parent_owned_cells = parent_info.num_owned_cells;
+  TEUCHOS_TEST_FOR_EXCEPT_MSG(num_parent_owned_cells <= 0, "panzer::partitioning_utilities::setupSubLocalMeshInfo : Input parent info must contain owned cells");
+
   const int num_parent_ghstd_cells = parent_info.num_ghstd_cells;
+
+  const int num_parent_total_cells = parent_info.num_owned_cells + parent_info.num_ghstd_cells + parent_info.num_virtual_cells;
+
+  // Just as a precaution, make sure the parent_info is setup properly
+  TEUCHOS_ASSERT(static_cast<int>(parent_info.cell_to_faces.extent(0)) == num_parent_total_cells);
   const int num_faces_per_cell = parent_info.cell_to_faces.dimension_1();
 
   // The first thing to do is construct a vector containing the parent cell indexes of all
@@ -109,18 +118,32 @@ setupSubLocalMeshInfo(const panzer::LocalMeshInfoBase<LO,GO> & parent_info,
       for(int local_face_index=0;local_face_index<num_faces_per_cell;++local_face_index){
         const LO parent_face = parent_info.cell_to_faces(parent_cell_index, local_face_index);
 
+        // Sidesets can have owned cells that border the edge of the domain (i.e. parent_face == -1)
+        // If we are at the edge of the domain, we can ignore this face.
+        if(parent_face < 0)
+          continue;
+
+        // Find the side index for neighbor cell with respect to the face
         const LO neighbor_parent_side = (parent_info.face_to_cells(parent_face,0) == parent_cell_index) ? 1 : 0;
 
+        // Get the neighbor cell index in the parent's indexing scheme
         const LO neighbor_parent_cell = parent_info.face_to_cells(parent_face, neighbor_parent_side);
+
+        // If the face exists, then the neighbor should exist
+        TEUCHOS_ASSERT(neighbor_parent_cell >= 0);
 
         // We can easily check if this is a virtual cell
         if(neighbor_parent_cell >= virtual_parent_cell_offset){
           virtual_parent_cells_set.insert(neighbor_parent_cell);
+        } else if(neighbor_parent_cell >= num_parent_owned_cells){
+          // This is a quick check for a ghost cell
+          // This branch only exists to cut down on the number of times the next branch (much slower) is called
+          ghstd_parent_cells_set.insert(neighbor_parent_cell);
         } else {
-          // There is still potential for this to be a ghost cell
+          // There is still potential for this to be a ghost cell with respect to 'our' cells
           // The only way to check this is with a super slow lookup call
           if(owned_parent_cells_set.find(neighbor_parent_cell) == owned_parent_cells_set.end()){
-            // The neighbor cell is not owned, therefore it is a ghost
+            // The neighbor cell is not owned by 'us', therefore it is a ghost
             ghstd_parent_cells_set.insert(neighbor_parent_cell);
           }
         }
@@ -150,6 +173,11 @@ setupSubLocalMeshInfo(const panzer::LocalMeshInfoBase<LO,GO> & parent_info,
   sub_info.num_virtual_cells = virtual_parent_cells.size();
 
   // We now have the indexing order for our sub_info
+
+  // Just as a precaution, make sure the parent_info is setup properly
+  TEUCHOS_ASSERT(static_cast<int>(parent_info.cell_vertices.extent(0)) == num_parent_total_cells);
+  TEUCHOS_ASSERT(static_cast<int>(parent_info.local_cells.extent(0)) == num_parent_total_cells);
+  TEUCHOS_ASSERT(static_cast<int>(parent_info.global_cells.extent(0)) == num_parent_total_cells);
 
   const int num_vertices_per_cell = parent_info.cell_vertices.dimension_1();
   const int num_dims = parent_info.cell_vertices.dimension_2();
@@ -200,6 +228,10 @@ setupSubLocalMeshInfo(const panzer::LocalMeshInfoBase<LO,GO> & parent_info,
       const LO owned_parent_cell = owned_parent_cells[owned_cell];
       for(int local_face=0;local_face<num_faces_per_cell;++local_face){
         const LO parent_face = parent_info.cell_to_faces(owned_parent_cell,local_face);
+
+        // Skip faces at the edge of the domain
+        if(parent_face<0)
+          continue;
 
         // Get the cell on the other side of the face
         const LO neighbor_side = (parent_info.face_to_cells(parent_face,0) == owned_parent_cell) ? 1 : 0;
@@ -280,44 +312,54 @@ splitMeshInfo(const panzer::LocalMeshInfoBase<LO,GO> & mesh_info,
               std::vector<panzer::LocalMeshPartition<LO,GO> > & partitions)
 {
 
+  // Make sure the splitting size makes sense
+  TEUCHOS_ASSERT(splitting_size != 0);
+
   // This is not a partitioning scheme.
-  // This just chunks the mesh_info into equally sized chunks and ignores connectivity
+  // This just breaks the mesh_info into equally sized chunks and ignores connectivity
+  // This means that the cells in the partition probably won't be nearby each other - leads to an excess of ghost cells
 
   const LO num_owned_cells = mesh_info.num_owned_cells;
 
-  std::vector<LO> partition_cells;
-
   if(splitting_size < 0){
+
     // Just one chunk
+    std::vector<LO> partition_cells;
     partition_cells.reserve(mesh_info.num_owned_cells);
     for(LO i=0;i<mesh_info.num_owned_cells;++i){
       partition_cells.push_back(i);
     }
 
-    partitions.push_back(panzer::LocalMeshPartition<LO,GO>());
-    panzer::LocalMeshPartition<LO,GO> & partition_info = partitions.back();
-
-    setupSubLocalMeshInfo(mesh_info,partition_cells,partition_info);
+    // It seems this can happen
+    if(partition_cells.size() > 0){
+      partitions.push_back(panzer::LocalMeshPartition<LO,GO>());
+      setupSubLocalMeshInfo(mesh_info,partition_cells,partitions.back());
+    }
 
   } else {
 
+    std::vector<LO> partition_cells;
     partition_cells.reserve(splitting_size);
 
+    // There should be at least one partition
     const LO num_partitions = mesh_info.num_owned_cells / splitting_size + ((mesh_info.num_owned_cells % splitting_size == 0) ? 0 : 1);
+
     LO partition_start_index = 0;
-
     for(LO partition=0;partition<num_partitions;++partition){
-      const LO partition_end_index = std::min(partition_start_index + splitting_size, num_owned_cells);
-      partition_cells.resize(partition_end_index - partition_start_index,-1);
 
+      // Make sure end of partition maxes out at num_owned_cells
+      const LO partition_end_index = std::min(partition_start_index + splitting_size, num_owned_cells);
+
+      partition_cells.resize(partition_end_index - partition_start_index,-1);
       for(int i=partition_start_index;i<partition_end_index;++i){
         partition_cells[i] = i;
       }
 
-      partitions.push_back(panzer::LocalMeshPartition<LO,GO>());
-      panzer::LocalMeshPartition<LO,GO> & partition_info = partitions.back();
-
-      setupSubLocalMeshInfo(mesh_info,partition_cells,partition_info);
+      // It seems this can happen
+      if(partition_cells.size() > 0){
+        partitions.push_back(panzer::LocalMeshPartition<LO,GO>());
+        setupSubLocalMeshInfo(mesh_info,partition_cells,partitions.back());
+      }
 
       partition_start_index = partition_end_index;
     }
@@ -349,18 +391,24 @@ generateLocalMeshPartitions(const panzer::LocalMeshInfo<LO,GO> & mesh_info,
   TEUCHOS_ASSERT(description.getWorksetSize() != panzer::WorksetDescriptor::EMPTY);
   TEUCHOS_ASSERT(description.getWorksetSize() != 0);
 
+  // This could just return, but it would be difficult to debug why no partitions were returned
+  TEUCHOS_ASSERT(description.requiresPartitioning());
+
   const std::string & element_block_name = description.getElementBlock();
 
   // We have two processes for in case this is a sideset or element block
   if(description.useSideset()){
 
-    const std::string & sideset_name = description.getSideset();
-
-    TEUCHOS_ASSERT(mesh_info.sidesets.find(element_block_name) != mesh_info.sidesets.end());
-
+    // If the element block doesn't exist, there are no partitions to create
+    if(mesh_info.sidesets.find(element_block_name) == mesh_info.sidesets.end())
+      return;
     const auto & sideset_map = mesh_info.sidesets.at(element_block_name);
 
-    TEUCHOS_ASSERT(sideset_map.find(sideset_name) != sideset_map.end());
+    const std::string & sideset_name = description.getSideset();
+
+    // If the sideset doesn't exist, there are no partitions to create
+    if(sideset_map.find(sideset_name) == sideset_map.end())
+      return;
 
     const panzer::LocalMeshSidesetInfo<LO,GO> & sideset_info = sideset_map.at(sideset_name);
 
@@ -375,8 +423,9 @@ generateLocalMeshPartitions(const panzer::LocalMeshInfo<LO,GO> & mesh_info,
 
   } else {
 
-    // Make sure the element block of interest exists
-    TEUCHOS_ASSERT(mesh_info.element_blocks.find(element_block_name) != mesh_info.element_blocks.end());
+    // If the element block doesn't exist, there are no partitions to create
+    if(mesh_info.element_blocks.find(element_block_name) == mesh_info.element_blocks.end())
+      return;
 
     // Grab the element block we're interested in
     const panzer::LocalMeshBlockInfo<LO,GO> & block_info = mesh_info.element_blocks.at(element_block_name);
@@ -386,7 +435,13 @@ generateLocalMeshPartitions(const panzer::LocalMeshInfo<LO,GO> & mesh_info,
       panzer::partitioning_utilities::splitMeshInfo(block_info, -1, partitions);
     } else {
       // We need to partition local mesh
-      panzer::partitioning_utilities::partitionMeshInfo<LO,GO>(block_info, description.getWorksetSize(), partitions);
+
+      // TODO: This needs to be used, but first needs to be written
+      //panzer::partitioning_utilities::partitionMeshInfo<LO,GO>(block_info, description.getWorksetSize(), partitions);
+
+      // FIXME: Until the above function is fixed, we will use this hack - this will lead to horrible partitions
+      panzer::partitioning_utilities::splitMeshInfo(block_info, description.getWorksetSize(), partitions);
+
     }
 
     for(auto & partition : partitions){

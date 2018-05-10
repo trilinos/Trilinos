@@ -16,6 +16,7 @@
 #include "Xpetra_IO.hpp"
 #include "Xpetra_MatrixSplitting.hpp"
 #include "Xpetra_RegionAMG_def.hpp"
+#include "Xpetra_RegionHandler_def.hpp"
 #ifdef HAVE_XPETRA_TPETRA
 #include "Xpetra_TpetraCrsMatrix.hpp"
 #endif
@@ -53,6 +54,7 @@ int main(int argc, char* argv[])
   typedef KokkosClassic::DefaultNode::DefaultNodeType Node;
 
   typedef Xpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> multivector_type;
+  typedef Xpetra::MatrixSplitting<Scalar,LocalOrdinal,GlobalOrdinal,Node,Xpetra::UseTpetra, false> tpetra_splitting;
 
 #ifdef HAVE_MPI
   MPI_Init(&argc, &argv);
@@ -69,6 +71,12 @@ int main(int argc, char* argv[])
 
   TEUCHOS_TEST_FOR_EXCEPT_MSG(argc<4, "\nInvalid name for input matrix and output file\n");
 
+  Teuchos::RCP<Teuchos::FancyOStream> out = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
+
+  // process command line arguments
+  const char* xmlFileName = argv[1];
+  const char* matrixFileName = argv[2];
+  const char* mappingFileName = argv[3];
 
   Teuchos::ParameterList xmlParams;
   Teuchos::ParameterList mueluParams;
@@ -92,18 +100,31 @@ int main(int argc, char* argv[])
   //Teuchos::RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > A;
   //A = Xpetra::IO<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Read(argv[2], Xpetra::UseTpetra, comm);
 
+  // Create the RegionHandler to deal with mappings of nodes to regions etc.
+  Teuchos::RCP<Xpetra::RegionHandler<Scalar, LocalOrdinal, GlobalOrdinal, Node> > regionHandler = Teuchos::rcp(new Xpetra::RegionHandler<Scalar, LocalOrdinal, GlobalOrdinal, Node> (mappingFileName, comm));
+  Teuchos::Array<GlobalOrdinal> elementlist = regionHandler->GetGlobalRowMap();
+  std::size_t num_total_elements = regionHandler->GetNumGlobalElements();
+  std::size_t num_total_regions = regionHandler->GetNumTotalRegions();
+
+  // Read and split the matrix
+  Teuchos::RCP<tpetra_splitting> matrixSplitting = Teuchos::rcp(new tpetra_splitting(matrixFileName, regionHandler, comm));
+
+  // Create region-wise AMG hierarchy
   int max_num_levels = 4;
   int coarsening_factor = 3;
+  Xpetra::RegionAMG<Scalar,LocalOrdinal,GlobalOrdinal,Node> preconditioner(matrixSplitting, regionHandler, comm, mueluParams, max_num_levels, coarsening_factor);
 
-  Xpetra::RegionAMG<Scalar,LocalOrdinal,GlobalOrdinal,Node> preconditioner( argv[2], argv[3], comm, mueluParams, max_num_levels, coarsening_factor );
-
-
-  Teuchos::RCP<multivector_type> X = Xpetra::MultiVectorFactory< Scalar, LocalOrdinal, GlobalOrdinal, Node >::Build(preconditioner.getDomainMap(), 1) ;
-  Teuchos::RCP<multivector_type> Y = Xpetra::MultiVectorFactory< Scalar, LocalOrdinal, GlobalOrdinal, Node >::Build(preconditioner.getRangeMap(), 1) ;
-  X->randomize();
-  Y->putScalar((scalar_type) 0.0);
-
-  preconditioner.apply(*X,*Y);
+//  // Setup vectors for test problem
+//  Teuchos::RCP<multivector_type> X = Xpetra::MultiVectorFactory< Scalar, LocalOrdinal, GlobalOrdinal, Node >::Build(preconditioner.getDomainMap(), 1) ;
+//  Teuchos::RCP<multivector_type> Y = Xpetra::MultiVectorFactory< Scalar, LocalOrdinal, GlobalOrdinal, Node >::Build(preconditioner.getRangeMap(), 1) ;
+//  X->randomize();
+//  Y->putScalar((scalar_type) 0.0);
+//
+//  // Apply the preconditioner
+//  preconditioner.apply(*X,*Y);
+//
+//  // Output result to screen
+//  Y->describe(*out, Teuchos::VERB_EXTREME);
 
 #ifdef HAVE_MPI
   MPI_Finalize();

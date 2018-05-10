@@ -62,11 +62,75 @@ IF(${PACKAGE_NAME}_ENABLE_Epetra AND ${PACKAGE_NAME}_ENABLE_EpetraExt AND
     COMM mpi # Fails to build in serial (see Trilinos #465)
     )
 
-  TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  TRIBITS_ADD_EXECUTABLE(
     Example_Maxwell
     SOURCES example_Maxwell.cpp
       TrilinosCouplings_Pamgen_Utils.cpp
-    NUM_MPI_PROCS 1
+    COMM serial mpi
+    )
+
+  TRIBITS_ADD_TEST(
+      Example_Maxwell
+      NAME Example_Maxwell_ML
+      ARGS "--solverName=ML"
+      NUM_MPI_PROCS 1
+      COMM mpi serial
+      )
+
+  IF(${PACKAGE_NAME}_ENABLE_Stratimikos)
+    TRIBITS_ADD_TEST(
+      Example_Maxwell
+      NAME Example_Maxwell_ML_Stratimikos
+      ARGS "--solverName=ML-Stratimikos"
+      NUM_MPI_PROCS 1
+      COMM mpi serial
+      )
+  ENDIF()
+
+  IF(${PACKAGE_NAME}_ENABLE_Belos AND
+      ${PACKAGE_NAME}_ENABLE_MueLu)
+
+    IF(MueLu_ENABLE_Epetra)
+      TRIBITS_ADD_TEST(
+        Example_Maxwell
+        NAME Example_Maxwell_MueLu
+        ARGS "--solverName=MueLu"
+        NUM_MPI_PROCS 1
+        COMM mpi serial
+        )
+
+      TRIBITS_ADD_TEST(
+        Example_Maxwell
+        NAME Example_Maxwell_MueLu
+        ARGS "--solverName=MueLu"
+        NUM_MPI_PROCS 4
+        COMM mpi
+        )
+
+      IF(${PACKAGE_NAME}_ENABLE_Stratimikos)
+        TRIBITS_ADD_TEST(
+          Example_Maxwell
+          NAME Example_Maxwell_MueLu_Stratimikos
+          ARGS "--solverName=MueLu-Stratimikos"
+          NUM_MPI_PROCS 1
+          COMM mpi serial
+          )
+
+        TRIBITS_ADD_TEST(
+          Example_Maxwell
+          NAME Example_Maxwell_MueLu_Stratimikos
+          ARGS "--solverName=MueLu-Stratimikos"
+          NUM_MPI_PROCS 4
+          COMM mpi
+          )
+      ENDIF()
+    ENDIF() # MueLu_ENABLE_Epetra
+  ENDIF()
+
+  TRIBITS_COPY_FILES_TO_BINARY_DIR(TestCopyMaxwellFiles
+    SOURCE_FILES Maxwell.xml Ninja.xml
+    SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}
+    DEST_DIR ${CMAKE_CURRENT_BINARY_DIR}
     )
 
   TRIBITS_ADD_EXECUTABLE_AND_TEST(
@@ -106,7 +170,7 @@ IF(${PACKAGE_NAME}_ENABLE_Epetra AND ${PACKAGE_NAME}_ENABLE_EpetraExt AND
    )
 
  TRIBITS_ADD_TEST(
-   Example_Poisson2D_pn   
+   Example_Poisson2D_pn
    NAME "Poisson2D_pn=3"
    ARGS "Poisson2D_p3.xml"
    COMM serial mpi
@@ -130,12 +194,12 @@ IF(${PACKAGE_NAME}_ENABLE_Epetra AND ${PACKAGE_NAME}_ENABLE_EpetraExt AND
    )
 
 
-  
+
   TRIBITS_COPY_FILES_TO_BINARY_DIR(TestCopyPoissonFiles
   SOURCE_FILES Poisson.xml Poisson2D.xml Poisson2D_p3.xml Poisson2D_p4.xml Maxwell.xml CVFEM.xml ML_ho.xml muelu_ho.xml  muelu_ho_lin.xml Poisson_RTC.xml GradDiv.xml
   SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}
   DEST_DIR ${CMAKE_CURRENT_BINARY_DIR}
-  ) 
+  )
 ENDIF()
 
 
@@ -174,11 +238,11 @@ IF(${PACKAGE_NAME}_ENABLE_Epetra AND ${PACKAGE_NAME}_ENABLE_EpetraExt AND
                CurlLSFEMin.xml
                CurlLSFEMblock_in_block.xml
                DivLSFEMin.xml
-	      
+
                ML_nonsym.xml
   SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}
   DEST_DIR ${CMAKE_CURRENT_BINARY_DIR}
-  ) 
+  )
 ENDIF()
 
 IF(${PACKAGE_NAME}_ENABLE_Epetra AND ${PACKAGE_NAME}_ENABLE_EpetraExt AND
@@ -195,7 +259,7 @@ IF(${PACKAGE_NAME}_ENABLE_Epetra AND ${PACKAGE_NAME}_ENABLE_EpetraExt AND
                unit_cube_5int_tet.exo
   SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}
   DEST_DIR ${CMAKE_CURRENT_BINARY_DIR}
-  ) 
+  )
 ENDIF()
 
 # ik 20 Mar 2012, mfh 17 May 2012
@@ -284,7 +348,7 @@ IF(${PACKAGE_NAME}_ENABLE_Belos AND
     # The example can still build without MueLu.
     SET(TrilinosCouplings_ENABLE_EXAMPLE_IntrepidPoisson_Pamgen_Epetra ON)
   ENDIF()
-   
+
   IF(TrilinosCouplings_ENABLE_EXAMPLE_IntrepidPoisson_Pamgen_Epetra)
     TRIBITS_ADD_EXECUTABLE(
       IntrepidPoisson_Pamgen_Epetra
@@ -341,5 +405,30 @@ IF(${PACKAGE_NAME}_ENABLE_Epetra AND ${PACKAGE_NAME}_ENABLE_Tpetra)
     epetraTpetraImportBenchmark
     SOURCES epetraTpetraImportBenchmark.cpp
     COMM serial mpi
+    )
+ENDIF()
+
+# lbv 22 March 2018
+#
+# Just build this executable; don't run it as a test (yet).
+#
+IF(${PACKAGE_NAME}_ENABLE_Belos AND
+   ${PACKAGE_NAME}_ENABLE_Intrepid AND
+   ${PACKAGE_NAME}_ENABLE_Pamgen AND
+   ${PACKAGE_NAME}_ENABLE_Tpetra)
+  TRIBITS_ADD_EXECUTABLE(
+    StructuredIntrepidPoisson_Pamgen_Tpetra
+    SOURCES StructuredIntrepidPoisson_Pamgen_Tpetra_main.cpp
+      TrilinosCouplings_IntrepidPoissonExampleHelpers.cpp
+      TrilinosCouplings_TpetraIntrepidStructuredPoissonExample.cpp
+      TrilinosCouplings_TpetraIntrepidPoissonExample_SolveWithBelos.cpp
+      TrilinosCouplings_Pamgen_Utils.cpp
+    COMM serial mpi
+    )
+
+  TRIBITS_COPY_FILES_TO_BINARY_DIR(TestCopyMueLuStructuredFiles
+    SOURCE_FILES muelu_structured_aggregation.xml
+    SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}
+    DEST_DIR ${CMAKE_CURRENT_BINARY_DIR}
     )
 ENDIF()

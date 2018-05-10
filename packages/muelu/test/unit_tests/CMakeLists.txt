@@ -17,6 +17,7 @@ SET(SOURCES "")
 
 APPEND_SET(SOURCES
   Aggregates.cpp
+  BlackBoxPFactory.cpp
   CoalesceDropFactory.cpp
   CoarseMapFactory.cpp
 # CoupledAggregationFactory.cpp
@@ -38,6 +39,7 @@ APPEND_SET(SOURCES
   RAPShiftFactory.cpp
   SaPFactory.cpp
   Smoothers/SmootherFactory.cpp
+  StructuredAggregationFactory.cpp
   StructuredLineDetection.cpp
   TentativePFactory.cpp
   ThresholdAFilterFactory.cpp
@@ -122,22 +124,20 @@ IF (${PACKAGE_NAME}_ENABLE_Tpetra AND ${PACKAGE_NAME}_ENABLE_AmgX)
     )
 ENDIF()
 
-IF (${PACKAGE_NAME}_ENABLE_BROKEN_TESTS)
-  IF (${PACKAGE_NAME}_ENABLE_Belos)
-    APPEND_SET(SOURCES Adapters/BelosAdapters.cpp)
-  ENDIF()
-
-  IF ((${PACKAGE_NAME}_ENABLE_Epetra AND ${PACKAGE_NAME}_ENABLE_EpetraExt AND ${PACKAGE_NAME}_ENABLE_Ifpack AND ${PACKAGE_NAME}_ENABLE_Amesos) OR
-      (${PACKAGE_NAME}_ENABLE_Tpetra AND ${PACKAGE_NAME}_ENABLE_Ifpack2 AND ${PACKAGE_NAME}_ENABLE_Amesos2))
-    APPEND_SET(SOURCES Adapters/CreatePreconditioner.cpp)
-
-    TRIBITS_COPY_FILES_TO_BINARY_DIR(UnitTestsCreatePreconditioner_cp
-      SOURCE_DIR ${MueLu_SOURCE_DIR}/test/unit_tests/Adapters
-      SOURCE_FILES test.xml testReuse.xml testWithRebalance.xml testPDE.xml testPDE1.xml
-      )
-  ENDIF()
-
+IF (${PACKAGE_NAME}_ENABLE_Belos)
+  APPEND_SET(SOURCES Adapters/BelosAdapters.cpp)
 ENDIF()
+
+IF ((${PACKAGE_NAME}_ENABLE_Epetra AND ${PACKAGE_NAME}_ENABLE_EpetraExt AND ${PACKAGE_NAME}_ENABLE_Ifpack AND ${PACKAGE_NAME}_ENABLE_Amesos) OR
+    (${PACKAGE_NAME}_ENABLE_Tpetra AND ${PACKAGE_NAME}_ENABLE_Ifpack2 AND ${PACKAGE_NAME}_ENABLE_Amesos2))
+  APPEND_SET(SOURCES Adapters/CreatePreconditioner.cpp)
+
+  TRIBITS_COPY_FILES_TO_BINARY_DIR(UnitTestsCreatePreconditioner_cp
+    SOURCE_DIR ${MueLu_SOURCE_DIR}/test/unit_tests/Adapters
+    SOURCE_FILES test.xml testReuse.xml testWithRebalance.xml testPDE.xml testPDE1.xml
+    )
+ENDIF()
+
 
 
 IF (${PACKAGE_NAME}_ENABLE_Intrepid)
@@ -160,6 +160,8 @@ IF (${PACKAGE_NAME}_ENABLE_Zoltan AND TPL_ENABLE_MPI)
 ENDIF()
 
 IF (${PACKAGE_NAME}_ENABLE_Galeri) #TMP
+  APPEND_SET(SOURCES Galeri.cpp)
+
   TRIBITS_ADD_EXECUTABLE(
     UnitTests
     SOURCES ${SOURCES}

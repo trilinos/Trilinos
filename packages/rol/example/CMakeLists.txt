@@ -1,3 +1,4 @@
+# Always built.
 ADD_SUBDIRECTORY(rosenbrock)
 ADD_SUBDIRECTORY(burgers-control)
 ADD_SUBDIRECTORY(poisson-control)
@@ -15,9 +16,17 @@ ADD_SUBDIRECTORY(json)
 ADD_SUBDIRECTORY(intrepid)
 ADD_SUBDIRECTORY(minimax)
 ADD_SUBDIRECTORY(wave-calibration)
-ADD_SUBDIRECTORY(PDE-OPT)
 ADD_SUBDIRECTORY(quadratic)
 ADD_SUBDIRECTORY(arrayfire)
 ADD_SUBDIRECTORY(complex)
 ADD_SUBDIRECTORY(binary-design)
 ADD_SUBDIRECTORY(paraboloid-circle)
+ADD_SUBDIRECTORY(putting)
+ADD_SUBDIRECTORY(tensor-opt)
+ADD_SUBDIRECTORY(PDE-OPT)
+ADD_SUBDIRECTORY(PinT)
+
+# Conditionally built examples.
+IF(${PROJECT_NAME}_ENABLE_Tempus)
+  ADD_SUBDIRECTORY(tempus)
+ENDIF()

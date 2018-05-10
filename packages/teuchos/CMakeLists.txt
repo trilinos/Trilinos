@@ -127,11 +127,14 @@ TRIBITS_ADD_EXPLICIT_INSTANTIATION_OPTION()
 
 TRIBITS_SET_ST_FOR_DEV_MODE(ST_FOR_DEV_PT_FOR_RELEASE)
 
-IF (Trilinos_ENABLE_COMPLEX_DOUBLE)
+ASSERT_DEFINED(Trilinos_ENABLE_COMPLEX_DOUBLE)
+ASSERT_DEFINED(Trilinos_ENABLE_COMPLEX_FLOAT)
+IF (Trilinos_ENABLE_COMPLEX_DOUBLE OR Trilinos_ENABLE_COMPLEX_FLOAT)
   SET(${PACKAGE_NAME}_ENABLE_COMPLEX_DEFAULT  TRUE)
 ELSE()
+  # If Teuchos is configured as its own CMake project, independent of
+  # Trilinos, then Teuchos_ENABLE_COMPLEX could be OFF by default.
   SET(${PACKAGE_NAME}_ENABLE_COMPLEX_DEFAULT  FALSE)
-  # ABove will be set in case Teuchos is confiugred as its own CMake project!
 ENDIF()
 
 TRIBITS_ADD_OPTION_AND_DEFINE(
@@ -145,14 +148,20 @@ TRIBITS_ADD_OPTION_AND_DEFINE(
 # ${PACKAGE_NAME}_ENABLE_COMPLEX_FLOAT and
 # ${PACKAGE_NAME}_ENABLE_COMPLEX_DOUBLE.  See Trilinos GitHub #362.
 
-ASSERT_DEFINED(${PROJECT_NAME}_ENABLE_CXX11)
-SET(${PACKAGE_NAME}_ENABLE_LONG_LONG_INT_DEFAULT ${${PROJECT_NAME}_ENABLE_CXX11})
+set(TEUCHOS_LONG_LONG_DESC
+  "This option is DEPRECATED. Teuchos will ignore this option. Teuchos requires C++11, and long long comes with C++11, so you will always get long long. If you want to change the set of global ordinal types that Tpetra enables, set a Tpetra option, not a Teuchos option.")
 TRIBITS_ADD_OPTION_AND_DEFINE(
   ${PACKAGE_NAME}_ENABLE_LONG_LONG_INT
   HAVE_TEUCHOS_LONG_LONG_INT
-  "Enable Teuchos features for the 'long long' data type.  This is ON by default if and only if C++11 is enabled.  Please remember that 'long long' only entered the C++ language standard with C++11, even though many compilers supported it before."
-  ${${PACKAGE_NAME}_ENABLE_LONG_LONG_INT_DEFAULT}
+  ${TEUCHOS_LONG_LONG_DESC}
+  ON
   )
+IF(NOT ${PACKAGE_NAME}_ENABLE_LONG_LONG_INT)
+  MESSAGE(WARNING
+      "${PACKAGE_NAME}_ENABLE_LONG_LONG_INT=\
+       ${${PACKAGE_NAME}_ENABLE_LONG_LONG_INT}.\
+       ${TEUCHOS_LONG_LONG_DESC}")
+ENDIF()
 
 IF(WIN32 AND NOT CYGWIN AND NOT ${PACKAGE_NAME}_ENABLE_LONG_LONG_INT)
   # Can only provide __int64 support if it will not clash with 
@@ -332,6 +341,25 @@ IF(TPL_ENABLE_Valgrind)
   IF (${PACKAGE_NAME}_TIME_MASSIF_SNAPSHOTS)
     MESSAGE(STATUS "Enabling memory profiling using massif")
   ENDIF()
+ENDIF()
+
+# Enabling Kokkos profiling hooks in Teuchos timers requires that the
+# Kokkos package be enabled, and that KOKKOS_ENABLE_PROFILING is ON.
+
+IF(DEFINED ${PROJECT_NAME}_ENABLE_Kokkos AND ${PROJECT_NAME}_ENABLE_Kokkos)
+  ASSERT_DEFINED(KOKKOS_ENABLE_PROFILING)
+  SET(${PACKAGE_NAME}_KOKKOS_PROFILING_DEFAULT ${KOKKOS_ENABLE_PROFILING})
+ELSE()
+  SET(${PACKAGE_NAME}_KOKKOS_PROFILING_DEFAULT OFF)
+ENDIF()
+
+ASSERT_DEFINED(${PACKAGE_NAME}_KOKKOS_PROFILING_DEFAULT)
+TRIBITS_ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_KOKKOS_PROFILING
+  HAVE_TEUCHOS_KOKKOS_PROFILING
+  "Wrap every Teuchos timer with a Kokkos profiling region."
+  "${${PACKAGE_NAME}_KOKKOS_PROFILING_DEFAULT}")
+IF (${PACKAGE_NAME}_KOKKOS_PROFILING)
+  MESSAGE(STATUS "Wrapping every Teuchos timer with a Kokkos profiling region.")
 ENDIF()
 
 

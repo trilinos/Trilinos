@@ -44,7 +44,6 @@
 #include "Kokkos_View_Fad.hpp"
 
 namespace Kokkos {
-namespace Experimental {
 namespace Impl {
 
 template <>
@@ -267,7 +266,7 @@ struct DynRankDimTraits<Kokkos::Impl::ViewSpecializeSacadoFadContiguous> {
 
 };
 
-}}} // end Kokkos::Experimental::Impl
+}} // end Kokkos::Impl
 
 namespace Kokkos {
 namespace Impl {
@@ -286,7 +285,7 @@ struct ViewMapping
         std::is_same< typename SrcTraits::array_layout
                     , Kokkos::LayoutStride >::value
       )
-    ), Kokkos::Experimental::Impl::DynRankSubviewTag >::type
+    ), Kokkos::Impl::DynRankSubviewTag >::type
   , SrcTraits
   , Args ... >
 {
@@ -371,7 +370,7 @@ public:
 
   template < typename T , class ... P >
   KOKKOS_INLINE_FUNCTION
-  static ret_type subview( const unsigned src_rank , Kokkos::Experimental::DynRankView< T , P...> const & src , Args ... args )
+  static ret_type subview( const unsigned src_rank , Kokkos::DynRankView< T , P...> const & src , Args ... args )
   {
 
     typedef ViewMapping< traits_type, void >  DstType ;
@@ -478,7 +477,7 @@ struct ViewMapping
       &&
       std::is_same< typename SrcTraits::array_layout
                    , Kokkos::LayoutLeft >::value
-    ), Kokkos::Experimental::Impl::DynRankSubviewTag >::type
+    ), Kokkos::Impl::DynRankSubviewTag >::type
   , SrcTraits
   , Args ... >
 {
@@ -563,7 +562,7 @@ public:
 
   template < typename T , class ... P >
   KOKKOS_INLINE_FUNCTION
-  static ret_type subview( const unsigned src_rank , Kokkos::Experimental::DynRankView< T , P...> const & src , Args ... args )
+  static ret_type subview( const unsigned src_rank , Kokkos::DynRankView< T , P...> const & src , Args ... args )
   {
 
     typedef ViewMapping< traits_type, void >  DstType ;
@@ -692,7 +691,7 @@ class ViewMapping< DstTraits , SrcTraits ,
     // Source view has FAD only
     std::is_same< typename SrcTraits::specialize
                 , Kokkos::Impl::ViewSpecializeSacadoFadContiguous >::value
-  ), Kokkos::Experimental::Impl::ViewToDynRankViewTag >::type >
+  ), Kokkos::Impl::ViewToDynRankViewTag >::type >
 {
 public:
 
@@ -736,17 +735,22 @@ public:
 
       const bool is_left =
         std::is_same<typename DstTraits::array_layout,Kokkos::LayoutLeft>::value;
+      typedef typename DstType::offset_type dst_offset_type;
+      typedef typename DstType::array_offset_type dst_array_offset_type;
       if (is_left) {
-        dst.m_map.m_array_offset.m_dim = src.m_map.m_array_offset.m_dim;
+        dst.m_map.m_array_offset =
+          dst_array_offset_type(std::integral_constant<unsigned,0>(),
+                                src.m_map.m_array_offset.layout() );
       }
       else {
-        AssignDim<SrcTraits::rank,0>::eval(dst.m_map.m_array_offset,
-                                           src.m_map.m_array_offset);
+        dst.m_map.m_array_offset =
+          dst_array_offset_type(std::integral_constant<unsigned,0>(),
+                                permute_fad_layout(src.m_map.m_array_offset.layout(),
+                                                   SrcTraits::rank) );
       }
-      dst.m_map.m_array_offset.m_stride = src.m_map.m_array_offset.m_stride ;
-
-      dst.m_map.m_offset.m_dim = src.m_map.m_offset.m_dim;
-      dst.m_map.m_offset.m_stride = src.m_map.m_offset.m_stride ;
+      dst.m_map.m_offset =
+        dst_offset_type(std::integral_constant<unsigned,0>(),
+                        src.m_map.m_offset.layout() );
 
       dst.m_map.m_handle = src.m_map.m_handle ;
       dst.m_rank = src.Rank ;
@@ -774,7 +778,7 @@ class ViewMapping< DstTraits , SrcTraits ,
     // Source view has FAD only
     std::is_same< typename SrcTraits::specialize
                 , Kokkos::Impl::ViewSpecializeSacadoFadContiguous >::value
-  ), Kokkos::Experimental::Impl::ViewToDynRankViewTag >::type >
+  ), Kokkos::Impl::ViewToDynRankViewTag >::type >
 {
 public:
 

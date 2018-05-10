@@ -83,7 +83,7 @@ namespace Tpetra {
 // Forward declaration of Distributor
 class Distributor;
 // Forward declaration of CrsMatrix
-template<class ST, class LO, class GO, class NT, const bool classic>
+template<class ST, class LO, class GO, class NT>
 class CrsMatrix;
 #endif // DOXYGEN_SHOULD_SKIP_THIS
 
@@ -127,7 +127,7 @@ namespace Details {
 /// of data, this procedure could be bypassed.
 template<typename ST, typename LO, typename GO, typename NT>
 void
-packCrsMatrix (const CrsMatrix<ST, LO, GO, NT, false>& sourceMatrix,
+packCrsMatrix (const CrsMatrix<ST, LO, GO, NT>& sourceMatrix,
                Teuchos::Array<char>& exports,
                const Teuchos::ArrayView<size_t>& numPacketsPerLID,
                const Teuchos::ArrayView<const LO>& exportLIDs,
@@ -167,9 +167,9 @@ packCrsMatrix (const CrsMatrix<ST, LO, GO, NT, false>& sourceMatrix,
 /// pack has a valid KokkosSparse::CrsMatrix.
 template<typename ST, typename LO, typename GO, typename NT>
 void
-packCrsMatrixNew (const CrsMatrix<ST, LO, GO, NT, false>& sourceMatrix,
-                  Kokkos::DualView<char*, typename DistObject<char, LO, GO, NT, false>::buffer_device_type>& exports,
-                  const Kokkos::DualView<size_t*, typename DistObject<char, LO, GO, NT, false>::buffer_device_type>& numPacketsPerLID,
+packCrsMatrixNew (const CrsMatrix<ST, LO, GO, NT>& sourceMatrix,
+                  Kokkos::DualView<char*, typename DistObject<char, LO, GO, NT>::buffer_device_type>& exports,
+                  const Kokkos::DualView<size_t*, typename DistObject<char, LO, GO, NT>::buffer_device_type>& numPacketsPerLID,
                   const Kokkos::DualView<const LO*, typename NT::device_type>& exportLIDs,
                   size_t& constantNumPackets,
                   Distributor& distor);
@@ -209,7 +209,7 @@ packCrsMatrixNew (const CrsMatrix<ST, LO, GO, NT, false>& sourceMatrix,
 /// of data, this procedure could be bypassed.
 template<typename ST, typename LO, typename GO, typename NT>
 void
-packCrsMatrixWithOwningPIDs (const CrsMatrix<ST, LO, GO, NT, false>& sourceMatrix,
+packCrsMatrixWithOwningPIDs (const CrsMatrix<ST, LO, GO, NT>& sourceMatrix,
                              Kokkos::DualView<char*, typename DistObject<char, LO, GO, NT>::buffer_device_type>& exports_dv,
                              const Teuchos::ArrayView<size_t>& numPacketsPerLID,
                              const Teuchos::ArrayView<const LO>& exportLIDs,

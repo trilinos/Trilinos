@@ -153,7 +153,7 @@ namespace { // (anonymous)
       for (LO k = 0; k < static_cast<LO> (lclColInds.size ()); ++k) {
         const LO lclColInd = lclColInds[k];
         const LO err =
-          A->replaceLocalValues (lclRow, &lclColInd, curBlk.ptr_on_device (), 1);
+          A->replaceLocalValues (lclRow, &lclColInd, curBlk.data (), 1);
         TEUCHOS_TEST_FOR_EXCEPTION(err != 1, std::logic_error, "Bug");
       }
     }
@@ -341,7 +341,7 @@ TEUCHOS_UNIT_TEST( Distributor, createfromsendsandrecvs)
 
   if(newdist.howInitialized()!=Tpetra::Details::DISTRIBUTOR_INITIALIZED_BY_CREATE_FROM_SENDS_N_RECVS)
     {
-      myOut << "ProcID "<<my_proc <<"howInitialized() from distributor initalized with createFromSendsAndRecvs is incorrect" << endl;
+      myOut << "ProcID "<<my_proc <<"howInitialized() from distributor initialized with createFromSendsAndRecvs is incorrect" << endl;
       success = false;
     }
 

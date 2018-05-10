@@ -15,7 +15,7 @@
 namespace Tempus {
 
 
-/** \brief Newmark Explicit time stepper.  This is the specific case of the 
+/** \brief Newmark Explicit time stepper.  This is the specific case of the
  *  more general Newmark time stepper in the case this stepper is explicit (beta = 0).
  *  Newmark Explicit is hence an explicit time stepper (i.e., no solver used).
  */
@@ -43,6 +43,11 @@ public:
       Teuchos::RCP<Teuchos::ParameterList> solverPL=Teuchos::null);
     virtual void setSolver(
         Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> > solver);
+    virtual Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> > getSolver() const
+      { return Teuchos::null; }
+
+    virtual void setObserver(
+      Teuchos::RCP<StepperObserver<Scalar> > obs = Teuchos::null){}
 
     /// Initialize during construction and after changing input parameters.
     virtual void initialize(){}
@@ -59,6 +64,16 @@ public:
     }
     virtual Scalar getOrderMin() const {return 1.0;}
     virtual Scalar getOrderMax() const {return 2.0;}
+    virtual Scalar getInitTimeStep(
+        const Teuchos::RCP<SolutionHistory<Scalar> >& solutionHistory) const
+      {return std::numeric_limits<Scalar>::max();}
+
+    virtual bool isExplicit()         const {return true;}
+    virtual bool isImplicit()         const {return false;}
+    virtual bool isExplicitImplicit() const
+      {return isExplicit() and isImplicit();}
+    virtual bool isOneStepMethod()   const {return true;}
+    virtual bool isMultiStepMethod() const {return !isOneStepMethod();}
   //@}
 
   /// \name ParameterList methods
@@ -111,8 +126,8 @@ protected:
 
   Thyra::ModelEvaluatorBase::InArgs<Scalar>  inArgs_;
   Thyra::ModelEvaluatorBase::OutArgs<Scalar> outArgs_;
-   
-  Scalar gamma_; 
+
+  Scalar gamma_;
 
   Teuchos::RCP<Teuchos::FancyOStream> out_;
 

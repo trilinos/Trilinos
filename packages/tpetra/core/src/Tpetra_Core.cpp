@@ -39,16 +39,79 @@
 // ************************************************************************
 // @HEADER
 
-#include <Tpetra_Core.hpp>
+#include "Tpetra_Core.hpp"
+#include "Tpetra_Details_mpiIsInitialized.hpp"
+
 #ifdef HAVE_TPETRACORE_MPI
-#  include <Teuchos_DefaultMpiComm.hpp>// this includes mpi.h too
-#else
-#  include <Teuchos_DefaultSerialComm.hpp>
+#  include <Teuchos_DefaultMpiComm.hpp> // this includes mpi.h too
 #endif // HAVE_TPETRACORE_MPI
+#include <Teuchos_DefaultSerialComm.hpp>
+
 #include <Kokkos_Core.hpp>
 
 namespace Tpetra {
   namespace { // (anonymous)
+
+    class HideOutputExceptOnProcess0 {
+    public:
+      HideOutputExceptOnProcess0 (std::ostream& stream,
+				  const int myRank) :
+        stream_ (stream),
+        originalBuffer_ (stream.rdbuf ())
+      {
+        if (myRank != 0) {
+          stream.rdbuf (blackHole_.rdbuf ());
+        }
+      }
+
+      ~HideOutputExceptOnProcess0 () {
+        stream_.rdbuf (originalBuffer_);
+      }
+    private:
+      std::ostream& stream_;
+      decltype (std::cout.rdbuf ()) originalBuffer_;
+      Teuchos::oblackholestream blackHole_;
+    };
+
+#if defined(HAVE_TPETRACORE_MPI)
+    bool mpiIsInitializedAndNotFinalized ()
+    {
+      int isInitialized = 0;
+      int isFinalized = 0;
+      // Not sure if MPI_Initialized or MPI_Finalized meet the strong
+      // exception guarantee.
+      try {
+	(void) MPI_Initialized (&isInitialized);
+      }
+      catch (...) {
+	isInitialized = 0;
+      }
+      try {
+	(void) MPI_Finalized (&isFinalized);
+      }
+      catch (...) {
+	isFinalized = 0;
+      }
+      return isInitialized != 0 && isFinalized == 0;
+    }
+
+    int getRankHarmlessly (MPI_Comm comm)
+    {
+      int myRank = 0;      
+      if (mpiIsInitializedAndNotFinalized ()) {
+	try {
+	  (void) MPI_Comm_rank (comm, &myRank);
+	}
+	catch (...) {
+	  // Not sure if MPI_Comm_rank meets strong exception guarantee
+	  myRank = 0;
+	}
+      }
+      return myRank;
+    }
+#endif // defined(HAVE_TPETRACORE_MPI)
+    
+
     // Whether one of the Tpetra::initialize() functions has been called before.
     bool tpetraIsInitialized_ = false;
 
@@ -69,9 +132,8 @@ namespace Tpetra {
     // After Tpetra::finalize() is called, this GOES AWAY (is set to null).
     Teuchos::RCP<const Teuchos::Comm<int> > wrappedDefaultComm_;
 
-    // Initialize Kokkos, if it needs initialization.
     // This takes the same arguments as (the first two of) initialize().
-    void initKokkos (int* argc, char*** argv)
+    void initKokkosIfNeeded (int* argc, char*** argv, const int myRank)
     {
       if (! tpetraInitializedKokkos_) {
         // Kokkos doesn't have a global is_initialized().  However,
@@ -80,6 +142,9 @@ namespace Tpetra {
         const bool kokkosIsInitialized =
           Kokkos::DefaultExecutionSpace::is_initialized ();
         if (! kokkosIsInitialized) {
+          HideOutputExceptOnProcess0 hideCerr (std::cerr, myRank);
+          HideOutputExceptOnProcess0 hideCout (std::cout, myRank);
+
           // Unlike MPI_Init, Kokkos promises not to modify argc and argv.
           Kokkos::initialize (*argc, *argv);
           tpetraInitializedKokkos_ = true;
@@ -89,66 +154,41 @@ namespace Tpetra {
       const bool kokkosIsInitialized =
         Kokkos::DefaultExecutionSpace::is_initialized ();
       TEUCHOS_TEST_FOR_EXCEPTION
-        (! kokkosIsInitialized, std::logic_error, "At the end of initKokkos, "
-         "Kokkos is not initialized.  Please report this bug to the Tpetra "
-         "developers.");
+        (! kokkosIsInitialized, std::logic_error, "At the end of "
+	 "initKokkosIfNeeded, Kokkos is not initialized.  "
+	 "Please report this bug to the Tpetra developers.");
     }
 
 #ifdef HAVE_TPETRACORE_MPI
-    bool mpiIsInitialized (const bool throwExceptionOnFailure = true)
+    // This takes the same arguments as MPI_Init and the first two
+    // arguments of initialize().
+    void initMpiIfNeeded (int* argc, char*** argv)
     {
-      int isInitialized = 0;
-      int err = MPI_Initialized (&isInitialized);
+      // Both MPI_Initialized and MPI_Finalized report true after
+      // MPI_Finalize has been called.  It's not legal to call
+      // MPI_Init after MPI_Finalize has been called (see MPI 3.0
+      // Standard, Section 8.7).  It would be unusual for users to
+      // want to use Tpetra after MPI_Finalize has been called, but
+      // there's no reason why we should forbid it.  It just means
+      // that Tpetra will need to run without MPI.
 
-      if (throwExceptionOnFailure) {
+      const bool mpiReady = mpiIsInitializedAndNotFinalized ();
+      if (! mpiReady) {
+	// Tpetra doesn't currently need to call MPI_Init_thread,
+	// since with Tpetra, only one thread ever calls MPI
+	// functions.  If we ever want to explore
+	// MPI_THREAD_MULTIPLE, here would be the place to call
+	// MPI_Init_thread.
+	const int err = MPI_Init (argc, argv);
         TEUCHOS_TEST_FOR_EXCEPTION
-          (err != MPI_SUCCESS, std::runtime_error, "MPI_Initialized failed with "
-           "error code " << err << " != MPI_SUCCESS.  This probably indicates "
-           "that your MPI library is corrupted or that it is incorrectly linked "
-           "to your program, since this function should otherwise always "
-           "succeed.");
-      }
-      else if (err != MPI_SUCCESS) {
-        using std::cerr;
-        using std::endl;
-        cerr << "MPI_Initialized failed with error code " << err << " != "
-          "MPI_SUCCESS.  This probably indicates that your MPI library is "
-          "corrupted or that it is incorrectly linked to your program, since "
-          "this function should otherwise always succeed." << endl;
-        return false; // the best we can do in this case is nothing
-      }
-      return isInitialized != 0;
-    }
-
-    // Initialize MPI, if needed, and check for errors.  This takes
-    // the same arguments as MPI_Init and the first two arguments of
-    // initialize().
-    void initMpi (int* argc, char*** argv)
-    {
-      if (! tpetraInitializedMpi_) {
-        int err = MPI_SUCCESS;
-        const bool initialized = mpiIsInitialized ();
-        if (! initialized) { // MPI not yet initialized
-          // Tpetra doesn't currently need to call MPI_Init_thread, since
-          // with Tpetra, only one thread ever calls MPI functions.  If we
-          // ever want to explore MPI_THREAD_MULTIPLE, here would be the
-          // place to call MPI_Init_thread.
-          err = MPI_Init (argc, argv);
-        }
-        TEUCHOS_TEST_FOR_EXCEPTION
-          (err != MPI_SUCCESS, std::runtime_error, "MPI_Init failed with error "
-           "code " << err << " != MPI_SUCCESS.  If MPI was set up correctly, this "
-           "should not happen, since we have already checked that MPI_Init (or "
-           "MPI_Init_thread) has not yet been called.  This may indicate that "
-           "your MPI library is corrupted or that it is incorrectly linked to "
-           "your program.");
+          (err != MPI_SUCCESS, std::runtime_error, "MPI_Init failed with "
+           "error code " << err << " != MPI_SUCCESS.  If MPI was set up "
+           "correctly, then this should not happen, since we have already "
+	   "checked that MPI_Init (or MPI_Init_thread) has not yet been "
+	   "called.  This may indicate that your MPI library is corrupted "
+	   "or that it is incorrectly linked to your program.");
         tpetraInitializedMpi_ = true;
       }
-
-      const bool initialized = mpiIsInitialized ();
-      TEUCHOS_TEST_FOR_EXCEPTION
-        (! initialized, std::logic_error, "At the end of initMpi, MPI is not "
-         "initialized.  Please report this bug to the Tpetra developers.");
     }
 #endif // HAVE_TPETRACORE_MPI
 
@@ -160,29 +200,25 @@ namespace Tpetra {
 
   Teuchos::RCP<const Teuchos::Comm<int> > getDefaultComm ()
   {
-    // It's OK to call this function if Tpetra::initialize hasn't been
-    // called.  Users aren't obligated to call Tpetra::initialize, as
-    // long as they take responsibility for initializing Kokkos and
-    // MPI.  However, MPI must be initialized.  (Kokkos need not be
-    // initialized for this method to be called.)
-
-#ifdef HAVE_TPETRACORE_MPI
-    const bool mpiInitd = mpiIsInitialized (false); // don't throw on failure
-    TEUCHOS_TEST_FOR_EXCEPTION
-      (! mpiInitd, std::runtime_error,
-       "Tpetra::getDefaultComm: MPI has not been initialized.  Before "
-       "calling this method, you must either initialize MPI (by calling "
-       "MPI_Init), or you must call Tpetra::initialize (which initializes "
-       "MPI, if it has not yet been initialized).");
-#endif // HAVE_TPETRACORE_MPI
-
-    // This serves as lazy initialization.  Thus, the various
-    // Tpetra::initialize functions do not need to set up
-    // wrappedDefaultComm_.
+    // It's technically not correct to call this function if Tpetra
+    // has not yet been initialized, but requiring that may break some
+    // downstream tests.
+    //
+    // This function initializes wrappedDefaultComm_ lazily.
+    // Tpetra::initialize should not set it up.
     if (wrappedDefaultComm_.is_null ()) {
       Teuchos::RCP<const Teuchos::Comm<int> > comm;
 #ifdef HAVE_TPETRACORE_MPI
-      comm = Teuchos::rcp (new Teuchos::MpiComm<int> (MPI_COMM_WORLD));
+      // Teuchos::MpiComm's constructor used to invoke MPI collectives.
+      // It still reserves the right to do so.  This means MPI must be
+      // initialized and not finalized.
+      const bool mpiReady = mpiIsInitializedAndNotFinalized ();
+      if (mpiReady) {
+	comm = Teuchos::rcp (new Teuchos::MpiComm<int> (MPI_COMM_WORLD));
+      }
+      else {
+	comm = Teuchos::rcp (new Teuchos::SerialComm<int> ());
+      }
 #else
       comm = Teuchos::rcp (new Teuchos::SerialComm<int> ());
 #endif // HAVE_TPETRACORE_MPI
@@ -190,14 +226,20 @@ namespace Tpetra {
     }
     return wrappedDefaultComm_;
   }
-
+  
   void initialize (int* argc, char*** argv)
   {
     if (! tpetraIsInitialized_) {
-#ifdef HAVE_TPETRACORE_MPI
-      initMpi (argc, argv); // initialize MPI, if needed
-#endif // HAVE_TPETRACORE_MPI
-      initKokkos (argc, argv); // initialize Kokkos, if needed
+#if defined(HAVE_TPETRACORE_MPI)      
+      initMpiIfNeeded (argc, argv);
+      // It's technically legal to initialize Tpetra after
+      // MPI_Finalize has been called.  This means that we can't call
+      // MPI_Comm_rank without first checking MPI_Finalized.
+      const int myRank = getRankHarmlessly (MPI_COMM_WORLD);
+#else
+      const int myRank = 0;
+#endif // defined(HAVE_TPETRACORE_MPI)      
+      initKokkosIfNeeded (argc, argv, myRank);
     }
     tpetraIsInitialized_ = true;
   }
@@ -205,10 +247,28 @@ namespace Tpetra {
 #ifdef HAVE_TPETRACORE_MPI
   void initialize (int* argc, char*** argv, MPI_Comm comm)
   {
-    initialize (argc, argv);
-    // Set the default communicator.  What if users have already
-    // called initialize() before, but with a different default
-    // communicator?  There are two possible things we could do here:
+    if (! tpetraIsInitialized_) {
+#if defined(HAVE_TPETRACORE_MPI)      
+      initMpiIfNeeded (argc, argv);
+      // It's technically legal to initialize Tpetra after
+      // MPI_Finalize has been called.  This means that we can't call
+      // MPI_Comm_rank without first checking MPI_Finalized.
+      const int myRank = getRankHarmlessly (comm); 
+#else
+      const int myRank = 0;
+#endif // defined(HAVE_TPETRACORE_MPI)      
+      initKokkosIfNeeded (argc, argv, myRank);
+    }
+    tpetraIsInitialized_ = true;
+    
+    // Set the default communicator.  We set it here, after the above
+    // initialize() call, just in case users have not yet initialized
+    // MPI.  (This is legal if users pass in a predefined
+    // communicator, like MPI_COMM_WORLD or MPI_COMM_SELF.)
+    //
+    // What if users have already called initialize() before, but with
+    // a different default communicator?  There are two possible
+    // things we could do here:
     //
     //   1. Test via MPI_Comm_compare whether comm differs from the
     //      raw MPI communicator in wrappedDefaultComm_ (if indeed it
@@ -231,24 +291,17 @@ namespace Tpetra {
   initialize (int* argc, char*** argv,
               const Teuchos::RCP<const Teuchos::Comm<int> >& comm)
   {
-    initialize (argc, argv);
-    // Set the default communicator.  What if users have already
-    // called initialize() before, but with a different default
-    // communicator?  There are two possible things we could do here:
-    //
-    //   1. Test via MPI_Comm_compare whether comm differs from the
-    //      raw MPI communicator in wrappedDefaultComm_ (if indeed it
-    //      is an MpiComm).
-    //   2. Accept that the user might want to change the default
-    //      communicator, and let them do it.
-    //
-    // I prefer #2.  Perhaps it would be sensible to print a warning
-    // here, but on which process?  Would we use the old or the new
-    // communicator to find that process' rank?  We don't want to use
-    // MPI_COMM_WORLD's Process 0, since neither communicator might
-    // include that process.  Furthermore, in some environments, only
-    // Process 0 in MPI_COMM_WORLD is allowed to do I/O.  Thus, we
-    // just let the change go without a warning.
+    if (! tpetraIsInitialized_) {
+#if defined(HAVE_TPETRACORE_MPI)   
+      initMpiIfNeeded (argc, argv);
+#endif // defined(HAVE_TPETRACORE_MPI)
+      // It's technically legal to initialize Tpetra after
+      // MPI_Finalize has been called.  This means that we can't call
+      // MPI_Comm_rank without first checking MPI_Finalized.
+      const int myRank = comm->getRank ();
+      initKokkosIfNeeded (argc, argv, myRank);
+    }
+    tpetraIsInitialized_ = true;
     wrappedDefaultComm_ = comm;
   }
 
@@ -273,26 +326,18 @@ namespace Tpetra {
     // Tpetra should only finalize MPI if it initialized MPI.
     // See Github Issue #434.
     if (tpetraInitializedMpi_) {
-      // finalize() is a kind of destructor, so it's a bad idea to throw
-      // an exception on error.  Instead, we print an error message and
-      // do nothing.
-      const bool throwOnFail = false;
-      const bool mpiInitd = mpiIsInitialized (throwOnFail);
-
-      if (mpiInitd) {
-        // This must be called by the same thread that called MPI_Init
-        // (possibly, but not necessarily, in Tpetra::initialize()).
-        const int err = MPI_Finalize ();
-
-        // finalize() is a kind of destructor, so it's a bad idea to
-        // throw an exception.  Instead, just print out an error message
-        // and hope for the best.
-        if (err != MPI_SUCCESS) {
-          std::cerr << "MPI_Finalize failed with error code " << err << " != "
-            "MPI_SUCCESS.  I'm not sure how to recover from this safely, "
-            "so I will keep going and hope for the best." << std::endl;
-        }
+      // finalize() is a kind of destructor, so it's a bad idea to
+      // throw an exception on error.  MPI implementations do have
+      // the option to throw on error, so let's catch that here.
+      try {
+	if (Details::mpiIsInitialized ()) {
+	  // This must be called by the same thread that called
+	  // MPI_Init or MPI_Init_thread (possibly, but not
+	  // necessarily, in Tpetra::initialize()).
+	  (void) MPI_Finalize ();
+	}
       }
+      catch (...) {}
     }
 #endif // HAVE_TPETRACORE_MPI
 

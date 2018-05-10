@@ -416,12 +416,12 @@ evaluateFields(typename TRAITS::EvalData workset)
       auto rLIDs = globalIndexer_->getElementLIDs(cellLocalId); 
       auto initial_cLIDs = colGlobalIndexer->getElementLIDs(cellLocalId);
       std::vector<int> cLIDs;
-      for (int i=0;i<initial_cLIDs.extent(0); ++i)
+      for (int i(0); i < static_cast<int>(initial_cLIDs.extent(0)); ++i)
         cLIDs.push_back(initial_cLIDs(i));
       if (Teuchos::nonnull(workset.other)) {
         const std::size_t other_cellLocalId = workset.other->cell_local_ids[worksetCellIndex];
 	auto other_cLIDs = colGlobalIndexer->getElementLIDs(other_cellLocalId);
-        for (int i=0;i<other_cLIDs.extent(0); ++i)
+        for (int i(0); i < static_cast<int>(other_cLIDs.extent(0)); ++i)
           cLIDs.push_back(other_cLIDs(i));
       }
 

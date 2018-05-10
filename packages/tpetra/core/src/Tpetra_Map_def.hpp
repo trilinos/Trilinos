@@ -50,9 +50,13 @@
 #include "Tpetra_Directory.hpp" // must include for implicit instantiation to work
 #include "Tpetra_Details_FixedHashTable.hpp"
 #include "Tpetra_Details_gathervPrint.hpp"
+#include "Tpetra_Details_printOnce.hpp"
+#include "Tpetra_Core.hpp"
 #include "Tpetra_Util.hpp"
 #include "Teuchos_as.hpp"
 #include "Teuchos_TypeNameTraits.hpp"
+#include "Tpetra_Details_mpiIsInitialized.hpp"
+#include "Tpetra_Details_extractMpiCommFromTeuchos.hpp" // teuchosCommIsAnMpiComm
 #include <stdexcept>
 #include <typeinfo>
 
@@ -317,11 +321,18 @@ namespace Tpetra {
     }
     numLocalElements_ = numLocalElements;
     indexBase_ = indexBase;
-    minAllGID_ = indexBase;
-    // numGlobalElements might be GSTI; use numGlobalElements_;
-    maxAllGID_ = indexBase + numGlobalElements_ - 1;
-    minMyGID_ = indexBase + myOffset;
-    maxMyGID_ = indexBase + myOffset + numLocalElements - 1;
+    minAllGID_ = (numGlobalElements_ == 0) ?
+      std::numeric_limits<GO>::max () :
+      indexBase;
+    maxAllGID_ = (numGlobalElements_ == 0) ?
+      std::numeric_limits<GO>::lowest () :
+      indexBase + static_cast<GO> (numGlobalElements_) - static_cast<GO> (1);
+    minMyGID_ = (numLocalElements_ == 0) ?
+      std::numeric_limits<GO>::max () :
+      indexBase + static_cast<GO> (myOffset);
+    maxMyGID_ = (numLocalElements_ == 0) ?
+      std::numeric_limits<GO>::lowest () :
+      indexBase + myOffset + static_cast<GO> (numLocalElements) - static_cast<GO> (1);
     firstContiguousGID_ = minMyGID_;
     lastContiguousGID_ = maxMyGID_;
     contiguous_ = true;
@@ -573,17 +584,17 @@ namespace Tpetra {
       // Compute the GID -> LID lookup table, _not_ including the
       // initial sequence of contiguous GIDs.
       {
-        const std::pair<size_t, size_t> ncRange (i, entryList_host.dimension_0 ());
+        const std::pair<size_t, size_t> ncRange (i, entryList_host.extent (0));
         auto nonContigGids_host = subview (entryList_host, ncRange);
         TEUCHOS_TEST_FOR_EXCEPTION
-          (static_cast<size_t> (nonContigGids_host.dimension_0 ()) !=
-           static_cast<size_t> (entryList_host.dimension_0 () - i),
+          (static_cast<size_t> (nonContigGids_host.extent (0)) !=
+           static_cast<size_t> (entryList_host.extent (0) - i),
            std::logic_error, "Tpetra::Map noncontiguous constructor: "
-           "nonContigGids_host.dimension_0() = "
-           << nonContigGids_host.dimension_0 ()
-           << " != entryList_host.dimension_0() - i = "
-           << (entryList_host.dimension_0 () - i) << " = "
-           << entryList_host.dimension_0 () << " - " << i
+           "nonContigGids_host.extent(0) = "
+           << nonContigGids_host.extent (0)
+           << " != entryList_host.extent(0) - i = "
+           << (entryList_host.extent (0) - i) << " = "
+           << entryList_host.extent (0) << " - " << i
            << ".  Please report this bug to the Tpetra developers.");
 
         // FixedHashTable's constructor expects an owned device View,
@@ -627,6 +638,8 @@ namespace Tpetra {
       lgMapHost_ = lgMap_host;
     }
     else {
+      minMyGID_ = std::numeric_limits<GlobalOrdinal>::max();
+      maxMyGID_ = std::numeric_limits<GlobalOrdinal>::lowest();
       // This insures tests for GIDs in the range
       // [firstContiguousGID_, lastContiguousGID_] fail for processes
       // with no local elements.
@@ -916,17 +929,17 @@ namespace Tpetra {
       // Compute the GID -> LID lookup table, _not_ including the
       // initial sequence of contiguous GIDs.
       {
-        const std::pair<size_t, size_t> ncRange (i, entryList.dimension_0 ());
+        const std::pair<size_t, size_t> ncRange (i, entryList.extent (0));
         auto nonContigGids = subview (entryList, ncRange);
         TEUCHOS_TEST_FOR_EXCEPTION
-          (static_cast<size_t> (nonContigGids.dimension_0 ()) !=
-           static_cast<size_t> (entryList.dimension_0 () - i),
+          (static_cast<size_t> (nonContigGids.extent (0)) !=
+           static_cast<size_t> (entryList.extent (0) - i),
            std::logic_error, "Tpetra::Map noncontiguous constructor: "
-           "nonContigGids.dimension_0() = "
-           << nonContigGids.dimension_0 ()
-           << " != entryList.dimension_0() - i = "
-           << (entryList.dimension_0 () - i) << " = "
-           << entryList.dimension_0 () << " - " << i
+           "nonContigGids.extent(0) = "
+           << nonContigGids.extent (0)
+           << " != entryList.extent(0) - i = "
+           << (entryList.extent (0) - i) << " = "
+           << entryList.extent (0) << " - " << i
            << ".  Please report this bug to the Tpetra developers.");
 
         glMap_ = global_to_local_table_type (nonContigGids,
@@ -964,6 +977,8 @@ namespace Tpetra {
       lgMapHost_ = lgMap_host;
     }
     else {
+      minMyGID_ = std::numeric_limits<GlobalOrdinal>::max();
+      maxMyGID_ = std::numeric_limits<GlobalOrdinal>::lowest();
       // This insures tests for GIDs in the range
       // [firstContiguousGID_, lastContiguousGID_] fail for processes
       // with no local elements.
@@ -1036,7 +1051,53 @@ namespace Tpetra {
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   Map<LocalOrdinal,GlobalOrdinal,Node>::~Map ()
-  {}
+  {
+    if (! Kokkos::is_initialized ()) {
+      std::ostringstream os;
+      os << "WARNING: Tpetra::Map destructor (~Map()) is being called after "
+        "Kokkos::finalize() has been called.  This is user error!  There are "
+        "two likely causes: " << std::endl <<
+        "  1. You have a static Tpetra::Map (or RCP or shared_ptr of a Map)"
+         << std::endl <<
+        "  2. You declare and construct a Tpetra::Map (or RCP or shared_ptr "
+        "of a Tpetra::Map) at the same scope in main() as Kokkos::finalize() "
+        "or Tpetra::finalize()." << std::endl << std::endl <<
+        "Don't do either of these!  Please refer to GitHib Issue #2372."
+         << std::endl;
+      ::Tpetra::Details::printOnce (std::cerr, os.str (),
+                                    this->getComm ().getRawPtr ());
+    }
+    else {
+      using ::Tpetra::Details::mpiIsInitialized;
+      using ::Tpetra::Details::mpiIsFinalized;
+      using ::Tpetra::Details::teuchosCommIsAnMpiComm;
+
+      Teuchos::RCP<const Teuchos::Comm<int> > comm = this->getComm ();
+      if (! comm.is_null () && teuchosCommIsAnMpiComm (*comm) &&
+          mpiIsInitialized () && mpiIsFinalized ()) {
+        // Tpetra itself does not require MPI, even if building with
+        // MPI.  It is legal to create Tpetra objects that do not use
+        // MPI, even in an MPI program.  However, calling Tpetra stuff
+        // after MPI_Finalize() has been called is a bad idea, since
+        // some Tpetra defaults may use MPI if available.
+        std::ostringstream os;
+        os << "WARNING: Tpetra::Map destructor (~Map()) is being called after "
+          "MPI_Finalize() has been called.  This is user error!  There are "
+          "two likely causes: " << std::endl <<
+          "  1. You have a static Tpetra::Map (or RCP or shared_ptr of a Map)"
+           << std::endl <<
+          "  2. You declare and construct a Tpetra::Map (or RCP or shared_ptr "
+          "of a Tpetra::Map) at the same scope in main() as MPI_finalize() or "
+          "Tpetra::finalize()." << std::endl << std::endl <<
+          "Don't do either of these!  Please refer to GitHib Issue #2372."
+           << std::endl;
+        ::Tpetra::Details::printOnce (std::cerr, os.str (), comm.getRawPtr ());
+      }
+    }
+    // mfh 20 Mar 2018: We can't check Tpetra::isInitialized() yet,
+    // because Tpetra does not yet require Tpetra::initialize /
+    // Tpetra::finalize.
+  }
 
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -1175,8 +1236,8 @@ namespace Tpetra {
       return true;
     }
     else if (! isContiguous () && ! map.isContiguous () &&
-             lgMap_.dimension_0 () != 0 && map.lgMap_.dimension_0 () != 0 &&
-             lgMap_.ptr_on_device () == map.lgMap_.ptr_on_device ()) {
+             lgMap_.extent (0) != 0 && map.lgMap_.extent (0) != 0 &&
+             lgMap_.data () == map.lgMap_.data ()) {
       // Noncontiguous Maps whose global index lists are nonempty and
       // have the same pointer must be the same (and therefore
       // contiguous).
@@ -1270,7 +1331,7 @@ namespace Tpetra {
         }
         return true;
       }
-      else if (this->lgMap_.ptr_on_device () == map.lgMap_.ptr_on_device ()) {
+      else if (this->lgMap_.data () == map.lgMap_.data ()) {
         // Pointers to LID->GID "map" (actually just an array) are the
         // same, and the number of GIDs are the same.
         return this->getNodeNumElements () == map.getNodeNumElements ();
@@ -1446,7 +1507,7 @@ namespace Tpetra {
     // have local entries, then create and fill the local-to-global
     // mapping.
     const bool needToCreateLocalToGlobalMapping =
-      lgMap_.dimension_0 () == 0 && numLocalElements_ > 0;
+      lgMap_.extent (0) == 0 && numLocalElements_ > 0;
 
     if (needToCreateLocalToGlobalMapping) {
 #ifdef HAVE_TEUCHOS_DEBUG
@@ -1491,12 +1552,12 @@ namespace Tpetra {
     (void) this->getMyGlobalIndices ();
 
     // This does NOT assume UVM; lgMapHost_ is a host pointer.
-    const GO* lgMapHostRawPtr = lgMapHost_.ptr_on_device ();
+    const GO* lgMapHostRawPtr = lgMapHost_.data ();
     // The third argument forces ArrayView not to try to track memory
     // in a debug build.  We have to use it because the memory does
     // not belong to a Teuchos memory management class.
     return Teuchos::ArrayView<const GO> (lgMapHostRawPtr,
-                                         lgMapHost_.dimension_0 (),
+                                         lgMapHost_.extent (0),
                                          Teuchos::RCP_DISABLE_NODE_LOOKUP);
   }
 
@@ -1739,14 +1800,14 @@ namespace Tpetra {
       // 10:   Process 3: origComm->replaceCommWithSubset(subsetComm) threw an exception: /scratch/prj/Trilinos/Trilinos/packages/tpetra/core/src/Tpetra_Details_FixedHashTable_def.hpp:1044:
 
       auto lgMap = this->getMyGlobalIndices ();
-      typedef typename std::decay<decltype (lgMap.dimension_0 ()) >::type size_type;
+      typedef typename std::decay<decltype (lgMap.extent (0)) >::type size_type;
       const size_type lclNumInds =
         static_cast<size_type> (this->getNodeNumElements ());
       using Teuchos::TypeNameTraits;
       TEUCHOS_TEST_FOR_EXCEPTION
-        (lgMap.dimension_0 () != lclNumInds, std::logic_error,
+        (lgMap.extent (0) != lclNumInds, std::logic_error,
          "Tpetra::Map::replaceCommWithSubset: Result of getMyGlobalIndices() "
-         "has length " << lgMap.dimension_0 () << " (of type " <<
+         "has length " << lgMap.extent (0) << " (of type " <<
          TypeNameTraits<size_type>::name () << ") != this->getNodeNumElements()"
          " = " << this->getNodeNumElements () << ".  The latter, upon being "
          "cast to size_type = " << TypeNameTraits<size_type>::name () << ", "

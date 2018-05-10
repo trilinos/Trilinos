@@ -63,11 +63,11 @@ class StdVector : public Vector<Real> {
 
 private:
 
-  Teuchos::RCP<std::vector<Element> >  std_vec_;
+  ROL::Ptr<std::vector<Element> >  std_vec_;
 
 public:
 
-  StdVector(const Teuchos::RCP<std::vector<Element> > & std_vec) : std_vec_(std_vec) {}
+  StdVector(const ROL::Ptr<std::vector<Element> > & std_vec) : std_vec_(std_vec) {}
 
   void set( const Vector<Real> &x ) {
 
@@ -75,7 +75,7 @@ public:
                                 std::invalid_argument,
                                 "Error: Vectors must have the same dimension." );
 
-    const StdVector &ex = Teuchos::dyn_cast<const StdVector>(x);
+    const StdVector &ex = dynamic_cast<const StdVector&>(x);
     const std::vector<Element>& xval = *ex.getVector();
     std::copy(xval.begin(),xval.end(),std_vec_->begin());   
   }
@@ -86,7 +86,7 @@ public:
                                 std::invalid_argument,
                                 "Error: Vectors must have the same dimension." );
 
-    const StdVector &ex = Teuchos::dyn_cast<const StdVector>(x);
+    const StdVector &ex = dynamic_cast<const StdVector&>(x);
     const std::vector<Element>& xval = *ex.getVector();
     uint dim  = std_vec_->size();
     for (uint i=0; i<dim; i++) {
@@ -100,7 +100,7 @@ public:
                                 std::invalid_argument,
                                 "Error: Vectors must have the same dimension." );
 
-    const StdVector &ex = Teuchos::dyn_cast<const StdVector>(x);
+    const StdVector &ex = dynamic_cast<const StdVector&>(x);
     const std::vector<Element>& xval = *ex.getVector();
     uint dim  = std_vec_->size();
     for (uint i=0; i<dim; i++) {
@@ -121,7 +121,7 @@ public:
                                 std::invalid_argument,
                                 "Error: Vectors must have the same dimension." );
 
-    const StdVector & ex = Teuchos::dyn_cast<const StdVector>(x);
+    const StdVector & ex = dynamic_cast<const StdVector&>(x);
     const std::vector<Element>& xval = *ex.getVector();
     uint dim  = std_vec_->size();
     Real val = 0;
@@ -137,25 +137,26 @@ public:
     return val;
   }
 
-  virtual Teuchos::RCP<Vector<Real> > clone() const {
-    return Teuchos::rcp( new StdVector( Teuchos::rcp(new std::vector<Element>(std_vec_->size())) ));
+  virtual ROL::Ptr<Vector<Real> > clone() const {
+    return ROL::makePtr<StdVector>( ROL::makePtr<std::vector<Element>>(std_vec_->size()));
   }
 
-  Teuchos::RCP<const std::vector<Element> > getVector() const {
+  ROL::Ptr<const std::vector<Element> > getVector() const {
     return std_vec_;
   }
 
-  Teuchos::RCP<std::vector<Element> > getVector() {
+  ROL::Ptr<std::vector<Element> > getVector() {
     return std_vec_;
   }
 
-  Teuchos::RCP<Vector<Real> > basis( const int i ) const {
+  ROL::Ptr<Vector<Real> > basis( const int i ) const {
 
     TEUCHOS_TEST_FOR_EXCEPTION( i >= dimension() || i<0,
                                 std::invalid_argument,
                                 "Error: Basis index must be between 0 and vector dimension." );
 
-    Teuchos::RCP<StdVector> e = Teuchos::rcp( new StdVector( Teuchos::rcp(new std::vector<Element>(std_vec_->size(), 0.0)) ));
+    ROL::Ptr<StdVector> e = 
+      ROL::makePtr<StdVector>( ROL::makePtr<std::vector<Element>>(std_vec_->size(), 0.0));
     (*e->getVector())[i] = 1.0;
     return e;
   }
@@ -177,7 +178,7 @@ public:
                                 std::invalid_argument,
                                 "Error: Vectors must have the same dimension." );
 
-    const StdVector & ex = Teuchos::dyn_cast<const StdVector>(x);
+    const StdVector & ex = dynamic_cast<const StdVector&>(x);
     const std::vector<Element>& xval = *ex.getVector();
     uint dim  = std_vec_->size();
     for (uint i=0; i<dim; i++) {
@@ -195,7 +196,12 @@ public:
     return result;
   }
 
-  void print( std::ostream &outStream ) const {
+  void setScalar( const Real C ) {
+    uint dim = std_vec_->size();
+    std_vec_->assign(dim,C);
+  }
+
+  virtual void print( std::ostream &outStream ) const {
     uint dim = std_vec_->size();
     for(uint i=0; i<dim; ++i) {
       outStream << (*std_vec_)[i] << " ";

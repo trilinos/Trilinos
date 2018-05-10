@@ -80,8 +80,13 @@ area(Vector<T, N> const & p0, Vector<T, N> const & p1,
      Vector<T, N> const & p2);
 
 ///
-/// Area of a quadrilateral, assummed planar. If not planar, returns
-/// the sum of the areas of the two triangles p0,p1,p2 and p0,p2,p3
+/// Area of a quadrilateral.
+/// Taken from:
+/// Calculation of the volume of a general hexahedron for flow predictions
+/// Davies, D. E.; Salmond, D. J.
+/// AIAA Journal (ISSN 0001-1452), vol. 23, June 1985, p. 954-956.
+/// Their vertex naming convention: ABCD
+/// Our convention:                 0123
 ///
 template<typename T, Index N>
 KOKKOS_INLINE_FUNCTION
@@ -99,22 +104,13 @@ volume(Vector<T, N> const & p0, Vector<T, N> const & p1,
        Vector<T, N> const & p2, Vector<T, N> const & p3);
 
 ///
-/// Volume of pyramid of quadrilateral base
-/// Base is assumed planar
-/// Base is p0,p1,p2,p3
-/// Apex is p4
-///
-template<typename T, Index N>
-KOKKOS_INLINE_FUNCTION
-T
-volume(Vector<T, N> const & p0, Vector<T, N> const & p1,
-       Vector<T, N> const & p2, Vector<T, N> const & p3,
-       Vector<T, N> const & p4);
-
-///
 /// Volume of hexahedron
-/// Assumption: all faces are planar
-/// Decompose into 3 pyramids
+/// Taken from:
+/// Calculation of the volume of a general hexahedron for flow predictions
+/// Davies, D. E.; Salmond, D. J.
+/// AIAA Journal (ISSN 0001-1452), vol. 23, June 1985, p. 954-956.
+/// Their vertex naming convention: ABCDEFGH
+/// Our convention:                 45670123
 ///
 template<typename T, Index N>
 KOKKOS_INLINE_FUNCTION

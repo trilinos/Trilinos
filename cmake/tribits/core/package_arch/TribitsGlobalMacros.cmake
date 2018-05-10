@@ -84,6 +84,27 @@ INCLUDE(TribitsTplDeclareLibraries) # Deprecated
 #
 MACRO(TRIBITS_ASSERT_AND_SETUP_PROJECT_AND_STATIC_SYSTEM_VARS)
 
+  APPEND_STRING_VAR(IN_SOURCE_ERROR_COMMON_MSG
+    "\nYou must now run something like:\n"
+    "  $ cd ${CMAKE_CURRENT_SOURCE_DIR}/\n"
+    "  $ rm -r CMakeCache.txt CMakeFiles/"
+    "\n"
+    "Please create a different directory and configure ${PROJECT_NAME}"
+    " under that such as:\n"
+    "  $ cd ${CMAKE_CURRENT_SOURCE_DIR}/\n"
+    "  $ mkdir MY_BUILD\n"
+    "  $ cd MY_BUILD\n"
+    "  $ cmake [OPTIONS] .."
+    )
+
+  IF (EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/CMakeCache.txt")
+    MESSAGE(FATAL_ERROR "ERROR! "
+      "The file ${CMAKE_CURRENT_SOURCE_DIR}/CMakeCache.txt exists from a"
+      " likely prior attempt to do an in-source build."
+      "${IN_SOURCE_ERROR_COMMON_MSG}"
+      )
+  ENDIF()
+
   IF ("${CMAKE_CURRENT_SOURCE_DIR}" STREQUAL "${CMAKE_CURRENT_BINARY_DIR}")
     MESSAGE(FATAL_ERROR "ERROR! "
       "CMAKE_CURRENT_SOURCE_DIR=${CMAKE_CURRENT_SOURCE_DIR}"
@@ -91,13 +112,7 @@ MACRO(TRIBITS_ASSERT_AND_SETUP_PROJECT_AND_STATIC_SYSTEM_VARS)
       "\n${PROJECT_NAME} does not support in source builds!\n"
       "NOTE: You must now delete the CMakeCache.txt file and the CMakeFiles/ directory under"
       " the source directory for ${PROJECT_NAME} or you will not be able to configure ${PROJECT_NAME} correctly!"
-      "\nYou must now run something like:\n"
-      "  $ rm -r CMakeCache.txt CMakeFiles/"
-      "\n"
-      "Please create a different directory and configure ${PROJECT_NAME} under that such as:\n"
-      "  $ mkdir MY_BUILD\n"
-      "  $ cd MY_BUILD\n"
-      "  $ cmake [OPTIONS] .."
+      "${IN_SOURCE_ERROR_COMMON_MSG}"
       )
   ENDIF()
 
@@ -222,6 +237,14 @@ MACRO(TRIBITS_DEFINE_GLOBAL_OPTIONS_AND_DEFINE_EXTRA_REPOS)
     "Enable the C compiler and related code"
     ${${PROJECT_NAME}_ENABLE_C_DEFAULT} )
 
+  IF ("${${PROJECT_NAME}_C_Standard_DEFAULT}" STREQUAL "")
+    SET(${PROJECT_NAME}_C_Standard_DEFAULT c99)
+  ENDIF()
+  ADVANCED_SET(${PROJECT_NAME}_C_Standard
+    ${${PROJECT_NAME}_C_Standard_DEFAULT}
+    CACHE STRING
+    "The standard <cstd> to use in --std=<cstd> for GCC compilers." )
+
   IF ("${${PROJECT_NAME}_ENABLE_CXX_DEFAULT}" STREQUAL "")
     SET(${PROJECT_NAME}_ENABLE_CXX_DEFAULT ON)
   ENDIF()
@@ -281,20 +304,20 @@ MACRO(TRIBITS_DEFINE_GLOBAL_OPTIONS_AND_DEFINE_EXTRA_REPOS)
   OPTION(${PROJECT_NAME}_ENABLE_OpenMP
     "Build with OpenMP support." OFF)
 
-  IF (NOT CMAKE_VERSION VERSION_LESS "3.7.0")
-    IF (
-      CMAKE_GENERATOR STREQUAL "Ninja"
-      AND
-      "${${PROJECT_NAME}_WRITE_NINJA_MAKEFILES_DEFAULT}" STREQUAL ""
-      )
-      SET(${PROJECT_NAME}_WRITE_NINJA_MAKEFILES_DEFAULT ON)
+  IF (CMAKE_GENERATOR STREQUAL "Ninja")
+    IF (NOT CMAKE_VERSION VERSION_LESS "3.7.0")
+      IF("${${PROJECT_NAME}_WRITE_NINJA_MAKEFILES_DEFAULT}" STREQUAL "")
+        SET(${PROJECT_NAME}_WRITE_NINJA_MAKEFILES_DEFAULT ON)
+      ENDIF()
+      SET(${PROJECT_NAME}_WRITE_NINJA_MAKEFILES
+        ${${PROJECT_NAME}_WRITE_NINJA_MAKEFILES_DEFAULT} CACHE BOOL
+        "Generate dummy makefiles to call ninja in every bulid subdirectory (requires CMake 3.7.0 or newer)." )
     ELSE()
-      SET(${PROJECT_NAME}_WRITE_NINJA_MAKEFILES_DEFAULT OFF)
+      MESSAGE("-- NOTE: CMAKE_VERSION=${CMAKE_VERSION} < 3.7.0: Can not generate"
+        " dummy makefiles for Ninja generator!")
     ENDIF()
-    SET(${PROJECT_NAME}_WRITE_NINJA_MAKEFILES
-      ${${PROJECT_NAME}_WRITE_NINJA_MAKEFILES_DEFAULT} CACHE BOOL
-      "Generate dummy makefiles to call ninja in every bulid subdirectory (requires CMake 3.7.0 or newer)." )
-  ELSE()
+  ENDIF()
+  IF ("${${PROJECT_NAME}_WRITE_NINJA_MAKEFILES}" STREQUAL "")
     SET(${PROJECT_NAME}_WRITE_NINJA_MAKEFILES OFF)
   ENDIF()
   
@@ -516,7 +539,13 @@ MACRO(TRIBITS_DEFINE_GLOBAL_OPTIONS_AND_DEFINE_EXTRA_REPOS)
     CACHE BOOL
     "Excluded disabled packages from the CPack-generated distribution.")
 
-  ADVANCED_SET( ${PROJECT_NAME}_ENABLE_SECONDARY_TESTED_CODE OFF CACHE BOOL
+  IF ("${${PROJECT_NAME}_ENABLE_SECONDARY_TESTED_CODE_DEFAULT}" STREQUAL "")
+    SET(${PROJECT_NAME}_ENABLE_SECONDARY_TESTED_CODE_DEFAULT OFF)
+  ENDIF()
+  ADVANCED_SET(
+    ${PROJECT_NAME}_ENABLE_SECONDARY_TESTED_CODE
+    ${${PROJECT_NAME}_ENABLE_SECONDARY_TESTED_CODE_DEFAULT}
+    CACHE BOOL
     "Allow Secondary Tested (ST) packages and code to be implicitly enabled." )
 
   IF ("${${PROJECT_NAME}_TEST_CATEGORIES_DEFAULT}" STREQUAL "")
@@ -529,7 +558,13 @@ MACRO(TRIBITS_DEFINE_GLOBAL_OPTIONS_AND_DEFINE_EXTRA_REPOS)
     )
   TRIBITS_GET_INVALID_CATEGORIES(${PROJECT_NAME}_TEST_CATEGORIES)
 
-  ADVANCED_SET(${PROJECT_NAME}_GENERATE_REPO_VERSION_FILE OFF CACHE BOOL
+  IF ("${${PROJECT_NAME}_GENERATE_REPO_VERSION_FILE_DEFAULT}" STREQUAL "" )
+    SET(${PROJECT_NAME}_GENERATE_REPO_VERSION_FILE_DEFAULT OFF)
+  ENDIF()
+  ADVANCED_SET(
+    ${PROJECT_NAME}_GENERATE_REPO_VERSION_FILE
+    ${${PROJECT_NAME}_GENERATE_REPO_VERSION_FILE_DEFAULT}
+    CACHE BOOL
     "Generate a <ProjectName>RepoVersion.txt file.")
 
   IF ("${DART_TESTING_TIMEOUT_DEFAULT}"  STREQUAL "")
@@ -1800,6 +1835,18 @@ MACRO(TRIBITS_SETUP_ENV)
     ENABLE_LANGUAGE(Fortran)
   ENDIF()
 
+  # Do some project-specific tweaks for compiler options, etc.
+  SET(PROJECT_COMPILER_CONFIG_FILE
+    # Can be used for things like Kokkos.
+    "${${PROJECT_NAME}_SOURCE_DIR}/cmake/ProjectCompilerPostConfig.cmake"
+    CACHE FILEPATH
+    "Allow for project-specific compiler settings."
+   )
+  IF (EXISTS "${PROJECT_COMPILER_CONFIG_FILE}")
+    TRIBITS_TRACE_FILE_PROCESSING(PROJECT  INCLUDE  "${PROJECT_COMPILER_CONFIG_FILE}")
+    INCLUDE("${PROJECT_COMPILER_CONFIG_FILE}")
+  ENDIF()
+
   # Set up for strong compiler warnings and warnings as errors
 
   INCLUDE(TribitsSetupBasicCompileLinkFlags)
@@ -1931,10 +1978,10 @@ MACRO(TRIBITS_SETUP_ENV)
   IF(${PROJECT_NAME}_ENABLE_OpenMP)
     FIND_PACKAGE(OpenMP)
     IF(OPENMP_FOUND)
-      SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
-      SET(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${OpenMP_C_FLAGS}")
+      TRIBITS_SET_OPENMP_FLAGS(CXX)
+      TRIBITS_SET_OPENMP_FLAGS(C)
       IF(OpenMP_Fortran_FLAGS)
-        SET(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} ${OpenMP_Fortran_FLAGS}")
+        TRIBITS_SET_OPENMP_FLAGS(Fortran)
       ELSE()
       # Older versions of FindOpenMP.cmake don't find Fortran flags.  Mike H said this is safe.
         SET(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} ${OpenMP_C_FLAGS}")
@@ -1991,6 +2038,16 @@ MACRO(TRIBITS_SETUP_ENV)
   ENDIF()
 
 ENDMACRO()
+
+
+MACRO(TRIBITS_SET_OPENMP_FLAGS  LANG)
+  IF (NOT "${OpenMP_${LANG}_FLAGS_OVERRIDE}" STREQUAL "")
+    SET(CMAKE_${LANG}_FLAGS "${CMAKE_${LANG}_FLAGS} ${OpenMP_${LANG}_FLAGS_OVERRIDE}")
+  ELSE()
+    SET(CMAKE_${LANG}_FLAGS "${CMAKE_${LANG}_FLAGS} ${OpenMP_${LANG}_FLAGS}")
+  ENDIF()
+ENDMACRO()
+
 
 #
 # Set mapping of labels to subprojects (i.e. TriBITS packages) for local CTest
@@ -2318,7 +2375,7 @@ MACRO(TRIBITS_CONFIGURE_ENABLED_PACKAGES)
 	ELSE()
           INCLUDE("${TRIBITS_PACKAGE_CMAKELIST_FILE}")
         ENDIF()
-        IF (NOT ${PACKAGE_NAME}_TRIBITS_PACAKGE_POSTPROCESS)
+        IF (NOT ${PACKAGE_NAME}_TRIBITS_PACKAGE_POSTPROCESS)
           MESSAGE(FATAL_ERROR
             "ERROR: Forgot to call TRIBITS_PACKAGE_POSTPROCESS() in ${TRIBITS_PACKAGE_CMAKELIST_FILE}"
             )

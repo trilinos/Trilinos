@@ -53,6 +53,7 @@
 // LOCA Includes
 #include "NOX_Utils.H"
 #include "NOX_Solver_Factory.H"
+#include "NOX_Exceptions.H"
 #include "LOCA_ErrorCheck.H"
 #include "LOCA_GlobalData.H"
 #include "LOCA_Factory.H"
@@ -588,7 +589,16 @@ LOCA::Stepper::compute(LOCA::Abstract::Iterator::StepStatus stepStatus)
   printStartStep();
 
   // Compute next point on continuation curve
-  solverStatus = solverPtr->solve();
+  try
+  {
+    solverStatus = solverPtr->solve();
+  }
+  catch (const NOX::Exceptions::SolverFailure& e)
+  {
+    globalData->locaUtils->err() << "Caught NOX::Exceptions::SolverFailure:"
+      << std::endl << e.what() << std::endl;
+    solverStatus = NOX::StatusTest::Failed;
+  }
 
   // Check solver status
   if (solverStatus == NOX::StatusTest::Failed) {

@@ -50,7 +50,10 @@
 namespace panzer {
 
 //**********************************************************************
-PHX_EVALUATOR_CTOR(Product,p)
+template<typename EvalT, typename Traits>
+Product<EvalT, Traits>::
+Product(
+  const Teuchos::ParameterList& p)
   : scaling(1.0)
 {
   std::string product_name = p.get<std::string>("Product Name");
@@ -77,7 +80,12 @@ PHX_EVALUATOR_CTOR(Product,p)
 }
 
 //**********************************************************************
-PHX_POST_REGISTRATION_SETUP(Product, /* worksets */, fm)
+template<typename EvalT, typename Traits>
+void
+Product<EvalT, Traits>::
+postRegistrationSetup(
+  typename Traits::SetupData  /* worksets */,
+  PHX::FieldManager<Traits>&  fm)
 {
   this->utils.setFieldData(product,fm);
   for (std::size_t i=0; i < values.size(); ++i)
@@ -85,7 +93,11 @@ PHX_POST_REGISTRATION_SETUP(Product, /* worksets */, fm)
 }
 
 //**********************************************************************
-PHX_EVALUATE_FIELDS(Product, /* workset */)
+template<typename EvalT, typename Traits>
+void
+Product<EvalT, Traits>::
+evaluateFields(
+  typename Traits::EvalData  /* workset */)
 { 
     product.deep_copy(ScalarT(scaling));
     for (std::size_t j = 0; j < values.size(); ++j)

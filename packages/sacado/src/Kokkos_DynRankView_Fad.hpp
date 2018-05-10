@@ -44,7 +44,6 @@
 #include "Kokkos_View_Fad.hpp"
 
 namespace Kokkos {
-namespace Experimental {
 namespace Impl {
 
 template <>
@@ -266,7 +265,7 @@ struct DynRankDimTraits<Kokkos::Impl::ViewSpecializeSacadoFad> {
 
 };
 
-}}} // namespace Kokkos::Experimental::Impl
+}} // namespace Kokkos::Impl
 
 namespace Kokkos {
 namespace Impl {
@@ -486,7 +485,7 @@ struct ViewMapping
         std::is_same< typename SrcTraits::array_layout
                     , Kokkos::LayoutStride >::value
       ) 
-    ), Kokkos::Experimental::Impl::DynRankSubviewTag >::type
+    ), Kokkos::Impl::DynRankSubviewTag >::type
   , SrcTraits
   , Args ... >
 {
@@ -560,7 +559,7 @@ public:
 
   template < typename T , class ... P >
   KOKKOS_INLINE_FUNCTION
-  static ret_type subview( const unsigned src_rank , Kokkos::Experimental::DynRankView< T , P...> const & src , Args ... args )
+  static ret_type subview( const unsigned src_rank , Kokkos::DynRankView< T , P...> const & src , Args ... args )
   {
 
     typedef ViewMapping< traits_type, void >  DstType ;
@@ -641,128 +640,26 @@ template <> struct AssignFadDim7<0u> {
   }
 };
 
-
-template <unsigned , unsigned> struct AssignDim {};
-
-template <unsigned FadStaticDim> struct AssignDim<0u,FadStaticDim> {
-  template <typename Src, typename Dst>
-  KOKKOS_INLINE_FUNCTION
-  static void eval(Dst& dst, const Src& src) {
-    dst.m_dim.N0 = 1;
-    dst.m_dim.N1 = 1;
-    dst.m_dim.N2 = 1;
-    dst.m_dim.N3 = 1;
-    dst.m_dim.N4 = 1;
-    dst.m_dim.N5 = 1;
-    dst.m_dim.N6 = 1;
-    AssignFadDim7<FadStaticDim>::eval( dst , src , 0 );
-  }
-};
-
-template <unsigned FadStaticDim> struct AssignDim<1u,FadStaticDim> {
-  template <typename Src, typename Dst>
-  KOKKOS_INLINE_FUNCTION
-  static void eval(Dst& dst, const Src& src) {
-    dst.m_dim.N0 = src.m_dim.N0;
-    dst.m_dim.N1 = 1;
-    dst.m_dim.N2 = 1;
-    dst.m_dim.N3 = 1;
-    dst.m_dim.N4 = 1;
-    dst.m_dim.N5 = 1;
-    dst.m_dim.N6 = 1;
-    AssignFadDim7<FadStaticDim>::eval( dst , src , 1 );
-  }
-};
-
-template <unsigned FadStaticDim> struct AssignDim<2u,FadStaticDim> {
-  template <typename Src, typename Dst>
-  KOKKOS_INLINE_FUNCTION
-  static void eval(Dst& dst, const Src& src) {
-    dst.m_dim.N0 = src.m_dim.N0;
-    dst.m_dim.N1 = src.m_dim.N1;
-    dst.m_dim.N2 = 1;
-    dst.m_dim.N3 = 1;
-    dst.m_dim.N4 = 1;
-    dst.m_dim.N5 = 1;
-    dst.m_dim.N6 = 1;
-    AssignFadDim7<FadStaticDim>::eval( dst , src , 2 );
-  }
-};
-
-template <unsigned FadStaticDim> struct AssignDim<3u,FadStaticDim> {
-  template <typename Src, typename Dst>
-  KOKKOS_INLINE_FUNCTION
-  static void eval(Dst& dst, const Src& src) {
-    dst.m_dim.N0 = src.m_dim.N0;
-    dst.m_dim.N1 = src.m_dim.N1;
-    dst.m_dim.N2 = src.m_dim.N2;
-    dst.m_dim.N3 = 1;
-    dst.m_dim.N4 = 1;
-    dst.m_dim.N5 = 1;
-    dst.m_dim.N6 = 1;
-    AssignFadDim7<FadStaticDim>::eval( dst , src , 3 );
-  }
-};
-
-template <unsigned FadStaticDim> struct AssignDim<4u,FadStaticDim> {
-  template <typename Src, typename Dst>
-  KOKKOS_INLINE_FUNCTION
-  static void eval(Dst& dst, const Src& src) {
-    dst.m_dim.N0 = src.m_dim.N0;
-    dst.m_dim.N1 = src.m_dim.N1;
-    dst.m_dim.N2 = src.m_dim.N2;
-    dst.m_dim.N3 = src.m_dim.N3;
-    dst.m_dim.N4 = 1;
-    dst.m_dim.N5 = 1;
-    dst.m_dim.N6 = 1;
-    AssignFadDim7<FadStaticDim>::eval( dst , src , 4 );
-  }
-};
-
-template <unsigned FadStaticDim> struct AssignDim<5u,FadStaticDim> {
-  template <typename Src, typename Dst>
-  KOKKOS_INLINE_FUNCTION
-  static void eval(Dst& dst, const Src& src) {
-    dst.m_dim.N0 = src.m_dim.N0;
-    dst.m_dim.N1 = src.m_dim.N1;
-    dst.m_dim.N2 = src.m_dim.N2;
-    dst.m_dim.N3 = src.m_dim.N3;
-    dst.m_dim.N4 = src.m_dim.N4;
-    dst.m_dim.N5 = 1;
-    dst.m_dim.N6 = 1;
-    AssignFadDim7<FadStaticDim>::eval( dst , src , 5 );
-  }
-};
-
-template <unsigned FadStaticDim> struct AssignDim<6u,FadStaticDim> {
-  template <typename Src, typename Dst>
-  KOKKOS_INLINE_FUNCTION
-  static void eval(Dst& dst, const Src& src) {
-    dst.m_dim.N0 = src.m_dim.N0;
-    dst.m_dim.N1 = src.m_dim.N1;
-    dst.m_dim.N2 = src.m_dim.N2;
-    dst.m_dim.N3 = src.m_dim.N3;
-    dst.m_dim.N4 = src.m_dim.N4;
-    dst.m_dim.N5 = src.m_dim.N5;
-    dst.m_dim.N6 = 1;
-    AssignFadDim7<FadStaticDim>::eval( dst , src , 6 );
-  }
-};
-
-template <unsigned FadStaticDim> struct AssignDim<7u,FadStaticDim> {
-  template <typename Src, typename Dst>
-  KOKKOS_INLINE_FUNCTION
-  static void eval(Dst& dst, const Src& src) {
-    dst.m_dim.N0 = src.m_dim.N0;
-    dst.m_dim.N1 = src.m_dim.N1;
-    dst.m_dim.N2 = src.m_dim.N2;
-    dst.m_dim.N3 = src.m_dim.N3;
-    dst.m_dim.N4 = src.m_dim.N4;
-    dst.m_dim.N5 = src.m_dim.N5;
-    dst.m_dim.N6 = src.m_dim.N6;
-    AssignFadDim7<FadStaticDim>::eval( dst , src , 7 );
-  }
-};
+// Copy a layout, moving the Fad dimension to the last
+template <typename Layout>
+KOKKOS_INLINE_FUNCTION
+static Layout
+permute_fad_layout(const Layout& src, const unsigned rank) {
+  Layout dst = src;
+  dst.dimension[rank] = 1;
+  dst.dimension[7]    = src.dimension[rank];
+  return dst;
+}
+KOKKOS_INLINE_FUNCTION
+static LayoutStride
+permute_fad_layout(const LayoutStride& src, const unsigned rank) {
+  LayoutStride dst = src;
+  dst.dimension[rank] = 1;
+  dst.stride[rank]    = 1;
+  dst.dimension[7]    = src.dimension[rank];
+  dst.stride[7]       = src.stride[rank];
+  return dst;
+}
 
 /**\brief  Assign compatible Sacado FAD view mappings.
  *
@@ -786,7 +683,7 @@ class ViewMapping< DstTraits , SrcTraits ,
     // Source view has FAD only
     std::is_same< typename SrcTraits::specialize
                 , ViewSpecializeSacadoFad >::value
-  ), Kokkos::Experimental::Impl::ViewToDynRankViewTag >::type >
+  ), Kokkos::Impl::ViewToDynRankViewTag >::type >
 {
 public:
 
@@ -846,14 +743,14 @@ public:
                     , typename SrcTraits::const_value_type >::value ,
         "View assignment must have same value type or const = non-const" );
 
-      typedef ViewMapping< SrcTraits, void> SrcType;
-      enum { FadStaticDim = SrcType::FadStaticDimension };
-
-      AssignDim<SrcTraits::rank,FadStaticDim>::eval(dst.m_map.m_offset, src.m_map.m_offset);
+      typedef typename DstType::offset_type dst_offset_type;
+      dst.m_map.m_offset =
+        dst_offset_type(std::integral_constant<unsigned,0>(),
+                        permute_fad_layout(src.m_map.m_offset.layout(),
+                                           SrcTraits::rank));
 
       dst.m_map.m_handle  = src.m_map.m_handle ;
       dst.m_rank    = src.Rank ;
-      dst.m_map.m_offset.m_stride = src.m_map.m_offset.m_stride ;
 
       ViewMapping::template assign_fad_size< typename DstTraits::specialize >( dst.m_map , src.m_map );
     }
@@ -914,7 +811,7 @@ void deep_copy(
                   typename ViewTraits<DT,DP...>::non_const_value_type >::value
     , "Can only deep copy into non-const type" );
 
-  Kokkos::Experimental::Impl::DynRankViewFill< DynRankView<DT,DP...> >( view , value );
+  Kokkos::Impl::DynRankViewFill< DynRankView<DT,DP...> >( view , value );
 }
 
 // Overload of deep_copy for Fad views intializing to a constant Fad
@@ -934,7 +831,7 @@ void deep_copy(
                   typename ViewTraits<DT,DP...>::non_const_value_type >::value
     , "Can only deep copy into non-const type" );
 
-  Kokkos::Experimental::Impl::DynRankViewFill< DynRankView<DT,DP...> >( view , value );
+  Kokkos::Impl::DynRankViewFill< DynRankView<DT,DP...> >( view , value );
 }
 
 template< class DstType , class SrcType >
@@ -953,7 +850,7 @@ void deep_copy
     std::is_same< typename SrcType::traits::specialize
                 , Kokkos::Impl::ViewSpecializeSacadoFadContiguous >::value )
   &&
-  ( Kokkos::Experimental::is_dyn_rank_view<DstType>::value || Kokkos::Experimental::is_dyn_rank_view<SrcType
+  ( Kokkos::is_dyn_rank_view<DstType>::value || Kokkos::is_dyn_rank_view<SrcType
 >::value )
   )>::type * = 0 )
 {
@@ -1069,11 +966,11 @@ void deep_copy
     }
     else if ( DstExecCanAccessSrc ) {
       // Copying data between views in accessible memory spaces and either non-contiguous or incompatible shape.
-      Kokkos::Experimental::Impl::DynRankViewRemap< dst_type , src_type >( dst , src );
+      Kokkos::Impl::DynRankViewRemap< dst_type , src_type >( dst , src );
     }
     else if ( SrcExecCanAccessDst ) {
       // Copying data between views in accessible memory spaces and either non-contiguous or incompatible shape.
-      Kokkos::Experimental::Impl::DynRankViewRemap< dst_type , src_type , src_execution_space >( dst , src );
+      Kokkos::Impl::DynRankViewRemap< dst_type , src_type , src_execution_space >( dst , src );
     }
     else {
       Kokkos::Impl::throw_runtime_exception("deep_copy given views that would require a temporary allocation");

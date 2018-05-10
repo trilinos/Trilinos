@@ -5,7 +5,7 @@
 # NOTE: If the TBB (Intel's Threading Building Blocks) TPL is enabled,
 # it's probably not possible to build Tpetra with shadowing warnings.
 #TRIBITS_PACKAGE( Tpetra ENABLE_SHADOWING_WARNINGS CLEANED )
-TRIBITS_PACKAGE( Tpetra CLEANED )
+TRIBITS_PACKAGE_DECL( Tpetra CLEANED )
 
 TRIBITS_ADD_DEBUG_OPTION()
 
@@ -13,20 +13,50 @@ TRIBITS_ADD_SHOW_DEPRECATED_WARNINGS_OPTION()
 
 TRIBITS_SET_ST_FOR_DEV_MODE(ST_FOR_DEV_PT_FOR_RELEASE)
 
+# mfh 06 Nov 2017: Do users want to build Tpetra with CUDA enabled?
+# This doesn't meant that users actually want to instantiate Tpetra
+# objects for CUDA.  See Trilinos GitHub issue #1939.
+
+ASSERT_DEFINED(TPL_ENABLE_CUDA)
+ASSERT_DEFINED(Kokkos_ENABLE_Cuda)
+
+IF (TPL_ENABLE_CUDA AND Kokkos_ENABLE_Cuda)
+  SET (Tpetra_ENABLE_CUDA_DEFAULT ON)
+ELSE ()
+  SET (Tpetra_ENABLE_CUDA_DEFAULT OFF)
+ENDIF ()
+
+ASSERT_DEFINED (Tpetra_ENABLE_CUDA_DEFAULT)
+TRIBITS_ADD_OPTION_AND_DEFINE(
+  Tpetra_ENABLE_CUDA
+  TPETRA_ENABLE_CUDA
+  "Enable use of CUDA in Tpetra.  This requires TPL_ENABLE_CUDA AND Kokkos_ENABLE_Cuda.  That is, you must build with CUDA enabled, and let Kokkos use CUDA.  (The latter should be ON by default, if building with CUDA enabled.)  If both of those are ON, then Tpetra_ENABLE_CUDA is ON by default.  You may set Tpetra_ENABLE_CUDA:BOOL=OFF explicitly if you do not wish Tpetra or downstream packages to use CUDA."
+  ${Tpetra_ENABLE_CUDA_DEFAULT})
+
+# It's possible for users to _disable_ CUDA in Tpetra.  However,
+# _enabling_ CUDA in Tpetra requires the CUDA TPL, and that Kokkos
+# enable CUDA.
+
+ASSERT_DEFINED (Tpetra_ENABLE_CUDA)
+IF (Tpetra_ENABLE_CUDA AND (NOT TPL_ENABLE_CUDA))
+  MESSAGE (FATAL_ERROR "You set Tpetra_ENABLE_CUDA:BOOL=ON, but TPL_ENABLE_CUDA is OFF.  TPL_ENABLE_CUDA and Kokkos_ENABLE_Cuda must both be ON before you may set Tpetra_ENABLE_CUDA:BOOL=ON.")
+ENDIF ()
+IF (Tpetra_ENABLE_CUDA AND (NOT Kokkos_ENABLE_Cuda))
+  MESSAGE (FATAL_ERROR "You set Tpetra_ENABLE_CUDA:BOOL=ON, but Kokkos_ENABLE_Cuda is OFF.  TPL_ENABLE_CUDA and Kokkos_ENABLE_Cuda must both be ON before you may set Tpetra_ENABLE_CUDA:BOOL=ON.")
+ENDIF ()
+
 # Kokkos and Tpetra require C++11 as of the 12.0 release.
 #
 # I left a special case for CUDA because I'm not sure whether TriBITS
 # counts C++11 as enabled in that case; please feel free to revise if
 # you know better.
 ASSERT_DEFINED(${PROJECT_NAME}_ENABLE_CXX11)
-ASSERT_DEFINED(TPL_ENABLE_CUDA)
-IF (NOT ${PROJECT_NAME}_ENABLE_CXX11 AND NOT TPL_ENABLE_CUDA)
+IF (NOT ${PROJECT_NAME}_ENABLE_CXX11 AND NOT Tpetra_ENABLE_CUDA)
   MESSAGE(FATAL_ERROR "As of Trilinos 12.0, C++11 is REQUIRED when building Kokkos and its downstream packages, which include Tpetra.  You MUST enable C++11 when building these packages.  Trilinos should enable this by default, if your C++11 compiler supports C++11 (that is, if it's not too old).  If you set ${PROJECT_NAME}_ENABLE_CXX11=OFF, then you are disabling C++11.  DON'T DO THAT if you want to build Kokkos or its downstream packages, including Tpetra.  If you aren't happy about that, then you need to disable Kokkos explicitly, by setting ${PROJECT_NAME}_ENABLE_Kokkos=OFF.  This WILL disable Tpetra and its downstream packages.")
 ENDIF ()
 
 # Checks that only matter if building with CUDA enabled.
-ASSERT_DEFINED(TPL_ENABLE_CUDA)
-IF (TPL_ENABLE_CUDA)
+IF (Tpetra_ENABLE_CUDA)
   # As of 10 Aug 2017, Tpetra requires CUDA >= 7.5.
   IF (DEFINED CUDA_VERSION AND (CUDA_VERSION VERSION_LESS "7.5"))
     MESSAGE(FATAL_ERROR "If building with CUDA, Tpetra and downstream packages require at least CUDA 7.5, and preferably CUDA >= 8.0.  Your CUDA_VERSION is ${CUDA_VERSION}.  For details, please refer to Trilinos issue #1278: https://github.com/trilinos/Trilinos/issues/1278")
@@ -77,13 +107,12 @@ ENDIF ()
 
 SET (Tpetra_ASSUME_CUDA_AWARE_MPI_DEFAULT OFF)
 
-ASSERT_DEFINED (TPL_ENABLE_CUDA)
 ASSERT_DEFINED (TPL_ENABLE_MPI)
-
+ASSERT_DEFINED (Tpetra_ENABLE_CUDA)
 MESSAGE (STATUS "Determine whether Tpetra will assume that MPI is CUDA aware:")
 
-IF (NOT TPL_ENABLE_CUDA)
-  MESSAGE (STATUS "  - TPL_ENABLE_CUDA is OFF, so we assume that MPI is not CUDA aware.")
+IF (NOT Tpetra_ENABLE_CUDA)
+  MESSAGE (STATUS "  - Tpetra_ENABLE_CUDA is OFF, so Tpetra will assume that MPI is not CUDA aware.")
   SET (Tpetra_ASSUME_CUDA_AWARE_MPI_DEFAULT OFF)
 ELSEIF (NOT TPL_ENABLE_MPI)
   # Even if CUDA is enabled but MPI is not, Teuchos::SerialComm may
@@ -91,7 +120,7 @@ ELSEIF (NOT TPL_ENABLE_MPI)
   # Teuchos::reduceAll on a SerialComm may copy input into output on
   # host).  Thus, it's safer to assume that "MPI" (rather,
   # Teuchos::SerialComm, a kind of MPI stub) can't access CUDA memory.
-  MESSAGE (STATUS "  - TPL_ENABLE_CUDA is ON but TPL_ENABLE_MPI is OFF, so we assume that (nonexistent) MPI is not CUDA aware.")
+  MESSAGE (STATUS "  - Tpetra_ENABLE_CUDA is ON but TPL_ENABLE_MPI is OFF, so we assume that (nonexistent) MPI is not CUDA aware.")
   SET (Tpetra_ASSUME_CUDA_AWARE_MPI_DEFAULT OFF)
 ELSEIF (DEFINED Tpetra_ASSUME_CUDA_AWARE_MPI)
   # The user set Tpetra_ASSUME_CUDA_AWARE_MPI explicitly.
@@ -199,7 +228,7 @@ IF (NOT (DEFINED Tpetra_ASSUME_CUDA_AWARE_MPI_DEFAULT))
   MESSAGE (FATAL_ERROR "Failed to set Tpetra_ASSUME_CUDA_AWARE_MPI_DEFAULT!")
 ENDIF ()
 
-IF (NOT TPL_ENABLE_CUDA AND Tpetra_ASSUME_CUDA_AWARE_MPI_DEFAULT)
+IF (NOT Tpetra_ENABLE_CUDA AND Tpetra_ASSUME_CUDA_AWARE_MPI_DEFAULT)
   MESSAGE (FATAL_ERROR "Tpetra_ASSUME_CUDA_AWARE_MPI_DEFAULT is ON, but CUDA is not enabled!")
 ENDIF ()
   
@@ -309,7 +338,15 @@ GLOBAL_SET(HAVE_TPETRA_INST_PTHREAD_DEFAULT OFF)
 GLOBAL_SET(HAVE_TPETRA_INST_OPENMP_DEFAULT OFF)  
 GLOBAL_SET(HAVE_TPETRA_INST_CUDA_DEFAULT OFF)  
 
-IF (Kokkos_ENABLE_Cuda) 
+ASSERT_DEFINED(Kokkos_ENABLE_OpenMP)
+ASSERT_DEFINED(Kokkos_ENABLE_Pthread)
+ASSERT_DEFINED(Kokkos_ENABLE_Serial)
+
+# We already have a separate Tpetra_ENABLE_CUDA option that we defined
+# above, so we don't have to check Kokkos_ENABLE_Cuda here.
+
+ASSERT_DEFINED (Tpetra_ENABLE_CUDA)
+IF (Tpetra_ENABLE_CUDA) 
   # If you bothered to build with CUDA enabled, then we assume you
   # only want CUDA.
   GLOBAL_SET(HAVE_TPETRA_INST_CUDA_DEFAULT ON)  
@@ -318,6 +355,9 @@ ELSE()
     # It takes effort (setting a nondefault compiler flag) to turn
     # on OpenMP, so we assume that if OpenMP is ON, then you must
     # want it as the Node type.
+    #
+    # mfh 06 Nov 2017: However, see GitHub issue #1939, for the
+    # analogous situation with CUDA.
     GLOBAL_SET(HAVE_TPETRA_INST_OPENMP_DEFAULT ON)  
   ELSE()
     IF (Kokkos_ENABLE_Serial)
@@ -330,7 +370,7 @@ ELSE()
       ENDIF()  # Kokkos_ENABLE_Pthread
     ENDIF() # Kokkos_ENABLE_Serial
   ENDIF() # Kokkos_ENABLE_OpenMP
-ENDIF() # Kokkos_ENABLE_Cuda
+ENDIF() # Tpetra_ENABLE_CUDA
 
 # Don't turn on both Serial and Threads by default.  Prefer Serial,
 # because Threads is a last resort.  Of course, users may still
@@ -442,6 +482,15 @@ ELSE () # NOT Tpetra_INST_CUDA
     MESSAGE(STATUS "NOTE: Kokkos::Cuda is ON (the CMake option Kokkos_ENABLE_Cuda is ON), but the corresponding Tpetra Node type is disabled.  If you want to enable instantiation and use of Kokkos::Cuda in Tpetra, please also set the CMake option Tpetra_INST_CUDA:BOOL=ON.  If you use the Kokkos::Cuda version of Tpetra without doing this, you will get link errors!")
   ENDIF ()
 ENDIF () # Tpetra_INST_CUDA
+
+#
+# Check that users did not attempt to enable both the OpenMP and
+# Pthreads back-ends.
+#
+
+IF (Tpetra_INST_OPENMP AND TPETRA_INST_PTHREAD)
+  MESSAGE (FATAL_ERROR "You set both Tpetra_INST_OPENMP=ON and Tpetra_INST_PTHREAD=ON.  This is not allowed, because Kokkos (as of Dec 2017) forbids users from enabling both the OpenMP and Pthreads back-ends.")
+ENDIF ()
 
 #
 # Construct the list of enabled Device and Node types.
@@ -706,17 +755,6 @@ IF (NOT DEFINED ${PACKAGE_NAME}_ENABLE_quadmath)
   ENDIF ()
 ENDIF ()
 ASSERT_DEFINED (${PACKAGE_NAME}_ENABLE_quadmath)
-
-IF (NOT DEFINED ${PACKAGE_NAME}_ENABLE_CUDA)
-  IF (DEFINED TpetraCore_ENABLE_CUDA)
-    SET (${PACKAGE_NAME}_ENABLE_CUDA "${TpetraCore_ENABLE_CUDA}")
-  ELSEIF (DEFINED TPL_ENABLE_CUDA)
-    SET (${PACKAGE_NAME}_ENABLE_CUDA "${TPL_ENABLE_CUDA}")
-  ELSE ()
-    SET (${PACKAGE_NAME}_ENABLE_CUDA OFF)
-  ENDIF ()
-ENDIF ()
-ASSERT_DEFINED (${PACKAGE_NAME}_ENABLE_CUDA)
 
 IF (NOT DEFINED ${PACKAGE_NAME}_ENABLE_QD)
   IF (DEFINED TpetraCore_ENABLE_QD)

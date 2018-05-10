@@ -63,6 +63,7 @@
 
 // I/O for Harwell-Boeing files
 #include <Trilinos_Util_iohb.h>
+#include "MySDMHelpers.hpp"
 
 #include <complex>
 #include <stdexcept>
@@ -526,8 +527,8 @@ main (int argc, char *argv[])
       // it should require randomization, as
       // P_{X1,X1} P_{Y2,Y2} (X1*C1 + Y2*C2) = P_{X1,X1} X1*C1 = 0
       serial_matrix_type C1(sizeX1,sizeS), C2(sizeX2,sizeS);
-      C1.random();
-      C2.random();
+      Anasazi::randomSDM(C1);
+      Anasazi::randomSDM(C2);
       MVTraits::MvTimesMatAddMv(ONE,*X1,C1,ZERO,*S);
       MVTraits::MvTimesMatAddMv(ONE,*X2,C2,ONE,*S);
 
@@ -555,12 +556,14 @@ main (int argc, char *argv[])
       // rank-1
       RCP<MultiVec> one = MVTraits::Clone(*S,1);
       MVTraits::MvRandom(*one);
+      SerialDenseMatrix<int,ST> scaleS(sizeS,1);
+      Anasazi::randomSDM(scaleS);
       // put multiple of column 0 in columns 0:sizeS-1
       for (int i=0; i<sizeS; i++) {
         std::vector<int> ind(1);
         ind[0] = i;
         RCP<MultiVec> Si = MVTraits::CloneViewNonConst(*S,ind);
-        MVTraits::MvAddMv(STraits::random(),*one,ZERO,*one,*Si);
+        MVTraits::MvAddMv(scaleS(i,0),*one,ZERO,*one,*Si);
       }
 
       debugOut << "Testing normalize() on a rank-1 multivector " << endl;
@@ -585,8 +588,8 @@ main (int argc, char *argv[])
       // and
       // P_X2 P_X1 (X2*C2 + X1*C1) = P_X2 X2*C2 = 0
       serial_matrix_type C1(sizeX1,sizeS), C2(sizeX2,sizeS);
-      C1.random();
-      C2.random();
+      Anasazi::randomSDM(C1);
+      Anasazi::randomSDM(C2);
       MVTraits::MvTimesMatAddMv(ONE,*X1,C1,ZERO,*S);
       MVTraits::MvTimesMatAddMv(ONE,*X2,C2,ONE,*S);
 
@@ -615,12 +618,14 @@ main (int argc, char *argv[])
       // rank-1
       RCP<MultiVec> one = MVTraits::Clone(*S,1);
       MVTraits::MvRandom(*one);
+      SerialDenseMatrix<int,ST> scaleS(sizeS,1);
+      Anasazi::randomSDM(scaleS);
       // put multiple of column 0 in columns 0:sizeS-1
       for (int i=0; i<sizeS; i++) {
         std::vector<int> ind(1);
         ind[0] = i;
         RCP<MultiVec> Si = MVTraits::CloneViewNonConst(*S,ind);
-        MVTraits::MvAddMv(STraits::random(),*one,ZERO,*one,*Si);
+        MVTraits::MvAddMv(scaleS(i,0),*one,ZERO,*one,*Si);
       }
 
       debugOut << "Testing projectAndNormalize() on a rank-1 multivector " << endl;
@@ -755,9 +760,9 @@ testProjectAndNormalize (RCP< OrthoManager< scalar_type, MultiVec > > OM,
       // copies of S,MS
       Scopy = MVTraits::CloneCopy(*S);
       // randomize this data, it should be overwritten
-      B->random();
+      Anasazi::randomSDM(*B);
       for (size_type i=0; i<C.size(); i++) {
-        C[i]->random();
+        Anasazi::randomSDM(*C[i]);
       }
       // Run test.
       // Note that Anasazi and Belos differ, among other places,
@@ -803,9 +808,9 @@ testProjectAndNormalize (RCP< OrthoManager< scalar_type, MultiVec > > OM,
         // copies of S,MS
         Scopy = MVTraits::CloneCopy(*S);
         // randomize this data, it should be overwritten
-        B->random();
+        Anasazi::randomSDM(*B);
         for (size_type i=0; i<C.size(); i++) {
-          C[i]->random();
+          Anasazi::randomSDM(*C[i]);
         }
         // flip the inputs
         theX = tuple( theX[1], theX[0] );
@@ -962,7 +967,7 @@ testNormalize (RCP< OrthoManager< scalar_type, MultiVec > > OM,
       // copies of S,MS
       Scopy = MVTraits::CloneCopy(*S);
       // randomize this data, it should be overwritten
-      B->random();
+      Anasazi::randomSDM(*B);
       // run test
       ret = OM->normalize(*Scopy,B);
       sout << "normalize() returned rank " << ret << endl;
@@ -1138,7 +1143,7 @@ testProject (RCP< OrthoManager< scalar_type, MultiVec > > OM,
         Scopy = MVTraits::CloneCopy(*S);
         // randomize this data, it should be overwritten
         for (size_type i = 0; i < C.size(); ++i) {
-          C[i]->random();
+          Anasazi::randomSDM(*C[i]);
         }
         // Run test.
         // Note that Anasazi and Belos differ, among other places,
@@ -1161,7 +1166,7 @@ testProject (RCP< OrthoManager< scalar_type, MultiVec > > OM,
         Scopy = MVTraits::CloneCopy(*S);
         // randomize this data, it should be overwritten
         for (size_type i = 0; i < C.size(); ++i) {
-          C[i]->random();
+          Anasazi::randomSDM(*C[i]);
         }
         // flip the inputs
         theX = tuple( theX[1], theX[0] );

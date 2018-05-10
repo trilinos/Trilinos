@@ -44,6 +44,7 @@
 #define PANZER_DOF_MANAGER2_IMPL_HPP
 
 #include <map>
+#include <set>
 
 #include <mpi.h>
 
@@ -73,7 +74,7 @@
 #define PANZER_DOFMGR_FUNC_TIME_MONITOR(a) \
     PANZER_FUNC_TIME_MONITOR(a)
 
-#ifdef PHX_KOKKOS_DEVICE_TYPE_CUDA 
+#ifdef PHX_KOKKOS_DEVICE_TYPE_CUDA
 #define PANZER_DOFMGR_REQUIRE_CUDA
 #endif
 
@@ -107,6 +108,39 @@ public:
 };
 
 }
+
+
+namespace {
+template <typename LocalOrdinal,typename GlobalOrdinal>
+class GreedyTieBreak : public Tpetra::Details::TieBreak<LocalOrdinal,GlobalOrdinal> {
+
+public:
+  GreedyTieBreak() { }
+
+  virtual bool mayHaveSideEffects() const {
+    return true;
+  }
+
+  virtual std::size_t selectedIndex(GlobalOrdinal GID,
+                                    const std::vector<std::pair<int,LocalOrdinal> > & pid_and_lid) const
+  {
+    // always choose index of pair with smallest pid
+    auto numLids = pid_and_lid.size();
+    decltype(numLids) idx = 0;
+    auto minpid = pid_and_lid[0].first;
+    decltype(minpid) minidx = 0;
+    for (idx = 0; idx < numLids; ++idx) {
+      if (pid_and_lid[idx].first < minpid) {
+        minpid = pid_and_lid[idx].first;
+        minidx = idx;
+      }
+    }
+    return minidx;
+  }
+};
+
+}
+
 
 using Teuchos::RCP;
 using Teuchos::rcp;
@@ -676,7 +710,8 @@ DOFManager<LO,GO>::buildGlobalUnknowns_GUN(const Tpetra::MultiVector<GO,LO,GO,pa
   if(!useTieBreak_) {
     PANZER_DOFMGR_FUNC_TIME_MONITOR("panzer::DOFManager::buildGlobalUnknowns_GUN::line_04 createOneToOne");
 
-    non_overlap_map = Tpetra::createOneToOne<LO,GO,Node>(overlap_map);
+    GreedyTieBreak<LO,GO> greedy_tie_break;
+    non_overlap_map = Tpetra::createOneToOne<LO,GO,Node>(overlap_map, greedy_tie_break);
   }
   else {
     // use a hash tie break to get better load balancing from create one to one
@@ -767,7 +802,7 @@ DOFManager<LO,GO>::buildGlobalUnknowns_GUN(const Tpetra::MultiVector<GO,LO,GO,pa
 
   // LINES 13-21: In the GUN paper
 
-  { 
+  {
     PANZER_DOFMGR_FUNC_TIME_MONITOR("panzer::DOFManager::buildGlobalUnknowns_GUN::line_13-21 gid_assignment");
 
     // ArrayView<const GO> owned_ids = gid_map->getNodeElementList();
@@ -806,7 +841,7 @@ DOFManager<LO,GO>::buildGlobalUnknowns_GUN(const Tpetra::MultiVector<GO,LO,GO,pa
     // use exporter to save on communication setup costs
     overlap_mv.doImport(*non_overlap_mv,*exp,Tpetra::REPLACE);
 #endif
-  } 
+  }
 
   //std::cout << Teuchos::describe(*non_overlap_mv,Teuchos::VERB_EXTREME)  << std::endl;
 
@@ -861,7 +896,7 @@ DOFManager<LO,GO>::buildTaggedMultiVector(const ElementBlockAccess & ownedAccess
 
   // LINE 22: In the GUN paper...the overlap_mv is reused for the tagged multivector.
   //          This is a bit of a practical abuse of the algorithm presented in the paper.
-    
+
   Teuchos::RCP<MultiVector> overlap_mv;
   {
     PANZER_DOFMGR_FUNC_TIME_MONITOR("panzer::DOFManager::buildTaggedMultiVector::allocate_tagged_multivector");
@@ -884,7 +919,7 @@ DOFManager<LO,GO>::buildTaggedMultiVector(const ElementBlockAccess & ownedAccess
       // there has to be a field pattern assocaited with the block
       if(fa_fps_[b]==Teuchos::null)
         continue;
-  
+
       const std::vector<LO> & numFields= fa_fps_[b]->numFieldsPerId();
       const std::vector<LO> & fieldIds= fa_fps_[b]->fieldIds();
       const std::vector<LO> & myElements = connMngr_->getElementBlock(blockOrder_[b]);
@@ -895,7 +930,7 @@ DOFManager<LO,GO>::buildTaggedMultiVector(const ElementBlockAccess & ownedAccess
         for (int c = 0; c < connSize; ++c) {
           size_t lid = overlapmap->getLocalElement(elmtConn[c]);
 
-          for(std::size_t i=0;i<working.size();i++) 
+          for(std::size_t i=0;i<working.size();i++)
             working[i] = 0;
           for (int n = 0; n < numFields[c]; ++n) {
             int whichField = fieldIds[offset];
@@ -908,11 +943,11 @@ DOFManager<LO,GO>::buildTaggedMultiVector(const ElementBlockAccess & ownedAccess
             auto current = edittwoview[i][lid];
             edittwoview[i][lid] = (current > working[i]) ? current : working[i];
           }
- 
+
         }
       }
     }
-    
+
     // // verbose output for inspecting overlap_mv
     // for(int i=0;i<overlap_mv->getLocalLength(); i++) {
     //   for(int j=0;j<overlap_mv->getNumVectors() ; j++)
@@ -920,7 +955,7 @@ DOFManager<LO,GO>::buildTaggedMultiVector(const ElementBlockAccess & ownedAccess
     //   std::cout << std::endl;
     // }
   }
- 
+
   return overlap_mv;
 }
 

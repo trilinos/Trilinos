@@ -499,6 +499,8 @@ TEUCHOS_UNIT_TEST(tSTKInterface, globalVariables)
   // Write out the mesh database to an Exodus file.
   const string filename("globalVariables.exo");
   mesh->writeToExodus(filename);
+  // Data can be buffered in writeToExodus() call. Flush to file by closing.
+  mesh = Teuchos::null;
 
   // Open the output file for reading.
   stk::io::StkMeshIoBroker stkIo(MPI_COMM_WORLD);

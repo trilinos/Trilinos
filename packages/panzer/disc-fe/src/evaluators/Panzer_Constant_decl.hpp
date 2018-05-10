@@ -60,13 +60,36 @@ namespace panzer {
     </ParameterList>
     \endverbatim
   */
-PANZER_EVALUATOR_CLASS(Constant)
+template<typename EvalT, typename Traits>
+class Constant
+  :
+  public panzer::EvaluatorWithBaseImpl<Traits>,
+  public PHX::EvaluatorDerived<EvalT, Traits>
+{
+  public:
+
+    Constant(
+      const Teuchos::ParameterList& p);
+
+    void
+    postRegistrationSetup(
+      typename Traits::SetupData d,
+      PHX::FieldManager<Traits>& fm);
+
+    void
+    evaluateFields(
+      typename Traits::EvalData d);
+
+  private:
+
+    using ScalarT = typename EvalT::ScalarT;
   
   ScalarT value;
   
   PHX::MDField<ScalarT> constant;
   
-PANZER_EVALUATOR_CLASS_END
+}; // end of class Constant
+
 
 }
 

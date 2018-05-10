@@ -90,7 +90,9 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
   // =========================================================================
 
   bool runHeavyTests = false;
+  std::string xmlForceFile = "";
   clp.setOption("heavytests", "noheavytests",  &runHeavyTests, "whether to exercise tests that take a long time to run");
+  clp.setOption("xml", &xmlForceFile, "xml input file (useful for debugging)");
   clp.recogniseAllOptions(true);
   switch (clp.parse(argc,argv)) {
     case Teuchos::CommandLineProcessor::PARSE_HELP_PRINTED:        return EXIT_SUCCESS;
@@ -106,17 +108,23 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
   matrixParameters.set("nx",         Teuchos::as<GO>(9999));
   matrixParameters.set("matrixType", "Laplace1D");
   RCP<Matrix>      A           = MueLuTests::TestHelpers::TestFactory<SC, LO, GO, NO>::Build1DPoisson(matrixParameters.get<GO>("nx"), lib);
-  RCP<MultiVector> coordinates = Galeri::Xpetra::Utils::CreateCartesianCoordinates<SC,LO,GO,Map,MultiVector>("1D", A->getRowMap(), matrixParameters);
+  RCP<RealValuedMultiVector> coordinates = Galeri::Xpetra::Utils::CreateCartesianCoordinates<double,LO,GO,Map,RealValuedMultiVector>("1D", A->getRowMap(), matrixParameters);
 
   std::string outDir = "Output/";
 
   std::vector<std::string> dirList;
   if (runHeavyTests) {
     dirList.push_back("EasyParameterListInterpreter-heavy/");
+#if !(defined(HAVE_MUELU_KOKKOS_REFACTOR) && defined(HAVE_MUELU_KOKKOS_REFACTOR_USE_BY_DEFAULT))
+    // commented since extended xml interface does not support kokkos factories
     dirList.push_back("FactoryParameterListInterpreter-heavy/");
+#endif
   } else {
     dirList.push_back("EasyParameterListInterpreter/");
+#if !(defined(HAVE_MUELU_KOKKOS_REFACTOR) && defined(HAVE_MUELU_KOKKOS_REFACTOR_USE_BY_DEFAULT))
+    // commented since extended xml interface does not support kokkos factories
     dirList.push_back("FactoryParameterListInterpreter/");
+#endif
   }
 #if defined(HAVE_MPI) && defined(HAVE_MUELU_ISORROPIA) && defined(HAVE_AMESOS2_KLU2)
   // The ML interpreter have internal ifdef, which means that the resulting
@@ -129,6 +137,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
   int numLists = dirList.size();
 
   bool failed = false;
+  bool jumpOut = false;
   Teuchos::Time timer("Interpreter timer");
   //double lastTime = timer.wallTime();
   for (int k = 0; k < numLists; k++) {
@@ -142,10 +151,25 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
       // Reset (potentially) cached value of the estimate
       A->SetMaxEigenvalueEstimate(-Teuchos::ScalarTraits<SC>::one());
 
-      std::string xmlFile  = dirList[k] + fileList[i];
-      std::string outFile  = outDir     + fileList[i];
-      std::string baseFile = outFile.substr(0, outFile.find_last_of('.'));
-      std::size_t found = baseFile.find("_np");
+      std::string xmlFile;
+      std::string outFile;
+      std::string baseFile;
+      std::size_t found;
+      if (xmlForceFile==""){
+        xmlFile  = dirList[k] + fileList[i];
+        outFile  = outDir     + fileList[i];
+        baseFile = outFile.substr(0, outFile.find_last_of('.'));
+        found = baseFile.find("_np");
+      } else {
+        xmlFile = xmlForceFile;
+        std::string dir = xmlForceFile.substr(0, xmlForceFile.find_last_of('/')+1);
+        dirList[k] = dir;
+        outFile = outDir + xmlForceFile.substr(xmlForceFile.find_last_of('/')+1, xmlForceFile.size());
+        baseFile = outFile.substr(0, outFile.find_last_of('.'));
+        found = baseFile.find("_np");
+        jumpOut = true;
+      }
+      
       if (numProc == 1 && found != std::string::npos) {
 #ifdef HAVE_MPI
         baseFile = baseFile.substr(0, found);
@@ -154,6 +178,8 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
         continue;
 #endif
       }
+      std::cout << "Testing: "<< xmlFile << std::endl;
+      
       baseFile = baseFile + (lib == Xpetra::UseEpetra ? "_epetra" : "_tpetra");
       std::string goldFile = baseFile + ".gold";
       std::ifstream f(goldFile.c_str());
@@ -276,6 +302,11 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
         // NOTE1 : Epetra, on the other hand, rolls out its out random number
         // generator, which always produces same results
 
+        // make sure complex tests pass
+        run_sed("'s/relaxation: damping factor = (1,0)/relaxation: damping factor = 1/'", baseFile);
+        run_sed("'s/damping factor: (1,0)/damping factor: 1/'", baseFile);
+        run_sed("'s/relaxation: min diagonal value = (0,0)/relaxation: min diagonal value = 0/'", baseFile);
+
         // Ignore the value of "lambdaMax"
         run_sed("'s/lambdaMax: [0-9]*.[0-9]*/lambdaMax = <ignored>/'", baseFile);
 
@@ -323,7 +354,11 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
         //std::cout.flags(ff); // reset flags to whatever they were prior to printing time
         std::cout << xmlFile << " : " << (ret ? "failed" : "passed") << std::endl;
       }
+      if (jumpOut)
+        break;
     }
+    if (jumpOut)
+      break;
   }
 
   if (myRank == 0)
@@ -350,7 +385,9 @@ void run_sed(const std::string& pattern, const std::string& baseFile) {
 #ifdef __APPLE__
   sed_pref = sed_pref +  "\"\" ";
 #endif
-
-  system((sed_pref + pattern + " " + baseFile + ".gold_filtered").c_str());
-  system((sed_pref + pattern + " " + baseFile + ".out_filtered").c_str());
+  int ret;
+  ret = system((sed_pref + pattern + " " + baseFile + ".gold_filtered").c_str());
+  TEUCHOS_ASSERT_EQUALITY(ret,0);
+  ret = system((sed_pref + pattern + " " + baseFile + ".out_filtered").c_str());
+  TEUCHOS_ASSERT_EQUALITY(ret,0);
 }

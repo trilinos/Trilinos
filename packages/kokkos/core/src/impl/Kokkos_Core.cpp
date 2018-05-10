@@ -35,7 +35,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact  H. Carter Edwards (hcedwar@sandia.gov)
+// Questions? Contact Christian R. Trott (crtrott@sandia.gov)
 //
 // ************************************************************************
 //@HEADER
@@ -48,12 +48,14 @@
 #include <iostream>
 #include <sstream>
 #include <cstdlib>
+#include <stack>
 
 //----------------------------------------------------------------------------
 
 namespace {
 bool g_is_initialized = false;
 bool g_show_warnings = true;
+std::stack<std::function<void()> > finalize_hooks;
 }
 
 namespace Kokkos { namespace Impl { namespace {
@@ -187,6 +189,26 @@ setenv("MEMKIND_HBW_NODES", "1", 0);
 
 void finalize_internal( const bool all_spaces = false )
 {
+
+  typename decltype(finalize_hooks)::size_type  numSuccessfulCalls = 0;
+  while(! finalize_hooks.empty()) {
+    auto f = finalize_hooks.top();
+    try {
+      f();
+    }
+    catch(...) {
+      std::cerr << "Kokkos::finalize: A finalize hook (set via "
+        "Kokkos::push_finalize_hook) threw an exception that it did not catch."
+        "  Per std::atexit rules, this results in std::terminate.  This is "
+        "finalize hook number " << numSuccessfulCalls << " (1-based indexing) "
+        "out of " << finalize_hooks.size() << " to call.  Remember that "
+        "Kokkos::finalize calls finalize hooks in reverse order from how they "
+        "were pushed." << std::endl;
+      std::terminate();
+    }
+    finalize_hooks.pop();
+    ++numSuccessfulCalls;
+  }
 
 #if defined(KOKKOS_ENABLE_PROFILING)
     Kokkos::Profiling::finalize();
@@ -434,7 +456,7 @@ void initialize(int& narg, char* arg[])
          std::cout << "The following arguments exist also without prefix 'kokkos' (e.g. --help)." << std::endl;
          std::cout << "The prefixed arguments will be removed from the list by Kokkos::initialize()," << std::endl;
          std::cout << "the non-prefixed ones are not removed. Prefixed versions take precedence over " << std::endl;
-         std::cout << "non prefixed ones, and the last occurence of an argument overwrites prior" << std::endl;
+         std::cout << "non prefixed ones, and the last occurrence of an argument overwrites prior" << std::endl;
          std::cout << "settings." << std::endl;
          std::cout << std::endl;
          std::cout << "--kokkos-help               : print this message" << std::endl;
@@ -475,6 +497,11 @@ void initialize(int& narg, char* arg[])
 
 void initialize(const InitArguments& arguments) {
   Impl::initialize_internal(arguments);
+}
+
+void push_finalize_hook(std::function<void()> f)
+{
+  finalize_hooks.push(f);
 }
 
 void finalize()
@@ -639,7 +666,12 @@ void print_configuration( std::ostream & out , const bool detail )
 #else
   msg << "no" << std::endl;
 #endif
-
+  msg << "  KOKKOS_ENABLE_SERIAL_ATOMICS: ";
+#ifdef KOKKOS_ENABLE_SERIAL_ATOMICS
+  msg << "yes" << std::endl;
+#else
+  msg << "no" << std::endl;
+#endif
 
   msg << "Vectorization:" << std::endl;
   msg << "  KOKKOS_ENABLE_PRAGMA_IVDEP: ";

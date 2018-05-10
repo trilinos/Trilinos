@@ -153,19 +153,19 @@ template <class Real,
           class Node=Tpetra::Map<>::node_type >
 class TpetraMultiVector : public Vector<Real> {
 private:
-  const Teuchos::RCP<Tpetra::MultiVector<Real,LO,GO,Node> > tpetra_vec_;
-  const Teuchos::RCP<const Tpetra::Map<LO,GO,Node> > map_;
-  const Teuchos::RCP<const Teuchos::Comm<int> > comm_;
+  const ROL::Ptr<Tpetra::MultiVector<Real,LO,GO,Node> > tpetra_vec_;
+  const ROL::Ptr<const Tpetra::Map<LO,GO,Node> > map_;
+  const ROL::Ptr<const Teuchos::Comm<int> > comm_;
 
 protected:
-  const Teuchos::RCP<const Tpetra::Map<LO,GO,Node> > getMap(void) const {
+  const ROL::Ptr<const Tpetra::Map<LO,GO,Node> > getMap(void) const {
     return map_;
   }
 
 public:
   virtual ~TpetraMultiVector() {}
 
-  TpetraMultiVector(const Teuchos::RCP<Tpetra::MultiVector<Real,LO,GO,Node> > &tpetra_vec)
+  TpetraMultiVector(const ROL::Ptr<Tpetra::MultiVector<Real,LO,GO,Node> > &tpetra_vec)
     : tpetra_vec_(tpetra_vec), map_(tpetra_vec_->getMap()), comm_(map_->getComm()) {}
 
   /** \brief Assign \f$y \leftarrow x \f$ where \f$y = \mbox{*this}\f$.
@@ -174,7 +174,7 @@ public:
     TEUCHOS_TEST_FOR_EXCEPTION( dimension() != x.dimension(),
                                 std::invalid_argument,
                                 "Error: Vectors must have the same dimension." );
-    const TpetraMultiVector &ex = Teuchos::dyn_cast<const TpetraMultiVector>(x);
+    const TpetraMultiVector &ex = dynamic_cast<const TpetraMultiVector&>(x);
     tpetra_vec_->assign(*ex.getVector());
   }
 
@@ -185,7 +185,7 @@ public:
                                 std::invalid_argument,
                                 "Error: Vectors must have the same dimension." );
     Real one(1);
-    const TpetraMultiVector &ex = Teuchos::dyn_cast<const TpetraMultiVector>(x);
+    const TpetraMultiVector &ex = dynamic_cast<const TpetraMultiVector&>(x);
     tpetra_vec_->update(one,*ex.getVector(),one);
   }
 
@@ -194,7 +194,7 @@ public:
                                 std::invalid_argument,
                                 "Error: Vectors must have the same dimension." );
     Real one(1);
-    const TpetraMultiVector &ex = Teuchos::dyn_cast<const TpetraMultiVector>(x);
+    const TpetraMultiVector &ex = dynamic_cast<const TpetraMultiVector&>(x);
     tpetra_vec_->update(alpha,*ex.getVector(),one);
   }
 
@@ -210,7 +210,7 @@ public:
     TEUCHOS_TEST_FOR_EXCEPTION( dimension() != x.dimension(),
                                 std::invalid_argument,
                                 "Error: Vectors must have the same dimension." );
-    const TpetraMultiVector &ex = Teuchos::dyn_cast<const TpetraMultiVector>(x);
+    const TpetraMultiVector &ex = dynamic_cast<const TpetraMultiVector&>(x);
     size_t n = tpetra_vec_->getNumVectors();
     // Perform Euclidean dot between *this and x for each vector
     Teuchos::Array<Real> val(n,0);
@@ -231,10 +231,10 @@ public:
 
   /** \brief Clone to make a new (uninitialized) vector.
   */
-  virtual Teuchos::RCP<Vector<Real> > clone() const {
+  virtual ROL::Ptr<Vector<Real> > clone() const {
     size_t n = tpetra_vec_->getNumVectors();
-    return Teuchos::rcp( new TpetraMultiVector(
-           Teuchos::rcp( new Tpetra::MultiVector<Real,LO,GO,Node>(map_,n))));
+    return ROL::makePtr<TpetraMultiVector>(
+           ROL::makePtr<Tpetra::MultiVector<Real,LO,GO,Node>>(map_,n));
   }
 
   /**  \brief Set to zero vector.
@@ -244,27 +244,31 @@ public:
     tpetra_vec_->putScalar(zero);
   }
 
-  Teuchos::RCP<const Tpetra::MultiVector<Real,LO,GO,Node> > getVector() const {
+  void setScalar(const Real C) {
+    tpetra_vec_->putScalar(static_cast<double>(C));
+  }
+
+  ROL::Ptr<const Tpetra::MultiVector<Real,LO,GO,Node> > getVector() const {
     return tpetra_vec_;
   }
 
-  Teuchos::RCP<Tpetra::MultiVector<Real,LO,GO,Node> > getVector() {
+  ROL::Ptr<Tpetra::MultiVector<Real,LO,GO,Node> > getVector() {
     return tpetra_vec_;
   }
 
-  Teuchos::RCP<Vector<Real> > basis( const int i ) const {
+  ROL::Ptr<Vector<Real> > basis( const int i ) const {
     TEUCHOS_TEST_FOR_EXCEPTION( i >= dimension() || i<0,
                                 std::invalid_argument,
                                 "Error: Basis index must be between 0 and vector dimension." );
     const size_t n = tpetra_vec_->getNumVectors();
-    Teuchos::RCP<Tpetra::MultiVector<Real,LO,GO,Node> > e
-      = Teuchos::rcp(new Tpetra::MultiVector<Real,LO,GO,Node>(map_,n));
-    if (!map_.is_null() && map_->isNodeGlobalElement(static_cast<GO>(i))) {
+    ROL::Ptr<Tpetra::MultiVector<Real,LO,GO,Node> > e
+      = ROL::makePtr<Tpetra::MultiVector<Real,LO,GO,Node>>(map_,n);
+    if ( (map_ != ROL::nullPtr) && map_->isNodeGlobalElement(static_cast<GO>(i))) {
       for (size_t j = 0; j < n; ++j) {
         e->replaceGlobalValue (i, j, Teuchos::ScalarTraits<Real>::one());
       }
     }
-    return Teuchos::rcp(new TpetraMultiVector(e) );
+    return ROL::makePtr<TpetraMultiVector>(e);
   }
 
   int dimension() const {
@@ -295,8 +299,8 @@ public:
                                 std::invalid_argument,
                                 "Error: Vectors must have the same dimension." );
 
-   const TpetraMultiVector &ex = Teuchos::dyn_cast<const TpetraMultiVector>(x);
-   Teuchos::RCP<const Tpetra::MultiVector<Real,LO,GO,Node> > xp = ex.getVector();
+   const TpetraMultiVector &ex = dynamic_cast<const TpetraMultiVector&>(x);
+   ROL::Ptr<const Tpetra::MultiVector<Real,LO,GO,Node> > xp = ex.getVector();
 
     ViewType v_lcl = tpetra_vec_->getDualView().d_view;
     ViewType x_lcl = xp->getDualView().d_view;

@@ -47,6 +47,7 @@
 #include <Teuchos_Describable.hpp>
 #include <Teuchos_ParameterListAcceptorDefaultBase.hpp>
 #include <Teuchos_VerboseObject.hpp>
+#include <Tpetra_Details_Behavior.hpp>
 
 // If TPETRA_DISTRIBUTOR_TIMERS is defined, Distributor will time
 // doPosts (both versions) and doWaits, and register those timers with
@@ -1168,6 +1169,8 @@ namespace Tpetra {
     using std::endl;
     typedef Array<size_t>::size_type size_type;
 
+    const bool verbose = Tpetra::Details::Behavior::verbose("Distributor");
+
 #ifdef TPETRA_DISTRIBUTOR_TIMERS
     Teuchos::TimeMonitor timeMon (*timer_doPosts3_);
 #endif // TPETRA_DISTRIBUTOR_TIMERS
@@ -1179,7 +1182,7 @@ namespace Tpetra {
     const bool doBarrier = barrierBetween_;
 
     Teuchos::OSTab tab0 (out_);
-    if (debug_) {
+    if (verbose) {
       std::ostringstream os;
       os << "Proc " << myRank
          << ": Distributor::doPosts(3 args, Teuchos::ArrayRCP)" << endl;
@@ -1249,7 +1252,7 @@ namespace Tpetra {
       as<size_type> (selfMessage_ ? 1 : 0);
     requests_.resize (0);
 
-    if (debug_) {
+    if (verbose) {
       std::ostringstream os;
       os << "Proc " << myRank << ": doPosts(3 args, Teuchos::ArrayRCP, "
          << (indicesTo_.empty () ? "fast" : "slow") << "): Post receives"
@@ -1271,7 +1274,7 @@ namespace Tpetra {
       for (size_type i = 0; i < actualNumReceives; ++i) {
         const size_t curBufLen = lengthsFrom_[i] * numPackets;
         if (procsFrom_[i] != myRank) {
-          if (debug_) {
+          if (verbose) {
             std::ostringstream os;
             os << "Proc " << myRank << ": doPosts(3 args, Teuchos::ArrayRCP, "
                << (indicesTo_.empty () ? "fast" : "slow") << "): "
@@ -1311,7 +1314,7 @@ namespace Tpetra {
       Teuchos::TimeMonitor timeMonBarrier (*timer_doPosts3_barrier_);
 #endif // TPETRA_DISTRIBUTOR_TIMERS
 
-      if (debug_) {
+      if (verbose) {
         std::ostringstream os;
         os << "Proc " << myRank << ": doPosts(3 args, Teuchos::ArrayRCP, "
            << (indicesTo_.empty () ? "fast" : "slow") << "): Barrier" << endl;
@@ -1346,7 +1349,7 @@ namespace Tpetra {
     size_t selfNum = 0;
     size_t selfIndex = 0;
 
-    if (debug_) {
+    if (verbose) {
       std::ostringstream os;
       os << "Proc " << myRank
          << ": doPosts(3 args, Teuchos::ArrayRCP, "
@@ -1355,7 +1358,7 @@ namespace Tpetra {
     }
 
     if (indicesTo_.empty()) {
-      if (debug_) {
+      if (verbose) {
         std::ostringstream os;
         os << "Proc " << myRank
            << ": doPosts(3 args, Teuchos::ArrayRCP, fast): posting sends" << endl;
@@ -1371,7 +1374,7 @@ namespace Tpetra {
         }
 
         if (procsTo_[p] != myRank) {
-          if (debug_) {
+          if (verbose) {
             std::ostringstream os;
             os << "Proc " << myRank
                << ": doPosts(3 args, Teuchos::ArrayRCP, fast): Post send: "
@@ -1417,7 +1420,7 @@ namespace Tpetra {
       }
 
       if (selfMessage_) {
-        if (debug_) {
+        if (verbose) {
           std::ostringstream os;
           os << "Proc " << myRank
              << ": doPosts(3 args, Teuchos::ArrayRCP, fast): Self-send" << endl;
@@ -1434,7 +1437,7 @@ namespace Tpetra {
                    exports.begin()+startsTo_[selfNum]*numPackets+lengthsTo_[selfNum]*numPackets,
                    imports.begin()+selfReceiveOffset);
       }
-      if (debug_) {
+      if (verbose) {
         std::ostringstream os;
         os << "Proc " << myRank
            << ": doPosts(3 args, Teuchos::ArrayRCP, fast) done" << endl;
@@ -1442,7 +1445,7 @@ namespace Tpetra {
       }
     }
     else { // data are not blocked by proc, use send buffer
-      if (debug_) {
+      if (verbose) {
         std::ostringstream os;
         os << "Proc " << myRank
            << ": doPosts(3 args, Teuchos::ArrayRCP, slow): posting sends" << endl;
@@ -1465,7 +1468,7 @@ namespace Tpetra {
         }
 
         if (procsTo_[p] != myRank) {
-          if (debug_) {
+          if (verbose) {
             std::ostringstream os;
             os << "Proc " << myRank
                << ": doPosts(3 args, Teuchos::ArrayRCP, slow): Post send: "
@@ -1521,7 +1524,7 @@ namespace Tpetra {
       }
 
       if (selfMessage_) {
-        if (debug_) {
+        if (verbose) {
           std::ostringstream os;
           os << "Proc " << myRank
              << ": doPosts(3 args, Teuchos::ArrayRCP, slow): Self-send" << endl;
@@ -1535,7 +1538,7 @@ namespace Tpetra {
           selfReceiveOffset += numPackets;
         }
       }
-      if (debug_) {
+      if (verbose) {
         std::ostringstream os;
         os << "Proc " << myRank
            << ": doPosts(3 args, Teuchos::ArrayRCP, slow) done" << endl;
@@ -1543,7 +1546,7 @@ namespace Tpetra {
       }
     }
 
-    if (debug_) {
+    if (verbose) {
       std::ostringstream os;
       os << "Proc " << myRank << ": doPosts done" << endl;
       *out_ << os.str ();
@@ -1574,6 +1577,7 @@ namespace Tpetra {
     typedef Array<size_t>::size_type size_type;
 
     Teuchos::OSTab tab (out_);
+    const bool verbose = Tpetra::Details::Behavior::verbose("Distributor");
 
 #ifdef TPETRA_DISTRIBUTOR_TIMERS
     Teuchos::TimeMonitor timeMon (*timer_doPosts4_);
@@ -1648,6 +1652,8 @@ namespace Tpetra {
         std::logic_error,
         "Tpetra::Distributor::doPosts(4 args, Teuchos::ArrayRCP): Process "
         << myProcID << ": requests_.size() = " << requests_.size () << " != 0.");
+    }
+    if (verbose) {
       std::ostringstream os;
       os << "Proc " << myProcID << ": doPosts(4 args, Teuchos::ArrayRCP, "
          << (indicesTo_.empty () ? "fast" : "slow") << ")" << endl;
@@ -1757,7 +1763,7 @@ namespace Tpetra {
     size_t selfIndex = 0;
 
     if (indicesTo_.empty()) {
-      if (debug_) {
+      if (verbose) {
         std::ostringstream os;
         os << "Proc " << myProcID
            << ": doPosts(4 args, Teuchos::ArrayRCP, fast): posting sends" << endl;
@@ -1815,7 +1821,7 @@ namespace Tpetra {
                    exports.begin()+sendPacketOffsets[selfNum]+packetsPerSend[selfNum],
                    imports.begin()+selfReceiveOffset);
       }
-      if (debug_) {
+      if (verbose) {
         std::ostringstream os;
         os << "Proc " << myProcID
            << ": doPosts(4 args, Teuchos::ArrayRCP, fast) done" << endl;
@@ -1823,7 +1829,7 @@ namespace Tpetra {
       }
     }
     else { // data are not blocked by proc, use send buffer
-      if (debug_) {
+      if (verbose) {
         std::ostringstream os;
         os << "Proc " << myProcID
            << ": doPosts(4 args, Teuchos::ArrayRCP, slow): posting sends" << endl;
@@ -1906,7 +1912,7 @@ namespace Tpetra {
           ++selfIndex;
         }
       }
-      if (debug_) {
+      if (verbose) {
         std::ostringstream os;
         os << "Proc " << myProcID
            << ": doPosts(4 args, Teuchos::ArrayRCP, slow) done" << endl;
@@ -2038,9 +2044,10 @@ namespace Tpetra {
     using Teuchos::RCP;
     using Teuchos::rcp;
     using std::endl;
+    const bool verbose = Tpetra::Details::Behavior::verbose("Distributor");
 
     RCP<Teuchos::OSTab> tab0, tab1;
-    if (debug_) {
+    if (verbose) {
       tab0 = rcp (new Teuchos::OSTab (out_));
       const int myRank = comm_->getRank ();
       std::ostringstream os;
@@ -2058,7 +2065,7 @@ namespace Tpetra {
       " outstanding nonblocking messages pending.  It is incorrect to call "
       "this method with posts outstanding.");
 
-    if (debug_) {
+    if (verbose) {
       const int myRank = comm_->getRank ();
       std::ostringstream os;
       os << "Proc " << myRank
@@ -2066,7 +2073,7 @@ namespace Tpetra {
       *out_ << os.str ();
     }
     doPosts (exports, numPackets, imports);
-    if (debug_) {
+    if (verbose) {
       const int myRank = comm_->getRank ();
       std::ostringstream os;
       os << "Proc " << myRank
@@ -2123,6 +2130,7 @@ namespace Tpetra {
     typedef ExpView exports_view_type;
     typedef ImpView imports_view_type;
 
+    const bool verbose = Tpetra::Details::Behavior::verbose("Distributor");
 #ifdef KOKKOS_HAVE_CUDA
     static_assert (! std::is_same<typename ExpView::memory_space, Kokkos::CudaUVMSpace>::value &&
                    ! std::is_same<typename ImpView::memory_space, Kokkos::CudaUVMSpace>::value,
@@ -2141,7 +2149,7 @@ namespace Tpetra {
     const bool doBarrier = barrierBetween_;
 
     Teuchos::OSTab tab0 (out_);
-    if (debug_) {
+    if (verbose) {
       std::ostringstream os;
       os << "Proc " << myRank
          << ": Distributor::doPosts(3 args, Kokkos)" << endl;
@@ -2166,11 +2174,11 @@ namespace Tpetra {
       // Each message has the same number of packets.
       const size_t totalNumImportPackets = totalReceiveLength_ * numPackets;
 
-      if (debug_) {
+      if (verbose) {
         std::ostringstream os;
         os << "Proc " << myRank << ": doPosts: totalNumImportPackets = " <<
           totalNumImportPackets << " = " << totalReceiveLength_ << " * " <<
-          numPackets << "; imports.dimension_0() = " << imports.dimension_0 ()
+          numPackets << "; imports.extent(0) = " << imports.extent (0)
            << endl;
         *out_ << os.str ();
       }
@@ -2178,7 +2186,7 @@ namespace Tpetra {
 #ifdef HAVE_TPETRA_DEBUG
       // mfh 31 Mar 2016: Extra special all-reduce check to help diagnose #227.
       {
-        const size_t importBufSize = static_cast<size_t> (imports.dimension_0 ());
+        const size_t importBufSize = static_cast<size_t> (imports.extent (0));
         const int lclBad = (importBufSize < totalNumImportPackets) ? 1 : 0;
         int gblBad = 0;
         using Teuchos::reduceAll;
@@ -2195,11 +2203,11 @@ namespace Tpetra {
       }
 #else
       TEUCHOS_TEST_FOR_EXCEPTION
-        (static_cast<size_t> (imports.dimension_0 ()) < totalNumImportPackets,
+        (static_cast<size_t> (imports.extent (0)) < totalNumImportPackets,
          std::runtime_error,
          "Tpetra::Distributor::doPosts(3 args, Kokkos): The 'imports' "
          "array must have enough entries to hold the expected number of import "
-         "packets.  imports.dimension_0() = " << imports.dimension_0 () << " < "
+         "packets.  imports.extent(0) = " << imports.extent (0) << " < "
          "totalNumImportPackets = " << totalNumImportPackets << " = "
          "totalReceiveLength_ (" << totalReceiveLength_ << ") * numPackets ("
          << numPackets << ").");
@@ -2239,7 +2247,7 @@ namespace Tpetra {
       as<size_type> (selfMessage_ ? 1 : 0);
     requests_.resize (0);
 
-    if (debug_) {
+    if (verbose) {
       std::ostringstream os;
       os << "Proc " << myRank << ": doPosts(3 args, Kokkos, "
          << (indicesTo_.empty () ? "fast" : "slow") << "): Post receives"
@@ -2261,7 +2269,7 @@ namespace Tpetra {
       for (size_type i = 0; i < actualNumReceives; ++i) {
         const size_t curBufLen = lengthsFrom_[i] * numPackets;
         if (procsFrom_[i] != myRank) {
-          if (debug_) {
+          if (verbose) {
             std::ostringstream os;
             os << "Proc " << myRank << ": doPosts(3 args, Kokkos, "
                << (indicesTo_.empty () ? "fast" : "slow") << "): "
@@ -2300,7 +2308,7 @@ namespace Tpetra {
       Teuchos::TimeMonitor timeMonBarrier (*timer_doPosts3_barrier_);
 #endif // TPETRA_DISTRIBUTOR_TIMERS
 
-      if (debug_) {
+      if (verbose) {
         std::ostringstream os;
         os << "Proc " << myRank << ": doPosts(3 args, Kokkos, "
            << (indicesTo_.empty () ? "fast" : "slow") << "): Barrier" << endl;
@@ -2335,7 +2343,7 @@ namespace Tpetra {
     size_t selfNum = 0;
     size_t selfIndex = 0;
 
-    if (debug_) {
+    if (verbose) {
       std::ostringstream os;
       os << "Proc " << myRank << ": doPosts(3 args, Kokkos, "
          << (indicesTo_.empty () ? "fast" : "slow") << "): Post sends" << endl;
@@ -2343,7 +2351,7 @@ namespace Tpetra {
     }
 
     if (indicesTo_.empty()) {
-      if (debug_) {
+      if (verbose) {
         std::ostringstream os;
         os << "Proc " << myRank
            << ": doPosts(3 args, Kokkos, fast): posting sends" << endl;
@@ -2359,7 +2367,7 @@ namespace Tpetra {
         }
 
         if (procsTo_[p] != myRank) {
-          if (debug_) {
+          if (verbose) {
             std::ostringstream os;
             os << "Proc " << myRank << ": doPosts(3 args, Kokkos, fast): Post send: "
               "{target: " << procsTo_[p] << ", tag: " << tag << "}" << endl;
@@ -2414,7 +2422,7 @@ namespace Tpetra {
       }
 
       if (selfMessage_) {
-        if (debug_) {
+        if (verbose) {
           std::ostringstream os;
           os << "Proc " << myRank
              << ": doPosts(3 args, Kokkos, fast): Self-send" << endl;
@@ -2431,14 +2439,14 @@ namespace Tpetra {
                          startsTo_[selfNum]*numPackets,
                          lengthsTo_[selfNum]*numPackets);
       }
-      if (debug_) {
+      if (verbose) {
         std::ostringstream os;
         os << "Proc " << myRank << ": doPosts(3 args, Kokkos, fast) done" << endl;
         *out_ << os.str ();
       }
     }
     else { // data are not blocked by proc, use send buffer
-      if (debug_) {
+      if (verbose) {
         std::ostringstream os;
         os << "Proc " << myRank
            << ": doPosts(3 args, Kokkos, slow): posting sends" << endl;
@@ -2467,7 +2475,7 @@ namespace Tpetra {
         }
 
         if (procsTo_[p] != myRank) {
-          if (debug_) {
+          if (verbose) {
             std::ostringstream os;
             os << "Proc " << myRank
                << ": doPosts(3 args, Kokkos, slow): Post send: {target: "
@@ -2522,7 +2530,7 @@ namespace Tpetra {
       }
 
       if (selfMessage_) {
-        if (debug_) {
+        if (verbose) {
           std::ostringstream os;
           os << "Proc " << myRank
              << ": doPosts(3 args, Kokkos, slow): Self-send" << endl;
@@ -2535,7 +2543,7 @@ namespace Tpetra {
           selfReceiveOffset += numPackets;
         }
       }
-      if (debug_) {
+      if (verbose) {
         std::ostringstream os;
         os << "Proc " << myRank
            << ": doPosts(3 args, Kokkos, slow) done" << endl;
@@ -2543,7 +2551,7 @@ namespace Tpetra {
       }
     }
 
-    if (debug_) {
+    if (verbose) {
       std::ostringstream os;
       os << "Proc " << myRank << ": doPosts done" << endl;
       *out_ << os.str ();
@@ -2577,6 +2585,7 @@ namespace Tpetra {
     typedef Array<size_t>::size_type size_type;
     typedef ExpView exports_view_type;
     typedef ImpView imports_view_type;
+    const bool verbose = Tpetra::Details::Behavior::verbose("Distributor");
 
 #ifdef KOKKOS_HAVE_CUDA
     static_assert (! std::is_same<typename ExpView::memory_space, Kokkos::CudaUVMSpace>::value &&
@@ -2637,10 +2646,10 @@ namespace Tpetra {
       totalNumImportPackets += numImportPacketsPerLID[ii];
     }
     TEUCHOS_TEST_FOR_EXCEPTION(
-      imports.dimension_0 () < totalNumImportPackets, std::runtime_error,
+      imports.extent (0) < totalNumImportPackets, std::runtime_error,
       "Tpetra::Distributor::doPosts(4 args, Kokkos): The 'imports' array must have "
       "enough entries to hold the expected number of import packets.  "
-      "imports.dimension_0() = " << imports.dimension_0 () << " < "
+      "imports.extent(0) = " << imports.extent (0) << " < "
       "totalNumImportPackets = " << totalNumImportPackets << ".");
 #endif // HAVE_TEUCHOS_DEBUG
 
@@ -2657,6 +2666,8 @@ namespace Tpetra {
         requests_.size () != 0, std::logic_error, "Tpetra::Distributor::"
         "doPosts(4 args, Kokkos): Process " << myProcID << ": requests_.size () = "
         << requests_.size () << " != 0.");
+    }
+    if (verbose) {
       std::ostringstream os;
       os << "Proc " << myProcID << ": doPosts(4 args, Kokkos, "
          << (indicesTo_.empty () ? "fast" : "slow") << ")" << endl;
@@ -2765,7 +2776,7 @@ namespace Tpetra {
     size_t selfNum = 0;
     size_t selfIndex = 0;
     if (indicesTo_.empty()) {
-      if (debug_) {
+      if (verbose) {
         std::ostringstream os;
         os << "Proc " << myProcID
            << ": doPosts(4 args, Kokkos, fast): posting sends" << endl;
@@ -2822,14 +2833,14 @@ namespace Tpetra {
         deep_copy_offset(imports, exports, selfReceiveOffset,
                          sendPacketOffsets[selfNum], packetsPerSend[selfNum]);
       }
-      if (debug_) {
+      if (verbose) {
         std::ostringstream os;
         os << "Proc " << myProcID << ": doPosts(4 args, Kokkos, fast) done" << endl;
         *out_ << os.str ();
       }
     }
     else { // data are not blocked by proc, use send buffer
-      if (debug_) {
+      if (verbose) {
         std::ostringstream os;
         os << "Proc " << myProcID << ": doPosts(4 args, Kokkos, slow): posting sends" << endl;
         *out_ << os.str ();
@@ -2913,7 +2924,7 @@ namespace Tpetra {
           ++selfIndex;
         }
       }
-      if (debug_) {
+      if (verbose) {
         std::ostringstream os;
         os << "Proc " << myProcID
            << ": doPosts(4 args, Kokkos, slow) done" << endl;
@@ -3007,10 +3018,11 @@ namespace Tpetra {
     using Teuchos::ArrayView;
     using std::endl;
     typedef typename ArrayView<const OrdinalType>::size_type size_type;
+    const bool verbose = Tpetra::Details::Behavior::verbose("Distributor");
 
     Teuchos::OSTab tab (out_);
     const int myRank = comm_->getRank ();
-    if (debug_) {
+    if (verbose) {
       std::ostringstream os;
       os << "Proc " << myRank << ": computeSends" << endl;
       *out_ << os.str ();
@@ -3034,7 +3046,7 @@ namespace Tpetra {
     // pairs to importProcIDs[i].
     //
     Distributor tempPlan (comm_, out_);
-    if (debug_) {
+    if (verbose) {
       std::ostringstream os;
       os << "Proc " << myRank << ": computeSends: tempPlan.createFromSends" << endl;
       *out_ << os.str ();
@@ -3087,7 +3099,7 @@ namespace Tpetra {
       << ".  Please report this bug to the Tpetra developers.");
 
     Array<size_t> exportObjs (tempPlan.getTotalReceiveLength () * 2);
-    if (debug_) {
+    if (verbose) {
       std::ostringstream os;
       os << "Proc " << myRank << ": computeSends: tempPlan.doPostsAndWaits" << endl;
       *out_ << os.str ();
@@ -3100,7 +3112,7 @@ namespace Tpetra {
       exportProcIDs[i] = static_cast<int> (exportObjs[2*i+1]);
     }
 
-    if (debug_) {
+    if (verbose) {
       std::ostringstream os;
       os << "Proc " << myRank << ": computeSends done" << endl;
       *out_ << os.str ();
@@ -3115,11 +3127,12 @@ namespace Tpetra {
                    Teuchos::Array<int> &exportProcIDs)
   {
     using std::endl;
+    const bool verbose = Tpetra::Details::Behavior::verbose("Distributor");
 
     Teuchos::OSTab tab (out_);
     const int myRank = comm_->getRank();
 
-    if (debug_) {
+    if (verbose) {
       *out_ << "Proc " << myRank << ": createFromRecvs" << endl;
     }
 
@@ -3152,7 +3165,7 @@ namespace Tpetra {
 
     const size_t numProcsSendingToMe = createFromSends (exportProcIDs ());
 
-    if (debug_) {
+    if (verbose) {
       // NOTE (mfh 20 Mar 2014) If remoteProcIDs could contain
       // duplicates, then its length might not be the right check here,
       // even if we account for selfMessage_.  selfMessage_ is set in
@@ -3162,10 +3175,10 @@ namespace Tpetra {
          << numProcsSendingToMe << ", remoteProcIDs.size(): "
          << remoteProcIDs.size () << ", selfMessage_: "
          << (selfMessage_ ? "true" : "false") << "}" << std::endl;
-      std::cerr << os.str ();
+      *out_ << os.str ();
     }
 
-    if (debug_) {
+    if (verbose) {
       *out_ << "Proc " << myRank << ": createFromRecvs done" << endl;
     }
 

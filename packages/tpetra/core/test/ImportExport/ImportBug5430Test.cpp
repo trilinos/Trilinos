@@ -188,9 +188,8 @@ countFailures (const Teuchos::RCP<const Teuchos::Comm<int> >& teuchosComm,
 
 } // namespace (anonymous)
 
-
-int
-main (int argc, char *argv[])
+bool
+testMain (int argc, char *argv[])
 {
   using Teuchos::ArrayRCP;
   using Teuchos::ArrayView;
@@ -209,8 +208,6 @@ main (int argc, char *argv[])
   bool success = true; // May be changed by tests
 
   Teuchos::oblackholestream blackHole;
-  //Teuchos::GlobalMPISession (&argc, &argv, &blackHole);
-  MPI_Init (&argc, &argv);
 
   //
   // Construct communicators, and verify that we are on 4 processors.
@@ -226,7 +223,7 @@ main (int argc, char *argv[])
   // Verify that we are on four processors (which manifests the bug).
   if (teuchosComm->getSize() != 4) {
     out << "This test must be run on four processors.  Exiting ..." << endl;
-    return EXIT_FAILURE;
+    return false;
   }
 
   // We also need an Epetra Comm, so that we can compare Tpetra and
@@ -254,9 +251,7 @@ main (int argc, char *argv[])
                   "Print Tpetra output (in verbose mode only).");
   // Parse command-line options.
   if (cmdp.parse (argc,argv) != CommandLineProcessor::PARSE_SUCCESSFUL) {
-    out << "End Result: TEST FAILED" << endl;
-    MPI_Finalize ();
-    return EXIT_FAILURE;
+    return false;
   }
 
   if (verbose) {
@@ -507,9 +502,26 @@ main (int argc, char *argv[])
                              tpetraOverlapMap, tpetraOverlapVector, verbose);
   } // if testOtherDirections
 
-  out << "End Result: TEST " << (success ? "PASSED" : "FAILED") << endl;
+  return success;
+}
+
+int
+main (int argc, char *argv[])
+{
+  MPI_Init (&argc, &argv);
+  int myRank = 0;
+  MPI_Comm_rank (MPI_COMM_WORLD, &myRank);
+  const bool success = testMain (argc, argv);
   MPI_Finalize ();
+
+  if (myRank == 0) {
+    std::cout << "End Result: TEST " << (success ? "PASSED" : "FAILED") << std::endl;
+  }
   return success ? EXIT_SUCCESS : EXIT_FAILURE;
 }
+
+
+
+
 
 

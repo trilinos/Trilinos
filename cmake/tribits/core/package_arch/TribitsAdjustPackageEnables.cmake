@@ -302,7 +302,7 @@ ENDMACRO()
 #      [LIB_OPTIONAL_TPLS <tpl1> <tpl2> ...]
 #      [TEST_REQUIRED_TPLS <tpl1> <tpl2> ...]
 #      [TEST_OPTIONAL_TPLS <tpl1> <tpl2> ...]
-#      [REGRESSION_EMAIL_LIST  <regression-email-address>
+#      [REGRESSION_EMAIL_LIST  <regression-email-address>]
 #      [SUBPACKAGES_DIRS_CLASSIFICATIONS_OPTREQS
 #        <spkg1_name>  <spkg1_dir>  <spkg1_classifications>  <spkg1_optreq>
 #        <spkg2_name>  <spkg2_dir>  <spkg2_classifications>  <spkg2_optreq>
@@ -692,6 +692,7 @@ ENDMACRO()
 # Macro that reads in a single subpackage dependencies file and sets up
 # the dependency structure for it.
 #
+
 MACRO(TRIBITS_READ_SUBPACKAGE_DEPENDENCIES  PACKAGE_NAME  PACKAGE_DIR
   SUBPACKAGE_NAME  SUBPACKAGE_DIR)
 

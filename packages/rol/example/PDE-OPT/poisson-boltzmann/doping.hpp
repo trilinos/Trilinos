@@ -52,16 +52,16 @@
 template <class Real>
 class Doping {
 private:
-  const Teuchos::RCP<FE<Real> > fe_;
-  const Teuchos::RCP<Intrepid::FieldContainer<Real> > cellNodes_;
-  const Teuchos::RCP<Intrepid::FieldContainer<int> > cellDofs_;
+  const ROL::Ptr<FE<Real> > fe_;
+  const ROL::Ptr<Intrepid::FieldContainer<Real> > cellNodes_;
+  const ROL::Ptr<Intrepid::FieldContainer<int> > cellDofs_;
   const Teuchos::Array<int> cellIds_;
   Real a_, b_, wx_, wy_;
 
 public:
-  Doping(const Teuchos::RCP<FE<Real> > &fe,
-         const Teuchos::RCP<Intrepid::FieldContainer<Real> > & cellNodes,
-         const Teuchos::RCP<Intrepid::FieldContainer<int> > & cellDofs,
+  Doping(const ROL::Ptr<FE<Real> > &fe,
+         const ROL::Ptr<Intrepid::FieldContainer<Real> > & cellNodes,
+         const ROL::Ptr<Intrepid::FieldContainer<int> > & cellDofs,
          const Teuchos::Array<int> & cellIds,
          Teuchos::ParameterList &parlist)
     : fe_(fe), cellNodes_(cellNodes), cellDofs_(cellDofs), cellIds_(cellIds) {
@@ -80,12 +80,12 @@ public:
     return (inRegion1 || inRegion2 ? b_ : a_);
   }
 
-  void build(const Teuchos::RCP<Tpetra::MultiVector<> > &dpVec) const {
+  void build(const ROL::Ptr<Tpetra::MultiVector<> > &dpVec) const {
     int c = fe_->gradN()->dimension(0);
     int f = fe_->gradN()->dimension(1);
     int d = fe_->gradN()->dimension(3);
-    Teuchos::RCP<Intrepid::FieldContainer<Real> > dofPoints =
-      Teuchos::rcp(new Intrepid::FieldContainer<Real>(c,f,d));
+    ROL::Ptr<Intrepid::FieldContainer<Real> > dofPoints =
+      ROL::makePtr<Intrepid::FieldContainer<Real>>(c,f,d);
     fe_->computeDofCoords(dofPoints, cellNodes_);
     
     std::vector<Real> coord(d);
@@ -108,17 +108,17 @@ public:
 template <class Real>
 class DopingBounds {
 private:
-  const Teuchos::RCP<FE<Real> > fe_;
-  const Teuchos::RCP<Intrepid::FieldContainer<Real> > cellNodes_;
-  const Teuchos::RCP<Intrepid::FieldContainer<int> > cellDofs_;
+  const ROL::Ptr<FE<Real> > fe_;
+  const ROL::Ptr<Intrepid::FieldContainer<Real> > cellNodes_;
+  const ROL::Ptr<Intrepid::FieldContainer<int> > cellDofs_;
   const Teuchos::Array<int> cellIds_;
   Real a_, b_, wx_, wy_, lo_, hi_;
   bool useConstant_;
 
 public:
-  DopingBounds(const Teuchos::RCP<FE<Real> > &fe,
-               const Teuchos::RCP<Intrepid::FieldContainer<Real> > & cellNodes,
-               const Teuchos::RCP<Intrepid::FieldContainer<int> > & cellDofs,
+  DopingBounds(const ROL::Ptr<FE<Real> > &fe,
+               const ROL::Ptr<Intrepid::FieldContainer<Real> > & cellNodes,
+               const ROL::Ptr<Intrepid::FieldContainer<int> > & cellDofs,
                const Teuchos::Array<int> & cellIds,
                Teuchos::ParameterList &parlist)
     : fe_(fe), cellNodes_(cellNodes), cellDofs_(cellDofs), cellIds_(cellIds) {
@@ -156,13 +156,13 @@ public:
     return hi_;
   }
 
-  void build(const Teuchos::RCP<Tpetra::MultiVector<> > &loVec,
-             const Teuchos::RCP<Tpetra::MultiVector<> > &hiVec) const {
+  void build(const ROL::Ptr<Tpetra::MultiVector<> > &loVec,
+             const ROL::Ptr<Tpetra::MultiVector<> > &hiVec) const {
     int c = fe_->gradN()->dimension(0);
     int f = fe_->gradN()->dimension(1);
     int d = fe_->gradN()->dimension(3);
-    Teuchos::RCP<Intrepid::FieldContainer<Real> > dofPoints =
-      Teuchos::rcp(new Intrepid::FieldContainer<Real>(c,f,d));
+    ROL::Ptr<Intrepid::FieldContainer<Real> > dofPoints =
+      ROL::makePtr<Intrepid::FieldContainer<Real>>(c,f,d);
     fe_->computeDofCoords(dofPoints, cellNodes_);
     
     std::vector<Real> coord(d);

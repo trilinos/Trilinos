@@ -139,7 +139,7 @@ namespace MueLu {
     if(fineIsPadded == true || fineLevel.GetLevelID() > 0) {
 
       // build prolongation operator for padded fine level matrices.
-      // Note: padded fine level dofs are transfered by injection.
+      // Note: padded fine level dofs are transferred by injection.
       // That is, these interpolation stencils do not take averages of
       // coarse level variables. Further, fine level Dirichlet points
       // also use injection.

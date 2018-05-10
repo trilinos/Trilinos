@@ -479,7 +479,7 @@ namespace {
     // const GO gblNumGids = static_cast<GO> (numProcs * lclNumGids);
     Array<GO> domMapGids (lclNumGids);
     for (LO lid = 0; lid < lclNumGids; ++lid) {
-      const GO gid = static_cast<GO> (lid) + myRank + lclNumGids;
+      const GO gid = static_cast<GO> (lid) + myRank * lclNumGids;
       domMapGids[lid] = gid;
     }
     ArrayView<const GO> oldColMapGids = domMapGids ();

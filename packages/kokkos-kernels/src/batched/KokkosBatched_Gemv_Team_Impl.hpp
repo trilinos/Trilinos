@@ -43,7 +43,7 @@ namespace KokkosBatched {
              const yViewType &y) {
         return TeamGemvInternal<Algo::Gemv::Unblocked>::
           invoke(member,
-                 A.dimension_0(), A.dimension_1(),
+                 A.extent(0), A.extent(1),
                  alpha, 
                  A.data(), A.stride_0(), A.stride_1(),
                  x.data(), x.stride_0(),
@@ -69,7 +69,7 @@ namespace KokkosBatched {
              const yViewType &y) {
         return TeamGemvInternal<Algo::Gemv::Blocked>::
           invoke(member,
-                 A.dimension_0(), A.dimension_1(),
+                 A.extent(0), A.extent(1),
                  alpha, 
                  A.data(), A.stride_0(), A.stride_1(),
                  x.data(), x.stride_0(),
@@ -99,7 +99,7 @@ namespace KokkosBatched {
              const yViewType &y) {
         return TeamGemvInternal<Algo::Gemv::Unblocked>::
           invoke(member,
-                 A.dimension_1(), A.dimension_0(),
+                 A.extent(1), A.extent(0),
                  alpha, 
                  A.data(), A.stride_1(), A.stride_0(),
                  x.data(), x.stride_0(),
@@ -125,7 +125,7 @@ namespace KokkosBatched {
              const yViewType &y) {
         return TeamGemvInternal<Algo::Gemv::Blocked>::
           invoke(member,
-                 A.dimension_1(), A.dimension_0(),
+                 A.extent(1), A.extent(0),
                  alpha, 
                  A.data(), A.stride_1(), A.stride_0(),
                  x.data(), x.stride_0(),

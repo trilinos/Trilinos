@@ -32,6 +32,7 @@
 #include "Rythmos_Types.hpp"
 #include "Thyra_VectorBase.hpp"
 #include "Teuchos_Describable.hpp"
+#include <list>
 
 namespace Rythmos {
 
@@ -59,7 +60,7 @@ class DataStore : virtual public Teuchos::Describable
     /** \brief. */
     // This is a shallow copy constructor, use clone for a deep copy
     DataStore(const DataStore<Scalar>& ds_in);
-    
+
     /** \brief. */
     // This is a deep clone and copies the underlying vectors
     RCP<DataStore<Scalar> > clone() const;

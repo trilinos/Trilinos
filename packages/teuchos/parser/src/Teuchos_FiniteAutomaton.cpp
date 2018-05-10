@@ -13,7 +13,7 @@
 
 namespace Teuchos {
 
-template class Table<int>;
+template struct Table<int>;
 
 FiniteAutomaton::FiniteAutomaton(int nsymbols_init, bool is_deterministic_init,
     int nstates_reserve):
@@ -160,8 +160,8 @@ void unite(FiniteAutomaton& result, FiniteAutomaton const& a, FiniteAutomaton co
   append_states(out, b);
   int epsilon0 = get_epsilon0(out);
   int epsilon1 = get_epsilon1(out);
-  add_transition(out, start_state, epsilon0, a_offset); 
-  add_transition(out, start_state, epsilon1, b_offset); 
+  add_transition(out, start_state, epsilon0, a_offset);
+  add_transition(out, start_state, epsilon1, b_offset);
   using std::swap;
   swap(out, result);
 }

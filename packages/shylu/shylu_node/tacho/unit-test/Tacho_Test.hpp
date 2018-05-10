@@ -10,4 +10,6 @@
 #include "Tacho_TestDenseMatrixView.hpp"
 #include "Tacho_TestDenseByBlocks.hpp"
 
+#include "Tacho_TestDenseLinearAlgebra.hpp"
+
 #endif

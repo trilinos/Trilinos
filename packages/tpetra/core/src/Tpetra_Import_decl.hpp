@@ -223,10 +223,50 @@ namespace Tpetra {
     /// transpose of a sparse matrix.
     Import (const Export<LocalOrdinal,GlobalOrdinal,Node>& exporter);
 
-    /// \bief Full Expert constructor
-    /// Requirements: source and target maps are fully correct
+    /// \brief Constructor that computes optimized target Map.
     ///
+    /// Like every other Import constructor, this must be called
+    /// collectively on all processes in the input Map's communicator.
+    ///
+    /// \pre <tt>sourceMap->isOneToOne() </tt>
+    ///
+    /// \param sourceMap [in] Source Map of the Import.
+    ///
+    /// \param targetMapRemoteOrPermuteGlobalIndices [in] On the
+    ///   calling process, the global indices that will go into the
+    ///   target Map.  May differ on each process, just like Map's
+    ///   noncontiguous constructor.  No index in here on this process
+    ///   may also appear in \c sourceMap on this process.
+    ///
+    /// \param targetMapRemoteOrPermuteProcessRanks [in] For k in 0,
+    ///   ..., <tt>numTargetMapRemoteOrPermuteGlobalIndices-1</tt>,
+    ///   <tt>targetMapRemoteOrPermuteProcessRanks[k]</tt> is the rank
+    ///   of the MPI process from which to receive data for global
+    ///   index <tt>targetMapRemoteOrPermuteGlobalIndices[k]</tt>.
+    ///
+    /// \param numTargetMapRemoteOrPermuteGlobalIndices [in] Number of
+    ///   valid entries in the two input arrays above.  May differ on
+    ///   different processes.  May be zero on some or even all
+    ///   processes.
+    ///
+    /// \param mayReorderTargetMapIndicesLocally [in] If true, then
+    ///   this constructor reserves the right to reorder the target
+    ///   Map indices on each process, for better communication
+    ///   performance.
+    Import (const Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> >& sourceMap,
+            const GlobalOrdinal targetMapRemoteOrPermuteGlobalIndices[],
+            const int targetMapRemoteOrPermuteProcessRanks[],
+            const LocalOrdinal numTargetMapRemoteOrPermuteGlobalIndices,
+            const bool mayReorderTargetMapIndicesLocally,
+            const Teuchos::RCP<Teuchos::ParameterList>& plist = Teuchos::null,
+            const Teuchos::RCP<Teuchos::FancyOStream>& out = Teuchos::null);
 
+    /// \brief Expert constructor.
+    ///
+    /// \warning THIS IS FOR EXPERT USERS ONLY.  More specifically,
+    ///   this constructor exists for MueLu (algebraic multigrid)
+    ///   setup ONLY.  If you aren't a MueLu or Tpetra developer,
+    ///   DON'T USE THIS.
     Import (const Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> >& source,
             const Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> >& target,
             Teuchos::Array<int> & userRemotePIDs,
@@ -236,7 +276,6 @@ namespace Tpetra {
             const bool useRemotePIDs,
             const Teuchos::RCP<Teuchos::ParameterList>& plist = Teuchos::null,
             const Teuchos::RCP<Teuchos::FancyOStream>& out = Teuchos::null);
-
 
     //! Destructor.
     virtual ~Import ();
@@ -313,6 +352,29 @@ namespace Tpetra {
     //! Assignment operator.
     Import<LocalOrdinal,GlobalOrdinal,Node>&
     operator= (const Import<LocalOrdinal,GlobalOrdinal,Node>& Source);
+
+    /// \brief Find the union of the target IDs from two Import objects.
+    ///
+    /// On return, the input arrays permuteGIDs[1,2] and remotePGIDs[1,2] will
+    /// be ordered.  unionTgtGIDs are ordered as [{same}, {permute}, {remote}].
+    /// {same} is ordered identically to the target map with most "same"
+    /// indices.  {permute} is ordered from smallest ID to largest.  {remote} is
+    /// ordered by remote process ID and ID, respectively.  remotePGIDs are
+    /// ordered the same as {remote}.
+    void
+    findUnionTargetGIDs(Teuchos::Array<GlobalOrdinal>& unionTgtGIDs,
+                        Teuchos::Array<std::pair<int,GlobalOrdinal>>& remotePGIDs,
+                        typename Teuchos::Array<GlobalOrdinal>::size_type& numSameGIDs,
+                        typename Teuchos::Array<GlobalOrdinal>::size_type& numPermuteGIDs,
+                        typename Teuchos::Array<GlobalOrdinal>::size_type& numRemoteGIDs,
+                        const Teuchos::ArrayView<const GlobalOrdinal>& sameGIDs1,
+                        const Teuchos::ArrayView<const GlobalOrdinal>& sameGIDs2,
+                        Teuchos::Array<GlobalOrdinal>& permuteGIDs1,
+                        Teuchos::Array<GlobalOrdinal>& permuteGIDs2,
+                        Teuchos::Array<GlobalOrdinal>& remoteGIDs1,
+                        Teuchos::Array<GlobalOrdinal>& remoteGIDs2,
+                        Teuchos::Array<int>& remotePIDs1,
+                        Teuchos::Array<int>& remotePIDs2) const;
 
     /// \brief Return the union of this Import and \c rhs.
     ///

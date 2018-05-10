@@ -54,6 +54,9 @@
 // Xpetra
 #include <Xpetra_MultiVectorFactory.hpp>
 #include <Xpetra_ImportFactory.hpp>
+#include <Xpetra_Operator.hpp>
+#include <Xpetra_Map.hpp>
+#include <Xpetra_MultiVector.hpp>
 #include <Xpetra_IO.hpp>
 
 // Galeri
@@ -72,6 +75,7 @@
 #include <MueLu_MutuallyExclusiveTime.hpp>
 #include <MueLu_ParameterListInterpreter.hpp>
 #include <MueLu_Utilities.hpp>
+#include <MatrixLoad.hpp>
 
 #ifdef HAVE_MUELU_BELOS
 #include <BelosConfigDefs.hpp>
@@ -82,9 +86,60 @@
 #include <BelosPseudoBlockCGSolMgr.hpp>
 #include <BelosXpetraAdapter.hpp>     // => This header defines Belos::XpetraOp
 #include <BelosMueLuAdapter.hpp>      // => This header defines Belos::MueLuOp
+#ifdef HAVE_MUELU_TPETRA
+#include <BelosTpetraAdapter.hpp>    // => This header defines Belos::TpetraOp
+#endif
+#endif
+
+
+#ifdef HAVE_MUELU_CUDA
+#include "cuda_profiler_api.h"
+#endif
+
+#ifdef HAVE_MUELU_AMGX
+#include <MueLu_AMGXOperator.hpp>
+#endif
+#ifdef HAVE_MUELU_TPETRA
+#include <MueLu_TpetraOperator.hpp>
+#include <MueLu_CreateTpetraPreconditioner.hpp>
+#include <Xpetra_TpetraOperator.hpp>
 #endif
 
 #include <MueLu_CreateXpetraPreconditioner.hpp>
+
+
+/*********************************************************************/
+// Support for ML interface
+#if defined(HAVE_MUELU_ML) and defined(HAVE_MUELU_EPETRA)
+#include <Xpetra_EpetraOperator.hpp>
+#include <ml_MultiLevelPreconditioner.h>
+
+// Helper functions for compilation purposes
+template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+struct ML_Wrapper{
+  static void Generate_ML_MultiLevelPreconditioner(Teuchos::RCP<Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > & A, Teuchos::ParameterList & mueluList,
+                                                   Teuchos::RCP<Xpetra::Operator<Scalar,LocalOrdinal,GlobalOrdinal,Node> > & mlopX) {
+    throw std::runtime_error("Template parameter mismatch");
+  }
+};
+
+
+template<class GlobalOrdinal>
+struct ML_Wrapper<double,int,GlobalOrdinal,Kokkos::Compat::KokkosSerialWrapperNode> {
+  static void Generate_ML_MultiLevelPreconditioner(Teuchos::RCP<Xpetra::Matrix<double,int,GlobalOrdinal,Kokkos::Compat::KokkosSerialWrapperNode> >& A,Teuchos::ParameterList & mueluList,
+                                                   Teuchos::RCP<Xpetra::Operator<double,int,GlobalOrdinal,Kokkos::Compat::KokkosSerialWrapperNode> >& mlopX) {
+    typedef double SC;
+    typedef int LO;
+    typedef GlobalOrdinal GO;
+    typedef Kokkos::Compat::KokkosSerialWrapperNode NO;
+    Teuchos::RCP<const Epetra_CrsMatrix> Aep   = Xpetra::Helpers<SC, LO, GO, NO>::Op2EpetraCrs(A);
+    Teuchos::RCP<Epetra_Operator> mlop  = Teuchos::rcp<Epetra_Operator>(new ML_Epetra::MultiLevelPreconditioner(*Aep,mueluList));
+    mlopX = Teuchos::rcp(new Xpetra::EpetraOperator<GO,NO>(mlop));
+  }
+};
+#endif
+/*********************************************************************/
+
 
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int argc, char *argv[]) {
@@ -121,7 +176,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
   double      dtol              = 1e-12, tol;        clp.setOption("tol",                   &dtol,              "solver convergence tolerance");
   bool        binaryFormat      = false;             clp.setOption("binary", "ascii",       &binaryFormat,      "print timings to screen");
 
-  std::string rowmapFile;                            clp.setOption("rowmap",                &rowmapFile,        "map data file");
+  std::string rowMapFile;                            clp.setOption("rowmap",                &rowMapFile,        "map data file");
   std::string colMapFile;                            clp.setOption("colmap",                &colMapFile,        "colmap data file");
   std::string domainMapFile;                         clp.setOption("domainmap",             &domainMapFile,     "domainmap data file");
   std::string rangeMapFile;                          clp.setOption("rangemap",              &rangeMapFile,      "rangemap data file");
@@ -132,6 +187,11 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
   int         numRebuilds       = 0;                 clp.setOption("rebuild",               &numRebuilds,       "#times to rebuild hierarchy");
   int         maxIts            = 200;               clp.setOption("its",                   &maxIts,            "maximum number of solver iterations");
   bool        scaleResidualHist = true;              clp.setOption("scale", "noscale",      &scaleResidualHist, "scaled Krylov residual history");
+  bool        solvePreconditioned = true;            clp.setOption("solve-preconditioned","no-solve-preconditioned", &solvePreconditioned, "use MueLu preconditioner in solve");
+#ifdef HAVE_MUELU_CUDA
+  bool profileSetup = false;                         clp.setOption("cuda-profile-setup", "no-cuda-profile-setup", &profileSetup, "enable CUDA profiling for setup");
+  bool profileSolve = false;                         clp.setOption("cuda-profile-solve", "no-cuda-profile-solve", &profileSolve, "enable CUDA profiling for solve");
+#endif
 
   clp.recogniseAllOptions(true);
   switch (clp.parse(argc, argv)) {
@@ -177,129 +237,15 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
 
   RCP<Matrix>      A;
   RCP<const Map>   map;
-  RCP<MultiVector> coordinates;
-  RCP<MultiVector> nullspace;
-  if (matrixFile.empty()) {
-    galeriStream << "========================================================\n" << xpetraParameters << galeriParameters;
+  RCP<RealValuedMultiVector> coordinates;
+  typedef typename RealValuedMultiVector::scalar_type Real;
+  RCP<Xpetra::MultiVector<SC,LO,GO,NO> > nullspace;
+  RCP<MultiVector> X, B;
 
-    // Galeri will attempt to create a square-as-possible distribution of subdomains di, e.g.,
-    //                                 d1  d2  d3
-    //                                 d4  d5  d6
-    //                                 d7  d8  d9
-    //                                 d10 d11 d12
-    // A perfect distribution is only possible when the #processors is a perfect square.
-    // This *will* result in "strip" distribution if the #processors is a prime number or if the factors are very different in
-    // size. For example, np=14 will give a 7-by-2 distribution.
-    // If you don't want Galeri to do this, specify mx or my on the galeriList.
-    std::string matrixType = galeriParameters.GetMatrixType();
-
-    // Create map and coordinates
-    // In the future, we hope to be able to first create a Galeri problem, and then request map and coordinates from it
-    // At the moment, however, things are fragile as we hope that the Problem uses same map and coordinates inside
-    if (matrixType == "Laplace1D") {
-      map = Galeri::Xpetra::CreateMap<LO, GO, Node>(xpetraParameters.GetLib(), "Cartesian1D", comm, galeriList);
-      coordinates = Galeri::Xpetra::Utils::CreateCartesianCoordinates<SC,LO,GO,Map,MultiVector>("1D", map, galeriList);
-
-    } else if (matrixType == "Laplace2D" || matrixType == "Star2D" ||
-               matrixType == "BigStar2D" || matrixType == "Elasticity2D") {
-      map = Galeri::Xpetra::CreateMap<LO, GO, Node>(xpetraParameters.GetLib(), "Cartesian2D", comm, galeriList);
-      coordinates = Galeri::Xpetra::Utils::CreateCartesianCoordinates<SC,LO,GO,Map,MultiVector>("2D", map, galeriList);
-
-    } else if (matrixType == "Laplace3D" || matrixType == "Brick3D" || matrixType == "Elasticity3D") {
-      map = Galeri::Xpetra::CreateMap<LO, GO, Node>(xpetraParameters.GetLib(), "Cartesian3D", comm, galeriList);
-      coordinates = Galeri::Xpetra::Utils::CreateCartesianCoordinates<SC,LO,GO,Map,MultiVector>("3D", map, galeriList);
-    }
-
-    // Expand map to do multiple DOF per node for block problems
-    if (matrixType == "Elasticity2D")
-      map = Xpetra::MapFactory<LO,GO,Node>::Build(map, 2);
-    if (matrixType == "Elasticity3D")
-      map = Xpetra::MapFactory<LO,GO,Node>::Build(map, 3);
-
-    galeriStream << "Processor subdomains in x direction: " << galeriList.get<GO>("mx") << std::endl
-                 << "Processor subdomains in y direction: " << galeriList.get<GO>("my") << std::endl
-                 << "Processor subdomains in z direction: " << galeriList.get<GO>("mz") << std::endl
-                 << "========================================================" << std::endl;
-
-    if (matrixType == "Elasticity2D" || matrixType == "Elasticity3D") {
-      // Our default test case for elasticity: all boundaries of a square/cube have Neumann b.c. except left which has Dirichlet
-      galeriList.set("right boundary" , "Neumann");
-      galeriList.set("bottom boundary", "Neumann");
-      galeriList.set("top boundary"   , "Neumann");
-      galeriList.set("front boundary" , "Neumann");
-      galeriList.set("back boundary"  , "Neumann");
-    }
-
-    RCP<Galeri::Xpetra::Problem<Map,CrsMatrixWrap,MultiVector> > Pr =
-        Galeri::Xpetra::BuildProblem<SC,LO,GO,Map,CrsMatrixWrap,MultiVector>(galeriParameters.GetMatrixType(), map, galeriList);
-    A = Pr->BuildMatrix();
-
-    if (matrixType == "Elasticity2D" ||
-        matrixType == "Elasticity3D") {
-      nullspace = Pr->BuildNullspace();
-      A->SetFixedBlockSize((galeriParameters.GetMatrixType() == "Elasticity2D") ? 2 : 3);
-    }
-
-  } else {
-    if (!rowmapFile.empty())
-      map = Xpetra::IO<SC,LO,GO,Node>::ReadMap(rowmapFile, lib, comm);
-    comm->barrier();
-
-    if (!binaryFormat && !map.is_null()) {
-      RCP<const Map> colMap    = (!colMapFile.empty()    ? Xpetra::IO<SC,LO,GO,Node>::ReadMap(colMapFile,    lib, comm) : Teuchos::null);
-      RCP<const Map> domainMap = (!domainMapFile.empty() ? Xpetra::IO<SC,LO,GO,Node>::ReadMap(domainMapFile, lib, comm) : Teuchos::null);
-      RCP<const Map> rangeMap  = (!rangeMapFile.empty()  ? Xpetra::IO<SC,LO,GO,Node>::ReadMap(rangeMapFile,  lib, comm) : Teuchos::null);
-      A = Xpetra::IO<SC,LO,GO,Node>::Read(matrixFile, map, colMap, domainMap, rangeMap);
-
-    } else {
-      A = Xpetra::IO<SC,LO,GO,Node>::Read(matrixFile, lib, comm, binaryFormat);
-
-      if (!map.is_null()) {
-        RCP<Matrix> newMatrix = MatrixFactory::Build(map, 1);
-        RCP<Import> importer  = ImportFactory::Build(A->getRowMap(), map);
-        newMatrix->doImport(*A, *importer, Xpetra::INSERT);
-        newMatrix->fillComplete();
-
-        A.swap(newMatrix);
-      }
-    }
-    map = A->getMap();
-
-    comm->barrier();
-
-    if (!coordFile.empty()) {
-      // NOTE: currently we only allow reading scalar matrices, thus coordinate
-      // map is same as matrix map
-      coordinates = Xpetra::IO<SC,LO,GO,Node>::ReadMultiVector(coordFile, map);
-    }
-
-    if (!nullFile.empty())
-      nullspace = Xpetra::IO<SC,LO,GO,Node>::ReadMultiVector(nullFile, map);
-  }
-
-  RCP<MultiVector> X = VectorFactory::Build(map);
-  RCP<MultiVector> B = VectorFactory::Build(map);
-
-  if (rhsFile.empty()) {
-    // we set seed for reproducibility
-    Utilities::SetRandomSeed(*comm);
-    X->randomize();
-    A->apply(*X, *B, Teuchos::NO_TRANS, one, zero);
-
-    Teuchos::Array<typename STS::magnitudeType> norms(1);
-    B->norm2(norms);
-    B->scale(one/norms[0]);
-
-  } else {
-    // read in B
-    B = Xpetra::IO<SC,LO,GO,Node>::ReadMultiVector(rhsFile, map);
-  }
-
+  // Load the matrix off disk (or generate it via Galeri)  
+  MatrixLoad<SC,LO,GO,NO>(comm,lib,binaryFormat,matrixFile,rhsFile,rowMapFile,colMapFile,domainMapFile,rangeMapFile,coordFile,nullFile,map,A,coordinates,nullspace,X,B,galeriParameters,xpetraParameters,galeriStream);
   comm->barrier();
   tm = Teuchos::null;
-
-  galeriStream << "Galeri complete.\n========================================================" << std::endl;
-
 
   int numReruns = 1;
   if (paramList.isParameter("number of reruns"))
@@ -382,24 +328,41 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
       // Preconditioner construction
       // =========================================================================
       comm->barrier();
+#ifdef HAVE_MUELU_CUDA
+      if(profileSetup) cudaProfilerStart();
+#endif
+
       tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Driver: 2 - MueLu Setup")));
       bool useAMGX = mueluList.isParameter("use external multigrid package") && (mueluList.get<std::string>("use external multigrid package") == "amgx");
+      bool useML = mueluList.isParameter("use external multigrid package") && (mueluList.get<std::string>("use external multigrid package") == "ml");
+      if(useML && lib != Xpetra::UseEpetra) throw std::runtime_error("Error: Cannot use ML on non-epetra matrices");
 
       RCP<Hierarchy> H;
-#if defined (HAVE_MUELU_AMGX) and defined (HAVE_MUELU_TPETRA)
-      RCP<MueLu::AMGXOperator<SC,LO,GO,NO> > aH;
-#endif
+      //      RCP<MueLu::TpetraOperator<SC,LO,GO,NO> > AMGXprec;
+      RCP<Operator> Prec;
       for (int i = 0; i <= numRebuilds; i++) {
         A->SetMaxEigenvalueEstimate(-Teuchos::ScalarTraits<SC>::one());
-
-        if (useAMGX) {
-#if defined (HAVE_MUELU_AMGX) and defined (HAVE_MUELU_TPETRA)
-          aH = Teuchos::rcp_dynamic_cast<MueLu::AMGXOperator<SC, LO, GO, NO> >(tH);
+	if(useAMGX) {
+#if defined(HAVE_MUELU_AMGX) and defined(HAVE_MUELU_TPETRA)	  
+	  Teuchos::ParameterList dummyList;
+	  Teuchos::RCP<Tpetra::CrsMatrix<SC,LO,GO,NO> > Ac = Utilities::Op2NonConstTpetraCrs(A);
+	  Teuchos::RCP<Tpetra::Operator<SC,LO,GO,NO> > At = Teuchos::rcp_dynamic_cast<Tpetra::Operator<SC,LO,GO,NO> >(Ac);
+	  Teuchos::RCP<MueLu::TpetraOperator<SC,LO,GO,NO> > Top = MueLu::CreateTpetraPreconditioner(At, mueluList, dummyList);
+	  Prec = Teuchos::rcp(new Xpetra::TpetraOperator<SC,LO,GO,NO>(Top));
 #endif
-        } else {
-          H = MueLu::CreateXpetraPreconditioner(A, mueluList, coordinates);
+	} else if(useML) {
+#if defined(HAVE_MUELU_ML) and defined(HAVE_MUELU_EPETRA)
+          mueluList.remove("use external multigrid package");
+          ML_Wrapper<SC, LO, GO, NO>::Generate_ML_MultiLevelPreconditioner(A,mueluList,Prec);
+#endif
+        }
+        else {
+          H = MueLu::CreateXpetraPreconditioner(A, mueluList, coordinates, nullspace);
         }
       }
+#ifdef HAVE_MUELU_CUDA
+      if(profileSetup) cudaProfilerStop();
+#endif
 
       comm->barrier();
       tm = Teuchos::null;
@@ -421,42 +384,42 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
       comm->barrier();
       if (solveType == "none") {
         // Do not perform a solve
-
+	
       } else if (solveType == "standalone") {
         tm = rcp (new TimeMonitor(*TimeMonitor::getNewTimer("Driver: 4 - Fixed Point Solve")));
-
-        if (useAMGX) {
-#if defined (HAVE_MUELU_AMGX) and defined (HAVE_MUELU_TPETRA)
-          aH->apply(*(Utilities::MV2TpetraMV(B)), *(Utilities::MV2NonConstTpetraMV(X)));
-#endif
-        } else {
-          H->IsPreconditioner(false);
-          H->Iterate(*B, *X, maxIts);
-        }
-
+	H->IsPreconditioner(false);
+	H->Iterate(*B, *X, maxIts);
       } else if (solveType == "cg" || solveType == "gmres" || solveType == "bicgstab") {
 #ifdef HAVE_MUELU_BELOS
         tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Driver: 5 - Belos Solve")));
-
+#ifdef HAVE_MUELU_CUDA
+	if(profileSolve) cudaProfilerStart();
+#endif
         // Operator and Multivector type that will be used with Belos
         typedef MultiVector          MV;
         typedef Belos::OperatorT<MV> OP;
 
         // Define Operator and Preconditioner
-        Teuchos::RCP<OP> belosOp   = Teuchos::rcp(new Belos::XpetraOp<SC, LO, GO, NO>(A)); // Turns a Xpetra::Matrix object into a Belos operator
+        Teuchos::RCP<OP> belosOp   = Teuchos::rcp(new Belos::XpetraOp<SC, LO, GO, NO>(A)); // Turns a Xpetra::Matrix object into a Belos operato
         Teuchos::RCP<OP> belosPrec; // Turns a MueLu::Hierarchy object into a Belos operator
-        if (useAMGX) {
-#if defined (HAVE_MUELU_AMGX) and defined (HAVE_MUELU_TPETRA)
-          belosPrec = Teuchos::rcp(new Belos::MueLuOp <SC, LO, GO, NO>(aH)); // Turns a MueLu::Hierarchy object into a Belos operator
+	if(useAMGX) {
+#if defined(HAVE_MUELU_AMGX) and defined(HAVE_MUELU_TPETRA)
+          belosPrec = Teuchos::rcp(new Belos::XpetraOp <SC, LO, GO, NO>(Prec)); // Turns an Xpetra::Operator object into a Belos operator
 #endif
-        } else {
+        }
+	else if(useML) {
+#if defined(HAVE_MUELU_ML) and defined(HAVE_MUELU_EPETRA)
+          belosPrec = Teuchos::rcp(new Belos::XpetraOp <SC, LO, GO, NO>(Prec)); // Turns an Xpetra::Operator object into a Belos operator
+#endif
+        }
+        else {
           H->IsPreconditioner(true);
           belosPrec = Teuchos::rcp(new Belos::MueLuOp <SC, LO, GO, NO>(H)); // Turns a MueLu::Hierarchy object into a Belos operator
         }
 
         // Construct a Belos LinearProblem object
         RCP<Belos::LinearProblem<SC, MV, OP> > belosProblem = rcp(new Belos::LinearProblem<SC, MV, OP>(belosOp, X, B));
-        belosProblem->setRightPrec(belosPrec);
+        if(solvePreconditioned) belosProblem->setRightPrec(belosPrec);
 
         bool set = belosProblem->setProblem();
         if (set == false) {
@@ -500,6 +463,9 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
           out << std::endl << "ERROR:  Belos did not converge! " << std::endl;
         else
           out << std::endl << "SUCCESS:  Belos converged!" << std::endl;
+#ifdef HAVE_MUELU_CUDA
+	if(profileSolve) cudaProfilerStop();
+#endif
 #endif //ifdef HAVE_MUELU_BELOS
       } else {
         throw MueLu::Exceptions::RuntimeError("Unknown solver type: \"" + solveType + "\"");
@@ -559,4 +525,3 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
 int main(int argc, char *argv[]) {
   return Automatic_Test_ETI(argc,argv);
 }
-

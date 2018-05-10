@@ -126,9 +126,14 @@ namespace MueLu {
 
     //! Default constructor.
     Hierarchy();
+    //! Constructor that labels the hierarchy.
+    Hierarchy(const std::string& label);
 
     //! Constructor
     Hierarchy(const RCP<Matrix> & A);
+
+    //! Constructor
+    Hierarchy(const RCP<Matrix> & A, const std::string& label);
 
     //! Destructor.
     virtual ~Hierarchy() { }
@@ -334,6 +339,10 @@ namespace MueLu {
     void ResetDescription() {
       description_ = "";
     }
+
+    void AllocateLevelMultiVectors(int numvecs);
+    void DeleteLevelMultiVectors();
+
   protected:
     const RCP<const FactoryManagerBase>& GetLevelManager(const int levelID) const {
       return levelManagers_[levelID];
@@ -390,6 +399,11 @@ namespace MueLu {
 
     // Level managers used during the Setup
     Array<RCP<const FactoryManagerBase> > levelManagers_;
+
+    // Caching (Multi)Vectors used in Hierarchy::Iterate()
+    int sizeOfAllocatedLevelMultiVectors_;
+    Array<RCP<MultiVector> > residual_, coarseRhs_, coarseX_, coarseImport_, coarseExport_, correction_;
+    
 
   }; //class Hierarchy
 

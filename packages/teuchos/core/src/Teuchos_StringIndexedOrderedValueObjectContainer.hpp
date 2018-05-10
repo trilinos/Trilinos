@@ -46,7 +46,9 @@
 
 #include "Teuchos_Array.hpp"
 #include "Teuchos_FilteredIterator.hpp"
-
+#include <deque>
+#include <map>
+#include <string>
 
 namespace Teuchos {
 

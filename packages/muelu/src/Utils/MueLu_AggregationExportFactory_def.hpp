@@ -303,7 +303,7 @@ namespace MueLu {
       {
         aggStyle = pL.get<string>("aggregation: output file: agg style"); //Let "Point Cloud" be the default style
       }
-      catch(exception& e) {}
+      catch(std::exception& e) {}
       vector<int> vertices;
       vector<int> geomSizes;
       string indent = "";
@@ -950,7 +950,7 @@ namespace MueLu {
       color << "</ColorMap>" << endl;
       color.close();
     }
-    catch(exception& e)
+    catch(std::exception& e)
     {
       GetOStream(Warnings0) << "   Error while building colormap file: " << e.what() << endl;
     }

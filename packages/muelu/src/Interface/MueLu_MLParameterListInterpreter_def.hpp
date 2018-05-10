@@ -547,6 +547,9 @@ namespace MueLu {
   GetSmootherFactory (const Teuchos::ParameterList & paramList,
                       const RCP<FactoryBase> & AFact)
   {
+    typedef Teuchos::ScalarTraits<Scalar> STS;
+    SC one = STS::one();
+
     std::string type = "symmetric Gauss-Seidel"; // default
 
     //
@@ -587,7 +590,7 @@ namespace MueLu {
       smootherParamList.set("relaxation: type", type);
 
       MUELU_COPY_PARAM(paramList, "smoother: sweeps",            int,   2, smootherParamList, "relaxation: sweeps");
-      MUELU_COPY_PARAM(paramList, "smoother: damping factor", double, 1.0, smootherParamList, "relaxation: damping factor");
+      MUELU_COPY_PARAM(paramList, "smoother: damping factor", Scalar, one, smootherParamList, "relaxation: damping factor");
 
       smooProto = rcp( new TrilinosSmoother(ifpackType, smootherParamList, 0) );
       smooProto->SetFactory("A", AFact);

@@ -8,64 +8,78 @@
 #include "ShyLU_NodeTacho_config.h"
 
 #include <Kokkos_Core.hpp>
+#include <Kokkos_Random.hpp>
+#include <Kokkos_DualView.hpp>
 #include <impl/Kokkos_Timer.hpp>
 
-#include "TachoExp_Util.hpp"
-#include "TachoExp_Partition.hpp"
+#include "Tacho_Util.hpp"
+#include "Tacho_Partition.hpp"
 
-#include "TachoExp_CrsMatrixBase.hpp"
-#include "TachoExp_DenseMatrixView.hpp"
+#include "Tacho_CrsMatrixBase.hpp"
+#include "Tacho_DenseMatrixView.hpp"
 
-#include "TachoExp_MatrixMarket.hpp"           
+#include "Tacho_MatrixMarket.hpp"           
 
-#include "TachoExp_Graph.hpp"
-#include "TachoExp_GraphTools_CAMD.hpp"        
-#include "TachoExp_GraphTools_Metis.hpp"       
-//#include "TachoExp_GraphTools_MetisMT.hpp"       
-#include "TachoExp_GraphTools_Scotch.hpp"      
+#include "Tacho_Graph.hpp"
+#include "Tacho_GraphTools_CAMD.hpp"        
+#include "Tacho_GraphTools_Metis.hpp"       
+//#include "Tacho_GraphTools_MetisMT.hpp"       
+#include "Tacho_GraphTools_Scotch.hpp"      
 
-#include "TachoExp_SupernodeInfo.hpp"
-#include "TachoExp_SymbolicTools.hpp"
+#include "Tacho_SupernodeInfo.hpp"
+#include "Tacho_SymbolicTools.hpp"
 
-#include "TachoExp_Chol.hpp"
-#include "TachoExp_Chol_External.hpp"
-#include "TachoExp_Chol_ByBlocks.hpp"
+#include "Tacho_Lapack_External.hpp"
+#include "Tacho_Lapack_Team.hpp"
 
-#include "TachoExp_Trsm.hpp"
-#include "TachoExp_Trsm_External.hpp"
-#include "TachoExp_Trsm_ByBlocks.hpp"
+#include "Tacho_Blas_External.hpp"
+#include "Tacho_Blas_Team.hpp"
 
-#include "TachoExp_Herk.hpp"
-#include "TachoExp_Herk_External.hpp"
-#include "TachoExp_Herk_ByBlocks.hpp"          
+#include "Tacho_Chol.hpp"
+#include "Tacho_Chol_External.hpp"
+#include "Tacho_Chol_Internal.hpp"
+#include "Tacho_Chol_ByBlocks.hpp"
 
-#include "TachoExp_Gemm.hpp"
-#include "TachoExp_Gemm_External.hpp"
-#include "TachoExp_Gemm_ByBlocks.hpp"
+#include "Tacho_Trsm.hpp"
+#include "Tacho_Trsm_External.hpp"
+#include "Tacho_Trsm_Internal.hpp"
+#include "Tacho_Trsm_ByBlocks.hpp"
 
-#include "TachoExp_Trsv.hpp"
-#include "TachoExp_Trsv_External.hpp"
+#include "Tacho_Herk.hpp"
+#include "Tacho_Herk_External.hpp"
+#include "Tacho_Herk_Internal.hpp"
+#include "Tacho_Herk_ByBlocks.hpp"          
 
-#include "TachoExp_Gemv.hpp"
-#include "TachoExp_Gemv_External.hpp"
+#include "Tacho_Gemm.hpp"
+#include "Tacho_Gemm_External.hpp"
+#include "Tacho_Gemm_Internal.hpp"
+#include "Tacho_Gemm_ByBlocks.hpp"
 
-#include "TachoExp_CholSupernodes.hpp"
-#include "TachoExp_CholSupernodes_Serial.hpp"
-#include "TachoExp_CholSupernodes_SerialPanel.hpp"
+#include "Tacho_Trsv.hpp"
+#include "Tacho_Trsv_External.hpp"
+#include "Tacho_Trsv_Internal.hpp"
 
-#include "TachoExp_TaskFunctor_FactorizeChol.hpp"
-#include "TachoExp_TaskFunctor_FactorizeCholPanel.hpp"
-#include "TachoExp_TaskFunctor_FactorizeCholByBlocks.hpp"
-#include "TachoExp_TaskFunctor_FactorizeCholByBlocksPanel.hpp"
+#include "Tacho_Gemv.hpp"
+#include "Tacho_Gemv_External.hpp"
+#include "Tacho_Gemv_Internal.hpp"
 
-#include "TachoExp_TaskFunctor_SolveLowerChol.hpp"
-#include "TachoExp_TaskFunctor_SolveUpperChol.hpp"
+#include "Tacho_CholSupernodes.hpp"
+#include "Tacho_CholSupernodes_Serial.hpp"
+#include "Tacho_CholSupernodes_SerialPanel.hpp"
 
-#include "TachoExp_NumericTools.hpp"
+#include "Tacho_TaskFunctor_FactorizeChol.hpp"
+#include "Tacho_TaskFunctor_FactorizeCholPanel.hpp"
+#include "Tacho_TaskFunctor_FactorizeCholByBlocks.hpp"
+#include "Tacho_TaskFunctor_FactorizeCholByBlocksPanel.hpp"
+
+#include "Tacho_TaskFunctor_SolveLowerChol.hpp"
+#include "Tacho_TaskFunctor_SolveUpperChol.hpp"
+
+#include "Tacho_NumericTools.hpp"
 
 // Do not include this. 
 // In a gcc (4.9.x), this causes some multiple definition link error with gcc headers.
 // No idea yet why it happens as the code is guarded by Tacho::Experimental namespace.
-//#include "TachoExp_CommandLineParser.hpp" 
+//#include "Tacho_CommandLineParser.hpp" 
 
 #endif

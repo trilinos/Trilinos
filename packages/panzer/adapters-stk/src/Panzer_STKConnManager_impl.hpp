@@ -180,8 +180,10 @@ void STKConnManager<GO>::buildOffsetsAndIdCounts(const panzer::FieldPattern & fp
    switch(patternDim) {
    case 3:
      faceIdCnt = fp.getSubcellIndices(2,0).size();
+     // Intentional fall-through.
    case 2:
      edgeIdCnt = fp.getSubcellIndices(1,0).size();
+     // Intentional fall-through.
    case 1:
      nodeIdCnt = fp.getSubcellIndices(0,0).size();
      cellIdCnt = fp.getSubcellIndices(patternDim,0).size();
@@ -246,6 +248,11 @@ void STKConnManager<GO>::modifySubcellConnectivities(const panzer::FieldPattern 
 template <typename GO>
 void STKConnManager<GO>::buildConnectivity(const panzer::FieldPattern & fp)
 {
+#ifdef HAVE_EXTRA_TIMERS
+  using Teuchos::TimeMonitor;
+  RCP<Teuchos::TimeMonitor> tM = rcp(new TimeMonitor(*TimeMonitor::getNewTimer(std::string("panzer_stk::STKConnManager::buildConnectivity"))));
+#endif
+
    stk::mesh::BulkData& bulkData = *stkMeshDB_->getBulkData();
 
    // get element info from STK_Interface
@@ -315,6 +322,11 @@ void STKConnManager<GO>::applyPeriodicBCs( const panzer::FieldPattern & fp, Glob
 {
    using Teuchos::RCP;
    using Teuchos::rcp;
+
+#ifdef HAVE_EXTRA_TIMERS
+  using Teuchos::TimeMonitor;
+  RCP<Teuchos::TimeMonitor> tM = rcp(new TimeMonitor(*TimeMonitor::getNewTimer(std::string("panzer_stk::STKConnManager::applyPeriodicBCs"))));
+#endif
 
    std::pair<Teuchos::RCP<std::vector<std::pair<std::size_t,std::size_t> > >, Teuchos::RCP<std::vector<unsigned int> > > matchedValues
             = stkMeshDB_->getPeriodicNodePairing();

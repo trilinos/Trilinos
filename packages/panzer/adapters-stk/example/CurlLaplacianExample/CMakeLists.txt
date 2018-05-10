@@ -13,11 +13,11 @@ TRIBITS_ADD_EXECUTABLE(
 TRIBITS_ADD_ADVANCED_TEST(
   CurlLaplacianExample
   TEST_0 EXEC CurlLaplacianExample
-    ARGS --use-epetra
+    ARGS --use-epetra --output-filename="base-curl-test-"
     PASS_REGULAR_EXPRESSION "ALL PASSED: Epetra"
     NUM_MPI_PROCS 4
   TEST_1 EXEC CurlLaplacianExample
-    ARGS --use-tpetra
+    ARGS --use-tpetra --output-filename="base-curl-test-"
     PASS_REGULAR_EXPRESSION "ALL PASSED: Tpetra"
     NUM_MPI_PROCS 4
   COMM mpi

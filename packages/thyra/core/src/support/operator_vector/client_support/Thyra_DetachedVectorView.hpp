@@ -342,7 +342,7 @@ public:
   ~DetachedVectorView()
     {
       if( sv_s_.stride() != sv_.stride() ) {
-        TEUCHOS_TEST_FOR_EXCEPT_MSG(true, "I don't think non-unit stride has ever been tested!");
+        Teuchos::TestForTermination_terminate("I don't think non-unit stride has ever been tested!");
         //Teuchos_Ordinal i; Scalar *sv_v; const Scalar *values;
         //for (
         //  sv_v = sv_s_.values().get(), values = sv_.values().get(), i=0;

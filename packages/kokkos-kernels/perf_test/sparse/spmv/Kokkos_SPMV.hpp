@@ -130,7 +130,7 @@ int launch_parameters(int numRows, int nnz, int rows_per_thread, int& team_size,
 
   // Determine rows per thread
   if(rows_per_thread < 1) {
-    #ifdef KOKKOS_HAVE_CUDA
+    #ifdef KOKKOS_ENABLE_CUDA
     if(std::is_same<Kokkos::Cuda,execution_space>::value)
       rows_per_thread = 1;
     else
@@ -143,7 +143,7 @@ int launch_parameters(int numRows, int nnz, int rows_per_thread, int& team_size,
     }
   }
 
-  #ifdef KOKKOS_HAVE_CUDA
+  #ifdef KOKKOS_ENABLE_CUDA
   if(team_size < 1)
     team_size = 256/vector_length;
   #endif

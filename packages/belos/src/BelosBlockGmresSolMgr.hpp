@@ -315,24 +315,24 @@ private:
   Teuchos::RCP<Teuchos::ParameterList> params_;
 
   // Default solver values.
-  static const MagnitudeType convtol_default_;
-  static const MagnitudeType orthoKappa_default_;
-  static const int maxRestarts_default_;
-  static const int maxIters_default_;
-  static const bool adaptiveBlockSize_default_;
-  static const bool showMaxResNormOnly_default_;
-  static const bool flexibleGmres_default_;
-  static const bool expResTest_default_;
-  static const int blockSize_default_;
-  static const int numBlocks_default_;
-  static const int verbosity_default_;
-  static const int outputStyle_default_;
-  static const int outputFreq_default_;
-  static const std::string impResScale_default_;
-  static const std::string expResScale_default_;
-  static const std::string label_default_;
-  static const std::string orthoType_default_;
-  static const Teuchos::RCP<std::ostream> outputStream_default_;
+  static constexpr MagnitudeType convTol_default_ = 1e-8;
+  static constexpr MagnitudeType orthoKappa_default_ = -1.0;
+  static constexpr int maxRestarts_default_ = 20;
+  static constexpr int maxIters_default_ = 1000;
+  static constexpr bool adaptiveBlockSize_default_ = true;
+  static constexpr bool showMaxResNormOnly_default_ = false;
+  static constexpr bool flexibleGmres_default_ = false;
+  static constexpr bool expResTest_default_ = false;
+  static constexpr int blockSize_default_ = 1;
+  static constexpr int numBlocks_default_ = 300;
+  static constexpr int verbosity_default_ = Belos::Errors;
+  static constexpr int outputStyle_default_ = Belos::General;
+  static constexpr int outputFreq_default_ = -1;
+  static constexpr const char * impResScale_default_ = "Norm of Preconditioned Initial Residual";
+  static constexpr const char * expResScale_default_ = "Norm of Initial Residual";
+  static constexpr const char * label_default_ = "Belos";
+  static constexpr const char * orthoType_default_ = "DGKS";
+  static constexpr std::ostream * outputStream_default_ = &std::cout;
 
   // Current solver values.
   MagnitudeType convtol_, orthoKappa_, achievedTol_;
@@ -352,67 +352,11 @@ private:
 };
 
 
-// Default solver values.
-template<class ScalarType, class MV, class OP>
-const typename BlockGmresSolMgr<ScalarType,MV,OP>::MagnitudeType BlockGmresSolMgr<ScalarType,MV,OP>::convtol_default_ = 1e-8;
-
-template<class ScalarType, class MV, class OP>
-const typename BlockGmresSolMgr<ScalarType,MV,OP>::MagnitudeType BlockGmresSolMgr<ScalarType,MV,OP>::orthoKappa_default_ = -1.0;
-
-template<class ScalarType, class MV, class OP>
-const int BlockGmresSolMgr<ScalarType,MV,OP>::maxRestarts_default_ = 20;
-
-template<class ScalarType, class MV, class OP>
-const int BlockGmresSolMgr<ScalarType,MV,OP>::maxIters_default_ = 1000;
-
-template<class ScalarType, class MV, class OP>
-const bool BlockGmresSolMgr<ScalarType,MV,OP>::adaptiveBlockSize_default_ = true;
-
-template<class ScalarType, class MV, class OP>
-const bool BlockGmresSolMgr<ScalarType,MV,OP>::showMaxResNormOnly_default_ = false;
-
-template<class ScalarType, class MV, class OP>
-const bool BlockGmresSolMgr<ScalarType,MV,OP>::flexibleGmres_default_ = false;
-
-template<class ScalarType, class MV, class OP>
-const bool BlockGmresSolMgr<ScalarType,MV,OP>::expResTest_default_ = false;
-
-template<class ScalarType, class MV, class OP>
-const int BlockGmresSolMgr<ScalarType,MV,OP>::blockSize_default_ = 1;
-
-template<class ScalarType, class MV, class OP>
-const int BlockGmresSolMgr<ScalarType,MV,OP>::numBlocks_default_ = 300;
-
-template<class ScalarType, class MV, class OP>
-const int BlockGmresSolMgr<ScalarType,MV,OP>::verbosity_default_ = Belos::Errors;
-
-template<class ScalarType, class MV, class OP>
-const int BlockGmresSolMgr<ScalarType,MV,OP>::outputStyle_default_ = Belos::General;
-
-template<class ScalarType, class MV, class OP>
-const int BlockGmresSolMgr<ScalarType,MV,OP>::outputFreq_default_ = -1;
-
-template<class ScalarType, class MV, class OP>
-const std::string BlockGmresSolMgr<ScalarType,MV,OP>::impResScale_default_ = "Norm of Preconditioned Initial Residual";
-
-template<class ScalarType, class MV, class OP>
-const std::string BlockGmresSolMgr<ScalarType,MV,OP>::expResScale_default_ = "Norm of Initial Residual";
-
-template<class ScalarType, class MV, class OP>
-const std::string BlockGmresSolMgr<ScalarType,MV,OP>::label_default_ = "Belos";
-
-template<class ScalarType, class MV, class OP>
-const std::string BlockGmresSolMgr<ScalarType,MV,OP>::orthoType_default_ = "DGKS";
-
-template<class ScalarType, class MV, class OP>
-const Teuchos::RCP<std::ostream> BlockGmresSolMgr<ScalarType,MV,OP>::outputStream_default_ = Teuchos::rcp(&std::cout,false);
-
-
 // Empty Constructor
 template<class ScalarType, class MV, class OP>
 BlockGmresSolMgr<ScalarType,MV,OP>::BlockGmresSolMgr() :
-  outputStream_(outputStream_default_),
-  convtol_(convtol_default_),
+  outputStream_(Teuchos::rcp(outputStream_default_,false)),
+  convtol_(convTol_default_),
   orthoKappa_(orthoKappa_default_),
   achievedTol_(Teuchos::ScalarTraits<typename Teuchos::ScalarTraits<ScalarType>::magnitudeType>::zero()),
   maxRestarts_(maxRestarts_default_),
@@ -443,8 +387,8 @@ BlockGmresSolMgr<ScalarType,MV,OP>::
 BlockGmresSolMgr (const Teuchos::RCP<LinearProblem<ScalarType,MV,OP> > &problem,
                   const Teuchos::RCP<Teuchos::ParameterList> &pl) :
   problem_(problem),
-  outputStream_(outputStream_default_),
-  convtol_(convtol_default_),
+  outputStream_(Teuchos::rcp(outputStream_default_,false)),
+  convtol_(convTol_default_),
   orthoKappa_(orthoKappa_default_),
   achievedTol_(Teuchos::ScalarTraits<typename Teuchos::ScalarTraits<ScalarType>::magnitudeType>::zero()),
   maxRestarts_(maxRestarts_default_),
@@ -485,53 +429,56 @@ BlockGmresSolMgr<ScalarType,MV,OP>::getValidParameters() const
   static Teuchos::RCP<const Teuchos::ParameterList> validPL;
   if (is_null(validPL)) {
     Teuchos::RCP<Teuchos::ParameterList> pl = Teuchos::parameterList();
-    pl->set("Convergence Tolerance", convtol_default_,
+
+    // The static_cast is to resolve an issue with older clang versions which
+    // would cause the constexpr to link fail. With c++17 the problem is resolved.
+    pl->set("Convergence Tolerance", static_cast<MagnitudeType>(convTol_default_),
       "The relative residual tolerance that needs to be achieved by the\n"
       "iterative solver in order for the linear system to be declared converged." );
-    pl->set("Maximum Restarts", maxRestarts_default_,
+    pl->set("Maximum Restarts", static_cast<int>(maxRestarts_default_),
       "The maximum number of restarts allowed for each\n"
       "set of RHS solved.");
-    pl->set("Maximum Iterations", maxIters_default_,
+    pl->set("Maximum Iterations", static_cast<int>(maxIters_default_),
       "The maximum number of block iterations allowed for each\n"
       "set of RHS solved.");
-    pl->set("Num Blocks", numBlocks_default_,
+    pl->set("Num Blocks", static_cast<int>(numBlocks_default_),
       "The maximum number of blocks allowed in the Krylov subspace\n"
       "for each set of RHS solved.");
-    pl->set("Block Size", blockSize_default_,
+    pl->set("Block Size", static_cast<int>(blockSize_default_),
       "The number of vectors in each block.  This number times the\n"
       "number of blocks is the total Krylov subspace dimension.");
-    pl->set("Adaptive Block Size", adaptiveBlockSize_default_,
+    pl->set("Adaptive Block Size", static_cast<bool>(adaptiveBlockSize_default_),
       "Whether the solver manager should adapt the block size\n"
       "based on the number of RHS to solve.");
-    pl->set("Verbosity", verbosity_default_,
+    pl->set("Verbosity", static_cast<int>(verbosity_default_),
       "What type(s) of solver information should be outputted\n"
       "to the output stream.");
-    pl->set("Output Style", outputStyle_default_,
+    pl->set("Output Style", static_cast<int>(outputStyle_default_),
       "What style is used for the solver information outputted\n"
       "to the output stream.");
-    pl->set("Output Frequency", outputFreq_default_,
+    pl->set("Output Frequency", static_cast<int>(outputFreq_default_),
       "How often convergence information should be outputted\n"
       "to the output stream.");
-    pl->set("Output Stream", outputStream_default_,
+    pl->set("Output Stream", Teuchos::rcp(outputStream_default_,false),
       "A reference-counted pointer to the output stream where all\n"
       "solver output is sent.");
-    pl->set("Show Maximum Residual Norm Only", showMaxResNormOnly_default_,
+    pl->set("Show Maximum Residual Norm Only", static_cast<bool>(showMaxResNormOnly_default_),
       "When convergence information is printed, only show the maximum\n"
       "relative residual norm when the block size is greater than one.");
-    pl->set("Flexible Gmres", flexibleGmres_default_,
+    pl->set("Flexible Gmres", static_cast<bool>(flexibleGmres_default_),
       "Whether the solver manager should use the flexible variant\n"
       "of GMRES.");
-    pl->set("Explicit Residual Test", expResTest_default_,
+    pl->set("Explicit Residual Test", static_cast<bool>(expResTest_default_),
       "Whether the explicitly computed residual should be used in the convergence test.");
-    pl->set("Implicit Residual Scaling", impResScale_default_,
+    pl->set("Implicit Residual Scaling", static_cast<const char *>(impResScale_default_),
       "The type of scaling used in the implicit residual convergence test.");
-    pl->set("Explicit Residual Scaling", expResScale_default_,
+    pl->set("Explicit Residual Scaling", static_cast<const char *>(expResScale_default_),
       "The type of scaling used in the explicit residual convergence test.");
-    pl->set("Timer Label", label_default_,
+    pl->set("Timer Label", static_cast<const char *>(label_default_),
       "The string to use as a prefix for the timer labels.");
-    pl->set("Orthogonalization", orthoType_default_,
+    pl->set("Orthogonalization", static_cast<const char *>(orthoType_default_),
       "The type of orthogonalization to use: DGKS, ICGS, or IMGS.");
-    pl->set("Orthogonalization Constant",orthoKappa_default_,
+    pl->set("Orthogonalization Constant",static_cast<MagnitudeType>(orthoKappa_default_),
       "The constant used by DGKS orthogonalization to determine\n"
       "whether another step of classical Gram-Schmidt is necessary.");
     validPL = pl;
@@ -726,7 +673,7 @@ void BlockGmresSolMgr<ScalarType,MV,OP>::setParameters( const Teuchos::RCP<Teuch
 
   // Check for convergence tolerance
   if (params->isParameter("Convergence Tolerance")) {
-    convtol_ = params->get("Convergence Tolerance",convtol_default_);
+    convtol_ = params->get("Convergence Tolerance",convTol_default_);
 
     // Update parameter in our list and residual tests.
     params_->set("Convergence Tolerance", convtol_);

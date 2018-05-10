@@ -63,7 +63,8 @@ struct Histogram{
 
   KOKKOS_INLINE_FUNCTION
   void operator()(const size_t &ii) const {
-    Kokkos::atomic_fetch_add(&(outview(inview(ii))),1);
+    typedef typename std::remove_reference< decltype(outview(0)) >::type atomic_incr_type;
+    Kokkos::atomic_fetch_add(&(outview(inview(ii))), atomic_incr_type(1));
   }
 };
 

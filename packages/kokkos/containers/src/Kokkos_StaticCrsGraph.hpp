@@ -35,7 +35,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact  H. Carter Edwards (hcedwar@sandia.gov)
+// Questions? Contact Christian R. Trott (crtrott@sandia.gov)
 // 
 // ************************************************************************
 //@HEADER
@@ -70,7 +70,7 @@ namespace Impl {
 
     KOKKOS_INLINE_FUNCTION
     void operator() (const int_type& iRow) const {
-      const int_type num_rows = row_offsets.dimension_0()-1;
+      const int_type num_rows = row_offsets.extent(0)-1;
       const int_type num_entries = row_offsets(num_rows);
       const int_type total_cost = num_entries + num_rows*cost_per_row;
 
@@ -105,7 +105,7 @@ namespace Impl {
           }
         } else {
           if((count >= (current_block + 1) * cost_per_workset) ||
-             (iRow+2 == row_offsets.dimension_0())) {
+             (iRow+2 == row_offsets.extent(0))) {
             if(end_block>current_block+1) {
               int_type num_block = end_block-current_block;
               row_block_offsets(current_block+1) = iRow;
@@ -298,14 +298,17 @@ public:
   row_block_type row_block_offsets;
 
   //! Construct an empty view.
+  KOKKOS_INLINE_FUNCTION
   StaticCrsGraph () : entries(), row_map(), row_block_offsets() {}
 
   //! Copy constructor (shallow copy).
+  KOKKOS_INLINE_FUNCTION
   StaticCrsGraph (const StaticCrsGraph& rhs) : entries (rhs.entries), row_map (rhs.row_map),
                                                row_block_offsets(rhs.row_block_offsets)
   {}
 
   template<class EntriesType, class RowMapType>
+  KOKKOS_INLINE_FUNCTION
   StaticCrsGraph (const EntriesType& entries_,const RowMapType& row_map_) : entries (entries_), row_map (row_map_),
   row_block_offsets()
   {}
@@ -314,6 +317,7 @@ public:
    *          If the old view is the last view
    *          then allocated memory is deallocated.
    */
+  KOKKOS_INLINE_FUNCTION
   StaticCrsGraph& operator= (const StaticCrsGraph& rhs) {
     entries = rhs.entries;
     row_map = rhs.row_map;
@@ -324,14 +328,15 @@ public:
   /**  \brief  Destroy this view of the array.
    *           If the last view then allocated memory is deallocated.
    */
+  KOKKOS_INLINE_FUNCTION
   ~StaticCrsGraph() {}
 
   /**  \brief  Return number of rows in the graph
    */
   KOKKOS_INLINE_FUNCTION
   size_type numRows() const {
-    return (row_map.dimension_0 () != 0) ?
-      row_map.dimension_0 () - static_cast<size_type> (1) :
+    return (row_map.extent(0) != 0) ?
+      row_map.extent(0) - static_cast<size_type> (1) :
       static_cast<size_type> (0);
   }
 
@@ -458,7 +463,7 @@ DataType maximum_entry( const StaticCrsGraph< DataType , Arg1Type , Arg2Type , S
   typedef Impl::StaticCrsGraphMaximumEntry< GraphType > FunctorType ;
 
   DataType result = 0 ;
-  Kokkos::parallel_reduce( graph.entries.dimension_0(),
+  Kokkos::parallel_reduce( graph.entries.extent(0),
                            FunctorType(graph), result );
   return result ;
 }

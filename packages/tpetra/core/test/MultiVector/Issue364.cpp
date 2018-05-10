@@ -67,7 +67,7 @@ public:
     typedef typename ViewType::execution_space execution_space;
     typedef Kokkos::RangePolicy<execution_space, size_type> range_type;
     int result = 1;
-    Kokkos::parallel_reduce (range_type (0, x.dimension_0 ()),
+    Kokkos::parallel_reduce (range_type (0, x.extent (0)),
                              VectorsEqual<ViewType> (x, y),
                              result);
     return result == 1;
@@ -113,7 +113,7 @@ public:
   static void run (const ViewType& x) {
     typedef typename ViewType::execution_space execution_space;
     typedef Kokkos::RangePolicy<execution_space, size_type> range_type;
-    Kokkos::parallel_for (range_type (0, x.dimension_0 ()),
+    Kokkos::parallel_for (range_type (0, x.extent (0)),
                           NegateAllEntries<ViewType> (x));
   }
 
@@ -200,8 +200,8 @@ namespace { // (anonymous)
       X.template modify<host_memory_space> ();
       auto X_lcl = X.template getLocalView<host_memory_space> ();
 
-      TEST_EQUALITY( static_cast<LO> (X_lcl.dimension_0 ()), lclNumRows );
-      TEST_EQUALITY( static_cast<LO> (X_lcl.dimension_1 ()), numVecs );
+      TEST_EQUALITY( static_cast<LO> (X_lcl.extent (0)), lclNumRows );
+      TEST_EQUALITY( static_cast<LO> (X_lcl.extent (1)), numVecs );
       if (! success) {
         return;
       }
@@ -252,7 +252,7 @@ namespace { // (anonymous)
         auto X_sub_lcl_j_1d =
           Kokkos::subview (X_sub_lcl_j_2d, Kokkos::ALL (), 0);
 
-        TEST_EQUALITY( static_cast<LO> (X_sub_lcl_j_1d.dimension_0 ()),
+        TEST_EQUALITY( static_cast<LO> (X_sub_lcl_j_1d.extent (0)),
                        lclNumRows );
         if (! success) {
           return;
@@ -305,11 +305,11 @@ namespace { // (anonymous)
         auto X_copy_lcl_j_1d =
           Kokkos::subview (X_copy_lcl_j_2d, Kokkos::ALL (), 0);
 
-        TEST_EQUALITY( static_cast<LO> (X_sub_lcl_j_1d.dimension_0 ()),
+        TEST_EQUALITY( static_cast<LO> (X_sub_lcl_j_1d.extent (0)),
                        lclNumRows );
-        TEST_EQUALITY( static_cast<LO> (X_lcl_j_1d.dimension_0 ()),
+        TEST_EQUALITY( static_cast<LO> (X_lcl_j_1d.extent (0)),
                        lclNumRows );
-        TEST_EQUALITY( static_cast<LO> (X_copy_lcl_j_1d.dimension_0 ()),
+        TEST_EQUALITY( static_cast<LO> (X_copy_lcl_j_1d.extent (0)),
                        lclNumRows );
         if (! success) {
           return;
@@ -452,8 +452,8 @@ namespace { // (anonymous)
         X.template modify<host_memory_space> ();
         auto X_lcl = X.template getLocalView<host_memory_space> ();
 
-        TEST_EQUALITY( static_cast<LO> (X_lcl.dimension_0 ()), lclNumRows );
-        TEST_EQUALITY( static_cast<LO> (X_lcl.dimension_1 ()), numVecs );
+        TEST_EQUALITY( static_cast<LO> (X_lcl.extent (0)), lclNumRows );
+        TEST_EQUALITY( static_cast<LO> (X_lcl.extent (1)), numVecs );
         if (! success) {
           return;
         }
@@ -511,7 +511,7 @@ namespace { // (anonymous)
           auto Y_j = Y->getVector (k);
           auto Y_lcl_j_2d = Y_j->template getLocalView<host_memory_space> ();
           auto Y_lcl_j_1d = Kokkos::subview (Y_lcl_j_2d, Kokkos::ALL (), 0);
-          TEST_EQUALITY( static_cast<LO> (Y_lcl_j_1d.dimension_0 ()), lclNumRows );
+          TEST_EQUALITY( static_cast<LO> (Y_lcl_j_1d.extent (0)), lclNumRows );
           if (! success) {
             return;
           }
@@ -537,7 +537,7 @@ namespace { // (anonymous)
           auto Z_j = Z->getVector (k);
           auto Z_lcl_j_2d = Z_j->template getLocalView<dev_memory_space> ();
           auto Z_lcl_j_1d = Kokkos::subview (Z_lcl_j_2d, Kokkos::ALL (), 0);
-          TEST_EQUALITY( static_cast<LO> (Z_lcl_j_1d.dimension_0 ()), lclNumRows );
+          TEST_EQUALITY( static_cast<LO> (Z_lcl_j_1d.extent (0)), lclNumRows );
           if (! success) {
             return;
           }
@@ -573,7 +573,7 @@ namespace { // (anonymous)
           }
           auto X_lcl_j_2d = X_j->template getLocalView<host_memory_space> ();
           auto X_lcl_j_1d = Kokkos::subview (X_lcl_j_2d, Kokkos::ALL (), 0);
-          TEST_EQUALITY( static_cast<LO> (X_lcl_j_1d.dimension_0 ()),
+          TEST_EQUALITY( static_cast<LO> (X_lcl_j_1d.extent (0)),
                          lclNumRows );
 
           auto X_copy_j = X_copy.getVector (k);
@@ -582,7 +582,7 @@ namespace { // (anonymous)
           }
           auto X_copy_lcl_j_2d = X_copy_j->template getLocalView<host_memory_space> ();
           auto X_copy_lcl_j_1d = Kokkos::subview (X_copy_lcl_j_2d, Kokkos::ALL (), 0);
-          TEST_EQUALITY( static_cast<LO> (X_copy_lcl_j_1d.dimension_0 ()),
+          TEST_EQUALITY( static_cast<LO> (X_copy_lcl_j_1d.extent (0)),
                          lclNumRows );
 
           auto Y_j = Y->getVector (k);
@@ -591,7 +591,7 @@ namespace { // (anonymous)
           }
           auto Y_lcl_j_2d = Y_j->template getLocalView<host_memory_space> ();
           auto Y_lcl_j_1d = Kokkos::subview (Y_lcl_j_2d, Kokkos::ALL (), 0);
-          TEST_EQUALITY( static_cast<LO> (Y_lcl_j_1d.dimension_0 ()),
+          TEST_EQUALITY( static_cast<LO> (Y_lcl_j_1d.extent (0)),
                          lclNumRows );
           if (! success) {
             return;

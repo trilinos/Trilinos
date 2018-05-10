@@ -49,7 +49,10 @@
 namespace user_app {
 
 //**********************************************************************
-PHX_EVALUATOR_CTOR(Convection,p)
+template<typename EvalT, typename Traits>
+Convection<EvalT, Traits>::
+Convection(
+  const Teuchos::ParameterList& p)
 {
   using std::string;
   using Teuchos::RCP;
@@ -81,7 +84,12 @@ PHX_EVALUATOR_CTOR(Convection,p)
 }
 
 //**********************************************************************
-PHX_POST_REGISTRATION_SETUP(Convection, /* worksets */, fm)
+template<typename EvalT, typename Traits>
+void
+Convection<EvalT, Traits>::
+postRegistrationSetup(
+  typename Traits::SetupData  /* worksets */,
+  PHX::FieldManager<Traits>&  fm)
 {
   this->utils.setFieldData(conv,fm);
   this->utils.setFieldData(a,fm);
@@ -89,7 +97,11 @@ PHX_POST_REGISTRATION_SETUP(Convection, /* worksets */, fm)
 }
 
 //**********************************************************************
-PHX_EVALUATE_FIELDS(Convection,workset)
+template<typename EvalT, typename Traits>
+void
+Convection<EvalT, Traits>::
+evaluateFields(
+  typename Traits::EvalData workset)
 { 
   typedef typename PHX::MDField<ScalarT,Cell,Point>::size_type size_type;
   

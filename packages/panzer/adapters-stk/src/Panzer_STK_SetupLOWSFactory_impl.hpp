@@ -66,6 +66,7 @@
 
 #ifdef PANZER_HAVE_MUELU
 #include <Thyra_MueLuPreconditionerFactory.hpp>
+#include <Thyra_MueLuRefMaxwellPreconditionerFactory.hpp>
 #include "Stratimikos_MueLuHelpers.hpp"
 #include "MatrixMarket_Tpetra.hpp"
 #include "Xpetra_MapFactory.hpp"
@@ -190,7 +191,9 @@ namespace {
     {
       // TAW: the following is probably not optimal but it corresponds to what have been there before...
       Stratimikos::enableMueLu(linearSolverBuilder,"MueLu");
+      Stratimikos::enableMueLuRefMaxwell(linearSolverBuilder,"MueLuRefMaxwell");
       Stratimikos::enableMueLu<int,panzer::Ordinal64,panzer::TpetraNodeType>(linearSolverBuilder,"MueLu-Tpetra");
+      Stratimikos::enableMueLuRefMaxwell<int,panzer::Ordinal64,panzer::TpetraNodeType>(linearSolverBuilder,"MueLuRefMaxwell-Tpetra");
     }
     #endif // MUELU
     #ifdef PANZER_HAVE_IFPACK2
@@ -300,9 +303,11 @@ namespace {
              case 3:
                 vec = rcp(new Epetra_Vector(Copy,map,const_cast<double *>(&zcoords[0])));
                 EpetraExt::VectorToMatrixMarketFile("zcoords.mm",*vec);
+                // Intentional fall-through.
              case 2:
                 vec = rcp(new Epetra_Vector(Copy,map,const_cast<double *>(&ycoords[0])));
                 EpetraExt::VectorToMatrixMarketFile("ycoords.mm",*vec);
+                // Intentional fall-through.
              case 1:
                 vec = rcp(new Epetra_Vector(Copy,map,const_cast<double *>(&xcoords[0])));
                 EpetraExt::VectorToMatrixMarketFile("xcoords.mm",*vec);
@@ -414,9 +419,11 @@ namespace {
             case 3:
                vec = rcp(new Epetra_Vector(Copy,map,const_cast<double *>(&zcoords[0])));
                EpetraExt::VectorToMatrixMarketFile((fieldName+"_zcoords.mm").c_str(),*vec);
+               // Intentional fall-through.
             case 2:
                vec = rcp(new Epetra_Vector(Copy,map,const_cast<double *>(&ycoords[0])));
                EpetraExt::VectorToMatrixMarketFile((fieldName+"_ycoords.mm").c_str(),*vec);
+               // Intentional fall-through.
             case 1:
                vec = rcp(new Epetra_Vector(Copy,map,const_cast<double *>(&xcoords[0])));
                EpetraExt::VectorToMatrixMarketFile((fieldName+"_xcoords.mm").c_str(),*vec);

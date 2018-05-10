@@ -97,6 +97,14 @@ void populateValueArrays(std::size_t num_cells,bool isSide,const WorksetNeeds & 
   using Teuchos::RCP;
   using Teuchos::rcp;
 
+  // check to see if the number of owned, ghosted and virtual cells are needed
+  // this is required for backwards compatibility
+  ///////////////////////////////////////////////////////////////////////////////
+  if(details.numOwnedCells()==-1)
+    details.setNumberOfCells(num_cells,0,0);
+  if(other_details!=Teuchos::null and other_details->numOwnedCells()==-1)
+    other_details->setNumberOfCells(num_cells,0,0);
+
   panzer::MDFieldArrayFactory mdArrayFactory("",true);
 
   // setup the integration rules and bases

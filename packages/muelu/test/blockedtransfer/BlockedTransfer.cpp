@@ -280,7 +280,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
     std::string ifpackType;
     Teuchos::ParameterList ifpackList;
     ifpackList.set("relaxation: sweeps", (LO) 5);
-    ifpackList.set("relaxation: damping factor", (SC) 1.0);
+    ifpackList.set("relaxation: damping factor", Teuchos::ScalarTraits<SC>::one());
     ifpackType = "RELAXATION";
     ifpackList.set("relaxation: type", "Symmetric Gauss-Seidel");
     RCP<SmootherPrototype> smoProto11     = rcp( new TrilinosSmoother(ifpackType, ifpackList, 0) );
@@ -321,7 +321,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
     // Smoothers
     RCP<BlockedGaussSeidelSmoother> smootherPrototype     = rcp( new BlockedGaussSeidelSmoother() );
     smootherPrototype->SetParameter("Sweeps", Teuchos::ParameterEntry(2));
-    smootherPrototype->SetParameter("Damping factor", Teuchos::ParameterEntry(1.0));
+    smootherPrototype->SetParameter("Damping factor", Teuchos::ParameterEntry(Teuchos::ScalarTraits<Scalar>::one()));
     smootherPrototype->AddFactoryManager(M11,0);
     smootherPrototype->AddFactoryManager(M22,1);
     RCP<SmootherFactory>   smootherFact          = rcp( new SmootherFactory(smootherPrototype) );

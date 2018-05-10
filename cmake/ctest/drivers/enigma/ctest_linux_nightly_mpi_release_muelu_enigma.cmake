@@ -60,27 +60,28 @@ INCLUDE("${CTEST_SCRIPT_DIRECTORY}/TrilinosCTestDriverCore.enigma.gcc.cmake")
 # Set the options specific to this build case
 #
 
+# The variable BUILD_DIR_NAME is based COMM_TYPE, BUILD_TYPE, and BUILD_NAME_DETAILS.
+# Tribits creates the variable listed under "Build Name" by prepending the OS type and compiler
+# details to BUILD_DIR_NAME.
 SET(COMM_TYPE MPI)
 SET(BUILD_TYPE RELEASE)
-SET(BUILD_DIR_NAME OPENMPI_1.6.4_RELEASE_DEV_MueLu)
+SET(BUILD_NAME_DETAILS DEFAULT)
+
 SET(CTEST_PARALLEL_LEVEL 8)
 SET(CTEST_TEST_TYPE Nightly)
-#SET(CTEST_TEST_TYPE Experimental)
-SET(Trilinos_TRACK  Specialized)     # Set the Trilinos Track
+SET(Trilinos_TRACK  Nightly)     # Set CDash board to Nightly
 SET(CTEST_TEST_TIMEOUT 900)
 
-SET(Trilinos_PACKAGES Kokkos Tpetra Belos Ifpack2 MueLu Amesos Amesos2 Ifpack Epetra EpetraExt Zoltan Zoltan2 )
+SET(Trilinos_PACKAGES MueLu)
 
 SET(EXTRA_CONFIGURE_OPTIONS
   "-DTrilinos_ENABLE_EXPLICIT_INSTANTIATION=ON"
-  "-DTrilinos_ENABLE_Amesos:BOOL=ON"
-  "-DTrilinos_ENABLE_Amesos2:BOOL=ON"
-  "-DXpetra_ENABLE_Experimental:BOOL=OFF"
-  "-DMueLu_ENABLE_Experimental:BOOL=OFF"
+  "-DTrilinos_ENABLE_DEPENDENCY_UNIT_TESTS=ON"
+  "-DTPL_ENABLE_SuperLU:BOOL=ON"
+  "-DZoltan2_ENABLE_Experimental=ON"
+  "-DTeuchos_GLOBALLY_REDUCE_UNITTEST_RESULTS=ON"
 )
 
-#"-DAmesos2_ENABLE_KLU2:BOOL=ON"
-#"-DTrilinos_ENABLE_DEPENDENCY_UNIT_TESTS=OFF"
 #
 # Set the rest of the system-specific options and run the dashboard build/test
 #

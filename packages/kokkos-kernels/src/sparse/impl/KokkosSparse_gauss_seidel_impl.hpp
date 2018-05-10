@@ -47,7 +47,7 @@
 #include <impl/Kokkos_Timer.hpp>
 #include <Kokkos_Sort.hpp>
 #include <Kokkos_MemoryTraits.hpp>
-#include "KokkosGraph_GraphColor.hpp"
+#include "KokkosGraph_graph_color.hpp"
 
 #ifndef _KOKKOSGSIMP_HPP
 #define _KOKKOSGSIMP_HPP
@@ -79,14 +79,14 @@ public:
   typedef typename HandleType::nnz_scalar_t nnz_scalar_t;
 
 
-  typedef typename HandleType::const_lno_row_view_t const_lno_row_view_t;
-  typedef typename HandleType::non_const_lno_row_view_t non_const_lno_row_view_t;
+  typedef typename in_lno_row_view_t::const_type const_lno_row_view_t;
+  typedef typename in_lno_row_view_t::non_const_type non_const_lno_row_view_t;
 
-  typedef typename HandleType::const_lno_nnz_view_t const_lno_nnz_view_t;
-  typedef typename HandleType::non_const_lno_nnz_view_t non_const_lno_nnz_view_t;
+  typedef typename lno_nnz_view_t_::const_type const_lno_nnz_view_t;
+  typedef typename lno_nnz_view_t_::non_const_type non_const_lno_nnz_view_t;
 
-  typedef typename HandleType::const_scalar_nnz_view_t const_scalar_nnz_view_t;
-  typedef typename HandleType::non_const_scalar_nnz_view_t non_const_scalar_nnz_view_t;
+  typedef typename scalar_nnz_view_t_::const_type const_scalar_nnz_view_t;
+  typedef typename scalar_nnz_view_t_::non_const_type non_const_scalar_nnz_view_t;
 
 
 
@@ -356,7 +356,7 @@ public:
 #endif
 
 
-#if defined( KOKKOS_HAVE_CUDA )
+#if defined( KOKKOS_ENABLE_CUDA )
     if (Kokkos::Impl::is_same<Kokkos::Cuda, MyExecSpace >::value){
       for (nnz_lno_t i = 0; i < numColors; ++i){
         nnz_lno_t color_index_begin = h_color_xadj(i);
@@ -384,7 +384,7 @@ public:
     row_lno_persistent_work_view_t permuted_xadj ("new xadj", num_rows + 1);
     nnz_lno_persistent_work_view_t old_to_new_map ("old_to_new_index_", num_rows );
     nnz_lno_persistent_work_view_t permuted_adj ("newadj_", nnz );
-    Kokkos::parallel_for( my_exec_space(0,num_rows),
+    Kokkos::parallel_for( "KokkosSparse::GaussSeidel::create_permuted_xadj", my_exec_space(0,num_rows),
         create_permuted_xadj(
             color_adj,
             xadj,
@@ -411,7 +411,7 @@ public:
 #endif
 
 
-    Kokkos::parallel_for( my_exec_space(0,num_rows),
+    Kokkos::parallel_for( "KokkosSparse::GaussSeidel::fill_matrix_symbolic",my_exec_space(0,num_rows),
         fill_matrix_symbolic(
             num_rows,
             color_adj,
@@ -602,7 +602,7 @@ public:
       nnz_lno_persistent_work_view_t color_adj = gsHandler->get_color_adj();
       scalar_persistent_work_view_t permuted_adj_vals (Kokkos::ViewAllocateWithoutInitializing("newvals_"), nnz );
 
-      Kokkos::parallel_for( my_exec_space(0,num_rows),
+      Kokkos::parallel_for( "KokkosSparse::GaussSeidel::fill_matrix_numeric",my_exec_space(0,num_rows),
           fill_matrix_numeric(
               color_adj,
               xadj,
@@ -631,7 +631,7 @@ public:
           team_policy_t(num_rows / teamSizeMax + 1 , teamSizeMax, vector_size),
           gmd );
           */
-      Kokkos::parallel_for(
+      Kokkos::parallel_for("KokkosSparse::GaussSeidel::get_matrix_diagonals",
                 my_exec_space(0,num_rows),
                 gmd );
       MyExecSpace::fence();
@@ -789,7 +789,7 @@ public:
         gs._color_set_begin = color_index_begin;
         gs._color_set_end = color_index_end;
 
-        Kokkos::parallel_for(
+        Kokkos::parallel_for("KokkosSparse::GaussSeidel::Team_PSGS::forward",
             team_policy_t(overall_work / teamSizeMax + 1 , teamSizeMax, vector_size),
             gs );
         MyExecSpace::fence();
@@ -805,7 +805,7 @@ public:
         gs._color_set_begin = color_index_begin;
         gs._color_set_end = color_index_end;
 
-        Kokkos::parallel_for(
+        Kokkos::parallel_for("KokkosSparse::GaussSeidel::Team_PSGS::backward",
             team_policy_t(numberOfTeams / teamSizeMax + 1 , teamSizeMax, vector_size),
             gs );
         MyExecSpace::fence();
@@ -838,7 +838,8 @@ public:
       for (color_t i = 0; i < numColors; ++i){
         nnz_lno_t color_index_begin = h_color_xadj(i);
         nnz_lno_t color_index_end = h_color_xadj(i + 1);
-        Kokkos::parallel_for (my_exec_space (color_index_begin, color_index_end) , gs);
+        Kokkos::parallel_for ("KokkosSparse::GaussSeidel::PSGS::forward",
+            my_exec_space (color_index_begin, color_index_end) , gs);
         MyExecSpace::fence();
       }
     }
@@ -846,7 +847,8 @@ public:
       for (size_type i = numColors - 1; ; --i){
         nnz_lno_t color_index_begin = h_color_xadj(i);
         nnz_lno_t color_index_end = h_color_xadj(i + 1);
-        Kokkos::parallel_for (my_exec_space (color_index_begin, color_index_end) , gs);
+        Kokkos::parallel_for ("KokkosSparse::GaussSeidel::PSGS::backward",
+            my_exec_space (color_index_begin, color_index_end) , gs);
         MyExecSpace::fence();
         if (i == 0){
           break;

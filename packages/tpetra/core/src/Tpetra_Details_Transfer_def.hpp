@@ -262,6 +262,16 @@ localDescribeToString (const Teuchos::EVerbosityLevel vl) const
 	}
       }
 
+      out << "distor.NumRecvs   : "<<NumReceives<<endl 
+	  << "distor.ProcsFrom  : "<<toString(ProcsFrom)<<endl
+	  << "distor.LengthsFrom: "<<toString(LengthsFrom)<<endl;
+
+      out << "distor.NumSends   : "<<D.getNumSends()<<endl 
+	  << "distor.ProcsTo    : "<<toString(D.getProcsTo())<<endl
+	  << "distor.LengthsTo  : "<<toString(D.getLengthsTo())<<endl;
+
+      out << "distor.hasSelfMsg : "<<D.hasSelfMessage()<<endl;
+
       out << "permuteFromLIDs: " << toString (getPermuteFromLIDs ()) << endl
           << "permuteToLIDs: " << toString (getPermuteToLIDs ()) << endl
           << "remoteLIDs: " << toString (getRemoteLIDs ()) << endl

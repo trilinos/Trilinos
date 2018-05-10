@@ -53,7 +53,7 @@ typedef double RealT;
 
 int main(int argc, char *argv[]) {
 
-  using Teuchos::RCP; using Teuchos::rcp;
+   
 
   using SV  = ROL::StdVector<RealT>;
   using MAT = ROL::StdLinearOperator<RealT>;
@@ -66,12 +66,12 @@ int main(int argc, char *argv[]) {
 
   // This little trick lets us print to std::cout only if a (dummy) command-line argument is provided.
   int iprint     = argc - 1;
-  Teuchos::RCP<std::ostream> outStream;
+  ROL::Ptr<std::ostream> outStream;
   Teuchos::oblackholestream bhs; // outputs nothing
   if (iprint > 0)
-    outStream = Teuchos::rcp(&std::cout, false);
+    outStream = ROL::makePtrFromRef(std::cout);
   else
-    outStream = Teuchos::rcp(&bhs, false);
+    outStream = ROL::makePtrFromRef(bhs);
 
   // Save the format state of the original std::cout.
   Teuchos::oblackholestream oldFormatState;
@@ -87,23 +87,27 @@ int main(int argc, char *argv[]) {
    
     int dim = 3;    
 
-    RCP<vector> m_rcp = rcp( new vector({  3.0, 1.0, 0.0, -2.0, 6.0, 2.0, 0.0, -1.0, 3.0 }) );
-    RCP<vector> a_rcp = rcp( new vector({  3.0, 6.0, 3.0} ) );
-    RCP<vector> b_rcp = rcp( new vector({ -2.0,-1.0 } ) );
-    RCP<vector> c_rcp = rcp( new vector({  1.0, 2.0 } ) );
+    ROL::Ptr<vector> m_ptr = ROL::makePtr<vector>(
+      std::initializer_list<RealT>{ 3.0,  1.0, 0.0, -2.0, 6.0, 2.0, 0.0, -1.0, 3.0 } );
+    ROL::Ptr<vector> a_ptr = ROL::makePtr<vector>(
+      std::initializer_list<RealT>{ 3.0,  6.0, 3.0} );
+    ROL::Ptr<vector> b_ptr = ROL::makePtr<vector>(
+      std::initializer_list<RealT>{ -2.0, -1.0 } );
+    ROL::Ptr<vector> c_ptr = ROL::makePtr<vector>(
+      std::initializer_list<RealT>{  1.0,  2.0 } );
 
-    MAT M(m_rcp);
-    TRI T(a_rcp,b_rcp,c_rcp);   
+    MAT M(m_ptr);
+    TRI T(a_ptr,b_ptr,c_ptr);   
 
-    SV xm( rcp( new vector( {1.0, 2.0,-1.0} ) ) );
-    SV ym( rcp( new vector( dim ) ) );
-    SV zm( rcp( new vector( dim ) ) );
+    SV xm( ROL::makePtr<vector>( std::initializer_list<RealT>{1.0, 2.0, -1.0} ) );
+    SV ym( ROL::makePtr<vector>( dim ) );
+    SV zm( ROL::makePtr<vector>( dim ) );
     
-    SV xt( rcp( new vector( dim ) ) );
-    SV yt( rcp( new vector( dim ) ) );
-    SV zt( rcp( new vector( dim ) ) );
+    SV xt( ROL::makePtr<vector>( dim ) );
+    SV yt( ROL::makePtr<vector>( dim ) );
+    SV zt( ROL::makePtr<vector>( dim ) );
   
-    SV error( rcp( new vector(dim) ) );
+    SV error( ROL::makePtr<vector>(dim) );
     RealT nerr = 0;
  
     xt.set(xm);

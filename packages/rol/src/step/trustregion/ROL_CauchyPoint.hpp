@@ -60,9 +60,9 @@ template<class Real>
 class CauchyPoint : public TrustRegion<Real> {
 private:
 
-  Teuchos::RCP<Vector<Real> > g_;
-  Teuchos::RCP<Vector<Real> > p_;
-  Teuchos::RCP<Vector<Real> > Hp_;
+  ROL::Ptr<Vector<Real> > g_;
+  ROL::Ptr<Vector<Real> > p_;
+  ROL::Ptr<Vector<Real> > Hp_;
 
   Real pRed_;
   Real eps_;

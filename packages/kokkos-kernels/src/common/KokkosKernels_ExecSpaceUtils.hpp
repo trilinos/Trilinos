@@ -74,7 +74,7 @@ inline ExecSpaceType kk_get_exec_space_type(){
   }
 #endif
 
-#if defined( KOKKOS_HAVE_CUDA )
+#if defined( KOKKOS_ENABLE_CUDA )
   if (Kokkos::Impl::is_same<Kokkos::Cuda, ExecutionSpace >::value){
     exec_space = Exec_CUDA;
   }

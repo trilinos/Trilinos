@@ -381,21 +381,21 @@ MV_Update_Generic (const typename XMV::non_const_value_type& alpha, const XMV& X
     if (b == 0) {
       if (c == 0) {
         MV_Update_Functor<XMV, YMV, ZMV, 0, 0, 0, SizeType> op (alpha, X, beta, Y, gamma, Z);
-        Kokkos::parallel_for (policy, op);
+        Kokkos::parallel_for ("KokkosBlas::update<MV,0,0,0>",policy, op);
       }
       else {
         MV_Update_Functor<XMV, YMV, ZMV, 0, 0, 2, SizeType> op (alpha, X, beta, Y, gamma, Z);
-        Kokkos::parallel_for (policy, op);
+        Kokkos::parallel_for ("KokkosBlas::update<MV,0,0,c>",policy, op);
       }
     }
     else {
       if (c == 0) {
         MV_Update_Functor<XMV, YMV, ZMV, 0, 2, 0, SizeType> op (alpha, X, beta, Y, gamma, Z);
-        Kokkos::parallel_for (policy, op);
+        Kokkos::parallel_for ("KokkosBlas::update<MV,0,b,0>",policy, op);
       }
       else {
         MV_Update_Functor<XMV, YMV, ZMV, 0, 2, 2, SizeType> op (alpha, X, beta, Y, gamma, Z);
-        Kokkos::parallel_for (policy, op);
+        Kokkos::parallel_for ("KokkosBlas::update<MV,0,b,c>",policy, op);
       }
     }
   }
@@ -406,21 +406,21 @@ MV_Update_Generic (const typename XMV::non_const_value_type& alpha, const XMV& X
     if (b == 0) {
       if (c == 0) {
         MV_Update_Functor<XMV, YMV, ZMV, 2, 0, 0, SizeType> op (alpha, X, beta, Y, gamma, Z);
-        Kokkos::parallel_for (policy, op);
+        Kokkos::parallel_for ("KokkosBlas::update<MV,a,0,0>",policy, op);
       }
       else {
         MV_Update_Functor<XMV, YMV, ZMV, 2, 0, 2, SizeType> op (alpha, X, beta, Y, gamma, Z);
-        Kokkos::parallel_for (policy, op);
+        Kokkos::parallel_for ("KokkosBlas::update<MV,a,0,c>",policy, op);
       }
     }
     else {
       if (c == 0) {
         MV_Update_Functor<XMV, YMV, ZMV, 2, 2, 0, SizeType> op (alpha, X, beta, Y, gamma, Z);
-        Kokkos::parallel_for (policy, op);
+        Kokkos::parallel_for ("KokkosBlas::update<MV,a,b,0>",policy, op);
       }
       else {
         MV_Update_Functor<XMV, YMV, ZMV, 2, 2, 2, SizeType> op (alpha, X, beta, Y, gamma, Z);
-        Kokkos::parallel_for (policy, op);
+        Kokkos::parallel_for ("KokkosBlas::update<MV,a,b,c>",policy, op);
       }
     }
   }
@@ -477,21 +477,21 @@ V_Update_Generic (const typename XV::non_const_value_type& alpha, const XV& X,
     if (b == 0) {
       if (c == 0) {
         V_Update_Functor<XV, YV, ZV, 0, 0, 0, SizeType> op (alpha, X, beta, Y, gamma, Z);
-        Kokkos::parallel_for (policy, op);
+        Kokkos::parallel_for ("KokkosBlas::update<0,0,0>",policy, op);
       }
       else {
         V_Update_Functor<XV, YV, ZV, 0, 0, 2, SizeType> op (alpha, X, beta, Y, gamma, Z);
-        Kokkos::parallel_for (policy, op);
+        Kokkos::parallel_for ("KokkosBlas::update<0,0,c>",policy, op);
       }
     }
     else {
       if (c == 0) {
         V_Update_Functor<XV, YV, ZV, 0, 2, 0, SizeType> op (alpha, X, beta, Y, gamma, Z);
-        Kokkos::parallel_for (policy, op);
+        Kokkos::parallel_for ("KokkosBlas::update<0,b,0>",policy, op);
       }
       else {
         V_Update_Functor<XV, YV, ZV, 0, 2, 2, SizeType> op (alpha, X, beta, Y, gamma, Z);
-        Kokkos::parallel_for (policy, op);
+        Kokkos::parallel_for ("KokkosBlas::update<0,b,c>",policy, op);
       }
     }
   }
@@ -502,21 +502,21 @@ V_Update_Generic (const typename XV::non_const_value_type& alpha, const XV& X,
     if (b == 0) {
       if (c == 0) {
         V_Update_Functor<XV, YV, ZV, 2, 0, 0, SizeType> op (alpha, X, beta, Y, gamma, Z);
-        Kokkos::parallel_for (policy, op);
+        Kokkos::parallel_for ("KokkosBlas::update<a,0,0>",policy, op);
       }
       else {
         V_Update_Functor<XV, YV, ZV, 2, 0, 2, SizeType> op (alpha, X, beta, Y, gamma, Z);
-        Kokkos::parallel_for (policy, op);
+        Kokkos::parallel_for ("KokkosBlas::update<a,0,c>",policy, op);
       }
     }
     else {
       if (c == 0) {
         V_Update_Functor<XV, YV, ZV, 2, 2, 0, SizeType> op (alpha, X, beta, Y, gamma, Z);
-        Kokkos::parallel_for (policy, op);
+        Kokkos::parallel_for ("KokkosBlas::update<a,b,0>",policy, op);
       }
       else {
         V_Update_Functor<XV, YV, ZV, 2, 2, 2, SizeType> op (alpha, X, beta, Y, gamma, Z);
-        Kokkos::parallel_for (policy, op);
+        Kokkos::parallel_for ("KokkosBlas::update<a,b,c>",policy, op);
       }
     }
   }

@@ -42,22 +42,35 @@
 */
 #include <Kokkos_MemoryTraits.hpp>
 #include <Kokkos_Core.hpp>
-#include "KokkosKernels_Utils.hpp"
+#include <KokkosKernels_Utils.hpp>
+
 #ifndef _GRAPHCOLORHANDLE_HPP
 #define _GRAPHCOLORHANDLE_HPP
+
 //#define VERBOSE
-namespace KokkosGraph{
+namespace KokkosGraph {
 
-
-enum ColoringAlgorithm{COLORING_DEFAULT, COLORING_SERIAL, COLORING_VB, COLORING_VBBIT, COLORING_VBCS, COLORING_EB,COLORING_SERIAL2};
+enum ColoringAlgorithm { COLORING_DEFAULT,
+                         COLORING_SERIAL,
+                         COLORING_VB,
+                         COLORING_VBBIT,
+                         COLORING_VBCS,
+                         COLORING_EB,
+                         COLORING_SERIAL2,
+                         COLORING_SPGEMM,
+                         COLORING_D2_MATRIX_SQUARED,          // Distance-2 Graph Coloring (Brian's Code)
+                         COLORING_D2                          // Distance-2 Graph Coloring (WCMCLEN)
+                       };
 
 enum ConflictList{COLORING_NOCONFLICT, COLORING_ATOMIC, COLORING_PPS};
 
 enum ColoringType {Distance1, Distance2};
 
-template <class lno_row_view_t_, class nonconst_color_view_t_, class lno_nnz_view_t_,
-      class ExecutionSpace, class TemporaryMemorySpace, class PersistentMemorySpace>
-class GraphColoringHandle{
+template <class size_type_, class color_t_, class lno_t_, 
+         //class lno_row_view_t_, class nonconst_color_view_t_, class lno_nnz_view_t_,
+          class ExecutionSpace, class TemporaryMemorySpace, class PersistentMemorySpace>
+class GraphColoringHandle
+{
 
 public:
   typedef ExecutionSpace HandleExecSpace;
@@ -65,95 +78,28 @@ public:
   typedef PersistentMemorySpace HandlePersistentMemorySpace;
 
 
-  typedef lno_row_view_t_ in_lno_row_view_t;
-  //typedef row_index_view_type_ idx_array_type;
+  typedef typename std::remove_const<size_type_>::type  size_type;
+  typedef const size_type const_size_type;
 
-  //typedef nonzero_index_view_type_ idx_edge_array_type;
-  typedef lno_nnz_view_t_ in_lno_nnz_view_t;
+  typedef typename std::remove_const<lno_t_>::type  nnz_lno_t;
+  typedef const nnz_lno_t const_nnz_lno_t;
 
-  //typedef typename row_index_view_type::value_type idx;
-  //typedef typename in_lno_row_view_t::non_const_value_type row_lno_t;
-  typedef typename in_lno_row_view_t::non_const_value_type size_type;
-
-  //typedef typename row_index_view_type::array_layout idx_array_layout;
-  typedef typename in_lno_row_view_t::array_layout row_lno_view_array_layout;
-
-  //typedef typename row_index_view_type::device_type idx_device_type;
-  typedef typename in_lno_row_view_t::device_type row_lno_view_device_t;
-
-  //typedef typename row_index_view_type::memory_traits idx_memory_traits;
-  typedef typename in_lno_row_view_t::memory_traits row_lno_view_memory_traits;
-
-  //typedef typename row_index_view_type::HostMirror host_view_type;
-  typedef typename in_lno_row_view_t::HostMirror row_lno_host_view_t; //Host view type
-  //typedef typename idx_memory_traits::MemorySpace MyMemorySpace;
-
-  //typedef typename nonzero_index_view_type::non_const_value_type idx_edge;
-  typedef typename in_lno_nnz_view_t::non_const_value_type nnz_lno_t;
-
-  //typedef typename nonzero_index_view_type::array_layout idx_edge_array_layout;
-  typedef typename in_lno_nnz_view_t::array_layout nnz_lno_view_array_layout;
-
-  //typedef typename nonzero_index_view_type::device_type idx_edge_device_type;
-  typedef typename in_lno_nnz_view_t::device_type nnz_lno_view_device_t;
-
-  //typedef typename nonzero_index_view_type::memory_traits idx_edge_memory_traits;
-  typedef typename in_lno_nnz_view_t::memory_traits nnz_lno_view_memory_traits;
-
-  //typedef typename nonzero_index_view_type::HostMirror host_edge_view_type; //Host view type
-  typedef typename in_lno_nnz_view_t::HostMirror nnz_lno_host_view_t; //Host view type
+  typedef typename std::remove_const<color_t_>::type  color_t;
+  typedef const color_t const_color_t;
 
 
 
-  typedef nonconst_color_view_t_ color_view_t;
+  typedef typename Kokkos::View<color_t *, HandlePersistentMemorySpace> color_view_t;
 
-  typedef typename color_view_t::non_const_value_type color_t;
   typedef typename color_view_t::array_layout color_view_array_layout;
   typedef typename color_view_t::device_type color_view_device_t;
   typedef typename color_view_t::memory_traits color_view_memory_traits;
   typedef typename color_view_t::HostMirror color_host_view_t; //Host view type
 
 
-
-  //typedef typename in_lno_row_view_t::const_value_type const_row_lno_t;
-  typedef typename in_lno_row_view_t::const_value_type const_size_type;
-  //typedef typename in_lno_row_view_t::non_const_value_type non_const_row_lno_t;
-  //typedef typename in_row_index_view_type::memory_space row_view_memory_space;
-  //typedef typename Kokkos::View<const_row_lno_t, row_view_array_layout,
-  //    row_view_device_t, row_view_memory_traits> const_row_index_view_type;
-
-  typedef typename in_lno_row_view_t::const_type const_lno_row_view_t;
-
-  //typedef typename Kokkos::View<non_const_row_lno_t, row_view_array_layout,
-  //    row_view_device_t, row_view_memory_traits> non_const_row_index_view_type;
-  typedef typename in_lno_row_view_t::non_const_type non_const_lno_row_view_t;
-
-
-
-  typedef typename in_lno_nnz_view_t::const_value_type const_nnz_lno_t;
-  //typedef typename in_lno_nnz_view_t::non_const_value_type non_const_nnz_lno_t;
-  //typedef typename in_nonzero_index_view_type::memory_space nonzero_index_view_memory_space;
-  //typedef typename Kokkos::View<const_nnz_lno_t, nnz_lno_view_array_layout,
-  //    nnz_lno_view_device_t, nnz_lno_view_memory_traits> const_nonzero_index_view_type;
-
-  typedef typename in_lno_nnz_view_t::const_type const_lno_nnz_view_t;
-
-  //typedef typename Kokkos::View<non_const_nnz_lno_t, nnz_lno_view_array_layout,
-  //    nnz_lno_view_device_t, nnz_lno_view_memory_traits> non_const_nonzero_index_view_type;
-  typedef typename in_lno_nnz_view_t::non_const_type non_const_lno_nnz_view_t;
-
-
-
-
-  //typedef typename Kokkos::View<row_index_type *, HandleTempMemorySpace> idx_temp_work_array_type;
-  //typedef typename Kokkos::View<size_type *, HandleTempMemorySpace> row_lno_temp_work_view_t;
   typedef typename Kokkos::View<size_type *, HandleTempMemorySpace> size_type_temp_work_view_t;
-  //typedef typename row_index_persistent_work_view_type idx_persistent_work_array_type;
-  //typedef typename Kokkos::View<size_type *, HandlePersistentMemorySpace> size_type_persistent_work_view_t;
   typedef typename Kokkos::View<size_type *, HandlePersistentMemorySpace> size_type_persistent_work_view_t;
 
-  //typedef typename row_index_persistent_work_view_type::HostMirror host_idx_persistent_view_type; //Host view type
-  //typedef typename row_lno_persistent_work_view_t::HostMirror row_lno_persistent_work_host_view_t; //Host view type
   typedef typename size_type_persistent_work_view_t::HostMirror size_type_persistent_work_host_view_t; //Host view type
 
   typedef typename Kokkos::View<nnz_lno_t *, HandleTempMemorySpace> nnz_lno_temp_work_view_t;
@@ -162,6 +108,7 @@ public:
 
   typedef Kokkos::TeamPolicy<HandleExecSpace> team_policy_t ;
   typedef typename team_policy_t::member_type team_member_t ;
+
 private:
 
   ColoringType GraphColoringType;
@@ -247,6 +194,7 @@ private:
     return this->GraphColoringType;
   }
 
+
   /** \brief Changes the graph coloring algorithm.
    *  \param col_algo: Coloring algorithm: one of COLORING_VB, COLORING_VBBIT, COLORING_VBCS, COLORING_EB
    *  \param set_default_parameters: whether or not to reset the default parameters for the given algorithm.
@@ -263,10 +211,11 @@ private:
     }
   }
 
+
   /** \brief Chooses best algorithm based on the execution space. COLORING_EB if cuda, COLORING_VB otherwise.
    */
-  void choose_default_algorithm(){
-
+  void choose_default_algorithm()
+  {
 #if defined( KOKKOS_HAVE_SERIAL )
     if (Kokkos::Impl::is_same< Kokkos::Serial , ExecutionSpace >::value){
       this->coloring_algorithm_type = COLORING_SERIAL;
@@ -294,7 +243,7 @@ private:
     }
 #endif
 
-#if defined( KOKKOS_HAVE_CUDA )
+#if defined( KOKKOS_ENABLE_CUDA )
     if (Kokkos::Impl::is_same<Kokkos::Cuda, ExecutionSpace >::value){
       this->coloring_algorithm_type = COLORING_EB;
 #ifdef VERBOSE
@@ -346,6 +295,8 @@ private:
     }
   };
 
+
+
   template<typename v1, typename v2, typename v3>
   struct CountLowerTriangleTeam{
 
@@ -393,8 +344,9 @@ private:
         lower_xadj_counts(ii + 1) = new_edge_count;
       });
     }
-
   };
+
+
 
   template<typename v1, typename v2, typename v3, typename v4>
   struct FillLowerTriangleTeam{
@@ -420,7 +372,7 @@ private:
 
     KOKKOS_INLINE_FUNCTION
     void operator()(const team_member_t & teamMember) const {
-
+      typedef typename std::remove_reference< decltype( lower_xadj_counts(0) ) >::type atomic_incr_type;
 
       nnz_lno_t ii = teamMember.league_rank()  * teamMember.team_size()+ teamMember.team_rank();
       if (ii >= nv) {
@@ -438,13 +390,14 @@ private:
         nnz_lno_t n = adj[adjind];
         if (ii < n && n < nv){
           size_type position =
-              Kokkos::atomic_fetch_add( &(lower_xadj_counts(ii)), 1);
+              Kokkos::atomic_fetch_add( &(lower_xadj_counts(ii)), atomic_incr_type(1));
           lower_srcs(position) = ii;
           lower_dsts(position) = n;
         }
       });
     }
   };
+
 
 
   template<typename v1, typename v2, typename v3, typename v4>
@@ -484,6 +437,9 @@ private:
       }
     }
   };
+
+
+
   template <typename row_index_view_type, typename nonzero_view_type>
   void symmetrize_and_calculate_lower_diagonal_edge_list(
       nnz_lno_t nv,
@@ -501,6 +457,8 @@ private:
     size_of_edge_list = lower_triangle_src.dimension_0();
 
   }
+
+
 
   template <typename row_index_view_type, typename nonzero_view_type>
   void get_lower_diagonal_edge_list(
@@ -523,9 +481,8 @@ private:
       size_type new_num_edge = 0;
       typedef Kokkos::RangePolicy<HandleExecSpace> my_exec_space;
 
-
       if (
-#if defined( KOKKOS_HAVE_CUDA )
+#if defined( KOKKOS_ENABLE_CUDA )
           Kokkos::Impl::is_same<Kokkos::Cuda, ExecutionSpace >::value ||
 #endif
           0){
@@ -542,7 +499,7 @@ private:
             teamSizeMax,
             nv, ne);
 
-        Kokkos::parallel_for(
+        Kokkos::parallel_for("KokkosGraph::CountLowerTriangleTeam",
             team_policy_t(nv / teamSizeMax + 1 , teamSizeMax, vector_size),
             clt//, new_num_edge
         );
@@ -558,7 +515,7 @@ private:
         new_num_edge = hlower();
         nnz_lno_persistent_work_view_t half_src (Kokkos::ViewAllocateWithoutInitializing("HALF SRC"),new_num_edge);
         nnz_lno_persistent_work_view_t half_dst (Kokkos::ViewAllocateWithoutInitializing("HALF DST"),new_num_edge);
-        Kokkos::parallel_for(
+        Kokkos::parallel_for("KokkosGraph::FillLowerTriangleTeam",
             team_policy_t(nv / teamSizeMax + 1 , teamSizeMax, vector_size),
             FillLowerTriangleTeam
             <row_index_view_type, nonzero_view_type,
@@ -570,7 +527,7 @@ private:
       }
       else {
         if (nv > 0) {
-          Kokkos::parallel_reduce(my_exec_space(0,nv),
+          Kokkos::parallel_reduce("KokkosGraph::CountLowerTriangleTeam",my_exec_space(0,nv),
               CountLowerTriangle<row_index_view_type, nonzero_view_type, size_type_temp_work_view_t> (nv, xadj, adj, lower_count), new_num_edge);
         }
 
@@ -581,7 +538,7 @@ private:
         nnz_lno_persistent_work_view_t half_src (Kokkos::ViewAllocateWithoutInitializing("HALF SRC"),new_num_edge);
         nnz_lno_persistent_work_view_t half_dst (Kokkos::ViewAllocateWithoutInitializing("HALF DST"),new_num_edge);
 
-        Kokkos::parallel_for(my_exec_space(0,nv), FillLowerTriangle
+        Kokkos::parallel_for("KokkosGraph::FillLowerTriangleTeam",my_exec_space(0,nv), FillLowerTriangle
             <row_index_view_type, nonzero_view_type,
             size_type_temp_work_view_t,nnz_lno_persistent_work_view_t> (nv, xadj, adj, lower_count, half_src, half_dst));
 
@@ -589,9 +546,10 @@ private:
         dst = lower_triangle_dst = half_dst;
         num_out_edges = size_of_edge_list = new_num_edge;
       }
-
     }
   }
+
+
 
   struct ReduceMaxFunctor{
     color_view_t colors;
@@ -616,14 +574,17 @@ private:
   };
 
 
+
   nnz_lno_t get_num_colors(){
     if (num_colors == 0){
       typedef typename Kokkos::RangePolicy<ExecutionSpace> my_exec_space;
-      Kokkos::parallel_reduce(my_exec_space(0, vertex_colors.dimension_0()),
+      Kokkos::parallel_reduce("KokkosKernels::FindMax", my_exec_space(0, vertex_colors.dimension_0()),
           ReduceMaxFunctor(vertex_colors) ,num_colors);
     }
     return num_colors;
   }
+
+
 
   /** \brief Sets Default Parameter settings for the given algorithm.
    */
@@ -634,6 +595,9 @@ private:
     case COLORING_VBCS:
     case COLORING_SERIAL:
     case COLORING_SERIAL2:
+    case COLORING_SPGEMM:
+    case COLORING_D2_MATRIX_SQUARED:
+    case COLORING_D2:
       this->conflict_list_type = COLORING_ATOMIC;
       this->min_reduction_for_conflictlist = 0.35;
       this->min_elements_for_conflictlist = 1000;
@@ -661,7 +625,9 @@ private:
     }
   }
 
+
   virtual ~GraphColoringHandle(){};
+
 
   //getters
   ColoringAlgorithm get_coloring_algo_type() const {return this->coloring_algorithm_type;}
@@ -670,7 +636,7 @@ private:
   int get_min_elements_for_conflictlist() const{ return this->min_elements_for_conflictlist;}
   bool get_serial_conflict_resolution() const{return this->serial_conflict_resolution;}
   bool get_tictoc() const{return this->tictoc;}
-  bool get_vb_edge_filtering() const{return this-vb_edge_filtering;}
+  bool get_vb_edge_filtering() const{return this->vb_edge_filtering;}
   int get_vb_chunk_size() const{return this->vb_chunk_size;}
   int get_max_number_of_iterations() const{return this->max_number_of_iterations;}
   int get_eb_num_initial_colors() const{return this->eb_num_initial_colors;}
@@ -687,7 +653,7 @@ private:
   void set_min_elements_for_conflictlist(const int &min_elements){ this->min_elements_for_conflictlist = min_elements;}
   void set_serial_conflict_resolution(const bool &use_serial_conflist_resolution){this->serial_conflict_resolution = use_serial_conflist_resolution;}
   void set_tictoc(const bool use_tictoc){this->tictoc = use_tictoc;}
-  void set_vb_edge_filtering(const bool  &use_vb_edge_filtering){this-vb_edge_filtering = use_vb_edge_filtering;}
+  void set_vb_edge_filtering(const bool  &use_vb_edge_filtering){this->vb_edge_filtering = use_vb_edge_filtering;}
   void set_vb_chunk_size(const int &chunksize){this->vb_chunk_size = chunksize;}
   void set_max_number_of_iterations(const int &max_phases){this->max_number_of_iterations = max_phases;}
   void set_eb_num_initial_colors(const int &num_initial_colors){this->eb_num_initial_colors = num_initial_colors;}
@@ -702,6 +668,7 @@ private:
 
 
 };
-}
+
+}   // namespace KokkosGraph
 
 #endif // _GRAPHCOLORHANDLE_HPP

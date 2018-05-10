@@ -40,6 +40,7 @@
 // @HEADER
 
 #include <iostream>
+#include <vector>
 #include "Teuchos_LAPACK.hpp"
 #include "Teuchos_Version.hpp"
 

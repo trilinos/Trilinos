@@ -5,32 +5,11 @@
 namespace Teuchos {
 namespace YAML {
 
-Language make_language() {
-  Language out;
-  Language::Productions& prods = out.productions;
-  Language::Tokens& toks = out.tokens;
+namespace {
+
+Language::Productions make_productions() {
+  Language::Productions prods;
   prods.resize(NPRODS);
-  toks.resize(NTOKS);
-  toks[TOK_NEWLINE]("NEWLINE", "((#[^\r\n]*)?\r?\n[ \t]*)+");
-  toks[TOK_INDENT]("INDENT", "((#[^\r\n]*)?\r?\n[ \t]*)+");
-  toks[TOK_DEDENT]("DEDENT", "((#[^\r\n]*)?\r?\n[ \t]*)+");
-  toks[TOK_SPACE]("WS", "[ \t]");
-  toks[TOK_COLON](":", ":");
-  toks[TOK_DOT](".", "\\.");
-  toks[TOK_DASH]("-", "\\-");
-  toks[TOK_DQUOT]("\"", "\"");
-  toks[TOK_SQUOT]("'", "'");
-  toks[TOK_SLASH]("\\", "\\\\");
-  toks[TOK_PIPE]("|", "\\|");
-  toks[TOK_LSQUARE]("[", "\\[");
-  toks[TOK_RSQUARE]("]", "\\]");
-  toks[TOK_LCURLY]("{", "{");
-  toks[TOK_RCURLY]("}", "}");
-  toks[TOK_RANGLE](">", ">");
-  toks[TOK_COMMA](",", ",");
-  toks[TOK_PERCENT]("%", "%");
-  toks[TOK_EXCL]("!", "!");
-  toks[TOK_OTHER]("OTHERCHAR", "[^ \t:\\.\\-\"'\\\\\\|\\[\\]{}>,%#!\n\r]");
   prods[PROD_DOC]("doc") >> "top_items";
   prods[PROD_DOC2]("doc") >> "NEWLINE", "top_items";
   prods[PROD_TOP_FIRST]("top_items") >> "top_item";
@@ -78,8 +57,8 @@ Language make_language() {
   prods[PROD_SCALAR_QUOTED]("scalar") >> "scalar_quoted";
   prods[PROD_MAP_SCALAR_RAW]("map_scalar") >> "scalar_head", "scalar_tail*", "map_scalar_escaped*";
   prods[PROD_MAP_SCALAR_QUOTED]("map_scalar") >> "scalar_quoted";
-  prods[PROD_SCALAR_DQUOTED]("scalar_quoted") >> "\"", "dquoted*", "descape*", "\"";
-  prods[PROD_SCALAR_SQUOTED]("scalar_quoted") >> "'", "squoted*", "sescape*", "'";
+  prods[PROD_SCALAR_DQUOTED]("scalar_quoted") >> "\"", "dquoted*", "descape*", "\"", "WS*";
+  prods[PROD_SCALAR_SQUOTED]("scalar_quoted") >> "'", "squoted*", "sescape*", "'", "WS*";
   prods[PROD_SCALAR_HEAD_OTHER]("scalar_head") >> "OTHERCHAR";
   prods[PROD_SCALAR_HEAD_DOT]("scalar_head") >> ".", "OTHERCHAR";
   prods[PROD_SCALAR_HEAD_DASH]("scalar_head") >> "-", "OTHERCHAR";
@@ -150,6 +129,37 @@ Language make_language() {
   prods[PROD_SPACE_STAR_NEXT]("WS*") >> "WS*", "WS";
   prods[PROD_SPACE_PLUS_FIRST]("WS+") >> "WS";
   prods[PROD_SPACE_PLUS_NEXT]("WS+") >> "WS+", "WS";
+  return prods;
+}
+
+} // end anonymous namespace
+
+Language make_language() {
+  Language out;
+  Language::Productions& prods = out.productions;
+  prods = make_productions();
+  Language::Tokens& toks = out.tokens;
+  toks.resize(NTOKS);
+  toks[TOK_NEWLINE]("NEWLINE", "((#[^\r\n]*)?\r?\n[ \t]*)+");
+  toks[TOK_INDENT]("INDENT", "((#[^\r\n]*)?\r?\n[ \t]*)+");
+  toks[TOK_DEDENT]("DEDENT", "((#[^\r\n]*)?\r?\n[ \t]*)+");
+  toks[TOK_SPACE]("WS", "[ \t]");
+  toks[TOK_COLON](":", ":");
+  toks[TOK_DOT](".", "\\.");
+  toks[TOK_DASH]("-", "\\-");
+  toks[TOK_DQUOT]("\"", "\"");
+  toks[TOK_SQUOT]("'", "'");
+  toks[TOK_SLASH]("\\", "\\\\");
+  toks[TOK_PIPE]("|", "\\|");
+  toks[TOK_LSQUARE]("[", "\\[");
+  toks[TOK_RSQUARE]("]", "\\]");
+  toks[TOK_LCURLY]("{", "{");
+  toks[TOK_RCURLY]("}", "}");
+  toks[TOK_RANGLE](">", ">");
+  toks[TOK_COMMA](",", ",");
+  toks[TOK_PERCENT]("%", "%");
+  toks[TOK_EXCL]("!", "!");
+  toks[TOK_OTHER]("OTHERCHAR", "[^ \t:\\.\\-\"'\\\\\\|\\[\\]{}>,%#!\n\r]");
   return out;
 }
 

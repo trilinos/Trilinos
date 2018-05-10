@@ -1,0 +1,2 @@
+INCLUDE("${CMAKE_CURRENT_LIST_DIR}/ATDMDevEnvSettings.cmake")
+INCLUDE("${CMAKE_CURRENT_LIST_DIR}/ATDMDisables.cmake")

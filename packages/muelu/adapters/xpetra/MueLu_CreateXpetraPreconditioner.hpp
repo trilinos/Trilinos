@@ -73,7 +73,13 @@ namespace MueLu {
     }
 
     // Create Hierarchy
-    RCP<Hierarchy> H = mueLuFactory->CreateHierarchy();
+    std::string label;
+    if (hasParamList && paramList.isParameter("hierarchy label")) {
+      label = paramList.get<std::string>("hierarchy label");
+      paramList.remove("hierarchy label");
+    } else
+      label = op->getObjectLabel();
+    RCP<Hierarchy> H = mueLuFactory->CreateHierarchy(label);
     H->setlib(op->getDomainMap()->lib());
 
     // Stick the non-serializible data on the hierarchy.
@@ -259,5 +265,7 @@ namespace MueLu {
   }
 
 } //namespace
+
+#define XPETRA_CREATEXPETRAPRECONDITIONER_SHORT
 
 #endif /* PACKAGES_MUELU_ADAPTERS_XPETRA_MUELU_CREATEXPETRAPRECONDITIONER_HPP_ */

@@ -18,7 +18,7 @@ namespace Tempus {
 
 /** \brief Backward Euler time stepper.
  *
- *  For the implicit ODE system, \f$/mathcal{F}(\dot{x},x,t) = 0\f$,
+ *  For the implicit ODE system, \f$\mathcal{F}(\dot{x},x,t) = 0\f$,
  *  the solution, \f$\dot{x}\f$ and \f$x\f$, is determined using a
  *  solver (e.g., a non-linear solver, like NOX).
  *
@@ -40,20 +40,8 @@ public:
 
   /// \name Basic stepper methods
   //@{
-    virtual void setModel(
-      const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel);
-    virtual void setNonConstModel(
-      const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >& appModel);
-    virtual Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >
-      getModel(){return wrapperModel_->getAppModel();}
-
-    virtual void setSolver(std::string solverName);
-    virtual void setSolver(
-      Teuchos::RCP<Teuchos::ParameterList> solverPL=Teuchos::null);
-    virtual void setSolver(
-      Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> > solver);
     virtual void setObserver(
-      Teuchos::RCP<StepperBackwardEulerObserver<Scalar> > obs = Teuchos::null);
+      Teuchos::RCP<StepperObserver<Scalar> > obs = Teuchos::null);
 
     /// Set the predictor
     void setPredictor(std::string predictorName);
@@ -71,11 +59,22 @@ public:
     virtual Scalar getOrder() const {return 1.0;}
     virtual Scalar getOrderMin() const {return 1.0;}
     virtual Scalar getOrderMax() const {return 1.0;}
+
+    virtual bool isExplicit()         const {return false;}
+    virtual bool isImplicit()         const {return true;}
+    virtual bool isExplicitImplicit() const
+      {return isExplicit() and isImplicit();}
+    virtual bool isOneStepMethod()   const {return true;}
+    virtual bool isMultiStepMethod() const {return !isOneStepMethod();}
   //@}
 
   /// Compute predictor given the supplied stepper
   virtual void computePredictor(
     const Teuchos::RCP<SolutionHistory<Scalar> >& solutionHistory);
+
+  /// Provide temporary xDot memory for Stepper if SolutionState doesn't.
+  virtual Teuchos::RCP<Thyra::VectorBase<Scalar> > getXDotTemp(
+    Teuchos::RCP<Thyra::VectorBase<Scalar> > x);
 
   /// \name ParameterList methods
   //@{
@@ -100,12 +99,11 @@ private:
 
 private:
 
-  Teuchos::RCP<Teuchos::ParameterList>               stepperPL_;
-  Teuchos::RCP<WrapperModelEvaluator<Scalar> >       wrapperModel_;
-  Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> >  solver_;
-  Teuchos::RCP<Stepper<Scalar> >                     predictorStepper_;
-
+  Teuchos::RCP<Stepper<Scalar> >                      predictorStepper_;
+  Teuchos::RCP<StepperObserver<Scalar> >              stepperObserver_;
   Teuchos::RCP<StepperBackwardEulerObserver<Scalar> > stepperBEObserver_;
+
+  Teuchos::RCP<Thyra::VectorBase<Scalar> >            xDotTemp_;
 };
 
 /** \brief Time-derivative interface for Backward Euler.

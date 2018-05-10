@@ -72,10 +72,10 @@ namespace ROL {
 template <class Real>
 class NonlinearLeastSquaresObjective : public Objective<Real> {
 private:
-  const Teuchos::RCP<Constraint<Real> > con_;
+  const ROL::Ptr<Constraint<Real> > con_;
   const bool GaussNewtonHessian_;
 
-  Teuchos::RCP<Vector<Real> > c1_, c2_, c1dual_, x_;
+  ROL::Ptr<Vector<Real> > c1_, c2_, c1dual_, x_;
 
 public:
   /** \brief Constructor. 
@@ -85,7 +85,7 @@ public:
       @param[in]          vec   is a constraint space vector used for cloning.
       @param[in]          GHN   is a flag dictating whether or not to use the Gauss-Newton Hessian.
   */
-  NonlinearLeastSquaresObjective(const Teuchos::RCP<Constraint<Real> > &con,
+  NonlinearLeastSquaresObjective(const ROL::Ptr<Constraint<Real> > &con,
                                  const Vector<Real> &optvec,
                                  const Vector<Real> &convec,
                                  const bool GNH = false)

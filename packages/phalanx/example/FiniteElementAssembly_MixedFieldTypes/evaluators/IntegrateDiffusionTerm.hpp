@@ -56,6 +56,10 @@ class IntegrateDiffusionTerm : public PHX::EvaluatorWithBaseImpl<Traits>,
   using ScalarT = typename EvalT::ScalarT;
   PHX::Field<const ScalarT,3> flux;
   PHX::Field<ScalarT,2> residual;
+#ifdef PHX_ENABLE_KOKKOS_AMT
+  // Make residual atomic so that AMT mode can sum diffusion and source terms at same time
+  Kokkos::View<ScalarT**,typename PHX::DevLayout<ScalarT>::type,PHX::Device,Kokkos::MemoryTraits<Kokkos::Atomic>> residual_atomic;
+#endif
   Kokkos::View<const double****,PHX::Device> grad_basis;
   Kokkos::View<const double*,PHX::Device> weights;
   Kokkos::View<const double**,PHX::Device> cell_measure;

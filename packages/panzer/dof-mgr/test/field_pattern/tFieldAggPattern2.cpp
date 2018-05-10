@@ -80,9 +80,13 @@ namespace panzer {
     out << note << std::endl;
 
     // basis to build patterns from
-    RCP<Intrepid2::Basis<PHX::Device,double,double> > basisA = rcp(new Intrepid2::Basis_HGRAD_QUAD_Cn_FEM<PHX::Device,double,double>(3));
-    RCP<Intrepid2::Basis<PHX::Device,double,double> > basisB = rcp(new Intrepid2::Basis_HGRAD_QUAD_Cn_FEM<PHX::Device,double,double>(5));
-    RCP<Intrepid2::Basis<PHX::Device,double,double> > basisC = rcp(new Intrepid2::Basis_HGRAD_QUAD_Cn_FEM<PHX::Device,double,double>(1));
+    const int maxOrder = Intrepid2::Parameters::MaxOrder;
+    const int basisA_degree = std::min(3, maxOrder);
+    const int basisB_degree = std::min(5, maxOrder);
+    const int basisC_degree = std::min(1, maxOrder);
+    RCP<Intrepid2::Basis<PHX::Device,double,double> > basisA = rcp(new Intrepid2::Basis_HGRAD_QUAD_Cn_FEM<PHX::Device,double,double>(basisA_degree));
+    RCP<Intrepid2::Basis<PHX::Device,double,double> > basisB = rcp(new Intrepid2::Basis_HGRAD_QUAD_Cn_FEM<PHX::Device,double,double>(basisB_degree));
+    RCP<Intrepid2::Basis<PHX::Device,double,double> > basisC = rcp(new Intrepid2::Basis_HGRAD_QUAD_Cn_FEM<PHX::Device,double,double>(basisC_degree));
 
     RCP<const FieldPattern> patternA = rcp(new Intrepid2FieldPattern(basisA));
     RCP<const FieldPattern> patternB = rcp(new Intrepid2FieldPattern(basisB));
@@ -153,8 +157,10 @@ namespace panzer {
   TEUCHOS_UNIT_TEST(tFieldAggPattern, testB)
   {
     out << note << std::endl;
-
-    const int poly_A = 3, poly_B = 5;
+   
+    const int maxOrder = Intrepid2::Parameters::MaxOrder; 
+    const int poly_A = std::min(3, maxOrder),
+              poly_B = std::min(5, maxOrder);
     
     // basis to build patterns from
     RCP<Intrepid2::Basis<PHX::Device,double,double> > basisA = rcp(new Intrepid2::Basis_HGRAD_QUAD_Cn_FEM<PHX::Device,double,double>(poly_A));
@@ -307,7 +313,9 @@ namespace panzer {
     // basis to build patterns from
 
     {
-      const int poly = 4;
+
+      const int maxOrder = Intrepid2::Parameters::MaxOrder;
+      const int poly = std::min(4,maxOrder); 
       RCP<Intrepid2::Basis<PHX::Device,double,double> > basis = rcp(new Intrepid2::Basis_HGRAD_QUAD_Cn_FEM<PHX::Device,double,double>(poly));
 
       const int ndof[] = { basis->getDofTag(basis->getDofOrdinal(0,0,0))(3),
@@ -342,7 +350,9 @@ namespace panzer {
     }
 
     {
-      const int polyC1 = 3, polyC2 = 4;
+      const int maxOrder = Intrepid2::Parameters::MaxOrder; 
+      const int polyC1 = std::min(3, maxOrder),
+                polyC2 = std::min(4, maxOrder);
       RCP<Intrepid2::Basis<PHX::Device,double,double> > basisC1 = rcp(new Intrepid2::Basis_HGRAD_QUAD_Cn_FEM<PHX::Device,double,double>(polyC1));
       RCP<Intrepid2::Basis<PHX::Device,double,double> > basisC2 = rcp(new Intrepid2::Basis_HGRAD_QUAD_Cn_FEM<PHX::Device,double,double>(polyC2));
       

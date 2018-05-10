@@ -54,7 +54,10 @@
 namespace panzer {
 
 //**********************************************************************
-PHX_EVALUATOR_CTOR(WeakDirichletResidual,p)
+template<typename EvalT, typename Traits>
+WeakDirichletResidual<EvalT, Traits>::
+WeakDirichletResidual(
+  const Teuchos::ParameterList& p)
 {
   std::string residual_name = p.get<std::string>("Residual Name");
   std::string flux_name = p.get<std::string>("Flux Name");
@@ -94,7 +97,12 @@ PHX_EVALUATOR_CTOR(WeakDirichletResidual,p)
 }
 
 //**********************************************************************
-PHX_POST_REGISTRATION_SETUP(WeakDirichletResidual,sd,fm)
+template<typename EvalT, typename Traits>
+void
+WeakDirichletResidual<EvalT, Traits>::
+postRegistrationSetup(
+  typename Traits::SetupData sd,
+  PHX::FieldManager<Traits>& fm)
 {
   this->utils.setFieldData(residual,fm);
   this->utils.setFieldData(normal_dot_flux_plus_pen,fm);
@@ -114,7 +122,11 @@ PHX_POST_REGISTRATION_SETUP(WeakDirichletResidual,sd,fm)
 }
 
 //**********************************************************************
-PHX_EVALUATE_FIELDS(WeakDirichletResidual,workset)
+template<typename EvalT, typename Traits>
+void
+WeakDirichletResidual<EvalT, Traits>::
+evaluateFields(
+  typename Traits::EvalData workset)
 { 
   for (index_t cell = 0; cell < workset.num_cells; ++cell) {
     for (std::size_t ip = 0; ip < num_ip; ++ip) {

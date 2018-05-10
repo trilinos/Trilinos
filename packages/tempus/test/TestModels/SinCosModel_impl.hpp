@@ -18,6 +18,8 @@
 #include "Thyra_DefaultMultiVectorLinearOpWithSolve.hpp"
 #include "Thyra_DefaultLinearOpSource.hpp"
 #include "Thyra_VectorStdOps.hpp"
+#include "Thyra_MultiVectorStdOps.hpp"
+#include "Thyra_DefaultMultiVectorProductVector.hpp"
 
 #include <iostream>
 
@@ -30,11 +32,12 @@ SinCosModel(Teuchos::RCP<Teuchos::ParameterList> pList_)
 {
   isInitialized_ = false;
   dim_ = 2;
-  Np_ = 1; // Number of parameter vectors (1)
+  Np_ = 3; // Number of parameter vectors (p, dx/dp, dx_dot/dp)
   np_ = 3; // Number of parameters in this vector (3)
   Ng_ = 1; // Number of observation functions (1)
-  ng_ = 1; // Number of elements in this observation function (1)
+  ng_ = dim_; // Number of elements in this observation function ( == x )
   acceptModelParams_ = false;
+  useDfDpAsTangent_ = false;
   haveIC_ = true;
   a_ = 0.0;
   f_ = 1.0;
@@ -51,6 +54,9 @@ SinCosModel(Teuchos::RCP<Teuchos::ParameterList> pList_)
   g_space_ = Thyra::defaultSpmdVectorSpace<Scalar>(ng_);
 
   setParameterList(pList_);
+
+  // Create DxDp product space
+  DxDp_space_ = Thyra::multiVectorProductVectorSpace(x_space_, np_);
 }
 
 template<class Scalar>
@@ -275,8 +281,11 @@ evalModelImpl(
   const Thyra::ModelEvaluatorBase::OutArgs<Scalar> &outArgs
   ) const
 {
+  typedef Thyra::DefaultMultiVectorProductVector<Scalar> DMVPV;
   using Teuchos::RCP;
   using Thyra::VectorBase;
+  using Thyra::MultiVectorBase;
+  using Teuchos::rcp_dynamic_cast;
   TEUCHOS_TEST_FOR_EXCEPTION( !isInitialized_, std::logic_error,
       "Error, setupInOutArgs_ must be called first!\n");
 
@@ -294,6 +303,16 @@ evalModelImpl(
     a = p_in_view[0];
     f = p_in_view[1];
     L = p_in_view[2];
+  }
+
+  RCP<const MultiVectorBase<Scalar> > DxDp_in, DxdotDp_in;
+  if (acceptModelParams_) {
+    if (inArgs.get_p(1) != Teuchos::null)
+      DxDp_in =
+        rcp_dynamic_cast<const DMVPV>(inArgs.get_p(1))->getMultiVector();
+    if (inArgs.get_p(2) != Teuchos::null)
+      DxdotDp_in =
+        rcp_dynamic_cast<const DMVPV>(inArgs.get_p(2))->getMultiVector();
   }
 
   Scalar beta = inArgs.get_beta();
@@ -332,6 +351,17 @@ evalModelImpl(
       DfDp_out_view(1,0) = (f/L)*(f/L);
       DfDp_out_view(1,1) = (2.0*f/(L*L))*(a-x_in_view[0]);
       DfDp_out_view(1,2) = -(2.0*f*f/(L*L*L))*(a-x_in_view[0]);
+
+      // Compute df/dp + (df/dx) * (dx/dp)
+      if (useDfDpAsTangent_ && !is_null(DxDp_in)) {
+        Thyra::ConstDetachedMultiVectorView<Scalar> DxDp( *DxDp_in );
+        DfDp_out_view(0,0) +=  DxDp(1,0);
+        DfDp_out_view(0,1) +=  DxDp(1,1);
+        DfDp_out_view(0,2) +=  DxDp(1,2);
+        DfDp_out_view(1,0) += -(f/L)*(f/L) * DxDp(0,0);
+        DfDp_out_view(1,1) += -(f/L)*(f/L) * DxDp(0,1);
+        DfDp_out_view(1,2) += -(f/L)*(f/L) * DxDp(0,2);
+      }
     }
   } else {
 
@@ -363,6 +393,48 @@ evalModelImpl(
       DfDp_out_view(1,0) = -(f/L)*(f/L);
       DfDp_out_view(1,1) = -(2.0*f/(L*L))*(a-x_in_view[0]);
       DfDp_out_view(1,2) = +(2.0*f*f/(L*L*L))*(a-x_in_view[0]);
+
+      // Compute df/dp + (df/dx_dot) * (dx_dot/dp) + (df/dx) * (dx/dp)
+      if (useDfDpAsTangent_ && !is_null(DxdotDp_in)) {
+        Thyra::ConstDetachedMultiVectorView<Scalar> DxdotDp( *DxdotDp_in );
+        DfDp_out_view(0,0) += DxdotDp(0,0);
+        DfDp_out_view(0,1) += DxdotDp(0,1);
+        DfDp_out_view(0,2) += DxdotDp(0,2);
+        DfDp_out_view(1,0) += DxdotDp(1,0);
+        DfDp_out_view(1,1) += DxdotDp(1,1);
+        DfDp_out_view(1,2) += DxdotDp(1,2);
+      }
+      if (useDfDpAsTangent_ && !is_null(DxDp_in)) {
+        Thyra::ConstDetachedMultiVectorView<Scalar> DxDp( *DxDp_in );
+        DfDp_out_view(0,0) += -DxDp(1,0);
+        DfDp_out_view(0,1) += -DxDp(1,1);
+        DfDp_out_view(0,2) += -DxDp(1,2);
+        DfDp_out_view(1,0) +=  (f/L)*(f/L) * DxDp(0,0);
+        DfDp_out_view(1,1) +=  (f/L)*(f/L) * DxDp(0,1);
+        DfDp_out_view(1,2) +=  (f/L)*(f/L) * DxDp(0,2);
+      }
+    }
+  }
+
+  // Responses:  g = x
+  if (acceptModelParams_) {
+    RCP<VectorBase<Scalar> > g_out = outArgs.get_g(0);
+    if (g_out != Teuchos::null)
+      Thyra::assign(g_out.ptr(), *x_in);
+
+    RCP<Thyra::MultiVectorBase<Scalar> > DgDp_out =
+      outArgs.get_DgDp(0,0).getMultiVector();
+    if (DgDp_out != Teuchos::null)
+      Thyra::assign(DgDp_out.ptr(), Scalar(0.0));
+
+    RCP<Thyra::MultiVectorBase<Scalar> > DgDx_out =
+      outArgs.get_DgDx(0).getMultiVector();
+    if (DgDx_out != Teuchos::null) {
+      Thyra::DetachedMultiVectorView<Scalar> DgDx_out_view( *DgDx_out );
+      DgDx_out_view(0,0) = 1.0;
+      DgDx_out_view(0,1) = 0.0;
+      DgDx_out_view(1,0) = 0.0;
+      DgDx_out_view(1,1) = 1.0;
     }
   }
 }
@@ -376,7 +448,11 @@ get_p_space(int l) const
     return Teuchos::null;
   }
   TEUCHOS_ASSERT_IN_RANGE_UPPER_EXCLUSIVE( l, 0, Np_ );
-  return p_space_;
+  if (l == 0)
+    return p_space_;
+  else if (l == 1 || l == 2)
+    return DxDp_space_;
+  return Teuchos::null;
 }
 
 template<class Scalar>
@@ -390,9 +466,15 @@ get_p_names(int l) const
   TEUCHOS_ASSERT_IN_RANGE_UPPER_EXCLUSIVE( l, 0, Np_ );
   Teuchos::RCP<Teuchos::Array<std::string> > p_strings =
     Teuchos::rcp(new Teuchos::Array<std::string>());
-  p_strings->push_back("Model Coefficient:  a");
-  p_strings->push_back("Model Coefficient:  f");
-  p_strings->push_back("Model Coefficient:  L");
+  if (l == 0) {
+    p_strings->push_back("Model Coefficient:  a");
+    p_strings->push_back("Model Coefficient:  f");
+    p_strings->push_back("Model Coefficient:  L");
+  }
+  else if (l == 1)
+    p_strings->push_back("DxDp");
+  else if (l == 2)
+    p_strings->push_back("Dx_dotDp");
   return p_strings;
 }
 
@@ -441,6 +523,10 @@ setupInOutArgs_() const
       outArgs.set_Np_Ng(Np_,Ng_);
       outArgs.setSupports( Thyra::ModelEvaluatorBase::OUT_ARG_DfDp,0,
                            Thyra::ModelEvaluatorBase::DERIV_MV_BY_COL );
+      outArgs.setSupports( Thyra::ModelEvaluatorBase::OUT_ARG_DgDp,0,0,
+                           Thyra::ModelEvaluatorBase::DERIV_MV_BY_COL );
+      outArgs.setSupports( Thyra::ModelEvaluatorBase::OUT_ARG_DgDx,0,
+                           Thyra::ModelEvaluatorBase::DERIV_TRANS_MV_BY_ROW );
     }
     outArgs_ = outArgs;
   }
@@ -494,6 +580,7 @@ setParameterList(Teuchos::RCP<Teuchos::ParameterList> const& paramList)
   Teuchos::RCP<ParameterList> pl = this->getMyNonconstParamList();
   bool acceptModelParams = get<bool>(*pl,"Accept model parameters");
   bool haveIC = get<bool>(*pl,"Provide nominal values");
+  bool useDfDpAsTangent = get<bool>(*pl, "Use DfDp as Tangent");
   if ( (acceptModelParams != acceptModelParams_) ||
        (haveIC != haveIC_)
      ) {
@@ -501,6 +588,7 @@ setParameterList(Teuchos::RCP<Teuchos::ParameterList> const& paramList)
   }
   acceptModelParams_ = acceptModelParams;
   haveIC_ = haveIC;
+  useDfDpAsTangent_ = useDfDpAsTangent;
   a_ = get<Scalar>(*pl,"Coeff a");
   f_ = get<Scalar>(*pl,"Coeff f");
   L_ = get<Scalar>(*pl,"Coeff L");
@@ -521,6 +609,8 @@ getValidParameters() const
     Teuchos::RCP<Teuchos::ParameterList> pl = Teuchos::parameterList();
     pl->set("Accept model parameters", false);
     pl->set("Provide nominal values", true);
+    pl->set("Use DfDp as Tangent", false);
+    pl->set<std::string>("Output File Name", "Tempus_BDF2_SinCos");
     Teuchos::setDoubleParameter(
         "Coeff a", 0.0, "Coefficient a in model", &*pl);
     Teuchos::setDoubleParameter(
@@ -533,6 +623,8 @@ getValidParameters() const
         "IC x1", 1.0, "Initial Condition for x1", &*pl);
     Teuchos::setDoubleParameter(
         "IC t0", 0.0, "Initial time t0", &*pl);
+    Teuchos::setIntParameter(
+        "Number of Time Step Sizes", 1, "Number time step sizes for convergence study", &*pl);  
     validPL = pl;
   }
   return validPL;

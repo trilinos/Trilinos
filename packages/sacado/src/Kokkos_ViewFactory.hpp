@@ -104,7 +104,7 @@ struct ViewFactory {
     // Reconstruct layout for dynamic rank
     if (is_dyn_rank) {
       constexpr unsigned r = is_scalar ? rank : rank + 1;
-      layout = Experimental::Impl::reconstructLayout(layout, r);
+      layout = Impl::reconstructLayout(layout, r);
     }
 
     return ResultView(prop, layout);

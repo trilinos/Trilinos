@@ -310,7 +310,7 @@ getBlockId(LocalOrdinal localElmtId) const
 }
 
 template <typename LocalOrdinal,typename GlobalOrdinal>
-CartesianConnManager<LocalOrdinal,GlobalOrdinal>::Triplet<int> 
+typename CartesianConnManager<LocalOrdinal,GlobalOrdinal>::template Triplet<int> 
 CartesianConnManager<LocalOrdinal,GlobalOrdinal>::
 computeMyRankTriplet(int myRank,int dim,const Triplet<int> & procs) 
 {
@@ -338,7 +338,7 @@ computeMyRankTriplet(int myRank,int dim,const Triplet<int> & procs)
 }
 
 template <typename LocalOrdinal,typename GlobalOrdinal>
-CartesianConnManager<LocalOrdinal,GlobalOrdinal>::Triplet<GlobalOrdinal> 
+typename CartesianConnManager<LocalOrdinal,GlobalOrdinal>::template Triplet<GlobalOrdinal> 
 CartesianConnManager<LocalOrdinal,GlobalOrdinal>::
 computeLocalElementGlobalTriplet(int index,const Triplet<GlobalOrdinal> & myElements,
                                            const Triplet<GlobalOrdinal> & myOffset)
