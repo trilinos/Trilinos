@@ -66,8 +66,8 @@ namespace Intrepid2 {
       void
       clone( /**/  outputViewType output,
              const inputViewType  input ) {
-        const ordinal_type iend = output.dimension(0);
-        const ordinal_type jend = output.dimension(1);
+        const ordinal_type iend = output.extent(0);
+        const ordinal_type jend = output.extent(1);
 
         for (ordinal_type i=0;i<iend;++i)
           for (ordinal_type j=0;j<jend;++j)
@@ -91,7 +91,7 @@ namespace Intrepid2 {
       KOKKOS_INLINE_FUNCTION
       void operator()(const ordinal_type iter) const {
         // right
-        const auto stride = _outputFields.dimension(1);
+        const auto stride = _outputFields.extent(1);
         const auto 
           i = iter / stride, 
           j = iter % stride;
@@ -109,14 +109,14 @@ namespace Intrepid2 {
             break;
           }
           case 1: {
-            const ordinal_type kend = _outputFields.dimension(2);
+            const ordinal_type kend = _outputFields.extent(2);
             for (ordinal_type k=0;k<kend;++k)
               _outputFields(i, j, k) = _inputFields(j, k);
             break;
           }
           case 2: {
-            const ordinal_type kend = _outputFields.dimension(2);
-            const ordinal_type lend = _outputFields.dimension(3);
+            const ordinal_type kend = _outputFields.extent(2);
+            const ordinal_type lend = _outputFields.extent(3);
             for (ordinal_type k=0;k<kend;++k)
               for (ordinal_type l=0;l<lend;++l)
                 _outputFields(i, j, k, l) = _inputFields(j, k, l);

@@ -74,7 +74,7 @@ void OrthPolynomialTri<outputViewType,inputViewType,workViewType,hasDeriv,0>::ge
   auto output0 = (hasDeriv) ? Kokkos::subview(output,  Kokkos::ALL(), Kokkos::ALL(),0) : Kokkos::subview(output,  Kokkos::ALL(), Kokkos::ALL());
 
   const ordinal_type
-  npts = input.dimension(0);
+  npts = input.extent(0);
 
   const auto z = input;
 
@@ -207,8 +207,8 @@ void OrthPolynomialTri<outputViewType,inputViewType,workViewType,hasDeriv,1>::ge
     const ordinal_type   order ) {
   constexpr ordinal_type spaceDim = 2;
   const ordinal_type
-  npts = input.dimension(0),
-  card = output.dimension(0);
+  npts = input.extent(0),
+  card = output.extent(0);
 
   workViewType dummyView;
   OrthPolynomialTri<workViewType,inputViewType,workViewType,hasDeriv,0>::generate(work, input, dummyView, order);
@@ -240,8 +240,8 @@ typedef typename outputViewType::value_type value_type;
 typedef Sacado::Fad::SFad<value_type,spaceDim> fad_type;
 
 const ordinal_type
-npts = input.dimension(0),
-card = output.dimension(0);
+npts = input.extent(0),
+card = output.extent(0);
 
 // use stack buffer
 fad_type inBuf[Parameters::MaxNumPtsPerBasisEval][spaceDim],
@@ -344,13 +344,13 @@ getValues(       Kokkos::DynRankView<outputValueValueType,outputValueProperties.
   typedef typename ExecSpace<typename inputPointViewType::execution_space,SpT>::ExecSpaceType ExecSpaceType;
 
   // loopSize corresponds to the # of points
-  const auto loopSizeTmp1 = (inputPoints.dimension(0)/numPtsPerEval);
-  const auto loopSizeTmp2 = (inputPoints.dimension(0)%numPtsPerEval != 0);
+  const auto loopSizeTmp1 = (inputPoints.extent(0)/numPtsPerEval);
+  const auto loopSizeTmp2 = (inputPoints.extent(0)%numPtsPerEval != 0);
   const auto loopSize = loopSizeTmp1 + loopSizeTmp2;
   Kokkos::RangePolicy<ExecSpaceType,Kokkos::Schedule<Kokkos::Static> > policy(0, loopSize);
 
   typedef typename inputPointViewType::value_type inputPointType;
-  const ordinal_type cardinality = outputValues.dimension(0);
+  const ordinal_type cardinality = outputValues.extent(0);
   const ordinal_type spaceDim = 2;
 
   auto vcprop = Kokkos::common_view_alloc_prop(inputPoints);
@@ -365,7 +365,7 @@ getValues(       Kokkos::DynRankView<outputValueValueType,outputValueProperties.
   }
   case OPERATOR_GRAD:
   case OPERATOR_D1: {
-    workViewType  work(Kokkos::view_alloc("Basis_HGRAD_TRI_In_FEM_ORTH::getValues::work", vcprop), cardinality, inputPoints.dimension(0), spaceDim+1);
+    workViewType  work(Kokkos::view_alloc("Basis_HGRAD_TRI_In_FEM_ORTH::getValues::work", vcprop), cardinality, inputPoints.extent(0), spaceDim+1);
     typedef Functor<outputValueViewType,inputPointViewType,workViewType,OPERATOR_D1,numPtsPerEval> FunctorType;
     Kokkos::parallel_for( policy, FunctorType(outputValues, inputPoints, work, order) );
     break;

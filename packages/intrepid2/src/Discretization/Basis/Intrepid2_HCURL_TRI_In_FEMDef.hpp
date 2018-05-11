@@ -73,9 +73,9 @@ namespace Intrepid2 {
 
       constexpr ordinal_type spaceDim = 2;
       const ordinal_type
-        cardPn = coeffs.dimension(0)/spaceDim,
-        card = coeffs.dimension(1),
-        npts = input.dimension(0);
+        cardPn = coeffs.extent(0)/spaceDim,
+        card = coeffs.extent(1),
+        npts = input.extent(0);
 
       // compute order
       ordinal_type order = 0;
@@ -147,14 +147,14 @@ namespace Intrepid2 {
       typedef typename ExecSpace<typename inputPointViewType::execution_space,SpT>::ExecSpaceType ExecSpaceType;
 
       // loopSize corresponds to cardinality
-      const auto loopSizeTmp1 = (inputPoints.dimension(0)/numPtsPerEval);
-      const auto loopSizeTmp2 = (inputPoints.dimension(0)%numPtsPerEval != 0);
+      const auto loopSizeTmp1 = (inputPoints.extent(0)/numPtsPerEval);
+      const auto loopSizeTmp2 = (inputPoints.extent(0)%numPtsPerEval != 0);
       const auto loopSize = loopSizeTmp1 + loopSizeTmp2;
       Kokkos::RangePolicy<ExecSpaceType,Kokkos::Schedule<Kokkos::Static> > policy(0, loopSize);
 
       typedef typename inputPointViewType::value_type inputPointType;
 
-      const ordinal_type cardinality = outputValues.dimension(0);
+      const ordinal_type cardinality = outputValues.extent(0);
       const ordinal_type spaceDim = 2;
 
       auto vcprop = Kokkos::common_view_alloc_prop(inputPoints);
@@ -162,14 +162,14 @@ namespace Intrepid2 {
 
       switch (operatorType) {
       case OPERATOR_VALUE: {
-        workViewType  work(Kokkos::view_alloc("Basis_HCURL_TRI_In_FEM::getValues::work", vcprop), cardinality, inputPoints.dimension(0));
+        workViewType  work(Kokkos::view_alloc("Basis_HCURL_TRI_In_FEM::getValues::work", vcprop), cardinality, inputPoints.extent(0));
         typedef Functor<outputValueViewType,inputPointViewType,vinvViewType, workViewType,
           OPERATOR_VALUE,numPtsPerEval> FunctorType;
         Kokkos::parallel_for( policy, FunctorType(outputValues, inputPoints, coeffs, work) );
         break;
       }
       case OPERATOR_CURL: {
-        workViewType  work(Kokkos::view_alloc("Basis_HCURL_TRI_In_FEM::getValues::work", vcprop), cardinality*(2*spaceDim+1), inputPoints.dimension(0));
+        workViewType  work(Kokkos::view_alloc("Basis_HCURL_TRI_In_FEM::getValues::work", vcprop), cardinality*(2*spaceDim+1), inputPoints.extent(0));
         typedef Functor<outputValueViewType,inputPointViewType,vinvViewType, workViewType,
           OPERATOR_CURL,numPtsPerEval> FunctorType;
         Kokkos::parallel_for( policy, FunctorType(outputValues, inputPoints, coeffs, work) );

@@ -261,14 +261,14 @@ namespace Intrepid2 {
                                       ">>> ERROR (Intrepid::OrientationTools::mapToModifiedReference): " \
                                       "Method defined only for 1 and 2-dimensional subcells.");
         
-        INTREPID2_TEST_FOR_EXCEPTION( !( outPoints.dimension(0) == refPoints.dimension(0) ), std::invalid_argument,
+        INTREPID2_TEST_FOR_EXCEPTION( !( outPoints.extent(0) == refPoints.extent(0) ), std::invalid_argument,
                                       ">>> ERROR (Intrepid::OrientationTools::mapToModifiedReference): " \
                                       "Size of input and output point arrays does not match each other.");
       }
 #endif
       
       // Apply the parametrization map to every point in parameter domain
-      const ordinal_type numPts = outPoints.dimension(0);
+      const ordinal_type numPts = outPoints.extent(0);
       const auto key = cellTopo.getBaseCellTopologyData()->key;
       switch (key) {
       case shards::Line<>::key : {
@@ -320,7 +320,7 @@ namespace Intrepid2 {
                                   ">>> ERROR (Intrepid2::OrientationTools::getJacobianOfOrientationMap): " \
                                   "Jacobian should have rank 2" );
 
-        INTREPID2_TEST_FOR_EXCEPTION( ((jacobian.dimension(0) != cellDim) || (jacobian.dimension(1) != cellDim)), std::invalid_argument,
+        INTREPID2_TEST_FOR_EXCEPTION( ((jacobian.extent(0) != cellDim) || (jacobian.extent(1) != cellDim)), std::invalid_argument,
                                       ">>> ERROR (Intrepid::OrientationTools::getJacobianOfOrientationMap): " \
                                       "Size of jacobian is not compatible with cell topology.");
       }

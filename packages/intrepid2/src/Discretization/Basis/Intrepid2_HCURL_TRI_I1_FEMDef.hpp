@@ -107,7 +107,7 @@ namespace Intrepid2 {
       typedef typename ExecSpace<typename inputPointViewType::execution_space,SpT>::ExecSpaceType ExecSpaceType;
 
       // Number of evaluation points = dim 0 of inputPoints
-      const auto loopSize = inputPoints.dimension(0);
+      const auto loopSize = inputPoints.extent(0);
       Kokkos::RangePolicy<ExecSpaceType,Kokkos::Schedule<Kokkos::Static> > policy(0, loopSize);
   
       switch (operatorType) {

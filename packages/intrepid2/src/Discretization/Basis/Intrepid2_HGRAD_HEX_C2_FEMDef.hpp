@@ -716,8 +716,8 @@ namespace Intrepid2 {
       case OPERATOR_D4 : {
         // Non-zero entries have Dk (derivative cardinality) indices {3,4,5,7,8,12}, all other entries are 0.
         // Intitialize array by zero and then fill only non-zero entries.
-        const ordinal_type jend = output.dimension(1);
-        const ordinal_type iend = output.dimension(0);
+        const ordinal_type jend = output.extent(1);
+        const ordinal_type iend = output.extent(0);
 
         for (ordinal_type j=0;j<jend;++j)
           for (ordinal_type i=0;i<iend;++i)
@@ -918,8 +918,8 @@ namespace Intrepid2 {
         break;
       }
       case OPERATOR_MAX : {
-        const ordinal_type jend = output.dimension(1);
-        const ordinal_type iend = output.dimension(0);
+        const ordinal_type jend = output.extent(1);
+        const ordinal_type iend = output.extent(0);
 
         for (ordinal_type j=0;j<jend;++j)
           for (ordinal_type i=0;i<iend;++i)
@@ -954,7 +954,7 @@ namespace Intrepid2 {
       typedef typename ExecSpace<typename inputPointViewType::execution_space,SpT>::ExecSpaceType ExecSpaceType;
 
       // Number of evaluation points = dim 0 of inputPoints
-      const auto loopSize = inputPoints.dimension(0);
+      const auto loopSize = inputPoints.extent(0);
       Kokkos::RangePolicy<ExecSpaceType,Kokkos::Schedule<Kokkos::Static> > policy(0, loopSize);
 
       switch (operatorType) {

@@ -66,7 +66,7 @@ double computeMonomial(FieldContainer<double> & p, int xDeg, int yDeg=0, int zDe
   double val = 1.0;
   int polydeg[3];
   polydeg[0] = xDeg; polydeg[1] = yDeg; polydeg[2] = zDeg;
-  for (int i=0; i<p.dimension(0); i++) {
+  for (int i=0; i<p.extent(0); i++) {
     val *= std::pow(p(i),polydeg[i]);
   }
   return val;
