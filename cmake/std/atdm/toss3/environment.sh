@@ -67,7 +67,8 @@ export MPICC=`which mpicc`
 export MPICXX=`which mpicxx`
 export MPIF90=`which mpif90`
 
-export ATDM_CONFIG_MPI_POST_FLAG="--bind-to;core;--npernode;36"
+export ATDM_CONFIG_MPI_PRE_FLAGS="--bind-to;core;--npernode;36"
+export ATDM_CONFIG_MPI_EXEC_NUMPROCS_FLAG=--n
 
 # Set the default compilers
 export CC=mpicc
