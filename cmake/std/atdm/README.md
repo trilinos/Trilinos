@@ -301,9 +301,10 @@ $ salloc -N1 --time=0:20:00 --account=<YOUR_WCID> \
 
 ### SEMS rhel6 environment
 
-Once logged on to a rhel6 machine with the sems NFS, one can
-directly configure, build, and run tests.  For example, to configure, build and run 
-the tests for `MueuLu` one would clone Trilinos on the `develop` branch and then do the following:
+Once logged on to a rhel6 machine with the sems NFS, one can directly
+configure, build, and run tests.  For example, to configure, build and run the
+tests for `MueuLu` one would clone Trilinos on the `develop` branch and then
+do the following:
 
 
 ```
@@ -312,11 +313,12 @@ $ cd <some_build_dir>/
 $ source $TRILINOS_DIR/cmake/std/atdm/load-env.sh intel-opt-openmp
 
 $ cmake \
+  -GNinja \
   -DTrilinos_CONFIGURE_OPTIONS_FILE:STRING=cmake/std/atdm/ATDMDevEnv.cmake \
   -DTrilinos_ENABLE_TESTS=ON -DTrilinos_ENABLE_MueLu=ON \
   $TRILINOS_DIR
 
-$ make -j16
+$ make NP=16
 
 $ ctest -j16 \
 ```
