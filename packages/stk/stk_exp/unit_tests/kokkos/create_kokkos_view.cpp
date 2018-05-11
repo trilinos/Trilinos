@@ -29,7 +29,7 @@ Kokkos::View<float*,KokkosDevice> create_kokkos_view_float1D(const std::string& 
 
 //explicit template instantiations:
 //
-#ifdef KOKKOS_HAVE_OPENMP
+#ifdef KOKKOS_ENABLE_OPENMP
 template Kokkos::View<float*,Kokkos::OpenMP> create_kokkos_view_float1D(const std::string& name, size_t N, float init_value);
 #endif
 

@@ -6,7 +6,7 @@
 namespace Kokkos {
   namespace Compat {
 
-#ifdef KOKKOS_HAVE_PTHREAD
+#ifdef KOKKOS_ENABLE_THREADS
     template<>
     KokkosDeviceWrapperNode<Kokkos::Threads>::
     KokkosDeviceWrapperNode ()
@@ -84,7 +84,7 @@ namespace Kokkos {
     }
 #endif
 
-#ifdef KOKKOS_HAVE_OPENMP
+#ifdef KOKKOS_ENABLE_OPENMP
     template<>
     KokkosDeviceWrapperNode<Kokkos::OpenMP>::
     KokkosDeviceWrapperNode ()
@@ -160,7 +160,7 @@ namespace Kokkos {
     }
 #endif
 
-#ifdef KOKKOS_HAVE_SERIAL
+#ifdef KOKKOS_ENABLE_SERIAL
     template<>
     KokkosDeviceWrapperNode<Kokkos::Serial>::
     KokkosDeviceWrapperNode ()
@@ -231,9 +231,9 @@ namespace Kokkos {
     std::string KokkosDeviceWrapperNode<Kokkos::Serial>::name () {
       return "Serial/Wrapper";
     }
-#endif // KOKKOS_HAVE_SERIAL
+#endif // KOKKOS_ENABLE_SERIAL
 
-#ifdef KOKKOS_HAVE_CUDA
+#ifdef KOKKOS_ENABLE_CUDA
     template<>
     KokkosDeviceWrapperNode<Kokkos::Cuda>::
     KokkosDeviceWrapperNode ()
@@ -307,7 +307,7 @@ namespace Kokkos {
     std::string KokkosDeviceWrapperNode<Kokkos::Cuda>::name() {
       return std::string("Cuda/Wrapper");
     }
-#endif // KOKKOS_HAVE_CUDA
+#endif // KOKKOS_ENABLE_CUDA
 
   } // namespace Compat
 } // namespace Kokkos

@@ -697,19 +697,19 @@ int main(int argc, char* argv[]) {
     clp.setOption("p", &p, "Number of derivative components");
     int nloop = 10;
     clp.setOption("nloop", &nloop, "Number of loops");
-#ifdef KOKKOS_HAVE_SERIAL
+#ifdef KOKKOS_ENABLE_SERIAL
     bool serial = 0;
     clp.setOption("serial", "no-serial", &serial, "Whether to run Serial");
 #endif
-#ifdef KOKKOS_HAVE_OPENMP
+#ifdef KOKKOS_ENABLE_OPENMP
     int openmp = 0;
     clp.setOption("openmp", &openmp, "Number of OpenMP threads");
 #endif
-#ifdef KOKKOS_HAVE_PTHREAD
+#ifdef KOKKOS_ENABLE_THREADS
     int threads = 0;
     clp.setOption("threads", &threads, "Number of pThreads threads");
 #endif
-#ifdef KOKKOS_HAVE_CUDA
+#ifdef KOKKOS_ENABLE_CUDA
     bool cuda = 0;
     clp.setOption("cuda", "no-cuda", &cuda, "Whether to run CUDA");
 #endif
@@ -755,7 +755,7 @@ int main(int argc, char* argv[]) {
     if (vtune)
       connect_vtune();
 
-#ifdef KOKKOS_HAVE_SERIAL
+#ifdef KOKKOS_ENABLE_SERIAL
     if (serial) {
       Kokkos::Serial::initialize();
       if (print_config)
@@ -766,7 +766,7 @@ int main(int argc, char* argv[]) {
     }
 #endif
 
-#ifdef KOKKOS_HAVE_OPENMP
+#ifdef KOKKOS_ENABLE_OPENMP
     if (openmp) {
       Kokkos::OpenMP::initialize(openmp, numa, cores_per_numa);
       if (print_config)
@@ -777,7 +777,7 @@ int main(int argc, char* argv[]) {
     }
 #endif
 
-#ifdef KOKKOS_HAVE_PTHREAD
+#ifdef KOKKOS_ENABLE_THREADS
     if (threads) {
       Kokkos::Threads::initialize(threads, numa, cores_per_numa);
       if (print_config)
@@ -788,7 +788,7 @@ int main(int argc, char* argv[]) {
     }
 #endif
 
-#ifdef KOKKOS_HAVE_CUDA
+#ifdef KOKKOS_ENABLE_CUDA
     if (cuda) {
       Kokkos::HostSpace::execution_space::initialize();
       Kokkos::Cuda::initialize();

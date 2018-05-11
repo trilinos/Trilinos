@@ -287,7 +287,7 @@ int main_(int argc, char **argv) {
   execution_space::fence();
   Kokkos::Impl::Timer timer;
 
-#ifdef KOKKOS_HAVE_SERIAL
+#ifdef KOKKOS_ENABLE_SERIAL
   if (typeid(device_type) == typeid(Kokkos::Serial)) {
     for (int i = 0; i < loop; i++)
       kernel_coalesce_drop_serial(A);
@@ -334,21 +334,21 @@ int main(int argc, char* argv[]) {
     return main_<double,int,Kokkos::DefaultExecutionSpace>(argc, argv);
 
   } else if (node == "serial") {
-#ifdef KOKKOS_HAVE_SERIAL
+#ifdef KOKKOS_ENABLE_SERIAL
     return main_<double,int,Kokkos::Serial>(argc, argv);
 #else
     std::cout << "Error: Serial node type is disabled" << std::endl;
 #endif
 
   } else if (node == "openmp") {
-#ifdef KOKKOS_HAVE_OPENMP
+#ifdef KOKKOS_ENABLE_OPENMP
     return main_<double,int,Kokkos::OpenMP>(argc, argv);
 #else
     std::cout << "Error: OpenMP node type is disabled" << std::endl;
 #endif
 
   } else if (node == "cuda") {
-#ifdef KOKKOS_HAVE_CUDA
+#ifdef KOKKOS_ENABLE_CUDA
     return main_<double,int,Kokkos::Cuda>(argc, argv);
 #else
     std::cout << "Error: CUDA node type is disabled" << std::endl;

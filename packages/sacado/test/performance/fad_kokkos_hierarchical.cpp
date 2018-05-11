@@ -330,7 +330,7 @@ void run_flat(const KernelType& kernel) {
 template<typename KernelType>
 void run_hierarchical_flat(const KernelType& kernel) {
   typedef typename KernelType::execution_space execution_space;
-#if defined (KOKKOS_HAVE_CUDA)
+#if defined (KOKKOS_ENABLE_CUDA)
   const bool is_cuda = std::is_same<execution_space, Kokkos::Cuda>::value;
 #else
   const bool is_cuda = false;
@@ -352,7 +352,7 @@ void run_hierarchical_flat(const KernelType& kernel) {
 template<typename KernelType>
 void run_hierarchical_team(const KernelType& kernel) {
   typedef typename KernelType::execution_space execution_space;
-#if defined (KOKKOS_HAVE_CUDA)
+#if defined (KOKKOS_ENABLE_CUDA)
   const bool is_cuda = std::is_same<execution_space, Kokkos::Cuda>::value;
 #else
   const bool is_cuda = false;
@@ -424,7 +424,7 @@ struct DrekarTest {
   typedef Kokkos::View<FadType**,ExecSpace> t_2DViewFad;
 
   typedef typename ExecSpace::array_layout DefaultLayout;
-#if defined(KOKKOS_HAVE_CUDA)
+#if defined(KOKKOS_ENABLE_CUDA)
   static const int FadStride =
     std::is_same< ExecSpace, Kokkos::Cuda >::value ? 32 : 1;
 #if defined(SACADO_ALIGN_SFAD)
@@ -885,7 +885,7 @@ void run(const int cell_begin, const int cell_end, const int cell_step,
   std::cout << "concurrency = " << ExecSpace::concurrency() << std::endl;
   const size_t block_size = fad_dim*sizeof(double);
   size_t nkernels = ExecSpace::concurrency()*2;
-#if defined(KOKKOS_HAVE_CUDA)
+#if defined(KOKKOS_ENABLE_CUDA)
   if (std::is_same<ExecSpace, Kokkos::Cuda>::value)
     nkernels /= 32;
 #endif
@@ -924,19 +924,19 @@ int main(int argc, char* argv[]) {
     // Set up command line options
     Teuchos::CommandLineProcessor clp(false);
     clp.setDocString("This program tests the speed of various forward mode AD implementations for simple Kokkos kernel");
-#ifdef KOKKOS_HAVE_SERIAL
+#ifdef KOKKOS_ENABLE_SERIAL
     bool serial = 0;
     clp.setOption("serial", "no-serial", &serial, "Whether to run Serial");
 #endif
-#ifdef KOKKOS_HAVE_OPENMP
+#ifdef KOKKOS_ENABLE_OPENMP
     int openmp = 0;
     clp.setOption("openmp", &openmp, "Number of OpenMP threads");
 #endif
-#ifdef KOKKOS_HAVE_PTHREAD
+#ifdef KOKKOS_ENABLE_THREADS
     int threads = 0;
     clp.setOption("threads", &threads, "Number of pThreads threads");
 #endif
-#ifdef KOKKOS_HAVE_CUDA
+#ifdef KOKKOS_ENABLE_CUDA
     bool cuda = 0;
     clp.setOption("cuda", "no-cuda", &cuda, "Whether to run CUDA");
 #endif
@@ -976,7 +976,7 @@ int main(int argc, char* argv[]) {
       break;
     }
 
-#ifdef KOKKOS_HAVE_SERIAL
+#ifdef KOKKOS_ENABLE_SERIAL
     if (serial) {
       using Kokkos::Serial;
       Serial::initialize();
@@ -987,7 +987,7 @@ int main(int argc, char* argv[]) {
     }
 #endif
 
-#ifdef KOKKOS_HAVE_OPENMP
+#ifdef KOKKOS_ENABLE_OPENMP
     if (openmp) {
       using Kokkos::OpenMP;
       OpenMP::initialize(openmp, numa, cores_per_numa);
@@ -998,7 +998,7 @@ int main(int argc, char* argv[]) {
     }
 #endif
 
-#ifdef KOKKOS_HAVE_PTHREAD
+#ifdef KOKKOS_ENABLE_THREADS
     if (threads) {
       using Kokkos::Threads;
       Threads::initialize(threads, numa, cores_per_numa);
@@ -1009,7 +1009,7 @@ int main(int argc, char* argv[]) {
     }
 #endif
 
-#ifdef KOKKOS_HAVE_CUDA
+#ifdef KOKKOS_ENABLE_CUDA
     if (cuda) {
       using Kokkos::Cuda;
       Kokkos::HostSpace::execution_space::initialize();

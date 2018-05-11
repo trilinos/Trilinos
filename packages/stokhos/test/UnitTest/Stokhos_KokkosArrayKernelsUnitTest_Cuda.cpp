@@ -61,7 +61,7 @@ UnitTestSetup<Kokkos::Cuda> setup;
 using Kokkos::Cuda;
 
 // The Tiled-Crs kernel seems to fail when OpenMP is the host device
-#ifdef KOKKOS_HAVE_OPENMP
+#ifdef KOKKOS_ENABLE_OPENMP
 #define TILED_CRS_TEST(SCALAR, DEVICE)
 #else
 #define TILED_CRS_TEST(SCALAR, DEVICE)                                         \

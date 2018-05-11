@@ -104,29 +104,29 @@ namespace { // (anonymous)
     LO nEle = 63;
     RCP<const map_type> map = rcp (new map_type (nEle, 0, comm));
 
-#ifdef KOKKOS_HAVE_OPENMP
+#ifdef KOKKOS_ENABLE_OPENMP
     if (Kokkos::Impl::is_same<Node, Kokkos::Compat::KokkosDeviceWrapperNode<Kokkos::OpenMP> >::value) {
       TEUCHOS_TEST_FOR_EXCEPTION(
         ! Kokkos::OpenMP::is_initialized (), std::logic_error,
         "OpenMP execution space not initialized!" );
     }
-#endif // KOKKOS_HAVE_OPENMP
+#endif // KOKKOS_ENABLE_OPENMP
 
-#ifdef KOKKOS_HAVE_PTHREAD
+#ifdef KOKKOS_ENABLE_THREADS
     if (Kokkos::Impl::is_same<Node, Kokkos::Compat::KokkosDeviceWrapperNode<Kokkos::Threads> >::value) {
       TEUCHOS_TEST_FOR_EXCEPTION(
         ! Kokkos::Threads::is_initialized (), std::logic_error,
         "Threads execution space not initialized!" );
     }
-#endif // KOKKOS_HAVE_PTHREAD
+#endif // KOKKOS_ENABLE_THREADS
 
-#ifdef KOKKOS_HAVE_SERIAL
+#ifdef KOKKOS_ENABLE_SERIAL
     if (Kokkos::Impl::is_same<Node, Kokkos::Compat::KokkosDeviceWrapperNode<Kokkos::Serial> >::value) {
       TEUCHOS_TEST_FOR_EXCEPTION(
         ! Kokkos::Serial::is_initialized (), std::logic_error,
         "Serial execution space not initialized!" );
     }
-#endif // KOKKOS_HAVE_SERIAL
+#endif // KOKKOS_ENABLE_SERIAL
 
     RCP<crs_matrix_type> matrix = rcp (new crs_matrix_type (map, 10));
     const LO NumMyElements = map->getNodeNumElements ();

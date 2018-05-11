@@ -87,7 +87,7 @@ struct WorthBuildingFixedHashTableInParallel {
   }
 };
 
-#ifdef KOKKOS_HAVE_CUDA
+#ifdef KOKKOS_ENABLE_CUDA
 template<>
 struct WorthBuildingFixedHashTableInParallel<Kokkos::Cuda> {
   // There could be more complicated expressions for whether this is
@@ -98,7 +98,7 @@ struct WorthBuildingFixedHashTableInParallel<Kokkos::Cuda> {
     return true;
   }
 };
-#endif // KOKKOS_HAVE_CUDA
+#endif // KOKKOS_ENABLE_CUDA
 
 // Is it worth actually using building the FixedHashTable using
 // parallel threads, instead of just counting in a sequential loop?

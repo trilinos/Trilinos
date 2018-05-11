@@ -219,7 +219,7 @@ private:
   Teuchos::Array<size_type> rowptr_;
 
   // TODO: Decide handling for CUDA - how to fail
-#ifdef KOKKOS_HAVE_OPENMP
+#ifdef KOKKOS_ENABLE_OPENMP
   typedef Kokkos::OpenMP DeviceSpaceType;
 #else
   typedef Kokkos::Serial DeviceSpaceType;

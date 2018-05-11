@@ -154,11 +154,11 @@ namespace { // (anonymous)
                                             const typename RhsViewType::const_type& expectedVectorValues,
                                             const typename SparseMatrixType::values_type::const_type& expectedMatrixValues,
                                             const bool forceAtomic =
-#ifdef KOKKOS_HAVE_SERIAL
+#ifdef KOKKOS_ENABLE_SERIAL
                                             ! std::is_same<typename SparseMatrixType::device_type::execution_space, Kokkos::Serial>::value,
-#else // NOT KOKKOS_HAVE_SERIAL
+#else // NOT KOKKOS_ENABLE_SERIAL
                                             false,
-#endif // KOKKOS_HAVE_SERIAL
+#endif // KOKKOS_ENABLE_SERIAL
                                             const bool checkInputIndices = true)
   {
     static_assert (Kokkos::Impl::is_view<VectorViewType>::value,

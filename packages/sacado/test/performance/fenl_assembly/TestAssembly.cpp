@@ -50,7 +50,7 @@
 // Utilities
 #include "Teuchos_CommandLineProcessor.hpp"
 #include "Teuchos_StandardCatchMacros.hpp"
-#ifdef KOKKOS_HAVE_CUDA
+#ifdef KOKKOS_ENABLE_CUDA
 #include "cuda_runtime_api.h"
 #endif
 
@@ -96,15 +96,15 @@ int main(int argc, char *argv[])
     int num_hyper_threads = num_threads_per_core;
     CLP.setOption("hyperthreads", &num_hyper_threads,
                   "Number of hyper threads per core to use (defaults to all)");
-#ifdef KOKKOS_HAVE_PTHREAD
+#ifdef KOKKOS_ENABLE_THREADS
     bool threads = true;
     CLP.setOption("threads", "no-threads", &threads, "Enable Threads device");
 #endif
-#ifdef KOKKOS_HAVE_OPENMP
+#ifdef KOKKOS_ENABLE_OPENMP
     bool openmp = true;
     CLP.setOption("openmp", "no-openmp", &openmp, "Enable OpenMP device");
 #endif
-#ifdef KOKKOS_HAVE_CUDA
+#ifdef KOKKOS_ENABLE_CUDA
     bool cuda = true;
     CLP.setOption("cuda", "no-cuda", &cuda, "Enable Cuda device");
     int device_id = 0;
@@ -134,7 +134,7 @@ int main(int argc, char *argv[])
       system("sleep 10");
     }
 
-#ifdef KOKKOS_HAVE_PTHREAD
+#ifdef KOKKOS_ENABLE_THREADS
     if (threads) {
       typedef Kokkos::Threads Device;
 
@@ -151,7 +151,7 @@ int main(int argc, char *argv[])
     }
 #endif
 
-#ifdef KOKKOS_HAVE_OPENMP
+#ifdef KOKKOS_ENABLE_OPENMP
     if (openmp) {
       typedef Kokkos::OpenMP Device;
 
@@ -168,7 +168,7 @@ int main(int argc, char *argv[])
     }
 #endif
 
-#ifdef KOKKOS_HAVE_CUDA
+#ifdef KOKKOS_ENABLE_CUDA
     if (cuda) {
       typedef Kokkos::Cuda Device;
 

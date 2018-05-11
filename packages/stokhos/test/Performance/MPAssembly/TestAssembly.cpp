@@ -51,7 +51,7 @@
 #include "Teuchos_DefaultComm.hpp"
 #include "Teuchos_CommandLineProcessor.hpp"
 #include "Teuchos_StandardCatchMacros.hpp"
-#ifdef KOKKOS_HAVE_CUDA
+#ifdef KOKKOS_ENABLE_CUDA
 #include "cuda_runtime_api.h"
 #endif
 
@@ -132,19 +132,19 @@ int main(int argc, char *argv[])
     CLP.setOption("threads_per_vector", &threads_per_vector,
                   "Number of threads to use within each vector");
     CLP.setOption("check", "no-check", &check, "Check correctness");
-#ifdef KOKKOS_HAVE_SERIAL
+#ifdef KOKKOS_ENABLE_SERIAL
     bool serial = true;
     CLP.setOption("serial", "no-serial", &serial, "Enable Serial device");
 #endif
-#ifdef KOKKOS_HAVE_PTHREAD
+#ifdef KOKKOS_ENABLE_THREADS
     bool threads = true;
     CLP.setOption("threads", "no-threads", &threads, "Enable Threads device");
 #endif
-#ifdef KOKKOS_HAVE_OPENMP
+#ifdef KOKKOS_ENABLE_OPENMP
     bool openmp = true;
     CLP.setOption("openmp", "no-openmp", &openmp, "Enable OpenMP device");
 #endif
-#ifdef KOKKOS_HAVE_CUDA
+#ifdef KOKKOS_ENABLE_CUDA
     bool cuda = true;
     CLP.setOption("cuda", "no-cuda", &cuda, "Enable Cuda device");
     int cuda_threads_per_vector = 16;
@@ -169,7 +169,7 @@ int main(int argc, char *argv[])
     typedef int Ordinal;
     typedef double Scalar;
 
-#ifdef KOKKOS_HAVE_SERIAL
+#ifdef KOKKOS_ENABLE_SERIAL
     if (serial) {
       typedef Kokkos::Serial Device;
       typedef Stokhos::StaticFixedStorage<Ordinal,Scalar,1,Device> Storage;
@@ -190,7 +190,7 @@ int main(int argc, char *argv[])
     }
 #endif
 
-#ifdef KOKKOS_HAVE_PTHREAD
+#ifdef KOKKOS_ENABLE_THREADS
     if (threads) {
       typedef Kokkos::Threads Device;
       typedef Stokhos::StaticFixedStorage<Ordinal,Scalar,1,Device> Storage;
@@ -214,7 +214,7 @@ int main(int argc, char *argv[])
     }
 #endif
 
-#ifdef KOKKOS_HAVE_OPENMP
+#ifdef KOKKOS_ENABLE_OPENMP
     if (openmp) {
       typedef Kokkos::OpenMP Device;
       typedef Stokhos::StaticFixedStorage<Ordinal,Scalar,1,Device> Storage;
@@ -238,7 +238,7 @@ int main(int argc, char *argv[])
     }
 #endif
 
-#ifdef KOKKOS_HAVE_CUDA
+#ifdef KOKKOS_ENABLE_CUDA
     if (cuda) {
       typedef Kokkos::Cuda Device;
       typedef Stokhos::StaticFixedStorage<Ordinal,Scalar,1,Device> Storage;

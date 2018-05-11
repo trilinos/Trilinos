@@ -136,11 +136,11 @@ namespace phalanx_test {
     // using DevLayout = Kokkos::LayoutRight;
 #if defined(SACADO_VIEW_CUDA_HIERARCHICAL_DFAD)
 
-#if defined(KOKKOS_HAVE_CUDA)
-    std::cout << "\n\nKOKKOS_HAVE_CUDA = true" << std::endl;
+#if defined(KOKKOS_ENABLE_CUDA)
+    std::cout << "\n\nKOKKOS_ENABLE_CUDA = true" << std::endl;
     const static int FadStride = 32;
 #else
-    std::cout << "KOKKOS_HAVE_CUDA = false" << std::endl;
+    std::cout << "KOKKOS_ENABLE_CUDA = false" << std::endl;
     const static int FadStride = 1;
 #endif
 

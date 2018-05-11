@@ -67,7 +67,7 @@ int main(){
 	std::vector<double>parallelfortimevector;
 	std::vector<double>nestedparallelfortimevector;
 
-#if defined( KOKKOS_HAVE_OPENMP )
+#if defined( KOKKOS_ENABLE_OPENMP )
  int num_threads = 4;
 
  if (Kokkos::hwloc::available()) {
@@ -160,7 +160,7 @@ std::cout <<"loopvalues test: "<<1000000/loop1[itt]<<"\n";
  std::cout << std::endl << "finalize" << std::endl;
 
 
-#if defined( KOKKOS_HAVE_OPENMP )
+#if defined( KOKKOS_ENABLE_OPENMP )
   Kokkos::OpenMP::finalize();
 #else
   Kokkos::finalize();

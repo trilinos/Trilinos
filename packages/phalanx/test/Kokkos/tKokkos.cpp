@@ -848,7 +848,7 @@ namespace phalanx_test {
     using DefaultDevLayout = PHX::exec_space::array_layout;
 #if defined(SACADO_VIEW_CUDA_HIERARCHICAL_DFAD)
 
-#if defined(KOKKOS_HAVE_CUDA)
+#if defined(KOKKOS_ENABLE_CUDA)
     using DefaultFadLayout = Kokkos::LayoutContiguous<DefaultDevLayout,32>;
 #else
     using DefaultFadLayout = Kokkos::LayoutContiguous<DefaultDevLayout,1>;

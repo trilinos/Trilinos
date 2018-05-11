@@ -121,7 +121,7 @@ TEST_F(NgpFieldPerf, constFieldDataAccessIsFasterThanFieldDataAccess)
     double nonConstTime = time_field_data_access<ngp::Field<double>>();
     double constTime = time_field_data_access<ngp::ConstField<double>>();
     std::cerr << "non-const time: " << nonConstTime << ", const time: " << constTime << std::endl;
-#ifdef KOKKOS_HAVE_CUDA
+#ifdef KOKKOS_ENABLE_CUDA
     EXPECT_LT(constTime, nonConstTime);
 #endif
 }

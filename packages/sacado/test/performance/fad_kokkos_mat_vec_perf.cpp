@@ -75,7 +75,7 @@ void run_mat_vec_hierarchical(const ViewTypeA& A, const ViewTypeB& b,
   typedef typename ViewTypeC::value_type scalar_type;
   typedef typename ViewTypeC::execution_space execution_space;
 
-#if defined (KOKKOS_HAVE_CUDA)
+#if defined (KOKKOS_ENABLE_CUDA)
   const bool is_cuda = std::is_same<execution_space, Kokkos::Cuda>::value;
 #else
   const bool is_cuda = false;
@@ -111,7 +111,7 @@ void run_mat_vec_hierarchical(const ViewTypeA& A, const ViewTypeB& b,
   typedef typename Kokkos::ThreadLocalScalarType<ViewTypeC>::type scalar_type;
   typedef typename ViewTypeC::execution_space execution_space;
 
-#if defined (KOKKOS_HAVE_CUDA)
+#if defined (KOKKOS_ENABLE_CUDA)
   const bool is_cuda = std::is_same<execution_space, Kokkos::Cuda>::value;
 #else
   const bool is_cuda = false;
@@ -147,7 +147,7 @@ void run_mat_vec_hierarchical(const ViewTypeA& A, const ViewTypeB& b,
   typedef typename ViewTypeC::value_type scalar_type;
   typedef typename ViewTypeC::execution_space execution_space;
 
-#if defined (KOKKOS_HAVE_CUDA)
+#if defined (KOKKOS_ENABLE_CUDA)
   const bool is_cuda = std::is_same<execution_space, Kokkos::Cuda>::value;
 #else
   const bool is_cuda = false;
@@ -278,7 +278,7 @@ do_time_fad_hierarchical(const size_t m, const size_t n, const size_t p,
   typedef Kokkos::View<FadType*,  ViewArgs...> ViewTypeC;
   typedef typename ViewTypeA::execution_space execution_space;
 
-#if defined (KOKKOS_HAVE_CUDA)
+#if defined (KOKKOS_ENABLE_CUDA)
   const bool is_cuda = std::is_same<execution_space, Kokkos::Cuda>::value;
 #else
   const bool is_cuda = false;
@@ -575,19 +575,19 @@ int main(int argc, char* argv[]) {
     clp.setOption("ph", &ph, "Number of derivative components for hierarchical");
     int nloop = 10;
     clp.setOption("nloop", &nloop, "Number of loops");
-#ifdef KOKKOS_HAVE_SERIAL
+#ifdef KOKKOS_ENABLE_SERIAL
     bool serial = 0;
     clp.setOption("serial", "no-serial", &serial, "Whether to run Serial");
 #endif
-#ifdef KOKKOS_HAVE_OPENMP
+#ifdef KOKKOS_ENABLE_OPENMP
     int openmp = 0;
     clp.setOption("openmp", &openmp, "Number of OpenMP threads");
 #endif
-#ifdef KOKKOS_HAVE_PTHREAD
+#ifdef KOKKOS_ENABLE_THREADS
     int threads = 0;
     clp.setOption("threads", &threads, "Number of pThreads threads");
 #endif
-#ifdef KOKKOS_HAVE_CUDA
+#ifdef KOKKOS_ENABLE_CUDA
     bool cuda = 0;
     clp.setOption("cuda", "no-cuda", &cuda, "Whether to run CUDA");
 #endif
@@ -632,7 +632,7 @@ int main(int argc, char* argv[]) {
     if (vtune)
       connect_vtune();
 
-// #ifdef KOKKOS_HAVE_SERIAL
+// #ifdef KOKKOS_ENABLE_SERIAL
 //     if (serial) {
 //       Kokkos::Serial::initialize();
 //       if (print_config)
@@ -643,7 +643,7 @@ int main(int argc, char* argv[]) {
 //     }
 // #endif
 
-#ifdef KOKKOS_HAVE_OPENMP
+#ifdef KOKKOS_ENABLE_OPENMP
     if (openmp) {
       Kokkos::OpenMP::initialize(openmp, numa, cores_per_numa);
       if (print_config)
@@ -654,7 +654,7 @@ int main(int argc, char* argv[]) {
     }
 #endif
 
-#ifdef KOKKOS_HAVE_PTHREAD
+#ifdef KOKKOS_ENABLE_THREADS
     if (threads) {
       Kokkos::Threads::initialize(threads, numa, cores_per_numa);
       if (print_config)
@@ -665,7 +665,7 @@ int main(int argc, char* argv[]) {
     }
 #endif
 
-#ifdef KOKKOS_HAVE_CUDA
+#ifdef KOKKOS_ENABLE_CUDA
     if (cuda) {
       Kokkos::HostSpace::execution_space::initialize();
       Kokkos::Cuda::initialize();

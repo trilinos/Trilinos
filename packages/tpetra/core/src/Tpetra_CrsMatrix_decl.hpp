@@ -1190,11 +1190,11 @@ namespace Tpetra {
     ///
     /// \warning This is an implementation detail.
     static const bool useAtomicUpdatesByDefault =
-#ifdef KOKKOS_HAVE_SERIAL
+#ifdef KOKKOS_ENABLE_SERIAL
       ! std::is_same<execution_space, Kokkos::Serial>::value;
 #else
       true;
-#endif // KOKKOS_HAVE_SERIAL
+#endif // KOKKOS_ENABLE_SERIAL
 
     /// \brief Implementation detail of sumIntoGlobalValues.
     ///

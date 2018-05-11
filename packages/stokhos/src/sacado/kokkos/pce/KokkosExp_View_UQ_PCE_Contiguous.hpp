@@ -1604,7 +1604,7 @@ namespace Kokkos {
 namespace Impl {
 
 // Specialization for deep_copy( view, view::value_type ) for Cuda
-#if defined( KOKKOS_HAVE_CUDA )
+#if defined( KOKKOS_ENABLE_CUDA )
 template< class OutputView >
 struct StokhosViewFill< OutputView ,
                  typename std::enable_if< std::is_same< typename OutputView::specialize,
@@ -1737,7 +1737,7 @@ struct StokhosViewFill< OutputView ,
   }
 
 };
-#endif /* #if defined( KOKKOS_HAVE_CUDA ) */
+#endif /* #if defined( KOKKOS_ENABLE_CUDA ) */
 
 } // namespace Impl
 } // namespace Kokkos

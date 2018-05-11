@@ -7,7 +7,7 @@
 #endif
 #include "Intrepid_FieldContainer.hpp"
 #include "Teuchos_ScalarTraits.hpp"
-#ifdef KOKKOS_HAVE_CUDA
+#ifdef KOKKOS_ENABLE_CUDA
 #include "cublas_v2.h"
 #endif
 #include <Teuchos_BLAS.hpp>
@@ -224,7 +224,7 @@ Kokkos::parallel_for(C.dimension_0(),KOKKOS_LAMBDA (const size_t i) {
 #endif
 
 // The Following stuff doesn't compile at all with Cuda. And it can't for example Scalar is not defined because its explicit specialisations.
-#ifdef KOKKOS_HAVE_CUDA
+#ifdef KOKKOS_ENABLE_CUDA
 template <>	
 	struct MultiGemm<double,Kokkos::Cuda,Kokkos::LayoutLeft,2>{
 		static void GEMM(Teuchos::ETransp transA, Teuchos::ETransp transB, double alpha,

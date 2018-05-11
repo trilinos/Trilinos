@@ -47,7 +47,7 @@
 // Utilities
 #include "Teuchos_CommandLineProcessor.hpp"
 #include "Teuchos_StandardCatchMacros.hpp"
-#ifdef KOKKOS_HAVE_CUDA
+#ifdef KOKKOS_ENABLE_CUDA
 #include "cuda_runtime_api.h"
 #endif
 
@@ -64,7 +64,7 @@ int main(int argc, char *argv[])
   bool verbose = false;
   try {
 
-#ifdef KOKKOS_HAVE_PTHREAD
+#ifdef KOKKOS_ENABLE_THREADS
     const size_t num_sockets = Kokkos::hwloc::get_available_numa_count();
     const size_t num_cores_per_socket =
       Kokkos::hwloc::get_available_cores_per_numa();
@@ -86,7 +86,7 @@ int main(int argc, char *argv[])
     CLP.setOption("emax", &ensemble_max, "Stoping ensemble size");
     int ensemble_step = 4;
     CLP.setOption("estep", &ensemble_step, "Ensemble increment");
-#ifdef KOKKOS_HAVE_PTHREAD
+#ifdef KOKKOS_ENABLE_THREADS
     bool threads = true;
     CLP.setOption("threads", "no-threads", &threads, "Enable Threads device");
     int num_cores = num_cores_per_socket * num_sockets;
@@ -96,7 +96,7 @@ int main(int argc, char *argv[])
     CLP.setOption("hyperthreads", &num_hyper_threads,
                   "Number of hyper threads per core to use (defaults to all)");
 #endif
-#ifdef KOKKOS_HAVE_CUDA
+#ifdef KOKKOS_ENABLE_CUDA
     bool cuda = true;
     CLP.setOption("cuda", "no-cuda", &cuda, "Enable Cuda device");
     int device_id = 0;
@@ -107,7 +107,7 @@ int main(int argc, char *argv[])
     typedef int Ordinal;
     typedef double Scalar;
 
-#ifdef KOKKOS_HAVE_PTHREAD
+#ifdef KOKKOS_ENABLE_THREADS
     if (threads) {
       typedef Kokkos::Threads Device;
 
@@ -124,7 +124,7 @@ int main(int argc, char *argv[])
     }
 #endif
 
-#ifdef KOKKOS_HAVE_CUDA
+#ifdef KOKKOS_ENABLE_CUDA
     if (cuda) {
       typedef Kokkos::Cuda Device;
 

@@ -915,7 +915,7 @@ packCrsMatrix (const CrsMatrix<ST, LO, GO, NT>& sourceMatrix,
   // have a possibly different memory space (CudaSpace) than the
   // default CUDA memory space (currently CudaUVMSpace).
   typedef typename device_type::execution_space buffer_exec_space;
-#ifdef KOKKOS_HAVE_CUDA
+#ifdef KOKKOS_ENABLE_CUDA
   typedef typename std::conditional<
       std::is_same<
         buffer_exec_space, Kokkos::Cuda
@@ -925,7 +925,7 @@ packCrsMatrix (const CrsMatrix<ST, LO, GO, NT>& sourceMatrix,
     >::type buffer_memory_space;
 #else
   typedef typename device_type::memory_space buffer_memory_space;
-#endif // KOKKOS_HAVE_CUDA
+#endif // KOKKOS_ENABLE_CUDA
   typedef Kokkos::Device<buffer_exec_space,
     buffer_memory_space> buffer_device_type;
 
@@ -992,7 +992,7 @@ packCrsMatrixNew (const CrsMatrix<ST, LO, GO, NT>& sourceMatrix,
   // have a possibly different memory space (CudaSpace) than the
   // default CUDA memory space (currently CudaUVMSpace).
   typedef typename device_type::execution_space buffer_exec_space;
-#ifdef KOKKOS_HAVE_CUDA
+#ifdef KOKKOS_ENABLE_CUDA
   typedef typename std::conditional<
       std::is_same<
         buffer_exec_space, Kokkos::Cuda
@@ -1002,7 +1002,7 @@ packCrsMatrixNew (const CrsMatrix<ST, LO, GO, NT>& sourceMatrix,
     >::type buffer_memory_space;
 #else
   typedef typename device_type::memory_space buffer_memory_space;
-#endif // KOKKOS_HAVE_CUDA
+#endif // KOKKOS_ENABLE_CUDA
   typedef Kokkos::Device<buffer_exec_space,
     buffer_memory_space> buffer_device_type;
 
