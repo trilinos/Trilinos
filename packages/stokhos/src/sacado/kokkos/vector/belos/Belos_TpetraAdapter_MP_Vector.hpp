@@ -366,7 +366,7 @@ namespace Belos {
       typedef Kokkos::View<dot_type**, Kokkos::LayoutLeft, execution_space> b_view_type;
       typedef Kokkos::View<dot_type*, Kokkos::LayoutLeft, execution_space> b_1d_view_type;
       b_1d_view_type B_1d_view_dev(Kokkos::ViewAllocateWithoutInitializing("B"), strideB*numColsB);
-      b_view_type B_view_dev( B_1d_view_dev.ptr_on_device(), strideB, numColsB);
+      b_view_type B_view_dev( B_1d_view_dev.data(), strideB, numColsB);
       Kokkos::deep_copy(B_view_dev, B_view_host);
 
       // Do local multiply
@@ -474,7 +474,7 @@ namespace Belos {
       typedef Kokkos::View<dot_type**, Kokkos::LayoutLeft, execution_space> c_view_type;
       typedef Kokkos::View<dot_type*, Kokkos::LayoutLeft, execution_space> c_1d_view_type;
       c_1d_view_type C_1d_view_dev("C", strideC*numColsC);
-      c_view_type C_view_dev( C_1d_view_dev.ptr_on_device(), strideC, numColsC);
+      c_view_type C_view_dev( C_1d_view_dev.data(), strideC, numColsC);
 
       // Do local multiply
       ::Tpetra::Details::Blas::gemm(
@@ -490,12 +490,12 @@ namespace Belos {
       else {
         typedef Kokkos::View<dot_type*, Kokkos::LayoutLeft, Kokkos::HostSpace> c_1d_host_view_type;
         c_1d_host_view_type C_1d_view_tmp(Kokkos::ViewAllocateWithoutInitializing("C_tmp"), strideC*numColsC);
-        c_host_view_type C_view_tmp( C_1d_view_tmp.ptr_on_device(),
+        c_host_view_type C_view_tmp( C_1d_view_tmp.data(),
                                      strideC, numColsC);
         Kokkos::deep_copy(C_view_tmp, C_view_dev);
         reduceAll<int> (*pcomm, REDUCE_SUM, strideC*numColsC,
-                        C_view_tmp.ptr_on_device(),
-                        C_view_host.ptr_on_device());
+                        C_view_tmp.data(),
+                        C_view_host.data());
       }
     }
 
