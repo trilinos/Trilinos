@@ -150,10 +150,16 @@ StepperNewmarkImplicitDForm<Scalar>::takeStep(
 
   TEMPUS_FUNC_TIME_MONITOR("Tempus::StepperNewmarkImplicitDForm::takeStep()");
   {
-    RCP<SolutionState<Scalar>> workingState =
-        solutionHistory->getWorkingState();
-    RCP<SolutionState<Scalar>> currentState =
-        solutionHistory->getCurrentState();
+    TEUCHOS_TEST_FOR_EXCEPTION(solutionHistory->getNumStates() < 2,
+      std::logic_error,
+      "Error - StepperNewmarkImplicitDForm<Scalar>::takeStep(...)\n"
+      "Need at least two SolutionStates for NewmarkImplicitDForm.\n"
+      "  Number of States = " << solutionHistory->getNumStates() << "\n"
+      "Try setting in \"Solution History\" \"Storage Type\" = \"Undo\"\n"
+      "  or \"Storage Type\" = \"Static\" and \"Storage Limit\" = \"2\"\n");
+
+    RCP<SolutionState<Scalar>> workingState =solutionHistory->getWorkingState();
+    RCP<SolutionState<Scalar>> currentState =solutionHistory->getCurrentState();
 
     Teuchos::RCP<WrapperModelEvaluatorSecondOrder<Scalar> > wrapperModel =
       Teuchos::rcp_dynamic_cast<WrapperModelEvaluatorSecondOrder<Scalar> >(
