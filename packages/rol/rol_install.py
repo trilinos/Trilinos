@@ -23,7 +23,8 @@ if __name__ == '__main__':
     /usr/local/include 
     
     Optional arguments can also be provided through OPTS.
-    Currently the only supported option is shared_ptr 
+    Currently the only supported options are shared_ptr and
+    property_tree
     to use the std::shared_ptr instead of Teuchos::RCP.
     
     """
@@ -77,9 +78,13 @@ if __name__ == '__main__':
         opt_text += "Enabled options: \n"
 
     shared_ptr = 'shared_ptr' in options
+    property_tree = 'property_tree' in options
 
     if shared_ptr: 
         opt_text += "-> Use std::shared_ptr as ROL::Ptr"
+
+    if property_tree: 
+        opt_text += "-> Use boost::property_tree as ROL::ParameterList"
 
     status = \
     """
@@ -112,6 +117,12 @@ if __name__ == '__main__':
         else:
             headers = [ h for h in headers if 'shared_ptr' not in h ]
     
+        if property_tree:
+            headers = [ h for h in headers if 'parameterlist' not in h ]
+        else:
+            headers = [ h for h in headers if 'property_tree' not in h ]
+
+
         for h in headers:
             copy(h, install_path)
             print("Copying {0}".format(os.path.split(h)[-1]))
