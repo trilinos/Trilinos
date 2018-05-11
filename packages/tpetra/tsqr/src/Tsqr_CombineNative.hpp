@@ -182,10 +182,19 @@ namespace TSQR {
   template< class Ordinal, class Scalar >
   class CombineNative< Ordinal, Scalar, false >
   {
+  private:
+    using memory_space = Kokkos::HostSpace;
+#ifdef KOKKOS_ENABLE_SERIAL
+    using execution_space = Kokkos::Serial;
+#else // NOT KOKKOS_ENABLE_SERIAL
+    using execution_space = Kokkos::HostSpace::execution_space;
+#endif // KOKKOS_ENABLE_SERIAL
+
   public:
     typedef Scalar scalar_type;
     typedef typename Teuchos::ScalarTraits< Scalar >::magnitudeType magnitude_type;
     typedef Ordinal ordinal_type;
+    using device_type = Kokkos::Device<execution_space, memory_space>;
 
   private:
     typedef Teuchos::LAPACK<ordinal_type, scalar_type> lapack_type;
@@ -193,14 +202,14 @@ namespace TSQR {
 
     void
     GER (const magnitude_type alpha,
-         const Kokkos::View<const scalar_type*, Kokkos::LayoutLeft, Kokkos::Serial>& x,
-         const Kokkos::View<const scalar_type*, Kokkos::LayoutLeft, Kokkos::Serial>& y,
-         const Kokkos::View<scalar_type**, Kokkos::LayoutLeft, Kokkos::Serial>& A) const;
+         const Kokkos::View<const scalar_type*, Kokkos::LayoutLeft, device_type>& x,
+         const Kokkos::View<const scalar_type*, Kokkos::LayoutLeft, device_type>& y,
+         const Kokkos::View<scalar_type**, Kokkos::LayoutLeft, device_type>& A) const;
 
     void
     LARFG (const Ordinal n,
            scalar_type* const alpha,
-           const Kokkos::View<scalar_type*, Kokkos::LayoutLeft, Kokkos::Serial>& x,
+           const Kokkos::View<scalar_type*, Kokkos::LayoutLeft, device_type>& x,
            scalar_type* const tau) const
     {
       constexpr Ordinal incx {1};
@@ -236,38 +245,38 @@ namespace TSQR {
     void
     GEMV (const char trans[],
           const scalar_type alpha,
-          const Kokkos::View<const scalar_type**, Kokkos::LayoutLeft, Kokkos::Serial>& A,
-          const Kokkos::View<const scalar_type*, Kokkos::LayoutLeft, Kokkos::Serial>& x,
+          const Kokkos::View<const scalar_type**, Kokkos::LayoutLeft, device_type>& A,
+          const Kokkos::View<const scalar_type*, Kokkos::LayoutLeft, device_type>& x,
           const scalar_type beta,
-          const Kokkos::View<scalar_type*, Kokkos::LayoutLeft, Kokkos::Serial>& y) const;
+          const Kokkos::View<scalar_type*, Kokkos::LayoutLeft, device_type>& y) const;
 
     void
-    factor_pair (const Kokkos::View<scalar_type**, Kokkos::LayoutLeft, Kokkos::Serial>& R_top,
-                 const Kokkos::View<scalar_type**, Kokkos::LayoutLeft, Kokkos::Serial>& R_bot,
-                 const Kokkos::View<scalar_type*, Kokkos::LayoutLeft, Kokkos::Serial>& tau_view,
-                 const Kokkos::View<scalar_type*, Kokkos::LayoutLeft, Kokkos::Serial>& work_view) const;
+    factor_pair (const Kokkos::View<scalar_type**, Kokkos::LayoutLeft, device_type>& R_top,
+                 const Kokkos::View<scalar_type**, Kokkos::LayoutLeft, device_type>& R_bot,
+                 const Kokkos::View<scalar_type*, Kokkos::LayoutLeft, device_type>& tau_view,
+                 const Kokkos::View<scalar_type*, Kokkos::LayoutLeft, device_type>& work_view) const;
 
     void
-    factor_inner (const Kokkos::View<scalar_type**, Kokkos::LayoutLeft, Kokkos::Serial>& R_view,
-                  const Kokkos::View<scalar_type**, Kokkos::LayoutLeft, Kokkos::Serial>& A_view,
-                  const Kokkos::View<scalar_type*, Kokkos::LayoutLeft, Kokkos::Serial>& tau_view,
-                  const Kokkos::View<scalar_type*, Kokkos::LayoutLeft, Kokkos::Serial>& work_view) const;
+    factor_inner (const Kokkos::View<scalar_type**, Kokkos::LayoutLeft, device_type>& R_view,
+                  const Kokkos::View<scalar_type**, Kokkos::LayoutLeft, device_type>& A_view,
+                  const Kokkos::View<scalar_type*, Kokkos::LayoutLeft, device_type>& tau_view,
+                  const Kokkos::View<scalar_type*, Kokkos::LayoutLeft, device_type>& work_view) const;
 
     void
     apply_pair (const ApplyType& applyType,
-                const Kokkos::View<const scalar_type**, Kokkos::LayoutLeft, Kokkos::Serial>& R_bot, // ncols_Q
-                const Kokkos::View<const scalar_type*, Kokkos::LayoutLeft, Kokkos::Serial>& tau_view,
-                const Kokkos::View<scalar_type**, Kokkos::LayoutLeft, Kokkos::Serial>& C_top, // ncols_C
-                const Kokkos::View<scalar_type**, Kokkos::LayoutLeft, Kokkos::Serial>& C_bot,
-                const Kokkos::View<scalar_type*, Kokkos::LayoutLeft, Kokkos::Serial>& work_view) const;
+                const Kokkos::View<const scalar_type**, Kokkos::LayoutLeft, device_type>& R_bot, // ncols_Q
+                const Kokkos::View<const scalar_type*, Kokkos::LayoutLeft, device_type>& tau_view,
+                const Kokkos::View<scalar_type**, Kokkos::LayoutLeft, device_type>& C_top, // ncols_C
+                const Kokkos::View<scalar_type**, Kokkos::LayoutLeft, device_type>& C_bot,
+                const Kokkos::View<scalar_type*, Kokkos::LayoutLeft, device_type>& work_view) const;
 
     void
     apply_inner (const ApplyType& applyType,
-                 const Kokkos::View<const scalar_type**, Kokkos::LayoutLeft, Kokkos::Serial>& A,
-                 const Kokkos::View<const scalar_type*, Kokkos::LayoutLeft, Kokkos::Serial>& tau,
-                 const Kokkos::View<scalar_type**, Kokkos::LayoutLeft, Kokkos::Serial>& C_top,
-                 const Kokkos::View<scalar_type**, Kokkos::LayoutLeft, Kokkos::Serial>& C_bot,
-                 const Kokkos::View<scalar_type*, Kokkos::LayoutLeft, Kokkos::Serial>& work) const;
+                 const Kokkos::View<const scalar_type**, Kokkos::LayoutLeft, device_type>& A,
+                 const Kokkos::View<const scalar_type*, Kokkos::LayoutLeft, device_type>& tau,
+                 const Kokkos::View<scalar_type**, Kokkos::LayoutLeft, device_type>& C_top,
+                 const Kokkos::View<scalar_type**, Kokkos::LayoutLeft, device_type>& C_bot,
+                 const Kokkos::View<scalar_type*, Kokkos::LayoutLeft, device_type>& work) const;
 
   public:
     CombineNative () = default;
@@ -477,13 +486,13 @@ namespace TSQR {
   void
   CombineNative< Ordinal, Scalar, false >::
   GER (const magnitude_type alpha,
-       const Kokkos::View<const scalar_type*, Kokkos::LayoutLeft, Kokkos::Serial>& x,
-       const Kokkos::View<const scalar_type*, Kokkos::LayoutLeft, Kokkos::Serial>& y,
-       const Kokkos::View<scalar_type**, Kokkos::LayoutLeft, Kokkos::Serial>& A) const
+       const Kokkos::View<const scalar_type*, Kokkos::LayoutLeft, device_type>& x,
+       const Kokkos::View<const scalar_type*, Kokkos::LayoutLeft, device_type>& y,
+       const Kokkos::View<scalar_type**, Kokkos::LayoutLeft, device_type>& A) const
   {
     constexpr scalar_type ZERO {0.0};
-    const Ordinal m = A.dimension_0 ();
-    const Ordinal n = A.dimension_1 ();
+    const Ordinal m = A.extent (0);
+    const Ordinal n = A.extent (1);
 
     constexpr Ordinal incy {1};
     //Ordinal jy = (incy > 0) ? 1 : 1 - (n-1) * incy;
@@ -506,17 +515,17 @@ namespace TSQR {
   CombineNative< Ordinal, Scalar, false >::
   GEMV (const char trans[],
         const scalar_type alpha,
-        const Kokkos::View<const scalar_type**, Kokkos::LayoutLeft, Kokkos::Serial>& A,
-        const Kokkos::View<const scalar_type*, Kokkos::LayoutLeft, Kokkos::Serial>& x,
+        const Kokkos::View<const scalar_type**, Kokkos::LayoutLeft, device_type>& A,
+        const Kokkos::View<const scalar_type*, Kokkos::LayoutLeft, device_type>& x,
         const scalar_type beta,
-        const Kokkos::View<scalar_type*, Kokkos::LayoutLeft, Kokkos::Serial>& y) const
+        const Kokkos::View<scalar_type*, Kokkos::LayoutLeft, device_type>& y) const
   {
-    using y_vec_type = Kokkos::View<scalar_type*, Kokkos::LayoutLeft, Kokkos::Serial>;
-    using x_vec_type = Kokkos::View<const scalar_type*, Kokkos::LayoutLeft, Kokkos::Serial>;
+    using y_vec_type = Kokkos::View<scalar_type*, Kokkos::LayoutLeft, device_type>;
+    using x_vec_type = Kokkos::View<const scalar_type*, Kokkos::LayoutLeft, device_type>;
     using range_type = std::pair<Ordinal, Ordinal>;
 
-    const Ordinal m = A.dimension_0 ();
-    const Ordinal n = A.dimension_1 ();
+    const Ordinal m = A.extent (0);
+    const Ordinal n = A.extent (1);
 
     const bool no_trans = (trans[0] == 'N' || trans[0] == 'n');
     x_vec_type x_view = Kokkos::subview (x, range_type (0, no_trans ? n : m));
@@ -528,10 +537,10 @@ namespace TSQR {
   template< class Ordinal, class Scalar >
   void
   CombineNative< Ordinal, Scalar, false >::
-  factor_inner (const Kokkos::View<scalar_type**, Kokkos::LayoutLeft, Kokkos::Serial>& R_view,
-                const Kokkos::View<scalar_type**, Kokkos::LayoutLeft, Kokkos::Serial>& A_view,
-                const Kokkos::View<scalar_type*, Kokkos::LayoutLeft, Kokkos::Serial>& tau_view,
-                const Kokkos::View<scalar_type*, Kokkos::LayoutLeft, Kokkos::Serial>& work_view) const
+  factor_inner (const Kokkos::View<scalar_type**, Kokkos::LayoutLeft, device_type>& R_view,
+                const Kokkos::View<scalar_type**, Kokkos::LayoutLeft, device_type>& A_view,
+                const Kokkos::View<scalar_type*, Kokkos::LayoutLeft, device_type>& tau_view,
+                const Kokkos::View<scalar_type*, Kokkos::LayoutLeft, device_type>& work_view) const
   {
     using Kokkos::ALL;
     using Kokkos::subview;
@@ -539,8 +548,8 @@ namespace TSQR {
     constexpr scalar_type ZERO {0.0};
     constexpr scalar_type ONE {1.0};
 
-    const Ordinal m = A_view.dimension_0 ();
-    const Ordinal n = A_view.dimension_1 ();
+    const Ordinal m = A_view.extent (0);
+    const Ordinal n = A_view.extent (1);
 
     for (Ordinal k = 0; k < n; ++k) {
       work_view(k) = ZERO;
@@ -584,9 +593,9 @@ namespace TSQR {
     using Kokkos::ALL;
     using Kokkos::subview;
     using mat_type =
-      Kokkos::View<scalar_type**, Kokkos::LayoutLeft, Kokkos::Serial>;
+      Kokkos::View<scalar_type**, Kokkos::LayoutLeft, device_type>;
     using nonconst_vec_type =
-      Kokkos::View<scalar_type*, Kokkos::LayoutLeft, Kokkos::Serial>;
+      Kokkos::View<scalar_type*, Kokkos::LayoutLeft, device_type>;
     using range_type = std::pair<Ordinal, Ordinal>;
 
     mat_type A_full (A, lda, n);
@@ -603,21 +612,21 @@ namespace TSQR {
   void
   CombineNative< Ordinal, Scalar, false >::
   apply_inner (const ApplyType& applyType,
-               const Kokkos::View<const scalar_type**, Kokkos::LayoutLeft, Kokkos::Serial>& A,
-               const Kokkos::View<const scalar_type*, Kokkos::LayoutLeft, Kokkos::Serial>& tau,
-               const Kokkos::View<scalar_type**, Kokkos::LayoutLeft, Kokkos::Serial>& C_top,
-               const Kokkos::View<scalar_type**, Kokkos::LayoutLeft, Kokkos::Serial>& C_bot,
-               const Kokkos::View<scalar_type*, Kokkos::LayoutLeft, Kokkos::Serial>& work) const
+               const Kokkos::View<const scalar_type**, Kokkos::LayoutLeft, device_type>& A,
+               const Kokkos::View<const scalar_type*, Kokkos::LayoutLeft, device_type>& tau,
+               const Kokkos::View<scalar_type**, Kokkos::LayoutLeft, device_type>& C_top,
+               const Kokkos::View<scalar_type**, Kokkos::LayoutLeft, device_type>& C_bot,
+               const Kokkos::View<scalar_type*, Kokkos::LayoutLeft, device_type>& work) const
   {
     using Kokkos::ALL;
     using Kokkos::subview;
     using const_vec_type =
-      Kokkos::View<const scalar_type*, Kokkos::LayoutLeft, Kokkos::Serial>;
+      Kokkos::View<const scalar_type*, Kokkos::LayoutLeft, device_type>;
     constexpr scalar_type ZERO {0.0};
 
-    const Ordinal m = A.dimension_0 ();
-    const Ordinal ncols_Q = A.dimension_1 ();
-    const Ordinal ncols_C = C_top.dimension_1 ();
+    const Ordinal m = A.extent (0);
+    const Ordinal ncols_Q = A.extent (1);
+    const Ordinal ncols_C = C_top.extent (1);
 
     for (Ordinal i = 0; i < ncols_C; ++i) {
       work(i) = ZERO;
@@ -672,13 +681,13 @@ namespace TSQR {
     using Kokkos::ALL;
     using Kokkos::subview;
     using const_mat_type =
-      Kokkos::View<const scalar_type**, Kokkos::LayoutLeft, Kokkos::Serial>;
+      Kokkos::View<const scalar_type**, Kokkos::LayoutLeft, device_type>;
     using nonconst_mat_type =
-      Kokkos::View<scalar_type**, Kokkos::LayoutLeft, Kokkos::Serial>;
+      Kokkos::View<scalar_type**, Kokkos::LayoutLeft, device_type>;
     using const_vec_type =
-      Kokkos::View<const scalar_type*, Kokkos::LayoutLeft, Kokkos::Serial>;
+      Kokkos::View<const scalar_type*, Kokkos::LayoutLeft, device_type>;
     using nonconst_vec_type =
-      Kokkos::View<scalar_type*, Kokkos::LayoutLeft, Kokkos::Serial>;
+      Kokkos::View<scalar_type*, Kokkos::LayoutLeft, device_type>;
     using range_type = std::pair<Ordinal, Ordinal>;
 
     const_mat_type A_full (A, lda, ncols_Q);
@@ -697,10 +706,10 @@ namespace TSQR {
   template< class Ordinal, class Scalar >
   void
   CombineNative< Ordinal, Scalar, false >::
-  factor_pair (const Kokkos::View<scalar_type**, Kokkos::LayoutLeft, Kokkos::Serial>& R_top,
-               const Kokkos::View<scalar_type**, Kokkos::LayoutLeft, Kokkos::Serial>& R_bot,
-               const Kokkos::View<scalar_type*, Kokkos::LayoutLeft, Kokkos::Serial>& tau_view,
-               const Kokkos::View<scalar_type*, Kokkos::LayoutLeft, Kokkos::Serial>& work_view) const
+  factor_pair (const Kokkos::View<scalar_type**, Kokkos::LayoutLeft, device_type>& R_top,
+               const Kokkos::View<scalar_type**, Kokkos::LayoutLeft, device_type>& R_bot,
+               const Kokkos::View<scalar_type*, Kokkos::LayoutLeft, device_type>& tau_view,
+               const Kokkos::View<scalar_type*, Kokkos::LayoutLeft, device_type>& work_view) const
   {
     using Kokkos::ALL;
     using Kokkos::subview;
@@ -708,7 +717,7 @@ namespace TSQR {
     constexpr scalar_type ZERO {0.0};
     constexpr scalar_type ONE {1.0};
 
-    const Ordinal n = R_top.dimension_0 ();
+    const Ordinal n = R_top.extent (0);
     for (Ordinal k = 0; k < n; ++k) {
       work_view(k) = ZERO;
     }
@@ -757,10 +766,10 @@ namespace TSQR {
     using Kokkos::subview;
     using range_type = std::pair<Ordinal, Ordinal>;
 
-    Kokkos::View<scalar_type**, Kokkos::LayoutLeft, Kokkos::Serial> R_top_full (R_top, ldr_top, n);
-    Kokkos::View<scalar_type**, Kokkos::LayoutLeft, Kokkos::Serial> R_bot_full (R_bot, ldr_bot, n);
-    Kokkos::View<scalar_type*, Kokkos::LayoutLeft, Kokkos::Serial> tau_view (tau, n);
-    Kokkos::View<scalar_type*, Kokkos::LayoutLeft, Kokkos::Serial> work_view (work, n);
+    Kokkos::View<scalar_type**, Kokkos::LayoutLeft, device_type> R_top_full (R_top, ldr_top, n);
+    Kokkos::View<scalar_type**, Kokkos::LayoutLeft, device_type> R_bot_full (R_bot, ldr_bot, n);
+    Kokkos::View<scalar_type*, Kokkos::LayoutLeft, device_type> tau_view (tau, n);
+    Kokkos::View<scalar_type*, Kokkos::LayoutLeft, device_type> work_view (work, n);
 
     if (ldr_top == n) {
       if (ldr_bot == n) {
@@ -803,13 +812,13 @@ namespace TSQR {
     using Kokkos::subview;
     using range_type = std::pair<Ordinal, Ordinal>;
     using const_mat_type =
-      Kokkos::View<const scalar_type**, Kokkos::LayoutLeft, Kokkos::Serial>;
+      Kokkos::View<const scalar_type**, Kokkos::LayoutLeft, device_type>;
     using nonconst_mat_type =
-      Kokkos::View<scalar_type**, Kokkos::LayoutLeft, Kokkos::Serial>;
+      Kokkos::View<scalar_type**, Kokkos::LayoutLeft, device_type>;
     using const_vec_type =
-      Kokkos::View<const scalar_type*, Kokkos::LayoutLeft, Kokkos::Serial>;
+      Kokkos::View<const scalar_type*, Kokkos::LayoutLeft, device_type>;
     using nonconst_vec_type =
-      Kokkos::View<scalar_type*, Kokkos::LayoutLeft, Kokkos::Serial>;
+      Kokkos::View<scalar_type*, Kokkos::LayoutLeft, device_type>;
 
     const_mat_type R_bot_full (R_bot, ldr_bot, ncols_Q);
     nonconst_mat_type C_top_full (C_top, ldc_top, ncols_C);
@@ -827,17 +836,17 @@ namespace TSQR {
   void
   CombineNative< Ordinal, Scalar, false >::
   apply_pair (const ApplyType& applyType,
-              const Kokkos::View<const scalar_type**, Kokkos::LayoutLeft, Kokkos::Serial>& R_bot, // ncols_Q
-              const Kokkos::View<const scalar_type*, Kokkos::LayoutLeft, Kokkos::Serial>& tau_view,
-              const Kokkos::View<scalar_type**, Kokkos::LayoutLeft, Kokkos::Serial>& C_top, // ncols_C
-              const Kokkos::View<scalar_type**, Kokkos::LayoutLeft, Kokkos::Serial>& C_bot,
-              const Kokkos::View<scalar_type*, Kokkos::LayoutLeft, Kokkos::Serial>& work_view) const
+              const Kokkos::View<const scalar_type**, Kokkos::LayoutLeft, device_type>& R_bot, // ncols_Q
+              const Kokkos::View<const scalar_type*, Kokkos::LayoutLeft, device_type>& tau_view,
+              const Kokkos::View<scalar_type**, Kokkos::LayoutLeft, device_type>& C_top, // ncols_C
+              const Kokkos::View<scalar_type**, Kokkos::LayoutLeft, device_type>& C_bot,
+              const Kokkos::View<scalar_type*, Kokkos::LayoutLeft, device_type>& work_view) const
   {
     using const_vec_type =
-      Kokkos::View<const scalar_type*, Kokkos::LayoutLeft, Kokkos::Serial>;
+      Kokkos::View<const scalar_type*, Kokkos::LayoutLeft, device_type>;
     constexpr scalar_type ZERO {0.0};
-    const Ordinal ncols_C = C_top.dimension_1 ();
-    const Ordinal ncols_Q = R_bot.dimension_1 ();
+    const Ordinal ncols_C = C_top.extent (1);
+    const Ordinal ncols_Q = R_bot.extent (1);
 
     Ordinal j_start, j_end, j_step;
     if (applyType == ApplyType::NoTranspose) {

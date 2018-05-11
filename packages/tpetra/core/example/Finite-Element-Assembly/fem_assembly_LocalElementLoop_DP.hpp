@@ -232,9 +232,14 @@ int executeLocalElementLoopDP(const comm_ptr_t& comm, const struct CmdLineOpts& 
   // Create owned and overlapping CRS Matrices
   RCP<matrix_t> crs_matrix_owned       = rcp(new matrix_t(crs_graph_owned));
   RCP<matrix_t> crs_matrix_overlapping = rcp(new matrix_t(crs_graph_overlapping));
+  RCP<multivector_t> rhs_owned =
+    rcp(new multivector_t(crs_graph_owned->getRowMap(), 1));
+  RCP<multivector_t> rhs_overlapping =
+    rcp(new multivector_t(crs_graph_overlapping->getRowMap(), 1));
 
   scalar_2d_array_t element_matrix;
   Kokkos::resize(element_matrix, 4, 4);
+  Teuchos::Array<Scalar> element_rhs(4);
 
   Teuchos::Array<global_ordinal_t> column_global_ids(4);     // global column ids list
   Teuchos::Array<Scalar> column_scalar_values(4);         // scalar values for each column
@@ -244,6 +249,7 @@ int executeLocalElementLoopDP(const comm_ptr_t& comm, const struct CmdLineOpts& 
   {
     // Get the contributions for the current element
     ReferenceQuad4(element_matrix);
+    ReferenceQuad4RHS(element_rhs);
 
     // Fill the global column ids array for this element
     for(size_t element_node_idx=0; element_node_idx<owned_element_to_node_ids.extent(1); element_node_idx++)
@@ -266,6 +272,7 @@ int executeLocalElementLoopDP(const comm_ptr_t& comm, const struct CmdLineOpts& 
 
       // For Type-2 Assembly, we only sumInot the overlapping crs_matrix.
       crs_matrix_overlapping->sumIntoGlobalValues(global_row_id, column_global_ids, column_scalar_values);
+      rhs_overlapping->sumIntoGlobalValue(global_row_id, 0, element_rhs[element_node_idx]);
     }
   }
   timerElementLoopMatrix = Teuchos::null;
@@ -283,6 +290,7 @@ int executeLocalElementLoopDP(const comm_ptr_t& comm, const struct CmdLineOpts& 
   {
     TimeMonitor timer(*TimeMonitor::getNewTimer("7) Export       (Owned Matrix)"));
     crs_matrix_owned->doExport(*crs_matrix_overlapping, exporter, Tpetra::ADD);
+    rhs_owned->doExport(*rhs_overlapping, exporter, Tpetra::ADD);
   }
   
   {

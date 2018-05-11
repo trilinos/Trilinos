@@ -298,7 +298,7 @@ struct DefaultVectorizationMethod<Kokkos::Cuda, double> {
 template <>
 struct VectorizationTraits<SIMD<double> > {
   typedef double value_type;
-  typedef Kokkos::DefaultHostExecutionSpace exec_space; 
+  typedef Kokkos::DefaultHostExecutionSpace exec_space;
   enum : int { vector_length = DefaultVectorLength<double,typename exec_space::memory_space>::value };
   typedef Vector<SIMD<double>, vector_length> vector_type;
 };
@@ -1762,7 +1762,7 @@ public: // Intended to be private, but public for Cuda.
 #else // __KOKKOSBATCHED_PROMOTION__
       if (add_to_diag)
         KokkosBatched::Details::Todo::Serial_LU_Internal_Unblocked_invoke(
-          A.dimension_0(), A.dimension_1(), A.data(), A.stride_0(), A.stride_1(), diag_safety);
+          A.extent(0), A.extent(1), A.data(), A.stride_0(), A.stride_1(), diag_safety);
       else {
         namespace kbe = KokkosBatched::Experimental;
         kbe::SerialLU<kbe::Algo::LU::Blocked>::invoke(A);
@@ -1989,7 +1989,7 @@ public: // Intended to be private, but public for Cuda.
       namespace kbe = KokkosBatched::Experimental;
       kbe::SerialTrsvInternalLower<kbe::Algo::Trsv::Unblocked>::invoke(
         true,
-        values.dimension_1(),
+        values.extent(1),
         a,
         values.data() + i0*bs2, values.stride_1(), values.stride_2(),
         X.data() + r0*xsz, X.stride_1());
@@ -2002,7 +2002,7 @@ public: // Intended to be private, but public for Cuda.
       namespace kbe = KokkosBatched::Experimental;
       kbe::SerialTrsmInternalLeftLower<kbe::Algo::Trsm::Blocked>::invoke(
         true,
-        values.dimension_1(), X.dimension_2(),
+        values.extent(1), X.extent(2),
         a,
         values.data() + i0*bs2, values.stride_1(), values.stride_2(),
         X.data() + r0*xsz, X.stride_1(), X.stride_2());
@@ -2015,7 +2015,7 @@ public: // Intended to be private, but public for Cuda.
       namespace kbe = KokkosBatched::Experimental;
       kbe::SerialTrsvInternalUpper<kbe::Algo::Trsv::Unblocked>::invoke(
         false,
-        values.dimension_1(),
+        values.extent(1),
         a,
         values.data() + i0*bs2, values.stride_1(), values.stride_2(),
         X.data() + r0*xsz, X.stride_1());
@@ -2028,7 +2028,7 @@ public: // Intended to be private, but public for Cuda.
       namespace kbe = KokkosBatched::Experimental;
       kbe::SerialTrsmInternalLeftUpper<kbe::Algo::Trsm::Blocked>::invoke(
         false,
-        values.dimension_1(), X.dimension_2(),
+        values.extent(1), X.extent(2),
         a,
         values.data() + i0*bs2, values.stride_1(), values.stride_2(),
         X.data() + r0*xsz, X.stride_1(), X.stride_2());
@@ -2042,7 +2042,7 @@ public: // Intended to be private, but public for Cuda.
            typename std::enable_if<std::is_same<Tag, VecTag>::value>::type* = 0) const {
       namespace kbe = KokkosBatched::Experimental;
       kbe::SerialGemvInternal<kbe::Algo::Gemv::Unblocked>::invoke(
-        values.dimension_1(), values.dimension_2(),
+        values.extent(1), values.extent(2),
         a,
         values.data() + a0*bs2, values.stride_1(), values.stride_2(),
         X.data() + b0*xsz, X.stride_1(),
@@ -2056,7 +2056,7 @@ public: // Intended to be private, but public for Cuda.
            typename std::enable_if<std::is_same<Tag, MatTag>::value>::type* = 0) const {
       namespace kbe = KokkosBatched::Experimental;
       kbe::SerialGemmInternal<kbe::Algo::Gemm::Blocked>::invoke(
-        X.dimension_1(), X.dimension_2(), values.dimension_2(),
+        X.extent(1), X.extent(2), values.extent(2),
         a,
         values.data() + a0*bs2, values.stride_1(), values.stride_2(),
         X.data() + b0*xsz, X.stride_1(), X.stride_2(),
@@ -2069,8 +2069,8 @@ public: // Intended to be private, but public for Cuda.
            const typename Tridiags::PackedMultiVector& X_)
       : pack_td_ptr(btdm.pack_td_ptr), values(btdm.values),
         packptr(packptr_), part2packrowidx0(part2packrowidx0_),
-        X(X_), bs2(values.dimension_1()*values.dimension_1()),
-        xsz(values.dimension_1()*X.dimension_2())
+        X(X_), bs2(values.extent(1)*values.extent(1)),
+        xsz(values.extent(1)*X.extent(2))
     {}
 
     template <typename Tag>

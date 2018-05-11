@@ -357,7 +357,7 @@ public:
                      const vector_type & x,
                      const vector_type & y )
   {
-    const size_type row_count = A.graph.row_map.dimension_0() - 1;
+    const size_type row_count = A.graph.row_map.extent(0) - 1;
     const size_type tensor_dimension = A.block.dimension();
     const size_type tensor_align = tensor_dimension;
     const size_type avg_tensor_entries_per_row = A.block.avg_entries_per_row();

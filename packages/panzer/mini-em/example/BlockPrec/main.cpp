@@ -25,6 +25,8 @@
 #include "Panzer_ModelEvaluator.hpp"
 #include "Panzer_InitialCondition_Builder.hpp"
 #include "Panzer_CheckBCConsistency.hpp"
+#include "Panzer_ResponseEvaluatorFactory_Functional.hpp"
+#include "Panzer_Response_Functional.hpp"
 
 #include "Panzer_STK_MeshFactory.hpp"
 #include "Panzer_STK_CubeHexMeshFactory.hpp"
@@ -349,6 +351,9 @@ int main(int argc,char * argv[])
       {
         closure_models.sublist("electromagnetics").sublist("CURRENT").set<std::string>("Type","GAUSSIAN PULSE"); // a gaussian current source
         closure_models.sublist("electromagnetics").sublist("CURRENT").set<double>("dt",dt); // set pulse width such that dt resolves it
+        closure_models.sublist("electromagnetics").sublist("EM_ENERGY").set<std::string>("Type","ELECTROMAGNETIC ENERGY"); // compute 1/2(eps*||E||^2 + 1/mu*||B||^2)
+        closure_models.sublist("electromagnetics").sublist("EM_ENERGY").set<double>("mu",mu);
+        closure_models.sublist("electromagnetics").sublist("EM_ENERGY").set<double>("epsilon",epsilon);
       }
 
       Teuchos::ParameterList user_data("User Data"); // user data can be empty here
@@ -402,6 +407,25 @@ int main(int argc,char * argv[])
       RCP<panzer::ModelEvaluator<double> > physics = rcp(new panzer::ModelEvaluator<double> (linObjFactory, lowsFactory, globalData, true, 0.0));
       RCP<panzer::ModelEvaluator<double> > auxPhysics = rcp(new panzer::ModelEvaluator<double> (auxLinObjFactory, lowsFactory, globalData, false, 0.0));
 
+      // add a response to output total electromagnetic energy
+      {
+        std::vector<std::string> eBlocks;
+        mesh->getElementBlockNames(eBlocks);
+
+        panzer::FunctionalResponse_Builder<int,int> builder;
+
+        builder.comm = MPI_COMM_WORLD;
+        builder.cubatureDegree = 2*basis_order;
+        builder.requiresCellIntegral = true;
+        builder.quadPointField = "EM_ENERGY";
+
+        std::vector<panzer::WorksetDescriptor> wkst_descs;
+        for(std::size_t i=0;i<eBlocks.size();i++)
+          wkst_descs.push_back(panzer::blockDescriptor(eBlocks[i]));
+
+        physics->addResponse("Electromagnetic Energy",wkst_descs,builder);
+      }
+
       Teuchos::RCP<Teuchos::TimeMonitor> tMphysicsEval = Teuchos::rcp(new Teuchos::TimeMonitor(*Teuchos::TimeMonitor::getNewTimer(std::string("Mini-EM: setup physics model evaluator"))));
       physics->setupModel(wkstContainer,physicsBlocks,bcs,
                           *eqset_factory,
@@ -441,6 +465,8 @@ int main(int argc,char * argv[])
       RCP<panzer::ResponseLibrary<panzer::Traits> > stkIOResponseLibrary
       = buildSTKIOResponseLibrary(physicsBlocks,linObjFactory,wkstContainer,dofManager,cm_factory,mesh,
           closure_models);
+
+
 
       // set up the solution vector, jacobian, and residual
       RCP<Thyra::VectorBase<double> > solution_vec = Thyra::createMember(physics->get_x_space());
@@ -499,6 +525,31 @@ int main(int argc,char * argv[])
 
           // end for()
           // end Newton loop (nonlinear case)
+          
+          // print out energy response
+          {
+            Thyra::ModelEvaluatorBase::InArgs<double> respInArgs = physics->createInArgs();
+            Thyra::ModelEvaluatorBase::OutArgs<double> respOutArgs = physics->createOutArgs();
+
+            respInArgs.set_x(solution_vec);
+
+            for(int i=0;i<respOutArgs.Ng();i++) {
+              Teuchos::RCP<Thyra::VectorBase<double> > response = Thyra::createMember(*physics->get_g_space(i));
+              respOutArgs.set_g(i,response);
+            }
+
+            physics->evalModel(respInArgs, respOutArgs);
+
+            Teuchos::RCP<Thyra::VectorBase<double> > g = respOutArgs.get_g(0);
+            *out << "Total Electromagnetic Energy = " <<  Thyra::get_ele(*g,0) << std::endl;
+            *out << "Total Electromagnetic Energy/dt^2 = " <<  Thyra::get_ele(*g,0)/dt/dt << std::endl;
+          }
+          // for checking correctness:
+          //    the current pulse is designed to peak at 10 time-steps
+          //    consequently, EM energy increases quickly up to 10 time-steps and then growth slows
+          //    asymptoting around 20 time-steps when the pulse is negligible.
+          //    since the pulse depends on the time-step, so does the energy.
+          //    energy normalized by 1/dt^2 is approximately the same across different values of dt.
 
           // write to an exodus file
           if (exodus_output)

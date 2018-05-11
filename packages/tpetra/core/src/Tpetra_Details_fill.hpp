@@ -252,7 +252,7 @@ struct Fill<ViewType,
         for (IndexType j = 0; j < numCols; ++j) {
           auto X_j = Kokkos::subview (X, Kokkos::ALL (), j);
           memsetWrapper (X_j.data (), 0,
-                         X_j.dimension_0 () * sizeof (view_value_type));
+                         X_j.extent (0) * sizeof (view_value_type));
         }
       }
       else {

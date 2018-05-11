@@ -922,8 +922,8 @@ int main(int argc, char *argv[]) {
   try {
     // FEM problem description.
     int prob = 1;  // prob = 0 is the MBB beam example, prob = 1 is the cantilever beam example.
-    uint nx  = 12; // Number of x-elements (60 for prob = 0, 32 for prob = 1).
-    uint ny  = 8; // Number of y-elements (20 for prob = 0, 20 for prob = 1).
+    uint nx  = 30; // Number of x-elements (60 for prob = 0, 32 for prob = 1).
+    uint ny  = 10; // Number of y-elements (20 for prob = 0, 20 for prob = 1).
     int P    = 1;  // SIMP penalization power.
     RealT frac = 0.4;      // Volume fraction.
     ROL::Ptr<FEM<RealT> > pFEM = ROL::makePtr<FEM<RealT>>(nx,ny,P,prob);

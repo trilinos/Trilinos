@@ -702,7 +702,7 @@ mult_test_results jacobi_test(
     if(!done) {
       Dinv.putScalar(omega);
       RCP<Matrix_t> AB = rcp(new Matrix_t(B->getRowMap(),0));
-      
+
       Tpetra::MatrixMatrix::Multiply(*A,false,*B,false,*AB);
       AB->leftScale(Dinv);
       Tpetra::MatrixMatrix::Add(*AB,false,-one,*B,false,one,C2);
@@ -1495,7 +1495,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Tpetra_MatMat, threaded_add_sorted, SC, LO, GO
   ISC one(1);
   Tpetra::MatrixMatrix::AddDetails::AddKernels<SC, LO, GO, NT>::addSorted(valsCRS[0], rowptrsCRS[0], colindsCRS[0], one, valsCRS[1], rowptrsCRS[1], colindsCRS[1], one, valsCRS[2], rowptrsCRS[2], colindsCRS[2]);
   //now scan through C's rows and entries to check they are correct
-  TEUCHOS_TEST_FOR_EXCEPTION(rowptrsCRS[0].dimension_0() != rowptrsCRS[2].dimension_0(), std::logic_error,
+  TEUCHOS_TEST_FOR_EXCEPTION(rowptrsCRS[0].extent(0) != rowptrsCRS[2].extent(0), std::logic_error,
       "Threaded addition of sorted Kokkos::CrsMatrix returned a matrix with the wrong number of rows.");
   for(size_t i = 0; i < nrows; i++)
   {
@@ -1609,7 +1609,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Tpetra_MatMat, threaded_add_unsorted, SC, LO, 
   ISC one(1);
   Tpetra::MatrixMatrix::AddDetails::AddKernels<SC, LO, GO, NT>::addUnsorted(valsCRS[0], rowptrsCRS[0], colindsCRS[0], one, valsCRS[1], rowptrsCRS[1], colindsCRS[1], one, nrows, valsCRS[2], rowptrsCRS[2], colindsCRS[2]);
   //now scan through C's rows and entries to check they are correct
-  TEUCHOS_TEST_FOR_EXCEPTION(rowptrsCRS[0].dimension_0() != rowptrsCRS[2].dimension_0(), std::logic_error,
+  TEUCHOS_TEST_FOR_EXCEPTION(rowptrsCRS[0].extent(0) != rowptrsCRS[2].extent(0), std::logic_error,
       "Threaded addition of sorted Kokkos::CrsMatrix returned a matrix with the wrong number of rows.");
   for(size_t i = 0; i < nrows; i++)
   {

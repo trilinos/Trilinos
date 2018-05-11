@@ -97,7 +97,8 @@ int main(int argc, char *argv[]) {
     Teuchos::updateParametersFromXmlFile( filename, parlist.ptr() );
 
     // Setup optimization problem
-    ROL::Ptr<ROL::Vector<RealT> > x0, z;
+    ROL::Ptr<ROL::Vector<RealT> > x0;
+    std::vector<ROL::Ptr<ROL::Vector<RealT> > > z;
     ROL::Ptr<ROL::OptimizationProblem<RealT> > optProblem;
     ROL::GetTestProblem<RealT>(optProblem,x0,z,ROL::TESTOPTPROBLEM_HS1);
     ROL::Ptr<ROL::Vector<RealT> > x = x0->clone(); x->set(*x0);
@@ -122,13 +123,21 @@ int main(int argc, char *argv[]) {
     optSolver.solve(*outStream, myStatus, false);
 
     // Compute Error
-    e->set(*x0);
-    e->axpy(static_cast<RealT>(-1),*z);
-    RealT enorm = e->norm();
-    *outStream << std::endl << "Norm of Error: " << enorm << std::endl;
+    RealT err(0);
+    for (int i = 0; i < static_cast<int>(z.size()); ++i) {
+      e->set(*x0);
+      e->axpy(-1.0,*z[i]);
+      if (i == 0) {
+        err = e->norm();
+      }
+      else {
+        err = std::min(err,e->norm());
+      }
+    }
+    *outStream << std::endl << "Norm of Error: " << err << std::endl;
 
-    RealT tol = static_cast<RealT>(1e-3)*std::max(z->norm(),static_cast<RealT>(1));
-    errorFlag += ((enorm < tol) ? 0 : 1);
+    RealT tol = static_cast<RealT>(1e-3)*std::max(z[0]->norm(),static_cast<RealT>(1));
+    errorFlag += ((err < tol) ? 0 : 1);
   }
   catch (std::logic_error err) {
     *outStream << err.what() << std::endl;
