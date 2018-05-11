@@ -30,7 +30,6 @@ struct ComputeFunctor{
 
 //typedef Kokkos::TeamVectorPolicy<32> team_policy;
 //typedef team_policy::member_type team_member ;
-#ifdef KOKKOS_HAVE_CXX11
 /*
 template<class ViewType>
 struct NestedComputeFunctor {
@@ -52,7 +51,6 @@ struct NestedComputeFunctor {
   }
 };
 */
-#endif
 
 double fRand(double fMin, double fMax)
 {
@@ -147,7 +145,6 @@ std::cout <<"loopvalues test: "<<1000000/loop1[itt]<<"\n";
   parallelfortimevector.push_back(parallelfortime);
    std::cout <<"Parallel For Time: "<<parallelfortime<<"\n\n";
    
-#ifdef KOKKOS_HAVE_CXX11
   Kokkos::Impl::Timer NestedParallelForTimer;
   //nested parallel for loop
   //const team_policy policy( loop1[itt] , hyperthreads);
@@ -158,7 +155,6 @@ std::cout <<"loopvalues test: "<<1000000/loop1[itt]<<"\n";
     double nestedparallelfortime = NestedParallelForTimer.seconds();
     nestedparallelfortimevector.push_back(nestedparallelfortime);
    std::cout <<"Nested Parallel For Time: "<<nestedparallelfortime<<"\n\n";
-#endif
 }
 
  std::cout << std::endl << "finalize" << std::endl;
