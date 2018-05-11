@@ -722,7 +722,7 @@ namespace MueLu {
 
       // adjust column indices
       size_t nnz = 0;
-      for (size_t jj = 0; jj < D0Pcolind.size(); jj++)
+      for (size_t jj = 0; jj < (size_t) D0Pcolind.size(); jj++)
         for (size_t k = 0; k < dim; k++) {
           P11colind[nnz] = dim*D0Pcolind[jj]+k;
           P11vals[nnz] = SC_ZERO;
