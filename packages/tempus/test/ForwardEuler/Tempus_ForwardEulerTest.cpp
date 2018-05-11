@@ -297,16 +297,17 @@ TEUCHOS_UNIT_TEST(ForwardEuler, SinCos)
 
   // Check the order and intercept
   double xSlope = 0.0;
-  //double xDotSlope = 0.0;
+  double xDotSlope = 0.0;
   RCP<Tempus::Stepper<double> > stepper = integrator->getStepper();
   double order = stepper->getOrder();
   writeOrderError("Tempus_ForwardEuler_SinCos-Error.dat",
                   stepper, StepSize,
-                  solutions,    xErrorNorm,    xSlope); //,
-                  //solutionsDot, xDotErrorNorm, xDotSlope);
+                  solutions,    xErrorNorm,    xSlope,
+                  solutionsDot, xDotErrorNorm, xDotSlope);
 
   TEST_FLOATING_EQUALITY( xSlope,               order, 0.01   );
   TEST_FLOATING_EQUALITY( xErrorNorm[0],     0.051123, 1.0e-4 );
+  // xDot not yet available for Forward Euler.
   //TEST_FLOATING_EQUALITY( xDotSlope,            order, 0.01   );
   //TEST_FLOATING_EQUALITY( xDotErrorNorm[0], 0.0486418, 1.0e-4 );
 
@@ -382,19 +383,19 @@ TEUCHOS_UNIT_TEST(ForwardEuler, VanDerPol)
 
   // Check the order and intercept
   double xSlope = 0.0;
-  //double xDotSlope = 0.0;
+  double xDotSlope = 0.0;
   RCP<Tempus::Stepper<double> > stepper = integrator->getStepper();
   double order = stepper->getOrder();
   writeOrderError("Tempus_ForwardEuler_VanDerPol-Error.dat",
                   stepper, StepSize,
-                  solutions,    xErrorNorm,    xSlope); //,
-                  //solutionsDot, xDotErrorNorm, xDotSlope);
+                  solutions,    xErrorNorm,    xSlope,
+                  solutionsDot, xDotErrorNorm, xDotSlope);
 
   TEST_FLOATING_EQUALITY( xSlope,            order, 0.10   );
   TEST_FLOATING_EQUALITY( xErrorNorm[0],  0.387476, 1.0e-4 );
-  //TEST_FLOATING_EQUALITY( xDotSlope,     1.74898, 0.10 );//=order at small dt
+  // xDot not yet available for Forward Euler.
+  //TEST_FLOATING_EQUALITY( xDotSlope,       1.74898, 0.10   );
   //TEST_FLOATING_EQUALITY( xDotErrorNorm[0], 1.0038, 1.0e-4 );
-
 
   // Calculate the error - use the most temporally refined mesh for
   // the reference solution.

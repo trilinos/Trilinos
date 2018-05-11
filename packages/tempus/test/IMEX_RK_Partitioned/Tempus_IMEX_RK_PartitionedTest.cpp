@@ -271,18 +271,19 @@ TEUCHOS_UNIT_TEST(IMEX_RK_Partitioned, VanDerPol)
 
     // Check the order and intercept
     double xSlope = 0.0;
-    //double xDotSlope = 0.0;
+    double xDotSlope = 0.0;
     RCP<Tempus::Stepper<double> > stepper = integrator->getStepper();
     //double order = stepper->getOrder();
     writeOrderError("Tempus_"+stepperName+"_VanDerPol-Error.dat",
                     stepper, StepSize,
-                    solutions,    xErrorNorm,    xSlope); //,
-                    //solutionsDot, xDotErrorNorm, xDotSlope);
+                    solutions,    xErrorNorm,    xSlope,
+                    solutionsDot, xDotErrorNorm, xDotSlope);
 
-    TEST_FLOATING_EQUALITY( xSlope,        stepperOrders[m],   0.02 );
+    TEST_FLOATING_EQUALITY( xSlope,        stepperOrders[m], 0.02 );
     TEST_FLOATING_EQUALITY( xErrorNorm[0], stepperErrors[m], 1.0e-4 );
-    //TEST_FLOATING_EQUALITY( xDotSlope,        1.74898, 0.10 );
-    //TEST_FLOATING_EQUALITY( xDotErrorNorm[0],  1.0038, 1.0e-4 );
+    // xDot not yet available for IMEX_RK_Partitioned.
+    //TEST_FLOATING_EQUALITY( xDotSlope,              1.74898, 0.02 );
+    //TEST_FLOATING_EQUALITY( xDotErrorNorm[0],        1.0038, 1.0e-4 );
 
   }
   Teuchos::TimeMonitor::summarize();

@@ -58,8 +58,6 @@ void TimeStepControl<Scalar>::getNextTimeStep(
     Teuchos::OSTab ostab(out,1,"getNextTimeStep");
     bool printChanges = solutionHistory->getVerbLevel() !=
                         Teuchos::as<int>(Teuchos::VERB_NONE);
-    //bool printChangesHi = solutionHistory->getVerbLevel() >=
-    //                      Teuchos::as<int>(Teuchos::VERB_HIGH);
 
     auto changeDT = [] (Scalar dt_old, Scalar dt_new, std::string reason) {
       std::stringstream message;

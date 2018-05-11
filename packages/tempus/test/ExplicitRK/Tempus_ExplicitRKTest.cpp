@@ -62,9 +62,9 @@ TEUCHOS_UNIT_TEST(ExplicitRK, ParameterList)
 
   for(std::vector<std::string>::size_type m = 0; m != RKMethods.size(); m++) {
 
-    std::string RKMethod_ = RKMethods[m];
-    std::replace(RKMethod_.begin(), RKMethod_.end(), ' ', '_');
-    std::replace(RKMethod_.begin(), RKMethod_.end(), '/', '.');
+    std::string RKMethod = RKMethods[m];
+    std::replace(RKMethod.begin(), RKMethod.end(), ' ', '_');
+    std::replace(RKMethod.begin(), RKMethod.end(), '/', '.');
 
     // Read params from .xml file
     RCP<ParameterList> pList =
@@ -254,9 +254,9 @@ TEUCHOS_UNIT_TEST(ExplicitRK, SinCos)
 
   for(std::vector<std::string>::size_type m = 0; m != RKMethods.size(); m++) {
 
-    std::string RKMethod_ = RKMethods[m];
-    std::replace(RKMethod_.begin(), RKMethod_.end(), ' ', '_');
-    std::replace(RKMethod_.begin(), RKMethod_.end(), '/', '.');
+    std::string RKMethod = RKMethods[m];
+    std::replace(RKMethod.begin(), RKMethod.end(), ' ', '_');
+    std::replace(RKMethod.begin(), RKMethod.end(), '/', '.');
 
     RCP<Tempus::IntegratorBasic<double> > integrator;
     std::vector<RCP<Thyra::VectorBase<double>>> solutions;
@@ -325,7 +325,7 @@ TEUCHOS_UNIT_TEST(ExplicitRK, SinCos)
       if (n == 0) {
         RCP<const SolutionHistory<double> > solutionHistory =
           integrator->getSolutionHistory();
-        writeSolution("Tempus_"+RKMethod_+"_SinCos.dat", solutionHistory);
+        writeSolution("Tempus_"+RKMethod+"_SinCos.dat", solutionHistory);
 
         RCP<Tempus::SolutionHistory<double> > solnHistExact =
           Teuchos::rcp(new Tempus::SolutionHistory<double>());
@@ -338,7 +338,7 @@ TEUCHOS_UNIT_TEST(ExplicitRK, SinCos)
           state->setTime((*solutionHistory)[i]->getTime());
           solnHistExact->addState(state);
         }
-        writeSolution("Tempus_"+RKMethod_+"_SinCos-Ref.dat", solnHistExact);
+        writeSolution("Tempus_"+RKMethod+"_SinCos-Ref.dat", solnHistExact);
       }
 
       // Store off the final solution and step size
@@ -363,18 +363,19 @@ TEUCHOS_UNIT_TEST(ExplicitRK, SinCos)
 
     // Check the order and intercept
     double xSlope = 0.0;
-    //double xDotSlope = 0.0;
+    double xDotSlope = 0.0;
     RCP<Tempus::Stepper<double> > stepper = integrator->getStepper();
     double order = stepper->getOrder();
-    writeOrderError("Tempus_"+RKMethod_+"_SinCos-Error.dat",
+    writeOrderError("Tempus_"+RKMethod+"_SinCos-Error.dat",
                     stepper, StepSize,
-                    solutions,    xErrorNorm,    xSlope);  //,
-                    //solutionsDot, xDotErrorNorm, xDotSlope);
+                    solutions,    xErrorNorm,    xSlope,
+                    solutionsDot, xDotErrorNorm, xDotSlope);
 
     TEST_FLOATING_EQUALITY( xSlope,                    order, 0.01   );
     TEST_FLOATING_EQUALITY( xErrorNorm[0], RKMethodErrors[m], 1.0e-4 );
-    //TEST_FLOATING_EQUALITY( xDotSlope,            order, 0.01   );
-    //TEST_FLOATING_EQUALITY( xDotErrorNorm[0], 0.0486418, 1.0e-4 );
+    // xDot not yet available for ExplicitRK methods.
+    //TEST_FLOATING_EQUALITY( xDotSlope,                 order, 0.01   );
+    //TEST_FLOATING_EQUALITY( xDotErrorNorm[0],      0.0486418, 1.0e-4 );
 
   }
   //Teuchos::TimeMonitor::summarize();
@@ -422,7 +423,7 @@ TEUCHOS_UNIT_TEST(ExplicitRK, EmbeddedVanDerPol)
      RCP<Tempus::IntegratorBasic<double> > integrator =
         Tempus::integratorBasic<double>(pl, model);
 
-     const std::string RKMethod_ =
+     const std::string RKMethod =
         pl->sublist(integratorChoice).get<std::string>("Stepper Name");
 
      // Integrate to timeMax
@@ -477,7 +478,7 @@ TEUCHOS_UNIT_TEST(ExplicitRK, EmbeddedVanDerPol)
      }
 
      // Plot sample solution and exact solution
-     std::ofstream ftmp("Tempus_"+integratorChoice+RKMethod_+"_VDP_Example.dat");
+     std::ofstream ftmp("Tempus_"+integratorChoice+RKMethod+"_VDP_Example.dat");
      RCP<const SolutionHistory<double> > solutionHistory =
         integrator->getSolutionHistory();
      int nStates = solutionHistory->getNumStates();

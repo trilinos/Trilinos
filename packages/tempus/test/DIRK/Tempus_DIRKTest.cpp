@@ -59,7 +59,7 @@ TEUCHOS_UNIT_TEST(DIRK, ParameterList)
 
   for(std::vector<std::string>::size_type m = 0; m != RKMethods.size(); m++) {
 
-    std::string RKMethod_ = RKMethods[m];
+    std::string RKMethod = RKMethods[m];
 
     // Read params from .xml file
     RCP<ParameterList> pList =
@@ -276,9 +276,9 @@ TEUCHOS_UNIT_TEST(DIRK, SinCos)
 
   for(std::vector<std::string>::size_type m = 0; m != RKMethods.size(); m++) {
 
-    std::string RKMethod_ = RKMethods[m];
-    std::replace(RKMethod_.begin(), RKMethod_.end(), ' ', '_');
-    std::replace(RKMethod_.begin(), RKMethod_.end(), '/', '.');
+    std::string RKMethod = RKMethods[m];
+    std::replace(RKMethod.begin(), RKMethod.end(), ' ', '_');
+    std::replace(RKMethod.begin(), RKMethod.end(), '/', '.');
 
     RCP<Tempus::IntegratorBasic<double> > integrator;
     std::vector<RCP<Thyra::VectorBase<double>>> solutions;
@@ -345,7 +345,7 @@ TEUCHOS_UNIT_TEST(DIRK, SinCos)
       if (n == 0) {
         RCP<const SolutionHistory<double> > solutionHistory =
           integrator->getSolutionHistory();
-        writeSolution("Tempus_"+RKMethod_+"_SinCos.dat", solutionHistory);
+        writeSolution("Tempus_"+RKMethod+"_SinCos.dat", solutionHistory);
 
         RCP<Tempus::SolutionHistory<double> > solnHistExact =
           Teuchos::rcp(new Tempus::SolutionHistory<double>());
@@ -358,7 +358,7 @@ TEUCHOS_UNIT_TEST(DIRK, SinCos)
           state->setTime((*solutionHistory)[i]->getTime());
           solnHistExact->addState(state);
         }
-        writeSolution("Tempus_"+RKMethod_+"_SinCos-Ref.dat", solnHistExact);
+        writeSolution("Tempus_"+RKMethod+"_SinCos-Ref.dat", solnHistExact);
       }
 
       // Store off the final solution and step size
@@ -379,21 +379,21 @@ TEUCHOS_UNIT_TEST(DIRK, SinCos)
                     solutionDot.ptr());
         solutionsDot.push_back(solutionDot);
       }
-    //Teuchos::TimeMonitor::summarize();
     }
 
     // Check the order and intercept
     double xSlope = 0.0;
-    //double xDotSlope = 0.0;
+    double xDotSlope = 0.0;
     RCP<Tempus::Stepper<double> > stepper = integrator->getStepper();
     double order = stepper->getOrder();
-    writeOrderError("Tempus_"+RKMethod_+"_SinCos-Error.dat",
+    writeOrderError("Tempus_"+RKMethod+"_SinCos-Error.dat",
                     stepper, StepSize,
-                    solutions,    xErrorNorm,    xSlope); //,
-                    //solutionsDot, xDotErrorNorm, xDotSlope);
+                    solutions,    xErrorNorm,    xSlope,
+                    solutionsDot, xDotErrorNorm, xDotSlope);
 
     TEST_FLOATING_EQUALITY( xSlope,               order, 0.01   );
     TEST_FLOATING_EQUALITY( xErrorNorm[0], RKMethodErrors[m], 5.0e-4 );
+    // xDot not yet available for DIRK methods.
     //TEST_FLOATING_EQUALITY( xDotSlope,            order, 0.01   );
     //TEST_FLOATING_EQUALITY( xDotErrorNorm[0], 0.0486418, 1.0e-4 );
 
@@ -407,7 +407,12 @@ TEUCHOS_UNIT_TEST(DIRK, SinCos)
 // ************************************************************
 TEUCHOS_UNIT_TEST(DIRK, VanDerPol)
 {
-  std::string RKMethod_ = "SDIRK 2 Stage 2nd order";
+  std::vector<std::string> RKMethods;
+  RKMethods.push_back("SDIRK 2 Stage 2nd order");
+
+  std::string RKMethod = RKMethods[0];
+  std::replace(RKMethod.begin(), RKMethod.end(), ' ', '_');
+  std::replace(RKMethod.begin(), RKMethod.end(), '/', '.');
 
   RCP<Tempus::IntegratorBasic<double> > integrator;
   std::vector<RCP<Thyra::VectorBase<double>>> solutions;
@@ -432,7 +437,7 @@ TEUCHOS_UNIT_TEST(DIRK, VanDerPol)
 
     // Set the Stepper
     RCP<ParameterList> pl = sublist(pList, "Tempus", true);
-    pl->sublist("Default Stepper").set("Stepper Type", RKMethod_);
+    pl->sublist("Default Stepper").set("Stepper Type", RKMethods[0]);
     pl->sublist("Default Stepper").set("gamma", 0.2928932188134524);
 
     // Set the step size
@@ -467,8 +472,8 @@ TEUCHOS_UNIT_TEST(DIRK, VanDerPol)
     // Output finest temporal solution for plotting
     // This only works for ONE MPI process
     if ((n == 0) or (n == nTimeStepSizes-1)) {
-      std::string fname = "Tempus_"+RKMethod_+"_VanDerPol-Ref.dat";
-      if (n == 0) fname = "Tempus_"+RKMethod_+"_VanDerPol.dat";
+      std::string fname = "Tempus_"+RKMethod+"_VanDerPol-Ref.dat";
+      if (n == 0) fname = "Tempus_"+RKMethod+"_VanDerPol.dat";
       RCP<const SolutionHistory<double> > solutionHistory =
         integrator->getSolutionHistory();
       writeSolution(fname, solutionHistory);
@@ -477,16 +482,17 @@ TEUCHOS_UNIT_TEST(DIRK, VanDerPol)
 
   // Check the order and intercept
   double xSlope = 0.0;
-  //double xDotSlope = 0.0;
+  double xDotSlope = 0.0;
   RCP<Tempus::Stepper<double> > stepper = integrator->getStepper();
   double order = stepper->getOrder();
-  writeOrderError("Tempus_"+RKMethod_+"_VanDerPol-Error.dat",
+  writeOrderError("Tempus_"+RKMethod+"_VanDerPol-Error.dat",
                   stepper, StepSize,
-                  solutions,    xErrorNorm,    xSlope); //,
-                  //solutionsDot, xDotErrorNorm, xDotSlope);
+                  solutions,    xErrorNorm,    xSlope,
+                  solutionsDot, xDotErrorNorm, xDotSlope);
 
   TEST_FLOATING_EQUALITY( xSlope,            order, 0.06   );
   TEST_FLOATING_EQUALITY( xErrorNorm[0],  3.42577e-05, 1.0e-4 );
+  // xDot not yet available for DIRK methods.
   //TEST_FLOATING_EQUALITY( xDotSlope,        1.74898, 0.10 );
   //TEST_FLOATING_EQUALITY( xDotErrorNorm[0],  1.0038, 1.0e-4 );
 

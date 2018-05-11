@@ -442,15 +442,19 @@ TEUCHOS_UNIT_TEST(BackwardEuler, CDR)
   double xSlope = 0.0;
   double xDotSlope = 0.0;
   RCP<Tempus::Stepper<double> > stepper = integrator->getStepper();
-  double order = stepper->getOrder();
   writeOrderError("Tempus_BackwardEuler_CDR-Error.dat",
                   stepper, StepSize,
                   solutions,    xErrorNorm,    xSlope,
                   solutionsDot, xDotErrorNorm, xDotSlope);
-  TEST_FLOATING_EQUALITY( xSlope, order, 0.35 );
-  TEST_COMPARE(xSlope, >, 0.95);
-  TEST_FLOATING_EQUALITY( xDotSlope, order, 0.35 );
-  TEST_COMPARE(xDotSlope, >, 0.95);
+
+  TEST_FLOATING_EQUALITY( xSlope,            1.32213, 0.01   );
+  TEST_FLOATING_EQUALITY( xErrorNorm[0],    0.116919, 1.0e-4 );
+  TEST_FLOATING_EQUALITY( xDotSlope,         1.32052, 0.01 );
+  TEST_FLOATING_EQUALITY( xDotErrorNorm[0], 0.449888, 1.0e-4 );
+  // At small dt, slopes should be equal to order.
+  //double order = stepper->getOrder();
+  //TEST_FLOATING_EQUALITY( xSlope,              order, 0.01   );
+  //TEST_FLOATING_EQUALITY( xDotSlope,           order, 0.01 );
 
   // Write fine mesh solution at final time
   // This only works for ONE MPI process
@@ -556,8 +560,10 @@ TEUCHOS_UNIT_TEST(BackwardEuler, VanDerPol)
 
   TEST_FLOATING_EQUALITY( xSlope,            order, 0.10   );
   TEST_FLOATING_EQUALITY( xErrorNorm[0],  0.571031, 1.0e-4 );
-  TEST_FLOATING_EQUALITY( xDotSlope,       1.74898, 0.10 );//=order at small dt
+  TEST_FLOATING_EQUALITY( xDotSlope,       1.74898, 0.10   );
   TEST_FLOATING_EQUALITY( xDotErrorNorm[0], 1.0038, 1.0e-4 );
+  // At small dt, slopes should be equal to order.
+  //TEST_FLOATING_EQUALITY( xDotSlope,       order, 0.01 );
 
   Teuchos::TimeMonitor::summarize();
 }
