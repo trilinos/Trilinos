@@ -219,7 +219,7 @@ namespace { // (anonymous)
     auto comm = Tpetra::DefaultPlatform::getDefaultPlatform ().getComm ();
     map_type mapToInitKokkos (Tpetra::global_size_t (100), 0, comm);
 
-    const bool execSpaceInitd = DT::execution_space::is_initialized ();
+    const bool execSpaceInitd = Kokkos::is_initialized ();
     TEST_ASSERT( execSpaceInitd );
     if (! execSpaceInitd) {
       out << "Tpetra::Map failed to initialize Kokkos execution space \""

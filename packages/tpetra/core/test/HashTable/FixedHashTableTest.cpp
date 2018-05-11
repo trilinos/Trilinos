@@ -53,8 +53,8 @@ namespace { // (anonymous)
   // space, if it is currently initialized.
   template<class ExecSpace>
   void finalizeExecSpace () {
-    if (ExecSpace::is_initialized ()) {
-      ExecSpace::finalize ();
+    if (Kokkos::is_initialized ()) {
+      Kokkos::finalize ();
     }
   }
 
@@ -66,8 +66,8 @@ namespace { // (anonymous)
   template<class ExecSpace>
   struct InitExecSpace {
     InitExecSpace () {
-      if (! ExecSpace::is_initialized ()) {
-        ExecSpace::initialize ();
+      if (! Kokkos::is_initialized ()) {
+        Kokkos::initialize ();
       }
       // How should we respond if atexit() fails to register our hook?
       // That means that the Kokkos execution space won't get
@@ -82,7 +82,7 @@ namespace { // (anonymous)
     }
 
     bool isInitialized () {
-      return ExecSpace::is_initialized ();
+      return Kokkos::is_initialized ();
     }
 
     static bool registeredExitHook_;
@@ -98,8 +98,8 @@ namespace { // (anonymous)
       // first.  Otherwise, Cuda::initialize() throws an exception.
       InitExecSpace<Kokkos::HostSpace::execution_space> init2;
 
-      if (! ExecSpace::is_initialized ()) {
-        ExecSpace::initialize ();
+      if (! Kokkos::is_initialized ()) {
+        Kokkos::initialize ();
       }
       // How should we respond if atexit() fails to register our hook?
       // That means that the Kokkos execution space won't get
@@ -114,7 +114,7 @@ namespace { // (anonymous)
     }
 
     bool isInitialized () {
-      return ExecSpace::is_initialized ();
+      return Kokkos::is_initialized ();
     }
 
     static bool registeredExitHook_;
@@ -792,8 +792,8 @@ namespace { // (anonymous)
 
       // Make sure that the input device's execution space has been
       // initialized.
-      TEST_EQUALITY_CONST( execution_space::is_initialized (), true );
-      if (! execution_space::is_initialized ()) {
+      TEST_EQUALITY_CONST( Kokkos::is_initialized (), true );
+      if (! Kokkos::is_initialized ()) {
         return; // avoid crashes if initialization failed
       }
 

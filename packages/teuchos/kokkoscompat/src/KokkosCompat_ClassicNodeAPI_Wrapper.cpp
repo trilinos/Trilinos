@@ -12,12 +12,6 @@ namespace Kokkos {
     KokkosDeviceWrapperNode ()
     {
       KokkosCompat::Details::initializeKokkos ();
-      // The above might only initialize Kokkos' default execution
-      // space.  Kokkos::Threads might not be the default execution
-      // space.
-      if (! Kokkos::Threads::is_initialized ()) {
-        Kokkos::Threads::initialize ();
-      }
     }
 
     template<>
@@ -50,15 +44,6 @@ namespace Kokkos {
       (void) curDevice;
       // initializes at most once
       KokkosCompat::Details::initializeKokkos (args);
-      // The above might only initialize Kokkos' default execution
-      // space.  Kokkos::Threads might not be the default execution
-      // space.
-      if (! Kokkos::Threads::is_initialized ()) {
-        Kokkos::Threads::initialize (curNumThreads, curNumNUMA);
-      }
-      if (! Kokkos::Threads::is_initialized ()) {
-        throw std::runtime_error ("KokkosDeviceWrapperNode<Kokkos::Threads> called Kokkos::initialize and Kokkos::Threads::initialize, but Kokkos::Threads::is_initialized() == false.");
-      }
     }
 
     template<>
@@ -90,12 +75,6 @@ namespace Kokkos {
     KokkosDeviceWrapperNode ()
     {
       KokkosCompat::Details::initializeKokkos ();
-      // The above might only initialize Kokkos' default execution
-      // space.  Kokkos::OpenMP might not be the default execution
-      // space.
-      if (! Kokkos::OpenMP::is_initialized ()) {
-        Kokkos::OpenMP::initialize ();
-      }
     }
 
     template<>
@@ -129,12 +108,6 @@ namespace Kokkos {
       (void) curDevice;
       // initializes at most once
       KokkosCompat::Details::initializeKokkos (args);
-      // The above might only initialize Kokkos' default execution
-      // space.  Kokkos::OpenMP might not be the default execution
-      // space.
-      if (! Kokkos::OpenMP::is_initialized ()) {
-        Kokkos::OpenMP::initialize (curNumThreads);
-      }
     }
 
     template<>
@@ -166,12 +139,6 @@ namespace Kokkos {
     KokkosDeviceWrapperNode ()
     {
       KokkosCompat::Details::initializeKokkos ();
-      // The above might only initialize Kokkos' default execution
-      // space.  Kokkos::Serial might not be the default execution
-      // space.
-      if (! Kokkos::Serial::is_initialized ()) {
-        Kokkos::Serial::initialize ();
-      }
     }
 
     template<>
@@ -202,12 +169,6 @@ namespace Kokkos {
       (void) curNumCoresPerNUMA;
       (void) curDevice;
       KokkosCompat::Details::initializeKokkos ();
-      // The above might only initialize Kokkos' default execution
-      // space.  Kokkos::Serial might not be the default execution
-      // space.
-      if (! Kokkos::Serial::is_initialized ()) {
-        Kokkos::Serial::initialize ();
-      }
     }
 
     template<>
@@ -239,12 +200,6 @@ namespace Kokkos {
     KokkosDeviceWrapperNode ()
     {
       KokkosCompat::Details::initializeKokkos ();
-      // The above might only initialize Kokkos' default execution
-      // space.  Kokkos::Cuda might not be the default execution
-      // space.
-      if (! Kokkos::Cuda::is_initialized ()) {
-        Kokkos::Cuda::initialize ();
-      }
     }
 
     template<>
@@ -278,12 +233,6 @@ namespace Kokkos {
       (void) curNumCoresPerNUMA;
       args.device_id = curDevice;
       KokkosCompat::Details::initializeKokkos (args);
-      // The above might only initialize Kokkos' default execution
-      // space.  Kokkos::Cuda might not be the default execution
-      // space.
-      if (! Kokkos::Cuda::is_initialized ()) {
-        Kokkos::Cuda::initialize (Kokkos::Cuda::SelectDevice (curDevice));
-      }
     }
 
     template<>
