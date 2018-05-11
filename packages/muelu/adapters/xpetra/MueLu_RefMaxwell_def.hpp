@@ -318,7 +318,7 @@ namespace MueLu {
           SM_Matrix_->getDomainMap()->lib() == Xpetra::UseTpetra &&
           A22_->getDomainMap()->lib() == Xpetra::UseTpetra &&
           D0_Matrix_->getDomainMap()->lib() == Xpetra::UseTpetra) {
-#if defined(HAVE_MUELU_IFPACK2) && defined(HAVE_TPETRA_INST_INT_INT)
+#if defined(HAVE_MUELU_IFPACK2)
         Teuchos::ParameterList hiptmairPreList, hiptmairPostList, smootherPreList, smootherPostList;
 
         if (smootherList_.isSublist("smoother: pre params"))
@@ -355,11 +355,11 @@ namespace MueLu {
         hiptmairPostList.set("hiptmair: zero starting solution",
                              smootherPostList.get<bool>("hiptmair: zero starting solution", false));
 
-        typedef Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> TCRS;
-        typedef Tpetra::RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> TROW;
-        Teuchos::RCP<const TCRS> EdgeMatrix = Xpetra::Helpers<SC, LO, GO, NO>::Op2NonConstTpetraCrs(SM_Matrix_ );
-        Teuchos::RCP<const TCRS> NodeMatrix = Xpetra::Helpers<SC, LO, GO, NO>::Op2NonConstTpetraCrs(A22_);
-        Teuchos::RCP<const TCRS> PMatrix    = Xpetra::Helpers<SC, LO, GO, NO>::Op2NonConstTpetraCrs(D0_Matrix_);
+        typedef Tpetra::RowMatrix<SC, LO, GO, NO> TROW;
+        Teuchos::RCP<const TROW > EdgeMatrix = Utilities::Op2NonConstTpetraRow(SM_Matrix_);
+        Teuchos::RCP<const TROW > NodeMatrix = Utilities::Op2NonConstTpetraRow(A22_);
+        Teuchos::RCP<const TROW > PMatrix = Utilities::Op2NonConstTpetraRow(D0_Matrix_);
+
         hiptmairPreSmoother_  = Teuchos::rcp( new Ifpack2::Hiptmair<TROW>(EdgeMatrix,NodeMatrix,PMatrix) );
         hiptmairPreSmoother_ -> setParameters(hiptmairPreList);
         hiptmairPreSmoother_ -> initialize();
@@ -371,7 +371,7 @@ namespace MueLu {
         useHiptmairSmoothing_ = true;
 #else
         throw(Xpetra::Exceptions::RuntimeError("MueLu must be compiled with Ifpack2 for Hiptmair smoothing."));
-#endif  // defined(HAVE_MUELU_IFPACK2) && defined(HAVE_TPETRA_INST_INT_INT)
+#endif  // defined(HAVE_MUELU_IFPACK2)
       } else {
         Level level;
         RCP<MueLu::FactoryManagerBase> factoryHandler = rcp(new FactoryManager());
@@ -1100,10 +1100,10 @@ namespace MueLu {
     }
 
     // apply pre-smoothing
-#if defined(HAVE_MUELU_IFPACK2) && defined(HAVE_TPETRA_INST_INT_INT)
+#if defined(HAVE_MUELU_IFPACK2)
     if (useHiptmairSmoothing_) {
-      Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> tX = toTpetra(X);
-      Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> tRHS = toTpetra(RHS);
+      Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> tX = Utilities::MV2NonConstTpetraMV(X);
+      Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> tRHS = Utilities::MV2TpetraMV(RHS);
       hiptmairPreSmoother_->apply(tRHS, tX);
     }
     else
@@ -1126,11 +1126,11 @@ namespace MueLu {
       applyInverseAdditive(RHS,X);
 
     // apply post-smoothing
-#if defined(HAVE_MUELU_IFPACK2) && defined(HAVE_TPETRA_INST_INT_INT)
+#if defined(HAVE_MUELU_IFPACK2)
     if (useHiptmairSmoothing_)
       {
-        Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> tX = toTpetra(X);
-        Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> tRHS = toTpetra(RHS);
+        Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> tX = Utilities::MV2NonConstTpetraMV(X);
+        Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> tRHS = Utilities::MV2TpetraMV(RHS);
         hiptmairPostSmoother_->apply(tRHS, tX);
       }
     else
