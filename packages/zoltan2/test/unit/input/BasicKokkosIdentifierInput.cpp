@@ -43,21 +43,24 @@
 //
 // @HEADER
 //
-// Basic testing of Zoltan2::BasicIdentifierAdapter 
+// Basic testing of Zoltan2::BasicKokkosIdentifierAdapter 
 
-#include <Zoltan2_BasicIdentifierAdapter.hpp>
-#include <Zoltan2_TestHelpers.hpp>
-
+#include <Kokkos_Core.hpp>
 #include <Teuchos_GlobalMPISession.hpp>
 #include <Teuchos_DefaultComm.hpp>
 #include <Teuchos_RCP.hpp>
 #include <Teuchos_CommHelpers.hpp>
+#include <Zoltan2_BasicKokkosIdentifierAdapter.hpp>
+#include <Zoltan2_TestHelpers.hpp>
 
 using Teuchos::RCP;
 using Teuchos::Comm;
 using Teuchos::DefaultComm;
 
 int main(int argc, char *argv[]) {
+  typedef Zoltan2::BasicUserTypes<zscalar_t, zlno_t, zgno_t> userTypes_t;
+  typedef typename Zoltan2::BasicKokkosIdentifierAdapter<userTypes_t>::weight_layout_t Layout;
+
   Teuchos::GlobalMPISession session(&argc, &argv);
   RCP<const Comm<int> > comm = DefaultComm<int>::getComm();
   int rank = comm->getRank();
@@ -66,73 +69,58 @@ int main(int argc, char *argv[]) {
 
   // Create global identifiers with weights
   zlno_t numLocalIds = 10;
-  int nWeights = 2;
+  const int nWeights = 2;
 
-  zgno_t *myIds = new zgno_t[numLocalIds];
-  zscalar_t *weights = new zscalar_t [numLocalIds*nWeights];
+  Kokkos::initialize(argc, argv);
+  Kokkos::View<zgno_t *> myIds("myIds", numLocalIds);
   zgno_t myFirstId = rank * numLocalIds * numLocalIds;
+  Kokkos::View<zscalar_t **, Layout> weights("weights", numLocalIds, nWeights);
 
-  for (zlno_t i=0; i < numLocalIds; i++){
-    myIds[i] = zgno_t(myFirstId+i);
-    weights[i*nWeights] = 1.0;
-    weights[i*nWeights + 1] = (nprocs-rank) / (i+1);
+  for (zlno_t i = 0; i < numLocalIds; i++) {
+    myIds(i) = zgno_t(myFirstId + i);
+    weights(i, 0) = 1.0;
+    weights(i, 1) = (nprocs - rank) / (i + 1);
   }
 
-  typedef Zoltan2::BasicUserTypes<zscalar_t, zlno_t, zgno_t> userTypes_t;
-  std::vector<const zscalar_t *> weightValues;
-  std::vector<int> strides;
+  Zoltan2::BasicKokkosIdentifierAdapter<userTypes_t> ia(myIds, weights);
 
-  weightValues.push_back(weights);
-  weightValues.push_back(weights + 1);
-  strides.push_back(2);
-  strides.push_back(2);
-
-  Zoltan2::BasicIdentifierAdapter<userTypes_t> ia(numLocalIds, myIds,
-    weightValues, strides);
-
-  if (!fail && ia.getLocalNumIDs() != size_t(numLocalIds)){
+  if (!fail && ia.getLocalNumIDs() != size_t(numLocalIds)) {
     fail = 4;
   }
   if (!fail && ia.getNumWeightsPerID() != nWeights) {
     fail = 5;
   }
 
-  const zgno_t *globalIdsIn;
-  zscalar_t const *weightsIn[2];
-  int weightStridesIn[2];
+  Kokkos::View<zgno_t *> globalIdsIn;
+  Kokkos::View<zscalar_t *> weightsIn[nWeights];
 
-  ia.getIDsView(globalIdsIn);
+  ia.getIDsKokkosView(globalIdsIn);
 
-  for (int w=0; !fail && w < nWeights; w++) {
-    ia.getWeightsView(weightsIn[w], weightStridesIn[w], w);
+  for (int w = 0; !fail && w < nWeights; w++) {
+    ia.getWeightsKokkosView(weightsIn[w], w);
   }
 
-  const zscalar_t *w1 = weightsIn[0];
-  const zscalar_t *w2 = weightsIn[1];
-  int incr1 = weightStridesIn[0];
-  int incr2 = weightStridesIn[1];
+  Kokkos::View<zscalar_t *> w0 = weightsIn[0];
+  Kokkos::View<zscalar_t *> w1 = weightsIn[1];
 
-  for (zlno_t i=0; !fail && i < numLocalIds; i++){
-    if (globalIdsIn[i] != zgno_t(myFirstId+i)) {
+  for (zlno_t i = 0; !fail && i < numLocalIds; i++){
+    if (globalIdsIn(i) != zgno_t(myFirstId + i)) {
       fail = 8;
     }
-    if (!fail && w1[i*incr1] != 1.0) {
+    if (!fail && w0(i) != 1.0) {
       fail = 9;
     }
-    if (!fail && w2[i*incr2] != weights[i*nWeights+1]) {
+    if (!fail && w1(i) != weights(i, 1)) {
       fail = 10;
     }
   }
 
-  delete [] myIds;
-  delete [] weights;
-
   gfail = globalFail(comm, fail);
   if (gfail) {
-    printFailureCode(comm, fail);   // will exit(1)
+    printFailureCode(comm, fail); // will exit(1)
   }
   if (rank == 0) {
     std::cout << "PASS" << std::endl;
   }
+  Kokkos::finalize();
 }
-
