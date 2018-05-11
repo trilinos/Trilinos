@@ -165,17 +165,17 @@ namespace Intrepid2 {
     switch (valRank) {
     case 0: {
       typedef FunctorArrayTools::F_clone<outputViewType,inputViewType,0> FunctorType;
-      Kokkos::Experimental::md_parallel_for( policy, FunctorType(output, input) );
+      Kokkos::parallel_for( policy, FunctorType(output, input) );
       break;
     }
     case 1: {
       typedef FunctorArrayTools::F_clone<outputViewType,inputViewType,1> FunctorType;
-      Kokkos::Experimental::md_parallel_for( policy, FunctorType(output, input) );
+      Kokkos::parallel_for( policy, FunctorType(output, input) );
       break;
     }
     case 2: {
       typedef FunctorArrayTools::F_clone<outputViewType,inputViewType,2> FunctorType;
-      Kokkos::Experimental::md_parallel_for( policy, FunctorType(output, input) );
+      Kokkos::parallel_for( policy, FunctorType(output, input) );
       break;
     }
     }
@@ -217,17 +217,17 @@ namespace Intrepid2 {
     switch (valRank) {
     case 0: {
       typedef FunctorArrayTools::F_clone<outputViewType,inputViewType,0> FunctorType;
-      Kokkos::Experimental::md_parallel_for( policy, FunctorType(output, input) );
+      Kokkos::parallel_for( policy, FunctorType(output, input) );
       break;
     }
     case 1: {
       typedef FunctorArrayTools::F_clone<outputViewType,inputViewType,1> FunctorType;
-      Kokkos::Experimental::md_parallel_for( policy, FunctorType(output, input) );
+      Kokkos::parallel_for( policy, FunctorType(output, input) );
       break;
     }
     case 2: {
       typedef FunctorArrayTools::F_clone<outputViewType,inputViewType,2> FunctorType;
-      Kokkos::Experimental::md_parallel_for( policy, FunctorType(output, input) );
+      Kokkos::parallel_for( policy, FunctorType(output, input) );
       break;
     }
     }

@@ -170,7 +170,7 @@ namespace Intrepid2 {
       < ExecSpaceType, Kokkos::Experimental::Rank<2>, Kokkos::IndexType<ordinal_type> >;
     range_policy_type policy( { 0, 0 },
                               { jacobian.extent(0), jacobian.extent(1) } );
-    Kokkos::Experimental::md_parallel_for( policy, FunctorType(jacobian, worksetCell, grads) );
+    Kokkos::parallel_for( policy, FunctorType(jacobian, worksetCell, grads) );
   }
 
   template<typename SpT>

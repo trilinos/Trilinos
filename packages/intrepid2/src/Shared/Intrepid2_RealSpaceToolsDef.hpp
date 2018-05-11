@@ -735,7 +735,7 @@ namespace Intrepid2 {
         < ExecSpaceType, Kokkos::Experimental::Rank<2>, Kokkos::IndexType<ordinal_type> >;
       range_policy_type policy( { 0, 0 },
                                 { inverseMats.extent(0), inverseMats.extent(1) } );
-      Kokkos::Experimental::md_parallel_for( policy, FunctorType(inverseMats, inMats) );
+      Kokkos::parallel_for( policy, FunctorType(inverseMats, inMats) );
       break;
     }
     default: {
@@ -819,7 +819,7 @@ namespace Intrepid2 {
         < ExecSpaceType, Kokkos::Experimental::Rank<2>, Kokkos::IndexType<ordinal_type> >;
       range_policy_type policy( { 0, 0 },
                                 { detArray.extent(0), detArray.extent(1) } );
-      Kokkos::Experimental::md_parallel_for( policy, FunctorType(detArray, inMats) );
+      Kokkos::parallel_for( policy, FunctorType(detArray, inMats) );
       break;
     }
     default: {

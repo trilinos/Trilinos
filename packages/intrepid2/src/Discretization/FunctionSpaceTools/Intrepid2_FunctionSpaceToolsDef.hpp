@@ -155,12 +155,12 @@ namespace Intrepid2 {
     // switch (spaceDim) {
     // case 2: {
     //   typedef FunctorFunctionSpaceTools::F_HGRADtransformGRAD<outputViewType, jacInverseViewType, inputViewType, 2> FunctorType;
-    //   Kokkos::Experimental::md_parallel_for( policy, FunctorType(outputVals, jacobianInverse, inputVals) );
+    //   Kokkos::parallel_for( policy, FunctorType(outputVals, jacobianInverse, inputVals) );
     //   break;
     // }
     // case 3: {
     //   typedef FunctorFunctionSpaceTools::F_HGRADtransformGRAD<outputViewType, jacInverseViewType, inputViewType, 3> FunctorType;
-    //   Kokkos::Experimental::md_parallel_for( policy, FunctorType(outputVals, jacobianInverse, inputVals) );
+    //   Kokkos::parallel_for( policy, FunctorType(outputVals, jacobianInverse, inputVals) );
     //   break;
     // }
     // default: {

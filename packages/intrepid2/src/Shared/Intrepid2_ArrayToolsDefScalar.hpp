@@ -191,18 +191,18 @@ namespace Intrepid2 {
     if (equalRank) 
       if (reciprocal) {
         typedef FunctorArrayTools::F_scalarMultiply<outputFieldViewType,inputDataViewType,inputFieldViewType,true,true> FunctorType;
-        Kokkos::Experimental::md_parallel_for( policy, FunctorType(outputFields, inputData, inputFields) );
+        Kokkos::parallel_for( policy, FunctorType(outputFields, inputData, inputFields) );
       } else {
         typedef FunctorArrayTools::F_scalarMultiply<outputFieldViewType,inputDataViewType,inputFieldViewType,true,false> FunctorType;
-        Kokkos::Experimental::md_parallel_for( policy, FunctorType(outputFields, inputData, inputFields) );
+        Kokkos::parallel_for( policy, FunctorType(outputFields, inputData, inputFields) );
       }
     else 
       if (reciprocal) {
         typedef FunctorArrayTools::F_scalarMultiply<outputFieldViewType,inputDataViewType,inputFieldViewType,false,true> FunctorType;
-        Kokkos::Experimental::md_parallel_for( policy, FunctorType(outputFields, inputData, inputFields) );
+        Kokkos::parallel_for( policy, FunctorType(outputFields, inputData, inputFields) );
       } else {
         typedef FunctorArrayTools::F_scalarMultiply<outputFieldViewType,inputDataViewType,inputFieldViewType,false,false> FunctorType;
-        Kokkos::Experimental::md_parallel_for( policy, FunctorType(outputFields, inputData, inputFields) );
+        Kokkos::parallel_for( policy, FunctorType(outputFields, inputData, inputFields) );
       }
   }
 
@@ -274,18 +274,18 @@ namespace Intrepid2 {
     if (equalRank) 
       if (reciprocal) {
         typedef FunctorArrayTools::F_scalarMultiply<outputDataViewType,inputDataLeftViewType,inputDataRightViewType,true,true> FunctorType;
-        Kokkos::Experimental::md_parallel_for( policy, FunctorType(outputData, inputDataLeft, inputDataRight) );
+        Kokkos::parallel_for( policy, FunctorType(outputData, inputDataLeft, inputDataRight) );
       } else {
         typedef FunctorArrayTools::F_scalarMultiply<outputDataViewType,inputDataLeftViewType,inputDataRightViewType,true,false> FunctorType;
-        Kokkos::Experimental::md_parallel_for( policy, FunctorType(outputData, inputDataLeft, inputDataRight) );
+        Kokkos::parallel_for( policy, FunctorType(outputData, inputDataLeft, inputDataRight) );
       }
     else 
       if (reciprocal) {
         typedef FunctorArrayTools::F_scalarMultiply<outputDataViewType,inputDataLeftViewType,inputDataRightViewType,false,true> FunctorType;
-        Kokkos::Experimental::md_parallel_for( policy, FunctorType(outputData, inputDataLeft, inputDataRight) );
+        Kokkos::parallel_for( policy, FunctorType(outputData, inputDataLeft, inputDataRight) );
       } else {
         typedef FunctorArrayTools::F_scalarMultiply<outputDataViewType,inputDataLeftViewType,inputDataRightViewType,false,false> FunctorType;
-        Kokkos::Experimental::md_parallel_for( policy, FunctorType(outputData, inputDataLeft, inputDataRight) );
+        Kokkos::parallel_for( policy, FunctorType(outputData, inputDataLeft, inputDataRight) );
       }
   }
   

@@ -800,13 +800,13 @@ namespace Intrepid2 {
         < ExecSpaceType, Kokkos::Experimental::Rank<3>, Kokkos::IndexType<ordinal_type> >;
       range_policy_type policy( { 0, 0, 0 },
                                 { output.extent(0), output.extent(1), output.extent(2) } );
-      Kokkos::Experimental::md_parallel_for( policy, FunctorType(output, leftInput, rightInput, isTranspose) );
+      Kokkos::parallel_for( policy, FunctorType(output, leftInput, rightInput, isTranspose) );
     } else {
       using range_policy_type = Kokkos::Experimental::MDRangePolicy
         < ExecSpaceType, Kokkos::Experimental::Rank<2>, Kokkos::IndexType<ordinal_type> >;
       range_policy_type policy( { 0, 0 },
                                 { output.extent(0), output.extent(1) } );
-      Kokkos::Experimental::md_parallel_for( policy, FunctorType(output, leftInput, rightInput, isTranspose) );
+      Kokkos::parallel_for( policy, FunctorType(output, leftInput, rightInput, isTranspose) );
     }
   }
 
