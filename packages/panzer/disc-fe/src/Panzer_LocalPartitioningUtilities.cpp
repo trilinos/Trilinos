@@ -388,7 +388,7 @@ generateLocalMeshPartitions(const panzer::LocalMeshInfo<LO,GO> & mesh_info,
 {
 
   // We have to make sure that the partitioning is possible
-  TEUCHOS_ASSERT(description.getWorksetSize() != panzer::WorksetDescriptor::EMPTY);
+  TEUCHOS_ASSERT(description.getWorksetSize() != panzer::WorksetSizeType::CLASSIC_MODE);
   TEUCHOS_ASSERT(description.getWorksetSize() != 0);
 
   // This could just return, but it would be difficult to debug why no partitions were returned
@@ -430,7 +430,7 @@ generateLocalMeshPartitions(const panzer::LocalMeshInfo<LO,GO> & mesh_info,
     // Grab the element block we're interested in
     const panzer::LocalMeshBlockInfo<LO,GO> & block_info = mesh_info.element_blocks.at(element_block_name);
 
-    if(description.getWorksetSize() == panzer::WorksetDescriptor::FULL){
+    if(description.getWorksetSize() == panzer::WorksetSizeType::ALL_ELEMENTS){
       // We only have one partition describing the entire local mesh
       panzer::partitioning_utilities::splitMeshInfo(block_info, -1, partitions);
     } else {
