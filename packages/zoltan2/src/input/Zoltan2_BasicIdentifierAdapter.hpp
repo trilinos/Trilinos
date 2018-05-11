@@ -106,6 +106,16 @@ public:
   BasicIdentifierAdapter(lno_t numIds, const gno_t *idPtr, 
     std::vector<const scalar_t *> &weights, std::vector<int> &weightStrides);
 
+  /*! \brief Constructor
+   *  \param numIds is the number of identifiers in the list
+   *  \param ids should point to a list of numIds identifiers.
+   *
+   *  The values pointed to the arguments must remain valid for the
+   *  lifetime of this Adapter.
+   */
+  BasicIdentifierAdapter(lno_t numIds, const gno_t *idPtr):
+      numIds_(numIds), idList_(idPtr), weights_() {}
+
   ////////////////////////////////////////////////////////////////
   // The Adapter interface.
   ////////////////////////////////////////////////////////////////
