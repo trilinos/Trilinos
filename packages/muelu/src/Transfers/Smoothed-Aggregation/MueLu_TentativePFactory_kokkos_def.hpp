@@ -348,6 +348,11 @@ namespace MueLu {
     validParamList->set< RCP<const FactoryBase> >("UnAmalgamationInfo", Teuchos::null, "Generating factory of UnAmalgamationInfo");
     validParamList->set< RCP<const FactoryBase> >("CoarseMap",          Teuchos::null, "Generating factory of the coarse map");
 
+    // Make sure we don't recursively validate options for the matrixmatrix kernels
+    ParameterList norecurse;
+    norecurse.disableRecursiveValidation();
+    validParamList->set<ParameterList> ("matrixmatrix: kernel params", norecurse, "MatrixMatrix kernel parameters");
+
     return validParamList;
   }
 
@@ -378,7 +383,7 @@ namespace MueLu {
     RCP<Matrix>      Ptentative;
     RCP<MultiVector> coarseNullspace;
     if (!aggregates->AggregatesCrossProcessors())
-      BuildPuncoupled(coarseLevel, A, aggregates, amalgInfo, fineNullspace, coarseMap, Ptentative, coarseNullspace);
+      BuildPuncoupled(coarseLevel, A, aggregates, amalgInfo, fineNullspace, coarseMap, Ptentative, coarseNullspace, coarseLevel.GetLevelID());
     else
       BuildPcoupled  (A, aggregates, amalgInfo, fineNullspace, coarseMap, Ptentative, coarseNullspace);
 
@@ -408,7 +413,7 @@ namespace MueLu {
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class DeviceType>
   void TentativePFactory_kokkos<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>>::
   BuildPuncoupled(Level& coarseLevel, RCP<Matrix> A, RCP<Aggregates_kokkos> aggregates, RCP<AmalgamationInfo> amalgInfo, RCP<MultiVector> fineNullspace,
-                  RCP<const Map> coarseMap, RCP<Matrix>& Ptentative, RCP<MultiVector>& coarseNullspace) const {
+                  RCP<const Map> coarseMap, RCP<Matrix>& Ptentative, RCP<MultiVector>& coarseNullspace, const int levelID) const {
     auto rowMap = A->getRowMap();
     auto colMap = A->getColMap();
 
@@ -762,7 +767,22 @@ namespace MueLu {
       // FIXME_KOKKOS: this should be gone once Xpetra propagate "local matrix + 4 maps" constructor
       auto PtentCrs = CrsMatrixFactory::Build(rowMap, coarseMap, lclMatrix);
       PtentCrs->resumeFill();  // we need that for rectangular matrices
-      PtentCrs->expertStaticFillComplete(coarseMap, A->getDomainMap());
+
+      // Managing labels & constants for ESFC
+      const ParameterList& pL = GetParameterList();
+      RCP<ParameterList> FCparams;
+      if(pL.isSublist("matrixmatrix: kernel params"))
+        FCparams=rcp(new ParameterList(pL.sublist("matrixmatrix: kernel params")));
+      else
+        FCparams= rcp(new ParameterList);
+      // By default, we don't need global constants for TentativeP
+      FCparams->set("compute global constants",FCparams->get("compute global constants",false));
+      std::string levelIDs = toString(levelID);
+      FCparams->set("Timer Label",std::string("MueLu::TentativeP-")+levelIDs);
+      RCP<const Export> dummy_e;
+      RCP<const Import> dummy_i;
+
+      PtentCrs->expertStaticFillComplete(coarseMap, A->getDomainMap(), dummy_i, dummy_e, FCparams);
 #else
       auto PtentCrs = CrsMatrixFactory::Build(lclMatrix, rowMap, coarseMap, coarseMap, A->getDomainMap());
 #endif
