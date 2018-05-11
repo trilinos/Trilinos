@@ -134,11 +134,10 @@ int main(int argc, char *argv[])
       system("sleep 10");
     }
 
+    Kokkos::initialize(argc,argv);
 #ifdef KOKKOS_ENABLE_THREADS
     if (threads) {
       typedef Kokkos::Threads Device;
-
-      Kokkos::Threads::initialize(num_cores*num_hyper_threads);
 
       std::cout << std::endl
                 << "Threads performance with " << num_cores*num_hyper_threads
@@ -146,8 +145,6 @@ int main(int argc, char *argv[])
 
       performance_test_driver<Device>(
         print, nIter, nGridBegin, nGridEnd, nGridStep, quadratic, check);
-
-      Kokkos::Threads::finalize();
     }
 #endif
 
@@ -155,25 +152,18 @@ int main(int argc, char *argv[])
     if (openmp) {
       typedef Kokkos::OpenMP Device;
 
-      Kokkos::OpenMP::initialize(num_cores*num_hyper_threads);
-
       std::cout << std::endl
                 << "OpenMP performance with " << num_cores*num_hyper_threads
                 << " threads:" << std::endl;
 
       performance_test_driver<Device>(
         print, nIter, nGridBegin, nGridEnd, nGridStep, quadratic, check);
-
-      Kokkos::OpenMP::finalize();
     }
 #endif
 
 #ifdef KOKKOS_ENABLE_CUDA
     if (cuda) {
       typedef Kokkos::Cuda Device;
-
-      Kokkos::HostSpace::execution_space::initialize();
-      Kokkos::Cuda::initialize(Kokkos::Cuda::SelectDevice(device_id));
 
       cudaDeviceProp deviceProp;
       cudaGetDeviceProperties(&deviceProp, device_id);
@@ -186,11 +176,9 @@ int main(int argc, char *argv[])
       performance_test_driver<Device>(
         print, nIter, nGridBegin, nGridEnd, nGridStep, quadratic, check);
 
-      Kokkos::HostSpace::execution_space::finalize();
-      Kokkos::Cuda::finalize();
     }
 #endif
-
+    Kokkos::finalize();
   }
   TEUCHOS_STANDARD_CATCH_STATEMENTS(verbose, std::cerr, success);
 

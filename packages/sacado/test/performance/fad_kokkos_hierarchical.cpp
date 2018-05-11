@@ -976,52 +976,47 @@ int main(int argc, char* argv[]) {
       break;
     }
 
+    Kokkos::InitArguments init_args;
+    init_args.num_threads = -1;
+    #ifdef KOKKOS_ENABLE_OPENMP
+      if(openmp) init_args.num_threads = openmp;
+    #endif
+    #ifdef KOKKOS_ENABLE_THREADS
+      if(threads) init_args.num_threads = threads;
+    #endif
+
+    Kokkos::initialize(init_args);
+    if (print_config)
+      Kokkos::print_configuration(std::cout, true);
+
 #ifdef KOKKOS_ENABLE_SERIAL
     if (serial) {
       using Kokkos::Serial;
-      Serial::initialize();
-      if (print_config)
-        Serial::print_configuration(std::cout, true);
       run<Serial>(cell_begin, cell_end, cell_step, nbasis, npoint, ntrial, check);
-      Serial::finalize();
     }
 #endif
 
 #ifdef KOKKOS_ENABLE_OPENMP
     if (openmp) {
       using Kokkos::OpenMP;
-      OpenMP::initialize(openmp, numa, cores_per_numa);
-      if (print_config)
-        OpenMP::print_configuration(std::cout, true);
       run<OpenMP>(cell_begin, cell_end, cell_step, nbasis, npoint, ntrial, check);
-      OpenMP::finalize();
     }
 #endif
 
 #ifdef KOKKOS_ENABLE_THREADS
     if (threads) {
       using Kokkos::Threads;
-      Threads::initialize(threads, numa, cores_per_numa);
-      if (print_config)
-        Threads::print_configuration(std::cout, true);
       run<Threads>(cell_begin, cell_end, cell_step, nbasis, npoint, ntrial, check);
-      Threads::finalize();
     }
 #endif
 
 #ifdef KOKKOS_ENABLE_CUDA
     if (cuda) {
       using Kokkos::Cuda;
-      Kokkos::HostSpace::execution_space::initialize();
-      Cuda::initialize();
-      if (print_config)
-        Cuda::print_configuration(std::cout, true);
       run<Cuda>(cell_begin, cell_end, cell_step, nbasis, npoint, ntrial, check);
-      Kokkos::HostSpace::execution_space::finalize();
-      Cuda::finalize();
     }
 #endif
-
+    Kokkos::finalize();
   }
   TEUCHOS_STANDARD_CATCH_STATEMENTS(true, std::cerr, success);
 
