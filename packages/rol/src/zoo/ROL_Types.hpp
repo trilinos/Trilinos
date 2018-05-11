@@ -63,7 +63,7 @@
 #include <type_traits>
 #include "ROL_ScalarTraits.hpp"
 //#include <Teuchos_ScalarTraits.hpp>
-#include "ROL_Ptr.hpp"
+#include <ROL_Ptr.hpp>
 #include <ROL_Vector.hpp>
 #include <ROL_config.h>
 #include <Teuchos_TestForException.hpp>
