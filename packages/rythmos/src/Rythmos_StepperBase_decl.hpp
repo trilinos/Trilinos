@@ -305,7 +305,8 @@ public:
    */
   virtual void setStepControlData(const StepperBase & stepper);
 
-  bool isEmbeddedRK_; // Sidafa
+  // if the stepper is embedded (and allows for adaptive time stepping)
+  bool isEmbeddedRK_ = false;
 
 };
 
