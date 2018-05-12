@@ -44,7 +44,8 @@ Level 1
    Build (MueLu::CoarseMapFactory_kokkos)
    [empty list]
    
-  [empty list]
+  matrixmatrix: kernel params -> 
+   [empty list]
   
  sa: damping factor = 1.333
  sa: calculate eigenvalue estimate = 0   [default]
@@ -110,7 +111,8 @@ Level 2
    Build (MueLu::CoarseMapFactory_kokkos)
    [empty list]
    
-  [empty list]
+  matrixmatrix: kernel params -> 
+   [empty list]
   
  sa: damping factor = 1.333
  sa: calculate eigenvalue estimate = 0   [default]
@@ -176,7 +178,8 @@ Level 3
    Build (MueLu::CoarseMapFactory_kokkos)
    [empty list]
    
-  [empty list]
+  matrixmatrix: kernel params -> 
+   [empty list]
   
  sa: damping factor = 1.333
  sa: calculate eigenvalue estimate = 0   [default]

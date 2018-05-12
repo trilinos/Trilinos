@@ -49,7 +49,8 @@ Level 1
   Build (MueLu::CoarseMapFactory_kokkos)
   [empty list]
   
- [empty list]
+ matrixmatrix: kernel params -> 
+  [empty list]
  
  Computing Ac (MueLu::RAPFactory)
  transpose: use implicit = 1
@@ -110,7 +111,8 @@ Level 2
   Build (MueLu::CoarseMapFactory_kokkos)
   [empty list]
   
- [empty list]
+ matrixmatrix: kernel params -> 
+  [empty list]
  
  Computing Ac (MueLu::RAPFactory)
  transpose: use implicit = 1
