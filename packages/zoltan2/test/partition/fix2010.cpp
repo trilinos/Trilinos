@@ -80,7 +80,7 @@ int main(int narg, char **arg)
 
   Zoltan2::PartitioningSolution<adapter_t> solution = problem.getSolution();
 
-  if (solution.getActualGlobalNumberOfParts() != 1) 
+  if (solution.getActualGlobalNumberOfParts() != 0) 
     fail = true;
 
   gfail = globalFail(comm, fail);
