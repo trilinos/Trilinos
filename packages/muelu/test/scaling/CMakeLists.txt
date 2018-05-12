@@ -32,7 +32,7 @@ IF ((${PACKAGE_NAME}_ENABLE_Tpetra AND ${PACKAGE_NAME}_ENABLE_Ifpack2 AND ${PACK
     )
 
   TRIBITS_COPY_FILES_TO_BINARY_DIR(Driver_cp
-    SOURCE_FILES scaling.xml scaling-complex.xml scaling-withglobalconstants.xml scaling-complex-withglobalconstants.xml circ_nsp_dependency.xml isorropia.xml iso_poisson.xml conchas_milestone_zoltan.xml conchas_milestone_zoltan2.xml conchas_milestone_zoltan2_complex.xml sa_with_ilu.xml sa_with_Ifpack2_line_detection.xml rap.xml smoother.xml smoother_complex.xml tripleMatrixProduct.xml scaling-ml.xml elasticity3D.xml amgx.json amgx.xml
+    SOURCE_FILES scaling.xml scaling.yaml scaling-complex.xml scaling-withglobalconstants.xml scaling-complex-withglobalconstants.xml circ_nsp_dependency.xml isorropia.xml iso_poisson.xml conchas_milestone_zoltan.xml conchas_milestone_zoltan2.xml conchas_milestone_zoltan2_complex.xml sa_with_ilu.xml sa_with_Ifpack2_line_detection.xml rap.xml smoother.xml smoother_complex.xml tripleMatrixProduct.xml scaling-ml.xml elasticity3D.xml amgx.json amgx.xml
    )
 
  TRIBITS_ADD_EXECUTABLE(
@@ -196,6 +196,14 @@ IF (${PACKAGE_NAME}_ENABLE_Tpetra AND ${PACKAGE_NAME}_ENABLE_Ifpack2 AND ${PACKA
         Driver
         NAME "DriverTpetra"
         ARGS "--linAlgebra=Tpetra --xml=scaling.xml"
+        NUM_MPI_PROCS 4
+        COMM mpi # HAVE_MPI required
+        )
+
+      TRIBITS_ADD_TEST(
+        Driver
+        NAME "DriverTpetraYaml"
+        ARGS "--linAlgebra=Tpetra --yaml=scaling.yaml"
         NUM_MPI_PROCS 4
         COMM mpi # HAVE_MPI required
         )
