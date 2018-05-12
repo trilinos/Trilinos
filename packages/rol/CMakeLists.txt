@@ -24,17 +24,9 @@ TRIBITS_ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_TIMERS
   OFF
   )
 
-TRIBITS_ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_PTR 
-
 # Build Options
 SET( CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
 INCLUDE(BuildOptions)
-
-
-
-
-
-
 
 #
 # C) Add the libraries, tests, and examples
@@ -49,8 +41,6 @@ ENDIF()
 IF (ROL_ENABLE_ArrayFireCPU)
   ADD_SUBDIRECTORY(adapters/arrayfire)
 ENDIF()
-
-
 
 IF( NOT ${${PACKAGE_NAME}_ENABLE_STD_SHARED_PTR} )
 
@@ -68,11 +58,9 @@ IF (ROL_ENABLE_Belos)
   ADD_SUBDIRECTORY(adapters/belos)
 ENDIF()
 
-
 IF (ROL_ENABLE_Thyra)
   ADD_SUBDIRECTORY(adapters/thyra)
 ENDIF()
-
 
 IF (ROL_ENABLE_TriKota)
   ADD_SUBDIRECTORY(adapters/trikota)
