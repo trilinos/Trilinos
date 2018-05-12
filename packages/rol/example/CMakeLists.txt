@@ -29,10 +29,13 @@ ADD_SUBDIRECTORY(sacado)
 ENDIF()
 
 # Examples which require use of Teuchos
-IF( ${${PACKAGE_NAME}_ENABLE_TEUCHOS_RCP} )
-IF( ${${PACKAGE_NAME}_ENABLE_TEUCHOS_PARAMETERLIST} )
+GET_PROPERTY( PTR_STRING GLOBAL PROPERTY PTR_IMPL )
+GET_PROPERTY( PARAMETERLIST_STRING GLOBAL PROPERTY PARAMETERLIST_IMPL )
 
-MESSAGE("--  Enabling ROL examples with required dependency on Teuchos::RCP or Teuchos::ParameterList")
+IF( PTR_STRING STREQUAL "Teuchos::RCP" )
+IF( PARAMETERLIST_STRING STREQUAL "Teuchos::ParameterList" )
+
+MESSAGE("-- Enabling ROL examples with required dependency on Teuchos::RCP or Teuchos::ParameterList")
 
 ADD_SUBDIRECTORY(burgers-control)
 ADD_SUBDIRECTORY(parabolic-control)
@@ -43,8 +46,8 @@ IF(${PROJECT_NAME}_ENABLE_Tempus)
   ADD_SUBDIRECTORY(tempus)
 ENDIF()
 
-ENDIF( ${${PACKAGE_NAME}_ENABLE_TEUCHOS_PARAMETERLIST} )
-ENDIF( ${${PACKAGE_NAME}_ENABLE_TEUCHOS_RCP} )
+ENDIF()
+ENDIF()
 
 
 
