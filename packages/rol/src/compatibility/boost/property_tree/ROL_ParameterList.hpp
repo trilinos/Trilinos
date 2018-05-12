@@ -208,12 +208,12 @@ public:
     return T();
   }
 
-  std::string get( const string& name, const string& default_value) const {
+  std::string get( const string& name, const string& default_value) {
     return get<string>(name, default_value);
   }
 
   template<class T>
-  T get( const string& name, const T& default_value ) const {
+  T get( const string& name, const T& default_value ) {
     for (auto r : root_->second)
     {
       if (r.first == "Parameter" and
@@ -222,6 +222,7 @@ public:
         return r.second.get<T>("<xmlattr>.value");
       }
     }
+    set(name, default_value);
 
     return default_value;
   }
