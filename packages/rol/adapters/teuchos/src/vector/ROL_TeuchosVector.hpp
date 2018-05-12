@@ -118,7 +118,7 @@ public:
     }    
   }
 
-  Teuchos::RCP<Vector<Real>> clone() const { 
+  Teuchos::RCP<Vector<Real>> clone() const override { 
     return Teuchos::rcp( new TeuchosVector(vec_->length()) );
   }
 
