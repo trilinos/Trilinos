@@ -60,14 +60,14 @@ StackedTimer::flatten() {
 }
 
 void
-StackedTimer::merge(Teuchos::RCP<Teuchos::Comm<int> > comm){
+StackedTimer::merge(Teuchos::RCP<const Teuchos::Comm<int> > comm){
   Array<std::string> all_names;
   mergeCounterNames(*comm, flat_names_, all_names, Union);
   flat_names_ = all_names;
 }
 
 void
-StackedTimer::collectRemoteData(Teuchos::RCP<Teuchos::Comm<int> > comm) {
+StackedTimer::collectRemoteData(Teuchos::RCP<const Teuchos::Comm<int> > comm) {
   int comm_size = size(*comm);
   int comm_rank = rank(*comm);
   Array<BaseTimer::TimeInfo> local_time_data;
@@ -191,7 +191,7 @@ StackedTimer::printLevel (std::string prefix, int print_level, std::ostream &os,
 }
 
 void
-StackedTimer::report(std::ostream &os, Teuchos::RCP<Teuchos::Comm<int> > comm, OutputOptions options) {
+StackedTimer::report(std::ostream &os, Teuchos::RCP<const Teuchos::Comm<int> > comm, OutputOptions options) {
   flatten();
   merge(comm);
   collectRemoteData(comm);

@@ -470,7 +470,7 @@ public:
    * @param [in] os - Output stream
    * @param [in] comm - Teuchos comm pointer
    */
-  void report(std::ostream &os, Teuchos::RCP<Teuchos::Comm<int> > comm, OutputOptions options = OutputOptions());
+  void report(std::ostream &os, Teuchos::RCP<const Teuchos::Comm<int> > comm, OutputOptions options = OutputOptions());
 
   /// Base timer for all routines to access
   static Teuchos::RCP<StackedTimer> timer;
@@ -493,12 +493,12 @@ protected:
     * Merge all the timers together into a single structure
     * @param [in] comm - Communicator to use
     */
-   void merge(Teuchos::RCP<Teuchos::Comm<int> > comm);
+   void merge(Teuchos::RCP<const Teuchos::Comm<int> > comm);
 
    /**
     * Migrate all the timer data to rank=0 if parallel
     */
-   void collectRemoteData(Teuchos::RCP<Teuchos::Comm<int> > comm);
+   void collectRemoteData(Teuchos::RCP<const Teuchos::Comm<int> > comm);
 
    /**
     * Recursive call to print a level of timer data.
