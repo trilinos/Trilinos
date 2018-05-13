@@ -4,8 +4,24 @@
 #include "Teuchos_UnitTestHarness.hpp"
 #include "Teuchos_TimeMonitor.hpp"
 #include "Teuchos_StackedTimer.hpp"
+#include "Teuchos_DefaultMpiComm.hpp"
+#include "Teuchos_GlobalMPISession.hpp"
+#include "Teuchos_DefaultSerialComm.hpp"
 
 #include <thread> // std::this_thread::sleep_for;
+Teuchos::RCP<Teuchos::Comm<int> > comm;
+
+int main(int argc, char **argv) {
+  int result;
+  Teuchos::GlobalMPISession mpiSession(&argc,&argv);
+#ifdef HAVE_MPI
+  comm = Teuchos::rcp(new Teuchos::MpiComm<int>(Teuchos::opaqueWrapper(MPI_COMM_WORLD)));
+#else
+  comm = Teuchos::rcp(new Teuchos::SerialComm<int>());
+#endif
+  return Teuchos::UnitTestRepository::runUnitTestsFromMain(argc, argv);
+
+}
 
 TEUCHOS_UNIT_TEST(StackedTimer, Basic)
 {
@@ -23,9 +39,16 @@ TEUCHOS_UNIT_TEST(StackedTimer, Basic)
         timer.start("Prec");
         std::this_thread::sleep_for(std::chrono::milliseconds{50});   
         timer.stop("Prec");
-        timer.start("GMRES");
-        std::this_thread::sleep_for(std::chrono::milliseconds{50});   
-        timer.stop("GMRES");
+        if (rank(*comm) != 0 ) {
+          timer.start("GMRES");
+          std::this_thread::sleep_for(std::chrono::milliseconds{50});
+          timer.stop("GMRES");
+        } else {
+          timer.start("Not GMRES");
+          std::this_thread::sleep_for(std::chrono::milliseconds{50});
+          timer.stop("Not GMRES");
+
+        }
       }
       timer.stop("Solve");
       
@@ -33,7 +56,7 @@ TEUCHOS_UNIT_TEST(StackedTimer, Basic)
   }
   timer.stop("Total Time");
   
-  timer.report(std::cout);  
+  timer.report(std::cout, comm);
 }
 
 
@@ -74,5 +97,6 @@ TEUCHOS_UNIT_TEST(StackedTimer, TimeMonitorInteroperability)
   }
   timer->stop("Total Time");
   
-  timer->report(std::cout);  
+  assert(size(*comm)>0);
+  timer->report(std::cout, comm);
 }

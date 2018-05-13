@@ -18,113 +18,6 @@ void error_out(const std::string& msg, const bool)
   TEUCHOS_TEST_FOR_EXCEPTION(true,std::runtime_error,msg);
 }
   
-#if 0
-// Here for MPI stuff, not working/tested
-void
-StackedTimer::LevelTimer::merge(LevelTimer &partner){
-
-  // Make the timers at this level match
-  for (unsigned i=0;i<sub_timers_.size();++i) {
-    if ( i == partner.sub_timers_.size())  //ran out of partner ones
-      partner.sub_timers_.push_back(LevelTimer(sub_timers_[i].level_,sub_timers_[i].name_.c_str()));
-    if (sub_timers_[i].name_.compare( partner.sub_timers_[i].name_)==0)
-      continue;
-    // So, we need to merge something here.  first see if it is just out of order.
-    for (unsigned j = i+1;j<partner.sub_timers_.size();++j)
-      if (sub_timers_[i].name_.compare(partner.sub_timers_[j].name_)==0) {
-        std::swap(partner.sub_timers_[i],partner.sub_timers_[j]);
-        //  partner.sub_timers[i].parent = partner.sub_timers[j].parent = &partner;
-        break;
-      }
-    // If they are not equal still, insert copy
-    if (sub_timers_[i].name_.compare(partner.sub_timers_[i].name_) != 0) {
-      std::vector< LevelTimer>::iterator iter= partner.sub_timers_.begin();
-      for (unsigned j = 0; j < i; ++j) ++iter;
-      partner.sub_timers_.insert(iter,LevelTimer(sub_timers_[i].level_,sub_timers_[i].name_.c_str()));
-    }
-  }
-  // Now just tack on the end of the partner list to the main list
-  for (unsigned i=sub_timers_.size();i < partner.sub_timers_.size();++i)
-  {
-    sub_timers_.push_back(LevelTimer(partner.sub_timers_[i].level_,partner.sub_timers_[i].name_.c_str()));
-    sub_timers_[i].parent_ = this;
-  }
-
-  assert(sub_timers_.size() == partner.sub_timers_.size());
-
-  for (unsigned i=0;i<sub_timers_.size();++i)
-    assert ( sub_timers_[i].name_ == partner.sub_timers_[i].name_ ) ;
-
-  for (unsigned i=0;i<sub_timers_.size();++i)
-    sub_timers_[i].merge(partner.sub_timers_[i]);
-
-  for (unsigned i=0;i<sub_timers_.size();++i) {
-    partner.sub_timers_[i].parent_ = &partner;
-  }
-
-}
-#endif
-
-void
-StackedTimer::LevelTimer::pack() {
-  std::vector<char> buff;
-  pack_level(buff);
-
-  // wait for rank 0 to send ready to recv
-  // MPI_Status stat;
-  // int ready_to_recv;
-  // MPI_Recv(&ready_to_recv,1,MPI_INT,0, ready_to_recv_tag, mpi_world_,&stat);
-
-  // int size = buff.size();
-  // MPI_Send(&size,1,MPI_INT,0,send_size_tag,mpi_world_);
-  // MPI_Send(&buff[0],size,MPI_CHAR,0,send_buffer_tag,mpi_world_);
-}
-
-StackedTimer::LevelTimer *
-StackedTimer::LevelTimer::unpack(unsigned from) {
-  // MPI_Status stat;
-  // unsigned recv_size;
-  // MPI_Recv(&recv_size,1,MPI_INT,from,send_size_tag,mpi_world_,&stat);
-  // std::vector<char> buff(recv_size);
-  // MPI_Recv(&buff[0], recv_size, MPI_CHAR, from, send_buffer_tag, mpi_world_,&stat);
-  // level_ = 0;
-  // int position=0;
-  // unpack_level(buff, position);
-  return this;
-}
-
-
-void
-StackedTimer::LevelTimer::unpack_level(std::vector<char> &buff, int &position) {
-  // mpi_unpack(name_, buff, position);
-  // mpi_unpack(accumulation_, buff, position);
-  // mpi_unpack(count_started_, buff, position);
-  // mpi_unpack(count_updates_, buff, position);
-
-  // // Sub timer stuff
-  // unsigned num_sub_timers;
-  // mpi_unpack(num_sub_timers, buff, position);
-  // sub_timers_.resize(num_sub_timers);
-  // for (unsigned i=0;i<num_sub_timers;++i) {
-  //   sub_timers_[i].level_ = level_+1;
-  //   sub_timers_[i].unpack_level(buff, position);
-  //   sub_timers_[i].parent_ = this;
-  // }
-}
-
-void
-StackedTimer::LevelTimer::pack_level(std::vector<char> &buff) {
-  // mpi_pack(name_, buff);
-  // mpi_pack(accumulation_, buff);
-  // mpi_pack(count_started_, buff);
-  // mpi_pack(count_updates_, buff);
-
-  // // Sub timer stuff
-  // unsigned num_sub_timers = sub_timers_.size();
-  // mpi_pack(num_sub_timers, buff);
-  // for (unsigned i=0;i<num_sub_timers;++i)
-  //   sub_timers_[i].pack_level(buff);
-}
 
 void
 StackedTimer::LevelTimer::report(std::ostream &os) {
@@ -142,6 +35,127 @@ StackedTimer::LevelTimer::report(std::ostream &os) {
     os << "   ";
   os << "Remainder: " << accumulatedTime() - t_total<<std::endl;
 
+}
+
+BaseTimer::TimeInfo
+StackedTimer::LevelTimer::findTimer(std::string &name) {
+  BaseTimer::TimeInfo t;
+  if (get_full_name() == name)
+    t = BaseTimer::TimeInfo(this);
+  else {
+    for (unsigned i=0;i<sub_timers_.size(); ++i){
+      t = sub_timers_[i].findTimer(name);
+      if (t.time > 0.)
+        return t;
+    }
+  }
+  return t;
+}
+void
+StackedTimer::flatten() {
+  int num_timers = top_->countTimers();
+  flat_names_.resize(num_timers);
+  unsigned pos=0;
+  top_->addTimerNames(flat_names_, pos);
+}
+
+void
+StackedTimer::merge(Teuchos::RCP<Teuchos::Comm<int> > comm){
+  Array<std::string> all_names;
+  mergeCounterNames(*comm, flat_names_, all_names, Union);
+  flat_names_ = all_names;
+}
+
+void
+StackedTimer::collectRemoteData(Teuchos::RCP<Teuchos::Comm<int> > comm) {
+  int comm_size = size(*comm);
+  int comm_rank = rank(*comm);
+  Array<BaseTimer::TimeInfo> local_time_data;
+  if (comm_rank == 0) {
+    time_data_.resize(comm_size);
+    for (int r=0; r<comm_size; ++r)
+      time_data_[r].resize(flat_names_.size());
+  } else {
+    local_time_data.resize(flat_names_.size());
+  }
+
+  for (unsigned i=0; i<flat_names_.size(); ++i) {
+    auto t = top_->findTimer(flat_names_[i]);
+    if ( comm_rank == 0 )
+      time_data_[0][i] = t;
+    else
+      local_time_data[i] = t;
+  }
+
+  int buffer_size = sizeof(BaseTimer::TimeInfo);
+  if ( comm_rank == 0 )
+    buffer_size += ((std::size_t)&time_data_[0][flat_names_.size()-1] - (std::size_t)&time_data_[0][0]);
+  else
+    buffer_size += ((std::size_t)&local_time_data[flat_names_.size()-1] - (std::size_t)&local_time_data[0]);
+
+  if (comm_rank == 0 )  {
+    for (int r=1; r<comm_size; ++r)
+      receive(*comm, r, buffer_size, (char*)&time_data_[r][0]);
+  } else
+    send(*comm, buffer_size,(char*)&local_time_data[0] ,0);
+}
+
+std::pair<std::string, std::string> getPrefix(std::string &name) {
+  for (std::size_t i=name.size()-1; i>0; --i)
+    if (name[i] == ':') {
+        return std::pair<std::string, std::string>(name.substr(0,i), name.substr(i+1, name.size()));
+    }
+  return std::pair<std::string, std::string>(std::string(""), name);
+}
+
+
+double
+StackedTimer::printLevel (std::string prefix, int print_level, std::ostream &os, std::vector<bool> &printed) {
+  double total_time = 0.0;
+  std::size_t num_entries = time_data_.size();
+  for (std::size_t i=0; i<flat_names_.size(); ++i ) {
+    if (printed[i])
+      continue;
+    int level = std::count(flat_names_[i].begin(), flat_names_[i].end(), ':');
+    if (level != print_level)
+      continue;
+    auto split_names = getPrefix(flat_names_[i]);
+    if ( prefix == split_names.first) {
+      double average_t=0;
+      long average_count=0;
+      long long average_updates=0;
+      for (std::size_t r=0; r<num_entries; ++r) {
+        average_t += time_data_[r][i].time;
+        average_updates += time_data_[r][i].updates;
+        average_count += time_data_[r][i].count;
+      }
+      for (int l=0; l<level; ++l)
+        os << "    ";
+      os << split_names.second << ": ";
+      os << average_t/num_entries <<
+          " ["<<average_count/num_entries<<"] ("<<average_updates/num_entries<<")\n";
+      printed[i] = true;
+      double sub_time = printLevel(flat_names_[i], level+1, os, printed);
+      if (sub_time > 0 ) {
+        for (int l=0; l<=level; ++l)
+          os << "    ";
+        os << "Remainder: " << average_t/num_entries - sub_time<<std::endl;
+      }
+      total_time += average_t/num_entries;
+    }
+  }
+  return total_time;
+}
+
+void
+StackedTimer::report(std::ostream &os, Teuchos::RCP<Teuchos::Comm<int> > comm) {
+  flatten();
+  merge(comm);
+  collectRemoteData(comm);
+  if (rank(*comm) == 0 ) {
+    std::vector<bool> printed(flat_names_.size(), false);
+    printLevel("", 0, os, printed);
+  }
 }
 
 } //namespace Teuchos

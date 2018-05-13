@@ -6,7 +6,10 @@
 
 #include "Teuchos_Comm.hpp"
 #include "Teuchos_DefaultComm.hpp"
+#include "Teuchos_CommHelpers.hpp"
 #include "Teuchos_RCP.hpp"
+#include "Teuchos_Array.hpp"
+#include "Teuchos_PerformanceMonitorBase.hpp"
 #include <string>
 #include <vector>
 #include <cassert>
@@ -38,7 +41,7 @@ public:
   void start(){
     if (running_)
       error_out("Base_Timer:start Failed timer already running");
-    start_time_ = Clock::now(); // MPI_Wtime();
+    start_time_ = Clock::now(); 
     count_started_++;
     running_ = true;
   }
@@ -114,14 +117,22 @@ public:
 
   bool running() const { return running_;}
 
+  struct TimeInfo {
+    TimeInfo():time(0.0), count(0), updates(0){}
+    TimeInfo(BaseTimer* t): time(t->accumulation_), count(t->count_started_), updates(t->count_updates_) {}
+    double time;
+    unsigned long count;
+    unsigned long long updates;
+  };
+
 protected:
   double accumulation_;       // total time
   unsigned long count_started_; // Number of times this timer has been started
-  unsigned long count_updates_; // Total count of items updated during this timer
+  unsigned long long count_updates_; // Total count of items updated during this timer
   Clock::time_point start_time_;
   bool running_;
 
-
+  friend struct TimeInfo;
 };
 
 /**
@@ -180,8 +191,7 @@ protected:
           BaseTimer(),
           level_(level),
           name_(name),
-          parent_(parent),
-          mpi_world_(Teuchos::DefaultComm<int>::getComm())
+          parent_(parent)
     {
       if ( start )
         BaseTimer::start();
@@ -189,7 +199,7 @@ protected:
 
     /// Copy constructor
     LevelTimer(const LevelTimer &src) :
-      BaseTimer(src), level_(src.level_), name_(src.name_),parent_(src.parent_), sub_timers_(src.sub_timers_), mpi_world_(src.mpi_world_)
+      BaseTimer(src), level_(src.level_), name_(src.name_),parent_(src.parent_), sub_timers_(src.sub_timers_)
     {
       for (unsigned i=0;i<sub_timers_.size();++i) 
         sub_timers_[i].parent_ = this;
@@ -224,8 +234,11 @@ protected:
       return parent_;
     }
 
-#if 0
-    // Thought this might be useful, not sure,
+
+    /** 
+     * Return the full name of the timer with each level split by :
+     * @return The full name of the timer
+     */
     std::string get_full_name() {
       std::string parent_name("");
       if ((parent_ != NULL) && (parent_->level_ > 0))
@@ -236,7 +249,24 @@ protected:
       std::string full_name = parent_name + my_name;
       return full_name;
     }
-#endif
+
+    /**
+     * Return the number of timers on this level
+     * @return the number of timers and sub timers
+     */
+
+    int countTimers() {
+      int count=1;
+      for (unsigned i=0;i<sub_timers_.size(); ++i)
+        count += sub_timers_[i].countTimers();
+      return count;
+    }
+    
+    void addTimerNames(Array<std::string> &names, unsigned &pos) {
+      names[pos++] = get_full_name();
+      for (unsigned i=0;i<sub_timers_.size(); ++i)
+        sub_timers_[i].addTimerNames(names, pos);
+    }
 
     /**
      * Return the time spent at a given level
@@ -339,54 +369,14 @@ protected:
       */
      void report(std::ostream &os);
 
+     BaseTimer::TimeInfo findTimer(std::string &name);
 
   protected:
-     /**
-      * Pack a single level and call recursively on sublevels
-      * @param [inout] buff Buffer to pack to
-      */
-     void pack_level(std::vector<char> &buff);
-     /**
-      * Unpack a single level and call recursively on sublevels
-      * @param [in] buff Buffer to unpack from
-      * @param [inout] position Location in buffer to unpack from
-      */
-     void unpack_level(std::vector<char> &buff, int &position);
 
-     constexpr static int BaseLevelTimer=13000;
-     constexpr static int ready_to_recv_tag=BaseLevelTimer+1;
-     constexpr static int send_size_tag=BaseLevelTimer+2;
-     constexpr static int send_buffer_tag=BaseLevelTimer+3;
-
-     Teuchos::RCP<const Teuchos::Comm<int>> mpi_world_;
 
   }; // LevelTimer
 
 
-#if 0
-  // Disabled for now, needed for parallel stuff
-  /**
-   * This is a flat version of a level_ timer
-   */
-  class TimerInstance{
-   public:
-     TimerInstance(std::string name_,
-         unsigned level_,
-         float time,
-         float parent_,
-         int count_started = 0,
-         int count_updated = 0) :
-           name_(name_),time_(time),parent_(parent_),level_(level_),count_started_(count_started), count_updated_(count_updated)
-       { }
-     std::string name_;
-     float time_;
-     float parent_;
-     unsigned level_;
-     int count_started_;
-     int count_updated_;
-   }; // TimerInstance
-   std::vector< std::vector<TimerInstance> > flat_timers_;
-#endif
 
 
 public:
@@ -458,21 +448,52 @@ public:
      else
        return timer_.accumulatedTimePerTimerCall(name);
    }
+
+
   void report(std::ostream &os) {
     timer_.report(os);
   }
 
-//  void compile_timers();
-//  void compile_timers_collective();
+  /**
+   * Dump all the data from all the MPI ranks to an ostream
+   * @param [in] os - Output stream
+   * @param [in] comm - Teuchos comm pointer
+   */
+  void report(std::ostream &os, Teuchos::RCP<Teuchos::Comm<int> > comm);
 
   /// Base timer for all routines to access
   static Teuchos::RCP<StackedTimer> timer;
+
 
 protected:
   /// Current level running
   LevelTimer *top_;
   /// Base timer
   LevelTimer timer_;
+
+  Array<std::string> flat_names_;
+  Array<Array<BaseTimer::TimeInfo>> time_data_;
+
+  /**
+    * Flatten the timers into a single array
+    */
+   void flatten( );
+
+   /**
+    * Merge all the timers together into a single structure
+    * @param [in] comm - Communicator to use
+    */
+   void merge(Teuchos::RCP<Teuchos::Comm<int> > comm);
+
+   /**
+    * Migrate all the timer data to rank=0 if parallel
+    */
+   void collectRemoteData(Teuchos::RCP<Teuchos::Comm<int> > comm);
+
+   /**
+    * Recursive call to print a level of timer data.
+    */
+  double printLevel(std::string prefix, int level, std::ostream &os, std::vector<bool> &printed);
 
 };  //StackedTimer
 
