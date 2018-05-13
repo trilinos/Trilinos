@@ -53,10 +53,10 @@ StackedTimer::LevelTimer::findTimer(std::string &name) {
 }
 void
 StackedTimer::flatten() {
-  int num_timers = top_->countTimers();
+  int num_timers = timer_.countTimers();
   flat_names_.resize(num_timers);
   unsigned pos=0;
-  top_->addTimerNames(flat_names_, pos);
+  timer_.addTimerNames(flat_names_, pos);
 }
 
 void
@@ -80,7 +80,7 @@ StackedTimer::collectRemoteData(Teuchos::RCP<const Teuchos::Comm<int> > comm) {
   }
 
   for (unsigned i=0; i<flat_names_.size(); ++i) {
-    auto t = top_->findTimer(flat_names_[i]);
+    auto t = timer_.findTimer(flat_names_[i]);
     if ( comm_rank == 0 )
       time_data_[0][i] = t;
     else
