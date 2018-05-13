@@ -456,8 +456,8 @@ public:
 
   /// Struct for controlling output options like histograms
   struct OutputOptions {
-    OutputOptions() : output_fraction(true), output_total_updates(false), output_histogram(false),
-        output_minmax(true), num_histogram(10) {}
+    OutputOptions() : output_fraction(false), output_total_updates(false), output_histogram(false),
+        output_minmax(false), num_histogram(10) {}
     bool output_fraction;
     bool output_total_updates;
     bool output_histogram;
