@@ -106,7 +106,7 @@ std::pair<std::string, std::string> getPrefix(std::string &name) {
 
 
 double
-StackedTimer::printLevel (std::string prefix, int print_level, std::ostream &os, std::vector<bool> &printed, const OutputOptions &options) {
+StackedTimer::printLevel (std::string prefix, int print_level, std::ostream &os, std::vector<bool> &printed, double parent_time, const OutputOptions &options) {
   double total_time = 0.0;
   std::size_t num_entries = time_data_.size();
   for (std::size_t i=0; i<flat_names_.size(); ++i ) {
@@ -137,8 +137,13 @@ StackedTimer::printLevel (std::string prefix, int print_level, std::ostream &os,
     for (int l=0; l<level; ++l)
       os << "    ";
     os << split_names.second << ": ";
-    // output averge time and count
-    os << sum_t/num_ranks << " ["<<sum_count/num_ranks<<"]";
+    // output averge time
+    os << sum_t/num_ranks;
+    // output percentage
+    if ( options.output_fraction && parent_time>0)
+      os << " - "<<sum_t/num_ranks/parent_time*100<<"%";
+    // output count
+    os << " ["<<sum_count/num_ranks<<"]";
     // output total counts
     if ( options.output_total_updates )
       os << " ("<<sum_updates/num_ranks<<")";
@@ -174,13 +179,13 @@ StackedTimer::printLevel (std::string prefix, int print_level, std::ostream &os,
     }
     os << std::endl;
     printed[i] = true;
-    double sub_time = printLevel(flat_names_[i], level+1, os, printed, options);
+    double sub_time = printLevel(flat_names_[i], level+1, os, printed, sum_t/num_ranks, options);
     if (sub_time > 0 ) {
       for (int l=0; l<=level; ++l)
         os << "    ";
-      os << "Remainder: " << sum_t/num_entries - sub_time<<std::endl;
+      os << "Remainder: " << sum_t/num_ranks - sub_time<<std::endl;
     }
-    total_time += sum_t/num_entries;
+    total_time += sum_t/num_ranks;
   }
   return total_time;
 }
@@ -192,7 +197,7 @@ StackedTimer::report(std::ostream &os, Teuchos::RCP<Teuchos::Comm<int> > comm, O
   collectRemoteData(comm);
   if (rank(*comm) == 0 ) {
     std::vector<bool> printed(flat_names_.size(), false);
-    printLevel("", 0, os, printed, options);
+    printLevel("", 0, os, printed, 0., options);
   }
 }
 
