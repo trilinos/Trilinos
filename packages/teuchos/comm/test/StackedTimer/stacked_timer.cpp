@@ -55,8 +55,10 @@ TEUCHOS_UNIT_TEST(StackedTimer, Basic)
     }
   }
   timer.stop("Total Time");
-  
-  timer.report(std::cout, comm);
+  Teuchos::StackedTimer::OutputOptions options;
+  options.output_histogram=true;
+  options.num_histogram=3;
+  timer.report(std::cout, comm, options);
 }
 
 

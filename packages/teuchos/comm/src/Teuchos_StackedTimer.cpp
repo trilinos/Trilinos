@@ -87,11 +87,7 @@ StackedTimer::collectRemoteData(Teuchos::RCP<Teuchos::Comm<int> > comm) {
       local_time_data[i] = t;
   }
 
-  int buffer_size = sizeof(BaseTimer::TimeInfo);
-  if ( comm_rank == 0 )
-    buffer_size += ((std::size_t)&time_data_[0][flat_names_.size()-1] - (std::size_t)&time_data_[0][0]);
-  else
-    buffer_size += ((std::size_t)&local_time_data[flat_names_.size()-1] - (std::size_t)&local_time_data[0]);
+  int buffer_size = sizeof(BaseTimer::TimeInfo[flat_names_.size()]);
 
   if (comm_rank == 0 )  {
     for (int r=1; r<comm_size; ++r)
@@ -103,14 +99,14 @@ StackedTimer::collectRemoteData(Teuchos::RCP<Teuchos::Comm<int> > comm) {
 std::pair<std::string, std::string> getPrefix(std::string &name) {
   for (std::size_t i=name.size()-1; i>0; --i)
     if (name[i] == ':') {
-        return std::pair<std::string, std::string>(name.substr(0,i), name.substr(i+1, name.size()));
+      return std::pair<std::string, std::string>(name.substr(0,i), name.substr(i+1, name.size()));
     }
   return std::pair<std::string, std::string>(std::string(""), name);
 }
 
 
 double
-StackedTimer::printLevel (std::string prefix, int print_level, std::ostream &os, std::vector<bool> &printed) {
+StackedTimer::printLevel (std::string prefix, int print_level, std::ostream &os, std::vector<bool> &printed, const OutputOptions &options) {
   double total_time = 0.0;
   std::size_t num_entries = time_data_.size();
   for (std::size_t i=0; i<flat_names_.size(); ++i ) {
@@ -120,41 +116,83 @@ StackedTimer::printLevel (std::string prefix, int print_level, std::ostream &os,
     if (level != print_level)
       continue;
     auto split_names = getPrefix(flat_names_[i]);
-    if ( prefix == split_names.first) {
-      double average_t=0;
-      long average_count=0;
-      long long average_updates=0;
-      for (std::size_t r=0; r<num_entries; ++r) {
-        average_t += time_data_[r][i].time;
-        average_updates += time_data_[r][i].updates;
-        average_count += time_data_[r][i].count;
+    if ( prefix != split_names.first)
+      continue;
+
+    int num_ranks=0;
+    double sum_t=0., sum_sq=0., min_t=std::numeric_limits<double>::max(), max_t=0.;
+    long sum_count=0;
+    long long sum_updates=0;
+    for (std::size_t r=0; r<num_entries; ++r) {
+      if (time_data_[r][i].count) {
+        num_ranks++;
+        min_t = std::min(min_t, time_data_[r][i].time);
+        max_t = std::max(max_t, time_data_[r][i].time);
+        sum_t += time_data_[r][i].time;
+        sum_sq += time_data_[r][i].time*time_data_[r][i].time;
+        sum_updates += time_data_[r][i].updates;
+        sum_count += time_data_[r][i].count;
       }
-      for (int l=0; l<level; ++l)
-        os << "    ";
-      os << split_names.second << ": ";
-      os << average_t/num_entries <<
-          " ["<<average_count/num_entries<<"] ("<<average_updates/num_entries<<")\n";
-      printed[i] = true;
-      double sub_time = printLevel(flat_names_[i], level+1, os, printed);
-      if (sub_time > 0 ) {
-        for (int l=0; l<=level; ++l)
-          os << "    ";
-        os << "Remainder: " << average_t/num_entries - sub_time<<std::endl;
-      }
-      total_time += average_t/num_entries;
     }
+    for (int l=0; l<level; ++l)
+      os << "    ";
+    os << split_names.second << ": ";
+    // output averge time and count
+    os << sum_t/num_ranks << " ["<<sum_count/num_ranks<<"]";
+    // output total counts
+    if ( options.output_total_updates )
+      os << " ("<<sum_updates/num_ranks<<")";
+    // Output min and maxs
+    if ( options.output_minmax ) {
+      os << " {min="<<min_t<<", max="<<max_t;
+      if (num_ranks>1)
+        os<<", std dev="<<sqrt((sum_sq-sum_t*sum_t/num_ranks)/(num_ranks-1));
+      os << "}";
+    }
+    // Output histogram
+    if ( options.output_histogram && num_entries >1 ) {
+      std::vector<int> hist(options.num_histogram, 0);
+      double dh = (max_t-min_t)/options.num_histogram;
+      if (dh==0) // Put everything into bin 1
+        dh=1;
+      for (std::size_t r=0; r<num_entries; ++r) {
+        if (time_data_[r][i].count) {
+          int bin=(time_data_[r][i].time - min_t)/dh;
+          bin = std::max(std::min(bin,options.num_histogram-1) , 0);
+          hist[bin]++;
+        }
+      }
+      // dump the histogram
+      os << " <";
+      for (int h=0;h<options.num_histogram; ++h) {
+        if (h)
+          os <<", "<<hist[h];
+        else
+          os << hist[h];
+      }
+      os << ">";
+    }
+    os << std::endl;
+    printed[i] = true;
+    double sub_time = printLevel(flat_names_[i], level+1, os, printed, options);
+    if (sub_time > 0 ) {
+      for (int l=0; l<=level; ++l)
+        os << "    ";
+      os << "Remainder: " << sum_t/num_entries - sub_time<<std::endl;
+    }
+    total_time += sum_t/num_entries;
   }
   return total_time;
 }
 
 void
-StackedTimer::report(std::ostream &os, Teuchos::RCP<Teuchos::Comm<int> > comm) {
+StackedTimer::report(std::ostream &os, Teuchos::RCP<Teuchos::Comm<int> > comm, OutputOptions options) {
   flatten();
   merge(comm);
   collectRemoteData(comm);
   if (rank(*comm) == 0 ) {
     std::vector<bool> printed(flat_names_.size(), false);
-    printLevel("", 0, os, printed);
+    printLevel("", 0, os, printed, options);
   }
 }
 

@@ -454,16 +454,26 @@ public:
     timer_.report(os);
   }
 
+  /// Struct for controlling output options like histograms
+  struct OutputOptions {
+    OutputOptions() : output_fraction(true), output_total_updates(false), output_histogram(false),
+        output_minmax(true), num_histogram(10) {}
+    bool output_fraction;
+    bool output_total_updates;
+    bool output_histogram;
+    bool output_minmax;
+    int num_histogram;
+  };
+
   /**
    * Dump all the data from all the MPI ranks to an ostream
    * @param [in] os - Output stream
    * @param [in] comm - Teuchos comm pointer
    */
-  void report(std::ostream &os, Teuchos::RCP<Teuchos::Comm<int> > comm);
+  void report(std::ostream &os, Teuchos::RCP<Teuchos::Comm<int> > comm, OutputOptions options = OutputOptions());
 
   /// Base timer for all routines to access
   static Teuchos::RCP<StackedTimer> timer;
-
 
 protected:
   /// Current level running
@@ -493,7 +503,7 @@ protected:
    /**
     * Recursive call to print a level of timer data.
     */
-  double printLevel(std::string prefix, int level, std::ostream &os, std::vector<bool> &printed);
+  double printLevel(std::string prefix, int level, std::ostream &os, std::vector<bool> &printed, const OutputOptions &options);
 
 };  //StackedTimer
 
