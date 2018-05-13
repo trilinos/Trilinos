@@ -98,7 +98,7 @@ StackedTimer::collectRemoteData(Teuchos::RCP<const Teuchos::Comm<int> > comm) {
 
 std::pair<std::string, std::string> getPrefix(std::string &name) {
   for (std::size_t i=name.size()-1; i>0; --i)
-    if (name[i] == ':') {
+    if (name[i] == '@') {
       return std::pair<std::string, std::string>(name.substr(0,i), name.substr(i+1, name.size()));
     }
   return std::pair<std::string, std::string>(std::string(""), name);
@@ -112,7 +112,7 @@ StackedTimer::printLevel (std::string prefix, int print_level, std::ostream &os,
   for (std::size_t i=0; i<flat_names_.size(); ++i ) {
     if (printed[i])
       continue;
-    int level = std::count(flat_names_[i].begin(), flat_names_[i].end(), ':');
+    int level = std::count(flat_names_[i].begin(), flat_names_[i].end(), '@');
     if (level != print_level)
       continue;
     auto split_names = getPrefix(flat_names_[i]);

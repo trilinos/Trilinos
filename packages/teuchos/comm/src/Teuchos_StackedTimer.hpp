@@ -242,7 +242,7 @@ protected:
     std::string get_full_name() {
       std::string parent_name("");
       if ((parent_ != NULL) && (parent_->level_ > 0))
-        parent_name = parent_->get_full_name() + ":";
+        parent_name = parent_->get_full_name() + "@";
 
       std::string my_name(name_);
 
@@ -280,7 +280,7 @@ protected:
 
       std::string first_name,second_name;
 
-      size_t i = locate_name.find_first_of(':');
+      size_t i = locate_name.find_first_of('@');
       if ( i >= locate_name.size() ) {
         first_name = locate_name;
         second_name = "";
@@ -296,13 +296,13 @@ protected:
 
   protected:
     /**
-     * \brief split a string into two parts split by a ':' if no ':' first gets the full string
+     * \brief split a string into two parts split by a '@' if no '@' first gets the full string
      * @param [in] locate_name input string to split
-     * @param [out] first_name Part of string before the first ':'
-     * @param [out] second_name part of string after the first ':'
+     * @param [out] first_name Part of string before the first '@'
+     * @param [out] second_name part of string after the first '@'
      */
     void splitString(const std::string &locate_name, std::string &first_name, std::string &second_name) {
-      size_t i = locate_name.find_first_of(':');
+      size_t i = locate_name.find_first_of('@');
       if ( i >= locate_name.size() ) {
         first_name = locate_name;
         second_name = "";
