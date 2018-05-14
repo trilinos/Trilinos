@@ -83,9 +83,9 @@ StackedTimer::collectRemoteData(Teuchos::RCP<const Teuchos::Comm<int> > comm, co
   }
 
 
-  if (options.output_histogram && comm_rank == 0 ) {
+  if (options.output_histogram ) {
     hist_.resize(options.num_histogram);
-    for (int i=0;i<options.num_histogram; ++i)
+    for (int i=0;i<options.num_histogram ; ++i)
       hist_[i].resize(num_names);
   }
 
@@ -190,7 +190,7 @@ StackedTimer::printLevel (std::string prefix, int print_level, std::ostream &os,
     if ( options.output_total_updates )
       os << " ("<<updates_[i]/active_[i]<<")";
     // Output min and maxs
-    if ( options.output_minmax ) {
+    if ( options.output_minmax && active_[i]>1) {
       os << " {min="<<min_[i]<<", max="<<max_[i];
       if (active_[i]>1)
         os<<", std dev="<<sqrt((sum_sq_[i]-sum_[i]*sum_[i]/active_[i])/(active_[i]-1));
@@ -214,7 +214,10 @@ StackedTimer::printLevel (std::string prefix, int print_level, std::ostream &os,
     if (sub_time > 0 ) {
       for (int l=0; l<=level; ++l)
         os << "    ";
-      os << "Remainder: " <<  sum_[i]/active_[i]- sub_time<<std::endl;
+      os << "Remainder: " <<  sum_[i]/active_[i]- sub_time;
+      if ( options.output_fraction )
+        os << " - "<< (sum_[i]/active_[i]- sub_time)/parent_time*100 << "%";
+      os <<std::endl;
     }
     total_time += sum_[i]/active_[i];
   }
