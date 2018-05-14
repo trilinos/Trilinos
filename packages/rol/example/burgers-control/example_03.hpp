@@ -56,7 +56,7 @@
 #include "ROL_Reduced_Objective_SimOpt.hpp"
 #include "ROL_ParameterList.hpp"
 
-#include "Teuchos_oblackholestream.hpp"
+#include "ROL_Stream.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
 #include "Teuchos_LAPACK.hpp"
 

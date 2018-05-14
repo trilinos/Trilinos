@@ -45,7 +45,7 @@
     \brief Unit test for Automatic Differentiation evalutators
 */
 
-#include "Teuchos_oblackholestream.hpp"
+#include "ROL_Stream.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
 #include "Teuchos_XMLParameterListHelpers.hpp"
 
@@ -105,7 +105,7 @@ int main(int argc, char *argv[] ) {
   using RealT = double;
 
     
-  Teuchos::oblackholestream bhs;
+  ROL::nullstream bhs;
 
   ROL::Ptr<std::ostream> os;
   if(argc>1)   os = ROL::makePtrFromRef(std::cout);

@@ -48,7 +48,7 @@
 #include "ROL_OptimizationProblem.hpp"
 #include "ROL_CombinedStatusTest.hpp"
 
-#include "Teuchos_oblackholestream.hpp"
+#include "ROL_Stream.hpp"
 
 /** \class ROL::OptimizationSolver
     \brief Provides a simplified interface for solving a wide range of
@@ -207,7 +207,7 @@ public:
       ---
   */
   int solve(void) {
-    Teuchos::oblackholestream bhs;
+    ROL::nullstream bhs;
     return solve(bhs);
   }
 

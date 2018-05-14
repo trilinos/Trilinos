@@ -81,7 +81,7 @@ inline void RandVarFunctionalInfo(ROL::ParameterList &parlist, std::string &name
 
   // Print Information
   if ( printToStream ) {
-    Teuchos::oblackholestream oldFormatState;
+    ROL::nullstream oldFormatState;
     oldFormatState.copyfmt(outStream);
 
     outStream << std::endl;

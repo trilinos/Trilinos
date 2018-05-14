@@ -150,7 +150,7 @@ std::vector<std::vector<Real> > Objective<Real>::checkGradient( const Vector<Rea
   std::vector<std::vector<Real> > gCheck(numSteps, tmp);
 
   // Save the format state of the original outStream.
-  Teuchos::oblackholestream oldFormatState;
+  ROL::nullstream oldFormatState;
   oldFormatState.copyfmt(outStream);
 
   // Evaluate objective value at x.
@@ -272,7 +272,7 @@ std::vector<std::vector<Real> > Objective<Real>::checkHessVec( const Vector<Real
   std::vector<std::vector<Real> > hvCheck(numSteps, tmp);
 
   // Save the format state of the original outStream.
-  Teuchos::oblackholestream oldFormatState;
+  ROL::nullstream oldFormatState;
   oldFormatState.copyfmt(outStream);
 
   // Compute gradient at x.
@@ -380,7 +380,7 @@ std::vector<Real> Objective<Real>::checkHessSym( const Vector<Real> &x,
   hsymCheck[2] = std::abs(vHw-wHv);
 
   // Save the format state of the original outStream.
-  Teuchos::oblackholestream oldFormatState;
+  ROL::nullstream oldFormatState;
   oldFormatState.copyfmt(outStream);
 
   if (printToStream) {

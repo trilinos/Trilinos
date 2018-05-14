@@ -307,7 +307,7 @@ public:
     std::vector<std::vector<Real> > gCheck(numSteps, tmp);
   
     // Save the format state of the original outStream.
-    Teuchos::oblackholestream oldFormatState;
+    ROL::nullstream oldFormatState;
     oldFormatState.copyfmt(outStream);
   
     // Evaluate objective value at x.
@@ -427,7 +427,7 @@ public:
     std::vector<std::vector<Real> > gCheck(numSteps, tmp);
   
     // Save the format state of the original outStream.
-    Teuchos::oblackholestream oldFormatState;
+    ROL::nullstream oldFormatState;
     oldFormatState.copyfmt(outStream);
   
     // Evaluate objective value at x.
@@ -564,7 +564,7 @@ public:
     std::vector<std::vector<Real> > hvCheck(numSteps, tmp);
   
     // Save the format state of the original outStream.
-    Teuchos::oblackholestream oldFormatState;
+    ROL::nullstream oldFormatState;
     oldFormatState.copyfmt(outStream);
   
     // Compute gradient at x.
@@ -708,7 +708,7 @@ public:
     std::vector<std::vector<Real> > hvCheck(numSteps, tmp);
   
     // Save the format state of the original outStream.
-    Teuchos::oblackholestream oldFormatState;
+    ROL::nullstream oldFormatState;
     oldFormatState.copyfmt(outStream);
   
     // Compute gradient at x.
@@ -855,7 +855,7 @@ public:
     std::vector<std::vector<Real> > hvCheck(numSteps, tmp);
   
     // Save the format state of the original outStream.
-    Teuchos::oblackholestream oldFormatState;
+    ROL::nullstream oldFormatState;
     oldFormatState.copyfmt(outStream);
   
     // Compute gradient at x.
@@ -1002,7 +1002,7 @@ public:
     std::vector<std::vector<Real> > hvCheck(numSteps, tmp);
   
     // Save the format state of the original outStream.
-    Teuchos::oblackholestream oldFormatState;
+    ROL::nullstream oldFormatState;
     oldFormatState.copyfmt(outStream);
   
     // Compute gradient at x.

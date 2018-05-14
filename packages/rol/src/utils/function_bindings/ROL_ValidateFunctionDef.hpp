@@ -41,7 +41,7 @@ ValidateFunction<Real>::derivative_check( f_scalar_t<Real> f_value,
   vector<Real> tmp(numVals);
   vector<vector<Real>> vCheck(numSteps_,tmp);
   
-  Teuchos::oblackholestream oldFormatState;
+  ROL::nullstream oldFormatState;
   oldFormatState.copyfmt(os_);  
 
   // Evaluate reference scalar at input
@@ -104,7 +104,7 @@ ValidateFunction<Real>::derivative_check( f_vector_t<Real> f_value,
   vector<Real> tmp(numVals);
   vector<vector<Real>> dCheck(numSteps_,tmp);
   
-  Teuchos::oblackholestream oldFormatState;
+  ROL::nullstream oldFormatState;
   oldFormatState.copyfmt(os_);  
   
   auto dc = workspace_->clone(c);
@@ -185,7 +185,7 @@ ValidateFunction<Real>::symmetry_check( f_dderiv_t<Real> A,
   symCheck[1] = uAv;
   symCheck[2] = abs(vAu-uAv);
 
-  Teuchos::oblackholestream oldFormatState;
+  ROL::nullstream oldFormatState;
   oldFormatState.copyfmt(os_);  
 
 if (printToStream_) {
@@ -249,7 +249,7 @@ ValidateFunction<Real>::adjoint_consistency_check( f_dderiv_t<Real> A,
 
   os_ << endl;
 
-  Teuchos::oblackholestream oldFormatState;
+  ROL::nullstream oldFormatState;
   oldFormatState.copyfmt(os_);  
 
   return adjCheck;
@@ -285,7 +285,7 @@ ValidateFunction<Real>::inverse_check( f_dderiv_t<Real> A,
   invCheck[2] = AiAv_norm;
   invCheck[3] = err;
 
-  Teuchos::oblackholestream oldFormatState;
+  ROL::nullstream oldFormatState;
   oldFormatState.copyfmt(os_);  
 
 if (printToStream_) {

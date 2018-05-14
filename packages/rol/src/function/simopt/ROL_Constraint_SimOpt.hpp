@@ -1233,7 +1233,7 @@ public:
     std::vector<std::vector<Real> > jvCheck(numSteps, tmp);
  
     // Save the format state of the original outStream.
-    Teuchos::oblackholestream oldFormatState;
+    ROL::nullstream oldFormatState;
     oldFormatState.copyfmt(outStream);
  
     // Compute constraint value at x.
@@ -1358,7 +1358,7 @@ public:
     std::vector<std::vector<Real> > jvCheck(numSteps, tmp);
  
     // Save the format state of the original outStream.
-    Teuchos::oblackholestream oldFormatState;
+    ROL::nullstream oldFormatState;
     oldFormatState.copyfmt(outStream);
  
     // Compute constraint value at x.
@@ -1487,7 +1487,7 @@ public:
     ROL::Ptr<Vector<Real> > unew = u.clone();
   
     // Save the format state of the original outStream.
-    Teuchos::oblackholestream oldFormatState;
+    ROL::nullstream oldFormatState;
     oldFormatState.copyfmt(outStream);
   
     // Apply adjoint Jacobian to p.
@@ -1613,7 +1613,7 @@ public:
     ROL::Ptr<Vector<Real> > znew = z.clone();
   
     // Save the format state of the original outStream.
-    Teuchos::oblackholestream oldFormatState;
+    ROL::nullstream oldFormatState;
     oldFormatState.copyfmt(outStream);
   
     // Apply adjoint Jacobian to p.
@@ -1737,7 +1737,7 @@ public:
     ROL::Ptr<Vector<Real> > unew = u.clone();
   
     // Save the format state of the original outStream.
-    Teuchos::oblackholestream oldFormatState;
+    ROL::nullstream oldFormatState;
     oldFormatState.copyfmt(outStream);
   
     // Apply adjoint Jacobian to p.
@@ -1857,7 +1857,7 @@ public:
     ROL::Ptr<Vector<Real> > znew = z.clone();
   
     // Save the format state of the original outStream.
-    Teuchos::oblackholestream oldFormatState;
+    ROL::nullstream oldFormatState;
     oldFormatState.copyfmt(outStream);
   
     // Apply adjoint Jacobian to p.

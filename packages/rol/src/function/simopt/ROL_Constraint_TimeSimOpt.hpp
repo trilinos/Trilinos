@@ -640,7 +640,7 @@ public:
     std::vector<std::vector<Real> > jvCheck(numSteps, tmp);
  
     // Save the format state of the original outStream.
-    Teuchos::oblackholestream oldFormatState;
+    ROL::nullstream oldFormatState;
     oldFormatState.copyfmt(outStream);
  
     // Compute constraint value at x.

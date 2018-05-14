@@ -52,7 +52,7 @@
 #include "ROL_Elementwise_Function.hpp"
 
 #include "ROL_Ptr.hpp"
-#include "Teuchos_oblackholestream.hpp"
+#include "ROL_Stream.hpp"
 
 /** @ingroup la_group
     \class ROL::Vector
@@ -301,7 +301,7 @@ public:
     int width =  94;
     std::vector<Real> vCheck;
 
-    Teuchos::oblackholestream bhs; // outputs nothing
+    ROL::nullstream bhs; // outputs nothing
 
     ROL::Ptr<std::ostream> pStream;
     if (printToStream) {
@@ -311,7 +311,7 @@ public:
     }
 
     // Save the format state of the original pStream.
-    Teuchos::oblackholestream oldFormatState, headerFormatState;
+    ROL::nullstream oldFormatState, headerFormatState;
     oldFormatState.copyfmt(*pStream);
 
     ROL::Ptr<Vector> v    = this->clone();
