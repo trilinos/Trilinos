@@ -67,7 +67,6 @@ StackedTimer::merge(Teuchos::RCP<const Teuchos::Comm<int> > comm){
 
 void
 StackedTimer::collectRemoteData(Teuchos::RCP<const Teuchos::Comm<int> > comm, const OutputOptions &options) {
-  int comm_size = size(*comm);
   int comm_rank = rank(*comm);
 
   // allocate everything
@@ -84,7 +83,7 @@ StackedTimer::collectRemoteData(Teuchos::RCP<const Teuchos::Comm<int> > comm, co
   }
 
 
-  if (options.output_histogram) {
+  if (options.output_histogram && comm_rank == 0 ) {
     hist_.resize(options.num_histogram);
     for (int i=0;i<options.num_histogram; ++i)
       hist_[i].resize(num_names);
@@ -165,7 +164,7 @@ std::pair<std::string, std::string> getPrefix(std::string &name) {
 double
 StackedTimer::printLevel (std::string prefix, int print_level, std::ostream &os, std::vector<bool> &printed, double parent_time, const OutputOptions &options) {
   double total_time = 0.0;
-  std::size_t num_entries = -1;
+
   for (int i=0; i<flat_names_.size(); ++i ) {
     if (printed[i])
       continue;
