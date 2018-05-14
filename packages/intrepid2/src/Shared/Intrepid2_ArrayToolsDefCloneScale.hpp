@@ -76,13 +76,13 @@ namespace Intrepid2 {
                  const ordinal_type pt) const {
         switch (valRank) {
         case 0: {
-          _output(cl, pt) = _input(pt);
+          _output.access(cl, pt) = _input.access(pt);
           break;
         }
         case 1: {
           const ordinal_type iend = _output.extent(2);
           for (ordinal_type i=0;i<iend;++i)
-            _output(cl, pt, i) = _input(pt, i);
+            _output.access(cl, pt, i) = _input.access(pt, i);
           break;
         }
         case 2: {
@@ -91,7 +91,7 @@ namespace Intrepid2 {
             jend = _output.extent(3);
           for (ordinal_type i=0;i<iend;++i)
             for (ordinal_type j=0;j<jend;++j)
-              _output(cl, pt, i, j) = _input(pt, i, j);
+              _output.access(cl, pt, i, j) = _input.access(pt, i, j);
           break;
         }
         }
@@ -105,13 +105,13 @@ namespace Intrepid2 {
                  const ordinal_type pt) const {
         switch (valRank) {
         case 0: {
-          _output(cl, bf, pt) = _input(bf, pt);
+          _output.access(cl, bf, pt) = _input.access(bf, pt);
           break;
         }
         case 1: {
           const ordinal_type iend = _output.extent(3);
           for (ordinal_type i=0;i<iend;++i)
-            _output(cl, bf, pt, i) = _input(bf, pt, i);
+            _output.access(cl, bf, pt, i) = _input.access(bf, pt, i);
           break;
         }
         case 2: {
@@ -120,7 +120,7 @@ namespace Intrepid2 {
             jend = _output.extent(4);
           for (ordinal_type i=0;i<iend;++i)
             for (ordinal_type j=0;j<jend;++j)
-              _output(cl, bf, pt, i, j) = _input(bf, pt, i, j);
+              _output.access(cl, bf, pt, i, j) = _input.access(bf, pt, i, j);
           break;
         }
         }

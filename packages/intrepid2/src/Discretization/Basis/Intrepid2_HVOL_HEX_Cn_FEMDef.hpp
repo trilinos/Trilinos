@@ -107,7 +107,7 @@ namespace Intrepid2 {
           for (ordinal_type j=0;j<cardLine;++j) // y
             for (ordinal_type i=0;i<cardLine;++i,++idx)  // x
               for (ordinal_type l=0;l<npts;++l)
-                output(idx,l) = output_x(i,l)*output_y(j,l)*output_z(k,l);
+                output.access(idx,l) = output_x.access(i,l)*output_y.access(j,l)*output_z.access(k,l);
         break;
       }        
       case OPERATOR_GRAD:
@@ -177,7 +177,7 @@ namespace Intrepid2 {
                 for (ordinal_type j=0;j<cardLine;++j) // y
                   for (ordinal_type i=0;i<cardLine;++i,++idx)  // x
                     for (ordinal_type l=0;l<npts;++l)
-                      output(idx,l,d) = output_x(i,l,0)*output_y(j,l,0)*output_z(k,l,0);
+                      output.access(idx,l,d) = output_x.access(i,l,0)*output_y.access(j,l,0)*output_z.access(k,l,0);
               ++d;
             }
           }

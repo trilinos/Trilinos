@@ -92,7 +92,7 @@ namespace Intrepid2 {
           for (ordinal_type k=0;k<kend;++k)
             for (ordinal_type l=0;l<lend;++l)
               for (ordinal_type m=0;m<mend;++m)
-                norm += inVec(i,j,k,l,m)*inVec(i,j,k,l,m);
+                norm += inVec.access(i,j,k,l,m)*inVec.access(i,j,k,l,m);
       norm = sqrt(norm);
       break;
     }
@@ -102,7 +102,7 @@ namespace Intrepid2 {
           for (ordinal_type k=0;k<kend;++k)
             for (ordinal_type l=0;l<lend;++l)
               for (ordinal_type m=0;m<mend;++m) {
-                const value_type current = Util<value_type>::abs(inVec(i,j,k,l,m));
+                const value_type current = Util<value_type>::abs(inVec.access(i,j,k,l,m));
                 norm = (norm < current ? current : norm);
               }
       break;
@@ -113,7 +113,7 @@ namespace Intrepid2 {
           for (ordinal_type k=0;k<kend;++k)
             for (ordinal_type l=0;l<lend;++l)
               for (ordinal_type m=0;m<mend;++m)
-                norm += Util<value_type>::abs(inVec(i,j,k,l,m));
+                norm += Util<value_type>::abs(inVec.access(i,j,k,l,m));
       break;
     }
     default: {
@@ -243,7 +243,7 @@ namespace Intrepid2 {
           for (ordinal_type k=0;k<kend;++k)
             for (ordinal_type l=0;l<lend;++l)
               for (ordinal_type m=0;m<mend;++m)
-                _output(i,j,k,l,m) = get_scalar_value(_input(i,j,k,l,m));
+                _output.access(i,j,k,l,m) = get_scalar_value(_input.access(i,j,k,l,m));
       }
     };
   }
@@ -313,7 +313,7 @@ namespace Intrepid2 {
         for (ordinal_type i=0;i<iend;++i)
           for (ordinal_type j=0;j<jend;++j)
             for (ordinal_type k=0;k<kend;++k)
-              out(i,j,k) = _input(i,j,k);
+              out.access(i,j,k) = _input.access(i,j,k);
       }
     };
   }
@@ -392,7 +392,7 @@ namespace Intrepid2 {
           for (ordinal_type k=0;k<kend;++k)
             for (ordinal_type l=0;l<lend;++l)
               for (ordinal_type m=0;m<mend;++m)
-                _absArray(i,j,k,l,m) = Util<value_type>::abs(_inArray(i,j,k,l,m));
+                _absArray.access(i,j,k,l,m) = Util<value_type>::abs(_inArray.access(i,j,k,l,m));
       }
     };
   }
@@ -860,7 +860,7 @@ namespace Intrepid2 {
           for (ordinal_type k=0;k<kend;++k)
             for (ordinal_type l=0;l<lend;++l)
               for (ordinal_type m=0;m<mend;++m)
-                _sumArray(i,j,k,l,m) = _inArray1(i,j,k,l,m) + _inArray2(i,j,k,l,m);
+                _sumArray.access(i,j,k,l,m) = _inArray1.access(i,j,k,l,m) + _inArray2.access(i,j,k,l,m);
       }
     };
   }
@@ -953,7 +953,7 @@ namespace Intrepid2 {
           for (ordinal_type k=0;k<kend;++k)
             for (ordinal_type l=0;l<lend;++l)
               for (ordinal_type m=0;m<mend;++m)
-                _diffArray(i,j,k,l,m) = _inArray1(i,j,k,l,m) - _inArray2(i,j,k,l,m);
+                _diffArray.access(i,j,k,l,m) = _inArray1.access(i,j,k,l,m) - _inArray2.access(i,j,k,l,m);
       }
     };
   }
@@ -1045,7 +1045,7 @@ namespace Intrepid2 {
           for (ordinal_type k=0;k<kend;++k)
             for (ordinal_type l=0;l<lend;++l)
               for (ordinal_type m=0;m<mend;++m)
-                _scaledArray(i,j,k,l,m) = _alpha*_inArray(i,j,k,l,m);
+                _scaledArray.access(i,j,k,l,m) = _alpha*_inArray.access(i,j,k,l,m);
       }
     };
   }

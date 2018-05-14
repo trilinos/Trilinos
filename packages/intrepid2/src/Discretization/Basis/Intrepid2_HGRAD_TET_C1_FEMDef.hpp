@@ -70,29 +70,29 @@ namespace Intrepid2 {
         const auto z = input(2);
 
         // output is a rank-1 array with dimensions (basisCardinality_)
-        output(0) = 1.0 - x - y -z;
-        output(1) = x;
-        output(2) = y;
-        output(3) = z;
+        output.access(0) = 1.0 - x - y -z;
+        output.access(1) = x;
+        output.access(2) = y;
+        output.access(3) = z;
         break;
       }
       case OPERATOR_GRAD: {
-        // output is a rank-2 array with dimensions (basisCardinality_,spaceDim)
-        output(0, 0) = -1.0;
-        output(0, 1) = -1.0;
-        output(0, 2) = -1.0;
+        // output.access is a rank-2 array with dimensions (basisCardinality_,spaceDim)
+        output.access(0, 0) = -1.0;
+        output.access(0, 1) = -1.0;
+        output.access(0, 2) = -1.0;
 
-        output(1, 0) =  1.0;
-        output(1, 1) =  0.0;
-        output(1, 2) =  0.0;
+        output.access(1, 0) =  1.0;
+        output.access(1, 1) =  0.0;
+        output.access(1, 2) =  0.0;
 
-        output(2, 0) =  0.0;
-        output(2, 1) =  1.0;
-        output(2, 2) =  0.0;
+        output.access(2, 0) =  0.0;
+        output.access(2, 1) =  1.0;
+        output.access(2, 2) =  0.0;
 
-        output(3, 0) =  0.0;
-        output(3, 1) =  0.0;
-        output(3, 2) =  1.0;
+        output.access(3, 0) =  0.0;
+        output.access(3, 1) =  0.0;
+        output.access(3, 2) =  1.0;
         break;
       }
       case OPERATOR_MAX: {
@@ -101,7 +101,7 @@ namespace Intrepid2 {
 
         for (ordinal_type j=0;j<jend;++j)
           for (ordinal_type i=0;i<iend;++i)
-            output(i, j) = 0.0;
+            output.access(i, j) = 0.0;
         break;
       }
       default: {

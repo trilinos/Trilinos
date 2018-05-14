@@ -107,8 +107,8 @@ namespace Intrepid2 {
           for (ordinal_type j=0;j<cardLine;++j) // y
             for (ordinal_type i=0;i<cardBubble;++i,++idx) // x
               for (ordinal_type k=0;k<npts;++k) {
-                output(idx,k,0) = 0.0;
-                output(idx,k,1) = output_x(i,k)*output_y(j,k);
+                output.access(idx,k,0) = 0.0;
+                output.access(idx,k,1) = output_x.access(i,k)*output_y.access(j,k);
               }
         }
         {
@@ -124,8 +124,8 @@ namespace Intrepid2 {
           for (ordinal_type j=0;j<cardBubble;++j) // y
             for (ordinal_type i=0;i<cardLine;++i,++idx) // x
               for (ordinal_type k=0;k<npts;++k) {
-                output(idx,k,0) = output_x(i,k)*output_y(j,k);
-                output(idx,k,1) = 0.0;
+                output.access(idx,k,0) = output_x.access(i,k)*output_y.access(j,k);
+                output.access(idx,k,1) = 0.0;
               }
         }
         break;
@@ -149,7 +149,7 @@ namespace Intrepid2 {
           for (ordinal_type j=0;j<cardLine;++j) // y
             for (ordinal_type i=0;i<cardBubble;++i,++idx) // x
               for (ordinal_type k=0;k<npts;++k)
-                output(idx,k) = output_x(i,k)*output_y(j,k,0);
+                output.access(idx,k) = output_x.access(i,k)*output_y.access(j,k,0);
         }
         { // y - component
           viewType workLine(Kokkos::view_wrap(ptr0, vcprop), cardLine, npts);
@@ -168,7 +168,7 @@ namespace Intrepid2 {
           for (ordinal_type j=0;j<cardBubble;++j) // y
             for (ordinal_type i=0;i<cardLine;++i,++idx) // x
               for (ordinal_type k=0;k<npts;++k)
-                output(idx,k) = output_x(i,k,0)*output_y(j,k);
+                output.access(idx,k) = output_x.access(i,k,0)*output_y.access(j,k);
         }
         break;
       }

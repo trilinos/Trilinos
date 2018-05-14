@@ -101,9 +101,9 @@ namespace Intrepid2 {
         for (ordinal_type i=0;i<card;++i)
           for (ordinal_type j=0;j<npts;++j)
             for (ordinal_type d=0;d<spaceDim;++d) {
-              output(i,j,d) = 0.0;
+              output.access(i,j,d) = 0.0;
               for (ordinal_type k=0;k<cardPn;++k)
-                output(i,j,d) += coeffs(k+d*cardPn,i) * phis(k,j);
+                output.access(i,j,d) += coeffs(k+d*cardPn,i) * phis(k,j);
             }
         break;
       }
@@ -117,9 +117,9 @@ namespace Intrepid2 {
 
         for (ordinal_type i=0;i<card;++i)
           for (ordinal_type j=0;j<npts;++j) {
-            output(i,j) = 0.0;
+            output.access(i,j) = 0.0;
             for (ordinal_type k=0; k<cardPn; ++k)
-              output(i,j) += - coeffs(k,i)*phis(k,j,1)              // - dy of x component
+              output.access(i,j) += - coeffs(k,i)*phis(k,j,1)              // - dy of x component
                 + coeffs(k+cardPn,i)*phis(k,j,0);      // dx of y component
           }
         break;

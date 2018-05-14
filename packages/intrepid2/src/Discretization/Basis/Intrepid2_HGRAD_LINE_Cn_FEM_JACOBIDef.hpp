@@ -113,7 +113,7 @@ namespace Intrepid2 {
           for (ordinal_type p=0;p<pend;++p)
             for (ordinal_type i=0;i<iend;++i)
               for (ordinal_type j=0;j<jend;++j)
-                output(p, i, j) = 0.0;
+                output.access(p, i, j) = 0.0;
         }
         {
           const Kokkos::View<typename inputViewType::value_type*,

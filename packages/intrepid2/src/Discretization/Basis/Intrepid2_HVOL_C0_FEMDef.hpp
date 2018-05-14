@@ -62,7 +62,7 @@ namespace Intrepid2 {
                const inputViewType input ) {
       switch (opType) {
       case OPERATOR_VALUE : {
-        output(0) = 1.0;
+        output.access(0) = 1.0;
         break;
       }
       case OPERATOR_MAX : {
@@ -71,7 +71,7 @@ namespace Intrepid2 {
 
         for (ordinal_type j=0;j<jend;++j)
           for (ordinal_type i=0;i<iend;++i)
-            output(i, j) = 0.0;
+            output.access(i, j) = 0.0;
         break;
       }
       default: {

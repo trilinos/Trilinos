@@ -98,9 +98,9 @@ getValues(       outputViewType output,
 
     for (ordinal_type i=0;i<card;++i)
       for (ordinal_type j=0;j<npts;++j) {
-        output(i,j) = 0.0;
+        output.access(i,j) = 0.0;
         for (ordinal_type k=0;k<card;++k)
-          output(i,j) += vinv(k,i)*phis(k,j);
+          output.access(i,j) += vinv(k,i)*phis.access(k,j);
       }
     break;
   }
@@ -115,9 +115,9 @@ getValues(       outputViewType output,
     for (ordinal_type i=0;i<card;++i)
       for (ordinal_type j=0;j<npts;++j)
         for (ordinal_type k=0;k<spaceDim;++k) {
-          output(i,j,k) = 0.0;
+          output.access(i,j,k) = 0.0;
           for (ordinal_type l=0;l<card;++l)
-            output(i,j,k) += vinv(l,i)*phis(l,j,k);
+            output.access(i,j,k) += vinv(l,i)*phis.access(l,j,k);
         }
     break;
   }
@@ -140,9 +140,9 @@ getValues(       outputViewType output,
     for (ordinal_type i=0;i<card;++i)
       for (ordinal_type j=0;j<npts;++j)
         for (ordinal_type k=0;k<dkcard;++k) {
-          output(i,j,k) = 0.0;
+          output.access(i,j,k) = 0.0;
           for (ordinal_type l=0;l<card;++l)
-            output(i,j,k) += vinv(l,i)*phis(l,j,k);
+            output.access(i,j,k) += vinv(l,i)*phis.access(l,j,k);
         }
     break;
   }

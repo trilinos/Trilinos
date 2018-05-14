@@ -101,7 +101,7 @@ namespace Intrepid2 {
         for (ordinal_type j=0;j<cardLine;++j) // y
           for (ordinal_type i=0;i<cardLine;++i,++idx)  // x
             for (ordinal_type k=0;k<npts;++k)
-              output(idx,k) = output_x(i,k)*output_y(j,k);
+              output.access(idx,k) = output_x.access(i,k)*output_y.access(j,k);
         break;
       }
       case OPERATOR_CURL: {
@@ -140,7 +140,7 @@ namespace Intrepid2 {
           for (ordinal_type j=0;j<cardLine;++j) // y
             for (ordinal_type i=0;i<cardLine;++i,++idx)  // x
               for (ordinal_type k=0;k<npts;++k)
-                output(idx,k,l) = s*output_x(i,k,0)*output_y(j,k,0);
+                output.access(idx,k,l) = s*output_x.access(i,k,0)*output_y.access(j,k,0);
         }
         break;
       }
@@ -191,7 +191,7 @@ namespace Intrepid2 {
           for (ordinal_type j=0;j<cardLine;++j) // y
             for (ordinal_type i=0;i<cardLine;++i,++idx)  // x
               for (ordinal_type k=0;k<npts;++k)
-                output(idx,k,l) = output_x(i,k,0)*output_y(j,k,0);
+                output.access(idx,k,l) = output_x.access(i,k,0)*output_y.access(j,k,0);
         }
         break;
       }
