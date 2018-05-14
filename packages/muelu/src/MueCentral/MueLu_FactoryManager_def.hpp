@@ -57,7 +57,7 @@
 #include "MueLu_ConstraintFactory.hpp"
 #include "MueLu_DirectSolver.hpp"
 #include "MueLu_LineDetectionFactory.hpp"
-#include "MueLu_MultiVectorTransferFactory.hpp"
+// #include "MueLu_MultiVectorTransferFactory.hpp"
 #include "MueLu_NoFactory.hpp"
 #include "MueLu_NullspaceFactory.hpp"
 #include "MueLu_PatternFactory.hpp"
@@ -72,8 +72,26 @@
 #include "MueLu_UncoupledAggregationFactory.hpp"
 #include "MueLu_ZoltanInterface.hpp"
 
+#ifdef HAVE_MUELU_KOKKOS_REFACTOR
+#include "MueLu_CoalesceDropFactory_kokkos.hpp"
+#include "MueLu_CoarseMapFactory_kokkos.hpp"
+#include "MueLu_NullspaceFactory_kokkos.hpp"
+#include "MueLu_SaPFactory_kokkos.hpp"
+#include "MueLu_TentativePFactory_kokkos.hpp"
+#include "MueLu_UncoupledAggregationFactory_kokkos.hpp"
+#endif
+
 
 namespace MueLu {
+
+#ifndef HAVE_MUELU_KOKKOS_REFACTOR
+#define MUELU_KOKKOS_FACTORY(varName, oldFactory, newFactory)   \
+  SetAndReturnDefaultFactory(varName, rcp(new oldFactory()));
+#else
+#define MUELU_KOKKOS_FACTORY(varName, oldFactory, newFactory)   \
+  (!useKokkos) ? SetAndReturnDefaultFactory(varName, rcp(new oldFactory())) : \
+                 SetAndReturnDefaultFactory(varName, rcp(new newFactory()));
+#endif
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void FactoryManager<Scalar, LocalOrdinal, GlobalOrdinal, Node>::SetFactory(const std::string& varName, const RCP<const FactoryBase>& factory) {
@@ -109,20 +127,39 @@ namespace MueLu {
       return defaultFactoryTable_.find(varName)->second;
 
     } else {
+      bool useKokkos;
+#if defined(HAVE_MUELU_KOKKOS_REFACTOR) && defined(HAVE_MUELU_KOKKOS_REFACTOR_USE_BY_DEFAULT)
+      useKokkos = true;
+#else
+      useKokkos = false;
+#endif
+
       // No factory was created for this name, but we may know which one to create
       if (varName == "A")                               return SetAndReturnDefaultFactory(varName, rcp(new RAPFactory()));
       if (varName == "RAP Pattern")                     return GetFactory("A");
       if (varName == "AP Pattern")                      return GetFactory("A");
-      if (varName == "Ptent")                           return SetAndReturnDefaultFactory(varName, rcp(new TentativePFactory()));
+      if (varName == "Ptent")                           return MUELU_KOKKOS_FACTORY(varName, TentativePFactory, TentativePFactory_kokkos);
       if (varName == "P") {
         // GetFactory("Ptent"): we need to use the same factory instance for both "P" and "Nullspace"
-        RCP<Factory> factory = rcp(new SaPFactory());
+        RCP<Factory> factory;
+#ifdef HAVE_MUELU_KOKKOS_REFACTOR
+        if (useKokkos)
+          factory = rcp(new SaPFactory_kokkos());
+        else
+#endif
+          factory = rcp(new SaPFactory());
         factory->SetFactory("P", GetFactory("Ptent"));
         return SetAndReturnDefaultFactory(varName, factory);
       }
       if (varName == "Nullspace") {
         // GetFactory("Ptent"): we need to use the same factory instance for both "P" and "Nullspace"
-        RCP<Factory> factory = rcp(new NullspaceFactory());
+        RCP<Factory> factory;
+#ifdef HAVE_MUELU_KOKKOS_REFACTOR
+        if (useKokkos)
+          factory = rcp(new NullspaceFactory_kokkos());
+        else
+#endif
+          factory = rcp(new NullspaceFactory());
         factory->SetFactory("Nullspace", GetFactory("Ptent"));
         return SetAndReturnDefaultFactory(varName, factory);
       }
@@ -147,10 +184,10 @@ namespace MueLu {
 #endif
       }
 
-      if (varName == "Graph")                           return SetAndReturnDefaultFactory(varName, rcp(new CoalesceDropFactory()));
+      if (varName == "Graph")                           return MUELU_KOKKOS_FACTORY(varName, CoalesceDropFactory, CoalesceDropFactory_kokkos);
       if (varName == "UnAmalgamationInfo")              return SetAndReturnDefaultFactory(varName, rcp(new AmalgamationFactory())); //GetFactory("Graph"));
-      if (varName == "Aggregates")                      return SetAndReturnDefaultFactory(varName, rcp(new UncoupledAggregationFactory()));
-      if (varName == "CoarseMap")                       return SetAndReturnDefaultFactory(varName, rcp(new CoarseMapFactory()));
+      if (varName == "Aggregates")                      return MUELU_KOKKOS_FACTORY(varName, UncoupledAggregationFactory, UncoupledAggregationFactory_kokkos);
+      if (varName == "CoarseMap")                       return MUELU_KOKKOS_FACTORY(varName, CoarseMapFactory, CoarseMapFactory_kokkos);
       if (varName == "DofsPerNode")                     return GetFactory("Graph");
       if (varName == "Filtering")                       return GetFactory("Graph");
       if (varName == "LineDetection_VertLineIds")       return SetAndReturnDefaultFactory(varName, rcp(new LineDetectionFactory()));
