@@ -306,6 +306,14 @@ void Relaxation<MatrixType>::setParametersImpl (Teuchos::ParameterList& pl)
   using Teuchos::RCP;
   typedef scalar_type ST; // just to make code below shorter
 
+  if (pl.isType<double>("relaxation: damping factor")) {
+    // Make sure that ST=complex can run with a damping factor that is
+    // a double.
+    ST df = pl.get<double>("relaxation: damping factor");
+    pl.remove("relaxation: damping factor");
+    pl.set("relaxation: damping factor",df);
+  }
+
   pl.validateParametersAndSetDefaults (* getValidParameters ());
 
   const Details::RelaxationType precType =
