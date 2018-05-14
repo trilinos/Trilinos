@@ -109,7 +109,7 @@ namespace Tpetra {
     //@{
     /// \brief Basic constuctor.
     // NOTE: A map AND an imported need to be arguments because in serial, the importer will be null
-    // This will default to impoter->getTargetMap() being the active MultiVector
+    // This will default to importer->getTargetMap() being the active MultiVector
     FEMultiVector(const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > & map,
                   const Teuchos::RCP<const Import<LocalOrdinal,GlobalOrdinal,Node> >& importer,
                   const size_t numVecs,
