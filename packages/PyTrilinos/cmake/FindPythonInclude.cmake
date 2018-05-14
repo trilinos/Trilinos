@@ -67,28 +67,36 @@ IF(PYTHON_EXECUTABLE)
     OUTPUT_STRIP_TRAILING_WHITESPACE
     )
 
-  # Check ${PYPREFIX}/include/${PYVERSION}
-  SET(CANDIDATE1 ${PYPREFIX}/include/${PYVERSION})
+  # Obtain the Python include path
+  EXECUTE_PROCESS(COMMAND
+    ${PYTHON_EXECUTABLE} -c
+    "import sysconfig; print(sysconfig.get_paths()['include'])"
+    OUTPUT_VARIABLE PYTHON_INCLUDE_PATH
+    OUTPUT_STRIP_TRAILING_WHITESPACE
+    )
 
-  # Verify theat Python.h exists within the candidate path
-  IF(EXISTS "${CANDIDATE1}")
-    IF(EXISTS ${CANDIDATE1}/Python.h)
-      SET(PYTHON_INCLUDE_FOUND TRUE)
-      SET(PYTHON_INCLUDE_PATH ${CANDIDATE1})
-    ENDIF(EXISTS ${CANDIDATE1}/Python.h)
-  ELSE(EXISTS "${CANDIDATE1}")
+  # # Check ${PYPREFIX}/include/${PYVERSION}
+  # SET(CANDIDATE1 ${PYPREFIX}/include/${PYVERSION})
 
-    # Check ${PYPREFIX}/include/${PYVERSION}
-    SET(CANDIDATE2 ${PYPREFIX}/Headers)
+  # # Verify theat Python.h exists within the candidate path
+  # IF(EXISTS "${CANDIDATE1}")
+  #   IF(EXISTS ${CANDIDATE1}/Python.h)
+  #     SET(PYTHON_INCLUDE_FOUND TRUE)
+  #     SET(PYTHON_INCLUDE_PATH ${CANDIDATE1})
+  #   ENDIF(EXISTS ${CANDIDATE1}/Python.h)
+  # ELSE(EXISTS "${CANDIDATE1}")
 
-    # Verify theat Python.h exists within the candidate path
-    IF(EXISTS "${CANDIDATE2}")
-      IF(EXISTS ${CANDIDATE2}/Python.h)
-        SET(PYTHON_INCLUDE_FOUND TRUE)
-        SET(PYTHON_INCLUDE_PATH ${CANDIDATE2})
-      ENDIF(EXISTS ${CANDIDATE2}/Python.h)
-    ENDIF(EXISTS "${CANDIDATE2}")
-  ENDIF(EXISTS "${CANDIDATE1}")
+  #   # Check ${PYPREFIX}/include/${PYVERSION}
+  #   SET(CANDIDATE2 ${PYPREFIX}/Headers)
+
+  #   # Verify theat Python.h exists within the candidate path
+  #   IF(EXISTS "${CANDIDATE2}")
+  #     IF(EXISTS ${CANDIDATE2}/Python.h)
+  #       SET(PYTHON_INCLUDE_FOUND TRUE)
+  #       SET(PYTHON_INCLUDE_PATH ${CANDIDATE2})
+  #     ENDIF(EXISTS ${CANDIDATE2}/Python.h)
+  #   ENDIF(EXISTS "${CANDIDATE2}")
+  # ENDIF(EXISTS "${CANDIDATE1}")
 
   MESSAGE(STATUS "PYTHON_INCLUDE_PATH is ${PYTHON_INCLUDE_PATH}")
 
