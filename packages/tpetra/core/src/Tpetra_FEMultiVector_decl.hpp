@@ -126,20 +126,7 @@ namespace Tpetra {
 
     //! The type of the base class of this class.
     typedef MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> base_type;
-
-   public:
-    /// \brief Return a deep copy of this MultiVector, with a
-    ///   different Node type.
-    ///
-    /// \param node2 [in/out] The new Node type.
-    ///
-    /// \warning We prefer that you use Tpetra::deep_copy (see below)
-    ///   rather than this method.  This method will go away at some
-    ///   point.
-    template <class Node2>
-    Teuchos::RCP<FEMultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node2> >
-    clone (const Teuchos::RCP<Node2>& node2) const;
-
+   
     //! Destructor (virtual for memory safety of derived classes).
     virtual ~FEMultiVector () {delete inactiveMultiVector_;}
 
