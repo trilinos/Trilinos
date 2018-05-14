@@ -92,7 +92,7 @@ void FEMultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::replaceMap (const
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void FEMultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::doTargetToSource(const CombineMode CM) {
   if(!importer_.is_null() && activeMultiVector_ == FE_ACTIVE_TARGET) {
-    this->doExport(*inactiveMultiVector_,*importer_,CM);
+    inactiveMultiVector_->doExport(*this,*importer_,CM);
   }
 }//end doTargetToSource
 

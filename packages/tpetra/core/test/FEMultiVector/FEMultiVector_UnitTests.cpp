@@ -236,6 +236,7 @@ namespace {
         Vcolumn.getDataNonConst(0)[i] = domainMap->getGlobalElement(i);
       Vdomain.doExport(Vcolumn,*importer,Tpetra::ADD);
 
+
       Vfe.beginFill();
       Vfe.putScalar(ZERO);
       for(size_t i=0; i<Ndomain; i++)
@@ -253,11 +254,11 @@ namespace {
       Vfe.putScalar(ONE);
       Vfe.endFill();
       vector_check(Ncolumn,Vfe,Vdomain);
-
     } catch (std::exception& e) {
       err << "Proc " << myRank << ": " << e.what () << std::endl;
       lclErr = 1;
     }
+
 
     int gblErr = 0;
     Teuchos::reduceAll<int, int> (*comm, Teuchos::REDUCE_MAX, lclErr, Teuchos::outArg (gblErr));
