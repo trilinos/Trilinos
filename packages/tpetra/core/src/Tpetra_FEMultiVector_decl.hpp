@@ -107,8 +107,15 @@ namespace Tpetra {
     //@}
     //! @name Constructors and destructor
     //@{
-    /// \brief Basic constuctor.
-    // NOTE: A map AND an imported need to be arguments because in serial, the importer will be null
+    /// \brief Basic constructor.
+    /// \param map [in] Map describing the distribution of rows of the
+    ///   resulting MultiVector.  If the importer is not null, this must be the same as importer->getSourceMap()
+    /// \param importer [in] Import describing the distribution of rows of the the multivector in two separate modes.
+    ///   In the case of finite element assembly, importer->getSourceMap() should correspond to the uniquely owned entries in the domain map
+    ///   of the finite element problem.  importer->getTargetMap() should correspond to the overlapped entries needed for assembly.  The 
+    ///   cannonical way to get this importer is to take the Import object associated with the CrsGraph for your finite element matrix.
+    /// \param numVectors [in] Number of columns of the resulting MultiVector.
+    // NOTE: A map AND an importer need to be arguments because in serial, the importer will be null
     // This will default to importer->getTargetMap() being the active MultiVector
     FEMultiVector(const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > & map,
                   const Teuchos::RCP<const Import<LocalOrdinal,GlobalOrdinal,Node> >& importer,
@@ -123,7 +130,6 @@ namespace Tpetra {
    public:
     /// \brief Return a deep copy of this MultiVector, with a
     ///   different Node type.
-    // CMS - cloning to a *FEMultiVector* is OK, cloning to a MultiVector is not
     ///
     /// \param node2 [in/out] The new Node type.
     ///
