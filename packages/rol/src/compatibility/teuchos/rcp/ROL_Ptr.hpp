@@ -128,7 +128,7 @@ int getCount( const Ptr<T>& x ) {
 template<class T>
 inline
 bool is_nullPtr( const Ptr<T>& x ) {
-  return x == nullPtr;
+  return x.is_null();
 }
 
 template<typename T>
