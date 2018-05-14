@@ -105,9 +105,7 @@ int main(int argc, char *argv[]) {
     ROL::Ptr<ROL::Objective<RealT> > probj = ROL::makePtrFromRef(robj);
 
     // Get input parameter list.
-    std::string filename = "example_02.xml";
-    auto parlist = ROL::makePtr<ROL::ParameterList>()
-    Teuchos::updateParametersFromXmlFile( filename, parlist.ptr() );
+    auto parlist = ROL::getParametersFromXmlFile( "example_02.xml" );
 
     // Run optimization.
 

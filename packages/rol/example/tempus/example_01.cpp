@@ -91,8 +91,9 @@ int main(int argc, char *argv[]) {
     *outStream << "\nthyra vector norm = " << vecnorm << "\n";
 
     // Play with Tempus.
-    RCP<ROL::ParameterList> parList = Teuchos::getParametersFromXmlFile("example_01.xml");
-    RCP<ROL::ParameterList> tempusParList = sublist(parList, "Tempus", true);
+    RCP<Teuchos::ParameterList> parList = Teuchos::rcp( new Teuchos::ParameterList );
+    Teuchos::updateParametersFromXmlFile("example_01.xml", parList.ptr());
+    RCP<Teuchos::ParameterList> tempusParList = sublist(parList, "Tempus", true);
     RCP<SinCosModelEvaluator<RealT>> model = Teuchos::rcp(new SinCosModelEvaluator<RealT>());
 
     RCP<Tempus::IntegratorBasic<RealT> > integrator = Tempus::integratorBasic<RealT>(tempusParList, model);
