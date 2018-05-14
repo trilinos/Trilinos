@@ -13,7 +13,7 @@ SET_DEFAULT( ROL_ParameterList "Teuchos::ParameterList" )
 SET( DIR ${${PACKAGE_NAME}_SOURCE_DIR}/src/compatibility )
 
 # Override if specified
-IF( ${PACKAGE_NAME}_ENABLE_STD_SHARED_PTR ) 
+IF( ROL_Ptr STREQUAL "std::shared_ptr")
   SET_PROPERTY( GLOBAL PROPERTY PTR_IMPL "std::shared_ptr"       )
   SET_PROPERTY( GLOBAL PROPERTY PTR_DIR  "${DIR}/std/shared_ptr" )
 ELSE()
@@ -21,7 +21,7 @@ ELSE()
   SET_PROPERTY( GLOBAL PROPERTY PTR_DIR "${DIR}/teuchos/rcp" )
 ENDIF()
 
-IF( ${PACKAGE_NAME}_ENABLE_BOOST_PROPERTY_TREE ) 
+IF( ROL_ParameterList STREQUAL "boost::property_tree")
   SET_PROPERTY( GLOBAL PROPERTY PARAMETERLIST_IMPL "boost::property_tree"       )
   SET_PROPERTY( GLOBAL PROPERTY PARAMETERLIST_DIR  "${DIR}/boost/property_tree" )
 ELSE()
