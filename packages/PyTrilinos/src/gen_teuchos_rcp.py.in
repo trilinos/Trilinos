@@ -505,8 +505,15 @@ def main():
     print('"')
     print("%enddef")
     print("")
-    print('%module(package   = "PyTrilinos.Teuchos",')
-    print("        docstring = %teuchos_rcp_docstring) RCP")
+    print("%define %teuchos_import_code")
+    print('"')
+    print("from . import RCP")
+    print('"')
+    print("%enddef")
+    print("")
+    print('%module(package       = "PyTrilinos.Teuchos",')
+    print("        moduleinclude = %teuchos_import_code,")
+    print("        docstring     = %teuchos_rcp_docstring) RCP")
     print("")
 
     # Specify include files directly into the wrapper file
