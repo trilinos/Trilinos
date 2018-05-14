@@ -118,11 +118,12 @@ public:
   bool running() const { return running_;}
 
   struct TimeInfo {
-    TimeInfo():time(0.0), count(0), updates(0){}
-    TimeInfo(BaseTimer* t): time(t->accumulation_), count(t->count_started_), updates(t->count_updates_) {}
+    TimeInfo():time(0.0), count(0), updates(0), running(false){}
+    TimeInfo(BaseTimer* t): time(t->accumulation_), count(t->count_started_), updates(t->count_updates_), running(t->running()) {}
     double time;
     unsigned long count;
     unsigned long long updates;
+    bool running;
   };
 
 protected:
@@ -369,6 +370,11 @@ protected:
       */
      void report(std::ostream &os);
 
+     /**
+      * Return the time info for a given string
+      * @param name input string to search for
+      * @return Time data
+      */
      BaseTimer::TimeInfo findTimer(const std::string &name);
 
   protected:
@@ -448,6 +454,15 @@ public:
      else
        return timer_.accumulatedTimePerTimerCall(name);
    }
+
+  /**
+   * Return the time info for a given string
+   * @param name input string to search for
+   * @return Time data
+   */
+  BaseTimer::TimeInfo findTimer(const std::string &name){
+    return timer_.findTimer(name);
+  }
 
 
   void report(std::ostream &os) {
