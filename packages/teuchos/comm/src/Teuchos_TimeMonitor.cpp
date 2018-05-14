@@ -262,10 +262,8 @@ namespace Teuchos {
     if (!isRecursiveCall()) {
       counter().start(reset);
 #ifdef HAVE_TEUCHOS_ADD_TIME_MONITOR_TO_STACKED_TIMER
-#ifdef TEUCHOS_DEBUG
-      TEUCHOS_ASSERT(nonnull(stackedTimer_));
-#endif
-      stackedTimer_->start(counter().name());
+      if (nonnull(stackedTimer_))
+        stackedTimer_->start(counter().name());
 #endif
     }
   }
@@ -274,10 +272,8 @@ namespace Teuchos {
     if (!isRecursiveCall()) {
       counter().stop();
 #ifdef HAVE_TEUCHOS_ADD_TIME_MONITOR_TO_STACKED_TIMER
-#ifdef TEUCHOS_DEBUG
-      TEUCHOS_ASSERT(nonnull(stackedTimer_));
-#endif
-      stackedTimer_->stop(counter().name());
+      if (nonnull(stackedTimer_))
+        stackedTimer_->stop(counter().name());
 #endif
     }
   }
