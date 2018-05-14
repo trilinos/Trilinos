@@ -133,7 +133,7 @@ struct MultiplyKernel {
   void operator()( const team_handle& team ) const
   {
     const size_type i = team.league_rank()*team.team_size() + team.team_rank();
-    if (i < m_v1.dimension_0())
+    if (i < m_v1.extent(0))
       (*this)(i);
   }
 
@@ -142,7 +142,7 @@ struct MultiplyKernel {
                     const InputViewType2 v2,
                     const OutputViewType v3,
                     const bool update = false) {
-    const size_type nrow = v1.dimension_0();
+    const size_type nrow = v1.extent(0);
 
 #if defined (KOKKOS_HAVE_CUDA) && defined (SACADO_VIEW_CUDA_HIERARCHICAL)
     const size_type stride = Kokkos::ViewScalarStride<InputViewType1>::stride;
@@ -202,13 +202,13 @@ struct ScalarAssignKernel {
   void operator()( const team_handle& team ) const
   {
     const size_type i = team.league_rank()*team.team_size() + team.team_rank();
-    if (i < m_v.dimension_0())
+    if (i < m_v.extent(0))
       (*this)(i);
   }
 
   // Kernel launch
   static void apply(const ViewType& v, const ScalarType& s) {
-    const size_type nrow = v.dimension_0();
+    const size_type nrow = v.extent(0);
 
 #if defined (KOKKOS_HAVE_CUDA) && defined (SACADO_VIEW_CUDA_HIERARCHICAL)
     const bool use_team =
@@ -267,13 +267,13 @@ struct ValueAssignKernel {
   void operator()( const team_handle& team ) const
   {
     const size_type i = team.league_rank()*team.team_size() + team.team_rank();
-    if (i < m_v.dimension_0())
+    if (i < m_v.extent(0))
       (*this)(i);
   }
 
   // Kernel launch
   static void apply(const ViewType& v, const ValueType& s) {
-    const size_type nrow = v.dimension_0();
+    const size_type nrow = v.extent(0);
 
 #if defined (KOKKOS_HAVE_CUDA) && defined (SACADO_VIEW_CUDA_HIERARCHICAL)
     const bool use_team =
@@ -339,7 +339,7 @@ struct AssignRank2Rank1Kernel {
   void operator()( const team_handle& team ) const
   {
     const size_type i = team.league_rank()*team.team_size() + team.team_rank();
-    if (i < m_v1.dimension_0())
+    if (i < m_v1.extent(0))
       (*this)(i);
   }
 
@@ -347,7 +347,7 @@ struct AssignRank2Rank1Kernel {
   static void apply(const InputViewType v1,
                     const OutputViewType v2,
                     const size_type col) {
-    const size_type nrow = v1.dimension_0();
+    const size_type nrow = v1.extent(0);
 
 #if defined (KOKKOS_HAVE_CUDA) && defined (SACADO_VIEW_CUDA_HIERARCHICAL)
     const bool use_team =
@@ -968,7 +968,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(
   Kokkos::deep_copy(h_v2, v2);
 
   // Check dimensions are correct
-  TEUCHOS_TEST_EQUALITY(v2.dimension_0(), num_rows, out, success);
+  TEUCHOS_TEST_EQUALITY(v2.extent(0), num_rows, out, success);
   TEUCHOS_TEST_EQUALITY(Kokkos::dimension_scalar(v2), fad_size+1, out, success);
   TEUCHOS_TEST_EQUALITY(v2.stride_0(), v1.stride_0(), out, success);
   TEUCHOS_TEST_EQUALITY(v2.stride_1(), v1.stride_1(), out, success);
@@ -1007,8 +1007,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(
   Kokkos::deep_copy(h_v2, v2);
 
   // Check dimensions are correct
-  TEUCHOS_TEST_EQUALITY(v2.dimension_0(), num_rows, out, success);
-  TEUCHOS_TEST_EQUALITY(v2.dimension_1(), num_cols, out, success);
+  TEUCHOS_TEST_EQUALITY(v2.extent(0), num_rows, out, success);
+  TEUCHOS_TEST_EQUALITY(v2.extent(1), num_cols, out, success);
   TEUCHOS_TEST_EQUALITY(Kokkos::dimension_scalar(v2), fad_size+1, out, success);
   TEUCHOS_TEST_EQUALITY(v2.stride_0(), v1.stride_0(), out, success);
   TEUCHOS_TEST_EQUALITY(v2.stride_1(), v1.stride_1(), out, success);
@@ -1103,9 +1103,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(
   success = true;
   TEUCHOS_TEST_EQUALITY(Kokkos::dimension_scalar(s), fad_size+1, out, success);
   TEUCHOS_TEST_EQUALITY(Kokkos::dimension_scalar(h_s), fad_size+1, out, success);
-  TEUCHOS_TEST_EQUALITY(h_s.dimension_0(), num_rows, out, success);
-  TEUCHOS_TEST_EQUALITY(h_s.dimension_1(), 1, out, success);
-  TEUCHOS_TEST_EQUALITY(h_s.dimension_7(), 1, out, success);
+  TEUCHOS_TEST_EQUALITY(h_s.extent(0), num_rows, out, success);
+  TEUCHOS_TEST_EQUALITY(h_s.extent(1), 1, out, success);
+  TEUCHOS_TEST_EQUALITY(h_s.extent(7), 1, out, success);
 
   for (size_type i=0; i<num_rows; ++i) {
     FadType f = generate_fad<FadType>(num_rows, num_cols, fad_size, i, col);
@@ -1152,10 +1152,10 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(
   success = true;
   TEUCHOS_TEST_EQUALITY(Kokkos::dimension_scalar(s), fad_size+1, out, success);
   TEUCHOS_TEST_EQUALITY(Kokkos::dimension_scalar(h_s), fad_size+1, out, success);
-  TEUCHOS_TEST_EQUALITY(h_s.dimension_0(), num_cols, out, success);
-  TEUCHOS_TEST_EQUALITY(h_s.dimension_1(), num_planes, out, success);
-  TEUCHOS_TEST_EQUALITY(h_s.dimension_2(), 1, out, success);
-  TEUCHOS_TEST_EQUALITY(h_s.dimension_7(), 1, out, success);
+  TEUCHOS_TEST_EQUALITY(h_s.extent(0), num_cols, out, success);
+  TEUCHOS_TEST_EQUALITY(h_s.extent(1), num_planes, out, success);
+  TEUCHOS_TEST_EQUALITY(h_s.extent(2), 1, out, success);
+  TEUCHOS_TEST_EQUALITY(h_s.extent(7), 1, out, success);
 
   for (size_type j=0; j<num_cols; ++j) {
     FadType f = generate_fad<FadType>(num_rows, num_cols, fad_size, row, j);
@@ -1347,7 +1347,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(
   Kokkos::deep_copy(v, h_v);
 
   // Create unmanaged view
-  FadViewType v_fad(v.ptr_on_device(), num_rows, num_cols, fad_size+1);
+  FadViewType v_fad(v.data(), num_rows, num_cols, fad_size+1);
 
   // Copy back -- can't use create_mirror_view() because v_fad is unmanaged
   fad_host_view_type h_v_fad("host_view_fad", num_rows, num_cols, fad_size+1);
@@ -1411,7 +1411,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(
   Kokkos::deep_copy(v, h_v);
 
   // Create unmanaged view
-  FadViewType v_fad( v.ptr_on_device(), num_rows, num_cols, fad_size+1);
+  FadViewType v_fad( v.data(), num_rows, num_cols, fad_size+1);
 
   // Copy back -- can't use create_mirror_view() because v_fad is unmanaged
   fad_host_view_type h_v_fad("host_view_fad", num_rows, num_cols, fad_size+1);
@@ -1479,7 +1479,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(
 
   // Create unmanaged view
   ConstFadViewType v_fad(
-    v_const.ptr_on_device(), num_rows, num_cols, fad_size+1);
+    v_const.data(), num_rows, num_cols, fad_size+1);
 
   // Copy back -- can't use create_mirror_view() because v_fad is unmanaged
   fad_host_view_type h_v_fad("host_view_fad", num_rows, num_cols, fad_size+1);
@@ -1545,7 +1545,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(
   ConstViewType v_const = v;
 
   // Create unmanaged view
-  ConstFadViewType v_fad(v_const.ptr_on_device(), num_rows, num_cols, fad_size+1);
+  ConstFadViewType v_fad(v_const.data(), num_rows, num_cols, fad_size+1);
 
   // Copy back -- can't use create_mirror_view() because v_fad is unmanaged
   fad_host_view_type h_v_fad("host_view_fad", num_rows, num_cols, fad_size+1);
@@ -1689,8 +1689,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(
 
   // Check
   success = true;
-  TEUCHOS_TEST_EQUALITY(h_vs.dimension_0(), num_rows, out, success);
-  TEUCHOS_TEST_EQUALITY(h_vs.dimension_1(), num_cols, out, success);
+  TEUCHOS_TEST_EQUALITY(h_vs.extent(0), num_rows, out, success);
+  TEUCHOS_TEST_EQUALITY(h_vs.extent(1), num_cols, out, success);
   TEUCHOS_TEST_EQUALITY(Kokkos::dimension_scalar(h_vs), fad_size+1, out, success);
   for (size_type i=0; i<num_rows; ++i) {
     for (size_type j=0; j<num_cols; ++j) {

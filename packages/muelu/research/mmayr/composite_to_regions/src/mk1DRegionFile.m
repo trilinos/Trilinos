@@ -6,8 +6,11 @@
 % being the number of nodes in region 1...N. The number of regions is given by
 % this vector.
 %
-% Note: To allow for a coarsening rate of 3 with coarse nodes ending up on
-% region interfaces, n1...nN needs to be 3k+1
+% Note: 
+% - To allow for a coarsening rate of 3 with coarse nodes ending up on
+%   region interfaces, n1...nN needs to be 3k+1
+% - Number of nodes per region needs to be (k*3^L + 1) with k=1...N and L being
+%   the numberOfLevels-1.
 %
 
 function [] = mk1DRegionFile(filename)
@@ -15,10 +18,30 @@ function [] = mk1DRegionFile(filename)
 %% User-defined cases
 
 if (strcmp(filename, 'caseTen') == true)
+  nNodesPerRegion = [4 7 4];
+elseif (strcmp(filename, 'caseEleven') == true)
+  nNodesPerRegion = [7 4 7 4 4 7];
+elseif (strcmp(filename, 'caseTwelve') == true)
+  nNodesPerRegion = [28 37 25];
+elseif (strcmp(filename, 'caseThirteen') == true)
+%   nNodesPerRegion = [901 901 874 901 874 928 874 928 901];
+%   nNodesPerRegion = [901 901 901 901 901 901 901 901 901 901 901 901];
+%   nNodesPerRegion = [901 901 901 901 901 901 901 901 901 901 901 901 901 901 901 901 901 901 901 901 901 901 901 901];
+  nNodesPerRegion = [901 901 874 901 874 928 874 928 847 901 901 874 982 874 928 874 928 901 766 901 874 901 874 928 874 928 901];
+elseif (strcmp(filename, 'caseFourteen') == true)
+  numLevels = 5;
+  numRegions = 8;
+  baseSizeFac = 15; 
+  sizeDeviation = [0 1 1 -2 0 -2 2 0]; % 3 0 -1 0 1 1 -2 0 -2 2 0 3 0 -1 2];
+  if (numRegions ~= length(sizeDeviation))
+    error('Number of regions does not match length of "sizeDeviation".');
+  end
   
-%   nNodesPerRegion = [36 33 42 27];
-% nNodesPerRegion = [37 34 43 28 52 13 25 22 34];
-nNodesPerRegion = [7 7 10 7];
+  nNodesPerRegion = zeros(numRegions,1);
+  for i = 1:numRegions
+    nNodesPerRegion(i) = (baseSizeFac + sizeDeviation(i)) * 3^(numLevels-1) + 1;
+  end
+  disp(nNodesPerRegion');
 else
   error('Unknown case "%s".', filename);
 end

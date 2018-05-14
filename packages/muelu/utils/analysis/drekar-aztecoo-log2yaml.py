@@ -1,4 +1,4 @@
-#!/bin/env python
+#!/usr/bin/env python
 import optparse
 import re
 import yaml

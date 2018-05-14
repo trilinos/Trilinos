@@ -166,6 +166,60 @@ private:
     else if (stepperType == "Leapfrog")
       return rcp(new StepperLeapfrog<Scalar>(model, stepperPL));
     else {
+      Teuchos::RCP<Teuchos::FancyOStream> out =
+        Teuchos::VerboseObjectBase::getDefaultOStream();
+      Teuchos::OSTab ostab(out,1,"StepperFactory::createStepper");
+      *out
+      << "Unknown Stepper Type!  Here is a list of available Steppers.\n"
+      << "  One-Step Methods:\n"
+      << "    'Forward Euler'\n"
+      << "    'Backward Euler'\n"
+      << "    'Trapezoidal Method'\n"
+      << "  Multi-Step Methods:\n"
+      << "    'BDF2'\n"
+      << "  Second-order PDE Methods:\n"
+      << "    'Leapfrog'\n"
+      << "    'Newmark Implicit a-Form'\n"
+      << "    'Newmark Implicit d-Form'\n"
+      << "    'Newmark Explicit a-Form'\n"
+      << "    'HHT-Alpha'\n"
+      << "  Explicit Runge-Kutta Methods:\n"
+      << "    'RK Forward Euler'\n"
+      << "    'RK Explicit 4 Stage'\n"
+      << "    'RK Explicit 3/8 Rule'\n"
+      << "    'RK Explicit 4 Stage 3rd order by Runge'\n"
+      << "    'RK Explicit 5 Stage 3rd order by Kinnmark and Gray'\n"
+      << "    'RK Explicit 3 Stage 3rd order'\n"
+      << "    'RK Explicit 3 Stage 3rd order TVD'\n"
+      << "    'RK Explicit 3 Stage 3rd order by Heun'\n"
+      << "    'RK Explicit 2 Stage 2nd order by Runge'\n"
+      << "    'RK Explicit Trapezoidal'\n"
+      << "    'Bogacki-Shampine 3(2) Pair'\n"
+      << "    'General ERK'\n"
+      << "  Implicit Runge-Kutta Methods:\n"
+      << "    'RK Backward Euler'\n"
+      << "    'IRK 1 Stage Theta Method'\n"
+      << "    'SDIRK 1 Stage 1st order'\n"
+      << "    'SDIRK 2 Stage 2nd order'\n"
+      << "    'SDIRK 2 Stage 3rd order'\n"
+      << "    'EDIRK 2 Stage 3rd order'\n"
+      << "    'EDIRK 2 Stage Theta Method'\n"
+      << "    'SDIRK 3 Stage 4th order'\n"
+      << "    'SDIRK 5 Stage 4th order'\n"
+      << "    'SDIRK 5 Stage 5th order'\n"
+      << "    'General DIRK'\n"
+      << "  Implicit-Explicit (IMEX) Methods:\n"
+      << "    'IMEX RK 1st order'\n"
+      << "    'IMEX RK SSP2'\n"
+      << "    'IMEX RK ARS 233'\n"
+      << "    'General IMEX RK'\n"
+      << "    'Partitioned IMEX RK 1st order'\n"
+      << "    'Partitioned IMEX RK SSP2'\n"
+      << "    'Partitioned IMEX RK ARS 233'\n"
+      << "    'General Partitioned IMEX RK'\n"
+      << "  Steppers with subSteppers:\n"
+      << "    'Operator Split'\n"
+      << std::endl;
       TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
         "Unknown 'Stepper Type' = " << stepperType);
     }

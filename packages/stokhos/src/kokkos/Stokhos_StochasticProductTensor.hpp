@@ -162,9 +162,9 @@ public:
 
   void print( std::ostream & s ) const
   {
-    for ( unsigned i = 1 ; i < m_degree_map.dimension_0() ; ++i ) {
+    for ( unsigned i = 1 ; i < m_degree_map.extent(0) ; ++i ) {
       s << "  bases[" << i - 1 << "] (" ;
-      for ( unsigned j = 0 ; j < m_degree_map.dimension_1() ; ++j ) {
+      for ( unsigned j = 0 ; j < m_degree_map.extent(1) ; ++j ) {
         s << " " << m_degree_map(i,j);
       }
       s << " )" << std::endl ;

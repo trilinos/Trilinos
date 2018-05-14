@@ -184,8 +184,16 @@ void StepperHHTAlpha<Scalar>::takeStep(
 #endif
   using Teuchos::RCP;
 
-  TEMPUS_FUNC_TIME_MONITOR("Tempus::StepperBackardEuler::takeStep()");
+  TEMPUS_FUNC_TIME_MONITOR("Tempus::StepperHHTAlpha::takeStep()");
   {
+    TEUCHOS_TEST_FOR_EXCEPTION(solutionHistory->getNumStates() < 2,
+      std::logic_error,
+      "Error - StepperHHTAlpha<Scalar>::takeStep(...)\n"
+      "Need at least two SolutionStates for HHTAlpha.\n"
+      "  Number of States = " << solutionHistory->getNumStates() << "\n"
+      "Try setting in \"Solution History\" \"Storage Type\" = \"Undo\"\n"
+      "  or \"Storage Type\" = \"Static\" and \"Storage Limit\" = \"2\"\n");
+
     RCP<SolutionState<Scalar> > workingState=solutionHistory->getWorkingState();
     RCP<SolutionState<Scalar> > currentState=solutionHistory->getCurrentState();
 

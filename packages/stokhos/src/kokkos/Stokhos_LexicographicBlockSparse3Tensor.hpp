@@ -119,11 +119,11 @@ public:
 
   /** \brief  Number of coordinates. */
   KOKKOS_INLINE_FUNCTION
-  size_type num_coord() const { return m_coord.dimension_0(); }
+  size_type num_coord() const { return m_coord.extent(0); }
 
   /** \brief  Number of values. */
   KOKKOS_INLINE_FUNCTION
-  size_type num_value() const { return m_value.dimension_0(); }
+  size_type num_value() const { return m_value.extent(0); }
 
   /** \brief   */
   KOKKOS_INLINE_FUNCTION
@@ -174,7 +174,7 @@ public:
 
   /** \brief Number of non-zero's */
   KOKKOS_INLINE_FUNCTION
-  size_type num_non_zeros() const { return m_value.dimension_0(); }
+  size_type num_non_zeros() const { return m_value.extent(0); }
 
   /** \brief Number flop's per multiply-add */
   KOKKOS_INLINE_FUNCTION

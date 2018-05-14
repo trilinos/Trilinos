@@ -907,14 +907,14 @@ void deep_copy
 //         dst.span_is_contiguous() && //will always fail - stride set to 0s
 //         src.span_is_contiguous() &&
          dst.span() == src.span() &&
-         dst.dimension_0() == src.dimension_0() &&
-         dst.dimension_1() == src.dimension_1() &&
-         dst.dimension_2() == src.dimension_2() &&
-         dst.dimension_3() == src.dimension_3() &&
-         dst.dimension_4() == src.dimension_4() &&
-         dst.dimension_5() == src.dimension_5() &&
-         dst.dimension_6() == src.dimension_6() &&
-         dst.dimension_7() == src.dimension_7() ) {
+         dst.extent(0) == src.extent(0) &&
+         dst.extent(1) == src.extent(1) &&
+         dst.extent(2) == src.extent(2) &&
+         dst.extent(3) == src.extent(3) &&
+         dst.extent(4) == src.extent(4) &&
+         dst.extent(5) == src.extent(5) &&
+         dst.extent(6) == src.extent(6) &&
+         dst.extent(7) == src.extent(7) ) {
 
 //      const size_t nbytes = sizeof(typename dst_type::value_type) * dst.span() * dimension_scalar(dst) ;
       //const size_t nbytes = sizeof(typename dst_type::scalar_array_type) * dst.span() ;
@@ -942,14 +942,14 @@ void deep_copy
 //         dst.span_is_contiguous() && //will always fail - stride set to 0s
 //         src.span_is_contiguous() &&
          dst.span() == src.span() &&
-         dst.dimension_0() == src.dimension_0() &&
-         dst.dimension_1() == src.dimension_1() &&
-         dst.dimension_2() == src.dimension_2() &&
-         dst.dimension_3() == src.dimension_3() &&
-         dst.dimension_4() == src.dimension_4() &&
-         dst.dimension_5() == src.dimension_5() &&
-         dst.dimension_6() == src.dimension_6() &&
-         dst.dimension_7() == src.dimension_7() &&
+         dst.extent(0) == src.extent(0) &&
+         dst.extent(1) == src.extent(1) &&
+         dst.extent(2) == src.extent(2) &&
+         dst.extent(3) == src.extent(3) &&
+         dst.extent(4) == src.extent(4) &&
+         dst.extent(5) == src.extent(5) &&
+         dst.extent(6) == src.extent(6) &&
+         dst.extent(7) == src.extent(7) &&
          dst.stride_0() == src.stride_0() &&
          dst.stride_1() == src.stride_1() &&
          dst.stride_2() == src.stride_2() &&
