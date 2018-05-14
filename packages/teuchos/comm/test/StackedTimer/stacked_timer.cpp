@@ -39,15 +39,19 @@ TEUCHOS_UNIT_TEST(StackedTimer, Basic)
         timer.start("Prec");
         std::this_thread::sleep_for(std::chrono::milliseconds{50});   
         timer.stop("Prec");
-        if (rank(*comm) != 0 ) {
-          timer.start("GMRES");
+        if (rank(*comm) == 0 ) {
+          const std::string label = "Rank 0 ONLY";
+          timer.start(label);
           std::this_thread::sleep_for(std::chrono::milliseconds{50});
-          timer.stop("GMRES");
+          TEST_ASSERT((timer.findTimer("My New Timer@Solve@Rank 0 ONLY")).running);
+          timer.stop(label);
+          TEST_ASSERT(not (timer.findTimer("My New Timer@Solve@Rank 0 ONLY")).running);
         } else {
-          timer.start("Not GMRES");
+          timer.start("Not Rank 0");
           std::this_thread::sleep_for(std::chrono::milliseconds{50});
-          timer.stop("Not GMRES");
-
+          TEST_ASSERT((timer.findTimer("My New Timer@Solve@Not Rank 0")).running);
+          timer.stop("Not Rank 0");
+          TEST_ASSERT(not (timer.findTimer("My New Timer@Solve@Not Rank 0")).running);
         }
       }
       timer.stop("Solve");
@@ -66,14 +70,16 @@ TEUCHOS_UNIT_TEST(StackedTimer, TimeMonitorInteroperability)
 {
   const auto precTimer = Teuchos::TimeMonitor::getNewTimer("Prec");
   const auto gmresTimer = Teuchos::TimeMonitor::getNewTimer("GMRES");
-  
-  const auto timer = Teuchos::rcp(new Teuchos::StackedTimer("StackedTimerTest::TimeMonitorInteroperability"));
 
-  // Assign timer for TimeMonitor to use
-#ifdef HAVE_TEUCHOS_ADD_TIME_MONITOR_TO_STACKED_TIMER
+  // Test the set and get stacked timer methods on TimeMonitor
+  const auto timeMonitorDefaultStackedTimer = Teuchos::TimeMonitor::getStackedTimer();
+  const auto timer = Teuchos::rcp(new Teuchos::StackedTimer("StackedTimerTest::TimeMonitorInteroperability"));
+  TEST_ASSERT(nonnull(timeMonitorDefaultStackedTimer));
+  TEST_ASSERT(nonnull(timer));
+  TEST_ASSERT(timeMonitorDefaultStackedTimer != timer);
   Teuchos::TimeMonitor::setStackedTimer(timer);
-#endif
-  
+  TEST_ASSERT(timer == Teuchos::TimeMonitor::getStackedTimer());
+
   timer->start("Total Time");
   {
     for (int i=0; i < 10; ++i) {
@@ -101,4 +107,8 @@ TEUCHOS_UNIT_TEST(StackedTimer, TimeMonitorInteroperability)
   
   assert(size(*comm)>0);
   timer->report(std::cout, comm);
+
+#ifdef HAVE_TEUCHOS_ADD_TIME_MONITOR_TO_STACKED_TIMER
+  // If time monitor insertion enabled, then test it
+#endif
 }

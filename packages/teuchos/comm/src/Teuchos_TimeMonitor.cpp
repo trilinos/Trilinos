@@ -46,10 +46,7 @@
 #include "Teuchos_TableFormat.hpp"
 #include "Teuchos_StandardParameterEntryValidators.hpp"
 #include "Teuchos_ScalarTraits.hpp"
-
-#ifdef HAVE_TEUCHOS_ADD_TIME_MONITOR_TO_STACKED_TIMER
 #include "Teuchos_StackedTimer.hpp"
-#endif
 
 #include <functional>
 #include <iomanip>
@@ -250,11 +247,8 @@ namespace Teuchos {
   // that timer, total number of calls to that timer).
   typedef std::map<std::string, std::pair<double, int> > timer_map_t;
 
-  
-#ifdef HAVE_TEUCHOS_ADD_TIME_MONITOR_TO_STACKED_TIMER
   // static initialization
-  Teuchos::RCP<Teuchos::StackedTimer> TimeMonitor::stackedTimer_ = Teuchos::null;
-#endif
+  Teuchos::RCP<Teuchos::StackedTimer> TimeMonitor::stackedTimer_ = Teuchos::rcp(new Teuchos::StackedTimer("Teuchos::StackedTimer"));
   
   TimeMonitor::TimeMonitor (Time& timer, bool reset)
     : PerformanceMonitorBase<Time>(timer, reset)
@@ -1463,13 +1457,17 @@ namespace Teuchos {
                                                  &plist);
   }
 
-#ifdef HAVE_TEUCHOS_ADD_TIME_MONITOR_TO_STACKED_TIMER
   void
   TimeMonitor::setStackedTimer(const Teuchos::RCP<Teuchos::StackedTimer>& t)
   {
     stackedTimer_ = t;
   }
-#endif
+
+  const Teuchos::RCP<Teuchos::StackedTimer>&
+  TimeMonitor::getStackedTimer()
+  {
+    return stackedTimer_;
+  }
 
   RCP<const ParameterList>
   TimeMonitor::getValidReportParameters ()

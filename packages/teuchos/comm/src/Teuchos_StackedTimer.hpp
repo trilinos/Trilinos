@@ -4,6 +4,7 @@
 #ifndef TEUCHOS_STACKED_TIMER_HPP
 #define TEUCHOS_STACKED_TIMER_HPP
 
+#include "Teuchos_ConfigDefs.hpp"
 #include "Teuchos_Comm.hpp"
 #include "Teuchos_DefaultComm.hpp"
 #include "Teuchos_CommHelpers.hpp"
