@@ -12,7 +12,6 @@
 Teuchos::RCP<Teuchos::Comm<int> > comm;
 
 int main(int argc, char **argv) {
-  int result;
   Teuchos::GlobalMPISession mpiSession(&argc,&argv);
 #ifdef HAVE_MPI
   comm = Teuchos::rcp(new Teuchos::MpiComm<int>(Teuchos::opaqueWrapper(MPI_COMM_WORLD)));
@@ -43,15 +42,15 @@ TEUCHOS_UNIT_TEST(StackedTimer, Basic)
           const std::string label = "Rank 0 ONLY";
           timer.start(label);
           std::this_thread::sleep_for(std::chrono::milliseconds{50});
-          TEST_ASSERT((timer.findTimer("My New Timer@Solve@Rank 0 ONLY")).running);
+          TEST_ASSERT((timer.findTimer("Total Time@Solve@Rank 0 ONLY")).running);
           timer.stop(label);
-          TEST_ASSERT(not (timer.findTimer("My New Timer@Solve@Rank 0 ONLY")).running);
+          TEST_ASSERT(not (timer.findTimer("Total Time@Solve@Rank 0 ONLY")).running);
         } else {
           timer.start("Not Rank 0");
           std::this_thread::sleep_for(std::chrono::milliseconds{50});
-          TEST_ASSERT((timer.findTimer("My New Timer@Solve@Not Rank 0")).running);
+          TEST_ASSERT((timer.findTimer("Total Time@Solve@Not Rank 0")).running);
           timer.stop("Not Rank 0");
-          TEST_ASSERT(not (timer.findTimer("My New Timer@Solve@Not Rank 0")).running);
+          TEST_ASSERT(not (timer.findTimer("Total Time@Solve@Not Rank 0")).running);
         }
       }
       timer.stop("Solve");
