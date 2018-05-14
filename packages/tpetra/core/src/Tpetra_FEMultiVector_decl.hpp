@@ -104,6 +104,9 @@ namespace Tpetra {
     //! Grab execution_space from superclass
     typedef typename MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::execution_space execution_space;
 
+    //! The type of the base class of this class.
+    typedef MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> base_type;
+
     //@}
     //! @name Constructors and destructor
     //@{
@@ -122,14 +125,9 @@ namespace Tpetra {
                   const size_t numVecs,
                   const bool zeroOut = true);
 
-   private:
-
-    //! The type of the base class of this class.
-    typedef MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> base_type;
-   
     //! Destructor (virtual for memory safety of derived classes).
     virtual ~FEMultiVector () {delete inactiveMultiVector_;}
-
+    
     //@}
     //! @name Post-construction modification routines
     //@{
@@ -181,8 +179,6 @@ namespace Tpetra {
     /// \brief Replace the underlying Map in place.  NOTE: FEMultiVector does not allow this and will throw
     void replaceMap (const Teuchos::RCP<const map_type>& map);
 
-
-
     // Enum for activity
     enum FEWhichActive
     {
@@ -192,7 +188,6 @@ namespace Tpetra {
 
     // Switches which Multivector is active (without migrating data)
     void switchActiveMultiVector();
-
 
     // This is whichever multivector isn't currently active
     MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> * inactiveMultiVector_;
