@@ -7,8 +7,7 @@
 
 namespace Teuchos {
 
-Teuchos::RCP<StackedTimer> StackedTimer::timer;
-  
+
 StackedTimer::LevelTimer::LevelTimer() :
     level_(std::numeric_limits<unsigned>::max()),name_("INVALID"),parent_(NULL)
 {}
@@ -38,7 +37,7 @@ StackedTimer::LevelTimer::report(std::ostream &os) {
 }
 
 BaseTimer::TimeInfo
-StackedTimer::LevelTimer::findTimer(std::string &name) {
+StackedTimer::LevelTimer::findTimer(const std::string &name) {
   BaseTimer::TimeInfo t;
   if (get_full_name() == name)
     t = BaseTimer::TimeInfo(this);
@@ -67,33 +66,91 @@ StackedTimer::merge(Teuchos::RCP<const Teuchos::Comm<int> > comm){
 }
 
 void
-StackedTimer::collectRemoteData(Teuchos::RCP<const Teuchos::Comm<int> > comm) {
+StackedTimer::collectRemoteData(Teuchos::RCP<const Teuchos::Comm<int> > comm, const OutputOptions &options) {
   int comm_size = size(*comm);
   int comm_rank = rank(*comm);
-  Array<BaseTimer::TimeInfo> local_time_data;
-  if (comm_rank == 0) {
-    time_data_.resize(comm_size);
-    for (int r=0; r<comm_size; ++r)
-      time_data_[r].resize(flat_names_.size());
-  } else {
-    local_time_data.resize(flat_names_.size());
+
+  // allocate everything
+  int num_names = flat_names_.size();
+  sum_.resize(num_names);
+  count_.resize(num_names);
+  active_.resize(num_names);
+
+  if (options.output_minmax || options.output_histogram) {
+    min_.resize(num_names);
+    max_.resize(num_names);
+    if ( options.output_minmax )
+      sum_sq_.resize(num_names);
   }
 
-  for (unsigned i=0; i<flat_names_.size(); ++i) {
+
+  if (options.output_histogram) {
+    hist_.resize(options.num_histogram);
+    for (int i=0;i<options.num_histogram; ++i)
+      hist_[i].resize(num_names);
+  }
+
+  // Temp data
+  Array<double> time(num_names);
+  Array<unsigned long> count(num_names);
+  Array<unsigned long long> updates;
+  if (options.output_total_updates)
+    updates.resize(num_names);
+  Array<int> used(num_names);
+  Array<int> bins;
+
+  if (options.output_histogram)
+    bins.resize(num_names);
+
+  // set initial values
+  for (int i=0;i<num_names; ++i) {
     auto t = timer_.findTimer(flat_names_[i]);
-    if ( comm_rank == 0 )
-      time_data_[0][i] = t;
-    else
-      local_time_data[i] = t;
+      time[i] = t.time;
+      count[i] = t.count;
+      used[i] = t.count==0? 0:1;
+      if (options.output_total_updates)
+        updates[i] = t.updates;
   }
 
-  int buffer_size = sizeof(BaseTimer::TimeInfo[flat_names_.size()]);
+  // Now reduce the data
+  reduce<int, double>(&time[0], &sum_[0], num_names, REDUCE_SUM, 0, *comm);
+  reduce(&count[0], &count_[0], num_names, REDUCE_SUM, 0, *comm);
+  reduce(&used[0], &active_[0], num_names, REDUCE_SUM, 0, *comm);
 
-  if (comm_rank == 0 )  {
-    for (int r=1; r<comm_size; ++r)
-      receive(*comm, r, buffer_size, (char*)&time_data_[r][0]);
-  } else
-    send(*comm, buffer_size,(char*)&local_time_data[0] ,0);
+  if (min_.size()) {
+    reduceAll(*comm, REDUCE_MIN, num_names, &time[0], &min_[0]);
+    reduceAll(*comm, REDUCE_MAX, num_names, &time[0], &max_[0]);
+  }
+
+  if (options.output_histogram) {
+    for (int i=0;i<num_names; ++i) {
+
+      double dh = (max_[i]-min_[i])/options.num_histogram;
+      if (dh==0) // Put everything into bin 1
+        dh=1;
+      if (used[i]) {
+        int bin=(time[i]- min_[i])/dh;
+        bins[i] = std::max(std::min(bin,options.num_histogram-1) , 0);
+      }
+    }
+    // Recycle the used array for the temp bin array
+    for (int j=0; j<options.num_histogram; ++j){
+      for (int i=0;i<num_names; ++i) {
+        if (bins[i] == j )
+          used[i]=1;
+        else
+          used[i]=0;
+      }
+      reduce(&used[0], &hist_[j][0], num_names, REDUCE_SUM, 0, *comm);
+    }
+  }
+
+  if (sum_sq_.size()) {
+    for (int i=0;i<num_names; ++i)
+      time[i] *= time[i];
+    reduce(&time[0], &sum_sq_[0], num_names, REDUCE_SUM, 0, *comm);
+  }
+
 }
 
 std::pair<std::string, std::string> getPrefix(std::string &name) {
@@ -108,8 +165,8 @@ std::pair<std::string, std::string> getPrefix(std::string &name) {
 double
 StackedTimer::printLevel (std::string prefix, int print_level, std::ostream &os, std::vector<bool> &printed, double parent_time, const OutputOptions &options) {
   double total_time = 0.0;
-  std::size_t num_entries = time_data_.size();
-  for (std::size_t i=0; i<flat_names_.size(); ++i ) {
+  std::size_t num_entries = -1;
+  for (int i=0; i<flat_names_.size(); ++i ) {
     if (printed[i])
       continue;
     int level = std::count(flat_names_[i].begin(), flat_names_[i].end(), '@');
@@ -119,73 +176,48 @@ StackedTimer::printLevel (std::string prefix, int print_level, std::ostream &os,
     if ( prefix != split_names.first)
       continue;
 
-    int num_ranks=0;
-    double sum_t=0., sum_sq=0., min_t=std::numeric_limits<double>::max(), max_t=0.;
-    long sum_count=0;
-    long long sum_updates=0;
-    for (std::size_t r=0; r<num_entries; ++r) {
-      if (time_data_[r][i].count) {
-        num_ranks++;
-        min_t = std::min(min_t, time_data_[r][i].time);
-        max_t = std::max(max_t, time_data_[r][i].time);
-        sum_t += time_data_[r][i].time;
-        sum_sq += time_data_[r][i].time*time_data_[r][i].time;
-        sum_updates += time_data_[r][i].updates;
-        sum_count += time_data_[r][i].count;
-      }
-    }
+    // Output the data
     for (int l=0; l<level; ++l)
       os << "    ";
     os << split_names.second << ": ";
     // output averge time
-    os << sum_t/num_ranks;
+    os << sum_[i]/active_[i];
     // output percentage
     if ( options.output_fraction && parent_time>0)
-      os << " - "<<sum_t/num_ranks/parent_time*100<<"%";
+      os << " - "<<sum_[i]/active_[i]/parent_time*100<<"%";
     // output count
-    os << " ["<<sum_count/num_ranks<<"]";
+    os << " ["<<count_[i]/active_[i]<<"]";
     // output total counts
     if ( options.output_total_updates )
-      os << " ("<<sum_updates/num_ranks<<")";
+      os << " ("<<updates_[i]/active_[i]<<")";
     // Output min and maxs
     if ( options.output_minmax ) {
-      os << " {min="<<min_t<<", max="<<max_t;
-      if (num_ranks>1)
-        os<<", std dev="<<sqrt((sum_sq-sum_t*sum_t/num_ranks)/(num_ranks-1));
+      os << " {min="<<min_[i]<<", max="<<max_[i];
+      if (active_[i]>1)
+        os<<", std dev="<<sqrt((sum_sq_[i]-sum_[i]*sum_[i]/active_[i])/(active_[i]-1));
       os << "}";
     }
     // Output histogram
-    if ( options.output_histogram && num_entries >1 ) {
-      std::vector<int> hist(options.num_histogram, 0);
-      double dh = (max_t-min_t)/options.num_histogram;
-      if (dh==0) // Put everything into bin 1
-        dh=1;
-      for (std::size_t r=0; r<num_entries; ++r) {
-        if (time_data_[r][i].count) {
-          int bin=(time_data_[r][i].time - min_t)/dh;
-          bin = std::max(std::min(bin,options.num_histogram-1) , 0);
-          hist[bin]++;
-        }
-      }
+    if ( options.output_histogram && active_[i] >1 ) {
       // dump the histogram
       os << " <";
       for (int h=0;h<options.num_histogram; ++h) {
         if (h)
-          os <<", "<<hist[h];
+          os <<", "<<hist_[h][i];
         else
-          os << hist[h];
+          os << hist_[h][i];
       }
       os << ">";
     }
     os << std::endl;
     printed[i] = true;
-    double sub_time = printLevel(flat_names_[i], level+1, os, printed, sum_t/num_ranks, options);
+    double sub_time = printLevel(flat_names_[i], level+1, os, printed, sum_[i]/active_[i], options);
     if (sub_time > 0 ) {
       for (int l=0; l<=level; ++l)
         os << "    ";
-      os << "Remainder: " << sum_t/num_ranks - sub_time<<std::endl;
+      os << "Remainder: " <<  sum_[i]/active_[i]- sub_time<<std::endl;
     }
-    total_time += sum_t/num_ranks;
+    total_time += sum_[i]/active_[i];
   }
   return total_time;
 }
@@ -194,7 +226,7 @@ void
 StackedTimer::report(std::ostream &os, Teuchos::RCP<const Teuchos::Comm<int> > comm, OutputOptions options) {
   flatten();
   merge(comm);
-  collectRemoteData(comm);
+  collectRemoteData(comm, options);
   if (rank(*comm) == 0 ) {
     std::vector<bool> printed(flat_names_.size(), false);
     printLevel("", 0, os, printed, 0., options);

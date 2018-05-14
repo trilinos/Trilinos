@@ -369,7 +369,7 @@ protected:
       */
      void report(std::ostream &os);
 
-     BaseTimer::TimeInfo findTimer(std::string &name);
+     BaseTimer::TimeInfo findTimer(const std::string &name);
 
   protected:
 
@@ -472,8 +472,6 @@ public:
    */
   void report(std::ostream &os, Teuchos::RCP<const Teuchos::Comm<int> > comm, OutputOptions options = OutputOptions());
 
-  /// Base timer for all routines to access
-  static Teuchos::RCP<StackedTimer> timer;
 
 protected:
   /// Current level running
@@ -482,12 +480,19 @@ protected:
   LevelTimer timer_;
 
   Array<std::string> flat_names_;
-  Array<Array<BaseTimer::TimeInfo>> time_data_;
+  Array<double> min_;
+  Array<double> max_;
+  Array<double> sum_;
+  Array<double> sum_sq_;
+  Array<Array<int>> hist_;
+  Array<unsigned long> count_;
+  Array<unsigned long long> updates_;
+  Array<int> active_;
 
   /**
     * Flatten the timers into a single array
     */
-   void flatten( );
+   void flatten();
 
    /**
     * Merge all the timers together into a single structure
@@ -498,7 +503,7 @@ protected:
    /**
     * Migrate all the timer data to rank=0 if parallel
     */
-   void collectRemoteData(Teuchos::RCP<const Teuchos::Comm<int> > comm);
+   void collectRemoteData(Teuchos::RCP<const Teuchos::Comm<int> > comm, const OutputOptions &options );
 
    /**
     * Recursive call to print a level of timer data.
