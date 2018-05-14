@@ -48,8 +48,7 @@
 #include "ROL_RandomVector.hpp"
 #include "ROL_PinTVector.hpp"
 
-#include "TankConstraint.hpp"
-#include "TankVector.hpp"
+#include "Tanks_DynamicConstraint.hpp"
 #include "LowerBandedMatrix.hpp"
 
 #include <iostream>
@@ -65,11 +64,11 @@ int main( int argc, char* argv[] ) {
   using ROL::makePtr;
   using ROL::makePtrFromRef;
 
-  using Bounds                      = ROL::Bounds<RealT>;
-  using PartitionedVector           = ROL::PartitionedVector<RealT>;
+  using Bounds             = ROL::Bounds<RealT>;
+  using PartitionedVector  = ROL::PartitionedVector<RealT>;
  
-  using StateVector   = TankStateVector<RealT>;
-  using ControlVector = TankControlVector<RealT>;
+  using State      = Tanks::StateVector<RealT>;
+  using Control    = Tanks::ControlVector<RealT>;
 
   Teuchos::GlobalMPISession mpiSession(&argc, &argv);  
 
@@ -93,7 +92,7 @@ int main( int argc, char* argv[] ) {
     auto& pl = *tank_parameters;
 
     auto tankState = makePtr<TankState<RealT>>(pl);
-    auto con = makePtr<TankConstraint<RealT>>(tankState,pl);
+    auto con = Tanks::DynamicConstraint<RealT>::create(pl);
 
     auto height = pl.get("Height of Tank",              10.0  );
     auto Qin00  = pl.get("Corner Inflow",               100.0 );
@@ -104,20 +103,20 @@ int main( int argc, char* argv[] ) {
     auto nrows  = static_cast<size_type>( pl.get("Number of Rows",3) );
     auto ncols  = static_cast<size_type>( pl.get("Number of Columns",3) );
 
-    auto z      = makePtr<ControlVector>( nrows, ncols, "Control (z)" );    
-    auto vz     = z->clone( "Control direction (vz)"       );
-    auto z_lo   = z->clone( "Control Lower Bound (z_lo)"   );
+    auto z      = Control::create( pl, "Control (z)"     );    
+    auto vz     = z->clone( "Control direction (vz)"     );
+    auto z_lo   = z->clone( "Control Lower Bound (z_lo)" );
     z_lo->zero();
 
     auto z_bnd  = makePtr<Bounds>( *z_lo );
 
     // State
-    auto u_new    = makePtr<StateVector>( nrows, ncols, "New state (u_new)" );
+    auto u_new    = State::create( pl, "New state (u_new)"   );
     auto u_old    = u_new->clone( "Old state (u_old)"        );
     auto u_new_lo = u_new->clone( "State lower bound (u_lo)" );
     auto u_new_up = u_new->clone( "State upper bound (u_up)" );
 
-    auto u    = PartitionedVector::create( { u_old, u_new } );
+    auto u    = PartitionedVector::create( { u_old,    u_new    } );
     auto u_lo = PartitionedVector::create( { u_new_lo, u_new_lo } );
     auto u_up = PartitionedVector::create( { u_new_up, u_new_up } );
 
@@ -147,15 +146,28 @@ int main( int argc, char* argv[] ) {
     auto u_old_bnd = u_new_bnd; 
     auto u_bnd = makePtr<Bounds>( u_lo, u_up ); 
 
-    con->print_tankstate_parameters( *outStream );
-    con->checkApplyJacobian( *x, *v, *c, true, *outStream );
-    con->checkAdjointConsistencyJacobian( *c, *v, *x, true, *outStream );
-    con->checkInverseJacobian_1_new( *c, *u_new, *u_old, *z, *vu_new, true, *outStream );
-    con->checkInverseAdjointJacobian_1_new( *c, *u_new, *u_old, *z, *vu_new, true, *outStream );
+    auto con_check = (*con);
 
-    RandomizeVector( *c ) ;
-    con->checkSolve(*u, *z, *c, true, *outStream ); 
+    auto con_up_uo = con_check.update_uo();
+    auto con_up_un = con_check.update_un();
+    auto con_up_z  = con_check.update_z();
 
+    auto con_val_uo = con_check.value_uo();
+    auto con_val_un = con_check.value_un();
+    auto con_val_z  = con_check.value_z();
+    
+    auto con_J_uo = con_check.jacobian_uo();
+    auto con_J_un = con_check.jacobian_un();
+    auto con_J_z  = con_check.jacobian_z();
+
+    auto con_iJ_un = con_check.inverseJacobian_un();
+
+    auto con_aJ_uo = con_check.adjointJacobian_uo();
+    auto con_aJ_un = con_check.adjointJacobian_un();
+    auto con_aJ_z  = con_check.adjointJacobian_z();
+  
+    auto con_iaJ_un = con_check.inverseAdjointJacobian_un();
+ 
   }
   catch (std::logic_error err) {
     *outStream << err.what() << "\n";
