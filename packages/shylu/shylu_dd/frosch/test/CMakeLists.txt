@@ -1,7 +1,12 @@
+IF(${PACKAGE_NAME}_ENABLE_Epetra)
 ADD_SUBDIRECTORIES(
     TestLaplacian_Epetra
-    TestLaplacian_Tpetra
     TestInterfaceSets
-#    TestImport_Tpetra
-#    TestRepeatedMap
 )
+ENDIF ()
+
+IF(${PACKAGE_NAME}_ENABLE_Tpetra)
+ADD_SUBDIRECTORIES(
+    TestLaplacian_Tpetra
+)
+ENDIF ()
