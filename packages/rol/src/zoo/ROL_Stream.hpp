@@ -73,12 +73,19 @@ using nullstream = basic_nullstream<char, char_traits<char>>;
 
 inline
 Ptr<ostream> makeStreamPtr( ostream& os, bool noSuppressOutput=true ) {
-  return noSuppressOutput ? makePtrFromRef( os ) : makePtr<nullstream>();
+  Ptr<ostream> retstream;
+  if( noSuppressOutput ) retstream = makePtrFromRef<ostream>(os);
+  else retstream = makePtr<nullstream>();
+  return retstream; // noSuppressOutput ? makePtrFromRef( os ) : makePtr<nullstream>();
 }
 
 inline
 Ptr<ostream> makeStreamPtr( Ptr<ostream> os, bool noSuppressOutput=true ) {
-  return noSuppressOutput ? os : makePtr<nullstream>();
+  Ptr<ostream> retstream;
+  if( noSuppressOutput ) retstream = os;
+  else retstream = makePtr<nullstream>();
+  return retstream; // noSuppressOutput ? makePtrFromRef( os ) : makePtr<nullstream>();
+//  return noSuppressOutput ? os : makePtr<nullstream>();
 }
 
 } // details
