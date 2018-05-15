@@ -537,28 +537,6 @@ runTest (Teuchos::FancyOStream& out,
   auto expOptTgtMap = makeTargetMapFromTestInput (testInput, *sourceMap, true);
   RCP<import_type> expOptImport (new import_type (sourceMap, expOptTgtMap));
 
-  if (false) {
-    std::ostringstream errStrm;
-    bool lclErr = false;
-    // using Tpetra::Details::makeOptimizedColMapAndImport;
-    // auto result = makeOptimizedColMapAndImport (out, lclErr, *sourceMap,
-    //                                             *expUnoptTgtMap,
-    //                                             expUnoptImport.getRawPtr (),
-    //                                             true);
-    using Tpetra::Details::makeOptimizedColMap;
-    auto result = makeOptimizedColMap (out, lclErr, *sourceMap,
-                                       *expUnoptTgtMap,
-                                       expUnoptImport.getRawPtr ());;
-    const bool gblErr = ! trueEverywhere (! lclErr, *comm);
-    TEST_ASSERT( ! gblErr );
-    if (gblErr) {
-      out << "makeOptimizedColMapAndImport FAILED; returning early!" << endl;
-      return;
-    }
-    expOptTgtMap = Teuchos::rcp (new map_type (result));
-    expOptImport = Teuchos::rcp (new import_type (sourceMap, expOptTgtMap));
-  }
-
   out << "Source Map:" << endl;
   printMapCompactly (out, *sourceMap);
   out << endl;
@@ -623,6 +601,35 @@ runTest (Teuchos::FancyOStream& out,
       return;
     }
   } // for optimized in {false, true}
+
+
+  // Now test against results of makeOptimizedColMap.
+  {
+    out << "Test against makeOptimizedColMap" << endl;
+    Teuchos::OSTab tab2 (out);
+
+    std::ostringstream errStrm;
+    bool lclErr = false;
+    const map_type actualTgtMap =
+      Tpetra::Details::makeOptimizedColMap (out, lclErr, *sourceMap,
+                                            *expUnoptTgtMap,
+                                            expUnoptImport.getRawPtr ());;
+    const bool gblMadeItThrough = trueEverywhere (! lclErr, *comm);
+    TEST_ASSERT( gblMadeItThrough );
+    if (! gblMadeItThrough) {
+      out << "makeOptimizedColMap FAILED; returning early!" << endl;
+      return;
+    }
+
+    out << "Actual target Map:" << endl;
+    printMapCompactly (out, actualTgtMap);
+
+    const import_type actualImport (sourceMap, rcp (new map_type (actualTgtMap)));
+    const bool gblImportsSame =
+      importsGloballySame (out, *expOptImport, "expOptImport",
+                           actualImport, "actualImport");
+    TEST_ASSERT( gblImportsSame );
+  }
 }
 
 
