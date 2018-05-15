@@ -52,14 +52,29 @@ IF( PARAMETERLIST_STRING STREQUAL "Teuchos::ParameterList" )
 
 ADD_SUBDIRECTORY(adapters/teuchos)
 
-ADD_ADAPTER( Teuchos )
-ADD_ADAPTER( Epetra )
-ADD_ADAPTER( Tpetra ) 
-ADD_ADAPTER( Belos ) 
-ADD_ADAPTER( Thyra )
-ADD_ADAPTER( TriKota )
-ADD_ADAPTER( TriKota )
-ADD_ADAPTER( PEBBL )
+IF( ROL_ENABLE_Epetra )
+ADD_SUBDIRECTORY(adapters/epetra)
+ENDIF()
+
+IF( ROL_ENABLE_Tpetra )
+ADD_SUBDIRECTORY(adapters/tpetra)
+ENDIF()
+
+IF( ROL_ENABLE_Belos )
+ADD_SUBDIRECTORY(adapters/belos)
+ENDIF()
+
+IF( ROL_ENABLE_Thyra )
+ADD_SUBDIRECTORY(adapters/thyra)
+ENDIF()
+
+IF( ROL_ENABLE_TriKota )
+ADD_SUBDIRECTORY(adapters/trikota)
+ENDIF()
+
+IF( ROL_ENABLE_PEBBL )
+ADD_SUBDIRECTORY(adapters/pebbl)
+ENDIF()
 
 IF (ROL_ENABLE_Boost AND ROL_ENABLE_MiniTensor)
   ADD_SUBDIRECTORY(adapters/minitensor)
@@ -67,7 +82,7 @@ ENDIF()
 
 
 ENDIF( PARAMETERLIST_STRING STREQUAL "Teuchos::ParameterList" )
-ENDIF( PTR_STRING STREQUAL "Teuchos::RCP" )
+ENDIF( PTR_STRING           STREQUAL "Teuchos::RCP" )
 
 IF (ROL_ENABLE_Eigen)
   ADD_SUBDIRECTORY(adapters/eigen)
