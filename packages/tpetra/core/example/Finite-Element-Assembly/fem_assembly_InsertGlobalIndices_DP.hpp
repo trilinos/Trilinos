@@ -64,9 +64,23 @@ namespace TpetraExamples
 {
 using comm_ptr_t = Teuchos::RCP<const Teuchos::Comm<int> >;
 
+int executeInsertGlobalIndicesDP_(const comm_ptr_t& comm, const struct CmdLineOpts& opts);
 
 
-int executeInsertGlobalIndicesDP(const comm_ptr_t& comm, const struct CmdLineOpts& opts)
+
+int executeInsertGlobalIndicesDP(const comm_ptr_t& comm, const struct CmdLineOpts & opts)
+{
+  int status = 0;
+  for(size_t i=0; i<opts.repetitions; ++i)
+  {
+    status += executeInsertGlobalIndicesDP_(comm, opts);
+  }
+  return status;
+}
+
+
+
+int executeInsertGlobalIndicesDP_(const comm_ptr_t& comm, const struct CmdLineOpts& opts)
 {
   using Teuchos::RCP;
   using Teuchos::TimeMonitor;
@@ -76,7 +90,7 @@ int executeInsertGlobalIndicesDP(const comm_ptr_t& comm, const struct CmdLineOpt
 
   // The output stream 'out' will ignore any output not from Process 0.
   RCP<Teuchos::FancyOStream> pOut = getOutputStream(*comm);
-  Teuchos::FancyOStream& out = *pOut;  
+  Teuchos::FancyOStream& out = *pOut;
 
   out << "================================================================================" << std::endl
       << "=  Insert Global Indices (Dynamic Profile)"    << std::endl
@@ -85,9 +99,9 @@ int executeInsertGlobalIndicesDP(const comm_ptr_t& comm, const struct CmdLineOpt
 
   // Processor decomp (only works on perfect squares)
   int numProcs  = comm->getSize();
-  int sqrtProcs = sqrt(numProcs); 
+  int sqrtProcs = sqrt(numProcs);
 
-  if(sqrtProcs*sqrtProcs != numProcs) 
+  if(sqrtProcs*sqrtProcs != numProcs)
   {
     if(0 == comm->getRank())
       std::cerr << "Error: Invalid number of processors provided, num processors must be a perfect square." << std::endl;
@@ -99,9 +113,9 @@ int executeInsertGlobalIndicesDP(const comm_ptr_t& comm, const struct CmdLineOpt
   // Generate a simple 3x3 mesh
   int nex = opts.numElementsX;
   int ney = opts.numElementsY;
-  
+
   MeshDatabase mesh(comm,nex,ney,procx,procy);
-  
+
   if(opts.verbose) mesh.print(std::cout);
 
   // Build Tpetra Maps
@@ -115,18 +129,18 @@ int executeInsertGlobalIndicesDP(const comm_ptr_t& comm, const struct CmdLineOpt
   // ------------------
   // - Loop over every element in the mesh.
   //   - Get list of nodes associated with each element.
-  //   - Insert the clique of nodes associated with each element into the graph. 
-  //   
+  //   - Insert the clique of nodes associated with each element into the graph.
+  //
   auto domain_map = row_map;
   auto range_map  = row_map;
 
-  auto owned_element_to_node_ids = mesh.getOwnedElementToNode(); 
+  auto owned_element_to_node_ids = mesh.getOwnedElementToNode();
 
   RCP<TimeMonitor> timerGlobal = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("X) Global")));
   RCP<TimeMonitor> timerElementLoopGraph = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("1) ElementLoop  (Graph)")));
 
   RCP<graph_t> crs_graph = rcp(new graph_t(row_map, 0));
-  
+
   // Using 4 because we're using quads for this example, so there will be 4 nodes associated with each element.
   Teuchos::Array<global_ordinal_t> global_ids_in_row(4);
 
@@ -134,8 +148,8 @@ int executeInsertGlobalIndicesDP(const comm_ptr_t& comm, const struct CmdLineOpt
   for(size_t element_gidx=0; element_gidx<mesh.getNumOwnedElements(); element_gidx++)
   {
     // Populate global_ids_in_row:
-    // - Copy the global node ids for current element into an array.  
-    // - Since each element's contribution is a clique, we can re-use this for 
+    // - Copy the global node ids for current element into an array.
+    // - Since each element's contribution is a clique, we can re-use this for
     //   each row associated with this element's contribution.
     for(size_t element_node_idx=0; element_node_idx<owned_element_to_node_ids.extent(1); element_node_idx++)
     {
@@ -178,9 +192,9 @@ int executeInsertGlobalIndicesDP(const comm_ptr_t& comm, const struct CmdLineOpt
   //    | -1  |     | -1  |  2  |
   //    +-----+-----+-----+-----+
   //
-  // For Type 1 matrix fill, we create the crs_matrix object and will fill it 
-  // in the same manner as we filled in the graph but in this case, nodes 
-  // associated with each element will receive contributions according to 
+  // For Type 1 matrix fill, we create the crs_matrix object and will fill it
+  // in the same manner as we filled in the graph but in this case, nodes
+  // associated with each element will receive contributions according to
   // the row in this stencil.
   //
   // In this example, the calls to sumIntoGlobalValues() on 1 core will look like:
@@ -224,7 +238,7 @@ int executeInsertGlobalIndicesDP(const comm_ptr_t& comm, const struct CmdLineOpt
     {
       column_global_ids[element_node_idx] = owned_element_to_node_ids(element_gidx, element_node_idx);
     }
-    
+
     // For each node (row) on the current element:
     // - populate the values array
     // - add the values to the crs_matrix.
@@ -232,7 +246,7 @@ int executeInsertGlobalIndicesDP(const comm_ptr_t& comm, const struct CmdLineOpt
     Teuchos::Array<global_ordinal_t> rows(4);
     Teuchos::Array<Scalar> values(4);
     for(size_t element_node_idx=0; element_node_idx<4; element_node_idx++)
-    { 
+    {
       global_ordinal_t global_row_id = owned_element_to_node_ids(element_gidx, element_node_idx);
 
       for(size_t col_idx=0; col_idx<4; col_idx++)
