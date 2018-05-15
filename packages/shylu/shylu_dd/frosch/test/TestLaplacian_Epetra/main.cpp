@@ -69,8 +69,7 @@ typedef int LO;
 typedef int GO;
 #ifdef KOKKOS_HAVE_SERIAL
 typedef Kokkos::Compat::KokkosSerialWrapperNode EpetraNode;
-#endif
-#ifdef KOKKOS_HAVE_OPENMP
+#else
 typedef Kokkos::Compat::KokkosOpenMPWrapperNode EpetraNode;
 #endif
 typedef EpetraNode NO;
