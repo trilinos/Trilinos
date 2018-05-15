@@ -54,6 +54,9 @@
 #include "MueLu_BaseClass.hpp"
 #include "MueLu_VerboseObject.hpp"
 #include "MueLu_MutuallyExclusiveTime.hpp"
+#ifdef HAVE_TEUCHOS_ADD_TIME_MONITOR_TO_STACKED_TIMER
+#include "Teuchos_StackedTimer.hpp"
+#endif
 
 namespace MueLu {
 
@@ -83,13 +86,24 @@ namespace MueLu {
         // Start the timer (this is what is done by Teuchos::TimeMonitor)
         timer_->start();
         timer_->incrementNumCalls();
+#ifdef HAVE_TEUCHOS_ADD_TIME_MONITOR_TO_STACKED_TIMER
+        const auto stackedTimer = Teuchos::TimeMonitor::getStackedTimer();
+        if (nonnull(stackedTimer))
+          stackedTimer->start(timer_->name());
+#endif
       }
     }
 
     ~TimeMonitor() {
       // Stop the timer if present
-      if (timer_ != Teuchos::null)
+      if (timer_ != Teuchos::null) {
         timer_->stop();
+#ifdef HAVE_TEUCHOS_ADD_TIME_MONITOR_TO_STACKED_TIMER
+        const auto stackedTimer = Teuchos::TimeMonitor::getStackedTimer();
+        if (nonnull(stackedTimer))
+          stackedTimer->stop(timer_->name());
+#endif
+      }
     }
 
   protected:
