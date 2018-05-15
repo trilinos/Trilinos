@@ -374,9 +374,10 @@ protected:
      /**
       * Return the time info for a given string
       * @param name input string to search for
+      * @param set to true on exit if timer was found
       * @return Time data
       */
-     BaseTimer::TimeInfo findTimer(const std::string &name);
+    BaseTimer::TimeInfo findTimer(const std::string &name,bool& found);
 
   protected:
 
@@ -462,14 +463,17 @@ public:
    }
 
   /**
-   * Return the time info for a given string
+   * Return the time info for a given string (full string name)
    * @param name input string to search for
    * @return Time data
    */
-  BaseTimer::TimeInfo findTimer(const std::string &name){
-    return timer_.findTimer(name);
+  BaseTimer::TimeInfo findTimer(const std::string &name) {
+    bool foundTimer = false;
+    const auto timeInfo = timer_.findTimer(name,foundTimer);
+    TEUCHOS_TEST_FOR_EXCEPTION(!foundTimer, std::runtime_error,
+      "StackedTimer::findTimer() failed to find a timer named \"" << name << "\"!\n");
+    return timeInfo;
   }
-
 
   void report(std::ostream &os) {
     timer_.report(os);

@@ -35,21 +35,24 @@ StackedTimer::LevelTimer::report(std::ostream &os) {
   os << "Remainder: " << accumulatedTime() - t_total<<std::endl;
 
 }
-
+  
 BaseTimer::TimeInfo
-StackedTimer::LevelTimer::findTimer(const std::string &name) {
+StackedTimer::LevelTimer::findTimer(const std::string &name, bool& found) {
   BaseTimer::TimeInfo t;
-  if (get_full_name() == name)
+  if (get_full_name() == name) {
     t = BaseTimer::TimeInfo(this);
+    found = true;
+  }
   else {
     for (unsigned i=0;i<sub_timers_.size(); ++i){
-      t = sub_timers_[i].findTimer(name);
-      if (t.time > 0.)
+      t = sub_timers_[i].findTimer(name,found);
+      if (found)
         return t;
     }
   }
   return t;
 }
+
 void
 StackedTimer::flatten() {
   int num_timers = timer_.countTimers();
@@ -101,12 +104,13 @@ StackedTimer::collectRemoteData(Teuchos::RCP<const Teuchos::Comm<int> > comm, co
 
   // set initial values
   for (int i=0;i<num_names; ++i) {
-    auto t = timer_.findTimer(flat_names_[i]);
-      time[i] = t.time;
-      count[i] = t.count;
-      used[i] = t.count==0? 0:1;
-      if (options.output_total_updates)
-        updates[i] = t.updates;
+    bool found = false; // ignore result here
+    auto t = timer_.findTimer(flat_names_[i],found);
+    time[i] = t.time;
+    count[i] = t.count;
+    used[i] = t.count==0? 0:1;
+    if (options.output_total_updates)
+      updates[i] = t.updates;
   }
 
   // Now reduce the data

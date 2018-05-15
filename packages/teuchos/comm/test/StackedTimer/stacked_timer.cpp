@@ -59,6 +59,9 @@ TEUCHOS_UNIT_TEST(StackedTimer, Basic)
   TEST_EQUALITY((timer.findTimer("Total Time@Solve")).count, 10);
   TEST_EQUALITY((timer.findTimer("Total Time@Solve@Prec")).count, 10);
 
+  // Test for exception for bad timer name
+  TEST_THROW(timer.findTimer("Testing misspelled timer name!"),std::runtime_error);
+
   // Pre-aggregation
   if (myRank == 0) {
     TEST_EQUALITY((timer.findTimer("Total Time@Solve@Rank 0 ONLY")).count, 10);
