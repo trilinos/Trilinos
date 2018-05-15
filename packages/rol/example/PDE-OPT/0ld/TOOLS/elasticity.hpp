@@ -179,7 +179,7 @@ public:
           = ROL::makePtr<Intrepid::Basis_HGRAD_QUAD_C2_FEM<Real, Intrepid::FieldContainer<Real> >>();
       }
       else {
-        ROL_TEST_FOR_EXCEPTION(true, std::logic_error,
+        TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
           ">>> (Elasticity::Initialize): Basis Order is out of bounds!");
       }
     }
@@ -224,13 +224,13 @@ public:
     // and move it to the closesd boundary point only works for
     // rectangular domain first make sure the point load is in
     // the domain
-    ROL_TEST_FOR_EXCEPTION( pointload_loc_x_ < xmin_, std::invalid_argument,
+    TEUCHOS_TEST_FOR_EXCEPTION( pointload_loc_x_ < xmin_, std::invalid_argument,
       ">>> (elasticity::process_loading_information): x location of point load is less than xmin!");
-    ROL_TEST_FOR_EXCEPTION( pointload_loc_x_ > xmax_, std::invalid_argument,
+    TEUCHOS_TEST_FOR_EXCEPTION( pointload_loc_x_ > xmax_, std::invalid_argument,
       ">>> (elasticity::process_loading_information): x location of point load is greater than xmax!");
-    ROL_TEST_FOR_EXCEPTION( pointload_loc_y_ < ymin_, std::invalid_argument,
+    TEUCHOS_TEST_FOR_EXCEPTION( pointload_loc_y_ < ymin_, std::invalid_argument,
       ">>> (elasticity::process_loading_information): y location of point load is less than ymin!");
-    ROL_TEST_FOR_EXCEPTION( pointload_loc_y_ > ymax_, std::invalid_argument,
+    TEUCHOS_TEST_FOR_EXCEPTION( pointload_loc_y_ > ymax_, std::invalid_argument,
       ">>> (elasticity::process_loading_information): y location of point load is greater than ymax!");
     //    
     Real distx1 = std::abs(pointload_loc_x_ - xmin_);

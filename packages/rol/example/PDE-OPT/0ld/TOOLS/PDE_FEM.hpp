@@ -990,15 +990,15 @@ public:
 
   // ACCESSOR FUNCTIONS
   ROL::Ptr<MeshManager<Real> >& GetMeshManager(void) {
-    ROL_TEST_FOR_EXCEPTION(meshMgr_==ROL::nullPtr, std::logic_error,
+    TEUCHOS_TEST_FOR_EXCEPTION(meshMgr_==ROL::nullPtr, std::logic_error,
       ">>> (PDE_FEM::GetMeshManager): MeshManager not initialized!");
     return meshMgr_;
   }
 
   ROL::Ptr<Intrepid::Basis<Real, Intrepid::FieldContainer<Real> > >& GetBasisPtr(const int ind) {
-    ROL_TEST_FOR_EXCEPTION(ind > spaceDim_-1 || ind < 0, std::logic_error,
+    TEUCHOS_TEST_FOR_EXCEPTION(ind > spaceDim_-1 || ind < 0, std::logic_error,
       ">>> (PDE_FEM::GetBasisPtr): ind out of bounds!");
-    ROL_TEST_FOR_EXCEPTION(basisPtrs_.size()==0, std::logic_error,
+    TEUCHOS_TEST_FOR_EXCEPTION(basisPtrs_.size()==0, std::logic_error,
       ">>> (PDE_FEM::GetBasisPtr): BasisPntrs not initialized!");
     return basisPtrs_[ind];
   }

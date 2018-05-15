@@ -139,7 +139,7 @@ int main(int argc, char *argv[]) {
       meshMgr = ROL::makePtr<MeshReader<RealT>>(*parlist);
     }
     else {
-      ROL_TEST_FOR_EXCEPTION(true, std::invalid_argument,
+      TEUCHOS_TEST_FOR_EXCEPTION(true, std::invalid_argument,
         ">>> PDE-OPT/poisson/example_01.cpp: Problem dim is not 1, 2 or 3!");
     }
     // Initialize PDE describe Poisson's equation

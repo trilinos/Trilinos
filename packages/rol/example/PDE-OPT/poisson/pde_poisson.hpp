@@ -126,11 +126,11 @@ public:
     int cubDegree  = parlist.sublist("Problem").get("Cubature Degree",4);
     int probDim    = parlist.sublist("Problem").get("Problem Dimension",2);
     if (probDim > 3 || probDim < 1) {
-      ROL_TEST_FOR_EXCEPTION(true, std::invalid_argument,
+      TEUCHOS_TEST_FOR_EXCEPTION(true, std::invalid_argument,
         ">>> PDE-OPT/poisson/pde_poisson.hpp: Problem dimension is not 1, 2 or 3!");
     }
     if (basisOrder > 2 || basisOrder < 1) {
-      ROL_TEST_FOR_EXCEPTION(true, std::invalid_argument,
+      TEUCHOS_TEST_FOR_EXCEPTION(true, std::invalid_argument,
         ">>> PDE-OPT/poisson/pde_poisson.hpp: Basis order is not 1 or 2!");
     }
     if (probDim == 1) {

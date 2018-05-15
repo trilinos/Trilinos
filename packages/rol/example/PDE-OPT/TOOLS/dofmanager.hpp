@@ -299,7 +299,7 @@ public:
         *array = tmp;
       }
       else {
-        ROL_TEST_FOR_EXCEPTION(true, std::invalid_argument,
+        TEUCHOS_TEST_FOR_EXCEPTION(true, std::invalid_argument,
           ">>> PDE-OPT/TOOLS/dofmanager.hpp (transformToIntrepidPattern): Input array rank not 2 or 3!");
       }
     }
@@ -333,7 +333,7 @@ public:
         *array = tmp;
       }
       else {
-        ROL_TEST_FOR_EXCEPTION(true, std::invalid_argument,
+        TEUCHOS_TEST_FOR_EXCEPTION(true, std::invalid_argument,
           ">>> PDE-OPT/TOOLS/dofmanager.hpp (transformToFieldPattern): Input array rank not 2 or 3!");
       }
     }
@@ -540,7 +540,7 @@ private:
           map2FP[f] = {0, 2, 1};
         }
         else {
-          ROL_TEST_FOR_EXCEPTION(true, std::invalid_argument,
+          TEUCHOS_TEST_FOR_EXCEPTION(true, std::invalid_argument,
             ">>> PDE-OPT/TOOLS/dofmanager.hpp (ComputeDofTransforms): basisDeg > 2");
         }
       }
@@ -554,7 +554,7 @@ private:
           map2FP[f] = {0, 1, 2, 3, 4, 5, 6, 7, 8};
         }
         else {
-          ROL_TEST_FOR_EXCEPTION(true, std::invalid_argument,
+          TEUCHOS_TEST_FOR_EXCEPTION(true, std::invalid_argument,
             ">>> PDE-OPT/TOOLS/dofmanager.hpp (ComputeDofTransforms): basisDeg > 2");
         }
       }
@@ -574,7 +574,7 @@ private:
                        24, 25, 23, 21, 20, 22};                      // Faces
         }
         else {
-          ROL_TEST_FOR_EXCEPTION(true, std::invalid_argument,
+          TEUCHOS_TEST_FOR_EXCEPTION(true, std::invalid_argument,
             ">>> PDE-OPT/TOOLS/dofmanager.hpp (ComputeDofTransforms): basisDeg > 2");
         }
       }

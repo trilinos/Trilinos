@@ -168,7 +168,7 @@ class PDE_PrimalSimVector : public ROL::TpetraMultiVector<Real,LO,GO,Node> {
     }
 
     Real dot( const ROL::Vector<Real> &x ) const {
-      ROL_TEST_FOR_EXCEPTION( (ROL::TpetraMultiVector<Real,LO,GO,Node>::dimension() != x.dimension()),
+      TEUCHOS_TEST_FOR_EXCEPTION( (ROL::TpetraMultiVector<Real,LO,GO,Node>::dimension() != x.dimension()),
                                   std::invalid_argument,
                                   "Error: Vectors must have the same dimension." );
       const ROL::Ptr<const Tpetra::MultiVector<Real,LO,GO,Node> > ex
@@ -313,7 +313,7 @@ class PDE_DualSimVector : public ROL::TpetraMultiVector<Real,LO,GO,Node> {
     }
 
     Real dot( const ROL::Vector<Real> &x ) const {
-      ROL_TEST_FOR_EXCEPTION( (ROL::TpetraMultiVector<Real,LO,GO,Node>::dimension() != x.dimension()),
+      TEUCHOS_TEST_FOR_EXCEPTION( (ROL::TpetraMultiVector<Real,LO,GO,Node>::dimension() != x.dimension()),
                                   std::invalid_argument,
                                   "Error: Vectors must have the same dimension." );
       const ROL::Ptr<const Tpetra::MultiVector<Real,LO,GO,Node> > &ex
@@ -460,7 +460,7 @@ class PDE_PrimalOptVector : public ROL::TpetraMultiVector<Real,LO,GO,Node> {
     }
 
     Real dot( const ROL::Vector<Real> &x ) const {
-      ROL_TEST_FOR_EXCEPTION( (ROL::TpetraMultiVector<Real,LO,GO,Node>::dimension() != x.dimension()),
+      TEUCHOS_TEST_FOR_EXCEPTION( (ROL::TpetraMultiVector<Real,LO,GO,Node>::dimension() != x.dimension()),
                                   std::invalid_argument,
                                   "Error: Vectors must have the same dimension." );
       const ROL::Ptr<const Tpetra::MultiVector<Real,LO,GO,Node> > ex
@@ -605,7 +605,7 @@ class PDE_DualOptVector : public ROL::TpetraMultiVector<Real,LO,GO,Node> {
     }
 
     Real dot( const ROL::Vector<Real> &x ) const {
-      ROL_TEST_FOR_EXCEPTION( (ROL::TpetraMultiVector<Real,LO,GO,Node>::dimension() != x.dimension()),
+      TEUCHOS_TEST_FOR_EXCEPTION( (ROL::TpetraMultiVector<Real,LO,GO,Node>::dimension() != x.dimension()),
                                   std::invalid_argument,
                                   "Error: Vectors must have the same dimension." );
       const ROL::Ptr<const Tpetra::MultiVector<Real,LO,GO,Node> > &ex

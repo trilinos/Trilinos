@@ -544,7 +544,7 @@ public:
       return gradPhysicalZ_;
     }
     else {
-      ROL_TEST_FOR_EXCEPTION(true, std::invalid_argument,
+      TEUCHOS_TEST_FOR_EXCEPTION(true, std::invalid_argument,
         ">>> ERROR (PDEOPT::FE::DND): Invalid coordinate argument!");
     }
   }
@@ -566,7 +566,7 @@ public:
       return gradPhysicalZWeighted_;
     }
     else {
-      ROL_TEST_FOR_EXCEPTION(true, std::invalid_argument,
+      TEUCHOS_TEST_FOR_EXCEPTION(true, std::invalid_argument,
         ">>> ERROR (PDEOPT::FE::DNDdetJ): Invalid coordinate argument!");
     }
   }

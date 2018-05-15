@@ -31,12 +31,12 @@ public:
       ROL::Ptr<FieldVector> output_field = output_field_ptr->getVector();
       size_t input_length  = input_field->getLocalLength();
       size_t output_length = output_field->getLocalLength();
-      ROL_TEST_FOR_EXCEPTION(input_length != output_length, std::invalid_argument,
+      TEUCHOS_TEST_FOR_EXCEPTION(input_length != output_length, std::invalid_argument,
         ">>> (PDE_OptVector_BatchManager::sumAll): Field dimension mismatch!");
 
       size_t input_nvec  = input_field->getNumVectors();
       size_t output_nvec = output_field->getNumVectors();
-      ROL_TEST_FOR_EXCEPTION(input_nvec != output_nvec, std::invalid_argument,
+      TEUCHOS_TEST_FOR_EXCEPTION(input_nvec != output_nvec, std::invalid_argument,
         ">>> (PDE_OptVector_BatchManager::sumAll): Field dimension mismatch!");
 
       for (size_t i = 0; i < input_nvec; ++i) {
@@ -56,7 +56,7 @@ public:
       ROL::Ptr<ParamVector> output_param = output_param_ptr->getVector();
       size_t input_size  = static_cast<size_t>(input_param->size());
       size_t output_size = static_cast<size_t>(output_param->size());
-      ROL_TEST_FOR_EXCEPTION(input_size != output_size, std::invalid_argument,
+      TEUCHOS_TEST_FOR_EXCEPTION(input_size != output_size, std::invalid_argument,
         ">>> (PDE_OptVector_BatchManager::SumAll): Parameter dimension mismatch!");
 
       ROL::TeuchosBatchManager<Real,GO>::sumAll(&input_param->front(),

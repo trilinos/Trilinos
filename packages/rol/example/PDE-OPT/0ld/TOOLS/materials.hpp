@@ -71,7 +71,7 @@ public:
 
   virtual void InitializeMaterial(const int dim, const bool planeStrain,
                                   const Real modulus, const Real poissonRatio) {
-    ROL_TEST_FOR_EXCEPTION(dim > 3 || dim < 1, std::invalid_argument,
+    TEUCHOS_TEST_FOR_EXCEPTION(dim > 3 || dim < 1, std::invalid_argument,
       ">>> ERROR (InitializeMaterial): dim less than one or greater than three!");
     dim_          = dim;
     planeStrain_  = planeStrain;
@@ -177,7 +177,7 @@ public:
   virtual void InitializeSIMP(const int dim, const bool planeStrain,
                               const Real modulus, const Real poissonRatio,
                               const Real density, const int powerP, const Real minDensity) {
-    ROL_TEST_FOR_EXCEPTION(powerP < 1, std::invalid_argument,
+    TEUCHOS_TEST_FOR_EXCEPTION(powerP < 1, std::invalid_argument,
       ">>> ERROR (InitializeSIMP): SIMP power is less than one!");
     Material<Real>::InitializeMaterial(dim, planeStrain, modulus, poissonRatio);
     density_    = density;
@@ -186,21 +186,21 @@ public:
   }
   
   Real getSIMPScaleFactor(void) const {
-    ROL_TEST_FOR_EXCEPTION(powerP_ < 1, std::invalid_argument,
+    TEUCHOS_TEST_FOR_EXCEPTION(powerP_ < 1, std::invalid_argument,
       ">>> ERROR (getSIMPScaleFactor): SIMP power is less than one!");
     Real one(1);
     return minDensity_ + (one-minDensity_)*std::pow(density_, powerP_);
   }
   
   Real getSIMPFirstDerivativeScaleFactor(void) const {
-    ROL_TEST_FOR_EXCEPTION(powerP_ < 1, std::invalid_argument,
+    TEUCHOS_TEST_FOR_EXCEPTION(powerP_ < 1, std::invalid_argument,
       ">>> ERROR (getSIMPFirstDerivativeScaleFactor): SIMP power is less than one!");
     Real one(1);
     return (one-minDensity_) * powerP_ * (std::pow(density_, powerP_-1));
   }
   
   Real getSIMPSecondDerivativeScaleFactor(void) const {
-    ROL_TEST_FOR_EXCEPTION(powerP_ < 1, std::invalid_argument,
+    TEUCHOS_TEST_FOR_EXCEPTION(powerP_ < 1, std::invalid_argument,
       ">>> ERROR (getSIMPSecondDerivativeScaleFactor): SIMP power is less than one!");
     Real one(1), scale(0);
     if ( powerP_ > 1 ) {
