@@ -136,7 +136,7 @@ std::vector<std::vector<Real> > Objective<Real>::checkGradient( const Vector<Rea
                                                                 std::ostream & outStream,
                                                                 const int order ) {
 
-  TEUCHOS_TEST_FOR_EXCEPTION( order<1 || order>4, std::invalid_argument, 
+  ROL_TEST_FOR_EXCEPTION( order<1 || order>4, std::invalid_argument, 
                               "Error: finite difference order must be 1,2,3, or 4" );
 
   using Finite_Difference_Arrays::shifts;
@@ -257,7 +257,7 @@ std::vector<std::vector<Real> > Objective<Real>::checkHessVec( const Vector<Real
                                                                std::ostream & outStream,
                                                                const int order ) {
 
-  TEUCHOS_TEST_FOR_EXCEPTION( order<1 || order>4, std::invalid_argument, 
+  ROL_TEST_FOR_EXCEPTION( order<1 || order>4, std::invalid_argument, 
                               "Error: finite difference order must be 1,2,3, or 4" );
 
   using Finite_Difference_Arrays::shifts;

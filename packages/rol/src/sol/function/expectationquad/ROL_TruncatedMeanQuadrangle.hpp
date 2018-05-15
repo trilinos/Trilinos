@@ -74,7 +74,7 @@ private:
 
   void checkInputs(void) const {
     Real zero(0);
-    TEUCHOS_TEST_FOR_EXCEPTION((beta_ <= zero), std::invalid_argument,
+    ROL_TEST_FOR_EXCEPTION((beta_ <= zero), std::invalid_argument,
       ">>> ERROR (ROL::TruncatedMeanQuadrangle): Threshold must be positive!");
   }
 

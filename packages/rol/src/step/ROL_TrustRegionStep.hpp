@@ -517,7 +517,7 @@ public:
                                              useSecantHessVec_);
       }
       else {
-        TEUCHOS_TEST_FOR_EXCEPTION( true, std::invalid_argument,
+        ROL_TEST_FOR_EXCEPTION( true, std::invalid_argument,
           ">>> ERROR (TrustRegionStep): Invalid trust-region model!");
       }
     }

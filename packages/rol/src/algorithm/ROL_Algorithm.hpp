@@ -118,7 +118,7 @@ public:
 //    parlist.validateParametersAndSetDefaults(*validParlist);
 
     EStep els = StringToEStep(stepname);
-    TEUCHOS_TEST_FOR_EXCEPTION( !(isValidStep(els)),
+    ROL_TEST_FOR_EXCEPTION( !(isValidStep(els)),
                                 std::invalid_argument,
                                 "Invalid step name in algorithm constructor!");
     StepFactory<Real> stepFactory;

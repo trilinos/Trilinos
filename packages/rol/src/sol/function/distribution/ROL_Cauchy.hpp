@@ -83,7 +83,7 @@ public:
   }
 
   Real moment(const size_t m) const {
-    TEUCHOS_TEST_FOR_EXCEPTION( true, std::invalid_argument,
+    ROL_TEST_FOR_EXCEPTION( true, std::invalid_argument,
       ">>> ERROR (ROL::Cauchy): Cauchy moments are undefined!");
     return 0.;
   }

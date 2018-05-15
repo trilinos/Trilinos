@@ -163,12 +163,12 @@ private:
     Ptr<V> clone( const V& x ) {
       VectorKey x_key(x);
       
-      TEUCHOS_TEST_FOR_EXCEPTION( key_.hash_code != x_key.hash_code, logic_error,
+      ROL_TEST_FOR_EXCEPTION( key_.hash_code != x_key.hash_code, logic_error,
         "VectorWorkspace::VectorStack tried to clone a vector of type "     <<
         hex << key_.hash_code << ", but it can only clone vectors of type " <<
         hex << x_key.hash_code );
 
-      TEUCHOS_TEST_FOR_EXCEPTION( key_.dimension != x_key.dimension, logic_error, 
+      ROL_TEST_FOR_EXCEPTION( key_.dimension != x_key.dimension, logic_error, 
         "VectorWorkspace::VectorStack tried to clone a vector of dimension "     <<
         hex << key_.dimension << ", but it can only clone vectors of dimension " <<
         hex << x_key.dimension );

@@ -100,7 +100,7 @@ public:
   }
 
   virtual void sumAll(Vector<Real> &input, Vector<Real> &output) {
-    TEUCHOS_TEST_FOR_EXCEPTION( true, std::invalid_argument,
+    ROL_TEST_FOR_EXCEPTION( true, std::invalid_argument,
       ">>> ERROR (ROL::TeuchosBatchManager): sumAll(Vector<Real> &input, Vector<Real> &output) is not implemented");
   }
 

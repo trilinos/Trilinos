@@ -164,7 +164,7 @@ int main(int argc, char *argv[]) {
       meshMgr = ROL::makePtr<MeshReader<RealT>>(*parlist);
     }
     else {
-      TEUCHOS_TEST_FOR_EXCEPTION(true, std::invalid_argument,
+      ROL_TEST_FOR_EXCEPTION(true, std::invalid_argument,
         ">>> PDE-OPT/topo-opt/elasticity/example_04.cpp: Problem dim is not 2 or 3!");
     }
     // Initialize PDE describing elasticity equations.

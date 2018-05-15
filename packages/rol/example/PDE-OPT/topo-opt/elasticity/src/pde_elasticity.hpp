@@ -110,11 +110,11 @@ public:
     int bdryCubDegree = parlist.sublist("Problem").get("Boundary Cubature Degree",2);
     int probDim       = parlist.sublist("Problem").get("Problem Dimension",2);
     if (probDim > 3 || probDim < 2) {
-      TEUCHOS_TEST_FOR_EXCEPTION(true, std::invalid_argument,
+      ROL_TEST_FOR_EXCEPTION(true, std::invalid_argument,
         ">>> PDE-OPT/poisson/pde_poisson.hpp: Problem dimension is not 2 or 3!");
     }
     if (basisOrder > 2 || basisOrder < 1) {
-      TEUCHOS_TEST_FOR_EXCEPTION(true, std::invalid_argument,
+      ROL_TEST_FOR_EXCEPTION(true, std::invalid_argument,
         ">>> PDE-OPT/poisson/pde_poisson.hpp: Basis order is not 1 or 2!");
     }
     if (probDim == 2) {

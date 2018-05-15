@@ -107,7 +107,7 @@ template<class Real>
 class ReductionMin : public ReductionOp<Real> {
 public:
   ReductionMin() {
-      TEUCHOS_TEST_FOR_EXCEPTION(!std::numeric_limits<Real>::is_specialized, 
+      ROL_TEST_FOR_EXCEPTION(!std::numeric_limits<Real>::is_specialized, 
       std::logic_error,"ReductionMin() requires std::numeric_limits "  
       << "be specialized on supplied template parameter." << std::endl); 
   }
@@ -134,7 +134,7 @@ template<class Real>
 class ReductionMax : public ReductionOp<Real> {
 public:
   ReductionMax() {
-      TEUCHOS_TEST_FOR_EXCEPTION(!std::numeric_limits<Real>::is_specialized, 
+      ROL_TEST_FOR_EXCEPTION(!std::numeric_limits<Real>::is_specialized, 
       std::logic_error,"ReductionMax() requires std::numeric_limits "  
       << "be specialized on supplied template parameter." << std::endl); 
   }

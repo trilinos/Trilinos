@@ -88,7 +88,7 @@ class PrimalScaledTpetraMultiVector : public TpetraMultiVector<Real,LO,GO,Node> 
         scale_vec_(scale_vec), isDualInitialized_(false) {}
 
     Real dot( const Vector<Real> &x ) const {
-      TEUCHOS_TEST_FOR_EXCEPTION( (TpetraMultiVector<Real,LO,GO,Node>::dimension() != x.dimension()),
+      ROL_TEST_FOR_EXCEPTION( (TpetraMultiVector<Real,LO,GO,Node>::dimension() != x.dimension()),
                                   std::invalid_argument,
                                   "Error: Vectors must have the same dimension." );
       const Tpetra::MultiVector<Real,LO,GO,Node> &ex
@@ -159,7 +159,7 @@ class DualScaledTpetraMultiVector : public TpetraMultiVector<Real,LO,GO,Node> {
         scale_vec_(scale_vec), isDualInitialized_(false) {}
 
     Real dot( const Vector<Real> &x ) const {
-      TEUCHOS_TEST_FOR_EXCEPTION( (TpetraMultiVector<Real,LO,GO,Node>::dimension() != x.dimension()),
+      ROL_TEST_FOR_EXCEPTION( (TpetraMultiVector<Real,LO,GO,Node>::dimension() != x.dimension()),
                                   std::invalid_argument,
                                   "Error: Vectors must have the same dimension." );
       const Tpetra::MultiVector<Real,LO,GO,Node> &ex

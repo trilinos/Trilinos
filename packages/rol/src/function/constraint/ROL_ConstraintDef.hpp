@@ -382,7 +382,7 @@ std::vector<std::vector<Real> > Constraint<Real>::checkApplyJacobian(const Vecto
                                                                      const bool printToStream,
                                                                      std::ostream & outStream,
                                                                      const int order) {
-  TEUCHOS_TEST_FOR_EXCEPTION( order<1 || order>4, std::invalid_argument, 
+  ROL_TEST_FOR_EXCEPTION( order<1 || order>4, std::invalid_argument, 
                               "Error: finite difference order must be 1,2,3, or 4" );
 
   const Real one(1.0);

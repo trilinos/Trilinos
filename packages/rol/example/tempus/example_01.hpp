@@ -121,7 +121,7 @@ Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar>> SinCosModelEvaluator<Scalar>:
 
 template<class Scalar>
 Thyra::ModelEvaluatorBase::InArgs<Scalar> SinCosModelEvaluator<Scalar>::getNominalValues() const {
-  TEUCHOS_TEST_FOR_EXCEPTION( !isInitialized_, std::logic_error,"Error, setupInOutArgs_ must be called first!\n");
+  ROL_TEST_FOR_EXCEPTION( !isInitialized_, std::logic_error,"Error, setupInOutArgs_ must be called first!\n");
   return nominalValues_;
 }
 
@@ -146,7 +146,7 @@ void SinCosModelEvaluator<Scalar>::evalModelImpl(
   const Thyra::ModelEvaluatorBase::OutArgs<Scalar> &outArgs) const {
 
   using Teuchos::RCP;
-  TEUCHOS_TEST_FOR_EXCEPTION( !isInitialized_, std::logic_error,"Error, setupInOutArgs_ must be called first!\n");
+  ROL_TEST_FOR_EXCEPTION( !isInitialized_, std::logic_error,"Error, setupInOutArgs_ must be called first!\n");
 
   const Thyra::ConstDetachedVectorView<Scalar> x_in_view(inArgs.get_x());
   const RCP<Thyra::VectorBase<Scalar> > f_out = outArgs.get_f();

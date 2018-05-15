@@ -264,7 +264,7 @@ public:
           break;
         }
         default:
-          TEUCHOS_TEST_FOR_EXCEPTION(true,std::invalid_argument,
+          ROL_TEST_FOR_EXCEPTION(true,std::invalid_argument,
             ">>> (LineSearchStep::Initialize): Undefined descent type!");
       }
     }
@@ -291,7 +291,7 @@ public:
           break;
         }
         default:
-          TEUCHOS_TEST_FOR_EXCEPTION(true,std::invalid_argument,
+          ROL_TEST_FOR_EXCEPTION(true,std::invalid_argument,
             ">>> (LineSearchStep::Initialize): Undefined descent type!");
       }
     }

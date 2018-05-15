@@ -75,7 +75,7 @@ inline void RandVarFunctionalInfo(ROL::ParameterList &parlist, std::string &name
     ProbabilityInfo<Real>(parlist,name,nStatistic,lower,upper,isBoundActivated,printToStream,outStream);
   }
   else {
-    TEUCHOS_TEST_FOR_EXCEPTION(true,std::invalid_argument,
+    ROL_TEST_FOR_EXCEPTION(true,std::invalid_argument,
       ">>> (ROL::RandVarFunctionalInfo): Invalid random variable functional type!");
   }
 

@@ -247,7 +247,7 @@ public:
         output_ = algo_->run(*x_,*g_,*l_,*c_,*obj_,*con_,*bnd_,true,outStream);
       break;
       case TYPE_LAST:
-        TEUCHOS_TEST_FOR_EXCEPTION(true,std::invalid_argument,
+        ROL_TEST_FOR_EXCEPTION(true,std::invalid_argument,
           "Error in OptimizationSolver::solve() : Unsupported problem type");
       break;
     }

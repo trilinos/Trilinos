@@ -227,20 +227,20 @@ public:
 
   virtual void applyUnary( const Elementwise::UnaryFunction<Real> &f ) {
     ROL_UNUSED(f);
-    TEUCHOS_TEST_FOR_EXCEPTION( true, std::logic_error,
+    ROL_TEST_FOR_EXCEPTION( true, std::logic_error,
       "The method applyUnary wass called, but not implemented" << std::endl); 
   }
 
   virtual void applyBinary( const Elementwise::BinaryFunction<Real> &f, const Vector &x ) {
     ROL_UNUSED(f);
     ROL_UNUSED(x);
-    TEUCHOS_TEST_FOR_EXCEPTION( true, std::logic_error,
+    ROL_TEST_FOR_EXCEPTION( true, std::logic_error,
       "The method applyBinary wass called, but not implemented" << std::endl); 
   }
 
   virtual Real reduce( const Elementwise::ReductionOp<Real> &r ) const {
     ROL_UNUSED(r);
-    TEUCHOS_TEST_FOR_EXCEPTION( true, std::logic_error,
+    ROL_TEST_FOR_EXCEPTION( true, std::logic_error,
       "The method reduce was called, but not implemented" << std::endl); 
   }
 

@@ -152,7 +152,7 @@ int main(int argc, char *argv[]) {
         break;
 
         case TYPE_LAST:
-          TEUCHOS_TEST_FOR_EXCEPTION(true,std::invalid_argument,"Error: Unsupported problem type!");
+          ROL_TEST_FOR_EXCEPTION(true,std::invalid_argument,"Error: Unsupported problem type!");
         break;
       }
 

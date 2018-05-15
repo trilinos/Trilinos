@@ -71,7 +71,7 @@ inline void DeviationMeasureInfo(ROL::ParameterList &parlist, std::string &name,
     upper.resize(nStatistic,ROL_INF<Real>());
   }
   else {
-    TEUCHOS_TEST_FOR_EXCEPTION(true,std::invalid_argument,
+    ROL_TEST_FOR_EXCEPTION(true,std::invalid_argument,
       ">>> (ROL::DeviationMeasureInfo): Invalid deviation measure " << name << "!");
   }
 

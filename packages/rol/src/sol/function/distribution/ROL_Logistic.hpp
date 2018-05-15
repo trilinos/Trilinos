@@ -90,7 +90,7 @@ public:
       case 1: val = mean_;                                        break;
       case 2: val = std::pow(var_*ROL::ScalarTraits<Real>::pi(),2)/3. + std::pow(mean_,2); break;
       default:
-        TEUCHOS_TEST_FOR_EXCEPTION( true, std::invalid_argument,
+        ROL_TEST_FOR_EXCEPTION( true, std::invalid_argument,
           ">>> ERROR (ROL::Logistic): Logistic moment not implemented for m > 2!");
     }
     return val;

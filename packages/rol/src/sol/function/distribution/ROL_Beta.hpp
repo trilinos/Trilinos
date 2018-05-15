@@ -125,7 +125,7 @@ public:
   }
 
   Real integrateCDF(const Real input) const {
-    TEUCHOS_TEST_FOR_EXCEPTION( true, std::invalid_argument,
+    ROL_TEST_FOR_EXCEPTION( true, std::invalid_argument,
       ">>> ERROR (ROL::Beta): Beta integrateCDF not implemented!");
     return ((input < 0.) ? 0. : input);
   }

@@ -233,7 +233,7 @@ private:
       std::stringstream ss;
       ss << "Block identifier b= " << b << " is too large for i=" << i << " on array with " << getLocalSize() <<
             " and " << flatVec_.size() << " blocks.";
-      TEUCHOS_TEST_FOR_EXCEPTION(b>=flatVec_.size(),std::logic_error, ss.str());
+      ROL_TEST_FOR_EXCEPTION(b>=flatVec_.size(),std::logic_error, ss.str());
 
       return flatVec_[b][i-sum];
     }

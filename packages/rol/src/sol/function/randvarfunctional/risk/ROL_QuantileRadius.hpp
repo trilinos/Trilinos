@@ -83,9 +83,9 @@ private:
   void checkInputs(void) {
     Real zero(0), one(1);
     // Check inputs
-    TEUCHOS_TEST_FOR_EXCEPTION((prob_>one || prob_<zero), std::invalid_argument,
+    ROL_TEST_FOR_EXCEPTION((prob_>one || prob_<zero), std::invalid_argument,
       ">>> ERROR (ROL::QuantileRadius): Confidence level out of range!");
-    TEUCHOS_TEST_FOR_EXCEPTION((coeff_<zero), std::invalid_argument,
+    ROL_TEST_FOR_EXCEPTION((coeff_<zero), std::invalid_argument,
       ">>> ERROR (ROL::QuantileRadius): Coefficient is negative!");
      initializeQR();
   }

@@ -77,7 +77,7 @@ public:
              2./ROL::ScalarTraits<Real>::pi() * asin(std::sqrt((input-a_)/(b_-a_)))));
   }
   Real integrateCDF(const Real input) const {
-    TEUCHOS_TEST_FOR_EXCEPTION( true, std::invalid_argument,
+    ROL_TEST_FOR_EXCEPTION( true, std::invalid_argument,
       ">>> ERROR (ROL::Arcsine): Arcsine integrateCDF not implemented!");
     return ((input < 0.5*(a_+b_)) ? 0.0 : input);
   }
@@ -94,7 +94,7 @@ public:
       case 1: val = mean;                             break;
       case 2: val = std::pow(b_-a_,2)/8. + mean*mean; break;
       default:
-        TEUCHOS_TEST_FOR_EXCEPTION( true, std::invalid_argument,
+        ROL_TEST_FOR_EXCEPTION( true, std::invalid_argument,
           ">>> ERROR (ROL::Arcsine): Arcsine moment not implemented for m > 2!");
     }
     return val;

@@ -103,7 +103,7 @@ void addJSONPairToPL(const Json::Value& block,
         addJSONBlockToPL(val,parlist);
     }
       else {
-        TEUCHOS_TEST_FOR_EXCEPTION( true, std::invalid_argument, ">>> ERROR (addJSONPairToPL, "
+        ROL_TEST_FOR_EXCEPTION( true, std::invalid_argument, ">>> ERROR (addJSONPairToPL, "
                                                              "json value has unsupported type.");
     }
 }

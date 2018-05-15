@@ -91,7 +91,7 @@ public:
     
     const PV &xs = dynamic_cast<const PV&>(x);
 
-    TEUCHOS_TEST_FOR_EXCEPTION( numVectors() != xs.numVectors(),
+    ROL_TEST_FOR_EXCEPTION( numVectors() != xs.numVectors(),
                                 std::invalid_argument,
                                 "Error: Vectors must have the same number of subvectors." );
 
@@ -104,7 +104,7 @@ public:
     
     const PV &xs = dynamic_cast<const PV&>(x);
 
-    TEUCHOS_TEST_FOR_EXCEPTION( numVectors() != xs.numVectors(),
+    ROL_TEST_FOR_EXCEPTION( numVectors() != xs.numVectors(),
                                 std::invalid_argument,
                                 "Error: Vectors must have the same number of subvectors." );
 
@@ -123,7 +123,7 @@ public:
     
     const PV &xs = dynamic_cast<const PV&>(x);
 
-    TEUCHOS_TEST_FOR_EXCEPTION( numVectors() != xs.numVectors(),
+    ROL_TEST_FOR_EXCEPTION( numVectors() != xs.numVectors(),
                                 std::invalid_argument,
                                 "Error: Vectors must have the same number of subvectors." );
 
@@ -136,7 +136,7 @@ public:
     
     const PV &xs = dynamic_cast<const PV&>(x);
 
-   TEUCHOS_TEST_FOR_EXCEPTION( numVectors() != xs.numVectors(),
+   ROL_TEST_FOR_EXCEPTION( numVectors() != xs.numVectors(),
                                 std::invalid_argument,
                                 "Error: Vectors must have the same number of subvectors." );
 
@@ -178,7 +178,7 @@ public:
 
   Vp basis( const int i ) const { // this must be fixed for distributed batching
 
-    TEUCHOS_TEST_FOR_EXCEPTION( i >= dimension() || i<0,
+    ROL_TEST_FOR_EXCEPTION( i >= dimension() || i<0,
                                 std::invalid_argument,
                                 "Error: Basis index must be between 0 and vector dimension." );
 
@@ -318,7 +318,7 @@ public:
     const SimulatedVector<Real> &xs
       = dynamic_cast<const SimulatedVector<Real>&>(x);
 
-   TEUCHOS_TEST_FOR_EXCEPTION( sampler_->numMySamples() != static_cast<int>(xs.numVectors()),
+   ROL_TEST_FOR_EXCEPTION( sampler_->numMySamples() != static_cast<int>(xs.numVectors()),
                                std::invalid_argument,
                                "Error: Vectors must have the same number of subvectors." );
 
@@ -385,7 +385,7 @@ public:
     const SimulatedVector<Real> &xs
       = dynamic_cast<const SimulatedVector<Real>&>(x);
 
-   TEUCHOS_TEST_FOR_EXCEPTION( sampler_->numMySamples() != static_cast<Real>(xs.numVectors()),
+   ROL_TEST_FOR_EXCEPTION( sampler_->numMySamples() != static_cast<Real>(xs.numVectors()),
                                std::invalid_argument,
                                "Error: Vectors must have the same number of subvectors." );
 

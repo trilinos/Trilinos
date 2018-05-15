@@ -208,7 +208,7 @@ public:
         sm_ = ROL::makePtr<GoldenSectionScalarMinimization<Real>>(plist);
       }
       else {
-        TEUCHOS_TEST_FOR_EXCEPTION(true, std::invalid_argument,
+        ROL_TEST_FOR_EXCEPTION(true, std::invalid_argument,
           ">>> (ROL::ScalarMinimizationLineSearch): Undefined ScalarMinimization type!");
       }
     }

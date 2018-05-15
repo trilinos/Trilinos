@@ -69,7 +69,7 @@ inline void RegretMeasureInfo(ROL::ParameterList &parlist, std::string &name,
     nStatistic = 0;
   }
   else {
-    TEUCHOS_TEST_FOR_EXCEPTION(true,std::invalid_argument,
+    ROL_TEST_FOR_EXCEPTION(true,std::invalid_argument,
       ">>> (ROL::RegretMeasureInfo): Invalid probability " << name << "!");
   }
 

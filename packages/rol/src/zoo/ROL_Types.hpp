@@ -61,12 +61,13 @@
 #include <sstream>
 #include <limits>
 #include <type_traits>
+#include <ROL_stacktrace.hpp>
 #include "ROL_ScalarTraits.hpp"
 //#include <Teuchos_ScalarTraits.hpp>
 #include <ROL_Ptr.hpp>
 #include <ROL_Vector.hpp>
 #include <ROL_config.h>
-#include <Teuchos_TestForException.hpp>
+//#include <Teuchos_TestForException.hpp>
 
 /** \def    ROL_NUM_CHECKDERIV_STEPS
     \brief  Number of steps for derivative checks.

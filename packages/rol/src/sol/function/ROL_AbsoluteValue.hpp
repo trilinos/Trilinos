@@ -88,7 +88,7 @@ public:
       case ABSOLUTEVALUE_SQRTDENOM:  val = sqrtd_absolute_value(input,deriv); break;
       case ABSOLUTEVALUE_C2:         val = c2_absolute_value(input,deriv);    break;
       default:
-        TEUCHOS_TEST_FOR_EXCEPTION( true, std::invalid_argument,
+        ROL_TEST_FOR_EXCEPTION( true, std::invalid_argument,
                           ">>> ERROR (ROL::AbsoluteValue): Absolute value approximation not defined!");
     }
     return val;

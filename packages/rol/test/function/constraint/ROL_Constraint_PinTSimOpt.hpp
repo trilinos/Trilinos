@@ -421,7 +421,7 @@ public:
                                       const Vector<Real> &u,
                                       const Vector<Real> &z,
                                       Real &tol) override final {
-    TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
+    ROL_TEST_FOR_EXCEPTION(true, std::logic_error,
       "The method applyInverseJacobian_1 is used but not implemented!\n");
   }
 
@@ -525,7 +525,7 @@ public:
                                              const Vector<Real> &u,
                                              const Vector<Real> &z,
                                              Real &tol) override final {
-    TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
+    ROL_TEST_FOR_EXCEPTION(true, std::logic_error,
       "The method applyInverseAdjointJacobian_1 is used but not implemented!\n");
   };
 

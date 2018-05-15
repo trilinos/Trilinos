@@ -115,7 +115,7 @@ public:
   }
 
   Real integrateCDF(const Real input) const {
-    TEUCHOS_TEST_FOR_EXCEPTION( true, std::invalid_argument,
+    ROL_TEST_FOR_EXCEPTION( true, std::invalid_argument,
       ">>> ERROR (ROL::TruncatedGaussian): Truncated Gaussian integrateCDF not implemented!");
     //return ((input < 0.5*(a_+b_)) ? 0.0 : input - 0.5*(a_+b_));
   }
@@ -136,7 +136,7 @@ public:
       case 1: val = mean;                                                                       break;
       case 2: val = var*(one+(alpha_*phiA-beta_*phiB)/Z_-std::pow((phiA-phiB)/Z_,2))+mean*mean; break;
       default:
-        TEUCHOS_TEST_FOR_EXCEPTION( true, std::invalid_argument,
+        ROL_TEST_FOR_EXCEPTION( true, std::invalid_argument,
           ">>> ERROR (ROL::TruncatedGaussian): Truncated Gaussian moment not implemented for m > 2!");
     }
     return val;

@@ -95,14 +95,14 @@ private:
   std::vector<Real> pts_;
 
   void checkInputs(ROL::Ptr<Distribution<Real> > &dist = ROL::nullPtr) const {
-    TEUCHOS_TEST_FOR_EXCEPTION(plusFunction_ == ROL::nullPtr, std::invalid_argument,
+    ROL_TEST_FOR_EXCEPTION(plusFunction_ == ROL::nullPtr, std::invalid_argument,
       ">>> ERROR (ROL::SpectralRisk): PlusFunction pointer is null!");
     if ( dist != ROL::nullPtr) {
       Real lb = dist->lowerBound();
       Real ub = dist->upperBound();
-      TEUCHOS_TEST_FOR_EXCEPTION(lb < static_cast<Real>(0), std::invalid_argument,
+      ROL_TEST_FOR_EXCEPTION(lb < static_cast<Real>(0), std::invalid_argument,
         ">>> ERROR (ROL::SpectralRisk): Distribution lower bound less than zero!");
-      TEUCHOS_TEST_FOR_EXCEPTION(ub > static_cast<Real>(1), std::invalid_argument,
+      ROL_TEST_FOR_EXCEPTION(ub > static_cast<Real>(1), std::invalid_argument,
         ">>> ERROR (ROL::SpectralRisk): Distribution upper bound greater than one!");
     }
   }

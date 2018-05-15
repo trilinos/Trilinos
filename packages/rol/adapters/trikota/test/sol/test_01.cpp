@@ -146,7 +146,7 @@ int main(int argc, char* argv[]) {
       file.close();
     }
     else {
-      TEUCHOS_TEST_FOR_EXCEPTION(true, std::invalid_argument,
+      ROL_TEST_FOR_EXCEPTION(true, std::invalid_argument,
         ">>> (adapters/trikota/sol/test/test_01): Unable to open file!");
     }
 

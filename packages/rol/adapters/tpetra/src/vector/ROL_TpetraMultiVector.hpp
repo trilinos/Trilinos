@@ -171,7 +171,7 @@ public:
   /** \brief Assign \f$y \leftarrow x \f$ where \f$y = \mbox{*this}\f$.
   */
   void set(const Vector<Real> &x) {
-    TEUCHOS_TEST_FOR_EXCEPTION( dimension() != x.dimension(),
+    ROL_TEST_FOR_EXCEPTION( dimension() != x.dimension(),
                                 std::invalid_argument,
                                 "Error: Vectors must have the same dimension." );
     const TpetraMultiVector &ex = dynamic_cast<const TpetraMultiVector&>(x);
@@ -181,7 +181,7 @@ public:
   /** \brief Compute \f$y \leftarrow x + y\f$ where \f$y = \mbox{*this}\f$.
   */
   void plus(const Vector<Real> &x) {
-    TEUCHOS_TEST_FOR_EXCEPTION( dimension() != x.dimension(),
+    ROL_TEST_FOR_EXCEPTION( dimension() != x.dimension(),
                                 std::invalid_argument,
                                 "Error: Vectors must have the same dimension." );
     Real one(1);
@@ -190,7 +190,7 @@ public:
   }
 
   void axpy( const Real alpha, const Vector<Real> &x ) {
-    TEUCHOS_TEST_FOR_EXCEPTION( dimension() != x.dimension(),
+    ROL_TEST_FOR_EXCEPTION( dimension() != x.dimension(),
                                 std::invalid_argument,
                                 "Error: Vectors must have the same dimension." );
     Real one(1);
@@ -207,7 +207,7 @@ public:
   /** \brief Returns \f$ \langle y,x \rangle \f$ where \f$y = \mbox{*this}\f$.
   */
   virtual Real dot( const Vector<Real> &x ) const {
-    TEUCHOS_TEST_FOR_EXCEPTION( dimension() != x.dimension(),
+    ROL_TEST_FOR_EXCEPTION( dimension() != x.dimension(),
                                 std::invalid_argument,
                                 "Error: Vectors must have the same dimension." );
     const TpetraMultiVector &ex = dynamic_cast<const TpetraMultiVector&>(x);
@@ -257,7 +257,7 @@ public:
   }
 
   ROL::Ptr<Vector<Real> > basis( const int i ) const {
-    TEUCHOS_TEST_FOR_EXCEPTION( i >= dimension() || i<0,
+    ROL_TEST_FOR_EXCEPTION( i >= dimension() || i<0,
                                 std::invalid_argument,
                                 "Error: Basis index must be between 0 and vector dimension." );
     const size_t n = tpetra_vec_->getNumVectors();
@@ -295,7 +295,7 @@ public:
 
   void applyBinary( const Elementwise::BinaryFunction<Real> &f, const Vector<Real> &x ) {
 
-    TEUCHOS_TEST_FOR_EXCEPTION( dimension() != x.dimension(),
+    ROL_TEST_FOR_EXCEPTION( dimension() != x.dimension(),
                                 std::invalid_argument,
                                 "Error: Vectors must have the same dimension." );
 

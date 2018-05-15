@@ -64,7 +64,7 @@ public:
       = dynamic_cast<StdVector<Real>&>(output).getVector();
     int dim_i = static_cast<int>(input_ptr->size());
     int dim_o = static_cast<int>(output_ptr->size());
-    TEUCHOS_TEST_FOR_EXCEPTION(dim_i != dim_o, std::invalid_argument,
+    ROL_TEST_FOR_EXCEPTION(dim_i != dim_o, std::invalid_argument,
       ">>> (ROL::StdTeuchosBatchManager::SumAll): Dimension mismatch!");
     TeuchosBatchManager<Real,Ordinal>::sumAll(&input_ptr->front(),
                                               &output_ptr->front(),

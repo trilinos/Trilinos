@@ -98,17 +98,17 @@ private:
 
   void checkInputs(void) {
     uint lSize = lambda_.size(), rSize = risk_.size();
-    TEUCHOS_TEST_FOR_EXCEPTION((lSize!=rSize),std::invalid_argument,
+    ROL_TEST_FOR_EXCEPTION((lSize!=rSize),std::invalid_argument,
       ">>> ERROR (ROL::ConvexCombinationRiskMeasure): Convex combination parameter and risk measure arrays have different sizes!");
     Real sum(0), zero(0), one(1);
     for (uint i = 0; i < lSize; ++i) {
-      TEUCHOS_TEST_FOR_EXCEPTION((lambda_[i]>one || lambda_[i]<zero), std::invalid_argument,
+      ROL_TEST_FOR_EXCEPTION((lambda_[i]>one || lambda_[i]<zero), std::invalid_argument,
         ">>> ERROR (ROL::ConvexCombinationRiskMeasure): Element of convex combination parameter array out of range!");
-      TEUCHOS_TEST_FOR_EXCEPTION(risk_[i] == ROL::nullPtr, std::invalid_argument,
+      ROL_TEST_FOR_EXCEPTION(risk_[i] == ROL::nullPtr, std::invalid_argument,
         ">>> ERROR (ROL::ConvexCombinationRiskMeasure): Risk measure pointer is null!");
       sum += lambda_[i];
     }
-    TEUCHOS_TEST_FOR_EXCEPTION((std::abs(sum-one) > std::sqrt(ROL_EPSILON<Real>())),std::invalid_argument,
+    ROL_TEST_FOR_EXCEPTION((std::abs(sum-one) > std::sqrt(ROL_EPSILON<Real>())),std::invalid_argument,
       ">>> ERROR (ROL::ConvexCombinationRiskMeasure): Coefficients do not sum to one!");
     initializeCCRM();
   }

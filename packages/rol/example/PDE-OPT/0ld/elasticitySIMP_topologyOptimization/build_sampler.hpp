@@ -129,7 +129,7 @@ public:
       file.close();
     }
     else {
-      TEUCHOS_TEST_FOR_EXCEPTION(true, std::invalid_argument,
+      ROL_TEST_FOR_EXCEPTION(true, std::invalid_argument,
         ">>> (BuildSampler::print): Unable to open file!");
     }
   }

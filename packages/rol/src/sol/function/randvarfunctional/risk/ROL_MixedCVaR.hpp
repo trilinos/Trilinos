@@ -115,19 +115,19 @@ private:
 
   void checkInputs(void) {
     int pSize = prob_.size(), cSize = coeff_.size();
-    TEUCHOS_TEST_FOR_EXCEPTION((pSize!=cSize),std::invalid_argument,
+    ROL_TEST_FOR_EXCEPTION((pSize!=cSize),std::invalid_argument,
       ">>> ERROR (ROL::MixedCVaR): Probability and coefficient arrays have different sizes!");
     Real sum(0), zero(0), one(1);
     for (int i = 0; i < pSize; i++) {
-      TEUCHOS_TEST_FOR_EXCEPTION((prob_[i]>one || prob_[i]<zero), std::invalid_argument,
+      ROL_TEST_FOR_EXCEPTION((prob_[i]>one || prob_[i]<zero), std::invalid_argument,
         ">>> ERROR (ROL::MixedCVaR): Element of probability array out of range!");
-      TEUCHOS_TEST_FOR_EXCEPTION((coeff_[i]>one || coeff_[i]<zero), std::invalid_argument,
+      ROL_TEST_FOR_EXCEPTION((coeff_[i]>one || coeff_[i]<zero), std::invalid_argument,
         ">>> ERROR (ROL::MixedCVaR): Element of coefficient array out of range!");
       sum += coeff_[i];
     }
-    TEUCHOS_TEST_FOR_EXCEPTION((std::abs(sum-one) > std::sqrt(ROL_EPSILON<Real>())),std::invalid_argument,
+    ROL_TEST_FOR_EXCEPTION((std::abs(sum-one) > std::sqrt(ROL_EPSILON<Real>())),std::invalid_argument,
       ">>> ERROR (ROL::MixedCVaR): Coefficients do not sum to one!");
-    TEUCHOS_TEST_FOR_EXCEPTION(plusFunction_ == ROL::nullPtr, std::invalid_argument,
+    ROL_TEST_FOR_EXCEPTION(plusFunction_ == ROL::nullPtr, std::invalid_argument,
       ">>> ERROR (ROL::MixedCVaR): PlusFunction pointer is null!");
     initializeMCVAR();
   }

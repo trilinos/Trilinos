@@ -94,9 +94,9 @@ private:
   std::vector<Real> pts_;
 
   void checkInputs(void) const {
-    TEUCHOS_TEST_FOR_EXCEPTION((alpha_ < 0 || alpha_ >= 1), std::invalid_argument,
+    ROL_TEST_FOR_EXCEPTION((alpha_ < 0 || alpha_ >= 1), std::invalid_argument,
       ">>> ERROR (ROL::SecondOrderCVaR): Confidence level not between 0 and 1!");
-    TEUCHOS_TEST_FOR_EXCEPTION(plusFunction_ == ROL::nullPtr, std::invalid_argument,
+    ROL_TEST_FOR_EXCEPTION(plusFunction_ == ROL::nullPtr, std::invalid_argument,
       ">>> ERROR (ROL::SecondOrderCVaR): PlusFunction pointer is null!");
   }
 

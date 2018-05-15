@@ -99,7 +99,7 @@ public:
   }
 
   Real integrateCDF(const Real input) const {
-    TEUCHOS_TEST_FOR_EXCEPTION( true, std::invalid_argument,
+    ROL_TEST_FOR_EXCEPTION( true, std::invalid_argument,
       ">>> ERROR (ROL::Kumaraswamy): Kumaraswamy integrateCDF not implemented!");
     return ((input < 0.5*(a_+b_)) ? 0.0 : input - 0.5*(a_+b_));
   }

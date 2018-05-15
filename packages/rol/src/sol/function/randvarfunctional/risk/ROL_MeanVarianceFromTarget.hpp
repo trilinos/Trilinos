@@ -99,16 +99,16 @@ private:
 
   void checkInputs(void) const {
     int oSize = order_.size(), cSize = coeff_.size();
-    TEUCHOS_TEST_FOR_EXCEPTION((oSize!=cSize),std::invalid_argument,
+    ROL_TEST_FOR_EXCEPTION((oSize!=cSize),std::invalid_argument,
       ">>> ERROR (ROL::MeanVarianceFromTarget): Order and coefficient arrays have different sizes!");
     Real zero(0), two(2);
     for (int i = 0; i < oSize; i++) {
-      TEUCHOS_TEST_FOR_EXCEPTION((order_[i] < two), std::invalid_argument,
+      ROL_TEST_FOR_EXCEPTION((order_[i] < two), std::invalid_argument,
         ">>> ERROR (ROL::MeanVarianceFromTarget): Element of order array out of range!");
-      TEUCHOS_TEST_FOR_EXCEPTION((coeff_[i] < zero), std::invalid_argument,
+      ROL_TEST_FOR_EXCEPTION((coeff_[i] < zero), std::invalid_argument,
         ">>> ERROR (ROL::MeanVarianceFromTarget): Element of coefficient array out of range!");
     }
-    TEUCHOS_TEST_FOR_EXCEPTION(positiveFunction_ == ROL::nullPtr, std::invalid_argument,
+    ROL_TEST_FOR_EXCEPTION(positiveFunction_ == ROL::nullPtr, std::invalid_argument,
       ">>> ERROR (ROL::MeanVarianceFromTarget): PositiveFunction pointer is null!");
   }
 
@@ -192,7 +192,7 @@ public:
       positiveFunction_ = ROL::makePtr<AbsoluteValue<Real>>(list);
     }
     else {
-      TEUCHOS_TEST_FOR_EXCEPTION(true, std::invalid_argument,
+      ROL_TEST_FOR_EXCEPTION(true, std::invalid_argument,
         ">>> (ROL::MeanDeviation): Deviation type is not recoginized!");
     }
     // Check inputs
