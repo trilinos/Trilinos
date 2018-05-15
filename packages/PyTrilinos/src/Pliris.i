@@ -58,9 +58,16 @@ python version of the Pliris package supports the following class:
 "
 %enddef
 
-%module(package   = "PyTrilinos",
-	autodoc   = "1",
-	docstring = %pliris_docstring) Pliris
+%define %pliris_import_code
+"
+from . import _Pliris
+"
+%enddef
+
+%module(package      = "PyTrilinos",
+        moduleimport = %pliris_import_code,
+	autodoc      = "1",
+	docstring    = %pliris_docstring) Pliris
 
 %{
 // PyTrilinos configuration
