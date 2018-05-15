@@ -401,7 +401,12 @@ public:
    * Start a sublevel timer
    * @param [in] name Name of the timer you wish to start
    */
-  void start(const std::string name) {top_ = top_->start(name.c_str());}
+  void start(const std::string name) {
+    if (top_ == NULL)
+      top_ = timer_.start(name.c_str());
+    else
+      top_ = top_->start(name.c_str());
+  }
 
   /**
    * Stop the current top running timer, should be called for the root timer prior to final output
