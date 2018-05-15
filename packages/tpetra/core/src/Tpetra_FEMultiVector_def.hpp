@@ -111,25 +111,8 @@ void FEMultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::switchActiveMulti
 
   if(importer_.is_null()) return;
 
-  // Cache maps & views
-  Teuchos::RCP<const map_type> temp_map = inactiveMultiVector_->map_;
-  dual_view_type  temp1, temp2;
-  Teuchos::Array<size_t> temp3; // FIXME: This is a deep copy (see note in MultiVector)
-  temp1 = inactiveMultiVector_->view_;
-  temp2 = inactiveMultiVector_->origView_;
-  temp3 = inactiveMultiVector_->whichVectors_;
-
-  // Swap active-> inactive
-  inactiveMultiVector_->map_          = this->map_;
-  inactiveMultiVector_->view_         = this->view_;
-  inactiveMultiVector_->origView_     = this->origView_;
-  inactiveMultiVector_->whichVectors_ = this->whichVectors_;
-
-  // Swap inactive -> active
-  this->map_          = temp_map;
-  this->view_         = temp1;
-  this->origView_     = temp2;
-  this->whichVectors_ = temp3;
+  // Use MultiVector'sswap routine here
+  this->swap(*inactiveMultiVector_);
 
 }//end switchActiveMultiVector
 

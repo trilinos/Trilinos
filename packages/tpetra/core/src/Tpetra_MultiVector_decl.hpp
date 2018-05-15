@@ -394,8 +394,6 @@ namespace Tpetra {
   class MultiVector :
     public DistObject<Scalar, LocalOrdinal, GlobalOrdinal, Node>
   {
-    // Need to friend FEMultiVector here
-    friend FEMultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
   public:
     //! @name Typedefs to facilitate template metaprogramming.
     //@{
