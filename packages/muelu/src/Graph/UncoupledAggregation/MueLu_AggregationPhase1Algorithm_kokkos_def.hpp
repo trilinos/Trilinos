@@ -366,8 +366,7 @@ namespace MueLu {
                                       // This atomic guarentees that any other node trying to
                                       // join aggregate agg has the correct size.
                                       LO agg = vertex2AggIdView(nei, 0);
-                                      const LO aggSize =
-                                        Kokkos::atomic_fetch_add (&aggSizesView(agg), 1);
+                                      Kokkos::atomic_add (&aggSizesView(agg), 1);
                                       //assign vertex i to aggregate with root j
                                       vertex2AggIdView(i, 0) = agg;
                                       procWinnerView(i, 0)   = myRank;
