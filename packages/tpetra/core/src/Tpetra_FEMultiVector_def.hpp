@@ -111,7 +111,7 @@ void FEMultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::switchActiveMulti
 
   if(importer_.is_null()) return;
 
-  // Use MultiVector'sswap routine here
+  // Use MultiVector's swap routine here
   this->swap(*inactiveMultiVector_);
 
 }//end switchActiveMultiVector
