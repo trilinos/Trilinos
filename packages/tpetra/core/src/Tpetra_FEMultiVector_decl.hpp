@@ -126,7 +126,7 @@ namespace Tpetra {
                   const bool zeroOut = true);
 
     //! Destructor (virtual for memory safety of derived classes).
-    virtual ~FEMultiVector () {delete inactiveMultiVector_;}
+    virtual ~FEMultiVector () {}
     
     //@}
     //! @name Post-construction modification routines
@@ -138,7 +138,7 @@ namespace Tpetra {
     //! Calls doTargetToSource() and then activates the source map mode
     void endFill()
     {
-      if(activeMultiVector_ == FE_ACTIVE_TARGET) {
+      if(*activeMultiVector_ == FE_ACTIVE_TARGET) {
         doTargetToSource(Tpetra::ADD);
         switchActiveMultiVector();
       }
@@ -151,7 +151,7 @@ namespace Tpetra {
     {
       // Note: This does not throw an error since the on construction, the FEMV is in target mode.  Ergo, calling beginFill(),
       // like one should expect to do in a rational universe, should not cause an error.
-      if(activeMultiVector_ == FE_ACTIVE_SOURCE) {
+      if(*activeMultiVector_ == FE_ACTIVE_SOURCE) {
         switchActiveMultiVector();
       }
     }
@@ -190,8 +190,9 @@ namespace Tpetra {
     void switchActiveMultiVector();
 
     // This is whichever multivector isn't currently active
-    MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> * inactiveMultiVector_;
-    FEWhichActive activeMultiVector_;
+    Teuchos::RCP< MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> > inactiveMultiVector_;
+    // This is in RCP to make shallow copies of the FEMultiVector work correctly
+    Teuchos::RCP<FEWhichActive> activeMultiVector_;
 
     // Importer
     Teuchos::RCP<const Import<LocalOrdinal,GlobalOrdinal,Node> > importer_;

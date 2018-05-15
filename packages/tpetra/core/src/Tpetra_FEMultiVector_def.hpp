@@ -59,9 +59,10 @@ FEMultiVector(const Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> > 
               const size_t numVecs,
               const bool zeroOut):
   base_type(importer.is_null()? map:importer->getTargetMap(),numVecs,zeroOut),
-  inactiveMultiVector_(0),
-  activeMultiVector_(FE_ACTIVE_TARGET),
   importer_(importer) {
+
+  activeMultiVector_ = Teuchos::rcp(new FEWhichActive(FE_ACTIVE_TARGET));
+    
   // Sanity check the importer
   if(!importer_.is_null() && !importer_->getSourceMap()->isSameAs(*map)) {
     throw std::runtime_error("FEMultiVector: 'map' must match 'importer->getSourceMap()' if importer is provided");
@@ -71,13 +72,12 @@ FEMultiVector(const Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> > 
     // Check maps to see if we can reuse memory (aka do numSames == domainMap->getNodeNumElements()) 
     if(importer_->getNumSameIDs() == importer->getSourceMap()->getNodeNumElements()) {
       //   1) If so, we then build the inactiveMultiVector_ (w/ source map) using a restricted DualView      
-      inactiveMultiVector_ = new base_type(importer_->getSourceMap(),Kokkos::subview(this->view_,Kokkos::pair<size_t,size_t>(0,map->getNodeNumElements()),Kokkos::ALL));
+      inactiveMultiVector_ = Teuchos::rcp(new base_type(importer_->getSourceMap(),Kokkos::subview(this->view_,Kokkos::pair<size_t,size_t>(0,map->getNodeNumElements()),Kokkos::ALL)));
     }
     else {
       //   2) If not call a new constructor for the inactive guy (w/ source map)
-      inactiveMultiVector_ = new base_type(importer_->getSourceMap(),numVecs,zeroOut);
+      inactiveMultiVector_ = Teuchos::rcp(new base_type(importer_->getSourceMap(),numVecs,zeroOut));
     }
-
   }
 }// end constructor
 
@@ -91,7 +91,7 @@ void FEMultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::replaceMap (const
 
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void FEMultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::doTargetToSource(const CombineMode CM) {
-  if(!importer_.is_null() && activeMultiVector_ == FE_ACTIVE_TARGET) {
+  if(!importer_.is_null() && *activeMultiVector_ == FE_ACTIVE_TARGET) {
     inactiveMultiVector_->doExport(*this,*importer_,CM);
   }
 }//end doTargetToSource
@@ -99,15 +99,15 @@ void FEMultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::doTargetToSource(
 
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void FEMultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::doSourceToTarget(const CombineMode CM) {
-  if(!importer_.is_null() && activeMultiVector_ == FE_ACTIVE_SOURCE) {
+  if(!importer_.is_null() && *activeMultiVector_ == FE_ACTIVE_SOURCE) {
     this->doImport(*inactiveMultiVector_,*importer_,CM);
   }
 }//end doTargetToSource
 
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void FEMultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::switchActiveMultiVector() {
-  if(activeMultiVector_ == FE_ACTIVE_TARGET) activeMultiVector_ = FE_ACTIVE_SOURCE;
-  else activeMultiVector_ = FE_ACTIVE_TARGET;
+  if(*activeMultiVector_ == FE_ACTIVE_TARGET) *activeMultiVector_ = FE_ACTIVE_SOURCE;
+  else *activeMultiVector_ = FE_ACTIVE_TARGET;
 
   if(importer_.is_null()) return;
 
