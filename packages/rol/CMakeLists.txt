@@ -34,13 +34,13 @@ INCLUDE(BuildOptions)
 
 ADD_SUBDIRECTORY(src)
 
-ADD_ADAPTER( Sacado )
+IF( ROL_ENABLE_Sacado ) 
+ADD_SUBDIRECTORY(adapters/sacado)
+ENDIF()
 
 IF (ROL_ENABLE_ArrayFireCPU)
   ADD_SUBDIRECTORY(adapters/arrayfire)
 ENDIF()
-
-
 
 # Adapters which require use of Teuchos
 
