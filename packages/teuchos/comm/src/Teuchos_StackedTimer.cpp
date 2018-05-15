@@ -220,7 +220,7 @@ StackedTimer::printLevel (std::string prefix, int print_level, std::ostream &os,
       for (int l=0; l<=level; ++l)
         os << "    ";
       os << "Remainder: " <<  sum_[i]/active_[i]- sub_time;
-      if ( options.output_fraction )
+      if ( options.output_fraction && parent_time > 0 )
         os << " - "<< (sum_[i]/active_[i]- sub_time)/parent_time*100 << "%";
       os <<std::endl;
     }
