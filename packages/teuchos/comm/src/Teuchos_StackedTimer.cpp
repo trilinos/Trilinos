@@ -67,8 +67,6 @@ StackedTimer::merge(Teuchos::RCP<const Teuchos::Comm<int> > comm){
 
 void
 StackedTimer::collectRemoteData(Teuchos::RCP<const Teuchos::Comm<int> > comm, const OutputOptions &options) {
-  int comm_rank = rank(*comm);
-
   // allocate everything
   int num_names = flat_names_.size();
   sum_.resize(num_names);
@@ -112,13 +110,13 @@ StackedTimer::collectRemoteData(Teuchos::RCP<const Teuchos::Comm<int> > comm, co
   }
 
   // Now reduce the data
-  reduce<int, double>(&time[0], &sum_[0], num_names, REDUCE_SUM, 0, *comm);
-  reduce(&count[0], &count_[0], num_names, REDUCE_SUM, 0, *comm);
-  reduce(&used[0], &active_[0], num_names, REDUCE_SUM, 0, *comm);
+  reduce<int, double>(time.getRawPtr(), sum_.getRawPtr(), num_names, REDUCE_SUM, 0, *comm);
+  reduce(count.getRawPtr(), count_.getRawPtr(), num_names, REDUCE_SUM, 0, *comm);
+  reduce(used.getRawPtr(), active_.getRawPtr(), num_names, REDUCE_SUM, 0, *comm);
 
   if (min_.size()) {
-    reduceAll(*comm, REDUCE_MIN, num_names, &time[0], &min_[0]);
-    reduceAll(*comm, REDUCE_MAX, num_names, &time[0], &max_[0]);
+    reduceAll(*comm, REDUCE_MIN, num_names, time.getRawPtr(), min_.getRawPtr());
+    reduceAll(*comm, REDUCE_MAX, num_names, time.getRawPtr(), max_.getRawPtr());
   }
 
   if (options.output_histogram) {
@@ -140,19 +138,19 @@ StackedTimer::collectRemoteData(Teuchos::RCP<const Teuchos::Comm<int> > comm, co
         else
           used[i]=0;
       }
-      reduce(&used[0], &hist_[j][0], num_names, REDUCE_SUM, 0, *comm);
+      reduce(used.getRawPtr(), hist_[j].getRawPtr(), num_names, REDUCE_SUM, 0, *comm);
     }
   }
 
   if (sum_sq_.size()) {
     for (int i=0;i<num_names; ++i)
       time[i] *= time[i];
-    reduce(&time[0], &sum_sq_[0], num_names, REDUCE_SUM, 0, *comm);
+    reduce(time.getRawPtr(), sum_sq_.getRawPtr(), num_names, REDUCE_SUM, 0, *comm);
   }
 
 }
 
-std::pair<std::string, std::string> getPrefix(std::string &name) {
+std::pair<std::string, std::string> getPrefix(const std::string &name) {
   for (std::size_t i=name.size()-1; i>0; --i)
     if (name[i] == '@') {
       return std::pair<std::string, std::string>(name.substr(0,i), name.substr(i+1, name.size()));
@@ -233,6 +231,9 @@ StackedTimer::report(std::ostream &os, Teuchos::RCP<const Teuchos::Comm<int> > c
     std::vector<bool> printed(flat_names_.size(), false);
     printLevel("", 0, os, printed, 0., options);
   }
+#ifdef HAVE_TEUCHOS_ADD_TIME_MONITOR_TO_STACKED_TIMER
+  Teuchos::TimeMonitor::setStackedTimer(RCP<StackedTimer>());
+#endif
 }
 
 } //namespace Teuchos
