@@ -231,9 +231,6 @@ StackedTimer::report(std::ostream &os, Teuchos::RCP<const Teuchos::Comm<int> > c
     std::vector<bool> printed(flat_names_.size(), false);
     printLevel("", 0, os, printed, 0., options);
   }
-#ifdef HAVE_TEUCHOS_ADD_TIME_MONITOR_TO_STACKED_TIMER
-  Teuchos::TimeMonitor::setStackedTimer(RCP<StackedTimer>());
-#endif
 }
 
 } //namespace Teuchos
