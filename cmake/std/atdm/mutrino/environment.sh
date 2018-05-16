@@ -31,7 +31,7 @@ if [ "$ATDM_CONFIG_COMPILER" == "INTEL" ]; then
     module list
     export MPICXX=`which CC`
     export MPICC=`which cc`
-    unset MPIF90
+    export MPIF90=`which ftn`
 
 #    # Cray provides differently named wrappers
 #    export CXX=`which CC`
