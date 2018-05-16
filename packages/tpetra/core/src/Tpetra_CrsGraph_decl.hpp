@@ -193,7 +193,9 @@ namespace Tpetra {
     /// deprecated methods without emitting spurious warnings.
     class HasDeprecatedMethods2630_WarningThisClassIsNotForUsers {
     public:
-      virtual ~HasDeprecatedMethods2630_WarningThisClassIsNotForUsers() {}
+      virtual ~HasDeprecatedMethods2630_WarningThisClassIsNotForUsers () {}
+      virtual bool isLowerTriangularImpl () const = 0;
+      virtual bool isUpperTriangularImpl () const = 0;
       virtual size_t getGlobalNumDiagsImpl () const = 0;
       virtual global_size_t getNodeNumDiagsImpl () const = 0;
     };
@@ -1031,23 +1033,55 @@ namespace Tpetra {
     /// CrsMatrix.
     bool hasColMap() const;
 
+    /// \brief DO NOT CALL THIS METHOD; THIS IS NOT FOR USERS.
+    ///
+    /// \warning DO NOT CALL THIS METHOD.  THIS IS AN IMPLEMENTATION
+    ///   DETAIL OF TPETRA DESIGNED TO PREVENT SPURIOUS BUILD
+    ///   WARNINGS.  DO NOT CALL THIS METHOD.  IT WILL GO AWAY VERY
+    ///   SOON PER #2630.
+    ///
+    /// This function exists only to prevent spurious deprecation
+    /// warnings in CrsMatrix and BlockCrsMatrix.  We only want users
+    /// to see deprecated warnings if <i>they</i> call deprecated
+    /// methods, not if <i>we</i> call them.
+    bool isLowerTriangularImpl () const override;
+
     /// \brief Whether the graph is locally lower triangular.
+    ///
+    /// \warning DO NOT CALL THIS METHOD!  This method is DEPRECATED
+    ///   and will DISAPPEAR VERY SOON per #2630.
     ///
     /// \pre <tt>! isFillActive()</tt>.
     ///   If fill is active, this method's behavior is undefined.
     ///
     /// \note This is entirely a local property.  That means this
     ///   method may return different results on different processes.
-    bool isLowerTriangular() const;
+    bool TPETRA_DEPRECATED isLowerTriangular () const;
+
+    /// \brief DO NOT CALL THIS METHOD; THIS IS NOT FOR USERS.
+    ///
+    /// \warning DO NOT CALL THIS METHOD.  THIS IS AN IMPLEMENTATION
+    ///   DETAIL OF TPETRA DESIGNED TO PREVENT SPURIOUS BUILD
+    ///   WARNINGS.  DO NOT CALL THIS METHOD.  IT WILL GO AWAY VERY
+    ///   SOON PER #2630.
+    ///
+    /// This function exists only to prevent spurious deprecation
+    /// warnings in CrsMatrix and BlockCrsMatrix.  We only want users
+    /// to see deprecated warnings if <i>they</i> call deprecated
+    /// methods, not if <i>we</i> call them.
+    bool isUpperTriangularImpl () const override;
 
     /// \brief Whether the graph is locally upper triangular.
     ///
+    /// \warning DO NOT CALL THIS METHOD!  This method is DEPRECATED
+    ///   and will DISAPPEAR VERY SOON per #2630.
+    ///
     /// \pre <tt>! isFillActive()</tt>.
     ///   If fill is active, this method's behavior is undefined.
     ///
     /// \note This is entirely a local property.  That means this
     ///   method may return different results on different processes.
-    bool isUpperTriangular() const;
+    bool TPETRA_DEPRECATED isUpperTriangular () const;
 
     //! \brief If graph indices are in the local range, this function returns true. Otherwise, this function returns false. */
     bool isLocallyIndexed() const;

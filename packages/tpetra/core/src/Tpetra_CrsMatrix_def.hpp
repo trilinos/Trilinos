@@ -847,14 +847,18 @@ namespace Tpetra {
   bool
   CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   isLowerTriangular () const {
-    return getCrsGraphRef ().isLowerTriangular ();
+    const crs_graph_type& G = this->getCrsGraphRef ();
+    using HDM = Details::HasDeprecatedMethods2630_WarningThisClassIsNotForUsers;
+    return dynamic_cast<const HDM&> (G).isLowerTriangularImpl ();
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   bool
   CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   isUpperTriangular () const {
-    return getCrsGraphRef ().isUpperTriangular ();
+    const crs_graph_type& G = this->getCrsGraphRef ();
+    using HDM = Details::HasDeprecatedMethods2630_WarningThisClassIsNotForUsers;
+    return dynamic_cast<const HDM&> (G).isUpperTriangularImpl ();
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
