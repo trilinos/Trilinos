@@ -158,12 +158,13 @@ namespace panzer {
   template<typename LO, typename GO>
   Teuchos::RCP<Tpetra::CrsMatrix<double,LO,GO,Kokkos::Compat::KokkosDeviceWrapperNode<PHX::Device>>>
   panzer::L2Projection<LO,GO>::buildRHSMatrix(const Teuchos::RCP<panzer::DOFManager<LO,GO>>& sourceGlobalIndexer,
-                                              const Teuchos::RCP<Tpetra::Map<LO,GO,Kokkos::Compat::KokkosDeviceWrapperNode<PHX::Device>>>& ownedSourceMap,
+                                              const Teuchos::RCP<Tpetra::Map<LO,GO,Kokkos::Compat::KokkosDeviceWrapperNode<PHX::Device>>>& inputOwnedSourceMap,
                                               const std::string& sourceFieldName,
                                               const panzer::BasisDescriptor& sourceBasisDescriptor,
                                               const bool isVectorBasis,
                                               const int vectorBasisIndex)
   {
+    TEUCHOS_ASSERT(nonnull(sourceGlobalIndexer));
 
     /*
       NOTE: This will be the minimal memory implementation. It is not
@@ -335,21 +336,20 @@ namespace panzer {
       ownedTargetMap = rcp(new MapType(Teuchos::OrdinalTraits<GO>::invalid(),indices,0,comm_));
     }
  
-    // RCP<MapType> ownedSourceMap;
-    // {
-    //   std::vector<GO> indices;
-    //   sourceGlobalIndexer->getOwnedIndices(indices);
-    //   ownedSourceMap = rcp(new MapType(Teuchos::OrdinalTraits<GO>::invalid(),indices,0,comm_));
-    // }
+    RCP<MapType> ownedSourceMap = inputOwnedSourceMap;
+    if (is_null(ownedSourceMap)) {
+      std::vector<GO> indices;
+      sourceGlobalIndexer->getOwnedIndices(indices);
+      ownedSourceMap = rcp(new MapType(Teuchos::OrdinalTraits<GO>::invalid(),indices,0,comm_));
+    }
 
-    RCP<GraphType> ownedGraph = rcp(new GraphType(ownedTargetMap,0));
+    RCP<GraphType> ownedGraph = rcp(new GraphType(ownedTargetMap,ownedSourceMap,0));
     RCP<const ExportType> exporter = rcp(new ExportType(ghostedTargetMap,ownedTargetMap));
     ownedGraph->doExport(*ghostedGraph, *exporter, Tpetra::INSERT);
     ownedGraph->fillComplete(ownedSourceMap,ownedTargetMap);
     
     RCP<MatrixType> ghostedMatrix = rcp(new MatrixType(ghostedGraph));
     RCP<MatrixType> ownedMatrix = rcp(new MatrixType(ownedGraph));
-
 
     /*
     for (const auto& block : elementBlockNames_) {
@@ -402,18 +402,6 @@ namespace panzer {
     
     */
 
-    // const auto& hostEntries = entriesPerRow.template view<typename PHX::mem_space::HostSpace>();
-    // Teuchos::FancyOStream os(Teuchos::rcpFromRef(std::cout));
-    // os.setShowProcRank(true);
-    // for (size_t cell=0; cell < hostEntries.extent(0); ++cell)
-    //   os << "entriesPerRow(" << cell << ")=" << hostEntries(cell) << std::endl;
-    
-    // Teuchos::RCP<Tpetra::CrsGraph<LO,GO,Kokkos::Compat::KokkosDeviceWrapperNode<PHX::Device>>> graph = 
-    //                                           Teuchos::rcp(new Tpetra::CrsGraph<LO,GO,Kokkos::Compat::KokkosDeviceWrapperNode<PHX::Device>>(ownedTargetMap,)); 
-
-    // ownedTargetMap is the range map, sourceMap is the domain map
-
-    // loop over element blocks
     
 
     ownedMatrix->fillComplete(ownedSourceMap,ownedTargetMap);

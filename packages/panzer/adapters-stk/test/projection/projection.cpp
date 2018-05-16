@@ -83,7 +83,8 @@ TEUCHOS_UNIT_TEST(l2_projection, dof_manager)
 
   const int myRank = comm->getRank();
   const int numProcs = comm->getSize();
-  TEUCHOS_ASSERT(numProcs == 2);
+  const int numXElements = 2;
+  TEUCHOS_ASSERT(numXElements >= numProcs);
 
   RCP<panzer_stk::STK_Interface> mesh;
   {
@@ -91,10 +92,10 @@ TEUCHOS_UNIT_TEST(l2_projection, dof_manager)
     pl->set("X Blocks",2);
     pl->set("Y Blocks",1);
     pl->set("Z Blocks",1);
-    pl->set("X Elements",2);
+    pl->set("X Elements",numXElements);
     pl->set("Y Elements",2);
     pl->set("Z Elements",1);
-    pl->set("X Procs",2);
+    pl->set("X Procs",numProcs);
     pl->set("Y Procs",1);
     pl->set("Z Procs",1);
     panzer_stk::CubeHexMeshFactory factory;
@@ -218,6 +219,8 @@ TEUCHOS_UNIT_TEST(l2_projection, dof_manager)
   
 
   // Build rhs matrix
+  
+
   auto rhsMatrix_Chaff1 = projectionFactory.buildRHSMatrix(sourceGlobalIndexer,Teuchos::null,"Chaff1",hgradBD); // Project from scalar basis
   auto rhsMatrix_E0 = projectionFactory.buildRHSMatrix(sourceGlobalIndexer,Teuchos::null,"E_Field",hcurlBD,true,0); // Project from vector basis
   auto rhsMatrix_E1 = projectionFactory.buildRHSMatrix(sourceGlobalIndexer,Teuchos::null,"E_Field",hcurlBD,true,1); // Project from vector basis
