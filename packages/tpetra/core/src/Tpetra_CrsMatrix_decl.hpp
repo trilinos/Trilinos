@@ -2263,7 +2263,7 @@ namespace Tpetra {
     ///
     /// \warning This method is DEPRECATED.  DO NOT CALL IT.  It may
     ///   go away at any time.
-    global_size_t TPETRA_DEPRECATED getGlobalNumDiags() const;
+    global_size_t TPETRA_DEPRECATED getGlobalNumDiags () const;
 
     /// \brief Number of diagonal entries in the matrix's graph, on
     ///   the calling process.
@@ -2272,24 +2272,25 @@ namespace Tpetra {
     ///
     /// \warning This method is DEPRECATED.  DO NOT CALL IT.  It may
     ///   go away at any time.
-    size_t TPETRA_DEPRECATED getNodeNumDiags() const;
+    size_t TPETRA_DEPRECATED getNodeNumDiags () const;
 
     /// \brief Maximum number of entries in any row of the matrix,
-    ///   over all processes.
+    ///   over all processes in the matrix's communicator.
     ///
     /// \pre <tt>! isFillActive()</tt>
     ///
     /// This method only uses the matrix's graph.  Explicitly stored
     /// zeros count as "entries."
-    size_t getGlobalMaxNumRowEntries() const;
+    size_t getGlobalMaxNumRowEntries () const;
 
-    /// \brief Maximum number of entries in any row of the matrix on this process.
+    /// \brief Maximum number of entries in any row of the matrix,
+    ///   on this process.
     ///
     /// \pre <tt>! isFillActive()</tt>
     ///
     /// This method only uses the matrix's graph.  Explicitly stored
     /// zeros count as "entries."
-    size_t getNodeMaxNumRowEntries() const;
+    size_t getNodeMaxNumRowEntries () const;
 
     //! Whether the matrix has a well-defined column Map.
     bool hasColMap () const;
