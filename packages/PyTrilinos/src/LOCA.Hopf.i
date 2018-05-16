@@ -42,33 +42,26 @@
 // ***********************************************************************
 // @HEADER
 
-%define %loca_hopf_docstring
+%define %loca_hopf_base_docstring
 "
 PyTrilinos.LOCA.Hopf is the python interface to namespace Hopf of the
 Trilinos continuation algorithm package LOCA:
 
     http://trilinos.sandia.gov/packages/nox
 
-The purpose of LOCA.Hopf is to provide groups and vectors for Hopf
-bifurcations.  The python version of LOCA.Hopf supports the following
-sub-modules:
-
-    * MooreSpence         - Groups and vectors for locating Hopf bifurcations
-                            using the Moore-Spence formulation
-    * MinimallyAugmented  - Groups and vectors for locating Hopf bifurcations
-                            using the minimally augmented Hopf formulation
-
-and classes:
-
-    * ComplexMultiVector  - Multi-vector class to hold two multi-vectors to
-                            represent a complex multi-vector
-    * ComplexVector       - Vector class to hold two vectors to represent a
-                            complex vector
+See the PyTrilinos.LOCA.Hopf module for documentation
 "
 %enddef
 
-%module(package   = "PyTrilinos.LOCA.Hopf",
-        docstring = %loca_hopf_docstring) __init__
+%define %loca_hopf_base_import_code
+"
+from . import _Base
+"
+%enddef
+
+%module(package       = "PyTrilinos.LOCA.Hopf",
+        moduleinclude = %loca_hopf_base_import_code,
+        docstring     = %loca_hopf_base_docstring) Base
 
 %{
 // PyTrilinos include files
@@ -85,7 +78,6 @@ and classes:
 
 // NOX-Epetra include files
 #ifdef HAVE_PYTRILINOS_NOX_EPETRA
-//#include "Epetra_Vector.h"
 #include "NOX_Epetra_Group.H"
 #include "NOX_Epetra_Vector.H"
 #endif
@@ -133,23 +125,10 @@ import sys, os.path as op
 parentDir = op.normpath(op.join(op.dirname(op.abspath(__file__)),".."))
 if not parentDir in sys.path: sys.path.append(parentDir)
 del sys, op
-if "delete_ComplexMultiVector" not in dir(___init__):
-    del ___init__
-    from . import ___init__
 %}
 %import "NOX.Abstract.i"
 %import(module="Extended") "LOCA_Extended_MultiVector.H"
 %import(module="Extended") "LOCA_Extended_Vector.H"
-
-// Import the sub-modules
-%pythoncode
-%{
-__all__ = ['MooreSpence',
-           'MinimallyAugmented'
-           ]
-import MooreSpence
-import MinimallyAugmented
-%}
 
 // LOCA::Hopf ComplexMultiVector class
 %include "LOCA_Hopf_ComplexMultiVector.H"

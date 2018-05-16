@@ -42,24 +42,20 @@
 // ***********************************************************************
 // @HEADER
 
-%define %loca_epetra_docstring
+%define %loca_epetra_base_docstring
 "
 PyTrilinos.LOCA.Epetra is the python interface to namespace Epetra of
 the Trilinos continuation algorithm package LOCA:
 
     http://trilinos.sandia.gov/packages/nox
 
-The purpose of LOCA.Epetra is to provide an extension of the
-NOX.Epetra.Group to LOCA.  The python version of LOCA.Epetra supports
-the following classes:
-
-    * Group  - Extension of the NOX.Epetra.Group to LOCA
+See the documentation for PyTrilinos.LOCA.Epetra
 "
 %enddef
 
-%define %loca_epetra_import_code
+%define %loca_epetra_base_import_code
 "
-from . import ___init__
+from . import _Base
 "
 %enddef
 
@@ -67,8 +63,8 @@ from . import ___init__
 	directors    = "1",
 	autodoc      = "1",
 	implicitconv = "1",
-        moduleimport = %loca_epetra_import_code,
-	docstring    = %loca_epetra_docstring) __init__
+        moduleimport = %loca_epetra_base_import_code,
+	docstring    = %loca_epetra_base_docstring) Base
 
 %{
 // System include files
@@ -76,10 +72,6 @@ from . import ___init__
 
 // Teuchos include files
 #include "PyTrilinos_Teuchos_Headers.hpp"
-
-// PyTrilinos include files
-#include "PyTrilinos_Teuchos_Util.hpp"
-#include "PyTrilinos_Epetra_Util.hpp"
 
 // Epetra include files
 #include "PyTrilinos_Epetra_Headers.hpp"
@@ -97,14 +89,6 @@ from . import ___init__
 using Teuchos::RCP;
 using Teuchos::rcp;
 %}
-
-// ___init__ was pointing to Pitchfork/___init__.so (?!?), so I fix
-// that.
-// %pythoncode
-// %{
-// del ___init__
-// from . import ___init__
-// %}
 
 %ignore *::operator=;
 
@@ -157,7 +141,7 @@ using Teuchos::rcp;
 
 // NOX interface support
 %import "NOX.Abstract.i"
-%import "NOX.Epetra.__init__.i"
+%import "NOX.Epetra.i"
 %import "NOX.Epetra.Interface.i"
 
 // Allow import from this and parent directory. Force Interface to be
