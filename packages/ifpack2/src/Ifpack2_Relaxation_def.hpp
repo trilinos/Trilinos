@@ -52,9 +52,7 @@
 #include "MatrixMarket_Tpetra.hpp"
 #include <cstdlib>
 #include <sstream>
-#ifdef HAVE_IFPACK2_EXPERIMENTAL_KOKKOSKERNELS_FEATURES
-#  include "KokkosSparse_gauss_seidel.hpp"
-#endif // HAVE_IFPACK2_EXPERIMENTAL_KOKKOSKERNELS_FEATURES
+#include "KokkosSparse_gauss_seidel.hpp"
 
 
 // mfh 28 Mar 2013: Uncomment out these three lines to compute
@@ -614,7 +612,6 @@ void Relaxation<MatrixType>::initialize ()
   }
 
   if (PrecType_ == Ifpack2::Details::MTGS || PrecType_ == Ifpack2::Details::MTSGS) {
-#ifdef HAVE_IFPACK2_EXPERIMENTAL_KOKKOSKERNELS_FEATURES
     const crs_matrix_type* crsMat = dynamic_cast<const crs_matrix_type*> (&(*A_));
     TEUCHOS_TEST_FOR_EXCEPTION
       (crsMat == NULL, std::logic_error, "Ifpack2::Relaxation::initialize: "
@@ -650,12 +647,6 @@ void Relaxation<MatrixType>::initialize ()
                            kcsr.graph.row_map,
                            kcsr.graph.entries,
                            is_symmetric);
-#else // HAVE_IFPACK2_EXPERIMENTAL_KOKKOSKERNELS_FEATURES
-  TEUCHOS_TEST_FOR_EXCEPTION
-    (true, std::logic_error, "The multithreaded implementation of Gauss-Seidel "
-     "is not enabled.  Please talk to the Ifpack2 developers about how to "
-     "enable this method.");
-#endif // HAVE_IFPACK2_EXPERIMENTAL_KOKKOSKERNELS_FEATURES
   }
 
 
@@ -1209,7 +1200,6 @@ void Relaxation<MatrixType>::compute ()
       Importer_ = A_->getGraph ()->getImporter ();
       Diagonal_->template sync<device_type> ();
     }
-#ifdef HAVE_IFPACK2_EXPERIMENTAL_KOKKOSKERNELS_FEATURES
     //KokkosKernels GaussSiedel Initialization.
     if (PrecType_ == Ifpack2::Details::MTGS || PrecType_ == Ifpack2::Details::MTSGS) {
       const crs_matrix_type* crsMat = dynamic_cast<const crs_matrix_type*> (&(*A_));
@@ -1231,7 +1221,6 @@ void Relaxation<MatrixType>::compute ()
                                 kcsr.values,
                                 is_symmetric);
     }
-#endif // HAVE_IFPACK2_EXPERIMENTAL_KOKKOSKERNELS_FEATURES
   } // end TimeMonitor scope
 
   ComputeTime_ += Time_->totalElapsedTime ();
@@ -1727,7 +1716,6 @@ MTGaussSeidel (const crs_matrix_type* crsMat,
                const int numSweeps,
                const bool zeroInitialGuess) const
 {
-#ifdef HAVE_IFPACK2_EXPERIMENTAL_KOKKOSKERNELS_FEATURES
   using Teuchos::null;
   using Teuchos::RCP;
   using Teuchos::rcp;
@@ -2036,12 +2024,6 @@ MTGaussSeidel (const crs_matrix_type* crsMat,
     }
   }
 
-#else
-  TEUCHOS_TEST_FOR_EXCEPTION
-    (true, std::logic_error, "The multithreaded implementation of Gauss-Seidel "
-     "is not enabled.  Please talk to the Ifpack2 developers about how to "
-     "enable this method.");
-#endif // HAVE_IFPACK2_EXPERIMENTAL_KOKKOSKERNELS_FEATURES
 }
 
 template<class MatrixType>

@@ -51,10 +51,7 @@
 #include "Tpetra_CrsMatrix_decl.hpp" // Don't need the definition here
 #include "Tpetra_Experimental_BlockCrsMatrix_decl.hpp"
 #include <type_traits>
-
-#ifdef HAVE_IFPACK2_EXPERIMENTAL_KOKKOSKERNELS_FEATURES
 #include <KokkosKernels_Handle.hpp>
-#endif
 
 namespace Teuchos {
   // forward declarations
@@ -595,7 +592,6 @@ private:
   typedef Tpetra::Experimental::BlockMultiVector<scalar_type, local_ordinal_type,
                             global_ordinal_type, node_type> block_multivector_type;
 
-#ifdef HAVE_IFPACK2_EXPERIMENTAL_KOKKOSKERNELS_FEATURES
 
   //@}
   //! \name Implementation of multithreaded Gauss-Seidel.
@@ -612,7 +608,6 @@ private:
       <typename lno_row_view_t::const_value_type, local_ordinal_type,typename scalar_nonzero_view_t::value_type,
       MyExecSpace, TemporaryWorkSpace,PersistentWorkSpace > mt_kernel_handle_type;
   Teuchos::RCP<mt_kernel_handle_type> mtKernelHandle_;
-#endif // HAVE_IFPACK2_EXPERIMENTAL_KOKKOSKERNELS_FEATURES
 
   //@}
   //! \name Unimplemented methods that you are syntactically forbidden to call.
