@@ -57,11 +57,8 @@ void
 StackedTimer::flatten() {
   int num_timers = timer_.countTimers();
   flat_names_.resize(num_timers);
-
   unsigned pos=0;
   timer_.addTimerNames(flat_names_, pos);
-
-  std::sort(flat_names_.begin(), flat_names_.end());
 }
 
 void
