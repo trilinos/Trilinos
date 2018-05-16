@@ -31,7 +31,7 @@ if [ "$ATDM_CONFIG_COMPILER" == "INTEL" ]; then
     module list
     export MPICXX=`which CC`
     export MPICC=`which cc`
-    export MPIF90=`OFF`
+    unset MPIF90
 
 #    # Cray provides differently named wrappers
 #    export CXX=`which CC`
@@ -49,9 +49,6 @@ export ATDM_CONFIG_USE_HWLOC=OFF
 
 export ATDM_CONFIG_HDF5_LIBS="-L${HDF5_ROOT}/lib;${HDF5_ROOT}/lib/libhdf5_hl.a;${HDF5_ROOT}/lib/libhdf5.a;-lz;-ldl"
 export ATDM_CONFIG_NETCDF_LIBS="-L${BOOST_ROOT}/lib;-L${NETCDF_ROOT}/lib;-L${PNETCDF_ROOT}/lib;-L${HDF5_ROOT}/lib;${BOOST_ROOT}/lib/libboost_program_options.a;${BOOST_ROOT}/lib/libboost_system.a;${NETCDF_ROOT}/lib/libnetcdf.a;${PNETCDF_ROOT}/lib/libpnetcdf.a;${HDF5_ROOT}/lib/libhdf5_hl.a;${HDF5_ROOT}/lib/libhdf5.a;-lz;-ldl;-lm"
-unset ATTB_ENV
+
 export ATDM_CONFIG_MPI_POST_FLAG="-c 4"
 export ATDM_CONFIG_COMPLETED_ENV_SETUP=TRUE
-
-env|sort > /home/jfrye/cmakeCaches/atdm-env.out
-module li >> /home/jfrye/cmakeCaches/atdm-env.out
