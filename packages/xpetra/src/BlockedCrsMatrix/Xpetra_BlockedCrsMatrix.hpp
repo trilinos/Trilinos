@@ -625,17 +625,12 @@ namespace Xpetra {
       if (Rows() == 1 && Cols () == 1) {
         return getMatrix(0,0)->getNumEntriesInLocalRow(localRow);
       }
-<<<<<<< HEAD
       else if(is_diagonal_){      
 	GlobalOrdinal gid = this->getRowMap()->getGlobalElement(localRow);
 	size_t row = getBlockedRangeMap()->getMapIndexForGID(gid);
 	return getMatrix(row,row)->getNumEntriesInLocalRow(getMatrix(row,row)->getRowMap()->getLocalElement(gid));	
       }
       throw Xpetra::Exceptions::RuntimeError("getNumEntriesInLocalRow() not supported by BlockedCrsMatrix");
-
-=======
-      throw Xpetra::Exceptions::RuntimeError("getNumEntriesInLocalRow not supported by BlockedCrsMatrix");
->>>>>>> Xpetra: The great isTriangular / NumDiags purge advances!
     }
 
     //! \brief Returns the maximum number of entries across all rows/columns on all nodes.
