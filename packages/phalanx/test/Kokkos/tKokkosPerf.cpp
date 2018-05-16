@@ -86,7 +86,7 @@ namespace phalanx_test {
     KOKKOS_INLINE_FUNCTION
     void operator () (const int i) const
     {
-      for (int ip = 0; ip < static_cast<int>(rho_.dimension_1()); ++ip) {
+      for (int ip = 0; ip < static_cast<int>(rho_.extent(1)); ++ip) {
 	rho_(i,ip) = k_(0) * P_(i,ip) / T_(i,ip);
       }
     }
