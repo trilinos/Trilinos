@@ -129,7 +129,7 @@ namespace FROSch {
         int compute();
         
         void describe(Teuchos::FancyOStream &out,
-                              const Teuchos::EVerbosityLevel verbLevel=Teuchos::Describable::verbLevel_default) const;
+                      const Teuchos::EVerbosityLevel verbLevel=Teuchos::Describable::verbLevel_default) const;
         
         std::string description() const;
         

@@ -83,6 +83,8 @@ APPEND_SET(HEADERS
   SchwarzPreconditioners/FROSch_SchwarzPreconditioner_def.hpp
   Tools/FROSch_ExtractSubmatrices_decl.hpp
   Tools/FROSch_ExtractSubmatrices_def.hpp
+  Tools/FROSch_PartitionOfUnityBasis_decl.hpp
+  Tools/FROSch_PartitionOfUnityBasis_def.hpp
   Tools/FROSch_SubdomainSolver_decl.hpp
   Tools/FROSch_SubdomainSolver_def.hpp
   Tools/FROSch_Tools_decl.hpp

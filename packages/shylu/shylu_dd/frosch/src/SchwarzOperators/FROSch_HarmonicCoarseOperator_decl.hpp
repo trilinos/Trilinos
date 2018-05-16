@@ -57,8 +57,6 @@ namespace FROSch {
         
     public:
         
-//        typedef typename SchwarzOperator<SC,LO,GO,NO>::CommPtr CommPtr;
-//
         typedef typename SchwarzOperator<SC,LO,GO,NO>::MapPtr MapPtr;
         typedef typename SchwarzOperator<SC,LO,GO,NO>::MapPtrVecPtr MapPtrVecPtr;
         typedef typename SchwarzOperator<SC,LO,GO,NO>::MapPtrVecPtr2D MapPtrVecPtr2D;
@@ -67,32 +65,21 @@ namespace FROSch {
 
         typedef typename SchwarzOperator<SC,LO,GO,NO>::MultiVectorPtr MultiVectorPtr;
         typedef typename SchwarzOperator<SC,LO,GO,NO>::MultiVectorPtrVecPtr MultiVectorPtrVecPtr;
-//
+
         typedef typename SchwarzOperator<SC,LO,GO,NO>::ParameterListPtr ParameterListPtr;
-//
-//        typedef typename SchwarzOperator<SC,LO,GO,NO>::DDInterfacePtr DDInterfacePtr;
-//
-//        typedef typename SchwarzOperator<SC,LO,GO,NO>::EntitySetPtr EntitySetPtr;
-//
+        
         typedef typename SchwarzOperator<SC,LO,GO,NO>::SubdomainSolverPtr SubdomainSolverPtr;
-//
+
         typedef typename SchwarzOperator<SC,LO,GO,NO>::UN UN;
         typedef typename SchwarzOperator<SC,LO,GO,NO>::UNVecPtr UNVecPtr;
-//
+
         typedef typename SchwarzOperator<SC,LO,GO,NO>::LOVec LOVec;
-//        typedef typename SchwarzOperator<SC,LO,GO,NO>::LOVecPtr LOVecPtr;
         typedef typename SchwarzOperator<SC,LO,GO,NO>::LOVecPtr2D LOVecPtr2D;
-//
+
         typedef typename SchwarzOperator<SC,LO,GO,NO>::GOVec GOVec;
-//        typedef typename SchwarzOperator<SC,LO,GO,NO>::GOVecPtr GOVecPtr;
         typedef typename SchwarzOperator<SC,LO,GO,NO>::GOVecView GOVecView;
-//        typedef typename SchwarzOperator<SC,LO,GO,NO>::GOVecPtr2D GOVecPtr2D;
-//
+
         typedef typename SchwarzOperator<SC,LO,GO,NO>::SCVec SCVec;
-//        typedef typename SchwarzOperator<SC,LO,GO,NO>::SCVecPtr SCVecPtr;
-//        typedef typename SchwarzOperator<SC,LO,GO,NO>::SCVecPtr2D SCVecPtr2D;
-//
-//        typedef typename SchwarzOperator<SC,LO,GO,NO>::BoolVecPtr BoolVecPtr;
         
         
         HarmonicCoarseOperator(CrsMatrixPtr k,
