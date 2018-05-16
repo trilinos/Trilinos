@@ -233,7 +233,7 @@ std::vector<Real> Constraint<Real>::solveAugmentedSystem(Vector<Real> &v1,
   Teuchos::SerialDenseVector<int, Real> s(m+1);
   Teuchos::SerialDenseVector<int, Real> y(m+1);
   Teuchos::SerialDenseVector<int, Real> cnorm(m);
-  Teuchos::LAPACK<int, Real> lapack;
+  ROL::LAPACK<int, Real> lapack;
 
   // Compute initial residual.
   applyAdjointJacobian(*r1, v2, x, zerotol);

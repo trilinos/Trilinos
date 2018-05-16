@@ -46,10 +46,10 @@
 
 #include "ROL_Types.hpp"
 #include "ROL_Step.hpp"
+#include "ROL_LAPACK.hpp"
 #include <sstream>
 #include <iomanip>
 #include "Teuchos_SerialDenseMatrix.hpp"
-#include "Teuchos_LAPACK.hpp"
 
 /** \class ROL::CompositeStep
     \brief Implements the computation of optimization steps
@@ -812,7 +812,7 @@ public:
           }
         }
         if (Tm1.normOne() >= tol_ortho) {
-          Teuchos::LAPACK<int,Real> lapack;
+          ROL::LAPACK<int,Real> lapack;
           std::vector<int>          ipiv(iterCG_);
           int                       info;
           std::vector<Real>         work(3*iterCG_);

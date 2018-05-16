@@ -50,6 +50,7 @@
 #include "ROL_Bundle.hpp"
 
 #include "ROL_Ptr.hpp"
+#include "ROL_LAPACK.hpp" 
 
 #include <vector>
 #include <limits.h> 
@@ -60,7 +61,6 @@
 
 #include "Teuchos_SerialDenseMatrix.hpp" 
 #include "Teuchos_SerialDenseVector.hpp" 
-#include "Teuchos_LAPACK.hpp" 
 
 #define EXACT 1
 #define TABOO_LIST 1
@@ -77,7 +77,7 @@ namespace ROL {
 template<class Real>
 class Bundle_TT : public Bundle<Real> {
 private: 
-  Teuchos::LAPACK<int, Real> lapack_; // TT
+  ROL::LAPACK<int, Real> lapack_; // TT
 
   int QPStatus_;           // QP solver status
   int maxind_;             // maximum integer value

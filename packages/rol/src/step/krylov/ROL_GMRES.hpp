@@ -52,10 +52,11 @@
 #include "ROL_LinearOperator.hpp"
 #include "ROL_Vector.hpp"
 #include "ROL_Types.hpp"
+#include "ROL_LAPACK.hpp"
 
 #include "Teuchos_SerialDenseMatrix.hpp"
 #include "Teuchos_SerialDenseVector.hpp"
-#include "Teuchos_LAPACK.hpp"
+//#include "Teuchos_LAPACK.hpp"
 
 namespace ROL {
 
@@ -84,7 +85,7 @@ private:
   bool useInexact_;
   bool useInitialGuess_;    // If false, inital x will be ignored and zero vec used
  
-  Teuchos::LAPACK<int,Real> lapack_;
+  ROL::LAPACK<int,Real> lapack_;
 
 public:
   

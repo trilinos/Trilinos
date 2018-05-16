@@ -52,7 +52,11 @@
 
 int main( int argc, char* argv[] ) {
 
-  ROL_TEST_FOR_EXCEPTION( 0<1, std::logic_error, "End Result: TEST PASSED\n")
+  try{
+    ROL_TEST_FOR_EXCEPTION( 0<1, std::logic_error, "End Result: TEST PASSED\n")
+  }catch(std::exception e){
+    std::cerr << e.what() << std::endl;
+  };
 
   return 0;
 

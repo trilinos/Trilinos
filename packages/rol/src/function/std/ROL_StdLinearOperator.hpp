@@ -46,9 +46,9 @@
 
 #include "ROL_LinearOperator.hpp"
 #include "ROL_StdVector.hpp"
+#include "ROL_LAPACK.hpp"
 
 #include "Teuchos_BLAS.hpp"
-#include "Teuchos_LAPACK.hpp"
 
 /** @ingroup func_group
     \class ROL::StdLinearOperator
@@ -79,7 +79,7 @@ private:
   mutable std::vector<int> ipiv_; 
 
   Teuchos::BLAS<int,Real>    blas_;
-  Teuchos::LAPACK<int,Real>  lapack_;
+  ROL::LAPACK<int,Real>  lapack_;
 
 public:
 
