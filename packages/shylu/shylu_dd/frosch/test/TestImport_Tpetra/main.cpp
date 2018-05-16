@@ -70,17 +70,15 @@ typedef int GO;
 typedef KokkosClassic::DefaultNode::DefaultNodeType EpetraNode;
 typedef EpetraNode NO;
 
-using namespace std;
-using namespace Teuchos;
-using namespace Xpetra;
-using namespace Belos;
-
-using namespace std;
-
 int main(int argc, char *argv[])
 {
     MPI_Init(&argc,&argv);
     Epetra_MpiComm CommWorld(MPI_COMM_WORLD);
+    
+    using namespace std;
+    using namespace Teuchos;
+    using namespace Xpetra;
+    using namespace Belos;
     
     RCP<Epetra_MpiComm> Comm(new Epetra_MpiComm(MPI_COMM_WORLD));
     RCP<const Teuchos::Comm<int> > TeuchosComm = rcp(new MpiComm<int> (MPI_COMM_WORLD));

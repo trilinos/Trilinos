@@ -67,21 +67,21 @@ typedef unsigned UN;
 typedef double SC;
 typedef int LO;
 typedef int GO;
-#ifdef KOKKOS_HAVE_SERIAL
+#ifdef KOKKOS_ENABLE_SERIAL
 typedef Kokkos::Compat::KokkosSerialWrapperNode EpetraNode;
 #else
 typedef Kokkos::Compat::KokkosOpenMPWrapperNode EpetraNode;
 #endif
 typedef EpetraNode NO;
 
-using namespace std;
-using namespace Teuchos;
-using namespace Xpetra;
-using namespace FROSch;
-using namespace Belos;
-
 int main(int argc, char *argv[])
 {
+    using namespace std;
+    using namespace Teuchos;
+    using namespace Xpetra;
+    using namespace FROSch;
+    using namespace Belos;
+    
     MPI_Init(&argc,&argv);
     Epetra_MpiComm CommWorld(MPI_COMM_WORLD);
     

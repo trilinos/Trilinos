@@ -74,14 +74,14 @@ typedef int GO;
 typedef KokkosClassic::DefaultNode::DefaultNodeType EpetraNode;
 typedef EpetraNode NO;
 
-using namespace std;
-using namespace Teuchos;
-using namespace Xpetra;
-using namespace FROSch;
-using namespace Belos;
-
 int main(int argc, char *argv[])
 {
+    using namespace std;
+    using namespace Teuchos;
+    using namespace Xpetra;
+    using namespace FROSch;
+    using namespace Belos;
+    
     MPI_Init(&argc,&argv);
     Epetra_MpiComm CommWorld(MPI_COMM_WORLD);
     
