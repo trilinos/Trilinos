@@ -272,11 +272,12 @@ $ cd <some_build_dir>/
 $ source $TRILINOS_DIR/cmake/std/atdm/load-env.sh intel-opt-openmp
 
 $ cmake \
+  -GNinja \
   -DTrilinos_CONFIGURE_OPTIONS_FILE:STRING=cmake/std/atdm/ATDMDevEnv.cmake \
   -DTrilinos_ENABLE_TESTS=ON -DTrilinos_ENABLE_MueLu=ON \
   $TRILINOS_DIR
 
-$ make -j16
+$ make NP=16
 
 $ salloc -N1 --time=0:20:00 --account=<YOUR_WCID> ctest -j16
 ```
@@ -291,12 +292,10 @@ the configure and build as with:
 $ cd <some_build_dir>/
 $ ln -s $TRILINOS_DIR/cmake/std/atdm/checkin-test-sems.sh .
 $ ./checkin-test-sems.sh intel-opt-openmp \
-  --enable-all-packages=off --no-enable-fwd-packages --enable-packages=MueLu \
-  --allow-no-pull --configure --build
+  --enable-packages=MueLu --allow-no-pull --configure --build
 $ salloc -N1 --time=0:20:00 --account=<YOUR_WCID> \
   ./checkin-test-sems.sh intel-opt-openmp \
-  --enable-all-packages=off --no-enable-fwd-packages --enable-packages=MueLu \
-  --test
+  --enable-packages=MueLu --test
 ```
 
 ### SEMS rhel6 environment
