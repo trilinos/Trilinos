@@ -634,47 +634,51 @@ int main(int argc, char* argv[]) {
 
 // #ifdef KOKKOS_ENABLE_SERIAL
 //     if (serial) {
-//       Kokkos::Serial::initialize();
+//       Kokkos::initialize();
 //       if (print_config)
-//         Kokkos::Serial::print_configuration(std::cout, true);
+//         Kokkos::print_configuration(std::cout, true);
 //       do_times_layout<SFadSize,SLFadSize,HierSFadSize,HierSLFadSize,Kokkos::Serial>(
 //         m,n,p,nloop,value,sfad,slfad,dfad,hierarchical,check,layout,"Serial");
-//       Kokkos::Serial::finalize();
+//       Kokkos::finalize();
 //     }
 // #endif
 
 #ifdef KOKKOS_ENABLE_OPENMP
     if (openmp) {
-      Kokkos::OpenMP::initialize(openmp, numa, cores_per_numa);
+      Kokkos::InitArgs init_args;
+      init_args.num_threads = openmp;
+      init_args.num_numa = numa;
+      Kokkos::initialize( init_args );
       if (print_config)
-        Kokkos::OpenMP::print_configuration(std::cout, true);
+        Kokkos::print_configuration(std::cout, true);
       do_times_layout<SFadSize,SLFadSize,HierSFadSize,HierSLFadSize,Kokkos::OpenMP>(
         m,n,p,ph,nloop,value,sfad,slfad,dfad,hierarchical,check,layout,"OpenMP");
-      Kokkos::OpenMP::finalize();
+      Kokkos::finalize();
     }
 #endif
 
 #ifdef KOKKOS_ENABLE_THREADS
     if (threads) {
-      Kokkos::Threads::initialize(threads, numa, cores_per_numa);
+      Kokkos::InitArgs init_args;
+      init_args.num_threads = threads;
+      init_args.num_numa = numa;
+      Kokkos::initialize( init_args );
       if (print_config)
-        Kokkos::Threads::print_configuration(std::cout, true);
+        Kokkos::print_configuration(std::cout, true);
       do_times_layout<SFadSize,SLFadSize,HierSFadSize,HierSLFadSize,Kokkos::Threads>(
         m,n,p,ph,nloop,value,sfad,slfad,dfad,hierarchical,check,layout,"Threads");
-      Kokkos::Threads::finalize();
+      Kokkos::finalize();
     }
 #endif
 
 #ifdef KOKKOS_ENABLE_CUDA
     if (cuda) {
-      Kokkos::HostSpace::execution_space::initialize();
-      Kokkos::Cuda::initialize();
+      Kokkos::initialize();
       if (print_config)
-        Kokkos::Cuda::print_configuration(std::cout, true);
+        Kokkos::print_configuration(std::cout, true);
       do_times_layout<SFadSize,SLFadSize,HierSFadSize,HierSLFadSize,Kokkos::Cuda>(
         m,n,p,ph,nloop,value,sfad,slfad,dfad,hierarchical,check,layout,"Cuda");
-      Kokkos::HostSpace::execution_space::finalize();
-      Kokkos::Cuda::finalize();
+      Kokkos::finalize();
     }
 #endif
 

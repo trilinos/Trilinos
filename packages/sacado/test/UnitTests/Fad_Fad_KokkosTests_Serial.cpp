@@ -43,6 +43,7 @@ int main( int argc, char* argv[] ) {
 
   // Initialize serial
   Kokkos::initialize(argc,argv);
+  Kokkos::print_configuration(std::cout);
 
   int res = Teuchos::UnitTestRepository::runUnitTestsFromMain(argc, argv);
 
