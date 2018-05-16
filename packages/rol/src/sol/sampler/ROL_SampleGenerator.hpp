@@ -44,7 +44,6 @@
 #ifndef ROL_SAMPLEGENERATOR_HPP
 #define ROL_SAMPLEGENERATOR_HPP
 
-#include "Teuchos_RefCountPtr.hpp"
 #include "ROL_BatchManager.hpp"
 #include "ROL_Vector.hpp"
 #include <fstream>

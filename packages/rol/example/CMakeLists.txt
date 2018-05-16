@@ -1,6 +1,5 @@
 # Always built.
 ADD_SUBDIRECTORY(rosenbrock)
-ADD_SUBDIRECTORY(poisson-control)
 ADD_SUBDIRECTORY(poisson-inversion)
 
 
@@ -40,6 +39,7 @@ MESSAGE("-- Enabling ROL examples with required dependency on Teuchos::RCP or Te
 
 ADD_SUBDIRECTORY(burgers-control)
 ADD_SUBDIRECTORY(parabolic-control)
+ADD_SUBDIRECTORY(poisson-control)
 ADD_SUBDIRECTORY(tensor-opt)
 ADD_SUBDIRECTORY(PDE-OPT)
 

@@ -67,15 +67,15 @@ class DualSimulatedVector;
 template<class Real>
 class SimulatedVector : public Vector<Real> {
 
-  typedef Vector<Real>                             V;
+  typedef Vector<Real>                   V;
   typedef ROL::Ptr<V>                    Vp;
   typedef ROL::Ptr<BatchManager<Real> >  VBMp; 
-  typedef SimulatedVector<Real>                    PV;
+  typedef SimulatedVector<Real>          PV;
 
 private:
-  const std::vector<Vp>                            vecs_;
+  const std::vector<Vp>                  vecs_;
   ROL::Ptr<BatchManager<Real> >          bman_;
-  mutable std::vector<Vp>                          dual_vecs_;
+  mutable std::vector<Vp>                dual_vecs_;
   mutable ROL::Ptr<PV>                   dual_pvec_;
 public:
 
@@ -92,8 +92,8 @@ public:
     const PV &xs = dynamic_cast<const PV&>(x);
 
     ROL_TEST_FOR_EXCEPTION( numVectors() != xs.numVectors(),
-                                std::invalid_argument,
-                                "Error: Vectors must have the same number of subvectors." );
+                            std::invalid_argument,
+                            "Error: Vectors must have the same number of subvectors." );
 
     for( size_type i=0; i<vecs_.size(); ++i ) {
       vecs_[i]->set(*xs.get(i));
@@ -105,8 +105,8 @@ public:
     const PV &xs = dynamic_cast<const PV&>(x);
 
     ROL_TEST_FOR_EXCEPTION( numVectors() != xs.numVectors(),
-                                std::invalid_argument,
-                                "Error: Vectors must have the same number of subvectors." );
+                            std::invalid_argument,
+                            "Error: Vectors must have the same number of subvectors." );
 
     for( size_type i=0; i<vecs_.size(); ++i ) {
       vecs_[i]->plus(*xs.get(i));
@@ -124,8 +124,8 @@ public:
     const PV &xs = dynamic_cast<const PV&>(x);
 
     ROL_TEST_FOR_EXCEPTION( numVectors() != xs.numVectors(),
-                                std::invalid_argument,
-                                "Error: Vectors must have the same number of subvectors." );
+                            std::invalid_argument,
+                            "Error: Vectors must have the same number of subvectors." );
 
     for( size_type i=0; i<vecs_.size(); ++i ) {
       vecs_[i]->axpy(alpha,*xs.get(i));
@@ -137,8 +137,8 @@ public:
     const PV &xs = dynamic_cast<const PV&>(x);
 
    ROL_TEST_FOR_EXCEPTION( numVectors() != xs.numVectors(),
-                                std::invalid_argument,
-                                "Error: Vectors must have the same number of subvectors." );
+                           std::invalid_argument,
+                           "Error: Vectors must have the same number of subvectors." );
 
     Real locresult = 0;
     Real result = 0;
@@ -179,10 +179,8 @@ public:
   Vp basis( const int i ) const { // this must be fixed for distributed batching
 
     ROL_TEST_FOR_EXCEPTION( i >= dimension() || i<0,
-                                std::invalid_argument,
-                                "Error: Basis index must be between 0 and vector dimension." );
-
-
+                            std::invalid_argument,
+                            "Error: Basis index must be between 0 and vector dimension." );
     Vp bvec = clone();
 
     // Downcast

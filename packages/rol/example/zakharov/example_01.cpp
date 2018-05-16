@@ -53,11 +53,10 @@
 #include "ROL_StatusTest.hpp"
 #include "ROL_StdVector.hpp"
 #include "ROL_Zakharov.hpp"
+#include "ROL_ParameterList.hpp"
 #include "ROL_ParameterListConverters.hpp"
-//include "ROL_Stream.hpp"
 #include "ROL_Stream.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
-#include "Teuchos_XMLParameterListHelpers.hpp"
 
 #include <iostream>
 
@@ -74,14 +73,6 @@ int main(int argc, char *argv[]) {
   GlobalMPISession mpiSession(&argc, &argv);
 
   // This little trick lets us print to std::cout only if a (dummy) command-line argument is provided.
-//  int iprint     = argc - 1;
-//  ROL::Ptr<std::ostream> outStream;
-//  ROL::nullstream bhs; // outputs nothing
-//  if (iprint > 0)
-//    outStream = ROL::makePtrFromRef(std::cout);
-//  else
-//    outStream = ROL::makePtrFromRef(bhs);
-
   auto outStream = ROL::makeStreamPtr( std::cout, argc > 1 );
 
   int errorFlag  = 0;

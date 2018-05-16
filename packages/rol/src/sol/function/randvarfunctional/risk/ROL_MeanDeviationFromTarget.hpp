@@ -50,8 +50,6 @@
 #include "ROL_PlusFunction.hpp"
 #include "ROL_AbsoluteValue.hpp"
 
-#include "Teuchos_Array.hpp"
-
 /** @ingroup risk_group
     \class ROL::MeanDeviationFromTarget
     \brief Provides an interface for the mean plus a sum of arbitrary order

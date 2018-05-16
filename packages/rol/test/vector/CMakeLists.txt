@@ -8,32 +8,26 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   ADD_DIR_TO_NAME
   )
 
-IF( PTR_STRING STREQUAL "Teuchos::RCP" )
-IF( PARAMETERLIST_STRING STREQUAL "Teuchos::ParameterList" )
+# Moved to adapters/teuchos/test/vector
+#TRIBITS_ADD_EXECUTABLE_AND_TEST(
+#  CArrayVectorInterface
+#  SOURCES test_02.cpp
+#  ARGS PrintItAll
+#  NUM_MPI_PROCS 1
+#  PASS_REGULAR_EXPRESSION "TEST PASSED"
+#  ADD_DIR_TO_NAME
+#  )
 
 
-
-TRIBITS_ADD_EXECUTABLE_AND_TEST(
-  CArrayVectorInterface
-  SOURCES test_02.cpp
-  ARGS PrintItAll
-  NUM_MPI_PROCS 1
-  PASS_REGULAR_EXPRESSION "TEST PASSED"
-  ADD_DIR_TO_NAME
-  )
-
-
-ENDIF()
-ENDIF()
-
-TRIBITS_ADD_EXECUTABLE_AND_TEST(
-  MultiVectorInterface
-  SOURCES test_03.cpp
-  ARGS PrintItAll
-  NUM_MPI_PROCS 1
-  PASS_REGULAR_EXPRESSION "TEST PASSED"
-  ADD_DIR_TO_NAME
-  )
+# Moved to adapters/teuchos/test/vector
+#TRIBITS_ADD_EXECUTABLE_AND_TEST(
+#  MultiVectorInterface
+#  SOURCES test_03.cpp
+#  ARGS PrintItAll
+#  NUM_MPI_PROCS 1
+#  PASS_REGULAR_EXPRESSION "TEST PASSED"
+#  ADD_DIR_TO_NAME
+#  )
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   PartitionedVectorInterface
