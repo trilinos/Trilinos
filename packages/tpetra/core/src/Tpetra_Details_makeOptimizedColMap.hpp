@@ -59,9 +59,12 @@
 /// making the Import requires some of the same information that
 /// optimizing the column Map does.
 
-#include <Tpetra_Map.hpp>
-#include <Tpetra_Import.hpp>
-#include <Tpetra_Util.hpp>
+#include "Tpetra_Map.hpp"
+#include "Tpetra_Import.hpp"
+#include "Tpetra_Util.hpp"
+#include "Tpetra_Details_Behavior.hpp"
+#include "Teuchos_FancyOStream.hpp"
+#include <memory>
 
 namespace Tpetra {
 namespace Details {
@@ -75,13 +78,223 @@ namespace Details {
   template<class MapType>
   class OptColMap {
   public:
-    typedef MapType map_type;
-    typedef typename MapType::local_ordinal_type local_ordinal_type;
-    typedef typename MapType::global_ordinal_type global_ordinal_type;
-    typedef typename MapType::node_type node_type;
-    typedef Import<local_ordinal_type,
-                   global_ordinal_type,
-                   node_type> import_type;
+    using local_ordinal_type = typename MapType::local_ordinal_type;
+    using global_ordinal_type = typename MapType::global_ordinal_type;
+    using node_type = typename MapType::node_type;
+    using map_type = ::Tpetra::Map<local_ordinal_type, global_ordinal_type, node_type>;
+    using import_type = ::Tpetra::Import<local_ordinal_type, global_ordinal_type, node_type>;
+
+    static Teuchos::RCP<const map_type>
+    makeOptColMap (std::ostream& errStream,
+                   bool& lclErr,
+                   const map_type& domMap,
+                   const map_type& colMap,
+                   const import_type* /* oldImport */)
+    {
+      using ::Tpetra::Details::Behavior;
+      using Teuchos::Array;
+      using Teuchos::ArrayView;
+      using Teuchos::FancyOStream;
+      using Teuchos::getFancyOStream;
+      using Teuchos::RCP;
+      using Teuchos::rcp;
+      using Teuchos::rcpFromRef;
+      using std::endl;
+      using LO = local_ordinal_type;
+      using GO = global_ordinal_type;
+      const char prefix[] = "Tpetra::Details::makeOptimizedColMap: ";
+
+      RCP<const Teuchos::Comm<int> > comm = colMap.getComm ();
+      std::ostream& err = errStream;
+
+      const bool verbose = Behavior::verbose ("Tpetra::Details::makeOptimizedColMap");
+
+      RCP<FancyOStream> outPtr = getFancyOStream (rcpFromRef (std::cerr));
+      TEUCHOS_TEST_FOR_EXCEPTION
+        (outPtr.is_null (), std::logic_error,
+         "outPtr is null; this should never happen!");
+      FancyOStream& out = *outPtr;
+      Teuchos::OSTab tab1 (out);
+
+      std::unique_ptr<std::string> verboseHeader;
+      if (verbose) {
+        std::ostringstream os;
+        const int myRank = comm->getRank ();
+        os << "Proc " << myRank << ": ";
+        verboseHeader = std::unique_ptr<std::string> (new std::string (os.str ()));
+      }
+      if (verbose) {
+        std::ostringstream os;
+        os << *verboseHeader << "Tpetra::Details::makeOptimizedColMap" << endl;
+        out << os.str ();
+      }
+
+      if (verbose) {
+        std::ostringstream os;
+        os << *verboseHeader << "Domain Map GIDs: [";
+        const LO domMapLclNumInds = static_cast<LO> (domMap.getNodeNumElements ());
+        for (LO lid = 0; lid < domMapLclNumInds; ++lid) {
+          const GO gid = domMap.getGlobalElement (lid);
+          os << gid;
+          if (lid + LO (1) < domMapLclNumInds) {
+            os << ", ";
+          }
+        }
+        os << "]" << endl;
+        out << os.str ();
+      }
+
+      const LO colMapLclNumInds = static_cast<LO> (colMap.getNodeNumElements ());
+
+      if (verbose) {
+        std::ostringstream os;
+        os << *verboseHeader << "Column Map GIDs: [";
+        for (LO lid = 0; lid < colMapLclNumInds; ++lid) {
+          const GO gid = colMap.getGlobalElement (lid);
+          os << gid;
+          if (lid + LO (1) < colMapLclNumInds) {
+            os << ", ";
+          }
+        }
+        os << "]" << endl;
+        out << os.str ();
+      }
+
+      // Count remote GIDs.
+      LO numOwnedGids = 0;
+      LO numRemoteGids = 0;
+      for (LO colMapLid = 0; colMapLid < colMapLclNumInds; ++colMapLid) {
+        const GO colMapGid = colMap.getGlobalElement (colMapLid);
+        if (domMap.isNodeGlobalElement (colMapGid)) {
+          ++numOwnedGids;
+        }
+        else {
+          ++numRemoteGids;
+        }
+      }
+
+      if (verbose) {
+        std::ostringstream os;
+        os << *verboseHeader << "- numOwnedGids: " << numOwnedGids << endl
+           << *verboseHeader << "- numRemoteGids: " << numRemoteGids << endl;
+        out << os.str ();
+      }
+
+      // Put all colMap GIDs on the calling process in a single array.
+      // Owned GIDs go in front, and remote GIDs at the end.
+      Array<GO> allGids (numOwnedGids + numRemoteGids);
+      ArrayView<GO> ownedGids = allGids.view (0, numOwnedGids);
+      ArrayView<GO> remoteGids = allGids.view (numOwnedGids, numRemoteGids);
+
+      // Fill ownedGids and remoteGids (and therefore allGids).  We use
+      // two loops, one to count (above) and one to fill (here), in
+      // order to avoid dynamic memory allocation during the loop (in
+      // this case, lots of calls to push_back()).  That will simplify
+      // use of Kokkos to parallelize these loops later.
+      LO ownedPos = 0;
+      LO remotePos = 0;
+      for (LO colMapLid = 0; colMapLid < colMapLclNumInds; ++colMapLid) {
+        const GO colMapGid = colMap.getGlobalElement (colMapLid);
+        if (domMap.isNodeGlobalElement (colMapGid)) {
+          ownedGids[ownedPos++] = colMapGid;
+        }
+        else {
+          remoteGids[remotePos++] = colMapGid;
+        }
+      }
+
+      // If, for some reason, the running count doesn't match the
+      // orignal count, fill in any remaining GID spots with an
+      // obviously invalid value.  We don't want to stop yet, because
+      // other processes might not have noticed this error; Map
+      // construction is a collective, so we can't stop now.
+      if (ownedPos != numOwnedGids) {
+        lclErr = true;
+        err << prefix << "On Process " << comm->getRank () << ", ownedPos = "
+            << ownedPos << " != numOwnedGids = " << numOwnedGids << endl;
+        for (LO colMapLid = ownedPos; colMapLid < numOwnedGids; ++colMapLid) {
+          ownedGids[colMapLid] = Teuchos::OrdinalTraits<GO>::invalid ();
+        }
+      }
+      if (remotePos != numRemoteGids) {
+        lclErr = true;
+        err << prefix << "On Process " << comm->getRank () << ", remotePos = "
+            << remotePos << " != numRemoteGids = " << numRemoteGids << endl;
+        for (LO colMapLid = remotePos; colMapLid < numRemoteGids; ++colMapLid) {
+          remoteGids[colMapLid] = Teuchos::OrdinalTraits<GO>::invalid ();
+        }
+      }
+
+      // Figure out what processes own what GIDs in the domain Map.
+      // Initialize the output array of remote PIDs with the "invalid
+      // process rank" -1, to help us test whether getRemoteIndexList
+      // did its job.
+      Array<int> remotePids (numRemoteGids, -1);
+      const LookupStatus lookupStatus =
+        domMap.getRemoteIndexList (remoteGids, remotePids ());
+
+      // If any process returns IDNotPresent, then at least one of the
+      // remote indices was not present in the domain Map.  This means
+      // that the Import object cannot be constructed, because of
+      // incongruity between the column Map and domain Map.  This
+      // means that either the column Map or domain Map, or both, is
+      // incorrect.
+      const bool getRemoteIndexListFailed = (lookupStatus == IDNotPresent);
+      if (getRemoteIndexListFailed) {
+        lclErr = true;
+        err << prefix << "On Process " << comm->getRank () << ", some indices "
+          "in the input colMap (the original column Map) are not in domMap (the "
+          "domain Map).  Either these indices or the domain Map is invalid.  "
+          "Likely cause: For a nonsquare matrix, you must give the domain and "
+          "range Maps as input to fillComplete." << endl;
+      }
+
+      // Check that getRemoteIndexList actually worked, by making sure
+      // that none of the remote PIDs are -1.
+      for (LO k = 0; k < numRemoteGids; ++k) {
+        bool foundInvalidPid = false;
+        if (remotePids[k] == -1) {
+          foundInvalidPid = true;
+          break;
+        }
+        if (foundInvalidPid) {
+          lclErr = true;
+          err << prefix << "On Process " << comm->getRank () << ", "
+            "getRemoteIndexList returned -1 for the process ranks of "
+            "one or more GIDs on this process." << endl;
+        }
+      }
+
+      if (verbose) {
+        std::ostringstream os;
+        os << *verboseHeader << "- Before sort2:" << endl
+           << *verboseHeader << "-- ownedGids: " << Teuchos::toString (ownedGids) << endl
+           << *verboseHeader << "-- remoteGids: " << Teuchos::toString (remoteGids) << endl
+           << *verboseHeader << "-- allGids: " << Teuchos::toString (allGids ()) << endl;
+        out << os.str ();
+      }
+      using Tpetra::sort2;
+      sort2 (remotePids.begin (), remotePids.end (), remoteGids.begin ());
+      if (verbose) {
+        std::ostringstream os;
+        os << *verboseHeader << "- After sort2:" << endl
+           << *verboseHeader << "-- ownedGids: " << Teuchos::toString (ownedGids) << endl
+           << *verboseHeader << "-- remoteGids: " << Teuchos::toString (remoteGids) << endl
+           << *verboseHeader << "-- allGids: " << Teuchos::toString (allGids ()) << endl;
+        out << os.str ();
+      }
+
+      auto optColMap = rcp (new map_type (colMap.getGlobalNumElements (),
+                                          allGids (),
+                                          colMap.getIndexBase (),
+                                          comm));
+      if (verbose) {
+        std::ostringstream os;
+        os << *verboseHeader << "Tpetra::Details::makeOptimizedColMap: Done" << endl;
+        out << os.str ();
+      }
+      return optColMap;
+    }
 
     /// \brief Return an optimized reordering of the given column Map.
     ///   Optionally, recompute an Import from the input domain Map to
@@ -117,171 +330,30 @@ namespace Details {
     ///   communicators.
     /// \pre On all calling processes, the indices in \c colMap must be
     ///   a subset of the indices in \c domMap.
-    static std::pair<map_type, Teuchos::RCP<import_type> >
-    make (std::ostream& errStream,
-          bool& lclErr,
-          const map_type& domMap,
-          const map_type& colMap,
-          const import_type* oldImport,
-          const bool makeImport)
+    static std::pair<Teuchos::RCP<const map_type>,
+                     Teuchos::RCP<import_type> >
+    makeOptColMapAndImport (std::ostream& errStream,
+                            bool& lclErr,
+                            const map_type& domMap,
+                            const map_type& colMap,
+                            const import_type* oldImport)
     {
-      using Teuchos::Array;
-      using Teuchos::ArrayView;
       using Teuchos::RCP;
       using Teuchos::rcp;
-      using std::endl;
-      typedef local_ordinal_type LO;
-      typedef global_ordinal_type GO;
-      const char prefix[] = "Tpetra::makeOptimizedColMapAndImport: ";
-      std::ostream& err = errStream;
 
-      (void) oldImport; // We don't currently use this argument.
+      // mfh 15 May 2018: For now, just call makeOptColMap, and use
+      // the conventional two-Map (source and target) Import
+      // constructor.
+      RCP<const map_type> newColMap =
+        makeOptColMap (errStream, lclErr, domMap, colMap, oldImport);
+      RCP<import_type> imp (new import_type (rcp (new map_type (domMap)), newColMap));
 
-      RCP<const Teuchos::Comm<int> > comm = colMap.getComm ();
-      const LO colMapMinLid = colMap.getMinLocalIndex ();
-      const LO colMapMaxLid = colMap.getMaxLocalIndex ();
-
-      // Count the numbers of GIDs in colMap that are in and not in
-      // domMap on the calling process.  Check for zero indices on the
-      // calling process first, because if it's true, then we shouldn't
-      // trust [getMinLocalIndex(), getMaxLocalIndex()] to return a
-      // correct range.
-      LO numOwnedGids = 0;
-      LO numRemoteGids = 0;
-      if (colMap.getNodeNumElements () != 0) {
-        for (LO colMapLid = colMapMinLid; colMapLid <= colMapMaxLid; ++colMapLid) {
-          const GO colMapGid = colMap.getGlobalElement (colMapLid);
-          if (domMap.isNodeLocalElement (colMapGid)) {
-            ++numOwnedGids;
-          } else {
-            ++numRemoteGids;
-          }
-        }
-      }
-
-      // Put all colMap GIDs on the calling process in a single array.
-      // Owned GIDs go in front, and remote GIDs at the end.
-      Array<GO> allGids (numOwnedGids + numRemoteGids);
-      ArrayView<GO> ownedGids = allGids.view (0, numOwnedGids);
-      ArrayView<GO> remoteGids = allGids.view (numOwnedGids, numRemoteGids);
-
-      // Fill ownedGids and remoteGids (and therefore allGids).  We use
-      // two loops, one to count (above) and one to fill (here), in
-      // order to avoid dynamic memory allocation during the loop (in
-      // this case, lots of calls to push_back()).  That will simplify
-      // use of Kokkos to parallelize these loops later.
-      LO ownedPos = 0;
-      LO remotePos = 0;
-      if (colMap.getNodeNumElements () != 0) {
-        for (LO colMapLid = colMapMinLid; colMapLid <= colMapMaxLid; ++colMapLid) {
-          const GO colMapGid = colMap.getGlobalElement (colMapLid);
-          if (domMap.isNodeLocalElement (colMapGid)) {
-            ownedGids[ownedPos++] = colMapGid;
-          } else {
-            remoteGids[remotePos++] = colMapGid;
-          }
-        }
-      }
-
-      // If, for some reason, the running count doesn't match the
-      // orignal count, fill in any remaining GID spots with an
-      // obviously invalid value.  We don't want to stop yet, because
-      // other processes might not have noticed this error; Map
-      // construction is a collective, so we can't stop now.
-      if (ownedPos != numOwnedGids) {
-        lclErr = true;
-        err << prefix << "On Process " << comm->getRank () << ", ownedPos = "
-            << ownedPos << " != numOwnedGids = " << numOwnedGids << endl;
-        for (LO colMapLid = ownedPos; colMapLid < numOwnedGids; ++colMapLid) {
-          ownedGids[colMapLid] = Teuchos::OrdinalTraits<GO>::invalid ();
-        }
-      }
-      if (remotePos != numRemoteGids) {
-        lclErr = true;
-        err << prefix << "On Process " << comm->getRank () << ", remotePos = "
-            << remotePos << " != numRemoteGids = " << numRemoteGids << endl;
-        for (LO colMapLid = remotePos; colMapLid < numRemoteGids; ++colMapLid) {
-          remoteGids[colMapLid] = Teuchos::OrdinalTraits<GO>::invalid ();
-        }
-      }
-
-      // Figure out what processes own what GIDs in the domain Map.
-      // Initialize the output array of remote PIDs with the "invalid
-      // process rank" -1, to help us test whether getRemoteIndexList
-      // did its job.
-      Array<int> remotePids (numRemoteGids, -1);
-      Array<LO> remoteLids;
-      if (makeImport) {
-        remoteLids.resize (numRemoteGids);
-        std::fill (remoteLids.begin (), remoteLids.end (),
-                   Teuchos::OrdinalTraits<LO>::invalid ());
-      }
-      LookupStatus lookupStatus;
-      if (makeImport) {
-        lookupStatus = domMap.getRemoteIndexList (remoteGids, remotePids (),
-                                                  remoteLids ());
-      } else {
-        lookupStatus = domMap.getRemoteIndexList (remoteGids, remotePids ());
-      }
-
-      // If any process returns IDNotPresent, then at least one of the
-      // remote indices was not present in the domain Map.  This means
-      // that the Import object cannot be constructed, because of
-      // incongruity between the column Map and domain Map.  This means
-      // that either the column Map or domain Map, or both, is
-      // incorrect.
-      const bool getRemoteIndexListFailed = (lookupStatus == IDNotPresent);
-      if (getRemoteIndexListFailed) {
-        lclErr = true;
-        err << prefix << "On Process " << comm->getRank () << ", some indices "
-          "in the input colMap (the original column Map) are not in domMap (the "
-          "domain Map).  Either these indices or the domain Map is invalid.  "
-          "Likely cause: For a nonsquare matrix, you must give the domain and "
-          "range Maps as input to fillComplete." << endl;
-      }
-
-      // Check that getRemoteIndexList actually worked, by making sure
-      // that none of the remote PIDs are -1.
-      for (LO k = 0; k < numRemoteGids; ++k) {
-        bool foundInvalidPid = false;
-        if (remotePids[k] == -1) {
-          foundInvalidPid = true;
-          break;
-        }
-        if (foundInvalidPid) {
-          lclErr = true;
-          err << prefix << "On Process " << comm->getRank () << ", "
-            "getRemoteIndexList returned -1 for the process ranks of "
-            "one or more GIDs on this process." << endl;
-        }
-      }
-
-      // Sort incoming remote column Map indices so that all columns
-      // coming from a given remote process are contiguous.  This means
-      // the Import's Distributor doesn't need to reorder data.
-      if (makeImport) {
-        sort2 (remotePids.begin (), remotePids.end (), remoteGids.begin ());
-      }
-      else {
-        sort3 (remotePids.begin (), remotePids.end (),
-               remoteGids.begin (),
-               remoteLids.begin ());
-      }
-      // Make the new column Map.
-      MapType newColMap (colMap.getGlobalNumElements (), allGids (),
-                         colMap.getIndexBase (), comm, colMap.getNode ());
-      // Optionally, make the new Import object.
-      RCP<import_type> imp;
-      if (makeImport) {
-        imp = rcp (new import_type (rcp (new map_type (domMap)),
-                                    rcp (new map_type (newColMap))));
-        // FIXME (mfh 06 Jul 2014) This constructor throws a runtime
-        // error, so I'm not using it for now.
-        //
-        // imp = rcp (new import_type (domMap, newColMap, remoteGids,
-        //                             remotePids (), remoteLids (),
-        //                             Teuchos::null, Teuchos::null));
-      }
+      // FIXME (mfh 06 Jul 2014) This constructor throws a runtime
+      // error, so I'm not using it for now.
+      //
+      // imp = rcp (new import_type (domMap, newColMap, remoteGids,
+      //                             remotePids (), remoteLids (),
+      //                             Teuchos::null, Teuchos::null));
       return std::make_pair (newColMap, imp);
     }
   };
@@ -310,18 +382,20 @@ namespace Details {
   makeOptimizedColMap (std::ostream& errStream,
                        bool& lclErr,
                        const MapType& domMap,
-                       const MapType& colMap)
+                       const MapType& colMap,
+                       const Tpetra::Import<
+                         typename MapType::local_ordinal_type,
+                         typename MapType::global_ordinal_type,
+                         typename MapType::node_type>* oldImport = nullptr)
   {
-    typedef typename MapType::local_ordinal_type LO;
-    typedef typename MapType::global_ordinal_type GO;
-    typedef typename MapType::node_type NT;
-    typedef ::Tpetra::Import<LO, GO, NT> import_type;
-
-    const bool makeImport = false;
-    std::pair<MapType, Teuchos::RCP<import_type> > ret =
-      OptColMap<MapType>::make (errStream, lclErr, domMap, colMap,
-                                NULL, makeImport);
-    return ret.first;
+    using map_type = ::Tpetra::Map<
+      typename MapType::local_ordinal_type,
+      typename MapType::global_ordinal_type,
+      typename MapType::node_type>;
+    using impl_type = OptColMap<map_type>;
+    auto mapPtr = impl_type::makeOptColMap (errStream, lclErr,
+                                            domMap, colMap, oldImport);
+    return *mapPtr;
   }
 
   /// \brief Return an optimized reordering of the given column Map.
@@ -387,8 +461,20 @@ namespace Details {
                                 const typename OptColMap<MapType>::import_type* oldImport,
                                 const bool makeImport)
   {
-    return OptColMap<MapType>::make (errStream, lclErr, domMap, colMap,
-                                     oldImport, makeImport);
+    using local_ordinal_type = typename MapType::local_ordinal_type;
+    using global_ordinal_type = typename MapType::global_ordinal_type;
+    using node_type = typename MapType::node_type;
+    using map_type = ::Tpetra::Map<local_ordinal_type, global_ordinal_type, node_type>;
+    using impl_type = OptColMap<map_type>;
+
+    if (! makeImport) {
+      auto mapPtr = impl_type::makeOptColMap (errStream, lclErr, domMap, colMap, oldImport);
+      return std::make_pair (*mapPtr, Teuchos::null);
+    }
+    else {
+      auto mapAndImp = impl_type::makeOptColMapAndImport (errStream, lclErr, domMap, colMap, oldImport);
+      return std::make_pair (* (mapAndImp.first), mapAndImp.second);
+    }
   }
 
 } // namespace Details

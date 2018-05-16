@@ -145,12 +145,32 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   )
 
 # mfh 01 Feb 2018: Test for Github Issue #2198.
-TRIBITS_ADD_EXECUTABLE_AND_TEST(
+# It should always build, but it's only useful
+# to run in an MPI build.
+TRIBITS_ADD_EXECUTABLE(
   Issue_2198
   SOURCES
     Issue_2198
     ${TEUCHOS_STD_UNIT_TEST_MAIN}
+  COMM serial mpi
+  )
+
+# mfh 10 May 2018: See GitHub Issue #2564 for why we split the GitHub
+# Issue #2198 test into two separate cases: the first needing 3 MPI
+# processes, and the second needing 5 MPI processes.
+
+TRIBITS_ADD_TEST(
+  Issue_2198
+  NAME Issue_2198_no_more_than_4_processes
   COMM mpi
+  NUM_MPI_PROCS 3
   STANDARD_PASS_OUTPUT
+  )
+
+TRIBITS_ADD_TEST(
+  Issue_2198
+  NAME Issue_2198_exactly_5_processes
+  COMM mpi
   NUM_MPI_PROCS 5
+  STANDARD_PASS_OUTPUT
   )
