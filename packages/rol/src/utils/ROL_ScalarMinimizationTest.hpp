@@ -52,7 +52,7 @@
 #include "ROL_BisectionScalarMinimization.hpp"
 #include "ROL_GoldenSectionScalarMinimization.hpp"
 #include "ROL_ScalarFunction.hpp"
-#include "Teuchos_ParameterList.hpp"
+#include "ROL_ParameterList.hpp"
 #include "ROL_Ptr.hpp"
 #include <iostream>
 

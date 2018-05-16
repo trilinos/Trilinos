@@ -53,7 +53,7 @@
 #include "ROL_BoundConstraint.hpp"
 #include "ROL_LineSearch.hpp"
 
-#include "Teuchos_ParameterList.hpp"
+#include "ROL_ParameterList.hpp"
 #include "ROL_Ptr.hpp"
 
 /** @ingroup step_group

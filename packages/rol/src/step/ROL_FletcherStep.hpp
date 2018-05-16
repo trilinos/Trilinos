@@ -49,7 +49,7 @@
 #include "ROL_TrustRegionStep.hpp"
 #include "ROL_LineSearchStep.hpp"
 #include "ROL_Types.hpp"
-#include "Teuchos_ParameterList.hpp"
+#include "ROL_ParameterList.hpp"
 
 /** @ingroup step_group
     \class ROL::FletcherStep
