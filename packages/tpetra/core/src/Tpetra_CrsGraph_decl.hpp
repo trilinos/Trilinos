@@ -181,6 +181,22 @@ namespace Tpetra {
       STORAGE_1D_PACKED, //<! 1-D "packed" storage
       STORAGE_UB //<! Invalid value; upper bound on enum values
     };
+
+
+    /// \brief Mix-in to avoid spurious deprecation warnings due to #2630.
+    ///
+    /// CrsMatrix has methods deprecated by #2630, that need to call
+    /// CrsGraph methods also deprecated by #2630.  This results in
+    /// spurious deprecation warnings.  This mix-in class gives Tpetra
+    /// developers a work-around so that CrsMatrix's and
+    /// BlockCrsMatrix's deprecated methods can call CrsGraph's
+    /// deprecated methods without emitting spurious warnings.
+    class HasDeprecatedMethods2630_WarningThisClassIsNotForUsers {
+    public:
+      virtual ~HasDeprecatedMethods2630_WarningThisClassIsNotForUsers() {}
+      virtual size_t getGlobalNumDiagsImpl () const = 0;
+      virtual global_size_t getNodeNumDiagsImpl () const = 0;
+    };
   } // namespace Details
 
   /// \class CrsGraph
@@ -250,7 +266,8 @@ namespace Tpetra {
                       LocalOrdinal,
                       GlobalOrdinal,
                       Node>,
-    public Teuchos::ParameterListAcceptorDefaultBase
+    public Teuchos::ParameterListAcceptorDefaultBase,
+    public Details::HasDeprecatedMethods2630_WarningThisClassIsNotForUsers
   {
     template <class S, class LO, class GO, class N>
     friend class CrsMatrix;
@@ -945,6 +962,19 @@ namespace Tpetra {
     ///   go away at any time.
     global_size_t TPETRA_DEPRECATED getGlobalNumDiags() const;
 
+    /// \brief DO NOT CALL THIS METHOD; THIS IS NOT FOR USERS.
+    ///
+    /// \warning DO NOT CALL THIS METHOD.  THIS IS AN IMPLEMENTATION
+    ///   DETAIL OF TPETRA DESIGNED TO PREVENT SPURIOUS BUILD
+    ///   WARNINGS.  DO NOT CALL THIS METHOD.  IT WILL GO AWAY VERY
+    ///   SOON PER #2630.
+    ///
+    /// This function exists only to prevent spurious deprecation
+    /// warnings in CrsMatrix and BlockCrsMatrix.  We only want users
+    /// to see deprecated warnings if <i>they</i> call deprecated
+    /// methods, not if <i>we</i> call them.
+    global_size_t getGlobalNumDiagsImpl () const override;
+
     /// \brief Number of diagonal entries on the calling process.
     ///
     /// \pre <tt>! this->isFillActive()</tt>
@@ -952,6 +982,19 @@ namespace Tpetra {
     /// \warning This method is DEPRECATED.  DO NOT CALL IT.  It may
     ///   go away at any time.
     size_t TPETRA_DEPRECATED getNodeNumDiags() const;
+
+    /// \brief DO NOT CALL THIS METHOD; THIS IS NOT FOR USERS.
+    ///
+    /// \warning DO NOT CALL THIS METHOD.  THIS IS AN IMPLEMENTATION
+    ///   DETAIL OF TPETRA DESIGNED TO PREVENT SPURIOUS BUILD
+    ///   WARNINGS.  DO NOT CALL THIS METHOD.  IT WILL GO AWAY VERY
+    ///   SOON PER #2630.
+    ///
+    /// This function exists only to prevent spurious deprecation
+    /// warnings in CrsMatrix and BlockCrsMatrix.  We only want users
+    /// to see deprecated warnings if <i>they</i> call deprecated
+    /// methods, not if <i>we</i> call them.
+    size_t getNodeNumDiagsImpl () const override;
 
     /// \brief Maximum number of entries in all rows over all processes.
     ///

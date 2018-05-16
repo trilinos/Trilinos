@@ -848,16 +848,25 @@ namespace Tpetra {
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   size_t
   CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::
-  getNodeNumDiags () const
+  getNodeNumDiagsImpl () const
   {
     return nodeNumDiags_;
   }
 
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  size_t
+  CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::
+  getNodeNumDiags () const
+  {
+    return this->getNodeNumDiagsImpl ();
+  }
+
+
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
   global_size_t
   CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::
-  getGlobalNumDiags () const
+  getGlobalNumDiagsImpl () const
   {
     const char tfecfFuncName[] = "getGlobalNumDiags: ";
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
@@ -866,6 +875,15 @@ namespace Tpetra {
        "but the user has requested them.");
 
     return globalNumDiags_;
+  }
+
+
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  global_size_t
+  CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::
+  getGlobalNumDiags () const
+  {
+    return this->getGlobalNumDiagsImpl ();
   }
 
 
