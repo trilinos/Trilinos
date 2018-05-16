@@ -192,25 +192,45 @@ namespace Tpetra {
     /// \brief Number of diagonal entries in the matrix's graph, over
     ///   all processes in the matrix's communicator.
     ///
-    /// \warning This method is DEPRECATED.  DO NOT CALL IT.  It may
-    ///   go away at any time.
-    virtual global_size_t TPETRA_DEPRECATED getGlobalNumDiags() const = 0;
+    /// \warning DO NOT CALL THIS METHOD!  This method is DEPRECATED
+    ///   and will DISAPPEAR VERY SOON per #2630.
+    ///
+    /// \pre Subclasses reserve the right to impose preconditions on
+    ///   the matrix's state.
+    virtual global_size_t TPETRA_DEPRECATED getGlobalNumDiags () const = 0;
 
     /// \brief Number of diagonal entries in the matrix's graph, on
     ///   the calling process.
     ///
-    /// \warning This method is DEPRECATED.  DO NOT CALL IT.  It may
-    ///   go away at any time.
-    virtual size_t TPETRA_DEPRECATED getNodeNumDiags() const = 0;
+    /// \warning DO NOT CALL THIS METHOD!  This method is DEPRECATED
+    ///   and will DISAPPEAR VERY SOON per #2630.
+    ///
+    /// \pre Subclasses reserve the right to impose preconditions on
+    ///   the matrix's state.
+    virtual size_t TPETRA_DEPRECATED getNodeNumDiags () const = 0;
 
-    //! The maximum number of entries across all rows/columns on all nodes.
-    virtual size_t getGlobalMaxNumRowEntries() const = 0;
+    /// \brief Maximum number of entries in any row of the matrix,
+    ///   over all processes.
+    ///
+    /// \pre Subclasses reserve the right to impose preconditions on
+    ///   the matrix's state.
+    ///
+    /// This method only uses the matrix's graph.  Explicitly stored
+    /// zeros count as "entries."
+    virtual size_t getGlobalMaxNumRowEntries () const = 0;
 
-    //! The maximum number of entries across all rows/columns on this node.
-    virtual size_t getNodeMaxNumRowEntries() const = 0;
+    /// \brief Maximum number of entries in any row of the matrix,
+    ///   on this process.
+    ///
+    /// \pre Subclasses reserve the right to impose preconditions on
+    ///   the matrix's state.
+    ///
+    /// This method only uses the matrix's graph.  Explicitly stored
+    /// zeros count as "entries."
+    virtual size_t getNodeMaxNumRowEntries () const = 0;
 
-    //! Whether this matrix has a well-defined column map.
-    virtual bool hasColMap() const = 0;
+    //! Whether this matrix has a well-defined column Map.
+    virtual bool hasColMap () const = 0;
 
     /// \brief Whether the matrix is locally lower triangular.
     ///

@@ -998,9 +998,10 @@ namespace Tpetra {
     /// methods, not if <i>we</i> call them.
     size_t getNodeNumDiagsImpl () const override;
 
-    /// \brief Maximum number of entries in all rows over all processes.
+    /// \brief Maximum number of entries in any row of the graph,
+    ///   over all processes in the graph's communicator.
     ///
-    /// \note Undefined if isFillActive().
+    /// \pre <tt>! isFillActive()</tt>
     ///
     /// \note This is the same as the result of a global maximum of
     ///   getNodeMaxNumRowEntries() over all processes.  That may not
@@ -1010,12 +1011,13 @@ namespace Tpetra {
     ///   row.  This method only counts the number of entries in each
     ///   row that a process owns, not the total number of entries in
     ///   the row over all processes.
-    size_t getGlobalMaxNumRowEntries() const;
+    size_t getGlobalMaxNumRowEntries () const;
 
-    //! \brief Maximum number of entries in all rows owned by the calling process.
-    /** Undefined if isFillActive().
-     */
-    size_t getNodeMaxNumRowEntries() const;
+    /// \brief Maximum number of entries in any row of the graph,
+    ///   on this process.
+    ///
+    /// \pre <tt>! isFillActive()</tt>
+    size_t getNodeMaxNumRowEntries () const;
 
     /// \brief Whether the graph has a column Map.
     ///
@@ -1025,13 +1027,14 @@ namespace Tpetra {
     /// does not already have one.
     ///
     /// A column Map lets the graph
-    ///
-    ///   - use local indices for storing entries in each row, and
-    ///   - compute an Import from the domain Map to the column Map.
+    /// <ul>
+    /// <li> use local indices for storing entries in each row, and </li>
+    /// <li> compute an Import from the domain Map to the column Map. </li>
+    /// </ul>
     ///
     /// The latter is mainly useful for a graph associated with a
     /// CrsMatrix.
-    bool hasColMap() const;
+    bool hasColMap () const;
 
     /// \brief DO NOT CALL THIS METHOD; THIS IS NOT FOR USERS.
     ///
