@@ -326,8 +326,10 @@ public:
 
     Real gblValue;
 
+    auto reductionType = static_cast<Teuchos::EReductionType>(r.reductionType());
+
     // Reduce over MPI processes
-    Teuchos::reduceAll<int,Real>(*comm_,r.reductionType(),lclValue,Teuchos::outArg(gblValue));
+    Teuchos::reduceAll<int,Real>(*comm_,reductionType,lclValue,Teuchos::outArg(gblValue));
 
     return gblValue; 
   }

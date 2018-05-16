@@ -48,6 +48,7 @@
 #define ROL_UNUSED(x) (void) x
 
 #include <ostream>
+#include <vector>
 
 #include "ROL_Elementwise_Function.hpp"
 
