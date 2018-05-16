@@ -227,6 +227,22 @@ namespace Xpetra {
         vv_.push_back(this->ExtractVector(v, r, mapExtractor->getThyraMode()));
     }
 
+    /*!
+     * Constructor to build a blocked multivector from a blocked map and component vectors
+     *
+     * \note We do *NOT* check map compatibility between the BlockedMap and the array of multivectors
+     *
+     * \param  map BlockedMap object containing information about the block splitting
+     * \param  vin A std::vector of RCPs to component vectors
+     */
+    BlockedMultiVector(const Teuchos::RCP< const BlockedMap > &map, std::vector<Teuchos::RCP<MultiVector> > & vin) {
+      numVectors_ = vin[0]->getNumVectors();
+      map_ = map;
+      vv_.resize(vin.size());
+      for(size_t i=0; i<vv_.size(); i++)
+	vv_[i] = vin[i];
+    }
+
     //! Destructor.
     virtual ~BlockedMultiVector() {
       for (size_t r = 0; r < vv_.size(); ++r)
@@ -552,8 +568,8 @@ namespace Xpetra {
 
     //! Local number of rows on the calling process.
     virtual size_t getLocalLength() const {
-      throw Xpetra::Exceptions::RuntimeError("BlockedMultiVector::getLocalLength: routine not implemented. It has no value as one must iterate on the partial vectors.");
-      TEUCHOS_UNREACHABLE_RETURN(0);
+      XPETRA_MONITOR("BlockedMultiVector::getLocalLength()");
+      return map_->getFullMap()->getNodeNumElements();
     }
 
     //! Global number of rows in the multivector.

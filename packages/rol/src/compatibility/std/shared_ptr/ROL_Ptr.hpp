@@ -110,6 +110,17 @@ T* getRawPtr( const Ptr<T>& x ) {
   return x.get();
 }
 
+template<class T>
+inline 
+int getCount( const Ptr<T>& x ) {
+  return x.use_count();
+}
+
+template<class T>
+inline
+bool is_nullPtr( const Ptr<T>& x ) {
+  return x == nullPtr;
+}
 
 template<class T>
 struct IsSharedPtr : public std::false_type {};

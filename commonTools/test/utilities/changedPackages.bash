@@ -143,6 +143,12 @@ else #If we aren't building everything, figure out which packages to bulid
 
   if grep -q packages/shylu/ gitchanges.txt; then
         PackageEnables+="-DTrilinos_ENABLE_ShyLU=ON "
+        if grep -q shylu_node gitchanges.txt; then
+              PackageEnables+="-DTrilinos_ENABLE_ShyLU_Node=ON "
+        fi
+        if grep -q shylu_dd gitchanges.txt; then
+              PackageEnables+="-DTrilinos_ENABLE_ShyLU_DD=ON "
+        fi
   fi
 
   if grep -q packages/amesos2/ gitchanges.txt; then

@@ -50,15 +50,38 @@
 #include <Tpetra_Import_Util.hpp>
 #include <Tpetra_Export.hpp>
 #include <Tpetra_Details_Behavior.hpp>
+#include <Tpetra_Details_gathervPrint.hpp>
 #include <Teuchos_as.hpp>
 #ifdef HAVE_TPETRA_MMM_TIMINGS
 #include <Teuchos_TimeMonitor.hpp>
 #endif
+#include <array>
+#include <memory>
 
 
 namespace {
   // Default value of Import's "Debug" parameter.
   const bool tpetraImportDebugDefault = false;
+
+  bool
+  getBoolParameter (Teuchos::ParameterList* plist,
+                    const char paramName[],
+                    const bool defaultValue)
+  {
+    if (plist == nullptr) {
+      return defaultValue;
+    }
+    else if (plist->isType<bool> (paramName)) {
+      return plist->get<bool> (paramName);
+    }
+    else if (plist->isType<int> (paramName)) {
+      const int val_int = plist->get<int> (paramName);
+      return val_int != 0;
+    }
+    else {
+      return defaultValue;
+    }
+  }
 } // namespace (anonymous)
 
 namespace Tpetra {
@@ -94,15 +117,8 @@ namespace Tpetra {
     using std::endl;
     typedef ImportExportData<LocalOrdinal,GlobalOrdinal,Node> data_type;
 
-    // Read "Debug" parameter from the input ParameterList.
-    bool debug = tpetraImportDebugDefault;
-    if (! plist.is_null ()) {
-      try {
-        debug = plist->get<bool> ("Debug");
-      } catch (Teuchos::Exceptions::InvalidParameter&) {}
-    }
-    debug_ = debug;
-
+    this->debug_ = getBoolParameter (plist.getRawPtr (), "Debug",
+                                     tpetraImportDebugDefault);
     if (! out_.is_null ()) {
       out_->pushTab ();
     }
@@ -414,6 +430,386 @@ namespace Tpetra {
     ImportData_->distributor_.swap (distributor);
     ImportData_->exportLIDs_.swap (exportLIDs);
     ImportData_->exportPIDs_.swap (exportPIDs);
+  }
+
+  namespace { // (anonymous)
+
+    template <class LO, class GO, class NT>
+    struct ImportLocalSetupResult
+    {
+      Teuchos::RCP<const ::Tpetra::Map<LO, GO, NT> > targetMap;
+      LO numSameIDs;
+      // std::vector<LO> permuteToLIDs; // users aren't supposed to have permutes
+      // std::vector<LO> permuteFromLIDs; // users aren't suppoosed to have permutes
+      std::vector<GO> remoteGIDs;
+      std::vector<LO> remoteLIDs;
+      std::vector<int> remotePIDs;
+      LO numPermutes; // users aren't supposed to have permutes
+    };
+
+    template<class T>
+    void printArray (std::ostream& out, const T x[], const std::size_t N)
+    {
+      out << "[";
+      for (std::size_t k = 0; k < N; ++k) {
+        out << x[k];
+        if (k + 1 < N) {
+          out << ", ";
+        }
+      }
+      out << "]";
+    }
+
+    template<class LO, class GO, class NT>
+    ImportLocalSetupResult<LO, GO, NT>
+    setupSamePermuteRemoteFromUserGlobalIndexList (const ::Tpetra::Map<LO, GO, NT>& sourceMap,
+                                                   const GO targetMapRemoteOrPermuteGlobalIndices[],
+                                                   const int targetMapRemoteOrPermuteProcessRanks[],
+                                                   const LO numTargetMapRemoteOrPermuteGlobalIndices,
+                                                   const bool mayReorderTargetMapIndicesLocally,
+                                                   Teuchos::FancyOStream* out, // only valid if verbose
+                                                   const std::string* verboseHeader, // only valid if verbose
+                                                   const bool verbose)
+    {
+      using std::endl;
+      const int myRank = sourceMap.getComm ()->getRank ();
+      ImportLocalSetupResult<LO, GO, NT> result;
+
+      const bool debug = ::Tpetra::Details::Behavior::debug ("Tpetra::Import");
+      if (verbose) {
+        std::ostringstream os;
+        os << *verboseHeader << "Import ctor (setupSPR... w/ remote GIDs & PIDs): " << endl
+            << *verboseHeader << "  Input GIDs: ";
+        printArray (os, targetMapRemoteOrPermuteGlobalIndices, numTargetMapRemoteOrPermuteGlobalIndices);
+        os << endl << "  Input PIDs: ";
+        printArray (os, targetMapRemoteOrPermuteProcessRanks, numTargetMapRemoteOrPermuteGlobalIndices);
+        os << endl;
+        *out << os.str ();
+      }
+
+      // In debug mode, check whether any of the input GIDs are
+      // actually in the source Map on the calling process.  That's an
+      // error, because it means duplicate GIDs on the calling
+      // process.  Also check if any of the input PIDs are invalid.
+      if (debug) {
+        std::vector<GO> badGIDs;
+        std::vector<int> badPIDs;
+        const Teuchos::Comm<int>& comm = * (sourceMap.getComm ());
+        const int numProcs = comm.getSize ();
+
+        for (LO k = 0; k < numTargetMapRemoteOrPermuteGlobalIndices; ++k) {
+          const GO tgtGID = targetMapRemoteOrPermuteGlobalIndices[k];
+          if (sourceMap.isNodeGlobalElement (tgtGID)) {
+            badGIDs.push_back (tgtGID);
+          }
+          const int tgtPID = targetMapRemoteOrPermuteProcessRanks[k];
+          if (tgtPID < 0 || tgtPID >= numProcs) {
+            badPIDs.push_back (tgtPID);
+          }
+        }
+
+        std::array<int, 2> lclStatus {{
+          badGIDs.size () == 0 ? 1 : 0,
+          badPIDs.size () == 0 ? 1 : 0
+        }};
+        std::array<int, 2> gblStatus {{0, 0}}; // output argument
+        Teuchos::reduceAll<int, int> (comm, Teuchos::REDUCE_MIN, 2,
+                                      lclStatus.data (), gblStatus.data ());
+        const bool good = gblStatus[0] == 1 && gblStatus[1] == 1;
+        // Don't actually print all the "bad" GIDs and/or PIDs unless
+        // in verbose mode, since there could be many of them.
+        if (verbose && gblStatus[0] != 1) {
+          std::ostringstream os;
+          os << *verboseHeader << "Some input GIDs are already in the source Map: ";
+          printArray (os, badGIDs.data (), badGIDs.size ());
+          os << endl;
+          Tpetra::Details::gathervPrint (*out, os.str (), comm);
+        }
+        if (verbose && gblStatus[0] != 1) {
+          std::ostringstream os;
+          os << *verboseHeader << "Some input PIDs are invalid: ";
+          printArray (os, badPIDs.data (), badPIDs.size ());
+          os << endl;
+          Tpetra::Details::gathervPrint (*out, os.str (), comm);
+        }
+
+        if (! good) {
+          std::ostringstream os;
+          os << "Tpetra::Import constructor that takes remote GIDs and PIDs: ";
+          if (gblStatus[0] != 1) {
+            os << "Some input GIDs (global indices) are already in the source Map!  ";
+          }
+          if (gblStatus[1] != 1) {
+            os << "Some input PIDs (process ranks) are invalid!  ";
+          }
+          os << "Rerun with the environment variable TPETRA_VERBOSE=Tpetra::Import "
+            "to see what GIDs and/or PIDs are bad.";
+          TEUCHOS_TEST_FOR_EXCEPTION(true, std::invalid_argument, os.str ());
+        }
+      }
+
+      // Create list of GIDs to go into target Map.  We need to copy
+      // the GIDs into this list anyway, so once we have them, we can
+      // sort the "remotes" in place.
+      const LO numLclSrcIDs = static_cast<LO> (sourceMap.getNodeNumElements ());
+      const LO numLclTgtIDs = numLclSrcIDs + numTargetMapRemoteOrPermuteGlobalIndices;
+      if (verbose) {
+        std::ostringstream os;
+        os << *verboseHeader << "Copy source Map GIDs into target Map GID list: "
+          "numLclSrcIDs=" << numLclSrcIDs
+           << ", numTargetMapRemoteOrPermuteGlobalIndices="
+           << numTargetMapRemoteOrPermuteGlobalIndices << endl;
+        *out << os.str ();
+      }
+      std::vector<GO> tgtGIDs (numLclTgtIDs); // will go into target Map ctor
+      if (sourceMap.isContiguous ()) {
+        GO curTgtGID = sourceMap.getMinGlobalIndex ();
+        for (LO k = 0; k < numLclSrcIDs; ++k, ++curTgtGID) {
+          tgtGIDs[k] = curTgtGID;
+        }
+      }
+      else { // avoid calling getNodeElementList on a contiguous Map
+        auto srcGIDs = sourceMap.getNodeElementList (); // Teuchos::ArrayView has a different
+        for (LO k = 0; k < numLclSrcIDs; ++k) {         // iterator type, so can't std::copy
+          tgtGIDs[k] = srcGIDs[k];
+        }
+      }
+      std::copy (targetMapRemoteOrPermuteGlobalIndices,
+                 targetMapRemoteOrPermuteGlobalIndices + numTargetMapRemoteOrPermuteGlobalIndices,
+                 tgtGIDs.begin () + numLclSrcIDs);
+
+      // Optionally, sort input by process rank, so that remotes
+      // coming from the same process are grouped together.  Only sort
+      // remote GIDs.  While doing so, detect permutes (input "remote"
+      // GIDs whose rank is the same as that of the calling process).
+      //
+      // Permutes are actually an error.  We normally detect them in
+      // debug mode, but if we sort, we have a nearly free opportunity
+      // to do so.  We may also safely ignore permutes as duplicates.
+      //
+      // NOTE: tgtPIDs only includes remotes, not source Map entries.
+      if (verbose) {
+        std::ostringstream os;
+        os << *verboseHeader << "Sort by PID? "
+           << (mayReorderTargetMapIndicesLocally ? "true" : "false")  << endl;
+        *out << os.str ();
+      }
+      std::vector<int> tgtPIDs (targetMapRemoteOrPermuteProcessRanks,
+                                targetMapRemoteOrPermuteProcessRanks + numTargetMapRemoteOrPermuteGlobalIndices);
+      result.numPermutes = 0;
+      if (mayReorderTargetMapIndicesLocally) {
+        Tpetra::sort2 (tgtPIDs.begin (), tgtPIDs.end (), tgtGIDs.begin () + numLclSrcIDs);
+        auto range = std::equal_range (tgtPIDs.begin (), tgtPIDs.end (), myRank); // binary search
+        if (range.second > range.first) {
+          result.numPermutes = static_cast<LO> (range.second - range.first);
+        }
+      }
+      else { // don't sort; linear search to count permutes
+        result.numPermutes = static_cast<LO> (std::count (tgtPIDs.begin (), tgtPIDs.end (), myRank));
+      }
+      // The _actual_ number of remotes.
+      const LO numRemotes = numTargetMapRemoteOrPermuteGlobalIndices - result.numPermutes;
+      result.numSameIDs = static_cast<LO> (sourceMap.getNodeNumElements ());
+
+      if (verbose) {
+        std::ostringstream os;
+        os << *verboseHeader << "numSame=" << result.numSameIDs
+           << ", numPermutes=" << result.numPermutes
+           << ", numRemotes=" << numRemotes << endl;
+        *out << os.str ();
+      }
+
+      if (result.numPermutes == 0) {
+        result.remoteGIDs = std::vector<GO> (tgtGIDs.begin () + numLclSrcIDs, tgtGIDs.end ());
+        result.remotePIDs.swap (tgtPIDs);
+        result.remoteLIDs.resize (numRemotes);
+        for (LO k = 0; k < numRemotes; ++k) {
+          const LO tgtLid = result.numSameIDs + k;
+          result.remoteLIDs[k] = tgtLid;
+        }
+        if (verbose) {
+          std::ostringstream os;
+          os << *verboseHeader << "No permutes; identified remote GIDs, PIDs, and LIDs" << endl;
+          *out << os.str ();
+        }
+      }
+      else { // separate permutes from remotes
+        // This case doesn't need to be optimal; it just needs to be
+        // correct.  Users really shouldn't give permutes to this
+        // Import constructor.
+        result.remoteGIDs.reserve (numRemotes);
+        result.remoteLIDs.reserve (numRemotes);
+        result.remotePIDs.reserve (numRemotes);
+        for (LO k = 0; k < numTargetMapRemoteOrPermuteGlobalIndices; ++k) {
+          const LO tgtLid = result.numSameIDs + k;
+          const GO tgtGid = tgtGIDs[numLclSrcIDs + k];
+          const int tgtPid = tgtPIDs[k];
+
+          if (tgtPid != myRank) { // it's a remote
+            result.remoteGIDs.push_back (tgtGid);
+            result.remoteLIDs.push_back (tgtLid);
+            result.remotePIDs.push_back (tgtPid);
+          }
+        }
+        if (verbose) {
+          std::ostringstream os;
+          os << *verboseHeader << "Some permutes" << endl;
+          *out << os.str ();
+        }
+      }
+
+      if (verbose) {
+        std::ostringstream os;
+        os << *verboseHeader << "Make target Map" << endl;
+        *out << os.str ();
+      }
+      using ::Teuchos::rcp;
+      typedef ::Tpetra::Map<LO, GO, NT> map_type;
+      typedef ::Tpetra::global_size_t GST;
+      const GST MAP_COMPUTES_GLOBAL_COUNT = ::Teuchos::OrdinalTraits<GST>::invalid ();
+      result.targetMap = rcp (new map_type (MAP_COMPUTES_GLOBAL_COUNT,
+                                            tgtGIDs.data (),
+                                            numLclTgtIDs,
+                                            sourceMap.getIndexBase (),
+                                            sourceMap.getComm ()));
+      if (verbose) {
+        std::ostringstream os;
+        os << *verboseHeader << "Done" << endl;
+        std::cerr << os.str ();
+      }
+      return result;
+    }
+  } // namespace (anonymous)
+
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  Import<LocalOrdinal,GlobalOrdinal,Node>::
+  Import (const Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> >& sourceMap,
+          const GlobalOrdinal targetMapRemoteOrPermuteGlobalIndices[],
+          const int targetMapRemoteOrPermuteProcessRanks[],
+          const LocalOrdinal numTargetMapRemoteOrPermuteGlobalIndices,
+          const bool mayReorderTargetMapIndicesLocally,
+          const Teuchos::RCP<Teuchos::ParameterList>& plist,
+          const Teuchos::RCP<Teuchos::FancyOStream>& debugOutput) :
+    out_ (debugOutput),
+    debug_ (getBoolParameter (plist.getRawPtr (), "Debug", tpetraImportDebugDefault))
+  {
+    using Teuchos::FancyOStream;
+    using Teuchos::RCP;
+    using Teuchos::rcp;
+    using std::endl;
+    typedef LocalOrdinal LO;
+    typedef GlobalOrdinal GO;
+    typedef Node NT;
+
+    // TODO (mfh 19 Feb 2018) Read verbose("Tpetra::Import") instead.
+    const bool verbose = Details::Behavior::verbose () || this->debug_;
+    RCP<FancyOStream> outPtr = debugOutput.is_null () ?
+      Teuchos::getFancyOStream (Teuchos::rcpFromRef (std::cerr)) : debugOutput;
+    TEUCHOS_TEST_FOR_EXCEPTION
+      (outPtr.is_null (), std::logic_error,
+       "outPtr is null; this should never happen!");
+    FancyOStream& out = *outPtr;
+    Teuchos::OSTab tab1 (out);
+
+    std::unique_ptr<std::string> verboseHeader;
+    if (verbose) {
+      std::ostringstream os;
+      const int myRank = sourceMap->getComm ()->getRank ();
+      os << "Proc " << myRank << ": ";
+      verboseHeader = std::unique_ptr<std::string> (new std::string (os.str ()));
+    }
+    if (verbose) {
+      std::ostringstream os;
+      os << *verboseHeader << ": Import ctor (source Map + target indices)" << endl;
+      out << os.str ();
+    }
+
+    ImportLocalSetupResult<LO, GO, NT> localSetupResult =
+      setupSamePermuteRemoteFromUserGlobalIndexList<LO, GO, NT> (*sourceMap,
+                                                                 targetMapRemoteOrPermuteGlobalIndices,
+                                                                 targetMapRemoteOrPermuteProcessRanks,
+                                                                 numTargetMapRemoteOrPermuteGlobalIndices,
+                                                                 mayReorderTargetMapIndicesLocally,
+                                                                 outPtr.getRawPtr (),
+                                                                 verboseHeader.get (),
+                                                                 verbose);
+    TEUCHOS_TEST_FOR_EXCEPTION
+      (localSetupResult.targetMap.is_null (), std::logic_error,
+       "setupSamePermuteRemoteFromUserGlobalIndexList returned a null target Map!");
+    this->ImportData_ = rcp (new ImportExportData<LO, GO, NT> (sourceMap,
+                                                               localSetupResult.targetMap,
+                                                               debugOutput,
+                                                               plist));
+    this->ImportData_->numSameIDs_ = localSetupResult.numSameIDs;
+    // Skip permutes; they are user error, because they duplicate
+    // non-remote indices.
+    this->ImportData_->remoteLIDs_ =
+      Teuchos::Array<LO> (localSetupResult.remoteLIDs.begin (),
+                          localSetupResult.remoteLIDs.end ());
+    // "Is locally complete" for an Import means that all target Map
+    // indices on the calling process exist on at least one process
+    // (not necessarily this one) in the source Map.  For this
+    // constructor, this is true if and only if all input target PIDs
+    // are valid PIDs in the communicator.
+    //
+    // FIXME (mfh 20 Feb 2018) For now, assume this is always true.
+    this->ImportData_->isLocallyComplete_ = true;
+
+    if (sourceMap->isDistributed ()) {
+      // Import always sorts these, regardless of what the user wanted.
+      sort3 (localSetupResult.remotePIDs.begin (),
+             localSetupResult.remotePIDs.end (),
+             localSetupResult.remoteGIDs.begin (),
+             localSetupResult.remoteLIDs.begin ());
+    }
+
+    Teuchos::Array<GO> exportGIDs;
+    if (sourceMap->isDistributed ()) {
+      if (verbose) {
+        std::ostringstream os;
+        os << *verboseHeader << "Make Distributor (createFromRecvs)" << endl;
+        std::cerr << os.str ();
+      }
+      Teuchos::ArrayView<const GO> remoteGIDs (localSetupResult.remoteGIDs.data (),
+                                               localSetupResult.remoteGIDs.size ());
+      Teuchos::ArrayView<const int> remotePIDs (localSetupResult.remotePIDs.data (),
+                                                localSetupResult.remotePIDs.size ());
+      // Call Distributor::createFromRecvs to turn the remote GIDs and
+      // their owning PIDs into a send-and-receive communication plan.
+      // remoteGIDs and remotePIDs are input; exportGIDs and
+      // exportPIDs are output arrays that createFromRecvs allocates.
+      this->ImportData_->distributor_.createFromRecvs (remoteGIDs,
+                                                       remotePIDs,
+                                                       exportGIDs,
+                                                       this->ImportData_->exportPIDs_);
+      // Find the LIDs corresponding to the (outgoing) GIDs in
+      // exportGIDs.  For sparse matrix-vector multiply, this tells
+      // the calling process how to index into the source vector to
+      // get the elements which it needs to send.
+      //
+      // NOTE (mfh 03 Mar 2014) This is now a candidate for a
+      // thread-parallel kernel, but only if using the new thread-safe
+      // Map implementation.
+      if (verbose) {
+        std::ostringstream os;
+        os << *verboseHeader << "Compute exportLIDs" << endl;
+        std::cerr << os.str ();
+      }
+      typedef typename Teuchos::Array<GO>::size_type size_type;
+      const size_type numExportIDs = exportGIDs.size ();
+      this->ImportData_->exportLIDs_.resize (numExportIDs);
+      Teuchos::ArrayView<LO> exportLIDs = this->ImportData_->exportLIDs_ ();
+      for (size_type k = 0; k < numExportIDs; ++k) {
+        exportLIDs[k] = sourceMap->getLocalElement (exportGIDs[k]);
+      }
+    }
+
+    if (verbose) {
+      std::ostringstream os;
+      const int myRank = sourceMap->getComm ()->getRank ();
+      os << myRank << ": Import ctor: done" << endl;
+      out << os.str ();
+    }
   }
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>

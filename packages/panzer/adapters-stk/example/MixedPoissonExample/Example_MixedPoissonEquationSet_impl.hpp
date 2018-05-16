@@ -54,7 +54,6 @@
 #include "Panzer_BasisIRLayout.hpp"
 
 // include evaluators here
-#include "Panzer_Integrator_BasisTimesScalar.hpp"
 #include "Panzer_Integrator_GradBasisDotVector.hpp"
 #include "Panzer_Integrator_DivBasisTimesScalar.hpp"
 #include "Panzer_ScalarToVector.hpp"
@@ -224,7 +223,7 @@ buildAndRegisterEquationSetEvaluators(PHX::FieldManager<panzer::Traits>& fm,
     sum_names.push_back("RESIDUAL_GRADPHI_FIELD_DIFFUSION_OP");
     sum_names.push_back("RESIDUAL_GRADPHI_FIELD_MASS_OP");
 
-    this->buildAndRegisterResidualSummationEvalautor(fm,"GRADPHI_FIELD",sum_names);
+    this->buildAndRegisterResidualSummationEvaluator(fm,"GRADPHI_FIELD",sum_names);
   }
 
   // Use a sum operator to form the overall residual for the equation
@@ -235,7 +234,7 @@ buildAndRegisterEquationSetEvaluators(PHX::FieldManager<panzer::Traits>& fm,
     sum_names.push_back("RESIDUAL_PHI_DIFFUSION_OP");
     sum_names.push_back("RESIDUAL_PHI_MASS_OP");
 
-    this->buildAndRegisterResidualSummationEvalautor(fm,"PHI",sum_names);
+    this->buildAndRegisterResidualSummationEvaluator(fm,"PHI",sum_names);
   }
 
 }

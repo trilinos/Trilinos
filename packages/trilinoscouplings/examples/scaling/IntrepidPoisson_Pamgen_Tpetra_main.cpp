@@ -110,6 +110,7 @@ main (int argc, char *argv[])
   typedef Teuchos::ScalarTraits<MT> STM;
   typedef TpetraIntrepidPoissonExample::sparse_matrix_type sparse_matrix_type;
   typedef TpetraIntrepidPoissonExample::vector_type vector_type;
+  typedef TpetraIntrepidPoissonExample::multivector_type multivector_type;
   typedef TpetraIntrepidPoissonExample::operator_type operator_type;
 
   bool success = true;
@@ -135,7 +136,7 @@ main (int argc, char *argv[])
     double tolFromCmdLine = -1.0; // -1 means "read from XML file"
     std::string solverName = "GMRES";
     ST materialTensorOffDiagonalValue = 0.0;
-
+    Teuchos::ParameterList problemStatistics;
 
     // Set default values of command-line arguments.
     setCommandLineArgumentDefaults (nx, ny, nz, xmlInputParamsFile, 
@@ -262,11 +263,16 @@ main (int argc, char *argv[])
 
       RCP<sparse_matrix_type> A;
       RCP<vector_type> B, X_exact, X;
+      RCP<multivector_type> coords;
       {
         TEUCHOS_FUNC_TIME_MONITOR_DIFF("Total Assembly", total_assembly);
-        makeMatrixAndRightHandSide (A, B, X_exact, X, comm, node, meshInput, inputList,
+        makeMatrixAndRightHandSide (A, B, X_exact, X, coords, comm, node, meshInput, inputList, problemStatistics,
                                     out, err, verbose, debug);
       }
+
+      // Print Problem Statistics
+      *out<<"*** Problem Statistics ***\n"<<problemStatistics<<std::endl;
+
 
       // Optionally dump the matrix and/or its row Map to files.
       {
@@ -293,6 +299,7 @@ main (int argc, char *argv[])
            << "||B||_2 = " << norms[1] << endl
            << "||A||_F = " << norms[2] << endl;
 
+   
       // Setup preconditioner
       std::string prec_type = inputList.get ("Preconditioner", "None");
       RCP<operator_type> M;
@@ -304,6 +311,7 @@ main (int argc, char *argv[])
 	  for(int i=0; i<numMueluRebuilds+1; i++) {
 	    if (inputList.isSublist("MueLu")) {
 	      ParameterList mueluParams = inputList.sublist("MueLu");
+              mueluParams.sublist("user data").set("Coordinates",coords);
 	      M = MueLu::CreateTpetraPreconditioner<ST,LO,GO,Node>(A,mueluParams);
 	    } else {
 	      M = MueLu::CreateTpetraPreconditioner<ST,LO,GO,Node>(A);

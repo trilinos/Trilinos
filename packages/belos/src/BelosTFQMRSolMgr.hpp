@@ -269,17 +269,17 @@ namespace Belos {
     Teuchos::RCP<Teuchos::ParameterList> params_;
     
     // Default solver values.
-    static const MagnitudeType convtol_default_;
-    static const MagnitudeType impTolScale_default_;
-    static const int maxIters_default_;
-    static const bool expResTest_default_;
-    static const int verbosity_default_;
-    static const int outputStyle_default_;
-    static const int outputFreq_default_;
-    static const std::string impResScale_default_; 
-    static const std::string expResScale_default_; 
-    static const std::string label_default_;
-    static const Teuchos::RCP<std::ostream> outputStream_default_;
+    static constexpr MagnitudeType convTol_default_ = 1e-8;
+    static constexpr MagnitudeType impTolScale_default_ = 10;
+    static constexpr int maxIters_default_ = 1000;
+    static constexpr bool expResTest_default_ = false;
+    static constexpr int verbosity_default_ = Belos::Errors;
+    static constexpr int outputStyle_default_ = Belos::General;
+    static constexpr int outputFreq_default_ = -1;
+    static constexpr const char * impResScale_default_ = "Norm of Preconditioned Initial Residual";
+    static constexpr const char * expResScale_default_ = "Norm of Initial Residual";
+    static constexpr const char * label_default_ = "Belos";
+    static constexpr std::ostream * outputStream_default_ = &std::cout;
 
     // Current solver values.
     MagnitudeType convtol_, impTolScale_, achievedTol_;
@@ -298,46 +298,11 @@ namespace Belos {
   };
 
 
-// Default solver values.
-template<class ScalarType, class MV, class OP>
-const typename TFQMRSolMgr<ScalarType,MV,OP>::MagnitudeType TFQMRSolMgr<ScalarType,MV,OP>::convtol_default_ = 1e-8;
-
-template<class ScalarType, class MV, class OP>
-const typename TFQMRSolMgr<ScalarType,MV,OP>::MagnitudeType TFQMRSolMgr<ScalarType,MV,OP>::impTolScale_default_ = 10.0;
-
-template<class ScalarType, class MV, class OP>
-const int TFQMRSolMgr<ScalarType,MV,OP>::maxIters_default_ = 1000;
-
-template<class ScalarType, class MV, class OP>
-const bool TFQMRSolMgr<ScalarType,MV,OP>::expResTest_default_ = false;
-
-template<class ScalarType, class MV, class OP>
-const int TFQMRSolMgr<ScalarType,MV,OP>::verbosity_default_ = Belos::Errors;
-
-template<class ScalarType, class MV, class OP>
-const int TFQMRSolMgr<ScalarType,MV,OP>::outputStyle_default_ = Belos::General;
-
-template<class ScalarType, class MV, class OP>
-const int TFQMRSolMgr<ScalarType,MV,OP>::outputFreq_default_ = -1;
-
-template<class ScalarType, class MV, class OP>
-const std::string TFQMRSolMgr<ScalarType,MV,OP>::impResScale_default_ = "Norm of Preconditioned Initial Residual";
-
-template<class ScalarType, class MV, class OP>
-const std::string TFQMRSolMgr<ScalarType,MV,OP>::expResScale_default_ = "Norm of Initial Residual";
-
-template<class ScalarType, class MV, class OP>
-const std::string TFQMRSolMgr<ScalarType,MV,OP>::label_default_ = "Belos";
-
-template<class ScalarType, class MV, class OP>
-const Teuchos::RCP<std::ostream> TFQMRSolMgr<ScalarType,MV,OP>::outputStream_default_ = Teuchos::rcp(&std::cout,false);
-
-
 // Empty Constructor
 template<class ScalarType, class MV, class OP>
 TFQMRSolMgr<ScalarType,MV,OP>::TFQMRSolMgr() :
-  outputStream_(outputStream_default_),
-  convtol_(convtol_default_),
+  outputStream_(Teuchos::rcp(outputStream_default_,false)),
+  convtol_(convTol_default_),
   impTolScale_(impTolScale_default_),
   achievedTol_(Teuchos::ScalarTraits<typename Teuchos::ScalarTraits<ScalarType>::magnitudeType>::zero()),
   maxIters_(maxIters_default_),
@@ -361,8 +326,8 @@ TFQMRSolMgr<ScalarType,MV,OP>::TFQMRSolMgr(
 					     const Teuchos::RCP<LinearProblem<ScalarType,MV,OP> > &problem,
 					     const Teuchos::RCP<Teuchos::ParameterList> &pl ) : 
   problem_(problem),
-  outputStream_(outputStream_default_),
-  convtol_(convtol_default_),
+  outputStream_(Teuchos::rcp(outputStream_default_,false)),
+  convtol_(convTol_default_),
   impTolScale_(impTolScale_default_),
   achievedTol_(Teuchos::ScalarTraits<typename Teuchos::ScalarTraits<ScalarType>::magnitudeType>::zero()),
   maxIters_(maxIters_default_),
@@ -488,7 +453,7 @@ void TFQMRSolMgr<ScalarType,MV,OP>::setParameters( const Teuchos::RCP<Teuchos::P
   
   // Check for convergence tolerance
   if (params->isParameter("Convergence Tolerance")) {
-    convtol_ = params->get("Convergence Tolerance",convtol_default_);
+    convtol_ = params->get("Convergence Tolerance",convTol_default_);
 
     // Update parameter in our list.
     params_->set("Convergence Tolerance", convtol_);
@@ -626,34 +591,37 @@ TFQMRSolMgr<ScalarType,MV,OP>::getValidParameters() const
   // Set all the valid parameters and their default values.
   if(is_null(validPL)) {
     Teuchos::RCP<Teuchos::ParameterList> pl = Teuchos::parameterList();
-    pl->set("Convergence Tolerance", convtol_default_,
+
+    // The static_cast is to resolve an issue with older clang versions which
+    // would cause the constexpr to link fail. With c++17 the problem is resolved.
+    pl->set("Convergence Tolerance", static_cast<MagnitudeType>(convTol_default_),
       "The relative residual tolerance that needs to be achieved by the\n"
       "iterative solver in order for the linear system to be declared converged.");
-    pl->set("Implicit Tolerance Scale Factor", impTolScale_default_,
+    pl->set("Implicit Tolerance Scale Factor", static_cast<MagnitudeType>(impTolScale_default_),
       "The scale factor used by the implicit residual test when explicit residual\n"
       "testing is used.  May enable faster convergence when TFQMR bound is too loose.");
-    pl->set("Maximum Iterations", maxIters_default_,
+    pl->set("Maximum Iterations", static_cast<int>(maxIters_default_),
       "The maximum number of block iterations allowed for each\n"
       "set of RHS solved.");
-    pl->set("Verbosity", verbosity_default_,
+    pl->set("Verbosity", static_cast<int>(verbosity_default_),
       "What type(s) of solver information should be outputted\n"
       "to the output stream.");
-    pl->set("Output Style", outputStyle_default_,
+    pl->set("Output Style", static_cast<int>(outputStyle_default_),
       "What style is used for the solver information outputted\n"
       "to the output stream.");
-    pl->set("Output Frequency", outputFreq_default_,
+    pl->set("Output Frequency", static_cast<int>(outputFreq_default_),
       "How often convergence information should be outputted\n"
       "to the output stream.");  
-    pl->set("Output Stream", outputStream_default_,
+    pl->set("Output Stream", Teuchos::rcp(outputStream_default_,false),
       "A reference-counted pointer to the output stream where all\n"
       "solver output is sent.");
-    pl->set("Explicit Residual Test", expResTest_default_,
+    pl->set("Explicit Residual Test", static_cast<bool>(expResTest_default_),
       "Whether the explicitly computed residual should be used in the convergence test.");
-    pl->set("Implicit Residual Scaling", impResScale_default_,
+    pl->set("Implicit Residual Scaling", static_cast<const char *>(impResScale_default_),
       "The type of scaling used in the implicit residual convergence test.");
-    pl->set("Explicit Residual Scaling", expResScale_default_,
+    pl->set("Explicit Residual Scaling", static_cast<const char *>(expResScale_default_),
       "The type of scaling used in the explicit residual convergence test.");
-    pl->set("Timer Label", label_default_,
+    pl->set("Timer Label", static_cast<const char *>(label_default_),
       "The string to use as a prefix for the timer labels.");
     validPL = pl;
   }

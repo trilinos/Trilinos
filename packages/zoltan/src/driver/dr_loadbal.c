@@ -149,7 +149,7 @@ int setup_zoltan(struct Zoltan_Struct *zz, int Proc, PROB_INFO_PTR prob,
   int nprocs;                    /* Number of processors. */
   int i;                         /* Loop index */
   int ierr;                      /* Error code */
-  char errmsg[128];              /* Error message */
+  char errmsg[256];              /* Error message */
 
   DEBUG_TRACE_START(Proc, yo);
 

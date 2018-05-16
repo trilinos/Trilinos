@@ -65,62 +65,40 @@ NOX.Epetra provides the following user-level classes:
 "
 %enddef
 
+%define %nox_epetra_import_code
+"
+from . import ___init__
+"
+%enddef
+
 %module(package      = "PyTrilinos.NOX.Epetra",
 	directors    = "1",
 	autodoc      = "1",
 	implicitconv = "1",
+        moduleimport = %nox_epetra_import_code,
 	docstring    = %nox_epetra_docstring) __init__
 
 %{
-// System includes
+// System include files
 #include <vector>
 
 // Configuration
 #include "PyTrilinos_config.h"
 
-// Teuchos includes
-#ifdef HAVE_INTTYPES_H
-#undef HAVE_INTTYPES_H
-#endif
-#ifdef HAVE_STDINT_H
-#undef HAVE_STDINT_H
-#endif
-#include "Teuchos_RCPDecl.hpp"
-#include "Teuchos_DefaultSerialComm.hpp"
-#ifdef HAVE_MPI
-#include "Teuchos_DefaultMpiComm.hpp"
-#endif
-#include "PyTrilinos_Teuchos_Util.hpp"
+// Teuchos include files
+#include "PyTrilinos_Teuchos_Headers.hpp"
 
-// Teuchos includes
-#include "Teuchos_DefaultComm.hpp"
-
-// Epetra includes
+// Epetra include files
 #include "PyTrilinos_Epetra_Headers.hpp"
 
-// EpetraExt includes
+// EpetraExt include files
 #ifdef HAVE_NOX_EPETRAEXT
-#include "EpetraExt_MapColoring.h"
-#include "EpetraExt_MapColoringIndex.h"
-#include "EpetraExt_ModelEvaluator.h"
-#include "PyTrilinos_EpetraExt_Util.hpp"
+#include "PyTrilinos_EpetraExt_Headers.hpp"
 #endif
 
-// NOX includes
-#include "NOX_Abstract_Group.H"
-#include "NOX_Abstract_Vector.H"
-#include "NOX_Epetra_Group.H"
-#include "NOX_Epetra_Vector.H"
-#include "NOX_Epetra_FiniteDifference.H"
-#include "NOX_Epetra_FiniteDifferenceColoring.H"
-#include "NOX_Epetra_MatrixFree.H"
-#include "NOX_Epetra_Scaling.H"
-#include "NOX_Epetra_LinearSystem.H"
-#undef HAVE_STDINT_H
-#undef HAVE_INTTYPES_H
-#undef HAVE_SYS_TIME_H
-#include "NOX_Epetra_LinearSystem_AztecOO.H"
-#include "NOX_Epetra_ModelEvaluatorInterface.H"
+// NOX include files
+#include "PyTrilinos_NOX_Abstract_Headers.hpp"
+#include "PyTrilinos_NOX_Epetra_Headers.hpp"
 
 // NumPy include
 #define NO_IMPORT_ARRAY
@@ -148,7 +126,7 @@ using namespace NOX::Epetra;
 %ignore *::operator<<;
 %ignore *::operator[];
 
-// SWIG library includes
+// SWIG library include files
 %include "stl.i"
 
 // Trilinos interface import
@@ -168,9 +146,6 @@ parentDir = op.normpath(op.join(thisDir,".."))
 if not thisDir   in sys.path: sys.path.append(thisDir)
 if not parentDir in sys.path: sys.path.append(parentDir)
 del sys, op
-if "delete_Group" not in dir(___init__):
-    del ___init__
-    from . import ___init__
 %}
 
 // Include typemaps for Abstract base classes

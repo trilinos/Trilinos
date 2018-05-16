@@ -178,6 +178,15 @@ TRIBITS_ADD_OPTION_AND_DEFINE(
   "Enable MueLu code refactored to use Kokkos."
   NO)
 
+# Define option to use code that is refactored to use Kokkos by
+# default. This is useful for running all non-unit tests with Kokkos
+# without having to set "use kokkos refactor" in all parameter lists.
+TRIBITS_ADD_OPTION_AND_DEFINE(
+  ${PACKAGE_NAME}_ENABLE_Kokkos_Refactor_Use_By_Default
+  HAVE_${PACKAGE_NAME_UC}_KOKKOS_REFACTOR_USE_BY_DEFAULT
+  "Use MueLu code refactored to use Kokkos by default."
+  NO)
+
 
 IF (${PACKAGE_NAME}_ENABLE_Kokkos_Refactor AND NOT Xpetra_ENABLE_Kokkos_Refactor)
   MESSAGE(FATAL_ERROR "Kokkos Refactor in MueLu requires one to also enable Kokkos Refactor in Xpetra (-DXpetra_ENABLE_Kokkos_Refactor:BOOL=ON).")
@@ -245,6 +254,15 @@ IF(${PACKAGE_NAME}_ENABLE_EXPLICIT_INSTANTIATION)
   ELSE()
     GLOBAL_SET(${PACKAGE_NAME}_INST_COMPLEX_INT_INT OFF)
     GLOBAL_SET(HAVE_${PACKAGE_NAME_UC}_INST_COMPLEX_INT_INT OFF)
+  ENDIF()
+
+  # <complex, int, long long int>
+  IF(Tpetra_INST_COMPLEX_DOUBLE AND Tpetra_INST_INT_LONG_LONG)
+    GLOBAL_SET(${PACKAGE_NAME}_INST_COMPLEX_INT_LONG_LONG ON)
+    GLOBAL_SET(HAVE_${PACKAGE_NAME_UC}_INST_COMPLEX_INT_LONG_LONG ON)
+  ELSE()
+    GLOBAL_SET(${PACKAGE_NAME}_INST_COMPLEX_INT_LONG_LONG OFF)
+    GLOBAL_SET(HAVE_${PACKAGE_NAME_UC}_INST_COMPLEX_INT_LONG_LONG OFF)
   ENDIF()
 
   # <float, int, int>

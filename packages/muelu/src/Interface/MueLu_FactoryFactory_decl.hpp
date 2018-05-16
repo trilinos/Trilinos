@@ -71,6 +71,7 @@
 #include "MueLu_AmalgamationFactory.hpp"
 #include "MueLu_BlackBoxPFactory.hpp"
 #include "MueLu_BlockedCoarseMapFactory.hpp"
+#include "MueLu_BlockedCoordinatesTransferFactory.hpp"
 #include "MueLu_BlockedDirectSolver.hpp"
 #include "MueLu_BlockedGaussSeidelSmoother.hpp"
 #include "MueLu_BlockedJacobiSmoother.hpp"
@@ -96,6 +97,7 @@
 #include "MueLu_IsorropiaInterface.hpp"
 #include "MueLu_LineDetectionFactory.hpp"
 #include "MueLu_RepartitionInterface.hpp"
+#include "MueLu_RepartitionBlockDiagonalFactory.hpp"
 #include "MueLu_MapTransferFactory.hpp"
 #include "MueLu_MatrixAnalysisFactory.hpp"
 #include "MueLu_MultiVectorTransferFactory.hpp"
@@ -203,6 +205,7 @@ namespace MueLu {
       if (factoryName == "AggregationExportFactory")        return Build2<AggregationExportFactory>      (paramList, factoryMapIn, factoryManagersIn);
       if (factoryName == "AmalgamationFactory")             return Build2<AmalgamationFactory>           (paramList, factoryMapIn, factoryManagersIn);
       if (factoryName == "BlockedCoarseMapFactory")            return Build2<BlockedCoarseMapFactory>            (paramList, factoryMapIn, factoryManagersIn);
+      if (factoryName == "BlockedCoordinatesTransferFactory")  return Build2<BlockedCoordinatesTransferFactory>  (paramList, factoryMapIn, factoryManagersIn);
       if (factoryName == "BlockedRAPFactory")                  return BuildRAPFactory<BlockedRAPFactory>         (paramList, factoryMapIn, factoryManagersIn);
       if (factoryName == "BrickAggregationFactory")            return Build2<BrickAggregationFactory>            (paramList, factoryMapIn, factoryManagersIn);
       if (factoryName == "CloneRepartitionInterface")          return Build2<CloneRepartitionInterface>          (paramList, factoryMapIn, factoryManagersIn);
@@ -300,6 +303,9 @@ namespace MueLu {
       if (factoryName == "RebalanceBlockRestrictionFactory")return BuildBlockedFactory<RebalanceBlockRestrictionFactory>(paramList, factoryMapIn, factoryManagersIn);
       if (factoryName == "RebalanceBlockAcFactory")         return BuildBlockedFactory<RebalanceBlockAcFactory>(paramList, factoryMapIn, factoryManagersIn);
       if (factoryName == "RebalanceBlockInterpolationFactory") return BuildBlockedFactory<RebalanceBlockInterpolationFactory>(paramList, factoryMapIn, factoryManagersIn);
+#ifdef HAVE_MPI
+      if (factoryName == "RepartitionBlockDiagonalFactory")    return Build2<RepartitionBlockDiagonalFactory>    (paramList, factoryMapIn, factoryManagersIn);
+#endif
 #ifdef HAVE_MUELU_TEKO
       if (factoryName == "TekoSmoother")                    return BuildTekoSmoother(paramList, factoryMapIn, factoryManagersIn);
 #endif

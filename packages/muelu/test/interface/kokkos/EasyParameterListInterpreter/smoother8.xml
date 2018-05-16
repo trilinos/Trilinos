@@ -1,0 +1,3 @@
+<ParameterList name="MueLu">
+  <Parameter name="smoother: post type" type="string" value="CHEBYSHEV"/>
+</ParameterList>

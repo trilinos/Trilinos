@@ -46,6 +46,7 @@
 #include <Tpetra_MultiVector.hpp>
 #include <Tpetra_CrsMatrix.hpp>
 #include <Tpetra_CrsMatrixSolveOp.hpp>
+#include "Tpetra_Details_getNumDiags.hpp"
 
 namespace {
 
@@ -172,7 +173,7 @@ namespace {
         ZeroMat->fillComplete(params);
         TEST_EQUALITY_CONST(ZeroMat->isUpperTriangular(), true);
         TEST_EQUALITY_CONST(ZeroMat->isLowerTriangular(), true);
-        TEST_EQUALITY_CONST(ZeroMat->getGlobalNumDiags(), 0);
+        TEST_EQUALITY_CONST( Tpetra::Details::getGlobalNumDiags (*ZeroMat), static_cast<GO> (0) );
         ZeroIOp = createCrsMatrixSolveOp<Scalar>(ZeroMat.getConst());
       }
       X = B;
@@ -388,7 +389,7 @@ namespace {
           AMat->fillComplete(params);
           TEST_EQUALITY(AMat->isUpperTriangular(), uplo == UPPER_TRI);
           TEST_EQUALITY(AMat->isLowerTriangular(), uplo == LOWER_TRI);
-          TEST_EQUALITY(AMat->getGlobalNumDiags() == 0, diag == UNIT_DIAG);
+          TEST_EQUALITY( Tpetra::Details::getGlobalNumDiags (*AMat) == 0, diag == UNIT_DIAG);
           // AIOp.apply (X,B,trans) solves op(A) X=B for X locally,
           // using a triangular solve.  op(A) is just A if
           // trans==NO_TRANS, else A^H (Hermitian transpose) if

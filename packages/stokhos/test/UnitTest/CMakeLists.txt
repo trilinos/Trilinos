@@ -564,6 +564,14 @@ IF(Stokhos_ENABLE_Sacado)
       )
 
     TRIBITS_ADD_EXECUTABLE_AND_TEST(
+      SacadoMPVectorUnitTestMaskTraits
+      SOURCES Stokhos_SacadoMPVectorUnitTest_MaskTraits.cpp
+      COMM serial mpi
+      STANDARD_PASS_OUTPUT
+      NUM_MPI_PROCS 1
+      )
+
+    TRIBITS_ADD_EXECUTABLE_AND_TEST(
       SacadoMPVectorSerializationTests
       SOURCES Stokhos_SacadoMPVectorSerializationTests.cpp ${UTILS_SOURCES}
       ARGS

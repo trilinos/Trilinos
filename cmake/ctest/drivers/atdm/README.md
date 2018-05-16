@@ -7,6 +7,7 @@ Trilinos CDash site.
 **Outline:**
 * <a href="#base-ctestcdash-configuration">Base CTest/CDash configuration</a>
 * <a href="#system-specific-driver-files">System-specific driver files</a>
+* <a href="#split-ctest--s-drivers-and-submits-to-cdash">Split ctest -S drivers and submits to CDash</a>
 * <a href="#running-locally-and-debugging">Running locally and debugging</a>
 * <a href="#setting-up-jenkins-jobs">Setting up Jenkins jobs</a>
 * <a href="#specific-system_name-directories">Specific <system_name> directories</a>
@@ -22,7 +23,6 @@ The base directory:
 
 contains files that are used for driving builds on all machines.  These files
 define common behavior and reduces duplication to ease maintenance.
-
 
 This directory contains the file:
 
@@ -40,27 +40,26 @@ given in the files defined in the directory:
 
 That file reads `JOB_NAME` from the env and uses it to set the CDash build
 name.  (Therefore, the Jenkikns `JOB_NAME` is the same as the CDash build name
-for all of these Trilinos ATDM builds.)
+for all of these Trilinos ATDM builds.)  It also other CMake and CTest options
+that are pulled out of the env set by the
+`cmake/std/atdm/<system_name>/environment.sh` script.  (See `$ENV{<varName>}`
+to see what vars are pulled out of the env.)
 
-
-That directory contains a CTest -S driver script:
+This directory contains a CTest -S driver script:
 
 ```
   Trilinos/cmake/ctest/drivers/atdm/ctest-driver.cmake
 ```
 
-This files sets other CMake and CTest options that are pulled out of the env
-set by the `cmake/std/atdm/<system_name>/environment.sh` script.
-
-Given this file `atdm/ctest-driver.cmake`, then:
+which is called using:
 
 ```
   ctest -S <base-dir>/Trilinos/cmake/ctest/drivers/atdm/ctest-driver.cmake
 ```
 
-can be run using any way desired and it will clone a new Trilinos git repo (if
-not cloned already).  (But this file get directly run by the universal driver
-script `ctest-s-driver.sh` described above.)
+which can be run using any way desired and it will clone a new Trilinos git
+repo (if not cloned already).  (But this file get directly run by the
+universal driver script `ctest-s-driver.sh` described above.)
 
 This directory contains the file:
 
@@ -68,7 +67,9 @@ This directory contains the file:
   Trilinos/cmake/ctest/drivers/atdm/ctest-s-driver.sh
 ```
 
-which sets up and runs `ctest -S .../atdm/ctest-driver.cmake`.
+which sets up and runs `ctest -S .../atdm/ctest-driver.cmake`.  (Note, there
+are also `ctest-s-driver-config-build.sh` and `ctest-s-driver-test.sh` drivers
+as explained <a href="#split-ctest--s-drivers-and-submits-to-cdash">below</a>.)
 
 This base directly also contains the script:
 
@@ -120,6 +121,33 @@ which CDash Track/Group results are sent to and other tweaks like this.
 Having this file and using `smart-jenkins-driver.sh` allows customizing almost
 anything about a particular ATDM build of Trilinos without having to touch the
 Jenkins job configuration (which is not under any type of version control).
+
+## Split ctest -S drivers and submits to CDash
+
+On some machines (e.g. the SNL HPC machines), the update, configure and build
+must be done on a login/compile node and running the tests must be done on a
+compute node.  To accommodate this, the update, configure, build and submit of
+those results to CDash can be done in one `ctest -S` driver invocation and
+then running the tests and submitting those results to CDash can be done in a
+later `ctest -S` driver invocation.
+
+To use this approach, the `<system-name>/local-driver.sh` script should be set
+up to run as follows:
+
+```
+source $WORKSPACE/Trilinos/cmake/ctest/drivers/atdm/ctest-s-driver-config-build.sh
+$WORKSPACE/Trilinos/cmake/ctest/drivers/atdm/ctest-s-driver-test.sh
+```
+
+The first script `ctest-s-driver-config-build.sh` must be sourced instead of
+just run because it sets up the env and changes to a subdir.  The env must be
+loaded on the login/compile node and not the compute node and therefore, it
+must be done this way.
+
+With newer versions of CMake (3.10+), this will result in all of the results
+going to the same build (i.e. row) on CDash.  For older versions of CMake, the
+test results show up as a separate build (same `site` and `build name` but
+different `build stamp`).
 
 ## Running locally and debugging
 
@@ -229,19 +257,25 @@ there is no tractability for changes in these settings!
 
 ## Specific <system_name> directories
 
-The following `<system_name>` sub-directories exist:
+The following `<system_name>` sub-directories exist (in alphabetical order):
+ 
+* `rhel6/`: Contains files to drive builds on rhel6 machines with the SEMS
+  environment.
 
 * `ride/`: Contains the files to drive builds on the SRN test bed machine
   `ride` which also can be run on the SON machine `white`.
-
-* `shiller/`: Contains the files to drive builds on the SRN test bed machine
-  `shiller` which also can be run on the SON machine `hansen`.
 
 * `sems_gcc-7.2.0/`: Contains driver scripts for a on-off GCC 7.2.0 build
   based on the SEMS system.  This build really does not fit into the system
   described above but it put in this directory since it is targeted to support
   ATDM.  It also shows that a given system can have its own driver files if it
   needs to.
+
+* `shiller/`: Contains the files to drive builds on the SRN test bed machine
+  `shiller` which also can be run on the SON machine `hansen`.
+  
+* `toss3/`: Contains files to drive builds on the SRN HPC machines `serrano`
+  and `chama`.
 
 ## How add a new system
 

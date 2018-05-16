@@ -55,6 +55,8 @@
 #include "Teuchos_LAPACK.hpp"
 #include "Teuchos_ScalarTraits.hpp"
 
+#include "MySDMHelpers.hpp"
+
 #ifdef EPETRA_MPI
 #include "Epetra_MpiComm.h"
 #include <mpi.h>
@@ -134,7 +136,7 @@ int main(int argc, char *argv[])
     int info;
     std::vector<double> qrwork(NumColumns), tau(NumColumns);
     Teuchos::SerialDenseMatrix<int,double> Q(NumColumns,NumColumns), H(NumColumns,NumColumns);
-    H.random();
+    Anasazi::randomSDM(H);
     // QR of random matrix H: this puts Householder reflectors in H,tau
     lapack.GEQRF(H.numRows(),H.numCols(),H.values(),H.stride(),&tau[0],&qrwork[0],(int)qrwork.size(),&info);
     TEUCHOS_TEST_FOR_EXCEPTION(info != 0,std::logic_error,"error in LAPACK::GEQRF()");
@@ -212,8 +214,10 @@ int main(int argc, char *argv[])
 
     // form random eigenvalues
     std::vector<double> lambda1(nev);
+    SerialDenseMatrix<int,double> Lambda(nev,1)
+    Anasazi::randomSDM(Lambda);
     for (int i=0; i<nev; ++i) {
-      lambda1[i] = SCT::random();
+      lambda1[i] = Lambda(i,0);
     }
     // this will order the eigenvalues and give us a random permutation 
     // to use below

@@ -1665,7 +1665,6 @@ isend<int, float> (const ArrayRCP<const float>& sendBuffer,
                    const int tag,
                    const Comm<int>& comm);
 
-#ifdef HAVE_TEUCHOS_LONG_LONG_INT
 // Specialization for Ordinal=int and Packet=long long.
 template<>
 TEUCHOSCOMM_LIB_DLL_EXPORT void
@@ -1777,7 +1776,6 @@ isend<int, unsigned long long> (const ArrayRCP<const unsigned long long>& sendBu
                                 const int destRank,
                                 const int tag,
                                 const Comm<int>& comm);
-#endif // HAVE_TEUCHOS_LONG_LONG_INT
 
 // Specialization for Ordinal=int and Packet=long.
 template<>

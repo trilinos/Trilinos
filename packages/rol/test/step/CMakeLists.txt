@@ -1,5 +1,7 @@
 ADD_SUBDIRECTORY(interiorpoint)
 ADD_SUBDIRECTORY(fletcher)
+ADD_SUBDIRECTORY(trustregion)
+
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
    LineSearch
