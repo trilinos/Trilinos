@@ -42,59 +42,29 @@
 // ***********************************************************************
 // @HEADER
 
-%define %loca_docstring
+%define %loca_base_docstring
 "
 PyTrilinos.LOCA is the python interface to the Trilinos continuation
 algorithm package LOCA:
 
     http://trilinos.sandia.gov/packages/nox
 
-The purpose of LOCA is to provide a library of continuation
-algorithms.  It include files the following sub-modules:
-
-    * Abstract           - Abstract continuation problem base classes
-    * Extended           - Classes that extend NOX.Abstract classes to
-                           handle an arbitrary number of multi-vectors
-                           and scalars
-    * MultiContinuation  - Groups and vectors for multi-parameter continuation
-    * TimeDependent      - Abstract group for time dependent problems with a
-                           mass matrix
-    * TurningPoint       - Groups and vectors for turning point bifurcations
-    * Hopf               - Groups and vectors for Hopf bifurcations
-    * Pitchfork          - Groups and vectors for pitchfork bifurcations
-    * Homotopy           - Groups that allow for Homotopy to be applied
-    * PhaseTransition    - Groups and vectors for phase transition bifurcations
-    * Parameter          - Centralized library for setting/retrieving numerical
-                           parameter values in application codes
-    * BorderedSolver     - Strategies for solving bordered systems of equations
-    * BorderedSystem     - Interface for groups that are bordered systems
-    * Bifurcation        - Strategies for creating bifurcation objects
-    * StatusTest         - Status checkers
-    * StepSize           - Collection of step size control strategies
-    * MultiPredictor     - Predictor direction strategies
-
-and classes:
-
-    * GlobalData      - Container class that holds ref-count pointers to
-                        'global' objects, i.e., objects that nearly every LOCA
-                        object will need access to
-    * ErrorCheck      - Error checking algorithm for NOX/LOCA routines
-    * Factory         - Provides a single location for instantiating various
-                        strategies based on parameter list choices
-    * DerivUtils      - Generic derivative computation class to compute various
-                        derivatives via finite differencing
-    * Stepper         - Implementation of LOCA.Abstract.Iterator for computing
-                        points along a continuation curve
-    * ParameterVector - LOCA's container for holding a set of parameters that
-                        are used by the LOCA continuation routines
+See the documentation for python module PyTrilinos.LOCA
 "
 %enddef
 
-%module(package      = "PyTrilinos.LOCA",
-        directors    = "1",
-	autodoc      = "1",
-	implicitconv = "1",
-	docstring    = %loca_docstring) __init__
+%define %loca_base_import_code
+"
+from . import _Base
+"
+%enddef
+
+%module(package       = "PyTrilinos.LOCA",
+        directors     = "1",
+	autodoc       = "1",
+	implicitconv  = "1",
+        moduleinclude = %loca_base_import_code,
+	docstring     = %loca_base_docstring) Base
 
 %{
 // System include files
@@ -120,13 +90,6 @@ and classes:
 // Local include files
 #define NO_IMPORT_ARRAY
 #include "numpy_include.hpp"
-%}
-
-%pythoncode
-%{
-# Fix ___init__ ambiguity
-del ___init__
-from . import ___init__
 %}
 
 // Ignore/renames
@@ -185,54 +148,6 @@ from . import ___init__
   }
 }
 
-// Import NOX and LOCA sub-modules
-%pythoncode
-%{
-import PyTrilinos.NOX
-
-# LOCA sub-modules
-__all__ = ['Extended',
-           'MultiContinuation',
-           'TimeDependent',
-           'TurningPoint',
-           'Hopf',
-           'Pitchfork',
-           'Homotopy',
-           'PhaseTransition',
-           'Abstract',
-           'Parameter',
-           'BorderedSolver',
-           'BorderedSystem',
-           'Bifurcation',
-           'StatusTest',
-           'StepSize',
-           'MultiPredictor',
-           'Eigensolver',
-           'EigenvalueSort',
-           'SaveEigenData',
-           'AnasaziOperator'
-           ]
-from . import Extended
-from . import MultiContinuation
-from . import TimeDependent
-from . import TurningPoint
-from . import Hopf
-from . import Pitchfork
-from . import Homotopy
-from . import PhaseTransition
-from . import Parameter
-from . import BorderedSolver
-from . import BorderedSystem
-from . import Bifurcation
-from . import StatusTest
-from . import StepSize
-from . import MultiPredictor
-from . import Eigensolver
-from . import EigenvalueSort
-from . import SaveEigenData
-from . import AnasaziOperator
-%}
-
 // Techos::RCP handling
 %teuchos_rcp(LOCA::GlobalData)
 %teuchos_rcp(LOCA::ErrorCheck)
@@ -272,23 +187,18 @@ if 'NOX' in Abstract.__file__.split(os.path.sep):
 // LOCA Stepper class
 %teuchos_rcp(LOCA::Stepper)
 %feature("director") LOCA::Stepper;
-// Ignore the deprecated constructor
-// %ignore LOCA::Stepper::Stepper(const Teuchos::RCP< LOCA::GlobalData >&,
-//                                const Teuchos::RCP< LOCA::MultiContinuation::AbstractGroup >&,
-//                                const Teuchos::RCP< NOX::StatusTest::Generic >&,
-//                                const Teuchos::RCP< Teuchos::ParameterList >&);
 %include "LOCA_Stepper.H"
 
 // LOCA ParameterVector class
 %include "LOCA_Parameter_Vector.H"
 
-// LOCA.Epetra
-#ifdef HAVE_PYTRILINOS_NOX_EPETRA
-%pythoncode
-%{
+// // LOCA.Epetra
+// #ifdef HAVE_PYTRILINOS_NOX_EPETRA
+// %pythoncode
+// %{
 
-# Epetra namespace
-__all__.append("Epetra")
-from . import Epetra
-%}
-#endif
+// # Epetra namespace
+// __all__.append("Epetra")
+// from . import Epetra
+// %}
+// #endif
