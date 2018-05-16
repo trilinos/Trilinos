@@ -56,14 +56,14 @@ The purpose of Isorropia is to ....
 
 %define %isorropia_import_code
 "
-from . import ___init__
+from . import _Base
 "
 %enddef
 
 %module(package      = "PyTrilinos.Isorropia",
 	autodoc      = "1",
         moduleimport = %isorropia_import_code,
-        docstring    = %isorropia_docstring) __init__
+        docstring    = %isorropia_docstring) Base
 
 %{
 // Teuchos include files
@@ -163,15 +163,3 @@ __version__ = Isorropia_Version().split()[3]
 ///////////////////////////////////////
 %teuchos_rcp(Isorropia::LevelScheduler)
 %include "Isorropia_LevelScheduler.hpp"
-
-// Isorropia namespace imports
-
-// Allow import from the current directory
-#ifdef HAVE_PYTRILINOS_EPETRA
-%pythoncode
-%{
-# Epetra namespace
-__all__ = ['Epetra']
-from . import IsorropiaEpetra as Epetra
-%}
-#endif

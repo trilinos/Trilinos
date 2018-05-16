@@ -55,7 +55,7 @@ The purpose of Isorropia.Epetra is to ....
 
 %define %isorropia_epetra_import_code
 "
-from . import _IsorropiaEpetra
+from . import _Epetra
 "
 %enddef
 
@@ -63,7 +63,7 @@ from . import _IsorropiaEpetra
 	autodoc      = "1",
 	implicitconv = "1",
         moduleimport = %isorropia_epetra_import_code,
-	docstring    = %isorropia_epetra_docstring) IsorropiaEpetra
+	docstring    = %isorropia_epetra_docstring) Epetra
 
 %{
 // Configuration
@@ -149,19 +149,19 @@ from . import _IsorropiaEpetra
 // Isorropia import (let SWIG know about the base classes that will be
 // needed for the derived classes below)
 %teuchos_rcp(Isorropia::Operator)
-%import(module="__init__") "Isorropia_Operator.hpp"
+%import(module="Base") "Isorropia_Operator.hpp"
 %teuchos_rcp(Isorropia::Colorer)
-%import(module="__init__") "Isorropia_Colorer.hpp"
+%import(module="Base") "Isorropia_Colorer.hpp"
 %teuchos_rcp(Isorropia::Partitioner)
-%import(module="__init__") "Isorropia_Partitioner.hpp"
+%import(module="Base") "Isorropia_Partitioner.hpp"
 %teuchos_rcp(Isorropia::Redistributor)
-%import(module="__init__") "Isorropia_Redistributor.hpp"
+%import(module="Base") "Isorropia_Redistributor.hpp"
 %teuchos_rcp(Isorropia::CostDescriber)
-%import(module="__init__") "Isorropia_CostDescriber.hpp"
+%import(module="Base") "Isorropia_CostDescriber.hpp"
 %teuchos_rcp(Isorropia::Orderer)
-%import(module="__init__") "Isorropia_Orderer.hpp"
+%import(module="Base") "Isorropia_Orderer.hpp"
 %teuchos_rcp(Isorropia::LevelScheduler)
-%import(module="__init__") "Isorropia_LevelScheduler.hpp"
+%import(module="Base") "Isorropia_LevelScheduler.hpp"
 
 /////////////////////////////////////////
 // Isorropia::Epetra::Operator support //
