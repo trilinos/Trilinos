@@ -42,7 +42,7 @@
 // ***********************************************************************
 // @HEADER
 
-%define %nox_epetra_docstring
+%define %nox_epetra_base_docstring
 "
 PyTrilinos.NOX.Epetra is the python interface to namespace Epetra for
 the Trilinos package NOX:
@@ -65,9 +65,9 @@ NOX.Epetra provides the following user-level classes:
 "
 %enddef
 
-%define %nox_epetra_import_code
+%define %nox_epetra_base_import_code
 "
-from . import ___init__
+from . import _Base
 "
 %enddef
 
@@ -75,8 +75,8 @@ from . import ___init__
 	directors    = "1",
 	autodoc      = "1",
 	implicitconv = "1",
-        moduleimport = %nox_epetra_import_code,
-	docstring    = %nox_epetra_docstring) __init__
+        moduleimport = %nox_epetra_base_import_code,
+	docstring    = %nox_epetra_base_docstring) Base
 
 %{
 // System include files
