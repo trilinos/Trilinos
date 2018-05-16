@@ -44,12 +44,12 @@
 #include <Teuchos_CommandLineProcessor.hpp>
 
 
-namespace TpetraExamples 
+namespace TpetraExamples
 {
 
 
 // Options to read in from the command line
-struct CmdLineOpts 
+struct CmdLineOpts
 {
   // numElementsX - Number of Elements to generate in the X dimension.
   size_t numElementsX;
@@ -69,6 +69,8 @@ struct CmdLineOpts
   bool execLocalElementLoop;
   // execTotalElementLoopDP - execute the Total Element Loop kernel
   bool execTotalElementLoop;
+  // repetitions - how many times to execute the kernel for testing
+  size_t repetitions;
 };
 
 
@@ -91,6 +93,7 @@ void setCmdLineOpts(struct CmdLineOpts& opts, Teuchos::CommandLineProcessor& clp
   opts.execInsertGlobalIndices = false;
   opts.execLocalElementLoop    = false;
   opts.execTotalElementLoop    = false;
+  opts.repetitions  = 1;
 
   clp.setOption("num-elements-x", &(opts.numElementsX), "Number of elements to generate in the X-directon of the 2D grid.");
   clp.setOption("num-elements-y", &(opts.numElementsY), "Number of elements to generate in the Y-direction of the 2D grid.");
@@ -107,6 +110,7 @@ void setCmdLineOpts(struct CmdLineOpts& opts, Teuchos::CommandLineProcessor& clp
                 "Execute the Local Element Loop FEM Assembly kernel.");
   clp.setOption("with-total-element-loop",    "without-total-element-loop",    &(opts.execTotalElementLoop),
                 "Execute the Total Element Loop FEM Assembly kernel.");
+  clp.setOption("repetitions", &(opts.repetitions), "Number of times to repeat the kernel.");
 }
 
 
@@ -124,7 +128,7 @@ int parseCmdLineOpts(Teuchos::CommandLineProcessor& clp, int argc, char* argv[])
 {
   auto result = clp.parse(argc, argv);
 
-  switch(result) 
+  switch(result)
   {
     case Teuchos::CommandLineProcessor::PARSE_HELP_PRINTED:
       return 1;
@@ -180,23 +184,23 @@ int checkCmdLineOpts(std::ostream& out, const struct CmdLineOpts& opts)
 int readCmdLineOpts(std::ostream& out, struct CmdLineOpts& opts, int argc, char* argv[])
 {
   using std::endl;
-  
+
   {
     Teuchos::CommandLineProcessor clp;
     setCmdLineOpts(opts, clp);
     int result = parseCmdLineOpts(clp, argc, argv);
     // help printed
-    if(1 == result) 
-    { 
+    if(1 == result)
+    {
       return EXIT_SUCCESS;
     }
     // parse error
-    else if(-1 == result) 
-    { 
+    else if(-1 == result)
+    {
       return EXIT_FAILURE;
     }
     result = checkCmdLineOpts(out, opts);
-    if(0 != result) 
+    if(0 != result)
     {
       return EXIT_FAILURE;
     }
@@ -213,8 +217,9 @@ int readCmdLineOpts(std::ostream& out, struct CmdLineOpts& opts, int argc, char*
           << "timing       : " << opts.timing           << endl
           << "saveMM       : " << opts.saveMM           << endl
           << "staticProfile: " << opts.useStaticProfile << endl
+          << "repetitions  : " << opts.repetitions      << endl
           << endl
-          << "execInsertGlobalIndices: " << opts.execInsertGlobalIndices << endl 
+          << "execInsertGlobalIndices: " << opts.execInsertGlobalIndices << endl
           << "execLocalElementLoop   : " << opts.execLocalElementLoop    << endl
           << "execTotalElementLoop   : " << opts.execTotalElementLoop    << endl
           << endl;

@@ -4207,6 +4207,7 @@ namespace {
     typedef Tpetra::Map<LO, GO, Node> map_type;
     typedef Tpetra::MultiVector<ST, LO, GO, Node> MV;
     typedef Tpetra::global_size_t GST;
+    typedef Tpetra::MultiVector<ST, LO, GO, Node> MV;
 
     out << "Tpetra::MultiVector: Test MultiVector dimensions when ALL "
       "processes have zero rows" << endl;
@@ -4318,6 +4319,44 @@ namespace {
     SUBVIEWSOMEZEROROWS_REPORT_GLOBAL_ERR( "reportedGblNumRows != gblNumRows" );
   }
 
+  // Swap test
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( MultiVector, Swap, LO , GO , Scalar , Node ) {
+    using Teuchos::outArg;
+    using Teuchos::REDUCE_MIN;
+    using Teuchos::reduceAll;
+    typedef Tpetra::Map<LO, GO, Node> map_type;
+    typedef Tpetra::MultiVector<Scalar,LO, GO, Node> MV;
+    typedef Tpetra::global_size_t GST;
+
+    Scalar ONE  = Teuchos::ScalarTraits<Scalar>::one();
+    Scalar ZERO = Teuchos::ScalarTraits<Scalar>::zero();
+
+    RCP<const Comm<int> > comm = Tpetra::DefaultPlatform::getDefaultPlatform ().getComm ();
+    const int numProcs = comm->getSize ();
+
+    // Create a Map that puts nothing on Process 0 and something on
+    // the other processes.
+    const size_t lclNumRows = 4;
+    const GST gblNumRows = GST (numProcs * lclNumRows);
+    const GO indexBase = 0;
+    RCP<const map_type> map = rcp (new map_type (gblNumRows, indexBase, comm));
+
+    size_t numCols = 3;
+    MV Xo (map, numCols), Yo (map, numCols), Xn (map, numCols), Yn (map, numCols);
+
+    // Comparison vectors (unswapped)
+    Xo.putScalar(ZERO); Yo.putScalar(ONE);
+
+    // Swapping vectors (swapped)
+    Yn.putScalar(ZERO); Xn.putScalar(ONE);
+    Xn.swap(Yn);
+
+    // Compare
+    TEST_COMPARE_FLOATING_ARRAYS(Xo.get1dView(),Xn.get1dView(),testingTol<Scalar>() * errorTolSlack);
+    TEST_COMPARE_FLOATING_ARRAYS(Yo.get1dView(),Yn.get1dView(),testingTol<Scalar>() * errorTolSlack);
+
+  }
+
 //
 // INSTANTIATIONS
 //
@@ -4357,7 +4396,8 @@ namespace {
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( MultiVector, ViewCtor          , LO, GO, SCALAR, NODE ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( MultiVector, SubViewSomeZeroRows, LO, GO, SCALAR, NODE ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( MultiVector, DimsWithSomeZeroRows, LO, GO, SCALAR, NODE ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( MultiVector, DimsWithAllZeroRows, LO, GO, SCALAR, NODE )
+      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( MultiVector, DimsWithAllZeroRows, LO, GO, SCALAR, NODE ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( MultiVector, Swap, LO, GO, SCALAR, NODE )
 
 
   typedef Tpetra::Map<>::local_ordinal_type default_local_ordinal_type;
