@@ -3611,7 +3611,8 @@ public:
   BlockCrsMatrix<Scalar, LO, GO, Node>::
   getGlobalNumDiags() const
   {
-    return graph_.getGlobalNumDiags();
+    using HDM = Details::HasDeprecatedMethods2630_WarningThisClassIsNotForUsers;
+    return dynamic_cast<const HDM&> (this->graph_).getGlobalNumDiagsImpl ();
   }
 
   template<class Scalar, class LO, class GO, class Node>
@@ -3619,7 +3620,8 @@ public:
   BlockCrsMatrix<Scalar, LO, GO, Node>::
   getNodeNumDiags() const
   {
-    return graph_.getNodeNumDiags();
+    using HDM = Details::HasDeprecatedMethods2630_WarningThisClassIsNotForUsers;
+    return dynamic_cast<const HDM&> (this->graph_).getNodeNumDiagsImpl ();
   }
 
   template<class Scalar, class LO, class GO, class Node>

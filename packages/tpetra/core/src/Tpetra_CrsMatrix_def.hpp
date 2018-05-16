@@ -727,14 +727,18 @@ namespace Tpetra {
   global_size_t
   CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   getGlobalNumDiags () const {
-    return getCrsGraphRef ().getGlobalNumDiags ();
+    const crs_graph_type& G = this->getCrsGraphRef ();
+    using HDM = Details::HasDeprecatedMethods2630_WarningThisClassIsNotForUsers;
+    return dynamic_cast<const HDM&> (G).getGlobalNumDiagsImpl ();
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   size_t
   CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   getNodeNumDiags () const {
-    return getCrsGraphRef ().getNodeNumDiags ();
+    const crs_graph_type& G = this->getCrsGraphRef ();
+    using HDM = Details::HasDeprecatedMethods2630_WarningThisClassIsNotForUsers;
+    return dynamic_cast<const HDM&> (G).getNodeNumDiagsImpl ();
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
