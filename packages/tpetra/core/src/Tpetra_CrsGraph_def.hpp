@@ -1105,9 +1105,9 @@ namespace Tpetra {
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   bool
   CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::
-  isUpperTriangular () const
+  isLowerTriangularImpl () const
   {
-    return upperTriangular_;
+    return this->lowerTriangular_;
   }
 
 
@@ -1116,7 +1116,25 @@ namespace Tpetra {
   CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::
   isLowerTriangular () const
   {
-    return lowerTriangular_;
+    return this->isLowerTriangularImpl ();
+  }
+
+
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  bool
+  CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::
+  isUpperTriangularImpl () const
+  {
+    return this->upperTriangular_;
+  }
+
+
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  bool
+  CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::
+  isUpperTriangular () const
+  {
+    return this->isUpperTriangularImpl ();
   }
 
 

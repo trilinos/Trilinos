@@ -212,11 +212,29 @@ namespace Tpetra {
     //! Whether this matrix has a well-defined column map.
     virtual bool hasColMap() const = 0;
 
-    //! Whether this matrix is lower triangular.
-    virtual bool isLowerTriangular() const = 0;
+    /// \brief Whether the matrix is locally lower triangular.
+    ///
+    /// \warning DO NOT CALL THIS METHOD!  This method is DEPRECATED
+    ///   and will DISAPPEAR VERY SOON per #2630.
+    ///
+    /// \pre Subclasses reserve the right to impose preconditions on
+    ///   the matrix's state.
+    ///
+    /// \note This is entirely a local property.  That means this
+    ///   method may return different results on different processes.
+    virtual bool TPETRA_DEPRECATED isLowerTriangular () const = 0;
 
-    //! Whether this matrix is upper triangular.
-    virtual bool isUpperTriangular() const = 0;
+    /// \brief Whether the matrix is locally upper triangular.
+    ///
+    /// \warning DO NOT CALL THIS METHOD!  This method is DEPRECATED
+    ///   and will DISAPPEAR VERY SOON per #2630.
+    ///
+    /// \pre Subclasses reserve the right to impose preconditions on
+    ///   the matrix's state.
+    ///
+    /// \note This is entirely a local property.  That means this
+    ///   method may return different results on different processes.
+    virtual bool TPETRA_DEPRECATED isUpperTriangular () const = 0;
 
     /// \brief Whether matrix indices are locally indexed.
     ///
