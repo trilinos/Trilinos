@@ -142,8 +142,8 @@ namespace panzer {
        evalField_q1 = evaluator->evaluatedFields()[0];
 
        TEST_EQUALITY(evalField_q1->name(),basis_q1->name()+" Orientation");
-       TEST_EQUALITY(evalField_q1->dataLayout().dimension(0),basis_q1->functional->dimension(0));
-       TEST_EQUALITY(evalField_q1->dataLayout().dimension(1),basis_q1->functional->dimension(1));
+       TEST_EQUALITY(evalField_q1->dataLayout().extent(0),basis_q1->functional->extent(0));
+       TEST_EQUALITY(evalField_q1->dataLayout().extent(1),basis_q1->functional->extent(1));
 
        fm.registerEvaluator<panzer::Traits::Residual>(evaluator);
        fm.requireField<panzer::Traits::Residual>(*evaluator->evaluatedFields()[0]);
@@ -164,8 +164,8 @@ namespace panzer {
        evalField_qedge1 = evaluator->evaluatedFields()[0];
 
        TEST_EQUALITY(evalField_qedge1->name(),basis_qedge1->name()+" Orientation");
-       TEST_EQUALITY(evalField_qedge1->dataLayout().dimension(0),basis_qedge1->functional->dimension(0));
-       TEST_EQUALITY(evalField_qedge1->dataLayout().dimension(1),basis_qedge1->functional->dimension(1));
+       TEST_EQUALITY(evalField_qedge1->dataLayout().extent(0),basis_qedge1->functional->extent(0));
+       TEST_EQUALITY(evalField_qedge1->dataLayout().extent(1),basis_qedge1->functional->extent(1));
 
        fm.registerEvaluator<panzer::Traits::Residual>(evaluator);
        fm.requireField<panzer::Traits::Residual>(*evaluator->evaluatedFields()[0]);

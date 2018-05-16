@@ -131,9 +131,9 @@ evaluateFields(
   {
     PHX::MDField<const ScalarT,panzer::Cell,panzer::Point,panzer::Dim> & field = scatterFields_[fieldIndex];
     std::string fieldName = field.fieldTag().name();
-    int numCells = field.dimension(0);
-    int numPoints = field.dimension(1);  
-    int numDims = field.dimension(2);
+    int numCells = field.extent(0);
+    int numPoints = field.extent(1);  
+    int numDims = field.extent(2);
     
     for (int dim = 0; dim < numDims; dim++)
     {  

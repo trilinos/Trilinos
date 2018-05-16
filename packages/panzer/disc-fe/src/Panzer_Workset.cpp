@@ -65,7 +65,7 @@ WorksetDetails::setup(const panzer::LocalMeshPartition<int,int> & partition,
 {
 
 
-  const size_t num_cells = partition.local_cells.dimension_0();
+  const size_t num_cells = partition.local_cells.extent(0);
 
   _num_owned_cells = partition.num_owned_cells;
   _num_ghost_cells = partition.num_ghstd_cells;
@@ -96,9 +96,9 @@ void WorksetDetails::setupNeeds(Teuchos::RCP<const shards::CellTopology> cell_to
                                 const panzer::WorksetNeeds & needs)
 {
 
-  const size_t num_cells = cell_vertices.dimension_0();
-  const size_t num_vertices_per_cell = cell_vertices.dimension_1();
-  const size_t num_dims_per_vertex = cell_vertices.dimension_2();
+  const size_t num_cells = cell_vertices.extent(0);
+  const size_t num_vertices_per_cell = cell_vertices.extent(1);
+  const size_t num_dims_per_vertex = cell_vertices.extent(2);
 
   // Set cell vertices
   {

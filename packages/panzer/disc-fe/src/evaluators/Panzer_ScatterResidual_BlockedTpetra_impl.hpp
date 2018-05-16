@@ -176,7 +176,7 @@ postRegistrationSetup(typename TRAITS::SetupData d,
   // sized big enough to hold the largest elementBlockGIDCount in the
   // ProductVector.
   worksetLIDs_ = Kokkos::View<LO**,PHX::Device>("ScatterResidual_BlockedTpetra(Residual):worksetLIDs",
-                                                scatterFields_[0].dimension_0(),
+                                                scatterFields_[0].extent(0),
 						maxElementBlockGIDCount);
 }
 
@@ -307,7 +307,7 @@ postRegistrationSetup(typename TRAITS::SetupData d,
     elementBlockGIDCount += blockDOFMgr->getElementBlockGIDCount(blockId);
 
   worksetLIDs_ = Kokkos::View<LO**,PHX::Device>("ScatterResidual_BlockedTpetra(Jacobian):worksetLIDs",
-                                                scatterFields_[0].dimension_0(),
+                                                scatterFields_[0].extent(0),
 						elementBlockGIDCount);
 
   // Compute the block offsets
