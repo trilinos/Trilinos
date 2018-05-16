@@ -95,7 +95,7 @@ namespace MueLu {
 
     // This actually corresponds to the maximum number of entries per row in the matrix.
     const size_t maxNumNeighbors = graph.getNodeMaxNumRowEntries();
-    int scratch_size = ScratchViewType::shmem_size( 2*maxNumNeighbors );
+    int scratch_size = ScratchViewType::shmem_size( 3*maxNumNeighbors );
 
     Kokkos::View<int*, memory_space> connectWeightView("connectWeight", numRows);
     Kokkos::View<int*, memory_space> aggPenaltiesView ("aggPenalties",  numRows);
@@ -105,23 +105,23 @@ namespace MueLu {
                            connectWeightView(i) = defaultConnectWeight;
                          });
 
-    // We do this cycle twice.
-    // I don't know why, but ML does it too
     // taw: by running the aggregation routine more than once there is a chance that also
     // non-aggregated nodes with a node distance of two are added to existing aggregates.
     // Assuming that the aggregate size is 3 in each direction running the algorithm only twice
     // should be sufficient.
+    // lbv: If the prior phase of aggregation where run without specifying an aggregate size,
+    // the distance 2 coloring and phase 1 aggregation actually guarantee that only one iteration
+    // is needed to reach distance 2 neighbors.
     int maxIters = 2;
     int maxNodesPerAggregate = params.get<int>("aggregation: max agg size");
     if(maxNodesPerAggregate == std::numeric_limits<int>::max()) {maxIters = 1;}
+    std::cout << "maxIters set to: " << maxIters << std::endl;
     for (int iter = 0; iter < maxIters; ++iter) {
       // total work = numberOfTeams * teamSize
       Kokkos::TeamPolicy<execution_space> outerPolicy(numRows, Kokkos::AUTO);
       typedef typename Kokkos::TeamPolicy<execution_space>::member_type  member_type;
-      // Kokkos::RangePolicy<execution_space> numRowsPolicy(0, numRows);
       LO tmpNumNonAggregatedNodes = 0;
       Kokkos::parallel_reduce("Aggregation Phase 2b: aggregates expansion",
-                              // numRowsPolicy,
                               outerPolicy.set_scratch_size( 0, Kokkos::PerTeam( scratch_size ) ),
                               KOKKOS_LAMBDA (const member_type &teamMember,
                                              LO& lNumNonAggregatedNodes) {
@@ -130,6 +130,9 @@ namespace MueLu {
                                 // allocate view locally so that threads do not trash the weigth
                                 // when working on the same aggregate.
                                 const int vertexIdx = teamMember.league_rank();
+				int numAggregatedNeighbors = 0;
+				ScratchViewType aggregatedNeighbors(teamMember.team_scratch( 0 ),
+								    maxNumNeighbors);
                                 ScratchViewType vertex2AggLIDView(teamMember.team_scratch( 0 ),
                                                                   maxNumNeighbors);
                                 ScratchViewType aggWeightView(teamMember.team_scratch( 0 ),
@@ -143,67 +146,67 @@ namespace MueLu {
 
                                   // create a mapping from neighbor "lid" to aggregate "lid"
                                   Kokkos::single( Kokkos::PerTeam( teamMember ), [&] () {
-                                      int aggLIDCount = 0;
-                                      for (int j = 0; j < as<int>(neighOfINode.length); ++j) {
-                                        LO jNodeID = neighOfINode(j);
-                                        if ( graph.isLocalNeighborVertex(jNodeID)
-                                             && (aggStatView(jNodeID) == AGGREGATED) ) {
+				      int aggLIDCount = 0;
+				      for (int j = 0; j < neighOfINode.length; ++j) {
+					LO neigh = neighOfINode(j);
+					if( graph.isLocalNeighborVertex(neigh) &&
+					    (aggStatView(neigh) == AGGREGATED) ) {
+					  aggregatedNeighbors(numAggregatedNeighbors) = j;
+
                                           bool useNewLID = true;
-                                          for(int k = 0; k < j; ++k) {
-                                            LO kNodeID = neighOfINode(k);
-                                            if(vertex2AggIdView(jNodeID, 0)
-                                               == vertex2AggIdView(kNodeID, 0)) {
-                                              vertex2AggLIDView(j) = vertex2AggLIDView(k);
+                                          for(int k = 0; k < numAggregatedNeighbors; ++k) {
+                                            LO lowerNeigh = neighOfINode(aggregatedNeighbors(k));
+                                            if(vertex2AggIdView(neigh, 0)
+                                               == vertex2AggIdView(lowerNeigh, 0)) {
+                                              vertex2AggLIDView(numAggregatedNeighbors) = 
+					  	vertex2AggLIDView(k);
                                               useNewLID = false;
                                             }
                                           }
                                           if(useNewLID) {
-                                            vertex2AggLIDView(j) = aggLIDCount;
+                                            vertex2AggLIDView(numAggregatedNeighbors) = aggLIDCount;
                                             ++aggLIDCount;
                                           }
-                                        }
-                                      }
+
+					  ++numAggregatedNeighbors;
+					}
+				      }
                                     });
 
-                                  for (int j = 0; j < as<int>(neighOfINode.length); j++) {
-                                    LO neigh = neighOfINode(j);
+                                  for (int j = 0; j < numAggregatedNeighbors; j++) {
+                                    LO localNeigh = aggregatedNeighbors(j);
+				    LO neigh = neighOfINode(j);
 
-                                    // We don't check (neigh != i), as it is covered by checking
-                                    // (aggStat[neigh] == AGGREGATED)
-                                    if ( graph.isLocalNeighborVertex(neigh)
-                                         && (aggStatView(neigh) == AGGREGATED) )
                                       aggWeightView(vertex2AggLIDView(j)) =
-                                        aggWeightView(vertex2AggLIDView(j)) + connectWeightView(neigh);
+                                        aggWeightView(vertex2AggLIDView(j))
+					+ connectWeightView(neigh);
                                   }
 
                                   int bestScore   = -100000;
                                   int bestAggId   = -1;
                                   int bestConnect = -1;
 
-                                  for (int j = 0; j < as<int>(neighOfINode.length); j++) {
-                                    LO neigh = neighOfINode(j);
+                                  for (int j = 0; j < numAggregatedNeighbors; j++) {
+				    LO localNeigh = aggregatedNeighbors(j);
+                                    LO neigh = neighOfINode(localNeigh);
+				    int aggId = vertex2AggIdView(neigh, 0);
+				    int score = aggWeightView(vertex2AggLIDView(j))
+				      - aggPenaltiesView(aggId);
 
-                                    if ( graph.isLocalNeighborVertex(neigh)
-                                         && (aggStatView(neigh) == AGGREGATED) ) {
-                                      int aggId = vertex2AggIdView(neigh, 0);
-                                      int score = aggWeightView(vertex2AggLIDView(j))
-                                        - aggPenaltiesView(aggId);
+				    if (score > bestScore) {
+				      bestAggId   = aggId;
+				      bestScore   = score;
+				      bestConnect = connectWeightView(neigh);
 
-                                      if (score > bestScore) {
-                                        bestAggId   = aggId;
-                                        bestScore   = score;
-                                        bestConnect = connectWeightView(neigh);
+				    } else if (aggId == bestAggId
+					       && connectWeightView(neigh) > bestConnect) {
+				      bestConnect = connectWeightView(neigh);
+				    }
 
-                                      } else if (aggId == bestAggId
-                                                 && connectWeightView(neigh) > bestConnect) {
-                                        bestConnect = connectWeightView(neigh);
-                                      }
-
-                                      // Reset the weights for the next loop
-                                      // LBV: this looks a little suspicious, it would probably
-                                      // need to be taken out of this inner for loop...
-                                      aggWeightView(vertex2AggLIDView(j)) = 0;
-                                    }
+				    // Reset the weights for the next loop
+				    // LBV: this looks a little suspicious, it would probably
+				    // need to be taken out of this inner for loop...
+				    aggWeightView(vertex2AggLIDView(j)) = 0;
                                   }
 
 				  // Do the actual aggregate update with a single thread!
