@@ -378,7 +378,7 @@ namespace Teuchos {
                                  "Invalid set operation enum value.  Please "
                                  "report this bug to the Teuchos developers.");
             globalNames.swap (newNames);
-          } else { // Need a bruit force merge
+          } else { // Need a brute force merge
             unsortedMergePair(otherNames, globalNames, setOp);
           }
         }
