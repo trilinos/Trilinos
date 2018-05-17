@@ -95,6 +95,21 @@ namespace Teuchos
                      Array<std::string>& globalNames,
                      const ECounterSetOp setOp);
 
+  /**
+   * merge for unsorted lists.  New entries are at the bottom of the list
+   * @param localNames - The calling MPI process' list of (local)
+   * counter names.
+   * @param globalNames - Global list of names
+   * @param setOp If Intersection, globalNames on output
+   *   contains the intersection of all sets of counter names.  If
+   *   Union, globalNames on output contains the union of all sets of
+   *   counter names.
+   */
+  void
+  unsortedMergePair(const Array<std::string>& localNames,
+                    Array<std::string>& globalNames,
+                    const ECounterSetOp setOp);
+
   /// \class PerformanceMonitorBase
   ///
   /// \brief Common capabilities for collecting and reporting
