@@ -73,7 +73,6 @@
 #include <BelosTpetraAdapter.hpp>
 #include <BelosXpetraAdapter.hpp>     // => This header defines Belos::XpetraOp
 //#include <BelosMueLuAdapter.hpp>      // => This header defines Belos::MueLuOp
-#include <Belos_Details_registerGenericSolverFactory.hpp>
 #endif
 
 // Stratimikos
@@ -248,10 +247,6 @@ int MainWrappers<Scalar,LocalOrdinal,GlobalOrdinal,Node>::main_(Teuchos::Command
       // Belos solver
       RCP< Belos::SolverManager<SC, MV, OP> > solver;
       RCP< Belos::SolverFactory<SC, MV,OP> > factory = rcp( new  Belos::SolverFactory<SC,MV,OP>() );
-
-      // Using Belos::OperatorT, not Belos::Operator so auto registration won't
-      Belos::Details::registerGenericSolverFactory<SC, MV, OP>();
-
       RCP<Teuchos::ParameterList> belosParams
         = rcp( new Teuchos::ParameterList() );
       belosParams->set("Maximum Iterations", 100);
@@ -462,10 +457,6 @@ int MainWrappers<double,LocalOrdinal,GlobalOrdinal,Node>::main_(Teuchos::Command
       // Belos solver
       RCP< Belos::SolverManager<SC, MV, OP> > solver;
       RCP< Belos::SolverFactory<SC, MV,OP> > factory = rcp( new  Belos::SolverFactory<SC,MV,OP>() );
-
-      // Using Belos::OperatorT, not Belos::Operator so auto registration won't
-      Belos::Details::registerGenericSolverFactory<SC, MV, OP>();
-
       RCP<Teuchos::ParameterList> belosParams
         = rcp( new Teuchos::ParameterList() );
       belosParams->set("Maximum Iterations", 100);

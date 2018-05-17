@@ -113,6 +113,9 @@ IF (Belos_ENABLE_Tpetra)
   ADD_SUBDIRECTORY(tpetra)
 ENDIF()
 
+IF (Belos_ENABLE_Xpetra)
+  ADD_SUBDIRECTORY(xpetra)
+ENDIF()
 
 ######################################################################
 ## Build list of files to exclude from the release tarball

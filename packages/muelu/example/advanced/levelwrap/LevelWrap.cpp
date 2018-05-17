@@ -74,7 +74,6 @@
 #include "BelosSolverFactory.hpp"
 #include "BelosXpetraAdapter.hpp"
 #include "BelosMueLuAdapter.hpp"
-#include "Belos_Details_registerGenericSolverFactory.hpp"
 #endif
 
 using Teuchos::RCP;
@@ -118,10 +117,6 @@ namespace MueLuExamples {
     belosProblem->setRightPrec(belosPrec);
     belosProblem->setProblem(X,B);
     Belos::SolverFactory<Scalar, MV, OP> BelosFactory;
-
-    // Using Xpetra MV so auto registration won't be available.
-    Belos::Details::registerGenericSolverFactory<SC, MV, OP>();
-
     RCP<Belos::SolverManager<Scalar, MV, OP> > BelosSolver =
         BelosFactory.create(std::string("CG"), SList);
     BelosSolver->setProblem(belosProblem);
@@ -157,10 +152,6 @@ namespace MueLuExamples {
     belosProblem->setProblem(X,B);
 
     Belos::SolverFactory<SC, MV, OP> BelosFactory;
-
-    // Using Xpetra MV so auto registration won't be available.
-    Belos::Details::registerGenericSolverFactory<SC, MV, OP>();
-
     Teuchos::RCP<Belos::SolverManager<SC, MV, OP> > BelosSolver = BelosFactory.create(std::string("CG"), SList);
     BelosSolver->setProblem(belosProblem);
     Belos::ReturnType result = BelosSolver->solve();

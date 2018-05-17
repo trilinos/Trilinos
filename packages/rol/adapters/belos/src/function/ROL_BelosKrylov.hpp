@@ -53,9 +53,10 @@
 #ifndef ROL_BELOS_KRYLOV_HPP
 #define ROL_BELOS_KRYLOV_HPP
 
-#include "BelosSolverFactory.hpp"   
-#include "Belos_Details_registerGenericSolverFactory.hpp"
-#include "BelosSolverManager.hpp"   
+// The GenericSolverFactory will register managers for any types.
+// To be used when the types are not part of the standard set.
+// You must explicitly use GenericSolverFactory instead of SolverFactory.
+#include "BelosSolverFactory_Generic.hpp"
 
 #include "ROL_Krylov.hpp"
 #include "ROL_BelosMultiVector.hpp"
@@ -78,7 +79,7 @@ namespace ROL {
 
         private:
 
-            Belos::SolverFactory<ST,MV,OP> factory_;
+            Belos::GenericSolverFactory<ST,MV,OP> factory_;
             Teuchos::RCP<Belos::SolverManager<ST,MV,OP> > solver_;
             Teuchos::RCP<Belos::LinearProblem<ST,MV,OP> > problem_;  
 
@@ -102,9 +103,6 @@ namespace ROL {
                 solverParams->set("Maximum Iterations",maxit);
                 solverParams->set("Convergence Tolerance",abstol);  
                 solverParams->set("Num Blocks",numVectors);
-
-                // Using LinearOperator OP so auto registration won't be available.
-                Belos::Details::registerGenericSolverFactory<ST, MV, OP>();
 
                 solver_ = factory_.create(solverName,solverParams);                 
             }

@@ -58,46 +58,7 @@
 #include <stdexcept>
 #include <vector>
 
-// For convenience have a specialized form of registerSolverFactoryForLib()
-// called at construction of SolverFactoryParent which will pick up the proper
-// lib (belos, belosepetra, or belosepetra) based on the template parameters.
-// Then registerSolverFactoryForLib() will link to and register all the managers
-// for the proper lib. These includes were added for the specialization.
-
-// for belos lib
-#include "BelosMultiVec.hpp"
-#include "BelosOperator.hpp"
-
-// for belosepetra lib
-#ifdef HAVE_BELOS_EPETRA
-#include "Epetra_MultiVector.h"
-#include "Epetra_Operator.h"
-#endif
-
-// for belostpetra lib
-#ifdef HAVE_BELOS_TPETRA
-#include "Tpetra_MultiVector.hpp"
-#include "Tpetra_Operator.hpp"
-#include "TpetraCore_ETIHelperMacros.h"
-#endif
-
 namespace Belos {
-
-// Declare the registration methods for the 3 different libs
-// These are included as a cpp for each of the libraries and will be called
-// by the constructor of SolverFactoryParent using specialization to link
-// to the proper library. The cpp then also has a class constructed to call
-// the registration premain similar to what we did with Ifpack2.
-namespace Details {
-  void registerSolverFactory();   // for belos lib
-  namespace Tpetra {
-    void registerSolverFactory(); // for belostpetra lib
-  }
-  namespace Epetra {
-    void registerSolverFactory(); // for belosepetra lib
-  }
-}
-
 namespace Impl {
 
 //! Print the given array of strings, in YAML format, to \c out.
@@ -134,19 +95,20 @@ template<class Scalar, class MV, class OP>
 class SolverFactoryParent :
     public Teuchos::Describable
 {
+protected:
+  // SolverFactoryParent should never be created directly. Usually it will be
+  // created through derived classes EpetraSolverFactory, TpetraSolverFactory,
+  // BelosSolverFactory, or XpetraSolverFactory. If you are doing custom types
+  // and include BelosSolverFactory_Generic.hpp you should explicitly use
+  // GenericSolverFactory, not SolverFactory, which will avoid an error trying
+  // to construct here. GenericSolverFactory is special because it registers
+  // all the solver managers for any type. Note that if you are using hard coded
+  // types it is possible that some the type sets will be connecting to an
+  // automatic solver factory such as TpetraSolverFactory while another type
+  // set could be going through the GenericSolverFactory.
+  SolverFactoryParent() {}
+
 public:
-  SolverFactoryParent() {
-    // this method is specialized below for the different template parameters.
-    // This allows this class to determine which lib it will be executing for
-    // without reliance on weak links. For example if SolverFactoryParent is
-    // constructed with a Tpetra template it will call the Tpetra registration
-    // method: Belos::Details::Teptra::registerSolverFactory()
-    registerSolverFactoryForLib();
-  }
-
-  /// \brief specialization of registration for belos, epetra, or tpetra lib.
-  void registerSolverFactoryForLib();
-
   /// \brief The type of the solver returned by create().
   ///
   /// This is a specialization of SolverManager for the same scalar,
@@ -310,191 +272,37 @@ void registerSolverSubclassForTypes (const std::string & solverName) {
   }
 }
 
-} // namespace Impl
-
-/// \class SolverFactory
-/// \brief Factory for all solvers which Belos supports.
-/// \author Mark Hoemmen
-///
-/// New Belos users should start by creating an instance of this
-/// class, and using it to create the solver they want.
-///
-/// Belos implements several different iterative solvers.  The usual
-/// way in which users interact with these solvers is through
-/// appropriately named subclasses of \c SolverManager.  This factory
-/// class tells users which solvers are supported.  It can initialize
-/// and return any supported subclass of \c SolverManager, given a
-/// short name of the subclass (such as "GMRES" or "CG").
-///
-/// Users ask for the solver they want by a string name, and supply an
-/// optional (but recommended) list of parameters
-/// (Teuchos::ParameterList) for the solver.  The solver may fill in
-/// the parameter list with all the valid parameters and their default
-/// values, which users may later inspect and modify.  Valid solver
-/// names include both "canonical names" (each maps one-to-one to a
-/// specific SolverManager subclass) and "aliases."  Some aliases are
-/// short nicknames for canonical names, like "GMRES" for "Pseudoblock
-/// GMRES".  Other aliases refer to a canonical solver name, but also
-/// modify the user's parameter list.  For example, "Flexible GMRES"
-/// is an alias for "Block GMRES", and also sets the "Flexible Gmres"
-/// parameter to true in the input parameter list.
-///
-/// <table>
-/// <caption> Mapping of solver names and aliases to Belos classes </caption>
-/// <tr><th> Solver name </th>               <th> Aliases </th>                                                        <th> \c SolverManager subclass </th></tr>
-/// <tr><td> Pseudoblock GMRES </td>         <td> GMRES, Pseudo Block GMRES, PseudoBlockGMRES, PseudoBlockGmres </td>  <td> \c PseudoBlockGmresSolMgr </td></tr>
-/// <tr><td> Block GMRES </td>               <td> Flexible GMRES </td>                                                 <td> \c BlockGmresSolMgr </td></tr>
-/// <tr><td> Block CG </td>                  <td> Block CG </td>                                                       <td> \c BlockCGSolMgr </td></tr>
-/// <tr><td> Pseudoblock CG </td>            <td> PseudoBlockCG, Pseudo Block CG </td>                                 <td> \c PseudoBlockCGSolMgr </td></tr>
-/// <tr><td> Pseudoblock Stochastic CG </td> <td> Stochastic CG </td>                                                  <td> \c PseudoBlockStochasticCGSolMgr </td></tr>
-/// <tr><td> GCRODR </td>                    <td> Recycling GMRES </td>                                                <td> \c GCRODRSolMgr </td></tr>
-/// <tr><td> RCG </td>                       <td> Recycling CG </td>                                                   <td> \c RCGSolMgr </td></tr>
-/// <tr><td> MINRES </td>                    <td> MINRES </td>                                                         <td> \c MinresSolMgr </td></tr>
-/// <tr><td> LSQR </td>                      <td> LSQR </td>                                                           <td> \c LSQRSolMgr </td></tr>
-/// <tr><td> TFQMR </td>                     <td> TFQMR, Transpose-Free QMR </td>                                      <td> \c TFQMRSolMgr </td></tr>
-/// <tr><td> Pseudoblock TFQMR </td>         <td> Pseudoblock TFQMR, Pseudo Block Transpose-Free QMR </td>             <td> \c PseudoBlockTFQMRSolMgr </td></tr>
-/// <tr><td> Hybrid Block GMRES </td>        <td> GmresPoly, Seed GMRES </td>                                          <td> \c GmresPolySolMgr </td></tr>
-/// <tr><td> PCPG </td>                      <td> CGPoly, Seed CG </td>                                                <td> \c PCPGSolMgr </td></tr>
-/// </table>
-///
-/// This class' template parameters are the same as those of
-/// Belos::SolverManager.  Scalar is the scalar type (of entries in
-/// the multivector), MV is the multivector type, and OP is the
-/// operator type.  For example: Scalar=double, MV=Epetra_MultiVector,
-/// and OP=Epetra_Operator will access the Epetra specialization of
-/// the Belos solvers.
-///
-/// Here is a simple example of how to use SolverFactory to create a
-/// GMRES solver for your linear system.  Your code needs to include
-/// BelosSolverFactory.hpp and whatever linear algebra library header
-/// files you would normally use.  Suppose that Scalar, MV, and OP
-/// have been previously typedef'd to the scalar resp. multivector
-/// resp. operator type in your application.
-/// \code
-/// using Teuchos::ParameterList;
-/// using Teuchos::parameterList;
-/// using Teuchos::RCP;
-/// using Teuchos::rcp; // Save some typing
-///
-/// // The ellipses represent the code you would normally use to create
-/// // the sparse matrix, preconditioner, right-hand side, and initial
-/// // guess for the linear system AX=B you want to solve.
-/// RCP<OP> A = ...; // The sparse matrix / operator A
-/// RCP<OP> M = ...; // The (right) preconditioner M
-/// RCP<MV> B = ...; // Right-hand side of AX=B
-/// RCP<MV> X = ...; // Initial guess for the solution
-///
-/// Belos::SolverFactory<Scalar, MV, OP> factory;
-/// // Make an empty new parameter list.
-/// RCP<ParameterList> solverParams = parameterList();
-///
-/// // Set some GMRES parameters.
-/// //
-/// // "Num Blocks" = Maximum number of Krylov vectors to store.  This
-/// // is also the restart length.  "Block" here refers to the ability
-/// // of this particular solver (and many other Belos solvers) to solve
-/// // multiple linear systems at a time, even though we are only solving
-/// // one linear system in this example.
-/// solverParams->set ("Num Blocks", 40);
-/// solverParams->set ("Maximum Iterations", 400);
-/// solverParams->set ("Convergence Tolerance", 1.0e-8);
-///
-/// // Create the GMRES solver.
-/// RCP<Belos::SolverManager<Scalar, MV, OP> > solver =
-///   factory.create ("GMRES", solverParams);
-///
-/// // Create a LinearProblem struct with the problem to solve.
-/// // A, X, B, and M are passed by (smart) pointer, not copied.
-/// RCP<Belos::LinearProblem<Scalar, MV, OP> > problem =
-///   rcp (new Belos::LinearProblem<Scalar, MV, OP> (A, X, B));
-/// problem->setRightPrec (M);
-///
-/// // Tell the solver what problem you want to solve.
-/// solver->setProblem (problem);
-///
-/// // Attempt to solve the linear system.  result == Belos::Converged
-/// // means that it was solved to the desired tolerance.  This call
-/// // overwrites X with the computed approximate solution.
-/// Belos::ReturnType result = solver->solve();
-///
-/// // Ask the solver how many iterations the last solve() took.
-/// const int numIters = solver->getNumIters();
-/// \endcode
-///
-/// Belos developers who have implemented a new solver (i.e., a new
-/// subclass of SolverManager) and who want to make the solver
-/// available through the factory should do the following:
-///
-/// <ol>
-/// <li> Implement the clone() method for that solver. </li>
-/// <li> Implement registration for the DII system. </li>
-/// </ol>
-///
-template<class Scalar, class MV, class OP>
-class SolverFactory :
-    public Impl::SolverFactoryParent<Scalar, MV, OP>
-{
-private:
-  typedef Impl::SolverFactoryParent<Scalar, MV, OP> parent_type;
-public:
-  /// \brief The type of the solver returned by create().
-  ///
-  /// This is a specialization of SolverManager for the same scalar,
-  /// multivector, and operator types as the template parameters of
-  /// this factory.
-  typedef typename parent_type::solver_base_type solver_base_type;
-
-  /// \brief The type of a solver factory that users may give to
-  ///   addFactory() (which see).
-  typedef typename parent_type::custom_solver_factory_type
-    custom_solver_factory_type;
+// specializations get a typedef "type"
+// If this compile fails then the error is likely that BelosSolverFactory.hpp
+// was included directly but the specific sub class of SolverFactoryParent was
+// not included. Examples are:
+//   BelosSolverFactory_Belos.hpp, BelosSolverFactory_Epetra.hpp,
+//   BelosSolverFactory_Tpetra.hpp, BelosSolverFactory_Xpetra.hpp
+// These were setup to be automatically included through the corresponding
+// adapter includes so something may have gone wrong with that.
+template<class SC, class MV, class OP>
+class SolverFactorySelector {
+  public:
+    // TODO: This could be deleted except for the GenericSolverFactory which
+    // needs to be declared for all types. So I added this but then if you
+    // include GenericSolverFactory you will have SolverFactory simply point
+    // to SolverFactoryParent. I changed that constructor to be protected so
+    // using SolverFactory (pointing to SolverFactoryParent) will give a compile
+    // error. For GenericSolverFactory you must explicity use GenericSolverFactory
+    // in the code. This may be preferable because it makes it clear that
+    // factory is not connecting to the standard set of types. I'm not sure how
+    // to do this in a better way.
+    typedef SolverFactoryParent<SC,MV,OP> type;
 };
 
+} // namespace Impl
+
+// Derived setups such as found in BelosSolverFactory_Tpetra.hpp will define
+// this specialization so that SolverFactory will be used as SolverFactoryTpetra.
+template<class SC, class MV, class OP>
+using SolverFactory = typename ::Belos::Impl::SolverFactorySelector<SC, MV, OP>::type;
+
 namespace Impl {
-
-// specialize for Belos registration - such as for Belos_Factory unit test
-template<>
-inline void
-SolverFactoryParent<double, MultiVec<double>, Operator<double> >::
-registerSolverFactoryForLib () {
-  Belos::Details::registerSolverFactory();
-}
-
-// specialize for Epetra registration
-#ifdef HAVE_BELOS_EPETRA
-template<>
-inline void
-SolverFactoryParent<double, Epetra_MultiVector, Epetra_Operator>::
-registerSolverFactoryForLib () {
-  Belos::Details::Epetra::registerSolverFactory();
-}
-#endif // HAVE_BELOS_EPETRA
-
-// specialize for Tpetra registration - for each of the possible types
-#ifdef HAVE_BELOS_TPETRA
-#define SPECIALIZE_FOR_TPETRA(SC, LO, GO, NT) \
-template<> \
-inline void \
-SolverFactoryParent<SC, ::Tpetra::MultiVector<SC, LO, GO, NT>, \
-  ::Tpetra::Operator<SC, LO, GO, NT>>::registerSolverFactoryForLib () { \
-  Belos::Details::Tpetra::registerSolverFactory(); \
-}
-TPETRA_ETI_MANGLING_TYPEDEFS()
-TPETRA_INSTANTIATE_SLGN_NO_ORDINAL_SCALAR(SPECIALIZE_FOR_TPETRA)
-#endif // HAVE_BELOS_TPETRA
-
-// Fall through case. Register nothing such as for a custom SolverFactory.
-// Then user will be registering their own SolverManagers.
-template<class Scalar, class MV, class OP>
-void
-SolverFactoryParent<Scalar, MV, OP>::
-registerSolverFactoryForLib () {
-  // no managers will be preeegistered ...
-  // for special MV and OP types the templated method
-  // Belos::Details::registerGenericSolverFactory<ST, MV, OP> lives in
-  // Belos_Details_registerGenericSolverFactory.hpp.
-}
-
 
 template<class Scalar, class MV, class OP>
 Teuchos::RCP<typename SolverFactoryParent<Scalar, MV, OP>::solver_base_type>
@@ -509,7 +317,6 @@ create (const std::string& solverName,
      "Invalid or unsupported Belos solver name \"" << solverName << "\".");
   return solver;
 }
-
 
 template<class Scalar, class MV, class OP>
 Teuchos::RCP<typename SolverFactoryParent<Scalar, MV, OP>::solver_base_type>
@@ -769,6 +576,13 @@ isSupported (const std::string& solverName) const
 
 } // namespace Impl
 } // namespace Belos
+
+// We have things like BelosSolverFactory_Tpetra.hpp which are automatically
+// included through the adapter includes to maintain backwards compatibility.
+// The Belos version itself doesn't have a place like that so included here
+// which is awkward. It might make more sense to just copy that code here but
+// it has symmetry with the other files and wanted to preserveve that. To discuss.
+#include "BelosSolverFactory_Belos.hpp"
 
 #endif // __Belos_SolverFactory_hpp
 

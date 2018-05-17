@@ -39,12 +39,12 @@
 // ************************************************************************
 //@HEADER
 
-#ifndef BELOS_DETAILS_REGISTERGENERICSOLVERFACTORY_HPP
-#define BELOS_DETAILS_REGISTERGENERICSOLVERFACTORY_HPP
+#ifndef BELOSSOLVERFACTORY_GENERIC_HPP
+#define BELOSSOLVERFACTORY_GENERIC_HPP
 
-/// \file Belos_Details_registerGenericSolverFactory
-/// \brief Implement Injection and Inversion (DII) for Belos
-
+// The GenericSolverFactory is different from the others because it is
+// manually included and registers all the solvers on construction. It exists
+// for cases which are not covered by the other solver types.
 #include "BelosSolverFactory.hpp"
 
 #include "BelosBiCGStabSolMgr.hpp"
@@ -62,27 +62,28 @@
 #include "BelosTFQMRSolMgr.hpp"
 
 namespace Belos {
-namespace Details {
 
-// For manual registration if a class has special defined MV, OP
-template<class ST, class MV, class OP>
-void registerGenericSolverFactory() {
-  Impl::registerSolverSubclassForTypes<BiCGStabSolMgr<ST,MV,OP>, ST, MV, OP> ("BICGSTAB");
-  Impl::registerSolverSubclassForTypes<BlockCGSolMgr<ST,MV,OP>, ST, MV, OP> ("BLOCK CG");
-  Impl::registerSolverSubclassForTypes<BlockGmresSolMgr<ST,MV,OP>, ST, MV, OP> ("BLOCK GMRES");
-  Impl::registerSolverSubclassForTypes<FixedPointSolMgr<ST,MV,OP>, ST, MV, OP> ("FIXED POINT");
-  Impl::registerSolverSubclassForTypes<GCRODRSolMgr<ST,MV,OP>, ST, MV, OP> ("GCRODR");
-  Impl::registerSolverSubclassForTypes<LSQRSolMgr<ST,MV,OP>, ST, MV, OP> ("LSQR");
-  Impl::registerSolverSubclassForTypes<MinresSolMgr<ST,MV,OP>, ST, MV, OP> ("MINRES");
-  Impl::registerSolverSubclassForTypes<PCPGSolMgr<ST,MV,OP>, ST, MV, OP> ("PCPG");
-  Impl::registerSolverSubclassForTypes<PseudoBlockCGSolMgr<ST,MV,OP>, ST, MV, OP> ("PSEUDOBLOCK CG");
-  Impl::registerSolverSubclassForTypes<PseudoBlockGmresSolMgr<ST,MV,OP>, ST, MV, OP> ("PSEUDOBLOCK GMRES");
-  Impl::registerSolverSubclassForTypes<PseudoBlockTFQMRSolMgr<ST,MV,OP>, ST, MV, OP> ("PSEUDOBLOCK TFQMR");
-  Impl::registerSolverSubclassForTypes<RCGSolMgr<ST,MV,OP>, ST, MV, OP> ("RCG");
-  Impl::registerSolverSubclassForTypes<TFQMRSolMgr<ST,MV,OP>, ST, MV, OP> ("TFQMR");
-}
+template<class SC, class MV, class OP>
+class GenericSolverFactory : public Impl::SolverFactoryParent<SC, MV, OP>
+{
+  public:
+    GenericSolverFactory() {
+      Impl::registerSolverSubclassForTypes<BiCGStabSolMgr<SC,MV,OP>, SC, MV, OP> ("BICGSTAB");
+      Impl::registerSolverSubclassForTypes<BlockCGSolMgr<SC,MV,OP>, SC, MV, OP> ("BLOCK CG");
+      Impl::registerSolverSubclassForTypes<BlockGmresSolMgr<SC,MV,OP>, SC, MV, OP> ("BLOCK GMRES");
+      Impl::registerSolverSubclassForTypes<FixedPointSolMgr<SC,MV,OP>, SC, MV, OP> ("FIXED POINT");
+      Impl::registerSolverSubclassForTypes<GCRODRSolMgr<SC,MV,OP>, SC, MV, OP> ("GCRODR");
+      Impl::registerSolverSubclassForTypes<LSQRSolMgr<SC,MV,OP>, SC, MV, OP> ("LSQR");
+      Impl::registerSolverSubclassForTypes<MinresSolMgr<SC,MV,OP>, SC, MV, OP> ("MINRES");
+      Impl::registerSolverSubclassForTypes<PCPGSolMgr<SC,MV,OP>, SC, MV, OP> ("PCPG");
+      Impl::registerSolverSubclassForTypes<PseudoBlockCGSolMgr<SC,MV,OP>, SC, MV, OP> ("PSEUDOBLOCK CG");
+      Impl::registerSolverSubclassForTypes<PseudoBlockGmresSolMgr<SC,MV,OP>, SC, MV, OP> ("PSEUDOBLOCK GMRES");
+      Impl::registerSolverSubclassForTypes<PseudoBlockTFQMRSolMgr<SC,MV,OP>, SC, MV, OP> ("PSEUDOBLOCK TFQMR");
+      Impl::registerSolverSubclassForTypes<RCGSolMgr<SC,MV,OP>, SC, MV, OP> ("RCG");
+      Impl::registerSolverSubclassForTypes<TFQMRSolMgr<SC,MV,OP>, SC, MV, OP> ("TFQMR");
+    };
+};
 
-} // namespace Details
 } // namespace Belos
 
-#endif // BELOS_DETAILS_REGISTERGENERICSOLVERFACTORY_HPP
+#endif // BELOSSOLVERFACTORY_GENERIC_HPP

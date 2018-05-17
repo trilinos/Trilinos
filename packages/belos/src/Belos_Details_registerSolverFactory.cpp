@@ -42,6 +42,8 @@
 /// \file Belos_Details_registerSolverFactory
 /// \brief Implement Injection and Inversion (DII) for Belos
 
+#include "BelosMultiVec.hpp"
+#include "BelosOperator.hpp"
 #include "BelosSolverFactory.hpp"
 
 #include "BelosBiCGStabSolMgr.hpp"

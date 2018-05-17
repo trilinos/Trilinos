@@ -57,8 +57,7 @@
 
 #include <BelosOperatorT.hpp>
 #include <BelosXpetraAdapter.hpp>
-#include <BelosSolverFactory.hpp>
-#include "Belos_Details_registerGenericSolverFactory.hpp"
+#include <BelosSolverFactory_Generic.hpp>
 //#include <BelosPseudoBlockGmresSolMgr.hpp>
 
 #include <FROSch_GDSWPreconditioner_def.hpp>
@@ -196,10 +195,7 @@ int main(int argc, char *argv[])
         RCP<OperatorT<MultiVector<SC,LO,GO,NO> > > OpP = rcp(new XpetraOp<SC, LO, GO, NO>(Preconditioner));
         
         RCP<LinearProblem<SC,MultiVector<SC,LO,GO,NO>,OperatorT<MultiVector<SC,LO,GO,NO> > > > belosLinearProblem(new LinearProblem<SC,MultiVector<SC,LO,GO,NO>,OperatorT<MultiVector<SC,LO,GO,NO> > >(OpK,xSolution,xRightHandSide));
-        SolverFactory<SC,MultiVector<SC,LO,GO,NO>,OperatorT<MultiVector<SC,LO,GO,NO> > > belosFactory;
-
-        // Using OperatorT Op so auto registration won't be available.
-        Belos::Details::registerGenericSolverFactory<SC, MultiVector<SC,LO,GO,NO>, OperatorT<MultiVector<SC,LO,GO,NO> > >();
+        GenericSolverFactory<SC,MultiVector<SC,LO,GO,NO>,OperatorT<MultiVector<SC,LO,GO,NO> > > belosFactory;
 
         RCP<ParameterList> solverParameterList = sublist(parameterList,"Solver");
         RCP<SolverManager<SC,MultiVector<SC,LO,GO,NO>,OperatorT<MultiVector<SC,LO,GO,NO> > > > belosSoverManager = belosFactory.create(solverParameterList->get("Solver","GMRES"),sublist(solverParameterList,solverParameterList->get("Solver","GMRES")));
