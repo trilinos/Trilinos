@@ -146,7 +146,7 @@ int main (int argc, char *argv[])
   }
   A.fillComplete();
   
-  
+  tm.reset();
   tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("2) Halo Generation")));
 
   RCP<MAT> Mold, Mnew;

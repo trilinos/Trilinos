@@ -193,7 +193,7 @@ namespace Details {
       typedef decltype (dst.extent (0)) size_type;
       typedef Kokkos::RangePolicy<execution_space, size_type> range_type;
 
-      Kokkos::parallel_for (range_type (0, dst.extent (0)), f);
+      Kokkos::parallel_for ("Tpetra::Details::LocalDeepCopy(x,y,stride)",range_type (0, dst.extent (0)), f);
     }
 
     static void
@@ -222,13 +222,13 @@ namespace Details {
           typedef LocalDeepCopyFunctor<DstViewType, SrcViewType,
             DstWhichVecsType, SrcWhichVecsType, true, true> functor_type;
           functor_type f (dst, src);
-          Kokkos::parallel_for (range_type (0, dst.extent (0)), f);
+          Kokkos::parallel_for ("Tpetra::Details::LocalDeepCopy(x,y,stride,whichVecs,0)",range_type (0, dst.extent (0)), f);
         }
         else { // ! srcConstStride
           typedef LocalDeepCopyFunctor<DstViewType, SrcViewType,
             DstWhichVecsType, SrcWhichVecsType, true, false> functor_type;
           functor_type f (dst, src, srcWhichVecs, srcWhichVecs);
-          Kokkos::parallel_for (range_type (0, dst.extent (0)), f);
+          Kokkos::parallel_for ("Tpetra::Details::LocalDeepCopy(x,y,stride,whichVecs,1)",range_type (0, dst.extent (0)), f);
         }
       }
       else { // ! dstConstStride
@@ -236,13 +236,13 @@ namespace Details {
           typedef LocalDeepCopyFunctor<DstViewType, SrcViewType,
             DstWhichVecsType, SrcWhichVecsType, false, true> functor_type;
           functor_type f (dst, src, dstWhichVecs, dstWhichVecs);
-          Kokkos::parallel_for (range_type (0, dst.extent (0)), f);
+          Kokkos::parallel_for ("Tpetra::Details::LocalDeepCopy(x,y,stride,whichVecs,2)",range_type (0, dst.extent (0)), f);
         }
         else { // ! srcConstStride
           typedef LocalDeepCopyFunctor<DstViewType, SrcViewType,
             DstWhichVecsType, SrcWhichVecsType, false, false> functor_type;
           functor_type f (dst, src, dstWhichVecs, srcWhichVecs);
-          Kokkos::parallel_for (range_type (0, dst.extent (0)), f);
+          Kokkos::parallel_for ("Tpetra::Details::LocalDeepCopy(x,y,stride,whichVecs,3)",range_type (0, dst.extent (0)), f);
         }
       }
     }

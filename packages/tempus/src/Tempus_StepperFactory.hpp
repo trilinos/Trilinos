@@ -109,6 +109,7 @@ private:
       stepperType == "RK Explicit 2 Stage 2nd order by Runge" ||
       stepperType == "RK Explicit Trapezoidal" ||
       stepperType == "Bogacki-Shampine 3(2) Pair" ||
+      stepperType == "Merson 4(5) Pair" ||
       stepperType == "General ERK" )
       return rcp(new StepperExplicitRK<Scalar>(model, stepperType, stepperPL));
     else if (
@@ -122,6 +123,7 @@ private:
       stepperType == "SDIRK 3 Stage 4th order" ||
       stepperType == "SDIRK 5 Stage 4th order" ||
       stepperType == "SDIRK 5 Stage 5th order" ||
+      stepperType == "SDIRK 2(1) Pair" ||
       stepperType == "General DIRK"
       )
       return rcp(new StepperDIRK<Scalar>(model, stepperType, stepperPL));

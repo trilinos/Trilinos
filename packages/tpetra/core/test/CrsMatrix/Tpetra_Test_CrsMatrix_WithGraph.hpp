@@ -403,11 +403,10 @@ inline void tupleToArray(Array<T> &arr, const tuple &tup)
         TEST_ASSERT( lclTri.couldBeUpperTriangular );
       }
 
-      // Bug verification:
-      // Tpetra::CrsMatrix constructed with a Optimized, Fill-Complete graph will not call fillLocalMatrix()
-      // in optimizeStorage(), because it returns early due to picking up the storage optimized bool from the graph.
-      // As a result, the local mat-vec and mat-solve operations are never initialized, and localMultiply() and localSolve()
-      // fail with a complaint regarding the initialization of these objects.
+      // Make sure that if you create a CrsMatrix with an optimized,
+      // fillComplete CrsGraph, that the resulting CrsMatrix is
+      // fillComplete, has optimized storage, and has a correctly
+      // initialized local sparse matrix-vector multiply.
 
       out << "Create a CrsMatrix with the diagonal CrsGraph" << endl;
       MAT matrix(rcpFromRef(diaggraph));
@@ -432,10 +431,6 @@ inline void tupleToArray(Array<T> &arr, const tuple &tup)
       out << "Call localMultiply (local mat-vec) on the CrsMatrix; "
         "it should not throw" << endl;
       TEST_NOTHROW( matrix.localMultiply(x,y,Teuchos::NO_TRANS,SONE,SZERO) );
-
-      out << "Call localSolve (local triangular solve) on the CrsMatrix; "
-        "it should not throw" << endl;
-      TEST_NOTHROW( matrix.localSolve(y,y,Teuchos::NO_TRANS) );
 
       ArrayRCP<const Scalar> x_view = x.get1dView();
       ArrayRCP<const Scalar> y_view = y.get1dView();

@@ -171,6 +171,11 @@ protected:
   Teuchos::RCP<StepperDIRKObserver<Scalar> >             stepperDIRKObserver_;
 
   Teuchos::RCP<Thyra::VectorBase<Scalar> >               ee_;
+
+  // For Embedded RK
+  Teuchos::RCP<Thyra::VectorBase<Scalar> >               abs_u0;
+  Teuchos::RCP<Thyra::VectorBase<Scalar> >               abs_u;
+  Teuchos::RCP<Thyra::VectorBase<Scalar> >               sc;
 };
 
 

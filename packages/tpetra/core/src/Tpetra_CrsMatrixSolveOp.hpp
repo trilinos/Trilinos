@@ -53,6 +53,8 @@ namespace Tpetra {
 
   /// \class CrsMatrixSolveOp
   /// \brief Wrap a CrsMatrix instance's triangular solve in an Operator.
+  /// \warning This class is DEPRECATED, along with CrsMatrix::localSolve.
+  ///   DO NOT USE IT ANY MORE!  It may disappear at any time.
   ///
   /// \tparam Scalar Same as the first template parameter of Operator.
   ///   The type of the entries of the MultiVector input and output of
@@ -90,7 +92,7 @@ namespace Tpetra {
             class LocalOrdinal = ::Tpetra::Details::DefaultTypes::local_ordinal_type,
             class GlobalOrdinal = ::Tpetra::Details::DefaultTypes::global_ordinal_type,
             class Node = ::Tpetra::Details::DefaultTypes::node_type>
-  class CrsMatrixSolveOp :
+  class CrsMatrixSolveOp TPETRA_DEPRECATED :
     public Operator<Scalar, LocalOrdinal, GlobalOrdinal, Node> {
   public:
     //! The specialization of CrsMatrix which this class wraps.

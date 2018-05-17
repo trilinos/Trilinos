@@ -3611,7 +3611,8 @@ public:
   BlockCrsMatrix<Scalar, LO, GO, Node>::
   getGlobalNumDiags() const
   {
-    return graph_.getGlobalNumDiags();
+    using HDM = Details::HasDeprecatedMethods2630_WarningThisClassIsNotForUsers;
+    return dynamic_cast<const HDM&> (this->graph_).getGlobalNumDiagsImpl ();
   }
 
   template<class Scalar, class LO, class GO, class Node>
@@ -3619,7 +3620,8 @@ public:
   BlockCrsMatrix<Scalar, LO, GO, Node>::
   getNodeNumDiags() const
   {
-    return graph_.getNodeNumDiags();
+    using HDM = Details::HasDeprecatedMethods2630_WarningThisClassIsNotForUsers;
+    return dynamic_cast<const HDM&> (this->graph_).getNodeNumDiagsImpl ();
   }
 
   template<class Scalar, class LO, class GO, class Node>
@@ -3641,17 +3643,19 @@ public:
   template<class Scalar, class LO, class GO, class Node>
   bool
   BlockCrsMatrix<Scalar, LO, GO, Node>::
-  isLowerTriangular() const
+  isLowerTriangular () const
   {
-    return graph_.isLowerTriangular();
+    using HDM = ::Tpetra::Details::HasDeprecatedMethods2630_WarningThisClassIsNotForUsers;
+    return dynamic_cast<const HDM&> (this->graph_).isLowerTriangularImpl ();
   }
 
   template<class Scalar, class LO, class GO, class Node>
   bool
   BlockCrsMatrix<Scalar, LO, GO, Node>::
-  isUpperTriangular() const
+  isUpperTriangular () const
   {
-    return graph_.isUpperTriangular();
+    using HDM = ::Tpetra::Details::HasDeprecatedMethods2630_WarningThisClassIsNotForUsers;
+    return dynamic_cast<const HDM&> (this->graph_).isUpperTriangularImpl ();
   }
 
   template<class Scalar, class LO, class GO, class Node>

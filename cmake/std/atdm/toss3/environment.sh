@@ -8,16 +8,15 @@
 
 echo "Using toss3 compiler stack $ATDM_CONFIG_COMPILER to build $ATDM_CONFIG_BUILD_TYPE code with Kokkos node type $ATDM_CONFIG_NODE_TYPE"
 
-# there does not appear to be a ninja module ontoss3 so turn off ninja
-export ATDM_CONFIG_USE_MAKEFILES=ON
+export ATDM_CONFIG_USE_NINJA=ON
 export ATDM_CONFIG_BUILD_COUNT=16
-export ATDM_CONFIG_USE_NINJA=OFF
 
 module purge
 . /projects/sems/modulefiles/utils/sems-modules-init.sh
 module load sems-env
 module load atdm-env
 module load atdm-cmake/3.10.1
+module load atdm-ninja_fortran/1.7.2
 
 
 if [ "$ATDM_CONFIG_NODE_TYPE" == "OPENMP" ] ; then
@@ -27,8 +26,8 @@ else
   export ATDM_CONFIG_CTEST_PARALLEL_LEVEL=16
 fi
 
-#export Kokkos_Arch=BDW
 if [ "$ATDM_CONFIG_COMPILER" == "INTEL" ]; then
+    export ATDM_CONFIG_KOKKOS_ARCH=BDW
     module load sems-python/2.7.9
     module load sems-intel/17.0.0
     module load sems-openmpi/1.10.5
@@ -67,7 +66,7 @@ export MPICC=`which mpicc`
 export MPICXX=`which mpicxx`
 export MPIF90=`which mpif90`
 
-export ATDM_CONFIG_MPI_PRE_FLAGS="--bind-to;core;--npernode;36"
+export ATDM_CONFIG_MPI_PRE_FLAGS="--bind-to;socket;--report-bindings"
 export ATDM_CONFIG_MPI_EXEC_NUMPROCS_FLAG=--n
 
 # Set the default compilers
