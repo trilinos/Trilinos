@@ -173,6 +173,7 @@ $ ./checkin-test-sems.sh <job-name-0> <job-name-1> ... \
 * <a href="#ridewhite">ride/white</a>
 * <a href="#shillerhansen">shiller/hansen</a>
 * <a href="#chamaserrano">chama/serrano</a>
+* <a href="#mutrino">mutrino</a>
 * <a href="#sems-rhel6-environment">SEMS rhel6 environment</a>
 
 
@@ -298,6 +299,30 @@ $ salloc -N1 --time=0:20:00 --account=<YOUR_WCID> \
   --enable-packages=MueLu --test
 ```
 
+### mutrino
+
+Once logged on to `mutrino`, one can directly configure and build
+on the login node (being careful not to overload the node).  But to run the
+tests, one must run on the compute nodes using the `salloc` command.  For
+example, to configure, build and run the tests for say `MueuLu` on `mutrino`, 
+(after cloning Trilinos on the `develop` branch) one would:
+
+
+```
+$ cd <some_build_dir>/
+
+$ source $TRILINOS_DIR/cmake/std/atdm/load-env.sh intel-opt-openmp
+
+$ cmake \
+  -DTrilinos_CONFIGURE_OPTIONS_FILE:STRING=cmake/std/atdm/ATDMDevEnv.cmake \
+  -DTrilinos_ENABLE_TESTS=ON -DTrilinos_ENABLE_MueLu=ON \
+  $TRILINOS_DIR
+
+$ make -j16
+
+$ salloc -N 1 -p standard -J $JOB_NAME ctest -j16
+```
+
 ### SEMS rhel6 environment
 
 Once logged on to a rhel6 machine with the sems NFS, one can directly
@@ -421,6 +446,7 @@ options are read.
 
 The specific `cmake/std/atdm/<system-name>/` sub-directories and the systems
 they support are:
+* `mutrino/`: Supports SNL HPC machine `mutrino/`.
 
 * `rhel6/`: RHEL6 systems with the SEMS NFS environment
 
