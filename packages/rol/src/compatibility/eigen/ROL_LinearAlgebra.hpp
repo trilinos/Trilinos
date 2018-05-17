@@ -65,47 +65,96 @@ namespace ROL {
 
 namespace LA {
 
-template<typename Real>
-using Vector = Eigen::Matrix<Real,1,Eigen::Dynamic>;
+enum ETransp { NO_TRANS, TRANS, CONJ_TRANS };
+enum DataAccess { Copy, View };
+
 
 template<typename Real>
-using Matrix = Eigen::Matrix<Real,Eigen::Dynamic,Eigen::Dynamic>;
+using EVector = Eigen::Matrix<Real,1,Eigen::Dynamic>;
 
-template<class Real>
-inline
-Real* getDataPtr( const Ptr<LA::Vector<Real>>& x ) {
-  return const_cast<Real*>(x->data());
-}
+template<typename Real>
+using EMatrix = Eigen::Matrix<Real,Eigen::Dynamic,Eigen::Dynamic>;
 
-template<class Real>
-inline
-Real* getDataPtr( const LA::Matrix<Real>& M ) {
-  return const_cast<Real*>(M.data());
-}
+template<typename Real>
+class Vector{
+  private:
+    EVector<Real> v_;
+  public:
+    Vector(int size) : v_(size) {}
+    Vector() : v_() {}
+    Real* values(){ return const_cast<Real*>(v_.data()); }
+    void resize(int n) { v_.resize(n); }
+    void size(int n) { v_.resize(n); v_.setZero();}
+    Real& operator()(int i) {
+      return v_(i);
+    }
+    Real& operator[](int i) { return v_[i];}
+    Real dot(Vector<Real> x) {
+      return v_.dot(x.v_);
+    }
+    void operator -=(Vector<Real> x) { v_-= x.v_;}
+    void operator +=(Vector<Real> x) { v_+= x.v_;}
+    void scale(Real alpha) { v_ *= alpha; }
+    int numRows() { return v_.size(); }
+    int stride() { return v_.outerStride(); }
+};
 
-template<class Real>
-inline
-Real* getDataPtr( const Ptr<LA::Matrix<Real>>& M ) {
-  return const_cast<Real*>(M->data());
-}
+template<typename Real>
+class Matrix{
+  private:
+    EMatrix<Real> M_;
+  public:
+    Matrix() : M_() {}
+    Matrix(int rows, int columns) : M_(rows, columns) {}
+    Matrix(DataAccess access, Matrix<Real> A, int rows, int cols, int rowstart = 0, int colstart=0)
+    {
+      if(access == Copy)
+        M_ = A.M_.block(rowstart, colstart, rows, cols).eval();
+      else
+        M_ = A.M_.block(rowstart, colstart, rows, cols); // Does this DTRT?
 
-template<class Real>
-inline
-int getStride( const Ptr<LA::Matrix<Real>>& M ) {
-  return M->outerStride(); // DTRT?
-}
+    }
+    Real* values(){ return const_cast<Real*>(M_.data()); }
+    int stride() { return M_.outerStride(); }
+    void reshape(int m, int n) { M_.resize(m, n); }
+    Real normOne() { return M_.template lpNorm<1>(); }
+    Eigen::PartialPivLU<EMatrix<Real>> partialPivLu(bool inplace)
+    {
+      if(inplace)
+        return Eigen::PartialPivLU<Eigen::Ref<EMatrix<Real>>>(M_);
+      else
+        return M_.partialPivLu();
+    }
+    Real& operator()(int i, int j) {
+      return M_(i, j);
+    }
 
-template<class Real>
-inline
-int getStride( const LA::Matrix<Real>& M ) {
-  return M.outerStride(); // DTRT?
-}
+    void multiply	(ETransp transa, ETransp transb, Real alpha, const Matrix&	A,
+                   const Matrix& B, Real 	beta) {
 
-template<class Real>
-inline
-Real normOne( const LA::Matrix<Real>& M ) {
-  return M.template lpNorm<1>();
-}
+      EMatrix<Real> AA;
+      if(transa == NO_TRANS)
+        AA = A.M_;
+      else if(transa == TRANS)
+        AA = A.M_.transpose();
+      else
+        AA = A.M_.conjugate();
+      EMatrix<Real> BB;
+      if(transa == NO_TRANS)
+        BB = B.M_;
+      else if(transa == TRANS)
+        BB = B.M_.transpose();
+      else
+        BB = B.M_.conjugate();
+      if(beta != Real(1))
+        M_ *= beta;
+      M_.noalias() += alpha * AA * BB;
+    }
+
+    int numRows() { return M_.rows(); }
+    int numCols() { return M_.cols(); }
+
+};
 
 template<typename Real>
 class MatrixFactorization {
@@ -123,13 +172,9 @@ class LuFactorization : public MatrixFactorization<Real>{
   public:
     LuFactorization(Ptr<LA::Matrix<Real>> A, bool inplace = false)
     {
-      if(!inplace)
-        _lu = A.partialPivLu();
-      else
-      {
-        _lu = Eigen::PartialPivLU<Eigen::Ref<LA::Matrix<Real>>>(A);
+      _lu = A.partialPivLu(inplace);
+      if(inplace)
         _A = A; // we need to keep the matrix A alive if we do the decomposition in place.
-      }
     }
 
     Ptr<LA::Vector<Real>> solve(Ptr<LA::Vector<Real>> b)

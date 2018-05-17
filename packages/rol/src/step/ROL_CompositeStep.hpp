@@ -811,24 +811,19 @@ public:
             }
           }
         }
-<<<<<<< HEAD
         if (Tm1.normOne() >= tol_ortho) {
           ROL::LAPACK<int,Real> lapack;
-=======
-        if (LA::normOne(Tm1) >= tol_ortho) {
-          Teuchos::LAPACK<int,Real> lapack;
->>>>>>> more work on ROL::LA
           std::vector<int>          ipiv(iterCG_);
           int                       info;
           std::vector<Real>         work(3*iterCG_);
           // compute inverse of T
-          lapack.GETRF(iterCG_, iterCG_, LA::getDataPtr(T), LA::getStride(T), &ipiv[0], &info);
-          lapack.GETRI(iterCG_, LA::getDataPtr(T), LA::getStride(T), &ipiv[0], &work[0], 3*iterCG_, &info);
+          lapack.GETRF(iterCG_, iterCG_, T.values(), T.stride(), &ipiv[0], &info);
+          lapack.GETRI(iterCG_, T.values(), T.stride(), &ipiv[0], &work[0], 3*iterCG_, &info);
           Tm1 = T;
           for (int i=0; i<iterCG_; i++) {
             Tm1(i,i) = Tm1(i,i) - one;
           }
-          if (LA::normOne(Tm1) > S_max) {
+          if (Tm1.normOne() > S_max) {
             flagCG_ = 4;
             if (infoTS_) {
               std::stringstream hist;

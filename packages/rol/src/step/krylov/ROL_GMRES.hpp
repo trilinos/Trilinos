@@ -61,8 +61,6 @@ namespace ROL {
 template<class Real>
 class GMRES : public Krylov<Real> {
 
-  //typedef Teuchos::SerialDenseMatrix<int, Real> SDMatrix;
-  //typedef Teuchos::SerialDenseVector<int, Real> SDVector;
   typedef LA::Matrix<Real> SDMatrix;
   typedef LA::Vector<Real> SDVector;
 
@@ -236,7 +234,7 @@ public:
       Real scaling = zero;
       int info = 0;
       *y_ = *s_;
-      lapack_.LATRS(uplo, trans, diag, normin, iter+1, LA::getDataPtr(H_), maxit+1, LA::getDataPtr(y_), &scaling, LA::getDataPtr(cnorm_), &info);
+      lapack_.LATRS(uplo, trans, diag, normin, iter+1, H_->values(), maxit+1, y_->values(), &scaling, cnorm_->values(), &info);
 
       z_->zero();
 

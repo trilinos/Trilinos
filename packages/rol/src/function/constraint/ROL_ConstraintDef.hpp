@@ -227,12 +227,12 @@ std::vector<Real> Constraint<Real>::solveAugmentedSystem(Vector<Real> &v1,
   ROL::Ptr<Vector<Real> > Z2temp = v2.clone();
 
   std::vector<Real> res(m+1, zero); 
-  Teuchos::SerialDenseMatrix<int, Real> H(m+1,m);
-  Teuchos::SerialDenseVector<int, Real> cs(m);
-  Teuchos::SerialDenseVector<int, Real> sn(m);
-  Teuchos::SerialDenseVector<int, Real> s(m+1);
-  Teuchos::SerialDenseVector<int, Real> y(m+1);
-  Teuchos::SerialDenseVector<int, Real> cnorm(m);
+  LA::Matrix<Real> H(m+1,m);
+  LA::Vector<Real> cs(m);
+  LA::Vector<Real> sn(m);
+  LA::Vector<Real> s(m+1);
+  LA::Vector<Real> y(m+1);
+  LA::Vector<Real> cnorm(m);
   ROL::LAPACK<int, Real> lapack;
 
   // Compute initial residual.
