@@ -251,6 +251,24 @@ namespace Intrepid2 {
       inline
       static SubcellParamDataType& getSubcellParamData() { 
         static SubcellParamDataType subcellParamData; 
+        Kokkos::push_finalize_hook( [=] {
+            subcellParamData.dummy = NodeDataHostView();
+            subcellParamData.lineEdges = NodeDataHostView();
+            subcellParamData.triEdges = NodeDataHostView();
+            subcellParamData.quadEdges = NodeDataHostView();
+            subcellParamData.shellTriEdges = NodeDataHostView();
+            subcellParamData.shellQuadEdges = NodeDataHostView();
+            subcellParamData.tetEdges = NodeDataHostView();
+            subcellParamData.hexEdges = NodeDataHostView();
+            subcellParamData.pyrEdges = NodeDataHostView();
+            subcellParamData.wedgeEdges = NodeDataHostView();
+            subcellParamData.shellTriFaces = NodeDataHostView();
+            subcellParamData.shellQuadFaces = NodeDataHostView();
+            subcellParamData.tetFaces = NodeDataHostView();
+            subcellParamData.hexFaces = NodeDataHostView();
+            subcellParamData.pyrFaces = NodeDataHostView();
+            subcellParamData.wedgeFaces = NodeDataHostView();
+          });
         return subcellParamData;
       }
 
