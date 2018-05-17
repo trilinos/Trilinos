@@ -189,13 +189,13 @@ protected:
     LevelTimer(int level,
         const char* name = "RootTimer",
         LevelTimer *parent=NULL,
-        bool start=true) :
+        bool start_timer=true) :
           BaseTimer(),
           level_(level),
           name_(name),
           parent_(parent)
     {
-      if ( start )
+      if ( start_timer )
         BaseTimer::start();
     }
 
