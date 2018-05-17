@@ -50,6 +50,9 @@
 
 #include <functional>
 #include <iomanip>
+#ifdef HAVE_TEUCHOS_ADD_TIME_MONITOR_TO_STACKED_TIMER
+#include <sstream>
+#endif
 
 namespace Teuchos {
   /**
@@ -266,8 +269,27 @@ namespace Teuchos {
     if (!isRecursiveCall()) {
       counter().stop();
 #ifdef HAVE_TEUCHOS_ADD_TIME_MONITOR_TO_STACKED_TIMER
-      if (nonnull(stackedTimer_))
-        stackedTimer_->stop(counter().name());
+      try {
+        if (nonnull(stackedTimer_))
+          stackedTimer_->stop(counter().name());
+      }
+      catch (std::runtime_error) {
+        std::ostringstream warning;
+        warning <<
+          "\n*********************************************************************\n"
+          "WARNING: Overlapping timers detected!\n"
+          "A TimeMonitor timer was stopped before a nested subtimer was\n"
+          "stopped. This is not allowed by the StackedTimer. This corner case\n"
+          "typically occurs if the TimeMonitor is stored in an RCP and the RCP is\n"
+          "assigned to a new timer. To disable this warning, either fix the\n"
+          "ordering of timer creation and destuction or disable the StackedTimer\n"
+          "support in the TimeMonitor by setting the StackedTimer to null\n"
+          "with:\n"
+          "Teuchos::TimeMonitor::setStackedTimer(Teuchos::null)\n"
+          "*********************************************************************\n";
+        std::cout << warning.str() << std::endl;
+        Teuchos::TimeMonitor::setStackedTimer(Teuchos::null);
+      }
 #endif
     }
   }

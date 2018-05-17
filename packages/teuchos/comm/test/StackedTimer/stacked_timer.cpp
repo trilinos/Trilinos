@@ -189,3 +189,37 @@ TEUCHOS_UNIT_TEST(StackedTimer, TimeMonitorInteroperability)
 
   timer->report(out, comm);
 }
+
+// Overlapping timers are not allowed in a StackedTimer, but are in
+// TimeMonitor. Since StackedTimer is automatically used in
+// TimeMonitor by default, we have seen this error - a throw from the
+// stacked timer. In every instance so far, the intention was not to
+// actually overlap but a constructor/destructor ordering issue
+// (suually involving RCPs). To prevent tests from failing,
+// StackedTimer now automatically shuts itself off if it detects
+// overlaped timers in a TimeMonitor instance, reports a warning on
+// how to fix and allows the code to continue runnning. Where this has
+// occurred in Trilinos is when a TimeMonitor object is stored in an
+// RCP and then the RCP is reassigned to a new timer. The intention
+// was to stop one and start another. But the destruction of one and
+// the creation of the new one occurs in the wrong order. This test
+// demonstrates the issue.
+TEUCHOS_UNIT_TEST(StackedTimer, OverlappingTimersException)
+{
+  Teuchos::StackedTimer timer("My Timer");
+  timer.start("Outer");
+  timer.start("Inner");
+  // Should stop inner before outer
+  TEST_THROW(timer.stop("Outer"),std::runtime_error);
+}
+
+TEUCHOS_UNIT_TEST(StackedTimer, OverlappingTimersViaRCP)
+{
+  const auto precTimer = Teuchos::TimeMonitor::getNewTimer("Prec");
+  const auto gmresTimer = Teuchos::TimeMonitor::getNewTimer("GMRES");
+
+  Teuchos::RCP<Teuchos::TimeMonitor> timer = Teuchos::rcp(new Teuchos::TimeMonitor(*precTimer));
+  timer = Teuchos::rcp(new Teuchos::TimeMonitor(*gmresTimer));
+
+  TEST_ASSERT(is_null(Teuchos::TimeMonitor::getStackedTimer()));
+}
