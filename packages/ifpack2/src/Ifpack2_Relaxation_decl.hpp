@@ -706,6 +706,9 @@ private:
 
   void computeBlockCrs ();
 
+  //! A service routine for updating the cached MultiVector
+  void updateCachedMultiVector(const Teuchos::RCP<const Tpetra::Map<local_ordinal_type,global_ordinal_type,node_type> >& map, size_t numVecs) const;
+
 
   //@}
   //! @name Internal data and parameters
@@ -727,7 +730,8 @@ private:
   Teuchos::RCP<const Tpetra::Import<local_ordinal_type,global_ordinal_type,node_type> > Importer_;
   //! Contains the diagonal elements of \c A_.
   Teuchos::RCP<Tpetra::Vector<scalar_type,local_ordinal_type,global_ordinal_type,node_type> > Diagonal_;
-
+  //! MultiVector for caching purposes (so apply doesn't need to allocate one on each call)
+  mutable Teuchos::RCP<Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type> > cachedMV_;
 
   typedef Kokkos::View<typename block_crs_matrix_type::impl_scalar_type***,
                        typename block_crs_matrix_type::device_type> block_diag_type;

@@ -143,9 +143,21 @@ namespace {
       return Teuchos::ScalarTraits<Scalar>::eps ();
     }
   };
+
+
+
 } // namespace (anonymous)
 
 namespace Ifpack2 {
+
+template<class MatrixType>
+void Relaxation<MatrixType>::updateCachedMultiVector(const Teuchos::RCP<const Tpetra::Map<local_ordinal_type,global_ordinal_type,node_type> > & map, size_t numVecs) const{
+  // Allocate a multivector if the cached one isn't perfect
+  // Note: We check for map pointer equality here since it is much cheaper than isSameAs()
+  if(cachedMV_.is_null() || &*map != &*cachedMV_->getMap() || cachedMV_->getNumVectors() !=numVecs) 
+    cachedMV_ = Teuchos::rcp(new Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>(map, numVecs, false));
+}
+
 
 template<class MatrixType>
 void Relaxation<MatrixType>::
@@ -1236,9 +1248,6 @@ ApplyInverseJacobi (const Tpetra::MultiVector<scalar_type,local_ordinal_type,glo
                     Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& Y) const
 {
   using Teuchos::as;
-  typedef Tpetra::MultiVector<scalar_type, local_ordinal_type,
-    global_ordinal_type, node_type> MV;
-
   if (hasBlockCrsMatrix_) {
     ApplyInverseJacobi_BlockCrsMatrix (X, Y);
     return;
@@ -1274,14 +1283,15 @@ ApplyInverseJacobi (const Tpetra::MultiVector<scalar_type,local_ordinal_type,glo
   // If we were allowed to assume that the starting guess was zero,
   // then we have already done the first sweep above.
   const int startSweep = ZeroStartingSolution_ ? 1 : 0;
-  // We don't need to initialize the result MV, since the sparse
-  // mat-vec will clobber its contents anyway.
-  MV A_times_Y (Y.getMap (), as<size_t>(numVectors), false);
+
+  // Allocate a multivector if the cached one isn't perfect
+  updateCachedMultiVector(Y.getMap(),as<size_t>(numVectors));
+
   for (int j = startSweep; j < NumSweeps_; ++j) {
     // Each iteration: Y = Y + \omega D^{-1} (X - A*Y)
-    applyMat (Y, A_times_Y);
-    A_times_Y.update (STS::one (), X, -STS::one ());
-    Y.elementWiseMultiply (DampingFactor_, *Diagonal_, A_times_Y, STS::one ());
+    applyMat (Y, *cachedMV_);
+    cachedMV_->update (STS::one (), X, -STS::one ());
+    Y.elementWiseMultiply (DampingFactor_, *Diagonal_, *cachedMV_, STS::one ());
   }
 
   // For each column of output, for each pass over the matrix:
