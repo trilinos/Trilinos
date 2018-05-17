@@ -66,8 +66,9 @@ export MPICC=`which mpicc`
 export MPICXX=`which mpicxx`
 export MPIF90=`which mpif90`
 
-export ATDM_CONFIG_MPI_PRE_FLAGS="--bind-to;socket;--report-bindings"
-export ATDM_CONFIG_MPI_EXEC_NUMPROCS_FLAG=--n
+export ATDM_CONFIG_MPI_EXEC=srun
+export ATDM_CONFIG_MPI_PRE_FLAGS="--mpi=pmi2;--ntasks-per-node;36"
+export ATDM_CONFIG_MPI_EXEC_NUMPROCS_FLAG=--ntasks
 
 # Set the default compilers
 export CC=mpicc
