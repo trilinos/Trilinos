@@ -1,6 +1,6 @@
 #include "Intrepid_ArrayTools.hpp"
 #include <iostream>
-#ifdef HAVE_INTREPID_KOKKOSCORE
+#ifdef INTREPID_OLD_KOKKOS_CODE
 #include <Kokkos_Core.hpp>
 #include <Kokkos_Random.hpp>
 #include <impl/Kokkos_Timer.hpp>
@@ -43,7 +43,7 @@ template<typename Scalar>
 	}
 	
 };
-#ifdef HAVE_INTREPID_KOKKOSCORE	
+#ifdef INTREPID_OLD_KOKKOS_CODE	
 
 template<typename Scalar>
 	struct MultiGemm<Scalar,Kokkos::DefaultExecutionSpace,Kokkos::LayoutLeft,2>{
@@ -477,7 +477,7 @@ Kokkos::kokkos_free(Cptrs);
 
 
 int main(){
-#ifdef HAVE_INTREPID_KOKKOSCORE
+#ifdef INTREPID_OLD_KOKKOS_CODE
 
    Kokkos::initialize();
   //initialize viewsto random values

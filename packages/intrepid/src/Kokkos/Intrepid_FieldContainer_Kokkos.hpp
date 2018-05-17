@@ -2,7 +2,7 @@
 #ifndef INTREPID_FIELDCONTAINER_KOKKOS_HPP
 #define INTREPID_FIELDCONTAINER_KOKKOS_HPP
 
-//#ifdef HAVE_INTREPID_KOKKOSCORE
+//#ifdef INTREPID_OLD_KOKKOS_CODE
 #include "Kokkos_Core.hpp"
 #include "Sacado.hpp"
 #include <impl/Kokkos_Timer.hpp>
