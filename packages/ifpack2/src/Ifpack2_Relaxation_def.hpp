@@ -1418,6 +1418,7 @@ ApplyInverseGS_RowMatrix (const Tpetra::MultiVector<scalar_type,local_ordinal_ty
   using Teuchos::RCP;
   using Teuchos::rcp;
   using Teuchos::rcpFromRef;
+  typedef Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type> MV;
 
   // Tpetra's GS implementation for CrsMatrix handles zeroing out the
   // starting multivector itself.  The generic RowMatrix version here
@@ -2175,14 +2176,11 @@ ApplyInverseSGS_RowMatrix (const Tpetra::MultiVector<scalar_type,local_ordinal_t
   RCP<MV> Y2;
   if (IsParallel_) {
     if (Importer_.is_null ()) { // domain and column Maps are the same.
-      // We will copy Y into Y2 below, so no need to fill with zeros here.
-      Y2 = rcp (new MV (Y.getMap (), NumVectors, false));
+      updateCachedMultiVector(Y.getMap(),NumVectors);
     } else {
-      // FIXME (mfh 21 Mar 2013) We probably don't need to fill with
-      // zeros here, since we are doing an Import into Y2 below
-      // anyway.  However, it doesn't hurt correctness.
-      Y2 = rcp (new MV (Importer_->getTargetMap (), NumVectors));
+      updateCachedMultiVector(Importer_->getTargetMap(),NumVectors);
     }
+    Y2= cachedMV_;
   }
   else {
     Y2 = rcpFromRef (Y);
