@@ -52,6 +52,8 @@
 
 #include "ROL_Ptr.hpp"
 #include "ROL_ParameterList.hpp"
+#include "ROL_Stream.hpp"
+#include "ROL_Types.hpp"
 
 /** \file  ROL_LinearAlgebra.hpp
     \brief Provides basic capabilities in solving dense
@@ -69,102 +71,155 @@ using Vector = Eigen::Matrix<Real,1,Eigen::Dynamic>;
 template<typename Real>
 using Matrix = Eigen::Matrix<Real,Eigen::Dynamic,Eigen::Dynamic>;
 
-template<typename> class LinearSolver;
+template<class Real>
+inline
+Real* getDataPtr( const Ptr<LA::Vector<Real>>& x ) {
+  return const_cast<Real*>(x->data());
+}
+
+template<class Real>
+inline
+Real* getDataPtr( const LA::Matrix<Real>& M ) {
+  return const_cast<Real*>(M.data());
+}
+
+template<class Real>
+inline
+Real* getDataPtr( const Ptr<LA::Matrix<Real>>& M ) {
+  return const_cast<Real*>(M->data());
+}
+
+template<class Real>
+inline
+int getStride( const Ptr<LA::Matrix<Real>>& M ) {
+  return M->outerStride(); // DTRT?
+}
+
+template<class Real>
+inline
+int getStride( const LA::Matrix<Real>& M ) {
+  return M.outerStride(); // DTRT?
+}
+
+template<class Real>
+inline
+Real normOne( const LA::Matrix<Real>& M ) {
+  return M.template lpNorm<1>();
+}
 
 template<typename Real>
-class LinearProblem {
-private:
-
-  Ptr<LA::Vector<Real>> b_, x_;
-  Ptr<LA::Matrix<Real>> A_;
-  
-public:
-
-  friend class LinearSolver<Real>;
-
-  LinearProblem();
-  LinearProblem( const Ptr<LA::Matrix<Real>>& A,
-                 const Ptr<LA::Vector<Real>>& x,	
-                 const Ptr<LA::Vector<Real>>& b );
-
-  static Ptr<LinearProble> create( const Ptr<LA::Matrix<Real>>& A,
-                                   const Ptr<LA::Vector<Real>>& x,	
-                                   const Ptr<LA::Vector<Real>>& b );
-
-  void setMatrix( const Ptr<LA::Matrix<Real>>& A );
-
-  void setVectors( const Ptr<LA::Vector<Real>>& x,
-                   const Ptr<LA::Vector<Real>>& b );
+class MatrixFactorization {
+  public:
+    MatrixFactorization(Ptr<LA::Matrix<Real>> A, bool inplace = false);
+    Ptr<LA::Vector<Real>> solve(Ptr<LA::Vector<Real>> b);
 };
 
+template<typename Real>
+class LuFactorization : public MatrixFactorization<Real>{
+  private:
+    Eigen::PartialPivLU<LA::Matrix<Real>> _lu;
+    Ptr<LA::Matrix<Real>> _A;
 
+  public:
+    LuFactorization(Ptr<LA::Matrix<Real>> A, bool inplace = false)
+    {
+      if(!inplace)
+        _lu = A.partialPivLu();
+      else
+      {
+        _lu = Eigen::PartialPivLU<Eigen::Ref<LA::Matrix<Real>>>(A);
+        _A = A; // we need to keep the matrix A alive if we do the decomposition in place.
+      }
+    }
 
+    Ptr<LA::Vector<Real>> solve(Ptr<LA::Vector<Real>> b)
+    {
+      return makePtr<LA::Vector<Real>>(_lu.solve(*b));
+    }
+
+};
 
 template<typename Real>
 class LinearSolver {
 private:
   
- Ptr<LA::LinearProblem<Real>> problem_;
- ParameterList                options_;
+ Ptr<LA::Matrix<Real>>                A_;
+ Ptr<LA::MatrixFactorization<Real>>   P_;
+ ParameterList                        options_;
 
 public:
+  LinearSolver(Ptr<LA::Matrix<Real>> A, ParameterList& opts) : A_(A), options_(opts)
+  {
+    bool inplace = options_.get("Inplace", false);
+    if(options_.get("Factorization", "LU") == "LU")
+      P_ = dynamicPtrCast<MatrixFactorization>(makePtr<LuFactorization>(A_, inplace));
+    else
+      throw Exception::NotImplemented("Only LU factorization implemented for Eigen backend");
+  }
 
-  void setOptions( ParameterList& opts );
-  void setProblem( const Ptr<LA::PLinearroblem<Real>>& problem );
-  void solve( std::ostream& outStream );
+  void solve(const Ptr<LA::Vector<Real>>&x, const Ptr<LA::Vector<Real>>&b, std::ostream& outStream = std::cout)
+  {
+      auto res = P_.solve(b);
+      *b = *res; // Does this DTRT?
+  };
+
+  Ptr<LA::Vector<Real>> solve(const Ptr<LA::Vector<Real>>&b, std::ostream& outStream = std::cout)
+  {
+      return P_.solve(b);
+  };
 
 };
 
-template<typename> class EigenvalueSolver;
+//template<typename> class EigenvalueSolver;
 
-template<typename Real>
-class EigenvalueProblem {
-private:
+//template<typename Real>
+//class EigenvalueProblem {
+//private:
  
-  Ptr<LA::Vector<Real>> d_;         // Vector of eigenvalues
-  Ptr<LA::Matrix<Real>> A_,Vl_,Vr_; // Left and right eigenvectors
+//  Ptr<LA::Vector<Real>> d_;         // Vector of eigenvalues
+//  Ptr<LA::Matrix<Real>> A_,Vl_,Vr_; // Left and right eigenvectors
 
-public:
+//public:
  
-  friend class EigenvalueSolver<Real>;
+//  friend class EigenvalueSolver<Real>;
 
-  EigenvalueProblem();
+//  EigenvalueProblem();
 
-  EigenvalueProblem( const Ptr<LA::Matrix<Real>>& A,
-                     const Ptr<LA::Matrix<Real>>& V,	
-                     const Ptr<LA::Vector<Real>>& d );
+//  EigenvalueProblem( const Ptr<LA::Matrix<Real>>& A,
+//                     const Ptr<LA::Matrix<Real>>& V,	
+//                     const Ptr<LA::Vector<Real>>& d );
 
-  EigenvalueProblem( const Ptr<LA::Matrix<Real>>& A,
-		     const Ptr<LA::Matrix<Real>>& Vl,	
-                     const Ptr<LA::Matrix<Real>>& Vr,	
-                     const Ptr<LA::Vector<Real>>& d );
+//  EigenvalueProblem( const Ptr<LA::Matrix<Real>>& A,
+//         const Ptr<LA::Matrix<Real>>& Vl,	
+//                     const Ptr<LA::Matrix<Real>>& Vr,	
+//                     const Ptr<LA::Vector<Real>>& d );
 
   
 
-  static Ptr<EigenvaluerProble> create( const Ptr<LA::Matrix<Real>>& A,
-                                        const Ptr<LA::Matrix<Real>>& V,	
-                                        const Ptr<LA::Vector<Real>>& d );
+//  static Ptr<EigenvaluerProble> create( const Ptr<LA::Matrix<Real>>& A,
+//                                        const Ptr<LA::Matrix<Real>>& V,	
+//                                        const Ptr<LA::Vector<Real>>& d );
 
-  static Ptr<EigenvaluerProble> create( const Ptr<LA::Matrix<Real>>& A,
-                                        const Ptr<LA::Matrix<Real>>& Vl,	
-                                        const Ptr<LA::Matrix<Real>>& Vr,	
-                                        const Ptr<LA::Vector<Real>>& d );
+//  static Ptr<EigenvaluerProble> create( const Ptr<LA::Matrix<Real>>& A,
+//                                        const Ptr<LA::Matrix<Real>>& Vl,	
+//                                        const Ptr<LA::Matrix<Real>>& Vr,	
+//                                        const Ptr<LA::Vector<Real>>& d );
   
-};
+//};
 
 
-template<typename Real>
-class EigenvalueSolver {
-private:
+//template<typename Real>
+//class EigenvalueSolver {
+//private:
 
-  Ptr<LA::LinearProblem<Real>> problem_;
-  ParameterList                options_;
+//  Ptr<LA::LinearProblem<Real>> problem_;
+//  ParameterList                options_;
 
-public:
-  void setOptions( ParameterList& opts );
-  void setProblem( const Ptr<LA::EigenvalueProblem<Real>>& problem );
-  void solve( std::ostream& outStream );
-};
+//public:
+//  void setOptions( ParameterList& opts );
+//  void setProblem( const Ptr<LA::EigenvalueProblem<Real>>& problem );
+//  void solve( std::ostream& outStream );
+//};
 
 
 } // namespace LA

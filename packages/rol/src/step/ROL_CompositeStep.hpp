@@ -47,9 +47,9 @@
 #include "ROL_Types.hpp"
 #include "ROL_Step.hpp"
 #include "ROL_LAPACK.hpp"
+#include "ROL_LinearAlgebra.hpp"
 #include <sstream>
 #include <iomanip>
-#include "Teuchos_SerialDenseMatrix.hpp"
 
 /** \class ROL::CompositeStep
     \brief Implements the computation of optimization steps
@@ -798,9 +798,9 @@ public:
 
       // Check nonorthogonality, one-norm of (WR*R/diag^2 - I)
       if (orthocheck) {
-        Teuchos::SerialDenseMatrix<int,Real> Wrr(iterCG_,iterCG_);  // holds matrix Wrs'*rs
-        Teuchos::SerialDenseMatrix<int,Real> T(iterCG_,iterCG_);    // holds matrix T=(1/diag)*Wrs'*rs*(1/diag)
-        Teuchos::SerialDenseMatrix<int,Real> Tm1(iterCG_,iterCG_);  // holds matrix Tm1=T-I
+        ROL::LA::Matrix<Real> Wrr(iterCG_,iterCG_);  // holds matrix Wrs'*rs
+        ROL::LA::Matrix<Real> T(iterCG_,iterCG_);    // holds matrix T=(1/diag)*Wrs'*rs*(1/diag)
+        ROL::LA::Matrix<Real> Tm1(iterCG_,iterCG_);  // holds matrix Tm1=T-I
         for (int i=0; i<iterCG_; i++) {
           for (int j=0; j<iterCG_; j++) {
             Wrr(i,j)  = (Wrs[i])->dot(*rs[j]);
@@ -811,19 +811,24 @@ public:
             }
           }
         }
+<<<<<<< HEAD
         if (Tm1.normOne() >= tol_ortho) {
           ROL::LAPACK<int,Real> lapack;
+=======
+        if (LA::normOne(Tm1) >= tol_ortho) {
+          Teuchos::LAPACK<int,Real> lapack;
+>>>>>>> more work on ROL::LA
           std::vector<int>          ipiv(iterCG_);
           int                       info;
           std::vector<Real>         work(3*iterCG_);
           // compute inverse of T
-          lapack.GETRF(iterCG_, iterCG_, T.values(), T.stride(), &ipiv[0], &info);
-          lapack.GETRI(iterCG_, T.values(), T.stride(), &ipiv[0], &work[0], 3*iterCG_, &info);
+          lapack.GETRF(iterCG_, iterCG_, LA::getDataPtr(T), LA::getStride(T), &ipiv[0], &info);
+          lapack.GETRI(iterCG_, LA::getDataPtr(T), LA::getStride(T), &ipiv[0], &work[0], 3*iterCG_, &info);
           Tm1 = T;
           for (int i=0; i<iterCG_; i++) {
             Tm1(i,i) = Tm1(i,i) - one;
           }
-          if (Tm1.normOne() > S_max) {
+          if (LA::normOne(Tm1) > S_max) {
             flagCG_ = 4;
             if (infoTS_) {
               std::stringstream hist;
