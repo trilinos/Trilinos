@@ -528,9 +528,7 @@ int Ioss::GroupingEntity::get_field_data(const std::string &field_name,
   typename ViewType::HostMirror host_data = Kokkos::create_mirror_view(data);
 
   // Extract a pointer to the underlying allocated memory of the host view.
-  // Kokkos::View::ptr_on_device() will soon be changed to Kokkos::View::data(),
-  // in which case, TOPTR(data) will work.
-  T *host_data_ptr = host_data.ptr_on_device();
+  T *host_data_ptr = TOPTR(host_data);
 
   // Extract the data from disk to the underlying memory pointed to by host_data_ptr.
   int retval = internal_get_field_data(field, host_data_ptr, data_size);
@@ -634,9 +632,7 @@ int Ioss::GroupingEntity::put_field_data(const std::string &field_name,
   Kokkos::deep_copy(host_data, data);
 
   // Extract a pointer to the underlying allocated memory of the host view.
-  // Kokkos::View::ptr_on_device() will soon be changed to Kokkos::View::data(),
-  // in which case, TOPTR(data) will work.
-  T *host_data_ptr = host_data.ptr_on_device();
+  T *host_data_ptr = TOPTR(host_data);
 
   // Transform the field
   field.transform(host_data_ptr);
@@ -664,8 +660,8 @@ int Ioss::GroupingEntity::put_field_data(const std::string &field_name,
 
   Ioss::Field field = get_field(field_name);
 
-  int    view_size_left  = data.dimension_0();
-  int    view_size_right = data.dimension_1();
+  int    view_size_left  = data.extent(0);
+  int    view_size_right = data.extent(1);
   size_t data_size       = field.raw_count() * field.raw_storage()->component_count() * sizeof(T);
 
   if (view_size_left * view_size_right * sizeof(T) != data_size) {
