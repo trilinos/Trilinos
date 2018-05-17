@@ -264,6 +264,8 @@ TEUCHOS_UNIT_TEST(StackedTimer, OverlappingTimersException)
   TEST_THROW(timer.stop("Outer"),std::runtime_error);
 }
 
+
+#ifdef HAVE_TEUCHOS_ADD_TIME_MONITOR_TO_STACKED_TIMER
 TEUCHOS_UNIT_TEST(StackedTimer, OverlappingTimersViaRCP)
 {
   const auto precTimer = Teuchos::TimeMonitor::getNewTimer("Prec");
@@ -274,6 +276,6 @@ TEUCHOS_UNIT_TEST(StackedTimer, OverlappingTimersViaRCP)
 
   TEST_ASSERT(is_null(Teuchos::TimeMonitor::getStackedTimer()));
 }
-
+#endif
 
 
