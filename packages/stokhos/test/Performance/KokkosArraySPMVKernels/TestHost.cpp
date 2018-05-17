@@ -136,7 +136,9 @@ int mainHost(bool test_flat, bool test_orig, bool test_deg, bool test_lin,
   const size_t threads_per_team =
     Kokkos::hwloc::get_available_threads_per_core();
 
-  Device::initialize( team_count * threads_per_team );
+  Kokkos::InitArguments init_args;
+  init_args.num_threads = team_count*threads_per_team;
+  Kokkos::initialize( init_args );
 
   std::string name = "Host";
 #ifdef KOKKOS_ENABLE_THREADS
@@ -155,7 +157,7 @@ int mainHost(bool test_flat, bool test_orig, bool test_deg, bool test_lin,
   unit_test::performance_test_driver<Scalar,Device>::run(
     test_flat, test_orig, test_deg, test_lin, test_block, symmetric, mkl);
 
-  Device::finalize();
+  Kokkos::finalize();
 
   return 0 ;
 }

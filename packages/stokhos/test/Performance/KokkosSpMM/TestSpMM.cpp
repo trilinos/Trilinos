@@ -111,7 +111,9 @@ int main(int argc, char *argv[])
     if (threads) {
       typedef Kokkos::Threads Device;
 
-      Kokkos::Threads::initialize(num_cores*num_hyper_threads);
+      Kokkos::InitArguments init_args;
+      init_args.num_threads = num_cores*num_hyper_threads;
+      Kokkos::initialize( init_args );
 
       std::cout << std::endl
                 << "Threads performance with " << num_cores*num_hyper_threads
@@ -120,7 +122,7 @@ int main(int argc, char *argv[])
       performance_test_driver<Scalar,Ordinal,Device>(
         nGrid, nIter, ensemble_min, ensemble_max, ensemble_step);
 
-      Kokkos::Threads::finalize();
+      Kokkos::finalize();
     }
 #endif
 
@@ -128,8 +130,9 @@ int main(int argc, char *argv[])
     if (cuda) {
       typedef Kokkos::Cuda Device;
 
-      Kokkos::HostSpace::execution_space::initialize();
-      Kokkos::Cuda::initialize(Kokkos::Cuda::SelectDevice(device_id));
+      Kokkos::InitArguments init_args;
+      init_args.device_id = device_id;
+      Kokkos::initialize( init_args );
 
       cudaDeviceProp deviceProp;
       cudaGetDeviceProperties(&deviceProp, device_id);
@@ -141,8 +144,7 @@ int main(int argc, char *argv[])
       performance_test_driver<Scalar,Ordinal,Device>(
         nGrid, nIter, ensemble_min, ensemble_max, ensemble_step);
 
-      Kokkos::HostSpace::execution_space::finalize();
-      Kokkos::Cuda::finalize();
+      Kokkos::finalize();
     }
 #endif
 

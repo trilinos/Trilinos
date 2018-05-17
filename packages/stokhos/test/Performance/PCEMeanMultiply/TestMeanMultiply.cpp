@@ -113,7 +113,10 @@ int main(int argc, char *argv[])
     if (threads > 0) {
       typedef Kokkos::Threads Device;
 
-      Kokkos::Threads::initialize(threads, numa, cores);
+      Kokkos::InitArguments init_args;
+      init_args.num_threads = threads;
+      init_args.num_numa = numa;
+      Kokkos::initialize( init_args );
 
       std::cout << std::endl
                 << "Threads performance with " << threads
@@ -123,7 +126,7 @@ int main(int argc, char *argv[])
       performance_test_driver<Scalar,Ordinal,Device>(
         nGrid, nIter, order, dim_min, dim_max);
 
-      Kokkos::Threads::finalize();
+      Kokkos::finalize();
     }
 #endif
 
@@ -131,7 +134,10 @@ int main(int argc, char *argv[])
     if (openmp > 0) {
       typedef Kokkos::OpenMP Device;
 
-      Kokkos::OpenMP::initialize(openmp, numa, cores);
+      Kokkos::InitArguments init_args;
+      init_args.num_threads = openmp;
+      init_args.num_numa = numa;
+      Kokkos::initialize( init_args );
 
       std::cout << std::endl
                 << "OpenMP performance with " << openmp
@@ -141,7 +147,7 @@ int main(int argc, char *argv[])
       performance_test_driver<Scalar,Ordinal,Device>(
         nGrid, nIter, order, dim_min, dim_max);
 
-      Kokkos::OpenMP::finalize();
+      Kokkos::finalize();
     }
 #endif
 
@@ -149,8 +155,9 @@ int main(int argc, char *argv[])
     if (cuda) {
       typedef Kokkos::Cuda Device;
 
-      Kokkos::HostSpace::execution_space::initialize();
-      Kokkos::Cuda::initialize(Kokkos::Cuda::SelectDevice(device_id));
+      Kokkos::InitArguments init_args;
+      init_args.device_id = device_id;
+      Kokkos::initialize( init_args );
 
       cudaDeviceProp deviceProp;
       cudaGetDeviceProperties(&deviceProp, device_id);
@@ -162,8 +169,7 @@ int main(int argc, char *argv[])
       performance_test_driver<Scalar,Ordinal,Device>(
         nGrid, nIter, order, dim_min, dim_max);
 
-      Kokkos::HostSpace::execution_space::finalize();
-      Kokkos::Cuda::finalize();
+      Kokkos::finalize();
     }
 #endif
 

@@ -174,7 +174,7 @@ int main(int argc, char *argv[])
       typedef Kokkos::Serial Device;
       typedef Stokhos::StaticFixedStorage<Ordinal,Scalar,1,Device> Storage;
 
-      Kokkos::Serial::initialize();
+      Kokkos::initialize();
 
       if (comm->getRank() == 0)
         std::cout << std::endl
@@ -186,7 +186,7 @@ int main(int argc, char *argv[])
       mainHost<Storage>(comm, print, nIter, use_nodes, check,
                         dev_config);
 
-      Kokkos::Serial::finalize();
+      Kokkos::finalize();
     }
 #endif
 
@@ -195,7 +195,9 @@ int main(int argc, char *argv[])
       typedef Kokkos::Threads Device;
       typedef Stokhos::StaticFixedStorage<Ordinal,Scalar,1,Device> Storage;
 
-      Kokkos::Threads::initialize(num_cores*num_hyper_threads);
+      Kokkos::InitArguments init_args;
+      init_args.num_threads = num_cores*num_hyper_threads;
+      Kokkos::initialize( init_args );
 
       if (comm->getRank() == 0)
         std::cout << std::endl
@@ -210,7 +212,7 @@ int main(int argc, char *argv[])
       mainHost<Storage>(comm, print, nIter, use_nodes, check,
                         dev_config);
 
-      Kokkos::Threads::finalize();
+      Kokkos::finalize();
     }
 #endif
 
@@ -219,7 +221,9 @@ int main(int argc, char *argv[])
       typedef Kokkos::OpenMP Device;
       typedef Stokhos::StaticFixedStorage<Ordinal,Scalar,1,Device> Storage;
 
-      Kokkos::OpenMP::initialize(num_cores*num_hyper_threads);
+      Kokkos::InitArguments init_args;
+      init_args.num_threads = num_cores*num_hyper_threads;
+      Kokkos::initialize( init_args );
 
       if (comm->getRank() == 0)
         std::cout << std::endl
@@ -234,7 +238,7 @@ int main(int argc, char *argv[])
       mainHost<Storage>(comm, print, nIter, use_nodes, check,
                         dev_config);
 
-      Kokkos::OpenMP::finalize();
+      Kokkos::finalize();
     }
 #endif
 
@@ -262,8 +266,9 @@ int main(int argc, char *argv[])
           " to run with too many GPUs per node");
       }
 
-      Kokkos::HostSpace::execution_space::initialize();
-      Kokkos::Cuda::initialize(Kokkos::Cuda::SelectDevice(device_id));
+      Kokkos::InitArguments init_args;
+      init_args.device_id = device_id;
+      Kokkos::initialize( init_args );
 
       cudaDeviceProp deviceProp;
       cudaGetDeviceProperties(&deviceProp, device_id);
@@ -282,8 +287,7 @@ int main(int argc, char *argv[])
       mainCuda<Storage>(comm, print, nIter, use_nodes, check,
                         dev_config);
 
-      Kokkos::HostSpace::execution_space::finalize();
-      Kokkos::Cuda::finalize();
+      Kokkos::finalize();
     }
 #endif
 
