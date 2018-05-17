@@ -200,7 +200,7 @@ struct DeepCopyNonContiguous
     for ( size_type i5 = 0 ; i5 < output.extent(5) ; ++i5 ) {
     for ( size_type i6 = 0 ; i6 < output.extent(6) ; ++i6 ) {
     for ( size_type i7 = 0 ; i7 < output.extent(7) ; ++i7 ) {
-      output(i0,i1,i2,i3,i4,i5,i6,i7) = input(i0,i1,i2,i3,i4,i5,i6,i7) ;
+      output.access(i0,i1,i2,i3,i4,i5,i6,i7) = input.access(i0,i1,i2,i3,i4,i5,i6,i7) ;
     }}}}}}}
   }
 };
