@@ -27,7 +27,7 @@ namespace Tacho {
 
         int r_val = 0;      
         
-        const ordinal_type m = A.dimension_0();
+        const ordinal_type m = A.extent(0);
         if (m > 0) {
           Lapack<value_type>::sytrf(ArgUplo::param,
                                     m,

@@ -116,8 +116,8 @@ namespace bddc {
     value_type_matrix x(Sol, m, NRHS);
     value_type_matrix b(Rhs, m, NRHS);
     
-    if (static_cast<int>(m_TempRhs.dimension_0()) < m || 
-	static_cast<int>(m_TempRhs.dimension_1()) < NRHS)
+    if (static_cast<int>(m_TempRhs.extent(0)) < m || 
+	static_cast<int>(m_TempRhs.extent(1)) < NRHS)
       m_TempRhs = value_type_matrix("temp rhs", m, NRHS);      
     
     m_Solver.solve(x, b, m_TempRhs);

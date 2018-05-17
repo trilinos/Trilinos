@@ -2793,8 +2793,8 @@ namespace BaskerNS
 		/*
 	    printf("Added Upattern: %d %d nnz: %d colors: %d psize: %d kid: %d \n",
 		   j, j+UP.srow,nnz,
-		   color.dimension_0(),
-		   pattern.dimension_0(),
+		   color.extent(0),
+		   pattern.extent(0),
 		   kid);
 		*/
 	    color[j] = 2;

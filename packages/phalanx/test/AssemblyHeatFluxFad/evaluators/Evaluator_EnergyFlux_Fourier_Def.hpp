@@ -69,8 +69,8 @@ void Fourier<EvalT, Traits>::
 postRegistrationSetup(typename Traits::SetupData d,
 		      PHX::FieldManager<Traits>& fm)
 {  
-  num_qp = static_cast<PHX::index_size_type>(flux.dimension_1());
-  num_dim = static_cast<PHX::index_size_type>(flux.dimension_2());
+  num_qp = static_cast<PHX::index_size_type>(flux.extent(1));
+  num_dim = static_cast<PHX::index_size_type>(flux.extent(2));
 }
 //*********************************************************************
 template<typename EvalT, typename Traits>

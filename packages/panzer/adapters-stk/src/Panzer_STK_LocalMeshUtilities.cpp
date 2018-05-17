@@ -203,8 +203,8 @@ buildNodeMap(const Teuchos::RCP<const Teuchos::Comm<int> > & comm,
 
   // get locally unique global ids
   std::set<GO> global_nodes;
-  for(unsigned int i=0;i<cells_to_nodes.dimension(0);i++)
-    for(unsigned int j=0;j<cells_to_nodes.dimension(1);j++)
+  for(unsigned int i=0;i<cells_to_nodes.extent(0);i++)
+    for(unsigned int j=0;j<cells_to_nodes.extent(1);j++)
       global_nodes.insert(cells_to_nodes(i,j));
 
   // build local vector contribution
@@ -235,7 +235,7 @@ buildNodeToCellMatrix(const Teuchos::RCP<const Teuchos::Comm<int> > & comm,
   typedef Tpetra::CrsMatrix<LO,LO,GO> crs_type;
   typedef Tpetra::Import<LO,GO> import_type;
 
-  TEUCHOS_ASSERT(owned_cells.dimension(0)==owned_cells_to_nodes.dimension(0));
+  TEUCHOS_ASSERT(owned_cells.extent(0)==owned_cells_to_nodes.extent(0));
 
   // build a unque node map to use with fill complete
 
@@ -258,14 +258,14 @@ buildNodeToCellMatrix(const Teuchos::RCP<const Teuchos::Comm<int> > & comm,
     cell_to_node->resumeFill();
 
     // fill in the cell to node matrix
-    const unsigned int num_local_cells = owned_cells_to_nodes.dimension(0);
-    const unsigned int num_nodes_per_cell = owned_cells_to_nodes.dimension(1);
+    const unsigned int num_local_cells = owned_cells_to_nodes.extent(0);
+    const unsigned int num_nodes_per_cell = owned_cells_to_nodes.extent(1);
     std::vector<LO> local_node_indexes(num_nodes_per_cell);
     std::vector<GO> global_node_indexes(num_nodes_per_cell);
     for(unsigned int i=0;i<num_local_cells;i++) {
       const GO global_cell_index = owned_cells(i);
-  //    std::vector<LO> vals(cells_to_nodes.dimension(1));
-  //    std::vector<GO> cols(cells_to_nodes.dimension(1));
+  //    std::vector<LO> vals(cells_to_nodes.extent(1));
+  //    std::vector<GO> cols(cells_to_nodes.extent(1));
       for(unsigned int j=0;j<num_nodes_per_cell;j++) {
   //      vals[j] = Teuchos::as<LO>(j);
   //      cols[j] = cells_to_nodes(i,j);
@@ -354,7 +354,7 @@ buildGhostedCellOneRing(const Teuchos::RCP<const Teuchos::Comm<int> > & comm,
 
   // mark all owned cells as already known, e.g. and not in the list of
   // ghstd cells to be constructed
-  for(size_t i=0;i<cells.dimension(0);i++) {
+  for(size_t i=0;i<cells.extent(0);i++) {
     unique_cells.insert(cells(i));
   }
 
@@ -366,7 +366,7 @@ buildGhostedCellOneRing(const Teuchos::RCP<const Teuchos::Comm<int> > & comm,
   auto node_map = node_to_cell->getMap()->getMyGlobalIndices();
 
   // Iterate through the global node indexes associated with this process
-  for(size_t i=0;i<node_map.dimension(0);i++) {
+  for(size_t i=0;i<node_map.extent(0);i++) {
     const GO global_node_index = node_map(i);
     size_t numEntries = node_to_cell->getNumEntriesInGlobalRow(node_map(i));
     Teuchos::Array<GO> indices(numEntries);
@@ -414,10 +414,10 @@ buildGhostedVertices(const Tpetra::Import<int,GO> & importer,
 
   size_t owned_cell_cnt = importer.getSourceMap()->getNodeNumElements();
   size_t ghstd_cell_cnt = importer.getTargetMap()->getNodeNumElements();
-  int vertices_per_cell = owned_vertices.dimension(1);
-  int space_dim         = owned_vertices.dimension(2);
+  int vertices_per_cell = owned_vertices.extent(1);
+  int space_dim         = owned_vertices.extent(2);
 
-  TEUCHOS_ASSERT(owned_vertices.dimension(0)==owned_cell_cnt);
+  TEUCHOS_ASSERT(owned_vertices.extent(0)==owned_cell_cnt);
 
   // build vertex multivector
   RCP<mvec_type> owned_vertices_mv   = rcp(new mvec_type(importer.getSourceMap(),vertices_per_cell*space_dim));
@@ -605,7 +605,7 @@ setupLocalMeshSidesetInfo(const panzer_stk::STK_Interface & mesh,
         for(const size_t & local_cell_index : local_cell_indexes_for_subcell){
 
           // TODO: Super slow - fix this!!
-          for(LO i=0;i<LO(mesh_info.local_cells.dimension_0()); ++i){
+          for(LO i=0;i<LO(mesh_info.local_cells.extent(0)); ++i){
             if(mesh_info.local_cells(i) == LO(local_cell_index)){
               owned_parent_cell_index_map[i].push_back(subcell_index);
             }
@@ -683,8 +683,8 @@ setupLocalMeshSidesetInfo(const panzer_stk::STK_Interface & mesh,
 
   const LO num_real_cells = sideset_info.num_owned_cells + sideset_info.num_ghstd_cells;
   const LO num_total_cells = num_real_cells + sideset_info.num_virtual_cells;
-  const LO num_vertices_per_cell = mesh_info.cell_vertices.dimension_1();
-  const LO num_dims = mesh_info.cell_vertices.dimension_2();
+  const LO num_vertices_per_cell = mesh_info.cell_vertices.extent(1);
+  const LO num_dims = mesh_info.cell_vertices.extent(2);
 
   sideset_info.global_cells = Kokkos::View<GO*>("global_cells", num_total_cells);
   sideset_info.local_cells = Kokkos::View<LO*>("local_cells", num_total_cells);
@@ -705,7 +705,7 @@ setupLocalMeshSidesetInfo(const panzer_stk::STK_Interface & mesh,
   // Now we have to set the connectivity for the faces.
 
   const LO num_faces = faces.size();
-  const LO num_faces_per_cell = mesh_info.cell_to_faces.dimension_1();
+  const LO num_faces_per_cell = mesh_info.cell_to_faces.extent(1);
 
   sideset_info.face_to_cells = Kokkos::View<LO*[2]>("face_to_cells", num_faces);
   sideset_info.face_to_lidx = Kokkos::View<LO*[2]>("face_to_lidx", num_faces);
@@ -794,7 +794,7 @@ generateLocalMeshInfo(const panzer_stk::STK_Interface & mesh,
 
   // read all the vertices associated with these elements, get ghstd contributions
   /////////////////////////////////////////////////////////////////////
-  std::vector<std::size_t> localCells(owned_cells.dimension(0),-1);
+  std::vector<std::size_t> localCells(owned_cells.extent(0),-1);
   for(size_t i=0;i<localCells.size();i++){
     localCells[i] = i;
   }
@@ -821,10 +821,10 @@ generateLocalMeshInfo(const panzer_stk::STK_Interface & mesh,
 
   std::unordered_map<GO,int> global_to_local;
   global_to_local[-1] = -1; // this is the "no neighbor" flag
-  for(size_t i=0;i<owned_cells.dimension(0);i++)
+  for(size_t i=0;i<owned_cells.extent(0);i++)
     global_to_local[owned_cells(i)] = i;
-  for(size_t i=0;i<ghstd_cells.dimension(0);i++)
-    global_to_local[ghstd_cells(i)] = i+Teuchos::as<int>(owned_cells.dimension(0));
+  for(size_t i=0;i<ghstd_cells.extent(0);i++)
+    global_to_local[ghstd_cells(i)] = i+Teuchos::as<int>(owned_cells.extent(0));
 
   // this class comes from Mini-PIC and Matt B
   RCP<panzer::FaceToElement<LO,GO> > faceToElement = rcp(new panzer::FaceToElement<LO,GO>());
@@ -832,8 +832,8 @@ generateLocalMeshInfo(const panzer_stk::STK_Interface & mesh,
   auto elems_by_face = faceToElement->getFaceToElementsMap();
   auto face_to_lidx  = faceToElement->getFaceToCellLocalIdxMap();
 
-  const int num_owned_cells =owned_cells.dimension(0);
-  const int num_ghstd_cells =ghstd_cells.dimension(0);
+  const int num_owned_cells =owned_cells.extent(0);
+  const int num_ghstd_cells =ghstd_cells.extent(0);
 
 //  print_view("elems_by_face",elems_by_face);
 
@@ -847,7 +847,7 @@ generateLocalMeshInfo(const panzer_stk::STK_Interface & mesh,
 
   // Iterate over all faces and identify the faces connected to a potential virtual cell
   std::vector<int> all_boundary_faces;
-  const int num_faces = elems_by_face.dimension(0);
+  const int num_faces = elems_by_face.extent(0);
   for(int face=0;face<num_faces;++face){
     if(elems_by_face(face,0) < 0 or elems_by_face(face,1) < 0){
       all_boundary_faces.push_back(face);
@@ -858,7 +858,7 @@ generateLocalMeshInfo(const panzer_stk::STK_Interface & mesh,
   // total cells and faces include owned, ghosted, and virtual
   const LO num_real_cells = num_owned_cells + num_ghstd_cells;
   const LO num_total_cells = num_real_cells + num_virtual_cells;
-  const LO num_total_faces = elems_by_face.dimension(0);
+  const LO num_total_faces = elems_by_face.extent(0);
 
   // Create some global indexes associated with the virtual cells
   // Note: We are assuming that virtual cells belong to ranks and are not 'shared' - this will change later on
@@ -914,7 +914,7 @@ generateLocalMeshInfo(const panzer_stk::STK_Interface & mesh,
   // Transfer information from 'faceToElement' datasets to local arrays
   {
     int virtual_cell_index = num_real_cells;
-    for(size_t f=0;f<elems_by_face.dimension_0();f++) {
+    for(size_t f=0;f<elems_by_face.extent(0);f++) {
 
       const GO global_c0 = elems_by_face(f,0);
       const GO global_c1 = elems_by_face(f,1);
@@ -983,9 +983,9 @@ generateLocalMeshInfo(const panzer_stk::STK_Interface & mesh,
   mesh_info.face_to_cells           = face_to_cells;      // faces
   mesh_info.face_to_lidx            = face_to_localidx;
 
-  mesh_info.num_owned_cells = owned_cells.dimension_0();
-  mesh_info.num_ghstd_cells = ghstd_cells.dimension_0();
-  mesh_info.num_virtual_cells = virtual_cells.dimension_0();
+  mesh_info.num_owned_cells = owned_cells.extent(0);
+  mesh_info.num_ghstd_cells = ghstd_cells.extent(0);
+  mesh_info.num_virtual_cells = virtual_cells.extent(0);
 
   mesh_info.global_cells = Kokkos::View<GO*>("global_cell_indices",num_total_cells);
   mesh_info.local_cells = Kokkos::View<LO*>("local_cell_indices",num_total_cells);

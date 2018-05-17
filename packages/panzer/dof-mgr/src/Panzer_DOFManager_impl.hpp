@@ -774,7 +774,7 @@ DOFManager<LO,GO>::buildGlobalUnknowns_GUN(const Tpetra::MultiVector<GO,LO,GO,pa
     typedef typename MV::dual_view_type::t_dev KV;
     typedef typename MV::dual_view_type::t_dev::memory_space DMS;
     KV values = non_overlap_mv->template getLocalView<DMS>();
-    auto mv_size = values.dimension_0();
+    auto mv_size = values.extent(0);
     Kokkos::parallel_reduce(mv_size,panzer::dof_functors::SumRank2<GO,KV>(values),localsum);
   }
 

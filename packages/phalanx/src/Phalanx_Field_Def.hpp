@@ -241,7 +241,7 @@ void PHX::Field<DataT,Rank>::print(std::ostream& os, bool printValues) const
   for (int i=0; i < Rank; ++i) {
     if (i > 0)
       os << ",";
-    os << m_field_data.dimension(i);
+    os << m_field_data.extent(i);
   }
   os << "): ";
 

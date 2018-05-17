@@ -119,11 +119,11 @@ evaluateFields(
 
    for(std::size_t fieldIndex=0; fieldIndex<scatterFields_.size();fieldIndex++) {
       PHX::MDField<const ScalarT,panzer::Cell> & field = scatterFields_[fieldIndex];
-      // std::vector<double> value(field.dimension(0),0.0);
-      PHX::MDField<double,panzer::Cell,panzer::NODE> value = af.buildStaticArray<double,panzer::Cell,panzer::NODE>("",field.dimension(0),1);
+      // std::vector<double> value(field.extent(0),0.0);
+      PHX::MDField<double,panzer::Cell,panzer::NODE> value = af.buildStaticArray<double,panzer::Cell,panzer::NODE>("",field.extent(0),1);
 
       // write to double field
-      for(unsigned i=0; i<field.dimension(0);i++)
+      for(unsigned i=0; i<field.extent(0);i++)
          value(i,0) = Sacado::ScalarValue<ScalarT>::eval(field(i));
 
       mesh_->setCellFieldData(field.fieldTag().name(),blockId,localCellIds,value);

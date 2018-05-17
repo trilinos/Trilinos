@@ -63,10 +63,10 @@ void DOF_PointField<EvalT,TRAITST>::initialize(const std::string & fieldName,
 {
   intrepidBasis = fieldBasis.getIntrepid2Basis();
 
-  int cellCount = fieldBasis.functional->dimension(0);
-  int coeffCount = fieldBasis.functional->dimension(1);
-  int pointCount = coordLayout->dimension(0);
-  int dimCount = coordLayout->dimension(1);
+  int cellCount = fieldBasis.functional->extent(0);
+  int coeffCount = fieldBasis.functional->extent(1);
+  int pointCount = coordLayout->extent(0);
+  int dimCount = coordLayout->extent(1);
 
   Teuchos::RCP<PHX::DataLayout> basisLayout = fieldBasis.functional;
 

@@ -119,7 +119,7 @@ TEST( Symbolic, functions ) {
                                                stree_roots,
                                                work);
 
-  // const size_type numSuperNodes = supernodes.dimension_0() - 1;
+  // const size_type numSuperNodes = supernodes.extent(0) - 1;
   // printf("supernodes = \n");
   // for (size_type i=0;i<numSuperNodes;++i) {
   //   printf("sid=  %d\n", supernodes(i));

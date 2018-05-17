@@ -105,9 +105,9 @@ postRegistrationSetup(typename Traits::SetupData d,
 
   faceNormal = Kokkos::createDynRankView(gatherFieldNormals.get_static_view(),
 					 "faceNormal",
-					 gatherFieldNormals.dimension(0),
-					 gatherFieldNormals.dimension(1),
-					 gatherFieldNormals.dimension(2));
+					 gatherFieldNormals.extent(0),
+					 gatherFieldNormals.extent(1),
+					 gatherFieldNormals.extent(2));
 }
 
 // **********************************************************************
@@ -121,7 +121,7 @@ evaluateFields(typename Traits::EvalData workset)
 
   const shards::CellTopology & parentCell = *basis->getCellTopology();
   int cellDim = parentCell.getDimension();
-  int numFaces = gatherFieldNormals.dimension(1);
+  int numFaces = gatherFieldNormals.extent(1);
 
   // allocate space that is sized correctly for AD
   auto refEdges = Kokkos::createDynRankView(gatherFieldNormals.get_static_view(),"ref_edges", 2, cellDim);

@@ -67,7 +67,7 @@ template<typename EvalT, typename Traits>
 KOKKOS_INLINE_FUNCTION
 void Density<EvalT, Traits>:: operator () (const int i) const
 {
-  for (PHX::index_size_type ip=0; ip< static_cast<PHX::index_size_type>(density.dimension_1()); ip++)
+  for (PHX::index_size_type ip=0; ip< static_cast<PHX::index_size_type>(density.extent(1)); ip++)
     density(i,ip) =  temp(i,ip) * temp(i,ip);  
 }
 
@@ -76,7 +76,7 @@ void Density<EvalT, Traits>:: operator () (const int i) const
 // KOKKOS_INLINE_FUNCTION
 // void Density<EvalT, Traits>:: operator () (const DensityTag, const int i) const
 // {
-//   for (PHX::index_size_type ip=0; ip< static_cast<PHX::index_size_type>(density.dimension_1()); ip++)
+//   for (PHX::index_size_type ip=0; ip< static_cast<PHX::index_size_type>(density.extent(1)); ip++)
 //     density(i,ip) =  temp(i,ip) * temp(i,ip);  
 // }
 
@@ -85,7 +85,7 @@ void Density<EvalT, Traits>:: operator () (const int i) const
 // KOKKOS_INLINE_FUNCTION
 // void Density<EvalT, Traits>:: operator () (const DensityTag, typename Kokkos::TeamPolicy<>::member_type & team) const
 // {
-//   for (PHX::index_size_type ip=0; ip< static_cast<PHX::index_size_type>(density.dimension_1()); ip++)
+//   for (PHX::index_size_type ip=0; ip< static_cast<PHX::index_size_type>(density.extent(1)); ip++)
 //     density(0,ip) =  temp(0,ip) * temp(0,ip);
 // }
 
