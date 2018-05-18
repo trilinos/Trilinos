@@ -176,7 +176,7 @@ int Epetra_CrsGraph::TAllocate(const int* numIndicesPerRow, int Inc, bool static
     // yet.
     Data.SortedEntries_[i].entries_.resize(NumIndices,
                  indexBaseMinusOne);
-    Data.Indices_[i] = NumIndices > 0 ? &Data.SortedEntries_[i].entries_[0]: NULL;
+    Data.Indices_[i] = NumIndices > 0 ? Data.SortedEntries_[i].entries_.data() : NULL;
     Data.SortedEntries_[i].entries_.resize(0);
   }
       }
