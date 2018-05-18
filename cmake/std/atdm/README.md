@@ -64,6 +64,9 @@ The following `<job-name>` keywords specify the `<COMPILER>`:
 * `clang`: Use the LLVM Clang compilers (`<COMPILER>=CLANG`)
 * `cuda`: Do a CUDA build for that system (`<COMPILER>=CUDA`, `NODE_TYPE=CUDA`)
 
+If `default` is used, then the default compiler for the system will be
+selected.
+
 The following `<job-name>` keywords specify debug or optimized `<BUILD_TYPE>
 `(used for the CMake cache var `CMAKE_BUILD_TYPE`with default
 `<BUILD_TYPE>=DEBUG`):

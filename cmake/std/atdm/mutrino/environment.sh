@@ -6,10 +6,14 @@
 #
 ################################################################################
 
+if [ "$ATDM_CONFIG_COMPILER" == "DEFAULT" ] ; then
+  export ATDM_CONFIG_COMPILER=INTEL
+fi
+
 echo "Using mutrino compiler stack $ATDM_CONFIG_COMPILER to build $ATDM_CONFIG_BUILD_TYPE code with Kokkos node type $ATDM_CONFIG_NODE_TYPE"
-export ATDM_CONFIG_BUILD_COUNT=8
-export OMPI_CXX=
+
 export ATDM_CONFIG_USE_NINJA=OFF
+export ATDM_CONFIG_BUILD_COUNT=8
 export OMP_NUM_THREADS=2
 
 # Don't purge as this removes the Cray default environment
