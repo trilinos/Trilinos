@@ -99,7 +99,7 @@ namespace MueLu {
 
     // Now we create new aggregates using root nodes in all colors other than the first color,
     // as the first color was already exhausted in Phase 1.
-    for(int color = 1; color < numColors + 1; ++color) {
+    for(int color = 2; color < numColors + 1; ++color) {
 
       LO tmpNumNonAggregatedNodes = 0;
       Kokkos::parallel_reduce("Aggregation Phase 2a: loop over each individual color", numRows,
