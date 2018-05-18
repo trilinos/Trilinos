@@ -156,64 +156,64 @@ class Matrix{
 
 };
 
-template<typename Real>
-class MatrixFactorization {
-  public:
-    MatrixFactorization(Ptr<LA::Matrix<Real>> A, bool inplace = false);
-    Ptr<LA::Vector<Real>> solve(Ptr<LA::Vector<Real>> b);
-};
+//template<typename Real>
+//class MatrixFactorization {
+//  public:
+//    MatrixFactorization(Ptr<LA::Matrix<Real>> A, bool inplace = false);
+//    Ptr<LA::Vector<Real>> solve(Ptr<LA::Vector<Real>> b);
+//};
 
-template<typename Real>
-class LuFactorization : public MatrixFactorization<Real>{
-  private:
-    Eigen::PartialPivLU<LA::Matrix<Real>> _lu;
-    Ptr<LA::Matrix<Real>> _A;
+//template<typename Real>
+//class LuFactorization : public MatrixFactorization<Real>{
+//  private:
+//    Eigen::PartialPivLU<LA::Matrix<Real>> _lu;
+//    Ptr<LA::Matrix<Real>> _A;
 
-  public:
-    LuFactorization(Ptr<LA::Matrix<Real>> A, bool inplace = false)
-    {
-      _lu = A.partialPivLu(inplace);
-      if(inplace)
-        _A = A; // we need to keep the matrix A alive if we do the decomposition in place.
-    }
+//  public:
+//    LuFactorization(Ptr<LA::Matrix<Real>> A, bool inplace = false)
+//    {
+//      _lu = A.partialPivLu(inplace);
+//      if(inplace)
+//        _A = A; // we need to keep the matrix A alive if we do the decomposition in place.
+//    }
 
-    Ptr<LA::Vector<Real>> solve(Ptr<LA::Vector<Real>> b)
-    {
-      return makePtr<LA::Vector<Real>>(_lu.solve(*b));
-    }
+//    Ptr<LA::Vector<Real>> solve(Ptr<LA::Vector<Real>> b)
+//    {
+//      return makePtr<LA::Vector<Real>>(_lu.solve(*b));
+//    }
 
-};
+//};
 
-template<typename Real>
-class LinearSolver {
-private:
+//template<typename Real>
+//class LinearSolver {
+//private:
   
- Ptr<LA::Matrix<Real>>                A_;
- Ptr<LA::MatrixFactorization<Real>>   P_;
- ParameterList                        options_;
+// Ptr<LA::Matrix<Real>>                A_;
+// Ptr<LA::MatrixFactorization<Real>>   P_;
+// ParameterList                        options_;
 
-public:
-  LinearSolver(Ptr<LA::Matrix<Real>> A, ParameterList& opts) : A_(A), options_(opts)
-  {
-    bool inplace = options_.get("Inplace", false);
-    if(options_.get("Factorization", "LU") == "LU")
-      P_ = dynamicPtrCast<MatrixFactorization>(makePtr<LuFactorization>(A_, inplace));
-    else
-      throw Exception::NotImplemented("Only LU factorization implemented for Eigen backend");
-  }
+//public:
+//  LinearSolver(Ptr<LA::Matrix<Real>> A, ParameterList& opts) : A_(A), options_(opts)
+//  {
+//    bool inplace = options_.get("Inplace", false);
+//    if(options_.get("Factorization", "LU") == "LU")
+//      P_ = dynamicPtrCast<MatrixFactorization>(makePtr<LuFactorization>(A_, inplace));
+//    else
+//      throw Exception::NotImplemented("Only LU factorization implemented for Eigen backend");
+//  }
 
-  void solve(const Ptr<LA::Vector<Real>>&x, const Ptr<LA::Vector<Real>>&b, std::ostream& outStream = std::cout)
-  {
-      auto res = P_.solve(b);
-      *b = *res; // Does this DTRT?
-  };
+//  void solve(const Ptr<LA::Vector<Real>>&x, const Ptr<LA::Vector<Real>>&b, std::ostream& outStream = std::cout)
+//  {
+//      auto res = P_.solve(b);
+//      *b = *res; // Does this DTRT?
+//  };
 
-  Ptr<LA::Vector<Real>> solve(const Ptr<LA::Vector<Real>>&b, std::ostream& outStream = std::cout)
-  {
-      return P_.solve(b);
-  };
+//  Ptr<LA::Vector<Real>> solve(const Ptr<LA::Vector<Real>>&b, std::ostream& outStream = std::cout)
+//  {
+//      return P_.solve(b);
+//  };
 
-};
+//};
 
 //template<typename> class EigenvalueSolver;
 

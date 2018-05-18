@@ -56,11 +56,20 @@ APPEND_GLOB( HEADERS ${PARAMETERLIST_DIR}/*.hpp )
 INCLUDE_DIRECTORIES( ${STACKTRACE_DIR} )
 APPEND_GLOB( HEADERS ${STACKTRACE_DIR}/*.hpp )
 
-find_package(Eigen3 REQUIRED)
-INCLUDE_DIRECTORIES(${EIGEN3_INCLUDE_DIR})
+#find_package(Eigen3 REQUIRED)
+#INCLUDE_DIRECTORIES(${EIGEN3_INCLUDE_DIR})
 
-INCLUDE_DIRECTORIES( compatibility/eigen/ )
-APPEND_GLOB( HEADERS compatibility/eigen/*.hpp )
+#INCLUDE_DIRECTORIES( compatibility/eigen/ )
+#APPEND_GLOB( HEADERS compatibility/eigen/*.hpp )
+
+INCLUDE_DIRECTORIES( compatibility/teuchos/la/ )
+APPEND_GLOB( HEADERS compatibility/teuchos/la/*.hpp )
+
+#INCLUDE_DIRECTORIES( compatibility/lapack/ )
+#APPEND_GLOB( HEADERS compatibility/lapack/*.hpp )
+
+INCLUDE_DIRECTORIES( compatibility/teuchos/lapack/ )
+APPEND_GLOB( HEADERS compatibility/teuchos/lapack/*.hpp )
 
 #
 # vector headers
