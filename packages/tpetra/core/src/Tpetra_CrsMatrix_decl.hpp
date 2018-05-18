@@ -2263,7 +2263,7 @@ namespace Tpetra {
     ///
     /// \warning This method is DEPRECATED.  DO NOT CALL IT.  It may
     ///   go away at any time.
-    global_size_t TPETRA_DEPRECATED getGlobalNumDiags() const;
+    global_size_t TPETRA_DEPRECATED getGlobalNumDiags () const;
 
     /// \brief Number of diagonal entries in the matrix's graph, on
     ///   the calling process.
@@ -2272,30 +2272,52 @@ namespace Tpetra {
     ///
     /// \warning This method is DEPRECATED.  DO NOT CALL IT.  It may
     ///   go away at any time.
-    size_t TPETRA_DEPRECATED getNodeNumDiags() const;
+    size_t TPETRA_DEPRECATED getNodeNumDiags () const;
 
-    //! \brief Returns the maximum number of entries across all rows/columns on all nodes.
-    /** Undefined if isFillActive().
-     */
-    size_t getGlobalMaxNumRowEntries() const;
+    /// \brief Maximum number of entries in any row of the matrix,
+    ///   over all processes in the matrix's communicator.
+    ///
+    /// \pre <tt>! isFillActive()</tt>
+    ///
+    /// This method only uses the matrix's graph.  Explicitly stored
+    /// zeros count as "entries."
+    size_t getGlobalMaxNumRowEntries () const;
 
-    //! \brief Returns the maximum number of entries across all rows/columns on this node.
-    /** Undefined if isFillActive().
-     */
-    size_t getNodeMaxNumRowEntries() const;
+    /// \brief Maximum number of entries in any row of the matrix,
+    ///   on this process.
+    ///
+    /// \pre <tt>! isFillActive()</tt>
+    ///
+    /// This method only uses the matrix's graph.  Explicitly stored
+    /// zeros count as "entries."
+    size_t getNodeMaxNumRowEntries () const;
 
-    //! \brief Indicates whether the matrix has a well-defined column map.
-    bool hasColMap() const;
+    //! Whether the matrix has a well-defined column Map.
+    bool hasColMap () const;
 
-    //! \brief Indicates whether the matrix is lower triangular.
-    /** Undefined if isFillActive().
-     */
-    bool isLowerTriangular() const;
+    /// \brief Whether the matrix is locally lower triangular.
+    ///
+    /// \warning DO NOT CALL THIS METHOD!  This method is DEPRECATED
+    ///   and will DISAPPEAR VERY SOON per #2630.
+    ///
+    /// \pre <tt>! isFillActive()</tt>.
+    ///   If fill is active, this method's behavior is undefined.
+    ///
+    /// \note This is entirely a local property.  That means this
+    ///   method may return different results on different processes.
+    bool TPETRA_DEPRECATED isLowerTriangular () const;
 
-    //! \brief Indicates whether the matrix is upper triangular.
-    /** Undefined if isFillActive().
-     */
-    bool isUpperTriangular() const;
+    /// \brief Whether the matrix is locally upper triangular.
+    ///
+    /// \warning DO NOT CALL THIS METHOD!  This method is DEPRECATED
+    ///   and will DISAPPEAR VERY SOON per #2630.
+    ///
+    /// \pre <tt>! isFillActive()</tt>.
+    ///   If fill is active, this method's behavior is undefined.
+    ///
+    /// \note This is entirely a local property.  That means this
+    ///   method may return different results on different processes.
+    bool TPETRA_DEPRECATED isUpperTriangular () const;
 
     /// \brief Whether the matrix is locally indexed on the calling process.
     ///

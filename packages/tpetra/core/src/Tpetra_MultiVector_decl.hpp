@@ -73,6 +73,10 @@ namespace Tpetra {
 
   // forward declaration of MultiVector (declared later in this file)
   template<class S, class LO, class GO, class N> class MultiVector;
+
+  // forward declaration of FEMultiVector 
+  template<class S, class LO, class GO, class N> class FEMultiVector;
+
 #endif // DOXYGEN_SHOULD_SKIP_THIS
 
   namespace Details {
@@ -770,6 +774,12 @@ namespace Tpetra {
     template <class Node2>
     Teuchos::RCP<MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node2> >
     clone (const Teuchos::RCP<Node2>& node2) const;
+
+    /// \brief Swaps the data from *this with the data and maps from mv
+    /// \param mv [in/out] a MultiVector
+    ///
+    /// Note: This is done with minimal copying of data
+    void swap(MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> & mv);
 
     //! Destructor (virtual for memory safety of derived classes).
     virtual ~MultiVector ();

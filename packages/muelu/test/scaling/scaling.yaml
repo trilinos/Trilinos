@@ -1,0 +1,42 @@
+# For a generic symmetric scalar problem, these are the recommended settings for MueLu.
+muelu:
+  # general
+  verbosity: high
+  'coarse: max size': 1000
+  multigrid algorithm: sa
+
+  # reduce setup cost for symmetric problems
+  'transpose: use implicit': true
+
+  # start of default values for general options (can be omitted)
+  max levels: 10
+  number of equations: 1
+  'sa: use filtered matrix': true
+
+  # aggregation
+  'aggregation: type': uncoupled
+  'aggregation: drop scheme': classical
+  # Uncomment the next line to enable dropping of weak connections, which
+  # can help AMG convergence for anisotropic problems.  The exact value is
+  # problem dependent.
+  # 'aggregation: drop tol': 0.02
+
+  # smoothing
+  'smoother: type': CHEBYSHEV
+  'smoother: params':
+    'chebyshev: degree': 2
+    'chebyshev: ratio eigenvalue': 7.0
+    'chebyshev: min eigenvalue': 1.0
+    'chebyshev: zero starting solution': true
+
+  # repartitioning
+  'repartition: enable': true
+  'repartition: partitioner': zoltan2
+  'repartition: start level': 2
+  'repartition: min rows per proc': 800
+  'repartition: max imbalance': 1.1
+  # start of default values for repartitioning (can be omitted)
+  'repartition: remap parts': true
+  'repartition: rebalance P and R': false
+  'repartition: params':
+    algorithm: multijagged

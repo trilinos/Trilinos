@@ -35,7 +35,12 @@ using Tempus::IntegratorBasic;
 using Tempus::SolutionHistory;
 using Tempus::SolutionState;
 
+// Comment out any of the following tests to exclude from build/run.
+#define TEST_CONSTRUCTING_FROM_DEFAULTS
+#define TEST_VANDERPOL
 
+
+#ifdef TEST_CONSTRUCTING_FROM_DEFAULTS
 // ************************************************************
 // ************************************************************
 TEUCHOS_UNIT_TEST(IMEX_RK_Partitioned, ConstructingFromDefaults)
@@ -82,6 +87,7 @@ TEUCHOS_UNIT_TEST(IMEX_RK_Partitioned, ConstructingFromDefaults)
   timeStepControl->setInitTime (tscPL.get<double>("Initial Time"));
   timeStepControl->setFinalTime(tscPL.get<double>("Final Time"));
   timeStepControl->setInitTimeStep(dt);
+  timeStepControl->initialize();
 
   // Setup initial condition SolutionState --------------------
   Thyra::ModelEvaluatorBase::InArgs<double> inArgsIC =
@@ -137,8 +143,10 @@ TEUCHOS_UNIT_TEST(IMEX_RK_Partitioned, ConstructingFromDefaults)
   TEST_FLOATING_EQUALITY(get_ele(*(x), 0),  1.810210, 1.0e-4 );
   TEST_FLOATING_EQUALITY(get_ele(*(x), 1), -0.754602, 1.0e-4 );
 }
+#endif // TEST_CONSTRUCTING_FROM_DEFAULTS
 
 
+#ifdef TEST_VANDERPOL
 // ************************************************************
 // ************************************************************
 TEUCHOS_UNIT_TEST(IMEX_RK_Partitioned, VanDerPol)
@@ -175,12 +183,16 @@ TEUCHOS_UNIT_TEST(IMEX_RK_Partitioned, VanDerPol)
     std::replace(stepperName.begin(), stepperName.end(), ' ', '_');
     std::replace(stepperName.begin(), stepperName.end(), '/', '.');
 
+    RCP<Tempus::IntegratorBasic<double> > integrator;
     std::vector<RCP<Thyra::VectorBase<double>>> solutions;
+    std::vector<RCP<Thyra::VectorBase<double>>> solutionsDot;
     std::vector<double> StepSize;
-    std::vector<double> ErrorNorm;
+    std::vector<double> xErrorNorm;
+    std::vector<double> xDotErrorNorm;
+
     const int nTimeStepSizes = 3;  // 6 for error plot
     double dt = stepperInitDt[m];
-    double order = 0.0;
+    double time = 0.0;
     for (int n=0; n<nTimeStepSizes; n++) {
 
       // Read params from .xml file
@@ -224,83 +236,59 @@ TEUCHOS_UNIT_TEST(IMEX_RK_Partitioned, VanDerPol)
       // Setup the Integrator and reset initial time step
       pl->sublist("Default Integrator")
          .sublist("Time Step Control").set("Initial Time Step", dt);
-      RCP<Tempus::IntegratorBasic<double> > integrator =
-        Tempus::integratorBasic<double>(pl, model);
-      order = integrator->getStepper()->getOrder();
+      integrator = Tempus::integratorBasic<double>(pl, model);
 
       // Integrate to timeMax
       bool integratorStatus = integrator->advanceTime();
       TEST_ASSERT(integratorStatus)
 
       // Test if at 'Final Time'
-      double time = integrator->getTime();
+      time = integrator->getTime();
       double timeFinal =pl->sublist("Default Integrator")
         .sublist("Time Step Control").get<double>("Final Time");
       double tol = 100.0 * std::numeric_limits<double>::epsilon();
       TEST_FLOATING_EQUALITY(time, timeFinal, tol);
 
       // Store off the final solution and step size
+      StepSize.push_back(dt);
       auto solution = Thyra::createMember(model->get_x_space());
       Thyra::copy(*(integrator->getX()),solution.ptr());
       solutions.push_back(solution);
-      StepSize.push_back(dt);
+      auto solutionDot = Thyra::createMember(model->get_x_space());
+      Thyra::copy(*(integrator->getXdot()),solutionDot.ptr());
+      solutionsDot.push_back(solutionDot);
 
       // Output finest temporal solution for plotting
       // This only works for ONE MPI process
       if ((n == 0) or (n == nTimeStepSizes-1)) {
         std::string fname = "Tempus_"+stepperName+"_VanDerPol-Ref.dat";
         if (n == 0) fname = "Tempus_"+stepperName+"_VanDerPol.dat";
-        std::ofstream ftmp(fname);
         RCP<const SolutionHistory<double> > solutionHistory =
           integrator->getSolutionHistory();
-        int nStates = solutionHistory->getNumStates();
-        for (int i=0; i<nStates; i++) {
-          RCP<const SolutionState<double> > solutionState =
-            (*solutionHistory)[i];
-          RCP<const Thyra::VectorBase<double> > x = solutionState->getX();
-          double ttime = solutionState->getTime();
-          ftmp << ttime << "   " << get_ele(*x, 0) << "   " << get_ele(*x, 1)
-               << std::endl;
-        }
-        ftmp.close();
+        writeSolution(fname, solutionHistory);
       }
-    }
-
-    // Calculate the error - use the most temporally refined mesh for
-    // the reference solution.
-    auto ref_solution = solutions[solutions.size()-1];
-    std::vector<double> StepSizeCheck;
-    for (std::size_t i=0; i < (solutions.size()-1); ++i) {
-      auto tmp = solutions[i];
-      Thyra::Vp_StV(tmp.ptr(), -1.0, *ref_solution);
-      const double L2norm = Thyra::norm_2(*tmp);
-      StepSizeCheck.push_back(StepSize[i]);
-      ErrorNorm.push_back(L2norm);
     }
 
     // Check the order and intercept
-    double slope = computeLinearRegressionLogLog<double>(StepSizeCheck,ErrorNorm);
-    std::cout << "  Stepper = " << stepperType << std::endl;
-    std::cout << "  =========================" << std::endl;
-    std::cout << "  Expected order: " << order << std::endl;
-    std::cout << "  Observed order: " << slope << std::endl;
-    std::cout << "  =========================" << std::endl;
-    TEST_FLOATING_EQUALITY( slope, stepperOrders[m], 0.02 );
-    TEST_FLOATING_EQUALITY( ErrorNorm[0], stepperErrors[m], 1.0e-4 );
+    double xSlope = 0.0;
+    double xDotSlope = 0.0;
+    RCP<Tempus::Stepper<double> > stepper = integrator->getStepper();
+    //double order = stepper->getOrder();
+    writeOrderError("Tempus_"+stepperName+"_VanDerPol-Error.dat",
+                    stepper, StepSize,
+                    solutions,    xErrorNorm,    xSlope,
+                    solutionsDot, xDotErrorNorm, xDotSlope);
 
-    // Write error data
-    {
-      std::ofstream ftmp("Tempus_"+stepperName+"_VanDerPol-Error.dat");
-      double error0 = 0.8*ErrorNorm[0];
-      for (std::size_t n = 0; n < StepSizeCheck.size(); n++) {
-        ftmp << StepSizeCheck[n]  << "   " << ErrorNorm[n] << "   "
-             << error0*(pow(StepSize[n]/StepSize[0],order)) << std::endl;
-      }
-      ftmp.close();
-    }
+    TEST_FLOATING_EQUALITY( xSlope,        stepperOrders[m], 0.02 );
+    TEST_FLOATING_EQUALITY( xErrorNorm[0], stepperErrors[m], 1.0e-4 );
+    // xDot not yet available for IMEX_RK_Partitioned.
+    //TEST_FLOATING_EQUALITY( xDotSlope,              1.74898, 0.02 );
+    //TEST_FLOATING_EQUALITY( xDotErrorNorm[0],        1.0038, 1.0e-4 );
+
   }
   Teuchos::TimeMonitor::summarize();
 }
+#endif // TEST_VANDERPOL
 
 
 } // namespace Tempus_Test

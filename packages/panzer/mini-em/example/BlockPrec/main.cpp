@@ -10,6 +10,7 @@
 #include "Teuchos_oblackholestream.hpp"
 #include "Teuchos_Assert.hpp"
 #include "Teuchos_as.hpp"
+#include "Teuchos_StackedTimer.hpp"
 
 #include "Panzer_NodeType.hpp"
 #include "Panzer_ClosureModel_Factory_TemplateManager.hpp"
@@ -116,6 +117,8 @@ int main(int argc,char * argv[])
 
     Teuchos::RCP<const Teuchos::MpiComm<int> > comm
       = rcp_dynamic_cast<const Teuchos::MpiComm<int> >(Teuchos::DefaultComm<int>::getComm());
+    Teuchos::RCP<Teuchos::StackedTimer> stacked_timer(new Teuchos::StackedTimer("Mini-EM"));
+    Teuchos::TimeMonitor::setStackedTimer(stacked_timer);
 
     {
       Teuchos::RCP<Teuchos::TimeMonitor> tM = Teuchos::rcp(new Teuchos::TimeMonitor(*Teuchos::TimeMonitor::getNewTimer(std::string("Mini-EM: Total Time"))));
@@ -562,7 +565,10 @@ int main(int argc,char * argv[])
         }
       }
     }
-    Teuchos::TimeMonitor::summarize(*out,false,true,false,Teuchos::Union);
+//    Teuchos::TimeMonitor::summarize(*out,false,true,false,Teuchos::Union);
+    Teuchos::StackedTimer::OutputOptions options;
+    options.output_fraction = options.output_histogram = options.output_minmax = true;
+    stacked_timer->report(*out, comm, options);
 
   }
   Kokkos::finalize();

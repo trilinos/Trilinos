@@ -44,7 +44,8 @@ Level 1
    Build (MueLu::CoarseMapFactory_kokkos)
    [empty list]
    
-  [empty list]
+  matrixmatrix: kernel params -> 
+   [empty list]
   
   Constraint (MueLu::ConstraintFactory)
    Ppattern (MueLu::PatternFactory)
@@ -118,7 +119,8 @@ Level 2
    Build (MueLu::CoarseMapFactory_kokkos)
    [empty list]
    
-  [empty list]
+  matrixmatrix: kernel params -> 
+   [empty list]
   
   Constraint (MueLu::ConstraintFactory)
    Ppattern (MueLu::PatternFactory)

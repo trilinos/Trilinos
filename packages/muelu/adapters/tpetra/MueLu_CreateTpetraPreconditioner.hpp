@@ -96,44 +96,16 @@ namespace MueLu {
       }
       userList.set<RCP<Xpetra::MultiVector<double,LO,GO,NO> > >("Coordinates", coordinates);
     }
-    RCP<MultiVector> nullspace = Teuchos::null;
+
     if (userList.isParameter("Nullspace")) {
+      RCP<MultiVector> nullspace = Teuchos::null;
       try {
         nullspace = TpetraMultiVector_To_XpetraMultiVector<SC,LO,GO,NO>(userList.get<RCP<Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> > >("Nullspace"));
       } catch(Teuchos::Exceptions::InvalidParameterType) {
         nullspace = userList.get<RCP<Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> > >("Nullspace");
       }
+      userList.set<RCP<MultiVector> >("Nullspace", nullspace);
     }
-    if(nullspace == Teuchos::null) {
-      int nPDE = MueLu::MasterList::getDefault<int>("number of equations");
-      if (inParamList.isSublist("Matrix")) {
-        // Factory style parameter list
-        const Teuchos::ParameterList& operatorList = inParamList.sublist("Matrix");
-        if (operatorList.isParameter("PDE equations"))
-          nPDE = operatorList.get<int>("PDE equations");
-
-      } else if (inParamList.isParameter("number of equations")) {
-        // Easy style parameter list
-        nPDE = inParamList.get<int>("number of equations");
-      }
-
-      nullspace = Xpetra::MultiVectorFactory<SC,LO,GO,NO>::Build(A->getDomainMap(), nPDE);
-      if (nPDE == 1) {
-        nullspace->putScalar(Teuchos::ScalarTraits<Scalar>::one());
-
-      } else {
-        for (int i = 0; i < nPDE; i++) {
-          Teuchos::ArrayRCP<Scalar> nsData = nullspace->getDataNonConst(i);
-          for (int j = 0; j < nsData.size(); j++) {
-            GlobalOrdinal GID = A->getDomainMap()->getGlobalElement(j) - A->getDomainMap()->getIndexBase();
-            if ((GID-i) % nPDE == 0)
-              nsData[j] = Teuchos::ScalarTraits<Scalar>::one();
-          }
-        }
-      }
-    }
-    if(nullspace == Teuchos::null) {std::cout << "The nullspace is still Teuchos::null as it is added to the Hierarchy!" << std::endl;}
-    userList.set<RCP<MultiVector> >("Nullspace", nullspace);
 
     RCP<Hierarchy> H = MueLu::CreateXpetraPreconditioner<SC,LO,GO,NO>(A,inParamList,inParamList);
     return rcp(new TpetraOperator<SC,LO,GO,NO>(H));
