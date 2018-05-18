@@ -7,7 +7,7 @@ SET_PROPERTY( GLOBAL PROPERTY TEUCHOS_RCP           "Teuchos::RCP"           )
 
 SET_PROPERTY( GLOBAL PROPERTY BACKWARD_CPP          "backward-cpp"           )
 
-SET_PROPERTY( GLOBAL PROPERTY NOOP_STACKTRACE       "noop"                   )
+SET_PROPERTY( GLOBAL PROPERTY SIMPLE_STACKTRACE     "simple"                 )
 
 SET_PROPERTY( GLOBAL PROPERTY BOOST_PROPERTY_TREE   "boost::property_tree"   )
 SET_PROPERTY( GLOBAL PROPERTY BOOST_STACKTRACE      "boost::stacktrace"      )
@@ -17,6 +17,8 @@ SET_PROPERTY( GLOBAL PROPERTY STD_SHARED_PTR        "std::shared_ptr"        )
 SET_DEFAULT( ROL_Ptr           "Teuchos::RCP"           )
 SET_DEFAULT( ROL_ParameterList "Teuchos::ParameterList" )
 SET_DEFAULT( ROL_stacktrace    "Teuchos::stacktrace"    )
+SET_DEFAULT( ROL_LinearAlgebra "Teuchos::SerialDense"   )
+SET_DEFAULT( ROL_LAPACK        "Teuchos::LAPACK"        )
 
 SET( USING_TEUCHOS_ALL ON )
 SET( USING_TEUCHOS_ALL ON PARENT_SCOPE )
@@ -53,6 +55,7 @@ ENDIF()
 
 # set stacktrace type
 IF( ROL_stacktrace STREQUAL "backward-cpp" )
+  INCLUDE(BackwardConfig)
   SET_PROPERTY( GLOBAL PROPERTY STACKTRACE_IMPL "backward-cpp"               )
   SET_PROPERTY( GLOBAL PROPERTY STACKTRACE_DIR  "${DIR}/backward_cpp"        )
   SET( USING_TEUCHOS_ALL OFF )
@@ -74,7 +77,7 @@ ENDIF()
 
 
 # Set linear algebra
-IF( ROL_LA STREQUAL "Eigen")
+IF( ROL_LinearAlgebra STREQUAL "Eigen")
   SET_PROPERTY( GLOBAL PROPERTY LA_IMPL "Eigen"        )
   SET_PROPERTY( GLOBAL PROPERTY LA_DIR  "${DIR}/eigen" )
   find_package(Eigen3 REQUIRED)

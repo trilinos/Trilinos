@@ -117,7 +117,7 @@ public:
   ReductionMin() {
       ROL_TEST_FOR_EXCEPTION(!std::numeric_limits<Real>::is_specialized, 
       std::logic_error,"ReductionMin() requires std::numeric_limits "  
-      << "be specialized on supplied template parameter." << std::endl); 
+        "be specialized on supplied template parameter.\n" ); 
   }
 
   void reduce( const Real &input, Real &output ) const {
@@ -144,7 +144,7 @@ public:
   ReductionMax() {
       ROL_TEST_FOR_EXCEPTION(!std::numeric_limits<Real>::is_specialized, 
       std::logic_error,"ReductionMax() requires std::numeric_limits "  
-      << "be specialized on supplied template parameter." << std::endl); 
+        "be specialized on supplied template parameter.\n" ); 
   }
 
   void reduce( const Real &input, Real &output ) const {

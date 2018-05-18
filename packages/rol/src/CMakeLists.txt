@@ -52,7 +52,7 @@ MESSAGE( "-- ROL has been configured to use the build options:"              )
 MESSAGE( "--   ROL::Ptr           is implemented by ${PTR_STRING}"           )
 MESSAGE( "--   ROL::ParameterList is implemented by ${PARAMETERLIST_STRING}" )
 MESSAGE( "--   ROL::stacktrace    is implemented by ${STACKTRACE_STRING}"    )
-MESSAGE( "--   ROL::LA            is implemented by ${LA_STRING}"            )
+MESSAGE( "--   ROL::LinearAlgebra is implemented by ${LA_STRING}"            )
 MESSAGE( "--   ROL::LAPACK        is implemented by ${LAPACK_STRING}"        )
 
 INCLUDE_DIRECTORIES( ${PTR_DIR} )
