@@ -142,7 +142,7 @@ private:
   const ROL::Ptr<const V> maskL_;   
   const ROL::Ptr<const V> maskU_;
 
-  Teuchos::RPC<V> scratch_;
+  ROL::Ptr<V> scratch_;
 
   const ROL::Ptr<PENALTY> penalty_;
   const ROL::Ptr<OBJ>     obj_;

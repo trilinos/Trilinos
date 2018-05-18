@@ -45,6 +45,7 @@
     \brief Test creating a LineSearch using an externally provided 
            scalar minimization function. 
 */
+#include "Teuchos_GlobalMPISession.hpp"
 
 #include "Teuchos_GlobalMPISession.hpp"
 

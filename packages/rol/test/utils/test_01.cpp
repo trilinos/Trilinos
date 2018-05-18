@@ -46,6 +46,8 @@
 */
 #include "Teuchos_GlobalMPISession.hpp"
 
+#include "Teuchos_GlobalMPISession.hpp"
+
 #include "ROL_ScalarMinimizationTest01.hpp"
 
 typedef double RealT;
