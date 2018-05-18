@@ -151,7 +151,12 @@ struct PackTraits {
     // something other than 1, and the constructor will actually use
     // that value.
     const size_type numVals = numValuesPerScalar (x);
-    return view_type (label, static_cast<size_type> (numEnt), numVals);
+    if ( std::is_same< typename view_type::traits::specialize, void >::value ) {
+      return view_type (label, static_cast<size_type> (numEnt));
+    } 
+    else {
+      return view_type (label, static_cast<size_type> (numEnt), numVals);
+    }
   }
 
   /// \brief Pack the first numEnt entries of the given input buffer
