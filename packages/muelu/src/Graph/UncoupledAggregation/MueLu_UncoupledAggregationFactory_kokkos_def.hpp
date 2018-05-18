@@ -267,10 +267,16 @@ namespace MueLu {
       std::string phase = algos_[a]->description();
       SubFactoryMonitor sfm(*this, "Algo \"" + phase + "\"", currentLevel);
 
-      int oldRank = algos_[a]->SetProcRankVerbose(this->GetProcRankVerbose());
-      algos_[a]->BuildAggregates(pL, *graph, *aggregates, aggStatView, numNonAggregatedNodes,
-                                 colorsDevice, numColors);
-      algos_[a]->SetProcRankVerbose(oldRank);
+      if(numNonAggregatedNodes > 0) {
+        int oldRank = algos_[a]->SetProcRankVerbose(this->GetProcRankVerbose());
+        algos_[a]->BuildAggregates(pL, *graph, *aggregates, aggStatView, numNonAggregatedNodes,
+                                   colorsDevice, numColors);
+        algos_[a]->SetProcRankVerbose(oldRank);
+        TEUCHOS_TEST_FOR_EXCEPTION(numNonAggregatedNodes < 0,
+                                   Exceptions::RuntimeError,
+                                   "the number of nodes aggregated is larger than the number of "
+                                   "nodes in the problem!");
+      }
 
       if (IsPrint(Statistics1)) {
         GO numLocalAggregated = numRows - numNonAggregatedNodes, numGlobalAggregated = 0;
