@@ -724,8 +724,7 @@ private:
 
   //! The matrix for which to construct the preconditioner or smoother.
   Teuchos::RCP<const row_matrix_type> A_;
-  //! Time object to track timing.
-  Teuchos::RCP<Teuchos::Time> Time_;
+  //! Time object to track timing (setup).
   //! Importer for parallel Gauss-Seidel and symmetric Gauss-Seidel.
   Teuchos::RCP<const Tpetra::Import<local_ordinal_type,global_ordinal_type,node_type> > Importer_;
   //! Contains the diagonal elements of \c A_.
