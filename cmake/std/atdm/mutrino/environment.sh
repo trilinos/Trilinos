@@ -28,7 +28,6 @@ if [ "$ATDM_CONFIG_COMPILER" == "INTEL" ]; then
     module load devpack/20180124/cray/7.6.2/intel/17.0.4
     module load gcc/4.9.3
     module load cmake/3.9.0
-    module list
     export MPICXX=`which CC`
     export MPICC=`which cc`
     export MPIF90=`which ftn`
