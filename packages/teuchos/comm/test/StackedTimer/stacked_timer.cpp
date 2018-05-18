@@ -2,6 +2,7 @@
 // @HEADER
 
 #include "Teuchos_UnitTestHarness.hpp"
+#include "Teuchos_PerformanceMonitorBase.hpp"
 #include "Teuchos_TimeMonitor.hpp"
 #include "Teuchos_StackedTimer.hpp"
 #include "Teuchos_DefaultComm.hpp"
@@ -10,6 +11,56 @@
 #include <tuple>
 #include <regex>
 #include <iterator>
+
+
+TEUCHOS_UNIT_TEST(PerformanceMonitorBase, UnsortedMergeUnion) {
+
+  const Teuchos::RCP<const Teuchos::Comm<int>> comm = Teuchos::DefaultComm<int>::getComm();
+
+  Teuchos::Array<std::string> a,b, tmp_a, tmp_b;
+
+  a.push_back("foo");
+  a.push_back("bar");
+  a.push_back("car");
+
+  b.push_back("car");
+  b.push_back("bar");
+  b.push_back("cat");
+
+
+  tmp_a=a;
+  tmp_b=b;
+  Teuchos::unsortedMergePair(tmp_a, tmp_b, Teuchos::Union);
+  TEST_EQUALITY(tmp_b.size(),4);
+  TEST_EQUALITY(tmp_b[0], "car");
+  TEST_EQUALITY(tmp_b[1], "bar");
+  TEST_EQUALITY(tmp_b[2], "cat");
+  TEST_EQUALITY(tmp_b[3], "foo");
+}
+
+TEUCHOS_UNIT_TEST(PerformanceMonitorBase, UnsortedMergeIntersection) {
+
+  const Teuchos::RCP<const Teuchos::Comm<int>> comm = Teuchos::DefaultComm<int>::getComm();
+
+  Teuchos::Array<std::string> a,b, tmp_a, tmp_b;
+
+  a.push_back("foo");
+  a.push_back("bar");
+  a.push_back("car");
+
+  b.push_back("car");
+  b.push_back("bar");
+  b.push_back("cat");
+
+
+  tmp_a=a;
+  tmp_b=b;
+  Teuchos::unsortedMergePair(tmp_a, tmp_b, Teuchos::Intersection);
+  TEST_EQUALITY(tmp_b.size(),2);
+  TEST_EQUALITY(tmp_b[0], "car");
+  TEST_EQUALITY(tmp_b[1], "bar");
+}
+
 
 TEUCHOS_UNIT_TEST(StackedTimer, Basic)
 {
@@ -213,6 +264,8 @@ TEUCHOS_UNIT_TEST(StackedTimer, OverlappingTimersException)
   TEST_THROW(timer.stop("Outer"),std::runtime_error);
 }
 
+
+#ifdef HAVE_TEUCHOS_ADD_TIME_MONITOR_TO_STACKED_TIMER
 TEUCHOS_UNIT_TEST(StackedTimer, OverlappingTimersViaRCP)
 {
   const auto precTimer = Teuchos::TimeMonitor::getNewTimer("Prec");
@@ -223,3 +276,6 @@ TEUCHOS_UNIT_TEST(StackedTimer, OverlappingTimersViaRCP)
 
   TEST_ASSERT(is_null(Teuchos::TimeMonitor::getStackedTimer()));
 }
+#endif
+
+
