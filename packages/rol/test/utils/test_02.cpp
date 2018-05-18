@@ -46,6 +46,8 @@
            scalar minimization function. 
 */
 
+#include "Teuchos_GlobalMPISession.hpp"
+
 #include "ROL_Algorithm.hpp"
 #include "ROL_BisectionScalarMinimization.hpp"
 #include "ROL_LineSearchStep.hpp"

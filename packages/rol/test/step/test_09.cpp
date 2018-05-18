@@ -46,6 +46,8 @@
     \brief Test of Primal Dual Interior Point KKT system
 */
 
+#include "Teuchos_GlobalMPISession.hpp"
+
 #include "ROL_HS32.hpp" 
 #include "ROL_InteriorPointPrimalDualResidual.hpp"
 #include "ROL_RandomVector.hpp"
