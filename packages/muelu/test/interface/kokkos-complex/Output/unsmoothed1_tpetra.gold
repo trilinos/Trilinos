@@ -53,7 +53,8 @@ Level 1
   Build (MueLu::CoarseMapFactory_kokkos)
   [empty list]
   
- [empty list]
+ matrixmatrix: kernel params -> 
+  [empty list]
  
  Transpose P (MueLu::TransPFactory)
  matrixmatrix: kernel params -> 
@@ -122,7 +123,8 @@ Level 2
   Build (MueLu::CoarseMapFactory_kokkos)
   [empty list]
   
- [empty list]
+ matrixmatrix: kernel params -> 
+  [empty list]
  
  Transpose P (MueLu::TransPFactory)
  matrixmatrix: kernel params -> 

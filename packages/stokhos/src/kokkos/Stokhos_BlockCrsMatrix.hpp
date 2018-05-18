@@ -132,7 +132,7 @@ public:
                      const block_vector_type& x,
                      block_vector_type& y )
   {
-    const size_t row_count = A.graph.row_map.dimension_0() - 1;
+    const size_t row_count = A.graph.row_map.extent(0) - 1;
     Kokkos::parallel_for( row_count , Multiply(A,x,y) );
   }
 };

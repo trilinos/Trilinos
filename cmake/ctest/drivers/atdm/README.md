@@ -258,6 +258,7 @@ there is no tractability for changes in these settings!
 ## Specific <system_name> directories
 
 The following `<system_name>` sub-directories exist (in alphabetical order):
+* `mutrino/`: Contains files to drive builds on SNL machine mutrino.
  
 * `rhel6/`: Contains files to drive builds on rhel6 machines with the SEMS
   environment.

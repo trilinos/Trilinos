@@ -65,7 +65,7 @@ public:
 
   MatVec(const ViewTypeA& A_, const ViewTypeB& b_, const ViewTypeC& c_) :
     A(A_), b(b_), c(c_),
-    m(A.dimension_0()), n(A.dimension_1())
+    m(A.extent(0)), n(A.extent(1))
   {
     typedef typename ViewTypeC::execution_space execution_space;
     Kokkos::parallel_for(Kokkos::RangePolicy<execution_space>(0,m), *this);
@@ -102,7 +102,7 @@ public:
 
   MatVecDeriv(const ViewTypeA& A_, const ViewTypeB& b_, const ViewTypeC& c_) :
     A(A_), b(b_), c(c_),
-    m(A.dimension_0()), n(A.dimension_1()), p(A.dimension_2()-1)
+    m(A.extent(0)), n(A.extent(1)), p(A.extent(2)-1)
   {
     typedef typename ViewTypeC::execution_space execution_space;
     Kokkos::parallel_for(Kokkos::RangePolicy<execution_space>(0,m), *this);

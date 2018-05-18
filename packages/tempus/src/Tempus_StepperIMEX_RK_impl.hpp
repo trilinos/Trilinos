@@ -189,7 +189,7 @@ void StepperIMEX_RK<Scalar>::setTableaus(
     this->setExplicitTableau("General ERK",  explicitPL);
     this->setImplicitTableau("General DIRK", implicitPL);
     description_ = stepperType;
-    order_ = 0;  // TODO: Determine overall order
+    order_ = pList->get<int>("overall order", 0);
 
   } else {
     TEUCHOS_TEST_FOR_EXCEPTION( true, std::logic_error,
@@ -468,6 +468,14 @@ void StepperIMEX_RK<Scalar>::takeStep(
 
   TEMPUS_FUNC_TIME_MONITOR("Tempus::StepperIMEX_RK::takeStep()");
   {
+    TEUCHOS_TEST_FOR_EXCEPTION(solutionHistory->getNumStates() < 2,
+      std::logic_error,
+      "Error - StepperIMEX_RK<Scalar>::takeStep(...)\n"
+      "Need at least two SolutionStates for IMEX_RK.\n"
+      "  Number of States = " << solutionHistory->getNumStates() << "\n"
+      "Try setting in \"Solution History\" \"Storage Type\" = \"Undo\"\n"
+      "  or \"Storage Type\" = \"Static\" and \"Storage Limit\" = \"2\"\n");
+
     stepperObserver_->observeBeginTakeStep(solutionHistory, *this);
     RCP<SolutionState<Scalar> > currentState=solutionHistory->getCurrentState();
     RCP<SolutionState<Scalar> > workingState=solutionHistory->getWorkingState();

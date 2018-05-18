@@ -288,7 +288,7 @@ public:
                      const output_scalar & b = output_scalar(0) )
   {
     const tensor_type tensor = Kokkos::cijk(A.values);
-    const size_type row_count = A.graph.row_map.dimension_0() - 1;
+    const size_type row_count = A.graph.row_map.extent(0) - 1;
     const size_type tensor_dimension = tensor.dimension();
     const size_type tensor_align = tensor_dimension;
     const size_type avg_tensor_entries_per_row = tensor.avg_entries_per_row();
@@ -508,7 +508,7 @@ public:
     typedef Multiply< matrix_type, input_vector_type_1D,
       output_vector_type_1D > multiply_type_1D;
 
-    const size_type num_col = y.dimension_1();
+    const size_type num_col = y.extent(1);
     for (size_type col=0; col<num_col; ++col)
 
       multiply_type_1D::apply(
@@ -602,7 +602,7 @@ public:
       , v_x( x )
       , m_a( a )
       , m_b( b )
-      , m_row_count( A.graph.row_map.dimension_0()-1 )
+      , m_row_count( A.graph.row_map.extent(0)-1 )
       , dim( dimension_scalar(x) )
       {}
 
@@ -669,7 +669,7 @@ public:
                      const input_scalar & a = input_scalar(1) ,
                      const output_scalar & b = output_scalar(0) )
   {
-    const size_t row_count = A.graph.row_map.dimension_0() - 1;
+    const size_t row_count = A.graph.row_map.extent(0) - 1;
     const size_type dim = dimension_scalar(x);
 
     // Compute number of threads for PCE coefficients and number of
@@ -789,8 +789,8 @@ public:
       , v_x( x )
       , m_a( a )
       , m_b( b )
-      , m_row_count( A.graph.row_map.dimension_0()-1 )
-      , m_num_col( x.dimension_1() )
+      , m_row_count( A.graph.row_map.extent(0)-1 )
+      , m_num_col( x.extent(1) )
       , dim( dimension_scalar(x) )
       {}
 
@@ -861,7 +861,7 @@ public:
                      const input_scalar & a = input_scalar(1) ,
                      const output_scalar & b = output_scalar(0) )
   {
-    const size_t row_count = A.graph.row_map.dimension_0() - 1;
+    const size_t row_count = A.graph.row_map.extent(0) - 1;
     const size_type dim = dimension_scalar(x);
 
     // Compute number of threads for PCE coefficients and number of

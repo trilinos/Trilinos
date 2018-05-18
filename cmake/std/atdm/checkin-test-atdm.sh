@@ -168,7 +168,24 @@ done
 # ToDo: Implement
 
 #
-# D) Loop over individual builds and run them
+# D) Write default local-checkin-test-defaults.py file
+#
+
+_LOCAL_CHECKIN_TEST_DEFAULTS=local-checkin-test-defaults.py
+if [ -f $_LOCAL_CHECKIN_TEST_DEFAULTS ] ; then
+  echo "File $_LOCAL_CHECKIN_TEST_DEFAULTS already exists, leaving it!"
+else
+  echo "Creating default file $_LOCAL_CHECKIN_TEST_DEFAULTS!"
+  echo "
+defaults = [
+  \"--enable-all-package=off\",
+  \"--no-enable-fwd-packages\",
+  ]
+  " > $_LOCAL_CHECKIN_TEST_DEFAULTS
+fi
+
+#
+# E) Loop over individual builds and run them
 #
 
 echo
@@ -205,7 +222,7 @@ for ATDM_JOB_NAME_KEYS in $ATDM_JOB_NAME_KEYS_LIST ; do
 done
 
 #
-# E) Collect the results from all the builds
+# F) Collect the results from all the builds
 #
 
 echo
@@ -226,7 +243,7 @@ ATDM_CHT_RETURN_CODE=$?
 # NOTE The return value will be 0 if everything passed!
 
 #
-# F) Print final status
+# G) Print final status
 #
 
 echo

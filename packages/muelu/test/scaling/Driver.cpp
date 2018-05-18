@@ -49,6 +49,7 @@
 #include <unistd.h>
 
 #include <Teuchos_XMLParameterListHelpers.hpp>
+#include <Teuchos_YamlParameterListHelpers.hpp>
 #include <Teuchos_StandardCatchMacros.hpp>
 
 // Xpetra
@@ -168,7 +169,8 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
   Galeri::Xpetra::Parameters<GO> galeriParameters(clp, nx, ny, nz, "Laplace2D"); // manage parameters of the test case
   Xpetra::Parameters             xpetraParameters(clp);                          // manage parameters of Xpetra
 
-  std::string xmlFileName       = "scaling.xml";     clp.setOption("xml",                   &xmlFileName,       "read parameters from a file");
+  std::string xmlFileName       = "";                clp.setOption("xml",                   &xmlFileName,       "read parameters from an xml file");
+  std::string yamlFileName      = "";                clp.setOption("yaml",                  &yamlFileName,      "read parameters from a yaml file");
   bool        printTimings      = true;              clp.setOption("timings", "notimings",  &printTimings,      "print timings to screen");
   std::string timingsFormat     = "table-fixed";     clp.setOption("time-format",           &timingsFormat,     "timings format (table-fixed | table-scientific | yaml)");
   int         writeMatricesOPT  = -2;                clp.setOption("write",                 &writeMatricesOPT,  "write matrices to file (-1 means all; i>=0 means level i)");
@@ -201,9 +203,18 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
     case Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL:          break;
   }
 
+  TEUCHOS_TEST_FOR_EXCEPTION(xmlFileName != "" && yamlFileName != "", std::runtime_error,
+                             "Cannot provide both xml and yaml input files");
 
   ParameterList paramList;
-  Teuchos::updateParametersFromXmlFileAndBroadcast(xmlFileName, Teuchos::Ptr<ParameterList>(&paramList), *comm);
+  if (yamlFileName != "") {
+    Teuchos::updateParametersFromYamlFileAndBroadcast(yamlFileName, Teuchos::Ptr<ParameterList>(&paramList), *comm);
+
+  } else {
+    xmlFileName = (xmlFileName != "" ? xmlFileName : "scaling.xml");
+    Teuchos::updateParametersFromXmlFileAndBroadcast(xmlFileName, Teuchos::Ptr<ParameterList>(&paramList), *comm);
+  }
+
   bool isDriver = paramList.isSublist("Run1");
   if (isDriver) {
     // update galeriParameters with the values from the XML file
@@ -242,7 +253,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
   RCP<Xpetra::MultiVector<SC,LO,GO,NO> > nullspace;
   RCP<MultiVector> X, B;
 
-  // Load the matrix off disk (or generate it via Galeri)  
+  // Load the matrix off disk (or generate it via Galeri)
   MatrixLoad<SC,LO,GO,NO>(comm,lib,binaryFormat,matrixFile,rhsFile,rowMapFile,colMapFile,domainMapFile,rangeMapFile,coordFile,nullFile,map,A,coordinates,nullspace,X,B,galeriParameters,xpetraParameters,galeriStream);
   comm->barrier();
   tm = Teuchos::null;
@@ -343,7 +354,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
       for (int i = 0; i <= numRebuilds; i++) {
         A->SetMaxEigenvalueEstimate(-Teuchos::ScalarTraits<SC>::one());
 	if(useAMGX) {
-#if defined(HAVE_MUELU_AMGX) and defined(HAVE_MUELU_TPETRA)	  
+#if defined(HAVE_MUELU_AMGX) and defined(HAVE_MUELU_TPETRA)
 	  Teuchos::ParameterList dummyList;
 	  Teuchos::RCP<Tpetra::CrsMatrix<SC,LO,GO,NO> > Ac = Utilities::Op2NonConstTpetraCrs(A);
 	  Teuchos::RCP<Tpetra::Operator<SC,LO,GO,NO> > At = Teuchos::rcp_dynamic_cast<Tpetra::Operator<SC,LO,GO,NO> >(Ac);
@@ -384,7 +395,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
       comm->barrier();
       if (solveType == "none") {
         // Do not perform a solve
-	
+
       } else if (solveType == "standalone") {
         tm = rcp (new TimeMonitor(*TimeMonitor::getNewTimer("Driver: 4 - Fixed Point Solve")));
 	H->IsPreconditioner(false);

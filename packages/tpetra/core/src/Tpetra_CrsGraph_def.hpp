@@ -848,16 +848,25 @@ namespace Tpetra {
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   size_t
   CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::
-  getNodeNumDiags () const
+  getNodeNumDiagsImpl () const
   {
     return nodeNumDiags_;
   }
 
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  size_t
+  CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::
+  getNodeNumDiags () const
+  {
+    return this->getNodeNumDiagsImpl ();
+  }
+
+
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
   global_size_t
   CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::
-  getGlobalNumDiags () const
+  getGlobalNumDiagsImpl () const
   {
     const char tfecfFuncName[] = "getGlobalNumDiags: ";
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
@@ -866,6 +875,15 @@ namespace Tpetra {
        "but the user has requested them.");
 
     return globalNumDiags_;
+  }
+
+
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  global_size_t
+  CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::
+  getGlobalNumDiags () const
+  {
+    return this->getGlobalNumDiagsImpl ();
   }
 
 
@@ -1087,9 +1105,9 @@ namespace Tpetra {
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   bool
   CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::
-  isUpperTriangular () const
+  isLowerTriangularImpl () const
   {
-    return upperTriangular_;
+    return this->lowerTriangular_;
   }
 
 
@@ -1098,7 +1116,25 @@ namespace Tpetra {
   CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::
   isLowerTriangular () const
   {
-    return lowerTriangular_;
+    return this->isLowerTriangularImpl ();
+  }
+
+
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  bool
+  CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::
+  isUpperTriangularImpl () const
+  {
+    return this->upperTriangular_;
+  }
+
+
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  bool
+  CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::
+  isUpperTriangular () const
+  {
+    return this->isUpperTriangularImpl ();
   }
 
 

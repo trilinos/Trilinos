@@ -4,7 +4,7 @@
     <Parameter docString="" id="1" isDefault="false" isUsed="true" name="Integrator Type" type="string" value="Integrator Basic"/>
     <Parameter docString="" id="2" isDefault="false" isUsed="true" name="Stepper Name" type="string" value="Demo Stepper"/>
     <ParameterList id="5" name="Solution History">
-      <Parameter docString="" id="3" isDefault="true" isUsed="true" name="Storage Type" type="string" value="Unlimited"/>
+      <Parameter docString="" id="3" isDefault="true" isUsed="true" name="Storage Type" type="string" value="Undo"/>
       <Parameter docString="" id="4" isDefault="true" isUsed="true" name="Storage Limit" type="int" value="2"/>
       <ParameterList name="Interpolator">
         <Parameter name="Interpolator Type" type="string" value="Lagrange"/>
@@ -15,8 +15,8 @@
       <Parameter docString="" id="7" isDefault="true" isUsed="true" name="Final Time" type="double" value="1.79769313486231571e+308"/>
       <Parameter docString="" id="8" isDefault="true" isUsed="true" name="Initial Time Index" type="int" value="0"/>
       <Parameter docString="" id="9" isDefault="true" isUsed="true" name="Final Time Index" type="int" value="1000000"/>
-      <Parameter docString="" id="10" isDefault="true" isUsed="true" name="Minimum Time Step" type="double" value="2.22044604925031308e-12"/>
-      <Parameter docString="" id="11" isDefault="true" isUsed="true" name="Initial Time Step" type="double" value="2.22044604925031308e-12"/>
+      <Parameter docString="" id="10" isDefault="true" isUsed="true" name="Minimum Time Step" type="double" value="0.0"/>
+      <Parameter docString="" id="11" isDefault="true" isUsed="true" name="Initial Time Step" type="double" value="1.0"/>
       <Parameter docString="" id="12" isDefault="true" isUsed="true" name="Maximum Time Step" type="double" value="1.79769313486231571e+308"/>
       <Parameter docString="" id="15" isDefault="true" isUsed="true" name="Minimum Order" type="int" value="1"/>
       <Parameter docString="" id="16" isDefault="true" isUsed="true" name="Initial Order" type="int" value="1"/>

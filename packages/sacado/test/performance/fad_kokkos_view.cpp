@@ -68,7 +68,7 @@ struct MatVecFunctor {
   MatVecFunctor(const ViewTypeA& A_arg,
                 const ViewTypeB& b_arg,
                 const ViewTypeC& c_arg) :
-    A(A_arg), b(b_arg), c(c_arg), n(A.dimension_1())
+    A(A_arg), b(b_arg), c(c_arg), n(A.extent(1))
   {}
 
   // Function to compute matrix-vector product for a given row i
@@ -110,7 +110,7 @@ struct MatVecDerivFunctor {
   MatVecDerivFunctor(const ViewTypeA& A_arg,
                      const ViewTypeB& b_arg,
                      const ViewTypeC& c_arg) :
-    A(A_arg), b(b_arg), c(c_arg), n(A.dimension_1()), p(A.dimension_2()-1)
+    A(A_arg), b(b_arg), c(c_arg), n(A.extent(1)), p(A.extent(2)-1)
   {}
 
   KOKKOS_INLINE_FUNCTION
@@ -157,7 +157,7 @@ struct SLMatVecDerivFunctor {
   SLMatVecDerivFunctor(const ViewTypeA& A_arg,
                        const ViewTypeB& b_arg,
                        const ViewTypeC& c_arg) :
-    A(A_arg), b(b_arg), c(c_arg), n(A.dimension_1()), p(A.dimension_2()-1)
+    A(A_arg), b(b_arg), c(c_arg), n(A.extent(1)), p(A.extent(2)-1)
   {}
 
   KOKKOS_INLINE_FUNCTION
@@ -211,7 +211,7 @@ struct SMatVecDerivFunctor {
   SMatVecDerivFunctor(const ViewTypeA& A_arg,
                       const ViewTypeB& b_arg,
                       const ViewTypeC& c_arg) :
-    A(A_arg), b(b_arg), c(c_arg), n(A.dimension_1())
+    A(A_arg), b(b_arg), c(c_arg), n(A.extent(1))
   {}
 
   KOKKOS_INLINE_FUNCTION
@@ -251,7 +251,7 @@ void
 run_mat_vec(const ViewTypeA& A, const ViewTypeB& b, const ViewTypeC& c)
 {
   MatVecFunctor<ViewTypeA, ViewTypeB, ViewTypeC> f( A, b, c );
-  Kokkos::parallel_for( A.dimension_0(), f );
+  Kokkos::parallel_for( A.extent(0), f );
 }
 
 // Create a mat-vec derivative functor from given A, b, c
@@ -260,7 +260,7 @@ void
 run_mat_vec_deriv(const ViewTypeA& A, const ViewTypeB& b, const ViewTypeC& c)
 {
   MatVecDerivFunctor<ViewTypeA, ViewTypeB, ViewTypeC> f( A, b, c );
-  Kokkos::parallel_for( A.dimension_0(), f );
+  Kokkos::parallel_for( A.extent(0), f );
 }
 
 // Create a mat-vec derivative functor from given A, b, c
@@ -269,7 +269,7 @@ void
 run_mat_vec_deriv_sl(const ViewTypeA& A, const ViewTypeB& b, const ViewTypeC& c)
 {
   SLMatVecDerivFunctor<ViewTypeA, ViewTypeB, ViewTypeC, MaxP> f( A, b, c );
-  Kokkos::parallel_for( A.dimension_0(), f );
+  Kokkos::parallel_for( A.extent(0), f );
 }
 
 // Create a mat-vec derivative functor from given A, b, c
@@ -278,7 +278,7 @@ void
 run_mat_vec_deriv_s(const ViewTypeA& A, const ViewTypeB& b, const ViewTypeC& c)
 {
   SMatVecDerivFunctor<ViewTypeA, ViewTypeB, ViewTypeC, p> f( A, b, c );
-  Kokkos::parallel_for( A.dimension_0(), f );
+  Kokkos::parallel_for( A.extent(0), f );
 }
 
 template <typename ViewTypeA, typename ViewTypeB, typename ViewTypeC>
@@ -289,8 +289,8 @@ check_val(const ViewTypeA& A, const ViewTypeB& b, const ViewTypeC& c)
   typedef typename ViewTypeC::value_type value_type;
   typename ViewTypeC::HostMirror h_c = Kokkos::create_mirror_view(c);
   Kokkos::deep_copy(h_c, c);
-  const size_t m = A.dimension_0();
-  const size_t n = A.dimension_1();
+  const size_t m = A.extent(0);
+  const size_t n = A.extent(1);
   for (size_t i=0; i<m; ++i) {
     value_type t = n;
     if (std::abs(h_c(i)- t) > tol) {
@@ -308,9 +308,9 @@ check_deriv(const ViewTypeA& A, const ViewTypeB& b, const ViewTypeC& c)
   typedef typename ViewTypeC::value_type value_type;
   typename ViewTypeC::HostMirror h_c = Kokkos::create_mirror_view(c);
   Kokkos::deep_copy(h_c, c);
-  const size_t m = A.dimension_0();
-  const size_t n = A.dimension_1();
-  const size_t p = A.dimension_2();
+  const size_t m = A.extent(0);
+  const size_t n = A.extent(1);
+  const size_t p = A.extent(2);
   for (size_t i=0; i<m; ++i) {
     for (size_t j=0; j<p; ++j) {
       value_type t = (j == p-1 ? n : 2*n);

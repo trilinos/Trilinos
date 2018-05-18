@@ -78,7 +78,7 @@ public:
   static void apply(const value_type& alpha, vector_type& x,
                     const value_type& beta,  const vector_type& y)
   {
-    const size_t row_count = x.dimension_0();
+    const size_t row_count = x.extent(0);
     Kokkos::parallel_for( row_count , Update(alpha,x,beta,y) );
   }
 };

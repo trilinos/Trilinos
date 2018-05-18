@@ -35,6 +35,9 @@ elif [[ $THIS_HOSTNAME == "chama"* ]] ; then
 elif [[ $THIS_HOSTNAME == "serrano"* ]] ; then
   ATDM_HOSTNAME=serrano
   ATDM_SYSTEM_NAME=toss3
+elif [[ $THIS_HOSTNAME == "mutrino"* ]] ; then
+  ATDM_HOSTNAME=mutrino
+  ATDM_SYSTEM_NAME=mutrino
 elif [[ -f /projects/sems/modulefiles/utils/get-platform ]] ; then
   ATDM_SYSTEM_NAME=`source /projects/sems/modulefiles/utils/get-platform`
   if [[ $ATDM_SYSTEM_NAME == "rhel6-x86_64" ]] ; then
