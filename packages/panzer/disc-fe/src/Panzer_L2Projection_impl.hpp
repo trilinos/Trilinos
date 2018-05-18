@@ -406,7 +406,7 @@ namespace panzer {
           const std::vector<LO>& offsets = targetGlobalIndexer_->getGIDFieldOffsets(block,fieldIndex);
           targetFieldOffsets = Kokkos::View<LO*,PHX::Device>("L2Projection:buildRHS:targetFieldOffsets",offsets.size());
           const auto hostOffsets = Kokkos::create_mirror_view(targetFieldOffsets);
-          for(const auto& i : offsets)
+          for(size_t i=0; i < offsets.size(); ++i)
             hostOffsets(i) = offsets[i];
           Kokkos::deep_copy(targetFieldOffsets,hostOffsets);
           PHX::Device::fence();
@@ -418,7 +418,7 @@ namespace panzer {
           const std::vector<LO>& offsets = sourceGlobalIndexer->getGIDFieldOffsets(block,fieldIndex);
           sourceFieldOffsets = Kokkos::View<LO*,PHX::Device>("L2Projection:buildRHS:sourceFieldOffsets",offsets.size());
           const auto hostOffsets = Kokkos::create_mirror_view(sourceFieldOffsets);
-          for(const auto& i : offsets)
+          for(size_t i=0; i <offsets.size(); ++i)
             hostOffsets(i) = offsets[i];
           Kokkos::deep_copy(sourceFieldOffsets,hostOffsets);
           PHX::Device::fence();
@@ -456,19 +456,35 @@ namespace panzer {
           });
         }
         else {
+          // loop over cells
+          Kokkos::parallel_for(Kokkos::RangePolicy<PHX::Device>(0,workset.numOwnedCells()),KOKKOS_LAMBDA (const int& cell) {
+            LO cLIDs[256];
+            double vals[256];  
+            for (int row = 0; row < numRows; ++row) {
+              const int rowOffset = targetFieldOffsets(row); 
+              const int rowLID = targetLocalIds(cell,rowOffset);
+              for (int col = 0; col < numCols; ++col)
+                vals[col] = 0.0;
+
+              for (int col = 0; col < numCols; ++col) {
+                for (int qp = 0; qp < numQP; ++qp) {
+                  const int colOffset = sourceFieldOffsets(col); 
+                  const int colLID = sourceLocalIds(cell,colOffset);
+                  cLIDs[col] = colLID;
+                  vals[col] += sourceUnweightedScalarBasis(cell,col,qp)*targetWeightedBasis(cell,row,qp);
+                }
+              }
+              localMatrix.sumIntoValues(rowLID,cLIDs,numCols,vals,true,true);
+            }
+          });
           
         }
       }
 
     }
-
-    // entriesPerLocalRow.template modify<PHX::mem_space>();
-    // entriesPerLocalRow.template sync<typename PHX::mem_space::HostSpace>();
-
-    // The above is only for locally owned cells. Now need to import sum across processes
-    
-    
-
+    ghostedMatrix->fillComplete(ghostedSourceMap,ghostedTargetMap);
+    ownedMatrix->resumeFill();
+    ownedMatrix->doExport(*ghostedMatrix,*exporter,Tpetra::ADD);
     ownedMatrix->fillComplete(ownedSourceMap,ownedTargetMap);
 
     return ownedMatrix;
