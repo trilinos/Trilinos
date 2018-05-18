@@ -40,13 +40,13 @@
 // ************************************************************************
 // @HEADER
 
-#include "ROL_Stream.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
-#include "Teuchos_XMLParameterListHelpers.hpp"
 
+#include "ROL_Stream.hpp"
+#include "ROL_ParameterList.hpp"
 #include "ROL_Bounds.hpp"
 #include "ROL_RandomVector.hpp"
-#include "ROL_PinTVector.hpp"
+//#include "ROL_PinTVector.hpp"
 
 #include "TankConstraint.hpp"
 #include "TankVector.hpp"

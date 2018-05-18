@@ -61,6 +61,10 @@ IF( ${USING_TEUCHOS_ALL} )
 
 ADD_SUBDIRECTORY(adapters/teuchos)
 
+IF( TPL_ENABLE_MPI ) 
+ADD_SUBDIRECTORY(adapters/mpi)
+ENDIF()
+
 IF( ROL_ENABLE_Epetra )
 ADD_SUBDIRECTORY(adapters/epetra)
 ENDIF()

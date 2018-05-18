@@ -26,17 +26,21 @@ INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
 
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/vector)
   APPEND_SET(HEADERS 
-    vector/ROL_CArrayVector.hpp
-    vector/ROL_TeuchosVector.hpp
-    vector/ROL_MultiVector.hpp
-    vector/ROL_MultiVectorDefault.hpp
+    vector/ROL_PinTVector.hpp
 )
 
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/function)
   APPEND_SET(HEADERS 
-    function/ROL_Teuchos_Objective.hpp
-    function/ROL_Teuchos_Constraint.hpp
+    function/ODEConstraint_TimeSimOpt.hpp
+    function/ROL_Constraint_PinTSimOpt.hpp
 )
+
+
+
+
+
+
+
 
 
 INSTALL(FILES ${HEADERS} DESTINATION ${CMAKE_INSTALL_PREFIX}/${${PROJECT_NAME}_INSTALL_INCLUDE_DIR})
