@@ -56,7 +56,7 @@ int main( int argc, char* argv[] ) {
 
   // Initialize Cuda
   Kokkos::InitArguments init_args;
-  init_args.device = 0;
+  init_args.device_id = 0;
   Kokkos::initialize( init_args );
   Kokkos::print_configuration(std::cout);
 

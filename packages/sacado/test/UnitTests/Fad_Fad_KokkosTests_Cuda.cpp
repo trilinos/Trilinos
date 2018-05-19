@@ -44,7 +44,7 @@ int main( int argc, char* argv[] ) {
   // Initialize Cuda
   Kokkos::InitArguments init_args;
   init_args.device_id = 0;
-  Kokkos::initalize( init_args );
+  Kokkos::initialize( init_args );
   Kokkos::print_configuration(std::cout);
 
   int res = Teuchos::UnitTestRepository::runUnitTestsFromMain(argc, argv);
