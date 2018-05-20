@@ -84,10 +84,10 @@ public:
   virtual ~TrustRegion() {}
 
   // Constructor
-  TrustRegion( Teuchos::ParameterList &parlist )
+  TrustRegion( ROL::ParameterList &parlist )
     : ftol_old_(ROL_OVERFLOW<Real>()), cnt_(0), verbosity_(0) {
     // Trust-Region Parameters
-    Teuchos::ParameterList list = parlist.sublist("Step").sublist("Trust Region");
+    ROL::ParameterList list = parlist.sublist("Step").sublist("Trust Region");
     TRmodel_ = StringToETrustRegionModel(list.get("Subproblem Model", "Kelley-Sachs"));
     eta0_    = list.get("Step Acceptance Threshold",            static_cast<Real>(0.05));
     eta1_    = list.get("Radius Shrinking Threshold",           static_cast<Real>(0.05));
@@ -99,13 +99,13 @@ public:
     TRsafe_  = list.get("Safeguard Size",                       static_cast<Real>(100.0));
     eps_     = TRsafe_*ROL_EPSILON<Real>();
     // General Inexactness Information
-    Teuchos::ParameterList &glist = parlist.sublist("General");
+    ROL::ParameterList &glist = parlist.sublist("General");
     useInexact_.clear();
     useInexact_.push_back(glist.get("Inexact Objective Function",     false));
     useInexact_.push_back(glist.get("Inexact Gradient",               false));
     useInexact_.push_back(glist.get("Inexact Hessian-Times-A-Vector", false));
     // Inexact Function Evaluation Information
-    Teuchos::ParameterList &ilist = list.sublist("Inexact").sublist("Value");
+    ROL::ParameterList &ilist = list.sublist("Inexact").sublist("Value");
     scale_       = ilist.get("Tolerance Scaling",                 static_cast<Real>(1.e-1));
     omega_       = ilist.get("Exponent",                          static_cast<Real>(0.9));
     force_       = ilist.get("Forcing Sequence Initial Value",    static_cast<Real>(1.0));

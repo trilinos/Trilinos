@@ -44,7 +44,7 @@
 #ifndef __ODEConstraint_TimeSimOpt_hpp__
 #define __ODEConstraint_TimeSimOpt_hpp__
 
-#include "Teuchos_oblackholestream.hpp"
+#include "ROL_Stream.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
 
 #include "ROL_Constraint_TimeSimOpt.hpp"

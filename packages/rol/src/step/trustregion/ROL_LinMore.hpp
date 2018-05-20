@@ -96,8 +96,8 @@ private:
     Real initialValue() const {
       return ROL_INF<Real>();
     }
-    Teuchos::EReductionType reductionType() const {
-      return Teuchos::REDUCE_MIN;
+    Elementwise::EReductionType reductionType() const {
+      return Elementwise::REDUCE_MIN;
     }
   } pmin_;
 
@@ -114,15 +114,15 @@ private:
     Real initialValue() const {
       return static_cast<Real>(0);
     }
-    Teuchos::EReductionType reductionType() const {
-      return Teuchos::REDUCE_MAX;
+    Elementwise::EReductionType reductionType() const {
+      return Elementwise::REDUCE_MAX;
     }
   } pmax_;
 
 public:
 
   // Constructor
-  LinMore( Teuchos::ParameterList &parlist ) : TrustRegion<Real>(parlist), alpha_(1) {
+  LinMore( ROL::ParameterList &parlist ) : TrustRegion<Real>(parlist), alpha_(1) {
     // Unravel Parameter List
     Real em4(1e-4), em2(1e-2);
     maxit_   = parlist.sublist("General").sublist("Krylov").get("Iteration Limit",20);

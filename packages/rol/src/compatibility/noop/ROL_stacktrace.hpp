@@ -41,74 +41,26 @@
 // ************************************************************************
 // @HEADER
 
-#ifndef ROLTEUCHOSBATCHMANAGER_HPP
-#define ROLTEUCHOSBATCHMANAGER_HPP
+#pragma once
+#ifndef ROL_STACKTRACE_HPP
+#define ROL_STACKTRACE_HPP
 
-#include "ROL_BatchManager.hpp"
-#include "ROL_Ptr.hpp"
-#include "Teuchos_Comm.hpp"
-#include "Teuchos_CommHelpers.hpp"
+#include <iostream>
 
-namespace ROL {
+/* \file  ROL_StackTrace.hpp
+ * \brief Defines the "RELEASE" version of ROL_TEST_FOR_EXCEPTION 
+ *        which simply throws an exception if the test returns true,
+ *        bit does not create a stack trace.
+ */
 
-template<class Real, class Ordinal>
-class TeuchosBatchManager : public BatchManager<Real> {
-private:
-  const ROL::Ptr<const Teuchos::Comm<Ordinal> > comm_;
-
-public:
-  TeuchosBatchManager(const ROL::Ptr<const Teuchos::Comm<Ordinal> > &comm)
-    : comm_(comm) {}
-
-  int batchID(void) {
-    return Teuchos::rank<Ordinal>(*comm_);
-  }
-
-  int numBatches(void) {
-    return Teuchos::size<Ordinal>(*comm_);
-  }
-
-  void reduceAll(Real* input, Real* output, int dim,
-                 const Elementwise::ReductionOp<Real> &r) {
-    int nB = this->numBatches();
-    std::vector<Real> receiveBuffer(nB);
-    Teuchos::gather<Ordinal,Real>(input,1,&receiveBuffer[0],1,0,*comm_);
-    output[0] = r.initialValue();
-    for (int i = 0; i < nB; i++) {
-      r.reduce(receiveBuffer[i],output[0]);
-    }
-    Teuchos::broadcast<Ordinal,Real>(*comm_,0,1,output);
-  }
-
-  void minAll(Real* input, Real* output, int dim) {
-    Teuchos::reduceAll<Ordinal,Real>(*comm_,Teuchos::REDUCE_MIN,
-      dim, input, output);
-  }
-
-  void maxAll(Real* input, Real* output, int dim) {
-    Teuchos::reduceAll<Ordinal,Real>(*comm_,Teuchos::REDUCE_MAX,
-      dim, input, output);
-  }
-
-  void sumAll(Real* input, Real* output, int dim) {
-    Teuchos::reduceAll<Ordinal,Real>(*comm_,Teuchos::REDUCE_SUM,
-      dim, input, output);
-  }
-
-  void broadcast(Real* input, int cnt, int root) {
-    Teuchos::broadcast<Ordinal,Real>(*comm_,root,cnt,input);
-  }
-
-  virtual void sumAll(Vector<Real> &input, Vector<Real> &output) {
-    TEUCHOS_TEST_FOR_EXCEPTION( true, std::invalid_argument,
-      ">>> ERROR (ROL::TeuchosBatchManager): sumAll(Vector<Real> &input, Vector<Real> &output) is not implemented");
-  }
-
-  void barrier(void) {
-    Teuchos::barrier<Ordinal>(*comm_); 
-  }
-};
-
+#define ROL_TEST_FOR_EXCEPTION(throw_exception_test, Exception, msg) \
+{ \
+  const bool throw_exception = (throw_exception_test); \
+  if(throw_exception) { \
+    std::cerr << msg << std::endl; \
+    throw Exception(msg); \
+  }\
 }
 
-#endif
+#endif // ROL_STACKTRACE_HPP
+

@@ -89,7 +89,7 @@ public:
     int N2 = A_->size();
     N_ = (std::round(std::sqrt(N2)));
     bool isSquare = N_*N_ == N2;
-    TEUCHOS_TEST_FOR_EXCEPTION( !isSquare, std::invalid_argument,
+    ROL_TEST_FOR_EXCEPTION( !isSquare, std::invalid_argument,
       "Error: vector representation of matrix must have a square "
       "number of elements.");
     ipiv_.resize(N_);   
@@ -159,16 +159,16 @@ public:
     // Do LU factorization
     lapack_.GETRF(N_,N_,&PLU_[0],LDA,&ipiv_[0],&INFO);
 
-    TEUCHOS_TEST_FOR_EXCEPTION(INFO>0,std::logic_error,"Error in StdLinearOperator::applyInverse(): "
+    ROL_TEST_FOR_EXCEPTION(INFO>0,std::logic_error,"Error in StdLinearOperator::applyInverse(): "
       "Zero diagonal element encountered in matrix factor U(" << INFO << "," << INFO << ").");
 
-    TEUCHOS_TEST_FOR_EXCEPTION(INFO<0,std::logic_error,"Error in StdLinearOperator::applyInverse(): "
+    ROL_TEST_FOR_EXCEPTION(INFO<0,std::logic_error,"Error in StdLinearOperator::applyInverse(): "
       "Illegal value encountered in element " << -INFO << " when performing LU factorization.");    
 
     // Solve factored system
     lapack_.GETRS('N',N_,NRHS,&PLU_[0],LDA,&ipiv_[0],&Hv[0],LDB,&INFO);
 
-    TEUCHOS_TEST_FOR_EXCEPTION(INFO<0,std::logic_error,"Error in StdLinearOperator::applyInverse(): "
+    ROL_TEST_FOR_EXCEPTION(INFO<0,std::logic_error,"Error in StdLinearOperator::applyInverse(): "
       "Illegal value encountered in element " << -INFO << " when solving the factorized system. "); 
   
   }
@@ -196,16 +196,16 @@ public:
     // Do LU factorization
     lapack_.GETRF(N_,N_,&PLU_[0],LDA,&ipiv_[0],&INFO);
 
-    TEUCHOS_TEST_FOR_EXCEPTION(INFO>0,std::logic_error,"Error in StdLinearOperator::applyAdjointInverse(): "
+    ROL_TEST_FOR_EXCEPTION(INFO>0,std::logic_error,"Error in StdLinearOperator::applyAdjointInverse(): "
       "Zero diagonal element encountered in matrix factor U(" << INFO << "," << INFO << ").");
 
-    TEUCHOS_TEST_FOR_EXCEPTION(INFO<0,std::logic_error,"Error in StdLinearOperator::applyAdjointInverse(): "
+    ROL_TEST_FOR_EXCEPTION(INFO<0,std::logic_error,"Error in StdLinearOperator::applyAdjointInverse(): "
       "Illegal value encountered in element " << -INFO << " when performing LU factorization.");    
 
     // Solve factored system
     lapack_.GETRS('T',N_,NRHS,&PLU_[0],LDA,&ipiv_[0],&Hv[0],LDB,&INFO);
 
-    TEUCHOS_TEST_FOR_EXCEPTION(INFO<0,std::logic_error,"Error in StdLinearOperator::applyAdjointInverse(): "
+    ROL_TEST_FOR_EXCEPTION(INFO<0,std::logic_error,"Error in StdLinearOperator::applyAdjointInverse(): "
       "Illegal value encountered in element " << -INFO << " when solving the factorized system. "); 
   
   }

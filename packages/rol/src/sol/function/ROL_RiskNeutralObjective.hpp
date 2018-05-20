@@ -44,7 +44,6 @@
 #ifndef ROL_RISKNEUTRALOBJECTIVE_HPP
 #define ROL_RISKNEUTRALOBJECTIVE_HPP
 
-#include "Teuchos_RefCountPtr.hpp"
 #include "ROL_Vector.hpp"
 #include "ROL_Objective.hpp"
 #include "ROL_SampleGenerator.hpp"

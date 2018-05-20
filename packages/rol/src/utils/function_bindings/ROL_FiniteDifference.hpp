@@ -49,77 +49,21 @@
 
 /** \class ROL::FiniteDifference
     \brief General interface for numerical approximation of Constraint 
-           or Objective methods using the finite difference method. Also
-           provides a unified interface for validation.
+           or Objective methods using the finite difference method. 
 
-           ----------------------------------------------------------------
-
-           The FiniteDifference::check() methods are defined for two
-           situations:
-
-           1) The tested function has the signature
-           
-              (void) ( Vector<Real>& y, const Vector<Real>& x ); 
-
-              which is specified by the type FiniteDifference::vector_type
-              and it will be tested using a reference function that has the 
-              signature
- 
-              (Real) ( const Vector<Real>& x );
- 
-              which is specified by the type FiniteDifference::scalar_type.
-               
-
-           2) The tested function has the signature
-
-              (void) ( Vector& dy_dv, const Vector& v, const Vector& x );
-
-              which is specified by the type FiniteDifference::dderiv_type
-              and it will be tested using a reference function of vector_type.
- 
-           The check methods require pointers to the two functions above,
-           an update function, and the necessary input vectors and result vector, 
-           although this vector is not used directly, but is cloned, if 
-           necessary, for workspace.
-
-           ----------------------------------------------------------------
-
-           Appropriate pointers to the member functions of the classes 
-           to be tested can easily be created using std::bind 
-           (defined in the <functional> header).
-
-
-           While currently only check() is implemented, methods could be
-           added to provide finite difference approximations to methods
-           as well.
-
+           TODO: Should optionally store values for reuse as needed
 */
 
-#include <functional>
+#include "ROL_FunctionBindings.hpp"
 
 #include "ROL_Vector.hpp"
 #include "ROL_VectorWorkspace.hpp"
 
 namespace ROL {
 
-
-
 namespace details {
 
 using namespace std;
-
-template<typename Real>
-using f_update_t = function<void( const Vector<Real>& )>;
-
-template<typename Real>
-using f_scalar_t = function<Real( const Vector<Real>& )>;
-
-template<typename Real>
-using f_vector_t = function<void( Vector<Real>&, const Vector<Real>& )>;
-
-template<typename Real>
-using f_dderiv_t = function<void( Vector<Real>&, const Vector<Real>&, const Vector<Real>& )>;
-
 
 template<typename Real>
 class FiniteDifference {
@@ -127,82 +71,38 @@ public:
  
   using V = ROL::Vector<Real>;
 
-  FiniteDifference( Teuchos::ParameterList& pl,
-                    ostream& os = cout );
-
-  FiniteDifference( const int order = 1, 
-                    const int numSteps = ROL_NUM_CHECKDERIV_STEPS,
-                    const int width = 20,
-                    const int precision = 11,
-                    const bool printToStream = true,
-                    ostream& os = cout );
+  FiniteDifference( const int order = 1 );
+  FiniteDifference( const int order, const Ptr<VectorWorkspace<Real>>& workspace );
 
   virtual ~FiniteDifference(){}
 
-  virtual vector<vector<Real>> scalar_check( f_scalar_t<Real> f_ref, 
-                                             f_vector_t<Real> f_test, 
-                                             f_update_t<Real> f_update,
-                                             const V& result, 
-                                             const V& input,
-                                             const V& direction,
-                                             const string& label ) const;
-                                        
-  virtual vector<vector<Real>> vector_check( f_vector_t<Real> f_ref, 
-                                             f_dderiv_t<Real> f_test, 
-                                             f_update_t<Real> f_update,
-                                             const V& result, 
-                                             const V& input,
-                                             const V& direction,
-                                             const string& label ) const;
+  /** Approximately compute the derivative of f(x) in the direction v 
+      using the step size h */
+  virtual Real operator()( f_scalar_t<Real>& f_value,
+                           f_update_t<Real>& f_update,
+                           const V& v, 
+                           const V& x,
+                           const Real h ) const;
 
-  virtual vector<Real> symmetry_check( f_dderiv_t<Real> A, 
-                                       f_update_t<Real> A_update,
-                                       const V& u, 
-                                       const V& v, 
-                                       const V& x,
-                                       const string& name="Linear Operator",
-                                       const string& symbol="A" ) const;
-
-  virtual vector<Real> adjoint_consistency_check( f_dderiv_t<Real> A,
-                                                  f_dderiv_t<Real> A_adj,
-                                                  f_update_t<Real> A_update,
-                                                  const V& u,  
-                                                  const V& v,
-                                                  const V& x, 
-                                                  const string& name="Linear Operator",
-                                                  const string& symbol="A" ) const;
-
-  virtual vector<Real> inverse_check( f_dderiv_t<Real> A,
-                                      f_dderiv_t<Real> A_inv,
-                                      f_update_t<Real> A_update,
-                                      const V& v,
-                                      const V& x, 
-                                      const string& name="Linear Operator",
-                                      const string& symbol="A" ) const;
-
-
+  /** Approximately compute the Jacobian of f(x) applied to the direction v
+      using the step size h */
+  virtual void operator()( f_vector_t<Real>& f_value, 
+                           f_update_t<Real>& f_update,
+                           V& Jv, 
+                           const V& v, 
+                           const V& x,
+                           const Real h ) const;             
 private:
 
-  int          order_;         // Finite difference order (1,2,3, or 4)
-  int          numSteps_;      // Number of evalutions of different step sizes
-  int          width_;         // For print formatting
-  int          precision_;     // Number of digits to display
-  bool         printToStream_; // False will suppress output
-  vector<Real> steps_;         // Set of step sizes of FD approximation
+  const int order_; // Finite difference order (1,2,3, or 4)
   
-  ostream& os_;                // pointer to Output stream
-  
-  mutable VectorWorkspace<Real> workspace_;
+  mutable Ptr<VectorWorkspace<Real>> workspace_;
 
 }; // class FiniteDifference
 
 } // namespace details
 
 using details::FiniteDifference;
-using details::f_scalar_t;
-using details::f_vector_t;
-using details::f_dderiv_t;
-using details::f_update_t;
 
 
 } // namespace ROL

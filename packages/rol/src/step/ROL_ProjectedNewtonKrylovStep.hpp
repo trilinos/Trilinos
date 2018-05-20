@@ -170,17 +170,17 @@ public:
   /** \brief Constructor.
 
       Standard constructor to build a ProjectedNewtonKrylovStep object.  Algorithmic 
-      specifications are passed in through a Teuchos::ParameterList.
+      specifications are passed in through a ROL::ParameterList.
 
       @param[in]     parlist    is a parameter list containing algorithmic specifications
   */
-  ProjectedNewtonKrylovStep( Teuchos::ParameterList &parlist, const bool computeObj = true )
+  ProjectedNewtonKrylovStep( ROL::ParameterList &parlist, const bool computeObj = true )
     : Step<Real>(), secant_(ROL::nullPtr), krylov_(ROL::nullPtr),
       gp_(ROL::nullPtr), d_(ROL::nullPtr),
       iterKrylov_(0), flagKrylov_(0), verbosity_(0),
       computeObj_(computeObj), useSecantPrecond_(false) {
     // Parse ParameterList
-    Teuchos::ParameterList& Glist = parlist.sublist("General");
+    ROL::ParameterList& Glist = parlist.sublist("General");
     useSecantPrecond_ = Glist.sublist("Secant").get("Use as Preconditioner", false);
     useProjectedGrad_ = Glist.get("Projected Gradient Criticality Measure", false);
     verbosity_ = Glist.get("Print Verbosity",0);
@@ -200,13 +200,13 @@ public:
 
       Constructor to build a ProjectedNewtonKrylovStep object with user-defined 
       secant and Krylov objects.  Algorithmic specifications are passed in through 
-      a Teuchos::ParameterList.
+      a ROL::ParameterList.
 
       @param[in]     parlist    is a parameter list containing algorithmic specifications
       @param[in]     krylov     is a user-defined Krylov object
       @param[in]     secant     is a user-defined secant object
   */
-  ProjectedNewtonKrylovStep(Teuchos::ParameterList &parlist,
+  ProjectedNewtonKrylovStep(ROL::ParameterList &parlist,
              const ROL::Ptr<Krylov<Real> > &krylov,
              const ROL::Ptr<Secant<Real> > &secant,
              const bool computeObj = true)
@@ -216,7 +216,7 @@ public:
       iterKrylov_(0), flagKrylov_(0), verbosity_(0),
       computeObj_(computeObj), useSecantPrecond_(false) {
     // Parse ParameterList
-    Teuchos::ParameterList& Glist = parlist.sublist("General");
+    ROL::ParameterList& Glist = parlist.sublist("General");
     useSecantPrecond_ = Glist.sublist("Secant").get("Use as Preconditioner", false);
     useProjectedGrad_ = Glist.get("Projected Gradient Criticality Measure", false);
     verbosity_ = Glist.get("Print Verbosity",0);

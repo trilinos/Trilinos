@@ -70,14 +70,14 @@ int main(int argc, char *argv[] ) {
   // This little trick lets us print to std::cout only if a (dummy) command-line argument is provided.
   int iprint     = argc - 1;
   ROL::Ptr<std::ostream> outStream;
-  Teuchos::oblackholestream bhs; // outputs nothing
+  ROL::nullstream bhs; // outputs nothing
   if (iprint > 0)
     outStream = ROL::makePtrFromRef(std::cout);
   else
     outStream = ROL::makePtrFromRef(bhs);
 
   // Save the format state of the original std::cout.
-  Teuchos::oblackholestream oldFormatState;
+  ROL::nullstream oldFormatState;
   oldFormatState.copyfmt(std::cout);
 
   int errorFlag  = 0;
@@ -100,7 +100,7 @@ int main(int argc, char *argv[] ) {
 
     ZOO::Objective_Zakharov<RealT> obj(k);
 
-    Teuchos::ParameterList parlist;
+    ROL::ParameterList parlist;
 
     parlist.sublist("Scalar Minimization").set("Type","Bisection");
     parlist.sublist("Scalar Minimization").sublist("Bisection").set("Tolerance",1.e-10);

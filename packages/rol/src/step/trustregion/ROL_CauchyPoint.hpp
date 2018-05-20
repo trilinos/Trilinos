@@ -52,7 +52,7 @@
 #include "ROL_Vector.hpp"
 #include "ROL_Types.hpp"
 #include "ROL_HelperFunctions.hpp"
-#include "Teuchos_ParameterList.hpp"
+#include "ROL_ParameterList.hpp"
 
 namespace ROL {
 
@@ -73,7 +73,7 @@ private:
 public:
 
   // Constructor
-  CauchyPoint( Teuchos::ParameterList &parlist )
+  CauchyPoint( ROL::ParameterList &parlist )
     : TrustRegion<Real>(parlist), pRed_(0), alpha_(-1), useCGTCP_(false) {
     // Unravel Parameter List
     Real oe2(100);

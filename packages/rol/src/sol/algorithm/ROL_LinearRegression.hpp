@@ -90,7 +90,7 @@ public:
     c_      = makePtr<RiskVector<Real>>(makePtr<StdVector<Real>>(cdata_));
   }
 
-  void setErrorMeasure(Teuchos::ParameterList &parlist, bool reset = false) {
+  void setErrorMeasure(ROL::ParameterList &parlist, bool reset = false) {
     if (!initialized_ || reset) {
       em_ = ErrorMeasureFactory<Real>(parlist);
       obj_ = makePtr<StochasticObjective<Real>>(error_,em_,data_);

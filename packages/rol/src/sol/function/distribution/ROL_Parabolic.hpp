@@ -45,7 +45,7 @@
 #define ROL_PARABOLIC_HPP
 
 #include "ROL_Distribution.hpp"
-#include "Teuchos_ParameterList.hpp"
+#include "ROL_ParameterList.hpp"
 
 namespace ROL {
 
@@ -59,7 +59,7 @@ public:
   Parabolic(const Real a = 0., const Real b = 1.)
     : a_(std::min(a,b)), b_(std::max(a,b)) {}
 
-  Parabolic(Teuchos::ParameterList &parlist) {
+  Parabolic(ROL::ParameterList &parlist) {
     a_ = parlist.sublist("SOL").sublist("Distribution").sublist("Parabolic").get("Lower Bound",0.);
     b_ = parlist.sublist("SOL").sublist("Distribution").sublist("Parabolic").get("Upper Bound",1.);
     Real tmp = a_;

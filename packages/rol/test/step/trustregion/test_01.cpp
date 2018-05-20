@@ -47,7 +47,7 @@
 
 #include "ROL_OptimizationSolver.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
-#include "Teuchos_XMLParameterListHelpers.hpp"
+
 #include "ROL_Stream.hpp"
 #include "ROL_RandomVector.hpp"
 #include "ROL_Rosenbrock.hpp"

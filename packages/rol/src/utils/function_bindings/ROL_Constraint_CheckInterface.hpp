@@ -46,7 +46,7 @@
 #ifndef ROL_CONSTRAINT_CHECKINTERFACE_HPP
 #define ROL_CONSTRAINT_CHECKINTERFACE_HPP
 
-#include <functional>
+#include "ROL_FunctionBindings.hpp"
 #include "ROL_Constraint.hpp"
 
 namespace ROL {
@@ -54,7 +54,7 @@ namespace details {
 
 
 using namespace std;
-using namespace std::placeholders;
+namespace ph = std::placeholders;
 
 template<typename Real>
 class Constraint_CheckInterface {
@@ -69,35 +69,28 @@ public:
     con_(con), tol_(sqrt(ROL_EPSILON<Real>())) {}
    
   f_update_t<Real> update() {
-    return bind( &Constraint<Real>::update, &con_, _1, true, 0 );
+    return bind( &Constraint<Real>::update, &con_, ph::_1, true, 0 );
   }
 
   f_vector_t<Real> value() {
-    return bind( &Constraint<Real>::value, &con_, _1, _2, tol_);
+    return bind( &Constraint<Real>::value, &con_, ph::_1, ph::_2, tol_);
   }
 
-  f_dderiv_t<Real> applyJacobian() {
-    return bind( &Constraint<Real>::applyJacobian, &con_, _1, _2, _3, tol_);
-  }
 
-  // Provide a vector in the dual constraint space
-  f_vector_t<Real> applyAdjointJacobian( ) {
-    return bind( static_cast<void (Constraint<Real>::*)
-                              ( V&, const V&, const V&, Real& )>
-               (&Constraint<Real>::applyAdjointJacobian), 
-                &con_, _1, _2, _3, tol_);
+  f_dderiv_t<Real> jacobian() {
+    return bind( &Constraint<Real>::applyJacobian, &con_, ph::_1, ph::_2, ph::_3, tol_);
   }
 
   // Provide a vector in the dual constraint space
-  f_vector_t<Real> applyAdjointJacobian( const V& l ) {
+  f_dderiv_t<Real> adjointJacobian( ) {
     return bind( static_cast<void (Constraint<Real>::*)
                               ( V&, const V&, const V&, Real& )>
                (&Constraint<Real>::applyAdjointJacobian), 
-                &con_, _1, cref(l), _2, tol_);
+                &con_, ph::_1, ph::_2, ph::_3, tol_);
   }
 
-  f_dderiv_t<Real> applyAdjointHessian( const V& l ) {
-    return bind( &Constraint<Real>::applyAdjointHessian, &con_, _1, cref(l), _2, _3, tol_);
+  f_dderiv_t<Real> adjointHessian( const V& l ) {
+    return bind( &Constraint<Real>::applyAdjointHessian, &con_, ph::_1, cref(l), ph::_2, ph::_3, tol_);
   }
 
 

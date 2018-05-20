@@ -237,14 +237,14 @@ public:
                 flag = true if optimization variable is changed,
                 iter is the outer algorithm iterations count.
   */
-  virtual void update_1( const Vector<Real> &u, bool flag = true, int iter = -1 ) {}
+  virtual void update_1( const Vector<Real> &u, bool flag = true, int iter = -1 ) override {}
 
   /** \brief Update constraint functions with respect to Opt variable.
                 z is the control variable, 
                 flag = true if optimization variable is changed,
                 iter is the outer algorithm iterations count.
   */
-  virtual void update_2( const Vector<Real> &z, bool flag = true, int iter = -1 ) {}
+  virtual void update_2( const Vector<Real> &z, bool flag = true, int iter = -1 ) override {}
 
   virtual void value(Vector<Real> &c,
                      const Vector<Real> &u,
@@ -421,7 +421,7 @@ public:
                                       const Vector<Real> &u,
                                       const Vector<Real> &z,
                                       Real &tol) override final {
-    TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
+    ROL_TEST_FOR_EXCEPTION(true, std::logic_error,
       "The method applyInverseJacobian_1 is used but not implemented!\n");
   }
 
@@ -525,7 +525,7 @@ public:
                                              const Vector<Real> &u,
                                              const Vector<Real> &z,
                                              Real &tol) override final {
-    TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
+    ROL_TEST_FOR_EXCEPTION(true, std::logic_error,
       "The method applyInverseAdjointJacobian_1 is used but not implemented!\n");
   };
 

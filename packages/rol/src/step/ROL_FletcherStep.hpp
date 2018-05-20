@@ -49,7 +49,7 @@
 #include "ROL_TrustRegionStep.hpp"
 #include "ROL_LineSearchStep.hpp"
 #include "ROL_Types.hpp"
-#include "Teuchos_ParameterList.hpp"
+#include "ROL_ParameterList.hpp"
 
 /** @ingroup step_group
     \class ROL::FletcherStep
@@ -65,7 +65,7 @@ private:
   ROL::Ptr<Step<Real> > step_;
   ROL::Ptr<BoundConstraint<Real> > bnd_;
 
-  Teuchos::ParameterList parlist_;
+  ROL::ParameterList parlist_;
 
   ROL::Ptr<Vector<Real> > x_; 
 
@@ -122,12 +122,12 @@ public:
 
   ~FletcherStep() {}
 
-  FletcherStep(Teuchos::ParameterList &parlist)
+  FletcherStep(ROL::ParameterList &parlist)
     : Step<Real>(), bnd_activated_(false), numSuccessSteps_(0),
       isDeltaChanged_(true), isPenaltyChanged_(true), stepHeaderLength_(0) {
     Real zero(0), one(1), two(2), oe8(1.e8), oe1(1.e-1), oem6(1e-6), oem8(1.e-8);
 
-    Teuchos::ParameterList& sublist = parlist.sublist("Step").sublist("Fletcher");
+    ROL::ParameterList& sublist = parlist.sublist("Step").sublist("Fletcher");
     Step<Real>::getState()->searchSize = sublist.get("Penalty Parameter",one);
     delta_ = sublist.get("Regularization Parameter",zero);
     deltaMin_ = sublist.get("Min Regularization Parameter",oem8);
@@ -161,7 +161,7 @@ public:
     // Determine what kind of step
     bnd_activated_ = bnd.isActivated();
 
-    Teuchos::ParameterList trlist(parlist_);
+    ROL::ParameterList trlist(parlist_);
     bool inexactFletcher = trlist.sublist("Step").sublist("Fletcher").get("Inexact Solves", false);
     if( inexactFletcher ) {
       trlist.sublist("General").set("Inexact Objective Value", true);

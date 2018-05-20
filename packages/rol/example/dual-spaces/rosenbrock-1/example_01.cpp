@@ -51,7 +51,7 @@
 #include "ROL_Algorithm.hpp"
 #include "ROL_TrustRegionStep.hpp"
 #include "ROL_StatusTest.hpp"
-#include "Teuchos_oblackholestream.hpp"
+#include "ROL_Stream.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
 #include <iostream>
 
@@ -249,7 +249,7 @@ int main(int argc, char *argv[]) {
   // This little trick lets us print to std::cout only if a (dummy) command-line argument is provided.
   int iprint     = argc - 1;
   ROL::Ptr<std::ostream> outStream;
-  Teuchos::oblackholestream bhs; // outputs nothing
+  ROL::nullstream bhs; // outputs nothing
   if (iprint > 0)
     outStream = ROL::makePtrFromRef(std::cout);
   else
@@ -265,7 +265,7 @@ int main(int argc, char *argv[]) {
     int dim = 100; // Set problem dimension. Must be even.
 
     // Define algorithm.
-    Teuchos::ParameterList parlist;
+    ROL::ParameterList parlist;
     std::string stepname = "Trust Region";
     parlist.sublist("Step").sublist(stepname).set("Subproblem Solver", "Truncated CG");
     parlist.sublist("General").sublist("Krylov").set("Iteration Limit",10);

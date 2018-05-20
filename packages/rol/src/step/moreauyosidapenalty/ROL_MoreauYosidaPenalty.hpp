@@ -170,11 +170,11 @@ public:
   MoreauYosidaPenalty(const ROL::Ptr<Objective<Real> > &obj,
                       const ROL::Ptr<BoundConstraint<Real> > &con, 
                       const ROL::Vector<Real> &x,
-                      Teuchos::ParameterList &parlist)
+                      ROL::ParameterList &parlist)
     : obj_(obj), con_(con),
       fval_(0), isConEvaluated_(false), nfval_(0), ngval_(0) {
     initialize(x,con);
-    Teuchos::ParameterList &list = parlist.sublist("Step").sublist("Moreau-Yosida Penalty");
+    ROL::ParameterList &list = parlist.sublist("Step").sublist("Moreau-Yosida Penalty");
     updateMultiplier_ = list.get("Update Multiplier",true);
     updatePenalty_    = list.get("Update Penalty",true);
     mu_               = list.get("Initial Penalty Parameter",1e1);
@@ -184,12 +184,12 @@ public:
                       const ROL::Ptr<BoundConstraint<Real> > &con, 
                       const ROL::Vector<Real> &x,
                       const ROL::Vector<Real> &lam,
-                      Teuchos::ParameterList &parlist)
+                      ROL::ParameterList &parlist)
     : obj_(obj), con_(con),
       fval_(0), isConEvaluated_(false), nfval_(0), ngval_(0) {
     initialize(x,con);
     lam_->set(lam);
-    Teuchos::ParameterList &list = parlist.sublist("Step").sublist("Moreau-Yosida Penalty");
+    ROL::ParameterList &list = parlist.sublist("Step").sublist("Moreau-Yosida Penalty");
     updateMultiplier_ = list.get("Update Multiplier",true);
     updatePenalty_    = list.get("Update Penalty",true);
     mu_               = list.get("Initial Penalty Parameter",1e1);

@@ -18,20 +18,18 @@ SET(HEADERS "")
 SET(SOURCES "")
 
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR})
-
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
 
 #
 # All headers
 #
 
-#
-# vector headers
-#
-
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/vector)
   APPEND_SET(HEADERS 
+    vector/ROL_CArrayVector.hpp
     vector/ROL_TeuchosVector.hpp
+    vector/ROL_MultiVector.hpp
+    vector/ROL_MultiVectorDefault.hpp
 )
 
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/function)

@@ -147,13 +147,13 @@ public:
 
   virtual ~CompositeStep() {}
 
-  CompositeStep( Teuchos::ParameterList & parlist ) : Step<Real>() {
+  CompositeStep( ROL::ParameterList & parlist ) : Step<Real>() {
     //ROL::Ptr<StepState<Real> > step_state = Step<Real>::getState();
     flagCG_ = 0;
     flagAC_ = 0;
     iterCG_ = 0;
 
-    Teuchos::ParameterList& steplist = parlist.sublist("Step").sublist("Composite Step");
+    ROL::ParameterList& steplist = parlist.sublist("Step").sublist("Composite Step");
 
     //maxiterOSS_  = steplist.sublist("Optimality System Solver").get("Iteration Limit", 50);
     tolOSS_      = steplist.sublist("Optimality System Solver").get("Nominal Relative Tolerance", 1e-8);

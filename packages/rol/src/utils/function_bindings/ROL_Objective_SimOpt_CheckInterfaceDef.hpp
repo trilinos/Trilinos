@@ -54,7 +54,7 @@ namespace ROL {
 namespace details {
 
 using namespace std;
-using namespace std::placeholders;
+namespace ph = std::placeholders;
 
 template<typename Real>
 class Objective_SimOpt_CheckInterface {
@@ -70,24 +70,24 @@ public:
    
   // Takes a Vector_SimOpt
   f_update_t<Real> update() {
-    return bind( &Objective_SimOpt<Real>::update, &obj_, _1, true, 0 );
+    return bind( &Objective_SimOpt<Real>::update, &obj_, ph::_1, true, 0 );
   }
 
   // Takes a Vector_SimOpt
   f_scalar_t<Real> value() {
-    return bind( &Objective_SimOpt<Real>::value, &obj_, _1, tol_);
+    return bind( &Objective_SimOpt<Real>::value, &obj_, ph::_1, tol_);
   }
 
   f_vector_t<Real> gradient_1( const V& z ) {
-    return bind( &Objective_SimOpt<Real>::gradient_1, &obj_, _1, _2, cref(z), tol_);
+    return bind( &Objective_SimOpt<Real>::gradient_1, &obj_, ph::_1, ph::_2, cref(z), tol_);
   }
 
   f_vector_t<Real> gradient_2( const V& u ) {
-    return bind( &Objective_SimOpt<Real>::gradient_2, &obj_, _1, cref(u), _2, tol_);
+    return bind( &Objective_SimOpt<Real>::gradient_2, &obj_, ph::_1, cref(u), ph::_2, tol_);
   }
 
   f_dderiv_t<Real> hessVec_11( const  ) {
-    return bind( &Objective_SimOpt<Real>::hessVec, &obj_, _1, _2, _3, tol_);
+    return bind( &Objective_SimOpt<Real>::hessVec, &obj_, ph::_1, ph::_2, ph::_3, tol_);
   }
 
 }; // Objective_CheckInterface

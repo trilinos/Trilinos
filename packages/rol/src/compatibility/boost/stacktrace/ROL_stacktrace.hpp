@@ -41,37 +41,49 @@
 // ************************************************************************
 // @HEADER
 
-#ifndef ROLSTDTEUCHOSBATCHMANAGER_HPP
-#define ROLSTDTEUCHOSBATCHMANAGER_HPP
+#pragma once
+#ifndef ROL_STACKTRACE_HPP
+#define ROL_STACKTRACE_HPP
 
-#include "ROL_TeuchosBatchManager.hpp"
-#include "ROL_StdVector.hpp"
+#include <dlfcn.h>
+#include <boost/stacktrace.hpp>
+#include <boost/exception/all.hpp>
+
+/* \file  ROL_StackTrace.hpp
+ * \brief Defines ROL_TEST_FOR_EXCEPTION using boost::stacktrace
+ *
+ * Minimally requires boost::stacktrace, boost::config, and boost::container_hash
+ */
+
 
 namespace ROL {
 
-template<class Real, class Ordinal>
-class StdTeuchosBatchManager : public TeuchosBatchManager<Real,Ordinal> {
-public:
-  StdTeuchosBatchManager(const ROL::Ptr<const Teuchos::Comm<Ordinal> > &comm)
-    : TeuchosBatchManager<Real,Ordinal>(comm) {}
+using traced = boost::error_info<struct tag_stacktrace, boost::stacktrace::stacktrace>;
 
-  using TeuchosBatchManager<Real,Ordinal>::sumAll;
-
-  void sumAll(Vector<Real> &input, Vector<Real> &output) {
-    ROL::Ptr<std::vector<Real> > input_ptr
-      = dynamic_cast<StdVector<Real>&>(input).getVector();
-    ROL::Ptr<std::vector<Real> > output_ptr
-      = dynamic_cast<StdVector<Real>&>(output).getVector();
-    int dim_i = static_cast<int>(input_ptr->size());
-    int dim_o = static_cast<int>(output_ptr->size());
-    TEUCHOS_TEST_FOR_EXCEPTION(dim_i != dim_o, std::invalid_argument,
-      ">>> (ROL::StdTeuchosBatchManager::SumAll): Dimension mismatch!");
-    TeuchosBatchManager<Real,Ordinal>::sumAll(&input_ptr->front(),
-                                              &output_ptr->front(),
-                                              dim_i);
-  }
-};
-
+template <class E>
+void throw_with_trace(const E& e) {
+    throw boost::enable_error_info(e)
+        << traced(boost::stacktrace::stacktrace());
 }
 
-#endif
+} // namespace ROL
+
+#define ROL_TEST_FOR_EXCEPTION(throw_exception_test, Exception, msg) \
+{ \
+  const bool throw_exception = (throw_exception_test); \
+  if(throw_exception) { \
+    std::ostringstream omsg; \
+    omsg \
+      << __FILE__ << ":" << __LINE__ << ":\n\n" \
+      << "\n\n" \
+      << "Throw test that evaluated to true: "#throw_exception_test \
+      << "\n\n" \
+      << msg; \
+    const std::string &omsgstr = omsg.str(); \
+    ROL::throw_with_trace<Exception>(Exception(omsgstr)); \
+  } \
+}
+
+
+#endif // ROL_STACKTRACE_HPP
+

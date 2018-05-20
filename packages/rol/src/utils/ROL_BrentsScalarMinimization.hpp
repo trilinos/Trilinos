@@ -52,8 +52,9 @@
 #include "ROL_ScalarMinimization.hpp"
 #include "ROL_ScalarFunction.hpp"
 #include "ROL_Types.hpp"
+#include "ROL_ParameterList.hpp"
 
-namespace ROL { 
+namespace ROL {
 
 template<class Real>
 class BrentsScalarMinimization : public ScalarMinimization<Real> {
@@ -63,8 +64,8 @@ private:
 
 public:
   // Constructor
-  BrentsScalarMinimization( Teuchos::ParameterList &parlist ) {
-    Teuchos::ParameterList &list = parlist.sublist("Scalar Minimization").sublist("Brent's");
+  BrentsScalarMinimization( ROL::ParameterList &parlist ) {
+    ROL::ParameterList &list = parlist.sublist("Scalar Minimization").sublist("Brent's");
     tol_   = list.get("Tolerance",1.e-10);
     niter_ = list.get("Iteration Limit",1000);
   }
