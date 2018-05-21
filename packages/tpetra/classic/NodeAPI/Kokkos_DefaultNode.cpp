@@ -73,9 +73,9 @@ template Teuchos::RCP< ::Kokkos::Compat::KokkosOpenMPWrapperNode> getNode< ::Kok
 template Teuchos::RCP< ::Kokkos::Compat::KokkosSerialWrapperNode> getNode< ::Kokkos::Compat::KokkosSerialWrapperNode> (const Teuchos::RCP<Teuchos::ParameterList>& );
 #endif // KOKKOS_ENABLE_SERIAL
 
-#ifdef KOKKOS_ENABLE_PTHREAD
+#if defined(KOKKOS_ENABLE_PTHREAD) || defined(KOKKOS_ENABLE_THREADS)
 template Teuchos::RCP< ::Kokkos::Compat::KokkosThreadsWrapperNode> getNode< ::Kokkos::Compat::KokkosThreadsWrapperNode> (const Teuchos::RCP<Teuchos::ParameterList>& );
-#endif // KOKKOS_ENABLE_PTHREAD
+#endif // KOKKOS_ENABLE_PTHREAD || KOKKOS_ENABLE_THREADS
 
 } // namespace Details
 
