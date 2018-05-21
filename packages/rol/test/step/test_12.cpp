@@ -47,6 +47,8 @@
 
 #define USE_HESSVEC 0
 
+#include "Teuchos_GlobalMPISession.hpp"
+
 #include "ROL_Step.hpp"
 #include "ROL_GetTestProblems.hpp"
 

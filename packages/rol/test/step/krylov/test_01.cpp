@@ -83,7 +83,7 @@ private:
   Real b_; // diagonal
   Real c_; // superdiagonal
 
-  Teuchos::LAPACK<int,Real> lapack_;
+  ROL::LAPACK<int,Real> lapack_;
 
 public:
 

@@ -51,7 +51,6 @@
 #include "ROL_TrustRegion.hpp"
 #include "ROL_Vector.hpp"
 #include "ROL_Types.hpp"
-#include "ROL_HelperFunctions.hpp"
 #include "ROL_ParameterList.hpp"
 
 namespace ROL {

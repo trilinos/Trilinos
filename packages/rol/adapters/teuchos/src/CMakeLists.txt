@@ -38,5 +38,14 @@ INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/function)
     function/ROL_Teuchos_Constraint.hpp
 )
 
+INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/sol)
+  APPEND_SET(HEADERS 
+    sol/ROL_SingletonTeuchosBatchManager.hpp
+    sol/ROL_StdTeuchosBatchManager.hpp
+    sol/ROL_TeuchosBatchManager.hpp
+)
+
+
+
 
 INSTALL(FILES ${HEADERS} DESTINATION ${CMAKE_INSTALL_PREFIX}/${${PROJECT_NAME}_INSTALL_INCLUDE_DIR})

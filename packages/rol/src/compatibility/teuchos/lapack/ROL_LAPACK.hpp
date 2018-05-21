@@ -41,26 +41,20 @@
 // ************************************************************************
 // @HEADER
 
-#include <iostream>
-#include "Teuchos_GlobalMPISession.hpp"
+#ifndef ROL_LAPACK_H
+#define ROL_LAPACK_H
 
-#include "ROL_Types.hpp"
-#include "ROL_ParameterListConverters.hpp"
+#include "Teuchos_LAPACK.hpp"
+/** \class ROL::LAPACK
+  \brief Provides interface to Lapack
+  */
 
-int main(int argc, char *argv[]) {
 
-  using namespace Teuchos;
+namespace ROL { 
 
-  std::string infile  = "parameters.xml";
-  std::string outfile = "tiered_parameters.xml";
-
-  auto inlist = ROL::getParametersFromXmlFile(infile);
-
-  ROL::ParameterList outlist;
-
-  ROL::tierParameterList(outlist,*inlist);
-
-  ROL::writeParameterListToXmlFile(outlist,outfile);
-
+template<typename OrdinalType, typename Real>
+using LAPACK = Teuchos::LAPACK<OrdinalType, Real>;
 
 }
+
+#endif
