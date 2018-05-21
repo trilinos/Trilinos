@@ -1,18 +1,20 @@
-function [] = mkCompositeMap(myNodes,myRank,maxRegPerGID)
+function [] = mkCompositeMap(myNodes,myRank)
 
-   if exist(sprintf('myData_%d',myRank),'file'),
-      fprintf('mkCompositeMap: myData_%d already exists\n',myRank);
-      keyboard;
-   end;
-   fp = fopen(sprintf('myData_%d',myRank),'w');
-   if fp == -1,
-      fprintf('mkCompositeMap: cannot open myData_%d\n',myRank);
-      keyboard;
-   end;
-   fprintf(fp,'LoadCompositeMap\n');
-   myGIDs = getCompositeIDs(myNodes,myRank);
-   count = 1;
-   for i=1:length(myGIDs)
-      fprintf(fp,'%d\n',myGIDs(i));
-   end;
-   fclose(fp);
+  % open file
+  filename = 'myCompositeMap_';
+  fp = fopen(sprintf('%s%d',filename,myRank),'w');
+  if fp == -1
+    error('mkCompositeMap: cannot open myData_%d\n',myRank);
+  end
+  
+  % write to file
+%   fprintf(fp,'LoadCompositeMap\n');
+  myGIDs = getCompositeIDs(myNodes,myRank);
+  for i=1:length(myGIDs)
+    fprintf(fp,'%d\n',myGIDs(i));
+  end
+  
+  % close file
+  fclose(fp);
+  
+end
