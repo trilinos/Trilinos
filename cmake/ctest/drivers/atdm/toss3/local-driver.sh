@@ -11,5 +11,7 @@ source $WORKSPACE/Trilinos/cmake/ctest/drivers/atdm/ctest-s-driver-config-build.
 
 set -x
 
-salloc -N1 --time=${SALLOC_CTEST_TIME_LIMIT_MINUTES} --account=fy150090 -J $JOB_NAME \
-  $WORKSPACE/Trilinos/cmake/ctest/drivers/atdm/ctest-s-driver-test.sh
+atdm_run_script_on_compute_node \
+  $WORKSPACE/Trilinos/cmake/ctest/drivers/atdm/ctest-s-driver-test.sh \
+  $PWD/ctest-s-driver-test.out \
+  ${SALLOC_CTEST_TIME_LIMIT_MINUTES}
