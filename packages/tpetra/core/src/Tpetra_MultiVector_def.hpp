@@ -3223,10 +3223,12 @@ namespace Tpetra {
     }
     else if(thisIsHost == AIsHost && AIsHost) {
       typedef typename host_view_type::memory_space cur_memory_space;
+      this->template modify<cur_memory_space> ();
       this->updateImpl<cur_memory_space>(alpha,A,beta);
     }
     else { //thisIsHost == AIsHost && !AIsHost)
       typedef typename dev_view_type::memory_space cur_memory_space;
+      this->template modify<cur_memory_space> ();
       this->updateImpl<cur_memory_space>(alpha,A,beta);
     }
   }
