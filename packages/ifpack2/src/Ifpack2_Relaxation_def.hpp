@@ -183,7 +183,6 @@ template<class MatrixType>
 Relaxation<MatrixType>::
 Relaxation (const Teuchos::RCP<const row_matrix_type>& A)
 : A_ (A),
-  Time_ (Teuchos::rcp (new Teuchos::Time ("Ifpack2::Relaxation"))),
   NumSweeps_ (1),
   PrecType_ (Ifpack2::Details::JACOBI),
   DampingFactor_ (STS::one ()),
@@ -514,11 +513,14 @@ apply (const Tpetra::MultiVector<scalar_type, local_ordinal_type, global_ordinal
     beta != STS::zero (), std::logic_error,
     "Ifpack2::Relaxation::apply: beta = " << beta << " != 0 case not "
     "implemented.");
-  {
-    // Reset the timer each time, since Relaxation uses the same Time
-    // object to track times for different methods.
-    Teuchos::TimeMonitor timeMon (*Time_, true);
 
+  const std::string timerName ("Ifpack2::Relaxation::apply");
+  Teuchos::RCP<Teuchos::Time> timer = Teuchos::TimeMonitor::lookupCounter (timerName);
+  if (timer.is_null ()) {
+    timer = Teuchos::TimeMonitor::getNewCounter (timerName);
+  }
+
+  {
     // Special case: alpha == 0.
     if (alpha == STS::zero ()) {
       // No floating-point operations, so no need to update a count.
@@ -572,7 +574,7 @@ apply (const Tpetra::MultiVector<scalar_type, local_ordinal_type, global_ordinal
       }
     }
   }
-  ApplyTime_ += Time_->totalElapsedTime ();
+  ApplyTime_ += timer->totalElapsedTime ();
   ++NumApply_;
 }
 
@@ -607,7 +609,11 @@ void Relaxation<MatrixType>::initialize ()
     (A_.is_null (), std::runtime_error, "Ifpack2::Relaxation::initialize: "
      "The input matrix A is null.  Please call setMatrix() with a nonnull "
      "input matrix before calling this method.");
-  Teuchos::TimeMonitor timeMon (*Time_, true);
+  const std::string timerName ("Ifpack2::Relaxation::initialize");
+  Teuchos::RCP<Teuchos::Time> timer = Teuchos::TimeMonitor::lookupCounter (timerName);
+  if (timer.is_null ()) {
+    timer = Teuchos::TimeMonitor::getNewCounter (timerName);
+  }
 
   if (A_.is_null ()) {
     hasBlockCrsMatrix_ = false;
@@ -662,7 +668,7 @@ void Relaxation<MatrixType>::initialize ()
   }
 
 
-  InitializeTime_ += Time_->totalElapsedTime ();
+  InitializeTime_ += timer->totalElapsedTime ();
   ++NumInitialize_;
   isInitialized_ = true;
 }
@@ -742,12 +748,13 @@ void Relaxation<MatrixType>::computeBlockCrs ()
   using Teuchos::reduceAll;
   typedef local_ordinal_type LO;
   typedef typename node_type::device_type device_type;
-
-  {
-    // Reset the timer each time, since Relaxation uses the same Time
-    // object to track times for different methods.
-    Teuchos::TimeMonitor timeMon (*Time_, true);
-
+  
+  const std::string timerName ("Ifpack2::Relaxation::computeBlockCrs");
+  Teuchos::RCP<Teuchos::Time> timer = Teuchos::TimeMonitor::lookupCounter (timerName);
+  if (timer.is_null ()) {
+    timer = Teuchos::TimeMonitor::getNewCounter (timerName);
+  }
+  {   
     TEUCHOS_TEST_FOR_EXCEPTION(
       A_.is_null (), std::runtime_error, "Ifpack2::Relaxation::"
       "computeBlockCrs: The input matrix A is null.  Please call setMatrix() "
@@ -865,7 +872,7 @@ void Relaxation<MatrixType>::computeBlockCrs ()
     Importer_ = A_->getGraph ()->getImporter ();
   } // end TimeMonitor scope
 
-  ComputeTime_ += Time_->totalElapsedTime ();
+  ComputeTime_ += timer->totalElapsedTime ();
   ++NumCompute_;
   IsComputed_ = true;
 }
@@ -902,12 +909,15 @@ void Relaxation<MatrixType>::compute ()
   }
 
 
+    const std::string timerName ("Ifpack2::Relaxation::compute");
+    Teuchos::RCP<Teuchos::Time> timer = Teuchos::TimeMonitor::lookupCounter (timerName);
+    if (timer.is_null ()) {
+      timer = Teuchos::TimeMonitor::getNewCounter (timerName);
+    }
 
-  {
-    // Reset the timer each time, since Relaxation uses the same Time
-    // object to track times for different methods.
-    Teuchos::TimeMonitor timeMon (*Time_, true);
 
+
+    {
     TEUCHOS_TEST_FOR_EXCEPTION(
       A_.is_null (), std::runtime_error, "Ifpack2::Relaxation::compute: "
       "The input matrix A is null.  Please call setMatrix() with a nonnull "
@@ -1235,7 +1245,7 @@ void Relaxation<MatrixType>::compute ()
     }
   } // end TimeMonitor scope
 
-  ComputeTime_ += Time_->totalElapsedTime ();
+  ComputeTime_ += timer->totalElapsedTime ();
   ++NumCompute_;
   IsComputed_ = true;
 }

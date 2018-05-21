@@ -67,7 +67,7 @@ public:
 
   virtual ~FletcherStatusTest() {}
 
-  FletcherStatusTest( Teuchos::ParameterList &parlist ) {
+  FletcherStatusTest( ROL::ParameterList &parlist ) {
     Real em6(1e-6);
     gtol_     = parlist.sublist("Status Test").get("Gradient Tolerance", em6);
     ctol_     = parlist.sublist("Status Test").get("Constraint Tolerance", em6);

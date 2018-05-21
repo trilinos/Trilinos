@@ -41,9 +41,8 @@
 // ************************************************************************
 // @HEADER
 
-#include "Teuchos_ParameterList.hpp"
-#include "Teuchos_XMLParameterListHelpers.hpp"
-#include "Teuchos_oblackholestream.hpp"
+#include "ROL_ParameterList.hpp"
+#include "ROL_Stream.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
 #include "Teuchos_Comm.hpp"
 #include "Teuchos_DefaultComm.hpp"
@@ -61,12 +60,12 @@ int main(int argc, char* argv[]) {
 
   Teuchos::GlobalMPISession mpiSession(&argc, &argv);
   ROL::Ptr<const Teuchos::Comm<int> > commptr =
-    Teuchos::DefaultComm<int>::getComm();
+    ROL::toPtr(Teuchos::DefaultComm<int>::getComm());
 
   // This little trick lets us print to std::cout only if a (dummy) command-line argument is provided.
   int iprint     = argc - 1;
   ROL::Ptr<std::ostream> outStream;
-  Teuchos::oblackholestream bhs; // outputs nothing
+  ROL::nullstream bhs; // outputs nothing
   if (iprint > 0 && commptr->getRank() == 0)
     outStream = ROL::makePtrFromRef(std::cout);
   else
@@ -86,7 +85,7 @@ int main(int argc, char* argv[]) {
     // Initialize distribution
     ROL::Ptr<ROL::Distribution<RealT> > dist;
     std::vector<ROL::Ptr<ROL::Distribution<RealT> > > distVec(dimension);
-    Teuchos::ParameterList Dlist;
+    ROL::ParameterList Dlist;
     Dlist.sublist("SOL").sublist("Distribution").set("Name","Beta");
     RealT alpha = 1., beta = 4.;
     // Fill moment vector and initial guess
@@ -101,11 +100,11 @@ int main(int argc, char* argv[]) {
 
     // Get ROL parameterlist
     std::string filename = "input_04.xml";
-    Teuchos::RCP<Teuchos::ParameterList> parlist = Teuchos::rcp( new Teuchos::ParameterList() );
-    Teuchos::updateParametersFromXmlFile( filename, parlist.ptr() );
+    
+    auto parlist = ROL::getParametersFromXmlFile( filename );
 
-    Teuchos::ParameterList &list = parlist->sublist("SOL").sublist("Sample Generator").sublist("SROM");
-    Teuchos::Array<int> moments = Teuchos::getArrayFromStringParameter<int>(list,"Moments");
+    ROL::ParameterList &list = parlist->sublist("SOL").sublist("Sample Generator").sublist("SROM");
+    std::vector<int> moments = ROL::getArrayFromStringParameter<int>(list,"Moments");
     size_t numMoments = static_cast<size_t>(moments.size());
 
     std::clock_t timer = std::clock();
@@ -146,7 +145,7 @@ int main(int argc, char* argv[]) {
 //    std::ofstream file;
 //    std::stringstream name;
 //    name << "samples." << commptr->getRank() << ".txt";
-//    file.open(name.str().c_str()); 
+//    file.open(name.str().c_str());
 //    for (size_t k = 0; k < (size_t)sampler->numMySamples(); k++) {
 //      for (size_t d = 0; d < dimension; d++) {
 //        file << std::setprecision(std::numeric_limits<RealT>::digits10)

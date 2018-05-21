@@ -58,10 +58,10 @@ template<class Real>
 class MultiVectorDefault : public MultiVector<Real> {
 
     typedef Vector<Real>              V;       // Single vector 
-    typedef ROL::Ptr<V>           PV;      // Pointer to a vector
+    typedef ROL::Ptr<V>               PV;      // Pointer to a vector
     typedef Teuchos::ArrayRCP<PV>     APV;     // Array of pointers to vectors
     typedef MultiVector<Real>         MV;      // Instance of this class
-    typedef ROL::Ptr<MV>          PMV;     // Pointer to an instance of this class 
+    typedef ROL::Ptr<MV>              PMV;     // Pointer to an instance of this class 
 
     private:
         APV mvec_;             // Array of pointers to vectors 
@@ -202,7 +202,7 @@ class MultiVectorDefault : public MultiVector<Real> {
         // \f$\text{this}[i]\leftarrow\alpha[i]\text{this}[i]\f$
         void scale(const std::vector<Real> &alpha) {
 
-            TEUCHOS_TEST_FOR_EXCEPTION( static_cast<int>(alpha.size()) != numVectors_,
+            ROL_TEST_FOR_EXCEPTION( static_cast<int>(alpha.size()) != numVectors_,
                 std::invalid_argument,
                 "Error: alpha must have the same length as the number of vectors.");  
  
@@ -214,7 +214,7 @@ class MultiVectorDefault : public MultiVector<Real> {
         // Set the MultiVector equal to another MultiVector
         void set(const MV &A) {
 
-//            TEUCHOS_TEST_FOR_EXCEPTION( this->dimensionMismatch(A),
+//            ROL_TEST_FOR_EXCEPTION( this->dimensionMismatch(A),
 //                std::invalid_argument,
 //                "Error: MultiVectors must have the same dimensions.");
 
@@ -228,7 +228,7 @@ class MultiVectorDefault : public MultiVector<Real> {
         // vectors in another MultiVector
         void set(const MV &A, const std::vector<int> &index) {
 
-//            TEUCHOS_TEST_FOR_EXCEPTION( this->dimensionMismatch(A),
+//            ROL_TEST_FOR_EXCEPTION( this->dimensionMismatch(A),
 //                std::invalid_argument,
 //                "Error: MultiVectors must have the same dimensions.");
 
@@ -248,7 +248,7 @@ class MultiVectorDefault : public MultiVector<Real> {
                            const MV &A,
                            Teuchos::SerialDenseMatrix<int,Real> &B) const {
 
-//            TEUCHOS_TEST_FOR_EXCEPTION( this->dimensionMismatch(A),
+//            ROL_TEST_FOR_EXCEPTION( this->dimensionMismatch(A),
 //                std::invalid_argument,
 //                "Error: MultiVectors must have the same dimensions.");
 
@@ -263,7 +263,7 @@ class MultiVectorDefault : public MultiVector<Real> {
         void dots(const MV &A,
                   std::vector<Real> &b) const {
 
-            TEUCHOS_TEST_FOR_EXCEPTION( this->dimensionMismatch(A),
+            ROL_TEST_FOR_EXCEPTION( this->dimensionMismatch(A),
                 std::invalid_argument,
                 "Error: MultiVectors must have the same dimensions.");
 
@@ -292,7 +292,7 @@ class MultiVectorDefault : public MultiVector<Real> {
         // Return a pointer to the ith vector
         PV getVector(int i) const {
 
-            TEUCHOS_TEST_FOR_EXCEPTION( i>=numVectors_, 
+            ROL_TEST_FOR_EXCEPTION( i>=numVectors_, 
                 std::invalid_argument,
                 "Error: index out of bounds");
 

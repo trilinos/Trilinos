@@ -45,7 +45,7 @@
 #define ROL_GAUSSIAN_HPP
 
 #include "ROL_Distribution.hpp"
-#include "Teuchos_ParameterList.hpp"
+#include "ROL_ParameterList.hpp"
 
 namespace ROL {
 
@@ -61,7 +61,7 @@ private:
   std::vector<Real> d_;
 
   Real erfi(const Real p) const {
-    const Real zero(0), half(0.5), one(1), two(2), pi(Teuchos::ScalarTraits<Real>::pi());
+    const Real zero(0), half(0.5), one(1), two(2), pi(ROL::ScalarTraits<Real>::pi());
     Real val(0), z(0);
     if ( std::abs(p) > static_cast<Real>(0.7) ) {
       Real sgn = (p < zero) ? -one : one;
@@ -89,7 +89,7 @@ public:
     d_[0] =  3.543889200; d_[1] =  1.637067800;
   }
 
-  Gaussian(Teuchos::ParameterList &parlist) {
+  Gaussian(ROL::ParameterList &parlist) {
     mean_     = parlist.sublist("SOL").sublist("Distribution").sublist("Gaussian").get("Mean",0.);
     variance_ = parlist.sublist("SOL").sublist("Distribution").sublist("Gaussian").get("Variance",1.);
     variance_ = (variance_ > 0.) ? variance_ : 1.;
@@ -102,7 +102,7 @@ public:
   }
 
   Real evaluatePDF(const Real input) const {
-    return std::exp(-std::pow(input-mean_,2)/(2.*variance_))/(std::sqrt(2.*Teuchos::ScalarTraits<Real>::pi()*variance_));
+    return std::exp(-std::pow(input-mean_,2)/(2.*variance_))/(std::sqrt(2.*ROL::ScalarTraits<Real>::pi()*variance_));
   }
 
   Real evaluateCDF(const Real input) const {
@@ -111,7 +111,7 @@ public:
   }
 
   Real integrateCDF(const Real input) const {
-    TEUCHOS_TEST_FOR_EXCEPTION( true, std::invalid_argument,
+    ROL_TEST_FOR_EXCEPTION( true, std::invalid_argument,
       ">>> ERROR (ROL::Gaussian): Gaussian integrateCDF not implemented!");
     return ((input < mean_) ? 0.0 : input);
   }
@@ -184,7 +184,7 @@ public:
                     + 420.*std::pow(mean_,2)*std::pow(variance_,3)
                     + 105.*std::pow(variance_,4);                  break;
       default:
-        TEUCHOS_TEST_FOR_EXCEPTION( true, std::invalid_argument,
+        ROL_TEST_FOR_EXCEPTION( true, std::invalid_argument,
           ">>> ERROR (ROL::Distribution): Gaussian moment not implemented for m > 8!");
     }
     return val;

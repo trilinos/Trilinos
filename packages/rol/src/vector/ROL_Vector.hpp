@@ -48,11 +48,12 @@
 #define ROL_UNUSED(x) (void) x
 
 #include <ostream>
+#include <vector>
 
 #include "ROL_Elementwise_Function.hpp"
 
 #include "ROL_Ptr.hpp"
-#include "Teuchos_oblackholestream.hpp"
+#include "ROL_Stream.hpp"
 
 /** @ingroup la_group
     \class ROL::Vector
@@ -227,20 +228,20 @@ public:
 
   virtual void applyUnary( const Elementwise::UnaryFunction<Real> &f ) {
     ROL_UNUSED(f);
-    TEUCHOS_TEST_FOR_EXCEPTION( true, std::logic_error,
+    ROL_TEST_FOR_EXCEPTION( true, std::logic_error,
       "The method applyUnary wass called, but not implemented" << std::endl); 
   }
 
   virtual void applyBinary( const Elementwise::BinaryFunction<Real> &f, const Vector &x ) {
     ROL_UNUSED(f);
     ROL_UNUSED(x);
-    TEUCHOS_TEST_FOR_EXCEPTION( true, std::logic_error,
+    ROL_TEST_FOR_EXCEPTION( true, std::logic_error,
       "The method applyBinary wass called, but not implemented" << std::endl); 
   }
 
   virtual Real reduce( const Elementwise::ReductionOp<Real> &r ) const {
     ROL_UNUSED(r);
-    TEUCHOS_TEST_FOR_EXCEPTION( true, std::logic_error,
+    ROL_TEST_FOR_EXCEPTION( true, std::logic_error,
       "The method reduce was called, but not implemented" << std::endl); 
   }
 
@@ -301,7 +302,7 @@ public:
     int width =  94;
     std::vector<Real> vCheck;
 
-    Teuchos::oblackholestream bhs; // outputs nothing
+    ROL::nullstream bhs; // outputs nothing
 
     ROL::Ptr<std::ostream> pStream;
     if (printToStream) {
@@ -311,7 +312,7 @@ public:
     }
 
     // Save the format state of the original pStream.
-    Teuchos::oblackholestream oldFormatState, headerFormatState;
+    ROL::nullstream oldFormatState, headerFormatState;
     oldFormatState.copyfmt(*pStream);
 
     ROL::Ptr<Vector> v    = this->clone();

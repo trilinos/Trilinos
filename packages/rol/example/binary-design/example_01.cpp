@@ -48,7 +48,7 @@
 #include "ROL_Algorithm.hpp"
 #include "ROL_StdVector.hpp"
 
-#include "Teuchos_oblackholestream.hpp"
+#include "ROL_Stream.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
 #include "Teuchos_XMLParameterListHelpers.hpp"
 
@@ -187,7 +187,7 @@ int main(int argc, char *argv[]) {
   // This little trick lets us print to std::cout only if a (dummy) command-line argument is provided.
   int iprint     = argc - 1;
   ROL::Ptr<std::ostream> outStream;
-  Teuchos::oblackholestream bhs; // outputs nothing
+  ROL::nullstream bhs; // outputs nothing
   if (iprint > 0)
     outStream = ROL::makePtrFromRef(std::cout);
   else
@@ -232,10 +232,9 @@ int main(int argc, char *argv[]) {
     ROL::Ptr<ROL::Constraint<RealT> > con = ROL::makePtr<BinaryDesignConstraint<RealT>>(dim, vol);
 
    // Define algorithm
-    Teuchos::RCP<Teuchos::ParameterList> parlist
-      = Teuchos::rcp( new Teuchos::ParameterList() );
     std::string paramfile = "input.xml";
-    Teuchos::updateParametersFromXmlFile(paramfile,parlist.ptr());
+    auto parlist = ROL::getParametersFromXmlFile(paramfile);
+
     ROL::Algorithm<RealT> algo("Composite Step",*parlist);
 
     // Test objective

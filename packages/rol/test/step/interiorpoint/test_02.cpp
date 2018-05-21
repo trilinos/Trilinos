@@ -208,7 +208,7 @@ int main(int argc, char *argv[]) {
  
 //  typedef std::vector<RealT>                          vector;
 
-  typedef Teuchos::ParameterList                      PL;
+  typedef ROL::ParameterList                      PL;
 
   typedef ROL::Vector<RealT>                          V;
   typedef ROL::PartitionedVector<RealT>               PV;
@@ -227,7 +227,7 @@ int main(int argc, char *argv[]) {
 
   int iprint = argc - 1;
   ROL::Ptr<std::ostream> outStream;
-  Teuchos::oblackholestream bhs;
+  ROL::nullstream bhs;
   if( iprint > 0 ) 
     outStream = ROL::makePtrFromRef(std::cout);
   else

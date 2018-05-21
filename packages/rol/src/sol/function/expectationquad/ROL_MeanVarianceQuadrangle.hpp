@@ -79,9 +79,9 @@ class MeanVarianceQuadrangle : public ExpectationQuad<Real> {
 private:
   Real coeff_;
 
-  void parseParameterList(Teuchos::ParameterList &parlist) {
+  void parseParameterList(ROL::ParameterList &parlist) {
     std::string type = parlist.sublist("SOL").get("Stochastic Component Type","Risk Averse");
-    Teuchos::ParameterList list;
+    ROL::ParameterList list;
     if (type == "Risk Averse") {
       list = parlist.sublist("SOL").sublist("Risk Measure").sublist("Safety Margin");
     }
@@ -97,7 +97,7 @@ private:
 
   void checkInputs(void) const {
     Real zero(0);
-    TEUCHOS_TEST_FOR_EXCEPTION((coeff_ <= zero), std::invalid_argument,
+    ROL_TEST_FOR_EXCEPTION((coeff_ <= zero), std::invalid_argument,
       ">>> ERROR (ROL::MeanVarianceQuadrangle): Coefficient must be positive!");
   }
 
@@ -119,7 +119,7 @@ public:
       within the "Mean-Variance Quadrangle" sublist should have the following parameters
       \li "Coefficient" (array of positive scalars).
   */
-  MeanVarianceQuadrangle(Teuchos::ParameterList &parlist)
+  MeanVarianceQuadrangle(ROL::ParameterList &parlist)
     : ExpectationQuad<Real>() {
     parseParameterList(parlist);
     checkInputs();

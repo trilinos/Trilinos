@@ -72,7 +72,7 @@ class Lanczos {
   typedef Vector<Real>         V;
   typedef LinearOperator<Real> OP;
 
-  typedef Teuchos::ParameterList PL;
+  typedef ROL::ParameterList PL;
 
 private:
 
@@ -149,7 +149,7 @@ public:
   };
  
 
-  Lanczos( Teuchos::ParameterList &PL ) {
+  Lanczos( ROL::ParameterList &PL ) {
     PL &krylovList = parlist.sublist("General").sublist("Krylov");
     PL &lanczosList = krylovList.sublist("Lanczos");
 

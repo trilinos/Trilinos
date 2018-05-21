@@ -89,7 +89,7 @@ private:
 
 public:
   TankConstraint( const ROL::Ptr<TankState<Real>>& tankState, 
-                  Teuchos::ParameterList& pl ) : tankState_(tankState), 
+                  ROL::ParameterList& pl ) : tankState_(tankState), 
     rows_(pl.get("Number of Rows", 3)), cols_(pl.get("Number of Columns", 3)),
     zero_state_(rows_,cols_,"Zero State"), zero_ctrl_(rows_,cols_,"Zero Control"),
     has_applyJacobian_1_old_( pl.get("Has applyJacobian_1_old", false ) ),

@@ -70,7 +70,7 @@ public:
   const Real getProbability(const int i) const {
     const std::vector<Real> &yval = *(StdVector<Real>::getVector());
     int numMySamples = static_cast<int>(yval.size());
-    TEUCHOS_TEST_FOR_EXCEPTION((i < 0 || i >= numMySamples), std::invalid_argument,
+    ROL_TEST_FOR_EXCEPTION((i < 0 || i >= numMySamples), std::invalid_argument,
       ">>> ERROR (ROL::ProbabilityVector): index out of bounds in getProbability!");
     return yval[i];
   }
@@ -78,7 +78,7 @@ public:
   void setProbability(const int i, const Real wt) {
     std::vector<Real> &yval = *(StdVector<Real>::getVector());
     int numMySamples = static_cast<int>(yval.size());
-    TEUCHOS_TEST_FOR_EXCEPTION((i < 0 || i >= numMySamples), std::invalid_argument,
+    ROL_TEST_FOR_EXCEPTION((i < 0 || i >= numMySamples), std::invalid_argument,
       ">>> ERROR (ROL::ProbabilityVector): index out of bounds in setProbability!");
     yval[i] = wt;
   }
@@ -108,7 +108,7 @@ public:
     const std::vector<Real> &xval = *(dynamic_cast<const StdVector<Real>&>(x).getVector());
     const std::vector<Real> &yval = *(StdVector<Real>::getVector());
     uint numMySamples = static_cast<uint>(yval.size());
-    TEUCHOS_TEST_FOR_EXCEPTION( xval.size() != numMySamples, std::invalid_argument,
+    ROL_TEST_FOR_EXCEPTION( xval.size() != numMySamples, std::invalid_argument,
       "Error: Vectors must have the same dimension." );
     Real val(0), sum_val(0);
     for (uint i = 0; i < numMySamples; i++) {
@@ -161,7 +161,7 @@ public:
     const std::vector<Real> &xval = *(dynamic_cast<const StdVector<Real>&>(x).getVector());
     const std::vector<Real> &yval = *(StdVector<Real>::getVector());
     uint numMySamples = static_cast<uint>(yval.size());
-    TEUCHOS_TEST_FOR_EXCEPTION( xval.size() != numMySamples, std::invalid_argument,
+    ROL_TEST_FOR_EXCEPTION( xval.size() != numMySamples, std::invalid_argument,
       "Error: Vectors must have the same dimension." );
     Real val(0), sum_val(0);
     for (uint i = 0; i < numMySamples; i++) {

@@ -44,7 +44,7 @@
 #ifndef ROL_REGRETMEASUREFACTORY_HPP
 #define ROL_REGRETMEASUREFACTORY_HPP
 
-#include "Teuchos_ParameterList.hpp"
+#include "ROL_ParameterList.hpp"
 #include "ROL_Types.hpp"
 #include "ROL_ExpectationQuadRegret.hpp"
 #include "ROL_QuantileQuadrangle.hpp"
@@ -139,7 +139,7 @@ namespace ROL {
   }
 
   template<class Real>
-  inline Ptr<RandVarFunctional<Real> > RegretMeasureFactory(Teuchos::ParameterList &parlist) {
+  inline Ptr<RandVarFunctional<Real> > RegretMeasureFactory(ROL::ParameterList &parlist) {
     std::string regret = parlist.sublist("SOL").sublist("Regret Measure").get("Name","Mean Absolute Loss");
     ERegretMeasure ed = StringToERegretMeasure(regret);
     switch(ed) {
@@ -160,7 +160,7 @@ namespace ROL {
       case REGRETMEASURE_SMOOTHEDWORSTCASE:
              return makePtr<ExpectationQuadRegret<Real>>(makePtr<SmoothedWorstCaseQuadrangle<Real>>(parlist));
       default:
-        TEUCHOS_TEST_FOR_EXCEPTION(true,std::invalid_argument,
+        ROL_TEST_FOR_EXCEPTION(true,std::invalid_argument,
                                    "Invalid regret measure type " << regret << "!");
     }
   }

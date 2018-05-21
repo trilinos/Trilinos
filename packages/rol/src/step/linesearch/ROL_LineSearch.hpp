@@ -49,7 +49,7 @@
 */
 
 #include "ROL_Ptr.hpp"
-#include "Teuchos_ParameterList.hpp"
+#include "ROL_ParameterList.hpp"
 #include "ROL_Types.hpp"
 #include "ROL_Vector.hpp"
 #include "ROL_Objective.hpp"
@@ -91,7 +91,7 @@ public:
   virtual ~LineSearch() {}
 
   // Constructor
-  LineSearch( Teuchos::ParameterList &parlist ) : eps_(0) {
+  LineSearch( ROL::ParameterList &parlist ) : eps_(0) {
     Real one(1), p9(0.9), p6(0.6), p4(0.4), oem4(1.e-4), zero(0);
     // Enumerations
     edesc_ = StringToEDescent(parlist.sublist("Step").sublist("Line Search").sublist("Descent Method").get("Type","Quasi-Newton Method"));

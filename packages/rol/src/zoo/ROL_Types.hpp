@@ -61,11 +61,13 @@
 #include <sstream>
 #include <limits>
 #include <type_traits>
-#include <Teuchos_ScalarTraits.hpp>
-#include <Teuchos_TestForException.hpp>
+#include <ROL_stacktrace.hpp>
+#include "ROL_ScalarTraits.hpp"
+//#include <Teuchos_ScalarTraits.hpp>
 #include <ROL_Ptr.hpp>
 #include <ROL_Vector.hpp>
 #include <ROL_config.h>
+//#include <Teuchos_TestForException.hpp>
 
 /** \def    ROL_NUM_CHECKDERIV_STEPS
     \brief  Number of steps for derivative checks.
@@ -87,8 +89,8 @@ namespace ROL {
   /** \brief  Platform-dependent machine epsilon.
    */
   template<class Real>
-  inline Real ROL_EPSILON(void) { return std::abs(Teuchos::ScalarTraits<Real>::eps()); }
-  //static const Real ROL_EPSILON<Real>() = std::abs(Teuchos::ScalarTraits<Real>::eps());
+  inline Real ROL_EPSILON(void) { return std::abs(ROL::ScalarTraits<Real>::eps()); }
+  //static const Real ROL_EPSILON<Real>() = std::abs(ROL::ScalarTraits<Real>::eps());
 
   /** \brief  Tolerance for various equality tests.
    */
@@ -98,7 +100,7 @@ namespace ROL {
   /** \brief  Platform-dependent maximum double.
    */
   template<class Real>
-  inline Real ROL_OVERFLOW(void) { return std::abs(Teuchos::ScalarTraits<Real>::rmax()); }
+  inline Real ROL_OVERFLOW(void) { return std::abs(ROL::ScalarTraits<Real>::rmax()); }
 
   template<class Real>
   inline Real ROL_INF(void) { return 0.1*ROL_OVERFLOW<Real>(); }
@@ -109,7 +111,7 @@ namespace ROL {
   /** \brief  Platform-dependent minimum double.
    */
   template<class Real>
-  inline Real ROL_UNDERFLOW(void) { return std::abs(Teuchos::ScalarTraits<Real>::rmin()); }
+  inline Real ROL_UNDERFLOW(void) { return std::abs(ROL::ScalarTraits<Real>::rmin()); }
 
   /** \brief Enum for algorithm termination.
    */
@@ -1069,7 +1071,7 @@ using enable_if_t = typename std::enable_if<B,T>::type;
   \endcode
 
   \subsection step_qs_sec Step 3: Choose optimization algorithm.
-  ---  with @b Teuchos::ParameterList settings in the variable @b parlist.
+  ---  with @b ROL::ParameterList settings in the variable @b parlist.
 
   \code
       ROL::Algorithm<RealT> algo("Line Search",parlist);

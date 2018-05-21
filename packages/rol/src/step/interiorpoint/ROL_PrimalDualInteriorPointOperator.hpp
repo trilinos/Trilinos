@@ -127,7 +127,7 @@ public:
   }
 
   void applyInverse( Vector<Real> &Hv, const Vector<Real> &v, Real &tol ) const {
-     TEUCHOS_TEST_FOR_EXCEPTION( true , std::logic_error, 
+     ROL_TEST_FOR_EXCEPTION( true , std::logic_error, 
                                 ">>> ERROR (ROL_PrimalDualInteriorPointBlock11, applyInverse): "
                                 "Not implemented.");    
   }
@@ -174,7 +174,7 @@ public:
   }
 
   void applyInverse( Vector<Real> &Hv, const Vector<Real> &v, Real &tol ) const {
-     TEUCHOS_TEST_FOR_EXCEPTION( true , std::logic_error, 
+     ROL_TEST_FOR_EXCEPTION( true , std::logic_error, 
                                 ">>> ERROR (ROL_PrimalDualInteriorPointBlock12, applyInverse): "
                                 "Not implemented.");    
   }
@@ -234,7 +234,7 @@ public:
   }
 
   virtual void applyInverse( Vector<Real> &Hv, const Vector<Real> &v, Real &tol ) const {
-     TEUCHOS_TEST_FOR_EXCEPTION( true , std::logic_error, 
+     ROL_TEST_FOR_EXCEPTION( true , std::logic_error, 
                                 ">>> ERROR (ROL_PrimalDualInteriorPointBlock21, applyInverse): "
                                 "Not implemented.");    
   }

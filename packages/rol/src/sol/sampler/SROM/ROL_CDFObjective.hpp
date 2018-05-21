@@ -181,7 +181,7 @@ public:
                const Real scale = 1.e-2,
                const bool optProb = true, const bool optAtom = true)
     : Objective<Real>(), bman_(bman), dist_(dist), dimension_(dist.size()),
-      scale_(scale), sqrt2_(std::sqrt(2.)), sqrtpi_(std::sqrt(Teuchos::ScalarTraits<Real>::pi())),
+      scale_(scale), sqrt2_(std::sqrt(2.)), sqrtpi_(std::sqrt(ROL::ScalarTraits<Real>::pi())),
       optProb_(optProb), optAtom_(optAtom) {
     lowerBound_.resize(dimension_,0);
     upperBound_.resize(dimension_,0);

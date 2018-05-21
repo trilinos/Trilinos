@@ -92,7 +92,7 @@ public:
   }
 
   virtual void gradient( SerialDenseVector &g, const SerialDenseVector &x, Real &tol ) {
-    TEUCHOS_TEST_FOR_EXCEPTION(true, std::invalid_argument,
+    ROL_TEST_FOR_EXCEPTION(true, std::invalid_argument,
       ">>> ERROR (TeuchosObjective): gradient not implemented!");
   }
 
@@ -110,7 +110,7 @@ public:
   }
 
   virtual Real dirDeriv( const SerialDenseVector &x, const SerialDenseVector &d, Real &tol ) {
-    TEUCHOS_TEST_FOR_EXCEPTION(true, std::invalid_argument,
+    ROL_TEST_FOR_EXCEPTION(true, std::invalid_argument,
       ">>> ERROR (TeuchosObjective): dirDeriv not implemented!");
   }
 
@@ -128,7 +128,7 @@ public:
 
   virtual void hessVec( SerialDenseVector &hv, const SerialDenseVector &v, 
                         const SerialDenseVector &x, Real &tol ) {
-    TEUCHOS_TEST_FOR_EXCEPTION(true, std::invalid_argument,
+    ROL_TEST_FOR_EXCEPTION(true, std::invalid_argument,
       ">>> ERROR (TeuchosObjective): hessVec not implemented!");
   }
 
@@ -147,7 +147,7 @@ public:
 
   virtual void invHessVec( SerialDenseVector &hv, const SerialDenseVector &v, 
                            const SerialDenseVector &x, Real &tol ) {
-    TEUCHOS_TEST_FOR_EXCEPTION(true, std::invalid_argument,
+    ROL_TEST_FOR_EXCEPTION(true, std::invalid_argument,
       ">>> ERROR (TeuchosObjective): invHessVec not implemented!");
   }
 

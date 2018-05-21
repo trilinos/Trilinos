@@ -526,7 +526,7 @@ public:
 
              ---
   */
-  virtual void plus( const Vector<Real> &x )
+  virtual void plus( const Vector<Real> &x ) override
   {
     typedef PinTVector<Real> PinTVector; 
     const PinTVector &xs = dynamic_cast<const PinTVector&>(x);
@@ -543,7 +543,7 @@ public:
 
              ---
   */
-  virtual void scale( const Real alpha ) 
+  virtual void scale( const Real alpha ) override
   {
     stepVectors_->scale(alpha);
   }
@@ -556,7 +556,7 @@ public:
 
              ---
   */
-  virtual Real dot( const Vector<Real> &x ) const
+  virtual Real dot( const Vector<Real> &x ) const override
   {
     // this is probably very inefficient way to do this... oh well!
     typedef PinTVector<Real> PinTVector; 
@@ -581,7 +581,7 @@ public:
 
              ---
   */
-  virtual Real norm() const
+  virtual Real norm() const override
   {
     // this is probably very inefficient way to do this... oh well!
     return std::sqrt(this->dot(*this));
@@ -595,7 +595,7 @@ public:
 
              ---             
   */
-  virtual ROL::Ptr<Vector<Real>> clone() const
+  virtual ROL::Ptr<Vector<Real>> clone() const override
   {
     return makePtr<PinTVector<Real>>(*this);
   }

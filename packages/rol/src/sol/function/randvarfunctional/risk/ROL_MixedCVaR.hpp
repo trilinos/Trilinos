@@ -47,8 +47,7 @@
 #include "ROL_RandVarFunctional.hpp"
 #include "ROL_PlusFunction.hpp"
 
-#include "Teuchos_Array.hpp"
-#include "Teuchos_ParameterList.hpp"
+#include "ROL_ParameterList.hpp"
 
 /** @ingroup risk_group
     \class ROL::MixedCVaR
@@ -89,8 +88,8 @@ template<class Real>
 class MixedCVaR : public RandVarFunctional<Real> {
 private:
   ROL::Ptr<PlusFunction<Real> > plusFunction_;
-  Teuchos::Array<Real> prob_;
-  Teuchos::Array<Real> coeff_;
+  std::vector<Real> prob_;
+  std::vector<Real> coeff_;
   std::vector<Real> vec_;
   int size_;
 
@@ -115,32 +114,32 @@ private:
 
   void checkInputs(void) {
     int pSize = prob_.size(), cSize = coeff_.size();
-    TEUCHOS_TEST_FOR_EXCEPTION((pSize!=cSize),std::invalid_argument,
+    ROL_TEST_FOR_EXCEPTION((pSize!=cSize),std::invalid_argument,
       ">>> ERROR (ROL::MixedCVaR): Probability and coefficient arrays have different sizes!");
     Real sum(0), zero(0), one(1);
     for (int i = 0; i < pSize; i++) {
-      TEUCHOS_TEST_FOR_EXCEPTION((prob_[i]>one || prob_[i]<zero), std::invalid_argument,
+      ROL_TEST_FOR_EXCEPTION((prob_[i]>one || prob_[i]<zero), std::invalid_argument,
         ">>> ERROR (ROL::MixedCVaR): Element of probability array out of range!");
-      TEUCHOS_TEST_FOR_EXCEPTION((coeff_[i]>one || coeff_[i]<zero), std::invalid_argument,
+      ROL_TEST_FOR_EXCEPTION((coeff_[i]>one || coeff_[i]<zero), std::invalid_argument,
         ">>> ERROR (ROL::MixedCVaR): Element of coefficient array out of range!");
       sum += coeff_[i];
     }
-    TEUCHOS_TEST_FOR_EXCEPTION((std::abs(sum-one) > std::sqrt(ROL_EPSILON<Real>())),std::invalid_argument,
+    ROL_TEST_FOR_EXCEPTION((std::abs(sum-one) > std::sqrt(ROL_EPSILON<Real>())),std::invalid_argument,
       ">>> ERROR (ROL::MixedCVaR): Coefficients do not sum to one!");
-    TEUCHOS_TEST_FOR_EXCEPTION(plusFunction_ == ROL::nullPtr, std::invalid_argument,
+    ROL_TEST_FOR_EXCEPTION(plusFunction_ == ROL::nullPtr, std::invalid_argument,
       ">>> ERROR (ROL::MixedCVaR): PlusFunction pointer is null!");
     initializeMCVAR();
   }
 
 public:
 
-  MixedCVaR( Teuchos::ParameterList &parlist )
+  MixedCVaR( ROL::ParameterList &parlist )
     : RandVarFunctional<Real>() {
-    Teuchos::ParameterList &list
+    ROL::ParameterList &list
       = parlist.sublist("SOL").sublist("Risk Measure").sublist("Mixed CVaR");
     // Grab probability and coefficient arrays
-    prob_  = Teuchos::getArrayFromStringParameter<Real>(list,"Probability Array");
-    coeff_ = Teuchos::getArrayFromStringParameter<Real>(list,"Coefficient Array");
+    prob_  = ROL::getArrayFromStringParameter<Real>(list,"Probability Array");
+    coeff_ = ROL::getArrayFromStringParameter<Real>(list,"Coefficient Array");
     plusFunction_ = ROL::makePtr<PlusFunction<Real>>(list);
     // Check inputs
     checkInputs();
