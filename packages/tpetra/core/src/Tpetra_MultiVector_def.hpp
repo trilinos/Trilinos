@@ -3141,14 +3141,50 @@ namespace Tpetra {
 
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  template <class cur_memory_space>
+  void
+  MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
+  updateImpl (const Scalar& alpha,
+              const MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& A,
+              const Scalar& beta) {
+    using Kokkos::ALL;
+    using Kokkos::subview;
+
+    const size_t lclNumRows = getLocalLength ();
+    const size_t numVecs = getNumVectors ();
+    const impl_scalar_type theAlpha = static_cast<impl_scalar_type> (alpha);
+    const impl_scalar_type theBeta = static_cast<impl_scalar_type> (beta);
+    const std::pair<size_t, size_t> rowRng (0, lclNumRows);
+    const std::pair<size_t, size_t> colRng (0, numVecs);
+
+    auto Y_lcl_orig = this->template getLocalView<cur_memory_space> ();
+    auto Y_lcl = subview (Y_lcl_orig, rowRng, Kokkos::ALL ());
+    auto X_lcl_orig = A.template getLocalView<cur_memory_space> ();
+    auto X_lcl = subview (X_lcl_orig, rowRng, Kokkos::ALL ());
+    
+    if (isConstantStride () && A.isConstantStride ()) {
+      KokkosBlas::axpby (theAlpha, X_lcl, theBeta, Y_lcl);
+    }
+    else {
+      // Make sure that Kokkos only uses the local length for add.
+      for (size_t k = 0; k < numVecs; ++k) {
+        const size_t Y_col = this->isConstantStride () ? k : this->whichVectors_[k];
+        const size_t X_col = A.isConstantStride () ? k : A.whichVectors_[k];
+        auto Y_k = subview (Y_lcl, ALL (), Y_col);
+        auto X_k = subview (X_lcl, ALL (), X_col);
+        
+        KokkosBlas::axpby (theAlpha, X_k, theBeta, Y_k);
+      }
+    }
+  }
+
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void
   MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   update (const Scalar& alpha,
           const MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& A,
           const Scalar& beta)
   {
-    using Kokkos::ALL;
-    using Kokkos::subview;
     const char tfecfFuncName[] = "update: ";
 
     ::Tpetra::Details::ProfilingRegion region ("Tpetra::MV::update(alpha,A,beta)");
@@ -3165,69 +3201,33 @@ namespace Tpetra {
       "this->getNumVectors() = " << numVecs << " != A.getNumVectors() = "
       << A.getNumVectors () << ".");
 
-    const impl_scalar_type theAlpha = static_cast<impl_scalar_type> (alpha);
-    const impl_scalar_type theBeta = static_cast<impl_scalar_type> (beta);
-    const std::pair<size_t, size_t> rowRng (0, lclNumRows);
-    const std::pair<size_t, size_t> colRng (0, numVecs);
-
     typedef typename dual_view_type::t_dev dev_view_type;
     typedef typename dual_view_type::t_host host_view_type;
 
-    // If we need sync to device, then host has the most recent version.
-    const bool useHostVersion = this->template need_sync<device_type> ();
-    if (useHostVersion) {
-      // Work on host, where A's data were most recently modified.  A
-      // is a "guest" of this method, so it's more polite to sync
-      // *this, than to sync A.
-      typedef typename host_view_type::memory_space cur_memory_space;
+    // Are this and A in the "host" state?
+    const bool thisIsHost = this->template need_sync<device_type> ();
+    const bool AIsHost = A.template need_sync<device_type> ();
 
+    // If they're not in the same state... sync *this because A is const
+    if(thisIsHost != AIsHost && AIsHost) {
+      typedef typename host_view_type::memory_space cur_memory_space;
       this->template sync<cur_memory_space> ();
       this->template modify<cur_memory_space> ();
-      auto Y_lcl_orig = this->template getLocalView<cur_memory_space> ();
-      auto Y_lcl = subview (Y_lcl_orig, rowRng, Kokkos::ALL ());
-      auto X_lcl_orig = A.template getLocalView<cur_memory_space> ();
-      auto X_lcl = subview (X_lcl_orig, rowRng, Kokkos::ALL ());
-
-      if (isConstantStride () && A.isConstantStride ()) {
-        KokkosBlas::axpby (theAlpha, X_lcl, theBeta, Y_lcl);
-      }
-      else {
-        // Make sure that Kokkos only uses the local length for add.
-        for (size_t k = 0; k < numVecs; ++k) {
-          const size_t Y_col = this->isConstantStride () ? k : this->whichVectors_[k];
-          const size_t X_col = A.isConstantStride () ? k : A.whichVectors_[k];
-          auto Y_k = subview (Y_lcl, ALL (), Y_col);
-          auto X_k = subview (X_lcl, ALL (), X_col);
-
-          KokkosBlas::axpby (theAlpha, X_k, theBeta, Y_k);
-        }
-      }
+      this->updateImpl<cur_memory_space>(alpha,A,beta);
     }
-    else { // work on device
-      // A is a "guest" of this method, so it's more polite to sync
-      // *this, than to sync A.
+    else if(thisIsHost != AIsHost && !AIsHost) {
       typedef typename dev_view_type::memory_space cur_memory_space;
       this->template sync<cur_memory_space> ();
       this->template modify<cur_memory_space> ();
-      auto Y_lcl_orig = this->template getLocalView<cur_memory_space> ();
-      auto Y_lcl = subview (Y_lcl_orig, rowRng, Kokkos::ALL ());
-      auto X_lcl_orig = A.template getLocalView<cur_memory_space> ();
-      auto X_lcl = subview (X_lcl_orig, rowRng, Kokkos::ALL ());
-
-      if (isConstantStride () && A.isConstantStride ()) {
-        KokkosBlas::axpby (theAlpha, X_lcl, theBeta, Y_lcl);
-      }
-      else {
-        // Make sure that Kokkos only uses the local length for add.
-        for (size_t k = 0; k < numVecs; ++k) {
-          const size_t Y_col = this->isConstantStride () ? k : this->whichVectors_[k];
-          const size_t X_col = A.isConstantStride () ? k : A.whichVectors_[k];
-          auto Y_k = subview (Y_lcl, ALL (), Y_col);
-          auto X_k = subview (X_lcl, ALL (), X_col);
-
-          KokkosBlas::axpby (theAlpha, X_k, theBeta, Y_k);
-        }
-      }
+      this->updateImpl<cur_memory_space>(alpha,A,beta);
+    }
+    else if(thisIsHost == AIsHost && AIsHost) {
+      typedef typename host_view_type::memory_space cur_memory_space;
+      this->updateImpl<cur_memory_space>(alpha,A,beta);
+    }
+    else { //thisIsHost == AIsHost && !AIsHost)
+      typedef typename dev_view_type::memory_space cur_memory_space;
+      this->updateImpl<cur_memory_space>(alpha,A,beta);
     }
   }
 
