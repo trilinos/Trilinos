@@ -2300,21 +2300,6 @@ namespace Tpetra {
                 const MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& A,
                 const Scalar& beta);
 
-    /// \brief Update: <tt>this = gamma*this + alpha*A + beta*B</tt>.
-    ///
-    /// Update this MultiVector with scaled values of A and B.  If
-    /// gamma is zero, overwrite \c *this unconditionally, even if it
-    /// contains NaN entries.  It is legal for the inputs A or B to
-    /// alias this MultiVector.
-    template <class cur_memory_space>
-    void 
-    updateImpl (const Scalar& alpha,
-            const MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& A,
-            const Scalar& beta,
-            const MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& B,
-            const Scalar& gamma);
-
-
     //@}
     //! @name Misc. implementation details
     //@{
