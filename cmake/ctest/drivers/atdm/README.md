@@ -136,7 +136,8 @@ up to run as follows:
 
 ```
 source $WORKSPACE/Trilinos/cmake/ctest/drivers/atdm/ctest-s-driver-config-build.sh
-$WORKSPACE/Trilinos/cmake/ctest/drivers/atdm/ctest-s-driver-test.sh
+<comamnd-to-run-on-compute-node> \
+  $WORKSPACE/Trilinos/cmake/ctest/drivers/atdm/ctest-s-driver-test.sh
 ```
 
 The first script `ctest-s-driver-config-build.sh` must be sourced instead of
@@ -258,6 +259,7 @@ there is no tractability for changes in these settings!
 ## Specific <system_name> directories
 
 The following `<system_name>` sub-directories exist (in alphabetical order):
+
 * `mutrino/`: Contains files to drive builds on SNL machine mutrino.
  
 * `rhel6/`: Contains files to drive builds on rhel6 machines with the SEMS
@@ -280,4 +282,131 @@ The following `<system_name>` sub-directories exist (in alphabetical order):
 
 ## How add a new system
 
-ToDo: Fill in!
+To add a new system, first add a new `elseif` statement for the new system in
+the file:
+
+```
+  Trilinos/cmake/std/atdm/utils/get_known_system_name.sh
+```
+
+Note that more than one `hostname` machine may map to the same
+`<new_system_name>` (e.g. both `white` and `ride` machines map to the system
+`ride`).
+
+The variable `ATDM_HOSTNAME` (set to exported var
+`ATDM_CONFIG_KNOWN_HOSTNAME`) is used for the CDash site name.  This makes it
+so that any node `white05`, `white12`, etc. just says `white` on CDash.  This
+is important for the CDash 'next' and 'previous' relationships to work.
+
+The variable `ATDM_SYSTEM_NAME` (set to the exported var
+`ATDM_CONFIG_KNOWN_SYSTEM_NAME`) must be set to `<new_system_name>` which is
+selected for this new system type.
+
+Then, create a new directory for the new system called `<new_system_name>`:
+
+```
+  Trilinos/cmake/std/atdm/<new_system_name>/
+```
+
+and fill in the file:
+
+```
+  Trilinos/cmake/std/atdm/<new_system_name>/environment.sh
+```
+
+The file `<new_system_name>/environment.sh` contains all of the
+system-specific settings to get an ATDM Trilinos build to work on this new
+platform.  For tips, see examples of these files in other
+`cmake/std/atdm/<system_name>/` directories.  And see how these env vars are
+read and interpreted in the file:
+
+```
+  Trilinos/cmake/std/atdm/ATDMDevEnvSettings.cmake
+```
+
+to understand their impact on the configuration, build and testing.
+
+A few of the environment variables that need to be set in the file
+`<new_system_name>/environment.sh` worth specifically discussing are:
+
+* `ATDM_CONFIG_USE_NINJA`: If Ninja is available on the system and will be
+  loaded into the env in this script, set this to `TRUE`.  Otherwise, if
+  makefiles are to be used, set to `FALSE`.  When possible, it is best to use
+  Ninja but this needs to be a Fortran-enabled Ninja (see [Installing Ninja
+  from Source](
+  https://tribits.org/doc/TribitsBuildReference.html#installing-ninja-from-source)).
+
+* `ATDM_CONFIG_BUILD_COUNT`: Set to a positive integer to control how many
+  processes will be used when building.  When using
+  `ATDM_CONFIG_USE_NINJA=TRUE`, this can be set to `0` or `-1` to allow
+  `ninja` to be run without a `-j<N>` option and therefore use all of the
+  cores (see [Building in parallel with Ninja](
+  https://tribits.org/doc/TribitsBuildReference.html#building-in-parallel-with-ninja)).
+  But when using Makefiles, this must be set to a positive integer.  Don't set
+  too high so that it will overload the machine.
+
+* `ATDM_CONFIG_CTEST_PARALLEL_LEVEL`: This determines the parallel level when
+  running `ctest -j<N>` (see [CTEST_PARALLEL_LEVEL](
+  https://tribits.org/doc/TribitsDevelopersGuide.html#determining-what-testing-related-actions-are-performed-tribits-ctest-driver)).
+  When using threading with OpenMP, note that this will need to be reduced
+  based on the value set for `OMP_NUM_THREADS`.
+
+* `ATDM_CONFIG_KOKKOS_ARCH`: This must be set correctly for each compiler
+  supported.  Knowing the correct value to set is beyond the scope of this
+  document.
+
+After creating the file:
+
+```
+  Trilinos/cmake/std/atdm/<new_system_name>/environment.sh
+```
+
+one can do some local configures and builds of Trilinos packages as documented
+in the file
+
+```
+  Trilinos/cmake/std/atdm/README.md
+```
+
+Then, add the file:
+
+```
+  Trilinos/cmake/std/atdm/<new_system_name>/all_supported_builds.sh
+```
+
+and fill in the list of builds that are going to be supported on this machine.
+This allows one to use `./checkin-test-sems.sh all ...` to test all
+configurations on a given machine.
+
+Once local configurations are complete and some local testing if finished,
+then create the ctest -S / Jenkins driver directory:
+
+```
+  Trilinos/cmake/ctest/drivers/atdm/<new_system_name>/
+```
+
+and create the basic driver file:
+
+```
+  Trilinos/cmake/ctest/drivers/atdm/<new_system_name>/local-driver.sh
+```
+
+and one or more smart Jenkins driver files:
+
+```
+  Trilinos/cmake/ctest/drivers/atdm/<new_system_name>/drivers/$JOB_NAME.sh
+```
+
+Use examples from other `Trilinos/cmake/ctest/drivers/atdm/<system_name>/`
+directories for inspiration.  Then test the configurations one at a time as
+described <a href="#running-locally-and-debugging">above</a>.
+
+Once the basic configurations seem to be working, then commit your changes on
+a topic branch and [submit a pull request (PR) to
+Trilinos](https://github.com/trilinos/Trilinos/wiki/Submitting-a-Trilinos-Pull-Request).
+Make sure and mention `@fryeguy52` and add the label `ATDM`.
+
+Once the PR has been has been merged, then set up the Jenkins jobs to run the
+builds as described <a href="#setting-up-jenkins-jobs">above</a>.
+
+ToDo: Fill in more detail, add an FAQ, etc.

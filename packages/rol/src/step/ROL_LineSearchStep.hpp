@@ -45,7 +45,6 @@
 #define ROL_LINESEARCHSTEP_H
 
 #include "ROL_Types.hpp"
-#include "ROL_HelperFunctions.hpp"
 #include "ROL_Step.hpp"
 #include "ROL_LineSearch.hpp"
 

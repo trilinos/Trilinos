@@ -45,6 +45,8 @@
     \brief Test of FiniteDifference class for performing derivative checks
 */
 
+#include "Teuchos_GlobalMPISession.hpp"
+
 #include "ROL_ValidateFunction.hpp"
 
 #include "ROL_SimpleEqConstrained.hpp"

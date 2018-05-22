@@ -50,7 +50,6 @@
 
 #include "ROL_TrustRegion.hpp"
 #include "ROL_Types.hpp"
-#include "ROL_HelperFunctions.hpp"
 
 namespace ROL { 
 

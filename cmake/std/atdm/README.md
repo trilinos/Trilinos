@@ -64,6 +64,9 @@ The following `<job-name>` keywords specify the `<COMPILER>`:
 * `clang`: Use the LLVM Clang compilers (`<COMPILER>=CLANG`)
 * `cuda`: Do a CUDA build for that system (`<COMPILER>=CUDA`, `NODE_TYPE=CUDA`)
 
+If `default` is used, then the default compiler for the system will be
+selected.
+
 The following `<job-name>` keywords specify debug or optimized `<BUILD_TYPE>
 `(used for the CMake cache var `CMAKE_BUILD_TYPE`with default
 `<BUILD_TYPE>=DEBUG`):
@@ -111,7 +114,7 @@ directories and libraries for each of these TPLs.
 When included, the file `ATDMDevEnv.cmake` also disables many packages and
 subpackages not used for the ATDM configuration of Trilinos.  This uses a
 so-called back-listing approach which allows one to only directly enable the
-packages you want to use with `Triinos_ENABLE_ALL_OPTIONAL_PACKAGES=ON` and
+packages you want to use with `Trilinos_ENABLE_ALL_OPTIONAL_PACKAGES=ON` and
 then disable the ones you don't want.  This is a much more flexible way to
 define a standard configuration of Trilinos that allows different sets of
 actual packages to be enabled based on the needs of the different ATDM
@@ -137,20 +140,47 @@ $ cd <some_build_dir>/
 $ ln -s $TRILINOS_DIR/cmake/std/atdm/checkin-test-sems.sh .
 
 $ ./checkin-test-sems.sh <job-name-0> <job-name-1> ... \
-  --enable-all-packages=off --no-enable-fwd-packages \
   --enable-packages=<Package> --local-do-all
 ```
 
 That will configure, build, and run tests for each specified build
 `<job-name-0>` and send a summary email when complete.  See comments at the
-top of the script `checkin-test-atdm.sh` for more details.
+top of the script `checkin-test-atdm.sh` for more details.  The parallel level
+for building and running tests are determined by the env vars
+`ATDM_CONFIG_BUILD_COUNT` and `ATDM_CONFIG_CTEST_PARALLEL_LEVEL`,
+respectfully, as set by default for the given system.  These can be overridden
+by setting the env vars `ATDM_CONFIG_BUILD_COUNT_OVERRIDE` and
+`ATDM_CONFIG_CTEST_PARALLEL_LEVEL_OVERIDE`, respectfully as, for example:
 
-Note that to run tests for a CUDA build, one will need to run these on a
-compute node on the system that has a GPU.  See <a
-href="#specific-instructions-for-each-system">Specific instructions for each
-system</a> for details.
+```
+$ env \
+  ATDM_CONFIG_BUILD_COUNT_OVERRIDE=8 \
+  ATDM_CONFIG_CTEST_PARALLEL_LEVEL_OVERIDE=12 \
+  ./checkin-test-sems.sh ...
+```
 
-Also note that one can create a `local-checkin-test-defaults.py` file to set
+A value of `ATDM_CONFIG_BUILD_COUNT_OVERRIDE=0` or less than `0` is allowed
+when using Ninja (i.e. `ATDM_CONFIG_USE_NINJA=ON`) in which case `ninja` will
+be run with non `-j<N>` argument, and therefore all of the non-loaded cores
+will be used.
+
+Note that to run tests for a CUDA build or to run tests on platforms that must
+run on a compute node one will need to run these on a compute node on the
+system that has a GPU.  On such a system one would run:
+
+```
+$ ./checkin-test-sems.sh <job-name-0> <job-name-1> ... \
+  --enable-packages=<Package> --configure --build \
+  && \
+  <command-to-run-on-compute-node> \
+  ./checkin-test-sems.sh <job-name-0> <job-name-1> ... \
+  --enable-packages=<Package> --test
+```
+
+See <a href="#specific-instructions-for-each-system">Specific instructions for
+each system</a> for details.
+
+Note that one can create a `local-checkin-test-defaults.py` file to set
 defaults like:
 
 ```
@@ -167,6 +197,8 @@ $ ./checkin-test-sems.sh <job-name-0> <job-name-1> ... \
   --enable-packages=<Package> --local-do-all
 ```
 
+However, a default `local-checkin-test-defaults.py` is created the first time
+the `checkin-test-atdm.sh` script is run.
 
 ## Specific instructions for each system
 
