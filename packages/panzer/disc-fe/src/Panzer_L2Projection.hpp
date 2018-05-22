@@ -29,9 +29,12 @@ namespace panzer {
   template<typename LO,typename GO> class DOFManager;
   class WorksetContainer;
 
-  /** \brief Creates a mass matrix for an L2 projection of a scalar field(s) onto the basis.
+  /** \brief Unified set of tools for building objects for lumped and
+      consistent L2 projects between bases. Currently only supports
+      scalar projections onto HGrad bases. It is design to be
+      extensible to all cases.
 
-      Worksets are build using lazy construction if not supplied by the user
+      Need to add description of utilities.
   */
   template<typename LO, typename GO>
   class L2Projection {
@@ -48,13 +51,14 @@ namespace panzer {
 
   public:
 
+    //! Constructor
     L2Projection() : setupCalled_(false) {}
 
-    /** \brief Setup for L2 Projects - requires target scalar basis and creates worksets if not supplied by user.
-        
+    /** \brief Setup base objects for L2 Projections - requires target scalar basis and creates worksets if not supplied by user.
+
         \param[in] basis (required) Basis that field values will be projected to.
         \param[in] integrationDescriptor (required) Integration order used for the projection.
-        \param[in] comm (required) Teuchos MPI communicator used all processes involved in the project. 
+        \param[in] comm (required) Teuchos MPI communicator used all processes involved in the project.
         \param[in] connManger (required) Connection manager to describe the mesh.
         \param[in] elementBlockNames (required) Names of element blocks in mesh that are involved in the projection.
         \param[in] worksetContainer (optional) If the user has already allocated worksets for the corresponding mesh/element blocks, we can used those instead of reallocating for projection.
@@ -65,39 +69,37 @@ namespace panzer {
                const Teuchos::RCP<const panzer::ConnManager<LO,GO>>& connManager,
                const std::vector<std::string>& elementBlockNames,
                const Teuchos::RCP<panzer::WorksetContainer>& worksetContainer = nullptr);
-    
-    /** \brief Allocated, fills and returns a mass matrix for L2 projection of a scalar and vector field(s) onto a scalar basis.
-        
+
+    /** \brief Allocates, fills and returns a mass matrix for L2
+        projection of a scalar and vector field(s) onto a scalar
+        basis.
+
         \returns Filled Matrix in a LinearObjectContainer
     */
     Teuchos::RCP<Tpetra::CrsMatrix<double,LO,GO,Kokkos::Compat::KokkosDeviceWrapperNode<PHX::Device>>>
       buildMassMatrix();
-    
+
+    /** \brief Allocates, fills and returns a rectangular matrix for
+        L2 projection of a scalar fields (or their gradients) or one
+        dimension of a vector field onto the target scalar basis. If
+        you wish to project all values of a vector field or the
+        gradients of a scalar field, then you will need three separate
+        RHS matrices to form the RHS for each independently.
+
+        \param[in] (required) sourceDOFManager The source dof manger object
+        \param[in] (required) ownedSourceMap The Tpetra Map for the owned source vector
+        \param[in] (required) sourceFieldName The string name of the source field to project
+        \param[in] (required) sourceBasisDescriptor The type of the basis for the source field
+        \param[in] (optional) vectorOrGradientDirectionIndex For vector fields, this is the vector index to project (x,y, or z coordinate direction). For scalar fields, the default value of -1 results in a projection of the scalar field value. If set to 0 or greater, it is assumed that the gradient of the HGrad field is projected and that this value is the dimension index for the particular gradient (x, y, or z coordinate direction).
+        \returns Alocated and filled Tpetra::CrsMatrix
+    */
     Teuchos::RCP<Tpetra::CrsMatrix<double,LO,GO,Kokkos::Compat::KokkosDeviceWrapperNode<PHX::Device>>>
       buildRHSMatrix(const Teuchos::RCP<panzer::DOFManager<LO,GO>>& sourceDOFManager,
                      const Teuchos::RCP<Tpetra::Map<LO,GO,Kokkos::Compat::KokkosDeviceWrapperNode<PHX::Device>>>& ownedSourceMap,
                      const std::string& sourceFieldName,
                      const panzer::BasisDescriptor& sourceBasisDescriptor,
-                     const bool isVectorBasis = false,
-                     const int vectorBasisIndex = -1);
-
+                     const int vectorOrGradientDirectionIndex = -1);
   };
-
-  /** \brief This class provides general utilities to perform a L2
-      projections. It can be used to build the Mass matrix and RHS
-      vectors.
-
-      Users can perform projections in multiple ways. They could
-      formulate a projection that does multiple field values all at
-      once. If projection multiple fields to the same basis, another
-      possibility is to create a mass matrix for a single field
-      projection and reuse the matrix for each of the fields. In this
-      case, performance can be improved further via using multiple
-      right-hand-sides (one per field to project) with the Petra
-      MultiVector concept. Users can also choose between consistent
-      and lumped mass matrix formulations. This class provides the
-      tools to try all of these avenues.
-   */
 
 }
 

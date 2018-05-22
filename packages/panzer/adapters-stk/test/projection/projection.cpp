@@ -63,6 +63,7 @@
 #include "Panzer_DOFManager.hpp"
 #include "Panzer_BlockedDOFManager.hpp"
 
+#include "Tpetra_Vector.hpp"
 #include "Tpetra_CrsMatrix.hpp"
 
 // Teuchos
@@ -70,8 +71,20 @@
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_TimeMonitor.hpp"
 #include "Teuchos_UnitTestHarness.hpp"
+#include "Teuchos_TimeMonitor.hpp"
+#include "Teuchos_StackedTimer.hpp"
+
+// Solver
+#include "BelosSolverFactory.hpp"
+#include "BelosMultiVecTraits_Tpetra.hpp"
+#include "BelosOperatorTraits_Tpetra.hpp"
+#include "BelosTpetraAdapter.hpp"
+#include "BelosLinearProblem.hpp"
 
 #include <memory>
+#include <vector>
+#include <string>
+#include <cmath>
 
 TEUCHOS_UNIT_TEST(l2_projection, dof_manager)
 {
@@ -81,6 +94,9 @@ TEUCHOS_UNIT_TEST(l2_projection, dof_manager)
 
   RCP<MpiComm<int>> comm = rcp(new MpiComm<int>(MPI_COMM_WORLD));
 
+  auto timer = Teuchos::TimeMonitor::getStackedTimer();
+  timer->start("Total Time");
+
   const int myRank = comm->getRank();
   const int numProcs = comm->getSize();
   const int numXElements = 2;
@@ -88,6 +104,7 @@ TEUCHOS_UNIT_TEST(l2_projection, dof_manager)
 
   RCP<panzer_stk::STK_Interface> mesh;
   {
+    PANZER_FUNC_TIME_MONITOR("L2Projection: mesh construction");
     Teuchos::RCP<Teuchos::ParameterList> pl = rcp(new Teuchos::ParameterList);
     pl->set("X Blocks",2);
     pl->set("Y Blocks",1);
@@ -117,7 +134,7 @@ TEUCHOS_UNIT_TEST(l2_projection, dof_manager)
   WorksetNeeds worksetNeeds;
   worksetNeeds.addBasis(hgradBD);
   worksetNeeds.addBasis(hcurlBD);
-  worksetNeeds.addBasis(hcurlBD);
+  worksetNeeds.addBasis(hdivBD);
   worksetNeeds.addIntegrator(integrationDescriptor);
 
   RCP<WorksetFactory> worksetFactory(new WorksetFactory(mesh));
@@ -131,7 +148,9 @@ TEUCHOS_UNIT_TEST(l2_projection, dof_manager)
   // Build Connection Manager
   using LO = int;
   using GO = panzer::Ordinal64;
+  timer->start("ConnManager ctor");
   const RCP<panzer::ConnManager<LO,GO> > connManager = rcp(new panzer_stk::STKConnManager<GO>(mesh));
+  timer->stop("ConnManager ctor");
 
   // Set up bases for projections
   auto cellTopology = mesh->getCellTopology(eBlockNames[0]);
@@ -145,91 +164,230 @@ TEUCHOS_UNIT_TEST(l2_projection, dof_manager)
   auto divBasis = panzer::createIntrepid2Basis<PHX::Device,double,double>(hdivBD.getType(),hdivBD.getOrder(),*cellTopology);
   RCP<const panzer::FieldPattern> hdivFP(new panzer::Intrepid2FieldPattern(divBasis));
 
-
   // ****************
   // Testing ghosting
   // ****************
-  out.setShowProcRank(true);
-  out.setOutputToRootOnly(myRank);
-  connManager->buildConnectivity(*hgradFP);
-  for (const auto& block : eBlockNames) {
-    const auto& localElements = connManager->getElementBlock(block);
-    const auto& ghostElements = connManager->getNeighborElementBlock(block);
-    out << "block=" << block << ", numOwnedElements = " << localElements.size() 
-        << ", numGhostedElements = " << ghostElements.size() << std::endl;
-    for (const auto& e : localElements) {
-      auto cellSize = connManager->getConnectivitySize(e);
-      auto conn = connManager->getConnectivity(e);
-      std::stringstream os;
-      os << "owned lid=" << e << ", cellSize=" << cellSize << ", conn=";
-      for (int i=0; i < cellSize; ++i)
-        os << conn[i] << ",";
-      out << os.str() << std::endl;
+  {
+    PANZER_FUNC_TIME_MONITOR("L2Projection: test ghosting (build connectivity)");
+    out.setShowProcRank(true);
+    out.setOutputToRootOnly(myRank);
+    connManager->buildConnectivity(*hgradFP);
+    for (const auto& block : eBlockNames) {
+      const auto& localElements = connManager->getElementBlock(block);
+      const auto& ghostElements = connManager->getNeighborElementBlock(block);
+      out << "block=" << block << ", numOwnedElements = " << localElements.size()
+          << ", numGhostedElements = " << ghostElements.size() << std::endl;
+      for (const auto& e : localElements) {
+        auto cellSize = connManager->getConnectivitySize(e);
+        auto conn = connManager->getConnectivity(e);
+        std::stringstream os;
+        os << "owned lid=" << e << ", cellSize=" << cellSize << ", conn=";
+        for (int i=0; i < cellSize; ++i)
+          os << conn[i] << ",";
+        out << os.str() << std::endl;
+      }
+      for (const auto& e : ghostElements) {
+        auto cellSize = connManager->getConnectivitySize(e);
+        auto conn = connManager->getConnectivity(e);
+        std::stringstream os;
+        os << "ghosted lid=" << e << ", cellSize=" << cellSize << ", conn=";
+        for (int i=0; i < cellSize; ++i)
+          os << conn[i] << ",";
+        out << os.str() << std::endl;
+      }
     }
-    for (const auto& e : ghostElements) {
-      auto cellSize = connManager->getConnectivitySize(e);
-      auto conn = connManager->getConnectivity(e);
-      std::stringstream os;
-      os << "ghosted lid=" << e << ", cellSize=" << cellSize << ", conn=";
-      for (int i=0; i < cellSize; ++i)
-        os << conn[i] << ",";
-      out << os.str() << std::endl;
-    }
+    out.setOutputToRootOnly(0);
   }
-  out.setOutputToRootOnly(0);
   // ****************
   // ****************
-
-
-
-
 
   // Build source DOF Manager that mimics multi-fluid plasma dof manager
+  timer->start("Build sourceGlobalIndexer");
   RCP<panzer::DOFManager<LO,GO>> sourceGlobalIndexer = rcp(new panzer::DOFManager<LO,GO>(connManager,*comm->getRawMpiComm()));
-  sourceGlobalIndexer->addField("Chaff0",hgradFP);
-  sourceGlobalIndexer->addField("Chaff1",hgradFP);
-  sourceGlobalIndexer->addField("Chaff2",hgradFP);
-  sourceGlobalIndexer->addField("E_Field",hcurlFP);
-  sourceGlobalIndexer->addField("B_Field",hdivFP);
+  sourceGlobalIndexer->addField("PHI",hgradFP); // Electric Potential for ES
+  sourceGlobalIndexer->addField("Chaff0",hgradFP); // Dummy
+  sourceGlobalIndexer->addField("Chaff1",hgradFP); // Dummy
+  sourceGlobalIndexer->addField("Chaff2",hgradFP); // Dummy
+  sourceGlobalIndexer->addField("E_Field",hcurlFP); // Electric Field for EM
+  sourceGlobalIndexer->addField("B_Field",hdivFP); // Magnetic Field for EM
   sourceGlobalIndexer->buildGlobalUnknowns();
+  timer->stop("Build sourceGlobalIndexer");
 
-  
-
-  // Build Target DOF Manager (Scalar fields on hgrad)
+  // Build Target DOF Manager (Separate scalar fields on hgrad)
+  timer->start("Build targetGlobalIndexer");
   RCP<panzer::DOFManager<LO,GO>> targetGlobalIndexer = rcp(new panzer::DOFManager<LO,GO>(connManager,*comm->getRawMpiComm()));
-  targetGlobalIndexer->addField("Projection Nodal Scalar",hgradFP);
-  targetGlobalIndexer->addField("E1",hgradFP);
-  targetGlobalIndexer->addField("E2",hgradFP);
-  targetGlobalIndexer->addField("B0",hgradFP);
-  targetGlobalIndexer->addField("B1",hgradFP);
-  targetGlobalIndexer->addField("B2",hgradFP);
+  targetGlobalIndexer->addField("Projection to Mesh Vertices",hgradFP);
   targetGlobalIndexer->buildGlobalUnknowns();
+  timer->stop("Build targetGlobalIndexer");
 
-  // Build projection objects
+  // Build projection factory
+  timer->start("projectionFactory.setup()");
   panzer::L2Projection<LO,GO> projectionFactory;
   projectionFactory.setup(hgradBD,integrationDescriptor,comm,connManager,eBlockNames,worksetContainer);
+  timer->stop("projectionFactory.setup()");
 
   // Build mass matrix
+  timer->start("projectionFactory.buildMassMatrix()");
   auto massMatrix = projectionFactory.buildMassMatrix();
+  timer->stop("projectionFactory.buildMassMatrix()");
   massMatrix->print(out);
   massMatrix->getRowMap()->describe(out,Teuchos::EVerbosityLevel::VERB_EXTREME);
   massMatrix->getColMap()->describe(out,Teuchos::EVerbosityLevel::VERB_EXTREME);
 
-  // Test a projection using the mass matrix
-  
-
   // Build rhs matrix
-  
+  timer->start("projectionFactory.buildRHSMatrix()");
+  const int xDir = 0;
+  const int yDir = 1;
+  const int zDir = 2;
+  using NodeType = Kokkos::Compat::KokkosDeviceWrapperNode<PHX::Device>;
+  auto rhsMatrix_PHI = projectionFactory.buildRHSMatrix(sourceGlobalIndexer,Teuchos::null,"PHI",hgradBD);          // Project value from scalar basis
+  auto rhsMatrix_DPHI_DX = projectionFactory.buildRHSMatrix(sourceGlobalIndexer,Teuchos::null,"PHI",hgradBD,xDir); // Project gradient from scalar basis
+  auto rhsMatrix_E0 = projectionFactory.buildRHSMatrix(sourceGlobalIndexer,Teuchos::null,"E_Field",hcurlBD,xDir);  // Project value from vector basis
+  auto rhsMatrix_E1 = projectionFactory.buildRHSMatrix(sourceGlobalIndexer,Teuchos::null,"E_Field",hcurlBD,yDir);  // Project value from vector basis
+  auto rhsMatrix_E2 = projectionFactory.buildRHSMatrix(sourceGlobalIndexer,Teuchos::null,"E_Field",hcurlBD,zDir);  // Project value from vector basis
+  auto rhsMatrix_B0 = projectionFactory.buildRHSMatrix(sourceGlobalIndexer,Teuchos::null,"B_Field",hdivBD,xDir);   // Project value from vector basis
+  auto rhsMatrix_B1 = projectionFactory.buildRHSMatrix(sourceGlobalIndexer,Teuchos::null,"B_Field",hdivBD,yDir);   // Project value from vector basis
+  auto rhsMatrix_B2 = projectionFactory.buildRHSMatrix(sourceGlobalIndexer,Teuchos::null,"B_Field",hdivBD,zDir);   // Project value from vector basis
+  timer->stop("projectionFactory.buildRHSMatrix()");
 
-  auto rhsMatrix_Chaff1 = projectionFactory.buildRHSMatrix(sourceGlobalIndexer,Teuchos::null,"Chaff1",hgradBD); // Project from scalar basis
-  auto rhsMatrix_E0 = projectionFactory.buildRHSMatrix(sourceGlobalIndexer,Teuchos::null,"E_Field",hcurlBD,true,0); // Project from vector basis
-  auto rhsMatrix_E1 = projectionFactory.buildRHSMatrix(sourceGlobalIndexer,Teuchos::null,"E_Field",hcurlBD,true,1); // Project from vector basis
-  auto rhsMatrix_E2 = projectionFactory.buildRHSMatrix(sourceGlobalIndexer,Teuchos::null,"E_Field",hcurlBD,true,2); // Project from vector basis
+  // Store in vector for convenience
+  std::vector<RCP<Tpetra::CrsMatrix<double,LO,GO,NodeType>>> rhsMatrices;
+  rhsMatrices.push_back(rhsMatrix_PHI);
+  rhsMatrices.push_back(rhsMatrix_DPHI_DX);
+  rhsMatrices.push_back(rhsMatrix_E0);
+  rhsMatrices.push_back(rhsMatrix_E1);
+  rhsMatrices.push_back(rhsMatrix_E2);
+  rhsMatrices.push_back(rhsMatrix_B0);
+  rhsMatrices.push_back(rhsMatrix_B1);
+  rhsMatrices.push_back(rhsMatrix_B2);
 
-  // Build RHS Multivector target
+  // Create a Names vector for output
+  std::vector<std::string> names;
+  names.push_back("PHI");
+  names.push_back("DPHI_DX");
+  names.push_back("E0");
+  names.push_back("E1");
+  names.push_back("E2");
+  names.push_back("B0");
+  names.push_back("B1");
+  names.push_back("B2");
+
+  // Allocate the source vector
+  timer->start("Allocate Source Vector");
+  using VectorType = Tpetra::Vector<double,LO,GO,NodeType>;
+  auto sourceValues = rcp(new VectorType(rhsMatrix_PHI->getDomainMap(),true));
+  timer->stop("Allocate Source Vector");
+
+  // Fill the source vector. We need to insert values that are
+  // consistent with the basis type.
+  timer->start("Fill Source Vector");
+  Kokkos::deep_copy(sourceValues->getLocalView<PHX::Device>(), 1.0);
+  auto hostSourceValues = Kokkos::create_mirror_view(sourceValues->getLocalView<PHX::Device>());
+
+
+  timer->stop("Fill Source Vector");
+
+  // Assemble RHS vectors using matvec
+  timer->start("Allocate RHS Vectors");
+  auto rhs_PHI = rcp(new VectorType(massMatrix->getDomainMap(),true));
+  auto rhs_DPHI_DX = rcp(new VectorType(massMatrix->getDomainMap(),true));
+  auto rhs_E0 = rcp(new VectorType(massMatrix->getDomainMap(),true));
+  auto rhs_E1 = rcp(new VectorType(massMatrix->getDomainMap(),true));
+  auto rhs_E2 = rcp(new VectorType(massMatrix->getDomainMap(),true));
+  auto rhs_B0 = rcp(new VectorType(massMatrix->getDomainMap(),true));
+  auto rhs_B1 = rcp(new VectorType(massMatrix->getDomainMap(),true));
+  auto rhs_B2 = rcp(new VectorType(massMatrix->getDomainMap(),true));
+  timer->stop("Allocate RHS Vectors");
+
+  // Store in vector for convenience
+  std::vector<RCP<VectorType>> rhs;
+  rhs.push_back(rhs_PHI);
+  rhs.push_back(rhs_DPHI_DX);
+  rhs.push_back(rhs_E0);
+  rhs.push_back(rhs_E1);
+  rhs.push_back(rhs_E2);
+  rhs.push_back(rhs_B0);
+  rhs.push_back(rhs_B1);
+  rhs.push_back(rhs_B2);
+
+  timer->start("Assemble RHS Vectors");
+  for (size_t i=0; i < rhs.size(); ++i)
+    rhsMatrices[i]->apply(*sourceValues,*rhs[i]);
+  timer->stop("Assemble RHS Vectors");
+
+  // Build RHS Multivector target for efficient consistent matrix solve
+  timer->start("Copy RHS Values into MV");
   const auto targetRangeMap = massMatrix->getRangeMap();
-  using NODE = Kokkos::Compat::KokkosDeviceWrapperNode<PHX::Device>;
-  const int numVectors = 6; // 3 E, 3 B
-  const bool zeroOut = true;
-  Tpetra::MultiVector<double,LO,GO,NODE> rhsMV(targetRangeMap,numVectors,zeroOut);
+  const int numVectors = 8; // PHI, DPHI_DX, E, B
+  const auto rhsMV = rcp(new Tpetra::MultiVector<double,LO,GO,NodeType>(targetRangeMap,numVectors,false));
+  const auto mvView = rhsMV->getLocalView<NodeType>();
+  TEST_EQUALITY(mvView.extent(1),static_cast<size_t>(numVectors));
+  for (int col=0; col < numVectors; ++col) {
+    const auto source = rhs[col]->getLocalView<NodeType>();
+    const int numEntries = source.extent(0);
+    Kokkos::parallel_for(numEntries, KOKKOS_LAMBDA (const int& i) { mvView(i,col) = source(i,0); });
+    PHX::Device::fence();
+  }
+  timer->stop("Copy RHS Values into MV");
+
+  // Solve the multiple matrices
+  using MV = Tpetra::MultiVector<double,LO,GO,NodeType>;
+  using OP = Tpetra::Operator<double,LO,GO,NodeType>;
+  const auto solutionMV = rcp(new Tpetra::MultiVector<double,LO,GO,NodeType>(targetRangeMap,numVectors,true));
+  const auto problem = rcp(new Belos::LinearProblem<double,MV,OP>(massMatrix, solutionMV, rhsMV));
+
+  problem->setProblem();
+
+  TEST_ASSERT(nonnull(massMatrix));
+  TEST_ASSERT(nonnull(solutionMV));
+  TEST_ASSERT(nonnull(rhsMV));
+  TEST_ASSERT(nonnull(problem));
+
+  timer->start("Create Belos Solver");
+  RCP<ParameterList> pl = parameterList("L2 Consistent Projection Linear Solver");
+  pl->set("Num Blocks", 100); // Max Krylov vectors to store
+  pl->set("Maximum Iterations", 100);
+  pl->set("Convergence Tolerance", 1e-5);
+  pl->set("output Frequency",-1); // all iterations
+  pl->set("Verbosity", Belos::Errors | Belos::Warnings | Belos::IterationDetails| Belos::FinalSummary);
+  Belos::SolverFactory<double,MV,OP> belosFactory;
+  const auto solver = belosFactory.create("GMRES",pl);
+  solver->setProblem(problem);
+  timer->stop("Create Belos Solver");
+
+  timer->start("Belos Solve");
+  const auto result = solver->solve();
+  timer->stop("Belos Solve");
+
+  TEST_EQUALITY(result,Belos::Converged);
+
+  // Check the final values on host
+  timer->start("Check Final Values on Host");
+  double tol = 1.0e-4; // one magnitude less than solver tolerance
+  for (int field=0; field < numVectors; ++field) {
+    const auto hostValues = Kokkos::create_mirror_view(solutionMV->getLocalView<PHX::Device>());
+    Kokkos::deep_copy(hostValues,solutionMV->getLocalView<PHX::Device>());
+    for (size_t i=0; i < hostValues.extent(0); ++i) {
+      out << names[field] << "(" << i << "," << field << ")=" << hostValues(i,field) << std::endl;
+      if (field == 0) { // PHI
+        TEST_FLOATING_EQUALITY(hostValues(i,field), 1.0, tol);
+      }
+      else if (field == 1) { // DPHI_DX
+        // the test floating doesn't work since it forces relative
+        // error, not absolute and this is too close to zero.
+        // TEST_FLOATING_EQUALITY(hostValues(i,field), 0.0, tol);
+        TEST_ASSERT(std::fabs(hostValues(i,field)-0.0) < tol);
+      }
+    }
+  }
+  timer->stop("Check Final Values on Host");
+
+  timer->stop("Total Time");
+
+  Teuchos::StackedTimer::OutputOptions options;
+  options.output_fraction = true;
+  options.output_minmax = true;
+  options.output_histogram = false;
+  options.num_histogram = 5;
+  timer->report(out,comm,options);
 }
