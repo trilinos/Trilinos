@@ -280,7 +280,7 @@ void TestMultiLevelPreconditioner_Stratimikos(char ProblemType[],
                                               double & TotalErrorResidual,
                                               double & TotalErrorExactSol);
 
-#if defined(HAVE_MUELU_EPETRA) and defined(HAVE_TRILINOSCOUPLINGS_MUELU)
+  #if defined(HAVE_MUELU_EPETRA) and defined(HAVE_TRILINOSCOUPLINGS_MUELU)
 /** \brief  MueLu Preconditioner
 
     \param  ProblemType        [in]    problem type
@@ -306,7 +306,7 @@ void TestMueLuMultiLevelPreconditioner_Stratimikos(char ProblemType[],
                                                    Epetra_MultiVector & b,
                                                    double & TotalErrorResidual,
                                                    double & TotalErrorExactSol);
-#endif
+  #endif
 #endif
 
 /**********************************************************************************/
@@ -2022,6 +2022,7 @@ int main(int argc, char *argv[]) {
 
   }
 
+#if defined(HAVE_MUELU_EPETRA) and defined(HAVE_TRILINOSCOUPLINGS_MUELU)
   if (solverName == "MueLu") {
     // MueLu RefMaxwell
     if(MyPID==0) {std::cout << "\n\nMueLu solve \n";}
@@ -2032,7 +2033,7 @@ int main(int argc, char *argv[]) {
                                               TotalErrorResidual, TotalErrorExactSol);
   }
 
-#ifdef HAVE_TRILINOSCOUPLINGS_STRATIMIKOS
+  #ifdef HAVE_TRILINOSCOUPLINGS_STRATIMIKOS
   if (solverName == "MueLu-Stratimikos") {
     if(MyPID==0) {std::cout << "\n\nMueLu Stratimikos solve \n";}
     TestMueLuMultiLevelPreconditioner_Stratimikos(probType,MueLuList,StiffMatrixC,
@@ -2041,6 +2042,7 @@ int main(int argc, char *argv[]) {
                                                   xh,rhsVector,
                                                   TotalErrorResidual, TotalErrorExactSol);
   }
+  #endif
 #endif
 
 
