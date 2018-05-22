@@ -42,43 +42,40 @@
 #ifndef _FROSCH_PARTITIONOFUNITYBASIS_DEF_hpp
 #define _FROSCH_PARTITIONOFUNITYBASIS_DEF_hpp
 
-#include <FROSch_PartitionOfUnityBasis_decl.hpp>
+#include <FROSch_LocalPartitionOfUnityBasis_decl.hpp>
 
 namespace FROSch {
     
     template<class SC,class LO,class GO,class NO>
-    PartitionOfUnityBasis<SC,LO,GO,NO>::PartitionOfUnityBasis(MapPtr &nodesMap,
+    LocalPartitionOfUnityBasis<SC,LO,GO,NO>::LocalPartitionOfUnityBasis(MapPtr &nodesMap,
                                                               MapPtrVecPtr &dofsMaps) :
     DofsPerNode_ (dofsMaps.size()),
     NodesMap_ (nodesMap),
     DofsMaps_ (dofsMaps),
     PartitionOfUnity_ (),
-    GlobalBasis_ (),
-    Basis_ ()
+    NullSpaceBasis_ (),
+    LocalBasis_ ()
     {
         
     }
     
     template<class SC,class LO,class GO,class NO>
-    PartitionOfUnityBasis<SC,LO,GO,NO>::PartitionOfUnityBasis(MapPtr &nodesMap,
+    LocalPartitionOfUnityBasis<SC,LO,GO,NO>::LocalPartitionOfUnityBasis(MapPtr &nodesMap,
                                                               MapPtrVecPtr &dofsMaps,
                                                               MultiVectorPtr &partitionOfUnity,
-                                                              MultiVectorPtr &globalBasis) :
+                                                              MultiVectorPtr &nullspacebasis) :
     DofsPerNode_ (dofsMaps.size()),
     NodesMap_ (nodesMap),
     DofsMaps_ (dofsMaps),
     PartitionOfUnity_ (partitionOfUnity),
-    GlobalBasis_ (globalBasis),
-    Basis_ ()
+    NullSpaceBasis_ (nullspacebasis),
+    LocalBasis_ ()
     {
         FROSCH_ASSERT(partitionOfUnity->getMap()->isSameAs(*NodesMap_),"The Maps are not compatible.");
-        PartitionOfUnity_ = partitionOfUnity;
-        FROSCH_ASSERT(globalBasis->getMap()->isSameAs(*NodesMap_),"The Maps are not compatible.");
-        GlobalBasis_ = globalBasis;
     }
     
     template<class SC,class LO,class GO,class NO>
-    int PartitionOfUnityBasis<SC,LO,GO,NO>::addPartitionOfUnity(MultiVectorPtr &partitionOfUnity)
+    int LocalPartitionOfUnityBasis<SC,LO,GO,NO>::addPartitionOfUnity(MultiVectorPtr &partitionOfUnity)
     {
         FROSCH_ASSERT(partitionOfUnity->getMap()->isSameAs(*NodesMap_),"The Maps are not compatible.");
         PartitionOfUnity_ = partitionOfUnity;
@@ -86,46 +83,56 @@ namespace FROSch {
     }
     
     template<class SC,class LO,class GO,class NO>
-    int PartitionOfUnityBasis<SC,LO,GO,NO>::addGlobalBasis(MultiVectorPtr &globalBasis)
+    int LocalPartitionOfUnityBasis<SC,LO,GO,NO>::addGlobalBasis(MultiVectorPtr &nullspacebasis)
     {
-        FROSCH_ASSERT(globalBasis->getMap()->isSameAs(*NodesMap_),"The Maps are not compatible.");
-        GlobalBasis_ = globalBasis;
+        NullSpaceBasis_ = nullspacebasis;
         return 0;
     }
     
     template<class SC,class LO,class GO,class NO>
-    int PartitionOfUnityBasis<SC,LO,GO,NO>::buildPartitionOfUnityBasis()
+    int LocalPartitionOfUnityBasis<SC,LO,GO,NO>::buildLocalPartitionOfUnityBasis()
     {
         FROSCH_ASSERT(!PartitionOfUnity_.is_null(),"PartitionOfUnity is not set.");
-        FROSCH_ASSERT(!GlobalBasis_.is_null(),"GlobalBasis is not set.");
+        FROSCH_ASSERT(!NullSpaceBasis_.is_null(),"GlobalBasis is not set.");
         
-        MultiVectorPtrVecPtr tmpBasis(PartitionOfUnity_->getNumVectors());
+        LocalBasis_ = ConstMultiVectorPtrVecPtr(PartitionOfUnity_->getNumVectors());
+        
+        MultiVectorPtr tmpBasis;
         for (UN i=0; i<PartitionOfUnity_->getNumVectors(); i++) {
-            tmpBasis[i] = Xpetra::MultiVectorFactory<LO,GO,NO>::Build(NodesMap_,GlobalBasis_->getNumVectors());
-            tmpBasis[i]->elementWiseMultiply(1.0,PartitionOfUnity_->getVector(i),GlobalBasis_,1.0);
+            tmpBasis = Xpetra::MultiVectorFactory<SC,LO,GO,NO>::Build(NullSpaceBasis_->getMap(),NullSpaceBasis_->getNumVectors());
+            for (UN j=0; j<PartitionOfUnity_->getLocalLength(); j++) {
+                for (UN k=0; k<NullSpaceBasis_->getNumVectors(); k++) {
+                    for (UN l=0; l<DofsPerNode_; l++) {
+                        tmpBasis->getDataNonConst(k)[DofsMaps_[l]->getGlobalElement(j)] = PartitionOfUnity_->getData(i)[j]*NullSpaceBasis_->getData(k)[DofsMaps_[l]->getGlobalElement(j)];
+                    }
+                }
+            }
             
-            // Hier muss noch orthogonalisiert werden
+            // Orthogonalization
+            LocalBasis_[i] = ModifiedGramSchmidt(tmpBasis.getConst()).getConst();
         }
-        
+        return 0;
     }
     
     template<class SC,class LO,class GO,class NO>
-    typename PartitionOfUnityBasis<SC,LO,GO,NO>::ConstMultiVectorPtr PartitionOfUnityBasis<SC,LO,GO,NO>::getPartitionOfUnity() const
+    typename LocalPartitionOfUnityBasis<SC,LO,GO,NO>::ConstMultiVectorPtr LocalPartitionOfUnityBasis<SC,LO,GO,NO>::getPartitionOfUnity() const
     {
+        FROSCH_ASSERT(!PartitionOfUnity_.is_null(),"Basis is not built yet.");
         return PartitionOfUnity_.getConst();
     }
     
     template<class SC,class LO,class GO,class NO>
-    typename PartitionOfUnityBasis<SC,LO,GO,NO>::ConstMultiVectorPtr PartitionOfUnityBasis<SC,LO,GO,NO>::getGlobalBasis() const
+    typename LocalPartitionOfUnityBasis<SC,LO,GO,NO>::ConstMultiVectorPtr LocalPartitionOfUnityBasis<SC,LO,GO,NO>::getGlobalBasis() const
     {
-        return GlobalBasis_.getConst();
+        FROSCH_ASSERT(!NullSpaceBasis_.is_null(),"Basis is not built yet.");
+        return NullSpaceBasis_.getConst();
     }
     
     template<class SC,class LO,class GO,class NO>
-    typename PartitionOfUnityBasis<SC,LO,GO,NO>::ConstMultiVectorPtr PartitionOfUnityBasis<SC,LO,GO,NO>::getBasis() const
+    typename LocalPartitionOfUnityBasis<SC,LO,GO,NO>::ConstMultiVectorPtrVecPtr LocalPartitionOfUnityBasis<SC,LO,GO,NO>::getBasis() const
     {
-        FROSCH_ASSERT(!Basis_.is_null(),"Basis is not built yet.");
-        return Basis_.getConst();
+        FROSCH_ASSERT(!LocalBasis_.is_null(),"Basis is not built yet.");
+        return LocalBasis_;
     }
 }
 

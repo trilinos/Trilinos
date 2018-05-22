@@ -57,6 +57,7 @@ namespace FROSch {
         
         typedef Xpetra::Map<LO,GO,NO> Map;
         typedef Teuchos::RCP<Map> MapPtr;
+        typedef Teuchos::RCP<const Map> ConstMapPtr;
         
         typedef Xpetra::Matrix<SC,LO,GO,NO> CrsMatrix;
         typedef Teuchos::RCP<CrsMatrix> CrsMatrixPtr;
@@ -84,7 +85,7 @@ namespace FROSch {
         
         int addEntity(InterfaceEntityPtr entity);
         
-        int buildEntityMap(MapPtr &localToGlobalNodesMap);
+        int buildEntityMap(ConstMapPtr localToGlobalNodesMap);
         
         int findParents(EntitySetPtr entitySet);
         

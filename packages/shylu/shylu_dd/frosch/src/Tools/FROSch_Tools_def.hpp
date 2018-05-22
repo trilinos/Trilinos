@@ -329,7 +329,7 @@ namespace FROSch {
     }
     
     template <class LO,class GO,class NO>
-    int BuildDofMaps(Teuchos::RCP<Xpetra::Map<LO,GO,NO> > repeatedMap,
+    int BuildDofMaps(const Teuchos::RCP<Xpetra::Map<LO,GO,NO> > repeatedMap,
                      unsigned dofsPerNode,
                      unsigned dofOrdering,
                      Teuchos::RCP<Xpetra::Map<LO,GO,NO> > &repeatedNodesMap,
@@ -448,6 +448,50 @@ namespace FROSch {
     {
         std::sort(v.begin(),v.end());
         v.erase(std::unique(v.begin(),v.end()),v.end());
+    }
+    
+    template <class SC, class LO,class GO,class NO>
+    Teuchos::RCP<Xpetra::MultiVector<SC,LO,GO,NO> > ModifiedGramSchmidt(Teuchos::RCP<const Xpetra::MultiVector<SC,LO,GO,NO> > multiVector)
+    {
+        /*
+         n = size(V,1);
+         k = size(V,2);
+         U = zeros(n,k);
+         U(:,1) = V(:,1)/sqrt(V(:,1)'*V(:,1));
+         for i = 2:k
+            U(:,i) = V(:,i);
+            for j = 1:i-1
+                U(:,i) = U(:,i) - ( U(:,i)'*U(:,j) )/( U(:,j)'*U(:,j) )*U(:,j);
+            end
+            U(:,i) = U(:,i)/sqrt(U(:,i)'*U(:,i));
+         end
+         */
+        unsigned numVec = multiVector->getNumVectors();
+        unsigned itmp = 0;
+        SC en = 0.0;
+        SC de = 0.0;
+        SC norm = 0.0;
+        Teuchos::RCP<Xpetra::MultiVector<SC,LO,GO,NO> > tmpMultiVector = Xpetra::MultiVectorFactory<SC,LO,GO,NO>::Build(multiVector->getMap(),numVec);
+        for (unsigned i=0; i<numVec; i++) {
+            tmpMultiVector->getVectorNonConst(i-itmp)->update(1.0,*multiVector->getVector(i),0.0);
+            for (unsigned j=0; j<i-itmp; j++) {
+                en = tmpMultiVector->getVector(i-itmp)->dot(*tmpMultiVector->getVector(j));
+                de = tmpMultiVector->getVector(j)->dot(*tmpMultiVector->getVector(j));
+                tmpMultiVector->getVectorNonConst(i-itmp)->update(-en/de,*tmpMultiVector->getVector(j),1.0);
+            }
+            norm = tmpMultiVector->getVector(i-itmp)->norm2();
+            if (norm<1.0e-10) {
+                itmp++;
+            } else {
+                //tmpMultiVector->getVectorNonConst(i-itmp)->scale(1.0/norm);
+            }
+        }
+        Teuchos::RCP<Xpetra::MultiVector<SC,LO,GO,NO> > resultMultiVector = Xpetra::MultiVectorFactory<SC,LO,GO,NO>::Build(multiVector->getMap(),numVec-itmp);
+        for (unsigned i=0; i<numVec-itmp; i++) {
+            resultMultiVector->getVectorNonConst(i)->update(1.0,*tmpMultiVector->getVector(i),0.0);
+        }
+        
+        return resultMultiVector;
     }
 }
 

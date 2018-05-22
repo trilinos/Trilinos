@@ -30,6 +30,7 @@ INCLUDE_DIRECTORIES(${PROJECT_SOURCE_DIR})
 #
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR})
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
+INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/InterfacePartitionsOfUnity)
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/InterfaceSets)
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/SchwarzOperators)
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/SchwarzPreconditioners)
@@ -51,6 +52,10 @@ INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
 #INCLUDE_DIRECTORIES(${PROJECT_SOURCE_DIR}/packages/muelu/adapters/belos)
 
 APPEND_SET(HEADERS
+  InterfacePartitionsOfUnity/FROSch_GDSWInterfacePartitionOfUnity_decl.hpp
+  InterfacePartitionsOfUnity/FROSch_GDSWInterfacePartitionOfUnity_def.hpp
+  InterfacePartitionsOfUnity/FROSch_InterfacePartitionOfUnity_decl.hpp
+  InterfacePartitionsOfUnity/FROSch_InterfacePartitionOfUnity_def.hpp
   InterfaceSets/FROSch_DDInterface_decl.hpp
   InterfaceSets/FROSch_DDInterface_def.hpp
   InterfaceSets/FROSch_EntitySet_decl.hpp
@@ -65,6 +70,8 @@ APPEND_SET(HEADERS
   SchwarzOperators/FROSch_GDSWCoarseOperator_def.hpp
   SchwarzOperators/FROSch_HarmonicCoarseOperator_decl.hpp
   SchwarzOperators/FROSch_HarmonicCoarseOperator_def.hpp
+  SchwarzOperators/FROSch_IPOUHarmonicCoarseOperator_decl.hpp
+  SchwarzOperators/FROSch_IPOUHarmonicCoarseOperator_def.hpp
   SchwarzOperators/FROSch_OverlappingOperator_decl.hpp
   SchwarzOperators/FROSch_OverlappingOperator_def.hpp
   SchwarzOperators/FROSch_RGDSWCoarseOperator_decl.hpp
@@ -83,8 +90,8 @@ APPEND_SET(HEADERS
   SchwarzPreconditioners/FROSch_SchwarzPreconditioner_def.hpp
   Tools/FROSch_ExtractSubmatrices_decl.hpp
   Tools/FROSch_ExtractSubmatrices_def.hpp
-  Tools/FROSch_PartitionOfUnityBasis_decl.hpp
-  Tools/FROSch_PartitionOfUnityBasis_def.hpp
+  Tools/FROSch_LocalPartitionOfUnityBasis_decl.hpp
+  Tools/FROSch_LocalPartitionOfUnityBasis_def.hpp
   Tools/FROSch_SubdomainSolver_decl.hpp
   Tools/FROSch_SubdomainSolver_def.hpp
   Tools/FROSch_Tools_decl.hpp

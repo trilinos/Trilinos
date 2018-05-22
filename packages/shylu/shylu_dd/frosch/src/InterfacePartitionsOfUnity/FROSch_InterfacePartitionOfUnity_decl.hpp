@@ -39,93 +39,94 @@
 // ************************************************************************
 //@HEADER
 
-#ifndef _FROSCH_SCHWARZPRECONDITIONER_DECL_HPP
-#define _FROSCH_SCHWARZPRECONDITIONER_DECL_HPP
+#ifndef _FROSCH_INTERFACEPARTITIONOFUNITY_DECL_HPP
+#define _FROSCH_INTERFACEPARTITIONOFUNITY_DECL_HPP
 
-#include <Xpetra_Operator.hpp>
-#include <Xpetra_Matrix_fwd.hpp>
+#define FROSCH_ASSERT(A,S) if(!(A)) { std::cerr<<"Assertion failed. "<<S<<std::endl; std::cout.flush(); throw std::out_of_range("Assertion.");};
 
-#include <FROSch_AlgebraicOverlappingOperator_def.hpp>
-#include <FROSch_SumOperator_def.hpp>
-#include <FROSch_GDSWCoarseOperator_def.hpp>
-#include <FROSch_RGDSWCoarseOperator_def.hpp>
+//#define INTERFACE_OUTPUT
 
-namespace FROSch {        
+#include <FROSch_DDInterface_def.hpp>
+
+// TODO
+// -> "Parent" -> "Anchestor"
+
+namespace FROSch {
     
     template <class SC = Xpetra::Operator<>::scalar_type,
     class LO = typename Xpetra::Operator<SC>::local_ordinal_type,
     class GO = typename Xpetra::Operator<SC, LO>::global_ordinal_type,
-    class NO = typename Xpetra::Operator<SC,LO,GO>::node_type>
-    class SchwarzPreconditioner : public Xpetra::Operator<SC,LO,GO,NO> {
+    class NO = typename Xpetra::Operator<SC, LO, GO>::node_type>
+    class InterfacePartitionOfUnity {
         
     public:
         
         typedef Teuchos::RCP<const Teuchos::Comm<int> > CommPtr;
-        
+
         typedef Xpetra::Map<LO,GO,NO> Map;
         typedef Teuchos::RCP<Map> MapPtr;
-        typedef Teuchos::RCP<const Map> ConstMapPtr;
         typedef Teuchos::ArrayRCP<MapPtr> MapPtrVecPtr;
         
         typedef Xpetra::Matrix<SC,LO,GO,NO> CrsMatrix;
         typedef Teuchos::RCP<CrsMatrix> CrsMatrixPtr;
         
         typedef Xpetra::MultiVector<SC,LO,GO,NO> MultiVector;
-        
+        typedef Teuchos::RCP<const MultiVector> ConstMultiVectorPtr;
+        typedef Teuchos::RCP<MultiVector> MultiVectorPtr;
+        typedef Teuchos::ArrayRCP<MultiVectorPtr> MultiVectorPtrVecPtr;
+        typedef Teuchos::ArrayRCP<ConstMultiVectorPtr> ConstMultiVectorPtrVecPtr;
+
         typedef Teuchos::RCP<Teuchos::ParameterList> ParameterListPtr;
         
-        typedef Teuchos::RCP<SumOperator<SC,LO,GO,NO> > SumOperatorPtr;
-        typedef Teuchos::RCP<AlgebraicOverlappingOperator<SC,LO,GO,NO> > AlgebraicOverlappingOperatorPtr;
-        typedef Teuchos::RCP<GDSWCoarseOperator<SC,LO,GO,NO> > GDSWCoarseOperatorPtr;
-        typedef Teuchos::RCP<RGDSWCoarseOperator<SC,LO,GO,NO> > RGDSWCoarseOperatorPtr;
+        typedef Teuchos::RCP<DDInterface<SC,LO,GO,NO> > DDInterfacePtr;
         
-        typedef Teuchos::ArrayRCP<GO> GOVecPtr;
+        typedef Teuchos::RCP<EntitySet<SC,LO,GO,NO> > EntitySetPtr;
+        
+        typedef unsigned UN;
+        
+        typedef Teuchos::Array<GO> GOVec;
+        typedef Teuchos::ArrayView<GO> GOVecView;
         
         typedef Teuchos::ArrayRCP<SC> SCVecPtr;
         typedef Teuchos::ArrayRCP<SCVecPtr> SCVecPtr2D;
+
         
+        InterfacePartitionOfUnity(CommPtr mpiComm,
+                                  CommPtr serialComm,
+                                  UN dimension,
+                                  UN dofsPerNode,
+                                  MapPtr nodesMap,
+                                  MapPtrVecPtr dofsMaps,
+                                  ParameterListPtr parameterList);
         
-        SchwarzPreconditioner(ParameterListPtr parameterList,
-                              CommPtr comm);
+        virtual ~InterfacePartitionOfUnity();
         
-        virtual ~SchwarzPreconditioner();
+        virtual int removeDirichletNodes(GOVecView myGlobalDirichletBoundaryDofs = GOVecView()) = 0;
         
-        virtual int initialize() = 0;
+        virtual int sortInterface(CrsMatrixPtr Matrix,
+                                  SCVecPtr2D localNodeList = SCVecPtr2D()) = 0;
         
-        virtual int compute() = 0;
+        virtual int computePartitionOfUnity() = 0;
         
-        // Y = alpha * A^mode * X + beta * Y
-        virtual void apply(const MultiVector &X,
-                           MultiVector &Y,
-                           Teuchos::ETransp mode=Teuchos::NO_TRANS,
-                           SC alpha=Teuchos::ScalarTraits<SC>::one(),
-                           SC beta=Teuchos::ScalarTraits<SC>::zero()) const = 0;
+        ConstMultiVectorPtrVecPtr getLocalPartitionOfUnity() const;
         
-        virtual ConstMapPtr getDomainMap() const = 0;
-        
-        virtual ConstMapPtr getRangeMap() const = 0;
-        
-        virtual void describe(Teuchos::FancyOStream &out,
-                              const Teuchos::EVerbosityLevel verbLevel=Teuchos::Describable::verbLevel_default) const = 0;
-        
-        virtual std::string description() const = 0;
-        
-        bool isInitialized() const;
-        
-        bool isComputed() const;
-        
+        DDInterfacePtr getDDInterface() const;
+
         
     protected:
         
         CommPtr MpiComm_;
+        CommPtr SerialComm_;
+        
+        DDInterfacePtr DDInterface_;
+        
+        EntitySetPtr Interface_;
         
         ParameterListPtr ParameterList_;
         
-        bool UseTranspose_;
-        bool IsInitialized_;
-        bool IsComputed_;
-        bool Verbose_;
+        ConstMultiVectorPtrVecPtr LocalPartitionOfUnity_;
         
+        bool Verbose_;
     };
     
 }

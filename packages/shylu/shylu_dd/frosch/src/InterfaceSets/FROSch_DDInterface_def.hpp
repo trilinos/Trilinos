@@ -64,12 +64,12 @@ namespace FROSch {
     ParentVertices_ (new EntitySet<SC,LO,GO,NO>(VertexType)),
     ParentEdges_ (new EntitySet<SC,LO,GO,NO>(EdgeType)),
     ParentFaces_ (new EntitySet<SC,LO,GO,NO>(FaceType)),
-    LocalToGlobalNodesMap_ (localToGlobalMap),
-    LocalToGlobalNodesUniqueMap_ ()
+    NodesMap_ (localToGlobalMap),
+    UniqueNodesMap_ ()
     {
         FROSCH_ASSERT(((Dimension_==2)||(Dimension_==3)),"Only dimension 2 and 3 are available");
         
-        LocalToGlobalNodesUniqueMap_ = BuildUniqueMap<LO,GO,NO>(LocalToGlobalNodesMap_);
+        UniqueNodesMap_ = BuildUniqueMap<LO,GO,NO>(NodesMap_);
         
         GOVecVecPtr componentsSubdomains;
         GOVecVec componentsSubdomainsUnique;
@@ -459,154 +459,114 @@ namespace FROSch {
     }
     
     template <class SC,class LO,class GO,class NO>
-    typename DDInterface<SC,LO,GO,NO>::EntitySetPtr & DDInterface<SC,LO,GO,NO>::getVertices()
+    typename DDInterface<SC,LO,GO,NO>::UN DDInterface<SC,LO,GO,NO>::getDimension() const
+    {
+        return Dimension_;
+    }
+    
+    template <class SC,class LO,class GO,class NO>
+    typename DDInterface<SC,LO,GO,NO>::UN DDInterface<SC,LO,GO,NO>::getDofsPerNode() const
+    {
+        return DofsPerNode_;
+    }
+    
+    template <class SC,class LO,class GO,class NO>
+    LO DDInterface<SC,LO,GO,NO>::getNumMyNodes() const
+    {
+        return NumMyNodes_;
+    }
+    
+    template <class SC,class LO,class GO,class NO>
+    typename DDInterface<SC,LO,GO,NO>::EntitySetConstPtr & DDInterface<SC,LO,GO,NO>::getVertices() const
     {
         return Vertices_;
     }
     
     template <class SC,class LO,class GO,class NO>
-    typename DDInterface<SC,LO,GO,NO>::EntitySetPtr & DDInterface<SC,LO,GO,NO>::getShortEdges()
+    typename DDInterface<SC,LO,GO,NO>::EntitySetConstPtr & DDInterface<SC,LO,GO,NO>::getShortEdges() const
     {
         return ShortEdges_;
     }
     
     template <class SC,class LO,class GO,class NO>
-    typename DDInterface<SC,LO,GO,NO>::EntitySetPtr & DDInterface<SC,LO,GO,NO>::getStraightEdges()
+    typename DDInterface<SC,LO,GO,NO>::EntitySetConstPtr & DDInterface<SC,LO,GO,NO>::getStraightEdges() const
     {
         return StraightEdges_;
     }
     
     template <class SC,class LO,class GO,class NO>
-    typename DDInterface<SC,LO,GO,NO>::EntitySetPtr & DDInterface<SC,LO,GO,NO>::getEdges()
+    typename DDInterface<SC,LO,GO,NO>::EntitySetConstPtr & DDInterface<SC,LO,GO,NO>::getEdges() const
     {
         return Edges_;
     }
     
     template <class SC,class LO,class GO,class NO>
-    typename DDInterface<SC,LO,GO,NO>::EntitySetPtr & DDInterface<SC,LO,GO,NO>::getFaces()
+    typename DDInterface<SC,LO,GO,NO>::EntitySetConstPtr & DDInterface<SC,LO,GO,NO>::getFaces() const
     {
         return Faces_;
     }
     
     template <class SC,class LO,class GO,class NO>
-    typename DDInterface<SC,LO,GO,NO>::EntitySetPtr & DDInterface<SC,LO,GO,NO>::getInterface()
+    typename DDInterface<SC,LO,GO,NO>::EntitySetConstPtr & DDInterface<SC,LO,GO,NO>::getInterface() const
     {
         return Interface_;
     }
     
     template <class SC,class LO,class GO,class NO>
-    typename DDInterface<SC,LO,GO,NO>::EntitySetPtr & DDInterface<SC,LO,GO,NO>::getInterior()
+    typename DDInterface<SC,LO,GO,NO>::EntitySetConstPtr & DDInterface<SC,LO,GO,NO>::getInterior() const
     {
         return Interior_;
     }
     
     template <class SC,class LO,class GO,class NO>
-    typename DDInterface<SC,LO,GO,NO>::EntitySetPtr & DDInterface<SC,LO,GO,NO>::getParentVertices()
+    typename DDInterface<SC,LO,GO,NO>::EntitySetConstPtr & DDInterface<SC,LO,GO,NO>::getParentVertices() const
     {
-//        ParentVertices_ = Vertices_;
-//        for (UN i=0; i<ParentVertices_->getNumEntities(); i++) {
-//            ParentVertices_->getEntity(i)->setParentID(i);
-//        }
-//        if (!LocalToGlobalMapParentVerticesBuilt_) {
-//            ParentVertices_->buildEntityMap(LocalToGlobalNodesMap_);
-//            ParentVerticesMap_ = ParentVertices_->getEntityMap();
-//            LocalToGlobalMapParentVerticesBuilt_ = true;
-//        }
-//        parentVertices = ParentVertices_;
-//        parentVerticesMap = ParentVerticesMap_;
-//        
         return ParentVertices_;
     }
     
     template <class SC,class LO,class GO,class NO>
-    typename DDInterface<SC,LO,GO,NO>::EntitySetPtr & DDInterface<SC,LO,GO,NO>::getParentEdges()
+    typename DDInterface<SC,LO,GO,NO>::EntitySetConstPtr & DDInterface<SC,LO,GO,NO>::getParentEdges() const
     {
-//        int itmp = 0;
-//        
-//        EntitySetPtr tmpVertices;
-//        for (UN i=0; i<ShortEdges_->getNumEntities(); i++) {
-//            tmpVertices = ShortEdges_->getEntity(i)->getParents();
-//            if (tmpVertices->getNumEntities() == 0) {
-//                ParentEdges_->addEntity(ShortEdges_->getEntity(i));
-//                ShortEdges_->getEntity(i)->setParentID(itmp);
-//                itmp++;
-//            }
-//        }
-//        for (UN i=0; i<StraightEdges_->getNumEntities(); i++) {
-//            tmpVertices = StraightEdges_->getEntity(i)->getParents();
-//            if (tmpVertices->getNumEntities() == 0) {
-//                ParentEdges_->addEntity(StraightEdges_->getEntity(i));
-//                StraightEdges_->getEntity(i)->setParentID(itmp);
-//                itmp++;
-//            }
-//        }
-//        for (UN i=0; i<Edges_->getNumEntities(); i++) {
-//            tmpVertices = Edges_->getEntity(i)->getParents();
-//            if (tmpVertices->getNumEntities() == 0) {
-//                ParentEdges_->addEntity(Edges_->getEntity(i));
-//                Edges_->getEntity(i)->setParentID(itmp);
-//                itmp++;
-//            }
-//        }
-//        if (!LocalToGlobalMapParentEdgesBuilt_) {
-//            ParentEdges_->buildEntityMap(LocalToGlobalNodesMap_);
-//            ParentEdgesMap_ = ParentEdges_->getEntityMap();
-//            LocalToGlobalMapParentEdgesBuilt_ = true;
-//        }
-//        parentEdges = ParentEdges_;
-//        parentEdgesMap = ParentEdgesMap_;
         return ParentEdges_;
     }
     
     template <class SC,class LO,class GO,class NO>
-    typename DDInterface<SC,LO,GO,NO>::EntitySetPtr & DDInterface<SC,LO,GO,NO>::getParentFaces()
+    typename DDInterface<SC,LO,GO,NO>::EntitySetConstPtr & DDInterface<SC,LO,GO,NO>::getParentFaces() const
     {
-//        int itmp = 0;
-//        
-//        EntitySetPtr tmpEdges;
-//        for (UN i=0; i<Faces_->getNumEntities(); i++) {
-//            tmpEdges = Faces_->getEntity(i)->getParents();
-//            if (tmpEdges->getNumEntities() == 0) {
-//                ParentFaces_->addEntity(Faces_->getEntity(i));
-//                Faces_->getEntity(i)->setParentID(itmp);
-//                itmp++;
-//            }
-//        }
-//        if (!LocalToGlobalMapParentFacesBuilt_) {
-//            ParentFaces_->buildEntityMap(LocalToGlobalNodesMap_);
-//            ParentFacesMap_ = ParentFaces_->getEntityMap();
-//            LocalToGlobalMapParentFacesBuilt_ = true;
-//        }
-//        parentFaces = ParentFaces_;
-//        parentFacesMap = ParentFacesMap_;
         return ParentFaces_;
+    }
+    
+    template <class SC,class LO,class GO,class NO>
+    typename DDInterface<SC,LO,GO,NO>::ConstMapPtr DDInterface<SC,LO,GO,NO>::getNodesMap() const
+    {
+        return NodesMap_.getConst();
     }
     
     template <class SC,class LO,class GO,class NO>
     int DDInterface<SC,LO,GO,NO>::communicateLocalComponents(GOVecVecPtr &componentsSubdomains,
                                                              GOVecVec &componentsSubdomainsUnique)
     {
-        Teuchos::RCP<Xpetra::Matrix<SC,LO,GO,NO> > commMat = Xpetra::MatrixFactory<SC,LO,GO,NO>::Build(LocalToGlobalNodesMap_,10);
-        Teuchos::RCP<Xpetra::Matrix<SC,LO,GO,NO> > commMatTmp = Xpetra::MatrixFactory<SC,LO,GO,NO>::Build(LocalToGlobalNodesUniqueMap_,10);
+        Teuchos::RCP<Xpetra::Matrix<SC,LO,GO,NO> > commMat = Xpetra::MatrixFactory<SC,LO,GO,NO>::Build(NodesMap_,10);
+        Teuchos::RCP<Xpetra::Matrix<SC,LO,GO,NO> > commMatTmp = Xpetra::MatrixFactory<SC,LO,GO,NO>::Build(UniqueNodesMap_,10);
 #ifdef Tpetra_issue_1752
         // AH 10/10/2017: Can we get away with using just one importer/exporter after the Tpetra issue is fixed?
-        Teuchos::RCP<Xpetra::Import<LO,GO,NO> > commImporter = Xpetra::ImportFactory<LO,GO,NO>::Build(LocalToGlobalNodesUniqueMap_,LocalToGlobalNodesMap_);
-        Teuchos::RCP<Xpetra::Export<LO,GO,NO> > commExporter = Xpetra::ExportFactory<LO,GO,NO>::Build(LocalToGlobalNodesMap_,LocalToGlobalNodesUniqueMap_);
+        Teuchos::RCP<Xpetra::Import<LO,GO,NO> > commImporter = Xpetra::ImportFactory<LO,GO,NO>::Build(UniqueNodesMap_,NodesMap_);
+        Teuchos::RCP<Xpetra::Export<LO,GO,NO> > commExporter = Xpetra::ExportFactory<LO,GO,NO>::Build(NodesMap_,UniqueNodesMap_);
 #else
-        Teuchos::RCP<Xpetra::Export<LO,GO,NO> > commExporter = Xpetra::ExportFactory<LO,GO,NO>::Build(LocalToGlobalNodesMap_,LocalToGlobalNodesUniqueMap_);
+        Teuchos::RCP<Xpetra::Export<LO,GO,NO> > commExporter = Xpetra::ExportFactory<LO,GO,NO>::Build(NodesMap_,UniqueNodesMap_);
 #endif
         
         Teuchos::Array<SC> one(1,Teuchos::ScalarTraits<SC>::one());
-        Teuchos::Array<GO> myPID(1,LocalToGlobalNodesUniqueMap_->getComm()->getRank());
+        Teuchos::Array<GO> myPID(1,UniqueNodesMap_->getComm()->getRank());
         for (int i=0; i<NumMyNodes_; i++) {
-            commMat->insertGlobalValues(LocalToGlobalNodesMap_->getGlobalElement(i),myPID(),one());
+            commMat->insertGlobalValues(NodesMap_->getGlobalElement(i),myPID(),one());
         }
         commMat->fillComplete();
         
         commMatTmp->doExport(*commMat,*commExporter,Xpetra::INSERT);
         commMatTmp->fillComplete();
         
-        commMat = Xpetra::MatrixFactory<SC,LO,GO,NO>::Build(LocalToGlobalNodesMap_,10);
+        commMat = Xpetra::MatrixFactory<SC,LO,GO,NO>::Build(NodesMap_,10);
 #ifdef Tpetra_issue_1752
         commMat->doImport(*commMatTmp,*commImporter,Xpetra::INSERT);
 #else
@@ -619,7 +579,7 @@ namespace FROSch {
         Teuchos::ArrayView<const GO> indices2;
         Teuchos::ArrayView<const SC> values2;
         for (LO i=0; i<NumMyNodes_; i++) {
-            commMat->getGlobalRowView(LocalToGlobalNodesMap_->getGlobalElement(i),indices2,values2);
+            commMat->getGlobalRowView(NodesMap_->getGlobalElement(i),indices2,values2);
             componentsSubdomains[i].resize(indices2.size());
             componentsSubdomainsUnique[i].resize(indices2.size());
             for (LO j=0; j<indices2.size(); j++) {
@@ -662,7 +622,7 @@ namespace FROSch {
             if (componentsMultiplicity[localComponentIndices[i]] == 1) {
                 LO nodeIDI = volume->getNumNodes();
                 LO nodeIDLocal = i;
-                GO nodeIDGlobal = LocalToGlobalNodesMap_->getGlobalElement(nodeIDLocal);
+                GO nodeIDGlobal = NodesMap_->getGlobalElement(nodeIDLocal);
                 LOVecPtr dofsI(DofsPerNode_);
                 LOVecPtr dofsLocal(DofsPerNode_);
                 GOVecPtr dofsGlobal(DofsPerNode_);
@@ -676,7 +636,7 @@ namespace FROSch {
             else {
                 LO nodeIDGamma = surface->getNumNodes();
                 LO nodeIDLocal = i;
-                GO nodeIDGlobal = LocalToGlobalNodesMap_->getGlobalElement(nodeIDLocal); //cout << nodeIDGlobal << std::endl;
+                GO nodeIDGlobal = NodesMap_->getGlobalElement(nodeIDLocal); //cout << nodeIDGlobal << std::endl;
                 LOVecPtr dofsGamma(DofsPerNode_);
                 LOVecPtr dofsLocal(DofsPerNode_);
                 GOVecPtr dofsGlobal(DofsPerNode_);
@@ -717,7 +677,7 @@ namespace FROSch {
                             
                             nodeIDGamma = componentsGamma[i][0];
                             nodeIDLocal = components[i][0];
-                            nodeIDGlobal = LocalToGlobalNodesMap_->getGlobalElement(nodeIDLocal); //cout << "vertex " << nodeIDGlobal << std::endl;
+                            nodeIDGlobal = NodesMap_->getGlobalElement(nodeIDLocal); //cout << "vertex " << nodeIDGlobal << std::endl;
                             for (UN k=0; k<DofsPerNode_; k++) {
                                 dofsGamma[k] = DofsPerNode_*nodeIDGamma+k;
                                 dofsLocal[k] = DofsPerNode_*nodeIDLocal+k;
@@ -738,7 +698,7 @@ namespace FROSch {
                             for (UN j=0; j<components[i].size(); j++) {
                                 nodeIDGamma = componentsGamma[i][j];
                                 nodeIDLocal = components[i][j];
-                                nodeIDGlobal = LocalToGlobalNodesMap_->getGlobalElement(nodeIDLocal);  //cout << "face " << nodeIDGlobal << std::endl;
+                                nodeIDGlobal = NodesMap_->getGlobalElement(nodeIDLocal);  //cout << "face " << nodeIDGlobal << std::endl;
                                 for (UN k=0; k<DofsPerNode_; k++) {
                                     dofsGamma[k] = DofsPerNode_*nodeIDGamma+k;
                                     dofsLocal[k] = DofsPerNode_*nodeIDLocal+k;
@@ -766,7 +726,7 @@ namespace FROSch {
                             
                             nodeIDGamma = componentsGamma[i][0];
                             nodeIDLocal = components[i][0];
-                            nodeIDGlobal = LocalToGlobalNodesMap_->getGlobalElement(nodeIDLocal); //cout << "vertex " << nodeIDGlobal << std::endl;
+                            nodeIDGlobal = NodesMap_->getGlobalElement(nodeIDLocal); //cout << "vertex " << nodeIDGlobal << std::endl;
                             for (UN k=0; k<DofsPerNode_; k++) {
                                 dofsGamma[k] = DofsPerNode_*nodeIDGamma+k;
                                 dofsLocal[k] = DofsPerNode_*nodeIDLocal+k;
@@ -786,7 +746,7 @@ namespace FROSch {
                             for (UN j=0; j<components[i].size(); j++) {
                                 nodeIDGamma = componentsGamma[i][j];
                                 nodeIDLocal = components[i][j];
-                                nodeIDGlobal = LocalToGlobalNodesMap_->getGlobalElement(nodeIDLocal); //cout << "edge " << nodeIDGlobal << std::endl;
+                                nodeIDGlobal = NodesMap_->getGlobalElement(nodeIDLocal); //cout << "edge " << nodeIDGlobal << std::endl;
                                 for (UN k=0; k<DofsPerNode_; k++) {
                                     dofsGamma[k] = DofsPerNode_*nodeIDGamma+k;
                                     dofsLocal[k] = DofsPerNode_*nodeIDLocal+k;

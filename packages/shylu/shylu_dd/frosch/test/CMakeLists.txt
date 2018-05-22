@@ -4,5 +4,6 @@ ADD_SUBDIRECTORIES(
     TestInterfaceSets
 #    TestImport_Tpetra
 #    TestRepeatedMap
-	TestPartitionOfUnityBasis
+#	 TestLocalPartitionOfUnityBasis
+	TestInterfacePartitionOfUnity
 )

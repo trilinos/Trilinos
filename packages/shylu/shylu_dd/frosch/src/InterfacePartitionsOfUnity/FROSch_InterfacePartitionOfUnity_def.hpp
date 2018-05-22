@@ -39,53 +39,49 @@
 // ************************************************************************
 //@HEADER
 
-#ifndef _FROSCH_TOOLS_DECL_HPP
-#define _FROSCH_TOOLS_DECL_HPP
+#ifndef _FROSCH_INTERFACEPARTITIONOFUNITY_DEF_HPP
+#define _FROSCH_INTERFACEPARTITIONOFUNITY_DEF_HPP
 
-#define FROSCH_ASSERT(A,S) if(!(A)) { std::cerr<<"Assertion failed. "<<S<<std::endl; std::cout.flush(); throw std::out_of_range("Assertion.");};
-
-#include <Xpetra_MatrixFactory.hpp>
-#include <Xpetra_MultiVectorFactory.hpp>
-#include <Xpetra_VectorFactory.hpp>
-#include <Xpetra_ExportFactory.hpp>
+#include <FROSch_InterfacePartitionOfUnity_decl.hpp>
 
 namespace FROSch {
     
-    enum DofOrdering {NodeWise=0,DimensionWise=1,Custom=2};
-    
-    template <class LO,class GO,class NO>
-    Teuchos::RCP<Xpetra::Map<LO,GO,NO> > BuildUniqueMap(const Teuchos::RCP<const Xpetra::Map<LO,GO,NO> > map);
+    template <class SC,class LO,class GO,class NO>
+    InterfacePartitionOfUnity<SC,LO,GO,NO>::InterfacePartitionOfUnity(CommPtr mpiComm,
+                                                                      CommPtr serialComm,
+                                                                      UN dimension,
+                                                                      UN dofsPerNode,
+                                                                      MapPtr nodesMap,
+                                                                      MapPtrVecPtr dofsMaps,
+                                                                      ParameterListPtr parameterList) :
+    MpiComm_ (mpiComm),
+    SerialComm_ (serialComm),
+    DDInterface_ (new DDInterface<SC,LO,GO,NO>(dimension,dofsPerNode,nodesMap)),
+    Interface_ (),
+    ParameterList_ (parameterList),
+    LocalPartitionOfUnity_ (),
+    Verbose_ (MpiComm_->getRank() == 0)
+    {
+        DDInterface_->resetGlobalDofs(dofsMaps);
+    }
     
     template <class SC,class LO,class GO,class NO>
-    Teuchos::RCP<Xpetra::Map<LO,GO,NO> > BuildRepeatedMap(Teuchos::RCP<Xpetra::Matrix<SC,LO,GO,NO> > matrix);
+    InterfacePartitionOfUnity<SC,LO,GO,NO>::~InterfacePartitionOfUnity()
+    {
+        
+    }
     
     template <class SC,class LO,class GO,class NO>
-    int ExtendOverlapByOneLayer(Teuchos::RCP<Xpetra::Matrix<SC,LO,GO,NO> > &overlappingMatrix,
-                                Teuchos::RCP<Xpetra::Map<LO,GO,NO> > &overlappingMap);
-    
-    template <class LO,class GO,class NO>
-    Teuchos::RCP<Xpetra::Map<LO,GO,NO> > AssembleMaps(Teuchos::ArrayRCP<Teuchos::RCP<Xpetra::Map<LO,GO,NO> > > &mapVector,
-                                                      Teuchos::ArrayRCP<Teuchos::ArrayRCP<LO> > &partMappings);
-    
-    template <class LO,class GO,class NO>
-    int BuildDofMaps(const Teuchos::RCP<Xpetra::Map<LO,GO,NO> > repeatedMap,
-                     unsigned dofsPerNO,
-                     unsigned dofOrdering,
-                     Teuchos::RCP<Xpetra::Map<LO,GO,NO> > &repeatedNodesMap,
-                     Teuchos::ArrayRCP<Teuchos::RCP<Xpetra::Map<LO,GO,NO> > > &repeatedDofMaps);
+    typename InterfacePartitionOfUnity<SC,LO,GO,NO>::ConstMultiVectorPtrVecPtr InterfacePartitionOfUnity<SC,LO,GO,NO>::getLocalPartitionOfUnity() const
+    {
+        return LocalPartitionOfUnity_;
+    }
     
     template <class SC,class LO,class GO,class NO>
-    Teuchos::ArrayRCP<GO> FindOneEntryOnly(Teuchos::RCP<Xpetra::Matrix<SC,LO,GO,NO> > &matrix);
-    
-    template <class SC,class LO>
-    bool ismultiple(Teuchos::ArrayView<SC> A,
-                    Teuchos::ArrayView<SC> B);
-    
-    template<class T>
-    inline void sortunique(T &v);
-    
-    template <class SC, class LO,class GO,class NO>
-    Teuchos::RCP<Xpetra::MultiVector<SC,LO,GO,NO> > ModifiedGramSchmidt(Teuchos::RCP<const Xpetra::MultiVector<SC,LO,GO,NO> > multiVector);
+    typename InterfacePartitionOfUnity<SC,LO,GO,NO>::DDInterfacePtr InterfacePartitionOfUnity<SC,LO,GO,NO>::getDDInterface() const
+    {
+        return DDInterface_;
+    }
     
 }
 

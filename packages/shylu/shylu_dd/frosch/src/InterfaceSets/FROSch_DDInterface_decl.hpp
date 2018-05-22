@@ -72,12 +72,14 @@ namespace FROSch {
         
         typedef Xpetra::Map<LO,GO,NO> Map;
         typedef Teuchos::RCP<Map> MapPtr;
+        typedef Teuchos::RCP<const Map> ConstMapPtr;
         typedef Teuchos::ArrayRCP<MapPtr> MapPtrVecPtr;
         
         typedef Xpetra::Matrix<SC,LO,GO,NO> CrsMatrix;
         typedef Teuchos::RCP<CrsMatrix> CrsMatrixPtr;
         
         typedef Teuchos::RCP<EntitySet<SC,LO,GO,NO> > EntitySetPtr;
+        typedef const EntitySetPtr EntitySetConstPtr;
         
         typedef Teuchos::RCP<InterfaceEntity<SC,LO,GO,NO> > InterfaceEntityPtr;
         typedef Teuchos::ArrayRCP<InterfaceEntityPtr> InterfaceEntityPtrVecPtr;
@@ -115,25 +117,34 @@ namespace FROSch {
         
         int findParents();
         
-        EntitySetPtr & getVertices();
+        UN getDimension() const;
         
-        EntitySetPtr & getShortEdges();
+        UN getDofsPerNode() const;
         
-        EntitySetPtr & getStraightEdges();
+        LO getNumMyNodes() const;
         
-        EntitySetPtr & getEdges();
+        EntitySetConstPtr & getVertices() const;
         
-        EntitySetPtr & getFaces();
+        EntitySetConstPtr & getShortEdges() const;
         
-        EntitySetPtr & getInterface();
+        EntitySetConstPtr & getStraightEdges() const;
         
-        EntitySetPtr & getInterior();
+        EntitySetConstPtr & getEdges() const;
         
-        EntitySetPtr & getParentVertices();
+        EntitySetConstPtr & getFaces() const;
         
-        EntitySetPtr & getParentEdges();
+        EntitySetConstPtr & getInterface() const;
         
-        EntitySetPtr & getParentFaces();
+        EntitySetConstPtr & getInterior() const;
+        
+        EntitySetConstPtr & getParentVertices() const;
+        
+        EntitySetConstPtr & getParentEdges() const;
+        
+        EntitySetConstPtr & getParentFaces() const;
+        
+        ConstMapPtr getNodesMap() const;
+        
         
     protected:
         
@@ -161,8 +172,8 @@ namespace FROSch {
         EntitySetPtr ParentEdges_;
         EntitySetPtr ParentFaces_;
         
-        MapPtr LocalToGlobalNodesMap_;
-        MapPtr LocalToGlobalNodesUniqueMap_;
+        MapPtr NodesMap_;
+        MapPtr UniqueNodesMap_;
     };
     
 }

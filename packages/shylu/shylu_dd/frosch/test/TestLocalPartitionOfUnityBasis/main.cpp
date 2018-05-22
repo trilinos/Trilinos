@@ -48,7 +48,7 @@
 #include <Xpetra_VectorFactory.hpp>
 #include <Xpetra_MapFactory.hpp>
 
-#include "FROSch_PartitionOfUnityBasis_def.hpp"
+#include "FROSch_LocalPartitionOfUnityBasis_def.hpp"
 
 typedef unsigned UN;
 typedef double SC;
@@ -66,7 +66,6 @@ using namespace FROSch;
 int main(int argc, char *argv[])
 {
     
-    //#ifdef HAVE_MPI
     MPI_Init(&argc,&argv);
     
     {
@@ -123,21 +122,25 @@ int main(int argc, char *argv[])
             globalBasis->replaceLocalValue(dofsMaps[2]->getGlobalElement(i),5,-double(i));
         }
         
-        RCP<FancyOStream> fancy = fancyOStream(rcpFromRef(std::cout));
-        for (UN i=0; i<6; i++) {
-            globalBasis->getVector(i)->describe(*fancy,Teuchos::VERB_EXTREME);
+        LocalPartitionOfUnityBasis<SC,LO,GO,NO> TestBasis(nodesMap,dofsMaps,partitionOfUnity,globalBasis);
+        TestBasis.buildLocalPartitionOfUnityBasis();
+        
+        for (UN i=0; i<3; i++) {
+            for (UN j=0; j<TestBasis.getBasis()[i]->getLocalLength(); j++) {
+                for (UN k=0; k<TestBasis.getBasis()[i]->getNumVectors(); k++) {
+                    std::cout << TestBasis.getBasis()[i]->getData(k)[j] << "\t";
+                }
+                std::cout << "\n";
+            }
+            std::cout << "\n";
         }
         
-        PartitionOfUnityBasis<SC,LO,GO,NO> TestBasis(nodesMap,dofsMaps,partitionOfUnity,globalBasis);
-        
-//        RCP<FancyOStream> fancy = fancyOStream(rcpFromRef(std::cout));
-//        partitionOfUnity->describe(*fancy,Teuchos::VERB_EXTREME);
-//        globalBasis->describe(*fancy,Teuchos::VERB_EXTREME);
-        
+        //        RCP<FancyOStream> fancy = fancyOStream(rcpFromRef(std::cout));
+        //        partitionOfUnity->describe(*fancy,Teuchos::VERB_EXTREME);
+        //        globalBasis->describe(*fancy,Teuchos::VERB_EXTREME);
     }
     
     MPI_Finalize();
-    //#endif
     
     return(EXIT_SUCCESS);
 }

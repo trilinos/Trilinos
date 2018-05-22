@@ -47,50 +47,52 @@
 #include <Xpetra_Operator.hpp>
 #include <Xpetra_MapFactory_fwd.hpp>
 
+#include "FROSch_Tools_def.hpp"
+
 namespace FROSch {
 
     template <class SC = Xpetra::Operator<>::scalar_type,
     class LO = typename Xpetra::Operator<SC>::local_ordinal_type,
     class GO = typename Xpetra::Operator<SC, LO>::global_ordinal_type,
     class NO = typename Xpetra::Operator<SC, LO, GO>::node_type>
-    class PartitionOfUnityBasis {
+    class LocalPartitionOfUnityBasis {
         
     public:
         
         typedef Xpetra::Map<LO,GO,NO> Map;
         typedef Teuchos::RCP<Map> MapPtr;
         typedef Teuchos::ArrayRCP<MapPtr> MapPtrVecPtr;
-        typedef Teuchos::ArrayRCP<MapPtrVecPtr> MapPtrVecPtr2D;
         
         typedef Xpetra::MultiVector<SC,LO,GO,NO> MultiVector;
         typedef Teuchos::RCP<MultiVector> MultiVectorPtr;
         typedef Teuchos::RCP<const MultiVector> ConstMultiVectorPtr;
         typedef Teuchos::ArrayRCP<MultiVectorPtr> MultiVectorPtrVecPtr;
+        typedef Teuchos::ArrayRCP<ConstMultiVectorPtr> ConstMultiVectorPtrVecPtr;
         
         typedef unsigned UN;
         
         
-        PartitionOfUnityBasis(MapPtr &nodesMap,
-                              MapPtrVecPtr &dofsMaps);
+        LocalPartitionOfUnityBasis(MapPtr &nodesMap,
+                                   MapPtrVecPtr &dofsMaps);
         
-        PartitionOfUnityBasis(MapPtr &nodesMap,
-                              MapPtrVecPtr &dofsMaps,
-                              MultiVectorPtr &partitionOfUnity,
-                              MultiVectorPtr &globalBasis);
+        LocalPartitionOfUnityBasis(MapPtr &nodesMap,
+                                   MapPtrVecPtr &dofsMaps,
+                                   MultiVectorPtr &partitionOfUnity,
+                                   MultiVectorPtr &nullspacebasis);
         
-        virtual ~PartitionOfUnityBasis();
+//        virtual ~LocalPartitionOfUnityBasis();
         
         int addPartitionOfUnity(MultiVectorPtr &partitionOfUnity);
         
-        int addGlobalBasis(MultiVectorPtr &globalBasis);
+        int addGlobalBasis(MultiVectorPtr &nullspacebasis);
         
-        int buildPartitionOfUnityBasis();
+        int buildLocalPartitionOfUnityBasis();
         
         ConstMultiVectorPtr getPartitionOfUnity() const;
         
         ConstMultiVectorPtr getGlobalBasis() const;
         
-        ConstMultiVectorPtr getBasis() const;
+        ConstMultiVectorPtrVecPtr getBasis() const;
         
     protected:
         
@@ -98,11 +100,11 @@ namespace FROSch {
         
         MapPtr NodesMap_;
         
-        MapPtrVecPtr2D DofsMaps_;
+        MapPtrVecPtr DofsMaps_;
         
         MultiVectorPtr PartitionOfUnity_;
-        MultiVectorPtr GlobalBasis_;
-        MultiVectorPtr Basis_;
+        MultiVectorPtr NullSpaceBasis_;
+        ConstMultiVectorPtrVecPtr LocalBasis_;
     };
     
 }
