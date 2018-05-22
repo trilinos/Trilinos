@@ -149,7 +149,9 @@
 
 // MueLu
 #include <MueLu_RefMaxwell.hpp>
+#ifdef HAVE_MUELU_EPETRA
 #include <MueLu_AztecEpetraOperator.hpp>
+#endif
 #include <MueLu_Exceptions.hpp>
 
 #endif
