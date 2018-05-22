@@ -3150,6 +3150,7 @@ namespace Tpetra {
     using Kokkos::subview;
     using Kokkos::ALL;
     typedef MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> MV;
+    typedef typename dual_view_type::t_dev::memory_space dev_memory_space;
     
     ::Tpetra::Details::ProfilingRegion region ("Tpetra::MV::update(alpha,A,beta)");
 
@@ -3164,11 +3165,8 @@ namespace Tpetra {
       numVecs != A.getNumVectors (), std::invalid_argument,
       "this->getNumVectors() = " << numVecs << " != A.getNumVectors() = "
       << A.getNumVectors () << ".");
-
-    typedef typename dual_view_type::t_dev dev_view_type;
  
     // Are this or A in the "host" state?  If so, sync to device
-    typedef typename dev_view_type::memory_space dev_memory_space;
     if (this->template need_sync<device_type> ()) this->template sync<dev_memory_space> ();
     if (A.template need_sync<device_type> ())     const_cast<MV*>(&A)->template sync<dev_memory_space> ();
 
@@ -3241,6 +3239,7 @@ namespace Tpetra {
     const impl_scalar_type theBeta = static_cast<impl_scalar_type> (beta);
     const impl_scalar_type theGamma = static_cast<impl_scalar_type> (gamma);
 
+    // Sync everything to the device only if we need to
     // We're lucky if *this, A, and B are all sync'd to the same
     // memory space.  If not, we have to sync _something_.  Unlike
     // three-argument update() or (say) dot(), we may have to sync one
