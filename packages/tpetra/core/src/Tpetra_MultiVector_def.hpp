@@ -3166,9 +3166,9 @@ namespace Tpetra {
       "this->getNumVectors() = " << numVecs << " != A.getNumVectors() = "
       << A.getNumVectors () << ".");
  
-    // All kernels are executed on the device by rule.  So we sync there if needed
+    // All kernels are executed on the device as per Tpetra policy.  Sync to device if needed.
     if (this->template need_sync<dev_memory_space> ()) this->template sync<dev_memory_space> ();
-    if (A.template need_sync<dev_memory_space> ())     const_cast<MV*>(&A)->template sync<dev_memory_space> ();
+    if (A.template need_sync<dev_memory_space> ())     const_cast<MV&>(A).template sync<dev_memory_space> ();
 
     const impl_scalar_type theAlpha = static_cast<impl_scalar_type> (alpha);
     const impl_scalar_type theBeta = static_cast<impl_scalar_type> (beta);
@@ -3241,17 +3241,13 @@ namespace Tpetra {
     const impl_scalar_type theBeta = static_cast<impl_scalar_type> (beta);
     const impl_scalar_type theGamma = static_cast<impl_scalar_type> (gamma);
 
-    // Sync everything to the device only if we need to
-    // We're lucky if *this, A, and B are all sync'd to the same
-    // memory space.  If not, we have to sync _something_.  Unlike
-    // three-argument update() or (say) dot(), we may have to sync one
-    // of the inputs.  For now, we just sync _everything_ to device.
-    this->template sync<dev_memory_space> ();
-    const_cast<MV&> (A).template sync<device_type> ();
-    const_cast<MV&> (B).template sync<device_type> ();
+    // All kernels are executed on the device as per Tpetra policy.  Sync to device if needed.
+    if (this->template need_sync<dev_memory_space> ()) this->template sync<dev_memory_space> ();
+    if (A.template need_sync<dev_memory_space> ())     const_cast<MV&>(A).template sync<dev_memory_space> ();
+    if (B.template need_sync<dev_memory_space> ())     const_cast<MV&>(B).template sync<dev_memory_space> ();
 
     // This method modifies *this.
-    this->template modify<device_type> ();
+    this->template modify<dev_memory_space> ();
 
     const std::pair<size_t, size_t> rowRng (0, lclNumRows);
     const std::pair<size_t, size_t> colRng (0, numVecs);
@@ -3259,9 +3255,9 @@ namespace Tpetra {
     // Prefer 'auto' over specifying the type explicitly.  This avoids
     // issues with a subview possibly having a different type than the
     // original view.
-    auto C_lcl = subview (this->template getLocalView<device_type> (), rowRng, ALL ());
-    auto A_lcl = subview (A.template getLocalView<device_type> (), rowRng, ALL ());
-    auto B_lcl = subview (B.template getLocalView<device_type> (), rowRng, ALL ());
+    auto C_lcl = subview (this->template getLocalView<dev_memory_space> (), rowRng, ALL ());
+    auto A_lcl = subview (A.template getLocalView<dev_memory_space> (), rowRng, ALL ());
+    auto B_lcl = subview (B.template getLocalView<dev_memory_space> (), rowRng, ALL ());
 
     if (isConstantStride () && A.isConstantStride () && B.isConstantStride ()) {
       KokkosBlas::update (theAlpha, A_lcl, theBeta, B_lcl, theGamma, C_lcl);
