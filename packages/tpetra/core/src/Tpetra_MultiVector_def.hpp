@@ -3166,9 +3166,9 @@ namespace Tpetra {
       "this->getNumVectors() = " << numVecs << " != A.getNumVectors() = "
       << A.getNumVectors () << ".");
  
-    // Are this or A in the "host" state?  If so, sync to device
-    if (this->template need_sync<device_type> ()) this->template sync<dev_memory_space> ();
-    if (A.template need_sync<device_type> ())     const_cast<MV*>(&A)->template sync<dev_memory_space> ();
+    // All kernels are executed on the device by rule.  So we sync there if needed
+    if (this->template need_sync<dev_memory_space> ()) this->template sync<dev_memory_space> ();
+    if (A.template need_sync<dev_memory_space> ())     const_cast<MV*>(&A)->template sync<dev_memory_space> ();
 
     const impl_scalar_type theAlpha = static_cast<impl_scalar_type> (alpha);
     const impl_scalar_type theBeta = static_cast<impl_scalar_type> (beta);
@@ -3210,6 +3210,8 @@ namespace Tpetra {
     using Kokkos::ALL;
     using Kokkos::subview;
     typedef MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> MV;
+    typedef typename dual_view_type::t_dev::memory_space dev_memory_space;
+ 
     const char tfecfFuncName[] = "update(alpha,A,beta,B,gamma): ";
 
     ::Tpetra::Details::ProfilingRegion region ("Tpetra::MV::update(alpha,A,beta,B,gamma)");
@@ -3244,7 +3246,7 @@ namespace Tpetra {
     // memory space.  If not, we have to sync _something_.  Unlike
     // three-argument update() or (say) dot(), we may have to sync one
     // of the inputs.  For now, we just sync _everything_ to device.
-    this->template sync<device_type> ();
+    this->template sync<dev_memory_space> ();
     const_cast<MV&> (A).template sync<device_type> ();
     const_cast<MV&> (B).template sync<device_type> ();
 
