@@ -2288,18 +2288,7 @@ namespace Tpetra {
     //! \name Implementation of various useful kernel utilities
     //@{
 
- /// \brief Update: <tt>this = beta*this + alpha*A</tt>.
-    ///
-    /// Update this MultiVector with scaled values of A.  If beta is
-    /// zero, overwrite \c *this unconditionally, even if it contains
-    /// NaN entries.  It is legal for the input A to alias this
-    /// MultiVector.
-    template <class cur_memory_space>
-    void
-    updateImpl (const Scalar& alpha,
-                const MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& A,
-                const Scalar& beta);
-
+ 
     //@}
     //! @name Misc. implementation details
     //@{
