@@ -153,8 +153,6 @@ def muelu_strong_scaling(input_files, display, ax, top, style):
     #  - stack-percent: same as stack, but shows percentage values on sides
     #  - scaling      : scaling of individual timers
 
-    assert(display)
-
     show_the_rest = 0
     if style == 'stack' or style == 'stack-percent':
         show_the_rest = 1
@@ -289,6 +287,10 @@ def muelu_strong_scaling(input_files, display, ax, top, style):
             ax.set_xlabel('Scaling', fontsize=17)
 
             ax.legend(timers, loc='upper left')
+
+    else:
+        print("Strong scaling is only implemented for display")
+
 
 def solve_per_level(yaml_data, display, ax = None):
     """Show solve timers per level"""
@@ -513,7 +515,7 @@ if __name__ == '__main__':
 
     if analysis == 'muelu_strong_scaling':
         # Scaling studies work with multiple files
-        muelu_strong_scaling(input_files, mode=display, ax=ax, style=style, top=top)
+        muelu_strong_scaling(input_files, display=display, ax=ax, style=style, top=top)
     elif analysis == 'setup_timers':
         # Setup timers work with multiple files
         # If there are two files, it compares the timers, using top timers from
