@@ -67,7 +67,7 @@ TEST(MiniTensor_ROL, VectorAdaptor)
   print_output = ::testing::GTEST_FLAG(print_time);
 
   // outputs nothing
-  Teuchos::oblackholestream
+  ROL::nullstream
   bhs;
 
   std::ostream &
@@ -165,7 +165,7 @@ TEST(MiniTensor_ROL, VectorValue)
   print_output = ::testing::GTEST_FLAG(print_time);
 
   // outputs nothing
-  Teuchos::oblackholestream
+  ROL::nullstream
   bhs;
 
   std::ostream &

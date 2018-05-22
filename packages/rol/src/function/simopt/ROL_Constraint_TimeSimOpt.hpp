@@ -349,7 +349,7 @@ public:
                                       const Vector<Real> &u,
                                       const Vector<Real> &z,
                                       Real &tol) override final {
-    TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
+    ROL_TEST_FOR_EXCEPTION(true, std::logic_error,
       "The method applyInverseJacobian_1 is used but not implemented!\n");
   }
 
@@ -383,7 +383,7 @@ public:
                                              const Vector<Real> &u,
                                              const Vector<Real> &z,
                                              Real &tol) override final {
-    TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
+    ROL_TEST_FOR_EXCEPTION(true, std::logic_error,
       "The method applyInverseAdjointJacobian_1 is used but not implemented!\n");
   };
 
@@ -624,7 +624,7 @@ public:
                                                          std::ostream & outStream = std::cout,
                                                          const int order = 1) {
  
-    TEUCHOS_TEST_FOR_EXCEPTION( order<1 || order>4, std::invalid_argument, 
+    ROL_TEST_FOR_EXCEPTION( order<1 || order>4, std::invalid_argument, 
                                 "Error: finite difference order must be 1,2,3, or 4" );
  
     Real one(1.0);
@@ -640,7 +640,7 @@ public:
     std::vector<std::vector<Real> > jvCheck(numSteps, tmp);
  
     // Save the format state of the original outStream.
-    Teuchos::oblackholestream oldFormatState;
+    ROL::nullstream oldFormatState;
     oldFormatState.copyfmt(outStream);
  
     // Compute constraint value at x.

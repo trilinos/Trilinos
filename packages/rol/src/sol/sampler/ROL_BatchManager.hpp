@@ -44,7 +44,6 @@
 #ifndef ROL_BATCHMANAGER_HPP
 #define ROL_BATCHMANAGER_HPP
 
-#include "Teuchos_RefCountPtr.hpp"
 #include "ROL_Vector.hpp"
 #include "ROL_Elementwise_Function.hpp"
 

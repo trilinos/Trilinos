@@ -65,7 +65,7 @@ public:
 
   virtual ~StatusTest() {}
 
-  StatusTest( Teuchos::ParameterList &parlist ) {
+  StatusTest( ROL::ParameterList &parlist ) {
     Real em6(1e-6);
     gtol_     = parlist.sublist("Status Test").get("Gradient Tolerance", em6);
     stol_     = parlist.sublist("Status Test").get("Step Tolerance", em6*gtol_);

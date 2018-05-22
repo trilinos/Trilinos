@@ -71,7 +71,7 @@ public:
 
   void set( const Vector<Real> &x ) {
 
-    TEUCHOS_TEST_FOR_EXCEPTION( dimension() != x.dimension(),
+    ROL_TEST_FOR_EXCEPTION( dimension() != x.dimension(),
                                 std::invalid_argument,
                                 "Error: Vectors must have the same dimension." );
 
@@ -82,7 +82,7 @@ public:
 
   void plus( const Vector<Real> &x ) {
 
-    TEUCHOS_TEST_FOR_EXCEPTION( dimension() != x.dimension(),
+    ROL_TEST_FOR_EXCEPTION( dimension() != x.dimension(),
                                 std::invalid_argument,
                                 "Error: Vectors must have the same dimension." );
 
@@ -96,7 +96,7 @@ public:
 
   void axpy( const Real alpha, const Vector<Real> &x ) {
 
-    TEUCHOS_TEST_FOR_EXCEPTION( dimension() != x.dimension(),
+    ROL_TEST_FOR_EXCEPTION( dimension() != x.dimension(),
                                 std::invalid_argument,
                                 "Error: Vectors must have the same dimension." );
 
@@ -117,7 +117,7 @@ public:
 
   virtual Real dot( const Vector<Real> &x ) const {
 
-    TEUCHOS_TEST_FOR_EXCEPTION( dimension() != x.dimension(),
+    ROL_TEST_FOR_EXCEPTION( dimension() != x.dimension(),
                                 std::invalid_argument,
                                 "Error: Vectors must have the same dimension." );
 
@@ -151,7 +151,7 @@ public:
 
   ROL::Ptr<Vector<Real> > basis( const int i ) const {
 
-    TEUCHOS_TEST_FOR_EXCEPTION( i >= dimension() || i<0,
+    ROL_TEST_FOR_EXCEPTION( i >= dimension() || i<0,
                                 std::invalid_argument,
                                 "Error: Basis index must be between 0 and vector dimension." );
 
@@ -174,7 +174,7 @@ public:
 
   void applyBinary( const Elementwise::BinaryFunction<Real> &f, const Vector<Real> &x ) {
 
-    TEUCHOS_TEST_FOR_EXCEPTION( dimension() != x.dimension(),
+    ROL_TEST_FOR_EXCEPTION( dimension() != x.dimension(),
                                 std::invalid_argument,
                                 "Error: Vectors must have the same dimension." );
 

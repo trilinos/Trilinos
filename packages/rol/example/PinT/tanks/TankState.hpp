@@ -64,7 +64,7 @@ public:
 
   using size_type  = typename vector<Real>::size_type;
    
-  TankState( Teuchos::ParameterList& pl );
+  TankState( ROL::ParameterList& pl );
 
   void solve( StateVector& c, StateVector& u_new, 
               const StateVector& u_old, const ControlVector& z ) const;

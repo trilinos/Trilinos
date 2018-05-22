@@ -50,7 +50,7 @@
 #include "ROL_Algorithm.hpp"
 #include "ROL_ConstraintStatusTest.hpp"
 #include "ROL_CompositeStep.hpp"
-#include "Teuchos_oblackholestream.hpp"
+#include "ROL_Stream.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
 
 #include <iostream>
@@ -453,7 +453,7 @@ int main(int argc, char *argv[]) {
   // This little trick lets us print to std::cout only if a (dummy) command-line argument is provided.
   int iprint     = argc - 1;
   ROL::Ptr<std::ostream> outStream;
-  Teuchos::oblackholestream bhs; // outputs nothing
+  ROL::nullstream bhs; // outputs nothing
   if (iprint > 0)
     outStream = ROL::makePtrFromRef(std::cout);
   else
@@ -525,7 +525,7 @@ int main(int argc, char *argv[]) {
     
 
     // Define algorithm.
-    Teuchos::ParameterList parlist;
+    ROL::ParameterList parlist;
     std::string stepname = "Composite Step";
     parlist.sublist("Step").sublist(stepname).sublist("Optimality System Solver").set("Nominal Relative Tolerance",1.e-4);
     parlist.sublist("Step").sublist(stepname).sublist("Optimality System Solver").set("Fix Tolerance",true);

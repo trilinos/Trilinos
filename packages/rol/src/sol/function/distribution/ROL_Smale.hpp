@@ -45,7 +45,7 @@
 #define ROL_SMALE_HPP
 
 #include "ROL_Distribution.hpp"
-#include "Teuchos_ParameterList.hpp"
+#include "ROL_ParameterList.hpp"
 
 namespace ROL {
 
@@ -59,7 +59,7 @@ public:
   Smale(const Real a = 0., const Real b = 1.)
     : a_(std::min(a,b)), b_(std::max(a,b)) {}
 
-  Smale(Teuchos::ParameterList &parlist) {
+  Smale(ROL::ParameterList &parlist) {
     a_ = parlist.sublist("SOL").sublist("Distribution").sublist("Smale").get("Lower Bound",0.);
     b_ = parlist.sublist("SOL").sublist("Distribution").sublist("Smale").get("Upper Bound",1.);
     Real tmp = a_;
@@ -110,7 +110,7 @@ public:
   }
 
   Real moment(const size_t m) const {
-    TEUCHOS_TEST_FOR_EXCEPTION( true, std::invalid_argument,
+    ROL_TEST_FOR_EXCEPTION( true, std::invalid_argument,
       ">>> ERROR (ROL::Smale): Smale moment is not implemented!");
     return 0.;
   }

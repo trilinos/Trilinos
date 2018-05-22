@@ -53,9 +53,9 @@
 #include "ROL_Constraint.hpp"
 #include "ROL_OptimizationSolver.hpp"
 
-#include "Teuchos_oblackholestream.hpp"
+#include "ROL_Stream.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
-#include "Teuchos_XMLParameterListHelpers.hpp"
+
 
 typedef double RealT;
 
@@ -69,12 +69,12 @@ int main(int argc, char *argv[]) {
   Teuchos::GlobalMPISession mpiSession(&argc, &argv);
 
   std::string filename = "input_ex02.xml";
-  Teuchos::RCP<Teuchos::ParameterList> parlist = Teuchos::rcp( new Teuchos::ParameterList() );
-  Teuchos::updateParametersFromXmlFile( filename, parlist.ptr() );
+  
+  auto parlist = ROL::getParametersFromXmlFile( filename );
 
   int iprint     = argc - 1;
   ROL::Ptr<std::ostream> outStream;
-  Teuchos::oblackholestream bhs; // outputs nothing
+  ROL::nullstream bhs; // outputs nothing
   if (iprint > 0)
     outStream = ROL::makePtrFromRef(std::cout);
   else

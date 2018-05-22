@@ -141,7 +141,7 @@ public:
     // Make sure that given vector is not itself a ProfiledVector to avoid recursion
     ROL::Ptr<ProfiledVector> pv = ROL::nullPtr;
     pv = ROL::dynamicPtrCast<ProfiledVector>(v);
-    TEUCHOS_TEST_FOR_EXCEPTION( pv != ROL::nullPtr, std::logic_error, "ProfiledVector class "
+    ROL_TEST_FOR_EXCEPTION( pv != ROL::nullPtr, std::logic_error, "ProfiledVector class "
     "cannot encapsulate a ProfiledVector object!");
 
     v_ = v;

@@ -44,7 +44,7 @@
 #ifndef ROL_PROBABILITYFACTORY_HPP
 #define ROL_PROBABILITYFACTORY_HPP
 
-#include "Teuchos_ParameterList.hpp"
+#include "ROL_ParameterList.hpp"
 
 #include "ROL_Types.hpp"
 #include "ROL_BPOE.hpp"
@@ -109,7 +109,7 @@ namespace ROL {
   }
 
   template<class Real>
-  inline Ptr<RandVarFunctional<Real> > ProbabilityFactory(Teuchos::ParameterList &parlist) {
+  inline Ptr<RandVarFunctional<Real> > ProbabilityFactory(ROL::ParameterList &parlist) {
     std::string prob = parlist.sublist("SOL").sublist("Probability").get("Name","bPOE");
     EProbability ed = StringToEProbability(prob);
     switch(ed) {
@@ -118,7 +118,7 @@ namespace ROL {
       case PROBABILITY_SMOOTHEDPOE:
              return makePtr<SmoothedPOE<Real>>(parlist);
       default:
-        TEUCHOS_TEST_FOR_EXCEPTION(true,std::invalid_argument,
+        ROL_TEST_FOR_EXCEPTION(true,std::invalid_argument,
                                    "Invalid probability type " << prob << "!");
     }
   }

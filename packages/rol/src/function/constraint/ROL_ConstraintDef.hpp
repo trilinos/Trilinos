@@ -227,13 +227,13 @@ std::vector<Real> Constraint<Real>::solveAugmentedSystem(Vector<Real> &v1,
   ROL::Ptr<Vector<Real> > Z2temp = v2.clone();
 
   std::vector<Real> res(m+1, zero); 
-  Teuchos::SerialDenseMatrix<int, Real> H(m+1,m);
-  Teuchos::SerialDenseVector<int, Real> cs(m);
-  Teuchos::SerialDenseVector<int, Real> sn(m);
-  Teuchos::SerialDenseVector<int, Real> s(m+1);
-  Teuchos::SerialDenseVector<int, Real> y(m+1);
-  Teuchos::SerialDenseVector<int, Real> cnorm(m);
-  Teuchos::LAPACK<int, Real> lapack;
+  LA::Matrix<Real> H(m+1,m);
+  LA::Vector<Real> cs(m);
+  LA::Vector<Real> sn(m);
+  LA::Vector<Real> s(m+1);
+  LA::Vector<Real> y(m+1);
+  LA::Vector<Real> cnorm(m);
+  ROL::LAPACK<int, Real> lapack;
 
   // Compute initial residual.
   applyAdjointJacobian(*r1, v2, x, zerotol);
@@ -382,7 +382,7 @@ std::vector<std::vector<Real> > Constraint<Real>::checkApplyJacobian(const Vecto
                                                                      const bool printToStream,
                                                                      std::ostream & outStream,
                                                                      const int order) {
-  TEUCHOS_TEST_FOR_EXCEPTION( order<1 || order>4, std::invalid_argument, 
+  ROL_TEST_FOR_EXCEPTION( order<1 || order>4, std::invalid_argument, 
                               "Error: finite difference order must be 1,2,3, or 4" );
 
   const Real one(1.0);
@@ -398,7 +398,7 @@ std::vector<std::vector<Real> > Constraint<Real>::checkApplyJacobian(const Vecto
   std::vector<std::vector<Real> > jvCheck(numSteps, tmp);
 
   // Save the format state of the original outStream.
-  Teuchos::oblackholestream oldFormatState;
+  ROL::nullstream oldFormatState;
   oldFormatState.copyfmt(outStream);
 
   // Compute constraint value at x.
@@ -506,7 +506,7 @@ std::vector<std::vector<Real> > Constraint<Real>::checkApplyAdjointJacobian(cons
   ROL::Ptr<Vector<Real> > eajv = ajv.clone();
 
   // Save the format state of the original outStream.
-  Teuchos::oblackholestream oldFormatState;
+  ROL::nullstream oldFormatState;
   oldFormatState.copyfmt(outStream);
 
   // Compute constraint value at x.
@@ -653,7 +653,7 @@ std::vector<std::vector<Real> > Constraint<Real>::checkApplyAdjointHessian(const
   ROL::Ptr<Vector<Real> > xnew = x.clone();
 
   // Save the format state of the original outStream.
-  Teuchos::oblackholestream oldFormatState;
+  ROL::nullstream oldFormatState;
   oldFormatState.copyfmt(outStream);
 
   // Apply adjoint Jacobian to u.

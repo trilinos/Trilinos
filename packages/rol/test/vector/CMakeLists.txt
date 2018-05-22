@@ -8,23 +8,26 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   ADD_DIR_TO_NAME
   )
 
-TRIBITS_ADD_EXECUTABLE_AND_TEST(
-  CArrayVectorInterface
-  SOURCES test_02.cpp
-  ARGS PrintItAll
-  NUM_MPI_PROCS 1
-  PASS_REGULAR_EXPRESSION "TEST PASSED"
-  ADD_DIR_TO_NAME
-  )
+# Moved to adapters/teuchos/test/vector
+#TRIBITS_ADD_EXECUTABLE_AND_TEST(
+#  CArrayVectorInterface
+#  SOURCES test_02.cpp
+#  ARGS PrintItAll
+#  NUM_MPI_PROCS 1
+#  PASS_REGULAR_EXPRESSION "TEST PASSED"
+#  ADD_DIR_TO_NAME
+#  )
 
-TRIBITS_ADD_EXECUTABLE_AND_TEST(
-  MultiVectorInterface
-  SOURCES test_03.cpp
-  ARGS PrintItAll
-  NUM_MPI_PROCS 1
-  PASS_REGULAR_EXPRESSION "TEST PASSED"
-  ADD_DIR_TO_NAME
-  )
+
+# Moved to adapters/teuchos/test/vector
+#TRIBITS_ADD_EXECUTABLE_AND_TEST(
+#  MultiVectorInterface
+#  SOURCES test_03.cpp
+#  ARGS PrintItAll
+#  NUM_MPI_PROCS 1
+#  PASS_REGULAR_EXPRESSION "TEST PASSED"
+#  ADD_DIR_TO_NAME
+#  )
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   PartitionedVectorInterface
@@ -63,15 +66,16 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   ADD_DIR_TO_NAME
   )
 
-TRIBITS_ADD_EXECUTABLE_AND_TEST(
-  PinTVector
-  SOURCES test_08.cpp
-  ARGS PrintItAll
-  COMM mpi
-  NUM_MPI_PROCS 3
-  PASS_REGULAR_EXPRESSION "TEST PASSED"
-  ADD_DIR_TO_NAME
-  )
+# moved to adapters/mpi/test/vector
+#TRIBITS_ADD_EXECUTABLE_AND_TEST(
+#  PinTVector
+#  SOURCES test_08.cpp
+#  ARGS PrintItAll
+#  COMM mpi
+#  NUM_MPI_PROCS 3
+#  PASS_REGULAR_EXPRESSION "TEST PASSED"
+#  ADD_DIR_TO_NAME
+#  )
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   VectorCloneInterface
