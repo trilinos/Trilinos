@@ -1368,8 +1368,7 @@ ifpackApplyImpl (const op_type& A,
             << " - dtemp2 = " << dtemp2 << endl;
     }
 
-    W.scale (dtemp1);
-    W.elementWiseMultiply (dtemp2, D_inv, V1, one);
+    W.elementWiseMultiply (dtemp2, D_inv, V1, dtemp1);
     X.update (one, W, one);
 
     if (debug) {
