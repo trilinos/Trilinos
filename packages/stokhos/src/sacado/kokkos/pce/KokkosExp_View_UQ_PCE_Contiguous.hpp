@@ -1647,7 +1647,7 @@ struct StokhosViewFill< OutputView ,
       for ( size_type i6 = 0 ; i6 < output.extent(6) ; ++i6 ) {
       for ( size_type i7 = 0 ; i7 < output.extent(7) ; ++i7 ) {
       for ( size_type is = tidx ; is < nvec ; is+=VectorLength ) {
-        output(i0,i1,i2,i3,i4,i5,i6,i7).fastAccessCoeff(is) =
+        output.access(i0,i1,i2,i3,i4,i5,i6,i7).fastAccessCoeff(is) =
           input.fastAccessCoeff(is) ;
       }}}}}}}}
     }
@@ -1682,7 +1682,7 @@ struct StokhosViewFill< OutputView ,
       for ( size_type i6 = 0 ; i6 < output.extent(6) ; ++i6 ) {
       for ( size_type i7 = 0 ; i7 < output.extent(7) ; ++i7 ) {
       for ( size_type is = tidx ; is < npce ; is+=VectorLength ) {
-        output(i0,i1,i2,i3,i4,i5,i6,i7).fastAccessCoeff(is) =
+        output.access(i0,i1,i2,i3,i4,i5,i6,i7).fastAccessCoeff(is) =
           is == 0 ? input : scalar_type(0) ;
       }}}}}}}}
     }
