@@ -18,11 +18,11 @@ namespace Teuchos {
 
 namespace Tpetra {
   template<typename S,typename LO,typename GO,typename Node> class CrsMatrix;
+  template<typename S,typename LO,typename GO,typename Node> class MultiVector;
 }
 
 namespace panzer {
 
-  class LinearObjContainer;
   class BasisDescriptor;
   class IntegrationDescriptor;
   template<typename LO,typename GO> class ConnManager;
@@ -74,10 +74,18 @@ namespace panzer {
         projection of a scalar and vector field(s) onto a scalar
         basis.
 
-        \returns Filled Matrix in a LinearObjectContainer
+        \returns Filled mass matrix in a Tpetra::CrsMatrix
     */
     Teuchos::RCP<Tpetra::CrsMatrix<double,LO,GO,Kokkos::Compat::KokkosDeviceWrapperNode<PHX::Device>>>
       buildMassMatrix();
+
+    /** \brief Allocates, fills and returns a Tpetra::MultiVector
+        containing the inverse lumped mass matrix values.
+
+        \returns Filled inverse lumped mass matrix in a Tpetra::MultiVector (diagonal entries mass matrix)
+    */
+    Teuchos::RCP<Tpetra::MultiVector<double,LO,GO,Kokkos::Compat::KokkosDeviceWrapperNode<PHX::Device>>>
+      buildInverseLumpedMassMatrix();
 
     /** \brief Allocates, fills and returns a rectangular matrix for
         L2 projection of a scalar fields (or their gradients) or one

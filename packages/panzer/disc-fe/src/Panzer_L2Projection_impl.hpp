@@ -6,6 +6,8 @@
 
 #include "Teuchos_DefaultMpiComm.hpp"
 #include "Tpetra_CrsGraph.hpp"
+#include "Tpetra_MultiVector.hpp"
+#include "Tpetra_CrsMatrix.hpp"
 #include "Panzer_BasisDescriptor.hpp"
 #include "Panzer_TpetraLinearObjContainer.hpp"
 #include "Panzer_TpetraLinearObjFactory.hpp"
@@ -91,7 +93,7 @@ namespace panzer {
     for (const auto& block : elementBlockNames_) {
 
       // Based on descriptor, currently assumes there should only be one workset
-      panzer::WorksetDescriptor wd(block,panzer::WorksetSizeType::ALL_ELEMENTS,true,false);
+      panzer::WorksetDescriptor wd(block,panzer::WorksetSizeType::ALL_ELEMENTS,true,true);
       const auto& worksets = worksetContainer_->getWorksets(wd);
       TEUCHOS_ASSERT(worksets->size() == 1);
       const auto& workset = (*worksets)[0];
@@ -153,6 +155,20 @@ namespace panzer {
     ownedMatrix->fillComplete();
 
     return ownedMatrix;
+  }
+
+  template<typename LO, typename GO>
+  Teuchos::RCP<Tpetra::MultiVector<double,LO,GO,Kokkos::Compat::KokkosDeviceWrapperNode<PHX::Device>>>
+  panzer::L2Projection<LO,GO>::buildInverseLumpedMassMatrix()
+  {
+    using Teuchos::rcp;
+    const auto massMatrix = this->buildMassMatrix();
+    const auto lumpedMassMatrix = rcp(new Tpetra::MultiVector<double,LO,GO,Kokkos::Compat::KokkosDeviceWrapperNode<PHX::Device>>(massMatrix->getDomainMap(),1,true));
+    const auto tmp = rcp(new Tpetra::MultiVector<double,LO,GO,Kokkos::Compat::KokkosDeviceWrapperNode<PHX::Device>>(massMatrix->getRangeMap(),1,false));
+    tmp->putScalar(1.0);
+    massMatrix->apply(*tmp,*lumpedMassMatrix);
+    lumpedMassMatrix->reciprocal(*lumpedMassMatrix);
+    return lumpedMassMatrix;
   }
 
   template<typename LO, typename GO>
@@ -253,7 +269,7 @@ namespace panzer {
     // *******************
     for (const auto& block : elementBlockNames_) {
 
-      panzer::WorksetDescriptor wd(block,panzer::WorksetSizeType::ALL_ELEMENTS,true,false);
+      panzer::WorksetDescriptor wd(block,panzer::WorksetSizeType::ALL_ELEMENTS,true,true);
       const auto& worksets = worksetContainer_->getWorksets(wd);
       for (const auto& workset : *worksets) {
 

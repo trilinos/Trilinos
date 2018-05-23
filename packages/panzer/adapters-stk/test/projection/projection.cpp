@@ -115,6 +115,12 @@ TEUCHOS_UNIT_TEST(l2_projection, dof_manager)
     pl->set("X Procs",numProcs);
     pl->set("Y Procs",1);
     pl->set("Z Procs",1);
+    pl->set("X0",0.0);
+    pl->set("Y0",0.0);
+    pl->set("Z0",0.0);
+    pl->set("Xf",1.0);
+    pl->set("Yf",1.0);
+    pl->set("Zf",1.0);
     panzer_stk::CubeHexMeshFactory factory;
     factory.setParameterList(pl);
     mesh = factory.buildUncommitedMesh(MPI_COMM_WORLD);
@@ -278,12 +284,55 @@ TEUCHOS_UNIT_TEST(l2_projection, dof_manager)
   auto sourceValues = rcp(new VectorType(rhsMatrix_PHI->getDomainMap(),true));
   timer->stop("Allocate Source Vector");
 
-  // Fill the source vector. We need to insert values that are
-  // consistent with the basis type.
+  // Fill the source vector.
   timer->start("Fill Source Vector");
   Kokkos::deep_copy(sourceValues->getLocalView<PHX::Device>(), 1.0);
   auto hostSourceValues = Kokkos::create_mirror_view(sourceValues->getLocalView<PHX::Device>());
+  if (0) { 
+    const int PHI_Index = sourceGlobalIndexer->getFieldNum("PHI");
+    // const int E_Index = sourceGlobalIndexer->getFieldNum("E_Field");
+    // const int B_Index = sourceGlobalIndexer->getFieldNum("B_Field");
 
+    std::vector<std::string> elementBlockNames;
+    sourceGlobalIndexer->getElementBlockIds(elementBlockNames);
+    for (const auto& block : elementBlockNames) {
+
+      panzer::WorksetDescriptor wd(block,panzer::WorksetSizeType::ALL_ELEMENTS,true,true);
+      const auto worksets = worksetContainer->getWorksets(wd);
+      for (const auto& workset : *worksets) {
+      
+        // Field Offsets        
+        const std::vector<LO>& offsets = sourceGlobalIndexer->getGIDFieldOffsets(block,PHI_Index);
+        PHX::View<LO*> kOffsets("projection unit test: PHI Offsets",offsets.size());
+        const auto hostOffsets = Kokkos::create_mirror_view(kOffsets);
+        for (const auto& i : offsets)
+          hostOffsets(i) = offsets[i];
+        Kokkos::deep_copy(kOffsets,hostOffsets);
+        PHX::Device::fence();
+
+        // Local Ids
+        Kokkos::View<LO**,PHX::Device> localIds("projection unit test: LocalIds", workset.numOwnedCells()+workset.numGhostCells()+workset.numVirtualCells(),
+                                                sourceGlobalIndexer->getElementBlockGIDCount(block));
+        // Remove the ghosted cell ids or the call to getElementLocalIds will spill array bounds
+        const auto cellLocalIdsNoGhost = Kokkos::subview(workset.cell_local_ids_k,std::make_pair(0,workset.numOwnedCells()));
+        sourceGlobalIndexer->getElementLIDs(cellLocalIdsNoGhost,localIds);
+
+        const auto& basisValues = workset.getBasisValues(hgradBD,integrationDescriptor);
+        const auto& coords = basisValues.basis_coordinates;
+        const auto& x = sourceValues->getLocalView<PHX::Device>();
+        const int numBasis = static_cast<int>(kOffsets.extent(0));
+
+        std::cout << "ROGER numBasis=" << numBasis << ", basis=" << std::endl;
+
+        Kokkos::parallel_for(workset.numOwnedCells(),KOKKOS_LAMBDA (const int& cell) {
+          for (int basis=0; basis < numBasis; ++basis) {
+            const int lid = localIds(cell,kOffsets(basis));
+            x(lid,0) = +coords(cell,basis,0); // linear ramp in x-dir for PHI to test gradient projection
+          }
+        });
+      }
+    }
+  }
 
   timer->stop("Fill Source Vector");
 
@@ -381,6 +430,50 @@ TEUCHOS_UNIT_TEST(l2_projection, dof_manager)
     }
   }
   timer->stop("Check Final Values on Host");
+
+  // ***************************
+  // Now test lumped mass matrix
+  // ***************************
+  timer->start("projectionFactory.buildInverseLumpedMassMatrix()");
+  auto invLumpedMassMatrix = projectionFactory.buildInverseLumpedMassMatrix();
+  timer->stop("projectionFactory.buildInverseLumpedMassMatrix()");
+  
+  timer->start("apply lumped mass matrix");
+  {
+    auto x = solutionMV->getLocalView<PHX::Device>();
+    auto rhsMV_k = rhsMV->getLocalView<PHX::Device>();
+    const auto ilmm = invLumpedMassMatrix->getLocalView<PHX::Device>();
+    const int numEntries = static_cast<int>(x.extent(0));
+    Kokkos::parallel_for(numEntries,KOKKOS_LAMBDA (const int i) 
+      {
+        for (int field=0; field < numVectors; ++field)
+          x(i,field) = ilmm(i,0) * rhsMV_k(i,field);
+      });
+    PHX::Device::fence();
+    solutionMV->template modify<PHX::Device>();
+  }
+  timer->stop("apply lumped mass matrix");
+  
+  // Check the final values on host
+  timer->start("Check Final LUMPED Values on Host");
+  for (int field=0; field < numVectors; ++field) {
+    const auto hostValues = Kokkos::create_mirror_view(solutionMV->getLocalView<PHX::Device>());
+    Kokkos::deep_copy(hostValues,solutionMV->getLocalView<PHX::Device>());
+    for (size_t i=0; i < hostValues.extent(0); ++i) {
+      out << names[field] << "(" << i << "," << field << ")=" << hostValues(i,field) << std::endl;
+      if (field == 0) { // PHI
+        TEST_FLOATING_EQUALITY(hostValues(i,field), 1.0, tol);
+      }
+      else if (field == 1) { // DPHI_DX
+        // the test floating doesn't work since it forces relative
+        // error, not absolute and this is too close to zero.
+        // TEST_FLOATING_EQUALITY(hostValues(i,field), 0.0, tol);
+        TEST_ASSERT(std::fabs(hostValues(i,field)-0.0) < tol);
+      }
+    }
+  }
+  timer->stop("Check Final LUMPED Values on Host");
+
 
   timer->stop("Total Time");
 
