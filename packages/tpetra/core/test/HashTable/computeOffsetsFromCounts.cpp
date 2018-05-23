@@ -533,7 +533,11 @@ namespace { // (anonymous)
     }
 
 #ifdef KOKKOS_ENABLE_CUDA
+  #ifdef KOKKOS_ENABLE_DEPRECATED_CODE
     if (Kokkos::Cuda::is_initialized ()) {
+  #else
+    if (Kokkos::Cuda::impl_is_initialized ()) {
+  #endif
       // Make sure that we test both without and with UVM.
       // We only have to test once for each case.
       if (! std::is_same<typename device_type::memory_space, Kokkos::CudaSpace>::value) {
