@@ -1263,10 +1263,12 @@ ifpackApplyImpl (const op_type& A,
   using std::endl;
   const bool debug = debug_;
 
+#ifdef HAVE_IFPACK2_DEBUG
   if (debug) {
     *out_ << " \\|B\\|_{\\infty} = " << maxNormInf (B) << endl;
     *out_ << " \\|X\\|_{\\infty} = " << maxNormInf (X) << endl;
   }
+#endif
 
   if (numIters <= 0) {
     return;
@@ -1287,6 +1289,7 @@ ifpackApplyImpl (const op_type& A,
   const ST theta = (beta + alpha) / two;
   const ST s1 = theta * delta;
 
+#ifdef HAVE_IFPACK2_DEBUG
   if (debug) {
     *out_ << " alpha = " << alpha << endl
           << " beta = " << beta << endl
@@ -1294,6 +1297,7 @@ ifpackApplyImpl (const op_type& A,
           << " theta = " << theta << endl
           << " s1 = " << s1 << endl;
   }
+#endif
 
   // Fetch cached temporary vectors.
   Teuchos::RCP<MV> V_ptr, W_ptr;
@@ -1306,43 +1310,50 @@ ifpackApplyImpl (const op_type& A,
   MV& V1 = *V_ptr;
   MV& W = *W_ptr;
 
+#ifdef HAVE_IFPACK2_DEBUG
   if (debug) {
     *out_ << " Iteration " << 1 << ":" << endl
           << " - \\|D\\|_{\\infty} = " << D_->normInf () << endl;
   }
+#endif
 
   // Special case for the first iteration.
   if (! zeroStartingSolution_) {
     computeResidual (V1, B, A, X); // V1 = B - A*X
-
+#ifdef HAVE_IFPACK2_DEBUG
     if (debug) {
       *out_ << " - \\|B - A*X\\|_{\\infty} = " << maxNormInf (V1) << endl;
     }
+#endif
 
     solve (W, one/theta, D_inv, V1); // W = (1/theta)*D_inv*(B-A*X)
-
+#ifdef HAVE_IFPACK2_DEBUG
     if (debug) {
       *out_ << " - \\|W\\|_{\\infty} = " << maxNormInf (W) << endl;
     }
-
+#endif
     X.update (one, W, one); // X = X + W
   }
   else {
     solve (W, one/theta, D_inv, B); // W = (1/theta)*D_inv*B
+#ifdef HAVE_IFPACK2_DEBUG
     if (debug) {
       *out_ << " - \\|W\\|_{\\infty} = " << maxNormInf (W) << endl;
     }
+#endif
     Tpetra::deep_copy (X, W); // X = 0 + W
   }
+#ifdef HAVE_IFPACK2_DEBUG
   if (debug) {
     *out_ << " - \\|X\\|_{\\infty} = " << maxNormInf (X) << endl;
   }
+#endif
 
   // The rest of the iterations.
   ST rhok = one / s1;
   ST rhokp1, dtemp1, dtemp2;
   for (int deg = 1; deg < numIters; ++deg) {
-
+#ifdef HAVE_IFPACK2_DEBUG
     if (debug) {
       *out_ << " Iteration " << deg+1 << ":" << endl
             << " - \\|D\\|_{\\infty} = " << D_->normInf () << endl
@@ -1351,30 +1362,32 @@ ifpackApplyImpl (const op_type& A,
             << " - rhok = " << rhok << endl;
       V1.putScalar (STS::zero ()); // ???????
     }
+#endif
 
     computeResidual (V1, B, A, X); // V1 = B - A*X
-
+#ifdef HAVE_IFPACK2_DEBUG
     if (debug) {
       *out_ << " - \\|B - A*X\\|_{\\infty} = " << maxNormInf (V1) << endl;
     }
-
+#endif
     rhokp1 = one / (two * s1 - rhok);
     dtemp1 = rhokp1 * rhok;
     dtemp2 = two * rhokp1 * delta;
     rhok = rhokp1;
-
+#ifdef HAVE_IFPACK2_DEBUG
     if (debug) {
       *out_ << " - dtemp1 = " << dtemp1 << endl
             << " - dtemp2 = " << dtemp2 << endl;
     }
-
+#endif
     W.elementWiseMultiply (dtemp2, D_inv, V1, dtemp1);
     X.update (one, W, one);
-
+#ifdef HAVE_IFPACK2_DEBUG
     if (debug) {
       *out_ << " - \\|W\\|_{\\infty} = " << maxNormInf (W) << endl;
       *out_ << " - \\|X\\|_{\\infty} = " << maxNormInf (X) << endl;
     }
+#endif
   }
 }
 
