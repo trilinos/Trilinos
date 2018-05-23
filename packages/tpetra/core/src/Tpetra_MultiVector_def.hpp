@@ -4215,6 +4215,8 @@ namespace Tpetra {
     using Kokkos::subview;
     typedef MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> MV;
     typedef Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node> V;
+    typedef typename MV::dual_view_type::t_dev::memory_space dev_memory_space;
+
     const char tfecfFuncName[] = "elementWiseMultiply: ";
 
     const size_t lclNumRows = this->getLocalLength ();
@@ -4228,19 +4230,16 @@ namespace Tpetra {
       "() = " << numVecs << " != B.getNumVectors() = " << B.getNumVectors ()
       << ".");
 
-    // FIXME (mfh 18 May 2016) It would be rude to sync A and B here,
-    // because they are guests of this method.  Instead, the polite
-    // thing to do would be to copy them (if necessary) so we get
-    // their most recently updated version.  *this should always
-    // control where execution happens.
+    // All non-unary kernels are executed on the device as per Tpetra policy.  Sync to device if needed.
+    if (this->template need_sync<dev_memory_space> ()) this->template sync<dev_memory_space> ();
+    if (A.template need_sync<dev_memory_space> ())     const_cast<V&>(A).template sync<dev_memory_space> ();
+    if (B.template need_sync<dev_memory_space> ())     const_cast<MV&>(B).template sync<dev_memory_space> ();
 
-    this->template sync<device_type> ();
-    this->template modify<device_type> ();
-    const_cast<V&> (A).template sync<device_type> ();
-    const_cast<MV&> (B).template sync<device_type> ();
-    auto this_view = this->template getLocalView<device_type> ();
-    auto A_view = A.template getLocalView<device_type> ();
-    auto B_view = B.template getLocalView<device_type> ();
+    this->template modify<dev_memory_space> ();
+
+    auto this_view = this->template getLocalView<dev_memory_space> ();
+    auto A_view = A.template getLocalView<dev_memory_space> ();
+    auto B_view = B.template getLocalView<dev_memory_space> ();
 
     if (isConstantStride () && B.isConstantStride ()) {
       // A is just a Vector; it only has one column, so it always has
