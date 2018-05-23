@@ -1934,7 +1934,8 @@ namespace Tpetra {
         dot_type lclDot = Kokkos::ArithTraits<dot_type>::zero ();
         dot_type gblDot = Kokkos::ArithTraits<dot_type>::zero ();
 
-        // All kernels are executed on the device as per Tpetra policy.  Sync to device if needed.
+
+        // All non-unary kernels are executed on the device as per Tpetra policy.  Sync to device if needed.
         if (x.template need_sync<dev_memory_space> ()) x.template sync<dev_memory_space> ();
         if (y.template need_sync<dev_memory_space> ()) const_cast<MV&>(y).template sync<dev_memory_space> ();
 
@@ -2927,6 +2928,9 @@ namespace Tpetra {
   {
     using Kokkos::ALL;
     using Kokkos::subview;
+    typedef MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> MV;
+    typedef typename dual_view_type::t_dev::memory_space dev_memory_space;
+  
     const char tfecfFuncName[] = "scale: ";
 
     const size_t lclNumRows = getLocalLength ();
@@ -2945,65 +2949,32 @@ namespace Tpetra {
     const std::pair<size_t, size_t> rowRng (0, lclNumRows);
     const std::pair<size_t, size_t> colRng (0, numVecs);
 
-    typedef typename dual_view_type::t_dev dev_view_type;
-    typedef typename dual_view_type::t_host host_view_type;
+    // All non-unary kernels are executed on the device as per Tpetra policy.  Sync to device if needed.
+    if (this->template need_sync<dev_memory_space> ()) this->template sync<dev_memory_space> ();
+    if (A.template need_sync<dev_memory_space> ())     const_cast<MV&>(A).template sync<dev_memory_space> ();
 
-    // If we need sync to device, then host has the most recent version.
-    const bool useHostVersion = this->template need_sync<device_type> ();
-    if (useHostVersion) {
-      // Work on host, where A's data were most recently modified.  A
-      // is a "guest" of this method, so it's more polite to sync
-      // *this, than to sync A.
-      typedef typename host_view_type::memory_space cur_memory_space;
-
-      this->template sync<cur_memory_space> ();
-      this->template modify<cur_memory_space> ();
-      auto Y_lcl_orig = this->template getLocalView<cur_memory_space> ();
-      auto X_lcl_orig = A.template getLocalView<cur_memory_space> ();
-      auto Y_lcl = subview (Y_lcl_orig, rowRng, Kokkos::ALL ());
-      auto X_lcl = subview (X_lcl_orig, rowRng, Kokkos::ALL ());
-
-      if (isConstantStride () && A.isConstantStride ()) {
-        KokkosBlas::scal (Y_lcl, theAlpha, X_lcl);
-      }
-      else {
-        // Make sure that Kokkos only uses the local length for add.
-        for (size_t k = 0; k < numVecs; ++k) {
-          const size_t Y_col = this->isConstantStride () ? k : this->whichVectors_[k];
-          const size_t X_col = A.isConstantStride () ? k : A.whichVectors_[k];
-          auto Y_k = subview (Y_lcl, ALL (), Y_col);
-          auto X_k = subview (X_lcl, ALL (), X_col);
-
-          KokkosBlas::scal (Y_k, theAlpha, X_k);
-        }
-      }
+    this->template modify<dev_memory_space> ();
+    auto Y_lcl_orig = this->template getLocalView<dev_memory_space> ();
+    auto X_lcl_orig = A.template getLocalView<dev_memory_space> ();
+    auto Y_lcl = subview (Y_lcl_orig, rowRng, Kokkos::ALL ());
+    auto X_lcl = subview (X_lcl_orig, rowRng, Kokkos::ALL ());
+    
+    if (isConstantStride () && A.isConstantStride ()) {
+      KokkosBlas::scal (Y_lcl, theAlpha, X_lcl);
     }
-    else { // work on device
-      typedef typename dev_view_type::memory_space cur_memory_space;
-
-      this->template sync<cur_memory_space> ();
-      this->template modify<cur_memory_space> ();
-      auto Y_lcl_orig = this->template getLocalView<cur_memory_space> ();
-      auto X_lcl_orig = A.template getLocalView<cur_memory_space> ();
-      auto Y_lcl = subview (Y_lcl_orig, rowRng, Kokkos::ALL ());
-      auto X_lcl = subview (X_lcl_orig, rowRng, Kokkos::ALL ());
-
-      if (isConstantStride () && A.isConstantStride ()) {
-        KokkosBlas::scal (Y_lcl, theAlpha, X_lcl);
-      }
-      else {
-        // Make sure that Kokkos only uses the local length for add.
-        for (size_t k = 0; k < numVecs; ++k) {
-          const size_t Y_col = this->isConstantStride () ? k : this->whichVectors_[k];
-          const size_t X_col = A.isConstantStride () ? k : A.whichVectors_[k];
-          auto Y_k = subview (Y_lcl, ALL (), Y_col);
+    else {
+      // Make sure that Kokkos only uses the local length for add.
+      for (size_t k = 0; k < numVecs; ++k) {
+        const size_t Y_col = this->isConstantStride () ? k : this->whichVectors_[k];
+        const size_t X_col = A.isConstantStride () ? k : A.whichVectors_[k];
+        auto Y_k = subview (Y_lcl, ALL (), Y_col);
           auto X_k = subview (X_lcl, ALL (), X_col);
-
+          
           KokkosBlas::scal (Y_k, theAlpha, X_k);
-        }
       }
     }
   }
+ 
 
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -3011,7 +2982,9 @@ namespace Tpetra {
   MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   reciprocal (const MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& A)
   {
-    typedef MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> MV;
+    typedef MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> MV; 
+    typedef typename MV::dual_view_type::t_dev::memory_space dev_memory_space;  
+
     const char tfecfFuncName[] = "reciprocal: ";
 
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
@@ -3025,45 +2998,33 @@ namespace Tpetra {
        "this->getNumVectors() = " << getNumVectors ()
        << " != A.getNumVectors() = " << A.getNumVectors () << ".");
 
-    // FIXME (mfh 07 Jan 2015) See note on two-argument scale() above.
-
     const size_t numVecs = getNumVectors ();
-    try {
-      this->template sync<device_type> ();
-      this->template modify<device_type> ();
-      // FIXME (mfh 23 Jul 2014) I'm not sure if it should be our
-      // responsibility to sync A.
-      //
-      // FIXME (mfh 18 May 2016) It's rude to sync the input
-      // argument, since it is marked const.
-      const_cast<MV&> (A).template sync<device_type> ();
+    
+    // All non-unary kernels are executed on the device as per Tpetra policy.  Sync to device if needed.
+    if (this->template need_sync<dev_memory_space> ()) this->template sync<dev_memory_space> ();
+    if (A.template need_sync<dev_memory_space> ())     const_cast<MV&>(A).template sync<dev_memory_space> ();
+    this->template modify<dev_memory_space> ();
+ 
+    auto this_view_dev = this->template getLocalView<dev_memory_space> ();
+    auto A_view_dev = A.template getLocalView<dev_memory_space> ();
 
-      auto this_view_dev = this->template getLocalView<device_type> ();
-      auto A_view_dev = A.template getLocalView<device_type> ();
-
-      if (isConstantStride () && A.isConstantStride ()) {
-        KokkosBlas::reciprocal (this_view_dev, A_view_dev);
-      }
-      else {
-        using Kokkos::ALL;
-        using Kokkos::subview;
-        typedef Kokkos::View<impl_scalar_type*, device_type> view_type;
-
-        for (size_t k = 0; k < numVecs; ++k) {
-          const size_t this_col = isConstantStride () ? k : whichVectors_[k];
-          view_type vector_k = subview (this_view_dev, ALL (), this_col);
-          const size_t A_col = isConstantStride () ? k : A.whichVectors_[k];
-          view_type vector_Ak = subview (A_view_dev, ALL (), A_col);
-          KokkosBlas::reciprocal (vector_k, vector_Ak);
-        }
-      }
+    if (isConstantStride () && A.isConstantStride ()) {
+      KokkosBlas::reciprocal (this_view_dev, A_view_dev);
     }
-    catch (std::runtime_error &e) {
-      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(true, std::runtime_error,
-        ": Caught exception from Kokkos: " << e.what () << std::endl);
+    else {
+      using Kokkos::ALL;
+      using Kokkos::subview;
+      typedef Kokkos::View<impl_scalar_type*, device_type> view_type;
+      
+      for (size_t k = 0; k < numVecs; ++k) {
+        const size_t this_col = isConstantStride () ? k : whichVectors_[k];
+        view_type vector_k = subview (this_view_dev, ALL (), this_col);
+        const size_t A_col = isConstantStride () ? k : A.whichVectors_[k];
+        view_type vector_Ak = subview (A_view_dev, ALL (), A_col);
+        KokkosBlas::reciprocal (vector_k, vector_Ak);
+      }
     }
   }
-
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void
@@ -3144,7 +3105,7 @@ namespace Tpetra {
       "this->getNumVectors() = " << numVecs << " != A.getNumVectors() = "
       << A.getNumVectors () << ".");
  
-    // All kernels are executed on the device as per Tpetra policy.  Sync to device if needed.
+    // All non-unary kernels are executed on the device as per Tpetra policy.  Sync to device if needed.
     if (this->template need_sync<dev_memory_space> ()) this->template sync<dev_memory_space> ();
     if (A.template need_sync<dev_memory_space> ())     const_cast<MV&>(A).template sync<dev_memory_space> ();
 
@@ -3219,7 +3180,7 @@ namespace Tpetra {
     const impl_scalar_type theBeta = static_cast<impl_scalar_type> (beta);
     const impl_scalar_type theGamma = static_cast<impl_scalar_type> (gamma);
 
-    // All kernels are executed on the device as per Tpetra policy.  Sync to device if needed.
+    // All non-unary kernels are executed on the device as per Tpetra policy.  Sync to device if needed.
     if (this->template need_sync<dev_memory_space> ()) this->template sync<dev_memory_space> ();
     if (A.template need_sync<dev_memory_space> ())     const_cast<MV&>(A).template sync<dev_memory_space> ();
     if (B.template need_sync<dev_memory_space> ())     const_cast<MV&>(B).template sync<dev_memory_space> ();
