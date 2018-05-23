@@ -4816,18 +4816,16 @@ namespace Tpetra {
       const bool useHostVersion = src.template need_sync<device_type> ();
 
       if (useHostVersion) { // Host memory has the most recent version of src.
-        this->template modify<HMDT> (); // We are about to modify dst on host.
         // Copy from src to dst on host.
+        this->template modify<HMDT> ();
         Details::localDeepCopyConstStride (this->template getLocalView<HMDT> (),
                                            src.template getLocalView<HMDT> ());
-        this->template sync<DT> (); // Sync dst from host to device.
       }
       else { // Device memory has the most recent version of src.
-        this->template modify<DT> (); // We are about to modify dst on device.
         // Copy from src to dst on device.
+        this->template modify<DT> ();
         Details::localDeepCopyConstStride (this->template getLocalView<DT> (),
                                            src.template getLocalView<DT> ());
-        this->template sync<HMDT> (); // Sync dst from device to host.
       }
     }
     else {
@@ -4861,11 +4859,10 @@ namespace Tpetra {
           // Copy from the selected vectors of src to dst, on the
           // host.  The function ignores its dstWhichVecs argument in
           // this case.
+          this->template modify<HMDT> ();
           Details::localDeepCopy (this->template getLocalView<HMDT> (),
                                   src.template getLocalView<HMDT> (),
                                   true, false, srcWhichVecs, srcWhichVecs);
-          // Sync dst back to the device, since we only copied on the host.
-          this->template sync<DT> ();
         }
         else { // copy from the device version of src
           if (debug && this->getMap ()->getComm ()->getRank () == 0) {
@@ -4884,19 +4881,14 @@ namespace Tpetra {
           // Sync the host version of srcWhichVecs to the device.
           srcWhichVecs.template sync<DT> ();
 
-          // Mark the device version of dst's DualView as modified.
-          this->template modify<DT> ();
-
           // Copy from the selected vectors of src to dst, on the
           // device.  The function ignores its dstWhichVecs argument
           // in this case.
+          this->template modify<DT> ();
           Details::localDeepCopy (this->template getLocalView<DT> (),
                                   src.template getLocalView<DT> (),
                                   true, false, srcWhichVecs.d_view,
                                   srcWhichVecs.d_view);
-          // Sync *this' DualView to the host.  This is cheaper than
-          // repeating the above copy from src to *this on the host.
-          this->template sync<HMDT> ();
         }
 
       }
@@ -4921,16 +4913,12 @@ namespace Tpetra {
             }
             // Copy from src to the selected vectors of dst, on the
             // host.  The functor ignores its 4th arg in this case.
+            this->template modify<HMDT> ();
             Details::localDeepCopy (this->template getLocalView<HMDT> (),
                                     src.template getLocalView<HMDT> (),
                                     this->isConstantStride (),
                                     src.isConstantStride (),
                                     whichVecs, whichVecs);
-            // Sync dst back to the device, since we only copied on the host.
-            //
-            // FIXME (mfh 29 Jul 2014) This may overwrite columns that
-            // don't actually belong to dst's view.
-            this->template sync<DT> ();
           }
           else { // Copy from the device version of src.
             // whichVecs tells the kernel which vectors (columns) of dst
@@ -4947,17 +4935,12 @@ namespace Tpetra {
             whichVecs.template sync<DT> ();
 
             // Copy src to the selected vectors of dst, on the device.
+            this->template modify<DT> ();
             Details::localDeepCopy (this->template getLocalView<DT> (),
                                     src.template getLocalView<DT> (),
                                     this->isConstantStride (),
                                     src.isConstantStride (),
                                     whichVecs.d_view, whichVecs.d_view);
-            // We can't sync src and repeat the above copy on the
-            // host, so sync dst back to the host.
-            //
-            // FIXME (mfh 29 Jul 2014) This may overwrite columns that
-            // don't actually belong to dst's view.
-            this->template sync<HMDT> ();
           }
         }
         else { // neither src nor dst have constant stride
@@ -4983,18 +4966,13 @@ namespace Tpetra {
 
             // Copy from the selected vectors of src to the selected
             // vectors of dst, on the host.
+            this->template modify<HMDT> ();
             Details::localDeepCopy (this->template getLocalView<HMDT> (),
                                     src.template getLocalView<HMDT> (),
                                     this->isConstantStride (),
                                     src.isConstantStride (),
                                     whichVectorsDst, whichVectorsSrc);
 
-            // We can't sync src and repeat the above copy on the
-            // host, so sync dst back to the host.
-            //
-            // FIXME (mfh 29 Jul 2014) This may overwrite columns that
-            // don't actually belong to dst's view.
-            this->template sync<HMDT> ();
           }
           else { // copy from the device version of src
             // whichVectorsDst tells the kernel which columns of dst
@@ -5025,6 +5003,7 @@ namespace Tpetra {
 
             // Copy from the selected vectors of src to the selected
             // vectors of dst, on the device.
+            this->template modify<DT> ();
             Details::localDeepCopy (this->template getLocalView<DT> (),
                                     src.template getLocalView<DT> (),
                                     this->isConstantStride (),
