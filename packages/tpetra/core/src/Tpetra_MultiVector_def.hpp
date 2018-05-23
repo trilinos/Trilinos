@@ -1812,6 +1812,8 @@ namespace Tpetra {
     // View of all the dot product results.
     typedef Kokkos::View<dot_type*, Kokkos::HostSpace> RV;
     typedef MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> MV;
+    typedef typename dual_view_type::t_dev XMV;
+    typedef typename MV::dual_view_type::t_dev::memory_space dev_memory_space;
     const char tfecfFuncName[] = "Tpetra::MultiVector::dot: ";
 
     ::Tpetra::Details::ProfilingRegion region ("Tpetra::MV::dot (Kokkos::View)");
@@ -1860,49 +1862,18 @@ namespace Tpetra {
     RCP<const Comm<int> > comm = this->getMap ().is_null () ? null :
       this->getMap ()->getComm ();
 
-    // If we need sync to device, then host has the most recent
-    // version.  A is a guest of this method, so we should sync it.
-    // Thus, let A control where execution happens.
-    const bool useHostVersion = A.template need_sync<device_type> ();
-    if (useHostVersion) {
-      // A was last modified on host, so run the local kernel there.
-      // This means we need a host mirror of the array of norms too.
-      typedef typename dual_view_type::t_host XMV;
-      typedef typename XMV::memory_space cur_memory_space;
+    // All non-unary kernels are executed on the device as per Tpetra policy.  Sync to device if needed.
+    if (this->template need_sync<dev_memory_space> ()) const_cast<MV*>(this)->template sync<dev_memory_space> ();
+    if (A.template need_sync<dev_memory_space> ())     const_cast<MV&>(A).template sync<dev_memory_space> ();
 
-      // I consider it more polite to sync *this, then to sync A.
-      // A is a "guest" of this method, and is passed in const.
-      const_cast<MV*> (this)->template sync<cur_memory_space> ();
-      auto thisView = this->template getLocalView<cur_memory_space> ();
-      auto A_view = A.template getLocalView<cur_memory_space> ();
-
-      using Tpetra::Details::lclDot;
-      lclDot<RV, XMV> (dotsOut, thisView, A_view, lclNumRows, numVecs,
-                       this->whichVectors_.getRawPtr (),
-                       A.whichVectors_.getRawPtr (),
-                       this->isConstantStride (), A.isConstantStride ());
-      gblDotImpl (dotsOut, comm, this->isDistributed ());
-    }
-    else {
-      // A was last modified on device, so run the local kernel there.
-      typedef typename dual_view_type::t_dev XMV;
-      typedef typename XMV::memory_space cur_memory_space;
-
-      // I consider it more polite to sync *this, then to sync A.
-      // A is a "guest" of this method, and is passed in const.
-      //
-      // Yes, "const" is a lie.
-      const_cast<MV*> (this)->template sync<cur_memory_space> ();
-      auto thisView = this->template getLocalView<cur_memory_space> ();
-      auto A_view = A.template getLocalView<cur_memory_space> ();
-
-      using Tpetra::Details::lclDot;
-      lclDot<RV, XMV> (dotsOut, thisView, A_view, lclNumRows, numVecs,
-                       this->whichVectors_.getRawPtr (),
-                       A.whichVectors_.getRawPtr (),
-                       this->isConstantStride (), A.isConstantStride ());
-      gblDotImpl (dotsOut, comm, this->isDistributed ());
-    }
+    auto thisView = this->template getLocalView<dev_memory_space> ();
+    auto A_view = A.template getLocalView<dev_memory_space> ();
+    
+    Tpetra::Details::lclDot<RV, XMV> (dotsOut, thisView, A_view, lclNumRows, numVecs,
+                     this->whichVectors_.getRawPtr (),
+                     A.whichVectors_.getRawPtr (),
+                     this->isConstantStride (), A.isConstantStride ());
+    gblDotImpl (dotsOut, comm, this->isDistributed ());
   }
 
   namespace { // (anonymous)
@@ -1933,7 +1904,6 @@ namespace Tpetra {
         const Kokkos::pair<LO, LO> rowRng (0, lclNumRows);
         dot_type lclDot = Kokkos::ArithTraits<dot_type>::zero ();
         dot_type gblDot = Kokkos::ArithTraits<dot_type>::zero ();
-
 
         // All non-unary kernels are executed on the device as per Tpetra policy.  Sync to device if needed.
         if (x.template need_sync<dev_memory_space> ()) x.template sync<dev_memory_space> ();
