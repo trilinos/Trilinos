@@ -1916,7 +1916,6 @@ namespace Tpetra {
       typedef Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> MV;
       typedef typename MV::dot_type dot_type;
       typedef typename MV::dual_view_type::t_dev::memory_space dev_memory_space;
-      typedef typename MV::dual_view_type::t_host::memory_space host_memory_space;
       ::Tpetra::Details::ProfilingRegion region ("Tpetra::multiVectorSingleColumnDot");
 
       RCP<const typename MV::map_type> map = x.getMap ();
@@ -1935,37 +1934,16 @@ namespace Tpetra {
         dot_type lclDot = Kokkos::ArithTraits<dot_type>::zero ();
         dot_type gblDot = Kokkos::ArithTraits<dot_type>::zero ();
 
-        // This function is meant to be called by x.  Therefore, we
-        // can sync x, but we can't sync y.  y is a "guest" of this
-        // method.  Thus, we let y control where execution happens.
-        // If we need sync to device, then data were last modified on
-        // host, so we should run on host.
+        // All kernels are executed on the device as per Tpetra policy.  Sync to device if needed.
+        if (x.template need_sync<dev_memory_space> ()) x.template sync<dev_memory_space> ();
+        if (y.template need_sync<dev_memory_space> ()) const_cast<MV&>(y).template sync<dev_memory_space> ();
 
-        //const bool runOnHost = false;
-        const bool runOnHost = y.template need_sync<dev_memory_space> ();
-        // const_cast<MV&> (y).template sync<dev_memory_space> ();
-        // const_cast<MV&> (x).template sync<dev_memory_space> ();
-
-        if (runOnHost) {
-          typedef host_memory_space cur_memory_space;
-          // x is nonconst, so we may sync x where we need to sync it.
-          x.template sync<cur_memory_space> ();
-          auto x_2d = x.template getLocalView<cur_memory_space> ();
-          auto x_1d = Kokkos::subview (x_2d, rowRng, 0);
-          auto y_2d = y.template getLocalView<cur_memory_space> ();
-          auto y_1d = Kokkos::subview (y_2d, rowRng, 0);
-          lclDot = KokkosBlas::dot (x_1d, y_1d);
-        }
-        else { // run on device
-          typedef dev_memory_space cur_memory_space;
-          // x is nonconst, so we may sync x where we need to sync it.
-          x.template sync<cur_memory_space> ();
-          auto x_2d = x.template getLocalView<cur_memory_space> ();
-          auto x_1d = Kokkos::subview (x_2d, rowRng, 0);
-          auto y_2d = y.template getLocalView<cur_memory_space> ();
-          auto y_1d = Kokkos::subview (y_2d, rowRng, 0);
-          lclDot = KokkosBlas::dot (x_1d, y_1d);
-        }
+        x.template modify<dev_memory_space> ();
+        auto x_2d = x.template getLocalView<dev_memory_space> ();
+        auto x_1d = Kokkos::subview (x_2d, rowRng, 0);
+        auto y_2d = y.template getLocalView<dev_memory_space> ();
+        auto y_1d = Kokkos::subview (y_2d, rowRng, 0);
+        lclDot = KokkosBlas::dot (x_1d, y_1d);
 
         if (x.isDistributed ()) {
           using Teuchos::outArg;
