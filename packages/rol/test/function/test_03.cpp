@@ -64,7 +64,7 @@
 template<class Real>
 void print_vector( const ROL::Vector<Real> &x ) {
 
-  typedef ROL::Vector<Real>            V;
+//  typedef ROL::Vector<Real>            V;
   typedef ROL::StdVector<Real>         SV;
   typedef ROL::PartitionedVector<Real> PV;
   typedef typename PV::size_type       size_type;
@@ -74,9 +74,8 @@ void print_vector( const ROL::Vector<Real> &x ) {
     
   for(size_type k=0; k<n; ++k) {
     std::cout << "[subvector " << k << "]" << std::endl;
-    ROL::Ptr<const V> vec = eb.get(k);
-    ROL::Ptr<const std::vector<Real> > vp = 
-      dynamic_cast<SV>(const_cast<V&&>(*vec)).getVector();  
+   auto vec = eb.get(k);
+   auto vp  = ROL::dynamicPtrCast<const SV>(vec)->getVector();
    for(size_type i=0;i<vp->size();++i) {
       std::cout << (*vp)[i] << std::endl;
     }  
