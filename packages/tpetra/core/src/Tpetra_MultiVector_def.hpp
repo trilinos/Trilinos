@@ -872,11 +872,11 @@ namespace Tpetra {
     }
 
     if (copyOnHost) {
-      this->template sync<HMS> ();
+      if(this->template need_sync<HMS> ()) this->template sync<HMS> ();
       this->template modify<HMS> ();
     }
     else {
-      this->template sync<DMS> ();
+      if(this->template need_sync<DMS> ()) this->template sync<DMS> ();
       this->template modify<DMS> ();
     }
 
@@ -1548,11 +1548,11 @@ namespace Tpetra {
     // because copyAndPermute may have modified *this in the other
     // memory space.
     if (unpackOnHost) {
-      this->template sync<HMS> ();
+      if(this->template need_sync<HMS> ()) this->template sync<HMS> ();
       this->template modify<HMS> ();
     }
     else { // unpack on device
-      this->template sync<DMS> ();
+      if(this->template need_sync<DMS> ()) this->template sync<DMS> ();
       this->template modify<DMS> ();
     }
     auto X_d = this->template getLocalView<DMS> ();
