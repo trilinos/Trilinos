@@ -52,6 +52,7 @@
   <!-- ===========  STOCHASTIC OPTIMIZATION LIBRARY SUBLIST  =========== -->
   <ParameterList name="SOL">
     <ParameterList name="Progressive Hedging">
+      <Parameter name="Use Presolve"                           type="bool"   value="false" />
       <Parameter name="Initial Penalty Parameter"              type="double" value="1.0"   />
       <Parameter name="Penalty Update Scale"                   type="double" value="10.0"  />
       <Parameter name="Penalty Update Frequency"               type="int"    value="1"     />
