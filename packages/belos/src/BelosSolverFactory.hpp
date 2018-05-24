@@ -581,7 +581,7 @@ isSupported (const std::string& solverName) const
 // included through the adapter includes to maintain backwards compatibility.
 // The Belos version itself doesn't have a place like that so included here
 // which is awkward. It might make more sense to just copy that code here but
-// it has symmetry with the other files and wanted to preserveve that. To discuss.
+// it has symmetry with the other files and wanted to preserve that. To discuss.
 #include "BelosSolverFactory_Belos.hpp"
 
 #endif // __Belos_SolverFactory_hpp

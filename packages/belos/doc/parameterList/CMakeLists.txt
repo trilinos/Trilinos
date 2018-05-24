@@ -8,11 +8,6 @@ INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/../.
 TRIBITS_ADD_EXECUTABLE(
   ValidParameters
   SOURCES
-    # With the new DII setup we want to register the Tpetra classes
-    # Note this is not going to share the registration as other classes would
-    # if they linked the belostpetra.lib. TODO: We may wish to refactor so this
-    # special case can link those libs as needed. Would improve this build time.
-    ../../tpetra/src/Belos_Details_Tpetra_registerSolverFactory.cpp
     createValidParameterList.cpp
   COMM serial mpi
   )
