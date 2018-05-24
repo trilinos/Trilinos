@@ -100,7 +100,8 @@ apply (const Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &X,
   if (timer.is_null ()) {
     timer = Teuchos::TimeMonitor::getNewCounter (timerName);
   }
-    
+  Teuchos::TimeMonitor timeMon (*timer);
+
   if(!isInitialized() || !isComputed())
   {
     throw std::runtime_error(std::string("Called ") + getName() + "::apply() without first calling initialize() and/or compute().");
