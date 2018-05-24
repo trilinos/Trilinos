@@ -49,6 +49,7 @@
 
 #include <ostream>
 #include <vector>
+#include <algorithm>
 
 #include "ROL_Elementwise_Function.hpp"
 
@@ -320,7 +321,6 @@ public:
     ROL::Ptr<Vector> xtmp = x.clone();
     ROL::Ptr<Vector> ytmp = y.clone();
 
-    //*pStream << "\n************ Begin verification of linear algebra.\n\n";
     *pStream << "\n" << std::setw(width) << std::left << std::setfill('*') << "********** Begin verification of linear algebra. " << "\n\n";
     headerFormatState.copyfmt(*pStream);
 
@@ -371,7 +371,7 @@ public:
 
     // Additivity of dot (inner) product.
     xtmp->set(x);
-    xtmp->plus(y); vCheck.push_back(std::abs(this->dot(*xtmp) - this->dot(x) - this->dot(y))/std::max(std::abs(this->dot(*xtmp)), std::max(std::abs(this->dot(x)), std::abs(this->dot(y)))));
+    xtmp->plus(y); vCheck.push_back(std::abs(this->dot(*xtmp) - this->dot(x) - this->dot(y))/std::max({static_cast<Real>(std::abs(this->dot(*xtmp))), static_cast<Real>(std::abs(this->dot(x))), static_cast<Real>(std::abs(this->dot(y))), one}));
     *pStream << std::setw(width) << std::left << "Additivity of dot (inner) product. Consistency error: " << " " << vCheck.back() << "\n";
 
     // Consistency of scalar multiplication and norm.
