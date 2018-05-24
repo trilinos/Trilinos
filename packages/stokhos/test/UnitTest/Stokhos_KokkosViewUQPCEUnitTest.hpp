@@ -120,12 +120,12 @@ checkPCEView(const ViewType& v, Teuchos::FancyOStream& out) {
   bool is_right = Kokkos::Impl::is_same< typename ViewType::array_layout,
                                          Kokkos::LayoutRight >::value;
   if (is_right) {
-    num_rows = h_a.dimension_0();
-    num_cols = h_a.dimension_1();
+    num_rows = h_a.extent(0);
+    num_cols = h_a.extent(1);
   }
   else {
-    num_rows = h_a.dimension_1();
-    num_cols = h_a.dimension_0();
+    num_rows = h_a.extent(1);
+    num_cols = h_a.extent(0);
   }
   bool success = true;
   if (is_right) {
@@ -168,7 +168,7 @@ checkConstantPCEView(const ViewType& v,
   host_view_type h_v = Kokkos::create_mirror_view(v);
   Kokkos::deep_copy(h_v, v);
 
-  const size_type num_rows = h_v.dimension_0();
+  const size_type num_rows = h_v.extent(0);
   const size_type num_cols = Kokkos::dimension_scalar(h_v);
 
   bool success = true;
@@ -540,7 +540,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( Kokkos_View_PCE, Unmanaged, Storage, Layout )
 
   // Create unmanaged view
   ViewType v2 =
-    Kokkos::make_view<ViewType>( v.ptr_on_device(), cijk, num_rows, num_cols );
+    Kokkos::make_view<ViewType>( v.data(), cijk, num_rows, num_cols );
 
   success = checkPCEView(v2, out);
 }
@@ -561,7 +561,7 @@ struct PCEAtomicFunctor {
   PCEAtomicFunctor( const ViewType & v , const scalar_type & s ) :
     m_v( v ), m_s( s )
   {
-    Kokkos::parallel_for( m_v.dimension_0() , *this );
+    Kokkos::parallel_for( m_v.extent(0) , *this );
   }
 
   KOKKOS_INLINE_FUNCTION

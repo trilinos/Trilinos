@@ -403,6 +403,36 @@ int Epetra_Util_insert(T item, int offset, T*& list,
   return(0);
 }
 
+/** Function that returns either a pointer to the first entry in the vector
+    or, if the vector is empty, the NULL pointer.
+
+    @param vec vector argument (may be empty)
+    @return Either NULL or a pointer to the first entry in @p vec
+ */
+template<class T>
+T* Epetra_Util_data_ptr(std::vector<T> &vec)
+{
+  if (!vec.empty()) {
+    return &vec.front();
+  }
+  return NULL;
+}
+
+/** Function that returns either a pointer to the first entry in the
+    vector or, if the vector is empty, the NULL pointer.
+
+    @param vec constant vector argument (may be empty)
+    @return Either NULL or a pointer to the first entry in @p vec
+ */
+template<class T>
+const T* Epetra_Util_data_ptr(const std::vector<T> &vec)
+{
+  if (!vec.empty()) {
+    return &vec.front();
+  }
+  return NULL;
+}
+
 //! Harwell-Boeing data extraction routine
 /*! This routine will extract data from an existing Epetra_Crs Matrix, and
     optionally from related rhs and lhs objects in a form that is compatible with

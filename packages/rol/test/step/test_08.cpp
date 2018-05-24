@@ -46,6 +46,8 @@
     \brief Interior Point test using Hock & Schittkowski problem 29.
 */
 
+#include "Teuchos_GlobalMPISession.hpp"
+
 #include "ROL_HS29.hpp"
 #include "ROL_Algorithm.hpp"
 

@@ -41,6 +41,9 @@
 // ************************************************************************
 // @HEADER
 
+#include "Teuchos_GlobalMPISession.hpp"
+
+#include "Teuchos_GlobalMPISession.hpp"
 
 #include "ROL_InteriorPointPenalty.hpp"
 #include "ROL_RandomVector.hpp"

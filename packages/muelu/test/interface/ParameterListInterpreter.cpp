@@ -46,6 +46,7 @@
 
 #include <cstdlib>
 #include <fstream>
+#include <algorithm>
 
 #include <Teuchos_UnitTestHarness.hpp>
 #include <Teuchos_XMLParameterListHelpers.hpp>
@@ -143,6 +144,8 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
   for (int k = 0; k < numLists; k++) {
     Teuchos::ArrayRCP<std::string> fileList = MueLuTests::TestHelpers::GetFileList(dirList[k],
       (numProc == 1 ? std::string(".xml") : std::string("_np" + Teuchos::toString(numProc) + ".xml")));
+
+    std::sort(fileList.begin(),fileList.end());
 
     for (int i = 0; i < fileList.size(); i++) {
       // Set seed

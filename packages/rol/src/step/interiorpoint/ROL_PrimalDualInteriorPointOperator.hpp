@@ -195,7 +195,7 @@ class PrimalDualInteriorPointBlock21 : public LinearOperator<Real> {
   static const size_type UPPER = 1;
  
   ROL::Ptr<const V> zl_;
-  Teuchos::RPC<const V> zu_;
+  ROL::Ptr<const V> zu_;
 
 public:
  

@@ -96,7 +96,24 @@ getWorksets(const panzer::WorksetDescriptor & worksetDesc,
     }
     return panzer::buildPartitionedWorksets(*mesh_info_,worksetDesc,needs);
   } else if(!worksetDesc.useSideset()) {
-    return panzer_stk::buildWorksets(*mesh_,worksetDesc.getElementBlock(), needs);
+    // The non-partitioned case always creates worksets with just the
+    // owned elements.  CLASSIC_MODE gets the workset size directly
+    // from needs that is populated externally. As we transition away
+    // from classic mode, we need to create a copy of needs and
+    // override the workset size with values from WorksetDescription.
+    if (worksetDesc.getWorksetSize() == panzer::WorksetSizeType::CLASSIC_MODE)
+      return panzer_stk::buildWorksets(*mesh_,worksetDesc.getElementBlock(), needs);
+    else {
+      int worksetSize = worksetDesc.getWorksetSize();
+      if (worksetSize == panzer::WorksetSizeType::ALL_ELEMENTS) {
+        std::vector<stk::mesh::Entity> elements;
+        mesh_->getMyElements(worksetDesc.getElementBlock(),elements);
+        worksetSize = elements.size();
+      }
+      panzer::WorksetNeeds tmpNeeds(needs);
+      tmpNeeds.cellData = panzer::CellData(worksetSize,needs.cellData.getCellTopology());
+      return panzer_stk::buildWorksets(*mesh_,worksetDesc.getElementBlock(), needs);
+    }
   }
   else if(worksetDesc.useSideset() && worksetDesc.sideAssembly()) {
     // uses cascade by default, each subcell has its own workset
