@@ -63,6 +63,7 @@ private:
   const Ptr<OptimizationProblem<Real>> input_;
   const Ptr<SampleGenerator<Real>> sampler_;
   ParameterList parlist_;
+  bool usePresolve_;
   Real penaltyParam_;
   Real update_;
   int  freq_;
@@ -76,12 +77,30 @@ private:
   Ptr<Vector<Real>> z_psum_, z_gsum_;
   std::vector<Ptr<Vector<Real>>> zvec_, wvec_;
 
+  void presolve(void) {
+    OptimizationSolver<Real> solver(*input_,parlist_);
+    for (int j = 0; j < sampler_->numMySamples(); ++j) {
+      input_->getObjective()->setParameter(sampler_->getMyPoint(j));
+      if (input_->getConstraint() != nullPtr) {
+        input_->getConstraint()->setParameter(sampler_->getMyPoint(j));
+      }
+      solver.solve();
+      zvec_[j]->set(*input_->getSolutionVector());
+      solver.reset();
+      z_psum_->axpy(sampler_->getMyWeight(j),*zvec_[j]);
+    }
+    // Aggregation
+    z_gsum_->zero();
+    sampler_->sumAll(*z_psum_,*z_gsum_);
+  }
+
 public:
   ProgressiveHedging(const Ptr<OptimizationProblem<Real>> &input,
                      const Ptr<SampleGenerator<Real>> &sampler,
                      ParameterList &parlist)
     : input_(input), sampler_(sampler), parlist_(parlist) {
     // Get algorithmic parameters
+    usePresolve_  = parlist.sublist("SOL").sublist("Progressive Hedging").get("Use Presolve",true);
     penaltyParam_ = parlist.sublist("SOL").sublist("Progressive Hedging").get("Initial Penalty Parameter",10.0);
     update_       = parlist.sublist("SOL").sublist("Progressive Hedging").get("Penalty Update Scale",10.0);
     freq_         = parlist.sublist("SOL").sublist("Progressive Hedging").get("Penalty Update Frequency",0);
@@ -110,11 +129,15 @@ public:
       zvec_[i] = z_psum_->clone();        zvec_[i]->zero();
       wvec_[i] = z_psum_->dual().clone(); wvec_[i]->zero();
     }
+    if (usePresolve_) {
+      presolve();
+    }
   }
 
   void run(std::ostream &outStream = std::cout) {
     const Real zero(0), one(1);
-    Real znorm_p(0), znorm_g(0), znorm(ROL_INF<Real>());
+    std::vector<Real> vec_p(2), vec_g(2);
+    Real znorm(ROL_INF<Real>());
     int iter(0), spiter(0), tspiter(0);
     // Output
     outStream << std::scientific << std::setprecision(6);
@@ -150,16 +173,18 @@ public:
       z_gsum_->zero();
       sampler_->sumAll(*z_psum_,*z_gsum_);
       // Multiplier Update
-      znorm_p = zero; znorm_g = zero;
+      vec_p[0] = zero; vec_p[1] = static_cast<Real>(spiter);
+      vec_g[0] = zero; vec_g[1] = zero;
       for (int j = 0; j < sampler_->numMySamples(); ++j) {
         wvec_[j]->axpy(penaltyParam_,*zvec_[j]);
         wvec_[j]->axpy(-penaltyParam_,*z_gsum_);
         z_psum_->set(*zvec_[j]);
         z_psum_->axpy(-one,*z_gsum_);
-        znorm_p += z_psum_->dot(*z_psum_);
+        vec_p[0] += z_psum_->dot(*z_psum_);
       }
-      sampler_->sumAll(&znorm_p,&znorm_g,1);
-      znorm = std::sqrt(znorm_g);
+      sampler_->sumAll(&vec_p[0],&vec_g[0],2);
+      znorm  = std::sqrt(vec_g[0]);
+      spiter = static_cast<int>(vec_g[1]);
       iter++;
       tspiter += spiter;
       // Output
