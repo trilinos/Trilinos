@@ -139,9 +139,7 @@ else
   exit $ierror
 fi
 
-#load a newer cmake. The single submit requires at least 3.10.*
-module unload sems-cmake
-export PATH=/ascldap/users/bmpersc/bin/cmake-3.10.2/bin:$PATH
+# The single submit requires at least cmake 3.10.*
 cmake --version
 
 module list
@@ -178,7 +176,7 @@ ctest -S simple_testing.cmake \
   -Ddashboard_model=Experimental \
   -Ddashboard_track="${CDASH_TRACK:?}" \
   -DPARALLEL_LEVEL=13 \
-  -Dbuild_dir="$WORKSPACE/pull_request_test" \
+  -Dbuild_dir="${WORKSPACE:?}/pull_request_test" \
   -Dconfigure_script=../Trilinos/cmake/std/${CONFIG_SCRIPT:?} \
   -Dpackage_enables=../packageEnables.cmake \
   -Dsubprojects_file=../TFW_single_configure_support_scripts/package_subproject_list.cmake
