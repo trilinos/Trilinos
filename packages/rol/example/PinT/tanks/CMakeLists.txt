@@ -1,3 +1,6 @@
+INCLUDE_DIRECTORIES(${${PACKAGE_NAME}_SOURCE_DIR}/adapters/mpi/src/function)
+INCLUDE_DIRECTORIES(${${PACKAGE_NAME}_SOURCE_DIR}/adapters/mpi/src/vector)
+
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   example_01
   SOURCES example_01.cpp
