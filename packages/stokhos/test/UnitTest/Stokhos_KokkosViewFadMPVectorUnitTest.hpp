@@ -185,11 +185,11 @@ checkConstantFadVectorView2(const ViewType& view,
   for (size_type i5=0; i5<h_view.extent(5); ++i5) {
   for (size_type i6=0; i6<h_view.extent(6); ++i6) {
     for (size_type k=0; k<num_ensemble; ++k)
-      TEUCHOS_TEST_EQUALITY(h_view(i0,i1,i2,i3,i4,i5,i6,0).val().coeff(k),
+      TEUCHOS_TEST_EQUALITY(h_view.access(i0,i1,i2,i3,i4,i5,i6,0).val().coeff(k),
                             v.val().coeff(k), out, success);
     for (size_type j=0; j<num_fad; ++j) {
       for (size_type k=0; k<num_ensemble; ++k)
-        TEUCHOS_TEST_EQUALITY(h_view(i0,i1,i2,i3,i4,i5,i6,0).dx(j).coeff(k),
+        TEUCHOS_TEST_EQUALITY(h_view.access(i0,i1,i2,i3,i4,i5,i6,0).dx(j).coeff(k),
                               v.dx(j).coeff(k), out, success);
     }
   }}}}}}}
