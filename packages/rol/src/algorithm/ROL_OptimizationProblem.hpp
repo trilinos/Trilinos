@@ -99,8 +99,8 @@ private:
   std::vector<Ptr<SampleGenerator<Real>>> ixsampler_;
   std::vector<Ptr<BatchManager<Real>>>    icbman_;
 
-  Teuchos::RCP<Teuchos::ParameterList>              parlistObj_;
-  std::vector<Teuchos::RCP<Teuchos::ParameterList>> parlistCon_;
+  Ptr<ParameterList>                      parlistObj_;
+  std::vector<Ptr<ParameterList>>         parlistCon_;
 
   Ptr<Objective<Real>>       obj_;
   Ptr<Vector<Real>>          sol_;
@@ -619,7 +619,7 @@ public:
       @param[in]    gsampler  is the SampleGenerator defining the distribution of the auxiliary parameter for the gradient
       @param[in]    hsampler  is the SampleGenerator defining the distribution of the auxiliary parameter for the Hessian
   */
-  void setRiskAverseObjective(Teuchos::ParameterList &parlist,
+  void setRiskAverseObjective(ParameterList &parlist,
                               const Ptr<SampleGenerator<Real>> &vsampler,
                               const Ptr<SampleGenerator<Real>> &gsampler = nullPtr,
                               const Ptr<SampleGenerator<Real>> &hsampler = nullPtr) {
@@ -651,7 +651,7 @@ public:
     isInitialized_ = false;
   }
 
-  void setStochasticObjective(Teuchos::ParameterList &parlist,
+  void setStochasticObjective(ParameterList &parlist,
                               const Ptr<SampleGenerator<Real>> &vsampler,
                               const Ptr<SampleGenerator<Real>> &gsampler = nullPtr,
                               const Ptr<SampleGenerator<Real>> &hsampler = nullPtr) {
@@ -751,7 +751,7 @@ public:
   }
 
 
-  void setStochasticEquality(std::vector<Teuchos::ParameterList> &parlist,
+  void setStochasticEquality(std::vector<ParameterList> &parlist,
                              const std::vector<Ptr<SampleGenerator<Real>>> &xsampler,
                              const std::vector<Ptr<BatchManager<Real>>> &cbman) {
     initStochastic();
@@ -787,10 +787,10 @@ public:
     isInitialized_ = false;
   }
 
-  void setStochasticEquality(Teuchos::ParameterList &parlist,
+  void setStochasticEquality(ParameterList &parlist,
                              const Ptr<SampleGenerator<Real>> &xsampler,
                              const Ptr<BatchManager<Real>> &cbman) {
-    std::vector<Teuchos::ParameterList> cparlist(1,parlist);
+    std::vector<ParameterList> cparlist(1,parlist);
     std::vector<Ptr<SampleGenerator<Real>>> cxsampler(1,xsampler);
     std::vector<Ptr<BatchManager<Real>>> ccbman(1,cbman);
     setStochasticEquality(cparlist,cxsampler,ccbman);
@@ -842,7 +842,7 @@ public:
     isInitialized_ = false;
   }
 
-  void setRiskAverseInequality(Teuchos::ParameterList &parlist,
+  void setRiskAverseInequality(ParameterList &parlist,
                                const Ptr<SampleGenerator<Real>> &sampler,
                                const int index = 0) {
     initStochastic();
@@ -893,7 +893,7 @@ public:
     isInitialized_ = false;
   }
 
-  void setStochasticInequality(std::vector<Teuchos::ParameterList> &parlist,
+  void setStochasticInequality(std::vector<ParameterList> &parlist,
                                const std::vector<Ptr<SampleGenerator<Real>>> &xsampler,
                                const std::vector<Ptr<BatchManager<Real>>>    &cbman) {
     initStochastic();
@@ -937,10 +937,10 @@ public:
     isInitialized_ = false;
   }
 
-  void setStochasticInequality(Teuchos::ParameterList &parlist,
+  void setStochasticInequality(ParameterList &parlist,
                                const Ptr<SampleGenerator<Real>> &xsampler,
                                const Ptr<BatchManager<Real>> &cbman) {
-    std::vector<Teuchos::ParameterList> cparlist(1,parlist);
+    std::vector<ParameterList> cparlist(1,parlist);
     std::vector<Ptr<SampleGenerator<Real>>> cxsampler(1,xsampler);
     std::vector<Ptr<BatchManager<Real>>> ccbman(1,cbman);
     setStochasticInequality(cparlist,cxsampler,ccbman);

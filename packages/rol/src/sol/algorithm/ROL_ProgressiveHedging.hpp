@@ -62,7 +62,7 @@ class ProgressiveHedging {
 private:
   const Ptr<OptimizationProblem<Real>> input_;
   const Ptr<SampleGenerator<Real>> sampler_;
-  Teuchos::ParameterList parlist_;
+  ParameterList parlist_;
   Real penaltyParam_;
   Real update_;
   int  freq_;
@@ -79,7 +79,7 @@ private:
 public:
   ProgressiveHedging(const Ptr<OptimizationProblem<Real>> &input,
                      const Ptr<SampleGenerator<Real>> &sampler,
-                     Teuchos::ParameterList &parlist)
+                     ParameterList &parlist)
     : input_(input), sampler_(sampler), parlist_(parlist) {
     // Get algorithmic parameters
     penaltyParam_ = parlist.sublist("SOL").sublist("Progressive Hedging").get("Initial Penalty Parameter",10.0);
