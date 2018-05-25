@@ -73,7 +73,7 @@ int main(int argc, char *argv[]) {
   Teuchos::oblackholestream oldFormatState;
   oldFormatState.copyfmt(std::cout);
 
-#ifndef KOKKOS_HAVE_CUDA
+#ifndef KOKKOS_ENABLE_CUDA
   Teuchos::GlobalMPISession mpiSession(&argc, &argv);
 
   // This little trick lets us print to std::cout only if
@@ -111,7 +111,7 @@ int main(int argc, char *argv[]) {
   // Define basis and error flag
   Basis_HGRAD_LINE_C1_FEM<double, FieldContainer<double> > lineBasis;
   int errorFlag = 0;
-#ifndef KOKKOS_HAVE_CUDA
+#ifndef KOKKOS_ENABLE_CUDA
   // Initialize throw counter for exception testing
   int nException     = 0;
   int throwCounter   = 0;

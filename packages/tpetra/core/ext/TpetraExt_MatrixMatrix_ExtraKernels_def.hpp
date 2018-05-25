@@ -881,7 +881,7 @@ void copy_out_from_thread_memory(const InRowptrArrayType & Inrowptr, const InCol
   size_t c_nnz_size=0;
   lno_view_t thread_start_nnz("thread_nnz",thread_max+1);
   Kokkos::parallel_scan("LTG::Scan",range_type(0,thread_max).set_chunk_size(1), [=] (const size_t i, size_t& update, const bool final) {
-      size_t mynnz = Inrowptr(i)(Inrowptr(i).dimension(0)-1);
+      size_t mynnz = Inrowptr(i)(Inrowptr(i).extent(0)-1);
       if(final) thread_start_nnz(i) = update;
       update+=mynnz;
       if(final && i+1==thread_max) thread_start_nnz(i+1)=update;

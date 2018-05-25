@@ -21,8 +21,8 @@ namespace Tacho {
 
       switch (quadrant) {
       case Partition::TopLeft:
-        bmm = min(bm, A.dimension_0());
-        bnn = min(bn, A.dimension_1());                
+        bmm = min(bm, A.extent(0));
+        bnn = min(bn, A.extent(1));                
       
         ATL.set_view(A,
                      A.offset_0(), bmm,
@@ -33,8 +33,8 @@ namespace Tacho {
         TACHO_TEST_FOR_ABORT(true, MSG_NOT_IMPLEMENTED);
         break;
       case Partition::BottomRight:
-        bmm = A.dimension_0() - min(bm, A.dimension_0());
-        bnn = A.dimension_1() - min(bn, A.dimension_1());                
+        bmm = A.extent(0) - min(bm, A.extent(0));
+        bnn = A.extent(1) - min(bn, A.extent(1));                
       
         ATL.set_view(A,
                      A.offset_0(), bmm,
@@ -46,16 +46,16 @@ namespace Tacho {
       }
     
       ATR.set_view(A,
-                   A.offset_0(),                     ATL.dimension_0(),
-                   A.offset_1() + ATL.dimension_1(), A.dimension_1() - ATL.dimension_1());
+                   A.offset_0(),                     ATL.extent(0),
+                   A.offset_1() + ATL.extent(1), A.extent(1) - ATL.extent(1));
     
       ABL.set_view(A,
-                   A.offset_0() + ATL.dimension_0(), A.dimension_0() - ATL.dimension_0(),
-                   A.offset_1(),                     ATL.dimension_1());
+                   A.offset_0() + ATL.extent(0), A.extent(0) - ATL.extent(0),
+                   A.offset_1(),                     ATL.extent(1));
     
       ABR.set_view(A,
-                   A.offset_0() + ATL.dimension_0(), A.dimension_0() - ATL.dimension_0(),
-                   A.offset_1() + ATL.dimension_1(), A.dimension_1() - ATL.dimension_1());
+                   A.offset_0() + ATL.extent(0), A.extent(0) - ATL.extent(0),
+                   A.offset_1() + ATL.extent(1), A.extent(1) - ATL.extent(1));
     }
 
     template<typename MatView>
@@ -68,16 +68,16 @@ namespace Tacho {
 
       switch (side) {
       case Partition::Left:
-        bmm = A.dimension_0();
-        bnn = min(bn, A.dimension_1());
+        bmm = A.extent(0);
+        bnn = min(bn, A.extent(1));
       
         AL.set_view(A,
                     A.offset_0(), bmm,
                     A.offset_1(), bnn);
         break;
       case Partition::Right:
-        bmm = A.dimension_0();
-        bnn = A.dimension_1() - min(bn, A.dimension_1());
+        bmm = A.extent(0);
+        bnn = A.extent(1) - min(bn, A.extent(1));
 
         AL.set_view(A,
                     A.offset_0(), bmm,
@@ -89,8 +89,8 @@ namespace Tacho {
       }
 
       AR.set_view(A,
-                  A.offset_0(),                    A.dimension_0(),
-                  A.offset_1() + AL.dimension_1(), A.dimension_1() - AL.dimension_1());
+                  A.offset_0(),                    A.extent(0),
+                  A.offset_1() + AL.extent(1), A.extent(1) - AL.extent(1));
     }
 
     template<typename MatView>
@@ -104,16 +104,16 @@ namespace Tacho {
     
       switch (side) {
       case Partition::Top:
-        bmm = min(bm, A.dimension_0());
-        bnn = A.dimension_1();
+        bmm = min(bm, A.extent(0));
+        bnn = A.extent(1);
       
         AT.set_view(A,
                     A.offset_0(), bmm,
                     A.offset_1(), bnn);
         break;
       case Partition::Bottom:
-        bmm = A.dimension_0() - min(bm, A.dimension_0());
-        bnn = A.dimension_1();
+        bmm = A.extent(0) - min(bm, A.extent(0));
+        bnn = A.extent(1);
 
         AT.set_view(A,
                     A.offset_0(), bmm,
@@ -125,8 +125,8 @@ namespace Tacho {
       }
     
       AB.set_view(A,
-                  A.offset_0() + AT.dimension_0(), A.dimension_0() - AT.dimension_0(),
-                  A.offset_1(),                A.dimension_1());
+                  A.offset_0() + AT.extent(0), A.extent(0) - AT.extent(0),
+                  A.offset_1(),                A.extent(1));
     }
 
     template<typename MatView>
@@ -152,8 +152,8 @@ namespace Tacho {
                  bn, Partition::Right);
 
         A22.set_view(ABR,
-                     ABR.offset_0(), ABR.dimension_0(),
-                     ABR.offset_1(), ABR.dimension_1());
+                     ABR.offset_0(), ABR.extent(0),
+                     ABR.offset_1(), ABR.extent(1));
         break;
       case Partition::TopRight:
       case Partition::BottomLeft:
@@ -161,8 +161,8 @@ namespace Tacho {
         break;
       case Partition::BottomRight:
         A00.set_view(ATL,
-                     ATL.offset_0(), ATL.dimension_0(),
-                     ATL.offset_1(), ATL.dimension_1());
+                     ATL.offset_0(), ATL.extent(0),
+                     ATL.offset_1(), ATL.extent(1));
 
         Part_1x2(ATR, A01, A02,
                  bn, Partition::Left);
@@ -196,13 +196,13 @@ namespace Tacho {
                  bm, Partition::Bottom);
 
         A2.set_view(AB,
-                    AB.offset_0(), AB.dimension_0(),
-                    AB.offset_1(), AB.dimension_1());
+                    AB.offset_0(), AB.extent(0),
+                    AB.offset_1(), AB.extent(1));
         break;
       case Partition::Bottom:
         A0.set_view(AT,
-                    AT.offset_0(), AT.dimension_0(),
-                    AT.offset_1(), AT.dimension_1());
+                    AT.offset_0(), AT.extent(0),
+                    AT.offset_1(), AT.extent(1));
 
         Part_2x1(AB,  A1, 
                  /**/ A2,
@@ -227,13 +227,13 @@ namespace Tacho {
                  bn, Partition::Right);
 
         A2.set_view(AR.BaseObaject(),
-                    AR.offset_0(), AR.dimension_0(),
-                    AR.offset_1(), AR.dimension_1());
+                    AR.offset_0(), AR.extent(0),
+                    AR.offset_1(), AR.extent(1));
         break;
       case Partition::Right:
         A0.set_view(AL,
-                    AL.offset_0(), AL.dimension_0(),
-                    AL.offset_1(), AL.dimension_1());
+                    AL.offset_0(), AL.extent(0),
+                    AL.offset_1(), AL.extent(1));
 
         Part_1x2(AR,  A1, A2,
                  bn, Partition::Left);
@@ -250,8 +250,8 @@ namespace Tacho {
     Merge_2x2(const MatView ATL, const MatView ATR, 
               const MatView ABL, const MatView ABR, MatView &A) {
       A.set_view(ATL,
-                 ATL.offset_0(), ATL.dimension_0() + ABR.dimension_0(), 
-                 ATL.offset_1(), ATL.dimension_1() + ABR.dimension_1());
+                 ATL.offset_0(), ATL.extent(0) + ABR.extent(0), 
+                 ATL.offset_1(), ATL.extent(1) + ABR.extent(1));
     }
 
     template<typename MatView>
@@ -259,8 +259,8 @@ namespace Tacho {
     void 
     Merge_1x2(const MatView AL, const MatView AR, MatView &A) {
       A.set_view(AL,
-                 AL.offset_0(), AL.dimension_0(),
-                 AL.offset_1(), AL.dimension_1() + AR.dimension_1());
+                 AL.offset_0(), AL.extent(0),
+                 AL.offset_1(), AL.extent(1) + AR.extent(1));
     }
 
     template<typename MatView>
@@ -269,8 +269,8 @@ namespace Tacho {
     Merge_2x1(const MatView AT, 
               const MatView AB, MatView &A) {
       A.set_view(AT,
-                 AT.offset_0(), AT.dimension_0() + AB.dimension_0(),
-                 AT.offset_1(), AT.dimension_1());
+                 AT.offset_0(), AT.extent(0) + AB.extent(0),
+                 AT.offset_1(), AT.extent(1));
     }
 
     template<typename MatView>
@@ -291,8 +291,8 @@ namespace Tacho {
         Merge_1x2(A20, A21, ABL);
       
         ABR.set_view(A22,
-                     A22.offset_0(), A22.dimension_0(),
-                     A22.offset_1(), A22.dimension_1());
+                     A22.offset_0(), A22.extent(0),
+                     A22.offset_1(), A22.extent(1));
         break;
       case Partition::TopRight:
       case Partition::BottomLeft:
@@ -300,8 +300,8 @@ namespace Tacho {
         break;
       case Partition::BottomRight:
         ATL.set_view(A00,
-                     A00.offset_0(), A00.dimension_0(),
-                     A00.offset_1(), A00.dimension_1());
+                     A00.offset_0(), A00.extent(0),
+                     A00.offset_1(), A00.extent(1));
 
         Merge_1x2(A01, A02, ATR);
 
@@ -330,13 +330,13 @@ namespace Tacho {
                   A1, AT);
 
         AB.set_view(A2,
-                    A2.offset_0(), A2.dimension_0(),
-                    A2.offset_1(), A2.dimension_1());
+                    A2.offset_0(), A2.extent(0),
+                    A2.offset_1(), A2.extent(1));
         break;
       case Partition::Bottom:
         AT.set_view(A0,
-                    A0.offset_0(), A0.dimension_0(),
-                    A0.offset_1(), A0.dimension_1());
+                    A0.offset_0(), A0.extent(0),
+                    A0.offset_1(), A0.extent(1));
 
         Merge_2x1(A1, 
                   A2, AB);
@@ -358,13 +358,13 @@ namespace Tacho {
         Merge_1x2(A0, A1, AL);
 
         AR.set_view(A2,
-                    A2.offset_0(), A2.dimension_0(),
-                    A2.offset_1(), A2.dimension_1());
+                    A2.offset_0(), A2.extent(0),
+                    A2.offset_1(), A2.extent(1));
         break;
       case Partition::Right:
         AL.set_view(A0,
-                    A0.offset_0(), A0.dimension_0(),
-                    A0.offset_1(), A0.dimension_1());
+                    A0.offset_0(), A0.extent(0),
+                    A0.offset_1(), A0.extent(1));
 
         Merge_1x2(A1, A2, AR);
         break;

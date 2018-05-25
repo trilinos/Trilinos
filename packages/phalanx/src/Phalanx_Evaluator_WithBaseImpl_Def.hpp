@@ -425,7 +425,7 @@ createDeviceEvaluator() const
   TEUCHOS_TEST_FOR_EXCEPTION(true,std::runtime_error,
                              "Error - The evalautor \""<< this->getName() <<"\" does not have a derived method for createDeviceEvalautor() that is required when using Device DAG support.  Please implement the createDeviceEvaluator() method in this Evalautor.");
   // Suppress cuda warning for unreachable code
-#ifndef KOKKOS_HAVE_CUDA
+#ifndef KOKKOS_ENABLE_CUDA
   return nullptr;
 #endif
 }

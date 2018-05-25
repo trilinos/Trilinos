@@ -48,7 +48,7 @@ namespace stk
 #define STK_LAMBDA KOKKOS_LAMBDA
 #define STK_INLINE KOKKOS_INLINE_FUNCTION
 
-#ifdef KOKKOS_HAVE_CUDA
+#ifdef KOKKOS_ENABLE_CUDA
 using DeviceSpace = Kokkos::CudaSpace;
 #else
 using DeviceSpace = Kokkos::HostSpace;

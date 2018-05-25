@@ -60,7 +60,7 @@ TEST_F(MTK_Kokkos, calculate_average)
     EXPECT_NEAR(gold_ave, average, 0.0000001);
 }
 
-#if defined(KOKKOS_HAVE_CUDA)
+#if defined(KOKKOS_ENABLE_CUDA)
 void run_it_uvm()
 {
     typedef Kokkos::View<int*, Layout, MemSpace> IntViewType;

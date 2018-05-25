@@ -192,7 +192,7 @@ namespace Intrepid2 {
             DeviceSpaceType::fence();
             timer.reset();
             
-            Kokkos::Experimental::md_parallel_for(policy, functor);
+            Kokkos::parallel_for(policy, functor);
 
             DeviceSpaceType::fence();
             t_vectorize += (iwork >= 0)*timer.seconds();

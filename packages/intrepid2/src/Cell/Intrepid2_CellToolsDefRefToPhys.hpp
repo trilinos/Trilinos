@@ -84,8 +84,8 @@ namespace Intrepid2 {
       void operator()(const size_type iter) const {
         size_type cell, pt;
         unrollIndex( cell, pt,
-                           _physPoints.dimension(0),
-                           _physPoints.dimension(1),
+                           _physPoints.extent(0),
+                           _physPoints.extent(1),
                            iter );
               auto phys = Kokkos::subdynrankview( _physPoints, cell, pt, Kokkos::ALL());
         const auto dofs = Kokkos::subdynrankview( _worksetCells, cell, Kokkos::ALL(), Kokkos::ALL());
@@ -94,8 +94,8 @@ namespace Intrepid2 {
         const auto val = ( valRank == 2 ? Kokkos::subdynrankview( _basisVals,       Kokkos::ALL(), pt) :
                                           Kokkos::subdynrankview( _basisVals, cell, Kokkos::ALL(), pt));
 
-        const ordinal_type dim = phys.dimension(0);
-        const ordinal_type cardinality = val.dimension(0);
+        const ordinal_type dim = phys.extent(0);
+        const ordinal_type cardinality = val.extent(0);
 
         for (ordinal_type i=0;i<dim;++i) {
           phys(i) = 0;
@@ -141,11 +141,11 @@ namespace Intrepid2 {
     CellTools_mapToPhysicalFrameArgs( physPoints, refPoints, worksetCell, basis->getBaseCellTopology() );
 #endif
     const auto cellTopo = basis->getBaseCellTopology();
-    const auto numCells = worksetCell.dimension(0);
+    const auto numCells = worksetCell.extent(0);
 
     //points can be rank-2 (P,D), or rank-3 (C,P,D)
     const auto refPointRank = refPoints.rank();
-    const auto numPoints = (refPointRank == 2 ? refPoints.dimension(0) : refPoints.dimension(1));
+    const auto numPoints = (refPointRank == 2 ? refPoints.extent(0) : refPoints.extent(1));
     const auto basisCardinality = basis->getCardinality();
     auto vcprop = Kokkos::common_view_alloc_prop(physPoints);
 
@@ -179,7 +179,7 @@ namespace Intrepid2 {
     typedef FunctorCellTools::F_mapToPhysicalFrame<physPointViewType,worksetCellViewType,valViewType> FunctorType;
     typedef typename ExecSpace<typename worksetCellViewType::execution_space,SpT>::ExecSpaceType ExecSpaceType;
 
-    const auto loopSize = physPoints.dimension(0)*physPoints.dimension(1);
+    const auto loopSize = physPoints.extent(0)*physPoints.extent(1);
     Kokkos::RangePolicy<ExecSpaceType,Kokkos::Schedule<Kokkos::Static> > policy(0, loopSize);
     Kokkos::parallel_for( policy, FunctorType(physPoints, worksetCell, vals) );
   }
@@ -209,23 +209,23 @@ namespace Intrepid2 {
     // refSubcellPoints is rank-2 (P,D1), D1 = cell dimension
     INTREPID2_TEST_FOR_EXCEPTION( refSubcellPoints.rank() != 2, std::invalid_argument,
                                   ">>> ERROR (Intrepid2::CellTools::mapToReferenceSubcell): refSubcellPoints must have rank 2.");
-    INTREPID2_TEST_FOR_EXCEPTION( refSubcellPoints.dimension(1) != parentCell.getDimension(), std::invalid_argument,
+    INTREPID2_TEST_FOR_EXCEPTION( refSubcellPoints.extent(1) != parentCell.getDimension(), std::invalid_argument,
                                   ">>> ERROR (Intrepid2::CellTools::mapToReferenceSubcell): refSubcellPoints dimension (1) does not match to parent cell dimension.");
 
     // paramPoints is rank-2 (P,D2) with D2 = subcell dimension
     INTREPID2_TEST_FOR_EXCEPTION( paramPoints.rank() != 2, std::invalid_argument,
                                   ">>> ERROR (Intrepid2::CellTools::mapToReferenceSubcell): paramPoints must have rank 2.");
-    INTREPID2_TEST_FOR_EXCEPTION( static_cast<ordinal_type>(paramPoints.dimension(1)) != subcellDim, std::invalid_argument,
+    INTREPID2_TEST_FOR_EXCEPTION( static_cast<ordinal_type>(paramPoints.extent(1)) != subcellDim, std::invalid_argument,
                                   ">>> ERROR (Intrepid2::CellTools::mapToReferenceSubcell): paramPoints dimension (1) does not match to subcell dimension.");
 
     // cross check: refSubcellPoints and paramPoints: dimension 0 must match
-    INTREPID2_TEST_FOR_EXCEPTION( refSubcellPoints.dimension(0) < paramPoints.dimension(0), std::invalid_argument,
+    INTREPID2_TEST_FOR_EXCEPTION( refSubcellPoints.extent(0) < paramPoints.extent(0), std::invalid_argument,
                                   ">>> ERROR (Intrepid2::CellTools::mapToReferenceSubcell): refSubcellPoints dimension (0) does not match to paramPoints dimension(0).");
 #endif
 
 
     const ordinal_type cellDim = parentCell.getDimension();
-    const ordinal_type numPts  = paramPoints.dimension(0);
+    const ordinal_type numPts  = paramPoints.extent(0);
 
     // Get the subcell map, i.e., the coefficients of the parametrization function for the subcell
 

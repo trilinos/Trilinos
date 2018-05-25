@@ -136,7 +136,7 @@ namespace Intrepid2 {
 
         // Generic array for the output values; needs to be properly resized depending on the operator type
         const ordinal_type numFields = tetBasis.getCardinality();
-        const ordinal_type numPoints = tetNodes.dimension(0);
+        const ordinal_type numPoints = tetNodes.extent(0);
         const ordinal_type spaceDim  = tetBasis.getBaseCellTopology().getDimension();
 
         DynRankView vals("vals", numFields, numPoints);
@@ -233,7 +233,7 @@ namespace Intrepid2 {
         const auto allTags = tetBasis.getAllDofTags();
         
         // Loop over all tags, lookup the associated dof enumeration and then lookup the tag again
-        const ordinal_type dofTagSize = allTags.dimension(0);
+        const ordinal_type dofTagSize = allTags.extent(0);
         for (ordinal_type i=0;i<dofTagSize;++i) {
           const auto bfOrd = tetBasis.getDofOrdinal(allTags(i,0), allTags(i,1), allTags(i,2));
           
@@ -330,7 +330,7 @@ namespace Intrepid2 {
 
         // Dimensions for the output arrays:
         const ordinal_type numFields = tetBasis.getCardinality();
-        const ordinal_type numPoints = tetNodes.dimension(0);
+        const ordinal_type numPoints = tetNodes.extent(0);
         const ordinal_type spaceDim  = tetBasis.getBaseCellTopology().getDimension();
     
         // Check VALUE of basis functions: resize vals to rank-2 container:

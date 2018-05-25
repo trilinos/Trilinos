@@ -118,7 +118,7 @@ struct MV_NrmInf_Right_FunctorVector
   typename XMV::const_type m_x;
 
   MV_NrmInf_Right_FunctorVector (const XMV& x) :
-    value_count (x.dimension_1 ()), m_x (x)
+    value_count (x.extent(1)), m_x (x)
   {
     static_assert (Kokkos::Impl::is_view<RV>::value,
                    "KokkosBlas::Impl::MV_NrmInf_Right_FunctorVector: "
@@ -140,10 +140,10 @@ struct MV_NrmInf_Right_FunctorVector
   operator() (const size_type i, value_type max) const
   {
     const size_type numVecs = value_count;
-#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
+#ifdef KOKKOS_ENABLE_PRAGMA_IVDEP
 #pragma ivdep
 #endif
-#ifdef KOKKOS_HAVE_PRAGMA_VECTOR
+#ifdef KOKKOS_ENABLE_PRAGMA_VECTOR
 #pragma vector always
 #endif
     for (size_type j = 0; j < numVecs; ++j) {
@@ -156,10 +156,10 @@ struct MV_NrmInf_Right_FunctorVector
   init (value_type update) const
   {
     const size_type numVecs = value_count;
-#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
+#ifdef KOKKOS_ENABLE_PRAGMA_IVDEP
 #pragma ivdep
 #endif
-#ifdef KOKKOS_HAVE_PRAGMA_VECTOR
+#ifdef KOKKOS_ENABLE_PRAGMA_VECTOR
 #pragma vector always
 #endif
     for (size_type j = 0; j < numVecs; ++j) {
@@ -172,10 +172,10 @@ struct MV_NrmInf_Right_FunctorVector
         const volatile value_type source) const
   {
     const size_type numVecs = value_count;
-#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
+#ifdef KOKKOS_ENABLE_PRAGMA_IVDEP
 #pragma ivdep
 #endif
-#ifdef KOKKOS_HAVE_PRAGMA_VECTOR
+#ifdef KOKKOS_ENABLE_PRAGMA_VECTOR
 #pragma vector always
 #endif
     for (size_type j = 0; j < numVecs; ++j) {
@@ -189,10 +189,10 @@ struct MV_NrmInf_Right_FunctorVector
         const value_type source) const
   {
     const size_type numVecs = value_count;
-#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
+#ifdef KOKKOS_ENABLE_PRAGMA_IVDEP
 #pragma ivdep
 #endif
-#ifdef KOKKOS_HAVE_PRAGMA_VECTOR
+#ifdef KOKKOS_ENABLE_PRAGMA_VECTOR
 #pragma vector always
 #endif
     for (size_type j = 0; j < numVecs; ++j) {
@@ -212,7 +212,7 @@ V_NrmInf_Invoke (const RV& r, const XV& X)
   typedef typename XV::execution_space execution_space;
   typedef Kokkos::Details::ArithTraits<typename RV::non_const_value_type> AT;
 
-  const SizeType numRows = static_cast<SizeType> (X.dimension_0 ());
+  const SizeType numRows = static_cast<SizeType> (X.extent(0));
 
   // Avoid Max Reduction if this is a zero length view
   if( numRows == 0 ) {
@@ -224,7 +224,7 @@ V_NrmInf_Invoke (const RV& r, const XV& X)
 
   typedef V_NrmInf_Functor<RV, XV, SizeType> functor_type;
   functor_type op (X);
-  Kokkos::parallel_reduce (policy, op, Kokkos::Experimental::Max<typename RV::non_const_value_type>(r()));
+  Kokkos::parallel_reduce (policy, op, Kokkos::Max<typename RV::non_const_value_type>(r()));
 }
 
 
@@ -237,7 +237,7 @@ MV_NrmInf_Invoke (const RV& r, const XMV& X)
   typedef typename XMV::execution_space execution_space;
   typedef Kokkos::Details::ArithTraits<typename RV::non_const_value_type> AT;
 
-  const SizeType numRows = static_cast<SizeType> (X.dimension_0 ());
+  const SizeType numRows = static_cast<SizeType> (X.extent(0));
 
   // Avoid Max Reduction if this is a zero length view
   if( numRows == 0 ) {
@@ -249,7 +249,7 @@ MV_NrmInf_Invoke (const RV& r, const XMV& X)
 
   // If the input multivector (2-D View) has only one column, invoke
   // the single-vector version of the kernel.
-  if (X.dimension_1 () == 1) {
+  if (X.extent(1) == 1) {
     typedef Kokkos::View<typename RV::non_const_value_type,
                          typename RV::array_layout,
                          typename RV::device_type,

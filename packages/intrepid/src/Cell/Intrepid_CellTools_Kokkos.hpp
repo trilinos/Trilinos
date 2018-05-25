@@ -1,7 +1,7 @@
 #ifndef INTREPID_CELTOOLS_KOKKOS_HPP
 #define INTREPID_CELTOOLS_KOKKOS_HPP
 
-#ifdef HAVE_INTREPID_KOKKOSCORE
+#ifdef INTREPID_OLD_KOKKOS_CODE
 
 #include "Intrepid_CellTools.hpp"
 /*

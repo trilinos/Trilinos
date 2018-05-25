@@ -146,7 +146,7 @@ postRegistrationSetup(typename TRAITS::SetupData /* d */,
   }
 
   // get the number of nodes (Should be renamed basis)
-  num_nodes = scatterFields_[0].dimension(1);
+  num_nodes = scatterFields_[0].extent(1);
 }
 
 // **********************************************************************
@@ -333,7 +333,7 @@ postRegistrationSetup(typename TRAITS::SetupData /* d */,
   }
 
   // get the number of nodes (Should be renamed basis)
-  num_nodes = scatterFields_[0].dimension(1);
+  num_nodes = scatterFields_[0].extent(1);
 }
 
 // **********************************************************************
@@ -555,7 +555,7 @@ postRegistrationSetup(typename TRAITS::SetupData /* d */,
   }
 
   // get the number of nodes (Should be renamed basis)
-  num_nodes = scatterFields_[0].dimension(1);
+  num_nodes = scatterFields_[0].extent(1);
   num_eq = scatterFields_.size();
 }
 

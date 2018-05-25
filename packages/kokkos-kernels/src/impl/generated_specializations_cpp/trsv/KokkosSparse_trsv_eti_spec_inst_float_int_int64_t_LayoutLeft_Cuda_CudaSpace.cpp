@@ -43,17 +43,18 @@
 
 
 #define KOKKOSKERNELS_IMPL_COMPILE_LIBRARY true
-#include "KokkosSparse_trsv_spec.hpp"
-
-namespace KokkosSparse {
-namespace Impl {
+#include "KokkosKernels_config.h"
 #if defined (KOKKOSKERNELS_INST_FLOAT) \
  && defined (KOKKOSKERNELS_INST_LAYOUTLEFT) \
  && defined (KOKKOSKERNELS_INST_EXECSPACE_CUDA) \
  && defined (KOKKOSKERNELS_INST_MEMSPACE_CUDASPACE) \
  && defined (KOKKOSKERNELS_INST_ORDINAL_INT64_T) \
  && defined (KOKKOSKERNELS_INST_OFFSET_INT) 
+#include "KokkosSparse_trsv_spec.hpp"
+
+namespace KokkosSparse {
+namespace Impl {
  KOKKOSSPARSE_TRSV_ETI_SPEC_INST(float, int64_t, int, Kokkos::LayoutLeft, Kokkos::Cuda, Kokkos::CudaSpace)
-#endif
 } // Impl
 } // KokkosSparse
+#endif

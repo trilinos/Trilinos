@@ -63,13 +63,8 @@ namespace KokkosBatched {
           member.team_barrier();
             
         Kokkos::parallel_for(Kokkos::TeamThreadRange(member,0,m*n),[&](const int &ij) {
-#if                                                     \
-  defined (KOKKOS_ENABLE_CUDA) &&                         \
-  defined (KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_CUDA)
-            const int i = ij%m, j = ij/m;
-#else
+            // assume layout right for batched computation
             const int i = ij/n, j = ij%n;
-#endif
             const ValueType
               *__restrict__ pA = A+i*as0,
               *__restrict__ pB = B+j*bs1;

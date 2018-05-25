@@ -84,7 +84,7 @@ namespace Intrepid2 {
     ordinal_type i = 0, j = 0;
     ordinal_type err = 0;
 
-    while (! inputFile.eof() && i < static_cast<ordinal_type>(testMat.dimension(0)) ) {
+    while (! inputFile.eof() && i < static_cast<ordinal_type>(testMat.extent(0)) ) {
       std::getline(inputFile,line);
       std::istringstream linestream(line);
       std::string chunk;
@@ -153,7 +153,7 @@ namespace Intrepid2 {
     ValueType testentry;
     ordinal_type i = 0, j = 0;
 
-    while (! inputFile.eof() && i < static_cast<ordinal_type>(testMat.dimension(0)) ) {
+    while (! inputFile.eof() && i < static_cast<ordinal_type>(testMat.extent(0)) ) {
       std::getline (inputFile,line);
       std::istringstream linestream(line);
       std::string chunk;

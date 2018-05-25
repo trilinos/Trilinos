@@ -56,7 +56,7 @@ namespace Tpetra {
 namespace KokkosRefactor {
 namespace Details {
 
-#if defined( KOKKOS_HAVE_CUDA )
+#if defined( KOKKOS_ENABLE_CUDA )
   template< class D >
   struct device_is_cuda : public Kokkos::Impl::is_same<D,Kokkos::Cuda> {};
 #else

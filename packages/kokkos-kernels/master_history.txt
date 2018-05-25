@@ -2,4 +2,4 @@ tag: 0.10.00    date: 08/22/1017  master: xxxxxxxx    develop: e323bcb0
 tag: 0.10.03    date: 09/11/2017  master: e323bcb0    develop: 4cb87390
 tag: 2.5.00     date: 12/15/2017  master: e4c645e9    develop: 04d58766
 tag: 2.6.00     date: 03/07/2018  master: 00b16484    develop: f81778ce
-
+tag: 2.7.00     date: 05/24/2018  master: 6e8e97a9    develop: 692114a6

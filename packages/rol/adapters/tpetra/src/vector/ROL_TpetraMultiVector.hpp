@@ -76,7 +76,7 @@ namespace TPMultiVector {
 
     KOKKOS_INLINE_FUNCTION
     void operator()(const int i) const {
-      const int M = X_.dimension_1();
+      const int M = X_.extent(1);
       for(int j=0;j<M;++j) {
         X_(i,j) = f_->apply(X_(i,j));
       } 
@@ -100,7 +100,7 @@ namespace TPMultiVector {
 
     KOKKOS_INLINE_FUNCTION
     void operator()(const int i) const {
-      const int M = X_.dimension_1();
+      const int M = X_.extent(1);
       for(int j=0;j<M;++j) {
         X_(i,j) = f_->apply(X_(i,j),Y_(i,j));
       }
@@ -123,7 +123,7 @@ namespace TPMultiVector {
 
     KOKKOS_INLINE_FUNCTION
     void operator()(const int i, Real &rval) const {
-      const int M = X_.dimension_1();
+      const int M = X_.extent(1);
 
       for(int j=0;j<M;++j) {
         r_->reduce(X_(i,j),rval);

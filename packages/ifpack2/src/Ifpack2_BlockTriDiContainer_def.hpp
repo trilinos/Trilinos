@@ -512,10 +512,10 @@ void compute_b_minus_Rx (const Scalar* const b, const Int ldb, const Scalar* con
 // preconditioner.
 template <typename MvView,
           typename RowptrView, typename ColindView,
-          typename ARowptrView, typename ValuesView>
+          typename ARowptrView, typename AColindView, typename ValuesView>
 void compute_b_minus_Rx (MvView& B, MvView& X, MvView& Y, const int block_size,
                          const RowptrView& rowptrv, const ColindView& colindsubv,
-                         const ARowptrView& A_rowptrv, const ColindView& A_colindv,
+                         const ARowptrView& A_rowptrv, const AColindView& A_colindv,
                          const ValuesView& valuesv) {
   //todo Replace this placeholder impl with Kokkos-based placeholders, to be
   // replaced later by a good impl of matvec.
@@ -687,11 +687,11 @@ void compute_b_minus_Rx (
 // computation.
 //   dm2cm is the permutation of owned IDs from domain map to column map. If it
 // is the identity permutation, then it can be empty.
-template <typename RowptrView, typename ColindView, typename ARowptrView, typename ValuesView,
-          typename MvView, typename PackedView, typename ConstLOList>
+template <typename RowptrView, typename ColindView, typename ARowptrView, typename AColindView, 
+         typename ValuesView, typename MvView, typename PackedView, typename ConstLOList>
 void compute_b_minus_Rx (
   const RowptrView& rowptrv, const ColindView& colindsubv,
-  const ARowptrView& A_rowptrv, const ColindView& A_colindv, const ValuesView& valuesv,
+  const ARowptrView& A_rowptrv, const AColindView& A_colindv, const ValuesView& valuesv,
   const MvView& B, const MvView& X, const PackedView& Y,
   const ConstLOList& part2rowidx0, const ConstLOList& part2packrowidx0, const ConstLOList& lclrow,
   const ConstLOList& dm2cmv, const bool first_apply)
@@ -805,11 +805,11 @@ void compute_b_minus_Rx (
 // This third version is similar to the second in that it distinguishes between
 // _owned and _remote data. But y = b - R*x is done all at once, just with x in
 // two separate arrays.
-template <typename RowptrView, typename ColindView, typename ARowptrView, typename ValuesView,
-          typename MvView, typename PackedView, typename ConstLOList>
+template <typename RowptrView, typename ColindView, typename ARowptrView, typename AColindView, 
+          typename ValuesView, typename MvView, typename PackedView, typename ConstLOList>
 void compute_b_minus_Rx (
   const RowptrView& rowptrv, const ColindView& colindsubv,
-  const ARowptrView& A_rowptrv, const ColindView& A_colindv, const ValuesView& valuesv,
+  const ARowptrView& A_rowptrv, const AColindView& A_colindv, const ValuesView& valuesv,
   const MvView& B, const MvView& X_owned, const MvView& X_remote, const PackedView& Y,
   const ConstLOList& part2rowidx0, const ConstLOList& part2packrowidx0, const ConstLOList& lclrow,
   const ConstLOList& dm2cmv)

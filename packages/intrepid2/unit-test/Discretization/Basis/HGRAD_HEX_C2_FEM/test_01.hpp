@@ -140,7 +140,7 @@ namespace Intrepid2 {
 
         // Generic array for the output values; needs to be properly resized depending on the operator type
         const ordinal_type numFields = hexBasis.getCardinality();
-        const ordinal_type numPoints = hexNodes.dimension(0);
+        const ordinal_type numPoints = hexNodes.extent(0);
         const ordinal_type spaceDim  = hexBasis.getBaseCellTopology().getDimension();
         const ordinal_type D2Cardin  = getDkCardinality(OPERATOR_D2, spaceDim);
 
@@ -251,7 +251,7 @@ namespace Intrepid2 {
         const auto allTags = hexBasis.getAllDofTags();
 
         // Loop over all tags, lookup the associated dof enumeration and then lookup the tag again
-        const ordinal_type dofTagSize = allTags.dimension(0);
+        const ordinal_type dofTagSize = allTags.extent(0);
         for (ordinal_type i = 0; i < dofTagSize; ++i) {
           const auto bfOrd  = hexBasis.getDofOrdinal(allTags(i,0), allTags(i,1), allTags(i,2));
 
@@ -475,7 +475,7 @@ namespace Intrepid2 {
 
         // Dimensions for the output arrays:
         const ordinal_type numFields = hexBasis.getCardinality();
-        const ordinal_type numPoints = hexNodes.dimension(0);
+        const ordinal_type numPoints = hexNodes.extent(0);
         const ordinal_type spaceDim  = hexBasis.getBaseCellTopology().getDimension();
         const ordinal_type D2Cardin  = getDkCardinality(OPERATOR_D2, spaceDim);
         const ordinal_type D3Cardin  = getDkCardinality(OPERATOR_D3, spaceDim);
@@ -718,7 +718,7 @@ namespace Intrepid2 {
         auto bvals_host = Kokkos::create_mirror_view(typename HostSpaceType::memory_space(), bvals);
         Kokkos::deep_copy(bvals_host, bvals);
         char buffer[120];
-        ordinal_type b_dim0(bvals.dimension(0)), b_dim1(bvals.dimension(1));
+        ordinal_type b_dim0(bvals.extent(0)), b_dim1(bvals.extent(1));
         for (ordinal_type i=0; i<b_dim0; ++i) {
           for (ordinal_type j=0; j<b_dim1; ++j) {
             if ((i != j) && (std::abs(bvals_host(i,j) - 0.0) > tol)) {

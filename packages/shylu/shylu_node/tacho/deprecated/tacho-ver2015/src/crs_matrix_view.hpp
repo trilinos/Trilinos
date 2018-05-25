@@ -47,7 +47,7 @@ namespace Tacho {
     KOKKOS_INLINE_FUNCTION
     void fillRowViewArray(const bool flag = true) {
       if (flag) {
-        if (static_cast<ordinal_type>(_rows.dimension_0()) < _m)
+        if (static_cast<ordinal_type>(_rows.extent(0)) < _m)
           _rows = row_view_type_array(Kokkos::ViewAllocateWithoutInitializing(_base->Label() + "::View::RowViewArray"), _m);
         
         for (ordinal_type i=0;i<_m;++i)
@@ -198,10 +198,10 @@ namespace Kokkos {
       void operator()( const typename ExecSpace::size_type& i ) const
       { new(m_ptr+i) type(); }
       
-      ViewDefaultConstruct( type * pointer , size_t capacity )
+      ViewDefaultConstruct( type * pointer , size_t span )
         : m_ptr( pointer )
       {
-        Kokkos::RangePolicy< ExecSpace > range( 0 , capacity );
+        Kokkos::RangePolicy< ExecSpace > range( 0 , span );
         parallel_for( range , *this );
         ExecSpace::fence();
       }
@@ -217,10 +217,10 @@ namespace Kokkos {
       void operator()( const typename ExecSpace::size_type& i ) const
       { new(m_ptr+i) type(); }
       
-      ViewDefaultConstruct( type * pointer , size_t capacity )
+      ViewDefaultConstruct( type * pointer , size_t span )
         : m_ptr( pointer )
       {
-        Kokkos::RangePolicy< ExecSpace > range( 0 , capacity );
+        Kokkos::RangePolicy< ExecSpace > range( 0 , span );
         parallel_for( range , *this );
         ExecSpace::fence();
       }

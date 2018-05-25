@@ -222,7 +222,7 @@ namespace Tacho {
       if (_base.isValueArrayNull()) {
         os << "-- Base object is null --;";
       } else {
-        const size_type nnz = (_rows.dimension_0() == _m ? _nnz : -1);
+        const size_type nnz = (_rows.extent(0) == _m ? _nnz : -1);
         os << _base.Label() << "::View, "
            << " Offs ( " << std::setw(w) << _offm << " , " << std::setw(w) << _offn << " ); "
            << " Dims ( " << std::setw(w) << _m    << " , " << std::setw(w) << _n    << " ); "

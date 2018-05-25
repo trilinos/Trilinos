@@ -106,7 +106,7 @@ namespace Tpetra {
 
     // Make sure that Kokkos has been initialized (Github Issue #513).
     TEUCHOS_TEST_FOR_EXCEPTION
-      (! execution_space::is_initialized (), std::runtime_error,
+      (! Kokkos::is_initialized (), std::runtime_error,
        "Tpetra::Map constructor: The Kokkos execution space "
        << Teuchos::TypeNameTraits<execution_space>::name ()
        << " has not been initialized.  "
@@ -267,7 +267,7 @@ namespace Tpetra {
 
     // Make sure that Kokkos has been initialized (Github Issue #513).
     TEUCHOS_TEST_FOR_EXCEPTION
-      (! execution_space::is_initialized (), std::runtime_error,
+      (! Kokkos::is_initialized (), std::runtime_error,
        "Tpetra::Map constructor: The Kokkos execution space "
        << Teuchos::TypeNameTraits<execution_space>::name ()
        << " has not been initialized.  "
@@ -461,7 +461,7 @@ namespace Tpetra {
 
     // Make sure that Kokkos has been initialized (Github Issue #513).
     TEUCHOS_TEST_FOR_EXCEPTION
-      (! execution_space::is_initialized (), std::runtime_error,
+      (! Kokkos::is_initialized (), std::runtime_error,
        "Tpetra::Map constructor: The Kokkos execution space "
        << Teuchos::TypeNameTraits<execution_space>::name ()
        << " has not been initialized.  "
@@ -723,7 +723,7 @@ namespace Tpetra {
   {
     // Make sure that Kokkos has been initialized (Github Issue #513).
     TEUCHOS_TEST_FOR_EXCEPTION
-      (! execution_space::is_initialized (), std::runtime_error,
+      (! Kokkos::is_initialized (), std::runtime_error,
        "Tpetra::Map constructor: The Kokkos execution space "
        << Teuchos::TypeNameTraits<execution_space>::name ()
        << " has not been initialized.  "
@@ -754,7 +754,7 @@ namespace Tpetra {
   {
     // Make sure that Kokkos has been initialized (Github Issue #513).
     TEUCHOS_TEST_FOR_EXCEPTION
-      (! execution_space::is_initialized (), std::runtime_error,
+      (! Kokkos::is_initialized (), std::runtime_error,
        "Tpetra::Map constructor: The Kokkos execution space "
        << Teuchos::TypeNameTraits<execution_space>::name ()
        << " has not been initialized.  "
@@ -806,7 +806,7 @@ namespace Tpetra {
 
     // Make sure that Kokkos has been initialized (Github Issue #513).
     TEUCHOS_TEST_FOR_EXCEPTION
-      (! execution_space::is_initialized (), std::runtime_error,
+      (! Kokkos::is_initialized (), std::runtime_error,
        "Tpetra::Map constructor: The Kokkos execution space "
        << Teuchos::TypeNameTraits<execution_space>::name ()
        << " has not been initialized.  "

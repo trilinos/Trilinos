@@ -44,7 +44,7 @@
 
 #include "Kokkos_Macros.hpp"
 #include "Stokhos_ConfigDefs.h"
-#if defined(KOKKOS_HAVE_OPENMP) && defined(HAVE_STOKHOS_MKL)
+#if defined(KOKKOS_ENABLE_OPENMP) && defined(HAVE_STOKHOS_MKL)
 
 #include "Kokkos_Core.hpp"
 #include "Stokhos_CrsMatrix.hpp"
