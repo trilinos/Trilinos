@@ -1,20 +1,17 @@
-
+#!/bin/bash
+#
 
 # Clean up the mess from previous configurations.
 /bin/rm -r cmake* CMake* CPack* CTest* OUTPUT* Dart* Trilinos* Testing Makefile Users include lib install* *last*
 
 module purge
 module load devpack/latest/openmpi/2.1.2/intel/18.1.163
-#module load cmake/3.10.2
-#module load openblas/0.2.20/gcc/7.2.0
-#module load openmpi/2.1.2/gcc/7.2.0
 
 cmake \
 -D CMAKE_BUILD_TYPE:STRING="DEBUG" \
 -D CMAKE_VERBOSE_MAKEFILE:BOOL=OFF \
 \
 -D TPL_LAPACK_LIBRARIES="/home/projects/x86-64-skylake/openblas/0.2.20/gcc/7.2.0/lib/liblapack.a;/home/projects/x86-64-skylake/openblas/0.2.20/gcc/7.2.0/lib/liblapack.so" \
--D TPL_BLAS_INCLUDE_DIR:FILEPATH="/home/projects/x86-64-skylake/openblas/0.2.20/gcc/7.2.0/include" \
 -D TPL_BLAS_LIBRARIES="/home/projects/x86-64-skylake/openblas/0.2.20/gcc/7.2.0/lib/libblas.a;/home/projects/x86-64-skylake/openblas/0.2.20/gcc/7.2.0/lib/libblas.so" \
 -D MPI_BIN_DIR:FILEPATH="$SEMS_OPENMPI_ROOT/bin" \
 -D TPL_ENABLE_MPI:BOOL=ON \
