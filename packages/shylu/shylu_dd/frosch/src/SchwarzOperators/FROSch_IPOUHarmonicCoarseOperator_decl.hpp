@@ -39,8 +39,10 @@
 // ************************************************************************
 //@HEADER
 
-#ifndef _FROSCH_GDSWCOARSEOPERATOR_DECL_HPP
-#define _FROSCH_GDSWCOARSEOPERATOR_DECL_HPP
+#ifndef _FROSCH_IPOUHARMONICCOARSEOPERATOR_DECL_HPP
+#define _FROSCH_IPOUHARMONICCOARSEOPERATOR_DECL_HPP
+
+#include <FROSch_GDSWInterfacePartitionOfUnity_def.hpp>
 
 #include <FROSch_HarmonicCoarseOperator_def.hpp>
 
@@ -74,7 +76,13 @@ namespace FROSch {
         
         typedef typename SchwarzOperator<SC,LO,GO,NO>::EntitySetPtr EntitySetPtr;
         
+        typedef typename SchwarzOperator<SC,LO,GO,NO>::InterfaceEntityPtr InterfaceEntityPtr;
+        
+        typedef typename SchwarzOperator<SC,LO,GO,NO>::CoarseSpacePtr CoarseSpacePtr;
+        
         typedef typename SchwarzOperator<SC,LO,GO,NO>::InterfacePartitionOfUnityPtr InterfacePartitionOfUnityPtr;
+        
+        typedef typename SchwarzOperator<SC,LO,GO,NO>::LocalPartitionOfUnityBasisPtr LocalPartitionOfUnityBasisPtr;
         
         typedef typename SchwarzOperator<SC,LO,GO,NO>::SubdomainSolverPtr SubdomainSolverPtr;
         
@@ -98,7 +106,7 @@ namespace FROSch {
         
         
          IPOUHarmonicCoarseOperator(CrsMatrixPtr k,
-                           ParameterListPtr parameterList);
+                                    ParameterListPtr parameterList);
         
         virtual int initialize()
         {
@@ -107,35 +115,12 @@ namespace FROSch {
         };
         
         int initialize(UN dimension,
-                       MapPtr repeatedMap);
-        
-        int initialize(UN dimension,
-                       MapPtr repeatedMap,
+                       UN dofsPerNode,
+                       MapPtr nodesMap,
+                       MapPtrVecPtr dofsMaps,
+                       MultiVectorPtr nullSpaceBasis,
+                       SCVecPtr2D localNodeList,
                        GOVecPtr myGlobalDirichletBoundaryDofs);
-        
-        int initialize(UN dimension,
-                       UN dofsPerNode,
-                       MapPtr repeatedNodesMap,
-                       MapPtrVecPtr &RepeatedDofMaps);
-        
-        int initialize(UN dimension,
-                       UN dofsPerNode,
-                       MapPtr repeatedNodesMap,
-                       MapPtrVecPtr &RepeatedDofMaps,
-                       GOVecPtr myGlobalDirichletBoundaryDofs);
-        
-        int initialize(UN dimension,
-                       UN dofsPerNode,
-                       MapPtr repeatedNodesMap,
-                       MapPtrVecPtr &RepeatedDofMaps,
-                       SCVecPtr2D &localNodeList);
-        
-        int initialize(UN dimension,
-                       UN dofsPerNode,
-                       MapPtr repeatedNodesMap,
-                       MapPtrVecPtr &RepeatedDofMaps,
-                       GOVecPtr myGlobalDirichletBoundaryDofs,
-                       SCVecPtr2D &localNodeList);
         
         void describe(Teuchos::FancyOStream &out,
                       const Teuchos::EVerbosityLevel verbLevel=Teuchos::Describable::verbLevel_default) const;
@@ -145,43 +130,21 @@ namespace FROSch {
     protected:
         
         int buildCoarseSpace(UN dimension,
-                             MapPtr &nodesMap);
-        
-        int buildCoarseSpace(UN dimension,
-                             MapPtr &nodesMap,
-                             GOVecPtr myGlobalDirichletBoundaryDofs); // Das kann man auch mit in den Fall davor reinnehmen ?!
-        
-        int buildCoarseSpace(UN dimension,
                              UN dofsPerNode,
-                             MapPtr &nodesMap,
-                             MapPtrVecPtr &dofsMaps);
-        
-        int buildCoarseSpace(UN dimension,
-                             UN dofsPerNode,
-                             MapPtr &nodesMap,
-                             MapPtrVecPtr &dofsMaps,
-                             GOVecPtr myGlobalDirichletBoundaryDofs);
-        
-        int buildCoarseSpace(UN dimension,
-                             UN dofsPerNode,
-                             MapPtr &nodesMap,
-                             MapPtrVecPtr &dofsMaps,
-                             SCVecPtr2D &localNodeList);
-        
-        int buildCoarseSpace(UN dimension,
-                             UN dofsPerNode,
-                             MapPtr &nodesMap,
-                             MapPtrVecPtr &dofsMaps,
+                             MapPtr nodesMap,
+                             MapPtrVecPtr dofsMaps,
+                             MultiVectorPtr nullSpaceBasis,
                              GOVecPtr myGlobalDirichletBoundaryDofs,
-                             SCVecPtr2D &localNodeList);
+                             SCVecPtr2D localNodeList);
         
         virtual int resetCoarseSpaceBlock(UN blockId,
                                           UN dimension,
                                           UN dofsPerNode,
-                                          MapPtr &nodesMap,
-                                          MapPtrVecPtr &dofsMaps,
-                                          GOVecPtr &myGlobalDirichletBoundaryDofs,
-                                          SCVecPtr2D &localNodeList);
+                                          MapPtr nodesMap,
+                                          MapPtrVecPtr dofsMaps,
+                                          MultiVectorPtr nullSpaceBasis,
+                                          GOVecPtr myGlobalDirichletBoundaryDofs,
+                                          SCVecPtr2D localNodeList);
         
         int addZeroCoarseSpaceBlock(MapPtr &dofsMap);
         
@@ -191,29 +154,12 @@ namespace FROSch {
         
         MapPtr assembleCoarseMap();
         
-        int phiGammaGDSW(UN blockId,
-                         bool buildRotations,
-                         UN dimension,
-                         UN dofsPerNode,
-                         SCVecPtr2D &localNodeList,
-                         LOVecPtr2D &partMappings,
-                         EntitySetPtr &vertices,
-                         EntitySetPtr &shortEdges,
-                         EntitySetPtr &straightEdges,
-                         EntitySetPtr &edges,
-                         EntitySetPtr &faces,
-                         BoolVecPtr &coarseSpaceFunctions);
         
-        int computeAndFillPhi(CrsMatrixPtr &repeatedMatrix,
-                              MapPtr &repeatedMap,
-                              MapPtr &coarseMap,
-                              GOVecView indicesGammaDofsAll,
-                              GOVecView indicesIDofsAll,
-                              CrsMatrixPtr kII,
-                              CrsMatrixPtr kIGamma);
-                        
+        CoarseSpacePtr InterfaceCoarseSpace_;
         
         InterfacePartitionOfUnityPtr InterfacePartitionOfUnity_;
+        
+        LocalPartitionOfUnityBasisPtr LocalPartitionOfUnityBasis_;
         
         UNVecPtr Dimensions_;
         

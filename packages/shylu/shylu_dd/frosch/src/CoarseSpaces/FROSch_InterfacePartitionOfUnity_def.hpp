@@ -57,9 +57,9 @@ namespace FROSch {
     MpiComm_ (mpiComm),
     SerialComm_ (serialComm),
     DDInterface_ (new DDInterface<SC,LO,GO,NO>(dimension,dofsPerNode,nodesMap)),
-    Interface_ (),
     ParameterList_ (parameterList),
     LocalPartitionOfUnity_ (),
+    PartitionOfUnityMaps_ (),
     Verbose_ (MpiComm_->getRank() == 0)
     {
         DDInterface_->resetGlobalDofs(dofsMaps);
@@ -72,15 +72,21 @@ namespace FROSch {
     }
     
     template <class SC,class LO,class GO,class NO>
-    typename InterfacePartitionOfUnity<SC,LO,GO,NO>::ConstMultiVectorPtrVecPtr InterfacePartitionOfUnity<SC,LO,GO,NO>::getLocalPartitionOfUnity() const
+    typename InterfacePartitionOfUnity<SC,LO,GO,NO>::MultiVectorPtrVecPtr InterfacePartitionOfUnity<SC,LO,GO,NO>::getLocalPartitionOfUnity() const
     {
         return LocalPartitionOfUnity_;
     }
     
     template <class SC,class LO,class GO,class NO>
-    typename InterfacePartitionOfUnity<SC,LO,GO,NO>::DDInterfacePtr InterfacePartitionOfUnity<SC,LO,GO,NO>::getDDInterface() const
+    typename InterfacePartitionOfUnity<SC,LO,GO,NO>::MapPtrVecPtr InterfacePartitionOfUnity<SC,LO,GO,NO>::getPartitionOfUnityMaps() const
     {
-        return DDInterface_;
+        return PartitionOfUnityMaps_;
+    }
+    
+    template <class SC,class LO,class GO,class NO>
+    typename InterfacePartitionOfUnity<SC,LO,GO,NO>::ConstDDInterfacePtr InterfacePartitionOfUnity<SC,LO,GO,NO>::getDDInterface() const
+    {
+        return DDInterface_.getConst();
     }
     
 }

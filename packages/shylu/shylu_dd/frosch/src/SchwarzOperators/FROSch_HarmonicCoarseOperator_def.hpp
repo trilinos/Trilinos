@@ -54,8 +54,8 @@ namespace FROSch {
     MVPhiGamma_ (0),
     BlockCoarseMaps_ (0),
     DofsPerNode_ (0),
-    IndicesGammaDofs_ (0),
-    IndicesIDofs_ (0),
+    GammaDofs_ (0),
+    IDofs_ (0),
     DofsMaps_ (0),
     NumberOfBlocks_ (0)
     {
@@ -90,13 +90,13 @@ namespace FROSch {
         LO tmp = 0;
         
         for (UN i=0; i<NumberOfBlocks_; i++) {
-            for (UN j=0; j<IndicesGammaDofs_[i].size(); j++) {
-                indicesGammaDofsAll.push_back(tmp+IndicesGammaDofs_[i][j]);
+            for (UN j=0; j<GammaDofs_[i].size(); j++) {
+                indicesGammaDofsAll.push_back(tmp+GammaDofs_[i][j]);
             }
-            for (UN j=0; j<IndicesIDofs_[i].size(); j++) {
-                indicesIDofsAll.push_back(tmp+IndicesIDofs_[i][j]);
+            for (UN j=0; j<IDofs_[i].size(); j++) {
+                indicesIDofsAll.push_back(tmp+IDofs_[i][j]);
             }
-            tmp += IndicesGammaDofs_[i].size()+IndicesIDofs_[i].size(); // Ist das mit tmp korrekt?
+            tmp += GammaDofs_[i].size()+IDofs_[i].size(); // Ist das mit tmp korrekt?
         }
         
         CrsMatrixPtr kII;
@@ -183,7 +183,7 @@ namespace FROSch {
                 }
             } else { // Das ist für den Fall, dass keine Basisfunktionen für einen Block gebaut werden sollen
                 //mVPhiGamma->replaceLocalValue(k+kk,j+jj,1.0);
-                k=IndicesGammaDofs_[i].size();
+                k=GammaDofs_[i].size();
             }
             jj += j;
             kk += k;

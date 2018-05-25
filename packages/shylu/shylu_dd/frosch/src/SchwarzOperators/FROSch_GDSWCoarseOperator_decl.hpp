@@ -202,14 +202,6 @@ namespace FROSch {
                          EntitySetPtr &faces,
                          BoolVecPtr &coarseSpaceFunctions);
         
-        int computeAndFillPhi(CrsMatrixPtr &repeatedMatrix,
-                              MapPtr &repeatedMap,
-                              MapPtr &coarseMap,
-                              GOVecView indicesGammaDofsAll,
-                              GOVecView indicesIDofsAll,
-                              CrsMatrixPtr kII,
-                              CrsMatrixPtr kIGamma);
-        
         
         DDInterfacePtr DDInterface_;
         

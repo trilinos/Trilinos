@@ -219,8 +219,8 @@ namespace FROSch {
         // Das könnte man noch ändern
         IndicesGamma_.resize(IndicesGamma_.size()+1);
         IndicesI_.resize(IndicesI_.size()+1);
-        this->IndicesGammaDofs_.resize(this->IndicesGammaDofs_.size()+1);
-        this->IndicesIDofs_.resize(this->IndicesIDofs_.size()+1);
+        this->GammaDofs_.resize(this->GammaDofs_.size()+1);
+        this->IDofs_.resize(this->IDofs_.size()+1);
         this->BlockCoarseMaps_.resize(this->BlockCoarseMaps_.size()+1);
         this->MVPhiGamma_.resize(this->MVPhiGamma_.size()+1);
         this->DofsMaps_.resize(this->DofsMaps_.size()+1);
@@ -255,19 +255,19 @@ namespace FROSch {
         
         Teuchos::ArrayRCP<bool> coarseSpaceFunctions(9);
         
-        coarseSpaceFunctions[0] = coarseSpaceList->sublist("Custom").get("vertices: translations",true);
+        coarseSpaceFunctions[0] = coarseSpaceList->sublist("Custom").get("Vertices: translations",true);
         
-        coarseSpaceFunctions[1] = coarseSpaceList->sublist("Custom").get("shortEdges: translations",true);
-        coarseSpaceFunctions[2] = coarseSpaceList->sublist("Custom").get("shortEdges: rotations",true);
+        coarseSpaceFunctions[1] = coarseSpaceList->sublist("Custom").get("ShortEdges: translations",true);
+        coarseSpaceFunctions[2] = coarseSpaceList->sublist("Custom").get("ShortEdges: rotations",true);
         
-        coarseSpaceFunctions[3] = coarseSpaceList->sublist("Custom").get("straightEdges: translations",true);
-        coarseSpaceFunctions[4] = coarseSpaceList->sublist("Custom").get("straightEdges: rotations",true);
+        coarseSpaceFunctions[3] = coarseSpaceList->sublist("Custom").get("StraightEdges: translations",true);
+        coarseSpaceFunctions[4] = coarseSpaceList->sublist("Custom").get("StraightEdges: rotations",true);
         
-        coarseSpaceFunctions[5] = coarseSpaceList->sublist("Custom").get("edges: translations",true);
-        coarseSpaceFunctions[6] = coarseSpaceList->sublist("Custom").get("edges: rotations",true);
+        coarseSpaceFunctions[5] = coarseSpaceList->sublist("Custom").get("Edges: translations",true);
+        coarseSpaceFunctions[6] = coarseSpaceList->sublist("Custom").get("Edges: rotations",true);
         
-        coarseSpaceFunctions[7] = coarseSpaceList->sublist("Custom").get("faces: translations",true);
-        coarseSpaceFunctions[8] = coarseSpaceList->sublist("Custom").get("faces: rotations",true);
+        coarseSpaceFunctions[7] = coarseSpaceList->sublist("Custom").get("Faces: translations",true);
+        coarseSpaceFunctions[8] = coarseSpaceList->sublist("Custom").get("Faces: rotations",true);
         
         
         bool useRotations = coarseSpaceList->get("Rotations",true);
@@ -303,14 +303,14 @@ namespace FROSch {
         interface = DDInterface_->getInterface();
         interior = DDInterface_->getInterior();
         
-        this->IndicesGammaDofs_[blockId] = LOVecPtr(dofsPerNode*interface->getEntity(0)->getNumNodes());
-        this->IndicesIDofs_[blockId] = LOVecPtr(dofsPerNode*interior->getEntity(0)->getNumNodes());
+        this->GammaDofs_[blockId] = LOVecPtr(dofsPerNode*interface->getEntity(0)->getNumNodes());
+        this->IDofs_[blockId] = LOVecPtr(dofsPerNode*interior->getEntity(0)->getNumNodes());
         for (UN k=0; k<dofsPerNode; k++) {
             for (UN i=0; i<interface->getEntity(0)->getNumNodes(); i++) {
-                this->IndicesGammaDofs_[blockId][dofsPerNode*i+k] = interface->getEntity(0)->getLocalDofID(i,k);
+                this->GammaDofs_[blockId][dofsPerNode*i+k] = interface->getEntity(0)->getLocalDofID(i,k);
             }
             for (UN i=0; i<interior->getEntity(0)->getNumNodes(); i++) {
-                this->IndicesIDofs_[blockId][dofsPerNode*i+k] = interior->getEntity(0)->getLocalDofID(i,k);
+                this->IDofs_[blockId][dofsPerNode*i+k] = interior->getEntity(0)->getLocalDofID(i,k);
             }
         }
         
@@ -478,7 +478,7 @@ namespace FROSch {
             }
 
             LOVecPtr2D partMappings;
-            this->BlockCoarseMaps_[blockId] = AssembleMaps(mapVector,partMappings);
+            this->BlockCoarseMaps_[blockId] = AssembleMaps(mapVector(),partMappings);
 
             ////////////////////
             // Build PhiGamma //
@@ -495,8 +495,8 @@ namespace FROSch {
         // Das könnte man noch ändern
         IndicesGamma_->resize(IndicesGamma_.size()+1);
         IndicesI_->resize(IndicesI_.size()+1);
-        this->IndicesGammaDofs_->resize(this->IndicesGammaDofs_.size()+1);
-        this->IndicesIDofs_->resize(this->IndicesIDofs_.size()+1);
+        this->GammaDofs_->resize(this->GammaDofs_.size()+1);
+        this->IDofs_->resize(this->IDofs_.size()+1);
         this->BlockCoarseMaps_->resize(this->BlockCoarseMaps_.size()+1);
         this->MVPhiGamma_->resize(this->MVPhiGamma_.size()+1);
         this->DofsMaps_->resize(this->DofsMaps_.size()+1);
@@ -516,7 +516,7 @@ namespace FROSch {
         bool useForCoarseSpace = coarseSpaceList->get("Use For Coarse Space",true);
         
         IndicesGamma_[blockId] = LOVecPtr(0);
-        this->IndicesGammaDofs_[blockId] = LOVecPtr(0);
+        this->GammaDofs_[blockId] = LOVecPtr(0);
         
         if (useForCoarseSpace) {
             //Epetra_SerialComm serialComm;
@@ -526,7 +526,7 @@ namespace FROSch {
         
         for (int i=0; i<dofsMap->getNodeNumElements(); i++) {
             IndicesGamma_[blockId]->push_back(i);
-            this->IndicesGammaDofs_[blockId]->push_back(i);
+            this->GammaDofs_[blockId]->push_back(i);
             
             if (useForCoarseSpace) {
                 this->MVPhiGamma_[blockId]->replaceLocalValue(i,i,1.0);
@@ -534,7 +534,7 @@ namespace FROSch {
         }
         
         IndicesI_[blockId] = LOVecPtr(0);
-        this->IndicesIDofs_[blockId] = LOVecPtr(0);
+        this->IDofs_[blockId] = LOVecPtr(0);
         
         if (useForCoarseSpace) {
             this->BlockCoarseMaps_[blockId] = Xpetra::MapFactory<LO,GO,NO>::Build(dofsMap->lib(),-1,IndicesGamma_[blockId](),0,this->MpiComm_);
@@ -568,7 +568,7 @@ namespace FROSch {
         }
         
         //Epetra_SerialComm serialComm;
-        MapPtr serialGammaMap = Xpetra::MapFactory<LO,GO,NO>::Build(this->BlockCoarseMaps_[blockId]->lib(),this->IndicesGammaDofs_[blockId].size(),0,this->SerialComm_);
+        MapPtr serialGammaMap = Xpetra::MapFactory<LO,GO,NO>::Build(this->BlockCoarseMaps_[blockId]->lib(),this->GammaDofs_[blockId].size(),0,this->SerialComm_);
         this->MVPhiGamma_[blockId] = Xpetra::MultiVectorFactory<SC,LO,GO,NO>::Build(serialGammaMap,this->BlockCoarseMaps_[blockId]->getNodeNumElements());
         
         LO ii=0;

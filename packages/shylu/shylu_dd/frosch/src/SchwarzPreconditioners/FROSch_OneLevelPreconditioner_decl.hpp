@@ -39,13 +39,10 @@
 // ************************************************************************
 //@HEADER
 
-#ifndef _FROSCH_HARMONICCOARSEOPERATOR_DECL_HPP
-#define _FROSCH_HARMONICCOARSEOPERATOR_DECL_HPP
+#ifndef _FROSCH_ONELEVELPRECONDITIONER__DECL_HPP
+#define _FROSCH_ONELEVELPRECONDITIONER__DECL_HPP
 
-#include <FROSch_CoarseOperator_def.hpp>
-
-// TODO:
-// -> Typedef
+#include <FROSch_SchwarzPreconditioner_def.hpp>
 
 namespace FROSch {
     
@@ -53,73 +50,59 @@ namespace FROSch {
     class LO = typename Xpetra::Operator<SC>::local_ordinal_type,
     class GO = typename Xpetra::Operator<SC,LO>::global_ordinal_type,
     class NO = typename Xpetra::Operator<SC,LO,GO>::node_type>
-    class HarmonicCoarseOperator : public CoarseOperator<SC,LO,GO,NO> {
+    class OneLevelPreconditioner : public SchwarzPreconditioner<SC,LO,GO,NO> {
         
     public:
         
-        typedef typename SchwarzOperator<SC,LO,GO,NO>::MapPtr MapPtr;
-        typedef typename SchwarzOperator<SC,LO,GO,NO>::MapPtrVecPtr MapPtrVecPtr;
-        typedef typename SchwarzOperator<SC,LO,GO,NO>::MapPtrVecPtr2D MapPtrVecPtr2D;
-
-        typedef typename SchwarzOperator<SC,LO,GO,NO>::CrsMatrixPtr CrsMatrixPtr;
-
-        typedef typename SchwarzOperator<SC,LO,GO,NO>::MultiVectorPtr MultiVectorPtr;
-        typedef typename SchwarzOperator<SC,LO,GO,NO>::MultiVectorPtrVecPtr MultiVectorPtrVecPtr;
-
-        typedef typename SchwarzOperator<SC,LO,GO,NO>::ParameterListPtr ParameterListPtr;
+        typedef typename SchwarzPreconditioner<SC,LO,GO,NO>::MapPtr MapPtr;
+        typedef typename SchwarzPreconditioner<SC,LO,GO,NO>::ConstMapPtr ConstMapPtr;
         
-        typedef typename SchwarzOperator<SC,LO,GO,NO>::SubdomainSolverPtr SubdomainSolverPtr;
-
-        typedef typename SchwarzOperator<SC,LO,GO,NO>::UN UN;
-        typedef typename SchwarzOperator<SC,LO,GO,NO>::UNVecPtr UNVecPtr;
-
-        typedef typename SchwarzOperator<SC,LO,GO,NO>::LOVec LOVec;
-        typedef typename SchwarzOperator<SC,LO,GO,NO>::LOVecPtr2D LOVecPtr2D;
-
-        typedef typename SchwarzOperator<SC,LO,GO,NO>::GOVec GOVec;
-        typedef typename SchwarzOperator<SC,LO,GO,NO>::GOVecView GOVecView;
-
-        typedef typename SchwarzOperator<SC,LO,GO,NO>::SCVec SCVec;
+        typedef typename SchwarzPreconditioner<SC,LO,GO,NO>::CrsMatrixPtr CrsMatrixPtr;
+        
+        typedef typename SchwarzPreconditioner<SC,LO,GO,NO>::MultiVector MultiVector;
+        
+        typedef typename SchwarzPreconditioner<SC,LO,GO,NO>::ParameterListPtr ParameterListPtr;
+        
+        typedef typename SchwarzPreconditioner<SC,LO,GO,NO>::SumOperatorPtr SumOperatorPtr;
+        typedef typename SchwarzPreconditioner<SC,LO,GO,NO>::OverlappingOperatorPtr OverlappingOperatorPtr;
+        typedef typename SchwarzPreconditioner<SC,LO,GO,NO>::AlgebraicOverlappingOperatorPtr AlgebraicOverlappingOperatorPtr;
         
         
-        HarmonicCoarseOperator(CrsMatrixPtr k,
+        OneLevelPreconditioner(CrsMatrixPtr k,
                                ParameterListPtr parameterList);
         
-        virtual int initialize() = 0;
-                
-        int compute();
+        virtual int initialize(bool useDefaultParameters = true);
+        
+        virtual int initialize(int overlap = -1,
+                               bool buildRepeatedMap = false);
+        
+        virtual int initialize(int overlap,
+                               MapPtr repeatedMap);
+        
+        virtual int compute();
+        
+        virtual void apply(const MultiVector &x,
+                          MultiVector &y,
+                          Teuchos::ETransp mode=Teuchos::NO_TRANS,
+                          SC alpha=Teuchos::ScalarTraits<SC>::one(),
+                          SC beta=Teuchos::ScalarTraits<SC>::zero()) const;
+        
+        virtual ConstMapPtr getDomainMap() const;
+        
+        virtual ConstMapPtr getRangeMap() const;
+        
+        virtual void describe(Teuchos::FancyOStream &out,
+                              const Teuchos::EVerbosityLevel verbLevel=Teuchos::Describable::verbLevel_default) const;
+        
+        virtual std::string description() const;
+        
         
     protected:
         
-        int computeHarmonicExtensions();
+        CrsMatrixPtr K_;
         
-        MapPtr assembleRepeatedMap();
-        
-        MapPtr assembleCoarseMap();
-        
-        int computeAndFillPhi(CrsMatrixPtr &repeatedMatrix,
-                              MapPtr &repeatedMap,
-                              MapPtr &coarseMap,
-                              GOVecView indicesGammaDofsAll,
-                              GOVecView indicesIDofsAll,
-                              CrsMatrixPtr kII,
-                              CrsMatrixPtr kIGamma);
-        
-        
-        SubdomainSolverPtr ExtensionSolver_;
-
-        MultiVectorPtrVecPtr MVPhiGamma_;
-
-        MapPtrVecPtr BlockCoarseMaps_;
-
-        UNVecPtr DofsPerNode_;
-
-        LOVecPtr2D GammaDofs_;
-        LOVecPtr2D IDofs_;
-
-        MapPtrVecPtr2D DofsMaps_; // notwendig??
-
-        UN NumberOfBlocks_;
+        SumOperatorPtr SumOperator_;
+        OverlappingOperatorPtr OverlappingOperator_;
         
     };
     

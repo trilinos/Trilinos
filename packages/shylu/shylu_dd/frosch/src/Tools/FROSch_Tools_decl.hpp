@@ -64,7 +64,7 @@ namespace FROSch {
                                 Teuchos::RCP<Xpetra::Map<LO,GO,NO> > &overlappingMap);
     
     template <class LO,class GO,class NO>
-    Teuchos::RCP<Xpetra::Map<LO,GO,NO> > AssembleMaps(Teuchos::ArrayRCP<Teuchos::RCP<Xpetra::Map<LO,GO,NO> > > &mapVector,
+    Teuchos::RCP<Xpetra::Map<LO,GO,NO> > AssembleMaps(Teuchos::ArrayView<Teuchos::RCP<Xpetra::Map<LO,GO,NO> > > mapVector,
                                                       Teuchos::ArrayRCP<Teuchos::ArrayRCP<LO> > &partMappings);
     
     template <class LO,class GO,class NO>
@@ -85,7 +85,8 @@ namespace FROSch {
     inline void sortunique(T &v);
     
     template <class SC, class LO,class GO,class NO>
-    Teuchos::RCP<Xpetra::MultiVector<SC,LO,GO,NO> > ModifiedGramSchmidt(Teuchos::RCP<const Xpetra::MultiVector<SC,LO,GO,NO> > multiVector);
+    Teuchos::RCP<Xpetra::MultiVector<SC,LO,GO,NO> > ModifiedGramSchmidt(Teuchos::RCP<const Xpetra::MultiVector<SC,LO,GO,NO> > multiVector,
+                                                                        Teuchos::ArrayView<unsigned> zero = Teuchos::ArrayView<unsigned>());
     
 }
 

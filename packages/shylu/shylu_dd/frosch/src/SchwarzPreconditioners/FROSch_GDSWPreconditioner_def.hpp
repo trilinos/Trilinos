@@ -56,12 +56,6 @@ namespace FROSch {
     }
     
     template <class SC,class LO,class GO,class NO>
-    int GDSWPreconditioner<SC,LO,GO,NO>::initialize()
-    {
-        return initialize(true);
-    }
-    
-    template <class SC,class LO,class GO,class NO>
     int GDSWPreconditioner<SC,LO,GO,NO>::initialize(bool useDefaultParameters)
     {
         MapPtr repeatedMap = BuildRepeatedMap(this->K_);
@@ -122,7 +116,7 @@ namespace FROSch {
     }
     
     template <class SC,class LO,class GO,class NO>
-    int GDSWPreconditioner<SC,LO,GO,NO>::initialize(int dimension,
+    int GDSWPreconditioner<SC,LO,GO,NO>::initialize(UN dimension,
                                                     int overlap)
     {
         MapPtr repeatedMap = BuildRepeatedMap(this->K_);
@@ -130,7 +124,7 @@ namespace FROSch {
     }
     
     template <class SC,class LO,class GO,class NO>
-    int GDSWPreconditioner<SC,LO,GO,NO>::initialize(int dimension,
+    int GDSWPreconditioner<SC,LO,GO,NO>::initialize(UN dimension,
                                                     int overlap,
                                                     MapPtr repeatedMap)
     {
@@ -142,7 +136,7 @@ namespace FROSch {
     }
     
     template <class SC,class LO,class GO,class NO>
-    int GDSWPreconditioner<SC,LO,GO,NO>::initialize(int dimension,
+    int GDSWPreconditioner<SC,LO,GO,NO>::initialize(UN dimension,
                                                     int overlap,
                                                     MapPtr repeatedMap,
                                                     GOVecPtr &localDirichletBoundaryDofs)
@@ -155,8 +149,8 @@ namespace FROSch {
     }
     
     template <class SC,class LO,class GO,class NO>
-    int GDSWPreconditioner<SC,LO,GO,NO>::initialize(int dimension,
-                                                    int dofsPerNode,
+    int GDSWPreconditioner<SC,LO,GO,NO>::initialize(UN dimension,
+                                                    UN dofsPerNode,
                                                     DofOrdering dofOrdering,
                                                     int overlap,
                                                     MapPtr repeatedMap)
@@ -173,8 +167,8 @@ namespace FROSch {
     }
     
     template <class SC,class LO,class GO,class NO>
-    int GDSWPreconditioner<SC,LO,GO,NO>::initialize(int dimension,
-                                                    int dofsPerNode,
+    int GDSWPreconditioner<SC,LO,GO,NO>::initialize(UN dimension,
+                                                    UN dofsPerNode,
                                                     DofOrdering dofOrdering,
                                                     int overlap,
                                                     MapPtr repeatedMap,
@@ -192,8 +186,8 @@ namespace FROSch {
     }
     
     template <class SC,class LO,class GO,class NO>
-    int GDSWPreconditioner<SC,LO,GO,NO>::initialize(int dimension,
-                                                    int dofsPerNode,
+    int GDSWPreconditioner<SC,LO,GO,NO>::initialize(UN dimension,
+                                                    UN dofsPerNode,
                                                     DofOrdering dofOrdering,
                                                     int overlap,
                                                     MapPtr repeatedMap,
@@ -211,8 +205,8 @@ namespace FROSch {
     }
     
     template <class SC,class LO,class GO,class NO>
-    int GDSWPreconditioner<SC,LO,GO,NO>::initialize(int dimension,
-                                                    int dofsPerNode,
+    int GDSWPreconditioner<SC,LO,GO,NO>::initialize(UN dimension,
+                                                    UN dofsPerNode,
                                                     DofOrdering dofOrdering,
                                                     int overlap,
                                                     MapPtr repeatedMap,

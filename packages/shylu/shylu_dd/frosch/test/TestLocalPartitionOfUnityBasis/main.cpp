@@ -42,7 +42,7 @@
 //#ifdef HAVE_MPI
 #include "mpi.h"
 
-#include <Teuchos_Array.hpp>
+#include <Teuchos_XMLParameterListCoreHelpers.hpp>
 
 #include <Xpetra_MultiVectorFactory.hpp>
 #include <Xpetra_VectorFactory.hpp>
@@ -95,46 +95,70 @@ int main(int argc, char *argv[])
         dofsMaps[1] = MapFactory<LO,GO,NO>::Build(UseTpetra,-1,dofs2(),0,SerialComm);
         dofsMaps[2] = MapFactory<LO,GO,NO>::Build(UseTpetra,-1,dofs3(),0,SerialComm);
         
-        RCP<MultiVector<SC,LO,GO,NO> > partitionOfUnity = MultiVectorFactory<SC,LO,GO,NO>::Build(nodesMap,3);
-        RCP<MultiVector<SC,LO,GO,NO> > globalBasis = MultiVectorFactory<SC,LO,GO,NO>::Build(dofsMap,6);
+        ArrayRCP<RCP<MultiVector<SC,LO,GO,NO> > > partitionOfUnity(2);
         
-        partitionOfUnity->replaceLocalValue(nodes[0],0,1.0);
+        RCP<MultiVector<SC,LO,GO,NO> > tmpVec = MultiVectorFactory<SC,LO,GO,NO>::Build(dofsMap,2);
+        tmpVec->replaceLocalValue(dofsMaps[0]->getGlobalElement(nodes[0]),0,1.0);
+        tmpVec->replaceLocalValue(dofsMaps[1]->getGlobalElement(nodes[0]),0,1.0);
+        tmpVec->replaceLocalValue(dofsMaps[2]->getGlobalElement(nodes[0]),0,1.0);
+        
+        tmpVec->replaceLocalValue(dofsMaps[0]->getGlobalElement(nodes[8]),1,1.0);
+        tmpVec->replaceLocalValue(dofsMaps[1]->getGlobalElement(nodes[8]),1,1.0);
+        tmpVec->replaceLocalValue(dofsMaps[2]->getGlobalElement(nodes[8]),1,1.0);
+        partitionOfUnity[0] = tmpVec;
+        
+        tmpVec = MultiVectorFactory<SC,LO,GO,NO>::Build(dofsMap,1);
         for (UN i=1; i<8; i++) {
-            partitionOfUnity->replaceLocalValue(nodes[i],1,1.0);
+            tmpVec->replaceLocalValue(dofsMaps[0]->getGlobalElement(nodes[i]),0,1.0);
+            tmpVec->replaceLocalValue(dofsMaps[1]->getGlobalElement(nodes[i]),0,1.0);
+            tmpVec->replaceLocalValue(dofsMaps[2]->getGlobalElement(nodes[i]),0,1.0);
         }
-        partitionOfUnity->replaceLocalValue(nodes[8],2,1.0);
+        partitionOfUnity[1] = tmpVec;
         
+        RCP<MultiVector<SC,LO,GO,NO> > nullspace = MultiVectorFactory<SC,LO,GO,NO>::Build(dofsMap,6);
         for (UN i=0; i<9; i++) {
-            globalBasis->replaceLocalValue(dofsMaps[0]->getGlobalElement(i),0,1.0);
-            globalBasis->replaceLocalValue(dofsMaps[1]->getGlobalElement(i),1,1.0);
-            globalBasis->replaceLocalValue(dofsMaps[2]->getGlobalElement(i),2,1.0);
+            nullspace->replaceLocalValue(dofsMaps[0]->getGlobalElement(nodes[i]),0,1.0);
+            nullspace->replaceLocalValue(dofsMaps[1]->getGlobalElement(nodes[i]),1,1.0);
+            nullspace->replaceLocalValue(dofsMaps[2]->getGlobalElement(nodes[i]),2,1.0);
             
-            globalBasis->replaceLocalValue(dofsMaps[0]->getGlobalElement(i),3,double(i));
-            globalBasis->replaceLocalValue(dofsMaps[1]->getGlobalElement(i),3,-double(i));
-            globalBasis->replaceLocalValue(dofsMaps[2]->getGlobalElement(i),3,0.0);
+            nullspace->replaceLocalValue(dofsMaps[0]->getGlobalElement(nodes[i]),3,double(i));
+            nullspace->replaceLocalValue(dofsMaps[1]->getGlobalElement(nodes[i]),3,-double(i));
+            nullspace->replaceLocalValue(dofsMaps[2]->getGlobalElement(nodes[i]),3,0.0);
             
-            globalBasis->replaceLocalValue(dofsMaps[0]->getGlobalElement(i),4,-double(i));
-            globalBasis->replaceLocalValue(dofsMaps[1]->getGlobalElement(i),4,0.0);
-            globalBasis->replaceLocalValue(dofsMaps[2]->getGlobalElement(i),4,double(i));
+            nullspace->replaceLocalValue(dofsMaps[0]->getGlobalElement(nodes[i]),4,-double(i));
+            nullspace->replaceLocalValue(dofsMaps[1]->getGlobalElement(nodes[i]),4,0.0);
+            nullspace->replaceLocalValue(dofsMaps[2]->getGlobalElement(nodes[i]),4,double(i));
             
-            globalBasis->replaceLocalValue(dofsMaps[0]->getGlobalElement(i),5,0.0);
-            globalBasis->replaceLocalValue(dofsMaps[1]->getGlobalElement(i),5,double(i));
-            globalBasis->replaceLocalValue(dofsMaps[2]->getGlobalElement(i),5,-double(i));
+            nullspace->replaceLocalValue(dofsMaps[0]->getGlobalElement(nodes[i]),5,0.0);
+            nullspace->replaceLocalValue(dofsMaps[1]->getGlobalElement(nodes[i]),5,double(i));
+            nullspace->replaceLocalValue(dofsMaps[2]->getGlobalElement(nodes[i]),5,-double(i));
         }
         
-        LocalPartitionOfUnityBasis<SC,LO,GO,NO> TestBasis(nodesMap,dofsMaps,partitionOfUnity,globalBasis);
+
+        Array<GO> partitionOfUnityMapVec1(2);
+        partitionOfUnityMapVec1[0] = 0;
+        partitionOfUnityMapVec1[1] = 1;
+        Array<GO> partitionOfUnityMapVec2(1);
+        partitionOfUnityMapVec1[0] = 0;
+        
+        ArrayRCP<RCP<Map<LO,GO,NO> > > partitionOfUnityMaps(2);
+        partitionOfUnityMaps[0] = MapFactory<LO,GO,NO>::Build(UseTpetra,-1,partitionOfUnityMapVec1(),0,SerialComm);
+        partitionOfUnityMaps[1] = MapFactory<LO,GO,NO>::Build(UseTpetra,-1,partitionOfUnityMapVec2(),0,SerialComm);
+        
+        RCP<ParameterList> parameterList = getParametersFromXmlFile("Parameters.xml");
+        
+        LocalPartitionOfUnityBasis<SC,LO,GO,NO> TestBasis(SerialComm,SerialComm,3,parameterList,nullspace,partitionOfUnity,partitionOfUnityMaps);
         TestBasis.buildLocalPartitionOfUnityBasis();
         
-        for (UN i=0; i<3; i++) {
-            for (UN j=0; j<TestBasis.getBasis()[i]->getLocalLength(); j++) {
-                for (UN k=0; k<TestBasis.getBasis()[i]->getNumVectors(); k++) {
-                    std::cout << TestBasis.getBasis()[i]->getData(k)[j] << "\t";
-                }
-                std::cout << "\n";
+        RCP<CoarseSpace<SC,LO,GO,NO> > coarseSpace = TestBasis.getLocalPartitionOfUnitySpace();
+        
+        for (UN i=0; i<coarseSpace->getLocalBasis()->getLocalLength(); i++) {
+            for (UN j=0; j<coarseSpace->getLocalBasis()->getNumVectors(); j++) {
+                std::cout << coarseSpace->getLocalBasis()->getData(j)[i] << "\t";
             }
             std::cout << "\n";
         }
-        
+        std::cout << "\n";        
         //        RCP<FancyOStream> fancy = fancyOStream(rcpFromRef(std::cout));
         //        partitionOfUnity->describe(*fancy,Teuchos::VERB_EXTREME);
         //        globalBasis->describe(*fancy,Teuchos::VERB_EXTREME);

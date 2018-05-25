@@ -98,7 +98,7 @@ int main(int argc, char *argv[])
             color=0;
         }
     } else {
-        FROSCH_ASSERT(0!=0);
+        FROSCH_ASSERT(0!=0,"Dimension has to be 2 or 3.");
     }
     
     MPI_Comm_split(CommWorld.Comm(),color,CommWorld.getRank(),&COMM);

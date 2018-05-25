@@ -155,9 +155,7 @@ int main(int argc, char *argv[])
         RCP<InterfacePartitionOfUnity<SC,LO,GO,NO> > IPOU(new GDSWInterfacePartitionOfUnity<SC,LO,GO,NO>(RepeatedMap->getComm(),SerialComm,Dimension,1,RepeatedNodesMap,RepeatedDofMaps,parameterList));
         IPOU->removeDirichletNodes();
         IPOU->sortInterface(xMat);
-        IPOU->computePartitionOfUnity();
-        
-        Teuchos::ArrayRCP<Teuchos::RCP<const Xpetra::MultiVector<SC,LO,GO,NO> > > LocalPartitionOfUnity = IPOU->getLocalPartitionOfUnity();
+        IPOU->computePartitionOfUnity();                
     }
     
     MPI_Finalize();

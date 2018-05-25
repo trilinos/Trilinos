@@ -39,72 +39,91 @@
 // ************************************************************************
 //@HEADER
 
-#ifndef _FROSCH_PARTITIONOFUNITYBASIS_DECL_hpp
-#define _FROSCH_PARTITIONOFUNITYBASIS_DECL_hpp
+#ifndef _FROSCH_INTERFACEPARTITIONOFUNITY_DECL_HPP
+#define _FROSCH_INTERFACEPARTITIONOFUNITY_DECL_HPP
 
 #define FROSCH_ASSERT(A,S) if(!(A)) { std::cerr<<"Assertion failed. "<<S<<std::endl; std::cout.flush(); throw std::out_of_range("Assertion.");};
 
-#include <Xpetra_Operator.hpp>
-#include <Xpetra_MapFactory_fwd.hpp>
-
-#include "FROSch_Tools_def.hpp"
+#include <FROSch_DDInterface_def.hpp>
 
 namespace FROSch {
-
+    
     template <class SC = Xpetra::Operator<>::scalar_type,
     class LO = typename Xpetra::Operator<SC>::local_ordinal_type,
     class GO = typename Xpetra::Operator<SC, LO>::global_ordinal_type,
     class NO = typename Xpetra::Operator<SC, LO, GO>::node_type>
-    class LocalPartitionOfUnityBasis {
+    class InterfacePartitionOfUnity {
         
     public:
         
+        typedef Teuchos::RCP<const Teuchos::Comm<int> > CommPtr;
+
         typedef Xpetra::Map<LO,GO,NO> Map;
         typedef Teuchos::RCP<Map> MapPtr;
         typedef Teuchos::ArrayRCP<MapPtr> MapPtrVecPtr;
         
+        typedef Xpetra::Matrix<SC,LO,GO,NO> CrsMatrix;
+        typedef Teuchos::RCP<CrsMatrix> CrsMatrixPtr;
+        
         typedef Xpetra::MultiVector<SC,LO,GO,NO> MultiVector;
-        typedef Teuchos::RCP<MultiVector> MultiVectorPtr;
         typedef Teuchos::RCP<const MultiVector> ConstMultiVectorPtr;
+        typedef Teuchos::RCP<MultiVector> MultiVectorPtr;
         typedef Teuchos::ArrayRCP<MultiVectorPtr> MultiVectorPtrVecPtr;
         typedef Teuchos::ArrayRCP<ConstMultiVectorPtr> ConstMultiVectorPtrVecPtr;
+
+        typedef Teuchos::RCP<Teuchos::ParameterList> ParameterListPtr;
+        
+        typedef Teuchos::RCP<DDInterface<SC,LO,GO,NO> > DDInterfacePtr;
+        typedef Teuchos::RCP<const DDInterface<SC,LO,GO,NO> > ConstDDInterfacePtr;
+        
+        typedef Teuchos::RCP<EntitySet<SC,LO,GO,NO> > EntitySetPtr;
         
         typedef unsigned UN;
         
+        typedef Teuchos::Array<GO> GOVec;
+        typedef Teuchos::ArrayView<GO> GOVecView;
         
-        LocalPartitionOfUnityBasis(MapPtr &nodesMap,
-                                   MapPtrVecPtr &dofsMaps);
+        typedef Teuchos::ArrayRCP<SC> SCVecPtr;
+        typedef Teuchos::ArrayRCP<SCVecPtr> SCVecPtr2D;
+
         
-        LocalPartitionOfUnityBasis(MapPtr &nodesMap,
-                                   MapPtrVecPtr &dofsMaps,
-                                   MultiVectorPtr &partitionOfUnity,
-                                   MultiVectorPtr &nullspacebasis);
+        InterfacePartitionOfUnity(CommPtr mpiComm,
+                                  CommPtr serialComm,
+                                  UN dimension,
+                                  UN dofsPerNode,
+                                  MapPtr nodesMap,
+                                  MapPtrVecPtr dofsMaps,
+                                  ParameterListPtr parameterList);
         
-//        virtual ~LocalPartitionOfUnityBasis();
+        virtual ~InterfacePartitionOfUnity();
         
-        int addPartitionOfUnity(MultiVectorPtr &partitionOfUnity);
+        virtual int removeDirichletNodes(GOVecView myGlobalDirichletBoundaryDofs = Teuchos::null) = 0;
         
-        int addGlobalBasis(MultiVectorPtr &nullspacebasis);
+        virtual int sortInterface(CrsMatrixPtr matrix,
+                                  SCVecPtr2D localNodeList = Teuchos::null) = 0;
         
-        int buildLocalPartitionOfUnityBasis();
+        virtual int computePartitionOfUnity() = 0;
         
-        ConstMultiVectorPtr getPartitionOfUnity() const;
+        MultiVectorPtrVecPtr getLocalPartitionOfUnity() const;
         
-        ConstMultiVectorPtr getGlobalBasis() const;
+        MapPtrVecPtr getPartitionOfUnityMaps() const;
         
-        ConstMultiVectorPtrVecPtr getBasis() const;
+        ConstDDInterfacePtr getDDInterface() const;
         
     protected:
         
-        UN DofsPerNode_;
+        CommPtr MpiComm_;
+        CommPtr SerialComm_;
         
-        MapPtr NodesMap_;
+        DDInterfacePtr DDInterface_;
         
-        MapPtrVecPtr DofsMaps_;
+        ParameterListPtr ParameterList_;
         
-        MultiVectorPtr PartitionOfUnity_;
-        MultiVectorPtr NullSpaceBasis_;
-        ConstMultiVectorPtrVecPtr LocalBasis_;
+        MultiVectorPtrVecPtr LocalPartitionOfUnity_;
+        
+        MapPtrVecPtr PartitionOfUnityMaps_;
+        
+        bool Verbose_;
     };
     
 }

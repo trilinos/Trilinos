@@ -39,55 +39,70 @@
 // ************************************************************************
 //@HEADER
 
-#ifndef _FROSCH_ALGEBRAICOVERLAPPINGOPERATOR_DECL_HPP
-#define _FROSCH_ALGEBRAICOVERLAPPINGOPERATOR_DECL_HPP
+#ifndef _FROSCH_COARSESPACE_DECL_HPP
+#define _FROSCH_COARSESPACE_DECL_HPP
 
-#include <FROSch_OverlappingOperator_def.hpp>
+#define FROSCH_ASSERT(A,S) if(!(A)) { std::cerr<<"Assertion failed. "<<S<<std::endl; std::cout.flush(); throw std::out_of_range("Assertion.");};
+
+//#include <Xpetra_Operator_fwd.hpp>
+#include <Xpetra_MapFactory_fwd.hpp>
+
+#include <FROSch_Tools_def.hpp>
 
 namespace FROSch {
     
     template <class SC = Xpetra::Operator<>::scalar_type,
     class LO = typename Xpetra::Operator<SC>::local_ordinal_type,
-    class GO = typename Xpetra::Operator<SC,LO>::global_ordinal_type,
-    class NO = typename Xpetra::Operator<SC,LO,GO>::node_type>
-    class AlgebraicOverlappingOperator : public OverlappingOperator<SC,LO,GO,NO> {
+    class GO = typename Xpetra::Operator<SC, LO>::global_ordinal_type,
+    class NO = typename Xpetra::Operator<SC, LO, GO>::node_type>
+    class CoarseSpace {
         
     public:
         
-        typedef typename SchwarzOperator<SC,LO,GO,NO>::CommPtr CommPtr;
+        typedef Xpetra::Map<LO,GO,NO> Map;
+        typedef Teuchos::RCP<Map> MapPtr;
+        typedef Teuchos::RCP<const Map> ConstMapPtr;
+        typedef Teuchos::Array<MapPtr> MapPtrVec;
         
-        typedef typename SchwarzOperator<SC,LO,GO,NO>::MapPtr MapPtr;
+        typedef Xpetra::MultiVector<SC,LO,GO,NO> MultiVector;
+        typedef Teuchos::RCP<MultiVector> MultiVectorPtr;
+        typedef Teuchos::Array<MultiVectorPtr> MultiVectorPtrVec;
         
-        typedef typename SchwarzOperator<SC,LO,GO,NO>::CrsMatrixPtr CrsMatrixPtr;
+        typedef Teuchos::RCP<Teuchos::ParameterList> ParameterListPtr;
         
-        typedef typename SchwarzOperator<SC,LO,GO,NO>::ParameterListPtr ParameterListPtr;
+        typedef unsigned UN;
+        
+        typedef Teuchos::ArrayRCP<LO> LOVecPtr;
+        typedef Teuchos::ArrayRCP<LOVecPtr> LOVecPtr2D;
         
         
-        AlgebraicOverlappingOperator(CrsMatrixPtr k,
-                                     ParameterListPtr parameterList);
+        CoarseSpace();
         
-        virtual int initialize()
-        {
-            FROSCH_ASSERT(0!=0,"AlgebraicOverlappingOperator cannot be built without input parameters.");
-            return 0;
-        };
+        int addSubspace(MapPtr subspaceBasisMap,
+                        MultiVectorPtr subspaceBasis = Teuchos::null);
         
-        int initialize(int overlap,
-                       MapPtr repeatedMap = Teuchos::null);
+        int assembleCoarseSpace();
         
-        int compute();
+        int clearCoarseSpace();
         
-        void describe(Teuchos::FancyOStream &out,
-                      const Teuchos::EVerbosityLevel verbLevel=Teuchos::Describable::verbLevel_default) const;
+        int checkForLinearDependencies();
         
-        std::string description() const;
+        MapPtr getBasisMap() const;
         
-    private:
+        MultiVectorPtr getLocalBasis() const;
         
-        int setUpAlgebraicOverlappingOperator();
+    protected:
         
-        int buildOverlappingMatrices(int overlap,
-                                     MapPtr repeatedMap);
+        ConstMapPtr SerialRowMap_;
+        
+        MapPtrVec UnassembledBasesMaps_;
+        
+        MultiVectorPtrVec UnassembledSubspaceBases_;
+        
+        MapPtr AssembledBasisMap_;
+        
+        MultiVectorPtr AssembledBasis_;
+        
     };
     
 }

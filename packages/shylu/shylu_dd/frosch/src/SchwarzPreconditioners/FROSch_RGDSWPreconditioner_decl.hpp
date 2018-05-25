@@ -64,6 +64,8 @@ namespace FROSch {
         
         typedef typename SchwarzPreconditioner<SC,LO,GO,NO>::RGDSWCoarseOperatorPtr RGDSWCoarseOperatorPtr;
         
+        typedef typename SchwarzPreconditioner<SC,LO,GO,NO>::UN UN;
+        
         typedef typename SchwarzPreconditioner<SC,LO,GO,NO>::GOVecPtr GOVecPtr;
         
         typedef typename SchwarzPreconditioner<SC,LO,GO,NO>::SCVecPtr2D SCVecPtr2D;
@@ -71,10 +73,8 @@ namespace FROSch {
         
         RGDSWPreconditioner(CrsMatrixPtr k,
                             ParameterListPtr parameterList);
-        
-        int initialize();
-        
-        int initialize(bool useDefaultParameters);
+
+        int initialize(bool useDefaultParameters = true);
         
         int initialize(MapPtr repeatedMap,
                        bool useDefaultParameters = true);
@@ -86,40 +86,40 @@ namespace FROSch {
                        GOVecPtr &localDirichletBoundaryDofs,
                        bool useDefaultParameters = true);
         
-        int initialize(int dimension,
+        int initialize(UN dimension,
                        int overlap);
         
-        int initialize(int dimension,
+        int initialize(UN dimension,
                        int overlap,
                        MapPtr repeatedMap);
         
-        int initialize(int dimension,
+        int initialize(UN dimension,
                        int overlap,
                        MapPtr repeatedMap,
                        GOVecPtr &localDirichletBoundaryDofs);
         
-        int initialize(int dimension,
-                       int dofsPerNode,
+        int initialize(UN dimension,
+                       UN dofsPerNode,
                        DofOrdering dofOrdering,
                        int overlap,
                        MapPtr repeatedMap);
         
-        int initialize(int dimension,
-                       int dofsPerNode,
+        int initialize(UN dimension,
+                       UN dofsPerNode,
                        DofOrdering dofOrdering,
                        int overlap,
                        MapPtr repeatedMap,
                        GOVecPtr &localDirichletBoundaryDofs);
         
-        int initialize(int dimension,
-                       int dofsPerNode,
+        int initialize(UN dimension,
+                       UN dofsPerNode,
                        DofOrdering dofOrdering,
                        int overlap,
                        MapPtr repeatedMap,
                        SCVecPtr2D &localNodeList);
         
-        int initialize(int dimension,
-                       int dofsPerNode,
+        int initialize(UN dimension,
+                       UN dofsPerNode,
                        DofOrdering dofOrdering,
                        int overlap,
                        MapPtr repeatedMap,

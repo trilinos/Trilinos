@@ -44,12 +44,7 @@
 
 #define FROSCH_ASSERT(A,S) if(!(A)) { std::cerr<<"Assertion failed. "<<S<<std::endl; std::cout.flush(); throw std::out_of_range("Assertion.");};
 
-//#define INTERFACE_OUTPUT
-
 #include <FROSch_InterfacePartitionOfUnity_def.hpp>
-
-// TODO
-// -> "Parent" -> "Anchestor"
 
 namespace FROSch {
     
@@ -103,11 +98,10 @@ namespace FROSch {
         
         virtual int removeDirichletNodes(GOVecView myGlobalDirichletBoundaryDofs);
         
-        virtual int sortInterface(CrsMatrixPtr Matrix,
+        virtual int sortInterface(CrsMatrixPtr matrix,
                                   SCVecPtr2D localNodeList);
         
         virtual int computePartitionOfUnity();
-
         
     protected:
         

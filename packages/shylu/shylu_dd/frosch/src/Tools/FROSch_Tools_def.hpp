@@ -286,7 +286,7 @@ namespace FROSch {
     }
     
     template <class LO,class GO,class NO>
-    Teuchos::RCP<Xpetra::Map<LO,GO,NO> > AssembleMaps(Teuchos::ArrayRCP<Teuchos::RCP<Xpetra::Map<LO,GO,NO> > > &mapVector,
+    Teuchos::RCP<Xpetra::Map<LO,GO,NO> > AssembleMaps(Teuchos::ArrayView<Teuchos::RCP<Xpetra::Map<LO,GO,NO> > > mapVector,
                                                       Teuchos::ArrayRCP<Teuchos::ArrayRCP<LO> > &partMappings)
     {
         FROSCH_ASSERT(mapVector.size()>0,"Length of mapVector is == 0!");
@@ -451,7 +451,8 @@ namespace FROSch {
     }
     
     template <class SC, class LO,class GO,class NO>
-    Teuchos::RCP<Xpetra::MultiVector<SC,LO,GO,NO> > ModifiedGramSchmidt(Teuchos::RCP<const Xpetra::MultiVector<SC,LO,GO,NO> > multiVector)
+    Teuchos::RCP<Xpetra::MultiVector<SC,LO,GO,NO> > ModifiedGramSchmidt(Teuchos::RCP<const Xpetra::MultiVector<SC,LO,GO,NO> > multiVector,
+                                                                        Teuchos::ArrayView<unsigned> zero)
     {
         /*
          n = size(V,1);
@@ -459,38 +460,43 @@ namespace FROSch {
          U = zeros(n,k);
          U(:,1) = V(:,1)/sqrt(V(:,1)'*V(:,1));
          for i = 2:k
-            U(:,i) = V(:,i);
-            for j = 1:i-1
-                U(:,i) = U(:,i) - ( U(:,i)'*U(:,j) )/( U(:,j)'*U(:,j) )*U(:,j);
-            end
-            U(:,i) = U(:,i)/sqrt(U(:,i)'*U(:,i));
+         U(:,i) = V(:,i);
+         for j = 1:i-1
+         U(:,i) = U(:,i) - ( U(:,i)'*U(:,j) )/( U(:,j)'*U(:,j) )*U(:,j);
+         end
+         U(:,i) = U(:,i)/sqrt(U(:,i)'*U(:,i));
          end
          */
         unsigned numVec = multiVector->getNumVectors();
-        unsigned itmp = 0;
-        SC en = 0.0;
-        SC de = 0.0;
-        SC norm = 0.0;
-        Teuchos::RCP<Xpetra::MultiVector<SC,LO,GO,NO> > tmpMultiVector = Xpetra::MultiVectorFactory<SC,LO,GO,NO>::Build(multiVector->getMap(),numVec);
-        for (unsigned i=0; i<numVec; i++) {
-            tmpMultiVector->getVectorNonConst(i-itmp)->update(1.0,*multiVector->getVector(i),0.0);
-            for (unsigned j=0; j<i-itmp; j++) {
-                en = tmpMultiVector->getVector(i-itmp)->dot(*tmpMultiVector->getVector(j));
-                de = tmpMultiVector->getVector(j)->dot(*tmpMultiVector->getVector(j));
-                tmpMultiVector->getVectorNonConst(i-itmp)->update(-en/de,*tmpMultiVector->getVector(j),1.0);
+        Teuchos::Array<unsigned> arrayZero(0);
+        Teuchos::RCP<Xpetra::MultiVector<SC,LO,GO,NO> > resultMultiVector;
+        if (numVec>0) {
+            unsigned itmp = 0;
+            SC en = 0.0;
+            SC de = 0.0;
+            SC norm = 0.0;
+            Teuchos::RCP<Xpetra::MultiVector<SC,LO,GO,NO> > tmpMultiVector = Xpetra::MultiVectorFactory<SC,LO,GO,NO>::Build(multiVector->getMap(),numVec);
+            for (unsigned i=0; i<numVec; i++) {
+                tmpMultiVector->getVectorNonConst(i-itmp)->update(1.0,*multiVector->getVector(i),0.0);
+                for (unsigned j=0; j<i-itmp; j++) {
+                    en = tmpMultiVector->getVector(i-itmp)->dot(*tmpMultiVector->getVector(j));
+                    de = tmpMultiVector->getVector(j)->dot(*tmpMultiVector->getVector(j));
+                    tmpMultiVector->getVectorNonConst(i-itmp)->update(-en/de,*tmpMultiVector->getVector(j),1.0);
+                }
+                norm = tmpMultiVector->getVector(i-itmp)->norm2();
+                if (norm<1.0e-10) {
+                    arrayZero.push_back(i);
+                    itmp++;
+                } else {
+                    //tmpMultiVector->getVectorNonConst(i-itmp)->scale(1.0/norm);
+                }
             }
-            norm = tmpMultiVector->getVector(i-itmp)->norm2();
-            if (norm<1.0e-10) {
-                itmp++;
-            } else {
-                //tmpMultiVector->getVectorNonConst(i-itmp)->scale(1.0/norm);
+            resultMultiVector = Xpetra::MultiVectorFactory<SC,LO,GO,NO>::Build(multiVector->getMap(),numVec);
+            for (unsigned i=0; i<numVec-itmp; i++) {
+                resultMultiVector->getVectorNonConst(i)->update(1.0,*tmpMultiVector->getVector(i),0.0);
             }
         }
-        Teuchos::RCP<Xpetra::MultiVector<SC,LO,GO,NO> > resultMultiVector = Xpetra::MultiVectorFactory<SC,LO,GO,NO>::Build(multiVector->getMap(),numVec-itmp);
-        for (unsigned i=0; i<numVec-itmp; i++) {
-            resultMultiVector->getVectorNonConst(i)->update(1.0,*tmpMultiVector->getVector(i),0.0);
-        }
-        
+        zero = arrayZero();
         return resultMultiVector;
     }
 }

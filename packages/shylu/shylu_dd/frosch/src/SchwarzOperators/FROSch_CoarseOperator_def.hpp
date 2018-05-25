@@ -278,7 +278,7 @@ namespace FROSch {
             for (int i=0; i<gatheringSteps-1; i++) {
                 numMyRows = 0;
                 numProcsGatheringStep = LO(numProcsGatheringStep/gatheringFactor);
-                //if (Verbose_) std::cout << i << " " << numProcsGatheringStep << " " << numGlobalIndices << std::endl;
+                //if (this->Verbose_) std::cout << i << " " << numProcsGatheringStep << " " << numGlobalIndices << std::endl;
                 if (this->MpiComm_->getRank()%(this->MpiComm_->getSize()/numProcsGatheringStep) == 0 && this->MpiComm_->getRank()/(this->MpiComm_->getSize()/numProcsGatheringStep) < numProcsGatheringStep) {
                     if (this->MpiComm_->getRank()==0) {
                         numMyRows = numGlobalIndices - (numGlobalIndices/numProcsGatheringStep)*(numProcsGatheringStep-1);

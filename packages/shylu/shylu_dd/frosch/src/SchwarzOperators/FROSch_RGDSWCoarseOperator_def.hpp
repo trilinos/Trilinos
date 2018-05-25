@@ -99,14 +99,14 @@ namespace FROSch {
         interface = this->DDInterface_->getInterface();
         interior = this->DDInterface_->getInterior();
         
-        this->IndicesGammaDofs_[blockId] = LOVecPtr(dofsPerNode*interface->getEntity(0)->getNumNodes());
-        this->IndicesIDofs_[blockId] = LOVecPtr(dofsPerNode*interior->getEntity(0)->getNumNodes());
+        this->GammaDofs_[blockId] = LOVecPtr(dofsPerNode*interface->getEntity(0)->getNumNodes());
+        this->IDofs_[blockId] = LOVecPtr(dofsPerNode*interior->getEntity(0)->getNumNodes());
         for (UN k=0; k<dofsPerNode; k++) {
             for (UN i=0; i<interface->getEntity(0)->getNumNodes(); i++) {
-                this->IndicesGammaDofs_[blockId][dofsPerNode*i+k] = interface->getEntity(0)->getLocalDofID(i,k);
+                this->GammaDofs_[blockId][dofsPerNode*i+k] = interface->getEntity(0)->getLocalDofID(i,k);
             }
             for (UN i=0; i<interior->getEntity(0)->getNumNodes(); i++) {
-                this->IndicesIDofs_[blockId][dofsPerNode*i+k] = interior->getEntity(0)->getLocalDofID(i,k);
+                this->IDofs_[blockId][dofsPerNode*i+k] = interior->getEntity(0)->getLocalDofID(i,k);
             }
         }
         
@@ -204,7 +204,7 @@ namespace FROSch {
             }
             
             LOVecPtr2D partMappings;
-            this->BlockCoarseMaps_[blockId] = AssembleMaps(mapVector,partMappings);
+            this->BlockCoarseMaps_[blockId] = AssembleMaps(mapVector(),partMappings);
             
             ////////////////////
             // Build PhiGamma //
@@ -232,7 +232,7 @@ namespace FROSch {
         }
         
         //Epetra_SerialComm serialComm;
-        MapPtr serialGammaMap = Xpetra::MapFactory<LO,GO,NO>::Build(this->BlockCoarseMaps_[blockId]->lib(),this->IndicesGammaDofs_[blockId].size(),0,this->SerialComm_);
+        MapPtr serialGammaMap = Xpetra::MapFactory<LO,GO,NO>::Build(this->BlockCoarseMaps_[blockId]->lib(),this->GammaDofs_[blockId].size(),0,this->SerialComm_);
         this->MVPhiGamma_[blockId] = Xpetra::MultiVectorFactory<SC,LO,GO,NO>::Build(serialGammaMap,this->BlockCoarseMaps_[blockId]->getNodeNumElements());
         
         //int tmp=0;
