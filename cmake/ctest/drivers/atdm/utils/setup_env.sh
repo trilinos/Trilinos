@@ -11,4 +11,6 @@ echo
 echo "ATDM config env vars:"
 set | grep ATDM_CONFIG_
 
-export Trilinos_REPOSITORY_LOCATION=https://github.com/trilinos/Trilinos.git
+if [ "${Trilinos_REPOSITORY_LOCATION}" == "" ] ; then
+  export Trilinos_REPOSITORY_LOCATION=https://github.com/trilinos/Trilinos.git
+fi
