@@ -48,7 +48,7 @@
 
 #include <Tpetra_Core.hpp>
 #include <Tpetra_Version.hpp>
-#include "Tpetra_FEMultiVector.hpp"
+#include <Tpetra_FEMultiVector.hpp>
 #include <MatrixMarket_Tpetra.hpp>
 #include <Teuchos_CommandLineProcessor.hpp>
 #include <Teuchos_RCP.hpp>
@@ -215,7 +215,7 @@ int executeInsertGlobalIndicesDP_(const comm_ptr_t& comm, const struct CmdLineOp
   RCP<TimeMonitor> timerElementLoopMatrix = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("3) ElementLoop  (Matrix)")));
 
   RCP<matrix_t> crs_matrix = rcp(new matrix_t(crs_graph));
-  RCP<fe_multivector_t> v_fe =
+  RCP<fe_multivector_t> rhs =
     rcp (new fe_multivector_t(domain_map, crs_graph->getImporter(), 1));
 
   scalar_2d_array_t element_matrix;
@@ -226,7 +226,7 @@ int executeInsertGlobalIndicesDP_(const comm_ptr_t& comm, const struct CmdLineOp
   Teuchos::Array<Scalar> column_scalar_values(4);         // scalar values for each column
 
   // Loop over elements
-  v_fe->beginFill();
+  rhs->beginFill();
   for(size_t element_gidx=0; element_gidx<mesh.getNumOwnedElements(); element_gidx++)
   {
     // Get the contributions for the current element
@@ -253,7 +253,7 @@ int executeInsertGlobalIndicesDP_(const comm_ptr_t& comm, const struct CmdLineOp
       }
 
       crs_matrix->sumIntoGlobalValues(global_row_id, column_global_ids, column_scalar_values);
-      v_fe->sumIntoGlobalValue(global_row_id, 0, element_rhs[element_node_idx]);
+      rhs->sumIntoGlobalValue(global_row_id, 0, element_rhs[element_node_idx]);
     }
   }
   timerElementLoopMatrix = Teuchos::null;
@@ -264,11 +264,10 @@ int executeInsertGlobalIndicesDP_(const comm_ptr_t& comm, const struct CmdLineOp
     crs_matrix->fillComplete();
   }
 
-  RCP<multivector_t> rhs = rcp(new multivector_t(crs_graph->getRowMap(), 1));
   {
     // Global assemble the RHS
     TimeMonitor timer(*TimeMonitor::getNewTimer("5) GlobalAssemble (RHS)"));
-    v_fe->endFill();
+    rhs->endFill();
   }
 
 
