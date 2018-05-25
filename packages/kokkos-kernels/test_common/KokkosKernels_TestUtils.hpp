@@ -41,6 +41,8 @@
 //@HEADER
 */
 
+#ifndef KOKKOSKERNELS_TEST_UTILS_HPP
+#define KOKKOSKERNELS_TEST_UTILS_HPP
 
 #include "KokkosKernels_Utils.hpp"
 namespace Test {
@@ -87,16 +89,16 @@ namespace Test {
 
   template<class ViewType1, class ViewType2, class Scalar>
   void EXPECT_NEAR_KK_1DVIEW(ViewType1 v1, ViewType2 v2, Scalar tol) {
-    size_t v1_size = v1.dimension_0();
-    size_t v2_size = v2.dimension_0();
+    size_t v1_size = v1.extent(0);
+    size_t v2_size = v2.extent(0);
     EXPECT_NEAR_KK(v1_size, v2_size, 0);
 
 
     typename ViewType1::HostMirror h_v1 = Kokkos::create_mirror_view(v1);
     typename ViewType2::HostMirror h_v2 = Kokkos::create_mirror_view(v2);
 
-    KokkosKernels::Impl::safe_device_to_host_deep_copy (v1.dimension_0(), v1, h_v1);
-    KokkosKernels::Impl::safe_device_to_host_deep_copy (v2.dimension_0(), v2, h_v2);
+    KokkosKernels::Impl::safe_device_to_host_deep_copy (v1.extent(0), v1, h_v1);
+    KokkosKernels::Impl::safe_device_to_host_deep_copy (v2.extent(0), v2, h_v2);
 
     for (size_t i = 0; i < v1_size; ++i){
       EXPECT_NEAR_KK(h_v1(i), h_v2(i), tol);
@@ -104,3 +106,4 @@ namespace Test {
   }
 }
 
+#endif

@@ -56,17 +56,17 @@ void mkl_matvec(AType A, XType x, YType y, int rows_per_thread, int team_size, i
   char matdescra[6] = "GLNC0";
   char transa = 'N';
   int m = A.numRows();
-  int n = x.dimension_1();
+  int n = x.extent(1);
   int k = A.numCols();
-  double* x_ptr = (double*)x.ptr_on_device();
-  double* y_ptr = (double*)y.ptr_on_device();
+  double* x_ptr = (double*)x.data();
+  double* y_ptr = (double*)y.data();
 
   mkl_dcsrmv(&transa,
              &m, &k,
              &s_a,
              matdescra,
-             A.values.ptr_on_device(),
-             A.graph.entries.ptr_on_device(),
+             A.values.data(),
+             A.graph.entries.data(),
              (int*) &A.graph.row_map(0),
              (int*) &A.graph.row_map(1),
              x_ptr,

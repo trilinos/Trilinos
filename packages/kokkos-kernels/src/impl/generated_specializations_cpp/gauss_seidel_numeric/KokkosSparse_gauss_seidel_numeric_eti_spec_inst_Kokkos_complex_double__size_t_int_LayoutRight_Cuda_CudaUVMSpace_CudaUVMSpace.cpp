@@ -43,10 +43,8 @@
 
 
 #define KOKKOSKERNELS_IMPL_COMPILE_LIBRARY true
-#include "KokkosSparse_gauss_seidel_spec.hpp"
+#include "KokkosKernels_config.h"
 
-namespace KokkosSparse {
-namespace Impl {
 #if defined (KOKKOSKERNELS_INST_KOKKOS_COMPLEX_DOUBLE_) \
  && defined (KOKKOSKERNELS_INST_LAYOUTRIGHT) \
  && defined (KOKKOSKERNELS_INST_EXECSPACE_CUDA) \
@@ -54,7 +52,10 @@ namespace Impl {
  && defined (KOKKOSKERNELS_INST_MEMSPACE_CUDAUVMSPACE) \
  && defined (KOKKOSKERNELS_INST_ORDINAL_INT) \
  && defined (KOKKOSKERNELS_INST_OFFSET_SIZE_T) 
+#include "KokkosSparse_gauss_seidel_spec.hpp"
+namespace KokkosSparse {
+namespace Impl {
  KOKKOSSPARSE_GAUSS_SEIDEL_NUMERIC_ETI_SPEC_INST(Kokkos::complex<double>, int, size_t, Kokkos::LayoutRight, Kokkos::Cuda, Kokkos::CudaUVMSpace, Kokkos::CudaUVMSpace)
-#endif
 } // Impl
 } // KokkosSparse
+#endif

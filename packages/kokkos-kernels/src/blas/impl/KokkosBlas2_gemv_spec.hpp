@@ -129,8 +129,8 @@ struct GEMV {
                    "YViewType must have rank 1.");
 
     typedef typename AViewType::size_type size_type;
-    const size_type numRows = A.dimension_0 ();
-    const size_type numCols = A.dimension_1 ();
+    const size_type numRows = A.extent(0);
+    const size_type numCols = A.extent(1);
 
     // Prefer int as the index type, but use a larger type if needed.
     if (numRows < static_cast<size_type> (INT_MAX) &&

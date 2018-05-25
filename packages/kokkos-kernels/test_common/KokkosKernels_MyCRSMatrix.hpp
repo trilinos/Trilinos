@@ -94,8 +94,8 @@ public:
   ~StaticCrsGraph() {}
   KOKKOS_INLINE_FUNCTION
   data_type numRows() const {
-    return (row_map.dimension_0 () != 0) ?
-        row_map.dimension_0 () - static_cast<size_type> (1) :
+    return (row_map.extent(0) != 0) ?
+        row_map.extent(0) - static_cast<size_type> (1) :
         static_cast<size_type> (0);
   }
 };
@@ -151,7 +151,7 @@ public:
 
   //! The number of stored entries in the sparse matrix.
   KOKKOS_INLINE_FUNCTION size_type nnz () const {
-    return graph.entries.dimension_0 ();
+    return graph.entries.extent(0);
   }
   ordinal_type numCols_;
 };
@@ -221,7 +221,7 @@ out_crsMat_t copy_crsmat(in_crsMat_t inputMat){
 
 
     const size_type nv = inputMat.numRows();
-    const size_type ne = inputMat.graph.entries.dimension_0();
+    const size_type ne = inputMat.graph.entries.extent(0);
 
     row_map_view_t rowmap_view("rowmap_view", nv+1);
     cols_view_t columns_view("colsmap_view", ne);
