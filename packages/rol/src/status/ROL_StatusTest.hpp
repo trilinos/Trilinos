@@ -45,6 +45,7 @@
 #define ROL_STATUSTEST_H
 
 #include "ROL_Types.hpp"
+#include "ROL_ParameterList.hpp"
 
 /** \class ROL::StatusTest
     \brief Provides an interface to check status of optimization algorithms.

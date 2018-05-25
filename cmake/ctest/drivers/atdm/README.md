@@ -38,12 +38,12 @@ given in the files defined in the directory:
   Trilinos/cmake/std/atdm/
 ```
 
-That file reads `JOB_NAME` from the env and uses it to set the CDash build
-name.  (Therefore, the Jenkikns `JOB_NAME` is the same as the CDash build name
+That file reads `JOB_NAME` from the environment and uses it to set the CDash build
+name.  (Therefore, the Jenkins `JOB_NAME` is the same as the CDash build name
 for all of these Trilinos ATDM builds.)  It also other CMake and CTest options
-that are pulled out of the env set by the
+that are pulled out of the environment set by the
 `cmake/std/atdm/<system_name>/environment.sh` script.  (See `$ENV{<varName>}`
-to see what vars are pulled out of the env.)
+to see what variables are pulled out of the env.)
 
 This directory contains a CTest -S driver script:
 
@@ -58,7 +58,7 @@ which is called using:
 ```
 
 which can be run using any way desired and it will clone a new Trilinos git
-repo (if not cloned already).  (But this file get directly run by the
+repo (if not cloned already).  (But this file gets directly run by the
 universal driver script `ctest-s-driver.sh` described above.)
 
 This directory contains the file:
@@ -141,7 +141,7 @@ source $WORKSPACE/Trilinos/cmake/ctest/drivers/atdm/ctest-s-driver-config-build.
 ```
 
 The first script `ctest-s-driver-config-build.sh` must be sourced instead of
-just run because it sets up the env and changes to a subdir.  The env must be
+just run because it sets up the environment and changes to a subdir.  The environment must be
 loaded on the login/compile node and not the compute node and therefore, it
 must be done this way.
 
@@ -203,7 +203,7 @@ $ time env \
     &> console.out
 ```
 
-Then you can loot at the `console.out` file and examine the `*.xml` configure,
+Then you can look at the `console.out` file and examine the `*.xml` configure,
 build, and test files created under:
 
 ```
@@ -212,7 +212,7 @@ build, and test files created under:
 
 to see if it is doing the right thing.
 
-If that looks good, then you can do an experimental submit (avoiding a rebulid)
+If that looks good, then you can do an experimental submit (avoiding a rebuild)
 with:
 
 ```
@@ -247,7 +247,7 @@ configuration GUI:
   * "Abort of the build if it's stuck" (**checked**)
     * "Time-out strategy": `Deadline`
       * "Deadline time": `20:45`
-      * "Deadline tolerence in minues": `1`
+      * "Deadline tolerance in minutes": `1`
 * "Build"
   * "Execute shell"
     * "Command": `Trilinos/cmake/ctest/drivers/atdm/smart-jenkins-driver.sh`
@@ -268,7 +268,7 @@ The following `<system_name>` sub-directories exist (in alphabetical order):
 * `ride/`: Contains the files to drive builds on the SRN test bed machine
   `ride` which also can be run on the SON machine `white`.
 
-* `sems_gcc-7.2.0/`: Contains driver scripts for a on-off GCC 7.2.0 build
+* `sems_gcc-7.2.0/`: Contains driver scripts for an on-off GCC 7.2.0 build
   based on the SEMS system.  This build really does not fit into the system
   described above but it put in this directory since it is targeted to support
   ATDM.  It also shows that a given system can have its own driver files if it
@@ -293,12 +293,12 @@ Note that more than one `hostname` machine may map to the same
 `<new_system_name>` (e.g. both `white` and `ride` machines map to the system
 `ride`).
 
-The variable `ATDM_HOSTNAME` (set to exported var
+The variable `ATDM_HOSTNAME` (set to exported variable
 `ATDM_CONFIG_KNOWN_HOSTNAME`) is used for the CDash site name.  This makes it
 so that any node `white05`, `white12`, etc. just says `white` on CDash.  This
 is important for the CDash 'next' and 'previous' relationships to work.
 
-The variable `ATDM_SYSTEM_NAME` (set to the exported var
+The variable `ATDM_SYSTEM_NAME` (set to the exported variable
 `ATDM_CONFIG_KNOWN_SYSTEM_NAME`) must be set to `<new_system_name>` which is
 selected for this new system type.
 
@@ -317,7 +317,7 @@ and fill in the file:
 The file `<new_system_name>/environment.sh` contains all of the
 system-specific settings to get an ATDM Trilinos build to work on this new
 platform.  For tips, see examples of these files in other
-`cmake/std/atdm/<system_name>/` directories.  And see how these env vars are
+`cmake/std/atdm/<system_name>/` directories.  And see how these environment variables are
 read and interpreted in the file:
 
 ```
@@ -330,7 +330,7 @@ A few of the environment variables that need to be set in the file
 `<new_system_name>/environment.sh` worth specifically discussing are:
 
 * `ATDM_CONFIG_USE_NINJA`: If Ninja is available on the system and will be
-  loaded into the env in this script, set this to `TRUE`.  Otherwise, if
+  loaded into the environment in this script, set this to `TRUE`.  Otherwise, if
   makefiles are to be used, set to `FALSE`.  When possible, it is best to use
   Ninja but this needs to be a Fortran-enabled Ninja (see [Installing Ninja
   from Source](
@@ -407,6 +407,9 @@ Trilinos](https://github.com/trilinos/Trilinos/wiki/Submitting-a-Trilinos-Pull-R
 Make sure and mention `@fryeguy52` and add the label `ATDM`.
 
 Once the PR has been has been merged, then set up the Jenkins jobs to run the
-builds as described <a href="#setting-up-jenkins-jobs">above</a>.
+builds as described <a href="#setting-up-jenkins-jobs">above</a>. Please note that the 
+variable `JOB_NAME` is set by Jenkins and is the name of currently running job.  Your 
+driver files in `Trilinos/cmake/ctest/drivers/atdm/<new_system_name>/drivers/` must 
+be named to exactly match the Jenkins `JOB_NAME` variable.
 
 ToDo: Fill in more detail, add an FAQ, etc.

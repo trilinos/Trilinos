@@ -4895,7 +4895,7 @@ Epetra_CrsMatrix::FusedTransfer (const Epetra_CrsMatrix& SourceMatrix,
     Epetra_IntVector SourceDomain_pids(SourceMatrix.DomainMap(),true);
 
     SourcePids.resize(SourceMatrix.ColMap().NumMyElements(),0);
-    Epetra_IntVector SourceCol_pids(View,SourceMatrix.ColMap(),SourcePids.size() ? &SourcePids[0] : 0);
+    Epetra_IntVector SourceCol_pids(View,SourceMatrix.ColMap(), Epetra_Util_data_ptr(SourcePids));
     // SourceDomain_pids contains the restricted pids
     SourceDomain_pids.PutValue(MyPID);
 
@@ -4923,7 +4923,7 @@ Epetra_CrsMatrix::FusedTransfer (const Epetra_CrsMatrix& SourceMatrix,
 
     // Associate SourcePids vector with non-rebalanced column map
     SourcePids.resize(SourceMatrix.ColMap().NumMyElements(),0);
-    Epetra_IntVector SourceCol_pids(View,SourceMatrix.ColMap(),SourcePids.size() ? &SourcePids[0] : 0);
+    Epetra_IntVector SourceCol_pids(View,SourceMatrix.ColMap(), Epetra_Util_data_ptr(SourcePids));
 
     // create an Import object between non-rebalanced (=source) and rebalanced domain map (=target)
     if(typeid(TransferType)==typeid(Epetra_Import) && DomainTransfer->TargetMap().SameBlockMapDataAs(*theDomainMap))
@@ -4943,7 +4943,7 @@ Epetra_CrsMatrix::FusedTransfer (const Epetra_CrsMatrix& SourceMatrix,
     Epetra_IntVector TargetRow_pids(*theDomainMap,true);
     Epetra_IntVector SourceRow_pids(SourceMatrix.RowMap());
     SourcePids.resize(SourceMatrix.ColMap().NumMyElements(),0);
-    Epetra_IntVector SourceCol_pids(View,SourceMatrix.ColMap(),SourcePids.size() ? &SourcePids[0] : 0);
+    Epetra_IntVector SourceCol_pids(View,SourceMatrix.ColMap(), Epetra_Util_data_ptr(SourcePids));
 
     TargetRow_pids.PutValue(MyPID);
     if(typeid(TransferType)==typeid(Epetra_Import))
@@ -5027,7 +5027,7 @@ Epetra_CrsMatrix::FusedTransfer (const Epetra_CrsMatrix& SourceMatrix,
 
   // Unpack into arrays
   if(UseLL)
-    Epetra_Import_Util::UnpackAndCombineIntoCrsArrays(SourceMatrix,NumSameIDs,NumRemoteIDs,RemoteLIDs,NumPermuteIDs,PermuteToLIDs,PermuteFromLIDs,LenImports_,Imports_,NumMyRows(),mynnz,MyPID,CSR_rowptr.Values(),CSR_colind_LL.size()?&CSR_colind_LL[0]:0,CSR_vals,SourcePids,TargetPids);
+    Epetra_Import_Util::UnpackAndCombineIntoCrsArrays(SourceMatrix,NumSameIDs,NumRemoteIDs,RemoteLIDs,NumPermuteIDs,PermuteToLIDs,PermuteFromLIDs,LenImports_,Imports_,NumMyRows(),mynnz,MyPID,CSR_rowptr.Values(),Epetra_Util_data_ptr(CSR_colind_LL),CSR_vals,SourcePids,TargetPids);
   else
     Epetra_Import_Util::UnpackAndCombineIntoCrsArrays(SourceMatrix,NumSameIDs,NumRemoteIDs,RemoteLIDs,NumPermuteIDs,PermuteToLIDs,PermuteFromLIDs,LenImports_,Imports_,NumMyRows(),mynnz,MyPID,CSR_rowptr.Values(),CSR_colind.Values(),CSR_vals,SourcePids,TargetPids);
 
@@ -5067,10 +5067,10 @@ Epetra_CrsMatrix::FusedTransfer (const Epetra_CrsMatrix& SourceMatrix,
   /**************************************************************/
   //Call an optimized version of MakeColMap that avoids the Directory lookups (since the importer knows who owns all the gids).
   std::vector<int> RemotePIDs;
-  int * pids_ptr = TargetPids.size() ? &TargetPids[0] : 0;
+  int * pids_ptr = Epetra_Util_data_ptr(TargetPids);
   if(UseLL) {
 #ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
-    long long * CSR_colind_LL_ptr = CSR_colind_LL.size() ? &CSR_colind_LL[0] : 0;
+    long long * CSR_colind_LL_ptr = Epetra_Util_data_ptr(CSR_colind_LL);
     Epetra_Import_Util::LowCommunicationMakeColMapAndReindex(N,CSR_rowptr.Values(),CSR_colind.Values(),CSR_colind_LL_ptr,
                                                              *MyDomainMap,pids_ptr,
                                                              Graph_.CrsGraphData_->SortGhostsAssociatedWithEachProcessor_,RemotePIDs,
@@ -5103,7 +5103,7 @@ Epetra_CrsMatrix::FusedTransfer (const Epetra_CrsMatrix& SourceMatrix,
   // Pre-build the importer using the existing PIDs
   Epetra_Import * MyImport=0;
   int NumRemotePIDs = RemotePIDs.size();
-  int *RemotePIDs_ptr = RemotePIDs.size() ? &RemotePIDs[0] : 0;
+  int *RemotePIDs_ptr = Epetra_Util_data_ptr(RemotePIDs);
   //  if(!RestrictCommunicator && !MyDomainMap->SameAs(ColMap()))
   if(!MyDomainMap->SameAs(ColMap()))
     MyImport = new Epetra_Import(ColMap(),*MyDomainMap,NumRemotePIDs,RemotePIDs_ptr);

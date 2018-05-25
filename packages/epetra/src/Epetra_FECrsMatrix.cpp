@@ -925,7 +925,7 @@ int Epetra_FECrsMatrix::GlobalAssemble(const Epetra_Map& domain_map,
     //First build a map that describes our nonlocal data.
     //We'll use the arbitrary distribution constructor of Map.
 
-    int_type* nlr_ptr = nonlocalRows_var.size() > 0 ? &nonlocalRows_var[0] : 0;
+    int_type* nlr_ptr = Epetra_Util_data_ptr(nonlocalRows_var);
     if (sourceMap_ == NULL)
       sourceMap_ = new Epetra_Map((int_type) -1, (int) nonlocalRows_var.size(), nlr_ptr,
             (int_type) Map().IndexBase64(), Map().Comm());
@@ -962,7 +962,7 @@ int Epetra_FECrsMatrix::GlobalAssemble(const Epetra_Map& domain_map,
         }
       }
 
-      int_type* cols_ptr = cols.size() > 0 ? &cols[0] : 0;
+      int_type* cols_ptr = Epetra_Util_data_ptr(cols);
 
       colMap_ = new Epetra_Map((int_type) -1, (int) cols.size(), cols_ptr,
                                (int_type) Map().IndexBase64(), Map().Comm());
@@ -975,7 +975,7 @@ int Epetra_FECrsMatrix::GlobalAssemble(const Epetra_Map& domain_map,
       nonlocalRowLengths[i] = (int) nonlocalCols_var[i].size();
     }
 
-    int* nlRLptr = nonlocalRowLengths.size()>0 ? &nonlocalRowLengths[0] : NULL;
+    int* nlRLptr = Epetra_Util_data_ptr(nonlocalRowLengths);
     if ( first_time && tempMat_ == NULL )
       tempMat_ = new Epetra_CrsMatrix(Copy, *sourceMap_, *colMap_, nlRLptr);
     else
@@ -985,13 +985,13 @@ int Epetra_FECrsMatrix::GlobalAssemble(const Epetra_Map& domain_map,
       if ( first_time ) {
         EPETRA_CHK_ERR( tempMat_->InsertGlobalValues(nonlocalRows_var[i],
                                                     (int) nonlocalCols_var[i].size(),
-                                                    &nonlocalCoefs_[i][0],
-                                                    &nonlocalCols_var[i][0]) );
+                                                     Epetra_Util_data_ptr(nonlocalCoefs_[i]),
+                                                     Epetra_Util_data_ptr(nonlocalCols_var[i])) );
       } else {
         EPETRA_CHK_ERR( tempMat_->SumIntoGlobalValues(nonlocalRows_var[i],
                                                      (int) nonlocalCols_var[i].size(),
-                                                     &nonlocalCoefs_[i][0],
-                                                     &nonlocalCols_var[i][0]) );
+                                                      Epetra_Util_data_ptr(nonlocalCoefs_[i]),
+                                                      Epetra_Util_data_ptr(nonlocalCols_var[i])) );
       }
     }
 
@@ -1168,7 +1168,7 @@ int Epetra_FECrsMatrix::InputGlobalValues(int numRows, const int_type* rows,
 
     //If we get to here, the data is in column-major order.
 
-    double* valuesptr = &workData_[0];
+    double* valuesptr = Epetra_Util_data_ptr(workData_);
 
     //Since the data is in column-major order, then we copy the i-th row
     //of the values table into workData_, in order to have the row in
@@ -1209,7 +1209,7 @@ int Epetra_FECrsMatrix::InputGlobalValues(int numRows, const int_type* rows,
     for(int j=0; j<numCols; ++j) {
       workData_[j] = values[i+j*numRows];
     }
-    int err = InputGlobalValues_RowMajor(1, &rows[i], numCols, cols, &workData_[0], mode);
+    int err = InputGlobalValues_RowMajor(1, &rows[i], numCols, cols, Epetra_Util_data_ptr(workData_), mode);
     if (err < 0) return err;
     returncode += err;
   }

@@ -24,27 +24,18 @@ INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
 # All headers
 #
 
-INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/vector)
-  APPEND_SET(HEADERS 
-    vector/ROL_CArrayVector.hpp
-    vector/ROL_TeuchosVector.hpp
-    vector/ROL_MultiVector.hpp
-    vector/ROL_MultiVectorDefault.hpp
-)
+SET_AND_INC_DIRS( DIR ${CMAKE_CURRENT_SOURCE_DIR}/vector )
+INCLUDE_DIRECTORIES( ${DIR} )
+APPEND_GLOB(HEADERS ${DIR}/*.hpp)
 
-INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/function)
-  APPEND_SET(HEADERS 
-    function/ROL_Teuchos_Objective.hpp
-    function/ROL_Teuchos_Constraint.hpp
-)
 
-INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/sol)
-  APPEND_SET(HEADERS 
-    sol/ROL_SingletonTeuchosBatchManager.hpp
-    sol/ROL_StdTeuchosBatchManager.hpp
-    sol/ROL_TeuchosBatchManager.hpp
-)
+SET_AND_INC_DIRS( DIR ${CMAKE_CURRENT_SOURCE_DIR}/function )
+INCLUDE_DIRECTORIES( ${DIR} )
+APPEND_GLOB(HEADERS ${DIR}/*.hpp)
 
+SET_AND_INC_DIRS( DIR ${CMAKE_CURRENT_SOURCE_DIR}/sol )
+INCLUDE_DIRECTORIES( ${DIR} )
+APPEND_GLOB(HEADERS ${DIR}/*.hpp)
 
 
 

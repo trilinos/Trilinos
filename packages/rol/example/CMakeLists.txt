@@ -1,8 +1,6 @@
 # Always built.
 ADD_SUBDIRECTORY(rosenbrock)
 ADD_SUBDIRECTORY(poisson-inversion)
-
-
 ADD_SUBDIRECTORY(simple-eq-constr)
 ADD_SUBDIRECTORY(diode-circuit)
 ADD_SUBDIRECTORY(diode-circuit-simopt)
@@ -21,6 +19,7 @@ ADD_SUBDIRECTORY(binary-design)
 ADD_SUBDIRECTORY(paraboloid-circle)
 ADD_SUBDIRECTORY(putting)
 ADD_SUBDIRECTORY(PinT)
+ADD_SUBDIRECTORY(dense-hessian)
 
 
 IF(${PACKAGE_NAME}_ENABLE_Sacado)
