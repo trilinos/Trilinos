@@ -1675,7 +1675,7 @@ void performance_test_driver_poly( const int pdeg ,
 
     std::vector<double> perf_original_mat_free_block;
 #if defined(HAVE_STOKHOS_KOKKOSLINALG)
-#if defined( KOKKOS_HAVE_CUDA )
+#if defined( KOKKOS_ENABLE_CUDA )
     enum { is_cuda = Kokkos::Impl::is_same<Device,Kokkos::Cuda>::value };
 #else
     enum { is_cuda = false };

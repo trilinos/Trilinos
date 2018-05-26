@@ -398,8 +398,14 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
 
       } else if (solveType == "standalone") {
         tm = rcp (new TimeMonitor(*TimeMonitor::getNewTimer("Driver: 4 - Fixed Point Solve")));
+#ifdef HAVE_MUELU_CUDA
+	if(profileSolve) cudaProfilerStart();
+#endif
 	H->IsPreconditioner(false);
 	H->Iterate(*B, *X, maxIts);
+#ifdef HAVE_MUELU_CUDA
+	if(profileSolve) cudaProfilerStop();
+#endif
       } else if (solveType == "cg" || solveType == "gmres" || solveType == "bicgstab") {
 #ifdef HAVE_MUELU_BELOS
         tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Driver: 5 - Belos Solve")));

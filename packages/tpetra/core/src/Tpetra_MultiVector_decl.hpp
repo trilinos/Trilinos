@@ -73,6 +73,10 @@ namespace Tpetra {
 
   // forward declaration of MultiVector (declared later in this file)
   template<class S, class LO, class GO, class N> class MultiVector;
+
+  // forward declaration of FEMultiVector 
+  template<class S, class LO, class GO, class N> class FEMultiVector;
+
 #endif // DOXYGEN_SHOULD_SKIP_THIS
 
   namespace Details {
@@ -771,6 +775,12 @@ namespace Tpetra {
     Teuchos::RCP<MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node2> >
     clone (const Teuchos::RCP<Node2>& node2) const;
 
+    /// \brief Swaps the data from *this with the data and maps from mv
+    /// \param mv [in/out] a MultiVector
+    ///
+    /// Note: This is done with minimal copying of data
+    void swap(MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> & mv);
+
     //! Destructor (virtual for memory safety of derived classes).
     virtual ~MultiVector ();
 
@@ -784,11 +794,11 @@ namespace Tpetra {
     ///
     /// \warning This is an implementation detail.
     static const bool useAtomicUpdatesByDefault =
-#ifdef KOKKOS_HAVE_SERIAL
+#ifdef KOKKOS_ENABLE_SERIAL
       ! std::is_same<execution_space, Kokkos::Serial>::value;
 #else
       true;
-#endif // KOKKOS_HAVE_SERIAL
+#endif // KOKKOS_ENABLE_SERIAL
 
   public:
     /// \brief Replace value in host memory, using global row index.

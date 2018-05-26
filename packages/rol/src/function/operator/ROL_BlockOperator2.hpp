@@ -95,7 +95,7 @@ public:
 
   void applyInverse( V &Hv, const V &v, Real &tol ) const {
 
-    TEUCHOS_TEST_FOR_EXCEPTION( true , std::logic_error, 
+    ROL_TEST_FOR_EXCEPTION( true , std::logic_error, 
                                 ">>> ERROR (ROL_BlockOperator2, applyInverse): "
                                 "Not implemented."); 
 
@@ -107,7 +107,7 @@ public:
       return (*ops_)[dex];
     } 
     else {
-      TEUCHOS_TEST_FOR_EXCEPTION( true, std::invalid_argument, 
+      ROL_TEST_FOR_EXCEPTION( true, std::invalid_argument, 
                                   ">>> ERROR (ROL_BlockOperator2, getOperator): "
                                   "invalid block indices."); 
     }

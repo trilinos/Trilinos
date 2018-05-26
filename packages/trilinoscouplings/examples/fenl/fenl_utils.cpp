@@ -6,7 +6,7 @@
 #include <iomanip>
 #include <cstdlib>
 
-#if defined( KOKKOS_HAVE_CUDA )
+#if defined( KOKKOS_ENABLE_CUDA )
 #include <cuda_runtime_api.h>
 #endif
 
@@ -111,7 +111,7 @@ clp_return_type parse_cmdline( int argc , char ** argv, CMD & cmdline,
     case Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL:          break;
   }
 
-#if defined( KOKKOS_HAVE_CUDA )
+#if defined( KOKKOS_ENABLE_CUDA )
   // Set CUDA device based on local node rank
   if (cmdline.USE_CUDA && cmdline.USE_CUDA_DEV == -1) {
     int local_rank = 0;

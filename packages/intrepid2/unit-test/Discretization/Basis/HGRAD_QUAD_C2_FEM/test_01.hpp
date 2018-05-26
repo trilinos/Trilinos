@@ -135,7 +135,7 @@ namespace Intrepid2 {
         DynRankView ConstructWithLabel(quadNodes, 10, 2);
 
         const ordinal_type numFields = quadBasis.getCardinality();
-        const ordinal_type numPoints = quadNodes.dimension(0);
+        const ordinal_type numPoints = quadNodes.extent(0);
         const ordinal_type spaceDim  = quadBasis.getBaseCellTopology().getDimension();
         const ordinal_type D2Cardin  = getDkCardinality(OPERATOR_D2, spaceDim);
 
@@ -235,7 +235,7 @@ namespace Intrepid2 {
         const auto allTags   = quadBasis.getAllDofTags();
     
         // Loop over all tags, lookup the associated dof enumeration and then lookup the tag again
-        const ordinal_type dofTagSize = allTags.dimension(0);
+        const ordinal_type dofTagSize = allTags.extent(0);
         for (ordinal_type i = 0; i < dofTagSize; ++i) {
           const auto bfOrd  = quadBasis.getDofOrdinal(allTags(i,0), allTags(i,1), allTags(i,2));
       
@@ -517,7 +517,7 @@ namespace Intrepid2 {
 
         // Dimensions for the output arrays:
         const ordinal_type numFields = quadBasis.getCardinality();
-        const ordinal_type numPoints = quadNodes.dimension(0);
+        const ordinal_type numPoints = quadNodes.extent(0);
         const ordinal_type spaceDim  = quadBasis.getBaseCellTopology().getDimension();
         const ordinal_type D2Cardin  = getDkCardinality(OPERATOR_D2, spaceDim);
         const ordinal_type D3Cardin = getDkCardinality(OPERATOR_D3, spaceDim);
@@ -802,7 +802,7 @@ namespace Intrepid2 {
 
         // Check mathematical correctness.
         char buffer[120];
-        ordinal_type b_dim0(bvals.dimension(0)), b_dim1(bvals.dimension(1));
+        ordinal_type b_dim0(bvals.extent(0)), b_dim1(bvals.extent(1));
         for (ordinal_type i=0; i<b_dim0; ++i) {
           for (ordinal_type j=0; j<b_dim1; ++j) {
             if ((i != j) && (std::abs(bvals(i,j) - 0.0) > tol)) {

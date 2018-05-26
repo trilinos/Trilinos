@@ -52,7 +52,7 @@
 
 #include "ROL_DiagonalOperator.hpp"
 
-#include "Teuchos_oblackholestream.hpp"
+#include "ROL_Stream.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
 
 typedef double RealT;
@@ -75,7 +75,7 @@ int main(int argc, char *argv[]) {
   Teuchos::GlobalMPISession mpiSession(&argc, &argv,0);
 
   int iprint = argc - 1;
-  Teuchos::oblackholestream bhs; // outputs nothing
+  ROL::nullstream bhs; // outputs nothing
   ROL::Ptr<std::ostream> outStream;
   if  (iprint > 0) 
     outStream = ROL::makePtrFromRef(std::cout);

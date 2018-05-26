@@ -199,7 +199,7 @@ public:
     }
 
     // Align entry_count
-#if defined( KOKKOS_HAVE_CUDA )
+#if defined( KOKKOS_ENABLE_CUDA )
     enum { Align = Kokkos::Impl::is_same<ExecutionSpace,Kokkos::Cuda>::value ? 32 : 1 };
 #else
     enum { Align = 1 };
@@ -384,7 +384,7 @@ public:
     }
 
     // Align entry_count
-#if defined( KOKKOS_HAVE_CUDA )
+#if defined( KOKKOS_ENABLE_CUDA )
     enum { Align = Kokkos::Impl::is_same<ExecutionSpace,Kokkos::Cuda>::value ? 32 : 1 };
 #else
     enum { Align = 1 };

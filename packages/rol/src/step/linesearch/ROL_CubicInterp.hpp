@@ -63,7 +63,7 @@ public:
   virtual ~CubicInterp() {}
 
   // Constructor
-  CubicInterp( Teuchos::ParameterList &parlist ) : LineSearch<Real>(parlist) { 
+  CubicInterp( ROL::ParameterList &parlist ) : LineSearch<Real>(parlist) { 
     Real half(0.5);
     rho_ = parlist.sublist("Step").sublist("Line Search").sublist("Line-Search Method").get("Backtracking Rate",half);
   }

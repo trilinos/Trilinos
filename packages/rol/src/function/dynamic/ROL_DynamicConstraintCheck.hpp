@@ -69,7 +69,7 @@ public:
   // Provide vectors from which to create random direction vectors
   // (No bound constraint)
   DynamicConstraintCheck( DynamicConstraint<Real>& con,
-                          Teuchos::ParameterList& pl, 
+                          ROL::ParameterList& pl, 
                           ostream& os );
 
   DynamicConstraintCheck( DynamicConstraint<Real>& con,

@@ -125,7 +125,7 @@ evaluateFields(typename Traits::EvalData workset)
       for (std::size_t fieldIndex=0; fieldIndex<gatherFields_.size();fieldIndex++) {
          VariableField * field = stkFields_[fieldIndex];
 
-         std::size_t basisCnt = gatherFields_[fieldIndex].dimension(1);
+         std::size_t basisCnt = gatherFields_[fieldIndex].extent(1);
 
          if(isConstant_) {
            // loop over basis functions and fill the fields

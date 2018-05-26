@@ -93,7 +93,7 @@ class MPMultiply< KokkosSparse::CrsMatrix< Sacado::MP::Vector<MatrixStorage>,
                   Kokkos::View< Sacado::MP::Vector<OutputStorage>*,
                                 OutputP... >,
                   Update
-#ifdef KOKKOS_HAVE_CUDA
+#ifdef KOKKOS_ENABLE_CUDA
                   , typename std::enable_if<
                       !std::is_same<MatrixDevice,Kokkos::Cuda>::value >::type
 #endif
@@ -187,7 +187,7 @@ class MPMultiply< KokkosSparse::CrsMatrix< Sacado::MP::Vector<MatrixStorage>,
                   Kokkos::View< Sacado::MP::Vector<OutputStorage>**,
                                 OutputP... >,
                   Update
-#ifdef KOKKOS_HAVE_CUDA
+#ifdef KOKKOS_ENABLE_CUDA
                   , typename std::enable_if<
                     !std::is_same<MatrixDevice,Kokkos::Cuda>::value >::type
 #endif

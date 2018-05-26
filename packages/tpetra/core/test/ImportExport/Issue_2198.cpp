@@ -41,9 +41,15 @@
 // @HEADER
 */
 
-//
 // Test for Github Issue #2198 (feature request for new Import constructor).
 //
+// mfh 10 May 2018: See GitHub Issue #2564 for why we split this test
+// into two separate cases: 3 MPI processes, and 5 MPI processes.
+
+namespace { // (anonymous)
+constexpr int minNumProcsForTestA = 5;
+constexpr int minNumProcsForTestB = 3;
+} // namespace (anonymous)
 
 #include "Tpetra_TestingUtilities.hpp"
 #include "Tpetra_Map.hpp"
@@ -59,7 +65,7 @@ using Teuchos::rcp;
 using Teuchos::REDUCE_MIN;
 using Teuchos::reduceAll;
 using std::endl;
-typedef Tpetra::global_size_t GST;
+using GST = Tpetra::global_size_t;
 
 bool
 trueEverywhere (const bool localTruthValue,
@@ -272,8 +278,10 @@ struct Issue2198TestInput {
   bool contiguous;
   LO localNumSourceMapGlobalIndices; // only valid if contiguous is true
   std::vector<GO> sourceMapGlobalIndices;
-  std::vector<GO> targetMapGlobalIndices;
-  std::vector<int> targetMapProcessRanks;
+  std::vector<GO> remoteGlobalIndices;
+  std::vector<GO> optimizedRemoteGlobalIndices;
+  std::vector<int> remoteProcessRanks;
+  std::vector<int> optimizedRemoteProcessRanks;
   const GST globalNumSourceMapGlobalIndices;
   const GO indexBase;
 };
@@ -282,7 +290,7 @@ template<class LO, class GO, class NT>
 Teuchos::RCP<const Tpetra::Map<LO, GO, NT> >
 makeSourceMapFromTestInput (const Issue2198TestInput<LO, GO, NT>& test)
 {
-  typedef Tpetra::Map<LO, GO, NT> map_type;
+  using map_type = Tpetra::Map<LO, GO, NT>;
   if (test.contiguous) {
     return rcp (new map_type (test.globalNumSourceMapGlobalIndices,
                               test.localNumSourceMapGlobalIndices,
@@ -300,13 +308,17 @@ makeSourceMapFromTestInput (const Issue2198TestInput<LO, GO, NT>& test)
 
 template<class LO, class GO, class NT>
 Teuchos::RCP<const Tpetra::Map<LO, GO, NT> >
-makeUnoptimizedTargetMapFromTestInput (const Issue2198TestInput<LO, GO, NT>& testInput,
-                                       const ::Tpetra::Map<LO, GO, NT>& sourceMap)
+makeTargetMapFromTestInput (const Issue2198TestInput<LO, GO, NT>& testInput,
+                            const ::Tpetra::Map<LO, GO, NT>& sourceMap,
+                            const bool optimized)
 {
   typedef Tpetra::Map<LO, GO, NT> map_type;
 
-  const LO numLclSrcGids = sourceMap.getNodeNumElements ();
-  const LO numInputGids = static_cast<LO> (testInput.targetMapGlobalIndices.size ());
+  const std::vector<GO>& remoteGlobalIndices = optimized ?
+    testInput.optimizedRemoteGlobalIndices : testInput.remoteGlobalIndices;
+
+  const LO numLclSrcGids = static_cast<LO> (sourceMap.getNodeNumElements ());
+  const LO numInputGids = static_cast<LO> (remoteGlobalIndices.size ());
   const LO numLclTgtGids = numLclSrcGids + numInputGids;
   std::vector<GO> tgtGids (numLclTgtGids);
 
@@ -322,8 +334,8 @@ makeUnoptimizedTargetMapFromTestInput (const Issue2198TestInput<LO, GO, NT>& tes
       tgtGids[k] = srcGids[k];
     }
   }
-  std::copy (testInput.targetMapGlobalIndices.begin (),
-             testInput.targetMapGlobalIndices.end (),
+  std::copy (remoteGlobalIndices.begin (),
+             remoteGlobalIndices.end (),
              tgtGids.begin () + numLclSrcGids);
   return rcp (new map_type (Teuchos::OrdinalTraits<GST>::invalid (),
                             tgtGids.data (),
@@ -336,6 +348,13 @@ template<class LO, class GO, class NT>
 Issue2198TestInput<LO, GO, NT>
 makeTest_A (const Teuchos::RCP<const Teuchos::Comm<int> >& comm)
 {
+  const int numProcs = comm->getSize ();
+  TEUCHOS_TEST_FOR_EXCEPTION
+    (numProcs < minNumProcsForTestA, std::invalid_argument, "Test A needs at "
+     "least " << minNumProcsForTestA << "MPI processes, but the given "
+     "communicator has only " << numProcs
+     << " process" << (numProcs != 1 ? "es" : "") << ".");
+
   const int myRank = comm->getRank ();
   constexpr bool contiguous = false;
   LO localNumSourceMapGlobalIndices = 0; // not used in this case
@@ -356,46 +375,60 @@ makeTest_A (const Teuchos::RCP<const Teuchos::Comm<int> >& comm)
     sourceMapGlobalIndices = {3, 7, 8, 9, 13};
   }
 
-  std::vector<GO> targetMapGlobalIndices;
+  std::vector<GO> remoteGlobalIndices;
+  std::vector<GO> optimizedRemoteGlobalIndices;
   if (myRank == 0) {
-    targetMapGlobalIndices = {1, 3, 7};
+    remoteGlobalIndices = {1, 3, 7};
+    optimizedRemoteGlobalIndices = {1, 3, 7};
   }
   else if (myRank == 1) {
-    targetMapGlobalIndices = {3, 9, 10};
+    remoteGlobalIndices = {3, 9, 10};
+    optimizedRemoteGlobalIndices = {10, 3, 9};
   }
   else if (myRank == 2) {
-    targetMapGlobalIndices = {6, 7, 13};
+    remoteGlobalIndices = {6, 7, 13};
+    optimizedRemoteGlobalIndices = {6, 7, 13};
   }
   else if (myRank == 3) {
-    targetMapGlobalIndices = {9, 13, 15};
+    remoteGlobalIndices = {9, 13, 15};
+    optimizedRemoteGlobalIndices = {15, 9, 13};
   }
   else if (myRank == 4) {
-    targetMapGlobalIndices = {4, 5, 11, 12};
+    remoteGlobalIndices = {4, 5, 11, 12};
+    optimizedRemoteGlobalIndices = {4, 5, 11, 12};
   }
 
-  std::vector<int> targetMapProcessRanks;
+  std::vector<int> remoteProcessRanks;
+  std::vector<GO> optimizedRemoteProcessRanks;
   if (myRank == 0) {
-    targetMapProcessRanks = {1, 4, 4};
+    remoteProcessRanks = {1, 4, 4};
+    optimizedRemoteProcessRanks = {1, 4, 4};
   }
   else if (myRank == 1) {
-    targetMapProcessRanks = {4, 4, 3};
+    remoteProcessRanks = {4, 4, 3};
+    optimizedRemoteProcessRanks = {3, 4, 4};
   }
   else if (myRank == 2) {
-    targetMapProcessRanks = {0, 4, 4};
+    remoteProcessRanks = {0, 4, 4};
+    optimizedRemoteProcessRanks = {0, 4, 4};
   }
   else if (myRank == 3) {
-    targetMapProcessRanks = {4, 4, 2};
+    remoteProcessRanks = {4, 4, 2};
+    optimizedRemoteProcessRanks = {2, 4, 4};
   }
   else if (myRank == 4) {
-    targetMapProcessRanks = {0, 1, 2, 3};
+    remoteProcessRanks = {0, 1, 2, 3};
+    optimizedRemoteProcessRanks = {0, 1, 2, 3};
   }
 
   const GST globalNumSourceMapGlobalIndices = 17;
   const GO indexBase = 0;
   return {comm, contiguous, localNumSourceMapGlobalIndices,
       sourceMapGlobalIndices,
-      targetMapGlobalIndices,
-      targetMapProcessRanks,
+      remoteGlobalIndices,
+      optimizedRemoteGlobalIndices,
+      remoteProcessRanks,
+      optimizedRemoteProcessRanks,
       globalNumSourceMapGlobalIndices,
       indexBase};
 }
@@ -404,6 +437,13 @@ template<class LO, class GO, class NT>
 Issue2198TestInput<LO, GO, NT>
 makeTest_B (const Teuchos::RCP<const Teuchos::Comm<int> >& comm)
 {
+  const int numProcs = comm->getSize ();
+  TEUCHOS_TEST_FOR_EXCEPTION
+    (numProcs < minNumProcsForTestB, std::invalid_argument, "Test A needs at "
+     "least " << minNumProcsForTestB << "MPI processes, but the given "
+     "communicator has only " << numProcs
+     << " process" << (numProcs != 1 ? "es" : "") << ".");
+
   // Source Map: [0 1 2] [3 4 5 6] [7 8 9 10 11]
   //
   // Input for target Map: [5 11 3 8] [10 7] []
@@ -424,23 +464,29 @@ makeTest_B (const Teuchos::RCP<const Teuchos::Comm<int> >& comm)
     localNumSourceMapGlobalIndices = 5;
   }
 
-  std::vector<GO> targetMapGlobalIndices;
+  std::vector<GO> remoteGlobalIndices;
+  std::vector<GO> optimizedRemoteGlobalIndices;
   if (myRank == 0) {
-    targetMapGlobalIndices = {5, 11, 3, 8};
+    remoteGlobalIndices = {5, 11, 3, 8};
+    optimizedRemoteGlobalIndices = {5, 3, 11, 8};
   }
   else if (myRank == 1) {
-    targetMapGlobalIndices = {10, 7};
+    remoteGlobalIndices = {10, 7};
+    optimizedRemoteGlobalIndices = {10, 7};
   }
   // else if (myRank == 2) {
   // // do nothing; empty list
   // }
 
-  std::vector<int> targetMapProcessRanks;
+  std::vector<int> remoteProcessRanks;
+  std::vector<int> optimizedRemoteProcessRanks;
   if (myRank == 0) {
-    targetMapProcessRanks = {1, 2, 1, 2};
+    remoteProcessRanks = {1, 2, 1, 2};
+    optimizedRemoteProcessRanks = {1, 1, 2, 2};
   }
   else if (myRank == 1) {
-    targetMapProcessRanks = {2, 2};
+    remoteProcessRanks = {2, 2};
+    optimizedRemoteProcessRanks = {2, 2};
   }
   // else if (myRank == 2) {
   // // do nothing; empty list
@@ -450,8 +496,10 @@ makeTest_B (const Teuchos::RCP<const Teuchos::Comm<int> >& comm)
   const GO indexBase = 0;
   return {comm, contiguous, localNumSourceMapGlobalIndices,
       sourceMapGlobalIndices,
-      targetMapGlobalIndices,
-      targetMapProcessRanks,
+      remoteGlobalIndices,
+      optimizedRemoteGlobalIndices,
+      remoteProcessRanks,
+      optimizedRemoteProcessRanks,
       globalNumSourceMapGlobalIndices,
       indexBase};
 }
@@ -463,16 +511,18 @@ runTest (Teuchos::FancyOStream& out,
          const Issue2198TestInput<LO, GO, NT>& testInput,
          const std::string& testName)
 {
-  typedef ::Tpetra::Map<LO, GO, NT> map_type;
-  typedef ::Tpetra::Import<LO, GO, NT> import_type;
+  using map_type = ::Tpetra::Map<LO, GO, NT>;
+  using import_type = ::Tpetra::Import<LO, GO, NT>;
 
   out << "Test " << testName << endl;
   Teuchos::OSTab tab1 (out);
   auto comm = testInput.comm;
 
   const bool lclTestInputLegit =
-    testInput.targetMapGlobalIndices.size () ==
-    testInput.targetMapProcessRanks.size ();
+    (testInput.remoteGlobalIndices.size () ==
+     testInput.remoteProcessRanks.size ()) &&
+    (testInput.optimizedRemoteGlobalIndices.size () ==
+     testInput.optimizedRemoteProcessRanks.size ());
   const bool gblTestInputLegit = trueEverywhere (lclTestInputLegit, *comm);
   TEST_ASSERT( gblTestInputLegit );
   if (! gblTestInputLegit) {
@@ -481,44 +531,25 @@ runTest (Teuchos::FancyOStream& out,
   }
 
   auto sourceMap = makeSourceMapFromTestInput (testInput);
-  auto expectedUnoptimizedTargetMap = makeUnoptimizedTargetMapFromTestInput (testInput, *sourceMap);
-  RCP<import_type> expectedUnoptimizedImport =
-    rcp (new import_type (sourceMap, expectedUnoptimizedTargetMap));
+  auto expUnoptTgtMap = makeTargetMapFromTestInput (testInput, *sourceMap, false);
+  RCP<import_type> expUnoptImport (new import_type (sourceMap, expUnoptTgtMap));
 
-  RCP<const map_type> expectedOptimizedTargetMap;
-  RCP<import_type> expectedOptimizedImport;
-  {
-    std::ostringstream errStrm;
-    bool lclErr = false;
-    using Tpetra::Details::makeOptimizedColMapAndImport;
-    auto result = makeOptimizedColMapAndImport (out, lclErr, *sourceMap,
-                                                *expectedUnoptimizedTargetMap,
-                                                expectedUnoptimizedImport.getRawPtr (),
-                                                true);
-    const bool gblErr = ! trueEverywhere (! lclErr, *comm);
-    TEST_ASSERT( ! gblErr );
-    if (gblErr) {
-      out << "makeOptimizedColMapAndImport FAILED; returning early!" << endl;
-      return;
-    }
-    expectedOptimizedTargetMap = Teuchos::rcp (new map_type (result.first));
-    expectedOptimizedImport = result.second;
-  }
+  auto expOptTgtMap = makeTargetMapFromTestInput (testInput, *sourceMap, true);
+  RCP<import_type> expOptImport (new import_type (sourceMap, expOptTgtMap));
 
   out << "Source Map:" << endl;
   printMapCompactly (out, *sourceMap);
-
-  out << "Expected unoptimized target Map:" << endl;
-  printMapCompactly (out, *expectedUnoptimizedTargetMap);
-
-  out << "Expected optimized target Map:" << endl;
-  printMapCompactly (out, *expectedOptimizedTargetMap);
+  out << endl;
 
   for (bool optimized : {false, true}) {
-    RCP<const import_type> expectedImport = optimized ?
-      expectedOptimizedImport : expectedUnoptimizedImport;
-    RCP<const map_type> expectedTargetMap = optimized ?
-      expectedOptimizedTargetMap : expectedUnoptimizedTargetMap;
+    out << "Optimized: " << (optimized ? "true" : "false") << endl;
+    Teuchos::OSTab tab2 (out);
+
+    RCP<const import_type> expImport = optimized ? expOptImport : expUnoptImport;
+    RCP<const map_type> expTgtMap = optimized ? expOptTgtMap : expUnoptTgtMap;
+
+    out << "Expected target Map:" << endl;
+    printMapCompactly (out, *expTgtMap);
 
     std::unique_ptr<import_type> actualImport;
     std::ostringstream lclErrMsg;
@@ -526,9 +557,9 @@ runTest (Teuchos::FancyOStream& out,
     try {
       actualImport =
         std::unique_ptr<import_type> (new import_type (sourceMap,
-                                                       testInput.targetMapGlobalIndices.data (),
-                                                       testInput.targetMapProcessRanks.data (),
-                                                       testInput.targetMapGlobalIndices.size (),
+                                                       testInput.remoteGlobalIndices.data (),
+                                                       testInput.remoteProcessRanks.data (),
+                                                       testInput.remoteGlobalIndices.size (),
                                                        optimized));
       lclMadeItThrough = true;
     }
@@ -554,54 +585,94 @@ runTest (Teuchos::FancyOStream& out,
       TEST_ASSERT( gblTargetMapNonnull );
 
       if (gblTargetMapNonnull) {
-        out << "Actual unoptimized target Map:" << endl;
+        out << "Actual target Map:" << endl;
         printMapCompactly (out, * (actualImport->getTargetMap ()));
 
         const bool gblImportsSame =
-          importsGloballySame (out, *expectedImport,
-                               "expectedImport", *actualImport,
+          importsGloballySame (out, *expImport,
+                               "expImport", *actualImport,
                                "actualImport");
         TEST_ASSERT( gblImportsSame );
       }
     }
+
+    const bool allSuccessfulThusFar = trueEverywhere (success, *comm);
+    if (! allSuccessfulThusFar) {
+      return;
+    }
+  } // for optimized in {false, true}
+
+
+  // Now test against results of makeOptimizedColMap.
+  {
+    out << "Test against makeOptimizedColMap" << endl;
+    Teuchos::OSTab tab2 (out);
+
+    std::ostringstream errStrm;
+    bool lclErr = false;
+    const map_type actualTgtMap =
+      Tpetra::Details::makeOptimizedColMap (out, lclErr, *sourceMap,
+                                            *expUnoptTgtMap,
+                                            expUnoptImport.getRawPtr ());;
+    const bool gblMadeItThrough = trueEverywhere (! lclErr, *comm);
+    TEST_ASSERT( gblMadeItThrough );
+    if (! gblMadeItThrough) {
+      out << "makeOptimizedColMap FAILED; returning early!" << endl;
+      return;
+    }
+
+    out << "Actual target Map:" << endl;
+    printMapCompactly (out, actualTgtMap);
+
+    const import_type actualImport (sourceMap, rcp (new map_type (actualTgtMap)));
+    const bool gblImportsSame =
+      importsGloballySame (out, *expOptImport, "expOptImport",
+                           actualImport, "actualImport");
+    TEST_ASSERT( gblImportsSame );
   }
 }
 
 
 TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( ImportExport, Issue2198, LO, GO, NT )
 {
-  //typedef Tpetra::Map<LO, GO, NT> map_type; // unused
-  //typedef Tpetra::Import<LO, GO, NT> import_type; // unused
   int lclSuccess = 1;
   int gblSuccess = 1;
 
   out << "Test for Issue 2198 (new Import constructor)" << endl;
-  Teuchos::OSTab tab1 (out);
+  Teuchos::OSTab tab0 (out);
 
-  Teuchos::RCP<const Teuchos::Comm<int> > origComm = Teuchos::DefaultComm<int>::getComm ();
-  const int origNumProcs = origComm->getSize ();
-  constexpr int minNumProcs = 5;
-  constexpr int neededNumProcs = 5;
-  if (origNumProcs < minNumProcs) {
-    out << "Test FAILED; must be run on at least " << minNumProcs << " MPI "
-      "processes, but the test's input communicator has size " << origNumProcs
-      << endl;
+  auto comm = Teuchos::DefaultComm<int>::getComm ();
+  const int numProcs = comm->getSize ();
+  constexpr int minNumProcs = minNumProcsForTestA < minNumProcsForTestB ?
+    minNumProcsForTestA : minNumProcsForTestB;
+  if (numProcs < minNumProcs) {
+    out << "Test FAILED; test requires at least " << minNumProcs << " MPI "
+        << "processes, but the input communicator has " << numProcs
+        << "process" << (numProcs != 1 ? "es" : "") << "." << endl;
     success = false;
     return;
   }
-  const int origMyRank = origComm->getRank ();
-  const int color = (origMyRank < neededNumProcs) ? 0 : 1;
-  auto comm = origComm->split (color, origMyRank);
-  if (color == 1) {
+
+  bool didSomeTestRun = false;
+
+  // mfh 10 May 2018: See GitHub Issue #2564 for why we split this
+  // test into two separate cases, depending on the number of MPI
+  // processes that the user gives us.
+  if (numProcs >= minNumProcsForTestA && ! didSomeTestRun) {
+    runTest (out, success, makeTest_A<LO, GO, NT> (comm), "A");
+    didSomeTestRun = true;
+  }
+  if (numProcs >= minNumProcsForTestB && ! didSomeTestRun) {
+    runTest (out, success, makeTest_B<LO, GO, NT> (comm), "B");
+    didSomeTestRun = true;
+  }
+
+  // Don't let the test get by with doing nothing.
+  if (! didSomeTestRun) {
+    out << "Test FAILED, since no tests ran!" << endl;
+    success = false;
     return;
   }
-  //const int myRank = comm->getRank ();
-  // Only processes in comm -- that is, in the first 0
-  // .. neededNumProcs-1 processes of origComm -- participate in what
-  // follows.
-
-  runTest (out, success, makeTest_A<LO, GO, NT> (comm), "A");
-  runTest (out, success, makeTest_B<LO, GO, NT> (comm), "B");
 
   lclSuccess = success ? 1 : 0;
   reduceAll<int, int> (*comm, REDUCE_MIN, lclSuccess, outArg (gblSuccess));
@@ -617,4 +688,10 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( ImportExport, Issue2198, LO, GO, NT )
 
 TPETRA_ETI_MANGLING_TYPEDEFS()
 
-TPETRA_INSTANTIATE_LGN( UNIT_TEST_GROUP )
+using default_local_ordinal_type = Tpetra::Map<>::local_ordinal_type;
+using default_global_ordinal_type = Tpetra::Map<>::global_ordinal_type;
+using default_node_type = Tpetra::Map<>::node_type;
+
+UNIT_TEST_GROUP( default_local_ordinal_type, default_global_ordinal_type, default_node_type )
+
+//TPETRA_INSTANTIATE_LGN( UNIT_TEST_GROUP )

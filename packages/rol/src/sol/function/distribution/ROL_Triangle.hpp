@@ -45,7 +45,7 @@
 #define ROL_TRIANGLE_HPP
 
 #include "ROL_Distribution.hpp"
-#include "Teuchos_ParameterList.hpp"
+#include "ROL_ParameterList.hpp"
 
 namespace ROL {
 
@@ -62,7 +62,7 @@ public:
       b_(std::max(std::min(a,b),std::min(std::max(a,b),c))),
       c_(std::max(a,std::max(b,c))) {}
 
-  Triangle(Teuchos::ParameterList &parlist) {
+  Triangle(ROL::ParameterList &parlist) {
     Real a = parlist.sublist("SOL").sublist("Distribution").sublist("Triangle").get("Lower Bound",0.);
     Real b = parlist.sublist("SOL").sublist("Distribution").sublist("Triangle").get("Peak Location",0.5);
     Real c = parlist.sublist("SOL").sublist("Distribution").sublist("Triangle").get("Upper Bound",1.);

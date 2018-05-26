@@ -109,7 +109,7 @@ struct KokkosSPGEMM
         entriesC(entriesC_),
         valuesC(valuesC_),
         memory_space(memory_space_),
-        pEntriesC(entriesC_.ptr_on_device()), pVals(valuesC.ptr_on_device()),
+        pEntriesC(entriesC_.data()), pVals(valuesC.data()),
         my_exec_space(my_exec_space_),
         team_work_size(team_row_chunk_size){
         }
@@ -120,21 +120,29 @@ struct KokkosSPGEMM
     switch (my_exec_space){
     default:
       return row_index;
-#if defined( KOKKOS_HAVE_SERIAL )
+#if defined( KOKKOS_ENABLE_SERIAL )
     case KokkosKernels::Impl::Exec_SERIAL:
       return 0;
 #endif
-#if defined( KOKKOS_HAVE_OPENMP )
+#if defined( KOKKOS_ENABLE_OPENMP )
     case KokkosKernels::Impl::Exec_OMP:
+  #ifdef KOKKOS_ENABLE_DEPRECATED_CODE
       return Kokkos::OpenMP::hardware_thread_id();
+  #else
+      return Kokkos::OpenMP::impl_hardware_thread_id();
+  #endif
 #endif
-#if defined( KOKKOS_HAVE_PTHREAD )
+#if defined( KOKKOS_ENABLE_THREADS )
     case KokkosKernels::Impl::Exec_PTHREADS:
+  #ifdef KOKKOS_ENABLE_DEPRECATED_CODE
       return Kokkos::Threads::hardware_thread_id();
+  #else
+      return Kokkos::Threads::impl_hardware_thread_id();
+  #endif
 #endif
-#if defined( KOKKOS_HAVE_QTHREAD)
+#if defined( KOKKOS_ENABLE_QTHREAD)
     case KokkosKernels::Impl::Exec_QTHREADS:
-      return Kokkos::Qthread::hardware_thread_id();
+      return 0; // Kokkos does not have a thread_id API for Qthreads
 #endif
 #if defined( KOKKOS_ENABLE_CUDA )
     case KokkosKernels::Impl::Exec_CUDA:
@@ -280,8 +288,8 @@ struct KokkosSPGEMM
         valuesC(valuesC_),
         beginsC(beginsC_),
         nextsC(nextsC_),
-        pbeginsC(beginsC_.ptr_on_device()), pnextsC(nextsC_.ptr_on_device()),
-        pEntriesC(entriesC_.ptr_on_device()), pvaluesC(valuesC_.ptr_on_device()),
+        pbeginsC(beginsC_.data()), pnextsC(nextsC_.data()),
+        pEntriesC(entriesC_.data()), pvaluesC(valuesC_.data()),
         shared_memory_size(sharedMemorySize_),
 
         vector_size (suggested_vector_size),
@@ -478,8 +486,8 @@ void
     std::cout << "\tSPEED MODE" << std::endl;
   }
 
-  nnz_lno_t brows = row_mapB.dimension_0() - 1;
-  size_type bnnz =  valsB.dimension_0();
+  nnz_lno_t brows = row_mapB.extent(0) - 1;
+  size_type bnnz =  valsB.extent(0);
 
   //get suggested vector size, teamsize and row chunk size.
   int suggested_vector_size = this->handle->get_suggested_vector_size(brows, bnnz);
@@ -491,9 +499,9 @@ void
   if (my_exec_space == KokkosKernels::Impl::Exec_CUDA){
     //allocate memory for begins and next to be used by the hashmap
     nnz_lno_temp_work_view_t beginsC
-    (Kokkos::ViewAllocateWithoutInitializing("C keys"), valuesC_.dimension_0());
+    (Kokkos::ViewAllocateWithoutInitializing("C keys"), valuesC_.extent(0));
     nnz_lno_temp_work_view_t nextsC
-    (Kokkos::ViewAllocateWithoutInitializing("C nexts"), valuesC_.dimension_0());
+    (Kokkos::ViewAllocateWithoutInitializing("C nexts"), valuesC_.extent(0));
     Kokkos::deep_copy(beginsC, -1);
 
     //create the functor.

@@ -102,7 +102,7 @@ inline void kk_print_1Dview(idx_array_type view, bool print_all = false, size_t 
   typedef typename idx_array_type::size_type idx;
   host_type host_view = Kokkos::create_mirror_view (view);
   Kokkos::deep_copy (host_view , view);
-  idx nr = host_view.dimension_0();
+  idx nr = host_view.extent(0);
   if (!print_all){
 
 

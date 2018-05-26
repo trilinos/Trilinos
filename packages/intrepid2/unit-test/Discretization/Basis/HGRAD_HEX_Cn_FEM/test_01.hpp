@@ -153,7 +153,7 @@ int HGRAD_HEX_Cn_FEM_Test01(const bool verbose) {
 
       // Generic array for the output values; needs to be properly resized depending on the operator type
       const ordinal_type numFields = hexBasis.getCardinality();
-      const ordinal_type numPoints = hexNodes.dimension(0);
+      const ordinal_type numPoints = hexNodes.extent(0);
       //const ordinal_type spaceDim  = hexBasis.getBaseCellTopology().getDimension();
 
       // exception 1 - 2: CURL and DIV is not supported.
@@ -207,21 +207,21 @@ int HGRAD_HEX_Cn_FEM_Test01(const bool verbose) {
       }
       {
         // exception #14: incorrect 0th dimension of output array (must equal number of basis functions)
-        DynRankViewOutValueType ConstructWithLabelOutView(badVals, hexBasis.getCardinality() + 1, hexNodes.dimension(0));
+        DynRankViewOutValueType ConstructWithLabelOutView(badVals, hexBasis.getCardinality() + 1, hexNodes.extent(0));
         INTREPID2_TEST_ERROR_EXPECTED( hexBasis.getValues(badVals, hexNodes, OPERATOR_VALUE) );
       }
       {
         // exception #15: incorrect 1st dimension of output array (must equal number of points)
-        DynRankViewOutValueType ConstructWithLabelOutView(badVals, hexBasis.getCardinality(), hexNodes.dimension(0) + 1);
+        DynRankViewOutValueType ConstructWithLabelOutView(badVals, hexBasis.getCardinality(), hexNodes.extent(0) + 1);
         INTREPID2_TEST_ERROR_EXPECTED( hexBasis.getValues(badVals, hexNodes, OPERATOR_VALUE) );
       }
       {
         // exception #16: incorrect 2nd dimension of output array (must equal spatial dimension)
-        DynRankViewOutValueType ConstructWithLabelOutView(badVals, hexBasis.getCardinality(), hexNodes.dimension(0), 2);
+        DynRankViewOutValueType ConstructWithLabelOutView(badVals, hexBasis.getCardinality(), hexNodes.extent(0), 2);
         INTREPID2_TEST_ERROR_EXPECTED( hexBasis.getValues(badVals, hexNodes, OPERATOR_GRAD) );
       }
       {
-        DynRankViewOutValueType ConstructWithLabelOutView(badVals, hexBasis.getCardinality(), hexNodes.dimension(0), 40);
+        DynRankViewOutValueType ConstructWithLabelOutView(badVals, hexBasis.getCardinality(), hexNodes.extent(0), 40);
 
         // exception #17: incorrect 2nd dimension of output array (must equal spatial dimension)
         INTREPID2_TEST_ERROR_EXPECTED( hexBasis.getValues(badVals, hexNodes, OPERATOR_D2) );
@@ -258,7 +258,7 @@ int HGRAD_HEX_Cn_FEM_Test01(const bool verbose) {
     const auto allTags = hexBasis.getAllDofTags();
 
     // Loop over all tags, lookup the associated dof enumeration and then lookup the tag again
-    const ordinal_type dofTagSize = allTags.dimension(0);
+    const ordinal_type dofTagSize = allTags.extent(0);
     for (ordinal_type i=0;i<dofTagSize;++i) {
       const auto bfOrd = hexBasis.getDofOrdinal(allTags(i,0), allTags(i,1), allTags(i,2));
 
@@ -548,7 +548,7 @@ int HGRAD_HEX_Cn_FEM_Test01(const bool verbose) {
 
       // Dimensions for the output arrays:
       const ordinal_type numFields = hexBasis.getCardinality();
-      const ordinal_type numPoints = hexNodes.dimension(0);
+      const ordinal_type numPoints = hexNodes.extent(0);
       const ordinal_type spaceDim  = hexBasis.getBaseCellTopology().getDimension();
       const ordinal_type D2Cardin  = getDkCardinality(OPERATOR_D2, spaceDim);
       const ordinal_type D3Cardin  = getDkCardinality(OPERATOR_D3, spaceDim);

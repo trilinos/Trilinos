@@ -84,8 +84,8 @@ namespace { // (anonymous)
     // finalization automatically.
     Tpetra::Map<> map (comm->getSize (), 1, 0, comm);
 
-    TEST_ASSERT( execution_space::is_initialized () );
-    if (! execution_space::is_initialized ()) {
+    TEST_ASSERT( Kokkos::is_initialized () );
+    if (! Kokkos::is_initialized ()) {
       return; // avoid crashes if initialization failed
     }
     out << "Successfully initialized execution space, if necessary" << endl;

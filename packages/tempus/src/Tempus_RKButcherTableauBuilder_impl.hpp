@@ -172,6 +172,11 @@ void RKButcherTableauBuilder<Scalar>::initializeDefaults_()
                           ExplicitBogackiShampine32_RKBT<Scalar> >(),
       "Bogacki-Shampine 3(2) Pair");
 
+  builder_.setObjectFactory(
+      abstractFactoryStd< RKButcherTableau<Scalar>,
+                          ExplicitMerson45_RKBT<Scalar> >(),
+      "Merson 4(5) Pair");
+
   // Implicit
   builder_.setObjectFactory(
       abstractFactoryStd< RKButcherTableau<Scalar>,
@@ -223,6 +228,11 @@ void RKButcherTableauBuilder<Scalar>::initializeDefaults_()
       abstractFactoryStd< RKButcherTableau<Scalar>,
                           SDIRK5Stage5thOrder_RKBT<Scalar> >(),
       "SDIRK 5 Stage 5th order");
+
+  builder_.setObjectFactory(
+      abstractFactoryStd< RKButcherTableau<Scalar>,
+                          SDIRK21_RKBT<Scalar> >(),
+      "SDIRK 2(1) Pair");
 
   // EDIRK
   builder_.setObjectFactory(

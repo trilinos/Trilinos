@@ -45,7 +45,6 @@
 #define ROL_LINESEARCHSTEP_H
 
 #include "ROL_Types.hpp"
-#include "ROL_HelperFunctions.hpp"
 #include "ROL_Step.hpp"
 #include "ROL_LineSearch.hpp"
 
@@ -158,7 +157,7 @@ private:
   bool computeObj_;
   Real fval_;
 
-  Teuchos::ParameterList parlist_;
+  ROL::ParameterList parlist_;
 
   std::string lineSearchName_;  
 
@@ -193,7 +192,7 @@ public:
   /** \brief Constructor.
 
       Standard constructor to build a LineSearchStep object.  Algorithmic 
-      specifications are passed in through a Teuchos::ParameterList.  The
+      specifications are passed in through a ROL::ParameterList.  The
       line-search type, secant type, Krylov type, or nonlinear CG type can
       be set using user-defined objects.
 
@@ -203,7 +202,7 @@ public:
       @param[in]     krylov     is a user-defined Krylov object
       @param[in]     nlcg       is a user-defined Nonlinear CG object
   */
-  LineSearchStep( Teuchos::ParameterList &parlist,
+  LineSearchStep( ROL::ParameterList &parlist,
                   const ROL::Ptr<LineSearch<Real> > &lineSearch = ROL::nullPtr,
                   const ROL::Ptr<Secant<Real> > &secant = ROL::nullPtr,
                   const ROL::Ptr<Krylov<Real> > &krylov = ROL::nullPtr,
@@ -213,8 +212,8 @@ public:
       els_(LINESEARCH_USERDEFINED), econd_(CURVATURECONDITION_WOLFE),
       verbosity_(0), computeObj_(true), fval_(0), parlist_(parlist) {
     // Parse parameter list
-    Teuchos::ParameterList& Llist = parlist.sublist("Step").sublist("Line Search");
-    Teuchos::ParameterList& Glist = parlist.sublist("General");
+    ROL::ParameterList& Llist = parlist.sublist("Step").sublist("Line Search");
+    ROL::ParameterList& Glist = parlist.sublist("General");
     econd_ = StringToECurvatureCondition(Llist.sublist("Curvature Condition").get("Type","Strong Wolfe Conditions") );
     acceptLastAlpha_ = Llist.get("Accept Last Alpha", false); 
     verbosity_ = Glist.get("Print Verbosity",0);
@@ -238,7 +237,7 @@ public:
     d_ = x.clone();
 
     // Initialize unglobalized step
-    Teuchos::ParameterList& list
+    ROL::ParameterList& list
       = parlist_.sublist("Step").sublist("Line Search").sublist("Descent Method");
     EDescent edesc = StringToEDescent(list.get("Type","Quasi-Newton Method") );
     if (bnd.isActivated()) {
@@ -264,7 +263,7 @@ public:
           break;
         }
         default:
-          TEUCHOS_TEST_FOR_EXCEPTION(true,std::invalid_argument,
+          ROL_TEST_FOR_EXCEPTION(true,std::invalid_argument,
             ">>> (LineSearchStep::Initialize): Undefined descent type!");
       }
     }
@@ -291,7 +290,7 @@ public:
           break;
         }
         default:
-          TEUCHOS_TEST_FOR_EXCEPTION(true,std::invalid_argument,
+          ROL_TEST_FOR_EXCEPTION(true,std::invalid_argument,
             ">>> (LineSearchStep::Initialize): Undefined descent type!");
       }
     }

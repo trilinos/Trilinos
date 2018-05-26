@@ -50,7 +50,7 @@
 // Utilities
 #include "Teuchos_CommandLineProcessor.hpp"
 #include "Teuchos_StandardCatchMacros.hpp"
-#ifdef KOKKOS_HAVE_CUDA
+#ifdef KOKKOS_ENABLE_CUDA
 #include "cuda_runtime_api.h"
 #endif
 
@@ -63,12 +63,6 @@ int main(int argc, char *argv[])
   bool success = true;
   bool verbose = false;
   try {
-
-    const size_t num_sockets = Kokkos::hwloc::get_available_numa_count();
-    const size_t num_cores_per_socket =
-      Kokkos::hwloc::get_available_cores_per_numa();
-    const size_t num_threads_per_core =
-      Kokkos::hwloc::get_available_threads_per_core();
 
     // Setup command line options
     Teuchos::CommandLineProcessor CLP;
@@ -90,21 +84,21 @@ int main(int argc, char *argv[])
     CLP.setOption("check", "no-check", &check, "Check correctness");
     bool quadratic = false;
     CLP.setOption("quadratic", "linear", &quadratic, "Use quadratic basis functions");
-    int num_cores = num_cores_per_socket * num_sockets;
+    int num_cores = -1;
     CLP.setOption("cores", &num_cores,
                   "Number of CPU cores to use (defaults to all)");
-    int num_hyper_threads = num_threads_per_core;
+    int num_hyper_threads = -1;
     CLP.setOption("hyperthreads", &num_hyper_threads,
                   "Number of hyper threads per core to use (defaults to all)");
-#ifdef KOKKOS_HAVE_PTHREAD
+#ifdef KOKKOS_ENABLE_THREADS
     bool threads = true;
     CLP.setOption("threads", "no-threads", &threads, "Enable Threads device");
 #endif
-#ifdef KOKKOS_HAVE_OPENMP
+#ifdef KOKKOS_ENABLE_OPENMP
     bool openmp = true;
     CLP.setOption("openmp", "no-openmp", &openmp, "Enable OpenMP device");
 #endif
-#ifdef KOKKOS_HAVE_CUDA
+#ifdef KOKKOS_ENABLE_CUDA
     bool cuda = true;
     CLP.setOption("cuda", "no-cuda", &cuda, "Enable Cuda device");
     int device_id = 0;
@@ -134,46 +128,37 @@ int main(int argc, char *argv[])
       system("sleep 10");
     }
 
-#ifdef KOKKOS_HAVE_PTHREAD
+    Kokkos::initialize(argc,argv);
+#ifdef KOKKOS_ENABLE_THREADS
     if (threads) {
       typedef Kokkos::Threads Device;
 
-      Kokkos::Threads::initialize(num_cores*num_hyper_threads);
-
       std::cout << std::endl
-                << "Threads performance with " << num_cores*num_hyper_threads
+                << "Threads performance with " << Kokkos::Threads::concurrency()
                 << " threads:" << std::endl;
 
       performance_test_driver<Device>(
         print, nIter, nGridBegin, nGridEnd, nGridStep, quadratic, check);
-
-      Kokkos::Threads::finalize();
     }
 #endif
 
-#ifdef KOKKOS_HAVE_OPENMP
+#ifdef KOKKOS_ENABLE_OPENMP
     if (openmp) {
       typedef Kokkos::OpenMP Device;
 
-      Kokkos::OpenMP::initialize(num_cores*num_hyper_threads);
-
       std::cout << std::endl
-                << "OpenMP performance with " << num_cores*num_hyper_threads
+                << "OpenMP performance with " << Kokkos::OpenMP::concurrency()
                 << " threads:" << std::endl;
 
       performance_test_driver<Device>(
         print, nIter, nGridBegin, nGridEnd, nGridStep, quadratic, check);
 
-      Kokkos::OpenMP::finalize();
     }
 #endif
 
-#ifdef KOKKOS_HAVE_CUDA
+#ifdef KOKKOS_ENABLE_CUDA
     if (cuda) {
       typedef Kokkos::Cuda Device;
-
-      Kokkos::HostSpace::execution_space::initialize();
-      Kokkos::Cuda::initialize(Kokkos::Cuda::SelectDevice(device_id));
 
       cudaDeviceProp deviceProp;
       cudaGetDeviceProperties(&deviceProp, device_id);
@@ -186,11 +171,9 @@ int main(int argc, char *argv[])
       performance_test_driver<Device>(
         print, nIter, nGridBegin, nGridEnd, nGridStep, quadratic, check);
 
-      Kokkos::HostSpace::execution_space::finalize();
-      Kokkos::Cuda::finalize();
     }
 #endif
-
+    Kokkos::finalize();
   }
   TEUCHOS_STANDARD_CATCH_STATEMENTS(verbose, std::cerr, success);
 

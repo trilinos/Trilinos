@@ -83,39 +83,39 @@ namespace panzer {
 
     // check basis
     TEST_EQUALITY(point_values2.getRefCoordinates().fieldTag().dataLayout().rank(),2);
-    TEST_EQUALITY(point_values2.getRefCoordinates().fieldTag().dataLayout().dimension(0),num_points);
+    TEST_EQUALITY(point_values2.getRefCoordinates().fieldTag().dataLayout().extent(0),num_points);
     TEST_EQUALITY(point_values2.getRefCoordinates().fieldTag().dataLayout().extent_int(1),base_cell_dimension);
     TEST_EQUALITY(point_values2.getRefCoordinates().fieldTag().name(),"prefix_coords_ref");
 
     TEST_EQUALITY(point_values2.getVertexCoordinates().fieldTag().dataLayout().rank(),3);
     TEST_EQUALITY(point_values2.getVertexCoordinates().fieldTag().dataLayout().extent_int(0),num_cells);
-    TEST_EQUALITY(point_values2.getVertexCoordinates().fieldTag().dataLayout().dimension(1),4);
+    TEST_EQUALITY(point_values2.getVertexCoordinates().fieldTag().dataLayout().extent(1),4);
     TEST_EQUALITY(point_values2.getVertexCoordinates().fieldTag().dataLayout().extent_int(2),base_cell_dimension);
     TEST_EQUALITY(point_values2.getVertexCoordinates().fieldTag().name(),"prefix_node_coordinates");
 
     TEST_EQUALITY(point_values2.point_coords.fieldTag().dataLayout().rank(),3);
     TEST_EQUALITY(point_values2.point_coords.fieldTag().dataLayout().extent_int(0),num_cells);
-    TEST_EQUALITY(point_values2.point_coords.fieldTag().dataLayout().dimension(1),num_points);
+    TEST_EQUALITY(point_values2.point_coords.fieldTag().dataLayout().extent(1),num_points);
     TEST_EQUALITY(point_values2.point_coords.fieldTag().dataLayout().extent_int(2),base_cell_dimension);
     TEST_EQUALITY(point_values2.point_coords.fieldTag().name(),"prefix_point_coords");
 
     TEST_EQUALITY(point_values2.jac.fieldTag().dataLayout().rank(),4);
     TEST_EQUALITY(point_values2.jac.fieldTag().dataLayout().extent_int(0),num_cells);
-    TEST_EQUALITY(point_values2.jac.fieldTag().dataLayout().dimension(1),num_points);
+    TEST_EQUALITY(point_values2.jac.fieldTag().dataLayout().extent(1),num_points);
     TEST_EQUALITY(point_values2.jac.fieldTag().dataLayout().extent_int(2),base_cell_dimension);
     TEST_EQUALITY(point_values2.jac.fieldTag().dataLayout().extent_int(3),base_cell_dimension);
     TEST_EQUALITY(point_values2.jac.fieldTag().name(),"prefix_jac");
 
     TEST_EQUALITY(point_values2.jac_inv.fieldTag().dataLayout().rank(),4);
     TEST_EQUALITY(point_values2.jac_inv.fieldTag().dataLayout().extent_int(0),num_cells);
-    TEST_EQUALITY(point_values2.jac_inv.fieldTag().dataLayout().dimension(1),num_points);
+    TEST_EQUALITY(point_values2.jac_inv.fieldTag().dataLayout().extent(1),num_points);
     TEST_EQUALITY(point_values2.jac_inv.fieldTag().dataLayout().extent_int(2),base_cell_dimension);
     TEST_EQUALITY(point_values2.jac_inv.fieldTag().dataLayout().extent_int(3),base_cell_dimension);
     TEST_EQUALITY(point_values2.jac_inv.fieldTag().name(),"prefix_jac_inv");
 
     TEST_EQUALITY(point_values2.jac_det.fieldTag().dataLayout().rank(),2);
     TEST_EQUALITY(point_values2.jac_det.fieldTag().dataLayout().extent_int(0),num_cells);
-    TEST_EQUALITY(point_values2.jac_det.fieldTag().dataLayout().dimension(1),num_points);
+    TEST_EQUALITY(point_values2.jac_det.fieldTag().dataLayout().extent(1),num_points);
     TEST_EQUALITY(point_values2.jac_det.fieldTag().name(),"prefix_jac_det");
   }
 
@@ -161,7 +161,7 @@ namespace panzer {
 
     const size_type x = 0;
     const size_type y = 1;
-    for (size_type cell = 0; cell < node_coordinates.dimension(0); ++cell) {
+    for (size_type cell = 0; cell < node_coordinates.extent(0); ++cell) {
       int xleft = cell % 2;
       int yleft = int(cell/2);
 

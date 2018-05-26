@@ -140,7 +140,7 @@ namespace Tpetra {
         // Kokkos::initialize() always initializes the default execution
         // space, so it suffices to check whether that was initialized.
         const bool kokkosIsInitialized =
-          Kokkos::DefaultExecutionSpace::is_initialized ();
+          Kokkos::is_initialized ();
         if (! kokkosIsInitialized) {
           HideOutputExceptOnProcess0 hideCerr (std::cerr, myRank);
           HideOutputExceptOnProcess0 hideCout (std::cout, myRank);
@@ -152,7 +152,7 @@ namespace Tpetra {
       }
 
       const bool kokkosIsInitialized =
-        Kokkos::DefaultExecutionSpace::is_initialized ();
+        Kokkos::is_initialized ();
       TEUCHOS_TEST_FOR_EXCEPTION
         (! kokkosIsInitialized, std::logic_error, "At the end of "
 	 "initKokkosIfNeeded, Kokkos is not initialized.  "

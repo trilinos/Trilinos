@@ -48,7 +48,7 @@
     \brief Provides interface for and implements limited-memory secant operators.
 */
 
-#include "Teuchos_ParameterList.hpp"
+#include "ROL_ParameterList.hpp"
 #include "ROL_LinearOperator.hpp"
 #include "ROL_Types.hpp"
 

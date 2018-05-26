@@ -45,7 +45,7 @@
 #define ROL_LOGISTIC_HPP
 
 #include "ROL_Distribution.hpp"
-#include "Teuchos_ParameterList.hpp"
+#include "ROL_ParameterList.hpp"
 
 namespace ROL {
 
@@ -59,7 +59,7 @@ public:
   Logistic(const Real mean = 0., const Real var = 1.)
     : mean_(mean), var_((var>0.) ? var : 1.) {}
 
-  Logistic(Teuchos::ParameterList &parlist) {
+  Logistic(ROL::ParameterList &parlist) {
     mean_ = parlist.sublist("SOL").sublist("Distribution").sublist("Logistic").get("Mean",0.);
     var_  = parlist.sublist("SOL").sublist("Distribution").sublist("Logistic").get("Scale",1.);
     var_  = (var_ > 0.) ? var_ : 1.;
@@ -88,9 +88,9 @@ public:
     Real val = 0.;
     switch(m) {
       case 1: val = mean_;                                        break;
-      case 2: val = std::pow(var_*Teuchos::ScalarTraits<Real>::pi(),2)/3. + std::pow(mean_,2); break;
+      case 2: val = std::pow(var_*ROL::ScalarTraits<Real>::pi(),2)/3. + std::pow(mean_,2); break;
       default:
-        TEUCHOS_TEST_FOR_EXCEPTION( true, std::invalid_argument,
+        ROL_TEST_FOR_EXCEPTION( true, std::invalid_argument,
           ">>> ERROR (ROL::Logistic): Logistic moment not implemented for m > 2!");
     }
     return val;

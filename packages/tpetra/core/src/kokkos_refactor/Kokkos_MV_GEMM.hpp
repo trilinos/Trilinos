@@ -275,7 +275,7 @@ namespace Kokkos {
   };
 #endif // HAVE_KOKKOSKERNELS_MKL
 
-#ifdef KOKKOS_HAVE_CUDA
+#ifdef KOKKOS_ENABLE_CUDA
   template <typename Scalar>
   struct DeviceGEMM<Scalar, Cuda> {
   public:
@@ -333,7 +333,7 @@ namespace Kokkos {
                                      alpha, A, B, beta, C);
     }
   };
-#endif // KOKKOS_HAVE_CUDA
+#endif // KOKKOS_ENABLE_CUDA
 
 } // namespace Kokkos
 #endif // KOKKOS_MV_GEMM_HPP

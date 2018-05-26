@@ -68,8 +68,8 @@ namespace Intrepid2 {
                const ordinal_type   operatorDn ) {    
       ordinal_type opDn = operatorDn;
 
-      const ordinal_type card = vinv.dimension(0);
-      const ordinal_type npts = input.dimension(0);
+      const ordinal_type card = vinv.extent(0);
+      const ordinal_type npts = input.extent(0);
 
       const ordinal_type order = card - 1;
       const double alpha = 0.0, beta = 0.0;
@@ -86,9 +86,9 @@ namespace Intrepid2 {
 
         for (ordinal_type i=0;i<card;++i) 
           for (ordinal_type j=0;j<npts;++j) {
-            output(i,j) = 0.0;
+            output.access(i,j) = 0.0;
             for (ordinal_type k=0;k<card;++k)
-              output(i,j) += vinv(k,i)*phis(k,j);
+              output.access(i,j) += vinv(k,i)*phis.access(k,j);
           }
         break;
       }
@@ -114,9 +114,9 @@ namespace Intrepid2 {
         for (ordinal_type i=0;i<card;++i) 
           for (ordinal_type j=0;j<npts;++j) 
             for (ordinal_type k=0;k<dkcard;++k) {
-              output(i,j,k) = 0.0;
+              output.access(i,j,k) = 0.0;
               for (ordinal_type l=0;l<card;++l)
-                output(i,j,k) += vinv(l,i)*phis(l,j,k);
+                output.access(i,j,k) += vinv(l,i)*phis.access(l,j,k);
             }
         break;
       }
@@ -144,18 +144,18 @@ namespace Intrepid2 {
       typedef typename ExecSpace<typename inputPointViewType::execution_space,SpT>::ExecSpaceType ExecSpaceType;
 
       // loopSize corresponds to cardinality
-      const auto loopSizeTmp1 = (inputPoints.dimension(0)/numPtsPerEval);
-      const auto loopSizeTmp2 = (inputPoints.dimension(0)%numPtsPerEval != 0);
+      const auto loopSizeTmp1 = (inputPoints.extent(0)/numPtsPerEval);
+      const auto loopSizeTmp2 = (inputPoints.extent(0)%numPtsPerEval != 0);
       const auto loopSize = loopSizeTmp1 + loopSizeTmp2;
       Kokkos::RangePolicy<ExecSpaceType,Kokkos::Schedule<Kokkos::Static> > policy(0, loopSize);
 
       typedef typename inputPointViewType::value_type inputPointType;
 
-      const ordinal_type cardinality = outputValues.dimension(0);
+      const ordinal_type cardinality = outputValues.extent(0);
 
       auto vcprop = Kokkos::common_view_alloc_prop(inputPoints);
       typedef typename Kokkos::DynRankView< inputPointType, typename inputPointViewType::memory_space> workViewType;
-      workViewType  work(Kokkos::view_alloc("Basis_HVOL_LINE_Cn_FEM::getValues::work", vcprop), cardinality, inputPoints.dimension(0));
+      workViewType  work(Kokkos::view_alloc("Basis_HVOL_LINE_Cn_FEM::getValues::work", vcprop), cardinality, inputPoints.extent(0));
 
       switch (operatorType) {
       case OPERATOR_VALUE: {

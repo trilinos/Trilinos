@@ -81,7 +81,7 @@ postRegistrationSetup(
   this->utils.setFieldData(scatter_value,fm);
   this->utils.setFieldData(value,fm);
 
-  num_nodes = scatter_value.dimension(1);
+  num_nodes = scatter_value.extent(1);
 }
 
 template<typename EvalT, typename Traits>

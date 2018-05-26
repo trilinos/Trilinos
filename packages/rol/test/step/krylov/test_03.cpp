@@ -50,7 +50,7 @@
 #include "ROL_KrylovFactory.hpp"
 #include "ROL_RandomVector.hpp"
 
-#include "Teuchos_oblackholestream.hpp"
+#include "ROL_Stream.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
 
 #include<iomanip>
@@ -82,7 +82,7 @@ private:
   Real b_; // diagonal 
   Real c_; // superdiagonal
 
-  Teuchos::LAPACK<int,Real> lapack_;
+  ROL::LAPACK<int,Real> lapack_;
 
 public:
 
@@ -160,7 +160,7 @@ int main(int argc, char *argv[]) {
 
   int iprint     = argc - 1;
   ROL::Ptr<std::ostream> outStream;
-  Teuchos::oblackholestream bhs; // outputs nothing
+  ROL::nullstream bhs; // outputs nothing
   if (iprint > 0)
     outStream = ROL::makePtrFromRef(std::cout);
   else
@@ -170,9 +170,9 @@ int main(int argc, char *argv[]) {
 
   try {
 
-    Teuchos::ParameterList parlist;
-    Teuchos::ParameterList &gList = parlist.sublist("General");
-    Teuchos::ParameterList &kList = gList.sublist("Krylov");
+    ROL::ParameterList parlist;
+    ROL::ParameterList &gList = parlist.sublist("General");
+    ROL::ParameterList &kList = gList.sublist("Krylov");
     
     kList.set("Type","MINRES");
     kList.set("Iteration Limit",20);

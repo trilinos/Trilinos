@@ -50,9 +50,6 @@ namespace KokkosBatched {
       for (int p=0;p<k;++p) {
         const int iend = m-p-1, jend = n-p-1;
 
-        ValueType
-          alpha11 = A[p*as0+p*as1];
-
         const ValueType 
           *__restrict__ a12t = A+(p  )*as0+(p+1)*as1;
 
@@ -62,12 +59,16 @@ namespace KokkosBatched {
 
         if (tiny != 0) {
           if (member.team_rank() == 0) {
-            const auto alpha11_real = RealPart(alpha11);
-            alpha11 += minus_abs_tiny*ValueType(alpha11_real <  0);
-            alpha11 +=       abs_tiny*ValueType(alpha11_real >= 0);
+            ValueType &alpha11_reference = A[p*as0+p*as1];
+            const auto alpha11_real = Kokkos::Details::ArithTraits<ValueType>::real(alpha11_reference);
+            alpha11_reference += minus_abs_tiny*ValueType(alpha11_real <  0);
+            alpha11_reference +=       abs_tiny*ValueType(alpha11_real >= 0);
           }
         }
+
         member.team_barrier();
+        const ValueType
+          alpha11 = A[p*as0+p*as1];
         Kokkos::parallel_for(Kokkos::TeamThreadRange(member,0,iend),[&](const int &i) {
             // a21[i*as0] *= inv_alpha11; 
             a21[i*as0] /= alpha11;
@@ -75,13 +76,8 @@ namespace KokkosBatched {
             
         member.team_barrier();
         Kokkos::parallel_for(Kokkos::TeamThreadRange(member,0,iend*jend),[&](const int &ij) {
-#if							\
-  defined (KOKKOS_ENABLE_CUDA) &&				\
-  defined (KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_CUDA)
-            const int i = ij%iend, j = ij/iend;
-#else
+            // assume layout right for batched computation
             const int i = ij/jend, j = ij%jend;
-#endif
             A22[i*as0+j*as1] -= a21[i*as0] * a12t[j*as1];
           });
       }

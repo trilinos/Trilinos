@@ -52,18 +52,17 @@
 #include "ROL_LinearOperator.hpp"
 #include "ROL_Vector.hpp"
 #include "ROL_Types.hpp"
+#include "ROL_LAPACK.hpp"
+#include "ROL_LinearAlgebra.hpp"
 
-#include "Teuchos_SerialDenseMatrix.hpp"
-#include "Teuchos_SerialDenseVector.hpp"
-#include "Teuchos_LAPACK.hpp"
 
 namespace ROL {
 
 template<class Real>
 class GMRES : public Krylov<Real> {
 
-  typedef Teuchos::SerialDenseMatrix<int, Real> SDMatrix;
-  typedef Teuchos::SerialDenseVector<int, Real> SDVector;
+  typedef LA::Matrix<Real> SDMatrix;
+  typedef LA::Vector<Real> SDVector;
 
 private:
  
@@ -84,11 +83,11 @@ private:
   bool useInexact_;
   bool useInitialGuess_;    // If false, inital x will be ignored and zero vec used
  
-  Teuchos::LAPACK<int,Real> lapack_;
+  ROL::LAPACK<int,Real> lapack_;
 
 public:
   
-  GMRES( Teuchos::ParameterList &parlist ) : Krylov<Real>(parlist), isInitialized_(false) {
+  GMRES( ROL::ParameterList &parlist ) : Krylov<Real>(parlist), isInitialized_(false) {
 
     
     
@@ -96,8 +95,8 @@ public:
 
     Real zero(0);
 
-    Teuchos::ParameterList &gList = parlist.sublist("General");
-    Teuchos::ParameterList &kList = gList.sublist("Krylov");
+    ROL::ParameterList &gList = parlist.sublist("General");
+    ROL::ParameterList &kList = gList.sublist("Krylov");
     
     useInexact_      = gList.get("Inexact Hessian-Times-A-Vector",false);
     useInitialGuess_ = kList.get("Use Initial Guess",false);

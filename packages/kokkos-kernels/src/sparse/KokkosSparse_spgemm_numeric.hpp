@@ -235,15 +235,15 @@ void spgemm_numeric(
   Internal_cscalar_nnz_view_t_ nonconst_c_s = valuesC;
   */
 
-  Internal_alno_row_view_t_ const_a_r (row_mapA.data(), row_mapA.dimension_0());
-  Internal_alno_nnz_view_t_ const_a_l (entriesA.data(), entriesA.dimension_0());
-  Internal_ascalar_nnz_view_t_ const_a_s (valuesA.data(), valuesA.dimension_0());
-  Internal_blno_row_view_t_ const_b_r (row_mapB.data(), row_mapB.dimension_0());
-  Internal_blno_nnz_view_t_ const_b_l  (entriesB.data(), entriesB.dimension_0());
-  Internal_bscalar_nnz_view_t_ const_b_s ( valuesB.data(), valuesB.dimension_0());
-  Internal_clno_row_view_t_ nonconst_c_r  ( row_mapC.data(), row_mapC.dimension_0());
-  Internal_clno_nnz_view_t_ nonconst_c_l  ( entriesC.data(), entriesC.dimension_0());
-  Internal_cscalar_nnz_view_t_ nonconst_c_s ( valuesC.data(), valuesC.dimension_0());
+  Internal_alno_row_view_t_ const_a_r (row_mapA.data(), row_mapA.extent(0));
+  Internal_alno_nnz_view_t_ const_a_l (entriesA.data(), entriesA.extent(0));
+  Internal_ascalar_nnz_view_t_ const_a_s (valuesA.data(), valuesA.extent(0));
+  Internal_blno_row_view_t_ const_b_r (row_mapB.data(), row_mapB.extent(0));
+  Internal_blno_nnz_view_t_ const_b_l  (entriesB.data(), entriesB.extent(0));
+  Internal_bscalar_nnz_view_t_ const_b_s ( valuesB.data(), valuesB.extent(0));
+  Internal_clno_row_view_t_ nonconst_c_r  ( row_mapC.data(), row_mapC.extent(0));
+  Internal_clno_nnz_view_t_ nonconst_c_l  ( entriesC.data(), entriesC.extent(0));
+  Internal_cscalar_nnz_view_t_ nonconst_c_s ( valuesC.data(), valuesC.extent(0));
 
 
   KokkosSparse::Impl::SPGEMM_NUMERIC<

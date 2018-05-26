@@ -46,7 +46,7 @@
 
 #include "ROL_Types.hpp"
 
-#include "Teuchos_ParameterList.hpp"
+#include "ROL_ParameterList.hpp"
 #include "ROL_Ptr.hpp"
 
 #include "ROL_LineSearch.hpp"
@@ -61,7 +61,7 @@
 
 namespace ROL {
   template<class Real>
-  inline ROL::Ptr<LineSearch<Real> > LineSearchFactory(Teuchos::ParameterList &parlist) {
+  inline ROL::Ptr<LineSearch<Real> > LineSearchFactory(ROL::ParameterList &parlist) {
     ELineSearch els = StringToELineSearch(
       parlist.sublist("Step").sublist("Line Search").sublist("Line-Search Method").get("Type","Cubic Interpolation"));
     switch(els) {

@@ -90,7 +90,7 @@ TEST( TaskFunctor, MemoryPool ) {
 //   typedef typename functor_allocate::memory_pool_type memory_pool_type;
 //   typedef typename sched_type::memory_space memory_space;
 
-//   const size_type task_queue_capacity = 1000*sizeof(double);
+//   const size_type task_queue_span = 1000*sizeof(double);
 //   const ordinal_type
 //     min_block_alloc_size = 32,
 //     max_block_alloc_size = 512,
@@ -98,13 +98,13 @@ TEST( TaskFunctor, MemoryPool ) {
 
 // #if defined (__KK__)
 //   sched_type sched(memory_space(),
-//                    task_queue_capacity,
+//                    task_queue_span,
 //                    min_block_alloc_size,
 //                    max_block_alloc_size,
 //                    min_superblock_size);
 // #else
 //   sched_type sched(memory_space(),
-//                    task_queue_capacity);
+//                    task_queue_span);
 // #endif
 
 

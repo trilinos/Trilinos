@@ -43,17 +43,18 @@
 
 
 #define KOKKOSKERNELS_IMPL_COMPILE_LIBRARY true
-#include "KokkosSparse_spmv_spec.hpp"
-
-namespace KokkosSparse {
-namespace Impl {
+#include "KokkosKernels_config.h"
 #if defined (KOKKOSKERNELS_INST_DOUBLE) \
  && defined (KOKKOSKERNELS_INST_LAYOUTLEFT) \
  && defined (KOKKOSKERNELS_INST_EXECSPACE_SERIAL) \
  && defined (KOKKOSKERNELS_INST_MEMSPACE_HBWSPACE) \
  && defined (KOKKOSKERNELS_INST_ORDINAL_INT) \
  && defined (KOKKOSKERNELS_INST_OFFSET_SIZE_T) 
+#include "KokkosSparse_spmv_spec.hpp"
+
+namespace KokkosSparse {
+namespace Impl {
  KOKKOSSPARSE_SPMV_ETI_SPEC_INST(double, int, size_t, Kokkos::LayoutLeft, Kokkos::Serial, Kokkos::Experimental::HBWSpace)
-#endif
 } // Impl
 } // KokkosSparse
+#endif

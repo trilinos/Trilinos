@@ -69,7 +69,9 @@ run_test(const size_t num_cpu, const size_t num_core_per_cpu,
   typedef Kokkos::Threads Device;
   const size_t team_count = num_cpu * num_core_per_cpu;
   const size_t threads_per_team = num_threads_per_core;
-  Kokkos::Threads::initialize( team_count * threads_per_team );
+  Kokkos::InitArguments init_args;
+  init_args.num_threads = team_count*threads_per_team;
+  Kokkos::initialize( init_args );
 
   std::vector<int> var_degree( d , p );
 
@@ -82,7 +84,7 @@ run_test(const size_t num_cpu, const size_t num_core_per_cpu,
       unit_test::test_original_matrix_free_vec<Scalar,Device,Stokhos::DefaultMultiply>(
         var_degree , nGrid , nIter , true , symmetric );
 
-  Kokkos::Threads::finalize();
+  Kokkos::finalize();
 
   double speed_up;
   if (perf1.size() > 0)

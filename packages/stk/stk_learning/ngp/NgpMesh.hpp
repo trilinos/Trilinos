@@ -76,7 +76,7 @@ public:
     STK_FUNCTION
     stk::mesh::Entity operator[](unsigned i) const
     {
-#ifdef KOKKOS_HAVE_CUDA
+#ifdef KOKKOS_ENABLE_CUDA
         return entities[bucketSize*i];
 #else
         return entities[i];

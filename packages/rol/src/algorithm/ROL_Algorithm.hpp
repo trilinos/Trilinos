@@ -110,15 +110,15 @@ public:
              test is determined based on the step string.
   */
   Algorithm( const std::string &stepname,
-             Teuchos::ParameterList &parlist,
+             ROL::ParameterList &parlist,
              bool printHeader = false) {
 
 // Uncomment to test for parameter inconsistencies
-//    ROL::Ptr<const Teuchos::ParameterList> validParlist = getValidROLParameters();
+//    ROL::Ptr<const ROL::ParameterList> validParlist = getValidROLParameters();
 //    parlist.validateParametersAndSetDefaults(*validParlist);
 
     EStep els = StringToEStep(stepname);
-    TEUCHOS_TEST_FOR_EXCEPTION( !(isValidStep(els)),
+    ROL_TEST_FOR_EXCEPTION( !(isValidStep(els)),
                                 std::invalid_argument,
                                 "Invalid step name in algorithm constructor!");
     StepFactory<Real> stepFactory;

@@ -500,8 +500,8 @@ void Epetra_Export::Print(std::ostream & os) const
 
   if (sortIDs && NumExportIDs_ > 0) {
     int* intCompanions[1]; // Input for Epetra_Util::Sort().
-    intCompanions[0] = &exportLIDs[0];
-    Epetra_Util::Sort (true, NumExportIDs_, &exportPIDs[0],
+    intCompanions[0] = Epetra_Util_data_ptr(exportLIDs);
+    Epetra_Util::Sort (true, NumExportIDs_, Epetra_Util_data_ptr(exportPIDs),
            0, (double**) NULL, 1, intCompanions, 0, 0);
   }
       }

@@ -1,7 +1,7 @@
 #ifndef INTREPID_ARRAYTOOLSDEFSCALAR_KOKKOS_HPP
 #define INTREPID_ARRAYTOOLSDEFSCALAR_KOKKOS_HPP
 
-#ifdef HAVE_INTREPID_KOKKOSCORE
+#ifdef INTREPID_OLD_KOKKOS_CODE
 
 #include "Intrepid_ArrayToolsDefScalar.hpp"
 
@@ -135,7 +135,6 @@ struct ArrayTools::scalarMultiplyDataData2Kokkos<ArrayOutData, ArrayInDataLeft, 
 	
 //This is a test that uses nested paralleism
 //Functors for parallel_for rank 3_3
-#if defined( KOKKOS_HAVE_CXX11 )
 #define VECTOR_LENGTH 32
 typedef Kokkos::TeamVectorPolicy<8> team_policy;
 typedef team_policy::member_type team_member ;
@@ -164,7 +163,7 @@ struct PFor__Recip_Not_Const3_3 {
      }*/
   }
 };
-#endif
+
 /*
 template<class ViewType, class ViewType1,class ViewType2>
 struct PFor__Recip_Not_Const3_3 {
@@ -277,10 +276,8 @@ template<class ArrayOutData, class ArrayInDataLeft, class ArrayInDataRight, clas
       if (numDataPoints != 1) {
  
          if (reciprocal) {
-#if defined( KOKKOS_HAVE_CXX11 )
 			  const team_policy policy( numCells , 2 );
               Kokkos::parallel_for(policy,PFor__Recip_Not_Const3_3<ArrayOutData,ArrayInDataLeft,ArrayInDataRight>(outputData, inputDataLeft, inputDataRight));
-#endif
           }
           else {
     

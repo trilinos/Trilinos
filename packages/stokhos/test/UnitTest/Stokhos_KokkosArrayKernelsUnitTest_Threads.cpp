@@ -76,8 +76,11 @@ int main( int argc, char* argv[] ) {
     Kokkos::hwloc::get_available_threads_per_core();
 
   // Initialize threads
-  Kokkos::Threads::initialize( team_count * threads_per_team );
-  Kokkos::Threads::print_configuration( std::cout );
+  Kokkos::InitArguments init_args;
+  init_args.num_threads = team_count*threads_per_team;
+  init_args.device_id = 0;
+  Kokkos::initialize( init_args );
+  Kokkos::print_configuration( std::cout );
 
   // Setup (has to happen after initialization)
   setup.setup();
@@ -86,7 +89,7 @@ int main( int argc, char* argv[] ) {
   int ret = Teuchos::UnitTestRepository::runUnitTestsFromMain(argc, argv);
 
   // Finish up
-  Kokkos::Threads::finalize();
+  Kokkos::finalize();
 
   return ret;
 }

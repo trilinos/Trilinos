@@ -1925,6 +1925,38 @@ reduce<int, int> (const int sendBuf[],
                   const Comm<int>& comm);
 template<>
 TEUCHOSCOMM_LIB_DLL_EXPORT void
+reduce<int, long> (const long sendBuf[],
+                   long recvBuf[],
+                   const int count,
+                   const EReductionType reductType,
+                   const int root,
+                   const Comm<int>& comm);
+template<>
+TEUCHOSCOMM_LIB_DLL_EXPORT void
+reduce<int, unsigned long> (const unsigned long sendBuf[],
+                            unsigned long recvBuf[],
+                            const int count,
+                            const EReductionType reductType,
+                            const int root,
+                            const Comm<int>& comm);
+template<>
+TEUCHOSCOMM_LIB_DLL_EXPORT void
+reduce<int, unsigned long long > (const unsigned long long sendBuf[],
+                                  unsigned long long recvBuf[],
+                                  const int count,
+                                  const EReductionType reductType,
+                                  const int root,
+                                  const Comm<int>& comm);
+template<>
+TEUCHOSCOMM_LIB_DLL_EXPORT void
+reduce<int, double> (const double sendBuf[],
+                     double recvBuf[],
+                     const int count,
+                     const EReductionType reductType,
+                     const int root,
+                     const Comm<int>& comm);
+template<>
+TEUCHOSCOMM_LIB_DLL_EXPORT void
 reduceAll<int, int> (const Comm<int>& comm,
                      const EReductionType reductType,
                      const int count,

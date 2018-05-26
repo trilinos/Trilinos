@@ -82,7 +82,7 @@ namespace Tacho {
         auto stack = Kokkos::subview(work, range_type(2*m, 3*m));
 
         //Kokkos::deep_copy(head, -1);        
-        for (size_type i=0;i<head.dimension_0();++i)
+        for (size_type i=0;i<head.extent(0);++i)
           head(i) = -1;
 
         for (ordinal_type i=m-1;i>=0;--i) {
@@ -228,7 +228,7 @@ namespace Tacho {
                          /* */ size_type_array &sid_super_panel_ptr,
                          /* */ ordinal_type_array &sid_super_panel_colidx,
                          /* */ ordinal_type_array &blk_super_panel_colidx) {
-        const ordinal_type numSuperNodes = supernodes.dimension_0() - 1;
+        const ordinal_type numSuperNodes = supernodes.extent(0) - 1;
           
         // for each supernode
         auto clear_flag = [](const ordinal_type cnt,
@@ -389,7 +389,7 @@ namespace Tacho {
                                     /* */ ordinal_type_array &stree_children,
                                     /* */ ordinal_type_array &stree_roots,
                                     const ordinal_type_array &work) {
-        const ordinal_type numSuperNodes = supernodes.dimension_0() - 1;
+        const ordinal_type numSuperNodes = supernodes.extent(0) - 1;
         const ordinal_type m = supernodes(numSuperNodes);
 
         auto sparent = Kokkos::subview(work, range_type(0*m, 1*m));        
@@ -510,7 +510,7 @@ namespace Tacho {
       }
 
       inline
-      ordinal_type NumSuperNodes() const { return _supernodes.dimension_0() - 1; }
+      ordinal_type NumSuperNodes() const { return _supernodes.extent(0) - 1; }
       
       inline
       ordinal_type_array SuperNodes() const { return _supernodes; }

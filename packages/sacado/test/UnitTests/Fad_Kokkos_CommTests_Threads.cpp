@@ -71,13 +71,13 @@ int main( int argc, char* argv[] ) {
   Teuchos::GlobalMPISession mpiSession(&argc, &argv);
 
   // Initialize threads
-  Kokkos::Threads::initialize();
-  Kokkos::Threads::print_configuration(std::cout);
+  Kokkos::initialize();
+  Kokkos::print_configuration(std::cout);
 
   int ret = Teuchos::UnitTestRepository::runUnitTestsFromMain(argc, argv);
 
   // Finalize threads
-  Kokkos::Threads::finalize();
+  Kokkos::finalize();
 
   return ret;
 }

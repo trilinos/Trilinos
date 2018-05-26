@@ -921,7 +921,7 @@ namespace MueLu {
       AH_=Matrix1;
     }
     else {
-      tm = rcp(new Teuchos::TimeMonitor(*Teuchos::TimeMonitor::getNewTimer("MueLu RefMaxwell: Build coarse addon matrix")));
+      RCP<Teuchos::TimeMonitor> tmAddon = rcp(new Teuchos::TimeMonitor(*Teuchos::TimeMonitor::getNewTimer("MueLu RefMaxwell: Build coarse addon matrix")));
       // catch a failure
       TEUCHOS_TEST_FOR_EXCEPTION(M0inv_Matrix_==Teuchos::null,std::invalid_argument,
                                  "MueLu::RefMaxwell::formCoarseMatrix(): Inverse of "

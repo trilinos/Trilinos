@@ -191,14 +191,9 @@ fi
 echo
 echo "Load some env to get python, cmake, etc ..."
 echo
-source $STD_ATDM_DIR/load-env.sh gnu
+source $STD_ATDM_DIR/load-env.sh default
 # NOTE: Above, it does not matter which env you load.  Any of them will
-# provide the right python, cmake, etc.  Here we just assume that the 'gnu'
-# compilers will be on every ATDM system.
-
-# TODO: If every env does not have 'gnu', then add a special keyword 'default'
-# for the load-env.sh script to allow some default env to be loaded on a
-# system.
+# provide the right python, cmake, etc.
 
 echo
 echo "Running configure, build, and/or testing for $ATDM_NUM_BULDS builds: $ATDM_JOB_NAME_KEYS_LIST"

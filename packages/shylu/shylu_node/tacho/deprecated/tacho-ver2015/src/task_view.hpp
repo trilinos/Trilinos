@@ -73,10 +73,10 @@ namespace Kokkos {
       void operator()( const typename ExecSpace::size_type& i ) const
       { new(m_ptr+i) type(); }
 
-      ViewDefaultConstruct( type * pointer , size_t capacity )
+      ViewDefaultConstruct( type * pointer , size_t span )
         : m_ptr( pointer )
       {
-        Kokkos::RangePolicy< ExecSpace > range( 0 , capacity );
+        Kokkos::RangePolicy< ExecSpace > range( 0 , span );
         parallel_for( range , *this );
         ExecSpace::fence();
       }

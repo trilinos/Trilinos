@@ -88,8 +88,8 @@ postRegistrationSetup(
 {
   this->utils.setFieldData(normals,fm);
 
-  num_qp  = normals.dimension(1);
-  num_dim = normals.dimension(2);
+  num_qp  = normals.extent(1);
+  num_dim = normals.extent(2);
   
   quad_index =  panzer::getIntegrationRuleIndex(quad_order,(*sd.worksets_)[0], this->wda);
 }

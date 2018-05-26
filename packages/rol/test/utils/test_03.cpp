@@ -45,12 +45,15 @@
     \brief Test of FiniteDifference class for performing derivative checks
 */
 
-#include "ROL_FiniteDifference.hpp"
+#include "Teuchos_GlobalMPISession.hpp"
+
+#include "ROL_ValidateFunction.hpp"
 
 #include "ROL_SimpleEqConstrained.hpp"
 #include "ROL_StdVector.hpp"
 #include "ROL_RandomVector.hpp"
-#include "ROL_FunctionBindings.hpp"
+#include "ROL_Objective_CheckInterface.hpp"
+#include "ROL_Constraint_CheckInterface.hpp"
 
 
 int main(int argc, char *argv[]) {
@@ -67,7 +70,7 @@ int main(int argc, char *argv[]) {
 
   int iprint     = argc - 1;
   Ptr<std::ostream> os;
-  Teuchos::oblackholestream bhs; // outputs nothing
+  ROL::nullstream bhs; // outputs nothing
   if (iprint > 0)
     os = makePtrFromRef(std::cout);
   else
@@ -105,17 +108,23 @@ int main(int argc, char *argv[]) {
     auto con_check = make_check(con);
     auto con_up    = con_check.update();
     auto con_val   = con_check.value();
-    auto con_jac   = con_check.applyJacobian();
-    auto con_ajac  = con_check.applyAdjointJacobian( cref(*l) );
-    auto con_hess  = con_check.applyAdjointHessian( cref(*l) );
+    auto con_jac   = con_check.jacobian();
+    auto con_ajac  = con_check.adjointJacobian();
+    auto con_ajacl = fix_direction(con_ajac,*l);
+    auto con_hess  = con_check.adjointHessian( cref(*l) );
 
-    FiniteDifference<RealT> fd( 1, 13, 20, 11, true, *os );
- 
-    fd.scalar_check( obj_val,  obj_grad, obj_up, *g, *v, *x, "grad'*dir" );
-    fd.vector_check( obj_grad, obj_hess, obj_up, *g, *v, *x, "norm(Hess*vec)" );
- 
-    fd.vector_check( con_val,  con_jac,  con_up, *c, *v, *x, "norm(Jac*vec)" ); 
-    fd.vector_check( con_ajac, con_hess, con_up, *d, *v, *x, "norm(adj(H)(u,v))" ); 
+    ValidateFunction<RealT> validator( 1, 13, 20, 11, true, *os );
+
+    // Validate Objective Function
+
+    validator.derivative_check( obj_val,  obj_grad, obj_up, *g, *v, *x, "grad'*dir" );
+    validator.derivative_check( obj_grad, obj_hess, obj_up, *g, *v, *x, "norm(Hess*vec)" );
+    validator.symmetry_check( obj_hess, obj_up, *d, *v, *x, "objective Hessian", "H" );
+
+    validator.derivative_check( con_val,  con_jac,  con_up, *c, *v, *x, "norm(Jac*vec)" ); 
+    validator.derivative_check( con_ajacl, con_hess, con_up, *d, *v, *x, "norm(adj(H)(u,v))" ); 
+    validator.adjoint_consistency_check( con_jac, con_ajac, con_up, *v, *l, *x, "Jacobian", "J");
+
 
   }
   catch (std::logic_error err) {

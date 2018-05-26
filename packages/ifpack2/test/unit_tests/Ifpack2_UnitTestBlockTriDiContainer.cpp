@@ -132,7 +132,7 @@ struct Input {
        << " bs " << bs
        << " nrhs " << nrhs
        << " isplit " << isplit << " jsplit " << jsplit;
-#ifdef KOKKOS_HAVE_OPENMP
+#ifdef KOKKOS_ENABLE_OPENMP
     os << " nthreads " << omp_get_max_threads();
 #endif
     if (nonuniform_lines) os << " nonuniform-lines";

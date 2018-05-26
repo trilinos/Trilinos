@@ -1261,7 +1261,11 @@ ifpackApplyImpl (const op_type& A,
                  const V& D_inv)
 {
   using std::endl;
+#ifdef HAVE_IFPACK2_DEBUG
   const bool debug = debug_;
+#else
+  const bool debug = false;
+#endif
 
   if (debug) {
     *out_ << " \\|B\\|_{\\infty} = " << maxNormInf (B) << endl;
@@ -1314,17 +1318,14 @@ ifpackApplyImpl (const op_type& A,
   // Special case for the first iteration.
   if (! zeroStartingSolution_) {
     computeResidual (V1, B, A, X); // V1 = B - A*X
-
     if (debug) {
       *out_ << " - \\|B - A*X\\|_{\\infty} = " << maxNormInf (V1) << endl;
     }
 
     solve (W, one/theta, D_inv, V1); // W = (1/theta)*D_inv*(B-A*X)
-
     if (debug) {
       *out_ << " - \\|W\\|_{\\infty} = " << maxNormInf (W) << endl;
     }
-
     X.update (one, W, one); // X = X + W
   }
   else {
@@ -1342,7 +1343,6 @@ ifpackApplyImpl (const op_type& A,
   ST rhok = one / s1;
   ST rhokp1, dtemp1, dtemp2;
   for (int deg = 1; deg < numIters; ++deg) {
-
     if (debug) {
       *out_ << " Iteration " << deg+1 << ":" << endl
             << " - \\|D\\|_{\\infty} = " << D_->normInf () << endl
@@ -1353,7 +1353,6 @@ ifpackApplyImpl (const op_type& A,
     }
 
     computeResidual (V1, B, A, X); // V1 = B - A*X
-
     if (debug) {
       *out_ << " - \\|B - A*X\\|_{\\infty} = " << maxNormInf (V1) << endl;
     }
@@ -1368,8 +1367,8 @@ ifpackApplyImpl (const op_type& A,
             << " - dtemp2 = " << dtemp2 << endl;
     }
 
-    W.scale (dtemp1);
-    W.elementWiseMultiply (dtemp2, D_inv, V1, one);
+
+    W.elementWiseMultiply (dtemp2, D_inv, V1, dtemp1);
     X.update (one, W, one);
 
     if (debug) {

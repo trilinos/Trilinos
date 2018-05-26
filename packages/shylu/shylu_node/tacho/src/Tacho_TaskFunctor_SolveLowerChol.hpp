@@ -62,7 +62,7 @@ namespace Tacho {
       KOKKOS_INLINE_FUNCTION
       ordinal_type 
       solve_internal(member_type &member, const ordinal_type n, const bool final) {
-        const ordinal_type nrhs = _info.x.dimension_1();
+        const ordinal_type nrhs = _info.x.extent(1);
         const size_t bufsize = n*nrhs*sizeof(mat_value_type);
         
         mat_value_type* buf = NULL;

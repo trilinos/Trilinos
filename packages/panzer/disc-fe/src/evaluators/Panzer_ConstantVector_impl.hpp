@@ -55,7 +55,7 @@ ConstantVector(
 {
   this->addEvaluatedField(vector);
 
-  int dim = vector.fieldTag().dataLayout().dimension(2);
+  int dim = vector.fieldTag().dataLayout().extent(2);
 
   vals[0] = ScalarT(p.get<double>("Value X"));
   if(dim>1)
