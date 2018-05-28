@@ -169,16 +169,16 @@ namespace FROSch {
     {
         // Build CoarseMatrix_
         CrsMatrixPtr k0 = buildCoarseMatrix();
-        
+
         // Build CoarseMap_
         buildCoarseSolveMap(k0);
-        
+
         //------------------------------------------------------------------------------------------------------------------------
         // Communicate coarse matrix
         CoarseSolveExporters_[0] = Xpetra::ExportFactory<LO,GO,NO>::Build(CoarseMap_,GatheringMaps_[0]);
         CrsMatrixPtr tmpCoarseMatrix = Xpetra::MatrixFactory<SC,LO,GO,NO>::Build(GatheringMaps_[0],k0->getGlobalMaxNumRowEntries());
         tmpCoarseMatrix->doExport(*k0,*CoarseSolveExporters_[0],Xpetra::INSERT);
-        
+
         for (UN j=1; j<GatheringMaps_.size(); j++) {
             tmpCoarseMatrix->fillComplete();
             k0 = tmpCoarseMatrix;
@@ -187,7 +187,7 @@ namespace FROSch {
             
             tmpCoarseMatrix->doExport(*k0,*CoarseSolveExporters_[j],Xpetra::INSERT);
         }
-        
+
         //------------------------------------------------------------------------------------------------------------------------
         // Matrix to the new communicator
         if (OnCoarseSolveComm_) {
@@ -198,14 +198,14 @@ namespace FROSch {
                 tmpCoarseMatrix->getGlobalRowView(CoarseSolveMap_->getGlobalElement(i),indices,values);
                 CoarseMatrix_->insertGlobalValues(CoarseSolveMap_->getGlobalElement(i),indices,values);
             }
-            CoarseMatrix_->fillComplete();
-            
+            CoarseMatrix_->fillComplete(); //Teuchos::RCP<Teuchos::FancyOStream> fancy = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout)); CoarseMatrix_->describe(*fancy,Teuchos::VERB_EXTREME);
+
             CoarseSolver_.reset(new SubdomainSolver<SC,LO,GO,NO>(CoarseMatrix_,sublist(this->ParameterList_,"CoarseSolver")));
             CoarseSolver_->initialize();
             CoarseSolver_->compute();
         }
         //------------------------------------------------------------------------------------------------------------------------
-        
+
         return 0;
     }
     

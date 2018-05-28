@@ -318,7 +318,7 @@ namespace FROSch {
         if (UseFaces_ && Faces_->getNumEntities()>0) {
             MultiVectorPtr tmpVector = Xpetra::MultiVectorFactory<SC,LO,GO,NO>::Build(serialInterfaceMap,Faces_->getNumEntities());
             
-            for (UN i=0; i<Edges_->getNumEntities(); i++) {
+            for (UN i=0; i<Faces_->getNumEntities(); i++) {
                 for (UN j=0; j<Faces_->getEntity(i)->getNumNodes(); j++) {
                     for (UN k=0; k<dofsPerNode; k++) {
                         tmpVector->replaceLocalValue(Faces_->getEntity(i)->getGammaDofID(j,k),i,1.0);

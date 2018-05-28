@@ -172,16 +172,15 @@ int main(int argc, char *argv[])
         K->fillComplete();
         
         if (Comm->MyPID()==0) cout << "done" << endl << "CONSTRUCTING PRECONDITIONER...";
-        RCP<CoarseOperator<SC,LO,GO,NO> > CoarseOpetaror;
         
         RCP<TwoLevelPreconditioner<SC,LO,GO,NO> > TwoLevelPrec(new TwoLevelPreconditioner<SC,LO,GO,NO>(K,sublist(parameterList,"TwoLevelPreconditioner")));
         
         if (Comm->MyPID()==0) cout << "INITIALIZE...";
         TwoLevelPrec->initialize(Dimension,1,1);
         if (Comm->MyPID()==0) cout << "COMPUTE...";
-        CoarseOpetaror->compute();
+        TwoLevelPrec->compute();
         if (Comm->MyPID()==0) cout << "done" << endl << "SOLVING EQUATION SYSTEM...";
-        /*
+        
         RCP<MultiVector<SC,LO,GO,NO> > xSolution = MultiVectorFactory<SC,LO,GO,NO>::Build(UniqueMap,1);
         RCP<MultiVector<SC,LO,GO,NO> > xRightHandSide = MultiVectorFactory<SC,LO,GO,NO>::Build(UniqueMap,1);
         
@@ -189,7 +188,7 @@ int main(int argc, char *argv[])
         xRightHandSide->putScalar(1.0);
         
         RCP<OperatorT<MultiVector<SC,LO,GO,NO> > > OpK = rcp(new XpetraOp<SC, LO, GO, NO>(K));
-        RCP<OperatorT<MultiVector<SC,LO,GO,NO> > > OpP = rcp(new XpetraOp<SC, LO, GO, NO>(Preconditioner));
+        RCP<OperatorT<MultiVector<SC,LO,GO,NO> > > OpP = rcp(new XpetraOp<SC, LO, GO, NO>(TwoLevelPrec));
         
         RCP<LinearProblem<SC,MultiVector<SC,LO,GO,NO>,OperatorT<MultiVector<SC,LO,GO,NO> > > > belosLinearProblem(new LinearProblem<SC,MultiVector<SC,LO,GO,NO>,OperatorT<MultiVector<SC,LO,GO,NO> > >(OpK,xSolution,xRightHandSide));
         SolverFactory<SC,MultiVector<SC,LO,GO,NO>,OperatorT<MultiVector<SC,LO,GO,NO> > > belosFactory;
@@ -208,7 +207,7 @@ int main(int argc, char *argv[])
         belosLinearProblem->setProblem(xSolution,xRightHandSide);
         belosSoverManager->solve();
         belosSoverManager->getNumIters();
-        */
+        
         if (Comm->MyPID()==0) cout << "done" << endl;
     }
     

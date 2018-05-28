@@ -297,7 +297,7 @@ namespace FROSch {
         GO globalstart = 0;
         
         partMappings = Teuchos::ArrayRCP<Teuchos::ArrayRCP<LO> >(mapVector.size());
-        
+
         Teuchos::ArrayRCP<GO> assembledMapTmp(0);
         for (unsigned j=0; j<mapVector.size(); j++) {
             sizetmp = mapVector[j]->getNodeNumElements();

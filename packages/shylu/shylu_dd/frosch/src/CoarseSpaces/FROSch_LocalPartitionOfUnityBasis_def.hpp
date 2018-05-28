@@ -135,6 +135,7 @@ namespace FROSch {
             FROSCH_ASSERT(0!=0,"Number of Basisfunctions per Entity type is unknown.");
         } // Testen!!!!!!!!!!!!!!!!!!!!!!!! AUSGABE IMPLEMENTIEREN!!!!!!
         
+        // Kann man das schöner machen?
         for (UN i=0; i<PartitionOfUnity_.size(); i++) {
             if (!PartitionOfUnityMaps_[i].is_null()) {
                 if (!PartitionOfUnity_[i].is_null()) {
@@ -149,6 +150,8 @@ namespace FROSch {
                         }
                         LocalPartitionOfUnitySpace_->addSubspace(PartitionOfUnityMaps_[i],entityBasis);
                     }
+                } else {
+                    LocalPartitionOfUnitySpace_->addSubspace(PartitionOfUnityMaps_[i]);
                 }
             }
         }

@@ -148,12 +148,6 @@ namespace FROSch {
         
         int addZeroCoarseSpaceBlock(MapPtr &dofsMap);
         
-        int computeBasis();
-        
-        MapPtr assembleRepeatedMap();
-        
-        MapPtr assembleCoarseMap();
-        
         
         CoarseSpacePtr InterfaceCoarseSpace_;
         

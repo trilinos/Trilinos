@@ -80,15 +80,15 @@ namespace FROSch {
     {
         // Build repeatedMap for the local saddle point problem
         MapPtr repeatedMap = assembleRepeatedMap(); // Todo:: Eigentlich gehört das in Initialize !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-        
+
         // Build local saddle point problem
         CrsMatrixPtr repeatedMatrix = FROSch::ExtractLocalSubdomainMatrix(this->K_,repeatedMap);
-        
+
         // Extract submatrices
         GOVec indicesGammaDofsAll(0);
         GOVec indicesIDofsAll(0);
         LO tmp = 0;
-        
+
         for (UN i=0; i<NumberOfBlocks_; i++) {
             for (UN j=0; j<GammaDofs_[i].size(); j++) {
                 indicesGammaDofsAll.push_back(tmp+GammaDofs_[i][j]);
@@ -98,20 +98,20 @@ namespace FROSch {
             }
             tmp += GammaDofs_[i].size()+IDofs_[i].size(); // Ist das mit tmp korrekt?
         }
-        
+
         CrsMatrixPtr kII;
         CrsMatrixPtr kIGamma;
         CrsMatrixPtr kGammaI;
         CrsMatrixPtr kGammaGamma;
-        
+
         FROSch::BuildSubmatrices(repeatedMatrix,indicesIDofsAll(),kII,kIGamma,kGammaI,kGammaGamma);
-        
+
         // Assemble coarse map
         MapPtr coarseMap = assembleCoarseMap(); // Todo:: Eigentlich gehört das in Initialize !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
         // Build the saddle point harmonic extensions
         computeAndFillPhi(repeatedMatrix,repeatedMap,coarseMap,indicesGammaDofsAll(),indicesIDofsAll(),kII,kIGamma);
-        
+
         return 0;
     }
     
@@ -215,7 +215,7 @@ namespace FROSch {
             }
             
         }
-        
+
         // Hier Multiplikation kIGamma*PhiGamma
         kIGamma->apply(*mVPhiGamma,*mVtmp);
         
@@ -249,7 +249,7 @@ namespace FROSch {
             }
         }
         this->Phi_->fillComplete(coarseMap,this->Phi_->getRowMap());
-        
+        //Teuchos::RCP<Teuchos::FancyOStream> fancy = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout)); this->Phi_->describe(*fancy,Teuchos::VERB_EXTREME);
         return 0;
     }
     

@@ -81,21 +81,6 @@ namespace FROSch {
 
         int initialize(bool useDefaultParameters = true);
         
-//        int initialize(int dimension,
-//                       int dofsPerNode,
-//                       int overlap = -1,
-//                       DofOrdering dofOrdering = NodeWise,
-//                       MapPtr repeatedMap = Teuchos::null);
-//        
-//        int initialize(int dimension,
-//                       int dofsPerNode,
-//                       int overlap = -1,
-//                       SCVecPtr2D localNodeList = Teuchos::null,
-//                       DofOrdering dofOrdering = NodeWise,
-//                       MapPtr repeatedMap = Teuchos::null,
-//                       MapPtrVecPtr dofsMaps = Teuchos::null,
-//                       GOVecPtr localDirichletBoundaryDofs = Teuchos::null);
-        
         int initialize(UN dimension,
                        UN dofsPerNode,
                        int overlap = -1,
