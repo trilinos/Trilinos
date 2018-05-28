@@ -66,7 +66,7 @@ namespace Test {
     //KokkosBlas::axpy(a,x,y);
     Kokkos::parallel_for( policy, KOKKOS_LAMBDA ( const team_member &teamMember ) {
        const int teamId = teamMember.league_rank();
-       KokkosBlas::Experimental::axpy(teamMember, a, Kokkos::subview(x,std::make_pair(teamId*team_data_siz,(teamId < M-1)?(teamId+1)*team_data_siz:N)), Kokkos::subview(y,std::make_pair(teamId*team_data_siz,(teamId < M-1)?(teamId+1)*team_data_siz:N)));
+       KokkosBlas::Experimental::axpy(teamMember, a, Kokkos::subview(x,Kokkos::make_pair(teamId*team_data_siz,(teamId < M-1)?(teamId+1)*team_data_siz:N)), Kokkos::subview(y,Kokkos::make_pair(teamId*team_data_siz,(teamId < M-1)?(teamId+1)*team_data_siz:N)));
     } );
 
     ScalarB nonconst_nonconst_result = KokkosBlas::dot(y,y);
@@ -77,7 +77,7 @@ namespace Test {
     //KokkosBlas::axpy(a,c_x,y);
     Kokkos::parallel_for( policy, KOKKOS_LAMBDA ( const team_member &teamMember ) {
        const int teamId = teamMember.league_rank();
-       KokkosBlas::Experimental::axpy(teamMember, a, Kokkos::subview(c_x,std::make_pair(teamId*team_data_siz,(teamId < M-1)?(teamId+1)*team_data_siz:N)), Kokkos::subview(y,std::make_pair(teamId*team_data_siz,(teamId < M-1)?(teamId+1)*team_data_siz:N)));
+       KokkosBlas::Experimental::axpy(teamMember, a, Kokkos::subview(c_x,Kokkos::make_pair(teamId*team_data_siz,(teamId < M-1)?(teamId+1)*team_data_siz:N)), Kokkos::subview(y,Kokkos::make_pair(teamId*team_data_siz,(teamId < M-1)?(teamId+1)*team_data_siz:N)));
     } );
 
     ScalarB const_nonconst_result = KokkosBlas::dot(c_y,c_y);
