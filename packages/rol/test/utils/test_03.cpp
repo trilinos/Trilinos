@@ -45,6 +45,8 @@
     \brief Test of FiniteDifference class for performing derivative checks
 */
 
+#include "Teuchos_GlobalMPISession.hpp"
+
 #include "ROL_ValidateFunction.hpp"
 
 #include "ROL_SimpleEqConstrained.hpp"
@@ -68,7 +70,7 @@ int main(int argc, char *argv[]) {
 
   int iprint     = argc - 1;
   Ptr<std::ostream> os;
-  Teuchos::oblackholestream bhs; // outputs nothing
+  ROL::nullstream bhs; // outputs nothing
   if (iprint > 0)
     os = makePtrFromRef(std::cout);
   else

@@ -160,7 +160,7 @@ namespace ROL {
       case REGRETMEASURE_SMOOTHEDWORSTCASE:
              return makePtr<ExpectationQuadRegret<Real>>(makePtr<SmoothedWorstCaseQuadrangle<Real>>(parlist));
       default:
-        TEUCHOS_TEST_FOR_EXCEPTION(true,std::invalid_argument,
+        ROL_TEST_FOR_EXCEPTION(true,std::invalid_argument,
                                    "Invalid regret measure type " << regret << "!");
     }
   }

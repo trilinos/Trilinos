@@ -111,7 +111,7 @@ public:
   }
 
   Real integrateCDF(const Real input) const {
-    TEUCHOS_TEST_FOR_EXCEPTION( true, std::invalid_argument,
+    ROL_TEST_FOR_EXCEPTION( true, std::invalid_argument,
       ">>> ERROR (ROL::Gaussian): Gaussian integrateCDF not implemented!");
     return ((input < mean_) ? 0.0 : input);
   }
@@ -184,7 +184,7 @@ public:
                     + 420.*std::pow(mean_,2)*std::pow(variance_,3)
                     + 105.*std::pow(variance_,4);                  break;
       default:
-        TEUCHOS_TEST_FOR_EXCEPTION( true, std::invalid_argument,
+        ROL_TEST_FOR_EXCEPTION( true, std::invalid_argument,
           ">>> ERROR (ROL::Distribution): Gaussian moment not implemented for m > 8!");
     }
     return val;

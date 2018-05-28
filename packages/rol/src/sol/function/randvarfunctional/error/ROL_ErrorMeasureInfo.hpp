@@ -69,13 +69,13 @@ inline void ErrorMeasureInfo(ROL::ParameterList &parlist, std::string &name,
     nStatistic = 0;
   }
   else {
-    TEUCHOS_TEST_FOR_EXCEPTION(true,std::invalid_argument,
+    ROL_TEST_FOR_EXCEPTION(true,std::invalid_argument,
       ">>> (ROL::ErrorMeasureInfo): Invalid probability " << name << "!");
   }
 
   // Print Information
   if ( printToStream ) {
-    Teuchos::oblackholestream oldFormatState;
+    ROL::nullstream oldFormatState;
     oldFormatState.copyfmt(outStream);
 
     outStream << std::endl;

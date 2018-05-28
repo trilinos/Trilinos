@@ -96,8 +96,8 @@ private:
     Real initialValue() const {
       return ROL_INF<Real>();
     }
-    Teuchos::EReductionType reductionType() const {
-      return Teuchos::REDUCE_MIN;
+    Elementwise::EReductionType reductionType() const {
+      return Elementwise::REDUCE_MIN;
     }
   } pmin_;
 
@@ -114,8 +114,8 @@ private:
     Real initialValue() const {
       return static_cast<Real>(0);
     }
-    Teuchos::EReductionType reductionType() const {
-      return Teuchos::REDUCE_MAX;
+    Elementwise::EReductionType reductionType() const {
+      return Elementwise::REDUCE_MAX;
     }
   } pmax_;
 

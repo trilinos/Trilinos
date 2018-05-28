@@ -43,7 +43,7 @@
 
 #pragma once
 #include "ROL_Ptr.hpp"
-#include "Teuchos_ParameterList.hpp"
+#include "ROL_ParameterList.hpp"
 #include "Teuchos_XMLParameterListCoreHelpers.hpp"
 
 namespace ROL {

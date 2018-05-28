@@ -880,7 +880,7 @@ namespace MueLu {
       // We calculate the residual only if we want to print it out, or if we
       // want to stop once we achive the tolerance
       Teuchos::Array<MagnitudeType> rn;
-      rn = Utilities::ResidualNorm(*A, X, B);
+      rn = Utilities::ResidualNorm(*A, X, B,*residual_[startLevel]);
 
       if (tol > 0) {
         bool passed = true;
@@ -1070,7 +1070,7 @@ namespace MueLu {
         // We calculate the residual only if we want to print it out, or if we
         // want to stop once we achive the tolerance
         Teuchos::Array<MagnitudeType> rn;
-        rn = Utilities::ResidualNorm(*A, X, B);
+        rn = Utilities::ResidualNorm(*A, X, B,*residual_[startLevel]);
 
         prevNorm = curNorm;
         curNorm  = rn[0];

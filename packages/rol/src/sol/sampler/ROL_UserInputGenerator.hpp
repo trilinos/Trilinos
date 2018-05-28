@@ -130,7 +130,7 @@ public:
       sample(file_pt,file_wt,n,dim,bman);
     }
     else {
-      TEUCHOS_TEST_FOR_EXCEPTION(true,std::invalid_argument,
+      ROL_TEST_FOR_EXCEPTION(true,std::invalid_argument,
         ">>> (ROL::UserInputGenerator): ParameterList does not contain sufficient information.");
     }
   }

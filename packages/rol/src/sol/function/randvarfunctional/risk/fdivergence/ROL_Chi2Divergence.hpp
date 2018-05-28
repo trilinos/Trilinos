@@ -101,7 +101,7 @@ public:
       val = (x < zero) ? ROL_INF<Real>() : one;
     }
     else {
-      TEUCHOS_TEST_FOR_EXCEPTION(true,std::invalid_argument,
+      ROL_TEST_FOR_EXCEPTION(true,std::invalid_argument,
         ">>> (ROL::Chi2Divergence): Derivative order must be 0, 1, or 2!");
     }
     return val;
@@ -119,7 +119,7 @@ public:
       val = (x < -one) ? zero : one;
     }
     else {
-      TEUCHOS_TEST_FOR_EXCEPTION(true,std::invalid_argument,
+      ROL_TEST_FOR_EXCEPTION(true,std::invalid_argument,
         ">>> (ROL::Chi2Divergence): Derivative order must be 0, 1, or 2!");
     }
     return val;

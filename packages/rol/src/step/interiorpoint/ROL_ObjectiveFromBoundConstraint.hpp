@@ -217,7 +217,7 @@ public:
         break;
 
       default:
-        TEUCHOS_TEST_FOR_EXCEPTION(true,std::invalid_argument,
+        ROL_TEST_FOR_EXCEPTION(true,std::invalid_argument,
           ">>>(ObjectiveFromBoundConstraint::value): Undefined barrier function type!");
 
         break;
@@ -300,7 +300,7 @@ public:
         break;
 
       default:
-        TEUCHOS_TEST_FOR_EXCEPTION(true,std::invalid_argument,
+        ROL_TEST_FOR_EXCEPTION(true,std::invalid_argument,
           ">>>(ObjectiveFromBoundConstraint::gradient): Undefined barrier function type!");
 
         break;
@@ -384,7 +384,7 @@ public:
         break;
 
       default:
-        TEUCHOS_TEST_FOR_EXCEPTION(true,std::invalid_argument,
+        ROL_TEST_FOR_EXCEPTION(true,std::invalid_argument,
           ">>>(ObjectiveFromBoundConstraint::hessVec): Undefined barrier function type!");
 
         break;

@@ -69,7 +69,7 @@
 
 #include <iostream>
 
-#include "Teuchos_oblackholestream.hpp"
+#include "ROL_Stream.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
 
 #include "ROL_ParameterList.hpp"

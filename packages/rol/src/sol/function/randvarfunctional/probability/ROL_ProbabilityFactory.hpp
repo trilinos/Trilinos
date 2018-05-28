@@ -118,7 +118,7 @@ namespace ROL {
       case PROBABILITY_SMOOTHEDPOE:
              return makePtr<SmoothedPOE<Real>>(parlist);
       default:
-        TEUCHOS_TEST_FOR_EXCEPTION(true,std::invalid_argument,
+        ROL_TEST_FOR_EXCEPTION(true,std::invalid_argument,
                                    "Invalid probability type " << prob << "!");
     }
   }

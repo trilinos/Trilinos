@@ -57,16 +57,16 @@
 
 #include <algorithm>
 #include <complex>
+#include <exception>
 #include <string>
 #include <sstream>
 #include <limits>
 #include <type_traits>
+#include <ROL_stacktrace.hpp>
 #include "ROL_ScalarTraits.hpp"
-//#include <Teuchos_ScalarTraits.hpp>
 #include <ROL_Ptr.hpp>
 #include <ROL_Vector.hpp>
 #include <ROL_config.h>
-#include <Teuchos_TestForException.hpp>
 
 /** \def    ROL_NUM_CHECKDERIV_STEPS
     \brief  Number of steps for derivative checks.
@@ -978,10 +978,10 @@ Real rol_cast(const Element &val) {
 
 namespace Exception {
 
-class NotImplemented : public Teuchos::ExceptionBase {
+class NotImplemented : public std::logic_error {
 public:
   NotImplemented( const std::string& what_arg ) :
-    Teuchos::ExceptionBase(what_arg) {}
+    std::logic_error(what_arg) {}
 
 
 }; // class NotImplemented

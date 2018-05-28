@@ -45,13 +45,13 @@
 #ifndef _ZOLTAN2_ALGBLOCK_HPP_
 #define _ZOLTAN2_ALGBLOCK_HPP_
 
+#include <Zoltan2_Algorithm.hpp>
 #include <Zoltan2_IdentifierModel.hpp>
 #include <Zoltan2_PartitioningSolution.hpp>
-#include <Zoltan2_Algorithm.hpp>
 
+#include <bitset>
 #include <sstream>
 #include <string>
-#include <bitset>
 
 /*! \file Zoltan2_AlgBlock.hpp
  *  \brief The algorithm for block partitioning.
@@ -97,10 +97,10 @@ private:
   const RCP<const IdentifierModel<typename Adapter::base_adapter_t> > ids;
 
 public:
-  typedef typename Adapter::lno_t lno_t;     // local ids
-  typedef typename Adapter::gno_t gno_t;     // global ids
-  typedef typename Adapter::scalar_t scalar_t;   // scalars
-  typedef typename Adapter::part_t part_t;   // part numbers
+  typedef typename Adapter::lno_t lno_t;       // local ids
+  typedef typename Adapter::gno_t gno_t;       // global ids
+  typedef typename Adapter::scalar_t scalar_t; // scalars
+  typedef typename Adapter::part_t part_t;     // part numbers
 
   // Constructor
   AlgBlock(

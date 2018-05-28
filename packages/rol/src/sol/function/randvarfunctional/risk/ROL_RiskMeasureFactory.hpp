@@ -251,7 +251,7 @@ namespace ROL {
       case RISKMEASURE_KLDIVERGENCE:
              return makePtr<KLDivergence<Real>>(parlist);
       default:
-        TEUCHOS_TEST_FOR_EXCEPTION(true,std::invalid_argument,
+        ROL_TEST_FOR_EXCEPTION(true,std::invalid_argument,
                                    "Invalid risk measure type " << risk << "!");
     }
   }

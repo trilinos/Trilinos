@@ -63,7 +63,7 @@
 #include "ROL_StatusTest.hpp"
 #include "ROL_ParameterList.hpp"
 
-#include "Teuchos_oblackholestream.hpp"
+#include "ROL_Stream.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
 
 #include "example_01a.hpp"
@@ -79,7 +79,7 @@ int main(int argc, char **argv)
     // This little trick lets us print to std::cout only if a (dummy) command-line argument is provided.
     int iprint     = argc - 1;
     ROL::Ptr<std::ostream> outStream;
-    Teuchos::oblackholestream bhs; // outputs nothing
+    ROL::nullstream bhs; // outputs nothing
     if (iprint > 0)
         outStream = ROL::makePtrFromRef(std::cout);
     else

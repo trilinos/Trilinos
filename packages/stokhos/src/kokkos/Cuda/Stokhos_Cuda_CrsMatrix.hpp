@@ -120,8 +120,8 @@ public:
   {
     CudaSparseSingleton & s = CudaSparseSingleton::singleton();
     const float alpha = 1 , beta = 0 ;
-    const int n = A.graph.row_map.dimension_0() - 1 ;
-    const int nz = A.graph.entries.dimension_0();
+    const int n = A.graph.row_map.extent(0) - 1 ;
+    const int nz = A.graph.entries.extent(0);
 
     cusparseStatus_t status =
       cusparseScsrmv( s.handle ,
@@ -129,12 +129,12 @@ public:
                       n , n , nz ,
                       &alpha ,
                       s.descra ,
-                      A.values.ptr_on_device() ,
-                      A.graph.row_map.ptr_on_device() ,
-                      A.graph.entries.ptr_on_device() ,
-                      x.ptr_on_device() ,
+                      A.values.data() ,
+                      A.graph.row_map.data() ,
+                      A.graph.entries.data() ,
+                      x.data() ,
                       &beta ,
-                      y.ptr_on_device() );
+                      y.data() );
 
     if ( CUSPARSE_STATUS_SUCCESS != status ) {
       throw std::runtime_error( std::string("ERROR - cusparseScsrmv " ) );
@@ -164,8 +164,8 @@ public:
   {
     CudaSparseSingleton & s = CudaSparseSingleton::singleton();
     const double alpha = 1 , beta = 0 ;
-    const int n = A.graph.row_map.dimension_0() - 1 ;
-    const int nz = A.graph.entries.dimension_0();
+    const int n = A.graph.row_map.extent(0) - 1 ;
+    const int nz = A.graph.entries.extent(0);
 
     cusparseStatus_t status =
       cusparseDcsrmv( s.handle ,
@@ -173,12 +173,12 @@ public:
                       n , n , nz ,
                       &alpha ,
                       s.descra ,
-                      A.values.ptr_on_device() ,
-                      A.graph.row_map.ptr_on_device() ,
-                      A.graph.entries.ptr_on_device() ,
-                      x.ptr_on_device() ,
+                      A.values.data() ,
+                      A.graph.row_map.data() ,
+                      A.graph.entries.data() ,
+                      x.data() ,
                       &beta ,
-                      y.ptr_on_device() );
+                      y.data() );
 
     if ( CUSPARSE_STATUS_SUCCESS != status ) {
       throw std::runtime_error( std::string("ERROR - cusparseDcsrmv " ) );
@@ -210,8 +210,8 @@ public:
   {
     CudaSparseSingleton & s = CudaSparseSingleton::singleton();
     const float alpha = 1 , beta = 0 ;
-    const int n = A.graph.row_map.dimension_0() - 1 ;
-    const int nz = A.graph.entries.dimension_0();
+    const int n = A.graph.row_map.extent(0) - 1 ;
+    const int nz = A.graph.entries.extent(0);
     const size_t ncol = col_indices.size();
 
     // Copy columns of x into a contiguous vector
@@ -233,13 +233,13 @@ public:
                       n , ncol , n , nz ,
                       &alpha ,
                       s.descra ,
-                      A.values.ptr_on_device() ,
-                      A.graph.row_map.ptr_on_device() ,
-                      A.graph.entries.ptr_on_device() ,
-                      xx.ptr_on_device() ,
+                      A.values.data() ,
+                      A.graph.row_map.data() ,
+                      A.graph.entries.data() ,
+                      xx.data() ,
                       n ,
                       &beta ,
-                      yy.ptr_on_device() ,
+                      yy.data() ,
                       n );
 
     if ( CUSPARSE_STATUS_SUCCESS != status ) {
@@ -296,7 +296,7 @@ public:
     GatherTranspose( multi_vector_type& xt,
                      const multi_vector_type& x,
                      const Kokkos::View<Ordinal*,execution_space>& col ) :
-      m_xt(xt), m_x(x), m_col(col), m_ncol(col.dimension_0()) {}
+      m_xt(xt), m_x(x), m_col(col), m_ncol(col.extent(0)) {}
 
     __device__
     inline void operator() (size_type i) const {
@@ -307,7 +307,7 @@ public:
     static void apply( multi_vector_type& xt,
                        const multi_vector_type& x,
                        const Kokkos::View<Ordinal*,execution_space>& col ) {
-      const size_type n = x.dimension_0();
+      const size_type n = x.extent(0);
       Kokkos::parallel_for( n , GatherTranspose(xt,x,col) );
     }
   };
@@ -319,8 +319,8 @@ public:
   {
     CudaSparseSingleton & s = CudaSparseSingleton::singleton();
     const double alpha = 1 , beta = 0 ;
-    const int n = A.graph.row_map.dimension_0() - 1 ;
-    const int nz = A.graph.entries.dimension_0();
+    const int n = A.graph.row_map.extent(0) - 1 ;
+    const int nz = A.graph.entries.extent(0);
     const size_t ncol = col_indices.size();
 
     // Copy col_indices to the device
@@ -349,13 +349,13 @@ public:
                        n , ncol , n , nz ,
                        &alpha ,
                        s.descra ,
-                       A.values.ptr_on_device() ,
-                       A.graph.row_map.ptr_on_device() ,
-                       A.graph.entries.ptr_on_device() ,
-                       xx.ptr_on_device() ,
+                       A.values.data() ,
+                       A.graph.row_map.data() ,
+                       A.graph.entries.data() ,
+                       xx.data() ,
                        ncol ,
                        &beta ,
-                       yy.ptr_on_device() ,
+                       yy.data() ,
                        n );
 
     if ( CUSPARSE_STATUS_SUCCESS != status ) {
@@ -379,8 +379,8 @@ public:
   {
     CudaSparseSingleton & s = CudaSparseSingleton::singleton();
     const double alpha = 1 , beta = 0 ;
-    const int n = A.graph.row_map.dimension_0() - 1 ;
-    const int nz = A.graph.entries.dimension_0();
+    const int n = A.graph.row_map.extent(0) - 1 ;
+    const int nz = A.graph.entries.extent(0);
     const size_t ncol = col_indices.size();
 
     // Copy columns of x into a contiguous vector
@@ -402,13 +402,13 @@ public:
                       n , ncol , n , nz ,
                       &alpha ,
                       s.descra ,
-                      A.values.ptr_on_device() ,
-                      A.graph.row_map.ptr_on_device() ,
-                      A.graph.entries.ptr_on_device() ,
-                      xx.ptr_on_device() ,
+                      A.values.data() ,
+                      A.graph.row_map.data() ,
+                      A.graph.entries.data() ,
+                      xx.data() ,
                       n ,
                       &beta ,
-                      yy.ptr_on_device() ,
+                      yy.data() ,
                       n );
 
     if ( CUSPARSE_STATUS_SUCCESS != status ) {
@@ -449,9 +449,9 @@ public:
   {
     CudaSparseSingleton & s = CudaSparseSingleton::singleton();
     const float alpha = 1 , beta = 0 ;
-    const int n = A.graph.row_map.dimension_0() - 1 ;
-    const int nz = A.graph.entries.dimension_0();
-    const size_t ncol = x.dimension_1();
+    const int n = A.graph.row_map.extent(0) - 1 ;
+    const int nz = A.graph.entries.extent(0);
+    const size_t ncol = x.extent(1);
 
     // Sparse matrix-times-multivector
     cusparseStatus_t status =
@@ -460,13 +460,13 @@ public:
                       n , ncol , n , nz ,
                       &alpha ,
                       s.descra ,
-                      A.values.ptr_on_device() ,
-                      A.graph.row_map.ptr_on_device() ,
-                      A.graph.entries.ptr_on_device() ,
-                      x.ptr_on_device() ,
+                      A.values.data() ,
+                      A.graph.row_map.data() ,
+                      A.graph.entries.data() ,
+                      x.data() ,
                       n ,
                       &beta ,
-                      y.ptr_on_device() ,
+                      y.data() ,
                       n );
 
     if ( CUSPARSE_STATUS_SUCCESS != status ) {
@@ -497,9 +497,9 @@ public:
   {
     CudaSparseSingleton & s = CudaSparseSingleton::singleton();
     const double alpha = 1 , beta = 0 ;
-    const int n = A.graph.row_map.dimension_0() - 1 ;
-    const int nz = A.graph.entries.dimension_0();
-    const size_t ncol = x.dimension_1();
+    const int n = A.graph.row_map.extent(0) - 1 ;
+    const int nz = A.graph.entries.extent(0);
+    const size_t ncol = x.extent(1);
 
     // Sparse matrix-times-multivector
     cusparseStatus_t status =
@@ -508,13 +508,13 @@ public:
                       n , ncol , n , nz ,
                       &alpha ,
                       s.descra ,
-                      A.values.ptr_on_device() ,
-                      A.graph.row_map.ptr_on_device() ,
-                      A.graph.entries.ptr_on_device() ,
-                      x.ptr_on_device() ,
+                      A.values.data() ,
+                      A.graph.row_map.data() ,
+                      A.graph.entries.data() ,
+                      x.data() ,
                       n ,
                       &beta ,
-                      y.ptr_on_device() ,
+                      y.data() ,
                       n );
 
     if ( CUSPARSE_STATUS_SUCCESS != status ) {
@@ -556,7 +556,7 @@ public:
     m_x(x),
     m_y(y),
     m_col(col),
-    m_num_col(col.dimension_0()) {}
+    m_num_col(col.extent(0)) {}
 
   __device__
   inline void operator() ( const size_type iRow ) const {
@@ -593,7 +593,7 @@ public:
       col_indices_host(i) = col_indices[i];
     Kokkos::deep_copy(col_indices_dev, col_indices_host);
 
-    const size_t n = A.graph.row_map.dimension_0() - 1 ;
+    const size_t n = A.graph.row_map.extent(0) - 1 ;
     Kokkos::parallel_for( n , Multiply(A,x,y,col_indices_dev) );
   }
 };
@@ -622,8 +622,8 @@ public:
   {
     CudaSparseSingleton & s = CudaSparseSingleton::singleton();
     const float alpha = 1 , beta = 0 ;
-    const int n = A.graph.row_map.dimension_0() - 1 ;
-    const int nz = A.graph.entries.dimension_0();
+    const int n = A.graph.row_map.extent(0) - 1 ;
+    const int nz = A.graph.entries.extent(0);
     const size_t ncol = x.size();
 
     // Copy columns of x into a contiguous vector
@@ -643,13 +643,13 @@ public:
                       n , ncol , n , nz ,
                       &alpha ,
                       s.descra ,
-                      A.values.ptr_on_device() ,
-                      A.graph.row_map.ptr_on_device() ,
-                      A.graph.entries.ptr_on_device() ,
-                      xx.ptr_on_device() ,
+                      A.values.data() ,
+                      A.graph.row_map.data() ,
+                      A.graph.entries.data() ,
+                      xx.data() ,
                       n ,
                       &beta ,
-                      yy.ptr_on_device() ,
+                      yy.data() ,
                       n );
 
     if ( CUSPARSE_STATUS_SUCCESS != status ) {
@@ -687,8 +687,8 @@ public:
   {
     CudaSparseSingleton & s = CudaSparseSingleton::singleton();
     const double alpha = 1 , beta = 0 ;
-    const int n = A.graph.row_map.dimension_0() - 1 ;
-    const int nz = A.graph.entries.dimension_0();
+    const int n = A.graph.row_map.extent(0) - 1 ;
+    const int nz = A.graph.entries.extent(0);
     const size_t ncol = x.size();
 
     // Copy columns of x into a contiguous vector
@@ -708,13 +708,13 @@ public:
                       n , ncol , n , nz ,
                       &alpha ,
                       s.descra ,
-                      A.values.ptr_on_device() ,
-                      A.graph.row_map.ptr_on_device() ,
-                      A.graph.entries.ptr_on_device() ,
-                      xx.ptr_on_device() ,
+                      A.values.data() ,
+                      A.graph.row_map.data() ,
+                      A.graph.entries.data() ,
+                      xx.data() ,
                       n ,
                       &beta ,
-                      yy.ptr_on_device() ,
+                      yy.data() ,
                       n );
 
     if ( CUSPARSE_STATUS_SUCCESS != status ) {

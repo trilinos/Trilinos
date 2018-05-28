@@ -140,11 +140,11 @@ private:
 
   void checkInputs(void) const {
     Real zero(0), one(1);
-    TEUCHOS_TEST_FOR_EXCEPTION((prob_ <= zero) || (prob_ >= one), std::invalid_argument,
+    ROL_TEST_FOR_EXCEPTION((prob_ <= zero) || (prob_ >= one), std::invalid_argument,
       ">>> ERROR (ROL::GenMoreauYosidaCVaR): Confidence level must be between 0 and 1!");
-    TEUCHOS_TEST_FOR_EXCEPTION((lam_ < zero) || (lam_ > one), std::invalid_argument,
+    ROL_TEST_FOR_EXCEPTION((lam_ < zero) || (lam_ > one), std::invalid_argument,
       ">>> ERROR (ROL::GenMoreauYosidaCVaR): Convex combination parameter must be positive!");
-    TEUCHOS_TEST_FOR_EXCEPTION((eps_ <= zero), std::invalid_argument,
+    ROL_TEST_FOR_EXCEPTION((eps_ <= zero), std::invalid_argument,
       ">>> ERROR (ROL::GenMoreauYosidaCVaR): Smoothing parameter must be positive!");
   }
 

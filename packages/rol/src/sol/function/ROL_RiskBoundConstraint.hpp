@@ -95,7 +95,7 @@ private:
       nStat     = 0;
     }
     else {
-      TEUCHOS_TEST_FOR_EXCEPTION(true,std::invalid_argument,
+      ROL_TEST_FOR_EXCEPTION(true,std::invalid_argument,
         ">>> (ROL::RiskBoundConstraint): Invalid stochastic optimization type!" << optType);
     }
   }

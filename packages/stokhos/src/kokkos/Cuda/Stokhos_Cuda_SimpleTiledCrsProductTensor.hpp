@@ -248,7 +248,7 @@ public:
                      const vector_type & x ,
                      const vector_type & y )
   {
-    const size_type row_count = A.graph.row_map.dimension_0() - 1;
+    const size_type row_count = A.graph.row_map.extent(0) - 1;
     const size_type tensor_dimension = A.block.dimension();
     const size_type i_tile_size = A.block.max_i_tile_size();
     const size_type jk_tile_size = A.block.max_jk_tile_size();
@@ -535,7 +535,7 @@ public:
                      const vector_type & x ,
                      const vector_type & y )
   {
-    const size_type row_count = A.graph.row_map.dimension_0() - 1;
+    const size_type row_count = A.graph.row_map.extent(0) - 1;
     const size_type tensor_dimension = A.block.dimension();
     const size_type tile_size = A.block.max_jk_tile_size();
     const size_type n_i_tile = A.block.num_i_tiles();

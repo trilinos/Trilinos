@@ -77,7 +77,7 @@ public:
     
   void applyInverse( V &Hv, const V &v, Real &tol ) const {
 
-    TEUCHOS_TEST_FOR_EXCEPTION( true , std::logic_error, 
+    ROL_TEST_FOR_EXCEPTION( true , std::logic_error, 
                                 ">>> ERROR (ROL_DyadicOperator, applyInverse): "
                                 "Not implemented."); 
 

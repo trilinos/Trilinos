@@ -71,7 +71,7 @@ namespace ROL {
       return ProbabilityFactory<Real>(parlist);
     }
     else {
-      TEUCHOS_TEST_FOR_EXCEPTION(true,std::invalid_argument,
+      ROL_TEST_FOR_EXCEPTION(true,std::invalid_argument,
         ">>> (ROL::RandVarFunctionalFactory): Invalid random variable functional type!");
     }
   }

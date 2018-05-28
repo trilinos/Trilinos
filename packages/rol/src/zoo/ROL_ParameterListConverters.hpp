@@ -240,7 +240,7 @@ inline void tierParameterList( ROL::ParameterList &outList,
         setParameter( outList, location, itvec, value );
       }
       else {
-        TEUCHOS_TEST_FOR_EXCEPTION( true, std::invalid_argument,
+        ROL_TEST_FOR_EXCEPTION( true, std::invalid_argument,
                                     ">>>Error: Unhandled parameter type." );  
       }
     } 

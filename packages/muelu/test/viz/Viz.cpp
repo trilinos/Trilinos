@@ -357,11 +357,13 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
         // Preconditioner construction
         // =========================================================================
         comm->barrier();
+        tm.reset();
         tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("ScalingTest: 1.5 - MueLu read XML")));
 
         RCP<HierarchyManager> mueLuFactory = rcp(new ParameterListInterpreter(mueluList));
 
         comm->barrier();
+        tm.reset();
         tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("ScalingTest: 2 - MueLu Setup")));
 
         RCP<Hierarchy> H;
@@ -383,6 +385,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
         // System solution (Ax = b)
         // =========================================================================
         comm->barrier();
+        tm.reset();
         tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("ScalingTest: 3 - LHS and RHS initialization")));
 
         RCP<Vector> X = VectorFactory::Build(map);
@@ -402,6 +405,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
         tm = Teuchos::null;
 
         if (writeMatricesOPT > -2) {
+          tm.reset();
           tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("ScalingTest: 3.5 - Matrix output")));
           H->Write(writeMatricesOPT, writeMatricesOPT);
           tm = Teuchos::null;
@@ -412,6 +416,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
           // Do not perform a solve
 
         } else if (solveType == "standalone") {
+          tm.reset();
           tm = rcp (new TimeMonitor(*TimeMonitor::getNewTimer("ScalingTest: 4 - Fixed Point Solve")));
 
           H->IsPreconditioner(false);
@@ -419,6 +424,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
 
         } else if (solveType == "cg" || solveType == "gmres") {
 #ifdef HAVE_MUELU_BELOS
+          tm.reset();
           tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("ScalingTest: 5 - Belos Solve")));
 
           // Operator and Multivector type that will be used with Belos

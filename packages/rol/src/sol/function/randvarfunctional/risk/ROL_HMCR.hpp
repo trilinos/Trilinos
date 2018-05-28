@@ -111,13 +111,13 @@ private:
 
   void checkInputs(void) const {
     const Real zero(0), one(1);
-    TEUCHOS_TEST_FOR_EXCEPTION((prob_ <= zero) || (prob_ >= one), std::invalid_argument,
+    ROL_TEST_FOR_EXCEPTION((prob_ <= zero) || (prob_ >= one), std::invalid_argument,
       ">>> ERROR (ROL::HMCR): Confidence level must be between 0 and 1!");
-    TEUCHOS_TEST_FOR_EXCEPTION((lambda_ < zero) || (lambda_ > one), std::invalid_argument,
+    ROL_TEST_FOR_EXCEPTION((lambda_ < zero) || (lambda_ > one), std::invalid_argument,
       ">>> ERROR (ROL::HMCR): Convex combination parameter must be positive!");
-    TEUCHOS_TEST_FOR_EXCEPTION((order_ < 2), std::invalid_argument,
+    ROL_TEST_FOR_EXCEPTION((order_ < 2), std::invalid_argument,
       ">>> ERROR (ROL::HMCR): Norm order is less than 2!");
-    TEUCHOS_TEST_FOR_EXCEPTION(plusFunction_ == ROL::nullPtr, std::invalid_argument,
+    ROL_TEST_FOR_EXCEPTION(plusFunction_ == ROL::nullPtr, std::invalid_argument,
       ">>> ERROR (ROL::HMCR): PlusFunction pointer is null!");
   }
 

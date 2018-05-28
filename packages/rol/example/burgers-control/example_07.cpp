@@ -51,7 +51,7 @@
 #include "ROL_MonteCarloGenerator.hpp"
 #include "ROL_ParameterList.hpp"
 
-#include "Teuchos_oblackholestream.hpp"
+#include "ROL_Stream.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
 #include "Teuchos_Comm.hpp"
 #include "Teuchos_DefaultComm.hpp"
@@ -81,7 +81,7 @@ int main(int argc, char *argv[]) {
   int iprint = argc - 1;
   bool print = (iprint>0);
   ROL::Ptr<std::ostream> outStream;
-  Teuchos::oblackholestream bhs; // outputs nothing
+  ROL::nullstream bhs; // outputs nothing
   if (print)
     outStream = ROL::makePtrFromRef(std::cout);
   else

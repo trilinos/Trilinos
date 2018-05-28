@@ -163,7 +163,7 @@ namespace ROL {
       case ERRORMEASURE_SMOOTHEDWORSTCASEQUADRANGLE:
              return makePtr<ExpectationQuadError<Real>>(makePtr<SmoothedWorstCaseQuadrangle<Real>>(parlist));
       default:
-        TEUCHOS_TEST_FOR_EXCEPTION(true,std::invalid_argument,
+        ROL_TEST_FOR_EXCEPTION(true,std::invalid_argument,
                                    "Invalid error measure type " << risk << "!");
     }
   }

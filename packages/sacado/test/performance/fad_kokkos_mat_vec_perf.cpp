@@ -54,8 +54,8 @@ void run_mat_vec(const ViewTypeA& A, const ViewTypeB& b, const ViewTypeC& c) {
   typedef typename ViewTypeC::value_type scalar_type;
   typedef typename ViewTypeC::execution_space execution_space;
 
-  const int m = A.dimension_0();
-  const int n = A.dimension_1();
+  const int m = A.extent(0);
+  const int n = A.extent(1);
   Kokkos::parallel_for(
     Kokkos::RangePolicy<execution_space>( 0,m ),
     KOKKOS_LAMBDA (const int i) {
@@ -83,8 +83,8 @@ void run_mat_vec_hierarchical(const ViewTypeA& A, const ViewTypeB& b,
   const unsigned vector_size = is_cuda ? 32 : 1;
   const unsigned team_size = is_cuda ? 128 / vector_size : 1;
 
-  const int m = A.dimension_0();
-  const int n = A.dimension_1();
+  const int m = A.extent(0);
+  const int n = A.extent(1);
   const int range = (m+team_size-1)/team_size;
 
   typedef Kokkos::TeamPolicy<execution_space> Policy;
@@ -119,8 +119,8 @@ void run_mat_vec_hierarchical(const ViewTypeA& A, const ViewTypeB& b,
   const unsigned vector_size = is_cuda ? 32 : 1;
   const unsigned team_size = is_cuda ? 128 / vector_size : 1;
 
-  const int m = A.dimension_0();
-  const int n = A.dimension_1();
+  const int m = A.extent(0);
+  const int n = A.extent(1);
   const int range = (m+team_size-1)/team_size;
 
   typedef Kokkos::TeamPolicy<execution_space> Policy;
@@ -155,8 +155,8 @@ void run_mat_vec_hierarchical(const ViewTypeA& A, const ViewTypeB& b,
   const unsigned vector_size = 1;
   const unsigned team_size = is_cuda ? 128 / vector_size : 1;
 
-  const int m = A.dimension_0();
-  const int n = A.dimension_1();
+  const int m = A.extent(0);
+  const int n = A.extent(1);
   const int range = (m+team_size-1)/team_size;
 
   typedef Kokkos::TeamPolicy<execution_space> Policy;
@@ -185,8 +185,8 @@ check_val(const ViewTypeA& A, const ViewTypeB& b, const ViewTypeC& c)
   typedef typename ViewTypeC::value_type value_type;
   typename ViewTypeC::HostMirror h_c = Kokkos::create_mirror_view(c);
   Kokkos::deep_copy(h_c, c);
-  const size_t m = A.dimension_0();
-  const size_t n = A.dimension_1();
+  const size_t m = A.extent(0);
+  const size_t n = A.extent(1);
   for (size_t i=0; i<m; ++i) {
     value_type t = n;
     if (std::abs(h_c(i)- t) > tol) {
@@ -204,8 +204,8 @@ check_deriv(const ViewTypeA& A, const ViewTypeB& b, const ViewTypeC& c)
   typedef typename ViewTypeC::value_type value_type;
   typename ViewTypeC::HostMirror h_c = Kokkos::create_mirror_view(c);
   Kokkos::deep_copy(h_c, c);
-  const size_t m = A.dimension_0();
-  const size_t n = A.dimension_1();
+  const size_t m = A.extent(0);
+  const size_t n = A.extent(1);
   const size_t p = Kokkos::dimension_scalar(A);
   for (size_t i=0; i<m; ++i) {
     for (size_t j=0; j<p; ++j) {

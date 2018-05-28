@@ -45,7 +45,6 @@
 #define ROL_LINESEARCHSTEP_H
 
 #include "ROL_Types.hpp"
-#include "ROL_HelperFunctions.hpp"
 #include "ROL_Step.hpp"
 #include "ROL_LineSearch.hpp"
 
@@ -264,7 +263,7 @@ public:
           break;
         }
         default:
-          TEUCHOS_TEST_FOR_EXCEPTION(true,std::invalid_argument,
+          ROL_TEST_FOR_EXCEPTION(true,std::invalid_argument,
             ">>> (LineSearchStep::Initialize): Undefined descent type!");
       }
     }
@@ -291,7 +290,7 @@ public:
           break;
         }
         default:
-          TEUCHOS_TEST_FOR_EXCEPTION(true,std::invalid_argument,
+          ROL_TEST_FOR_EXCEPTION(true,std::invalid_argument,
             ">>> (LineSearchStep::Initialize): Undefined descent type!");
       }
     }

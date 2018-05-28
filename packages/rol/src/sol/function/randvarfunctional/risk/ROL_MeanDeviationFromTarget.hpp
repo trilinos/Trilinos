@@ -50,8 +50,6 @@
 #include "ROL_PlusFunction.hpp"
 #include "ROL_AbsoluteValue.hpp"
 
-#include "Teuchos_Array.hpp"
-
 /** @ingroup risk_group
     \class ROL::MeanDeviationFromTarget
     \brief Provides an interface for the mean plus a sum of arbitrary order
@@ -119,18 +117,18 @@ private:
 
   void checkInputs(void) {
     int oSize = order_.size(), cSize = coeff_.size(), tSize = target_.size();
-    TEUCHOS_TEST_FOR_EXCEPTION((oSize!=cSize),std::invalid_argument,
+    ROL_TEST_FOR_EXCEPTION((oSize!=cSize),std::invalid_argument,
       ">>> ERROR (ROL::MeanDeviationFromTarget): Order and coefficient arrays have different sizes!");
-    TEUCHOS_TEST_FOR_EXCEPTION((oSize!=tSize),std::invalid_argument,
+    ROL_TEST_FOR_EXCEPTION((oSize!=tSize),std::invalid_argument,
       ">>> ERROR (ROL::MeanDeviationFromTarget): Order and target arrays have different sizes!");
     Real zero(0), two(2);
     for (int i = 0; i < oSize; i++) {
-      TEUCHOS_TEST_FOR_EXCEPTION((order_[i] < two), std::invalid_argument,
+      ROL_TEST_FOR_EXCEPTION((order_[i] < two), std::invalid_argument,
         ">>> ERROR (ROL::MeanDeviationFromTarget): Element of order array out of range!");
-      TEUCHOS_TEST_FOR_EXCEPTION((coeff_[i] < zero), std::invalid_argument,
+      ROL_TEST_FOR_EXCEPTION((coeff_[i] < zero), std::invalid_argument,
         ">>> ERROR (ROL::MeanDeviationFromTarget): Element of coefficient array out of range!");
     }
-    TEUCHOS_TEST_FOR_EXCEPTION(positiveFunction_ == nullPtr, std::invalid_argument,
+    ROL_TEST_FOR_EXCEPTION(positiveFunction_ == nullPtr, std::invalid_argument,
       ">>> ERROR (ROL::MeanDeviationFromTarget): PositiveFunction pointer is null!");
     initializeMDT();
   }
@@ -218,7 +216,7 @@ public:
       positiveFunction_ = makePtr<AbsoluteValue<Real>>(list);
     }
     else {
-      TEUCHOS_TEST_FOR_EXCEPTION(true, std::invalid_argument,
+      ROL_TEST_FOR_EXCEPTION(true, std::invalid_argument,
         ">>> (ROL::MeanDeviation): Deviation type is not recoginized!");
     }
     // Check inputs

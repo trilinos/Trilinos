@@ -997,7 +997,7 @@ test_crs_flat_commuted(const UnitTestSetup<Device>& setup,
   matrix.graph = Kokkos::create_staticcrsgraph<matrix_graph_type>(
     std::string("testing") , flat_graph );
 
-  const size_t flat_graph_length = matrix.graph.entries.dimension_0();
+  const size_t flat_graph_length = matrix.graph.entries.extent(0);
 
   matrix.values = matrix_values_type( "matrix" , flat_graph_length );
   {
@@ -1144,7 +1144,7 @@ test_crs_flat_original(const UnitTestSetup<Device>& setup,
 
   matrix.graph = Kokkos::create_staticcrsgraph<matrix_graph_type>( std::string("testing") , flat_graph );
 
-  const size_t flat_graph_length = matrix.graph.entries.dimension_0();
+  const size_t flat_graph_length = matrix.graph.entries.extent(0);
 
   matrix.values = matrix_values_type( "matrix" , flat_graph_length );
   {

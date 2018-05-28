@@ -125,7 +125,7 @@ public:
   /** \brief  Number of sparse entries. */
   KOKKOS_INLINE_FUNCTION
   size_type entry_count() const
-  { return m_value.dimension_0(); }
+  { return m_value.extent(0); }
 
   /** \brief Is tensor built from symmetric PDFs. */
    KOKKOS_INLINE_FUNCTION

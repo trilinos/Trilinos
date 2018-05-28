@@ -97,11 +97,11 @@ private:
 
   void checkInputs(void) const {
     Real zero(0), one(1);
-    TEUCHOS_TEST_FOR_EXCEPTION((prob_ <= zero) || (prob_ >= one), std::invalid_argument,
+    ROL_TEST_FOR_EXCEPTION((prob_ <= zero) || (prob_ >= one), std::invalid_argument,
       ">>> ERROR (ROL::CVaR): Confidence level must be between 0 and 1!");
-    TEUCHOS_TEST_FOR_EXCEPTION((coeff_ < zero) || (coeff_ > one), std::invalid_argument,
+    ROL_TEST_FOR_EXCEPTION((coeff_ < zero) || (coeff_ > one), std::invalid_argument,
       ">>> ERROR (ROL::CVaR): Convex combination parameter must be positive!");
-    TEUCHOS_TEST_FOR_EXCEPTION(plusFunction_ == nullPtr, std::invalid_argument,
+    ROL_TEST_FOR_EXCEPTION(plusFunction_ == nullPtr, std::invalid_argument,
       ">>> ERROR (ROL::CVaR): PlusFunction pointer is null!");
   }
 

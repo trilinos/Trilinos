@@ -148,7 +148,7 @@ public:
                      const input_vector_type & x,
                      output_vector_type & y )
   {
-    const size_t row_count = A.graph.row_map.dimension_0() - 1;
+    const size_t row_count = A.graph.row_map.extent(0) - 1;
     Kokkos::parallel_for( row_count, Multiply(A,x,y) );
   }
 };
@@ -221,7 +221,7 @@ public:
                      output_multi_vector_type& y,
                      const column_indices_type& col )
   {
-    const size_t n = A.graph.row_map.dimension_0() - 1 ;
+    const size_t n = A.graph.row_map.extent(0) - 1 ;
     //Kokkos::parallel_for( n , Multiply(A,x,y,col) );
 
     const size_t block_size = 20;
@@ -280,8 +280,8 @@ public:
   : m_A( A )
   , m_x( x )
   , m_y( y )
-  , m_num_row( A.graph.row_map.dimension_0()-1 )
-  , m_num_col( m_y.dimension_1() )
+  , m_num_row( A.graph.row_map.extent(0)-1 )
+  , m_num_col( m_y.extent(1) )
   {
   }
 
@@ -334,7 +334,7 @@ public:
                      output_multi_vector_type& y )
   {
     // Parallelize over row blocks of size m_block_row_size
-    const size_type num_row = A.graph.row_map.dimension_0() - 1;
+    const size_type num_row = A.graph.row_map.extent(0) - 1;
     const size_type n = (num_row+m_block_row_size-1) / m_block_row_size;
     Kokkos::parallel_for( n , Multiply(A,x,y) );
   }
@@ -372,7 +372,7 @@ public:
   : m_A( A )
   , m_x( x )
   , m_y( y )
-  , m_num_vecs( m_y.dimension_1() )
+  , m_num_vecs( m_y.extent(1) )
   {}
 
   //--------------------------------------------------------------------------
@@ -401,7 +401,7 @@ public:
                      const input_multi_vector_type& x,
                      output_multi_vector_type& y )
   {
-    const size_t n = A.graph.row_map.dimension_0() - 1 ;
+    const size_t n = A.graph.row_map.extent(0) - 1 ;
     Kokkos::parallel_for( n , Multiply(A,x,y) );
 
     // const size_t block_size = 20;
@@ -460,7 +460,7 @@ public:
   : m_A( A )
   , m_x( x )
   , m_y( y )
-  , m_num_row( A.graph.row_map.dimension_0()-1 )
+  , m_num_row( A.graph.row_map.extent(0)-1 )
   , m_num_col( x.size() )
   {
   }
@@ -514,7 +514,7 @@ public:
                      output_multi_vector_type& y )
   {
     // Parallelize over row blocks of size m_block_row_size
-    const size_type num_row = A.graph.row_map.dimension_0() - 1;
+    const size_type num_row = A.graph.row_map.extent(0) - 1;
     const size_type n = (num_row+m_block_row_size-1) / m_block_row_size;
     Kokkos::parallel_for( n , Multiply(A,x,y) );
   }
@@ -582,7 +582,7 @@ public:
                      const input_multi_vector_type& x,
                      output_multi_vector_type& y )
   {
-    const size_t n = A.graph.row_map.dimension_0() - 1 ;
+    const size_t n = A.graph.row_map.extent(0) - 1 ;
     Kokkos::parallel_for( n , Multiply(A,x,y) );
 
     // const size_t block_size = 20;
@@ -710,11 +710,11 @@ public:
     typename matrix_type::HostMirror hA = Kokkos::create_mirror_view(A);
     Kokkos::deep_copy(hA, A);
 
-    const size_type nRow = hA.graph.row_map.dimension_0() - 1 ;
+    const size_type nRow = hA.graph.row_map.extent(0) - 1 ;
 
     // Write banner
     file << "%%MatrixMarket matrix coordinate real general" << std::endl;
-    file << nRow << " " << nRow << " " << hA.values.dimension_0() << std::endl;
+    file << nRow << " " << nRow << " " << hA.values.extent(0) << std::endl;
 
     for (size_type row=0; row<nRow; ++row) {
       size_type entryBegin = hA.graph.row_map(row);

@@ -74,7 +74,7 @@ public:
       numMySamples_(numMySamples), dimension_(dimension) {}
 
   ROL::Ptr<const std::vector<Real> > getAtom(const int i) const {
-    TEUCHOS_TEST_FOR_EXCEPTION((i < 0 || i > numMySamples_), std::invalid_argument,
+    ROL_TEST_FOR_EXCEPTION((i < 0 || i > numMySamples_), std::invalid_argument,
       ">>> ERROR (ROL::AtomVector): index out of bounds in getAtom!");
     uint dim = static_cast<uint>(dimension_), I = static_cast<uint>(i);
     std::vector<Real> pt(dim,0);
@@ -86,7 +86,7 @@ public:
   }
 
   void setAtom(const int i, const std::vector<Real> &pt) {
-    TEUCHOS_TEST_FOR_EXCEPTION((i < 0 || i > numMySamples_), std::invalid_argument,
+    ROL_TEST_FOR_EXCEPTION((i < 0 || i > numMySamples_), std::invalid_argument,
       ">>> ERROR (ROL::AtomVector): index out of bounds in setAtom!");
     uint dim = static_cast<uint>(dimension_), I = static_cast<uint>(i);
     std::vector<Real> &yval = *(StdVector<Real>::getVector());
@@ -124,7 +124,7 @@ public:
     const std::vector<Real> &xval = *(dynamic_cast<const StdVector<Real>&>(x).getVector());
     const std::vector<Real> &yval = *(StdVector<Real>::getVector());
     uint ysize = yval.size();
-    TEUCHOS_TEST_FOR_EXCEPTION( xval.size() != ysize, std::invalid_argument,
+    ROL_TEST_FOR_EXCEPTION( xval.size() != ysize, std::invalid_argument,
       "Error: Vectors must have the same dimension." );
     uint index        = 0;
     uint numMySamples = static_cast<uint>(AtomVector<Real>::getNumMyAtoms());
@@ -192,7 +192,7 @@ public:
     const std::vector<Real> &xval = *(dynamic_cast<const StdVector<Real>&>(x).getVector());
     const std::vector<Real> &yval = *(StdVector<Real>::getVector());
     uint ysize = yval.size();
-    TEUCHOS_TEST_FOR_EXCEPTION( xval.size() != ysize, std::invalid_argument,
+    ROL_TEST_FOR_EXCEPTION( xval.size() != ysize, std::invalid_argument,
       "Error: Vectors must have the same dimension." );
     uint index        = 0;
     uint numMySamples = static_cast<uint>(AtomVector<Real>::getNumMyAtoms());

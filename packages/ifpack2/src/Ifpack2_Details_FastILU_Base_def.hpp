@@ -1,4 +1,4 @@
-/*@HEADER
+ /*@HEADER
 // ***********************************************************************
 //
 //       Ifpack2: Templated Object-Oriented Algebraic Preconditioner Package
@@ -48,6 +48,8 @@
 #include <Ifpack2_Details_CrsArrays.hpp>
 #include <impl/Kokkos_Timer.hpp>
 #include <stdexcept>
+#include "Teuchos_TimeMonitor.hpp"
+
 
 namespace Ifpack2
 {
@@ -93,6 +95,13 @@ apply (const Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &X,
        Scalar alpha,
        Scalar beta) const
 {
+  const std::string timerName ("Ifpack2::FastILU::apply");
+  Teuchos::RCP<Teuchos::Time> timer = Teuchos::TimeMonitor::lookupCounter (timerName);
+  if (timer.is_null ()) {
+    timer = Teuchos::TimeMonitor::getNewCounter (timerName);
+  }
+  Teuchos::TimeMonitor timeMon (*timer);
+
   if(!isInitialized() || !isComputed())
   {
     throw std::runtime_error(std::string("Called ") + getName() + "::apply() without first calling initialize() and/or compute().");
@@ -144,6 +153,13 @@ template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void FastILU_Base<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
 initialize()
 {
+
+  const std::string timerName ("Ifpack2::FastILU::initialize");
+  Teuchos::RCP<Teuchos::Time> timer = Teuchos::TimeMonitor::lookupCounter (timerName);
+  if (timer.is_null ()) {
+    timer = Teuchos::TimeMonitor::getNewCounter (timerName);
+  }
+  
   if(mat_.is_null())
   {
     throw std::runtime_error(std::string("Called ") + getName() + "::initialize() but matrix was null (call setMatrix() with a non-null matrix first)");
@@ -171,6 +187,14 @@ compute()
   {
     throw std::runtime_error(getName() + ": initialize() must be called before compute()");
   }
+
+  const std::string timerName ("Ifpack2::FastILU::compute");
+  Teuchos::RCP<Teuchos::Time> timer = Teuchos::TimeMonitor::lookupCounter (timerName);
+  if (timer.is_null ()) {
+    timer = Teuchos::TimeMonitor::getNewCounter (timerName);
+  }
+
+
   //get copy of values array from matrix
   Kokkos::Impl::Timer copyTimer;
   CrsArrayReader<Scalar, LocalOrdinal, GlobalOrdinal, Node>::getValues(mat_.get(), localValues_, localRowPtrsHost_);

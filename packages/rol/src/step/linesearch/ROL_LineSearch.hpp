@@ -49,7 +49,7 @@
 */
 
 #include "ROL_Ptr.hpp"
-#include "Teuchos_ParameterList.hpp"
+#include "ROL_ParameterList.hpp"
 #include "ROL_Types.hpp"
 #include "ROL_Vector.hpp"
 #include "ROL_Objective.hpp"
