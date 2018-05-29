@@ -69,7 +69,6 @@ namespace {
   {
     typedef Tpetra::BlockMultiVector<Scalar, LO, GO, Node> BMV;
     typedef typename BMV::device_type device_type;
-    typedef typename device_type::execution_space execution_space;
     typedef typename BMV::impl_scalar_type IST;
     typedef Tpetra::Map<LO, GO, Node> map_type;
     typedef Tpetra::global_size_t GST;
@@ -379,7 +378,6 @@ namespace {
   {
     typedef Tpetra::BlockMultiVector<Scalar, LO, GO, Node> BMV;
     typedef typename BMV::device_type device_type;
-    typedef typename device_type::execution_space execution_space;
     typedef typename BMV::impl_scalar_type IST;
     typedef Tpetra::Map<LO, GO, Node> map_type;
     typedef Tpetra::global_size_t GST;
