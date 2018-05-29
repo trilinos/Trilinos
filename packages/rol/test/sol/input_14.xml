@@ -53,7 +53,11 @@
   <ParameterList name="SOL">
     <ParameterList name="Progressive Hedging">
       <Parameter name="Use Presolve"                           type="bool"   value="false" />
+      <Parameter name="Use Inexact Solve"                      type="bool"   value="true"  />
+      <Parameter name="Fixed Tolerance"                        type="double" value="1.0"   />
+      <Parameter name="Dynamic Tolerance"                      type="double" value="0.01"  />
       <Parameter name="Initial Penalty Parameter"              type="double" value="1.0"   />
+      <Parameter name="Maximum Penalty Parameter"              type="double" value="1e8"   />
       <Parameter name="Penalty Update Scale"                   type="double" value="10.0"  />
       <Parameter name="Penalty Update Frequency"               type="int"    value="1"     />
       <Parameter name="Nonanticipativity Constraint Tolerance" type="double" value="1.e-6" />

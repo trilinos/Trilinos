@@ -99,14 +99,6 @@ public:
   }
 };
 
-void setUpAndSolve(Teuchos::ParameterList &list,
-                   ROL::Ptr<ROL::Objective<RealT> > &pObj,
-                   ROL::Ptr<ROL::SampleGenerator<RealT> > &sampler,
-                   ROL::Ptr<ROL::Vector<RealT> > &x,
-                   ROL::Ptr<ROL::BoundConstraint<RealT> > &bnd,
-                   std::ostream & outStream) {
-}
-
 void setRandomVector(std::vector<RealT> &x) {
   unsigned dim = x.size();
   for ( unsigned i = 0; i < dim; i++ ) {
@@ -153,10 +145,14 @@ int main(int argc, char* argv[]) {
     /**********************************************************************************************/
     // Build vectors
     unsigned dim = 4;
-    ROL::Ptr<std::vector<RealT>> x_ptr = ROL::makePtr<std::vector<RealT>>(dim,0.0);
-    ROL::Ptr<ROL::Vector<RealT>> x     = ROL::makePtr<ROL::StdVector<RealT>>(x_ptr);
-    ROL::Ptr<std::vector<RealT>> d_ptr = ROL::makePtr<std::vector<RealT>>(dim,0.0);
-    ROL::Ptr<ROL::Vector<RealT>> d     = ROL::makePtr<ROL::StdVector<RealT>>(d_ptr);
+    ROL::Ptr<std::vector<RealT>> x_ptr  = ROL::makePtr<std::vector<RealT>>(dim,0.0);
+    ROL::Ptr<ROL::Vector<RealT>> x      = ROL::makePtr<ROL::StdVector<RealT>>(x_ptr);
+    ROL::Ptr<std::vector<RealT>> xr_ptr = ROL::makePtr<std::vector<RealT>>(dim,0.0);
+    ROL::Ptr<ROL::Vector<RealT>> xr     = ROL::makePtr<ROL::StdVector<RealT>>(xr_ptr);
+    ROL::Ptr<std::vector<RealT>> xg_ptr = ROL::makePtr<std::vector<RealT>>(dim,0.0);
+    ROL::Ptr<ROL::Vector<RealT>> xg     = ROL::makePtr<ROL::StdVector<RealT>>(xg_ptr);
+    ROL::Ptr<std::vector<RealT>> d_ptr  = ROL::makePtr<std::vector<RealT>>(dim,0.0);
+    ROL::Ptr<ROL::Vector<RealT>> d      = ROL::makePtr<ROL::StdVector<RealT>>(d_ptr);
     setRandomVector(*d_ptr);
     // Build samplers
     int nSamp = 1000;  
@@ -186,6 +182,28 @@ int main(int argc, char* argv[]) {
       = ROL::makePtr<ROL::OptimizationProblem<RealT>>(pObj,x,bnd);
     ROL::ProgressiveHedging<RealT> ph_solver(problem,sampler,*parlist);
     ph_solver.run(*outStream);
+    // Compute true solution
+    RealT denom(0), denom_g(0);
+    for (int i = 0; i < sampler->numMySamples(); ++i) {
+      denom += sampler->getMyWeight(i)*std::exp(sampler->getMyPoint(i)[0]);
+      for (unsigned j = 0; j < dim; ++j) {
+        (*xr_ptr)[j] += sampler->getMyWeight(i)*sampler->getMyPoint(i)[j+1];
+      }
+    }
+    sampler->sumAll(&denom,&denom_g,1);
+    sampler->sumAll(*xr,*xg);
+    for (unsigned j = 0; j < dim; ++j) {
+      (*xg_ptr)[j] /= -2.0*denom_g;
+    }
+    // Print solutions
+    *outStream << std::endl << "Progressive Hedging Solution" << std::endl;
+    printSolution(*x_ptr,*outStream);
+    *outStream << std::endl << "True Solution" << std::endl;
+    printSolution(*xg_ptr,*outStream);
+    d->set(*x); d->axpy(-1.0,*xg);
+    RealT err = d->norm();
+    *outStream << std::endl << "Error: " << err << std::endl << std::endl;
+    errorFlag += (err > 1e-2 ? 1 : 0);
   }
   catch (std::logic_error err) {
     *outStream << err.what() << "\n";

@@ -40,76 +40,56 @@
 //
 // ************************************************************************
 // @HEADER
-//
-#ifndef PROGHEDGEOBJECTIVE_H
-#define PROGHEDGEOBJECTIVE_H
 
-#include "ROL_Objective.hpp"
+#ifndef ROL_PH_STATUSTEST_H
+#define ROL_PH_STATUSTEST_H
 
-/** @ingroup func_group
-    \class ROL::ProgHedgeObjective
-    \brief Provides the interface for the progressive hedging objective.
+#include "ROL_StatusTest.hpp"
 
-    ---
+/** \class ROL::PH_StatusTest
+    \brief Provides an interface to check status of the progressive hedging algorithm.
 */
+
+
 namespace ROL {
 
 template <class Real>
-class ProgHedgeObjective : public Objective<Real> {
+class PH_StatusTest : public StatusTest<Real> {
 private:
-  const Ptr<Objective<Real>> obj_;
-  Ptr<Vector<Real>> xbar_, x0_, w_;
-  Real penaltyParam_;
+
+  Real mu_;
+  Real epsilon_;
+  Ptr<const Vector<Real>> xbar_;
+  Real tol_;
+  Ptr<Vector<Real>> x_;
 
 public:
 
-  ProgHedgeObjective(const Ptr<Objective<Real>> &obj,
-                     const Vector<Real> &x,
-                     const Real penaltyParam) 
-    : obj_(obj), penaltyParam_(penaltyParam) {
-    xbar_ = x.clone();
-    x0_   = x.clone();
-    w_    = x.dual().clone();
+  PH_StatusTest( ROL::ParameterList &parlist, const Vector<Real> &x ) {
+    mu_      = parlist.sublist("SOL").sublist("Progressive Hedging").get("Fixed Tolerance", 1e-4);
+    epsilon_ = parlist.sublist("SOL").sublist("Progressive Hedging").get("Dynamic Tolerance", 0.1);
+    x_       = x.clone();
   }
 
-  void setData(const Vector<Real> &xbar, const Vector<Real> &w, const Real penaltyParam) {
-    xbar_->set(xbar);
-    w_->set(w);
-    penaltyParam_ = penaltyParam;
-  }
-
-  void update( const Vector<Real> &x, bool flag = true, int iter = -1 ) {
-    obj_->update(x,flag,iter);
-  }
-
-  Real value( const Vector<Real> &x, Real &tol ) {
-    const Real half(0.5), one(1);
-    Real val = obj_->value(x,tol);
-    Real wx  = x.dot(w_->dual());
-    x0_->set(x); x0_->axpy(-one,*xbar_);
-    Real xx  = x0_->dot(*x0_);
-    return val + wx + half*penaltyParam_*xx;
-  }
-
-  void gradient( Vector<Real> &g, const Vector<Real> &x, Real &tol ) {
+  void setData(const int iter, const Ptr<const Vector<Real>> &xbar) {
     const Real one(1);
-    obj_->gradient(g,x,tol);
-    g.plus(*w_);
-    x0_->set(x); x0_->axpy(-one,*xbar_);
-    g.axpy(penaltyParam_,*x0_);
+    tol_   = mu_*std::pow(one-epsilon_,iter+1);
+    xbar_  = xbar;
   }
 
-  void hessVec( Vector<Real> &hv, const Vector<Real> &v, const Vector<Real> &x, Real &tol ) {
-    obj_->hessVec(hv,v,x,tol);
-    hv.axpy(penaltyParam_,v);
+  bool check( AlgorithmState<Real> &state ) {
+    const Real one(1);
+    x_->set(*state.iterateVec); x_->axpy(-one,*xbar_);
+    Real xnorm = x_->norm();
+    if ( state.gnorm <= tol_*std::min(one,xnorm) ) {
+      state.statusFlag = EXITSTATUS_USERDEFINED;
+      return false;
+    }
+    return true;
   }
 
-  void setParameter(const std::vector<Real> &param) {
-    obj_->setParameter(param);
-    Objective<Real>::setParameter(param);
-  }
+}; // class PH_StatusTest
 
-};
+} // namespace ROL
 
-}
 #endif

@@ -45,7 +45,8 @@
 #define ROL_PROGRESSIVEHEDGING_H
 
 #include "ROL_OptimizationSolver.hpp"
-#include "ROL_ProgHedgeObjective.hpp"
+#include "ROL_PH_Objective.hpp"
+#include "ROL_PH_StatusTest.hpp"
 
 /** @ingroup algo_group
     \class ROL::ProgressiveHedging
@@ -64,18 +65,21 @@ private:
   const Ptr<SampleGenerator<Real>> sampler_;
   ParameterList parlist_;
   bool usePresolve_;
+  bool useInexact_;
   Real penaltyParam_;
+  Real maxPen_;
   Real update_;
   int  freq_;
   Real ztol_;
   int maxit_;
   bool print_;
 
-  Ptr<ProgHedgeObjective<Real>>  ph_objective_;
+  Ptr<PH_Objective<Real>>        ph_objective_;
   Ptr<OptimizationProblem<Real>> ph_problem_;
   Ptr<OptimizationSolver<Real>>  ph_solver_;
+  Ptr<PH_StatusTest<Real>>       ph_status_;
   Ptr<Vector<Real>> z_psum_, z_gsum_;
-  std::vector<Ptr<Vector<Real>>> zvec_, wvec_;
+  std::vector<Ptr<Vector<Real>>> wvec_;
 
   void presolve(void) {
     OptimizationSolver<Real> solver(*input_,parlist_);
@@ -85,9 +89,8 @@ private:
         input_->getConstraint()->setParameter(sampler_->getMyPoint(j));
       }
       solver.solve();
-      zvec_[j]->set(*input_->getSolutionVector());
+      z_psum_->axpy(sampler_->getMyWeight(j),*input_->getSolutionVector());
       solver.reset();
-      z_psum_->axpy(sampler_->getMyWeight(j),*zvec_[j]);
     }
     // Aggregation
     z_gsum_->zero();
@@ -101,16 +104,20 @@ public:
     : input_(input), sampler_(sampler), parlist_(parlist) {
     // Get algorithmic parameters
     usePresolve_  = parlist.sublist("SOL").sublist("Progressive Hedging").get("Use Presolve",true);
+    useInexact_   = parlist.sublist("SOL").sublist("Progressive Hedging").get("Use Inexact Solve",true);
     penaltyParam_ = parlist.sublist("SOL").sublist("Progressive Hedging").get("Initial Penalty Parameter",10.0);
+    maxPen_       = parlist.sublist("SOL").sublist("Progressive Hedging").get("Maximum Penalty Parameter",-1.0);
     update_       = parlist.sublist("SOL").sublist("Progressive Hedging").get("Penalty Update Scale",10.0);
     freq_         = parlist.sublist("SOL").sublist("Progressive Hedging").get("Penalty Update Frequency",0);
     ztol_         = parlist.sublist("SOL").sublist("Progressive Hedging").get("Nonanticipativity Constraint Tolerance",1e-4);
     maxit_        = parlist.sublist("SOL").sublist("Progressive Hedging").get("Iteration Limit",100);
     print_        = parlist.sublist("SOL").sublist("Progressive Hedging").get("Print Subproblem Solve History",false);
+    maxPen_       = (maxPen_ <= static_cast<Real>(0) ? ROL_INF<Real>() : maxPen_);
+    penaltyParam_ = std::min(penaltyParam_,maxPen_);
     // Create progressive hedging objective function
-    ph_objective_ = makePtr<ProgHedgeObjective<Real>>(input_->getObjective(),
-                                                      *input_->getSolutionVector(),
-                                                      penaltyParam_);
+    ph_objective_ = makePtr<PH_Objective<Real>>(input_->getObjective(),
+                                                input_->getSolutionVector(),
+                                                penaltyParam_);
     // Build progressive hedging subproblems
     ph_problem_   = makePtr<OptimizationProblem<Real>>(ph_objective_,
                                                        input_->getSolutionVector(),
@@ -119,15 +126,21 @@ public:
                                                        input_->getMultiplierVector());
     // Build progressive hedging subproblem solver
     ph_solver_    = makePtr<OptimizationSolver<Real>>(*ph_problem_, parlist);
+    // Build progressive hedging status test for inexact solves
+    if (useInexact_) {
+      ph_status_  = makePtr<PH_StatusTest<Real>>(parlist,
+                                                 *input_->getSolutionVector());
+    }
+    else {
+      ph_status_  = nullPtr;
+    }
     // Initialize vector storage
     z_psum_       = ph_problem_->getSolutionVector()->clone();
     z_gsum_       = ph_problem_->getSolutionVector()->clone();
     z_gsum_->set(*ph_problem_->getSolutionVector());
-    zvec_.resize(sampler_->numMySamples());
     wvec_.resize(sampler_->numMySamples());
     for (int i = 0; i < sampler_->numMySamples(); ++i) {
-      zvec_[i] = z_psum_->clone();        zvec_[i]->zero();
-      wvec_[i] = z_psum_->dual().clone(); wvec_[i]->zero();
+      wvec_[i] = z_psum_->clone(); wvec_[i]->zero();
     }
     if (usePresolve_) {
       presolve();
@@ -137,8 +150,9 @@ public:
   void run(std::ostream &outStream = std::cout) {
     const Real zero(0), one(1);
     std::vector<Real> vec_p(2), vec_g(2);
-    Real znorm(ROL_INF<Real>());
-    int iter(0), spiter(0), tspiter(0);
+    Real znorm(ROL_INF<Real>()), zdotz(0);
+    int iter(0), tspiter(0);
+    bool converged = true;
     // Output
     outStream << std::scientific << std::setprecision(6);
     outStream << std::endl << "Progressive Hedging"
@@ -146,58 +160,68 @@ public:
               << std::setw(8)  << std::left << "iter"
               << std::setw(15) << std::left << "||z-Ez||"
               << std::setw(15) << std::left << "penalty"
-              << std::setw(8)  << std::left << "subiter"
+              << std::setw(10) << std::left << "subiter"
+              << std::setw(8)  << std::left << "success"
               << std::endl;
-    while (iter < maxit_ && znorm > ztol_) {
-      z_psum_->zero(); spiter = 0;
+    for (iter = 0; iter < maxit_; ++iter) {
+      z_psum_->zero(); vec_p[0] = zero; vec_p[1] = zero;
       ph_problem_->getSolutionVector()->set(*z_gsum_);
       // Solve concurrent optimization problems
       for (int j = 0; j < sampler_->numMySamples(); ++j) {
-        ph_objective_->setData(*z_gsum_,*wvec_[j],penaltyParam_);
+        ph_objective_->setData(z_gsum_,wvec_[j],penaltyParam_);
         ph_problem_->getObjective()->setParameter(sampler_->getMyPoint(j));
+        if (useInexact_) {
+          ph_status_->setData(iter,z_gsum_);
+        }
         if (ph_problem_->getConstraint() != nullPtr) {
           ph_problem_->getConstraint()->setParameter(sampler_->getMyPoint(j));
         }
         if (print_) {
-          ph_solver_->solve(outStream);
+          ph_solver_->solve(outStream,ph_status_,true);
         }
         else {
-          ph_solver_->solve();
+          ph_solver_->solve(ph_status_,true);
         }
-        zvec_[j]->set(*ph_problem_->getSolutionVector());
-        spiter += ph_solver_->getAlgorithmState()->iter;
+        wvec_[j]->axpy(penaltyParam_,*ph_problem_->getSolutionVector());
+        vec_p[0] += sampler_->getMyWeight(j)
+                  * ph_problem_->getSolutionVector()->dot(
+                   *ph_problem_->getSolutionVector());
+        vec_p[1] += static_cast<Real>(ph_solver_->getAlgorithmState()->iter);
+        z_psum_->axpy(sampler_->getMyWeight(j),*ph_problem_->getSolutionVector());
+        converged = (ph_solver_->getAlgorithmState()->statusFlag == EXITSTATUS_CONVERGED
+                   ||ph_solver_->getAlgorithmState()->statusFlag == EXITSTATUS_USERDEFINED
+                    ? converged : false);
         ph_solver_->reset();
-        z_psum_->axpy(sampler_->getMyWeight(j),*zvec_[j]);
       }
       // Aggregation
-      z_gsum_->zero();
+      z_gsum_->zero(); vec_g[0] = zero; vec_g[1] = zero;
       sampler_->sumAll(*z_psum_,*z_gsum_);
-      // Multiplier Update
-      vec_p[0] = zero; vec_p[1] = static_cast<Real>(spiter);
-      vec_g[0] = zero; vec_g[1] = zero;
-      for (int j = 0; j < sampler_->numMySamples(); ++j) {
-        wvec_[j]->axpy(penaltyParam_,*zvec_[j]);
-        wvec_[j]->axpy(-penaltyParam_,*z_gsum_);
-        z_psum_->set(*zvec_[j]);
-        z_psum_->axpy(-one,*z_gsum_);
-        vec_p[0] += z_psum_->dot(*z_psum_);
-      }
       sampler_->sumAll(&vec_p[0],&vec_g[0],2);
-      znorm  = std::sqrt(vec_g[0]);
-      spiter = static_cast<int>(vec_g[1]);
-      iter++;
-      tspiter += spiter;
+      // Multiplier Update
+      for (int j = 0; j < sampler_->numMySamples(); ++j) {
+        wvec_[j]->axpy(-penaltyParam_,*z_gsum_);
+      }
+      zdotz  = z_gsum_->dot(*z_gsum_);
+      znorm  = std::sqrt(vec_g[0] - zdotz);
+      tspiter += static_cast<int>(vec_g[1]);
       // Output
       outStream << "  "
                 << std::setw(8)  << std::left << iter
                 << std::setw(15) << std::left << znorm
                 << std::setw(15) << std::left << penaltyParam_
-                << std::setw(8)  << std::left << spiter
+                << std::setw(10) << std::left << static_cast<int>(vec_g[1])
+                << std::setw(8)  << std::left << converged
                 << std::endl;
+      // Check termination criterion
+      if (znorm <= ztol_ && converged) {
+        break;
+      }
+      converged = true;
       // Update penalty parameter
       if (freq_ > 0 && iter%freq_ == 0) {
         penaltyParam_ *= update_;
       }
+      penaltyParam_ = std::min(penaltyParam_,maxPen_);
     }
     input_->getSolutionVector()->set(*z_gsum_);
     // Output reason for termination
@@ -205,7 +229,7 @@ public:
       outStream << "Converged: Nonanticipativity constraint tolerance satisfied!" << std::endl;
     }
     else {
-      if (iter > maxit_) {
+      if (iter >= maxit_) {
         outStream << "Maximum number of iterations exceeded" << std::endl;
       }
     }
