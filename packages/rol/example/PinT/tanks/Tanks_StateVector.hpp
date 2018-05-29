@@ -41,8 +41,8 @@
 // @HEADER
 
 #pragma once
-#ifndef TANKVECTOR_HPP
-#define TANKVECTOR_HPP
+#ifndef TANKS_STATEVECTOR_HPP
+#define TANKS_STATEVECTOR_HPP
 
 #include "ROL_ParameterList.hpp"
 #include "ROL_StdVector.hpp"
@@ -59,7 +59,7 @@ template<typename> class ControlVector;
 
 template<typename Real>
 class StateVector : public ROL::StdVector<Real> {
-
+public:
   using size_type = typename vector<Real>::size_type;
 
 private:
@@ -89,7 +89,7 @@ public:
     return ROL::makePtr<StateVector>( rows_, cols_, "clone of " + name_ ); 
   }
 
-  ROL::Ptr<StateVector> clone( const string& name ) const { 
+  ROL::Ptr<StateVector<Real>> clone( const string& name ) const { 
     return ROL::makePtr<StateVector>( rows_, cols_, name ); 
   }
 
@@ -157,7 +157,7 @@ inline const ROL::Ptr<const StateVector<Real>>& to_state( const ROL::Ptr<const R
 } // namespace Tanks
 
 
-#include "StateVector_Impl.hpp"
+#include "Tanks_StateVector_Impl.hpp"
 
-#endif // STATEVECTOR_HPP
+#endif // TANKS_STATEVECTOR_HPP
 

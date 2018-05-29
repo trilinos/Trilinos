@@ -41,8 +41,8 @@
 // @HEADER
 
 #pragma once
-#ifndef TANKVECTOR_HPP
-#define TANKVECTOR_HPP
+#ifndef TANKS_CONTROLVECTOR_HPP
+#define TANKS_CONTROLVECTOR_HPP
 
 #include "ROL_ParameterList.hpp"
 #include "ROL_StdVector.hpp"
@@ -59,7 +59,7 @@ template<typename> class StateVector;
 
 template<typename Real>
 class ControlVector : public ROL::StdVector<Real> {
-
+public:
   using size_type = typename vector<Real>::size_type;
 
 private:
@@ -80,7 +80,7 @@ public:
   static ROL::Ptr<ControlVector> create( ROL::ParameterList& pl, const string& name="anonymous" ) {
     auto nrows  = static_cast<size_type>( pl.get("Number of Rows",3) );
     auto ncols  = static_cast<size_type>( pl.get("Number of Columns",3) );
-    return ROL::makePtr<StateVector>( nrows, ncols, name );
+    return ROL::makePtr<ControlVector>( nrows, ncols, name );
   }
 
 
@@ -154,7 +154,7 @@ const ROL::Ptr<const ControlVector<Real>>& to_control( const ROL::Ptr<const ROL:
 
 } // namespace Tanks
 
-#include "ControlVector_Impl.hpp"
+#include "Tanks_ControlVector_Impl.hpp"
 
-#endif // CONTROLVECTOR_HPP
+#endif // TANKS_CONTROLVECTOR_HPP
 

@@ -46,8 +46,7 @@
 #ifndef TANKS_DYNAMICCONSTRAINT_HPP
 #define TANKS_DYNAMICCONSTRAINT_HPP
 
-#include "Teuchos_Array.hpp"
-#include "Teuchos_ParameterList.hpp"
+#include "ROL_ParameterList.hpp"
 #include "ROL_DynamicConstraint.hpp"
 
 #include "Tanks_StateVector.hpp"
@@ -66,9 +65,11 @@ namespace Tanks {
 template<typename Real>
 class DynamicConstraint : public ROL::DynamicConstraint<Real> {
 
-  using State   = StateVector<Real>;
-  using Control = ControlVector<Real>;
-
+  using State     = StateVector<Real>;
+  using Control   = ControlVector<Real>;
+  using Matrix    = LowerBandedMatrix<Real>;
+  using V         = ROL::Vector<Real>;
+  using TS        = ROL::TimeStamp<Real>;
   using size_type = typename State::size_type;
 
 private:
@@ -91,13 +92,16 @@ private:
 
   size_type    Ntanks_;        // Total number of tanks 
 
-  ControlVector p_;            // Passthrough coefficients
-  mutable StateVector scratch_;
+  Control p_;                  // Passthrough coefficients
+  mutable State scratch_;
 
   Real         kappa_;         // Cv*rho*g
   Real         beta_;          // dt/A
   Real         alphaL_;        // kappa*(theta-1)
   Real         alphaR_;        // kappa*theta
+
+  //--------- Subvector addressing ---------------------------------------------
+  size_type  h_, Qout_, Qin_,  z_;
 
   shared_ptr<Matrix> L_, R_, S_;
 
@@ -153,12 +157,12 @@ public:
     return ROL::makePtr<DynamicConstraint>( pl );
   }
 
-  void value( Vector& c, const Vector& u_old, const Vector& u_new, 
-              const Vector& z, TimeStamp<Real>& ts ) override {
+  void value( V& c, const V& uo, const V& un, 
+              const V& z, const TS& ts ) const override {
 
     auto& c_state  = to_state(c); 
-    auto& uo_state = to_state(u_old);
-    auto& un_state = to_state(u_new);
+    auto& uo_state = to_state(uo);
+    auto& un_state = to_state(un);
     auto& z_ctrl   = to_control(z);
     c.zero();
 
@@ -175,96 +179,96 @@ public:
   }
 
 
-  void solve( Vector& c, const Vector& u_old, Vector& u_new, 
-              const Vector& z, TimeStamp<Real>& ts ) override {
+  void solve( V& c, const V& uo, V& un, 
+              const V& z, const TS& ts ) const override {
   
-    u_new.zero();  
+    un.zero();  
     auto& c_state  = to_state(c);      
-    auto& un_state = to_state(u_new);
-    auto& uo_state = to_state(u_old);
+    auto& un_state = to_state(un);
+    auto& uo_state = to_state(uo);
     auto& z_ctrl   = to_control(z);
 
     for( size_type i=0; i<rows_; ++i ) {
       for( size_type j=0; j<cols_; ++j ) {
-        u_new.h(i,j) =  u_old.h(i,j) + p_(i,j)*(beta_*z(i,j)-2.0*alphaR_*u_old.h(i,j));
+        un_state.h(i,j) =  uo_state.h(i,j) + p_(i,j)*(beta_*z_ctrl(i,j)-2.0*alphaR_*uo_state.h(i,j));
   
-        if( i>0 ) u_new.h(i,j) += p_(i,j)*(alphaL_*u_new.h(i-1,j) + alphaR_*u_old.h(i-1,j));
-        if( j>0 ) u_new.h(i,j) += p_(i,j)*(alphaL_*u_new.h(i,j-1) + alphaR_*u_old.h(i,j-1));
+        if( i>0 ) un_state.h(i,j) += p_(i,j)*(alphaL_*un_state.h(i-1,j) + alphaR_*uo_state.h(i-1,j));
+        if( j>0 ) un_state.h(i,j) += p_(i,j)*(alphaL_*un_state.h(i,j-1) + alphaR_*uo_state.h(i,j-1));
   
-        u_new.h(i,j) /= (1.0+2.0*alphaL_*p_(i,j));
-        u_new.Qout(i,j) = kappa_*u_new.h(i,j);   
-        u_new.Qin(i,j)  = 1.0*z(i,j);
+        un_state.h(i,j) /= (1.0+2.0*alphaL_*p_(i,j));
+        un_state.Qout(i,j) = kappa_*un_state.h(i,j);   
+        un_state.Qin(i,j)  = 1.0*z_ctrl(i,j);
        }
     }
-    S_->apply( u_new, u_new, 1.0, Ntanks_, 2*Ntanks_ );
+    S_->apply( un_state, un_state, 1.0, Ntanks_, 2*Ntanks_ );
 
   }
 
-  void applyJacobian_uo( Vector& jv, const Vector& v_old,
-                            const Vector& u_old, const Vector& u_new,
-                            const Vector& z,  TimeStamp<Real>& ts) override {
+  void applyJacobian_uo( V& jv, const V& v,
+                         const V& uo, const V& un,
+                         const V& z,  const TS& ts) const override {
     jv.zero();
     auto& jv_state = to_state(jv);
-    auto& vo_state = to_state(v_old);
+    auto& vo_state = to_state(v);
     R_->apply( jv_state, vo_state, -1.0, h_, h_);      
   }
 
-  void applyAdjointJacobian_uo( Vector &ajv_old, const Vector &dualv,
-                                   const Vector &u_old, const Vector &u_new,
-                                   const Vector &z, TimeStamp<Real>& ts) override { 
-    ajv_old.zero();
-    auto& ajv_state = to_state(ajv_old);
-    auto& dv_state  = to_state(dualv);
-    R_->applyTranspose( ajv_state, dv_state, -1.0, h_, h_);  
+  void applyAdjointJacobian_uo( V &ajv, const V& v,
+                                const V &uo, const V &un,
+                                const V &z, const TS& ts) const override { 
+    ajv.zero();
+    auto& ajv_state = to_state(ajv);
+    auto& v_state   = to_state(v);
+    R_->applyTranspose( ajv_state, v_state, -1.0, h_, h_);  
   }
 
   //----------------------------------------------------------------------------
 
-  void applyJacobian_un( Vector& jv, const Vector& v_new,
-                            const Vector& u_old, const Vector& u_new,
-                            const Vector& z, TimeStamp<Real>& ts ) override {
+  void applyJacobian_un( V& jv, const V& vn,
+                         const V& uo, const V& un,
+                         const V& z, const TS& ts ) const override {
     jv.zero();
     auto& jv_state = to_state(jv);
-    auto& vn_state = to_state(v_new);
+    auto& vn_state = to_state(vn);
     L_->apply( jv_state, vn_state, 1.0, h_, h_ );  
-    jv.set( vn_state, Qout_, Qout_ );
-    jv.axpy( -kappa_, vn_state, Qout_, h_ );
-    jv.set( vn_state, Qin_, Qin_ );
-    S_->apply( jv, vn_state, -1.0, Qin_, Qout_ );   
+    jv_state.set( vn_state, Qout_, Qout_ );
+    jv_state.axpy( -kappa_, vn_state, Qout_, h_ );
+    jv_state.set( vn_state, Qin_, Qin_ );
+    S_->apply( jv_state, vn_state, -1.0, Qin_, Qout_ );   
   }
  
-  void applyAdjointJacobian_un( Vector& ajv_new, const Vector &dualv,
-                                   const Vector &u_old, const Vector& u_new,
-                                   const Vector &z, TimeStamp<Real>& ts) override {
-    ajv_new.zero();
-    auto& ajv_state = to_state(ajv_new);
-    auto& dv_state  = to_state(dualv);
-    L_->applyTranspose( jv_state, vn_state 1.0, h_, h_ );  
-    jv.axpy(-kappa_, vn_state, h_, Qout_ );
-    jv.set( vn_state, Qout_, Qout_ );
-    jv.set( vn_state, Qin_, Qin_ );
-    S_->applyTranspose( jv_state, vn_state, -1.0, Qout_, Qin_ );
+  void applyAdjointJacobian_un( V& ajv, const V &v,
+                                const V &uo, const V& un,
+                                const V &z, const TS& ts ) const override {
+    ajv.zero();
+    auto& ajv_state = to_state(ajv);
+    auto& vn_state  = to_state(v);
+    L_->applyTranspose( ajv_state, vn_state, 1.0, h_, h_ );  
+    ajv_state.axpy(-kappa_, vn_state, h_, Qout_ );
+    ajv_state.set( vn_state, Qout_, Qout_ );
+    ajv_state.set( vn_state, Qin_, Qin_ );   
+    S_->applyTranspose( ajv_state, vn_state, -1.0, Qout_, Qin_ );
   }
 
-  void applyInverseJacobian_un( Vector &ijv, const Vector &v_new,
-                                   const Vector &u_old, const Vector &u_new,
-                                   const Vector &z, TimeStamp<Real>& ts ) override {
+  void applyInverseJacobian_un( V &ijv, const V &v,
+                                const V &uo, const V &un,
+                                const V &z, const TS& ts ) const override {
     ijv.zero();
     auto& ijv_state = to_state(ijv);      
-    auto& vn_state  = to_state(v_new);
+    auto& vn_state  = to_state(v);
     L_->solve( ijv_state, vn_state, 1.0, h_, h_ );  
-    ijv.set( v_new, Qout_, Qout_ );
-    ijv.axpy( kappa_, ijv_state, Qout_, h_ );
-    ijv.set( vn_state, Qin_, Qin_ );
+    ijv_state.set( vn_state, Qout_, Qout_ );
+    ijv_state.axpy( kappa_, ijv_state, Qout_, h_ );
+    ijv_state.set( vn_state, Qin_, Qin_ );
     S_->apply( ijv_state, ijv_state, 1.0, Qin_, Qout_ );
  }
 
-  void applyInverseAdjointJacobian_un( Vector& iajv, const Vector& v_new,
-                                          const Vector& u_old, const Vector& u_new,
-                                          const Vector& z, TimeStamp<Real>& ts) override {
+  void applyInverseAdjointJacobian_un( V& iajv, const V& v,
+                                       const V& uo, const V& un,
+                                       const V& z, const TS& ts) const override {
     iajv.zero();
     auto& iajv_state = to_state(iajv);      
-    auto& vn_state  = to_state(v_new);
+    auto& vn_state  = to_state(v);
     iajv_state.set( vn_state, Qin_, Qin_ );
     iajv_state.set( vn_state, Qout_, Qout_ );
     S_->applyTranspose( iajv_state, vn_state, 1.0, Qout_, Qin_ );
@@ -278,29 +282,31 @@ public:
 
   //----------------------------------------------------------------------------
 
-  void applyJacobian_z( Vector &jv, const Vector &v,
-                        const Vector &u_old, const Vector &u_new,
-                        const Vector &z, Real &tol TimeStamp<Real>& ts) override {
+  void applyJacobian_z( V &jv, const V &v,
+                        const V &uo, const V &un,
+                        const V &z, const TS& ts) const override {
     jv.zero();
     auto& jv_state = to_state(jv);
     auto& v_ctrl   = to_control(v);
     jv_state.axpy(-beta_,v_ctrl, h_);
     jv_state.hadamard( p_, h_ );
     jv_state.axpy(-1.0, v_ctrl, Qin_ );    
-}
+  }
 
-  void applyAdjointJacobian_z( Vector& ajv, const Vector &dualv,
-                                    const Vector &u_old, const Vector& u_new,
-                                    const Vector &z, TimeStamp<Real>& ts ) override {
+  void applyAdjointJacobian_z( V& ajv, const V& v,
+                               const V &uo, const V& un,
+                               const V &z, const TS& ts ) const override {
     ajv.zero();
     auto& ajv_ctrl = to_control(ajv);
-    auto& v_state  = to_state(dualv);
+    auto& v_state  = to_state(v);
     for( size_type i=0; i<rows_; ++i ) 
       for( size_type j=0; j<cols_; ++j ) 
         ajv_ctrl(i,j) = -beta_*p_(i,j)*v_state.h(i,j)-v_state.Qin(i,j);
     }
+ 
+  
 
-};
+}; // Tanks::DynamicConstraint
 
 } // namespace Tanks
 

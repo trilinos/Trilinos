@@ -46,13 +46,12 @@
 #include "ROL_ParameterList.hpp"
 #include "ROL_Bounds.hpp"
 #include "ROL_RandomVector.hpp"
-//#include "ROL_PinTVector.hpp"
+#include "ROL_Vector_SimOpt.hpp"
 
 #include "Tanks_DynamicConstraint.hpp"
-#include "LowerBandedMatrix.hpp"
+#include "Tanks_DynamicConstraintCheck.hpp"
 
 #include <iostream>
-
 
 using RealT = double;
 using size_type = std::vector<RealT>::size_type;
@@ -64,21 +63,18 @@ int main( int argc, char* argv[] ) {
   using ROL::makePtr;
   using ROL::makePtrFromRef;
 
+  using ValidateFunction   = ROL::ValidateFunction<RealT>;
   using Bounds             = ROL::Bounds<RealT>;
   using PartitionedVector  = ROL::PartitionedVector<RealT>;
- 
+  using Vector_SimOpt      = ROL::Vector_SimOpt<RealT>;
+
   using State      = Tanks::StateVector<RealT>;
   using Control    = Tanks::ControlVector<RealT>;
 
   Teuchos::GlobalMPISession mpiSession(&argc, &argv);  
 
-  int iprint     = argc - 1;
-  Ptr<std::ostream> outStream;
-  ROL::nullstream bhs; // outputs nothing
-  if (iprint > 0)
-    outStream = makePtrFromRef(std::cout);
-  else
-    outStream = makePtrFromRef(bhs);
+  // This little trick lets us print to std::cout only if a (dummy) command-line argument is provided.
+  auto outStream = ROL::makeStreamPtr( std::cout, argc > 1 );
 
   int errorFlag  = 0;
 
@@ -91,7 +87,6 @@ int main( int argc, char* argv[] ) {
     auto tank_parameters = ROL::getParametersFromXmlFile(tank_xml);
     auto& pl = *tank_parameters;
 
-    auto tankState = makePtr<TankState<RealT>>(pl);
     auto con = Tanks::DynamicConstraint<RealT>::create(pl);
 
     auto height = pl.get("Height of Tank",              10.0  );
@@ -122,15 +117,16 @@ int main( int argc, char* argv[] ) {
 
     u_lo->zero();
     u_up->setScalar( height );
-    
+    auto u_bnd = makePtr<Bounds>(u_new_lo,u_new_up);
+
     // State direction 
     auto vu_new = u_new->clone( "New state direction (vu_new)" );
     auto vu_old = u_old->clone( "Old state direction (vu_old)" );
     auto vu     = PartitionedVector::create( { vu_old, vu_new } );
 
     auto c = u_new->clone( "State residual (c)"              );
-    auto x = ROL::makePtr<ROL::Vector_SimOpt<RealT>>( u,  z  );
-    auto v = ROL::makePtr<ROL::Vector_SimOpt<RealT>>( vu, vz );
+    auto x = makePtr<Vector_SimOpt>( u,  z  );
+    auto v = makePtr<Vector_SimOpt>( vu, vz );
 
     (*z)(0,0) = Qin00;
 
@@ -138,35 +134,38 @@ int main( int argc, char* argv[] ) {
       for( size_type j=0; j<ncols; ++j )
         u_old->h(i,j) = h_init;
 
-    auto u_new_bnd = makePtr<Bounds>( u_new_lo, u_new_up );
-    RandomizeFeasibleVector( *u_new, *u_new_bnd );
-    RandomizeVector( *c ) ;
-    RandomizeVector( *v );
+    ValidateFunction validator( 1, 13, 24, 11, true, *outStream);
 
-    auto u_old_bnd = u_new_bnd; 
-    auto u_bnd = makePtr<Bounds>( u_lo, u_up ); 
-
-    auto con_check = (*con);
-
-    auto con_up_uo = con_check.update_uo();
-    auto con_up_un = con_check.update_un();
-    auto con_up_z  = con_check.update_z();
-
-    auto con_val_uo = con_check.value_uo();
-    auto con_val_un = con_check.value_un();
-    auto con_val_z  = con_check.value_z();
-    
-    auto con_J_uo = con_check.jacobian_uo();
-    auto con_J_un = con_check.jacobian_un();
-    auto con_J_z  = con_check.jacobian_z();
-
-    auto con_iJ_un = con_check.inverseJacobian_un();
-
-    auto con_aJ_uo = con_check.adjointJacobian_uo();
-    auto con_aJ_un = con_check.adjointJacobian_un();
-    auto con_aJ_z  = con_check.adjointJacobian_z();
-  
-    auto con_iaJ_un = con_check.inverseAdjointJacobian_un();
+    Tanks::check( *con, *u_bnd, *z_bnd, validator );
+//    auto u_new_bnd = makePtr<Bounds>( u_new_lo, u_new_up );
+//    RandomizeFeasibleVector( *u_new, *u_new_bnd );
+//    RandomizeVector( *c ) ;
+//    RandomizeVector( *v );
+//
+//    auto u_old_bnd = u_new_bnd; 
+//    auto u_bnd = makePtr<Bounds>( u_lo, u_up ); 
+//
+//    auto con_check = (*con);
+//
+//    auto con_up_uo = con_check.update_uo();
+//    auto con_up_un = con_check.update_un();
+//    auto con_up_z  = con_check.update_z();
+//
+//    auto con_val_uo = con_check.value_uo();
+//    auto con_val_un = con_check.value_un();
+//    auto con_val_z  = con_check.value_z();
+//    
+//    auto con_J_uo = con_check.jacobian_uo();
+//    auto con_J_un = con_check.jacobian_un();
+//    auto con_J_z  = con_check.jacobian_z();
+//
+//    auto con_iJ_un = con_check.inverseJacobian_un();
+//
+//    auto con_aJ_uo = con_check.adjointJacobian_uo();
+//    auto con_aJ_un = con_check.adjointJacobian_un();
+//    auto con_aJ_z  = con_check.adjointJacobian_z();
+//  
+//    auto con_iaJ_un = con_check.inverseAdjointJacobian_un();
  
   }
   catch (std::logic_error err) {

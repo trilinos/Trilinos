@@ -31,7 +31,7 @@ APPEND_SET(HEADERS
 
 #
 # compatibility headers (TODO: Move to compatibility/CMakeLists.txt)
-# 
+#
 
 GET_PROPERTY( PTR_STRING           GLOBAL PROPERTY PTR_IMPL )
 GET_PROPERTY( PTR_DIR              GLOBAL PROPERTY PTR_DIR  )
@@ -84,6 +84,7 @@ APPEND_GLOB(HEADERS ${DIR}/*.hpp)
 
 SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_SOURCE_DIR}/function)
 INCLUDE_DIRECTORIES(${DIR}
+                    ${DIR}/dynamic
                     ${DIR}/boundconstraint
                     ${DIR}/constraint
                     ${DIR}/nlls
@@ -93,6 +94,7 @@ INCLUDE_DIRECTORIES(${DIR}
                     ${DIR}/std)
 
 APPEND_GLOB(HEADERS ${DIR}/*.hpp
+                    ${DIR}/dynamic/*.hpp
                     ${DIR}/boundconstraint/*.hpp
                     ${DIR}/constraint/*.hpp
                     ${DIR}/nlls/*.hpp

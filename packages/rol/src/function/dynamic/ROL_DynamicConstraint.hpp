@@ -92,7 +92,7 @@ public:
   virtual void value( V& c, const V& uo, const V& un, 
                       const V& z, const TS& ts ) const = 0;
 
-  virtual void solve( V& c, V& uo, const V& un, 
+  virtual void solve( V& c, const V& uo, V& un, 
                       const V& z, const TS& ts ) const {}
 
   //----------------------------------------------------------------------------
@@ -129,7 +129,7 @@ public:
                                            const V& un, const V& z, 
                                            const TS& ts ) const {}
     
-  virtual void applyAdjointInverseJacobian_un( V& iajv, const V& vn, const V& uo, 
+  virtual void applyInverseAdjointJacobian_un( V& iajv, const V& vn, const V& uo, 
                                                   const V& un, const V& z, 
                                                   const TS& ts ) const {}
 

@@ -292,9 +292,9 @@ if (printToStream_) {
     os_ << "\nTest inverse identity of " << name << "\n";
     os_ << right
         << setw(width_) << "||v||"
-        << setw(width_) << "||" << symbol << "v||"
-        << setw(width_) << "||inv(" << symbol << ")" << symbol << "v||"
-        << setw(width_) << "||v-inv(" << symbol << ")" << symbol << "v||"
+        << setw(width_) << "||"       << symbol << "v||"
+        << setw(width_) << "||inv("   << symbol << ")"  << symbol << "v||"
+        << setw(width_) << "||v-inv(" << symbol << ")"  << symbol << "v||"
         << "\n";
     os_ << scientific << setprecision(precision_) << right
         << setw(width_) << invCheck[0]
