@@ -47,6 +47,7 @@
 #define TANKS_CONSTRAINTSERIAL_HPP
 
 #include "ROL_Constraint_SimOpt.hpp"
+#include "ROL_TimeStamp.hpp"
 #include "ROL_VectorWorkspace.hpp"
 
 namespace Tanks {
@@ -54,7 +55,7 @@ namespace Tanks {
 using namespace std;
 
 template<typename Real> 
-class ConstraintSerial : ROL::Constraint_SimOpt<Real> {
+class SerialConstraint : public ROL::Constraint_SimOpt<Real> {
 
   using V  = ROL::Vector<Real>;
   using PV = ROL::PartitionedVector<Real>;
@@ -68,23 +69,23 @@ private:
 
   Ptr<DynamicConstraint<Real>> con_;    // Constraint for a single time step
 
-  ROL::VectorWorkspace<RealT>  workspace_;
+  ROL::VectorWorkspace<Real>  workspace_;
 
   Ptr<SV> ui_;  // Initial condition
   Ptr<SV> u0_;  // Zero State
-  Pre<CV> z0_;  // Zero Control
+  Ptr<CV> z0_;  // Zero Control
 
-  int Nt_;      // Number of time steps
+  size_type Nt_;      // Number of time steps
 
-  ROL::TimeStep<Real> ts_; // placeholder
+  ROL::TimeStamp<Real> ts_; // placeholder
 
-  PV& partition ( V& x )      { return static_cast<PV&>(x); }
-  SV& to_state  ( Vector& x ) { return static_cast<SV&>(x); }
-  CV& to_control( Vector& x ) { return static_cast<CV&>(x); }
+  PV& partition ( V& x ) const { return static_cast<PV&>(x); }
+//  SV& to_state  ( V& x ) const { return static_cast<SV&>(x); }
+//  CV& to_control( V& x ) const { return static_cast<CV&>(x); }
 
-  const PV& partition ( const V& )        { return static_cast<const PV&>(x); }
-  const SV& to_state  ( const Vector& x ) { return static_cast<const SV&>(x); }
-  const CV& to_control( const Vector& x ) { return static_cast<const CV&>(x); }
+  const PV& partition ( const V& x ) const { return static_cast<const PV&>(x); }
+//  const SV& to_state  ( const V& x ) const { return static_cast<const SV&>(x); }
+//  const CV& to_control( const V& x ) const { return static_cast<const CV&>(x); }
 
 public:
 
@@ -105,20 +106,6 @@ public:
         ui_->h(i,j) = h0;
   }
 
-  void value( V& c, const V& u, const V& z, Real& tol ) override {
-
-    auto& cp = partition(c);
-    auto& up = partition(u);
-    auto& zp = partition(z);
-  
-    // First interval value uses initial condition
-    con_->value( *(cp.get(0)), *u0_, *(up.get(0)), *(zp.get(0)), ts_ );
-    
-    for( size_type k=1; k<Nt_; ++k ) 
-      con_->value( *(cp.get(k)), *(up.get(k-1)), *(up.get(k)), *(zp.get(k)), ts_ );
-
-  } 
-
   void solve( V& c, V& u, const V& z, Real& tol ) override { 
 
     auto& cp = partition(c);
@@ -130,8 +117,20 @@ public:
     
     for( size_type k=1; k<Nt_; ++k ) 
       con_->solve( *(cp.get(k)), *(up.get(k-1)), *(up.get(k)), *(zp.get(k)), ts_ );
+  }  
 
-  }
+  void value( V& c, const V& u, const V& z, Real& tol ) override {
+
+    auto& cp = partition(c);
+    auto& up = partition(u);
+    auto& zp = partition(z);
+  
+    // First interval value uses initial condition
+    con_->value( *(cp.get(0)), *ui_, *(up.get(0)), *(zp.get(0)), ts_ );
+    
+    for( size_type k=1; k<Nt_; ++k ) 
+      con_->value( *(cp.get(k)), *(up.get(k-1)), *(up.get(k)), *(zp.get(k)), ts_ );
+  } 
 
   void applyJacobian_1( V& jv, const V& v, const V& u, 
                        const V& z, Real& tol ) override {
@@ -139,14 +138,14 @@ public:
     auto& jvp = partition(jv);   auto& vp = partition(v);
     auto& up  = partition(u);    auto& zp = partition(z);
 
-    auto tmp = workspace_.clone(jvp);
+    auto  tmp  = workspace_.clone(jv);
+    auto& tmpp = partition(*tmp); 
 
-    con_->applyJacobian_uo( *(tmp->get(0)), *(vp.get(0)), *u0_, *(up.get(0)), *(zp.get(0)), ts_ );
     con_->applyJacobian_un( *(jvp.get(0)),  *(vp.get(0)), *ui_, *(up.get(0)), *(zp.get(0)), ts_ );
     
     for( size_type k=1; k<Nt_; ++k ) {
-      con_->applyJacobian_uo( *(tmp->get(0)), *(vp.get(0)), *(up.get(k-1)), *(up.get(k)), *(zp.get(k)), ts_ );
-      con_->applyJacobian_un( *(jvp.get(0)), *(vp.get(0)),  *(up.get(k-1)), *(up.get(k)), *(zp.get(k)), ts_ );
+      con_->applyJacobian_uo( *(tmpp.get(k)), *(vp.get(k-1)), *(up.get(k-1)), *(up.get(k)), *(zp.get(k)), ts_ );
+      con_->applyJacobian_un( *(jvp.get(k)),  *(vp.get(k)),   *(up.get(k-1)), *(up.get(k)), *(zp.get(k)), ts_ );
     }
 
     jvp.plus(*tmp);
@@ -156,63 +155,98 @@ public:
    void applyJacobian_2( V& jv, const V& v, const V& u,
                          const V &z, Real &tol ) override { 
 
-    auto& jvp = partition(jv);   auto& vp = partition(v);
-    auto& up  = partition(u);    auto& zp = partition(z);
+     auto& jvp = partition(jv);   auto& vp = partition(v);
+     auto& up  = partition(u);    auto& zp = partition(z);
 
-    con_->applyJacobian_z( *(jvp.get(0)), *(vp.get(0)), *ui_, *(up.get(0)), *(zp.get(0)), ts_ );
+     con_->applyJacobian_z( *(jvp.get(0)), *(vp.get(0)), *ui_, *(up.get(0)), *(zp.get(0)), ts_ );
 
-    for( size_type k=1; k<Nt_; ++k ) 
-      con_->applyJacobian_z( *(jvp.get(k)), *(vp.get(k)), *(up.get(k-1)), *(up.get(k)), *(zp.get(k)), ts_ );
+     for( size_type k=1; k<Nt_; ++k ) 
+       con_->applyJacobian_z( *(jvp.get(k)), *(vp.get(k)), *(up.get(k-1)), *(up.get(k)), *(zp.get(k)), ts_ );
    }
+
 
    void applyInverseJacobian_1( V& ijv, const V& v, const V& u,
                                 const V& z, Real& tol) override {
 
+     auto& ijvp = partition(ijv);  auto& vp = partition(v);
+     auto& up   = partition(u);    auto& zp = partition(z);
+
+     auto  tmp  = workspace_.clone(ijv);
+     auto& tmpp = partition(*tmp); 
+
+     con_->applyInverseJacobian_un( *(ijvp.get(0)), *(vp.get(0)), *ui_, *(up.get(0)), *(zp.get(0)), ts_ );
+
+     for( size_type k=1; k<Nt_; ++k ) {
+       con_->applyJacobian_uo( *(tmpp.get(k)), *(ijvp.get(k-1)), *(up.get(k-1)), *(up.get(k)), *(zp.get(k)), ts_ );
+       tmpp.get(k)->scale(-1.0);
+       tmpp.get(k)->plus( *(vp.get(k)) );
+       con_->applyInverseJacobian_un( *(ijvp.get(k)), *(tmpp.get(k)), *(up.get(k-1)), *(up.get(k)), *(zp.get(k)), ts_ );
+     }
+     
    }
 
 
    void applyAdjointJacobian_1( V& ajv, const V& v, const V& u,
                                 const V& z, const V& dualv, Real& tol) override {
 
+     auto& ajvp  = partition(ajv);   auto& vp = partition(v);
+     auto& up    = partition(u);     auto& zp = partition(z);
+
+     auto  tmp  = workspace_.clone(ajv); 
+     auto& tmpp = partition(*tmp); 
+
+     con_->applyAdjointJacobian_un( *(ajvp.get(0)),  *(vp.get(0)), *ui_, *(up.get(0)), *(zp.get(0)), ts_ );
+    
+     for( size_type k=1; k<Nt_; ++k ) {
+       con_->applyAdjointJacobian_un( *(ajvp.get(k)), *(vp.get(k)), *(up.get(k-1)), *(up.get(k)), *(zp.get(k)), ts_ );
+       con_->applyAdjointJacobian_uo( *(tmpp.get(k)), *(vp.get(k)), *(up.get(k-1)), *(up.get(k)), *(zp.get(k)), ts_ );
+       ajvp.get(k-1)->plus(*(tmpp.get(k)));
+     }
+     
    }
 
    void applyAdjointJacobian_2( V& ajv,  const V& v, const V& u,
                                 const V& z, Real& tol ) override {
 
-   }
+     auto& ajvp  = partition(ajv);   auto& vp = partition(v);
+     auto& up    = partition(u);     auto& zp = partition(z);
 
-   void applyAdjointJacobian_2( V& ajv, const V& v, const V& u,
-                                const V& z, const V& dualv, Real& tol) override {
+     con_->applyAdjointJacobian_z( *(ajvp.get(0)), *(vp.get(0)), *ui_, *(up.get(0)), *(zp.get(0)), ts_ );
+
+     for( size_type k=1; k<Nt_; ++k ) 
+       con_->applyAdjointJacobian_z( *(ajvp.get(k)), *(vp.get(k)), *(up.get(k-1)), *(up.get(k)), *(zp.get(k)), ts_ );
+
    }
 
    void applyInverseAdjointJacobian_1( V& iajv, const V& v, const V& u,
                                        const V& z, Real& tol) override {
 
+     auto& iajvp = partition(iajv);  auto& vp = partition(v);
+     auto& up    = partition(u);     auto& zp = partition(z);
+
+     auto  tmp  = workspace_.clone(iajv);
+     auto& tmpp = partition(*tmp); 
+
+     size_type k = Nt_-1;
+
+     con_->applyInverseAdjointJacobian_un( *(iajvp.get(k)), *(vp.get(k)), *(up.get(k-1)), *(up.get(k)), *(zp.get(k)), ts_ );
+
+     for( size_type k=Nt_-2; k>0; --k ) {
+       con_->applyAdjointJacobian_uo( *(tmpp.get(k)), *(iajvp.get(k+1)), *(up.get(k)), *(up.get(k+1)), *(zp.get(k+1)), ts_ );
+       tmpp.get(k)->scale(-1.0);
+       tmpp.get(k)->plus( *(vp.get(k) ) );
+       con_->applyInverseAdjointJacobian_un( *(iajvp.get(k)), *(tmpp.get(k)), *(up.get(k)), *(up.get(k+1)), *(zp.get(k+1)), ts_ );             
+     }
+
+     con_->applyAdjointJacobian_uo( *(tmpp.get(0)), *(iajvp.get(1)), *(up.get(0)), *(up.get(1)), *(zp.get(1)), ts_ );
+     tmpp.get(0)->scale(-1.0);
+     tmpp.get(0)->plus( *(vp.get(0) ) );
+     con_->applyInverseAdjointJacobian_un( *(iajvp.get(0)), *(tmpp.get(0)), *ui_, *(up.get(0)), *(zp.get(0)), ts_ );           
+     
    }
 
-   void applyAdjointHessian_11( V& ahwv, const V& w, const V &v,
-                                const V& u, const V& z, Real& tol) override {
 
-    }
-
-    void applyAdjointHessian_12(V &ahwv,
-                                      const V &w,
-                                      const V &v,
-                                      const V &u,
-                                      const V &z,
-                                      Real &tol) override {
-
-    }
-
-
-    void applyAdjointHessian_21(V &ahwv, const V &w, const V &v,
-                                const V &u, const V &z, Real &tol) override {
-    }
-
-    void applyAdjointHessian_22(V& ahwv, const V& w, const V& v,
-                                const V& u, const V& z, Real& tol) override {
-    }
-
+   size_type numTimeSteps() const { return Nt_; }
 
 }; // Tanks::ConstraintSerial
 

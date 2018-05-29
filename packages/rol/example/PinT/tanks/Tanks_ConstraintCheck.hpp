@@ -1,12 +1,13 @@
 #pragma once
-#ifndef TANKS_DYNAMICCONSTRAINTCHECK_HPP
-#define TANKS_DYNAMICCONSTRAINTCHECK_HPP
+#ifndef TANKS_CONSTRAINTCHECK_HPP
+#define TANKS_CONSTRAINTCHECK_HPP
 
 #include <ostream>
 
 #include "ROL_ValidateFunction.hpp"
 #include "ROL_RandomVector.hpp"
 #include "ROL_DynamicConstraint_CheckInterface.hpp"
+#include "Tanks_SerialConstraint.hpp"
 
 namespace Tanks {
 
@@ -70,9 +71,43 @@ void check( DynamicConstraint<Real>& con,
   validator.adjoint_consistency_check( J_un, aJ_un, up_un, *c, *vu, *un, "Jacobian with respect to un", "J_un");
   validator.adjoint_consistency_check( J_z,  aJ_z,  up_z,  *vz, *c, *z,  "Jacobian with respect to z", "J_z");
 
-} // check
+} // check(ROL::DynamicConstraint)
+
+
+
+template<typename Real>
+void check( SerialConstraint<Real>& con, 
+            ROL::BoundConstraint<Real>& ubnd, // For a single time step
+            ROL::BoundConstraint<Real>& zbnd,
+            std::ostream& outStream ) { 
+
+    auto Nt = con.numTimeSteps();
+    auto up = ubnd.getLowerBound();
+    auto zp = zbnd.getLowerBound();
+
+    auto u_serial  = ROL::PartitionedVector<Real>::create( *up, Nt );
+    auto vu_serial = ROL::PartitionedVector<Real>::create( *up, Nt );
+    auto c_serial  = ROL::PartitionedVector<Real>::create( *up, Nt );
+    auto z_serial  = ROL::PartitionedVector<Real>::create( *zp, Nt );
+    auto vz_serial = ROL::PartitionedVector<Real>::create( *zp, Nt );
+
+    for( size_type i=0; i<Nt; ++i ) {
+      ROL::RandomizeFeasibleVector( *(u_serial->get(i)), ubnd );
+      ROL::RandomizeVector( *( c_serial->get(i)) );
+      ROL::RandomizeVector( *(vu_serial->get(i)) );
+      ROL::RandomizeVector( *( z_serial->get(i)) );
+      ROL::RandomizeVector( *(vz_serial->get(i)) );
+    }
+
+    con.checkApplyJacobian_1(               *u_serial,  *z_serial,  *vu_serial, *c_serial, true, outStream );
+    con.checkApplyJacobian_2(               *u_serial,  *z_serial,  *vz_serial, *c_serial, true, outStream );
+    con.checkInverseJacobian_1( *c_serial, *vu_serial,  *u_serial,   *z_serial,            true, outStream );
+    con.checkAdjointConsistencyJacobian_1(  *c_serial,  *vu_serial,  *u_serial, *z_serial, true, outStream );
+    con.checkAdjointConsistencyJacobian_2(  *c_serial,  *vz_serial,  *u_serial, *z_serial, true, outStream );
+    con.checkInverseAdjointJacobian_1(     * c_serial,  *vu_serial,  *u_serial, *z_serial, true, outStream );
+} // check(Tanks::SerialConstraint)
 
 } // namespace Tanks
 
 
-#endif // TANKS_DYNAMICCONSTRAINTCHECK_HPP
+#endif // TANKS_CONSTRAINTCHECK_HPP

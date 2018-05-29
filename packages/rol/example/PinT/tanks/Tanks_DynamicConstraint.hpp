@@ -183,7 +183,7 @@ public:
               const V& z, const TS& ts ) const override {
   
     un.zero();  
-    auto& c_state  = to_state(c);      
+//    auto& c_state  = to_state(c);      
     auto& un_state = to_state(un);
     auto& uo_state = to_state(uo);
     auto& z_ctrl   = to_control(z);
@@ -201,7 +201,7 @@ public:
        }
     }
     S_->apply( un_state, un_state, 1.0, Ntanks_, 2*Ntanks_ );
-
+    value(c,uo,un,z,ts);
   }
 
   void applyJacobian_uo( V& jv, const V& v,
