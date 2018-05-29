@@ -492,6 +492,8 @@ options are read.
 
 The specific `cmake/std/atdm/<system-name>/` sub-directories and the systems
 they support are:
+* `chama/`: Supports SNL HPC machine `chama/`.
+
 * `mutrino/`: Supports SNL HPC machine `mutrino/`.
 
 * `rhel6/`: RHEL6 systems with the SEMS NFS environment
@@ -499,7 +501,9 @@ they support are:
 * `ride/`: Supports GNU and CUDA builds on both the SRN machine `ride` and the
   mirror SON machine `white`.
 
+* `serrano/`: Supports SNL HPC machine `serrano/`.
+
 * `shiller/`: Supports GNU, Intel, and CUDA builds on both the SRN machine
   `shiller` and the mirror SON machine `hansen`.
   
-* `toss3/`: Supports SNL HPC machines `serrano/` and `chama/`.
+

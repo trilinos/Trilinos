@@ -1,6 +1,6 @@
 ################################################################################
 #
-# Set up env on toss3 (chama/serrano) for ATMD builds of Trilinos
+# Set up env on chama for ATMD builds of Trilinos
 #
 # This source script gets the settings from the JOB_NAME var.
 #
@@ -10,7 +10,7 @@ if [ "$ATDM_CONFIG_COMPILER" == "DEFAULT" ] ; then
   export ATDM_CONFIG_COMPILER=INTEL
 fi
 
-echo "Using toss3 compiler stack $ATDM_CONFIG_COMPILER to build $ATDM_CONFIG_BUILD_TYPE code with Kokkos node type $ATDM_CONFIG_NODE_TYPE"
+echo "Using chama compiler stack $ATDM_CONFIG_COMPILER to build $ATDM_CONFIG_BUILD_TYPE code with Kokkos node type $ATDM_CONFIG_NODE_TYPE"
 
 export ATDM_CONFIG_USE_NINJA=ON
 export ATDM_CONFIG_BUILD_COUNT=8
