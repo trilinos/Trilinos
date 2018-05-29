@@ -17,8 +17,6 @@ export ATDM_CONFIG_BUILD_COUNT=32
 
 module purge
 
-module load ninja/1.7.2
-
 if [[ "$ATDM_CONFIG_NODE_TYPE" == "OPENMP" ]] ; then
   export ATDM_CONFIG_CTEST_PARALLEL_LEVEL=16
   export OMP_NUM_THREADS=2
@@ -88,6 +86,9 @@ export ATDM_CONFIG_USE_HWLOC=OFF
 
 export ATDM_CONFIG_HDF5_LIBS="-L${HDF5_ROOT}/lib;-lhdf5_hl;-lhdf5;-lz;-ldl"
 export ATDM_CONFIG_NETCDF_LIBS="-L${BOOST_ROOT}/lib;-L${NETCDF_ROOT}/lib;-L${NETCDF_ROOT}/lib;-L${PNETCDF_ROOT}/lib;${BOOST_ROOT}/lib/libboost_program_options.a;${BOOST_ROOT}/lib/libboost_system.a;${NETCDF_ROOT}/lib/libnetcdf.a;${PNETCDF_ROOT}/lib/libpnetcdf.a;${ATDM_CONFIG_HDF5_LIBS}"
+
+# Use manually installed cmake and ninja (see TRIL-209)
+export PATH=/ascldap/users/rabartl/install/hansen-shiller/cmake-3.11.2/bin:/ascldap/users/rabartl/install/hansen-shiller/ninja-1.8.2/bin:$PATH
 
 # Set MPI wrappers
 export MPICC=`which mpicc`

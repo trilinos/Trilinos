@@ -10,6 +10,8 @@ which ninja
 echo
 echo "ATDM config env vars:"
 set | grep ATDM_CONFIG_
+echo
+echo "PATH=$PATH"
 
 if [ "${Trilinos_REPOSITORY_LOCATION}" == "" ] ; then
   export Trilinos_REPOSITORY_LOCATION=https://github.com/trilinos/Trilinos.git
