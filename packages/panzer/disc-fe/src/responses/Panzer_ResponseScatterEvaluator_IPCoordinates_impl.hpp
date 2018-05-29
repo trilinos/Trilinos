@@ -107,8 +107,8 @@ evaluateFields(typename Traits::EvalData workset)
   // Kokkos::DynRankView<double,PHX::Device>& workset_coords = (this->wda(workset).int_rules[ir_index_])->ip_coordinates;
   IntegrationValues2<double> & iv = *this->wda(workset).int_rules[ir_index_];
 
-  if (tmpCoords_.size() != Teuchos::as<std::size_t>(iv.ip_coordinates.dimension(2))) {
-    tmpCoords_.resize(iv.ip_coordinates.dimension(2));
+  if (tmpCoords_.size() != Teuchos::as<std::size_t>(iv.ip_coordinates.extent(2))) {
+    tmpCoords_.resize(iv.ip_coordinates.extent(2));
     for(std::size_t dim=0;dim<tmpCoords_.size();dim++)
       tmpCoords_[dim].clear();
   }

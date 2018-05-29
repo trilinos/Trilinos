@@ -101,11 +101,11 @@ public:
     state_->iter = 0;
     state_->grad.resize(1);
     state_->pstep.resize(1);
-    TEUCHOS_TEST_FOR_EXCEPTION(!(isValidNonlinearCG(type)),
+    ROL_TEST_FOR_EXCEPTION(!(isValidNonlinearCG(type)),
                           std::invalid_argument,
                           ">>> ERROR (ROL_NonlinearCG.hpp): Invalid nonlinear CG type in constructor!");
     state_->nlcg_type = type;
-    TEUCHOS_TEST_FOR_EXCEPTION((restart < 1),
+    ROL_TEST_FOR_EXCEPTION((restart < 1),
                           std::invalid_argument,
                           ">>> ERROR (ROL_NonlinearCG.hpp): Non-positive restart integer in constructor!");
     state_->restart = restart;
@@ -210,7 +210,7 @@ public:
           }
 
         default:
-          TEUCHOS_TEST_FOR_EXCEPTION(!(isValidNonlinearCG(state_->nlcg_type)),
+          ROL_TEST_FOR_EXCEPTION(!(isValidNonlinearCG(state_->nlcg_type)),
                           std::invalid_argument,
                           ">>> ERROR (ROL_NonlinearCG.hpp): Invalid nonlinear CG type in the 'run' method!");  
       }

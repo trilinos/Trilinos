@@ -84,13 +84,13 @@ Integrator_GradBasisCrossVector(
   _num_dims = _residuals.size();
 
   // Currently we only allow for vectors of length 3
-  TEUCHOS_TEST_FOR_EXCEPTION(_num_dims != vector_dl->dimension(2),std::logic_error,"Vector must be same length as number of residuals.");
+  TEUCHOS_TEST_FOR_EXCEPTION(_num_dims != vector_dl->extent(2),std::logic_error,"Vector must be same length as number of residuals.");
 
   // Setup vector
   _vector = PHX::MDField<const ScalarT,Cell,IP,Dim>(p.get<std::string>("Vector Name"), vector_dl);
 
   // TODO: I'm assuming that the gradient is held in the same number of dimensions as ir->dl_vector (dl_vector is initialized from mesh dimensions)
-  _num_grad_dims = ir->dl_vector->dimension(2);
+  _num_grad_dims = ir->dl_vector->extent(2);
 
   // Vector must be at least the same dimension as the GRAD operation
   TEUCHOS_TEST_FOR_EXCEPTION(_num_grad_dims > _num_dims,std::logic_error,"Vector size must have at least as many components as there are dimensions in the mesh.");
@@ -140,13 +140,13 @@ postRegistrationSetup(
     this->utils.setFieldData(field,fm);
   }
 
-  _num_basis_nodes = _residuals[0].dimension(1);
-  _num_quadrature_points = _vector.dimension(1);
+  _num_basis_nodes = _residuals[0].extent(1);
+  _num_quadrature_points = _vector.extent(1);
 
   _basis_index = panzer::getBasisIndex(_basis_name, (*sd.worksets_)[0], this->wda);
 
   // TODO: figure out a clean way of cloning _vector
-  _tmp = Kokkos::createDynRankView(_residuals[0].get_static_view(),"tmp",_vector.dimension(0), _num_quadrature_points, _num_dims);
+  _tmp = Kokkos::createDynRankView(_residuals[0].get_static_view(),"tmp",_vector.extent(0), _num_quadrature_points, _num_dims);
 }
 
 //**********************************************************************

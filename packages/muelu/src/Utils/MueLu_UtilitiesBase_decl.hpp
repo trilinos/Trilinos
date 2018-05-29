@@ -348,6 +348,15 @@ namespace MueLu {
        return norms;
     }
 
+    static Teuchos::Array<Magnitude> ResidualNorm(const Xpetra::Operator<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Op, const MultiVector& X, const MultiVector& RHS, MultiVector & Resid) {
+      TEUCHOS_TEST_FOR_EXCEPTION(X.getNumVectors() != RHS.getNumVectors(), Exceptions::RuntimeError, "Number of solution vectors != number of right-hand sides")
+       const size_t numVecs = X.getNumVectors();
+       Residual(Op,X,RHS,Resid);
+       Teuchos::Array<Magnitude> norms(numVecs);
+       Resid.norm2(norms);
+       return norms;
+    }
+
     static RCP<MultiVector> Residual(const Xpetra::Operator<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Op, const MultiVector& X, const MultiVector& RHS) {
       TEUCHOS_TEST_FOR_EXCEPTION(X.getNumVectors() != RHS.getNumVectors(), Exceptions::RuntimeError, "Number of solution vectors != number of right-hand sides")
         const size_t numVecs = X.getNumVectors();

@@ -81,8 +81,9 @@ unset OMPI_CXX
 unset OMPI_FC
 unset ATDM_CONFIG_USE_NINJA
 unset ATDM_CONFIG_BUILD_COUNT
-unset ATDM_CONFIG_KOKKOS_ARCH
+unset ATDM_CONFIG_CMAKE_JOB_POOL_LINK
 unset ATDM_CONFIG_CTEST_PARALLEL_LEVEL
+unset ATDM_CONFIG_KOKKOS_ARCH
 unset ATDM_CONFIG_BLAS_LIB
 unset ATDM_CONFIG_LAPACK_LIB
 unset ATDM_CONFIG_USE_HWLOC
@@ -97,12 +98,25 @@ unset ATDM_CONFIG_COMPLETED_ENV_SETUP
 
 source $_SCRIPT_DIR/$ATDM_CONFIG_KNOWN_SYSTEM_NAME/environment.sh
 
+if [ "${ATDM_CONFIG_BUILD_COUNT_OVERRIDE}" != "" ] ; then
+  export ATDM_CONFIG_BUILD_COUNT=${ATDM_CONFIG_BUILD_COUNT_OVERRIDE}
+fi
+
+if [ "${ATDM_CONFIG_CMAKE_JOB_POOL_LINK_OVERRIDE}" != "" ] ; then
+  export ATDM_CONFIG_CMAKE_JOB_POOL_LINK=${ATDM_CONFIG_CMAKE_JOB_POOL_LINK_OVERRIDE}
+fi
+
+if [ "${ATDM_CONFIG_CTEST_PARALLEL_LEVEL_OVERRIDE}" != "" ] ; then
+  export ATDM_CONFIG_CTEST_PARALLEL_LEVEL=${ATDM_CONFIG_CTEST_PARALLEL_LEVEL_OVERRIDE}
+fi
+
 if [ "$ATDM_CONFIG_COMPLETED_ENV_SETUP" != "TRUE" ] ; then
   echo
   echo "***"
   echo "*** ERROR: Environment setup was not successful, see above errors!"
   echo "***"
   echo
+  return
 fi
 
 # NOTE: The ATDMDevEnv.cmake module when processed will assert that all of

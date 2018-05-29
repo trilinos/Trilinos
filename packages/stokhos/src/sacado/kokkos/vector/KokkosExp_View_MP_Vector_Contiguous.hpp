@@ -941,8 +941,8 @@ namespace Impl {
 template< class DstTraits , class SrcTraits >
 class ViewMapping< DstTraits , SrcTraits ,
   typename std::enable_if<(
-    std::is_same< typename DstTraits::memory_space
-                , typename SrcTraits::memory_space >::value
+    Kokkos::Impl::MemorySpaceAccess< typename DstTraits::memory_space
+                , typename SrcTraits::memory_space >::assignable
     &&
     // Destination view has MP::Vector
     std::is_same< typename DstTraits::specialize
@@ -1023,8 +1023,8 @@ public:
 template< class DstTraits , class SrcTraits >
 class ViewMapping< DstTraits , SrcTraits ,
   typename std::enable_if<(
-    std::is_same< typename DstTraits::memory_space
-                , typename SrcTraits::memory_space >::value
+    Kokkos::Impl::MemorySpaceAccess< typename DstTraits::memory_space
+                , typename SrcTraits::memory_space >::assignable
     &&
     // Destination view has ordinary
     std::is_same< typename DstTraits::specialize , void >::value
@@ -1132,8 +1132,8 @@ public:
 template< class DstTraits , class SrcTraits >
 class ViewMapping< DstTraits , SrcTraits ,
   typename std::enable_if<(
-    std::is_same< typename DstTraits::memory_space
-                , typename SrcTraits::memory_space >::value
+    Kokkos::Impl::MemorySpaceAccess< typename DstTraits::memory_space
+                , typename SrcTraits::memory_space >::assignable
     &&
     // Destination view has ordinary
     std::is_same< typename DstTraits::specialize , void >::value
@@ -1461,7 +1461,7 @@ namespace Kokkos {
 namespace Impl {
 
 // Specialization for deep_copy( view, view::value_type ) for Cuda
-#if defined( KOKKOS_HAVE_CUDA )
+#if defined( KOKKOS_ENABLE_CUDA )
 template< class OutputView >
 struct StokhosViewFill< OutputView ,
                  typename std::enable_if< std::is_same< typename OutputView::specialize,
@@ -1493,17 +1493,17 @@ struct StokhosViewFill< OutputView ,
       const size_type nvec = dimension_scalar(output);
 
       const size_type i0 = dev.league_rank() * nrow + tidy;
-      if ( i0 >= output.dimension_0() ) return;
+      if ( i0 >= output.extent(0) ) return;
 
-      for ( size_type i1 = 0 ; i1 < output.dimension_1() ; ++i1 ) {
-      for ( size_type i2 = 0 ; i2 < output.dimension_2() ; ++i2 ) {
-      for ( size_type i3 = 0 ; i3 < output.dimension_3() ; ++i3 ) {
-      for ( size_type i4 = 0 ; i4 < output.dimension_4() ; ++i4 ) {
-      for ( size_type i5 = 0 ; i5 < output.dimension_5() ; ++i5 ) {
-      for ( size_type i6 = 0 ; i6 < output.dimension_6() ; ++i6 ) {
-      for ( size_type i7 = 0 ; i7 < output.dimension_7() ; ++i7 ) {
+      for ( size_type i1 = 0 ; i1 < output.extent(1) ; ++i1 ) {
+      for ( size_type i2 = 0 ; i2 < output.extent(2) ; ++i2 ) {
+      for ( size_type i3 = 0 ; i3 < output.extent(3) ; ++i3 ) {
+      for ( size_type i4 = 0 ; i4 < output.extent(4) ; ++i4 ) {
+      for ( size_type i5 = 0 ; i5 < output.extent(5) ; ++i5 ) {
+      for ( size_type i6 = 0 ; i6 < output.extent(6) ; ++i6 ) {
+      for ( size_type i7 = 0 ; i7 < output.extent(7) ; ++i7 ) {
       for ( size_type is = tidx ; is < nvec ; is+=VectorLength ) {
-        output(i0,i1,i2,i3,i4,i5,i6,i7).fastAccessCoeff(is) =
+        output.access(i0,i1,i2,i3,i4,i5,i6,i7).fastAccessCoeff(is) =
           input.fastAccessCoeff(is) ;
       }}}}}}}}
     }
@@ -1525,7 +1525,7 @@ struct StokhosViewFill< OutputView ,
       const size_type block_size = 256;
 
       const size_type rows_per_block = block_size / vector_length;
-      const size_type n = output.dimension_0();
+      const size_type n = output.extent(0);
       const size_type league_size = ( n + rows_per_block-1 ) / rows_per_block;
       const size_type team_size = rows_per_block * vector_length;
       Kokkos::TeamPolicy< execution_space > config( league_size, team_size );
@@ -1536,7 +1536,7 @@ struct StokhosViewFill< OutputView ,
   }
 
 };
-#endif /* #if defined( KOKKOS_HAVE_CUDA ) */
+#endif /* #if defined( KOKKOS_ENABLE_CUDA ) */
 
 } // namespace Impl
 } // namespace Kokkos
@@ -1559,8 +1559,8 @@ struct ViewSpecializeSacadoFad;
 template< class DstTraits , class SrcTraits >
 class ViewMapping< DstTraits , SrcTraits ,
   typename std::enable_if<(
-    std::is_same< typename DstTraits::memory_space
-                , typename SrcTraits::memory_space >::value
+    Kokkos::Impl::MemorySpaceAccess< typename DstTraits::memory_space
+                , typename SrcTraits::memory_space >::assignable
     &&
     // Destination view has MP::Vector only
     std::is_same< typename DstTraits::specialize

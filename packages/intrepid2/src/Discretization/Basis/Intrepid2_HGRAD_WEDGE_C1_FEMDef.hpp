@@ -70,12 +70,12 @@ namespace Intrepid2 {
         const auto z = input(2);
 
         // outputValues is a rank-2 array with dimensions (basisCardinality_, dim0)
-        output(0) = (1.0 - x - y)*(1.0 - z)/2.0;
-        output(1) = x*(1.0 - z)/2.0;
-        output(2) = y*(1.0 - z)/2.0;
-        output(3) = (1.0 - x - y)*(1.0 + z)/2.0;
-        output(4) = x*(1.0 + z)/2.0;
-        output(5) = y*(1.0 + z)/2.0;
+        output.access(0) = (1.0 - x - y)*(1.0 - z)/2.0;
+        output.access(1) = x*(1.0 - z)/2.0;
+        output.access(2) = y*(1.0 - z)/2.0;
+        output.access(3) = (1.0 - x - y)*(1.0 + z)/2.0;
+        output.access(4) = x*(1.0 + z)/2.0;
+        output.access(5) = y*(1.0 + z)/2.0;
         break;
       }
       case OPERATOR_GRAD: {
@@ -84,62 +84,62 @@ namespace Intrepid2 {
         const auto z = input(2);
 
         // outputValues is a rank-3 array with dimensions (basisCardinality_, dim0, spaceDim)
-        output(0, 0) = -(1.0 - z)/2.0;
-        output(0, 1) = -(1.0 - z)/2.0;
-        output(0, 2) = -(1.0 - x - y)/2.0;
+        output.access(0, 0) = -(1.0 - z)/2.0;
+        output.access(0, 1) = -(1.0 - z)/2.0;
+        output.access(0, 2) = -(1.0 - x - y)/2.0;
 
-        output(1, 0) =  (1.0 - z)/2.0;
-        output(1, 1) =  0.0;
-        output(1, 2) = -x/2.0;
+        output.access(1, 0) =  (1.0 - z)/2.0;
+        output.access(1, 1) =  0.0;
+        output.access(1, 2) = -x/2.0;
 
-        output(2, 0) =  0.0;
-        output(2, 1) =  (1.0 - z)/2.0;
-        output(2, 2) = -y/2.0;
+        output.access(2, 0) =  0.0;
+        output.access(2, 1) =  (1.0 - z)/2.0;
+        output.access(2, 2) = -y/2.0;
 
 
-        output(3, 0) = -(1.0 + z)/2.0;
-        output(3, 1) = -(1.0 + z)/2.0;
-        output(3, 2) =  (1.0 - x - y)/2.0;
+        output.access(3, 0) = -(1.0 + z)/2.0;
+        output.access(3, 1) = -(1.0 + z)/2.0;
+        output.access(3, 2) =  (1.0 - x - y)/2.0;
 
-        output(4, 0) =  (1.0 + z)/2.0;
-        output(4, 1) =  0.0;
-        output(4, 2) =  x/2.0;
+        output.access(4, 0) =  (1.0 + z)/2.0;
+        output.access(4, 1) =  0.0;
+        output.access(4, 2) =  x/2.0;
 
-        output(5, 0) =  0.0;
-        output(5, 1) =  (1.0 + z)/2.0;
-        output(5, 2) =  y/2.0;
+        output.access(5, 0) =  0.0;
+        output.access(5, 1) =  (1.0 + z)/2.0;
+        output.access(5, 2) =  y/2.0;
         break;
       }
       case OPERATOR_D2: {
-        output(0, 0) = 0.0;     output(3, 0) = 0.0;
-        output(0, 1) = 0.0;     output(3, 1) = 0.0;
-        output(0, 2) = 0.5;     output(3, 2) =-0.5;
-        output(0, 3) = 0.0;     output(3, 3) = 0.0;
-        output(0, 4) = 0.5;     output(3, 4) =-0.5;
-        output(0, 5) = 0.0;     output(3, 5) = 0.0;
+        output.access(0, 0) = 0.0;     output.access(3, 0) = 0.0;
+        output.access(0, 1) = 0.0;     output.access(3, 1) = 0.0;
+        output.access(0, 2) = 0.5;     output.access(3, 2) =-0.5;
+        output.access(0, 3) = 0.0;     output.access(3, 3) = 0.0;
+        output.access(0, 4) = 0.5;     output.access(3, 4) =-0.5;
+        output.access(0, 5) = 0.0;     output.access(3, 5) = 0.0;
 
-        output(1, 0) = 0.0;     output(4, 0) = 0.0;
-        output(1, 1) = 0.0;     output(4, 1) = 0.0;
-        output(1, 2) =-0.5;     output(4, 2) = 0.5;
-        output(1, 3) = 0.0;     output(4, 3) = 0.0;
-        output(1, 4) = 0.0;     output(4, 4) = 0.0;
-        output(1, 5) = 0.0;     output(4, 5) = 0.0;
+        output.access(1, 0) = 0.0;     output.access(4, 0) = 0.0;
+        output.access(1, 1) = 0.0;     output.access(4, 1) = 0.0;
+        output.access(1, 2) =-0.5;     output.access(4, 2) = 0.5;
+        output.access(1, 3) = 0.0;     output.access(4, 3) = 0.0;
+        output.access(1, 4) = 0.0;     output.access(4, 4) = 0.0;
+        output.access(1, 5) = 0.0;     output.access(4, 5) = 0.0;
 
-        output(2, 0) = 0.0;     output(5, 0) = 0.0;
-        output(2, 1) = 0.0;     output(5, 1) = 0.0;
-        output(2, 2) = 0.0;     output(5, 2) = 0.0;
-        output(2, 3) = 0.0;     output(5, 3) = 0.0;
-        output(2, 4) =-0.5;     output(5, 4) = 0.5;
-        output(2, 5) = 0.0;     output(5, 5) = 0.0;
+        output.access(2, 0) = 0.0;     output.access(5, 0) = 0.0;
+        output.access(2, 1) = 0.0;     output.access(5, 1) = 0.0;
+        output.access(2, 2) = 0.0;     output.access(5, 2) = 0.0;
+        output.access(2, 3) = 0.0;     output.access(5, 3) = 0.0;
+        output.access(2, 4) =-0.5;     output.access(5, 4) = 0.5;
+        output.access(2, 5) = 0.0;     output.access(5, 5) = 0.0;
         break;
       }
       case OPERATOR_MAX : {
-        const ordinal_type jend = output.dimension(1);
-        const ordinal_type iend = output.dimension(0);
+        const ordinal_type jend = output.extent(1);
+        const ordinal_type iend = output.extent(0);
 
         for (ordinal_type j=0;j<jend;++j)
           for (ordinal_type i=0;i<iend;++i)
-            output(i, j) = 0.0;
+            output.access(i, j) = 0.0;
         break;
       }
       default: {
@@ -166,7 +166,7 @@ namespace Intrepid2 {
       typedef typename ExecSpace<typename inputPointViewType::execution_space,SpT>::ExecSpaceType ExecSpaceType;
 
       // Number of evaluation points = dim 0 of inputPoints
-      const auto loopSize = inputPoints.dimension(0);
+      const auto loopSize = inputPoints.extent(0);
       Kokkos::RangePolicy<ExecSpaceType,Kokkos::Schedule<Kokkos::Static> > policy(0, loopSize);
 
       switch (operatorType) {

@@ -68,7 +68,7 @@ namespace { // anonymous
       // Otherwise, all the MultiVector and BlockMultiVector kernels
       // would run on host instead of device.  See Github Issue #428.
       auto X_view_host = X.template getLocalView<Kokkos::HostSpace> ();
-      impl_scalar_type* X_raw = X_view_host.ptr_on_device ();
+      impl_scalar_type* X_raw = X_view_host.data ();
       return X_raw;
     }
   };
@@ -398,7 +398,7 @@ getLocalRowView (const LO localRowIndex, const LO colIndex, Scalar*& vals) const
     return false;
   } else {
     auto X_ij = getLocalBlock (localRowIndex, colIndex);
-    vals = reinterpret_cast<Scalar*> (X_ij.ptr_on_device ());
+    vals = reinterpret_cast<Scalar*> (X_ij.data ());
     return true;
   }
 }
@@ -413,7 +413,7 @@ getGlobalRowView (const GO globalRowIndex, const LO colIndex, Scalar*& vals) con
     return false;
   } else {
     auto X_ij = getLocalBlock (localRowIndex, colIndex);
-    vals = reinterpret_cast<Scalar*> (X_ij.ptr_on_device ());
+    vals = reinterpret_cast<Scalar*> (X_ij.data ());
     return true;
   }
 }
@@ -692,7 +692,7 @@ public:
   void operator() (const Size k) const {
     const auto zero = Kokkos::Details::ArithTraits<Scalar>::zero();
     auto D_curBlk = Kokkos::subview(D_, k, Kokkos::ALL (), Kokkos::ALL ());
-    const auto num_vecs = X_.dimension_1();
+    const auto num_vecs = X_.extent(1);
     for (Size i = 0; i < num_vecs; ++i) {
       Kokkos::pair<Size, Size> kslice(k*block_size_, (k+1)*block_size_);
       auto X_curBlk = Kokkos::subview(X_, kslice, i);
@@ -745,8 +745,8 @@ public:
                      const ViewD& D,
                      const ViewZ& Z,
                      const Scalar& beta) :
-    blockSize_ (D.dimension_1 ()),
-    // numVecs_ (static_cast<int> (ViewY::rank) == 1 ? static_cast<size_type> (1) : static_cast<size_type> (Y_.dimension_1 ())),
+    blockSize_ (D.extent (1)),
+    // numVecs_ (static_cast<int> (ViewY::rank) == 1 ? static_cast<size_type> (1) : static_cast<size_type> (Y_.extent (1))),
     Y_ (Y),
     alpha_ (alpha),
     D_ (D),
@@ -810,27 +810,27 @@ blockJacobiUpdate (const ViewY& Y,
                  "Y and Z must have the same rank.");
   static_assert (static_cast<int> (ViewD::rank) == 3, "D must have rank 3.");
 
-  const auto lclNumMeshRows = D.dimension_0 ();
+  const auto lclNumMeshRows = D.extent (0);
 
 #ifdef HAVE_TPETRA_DEBUG
-  // D.dimension_0() is the (local) number of mesh rows.
-  // D.dimension_1() is the block size.  Thus, their product should be
+  // D.extent(0) is the (local) number of mesh rows.
+  // D.extent(1) is the block size.  Thus, their product should be
   // the local number of point rows, that is, the number of rows in Y.
-  const auto blkSize = D.dimension_1 ();
+  const auto blkSize = D.extent (1);
   const auto lclNumPtRows = lclNumMeshRows * blkSize;
   TEUCHOS_TEST_FOR_EXCEPTION
-    (Y.dimension_0 () != lclNumPtRows, std::invalid_argument,
-     "blockJacobiUpdate: Y.dimension_0() = " << Y.dimension_0 () << " != "
-     "D.dimension_0()*D.dimension_1() = " << lclNumMeshRows << " * " << blkSize
+    (Y.extent (0) != lclNumPtRows, std::invalid_argument,
+     "blockJacobiUpdate: Y.extent(0) = " << Y.extent (0) << " != "
+     "D.extent(0)*D.extent(1) = " << lclNumMeshRows << " * " << blkSize
      << " = " << lclNumPtRows << ".");
   TEUCHOS_TEST_FOR_EXCEPTION
-    (Y.dimension_0 () != Z.dimension_0 (), std::invalid_argument,
-     "blockJacobiUpdate: Y.dimension_0() = " << Y.dimension_0 () << " != "
-     "Z.dimension_0() = " << Z.dimension_0 () << ".");
+    (Y.extent (0) != Z.extent (0), std::invalid_argument,
+     "blockJacobiUpdate: Y.extent(0) = " << Y.extent (0) << " != "
+     "Z.extent(0) = " << Z.extent (0) << ".");
   TEUCHOS_TEST_FOR_EXCEPTION
-    (Y.dimension_1 () != Z.dimension_1 (), std::invalid_argument,
-     "blockJacobiUpdate: Y.dimension_1() = " << Y.dimension_1 () << " != "
-     "Z.dimension_1() = " << Z.dimension_1 () << ".");
+    (Y.extent (1) != Z.extent (1), std::invalid_argument,
+     "blockJacobiUpdate: Y.extent(1) = " << Y.extent (1) << " != "
+     "Z.extent(1) = " << Z.extent (1) << ".");
 #endif // HAVE_TPETRA_DEBUG
 
   BlockJacobiUpdate<ViewY, Scalar, ViewD, ViewZ, LO> functor (Y, alpha, D, Z, beta);

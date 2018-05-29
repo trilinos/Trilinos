@@ -336,7 +336,11 @@ namespace Tacho {
         _N.setFrontUpdateMode(_front_update_mode);
 
 #if !defined (KOKKOS_ENABLE_CUDA)
+  #ifdef KOKKOS_ENABLE_DEPRECATED_CODE
         const ordinal_type nthreads = host_space::thread_pool_size(0);
+  #else
+        const ordinal_type nthreads = host_space::impl_thread_pool_size(0);
+  #endif
 #endif
         
         if (false) {
@@ -437,13 +441,17 @@ namespace Tacho {
         }
       } else {
 #if !defined (KOKKOS_ENABLE_CUDA)
+  #ifdef KOKKOS_ENABLE_DEPRECATED_CODE
         const ordinal_type nthreads = host_space::thread_pool_size(0);
+  #else
+        const ordinal_type nthreads = host_space::impl_thread_pool_size(0);
+  #endif
 #endif
-        TACHO_TEST_FOR_EXCEPTION(t.dimension_0() < x.dimension_0() ||
-                                 t.dimension_1() < x.dimension_1(), std::logic_error, "Temporary rhs vector t is smaller than x");
+        TACHO_TEST_FOR_EXCEPTION(t.extent(0) < x.extent(0) ||
+                                 t.extent(1) < x.extent(1), std::logic_error, "Temporary rhs vector t is smaller than x");
         auto tt = Kokkos::subview(t, 
-                                  Kokkos::pair<ordinal_type,ordinal_type>(0, x.dimension_0()),
-                                  Kokkos::pair<ordinal_type,ordinal_type>(0, x.dimension_1()));
+                                  Kokkos::pair<ordinal_type,ordinal_type>(0, x.extent(0)),
+                                  Kokkos::pair<ordinal_type,ordinal_type>(0, x.extent(1)));
         if (false) {
         } 
 #if !defined (KOKKOS_ENABLE_CUDA)

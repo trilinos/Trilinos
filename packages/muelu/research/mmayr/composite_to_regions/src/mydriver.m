@@ -87,9 +87,10 @@
 % Read in region information so that we can setup a 1D Poisson problem
 % on a composite mesh as well as on each of the individual region meshes
 %
-!rm -f myData_* 
+!rm -f myData_* compX.mm map_compX.mm
 
-nDims = 1; file='caseFour'; 
+% nDims = 1; file='caseTen'; 
+nDims = 2; file='caseTwenty'; 
 
 if (nDims == 2)
   [globalDims,localDims,relcorners,abscorners]=mk2DRegionFile(file);
@@ -105,6 +106,9 @@ end
 fp = fopen(file,'r'); fgetl(fp); 
 t = fscanf(fp,'%d'); nNodes = t(1); nProcs = t(3); 
 whichCase = fgets(fp,16); fclose(fp);
+
+str = sprintf('Run now with #procs = %d', nProcs);
+disp(str);
 
 %
 % make a global tridiagonal matrix corresponding to the discretization
@@ -243,7 +247,7 @@ waitForRmDataFiles(nProcs);
 send('MakeGrpRegRowMaps',nProcs);
 send('MakeGrpRegColMaps',nProcs);
 send('MakeExtendedGrpRegMaps',nProcs);
-send('TestRegionalToComposite',nProcs);
+% send('TestRegionalToComposite',nProcs);
 send('MakeQuasiRegionMatrices',nProcs);
 % send('PrintQuasiRegionMatrices',nProcs);
 % send('PrintGrpRegDomMaps',nProcs);
@@ -258,11 +262,16 @@ send('MakeRegionMatrices',nProcs);
 % send('PrintRegionMatrixRangeMap',nProcs);
 % send('PrintRegionMatrixDomainMap',nProcs);
 % send('ComputeMatVecs',nProcs);
+
 % send('MakeRegionTransferOperators',nProcs);
-send('MakeMueLuTransferOperators',nProcs);
 % send('MakeInterfaceScalingFactors',nProcs);
 % send('MakeCoarseLevelOperator',nProcs);
 % send('RunTwoLevelMethod',nProcs);
+
+send('MakeMueLuTransferOperators',nProcs);
+send('MakeInterfaceScalingFactorsRecursively',nProcs);
+send('RunVCycle',nProcs);
+
 % send('PrintCompositeVectorX',nProcs);
 % send('PrintCompositeVectorY',nProcs);
 % send('PrintQuasiRegVectorX',nProcs);
@@ -271,3 +280,5 @@ send('MakeMueLuTransferOperators',nProcs);
 % send('PrintRegVectorYComp',nProcs);
 send('Terminate',nProcs);
 
+solution = mmread('compX.mm');
+plotSolution(solution, nDims);

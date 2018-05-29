@@ -98,17 +98,17 @@ private:
 
   void checkInputs(void) {
     uint lSize = lambda_.size(), rSize = risk_.size();
-    TEUCHOS_TEST_FOR_EXCEPTION((lSize!=rSize),std::invalid_argument,
+    ROL_TEST_FOR_EXCEPTION((lSize!=rSize),std::invalid_argument,
       ">>> ERROR (ROL::ConvexCombinationRiskMeasure): Convex combination parameter and risk measure arrays have different sizes!");
     Real sum(0), zero(0), one(1);
     for (uint i = 0; i < lSize; ++i) {
-      TEUCHOS_TEST_FOR_EXCEPTION((lambda_[i]>one || lambda_[i]<zero), std::invalid_argument,
+      ROL_TEST_FOR_EXCEPTION((lambda_[i]>one || lambda_[i]<zero), std::invalid_argument,
         ">>> ERROR (ROL::ConvexCombinationRiskMeasure): Element of convex combination parameter array out of range!");
-      TEUCHOS_TEST_FOR_EXCEPTION(risk_[i] == ROL::nullPtr, std::invalid_argument,
+      ROL_TEST_FOR_EXCEPTION(risk_[i] == ROL::nullPtr, std::invalid_argument,
         ">>> ERROR (ROL::ConvexCombinationRiskMeasure): Risk measure pointer is null!");
       sum += lambda_[i];
     }
-    TEUCHOS_TEST_FOR_EXCEPTION((std::abs(sum-one) > std::sqrt(ROL_EPSILON<Real>())),std::invalid_argument,
+    ROL_TEST_FOR_EXCEPTION((std::abs(sum-one) > std::sqrt(ROL_EPSILON<Real>())),std::invalid_argument,
       ">>> ERROR (ROL::ConvexCombinationRiskMeasure): Coefficients do not sum to one!");
     initializeCCRM();
   }
@@ -123,14 +123,13 @@ public:
       \li "Convex Combination Parameters" (greater than 0 and sum to 1)
       \li Sublists labeled 1 to n with risk measure definitions.
   */
-  ConvexCombinationRiskMeasure(Teuchos::ParameterList &parlist)
+  ConvexCombinationRiskMeasure(ROL::ParameterList &parlist)
     : RandVarFunctional<Real>(), size_(0) {
-    Teuchos::ParameterList &list
+    ROL::ParameterList &list
       = parlist.sublist("SOL").sublist("Risk Measure").sublist("Convex Combination Risk Measure");
     // Get convex combination parameters
-    Teuchos::Array<Real> lambda
-      = Teuchos::getArrayFromStringParameter<Real>(list,"Convex Combination Parameters");
-    lambda_ = lambda.toVector();
+    lambda_ = ROL::getArrayFromStringParameter<Real>(list,"Convex Combination Parameters");
+
     size_ = lambda_.size();
     // Build risk measures
     statVec_.clear();
@@ -139,9 +138,9 @@ public:
       std::ostringstream convert;
       convert << i;
       std::string si = convert.str();
-      Teuchos::ParameterList &ilist = list.sublist(si);
+      ROL::ParameterList &ilist = list.sublist(si);
       std::string name = ilist.get<std::string>("Name");
-      Teuchos::ParameterList riskList;
+      ROL::ParameterList riskList;
       riskList.sublist("SOL").sublist("Risk Measure").set("Name",name);
       riskList.sublist("SOL").sublist("Risk Measure").sublist(name) = ilist;
       risk_[i] = RiskMeasureFactory<Real>(riskList);

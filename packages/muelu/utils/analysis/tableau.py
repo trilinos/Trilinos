@@ -1,4 +1,4 @@
-#!/bin/env python
+#!/usr/bin/env python
 
 def rgb2float(colors):
     """Scale the RGB values to the [0, 1] range, which is the format matplotlib accepts"""

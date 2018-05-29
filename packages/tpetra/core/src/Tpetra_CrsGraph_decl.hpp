@@ -181,6 +181,24 @@ namespace Tpetra {
       STORAGE_1D_PACKED, //<! 1-D "packed" storage
       STORAGE_UB //<! Invalid value; upper bound on enum values
     };
+
+
+    /// \brief Mix-in to avoid spurious deprecation warnings due to #2630.
+    ///
+    /// CrsMatrix has methods deprecated by #2630, that need to call
+    /// CrsGraph methods also deprecated by #2630.  This results in
+    /// spurious deprecation warnings.  This mix-in class gives Tpetra
+    /// developers a work-around so that CrsMatrix's and
+    /// BlockCrsMatrix's deprecated methods can call CrsGraph's
+    /// deprecated methods without emitting spurious warnings.
+    class HasDeprecatedMethods2630_WarningThisClassIsNotForUsers {
+    public:
+      virtual ~HasDeprecatedMethods2630_WarningThisClassIsNotForUsers () {}
+      virtual bool isLowerTriangularImpl () const = 0;
+      virtual bool isUpperTriangularImpl () const = 0;
+      virtual size_t getGlobalNumDiagsImpl () const = 0;
+      virtual global_size_t getNodeNumDiagsImpl () const = 0;
+    };
   } // namespace Details
 
   /// \class CrsGraph
@@ -250,7 +268,8 @@ namespace Tpetra {
                       LocalOrdinal,
                       GlobalOrdinal,
                       Node>,
-    public Teuchos::ParameterListAcceptorDefaultBase
+    public Teuchos::ParameterListAcceptorDefaultBase,
+    public Details::HasDeprecatedMethods2630_WarningThisClassIsNotForUsers
   {
     template <class S, class LO, class GO, class N>
     friend class CrsMatrix;
@@ -945,6 +964,19 @@ namespace Tpetra {
     ///   go away at any time.
     global_size_t TPETRA_DEPRECATED getGlobalNumDiags() const;
 
+    /// \brief DO NOT CALL THIS METHOD; THIS IS NOT FOR USERS.
+    ///
+    /// \warning DO NOT CALL THIS METHOD.  THIS IS AN IMPLEMENTATION
+    ///   DETAIL OF TPETRA DESIGNED TO PREVENT SPURIOUS BUILD
+    ///   WARNINGS.  DO NOT CALL THIS METHOD.  IT WILL GO AWAY VERY
+    ///   SOON PER #2630.
+    ///
+    /// This function exists only to prevent spurious deprecation
+    /// warnings in CrsMatrix and BlockCrsMatrix.  We only want users
+    /// to see deprecated warnings if <i>they</i> call deprecated
+    /// methods, not if <i>we</i> call them.
+    global_size_t getGlobalNumDiagsImpl () const override;
+
     /// \brief Number of diagonal entries on the calling process.
     ///
     /// \pre <tt>! this->isFillActive()</tt>
@@ -953,9 +985,23 @@ namespace Tpetra {
     ///   go away at any time.
     size_t TPETRA_DEPRECATED getNodeNumDiags() const;
 
-    /// \brief Maximum number of entries in all rows over all processes.
+    /// \brief DO NOT CALL THIS METHOD; THIS IS NOT FOR USERS.
     ///
-    /// \note Undefined if isFillActive().
+    /// \warning DO NOT CALL THIS METHOD.  THIS IS AN IMPLEMENTATION
+    ///   DETAIL OF TPETRA DESIGNED TO PREVENT SPURIOUS BUILD
+    ///   WARNINGS.  DO NOT CALL THIS METHOD.  IT WILL GO AWAY VERY
+    ///   SOON PER #2630.
+    ///
+    /// This function exists only to prevent spurious deprecation
+    /// warnings in CrsMatrix and BlockCrsMatrix.  We only want users
+    /// to see deprecated warnings if <i>they</i> call deprecated
+    /// methods, not if <i>we</i> call them.
+    size_t getNodeNumDiagsImpl () const override;
+
+    /// \brief Maximum number of entries in any row of the graph,
+    ///   over all processes in the graph's communicator.
+    ///
+    /// \pre <tt>! isFillActive()</tt>
     ///
     /// \note This is the same as the result of a global maximum of
     ///   getNodeMaxNumRowEntries() over all processes.  That may not
@@ -965,12 +1011,13 @@ namespace Tpetra {
     ///   row.  This method only counts the number of entries in each
     ///   row that a process owns, not the total number of entries in
     ///   the row over all processes.
-    size_t getGlobalMaxNumRowEntries() const;
+    size_t getGlobalMaxNumRowEntries () const;
 
-    //! \brief Maximum number of entries in all rows owned by the calling process.
-    /** Undefined if isFillActive().
-     */
-    size_t getNodeMaxNumRowEntries() const;
+    /// \brief Maximum number of entries in any row of the graph,
+    ///   on this process.
+    ///
+    /// \pre <tt>! isFillActive()</tt>
+    size_t getNodeMaxNumRowEntries () const;
 
     /// \brief Whether the graph has a column Map.
     ///
@@ -980,31 +1027,64 @@ namespace Tpetra {
     /// does not already have one.
     ///
     /// A column Map lets the graph
-    ///
-    ///   - use local indices for storing entries in each row, and
-    ///   - compute an Import from the domain Map to the column Map.
+    /// <ul>
+    /// <li> use local indices for storing entries in each row, and </li>
+    /// <li> compute an Import from the domain Map to the column Map. </li>
+    /// </ul>
     ///
     /// The latter is mainly useful for a graph associated with a
     /// CrsMatrix.
-    bool hasColMap() const;
+    bool hasColMap () const;
+
+    /// \brief DO NOT CALL THIS METHOD; THIS IS NOT FOR USERS.
+    ///
+    /// \warning DO NOT CALL THIS METHOD.  THIS IS AN IMPLEMENTATION
+    ///   DETAIL OF TPETRA DESIGNED TO PREVENT SPURIOUS BUILD
+    ///   WARNINGS.  DO NOT CALL THIS METHOD.  IT WILL GO AWAY VERY
+    ///   SOON PER #2630.
+    ///
+    /// This function exists only to prevent spurious deprecation
+    /// warnings in CrsMatrix and BlockCrsMatrix.  We only want users
+    /// to see deprecated warnings if <i>they</i> call deprecated
+    /// methods, not if <i>we</i> call them.
+    bool isLowerTriangularImpl () const override;
 
     /// \brief Whether the graph is locally lower triangular.
     ///
+    /// \warning DO NOT CALL THIS METHOD!  This method is DEPRECATED
+    ///   and will DISAPPEAR VERY SOON per #2630.
+    ///
     /// \pre <tt>! isFillActive()</tt>.
     ///   If fill is active, this method's behavior is undefined.
     ///
     /// \note This is entirely a local property.  That means this
     ///   method may return different results on different processes.
-    bool isLowerTriangular() const;
+    bool TPETRA_DEPRECATED isLowerTriangular () const;
+
+    /// \brief DO NOT CALL THIS METHOD; THIS IS NOT FOR USERS.
+    ///
+    /// \warning DO NOT CALL THIS METHOD.  THIS IS AN IMPLEMENTATION
+    ///   DETAIL OF TPETRA DESIGNED TO PREVENT SPURIOUS BUILD
+    ///   WARNINGS.  DO NOT CALL THIS METHOD.  IT WILL GO AWAY VERY
+    ///   SOON PER #2630.
+    ///
+    /// This function exists only to prevent spurious deprecation
+    /// warnings in CrsMatrix and BlockCrsMatrix.  We only want users
+    /// to see deprecated warnings if <i>they</i> call deprecated
+    /// methods, not if <i>we</i> call them.
+    bool isUpperTriangularImpl () const override;
 
     /// \brief Whether the graph is locally upper triangular.
     ///
+    /// \warning DO NOT CALL THIS METHOD!  This method is DEPRECATED
+    ///   and will DISAPPEAR VERY SOON per #2630.
+    ///
     /// \pre <tt>! isFillActive()</tt>.
     ///   If fill is active, this method's behavior is undefined.
     ///
     /// \note This is entirely a local property.  That means this
     ///   method may return different results on different processes.
-    bool isUpperTriangular() const;
+    bool TPETRA_DEPRECATED isUpperTriangular () const;
 
     //! \brief If graph indices are in the local range, this function returns true. Otherwise, this function returns false. */
     bool isLocallyIndexed() const;
@@ -1181,7 +1261,7 @@ namespace Tpetra {
     /// \pre The graph must have a column Map.
     /// \pre All diagonal entries of the graph must be populated on
     ///   this process.  Results are undefined otherwise.
-    /// \pre <tt>offsets.dimension_0() >= this->getNodeNumRows()</tt>
+    /// \pre <tt>offsets.extent(0) >= this->getNodeNumRows()</tt>
     ///
     /// \param offsets [out] Output array of offsets.  This method
     ///   does NOT allocate the array; the caller must allocate.  Must
@@ -1737,11 +1817,11 @@ namespace Tpetra {
     ///
     /// \warning This is an implementation detail.
     static const bool useAtomicUpdatesByDefault =
-#ifdef KOKKOS_HAVE_SERIAL
+#ifdef KOKKOS_ENABLE_SERIAL
       ! std::is_same<execution_space, Kokkos::Serial>::value;
 #else
       true;
-#endif // KOKKOS_HAVE_SERIAL
+#endif // KOKKOS_ENABLE_SERIAL
 
     //@}
     //! \name Methods for sorting and merging column indices.

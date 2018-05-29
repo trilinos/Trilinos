@@ -46,7 +46,7 @@
 #include "ROL_RandomVector.hpp"
 #include "ROL_Types.hpp"
 
-#include "Teuchos_oblackholestream.hpp"
+#include "ROL_Stream.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
 
 #include "Thyra_DefaultSpmdVectorSpace.hpp"
@@ -64,7 +64,7 @@ int main(int argc, char *argv[]) {
   // This little trick lets us print to std::cout only if a (dummy) command-line argument is provided.
   int iprint     = argc - 1;
   Teuchos::RCP<std::ostream> outStream;
-  oblackholestream bhs; // outputs nothing
+  ROL::nullstream bhs; // outputs nothing
   if (iprint > 0)
     outStream = Teuchos::rcpFromRef(std::cout);
   else

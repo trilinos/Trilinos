@@ -185,12 +185,12 @@ public:
     const auto& X_view = X.template getLocalView<Kokkos::HostSpace>();
     const auto& Y_view = Y.template getLocalView<Kokkos::HostSpace>();
     // Only does something if #rhs > current capacity.
-    HTST::reset_max_nrhs(Timpl_.get(), X_view.dimension_1());
+    HTST::reset_max_nrhs(Timpl_.get(), X_view.extent(1));
     // Switch alpha and beta because of HTS's opposite convention.
     HTST::solve_omp(Timpl_.get(),
                     // For std/Kokkos::complex.
                     reinterpret_cast<const scalar_type*>(X_view.data()),
-                    X_view.dimension_1(),
+                    X_view.extent(1),
                     // For std/Kokkos::complex.
                     reinterpret_cast<scalar_type*>(Y_view.data()),
                     beta, alpha);
@@ -394,9 +394,9 @@ initialize ()
     auto numCols = Alocal.numCols();
     auto numNnz = Alocal.nnz();
 
-    typename decltype(ptr)::non_const_type  newptr ("ptr", ptr.dimension_0 ());
-    typename decltype(ind)::non_const_type  newind ("ind", ind.dimension_0 ());
-    decltype(val)                           newval ("val", val.dimension_0 ());
+    typename decltype(ptr)::non_const_type  newptr ("ptr", ptr.extent (0));
+    typename decltype(ind)::non_const_type  newind ("ind", ind.extent (0));
+    decltype(val)                           newval ("val", val.extent (0));
 
     // FIXME: The code below assumes UVM
     crs_matrix_type::execution_space::fence();

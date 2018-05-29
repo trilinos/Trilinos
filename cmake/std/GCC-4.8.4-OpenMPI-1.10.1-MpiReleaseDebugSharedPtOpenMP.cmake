@@ -23,6 +23,9 @@ TRIL_SET_CACHE_VAR(MPI_EXEC_PRE_NUMPROCS_FLAGS "--bind-to;none"
 # NOTE: The above is a workaround for the problem of having threads on MPI
 # ranks bind to the same cores (see #2422).
 
+# Disable just one Teko sub-unit test that fails with GCC 4.8.4 + OpenMP (#2712)
+TRIL_SET_BOOL_CACHE_VAR(Teko_DISABLE_LSCSTABALIZED_TPETRA_ALPAH_INV_D TRUE)
+
 # NOTE: The order of these includes matters!
 
 include("${CMAKE_CURRENT_LIST_DIR}/MpiReleaseDebugSharedPtSettings.cmake")

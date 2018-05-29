@@ -72,18 +72,18 @@ template<class ViewType1,
          class IndexType = int>
 struct GemmCanUseMkl {
 #ifdef HAVE_KOKKOSKERNELS_MKL
-#  ifdef KOKKOS_HAVE_CUDA
+#  ifdef KOKKOS_ENABLE_CUDA
   static constexpr bool value =
     ::Tpetra::Details::Blas::Lib::GemmCanUseLib<ViewType1, ViewType2, ViewType3,
                           CoefficientType, IndexType>::value &&
     ! std::is_same<typename ViewType1::execution_space, ::Kokkos::Cuda>::value &&
     ! std::is_same<typename ViewType2::execution_space, ::Kokkos::Cuda>::value &&
     ! std::is_same<typename ViewType3::execution_space, ::Kokkos::Cuda>::value;
-#  else // NOT KOKKOS_HAVE_CUDA
+#  else // NOT KOKKOS_ENABLE_CUDA
   static constexpr bool value =
     ::Tpetra::Details::Blas::Lib::GemmCanUseLib<ViewType1, ViewType2, ViewType3,
                                                 CoefficientType, IndexType>::value;
-#  endif // KOKKOS_HAVE_CUDA
+#  endif // KOKKOS_ENABLE_CUDA
 #else // NOT HAVE_KOKKOSKERNELS_MKL
   static constexpr bool value = false;
 #endif // NOT HAVE_KOKKOSKERNELS_MKL
@@ -282,12 +282,12 @@ gemm (const char transA,
   const index_type ldb = getStride2DView<ViewType2, index_type> (B);
   const index_type ldc = getStride2DView<ViewType3, index_type> (C);
 
-  const index_type m = static_cast<index_type> (C.dimension_0 ());
-  const index_type n = static_cast<index_type> (C.dimension_1 ());
+  const index_type m = static_cast<index_type> (C.extent (0));
+  const index_type n = static_cast<index_type> (C.extent (1));
   const bool noTransA = (transA == 'N' || transA == 'n');
   const index_type k = static_cast<index_type> (noTransA ?
-                                                A.dimension_1 () :
-                                                A.dimension_0 ());
+                                                A.extent (1) :
+                                                A.extent (0));
   impl_type::gemm (transA, transB, m, n, k,
                    alpha, A.data (), lda,
                    B.data (), ldb,

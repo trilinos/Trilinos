@@ -246,10 +246,10 @@ int Epetra_FECrsGraph::GlobalAssemble(const Epetra_Map& domain_map,
   for (nonlocalRows = nonlocalRowData_var.begin();
        nonlocalRows != nonlocalRowData_var.end(); ++nonlocalRows)
     allColumns.AddEntries((int) nonlocalRows->second.entries_.size(),
-       nonlocalRows->second.entries_.size() ? &nonlocalRows->second.entries_[0] : 0);
+       Epetra_Util_data_ptr(nonlocalRows->second.entries_));
 
   Epetra_Map* colMap = new Epetra_Map((int_type) -1, (int) allColumns.entries_.size(),
-             allColumns.entries_.size() ? &allColumns.entries_[0] : 0,
+                                      Epetra_Util_data_ptr(allColumns.entries_),
                                       (int_type) Map().IndexBase64(), Map().Comm());
 
   //now we need to create a graph with sourceMap and colMap, and fill it with
@@ -281,7 +281,7 @@ int Epetra_FECrsGraph::GlobalAssemble(const Epetra_Map& domain_map,
        nonlocalRows != nonlocalRowData_var.end(); ++nonlocalRows)
     EPETRA_CHK_ERR( tempGrph->InsertGlobalIndices(nonlocalRows->first,
              (int) nonlocalRows->second.entries_.size(),
-             nonlocalRows->second.entries_.size() ? &nonlocalRows->second.entries_[0] : 0) );
+             Epetra_Util_data_ptr(nonlocalRows->second.entries_)) );
 
 
   //Now we need to call FillComplete on our temp graph. We need to

@@ -52,11 +52,11 @@ namespace ROL {
 namespace details {
 
 using namespace std;
-using namespace std::placeholders; // defines _1, _2, ...
+namespace ph = std::placeholders; // defines ph::_1, ph::_2, ...
 
 template<typename Real>
 DynamicConstraintCheck<Real>::DynamicConstraintCheck( DynamicConstraint<Real>& con,
-                                                      Teuchos::ParameterList& pl,
+                                                      ROL::ParameterList& pl,
                                                       ostream& os=cout ) :
   con_(con), os_(os) {
   auto& fdlist = pl.sublist("Finite Difference Check"); 
@@ -86,8 +86,8 @@ DynamicConstraintCheck<Real>::applyJacobian_uo( V& jv, const V& vo, const V& uo,
                                                 const V& un, const V& z, 
                                                 const TS& ts ) const override {
 
-  auto f_val = bind( &DC::value, _2, _1, un, z, ts );
-  auto f_der = bind( &DC::applyJacobian_uo, _3, _2, _1, un, z, ts );
+  auto f_val = bind( &DC::value, ph::_2, ph::_1, un, z, ts );
+  auto f_der = bind( &DC::applyJacobian_uo, ph::_3, ph::_2, ph::_1, un, z, ts );
    
 }
 

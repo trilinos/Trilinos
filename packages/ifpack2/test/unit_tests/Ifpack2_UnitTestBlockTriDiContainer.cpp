@@ -132,7 +132,7 @@ struct Input {
        << " bs " << bs
        << " nrhs " << nrhs
        << " isplit " << isplit << " jsplit " << jsplit;
-#ifdef KOKKOS_HAVE_OPENMP
+#ifdef KOKKOS_ENABLE_OPENMP
     os << " nthreads " << omp_get_max_threads();
 #endif
     if (nonuniform_lines) os << " nonuniform-lines";
@@ -270,7 +270,7 @@ static LO run_teuchos_tests (const Input& in, Teuchos::FancyOStream& out, bool& 
       }
       for (const bool jacobi : {false, true})
         for (const bool seq_method : {false, true})
-          for (const bool overlap_comm : {false /*, true*/}) { // temporary disabling overlap comm version
+          for (const bool overlap_comm : {false, true}) { // temporary disabling overlap comm version
             if (seq_method && overlap_comm) continue;
             for (const bool nonuniform_lines : {false, true}) {
               if (jacobi && nonuniform_lines) continue;

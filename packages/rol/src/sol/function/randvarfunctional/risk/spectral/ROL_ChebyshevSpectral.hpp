@@ -106,15 +106,15 @@ private:
   std::vector<Real> pts_;
 
   void checkInputs(void) const {
-    TEUCHOS_TEST_FOR_EXCEPTION(lower_ > upper_, std::invalid_argument,
+    ROL_TEST_FOR_EXCEPTION(lower_ > upper_, std::invalid_argument,
       ">>> ERROR (ROL::ChebyshevSpectral): Lower bound exceeds upper!");
-    TEUCHOS_TEST_FOR_EXCEPTION(lower_ < static_cast<Real>(0), std::invalid_argument,
+    ROL_TEST_FOR_EXCEPTION(lower_ < static_cast<Real>(0), std::invalid_argument,
       ">>> ERROR (ROL::ChebyshevSpectral): Lower bound is less than zero!");
-    TEUCHOS_TEST_FOR_EXCEPTION(static_cast<Real>(1) < upper_, std::invalid_argument,
+    ROL_TEST_FOR_EXCEPTION(static_cast<Real>(1) < upper_, std::invalid_argument,
       ">>> ERROR (ROL::ChebyshevSpectral): Upper bound is greater than one!");
-    TEUCHOS_TEST_FOR_EXCEPTION((wType_ < 1 || wType_ > 3), std::invalid_argument,
+    ROL_TEST_FOR_EXCEPTION((wType_ < 1 || wType_ > 3), std::invalid_argument,
       ">>> ERROR (ROL::ChebyshevSpectral): Weight must be 1, 2 or 3!");
-    TEUCHOS_TEST_FOR_EXCEPTION(plusFunction_ == ROL::nullPtr, std::invalid_argument,
+    ROL_TEST_FOR_EXCEPTION(plusFunction_ == ROL::nullPtr, std::invalid_argument,
       ">>> ERROR (ROL::ChebyshevSpectral): PlusFunction pointer is null!");
   }
 
@@ -155,9 +155,9 @@ public:
       \li "Number of Quadrature Points"
       \li A sublist for plus function information.
   */
-  ChebyshevSpectral( Teuchos::ParameterList &parlist )
+  ChebyshevSpectral( ROL::ParameterList &parlist )
     : SpectralRisk<Real>() {
-    Teuchos::ParameterList &list
+    ROL::ParameterList &list
       = parlist.sublist("SOL").sublist("Risk Measure").sublist("Chebyshev Spectral Risk");
     // Grab confidence level and quadrature order
     lower_ = list.get("Lower Bound",0.0);

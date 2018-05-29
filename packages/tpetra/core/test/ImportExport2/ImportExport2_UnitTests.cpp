@@ -83,8 +83,8 @@ namespace {
 
     auto x_host = x.template view<Kokkos::HostSpace> ();
     typedef typename DualViewType::t_dev::value_type value_type;
-    return Teuchos::ArrayView<value_type> (x_host.ptr_on_device (),
-                                           x_host.dimension_0 ());
+    return Teuchos::ArrayView<value_type> (x_host.data (),
+                                           x_host.extent (0));
   }
 
   using Teuchos::as;
@@ -2045,14 +2045,14 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( Import_Util, UnpackAndCombineWithOwningPIDs, 
 
   // mfh 01 Aug 2017: Deal with fix for #1088, by not using
   // Kokkos::CudaUVMSpace for communication buffers.
-#ifdef KOKKOS_HAVE_CUDA
+#ifdef KOKKOS_ENABLE_CUDA
   typedef typename std::conditional<
   std::is_same<typename device_type::execution_space, Kokkos::Cuda>::value,
     Kokkos::CudaSpace,
     typename device_type::memory_space>::type buffer_memory_space;
 #else
   typedef typename device_type::memory_space buffer_memory_space;
-#endif // KOKKOS_HAVE_CUDA
+#endif // KOKKOS_ENABLE_CUDA
   typedef typename device_type::execution_space buffer_execution_space;
   typedef Kokkos::Device<buffer_execution_space, buffer_memory_space> buffer_device_type;
 
@@ -2647,7 +2647,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( Import_Util,GetTwoTransferOwnershipVector, LO
   typedef Tpetra::Vector<int,LO, GO, Node> IntVectorType;
   RCP<const ImportType> ImportOwn, ImportXfer;
   RCP<MapType> Map0, Map1, Map2;
-  
+
   // Get Rank
   const int NumProc = Comm->getSize ();
   const int MyPID   = Comm->getRank ();
@@ -2705,11 +2705,11 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( Import_Util,GetTwoTransferOwnershipVector, LO
     oss<<"\n["<<MyPID<<"] Ownership = ";
     for(int i=0; i<num_per_proc; i++)
       oss<<odata[i]<< " ";
-    std::cout<<oss.str()<<std::endl; 
+    std::cout<<oss.str()<<std::endl;
   }
 #endif
-  
-  
+
+
   // Check answer [ownership(GID i) should contain the owning PID in Map0]
   for(size_t i=0; i<Map2->getNodeNumElements(); i++) {
     GO GID  = Map2->getGlobalElement(i);

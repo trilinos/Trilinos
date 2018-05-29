@@ -45,8 +45,8 @@
 ///   (row pointers, column indices, and values) from Tpetra::RowMatrix.
 ///   This is used by Ifpack2's FastILU wrapper.
 
-#ifndef __IFPACK2_CRSARRAYS_DECL_HPP__ 
-#define __IFPACK2_CRSARRAYS_DECL_HPP__ 
+#ifndef __IFPACK2_CRSARRAYS_DECL_HPP__
+#define __IFPACK2_CRSARRAYS_DECL_HPP__
 
 #include <Tpetra_RowMatrix.hpp>
 #include <Tpetra_CrsMatrix.hpp>
@@ -117,10 +117,10 @@ struct CrsArrayReader
     OrdinalArrayHost& colinds;
   };
 
-  //! Functor for getting matrix values in parallel 
+  //! Functor for getting matrix values in parallel
   struct GetValuesFunctor
   {
-    GetValuesFunctor(const TRowMatrix* A_, const OrdinalArrayHost& rowptrs_, ScalarArrayHost& vals_) : 
+    GetValuesFunctor(const TRowMatrix* A_, const OrdinalArrayHost& rowptrs_, ScalarArrayHost& vals_) :
       A(A_), rowptrs(rowptrs_), vals(vals_) {}
     KOKKOS_INLINE_FUNCTION void operator()(const int row) const
     {
@@ -221,7 +221,7 @@ struct CrsArrayReader
     auto rowmap = A->getLocalMatrix().graph.row_map;
     //allocate rowptrs, it's a deep copy (colinds is a shallow copy so not necessary for it)
     rowptrs = OrdinalArray("RowPtrs", A->getNodeNumRows() + 1);
-    for(size_t i = 0; i < rowmap.dimension_0(); i++)
+    for(size_t i = 0; i < rowmap.extent(0); i++)
     {
       rowptrs[i] = rowmap[i];
     }

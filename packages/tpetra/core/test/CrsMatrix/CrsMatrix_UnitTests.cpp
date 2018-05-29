@@ -148,7 +148,6 @@ namespace { // (anonymous)
       MV mvbad(badmap,1);
 #ifdef HAVE_TPETRA_DEBUG
       const Scalar ONE = ST::one(), ZERO = ST::zero();
-      // tests in localSolve() and localMultiply() are only done in a debug build
       MV mvcol(zero->getColMap(),1);
       MV mvrow(zero->getRowMap(),1);
       TEST_THROW(zero->template localMultiply<Scalar>(mvcol,mvbad,  NO_TRANS,ONE,ZERO), std::runtime_error); // bad output map

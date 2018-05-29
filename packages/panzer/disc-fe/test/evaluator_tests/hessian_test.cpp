@@ -282,7 +282,7 @@ evaluateFields(
   // Hess*v = dy * std::cos(x*y) - y * ( dx * sin(x*y) + dy * sin(x*y))
   //        = dx * std::cos(x*y) - x * ( dx * sin(x*y) + dy * sin(x*y)) - 0.25 * dy * std::cos(y)
   //
-  for(int ip=0;ip<Teuchos::as<int>(result.dimension_0());++ip)
+  for(int ip=0;ip<Teuchos::as<int>(result.extent(0));++ip)
     result(ip) = std::sin(x(ip)*y(ip))+0.25*std::cos(y(ip));
 }
 

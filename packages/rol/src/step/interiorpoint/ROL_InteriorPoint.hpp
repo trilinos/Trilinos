@@ -75,10 +75,10 @@ public:
   PenalizedObjective( const ROL::Ptr<Objective<Real> >       &obj,
                       const ROL::Ptr<BoundConstraint<Real> > &bnd,
                       const Vector<Real>                         &x,
-                      Teuchos::ParameterList                     &parlist)
+                      ROL::ParameterList                     &parlist)
     : obj_(obj), x_(ROL::nullPtr), g_(ROL::nullPtr), scratch_(ROL::nullPtr),
       fval_(0), gnorm_(0), nfval_(0), ngval_(0) {
-    Teuchos::ParameterList& IPlist = parlist.sublist("Step").sublist("Interior Point");
+    ROL::ParameterList& IPlist = parlist.sublist("Step").sublist("Interior Point");
     barrier_ = ROL::makePtr<ObjectiveFromBoundConstraint<Real>>(*bnd,IPlist);
     x_       = x.clone();
     g_       = x.dual().clone();

@@ -74,7 +74,7 @@ namespace Intrepid2 {
       ordinal_type opDn = operatorDn;
 
       const auto pts = Kokkos::subview( input, Kokkos::ALL(), 0 );
-      const ordinal_type np = input.dimension(0);
+      const ordinal_type np = input.extent(0);
 
       switch (opType) {
       case OPERATOR_VALUE: {
@@ -106,14 +106,14 @@ namespace Intrepid2 {
         opDn = getOperatorOrder(opType);
       case OPERATOR_Dn: {
         {
-          const ordinal_type pend = output.dimension(0);
-          const ordinal_type iend = output.dimension(1);
-          const ordinal_type jend = output.dimension(2);
+          const ordinal_type pend = output.extent(0);
+          const ordinal_type iend = output.extent(1);
+          const ordinal_type jend = output.extent(2);
           
           for (ordinal_type p=0;p<pend;++p)
             for (ordinal_type i=0;i<iend;++i)
               for (ordinal_type j=0;j<jend;++j)
-                output(p, i, j) = 0.0;
+                output.access(p, i, j) = 0.0;
         }
         {
           const Kokkos::View<typename inputViewType::value_type*,
@@ -157,8 +157,8 @@ namespace Intrepid2 {
       typedef typename ExecSpace<typename inputPointViewType::execution_space,SpT>::ExecSpaceType ExecSpaceType;
 
       // loopSize corresponds to the # of points
-      const auto loopSizeTmp1 = (inputPoints.dimension(0)/numPtsPerEval);
-      const auto loopSizeTmp2 = (inputPoints.dimension(0)%numPtsPerEval != 0);
+      const auto loopSizeTmp1 = (inputPoints.extent(0)/numPtsPerEval);
+      const auto loopSizeTmp2 = (inputPoints.extent(0)%numPtsPerEval != 0);
       const auto loopSize = loopSizeTmp1 + loopSizeTmp2;
       Kokkos::RangePolicy<ExecSpaceType,Kokkos::Schedule<Kokkos::Static> > policy(0, loopSize);
       

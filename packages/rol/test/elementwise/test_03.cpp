@@ -50,7 +50,7 @@
 #include "ROL_Bounds.hpp"
 #include "ROL_StdBoundConstraint.hpp"
 #include "ROL_StdVector.hpp"
-#include "Teuchos_oblackholestream.hpp"
+#include "ROL_Stream.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
 
 #include <iostream>
@@ -72,7 +72,7 @@ int main(int argc, char *argv[]) {
  
   int iprint = argc - 1;
   ROL::Ptr<std::ostream>  outStream;
-  oblackholestream   bhs;
+  ROL::nullstream bhs;
   if( iprint > 0 )
     outStream = ROL::makePtrFromRef(std::cout);
   else

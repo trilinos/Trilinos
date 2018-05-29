@@ -280,12 +280,12 @@ gemm (const char transA,
   const index_type ldb = getStride2DView<ViewType2, index_type> (B);
   const index_type ldc = getStride2DView<ViewType3, index_type> (C);
 
-  const index_type m = static_cast<index_type> (C.dimension_0 ());
-  const index_type n = static_cast<index_type> (C.dimension_1 ());
+  const index_type m = static_cast<index_type> (C.extent (0));
+  const index_type n = static_cast<index_type> (C.extent (1));
   const bool noTransA = (transA == 'N' || transA == 'n');
   const index_type k = static_cast<index_type> (noTransA ?
-                                                A.dimension_1 () :
-                                                A.dimension_0 ());
+                                                A.extent (1) :
+                                                A.extent (0));
   impl_type::gemm (transA, transB, m, n, k,
                    alpha, A.data (), lda,
                    B.data (), ldb,

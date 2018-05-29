@@ -204,11 +204,11 @@ namespace { // (anonymous)
     }
     if (debug) {
       TEUCHOS_TEST_FOR_EXCEPTION
-        (static_cast<size_t> (d_view.dimension_0 ()) != lclNumRows ||
-         static_cast<size_t> (d_view.dimension_1 ()) != numCols, std::logic_error,
+        (static_cast<size_t> (d_view.extent (0)) != lclNumRows ||
+         static_cast<size_t> (d_view.extent (1)) != numCols, std::logic_error,
          "allocDualView: d_view's dimensions actual dimensions do not match "
-         "requested dimensions.  d_view is " << d_view.dimension_0 () << " x " <<
-         d_view.dimension_1 () << "; requested " << lclNumRows << " x " << numCols
+         "requested dimensions.  d_view is " << d_view.extent (0) << " x " <<
+         d_view.extent (1) << "; requested " << lclNumRows << " x " << numCols
          << ".  Please report this bug to the Tpetra developers.");
     }
 
@@ -272,7 +272,7 @@ namespace { // (anonymous)
                const Kokkos::Impl::ALL_t&,
                const std::pair<size_t, size_t>& colRng)
   {
-    if (X.dimension_0 () == 0 && X.dimension_1 () != 0) {
+    if (X.extent (0) == 0 && X.extent (1) != 0) {
       return DualViewType ("MV::DualView", 0, colRng.second - colRng.first);
     }
     else {
@@ -289,7 +289,7 @@ namespace { // (anonymous)
                const std::pair<size_t, size_t>& rowRng,
                const std::pair<size_t, size_t>& colRng)
   {
-    if (X.dimension_0 () == 0 && X.dimension_1 () != 0) {
+    if (X.extent (0) == 0 && X.extent (1) != 0) {
       return DualViewType ("MV::DualView", 0, colRng.second - colRng.first);
     }
     else {
@@ -385,14 +385,14 @@ namespace Tpetra {
     // stride might be 0, so take view_dimension instead.
     size_t stride[8];
     origView_.stride (stride);
-    const size_t LDA = (origView_.dimension_1 () > 1) ? stride[1] :
-      origView_.dimension_0 ();
+    const size_t LDA = (origView_.extent (1) > 1) ? stride[1] :
+      origView_.extent (0);
     const size_t lclNumRows = this->getLocalLength (); // comes from the Map
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
       LDA < lclNumRows, std::invalid_argument, "The input Kokkos::DualView's "
       "column stride LDA = " << LDA << " < getLocalLength() = " << lclNumRows
       << ".  This may also mean that the input view's first dimension (number "
-      "of rows = " << view.dimension_0 () << ") does not not match the number "
+      "of rows = " << view.extent (0) << ") does not not match the number "
       "of entries in the Map on the calling process.");
   }
 
@@ -413,14 +413,14 @@ namespace Tpetra {
     // be 0, so take view_dimension instead.
     size_t stride[8];
     d_view.stride (stride);
-    const size_t LDA = (d_view.dimension_1 () > 1) ? stride[1] :
-      d_view.dimension_0 ();
+    const size_t LDA = (d_view.extent (1) > 1) ? stride[1] :
+      d_view.extent (0);
     const size_t lclNumRows = this->getLocalLength (); // comes from the Map
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
       LDA < lclNumRows, std::invalid_argument, "The input Kokkos::View's "
       "column stride LDA = " << LDA << " < getLocalLength() = " << lclNumRows
       << ".  This may also mean that the input view's first dimension (number "
-      "of rows = " << d_view.dimension_0 () << ") does not not match the "
+      "of rows = " << d_view.extent (0) << ") does not not match the "
       "number of entries in the Map on the calling process.");
 
     // The difference between create_mirror and create_mirror_view, is
@@ -449,14 +449,14 @@ namespace Tpetra {
     // stride might be 0, so take view_dimension instead.
     size_t stride[8];
     origView_.stride (stride);
-    const size_t LDA = (origView_.dimension_1 () > 1) ? stride[1] :
-      origView_.dimension_0 ();
+    const size_t LDA = (origView_.extent (1) > 1) ? stride[1] :
+      origView_.extent (0);
     const size_t lclNumRows = this->getLocalLength (); // comes from the Map
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
       LDA < lclNumRows, std::invalid_argument, "The input Kokkos::DualView's "
       "column stride LDA = " << LDA << " < getLocalLength() = " << lclNumRows
       << ".  This may also mean that the input origView's first dimension (number "
-      "of rows = " << origView.dimension_0 () << ") does not not match the number "
+      "of rows = " << origView.extent (0) << ") does not not match the number "
       "of entries in the Map on the calling process.");
   }
 
@@ -484,13 +484,13 @@ namespace Tpetra {
     // require the number of columns to match if the (Dual)View has
     // more than zero rows.
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-      view.dimension_1 () != 0 && static_cast<size_t> (view.dimension_0 ()) < lclNumRows,
-      std::invalid_argument, "view.dimension_0() = " << view.dimension_0 ()
+      view.extent (1) != 0 && static_cast<size_t> (view.extent (0)) < lclNumRows,
+      std::invalid_argument, "view.extent(0) = " << view.extent (0)
       << " < map->getNodeNumElements() = " << lclNumRows << ".");
     if (whichVectors.size () != 0) {
       TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-        view.dimension_1 () != 0 && view.dimension_1 () == 0,
-        std::invalid_argument, "view.dimension_1() = 0, but whichVectors.size()"
+        view.extent (1) != 0 && view.extent (1) == 0,
+        std::invalid_argument, "view.extent(1) = 0, but whichVectors.size()"
         " = " << whichVectors.size () << " > 0.");
       size_t maxColInd = 0;
       typedef Teuchos::ArrayView<const size_t>::size_type size_type;
@@ -502,8 +502,8 @@ namespace Tpetra {
         maxColInd = std::max (maxColInd, whichVectors[k]);
       }
       TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-        view.dimension_1 () != 0 && static_cast<size_t> (view.dimension_1 ()) <= maxColInd,
-        std::invalid_argument, "view.dimension_1() = " << view.dimension_1 ()
+        view.extent (1) != 0 && static_cast<size_t> (view.extent (1)) <= maxColInd,
+        std::invalid_argument, "view.extent(1) = " << view.extent (1)
         << " <= max(whichVectors) = " << maxColInd << ".");
     }
 
@@ -511,8 +511,8 @@ namespace Tpetra {
     // stride might be 0, so take view_dimension instead.
     size_t stride[8];
     origView_.stride (stride);
-    const size_t LDA = (origView_.dimension_1 () > 1) ? stride[1] :
-      origView_.dimension_0 ();
+    const size_t LDA = (origView_.extent (1) > 1) ? stride[1] :
+      origView_.extent (0);
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
       LDA < lclNumRows, std::invalid_argument,
       "LDA = " << LDA << " < this->getLocalLength() = " << lclNumRows << ".");
@@ -558,13 +558,13 @@ namespace Tpetra {
     // require the number of columns to match if the (Dual)View has
     // more than zero rows.
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-      view.dimension_1 () != 0 && static_cast<size_t> (view.dimension_0 ()) < lclNumRows,
-      std::invalid_argument, "view.dimension_0() = " << view.dimension_0 ()
+      view.extent (1) != 0 && static_cast<size_t> (view.extent (0)) < lclNumRows,
+      std::invalid_argument, "view.extent(0) = " << view.extent (0)
       << " < map->getNodeNumElements() = " << lclNumRows << ".");
     if (whichVectors.size () != 0) {
       TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-        view.dimension_1 () != 0 && view.dimension_1 () == 0,
-        std::invalid_argument, "view.dimension_1() = 0, but whichVectors.size()"
+        view.extent (1) != 0 && view.extent (1) == 0,
+        std::invalid_argument, "view.extent(1) = 0, but whichVectors.size()"
         " = " << whichVectors.size () << " > 0.");
       size_t maxColInd = 0;
       typedef Teuchos::ArrayView<const size_t>::size_type size_type;
@@ -576,16 +576,16 @@ namespace Tpetra {
         maxColInd = std::max (maxColInd, whichVectors[k]);
       }
       TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-        view.dimension_1 () != 0 && static_cast<size_t> (view.dimension_1 ()) <= maxColInd,
-        std::invalid_argument, "view.dimension_1() = " << view.dimension_1 ()
+        view.extent (1) != 0 && static_cast<size_t> (view.extent (1)) <= maxColInd,
+        std::invalid_argument, "view.extent(1) = " << view.extent (1)
         << " <= max(whichVectors) = " << maxColInd << ".");
     }
     // Get stride of view: if second dimension is 0, the
     // stride might be 0, so take view_dimension instead.
     size_t stride[8];
     origView_.stride (stride);
-    const size_t LDA = (origView_.dimension_1 () > 1) ? stride[1] :
-      origView_.dimension_0 ();
+    const size_t LDA = (origView_.extent (1) > 1) ? stride[1] :
+      origView_.extent (0);
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
       LDA < lclNumRows, std::invalid_argument, "Input DualView's column stride"
       " = " << LDA << " < this->getLocalLength() = " << lclNumRows << ".");
@@ -661,8 +661,8 @@ namespace Tpetra {
     // case.
     size_t outStrides[8];
     X_out.stride (outStrides);
-    const size_t outStride = (X_out.dimension_1 () > 1) ? outStrides[1] :
-      X_out.dimension_0 ();
+    const size_t outStride = (X_out.extent (1) > 1) ? outStrides[1] :
+      X_out.extent (0);
     if (LDA == outStride) { // strides are the same; deep_copy once
       // This only works because MultiVector uses LayoutLeft.
       // We would need a custom copy functor otherwise.
@@ -776,8 +776,8 @@ namespace Tpetra {
       // stride might be 0, so take view_dimension instead.
       size_t stride[8];
       origView_.stride (stride);
-      const size_t LDA = (origView_.dimension_1 () > 1) ? stride[1] :
-        origView_.dimension_0 ();
+      const size_t LDA = (origView_.extent (1) > 1) ? stride[1] :
+        origView_.extent (0);
       return LDA;
     }
     else {
@@ -848,10 +848,10 @@ namespace Tpetra {
     }
 
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
-      (permuteToLIDs.dimension_0 () != permuteFromLIDs.dimension_0 (),
-       std::runtime_error, "permuteToLIDs.dimension_0() = "
-       << permuteToLIDs.dimension_0 () << " != permuteFromLIDs.dimension_0() = "
-       << permuteFromLIDs.dimension_0 () << ".");
+      (permuteToLIDs.extent (0) != permuteFromLIDs.extent (0),
+       std::runtime_error, "permuteToLIDs.extent(0) = "
+       << permuteToLIDs.extent (0) << " != permuteFromLIDs.extent(0) = "
+       << permuteFromLIDs.extent (0) << ".");
 
     // We've already called checkSizes(), so this cast must succeed.
     const MV& sourceMV = dynamic_cast<const MV&> (sourceObj);
@@ -948,8 +948,8 @@ namespace Tpetra {
     // (such as ADD).
 
     // If there are no permutations, we are done
-    if (permuteFromLIDs.dimension_0 () == 0 ||
-        permuteToLIDs.dimension_0 () == 0) {
+    if (permuteFromLIDs.extent (0) == 0 ||
+        permuteToLIDs.extent (0) == 0) {
       if (debug) {
         std::ostringstream os;
         os << "(Proc " << myRank << ") MV::copyAndPermuteNew: "
@@ -1013,10 +1013,10 @@ namespace Tpetra {
                                                              copyOnHost);
       }
       TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
-        (static_cast<size_t> (tgtWhichVecs.dimension_0 ()) !=
+        (static_cast<size_t> (tgtWhichVecs.extent (0)) !=
          this->getNumVectors (),
-         std::logic_error, "tgtWhichVecs.dimension_0() = " <<
-         tgtWhichVecs.dimension_0 () << " != this->getNumVectors() = " <<
+         std::logic_error, "tgtWhichVecs.extent(0) = " <<
+         tgtWhichVecs.extent (0) << " != this->getNumVectors() = " <<
          this->getNumVectors () << ".");
 
       if (sourceMV.whichVectors_.size () == 0) {
@@ -1039,9 +1039,9 @@ namespace Tpetra {
                                                              copyOnHost);
       }
       TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
-        (static_cast<size_t> (srcWhichVecs.dimension_0 ()) !=
+        (static_cast<size_t> (srcWhichVecs.extent (0)) !=
          sourceMV.getNumVectors (), std::logic_error,
-         "srcWhichVecs.dimension_0() = " << srcWhichVecs.dimension_0 ()
+         "srcWhichVecs.extent(0) = " << srcWhichVecs.extent (0)
          << " != sourceMV.getNumVectors() = " << sourceMV.getNumVectors ()
          << ".");
     }
@@ -1214,8 +1214,8 @@ namespace Tpetra {
         // sourceMV was most recently updated on device; copy to host.
         // Allocate a new host mirror.  We'll use it for packing below.
         src_host = decltype (src_host) ("MV::DualView::h_view",
-                                        src_dev.dimension_0 (),
-                                        src_dev.dimension_1 ());
+                                        src_dev.extent (0),
+                                        src_dev.extent (1));
         Kokkos::deep_copy (src_host, src_dev);
       }
     }
@@ -1230,8 +1230,8 @@ namespace Tpetra {
         // sourceMV was most recently updated on host; copy to device.
         // Allocate a new "device mirror."  We'll use it for packing below.
         src_dev = decltype (src_dev) ("MV::DualView::d_view",
-                                      src_host.dimension_0 (),
-                                      src_host.dimension_1 ());
+                                      src_host.extent (0),
+                                      src_host.extent (1));
         Kokkos::deep_copy (src_dev, src_host);
       }
     }
@@ -1245,7 +1245,7 @@ namespace Tpetra {
 
     // If we have no exports, there is nothing to do.  Make sure this
     // goes _after_ setting constantNumPackets correctly.
-    if (exportLIDs.dimension_0 () == 0) {
+    if (exportLIDs.extent (0) == 0) {
       if (printDebugOutput) {
         std::ostringstream os;
         os << "Proc " << myRank << ": MV::packAndPrepareNew: "
@@ -1270,13 +1270,13 @@ namespace Tpetra {
     // needs to know how to index into that data.  Kokkos is good at
     // decoupling storage intent from data layout choice.
 
-    const size_t numExportLIDs = exportLIDs.dimension_0 ();
+    const size_t numExportLIDs = exportLIDs.extent (0);
     const size_t newExportsSize = numCols * numExportLIDs;
     if (printDebugOutput) {
       std::ostringstream os;
       os << "Proc " << myRank << ": MV::packAndPrepareNew: realloc: "
          << "numExportLIDs = " << numExportLIDs
-         << ", exports.dimension_0() = " << exports.dimension_0 ()
+         << ", exports.extent(0) = " << exports.extent (0)
          << ", newExportsSize = " << newExportsSize << std::endl;
       std::cerr << os.str ();
     }
@@ -1464,20 +1464,20 @@ namespace Tpetra {
     }
 
     // If we have no imports, there is nothing to do
-    if (importLIDs.dimension_0 () == 0) {
+    if (importLIDs.extent (0) == 0) {
       return;
     }
 
     const size_t numVecs = getNumVectors ();
     if (debugCheckIndices) {
       TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
-        (static_cast<size_t> (imports.dimension_0 ()) !=
-         numVecs * importLIDs.dimension_0 (),
+        (static_cast<size_t> (imports.extent (0)) !=
+         numVecs * importLIDs.extent (0),
          std::runtime_error,
-         "imports.dimension_0() = " << imports.dimension_0 ()
-         << " != getNumVectors() * importLIDs.dimension_0() = " << numVecs
-         << " * " << importLIDs.dimension_0 () << " = "
-         << numVecs * importLIDs.dimension_0 () << ".");
+         "imports.extent(0) = " << imports.extent (0)
+         << " != getNumVectors() * importLIDs.extent(0) = " << numVecs
+         << " * " << importLIDs.extent (0) << " = "
+         << numVecs * importLIDs.extent (0) << ".");
 
       TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
         (constantNumPackets == static_cast<size_t> (0), std::runtime_error,
@@ -1597,7 +1597,7 @@ namespace Tpetra {
       std::cerr << os.str ();
     }
 
-    if (numVecs > 0 && importLIDs.dimension_0 () > 0) {
+    if (numVecs > 0 && importLIDs.extent (0) > 0) {
       typedef typename Kokkos::DualView<IST*,
         device_type>::t_dev::execution_space dev_exec_space;
       typedef typename Kokkos::DualView<IST*,
@@ -1739,7 +1739,7 @@ namespace Tpetra {
   getNumVectors () const
   {
     if (isConstantStride ()) {
-      return static_cast<size_t> (view_.dimension_1 ());
+      return static_cast<size_t> (view_.extent (1));
     } else {
       return static_cast<size_t> (whichVectors_.size ());
     }
@@ -1758,7 +1758,7 @@ namespace Tpetra {
       using Teuchos::reduceAll;
       typedef typename RV::non_const_value_type dot_type;
 
-      const size_t numVecs = dotsOut.dimension_0 ();
+      const size_t numVecs = dotsOut.extent (0);
 
       // If the MultiVector is distributed over multiple processes, do
       // the distributed (interprocess) part of the dot product.  We
@@ -1785,12 +1785,12 @@ namespace Tpetra {
           // sum.
           typename RV::non_const_type lclDots (Kokkos::ViewAllocateWithoutInitializing ("tmp"), numVecs);
           Kokkos::deep_copy (lclDots, dotsOut);
-          const dot_type* const lclSum = lclDots.ptr_on_device ();
-          dot_type* const gblSum = dotsOut.ptr_on_device ();
+          const dot_type* const lclSum = lclDots.data ();
+          dot_type* const gblSum = dotsOut.data ();
           reduceAll<int, dot_type> (*comm, REDUCE_SUM, nv, lclSum, gblSum);
         }
         else {
-          dot_type* const inout = dotsOut.ptr_on_device ();
+          dot_type* const inout = dotsOut.data ();
           reduceAll<int, dot_type> (*comm, REDUCE_SUM, nv, inout, inout);
         }
       }
@@ -1821,7 +1821,7 @@ namespace Tpetra {
       return; // nothing to do
     }
     const size_t lclNumRows = this->getLocalLength ();
-    const size_t numDots = static_cast<size_t> (dots.dimension_0 ());
+    const size_t numDots = static_cast<size_t> (dots.extent (0));
     const bool debug = Behavior::debug ();
 
     if (debug) {
@@ -1852,7 +1852,7 @@ namespace Tpetra {
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
       numDots != numVecs, std::runtime_error,
       "The output array 'dots' must have the same number of entries as the "
-      "number of columns (vectors) in *this and A.  dots.dimension_0() = " <<
+      "number of columns (vectors) in *this and A.  dots.extent(0) = " <<
       numDots << " != this->getNumVectors() = " << numVecs << ".");
 
     const std::pair<size_t, size_t> colRng (0, numVecs);
@@ -2018,7 +2018,7 @@ namespace Tpetra {
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
       (numDots != numVecs, std::runtime_error,
        "The output array 'dots' must have the same number of entries as the "
-       "number of columns (vectors) in *this and A.  dots.dimension_0() = " <<
+       "number of columns (vectors) in *this and A.  dots.extent(0) = " <<
        numDots << " != this->getNumVectors() = " << numVecs << ".");
 
     if (numVecs == 1 && this->isConstantStride () && A.isConstantStride ()) {
@@ -2136,7 +2136,7 @@ namespace Tpetra {
     if (! comm.is_null () && this->isDistributed ()) {
       // Assume that MPI can access device memory.
       reduceAll<int, mag_type> (*comm, REDUCE_SUM, static_cast<int> (numVecs),
-                                lclNrms.ptr_on_device (), norms.getRawPtr ());
+                                lclNrms.data (), norms.getRawPtr ());
       for (size_t k = 0; k < numVecs; ++k) {
         norms[k] = ATM::sqrt (norms[k] * OneOverN);
       }
@@ -2238,19 +2238,19 @@ namespace Tpetra {
       // it returns a 0 x 0 (Dual)View.
       TEUCHOS_TEST_FOR_EXCEPTION(
         lclNumRows != 0 && constantStride && ( \
-          ( X.dimension_0 () != lclNumRows ) ||
-          ( X.dimension_1 () != numVecs    ) ),
-        std::logic_error, "Constant Stride X's dimensions are " << X.dimension_0 () << " x "
-        << X.dimension_1 () << ", which differ from the local dimensions "
+          ( X.extent (0) != lclNumRows ) ||
+          ( X.extent (1) != numVecs    ) ),
+        std::logic_error, "Constant Stride X's dimensions are " << X.extent (0) << " x "
+        << X.extent (1) << ", which differ from the local dimensions "
         << lclNumRows << " x " << numVecs << ".  Please report this bug to "
         "the Tpetra developers.");
 
       TEUCHOS_TEST_FOR_EXCEPTION(
         lclNumRows != 0 && !constantStride && ( \
-          ( X.dimension_0 () != lclNumRows ) ||
-          ( X.dimension_1 () < numVecs    ) ),
-        std::logic_error, "Strided X's dimensions are " << X.dimension_0 () << " x "
-        << X.dimension_1 () << ", which are incompatible with the local dimensions "
+          ( X.extent (0) != lclNumRows ) ||
+          ( X.extent (1) < numVecs    ) ),
+        std::logic_error, "Strided X's dimensions are " << X.extent (0) << " x "
+        << X.extent (1) << ", which are incompatible with the local dimensions "
         << lclNumRows << " x " << numVecs << ".  Please report this bug to "
         "the Tpetra developers.");
 
@@ -2337,7 +2337,7 @@ namespace Tpetra {
       using Teuchos::reduceAll;
       typedef typename RV::non_const_value_type mag_type;
 
-      const size_t numVecs = normsOut.dimension_0 ();
+      const size_t numVecs = normsOut.extent (0);
 
       // If the MultiVector is distributed over multiple processes, do
       // the distributed (interprocess) part of the norm.  We assume
@@ -2360,8 +2360,8 @@ namespace Tpetra {
         // a copy of the local sum.
         RV lclNorms ("MV::normImpl lcl", numVecs);
         Kokkos::deep_copy (lclNorms, normsOut);
-        const mag_type* const lclSum = lclNorms.ptr_on_device ();
-        mag_type* const gblSum = normsOut.ptr_on_device ();
+        const mag_type* const lclSum = lclNorms.data ();
+        mag_type* const gblSum = normsOut.data ();
         const int nv = static_cast<int> (numVecs);
         if (whichNorm == IMPL_NORM_INF) {
           reduceAll<int, mag_type> (*comm, REDUCE_MAX, nv, lclSum, gblSum);
@@ -2418,11 +2418,11 @@ namespace Tpetra {
       return; // nothing to do
     }
     const size_t lclNumRows = this->getLocalLength ();
-    const size_t numNorms = static_cast<size_t> (norms.dimension_0 ());
+    const size_t numNorms = static_cast<size_t> (norms.extent (0));
     TEUCHOS_TEST_FOR_EXCEPTION(
       numNorms < numVecs, std::runtime_error, "Tpetra::MultiVector::normImpl: "
       "'norms' must have at least as many entries as the number of vectors in "
-      "*this.  norms.dimension_0() = " << numNorms << " < this->getNumVectors()"
+      "*this.  norms.extent(0) = " << numNorms << " < this->getNumVectors()"
       " = " << numVecs << ".");
 
     const std::pair<size_t, size_t> colRng (0, numVecs);
@@ -2529,7 +2529,7 @@ namespace Tpetra {
       // copy lclSums into meansOut.
       if (! comm.is_null () && this->isDistributed ()) {
         reduceAll (*comm, REDUCE_SUM, static_cast<int> (numVecs),
-                   lclSums.ptr_on_device (), meansOut.ptr_on_device ());
+                   lclSums.data (), meansOut.data ());
       }
       else {
         Kokkos::deep_copy (meansOut, lclSums);
@@ -2558,7 +2558,7 @@ namespace Tpetra {
       // into meansOut.
       if (! comm.is_null () && this->isDistributed ()) {
         reduceAll (*comm, REDUCE_SUM, static_cast<int> (numVecs),
-                   lclSums.ptr_on_device (), meansOut.ptr_on_device ());
+                   lclSums.data (), meansOut.data ());
       }
       else {
         Kokkos::deep_copy (meansOut, lclSums);
@@ -2769,10 +2769,10 @@ namespace Tpetra {
       // Case 3: current Map is null, new Map is nonnull.
       // Reallocate the DualView with the right dimensions.
       const size_t newNumRows = newMap->getNodeNumElements ();
-      const size_t origNumRows = view_.dimension_0 ();
+      const size_t origNumRows = view_.extent (0);
       const size_t numCols = this->getNumVectors ();
 
-      if (origNumRows != newNumRows || view_.dimension_1 () != numCols) {
+      if (origNumRows != newNumRows || view_.extent (1) != numCols) {
         view_ = allocDualView<Scalar, LocalOrdinal, GlobalOrdinal, Node> (newNumRows, numCols);
       }
     }
@@ -2878,9 +2878,9 @@ namespace Tpetra {
     const size_t lclNumRows = this->getLocalLength ();
     const size_t numVecs = this->getNumVectors ();
     TEUCHOS_TEST_FOR_EXCEPTION(
-      static_cast<size_t> (alphas.dimension_0 ()) != numVecs,
+      static_cast<size_t> (alphas.extent (0)) != numVecs,
       std::invalid_argument, "Tpetra::MultiVector::scale(alphas): "
-      "alphas.dimension_0() = " << alphas.dimension_0 ()
+      "alphas.extent(0) = " << alphas.extent (0)
       << " != this->getNumVectors () = " << numVecs << ".");
     const std::pair<size_t, size_t> rowRng (0, lclNumRows);
     const std::pair<size_t, size_t> colRng (0, numVecs);
@@ -3338,9 +3338,9 @@ namespace Tpetra {
       Kokkos::Compat::persistingView (hostView_j, 0, getLocalLength ());
 
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
-      (static_cast<size_t> (hostView_j.dimension_0 ()) <
+      (static_cast<size_t> (hostView_j.extent (0)) <
        static_cast<size_t> (dataAsArcp.size ()), std::logic_error,
-       "hostView_j.dimension_0() = " << hostView_j.dimension_0 ()
+       "hostView_j.extent(0) = " << hostView_j.extent (0)
        << " < dataAsArcp.size() = " << dataAsArcp.size () << ".  "
        "Please report this bug to the Tpetra developers.");
 
@@ -3379,9 +3379,9 @@ namespace Tpetra {
       Kokkos::Compat::persistingView (hostView_j, 0, getLocalLength ());
 
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
-      (static_cast<size_t> (hostView_j.dimension_0 ()) <
+      (static_cast<size_t> (hostView_j.extent (0)) <
        static_cast<size_t> (dataAsArcp.size ()), std::logic_error,
-       "hostView_j.dimension_0() = " << hostView_j.dimension_0 ()
+       "hostView_j.extent(0) = " << hostView_j.extent (0)
        << " < dataAsArcp.size() = " << dataAsArcp.size () << ".  "
        "Please report this bug to the Tpetra developers.");
 
@@ -3463,14 +3463,14 @@ namespace Tpetra {
   size_t
   MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   getOrigNumLocalRows () const {
-    return origView_.dimension_0 ();
+    return origView_.extent (0);
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   size_t
   MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   getOrigNumLocalCols () const {
-    return origView_.dimension_1 ();
+    return origView_.extent (1);
   }
 
   template <class Scalar, class LO, class GO, class Node>
@@ -3508,10 +3508,10 @@ namespace Tpetra {
     const size_t lclNumRowsBefore = X.getLocalLength ();
     const size_t numColsBefore = X.getNumVectors ();
     const impl_scalar_type* hostPtrBefore =
-      X.template getLocalView<Kokkos::HostSpace> ().ptr_on_device ();
+      X.template getLocalView<Kokkos::HostSpace> ().data ();
 #endif // HAVE_TPETRA_DEBUG
 
-    const std::pair<size_t, size_t> origRowRng (offset, X.origView_.dimension_0 ());
+    const std::pair<size_t, size_t> origRowRng (offset, X.origView_.extent (0));
     const std::pair<size_t, size_t> rowRng (offset, offset + newNumRows);
 
     dual_view_type newOrigView = subview (X.origView_, origRowRng, ALL ());
@@ -3532,13 +3532,13 @@ namespace Tpetra {
     // reason, the ([0,0], [0,2]) subview of a 0 x 2 DualView is 0 x
     // 0.  We work around by creating a new empty DualView of the
     // desired (degenerate) dimensions.
-    if (newOrigView.dimension_0 () == 0 &&
-        newOrigView.dimension_1 () != X.origView_.dimension_1 ()) {
+    if (newOrigView.extent (0) == 0 &&
+        newOrigView.extent (1) != X.origView_.extent (1)) {
       newOrigView = allocDualView<Scalar, LO, GO, Node> (size_t (0),
                                                          X.getNumVectors ());
     }
-    if (newView.dimension_0 () == 0 &&
-        newView.dimension_1 () != X.view_.dimension_1 ()) {
+    if (newView.extent (0) == 0 &&
+        newView.extent (1) != X.view_.extent (1)) {
       newView = allocDualView<Scalar, LO, GO, Node> (size_t (0),
                                                      X.getNumVectors ());
     }
@@ -3554,7 +3554,7 @@ namespace Tpetra {
     const size_t lclNumRowsAfter = X.getLocalLength ();
     const size_t numColsAfter = X.getNumVectors ();
     const impl_scalar_type* hostPtrAfter =
-      X.template getLocalView<Kokkos::HostSpace> ().ptr_on_device ();
+      X.template getLocalView<Kokkos::HostSpace> ().data ();
 
     const size_t strideRet = subViewMV.isConstantStride () ?
       subViewMV.getStride () :
@@ -3825,13 +3825,13 @@ namespace Tpetra {
     // exports_.  Taking subviews now ensures that their lengths will
     // be exactly what we need, so we won't have to resize them later.
     {
-      const size_t newSize = X.imports_.dimension_0 () / numCols;
+      const size_t newSize = X.imports_.extent (0) / numCols;
       auto newImports = X.imports_;
       newImports.d_view = subview (X.imports_.d_view, range_type (0, newSize));
       newImports.h_view = subview (X.imports_.h_view, range_type (0, newSize));
     }
     {
-      const size_t newSize = X.exports_.dimension_0 () / numCols;
+      const size_t newSize = X.exports_.extent (0) / numCols;
       auto newExports = X.exports_;
       newExports.d_view = subview (X.exports_.d_view, range_type (0, newSize));
       newExports.h_view = subview (X.exports_.h_view, range_type (0, newSize));
@@ -3928,7 +3928,7 @@ namespace Tpetra {
       if (useHostVersion) {
         auto srcColView_host = Kokkos::subview (srcView_host, rowRange, srcCol);
         TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-          dstColView.dimension_0 () != srcColView_host.dimension_0 (),
+          dstColView.extent (0) != srcColView_host.extent (0),
           std::logic_error, ": srcColView and dstColView_host have different "
           "dimensions.  Please report this bug to the Tpetra developers.");
         Kokkos::deep_copy (dstColView, srcColView_host);
@@ -3936,7 +3936,7 @@ namespace Tpetra {
       else {
         auto srcColView_dev = Kokkos::subview (srcView_dev, rowRange, srcCol);
         TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-          dstColView.dimension_0 () != srcColView_dev.dimension_0 (),
+          dstColView.extent (0) != srcColView_dev.extent (0),
           std::logic_error, ": srcColView and dstColView_dev have different "
           "dimensions.  Please report this bug to the Tpetra developers.");
         Kokkos::deep_copy (dstColView, srcColView_dev);
@@ -4421,7 +4421,7 @@ namespace Tpetra {
     host_view_type srcView_host;
     if (useHostVersion) {
       srcView_host = this->template getLocalView<Kokkos::HostSpace> ();
-      if (lclNumRows != static_cast<size_t> (srcView_host.dimension_0 ())) {
+      if (lclNumRows != static_cast<size_t> (srcView_host.extent (0))) {
         // Make sure the number of rows is correct.  If not, take a subview.
         const Kokkos::pair<size_t, size_t> rowRng (0, lclNumRows);
         srcView_host = Kokkos::subview (srcView_host, rowRng, Kokkos::ALL ());
@@ -4429,7 +4429,7 @@ namespace Tpetra {
     }
     else {
       srcView_dev = this->template getLocalView<device_type> ();
-      if (lclNumRows != static_cast<size_t> (srcView_dev.dimension_0 ())) {
+      if (lclNumRows != static_cast<size_t> (srcView_dev.extent (0))) {
         // Make sure the number of rows is correct.  If not, take a subview.
         const Kokkos::pair<size_t, size_t> rowRng (0, lclNumRows);
         srcView_dev = Kokkos::subview (srcView_dev, rowRng, Kokkos::ALL ());
@@ -4499,8 +4499,8 @@ namespace Tpetra {
          << tgtBuf_host.size () << " < lclNumRows*numCols = " << totalAllocSize
          << ".  Please report this bug to the Tpetra developers.");
       reduceAll<int, impl_scalar_type> (comm, REDUCE_SUM, reduceCount,
-                                        srcBuf_host.ptr_on_device (),
-                                        tgtBuf_host.ptr_on_device ());
+                                        srcBuf_host.data (),
+                                        tgtBuf_host.data ());
     }
     else { // use device version
       TEUCHOS_TEST_FOR_EXCEPTION
@@ -4509,8 +4509,8 @@ namespace Tpetra {
          << tgtBuf_dev.size () << " < lclNumRows*numCols = " << totalAllocSize
          << ".  Please report this bug to the Tpetra developers.");
       reduceAll<int, impl_scalar_type> (comm, REDUCE_SUM, reduceCount,
-                                        srcBuf_dev.ptr_on_device (),
-                                        tgtBuf_dev.ptr_on_device ());
+                                        srcBuf_dev.data (),
+                                        tgtBuf_dev.data ());
     }
 
     // Write back the results to *this.
@@ -5179,9 +5179,9 @@ namespace Tpetra {
     size_t l1 = this->getLocalLength();
     size_t l2 = vec.getLocalLength();
     if ((l1!=l2) || (this->getNumVectors() != vec.getNumVectors()))
-      return false;    
+      return false;
     if(l1==0)  return true;
-     
+
     auto v1 = this->template getLocalView<HES>();
     auto v2 = vec.template getLocalView<HES>();
     if(Details::PackTraits<ST,HES>::packValueCount(v1(0,0)) != Details::PackTraits<ST,HES>::packValueCount(v2(0,0)))
@@ -5209,6 +5209,31 @@ namespace Tpetra {
     cpy.assign (src);
     return cpy;
   }
+
+  template <class ST, class LO, class GO, class NT>
+  void MultiVector<ST, LO, GO, NT>::
+  swap(MultiVector<ST, LO, GO, NT> & mv) {
+    // Cache maps & views
+    Teuchos::RCP<const map_type> map = mv.map_;
+    dual_view_type  view, origView;
+    Teuchos::Array<size_t> whichVectors; // FIXME: This is a deep copy 
+    view         = mv.view_;
+    origView     = mv.origView_;
+    whichVectors = mv.whichVectors_;
+
+    // Swap this-> mv
+    mv.map_          = this->map_;
+    mv.view_         = this->view_;
+    mv.origView_     = this->origView_;
+    mv.whichVectors_ = this->whichVectors_;
+    
+    // Swap mv -> this
+    this->map_          = map;
+    this->view_         = view;
+    this->origView_     = origView;
+    this->whichVectors_ = whichVectors;  
+  }
+
 
 } // namespace Tpetra
 

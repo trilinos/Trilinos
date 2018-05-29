@@ -150,7 +150,7 @@ postRegistrationSetup(typename TRAITS::SetupData  d ,
         this->utils.setFieldData(tangentFields_[fd][i],fm);
   }
 
-  scratch_lids_ = Kokkos::View<LO**,PHX::Device>("lids",gatherFields_[0].dimension_0(),
+  scratch_lids_ = Kokkos::View<LO**,PHX::Device>("lids",gatherFields_[0].extent(0),
                                                  globalIndexer_->getElementBlockGIDCount(blockId));
 
   indexerNames_.clear();  // Don't need this anymore
@@ -208,7 +208,7 @@ evaluateFields(typename TRAITS::EvalData workset)
 
      Kokkos::parallel_for(localCellIds.size(), KOKKOS_LAMBDA (std::size_t worksetCellIndex) {
        // loop over basis functions and fill the fields
-       for(std::size_t basis=0;basis<offsets.dimension_0();basis++) {
+       for(std::size_t basis=0;basis<offsets.extent(0);basis++) {
          int offset = offsets(basis);
          LO lid    = lids(worksetCellIndex,offset);
 
@@ -479,7 +479,7 @@ postRegistrationSetup(typename TRAITS::SetupData d,
       scratch_offsets_[fd](i) = offsets[i];
   }
 
-  scratch_lids_ = Kokkos::View<LO**,PHX::Device>("lids",gatherFields_[0].dimension_0(),
+  scratch_lids_ = Kokkos::View<LO**,PHX::Device>("lids",gatherFields_[0].extent(0),
                                                  globalIndexer_->getElementBlockGIDCount(blockId));
 
   indexerNames_.clear();  // Don't need this anymore
@@ -625,7 +625,7 @@ void panzer::GatherSolution_Tpetra<panzer::Traits::Jacobian, TRAITS,LO,GO,NodeT>
 operator()(const int worksetCellIndex) const
 {
   // loop over basis functions and fill the fields
-  for(std::size_t basis=0;basis<functor_data.offsets.dimension_0();basis++) {
+  for(std::size_t basis=0;basis<functor_data.offsets.extent(0);basis++) {
     int offset = functor_data.offsets(basis);
     LO lid    = functor_data.lids(worksetCellIndex,offset);
 
@@ -642,7 +642,7 @@ void panzer::GatherSolution_Tpetra<panzer::Traits::Jacobian, TRAITS,LO,GO,NodeT>
 operator()(const NoSeed,const int worksetCellIndex) const
 {
   // loop over basis functions and fill the fields
-  for(std::size_t basis=0;basis<functor_data.offsets.dimension_0();basis++) {
+  for(std::size_t basis=0;basis<functor_data.offsets.extent(0);basis++) {
     int offset = functor_data.offsets(basis);
     LO lid    = functor_data.lids(worksetCellIndex,offset);
 

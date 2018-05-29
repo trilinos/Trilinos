@@ -46,8 +46,8 @@
 #define ROL_STREAM_HPP
 
 #include <ostream>
-#include <streambuf>
-#include <type_traits>
+#include <string>
+#include "ROL_Ptr.hpp"
 
 /** \file  ROL_Stream.hpp
     \brief Defines a no-output stream class ROL::NullStream and a function
@@ -63,31 +63,34 @@ namespace details {
 
 using namespace std;
 
-class NullBuffer : virtual public streambuf {
+template<typename _CharT, typename _Traits>
+class basic_nullstream : virtual public basic_ostream<_CharT, _Traits> {
 public:
-  int overflow( int c ) override { return c; }
-}; // NullBuffer
+  explicit basic_nullstream() : basic_ostream<_CharT, _Traits>(NULL) {}
+}; 
 
-class NullStream : virtual public ostream {
-private:
-  NullBuffer buffer; 
-public:
-  NullStream( ) : ostream(&buffer) {}
-}; // NullStream
+using nullstream = basic_nullstream<char, char_traits<char>>;
 
 inline
 Ptr<ostream> makeStreamPtr( ostream& os, bool noSuppressOutput=true ) {
-  Ptr<ostream> osPtr;
-  if( noSuppressOutput ) osPtr = makePtrFromRef( os );
-  else {
-    osPtr = makePtr<NullStream>();
-  }
-  return osPtr;
+  Ptr<ostream> retstream;
+  if( noSuppressOutput ) retstream = makePtrFromRef<ostream>(os);
+  else retstream = makePtr<nullstream>();
+  return retstream; // noSuppressOutput ? makePtrFromRef( os ) : makePtr<nullstream>();
 }
 
-} // namespace details
+inline
+Ptr<ostream> makeStreamPtr( Ptr<ostream> os, bool noSuppressOutput=true ) {
+  Ptr<ostream> retstream;
+  if( noSuppressOutput ) retstream = os;
+  else retstream = makePtr<nullstream>();
+  return retstream; // noSuppressOutput ? makePtrFromRef( os ) : makePtr<nullstream>();
+//  return noSuppressOutput ? os : makePtr<nullstream>();
+}
 
-using details::NullStream;
+} // details
+
+using details::nullstream;
 using details::makeStreamPtr;
 
 } // namespace ROL

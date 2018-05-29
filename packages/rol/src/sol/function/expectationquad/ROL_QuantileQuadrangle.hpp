@@ -106,9 +106,9 @@ private:
   Real alpha_;
   Real beta_;
 
-  void parseParameterList(Teuchos::ParameterList &parlist) {
+  void parseParameterList(ROL::ParameterList &parlist) {
     std::string type = parlist.sublist("SOL").get("Stochastic Component Type","Risk Averse");
-    Teuchos::ParameterList list;
+    ROL::ParameterList list;
     if (type == "Risk Averse") {
       list = parlist.sublist("SOL").sublist("Risk Measure").sublist("CVaR");
     }
@@ -131,13 +131,13 @@ private:
 
   void checkInputs(void) const {
     Real zero(0), one(1);
-    TEUCHOS_TEST_FOR_EXCEPTION((prob_ <= zero) || (prob_ >= one), std::invalid_argument,
+    ROL_TEST_FOR_EXCEPTION((prob_ <= zero) || (prob_ >= one), std::invalid_argument,
       ">>> ERROR (ROL::QuantileQuadrangle): Confidence level must be between 0 and 1!");
-    TEUCHOS_TEST_FOR_EXCEPTION((lam_ < zero) || (lam_ > one), std::invalid_argument,
+    ROL_TEST_FOR_EXCEPTION((lam_ < zero) || (lam_ > one), std::invalid_argument,
       ">>> ERROR (ROL::QuantileQuadrangle): Convex combination parameter must be positive!");
-    TEUCHOS_TEST_FOR_EXCEPTION((eps_ <= zero), std::invalid_argument,
+    ROL_TEST_FOR_EXCEPTION((eps_ <= zero), std::invalid_argument,
       ">>> ERROR (ROL::QuantileQuadrangle): Smoothing parameter must be positive!");
-    TEUCHOS_TEST_FOR_EXCEPTION(pf_ == ROL::nullPtr, std::invalid_argument,
+    ROL_TEST_FOR_EXCEPTION(pf_ == ROL::nullPtr, std::invalid_argument,
       ">>> ERROR (ROL::QuantileQuadrangle): PlusFunction pointer is null!");
   }
 
@@ -187,7 +187,7 @@ public:
       \li "Smoothing Parameter" (must be positive)
       \li A sublist for plus function information.
   */
-  QuantileQuadrangle(Teuchos::ParameterList &parlist) : ExpectationQuad<Real>() {
+  QuantileQuadrangle(ROL::ParameterList &parlist) : ExpectationQuad<Real>() {
     parseParameterList(parlist);
     // Check inputs
     checkInputs();

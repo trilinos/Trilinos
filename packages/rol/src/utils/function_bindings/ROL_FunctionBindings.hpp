@@ -47,134 +47,46 @@
 #define ROL_FUNCTIONBINDING_HPP
 
 #include <functional>
-
-#include "ROL_Objective_SimOpt.hpp"
-#include "ROL_Constraint_SimOpt.hpp"
-
+#include "ROL_Vector.hpp"
 
 namespace ROL {
+
 namespace details {
 
 using namespace std;
-using namespace std::placeholders;
+namespace ph = std::placeholders;
 
 template<typename Real>
-class Objective_CheckInterface {
-private:
-  using V = Vector<Real>;
-  Objective<Real>& obj_;
-  Real tol_;
-
-public:
-
-  Objective_CheckInterface( Objective<Real>& obj ) : 
-    obj_(obj), tol_(sqrt(ROL_EPSILON<Real>())) {}
-   
-  f_update_t<Real> update() {
-    return bind( &Objective<Real>::update, &obj_, _1, true, 0 );
-  }
-
-  f_scalar_t<Real> value() {
-    return bind( &Objective<Real>::value, &obj_, _1, tol_);
-  }
-
-  f_vector_t<Real> gradient() {
-    return bind( &Objective<Real>::gradient, &obj_, _1, _2, tol_);
-  }
-
-  f_dderiv_t<Real> hessVec() {
-    return bind( &Objective<Real>::hessVec, &obj_, _1, _2, _3, tol_);
-  }
-
-}; // Objective_CheckInterface
-
-
-//template<typename Real>
-//class Objective_SimOpt_CheckInterface {
-//private:
-//  using V   = Vector<Real>;
-//  Objective_SimOpt<Real>& obj_;
-//  Real tol_;
-//
-//public: 
-//  
-//  Objective_SimOpt_CheckInterface( Objective_SimOpt<Real>& obj ) :
-//    obj_(obj), tol_(sqrt(ROL_EPSILON<Real>())) {}
-//
-//  f_update_t<Real> update_1( const V& u ) {
-//    return bind( &Objective<Real>::update, &obj, _1, true, 0 );
-//  }
-//
-//  f_scalar_t<Real> value() {
-//    return bind( &Objective<Real>::value, &obj, _1, tol_);
-//  }
-//
-//  f_vector_t<Real> gradient() {
-//    return bind( &Objective<Real>::gradient, &obj, _1, _2, tol_);
-//  }
-//
-//  f_dderiv_t<Real> hessVec() {
-//    return bind( &Objective<Real>::hessVec, &obj, _1, _2, _3, tol_);
-//  }
-//};
-
+using f_update_t = function<void( const Vector<Real>& )>;
 
 template<typename Real>
-class Constraint_CheckInterface {
-private:
-  Constraint<Real>& con_;
-  Real tol_;
-
-public:
-  using V = Vector<Real>;
-
-  Constraint_CheckInterface( Constraint<Real>& con ) : 
-    con_(con), tol_(sqrt(ROL_EPSILON<Real>())) {}
-   
-  f_update_t<Real> update() {
-    return bind( &Constraint<Real>::update, &con_, _1, true, 0 );
-  }
-
-  f_vector_t<Real> value() {
-    return bind( &Constraint<Real>::value, &con_, _1, _2, tol_);
-  }
-
-  f_dderiv_t<Real> applyJacobian() {
-    return bind( &Constraint<Real>::applyJacobian, &con_, _1, _2, _3, tol_);
-  }
-
-  // Provide a vector in the dual constraint space
-  f_vector_t<Real> applyAdjointJacobian( const V& l ) {
-    return bind( static_cast<void (Constraint<Real>::*)
-                              ( V&, const V&, const V&, Real& )>
-               (&Constraint<Real>::applyAdjointJacobian), 
-                &con_, _1, cref(l), _2, tol_);
-  }
-
-  f_dderiv_t<Real> applyAdjointHessian( const V& l ) {
-    return bind( &Constraint<Real>::applyAdjointHessian, &con_, _1, cref(l), _2, _3, tol_);
-  }
-
-
-}; // Constraint_CheckInterface
-
-} // namespace details
-
-using details::Objective_CheckInterface;
-using details::Constraint_CheckInterface;
+using f_scalar_t = function<Real( const Vector<Real>& )>;
 
 template<typename Real>
-Objective_CheckInterface<Real> make_check( Objective<Real>& obj ) {
-  return Objective_CheckInterface<Real>(obj);
+using f_vector_t = function<void( Vector<Real>&, const Vector<Real>& )>;
+
+template<typename Real>
+using f_dderiv_t = function<void( Vector<Real>&, const Vector<Real>&, const Vector<Real>& )>;
+
+template<typename Real>
+f_vector_t<Real> fix_direction( f_dderiv_t<Real>& f, const Vector<Real>& v ) {
+  return bind( f, ph::_1, cref(v), ph::_2 );
 }
 
 template<typename Real>
-Constraint_CheckInterface<Real> make_check( Constraint<Real>& con ) {
-  return Constraint_CheckInterface<Real>(con);
+f_vector_t<Real> fix_position( f_dderiv_t<Real>& f, const Vector<Real>& x ) {
+  return bind( f, ph::_1, ph::_2, cref(x) );
 }
 
 
+} // namespace details 
 
+using details::f_update_t;
+using details::f_scalar_t;
+using details::f_vector_t;
+using details::f_dderiv_t;
+using details::fix_direction;
+using details::fix_position;
 
 
 } // namespace ROL

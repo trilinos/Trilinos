@@ -6,6 +6,10 @@
 #
 ################################################################################
 
+if [ "$ATDM_CONFIG_COMPILER" == "DEFAULT" ] ; then
+  export ATDM_CONFIG_COMPILER=GNU
+fi
+
 echo "Using white/ride compiler stack $ATDM_CONFIG_COMPILER to build $ATDM_CONFIG_BUILD_TYPE code with Kokkos node type $ATDM_CONFIG_NODE_TYPE"
 
 export ATDM_CONFIG_USE_NINJA=ON
@@ -14,8 +18,6 @@ export ATDM_CONFIG_BUILD_COUNT=128
 # Dual-Socket POWER8, 8 cores per socket, K80 GPUs) node.
 
 module purge
-
-module load ninja/1.7.2
 
 if [ "$ATDM_CONFIG_NODE_TYPE" == "OPENMP" ] ; then
   export ATDM_CONFIG_CTEST_PARALLEL_LEVEL=16
@@ -64,10 +66,12 @@ export ATDM_CONFIG_USE_HWLOC=OFF
 export ATDM_CONFIG_HDF5_LIBS="-L${HDF5_ROOT}/lib;${HDF5_ROOT}/lib/libhdf5_hl.a;${HDF5_ROOT}/lib/libhdf5.a;-lz;-ldl"
 export ATDM_CONFIG_NETCDF_LIBS="-L${BOOST_ROOT}/lib;-L${NETCDF_ROOT}/lib;-L${NETCDF_ROOT}/lib;-L${PNETCDF_ROOT}/lib;-L${HDF5_ROOT}/lib;${BOOST_ROOT}/lib/libboost_program_options.a;${BOOST_ROOT}/lib/libboost_system.a;${NETCDF_ROOT}/lib/libnetcdf.a;${PNETCDF_ROOT}/lib/libpnetcdf.a;${HDF5_ROOT}/lib/libhdf5_hl.a;${HDF5_ROOT}/lib/libhdf5.a;-lz;-ldl"
 
-module swap cmake/3.6.2 cmake/3.10.2
-
 module swap yamlcpp/0.3.0 yaml-cpp/20170104 
 if [ $? ]; then module load  yaml-cpp/20170104; fi
+
+# Use manually installed cmake and ninja to try to avoid module loading
+# problems (see TRIL-208)
+export PATH=/ascldap/users/rabartl/install/cmake-3.11.2/bin:/ascldap/users/rabartl/install/ninja-1.8.2/bin:$PATH
 
 # Set MPI wrappers
 export MPICC=`which mpicc`

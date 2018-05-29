@@ -52,8 +52,9 @@
 #include "ROL_ScalarMinimization.hpp"
 #include "ROL_ScalarFunction.hpp"
 #include "ROL_Types.hpp"
+#include "ROL_ParameterList.hpp"
 
-namespace ROL { 
+namespace ROL {
 
 template<class Real>
 class BisectionScalarMinimization : public ScalarMinimization<Real> {
@@ -63,8 +64,8 @@ private:
 
 public:
   // Constructor
-  BisectionScalarMinimization( Teuchos::ParameterList &parlist ) {
-    Teuchos::ParameterList &list = parlist.sublist("Scalar Minimization").sublist("Bisection");
+  BisectionScalarMinimization( ROL::ParameterList &parlist ) {
+    ROL::ParameterList &list = parlist.sublist("Scalar Minimization").sublist("Bisection");
     tol_   = list.get("Tolerance",1.e-10);
     niter_ = list.get("Iteration Limit",1000);
   }
@@ -98,7 +99,7 @@ public:
       u = half*(a+m); fu = f.value(u); nfval++;
       v = half*(m+b); fv = f.value(v); nfval++;
 
-      if (    ( (fa <= fb) && (fa <= fu) && (fa <= fv) && (fa <= fm) ) 
+      if (    ( (fa <= fb) && (fa <= fu) && (fa <= fv) && (fa <= fm) )
            || ( (fu <= fb) && (fu <= fa) && (fu <= fv) && (fu <= fm) ) ) {
         if ( fa < fu ) {
           x = a; fx = fa;
@@ -109,12 +110,12 @@ public:
         b = m; fb = fm;
         m = u; fm = fu;
       }
-      else if ( ( (fm <= fb) && (fm <= fa) && (fm <= fu) && (fm <= fv) ) ) { 
+      else if ( ( (fm <= fb) && (fm <= fa) && (fm <= fu) && (fm <= fv) ) ) {
         x = m; fx = fm;
         a = u; fa = fu;
         b = v; fb = fv;
       }
-      else if (    ( (fv <= fb) && (fv <= fa) && (fv <= fu) && (fv <= fm) ) 
+      else if (    ( (fv <= fb) && (fv <= fa) && (fv <= fu) && (fv <= fm) )
                 || ( (fb <= fa) && (fb <= fu) && (fb <= fv) && (fb <= fm) ) ) {
         if ( fb < fv ) {
           x = b; fx = fb;

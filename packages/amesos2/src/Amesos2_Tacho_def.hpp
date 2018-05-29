@@ -225,7 +225,7 @@ TachoSolver<Matrix,Vector>::solve_impl(const Teuchos::Ptr<MultiVecAdapter<Vector
     Teuchos::TimeMonitor solveTimer(this->timers_.solveTime_);
 #endif
     // Bump up the workspace size if needed
-    if (workspace_.dimension_0() < this->globalNumRows_ || workspace_.dimension_1() < nrhs) {
+    if (workspace_.extent(0) < this->globalNumRows_ || workspace_.extent(1) < nrhs) {
       workspace_ = solve_array_t("t", this->globalNumRows_, nrhs);
     }
 

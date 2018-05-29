@@ -1,4 +1,4 @@
-#!/bin/env python3
+#!/usr/bin/env python3
 """This is superclass for all Log packages"""
 
 class Log(object):

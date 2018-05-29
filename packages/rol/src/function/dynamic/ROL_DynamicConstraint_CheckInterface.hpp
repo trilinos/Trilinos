@@ -54,7 +54,7 @@ namespace ROL {
 namespace details {
 
 using namespace std;
-using namespace std::placeholders;
+namespace ph = std::placeholders;
 
 template<typename Real>
 class DynamicConstraint_CheckInterface {
@@ -72,112 +72,112 @@ public:
   DynamicConstraint_CheckInterface( Con& con ) : con_(con) {}
 
   f_update_t<Real> update_uo() {
-    return bind( &Con::update_uo, &con_, _1 );
+    return bind( &Con::update_uo, &con_, ph::_1 );
   }
 
   f_update_t<Real> update_un() {
-    return bind( &Con::update_un, &con_, _1 );
+    return bind( &Con::update_un, &con_, ph::_1 );
   }
 
   f_update_t<Real> update_z() {
-    return bind( &Con::update_z, &con_, _1 );
+    return bind( &Con::update_z, &con_, ph::_1 );
   }
 
   //----------------------------------------------------------------------------
 
   f_vector_t<Real> value_uo( const V& un, const V& z ) {
     return bind( &Con::value, &con_, 
-                 _1, _2, cref(un), cref(z), ts_ );
+                 ph::_1, ph::_2, cref(un), cref(z), ts_ );
   }
 
   f_vector_t<Real> value_un( const V& uo, const V& z ) {
     return bind( &Con::value, &con_, 
-                 _1, cref(uo), _2, cref(z), ts_ );
+                 ph::_1, cref(uo), ph::_2, cref(z), ts_ );
   }
 
   f_vector_t<Real> value_z( const V& uo, const V& un ) {
     return bind( &Con::value, &con_, 
-                 _1, cref(uo), cref(un), _2, ts_ );
+                 ph::_1, cref(uo), cref(un), ph::_2, ts_ );
   }
 
   //----------------------------------------------------------------------------
 
-  f_dderiv_t<Real> applyJacobian_uo( const V& un, const V& z ) {
-    return bind( &Con::applyJacobian_uo, &con_, _1, _2, _3, 
+  f_dderiv_t<Real> jacobian_uo( const V& un, const V& z ) {
+    return bind( &Con::jacobian_uo, &con_, ph::_1, ph::_2, ph::_3, 
                  cref(un), cref(z), ts_ ); 
   }
 
-  f_dderiv_t<Real> applyJacobian_un( const V& uo, const V& z ) {
-    return bind( &Con::applyJacobian_uo, &con_, _1, _2, cref(uo), 
-                 _3, cref(z), ts_ ); 
+  f_dderiv_t<Real> jacobian_un( const V& uo, const V& z ) {
+    return bind( &Con::jacobian_uo, &con_, ph::_1, ph::_2, cref(uo), 
+                 ph::_3, cref(z), ts_ ); 
   }
 
-  f_dderiv_t<Real> applyJacobian_z( const V& uo, const V& un ) {
-    return bind( &Con::applyJacobian_uo, &con_, _1, _2, cref(uo), 
-                 cref(un), _3, ts_ ); 
+  f_dderiv_t<Real> jacobian_z( const V& uo, const V& un ) {
+    return bind( &Con::jacobian_uo, &con_, ph::_1, ph::_2, cref(uo), 
+                 cref(un), ph::_3, ts_ ); 
   }
 
   //----------------------------------------------------------------------------
 
-  f_vector_t<Real> applyAdjointJacobian_uo( const V& un, const V& z, const V& l ) {
-    return bind( &Con::applyAdjointJacobian_uo, &con_, _1, cref(l), _2, 
+  f_vector_t<Real> adjointJacobian_uo( const V& un, const V& z, const V& l ) {
+    return bind( &Con::adjointJacobian_uo, &con_, ph::_1, cref(l), ph::_2, 
                  cref(un), cref(z), ts_ ); 
   }
 
-  f_vector_t<Real> applyAdjointJacobian_un( const V& uo, const V& z, const V& l ) {
-    return bind( &Con::applyAdjointJacobian_uo, &con_, _1, cref(l), cref(uo), 
-                 _2, cref(z), ts_ ); 
+  f_vector_t<Real> adjointJacobian_un( const V& uo, const V& z, const V& l ) {
+    return bind( &Con::adjointJacobian_uo, &con_, ph::_1, cref(l), cref(uo), 
+                 ph::_2, cref(z), ts_ ); 
   }
 
-  f_vector_t<Real> applyAdjointJacobian_z( const V& uo, const V& un, const V& l ) {
-    return bind( &Con::applyAdjointJacobian_uo, &con_, _1, cref(l), cref(uo), 
-                 cref(un), _2, ts_ ); 
+  f_vector_t<Real> adjointJacobian_z( const V& uo, const V& un, const V& l ) {
+    return bind( &Con::adjointJacobian_uo, &con_, ph::_1, cref(l), cref(uo), 
+                 cref(un), ph::_2, ts_ ); 
   }
  
   //----------------------------------------------------------------------------
 
-  f_dderiv_t<Real> applyAdjointHessian_un_un( const V& uo, const V& z, const V& l ) {
-    return bind( &Con::applyAdjointHessian_un_un, &con_, _1, cref(l), _2, 
-                 cref(uo), _3, cref(z), ts_ );
+  f_dderiv_t<Real> adjointHessian_un_un( const V& uo, const V& z, const V& l ) {
+    return bind( &Con::adjointHessian_un_un, &con_, ph::_1, cref(l), ph::_2, 
+                 cref(uo), ph::_3, cref(z), ts_ );
   } 
 
-  f_dderiv_t<Real> applyAdjointHessian_un_uo( const V& un, const V& z, const V& l ) {
-    return bind( &Con::applyAdjointHessian_un_uo, &con_, _1, cref(l), _2, 
-                 _3, cref(un), cref(z), ts_ );
+  f_dderiv_t<Real> adjointHessian_un_uo( const V& un, const V& z, const V& l ) {
+    return bind( &Con::adjointHessian_un_uo, &con_, ph::_1, cref(l), ph::_2, 
+                 ph::_3, cref(un), cref(z), ts_ );
   } 
 
-  f_dderiv_t<Real> applyAdjointHessian_un_z( const V& un, const V& uo, const V& l ) {
-    return bind( &Con::applyAdjointHessian_un_z, &con_, _1, cref(l), _2, 
-                 cref(uo), cref(un), _3, ts_ );
+  f_dderiv_t<Real> adjointHessian_un_z( const V& un, const V& uo, const V& l ) {
+    return bind( &Con::adjointHessian_un_z, &con_, ph::_1, cref(l), ph::_2, 
+                 cref(uo), cref(un), ph::_3, ts_ );
   } 
 
   //----------------------------------------------------------------------------
   
-  f_dderiv_t<Real> applyAdjointHessian_uo_un( const V& uo, const V& z, const V& l ) {
-    return bind( &Con::applyAdjointHessian_uo_un, &con_, _1, cref(l), _2, 
-                 cref(uo), _3, cref(z), ts_ );
+  f_dderiv_t<Real> adjointHessian_uo_un( const V& uo, const V& z, const V& l ) {
+    return bind( &Con::adjointHessian_uo_un, &con_, ph::_1, cref(l), ph::_2, 
+                 cref(uo), ph::_3, cref(z), ts_ );
   } 
 
-  f_dderiv_t<Real> applyAdjointHessian_uo_z( const V& un, const V& uo, const V& l ) {
-    return bind( &Con::applyAdjointHessian_uo_z, &con_, _1, cref(l), _2, 
-                 cref(uo), cref(un), _3, ts_ );
+  f_dderiv_t<Real> adjointHessian_uo_z( const V& un, const V& uo, const V& l ) {
+    return bind( &Con::adjointHessian_uo_z, &con_, ph::_1, cref(l), ph::_2, 
+                 cref(uo), cref(un), ph::_3, ts_ );
   } 
 
   //----------------------------------------------------------------------------
 
-  f_dderiv_t<Real> applyAdjointHessian_z_un( const V& uo, const V& z, const V& l ) {
-    return bind( &Con::applyAdjointHessian_z_un, &con_, _1, cref(l), _2, 
-                 cref(uo), _3, cref(z), ts_ );
+  f_dderiv_t<Real> adjointHessian_z_un( const V& uo, const V& z, const V& l ) {
+    return bind( &Con::adjointHessian_z_un, &con_, ph::_1, cref(l), ph::_2, 
+                 cref(uo), ph::_3, cref(z), ts_ );
   } 
 
-  f_dderiv_t<Real> applyAdjointHessian_z_uo( const V& un, const V& z, const V& l ) {
-    return bind( &Con::applyAdjointHessian_z_uo, &con_, _1, cref(l), _2, 
-                 _3, cref(un), cref(z), ts_ );
+  f_dderiv_t<Real> adjointHessian_z_uo( const V& un, const V& z, const V& l ) {
+    return bind( &Con::adjointHessian_z_uo, &con_, ph::_1, cref(l), ph::_2, 
+                 ph::_3, cref(un), cref(z), ts_ );
   } 
 
-  f_dderiv_t<Real> applyAdjointHessian_z_z( const V& un, const V& uo, const V& l ) {
-    return bind( &Con::applyAdjointHessian_z_z, &con_, _1, cref(l), _2, 
-                 cref(uo), cref(un), _3, ts_ );
+  f_dderiv_t<Real> adjointHessian_z_z( const V& un, const V& uo, const V& l ) {
+    return bind( &Con::adjointHessian_z_z, &con_, ph::_1, cref(l), ph::_2, 
+                 cref(uo), cref(un), ph::_3, ts_ );
   } 
 
 } // namespace details 

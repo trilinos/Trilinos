@@ -87,7 +87,7 @@ struct MV_Update_Functor
   MV_Update_Functor (const typename XMV::non_const_value_type& alpha, const XMV& X,
                      const typename YMV::non_const_value_type& beta, const YMV& Y,
                      const typename ZMV::non_const_value_type& gamma, const ZMV& Z) :
-    numCols (X.dimension_1 ()),
+    numCols (X.extent(1)),
     alpha_ (alpha), X_ (X),
     beta_ (beta), Y_ (Y),
     gamma_ (gamma), Z_ (Z)
@@ -122,10 +122,10 @@ struct MV_Update_Functor
     if (scalar_x == 0) {
       if (scalar_y == 0) {
         if (scalar_z == 0) {
-#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
+#ifdef KOKKOS_ENABLE_PRAGMA_IVDEP
 #pragma ivdep
 #endif
-#ifdef KOKKOS_HAVE_PRAGMA_VECTOR
+#ifdef KOKKOS_ENABLE_PRAGMA_VECTOR
 #pragma vector always
 #endif
           for (size_type k = 0; k < numCols; ++k) {
@@ -133,10 +133,10 @@ struct MV_Update_Functor
           }
         }
         else {
-#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
+#ifdef KOKKOS_ENABLE_PRAGMA_IVDEP
 #pragma ivdep
 #endif
-#ifdef KOKKOS_HAVE_PRAGMA_VECTOR
+#ifdef KOKKOS_ENABLE_PRAGMA_VECTOR
 #pragma vector always
 #endif
           for (size_type k = 0; k < numCols; ++k) {
@@ -146,10 +146,10 @@ struct MV_Update_Functor
       }
       else {
         if (scalar_z == 0) {
-#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
+#ifdef KOKKOS_ENABLE_PRAGMA_IVDEP
 #pragma ivdep
 #endif
-#ifdef KOKKOS_HAVE_PRAGMA_VECTOR
+#ifdef KOKKOS_ENABLE_PRAGMA_VECTOR
 #pragma vector always
 #endif
           for (size_type k = 0; k < numCols; ++k) {
@@ -157,10 +157,10 @@ struct MV_Update_Functor
           }
         }
         else {
-#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
+#ifdef KOKKOS_ENABLE_PRAGMA_IVDEP
 #pragma ivdep
 #endif
-#ifdef KOKKOS_HAVE_PRAGMA_VECTOR
+#ifdef KOKKOS_ENABLE_PRAGMA_VECTOR
 #pragma vector always
 #endif
           for (size_type k = 0; k < numCols; ++k) {
@@ -175,10 +175,10 @@ struct MV_Update_Functor
     else {
       if (scalar_y == 0) {
         if (scalar_z == 0) {
-#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
+#ifdef KOKKOS_ENABLE_PRAGMA_IVDEP
 #pragma ivdep
 #endif
-#ifdef KOKKOS_HAVE_PRAGMA_VECTOR
+#ifdef KOKKOS_ENABLE_PRAGMA_VECTOR
 #pragma vector always
 #endif
           for (size_type k = 0; k < numCols; ++k) {
@@ -186,10 +186,10 @@ struct MV_Update_Functor
           }
         }
         else {
-#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
+#ifdef KOKKOS_ENABLE_PRAGMA_IVDEP
 #pragma ivdep
 #endif
-#ifdef KOKKOS_HAVE_PRAGMA_VECTOR
+#ifdef KOKKOS_ENABLE_PRAGMA_VECTOR
 #pragma vector always
 #endif
           for (size_type k = 0; k < numCols; ++k) {
@@ -199,10 +199,10 @@ struct MV_Update_Functor
       }
       else {
         if (scalar_z == 0) {
-#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
+#ifdef KOKKOS_ENABLE_PRAGMA_IVDEP
 #pragma ivdep
 #endif
-#ifdef KOKKOS_HAVE_PRAGMA_VECTOR
+#ifdef KOKKOS_ENABLE_PRAGMA_VECTOR
 #pragma vector always
 #endif
           for (size_type k = 0; k < numCols; ++k) {
@@ -210,10 +210,10 @@ struct MV_Update_Functor
           }
         }
         else {
-#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
+#ifdef KOKKOS_ENABLE_PRAGMA_IVDEP
 #pragma ivdep
 #endif
-#ifdef KOKKOS_HAVE_PRAGMA_VECTOR
+#ifdef KOKKOS_ENABLE_PRAGMA_VECTOR
 #pragma vector always
 #endif
           for (size_type k = 0; k < numCols; ++k) {
@@ -257,7 +257,7 @@ struct V_Update_Functor
   V_Update_Functor (const typename XV::non_const_value_type& alpha, const XV& X,
                     const typename YV::non_const_value_type& beta, const YV& Y,
                     const typename ZV::non_const_value_type& gamma, const ZV& Z) :
-    numCols (X.dimension_1 ()),
+    numCols (X.extent(1)),
     alpha_ (alpha), X_ (X),
     beta_ (beta), Y_ (Y),
     gamma_ (gamma), Z_ (Z)
@@ -374,7 +374,7 @@ MV_Update_Generic (const typename XMV::non_const_value_type& alpha, const XMV& X
                  "XMV, YMV, and ZMV must have rank 2.");
 
   typedef typename XMV::execution_space execution_space;
-  const SizeType numRows = X.dimension_0 ();
+  const SizeType numRows = X.extent(0);
   Kokkos::RangePolicy<execution_space, SizeType> policy (0, numRows);
 
   if (a == 0) {
@@ -470,7 +470,7 @@ V_Update_Generic (const typename XV::non_const_value_type& alpha, const XV& X,
                    "XV, YV, and ZV must have rank 1.");
 
   typedef typename XV::execution_space execution_space;
-  const SizeType numRows = X.dimension_0 ();
+  const SizeType numRows = X.extent(0);
   Kokkos::RangePolicy<execution_space, SizeType> policy (0, numRows);
 
   if (a == 0) {

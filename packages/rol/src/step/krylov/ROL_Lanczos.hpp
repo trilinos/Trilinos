@@ -48,8 +48,7 @@
 #include "ROL_LinearOperator.hpp"
 #include "ROL_Vector.hpp"
 #include "ROL_Types.hpp"
-
-#include "Teuchos_LAPACK.hpp"
+#include "ROL_LAPACK.hpp"
 
 namespace ROL {
 
@@ -72,11 +71,11 @@ class Lanczos {
   typedef Vector<Real>         V;
   typedef LinearOperator<Real> OP;
 
-  typedef Teuchos::ParameterList PL;
+  typedef ROL::ParameterList PL;
 
 private:
 
-  Teuchos::LAPACK<int,Real> lapack_;
+  ROL::LAPACK<int,Real> lapack_;
 
   vector<ROL::Ptr<V> > Q_;     // Orthogonal basis
   vector<Real>    alpha_; // Diagonal recursion coefficients
@@ -149,7 +148,7 @@ public:
   };
  
 
-  Lanczos( Teuchos::ParameterList &PL ) {
+  Lanczos( ROL::ParameterList &PL ) {
     PL &krylovList = parlist.sublist("General").sublist("Krylov");
     PL &lanczosList = krylovList.sublist("Lanczos");
 

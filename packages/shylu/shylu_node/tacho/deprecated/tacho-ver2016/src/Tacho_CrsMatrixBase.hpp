@@ -67,28 +67,28 @@ namespace Tacho {
       _n = n;
       _nnz = nnz;
 
-      if (static_cast<ordinal_type>(_ap_begin.dimension_0()) < m) {
+      if (static_cast<ordinal_type>(_ap_begin.extent(0)) < m) {
         _ap_begin = size_type_array("CrsMatrixBase::RowPtrBeginArray", m);
       } else {
         // otherwise initialize it
         Kokkos::Impl::ViewFill<size_type_array>(_ap_begin, size_type());
       }
 
-      if (static_cast<ordinal_type>(_ap_end.dimension_0()) < m) {
+      if (static_cast<ordinal_type>(_ap_end.extent(0)) < m) {
         _ap_end = size_type_array("CrsMatrixBase::RowPtrEndArray", m);
       } else {
         // otherwise initialize it
         Kokkos::Impl::ViewFill<size_type_array>(_ap_end, size_type());
       }
 
-      if (static_cast<size_type>(_aj.dimension_0()) < nnz) {
+      if (static_cast<size_type>(_aj.extent(0)) < nnz) {
         _aj = ordinal_type_array("CrsMatrixBase::ColsArray", nnz);
       } else {
         // otherwise initialize it
         Kokkos::Impl::ViewFill<ordinal_type_array>(_aj, ordinal_type());
       }
 
-      if (static_cast<size_type>(_ax.dimension_0()) < nnz) {
+      if (static_cast<size_type>(_ax.extent(0)) < nnz) {
         _ax = value_type_array("CrsMatrixBase::ValuesArray", nnz);
       } else {
         // otherwise initialize it
@@ -123,7 +123,7 @@ namespace Tacho {
 
     KOKKOS_INLINE_FUNCTION
     bool isValueArrayNull() const {
-      return !_ax.dimension_0();
+      return !_ax.extent(0);
     }
 
     KOKKOS_INLINE_FUNCTION
@@ -354,10 +354,10 @@ namespace Tacho {
         // when the space is different, perform deep copy
         createInternalArrays(b._m, b._n, b._nnz);
 
-        const auto ap_begin_range = range_type<ordinal_type>(0, Util::min(_ap_begin.dimension_0(), b._ap_begin.dimension_0()));
-        const auto ap_end_range   = range_type<ordinal_type>(0, Util::min(_ap_end.dimension_0(),   b._ap_end.dimension_0()));
-        const auto aj_range = range_type<size_type>   (0, Util::min(_aj.dimension_0(), b._aj.dimension_0()));
-        const auto ax_range = range_type<size_type>   (0, Util::min(_ax.dimension_0(), b._ax.dimension_0()));
+        const auto ap_begin_range = range_type<ordinal_type>(0, Util::min(_ap_begin.extent(0), b._ap_begin.extent(0)));
+        const auto ap_end_range   = range_type<ordinal_type>(0, Util::min(_ap_end.extent(0),   b._ap_end.extent(0)));
+        const auto aj_range = range_type<size_type>   (0, Util::min(_aj.extent(0), b._aj.extent(0)));
+        const auto ax_range = range_type<size_type>   (0, Util::min(_ax.extent(0), b._ax.extent(0)));
 
         space_type::execution_space::fence();
         Kokkos::deep_copy(Kokkos::subview(_ap_begin, ap_begin_range), Kokkos::subview(b._ap_begin, ap_begin_range));
@@ -387,10 +387,10 @@ namespace Tacho {
          << "    # of NonZeros      = " << _nnz << std::endl
          << "    Ap End             = " << _ap_end(_m-1) << std::endl
          << std::endl
-         << "    RowPtrBeginArray length = " << _ap_begin.dimension_0() << std::endl
-         << "    RowPtrEndArray length   = " << _ap_end.dimension_0() << std::endl
-         << "    ColArray length         = " << _aj.dimension_0() << std::endl 
-         << "    ValueArray length       = " << _ax.dimension_0() << std::endl
+         << "    RowPtrBeginArray length = " << _ap_begin.extent(0) << std::endl
+         << "    RowPtrEndArray length   = " << _ap_end.extent(0) << std::endl
+         << "    ColArray length         = " << _aj.extent(0) << std::endl 
+         << "    ValueArray length       = " << _ax.extent(0) << std::endl
          << std::endl;
       
       const int w = 10;

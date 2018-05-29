@@ -272,27 +272,27 @@ applyImpl (HostViewLocal& X,
 {
   typedef Teuchos::ScalarTraits<local_scalar_type> STS;
   auto zero = STS::zero();
-  size_t numVecs = X.dimension_1();
-  size_t numRows = X.dimension_0();
+  size_t numVecs = X.extent(1);
+  size_t numRows = X.extent(0);
 
   TEUCHOS_TEST_FOR_EXCEPTION(
-    X.dimension_0 () != Y.dimension_0 (),
+    X.extent (0) != Y.extent (0),
     std::logic_error, "Ifpack2::TriDiContainer::applyImpl: X and Y have "
-    "incompatible dimensions (" << X.dimension_0 () << " resp. "
-    << Y.dimension_0 () << ").  Please report this bug to "
+    "incompatible dimensions (" << X.extent (0) << " resp. "
+    << Y.extent (0) << ").  Please report this bug to "
     "the Ifpack2 developers.");
   TEUCHOS_TEST_FOR_EXCEPTION(
-    X.dimension_0 () != static_cast<size_t> (diagBlocks_[blockIndex].numRowsCols()),
+    X.extent (0) != static_cast<size_t> (diagBlocks_[blockIndex].numRowsCols()),
     std::logic_error, "Ifpack2::TriDiContainer::applyImpl: The input "
     "multivector X has incompatible dimensions from those of the "
-    "inverse operator (" << X.dimension_0 () << " vs. "
+    "inverse operator (" << X.extent (0) << " vs. "
     << (mode == Teuchos::NO_TRANS ? diagBlocks_[blockIndex].numRowsCols () : diagBlocks_[blockIndex].numRowsCols())
     << ").  Please report this bug to the Ifpack2 developers.");
   TEUCHOS_TEST_FOR_EXCEPTION(
-    Y.dimension_0 () != static_cast<size_t> (diagBlocks_[blockIndex].numRowsCols()),
+    Y.extent (0) != static_cast<size_t> (diagBlocks_[blockIndex].numRowsCols()),
     std::logic_error, "Ifpack2::TriDiContainer::applyImpl: The output "
     "multivector Y has incompatible dimensions from those of the "
-    "inverse operator (" << Y.dimension_0 () << " vs. "
+    "inverse operator (" << Y.extent (0) << " vs. "
     << (mode == Teuchos::NO_TRANS ? diagBlocks_[blockIndex].numRowsCols() : diagBlocks_[blockIndex].numRowsCols ())
     << ").  Please report this bug to the Ifpack2 developers.");
 
@@ -301,13 +301,13 @@ applyImpl (HostViewLocal& X,
       // Use BLAS AXPY semantics for beta == 0: overwrite, clobbering
       // any Inf or NaN values in Y (rather than multiplying them by
       // zero, resulting in NaN values).
-      for(size_t j = 0; j < Y.dimension_1(); j++)
-        for(size_t i = 0; i < Y.dimension_0(); i++)
+      for(size_t j = 0; j < Y.extent(1); j++)
+        for(size_t i = 0; i < Y.extent(0); i++)
           Y(i, j) = zero;
     }
     else { // beta != 0
-      for(size_t j = 0; j < Y.dimension_1(); j++)
-        for(size_t i = 0; i < Y.dimension_0(); i++)
+      for(size_t j = 0; j < Y.extent(1); j++)
+        for(size_t i = 0; i < Y.extent(0); i++)
           Y(i, j) *= beta;
     }
   }
@@ -318,7 +318,7 @@ applyImpl (HostViewLocal& X,
     // GETRS overwrites its (multi)vector input with its output.
     HostViewLocal Y_tmp("", numRows, numVecs);
     Kokkos::deep_copy(Y_tmp, X);
-    scalar_type* Y_ptr = Y_tmp.ptr_on_device();
+    scalar_type* Y_ptr = Y_tmp.data();
     int INFO = 0;
     const char trans =
       (mode == Teuchos::CONJ_TRANS ? 'C' : (mode == Teuchos::TRANS ? 'T' : 'N'));
@@ -340,9 +340,9 @@ applyImpl (HostViewLocal& X,
       "failed with INFO = " << INFO << " != 0.");
 
     if (beta != STS::zero ()) {
-      for(size_t j = 0; j < Y.dimension_1(); j++)
+      for(size_t j = 0; j < Y.extent(1); j++)
       {
-        for(size_t i = 0; i < Y.dimension_0(); i++)
+        for(size_t i = 0; i < Y.extent(0); i++)
         {
           Y(i, j) *= beta;
           Y(i, j) += alpha * Y_tmp(i, j);
@@ -350,9 +350,9 @@ applyImpl (HostViewLocal& X,
       }
     }
     else {
-      for(size_t j = 0; j < Y.dimension_1(); j++)
+      for(size_t j = 0; j < Y.extent(1); j++)
       {
-        for(size_t i = 0; i < Y.dimension_0(); i++)
+        for(size_t i = 0; i < Y.extent(0); i++)
           Y(i, j) = Y_tmp(i, j);
       }
     }
@@ -388,7 +388,7 @@ apply (HostView& X,
     "You may call the apply() method as many times as you want after calling "
     "compute() once, but you must have called compute() at least once.");
 
-  const size_t numVecs = X.dimension_1();
+  const size_t numVecs = X.extent(1);
 
   if(numVecs == 0) {
     return; // done! nothing to do
@@ -418,7 +418,7 @@ apply (HostView& X,
   //
   // FIXME (mfh 20 Aug 2013) This "local permutation" functionality
   // really belongs in Tpetra.
-  
+
   if(X_local.size() == 0)
   {
     //create all X_local and Y_local managed Views at once, are
@@ -456,7 +456,7 @@ apply (HostView& X,
 
 template<class MatrixType, class LocalScalarType>
 void TriDiContainer<MatrixType, LocalScalarType, true>::
-weightedApply (HostView& X, 
+weightedApply (HostView& X,
                HostView& Y,
                HostView& D,
                int blockIndex,
@@ -487,7 +487,7 @@ weightedApply (HostView& X,
   Details::MultiVectorLocalGatherScatter<mv_type, local_mv_type> mvgs;
 
   size_t numRows = this->blockRows_[blockIndex];
-  size_t numVecs = X.dimension_1();
+  size_t numVecs = X.extent(1);
 
   if(numVecs == 0) {
     return; // done! nothing to do
@@ -564,8 +564,8 @@ weightedApply (HostView& X,
 
   HostViewLocal X_scaled("", numVecs, numRows);
 
-  for(size_t i = 0; i < X_scaled.dimension_0(); i++) {
-    for(size_t j = 0; j < X_scaled.dimension_1(); j++) {
+  for(size_t i = 0; i < X_scaled.extent(0); i++) {
+    for(size_t j = 0; j < X_scaled.extent(1); j++) {
       X_scaled(i, j) = X_local[blockIndex](i, j) * D_local(0, j);
     }
   }
@@ -575,7 +575,7 @@ weightedApply (HostView& X,
   // Y_temp may alias Y_local.  Otherwise, if beta != 0, we need
   // temporary storage for M^{-1}*X_scaled, so Y_temp must be
   // different than Y_local.
-  HostViewLocal Y_temp("", Y.dimension_0(), Y.dimension_1());
+  HostViewLocal Y_temp("", Y.extent(0), Y.extent(1));
 
   // Apply the local operator: Y_tmp := M^{-1} * X_scaled
   applyImpl(X_scaled, Y_temp, blockIndex, stride, mode, STS::one(), STS::zero());
@@ -584,8 +584,8 @@ weightedApply (HostView& X,
   // Note that we still use the permuted subset scaling D_local here,
   // because Y_temp has the same permuted subset Map.  That's good, in
   // fact, because it's a subset: less data to read and multiply.
-  for(size_t i = 0; i < Y.dimension_0(); i++) {
-    for(size_t j = 0; j < Y.dimension_1(); j++) {
+  for(size_t i = 0; i < Y.extent(0); i++) {
+    for(size_t j = 0; j < Y.extent(1); j++) {
       Y_local[blockIndex](i, j) *= beta;
       Y_local[blockIndex](i, j) += alpha * D_local(i, 0) * Y_temp(i, j);
     }
@@ -887,7 +887,7 @@ apply (HostView& X,
 
 template<class MatrixType, class LocalScalarType>
 void TriDiContainer<MatrixType, LocalScalarType, false>::
-weightedApply (HostView& X, 
+weightedApply (HostView& X,
                HostView& Y,
                HostView& D,
                int blockIndex,

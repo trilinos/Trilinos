@@ -53,10 +53,10 @@ void openmp_static_matvec(AType A, XType x, YType y, int rows_per_thread, int te
   const double s_b                                = 0.0;
 
   const int rowCount                              = A.numRows();
-  const double* OMP_BENCH_RESTRICT x_ptr          = (double*) x.ptr_on_device();
-  double* OMP_BENCH_RESTRICT y_ptr                = (double*) y.ptr_on_device();
-  const double* OMP_BENCH_RESTRICT matrixCoeffs   = A.values.ptr_on_device();
-  const int* OMP_BENCH_RESTRICT matrixCols        = A.graph.entries.ptr_on_device();
+  const double* OMP_BENCH_RESTRICT x_ptr          = (double*) x.data();
+  double* OMP_BENCH_RESTRICT y_ptr                = (double*) y.data();
+  const double* OMP_BENCH_RESTRICT matrixCoeffs   = A.values.data();
+  const int* OMP_BENCH_RESTRICT matrixCols        = A.graph.entries.data();
   const int* OMP_BENCH_RESTRICT matrixRowOffsets  = &A.graph.row_map(0);
   
   #pragma omp parallel for

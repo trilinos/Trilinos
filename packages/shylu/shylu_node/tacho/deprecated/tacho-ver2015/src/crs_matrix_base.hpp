@@ -63,13 +63,13 @@ namespace Tacho {
       _n = n;
       _nnz = nnz;
 
-      if (static_cast<ordinal_type>(_ap.dimension_0()) < m+1)
+      if (static_cast<ordinal_type>(_ap.extent(0)) < m+1)
         _ap = size_type_array(_label+"::RowPtrArray", m+1);
       
-      if (static_cast<size_type>(_aj.dimension_0()) < nnz)
+      if (static_cast<size_type>(_aj.extent(0)) < nnz)
         _aj = ordinal_type_array(_label+"::ColsArray", nnz);
 
-      if (static_cast<size_type>(_ax.dimension_0()) < nnz)
+      if (static_cast<size_type>(_ax.extent(0)) < nnz)
         _ax = value_type_array(_label+"::ValuesArray", nnz);
       //_ax = value_type_array(Kokkos::ViewAllocateWithoutInitializing(_label+"::ValuesArray"), nnz);
     }
@@ -239,9 +239,9 @@ namespace Tacho {
     copy(const CrsMatrixBase<VT,OT,ST,SpT,MT> &b) {
       createInternalArrays(b._m, b._n, b._nnz);
 
-      const auto ap_range = range_type<ordinal_type>(0, min(_ap.dimension_0(), b._ap.dimension_0()));
-      const auto aj_range = range_type<size_type>   (0, min(_aj.dimension_0(), b._aj.dimension_0()));
-      const auto ax_range = range_type<size_type>   (0, min(_ax.dimension_0(), b._ax.dimension_0()));
+      const auto ap_range = range_type<ordinal_type>(0, min(_ap.extent(0), b._ap.extent(0)));
+      const auto aj_range = range_type<size_type>   (0, min(_aj.extent(0), b._aj.extent(0)));
+      const auto ax_range = range_type<size_type>   (0, min(_ax.extent(0), b._ax.extent(0)));
 
       Kokkos::deep_copy(Kokkos::subview(  _ap, ap_range), 
                         Kokkos::subview(b._ap, ap_range));
@@ -420,9 +420,9 @@ namespace Tacho {
          << "    # of Cols          = " << _n << endl
          << "    # of NonZeros      = " << _nnz << endl
          << endl
-         << "    RowPtrArray length = " << _ap.dimension_0() << endl
-         << "    ColArray    length = " << _aj.dimension_0() << endl 
-         << "    ValueArray  length = " << _ax.dimension_0() << endl
+         << "    RowPtrArray length = " << _ap.extent(0) << endl
+         << "    ColArray    length = " << _aj.extent(0) << endl 
+         << "    ValueArray  length = " << _ax.extent(0) << endl
          << endl;
       
       const int w = 10;

@@ -629,7 +629,7 @@ public:
   ///   has a column Map).
   /// \pre All diagonal entries of the matrix's graph must be
   ///   populated on this process.  Results are undefined otherwise.
-  /// \post <tt>offsets.dimension_0() == getNodeNumRows()</tt>
+  /// \post <tt>offsets.extent(0) == getNodeNumRows()</tt>
   ///
   /// This method creates an array of offsets of the local diagonal
   /// entries in the matrix.  This array is suitable for use in the
@@ -1117,11 +1117,29 @@ public:
   //! Whether this matrix has a well-defined column map.
   virtual bool hasColMap() const;
 
-  //! Whether this matrix is lower triangular.
-  virtual bool isLowerTriangular() const;
+  /// \brief Whether the matrix's graph is locally lower triangular.
+  ///
+  /// \warning DO NOT CALL THIS METHOD!  This method is DEPRECATED
+  ///   and will DISAPPEAR VERY SOON per #2630.
+  ///
+  /// \pre <tt>! isFillActive()</tt>.
+  ///   If fill is active, this method's behavior is undefined.
+  ///
+  /// \note This is entirely a local property.  That means this
+  ///   method may return different results on different processes.
+  virtual bool TPETRA_DEPRECATED isLowerTriangular () const;
 
-  //! Whether this matrix is upper triangular.
-  virtual bool isUpperTriangular() const;
+  /// \brief Whether the matrix's graph is locally upper triangular.
+  ///
+  /// \warning DO NOT CALL THIS METHOD!  This method is DEPRECATED
+  ///   and will DISAPPEAR VERY SOON per #2630.
+  ///
+  /// \pre <tt>! isFillActive()</tt>.
+  ///   If fill is active, this method's behavior is undefined.
+  ///
+  /// \note This is entirely a local property.  That means this
+  ///   method may return different results on different processes.
+  virtual bool TPETRA_DEPRECATED isUpperTriangular () const;
 
   /// \brief Whether matrix indices are locally indexed.
   ///

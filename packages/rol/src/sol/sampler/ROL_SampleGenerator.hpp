@@ -44,7 +44,6 @@
 #ifndef ROL_SAMPLEGENERATOR_HPP
 #define ROL_SAMPLEGENERATOR_HPP
 
-#include "Teuchos_RefCountPtr.hpp"
 #include "ROL_BatchManager.hpp"
 #include "ROL_Vector.hpp"
 #include <fstream>
@@ -158,7 +157,7 @@ public:
       file.close();
     }
     else {
-      TEUCHOS_TEST_FOR_EXCEPTION(true, std::invalid_argument,
+      ROL_TEST_FOR_EXCEPTION(true, std::invalid_argument,
         ">>> (ROL::SampleGenerator::print): Unable to open file!");
     }
   }

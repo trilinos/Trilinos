@@ -51,73 +51,6 @@ namespace KokkosSparse{
 
 namespace Experimental{
 
-/*
-template <typename KernelHandle, typename lno_row_view_t_, typename lno_nnz_view_t_>
-void gauss_seidel_symbolic_spec(
-    KernelHandle *handle,
-    typename KernelHandle::const_nnz_lno_t num_rows,
-    typename KernelHandle::const_nnz_lno_t num_cols,
-    lno_row_view_t_ row_map,
-    lno_nnz_view_t_ entries,
-	bool is_graph_symmetric){
-
-	typedef typename Impl::GaussSeidel<KernelHandle, lno_row_view_t_,
-			lno_nnz_view_t_, typename KernelHandle::in_scalar_nnz_view_t> SGS;
-	SGS sgs(handle,num_rows, num_cols, row_map, entries, is_graph_symmetric);
-	sgs.initialize_symbolic();
-}
-
-template <typename KernelHandle,
-          typename lno_row_view_t_,
-          typename lno_nnz_view_t_,
-          typename scalar_nnz_view_t_>
-void gauss_seidel_numeric_spec(KernelHandle *handle,
-    typename KernelHandle::const_nnz_lno_t num_rows,
-    typename KernelHandle::const_nnz_lno_t num_cols,
-    lno_row_view_t_ row_map,
-    lno_nnz_view_t_ entries,
-    scalar_nnz_view_t_ values,
-    bool is_graph_symmetric
-    ){
-	    typedef typename Impl::GaussSeidel
-	        <KernelHandle,lno_row_view_t_,
-	        lno_nnz_view_t_,scalar_nnz_view_t_> SGS;
-	    SGS sgs(handle, num_rows, num_cols, row_map, entries, values, is_graph_symmetric);
-	    sgs.initialize_numeric();
-}
-
-template <typename KernelHandle,
-  typename lno_row_view_t_,
-  typename lno_nnz_view_t_,
-  typename scalar_nnz_view_t_,
-  typename x_scalar_view_t,
-  typename y_scalar_view_t>
-void gauss_seidel_apply_spec(
-		  KernelHandle *handle,
-    typename KernelHandle::const_nnz_lno_t num_rows,
-    typename KernelHandle::const_nnz_lno_t num_cols,
-    lno_row_view_t_ row_map,
-    lno_nnz_view_t_ entries,
-    scalar_nnz_view_t_ values,
-    x_scalar_view_t x_lhs_output_vec,
-    y_scalar_view_t y_rhs_input_vec,
-    bool init_zero_x_vector,
-    bool update_y_vector,
-    int numIter, bool apply_forward, bool apply_backward){
-
-	    typedef typename Impl::GaussSeidel <KernelHandle,
-	            lno_row_view_t_, lno_nnz_view_t_,scalar_nnz_view_t_ > SGS;
-	    SGS sgs(handle, num_rows, num_cols, row_map, entries, values);
-	    sgs.apply(
-	        x_lhs_output_vec,
-	        y_rhs_input_vec,
-	        init_zero_x_vector,
-	        numIter,
-			apply_forward,
-			apply_backward, update_y_vector);
-}
-*/
-
   template <typename KernelHandle, typename lno_row_view_t_, typename lno_nnz_view_t_>
   void gauss_seidel_symbolic(
       KernelHandle *handle,
@@ -165,13 +98,32 @@ void gauss_seidel_apply_spec(
 
 	  //Internal_alno_row_view_t_ const_a_r  = row_map;
 	  //Internal_alno_nnz_view_t_ const_a_l  = entries;
-          Internal_alno_row_view_t_ const_a_r (row_map.data(), row_map.dimension_0());
-          Internal_alno_nnz_view_t_ const_a_l (entries.data(), entries.dimension_0());
+          Internal_alno_row_view_t_ const_a_r (row_map.data(), row_map.extent(0));
+          Internal_alno_nnz_view_t_ const_a_l (entries.data(), entries.extent(0));
 
 	  using namespace KokkosSparse::Impl;
 
 	  GAUSS_SEIDEL_SYMBOLIC<const_handle_type, Internal_alno_row_view_t_, Internal_alno_nnz_view_t_>::gauss_seidel_symbolic
 	  (&tmp_handle, num_rows, num_cols, const_a_r, const_a_l, is_graph_symmetric);
+
+  }
+
+  template <typename KernelHandle, typename lno_row_view_t_, typename lno_nnz_view_t_>
+  void block_gauss_seidel_symbolic(
+      KernelHandle *handle,
+      typename KernelHandle::const_nnz_lno_t num_rows,
+      typename KernelHandle::const_nnz_lno_t num_cols,
+	  typename KernelHandle::const_nnz_lno_t block_size,
+      lno_row_view_t_ row_map,
+      lno_nnz_view_t_ entries,
+	  bool is_graph_symmetric = true){
+
+
+	  handle->get_gs_handle()->set_block_size(block_size);
+
+	  gauss_seidel_symbolic(handle,
+			  num_rows, num_cols,
+			  row_map, entries, is_graph_symmetric);
 
   }
 
@@ -231,15 +183,10 @@ void gauss_seidel_apply_spec(
 			  typename KokkosKernels::Impl::GetUnifiedLayout<scalar_nnz_view_t_>::array_layout,
 			  typename scalar_nnz_view_t_::device_type,
 			  Kokkos::MemoryTraits<Kokkos::Unmanaged> > Internal_ascalar_nnz_view_t_;
-	  /*
-	  Internal_alno_row_view_t_ const_a_r  = row_map;
-	  Internal_alno_nnz_view_t_ const_a_l  = entries;
-	  Internal_ascalar_nnz_view_t_ const_a_v  = values;
-	  */
 
-	  Internal_alno_row_view_t_ const_a_r (row_map.data(), row_map.dimension_0());
-	  Internal_alno_nnz_view_t_ const_a_l (entries.data(), entries.dimension_0());
-	  Internal_ascalar_nnz_view_t_ const_a_v (values.data(), values.dimension_0());
+	  Internal_alno_row_view_t_ const_a_r (row_map.data(), row_map.extent(0));
+	  Internal_alno_nnz_view_t_ const_a_l (entries.data(), entries.extent(0));
+	  Internal_ascalar_nnz_view_t_ const_a_v (values.data(), values.extent(0));
 
 
 	  using namespace KokkosSparse::Impl;
@@ -247,6 +194,28 @@ void gauss_seidel_apply_spec(
 	  GAUSS_SEIDEL_NUMERIC<const_handle_type, Internal_alno_row_view_t_, Internal_alno_nnz_view_t_, Internal_ascalar_nnz_view_t_>::gauss_seidel_numeric
 	  	  (&tmp_handle, num_rows, num_cols, const_a_r, const_a_l, const_a_v, is_graph_symmetric);
 
+  }
+
+  template <typename KernelHandle,
+            typename lno_row_view_t_,
+            typename lno_nnz_view_t_,
+            typename scalar_nnz_view_t_>
+  void block_gauss_seidel_numeric(KernelHandle *handle,
+      typename KernelHandle::const_nnz_lno_t num_rows,
+      typename KernelHandle::const_nnz_lno_t num_cols,
+	  typename KernelHandle::const_nnz_lno_t block_size,
+      lno_row_view_t_ row_map,
+      lno_nnz_view_t_ entries,
+      scalar_nnz_view_t_ values,
+      bool is_graph_symmetric = true
+      ){
+	  handle->get_gs_handle()->set_block_size(block_size);
+
+	  gauss_seidel_numeric(handle,
+			  num_rows,num_cols,
+			  row_map, entries, values,
+			  is_graph_symmetric
+	        );
   }
 
   template <typename KernelHandle,
@@ -342,12 +311,12 @@ void gauss_seidel_apply_spec(
 	  Internal_yscalar_nnz_view_t_ const_y_v = y_rhs_input_vec;
 	  */
 
-          Internal_alno_row_view_t_ const_a_r (row_map.data(), row_map.dimension_0());
-          Internal_alno_nnz_view_t_ const_a_l (entries.data(), entries.dimension_0());
-          Internal_ascalar_nnz_view_t_ const_a_v (values.data(), values.dimension_0());
+          Internal_alno_row_view_t_ const_a_r (row_map.data(), row_map.extent(0));
+          Internal_alno_nnz_view_t_ const_a_l (entries.data(), entries.extent(0));
+          Internal_ascalar_nnz_view_t_ const_a_v (values.data(), values.extent(0));
 
-          Internal_xscalar_nnz_view_t_ nonconst_x_v (x_lhs_output_vec.data(), x_lhs_output_vec.dimension_0());
-          Internal_yscalar_nnz_view_t_ const_y_v (y_rhs_input_vec.data(), y_rhs_input_vec.dimension_0());
+          Internal_xscalar_nnz_view_t_ nonconst_x_v (x_lhs_output_vec.data(), x_lhs_output_vec.extent(0));
+          Internal_yscalar_nnz_view_t_ const_y_v (y_rhs_input_vec.data(), y_rhs_input_vec.extent(0));
 
 	  using namespace KokkosSparse::Impl;
 
@@ -364,6 +333,36 @@ void gauss_seidel_apply_spec(
 
   }
 
+  template <typename KernelHandle,
+    typename lno_row_view_t_,
+    typename lno_nnz_view_t_,
+    typename scalar_nnz_view_t_,
+    typename x_scalar_view_t,
+    typename y_scalar_view_t>
+  void symmetric_block_gauss_seidel_apply(KernelHandle *handle,
+      typename KernelHandle::const_nnz_lno_t num_rows,
+      typename KernelHandle::const_nnz_lno_t num_cols,
+	  typename KernelHandle::const_nnz_lno_t block_size,
+
+      lno_row_view_t_ row_map,
+      lno_nnz_view_t_ entries,
+      scalar_nnz_view_t_ values,
+      x_scalar_view_t x_lhs_output_vec,
+      y_scalar_view_t y_rhs_input_vec,
+      bool init_zero_x_vector = false,
+      bool update_y_vector = true,
+      int numIter = 1){
+	  handle->get_gs_handle()->set_block_size(block_size);
+	  symmetric_gauss_seidel_apply(handle,num_rows,num_cols,
+			  row_map,
+		      entries,
+		      values,
+		      x_lhs_output_vec,
+		      y_rhs_input_vec,
+		      init_zero_x_vector,
+		      update_y_vector,
+		      numIter);
+  }
   template <class KernelHandle,
   typename lno_row_view_t_,
   typename lno_nnz_view_t_,
@@ -456,12 +455,12 @@ void gauss_seidel_apply_spec(
 	  Internal_yscalar_nnz_view_t_ const_y_v = y_rhs_input_vec;
 	  */
 
-          Internal_alno_row_view_t_ const_a_r (row_map.data(), row_map.dimension_0());
-          Internal_alno_nnz_view_t_ const_a_l (entries.data(), entries.dimension_0());
-          Internal_ascalar_nnz_view_t_ const_a_v (values.data(), values.dimension_0());
+          Internal_alno_row_view_t_ const_a_r (row_map.data(), row_map.extent(0));
+          Internal_alno_nnz_view_t_ const_a_l (entries.data(), entries.extent(0));
+          Internal_ascalar_nnz_view_t_ const_a_v (values.data(), values.extent(0));
 
-          Internal_xscalar_nnz_view_t_ nonconst_x_v (x_lhs_output_vec.data(), x_lhs_output_vec.dimension_0());
-          Internal_yscalar_nnz_view_t_ const_y_v (y_rhs_input_vec.data(), y_rhs_input_vec.dimension_0());
+          Internal_xscalar_nnz_view_t_ nonconst_x_v (x_lhs_output_vec.data(), x_lhs_output_vec.extent(0));
+          Internal_yscalar_nnz_view_t_ const_y_v (y_rhs_input_vec.data(), y_rhs_input_vec.extent(0));
 
 
 
@@ -478,6 +477,38 @@ void gauss_seidel_apply_spec(
 			  numIter, true, false);
 
 
+  }
+
+
+  template <typename KernelHandle,
+    typename lno_row_view_t_,
+    typename lno_nnz_view_t_,
+    typename scalar_nnz_view_t_,
+    typename x_scalar_view_t,
+    typename y_scalar_view_t>
+  void forward_sweep_block_gauss_seidel_apply(KernelHandle *handle,
+      typename KernelHandle::const_nnz_lno_t num_rows,
+      typename KernelHandle::const_nnz_lno_t num_cols,
+	  typename KernelHandle::const_nnz_lno_t block_size,
+
+      lno_row_view_t_ row_map,
+      lno_nnz_view_t_ entries,
+      scalar_nnz_view_t_ values,
+      x_scalar_view_t x_lhs_output_vec,
+      y_scalar_view_t y_rhs_input_vec,
+      bool init_zero_x_vector = false,
+      bool update_y_vector = true,
+      int numIter = 1){
+	  handle->get_gs_handle()->set_block_size(block_size);
+	  forward_sweep_gauss_seidel_apply(handle,num_rows,num_cols,
+			  row_map,
+		      entries,
+		      values,
+		      x_lhs_output_vec,
+		      y_rhs_input_vec,
+		      init_zero_x_vector,
+		      update_y_vector,
+		      numIter);
   }
   template <class KernelHandle,
   typename lno_row_view_t_,
@@ -570,12 +601,12 @@ void gauss_seidel_apply_spec(
 	  Internal_xscalar_nnz_view_t_ nonconst_x_v = x_lhs_output_vec;
 	  Internal_yscalar_nnz_view_t_ const_y_v = y_rhs_input_vec;
 	  */
-          Internal_alno_row_view_t_ const_a_r (row_map.data(), row_map.dimension_0());
-          Internal_alno_nnz_view_t_ const_a_l (entries.data(), entries.dimension_0());
-          Internal_ascalar_nnz_view_t_ const_a_v (values.data(), values.dimension_0());
+          Internal_alno_row_view_t_ const_a_r (row_map.data(), row_map.extent(0));
+          Internal_alno_nnz_view_t_ const_a_l (entries.data(), entries.extent(0));
+          Internal_ascalar_nnz_view_t_ const_a_v (values.data(), values.extent(0));
 
-          Internal_xscalar_nnz_view_t_ nonconst_x_v (x_lhs_output_vec.data(), x_lhs_output_vec.dimension_0());
-          Internal_yscalar_nnz_view_t_ const_y_v (y_rhs_input_vec.data(), y_rhs_input_vec.dimension_0());
+          Internal_xscalar_nnz_view_t_ nonconst_x_v (x_lhs_output_vec.data(), x_lhs_output_vec.extent(0));
+          Internal_yscalar_nnz_view_t_ const_y_v (y_rhs_input_vec.data(), y_rhs_input_vec.extent(0));
 
 
 	  using namespace KokkosSparse::Impl;
@@ -591,6 +622,37 @@ void gauss_seidel_apply_spec(
 			  numIter, false, true);
 
 
+  }
+
+  template <typename KernelHandle,
+    typename lno_row_view_t_,
+    typename lno_nnz_view_t_,
+    typename scalar_nnz_view_t_,
+    typename x_scalar_view_t,
+    typename y_scalar_view_t>
+  void backward_sweep_block_gauss_seidel_apply(KernelHandle *handle,
+      typename KernelHandle::const_nnz_lno_t num_rows,
+      typename KernelHandle::const_nnz_lno_t num_cols,
+	  typename KernelHandle::const_nnz_lno_t block_size,
+
+      lno_row_view_t_ row_map,
+      lno_nnz_view_t_ entries,
+      scalar_nnz_view_t_ values,
+      x_scalar_view_t x_lhs_output_vec,
+      y_scalar_view_t y_rhs_input_vec,
+      bool init_zero_x_vector = false,
+      bool update_y_vector = true,
+      int numIter = 1){
+	  handle->get_gs_handle()->set_block_size(block_size);
+	  backward_sweep_gauss_seidel_apply(handle,num_rows,num_cols,
+			  row_map,
+		      entries,
+		      values,
+		      x_lhs_output_vec,
+		      y_rhs_input_vec,
+		      init_zero_x_vector,
+		      update_y_vector,
+		      numIter);
   }
 }
 }

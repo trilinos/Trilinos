@@ -46,7 +46,7 @@
 
 #include "ROL_Types.hpp"
 
-#include "Teuchos_ParameterList.hpp"
+#include "ROL_ParameterList.hpp"
 #include "ROL_Ptr.hpp"
 
 #include "ROL_Krylov.hpp"
@@ -61,7 +61,7 @@ namespace ROL {
   class GMRES;
 
   template<class Real>
-  inline ROL::Ptr<Krylov<Real> > KrylovFactory( Teuchos::ParameterList &parlist ) {
+  inline ROL::Ptr<Krylov<Real> > KrylovFactory( ROL::ParameterList &parlist ) {
     Real em4(1e-4), em2(1e-2);
     EKrylov ekv = StringToEKrylov(
                    parlist.sublist("General").sublist("Krylov").get("Type","Conjugate Gradients"));

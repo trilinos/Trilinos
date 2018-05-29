@@ -43,15 +43,16 @@
 
 
 #define KOKKOSKERNELS_IMPL_COMPILE_LIBRARY true
-#include "KokkosBlas1_dot_spec.hpp"
-
-namespace KokkosBlas {
-namespace Impl {
+#include "KokkosKernels_config.h"
 #if defined (KOKKOSKERNELS_INST_DOUBLE) \
  && defined (KOKKOSKERNELS_INST_LAYOUTRIGHT) \
  && defined (KOKKOSKERNELS_INST_EXECSPACE_SERIAL) \
  && defined (KOKKOSKERNELS_INST_MEMSPACE_HBWSPACE)
+#include "KokkosBlas1_dot_spec.hpp"
+
+namespace KokkosBlas {
+namespace Impl {
  KOKKOSBLAS1_DOT_MV_ETI_SPEC_INST(double, Kokkos::LayoutRight, Kokkos::Serial, Kokkos::Experimental::HBWSpace)
-#endif
 } // Impl
 } // KokkosBlas
+#endif

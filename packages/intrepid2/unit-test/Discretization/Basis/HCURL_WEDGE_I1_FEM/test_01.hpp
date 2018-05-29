@@ -138,7 +138,7 @@ namespace Test {
 
     // Generic array for the output values; needs to be properly resized depending on the operator type
     const ordinal_type numFields = wedgeBasis.getCardinality();
-    const ordinal_type numPoints = wedgeNodes.dimension(0);
+    const ordinal_type numPoints = wedgeNodes.extent(0);
     const ordinal_type spaceDim  = wedgeBasis.getBaseCellTopology().getDimension();
 
     DynRankView vals ("vals", numFields, numPoints);
@@ -229,7 +229,7 @@ namespace Test {
     const auto allTags = wedgeBasis.getAllDofTags();
 
     // Loop over all tags, lookup the associated dof enumeration and then lookup the tag again
-    const ordinal_type dofTagSize = allTags.dimension(0);
+    const ordinal_type dofTagSize = allTags.extent(0);
     for (ordinal_type i = 0; i < dofTagSize; ++i) {
       auto bfOrd  = wedgeBasis.getDofOrdinal(allTags(i,0), allTags(i,1), allTags(i,2));
       
@@ -374,7 +374,7 @@ namespace Test {
         
     // Dimensions for the output arrays:
     const ordinal_type numFields = wedgeBasis.getCardinality();
-    const ordinal_type numPoints = wedgeNodes.dimension(0);
+    const ordinal_type numPoints = wedgeNodes.extent(0);
     const ordinal_type spaceDim  = wedgeBasis.getBaseCellTopology().getDimension();
     
     {

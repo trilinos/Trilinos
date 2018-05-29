@@ -134,7 +134,7 @@ int HDIV_WEDGE_I1_FEM_Test01(const bool verbose) {
 
     // Generic array for the output values; needs to be properly resized depending on the operator type
     const auto numFields = wedgeBasis.getCardinality();
-    const auto numPoints = wedgeNodes.dimension(0);
+    const auto numPoints = wedgeNodes.extent(0);
     const auto spaceDim  = wedgeBasis.getBaseCellTopology().getDimension();
 
     // exception #1: GRAD cannot be applied to HDIV functions 
@@ -175,23 +175,23 @@ int HDIV_WEDGE_I1_FEM_Test01(const bool verbose) {
     INTREPID2_TEST_ERROR_EXPECTED( wedgeBasis.getValues(badVals2, wedgeNodes, OPERATOR_DIV));
 
     // exception #12 incorrect 0th dimension of output array (must equal number of basis functions)
-    DynRankView ConstructWithLabel(badVals3, wedgeBasis.getCardinality() + 1, wedgeNodes.dimension(0), 3);
+    DynRankView ConstructWithLabel(badVals3, wedgeBasis.getCardinality() + 1, wedgeNodes.extent(0), 3);
     INTREPID2_TEST_ERROR_EXPECTED( wedgeBasis.getValues(badVals3, wedgeNodes, OPERATOR_VALUE));
 
     // exception #13 incorrect 0th dimension of output array (must equal number of basis functions)
-    DynRankView ConstructWithLabel(badVals4, wedgeBasis.getCardinality() + 1, wedgeNodes.dimension(0));
+    DynRankView ConstructWithLabel(badVals4, wedgeBasis.getCardinality() + 1, wedgeNodes.extent(0));
     INTREPID2_TEST_ERROR_EXPECTED( wedgeBasis.getValues(badVals4, wedgeNodes, OPERATOR_DIV));
 
     // exception #14 incorrect 1st dimension of output array (must equal number of points)
-    DynRankView ConstructWithLabel(badVals5, wedgeBasis.getCardinality(), wedgeNodes.dimension(0) + 1, 3);
+    DynRankView ConstructWithLabel(badVals5, wedgeBasis.getCardinality(), wedgeNodes.extent(0) + 1, 3);
     INTREPID2_TEST_ERROR_EXPECTED( wedgeBasis.getValues(badVals5, wedgeNodes, OPERATOR_VALUE));
 
     // exception #15 incorrect 1st dimension of output array (must equal number of points)
-    DynRankView ConstructWithLabel(badVals6, wedgeBasis.getCardinality(), wedgeNodes.dimension(0) + 1);
+    DynRankView ConstructWithLabel(badVals6, wedgeBasis.getCardinality(), wedgeNodes.extent(0) + 1);
     INTREPID2_TEST_ERROR_EXPECTED( wedgeBasis.getValues(badVals6, wedgeNodes, OPERATOR_DIV));
 
     // exception #16: incorrect 2nd dimension of output array (must equal the space dimension)
-    DynRankView ConstructWithLabel(badVals7, wedgeBasis.getCardinality(), wedgeNodes.dimension(0), 4);
+    DynRankView ConstructWithLabel(badVals7, wedgeBasis.getCardinality(), wedgeNodes.extent(0), 4);
     INTREPID2_TEST_ERROR_EXPECTED( wedgeBasis.getValues(badVals7, wedgeNodes, OPERATOR_VALUE));
 #endif
 
@@ -214,7 +214,7 @@ int HDIV_WEDGE_I1_FEM_Test01(const bool verbose) {
     const auto allTags = wedgeBasis.getAllDofTags();
 
     // Loop over all tags, lookup the associated dof enumeration and then lookup the tag again
-    const auto dofTagSize = allTags.dimension(0);
+    const auto dofTagSize = allTags.extent(0);
 
     // Loop over all tags, lookup the associated dof enumeration and then lookup the tag again
     for (size_type i = 0; i < dofTagSize; i++) {
@@ -330,7 +330,7 @@ int HDIV_WEDGE_I1_FEM_Test01(const bool verbose) {
 
     // Dimensions for the output arrays:
     const auto numFields = wedgeBasis.getCardinality();
-    const auto numPoints = wedgeNodes.dimension(0);
+    const auto numPoints = wedgeNodes.extent(0);
     const auto spaceDim  = wedgeBasis.getBaseCellTopology().getDimension();
 
 

@@ -179,8 +179,8 @@ bool compare_rank_2_views(const array_type& y,
   Kokkos::deep_copy(hy, y);
   Kokkos::deep_copy(hy_exp, y_exp);
 
-  size_type num_rows = y.dimension_0();
-  size_type num_cols = y.dimension_1();
+  size_type num_rows = y.extent(0);
+  size_type num_cols = y.extent(1);
   bool success = true;
   for (size_type i=0; i<num_rows; ++i) {
     for (size_type j=0; j<num_cols; ++j) {
@@ -216,7 +216,7 @@ bool compareRank1(const vector_type& y,
   Kokkos::deep_copy(hy, y);
   Kokkos::deep_copy(hy_exp, y_exp);
 
-  size_type num_rows = y.dimension_0();
+  size_type num_rows = y.extent(0);
   bool success = true;
   for (size_type i=0; i<num_rows; ++i) {
     for (size_type j=0; j<Kokkos::dimension_scalar(y); ++j) {
@@ -251,8 +251,8 @@ bool compareRank2(const vector_type& y,
   Kokkos::deep_copy(hy, y);
   Kokkos::deep_copy(hy_exp, y_exp);
 
-  size_type num_rows = y.dimension_0();
-  size_type num_cols = y.dimension_1();
+  size_type num_rows = y.extent(0);
+  size_type num_cols = y.extent(1);
   bool success = true;
 
  for (size_type col = 0; col < num_cols; ++col){

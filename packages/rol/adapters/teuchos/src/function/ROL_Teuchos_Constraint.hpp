@@ -95,7 +95,7 @@ public:
 
   virtual void applyJacobian( SerialDenseVector &jv, const SerialDenseVector &v, 
                               const SerialDenseVector &x, Real &tol ) {
-    TEUCHOS_TEST_FOR_EXCEPTION(true, std::invalid_argument,
+    ROL_TEST_FOR_EXCEPTION(true, std::invalid_argument,
       ">>> ERROR (ROL::TeuchosConstraint): applyJacobian not implemented!");
   }
 
@@ -117,7 +117,7 @@ public:
 
   virtual void applyAdjointJacobian( SerialDenseVector &ajv, const SerialDenseVector &v, 
                                       const SerialDenseVector &x, Real &tol ) {
-    TEUCHOS_TEST_FOR_EXCEPTION(true, std::invalid_argument,
+    ROL_TEST_FOR_EXCEPTION(true, std::invalid_argument,
       ">>> ERROR (ROL::TeuchosConstraint): applyAdjointJacobian not implemented!");
   }
 
@@ -141,7 +141,7 @@ public:
   virtual void applyAdjointHessian( SerialDenseVector &ahuv, const SerialDenseVector &u,
                                     const SerialDenseVector &v, const SerialDenseVector &x,
                                     Real &tol ) {
-    TEUCHOS_TEST_FOR_EXCEPTION(true, std::invalid_argument, 
+    ROL_TEST_FOR_EXCEPTION(true, std::invalid_argument, 
       ">>> ERROR (ROL::TeuchosConstraint) : applyAdjointHessian not implemented!");
   }
 
@@ -167,7 +167,7 @@ public:
   virtual std::vector<Real> solveAugmentedSystem( SerialDenseVector &v1, SerialDenseVector &v2,
                                                   const SerialDenseVector &b1, const SerialDenseVector &b2,
                                                   const SerialDenseVector &x, Real &tol ) {
-    TEUCHOS_TEST_FOR_EXCEPTION(true, std::invalid_argument, 
+    ROL_TEST_FOR_EXCEPTION(true, std::invalid_argument, 
       ">>> ERROR (ROL::TeuchosConstraint) : solveAugmentedSystem not implemented!");
   }
 
@@ -192,7 +192,7 @@ public:
 
   virtual void applyPreconditioner( SerialDenseVector &pv, const SerialDenseVector &v,
                                     const SerialDenseVector &x, const SerialDenseVector &g, Real &tol ) {
-    TEUCHOS_TEST_FOR_EXCEPTION(true, std::invalid_argument, 
+    ROL_TEST_FOR_EXCEPTION(true, std::invalid_argument, 
       ">>> ERROR (ROL::TeuchosConstraint) : applyPreconditioner not implemented!");
   }
 

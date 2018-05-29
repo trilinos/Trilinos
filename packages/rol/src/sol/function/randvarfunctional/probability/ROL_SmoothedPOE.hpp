@@ -105,9 +105,9 @@ public:
     : RandVarFunctional<Real>(),
       threshold_(threshold), eps_(eps) {}
 
-  SmoothedPOE(Teuchos::ParameterList &parlist)
+  SmoothedPOE(ROL::ParameterList &parlist)
     : RandVarFunctional<Real>() {
-    Teuchos::ParameterList &list = parlist.sublist("SOL").sublist("Probability").sublist("Smoothed POE");
+    ROL::ParameterList &list = parlist.sublist("SOL").sublist("Probability").sublist("Smoothed POE");
     threshold_ = list.get<Real>("Threshold");
     eps_       = list.get<Real>("Smoothing Parameter");
   }

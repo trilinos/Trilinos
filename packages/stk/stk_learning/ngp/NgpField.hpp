@@ -143,7 +143,7 @@ private:
 };
 
 
-#ifdef KOKKOS_HAVE_CUDA
+#ifdef KOKKOS_ENABLE_CUDA
 #define ORDER_INDICES(i,j) j,i
 #else
 #define ORDER_INDICES(i,j) i,j
@@ -159,7 +159,7 @@ public:
     StaticField() : rank(stk::topology::NODE_RANK) { }
 
     void construct_view(const std::string& name, unsigned numBuckets, unsigned numPerEntity) {
-#ifdef KOKKOS_HAVE_CUDA
+#ifdef KOKKOS_ENABLE_CUDA
         deviceData = FieldDataType(name, numBuckets, numPerEntity);
 #else
         deviceData = FieldDataType(name, numBuckets, bucketSize, numPerEntity);
@@ -268,14 +268,14 @@ private:
     }
 
     unsigned get_num_components_per_entity() const {
-#ifdef KOKKOS_HAVE_CUDA
+#ifdef KOKKOS_ENABLE_CUDA
         return hostData.dimension_1();
 #else
         return hostData.dimension_2();
 #endif
     }
 
-#ifdef KOKKOS_HAVE_CUDA
+#ifdef KOKKOS_ENABLE_CUDA
     typedef Kokkos::View<T * * [bucketSize], Kokkos::LayoutRight,
                          Kokkos::CudaSpace> FieldDataType;
 #else
@@ -354,7 +354,7 @@ public:
 
 private:
 
-#ifdef KOKKOS_HAVE_CUDA
+#ifdef KOKKOS_ENABLE_CUDA
   typedef Kokkos::View<
       const T * * [bucketSize], Kokkos::LayoutRight, Kokkos::CudaSpace,
       Kokkos::MemoryTraits<Kokkos::RandomAccess>> ConstFieldDataType;
