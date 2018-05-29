@@ -50,7 +50,11 @@ void check( DynamicConstraint<Real>& con,
   auto aJ_uo = con_check.adjointJacobian_uo( *un, *z  );
   auto aJ_un = con_check.adjointJacobian_un( *uo, *z  );
   auto aJ_z  = con_check.adjointJacobian_z(  *uo, *un );
-
+  
+  auto aJ_uol = fix_direction( aJ_uo, *l );
+  auto aJ_unl = fix_direction( aJ_un, *l );
+  auto aJ_zl  = fix_direction( aJ_z,  *l );
+  
   auto iaJ_un = con_check.inverseAdjointJacobian_un( *uo, *z );
 
   // Check uo,un,z Jacobians

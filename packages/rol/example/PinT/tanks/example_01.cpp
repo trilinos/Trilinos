@@ -124,7 +124,7 @@ int main( int argc, char* argv[] ) {
     auto vu_old = u_old->clone( "Old state direction (vu_old)" );
     auto vu     = PartitionedVector::create( { vu_old, vu_new } );
 
-    auto c = u_new->clone( "State residual (c)"              );
+    auto c = u_new->clone( "State residual (c)" );
     auto x = makePtr<Vector_SimOpt>( u,  z  );
     auto v = makePtr<Vector_SimOpt>( vu, vz );
 
@@ -134,39 +134,9 @@ int main( int argc, char* argv[] ) {
       for( size_type j=0; j<ncols; ++j )
         u_old->h(i,j) = h_init;
 
-    ValidateFunction validator( 1, 13, 24, 11, true, *outStream);
-
+    ValidateFunction validator( 1, 13, 20, 11, true, *outStream);
     Tanks::check( *con, *u_bnd, *z_bnd, validator );
-//    auto u_new_bnd = makePtr<Bounds>( u_new_lo, u_new_up );
-//    RandomizeFeasibleVector( *u_new, *u_new_bnd );
-//    RandomizeVector( *c ) ;
-//    RandomizeVector( *v );
-//
-//    auto u_old_bnd = u_new_bnd; 
-//    auto u_bnd = makePtr<Bounds>( u_lo, u_up ); 
-//
-//    auto con_check = (*con);
-//
-//    auto con_up_uo = con_check.update_uo();
-//    auto con_up_un = con_check.update_un();
-//    auto con_up_z  = con_check.update_z();
-//
-//    auto con_val_uo = con_check.value_uo();
-//    auto con_val_un = con_check.value_un();
-//    auto con_val_z  = con_check.value_z();
-//    
-//    auto con_J_uo = con_check.jacobian_uo();
-//    auto con_J_un = con_check.jacobian_un();
-//    auto con_J_z  = con_check.jacobian_z();
-//
-//    auto con_iJ_un = con_check.inverseJacobian_un();
-//
-//    auto con_aJ_uo = con_check.adjointJacobian_uo();
-//    auto con_aJ_un = con_check.adjointJacobian_un();
-//    auto con_aJ_z  = con_check.adjointJacobian_z();
-//  
-//    auto con_iaJ_un = con_check.inverseAdjointJacobian_un();
- 
+
   }
   catch (std::logic_error err) {
     *outStream << err.what() << "\n";
