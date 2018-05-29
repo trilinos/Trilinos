@@ -116,10 +116,10 @@ benchmarkTpetraImport (ArrayView<const GO> srcGlobalElts,
     numVectorCreateTrials < 1 && numImportExecTrials > 0, std::invalid_argument,
     "numVectorCreateTrials must be > 0 if numImportExecTrials > 0.");
 
-  RCP<Time> mapCreateTimer = getTimer ("Tpetra: Map: Create ");
-  RCP<Time> importCreateTimer = getTimer ("Tpetra: Import: Create ");
-  RCP<Time> vectorCreateTimer = getTimer ("Tpetra: Vector: Create ");
-  RCP<Time> importExecTimer = getTimer ("Tpetra: Import: Execute ");
+  RCP<Time> mapCreateTimer = getTimer ("Tpetra: Map: Create");
+  RCP<Time> importCreateTimer = getTimer ("Tpetra: Import: Create");
+  RCP<Time> vectorCreateTimer = getTimer ("Tpetra: Vector: Create");
+  RCP<Time> importExecTimer = getTimer ("Tpetra: Import: Execute");
 
   RCP<map_type> srcMap, destMap;
   {

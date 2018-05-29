@@ -89,7 +89,7 @@ using Teuchos::RCP;
 using Teuchos::rcp;
 using Teuchos::TimeMonitor;
 
-extern bool isMMdump;
+extern bool isMMOverride;
 
 
 // =========================================================================
@@ -389,7 +389,7 @@ void TestTransfer(Teuchos::RCP<Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,
     import_type NaiveImport(Pview.importMatrix->getColMap(),Pu->getDomainMap());
     tm=Teuchos::null;
     Au->getComm()->barrier();
-    ::isMMdump = true;
+
 #endif // defined(HAVE_MUELU_TPETRA)
   }
   else if (lib == Xpetra::UseEpetra) {
@@ -397,8 +397,6 @@ void TestTransfer(Teuchos::RCP<Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,
     RCP<const Epetra_CrsMatrix> Au = Utilities::Op2EpetraCrs(A);
     RCP<const Epetra_CrsMatrix> Pu = Utilities::Op2EpetraCrs(P);
     if(Au->Comm().NumProc()==1) return;
-
-    ::isMMdump = false;
 
     // ==================
     // Optimized Transfer
@@ -428,12 +426,9 @@ void TestTransfer(Teuchos::RCP<Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,
     // Naive Transfer
     // ==================
     // Use the columnmap from Aopt and build an importer ex nihilo
-    ::isMMdump = true;
     tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("NaiveTransfer: BuildImport")));
     const Epetra_Map &NaiveColMap = Aopt->ColMap();
     Epetra_Import NaiveImport(NaiveColMap,Pu->DomainMap());
-
-    ::isMMdump = false;
 
     tm=Teuchos::null;
     Au->Comm().Barrier();
@@ -757,5 +752,10 @@ int main_(Teuchos::CommandLineProcessor &clp,  Xpetra::UnderlyingLib &lib, int a
 #include "MueLu_Test_ETI.hpp"
 
 int main(int argc, char *argv[]) {
-  return Automatic_Test_ETI(argc,argv);
+
+    char * foo =           std::getenv("ISMMOVER");
+    if(foo == nullptr) ::isMMOverride = false;
+    else ::isMMOverride = true;
+    
+    return Automatic_Test_ETI(argc,argv);
 }

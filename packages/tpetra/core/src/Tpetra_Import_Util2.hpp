@@ -309,6 +309,320 @@ bool sort_PID_then_pair_GID_LID(const std::pair<PID, std::pair< GlobalOrdinal, L
 //       relayedGIDs.push_back(std::make_tuple (ProcsFrom[i],rp,gid));
 //     }
 //  }
+// template<typename Scalar,
+//          typename LocalOrdinal,
+//          typename GlobalOrdinal,
+//          typename Node>
+// void
+// rev_ND(const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>  & SourceMatrix,
+//        const Tpetra::Details::Transfer<LocalOrdinal,GlobalOrdinal,Node>& rowTransfer,
+//        bool reverseMode,                  
+//        Teuchos::ArrayView<const GlobalOrdinal> tgtRemoteGIDs,
+//        Teuchos::RCP<const Tpetra::Import<LocalOrdinal,GlobalOrdinal,Node> > MyImporter,
+//        Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > MyDomainMap,
+//        Teuchos::Array<int>& reversePIDs,
+//        Teuchos::Array<LocalOrdinal>& reverseLIDs,
+//        Teuchos::Array<GlobalOrdinal>& reverseGIDs,
+//        Teuchos::Array<std::pair<int,GlobalOrdinal> > & fromRemoteGID)
+
+// {
+//  // need to bring in the target row map, as I don't want to replicate the logic for forward/reverse
+//   // and reduced rowMap that is in the exportAndFillComplete routine.
+
+//   std::string pfx = std::string(" Import_Util2::rev_ND::");
+
+//   typedef LocalOrdinal LO;
+//   typedef GlobalOrdinal GO;
+//   typedef std::pair<int,GlobalOrdinal> pidgidpair_t;
+//   using Teuchos::RCP;
+
+//   auto const comm             = MyDomainMap->getComm();
+//   const int MyPID             = comm->getRank ();
+
+//   // Things related to messages I am sending in forward mode (RowTransfer)
+//   // *** Note: this will be incorrect for transferAndFillComplete if it is in reverse mode. FIXME cbl.
+//   auto ExportPIDs                 = rowTransfer.getExportPIDs();
+//   auto ExportLIDs                 = rowTransfer.getExportLIDs();
+//   // ArrayView<const LO> ExportLIDs = reverseMode ?
+//   //    rowTransfer.getRemoteLIDs () : rowTransfer.getExportLIDs ();
+//   auto const NumExportLIDs              = rowTransfer.getNumExportIDs();
+
+  
+//   TEUCHOS_TEST_FOR_EXCEPTION(MyImporter.is_null(),
+// 			     std::logic_error, 
+// 			     "Tpetra::reverseNeighborDiscovery "
+// 			     "Neighbor Discovery Should not be called with null Importer");
+
+//   Distributor & Distor            = MyImporter->getDistributor();
+//   auto const NumRecvs                   = Distor.getNumReceives();
+//   auto const NumSends                   = Distor.getNumSends();
+//   auto RemoteLIDs                 = MyImporter->getRemoteLIDs();
+//   Teuchos::ArrayView<const int> ProcsFrom       = Distor.getProcsFrom();
+//   Teuchos::ArrayView<const int>ProcsTo          = Distor.getProcsTo();
+//   Teuchos::ArrayView<const int> LengthsFrom     = Distor.getLengthsFrom();
+
+// //  if(ExportLIDs.is_null() || ExportPIDs.is_null())  return;
+  
+//   auto MyColMap                   = SourceMatrix.getColMap();
+//   const size_t numCols            = MyColMap->getNodeNumElements ();
+//   RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > target = MyImporter->getTargetMap();
+
+//   // ProcsFrom[RemotePIDs[i]] is the proc that owns RemoteLIDs[j]....
+//   Teuchos::Array<int> RemotePIDOrder(numCols,-1);
+
+//   // For each remote ID, record index into ProcsFrom, who owns it.
+//   for(uint i=0,j=0;i<NumRecvs;i++){
+//     for(uint k=0;k<LengthsFrom[i];k++){
+//       int pid=ProcsFrom[i];
+//       if(pid!=MyPID ) RemotePIDOrder[RemoteLIDs[j]]=i;
+//       j++;
+//     }
+//   }
+
+//   // Step One: Start tacking the (GID,PID) pairs on the std sets
+//   //
+//   // For each index in ProcsFrom, we will insert into a set of (PID,
+//   // GID) pairs, in order to build a list of such pairs for each of
+//   // those processes.  Since this is building a reverse, we will send
+//   // to these processes.
+//   std::vector<std::vector<pidgidpair_t> > ReversePGIDs(NumRecvs); // needs to be size of ProcsFrom
+//   for(auto & v : ReversePGIDs) v.reserve(NumExportLIDs);
+
+//   Teuchos::ArrayRCP<const size_t> rowptr;
+//   Teuchos::ArrayRCP<const LO> colind;
+//   Teuchos::ArrayRCP<const Scalar> vals;
+
+//   SourceMatrix.getAllValues(rowptr,colind,vals);  // is there a more efficient way to get just rowptr?
+
+//   // Loop over each exported row and add to the temp list
+//   for(size_t i=0; i < NumExportLIDs; i++) {
+//     LO lid = ExportLIDs[i];
+//     GO exp_pid = ExportPIDs[i];
+//     for(auto j=rowptr[lid]; j<rowptr[lid+1]; j++){
+//       int pid_order = RemotePIDOrder[colind[j]];
+//       if(pid_order!=-1) {
+//         GO gid = MyColMap->getGlobalElement(colind[j]);  //Epetra SM.GCID46 =>sm->graph-> {colmap(colind)}
+//         ReversePGIDs[pid_order].push_back(pidgidpair_t(exp_pid,gid));
+//       }
+//     }
+//   }
+  
+//   // Step 2: Count sizes
+//   Teuchos::Array<std::pair<size_t,size_t>> ReverseSendSizes(NumRecvs);
+//   for(size_t j = 0; j<ReversePGIDs.size(); ++j) {
+//     ReverseSendSizes[j].first = ReversePGIDs[j].size();
+//     ReverseSendSizes[j].second = tgtRemoteGIDs.size();
+//   }
+
+// // *** edits stop here: the send/receive buffer need to have <pid,gid> then just <gid> to save space(?)
+
+//   // Step 3: Alloc and fill the send buffer
+//   Teuchos::Array<Teuchos::Array<pidgidpair_t > > ReverseSendBuffer(NumRecvs);
+//   Teuchos::Array<Teuchos::Array<pidgidpair_t > > ReverseRecvBuffer(NumSends);
+
+//   for(uint i=0;i<NumRecvs;++i)
+//     ReverseSendBuffer[i].reserve(ReverseSendSizes[i].first + ReverseSendSizes[i].second); 
+
+//   uint pididx=0;
+//   for(auto&& vecofPairs : ReversePGIDs) {
+//     if( pididx >= NumRecvs) {
+//       std::cerr<<"  size missmatch in Import_Util::reverseNeighborDiscovery "<<std::endl;
+//       MPI_Abort (MPI_COMM_WORLD, -1);
+//     }
+//     for(auto&& pidGidPair : vecofPairs) {
+//       ReverseSendBuffer[pididx].push_back(pidGidPair);
+//     }
+//     // now tack on tgtRemoteGIDs: Note it would be more space efficient to omit MyPID, and just pack the tgtRemoteGIDs
+//     for(auto&& remGID : tgtRemoteGIDs) {
+//       ReverseSendBuffer[pididx].push_back(pidgidpair_t(MyPID,remGID));
+//     }
+//     pididx++;
+//   }
+
+//   Teuchos::Array<std::pair<size_t,size_t>> ReverseRecvSizes(NumSends);
+//   Teuchos::ArrayView<const std::pair<size_t,size_t> > RSS = ReverseSendSizes; // for const ness
+
+//   Teuchos::Array<Teuchos::RCP<Teuchos::CommRequest<int> > > mpireq;
+//   Teuchos::Array<Teuchos::RCP<Teuchos::CommRequest<int> > > mpisend;
+//   RCP<Teuchos::CommRequest<int> > recvRequest;
+//   RCP<Teuchos::CommRequest<int> > sendRequest;
+//   for(int i=0;i<ProcsTo.size();++i) {
+//     recvRequest = Teuchos::ireceive<int,std::pair<size_t,size_t> >(*comm,Teuchos::rcp(&ReverseRecvSizes[i],false),ProcsTo[i]);
+//     mpireq.push_back(recvRequest);
+
+//   }
+//   for(int i=0;i<ProcsFrom.size();++i) { 
+//     sendRequest = Teuchos::isend<int,std::pair<size_t,size_t> >(*comm,Teuchos::rcp(&ReverseSendSizes[i],false),ProcsFrom[i]);
+//     mpisend.push_back(sendRequest);
+//   }
+//   Teuchos::waitAll(*comm,mpireq());
+
+// // debug only 
+//   // for(int i=0;i<ProcsTo.size();++i) {
+//   //     if(MyPID<4) std::cerr<<MyPID<<" from "<<ProcsTo[i]<<" sizes "<<ReverseRecvSizes[i].first<<" "<<ReverseRecvSizes[i].second<<std::endl;
+//   // }
+// //
+
+//   for(uint i=0;i<NumSends;++i)
+//     ReverseRecvBuffer[i].resize(ReverseRecvSizes[i].first+ReverseRecvSizes[i].second,pidgidpair_t(-9999,-8888));
+
+//   mpireq.clear();
+//   mpisend.clear();
+
+//   Teuchos::Array<MPI_Request> rawRreq(ProcsTo.size(), MPI_REQUEST_NULL);
+//   Teuchos::Array<MPI_Request> rawSreq(ProcsFrom.size(), MPI_REQUEST_NULL);
+
+//   MPI_Comm rawComm = getRawMpiComm(*comm);
+
+//   for(int i=0;i<ProcsTo.size();++i) {
+//     char * myrecv  = (char *) (&ReverseRecvBuffer[i])->getRawPtr();
+//     MPI_Request rawRequest = MPI_REQUEST_NULL;
+//     MPI_Irecv(const_cast<char*>(myrecv),
+//               ReverseRecvBuffer[i].size()*sizeof(pidgidpair_t),
+//               MPI_CHAR,
+//               ProcsTo[i],
+//               0,
+//               rawComm,
+//               &rawRequest);
+//     rawRreq[i]=rawRequest;
+//   }
+//   for(int i=0;i<ProcsFrom.size();++i) { 
+//     char * mysend =  (char *)(&ReverseSendBuffer[i])->getRawPtr();
+//     MPI_Request rawRequest = MPI_REQUEST_NULL;
+
+//     if(ReverseSendBuffer[i].size()!=ReverseSendSizes[i].first + ReverseSendSizes[i].second)
+//     {
+//      std::ostringstream os;
+//      os << "reverseNeighborDiscovery Send of ReverseSendBuffer["<<i<<"] size missmatch "<< " buff.size() "<<ReverseSendBuffer[i].size()<<" != first+second: "<<ReverseSendSizes[i].first<<"  + "<<ReverseSendSizes[i].second<<std::endl;
+//      std::cerr<<os.str()<<std::flush;
+//      MPI_Abort (MPI_COMM_WORLD, -1);
+//     } 
+
+
+//     MPI_Isend(mysend,
+//               sizeof(pidgidpair_t)*(ReverseSendSizes[i].first + ReverseSendSizes[i].second),
+//               MPI_CHAR,
+//               ProcsFrom[i],
+//               0,
+//               rawComm,
+//               &rawRequest);
+//     rawSreq[i]=rawRequest;
+//   }
+
+//   Teuchos::Array<MPI_Status> rawRstatus(rawRreq.size());
+
+//   const int err = MPI_Waitall (rawRreq.size(), rawRreq.getRawPtr(),
+//                                rawRstatus.getRawPtr());
+//   if(err) {
+//      std::ostringstream os;
+//      os << "reverseNeighborDiscovery Mpi_Waitall error on receive ";
+//      os<<std::endl;
+//      std::cerr<<os.str()<<std::flush;
+//      assert(false);
+//      MPI_Abort (MPI_COMM_WORLD, -1);
+//   }
+
+//   size_t totalexportpairrecsize = 0;
+//   for(size_t i = 0; i < (size_t)ReverseRecvSizes.size(); i++) {
+//     totalexportpairrecsize += ReverseRecvSizes[i].first;
+//     if(ReverseRecvSizes[i].first<0) {
+// 	std::ostringstream os;
+// 	os << MyPID << "reverseNeighborDiscovery: got a -1 for receive size "<<std::endl;
+// 	std::cerr<<os.str()<<std::flush;
+// 	assert(false);
+// 	MPI_Abort (MPI_COMM_WORLD, -1);
+//     }
+//   }
+
+//   // Sort RecvBuffer first by PID, then by GID.
+//   Teuchos::Array<pidgidpair_t > AllReverseRecv;
+//   AllReverseRecv.reserve(totalexportpairrecsize);
+  
+//   size_t totalforeignremotesize =0;
+//   for(auto &&p : ReverseRecvSizes) {
+//       totalforeignremotesize+=p.second;
+//       if(p.second<0) {
+// 	  std::ostringstream os;
+// 	  os << MyPID << "reverseNeighborDiscovery: got a -1 for foreignremote receive size "<<std::endl;
+// 	  std::cerr<<os.str()<<std::flush;
+// 	  assert(false);
+// 	  MPI_Abort (MPI_COMM_WORLD, -1);
+//       }
+//   }
+
+//   fromRemoteGID.clear();
+//   fromRemoteGID.reserve(totalforeignremotesize);
+
+//   for(uint i=0;i<ReverseRecvBuffer.size();++i) {
+//     // for(size_t s = 0; s< ReverseRecvSizes[i].first ; ++s) // first reverse export pairs
+//     // 	AllReverseRecv.push_back(ReverseRecvBuffer[i][s]);
+      
+//       AllReverseRecv.insert(AllReverseRecv.begin(),
+// 			    ReverseRecvBuffer[i].begin(),
+// 			    ReverseRecvBuffer[i].begin()+ReverseRecvSizes[i].first);
+//       // this should work, test the below loop for debug. 
+//       // fromRemoteGID.insert(fromRemoteGID.begin(), 
+//       // 			   ReverseRecvBuffer[i].begin()+ReverseRecvSizes[i].first,
+//       // 			   ReverseRecvBuffer[i].end());
+
+//     for(size_t s=ReverseRecvSizes[i].first ; s<ReverseRecvSizes[i].first+ReverseRecvSizes[i].second; ++s) { 
+//     	fromRemoteGID.push_back(ReverseRecvBuffer[i][s]);
+
+//     	if(ReverseRecvBuffer[i][s].first != ProcsTo[i]) {  
+//     	    std::ostringstream os; 
+//     	    os <<MyPID<<" rev_ND::error in unpack RecvBuffPID "<<ReverseRecvBuffer[i][s].first<<" from "<<ProcsTo[i]<<" for buff index "<<i<<" of "<<ReverseRecvBuffer.size()<< std::endl;
+//     	    std::cerr<<os.str()<<std::flush;    
+// 	    assert(false);
+//     	    MPI_Abort (MPI_COMM_WORLD, -1);
+//     	}
+//     }
+//   }
+
+//   if(AllReverseRecv.size() !=totalexportpairrecsize) {
+//       std::ostringstream os; 
+//       os <<MyPID<<" rev_ND::error in unpack RecvBuffPID AllReverseRecv.size!=totalexportpairrecsize "<<AllReverseRecv.size()<<" vs "<<totalexportpairrecsize<<std::endl;
+//         std::cerr<<os.str()<<std::flush;    
+//         MPI_Abort (MPI_COMM_WORLD, -1);
+//   }
+  
+//   if(fromRemoteGID.size() !=totalforeignremotesize) {
+//       std::ostringstream os; 
+//       os <<MyPID<<" rev_ND::error in unpack RecvBuffPID fromRemoteGID.size!=totalforeignremotesize "<<fromRemoteGID.size()<<" vs "<<totalforeignremotesize<<std::endl;
+//         std::cerr<<os.str()<<std::flush;    
+//         MPI_Abort (MPI_COMM_WORLD, -1);
+//   }
+  
+
+//   std::sort(AllReverseRecv.begin(), AllReverseRecv.end(), Tpetra::Import_Util::sort_PID_then_GID<int, GlobalOrdinal>);
+// //  std::sort(AllReverseRecv.begin(), AllReverseRecv.end());
+//   auto newEndOfPairs = std::unique(AllReverseRecv.begin(), AllReverseRecv.end());
+//   AllReverseRecv.resize( std::distance(AllReverseRecv.begin(),newEndOfPairs) );
+//   reversePIDs.clear();
+//   reverseLIDs.clear();
+//   reverseGIDs.clear();
+  
+//   reversePIDs.reserve(AllReverseRecv.size());
+//   reverseLIDs.reserve(AllReverseRecv.size());
+//   reverseGIDs.reserve(AllReverseRecv.size());
+
+//   for(auto && pgPair : AllReverseRecv) {
+//     if((int)pgPair.first != MyPID) {
+//       // if this pair is not found in fromRemoteGID, it's bogus, skip it. 
+//       // if(std::find(fromRemoteGID.begin(),fromRemoteGID.end(),pgPair) == fromRemoteGID.end()) 
+//       //   {
+//       //     std::ostringstream os;
+//       //     os<<MyPID<<"  RND not found "<<pgPair.first<<" "<<pgPair.second<<std::endl;
+//       //     std::cerr<<os.str()<<std::flush;
+//       //     continue;
+//       //   }
+//       reversePIDs.push_back((int)pgPair.first);
+//       reverseGIDs.push_back(pgPair.second);
+//       LocalOrdinal lid = MyDomainMap->getLocalElement(pgPair.second);
+//       reverseLIDs.push_back(lid);
+//     }
+//   }
+// }
+
 
 
 template<typename Scalar,
@@ -332,6 +646,9 @@ reverseNeighborDiscovery(const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, No
 
   std::string pfx = std::string(" Import_Util2::pAPRC:: ");
 
+  std::ostringstream errstr;
+  bool error = false; 
+
   typedef LocalOrdinal LO;
   typedef GlobalOrdinal GO;
   typedef std::pair<int,GlobalOrdinal> pidgidpair_t;
@@ -346,28 +663,22 @@ reverseNeighborDiscovery(const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, No
   auto ExportLIDs                 = RowTransfer.getExportLIDs();
   auto NumExportLIDs              = RowTransfer.getNumExportIDs();
 
-  // Things related to messages I am sending in reverse mode (MyImporter)
-  if(MyImporter.is_null()) {
-    std::cerr<<MyPID<<" reverseNeighborDiscovery MyImporter is null, skipping "<<std::endl<<std::flush;
-    return;
-  }
-  Distributor & Distor            = MyImporter->getDistributor();
-  // Distributor & Distor            = RowTransfer.getDistributor();
   
+  TEUCHOS_TEST_FOR_EXCEPTION(MyImporter.is_null(),
+			     std::logic_error, 
+			     "Tpetra::reverseNeighborDiscovery "
+			     "Neighbor Discovery Should not be called with null Importer");
+
+  Distributor & Distor            = MyImporter->getDistributor();
   auto NumRecvs                   = Distor.getNumReceives();
   auto NumSends                   = Distor.getNumSends();
   auto RemoteLIDs                 = MyImporter->getRemoteLIDs();
   Teuchos::ArrayView<const int> ProcsFrom       = Distor.getProcsFrom();
   auto const ProcsTo              = Distor.getProcsTo();
   auto LengthsFrom                = Distor.getLengthsFrom();
-
-  if(ExportLIDs.is_null() || ExportPIDs.is_null())  return;
-  
-
   auto MyColMap                   = SourceMatrix.getColMap();
   const size_t numCols            = MyColMap->getNodeNumElements ();
   RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > target = MyImporter->getTargetMap();
-  //RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > target = RowTransfer.getTargetMap();
 
   // Get the owning pids in a special way,
   // s.t. ProcsFrom[RemotePIDs[i]] is the proc that owns RemoteLIDs[j]....
@@ -398,6 +709,7 @@ reverseNeighborDiscovery(const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, No
   SourceMatrix.getAllValues(rowptr,colind,vals);  // is there a more efficient way to get just rowptr?
 
   // Loop over each exported row and add to the temp list
+  // note that if NumExportLIDs is 0, ExportLIDs.is_null()==true
   for(size_t i=0; i < NumExportLIDs; i++) {
     LO lid = ExportLIDs[i];
     GO exp_pid = ExportPIDs[i];
@@ -411,25 +723,24 @@ reverseNeighborDiscovery(const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, No
   }
   
   // Step 2: Count sizes
-  Teuchos::Array<std::pair<size_t,size_t>> ReverseSendSizes(NumRecvs);
-  size_t totalcount=0;
+  Teuchos::Array<std::pair<int,int>> ReverseSendSizes(NumRecvs);
   for(size_t j = 0; j<ReversePGIDs.size(); ++j) {
     ReverseSendSizes[j].first = ReversePGIDs[j].size();
     ReverseSendSizes[j].second = tgtRemoteGIDs.size();
-    totalcount += ReverseSendSizes[j].first + ReverseSendSizes[j].second;
   }
 
   // Step 3: Alloc and fill the send buffer
   Teuchos::Array<Teuchos::Array<pidgidpair_t > > ReverseSendBuffer(NumRecvs);
   Teuchos::Array<Teuchos::Array<pidgidpair_t > > ReverseRecvBuffer(NumSends);
+
   for(uint i=0;i<NumRecvs;++i)
-    ReverseSendBuffer[i].reserve(ReverseSendSizes[i].first + ReverseSendSizes[i].second); // send remoteGID's to everyone
+    ReverseSendBuffer[i].reserve(ReverseSendSizes[i].first + ReverseSendSizes[i].second); 
 
   uint pididx=0;
   for(auto&& vecofPairs : ReversePGIDs) {
     if( pididx >= NumRecvs) {
-      std::cerr<<"  size missmatch in Import_Util::reverseNeighborDiscovery "<<std::endl;
-      MPI_Abort (MPI_COMM_WORLD, -1);
+      errstr<<" E1 size missmatch in Import_Util::reverseNeighborDiscovery "<<std::endl;
+      error = true;
     }
     for(auto&& pidGidPair : vecofPairs) {
       ReverseSendBuffer[pididx].push_back(pidGidPair);
@@ -441,42 +752,40 @@ reverseNeighborDiscovery(const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, No
     pididx++;
   }
 
-  Teuchos::Array<std::pair<size_t,size_t>> ReverseRecvSizes(NumSends);
-  Teuchos::ArrayView<const std::pair<size_t,size_t> > RSS = ReverseSendSizes; // for const ness
+  Teuchos::Array<std::pair<int,int>> ReverseRecvSizes(NumSends);
+  for(int i=0;i<NumSends;++i) ReverseRecvSizes[i] = std::pair<int,int>(-1,-1);
 
   Teuchos::Array<Teuchos::RCP<Teuchos::CommRequest<int> > > mpireq;
   Teuchos::Array<Teuchos::RCP<Teuchos::CommRequest<int> > > mpisend;
   RCP<Teuchos::CommRequest<int> > recvRequest;
   RCP<Teuchos::CommRequest<int> > sendRequest;
   for(int i=0;i<ProcsTo.size();++i) {
-    recvRequest = Teuchos::ireceive<int,std::pair<size_t,size_t> >(*comm,Teuchos::rcp(&ReverseRecvSizes[i],false),ProcsTo[i]);
+    recvRequest = Teuchos::ireceive<int,std::pair<int,int> >(*comm,Teuchos::rcp(&ReverseRecvSizes[i],false),ProcsTo[i]);
     mpireq.push_back(recvRequest);
+
   }
   for(int i=0;i<ProcsFrom.size();++i) { 
-    sendRequest = Teuchos::isend<int,std::pair<size_t,size_t> >(*comm,Teuchos::rcp(&ReverseSendSizes[i],false),ProcsFrom[i]);
+    sendRequest = Teuchos::isend<int,std::pair<int,int> >(*comm,Teuchos::rcp(&ReverseSendSizes[i],false),ProcsFrom[i]);
     mpisend.push_back(sendRequest);
   }
+
   Teuchos::waitAll(*comm,mpireq());
+ 
   size_t totalexportpairrecsize = 0;
-  bool any_receive_size_is_minus_one = false;
   for(size_t i = 0; i < (size_t)ReverseRecvSizes.size(); i++) {
-    if(ReverseRecvSizes[i].first>=0) { // individual size could be -1 as flag
-      totalexportpairrecsize += ReverseRecvSizes[i].first;
-      //  do not add this,       totalexportpairrecsize += ReverseRecvSizes[i].second;
+    totalexportpairrecsize += ReverseRecvSizes[i].first;
+    if(ReverseRecvSizes[i].first<0) {
+	errstr << MyPID << "E4 reverseNeighborDiscovery: got a -1 for receive size "<<std::endl;
+	error=true;
     }
-    else {
-      any_receive_size_is_minus_one = true;
+     if(ReverseRecvSizes[i].second<0) {
+	errstr << MyPID << "E4.1 reverseNeighborDiscovery: got a -1 for receive size "<<std::endl;
+	error=true;
     }
-  }
-  if(any_receive_size_is_minus_one) {
-     std::ostringstream os;
-     os << MyPID << "reverseNeighborDiscovery: got a -1 for receive size "<<std::endl;
-     std::cerr<<os.str()<<std::flush;
-     MPI_Abort (MPI_COMM_WORLD, -1);
   }
 
   for(uint i=0;i<NumSends;++i)
-    ReverseRecvBuffer[i].resize(ReverseRecvSizes[i].first+ReverseRecvSizes[i].second,pidgidpair_t(0,0));
+    ReverseRecvBuffer[i].resize(ReverseRecvSizes[i].first+ReverseRecvSizes[i].second,pidgidpair_t(-9999,-8888));
 
   mpireq.clear();
   mpisend.clear();
@@ -501,8 +810,18 @@ reverseNeighborDiscovery(const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, No
   for(int i=0;i<ProcsFrom.size();++i) { 
     char * mysend =  (char *)(&ReverseSendBuffer[i])->getRawPtr();
     MPI_Request rawRequest = MPI_REQUEST_NULL;
+
+    if(ReverseSendBuffer[i].size()!=ReverseSendSizes[i].first + ReverseSendSizes[i].second)
+    {
+     errstr << "E2 reverseNeighborDiscovery Send of ReverseSendBuffer["<<i<<"] size missmatch "<< " buff.size() "<<ReverseSendBuffer[i].size()<<" != first+second: "<<ReverseSendSizes[i].first<<"  + "<<ReverseSendSizes[i].second<<std::endl;
+     error=true;
+     std::cerr<<errstr.str()<<std::flush;
+     std::cerr<<std::flush<<std::flush;
+    } 
+
+
     MPI_Isend(mysend,
-              sizeof(pidgidpair_t)*(ReverseSendSizes[i].first + ReverseSendSizes[i].second),
+              ReverseSendBuffer[i].size()*sizeof(pidgidpair_t),
               MPI_CHAR,
               ProcsFrom[i],
               0,
@@ -516,41 +835,85 @@ reverseNeighborDiscovery(const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, No
   const int err = MPI_Waitall (rawRreq.size(), rawRreq.getRawPtr(),
                                rawRstatus.getRawPtr());
   if(err) {
-     std::ostringstream os;
-     os << "reverseNeighborDiscovery Mpi_Waitall error on receive ";
-     os<<std::endl;
-     std::cerr<<os.str()<<std::flush;
-     MPI_Abort (MPI_COMM_WORLD, -1);
+      errstr <<MyPID<< "E3 reverseNeighborDiscovery Mpi_Waitall error on receive ";
+     error=true;
+  }
+
+  const int comsize = comm->getSize();
+  // DEBUG ONLY 
+  bool badpid = false;
+  for(int i=0;i<ProcsTo.size();++i) {
+
+      int pos =0;
+      for( auto && p : ReverseRecvBuffer[i]) {
+
+	  if(p.first < 0 || p.first > comsize ) {
+
+	      errstr<<MyPID<<" received from "<<ProcsTo[i]<<" a bad pid of "<<p.first<< " pos = "<<pos<<" into reverse buffer, with sizes "<< ReverseRecvSizes[i].first<<" "<<ReverseRecvSizes[i].second<<std::endl;
+	      badpid = true;
+	  }
+	  pos++;
+      }
+  }
+
+  if(badpid) {
+      std::cerr<<errstr.str()<<std::flush;
+      comm->barrier();
+      comm->barrier();
+      comm->barrier();
+      MPI_Abort (MPI_COMM_WORLD, -1);
   }
 
   // Sort RecvBuffer first by PID, then by GID.
-
   Teuchos::Array<pidgidpair_t > AllReverseRecv;
   AllReverseRecv.reserve(totalexportpairrecsize);
   
-  size_t totalforeignremote =0;
-  for(auto &&p : ReverseRecvSizes) totalforeignremote+=p.second;
-  
+  size_t totalforeignremotesize =0;
+  for(auto &&p : ReverseRecvSizes) {
+      totalforeignremotesize+=p.second;
+      if(p.second<0) {
+	  errstr<< MyPID << "E5 reverseNeighborDiscovery: got a -1 for foreignremote receive size "<<std::endl;
+	  error=true;
+      }
+  }
+
   fromRemoteGID.clear();
-  fromRemoteGID.reserve(totalforeignremote);
+  fromRemoteGID.reserve(totalforeignremotesize);
 
   for(uint i=0;i<ReverseRecvBuffer.size();++i) {
-    size_t s=0;
-    for(; s< ReverseRecvSizes[i].first ; ++s) // first reverse export pairs
-      AllReverseRecv.push_back(ReverseRecvBuffer[i][s]);
-    for( ; s<ReverseRecvSizes[i].first+ReverseRecvSizes[i].second; ++s) { // then save the foreign remote GIDS
-      fromRemoteGID.push_back(ReverseRecvBuffer[i][s]);
-      if(ReverseRecvBuffer[i][s].first != ProcsTo[i]) {  
-        std::ostringstream os; 
-        os <<" error in unpack "<<std::endl;
-        std::cerr<<os.str()<<std::flush;    
-        MPI_Abort (MPI_COMM_WORLD, -1);
-      }
+    // AllReverseRecv.insert( AllReverseRecv.end(),
+    // 			   ReverseRecvBuffer[i].begin(),
+    // 			   ReverseRecvBuffer[i].begin()+ReverseRecvSizes[i].first);
+//    s = ReverseRecvSizes[i].first;
+    for(size_t s = 0; s< ReverseRecvSizes[i].first ; ++s) // first reverse export pairs
+	AllReverseRecv.push_back(ReverseRecvBuffer[i][s]);
+
+//    if(MyPID<4) std::cerr<<MyPID<<" after i="<<i<<"  ARR.size() "<<AllReverseRecv.size()<<std::endl;
+
+    for(size_t s=ReverseRecvSizes[i].first ; s<ReverseRecvSizes[i].first+ReverseRecvSizes[i].second; ++s) { 
+	fromRemoteGID.push_back(ReverseRecvBuffer[i][s]);
+
+	if(ReverseRecvBuffer[i][s].first != ProcsTo[i]) {  
+	    errstr <<MyPID<<"E6 error in unpack RecvBuffPID "<<ReverseRecvBuffer[i][s].first<<" from "<<ProcsTo[i]<<" for buff index "<<i<<" of "<<ReverseRecvBuffer.size()<< std::endl;
+	    error=true;
+	}
+
     }
   }
 
-  // this custom sorter is unneeded, as std has a default pair sorter that sorts on .first then .second for any atomic types. 
+  if(AllReverseRecv.size() !=totalexportpairrecsize) {
+      errstr <<MyPID<<"E7 error in unpack RecvBuffPID AllReverseRecv.size!=totalexportpairrecsize "<<AllReverseRecv.size()<<" vs "<<totalexportpairrecsize<<std::endl;
+      error=true;
+  }
+  
+  if(fromRemoteGID.size() !=totalforeignremotesize) {
+     errstr <<MyPID<<"E8 error in unpack RecvBuffPID fromRemoteGID.size!=totalforeignremotesize "<<fromRemoteGID.size()<<" vs "<<totalforeignremotesize<<std::endl;
+     error=true;
+  }
+  
+
   std::sort(AllReverseRecv.begin(), AllReverseRecv.end(), Tpetra::Import_Util::sort_PID_then_GID<int, GlobalOrdinal>);
+//  std::sort(AllReverseRecv.begin(), AllReverseRecv.end());
   auto newEndOfPairs = std::unique(AllReverseRecv.begin(), AllReverseRecv.end());
   AllReverseRecv.resize( std::distance(AllReverseRecv.begin(),newEndOfPairs) );
   reversePIDs.clear();
@@ -578,6 +941,14 @@ reverseNeighborDiscovery(const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, No
       LocalOrdinal lid = MyDomainMap->getLocalElement(pgPair.second);
       reverseLIDs.push_back(lid);
     }
+  }
+
+  if(error){
+      std::cerr<<errstr.str()<<std::flush;
+      comm->barrier();
+      comm->barrier();
+      comm->barrier();
+      MPI_Abort (MPI_COMM_WORLD, -1);
   }
 }
 
