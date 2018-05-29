@@ -849,7 +849,7 @@ namespace Tpetra {
     Teuchos::RCP<node_type> getNode() const;
 
     //! Returns the Map that describes the row distribution in this graph.
-    Teuchos::RCP<const map_type> getRowMap () const;
+    Teuchos::RCP<const map_type> getRowMap () const override;
 
     //! \brief Returns the Map that describes the column distribution in this graph.
     Teuchos::RCP<const map_type> getColMap () const;
@@ -869,7 +869,7 @@ namespace Tpetra {
     //! Returns the number of global rows in the graph.
     /** Undefined if isFillActive().
      */
-    global_size_t getGlobalNumRows() const;
+    global_size_t getGlobalNumRows() const override;
 
     //! \brief Returns the number of global columns in the graph.
     /** Returns the number of entries in the domain map of the matrix.
@@ -883,7 +883,7 @@ namespace Tpetra {
     //! Returns the number of columns connected to the locally owned rows of this graph.
     /** Throws std::runtime_error if <tt>hasColMap() == false</tt>
      */
-    size_t getNodeNumCols() const;
+    size_t getNodeNumCols() const override;
 
     //! Returns the index base for global indices for this graph.
     GlobalOrdinal getIndexBase() const;
@@ -891,7 +891,7 @@ namespace Tpetra {
     //! Returns the global number of entries in the graph.
     /** Undefined if isFillActive().
      */
-    global_size_t getGlobalNumEntries() const;
+    global_size_t getGlobalNumEntries() const override;
 
     /// \brief The local number of entries in the graph.
     ///
@@ -1034,7 +1034,7 @@ namespace Tpetra {
     ///
     /// The latter is mainly useful for a graph associated with a
     /// CrsMatrix.
-    bool hasColMap () const;
+    bool hasColMap () const override;
 
     /// \brief DO NOT CALL THIS METHOD; THIS IS NOT FOR USERS.
     ///
@@ -1197,7 +1197,7 @@ namespace Tpetra {
     copyAndPermute (const SrcDistObject& source,
                     size_t numSameIDs,
                     const Teuchos::ArrayView<const LocalOrdinal> &permuteToLIDs,
-                    const Teuchos::ArrayView<const LocalOrdinal> &permuteFromLIDs);
+                    const Teuchos::ArrayView<const LocalOrdinal> &permuteFromLIDs) override;
 
     virtual void
     packAndPrepare (const SrcDistObject& source,
