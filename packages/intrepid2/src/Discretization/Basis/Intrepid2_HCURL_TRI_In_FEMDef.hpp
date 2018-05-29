@@ -178,7 +178,6 @@ namespace Intrepid2 {
       default: {
         INTREPID2_TEST_FOR_EXCEPTION( true , std::invalid_argument,
                                       ">>> ERROR (Basis_HCURL_TRI_In_FEM): Operator type not implemented" );
-        break;
       }
       }
     }

@@ -118,7 +118,6 @@ public:
       case OPERATOR_DIV:
       case OPERATOR_D1:
         return 7*cardinality;
-        break;
       default:
         return getDkCardinality<opType,3>()*cardinality;
       }
