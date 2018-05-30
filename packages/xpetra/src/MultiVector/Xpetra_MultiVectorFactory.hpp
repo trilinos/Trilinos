@@ -56,6 +56,7 @@
 
 #ifdef HAVE_XPETRA_EPETRA
 #include "Xpetra_EpetraMultiVector.hpp"
+#include "Xpetra_EpetraIntMultiVector.hpp"
 #endif
 
 #include "Xpetra_BlockedMap.hpp"
@@ -219,7 +220,7 @@ namespace Xpetra {
 #endif
 
       if (map->lib() == UseEpetra)
-        return rcp( new EpetraMultiVectorT<int,Node>(map, NumVectors, zeroOut) );
+        return rcp( new EpetraIntMultiVectorT<int,Node>(map, NumVectors, zeroOut) );
 
       XPETRA_FACTORY_END;
     }
@@ -334,7 +335,7 @@ namespace Xpetra {
 #endif
 
       if (map->lib() == UseEpetra)
-        return rcp( new EpetraMultiVectorT<long long,Node>(map, NumVectors, zeroOut) );
+        return rcp( new EpetraIntMultiVectorT<long long,Node>(map, NumVectors, zeroOut) );
 
       XPETRA_FACTORY_END;
     }
