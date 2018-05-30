@@ -178,12 +178,10 @@ public:
     S_->apply( c_state, un_state, -1.0, Qin_, Qout_ );  
   }
 
-
   void solve( V& c, const V& uo, V& un, 
               const V& z, const TS& ts ) const override {
   
     un.zero();  
-//    auto& c_state  = to_state(c);      
     auto& un_state = to_state(un);
     auto& uo_state = to_state(uo);
     auto& z_ctrl   = to_control(z);

@@ -75,17 +75,12 @@ private:
   Ptr<SV> u0_;  // Zero State
   Ptr<CV> z0_;  // Zero Control
 
-  size_type Nt_;      // Number of time steps
+  size_type Nt_;            // Number of time steps
 
   ROL::TimeStamp<Real> ts_; // placeholder
 
   PV& partition ( V& x ) const { return static_cast<PV&>(x); }
-//  SV& to_state  ( V& x ) const { return static_cast<SV&>(x); }
-//  CV& to_control( V& x ) const { return static_cast<CV&>(x); }
-
   const PV& partition ( const V& x ) const { return static_cast<const PV&>(x); }
-//  const SV& to_state  ( const V& x ) const { return static_cast<const SV&>(x); }
-//  const CV& to_control( const V& x ) const { return static_cast<const CV&>(x); }
 
 public:
 
