@@ -74,15 +74,26 @@
 #include <memory>
 
 // need to interface this into cmake variable (or only use this flag when it is necessary)
-//#define BLOCKTRIDICONTAINER_ENABLE_PROFILE
-#undef  BLOCKTRIDICONTAINER_ENABLE_PROFILE
-#if defined(KOKKOS_ENABLE_CUDA) && defined(BLOCKTRIDICONTAINER_ENABLE_PROFILE)
+//#define IFPACK2_BLOCKTRIDICONTAINER_ENABLE_PROFILE
+#undef  IFPACK2_BLOCKTRIDICONTAINER_ENABLE_PROFILE
+#if defined(KOKKOS_ENABLE_CUDA) && defined(IFPACK2_BLOCKTRIDICONTAINER_ENABLE_PROFILE)
 #include "cuda_profiler_api.h"
 #endif
 
 namespace Ifpack2 {
 
   namespace BlockTriDiContainerDetails {
+    ///
+    /// impl tag to distinguish built-in types and sacado types
+    ///
+    struct ImplNotAvailTag {};
+    struct ImplSimdTag {};
+    struct ImplSacadoTag {};
+
+    template<typename T> struct ImplTag         { typedef ImplNotAvailTag type; };
+    template<>           struct ImplTag<float>  { typedef ImplSimdTag type;     };
+    template<>           struct ImplTag<double> { typedef ImplSimdTag type;     };
+
     ///
     /// view decorators for unmanaged and const memory
     ///
@@ -1682,7 +1693,7 @@ namespace Ifpack2 {
       }
 
       void run() {
-#if defined(KOKKOS_ENABLE_CUDA) && defined(BLOCKTRIDICONTAINER_ENABLE_PROFILE)
+#if defined(KOKKOS_ENABLE_CUDA) && defined(IFPACK2_BLOCKTRIDICONTAINER_ENABLE_PROFILE)
         cudaProfilerStart();
 #endif
 
@@ -1700,7 +1711,7 @@ namespace Ifpack2 {
           Kokkos::parallel_for("ExtractAndFactorize::RangePolicy::run", policy, *this);
 #endif
         }
-#if defined(KOKKOS_ENABLE_CUDA) && defined(BLOCKTRIDICONTAINER_ENABLE_PROFILE)
+#if defined(KOKKOS_ENABLE_CUDA) && defined(IFPACK2_BLOCKTRIDICONTAINER_ENABLE_PROFILE)
         cudaProfilerStop();
 #endif
       }
@@ -2411,7 +2422,7 @@ namespace Ifpack2 {
       }      
 
       void run() {
-#if defined(KOKKOS_ENABLE_CUDA) && defined(BLOCKTRIDICONTAINER_ENABLE_PROFILE)
+#if defined(KOKKOS_ENABLE_CUDA) && defined(IFPACK2_BLOCKTRIDICONTAINER_ENABLE_PROFILE)
         cudaProfilerStart();
 #endif
 
@@ -2482,7 +2493,7 @@ namespace Ifpack2 {
 #endif
         }
 
-#if defined(KOKKOS_ENABLE_CUDA) && defined(BLOCKTRIDICONTAINER_ENABLE_PROFILE)
+#if defined(KOKKOS_ENABLE_CUDA) && defined(IFPACK2_BLOCKTRIDICONTAINER_ENABLE_PROFILE)
         cudaProfilerStop();
 #endif
       }
@@ -2925,7 +2936,7 @@ namespace Ifpack2 {
       void run(const MultiVectorLocalViewTypeY &y_, 
                const MultiVectorLocalViewTypeB &b_, 
                const MultiVectorLocalViewTypeX &x_) {
-#if defined(KOKKOS_ENABLE_CUDA) && defined(BLOCKTRIDICONTAINER_ENABLE_PROFILE)
+#if defined(KOKKOS_ENABLE_CUDA) && defined(IFPACK2_BLOCKTRIDICONTAINER_ENABLE_PROFILE)
         cudaProfilerStart();
 #endif
 
@@ -2949,7 +2960,7 @@ namespace Ifpack2 {
 #endif
         }
 
-#if defined(KOKKOS_ENABLE_CUDA) && defined(BLOCKTRIDICONTAINER_ENABLE_PROFILE)
+#if defined(KOKKOS_ENABLE_CUDA) && defined(IFPACK2_BLOCKTRIDICONTAINER_ENABLE_PROFILE)
         cudaProfilerStop();
 #endif
       }
@@ -2962,7 +2973,7 @@ namespace Ifpack2 {
                const MultiVectorLocalViewTypeB &b_, 
                const MultiVectorLocalViewTypeX &x_,
                const MultiVectorLocalViewTypeX_Remote &x_remote_) {
-#if defined(KOKKOS_ENABLE_CUDA) && defined(BLOCKTRIDICONTAINER_ENABLE_PROFILE)
+#if defined(KOKKOS_ENABLE_CUDA) && defined(IFPACK2_BLOCKTRIDICONTAINER_ENABLE_PROFILE)
         cudaProfilerStart();
 #endif
 
@@ -3031,7 +3042,7 @@ namespace Ifpack2 {
 #undef BLOCKTRIDICONTAINER_DETAILS_COMPUTERESIDUAL
 #endif
         }
-#if defined(KOKKOS_ENABLE_CUDA) && defined(BLOCKTRIDICONTAINER_ENABLE_PROFILE)
+#if defined(KOKKOS_ENABLE_CUDA) && defined(IFPACK2_BLOCKTRIDICONTAINER_ENABLE_PROFILE)
         cudaProfilerStop();
 #endif
       }
@@ -3045,7 +3056,7 @@ namespace Ifpack2 {
                const MultiVectorLocalViewTypeX &x_,
                const MultiVectorLocalViewTypeX_Remote &x_remote_,
                const bool compute_owned) {
-#if defined(KOKKOS_ENABLE_CUDA) && defined(BLOCKTRIDICONTAINER_ENABLE_PROFILE)
+#if defined(KOKKOS_ENABLE_CUDA) && defined(IFPACK2_BLOCKTRIDICONTAINER_ENABLE_PROFILE)
         cudaProfilerStart();
 #endif
 
@@ -3125,7 +3136,7 @@ namespace Ifpack2 {
 #undef BLOCKTRIDICONTAINER_DETAILS_COMPUTERESIDUAL
 #endif
         }
-#if defined(KOKKOS_ENABLE_CUDA) && defined(BLOCKTRIDICONTAINER_ENABLE_PROFILE)
+#if defined(KOKKOS_ENABLE_CUDA) && defined(IFPACK2_BLOCKTRIDICONTAINER_ENABLE_PROFILE)
         cudaProfilerStop();
 #endif
       }

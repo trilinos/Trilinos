@@ -89,8 +89,84 @@ namespace Ifpack2 {
   ///
   /// Currently, this class is expected to perform well on conventional CPU and
   /// Intel Xeon Phi. It does *not* yet perform well on GPU.
-  template <typename MatrixType, typename LocalScalarType = typename MatrixType::scalar_type>
-  class BlockTriDiContainer : public Container<MatrixType> {
+
+  ///
+  /// Imput parameters
+  ///   When the parameters are instanciated by ETI, it has a trouble with UQ types. 
+  ///   It is more reasonable that tolerence and shifting parameters is to be 
+  ///   double precision. We put the definition of the parameter struct here
+  ///   as it can be instanciated multiple times during ETI.
+  ///
+  struct BlockTriDiContainerParameters {
+    /// in practice, there is no need to specialize this for different scalar types
+    typedef double scalar_type;
+    typedef double magnitude_type;
+
+    struct ComputeParameters {
+      //! addRadiallyToDiagonal [in] Add a constant to each diagonal entry of the
+      //! matrix. It is added according to the (possibly complex) sign of the
+      //! digonal entry at the time that the entry is the pivot in the LU
+      //! factorization, such that the entry is moved radially outward in the
+      //! complex plane. N.B. that this constant modifies the matrix in the linear
+      //! equation, not simply the diagonal preconditioner.
+      magnitude_type addRadiallyToDiagonal = Kokkos::ArithTraits<magnitude_type>::zero();
+      // ComputeParameters() 
+      //   : addRadiallyToDiagonal(Kokkos::ArithTraits<magnitude_type>::zero()) 
+      // {}
+    };
+
+    //! Input arguments to <tt>applyInverseJacobi</tt>
+    struct ApplyParameters {
+      //! Set this to true if <tt>Y</tt> is meant to be treated as 0 on
+      //! entry. Defaults to false.
+      bool zeroStartingSolution;
+      //! Damping factor. Defaults to 1.
+      scalar_type dampingFactor;
+      //! The maximum number of sweeps. If the norm-based criterion is not used,
+      //! it's exactly the number of sweeps. Defaults to 1.
+      int maxNumSweeps;
+      //! The 2-norm-based termination criterion. If it is larger than 0, then it
+      //! is used. Termination is then based on <tt>maxNumSweeps</tt> and this
+      //! criterion, whichever is reached first. In the case of multiple right
+      //! hand sides, norm-based termination occurs only when each vector
+      //! satisfies the criterion. The criterion for a vector is <tt>f(D^{-1} (x -
+      //! A*y)) <= tolerance * f(D^{-1} (x - R*y_0))</tt>, where <tt>y_0</tt> is
+      //! the input <tt>y</tt>, often 0, and <tt>f</tt> is the maximum of the
+      //! 2-norms of each degree of freedom, i.e., index of a block. Defaults to
+      //! 0.
+      magnitude_type tolerance;
+      //! Check the norm-based termination criterion every
+      //! <tt>checkToleranceEvery</tt> iterations. Defaults to 1. A norm
+      //! computation requires a global reduction, which is expensive. Hence it
+      //! can make sense to check for termination only every 2 or 3 iterations if
+      //! it is anticipated that the number of iterations required to terminate
+      //! will be sufficiently large to make 1 or 2 extra iterations relatively
+      //! cheap. Defaults to 1.
+      int checkToleranceEvery;
+      ApplyParameters() 
+        : zeroStartingSolution(false), dampingFactor(Kokkos::ArithTraits<magnitude_type>::one()),
+          maxNumSweeps(1), tolerance(Kokkos::ArithTraits<magnitude_type>::zero()),
+          checkToleranceEvery(1)
+      {}
+    };
+  };
+
+  ///
+  /// Primary declation
+  ///
+  template <typename MatrixType, 
+            typename LocalScalarType = typename MatrixType::scalar_type,
+            typename ImplTagType = typename BlockTriDiContainerDetails::ImplTag<LocalScalarType>::type>
+  class BlockTriDiContainer;
+  
+  ///
+  /// Partial specialization with SIMD<LocalScalarType> internally used.
+  /// The code does not support Sacado UQ types. As UQ type also uses SIMD like structure,
+  /// it needs an additional specialization.
+  ///
+  template <typename MatrixType, typename LocalScalarType>
+  class BlockTriDiContainer<MatrixType,LocalScalarType,BlockTriDiContainerDetails::ImplSimdTag> 
+    : public Container<MatrixType> {
     //! @name Internal typedefs (private)
     //@{
   private:
@@ -215,19 +291,8 @@ namespace Ifpack2 {
                              bool zeroStartingSolution = false,
                              int numSweeps = 1) const override;
 
-    struct ComputeParameters {
-      //! addRadiallyToDiagonal [in] Add a constant to each diagonal entry of the
-      //! matrix. It is added according to the (possibly complex) sign of the
-      //! digonal entry at the time that the entry is the pivot in the LU
-      //! factorization, such that the entry is moved radially outward in the
-      //! complex plane. N.B. that this constant modifies the matrix in the linear
-      //! equation, not simply the diagonal preconditioner.
-      magnitude_type addRadiallyToDiagonal;
-      ComputeParameters();
-    };
-
     /// \brief Create a ComputeParameters struct with default values.
-    ComputeParameters createDefaultComputeParameters () const;
+    BlockTriDiContainerParameters::ComputeParameters createDefaultComputeParameters () const;
 
     /// \brief Extract the local tridiagonal block and prepare the solver.
     ///
@@ -240,41 +305,10 @@ namespace Ifpack2 {
     ///   factorization, such that the entry is moved radially outward in the
     ///   complex plane. N.B. that this constant modifies the matrix in the linear
     ///   equation, not simply the diagonal preconditioner.
-    void compute (const ComputeParameters& input);
-
-    //! Input arguments to <tt>applyInverseJacobi</tt>
-    struct ApplyParameters {
-      //! Set this to true if <tt>Y</tt> is meant to be treated as 0 on
-      //! entry. Defaults to false.
-      bool zeroStartingSolution;
-      //! Damping factor. Defaults to 1.
-      scalar_type dampingFactor;
-      //! The maximum number of sweeps. If the norm-based criterion is not used,
-      //! it's exactly the number of sweeps. Defaults to 1.
-      int maxNumSweeps;
-      //! The 2-norm-based termination criterion. If it is larger than 0, then it
-      //! is used. Termination is then based on <tt>maxNumSweeps</tt> and this
-      //! criterion, whichever is reached first. In the case of multiple right
-      //! hand sides, norm-based termination occurs only when each vector
-      //! satisfies the criterion. The criterion for a vector is <tt>f(D^{-1} (x -
-      //! A*y)) <= tolerance * f(D^{-1} (x - R*y_0))</tt>, where <tt>y_0</tt> is
-      //! the input <tt>y</tt>, often 0, and <tt>f</tt> is the maximum of the
-      //! 2-norms of each degree of freedom, i.e., index of a block. Defaults to
-      //! 0.
-      magnitude_type tolerance;
-      //! Check the norm-based termination criterion every
-      //! <tt>checkToleranceEvery</tt> iterations. Defaults to 1. A norm
-      //! computation requires a global reduction, which is expensive. Hence it
-      //! can make sense to check for termination only every 2 or 3 iterations if
-      //! it is anticipated that the number of iterations required to terminate
-      //! will be sufficiently large to make 1 or 2 extra iterations relatively
-      //! cheap. Defaults to 1.
-      int checkToleranceEvery;
-      ApplyParameters();
-    };
+    void compute (const BlockTriDiContainerParameters::ComputeParameters& input);
 
     /// \brief Create an ApplyParameters struct with default values.
-    ApplyParameters createDefaultApplyParameters () const;
+    BlockTriDiContainerParameters::ApplyParameters createDefaultApplyParameters () const;
 
     /// \brief Compute <tt>Y := D^{-1} (X - R*Y)</tt>.
     ///
@@ -282,7 +316,8 @@ namespace Ifpack2 {
     /// direct users of this class, rather than by <tt>BlockRelaxation</tt>. It
     /// supports 2-norm-based termination. It returns the number of sweeps
     /// performed.
-    int applyInverseJacobi (const mv_type& X, mv_type& Y, const ApplyParameters& input) const;
+    int applyInverseJacobi (const mv_type& X, mv_type& Y, 
+                            const BlockTriDiContainerParameters::ApplyParameters& input) const;
 
     /// \brief If a norm-based method was used, return a buffer containing the
     ///        norms, ordered by degrees of freedom, then RHS; otherwise, return a
@@ -386,6 +421,93 @@ namespace Ifpack2 {
 
     void clearInternal();
   };
+  
+  ///
+  /// ImplNotAvailTag
+  ///   This container does not support UQ types; however, the UQ types are required for 
+  ///   Stokhos ETI. To prevent linking errors, we provide an empty implementation with
+  ///   ImplNotAvailTag. Upon the request to support UQ types, we need to specialize
+  ///   the impl function and interface with ImplSacadoTag.
+  ///
+  template <typename MatrixType, typename LocalScalarType>
+  class BlockTriDiContainer<MatrixType,LocalScalarType,BlockTriDiContainerDetails::ImplNotAvailTag> 
+    : public Container<MatrixType> {
+  private:
+    typedef typename Container<MatrixType>::scalar_type scalar_type;
+    typedef typename Kokkos::ArithTraits<scalar_type>::magnitudeType magnitude_type;
+    typedef typename Container<MatrixType>::local_ordinal_type local_ordinal_type;
+    typedef typename Container<MatrixType>::global_ordinal_type global_ordinal_type;
+
+    typedef typename Container<MatrixType>::mv_type mv_type;
+    typedef typename Container<MatrixType>::partitioner_type partitioner_type;
+    typedef typename Container<MatrixType>::import_type import_type;
+
+    typedef typename Container<MatrixType>::HostView host_view_type;
+    typedef typename Container<MatrixType>::row_matrix_type row_matrix_type;
+
+    static_assert (std::is_same<MatrixType, row_matrix_type>::value,
+                   "Ifpack2::BlockTriDiContainer: MatrixType must be a Tpetra::RowMatrix specialization.");
+  public:
+
+    BlockTriDiContainer (const Teuchos::RCP<const row_matrix_type>& matrix,
+                         const Teuchos::Array<Teuchos::Array<local_ordinal_type> >& partitions,
+                         const Teuchos::RCP<const import_type>& importer,
+                         int OverlapLevel,
+                         scalar_type DampingFactor)
+      : Container<MatrixType>(matrix, partitions, importer, OverlapLevel, DampingFactor) {
+      TEUCHOS_TEST_FOR_EXCEPT_MSG(true, "Error: BlockTriDiContainer is not available for this scalar_type");
+    }
+
+    bool isInitialized() const override { return 0; }
+    bool isComputed() const override { return 0; }
+    void setParameters(const Teuchos::ParameterList& List) override {}
+    void clearBlocks() override {}
+
+    void initialize () override {}
+    void compute () override {}
+    void applyInverseJacobi (const mv_type& X, mv_type& Y,
+                             bool zeroStartingSolution = false,
+                             int numSweeps = 1) const override {}
+    
+    void
+    apply (host_view_type& X,
+           host_view_type& Y,
+           int blockIndex,
+           int stride,
+           Teuchos::ETransp mode = Teuchos::NO_TRANS,
+           scalar_type alpha = Teuchos::ScalarTraits<scalar_type>::one(),
+           scalar_type beta = Teuchos::ScalarTraits<scalar_type>::zero()) const override {}
+
+    void
+    weightedApply (host_view_type& X,
+                   host_view_type& Y,
+                   host_view_type& W,
+                   int blockIndex,
+                   int stride,
+                   Teuchos::ETransp mode = Teuchos::NO_TRANS,
+                   scalar_type alpha = Teuchos::ScalarTraits<scalar_type>::one(),
+                   scalar_type beta = Teuchos::ScalarTraits<scalar_type>::zero()) const override {}
+
+    std::ostream& print (std::ostream& os) const override { 
+      return os << "Ifpack2::BlockTriDiContainer::ImplNotAvailTag"; 
+    }
+
+    std::string description () const override {
+      return "Ifpack2::BlockTriDiContainer::ImplNotAvailTag";
+    }
+
+    void
+    describe (Teuchos::FancyOStream &out,
+              const Teuchos::EVerbosityLevel verbLevel =
+              Teuchos::Describable::verbLevel_default) const override {
+      out << "Ifpack2::BlockTriDiContainer::ImplNotAvailTag";
+    }
+    
+    static std::string getName() {
+      return "Ifpack2::BlockTriDiContainer::ImplNotAvailTag";
+    }
+  };
+
 
 } // namespace Ifpack2
 
