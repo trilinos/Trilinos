@@ -438,8 +438,8 @@ namespace BaskerNS
       //Reset Inc vector 
       if(Options.inc_lvl == BASKER_TRUE)
       {
-        //for(Int i = 0; i < INC_LVL_TEMP.dimension_0(); i++) //NDE - warning: comparison s and us
-        for(Int i = 0; i < static_cast<Int>( INC_LVL_TEMP.dimension_0() ); i++) 
+        //for(Int i = 0; i < INC_LVL_TEMP.extent(0); i++) //NDE - warning: comparison s and us
+        for(Int i = 0; i < static_cast<Int>( INC_LVL_TEMP.extent(0) ); i++) 
         {
           INC_LVL_TEMP(i) = BASKER_MAX_IDX;
         }

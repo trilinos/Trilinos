@@ -120,8 +120,8 @@ namespace {
 
     const auto tol = 10.0 * Kokkos::Details::ArithTraits<IST>::eps ();
 
-    TEST_ASSERT( execution_space::is_initialized () );
-    if (! execution_space::is_initialized ()) {
+    TEST_ASSERT( Kokkos::is_initialized () );
+    if (! Kokkos::is_initialized ()) {
       return; // don't bother to continue
     }
 
@@ -219,8 +219,8 @@ namespace {
 
     const auto tol = 10.0 * Kokkos::Details::ArithTraits<IST>::eps ();
 
-    TEST_ASSERT( execution_space::is_initialized () );
-    if (! execution_space::is_initialized ()) {
+    TEST_ASSERT( Kokkos::is_initialized () );
+    if (! Kokkos::is_initialized ()) {
       return; // don't bother to continue
     }
 

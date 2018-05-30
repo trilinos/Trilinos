@@ -106,10 +106,7 @@ namespace Tacho {
       ordinal_type offset_1() const { return _offn; } 
 
       KOKKOS_INLINE_FUNCTION
-      ordinal_type dimension_0() const { return _m; }
-
-      KOKKOS_INLINE_FUNCTION
-      ordinal_type dimension_1() const { return _n; } 
+      ordinal_type extent(const ordinal_type r) const { return (r == 0) ? _m : _n; }
 
       KOKKOS_INLINE_FUNCTION
       ordinal_type stride_0() const { return _rs; }
@@ -128,8 +125,8 @@ namespace Tacho {
     KOKKOS_INLINE_FUNCTION
     void 
     clearFutureOfBlocks(const MatrixOfBlocksViewType &H) {
-      const ordinal_type m = H.dimension_0();
-      const ordinal_type n = H.dimension_1();
+      const ordinal_type m = H.extent(0);
+      const ordinal_type n = H.extent(1);
       for (ordinal_type j=0;j<n;++j)
         for (ordinal_type i=0;i<m;++i)
           H(i,j).set_future();
@@ -141,8 +138,8 @@ namespace Tacho {
     void 
     clearFutureOfBlocks(/* */ MemberType &member, 
                         const MatrixOfBlocksViewType &H) {
-      const ordinal_type m = H.dimension_0();
-      const ordinal_type n = H.dimension_1();
+      const ordinal_type m = H.extent(0);
+      const ordinal_type n = H.extent(1);
       Kokkos::parallel_for(Kokkos::TeamThreadRange(member,n),[&](const int &j) {
           Kokkos::parallel_for(Kokkos::ThreadVectorRange(member,m),[&](const int &i) {
               H(i,j).set_future();
@@ -158,8 +155,8 @@ namespace Tacho {
                       const ordinal_type n,
                       const ordinal_type mb,
                       const ordinal_type nb) {     
-      const ordinal_type bm = H.dimension_0();
-      const ordinal_type bn = H.dimension_1();
+      const ordinal_type bm = H.extent(0);
+      const ordinal_type bn = H.extent(1);
       
       for (ordinal_type j=0;j<bn;++j) {
         const ordinal_type
@@ -200,8 +197,8 @@ namespace Tacho {
                       const ordinal_type n,
                       const ordinal_type mb,
                       const ordinal_type nb) {     
-      const ordinal_type bm = H.dimension_0();
-      const ordinal_type bn = H.dimension_1();
+      const ordinal_type bm = H.extent(0);
+      const ordinal_type bn = H.extent(1);
       
       Kokkos::parallel_for(Kokkos::TeamThreadRange(member,bn),[&](const int &j) {
           const ordinal_type
@@ -241,7 +238,7 @@ namespace Tacho {
                      const BaseBufferPtrType ptr,
                      const ordinal_type rs,
                      const ordinal_type cs) {
-      const ordinal_type m = H.dimension_0(), n = H.dimension_1();
+      const ordinal_type m = H.extent(0), n = H.extent(1);
       for (ordinal_type j=0;j<n;++j)
         for (ordinal_type i=0;i<m;++i) 
           H(i,j).attach_buffer(rs, cs, ptr);
@@ -257,8 +254,8 @@ namespace Tacho {
                      const BaseBufferPtrType ptr,
                      const ordinal_type rs,
                      const ordinal_type cs) {
-      const ordinal_type m = H.dimension_0();
-      const ordinal_type n = H.dimension_1();
+      const ordinal_type m = H.extent(0);
+      const ordinal_type n = H.extent(1);
       Kokkos::parallel_for(Kokkos::TeamThreadRange(member,n),[&](const int &j) {
           Kokkos::parallel_for(Kokkos::ThreadVectorRange(member,m),[&](const int &i) {
               H(i,j).attach_buffer(rs, cs, ptr);
@@ -275,11 +272,11 @@ namespace Tacho {
       typedef typename MatrixOfBlocksViewType::value_type dense_block_type;
       typedef typename dense_block_type::value_type value_type;
 
-      const ordinal_type m = H.dimension_0();
-      const ordinal_type n = H.dimension_1();
+      const ordinal_type m = H.extent(0);
+      const ordinal_type n = H.extent(1);
       for (ordinal_type j=0;j<n;++j)
         for (ordinal_type i=0;i<m;++i) {
-          const ordinal_type mm = H(i,j).dimension_0(), nn = H(i,j).dimension_1();
+          const ordinal_type mm = H(i,j).extent(0), nn = H(i,j).extent(1);
           if (mm > 0 && nn > 0) {
             auto ptr = (value_type*)pool.allocate(mm*nn*sizeof(value_type));
             TACHO_TEST_FOR_ABORT(ptr == NULL, "memory pool allocation fails");          
@@ -299,11 +296,11 @@ namespace Tacho {
       typedef typename MatrixOfBlocksViewType::value_type dense_block_type;
       typedef typename dense_block_type::value_type value_type;
 
-      const ordinal_type m = H.dimension_0(), n = H.dimension_1();
+      const ordinal_type m = H.extent(0), n = H.extent(1);
       for (ordinal_type j=0;j<n;++j)
         for (ordinal_type i=0;i<m;++i) {
           auto &blk = H(i,j);
-          const ordinal_type mm = blk.dimension_0(), nn = blk.dimension_1();
+          const ordinal_type mm = blk.extent(0), nn = blk.extent(1);
           if (mm > 0 && nn > 0) 
             pool.deallocate(blk.data(), mm*nn*sizeof(value_type));
         }
@@ -315,8 +312,8 @@ namespace Tacho {
     copyElementwise(const DenseMatrixView<ValueType,ExecSpace> &F,
                     const DenseMatrixView<DenseMatrixView<ValueType,ExecSpace>,ExecSpace> &H) {
       const ordinal_type 
-        hm = H.dimension_0(), hn = H.dimension_0(),
-        fm = F.dimension_0(), fn = F.dimension_0();
+        hm = H.extent(0), hn = H.extent(0),
+        fm = F.extent(0), fn = F.extent(0);
         
       if (hm > 0 && hn > 0) {
         ordinal_type offj = 0;
@@ -325,7 +322,7 @@ namespace Tacho {
           for (ordinal_type i=0;i<hm;++i) {
             const auto &blk = H(i,j);
             const ordinal_type 
-              mm = blk.dimension_0(), nn = blk.dimension_1();
+              mm = blk.extent(0), nn = blk.extent(1);
             for(ordinal_type jj=0;jj<nn;++jj) {
               const ordinal_type jjj = offj+jj;
               for(ordinal_type ii=0;ii<mm;++ii) {
@@ -336,7 +333,7 @@ namespace Tacho {
             }
             offi += mm;
           }
-          offj += H(0,j).dimension_1();
+          offj += H(0,j).extent(1);
         }
       }
     }
@@ -347,8 +344,8 @@ namespace Tacho {
     copyElementwise(const DenseMatrixView<DenseMatrixView<ValueType,ExecSpace>,ExecSpace> &H,
                     const DenseMatrixView<ValueType,ExecSpace> &F) {
       const ordinal_type 
-        hm = H.dimension_0(), hn = H.dimension_0(),
-        fm = F.dimension_0(), fn = F.dimension_0();
+        hm = H.extent(0), hn = H.extent(0),
+        fm = F.extent(0), fn = F.extent(0);
         
       if (hm > 0 && hn > 0) {
         ordinal_type offj = 0;
@@ -357,7 +354,7 @@ namespace Tacho {
           for (ordinal_type i=0;i<hm;++i) {
             const auto &blk = H(i,j);
             const ordinal_type 
-              mm = blk.dimension_0(), nn = blk.dimension_1();
+              mm = blk.extent(0), nn = blk.extent(1);
             for(ordinal_type jj=0;jj<nn;++jj) {
               const ordinal_type jjj = offj+jj;
               for(ordinal_type ii=0;ii<mm;++ii) {
@@ -368,7 +365,7 @@ namespace Tacho {
             }
             offi += mm;
           }
-          offj += H(0,j).dimension_1();
+          offj += H(0,j).extent(1);
         }
       }
     }
@@ -380,7 +377,7 @@ namespace Tacho {
     applyRowPermutation(const DenseMatrixViewType &A, 
                         const DenseMatrixViewType &B,
                         const OrdinalTypeArray &p) {
-      const ordinal_type m = A.dimension_0(), n = A.dimension_1();
+      const ordinal_type m = A.extent(0), n = A.extent(1);
       typedef typename DenseMatrixViewType::execution_space execution_space;
 
       if (true) { //std::is_same<typename execution_space::memory_space,Kokkos::HostSpace>::value) {

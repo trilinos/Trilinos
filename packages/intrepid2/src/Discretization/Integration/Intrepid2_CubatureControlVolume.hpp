@@ -94,10 +94,10 @@ namespace Intrepid2{
 
       KOKKOS_INLINE_FUNCTION
       void operator()(const ordinal_type cell) const {        
-        const ordinal_type numNodesPerCell  = _subcvCoords.dimension(1);
-        const ordinal_type numNodesPerSubcv = _subcvCoords.dimension(2);
-        const ordinal_type spaceDim         = _subcvCoords.dimension(3);
-        const ordinal_type numSubcvPoints   = _subcvWeights.dimension(0);
+        const ordinal_type numNodesPerCell  = _subcvCoords.extent(1);
+        const ordinal_type numNodesPerSubcv = _subcvCoords.extent(2);
+        const ordinal_type spaceDim         = _subcvCoords.extent(3);
+        const ordinal_type numSubcvPoints   = _subcvWeights.extent(0);
 
         // compute subcv centers
         for (ordinal_type node=0;node<numNodesPerCell;++node) {

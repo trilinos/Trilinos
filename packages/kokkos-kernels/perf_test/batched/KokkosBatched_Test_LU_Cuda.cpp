@@ -72,7 +72,7 @@ namespace KokkosBatched {
             (Kokkos::ThreadVectorRange(member, VectorLength),
              [&](const int &k) {
               const int kk = kbeg + k;
-              if (kk < _a.extent(0)) {
+              if (kk < _a.extent_int(0)) {
                 auto aa = Kokkos::subview(_a, kk, Kokkos::ALL(), Kokkos::ALL());
                 SerialLU<AlgoTagType>::invoke(aa);
               }
@@ -87,7 +87,7 @@ namespace KokkosBatched {
             (Kokkos::ThreadVectorRange(member, VectorLength),
              [&](const int &k) {
               const int kk = kbeg + k;
-              if (kk < _a.extent(0)) {
+              if (kk < _a.extent_int(0)) {
                 auto aa = Kokkos::subview(_a, kk, Kokkos::ALL(), Kokkos::ALL());
                 TeamLU<MemberType,AlgoTagType>::invoke(member, aa);
               }
@@ -105,7 +105,7 @@ namespace KokkosBatched {
             (Kokkos::ThreadVectorRange(member, VectorLength),
              [&](const int &k) {
               const int kk = kbeg + k;
-              if (kk < _a.extent(0)) {
+              if (kk < _a.extent_int(0)) {
                 auto aa  = Kokkos::subview(_a, kk, Kokkos::ALL(), Kokkos::ALL());
                 auto saa = Kokkos::subview(sa,  k, Kokkos::ALL(), Kokkos::ALL());
 
@@ -329,7 +329,6 @@ namespace KokkosBatched {
           double tavg = 0, tmin = tmax;
           {
             typedef Kokkos::TeamPolicy<DeviceSpaceType,ScheduleType,TeamTagV1> policy_type;
-            typedef typename policy_type::member_type member_type;
 
             typedef Functor<view_type,AlgoTagType,VectorLength> functor_type;
             typedef Kokkos::Impl::ParallelFor<functor_type,policy_type,DeviceSpaceType> parallel_for_type;
@@ -391,7 +390,6 @@ namespace KokkosBatched {
           double tavg = 0, tmin = tmax;
           {
             typedef Kokkos::TeamPolicy<DeviceSpaceType,ScheduleType,TeamTagV2> policy_type;
-            typedef typename policy_type::member_type member_type;
 
             typedef Functor<view_type,AlgoTagType,VectorLength> functor_type;
             typedef Kokkos::Impl::ParallelFor<functor_type,policy_type,DeviceSpaceType> parallel_for_type;
@@ -462,7 +460,6 @@ namespace KokkosBatched {
           double tavg = 0, tmin = tmax;
           {
             typedef Kokkos::TeamPolicy<DeviceSpaceType,ScheduleType,TeamTagV3> policy_type;
-            typedef typename policy_type::member_type member_type;
 
             typedef Functor<view_type,AlgoTagType,VectorLength> functor_type;
             typedef Kokkos::Impl::ParallelFor<functor_type,policy_type,DeviceSpaceType> parallel_for_type;
@@ -481,7 +478,7 @@ namespace KokkosBatched {
               const int max_cuda_blocksize = Kokkos::Impl::cuda_get_max_block_size<parallel_for_type>(functor_type(), VectorLength, 0, 0);
               const int team_size = min(max(mblk*2,1), max_cuda_blocksize/VectorLength);
 
-              const policy_type policy(N, team_size, VectorLength);
+              policy_type policy(N, team_size, VectorLength);
               for (int iter=iter_begin;iter<iter_end;++iter) {
                 // flush
                 flush.run();

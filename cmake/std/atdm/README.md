@@ -40,7 +40,7 @@ $ cmake \
 
 $ make NP=16  # Uses ninja -j16
 
-$ ctest -j16  # Might need to be run with srun or some other command, see below
+$ ctest -j16  # Might need to be run with salloc or some other command, see below
 ```
 
 The command:
@@ -62,15 +62,24 @@ The following `<job-name>` keywords specify the `<COMPILER>`:
 * `gnu`: Use the GCC compilers (`<COMPILER>=GNU`)
 * `intel`: Use the Intel compilers (`<COMPILER>=INTEL`)
 * `clang`: Use the LLVM Clang compilers (`<COMPILER>=CLANG`)
-* `cuda`: Do a CUDA build for that system (`<COMPILER>=CUDA`, `NODE_TYPE=CUDA`)
+* `cuda`: Do a CUDA build (`<COMPILER>=CUDA`, `NODE_TYPE=CUDA`)
+  - `cuda-8.0`: Use CUDA 8.0
+  - `cuda-9.0`: Use CUDA 9.0
 
-If `default` is used, then the default compiler for the system will be
-selected.
+When using `gnu`, `intel`, `clang`, and `cuda` without specifying a version
+(e.g. `cuda-9.0`), then a default version of the compilers for that system
+will be chosen (see the loaded env for the default chosen version).  Each
+system may only support a subset of these compilers; see the
+`cmake/std/atdm/<system-name>/environment.sh` file for details on which
+compilers and which versions are supported.  If you choose a compiler that is
+not supported, an error message will be provided.  If `default` is used, then
+the default compiler for the system will be selected.
 
 The following `<job-name>` keywords specify debug or optimized `<BUILD_TYPE>
 `(used for the CMake cache var `CMAKE_BUILD_TYPE`with default
 `<BUILD_TYPE>=DEBUG`):
 
+* `debug`: Use `<BUILD_TYPE>=DEBUG`
 * `opt`: Use `<BUILD_TYPE>=RELEASE`
 
 The following `<job-name>` keywords determine the Kokkos threading model
@@ -80,7 +89,8 @@ The following `<job-name>` keywords determine the Kokkos threading model
 * `pthread`: Use Pthreads for host threading (`NODE_TYPE=THREAD`)
 * `serial`: Use no host threading (`NODE_TYPE=SERIAL`, DEFAULT)
 
-If `cuda` is given, then `<NODE_TYPE>` is automatically set to `CUDA`.
+If `cuda` (or `cuda-8.0`, `cuda-9.0`, etc.) is given, then `<NODE_TYPE>` is
+automatically set to `CUDA`.
 
 All other strings in `<job-name>` are ignored but are allowed for
 informational purposes.  The reason that a `<job-name>` string is defined in
@@ -89,7 +99,8 @@ build name that shows up on CDash.  This makes it very easy to define the
 configuration options and maintain the Jenkins build jobs.  The combination
 `<COMPILER>-<BUILD_TYPE>-<NODE_TYPE>` is used to define the CMake variable
 `ATDM_JOB_NAME_KEYS_STR` that is used to uniquely define a build on a
-particular system (see below).
+particular system and to manage a system of tweaks for each of the supported
+builds (see below).
 
 Some examples of `<job-name>` keyword sets used on various platforms include:
 * `gnu-debug-openmp`
@@ -98,8 +109,10 @@ Some examples of `<job-name>` keyword sets used on various platforms include:
 * `intel-opt-openmp`
 * `cuda-debug` (`<NODE_TYPE>` is implicitly `CUDA`)
 * `cuda-opt` (`<NODE_TYPE>` is implicitly `CUDA`)
+* `cuda-8.0-debug` (`<NODE_TYPE>` is implicitly `CUDA`)
+* `cuda-9.0-opt` (`<NODE_TYPE>` is implicitly `CUDA`)
 
-The script `cmake/std/atdm/load-env.sh` when sourced sets a set of bash
+The script `cmake/std/atdm/load-env.sh` when sourced sets some bash
 environment variables that are prefixed with `ATDM_CONFIG_` and other standard
 variables.
 
@@ -107,9 +120,9 @@ The file `ATDMDevEnv.cmake` pulls bash environment variables set by the
 sourced `atdm/load-env.sh` script and sets up a number of CMake cache
 variables such as the compilers, compiler options, and sets up a number of
 Trilinos configuration variables (many of which are echoed to the STDOUT when
-running `cmake`).  This also default enables all of the standard TPLs used by
-ATDM Application codes through Trilinos and sets up locations for the include
-directories and libraries for each of these TPLs.
+running `cmake`).  This also enables by default all of the standard TPLs used
+by ATDM Application codes through Trilinos and sets up locations for the
+include directories and libraries for each of these TPLs.
 
 When included, the file `ATDMDevEnv.cmake` also disables many packages and
 subpackages not used for the ATDM configuration of Trilinos.  This uses a
@@ -119,7 +132,8 @@ then disable the ones you don't want.  This is a much more flexible way to
 define a standard configuration of Trilinos that allows different sets of
 actual packages to be enabled based on the needs of the different ATDM
 application customers and Trilinos developers just needing to enable a subset
-of packages.
+of packages.  But if package X does get enabled, then it will always have the
+same configuration options independent of any other packages that are enabled.
 
 When `ATDMDevEnv.cmake` is being processed, if there is a "tweaks" file
 defined for a build, then it will be picked up in the CMake cache var <a
@@ -257,7 +271,7 @@ $ bsub -x -I -q rhel7F -n 16 \
 Once logged on to `hansen` (on the SON) or `shiller` (on the SRN), one can
 directly configure and build on the login node (being careful not to overload
 the node).  But to run the tests, one must run on the compute nodes using the
-`srun` command.  For example, to configure, build and run the tests for say
+`salloc` command.  For example, to configure, build and run the tests for say
 `MueuLu` on `hansen`, (after cloning Trilinos on the `develop` branch) one
 would do:
 
@@ -275,7 +289,7 @@ $ cmake \
 
 $ make NP=16
 
-$ srun ctest -j16
+$ salloc ctest -j16
 ```
 
 Note that one can also run the same build a tests using the <a
@@ -284,7 +298,7 @@ href="#checkin-test-atdmsh">checkin-test-atdm.sh</a> script as:
 ```
 $ cd <some_build_dir>/
 $ ln -s $TRILINOS_DIR/cmake/std/atdm/checkin-test-sems.sh .
-$ srun ./checkin-test-sems.sh intel-opt-openmp \
+$ salloc ./checkin-test-sems.sh intel-opt-openmp \
   --enable-all-packages=off --no-enable-fwd-packages \
   --enable-packages=MueLu \
   --local-do-all
@@ -294,7 +308,7 @@ $ srun ./checkin-test-sems.sh intel-opt-openmp \
 
 Once logged on to `chama` or `serrano`, one can directly configure and build
 on the login node (being careful not to overload the node).  But to run the
-tests, one must run on the compute nodes using the `srun` command.  For
+tests, one must run on the compute nodes using the `salloc` command.  For
 example, to configure, build and run the tests for say `MueuLu` on `serrano`
 or `chama`, (after cloning Trilinos on the `develop` branch) one would do:
 

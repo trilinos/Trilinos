@@ -67,7 +67,7 @@ int main( int argc, char* argv[] ) {
   Teuchos::GlobalMPISession mpiSession(&argc, &argv);
 
   // Initialize serial
-  Kokkos::Serial::initialize();
+  Kokkos::initialize();
 
   // Setup (has to happen after initialization)
   setup.setup();
@@ -76,7 +76,7 @@ int main( int argc, char* argv[] ) {
   int ret = Teuchos::UnitTestRepository::runUnitTestsFromMain(argc, argv);
 
   // Finish up
-  Kokkos::Serial::finalize();
+  Kokkos::finalize();
 
   return ret;
 }

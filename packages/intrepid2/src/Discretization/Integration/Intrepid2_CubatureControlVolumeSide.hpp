@@ -90,11 +90,11 @@ namespace Intrepid2{
 
       KOKKOS_INLINE_FUNCTION
       void operator()(const ordinal_type cell) const {        
-        const ordinal_type numNodesPerCell  = _cubPoints.dimension(1);
-        const ordinal_type spaceDim         = _cubPoints.dimension(2);
+        const ordinal_type numNodesPerCell  = _cubPoints.extent(1);
+        const ordinal_type spaceDim         = _cubPoints.extent(2);
 
         const ordinal_type numNodesPerSide  = _sideMap(0);
-        const ordinal_type numSubcvPoints   = _subcvSideNormals.dimension(2);
+        const ordinal_type numSubcvPoints   = _subcvSideNormals.extent(2);
 
         const ordinal_type sideDim = spaceDim - 1;
 

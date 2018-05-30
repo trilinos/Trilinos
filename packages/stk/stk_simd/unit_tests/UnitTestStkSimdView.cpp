@@ -52,7 +52,7 @@ TEST_F(StkSimdViewFixture, SimdParallelReduce) {
   EXPECT_EQ(3*numNodes, reduce_sum_velocity_field(veloField, 2));
 };
 
-#ifndef KOKKOS_HAVE_CUDA
+#ifndef KOKKOS_ENABLE_CUDA
 
 // simpler for_each and reduce_sum_each only work on host for now.
 

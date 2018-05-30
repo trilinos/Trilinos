@@ -521,6 +521,7 @@ apply (const Tpetra::MultiVector<scalar_type, local_ordinal_type, global_ordinal
   }
 
   {
+    Teuchos::TimeMonitor timeMon (*timer);
     // Special case: alpha == 0.
     if (alpha == STS::zero ()) {
       // No floating-point operations, so no need to update a count.

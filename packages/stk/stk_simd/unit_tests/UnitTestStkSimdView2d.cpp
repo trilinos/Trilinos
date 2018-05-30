@@ -233,7 +233,7 @@ TEST_F(StkSimdViewFixture, SimdParallelFor2d_DefaultLayout) {
 }
 
 // Specifying a simd layout other than the default doesn't work on the GPU
-#ifndef KOKKOS_HAVE_CUDA
+#ifndef KOKKOS_ENABLE_CUDA
 TEST_F(StkSimdViewFixture, SimdParallelFor2d_LayoutRight) {
   StkSimdView2dTester<double*[4], double, 4, stk::simd::LayoutRight<double> > tester(237);
   tester.const_cast_test();
@@ -271,7 +271,7 @@ TEST_F(StkSimdViewFixture, SimdParallelFor2d_DefaultLayout_PtrPtr) {
 }
 
 // Specifying a simd layout other than the default doesn't work on the GPU
-#ifndef KOKKOS_HAVE_CUDA
+#ifndef KOKKOS_ENABLE_CUDA
 TEST_F(StkSimdViewFixture, SimdParallelFor2d_LayoutRight_PtrPtr) {
   StkSimdView2dTester<double**, double, 4, stk::simd::LayoutRight<double> > tester(237);
   tester.const_cast_test();

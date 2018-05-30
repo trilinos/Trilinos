@@ -124,19 +124,19 @@ void CUSP_apply(
 
 
 
-  idx nnzA = entriesA.dimension_0();
-  idx nnzB = entriesB.dimension_0();
+  idx nnzA = entriesA.extent(0);
+  idx nnzB = entriesB.extent(0);
 
 
-  idx *a_xadj = (idx *)row_mapA.ptr_on_device();
-  idx *b_xadj = (idx *)row_mapB.ptr_on_device();
+  idx *a_xadj = (idx *)row_mapA.data();
+  idx *b_xadj = (idx *)row_mapB.data();
 
 
-  idx *a_adj = (idx *)entriesA.ptr_on_device();
-  idx *b_adj = (idx *)entriesB.ptr_on_device();
+  idx *a_adj = (idx *)entriesA.data();
+  idx *b_adj = (idx *)entriesB.data();
 
-  value_type *a_ew = valuesA.ptr_on_device();
-  value_type *b_ew = valuesB.ptr_on_device();
+  value_type *a_ew = valuesA.data();
+  value_type *b_ew = valuesB.data();
 
   /*
   thrust::device_ptr<idx> dev_a_xadj(a_xadj);
@@ -160,19 +160,19 @@ void CUSP_apply(
 
   typedef typename cusp::csr_matrix_view<IDXArray1dView, IDXArray1dView, VALUEArray1dView, idx,value_type,cusp::device_memory> cuspMatrix_View;
 
-  cuspMatrix_View A(m, n, entriesA.dimension_0(), arraya_xadj, arraya_adj, arraya_ew);
-  cuspMatrix_View B(n, k, entriesB.dimension_0(), arrayb_xadj, arrayb_adj, arrayb_ew);
+  cuspMatrix_View A(m, n, entriesA.extent(0), arraya_xadj, arraya_adj, arraya_ew);
+  cuspMatrix_View B(n, k, entriesB.extent(0), arrayb_xadj, arrayb_adj, arrayb_ew);
 
   /*
   CopyArrayToCuspArray<typename cuspMatrix::row_offsets_array_type, typename KernelHandle::idx_array_type> Aforward(A.row_offsets, row_mapA);
   Kokkos::parallel_for (my_exec_space (0, m + 1) , Aforward);
   Kokkos::parallel_for (my_exec_space (0, n + 1) , CopyArrayToCuspArray<typename cuspMatrix::row_offsets_array_type, typename KernelHandle::idx_array_type>(B.row_offsets, row_mapB));
 
-  Kokkos::parallel_for (my_exec_space (0, entriesA.dimension_0()) , CopyArrayToCuspArray<typename cuspMatrix::column_indices_array_type, typename KernelHandle::idx_edge_array_type>(A.column_indices, entriesA));
-  Kokkos::parallel_for (my_exec_space (0, entriesB.dimension_0()) , CopyArrayToCuspArray<typename cuspMatrix::column_indices_array_type, typename KernelHandle::idx_edge_array_type>(B.column_indices, entriesB));
+  Kokkos::parallel_for (my_exec_space (0, entriesA.extent(0)) , CopyArrayToCuspArray<typename cuspMatrix::column_indices_array_type, typename KernelHandle::idx_edge_array_type>(A.column_indices, entriesA));
+  Kokkos::parallel_for (my_exec_space (0, entriesB.extent(0)) , CopyArrayToCuspArray<typename cuspMatrix::column_indices_array_type, typename KernelHandle::idx_edge_array_type>(B.column_indices, entriesB));
 
-  Kokkos::parallel_for (my_exec_space (0, valuesA.dimension_0()) , CopyArrayToCuspArray<typename cuspMatrix::values_array_type, typename KernelHandle::value_array_type>(A.values, valuesA));
-  Kokkos::parallel_for (my_exec_space (0, valuesB.dimension_0()) , CopyArrayToCuspArray<typename cuspMatrix::values_array_type, typename KernelHandle::value_array_type>(B.values, valuesB));
+  Kokkos::parallel_for (my_exec_space (0, valuesA.extent(0)) , CopyArrayToCuspArray<typename cuspMatrix::values_array_type, typename KernelHandle::value_array_type>(A.values, valuesA));
+  Kokkos::parallel_for (my_exec_space (0, valuesB.extent(0)) , CopyArrayToCuspArray<typename cuspMatrix::values_array_type, typename KernelHandle::value_array_type>(B.values, valuesB));
   */
 
   typedef typename cusp::csr_matrix<idx,value_type,cusp::device_memory> cuspMatrix;

@@ -408,6 +408,23 @@ const std::vector<int> & DOFManager<LO,GO>::getGIDFieldOffsets(const std::string
 }
 
 template <typename LO, typename GO>
+const Kokkos::View<const int*,PHX::Device> DOFManager<LO,GO>::
+getGIDFieldOffsetsKokkos(const std::string & blockID, int fieldNum) const
+{
+  TEUCHOS_TEST_FOR_EXCEPTION(!buildConnectivityRun_,std::logic_error, "DOFManager::getGIDFieldOffsets: cannot be called before "
+                                                                      "buildGlobalUnknowns has been called");
+  std::map<std::string,int>::const_iterator bitr = blockNameToID_.find(blockID);
+  if(bitr==blockNameToID_.end())
+    TEUCHOS_TEST_FOR_EXCEPTION(true,std::logic_error,"DOFManager::fieldInBlock: invalid block name");
+  int bid=bitr->second;
+  if(fa_fps_[bid]!=Teuchos::null)
+    return fa_fps_[bid]->localOffsetsKokkos(fieldNum);
+
+  static const Kokkos::View<int*,PHX::Device> empty("panzer::DOFManager::getGIDFieldOffsetsKokkos() empty",0);
+  return empty;
+}
+
+template <typename LO, typename GO>
 void DOFManager<LO,GO>::getElementGIDs(LO localElementID, std::vector<GO>& gids, const std::string& /* blockIdHint */) const
 {
   gids = elementGIDs_[localElementID];
@@ -774,7 +791,7 @@ DOFManager<LO,GO>::buildGlobalUnknowns_GUN(const Tpetra::MultiVector<GO,LO,GO,pa
     typedef typename MV::dual_view_type::t_dev KV;
     typedef typename MV::dual_view_type::t_dev::memory_space DMS;
     KV values = non_overlap_mv->template getLocalView<DMS>();
-    auto mv_size = values.dimension_0();
+    auto mv_size = values.extent(0);
     Kokkos::parallel_reduce(mv_size,panzer::dof_functors::SumRank2<GO,KV>(values),localsum);
   }
 

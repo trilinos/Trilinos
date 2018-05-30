@@ -279,7 +279,7 @@ namespace Stokhos {
 
   };
 
-#if defined(KOKKOS_HAVE_CUDA)
+#if defined(KOKKOS_ENABLE_CUDA)
 
   //! Statically allocated storage class
   /*!

@@ -340,7 +340,7 @@ namespace Tacho {
          << "    # of NonZeros  = " << _in._nnz << endl ;
 
       os << " -- Input Graph :: RowPtr -- " << endl;
-      for (ordinal_type i=0;i<_in._ap.dimension_0();++i)
+      for (ordinal_type i=0;i<_in._ap.extent(0);++i)
         os << setw(w) << i
            << setw(w) << _in._ap[i]
            << endl;
@@ -351,7 +351,7 @@ namespace Tacho {
          << "    # of NonZeros  = " << _out._nnz << endl ;
 
       os << " -- Output Graph :: RowPtr -- " << endl;
-      for (ordinal_type i=0;i<_out._ap.dimension_0();++i)
+      for (ordinal_type i=0;i<_out._ap.extent(0);++i)
         os << setw(w) << i
            << setw(w) << _out._ap[i]
            << endl;

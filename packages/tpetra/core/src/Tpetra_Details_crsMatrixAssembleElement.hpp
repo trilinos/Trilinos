@@ -97,11 +97,11 @@ crsMatrixSumIntoValues_sortedSortedLinear (const SparseMatrixType& A,
                                            const ValsViewType& vals,
                                            const typename SparseMatrixType::ordinal_type numEntInInput,
                                            const bool forceAtomic =
-#ifdef KOKKOS_HAVE_SERIAL
+#ifdef KOKKOS_ENABLE_SERIAL
                                            ! std::is_same<typename SparseMatrixType::device_type::execution_space, Kokkos::Serial>::type,
-#else // NOT KOKKOS_HAVE_SERIAL
+#else // NOT KOKKOS_ENABLE_SERIAL
                                            false,
-#endif // KOKKOS_HAVE_SERIAL
+#endif // KOKKOS_ENABLE_SERIAL
                                            const bool checkInputIndices = true)
 {
   typedef typename std::remove_const<typename SparseMatrixType::value_type>::type
@@ -221,11 +221,11 @@ crsMatrixReplaceValues_sortedSortedLinear (const SparseMatrixType& A,
                                            const ValsViewType& vals,
                                            const typename SparseMatrixType::ordinal_type numEntInInput,
                                            const bool forceAtomic =
-#ifdef KOKKOS_HAVE_SERIAL
+#ifdef KOKKOS_ENABLE_SERIAL
                                            ! std::is_same<typename SparseMatrixType::device_type::execution_space, Kokkos::Serial>::type,
-#else // NOT KOKKOS_HAVE_SERIAL
+#else // NOT KOKKOS_ENABLE_SERIAL
                                            false,
-#endif // KOKKOS_HAVE_SERIAL
+#endif // KOKKOS_ENABLE_SERIAL
                                            const bool checkInputIndices = true)
 {
   typedef typename std::remove_const<typename SparseMatrixType::value_type>::type
@@ -360,11 +360,11 @@ crsMatrixAssembleElement_sortedLinear (const SparseMatrixType& A,
                                        const RhsViewType& rhs,
                                        const LhsViewType& lhs,
                                        const bool forceAtomic =
-#ifdef KOKKOS_HAVE_SERIAL
+#ifdef KOKKOS_ENABLE_SERIAL
                                        ! std::is_same<typename SparseMatrixType::device_type::execution_space, Kokkos::Serial>::type,
-#else // NOT KOKKOS_HAVE_SERIAL
+#else // NOT KOKKOS_ENABLE_SERIAL
                                        false,
-#endif // KOKKOS_HAVE_SERIAL
+#endif // KOKKOS_ENABLE_SERIAL
                                        const bool checkInputIndices = true)
 {
   typedef typename std::remove_const<typename SparseMatrixType::value_type>::type

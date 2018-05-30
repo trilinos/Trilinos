@@ -797,7 +797,7 @@ packCrsGraph(const CrsGraph<LO, GO, NT>& sourceGraph,
   // have a possibly different memory space (CudaSpace) than the
   // default CUDA memory space (currently CudaUVMSpace).
   typedef typename device_type::execution_space buffer_exec_space;
-#ifdef KOKKOS_HAVE_CUDA
+#ifdef KOKKOS_ENABLE_CUDA
   typedef typename std::conditional<
       std::is_same<
         buffer_exec_space, Kokkos::Cuda
@@ -807,7 +807,7 @@ packCrsGraph(const CrsGraph<LO, GO, NT>& sourceGraph,
     >::type buffer_memory_space;
 #else
   typedef typename device_type::memory_space buffer_memory_space;
-#endif // KOKKOS_HAVE_CUDA
+#endif // KOKKOS_ENABLE_CUDA
   // @MFH: why not use CrsGraph<LO,GO,NT>::buffer_device_type???
   typedef Kokkos::Device<buffer_exec_space,
     buffer_memory_space> buffer_device_type;
@@ -875,7 +875,7 @@ packCrsGraphNew(const CrsGraph<LO, GO, NT>& sourceGraph,
   // mfh 23 Aug 2017: Fix for #1088 requires pack / unpack buffers to
   // have a possibly different memory space (CudaSpace) than the
   // default CUDA memory space (currently CudaUVMSpace).
-#ifdef KOKKOS_HAVE_CUDA
+#ifdef KOKKOS_ENABLE_CUDA
   typedef typename device_type::execution_space buffer_exec_space;
   typedef typename std::conditional<
       std::is_same<
@@ -886,7 +886,7 @@ packCrsGraphNew(const CrsGraph<LO, GO, NT>& sourceGraph,
     >::type buffer_memory_space;
 #else
   typedef typename device_type::memory_space buffer_memory_space;
-#endif // KOKKOS_HAVE_CUDA
+#endif // KOKKOS_ENABLE_CUDA
 
   // Create an empty array of PIDs, since the interface needs it.
   Kokkos::View<int*, device_type> exportPIDs_d ("exportPIDs", 0);

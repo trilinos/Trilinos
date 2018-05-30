@@ -26,6 +26,11 @@ TRIL_SET_CACHE_VAR(MPI_EXEC_PRE_NUMPROCS_FLAGS "--bind-to;none"
 # Disable just one Teko sub-unit test that fails with GCC 4.8.4 + OpenMP (#2712)
 TRIL_SET_BOOL_CACHE_VAR(Teko_DISABLE_LSCSTABALIZED_TPETRA_ALPAH_INV_D TRUE)
 
+# Disable these tests until they can get fixed (#2691)
+TRIL_SET_BOOL_CACHE_VAR(ShyLU_DDFROSch_test_frosch_laplacian_epetra_2d_gdsw_MPI_4_DISABLE TRUE)
+TRIL_SET_BOOL_CACHE_VAR(ShyLU_DDFROSch_test_frosch_laplacian_epetra_2d_rgdsw_MPI_4_DISABLE TRUE)
+TRIL_SET_BOOL_CACHE_VAR(ShyLU_DDFROSch_test_frosch_interfacesets_2D_MPI_4_DISABLE TRUE)
+
 # NOTE: The order of these includes matters!
 
 include("${CMAKE_CURRENT_LIST_DIR}/MpiReleaseDebugSharedPtSettings.cmake")

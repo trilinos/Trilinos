@@ -369,7 +369,7 @@ namespace Stokhos {
     }
   };
 
-#ifdef KOKKOS_HAVE_CUDA
+#ifdef KOKKOS_ENABLE_CUDA
   // Specialization for CopyPCE2Scalar specifically for Cuda that ensures
   // coalesced reads and writes
   template <>

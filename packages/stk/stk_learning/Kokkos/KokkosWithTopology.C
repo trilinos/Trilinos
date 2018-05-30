@@ -48,17 +48,17 @@ void test_topo(int N, int M, int nrepeat) {
 
     // typedef Kokkos::Threads  ExecSpace ;
 
-#ifdef KOKKOS_HAVE_OPENMP
+#ifdef KOKKOS_ENABLE_OPENMP
   typedef Kokkos::OpenMP   ExecSpace ;
-#elif KOKKOS_HAVE_CUDA
+#elif KOKKOS_ENABLE_CUDA
   typedef Kokkos::Cuda     ExecSpace ;
 #else
   typedef Kokkos::Serial   ExecSpace ;
 #endif
 
-#ifdef KOKKOS_HAVE_OPENMP
+#ifdef KOKKOS_ENABLE_OPENMP
    typedef Kokkos::OpenMP       MemSpace;
-#elif KOKKOS_HAVE_CUDA
+#elif KOKKOS_ENABLE_CUDA
    typedef Kokkos::CudaSpace    MemSpace;
 #else
    typedef Kokkos::HostSpace    MemSpace;

@@ -105,7 +105,7 @@ namespace {
     map_type meshMap (INVALID, static_cast<size_t> (numLocalMeshPoints),
                       indexBase, comm);
     // Make sure that the execution space actually got initialized.
-    TEST_ASSERT( execution_space::is_initialized () );
+    TEST_ASSERT( Kokkos::is_initialized () );
 
     lclSuccess = success ? 1 : 0;
     gblSuccess = 0;
@@ -415,7 +415,7 @@ namespace {
     map_type meshMap (INVALID, static_cast<size_t> (numLocalMeshPoints),
                       indexBase, comm);
     // Make sure that the execution space actually got initialized.
-    TEST_ASSERT( execution_space::is_initialized () );
+    TEST_ASSERT( Kokkos::is_initialized () );
 
     lclSuccess = success ? 1 : 0;
     gblSuccess = 0;
