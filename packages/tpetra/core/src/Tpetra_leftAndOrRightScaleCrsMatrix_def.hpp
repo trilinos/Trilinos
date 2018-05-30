@@ -50,19 +50,24 @@
 /// Tpetra_leftAndOrRightScaleCrsMatrix_decl.hpp in this directory.
 
 #include "Tpetra_CrsMatrix.hpp"
-#include "Tpetra_Details_EquilibrationInfo.hpp"
 #include "Tpetra_Details_leftScaleLocalCrsMatrix.hpp"
 #include "Tpetra_Details_rightScaleLocalCrsMatrix.hpp"
-#include "Kokkos_Core.hpp"
 
 namespace Tpetra {
 
 template<class SC, class LO, class GO, class NT>
 void
 leftAndOrRightScaleCrsMatrix (Tpetra::CrsMatrix<SC, LO, GO, NT>& A,
-                              const Details::EquilibrationInfo<typename Kokkos::ArithTraits<SC>::val_type, typename NT::device_type>& equib,
+                              const Kokkos::View<
+                                const typename Kokkos::ArithTraits<SC>::mag_type*,
+                                typename NT::device_type>& rowScalingFactors,
+                              const Kokkos::View<
+                                const typename Kokkos::ArithTraits<SC>::mag_type*,
+                                typename NT::device_type>& colScalingFactors,
                               const bool leftScale,
-                              const bool rightScale)
+                              const bool rightScale,
+                              const bool assumeSymmetric,
+                              const EScaling scaling)
 {
   if (! leftScale && ! rightScale) {
     return;
@@ -90,17 +95,18 @@ leftAndOrRightScaleCrsMatrix (Tpetra::CrsMatrix<SC, LO, GO, NT>& A,
     A.resumeFill ();
   }
 
+  const bool divide = scaling == SCALING_DIVIDE;
   if (leftScale) {
     Details::leftScaleLocalCrsMatrix (A.getLocalMatrix (),
-                                      equib.rowNorms,
-                                      equib.assumeSymmetric);
+                                      rowScalingFactors,
+                                      assumeSymmetric,
+                                      divide);
   }
   if (rightScale) {
     Details::rightScaleLocalCrsMatrix (A.getLocalMatrix (),
-                                       equib.assumeSymmetric ?
-                                         equib.colNorms :
-                                         equib.rowScaledColNorms,
-                                       equib.assumeSymmetric);
+                                       colScalingFactors,
+                                       assumeSymmetric,
+                                       divide);
   }
 
   if (A_fillComplete_on_input) { // put A back how we found it
@@ -122,8 +128,15 @@ leftAndOrRightScaleCrsMatrix (Tpetra::CrsMatrix<SC, LO, GO, NT>& A,
   template void \
   leftAndOrRightScaleCrsMatrix ( \
     Tpetra::CrsMatrix<SC, LO, GO, NT>& A, \
-    const Details::EquilibrationInfo<Kokkos::ArithTraits<SC>::val_type, NT::device_type>& equib, \
+    const Kokkos::View< \
+      const Kokkos::ArithTraits<SC>::mag_type*, \
+      NT::device_type>& rowScalingFactors, \
+    const Kokkos::View< \
+      const Kokkos::ArithTraits<SC>::mag_type*, \
+      NT::device_type>& colScalingFactors, \
     const bool leftScale, \
-    const bool rightScale);
+    const bool rightScale, \
+    const bool assumeSymmetric, \
+    const EScaling scaling);
 
 #endif // TPETRA_LEFTANDORRIGHTSCALECRSMATRIX_DEF_HPP

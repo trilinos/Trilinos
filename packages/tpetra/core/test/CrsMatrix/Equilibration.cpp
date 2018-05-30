@@ -49,7 +49,6 @@
 #include "Tpetra_computeRowAndColumnOneNorms.hpp"
 #include "Tpetra_computeRowAndColumnOneNorms_def.hpp" // unfortunate, but needed for test below; USERS DON'T DO THIS!
 #include "Tpetra_leftAndOrRightScaleCrsMatrix.hpp"
-#include "Tpetra_leftAndOrRightScaleCrsMatrix_def.hpp" // unfortunate, but needed for test below; USERS DON'T DO THIS!
 #include "Tpetra_Core.hpp"
 #include "Tpetra_CrsGraph.hpp"
 #include "Tpetra_CrsMatrix.hpp"
@@ -738,7 +737,14 @@ testEquilibration (Teuchos::FancyOStream& out,
       out << "Test left-scaling CrsMatrix" << endl;
       Teuchos::OSTab tab3 (out);
       auto A_copy = deepCopyFillCompleteCrsMatrix (*(test.A));
-      Tpetra::leftAndOrRightScaleCrsMatrix (*A_copy, result2, true, false);
+      Tpetra::leftAndOrRightScaleCrsMatrix (*A_copy,
+                                            result2.rowNorms,
+                                            result2.assumeSymmetric ?
+                                              result2.colNorms :
+                                              result2.rowScaledColNorms, // ignored
+                                            true, false,
+                                            result2.assumeSymmetric,
+                                            Tpetra::SCALING_DIVIDE);
       testCrsMatrixEquality (success, out, *(test.A_leftScaled), *A_copy);
     }
 
@@ -746,7 +752,14 @@ testEquilibration (Teuchos::FancyOStream& out,
       out << "Test right-scaling CrsMatrix" << endl;
       Teuchos::OSTab tab3 (out);
       auto A_copy = deepCopyFillCompleteCrsMatrix (*(test.A));
-      Tpetra::leftAndOrRightScaleCrsMatrix (*A_copy, result2, false, true);
+      Tpetra::leftAndOrRightScaleCrsMatrix (*A_copy,
+                                            result2.rowNorms, // ignored
+                                            result2.assumeSymmetric ?
+                                              result2.colNorms :
+                                              result2.rowScaledColNorms,
+                                            false, true,
+                                            result2.assumeSymmetric,
+                                            Tpetra::SCALING_DIVIDE);
       testCrsMatrixEquality (success, out, *(test.A_rightScaled), *A_copy);
     }
   } // test computeRowAndColumnOneNorms

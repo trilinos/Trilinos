@@ -47,6 +47,7 @@
 
 #include "TpetraCore_config.h"
 #include "Kokkos_ArithTraits.hpp"
+#include "Kokkos_Core.hpp"
 
 namespace Tpetra {
 
@@ -58,37 +59,56 @@ namespace Tpetra {
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
 template<class SC, class LO, class GO, class N>
 class CrsMatrix;
-
-namespace Details {
-template<class ValueType, class DeviceType>
-class EquilibrationInfo;
-} // namespace Details
 #endif // DOXYGEN_SHOULD_SKIP_THIS
+
+/// \brief Whether "scaling" a matrix means multiplying or dividing
+///   its entries.
+///
+/// leftAndOrRightScaleCrsMatrix (see below) takes this as input.
+enum EScaling {
+  SCALING_MULTIPLY,
+  SCALING_DIVIDE
+};
 
 /// \brief Left-scale and/or right-scale (in that order) the entries
 ///   of the input Tpetra::CrsMatrix A.
-///
-/// \note USERS: This is a function you want.
 ///
 /// \param A [in/out] The sparse matrix A to scale.  It must have a
 ///   valid KokkosSparse::CrsMatrix.  This is true if fillComplete has
 ///   been called on it at least once, or if the matrix was created
 ///   with a local sparse matrix.
 ///
-/// \param equib [in] Return value of computeRowAndColumnNorms (which
-///   see), called on the input matrix A.
+/// \param rowScalingFactors [in] Use
+///   Details::EquilibrationInfo::rowNorms.
+///
+/// \param colScalingFactors [in] If assumeSymmetric, use
+///   Details::EquilibrationInfo::colNorms, else use
+///   Details::EquilibrationInfo::rowScaledColNorms.
 ///
 /// \param leftScale [in] Whether to left-scale A.  Left scaling
 ///   happens first.
 ///
 /// \param rightScale [in] Whether to right-scale A.  Right scaling
 ///   happens last.
+///
+/// \param Whether to assume symmetric scaling, that is, whether to
+///   take square roots of scaling factors before scaling.
+///
+/// \param scaling [in] If SCALING_DIVIDE, "scale" means "divide by";
+///   if SCALING_MULTIPLY, it means "multiply by."
 template<class SC, class LO, class GO, class NT>
 void
 leftAndOrRightScaleCrsMatrix (Tpetra::CrsMatrix<SC, LO, GO, NT>& A,
-                              const Details::EquilibrationInfo<typename Kokkos::ArithTraits<SC>::val_type, typename NT::device_type>& equib,
+                              const Kokkos::View<
+                                const typename Kokkos::ArithTraits<SC>::mag_type*,
+                                typename NT::device_type>& rowScalingFactors,
+                              const Kokkos::View<
+                                const typename Kokkos::ArithTraits<SC>::mag_type*,
+                                typename NT::device_type>& colScalingFactors,
                               const bool leftScale,
-                              const bool rightScale);
+                              const bool rightScale,
+                              const bool assumeSymmetric,
+                              const EScaling scaling);
 
 } // namespace Tpetra
 
