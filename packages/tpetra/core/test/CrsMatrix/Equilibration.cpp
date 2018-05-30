@@ -61,6 +61,24 @@
 
 namespace { // (anonymous)
 
+template<class SC, class LO, class GO, class NT>
+Tpetra::Vector<SC, LO, GO, NT>
+createVectorFromCopyOf1DView (const Teuchos::RCP<const Tpetra::Map<LO, GO, NT> >& map,
+                              const Kokkos::View<SC*, typename NT::device_type>& inputView)
+{
+  using dual_view_type = typename Tpetra::Vector<SC, LO, GO, NT>::dual_view_type;
+  using dev_memory_space = typename NT::device_type::memory_space;
+
+  dual_view_type dv ("MV::DualView", inputView.extent (0), 1);
+  dv.template modify<dev_memory_space> ();
+
+  auto outputView_2d = dv.template view<dev_memory_space> ();
+  auto outputView_1d = Kokkos::subview (outputView_2d, Kokkos::ALL (), 0);
+
+  Kokkos::deep_copy (outputView_1d, inputView);
+  return Tpetra::Vector<SC, LO, GO, NT> (map, dv);
+}
+
 template<class ValueType>
 bool
 near (const ValueType& x,
@@ -733,8 +751,15 @@ testEquilibration (Teuchos::FancyOStream& out,
       testCrsMatrixEquality (success, out, *(test.A), *A_copy);
     }
 
+    Tpetra::Vector<mag_type, LO, GO, NT> rowNormsVec =
+      createVectorFromCopyOf1DView (test.A->getRowMap (), result2.rowNorms);
+    Tpetra::Vector<mag_type, LO, GO, NT> colNormsVec =
+      createVectorFromCopyOf1DView (test.A->getColMap (),
+                                    result2.assumeSymmetric ?
+                                      result2.colNorms :
+                                      result2.rowScaledColNorms);
     {
-      out << "Test left-scaling CrsMatrix" << endl;
+      out << "Test left-scaling CrsMatrix with Kokkos::View" << endl;
       Teuchos::OSTab tab3 (out);
       auto A_copy = deepCopyFillCompleteCrsMatrix (*(test.A));
       Tpetra::leftAndOrRightScaleCrsMatrix (*A_copy,
@@ -747,9 +772,21 @@ testEquilibration (Teuchos::FancyOStream& out,
                                             Tpetra::SCALING_DIVIDE);
       testCrsMatrixEquality (success, out, *(test.A_leftScaled), *A_copy);
     }
-
     {
-      out << "Test right-scaling CrsMatrix" << endl;
+      out << "Test left-scaling CrsMatrix with Vector" << endl;
+      Teuchos::OSTab tab3 (out);
+      auto A_copy = deepCopyFillCompleteCrsMatrix (*(test.A));
+
+      Tpetra::leftAndOrRightScaleCrsMatrix (*A_copy,
+                                            rowNormsVec,
+                                            colNormsVec, // ignored
+                                            true, false,
+                                            result2.assumeSymmetric,
+                                            Tpetra::SCALING_DIVIDE);
+      testCrsMatrixEquality (success, out, *(test.A_leftScaled), *A_copy);
+    }
+    {
+      out << "Test right-scaling CrsMatrix with Kokkos::View" << endl;
       Teuchos::OSTab tab3 (out);
       auto A_copy = deepCopyFillCompleteCrsMatrix (*(test.A));
       Tpetra::leftAndOrRightScaleCrsMatrix (*A_copy,
@@ -757,6 +794,18 @@ testEquilibration (Teuchos::FancyOStream& out,
                                             result2.assumeSymmetric ?
                                               result2.colNorms :
                                               result2.rowScaledColNorms,
+                                            false, true,
+                                            result2.assumeSymmetric,
+                                            Tpetra::SCALING_DIVIDE);
+      testCrsMatrixEquality (success, out, *(test.A_rightScaled), *A_copy);
+    }
+    {
+      out << "Test right-scaling CrsMatrix with Tpetra::Vector" << endl;
+      Teuchos::OSTab tab3 (out);
+      auto A_copy = deepCopyFillCompleteCrsMatrix (*(test.A));
+      Tpetra::leftAndOrRightScaleCrsMatrix (*A_copy,
+                                            rowNormsVec, // ignored
+                                            colNormsVec,
                                             false, true,
                                             result2.assumeSymmetric,
                                             Tpetra::SCALING_DIVIDE);
