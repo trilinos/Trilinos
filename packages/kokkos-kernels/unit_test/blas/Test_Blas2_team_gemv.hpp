@@ -89,7 +89,7 @@ namespace Test {
     //KokkosBlas::gemv(mode,a,A,x,b,y);
     Kokkos::parallel_for( policy, KOKKOS_LAMBDA ( const team_member &teamMember ) {
        const int teamId = teamMember.league_rank();
-       KokkosBlas::Experimental::gemv(teamMember, trans, a, Kokkos::subview(A,std::make_pair(teamId*team_data_siz,(teamId < K-1)?(teamId+1)*team_data_siz:N),Kokkos::ALL()), x, b, Kokkos::subview(y,std::make_pair(teamId*team_data_siz,(teamId < K-1)?(teamId+1)*team_data_siz:N)));
+       KokkosBlas::Experimental::gemv(teamMember, trans, a, Kokkos::subview(A,Kokkos::make_pair(teamId*team_data_siz,(teamId < K-1)?(teamId+1)*team_data_siz:N),Kokkos::ALL()), x, b, Kokkos::subview(y,Kokkos::make_pair(teamId*team_data_siz,(teamId < K-1)?(teamId+1)*team_data_siz:N)));
     } );
 
     ScalarY nonconst_nonconst_result = KokkosBlas::dot(y,y);
@@ -100,7 +100,7 @@ namespace Test {
     //KokkosBlas::gemv(mode,a,A,c_x,b,y);    
    Kokkos::parallel_for( policy, KOKKOS_LAMBDA ( const team_member &teamMember ) {
        const int teamId = teamMember.league_rank();
-       KokkosBlas::Experimental::gemv(teamMember, trans, a, Kokkos::subview(A,std::make_pair(teamId*team_data_siz,(teamId < K-1)?(teamId+1)*team_data_siz:N),Kokkos::ALL()), c_x, b, Kokkos::subview(y,std::make_pair(teamId*team_data_siz,(teamId < K-1)?(teamId+1)*team_data_siz:N)));
+       KokkosBlas::Experimental::gemv(teamMember, trans, a, Kokkos::subview(A,Kokkos::make_pair(teamId*team_data_siz,(teamId < K-1)?(teamId+1)*team_data_siz:N),Kokkos::ALL()), c_x, b, Kokkos::subview(y,Kokkos::make_pair(teamId*team_data_siz,(teamId < K-1)?(teamId+1)*team_data_siz:N)));
     } );
 
     ScalarY const_nonconst_result = KokkosBlas::dot(y,y);
@@ -111,7 +111,7 @@ namespace Test {
     //KokkosBlas::gemv(mode,a,c_A,c_x,b,y);
    Kokkos::parallel_for( policy, KOKKOS_LAMBDA ( const team_member &teamMember ) {
        const int teamId = teamMember.league_rank();
-       KokkosBlas::Experimental::gemv(teamMember, trans, a, Kokkos::subview(c_A,std::make_pair(teamId*team_data_siz,(teamId < K-1)?(teamId+1)*team_data_siz:N),Kokkos::ALL()), c_x, b, Kokkos::subview(y,std::make_pair(teamId*team_data_siz,(teamId < K-1)?(teamId+1)*team_data_siz:N)));
+       KokkosBlas::Experimental::gemv(teamMember, trans, a, Kokkos::subview(c_A,Kokkos::make_pair(teamId*team_data_siz,(teamId < K-1)?(teamId+1)*team_data_siz:N),Kokkos::ALL()), c_x, b, Kokkos::subview(y,Kokkos::make_pair(teamId*team_data_siz,(teamId < K-1)?(teamId+1)*team_data_siz:N)));
     } );
 
     ScalarY const_const_result = KokkosBlas::dot(y,y);

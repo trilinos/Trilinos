@@ -52,6 +52,7 @@
 
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_Tuple.hpp"
+#include "Phalanx_KokkosDeviceTypes.hpp"
 
 namespace panzer {
 
@@ -147,6 +148,25 @@ public:
      *                  required order of the basis functions
      */
    const std::vector<int> & localOffsets(int fieldId) const;
+
+  /** This function produces a map between the ordering specified by
+     * this pattern and an ordering required by the pattern associated with
+     * <code>fieldId</code>. 
+     *
+     * For instance if you have a vector called <code>GIDs</code>
+     * of length <code>this->numberIds()</code> and you want the GIDs
+     * associated with <code>fieldId = 0 </code>. Simply take the <code>offsets</code>
+     * vector and index it into the <code>GIDs</code> vector:
+     * <code>GIDs[offsets[*]]</code>.
+     *
+     * \param[in] fieldId Field to look up
+     *
+     * \returns offsets Offsets into global IDs vector. The order of this vector 
+     *                  is defined by the underlying FieldPattern defining the requested
+     *                  field. For the Intrepid2FieldPattern this will correspond to the 
+     *                  required order of the basis functions
+     */
+   const Kokkos::View<const int*,PHX::Device> localOffsetsKokkos(int fieldId) const;
      
    /** Returns a pair of vectors. The first is the offsets into the global ID 
      * array for the field and subcell specified. This will be the
@@ -232,6 +252,9 @@ protected:
 
    //! Stores the Field offsets for the fieldId key. Note that the key is the fieldId, not the index into the patterns_.
    mutable std::map<int, std::vector<int> > fieldOffsets_;
+
+   //! Stores the Field offsets for the fieldId key. Note that the key is the fieldId, not the index into the patterns_.
+   mutable std::map<int, Kokkos::View<int*,PHX::Device> > fieldOffsetsKokkos_;
 
    struct LessThan  
    { bool operator()(const Teuchos::Tuple<int,3> & a,const Teuchos::Tuple<int,3> & b) const; };

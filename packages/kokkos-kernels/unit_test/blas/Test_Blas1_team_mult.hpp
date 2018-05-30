@@ -78,7 +78,7 @@ namespace Test {
     //KokkosBlas::mult(b,z,a,x,y);
     Kokkos::parallel_for( policy, KOKKOS_LAMBDA ( const team_member &teamMember ) {
        const int teamId = teamMember.league_rank();
-       KokkosBlas::Experimental::mult(teamMember, b, Kokkos::subview(z,std::make_pair(teamId*team_data_siz,(teamId < M-1)?(teamId+1)*team_data_siz:N)), a, Kokkos::subview(x,std::make_pair(teamId*team_data_siz,(teamId < M-1)?(teamId+1)*team_data_siz:N)), Kokkos::subview(y,std::make_pair(teamId*team_data_siz,(teamId < M-1)?(teamId+1)*team_data_siz:N)));
+       KokkosBlas::Experimental::mult(teamMember, b, Kokkos::subview(z,Kokkos::make_pair(teamId*team_data_siz,(teamId < M-1)?(teamId+1)*team_data_siz:N)), a, Kokkos::subview(x,Kokkos::make_pair(teamId*team_data_siz,(teamId < M-1)?(teamId+1)*team_data_siz:N)), Kokkos::subview(y,Kokkos::make_pair(teamId*team_data_siz,(teamId < M-1)?(teamId+1)*team_data_siz:N)));
     } );
     ScalarC nonconst_nonconst_result = KokkosBlas::dot(z,z);
     EXPECT_NEAR_KK( nonconst_nonconst_result, expected_result, eps*expected_result);
@@ -87,7 +87,7 @@ namespace Test {
     //KokkosBlas::mult(b,z,a,x,c_y);
     Kokkos::parallel_for( policy, KOKKOS_LAMBDA ( const team_member &teamMember ) {
        const int teamId = teamMember.league_rank();
-       KokkosBlas::Experimental::mult(teamMember, b, Kokkos::subview(z,std::make_pair(teamId*team_data_siz,(teamId < M-1)?(teamId+1)*team_data_siz:N)), a, Kokkos::subview(x,std::make_pair(teamId*team_data_siz,(teamId < M-1)?(teamId+1)*team_data_siz:N)), Kokkos::subview(c_y,std::make_pair(teamId*team_data_siz,(teamId < M-1)?(teamId+1)*team_data_siz:N)));
+       KokkosBlas::Experimental::mult(teamMember, b, Kokkos::subview(z,Kokkos::make_pair(teamId*team_data_siz,(teamId < M-1)?(teamId+1)*team_data_siz:N)), a, Kokkos::subview(x,Kokkos::make_pair(teamId*team_data_siz,(teamId < M-1)?(teamId+1)*team_data_siz:N)), Kokkos::subview(c_y,Kokkos::make_pair(teamId*team_data_siz,(teamId < M-1)?(teamId+1)*team_data_siz:N)));
     } );
     ScalarC const_nonconst_result = KokkosBlas::dot(z,z);
     EXPECT_NEAR_KK( const_nonconst_result, expected_result, eps*expected_result);
@@ -96,7 +96,7 @@ namespace Test {
     //KokkosBlas::mult(b,z,a,c_x,c_y);
     Kokkos::parallel_for( policy, KOKKOS_LAMBDA ( const team_member &teamMember ) {
        const int teamId = teamMember.league_rank();
-       KokkosBlas::Experimental::mult(teamMember, b, Kokkos::subview(z,std::make_pair(teamId*team_data_siz,(teamId < M-1)?(teamId+1)*team_data_siz:N)), a, Kokkos::subview(c_x,std::make_pair(teamId*team_data_siz,(teamId < M-1)?(teamId+1)*team_data_siz:N)), Kokkos::subview(c_y,std::make_pair(teamId*team_data_siz,(teamId < M-1)?(teamId+1)*team_data_siz:N)));
+       KokkosBlas::Experimental::mult(teamMember, b, Kokkos::subview(z,Kokkos::make_pair(teamId*team_data_siz,(teamId < M-1)?(teamId+1)*team_data_siz:N)), a, Kokkos::subview(c_x,Kokkos::make_pair(teamId*team_data_siz,(teamId < M-1)?(teamId+1)*team_data_siz:N)), Kokkos::subview(c_y,Kokkos::make_pair(teamId*team_data_siz,(teamId < M-1)?(teamId+1)*team_data_siz:N)));
     } );
     ScalarC const_const_result = KokkosBlas::dot(z,z);
     EXPECT_NEAR_KK( const_const_result, expected_result, eps*expected_result);
