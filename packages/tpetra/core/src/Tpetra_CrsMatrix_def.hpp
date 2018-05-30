@@ -8168,20 +8168,7 @@ namespace Tpetra {
     using Teuchos::TimeMonitor;
     Teuchos::RCP<Teuchos::TimeMonitor> MM = Teuchos::rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix + std::string("TAFC Pack-1"))));
 #endif
-    bool isMM=false;
-    if(!params.is_null()) {
-      isMM = params->get("isMatrixMatrix_TransferAndFillComplete",false);
-    }
-
-    static bool first = true;
-    if(isMM && ::isMMOverride) {
-    	isMM=false;
-    	if(first) {
-//    	    std::cerr<< " over ride isMM "<<std::endl;
-    	    first = false;
-    	}
-    }
-
+  
     // Make sure that the input argument rowTransfer is either an
     // Import or an Export.  Import and Export are the only two
     // subclasses of Transfer that we defined, but users might
@@ -8235,7 +8222,7 @@ namespace Tpetra {
     //
     // Get the caller's parameters
     //
-
+    bool isMM = false; // optimize for matrix-matrix ops. 
     bool reverseMode = false; // Are we in reverse mode?
     bool restrictComm = false; // Do we need to restrict the communicator?
     RCP<ParameterList> matrixparams; // parameters for the destination matrix
@@ -8243,7 +8230,15 @@ namespace Tpetra {
       reverseMode = params->get ("Reverse Mode", reverseMode);
       restrictComm = params->get ("Restrict Communicator", restrictComm);
       matrixparams = sublist (params, "CrsMatrix");
+      isMM = params->get("isMatrixMatrix_TransferAndFillComplete",false);
+      if(reverseMode) isMM = false;
     }
+
+// cbl debug only, REMOVE before checkin.
+    if(isMM && ::isMMOverride) {
+    	isMM=false;
+    }
+
 
     // Get the new domain and range Maps.  We need some of them for
     // error checking, now that we have the reverseMode parameter.
@@ -8355,6 +8350,10 @@ namespace Tpetra {
     ArrayView<const LO> PermuteFromLIDs = reverseMode ?
       rowTransfer.getPermuteToLIDs () : rowTransfer.getPermuteFromLIDs ();
     Distributor& Distor = rowTransfer.getDistributor ();
+
+    // we use this in isMM neighbor discovery, for which reverseMode == false
+    ArrayView<const int> neigDiscExportPIDs =  rowTransfer.getExportPIDs (); 
+
 
     // Owning PIDs
     Teuchos::Array<int> SourcePids;
@@ -9074,52 +9073,7 @@ namespace Tpetra {
             }
 	}// end while
 	} // for type123sort
-	//     }
-//         else // do  cbl sort
-//           { 
-// 	      // for small problems the average MueLu_ImportPerformance time is 44 seifert vs 70 cbl sort. 
-	      
-// #ifdef HAVE_TPETRA_MMM_TIMINGS
-//         auto cblsortMM = Teuchos::rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix + std::string("cblSort"))));
-// #endif
-//             typedef std::tuple<int,GO,LO> pgl_t;
-//             std::vector< pgl_t > mms;
-// 	    mms.reserve(EPID1.size()+EPID2.size()+EPID3.size());
 
-//             for(uint i =0; i < EPID1.size();++i) 
-//               mms.push_back(pgl_t(EPID1[i],getDomainMap()->getGlobalElement(ELID1[i]),ELID1[i]));
-            
-//             for(uint i =0; i < EPID2.size();++i)  
-//               mms.push_back(pgl_t(EPID2[i],getDomainMap()->getGlobalElement(ELID2[i]),ELID2[i]));
-            
-//             for(uint i =0; i < EPID3.size();++i)  
-//               mms.push_back(pgl_t(EPID3[i],getDomainMap()->getGlobalElement(ELID3[i]),ELID3[i]));
-
-// 	    const pgl_t MAX(Teuchos::OrdinalTraits<int>::max(),Teuchos::OrdinalTraits<GlobalOrdinal>::max(),Teuchos::OrdinalTraits<LO>::max());
-//             for( auto && me : mms) {
-//               GO gid;               LO lid;               int pid;
-//               std::tie(pid,gid,lid) = me;
-//               std::pair<int,GlobalOrdinal> pgPair(pid,gid);
-//               bool dumpit = (std::find(fromRemoteGID.begin(),fromRemoteGID.end(),pgPair) == fromRemoteGID.end());
-//               if( !(gid != Teuchos::OrdinalTraits<GlobalOrdinal>::invalid() && !dumpit))
-// 		  me = MAX;
-
-//             }
-//             // Note we want the LID's in GID order. 
-// 	    std::sort(mms.begin(),mms.end());
-// 	    auto newEndOfPairs = std::unique(mms.begin(), mms.end());
-// 	    mms.erase(newEndOfPairs,mms.end());
-
-// 	    for(auto p = mms.begin(); p<newEndOfPairs; ++p)
-// 	    {
-// 		if(*p == MAX) break;
-// 		GO gid;               LO lid;               int pid;
-// 		std::tie(pid,gid,lid) = *p;
-// 		userExportPIDs.push_back(pid);
-// 		userExportLIDs.push_back(lid);            
-// 		userExportGIDs.push_back(gid);
-//             }
-//           } // cbl sort
 
 	{
 #ifdef HAVE_TPETRA_MMM_TIMINGS
