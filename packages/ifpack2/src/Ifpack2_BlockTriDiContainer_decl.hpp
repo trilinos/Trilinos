@@ -109,21 +109,18 @@ namespace Ifpack2 {
       //! complex plane. N.B. that this constant modifies the matrix in the linear
       //! equation, not simply the diagonal preconditioner.
       magnitude_type addRadiallyToDiagonal = Kokkos::ArithTraits<magnitude_type>::zero();
-      // ComputeParameters() 
-      //   : addRadiallyToDiagonal(Kokkos::ArithTraits<magnitude_type>::zero()) 
-      // {}
     };
 
     //! Input arguments to <tt>applyInverseJacobi</tt>
     struct ApplyParameters {
       //! Set this to true if <tt>Y</tt> is meant to be treated as 0 on
       //! entry. Defaults to false.
-      bool zeroStartingSolution;
+      bool zeroStartingSolution = false;
       //! Damping factor. Defaults to 1.
-      scalar_type dampingFactor;
+      scalar_type dampingFactor = Kokkos::ArithTraits<magnitude_type>::one();
       //! The maximum number of sweeps. If the norm-based criterion is not used,
       //! it's exactly the number of sweeps. Defaults to 1.
-      int maxNumSweeps;
+      int maxNumSweeps = 1;
       //! The 2-norm-based termination criterion. If it is larger than 0, then it
       //! is used. Termination is then based on <tt>maxNumSweeps</tt> and this
       //! criterion, whichever is reached first. In the case of multiple right
@@ -133,7 +130,7 @@ namespace Ifpack2 {
       //! the input <tt>y</tt>, often 0, and <tt>f</tt> is the maximum of the
       //! 2-norms of each degree of freedom, i.e., index of a block. Defaults to
       //! 0.
-      magnitude_type tolerance;
+      magnitude_type tolerance = Kokkos::ArithTraits<magnitude_type>::zero();
       //! Check the norm-based termination criterion every
       //! <tt>checkToleranceEvery</tt> iterations. Defaults to 1. A norm
       //! computation requires a global reduction, which is expensive. Hence it
@@ -141,12 +138,7 @@ namespace Ifpack2 {
       //! it is anticipated that the number of iterations required to terminate
       //! will be sufficiently large to make 1 or 2 extra iterations relatively
       //! cheap. Defaults to 1.
-      int checkToleranceEvery;
-      ApplyParameters() 
-        : zeroStartingSolution(false), dampingFactor(Kokkos::ArithTraits<magnitude_type>::one()),
-          maxNumSweeps(1), tolerance(Kokkos::ArithTraits<magnitude_type>::zero()),
-          checkToleranceEvery(1)
-      {}
+      int checkToleranceEvery = 1;
     };
   };
 
