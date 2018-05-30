@@ -462,7 +462,7 @@ rev_ND(const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>  & SourceMatri
   std::vector<int> rsize2(ProcsTo.size(),-1);
   
    for(int i=0;i<ProcsTo.size();++i) {
-       char * thisrec = (char *) (&rsize1[i]);
+       char * thisrecv = (char *) (&rsize1[i]);
        MPI_Request rawRequest = MPI_REQUEST_NULL;
        MPI_Irecv(const_cast<char*>(thisrecv),
 		 sizeof(int),
@@ -486,7 +486,7 @@ rev_ND(const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>  & SourceMatri
        rawSreq[i]=rawRequest;
    }
    for(int i=0;i<ProcsTo.size();++i) {
-       char * thisrec = (char *) (&rsize2[i]);
+       char * thisrecv = (char *) (&rsize2[i]);
        MPI_Request rawRequest = MPI_REQUEST_NULL;
        MPI_Irecv(const_cast<char*>(thisrecv),
 		 sizeof(int),
@@ -514,13 +514,13 @@ rev_ND(const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>  & SourceMatri
    bool sizeerr=false;
    for(int i=0;i<ProcsTo.size();++i) {
 
-       if(rsize1[i]!=ReverseRecvSize[i].first){
+       if(rsize1[i]!=ReverseRecvSizes[i].first){
 	   sizeerr=true;
-	   serr<<MyPID<<" Mismatch in received 1st sizes between Teuchos::isend and raw MPI send Raw:"<<rsize1[i]<<" T::isend "<<ReverseRecvSize[i].first<<std::endl;
+	   serr<<MyPID<<" Mismatch in received 1st sizes between Teuchos::isend and raw MPI send Raw:"<<rsize1[i]<<" T::isend "<<ReverseRecvSizes[i].first<<std::endl;
        }
-       if(rsize2[i]!=ReverseRecvSize[i].second){
+       if(rsize2[i]!=ReverseRecvSizes[i].second){
 	   sizeerr=true;
-	   serr<<MyPID<<" Mismatch in received 2nd sizes between Teuchos::isend and raw MPI send Raw:"<<rsize2[i]<<" T::isend "<<ReverseRecvSize[i].second<<std::endl;
+	   serr<<MyPID<<" Mismatch in received 2nd sizes between Teuchos::isend and raw MPI send Raw:"<<rsize2[i]<<" T::isend "<<ReverseRecvSizes[i].second<<std::endl;
        }
    }
    if(sizeerr) std::cerr<<serr.str()<<std::flush<<std::flush;
@@ -840,6 +840,112 @@ reverseNeighborDiscovery(const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, No
 
   Teuchos::waitAll(*comm,mpireq());
  
+  Teuchos::Array<MPI_Request> rawRreq(ProcsTo.size(), MPI_REQUEST_NULL);
+  Teuchos::Array<MPI_Request> rawSreq(ProcsFrom.size(), MPI_REQUEST_NULL);
+
+  MPI_Comm rawComm = getRawMpiComm(*comm);
+
+
+
+
+
+  std::vector<int> rsize1(ProcsTo.size(),-1);
+  std::vector<int> rsize2(ProcsTo.size(),-1);
+  
+   for(int i=0;i<ProcsTo.size();++i) {
+       char * thisrecv = (char *) (&rsize1[i]);
+       MPI_Request rawRequest = MPI_REQUEST_NULL;
+       MPI_Irecv(const_cast<char*>(thisrecv),
+		 sizeof(int),
+		 MPI_CHAR,
+		 ProcsTo[i],
+		 0,
+		 rawComm,
+		 &rawRequest);
+       rawRreq[i]=rawRequest;
+   }
+   for(int i=0;i<ProcsFrom.size();++i) { 
+       char * mysend =  (char *)(&ReverseSendSizes[i].first);
+       MPI_Request rawRequest = MPI_REQUEST_NULL;
+       MPI_Isend(mysend,
+		 sizeof(int),
+		 MPI_CHAR,
+		 ProcsFrom[i],
+		 0,
+		 rawComm,
+		 &rawRequest);
+       rawSreq[i]=rawRequest;
+   }
+   for(int i=0;i<ProcsTo.size();++i) {
+       char * thisrecv = (char *) (&rsize2[i]);
+       MPI_Request rawRequest = MPI_REQUEST_NULL;
+       MPI_Irecv(const_cast<char*>(thisrecv),
+		 sizeof(int),
+		 MPI_CHAR,
+		 ProcsTo[i],
+		 0,
+		 rawComm,
+		 &rawRequest);
+       rawRreq[i]=rawRequest;
+   }
+   for(int i=0;i<ProcsFrom.size();++i) { 
+       char * mysend =  (char *)(&ReverseSendSizes[i].second);
+       MPI_Request rawRequest = MPI_REQUEST_NULL;
+       MPI_Isend(mysend,
+		 sizeof(int),
+		 MPI_CHAR,
+		 ProcsFrom[i],
+		 0,
+		 rawComm,
+		 &rawRequest);
+       rawSreq[i]=rawRequest;
+   }
+
+   std::ostringstream serr;
+   bool sizeerr=false;
+   for(int i=0;i<ProcsTo.size();++i) {
+
+       if(rsize1[i]!=ReverseRecvSizes[i].first){
+	   sizeerr=true;
+	   serr<<MyPID<<" Mismatch in received 1st sizes between Teuchos::isend and raw MPI send Raw:"<<rsize1[i]<<" T::isend "<<ReverseRecvSizes[i].first<<std::endl;
+       }
+       if(rsize2[i]!=ReverseRecvSizes[i].second){
+	   sizeerr=true;
+	   serr<<MyPID<<" Mismatch in received 2nd sizes between Teuchos::isend and raw MPI send Raw:"<<rsize2[i]<<" T::isend "<<ReverseRecvSizes[i].second<<std::endl;
+       }
+   }
+   if(sizeerr) std::cerr<<serr.str()<<std::flush<<std::flush;
+
+   comm->barrier();
+   comm->barrier();
+   if(sizeerr) {
+       std::cerr<<std::flush;
+       comm->barrier();
+       comm->barrier();
+   }
+   assert(!sizeerr);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   size_t totalexportpairrecsize = 0;
   for(size_t i = 0; i < (size_t)ReverseRecvSizes.size(); i++) {
     totalexportpairrecsize += ReverseRecvSizes[i].first;
@@ -859,10 +965,6 @@ reverseNeighborDiscovery(const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, No
   mpireq.clear();
   mpisend.clear();
 
-  Teuchos::Array<MPI_Request> rawRreq(ProcsTo.size(), MPI_REQUEST_NULL);
-  Teuchos::Array<MPI_Request> rawSreq(ProcsFrom.size(), MPI_REQUEST_NULL);
-
-  MPI_Comm rawComm = getRawMpiComm(*comm);
 
   for(int i=0;i<ProcsTo.size();++i) {
     char * myrecv  = (char *) (&ReverseRecvBuffer[i])->getRawPtr();
