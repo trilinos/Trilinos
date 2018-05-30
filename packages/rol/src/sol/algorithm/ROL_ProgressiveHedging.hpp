@@ -202,7 +202,7 @@ public:
         wvec_[j]->axpy(-penaltyParam_,*z_gsum_);
       }
       zdotz  = z_gsum_->dot(*z_gsum_);
-      znorm  = std::sqrt(vec_g[0] - zdotz);
+      znorm  = std::sqrt(std::abs(vec_g[0] - zdotz));
       tspiter += static_cast<int>(vec_g[1]);
       // Output
       outStream << "  "
