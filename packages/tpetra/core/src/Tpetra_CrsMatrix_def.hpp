@@ -4018,13 +4018,10 @@ namespace Tpetra {
     if (this->getRangeMap ()->isSameAs (* (x.getMap ()))) {
       // Take from Epetra: If we have a non-trivial exporter, we must
       // import elements that are permuted or are on other processors.
-      // (We will use the exporter to perform the import ("reverse
-      // mode").)
       auto exporter = this->getCrsGraphRef ().getExporter ();
-
-      if (exporter != Teuchos::null) {
+      if (exporter.get () != nullptr) {
         RCP<vec_type> tempVec (new vec_type (this->getRowMap ()));
-        tempVec->doImport (x, *exporter, REPLACE);
+        tempVec->doImport (x, *exporter, REPLACE); // reverse mode
         xp = tempVec;
       }
       else {
@@ -4036,8 +4033,8 @@ namespace Tpetra {
     }
     else {
       TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
-        (true, std::invalid_argument, "x's Map must be the same as either the "
-         "row Map or the range Map of the CrsMatrix.");
+        (true, std::invalid_argument, "x's Map must be the same as "
+         "either the row Map or the range Map of the CrsMatrix.");
     }
 
     // Check whether A has a valid local matrix.  It might not if it
@@ -4082,6 +4079,7 @@ namespace Tpetra {
   CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   rightScale (const Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& x)
   {
+    using ::Tpetra::Details::ProfilingRegion;
     using Teuchos::ArrayRCP;
     using Teuchos::ArrayView;
     using Teuchos::null;
@@ -4091,30 +4089,28 @@ namespace Tpetra {
     typedef Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node> vec_type;
     const char tfecfFuncName[] = "rightScale: ";
 
-    // FIXME (mfh 06 Aug 2014) This doesn't make sense.  The matrix
-    // should only be modified when it is not fill complete.
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-      ! isFillComplete (), std::runtime_error, "Matrix must be fill complete.");
+    ProfilingRegion region ("Tpetra::CrsMatrix::rightScale");
+
     RCP<const vec_type> xp;
-    if (getDomainMap ()->isSameAs (* (x.getMap ()))) {
+    if (this->getDomainMap ()->isSameAs (* (x.getMap ()))) {
       // Take from Epetra: If we have a non-trivial exporter, we must
       // import elements that are permuted or are on other processors.
-      // (We will use the exporter to perform the import.)
-      if (getCrsGraphRef ().getImporter () != Teuchos::null) {
-        RCP<vec_type> tempVec = rcp (new vec_type (getColMap ()));
-        tempVec->doImport (x, * (getCrsGraphRef ().getImporter ()), INSERT);
+      auto importer = this->getCrsGraphRef ().getImporter ();
+      if (importer.get () != nullptr) {
+        RCP<vec_type> tempVec (new vec_type (this->getColMap ()));
+        tempVec->doImport (x, *importer, REPLACE);
         xp = tempVec;
       }
       else {
         xp = rcpFromRef (x);
       }
     }
-    else if (getRowMap ()->isSameAs (* (x.getMap ()))) {
+    else if (this->getColMap ()->isSameAs (* (x.getMap ()))) {
       xp = rcpFromRef (x);
     } else {
       TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-        true, std::runtime_error, "The vector x must have the same Map as "
-        "either the row Map or the range Map.");
+        true, std::runtime_error, "x's Map must be the same as "
+        "either the domain Map or the column Map of the CrsMatrix.");
     }
 
     ArrayRCP<const Scalar> vectorVals = xp->getData (0);
