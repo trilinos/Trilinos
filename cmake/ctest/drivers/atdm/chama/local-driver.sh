@@ -18,5 +18,4 @@ set -x
 atdm_run_script_on_compute_node \
   $WORKSPACE/Trilinos/cmake/ctest/drivers/atdm/ctest-s-driver-test.sh \
   $PWD/ctest-s-driver-test.out \
-  ${SALLOC_CTEST_TIME_LIMIT_MINUTES} \
-  fy150106
+  ${SALLOC_CTEST_TIME_LIMIT_MINUTES}
