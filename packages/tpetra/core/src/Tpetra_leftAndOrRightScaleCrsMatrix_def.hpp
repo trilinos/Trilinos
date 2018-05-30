@@ -51,135 +51,11 @@
 
 #include "Tpetra_CrsMatrix.hpp"
 #include "Tpetra_Details_EquilibrationInfo.hpp"
+#include "Tpetra_Details_leftScaleLocalCrsMatrix.hpp"
+#include "Tpetra_Details_rightScaleLocalCrsMatrix.hpp"
 #include "Kokkos_Core.hpp"
 
 namespace Tpetra {
-namespace Details {
-
-/// \brief Kokkos::parallel_for functor that left-scales a
-///   KokkosSparse::CrsMatrix.
-///
-/// \tparam LocalSparseMatrixType KokkosSparse::CrsMatrix specialization.
-template<class LocalSparseMatrixType>
-class LeftScaleLocalCrsMatrix {
-public:
-  using local_matrix_type = LocalSparseMatrixType;
-  using val_type = typename local_matrix_type::value_type;
-  using mag_type = typename Kokkos::ArithTraits<val_type>::mag_type;
-  using device_type = typename local_matrix_type::device_type;
-
-  LeftScaleLocalCrsMatrix (const local_matrix_type& A_lcl,
-                           const EquilibrationInfo<val_type, device_type>& result) :
-    A_lcl_ (A_lcl),
-    rowNorms_ (result.rowNorms),
-    assumeSymmetric_ (result.assumeSymmetric)
-  {}
-
-  KOKKOS_INLINE_FUNCTION void
-  operator () (const typename local_matrix_type::ordinal_type lclRow) const
-  {
-    using LO = typename local_matrix_type::ordinal_type;
-    using KAM = Kokkos::ArithTraits<mag_type>;
-
-    const mag_type curRowNorm = rowNorms_(lclRow);
-    // Dividing by zero gives unpleasant results, so don't do it.
-    if (curRowNorm > KAM::zero ()) {
-      const mag_type scalingFactor = assumeSymmetric_ ?
-        KAM::sqrt (curRowNorm) : curRowNorm;
-      auto curRow = A_lcl_.row (lclRow);
-      const LO numEnt = curRow.length;
-      for (LO k = 0; k < numEnt; ++k) {
-        curRow.value (k) = curRow.value(k) / scalingFactor;
-      }
-    }
-  }
-
-  /// \brief leftAndOrRightScaleCrsMatrix should call this.
-  ///
-  /// Create a functor instance and invoke it in a Kokkos::parallel_for.
-  static void
-  run (const local_matrix_type& A_lcl,
-       const EquilibrationInfo<val_type, device_type>& result)
-  {
-    using execution_space = typename device_type::execution_space;
-    using LO = typename local_matrix_type::ordinal_type;
-    using range_type = Kokkos::RangePolicy<execution_space, LO>;
-
-    LeftScaleLocalCrsMatrix<local_matrix_type> functor (A_lcl, result);
-    const LO lclNumRows = A_lcl.numRows ();
-    Kokkos::parallel_for ("leftScaleLocalCrsMatrix",
-                          range_type (0, lclNumRows), functor);
-  }
-
-private:
-  local_matrix_type A_lcl_;
-  Kokkos::View<const mag_type*, device_type> rowNorms_;
-  bool assumeSymmetric_;
-};
-
-/// \brief Kokkos::parallel_for functor that right-scales a
-///   KokkosSparse::CrsMatrix.
-///
-/// \tparam LocalSparseMatrixType KokkosSparse::CrsMatrix specialization.
-template<class LocalSparseMatrixType>
-class RightScaleLocalCrsMatrix {
-public:
-  using local_matrix_type = LocalSparseMatrixType;
-  using val_type = typename local_matrix_type::value_type;
-  using device_type = typename local_matrix_type::device_type;
-
-  RightScaleLocalCrsMatrix (const local_matrix_type& A_lcl,
-                            const EquilibrationInfo<val_type, device_type>& result) :
-    A_lcl_ (A_lcl),
-    scalingFactors_ (result.assumeSymmetric ? result.colNorms : result.rowScaledColNorms),
-    assumeSymmetric_ (result.assumeSymmetric)
-  {}
-
-  KOKKOS_INLINE_FUNCTION void
-  operator () (const typename local_matrix_type::ordinal_type lclRow) const
-  {
-    using LO = typename local_matrix_type::ordinal_type;
-    using mag_type = typename Kokkos::ArithTraits<val_type>::mag_type;
-    using KAM = Kokkos::ArithTraits<mag_type>;
-
-    auto curRow = A_lcl_.row (lclRow);
-    const LO numEnt = curRow.length;
-    for (LO k = 0; k < numEnt; ++k) {
-      const LO lclColInd = curRow.colidx(k);
-      const mag_type curColNorm = scalingFactors_(lclColInd);
-      if (curColNorm != KAM::zero ()) {
-        const mag_type scalingFactor = assumeSymmetric_ ?
-          KAM::sqrt (curColNorm) : curColNorm;
-        curRow.value(k) = curRow.value(k) / scalingFactor;
-      }
-    }
-  }
-
-  /// \brief leftAndOrRightScaleCrsMatrix should call this.
-  ///
-  /// Create a functor instance and invoke it in a Kokkos::parallel_for.
-  static void
-  run (const local_matrix_type& A_lcl,
-       const EquilibrationInfo<val_type, device_type>& result)
-  {
-    using execution_space = typename device_type::execution_space;
-    using LO = typename local_matrix_type::ordinal_type;
-    using range_type = Kokkos::RangePolicy<execution_space, LO>;
-
-    RightScaleLocalCrsMatrix<local_matrix_type> functor (A_lcl, result);
-    Kokkos::parallel_for ("rightScaleLocalCrsMatrix",
-                          range_type (0, A_lcl.numRows ()), functor);
-  }
-
-private:
-  local_matrix_type A_lcl_;
-
-  using mag_type = typename Kokkos::ArithTraits<val_type>::mag_type;
-  Kokkos::View<const mag_type*, device_type> scalingFactors_;
-  bool assumeSymmetric_;
-};
-
-} // namespace Details
 
 template<class SC, class LO, class GO, class NT>
 void
@@ -196,8 +72,9 @@ leftAndOrRightScaleCrsMatrix (Tpetra::CrsMatrix<SC, LO, GO, NT>& A,
   if (! A_fillComplete_on_input) {
     // Make sure that A has a valid local matrix.  It might not if it
     // was not created with a local matrix, and if fillComplete has
-    // never been called on it before.  It's invalid if the local
-    // number of rows is zero, but shouldn't be.
+    // never been called on it before.  A never-initialized (and thus
+    // invalid) local matrix has zero rows, because it was default
+    // constructed.
     auto A_lcl = A.getLocalMatrix ();
     const LO lclNumRows =
       static_cast<LO> (A.getRowMap ()->getNodeNumElements ());
@@ -214,16 +91,16 @@ leftAndOrRightScaleCrsMatrix (Tpetra::CrsMatrix<SC, LO, GO, NT>& A,
   }
 
   if (leftScale) {
-    using crs_matrix_type = Tpetra::CrsMatrix<SC, LO, GO, NT>;
-    using local_matrix_type = typename crs_matrix_type::local_matrix_type;
-    using impl_type = Details::LeftScaleLocalCrsMatrix<local_matrix_type>;
-    impl_type::run (A.getLocalMatrix (), equib);
+    Details::leftScaleLocalCrsMatrix (A.getLocalMatrix (),
+                                      equib.rowNorms,
+                                      equib.assumeSymmetric);
   }
   if (rightScale) {
-    using crs_matrix_type = Tpetra::CrsMatrix<SC, LO, GO, NT>;
-    using local_matrix_type = typename crs_matrix_type::local_matrix_type;
-    using impl_type = Details::RightScaleLocalCrsMatrix<local_matrix_type>;
-    impl_type::run (A.getLocalMatrix (), equib);
+    Details::rightScaleLocalCrsMatrix (A.getLocalMatrix (),
+                                       equib.assumeSymmetric ?
+                                         equib.colNorms :
+                                         equib.rowScaledColNorms,
+                                       equib.assumeSymmetric);
   }
 
   if (A_fillComplete_on_input) { // put A back how we found it
