@@ -50,8 +50,11 @@
 /// Tpetra_leftAndOrRightScaleCrsMatrix_decl.hpp in this directory.
 
 #include "Tpetra_CrsMatrix.hpp"
+#include "Tpetra_Vector.hpp"
+#include "Tpetra_Details_Behavior.hpp"
 #include "Tpetra_Details_leftScaleLocalCrsMatrix.hpp"
 #include "Tpetra_Details_rightScaleLocalCrsMatrix.hpp"
+#include "Teuchos_TestForException.hpp"
 
 namespace Tpetra {
 
@@ -116,6 +119,63 @@ leftAndOrRightScaleCrsMatrix (Tpetra::CrsMatrix<SC, LO, GO, NT>& A,
   }
 }
 
+template<class SC, class LO, class GO, class NT>
+void
+leftAndOrRightScaleCrsMatrix (Tpetra::CrsMatrix<SC, LO, GO, NT>& A,
+                              const Tpetra::Vector<
+                                typename Kokkos::ArithTraits<SC>::mag_type,
+                                LO, GO, NT>& rowScalingFactors,
+                              const Tpetra::Vector<
+                                typename Kokkos::ArithTraits<SC>::mag_type,
+                                LO, GO, NT>& colScalingFactors,
+                              const bool leftScale,
+                              const bool rightScale,
+                              const bool assumeSymmetric,
+                              const EScaling scaling)
+{
+  using device_type = typename NT::device_type;
+  using dev_memory_space = typename device_type::memory_space;
+  using mag_type = typename Kokkos::ArithTraits<SC>::mag_type;
+  using vec_type = Tpetra::Vector<mag_type, LO, GO, NT>;
+  const char prefix[] = "leftAndOrRightScaleCrsMatrix: ";
+  const bool debug = ::Tpetra::Details::Behavior::debug ();
+
+  Kokkos::View<const mag_type*, device_type> row_lcl;
+  Kokkos::View<const mag_type*, device_type> col_lcl;
+  if (leftScale) {
+    if (debug) {
+      const bool same = rowScalingFactors.getMap ()->isSameAs (* (A.getRowMap ()));
+      TEUCHOS_TEST_FOR_EXCEPTION
+        (! same, std::invalid_argument, prefix << "rowScalingFactors's Map "
+         "must be the same as the CrsMatrix's row Map.  If you see this "
+         "message, it's likely that you are using a range Map Vector and that "
+         "the CrsMatrix's row Map is overlapping.");
+    }
+    if (rowScalingFactors.template need_sync<dev_memory_space> ()) {
+      const_cast<vec_type&> (rowScalingFactors).template sync<dev_memory_space> ();
+    }
+    auto row_lcl_2d = rowScalingFactors.template getLocalView<dev_memory_space> ();
+    row_lcl = Kokkos::subview (row_lcl_2d, Kokkos::ALL (), 0);
+  }
+  if (rightScale) {
+    if (debug) {
+      const bool same = colScalingFactors.getMap ()->isSameAs (* (A.getColMap ()));
+      TEUCHOS_TEST_FOR_EXCEPTION
+        (! same, std::invalid_argument, prefix << "colScalingFactors's Map "
+         "must be the same as the CrsMatrix's column Map.  If you see this "
+         "message, it's likely that you are using a domain Map Vector.");
+    }
+    if (colScalingFactors.template need_sync<dev_memory_space> ()) {
+      const_cast<vec_type&> (colScalingFactors).template sync<dev_memory_space> ();
+    }
+    auto col_lcl_2d = colScalingFactors.template getLocalView<dev_memory_space> ();
+    col_lcl = Kokkos::subview (col_lcl_2d, Kokkos::ALL (), 0);
+  }
+
+  leftAndOrRightScaleCrsMatrix (A, row_lcl, col_lcl, leftScale, rightScale,
+                                assumeSymmetric, scaling);
+}
+
 } // namespace Tpetra
 
 //
@@ -134,6 +194,16 @@ leftAndOrRightScaleCrsMatrix (Tpetra::CrsMatrix<SC, LO, GO, NT>& A,
     const Kokkos::View< \
       const Kokkos::ArithTraits<SC>::mag_type*, \
       NT::device_type>& colScalingFactors, \
+    const bool leftScale, \
+    const bool rightScale, \
+    const bool assumeSymmetric, \
+    const EScaling scaling); \
+  \
+  template void \
+  leftAndOrRightScaleCrsMatrix ( \
+    Tpetra::CrsMatrix<SC, LO, GO, NT>& A, \
+    const Tpetra::Vector<Kokkos::ArithTraits<SC>::mag_type, LO, GO, NT>& rowScalingFactors, \
+    const Tpetra::Vector<Kokkos::ArithTraits<SC>::mag_type, LO, GO, NT>& colScalingFactors, \
     const bool leftScale, \
     const bool rightScale, \
     const bool assumeSymmetric, \
