@@ -90,9 +90,9 @@ namespace Ifpack2 {
   /// BlockTriDiContainer, ImplSimdTag
   ///
 
-  template <typename MatrixType, typename LocalScalarType>
+  template <typename MatrixType>
   void
-  BlockTriDiContainer<MatrixType, LocalScalarType, BlockTriDiContainerDetails::ImplSimdTag>
+  BlockTriDiContainer<MatrixType, BlockTriDiContainerDetails::ImplSimdTag>
   ::initInternal (const Teuchos::RCP<const row_matrix_type>& matrix,
                 const Teuchos::Array<Teuchos::Array<local_ordinal_type> >& partitions,
                 const Teuchos::RCP<const import_type>& importer,
@@ -132,9 +132,9 @@ namespace Ifpack2 {
     norm_manager_    = BlockTriDiContainerDetails::NormManager<MatrixType>(A_->getComm());
   }
 
-  template <typename MatrixType, typename LocalScalarType>
+  template <typename MatrixType>
   void
-  BlockTriDiContainer<MatrixType, LocalScalarType, BlockTriDiContainerDetails::ImplSimdTag>
+  BlockTriDiContainer<MatrixType, BlockTriDiContainerDetails::ImplSimdTag>
   ::clearInternal ()
   {
     using impl_type = BlockTriDiContainerDetails::ImplType<MatrixType>;
@@ -156,8 +156,8 @@ namespace Ifpack2 {
     norm_manager_    = norm_manager_type();
   }
 
-  template <typename MatrixType, typename LocalScalarType>
-  BlockTriDiContainer<MatrixType, LocalScalarType, BlockTriDiContainerDetails::ImplSimdTag>
+  template <typename MatrixType>
+  BlockTriDiContainer<MatrixType, BlockTriDiContainerDetails::ImplSimdTag>
   ::BlockTriDiContainer (const Teuchos::RCP<const row_matrix_type>& matrix,
                        const Teuchos::Array<Teuchos::Array<local_ordinal_type> >& partitions,
                        const Teuchos::RCP<const import_type>& importer,
@@ -169,8 +169,8 @@ namespace Ifpack2 {
     initInternal(matrix, partitions, importer, overlapCommAndComp, useSeqMethod);
   }
 
-  template <typename MatrixType, typename LocalScalarType>
-  BlockTriDiContainer<MatrixType, LocalScalarType, BlockTriDiContainerDetails::ImplSimdTag>
+  template <typename MatrixType>
+  BlockTriDiContainer<MatrixType, BlockTriDiContainerDetails::ImplSimdTag>
   ::BlockTriDiContainer (const Teuchos::RCP<const row_matrix_type>& matrix,
                        const Teuchos::Array<Teuchos::Array<local_ordinal_type> >& partitions,
                        const bool overlapCommAndComp, const bool useSeqMethod)
@@ -180,39 +180,39 @@ namespace Ifpack2 {
     initInternal(matrix, partitions, Teuchos::null, overlapCommAndComp, useSeqMethod);
   }
 
-  template <typename MatrixType, typename LocalScalarType>
-  BlockTriDiContainer<MatrixType, LocalScalarType, BlockTriDiContainerDetails::ImplSimdTag>
+  template <typename MatrixType>
+  BlockTriDiContainer<MatrixType, BlockTriDiContainerDetails::ImplSimdTag>
   ::~BlockTriDiContainer ()
   {
   }
 
-  template <typename MatrixType, typename LocalScalarType>
+  template <typename MatrixType>
   bool 
-  BlockTriDiContainer<MatrixType, LocalScalarType, BlockTriDiContainerDetails::ImplSimdTag>
+  BlockTriDiContainer<MatrixType, BlockTriDiContainerDetails::ImplSimdTag>
   ::isInitialized () const
   {
     return IsInitialized_;
   }
 
-  template <typename MatrixType, typename LocalScalarType>
+  template <typename MatrixType>
   bool 
-  BlockTriDiContainer<MatrixType, LocalScalarType, BlockTriDiContainerDetails::ImplSimdTag>
+  BlockTriDiContainer<MatrixType, BlockTriDiContainerDetails::ImplSimdTag>
   ::isComputed () const
   {
     return IsComputed_;
   }
 
-  template <typename MatrixType, typename LocalScalarType>
+  template <typename MatrixType>
   void 
-  BlockTriDiContainer<MatrixType, LocalScalarType, BlockTriDiContainerDetails::ImplSimdTag>
+  BlockTriDiContainer<MatrixType, BlockTriDiContainerDetails::ImplSimdTag>
   ::setParameters (const Teuchos::ParameterList& /* List */)
   {
     // the solver doesn't currently take any parameters
   }
 
-  template <typename MatrixType, typename LocalScalarType>
+  template <typename MatrixType>
   void 
-  BlockTriDiContainer<MatrixType, LocalScalarType, BlockTriDiContainerDetails::ImplSimdTag>
+  BlockTriDiContainer<MatrixType, BlockTriDiContainerDetails::ImplSimdTag>
   ::initialize ()
   {
     IsInitialized_ = true;
@@ -226,9 +226,9 @@ namespace Ifpack2 {
     }
   }
 
-  template <typename MatrixType, typename LocalScalarType>
+  template <typename MatrixType>
   void 
-  BlockTriDiContainer<MatrixType, LocalScalarType, BlockTriDiContainerDetails::ImplSimdTag>
+  BlockTriDiContainer<MatrixType, BlockTriDiContainerDetails::ImplSimdTag>
   ::compute ()
   {
     IsComputed_ = false;
@@ -241,9 +241,9 @@ namespace Ifpack2 {
     IsComputed_ = true;
   }
 
-  template <typename MatrixType, typename LocalScalarType>
+  template <typename MatrixType>
   void 
-  BlockTriDiContainer<MatrixType, LocalScalarType, BlockTriDiContainerDetails::ImplSimdTag>
+  BlockTriDiContainer<MatrixType, BlockTriDiContainerDetails::ImplSimdTag>
   ::clearBlocks ()
   {
     clearInternal();
@@ -251,9 +251,9 @@ namespace Ifpack2 {
     IsComputed_ = false;
   }
 
-  template <typename MatrixType, typename LocalScalarType>
+  template <typename MatrixType>
   void 
-  BlockTriDiContainer<MatrixType, LocalScalarType, BlockTriDiContainerDetails::ImplSimdTag>
+  BlockTriDiContainer<MatrixType, BlockTriDiContainerDetails::ImplSimdTag>
   ::applyInverseJacobi (const mv_type& X, mv_type& Y, bool zeroStartingSolution,
                         int numSweeps) const
   {
@@ -276,17 +276,17 @@ namespace Ifpack2 {
        check_tol_every);
   }
 
-  template <typename MatrixType, typename LocalScalarType>
+  template <typename MatrixType>
   BlockTriDiContainerParameters::ComputeParameters
-  BlockTriDiContainer<MatrixType, LocalScalarType, BlockTriDiContainerDetails::ImplSimdTag>
+  BlockTriDiContainer<MatrixType, BlockTriDiContainerDetails::ImplSimdTag>
   ::createDefaultComputeParameters () const
   {
     return BlockTriDiContainerParameters::ComputeParameters();
   }
 
-  template <typename MatrixType, typename LocalScalarType>
+  template <typename MatrixType>
   void 
-  BlockTriDiContainer<MatrixType, LocalScalarType, BlockTriDiContainerDetails::ImplSimdTag>
+  BlockTriDiContainer<MatrixType, BlockTriDiContainerDetails::ImplSimdTag>
   ::compute (const BlockTriDiContainerParameters::ComputeParameters& in)
   {
     IsComputed_ = false;
@@ -299,9 +299,9 @@ namespace Ifpack2 {
     IsComputed_ = true;
   }
 
-  template <typename MatrixType, typename LocalScalarType>
+  template <typename MatrixType>
   BlockTriDiContainerParameters::ApplyParameters
-  BlockTriDiContainer<MatrixType, LocalScalarType, BlockTriDiContainerDetails::ImplSimdTag>
+  BlockTriDiContainer<MatrixType, BlockTriDiContainerDetails::ImplSimdTag>
   ::createDefaultApplyParameters () const
   {
     BlockTriDiContainerParameters::ApplyParameters in;
@@ -309,9 +309,9 @@ namespace Ifpack2 {
     return in;
   }
 
-  template <typename MatrixType, typename LocalScalarType>
+  template <typename MatrixType>
   int 
-  BlockTriDiContainer<MatrixType, LocalScalarType, BlockTriDiContainerDetails::ImplSimdTag>
+  BlockTriDiContainer<MatrixType, BlockTriDiContainerDetails::ImplSimdTag>
   ::applyInverseJacobi (const mv_type& X, mv_type& Y, 
                         const BlockTriDiContainerParameters::ApplyParameters& in) const
   {
@@ -335,25 +335,25 @@ namespace Ifpack2 {
     return r_val;
   }
 
-  template <typename MatrixType, typename LocalScalarType>
-  const Teuchos::ArrayRCP<const typename BlockTriDiContainer<MatrixType, LocalScalarType, BlockTriDiContainerDetails::ImplSimdTag>::magnitude_type>
-  BlockTriDiContainer<MatrixType, LocalScalarType, BlockTriDiContainerDetails::ImplSimdTag>
+  template <typename MatrixType>
+  const Teuchos::ArrayRCP<const typename BlockTriDiContainer<MatrixType, BlockTriDiContainerDetails::ImplSimdTag>::magnitude_type>
+  BlockTriDiContainer<MatrixType, BlockTriDiContainerDetails::ImplSimdTag>
   ::getNorms0 () const {
     const auto p = norm_manager_.getNorms0();
     return Teuchos::arcp(p, 0, p ? norm_manager_.getNumVectors() : 0, false);
   }
 
-  template <typename MatrixType, typename LocalScalarType>
-  const Teuchos::ArrayRCP<const typename BlockTriDiContainer<MatrixType, LocalScalarType, BlockTriDiContainerDetails::ImplSimdTag>::magnitude_type>
-  BlockTriDiContainer<MatrixType, LocalScalarType, BlockTriDiContainerDetails::ImplSimdTag>
+  template <typename MatrixType>
+  const Teuchos::ArrayRCP<const typename BlockTriDiContainer<MatrixType, BlockTriDiContainerDetails::ImplSimdTag>::magnitude_type>
+  BlockTriDiContainer<MatrixType, BlockTriDiContainerDetails::ImplSimdTag>
   ::getNormsFinal () const {
     const auto p = norm_manager_.getNormsFinal();
     return Teuchos::arcp(p, 0, p ? norm_manager_.getNumVectors() : 0, false);
   }
 
-  template <typename MatrixType, typename LocalScalarType>
+  template <typename MatrixType>
   void 
-  BlockTriDiContainer<MatrixType, LocalScalarType, BlockTriDiContainerDetails::ImplSimdTag>
+  BlockTriDiContainer<MatrixType, BlockTriDiContainerDetails::ImplSimdTag>
   ::apply (HostView& X, HostView& Y, int blockIndex, int stride, Teuchos::ETransp mode,
            scalar_type alpha, scalar_type beta) const
   {
@@ -362,18 +362,18 @@ namespace Ifpack2 {
                                 << "that case, set \"relaxation: type\" to \"MT Split Jacobi\" rather than \"Jacobi\".");
   }
 
-  template <typename MatrixType, typename LocalScalarType>
+  template <typename MatrixType>
   void 
-  BlockTriDiContainer<MatrixType, LocalScalarType, BlockTriDiContainerDetails::ImplSimdTag>
+  BlockTriDiContainer<MatrixType, BlockTriDiContainerDetails::ImplSimdTag>
   ::weightedApply (HostView& X, HostView& Y, HostView& D, int blockIndex, int stride,
                    Teuchos::ETransp mode, scalar_type alpha, scalar_type beta) const
   {
     TEUCHOS_TEST_FOR_EXCEPT_MSG(true, "BlockTriDiContainer::weightedApply is not implemented.");
   }
 
-  template <typename MatrixType, typename LocalScalarType>
+  template <typename MatrixType>
   std::ostream& 
-  BlockTriDiContainer<MatrixType, LocalScalarType, BlockTriDiContainerDetails::ImplSimdTag>
+  BlockTriDiContainer<MatrixType, BlockTriDiContainerDetails::ImplSimdTag>
   ::print (std::ostream& os) const
   {
     Teuchos::FancyOStream fos(Teuchos::rcp(&os,false));
@@ -382,9 +382,9 @@ namespace Ifpack2 {
     return os;
   }
 
-  template <typename MatrixType, typename LocalScalarType>
+  template <typename MatrixType>
   std::string 
-  BlockTriDiContainer<MatrixType, LocalScalarType, BlockTriDiContainerDetails::ImplSimdTag>
+  BlockTriDiContainer<MatrixType, BlockTriDiContainerDetails::ImplSimdTag>
   ::description () const
   {
     std::ostringstream oss;
@@ -405,9 +405,9 @@ namespace Ifpack2 {
     return oss.str();
   }
 
-  template <typename MatrixType, typename LocalScalarType>
+  template <typename MatrixType>
   void
-  BlockTriDiContainer<MatrixType, LocalScalarType, BlockTriDiContainerDetails::ImplSimdTag>::
+  BlockTriDiContainer<MatrixType, BlockTriDiContainerDetails::ImplSimdTag>::
   describe (Teuchos::FancyOStream& os,
             const Teuchos::EVerbosityLevel verbLevel) const
   {
@@ -422,9 +422,9 @@ namespace Ifpack2 {
        << endl;
   }
 
-  template <typename MatrixType, typename LocalScalarType>
+  template <typename MatrixType>
   std::string 
-  BlockTriDiContainer<MatrixType, LocalScalarType, BlockTriDiContainerDetails::ImplSimdTag>
+  BlockTriDiContainer<MatrixType, BlockTriDiContainerDetails::ImplSimdTag>
   ::getName() { return "Ifpack2::BlockTriDiContainer::ImplSimdTag"; }
 
 #define IFPACK2_BLOCKTRIDICONTAINER_INSTANT(S,LO,GO,N)                  \

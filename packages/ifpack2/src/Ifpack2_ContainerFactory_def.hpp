@@ -69,7 +69,7 @@ registerDefaults()
   registerContainer<SparseContainer<MatrixType, Details::Amesos2Wrapper<MatrixType>>>("SparseAmesos2");
 #endif
 #ifdef HAVE_IFPACK2_EXPERIMENTAL_KOKKOSKERNELS_FEATURES
-  registerContainer<Ifpack2::BlockTriDiContainer<MatrixType, scalar_type>>("BlockTriDi");
+  registerContainer<Ifpack2::BlockTriDiContainer<MatrixType>>("BlockTriDi");
 #endif
   registeredDefaults = true;
 }

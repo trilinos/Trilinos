@@ -74,8 +74,7 @@ namespace Ifpack2 {
   /// block.
   ///
   /// BlockTriDiContainer requires the Tpetra::RowMatrix to be
-  /// Tpetra::BlockCrsMatrix. It also requires LocalScalarType to be the same as
-  /// MatrixType::scalar_type, unlike some other containers.
+  /// Tpetra::BlockCrsMatrix. 
   ///
   /// This class currently assumes the following about the column and
   /// row Maps of the input matrix:
@@ -155,17 +154,16 @@ namespace Ifpack2 {
   /// Primary declation
   ///
   template <typename MatrixType, 
-            typename LocalScalarType = typename MatrixType::scalar_type,
-            typename ImplTagType = typename BlockTriDiContainerDetails::ImplTag<LocalScalarType>::type>
+            typename ImplTagType = typename BlockTriDiContainerDetails::ImplTag<typename MatrixType::scalar_type>::type>
   class BlockTriDiContainer;
   
   ///
-  /// Partial specialization with SIMD<LocalScalarType> internally used.
+  /// Partial specialization with SIMD<ScalarType> internally used.
   /// The code does not support Sacado UQ types. As UQ type also uses SIMD like structure,
   /// it needs an additional specialization.
   ///
-  template <typename MatrixType, typename LocalScalarType>
-  class BlockTriDiContainer<MatrixType,LocalScalarType,BlockTriDiContainerDetails::ImplSimdTag> 
+  template <typename MatrixType>
+  class BlockTriDiContainer<MatrixType,BlockTriDiContainerDetails::ImplSimdTag> 
     : public Container<MatrixType> {
     //! @name Internal typedefs (private)
     //@{
@@ -176,8 +174,6 @@ namespace Ifpack2 {
     /// entirely different template parameters (e.g., \c scalar_type)
     /// than \c InverseType.
     typedef MatrixType matrix_type;
-    //! The second template parameter of this class.
-    typedef LocalScalarType local_scalar_type;
 
     //! The type of entries in the input (global) matrix.
     typedef typename Container<MatrixType>::scalar_type scalar_type;
@@ -381,7 +377,7 @@ namespace Ifpack2 {
 
   private:
     //! Copy constructor: Declared but not implemented, to forbid copy construction.
-    BlockTriDiContainer (const BlockTriDiContainer<MatrixType, LocalScalarType>& rhs);
+    BlockTriDiContainer (const BlockTriDiContainer<MatrixType>& rhs);
 
     //! If \c true, the container has been successfully initialized.
     bool IsInitialized_;
@@ -429,8 +425,8 @@ namespace Ifpack2 {
   ///   ImplNotAvailTag. Upon the request to support UQ types, we need to specialize
   ///   the impl function and interface with ImplSacadoTag.
   ///
-  template <typename MatrixType, typename LocalScalarType>
-  class BlockTriDiContainer<MatrixType,LocalScalarType,BlockTriDiContainerDetails::ImplNotAvailTag> 
+  template <typename MatrixType>
+  class BlockTriDiContainer<MatrixType,BlockTriDiContainerDetails::ImplNotAvailTag> 
     : public Container<MatrixType> {
   private:
     typedef typename Container<MatrixType>::scalar_type scalar_type;
