@@ -175,7 +175,7 @@ ctest -S simple_testing.cmake \
   -Dskip_update_step=ON \
   -Ddashboard_model=Experimental \
   -Ddashboard_track="${CDASH_TRACK:?}" \
-  -DPARALLEL_LEVEL=13 \
+  -DPARALLEL_LEVEL=22 \
   -Dbuild_dir="${WORKSPACE:?}/pull_request_test" \
   -Dconfigure_script=../Trilinos/cmake/std/${CONFIG_SCRIPT:?} \
   -Dpackage_enables=../packageEnables.cmake \
