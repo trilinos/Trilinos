@@ -62,6 +62,7 @@
 #include "Tpetra_Details_gathervPrint.hpp"
 #include "Tpetra_Details_leftScaleLocalCrsMatrix.hpp"
 #include "Tpetra_Details_Profiling.hpp"
+#include "Tpetra_Details_rightScaleLocalCrsMatrix.hpp"
 
 //#include "Tpetra_Util.hpp" // comes in from Tpetra_CrsGraph_decl.hpp
 #include "Teuchos_SerialDenseMatrix.hpp"
@@ -4069,7 +4070,6 @@ namespace Tpetra {
           rowValues[j] *= scaleValue;
         }
       }
-
       execution_space::fence (); // for UVM's sake
     }
   }
@@ -4086,6 +4086,7 @@ namespace Tpetra {
     using Teuchos::RCP;
     using Teuchos::rcp;
     using Teuchos::rcpFromRef;
+    using LO = local_ordinal_type;
     typedef Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node> vec_type;
     const char tfecfFuncName[] = "rightScale: ";
 
@@ -4108,24 +4109,45 @@ namespace Tpetra {
     else if (this->getColMap ()->isSameAs (* (x.getMap ()))) {
       xp = rcpFromRef (x);
     } else {
-      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-        true, std::runtime_error, "x's Map must be the same as "
-        "either the domain Map or the column Map of the CrsMatrix.");
+      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+        (true, std::runtime_error, "x's Map must be the same as "
+         "either the domain Map or the column Map of the CrsMatrix.");
     }
 
-    ArrayRCP<const Scalar> vectorVals = xp->getData (0);
-    ArrayView<impl_scalar_type> rowValues = null;
+    // Check whether A has a valid local matrix.  It might not if it
+    // was not created with a local matrix, and if fillComplete has
+    // never been called on it before.  A never-initialized (and thus
+    // invalid) local matrix has zero rows, because it was default
+    // constructed.
+    const LO lclNumRows =
+      static_cast<LO> (this->getRowMap ()->getNodeNumElements ());
+    const bool validLocalMatrix = this->lclMatrix_.numRows () == lclNumRows;
 
-    const LocalOrdinal lclNumRows =
-      static_cast<LocalOrdinal> (this->getNodeNumRows ());
-    for (LocalOrdinal i = 0; i < lclNumRows; ++i) {
-      const RowInfo rowinfo = staticGraph_->getRowInfo (i);
-      rowValues = this->getViewNonConst (rowinfo);
-      ArrayView<const LocalOrdinal> colInds;
-      getCrsGraphRef ().getLocalRowView (i, colInds);
-      for (size_t j = 0; j < rowinfo.numEntries; ++j) {
-        rowValues[j] *= static_cast<impl_scalar_type> (vectorVals[colInds[j]]);
+    if (validLocalMatrix) {
+      using dev_memory_space = typename device_type::memory_space;
+      if (xp->template need_sync<dev_memory_space> ()) {
+        using Teuchos::rcp_const_cast;
+        rcp_const_cast<vec_type> (xp)->template sync<dev_memory_space> ();
       }
+      auto x_lcl = xp->template getLocalView<dev_memory_space> ();
+      auto x_lcl_1d = Kokkos::subview (x_lcl, Kokkos::ALL (), 0);
+      Details::rightScaleLocalCrsMatrix (this->lclMatrix_, x_lcl_1d, false, false);
+    }
+    else {
+      execution_space::fence (); // for UVM's sake
+
+      ArrayRCP<const Scalar> vectorVals = xp->getData (0);
+      ArrayView<impl_scalar_type> rowValues = null;
+      for (LO i = 0; i < lclNumRows; ++i) {
+        const RowInfo rowinfo = this->staticGraph_->getRowInfo (i);
+        rowValues = this->getViewNonConst (rowinfo);
+        ArrayView<const LO> colInds;
+        this->getCrsGraphRef ().getLocalRowView (i, colInds);
+        for (size_t j = 0; j < rowinfo.numEntries; ++j) {
+          rowValues[j] *= static_cast<impl_scalar_type> (vectorVals[colInds[j]]);
+        }
+      }
+      execution_space::fence (); // for UVM's sake
     }
   }
 
