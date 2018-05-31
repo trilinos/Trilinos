@@ -319,13 +319,13 @@ struct BlockTriDiContainerTester {
             T_bare->applyInverseJacobi(*B, *X1, input);
             X_true.update(df, *X1, 1 - df);
             // Norm-based calcs have a different code path; need to test both.
-            for (const auto tol : {0.0, 1e-20}) {
+            for (const auto tol_test : {0.0, 1e-20}) {
               if (seq_method) continue;
               // Damping factor computation. 2 sweeps, starting with 0.
               input = T_bare->createDefaultApplyParameters();
               input.zeroStartingSolution = true;
               input.maxNumSweeps = 2;
-              input.tolerance = tol;
+              input.tolerance = tol_test;
               input.dampingFactor = df;
               T_bare->applyInverseJacobi(*B, *X, input);
               // Check if X agrees with the manually computed X_true.

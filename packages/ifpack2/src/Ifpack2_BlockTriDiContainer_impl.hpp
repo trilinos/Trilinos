@@ -819,7 +819,6 @@ namespace Ifpack2 {
       std::vector<local_ordinal_type> p;
       if (!jacobi) {
         // reorder parts to maximize simd packing efficiency
-        const local_ordinal_type nparts = partitions.size();
         p.resize(nparts);
         
         typedef std::pair<local_ordinal_type,local_ordinal_type> size_idx_pair_type;
@@ -1046,19 +1045,18 @@ namespace Ifpack2 {
       using execution_space = typename impl_type::execution_space;
       using local_ordinal_type = typename impl_type::local_ordinal_type;
       using size_type = typename impl_type::size_type;
-      using impl_scalar_type = typename impl_type::impl_scalar_type;
 
       using size_type_1d_view = typename impl_type::size_type_1d_view;
-      using impl_scalar_type_4d_view = typename impl_type::impl_scalar_type_4d_view;
       using vector_type_3d_view = typename impl_type::vector_type_3d_view;
-
-      constexpr int vector_length = impl_type::vector_length;
 
       const ConstUnmanaged<size_type_1d_view> pack_td_ptr(btdm.pack_td_ptr);
       const local_ordinal_type blocksize = btdm.values.extent(1);
       
       if (is_cuda<execution_space>::value) {
 #if defined(KOKKOS_ENABLE_CUDA)
+        constexpr int vector_length = impl_type::vector_length;
+        using impl_scalar_type = typename impl_type::impl_scalar_type;
+        using impl_scalar_type_4d_view = typename impl_type::impl_scalar_type_4d_view;
         using team_policy_type = Kokkos::TeamPolicy<execution_space>;
         const impl_scalar_type_4d_view values((impl_scalar_type*)btdm.values.data(), 
                                               btdm.values.extent(0), 
@@ -1494,8 +1492,8 @@ namespace Ifpack2 {
         A_rowptr(A_->getCrsGraph().getLocalGraph().row_map), 
         A_values(const_cast<block_crs_matrix_type*>(A_.get())->template getValues<memory_space>()),
         // block tridiags 
-        flat_td_ptr(btdm_.flat_td_ptr), 
         pack_td_ptr(btdm_.pack_td_ptr), 
+        flat_td_ptr(btdm_.flat_td_ptr), 
         A_colindsub(btdm_.A_colindsub),
         vector_values(btdm_.values),
         scalar_values((impl_scalar_type*)vector_values.data(),
@@ -1846,9 +1844,9 @@ namespace Ifpack2 {
           part2packrowidx0(interf.part2packrowidx0),
           part2rowidx0(interf.part2rowidx0),
           lclrow(interf.lclrow),
-          packed_multivector(pmv),
           blocksize(pmv.extent(1)),
-          num_vectors(pmv.extent(2)) {}
+          num_vectors(pmv.extent(2)),
+          packed_multivector(pmv) {}
 
       // TODO:: modify this routine similar to the team level functions
       template<typename TagType>
@@ -2586,9 +2584,9 @@ namespace Ifpack2 {
       inline
       void 
       serialGemv(const local_ordinal_type &blocksize,
-                 const impl_scalar_type * const __restrict__ A, 
-                 const impl_scalar_type * const __restrict__ x,
-                 /* */ impl_scalar_type * __restrict__ y) const {
+                 const impl_scalar_type * const __restrict__ AA, 
+                 const impl_scalar_type * const __restrict__ xx,
+                 /* */ impl_scalar_type * __restrict__ yy) const {
         for (local_ordinal_type k0=0;k0<blocksize;++k0) {
           impl_scalar_type val = 0;
           const local_ordinal_type offset = k0*blocksize;
@@ -2599,8 +2597,8 @@ namespace Ifpack2 {
 #   pragma unroll
 #endif
           for (local_ordinal_type k1=0;k1<blocksize;++k1) 
-            val += A[offset+k1]*x[k1];
-          y[k0] -= val;
+            val += AA[offset+k1]*xx[k1];
+          yy[k0] -= val;
         }
       }
 
