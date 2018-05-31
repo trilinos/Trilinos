@@ -9,9 +9,3 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   COMM serial mpi
   NUM_MPI_PROCS 2
   )
-TRIBITS_ADD_EXECUTABLE_AND_TEST(
-  projection_2D
-  SOURCES projection_2D.cpp ${UNIT_TEST_DRIVER}
-  COMM serial mpi
-  NUM_MPI_PROCS 2
-  )
