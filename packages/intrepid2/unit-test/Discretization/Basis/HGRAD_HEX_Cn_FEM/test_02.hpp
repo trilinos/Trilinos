@@ -41,7 +41,7 @@
 // @HEADER
 
 /** \file test_01.hpp
-    \brief  Unit tests for the Intrepid2::HGRAD_QUAD_Cn_FEM class.
+    \brief  Unit tests for the Intrepid2::HGRAD_HEX_Cn_FEM class.
     \author Created by P. Bochev, D. Ridzal, K. Peterson, Kyungjoo Kim
  */
 
@@ -55,7 +55,7 @@
 #include "Intrepid2_Types.hpp"
 #include "Intrepid2_Utils.hpp"
 
-#include "Intrepid2_HGRAD_QUAD_Cn_FEM.hpp"
+#include "Intrepid2_HGRAD_HEX_Cn_FEM.hpp"
 
 namespace Intrepid2 {
 
@@ -63,7 +63,7 @@ namespace Intrepid2 {
 
     // This code provides an example to use serial interface of high order elements
     template<typename OutValueType, typename PointValueType, typename DeviceSpaceType>
-    int HGRAD_QUAD_Cn_FEM_Test02(const bool verbose) {
+    int HGRAD_HEX_Cn_FEM_Test02(const bool verbose) {
 
       Kokkos::print_configuration(std::cout, false);
 
@@ -71,12 +71,12 @@ namespace Intrepid2 {
 
       try { 
         for (int order=1;order<Parameters::MaxOrder;++order) {
-          Basis_HGRAD_QUAD_Cn_FEM<DeviceSpaceType,OutValueType,PointValueType> basis(order);
+          Basis_HGRAD_HEX_Cn_FEM<DeviceSpaceType,OutValueType,PointValueType> basis(order);
           
           // problem setup 
           //   let's say we want to evaluate 1000 points in parallel. output values are stored in outputValuesA and B.
           //   A is compuated via serial interface and B is computed with top-level interface.
-          const int npts = 1000, ndim = 2;
+          const int npts = 1000, ndim = 3;
           Kokkos::DynRankView<OutValueType,DeviceSpaceType> outputValuesA("outputValuesA", basis.getCardinality(), npts);
           Kokkos::DynRankView<OutValueType,DeviceSpaceType> outputValuesB("outputValuesB", basis.getCardinality(), npts);
           
@@ -97,7 +97,7 @@ namespace Intrepid2 {
           //   as team policy only can create shared memory 
           //   this part would be tricky as ths max size should be determined in compile time
           //   let's think about this and find out the best practice. for now I use the following.
-          constexpr int worksize = (Parameters::MaxOrder+1)*3;
+          constexpr int worksize = (Parameters::MaxOrder+1)*4;
           
           // if you use team policy, worksize can be gathered from the basis object and use 
           // kokkos shemem_size APIs to create workspace per team or per thread.
@@ -122,7 +122,7 @@ namespace Intrepid2 {
               Kokkos::View<OutValueType*,Kokkos::Impl::ActiveExecutionMemorySpace> work(&workbuf[0], worksize);
               
               // evaluate basis using serial interface
-              Impl::Basis_HGRAD_QUAD_Cn_FEM
+              Impl::Basis_HGRAD_HEX_Cn_FEM
                 ::Serial<OPERATOR_VALUE>::getValues(output, input, work, vinv);
             });
           

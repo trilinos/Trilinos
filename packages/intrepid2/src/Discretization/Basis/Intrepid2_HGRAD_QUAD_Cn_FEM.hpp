@@ -81,10 +81,6 @@ namespace Intrepid2 {
                          workViewType        work,
                    const vinvViewType        vinv,
                    const ordinal_type        operatorDn = 0 );
-
-        KOKKOS_INLINE_FUNCTION
-        static ordinal_type
-        getWorkSizePerPoint(ordinal_type order) {return 3*getPnCardinality<1>(order); }
       };
       
       template<typename ExecSpaceType, ordinal_type numPtsPerEval,
@@ -254,12 +250,12 @@ namespace Intrepid2 {
     }
 
     Kokkos::DynRankView<typename scalarViewType::const_value_type,ExecSpaceType>
-    getVandermondeMatrix() {
+    getVandermondeInverse() const {
       return vinv_;
     }
 
     ordinal_type
-    getWorkSizePerPoint() { 
+    getWorkSizePerPoint(const EOperator operatorType) const { 
       return 3*getPnCardinality<1>(this->basisDegree_); 
     }
     
