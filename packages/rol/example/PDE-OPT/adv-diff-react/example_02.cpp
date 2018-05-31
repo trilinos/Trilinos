@@ -413,7 +413,7 @@ int main(int argc, char *argv[]) {
     }
     // Output statisitic to file
     std::vector<RealT> stat = opt.getObjectiveStatistic();
-    if ( myRank == 0) {
+    if ( myRank == 0 && stat.size() > 0 ) {
       std::ofstream sfile;
       sfile.open("stat.txt");
       for (int i = 0; i < static_cast<int>(stat.size()); ++i) {
