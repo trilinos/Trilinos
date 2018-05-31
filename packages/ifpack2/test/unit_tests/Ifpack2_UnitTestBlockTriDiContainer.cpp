@@ -70,7 +70,7 @@ struct Input {
   double tol;
   bool use_seq_method, use_overlap_comm, jacobi;
 
-  Input (const Teuchos::RCP<const Teuchos::Comm<int> >& comm) { init(comm); }
+  Input (const Teuchos::RCP<const Teuchos::Comm<int> >& icomm) { init(icomm); }
 
   Input (int argc, char** argv, const Teuchos::RCP<const Teuchos::Comm<int> >& icomm) {
     init(icomm);
