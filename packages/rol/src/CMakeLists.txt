@@ -161,6 +161,7 @@ INCLUDE_DIRECTORIES(${DIR}/function
                     ${DIR}/function/randvarfunctional/regret
                     ${DIR}/function/randvarfunctional/deviation
                     ${DIR}/function/randvarfunctional/probability
+                    ${DIR}/function/progressivehedging
 #                    ${DIR}/function/riskmeasure
 #                    ${DIR}/function/riskmeasure/quadrangle
 #                    ${DIR}/function/riskmeasure/fdivergence
@@ -183,6 +184,7 @@ APPEND_GLOB(HEADERS ${DIR}/function/*.hpp
                     ${DIR}/function/randvarfunctional/regret/*.hpp
                     ${DIR}/function/randvarfunctional/deviation/*.hpp
                     ${DIR}/function/randvarfunctional/probability/*.hpp
+                    ${DIR}/function/progressivehedging/*.hpp
 #                    ${DIR}/function/riskmeasure/quadrangle/*.hpp
 #                    ${DIR}/function/riskmeasure/fdivergence/*.hpp
 #                    ${DIR}/function/errormeasure/*.hpp
