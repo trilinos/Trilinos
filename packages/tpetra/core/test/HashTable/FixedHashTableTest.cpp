@@ -784,7 +784,6 @@ namespace { // (anonymous)
           const bool testValues = true)
     {
       using std::endl;
-      typedef typename InDeviceType::execution_space execution_space;
 
       out << "Test FixedHashTable copy constructor from " << inDeviceName
            << " to " << outDeviceName << endl;

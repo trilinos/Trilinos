@@ -112,7 +112,6 @@ namespace {
     using Teuchos::Array;
     typedef typename Kokkos::Details::ArithTraits<ST>::val_type IST;
     typedef typename Tpetra::Vector<ST, LO>::device_type device_type;
-    typedef typename device_type::execution_space execution_space;
     typedef Teuchos::LAPACK<LO, ST> lapack_type;
     typedef Kokkos::View<IST**, Kokkos::LayoutLeft, device_type> block_type;
     typedef Kokkos::View<LO*, device_type> int_vec_type;
@@ -211,7 +210,6 @@ namespace {
     using Teuchos::Array;
     typedef typename Kokkos::Details::ArithTraits<ST>::val_type IST;
     typedef typename Tpetra::Vector<ST, LO>::device_type device_type;
-    typedef typename device_type::execution_space execution_space;
     typedef Teuchos::LAPACK<LO, ST> lapack_type;
     typedef Kokkos::View<IST**, Kokkos::LayoutLeft, device_type> block_type;
     typedef Kokkos::View<LO*, device_type> int_vec_type;

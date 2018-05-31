@@ -1,6 +1,6 @@
 ################################################################################
 #
-# Set up env on toss3 (chama/serrano) for ATMD builds of Trilinos
+# Set up env on toss3 (chama and serrano) for ATMD builds of Trilinos
 #
 # This source script gets the settings from the JOB_NAME var.
 #

@@ -270,7 +270,7 @@ static LO run_teuchos_tests (const Input& in, Teuchos::FancyOStream& out, bool& 
       }
       for (const bool jacobi : {false, true})
         for (const bool seq_method : {false, true})
-          for (const bool overlap_comm : {false, true}) {
+          for (const bool overlap_comm : {false, true}) { // temporary disabling overlap comm version
             if (seq_method && overlap_comm) continue;
             for (const bool nonuniform_lines : {false, true}) {
               if (jacobi && nonuniform_lines) continue;
@@ -294,6 +294,9 @@ static LO run_teuchos_tests (const Input& in, Teuchos::FancyOStream& out, bool& 
                 } catch (const std::exception& e) {
                   threw = true;
                 }
+                if (threw)
+                  printf("Exception threw from rank %d, %s\n", in.comm->getRank(), details.c_str());
+                
                 TEUCHOS_TEST(ne == 0 && ! threw, details);
               }
             }
