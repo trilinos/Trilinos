@@ -267,7 +267,12 @@
       </ParameterList>
     </ParameterList>
     <ParameterList name="Probability">
-      <Parameter name="Name" type="string" value="Smoothed POE" />
+      <Parameter name="Name" type="string" value="bPOE" />
+      <!-- ===========  BPOE SUBLIST  =========== -->
+      <ParameterList name="bPOE">
+        <Parameter name="Moment Order" type="double" value="2.0" />
+        <Parameter name="Threshold"    type="double" value="1.0" />
+      </ParameterList>
       <!-- ===========  SMOOTHED POE SUBLIST  =========== -->
       <ParameterList name="Smoothed POE">
         <Parameter name="Threshold"           type="double" value="1.0"  />

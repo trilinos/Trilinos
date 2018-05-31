@@ -99,7 +99,7 @@ private:
   int maxit_;
   bool print_;
 
-  std::string type_;
+  bool hasStat_;
   Ptr<PH_Objective<Real>>        ph_objective_;
   Ptr<Vector<Real>>              ph_vector_;
   Ptr<BoundConstraint<Real>>     ph_bound_;
@@ -130,7 +130,7 @@ public:
   ProgressiveHedging(const Ptr<OptimizationProblem<Real>> &input,
                      const Ptr<SampleGenerator<Real>> &sampler,
                      ParameterList &parlist)
-    : input_(input), sampler_(sampler), parlist_(parlist) {
+    : input_(input), sampler_(sampler), parlist_(parlist), hasStat_(false) {
     // Get algorithmic parameters
     usePresolve_  = parlist.sublist("SOL").sublist("Progressive Hedging").get("Use Presolve",true);
     useInexact_   = parlist.sublist("SOL").sublist("Progressive Hedging").get("Use Inexact Solve",true);
@@ -144,9 +144,13 @@ public:
     maxPen_       = (maxPen_ <= static_cast<Real>(0) ? ROL_INF<Real>() : maxPen_);
     penaltyParam_ = std::min(penaltyParam_,maxPen_);
     // Create progressive hedging vector
-    type_ = parlist.sublist("SOL").get("Stochastic Component Type","Risk Neutral");
+    std::string type = parlist.sublist("SOL").get("Stochastic Component Type","Risk Neutral");
+    std::string prob = parlist.sublist("SOL").sublist("Probability").get("Name","bPOE");
+    hasStat_ = ((type=="Risk Averse") ||
+                (type=="Deviation")   ||
+                (type=="Probability" && prob=="bPOE"));
     Ptr<ParameterList> parlistptr = makePtrFromRef<ParameterList>(parlist);
-    if (type_ == "Risk Averse" || type_ == "Deviation") {
+    if (hasStat_) {
       ph_vector_  = makePtr<RiskVector<Real>>(parlistptr,
                                               input_->getSolutionVector());
     }
@@ -159,20 +163,17 @@ public:
                                                 penaltyParam_,
                                                 parlist);
     // Create progressive hedging bound constraint
-    ph_bound_ = nullPtr;
-    if (input_->getBoundConstraint() != nullPtr) {
-      if (type_ == "Risk Averse" || type_ == "Deviation") {
-        ph_bound_   = makePtr<RiskBoundConstraint<Real>>(parlistptr,
-                                                         input_->getBoundConstraint());
-      }
-      else {
-        ph_bound_   = input_->getBoundConstraint();
-      }
+    if (hasStat_) {
+      ph_bound_   = makePtr<RiskBoundConstraint<Real>>(parlistptr,
+                                                       input_->getBoundConstraint());
+    }
+    else {
+      ph_bound_   = input_->getBoundConstraint();
     }
     // Create progressive hedging constraint
     ph_constraint_ = nullPtr;
     if (input_->getConstraint() != nullPtr) {
-      if (type_ == "Risk Averse" || type_ == "Deviation") {
+      if (hasStat_) {
         ph_constraint_ = makePtr<RiskLessConstraint<Real>>(input_->getConstraint());
       }
       else {
@@ -206,6 +207,18 @@ public:
     }
     if (usePresolve_) {
       presolve();
+    }
+  }
+
+  void check(std::ostream &outStream = std::cout, const int numSamples = 1) {
+    int nsamp = std::min(sampler_->numMySamples(),numSamples);
+    for (int i = 0; i < nsamp; ++i) {
+      ph_objective_->setParameter(sampler_->getMyPoint(i));
+      ph_objective_->setData(z_gsum_,wvec_[i],penaltyParam_);
+      if (ph_constraint_ != nullPtr) {
+        ph_constraint_->setParameter(sampler_->getMyPoint(i));
+      }
+      ph_problem_->check(outStream);
     }
   }
 
@@ -287,7 +300,7 @@ public:
       }
       penaltyParam_ = std::min(penaltyParam_,maxPen_);
     }
-    if (type_ == "Risk Averse" || type_ == "Deviation") {
+    if (hasStat_) {
       input_->getSolutionVector()->set(*dynamicPtrCast<RiskVector<Real>>(z_gsum_)->getVector());
     }
     else {

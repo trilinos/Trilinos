@@ -126,24 +126,40 @@ public:
   Real value( const Vector<Real> &x, Real &tol ) {
     getValue(x,tol);
     Real prob = smoothHeaviside(val_-threshold_,0);
-    return prob;
+    if (std::abs(prob) > ROL_EPSILON<Real>()) {
+      return prob;
+    }
+    return static_cast<Real>(0);
   }
 
   void gradient( Vector<Real> &g, const Vector<Real> &x, Real &tol ) {
     getValue(x,tol);
     Real prob = smoothHeaviside(val_-threshold_,1);
-    getGradient(x,tol);
-    g.set(*g_); g.scale(prob);
+    if (std::abs(prob) > ROL_EPSILON<Real>()) {
+      getGradient(x,tol);
+      g.set(*g_); g.scale(prob);
+    }
+    else {
+      g.zero();
+    }
   }
 
   void hessVec( Vector<Real> &hv, const Vector<Real> &v, const Vector<Real> &x, Real &tol ) {
     getValue(x,tol);
     Real prob1 = smoothHeaviside(val_-threshold_,1);
     Real prob2 = smoothHeaviside(val_-threshold_,2);
-    getGradient(x,tol);
-    Real gv    = v.dot(g_->dual());
-    obj_->hessVec(hv,v,x,tol);
-    hv.scale(prob1); hv.axpy(prob2*gv,*g_);
+    if (std::abs(prob1) > ROL_EPSILON<Real>()) {
+      obj_->hessVec(hv,v,x,tol);
+      hv.scale(prob1);
+    }
+    else {
+      hv.zero();
+    }
+    if (std::abs(prob2) > ROL_EPSILON<Real>()) {
+      getGradient(x,tol);
+      Real gv    = v.dot(g_->dual());
+      hv.axpy(prob2*gv,*g_);
+    }
   }
 
   void setParameter(const std::vector<Real> &param) {

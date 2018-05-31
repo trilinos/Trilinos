@@ -49,6 +49,7 @@
 #include "ROL_PH_RegretObjective.hpp"
 #include "ROL_PH_ErrorObjective.hpp"
 #include "ROL_PH_ProbObjective.hpp"
+#include "ROL_PH_bPOEObjective.hpp"
 
 /** @ingroup func_group
     \class ROL::PH_Objective
@@ -92,12 +93,20 @@ public:
       if (prob == "Smoothed POE") {
         obj_ = makePtr<PH_ProbObjective<Real>>(obj,parlist);
       }
+      else if (prob == "bPOE") {
+        obj_ = makePtr<PH_bPOEObjective<Real>>(obj,parlist);
+      }
       else {
-        obj_ = obj;
+        ROL_TEST_FOR_EXCEPTION(true,std::invalid_argument,
+                               "Invalid probability type " << prob << "!");
       }
     }
-    else {
+    else if (type == "Risk Neutral") {
       obj_ = obj;
+    }
+    else {
+      ROL_TEST_FOR_EXCEPTION(true,std::invalid_argument,
+                             "Invalid stochastic component type " << type << "!");
     }
   }
 

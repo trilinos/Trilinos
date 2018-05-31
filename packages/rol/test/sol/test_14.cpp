@@ -181,6 +181,7 @@ int main(int argc, char* argv[]) {
     ROL::Ptr<ROL::OptimizationProblem<RealT>> problem
       = ROL::makePtr<ROL::OptimizationProblem<RealT>>(pObj,x,bnd);
     ROL::ProgressiveHedging<RealT> ph_solver(problem,sampler,*parlist);
+    ph_solver.check(*outStream);
     ph_solver.run(*outStream);
     // Compute true solution
     RealT denom(0), denom_g(0);
