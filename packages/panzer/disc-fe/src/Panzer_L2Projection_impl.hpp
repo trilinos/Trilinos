@@ -114,8 +114,6 @@ namespace panzer {
       Kokkos::View<LO**,PHX::Device> localIds("MassMatrix: LocalIds", workset.numOwnedCells()+workset.numGhostCells()+workset.numVirtualCells(),
                                               targetGlobalIndexer_->getElementBlockGIDCount(block));
 
-      std::cout << "workset.owned=" << workset.numOwnedCells() << ", ghosted=" << workset.numGhostCells() << ", virtual=" << workset.numVirtualCells() << std::endl;
-
       // Remove the ghosted cell ids or the call to getElementLocalIds will spill array bounds
       const auto cellLocalIdsNoGhost = Kokkos::subview(workset.cell_local_ids_k,std::make_pair(0,workset.numOwnedCells()));
 
