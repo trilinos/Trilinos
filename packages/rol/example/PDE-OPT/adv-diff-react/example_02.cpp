@@ -153,7 +153,6 @@ template<class Real>
 void printSampler(ROL::SampleGenerator<Real> &sampler,
                   const ROL::Ptr<const Teuchos::Comm<int> > &comm,
                   const std::string &filename) {
-  Real tol(1e-8);
   int ngsamp = sampler.numGlobalSamples();
   // Build objective function distribution
   int nsamp = sampler.numMySamples();
@@ -199,7 +198,7 @@ void printSampler(ROL::SampleGenerator<Real> &sampler,
       for (int j = 0; j < sdim; ++j) {
         file << std::setw(25) << std::left << gsamples[j][i];
       }
-      file << std::cout;
+      file << std::endl;
     }
     file.close();
   }
