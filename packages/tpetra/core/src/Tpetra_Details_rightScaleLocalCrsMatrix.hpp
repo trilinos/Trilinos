@@ -106,16 +106,15 @@ public:
     for (LO k = 0; k < numEnt; ++k) {
       const LO lclColInd = curRow.colidx(k);
       const mag_type curColNorm = scalingFactors_(lclColInd);
-      if (curColNorm != KAM::zero ()) {
-        const mag_type scalingFactor = assumeSymmetric_ ?
-          KAM::sqrt (curColNorm) : curColNorm;
-
-        if (divide) {
-          curRow.value(k) = curRow.value(k) / scalingFactor;
-        }
-        else {
-          curRow.value(k) = curRow.value(k) * scalingFactor;
-        }
+      // Users are responsible for any divisions or multiplications by
+      // zero.
+      const mag_type scalingFactor = assumeSymmetric_ ?
+        KAM::sqrt (curColNorm) : curColNorm;
+      if (divide) { // constexpr, so should get compiled out
+        curRow.value(k) = curRow.value(k) / scalingFactor;
+      }
+      else {
+        curRow.value(k) = curRow.value(k) * scalingFactor;
       }
     }
   }

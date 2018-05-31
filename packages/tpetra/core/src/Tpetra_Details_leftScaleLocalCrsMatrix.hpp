@@ -100,20 +100,18 @@ public:
     using KAM = Kokkos::ArithTraits<mag_type>;
 
     const mag_type curRowNorm = scalingFactors_(lclRow);
-    // Dividing by zero gives unpleasant results, so don't do it.
-    if (curRowNorm != KAM::zero ()) {
-      const mag_type scalingFactor = assumeSymmetric_ ?
-        KAM::sqrt (curRowNorm) : curRowNorm;
-      auto curRow = A_lcl_.row (lclRow);
-      const LO numEnt = curRow.length;
-      for (LO k = 0; k < numEnt; ++k) {
-
-        if (divide) {
-          curRow.value (k) = curRow.value(k) / scalingFactor;
-        }
-        else {
-          curRow.value (k) = curRow.value(k) * scalingFactor;
-        }
+    // Users are responsible for any divisions or multiplications by
+    // zero.
+    const mag_type scalingFactor = assumeSymmetric_ ?
+      KAM::sqrt (curRowNorm) : curRowNorm;
+    auto curRow = A_lcl_.row (lclRow);
+    const LO numEnt = curRow.length;
+    for (LO k = 0; k < numEnt; ++k) {
+      if (divide) { // constexpr, so should get compiled out
+        curRow.value (k) = curRow.value(k) / scalingFactor;
+      }
+      else {
+        curRow.value (k) = curRow.value(k) * scalingFactor;
       }
     }
   }
