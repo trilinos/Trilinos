@@ -260,6 +260,8 @@ there is no tractability for changes in these settings!
 
 The following `<system_name>` sub-directories exist (in alphabetical order):
 
+* `chama/`: Contains files to drive builds on the SRN HPC machine `chama`.
+
 * `mutrino/`: Contains files to drive builds on SNL machine mutrino.
  
 * `rhel6/`: Contains files to drive builds on rhel6 machines with the SEMS
@@ -274,11 +276,12 @@ The following `<system_name>` sub-directories exist (in alphabetical order):
   ATDM.  It also shows that a given system can have its own driver files if it
   needs to.
 
+* `serrano/`: Contains files to drive builds on the SRN HPC machine `serrano`.
+
 * `shiller/`: Contains the files to drive builds on the SRN test bed machine
   `shiller` which also can be run on the SON machine `hansen`.
   
-* `toss3/`: Contains files to drive builds on the SRN HPC machines `serrano`
-  and `chama`.
+
 
 ## How add a new system
 
