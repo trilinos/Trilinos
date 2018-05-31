@@ -172,6 +172,8 @@ function atdm_run_script_on_compute_node {
 
 }
 
+export -f atdm_run_script_on_compute_node
+
 # NOTE: The above function is implemented in this way using 'sbatch' so that
 # we can avoid using 'salloc' which is belived to cause ORTE errors.  But we
 # still want to see live ouput from the script so that we can report it on
