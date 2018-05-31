@@ -81,6 +81,7 @@ private:
 
   PV& partition ( V& x ) const { return static_cast<PV&>(x); }
   const PV& partition ( const V& x ) const { return static_cast<const PV&>(x); }
+  size_type numTimeSteps() const { return Nt_; }
 
 public:
 
@@ -240,8 +241,6 @@ public:
      
    }
 
-
-   size_type numTimeSteps() const { return Nt_; }
 
 }; // Tanks::ConstraintSerial
 
