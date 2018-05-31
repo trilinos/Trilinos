@@ -47,6 +47,9 @@
 #include "ROL_OptimizationSolver.hpp"
 #include "ROL_PH_Objective.hpp"
 #include "ROL_PH_StatusTest.hpp"
+#include "ROL_RiskVector.hpp"
+#include "ROL_RiskBoundConstraint.hpp"
+#include "ROL_RiskLessConstraint.hpp"
 
 /** @ingroup algo_group
     \class ROL::ProgressiveHedging
@@ -74,7 +77,11 @@ private:
   int maxit_;
   bool print_;
 
+  std::string type_;
   Ptr<PH_Objective<Real>>        ph_objective_;
+  Ptr<Vector<Real>>              ph_vector_;
+  Ptr<BoundConstraint<Real>>     ph_bound_;
+  Ptr<Constraint<Real>>          ph_constraint_;
   Ptr<OptimizationProblem<Real>> ph_problem_;
   Ptr<OptimizationSolver<Real>>  ph_solver_;
   Ptr<PH_StatusTest<Real>>       ph_status_;
@@ -114,22 +121,55 @@ public:
     print_        = parlist.sublist("SOL").sublist("Progressive Hedging").get("Print Subproblem Solve History",false);
     maxPen_       = (maxPen_ <= static_cast<Real>(0) ? ROL_INF<Real>() : maxPen_);
     penaltyParam_ = std::min(penaltyParam_,maxPen_);
+    // Create progressive hedging vector
+    type_ = parlist.sublist("SOL").get("Stochastic Component Type","Risk Neutral");
+    Ptr<ParameterList> parlistptr = makePtrFromRef<ParameterList>(parlist);
+    if (type_ == "Risk Averse" || type_ == "Deviation") {
+      ph_vector_  = makePtr<RiskVector<Real>>(parlistptr,
+                                              input_->getSolutionVector());
+    }
+    else {
+      ph_vector_  = input_->getSolutionVector();
+    }
     // Create progressive hedging objective function
     ph_objective_ = makePtr<PH_Objective<Real>>(input_->getObjective(),
-                                                input_->getSolutionVector(),
-                                                penaltyParam_);
+                                                ph_vector_,
+                                                penaltyParam_,
+                                                parlist);
+    // Create progressive hedging bound constraint
+    ph_bound_ = nullPtr;
+    if (input_->getBoundConstraint() != nullPtr) {
+      if (type_ == "Risk Averse" || type_ == "Deviation") {
+        ph_bound_   = makePtr<RiskBoundConstraint<Real>>(parlistptr,
+                                                         input_->getBoundConstraint());
+      }
+      else {
+        ph_bound_   = input_->getBoundConstraint();
+      }
+    }
+    // Create progressive hedging constraint
+    ph_constraint_ = nullPtr;
+    if (input_->getConstraint() != nullPtr) {
+      if (type_ == "Risk Averse" || type_ == "Deviation") {
+        ph_constraint_ = makePtr<RiskLessConstraint<Real>>(input_->getConstraint());
+      }
+      else {
+        ph_constraint_ = input_->getConstraint();
+      }
+    }
     // Build progressive hedging subproblems
-    ph_problem_   = makePtr<OptimizationProblem<Real>>(ph_objective_,
-                                                       input_->getSolutionVector(),
-                                                       input_->getBoundConstraint(),
-                                                       input_->getConstraint(),
-                                                       input_->getMultiplierVector());
+    ph_problem_  = makePtr<OptimizationProblem<Real>>(ph_objective_,
+                                                      ph_vector_,
+                                                      ph_bound_,
+                                                      ph_constraint_,
+                                                      input_->getMultiplierVector());
     // Build progressive hedging subproblem solver
     ph_solver_    = makePtr<OptimizationSolver<Real>>(*ph_problem_, parlist);
     // Build progressive hedging status test for inexact solves
     if (useInexact_) {
       ph_status_  = makePtr<PH_StatusTest<Real>>(parlist,
-                                                 *input_->getSolutionVector());
+                                                 *ph_vector_);
+//*input_->getSolutionVector());
     }
     else {
       ph_status_  = nullPtr;
@@ -151,7 +191,7 @@ public:
     const Real zero(0), one(1);
     std::vector<Real> vec_p(2), vec_g(2);
     Real znorm(ROL_INF<Real>()), zdotz(0);
-    int iter(0), tspiter(0);
+    int iter(0), tspiter(0), flag = 1;
     bool converged = true;
     // Output
     outStream << std::scientific << std::setprecision(6);
@@ -214,6 +254,8 @@ public:
                 << std::endl;
       // Check termination criterion
       if (znorm <= ztol_ && converged) {
+        flag = 0;
+        outStream << "Converged: Nonanticipativity constraint tolerance satisfied!" << std::endl;
         break;
       }
       converged = true;
@@ -223,15 +265,15 @@ public:
       }
       penaltyParam_ = std::min(penaltyParam_,maxPen_);
     }
-    input_->getSolutionVector()->set(*z_gsum_);
-    // Output reason for termination
-    if (znorm < ztol_) {
-      outStream << "Converged: Nonanticipativity constraint tolerance satisfied!" << std::endl;
+    if (type_ == "Risk Averse" || type_ == "Deviation") {
+      input_->getSolutionVector()->set(*dynamicPtrCast<RiskVector<Real>>(z_gsum_)->getVector());
     }
     else {
-      if (iter >= maxit_) {
-        outStream << "Maximum number of iterations exceeded" << std::endl;
-      }
+      input_->getSolutionVector()->set(*z_gsum_);
+    }
+    // Output reason for termination
+    if (iter >= maxit_ && flag != 0) {
+      outStream << "Maximum number of iterations exceeded" << std::endl;
     }
     outStream << "Total number of subproblem iterations per sample: "
               << tspiter << " / " << sampler_->numGlobalSamples()

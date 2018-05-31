@@ -64,5 +64,215 @@
       <Parameter name="Iteration Limit"                        type="int"    value="100"   />
       <Parameter name="Print Subproblem Solve History"         type="bool"   value="false" />
     </ParameterList>
+
+    <Parameter name = "Stochastic Component Type" type="string" value="Risk Neutral" />
+    <ParameterList name="Risk Measure">
+      <Parameter name="Name" type="string" value="CVaR" />
+      <!-- ===========  ENTROPIC RISK SUBLIST  =========== -->
+      <ParameterList name="Entropic Risk">
+        <Parameter name="Rate" type="double" value="2.0" />
+      </ParameterList>
+      <!-- ===========  CVAR SUBLIST  =========== -->
+      <ParameterList name="CVaR">
+        <Parameter name="Confidence Level"             type="double" value="0.8"   />
+        <Parameter name="Convex Combination Parameter" type="double" value="0.8"   />
+        <Parameter name="Smoothing Parameter"          type="double" value="1.e-2" />
+        <ParameterList name="Distribution">
+          <Parameter name="Name" type="string" value="Parabolic" />
+          <ParameterList name="Parabolic">
+            <Parameter name="Lower Bound" type="double" value="-0.5" />
+            <Parameter name="Upper Bound" type="double" value="0.5"  />
+          </ParameterList>
+        </ParameterList>
+      </ParameterList>
+      <!-- ===========  MOREAU-YOSIDA CVAR SUBLIST  =========== -->
+      <ParameterList name="Moreau-Yosida CVaR">
+        <Parameter name="Confidence Level"             type="double" value="0.8"   />
+        <Parameter name="Convex Combination Parameter" type="double" value="0.8"   />
+        <Parameter name="Smoothing Parameter"          type="double" value="1.e-2" />
+      </ParameterList>
+      <!-- ===========  GENERALIZED MOREAU-YOSIDA CVAR SUBLIST  =========== -->
+      <ParameterList name="Generalized Moreau-Yosida CVaR">
+        <Parameter name="Confidence Level"             type="double" value="0.8"   />
+        <Parameter name="Convex Combination Parameter" type="double" value="0.8"   />
+        <Parameter name="Smoothing Parameter"          type="double" value="1.e-2" />
+      </ParameterList>
+      <!-- ===========  MEAN PLUS VARIANCE SUBLIST  =========== -->
+      <ParameterList name="Mean Plus Variance">
+        <Parameter name="Coefficient" type="double" value="1.e-2" />
+      </ParameterList>
+      <!-- ===========  LOG QUANTILE SUBLIST  =========== -->
+      <ParameterList name="Log Quantile">
+        <Parameter name="Slope for Linear Growth"     type="double" value="0.5"   />
+        <Parameter name="Rate for Exponential Growth" type="double" value="1.0"   />
+        <Parameter name="Smoothing Parameter"         type="double" value="1.e-2" />
+      </ParameterList>
+      <!-- ===========  SMOOTHED WORST CASE SUBLIST  =========== -->
+      <ParameterList name="Smoothed Worst Case">
+        <Parameter name="Smoothing Parameter" type="double" value="1.e-2" />
+      </ParameterList>
+      <!-- ===========  TRUNCATED MEAN SUBLIST  =========== -->
+      <ParameterList name="Truncated Mean">
+        <Parameter name="Threshold" type="double" value="1.e-2" />
+      </ParameterList>
+    </ParameterList>
+    <ParameterList name="Deviation Measure">
+      <Parameter name="Name" type="string" value="CVaR" />
+      <!-- ===========  VARIANCE SUBLIST  =========== -->
+      <ParameterList name="Variance">
+        <Parameter name="Coefficient" type="double" value="1.e-2" />
+      </ParameterList>
+      <!-- ===========  ENTROPIC RISK SUBLIST  =========== -->
+      <ParameterList name="Entropic">
+        <Parameter name="Rate" type="double" value="2.0" />
+      </ParameterList>
+      <!-- ===========  CVAR SUBLIST  =========== -->
+      <ParameterList name="CVaR">
+        <Parameter name="Confidence Level"             type="double" value="0.8"   />
+        <Parameter name="Convex Combination Parameter" type="double" value="0.8"   />
+        <Parameter name="Smoothing Parameter"          type="double" value="1.e-2" />
+        <ParameterList name="Distribution">
+          <Parameter name="Name" type="string" value="Parabolic" />
+          <ParameterList name="Parabolic">
+            <Parameter name="Lower Bound" type="double" value="-0.5" />
+            <Parameter name="Upper Bound" type="double" value="0.5"  />
+          </ParameterList>
+        </ParameterList>
+      </ParameterList>
+      <!-- ===========  MOREAU-YOSIDA CVAR SUBLIST  =========== -->
+      <ParameterList name="Moreau-Yosida CVaR">
+        <Parameter name="Confidence Level"             type="double" value="0.8"   />
+        <Parameter name="Convex Combination Parameter" type="double" value="0.8"   />
+        <Parameter name="Smoothing Parameter"          type="double" value="1.e-2" />
+      </ParameterList>
+      <!-- ===========  GENERALIZED MOREAU-YOSIDA CVAR SUBLIST  =========== -->
+      <ParameterList name="Generalized Moreau-Yosida CVaR">
+        <Parameter name="Confidence Level"             type="double" value="0.8"   />
+        <Parameter name="Convex Combination Parameter" type="double" value="0.8"   />
+        <Parameter name="Smoothing Parameter"          type="double" value="1.e-2" />
+      </ParameterList>
+      <!-- ===========  LOG QUANTILE SUBLIST  =========== -->
+      <ParameterList name="Log Quantile">
+        <Parameter name="Slope for Linear Growth"     type="double" value="0.5"   />
+        <Parameter name="Rate for Exponential Growth" type="double" value="1.0"   />
+        <Parameter name="Smoothing Parameter"         type="double" value="1.e-2" />
+      </ParameterList>
+      <!-- ===========  SMOOTHED WORST CASE SUBLIST  =========== -->
+      <ParameterList name="Smoothed Upper Range">
+        <Parameter name="Smoothing Parameter" type="double" value="1.e-2" />
+      </ParameterList>
+      <!-- ===========  TRUNCATED MEAN SUBLIST  =========== -->
+      <ParameterList name="Truncated Mean">
+        <Parameter name="Threshold" type="double" value="1.e-2" />
+      </ParameterList>
+    </ParameterList>
+    <ParameterList name="Regret Measure">
+      <Parameter name="Name" type="string" value="Mean Absolute Loss" />
+      <!-- ===========  ENTROPIC RISK SUBLIST  =========== -->
+      <ParameterList name="Exponential">
+        <Parameter name="Rate" type="double" value="2.0" />
+      </ParameterList>
+      <!-- ===========  CVAR SUBLIST  =========== -->
+      <ParameterList name="Mean Absolute Loss">
+        <Parameter name="Confidence Level"             type="double" value="0.8"   />
+        <Parameter name="Convex Combination Parameter" type="double" value="0.8"   />
+        <Parameter name="Smoothing Parameter"          type="double" value="1.e-2" />
+        <ParameterList name="Distribution">
+          <Parameter name="Name" type="string" value="Parabolic" />
+          <ParameterList name="Parabolic">
+            <Parameter name="Lower Bound" type="double" value="-0.5" />
+            <Parameter name="Upper Bound" type="double" value="0.5"  />
+          </ParameterList>
+        </ParameterList>
+      </ParameterList>
+      <!-- ===========  MOREAU-YOSIDA CVAR SUBLIST  =========== -->
+      <ParameterList name="Moreau-Yosida Mean Absolute Loss">
+        <Parameter name="Confidence Level"             type="double" value="0.8"   />
+        <Parameter name="Convex Combination Parameter" type="double" value="0.8"   />
+        <Parameter name="Smoothing Parameter"          type="double" value="1.e-2" />
+      </ParameterList>
+      <!-- ===========  GENERALIZED MOREAU-YOSIDA CVAR SUBLIST  =========== -->
+      <ParameterList name="Generalized Moreau-Yosida Mean Absolute Loss">
+        <Parameter name="Confidence Level"             type="double" value="0.8"   />
+        <Parameter name="Convex Combination Parameter" type="double" value="0.8"   />
+        <Parameter name="Smoothing Parameter"          type="double" value="1.e-2" />
+      </ParameterList>
+      <!-- ===========  LOG QUANTILE SUBLIST  =========== -->
+      <ParameterList name="Log Quantile">
+        <Parameter name="Slope for Linear Growth"     type="double" value="0.5"   />
+        <Parameter name="Rate for Exponential Growth" type="double" value="1.0"   />
+        <Parameter name="Smoothing Parameter"         type="double" value="1.e-2" />
+      </ParameterList>
+      <!-- ===========  MEAN L2 SUBLIST  =========== -->
+      <ParameterList name="Mean L2">
+        <Parameter name="Coefficient" type="double" value="1.e-2" />
+      </ParameterList>
+      <!-- ===========  SMOOTHED WORST CASE SUBLIST  =========== -->
+      <ParameterList name="Smoothed Worst Case">
+        <Parameter name="Smoothing Parameter" type="double" value="1.e-2" />
+      </ParameterList>
+      <!-- ===========  TRUNCATED MEAN SUBLIST  =========== -->
+      <ParameterList name="Truncated Mean">
+        <Parameter name="Threshold" type="double" value="1.e-2" />
+      </ParameterList>
+    </ParameterList>
+    <ParameterList name="Error Measure">
+      <Parameter name="Name" type="string" value="Exponential" />
+      <!-- ===========  ENTROPIC RISK SUBLIST  =========== -->
+      <ParameterList name="Exponential">
+        <Parameter name="Rate" type="double" value="2.0" />
+      </ParameterList>
+      <!-- ===========  CVAR SUBLIST  =========== -->
+      <ParameterList name="Koenker-Bassett">
+        <Parameter name="Confidence Level"             type="double" value="0.8"   />
+        <Parameter name="Convex Combination Parameter" type="double" value="0.8"   />
+        <Parameter name="Smoothing Parameter"          type="double" value="1.e-2" />
+        <ParameterList name="Distribution">
+          <Parameter name="Name" type="string" value="Parabolic" />
+          <ParameterList name="Parabolic">
+            <Parameter name="Lower Bound" type="double" value="-0.5" />
+            <Parameter name="Upper Bound" type="double" value="0.5"  />
+          </ParameterList>
+        </ParameterList>
+      </ParameterList>
+      <!-- ===========  MOREAU-YOSIDA CVAR SUBLIST  =========== -->
+      <ParameterList name="Moreau-Yosida-Koenker-Bassett">
+        <Parameter name="Confidence Level"             type="double" value="0.8"   />
+        <Parameter name="Convex Combination Parameter" type="double" value="0.8"   />
+        <Parameter name="Smoothing Parameter"          type="double" value="1.e-2" />
+      </ParameterList>
+      <!-- ===========  GENERALIZED MOREAU-YOSIDA CVAR SUBLIST  =========== -->
+      <ParameterList name="Generalized Moreau-Yosida-Koenker-Bassett">
+        <Parameter name="Confidence Level"             type="double" value="0.8"   />
+        <Parameter name="Convex Combination Parameter" type="double" value="0.8"   />
+        <Parameter name="Smoothing Parameter"          type="double" value="1.e-2" />
+      </ParameterList>
+      <!-- ===========  LOG QUANTILE SUBLIST  =========== -->
+      <ParameterList name="Log Quantile">
+        <Parameter name="Slope for Linear Growth"     type="double" value="0.5"   />
+        <Parameter name="Rate for Exponential Growth" type="double" value="1.0"   />
+        <Parameter name="Smoothing Parameter"         type="double" value="1.e-2" />
+      </ParameterList>
+      <!-- ===========  MEAN L2 SUBLIST  =========== -->
+      <ParameterList name="Least Squares">
+        <Parameter name="Coefficient" type="double" value="1.e-2" />
+      </ParameterList>
+      <!-- ===========  SMOOTHED WORST CASE SUBLIST  =========== -->
+      <ParameterList name="Smoothed Worst Case">
+        <Parameter name="Smoothing Parameter" type="double" value="1.e-2" />
+      </ParameterList>
+      <!-- ===========  TRUNCATED MEAN SUBLIST  =========== -->
+      <ParameterList name="Huber">
+        <Parameter name="Threshold" type="double" value="1.e-2" />
+      </ParameterList>
+    </ParameterList>
+    <ParameterList name="Probability">
+      <Parameter name="Name" type="string" value="Smoothed POE" />
+      <!-- ===========  SMOOTHED POE SUBLIST  =========== -->
+      <ParameterList name="Smoothed POE">
+        <Parameter name="Threshold"           type="double" value="1.0"  />
+        <Parameter name="Smoothing Parameter" type="double" value="1e-3" />
+      </ParameterList>
+    </ParameterList>
   </ParameterList>
 </ParameterList>

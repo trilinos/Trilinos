@@ -41,100 +41,109 @@
 // ************************************************************************
 // @HEADER
 //
-#ifndef PH_OBJECTIVE_H
-#define PH_OBJECTIVE_H
+#ifndef PH_PROBOBJECTIVE_H
+#define PH_PROBOBJECTIVE_H
 
-#include "ROL_PH_RiskObjective.hpp"
-#include "ROL_PH_DeviationObjective.hpp"
-#include "ROL_PH_RegretObjective.hpp"
-#include "ROL_PH_ErrorObjective.hpp"
-#include "ROL_PH_ProbObjective.hpp"
+#include "ROL_Objective.hpp"
 
 /** @ingroup func_group
-    \class ROL::PH_Objective
-    \brief Provides the interface for the progressive hedging objective.
+    \class ROL::PH_ProbObjective
+    \brief Provides the interface for the progressive hedging probability objective.
 
     ---
 */
 namespace ROL {
 
 template <class Real>
-class PH_Objective : public Objective<Real> {
+class PH_ProbObjective : public Objective<Real> {
 private:
-  Ptr<Objective<Real>> obj_;
-  Ptr<const Vector<Real>> xbar_, w_;
-  Ptr<Vector<Real>> xprimal_;
-  Real penaltyParam_;
+  const Ptr<Objective<Real>> obj_;
+  Real threshold_;
+  Real eps_;
 
-public:
+  bool isValueComputed_;
+  Real val_;
 
-  PH_Objective(const Ptr<Objective<Real>> &obj,
-               const Ptr<Vector<Real>> &x,
-               const Real penaltyParam,
-               ParameterList &parlist) 
-    : penaltyParam_(penaltyParam), xbar_(nullPtr), w_(nullPtr) {
-    xprimal_ = x->clone();
-    std::string type = parlist.sublist("SOL").get("Stochastic Component Type","Risk Neutral");
-    if (type == "Risk Averse") {
-      obj_ = makePtr<PH_RiskObjective<Real>>(obj,parlist);
-    }
-    else if (type == "Deviation") {
-      obj_ = makePtr<PH_DeviationObjective<Real>>(obj,parlist);
-    }
-    else if (type == "Regret") {
-      obj_ = makePtr<PH_RegretObjective<Real>>(obj,parlist);
-    }
-    else if (type == "Error") {
-      obj_ = makePtr<PH_ErrorObjective<Real>>(obj,parlist);
-    }
-    else if (type == "Probability") {
-      std::string prob = parlist.sublist("SOL").sublist("Probability").get("Name","bPOE");
-      if (prob == "Smoothed POE") {
-        obj_ = makePtr<PH_ProbObjective<Real>>(obj,parlist);
-      }
-      else {
-        obj_ = obj;
-      }
-    }
-    else {
-      obj_ = obj;
+  bool isGradientInitialized_;
+  bool isGradientComputed_;
+  Ptr<Vector<Real>> g_;
+
+  void getValue(const Vector<Real> &x, Real &tol) {
+    if (!isValueComputed_) {
+      val_ = obj_->value(x,tol);
+      isValueComputed_ = true;
     }
   }
 
-  void setData(const Ptr<const Vector<Real>> &xbar,
-               const Ptr<const Vector<Real>> &w,
-               const Real penaltyParam) {
-    xbar_         = xbar;
-    w_            = w;
-    penaltyParam_ = penaltyParam;
+  void getGradient(const Vector<Real> &x, Real &tol) {
+    if (!isGradientInitialized_) {
+      g_ = x.dual().clone();
+      isGradientInitialized_ = true;
+    }
+    if (!isGradientComputed_) {
+      obj_->gradient(*g_,x,tol);
+      isGradientComputed_ = true;
+    }
+  }
+
+  Real smoothHeaviside(const Real x, const int deriv = 0) const {
+    const Real one(1), two(2);
+    Real val(0);
+    if (deriv == 0) {
+      Real ex = std::exp(-two*x/eps_);
+      val = one/(one+ex);
+    }
+    else if (deriv == 1) {
+      Real ex = std::exp(-two*x/eps_);
+      val = (two/eps_)*ex/std::pow(one+ex,2);
+    }
+    else if (deriv == 2) {
+      Real ex = std::exp(two*x/eps_);
+      val = std::pow(two/eps_,2)*ex*(one-ex)/std::pow(one+ex,3);
+    }
+    return val;
+  }
+
+public:
+
+  PH_ProbObjective(const Ptr<Objective<Real>> &obj,
+                   ParameterList              &parlist)
+    : obj_(obj),
+      isValueComputed_(false),
+      isGradientInitialized_(false),
+      isGradientComputed_(false) {
+    ParameterList &list = parlist.sublist("SOL").sublist("Probability").sublist("Smoothed POE");
+    threshold_ = list.get<Real>("Threshold");
+    eps_       = list.get<Real>("Smoothing Parameter");
   }
 
   void update( const Vector<Real> &x, bool flag = true, int iter = -1 ) {
     obj_->update(x,flag,iter);
+    isValueComputed_    = false;
+    isGradientComputed_ = false;
   }
 
   Real value( const Vector<Real> &x, Real &tol ) {
-    const Real half(0.5), one(1);
-    Real val  = obj_->value(x,tol);
-    Real wx   = x.dot(*w_);
-    xprimal_->set(x);
-    xprimal_->axpy(-one,*xbar_);
-    Real xx   = xprimal_->dot(*xprimal_);
-    return val + wx + half*penaltyParam_*xx;
+    getValue(x,tol);
+    Real prob = smoothHeaviside(val_-threshold_,0);
+    return prob;
   }
 
   void gradient( Vector<Real> &g, const Vector<Real> &x, Real &tol ) {
-    const Real one(1);
-    obj_->gradient(g,x,tol);
-    xprimal_->set(*w_);
-    xprimal_->axpy(penaltyParam_,x);
-    xprimal_->axpy(-penaltyParam_,*xbar_);
-    g.plus(xprimal_->dual());
+    getValue(x,tol);
+    Real prob = smoothHeaviside(val_-threshold_,1);
+    getGradient(x,tol);
+    g.set(*g_); g.scale(prob);
   }
 
   void hessVec( Vector<Real> &hv, const Vector<Real> &v, const Vector<Real> &x, Real &tol ) {
+    getValue(x,tol);
+    Real prob1 = smoothHeaviside(val_-threshold_,1);
+    Real prob2 = smoothHeaviside(val_-threshold_,2);
+    getGradient(x,tol);
+    Real gv    = v.dot(g_->dual());
     obj_->hessVec(hv,v,x,tol);
-    hv.axpy(penaltyParam_,v.dual());
+    hv.scale(prob1); hv.axpy(prob2*gv,*g_);
   }
 
   void setParameter(const std::vector<Real> &param) {
