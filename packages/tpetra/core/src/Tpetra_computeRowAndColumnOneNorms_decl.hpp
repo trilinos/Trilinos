@@ -47,6 +47,7 @@
 
 #include "TpetraCore_config.h"
 #include "Kokkos_ArithTraits.hpp"
+#include "Tpetra_Details_EquilibrationInfo.hpp"
 
 namespace Tpetra {
 
