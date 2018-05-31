@@ -69,7 +69,7 @@
     <ParameterList name="Risk Measure">
       <Parameter name="Name" type="string" value="CVaR" />
       <!-- ===========  ENTROPIC RISK SUBLIST  =========== -->
-      <ParameterList name="Entropic Risk">
+      <ParameterList name="Log Exponential">
         <Parameter name="Rate" type="double" value="2.0" />
       </ParameterList>
       <!-- ===========  CVAR SUBLIST  =========== -->
@@ -98,7 +98,7 @@
         <Parameter name="Smoothing Parameter"          type="double" value="1.e-2" />
       </ParameterList>
       <!-- ===========  MEAN PLUS VARIANCE SUBLIST  =========== -->
-      <ParameterList name="Mean Plus Variance">
+      <ParameterList name="Safety Margin">
         <Parameter name="Coefficient" type="double" value="1.e-2" />
       </ParameterList>
       <!-- ===========  LOG QUANTILE SUBLIST  =========== -->

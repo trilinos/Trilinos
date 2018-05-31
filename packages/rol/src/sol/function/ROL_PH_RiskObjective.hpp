@@ -131,9 +131,9 @@ public:
              quad_ = makePtr<MoreauYosidaCVaR<Real>>(parlist);            break;
       case RISKMEASURE_GENMOREAUYOSIDACVAR:
              quad_ = makePtr<GenMoreauYosidaCVaR<Real>>(parlist);         break;
-      case RISKMEASURE_ENTROPICRISK:
+      case RISKMEASURE_LOGEXPONENTIAL:
              quad_ = makePtr<LogExponentialQuadrangle<Real>>(parlist);    break;
-      case RISKMEASURE_MEANVARIANCE:
+      case RISKMEASURE_SAFETYMARGIN:
              quad_ = makePtr<MeanVarianceQuadrangle<Real>>(parlist);      break;
       case RISKMEASURE_TRUNCATEDMEAN:
              quad_ = makePtr<TruncatedMeanQuadrangle<Real>>(parlist);     break;
