@@ -83,6 +83,8 @@ struct EquilibrationInfo {
   using host_device_type = typename Kokkos::View<mag_type*, device_type>::HostMirror::device_type;
   using HostMirror = EquilibrationInfo<val_type, host_device_type>;
 
+  EquilibrationInfo () = default;
+
   EquilibrationInfo (const std::size_t lclNumRows,
                      const std::size_t lclNumCols,
                      const bool assumeSymmetric_) :
