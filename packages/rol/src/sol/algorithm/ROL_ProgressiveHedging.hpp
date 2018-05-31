@@ -55,6 +55,28 @@
     \class ROL::ProgressiveHedging
     \brief Provides the interface to solve a stochastic program using progressive hedging.
 
+    The progressive hedging algorithm was introduced in
+
+    Rockafellar, R. T., and Wets, R. J-B. Scenarios and policy aggregation in
+    optimization under uncertainty. Mathematics of Operations Research, 16
+    (1991), 119-147.
+
+    This algorithm solves deterministic optimization problems for each sample and then
+    aggregates the optimization variables to produce an ``implementable'' solution.
+    Progressive hedging has recently been applied to solve risk-averse and buffered
+    probability optimization problems in
+
+    Rockafellar, R. T., Solving stochastic programming problems with risk
+    measures by progessive hedging, Set-valued and Variational Analysis,
+    published online 2017.
+
+    Rockafellar, R. T., and Uryasev, S. Minimizing buffered probability of
+    exceedance by progressive hedging, Mathematical Programming B,
+    published online 2018.
+
+    This implementation can also minimize deviation, error and regret arising
+    from the expectation risk quadrangle as well as the smoothed probability
+    of exceedance.
     ---
 */
 
