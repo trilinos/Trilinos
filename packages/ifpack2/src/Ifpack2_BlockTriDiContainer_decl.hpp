@@ -117,7 +117,7 @@ namespace Ifpack2 {
       //! entry. Defaults to false.
       bool zeroStartingSolution = false;
       //! Damping factor. Defaults to 1.
-      scalar_type dampingFactor = Kokkos::ArithTraits<magnitude_type>::one();
+      scalar_type dampingFactor = Kokkos::ArithTraits<scalar_type>::one();
       //! The maximum number of sweeps. If the norm-based criterion is not used,
       //! it's exactly the number of sweeps. Defaults to 1.
       int maxNumSweeps = 1;
