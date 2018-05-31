@@ -992,7 +992,7 @@ namespace Ifpack2 {
         
         const auto nblocks = Kokkos::create_mirror_view_and_copy
           (Kokkos::HostSpace(), Kokkos::subview(btdm.flat_td_ptr, ntridiags));
-        btdm.is_diagonal_only = (nblocks() == ntridiags);
+        btdm.is_diagonal_only = (static_cast<local_ordinal_type>(nblocks()) == ntridiags);
       }
       
       // And the packed index pointers.
@@ -3361,7 +3361,7 @@ namespace Ifpack2 {
       typename AsyncableImport<MatrixType>::impl_scalar_type_2d_view remote_multivector;
       if (is_seq_method_requested) {
         // construct copy of Y again if num vectors are different
-        if (Z.getNumVectors() != num_vectors) 
+        if (static_cast<local_ordinal_type>(Z.getNumVectors()) != num_vectors) 
           Z = tpetra_multivector_type(tpetra_importer->getTargetMap(), num_vectors, false);
       } else {
         if (is_async_importer_active) {
