@@ -330,7 +330,8 @@ endif
 
 #CPPFLAGS is now unused
 KOKKOS_CPPFLAGS =
-KOKKOS_CXXFLAGS = -I./ -I$(KOKKOS_PATH)/core/src -I$(KOKKOS_PATH)/containers/src -I$(KOKKOS_PATH)/algorithms/src -I$(KOKKOS_ETI_PATH)
+KOKKOS_CXXFLAGS =
+#-I./ -I$(KOKKOS_PATH)/core/src -I$(KOKKOS_PATH)/containers/src -I$(KOKKOS_PATH)/algorithms/src -I$(KOKKOS_ETI_PATH)
 KOKKOS_TPL_INCLUDE_DIRS =
 KOKKOS_TPL_LIBRARY_DIRS =
 KOKKOS_TPL_LIBRARY_NAMES =
@@ -341,9 +342,11 @@ endif
 
 KOKKOS_LIBS = -ldl
 KOKKOS_TPL_LIBRARY_NAMES += dl
-KOKKOS_LDFLAGS = -L$(shell pwd)
+KOKKOS_LDFLAGS = 
+#-L$(shell pwd)
 # CXXLDFLAGS is used together with CXXFLAGS in a combined compile/link command
-KOKKOS_CXXLDFLAGS = -L$(shell pwd)
+KOKKOS_CXXLDFLAGS = 
+#-L$(shell pwd)
 KOKKOS_LINK_FLAGS = 
 KOKKOS_SRC =
 KOKKOS_HEADERS =
