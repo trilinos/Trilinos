@@ -95,12 +95,12 @@ namespace Intrepid2 {
           //   workspace per thread is required for serial interface. 
           //   parallel_for with range policy would be good to use stack workspace 
           //   as team policy only can create shared memory 
-          //   this part would be tricky as ths max size should be determined in compile time
+          //   this part would be tricky as the max size should be determined at compile time
           //   let's think about this and find out the best practice. for now I use the following.
           constexpr int worksize = (Parameters::MaxOrder+1)*4;
           
           // if you use team policy, worksize can be gathered from the basis object and use 
-          // kokkos shemem_size APIs to create workspace per team or per thread.
+          // kokkos shmem_size APIs to create workspace per team or per thread.
           //const auto worksize_for_teampolicy = basis.getWorksizePerPoint(OPERATOR_VALUE);
           
           // extract point range to be evaluated in each thread

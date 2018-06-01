@@ -175,7 +175,7 @@ namespace Intrepid2 {
     typedef typename Basis<ExecSpaceType,outputValueType,pointValueType>::scalarViewType  scalarViewType;
 
   private:
-    /** \brief inverse of Generalized Vandermonde matrix (isotropic order */
+    /** \brief inverse of Generalized Vandermonde matrix (isotropic order) */
     Kokkos::DynRankView<typename scalarViewType::value_type,ExecSpaceType> vinv_;
 
   public:
