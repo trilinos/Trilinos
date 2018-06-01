@@ -13,13 +13,6 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   ${TEUCHOS_STD_UNIT_TEST_MAIN}
   )
 
-TRIBITS_ADD_EXECUTABLE_AND_TEST(
-  TripleProduct_UnitTests
-  SOURCES
-  TripleProductTest.cpp
-  ${TEUCHOS_STD_UNIT_TEST_MAIN}
-  )
-
 IF (KokkosKernels_ENABLE_Experimental)
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   MatrixMatrixKernels_UnitTests

@@ -491,12 +491,12 @@ namespace Tpetra {
       size_t thread_max =  Inrowptr.size();
       size_t c_nnz_size=0;
       lno_view_t thread_start_nnz("thread_nnz",thread_max+1);
-      Kokkos::parallel_scan("LTG::Scan",range_type(0,thread_max).set_chunk_size(1), [=] (const size_t i, size_t& update, const bool final) {
-          size_t mynnz = Inrowptr(i)(Inrowptr(i).dimension(0)-1);
-          if(final) thread_start_nnz(i) = update;
-          update+=mynnz;
-          if(final && i+1==thread_max) thread_start_nnz(i+1)=update;
-        });
+      {
+        lno_view_t thread_nnz_count("thread_nnz_counts", thread_max);
+        for(size_t i = 0; i < thread_max; i++)
+          thread_nnz_count(i) = Inrowptr(i)(Inrowptr(i).dimension(0) - 1);
+        Tpetra::Details::computeOffsetsFromCounts(thread_start_nnz, thread_nnz_count);
+      }
       c_nnz_size = thread_start_nnz(thread_max);
 
       // Allocate output
@@ -858,15 +858,6 @@ namespace Tpetra {
         // effort on estimation and risk an occasional reallocation.
 
         size_t Acest_nnz_per_row = std::ceil(Ac_estimate_nnz(*Aview.origMatrix, *Pview.origMatrix) / m);
-
-        // mfh 27 Sep 2016: The ac_status array is an implementation detail
-        // of the local sparse matrix-matrix multiply routine.
-
-        // The status array will contain the index into colind where this entry was last deposited.
-        //   ac_status[i] <  nnz - not in the row yet
-        //   ac_status[i] >= nnz - this is the entry where you can find the data
-        // We start with this filled with INVALID's indicating that there are no entries yet.
-        // Sadly, this complicates the code due to the fact that size_t's are unsigned.
         size_t INVALID = Teuchos::OrdinalTraits<size_t>::invalid();
 
         // Get my node / thread info (right from openmp or parameter list)
