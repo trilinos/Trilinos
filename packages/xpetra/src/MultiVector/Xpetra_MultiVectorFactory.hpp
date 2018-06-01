@@ -238,7 +238,7 @@ namespace Xpetra {
 #endif
 
       if (map->lib() == UseEpetra)
-        return rcp( new EpetraMultiVectorT<int,Node>(map, ArrayOfPtrs, NumVectors) );
+        return rcp( new EpetraIntMultiVectorT<int,Node>(map, ArrayOfPtrs, NumVectors) );
 
       XPETRA_FACTORY_END;
     }
@@ -353,7 +353,7 @@ namespace Xpetra {
 #endif
 
       if (map->lib() == UseEpetra)
-        return rcp( new EpetraMultiVectorT<long long,Node>(map, ArrayOfPtrs, NumVectors) );
+        return rcp( new EpetraIntMultiVectorT<long long,Node>(map, ArrayOfPtrs, NumVectors) );
 
       XPETRA_FACTORY_END;
     }
