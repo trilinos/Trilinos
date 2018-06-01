@@ -547,6 +547,9 @@ private:
   //! Create the Preconditioner.
   int CreatePrecond();
 
+  //! Copies matrix data from Epetra matrix to Hypre matrix.
+  int CopyEpetraToHypre();
+
   //! Add a function to be called in Compute()
   int AddFunToList(Teuchos::RCP<FunctionParameter> NewFun);
 
@@ -659,8 +662,9 @@ private:
   bool *IsPrecondSetup_;
   //! Is the system to be solved or apply preconditioner
   Hypre_Chooser SolveOrPrec_;
-  //! This is a linear map used the way it is in Hypre
-  Teuchos::RefCountPtr<Epetra_Map> MySimpleMap_;
+  //! These are linear maps that meet the needs of Hypre
+  Teuchos::RCP<Epetra_Map> MySimpleMap_;
+  Teuchos::RCP<Epetra_Map> MySimpleColumnMap_;
   //! Counter of the number of parameters set
   int NumFunsToCall_;
   //! Which solver was chosen
