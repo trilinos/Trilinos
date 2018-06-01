@@ -628,7 +628,7 @@ namespace Tpetra {
       //   ac_status[i] >= nnz - this is the entry where you can find the data
       // We start with this filled with INVALID's indicating that there are no entries yet.
       // Sadly, this complicates the code due to the fact that size_t's are unsigned.
-      size_t INVALID = Teuchos::OrdinalTraits<size_t>::invalid();
+      const size_t INVALID = Teuchos::OrdinalTraits<size_t>::invalid();
       Array<size_t> ac_status(n, ST_INVALID);
 
       // mfh 27 Sep 2016: Here is the local sparse matrix-matrix multiply
@@ -1143,14 +1143,6 @@ namespace Tpetra {
         // ML; for the non-threaded case, ML found it faster to spend less
         // effort on estimation and risk an occasional reallocation.
 
-        // mfh 27 Sep 2016: The ac_status array is an implementation detail
-        // of the local sparse matrix-matrix multiply routine.
-
-        // The status array will contain the index into colind where this entry was last deposited.
-        //   ac_status[i] <  nnz - not in the row yet
-        //   ac_status[i] >= nnz - this is the entry where you can find the data
-        // We start with this filled with INVALID's indicating that there are no entries yet.
-        // Sadly, this complicates the code due to the fact that size_t's are unsigned.
         const size_t ST_INVALID = Teuchos::OrdinalTraits<size_t>::invalid();
 
         // Get my node / thread info (right from openmp or parameter list)

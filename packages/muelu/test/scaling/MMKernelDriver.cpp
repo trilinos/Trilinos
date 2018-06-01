@@ -485,7 +485,7 @@ struct LTG_Tests<Scalar, LocalOrdinal, GlobalOrdinal, Kokkos::Compat::KokkosOpen
       const LO colMapSize = static_cast<LO>(Bview.colMap->getNodeNumElements());
       Kokkos::parallel_for("Tpetra::mult_A_B_newmatrix::Bcol2Ccol_fill",
                            Kokkos::RangePolicy<execution_space, LO>(0, colMapSize),
-                           KOKKOS_LAMBDA(const LO i) {
+                           [=](const LO i) {
                              Bcol2Ccol(i) = i;
                            });
 
@@ -494,7 +494,7 @@ struct LTG_Tests<Scalar, LocalOrdinal, GlobalOrdinal, Kokkos::Compat::KokkosOpen
       local_map_type Browmap_local = Bview.origMatrix->getRowMap()->getLocalMap();
       lo_view_t targetMapToOrigRow(Kokkos::ViewAllocateWithoutInitializing("targetMapToOrigRow"),Aview.colMap->getNodeNumElements());
       lo_view_t targetMapToImportRow;
-      Kokkos::parallel_for("Tpetra::mult_A_B_newmatrix::construct_tables",range_type(Aview.colMap->getMinLocalIndex(), Aview.colMap->getMaxLocalIndex()+1),KOKKOS_LAMBDA(const LO i) {
+      Kokkos::parallel_for("Tpetra::mult_A_B_newmatrix::construct_tables",range_type(Aview.colMap->getMinLocalIndex(), Aview.colMap->getMaxLocalIndex()+1),[&](const LO i) {
         GO aidx = Acolmap_local.getGlobalElement(i);
         LO B_LID = Browmap_local.getLocalElement(aidx);
         if (B_LID != LO_INVALID) {
