@@ -70,7 +70,6 @@ namespace { // (anonymous)
     using std::endl;
     typedef Tpetra::MultiVector<S, LO, GO, NODE> MV;
     typedef typename MV::dual_view_type dual_view_type;
-    typedef typename dual_view_type::execution_space execution_space;
     typedef typename dual_view_type::size_type size_type;
 
     Teuchos::OSTab tab0 (out);

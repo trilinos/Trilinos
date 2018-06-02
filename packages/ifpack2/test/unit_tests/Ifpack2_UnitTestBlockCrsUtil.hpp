@@ -429,11 +429,11 @@ struct BlockCrsMatrixMaker {
         std::sort(colidx.data() + rowptr(r), colidx.data() + rowptr(r+1));
 
       {
-        typename row_map_type::non_const_type row_map("row_map", rowptr.size());
-        Kokkos::deep_copy(row_map, rowptr);
+        typename row_map_type::non_const_type row_map_tmp("row_map", rowptr.size());
+        Kokkos::deep_copy(row_map_tmp, rowptr);
         entries_type entries("entries", colidx.size());
         Kokkos::deep_copy(entries, colidx);
-        g = typename Tpetra_CrsGraph::local_graph_type(entries, row_map);
+        g = typename Tpetra_CrsGraph::local_graph_type(entries, row_map_tmp);
       }
 
       if ( ! tridiags_only) {

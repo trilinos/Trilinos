@@ -146,8 +146,7 @@ module list
 
 echo "MPI type = sems-${SEMS_MPI_NAME:?}/${SEMS_MPI_VERSION:?}"
 
-# CDASH_TRACK="Pull Request"
-CDASH_TRACK="Experimental"
+CDASH_TRACK="Pull Request"
 echo "CDash Track = ${CDASH_TRACK:?}"
 
 
@@ -175,7 +174,7 @@ ctest -S simple_testing.cmake \
   -Dskip_update_step=ON \
   -Ddashboard_model=Experimental \
   -Ddashboard_track="${CDASH_TRACK:?}" \
-  -DPARALLEL_LEVEL=13 \
+  -DPARALLEL_LEVEL=22 \
   -Dbuild_dir="${WORKSPACE:?}/pull_request_test" \
   -Dconfigure_script=../Trilinos/cmake/std/${CONFIG_SCRIPT:?} \
   -Dpackage_enables=../packageEnables.cmake \

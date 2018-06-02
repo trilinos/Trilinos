@@ -56,8 +56,8 @@
 #include "Xpetra_Map.hpp"
 #include "Xpetra_MatrixFactory.hpp"
 #include "Xpetra_Matrix.hpp"
-// #include "Xpetra_StridedMapFactory.hpp"
-// #include "Xpetra_StridedMap.hpp"
+#include "Xpetra_StridedMapFactory.hpp"
+#include "Xpetra_StridedMap.hpp"
 
 #ifdef HAVE_XPETRA_TPETRA
 #include <TpetraExt_TripleMatrixMultiply.hpp>
@@ -147,6 +147,30 @@ namespace Xpetra {
                         fillParams);
       }
 
+      // transfer striding information
+      RCP<const Map> domainMap = Teuchos::null;
+      RCP<const Map> rangeMap  = Teuchos::null;
+
+      const std::string stridedViewLabel("stridedMaps");
+      const size_t        blkSize = 1;
+      std::vector<size_t> stridingInfo(1, blkSize);
+      LocalOrdinal        stridedBlockId = -1;
+      
+      if (R.IsView(stridedViewLabel)) {
+        rangeMap  = transposeR ? R.getColMap(stridedViewLabel) : R.getRowMap(stridedViewLabel);
+      } else {
+        rangeMap  = transposeR ? R.getDomainMap()       : R.getRangeMap();
+        rangeMap  = StridedMapFactory::Build(rangeMap,  stridingInfo, stridedBlockId);
+      }
+      
+      if (P.IsView(stridedViewLabel)) {
+          domainMap = transposeP ? P.getRowMap(stridedViewLabel) : P.getColMap(stridedViewLabel);
+      } else {
+        domainMap = transposeP ? P.getRangeMap()        : P.getDomainMap();
+        domainMap = StridedMapFactory::Build(domainMap, stridingInfo, stridedBlockId);
+      }
+      Ac.CreateView(stridedViewLabel, rangeMap, domainMap);
+
     } // end Multiply
 
   }; // class TripleMatrixMultiply
@@ -202,6 +226,37 @@ namespace Xpetra {
 #else
         throw(Xpetra::Exceptions::RuntimeError("Xpetra must be compiled with Tpetra."));
 #endif
+        if (call_FillComplete_on_result && !haveMultiplyDoFillComplete) {
+          RCP<Teuchos::ParameterList> fillParams = rcp(new Teuchos::ParameterList());
+          fillParams->set("Optimize Storage", doOptimizeStorage);
+          Ac.fillComplete((transposeP) ? P.getRangeMap() : P.getDomainMap(),
+                          (transposeR) ? R.getDomainMap() : R.getRangeMap(),
+                          fillParams);
+        }
+
+        // transfer striding information
+        RCP<const Map> domainMap = Teuchos::null;
+        RCP<const Map> rangeMap  = Teuchos::null;
+
+        const std::string stridedViewLabel("stridedMaps");
+        const size_t        blkSize = 1;
+        std::vector<size_t> stridingInfo(1, blkSize);
+        LocalOrdinal        stridedBlockId = -1;
+      
+        if (R.IsView(stridedViewLabel)) {
+          rangeMap  = transposeR ? R.getColMap(stridedViewLabel) : R.getRowMap(stridedViewLabel);
+        } else {
+          rangeMap  = transposeR ? R.getDomainMap()       : R.getRangeMap();
+          rangeMap  = StridedMapFactory::Build(rangeMap,  stridingInfo, stridedBlockId);
+        }
+      
+        if (P.IsView(stridedViewLabel)) {
+          domainMap = transposeP ? P.getRowMap(stridedViewLabel) : P.getColMap(stridedViewLabel);
+        } else {
+          domainMap = transposeP ? P.getRangeMap()        : P.getDomainMap();
+          domainMap = StridedMapFactory::Build(domainMap, stridingInfo, stridedBlockId);
+        }
+        Ac.CreateView(stridedViewLabel, rangeMap, domainMap);
       }
 
     } // end Multiply
@@ -258,6 +313,37 @@ namespace Xpetra {
 #else
         throw(Xpetra::Exceptions::RuntimeError("Xpetra must be compiled with Tpetra."));
 #endif
+        if (call_FillComplete_on_result && !haveMultiplyDoFillComplete) {
+          RCP<Teuchos::ParameterList> fillParams = rcp(new Teuchos::ParameterList());
+          fillParams->set("Optimize Storage", doOptimizeStorage);
+          Ac.fillComplete((transposeP) ? P.getRangeMap() : P.getDomainMap(),
+                          (transposeR) ? R.getDomainMap() : R.getRangeMap(),
+                          fillParams);
+        }
+
+        // transfer striding information
+        RCP<const Map> domainMap = Teuchos::null;
+        RCP<const Map> rangeMap  = Teuchos::null;
+
+        const std::string stridedViewLabel("stridedMaps");
+        const size_t        blkSize = 1;
+        std::vector<size_t> stridingInfo(1, blkSize);
+        LocalOrdinal        stridedBlockId = -1;
+      
+        if (R.IsView(stridedViewLabel)) {
+          rangeMap  = transposeR ? R.getColMap(stridedViewLabel) : R.getRowMap(stridedViewLabel);
+        } else {
+          rangeMap  = transposeR ? R.getDomainMap()       : R.getRangeMap();
+          rangeMap  = StridedMapFactory::Build(rangeMap,  stridingInfo, stridedBlockId);
+        }
+      
+        if (P.IsView(stridedViewLabel)) {
+          domainMap = transposeP ? P.getRowMap(stridedViewLabel) : P.getColMap(stridedViewLabel);
+        } else {
+          domainMap = transposeP ? P.getRangeMap()        : P.getDomainMap();
+          domainMap = StridedMapFactory::Build(domainMap, stridingInfo, stridedBlockId);
+        }
+        Ac.CreateView(stridedViewLabel, rangeMap, domainMap);
       }
 
     } // end Multiply
