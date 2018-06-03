@@ -43,8 +43,7 @@
 #ifndef IFPACK2_DIAGONALFILTER_DECL_HPP
 #define IFPACK2_DIAGONALFILTER_DECL_HPP
 
-#include "Ifpack2_ConfigDefs.hpp"
-#include "Tpetra_RowMatrix.hpp"
+#include "Ifpack2_Details_RowMatrix.hpp"
 #include <type_traits>
 
 namespace Ifpack2 {
@@ -74,10 +73,7 @@ Note: This operation only really makes sense if the Thresholds are not complex.
 
 template<class MatrixType>
 class DiagonalFilter :
-    virtual public Tpetra::RowMatrix<typename MatrixType::scalar_type,
-                                     typename MatrixType::local_ordinal_type,
-                                     typename MatrixType::global_ordinal_type,
-                                     typename MatrixType::node_type> {
+    virtual public Ifpack2::Details::RowMatrix<MatrixType> {
 public:
   typedef typename MatrixType::scalar_type Scalar;
   typedef typename MatrixType::local_ordinal_type LocalOrdinal;
@@ -155,12 +151,6 @@ public:
   /*! Returns Teuchos::OrdinalTraits<size_t>::invalid() if the specified local row is not valid for this graph. */
   virtual size_t getNumEntriesInLocalRow(LocalOrdinal localRow) const;
 
-  //! \brief Returns the number of global diagonal entries, based on global row/column index comparisons.
-  virtual global_size_t getGlobalNumDiags() const;
-
-  //! \brief Returns the number of local diagonal entries, based on global row/column index comparisons.
-  virtual size_t getNodeNumDiags() const;
-
   //! \brief Returns the maximum number of entries across all rows/columns on all nodes.
   virtual size_t getGlobalMaxNumRowEntries() const;
 
@@ -169,12 +159,6 @@ public:
 
   //! \brief Indicates whether this matrix has a well-defined column map.
   virtual bool hasColMap() const;
-
-  //! \brief Indicates whether this matrix is lower triangular.
-  virtual bool isLowerTriangular() const;
-
-  //! \brief Indicates whether this matrix is upper triangular.
-  virtual bool isUpperTriangular() const;
 
   //! \brief If matrix indices are in the local range, this function returns true. Otherwise, this function returns false. */
   virtual bool isLocallyIndexed() const;

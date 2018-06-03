@@ -189,7 +189,8 @@ namespace Tpetra {
             class Node = ::Tpetra::Details::DefaultTypes::node_type>
   class CrsMatrix :
     public RowMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>,
-    public DistObject<char, LocalOrdinal, GlobalOrdinal, Node>
+    public DistObject<char, LocalOrdinal, GlobalOrdinal, Node>,
+    public Details::HasDeprecatedMethods2630_WarningThisClassIsNotForUsers
   {
   public:
     //! @name Typedefs
@@ -2149,26 +2150,27 @@ namespace Tpetra {
     ///   is not, this method's behavior is undefined.  This pointer
     ///   will be null on excluded processes.
     virtual void
-    removeEmptyProcessesInPlace (const Teuchos::RCP<const map_type>& newMap);
+    removeEmptyProcessesInPlace (const Teuchos::RCP<const map_type>& newMap) override;
 
     //@}
     //! @name Methods implementing RowMatrix
     //@{
 
     //! The communicator over which the matrix is distributed.
-    Teuchos::RCP<const Teuchos::Comm<int> > getComm() const;
+    Teuchos::RCP<const Teuchos::Comm<int> > getComm() const override;
 
     //! The Kokkos Node instance.
-    Teuchos::RCP<node_type> getNode () const;
+    Teuchos::RCP<node_type> getNode () const override;
 
     //! The Map that describes the row distribution in this matrix.
-    Teuchos::RCP<const map_type> getRowMap () const;
+    Teuchos::RCP<const map_type> getRowMap () const override;
 
     //! The Map that describes the column distribution in this matrix.
-    Teuchos::RCP<const map_type> getColMap () const;
+    Teuchos::RCP<const map_type> getColMap () const override;
 
     //! This matrix's graph, as a RowGraph.
-    Teuchos::RCP<const RowGraph<LocalOrdinal, GlobalOrdinal, Node> > getGraph () const;
+    Teuchos::RCP<const RowGraph<LocalOrdinal, GlobalOrdinal, Node> >
+    getGraph () const override;
 
     //! This matrix's graph, as a CrsGraph.
     Teuchos::RCP<const crs_graph_type> getCrsGraph () const;
@@ -2217,14 +2219,14 @@ namespace Tpetra {
     ///
     /// \warning Undefined if isFillActive().
     ///
-    global_size_t getGlobalNumRows() const;
+    global_size_t getGlobalNumRows() const override;
 
     /// \brief The number of global columns in the matrix.
     ///
     /// This equals the number of entries in the matrix's domain Map.
     ///
     /// \warning Undefined if isFillActive().
-    global_size_t getGlobalNumCols() const;
+    global_size_t getGlobalNumCols() const override;
 
     /// \brief The number of matrix rows owned by the calling process.
     ///
@@ -2232,29 +2234,50 @@ namespace Tpetra {
     /// in the row Map's communicator does not necessarily equal the
     /// global number of rows in the matrix, if the row Map is
     /// overlapping.
-    size_t getNodeNumRows() const;
+    size_t getNodeNumRows() const override;
 
     /// \brief The number of columns connected to the locally owned rows of this matrix.
     ///
     /// Throws std::runtime_error if <tt>! hasColMap ()</tt>.
-    size_t getNodeNumCols() const;
+    size_t getNodeNumCols() const override;
 
     //! The index base for global indices for this matrix.
-    GlobalOrdinal getIndexBase() const;
+    GlobalOrdinal getIndexBase() const override;
 
     //! The global number of entries in this matrix.
-    global_size_t getGlobalNumEntries() const;
+    global_size_t getGlobalNumEntries() const override;
 
     //! The local number of entries in this matrix.
-    size_t getNodeNumEntries() const;
+    size_t getNodeNumEntries() const override;
 
-    //! \brief Returns the current number of entries on this node in the specified global row.
-    /*! Returns OrdinalTraits<size_t>::invalid() if the specified global row does not belong to this matrix. */
-    size_t getNumEntriesInGlobalRow (GlobalOrdinal globalRow) const;
+    /// \brief Number of entries in the sparse matrix in the given
+    ///   globa row, on the calling (MPI) process.
+    ///
+    /// \return <tt>OrdinalTraits<size_t>::invalid()</tt>if the
+    ///   specified global row index is invalid on the calling
+    ///   process, else the number of entries in the given row.
+    size_t getNumEntriesInGlobalRow (GlobalOrdinal globalRow) const override;
 
-    //! Returns the current number of entries on this node in the specified local row.
-    /*! Returns OrdinalTraits<size_t>::invalid() if the specified local row is not valid for this matrix. */
-    size_t getNumEntriesInLocalRow (LocalOrdinal localRow) const;
+    /// \brief Number of entries in the sparse matrix in the given
+    ///   local row, on the calling (MPI) process.
+    ///
+    /// \return <tt>OrdinalTraits<size_t>::invalid()</tt>if the
+    ///   specified local row index is invalid on the calling process,
+    ///   else the number of entries in the given row.
+    size_t getNumEntriesInLocalRow (LocalOrdinal localRow) const override;
+
+    /// \brief DO NOT CALL THIS METHOD; THIS IS NOT FOR USERS.
+    ///
+    /// \warning DO NOT CALL THIS METHOD.  THIS IS AN IMPLEMENTATION
+    ///   DETAIL OF TPETRA DESIGNED TO PREVENT SPURIOUS BUILD
+    ///   WARNINGS.  DO NOT CALL THIS METHOD.  IT WILL GO AWAY VERY
+    ///   SOON PER #2630.
+    ///
+    /// This function exists only to prevent spurious deprecation
+    /// warnings.  We only want users to see deprecated warnings if
+    /// <i>they</i> call deprecated methods, not if <i>we</i> call
+    /// them.
+    global_size_t getGlobalNumDiagsImpl () const override;
 
     /// \brief Number of diagonal entries in the matrix's graph, over
     ///   all processes in the matrix's communicator.
@@ -2263,7 +2286,20 @@ namespace Tpetra {
     ///
     /// \warning This method is DEPRECATED.  DO NOT CALL IT.  It may
     ///   go away at any time.
-    global_size_t TPETRA_DEPRECATED getGlobalNumDiags () const;
+    global_size_t TPETRA_DEPRECATED getGlobalNumDiags () const override;
+
+    /// \brief DO NOT CALL THIS METHOD; THIS IS NOT FOR USERS.
+    ///
+    /// \warning DO NOT CALL THIS METHOD.  THIS IS AN IMPLEMENTATION
+    ///   DETAIL OF TPETRA DESIGNED TO PREVENT SPURIOUS BUILD
+    ///   WARNINGS.  DO NOT CALL THIS METHOD.  IT WILL GO AWAY VERY
+    ///   SOON PER #2630.
+    ///
+    /// This function exists only to prevent spurious deprecation
+    /// warnings.  We only want users to see deprecated warnings if
+    /// <i>they</i> call deprecated methods, not if <i>we</i> call
+    /// them.
+    size_t getNodeNumDiagsImpl () const override;
 
     /// \brief Number of diagonal entries in the matrix's graph, on
     ///   the calling process.
@@ -2272,7 +2308,7 @@ namespace Tpetra {
     ///
     /// \warning This method is DEPRECATED.  DO NOT CALL IT.  It may
     ///   go away at any time.
-    size_t TPETRA_DEPRECATED getNodeNumDiags () const;
+    size_t TPETRA_DEPRECATED getNodeNumDiags () const override;
 
     /// \brief Maximum number of entries in any row of the matrix,
     ///   over all processes in the matrix's communicator.
@@ -2281,7 +2317,7 @@ namespace Tpetra {
     ///
     /// This method only uses the matrix's graph.  Explicitly stored
     /// zeros count as "entries."
-    size_t getGlobalMaxNumRowEntries () const;
+    size_t getGlobalMaxNumRowEntries () const override;
 
     /// \brief Maximum number of entries in any row of the matrix,
     ///   on this process.
@@ -2290,10 +2326,23 @@ namespace Tpetra {
     ///
     /// This method only uses the matrix's graph.  Explicitly stored
     /// zeros count as "entries."
-    size_t getNodeMaxNumRowEntries () const;
+    size_t getNodeMaxNumRowEntries () const override;
 
     //! Whether the matrix has a well-defined column Map.
-    bool hasColMap () const;
+    bool hasColMap () const override;
+
+    /// \brief DO NOT CALL THIS METHOD; THIS IS NOT FOR USERS.
+    ///
+    /// \warning DO NOT CALL THIS METHOD.  THIS IS AN IMPLEMENTATION
+    ///   DETAIL OF TPETRA DESIGNED TO PREVENT SPURIOUS BUILD
+    ///   WARNINGS.  DO NOT CALL THIS METHOD.  IT WILL GO AWAY VERY
+    ///   SOON PER #2630.
+    ///
+    /// This function exists only to prevent spurious deprecation
+    /// warnings.  We only want users to see deprecated warnings if
+    /// <i>they</i> call deprecated methods, not if <i>we</i> call
+    /// them.
+    bool isLowerTriangularImpl () const override;
 
     /// \brief Whether the matrix is locally lower triangular.
     ///
@@ -2305,7 +2354,20 @@ namespace Tpetra {
     ///
     /// \note This is entirely a local property.  That means this
     ///   method may return different results on different processes.
-    bool TPETRA_DEPRECATED isLowerTriangular () const;
+    bool TPETRA_DEPRECATED isLowerTriangular () const override;
+
+    /// \brief DO NOT CALL THIS METHOD; THIS IS NOT FOR USERS.
+    ///
+    /// \warning DO NOT CALL THIS METHOD.  THIS IS AN IMPLEMENTATION
+    ///   DETAIL OF TPETRA DESIGNED TO PREVENT SPURIOUS BUILD
+    ///   WARNINGS.  DO NOT CALL THIS METHOD.  IT WILL GO AWAY VERY
+    ///   SOON PER #2630.
+    ///
+    /// This function exists only to prevent spurious deprecation
+    /// warnings.  We only want users to see deprecated warnings if
+    /// <i>they</i> call deprecated methods, not if <i>we</i> call
+    /// them.
+    bool isUpperTriangularImpl () const override;
 
     /// \brief Whether the matrix is locally upper triangular.
     ///
@@ -2317,9 +2379,10 @@ namespace Tpetra {
     ///
     /// \note This is entirely a local property.  That means this
     ///   method may return different results on different processes.
-    bool TPETRA_DEPRECATED isUpperTriangular () const;
+    bool TPETRA_DEPRECATED isUpperTriangular () const override;
 
-    /// \brief Whether the matrix is locally indexed on the calling process.
+    /// \brief Whether the matrix is locally indexed on the calling
+    ///   process.
     ///
     /// The matrix is locally indexed on the calling process if and
     /// only if all of the following hold:
@@ -2338,7 +2401,7 @@ namespace Tpetra {
     /// locally nor globally indexed, and some processes that are
     /// globally indexed.  The processes that are neither do not have
     /// any entries.
-    bool isLocallyIndexed() const;
+    bool isLocallyIndexed() const override;
 
     /// \brief Whether the matrix is globally indexed on the calling process.
     ///
@@ -2359,7 +2422,7 @@ namespace Tpetra {
     /// locally nor globally indexed, and some processes that are
     /// globally indexed.  The processes that are neither do not have
     /// any entries.
-    bool isGloballyIndexed() const;
+    bool isGloballyIndexed() const override;
 
     /// \brief Whether the matrix is fill complete.
     ///
@@ -2383,7 +2446,7 @@ namespace Tpetra {
     /// is called.  Some methods like clone() and some of the
     /// "nonmember constructors" (like importAndFillComplete() and
     /// exportAndFillComplete()) may return a fill-complete matrix.
-    bool isFillComplete() const;
+    bool isFillComplete() const override;
 
     /// \brief Whether the matrix is not fill complete.
     ///
@@ -2435,11 +2498,11 @@ namespace Tpetra {
     /// cached; the cache is cleared whenever resumeFill() is called.
     /// Otherwise, the value is computed every time the method is
     /// called.
-    mag_type getFrobeniusNorm () const;
+    mag_type getFrobeniusNorm () const override;
 
     /// \brief Return \c true if getLocalRowView() and
     ///   getGlobalRowView() are valid for this object.
-    virtual bool supportsRowViews () const;
+    virtual bool supportsRowViews () const override;
 
     /// \brief Fill given arrays with a deep copy of the locally owned
     ///   entries of the matrix in a given row, using global column
@@ -2493,7 +2556,7 @@ namespace Tpetra {
     getGlobalRowCopy (GlobalOrdinal GlobalRow,
                       const Teuchos::ArrayView<GlobalOrdinal>& Indices,
                       const Teuchos::ArrayView<Scalar>& Values,
-                      size_t& NumEntries) const;
+                      size_t& NumEntries) const override;
 
     /// \brief Fill given arrays with a deep copy of the locally owned
     ///   entries of the matrix in a given row, using local column
@@ -2516,7 +2579,7 @@ namespace Tpetra {
     getLocalRowCopy (LocalOrdinal localRow,
                      const Teuchos::ArrayView<LocalOrdinal>& colInds,
                      const Teuchos::ArrayView<Scalar>& vals,
-                     size_t& numEntries) const;
+                     size_t& numEntries) const override;
 
     /// \brief Get a constant, nonpersisting view of a row of this
     ///   matrix, using global row and column indices.
@@ -2534,7 +2597,7 @@ namespace Tpetra {
     void
     getGlobalRowView (GlobalOrdinal GlobalRow,
                       Teuchos::ArrayView<const GlobalOrdinal>& indices,
-                      Teuchos::ArrayView<const Scalar>& values) const;
+                      Teuchos::ArrayView<const Scalar>& values) const override;
 
     /// \brief Get a constant, nonpersisting view of a row of this
     ///   matrix, using local row and column indices.
@@ -2552,7 +2615,7 @@ namespace Tpetra {
     void
     getLocalRowView (LocalOrdinal LocalRow,
                      Teuchos::ArrayView<const LocalOrdinal>& indices,
-                     Teuchos::ArrayView<const Scalar>& values) const;
+                     Teuchos::ArrayView<const Scalar>& values) const override;
 
     /// \brief Get a constant, nonpersisting, locally indexed view of
     ///   the given row of the matrix, using "raw" pointers instead of
@@ -2584,7 +2647,7 @@ namespace Tpetra {
     getLocalRowViewRaw (const LocalOrdinal lclRow,
                         LocalOrdinal& numEnt,
                         const LocalOrdinal*& lclColInds,
-                        const Scalar*& vals) const;
+                        const Scalar*& vals) const override;
 
     /// \brief Get a constant, nonpersisting view of a row of this
     ///   matrix, using local row and column indices, with raw
@@ -2648,7 +2711,7 @@ namespace Tpetra {
     /// entries owned by the calling process. If the matrix has an empty
     /// row, the diagonal entry contains a zero.
     void
-    getLocalDiagCopy (Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& diag) const;
+    getLocalDiagCopy (Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& diag) const override;
 
     /// \brief Get offsets of the diagonal entries in the matrix.
     ///
@@ -2747,13 +2810,19 @@ namespace Tpetra {
     getLocalDiagCopy (Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& diag,
                       const Teuchos::ArrayView<const size_t>& offsets) const;
 
-    /** \brief . */
+    /// \brief Scale the matrix on the left with the given Vector.
+    ///
+    /// On return, for all entries i,j in the matrix,
+    /// \f$A(i,j) = x(i)*A(i,j)\f$.
     void
-    leftScale (const Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& x);
+    leftScale (const Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& x) override;
 
-    /** \brief . */
+    /// \brief Scale the matrix on the right with the given Vector.
+    ///
+    /// On return, for all entries i,j in the matrix,
+    /// \f$A(i,j) = x(j)*A(i,j)\f$.
     void
-    rightScale (const Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& x);
+    rightScale (const Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& x) override;
 
     //@}
     //! @name Advanced templated methods
@@ -3151,23 +3220,11 @@ namespace Tpetra {
     /// \brief Solves a linear system when the underlying matrix is
     ///   locally triangular.
     ///
-    /// X is required to be post-imported, i.e., described by the
-    /// column map of the matrix. Y is required to be pre-exported,
-    /// i.e., described by the row map of the matrix.
-    ///
-    /// This method is templated on the scalar type of MultiVector
-    /// objects, allowing this method to be applied to MultiVector
-    /// objects of arbitrary type. However, if you intend to use this
-    /// with template parameters not equal to Scalar, we recommend
-    /// that you wrap this matrix in a CrsMatrixSolveOp.  That class
-    /// will handle the Import/Export operations required to apply a
-    /// matrix with non-trivial communication needs.
-    ///
-    /// Both X and Y are required to have constant stride. However,
-    /// unlike multiply(), it is permissible for <tt>&X == &Y</tt>. No
-    /// run-time checking will be performed in a non-debug build.
+    /// \warning This method is DEPRECATED.  For comparable
+    ///   functionality with a better interface, please see
+    ///   Ifpack2::LocalSparseTriangularSolver.
     template <class DomainScalar, class RangeScalar>
-    void
+    void TPETRA_DEPRECATED
     localSolve (const MultiVector<RangeScalar, LocalOrdinal, GlobalOrdinal, Node>& Y,
                 MultiVector<DomainScalar, LocalOrdinal, GlobalOrdinal, Node>& X,
                 Teuchos::ETransp mode) const
@@ -3189,7 +3246,8 @@ namespace Tpetra {
          "X and Y must be constant stride.");
 
       TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
-        ( getNodeNumRows()>0 && ! isUpperTriangular () && ! isLowerTriangular (), std::runtime_error,
+        (getNodeNumRows () != 0 && ! isUpperTriangularImpl () &&
+	 ! isLowerTriangularImpl (), std::runtime_error,
          "The matrix is neither upper triangular or lower triangular.  "
          "You may only call this method if the matrix is triangular.  "
          "Remember that this is a local (per MPI process) property, and that "
@@ -3220,12 +3278,12 @@ namespace Tpetra {
       // this code should only assume an implicitly stored unit diagonal
       // if the matrix has _no_ explicitly stored diagonal entries.
 
-      const std::string uplo = isUpperTriangular () ? "U" :
-        (isLowerTriangular () ? "L" : "N");
+      const std::string uplo = isUpperTriangularImpl () ? "U" :
+        (isLowerTriangularImpl () ? "L" : "N");
       const std::string trans = (mode == Teuchos::CONJ_TRANS) ? "C" :
         (mode == Teuchos::TRANS ? "T" : "N");
       const std::string diag =
-        (getNodeNumDiags () < getNodeNumRows ()) ? "U" : "N";
+        (getNodeNumDiagsImpl () < getNodeNumRows ()) ? "U" : "N";
 
       local_matrix_type A_lcl = this->getLocalMatrix ();
 
@@ -3286,10 +3344,11 @@ namespace Tpetra {
            MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>&Y,
            Teuchos::ETransp mode = Teuchos::NO_TRANS,
            Scalar alpha = Teuchos::ScalarTraits<Scalar>::one(),
-           Scalar beta = Teuchos::ScalarTraits<Scalar>::zero()) const;
+           Scalar beta = Teuchos::ScalarTraits<Scalar>::zero()) const override;
 
-    //! Whether apply() allows applying the transpose or conjugate transpose.
-    bool hasTransposeApply () const;
+    /// \brief Whether apply() allows applying the transpose or
+    ///   conjugate transpose.
+    bool hasTransposeApply () const override;
 
     /// \brief The domain Map of this matrix.
     ///
@@ -3297,7 +3356,7 @@ namespace Tpetra {
     /// has not yet been called at least once on this matrix, or if
     /// the matrix was not constructed with a domain Map, then this
     /// method returns Teuchos::null.
-    Teuchos::RCP<const map_type> getDomainMap () const;
+    Teuchos::RCP<const map_type> getDomainMap () const override;
 
     /// \brief The range Map of this matrix.
     ///
@@ -3305,7 +3364,7 @@ namespace Tpetra {
     /// has not yet been called at least once on this matrix, or if
     /// the matrix was not constructed with a domain Map, then this
     /// method returns Teuchos::null.
-    Teuchos::RCP<const map_type> getRangeMap () const;
+    Teuchos::RCP<const map_type> getRangeMap () const override;
 
     //@}
     //! @name Other "apply"-like methods
@@ -3550,20 +3609,21 @@ namespace Tpetra {
          const Scalar& beta,
          const Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> >& domainMap,
          const Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> >& rangeMap,
-         const Teuchos::RCP<Teuchos::ParameterList>& params) const;
+         const Teuchos::RCP<Teuchos::ParameterList>& params) const override;
 
     //@}
     //! @name Implementation of Teuchos::Describable interface
     //@{
 
     //! A one-line description of this object.
-    std::string description () const;
+    std::string description () const override;
 
-    //! Print the object with some verbosity level to an FancyOStream object.
+    /// \brief Print this object with the given verbosity level to the
+    ///   given output stream.
     void
-    describe (Teuchos::FancyOStream &out,
+    describe (Teuchos::FancyOStream& out,
               const Teuchos::EVerbosityLevel verbLevel =
-              Teuchos::Describable::verbLevel_default) const;
+              Teuchos::Describable::verbLevel_default) const override;
 
     //@}
     //! @name Implementation of DistObject interface
@@ -3577,7 +3637,7 @@ namespace Tpetra {
                                 Node>::buffer_device_type buffer_device_type;
 
     virtual bool
-    checkSizes (const SrcDistObject& source);
+    checkSizes (const SrcDistObject& source) override;
 
     /// \brief Whether the subclass implements the "old" or "new"
     ///   (Kokkos-friendly) interface.
@@ -3593,7 +3653,7 @@ namespace Tpetra {
     /// the "new" interface (by removing "New" from the methods'
     /// names), so that it becomes the only interface.
     virtual bool
-    useNewInterface ();
+    useNewInterface () override;
 
   private:
 
@@ -3609,7 +3669,7 @@ namespace Tpetra {
     copyAndPermuteNew (const SrcDistObject& source,
                        const size_t numSameIDs,
                        const Kokkos::DualView<const local_ordinal_type*, device_type>& permuteToLIDs,
-                       const Kokkos::DualView<const local_ordinal_type*, device_type>& permuteFromLIDs);
+                       const Kokkos::DualView<const local_ordinal_type*, device_type>& permuteFromLIDs) override;
 
     virtual void
     packAndPrepareNew (const SrcDistObject& source,
@@ -3617,7 +3677,7 @@ namespace Tpetra {
                        Kokkos::DualView<char*, buffer_device_type>& exports,
                        const Kokkos::DualView<size_t*, buffer_device_type>& numPacketsPerLID,
                        size_t& constantNumPackets,
-                       Distributor& distor);
+                       Distributor& distor) override;
 
   private:
     /// \brief Unpack the imported column indices and values, and
@@ -3657,7 +3717,7 @@ namespace Tpetra {
                          const Kokkos::DualView<const size_t*, buffer_device_type>& numPacketsPerLID,
                          const size_t constantNumPackets,
                          Distributor& distor,
-                         const CombineMode CM);
+                         const CombineMode CM) override;
 
     /// \brief Pack this object's data for an Import or Export.
     ///

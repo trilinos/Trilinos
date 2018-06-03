@@ -383,7 +383,14 @@ initialize ()
     (! G->isFillComplete (), std::runtime_error, "If you call this method, "
      "the matrix's graph must be fill complete.  It is not.");
 
-  if (reverseStorage_ && A_crs_->isUpperTriangular() && htsImpl_.is_null()) {
+  // FIXME (mfh 01,02 Jun 2018) isUpperTriangular has been DEPRECATED.
+  // See GitHub Issue #2630.  I'm using isUpperTriangularImpl ONLY to
+  // avoid deprecated warnings.  Users may NOT call this method.
+  //
+  // FIXME (mfh 02 Jun 2018) Move the
+  // determineLocalTriangularStructure call above this test, so we can
+  // use that result, rather than the deprecated method.
+  if (reverseStorage_ && A_crs_->isUpperTriangularImpl() && htsImpl_.is_null()) {
     // Reverse the storage for an upper triangular matrix
     auto Alocal = A_crs_->getLocalMatrix();
     auto ptr    = Alocal.graph.row_map;
