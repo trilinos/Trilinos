@@ -244,7 +244,7 @@ namespace Tpetra {
     /// If subclasses override the default (trivial) implementation of
     /// getLocalRowView() and getGlobalRowView(), then they need to
     /// override this method as well.
-    bool supportsRowViews () const {
+    virtual bool supportsRowViews () const {
       return false;
     }
 
