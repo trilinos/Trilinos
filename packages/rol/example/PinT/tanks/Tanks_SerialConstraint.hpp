@@ -71,9 +71,7 @@ private:
 
   ROL::VectorWorkspace<Real>  workspace_;
 
-  Ptr<SV> ui_;  // Initial condition
-  Ptr<SV> u0_;  // Zero State
-  Ptr<CV> z0_;  // Zero Control
+  Ptr<const V> ui_;  // Initial condition
 
   size_type Nt_;            // Number of time steps
 
@@ -81,16 +79,21 @@ private:
 
   PV& partition ( V& x ) const { return static_cast<PV&>(x); }
   const PV& partition ( const V& x ) const { return static_cast<const PV&>(x); }
-  size_type numTimeSteps() const { return Nt_; }
+
+  bool skipInitialCond_;
 
 public:
 
+  size_type numTimeSteps() const { return Nt_; }
+
+  SerialConstraint() {}
+
   SerialConstraint( ROL::ParameterList& pl ) :
     con_( DynamicConstraint<Real>::create(pl) ), 
-    ui_( SV::create(pl) ), 
-    u0_( SV::create(pl) ), 
-    z0_( CV::create(pl) ), 
-    Nt_( static_cast<size_type>(pl.get( "Number of Time Steps", 100 ) ) ) { 
+    Nt_( static_cast<size_type>(pl.get( "Number of Time Steps", 100 ) ) ),
+    skipInitialCond_(false) { 
+
+    Ptr<SV> ui = SV::create(pl);  
 
     Real h0 = pl.get( "Initial Fluid Level", 2.0 );
   
@@ -99,8 +102,30 @@ public:
 
     for( size_type i=0; i<rows; ++i ) 
       for( size_type j=0; j<cols; ++j ) 
-        ui_->h(i,j) = h0;
+        ui->h(i,j) = h0;
+
+    ui_ = ui;
   }
+
+  SerialConstraint( const Ptr<DynamicConstraint<Real>> & con,
+                    const Ptr<const ROL::Vector<Real>> & ui,
+                    size_type Nt) 
+    : con_( con )
+    , ui_( ui )
+    , Nt_( Nt ) {
+  }
+
+  void setDynamicConstraint( const Ptr<DynamicConstraint<Real>> & con)
+  { con_ = con; }
+
+  void setInitialCondition( const Ptr<const ROL::Vector<Real>> & ui)
+  { ui_ = ui; }
+
+  void setNumberOfTimeSteps(size_type Nt)
+  { Nt_ = Nt; }
+
+  void setSkipInitialCondition(bool skip)
+  { skipInitialCond_ = skip; }
 
   void solve( V& c, V& u, const V& z, Real& tol ) override { 
 
@@ -109,7 +134,7 @@ public:
     auto& zp = partition(z);
  
     // First interval solve uses initial condition
-    con_->solve( *(cp.get(0)), *u0_, *(up.get(0)), *(zp.get(0)), ts_ );
+    con_->solve( *(cp.get(0)), *ui_, *(up.get(0)), *(zp.get(0)), ts_ );
     
     for( size_type k=1; k<Nt_; ++k ) 
       con_->solve( *(cp.get(k)), *(up.get(k-1)), *(up.get(k)), *(zp.get(k)), ts_ );
@@ -122,7 +147,8 @@ public:
     auto& zp = partition(z);
   
     // First interval value uses initial condition
-    con_->value( *(cp.get(0)), *ui_, *(up.get(0)), *(zp.get(0)), ts_ );
+    if(!skipInitialCond_) 
+      con_->value( *(cp.get(0)), *ui_, *(up.get(0)), *(zp.get(0)), ts_ );
     
     for( size_type k=1; k<Nt_; ++k ) 
       con_->value( *(cp.get(k)), *(up.get(k-1)), *(up.get(k)), *(zp.get(k)), ts_ );
@@ -137,7 +163,8 @@ public:
     auto  tmp  = workspace_.clone(jv);
     auto& tmpp = partition(*tmp); 
 
-    con_->applyJacobian_un( *(jvp.get(0)),  *(vp.get(0)), *ui_, *(up.get(0)), *(zp.get(0)), ts_ );
+    if(!skipInitialCond_) 
+      con_->applyJacobian_un( *(jvp.get(0)),  *(vp.get(0)), *ui_, *(up.get(0)), *(zp.get(0)), ts_ );
     
     for( size_type k=1; k<Nt_; ++k ) {
       con_->applyJacobian_uo( *(tmpp.get(k)), *(vp.get(k-1)), *(up.get(k-1)), *(up.get(k)), *(zp.get(k)), ts_ );
@@ -145,7 +172,6 @@ public:
     }
 
     jvp.plus(*tmp);
-    
   }
 
    void applyJacobian_2( V& jv, const V& v, const V& u,
