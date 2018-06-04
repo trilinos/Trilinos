@@ -15,7 +15,6 @@ namespace KokkosBatched {
     template<typename T1, typename T2, int l>                           \
     inline                                                              \
     const Vector<SIMD<bool>,l> operator op (const Vector<SIMD<T1>,l> &a, const Vector<SIMD<T2>,l> &b) { \
-      static_assert(std::is_convertible<T1,T2>::value, "value types must be convertible"); \
       Vector<SIMD<bool>,l> r_val;                                       \
       for (int i=0;i<l;++i)                                             \
         r_val[i] = a[i] op b[i];                                        \
@@ -35,7 +34,6 @@ namespace KokkosBatched {
     template<typename T1, typename T2, int l>                           \
     inline                                                              \
     const Vector<SIMD<bool>,l> operator op (const Vector<SIMD<T1>,l> &a, const T2 &b) { \
-      static_assert(std::is_convertible<T1,T2>::value, "value types must be convertible"); \
       Vector<SIMD<bool>,l> r_val;                                       \
       for (int i=0;i<l;++i)                                             \
         r_val[i] = a[i] op b;                                           \
@@ -55,7 +53,6 @@ namespace KokkosBatched {
     template<typename T1, typename T2, int l>                           \
     inline                                                              \
     const Vector<SIMD<bool>,l> operator op (const T1 &a, const Vector<SIMD<T2>,l> &b) { \
-      static_assert(std::is_convertible<T1,T2>::value, "value types must be convertible"); \
       Vector<SIMD<bool>,l> r_val;                                       \
       for (int i=0;i<l;++i)                                             \
         r_val[i] = a op b[i];                                           \
