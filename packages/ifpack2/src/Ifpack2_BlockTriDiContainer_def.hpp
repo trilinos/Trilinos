@@ -73,20 +73,6 @@
 namespace Ifpack2 {
   
   ///
-  /// Paramters
-  ///
-
-  // BlockTriDiContainerParameters::ComputeParameters::ComputeParameters ()
-  //   : addRadiallyToDiagonal(Kokkos::ArithTraits<magnitude_type>::zero())
-  // {}
-
-  // BlockTriDiContainerParameters::ApplyParameters::ApplyParameters ()
-  //   : zeroStartingSolution(false), dampingFactor(Kokkos::ArithTraits<magnitude_type>::one()),
-  //     maxNumSweeps(1), tolerance(Kokkos::ArithTraits<magnitude_type>::zero()),
-  //     checkToleranceEvery(1)
-  // {}
-
-  ///
   /// BlockTriDiContainer, ImplSimdTag
   ///
 
@@ -277,17 +263,17 @@ namespace Ifpack2 {
   }
 
   template <typename MatrixType>
-  BlockTriDiContainerParameters::ComputeParameters
+  typename BlockTriDiContainer<MatrixType, BlockTriDiContainerDetails::ImplSimdTag>::ComputeParameters
   BlockTriDiContainer<MatrixType, BlockTriDiContainerDetails::ImplSimdTag>
   ::createDefaultComputeParameters () const
   {
-    return BlockTriDiContainerParameters::ComputeParameters();
+    return ComputeParameters();
   }
 
   template <typename MatrixType>
   void 
   BlockTriDiContainer<MatrixType, BlockTriDiContainerDetails::ImplSimdTag>
-  ::compute (const BlockTriDiContainerParameters::ComputeParameters& in)
+  ::compute (const ComputeParameters& in)
   {
     IsComputed_ = false;
     if (!this->isInitialized())
@@ -300,11 +286,11 @@ namespace Ifpack2 {
   }
 
   template <typename MatrixType>
-  BlockTriDiContainerParameters::ApplyParameters
+  typename BlockTriDiContainer<MatrixType, BlockTriDiContainerDetails::ImplSimdTag>::ApplyParameters
   BlockTriDiContainer<MatrixType, BlockTriDiContainerDetails::ImplSimdTag>
   ::createDefaultApplyParameters () const
   {
-    BlockTriDiContainerParameters::ApplyParameters in;
+    ApplyParameters in;
     in.dampingFactor = this->DampingFactor_;
     return in;
   }
@@ -313,7 +299,7 @@ namespace Ifpack2 {
   int 
   BlockTriDiContainer<MatrixType, BlockTriDiContainerDetails::ImplSimdTag>
   ::applyInverseJacobi (const mv_type& X, mv_type& Y, 
-                        const BlockTriDiContainerParameters::ApplyParameters& in) const
+                        const ApplyParameters& in) const
   {
     int r_val = 0;
     {

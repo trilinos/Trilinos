@@ -50,6 +50,13 @@
 
 #include <Kokkos_ArithTraits.hpp>
 #include <KokkosBatched_Util.hpp>
+
+/// complex is_convertible override
+namespace std {
+  template<typename T1, typename T2> struct is_convertible<Kokkos::complex<T1>, T2> { static constexpr bool value = std::is_convertible<T1,T2>::value; };
+  template<typename T1, typename T2> struct is_convertible<std::complex<T1>, T2>    { static constexpr bool value = std::is_convertible<T1,T2>::value; };
+}
+
 #include <KokkosBatched_Vector.hpp>
 #include <KokkosBatched_Copy_Decl.hpp>
 #include <KokkosBatched_Copy_Impl.hpp>
@@ -387,7 +394,9 @@ namespace Ifpack2 {
       using impl_scalar_type_1d_view = typename impl_type::impl_scalar_type_1d_view;
       using impl_scalar_type_2d_view = typename impl_type::impl_scalar_type_2d_view;
 
+#ifdef HAVE_MPI
       MPI_Comm comm;
+#endif
       impl_scalar_type_2d_view remote_multivector;
       local_ordinal_type blocksize;
       
@@ -589,10 +598,11 @@ namespace Ifpack2 {
         blocksize = blocksize_;
         dm2cm = dm2cm_;
 
+#ifdef HAVE_MPI
         const auto mpi_comm = Teuchos::rcp_dynamic_cast<const Teuchos::MpiComm<int> >(tgt_map->getComm());
         TEUCHOS_ASSERT(!mpi_comm.is_null());
         comm = *mpi_comm->getRawMpiComm();
-
+#endif
         const tpetra_import_type import(src_map, tgt_map);
 
         createMpiRequests(import);
