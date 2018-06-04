@@ -982,8 +982,8 @@ namespace Tpetra {
             // Resize for next pass if needed
             if (nnz + n > nnzAllocated) {
               nnzAllocated *= 2;
-              u_lno_nnz_view_t Accolind((typename u_lno_nnz_view_t::data_type) realloc(Accolind.data(), u_lno_nnz_view_t::shmem_size(nnzAllocated)), nnzAllocated);
-              u_scalar_view_t Acvals((typename u_scalar_view_t::data_type) realloc(Acvals.data(), u_scalar_view_t::shmem_size(nnzAllocated)), nnzAllocated);
+              Accolind = u_lno_nnz_view_t((typename u_lno_nnz_view_t::data_type) realloc(Accolind.data(), u_lno_nnz_view_t::shmem_size(nnzAllocated)), nnzAllocated);
+              Acvals = u_scalar_view_t((typename u_scalar_view_t::data_type) realloc(Acvals.data(), u_scalar_view_t::shmem_size(nnzAllocated)), nnzAllocated);
             }
             nnz_old = nnz;
           }
@@ -1276,8 +1276,8 @@ namespace Tpetra {
             if (nnz + std::max(5*nnzPerRowA, n) > nnzAllocated) {
               nnzAllocated *= 2;
               nnzAllocated = std::max(nnzAllocated, nnz + std::max(5*nnzPerRowA, n));
-              u_lno_nnz_view_t Accolind((typename u_lno_nnz_view_t::data_type) realloc(Accolind.data(), u_lno_nnz_view_t::shmem_size(nnzAllocated)), nnzAllocated);
-              u_scalar_view_t Acvals((typename u_scalar_view_t::data_type) realloc(Acvals.data(), u_scalar_view_t::shmem_size(nnzAllocated)), nnzAllocated);
+              Accolind = u_lno_nnz_view_t((typename u_lno_nnz_view_t::data_type) realloc(Accolind.data(), u_lno_nnz_view_t::shmem_size(nnzAllocated)), nnzAllocated);
+              Acvals = u_scalar_view_t((typename u_scalar_view_t::data_type) realloc(Acvals.data(), u_scalar_view_t::shmem_size(nnzAllocated)), nnzAllocated);
             }
             nnz_old = nnz;
           }
