@@ -54,9 +54,7 @@ public:
     if (running_)
       error_out("Base_Timer:start Failed timer already running");
     start_time_ = Clock::now(); 
-#if defined(HAVE_TEUCHOS_KOKKOS_PROFILING) && defined(HAVE_TEUCHOSCORE_KOKKOSCORE)
-    ::Kokkos::Profiling::pushRegion (name_);
-#endif
+
     count_started_++;
     running_ = true;
   }
@@ -214,6 +212,9 @@ protected:
     {
       if ( start_timer )
         BaseTimer::start();
+#if defined(HAVE_TEUCHOS_KOKKOS_PROFILING) && defined(HAVE_TEUCHOSCORE_KOKKOSCORE)
+    ::Kokkos::Profiling::pushRegion (name);
+#endif
     }
 
     /// Copy constructor
@@ -233,6 +234,9 @@ protected:
       for (unsigned i=0;i<sub_timers_.size();i++ )
         if (sub_name == sub_timers_[i].name_ ) {
           sub_timers_[i].BaseTimer::start();
+#if defined(HAVE_TEUCHOS_KOKKOS_PROFILING) && defined(HAVE_TEUCHOSCORE_KOKKOSCORE)
+          ::Kokkos::Profiling::pushRegion(sub_name);
+#endif
           return &sub_timers_[i];
         }
       sub_timers_.push_back(LevelTimer(level_+1,sub_name,this,true));
@@ -434,6 +438,7 @@ public:
       top_ = top_->stop(name);
     else
       timer_.BaseTimer::stop( );
+
   }
 
   /**
