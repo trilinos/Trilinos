@@ -149,17 +149,18 @@ namespace FROSch {
         int addZeroCoarseSpaceBlock(MapPtr &dofsMap);
         
         
+        /*
+         Das müssen Vektoren werden!
+         vvvvvvvvvv
+         */
         CoarseSpacePtr InterfaceCoarseSpace_;
         
         InterfacePartitionOfUnityPtr InterfacePartitionOfUnity_;
         
         LocalPartitionOfUnityBasisPtr LocalPartitionOfUnityBasis_;
-        
-        UNVecPtr Dimensions_;
-        
-        LOVecPtr2D IndicesGamma_;
-        LOVecPtr2D IndicesI_;
-        
+        /*
+         ^^^^^^^^^^
+         */        
     };
     
 }

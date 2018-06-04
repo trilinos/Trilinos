@@ -111,7 +111,8 @@ namespace FROSch {
         MultiVectorPtrVecPtr MVPhiGamma_;
 
         MapPtrVecPtr BlockCoarseMaps_;
-
+        
+        UNVecPtr Dimensions_;
         UNVecPtr DofsPerNode_;
 
         LOVecPtr2D GammaDofs_;

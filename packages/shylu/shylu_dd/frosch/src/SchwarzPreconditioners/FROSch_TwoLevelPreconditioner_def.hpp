@@ -76,6 +76,15 @@ namespace FROSch {
     
     template <class SC,class LO,class GO,class NO>
     int TwoLevelPreconditioner<SC,LO,GO,NO>::initialize(UN dimension,
+                                                        int overlap,
+                                                        UN dofsPerNode,
+                                                        DofOrdering dofOrdering)
+    {
+        return initialize(dimension,dofsPerNode,overlap,Teuchos::null,Teuchos::null,dofOrdering,Teuchos::null,Teuchos::null,Teuchos::null);
+    }
+    
+    template <class SC,class LO,class GO,class NO>
+    int TwoLevelPreconditioner<SC,LO,GO,NO>::initialize(UN dimension,
                                                         UN dofsPerNode,
                                                         int overlap,
                                                         MultiVectorPtr nullSpaceBasis,
@@ -95,7 +104,7 @@ namespace FROSch {
         if (repeatedMap.is_null()) {
             repeatedMap = BuildRepeatedMap(this->K_);
         }
-
+ 
         // Initialize the OverlappingOperator
         if (!this->ParameterList_->get("OverlappingOperator Type","AlgebraicOverlappingOperator").compare("AlgebraicOverlappingOperator")) {
             AlgebraicOverlappingOperatorPtr algebraicOverlappigOperator = Teuchos::rcp_static_cast<AlgebraicOverlappingOperator<SC,LO,GO,NO> >(this->OverlappingOperator_);
@@ -129,7 +138,7 @@ namespace FROSch {
                 nullSpaceBasis = Xpetra::MultiVectorFactory<SC,LO,GO,NO>::Build(repeatedMap,dofsPerNode);
                 for (UN i=0; i<dofsPerNode; i++) {
                     for (UN j=0; j<dofsMaps[i]->getNodeNumElements(); j++) {
-                        nullSpaceBasis->getDataNonConst(i)[repeatedMap->getLocalElement(dofsMaps[i]->getGlobalElement(j))] = 1.0;
+                        nullSpaceBasis->getDataNonConst(i)[repeatedMap->getLocalElement(dofsMaps[i]->getGlobalElement(j))] = 1.0;                        
                     }
                 }
             }

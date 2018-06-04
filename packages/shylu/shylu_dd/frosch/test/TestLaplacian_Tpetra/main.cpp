@@ -177,7 +177,7 @@ int main(int argc, char *argv[])
             K->insertGlobalValues(UniqueMapEpetra->GID(i),indicesArray(),valuesArrayView);
         }
         K->fillComplete();
-        
+//        RCP<FancyOStream> fancy = fancyOStream(rcpFromRef(std::cout)); K->describe(*fancy,Teuchos::VERB_EXTREME);
         if (Comm->MyPID()==0) cout << "done" << endl << "CONSTRUCTING PRECONDITIONER...";
         RCP<SchwarzPreconditioner<SC,LO,GO,NO> > Preconditioner;
         if (!Reduced) {

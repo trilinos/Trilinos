@@ -52,10 +52,7 @@ namespace FROSch {
     HarmonicCoarseOperator<SC,LO,GO,NO> (k,parameterList),
     InterfaceCoarseSpace_ (new CoarseSpace<SC,LO,GO,NO>()),
     InterfacePartitionOfUnity_ (),
-    LocalPartitionOfUnityBasis_ (),
-    Dimensions_ (0),
-    IndicesGamma_ (0),
-    IndicesI_ (0)
+    LocalPartitionOfUnityBasis_ ()
     {
         
     }
@@ -101,8 +98,6 @@ namespace FROSch {
         
         // Das könnte man noch ändern
         // LÄNGEN NOCHMAL GEGEN NumberOfBlocks_ checken!!!
-        IndicesGamma_.resize(IndicesGamma_.size()+1);
-        IndicesI_.resize(IndicesI_.size()+1);
         this->GammaDofs_.resize(this->GammaDofs_.size()+1);
         this->IDofs_.resize(this->IDofs_.size()+1);
         this->BlockCoarseMaps_.resize(this->BlockCoarseMaps_.size()+1);
@@ -169,16 +164,12 @@ namespace FROSch {
             MapPtr serialInterfaceMap = Xpetra::MapFactory<LO,GO,NO>::Build(nullSpaceBasis->getMap()->lib(),this->GammaDofs_[blockId].size(),this->GammaDofs_[blockId].size(),0,this->SerialComm_);
             MultiVectorPtr interfaceNullspaceBasis = Xpetra::MultiVectorFactory<SC,LO,GO,NO>::Build(serialInterfaceMap,nullSpaceBasis->getNumVectors());
             for (UN i=0; i<nullSpaceBasis->getNumVectors(); i++) {
-                for (UN j=0; j<this->GammaDofs_[blockId].size(); j++) {
-                    interfaceNullspaceBasis->getDataNonConst(i)[j] = nullSpaceBasis->getData(i)[this->GammaDofs_[blockId][j]];
+                for (UN k=0; k<this->DofsPerNode_[blockId]; k++) {
+                    for (UN j=0; j<interface->getNumNodes(); j++) {
+                        interfaceNullspaceBasis->getDataNonConst(i)[this->DofsPerNode_[blockId]*j+k] = nullSpaceBasis->getData(i)[nullSpaceBasis->getMap()->getLocalElement(interface->getGlobalDofID(j,k))];
+                    }
                 }
             }
-            
-            /*
-            for (UN i=0; i<InterfacePartitionOfUnity_->getLocalPartitionOfUnity().size(); i++) {
-                if (this->Verbose_) { Teuchos::RCP<Teuchos::FancyOStream> fancy = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout)); InterfacePartitionOfUnity_->getLocalPartitionOfUnity()[i]->describe(*fancy,Teuchos::VERB_EXTREME); }
-            }
-            */
             
             // Build local basis
             LocalPartitionOfUnityBasis_ = LocalPartitionOfUnityBasisPtr(new LocalPartitionOfUnityBasis<SC,LO,GO,NO>(this->MpiComm_,this->SerialComm_,this->DofsPerNode_[blockId],sublist(coarseSpaceList,"LocalPartitionOfUnityBasis"),interfaceNullspaceBasis,InterfacePartitionOfUnity_->getLocalPartitionOfUnity(),InterfacePartitionOfUnity_->getPartitionOfUnityMaps())); // sublist(coarseSpaceList,"LocalPartitionOfUnityBasis") testen
@@ -198,8 +189,6 @@ namespace FROSch {
     int  IPOUHarmonicCoarseOperator<SC,LO,GO,NO>::addZeroCoarseSpaceBlock(MapPtr &dofsMap)
     {
         // Das könnte man noch ändern
-        IndicesGamma_->resize(IndicesGamma_.size()+1);
-        IndicesI_->resize(IndicesI_.size()+1);
         this->GammaDofs_->resize(this->GammaDofs_.size()+1);
         this->IDofs_->resize(this->IDofs_.size()+1);
         this->BlockCoarseMaps_->resize(this->BlockCoarseMaps_.size()+1);
@@ -220,7 +209,6 @@ namespace FROSch {
         
         bool useForCoarseSpace = coarseSpaceList->get("Use For Coarse Space",true);
         
-        IndicesGamma_[blockId] = LOVecPtr(0);
         this->GammaDofs_[blockId] = LOVecPtr(0);
         
         if (useForCoarseSpace) {
@@ -230,19 +218,17 @@ namespace FROSch {
         }
         
         for (int i=0; i<dofsMap->getNodeNumElements(); i++) {
-            IndicesGamma_[blockId]->push_back(i);
             this->GammaDofs_[blockId]->push_back(i);
             
             if (useForCoarseSpace) {
                 this->MVPhiGamma_[blockId]->replaceLocalValue(i,i,1.0);
             }
         }
-        
-        IndicesI_[blockId] = LOVecPtr(0);
+
         this->IDofs_[blockId] = LOVecPtr(0);
         
         if (useForCoarseSpace) {
-            this->BlockCoarseMaps_[blockId] = Xpetra::MapFactory<LO,GO,NO>::Build(dofsMap->lib(),-1,IndicesGamma_[blockId](),0,this->MpiComm_);
+            this->BlockCoarseMaps_[blockId] = Xpetra::MapFactory<LO,GO,NO>::Build(dofsMap->lib(),-1,this->GammaDofs_[blockId](),0,this->MpiComm_);
         }
         
         this->DofsMaps_[blockId] = MapPtrVecPtr(0);

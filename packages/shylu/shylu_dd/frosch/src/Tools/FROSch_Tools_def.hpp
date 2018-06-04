@@ -355,7 +355,7 @@ namespace FROSch {
             for (unsigned i=0; i<repeatedNodes.size(); i++) {
                 repeatedNodes[i] = repeatedMap->getGlobalElement(i);
                 for (unsigned j=0; j<dofsPerNode; j++) {
-                    repeatedDofs[j][i] = repeatedNodes[i]+j*repeatedNodes.size();
+                    repeatedDofs[j][i] = repeatedNodes[i]+j*(repeatedMap->getMaxAllGlobalIndex()+1)/dofsPerNode;
                 }
             }
         }

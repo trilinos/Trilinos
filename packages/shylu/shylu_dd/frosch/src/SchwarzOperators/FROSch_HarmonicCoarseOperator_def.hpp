@@ -53,6 +53,7 @@ namespace FROSch {
     ExtensionSolver_ (),
     MVPhiGamma_ (0),
     BlockCoarseMaps_ (0),
+    Dimensions_ (0),
     DofsPerNode_ (0),
     GammaDofs_ (0),
     IDofs_ (0),
@@ -215,7 +216,7 @@ namespace FROSch {
             }
             
         }
-
+//        Teuchos::RCP<Teuchos::FancyOStream> fancy = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout)); this->Phi_->describe(*fancy,Teuchos::VERB_EXTREME);
         // Hier Multiplikation kIGamma*PhiGamma
         kIGamma->apply(*mVPhiGamma,*mVtmp);
         

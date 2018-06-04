@@ -89,9 +89,13 @@ int main(int argc, char *argv[])
     int M = 4;
     My_CLP.setOption("M",&M,"H / h.");
     int Dimension = 3;
-    My_CLP.setOption("DIM",&Dimension,"Dimension.");
+    My_CLP.setOption("Dim",&Dimension,"Dimension.");
     int Overlap = 1;
-    My_CLP.setOption("OL",&Overlap,"Overlap.");
+    My_CLP.setOption("Overlap",&Overlap,"Overlap.");
+    int DofsPerNode = 1;
+    My_CLP.setOption("DPN",&DofsPerNode,"Dofs per node.");
+    int DOFOrdering = 0;
+    My_CLP.setOption("Ordering",&DOFOrdering,"Dofs ordering (NodeWise=0,DimensionWise=1,Custom=2).");
     
     My_CLP.recogniseAllOptions(true);
     My_CLP.throwExceptions(false);
@@ -153,30 +157,77 @@ int main(int argc, char *argv[])
             KEpetra.reset(Galeri::CreateCrsMatrix("Laplace3D", UniqueMapEpetra.get(), GalerList));
         }
         
-        ArrayView<GO> uniqueMapArrayView(UniqueMapEpetra->MyGlobalElements(),UniqueMapEpetra->NumMyElements());
-        RCP<Map<LO,GO,NO> > UniqueMap = MapFactory<LO,GO,NO>::Build(UseTpetra,-1,uniqueMapArrayView,0,TeuchosComm);
-        RCP<Matrix<SC,LO,GO,NO> > K = MatrixFactory<SC,LO,GO,NO>::Build(UniqueMap,KEpetra->MaxNumEntries());
-        for (LO i=0; i<UniqueMapEpetra->NumMyElements(); i++) {
-            LO numEntries;
-            GO* indices;
-            SC* values;
-            KEpetra->ExtractMyRowView(i,numEntries,values,indices);
-            
-            Array<GO> indicesArray(numEntries);
-            ArrayView<SC> valuesArrayView(values,numEntries);
-            for (LO j=0; j<numEntries; j++) {
-                indicesArray[j] = KEpetra->ColMap().GID(indices[j]);
-            }
-            K->insertGlobalValues(UniqueMapEpetra->GID(i),indicesArray(),valuesArrayView);
-        }
-        K->fillComplete();
+        RCP<Map<LO,GO,NO> > UniqueMap;
+        RCP<Matrix<SC,LO,GO,NO> > K;
+        DofOrdering Ord;
         
+        if (DOFOrdering == 0) {
+            Ord = NodeWise;
+            Array<GO> uniqueMapArray(DofsPerNode*UniqueMapEpetra->NumMyElements());
+            for (LO i=0; i<UniqueMapEpetra->NumMyElements(); i++) {
+                for (LO j=0; j<DofsPerNode; j++) {
+                    uniqueMapArray[DofsPerNode*i+j] = DofsPerNode*UniqueMapEpetra->GID(i)+j;
+                }
+            }
+
+            UniqueMap = MapFactory<LO,GO,NO>::Build(UseTpetra,-1,uniqueMapArray(),0,TeuchosComm);
+            K = MatrixFactory<SC,LO,GO,NO>::Build(UniqueMap,KEpetra->MaxNumEntries());
+            for (LO i=0; i<UniqueMapEpetra->NumMyElements(); i++) {
+                LO numEntries;
+                GO* indices;
+                SC* values;
+                KEpetra->ExtractMyRowView(i,numEntries,values,indices);
+                
+                for (LO j=0; j<DofsPerNode; j++) {
+                    Array<GO> indicesArray(numEntries);
+                    ArrayView<SC> valuesArrayView(values,numEntries);
+                    for (LO k=0; k<numEntries; k++) {
+                        indicesArray[k] = DofsPerNode*KEpetra->ColMap().GID(indices[k])+j;
+                    }
+                    K->insertGlobalValues(DofsPerNode*KEpetra->RowMap().GID(i)+j,indicesArray(),valuesArrayView);
+                }
+            }
+            K->fillComplete();
+        } else if (DOFOrdering == 1) {
+            Ord = DimensionWise;
+            Array<GO> uniqueMapArray(DofsPerNode*UniqueMapEpetra->NumMyElements());
+            for (LO i=0; i<UniqueMapEpetra->NumMyElements(); i++) {
+                for (LO j=0; j<DofsPerNode; j++) {
+                    uniqueMapArray[i+UniqueMapEpetra->NumMyElements()*j] = UniqueMapEpetra->GID(i)+(UniqueMapEpetra->MaxAllGID()+1)*j;
+                }
+            }
+            
+            UniqueMap = MapFactory<LO,GO,NO>::Build(UseTpetra,-1,uniqueMapArray(),0,TeuchosComm);
+            K = MatrixFactory<SC,LO,GO,NO>::Build(UniqueMap,KEpetra->MaxNumEntries());
+            for (LO i=0; i<UniqueMapEpetra->NumMyElements(); i++) {
+                LO numEntries;
+                GO* indices;
+                SC* values;
+                KEpetra->ExtractMyRowView(i,numEntries,values,indices);
+                
+                for (LO j=0; j<DofsPerNode; j++) {
+                    Array<GO> indicesArray(numEntries);
+                    ArrayView<SC> valuesArrayView(values,numEntries);
+                    for (LO k=0; k<numEntries; k++) {
+                        indicesArray[k] = KEpetra->ColMap().GID(indices[k])+(KEpetra->ColMap().MaxAllGID()+1)*j;
+                    }
+                    K->insertGlobalValues(UniqueMapEpetra->GID(i)+(UniqueMapEpetra->MaxAllGID()+1)*j,indicesArray(),valuesArrayView);
+                }
+            }
+            K->fillComplete();
+        } else if (DOFOrdering == 2) {
+            assert(0!=0); // TODO: Implementieren
+        } else {
+            assert(0!=0);
+        }
+        // RCP<FancyOStream> fancy = fancyOStream(rcpFromRef(std::cout)); UniqueMap->describe(*fancy,Teuchos::VERB_EXTREME); UniqueMap->getComm()->barrier(); UniqueMap->getComm()->barrier();
         if (Comm->MyPID()==0) cout << "done" << endl << "CONSTRUCTING PRECONDITIONER...";
         
         RCP<TwoLevelPreconditioner<SC,LO,GO,NO> > TwoLevelPrec(new TwoLevelPreconditioner<SC,LO,GO,NO>(K,sublist(parameterList,"TwoLevelPreconditioner")));
         
         if (Comm->MyPID()==0) cout << "INITIALIZE...";
-        TwoLevelPrec->initialize(Dimension,1,1);
+        TwoLevelPrec->initialize(Dimension,1,DofsPerNode,Ord);
+        //initialize(dim,2,NodeWise,1,rcpFromRef(RepMap),NodeList);
         if (Comm->MyPID()==0) cout << "COMPUTE...";
         TwoLevelPrec->compute();
         if (Comm->MyPID()==0) cout << "done" << endl << "SOLVING EQUATION SYSTEM...";

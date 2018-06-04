@@ -199,11 +199,6 @@ namespace FROSch {
         
         DDInterfacePtr DDInterface_;
         
-        UNVecPtr Dimensions_;
-        
-        LOVecPtr2D IndicesGamma_;
-        LOVecPtr2D IndicesI_;
-        
     };
     
 }

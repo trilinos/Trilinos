@@ -50,10 +50,7 @@ namespace FROSch {
     GDSWCoarseOperator<SC,LO,GO,NO>::GDSWCoarseOperator(CrsMatrixPtr k,
                                                         ParameterListPtr parameterList) :
     HarmonicCoarseOperator<SC,LO,GO,NO> (k,parameterList),
-    DDInterface_ (),
-    Dimensions_ (0),
-    IndicesGamma_ (0),
-    IndicesI_ (0)
+    DDInterface_ ()
     {
         
     }
@@ -217,8 +214,7 @@ namespace FROSch {
         FROSCH_ASSERT(dofsMaps.size()==dofsPerNode,"dofsMaps.size()!=dofsPerNode");
         
         // Das könnte man noch ändern
-        IndicesGamma_.resize(IndicesGamma_.size()+1);
-        IndicesI_.resize(IndicesI_.size()+1);
+        // TODO: DAS SOLLTE ALLES IN EINE FUNKTION IN HARMONICCOARSEOPERATOR
         this->GammaDofs_.resize(this->GammaDofs_.size()+1);
         this->IDofs_.resize(this->IDofs_.size()+1);
         this->BlockCoarseMaps_.resize(this->BlockCoarseMaps_.size()+1);
@@ -489,12 +485,12 @@ namespace FROSch {
         return 0;
     }
     
+    
+    // TODO: Das könnte man zum HARMONICCOARSEOPERATOR hinzurüfgen
     template <class SC,class LO,class GO,class NO>
     int GDSWCoarseOperator<SC,LO,GO,NO>::addZeroCoarseSpaceBlock(MapPtr &dofsMap)
     {
         // Das könnte man noch ändern
-        IndicesGamma_->resize(IndicesGamma_.size()+1);
-        IndicesI_->resize(IndicesI_.size()+1);
         this->GammaDofs_->resize(this->GammaDofs_.size()+1);
         this->IDofs_->resize(this->IDofs_.size()+1);
         this->BlockCoarseMaps_->resize(this->BlockCoarseMaps_.size()+1);
@@ -515,7 +511,6 @@ namespace FROSch {
         
         bool useForCoarseSpace = coarseSpaceList->get("Use For Coarse Space",true);
         
-        IndicesGamma_[blockId] = LOVecPtr(0);
         this->GammaDofs_[blockId] = LOVecPtr(0);
         
         if (useForCoarseSpace) {
@@ -525,7 +520,6 @@ namespace FROSch {
         }
         
         for (int i=0; i<dofsMap->getNodeNumElements(); i++) {
-            IndicesGamma_[blockId]->push_back(i);
             this->GammaDofs_[blockId]->push_back(i);
             
             if (useForCoarseSpace) {
@@ -533,11 +527,10 @@ namespace FROSch {
             }
         }
         
-        IndicesI_[blockId] = LOVecPtr(0);
         this->IDofs_[blockId] = LOVecPtr(0);
         
         if (useForCoarseSpace) {
-            this->BlockCoarseMaps_[blockId] = Xpetra::MapFactory<LO,GO,NO>::Build(dofsMap->lib(),-1,IndicesGamma_[blockId](),0,this->MpiComm_);
+            this->BlockCoarseMaps_[blockId] = Xpetra::MapFactory<LO,GO,NO>::Build(dofsMap->lib(),-1,this->GammaDofs_[blockId](),0,this->MpiComm_);
         }
         
         this->DofsMaps_[blockId] = MapPtrVecPtr(0);

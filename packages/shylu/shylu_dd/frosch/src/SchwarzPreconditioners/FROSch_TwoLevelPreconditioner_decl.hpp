@@ -82,6 +82,11 @@ namespace FROSch {
         int initialize(bool useDefaultParameters = true);
         
         int initialize(UN dimension,
+                       int overlap,
+                       UN dofsPerNode,
+                       DofOrdering dofOrdering);
+        
+        int initialize(UN dimension,
                        UN dofsPerNode,
                        int overlap = -1,
                        MultiVectorPtr nullSpaceBasis = Teuchos::null,
