@@ -205,6 +205,8 @@ namespace Xpetra {
       TEUCHOS_TEST_FOR_EXCEPTION(!A.isFillComplete(), Exceptions::RuntimeError, "A is not fill-completed");
       TEUCHOS_TEST_FOR_EXCEPTION(!P.isFillComplete(), Exceptions::RuntimeError, "P is not fill-completed");
 
+      bool haveMultiplyDoFillComplete = call_FillComplete_on_result && doOptimizeStorage;
+
       if (Ac.getRowMap()->lib() == Xpetra::UseEpetra) {
         throw(Xpetra::Exceptions::RuntimeError("Xpetra::TripleMatrixMultiply::MultiplyRAP is only implemented for Tpetra"));
       } else if (Ac.getRowMap()->lib() == Xpetra::UseTpetra) {
@@ -220,7 +222,6 @@ namespace Xpetra {
 
         // 18Feb2013 JJH I'm reenabling the code that allows the matrix matrix multiply to do the fillComplete.
         // Previously, Tpetra's matrix matrix multiply did not support fillComplete.
-        bool haveMultiplyDoFillComplete = call_FillComplete_on_result && doOptimizeStorage;
         Tpetra::TripleMatrixMultiply::MultiplyRAP(tpR, transposeR, tpA, transposeA, tpP, transposeP, tpAc, haveMultiplyDoFillComplete, label, params);
 # endif
 #else
@@ -292,6 +293,8 @@ namespace Xpetra {
       TEUCHOS_TEST_FOR_EXCEPTION(!A.isFillComplete(), Exceptions::RuntimeError, "A is not fill-completed");
       TEUCHOS_TEST_FOR_EXCEPTION(!P.isFillComplete(), Exceptions::RuntimeError, "P is not fill-completed");
 
+      bool haveMultiplyDoFillComplete = call_FillComplete_on_result && doOptimizeStorage;
+
       if (Ac.getRowMap()->lib() == Xpetra::UseEpetra) {
         throw(Xpetra::Exceptions::RuntimeError("Xpetra::TripleMatrixMultiply::MultiplyRAP is only implemented for Tpetra"));
       } else if (Ac.getRowMap()->lib() == Xpetra::UseTpetra) {
@@ -307,7 +310,6 @@ namespace Xpetra {
 
         // 18Feb2013 JJH I'm reenabling the code that allows the matrix matrix multiply to do the fillComplete.
         // Previously, Tpetra's matrix matrix multiply did not support fillComplete.
-        bool haveMultiplyDoFillComplete = call_FillComplete_on_result && doOptimizeStorage;
         Tpetra::TripleMatrixMultiply::MultiplyRAP(tpR, transposeR, tpA, transposeA, tpP, transposeP, tpAc, haveMultiplyDoFillComplete, label, params);
 # endif
 #else
