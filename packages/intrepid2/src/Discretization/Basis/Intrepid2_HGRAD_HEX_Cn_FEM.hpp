@@ -77,10 +77,6 @@ namespace Intrepid2 {
                          workViewType        work,
                    const vinvViewType        vinv,
                    const ordinal_type        operatorDn = 0 );
-
-        KOKKOS_INLINE_FUNCTION
-        static ordinal_type
-        getWorkSizePerPoint(ordinal_type order) {return 4*getPnCardinality<1>(order); }
       };
 
       template<typename ExecSpaceType, ordinal_type numPtsPerEval,
@@ -175,14 +171,20 @@ namespace Intrepid2 {
     typedef typename Basis<ExecSpaceType,outputValueType,pointValueType>::ordinal_type_array_2d_host ordinal_type_array_2d_host;
     typedef typename Basis<ExecSpaceType,outputValueType,pointValueType>::ordinal_type_array_3d_host ordinal_type_array_3d_host;
 
+    typedef typename Basis<ExecSpaceType,outputValueType,pointValueType>::outputViewType outputViewType;
+    typedef typename Basis<ExecSpaceType,outputValueType,pointValueType>::pointViewType  pointViewType;
+    typedef typename Basis<ExecSpaceType,outputValueType,pointValueType>::scalarViewType  scalarViewType;
+
+  private:
+    /** \brief inverse of Generalized Vandermonde matrix (isotropic order) */
+    Kokkos::DynRankView<typename scalarViewType::value_type,ExecSpaceType> vinv_;
+
+  public:
+
     /** \brief  Constructor.
      */
     Basis_HGRAD_HEX_Cn_FEM(const ordinal_type order,
                             const EPointType   pointType = POINTTYPE_EQUISPACED);
-
-    typedef typename Basis<ExecSpaceType,outputValueType,pointValueType>::outputViewType outputViewType;
-    typedef typename Basis<ExecSpaceType,outputValueType,pointValueType>::pointViewType  pointViewType;
-    typedef typename Basis<ExecSpaceType,outputValueType,pointValueType>::scalarViewType  scalarViewType;
 
     using Basis<ExecSpaceType,outputValueType,pointValueType>::getValues;
 
@@ -250,10 +252,16 @@ namespace Intrepid2 {
       return (this->basisDegree_ > 2);
     }
 
-  private:
+    Kokkos::DynRankView<typename scalarViewType::const_value_type,ExecSpaceType>
+    getVandermondeInverse() {
+      return vinv_;
+    }
 
-    /** \brief inverse of Generalized Vandermonde matrix (isotropic order) */
-    Kokkos::DynRankView<typename scalarViewType::value_type,ExecSpaceType> vinv_;
+    ordinal_type
+    getWorkSizePerPoint(const EOperator operatorType) {
+      return 4*getPnCardinality<1>(this->basisDegree_); 
+    }
+
   };
 
 }// namespace Intrepid2
