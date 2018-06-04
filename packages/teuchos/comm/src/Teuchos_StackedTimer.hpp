@@ -16,6 +16,17 @@
 #include <cassert>
 #include <chrono>
 
+
+#if defined(HAVE_TEUCHOS_KOKKOS_PROFILING) && defined(HAVE_TEUCHOSCORE_KOKKOSCORE)
+namespace Kokkos {
+namespace Profiling {
+extern void pushRegion (const std::string&);
+extern void popRegion ();
+} // namespace Profiling
+} // namespace Kokkos
+#endif
+
+
 namespace Teuchos {
   
 //! Error reporting function for stacked timer.
@@ -43,6 +54,9 @@ public:
     if (running_)
       error_out("Base_Timer:start Failed timer already running");
     start_time_ = Clock::now(); 
+#if defined(HAVE_TEUCHOS_KOKKOS_PROFILING) && defined(HAVE_TEUCHOSCORE_KOKKOSCORE)
+    ::Kokkos::Profiling::pushRegion (name_);
+#endif
     count_started_++;
     running_ = true;
   }
@@ -52,6 +66,9 @@ public:
     if (!running_)
       error_out("Base_Timer:stop Failed timer not running");
     accumulation_ += std::chrono::duration_cast<std::chrono::duration<double>>(Clock::now() - start_time_).count();
+#if defined(HAVE_TEUCHOS_KOKKOS_PROFILING) && defined(HAVE_TEUCHOSCORE_KOKKOSCORE)
+      ::Kokkos::Profiling::popRegion ();
+#endif
     running_ = false;
   }
 
