@@ -40,6 +40,7 @@
             <ParameterList name="Prec Types">
               <ParameterList name="MueLu-Tpetra">
                 <Parameter name="verbosity" type="string" value="high"/>
+                <Parameter name="hierarchy label" type="string" value="Q_B"/>
                 <Parameter name="multigrid algorithm" type="string" value="unsmoothed"/>
                 <Parameter name="coarse: type" type="string" value="KLU2"/>
                 <Parameter name="coarse: max size" type="int" value="2500"/>
@@ -78,6 +79,7 @@
           <ParameterList name="T_E Solve">
             <Parameter name="Type" type="string" value="MueLu-Tpetra"/>
             <Parameter name="verbosity" type="string" value="high"/>
+            <Parameter name="hierarchy label" type="string" value="T_E"/>
             <Parameter name="multigrid algorithm" type="string" value="unsmoothed"/>
             <Parameter name="coarse: type" type="string" value="KLU2"/>
             <Parameter name="coarse: max size" type="int" value="2500"/>
