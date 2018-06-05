@@ -2,19 +2,34 @@
   <Parameter name="Linear Solver Type" type="string" value="Belos"/>
   <ParameterList name="Linear Solver Types">
     <ParameterList name="Belos">
-      <Parameter name="Solver Type" type="string" value="Block GMRES"/>
+      <!-- If the Maxwell solver has "Use as preconditioner"==true, we don't need flexible GMRES -->
+      <!-- <Parameter name="Solver Type" type="string" value="Block GMRES"/> -->
+      <Parameter name="Solver Type" type="string" value="Pseudo Block GMRES"/>
       <ParameterList name="Solver Types">
         <ParameterList name="Block GMRES">
-          <Parameter name="Convergence Tolerance" type="double" value="1.0e-5"/>
+          <Parameter name="Convergence Tolerance" type="double" value="1.0e-8"/>
+          <Parameter name="Orthogonalization" type="string" value="ICGS"/>
           <Parameter name="Output Frequency" type="int" value="1"/>
           <Parameter name="Output Style" type="int" value="1"/>
           <Parameter name="Verbosity" type="int" value="33"/>
           <Parameter name="Maximum Iterations" type="int" value="100"/>
           <Parameter name="Block Size" type="int" value="1"/>
-          <Parameter name="Num Blocks" type="int" value="100"/>
+          <Parameter name="Num Blocks" type="int" value="40"/>
           <Parameter name="Flexible Gmres" type="bool" value="true"/>
           <Parameter name="Timer Label" type="string" value="GMRES block system"/>
         </ParameterList>
+        <ParameterList name="Pseudo Block GMRES">
+          <Parameter name="Convergence Tolerance" type="double" value="1.0e-8"/>
+          <Parameter name="Orthogonalization" type="string" value="ICGS"/>
+          <Parameter name="Output Frequency" type="int" value="1"/>
+          <Parameter name="Output Style" type="int" value="1"/>
+          <Parameter name="Verbosity" type="int" value="33"/>
+          <Parameter name="Maximum Iterations" type="int" value="100"/>
+          <Parameter name="Block Size" type="int" value="1"/>
+          <Parameter name="Num Blocks" type="int" value="40"/>
+          <Parameter name="Timer Label" type="string" value="GMRES block system"/>
+        </ParameterList>
+      </ParameterList>
       </ParameterList>
       <ParameterList name="VerboseObject">
         <Parameter name="Verbosity Level" type="string" value="medium"/>
@@ -41,7 +56,8 @@
             <Parameter name="Solver Type" type="string" value="Block CG"/>
             <ParameterList name="Solver Types">
               <ParameterList name="Block CG">
-                <Parameter name="Convergence Tolerance" type="double" value="1.0e-6"/>
+                <Parameter name="Convergence Tolerance" type="double" value="1.0e-9"/>
+                <Parameter name="Orthogonalization" type="string" value="ICGS"/>
                 <Parameter name="Maximum Iterations" type="int" value="100"/>
                 <Parameter name="Timer Label" type="string" value="CG Q_B"/>
                 <Parameter name="Output Frequency" type="int" value="1"/>
@@ -86,8 +102,9 @@
                 <ParameterList name="smoother: params">
                   <Parameter name="relaxation: type" type="string" value="MT Gauss-Seidel"/>
                   <Parameter name="relaxation: symmetric matrix structure" type="bool" value="true"/>
-                  <Parameter name="relaxation: sweeps" type="int" value="4"/>
+                  <Parameter name="relaxation: sweeps" type="int" value="2"/>
                   <Parameter name="relaxation: damping factor" type="double" value="1.0"/>
+                  <Parameter name="relaxation: use l1" type="bool" value="true"/>
                 </ParameterList>
 
                 <Parameter name="repartition: enable" type="bool" value="true"/>
@@ -113,7 +130,8 @@
             <Parameter name="Solver Type" type="string" value="Block CG"/>
             <ParameterList name="Solver Types">
               <ParameterList name="Block CG">
-                <Parameter name="Convergence Tolerance" type="double" value="1.0e-6"/>
+                <Parameter name="Convergence Tolerance" type="double" value="1.0e-9"/>
+                <Parameter name="Orthogonalization" type="string" value="ICGS"/>
                 <Parameter name="Maximum Iterations" type="int" value="100"/>
                 <Parameter name="Timer Label" type="string" value="CG S_E"/>
                 <Parameter name="Output Frequency" type="int" value="1"/>
@@ -159,6 +177,8 @@
                   <Parameter name="number of equations" type="int" value="3"/>
                   <Parameter name="aggregation: type" type="string" value="uncoupled"/>
                   <Parameter name="aggregation: drop tol" type="double" value="0.02"/>
+
+                  <Parameter name="tentative: calculate qr" type="bool" value="false"/>
 
                   <!-- <Parameter name="smoother: type" type="string" value="CHEBYSHEV"/> -->
                   <!-- <ParameterList name="smoother: params"> -->

@@ -17,6 +17,8 @@
           <Parameter name="Num Blocks" type="int" value="40"/>
           <Parameter name="Flexible Gmres" type="bool" value="true"/>
           <Parameter name="Timer Label" type="string" value="GMRES block system"/>
+          <Parameter name="Explicit Residual Scaling" type="string" value="None"/>
+          <Parameter name="Implicit Residual Scaling" type="string" value="None"/>
         </ParameterList>
         <ParameterList name="Pseudo Block GMRES">
           <Parameter name="Convergence Tolerance" type="double" value="1.0e-8"/>
@@ -86,6 +88,7 @@
             <Parameter name="Prec Type" type="string" value="MueLu-Tpetra"/>
             <ParameterList name="Prec Types">
               <ParameterList name="MueLu-Tpetra">
+                <Parameter name="use kokkos refactor" type="bool" value="true"/>
                 <Parameter name="verbosity" type="string" value="high"/>
                 <Parameter name="hierarchy label" type="string" value="Q_B"/>
                 <Parameter name="multigrid algorithm" type="string" value="unsmoothed"/>
@@ -101,7 +104,7 @@
                 <Parameter name="smoother: pre or post" type="string" value="both"/>
                 <Parameter name="smoother: type" type="string" value="RELAXATION"/>
                 <ParameterList name="smoother: params">
-                  <Parameter name="relaxation: type" type="string" value="Gauss-Seidel"/>
+                  <Parameter name="relaxation: type" type="string" value="MT Gauss-Seidel"/>
                   <Parameter name="relaxation: symmetric matrix structure" type="bool" value="true"/>
                   <Parameter name="relaxation: sweeps" type="int" value="2"/>
                   <Parameter name="relaxation: damping factor" type="double" value="1.0"/>
@@ -169,13 +172,14 @@
 
                 <Parameter name="smoother: type" type="string" value="RELAXATION"/>
                 <ParameterList name="smoother: params">
-                  <Parameter name="relaxation: type" type="string" value="Gauss-Seidel"/>
+                  <Parameter name="relaxation: type" type="string" value="MT Gauss-Seidel"/>
                   <Parameter name="relaxation: symmetric matrix structure" type="bool" value="true"/>
                   <Parameter name="relaxation: sweeps" type="int" value="2"/>
                   <Parameter name="relaxation: use l1" type="bool" value="true"/>
                 </ParameterList>
 
                 <ParameterList name="refmaxwell: 11list">
+                  <Parameter name="use kokkos refactor" type="bool" value="true"/>
                   <Parameter name="coarse: max size" type="int" value="1000"/>
                   <Parameter name="number of equations" type="int" value="3"/>
                   <Parameter name="aggregation: type" type="string" value="uncoupled"/>
@@ -189,7 +193,7 @@
 
                   <Parameter name="smoother: type" type="string" value="RELAXATION"/>
                   <ParameterList name="smoother: params">
-                    <Parameter name="relaxation: type" type="string" value="Gauss-Seidel"/>
+                    <Parameter name="relaxation: type" type="string" value="MT Gauss-Seidel"/>
                     <Parameter name="relaxation: symmetric matrix structure" type="bool" value="true"/>
                     <Parameter name="relaxation: sweeps" type="int" value="2"/>
                     <Parameter name="relaxation: use l1" type="bool" value="true"/>
@@ -208,6 +212,7 @@
                 </ParameterList>
 
                 <ParameterList name="refmaxwell: 22list">
+                  <Parameter name="use kokkos refactor" type="bool" value="true"/>
                   <Parameter name="coarse: max size" type="int" value="1000"/>
                   <Parameter name="aggregation: type" type="string" value="uncoupled"/>
                   <Parameter name="aggregation: drop tol" type="double" value="0.02"/>
@@ -220,7 +225,7 @@
 
                   <Parameter name="smoother: type" type="string" value="RELAXATION"/>
                   <ParameterList name="smoother: params">
-                    <Parameter name="relaxation: type" type="string" value="Gauss-Seidel"/>
+                    <Parameter name="relaxation: type" type="string" value="MT Gauss-Seidel"/>
                     <Parameter name="relaxation: symmetric matrix structure" type="bool" value="true"/>
                     <Parameter name="relaxation: sweeps" type="int" value="2"/>
                     <Parameter name="relaxation: use l1" type="bool" value="true"/>

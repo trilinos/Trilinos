@@ -12,6 +12,8 @@
 #include "Teuchos_as.hpp"
 #include "Teuchos_StackedTimer.hpp"
 
+#include "KokkosCompat_ClassicNodeAPI_Wrapper.hpp"
+
 #include "Panzer_NodeType.hpp"
 #include "Panzer_ClosureModel_Factory_TemplateManager.hpp"
 #include "Panzer_PauseToAttach.hpp"
@@ -397,8 +399,17 @@ int main(int argc,char * argv[])
       std::string defaultXMLfile;
       if (!use_refmaxwell)
         defaultXMLfile = "solverDefaultsAugmentation.xml";
-      else
+      else {
         defaultXMLfile = "solverDefaultsRefMaxwell.xml";
+#ifdef KOKKOS_ENABLE_OPENMP
+        if (typeid(panzer::TpetraNodeType).name() == typeid(Kokkos::Compat::KokkosOpenMPWrapperNode).name())
+          defaultXMLfile = "solverDefaultsRefMaxwellOpenMP.xml";
+#endif
+#ifdef KOKKOS_ENABLE_CUDA
+        if (typeid(panzer::TpetraNodeType).name() == typeid(Kokkos::Compat::KokkosCudaWrapperNode).name())
+          defaultXMLfile = "solverDefaultsRefMaxwellCuda.xml";
+#endif
+      }
       RCP<Teuchos::ParameterList> lin_solver_pl = Teuchos::rcp(new Teuchos::ParameterList("Linear Solver"));
       Teuchos::updateParametersFromXmlFileAndBroadcast(defaultXMLfile,lin_solver_pl.ptr(),*comm);
       if (xml != "")
