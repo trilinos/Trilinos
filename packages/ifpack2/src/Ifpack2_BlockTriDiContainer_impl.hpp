@@ -90,9 +90,11 @@ namespace Ifpack2 {
     struct ImplSimdTag {};
     struct ImplSacadoTag {};
 
-    template<typename T> struct ImplTag         { typedef ImplNotAvailTag type; };
-    template<>           struct ImplTag<float>  { typedef ImplSimdTag type;     };
-    template<>           struct ImplTag<double> { typedef ImplSimdTag type;     };
+    template<typename T> struct ImplTag                        { typedef ImplNotAvailTag type; };
+    template<>           struct ImplTag<float>                 { typedef ImplSimdTag type;     };
+    template<>           struct ImplTag<double>                { typedef ImplSimdTag type;     };
+    template<>           struct ImplTag<std::complex<float> >  { typedef ImplSimdTag type;     };
+    template<>           struct ImplTag<std::complex<double> > { typedef ImplSimdTag type;     };
 
     ///
     /// view decorators for unmanaged and const memory
