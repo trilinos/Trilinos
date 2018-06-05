@@ -46,6 +46,7 @@
 /// \file Ifpack2_BlockTriDiContainer_decl.hpp
 /// \brief Ifpack2::BlockTriDiContainer class declaration
 
+#include "Ifpack2_config.h"
 #include "Ifpack2_Container.hpp"
 #include "Tpetra_MultiVector.hpp"
 #include "Tpetra_Map.hpp"
@@ -88,59 +89,6 @@ namespace Ifpack2 {
   ///
   /// Currently, this class is expected to perform well on conventional CPU and
   /// Intel Xeon Phi. It does *not* yet perform well on GPU.
-
-  ///
-  /// Imput parameters
-  ///   When the parameters are instanciated by ETI, it has a trouble with UQ types. 
-  ///   It is more reasonable that tolerence and shifting parameters is to be 
-  ///   double precision. We put the definition of the parameter struct here
-  ///   as it can be instanciated multiple times during ETI.
-  ///
-  struct BlockTriDiContainerParameters {
-    /// in practice, there is no need to specialize this for different scalar types
-    typedef double scalar_type;
-    typedef double magnitude_type;
-
-    struct ComputeParameters {
-      //! addRadiallyToDiagonal [in] Add a constant to each diagonal entry of the
-      //! matrix. It is added according to the (possibly complex) sign of the
-      //! digonal entry at the time that the entry is the pivot in the LU
-      //! factorization, such that the entry is moved radially outward in the
-      //! complex plane. N.B. that this constant modifies the matrix in the linear
-      //! equation, not simply the diagonal preconditioner.
-      magnitude_type addRadiallyToDiagonal = Kokkos::ArithTraits<magnitude_type>::zero();
-    };
-
-    //! Input arguments to <tt>applyInverseJacobi</tt>
-    struct ApplyParameters {
-      //! Set this to true if <tt>Y</tt> is meant to be treated as 0 on
-      //! entry. Defaults to false.
-      bool zeroStartingSolution = false;
-      //! Damping factor. Defaults to 1.
-      scalar_type dampingFactor = Kokkos::ArithTraits<scalar_type>::one();
-      //! The maximum number of sweeps. If the norm-based criterion is not used,
-      //! it's exactly the number of sweeps. Defaults to 1.
-      int maxNumSweeps = 1;
-      //! The 2-norm-based termination criterion. If it is larger than 0, then it
-      //! is used. Termination is then based on <tt>maxNumSweeps</tt> and this
-      //! criterion, whichever is reached first. In the case of multiple right
-      //! hand sides, norm-based termination occurs only when each vector
-      //! satisfies the criterion. The criterion for a vector is <tt>f(D^{-1} (x -
-      //! A*y)) <= tolerance * f(D^{-1} (x - R*y_0))</tt>, where <tt>y_0</tt> is
-      //! the input <tt>y</tt>, often 0, and <tt>f</tt> is the maximum of the
-      //! 2-norms of each degree of freedom, i.e., index of a block. Defaults to
-      //! 0.
-      magnitude_type tolerance = Kokkos::ArithTraits<magnitude_type>::zero();
-      //! Check the norm-based termination criterion every
-      //! <tt>checkToleranceEvery</tt> iterations. Defaults to 1. A norm
-      //! computation requires a global reduction, which is expensive. Hence it
-      //! can make sense to check for termination only every 2 or 3 iterations if
-      //! it is anticipated that the number of iterations required to terminate
-      //! will be sufficiently large to make 1 or 2 extra iterations relatively
-      //! cheap. Defaults to 1.
-      int checkToleranceEvery = 1;
-    };
-  };
 
   ///
   /// Primary declation
@@ -249,6 +197,46 @@ namespace Ifpack2 {
     //! Destructor (declared virtual for memory safety of derived classes).
     ~BlockTriDiContainer () override;
 
+    struct ComputeParameters {
+      //! addRadiallyToDiagonal [in] Add a constant to each diagonal entry of the
+      //! matrix. It is added according to the (possibly complex) sign of the
+      //! digonal entry at the time that the entry is the pivot in the LU
+      //! factorization, such that the entry is moved radially outward in the
+      //! complex plane. N.B. that this constant modifies the matrix in the linear
+      //! equation, not simply the diagonal preconditioner.
+      magnitude_type addRadiallyToDiagonal = Kokkos::ArithTraits<magnitude_type>::zero();
+    };
+
+    //! Input arguments to <tt>applyInverseJacobi</tt>
+    struct ApplyParameters {
+      //! Set this to true if <tt>Y</tt> is meant to be treated as 0 on
+      //! entry. Defaults to false.
+      bool zeroStartingSolution = false;
+      //! Damping factor. Defaults to 1.
+      scalar_type dampingFactor = Kokkos::ArithTraits<scalar_type>::one();
+      //! The maximum number of sweeps. If the norm-based criterion is not used,
+      //! it's exactly the number of sweeps. Defaults to 1.
+      int maxNumSweeps = 1;
+      //! The 2-norm-based termination criterion. If it is larger than 0, then it
+      //! is used. Termination is then based on <tt>maxNumSweeps</tt> and this
+      //! criterion, whichever is reached first. In the case of multiple right
+      //! hand sides, norm-based termination occurs only when each vector
+      //! satisfies the criterion. The criterion for a vector is <tt>f(D^{-1} (x -
+      //! A*y)) <= tolerance * f(D^{-1} (x - R*y_0))</tt>, where <tt>y_0</tt> is
+      //! the input <tt>y</tt>, often 0, and <tt>f</tt> is the maximum of the
+      //! 2-norms of each degree of freedom, i.e., index of a block. Defaults to
+      //! 0.
+      magnitude_type tolerance = Kokkos::ArithTraits<magnitude_type>::zero();
+      //! Check the norm-based termination criterion every
+      //! <tt>checkToleranceEvery</tt> iterations. Defaults to 1. A norm
+      //! computation requires a global reduction, which is expensive. Hence it
+      //! can make sense to check for termination only every 2 or 3 iterations if
+      //! it is anticipated that the number of iterations required to terminate
+      //! will be sufficiently large to make 1 or 2 extra iterations relatively
+      //! cheap. Defaults to 1.
+      int checkToleranceEvery = 1;
+    };
+
     //@}
     //! \name Get and set methods
     //@{
@@ -280,7 +268,7 @@ namespace Ifpack2 {
                              int numSweeps = 1) const override;
 
     /// \brief Create a ComputeParameters struct with default values.
-    BlockTriDiContainerParameters::ComputeParameters createDefaultComputeParameters () const;
+    ComputeParameters createDefaultComputeParameters () const;
 
     /// \brief Extract the local tridiagonal block and prepare the solver.
     ///
@@ -293,10 +281,10 @@ namespace Ifpack2 {
     ///   factorization, such that the entry is moved radially outward in the
     ///   complex plane. N.B. that this constant modifies the matrix in the linear
     ///   equation, not simply the diagonal preconditioner.
-    void compute (const BlockTriDiContainerParameters::ComputeParameters& input);
+    void compute (const ComputeParameters& input);
 
     /// \brief Create an ApplyParameters struct with default values.
-    BlockTriDiContainerParameters::ApplyParameters createDefaultApplyParameters () const;
+    ApplyParameters createDefaultApplyParameters () const;
 
     /// \brief Compute <tt>Y := D^{-1} (X - R*Y)</tt>.
     ///
@@ -305,7 +293,7 @@ namespace Ifpack2 {
     /// supports 2-norm-based termination. It returns the number of sweeps
     /// performed.
     int applyInverseJacobi (const mv_type& X, mv_type& Y, 
-                            const BlockTriDiContainerParameters::ApplyParameters& input) const;
+                            const ApplyParameters& input) const;
 
     /// \brief If a norm-based method was used, return a buffer containing the
     ///        norms, ordered by degrees of freedom, then RHS; otherwise, return a

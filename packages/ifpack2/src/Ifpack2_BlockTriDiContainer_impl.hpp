@@ -317,7 +317,7 @@ namespace Ifpack2 {
       ///
       /// MPI wrapper
       ///
-#if !defined(HAVE_MPI)
+#if !defined(HAVE_IFPACK2_MPI)
       typedef int MPI_Request;
       typedef int MPI_Comm;
 #endif
@@ -327,7 +327,7 @@ namespace Ifpack2 {
 
       template <typename T>
       static int isend(const MPI_Comm comm, const T* buf, int count, int dest, int tag, MPI_Request* ireq) {
-#ifdef HAVE_MPI
+#ifdef HAVE_IFPACK2_MPI
         MPI_Request ureq;
         const auto dt = Teuchos::Details::MpiTypeTraits<scalar_type>::getType();
         int ret = MPI_Isend(const_cast<T*>(buf), count, dt, dest, tag, comm, ireq == NULL ? &ureq : ireq);
@@ -340,7 +340,7 @@ namespace Ifpack2 {
 
       template <typename T>
       static int irecv(const MPI_Comm comm, T* buf, int count, int src, int tag, MPI_Request* ireq) {
-#ifdef HAVE_MPI
+#ifdef HAVE_IFPACK2_MPI
         MPI_Request ureq;
         const auto dt = Teuchos::Details::MpiTypeTraits<scalar_type>::getType();
         int ret = MPI_Irecv(buf, count, dt, src, tag, comm, ireq == NULL ? &ureq : ireq);
@@ -352,7 +352,7 @@ namespace Ifpack2 {
       }
 
       static int waitany(int count, MPI_Request* reqs, int* index) {
-#ifdef HAVE_MPI
+#ifdef HAVE_IFPACK2_MPI
         return MPI_Waitany(count, reqs, index, MPI_STATUS_IGNORE);
 #else
         return 0;
@@ -360,7 +360,7 @@ namespace Ifpack2 {
       }
 
       static int waitall(int count, MPI_Request* reqs) {
-#ifdef HAVE_MPI
+#ifdef HAVE_IFPACK2_MPI
         return MPI_Waitall(count, reqs, MPI_STATUS_IGNORE);
 #else
         return 0;
@@ -387,7 +387,9 @@ namespace Ifpack2 {
       using impl_scalar_type_1d_view = typename impl_type::impl_scalar_type_1d_view;
       using impl_scalar_type_2d_view = typename impl_type::impl_scalar_type_2d_view;
 
+#ifdef HAVE_IFPACK2_MPI
       MPI_Comm comm;
+#endif
       impl_scalar_type_2d_view remote_multivector;
       local_ordinal_type blocksize;
       
@@ -589,10 +591,11 @@ namespace Ifpack2 {
         blocksize = blocksize_;
         dm2cm = dm2cm_;
 
+#ifdef HAVE_IFPACK2_MPI
         const auto mpi_comm = Teuchos::rcp_dynamic_cast<const Teuchos::MpiComm<int> >(tgt_map->getComm());
         TEUCHOS_ASSERT(!mpi_comm.is_null());
         comm = *mpi_comm->getRawMpiComm();
-
+#endif
         const tpetra_import_type import(src_map, tgt_map);
 
         createMpiRequests(import);
@@ -603,7 +606,7 @@ namespace Ifpack2 {
 #ifdef HAVE_IFPACK2_BLOCKTRIDICONTAINER_TIMERS
         TEUCHOS_FUNC_TIME_MONITOR("BlockTriDi::Setup::AsyncSendRecv");
 #endif
-#ifdef HAVE_MPI
+#ifdef HAVE_IFPACK2_MPI
         // constants and reallocate data buffers if necessary
         const local_ordinal_type num_vectors = mv.extent(1);
         const local_ordinal_type mv_blocksize = blocksize*num_vectors;
@@ -641,7 +644,7 @@ namespace Ifpack2 {
       }
 
       void cancel () {
-#ifdef HAVE_MPI
+#ifdef HAVE_IFPACK2_MPI
         for (local_ordinal_type i=0,iend=pids.recv.extent(0);i<iend;++i)
           MPI_Cancel(&reqs.recv[i]);
 #endif
@@ -651,7 +654,7 @@ namespace Ifpack2 {
 #ifdef HAVE_IFPACK2_BLOCKTRIDICONTAINER_TIMERS
         TEUCHOS_FUNC_TIME_MONITOR("BlockTriDi::Setup::SyncRecv");
 #endif
-#ifdef HAVE_MPI
+#ifdef HAVE_IFPACK2_MPI
         // receive async.
         for (local_ordinal_type i=0,iend=pids.recv.extent(0);i<iend;++i) {
           local_ordinal_type idx = i;
@@ -3154,7 +3157,7 @@ namespace Ifpack2 {
     private:
       bool collective_;
       int sweep_step_, blocksize_, num_vectors_;
-#ifdef HAVE_MPI
+#ifdef HAVE_IFPACK2_MPI
       MPI_Request mpi_request_;
       MPI_Comm comm_;
 #endif
@@ -3170,7 +3173,7 @@ namespace Ifpack2 {
 
         collective_ = comm->getSize() > 1;
         if (collective_) {
-#ifdef HAVE_MPI
+#ifdef HAVE_IFPACK2_MPI
           const auto mpi_comm = Teuchos::rcp_dynamic_cast<const Teuchos::MpiComm<int> >(comm);
           TEUCHOS_ASSERT( ! mpi_comm.is_null());
           comm_ = *mpi_comm->getRawMpiComm();
@@ -3204,7 +3207,7 @@ namespace Ifpack2 {
         const int n = blocksize_*num_vectors_;
         if (collective_) {
           std::copy(work_.begin(), work_.begin() + n, work_.begin() + n);
-#ifdef HAVE_MPI
+#ifdef HAVE_IFPACK2_MPI
 # if MPI_VERSION >= 3
           MPI_Iallreduce(work_.data() + n, work_.data(), n,
                          Teuchos::Details::MpiTypeTraits<magnitude_type>::getType(),
@@ -3233,7 +3236,7 @@ namespace Ifpack2 {
         TEUCHOS_ASSERT(sweep >= 1);
         if ( ! force && (sweep - 1) % sweep_step_) return false;
         if (collective_) {
-#ifdef HAVE_MPI
+#ifdef HAVE_IFPACK2_MPI
 # if MPI_VERSION >= 3
           MPI_Wait(&mpi_request_, MPI_STATUS_IGNORE);
 # else
