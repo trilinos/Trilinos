@@ -146,8 +146,7 @@ module list
 
 echo "MPI type = sems-${SEMS_MPI_NAME:?}/${SEMS_MPI_VERSION:?}"
 
-# CDASH_TRACK="Pull Request"
-CDASH_TRACK="Experimental"
+CDASH_TRACK="Pull Request"
 echo "CDash Track = ${CDASH_TRACK:?}"
 
 
