@@ -96,6 +96,7 @@ class AggregateGenerator {
       aggFact->SetParameter("aggregation: enable phase 2a", Teuchos::ParameterEntry(bPhase2a));
       aggFact->SetParameter("aggregation: enable phase 2b", Teuchos::ParameterEntry(bPhase2b));
       aggFact->SetParameter("aggregation: enable phase 3",  Teuchos::ParameterEntry(bPhase3));
+      aggFact->SetParameter("aggregation: use interface aggregation",Teuchos::ParameterEntry(false));
 
       level.Request("Aggregates", aggFact.get());
       level.Request("UnAmalgamationInfo", amalgFact.get());
@@ -186,6 +187,46 @@ class AggregateGenerator {
 
       return aggregates;
     }  // gimmeStructuredAggregates
+
+    // Little utility to generate uncoupled aggregates with some specified root nodes on interface.
+    static RCP<Aggregates>
+    gimmeInterfaceAggregates(const RCP<Matrix>&A, RCP<AmalgamationInfo> & amalgInfo, Teuchos::Array<LO>& nodeOnInterface)
+    {
+      Level level;
+      TestHelpers::TestFactory<SC,LO,GO,NO>::createSingleLevelHierarchy(level);
+      level.Set("A", A);
+
+      RCP<AmalgamationFactory> amalgFact = rcp(new AmalgamationFactory());
+      RCP<CoalesceDropFactory> dropFact = rcp(new CoalesceDropFactory());
+      dropFact->SetFactory("UnAmalgamationInfo", amalgFact);
+
+      // Setup aggregation factory (use default factory for graph)
+      RCP<UncoupledAggregationFactory> aggFact = rcp(new UncoupledAggregationFactory());
+      aggFact->SetFactory("Graph", dropFact);
+      aggFact->SetParameter("aggregation: use interface aggregation",Teuchos::ParameterEntry(true));
+      aggFact->SetParameter("aggregation: max agg size",Teuchos::ParameterEntry(3));
+      aggFact->SetParameter("aggregation: min agg size",Teuchos::ParameterEntry(3));
+      aggFact->SetParameter("aggregation: max selected neighbors",Teuchos::ParameterEntry(0));
+      aggFact->SetParameter("aggregation: ordering",Teuchos::ParameterEntry(std::string("natural")));
+      aggFact->SetParameter("aggregation: enable phase 1",  Teuchos::ParameterEntry(true));
+      aggFact->SetParameter("aggregation: enable phase 2a", Teuchos::ParameterEntry(true));
+      aggFact->SetParameter("aggregation: enable phase 2b", Teuchos::ParameterEntry(true));
+      aggFact->SetParameter("aggregation: enable phase 3",  Teuchos::ParameterEntry(true));
+
+      level.Set("nodeOnInterface",nodeOnInterface);
+
+
+
+      level.Request("Aggregates", aggFact.get());
+      level.Request("UnAmalgamationInfo", amalgFact.get());
+
+      level.Request(*aggFact);
+      aggFact->Build(level);
+
+      RCP<Aggregates> aggregates = level.Get<RCP<Aggregates> >("Aggregates",aggFact.get());
+      level.Release("Aggregates", aggFact.get());
+      return aggregates;
+    }  // gimmeInterfaceAggregates
 };
 
   TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Aggregates, JustAggregation, Scalar, LocalOrdinal, GlobalOrdinal, Node)
@@ -550,6 +591,36 @@ class AggregateGenerator {
 
   } //UncoupledPhase3
 
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Aggregates, UncoupledInterface, Scalar, LocalOrdinal, GlobalOrdinal, Node)
+  {
+#   include <MueLu_UseShortNames.hpp>
+    MUELU_TESTING_SET_OSTREAM
+    MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Node);
+    out << "version: " << MueLu::Version() << std::endl;
+
+    RCP<Matrix> A = TestHelpers::TestFactory<SC, LO, GO, NO>::Build1DPoisson(36);
+
+
+    RCP<const Map> rowmap = A->getRowMap();
+
+    // Specify root nodes on interface
+    Teuchos::Array<LO> nodeOnInterface(rowmap->getNodeNumElements(),0);
+    nodeOnInterface[0] = 1;
+    nodeOnInterface[35] = 1;
+
+    RCP<AmalgamationInfo> amalgInfo;
+    RCP<Aggregates> aggregates = AggregateGenerator<SC,LO,GO,NO>::gimmeInterfaceAggregates(A, amalgInfo,nodeOnInterface);
+    GO numAggs = aggregates->GetNumAggregates();
+
+
+    // Check to see if specified nodes are root nodes
+    for(LO i=0; i<nodeOnInterface.size(); i++){
+      if (nodeOnInterface[i])
+        TEST_EQUALITY(aggregates->IsRoot( i ), true);
+    }
+
+  } //UncoupledInterface
+
   TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Aggregates, JustStructuredAggregationGlobal, Scalar, LocalOrdinal, GlobalOrdinal, Node)
   {
 #   include <MueLu_UseShortNames.hpp>
@@ -663,6 +734,7 @@ class AggregateGenerator {
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Aggregates,UncoupledPhase1,Scalar,LO,GO,Node) \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Aggregates,UncoupledPhase2,Scalar,LO,GO,Node) \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Aggregates,UncoupledPhase3,Scalar,LO,GO,Node) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Aggregates,UncoupledInterface,Scalar,LO,GO,Node) \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Aggregates,JustStructuredAggregationGlobal,Scalar,LO,GO,Node) \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Aggregates,JustStructuredAggregationLocal,Scalar,LO,GO,Node)
 
