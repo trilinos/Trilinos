@@ -192,6 +192,7 @@ namespace MueLu {
   "<Parameter name=\"aggregation: allow empty prolongator columns\" type=\"bool\" value=\"false\"/>"
   "<Parameter name=\"aggregation: preserve Dirichlet points\" type=\"bool\" value=\"false\"/>"
   "<Parameter name=\"aggregation: allow user-specified singletons\" type=\"bool\" value=\"false\"/>"
+  "<Parameter name=\"aggregation: use interface aggregation\" type=\"bool\" value=\"false\"/>"
   "<Parameter name=\"aggregation: export visualization data\" type=\"bool\" value=\"false\"/>"
   "<Parameter name=\"aggregation: output filename\" type=\"string\" value=\"\"/>"
   "<Parameter name=\"aggregation: output file: time step\" type=\"int\" value=\"0\"/>"
@@ -523,6 +524,7 @@ namespace MueLu {
          ("aggregation: preserve Dirichlet points","aggregation: preserve Dirichlet points")
       
          ("aggregation: allow user-specified singletons","aggregation: allow user-specified singletons")
+         ("aggregation: use interface aggregation","aggregation: use interface aggregation")
       
          ("aggregation: export visualization data","aggregation: export visualization data")
       
