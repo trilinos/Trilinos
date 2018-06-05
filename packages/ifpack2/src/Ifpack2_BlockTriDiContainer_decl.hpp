@@ -46,6 +46,7 @@
 /// \file Ifpack2_BlockTriDiContainer_decl.hpp
 /// \brief Ifpack2::BlockTriDiContainer class declaration
 
+#include "Ifpack2_config.h"
 #include "Ifpack2_Container.hpp"
 #include "Tpetra_MultiVector.hpp"
 #include "Tpetra_Map.hpp"
