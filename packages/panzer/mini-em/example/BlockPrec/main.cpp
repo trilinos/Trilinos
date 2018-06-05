@@ -135,6 +135,8 @@ int main(int argc,char * argv[])
       double epsilon = 8.854187817e-12;
       double mu = 1.2566370614e-6;
       bool build_tet_mesh = false;
+      bool doSolveTimings = false;
+      int numReps = 0;
       std::string xml = "";
       Teuchos::CommandLineProcessor clp;
       clp.setOption("x-elements",&x_elements);
@@ -152,6 +154,7 @@ int main(int argc,char * argv[])
       clp.setOption("use-refmaxwell","use-augmentation",&use_refmaxwell);
       clp.setOption("build-tet-mesh","build-hex-mesh",&build_tet_mesh);
       clp.setOption("numTimeSteps",&numTimeSteps);
+      clp.setOption("doSolveTimings","no-doSolveTimings",&doSolveTimings,"repeat the first solve 'numTimeSteps' times");
       clp.setOption("epsilon",&epsilon);
       clp.setOption("mu",&mu);
       clp.setOption("xml",&xml);
@@ -166,6 +169,11 @@ int main(int argc,char * argv[])
         case Teuchos::CommandLineProcessor::PARSE_UNRECOGNIZED_OPTION: return EXIT_FAILURE;
         case Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL:          break;
       }
+      if (doSolveTimings) {
+        numReps = numTimeSteps;
+        numTimeSteps = 1;
+      }
+
 
       Teuchos::RCP<Teuchos::TimeMonitor> tMmesh = Teuchos::rcp(new Teuchos::TimeMonitor(*Teuchos::TimeMonitor::getNewTimer(std::string("Mini-EM: build mesh"))));
       RCP<panzer_stk::STK_Interface> mesh;
@@ -524,7 +532,13 @@ int main(int argc,char * argv[])
           physics->evalModel(inArgs,outArgs);
 
           // solve
-          jacobian->solve(Thyra::NOTRANS,*residual,correction_vec.ptr());
+          if (doSolveTimings)
+            for (int rep = 0; rep < numReps; rep++) {
+              Thyra::assign(correction_vec.ptr(),0.0);
+              jacobian->solve(Thyra::NOTRANS,*residual,correction_vec.ptr());
+            }
+          else
+            jacobian->solve(Thyra::NOTRANS,*residual,correction_vec.ptr());
           Thyra::V_StVpStV(solution_vec.ptr(),1.0,*solution_vec,-1.0,*correction_vec);
 
           // end for()
