@@ -376,20 +376,6 @@ getNumEntriesInLocalRow (local_ordinal_type localRow) const
 
 
 template<class MatrixType>
-global_size_t OverlappingRowMatrix<MatrixType>::getGlobalNumDiags() const
-{
-  throw std::runtime_error("Ifpack2::OverlappingRowMatrix::getGlobalNumDiags() not supported.");
-}
-
-
-template<class MatrixType>
-size_t OverlappingRowMatrix<MatrixType>::getNodeNumDiags() const
-{
-  return A_->getNodeNumDiags();
-}
-
-
-template<class MatrixType>
 size_t OverlappingRowMatrix<MatrixType>::getGlobalMaxNumRowEntries() const
 {
   throw std::runtime_error("Ifpack2::OverlappingRowMatrix::getGlobalMaxNumRowEntries() not supported.");
@@ -407,20 +393,6 @@ template<class MatrixType>
 bool OverlappingRowMatrix<MatrixType>::hasColMap() const
 {
   return true;
-}
-
-
-template<class MatrixType>
-bool OverlappingRowMatrix<MatrixType>::isLowerTriangular() const
-{
-  return A_->isLowerTriangular();
-}
-
-
-template<class MatrixType>
-bool OverlappingRowMatrix<MatrixType>::isUpperTriangular() const
-{
-  return A_->isUpperTriangular();
 }
 
 
@@ -772,7 +744,6 @@ void OverlappingRowMatrix<MatrixType>::describe(Teuchos::FancyOStream &out,
       }
       // O(1) globals, minus what was already printed by description()
       //if (isFillComplete() && myRank == 0) {
-      //  out << "Global number of diagonal entries: " << getGlobalNumDiags() << std::endl;
       //  out << "Global max number of entries in a row: " << getGlobalMaxNumRowEntries() << std::endl;
       //}
       // constituent objects
@@ -841,9 +812,6 @@ void OverlappingRowMatrix<MatrixType>::describe(Teuchos::FancyOStream &out,
           if (myRank == curRank) {
             out << "Process rank: " << curRank << std::endl;
             out << "  Number of entries: " << getNodeNumEntries() << std::endl;
-            if (isFillComplete()) {
-              out << "  Number of diagonal entries: " << getNodeNumDiags() << std::endl;
-            }
             out << "  Max number of entries per row: " << getNodeMaxNumRowEntries() << std::endl;
           }
           comm->barrier();

@@ -249,20 +249,6 @@ getNumEntriesInLocalRow (local_ordinal_type localRow) const
 
 
 template<class MatrixType>
-global_size_t ReorderFilter<MatrixType>::getGlobalNumDiags() const
-{
-  return A_->getGlobalNumDiags();
-}
-
-
-template<class MatrixType>
-size_t ReorderFilter<MatrixType>::getNodeNumDiags() const
-{
-  return A_->getNodeNumDiags();
-}
-
-
-template<class MatrixType>
 size_t ReorderFilter<MatrixType>::getGlobalMaxNumRowEntries() const
 {
   return A_->getGlobalMaxNumRowEntries();
@@ -280,20 +266,6 @@ template<class MatrixType>
 bool ReorderFilter<MatrixType>::hasColMap() const
 {
   return true;
-}
-
-
-template<class MatrixType>
-bool ReorderFilter<MatrixType>::isLowerTriangular() const
-{
-  return A_->isLowerTriangular();
-}
-
-
-template<class MatrixType>
-bool ReorderFilter<MatrixType>::isUpperTriangular() const
-{
-  return A_->isUpperTriangular();
 }
 
 
