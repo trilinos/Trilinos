@@ -64,9 +64,6 @@ public:
     if (!running_)
       error_out("Base_Timer:stop Failed timer not running");
     accumulation_ += std::chrono::duration_cast<std::chrono::duration<double>>(Clock::now() - start_time_).count();
-#if defined(HAVE_TEUCHOS_KOKKOS_PROFILING) && defined(HAVE_TEUCHOSCORE_KOKKOSCORE)
-      ::Kokkos::Profiling::popRegion ();
-#endif
     running_ = false;
   }
 
@@ -212,9 +209,7 @@ protected:
     {
       if ( start_timer )
         BaseTimer::start();
-#if defined(HAVE_TEUCHOS_KOKKOS_PROFILING) && defined(HAVE_TEUCHOSCORE_KOKKOSCORE)
-    ::Kokkos::Profiling::pushRegion (name);
-#endif
+
     }
 
     /// Copy constructor
@@ -234,9 +229,6 @@ protected:
       for (unsigned i=0;i<sub_timers_.size();i++ )
         if (sub_name == sub_timers_[i].name_ ) {
           sub_timers_[i].BaseTimer::start();
-#if defined(HAVE_TEUCHOS_KOKKOS_PROFILING) && defined(HAVE_TEUCHOSCORE_KOKKOSCORE)
-          ::Kokkos::Profiling::pushRegion(sub_name);
-#endif
           return &sub_timers_[i];
         }
       sub_timers_.push_back(LevelTimer(level_+1,sub_name,this,true));
@@ -418,7 +410,12 @@ public:
   /**
    * Start the base level timer only, used really in testing only
    */
-  void start() { timer_.BaseTimer::start();}
+  void start() { 
+    timer_.BaseTimer::start();
+#if defined(HAVE_TEUCHOS_KOKKOS_PROFILING) && defined(HAVE_TEUCHOSCORE_KOKKOSCORE)
+    ::Kokkos::Profiling::pushRegion("ANONYMOUS");
+#endif
+}
   /**
    * Start a sublevel timer
    * @param [in] name Name of the timer you wish to start
@@ -428,6 +425,9 @@ public:
       top_ = timer_.start(name.c_str());
     else
       top_ = top_->start(name.c_str());
+#if defined(HAVE_TEUCHOS_KOKKOS_PROFILING) && defined(HAVE_TEUCHOSCORE_KOKKOSCORE)
+    ::Kokkos::Profiling::pushRegion(name);
+#endif
   }
 
   /**
@@ -438,7 +438,9 @@ public:
       top_ = top_->stop(name);
     else
       timer_.BaseTimer::stop( );
-
+#if defined(HAVE_TEUCHOS_KOKKOS_PROFILING) && defined(HAVE_TEUCHOSCORE_KOKKOSCORE)
+    ::Kokkos::Profiling::popRegion();
+#endif
   }
 
   /**
