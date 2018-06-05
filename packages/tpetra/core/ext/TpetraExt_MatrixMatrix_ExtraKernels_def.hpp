@@ -935,32 +935,26 @@ void jacobi_A_B_newmatrix_MultiplyScaleAddKernel(Scalar omega,
 #ifdef HAVE_TPETRA_MMM_TIMINGS
   std::string prefix_mmm = std::string("TpetraExt ") + label + std::string(": ");
   using Teuchos::TimeMonitor;
-  Teuchos::RCP<Teuchos::TimeMonitor> MM = rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix_mmm + std::string("Jacobi Reuse MSAK"))));
-  Teuchos::RCP<Teuchos::TimeMonitor> MM2 = rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix_mmm + std::string("Jacobi Reuse MSAK Multiply"))));
+  Teuchos::RCP<Teuchos::TimeMonitor> MM = rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix_mmm + std::string("Jacobi Newmatrix MSAK"))));
+  Teuchos::RCP<Teuchos::TimeMonitor> MM2 = rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix_mmm + std::string("Jacobi Newmatrix MSAK Multiply"))));
 #endif
   typedef  CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> Matrix_t;
 
   // This kernel computes (I-omega Dinv A) B the slow way (for generality's sake, you must understand)
-  Teuchos::ParameterList jparams;
-  if(!params.is_null()) {
-    jparams = *params;
-    jparams.remove("openmp: algorithm",false);
-    jparams.remove("cuda: algorithm",false);
-  }
 
   // 1) Multiply A*B
   Teuchos::RCP<Matrix_t> AB = Teuchos::rcp(new Matrix_t(C.getRowMap(),0));
-  Tpetra::MMdetails::mult_A_B_newmatrix(Aview,Bview,*AB,label+std::string(" MSAK"),Teuchos::rcp(&jparams,false));
+  Tpetra::MMdetails::mult_A_B_newmatrix(Aview,Bview,*AB,label+std::string(" MSAK"),Teuchos::rcp(&pparams,false));
 
 #ifdef HAVE_TPETRA_MMM_TIMINGS
-MM2 = rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix_mmm + std::string("Jacobi Reuse MSAK Scale"))));
+MM2 = rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix_mmm + std::string("Jacobi Newmatrix MSAK Scale"))));
 #endif
   
   // 2) Scale A by Dinv
   AB->leftScale(Dinv);
 
 #ifdef HAVE_TPETRA_MMM_TIMINGS  
-MM2 = rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix_mmm + std::string("Jacobi Reuse MSAK Add"))));
+MM2 = rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix_mmm + std::string("Jacobi Newmatrix MSAK Add"))));
 #endif
 
   // 3) Add [-omega Dinv A] + B
