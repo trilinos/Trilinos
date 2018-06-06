@@ -413,6 +413,6 @@ class Epetra_MsrMatrix: public Epetra_Object, public Epetra_CompObject, public v
     
 
  //! Copy constructor (not accessible to users).
-  Epetra_MsrMatrix(const Epetra_MsrMatrix & Matrix) {(void)Matrix;}
+  Epetra_MsrMatrix(const Epetra_MsrMatrix & Matrix) : Epetra_Object(Matrix), Epetra_CompObject(Matrix) {}
 };
 #endif /* _EPETRA_MSRMATRIX_H_ */
