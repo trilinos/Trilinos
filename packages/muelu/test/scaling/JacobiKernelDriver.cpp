@@ -263,6 +263,8 @@ void Jacobi_Wrapper(const Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>
   Xpetra::UnderlyingLib lib = A.getRowMap()->lib();
   RCP<TimeMonitor> tm;
 
+  std::string name = jacobi_algorithm_name + "/" + spgemm_algorithm_name;
+
   if (lib == Xpetra::UseTpetra) {
 #if defined(HAVE_MUELU_TPETRA) && defined(HAVE_TPETRA_INST_OPENMP)
     typedef Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> crs_matrix_type;
@@ -290,7 +292,7 @@ void Jacobi_Wrapper(const Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>
 
     // **********************************
     // Copy in the data for Jacobi Kernel Wrapper
-    tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Jacobi "+jacobi_algorithm_name+"/"+spgemm_algorithm_name+": CopyIn")));
+    tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Jacobi "+name+": CopyIn")));
 
     Tpetra::CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node> Aview, Bview;
     Aview.origMatrix   = Au;
@@ -345,8 +347,8 @@ void Jacobi_Wrapper(const Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>
     params->set("openmp: algorithm", spgemm_algorithm_name);
     params->get("openmp: team work size",team_work_size);
 
-    tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer(std::string("Jacobi ")+jacobi_algorithm_name+std::string(":")+spgemm_algorithm_name)));
-    Tpetra::MMdetails::KernelWrappers2<SC,LO,GO,Node,lno_nnz_view_t>::jacobi_A_B_newmatrix_kernel_wrapper(omega,*Du,Aview,Bview,targetMapToOrigRow,targetMapToImportRow,Bcol2Ccol,Icol2Ccol,*Cnc,Cimport,std::string("Jacobi "),params);
+    tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer(std::string("Jacobi ")+name+": Kernel")));
+    Tpetra::MMdetails::KernelWrappers2<SC,LO,GO,Node,lno_nnz_view_t>::jacobi_A_B_newmatrix_kernel_wrapper(omega,*Du,Aview,Bview,targetMapToOrigRow,targetMapToImportRow,Bcol2Ccol,Icol2Ccol,*Cnc,Cimport,name,params);
 
     tm = Teuchos::null;
     Au->getComm()->barrier();
@@ -570,7 +572,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
           C = Xpetra::MatrixFactory<SC,LO,GO,Node>::Build(A->getRowMap(),0);
           {
             TimeMonitor t(*TimeMonitor::getNewTimer("JAC JLTG: Total"));
-            Jacobi_Wrapper(*A,*B,*C,*D,omega,std::string("LTG"),std::string(""),0);
+            Jacobi_Wrapper(*A,*B,*C,*D,omega,std::string("LTG"),std::string("--"),0);
           }
           break;
 
