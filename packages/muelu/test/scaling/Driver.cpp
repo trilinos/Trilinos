@@ -145,6 +145,16 @@ struct ML_Wrapper<double,int,GlobalOrdinal,Kokkos::Compat::KokkosSerialWrapperNo
 /*********************************************************************/
 
 #ifdef HAVE_MUELU_TPETRA
+#include "KokkosBlas1_abs_impl.hpp"
+template<class RV, class XV, class SizeType>
+void Temporary_Replacement_For_Kokkos_abs(const RV& R, const XV& X) {
+  typedef typename XV::execution_space execution_space;
+  const SizeType numRows = X.extent(0);
+  Kokkos::RangePolicy<execution_space, SizeType> policy (0, numRows);
+  KokkosBlas::Impl::V_Abs_Functor<RV, XV, SizeType> op (R, X);
+  Kokkos::parallel_for (policy, op);
+}
+
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void equilibrateMatrix(Teuchos::RCP<Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > &Axpetra, std::string equilibrate) {
 #include <MueLu_UseShortNames.hpp>
@@ -154,20 +164,26 @@ void equilibrateMatrix(Teuchos::RCP<Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrd
   bool equilibrate_diag  = (equilibrate == "diag");
   bool equilibrate_no    = (equilibrate == "no");
   bool assumeSymmetric = false;
+  typedef typename Tpetra::Details::EquilibrationInfo<typename Kokkos::ArithTraits<Scalar>::val_type,typename Node::device_type> equil_type;
+  
   Teuchos::RCP<Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > A = Utilities::Op2NonConstTpetraCrs(Axpetra);
-
+  
   if(Axpetra->getRowMap()->lib() == Xpetra::UseTpetra) {
-     auto equibResult_ = computeRowAndColumnOneNorms (*A, assumeSymmetric);
+     equil_type equibResult_ = computeRowAndColumnOneNorms (*A, assumeSymmetric);
      if (equilibrate_1norm) {
         using device_type = typename Node::device_type;
         using mag_type = typename Kokkos::ArithTraits<Scalar>::mag_type;
-        using view_type = Kokkos::View<mag_type*, device_type>;
+        using mag_view_type = Kokkos::View<mag_type*, device_type>;
+        using scalar_view_type = Kokkos::View<typename equil_type::val_type*, device_type>;
+        
+        mag_view_type rowDiagAbsVals ("rowDiagAbsVals",equibResult_.rowDiagonalEntries.extent (0));                                  
+        //        KokkosBlas::abs (rowDiagAbsVals, equibResult_.rowDiagonalEntries);
+        Temporary_Replacement_For_Kokkos_abs<mag_view_type,scalar_view_type,LocalOrdinal>(rowDiagAbsVals, equibResult_.rowDiagonalEntries);
 
-        view_type rowDiagAbsVals ("rowDiagAbsVals",equibResult_.rowDiagonalEntries.extent (0));                                  
-        KokkosBlas::abs (rowDiagAbsVals, equibResult_.rowDiagonalEntries);
-        view_type colDiagAbsVals ("colDiagAbsVals",equibResult_.colDiagonalEntries.extent (0));
+        mag_view_type colDiagAbsVals ("colDiagAbsVals",equibResult_.colDiagonalEntries.extent (0));
                                   
-        KokkosBlas::abs (colDiagAbsVals, equibResult_.colDiagonalEntries);
+        //        KokkosBlas::abs (colDiagAbsVals, equibResult_.colDiagonalEntries);
+        Temporary_Replacement_For_Kokkos_abs<mag_view_type,scalar_view_type,LocalOrdinal>(colDiagAbsVals, equibResult_.colDiagonalEntries);
 
         leftAndOrRightScaleCrsMatrix (*A, rowDiagAbsVals, colDiagAbsVals,
                                       true, true, equibResult_.assumeSymmetric,
